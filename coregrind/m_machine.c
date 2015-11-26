@@ -700,8 +700,12 @@ static UInt VG_(get_machine_model)(void)
 
 #if defined(VGA_mips32) || defined(VGA_mips64)
 
-/* Read /proc/cpuinfo and return the machine model. */
-static UInt VG_(get_machine_model)(void)
+/* 
+ * Initialize hwcaps by parsing /proc/cpuinfo . Returns False if it can not
+ * determine what CPU it is (it searches only for the models that are or may be
+ * supported by Valgrind).
+ */
+static Bool VG_(parse_cpuinfo)(void)
 {
    const char *search_Broadcom_str = "cpu model\t\t: Broadcom";
    const char *search_Cavium_str= "cpu model\t\t: Cavium";
@@ -713,11 +717,11 @@ static UInt VG_(get_machine_model)(void)
    Int    n, fh;
    SysRes fd;
    SizeT  num_bytes, file_buf_size;
-   HChar  *file_buf;
+   HChar  *file_buf, *isa;
 
    /* Slurp contents of /proc/cpuinfo into FILE_BUF */
    fd = VG_(open)( "/proc/cpuinfo", 0, VKI_S_IRUSR );
-   if ( sr_isError(fd) ) return -1;
+   if ( sr_isError(fd) ) return False;
 
    fh  = sr_Res(fd);
 
@@ -751,20 +755,66 @@ static UInt VG_(get_machine_model)(void)
 
    /* Parse file */
    if (VG_(strstr)(file_buf, search_Broadcom_str) != NULL)
-       return VEX_PRID_COMP_BROADCOM;
-   if (VG_(strstr)(file_buf, search_Netlogic_str) != NULL)
-       return VEX_PRID_COMP_NETLOGIC;
-   if (VG_(strstr)(file_buf, search_Cavium_str) != NULL)
-       return VEX_PRID_COMP_CAVIUM;
-   if (VG_(strstr)(file_buf, search_MIPS_str) != NULL)
-       return VEX_PRID_COMP_MIPS;
-   if (VG_(strstr)(file_buf, search_Ingenic_str) != NULL)
-       return VEX_PRID_COMP_INGENIC_E1;
-   if (VG_(strstr)(file_buf, search_Loongson_str) != NULL)
-       return (VEX_PRID_COMP_LEGACY | VEX_PRID_IMP_LOONGSON_64);
+       vai.hwcaps = VEX_PRID_COMP_BROADCOM;
+   else if (VG_(strstr)(file_buf, search_Netlogic_str) != NULL)
+       vai.hwcaps = VEX_PRID_COMP_NETLOGIC;
+   else if (VG_(strstr)(file_buf, search_Cavium_str) != NULL)
+       vai.hwcaps = VEX_PRID_COMP_CAVIUM;
+   else if (VG_(strstr)(file_buf, search_MIPS_str) != NULL)
+       vai.hwcaps = VEX_PRID_COMP_MIPS;
+   else if (VG_(strstr)(file_buf, search_Ingenic_str) != NULL)
+       vai.hwcaps = VEX_PRID_COMP_INGENIC_E1;
+   else if (VG_(strstr)(file_buf, search_Loongson_str) != NULL)
+       vai.hwcaps = (VEX_PRID_COMP_LEGACY | VEX_PRID_IMP_LOONGSON_64);
+   else {
+       /* Did not find string in the proc file. */
+       vai.hwcaps = 0;
+       VG_(free)(file_buf);
+       return False;
+   }
 
-   /* Did not find string in the proc file. */
-   return -1;
+   isa = VG_(strstr)(file_buf, "isa\t\t\t: ");
+
+   if (NULL != isa) {
+      if (VG_(strstr) (isa, "mips32r1") != NULL)
+          vai.hwcaps |= VEX_MIPS_CPU_ISA_M32R1;
+      if (VG_(strstr) (isa, "mips32r2") != NULL)
+          vai.hwcaps |= VEX_MIPS_CPU_ISA_M32R2;
+      if (VG_(strstr) (isa, "mips32r6") != NULL)
+          vai.hwcaps |= VEX_MIPS_CPU_ISA_M32R6;
+      if (VG_(strstr) (isa, "mips64r1") != NULL)
+          vai.hwcaps |= VEX_MIPS_CPU_ISA_M64R1;
+      if (VG_(strstr) (isa, "mips64r2") != NULL)
+          vai.hwcaps |= VEX_MIPS_CPU_ISA_M64R2;
+      if (VG_(strstr) (isa, "mips64r6") != NULL)
+          vai.hwcaps |= VEX_MIPS_CPU_ISA_M64R6;
+   } else {
+      /*
+       * Kernel does not provide information about supported ISAs.
+       * Populate the isa level flags based on the CPU model. That is our
+       * best guess.
+       */
+       switch VEX_MIPS_COMP_ID(vai.hwcaps) {
+          case VEX_PRID_COMP_CAVIUM:
+          case VEX_PRID_COMP_NETLOGIC:
+             vai.hwcaps |= (VEX_MIPS_CPU_ISA_M64R2 | VEX_MIPS_CPU_ISA_M64R1);
+          case VEX_PRID_COMP_INGENIC_E1:
+          case VEX_PRID_COMP_MIPS:
+             vai.hwcaps |= VEX_MIPS_CPU_ISA_M32R2;
+          case VEX_PRID_COMP_BROADCOM:
+             vai.hwcaps |= VEX_MIPS_CPU_ISA_M32R1;
+             break;
+          case VEX_PRID_COMP_LEGACY:
+             if ((VEX_MIPS_PROC_ID(vai.hwcaps) == VEX_PRID_IMP_LOONGSON_64))
+                vai.hwcaps |= VEX_MIPS_CPU_ISA_M64R2 | VEX_MIPS_CPU_ISA_M64R1 |
+                              VEX_MIPS_CPU_ISA_M32R2 | VEX_MIPS_CPU_ISA_M32R1;
+             break;
+         default:
+             break;
+       }
+   }
+   VG_(free)(file_buf);
+   return True;
 }
 
 #endif
@@ -1590,11 +1640,8 @@ Bool VG_(machine_get_hwcaps)( void )
      /* Define the position of F64 bit in FIR register. */
 #    define FP64 22
      va = VexArchMIPS32;
-     UInt model = VG_(get_machine_model)();
-     if (model == -1)
+     if (!VG_(parse_cpuinfo)())
          return False;
-
-     vai.hwcaps = model;
 
 #    if defined(VKI_LITTLE_ENDIAN)
      vai.endness = VexEndnessLE;
@@ -1633,7 +1680,7 @@ Bool VG_(machine_get_hwcaps)( void )
      tmp_sigill_act.ksa_handler = handler_unsup_insn;
      VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
 
-     if (model == VEX_PRID_COMP_MIPS) {
+     if (VEX_PRID_COMP_MIPS == VEX_MIPS_COMP_ID(vai.hwcaps)) {
         /* DSPr2 instructions. */
         have_DSPr2 = True;
         if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
@@ -1666,7 +1713,7 @@ Bool VG_(machine_get_hwcaps)( void )
         : "=r" (FIR)
      );
      if (FIR & (1 << FP64)) {
-        vai.hwcaps |= VEX_PRID_CPU_32FPR;
+        vai.hwcaps |= VEX_MIPS_CPU_32FPR;
      }
 
      VG_(convert_sigaction_fromK_to_toK)(&saved_sigill_act, &tmp_sigill_act);
@@ -1682,11 +1729,8 @@ Bool VG_(machine_get_hwcaps)( void )
 #elif defined(VGA_mips64)
    {
      va = VexArchMIPS64;
-     UInt model = VG_(get_machine_model)();
-     if (model == -1)
+     if (!VG_(parse_cpuinfo)())
          return False;
-
-     vai.hwcaps = model;
 
 #    if defined(VKI_LITTLE_ENDIAN)
      vai.endness = VexEndnessLE;

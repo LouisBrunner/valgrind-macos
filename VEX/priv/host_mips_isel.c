@@ -4184,7 +4184,7 @@ HInstrArray *iselSB_MIPS ( const IRSB* bb,
 
    mode64 = arch_host != VexArchMIPS32;
 #if (__mips_fpr==64)
-   fp_mode64 = ((VEX_MIPS_REV(hwcaps_host) == VEX_PRID_CPU_32FPR)
+   fp_mode64 = (VEX_MIPS_HAS_32_64BIT_FPRS(hwcaps_host)
                 || arch_host == VexArchMIPS64);
 #endif
 

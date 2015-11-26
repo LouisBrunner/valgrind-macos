@@ -17290,7 +17290,7 @@ DisResult disInstr_MIPS( IRSB*        irsb_IN,
 
    mode64 = guest_arch != VexArchMIPS32;
 #if (__mips_fpr==64)
-   fp_mode64 = ((VEX_MIPS_REV(archinfo->hwcaps) == VEX_PRID_CPU_32FPR)
+   fp_mode64 = (VEX_MIPS_HAS_32_64BIT_FPRS(archinfo->hwcaps)
                 || guest_arch == VexArchMIPS64);
 #endif
 

@@ -1738,7 +1738,12 @@ static const HChar* show_hwcaps_mips64 ( UInt hwcaps )
       return "Loongson-baseline";
    }
 
-   return "mips64-baseline";
+   /* MIPS64 baseline. */
+   if (VEX_MIPS_COMP_ID(hwcaps) == VEX_PRID_COMP_MIPS) {
+      return "mips64-baseline";
+   }
+
+   return "Unsupported baseline";
 }
 
 static const HChar* show_hwcaps_tilegx ( UInt hwcaps )

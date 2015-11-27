@@ -97,6 +97,6 @@ The following steps are needed
 
 Status
 ------
-vbit-test has been tested on x86-64, ppc64, s390x, and mips32.
+vbit-test has been tested on x86-64, ppc64, s390x, mips32 and mips64.
 There is support for other architectures in valgrind.h and guest_ARCH_toIR.c
 but it has not been tested. 

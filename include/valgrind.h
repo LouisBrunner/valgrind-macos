@@ -946,7 +946,7 @@ typedef
                      "move %0, $11\n\t"     /*result*/            \
                      : "=r" (_zzq_result)                         \
                      : "r" (_zzq_default), "r" (&_zzq_args[0])    \
-                     : "$11", "$12");                             \
+                     : "$11", "$12", "memory");                   \
     _zzq_result;                                                  \
   })
 
@@ -1017,7 +1017,7 @@ typedef
                          "move %0, $11\n\t"     /*result*/          \
                          : "=r" (_zzq_result)                       \
                          : "r" (_zzq_default), "r" (&_zzq_args[0])  \
-                         : "$11", "$12");                           \
+                         : "$11", "$12", "memory");                 \
     _zzq_result;                                                    \
   })
 

@@ -91,7 +91,6 @@ typedef struct
   ULong  li_header_length;
   UChar  li_min_insn_length;
   UChar  li_max_ops_per_insn;
-  UChar  li_default_is_stmt;
   Int    li_line_base;
   UChar  li_line_range;
   UChar  li_opcode_base;
@@ -150,7 +149,6 @@ typedef struct
   UInt  file;
   UInt  line;
   UInt  column;
-  Int   is_stmt;
   Int   basic_block;
   UChar end_sequence;
 } LineSMR;
@@ -230,7 +228,7 @@ ULong read_initial_length_field ( DiCursor p_img, /*OUT*/Bool* is64 )
 static LineSMR state_machine_regs;
 
 static 
-void reset_state_machine ( Int is_stmt )
+void reset_state_machine ( void )
 {
    if (0) VG_(printf)("smr.a := %p (reset)\n", NULL );
    state_machine_regs.last_address = 0;
@@ -240,7 +238,6 @@ void reset_state_machine ( Int is_stmt )
    state_machine_regs.file = 1;
    state_machine_regs.line = 1;
    state_machine_regs.column = 0;
-   state_machine_regs.is_stmt = is_stmt;
    state_machine_regs.basic_block = 0;
    state_machine_regs.end_sequence = 0;
 }
@@ -253,7 +250,7 @@ void reset_state_machine ( Int is_stmt )
 static 
 void process_extended_line_op( struct _DebugInfo* di,
                                XArray* fndn_ix_xa,
-                               DiCursor* data, Int is_stmt)
+                               DiCursor* data )
 {
    UInt len = step_leb128U(data);
    if (len == 0) {
@@ -275,19 +272,17 @@ void process_extended_line_op( struct _DebugInfo* di,
             reset_state_machine below */
          state_machine_regs.end_sequence = 1; 
 
-         if (state_machine_regs.is_stmt) {
-            if (state_machine_regs.last_address) {
-               ML_(addLineInfo) (
-                  di,
-                  safe_fndn_ix (fndn_ix_xa,
-                                state_machine_regs.last_file),
-                  di->text_debug_bias + state_machine_regs.last_address, 
-                  di->text_debug_bias + state_machine_regs.address, 
-                  state_machine_regs.last_line, 0
-               );
-            }
+         if (state_machine_regs.last_address) {
+            ML_(addLineInfo)(
+               di,
+               safe_fndn_ix(fndn_ix_xa,
+                            state_machine_regs.last_file),
+               di->text_debug_bias + state_machine_regs.last_address, 
+               di->text_debug_bias + state_machine_regs.address, 
+               state_machine_regs.last_line, 0
+            );
          }
-         reset_state_machine (is_stmt);
+         reset_state_machine();
          if (di->ddump_line)
             VG_(printf)("  Extended opcode %d: End of Sequence\n\n", 
                         (Int)op_code);
@@ -446,29 +441,9 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
       info.li_max_ops_per_insn = 1;
    }
 
-   info.li_default_is_stmt = ML_(cur_step_UChar)(&external);
-   if (di->ddump_line)
-      VG_(printf)("  Initial value of 'is_stmt':  %d\n", 
-                  (Int)info.li_default_is_stmt);
-
-   /* Josef Weidendorfer (20021021) writes:
-
-      It seems to me that the Intel Fortran compiler generates bad
-      DWARF2 line info code: It sets "is_stmt" of the state machine in
-      the line info reader to be always false. Thus, there is never
-      a statement boundary generated and therefore never an instruction
-      range/line number mapping generated for valgrind.
-
-      Please have a look at the DWARF2 specification, Ch. 6.2
-      (x86.ddj.com/ftp/manuals/tools/dwarf.pdf).  Perhaps I understand
-      this wrong, but I don't think so.
-
-      I just had a look at the GDB DWARF2 reader...  They completely
-      ignore "is_stmt" when recording line info ;-) That's the reason
-      "objdump -S" works on files from the intel fortran compiler.
-
-      Therefore: */
-   info.li_default_is_stmt = True; 
+   /* Register is_stmt is not tracked as we are interested only
+      in pc -> line info mapping and not other debugger features. */
+   /* default_is_stmt = */ ML_(cur_step_UChar)(&external);
 
    /* JRS: changed (UInt*) to (UChar*) */
    info.li_line_base = ML_(cur_step_UChar)(&external);
@@ -495,7 +470,7 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
    DiCursor end_of_sequence
      = ML_(cur_plus)(data, info.li_length + (is64 ? 12 : 4));
 
-   reset_state_machine (info.li_default_is_stmt);
+   reset_state_machine();
 
    /* Read the contents of the Opcodes table.  */
    DiCursor standard_opcodes = external;
@@ -632,15 +607,42 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
                         (Int)op_code, advAddr, state_machine_regs.address,
                         (Int)adv, (Int)state_machine_regs.line );
 
-         if (state_machine_regs.is_stmt) {
+         /* only add a statement if there was a previous boundary */
+         if (state_machine_regs.last_address) {
+            ML_(addLineInfo)(
+               di,
+               safe_fndn_ix(fndn_ix_xa,
+                            state_machine_regs.last_file),
+               di->text_debug_bias + state_machine_regs.last_address, 
+               di->text_debug_bias + state_machine_regs.address, 
+               state_machine_regs.last_line, 
+               0
+            );
+         }
+         state_machine_regs.last_address = state_machine_regs.address;
+         state_machine_regs.last_file = state_machine_regs.file;
+         state_machine_regs.last_line = state_machine_regs.line;
+      }
+
+      else { /* ! (op_code >= info.li_opcode_base) */
+
+      switch (op_code) {
+         case DW_LNS_extended_op:
+            process_extended_line_op(di, fndn_ix_xa, &data);
+            break;
+
+         case DW_LNS_copy:
+            if (0) VG_(printf)("1002: di->o %#lx, smr.a %#lx\n",
+                               (UWord)di->text_debug_bias,
+                               state_machine_regs.address );
             /* only add a statement if there was a previous boundary */
             if (state_machine_regs.last_address) {
                ML_(addLineInfo)(
                   di,
-                  safe_fndn_ix (fndn_ix_xa,
-                                state_machine_regs.last_file),
+                  safe_fndn_ix(fndn_ix_xa,
+                               state_machine_regs.last_file), 
                   di->text_debug_bias + state_machine_regs.last_address, 
-                  di->text_debug_bias + state_machine_regs.address, 
+                  di->text_debug_bias + state_machine_regs.address,
                   state_machine_regs.last_line, 
                   0
                );
@@ -648,39 +650,6 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
             state_machine_regs.last_address = state_machine_regs.address;
             state_machine_regs.last_file = state_machine_regs.file;
             state_machine_regs.last_line = state_machine_regs.line;
-         }
-      }
-
-      else { /* ! (op_code >= info.li_opcode_base) */
-
-      switch (op_code) {
-         case DW_LNS_extended_op:
-            process_extended_line_op (
-                       di, fndn_ix_xa,
-                       &data, info.li_default_is_stmt);
-            break;
-
-         case DW_LNS_copy:
-            if (0) VG_(printf)("1002: di->o %#lx, smr.a %#lx\n",
-                               (UWord)di->text_debug_bias,
-                               state_machine_regs.address );
-            if (state_machine_regs.is_stmt) {
-               /* only add a statement if there was a previous boundary */
-               if (state_machine_regs.last_address) {
-                  ML_(addLineInfo)(
-                     di,
-                     safe_fndn_ix (fndn_ix_xa,
-                                   state_machine_regs.last_file), 
-                     di->text_debug_bias + state_machine_regs.last_address, 
-                     di->text_debug_bias + state_machine_regs.address,
-                     state_machine_regs.last_line, 
-                     0
-                  );
-               }
-               state_machine_regs.last_address = state_machine_regs.address;
-               state_machine_regs.last_file = state_machine_regs.file;
-               state_machine_regs.last_line = state_machine_regs.line;
-            }
             state_machine_regs.basic_block = 0; /* JRS added */
             if (di->ddump_line)
                VG_(printf)("  Copy\n");
@@ -719,9 +688,6 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
             break;
          }
          case DW_LNS_negate_stmt: {
-            Int adv = state_machine_regs.is_stmt;
-            adv = ! adv;
-            state_machine_regs.is_stmt = adv;
             if (di->ddump_line)
                VG_(printf)("  DWARF2-line: negate_stmt\n");
             break;

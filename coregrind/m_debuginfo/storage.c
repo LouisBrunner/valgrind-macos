@@ -419,6 +419,21 @@ static void addLoc ( struct _DebugInfo* di, DiLoc* loc, UInt fndn_ix )
    /* Zero-sized locs should have been ignored earlier */
    vg_assert(loc->size > 0);
 
+   /* Check if the last entry has adjacent range for the same line. */
+   if (di->loctab_used > 0) {
+      DiLoc *previous = &di->loctab[di->loctab_used - 1];
+      if ((previous->lineno == loc->lineno)
+          && (previous->addr + previous->size == loc->addr)) {
+         if (0)
+            VG_(printf)("Merging previous: addr %#lx, size %d, line %d, "
+                        "with current: addr %#lx, size %d, line %d.\n",
+                        previous->addr, previous->size, previous->lineno,
+                        loc->addr, loc->size, loc->lineno);
+         previous->size += loc->size;
+         return;
+      }
+   }
+
    if (di->loctab_used == di->loctab_size) {
       UInt   new_sz;
       DiLoc* new_loctab;

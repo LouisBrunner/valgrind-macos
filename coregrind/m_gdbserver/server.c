@@ -793,6 +793,12 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       return;
    }
 
+   if (strcmp ("qC", arg_own_buf) == 0) {
+      VG_(sprintf) (arg_own_buf, "QC%x",
+                    thread_to_gdb_id (current_inferior));
+      return;
+   }
+
    if (strcmp ("qfThreadInfo", arg_own_buf) == 0) {
       thread_ptr = all_threads.head;
       VG_(sprintf) (arg_own_buf, "m%x", 

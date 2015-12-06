@@ -412,6 +412,18 @@ static inline void set_fndn_ix (struct _DebugInfo* di, Word locno, UInt fndn_ix)
    }
 }
 
+
+// Comment the below line to trace LOCTAB merging/canonicalising
+#define TRACE_LOCTAB_CANON(msg,prev_loc,cur_loc)
+#ifndef TRACE_LOCTAB_CANON
+#define TRACE_LOCTAB_CANON(msg,prev_loc,cur_loc)                        \
+   VG_(printf)("%s previous: addr %#lx, size %d, line %d, "             \
+               " current: addr %#lx, size %d, line %d.\n",              \
+               msg,                                                     \
+               (prev_loc)->addr, (prev_loc)->size, (prev_loc)->lineno,  \
+               (cur_loc)->addr, (cur_loc)->size, (cur_loc)->lineno);
+#endif
+
 /* Add a location to the location table. 
 */
 static void addLoc ( struct _DebugInfo* di, DiLoc* loc, UInt fndn_ix )
@@ -424,13 +436,14 @@ static void addLoc ( struct _DebugInfo* di, DiLoc* loc, UInt fndn_ix )
       DiLoc *previous = &di->loctab[di->loctab_used - 1];
       if ((previous->lineno == loc->lineno)
           && (previous->addr + previous->size == loc->addr)) {
-         if (0)
-            VG_(printf)("Merging previous: addr %#lx, size %d, line %d, "
-                        "with current: addr %#lx, size %d, line %d.\n",
-                        previous->addr, previous->size, previous->lineno,
-                        loc->addr, loc->size, loc->lineno);
-         previous->size += loc->size;
-         return;
+         if (previous->size + loc->size <= MAX_LOC_SIZE) {
+            TRACE_LOCTAB_CANON ("addLoc merging", previous, loc);
+            previous->size += loc->size;
+            return;
+         } else {
+            TRACE_LOCTAB_CANON ("addLoc merging not done (maxsize)",
+                                previous, loc);
+         }
       }
    }
 
@@ -2016,13 +2029,15 @@ static void canonicaliseLoctab ( struct _DebugInfo* di )
    /* sort loctab and loctab_fndn_ix by addr. */
    sort_loctab_and_loctab_fndn_ix (di);
 
-   /* If two adjacent entries overlap, truncate the first. */
    for (i = 0; i < ((Word)di->loctab_used)-1; i++) {
       vg_assert(di->loctab[i].size < 10000);
+      /* If two adjacent entries overlap, truncate the first. */
       if (di->loctab[i].addr + di->loctab[i].size > di->loctab[i+1].addr) {
          /* Do this in signed int32 because the actual .size fields
             are only 12 bits. */
          Int new_size = di->loctab[i+1].addr - di->loctab[i].addr;
+         TRACE_LOCTAB_CANON ("Truncating",
+                             &(di->loctab[i]), &(di->loctab[i+1]));
          if (new_size < 0) {
             di->loctab[i].size = 0;
          } else

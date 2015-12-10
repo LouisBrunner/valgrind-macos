@@ -1816,10 +1816,13 @@ void ms_unrecord_page_mem( Addr a, SizeT len )
    Addr end;
    tl_assert(VG_IS_PAGE_ALIGNED(len));
    tl_assert(len >= VKI_PAGE_SIZE);
+   // Unrecord the first page. This might be the peak, so do a snapshot.
+   unrecord_block((void*)a, /*maybe_snapshot*/True);
+   a += VKI_PAGE_SIZE;
+   // Then unrecord the remaining pages, but without snapshots.
    for (end = a + len - VKI_PAGE_SIZE; a < end; a += VKI_PAGE_SIZE) {
       unrecord_block((void*)a, /*maybe_snapshot*/False);
    }
-   unrecord_block((void*)a, /*maybe_snapshot*/True);
 }
 
 //------------------------------------------------------------//

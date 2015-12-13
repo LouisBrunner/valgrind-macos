@@ -743,3 +743,53 @@ OR
 
 * STACK is only present in case of VALGRIND_PRINTF_BACKTRACE. See above
   for a definition of STACK.
+
+====================================================================
+
+FATAL_SIGNAL
+
+FATAL_SIGNAL defines a message that was caused by a signal that killed them
+process.
+
+Definition:
+
+  <fatal_signal>
+     <tid>INT</tid>
+     <threadname>NAME</threadname>    if set
+
+     <signo>INT</signo>
+     <signame>NAME</signame>
+
+     <sicode>INT</sicode>
+     <event>NAME</event>
+     <siaddr>ADDR</siaddr>
+
+     STACK
+
+  </fatal_signal>
+
+* The <tid> tag indicates the Valgrind thread number.  This value
+  is arbitrary but may be used to determine which threads produced
+  which errors (at least, the first instance of each error).
+
+* The <threadname> tag identifies the name of the thread if it was
+  set by the client application. If no name was set, the tag is
+  omitted.
+
+* The <signo> tag indicates signo value from struct siginfo.
+
+* In <signame> tag there is the decoded name of signo.
+
+* The <sicode> tag contains the sicode from struct siginfo.
+
+* The <event> tag indicates the decoded name of the sicode. If sicode
+  has no name, the tag is omitted.
+
+* The <siaddr> tag indicates the address that is the reason
+  why the signal was triggered. This can be an unaligned pointer value or
+  just the address of not mapped memory that is accessed nevertheless.
+  If the signal reason is not related to an address, the tag is omitted.
+
+* STACK is defined above and shows where the thread was when it
+  catched the signal.  When sending the signal to itself using raise,
+  then raise is visible in this stack.

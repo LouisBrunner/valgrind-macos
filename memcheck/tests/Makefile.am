@@ -297,7 +297,8 @@ EXTRA_DIST = \
 	writev1.stderr.exp writev1.stderr.exp-solaris writev1.vgtest \
 	xml1.stderr.exp xml1.stdout.exp xml1.vgtest xml1.stderr.exp-s390x-mvc \
 	threadname.vgtest threadname.stderr.exp \
-	threadname_xml.vgtest threadname_xml.stderr.exp
+	threadname_xml.vgtest threadname_xml.stderr.exp \
+	gone_abrt_xml.vgtest gone_abrt_xml.stderr.exp
 
 check_PROGRAMS = \
 	accounting \

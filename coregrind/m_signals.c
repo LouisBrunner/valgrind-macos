@@ -1740,14 +1740,26 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
 	 core = False;
    }
 
-   if ( (VG_(clo_verbosity) >= 1 ||
-         (could_core && is_signal_from_kernel(tid, sigNo, info->si_code))
-        ) &&
-        !VG_(clo_xml) ) {
-      VG_(umsg)(
-         "\n"
-         "Process terminating with default action of signal %d (%s)%s\n",
-         sigNo, VG_(signame)(sigNo), core ? ": dumping core" : "");
+   if ( VG_(clo_verbosity) >= 1 
+        || (could_core && is_signal_from_kernel(tid, sigNo, info->si_code))
+        || VG_(clo_xml) ) {
+      if (VG_(clo_xml)) {
+         VG_(printf_xml)("<fatal_signal>\n");
+         VG_(printf_xml)("  <tid>%d</tid>\n", tid);
+         ThreadState* tst = VG_(get_ThreadState)(tid);
+         if (tst->thread_name) {
+            VG_(printf_xml)("  <threadname>%s</threadname>\n",
+                            tst->thread_name);
+         }
+         VG_(printf_xml)("  <signo>%d</signo>\n", sigNo);
+         VG_(printf_xml)("  <signame>%s</signame>\n", VG_(signame)(sigNo));
+         VG_(printf_xml)("  <sicode>%d</sicode>\n", info->si_code);
+      } else {
+         VG_(umsg)(
+            "\n"
+            "Process terminating with default action of signal %d (%s)%s\n",
+            sigNo, VG_(signame)(sigNo), core ? ": dumping core" : "");
+      }
 
       /* Be helpful - decode some more details about this fault */
       if (is_signal_from_kernel(tid, sigNo, info->si_code)) {
@@ -1820,13 +1832,21 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
 	    break;
 	 } /* switch (sigNo) */
 
-	 if (event != NULL) {
-	    if (haveaddr)
-               VG_(umsg)(" %s at address %p\n",
-                         event, info->VKI_SIGINFO_si_addr);
-	    else
-               VG_(umsg)(" %s\n", event);
-	 }
+         if (VG_(clo_xml)) {
+            if (event != NULL)
+               VG_(printf_xml)("  <event>%s</event>\n", event);
+            if (haveaddr)
+               VG_(printf_xml)("  <siaddr>%p</siaddr>\n",
+                               info->VKI_SIGINFO_si_addr);
+         } else {
+            if (event != NULL) {
+               if (haveaddr)
+                  VG_(umsg)(" %s at address %p\n",
+                            event, info->VKI_SIGINFO_si_addr);
+               else
+                  VG_(umsg)(" %s\n", event);
+            }
+         }
       }
       /* Print a stack trace.  Be cautious if the thread's SP is in an
          obviously stupid place (not mapped readable) that would
@@ -1845,8 +1865,8 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
          if (tid == 1) {           // main thread
             Addr esp  = VG_(get_SP)(tid);
             Addr base = VG_PGROUNDDN(esp - VG_STACK_REDZONE_SZB);
-            if (VG_(am_addr_is_in_extensible_client_stack)(base) &&
-                VG_(extend_stack)(tid, base)) {
+            if (VG_(am_addr_is_in_extensible_client_stack)(base) 
+                && VG_(extend_stack)(tid, base)) {
                if (VG_(clo_trace_signals))
                   VG_(dmsg)("       -> extended stack base to %#lx\n",
                             VG_PGROUNDDN(esp));
@@ -1888,6 +1908,11 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
                " The main thread stack size used in this run was %lu.\n",
                VG_(threads)[1].client_stack_szB);
          }
+      }
+      if (VG_(clo_xml)) {
+         /* postamble */
+         VG_(printf_xml)("</fatal_signal>\n");
+         VG_(printf_xml)("\n");
       }
    }
 
@@ -2683,8 +2708,8 @@ static Bool extend_stack_if_appropriate(ThreadId tid, vki_siginfo_t* info)
          then extend the stack segment. 
        */
       Addr base = VG_PGROUNDDN(esp - VG_STACK_REDZONE_SZB);
-      if (VG_(am_addr_is_in_extensible_client_stack)(base) &&
-          VG_(extend_stack)(tid, base)) {
+      if (VG_(am_addr_is_in_extensible_client_stack)(base)
+          && VG_(extend_stack)(tid, base)) {
          if (VG_(clo_trace_signals))
             VG_(dmsg)("       -> extended stack base to %#lx\n",
                       VG_PGROUNDDN(fault));
@@ -2783,11 +2808,11 @@ void sync_signalhandler ( Int sigNo,
 
    vg_assert(info != NULL);
    vg_assert(info->si_signo == sigNo);
-   vg_assert(sigNo == VKI_SIGSEGV ||
-	     sigNo == VKI_SIGBUS  ||
-	     sigNo == VKI_SIGFPE  ||
-	     sigNo == VKI_SIGILL  ||
-	     sigNo == VKI_SIGTRAP);
+   vg_assert(sigNo == VKI_SIGSEGV 
+	     || sigNo == VKI_SIGBUS
+	     || sigNo == VKI_SIGFPE
+	     || sigNo == VKI_SIGILL
+	     || sigNo == VKI_SIGTRAP);
 
    info->si_code = sanitize_si_code(info->si_code);
 

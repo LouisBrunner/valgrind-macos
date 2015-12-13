@@ -39,7 +39,7 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
-191069  report fatal signal in XML output
+191069  Exiting due to signal not reported in XML output
 278744  cvtps2pd with redundant RexW
 353083  arm64 doesn't implement various xattr system calls
 353084  arm64 doesn't support sigpending system call

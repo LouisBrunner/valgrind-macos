@@ -125,6 +125,7 @@ EXTRA_DIST = \
 	fprw.stderr.exp fprw.stderr.exp-mips32-be fprw.stderr.exp-mips32-le \
 		fprw.vgtest \
 	fwrite.stderr.exp fwrite.vgtest fwrite.stderr.exp-kfail \
+	gone_abrt_xml.vgtest gone_abrt_xml.stderr.exp gone_abrt_xml.stderr.exp-solaris \
 	holey_buffer_too_small.vgtest holey_buffer_too_small.stdout.exp \
 	holey_buffer_too_small.stderr.exp \
 	inits.stderr.exp inits.vgtest \
@@ -259,6 +260,8 @@ EXTRA_DIST = \
 	    test-plo-yes.stderr.exp-le64 test-plo-yes.stderr.exp-le32 \
 	    test-plo-no.stderr.exp-s390x-mvc \
 	thread_alloca.stderr.exp thread_alloca.vgtest \
+	threadname.vgtest threadname.stderr.exp \
+	threadname_xml.vgtest threadname_xml.stderr.exp \
 	trivialleak.stderr.exp trivialleak.vgtest trivialleak.stderr.exp2 \
 	undef_malloc_args.stderr.exp undef_malloc_args.vgtest \
 	unit_libcbase.stderr.exp unit_libcbase.vgtest \
@@ -295,10 +298,7 @@ EXTRA_DIST = \
 	wrapmallocstatic.vgtest wrapmallocstatic.stdout.exp \
 	wrapmallocstatic.stderr.exp \
 	writev1.stderr.exp writev1.stderr.exp-solaris writev1.vgtest \
-	xml1.stderr.exp xml1.stdout.exp xml1.vgtest xml1.stderr.exp-s390x-mvc \
-	threadname.vgtest threadname.stderr.exp \
-	threadname_xml.vgtest threadname_xml.stderr.exp \
-	gone_abrt_xml.vgtest gone_abrt_xml.stderr.exp
+	xml1.stderr.exp xml1.stdout.exp xml1.vgtest xml1.stderr.exp-s390x-mvc
 
 check_PROGRAMS = \
 	accounting \

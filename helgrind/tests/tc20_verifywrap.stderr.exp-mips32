@@ -13,7 +13,6 @@ Thread #x is the program's root thread
 
 Thread #x was created
    ...
-   by 0x........: pthread_create_WRK (hg_intercepts.c:...)
    by 0x........: pthread_create@* (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:81)
 
@@ -28,9 +27,8 @@ Locks held: none
    at 0x........: racy_child (tc20_verifywrap.c:39)
    by 0x........: mythread_wrapper (hg_intercepts.c:...)
    ...
-
-Location 0x........ is 0 bytes inside global var "unprotected"
-declared at tc20_verifywrap.c:32
+ Location 0x........ is 0 bytes inside global var "unprotected"
+ declared at tc20_verifywrap.c:32
 
 ----------------------------------------------------------------
 
@@ -167,10 +165,13 @@ Thread #x unlocked a not-locked lock at 0x........
    by 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
    ...
    by 0x........: main (tc20_verifywrap.c:189)
-  Lock at 0x........ was first observed
+ Lock at 0x........ was first observed
    at 0x........: pthread_rwlock_init_WRK (hg_intercepts.c:...)
    by 0x........: pthread_rwlock_init (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:188)
+ Location 0x........ is 0 bytes inside local var "rwl"
+ declared at tc20_verifywrap.c:52, in frame #x of thread x
+
 
 (1) no error on next line
 (2) no error on next line
@@ -182,10 +183,13 @@ Thread #x unlocked a not-locked lock at 0x........
    by 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
    ...
    by 0x........: main (tc20_verifywrap.c:206)
-  Lock at 0x........ was first observed
+ Lock at 0x........ was first observed
    at 0x........: pthread_rwlock_init_WRK (hg_intercepts.c:...)
    by 0x........: pthread_rwlock_init (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:196)
+ Location 0x........ is 0 bytes inside local var "rwl2"
+ declared at tc20_verifywrap.c:53, in frame #x of thread x
+
 
 (4) no error on next line
 (5) no error on next line
@@ -199,10 +203,13 @@ Thread #x unlocked a not-locked lock at 0x........
    by 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
    ...
    by 0x........: main (tc20_verifywrap.c:227)
-  Lock at 0x........ was first observed
+ Lock at 0x........ was first observed
    at 0x........: pthread_rwlock_init_WRK (hg_intercepts.c:...)
    by 0x........: pthread_rwlock_init (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:196)
+ Location 0x........ is 0 bytes inside local var "rwl2"
+ declared at tc20_verifywrap.c:53, in frame #x of thread x
+
 
 
 ---------------- sem_* ----------------
@@ -213,7 +220,7 @@ Thread #x's call to sem_init failed
    with error code 22 (EINVAL: Invalid argument)
    at 0x........: sem_init_WRK (hg_intercepts.c:...)
    by 0x........: sem_init@* (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:243)
+   by 0x........: main (tc20_verifywrap.c:248)
 
 
 FIXME: can't figure out how to verify wrap of sem_destroy
@@ -223,7 +230,7 @@ FIXME: can't figure out how to verify wrap of sem_destroy
 Thread #x: Bug in libpthread: sem_wait succeeded on semaphore without prior sem_post
    at 0x........: sem_wait_WRK (hg_intercepts.c:...)
    by 0x........: sem_wait (hg_intercepts.c:...)
-   by 0x........: main (tc20_verifywrap.c:257)
+   by 0x........: main (tc20_verifywrap.c:262)
 
 
 FIXME: can't figure out how to verify wrap of sem_post

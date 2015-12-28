@@ -463,7 +463,7 @@ static void pp_addrinfo_WRK ( Addr a, const AddrInfo* ai, Bool mc,
             hasfn = VG_(get_fnname)(ai->Addr.Stack.IP, &fn);
 
             if (hasfn || hasfile)
-               VG_(emit)( "%sin frame #%d, created by %s (%s:%s)%s\n",
+               VG_(emit)( "%sin frame #%d, created by %ps (%ps:%s)%s\n",
                           xpre,
                           ai->Addr.Stack.frameNo, 
                           hasfn ? fn : "???", 
@@ -573,7 +573,7 @@ static void pp_addrinfo_WRK ( Addr a, const AddrInfo* ai, Bool mc,
 
       case Addr_DataSym:
          VG_(emit)( "%sAddress 0x%lx is %llu bytes "
-                    "inside data symbol \"%pS\"%s\n",
+                    "inside data symbol \"%ps\"%s\n",
                     xpre, a,
                     (ULong)ai->Addr.DataSym.offset,
                     ai->Addr.DataSym.name,
@@ -595,7 +595,7 @@ static void pp_addrinfo_WRK ( Addr a, const AddrInfo* ai, Bool mc,
          break;
 
       case Addr_SectKind:
-         VG_(emit)( "%sAddress 0x%lx is in the %pS segment of %pS%s\n",
+         VG_(emit)( "%sAddress 0x%lx is in the %ps segment of %ps%s\n",
                     xpre, a,
                     VG_(pp_SectKind)(ai->Addr.SectKind.kind),
                     ai->Addr.SectKind.objname,
@@ -627,7 +627,7 @@ static void pp_addrinfo_WRK ( Addr a, const AddrInfo* ai, Bool mc,
 
       case Addr_SegmentKind:
          VG_(emit)( "%sAddress 0x%lx is in "
-                    "a %s%s%s %s%s%pS segment%s\n",
+                    "a %s%s%s %s%s%ps segment%s\n",
                     xpre,
                     a,
                     ai->Addr.SegmentKind.hasR ? "r" : "-",

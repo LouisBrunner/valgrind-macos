@@ -58,6 +58,7 @@ where XXXXXX is the bug number as listed below.
 355454  do not intercept malloc related symbols from the runtime linker
 356044  Dwarf line info reader misinterprets is_stmt register
 357887  Fix a file handle leak. VG_(fclose) did not close the file
+357871  pthread_spin_destroy not properly wrapped
 
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 32 bits
 n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap

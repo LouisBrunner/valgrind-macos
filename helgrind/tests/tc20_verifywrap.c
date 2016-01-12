@@ -29,6 +29,11 @@
 #endif
 #endif /* __sun__ */
 
+typedef union {
+   pthread_spinlock_t spinlock;
+   pthread_rwlock_t rwlock;
+} spin_rw_lock;
+
 short unprotected = 0;
 
 void* lazy_child ( void* v ) {
@@ -235,6 +240,20 @@ int main ( void )
       it. */
    r= pthread_rwlock_init( &rwl3, NULL ); assert(!r);
    r= pthread_rwlock_rdlock( &rwl3 ); assert(!r);
+
+   /* --------- pthread_spin_* --------- */
+
+   fprintf(stderr,
+   "\n---------------- pthread_spin_* ----------------\n\n");
+
+   /* The following sequence verifies correct wrapping of pthread_spin_init()
+      and pthread_spin_destroy(). */
+   spin_rw_lock srwl1;
+   pthread_spin_init(&srwl1.spinlock, PTHREAD_PROCESS_PRIVATE);
+   pthread_spin_destroy(&srwl1.spinlock);
+
+   pthread_rwlock_init(&srwl1.rwlock, NULL);
+   pthread_rwlock_destroy(&srwl1.rwlock);
 
    /* ------------- sem_* ------------- */
 

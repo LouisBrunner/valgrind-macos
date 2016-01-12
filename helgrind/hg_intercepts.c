@@ -1854,13 +1854,13 @@ static int pthread_spin_destroy_WRK(pthread_spinlock_t *lock)
    return ret;
 }
 #if defined(VGO_linux)
-   PTH_FUNC(int, pthreadZuspinZusdestroy, // pthread_spin_destroy
+   PTH_FUNC(int, pthreadZuspinZudestroy, // pthread_spin_destroy
             pthread_spinlock_t *lock) {
       return pthread_spin_destroy_WRK(lock);
    }
 #elif defined(VGO_darwin)
 #elif defined(VGO_solaris)
-   PTH_FUNC(int, pthreadZuspinZusdestroy, // pthread_spin_destroy
+   PTH_FUNC(int, pthreadZuspinZudestroy, // pthread_spin_destroy
             pthread_spinlock_t *lock) {
       return pthread_spin_destroy_WRK(lock);
    }

@@ -359,6 +359,7 @@ void VG_(fclose)( VgFile *fp )
    if (fp->num_chars)
       VG_(write)(fp->fd, fp->buf, fp->num_chars);
 
+   VG_(close)(fp->fd);
    VG_(free)(fp);
 }
 

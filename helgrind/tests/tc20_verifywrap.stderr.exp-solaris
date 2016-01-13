@@ -231,7 +231,6 @@ Thread #x's call to pthread_rwlock_unlock failed
    by 0x........: main (tc20_verifywrap.c:232)
 
 
-
 ---------------- pthread_spin_* ----------------
 
 

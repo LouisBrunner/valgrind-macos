@@ -254,7 +254,7 @@ extern SysRes VG_(am_mmap_file_float_valgrind)
 extern SysRes VG_(am_shared_mmap_file_float_valgrind)
    ( SizeT length, UInt prot, Int fd, Off64T offset );
 
-/* Convenience wrapper around VG_(am_mmap_anon_float_client) which also
+/* Similar to VG_(am_mmap_anon_float_client) but also
    marks the segment as containing the client heap. */
 extern SysRes VG_(am_mmap_client_heap) ( SizeT length, Int prot );
 

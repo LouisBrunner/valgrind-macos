@@ -2476,7 +2476,7 @@ SysRes VG_(am_mmap_anon_fixed_client) ( Addr start, SizeT length, UInt prot )
 /* Map anonymously at an unconstrained address for the client, and
    update the segment array accordingly.  */
 
-SysRes VG_(am_mmap_anon_float_client) ( SizeT length, Int prot )
+static SysRes am_mmap_anon_float_client ( SizeT length, Int prot, Bool isCH )
 {
    SysRes     sres;
    NSegment   seg;
@@ -2524,12 +2524,17 @@ SysRes VG_(am_mmap_anon_float_client) ( SizeT length, Int prot )
    seg.hasR  = toBool(prot & VKI_PROT_READ);
    seg.hasW  = toBool(prot & VKI_PROT_WRITE);
    seg.hasX  = toBool(prot & VKI_PROT_EXEC);
+   seg.isCH  = isCH;
    add_segment( &seg );
 
    AM_SANITY_CHECK;
    return sres;
 }
 
+SysRes VG_(am_mmap_anon_float_client) ( SizeT length, Int prot )
+{
+   return am_mmap_anon_float_client (length, prot, False /* isCH */);
+}
 
 /* Map anonymously at an unconstrained address for V, and update the
    segment array accordingly.  This is fundamentally how V allocates
@@ -2738,21 +2743,13 @@ SysRes VG_(am_shared_mmap_file_float_valgrind)
                                                   fd, offset );
 }
 
-/* Convenience wrapper around VG_(am_mmap_anon_float_client) which also
+/* Similar to VG_(am_mmap_anon_float_client) but also
    marks the segment as containing the client heap. This is for the benefit
    of the leak checker which needs to be able to identify such segments
    so as not to use them as sources of roots during leak checks. */
 SysRes VG_(am_mmap_client_heap) ( SizeT length, Int prot )
 {
-   SysRes res = VG_(am_mmap_anon_float_client)(length, prot);
-
-   if (! sr_isError(res)) {
-      Addr addr = sr_Res(res);
-      Int ix = find_nsegment_idx(addr);
-
-      nsegments[ix].isCH = True;
-   }
-   return res;
+   return am_mmap_anon_float_client (length, prot, True /* isCH */);
 }
 
 /* --- --- munmap helper --- --- */

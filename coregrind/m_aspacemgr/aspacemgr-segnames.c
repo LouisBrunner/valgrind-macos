@@ -250,9 +250,7 @@ dec_refcount(UInt ix)
          UInt size = get_slotsize(ix);
          /* Chain this slot in the freelist */
          put_slotindex(ix, freeslot_chain);
-         get_slotindex(ix);
          put_slotsize(ix + slotsize_size, size);
-         get_slotindex(ix);
          freeslot_chain = ix;
          --num_segnames;
          if (0) VG_(am_show_nsegments)(0, "AFTER DECREASE rc -> 0");

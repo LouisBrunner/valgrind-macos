@@ -309,7 +309,7 @@ ML_(am_allocate_segname)(const HChar *name)
             freeslot_chain = next_freeslot;
          else
             put_slotindex(prev, next_freeslot);
-         put_refcount(ix, 1);
+         put_refcount(ix, 0);
          put_slotsize(ix, size);
          VG_(strcpy)(segnames + ix, name);
          ++num_segnames;
@@ -336,7 +336,7 @@ ML_(am_allocate_segname)(const HChar *name)
 
    /* copy it in */
    ix = segnames_used;
-   put_refcount(ix, 1);
+   put_refcount(ix, 0);
    put_slotsize(ix, len + 1);
    VG_(strcpy)(segnames + ix, name);
    segnames_used += need;

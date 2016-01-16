@@ -1445,6 +1445,15 @@ static void add_segment ( const NSegment* seg )
 
    split_nsegments_lo_and_hi( sStart, sEnd, &iLo, &iHi );
 
+   /* Increase the reference count of SEG's name. We need to do this
+      *before* decreasing the reference count of the names of the replaced
+      segments. Consider the case where the segment name of SEG and one of
+      the replaced segments are the same. If the refcount of that name is 1,
+      then decrementing first would put the slot for that name on the free
+      list. Attempting to increment the refcount later would then fail
+      because the slot is no longer allocated. */
+   ML_(am_inc_refcount)(seg->fnIdx);
+
    /* Now iLo .. iHi inclusive is the range of segment indices which
       seg will replace.  If we're replacing more than one segment,
       slide those above the range down to fill the hole. Before doing

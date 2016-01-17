@@ -57,6 +57,7 @@ where XXXXXX is the bug number as listed below.
 355455  stderr.exp of test cases wrapmalloc and wrapmallocstatic overconstrained
 355454  do not intercept malloc related symbols from the runtime linker
 356044  Dwarf line info reader misinterprets is_stmt register
+356817  valgrind.h triggers compiler errors on MSVC when defining NVALGRIND
 357871  pthread_spin_destroy not properly wrapped
 357887  Fix a file handle leak. VG_(fclose) did not close the file
 

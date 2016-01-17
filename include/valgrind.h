@@ -6759,7 +6759,7 @@ __inline
 VALGRIND_PRINTF(const char *format, ...)
 {
 #if defined(NVALGRIND)
-   if (format) *(volatile const *)format;   // avoid compiler warning
+   if (format) *(volatile const char *)format;   /* avoid compiler warning */
    return 0;
 #else /* NVALGRIND */
 #if defined(_MSC_VER) || defined(__MINGW64__)
@@ -6798,7 +6798,7 @@ __inline
 VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 {
 #if defined(NVALGRIND)
-   if (format) *(volatile const *)format;   // avoid compiler warning
+   if (format) *(volatile const char *)format;   /* avoid compiler warning */
    return 0;
 #else /* NVALGRIND */
 #if defined(_MSC_VER) || defined(__MINGW64__)

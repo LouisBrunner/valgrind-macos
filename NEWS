@@ -60,6 +60,7 @@ where XXXXXX is the bug number as listed below.
 356817  valgrind.h triggers compiler errors on MSVC when defining NVALGRIND
 357871  pthread_spin_destroy not properly wrapped
 357887  Fix a file handle leak. VG_(fclose) did not close the file
+358030  support direct socket calls on x86 32bit (new in linux 4.3)
 
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 32 bits
 n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap

@@ -1,4 +1,4 @@
-prereq: which host >/dev/null 2>/dev/null && host www.yahoo.com > /dev/null && ! ../../tests/os_test darwin
+prereq: command -v host >/dev/null 2>/dev/null && host www.yahoo.com > /dev/null && ! ../../tests/os_test darwin
 prog: res_search
 args: www.yahoo.com
 vgopts: -q

@@ -450,9 +450,6 @@ void VG_(execv) ( const HChar* filename, const HChar** argv )
    HChar** envp;
    SysRes res;
 
-   /* restore the DATA rlimit for the child */
-   VG_(setrlimit)(VKI_RLIMIT_DATA, &VG_(client_rlimit_data));
-
    envp = VG_(env_clone)(VG_(client_envp));
    VG_(env_remove_valgrind_env_stuff)( envp, True /*ro_strings*/, NULL );
 
@@ -511,16 +508,8 @@ Int VG_(spawn) ( const HChar *filename, const HChar **argv )
 #  undef COPY_CHAR_TO_ARGENV
 #  undef COPY_STRING_TOARGENV
 
-   /* HACK: Temporarily restore the DATA rlimit for spawned child. */
-   VG_(setrlimit)(VKI_RLIMIT_DATA, &VG_(client_rlimit_data));
-
    SysRes res = VG_(do_syscall5)(__NR_spawn, (UWord) filename, (UWord) NULL, 0,
                                  (UWord) argenv, argenv_size);
-
-   /* Restore DATA rlimit back to its previous value set in m_main.c. */
-   struct vki_rlimit zero = { 0, 0 };
-   zero.rlim_max = VG_(client_rlimit_data).rlim_max;
-   VG_(setrlimit)(VKI_RLIMIT_DATA, &zero);
 
    VG_(free)(argenv);
    for (HChar **p = envp; *p != NULL; p++) {

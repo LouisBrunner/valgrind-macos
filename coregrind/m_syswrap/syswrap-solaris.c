@@ -1589,20 +1589,11 @@ PRE(sys_spawn)
 #undef COPY_CHAR_TO_ARGENV
 #undef COPY_STRING_TOARGENV
 
-   /* HACK: Temporarily restore the DATA rlimit for spawned child.
-      This is a terrible hack to provide sensible brk limit for child. */
-   VG_(setrlimit)(VKI_RLIMIT_DATA, &VG_(client_rlimit_data));
-
    /* Actual spawn() syscall. */
    SysRes res = VG_(do_syscall5)(__NR_spawn, (UWord) path, (UWord) attrs,
                                  attrs_size, (UWord) argenv, argenv_size);
    SET_STATUS_from_SysRes(res);
    VG_(free)(argenv);
-
-   /* Restore DATA rlimit back to its previous value set in m_main.c. */
-   struct vki_rlimit zero = { 0, 0 };
-   zero.rlim_max = VG_(client_rlimit_data).rlim_max;
-   VG_(setrlimit)(VKI_RLIMIT_DATA, &zero);
 
    if (SUCCESS) {
       PRINT("   spawn: process %d spawned child %ld\n", VG_(getpid)(), RES);
@@ -3793,9 +3784,6 @@ PRE(sys_execve)
       ThreadState *tst = VG_(get_ThreadState)(tid);
       VG_(sigprocmask)(VKI_SIG_SETMASK, &tst->sig_mask, NULL);
    }
-
-   /* Restore the DATA rlimit for the child. */
-   VG_(setrlimit)(VKI_RLIMIT_DATA, &VG_(client_rlimit_data));
 
    /* Debug-only printing. */
    if (0) {

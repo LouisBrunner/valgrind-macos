@@ -1627,7 +1627,6 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    Bool    logging_to_fd      = False;
    const HChar* xml_fname_unexpanded = NULL;
    Int     loglevel, i;
-   struct vki_rlimit zero = { 0, 0 };
    XArray* addr2dihandle = NULL;
 
    //============================================================
@@ -1800,13 +1799,15 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    VG_(debugLog)(1, "main", "... %s\n", VG_(name_of_launcher));
 
    //--------------------------------------------------------------
-   // Get the current process datasize rlimit, and set it to zero.
-   // This prevents any internal uses of brk() from having any effect.
-   // We remember the old value so we can restore it on exec, so that
-   // child processes will have a reasonable brk value.
+   // We used to set the process datasize rlimit to zero to prevent
+   // any internal use of brk() from having any effect. But later
+   // linux kernels redefine RLIMIT_DATA as the size of any data
+   // areas, including some dynamic mmap memory allocations.
+   // See bug #357833 for the commit that went into linux 4.5
+   // changing the definition of RLIMIT_DATA. So don't mess with
+   // RLIMIT_DATA here now anymore. Just remember it for use in
+   // the syscall wrappers.
    VG_(getrlimit)(VKI_RLIMIT_DATA, &VG_(client_rlimit_data));
-   zero.rlim_max = VG_(client_rlimit_data).rlim_max;
-   VG_(setrlimit)(VKI_RLIMIT_DATA, &zero);
 
    // Get the current process stack rlimit.
    VG_(getrlimit)(VKI_RLIMIT_STACK, &VG_(client_rlimit_stack));

@@ -3014,9 +3014,6 @@ PRE(sys_execve)
       vg_assert(j == tot_args+1);
    }
 
-   /* restore the DATA rlimit for the child */
-   VG_(setrlimit)(VKI_RLIMIT_DATA, &VG_(client_rlimit_data));
-
    /*
       Set the signal state up for exec.
 

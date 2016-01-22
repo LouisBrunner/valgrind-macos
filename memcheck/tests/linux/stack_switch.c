@@ -1,5 +1,11 @@
 #define _XOPEN_SOURCE 600
+
+/* Legacy feature macro.  */
 #define _BSD_SOURCE
+/* New feature macro, always define to squash warning about _BSD_SOURCE
+   with glibc 2.20+.  */
+#define _DEFAULT_SOURCE 1
+
 #define _GNU_SOURCE
 
 #include <stdio.h>

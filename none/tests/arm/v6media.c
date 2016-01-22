@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 
-static int gen_cin(cin)
+static int gen_cin(int cin)
 {
   int r = ((cin & 1) ? (1<<29) : 0);
   //r |= (1 << 31) | (1 << 30);

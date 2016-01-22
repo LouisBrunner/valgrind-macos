@@ -50,6 +50,7 @@
 #include "pub_core_machine.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_syswrap.h"
+#include "pub_core_gdbserver.h"     // VG_(gdbserver_report_syscall)
 
 #include "priv_types_n_macros.h"
 #include "priv_syswrap-main.h"
@@ -1906,6 +1907,9 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
                   &layout, 
                   &sci->args, &sci->status, &sci->flags );
    
+   /* If needed, gdbserver will report syscall entry to GDB */
+   VG_(gdbserver_report_syscall)(True, sysno, tid);
+
    /* The pre-handler may have modified:
          sci->args
          sci->status
@@ -2062,6 +2066,9 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
       a platform-specific action. */
    if (!(sci->flags & SfNoWriteResult))
       putSyscallStatusIntoGuestState( tid, &sci->status, &tst->arch.vex );
+
+   /* If needed, gdbserver will report syscall return to GDB */
+   VG_(gdbserver_report_syscall)(False, sysno, tid);
 
    /* Situation now:
       - the guest state is now correctly modified following the syscall

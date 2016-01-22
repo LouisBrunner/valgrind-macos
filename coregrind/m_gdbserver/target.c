@@ -177,6 +177,26 @@ Bool gdbserver_deliver_signal (vki_siginfo_t *info)
    return vki_signal_to_deliver.si_signo != 0;
 }
 
+static Bool before_syscall;
+static Int sysno_to_report = -1;
+void gdbserver_syscall_encountered (Bool before, Int sysno)
+{
+   before_syscall = before;
+   sysno_to_report = sysno;
+}
+
+Int valgrind_stopped_by_syscall (void)
+{
+   return sysno_to_report;
+}
+
+Bool valgrind_stopped_before_syscall()
+{
+   vg_assert (sysno_to_report >= 0);
+   return before_syscall;
+}
+
+
 static unsigned char exit_status_to_report;
 static int exit_code_to_report;
 void gdbserver_process_exit_encountered (unsigned char status, Int code)
@@ -249,6 +269,12 @@ void valgrind_resume (struct thread_resume *resume_info)
            C2v(stopped_data_address));
       VG_(set_watchpoint_stop_address) ((Addr) 0);
    }
+   if (valgrind_stopped_by_syscall () >= 0) {
+      dlog(1, "clearing stopped by syscall %d\n",
+           valgrind_stopped_by_syscall ());
+      gdbserver_syscall_encountered (False, -1);
+   }
+
    vki_signal_to_deliver.si_signo = resume_info->sig;
    /* signal was reported to GDB, GDB told us to resume execution.
       So, reset the signal to report to 0. */

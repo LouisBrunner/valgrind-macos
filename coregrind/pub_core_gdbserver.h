@@ -119,6 +119,13 @@ extern Bool VG_(gdbserver_report_signal) (vki_siginfo_t *info, ThreadId tid);
 extern void VG_(gdbserver_report_fatal_signal) (const vki_siginfo_t *info,
                                                 ThreadId tid);
 
+// To be called by core before and after a client syscall.
+// If GDB has asked to observe the syscall, control will be given to GDB.
+// When Before is True, it is a report before the syscall,
+// False means a report after the syscall.
+extern void VG_(gdbserver_report_syscall) (Bool before, UWord sysno,
+                                           ThreadId tid);
+
 /* Entry point invoked by scheduler.c to execute the request 
    VALGRIND_CLIENT_MONITOR_COMMAND.
    Returns True if command was not recognised. */

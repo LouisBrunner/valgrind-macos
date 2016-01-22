@@ -26,6 +26,12 @@ n-i-bz Improved thread startup time significantly on non-Linux platforms.
   "nouserintercepts" can be any non-existing library name).
   This new functionality is not implemented for darwin/macosx.
 
+* New and modified GDB server monitor features:
+
+  - Valgrind's gdbserver now accepts the command 'catch syscall'.
+    Note that you must have a GDB >= 7.11 to use 'catch syscall' with
+    gdbserver.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

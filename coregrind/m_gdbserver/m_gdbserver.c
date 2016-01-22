@@ -1012,6 +1012,44 @@ Bool VG_(gdbserver_report_signal) (vki_siginfo_t *info, ThreadId tid)
    }
 }
 
+Bool catching_syscalls = False; // True if catching all or some syscalls.
+/* If catching_syscalls is True, then syscalls_to_catch_size == 0 means
+   to catch all syscalls. Otherwise, it is the size of the syscalls_to_catch
+   array. */
+Int syscalls_to_catch_size = 0;
+Int *syscalls_to_catch;
+static Bool catch_this_syscall (Int sysno)
+{
+   Int i;
+
+   if (syscalls_to_catch_size == 0)
+      return True;
+
+   for (i = 0; i < syscalls_to_catch_size; i++)
+      if (syscalls_to_catch[i] == sysno)
+         return True;
+
+   return False;
+}
+
+void VG_(gdbserver_report_syscall) (Bool before, UWord sysno, ThreadId tid)
+{
+   dlog(4, "VG_(gdbserver_report_syscall) before %d sysno %lu tid %d\n",
+        before, sysno, tid);
+
+   if (UNLIKELY(catching_syscalls)) {
+      if (!remote_connected()) {
+         dlog(2, "not connected => no report\n");
+       }
+
+      if (catch_this_syscall ((Int)sysno)) {
+         /* let gdbserver do some work */
+         gdbserver_syscall_encountered (before, (Int)sysno);
+         call_gdbserver (tid, signal_reason);
+      }
+   }
+}
+
 void VG_(gdbserver_exit) (ThreadId tid, VgSchedReturnCode tids_schedretcode)
 {
    dlog(1, "VG core calling VG_(gdbserver_exit) tid %u will exit\n", tid);
@@ -1022,11 +1060,13 @@ void VG_(gdbserver_exit) (ThreadId tid, VgSchedReturnCode tids_schedretcode)
          vg_assert (0);
       case VgSrc_ExitThread:
       case VgSrc_ExitProcess:
-         gdbserver_process_exit_encountered ('W', VG_(threads)[tid].os_state.exitcode);
+         gdbserver_process_exit_encountered
+            ('W', VG_(threads)[tid].os_state.exitcode);
          call_gdbserver (tid, exit_reason);
          break;
       case VgSrc_FatalSig:
-         gdbserver_process_exit_encountered ('X', VG_(threads)[tid].os_state.fatalsig);
+         gdbserver_process_exit_encountered
+            ('X', VG_(threads)[tid].os_state.fatalsig);
          call_gdbserver (tid, exit_reason);
          break;
       default:

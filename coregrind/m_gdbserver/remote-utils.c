@@ -1154,6 +1154,14 @@ void prepare_resume_reply (char *buf, char status, unsigned char sig)
          *buf++ = ';';
       }
 
+      if (valgrind_stopped_by_syscall () >= 0) {
+         VG_(sprintf) (buf, "%s:%x;",
+                       valgrind_stopped_before_syscall ()
+                       ? "syscall_entry" : "syscall_return",
+                       valgrind_stopped_by_syscall ());
+         buf += strlen (buf);
+      }
+
       while (*regp) {
          buf = outreg (find_regno (*regp), buf);
          regp ++;

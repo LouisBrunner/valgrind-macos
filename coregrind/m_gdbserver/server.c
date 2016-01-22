@@ -624,6 +624,52 @@ void handle_set (char *arg_own_buf, int *new_packet_len_p)
       return;
    }
 
+   if (strcmp ("QCatchSyscalls:0", arg_own_buf) == 0) {
+      dlog (3, "catch syscall all off\n");
+      catching_syscalls = False;
+      write_ok (arg_own_buf);
+      return;
+   }
+
+   const char *q1 = "QCatchSyscalls:1";
+   if (strncmp (q1, arg_own_buf, strlen(q1)) == 0) {
+      Int i;
+      const char *p;
+
+      if (syscalls_to_catch != NULL) {
+         free (syscalls_to_catch);
+         syscalls_to_catch = NULL;
+      }
+      syscalls_to_catch_size = 0;
+      p = arg_own_buf + strlen(q1);
+      while (*p) {
+         if (*p++ == ';')
+	    syscalls_to_catch_size++;
+      }
+      if (syscalls_to_catch_size > 0) {
+         CORE_ADDR sysno;
+         char *from, *to;
+
+         syscalls_to_catch = malloc (syscalls_to_catch_size * sizeof (int));
+
+         from = strchr (arg_own_buf, ';') + 1;
+         for (i = 0; i < syscalls_to_catch_size; i++) {
+            to = strchr (from, ';');
+            if (to == NULL)
+               to = arg_own_buf + strlen (arg_own_buf);
+            decode_address (&sysno, from, to - from);
+            syscalls_to_catch[i] = (Int)sysno;
+            dlog(4, "catch syscall sysno %d\n", (int)sysno);
+            from = to;
+            if (*from == ';') from++;
+         }
+      } else
+         dlog (4, "catch syscall all sysno\n");
+      catching_syscalls = True;
+      write_ok (arg_own_buf);
+      return;
+   }
+
    if (strncmp ("QPassSignals:", arg_own_buf, 13) == 0) {
       int i;
       char *from, *to;
@@ -1042,6 +1088,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
 
       strcat (arg_own_buf, ";QStartNoAckMode+");
       strcat (arg_own_buf, ";QPassSignals+");
+      strcat (arg_own_buf, ";QCatchSyscalls+");
       if (VG_(client_auxv))
          strcat (arg_own_buf, ";qXfer:auxv:read+");
 

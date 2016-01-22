@@ -144,11 +144,23 @@ extern int valgrind_stopped_by_watchpoint (void);
    returns 0 otherwise.  */
 extern CORE_ADDR valgrind_stopped_data_address (void);
 
+
+/* Inform GDB (if needed) that client is before (or after) syscall sysno.
+   sysno -1 is used to clear the fact that a syscall has been encountered. */
+extern void gdbserver_syscall_encountered (Bool before, Int sysno);
+
+/* >= 0 if valgrind stopped due to syscall, -1 if not stopped due to syscall. */
+extern Int valgrind_stopped_by_syscall (void);
+
+/* if valgrind_stopped_by_syscall() >= 0, tells if stopped before or after
+   syscall. */
+extern Bool valgrind_stopped_before_syscall (void);
+
 /* True if gdbserver is single stepping the valgrind process */
-extern Bool valgrind_single_stepping(void);
+extern Bool valgrind_single_stepping (void);
 
 /* Set Valgrind in single stepping mode or not according to Bool. */
-extern void valgrind_set_single_stepping(Bool);
+extern void valgrind_set_single_stepping (Bool);
 
 /* -------------------------------------------------------------------------- */
 /* ----------------- Examining/modifying data while stopped ----------------- */

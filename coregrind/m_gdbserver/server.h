@@ -116,6 +116,14 @@ extern Addr thumb_pc (Addr pc);
    or tid 1 otherwise). */
 extern ThreadId vgdb_interrupted_tid;
 
+/* True if GDB is catching client syscalls. */
+extern Bool catching_syscalls;
+
+/* Size of the syscalls_to_catch. Only useful if catching_syscalls True.
+   syscalls_to_catch_size 0 means all syscalls are caught. */
+extern Int syscalls_to_catch_size;
+extern Int *syscalls_to_catch;
+
 /*------------ end of interface to low level gdbserver */
 
 

@@ -13365,8 +13365,8 @@ static void expr_eq(void)
                     rc = RC_FLOAT;
                 else
                     rc = RC_INT;
-                    gv(rc);
-                    save_regs(1);
+                gv(rc);
+                save_regs(1);
             }
             if (tok == ':' && gnu_ext) {
                 gv_dup();

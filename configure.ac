@@ -160,7 +160,7 @@ case "${is_clang}-${gcc_version}" in
      icc-1[[3-9]].*)
 	AC_MSG_RESULT([ok (ICC version ${gcc_version})])
 	;;
-     notclang-[[3-9]].*|notclang-[[1-9][0-9]]*)
+     notclang-[[3-9]]|notclang-[[3-9]].*|notclang-[[1-9][0-9]]*)
 	AC_MSG_RESULT([ok (${gcc_version})])
 	;;
      clang-2.9|clang-[[3-9]].*|clang-[[1-9][0-9]]*)

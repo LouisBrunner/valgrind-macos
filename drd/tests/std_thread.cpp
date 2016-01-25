@@ -21,6 +21,7 @@ int main(int argc, char** argv)
   return 0;
 }
 
+#if defined(__GNUC__) && __GNUC__ -0 < 6
 //
 // From libstdc++-v3/src/c++11/thread.cc
 //
@@ -65,3 +66,4 @@ namespace std
     }
   }
 }
+#endif

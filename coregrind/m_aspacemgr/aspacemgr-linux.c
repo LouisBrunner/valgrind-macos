@@ -335,7 +335,7 @@ static Addr aspacem_vStart = 0;
 
 #define AM_SANITY_CHECK                                      \
    do {                                                      \
-      if (VG_(clo_sanity_level >= 3))                        \
+      if (VG_(clo_sanity_level) >= 3)                        \
          aspacem_assert(VG_(am_do_sync_check)                \
             (__PRETTY_FUNCTION__,__FILE__,__LINE__));        \
    } while (0) 

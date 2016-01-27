@@ -426,7 +426,7 @@ static void clean_schedctl_data(ThreadId tid)
          if (a != 0) {
             tst->os_state.schedctl_data = 0;
             a = VG_PGROUNDDN(a);
-            if (VG_(am_find_anon_segment(a)))
+            if (VG_(am_find_anon_segment)(a))
                VG_(am_notify_munmap)(a, VKI_PAGE_SIZE);
          }
       }
@@ -9023,7 +9023,7 @@ POST(sys_door)
 
          if (params->rbuf) {
             Addr addr = (Addr)params->rbuf;
-            if (!VG_(am_find_anon_segment(addr))) {
+            if (!VG_(am_find_anon_segment)(addr)) {
                /* This segment is new and was mapped by the kernel. */
                UInt prot, flags;
                SizeT size;
@@ -9121,7 +9121,7 @@ POST(sys_schedctl)
    tst->os_state.schedctl_data = a;
 
    /* Returned address points to a block in a mapped page. */
-   if (!VG_(am_find_anon_segment(a))) {
+   if (!VG_(am_find_anon_segment)(a)) {
       Addr page = VG_PGROUNDDN(a);
       UInt prot = VKI_PROT_READ | VKI_PROT_WRITE | VKI_PROT_EXEC;
       UInt flags = VKI_MAP_ANONYMOUS;
@@ -9135,9 +9135,9 @@ POST(sys_schedctl)
       /* The kernel always places redzone before and after the allocated page.
          Check this assertion now; the tool can later request to allocate
          a Valgrind segment and aspacemgr will place it adjacent. */
-      const NSegment *seg = VG_(am_find_nsegment(page - 1));
+      const NSegment *seg = VG_(am_find_nsegment)(page - 1);
       vg_assert(seg == NULL || seg->kind == SkResvn);
-      seg = VG_(am_find_nsegment(page + VKI_PAGE_SIZE));
+      seg = VG_(am_find_nsegment)(page + VKI_PAGE_SIZE);
       vg_assert(seg == NULL || seg->kind == SkResvn);
 
       /* The address space manager works with whole pages. */

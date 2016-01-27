@@ -446,7 +446,7 @@ VG_(strtok_r) (HChar* s, const HChar* delim, HChar** saveptr)
       s = *saveptr;
 
    /* Scan leading delimiters.  */
-   s += VG_(strspn (s, delim));
+   s += VG_(strspn) (s, delim);
    if (*s == '\0')
       {
          *saveptr = s;
@@ -455,7 +455,7 @@ VG_(strtok_r) (HChar* s, const HChar* delim, HChar** saveptr)
 
    /* Find the end of the token.  */
    token = s;
-   s = VG_(strpbrk (token, delim));
+   s = VG_(strpbrk) (token, delim);
    if (s == NULL)
       /* This token finishes the string.  */
       *saveptr = token + VG_(strlen) (token);

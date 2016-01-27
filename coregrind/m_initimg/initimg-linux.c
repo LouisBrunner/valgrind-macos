@@ -221,7 +221,7 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    /* ret[0 .. envc-1] is live now. */
    /* Find and remove a binding for VALGRIND_LAUNCHER. */
    for (i = 0; i < envc; i++)
-      if (0 == VG_(memcmp(ret[i], v_launcher, v_launcher_len)))
+      if (0 == VG_(memcmp)(ret[i], v_launcher, v_launcher_len))
          break;
 
    if (i < envc) {

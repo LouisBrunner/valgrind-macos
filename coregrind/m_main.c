@@ -1315,7 +1315,7 @@ static void print_preamble ( Bool logging_to_fd,
       VG_(printf_xml)("\n");
    }
 
-   if (VG_(clo_xml) || VG_(clo_verbosity > 0)) {
+   if (VG_(clo_xml) || VG_(clo_verbosity) > 0) {
 
       if (VG_(clo_xml))
          VG_(printf_xml)("<preamble>\n");

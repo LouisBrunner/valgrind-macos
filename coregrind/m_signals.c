@@ -2910,7 +2910,7 @@ void pp_ksigaction ( vki_sigaction_toK_t* sa )
               );
    VG_(printf)("pp_ksigaction: { ");
    for (i = 1; i <= VG_(max_signal); i++)
-      if (VG_(sigismember(&(sa->sa_mask),i)))
+      if (VG_(sigismember)(&(sa->sa_mask),i))
          VG_(printf)("%d ", i);
    VG_(printf)("}\n");
 }

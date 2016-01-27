@@ -284,7 +284,7 @@ static void lockN_acquire_writer ( Lock* lk, Thread* thr )
          /* 2nd and subsequent locking of a lock by its owner */
          tl_assert(lk->heldW);
          /* assert: lk is only held by one thread .. */
-         tl_assert(VG_(sizeUniqueBag(lk->heldBy)) == 1);
+         tl_assert(VG_(sizeUniqueBag)(lk->heldBy) == 1);
          /* assert: .. and that thread is 'thr'. */
          tl_assert(VG_(elemBag)(lk->heldBy, (UWord)thr)
                    == VG_(sizeTotalBag)(lk->heldBy));
@@ -4902,7 +4902,7 @@ static void print_monitor_help ( void )
 static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
 {
    HChar* wcmd;
-   HChar s[VG_(strlen(req))]; /* copy for strtok_r */
+   HChar s[VG_(strlen)(req)]; /* copy for strtok_r */
    HChar *ssaveptr;
    Int   kwdid;
 

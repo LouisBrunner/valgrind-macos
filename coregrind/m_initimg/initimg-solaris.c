@@ -236,7 +236,7 @@ static HChar **setup_client_env(HChar **origenv, const HChar *toolname)
       SizeT v_launcher_len = VG_(strlen)(v_launcher);
 
       for (i = 0; i < envc; i++)
-         if (!VG_(memcmp(ret[i], v_launcher, v_launcher_len))) {
+         if (!VG_(memcmp)(ret[i], v_launcher, v_launcher_len)) {
             /* VALGRIND_LAUNCHER was found. */
             break;
          }

@@ -1349,7 +1349,7 @@ Bool MC_(read_extra_suppression_info) ( Int fd, HChar** bufpp,
       if (eof) return True; // old LeakSupp style, no match-leak-kinds line.
       if (0 == VG_(strncmp)(*bufpp, "match-leak-kinds:", 17)) {
          i = 17;
-         while ((*bufpp)[i] && VG_(isspace((*bufpp)[i])))
+         while ((*bufpp)[i] && VG_(isspace)((*bufpp)[i]))
             i++;
          if (!VG_(parse_enum_set)(MC_(parse_leak_kinds_tokens),
                                   True/*allow_all*/,
@@ -1394,7 +1394,7 @@ Bool MC_(error_matches_suppression) ( const Error* err, const Supp* su )
 {
    Int       su_szB;
    MC_Error* extra = VG_(get_error_extra)(err);
-   ErrorKind ekind = VG_(get_error_kind )(err);
+   ErrorKind ekind = VG_(get_error_kind)(err);
 
    switch (VG_(get_supp_kind)(su)) {
       case ParamSupp:
@@ -1522,7 +1522,7 @@ const HChar* MC_(get_error_name) ( const Error* err )
 SizeT MC_(get_extra_suppression_info) ( const Error* err,
                                         /*OUT*/HChar* buf, Int nBuf )
 {
-   ErrorKind ekind = VG_(get_error_kind )(err);
+   ErrorKind ekind = VG_(get_error_kind)(err);
    tl_assert(buf);
    tl_assert(nBuf >= 1);
 

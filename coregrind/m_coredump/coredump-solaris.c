@@ -920,7 +920,7 @@ void VG_(make_coredump)(ThreadId tid, const vki_siginfo_t *si,
    Int i;
    UInt num_phdrs = 2;		/* two CORE note sections */
    for (i = 0; i < n_seg_starts; i++) {
-      if (!may_dump(VG_(am_find_nsegment(seg_starts[i]))))
+      if (!may_dump(VG_(am_find_nsegment)(seg_starts[i])))
 	 continue;
 
       num_phdrs++;
@@ -1051,7 +1051,7 @@ void VG_(make_coredump)(ThreadId tid, const vki_siginfo_t *si,
    /* fill program headers for segments */
    UInt idx;
    for (i = 0, idx = 2; i < n_seg_starts; i++) {
-      NSegment const *seg = VG_(am_find_nsegment(seg_starts[i]));
+      NSegment const *seg = VG_(am_find_nsegment)(seg_starts[i]);
 
       if (!may_dump(seg))
 	 continue;
@@ -1078,7 +1078,7 @@ void VG_(make_coredump)(ThreadId tid, const vki_siginfo_t *si,
    VG_(lseek)(core_fd, phdrs[2].p_offset, VKI_SEEK_SET);
 
    for (i = 0, idx = 2; i < n_seg_starts; i++) {
-      NSegment const *seg = VG_(am_find_nsegment(seg_starts[i]));
+      NSegment const *seg = VG_(am_find_nsegment)(seg_starts[i]);
 
       if (!should_dump(seg))
 	 continue;

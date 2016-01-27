@@ -2358,7 +2358,7 @@ static void handle_all_snapshots_monitor_command (const HChar *filename)
 static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
 {
    HChar* wcmd;
-   HChar s[VG_(strlen(req)) + 1]; /* copy for strtok_r */
+   HChar s[VG_(strlen)(req) + 1]; /* copy for strtok_r */
    HChar *ssaveptr;
 
    VG_(strcpy) (s, req);

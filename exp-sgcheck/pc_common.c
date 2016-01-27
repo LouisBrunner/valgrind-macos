@@ -779,7 +779,7 @@ const HChar* pc_get_error_name ( const Error* err )
 SizeT pc_get_extra_suppression_info ( const Error* err,
                                       /*OUT*/HChar* buf, Int nBuf )
 {
-   ErrorKind ekind = VG_(get_error_kind )(err);
+   ErrorKind ekind = VG_(get_error_kind)(err);
    tl_assert(buf);
    tl_assert(nBuf >= 1);
 

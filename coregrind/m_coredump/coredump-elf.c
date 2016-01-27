@@ -640,7 +640,7 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
    /* First, count how many memory segments to dump */
    num_phdrs = 1;		/* start with notes */
    for(i = 0; i < n_seg_starts; i++) {
-      if (!may_dump(VG_(am_find_nsegment(seg_starts[i]))))
+      if (!may_dump(VG_(am_find_nsegment)(seg_starts[i])))
 	 continue;
 
       num_phdrs++;
@@ -698,7 +698,7 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
    off = VG_PGROUNDUP(off);
 
    for(i = 0, idx = 1; i < n_seg_starts; i++) {
-      seg = VG_(am_find_nsegment(seg_starts[i]));
+      seg = VG_(am_find_nsegment)(seg_starts[i]);
 
       if (!may_dump(seg))
 	 continue;
@@ -721,7 +721,7 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
    VG_(lseek)(core_fd, phdrs[1].p_offset, VKI_SEEK_SET);
 
    for(i = 0, idx = 1; i < n_seg_starts; i++) {
-      seg = VG_(am_find_nsegment(seg_starts[i]));
+      seg = VG_(am_find_nsegment)(seg_starts[i]);
 
       if (!should_dump(seg))
 	 continue;

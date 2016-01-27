@@ -2019,7 +2019,7 @@ void VG_(discard_translations) ( Addr guest_start, ULong range,
                     guest_start, range, who );
 
    /* Pre-deletion sanity check */
-   if (VG_(clo_sanity_level >= 4)) {
+   if (VG_(clo_sanity_level) >= 4) {
       Bool sane = sanity_check_all_sectors();
       vg_assert(sane);
    }
@@ -2107,7 +2107,7 @@ void VG_(discard_translations) ( Addr guest_start, ULong range,
    unredir_discard_translations( guest_start, range );
 
    /* Post-deletion sanity check */
-   if (VG_(clo_sanity_level >= 4)) {
+   if (VG_(clo_sanity_level) >= 4) {
       TTEno    i;
       TTEntry* tte;
       Bool     sane = sanity_check_all_sectors();

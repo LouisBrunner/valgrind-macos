@@ -2017,7 +2017,7 @@ Bool VG_(get_objname) ( Addr a, const HChar** buf )
       knows the name of the file associated with this mapping.  This
       allows us to print the names of exe/dll files in the stack trace
       when running programs under wine. */
-   if ( (seg = VG_(am_find_nsegment(a))) != NULL 
+   if ( (seg = VG_(am_find_nsegment)(a)) != NULL 
         && (filename = VG_(am_get_filename)(seg)) != NULL ) {
      *buf = filename;
       return True;

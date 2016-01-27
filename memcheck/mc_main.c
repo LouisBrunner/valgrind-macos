@@ -6150,7 +6150,7 @@ static Bool VG_(parse_slice) (HChar* s, HChar** saveptr,
 static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
 {
    HChar* wcmd;
-   HChar s[VG_(strlen(req)) + 1]; /* copy for strtok_r */
+   HChar s[VG_(strlen)(req) + 1]; /* copy for strtok_r */
    HChar *ssaveptr;
 
    VG_(strcpy) (s, req);

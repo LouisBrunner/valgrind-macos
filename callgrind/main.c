@@ -1576,7 +1576,7 @@ static void print_monitor_help ( void )
 static Bool handle_gdb_monitor_command (ThreadId tid, const HChar *req)
 {
    HChar* wcmd;
-   HChar s[VG_(strlen(req)) + 1]; /* copy for strtok_r */
+   HChar s[VG_(strlen)(req) + 1]; /* copy for strtok_r */
    HChar *ssaveptr;
 
    VG_(strcpy) (s, req);
@@ -2024,7 +2024,7 @@ void CLG_(post_clo_init)(void)
 
    CLG_(instrument_state) = CLG_(clo).instrument_atstart;
 
-   if (VG_(clo_verbosity > 0)) {
+   if (VG_(clo_verbosity) > 0) {
       VG_(message)(Vg_UserMsg,
                    "For interactive control, run 'callgrind_control%s%s -h'.\n",
                    (VG_(arg_vgdb_prefix) ? " " : ""),

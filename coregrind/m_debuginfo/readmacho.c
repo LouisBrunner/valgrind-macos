@@ -609,15 +609,15 @@ static DiSlice getsectdata ( DiSlice img,
       if (cmd.cmd == LC_SEGMENT_CMD) {
          struct SEGMENT_COMMAND seg;
          ML_(cur_read_get)(&seg, cur, sizeof(seg));
-         if (0 == VG_(strncmp(&seg.segname[0],
-                              segname, sizeof(seg.segname)))) {
+         if (0 == VG_(strncmp)(&seg.segname[0],
+                               segname, sizeof(seg.segname))) {
             DiCursor sects_cur = ML_(cur_plus)(cur, sizeof(seg));
             Int s;
             for (s = 0; s < seg.nsects; s++) {
                struct SECTION sect;
                ML_(cur_step_get)(&sect, &sects_cur, sizeof(sect));
-               if (0 == VG_(strncmp(sect.sectname, sectname, 
-                                    sizeof(sect.sectname)))) {
+               if (0 == VG_(strncmp)(sect.sectname, sectname, 
+                                     sizeof(sect.sectname))) {
                   DiSlice res = img;
                   res.ioff = sect.offset;
                   res.szB = sect.size;

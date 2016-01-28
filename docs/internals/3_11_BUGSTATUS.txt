@@ -154,3 +154,72 @@ of 3.11.0 go in here.  Bugs that didn't get fixed in 3.11.0 remain in
         which doesn't exist
 
 Mon  9 Nov 21:57:00 CET 2015
+
+355188  valgrind should intercept all malloc related global functions by default
+355197  Too strong assert in variable debug info code
+355231  Unhandled Instruction Bytes (SSE4, vmovdqu, "0xC5 0xFA 0x6F 0x2")
+355454  do not intercept malloc related symbols from the runtime linker
+355455  expected stderr of test cases wrapmalloc and wrapmallocstatic
+        overconstrained
+355526  disInstr(arm): unhandled instruction: 0x1823E91
+355803  Add Lustre's IOC_MDC_GETFILESTRIPE ioctl
+356044  Dwarf line info reader misinterprets is_stmt register
+n-i-bz  [PATCH] Fix clobber list in none/tests/amd64/xacq_xrel.c
+n-i-bz  [PATCH][VEX] Bump allowed shift value for "add.w reg, sp, reg, lsl #N"
+n-i-bz  [PATCH][VEX] Remove limit on strd's negative immediates
+356112  mips: replace addi with addiu
+356122  Apparent infinite loop calling the GLib g_get_user_special_dir() function
+356138  vex amd64->IR: 0x8F 0xEA 0x78 0x10 0xD2 0x6 0x6 0x0
+356174  Enhance the embedded gdbserver to allow LLDB to use it
+
+Wed  2 Dec 16:01:07 CET 2015
+
+356374  Assertion 'DRD_(g_threadinfo)[tid].pt_threadid
+        != INVALID_POSIX_THREADID' failed
+356392  FPU control word not updated on FYL2X with ST(0) = 0
+356393  valgrind (vex) crashes because isZeroU happened
+356457  valgrind: m_mallocfree.c:2042 (vgPlain_arena_free):
+        Assertion 'blockSane(a, b)' failed.
+356611  vex amd64->IR: 0x8F 0xEA 0xF8 0x10 0xC9 0x3 0x1D 0x0
+356675  callgrind test apk in android 5.0.2
+356676  Unhandled arm64-linux syscalls: 125 and 126 (sched_get_priority_max/min)
+356678  unhandled arm64-linux syscall: 232 (mincore)
+356715  vex amd64->IR: 0xC4 0xE2 0x7D 0x13 0x4 0x4A 0xC5 0xFC
+356817  valgrind.h triggers compiler errors on MSVC when defining NVALGRIND
+356823  Unsupported ARM instruction: stlex
+357010  drd regression tests fail to compile with Intel compiler
+357011  Memcheck regression tests do not generate expected frame numbers
+        if compiled with intel compiler
+357012  Memcheck regression tests do not match expected results
+        if compiled with intel compiler
+357014  Helgrind regression tests do not match expected results
+        if compiled with intel compiler
+357033  VALGRIND_DO_QUICK_LEAK_CHECK reports leaked and dubious memory
+        as reachable in intel-compiled
+357034  Inlined functions are not reported for intel-compiled applications.
+357035  Uninitialized variable of type double is reported twice
+        in intel-compiled application.
+357037  Line numbers are occasionally displayed incorrectly
+        in intel-compiled applications
+357059  x86: SSE cvtpi2ps with memory source does transition to MMX state
+357294  cannot start  valgrind with tool dhat
+357338  Unhandled instruction for SHA instructions libcrypto Boring SSL
+357673  crash if I try to run valgrind with a binary link with libcurl
+357734  "unhandled instruction 0x1AC12D8C" for ARM64/AARCH64
+357781  unhandled amd64-linux syscall: 317
+357833  Valgrind is broken on recent linux kernel
+357871  pthread_spin_destroy not properly
+357873  libstdc++ unhandled instruction: 0xF 0xC7 0xF0 0x89
+357887  Calls to VG_(fclose) does not close the file descriptor
+357928  Thread 1: status = VgTs_Runnable
+357932  vex amd64->IR: 0xF2 0x49 0xF 0x5D  and 0xF2 0x49 0xF 0x5F
+358030  support direct socket calls on x86 32bit (new in linux 4.3)
+358213  helgrind bar_bad testcase hangs
+        with new glibc pthread barrier implementation
+358478  drd/tests/std_thread.cpp doesn't build with GCC6
+358569  Unhandled instructions cause creation of "orphan" stack traces
+        in XML output
+358620  WARNING: unhandled syscall: 357
+358637  produces invalid xml
+
+Thu 28 Jan 13:20:02 CET 2016

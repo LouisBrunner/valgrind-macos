@@ -667,6 +667,38 @@ Int VG_(getdents64) (Int fd, struct vki_dirent64 *dirp, UInt count)
    res = VG_(do_syscall3)(__NR_getdents, fd, (UWord)dirp, count);
 #  else
    res = VG_(do_syscall3)(__NR_getdents64, fd, (UWord)dirp, count);
+#     if defined(VGA_mips64)
+      /* The MIPS64 getdents64() system call is only present in 3.10+ kernels.
+         If the getdents64() system call is not available fall back to using
+         getdents() and modify the result to be compatible with getdents64(). */
+      if (sr_isError(res) && (sr_Err(res) == VKI_ENOSYS)) {
+         int r;
+         res = VG_(do_syscall3)(__NR_getdents, fd, (UWord)dirp, count);
+         r = sr_Res(res);
+         if (r > 0) {
+            char *p;
+            char type;
+            union dirents {
+               struct vki_dirent m;
+               struct vki_dirent64 d;
+            } *u;
+            p = (char *)dirp;
+            do {
+               u = (union dirents *)p;
+               /* This should not happen, but just in case... */
+               if (p + u->m.d_reclen > (char *)dirp + r)
+                  break;
+               /* shuffle the dirent */
+               type = *(p + u->m.d_reclen - 1);
+               VG_(memmove)(u->d.d_name, u->m.d_name,
+                            u->m.d_reclen - 2
+                               - offsetof(struct vki_dirent, d_name) + 1);
+               u->d.d_type = type;
+               p += u->m.d_reclen;
+            } while (p < (char *)dirp + r);
+         }
+      }
+#     endif
 #  endif
    return sr_isError(res) ? -1 : sr_Res(res);
 }

@@ -48,6 +48,7 @@ where XXXXXX is the bug number as listed below.
 191069  Exiting due to signal not reported in XML output
 212352  vex amd64 unhandled opc_aux = 0x 2, first_opcode == 0xDC (FCOM)
 278744  cvtps2pd with redundant RexW
+348345  Assertion fails for negative lineno
 353083  arm64 doesn't implement various xattr system calls
 353084  arm64 doesn't support sigpending system call
 353370  don't advertise RDRAND in cpuid for Core-i7-4910-like avx2 machine

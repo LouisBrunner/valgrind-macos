@@ -233,14 +233,9 @@ void ML_(ppDiCfSI) ( const XArray* /* of CfiExpr */ exprs,
 /*--- Adding stuff                                         ---*/
 /*------------------------------------------------------------*/
 
-/* Add a str to the string table, including terminating zero, and
-   return pointer to the string in vg_strtab.  Unless it's been seen
-   recently, in which case we find the old pointer and return that.
-   This avoids the most egregious duplications.
-
-   JSGF: changed from returning an index to a pointer, and changed to
-   a chunking memory allocator rather than reallocating, so the
-   pointers are stable.
+/* If not yet in strpool, add a str to the string pool including terminating
+   zero.
+   Return the pointer to the string in strpool.
 */
 const HChar* ML_(addStr) ( DebugInfo* di, const HChar* str, Int len )
 {
@@ -493,6 +488,20 @@ static void shrinkLocTab ( struct _DebugInfo* di )
    di->loctab_size = new_sz;
 }
 
+#define COMPLAIN_ONCE(what, limit, limit_op)                   \
+   {                                                           \
+   static Bool complained = False;                             \
+   if (!complained) {                                          \
+      complained = True;                                       \
+      VG_(message)(Vg_UserMsg,                                 \
+                   "warning: Can't handle " what " with "      \
+                   "line number %d " limit_op " than %d\n",    \
+                   lineno, limit);                             \
+      VG_(message)(Vg_UserMsg,                                 \
+                   "(Nb: this message is only shown once)\n"); \
+   } \
+}
+
 
 /* Top-level place to call to add a source-location mapping entry.
 */
@@ -567,30 +576,11 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
    }
 
    if (lineno < 0) {
-      static Bool complained = False;
-      if (!complained) {
-         complained = True;
-         VG_(message)(Vg_UserMsg, 
-                      "warning: ignoring line info entry with "
-                      "negative line number (%d)\n", lineno);
-         VG_(message)(Vg_UserMsg, 
-                      "(Nb: this message is only shown once)\n");
-      }
+      COMPLAIN_ONCE("line info entry", 0, "smaller");
       return;
    }
    if (lineno > MAX_LINENO) {
-      static Bool complained = False;
-      if (!complained) {
-         complained = True;
-         VG_(message)(Vg_UserMsg, 
-                      "warning: ignoring line info entry with "
-                      "huge line number (%d)\n", lineno);
-         VG_(message)(Vg_UserMsg, 
-                      "         Can't handle line numbers "
-                      "greater than %d, sorry\n", MAX_LINENO);
-         VG_(message)(Vg_UserMsg, 
-                      "(Nb: this message is only shown once)\n");
-      }
+      COMPLAIN_ONCE("line info entry", MAX_LINENO, "greater");
       return;
    }
 
@@ -668,20 +658,12 @@ void ML_(addInlInfo) ( struct _DebugInfo* di,
        addr_hi = addr_lo + 1;
    }
 
-   vg_assert(lineno >= 0);
+   if (lineno < 0) {
+      COMPLAIN_ONCE ("inlined call info entry", 0, "smaller");
+      return;
+   }
    if (lineno > MAX_LINENO) {
-      static Bool complained = False;
-      if (!complained) {
-         complained = True;
-         VG_(message)(Vg_UserMsg, 
-                      "warning: ignoring inlined call info entry with "
-                      "huge line number (%d)\n", lineno);
-         VG_(message)(Vg_UserMsg, 
-                      "         Can't handle line numbers "
-                      "greater than %d, sorry\n", MAX_LINENO);
-         VG_(message)(Vg_UserMsg, 
-                      "(Nb: this message is only shown once)\n");
-      }
+      COMPLAIN_ONCE ("inlined call info entry", MAX_LINENO, "greater");
       return;
    }
 

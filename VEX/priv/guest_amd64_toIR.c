@@ -6401,19 +6401,20 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                fp_do_op_mem_ST_0 ( addr, "mul", dis_buf, Iop_MulF64, True );
                break;
 
-//..             case 2: /* FCOM double-real */
-//..                DIP("fcoml %s\n", dis_buf);
-//..                /* This forces C1 to zero, which isn't right. */
-//..                put_C3210( 
-//..                    binop( Iop_And32,
-//..                           binop(Iop_Shl32, 
-//..                                 binop(Iop_CmpF64, 
-//..                                       get_ST(0),
-//..                                       loadLE(Ity_F64,mkexpr(addr))),
-//..                                 mkU8(8)),
-//..                           mkU32(0x4500)
-//..                    ));
-//..                break;  
+            case 2: /* FCOM double-real */
+               DIP("fcoml %s\n", dis_buf);
+               /* This forces C1 to zero, which isn't right. */
+               put_C3210(
+                   unop(Iop_32Uto64,
+                   binop( Iop_And32,
+                          binop(Iop_Shl32,
+                                binop(Iop_CmpF64,
+                                      get_ST(0),
+                                      loadLE(Ity_F64,mkexpr(addr))),
+                                mkU8(8)),
+                          mkU32(0x4500)
+                   )));
+               break;
 
             case 3: /* FCOMP double-real */
                DIP("fcompl %s\n", dis_buf);

@@ -28,7 +28,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-/* Copyright 2013-2015, Ivo Raisr <ivosh@ivosh.net>. */
+/* Copyright 2013-2016, Ivo Raisr <ivosh@ivosh.net>. */
 
 /* Copyright 2015-2015, Tomas Jedlicka <jedlickat@gmail.com>. */
 
@@ -989,6 +989,9 @@ DECL_TEMPLATE(solaris, sys_sysconfig);
 DECL_TEMPLATE(solaris, sys_systeminfo);
 DECL_TEMPLATE(solaris, sys_seteuid);
 DECL_TEMPLATE(solaris, sys_forksys);
+#if defined(SOLARIS_GETRANDOM_SYSCALL)
+DECL_TEMPLATE(solaris, sys_getrandom);
+#endif /* SOLARIS_GETRANDOM_SYSCALL */
 DECL_TEMPLATE(solaris, sys_sigtimedwait);
 DECL_TEMPLATE(solaris, sys_yield);
 DECL_TEMPLATE(solaris, sys_lwp_sema_post);
@@ -6461,6 +6464,22 @@ PRE(sys_forksys)
    }
 }
 
+#if defined(SOLARIS_GETRANDOM_SYSCALL)
+PRE(sys_getrandom)
+{
+   /* int getrandom(void *buf, size_t buflen, uint_t flags); */
+   PRINT("sys_getrandom ( %#lx, %lu, %lu )", ARG1, ARG2, ARG3);
+   PRE_REG_READ3(long, "getrandom", void *, buf, vki_size_t, buflen,
+                 vki_uint_t, flags);
+   PRE_MEM_WRITE("getrandom(buf)", ARG1, ARG2);
+}
+
+POST(sys_getrandom)
+{
+   POST_MEM_WRITE(ARG1, RES);
+}
+#endif /* SOLARIS_GETRANDOM_SYSCALL */
+
 PRE(sys_sigtimedwait)
 {
    /* int sigtimedwait(const sigset_t *set, siginfo_t *info,
@@ -10388,6 +10407,9 @@ static SyscallTableEntry syscall_table[] = {
    SOLXY(__NR_systeminfo,           sys_systeminfo),            /* 139 */
    SOLX_(__NR_seteuid,              sys_seteuid),               /* 141 */
    SOLX_(__NR_forksys,              sys_forksys),               /* 142 */
+#if defined(SOLARIS_GETRANDOM_SYSCALL)
+   SOLXY(__NR_getrandom,            sys_getrandom),             /* 143 */
+#endif /* SOLARIS_GETRANDOM_SYSCALL */
    SOLXY(__NR_sigtimedwait,         sys_sigtimedwait),          /* 144 */
    SOLX_(__NR_yield,                sys_yield),                 /* 146 */
    SOLXY(__NR_lwp_sema_post,        sys_lwp_sema_post),         /* 148 */

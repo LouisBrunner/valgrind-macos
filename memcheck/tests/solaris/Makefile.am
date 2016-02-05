@@ -30,6 +30,7 @@ EXTRA_DIST = \
 	pkcs11.stderr.exp-illumos pkcs11.stderr.exp-solaris pkcs11.stdout.exp pkcs11.vgtest \
 	scalar.stderr.exp scalar.stdout.exp scalar.vgtest \
 	scalar_frealpathat.stderr.exp scalar_frealpathat.stdout.exp scalar_frealpathat.vgtest \
+	scalar_getrandom.stderr.exp scalar_getrandom.stdout.exp scalar_getrandom.vgtest \
 	scalar_ioctl.stderr.exp scalar_ioctl.stdout.exp scalar_ioctl.vgtest \
 	scalar_lwp_kill.stderr.exp scalar_lwp_kill.stdout.exp scalar_lwp_kill.vgtest \
 	scalar_lwp_name.stderr.exp scalar_lwp_name.stdout.exp scalar_lwp_name.vgtest \
@@ -96,6 +97,10 @@ endif
 
 if SOLARIS_FREALPATHAT_SYSCALL
 check_PROGRAMS += scalar_frealpathat
+endif
+
+if SOLARIS_GETRANDOM_SYSCALL
+check_PROGRAMS += scalar_getrandom
 endif
 
 if SOLARIS_LWP_NAME_SYSCALL

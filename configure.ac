@@ -2969,6 +2969,32 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL(SOLARIS_LWP_NAME_SYSCALL, test x$solaris_lwp_name_syscall = xyes)
 
 
+# Solaris-specific check determining if the new getrandom() syscall is
+# available.
+#
+# New syscall (available on Solaris 11):
+# int getrandom(void *buf, size_t buflen, uint_t flags);
+#
+# C-level symbol: SOLARIS_GETRANDOM_SYSCALL
+# Automake-level symbol: SOLARIS_GETRANDOM_SYSCALL
+#
+AC_MSG_CHECKING([for the new `getrandom' syscall (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h>
+]], [[
+  return !SYS_getrandom;
+]])], [
+solaris_getrandom_syscall=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_GETRANDOM_SYSCALL], 1,
+          [Define to 1 if you have the new `getrandom' syscall.])
+], [
+solaris_getrandom_syscall=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_GETRANDOM_SYSCALL, test x$solaris_getrandom_syscall = xyes)
+
+
 # Solaris-specific check determining if the new zone() syscall subcodes
 # ZONE_LIST_DEFUNCT and ZONE_GETATTR_DEFUNCT are available.  These subcodes
 # were added in Solaris 11 but are missing on illumos.
@@ -3467,6 +3493,7 @@ AM_CONDITIONAL(SOLARIS_OLD_SYSCALLS, false)
 AM_CONDITIONAL(SOLARIS_LWP_SIGQUEUE_SYSCALL, false)
 AM_CONDITIONAL(SOLARIS_LWP_SIGQUEUE_SYSCALL_TAKES_PID, false)
 AM_CONDITIONAL(SOLARIS_LWP_NAME_SYSCALL, false)
+AM_CONDITIONAL(SOLARIS_GETRANDOM_SYSCALL, false)
 AM_CONDITIONAL(SOLARIS_ZONE_DEFUNCT, false)
 AM_CONDITIONAL(SOLARIS_SHM_NEW, false)
 AM_CONDITIONAL(SOLARIS_PRXREGSET_T, false)

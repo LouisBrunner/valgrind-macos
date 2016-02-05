@@ -1,0 +1,16 @@
+---------------------------------------------------------
+143:           SYS_getrandom (getrandom) 3s 1m
+---------------------------------------------------------
+Syscall param getrandom(buf) contains uninitialised byte(s)
+   ...
+
+Syscall param getrandom(buflen) contains uninitialised byte(s)
+   ...
+
+Syscall param getrandom(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param getrandom(buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+

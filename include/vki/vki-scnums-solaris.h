@@ -28,7 +28,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-/* Copyright 2013-2015, Ivo Raisr <ivosh@ivosh.net>. */
+/* Copyright 2013-2016, Ivo Raisr <ivosh@ivosh.net>. */
 
 /* Copyright 2013, OmniTI Computer Consulting, Inc. All rights reserved. */
 
@@ -194,6 +194,9 @@
 //#define __NR_sharefs                    SYS_sharefs
 #define __NR_seteuid                    SYS_seteuid
 #define __NR_forksys                    SYS_forksys
+#if defined(SOLARIS_GETRANDOM_SYSCALL)
+#define __NR_getrandom                  SYS_getrandom
+#endif /* SOLARIS_GETRANDOM_SYSCALL */
 #define __NR_sigtimedwait               SYS_sigtimedwait
 //#define __NR_lwp_info                   SYS_lwp_info
 #define __NR_yield                      SYS_yield

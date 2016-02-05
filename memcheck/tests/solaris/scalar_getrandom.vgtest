@@ -1,0 +1,4 @@
+prereq: test -e scalar_getrandom
+prog: scalar_getrandom
+vgopts: -q
+stderr_filter_args:

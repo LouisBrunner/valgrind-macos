@@ -1,7 +1,6 @@
 ---Status---
 debugging core file of coredump_single (64-bit) from ...
 initial argv: ./coredump_single_thread
-threading model: native threads
 status: process terminated by SIGSEGV (Segmentation Fault), addr=........
 
 ---Registers---

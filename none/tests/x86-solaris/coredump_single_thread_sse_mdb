@@ -7,6 +7,7 @@ echo "---Status---"
 echo "::status" | /usr/bin/mdb vgcore.* | \
 perl -p -e 's/from \S*$/from .../' | \
 perl -0 -p -e 's/^file: .+?^(initial argv:)/$1/ms' | \
+sed '/^threading model:/ d' | \
 perl -p -e 's/addr=[0-9A-Fa-f]+/addr=......../g'
 
 echo "\n---SSE Registers---"

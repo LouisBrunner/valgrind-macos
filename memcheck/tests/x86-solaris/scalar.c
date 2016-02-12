@@ -64,8 +64,8 @@ int main(void)
    sys_openat642();
 
    /* SYS_llseek                175 */
-   GO(SYS_llseek, "3s 0m");
-   SY(SYS_llseek, x0 - 1, x0, x0); FAILx(EBADF);
+   GO(SYS_llseek, "4s 0m");
+   SY(SYS_llseek, x0 - 1, x0, x0, x0); FAILx(EBADF);
 
    /* SYS_getdents64            213 */
    GO(SYS_getdents64, "3s 1m");

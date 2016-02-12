@@ -57,7 +57,7 @@ Syscall param openat64(filename) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
-175:              SYS_llseek 3s 0m
+175:              SYS_llseek 4s 0m
 ---------------------------------------------------------
 Syscall param llseek(fildes) contains uninitialised byte(s)
    ...
@@ -66,6 +66,9 @@ Syscall param llseek(offset_low) contains uninitialised byte(s)
    ...
 
 Syscall param llseek(offset_high) contains uninitialised byte(s)
+   ...
+
+Syscall param llseek(whence) contains uninitialised byte(s)
    ...
 
 ---------------------------------------------------------

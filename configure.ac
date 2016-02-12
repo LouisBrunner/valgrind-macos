@@ -2728,6 +2728,26 @@ AM_CONDITIONAL(SOLARIS_XPG_SYMBOLS_PRESENT, test x$solaris_xpg_symbols_present =
 CFLAGS="$save_CFLAGS"
 
 
+# Solaris-specific check determining if gcc enables largefile support by
+# default for 32-bit executables. If it does, then set SOLARIS_UNDEF_LARGESOURCE
+# variable with gcc flags which disable it.
+#
+AC_MSG_CHECKING([if gcc enables largefile support for 32-bit apps (Solaris-specific)])
+save_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -m32"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  return _LARGEFILE_SOURCE;
+]])], [
+SOLARIS_UNDEF_LARGESOURCE="-U_LARGEFILE_SOURCE -U_LARGEFILE64_SOURCE -U_FILE_OFFSET_BITS"
+AC_MSG_RESULT([yes])
+], [
+SOLARIS_UNDEF_LARGESOURCE=""
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+AC_SUBST(SOLARIS_UNDEF_LARGESOURCE)
+
+
 # Solaris-specific check determining if /proc/self/cmdline
 # or /proc/<pid>/cmdline is supported.
 #

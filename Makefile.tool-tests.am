@@ -28,7 +28,8 @@ AM_CCASFLAGS = $(AM_CPPFLAGS)
 
 if VGCONF_OS_IS_SOLARIS
 # Make sure that all test programs have threaded errno.
-AM_CFLAGS  += -D_REENTRANT
+# Disable largefile support as there are test cases explictly enabling it.
+AM_CFLAGS  += -D_REENTRANT @SOLARIS_UNDEF_LARGESOURCE@
 endif
 
 if VGCONF_OS_IS_DARWIN

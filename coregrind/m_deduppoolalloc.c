@@ -255,7 +255,6 @@ const void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa, SizeT eltSzB,
    ht_node *ht_ins;
    vg_assert(ddpa);
    vg_assert(ddpa->ht_elements);
-   vg_assert (eltSzB <= ddpa->poolSzB);
 
    ddpa->nr_alloc_calls++;
 
@@ -272,15 +271,24 @@ const void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa, SizeT eltSzB,
       and insert it in the hash table of inserted elements. */
 
    // Add a new pool or grow pool if not enough space in the current pool
-   if (UNLIKELY(ddpa->curpool_free == NULL
-                || ddpa->curpool_free + eltSzB - 1 > ddpa->curpool_limit)) {
-      ddpa_add_new_pool_or_grow (ddpa);
+   if (eltSzB + ddpa->eltAlign > ddpa->poolSzB) {
+      // Element (+eltAlign for worst case) bigger than the pool size
+      // => allocate a specific pool just for this element
+      UChar *newpool = ddpa->alloc_fn (ddpa->cc, eltSzB + ddpa->eltAlign);
+      /* add to our collection of pools */
+      VG_(addToXA)( ddpa->pools, &newpool );
+      elt_ins = ddpa_align (ddpa, newpool);
+   } else {
+      if (UNLIKELY(ddpa->curpool_free == NULL
+                   || ddpa->curpool_free + eltSzB - 1 > ddpa->curpool_limit)) {
+         ddpa_add_new_pool_or_grow (ddpa);
+      }
+      elt_ins = ddpa->curpool_free;
+      ddpa->curpool_free = ddpa_align(ddpa, ddpa->curpool_free + eltSzB);
    }
 
-   elt_ins = ddpa->curpool_free;
-   VG_(memcpy)(elt_ins, elt, eltSzB);
-   ddpa->curpool_free = ddpa_align(ddpa, ddpa->curpool_free + eltSzB);
 
+   VG_(memcpy)(elt_ins, elt, eltSzB);
    ht_ins = VG_(allocEltPA) (ddpa->ht_node_pa);
    ht_ins->key = ht_elt.key;
    ht_ins->eltSzB = eltSzB;

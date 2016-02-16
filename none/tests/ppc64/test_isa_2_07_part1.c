@@ -874,7 +874,7 @@ static int verbose = 0;
 static int arg_list_size = 0;
 static unsigned long long * vdargs = NULL;
 static unsigned long long * vdargs_x = NULL;
-#define NB_VDARGS 4
+#define NB_VDARGS 9
 
 static void build_vdargs_table (void)
 {
@@ -884,6 +884,11 @@ static void build_vdargs_table (void)
    vdargs[1] = 0x090A0B0C0E0D0E0FULL;
    vdargs[2] = 0xF1F2F3F4F5F6F7F8ULL;
    vdargs[3] = 0xF9FAFBFCFEFDFEFFULL;
+   vdargs[4] = 0x00007FFFFFFFFFFFULL;
+   vdargs[5] = 0xFFFF000000000000ULL;
+   vdargs[6] = 0x0000800000000000ULL;
+   vdargs[7] = 0x0000000000000000ULL;
+   vdargs[8] = 0xFFFFFFFFFFFFFFFFULL;
 
    vdargs_x = memalign16(NB_VDARGS * sizeof(unsigned long long));
    vdargs_x[0] = 0x000000007c118a2bULL;

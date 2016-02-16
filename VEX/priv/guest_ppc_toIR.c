@@ -17968,6 +17968,7 @@ static IRTemp _get_quad_modulo_or_carry(IRExpr * vecA, IRExpr * vecB,
    IRTemp _vecA_32   = IRTemp_INVALID;
    IRTemp _vecB_32   = IRTemp_INVALID;
    IRTemp res_32     = IRTemp_INVALID;
+   IRTemp res_64     = IRTemp_INVALID;
    IRTemp result     = IRTemp_INVALID;
    IRTemp tmp_result = IRTemp_INVALID;
    IRTemp carry      = IRTemp_INVALID;
@@ -17977,10 +17978,15 @@ static IRTemp _get_quad_modulo_or_carry(IRExpr * vecA, IRExpr * vecB,
    IRExpr * _vecA_high64 = unop( Iop_V128HIto64, vecA );
    IRExpr * _vecB_high64 = unop( Iop_V128HIto64, vecB );
 
+   carry = newTemp(Ity_I32);
+   assign( carry, cin );
+
    for (i = 0; i < 4; i++) {
       _vecA_32 = newTemp(Ity_I32);
       _vecB_32 = newTemp(Ity_I32);
       res_32   = newTemp(Ity_I32);
+      res_64   = newTemp(Ity_I64);
+
       switch (i) {
       case 0:
          assign(_vecA_32, unop( Iop_64to32, _vecA_low64 ) );
@@ -18000,13 +18006,25 @@ static IRTemp _get_quad_modulo_or_carry(IRExpr * vecA, IRExpr * vecB,
          break;
       }
 
-      assign(res_32, binop( Iop_Add32,
-                            binop( Iop_Add32,
-                                   binop ( Iop_Add32,
-                                           mkexpr(_vecA_32),
-                                           mkexpr(_vecB_32) ),
-                                   (i == 0) ? mkU32(0) : mkexpr(carry) ),
-                            (i == 0) ? cin : mkU32(0) ) );
+      assign( res_64, binop( Iop_Add64,
+                             binop ( Iop_Add64,
+                                     binop( Iop_32HLto64,
+                                            mkU32( 0 ),
+                                            mkexpr(_vecA_32) ),
+                                     binop( Iop_32HLto64,
+                                            mkU32( 0 ),
+                                            mkexpr(_vecB_32) ) ),
+                             binop( Iop_32HLto64,
+                                    mkU32( 0 ),
+                                    mkexpr( carry ) ) ) );
+
+      /* Calculate the carry to the next higher 32 bits. */
+      carry = newTemp(Ity_I32);
+      assign(carry, unop( Iop_64HIto32, mkexpr( res_64 ) ) );
+
+      /* result is the lower 32-bits */
+      assign(res_32, unop( Iop_64to32, mkexpr( res_64 ) ) );
+
       if (modulo) {
          result = newTemp(Ity_V128);
          assign(result, binop( Iop_OrV128,
@@ -18023,10 +18041,6 @@ static IRTemp _get_quad_modulo_or_carry(IRExpr * vecA, IRExpr * vecB,
          tmp_result = newTemp(Ity_V128);
          assign(tmp_result, mkexpr(result));
       }
-      carry = newTemp(Ity_I32);
-      assign(carry, unop(Iop_1Uto32, binop( Iop_CmpLT32U,
-                                            mkexpr(res_32),
-                                            mkexpr(_vecA_32 ) ) ) );
    }
    if (modulo)
       return result;

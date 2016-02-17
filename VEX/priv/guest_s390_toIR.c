@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright IBM Corp. 2010-2015
+   Copyright IBM Corp. 2010-2016
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -12938,6 +12938,38 @@ s390_irgen_FLOGR(UChar r1, UChar r2)
 }
 
 static const HChar *
+s390_irgen_POPCNT(UChar r1, UChar r2)
+{
+   Int i;
+   IRTemp val = newTemp(Ity_I64);
+   IRTemp mask[3];
+
+   assign(val, get_gpr_dw0(r2));
+   for (i = 0; i < 3; i++) {
+      mask[i] = newTemp(Ity_I64);
+   }
+   assign(mask[0], mkU64(0x5555555555555555ULL));
+   assign(mask[1], mkU64(0x3333333333333333ULL));
+   assign(mask[2], mkU64(0x0F0F0F0F0F0F0F0FULL));
+   for (i = 0; i < 3; i++) {
+      IRTemp tmp = newTemp(Ity_I64);
+
+      assign(tmp,
+             binop(Iop_Add64,
+                   binop(Iop_And64,
+                         mkexpr(val),
+                         mkexpr(mask[i])),
+                   binop(Iop_And64,
+                         binop(Iop_Shr64, mkexpr(val), mkU8(1 << i)),
+                         mkexpr(mask[i]))));
+      val = tmp;
+   }
+   s390_cc_thunk_putZ(S390_CC_OP_BITWISE, val);
+   put_gpr_dw0(r1, mkexpr(val));
+   return "popcnt";
+}
+
+static const HChar *
 s390_irgen_STCK(IRTemp op2addr)
 {
    IRDirty *d;
@@ -14999,7 +15031,8 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
                                    ovl.fmt.RRE.r2);  goto ok;
    case 0xb9df: s390_format_RRE_RR(s390_irgen_CLHLR, ovl.fmt.RRE.r1,
                                    ovl.fmt.RRE.r2);  goto ok;
-   case 0xb9e1: /* POPCNT */ goto unimplemented;
+   case 0xb9e1: s390_format_RRE_RR(s390_irgen_POPCNT, ovl.fmt.RRE.r1,
+                                   ovl.fmt.RRE.r2);  goto ok;
    case 0xb9e2: s390_format_RRF_U0RR(s390_irgen_LOCGR, ovl.fmt.RRF3.r3,
                                      ovl.fmt.RRF3.r1, ovl.fmt.RRF3.r2,
                                      S390_XMNM_LOCGR);  goto ok;

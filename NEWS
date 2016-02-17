@@ -70,6 +70,7 @@ where XXXXXX is the bug number as listed below.
 357871  pthread_spin_destroy not properly wrapped
 357887  Fix a file handle leak. VG_(fclose) did not close the file
 358030  support direct socket calls on x86 32bit (new in linux 4.3)
+359201  futex syscall "skips" argument 5 if op is FUTEX_WAIT_BITSET
 359133  Assertion 'eltSzB <= ddpa->poolSzB' failed
 359289  s390x: popcnt (B9E1) not implemented
 

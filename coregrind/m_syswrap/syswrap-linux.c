@@ -1154,13 +1154,16 @@ PRE(sys_futex)
             return;
       }
       if (*(vki_u32 *)ARG1 != ARG3) {
-         PRE_REG_READ5(long, "futex",
+         PRE_REG_READ4(long, "futex",
                        vki_u32 *, futex, int, op, int, val,
-                       struct timespec *, utime, int, dummy);
+                       struct timespec *, utime);
       } else {
-         PRE_REG_READ6(long, "futex",
+        /* Note argument 5 is unused, but argument 6 is used.
+           So we cannot just PRE_REG_READ6. Read argument 6 separately.  */
+         PRE_REG_READ4(long, "futex",
                        vki_u32 *, futex, int, op, int, val,
-                       struct timespec *, utime, int, dummy, int, val3);
+                       struct timespec *, utime);
+         PRA6("futex",int,val3);
       }
       break;
    case VKI_FUTEX_WAKE_BITSET:

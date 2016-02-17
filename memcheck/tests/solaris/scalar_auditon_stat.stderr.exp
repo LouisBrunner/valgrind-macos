@@ -1,0 +1,32 @@
+---------------------------------------------------------
+186:            SYS_auditsys (BSM_AUDITCTL,A_GETSTAT) 3s 1m
+---------------------------------------------------------
+Syscall param auditsys_auditctl_getstat(code) contains uninitialised byte(s)
+   ...
+
+Syscall param auditsys_auditctl_getstat(cmd) contains uninitialised byte(s)
+   ...
+
+Syscall param auditsys_auditctl_getstat(stats) contains uninitialised byte(s)
+   ...
+
+Syscall param auditsys(stats) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+186:            SYS_auditsys (BSM_AUDITCTL,A_SETSTAT) 3s 1m
+---------------------------------------------------------
+Syscall param auditsys_auditctl_setstat(code) contains uninitialised byte(s)
+   ...
+
+Syscall param auditsys_auditctl_setstat(cmd) contains uninitialised byte(s)
+   ...
+
+Syscall param auditsys_auditctl_setstat(stats) contains uninitialised byte(s)
+   ...
+
+Syscall param auditsys(stats) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+

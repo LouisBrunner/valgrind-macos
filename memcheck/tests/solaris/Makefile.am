@@ -29,6 +29,7 @@ EXTRA_DIST = \
 	name_service_door.stdout.exp name_service_door.vgtest \
 	pkcs11.stderr.exp-illumos pkcs11.stderr.exp-solaris pkcs11.stdout.exp pkcs11.vgtest \
 	scalar.stderr.exp scalar.stdout.exp scalar.vgtest \
+	scalar_auditon_stat.stderr.exp scalar_auditon_stat.stdout.exp scalar_auditon_stat.vgtest \
 	scalar_frealpathat.stderr.exp scalar_frealpathat.stdout.exp scalar_frealpathat.vgtest \
 	scalar_getrandom.stderr.exp scalar_getrandom.stdout.exp scalar_getrandom.vgtest \
 	scalar_ioctl.stderr.exp scalar_ioctl.stdout.exp scalar_ioctl.vgtest \
@@ -95,6 +96,10 @@ if SOLARIS_OLD_SYSCALLS
 check_PROGRAMS += scalar_obsolete
 endif
 
+if SOLARIS_AUDITON_STAT
+check_PROGRAMS += scalar_auditon_stat
+endif
+
 if SOLARIS_FREALPATHAT_SYSCALL
 check_PROGRAMS += scalar_frealpathat
 endif
@@ -146,7 +151,7 @@ if SOLARIS_UUIDSYS_SYSCALL
 check_PROGRAMS += scalar_uuidsys
 endif
 
-if SOLARIS_ZONE_DEFUNCT 
+if SOLARIS_ZONE_DEFUNCT
 check_PROGRAMS += scalar_zone_defunct
 endif
 

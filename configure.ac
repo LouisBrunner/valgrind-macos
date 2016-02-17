@@ -3039,6 +3039,31 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL(SOLARIS_ZONE_DEFUNCT, test x$solaris_zone_defunct = xyes)
 
 
+# Solaris-specific check determining if commands A_GETSTAT and A_SETSTAT
+# for auditon(2) subcode of the auditsys() syscall are available.
+# These commands are available in Solaris 11 and illumos but were removed
+# in Solaris 12.
+#
+# C-level symbol: SOLARIS_AUDITON_STAT
+# Automake-level symbol: SOLARIS_AUDITON_STAT
+#
+AC_MSG_CHECKING([for A_GETSTAT and A_SETSTAT auditon(2) commands (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <bsm/audit.h>
+]], [[
+  return !(A_GETSTAT && A_SETSTAT);
+]])], [
+solaris_auditon_stat=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_AUDITON_STAT], 1,
+          [Define to 1 if you have the `A_GETSTAT' and `A_SETSTAT' constants.])
+], [
+solaris_auditon_stat=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_AUDITON_STAT, test x$solaris_auditon_stat = xyes)
+
+
 # Solaris-specific check determining if the new shmsys() syscall subcodes
 # IPC_XSTAT64, SHMADV, SHM_ADV_GET, SHM_ADV_SET and SHMGET_OSM are available.
 # These subcodes were added in Solaris 11 but are missing on illumos.
@@ -3515,6 +3540,7 @@ AM_CONDITIONAL(SOLARIS_LWP_SIGQUEUE_SYSCALL_TAKES_PID, false)
 AM_CONDITIONAL(SOLARIS_LWP_NAME_SYSCALL, false)
 AM_CONDITIONAL(SOLARIS_GETRANDOM_SYSCALL, false)
 AM_CONDITIONAL(SOLARIS_ZONE_DEFUNCT, false)
+AM_CONDITIONAL(SOLARIS_AUDITON_STAT, false)
 AM_CONDITIONAL(SOLARIS_SHM_NEW, false)
 AM_CONDITIONAL(SOLARIS_PRXREGSET_T, false)
 AM_CONDITIONAL(SOLARIS_FREALPATHAT_SYSCALL, false)

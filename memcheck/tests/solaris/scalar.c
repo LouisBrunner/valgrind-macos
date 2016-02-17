@@ -950,61 +950,47 @@ static void sys_auditsys13(void)
 __attribute__((noinline))
 static void sys_auditsys14(void)
 {
-   GO(SYS_auditsys, "(BSM_AUDITCTL,A_GETSTAT) 3s 1m");
-   SY(SYS_auditsys, x0 + BSM_AUDITCTL, x0 + A_GETSTAT, x0); FAIL;
-}
-
-__attribute__((noinline))
-static void sys_auditsys15(void)
-{
-   GO(SYS_auditsys, "(BSM_AUDITCTL,A_SETSTAT) 3s 1m");
-   SY(SYS_auditsys, x0 + BSM_AUDITCTL, x0 + A_SETSTAT, x0); FAIL;
-}
-
-__attribute__((noinline))
-static void sys_auditsys16(void)
-{
    GO(SYS_auditsys, "(BSM_AUDITCTL,A_SETUMASK) 3s 1m");
    SY(SYS_auditsys, x0 + BSM_AUDITCTL, x0 + A_SETUMASK, x0); FAIL;
 }
 
 __attribute__((noinline))
-static void sys_auditsys17(void)
+static void sys_auditsys15(void)
 {
    GO(SYS_auditsys, "(BSM_AUDITCTL,A_SETSMASK) 3s 1m");
    SY(SYS_auditsys, x0 + BSM_AUDITCTL, x0 + A_SETSMASK, x0); FAIL;
 }
 
 __attribute__((noinline))
-static void sys_auditsys18(void)
+static void sys_auditsys16(void)
 {
    GO(SYS_auditsys, "(BSM_AUDITCTL,A_GETCOND) 3s 1m");
    SY(SYS_auditsys, x0 + BSM_AUDITCTL, x0 + A_GETCOND, x0); FAIL;
 }
 
 __attribute__((noinline))
-static void sys_auditsys19(void)
+static void sys_auditsys17(void)
 {
    GO(SYS_auditsys, "(BSM_AUDITCTL,A_SETCOND) 3s 1m");
    SY(SYS_auditsys, x0 + BSM_AUDITCTL, x0 + A_SETCOND, x0); FAIL;
 }
 
 __attribute__((noinline))
-static void sys_auditsys20(void)
+static void sys_auditsys18(void)
 {
    GO(SYS_auditsys, "(BSM_AUDITCTL,A_GETCLASS) 3s 0m");
    SY(SYS_auditsys, x0 + BSM_AUDITCTL, x0 + A_GETCLASS, x0); FAIL;
 }
 
 __attribute__((noinline))
-static void sys_auditsys21(void)
+static void sys_auditsys19(void)
 {
    GO(SYS_auditsys, "(BSM_AUDITCTL,A_SETCLASS) 3s 0m");
    SY(SYS_auditsys, x0 + BSM_AUDITCTL, x0 + A_SETCLASS, x0 + 1); FAIL;
 }
 
 __attribute__((noinline))
-static void sys_auditsys22(void)
+static void sys_auditsys20(void)
 {
    au_evclass_map_t classmap;
    classmap.ec_number = x0;
@@ -1015,21 +1001,21 @@ static void sys_auditsys22(void)
 }
 
 __attribute__((noinline))
-static void sys_auditsys23(void)
+static void sys_auditsys21(void)
 {
    GO(SYS_auditsys, "(BSM_AUDITCTL,A_GETPINFO) 3s 0m");
    SY(SYS_auditsys, x0 + BSM_AUDITCTL, x0 + A_GETPINFO, x0); FAIL;
 }
 
 __attribute__((noinline))
-static void sys_auditsys24(void)
+static void sys_auditsys22(void)
 {
    GO(SYS_auditsys, "(BSM_AUDITCTL,A_SETPMASK) 3s 1m");
    SY(SYS_auditsys, x0 + BSM_AUDITCTL, x0 + A_SETPMASK, x0); FAIL;
 }
 
 __attribute__((noinline))
-static void sys_auditsys25(void)
+static void sys_auditsys23(void)
 {
    GO(SYS_auditsys, "(BSM_AUDITCTL,A_GETPINFO_ADDR) 4s 0m");
    SY(SYS_auditsys, x0 + BSM_AUDITCTL, x0 + A_GETPINFO_ADDR, x0,
@@ -1037,49 +1023,49 @@ static void sys_auditsys25(void)
 }
 
 __attribute__((noinline))
-static void sys_auditsys26(void)
+static void sys_auditsys24(void)
 {
    GO(SYS_auditsys, "(BSM_AUDITCTL,A_GETKAUDIT) 4s 1m");
    SY(SYS_auditsys, x0 + BSM_AUDITCTL, x0 + A_GETKAUDIT, x0, x0 + 1); FAIL;
 }
 
 __attribute__((noinline))
-static void sys_auditsys27(void)
+static void sys_auditsys25(void)
 {
    GO(SYS_auditsys, "(BSM_AUDITCTL,A_SETKAUDIT) 4s 1m");
    SY(SYS_auditsys, x0 + BSM_AUDITCTL, x0 + A_SETKAUDIT, x0, x0 + 1); FAIL;
 }
 
 __attribute__((noinline))
-static void sys_auditsys28(void)
+static void sys_auditsys26(void)
 {
    GO(SYS_auditsys, "(BSM_AUDITCTL,A_GETAMASK) 3s 1m");
    SY(SYS_auditsys, x0 + BSM_AUDITCTL, x0 + A_GETAMASK, x0); FAIL;
 }
 
 __attribute__((noinline))
-static void sys_auditsys29(void)
+static void sys_auditsys27(void)
 {
    GO(SYS_auditsys, "(BSM_AUDITCTL,A_SETAMASK) 3s 1m");
    SY(SYS_auditsys, x0 + BSM_AUDITCTL, x0 + A_SETAMASK, x0); FAIL;
 }
 
 __attribute__((noinline))
-static void sys_auditsys30(void)
+static void sys_auditsys28(void)
 {
    GO(SYS_auditsys, "(BSM_GETAUDIT_ADDR) 3s 1m");
    SY(SYS_auditsys, x0 + BSM_GETAUDIT_ADDR, x0 + 1, x0 + 1); FAIL;
 }
 
 __attribute__((noinline))
-static void sys_auditsys31(void)
+static void sys_auditsys29(void)
 {
    GO(SYS_auditsys, "(BSM_SETAUDIT_ADDR) 3s 1m");
    SY(SYS_auditsys, x0 + BSM_SETAUDIT_ADDR, x0, x0 + 1); FAIL;
 }
 
 __attribute__((noinline))
-static void sys_auditsys32(void)
+static void sys_auditsys30(void)
 {
    GO(SYS_auditsys, "(BSM_AUDITDOOR) 2s 0m");
    SY(SYS_auditsys, x0 + BSM_AUDITDOOR, x0); FAIL;
@@ -2215,8 +2201,6 @@ int main(void)
    sys_auditsys28();
    sys_auditsys29();
    sys_auditsys30();
-   sys_auditsys31();
-   sys_auditsys32();
 
    /* SYS_processor_bind        187 */
    /* XXX Missing wrapper. */

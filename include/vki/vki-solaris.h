@@ -28,7 +28,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-/* Copyright 2013-2015, Ivo Raisr <ivosh@ivosh.net> */
+/* Copyright 2013-2016, Ivo Raisr <ivosh@ivosh.net> */
 
 /* Copyright 2013, OmniTI Computer Consulting, Inc. All rights reserved. */
 
@@ -133,7 +133,10 @@ typedef uint32_t vki_u32;
 #define VKI_A_GETPINFO_ADDR A_GETPINFO_ADDR
 #define VKI_A_GETPOLICY A_GETPOLICY
 #define VKI_A_GETQCTRL A_GETQCTRL
+#if defined(SOLARIS_AUDITON_STAT)
 #define VKI_A_GETSTAT A_GETSTAT
+#define VKI_A_SETSTAT A_SETSTAT
+#endif /* SOLARIS_AUDITON_STAT */
 #define VKI_A_SETAMASK A_SETAMASK
 #define VKI_A_SETCLASS A_SETCLASS
 #define VKI_A_SETCOND A_SETCOND
@@ -143,7 +146,6 @@ typedef uint32_t vki_u32;
 #define VKI_A_SETPOLICY A_SETPOLICY
 #define VKI_A_SETQCTRL A_SETQCTRL
 #define VKI_A_SETSMASK A_SETSMASK
-#define VKI_A_SETSTAT A_SETSTAT
 #define VKI_A_SETUMASK A_SETUMASK
 #define VKI_BSM_AUDIT BSM_AUDIT
 #define VKI_BSM_AUDITCTL BSM_AUDITCTL
@@ -158,11 +160,13 @@ typedef uint32_t vki_u32;
 #define vki_au_id_t au_id_t
 #define vki_au_mask_t au_mask_t
 #define vki_au_qctrl au_qctrl
-#define vki_au_stat_t au_stat_t
 #define vki_auditinfo_t auditinfo_t
 #define vki_auditinfo_addr_t auditinfo_addr_t
 #define vki_auditpinfo auditpinfo
 #define vki_auditpinfo_addr auditpinfo_addr
+#if defined(SOLARIS_AUDITON_STAT)
+#define vki_au_stat_t au_stat_t
+#endif /* SOLARIS_AUDITON_STAT */
 
 
 #include <sys/psw.h>

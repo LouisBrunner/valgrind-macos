@@ -7663,6 +7663,7 @@ PRE(sys_auditsys)
                        long, code, int, cmd, char *, data, int, length);
          PRE_MEM_WRITE("auditsys(data)", ARG3, ARG4);
          break;
+#if defined(SOLARIS_AUDITON_STAT)
       case VKI_A_GETSTAT:
          PRE_REG_READ3(long, SC3("auditsys", "auditctl", "getstat"),
                        long, code, int, cmd, vki_au_stat_t *, stats);
@@ -7673,6 +7674,7 @@ PRE(sys_auditsys)
                        long, code, int, cmd, vki_au_stat_t *, stats);
          PRE_MEM_READ("auditsys(stats)", ARG3, sizeof(vki_au_stat_t));
          break;
+#endif /* SOLARIS_AUDITON_STAT */
       case VKI_A_SETUMASK:
          PRE_REG_READ3(long, SC3("auditsys", "auditctl", "setumask"),
                        long, code, int, cmd, vki_auditinfo_t *, umask);
@@ -7853,10 +7855,12 @@ POST(sys_auditsys)
          case VKI_A_GETCAR:
             POST_MEM_WRITE(ARG3, VG_(strlen)((HChar *) ARG3) + 1);
             break;
+#if defined(SOLARIS_AUDITON_STAT)
          case VKI_A_GETSTAT:
             POST_MEM_WRITE(ARG3, sizeof(vki_au_stat_t));
             break;
          case VKI_A_SETSTAT:
+#endif /* SOLARIS_AUDITON_STAT */
          case VKI_A_SETUMASK:
          case VKI_A_SETSMASK:
             break;

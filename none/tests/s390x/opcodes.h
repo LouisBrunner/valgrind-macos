@@ -324,6 +324,7 @@
 #define OY(r1,x2,b2,dl2,dh2)            RXY_RRRD(e3,r1,x2,b2,dl2,dh2,56)
 #define PFD(r1,x2,b2,dl2,dh2)           RXY_URRD(e3,r1,x2,b2,dl2,dh2,36)
 #define PFDRL(r1,i2)                    RIL_UP(c6,r1,2,i2)
+#define POPCNT(r1,r2)                   RRE_RR(b9e1,00,r1,r2)
 #define RISBG(r1,r2,i3,i4,i5)           RIE_RRUUU(ec,r1,r2,i3,i4,i5,55)
 #define RNSBG(r1,r2,i3,i4,i5)           RIE_RRUUU(ec,r1,r2,i3,i4,i5,54)
 #define ROSBG(r1,r2,i3,i4,i5)           RIE_RRUUU(ec,r1,r2,i3,i4,i5,56)

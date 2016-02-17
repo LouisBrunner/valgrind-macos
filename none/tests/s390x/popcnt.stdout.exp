@@ -1,0 +1,5 @@
+popcnt                0 ->                0      cc=0    
+popcnt                1 ->                1      cc=1    
+popcnt 8000000000000000 ->  100000000000000      cc=1    
+popcnt ffffffffffffffff ->  808080808080808      cc=1    
+popcnt ff427e3800556bcd ->  802060300040505      cc=1    

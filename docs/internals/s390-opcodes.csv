@@ -903,7 +903,7 @@ srk,"subtract 3 operands 32 bit",implemented,
 sgrk,"subtract 3 operands 64 bit",implemented,
 slrk,"subtract logical 3 operands 32 bit",implemented,
 slgrk,"subtract logical 3 operands 64 bit",implemented,
-popcnt,"population count","not implemented",
+popcnt,"population count","implemented",
 rrbm,"reset reference bits multiple",N/A,"privileged instruction"
 cefbra,"convert from 32 bit fixed to short bfp with rounding mode",implemented,
 cdfbra,"convert from 32 bit fixed to long bfp with rounding mode",implemented,

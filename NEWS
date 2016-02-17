@@ -71,6 +71,7 @@ where XXXXXX is the bug number as listed below.
 357887  Fix a file handle leak. VG_(fclose) did not close the file
 358030  support direct socket calls on x86 32bit (new in linux 4.3)
 359133  Assertion 'eltSzB <= ddpa->poolSzB' failed
+359289  s390x: popcnt (B9E1) not implemented
 
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 32 bits
 n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap

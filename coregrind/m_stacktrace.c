@@ -607,9 +607,12 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
     * next function which is completely wrong.
     */
    while (True) {
+      Addr old_xsp;
 
       if (i >= max_n_ips)
          break;
+
+      old_xsp = uregs.xsp;
 
       /* Try to derive a new (ip,sp,fp) triple from the current set. */
 
@@ -617,6 +620,12 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          be used. */
       if ( VG_(use_CF_info)( &uregs, fp_min, fp_max ) ) {
          if (0 == uregs.xip || 1 == uregs.xip) break;
+         if (old_xsp >= uregs.xsp) {
+            if (debug)
+               VG_(printf) ("     CF end of stack old_xsp %p >= xsp %p\n",
+                            (void*)old_xsp, (void*)uregs.xsp);
+            break;
+         }
          if (sps) sps[i] = uregs.xsp;
          if (fps) fps[i] = uregs.xbp;
          ips[i++] = uregs.xip - 1; /* -1: refer to calling insn, not the RA */
@@ -646,6 +655,12 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          if (0 == uregs.xip || 1 == uregs.xip) break;
          uregs.xsp = uregs.xbp + sizeof(Addr) /*saved %rbp*/ 
                                + sizeof(Addr) /*ra*/;
+         if (old_xsp >= uregs.xsp) {
+            if (debug)
+               VG_(printf) ("     FF end of stack old_xsp %p >= xsp %p\n",
+                            (void*)old_xsp, (void*)uregs.xsp);
+            break;
+         }
          uregs.xbp = (((UWord*)uregs.xbp)[0]);
          if (sps) sps[i] = uregs.xsp;
          if (fps) fps[i] = uregs.xbp;

@@ -1163,7 +1163,8 @@ PRE(sys_futex)
          PRE_REG_READ4(long, "futex",
                        vki_u32 *, futex, int, op, int, val,
                        struct timespec *, utime);
-         PRA6("futex",int,val3);
+         if (VG_(tdict).track_pre_reg_read)
+            PRA6("futex",int,val3);
       }
       break;
    case VKI_FUTEX_WAKE_BITSET:

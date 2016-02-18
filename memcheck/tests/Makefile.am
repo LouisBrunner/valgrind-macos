@@ -107,6 +107,7 @@ EXTRA_DIST = \
 	custom-overlap.stderr.exp custom-overlap.vgtest \
 	deep-backtrace.vgtest deep-backtrace.stderr.exp \
 	demangle.stderr.exp demangle.vgtest \
+	big_debuginfo_symbol.stderr.exp big_debuginfo_symbol.vgtest \
 	describe-block.stderr.exp describe-block.vgtest \
 	descr_belowsp.vgtest descr_belowsp.stderr.exp \
 	doublefree.stderr.exp doublefree.vgtest \
@@ -326,6 +327,7 @@ check_PROGRAMS = \
 	custom_alloc \
 	custom-overlap \
 	demangle \
+	big_debuginfo_symbol \
 	deep-backtrace \
 	describe-block \
 	doublefree error_counts errs1 exitprog execve1 execve2 erringfds \
@@ -425,6 +427,9 @@ endif
 leak_cpp_interior_SOURCES	= leak_cpp_interior.cpp
 
 demangle_SOURCES = demangle.cpp
+
+big_debuginfo_symbol_SOURCES = big_debuginfo_symbol.cpp
+big_debuginfo_symbol__CXXFLAGS = $(AM_CXXFLAGS) -std=c++11
 
 bug340392_CFLAGS        = $(AM_CFLAGS) -O3
 dw4_CFLAGS		= $(AM_CFLAGS) -gdwarf-4 -fdebug-types-section

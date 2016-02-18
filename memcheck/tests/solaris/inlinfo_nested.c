@@ -3,7 +3,7 @@
  */
 
 #include "../../memcheck.h"
-#define INLINE    inline __attribute__((always_inline))
+#define INLINE static inline __attribute__((always_inline))
 
 INLINE int fun_d(int argd) {
    static int locd = 0;

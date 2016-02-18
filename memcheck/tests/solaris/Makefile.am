@@ -169,7 +169,7 @@ inlinfo_DEPENDENCIES = inlinfo_nested.so
 inlinfo_LDFLAGS = -Wl,-rpath,$(top_builddir)/memcheck/tests/solaris
 inlinfo_LDADD = inlinfo_nested.so
 inlinfo_nested_so_SOURCES = inlinfo_nested.c
-inlinfo_nested_so_CFLAGS = $(AM_CFLAGS) -fPIC
+inlinfo_nested_so_CFLAGS = $(AM_CFLAGS) -fPIC @FLAG_W_NO_UNINITIALIZED@
 inlinfo_nested_so_LDFLAGS = -Wl,-rpath,$(top_builddir)/memcheck/tests/solaris -shared -fPIC
 
 mmapobj_bssonly_SOURCES = mmapobj_bssonly.c

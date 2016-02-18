@@ -429,7 +429,7 @@ leak_cpp_interior_SOURCES	= leak_cpp_interior.cpp
 demangle_SOURCES = demangle.cpp
 
 big_debuginfo_symbol_SOURCES = big_debuginfo_symbol.cpp
-big_debuginfo_symbol__CXXFLAGS = $(AM_CXXFLAGS) -std=c++11
+big_debuginfo_symbol_CXXFLAGS = $(AM_CXXFLAGS) -std=c++11
 
 bug340392_CFLAGS        = $(AM_CFLAGS) -O3
 dw4_CFLAGS		= $(AM_CFLAGS) -gdwarf-4 -fdebug-types-section

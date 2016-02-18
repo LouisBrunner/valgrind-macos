@@ -73,6 +73,7 @@ where XXXXXX is the bug number as listed below.
 359133  Assertion 'eltSzB <= ddpa->poolSzB' failed
 359201  futex syscall "skips" argument 5 if op is FUTEX_WAIT_BITSET
 359289  s390x: popcnt (B9E1) not implemented
+359472  The Power PC vsubuqm instruction doesn't always give the correct result
 
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64
 n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap

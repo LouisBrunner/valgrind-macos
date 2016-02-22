@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 
 const float fs_f[] = {
@@ -7,6 +8,17 @@ const float fs_f[] = {
    -45786.476, 456.2489562, 34.00046, 45786.476,
    1752065, 107, -45667.24, -7.2945676,
    -347856.475, 356047.56, -1.0, 23.04
+};
+
+unsigned long long data[] = {
+   0x1234567887654321ull, 0x66785bd668466667ull,
+   0xBFF550ff07788000ull, 0x0004789236500000ull,
+   0x3FF0001256789600ull, 0x0012365478000000ull,
+   0x252a2e2b252a2e2bull, 0x26852147962d2d2aull,
+   0x1234567887654321ull, 0x66785bd668466667ull,
+   0x789651ff07788055ull, 0x00ff23f4f1f5f6f8ull,
+   0x3FF0001256789600ull, 0xaabbcdfeefcd1256ull,
+   0xa1b2b2a1a3a5a6aaull, 0x2569874123654786ull
 };
 
 unsigned int mem[] = {
@@ -22,259 +34,236 @@ unsigned int mem[] = {
 };
 
 // mfc1 rt, fs
-#define TESTINSNMOVE(instruction, offset, FS, RT) \
-{ \
-    float out; \
-    int out1; \
-   __asm__ volatile( \
-     "move $t0, %2\n\t" \
-     "lwc1 $" #FS ", "#offset"($t0)\n\t" \
-     instruction "\n\t" \
-     "mov.s %0, $" #FS"\n\t" \
-     "move %1, $" #RT "\n\t" \
-     : "=&f" (out), "=&r" (out1) \
-	 : "r" (mem) \
-	 : #RT, "cc", "memory" \
-	 ); \
-   printf("%s :: fs %f, rt 0x%x\n", \
-          instruction, out, out1); \
+#define TESTINSNMOVE(instruction, offset, FS, RT)          \
+{                                                          \
+   float out;                                              \
+   int out1;                                               \
+   __asm__ volatile(                                       \
+      ".set push \n\t"                                     \
+      ".set oddspreg \n\t"                                 \
+      "move $t0, %2\n\t"                                   \
+      "lwc1 $" #FS ", "#offset"($t0)\n\t"                  \
+      instruction "\n\t"                                   \
+      "mov.s %0, $" #FS"\n\t"                              \
+      "move %1, $" #RT "\n\t"                              \
+      ".set pop \n\t"                                      \
+      : "=&f" (out), "=&r" (out1)                          \
+      : "r" (mem)                                          \
+      : #RT, "memory"                                      \
+   );                                                      \
+   printf("%s :: fs %f, rt 0x%x\n",                        \
+          instruction, out, out1);                         \
 }
 
 // mfhc1 rt, fs
-#define TESTINSNMOVEd(instruction, offset, FS, RT) \
-{ \
-    double out; \
-    int out1; \
-   __asm__ volatile( \
-     "move $t0, %2\n\t" \
-     "ldc1 $" #FS ", "#offset"($t0)\n\t" \
-     instruction "\n\t" \
-     "mov.d %0, $" #FS"\n\t" \
-     "move %1, $" #RT "\n\t" \
-     : "=&f" (out), "=&r" (out1) \
-	 : "r" (mem) \
-	 : #RT, "cc", "memory" \
-	 ); \
-   printf("%s :: fs %lf, rt 0x%x\n", \
-          instruction, out, out1); \
+#define TESTINSNMOVEd(instruction, offset, FS, RT)         \
+{                                                          \
+   unsigned int out;                                       \
+   __asm__ volatile(                                       \
+      "move $t0, %1\n\t"                                   \
+      "ldc1 $" #FS ", "#offset"($t0)\n\t"                  \
+      instruction "\n\t"                                   \
+      "move %0, $" #RT "\n\t"                              \
+      :"=&r" (out)                                         \
+      : "r" (data)                                         \
+      : #RT, "memory"                                      \
+   );                                                      \
+   printf("%s :: rt 0x%x\n",                               \
+          instruction, out);                               \
 }
 
 // mtc1 rt, fs
-#define TESTINSNMOVEt(instruction, offset, FS, RT) \
-{ \
-    float out; \
-    int out1; \
-   __asm__ volatile( \
-     "move $t0, %2\n\t" \
-     "lw $" #RT ", "#offset"($t0)\n\t" \
-     instruction "\n\t" \
-     "mov.s %0, $" #FS"\n\t" \
-     "move %1, $" #RT "\n\t" \
-     : "=&f" (out), "=&r" (out1) \
-	 : "r" (mem) \
-	 : #RT, "cc", "memory" \
-	 ); \
-   printf("%s :: fs %f, rt 0x%x\n", \
-          instruction, out, out1); \
+#define TESTINSNMOVEt(instruction, offset, FS, RT)         \
+{                                                          \
+   float out;                                              \
+   int out1;                                               \
+   __asm__ volatile(                                       \
+      ".set push \n\t"                                     \
+      ".set oddspreg \n\t"                                 \
+      "move $t0, %2\n\t"                                   \
+      "lw $" #RT ", "#offset"($t0)\n\t"                    \
+      instruction "\n\t"                                   \
+      "mov.s %0, $" #FS"\n\t"                              \
+      "move %1, $" #RT "\n\t"                              \
+      ".set pop \n\t"                                      \
+      : "=&f" (out), "=&r" (out1)                          \
+      : "r" (mem)                                          \
+      : #RT, "memory"                                      \
+   );                                                      \
+   printf("%s :: fs %f, rt 0x%x\n",                        \
+          instruction, out, out1);                         \
 }
 
 // mthc1 rt, fs
-#define TESTINSNMOVEtd(instruction, offset, FS, RT) \
-{ \
-    double out; \
-    int out1; \
-   __asm__ volatile( \
-     "move $t0, %2\n\t" \
-     "lw $" #RT ", "#offset"($t0)\n\t" \
-     instruction "\n\t" \
-     "mov.d %0, $" #FS"\n\t" \
-     "move %1, $" #RT "\n\t" \
-     : "=&f" (out), "=&r" (out1) \
-	 : "r" (mem) \
-	 : #RT, "cc", "memory" \
-	 ); \
-   printf("%s :: fs %lf, rt 0x%x\n", \
-          instruction, out, out1); \
+#define TESTINSNMOVEtd(instruction, offset, offset2, FS, RT)    \
+{                                                               \
+   unsigned long long out = 0;                                  \
+   __asm__ volatile (                                           \
+      "move $t0, %2 \n\t"                                       \
+      "move $t1, %1 \n\t"                                       \
+      "ldc1 $"#FS"," #offset2"($t0)" "\n\t"                     \
+      "lw $"#RT"," #offset"($t1) \n\t"                          \
+      instruction "\n\t"                                        \
+      "move $"#RT", %0 \n\t"                                    \
+      "sdc1 $"#FS ", 0($"#RT")" "\n\t"                          \
+      : :"r" (&out),  "r" (mem), "r" (data)                     \
+      : #RT, "memory"                                           \
+   );                                                           \
+   printf("%s :: out: %llx\n", instruction, out);               \
 }
 
 // mov.s fd, fs
-#define TESTINSNMOVE1s(instruction, offset, FD, FS) \
-{ \
-    float out; \
-    int out1; \
-   __asm__ volatile( \
-     "move $t0, %2\n\t" \
-     "lwc1 $" #FS ", "#offset"($t0)\n\t" \
-     instruction "\n\t" \
-     "mov.s %0, $" #FD"\n\t" \
-     "mfc1 %1, $" #FD"\n\t" \
-     : "=&f" (out), "=&r" (out1) \
-	 : "r" (fs_f) \
-	 : "cc", "memory" \
-	 ); \
-   printf("%s :: fs %f, rt 0x%x\n", \
-          instruction, out, out1); \
+#define TESTINSNMOVE1s(instruction, offset, FD, FS)             \
+{                                                               \
+   float out;                                                   \
+   int out1;                                                    \
+   __asm__ volatile(                                            \
+      ".set push \n\t"                                          \
+      ".set oddspreg \n\t"                                      \
+      "move $t0, %2\n\t"                                        \
+      "lwc1 $" #FS ", "#offset"($t0)\n\t"                       \
+      instruction "\n\t"                                        \
+      "mov.s %0, $" #FD"\n\t"                                   \
+      "mfc1 %1, $" #FD"\n\t"                                    \
+      ".set pop \n\t"                                           \
+      : "=&f" (out), "=&r" (out1)                               \
+      : "r" (fs_f)                                              \
+      : "memory"                                                \
+   );                                                           \
+   printf("%s :: fs %f, rt 0x%x\n",                             \
+          instruction, out, out1);                              \
 }
 
 // mov.d fd, fs
-#define TESTINSNMOVE1d(instruction, offset, FD, FS) \
-{ \
-    double out; \
-    int out1; \
-   __asm__ volatile( \
-     "move $t0, %2\n\t" \
-     "ldc1 $" #FS ", "#offset"($t0)\n\t" \
-     instruction "\n\t" \
-     "mov.d %0, $" #FD"\n\t" \
-     "mfc1 %1, $" #FD"\n\t" \
-     : "=&f" (out), "=&r" (out1) \
-	 : "r" (fs_f) \
-	 : "cc", "memory" \
-	 ); \
-   printf("%s ::fs %f, rt 0x%x\n", \
-          instruction, out, out1); \
+#define TESTINSNMOVE1d(instruction, offset, FD, FS)             \
+{                                                               \
+   double out;                                                  \
+   int out1;                                                    \
+   __asm__ volatile(                                            \
+      "move $t0, %2\n\t"                                        \
+      "ldc1 $" #FS ", "#offset"($t0)\n\t"                       \
+      instruction "\n\t"                                        \
+      "mov.d %0, $" #FD"\n\t"                                   \
+      "mfc1 %1, $" #FD"\n\t"                                    \
+      : "=&f" (out), "=&r" (out1)                               \
+      : "r" (fs_f)                                              \
+      : "memory"                                                \
+   );                                                           \
+   printf("%s ::fs %f, rt 0x%x\n",                              \
+          instruction, out, out1);                              \
 }
 
 // movf rd, rs
-#define TESTINSNMOVE2(instruction, RDval, RSval, RD, RS, cc) \
-{ \
-    int out; \
-   __asm__ volatile( \
-     "li $t0, 1\n\t" \
-     "move $t1, %3\n\t" \
-     "mtc1 $t0, $f0\n\t" \
-     "mtc1 $t1, $f2\n\t" \
-     "c.eq.s $f0, $f2\n\t" \
-     "move $" #RS ", %1\n\t" \
-     "move $" #RD ", %2\n\t" \
-     instruction "\n\t" \
-     "move %0, $" #RD "\n\t" \
-     : "=&r" (out) \
-	 : "r" (RSval), "r" (RDval), "r" (cc) \
-	 : "t0", "t1", #RD, #RS, "cc", "memory" \
-	 ); \
-   printf("%s :: out: 0x%x, RDval: 0x%x, RSval: 0x%x, cc: %d\n", \
-          instruction, out, RDval, RSval, cc); \
+#define TESTINSNMOVE2(instruction, RDval, RSval, RD, RS, cc)    \
+{                                                               \
+   int out;                                                     \
+   __asm__ volatile(                                            \
+      "li $t0, 1\n\t"                                           \
+      "move $t1, %3\n\t"                                        \
+      "mtc1 $t0, $f0\n\t"                                       \
+      "mtc1 $t1, $f2\n\t"                                       \
+      "c.eq.s $f0, $f2\n\t"                                     \
+      "move $" #RS ", %1\n\t"                                   \
+      "move $" #RD ", %2\n\t"                                   \
+      instruction "\n\t"                                        \
+      "move %0, $" #RD "\n\t"                                   \
+      : "=&r" (out)                                             \
+      : "r" (RSval), "r" (RDval), "r" (cc)                      \
+      : "t0", "t1", #RD, #RS, "memory"                          \
+   );                                                           \
+   printf("%s :: out: 0x%x, RDval: 0x%x, RSval: 0x%x, cc: %d\n",\
+          instruction, out, RDval, RSval, cc);                  \
 }
 
 // movf.s fd, fs
-#define TESTINSNMOVE2s(instruction, FD, FS, cc, offset) \
-{ \
-   float out; \
-   __asm__ volatile( \
-     "li $t0, 1\n\t" \
-     "move $t1, %1\n\t" \
-     "mtc1 $t0, $f0\n\t" \
-     "mtc1 $t1, $f2\n\t" \
-     "c.eq.s $f0, $f2\n\t" \
-     "move $t0, %2\n\t" \
-     "lwc1 $" #FD ", 4($t0)\n\t" \
-     "lwc1 $" #FS ", "#offset"($t0)\n\t" \
-     instruction "\n\t" \
-     "mov.s %0, $" #FD"\n\t" \
-     : "=&f" (out) \
-	 : "r" (cc), "r" (fs_f) \
-	 : "t0", "t1", "cc", "memory" \
-	 ); \
-   printf("%s :: out: %f, cc: %d\n", \
-          instruction, out, cc); \
+#define TESTINSNMOVE2s(instruction, FD, FS, cc, offset)         \
+{                                                               \
+   float out;                                                   \
+   __asm__ volatile(                                            \
+      "li $t0, 1\n\t"                                           \
+      "move $t1, %1\n\t"                                        \
+      "mtc1 $t0, $f0\n\t"                                       \
+      "mtc1 $t1, $f2\n\t"                                       \
+      "c.eq.s $f0, $f2\n\t"                                     \
+      "move $t0, %2\n\t"                                        \
+      "lwc1 $" #FD ", 4($t0)\n\t"                               \
+      "lwc1 $" #FS ", "#offset"($t0)\n\t"                       \
+      instruction "\n\t"                                        \
+      "mov.s %0, $" #FD"\n\t"                                   \
+      : "=&f" (out)                                             \
+      : "r" (cc), "r" (fs_f)                                    \
+      : "t0", "t1", "memory"                                    \
+   );                                                           \
+   printf("%s :: out: %f, cc: %d\n",                            \
+          instruction, out, cc);                                \
 }
 
 // movf.d fd, fs
-#if (__mips_fpr==64)
-#define TESTINSNMOVE2d(instruction, FD, FS, cc, offset) \
-{ \
-   double out; \
-   int out1; \
-   int out2; \
-   __asm__ volatile( \
-     "li $t0, 1\n\t" \
-     "mtc1 $t0, $f0\n\t" \
-     "mtc1 %3,  $f2\n\t" \
-     "move $t0, %4\n\t" \
-     "ldc1 $f4, 8($t0)\n\t" \
-     "c.eq.s $f0, $f2\n\t" \
-     "ldc1 $" #FS ", "#offset"($t0)\n\t" \
-     instruction "\n\t" \
-     "mov.d %0, $" #FD"\n\t" \
-     "mfc1 %1, $f4\n\t" \
-     "mfhc1 %2, $f4\n\t" \
-     : "=&f" (out), "=&r" (out1), "=&r" (out2) \
-	 : "r" (cc), "r" (mem) \
-	 : "t0", "t1", "cc", "memory" \
-	 ); \
-   printf("%s :: out: 0x%x 0x%x, cc: %d\n", \
-          instruction, out1, out2, cc); \
+#define TESTINSNMOVE2d(instruction, FD, FS, cc, offset)             \
+{                                                                   \
+   double out;                                                      \
+   uint64_t outl;                                                   \
+   __asm__ volatile(                                                \
+      "li $t0, 1 \n\t"                                              \
+      "move $t1, %1 \n\t"                                           \
+      "mtc1 $t0, $f0 \n\t"                                          \
+      "mtc1 $t1, $f2 \n\t"                                          \
+      "move $t0, %2 \n\t"                                           \
+      "ldc1 $f4, 8($t0) \n\t"                                       \
+      "c.eq.s $f0, $f2\n\t"                                         \
+      "ldc1 $" #FS ", "#offset"($t0)\n\t"                           \
+      instruction "\n\t"                                            \
+      "mov.d %0, $" #FD"\n\t"                                       \
+      "sdc1 $f4, 0(%3)"                                             \
+      : "=f" (out)                                                  \
+      :"r" (cc), "r" (mem), "r" (&outl)                             \
+      : "t0", "t1", "memory"                                        \
+   );                                                               \
+   printf("%s :: out: 0x%x 0x%x, cc: %d\n",                         \
+          instruction, (uint32_t)outl, (uint32_t)(outl >> 32), cc); \
 }
-#else
-#define TESTINSNMOVE2d(instruction, FD, FS, cc, offset) \
-{ \
-   double out; \
-   int out1; \
-   int out2; \
-   __asm__ volatile( \
-     "li $t0, 1\n\t" \
-     "move $t1, %3\n\t" \
-     "mtc1 $t0, $f0\n\t" \
-     "mtc1 $t1, $f2\n\t" \
-     "move $t0, %4\n\t" \
-     "ldc1 $f4, 8($t0)\n\t" \
-     "c.eq.s $f0, $f2\n\t" \
-     "ldc1 $" #FS ", "#offset"($t0)\n\t" \
-     instruction "\n\t" \
-     "mov.d %0, $" #FD"\n\t" \
-     "mfc1 %1, $f4\n\t" \
-     "mfc1 %2, $f5\n\t" \
-     : "=&f" (out), "=&r" (out1), "=&r" (out2) \
-	 : "r" (cc), "r" (mem) \
-	 : "t0", "t1", "cc", "memory" \
-	 ); \
-   printf("%s :: out: 0x%x 0x%x, cc: %d\n", \
-          instruction, out1, out2, cc); \
-}
-#endif
 
 // movn.s fd, fs, rt
-#define TESTINSNMOVEN1s(instruction, offset, RTval, FD, FS, RT) \
-{ \
-    float out; \
-    int out1; \
-   __asm__ volatile( \
-     "move $" #RT ", %3\n\t" \
-     "move $t0, %2\n\t" \
-     "lwc1 $" #FS ", "#offset"($t0)\n\t" \
-     "mtc1 $0, $" #FD "\n\t" \
-     instruction "\n\t" \
-     "mov.s %0, $" #FD"\n\t" \
-     "mfc1 %1, $" #FD"\n\t" \
-     : "=&f" (out), "=&r" (out1) \
-	 : "r" (fs_f), "r" (RTval) \
-	 : #RT, "cc", "memory" \
-	 ); \
-   printf("%s :: fs rt 0x%x\n", \
-          instruction, out1); \
+#define TESTINSNMOVEN1s(instruction, offset, RTval, FD, FS, RT)     \
+{                                                                   \
+   float out;                                                       \
+   int out1;                                                        \
+   __asm__ volatile(                                                \
+      "move $" #RT ", %3\n\t"                                       \
+      "move $t0, %2\n\t"                                            \
+      "lwc1 $" #FS ", "#offset"($t0)\n\t"                           \
+      "mtc1 $0, $" #FD "\n\t"                                       \
+      instruction "\n\t"                                            \
+      "mov.s %0, $" #FD"\n\t"                                       \
+      "mfc1 %1, $" #FD"\n\t"                                        \
+      : "=&f" (out), "=&r" (out1)                                   \
+      : "r" (fs_f), "r" (RTval)                                     \
+      : #RT, "memory"                                               \
+   );                                                               \
+   printf("%s :: fs rt 0x%x\n",                                     \
+          instruction, out1);                                       \
 }
 
 // movn.d fd, fs, rt
-#define TESTINSNMOVEN1d(instruction, offset, RTval, FD, FS, RT) \
-{ \
-    double out; \
-    int out1; \
-   __asm__ volatile( \
-     "move $" #RT ", %3\n\t" \
-     "move $t0, %2\n\t" \
-     "ldc1 $" #FS ", "#offset"($t0)\n\t" \
-     "mtc1 $0, $" #FD "\n\t" \
-     "mtc1 $0, $" #FD + 1"\n\t" \
-     instruction "\n\t" \
-     "mov.d %0, $" #FD"\n\t" \
-     "mfc1 %1, $" #FD"\n\t" \
-     : "=&f" (out), "=&r" (out1) \
-	 : "r" (fs_f), "r" (RTval) \
-	 : #RT, "cc", "memory" \
-	 ); \
-   printf("%s :: fs %lf, rt 0x%x\n", \
-          instruction, out, out1); \
+#define TESTINSNMOVEN1d(instruction, offset, RTval, FD, FS, RT)     \
+{                                                                   \
+   double out;                                                      \
+   int out1;                                                        \
+   __asm__ volatile(                                                \
+      "move $" #RT ", %3\n\t"                                       \
+      "move $t0, %2\n\t"                                            \
+      "ldc1 $" #FS ", "#offset"($t0)\n\t"                           \
+      "mtc1 $0, $" #FD "\n\t"                                       \
+      "mtc1 $0, $" #FD + 1"\n\t"                                    \
+      instruction "\n\t"                                            \
+      "mov.d %0, $" #FD"\n\t"                                       \
+      "mfc1 %1, $" #FD"\n\t"                                        \
+      : "=&f" (out), "=&r" (out1)                                   \
+      : "r" (fs_f), "r" (RTval)                                     \
+      : #RT, "memory"                                               \
+   );                                                               \
+   printf("%s :: fs %lf, rt 0x%x\n",                                \
+          instruction, out, out1);                                  \
 }
 
 int main()
@@ -336,6 +325,44 @@ int main()
    TESTINSNMOVEt("mtc1 $t9, $f24", 30, f24, t9);
    TESTINSNMOVEt("mtc1 $t1, $f25", 34, f25, t1);
    TESTINSNMOVEt("mtc1 $t2, $f26", 38, f26, t2);
+
+#if defined(__mips__) && ((defined(__mips_isa_rev) && __mips_isa_rev >= 2))
+   printf("MFHC1\n");
+   TESTINSNMOVEd("mfhc1 $t1, $f0",    0,  f0, t1);
+   TESTINSNMOVEd("mfhc1 $t2, $f2",    8,  f2, t2);
+   TESTINSNMOVEd("mfhc1 $t3, $f4",   16,  f4, t3);
+   TESTINSNMOVEd("mfhc1 $v0, $f6",   24,  f6, v0);
+   TESTINSNMOVEd("mfhc1 $v1, $f8",   32,  f8, v1);
+   TESTINSNMOVEd("mfhc1 $a0, $f10",  40, f10, a0);
+   TESTINSNMOVEd("mfhc1 $a1, $f12",  48, f12, a1);
+   TESTINSNMOVEd("mfhc1 $a2, $f14",  56, f14, a2);
+   TESTINSNMOVEd("mfhc1 $a3, $f16",  64, f16, a3);
+   TESTINSNMOVEd("mfhc1 $s0, $f18",  72, f18, s0);
+   TESTINSNMOVEd("mfhc1 $s1, $f20",  80, f20, s1);
+   TESTINSNMOVEd("mfhc1 $s2, $f22",  88, f22, s2);
+   TESTINSNMOVEd("mfhc1 $s3, $f24",  96, f24, s3);
+   TESTINSNMOVEd("mfhc1 $s4, $f26", 104, f26, s4);
+   TESTINSNMOVEd("mfhc1 $s5, $f28", 112, f28, s5);
+   TESTINSNMOVEd("mfhc1 $s6, $f30", 120, f30, s6);
+
+   printf("MTHC1\n");
+   TESTINSNMOVEtd("mthc1 $t2, $f0",   0,   0,  f0, t2);
+   TESTINSNMOVEtd("mthc1 $t3, $f2",   4,   8,  f2, t3);
+   TESTINSNMOVEtd("mthc1 $v0, $f4",   8,  16,  f4, v0);
+   TESTINSNMOVEtd("mthc1 $v1, $f6",  12,  24,  f6, v1);
+   TESTINSNMOVEtd("mthc1 $a0, $f8",  16,  32,  f8, a0);
+   TESTINSNMOVEtd("mthc1 $a1, $f10", 20,  40, f10, a1);
+   TESTINSNMOVEtd("mthc1 $a2, $f12", 24,  48, f12, a1);
+   TESTINSNMOVEtd("mthc1 $a3, $f14", 28,  56, f14, a3);
+   TESTINSNMOVEtd("mthc1 $s0, $f16", 32,  64, f16, s0);
+   TESTINSNMOVEtd("mthc1 $s1, $f18", 36,  72, f18, s1);
+   TESTINSNMOVEtd("mthc1 $s2, $f20", 40,  80, f20, s2);
+   TESTINSNMOVEtd("mthc1 $s3, $f22", 44,  88, f22, s3);
+   TESTINSNMOVEtd("mthc1 $s4, $f24", 48,  96, f24, s4);
+   TESTINSNMOVEtd("mthc1 $s5, $f26", 52, 104, f26, s5);
+   TESTINSNMOVEtd("mthc1 $s6, $f28", 56, 112, f28, s6);
+   TESTINSNMOVEtd("mthc1 $s7, $f30", 60, 120, f30, s7);
+#endif
 
    printf("MOV.S\n");
    TESTINSNMOVE1s("mov.s $f0, $f0",  0, f0, f0);
@@ -631,5 +658,6 @@ int main()
    TESTINSNMOVEN1s("movz.d $f0, $f2, $t3", 52, 0xffffffff, f0, f2, t3);
    TESTINSNMOVEN1s("movz.d $f0, $f2, $t3", 56, 0x80000000, f0, f2, t3);
    TESTINSNMOVEN1s("movz.d $f0, $f2, $t3", 60, 0x7fffffff, f0, f2, t3);
+
    return 0;
 }

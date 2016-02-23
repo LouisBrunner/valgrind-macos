@@ -270,13 +270,13 @@ void VG_(change_stack)(UWord id, Addr start, Addr end)
 void VG_(stack_limits)(Addr SP, Addr *start, Addr *end )
 {
    Stack* stack = find_stack_by_addr(SP);
-   NSegment const *stackseg = VG_(am_find_nsegment) (SP);
 
    if (LIKELY(stack)) {
       *start = stack->start;
       *end = stack->end;
    }
 
+   NSegment const *stackseg = VG_(am_find_nsegment) (SP);
    /* SP is assumed to be in a RW segment or in the SkResvn segment of an
       extensible stack (normally, only the main thread has an extensible
       stack segment).

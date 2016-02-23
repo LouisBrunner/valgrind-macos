@@ -1051,7 +1051,25 @@ static SyscallTableEntry syscall_table[] = {
 // ?????(__NR_seccomp, ),                                             // 348
    LINXY(__NR_getrandom, sys_getrandom),                              // 349
 
-   LINXY(__NR_memfd_create, sys_memfd_create)                         // 350
+   LINXY(__NR_memfd_create, sys_memfd_create),                        // 350
+
+   LINXY(__NR_recvmmsg, sys_recvmmsg),                                // 357
+   LINXY(__NR_sendmmsg, sys_sendmmsg),                                // 358
+   LINXY(__NR_socket, sys_socket),                                    // 359
+   LINXY(__NR_socketpair, sys_socketpair),                            // 360
+   LINX_(__NR_bind, sys_bind),                                        // 361
+   LINX_(__NR_connect, sys_connect),                                  // 362
+   LINX_(__NR_listen, sys_listen),                                    // 363
+   LINXY(__NR_accept4, sys_accept4),                                  // 364
+   LINXY(__NR_getsockopt, sys_getsockopt),                            // 365
+   LINX_(__NR_setsockopt, sys_setsockopt),                            // 366
+   LINXY(__NR_getsockname, sys_getsockname),                          // 367
+   LINXY(__NR_getpeername, sys_getpeername),                          // 368
+   LINX_(__NR_sendto, sys_sendto),                                    // 369
+   LINX_(__NR_sendmsg, sys_sendmsg),                                  // 270
+   LINXY(__NR_recvfrom, sys_recvfrom),                                // 371
+   LINXY(__NR_recvmsg, sys_recvmsg),                                  // 372
+   LINX_(__NR_shutdown, sys_shutdown)                                 // 373
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

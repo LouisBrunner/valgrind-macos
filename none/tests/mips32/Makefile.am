@@ -16,7 +16,9 @@ EXTRA_DIST = \
 	MIPS32int.stdout.exp-mips32-BE MIPS32int.stdout.exp-mips32r2-BE \
 	MIPS32int.stdout.exp-mips32-LE MIPS32int.stdout.exp-mips32r2-LE \
 	MIPS32int.stderr.exp MIPS32int.vgtest \
-	MoveIns.stdout.exp MoveIns.stdout.exp-BE MoveIns.stderr.exp MoveIns.vgtest \
+	MoveIns.stdout.exp MoveIns.stdout.exp-BE \
+	MoveIns.stdout.exp-mips32r2-BE MoveIns.stdout.exp-mips32r2-LE \
+	MoveIns.stderr.exp MoveIns.vgtest \
 	round.stdout.exp round.stderr.exp round.vgtest \
 	vfp.stdout.exp-mips32-BE vfp.stdout.exp-mips32r2-BE \
 	vfp.stdout.exp-mips32-LE vfp.stdout.exp-mips32r2-LE vfp.stderr.exp \

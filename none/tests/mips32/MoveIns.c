@@ -47,9 +47,9 @@ unsigned int mem[] = {
       "mov.s %0, $" #FS"\n\t"                              \
       "move %1, $" #RT "\n\t"                              \
       ".set pop \n\t"                                      \
-      : "=&f" (out), "=&r" (out1)                          \
+      : "=f" (out), "=r" (out1)                            \
       : "r" (mem)                                          \
-      : #RT, "memory"                                      \
+      : "t0", "$"#FS, #RT, "memory"                        \
    );                                                      \
    printf("%s :: fs %f, rt 0x%x\n",                        \
           instruction, out, out1);                         \
@@ -64,9 +64,9 @@ unsigned int mem[] = {
       "ldc1 $" #FS ", "#offset"($t0)\n\t"                  \
       instruction "\n\t"                                   \
       "move %0, $" #RT "\n\t"                              \
-      :"=&r" (out)                                         \
+      : "=r" (out)                                         \
       : "r" (data)                                         \
-      : #RT, "memory"                                      \
+      : "t0", "$"#FS, #RT, "memory"                        \
    );                                                      \
    printf("%s :: rt 0x%x\n",                               \
           instruction, out);                               \
@@ -86,9 +86,9 @@ unsigned int mem[] = {
       "mov.s %0, $" #FS"\n\t"                              \
       "move %1, $" #RT "\n\t"                              \
       ".set pop \n\t"                                      \
-      : "=&f" (out), "=&r" (out1)                          \
+      : "=f" (out), "=r" (out1)                            \
       : "r" (mem)                                          \
-      : #RT, "memory"                                      \
+      : "t0", "$"#FS, #RT, "memory"                        \
    );                                                      \
    printf("%s :: fs %f, rt 0x%x\n",                        \
           instruction, out, out1);                         \
@@ -106,8 +106,8 @@ unsigned int mem[] = {
       instruction "\n\t"                                        \
       "move $"#RT", %0 \n\t"                                    \
       "sdc1 $"#FS ", 0($"#RT")" "\n\t"                          \
-      : :"r" (&out),  "r" (mem), "r" (data)                     \
-      : #RT, "memory"                                           \
+      : : "r" (&out),  "r" (mem), "r" (data)                    \
+      : "t0", "t1", "$"#FS, #RT, "memory"                       \
    );                                                           \
    printf("%s :: out: %llx\n", instruction, out);               \
 }
@@ -126,9 +126,9 @@ unsigned int mem[] = {
       "mov.s %0, $" #FD"\n\t"                                   \
       "mfc1 %1, $" #FD"\n\t"                                    \
       ".set pop \n\t"                                           \
-      : "=&f" (out), "=&r" (out1)                               \
+      : "=f" (out), "=r" (out1)                                 \
       : "r" (fs_f)                                              \
-      : "memory"                                                \
+      : "t0", "$"#FS, "$"#FD, "memory"                          \
    );                                                           \
    printf("%s :: fs %f, rt 0x%x\n",                             \
           instruction, out, out1);                              \
@@ -145,9 +145,9 @@ unsigned int mem[] = {
       instruction "\n\t"                                        \
       "mov.d %0, $" #FD"\n\t"                                   \
       "mfc1 %1, $" #FD"\n\t"                                    \
-      : "=&f" (out), "=&r" (out1)                               \
+      : "=f" (out), "=r" (out1)                                 \
       : "r" (fs_f)                                              \
-      : "memory"                                                \
+      : "t0", "$"#FS, "$"#FD, "memory"                          \
    );                                                           \
    printf("%s ::fs %f, rt 0x%x\n",                              \
           instruction, out, out1);                              \
@@ -167,9 +167,9 @@ unsigned int mem[] = {
       "move $" #RD ", %2\n\t"                                   \
       instruction "\n\t"                                        \
       "move %0, $" #RD "\n\t"                                   \
-      : "=&r" (out)                                             \
+      : "=r" (out)                                              \
       : "r" (RSval), "r" (RDval), "r" (cc)                      \
-      : "t0", "t1", #RD, #RS, "memory"                          \
+      : "t0", "t1", #RD, #RS                                    \
    );                                                           \
    printf("%s :: out: 0x%x, RDval: 0x%x, RSval: 0x%x, cc: %d\n",\
           instruction, out, RDval, RSval, cc);                  \
@@ -190,9 +190,9 @@ unsigned int mem[] = {
       "lwc1 $" #FS ", "#offset"($t0)\n\t"                       \
       instruction "\n\t"                                        \
       "mov.s %0, $" #FD"\n\t"                                   \
-      : "=&f" (out)                                             \
+      : "=f" (out)                                              \
       : "r" (cc), "r" (fs_f)                                    \
-      : "t0", "t1", "memory"                                    \
+      : "t0", "t1", "$"#FD, "$"#FS, "memory"                    \
    );                                                           \
    printf("%s :: out: %f, cc: %d\n",                            \
           instruction, out, cc);                                \
@@ -215,9 +215,9 @@ unsigned int mem[] = {
       instruction "\n\t"                                            \
       "mov.d %0, $" #FD"\n\t"                                       \
       "sdc1 $f4, 0(%3)"                                             \
-      : "=f" (out)                                                  \
-      :"r" (cc), "r" (mem), "r" (&outl)                             \
-      : "t0", "t1", "memory"                                        \
+      : "=&f" (out)                                                 \
+      : "r" (cc), "r" (mem), "r" (&outl)                            \
+      : "t0", "t1", "$f0", "$f2", "$f4", "$"#FS, "$"#FD, "memory"   \
    );                                                               \
    printf("%s :: out: 0x%x 0x%x, cc: %d\n",                         \
           instruction, (uint32_t)outl, (uint32_t)(outl >> 32), cc); \
@@ -236,9 +236,9 @@ unsigned int mem[] = {
       instruction "\n\t"                                            \
       "mov.s %0, $" #FD"\n\t"                                       \
       "mfc1 %1, $" #FD"\n\t"                                        \
-      : "=&f" (out), "=&r" (out1)                                   \
+      : "=f" (out), "=r" (out1)                                     \
       : "r" (fs_f), "r" (RTval)                                     \
-      : #RT, "memory"                                               \
+      : "t0", "$"#FS, "$"#FD, #RT, "memory"                         \
    );                                                               \
    printf("%s :: fs rt 0x%x\n",                                     \
           instruction, out1);                                       \
@@ -258,9 +258,9 @@ unsigned int mem[] = {
       instruction "\n\t"                                            \
       "mov.d %0, $" #FD"\n\t"                                       \
       "mfc1 %1, $" #FD"\n\t"                                        \
-      : "=&f" (out), "=&r" (out1)                                   \
+      : "=f" (out), "=r" (out1)                                     \
       : "r" (fs_f), "r" (RTval)                                     \
-      : #RT, "memory"                                               \
+      : "t0", "$"#FS, "$"#FD, #RT, "memory"                         \
    );                                                               \
    printf("%s :: fs %lf, rt 0x%x\n",                                \
           instruction, out, out1);                                  \

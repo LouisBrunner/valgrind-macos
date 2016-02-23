@@ -442,6 +442,7 @@ static Addr setup_client_stack(Addr init_sp,
       AT_SUN_EXECNAME
       AT_PHDR            (not for elfs with no PT_PHDR, such as ld.so.1)
       AT_BASE
+      AT_ENTRY
       AT_FLAGS
       AT_PAGESZ
       AT_SUN_AUXFLAFGS
@@ -450,9 +451,9 @@ static Addr setup_client_stack(Addr init_sp,
       AT_SUN_SYSSTAT_ZONE_ADDR (if supported)
       AT_NULL
 
-      It would be possible to also add AT_PHENT, AT_PHNUM, AT_ENTRY,
-      AT_SUN_LDDATA, but they don't seem to be so important. */
-   auxsize = 9 * sizeof(*auxv);
+      It would be possible to also add AT_PHENT, AT_PHNUM, AT_SUN_LDDATA,
+      but they don't seem to be so important. */
+   auxsize = 10 * sizeof(*auxv);
 #  if defined(SOLARIS_RESERVE_SYSSTAT_ADDR)
    auxsize += sizeof(*auxv);
 #  endif
@@ -629,6 +630,11 @@ static Addr setup_client_stack(Addr init_sp,
    /* AT_BASE */
    auxv->a_type = VKI_AT_BASE;
    auxv->a_un.a_val = info->interp_offset;
+   auxv++;
+
+   /* AT_ENTRY */
+   auxv->a_type = VKI_AT_ENTRY;
+   auxv->a_un.a_val = info->entry;
    auxv++;
 
    /* AT_FLAGS */

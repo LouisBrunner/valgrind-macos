@@ -75,6 +75,7 @@ where XXXXXX is the bug number as listed below.
 359289  s390x: popcnt (B9E1) not implemented
 359472  The Power PC vsubuqm instruction doesn't always give the correct result
 359703  s390: wire up separate socketcalls system calls
+359724  getsockname might crash - deref_UInt should call safe_to_deref
 
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64
 n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap

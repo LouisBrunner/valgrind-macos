@@ -1200,7 +1200,7 @@ static UInt deref_UInt ( ThreadId tid, Addr a, const HChar* s )
 {
    UInt* a_p = (UInt*)a;
    PRE_MEM_READ( s, (Addr)a_p, sizeof(UInt) );
-   if (a_p == NULL)
+   if (a_p == NULL || ! ML_(safe_to_deref) (a_p, sizeof(UInt)))
       return 0;
    else
       return *a_p;

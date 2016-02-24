@@ -1353,6 +1353,9 @@ void VG_(redir_initialise) ( void )
    if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
 
       add_hardwired_spec(
+         "ld-linux-x86-64.so.2", "index",
+         (Addr)&VG_(amd64_linux_REDIR_FOR_index), NULL);
+      add_hardwired_spec(
          "ld-linux-x86-64.so.2", "strlen",
          (Addr)&VG_(amd64_linux_REDIR_FOR_strlen),
 #        ifndef GLIBC_MANDATORY_STRLEN_REDIRECT

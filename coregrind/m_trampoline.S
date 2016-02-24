@@ -220,6 +220,30 @@ VG_(amd64_linux_REDIR_FOR_strlen):
 .LfnE5:
 .size VG_(amd64_linux_REDIR_FOR_strlen), .-VG_(amd64_linux_REDIR_FOR_strlen)
 
+.global VG_(amd64_linux_REDIR_FOR_index)
+.type   VG_(amd64_linux_REDIR_FOR_index), @function
+VG_(amd64_linux_REDIR_FOR_index):
+        movzbl  (%rdi), %eax
+        movl    %esi, %edx
+        cmpb    %sil, %al
+        jne     .L4
+        jmp     .L5
+.L10:
+        addq    $1, %rdi
+        movzbl  (%rdi), %eax
+        cmpb    %dl, %al
+        je      .L5
+.L4:
+        testb   %al, %al
+        jne     .L10
+        xorl    %eax, %eax
+        ret
+.L5:
+        movq    %rdi, %rax
+        ret
+.size VG_(amd64_linux_REDIR_FOR_index), .-VG_(amd64_linux_REDIR_FOR_index)
+
+
 
 /* A CIE for the above four functions, followed by their FDEs */
 	.section .eh_frame,"a",@progbits

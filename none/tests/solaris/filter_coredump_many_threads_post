@@ -15,5 +15,5 @@ echo "::stacks ! perl -p -e 's/^(\S+)\+.*/\$1/g'" | /usr/bin/mdb vgcore.* | \
 perl -p -e 's/^(THREAD)\s+(STATE)\s+(SOBJ)\s+(COUNT)\s*$/$1 $2 $3 $4\n/' | \
 perl -p -e 's/^(\d+)\s+(UNPARKED)\s+(\S+)\s+(\d+)/$1 $2 $3 $4/g' | \
 perl -p -e 's/^\s*libc.*.so.1/libc.so.1/g' | \
-perl -p -e 's/^\s*(coredump_many_threads)/$1/g' | \
-perl -p -e 's/\+0x[0-9A-Fa-f]+//g'
+perl -p -e 's/\+0x[0-9A-Fa-f]+//g' |
+sed 's/^ *//g'

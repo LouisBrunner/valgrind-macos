@@ -14,7 +14,7 @@ status: process terminated by SIGSEGV (Segmentation Fault), addr=........
                                 %r15 = 0x000000000000010e
 
 
-%rip = 0x........  coredump_single_thread`inner+0x........
+%rip = 0x........  inner+0x........
 %rsp = 0x000000000000010f
 
 
@@ -22,7 +22,7 @@ status: process terminated by SIGSEGV (Segmentation Fault), addr=........
    %err = 0x0
 
 ---Stack trace---
-coredump_single_thread`inner
-coredump_single_thread`outer
-coredump_single_thread`main
-coredump_single_thread`_start
+inner
+outer
+main
+_start

@@ -1743,10 +1743,12 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //   p: logging, plausible-stack
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Starting the address space manager\n");
-   vg_assert(VKI_PAGE_SIZE     == 4096 || VKI_PAGE_SIZE     == 65536
-             || VKI_PAGE_SIZE     == 16384);
-   vg_assert(VKI_MAX_PAGE_SIZE == 4096 || VKI_MAX_PAGE_SIZE == 65536
-             || VKI_MAX_PAGE_SIZE == 16384);
+   vg_assert(VKI_PAGE_SIZE    == 4096  || VKI_PAGE_SIZE == 8192
+             || VKI_PAGE_SIZE == 16384 || VKI_PAGE_SIZE == 32768
+             || VKI_PAGE_SIZE == 65536);
+   vg_assert(VKI_MAX_PAGE_SIZE    == 4096  || VKI_MAX_PAGE_SIZE == 8192
+             || VKI_MAX_PAGE_SIZE == 16384 || VKI_MAX_PAGE_SIZE == 32768
+             || VKI_MAX_PAGE_SIZE == 65536);
    vg_assert(VKI_PAGE_SIZE <= VKI_MAX_PAGE_SIZE);
    vg_assert(VKI_PAGE_SIZE     == (1 << VKI_PAGE_SHIFT));
    vg_assert(VKI_MAX_PAGE_SIZE == (1 << VKI_MAX_PAGE_SHIFT));
@@ -3324,11 +3326,12 @@ void _start_in_C_linux ( UWord* pArgc )
    the_iicii.sp_at_startup = (Addr)pArgc;
 
 #  if defined(VGP_ppc32_linux) || defined(VGP_ppc64be_linux) \
-      || defined(VGP_ppc64le_linux) || defined(VGP_arm64_linux)
+      || defined(VGP_ppc64le_linux) || defined(VGP_arm64_linux) \
+      || defined(VGP_mips32_linux)  || defined(VGP_mips64_linux)
    {
-      /* ppc32/ppc64 can be configured with different page sizes.
-         Determine this early.  This is an ugly hack and really should
-         be moved into valgrind_main. */
+      /* ppc32/ppc64, arm64, mips32/64 can be configured with different
+         page sizes. Determine this early. This is an ugly hack and really
+         should be moved into valgrind_main. */
       UWord *sp = &pArgc[1+argc+1];
       while (*sp++ != 0)
          ;

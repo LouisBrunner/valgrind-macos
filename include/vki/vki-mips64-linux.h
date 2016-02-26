@@ -80,12 +80,12 @@ typedef unsigned   long long __vki_u64;
 // From linux-2.6.35.9/include/asm-mips/page.h
 //----------------------------------------------------------------------
 
-/* PAGE_SHIFT determines the page size */
-#define VKI_PAGE_SHIFT  MIPS_PAGE_SHIFT
-#define VKI_PAGE_SIZE   (1UL << VKI_PAGE_SHIFT)
-#define VKI_PAGE_MASK   (~(VKI_PAGE_SIZE-1))
-#define VKI_MAX_PAGE_SHIFT      VKI_PAGE_SHIFT
-#define VKI_MAX_PAGE_SIZE       VKI_PAGE_SIZE
+/* MIPS64 uses runtime pagesize detection */
+extern UWord VKI_PAGE_SHIFT;
+extern UWord VKI_PAGE_SIZE;
+#define VKI_PAGE_MASK           (~(VKI_PAGE_SIZE-1))
+#define VKI_MAX_PAGE_SHIFT      16
+#define VKI_MAX_PAGE_SIZE       (1UL << VKI_MAX_PAGE_SHIFT)
 
 //----------------------------------------------------------------------
 // From linux-2.6.35.9/arch/mips/include/bits/shm.h

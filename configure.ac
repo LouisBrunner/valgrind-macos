@@ -931,32 +931,6 @@ AC_CACHE_CHECK([for using the undefined behaviour sanitiser], vg_cv_ubsan,
       [vg_cv_ubsan=no])])
 
 #----------------------------------------------------------------------------
-# Define MIPS_PAGE_SHIFT (--with-pagesize)
-#----------------------------------------------------------------------------
-AC_ARG_WITH(pagesize,
-   [  --with-pagesize=        override detected page size (4, 16 or 64)],
-   [psize=$withval],
-   [psize=0]
-)
- 
-if test "$psize" = "0"; then
-    psizer=`getconf PAGESIZE`
-    psize=$((${psizer}/1024))
-fi
-
-if test "$psize" = "4"; then
-    AC_DEFINE([MIPS_PAGE_SHIFT], 12, [configured page size 4k])
-elif test "$psize" = "16"; then
-    AC_DEFINE([MIPS_PAGE_SHIFT], 14, [configured page size 16k])
-elif test "$psize" = "64"; then
-    AC_DEFINE([MIPS_PAGE_SHIFT], 16, [configured page size 64k])
-else
-   AC_DEFINE([MIPS_PAGE_SHIFT], 12, [configured default page size 4k])
-fi
-AC_MSG_RESULT([checking for Pagesize... ${psize}k])
-
-
-#----------------------------------------------------------------------------
 # Extra fine-tuning of installation directories
 #----------------------------------------------------------------------------
 AC_ARG_WITH(tmpdir,

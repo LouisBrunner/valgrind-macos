@@ -19,14 +19,9 @@ CFLAGS="-mips64 -mabi=64" will do the trick and compile Valgrind correctly.
 - Example of configure line and additional configure options:
 
    $ ./configure --host=mipsel-linux-gnu --prefix=<path_to_install_directory>
-        [--with-pagesize=<4|16|64>]
 
  * --host=mips-linux-gnu is necessary only if Valgrind is built on platform
    other then MIPS, tools for building MIPS application have to be in PATH.
-
- * --with-pagesize option is used to set default PAGE SIZE. If option is not
-   used, PAGE SIZE is set to value default for platform on which Valgrind is
-   built on. Possible values are 4, 16 of 64 and represent size in kilobytes.
 
  * --host=mips-linux-gnu is necessary if you compile it with cross toolchain
    compiler for big endian platform.

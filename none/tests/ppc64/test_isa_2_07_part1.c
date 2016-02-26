@@ -875,6 +875,7 @@ static int arg_list_size = 0;
 static unsigned long long * vdargs = NULL;
 static unsigned long long * vdargs_x = NULL;
 #define NB_VDARGS 9
+#define NB_VDARGS_X 4
 
 static void build_vdargs_table (void)
 {
@@ -890,7 +891,7 @@ static void build_vdargs_table (void)
    vdargs[7] = 0x0000000000000000ULL;
    vdargs[8] = 0xFFFFFFFFFFFFFFFFULL;
 
-   vdargs_x = memalign16(NB_VDARGS * sizeof(unsigned long long));
+   vdargs_x = memalign16(NB_VDARGS_X * sizeof(unsigned long long));
    vdargs_x[0] = 0x000000007c118a2bULL;
    vdargs_x[1] = 0x00000000f1112345ULL;
    vdargs_x[2] = 0x01F2F3F4F5F6F7F8ULL;
@@ -927,7 +928,8 @@ static unsigned long long vbcd_args[] __attribute__ ((aligned (16))) = {
    0x0ULL,                // Invalid BCD zero (no sign code)
    0x0ULL
 };
-#define NUM_VBCD_VALS (sizeof vbcd_args/sizeof vbcd_args[0])
+//#define NUM_VBCD_VALS (sizeof vbcd_args/sizeof vbcd_args[0])
+#define NUM_VBCD_VALS 8 
 
 static void build_vargs_table (void)
 {
@@ -1293,12 +1295,12 @@ static void test_av_dint_two_args (const char* name, test_func_t func,
    else
       is_vpmsumd = 0;
 
-   for (i = 0; i < NB_VDARGS; i+=2) {
+   for (i = 0; i < NB_VDARGS - 1; i+=2) {
       if (isLE && family == PPC_ALTIVECQ)
          vec_inA = (vector unsigned long long){ vdargs[i+1], vdargs[i] };
       else
          vec_inA = (vector unsigned long long){ vdargs[i], vdargs[i+1] };
-      for (j = 0; j < NB_VDARGS; j+=2) {
+      for (j = 0; j < NB_VDARGS - 1; j+=2) {
          if (isLE && family == PPC_ALTIVECQ)
             vec_inB = (vector unsigned long long){ vdargs[j+1], vdargs[j] };
          else
@@ -1358,7 +1360,7 @@ static void test_av_dint_one_arg (const char* name, test_func_t func,
    unsigned long long * dst;
    int i;
 
-   for (i = 0; i < NB_VDARGS; i+=2) {
+   for (i = 0; i < NB_VDARGS - 1; i+=2) {
       vec_inB = (vector unsigned long long){ vdargs[i], vdargs[i+1] };
       vec_out = (vector unsigned long long){ 0,0 };
 
@@ -1377,7 +1379,7 @@ static void test_av_dint_one_arg_SHA (const char* name, test_func_t func,
    unsigned long long * dst;
    int i, st, six;
 
-   for (i = 0; i < NB_VDARGS; i+=2) {
+   for (i = 0; i < NB_VDARGS - 1; i+=2) {
       vec_inA = (vector unsigned long long){ vdargs[i], vdargs[i+1] };
       vec_out = (vector unsigned long long){ 0,0 };
 
@@ -1401,14 +1403,14 @@ static void test_av_bcd (const char* name, test_func_t func,
    unsigned long long * dst;
    int i, j;
 
-   for (i = 0; i < NUM_VBCD_VALS; i+=2) {
+   for (i = 0; i < NUM_VBCD_VALS - 1; i+=2) {
       if (isLE)
-         vec_inA = (vector unsigned long long){ vbcd_args[i+1], vbcd_args[i] };
+         vec_inA = (vector unsigned long long){ vbcd_args[i+1], vbcd_args[i]};
       else
          vec_inA = (vector unsigned long long){ vbcd_args[i], vbcd_args[i+1] };
-      for (j = 0; j < NUM_VBCD_VALS; j+=2) {
+      for (j = 0; j < NUM_VBCD_VALS - 1; j+=2) {
          if (isLE)
-            vec_inB = (vector unsigned long long){ vbcd_args[j+1], vbcd_args[j] };
+            vec_inB = (vector unsigned long long){ vbcd_args[j+1] , vbcd_args[j] };
          else
             vec_inB = (vector unsigned long long){ vbcd_args[j], vbcd_args[j+1] };
          vec_out = (vector unsigned long long){ 0, 0 };
@@ -1436,9 +1438,9 @@ static void test_av_dint_to_int_two_args (const char* name, test_func_t func,
 
    unsigned int * dst_int;
    int i,j;
-   for (i = 0; i < NB_VDARGS; i+=2) {
+   for (i = 0; i < NB_VDARGS_X - 1; i+=2) {
       vec_inA = (vector unsigned long long){ vdargs_x[i], vdargs_x[i+1] };
-      for (j = 0; j < NB_VDARGS; j+=2) {
+      for (j = 0; j < NB_VDARGS_X - 1; j+=2) {
          vec_inB = (vector unsigned long long){ vdargs_x[j], vdargs_x[j+1] };
          vec_out = (vector unsigned long long){ 0,0 };
 
@@ -1676,17 +1678,17 @@ static void test_av_dint_three_args (const char* name, test_func_t func,
                                     0xf000000000000000ULL, 0xf000000000000000ULL,
                                     0xf000000000000000ULL, 0xf000000000000001ULL
    };
-   for (i = 0; i < NB_VDARGS; i+=2) {
+   for (i = 0; i < NB_VDARGS - 1; i+=2) {
       if (isLE)
          vec_inA = (vector unsigned long long){ vdargs[i+1], vdargs[i] };
       else
          vec_inA = (vector unsigned long long){ vdargs[i], vdargs[i+1] };
-      for (j = 0; j < NB_VDARGS; j+=2) {
+      for (j = 0; j < NB_VDARGS - 1; j+=2) {
          if (isLE)
             vec_inB = (vector unsigned long long){ vdargs[j+1], vdargs[j] };
          else
             vec_inB = (vector unsigned long long){ vdargs[j], vdargs[j+1] };
-         for (k = 0; k < 4; k+=2) {
+         for (k = 0; k < 4 - 1; k+=2) {
             if (family == PPC_ALTIVECQ) {
                if (isLE)
                   vec_inC = (vector unsigned long long){ cin_vals[k+1], cin_vals[k] };

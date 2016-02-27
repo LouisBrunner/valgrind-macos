@@ -9,6 +9,17 @@
 #include "pub_tool_vki.h"
 #include "m_libcbase.c"
 
+/* On PPC, MIPS and ARM64 Linux VKI_PAGE_SIZE is a variable, not a macro. */
+#if defined(VGP_ppc32_linux) || defined(VGP_ppc64be_linux) \
+    || defined(VGP_ppc64le_linux)
+unsigned long VKI_PAGE_SIZE  = 1UL << 12;
+#elif defined(VGP_arm64_linux)
+unsigned long VKI_PAGE_SIZE  = 1UL << 16;
+#elif defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
+#include <unistd.h>
+unsigned long VKI_PAGE_SIZE;
+#endif
+
 /* Provide a stub to not have to pull in m_debuglog.c */
 void VG_(debugLog) ( Int level, const HChar* modulename,
                                 const HChar* format, ... )
@@ -73,14 +84,6 @@ void test_VG_STREQN(void)
    CHECK( VG_STREQN(1, "ab",   "ac"));
    CHECK( VG_STREQN(3, "abcd", "abce"));
 }
-
-// On PPC/Linux VKI_PAGE_SIZE is a variable, not a macro.
-#if defined(VGP_ppc32_linux) || defined(VGP_ppc64be_linux) \
-    || defined(VGP_ppc64le_linux)
-unsigned long VKI_PAGE_SIZE  = 1UL << 12;
-#elif defined(VGP_arm64_linux)
-unsigned long VKI_PAGE_SIZE  = 1UL << 16;
-#endif
 
 void test_VG_IS_XYZ_ALIGNED(void)
 {
@@ -485,6 +488,9 @@ void test_random(void)
 
 int main(void)
 {
+#if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
+   VKI_PAGE_SIZE = sysconf(_SC_PAGESIZE);
+#endif
    // Nb: the order of the tests is based on the order of the code in
    // m_libcbase.c, except that macros defined in pub_tool_libcbase.h are
    // tested first.

@@ -328,6 +328,10 @@ struct vki_rep_protocol_entity_name {
    vki_uint32_t rpr_entityid;
    vki_uint32_t rpr_answertype;
 };
+struct vki_rep_protocol_entity_fmri {
+   enum vki_rep_protocol_requestid rpr_request;
+   vki_uint32_t rpr_entityid;
+};
 struct vki_rep_protocol_entity_get {
    enum vki_rep_protocol_requestid rpr_request;
    vki_uint32_t rpr_entityid;

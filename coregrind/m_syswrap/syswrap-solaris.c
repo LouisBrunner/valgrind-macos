@@ -8241,6 +8241,7 @@ static void repository_door_pre_mem_door_call_hook(ThreadId tid, Int fd,
                            "entity_name->rpr_answertype)", r->rpr_answertype);
          }
          break;
+#if (SOLARIS_REPCACHE_PROTOCOL_VERSION >= 24) && (SOLARIS_REPCACHE_PROTOCOL_VERSION <= 30)
       case VKI_REP_PROTOCOL_ENTITY_FMRI:
          {
             struct vki_rep_protocol_entity_fmri *r =
@@ -8249,6 +8250,7 @@ static void repository_door_pre_mem_door_call_hook(ThreadId tid, Int fd,
                            "entity_fmri->rpr_entityid)", r->rpr_entityid);
          }
          break;
+#endif /* 24 <= SOLARIS_REPCACHE_PROTOCOL_VERSION =< 30 */
 #if (SOLARIS_REPCACHE_PROTOCOL_VERSION >= 25)
       case VKI_REP_PROTOCOL_ENTITY_GET_ROOT:
          {

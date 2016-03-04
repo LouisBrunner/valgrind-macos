@@ -439,7 +439,7 @@ err_disable3_LDADD 	= -lpthread
 err_disable4_LDADD 	= -lpthread
 err_disable4_CFLAGS	= $(AM_CFLAGS)
 if VGCONF_OS_IS_SOLARIS
-err_disable4_CFLAGS	+= -D_XOPEN_SOURCE=500
+err_disable4_CFLAGS	+= -std=c99 -D_XOPEN_SOURCE=600
 endif
 reach_thread_register_CFLAGS	= $(AM_CFLAGS) -O2
 reach_thread_register_LDADD	= -lpthread
@@ -503,7 +503,7 @@ resvn_stack_CFLAGS      = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
 sendmsg_CFLAGS		= $(AM_CFLAGS)
 if VGCONF_OS_IS_SOLARIS
-sendmsg_CFLAGS		+= -D_XOPEN_SOURCE=500
+sendmsg_CFLAGS		+= -std=c99 -D_XOPEN_SOURCE=600
 sendmsg_LDADD		= -lsocket -lnsl
 endif
 

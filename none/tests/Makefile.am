@@ -267,7 +267,7 @@ ansi_CFLAGS		= $(AM_CFLAGS) -ansi
 execve_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 if VGCONF_OS_IS_SOLARIS
 fcntl_setown_LDADD	= -lsocket -lnsl
-fdleak_cmsg_CFLAGS	= $(AM_CFLAGS) -D_XOPEN_SOURCE=500
+fdleak_cmsg_CFLAGS	= $(AM_CFLAGS) -std=c99 -D_XOPEN_SOURCE=600
 fdleak_cmsg_LDADD	= -lsocket -lnsl
 fdleak_ipv4_LDADD	= -lsocket -lnsl
 fdleak_creat_LDADD	= -lsocket -lnsl

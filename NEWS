@@ -79,6 +79,7 @@ where XXXXXX is the bug number as listed below.
 359733  amd64 implement ld.so strchr/index override like x86
 359829  PowerPC test none/tests/ppc64/test_isa_2_07.c uninitialized memory
         references was fixed.
+359871  Incorrect mask handling in ppoll
 
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64
 n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap

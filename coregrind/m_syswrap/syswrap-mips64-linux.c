@@ -889,7 +889,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_readlinkat, sys_readlinkat),
    LINX_ (__NR_fchmodat, sys_fchmodat),
    LINX_ (__NR_faccessat, sys_faccessat),
-   LINX_ (__NR_pselect6, sys_pselect6),
+   LINXY (__NR_pselect6, sys_pselect6),
    LINXY (__NR_ppoll, sys_ppoll),
    PLAX_ (__NR_unshare, sys_unshare),
    PLAX_ (__NR_splice, sys_splice),

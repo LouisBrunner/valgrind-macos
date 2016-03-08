@@ -1657,7 +1657,7 @@ static const SyscallTableEntry* get_syscall_entry ( Int syscallno )
 /* Add and remove signals from mask so that we end up telling the
    kernel the state we actually want rather than what the client
    wants. */
-static void sanitize_client_sigmask(vki_sigset_t *mask)
+void VG_(sanitize_client_sigmask)(vki_sigset_t *mask)
 {
    VG_(sigdelset)(mask, VKI_SIGKILL);
    VG_(sigdelset)(mask, VKI_SIGSTOP);
@@ -1979,7 +1979,7 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
          PRINT(" --> [async] ... \n");
 
          mask = tst->sig_mask;
-         sanitize_client_sigmask(&mask);
+         VG_(sanitize_client_sigmask)(&mask);
 
          /* Gack.  More impedance matching.  Copy the possibly
             modified syscall args back into the guest state. */

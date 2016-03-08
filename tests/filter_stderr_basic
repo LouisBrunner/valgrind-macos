@@ -46,7 +46,7 @@ sed "/warning: line info addresses out of order/d" |
 # of the bash process. Newer bash versions redirect such messages properly.
 # Suppress any redirected abnormal termination messages. You can find the
 # complete list of messages in the bash source file siglist.c.
-perl -n -e 'print if !/^(Segmentation fault|Alarm clock|Aborted|Bus error)( \(core dumped\))?$/' |
+perl -n -e 'print if !/^(Segmentation fault|Alarm clock|Aborted|Bus error|Killed)( \(core dumped\))?$/' |
 
 # Similar as above, but for ksh on Solaris/illumos.
 perl -n -e 'print if !/^(Memory fault|Killed) $/' |

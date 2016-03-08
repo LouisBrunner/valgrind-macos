@@ -1110,7 +1110,7 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_inotify_add_watch,  sys_inotify_add_watch), // 276
    LINX_(__NR_inotify_rm_watch,   sys_inotify_rm_watch),  // 277
 
-   LINX_(__NR_pselect6,          sys_pselect6),           // 280
+   LINXY(__NR_pselect6,          sys_pselect6),           // 280
    LINXY(__NR_ppoll,             sys_ppoll),              // 281
 
    LINXY(__NR_openat,            sys_openat),             // 286

@@ -1188,7 +1188,7 @@ static SyscallTableEntry syscall_main_table[] = {
 
    LINX_(__NR_arm_fadvise64_64,  sys_fadvise64_64),     // 270 */(Linux?)
 
-   LINX_(__NR_pselect6,          sys_pselect6),         // 335
+   LINXY(__NR_pselect6,          sys_pselect6),         // 335
    LINXY(__NR_ppoll,             sys_ppoll),            // 336
 
    LINXY(__NR_epoll_pwait,       sys_epoll_pwait),      // 346

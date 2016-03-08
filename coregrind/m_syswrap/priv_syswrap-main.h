@@ -38,6 +38,9 @@
 extern
 void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch );
 
+extern
+void VG_(sanitize_client_sigmask)(vki_sigset_t *mask);
+
 #if defined(VGO_darwin)
 /* Longjmp to scheduler after client calls workq_ops(WQOPS_THREAD_RETURN)*/
 extern

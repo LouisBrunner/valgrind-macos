@@ -1194,7 +1194,7 @@ static SyscallTableEntry syscall_table[] = {
    PLAXY(__NR_spu_run,            sys_spu_run),               // 278
    PLAX_(__NR_spu_create,         sys_spu_create),            // 279
 
-   LINX_(__NR_pselect6,          sys_pselect6),          // 280
+   LINXY(__NR_pselect6,          sys_pselect6),          // 280
    LINXY(__NR_ppoll,             sys_ppoll),             // 281
 
    LINXY(__NR_openat,            sys_openat),            // 286

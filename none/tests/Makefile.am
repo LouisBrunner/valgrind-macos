@@ -142,12 +142,14 @@ EXTRA_DIST = \
 	nestedfns.stderr.exp nestedfns.stdout.exp nestedfns.vgtest \
 	nodir.stderr.exp nodir.vgtest \
 	pending.stdout.exp pending.stderr.exp pending.vgtest \
+	ppoll_alarm.stdout.exp ppoll_alarm.stderr.exp ppoll_alarm.vgtest \
 	procfs-linux.stderr.exp-with-readlinkat \
 	procfs-linux.stderr.exp-without-readlinkat \
 	procfs-linux.vgtest \
 	procfs-non-linux.vgtest \
 	procfs-non-linux.stderr.exp-with-readlinkat \
 	procfs-non-linux.stderr.exp-without-readlinkat \
+	pselect_alarm.stdout.exp pselect_alarm.stderr.exp pselect_alarm.vgtest \
 	pth_atfork1.stderr.exp pth_atfork1.stdout.exp pth_atfork1.vgtest \
 	pth_blockedsig.stderr.exp \
 	pth_blockedsig.stdout.exp pth_blockedsig.vgtest \
@@ -215,7 +217,9 @@ check_PROGRAMS = \
 	mmap_fcntl_bug \
 	munmap_exe map_unaligned map_unmap mq \
 	pending \
+	ppoll_alarm \
 	procfs-cmdline-exe \
+	pselect_alarm \
 	pth_atfork1 pth_blockedsig pth_cancel1 pth_cancel2 pth_cvsimple \
 	pth_empty pth_exit pth_exit2 pth_mutexspeed pth_once pth_rwlock \
 	pth_stackalign \
@@ -289,6 +293,8 @@ libvexmultiarch_test_LDADD = \
 	../../VEX/libvexmultiarch-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a \
 	../../VEX/libvex-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a @LIB_UBSAN@
 libvexmultiarch_test_SOURCES = libvex_test.c
+ppoll_alarm_LDADD	= -lpthread
+pselect_alarm_LDADD	= -lpthread
 pth_atfork1_LDADD	= -lpthread
 pth_blockedsig_LDADD	= -lpthread
 pth_cancel1_CFLAGS	= $(AM_CFLAGS) -Wno-shadow

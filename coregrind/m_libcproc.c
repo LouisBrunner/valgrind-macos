@@ -708,7 +708,9 @@ Int VG_(getpid) ( void )
 Int VG_(getpgrp) ( void )
 {
    /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
-#  if defined(VGO_linux) || defined(VGO_darwin)
+#  if defined(VGP_arm64_linux)
+   return sr_Res( VG_(do_syscall1)(__NR_getpgid, 0) );
+#  elif defined(VGO_linux) || defined(VGO_darwin)
    return sr_Res( VG_(do_syscall0)(__NR_getpgrp) );
 #  elif defined(VGO_solaris)
    /* Uses the shared pgrpsys syscall, 0 for the getpgrp variant. */

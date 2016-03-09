@@ -480,7 +480,18 @@ SysRes VG_(dup) ( Int oldfd )
 
 SysRes VG_(dup2) ( Int oldfd, Int newfd )
 {
-#  if defined(VGO_linux) || defined(VGO_darwin)
+#  if defined(VGP_arm64_linux)
+   /* We only have dup3, that means we have to mimic dup2.
+      The only real difference is when oldfd == newfd.
+      dup3 always returns an error, but dup2 returns only an
+      error if the fd is invalid, otherwise it returns newfd. */
+   if (oldfd == newfd) {
+      if (VG_(fcntl)(oldfd, VKI_F_GETFL, 0) == -1)
+         return VG_(mk_SysRes_Error)(VKI_EBADF);
+      return VG_(mk_SysRes_Success)(newfd);
+   }
+   return VG_(do_syscall3)(__NR_dup3, oldfd, newfd, 0);
+#  elif defined(VGO_linux) || defined(VGO_darwin)
    return VG_(do_syscall2)(__NR_dup2, oldfd, newfd);
 #  elif defined(VGO_solaris)
    return VG_(do_syscall3)(__NR_fcntl, oldfd, F_DUP2FD, newfd);
@@ -504,14 +515,12 @@ Int VG_(fcntl) ( Int fd, Int cmd, Addr arg )
 
 Int VG_(rename) ( const HChar* old_name, const HChar* new_name )
 {
-#  if defined(VGP_tilegx_linux)
-   SysRes res = VG_(do_syscall3)(__NR_renameat, VKI_AT_FDCWD,
-                                 (UWord)old_name, (UWord)new_name);
-#  elif defined(VGO_linux) || defined(VGO_darwin)
-   SysRes res = VG_(do_syscall2)(__NR_rename, (UWord)old_name, (UWord)new_name);
-#  elif defined(VGO_solaris)
+#  if defined(VGO_solaris) \
+      || defined(VGP_arm64_linux) || defined(VGP_tilegx_linux)
    SysRes res = VG_(do_syscall4)(__NR_renameat, VKI_AT_FDCWD, (UWord)old_name,
                                  VKI_AT_FDCWD, (UWord)new_name);
+#  elif defined(VGO_linux) || defined(VGO_darwin)
+   SysRes res = VG_(do_syscall2)(__NR_rename, (UWord)old_name, (UWord)new_name);
 #  else
 #    error "Unknown OS"
 #  endif

@@ -331,7 +331,7 @@
 //#define __NR_link 1025
 //__SYSCALL(__NR_link, sys_link)
 //#define __NR_unlink 1026
-#define __NR_mknod 1027
+//#define __NR_mknod 1027
 //#define __NR_chmod 1028
 //__SYSCALL(__NR_chmod, sys_chmod)
 //#define __NR_chown 1029
@@ -342,8 +342,8 @@
 //__SYSCALL(__NR_rmdir, sys_rmdir)
 //#define __NR_lchown 1032
 //__SYSCALL(__NR_lchown, sys_lchown)
-#define __NR_access 1033
-#define __NR_rename 1034
+//#define __NR_access 1033
+//#define __NR_rename 1034
 //#define __NR_readlink 1035
 //#define __NR_symlink 1036
 //__SYSCALL(__NR_symlink, sys_symlink)
@@ -359,8 +359,8 @@
 //#endif /* __ARCH_WANT_SYSCALL_NO_AT */
 //
 //#ifdef __ARCH_WANT_SYSCALL_NO_FLAGS
-#define __NR_pipe 1040
-#define __NR_dup2 1041
+//#define __NR_pipe 1040
+//#define __NR_dup2 1041
 //#define __NR_epoll_create 1042
 //__SYSCALL(__NR_epoll_create, sys_epoll_create)
 //#define __NR_inotify_init 1043
@@ -383,7 +383,7 @@
 //__SYSCALL(__NR_ftruncate, sys_ftruncate)
 //#define __NR_truncate 1048
 //__SYSCALL(__NR_truncate, sys_truncate)
-#define __NR_stat 1049
+//#define __NR_stat 1049
 //#define __NR_lstat 1050
 //__SYSCALL(__NR_lstat, sys_newlstat)
 //ZZ#define __NR_fstat 1051
@@ -399,7 +399,7 @@
 //#define __NR_statfs 1056
 //__SYSCALL(__NR_statfs, sys_statfs)
 //#define __NR_lseek 1057
-#define __NR_mmap 1058
+//#define __NR_mmap 1058
 //
 //#undef __NR_syscalls
 //#define __NR_syscalls (__NR_mmap+1)
@@ -409,7 +409,7 @@
 //#define __NR_alarm 1059
 //#define __ARCH_WANT_SYS_ALARM
 //__SYSCALL(__NR_alarm, sys_alarm)
-#define __NR_getpgrp 1060
+//#define __NR_getpgrp 1060
 //#define __ARCH_WANT_SYS_GETPGRP
 //__SYSCALL(__NR_getpgrp, sys_getpgrp)
 //#define __NR_pause 1061
@@ -425,13 +425,13 @@
 //
 //#define __NR_creat 1064
 //__SYSCALL(__NR_creat, sys_creat)
-#define __NR_getdents 1065
+//#define __NR_getdents 1065
 //#define __NR_futimesat 1066
 //__SYSCALL(__NR_futimesat, sys_futimesat)
 //#define __NR_select 1067
 //#define __ARCH_WANT_SYS_SELECT
 //__SYSCALL(__NR_select, sys_select)
-#define __NR_poll 1068
+//#define __NR_poll 1068
 //#define __NR_epoll_wait 1069
 //__SYSCALL(__NR_epoll_wait, sys_epoll_wait)
 //#define __NR_ustat 1070
@@ -454,7 +454,7 @@
 //#define __NR__sysctl 1078
 //__SYSCALL(__NR__sysctl, sys_sysctl)
 //
-#define __NR_fork 1079
+//#define __NR_fork 1079
 //#ifdef CONFIG_MMU
 //__SYSCALL(__NR_fork, sys_fork)
 //#else
@@ -478,16 +478,16 @@
 // */
 //#if __BITS_PER_LONG == 64 && !defined(__SYSCALL_COMPAT)
 #define __NR_fcntl __NR3264_fcntl
-//#define __NR_statfs __NR3264_statfs
-//#define __NR_fstatfs __NR3264_fstatfs
-//#define __NR_truncate __NR3264_truncate
-//#define __NR_ftruncate __NR3264_ftruncate
+#define __NR_statfs __NR3264_statfs
+#define __NR_fstatfs __NR3264_fstatfs
+#define __NR_truncate __NR3264_truncate
+#define __NR_ftruncate __NR3264_ftruncate
 #define __NR_lseek __NR3264_lseek
-//#define __NR_sendfile __NR3264_sendfile
-//#define __NR_newfstatat __NR3264_fstatat
+#define __NR_sendfile __NR3264_sendfile
+#define __NR_newfstatat __NR3264_fstatat
 #define __NR_fstat __NR3264_fstat
-//#define __NR_mmap __NR3264_mmap
-//#define __NR_fadvise64 __NR3264_fadvise64
+#define __NR_mmap __NR3264_mmap
+#define __NR_fadvise64 __NR3264_fadvise64
 //#ifdef __NR3264_stat
 //#define __NR_stat __NR3264_stat
 //#define __NR_lstat __NR3264_lstat

@@ -3264,7 +3264,7 @@ POST(sys_newfstat)
    POST_MEM_WRITE( ARG2, sizeof(struct vki_stat) );
 }
 
-#if !defined(VGO_solaris)
+#if !defined(VGO_solaris) && !defined(VGP_arm64_linux)
 static vki_sigset_t fork_saved_mask;
 
 // In Linux, the sys_fork() function varies across architectures, but we
@@ -3327,7 +3327,7 @@ PRE(sys_fork)
       VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
    }
 }
-#endif // !defined(VGO_solaris)
+#endif // !defined(VGO_solaris) && !defined(VGP_arm64_linux)
 
 PRE(sys_ftruncate)
 {

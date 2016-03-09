@@ -74,6 +74,7 @@ where XXXXXX is the bug number as listed below.
 359201  futex syscall "skips" argument 5 if op is FUTEX_WAIT_BITSET
 359289  s390x: popcnt (B9E1) not implemented
 359472  The Power PC vsubuqm instruction doesn't always give the correct result
+359503  Add missing syscalls for aarch64 (arm64)
 359703  s390: wire up separate socketcalls system calls
 359724  getsockname might crash - deref_UInt should call safe_to_deref
 359733  amd64 implement ld.so strchr/index override like x86

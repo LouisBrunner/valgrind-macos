@@ -2664,17 +2664,20 @@ static inline CFSI_m_CacheEnt* cfsi_m_cache__find ( Addr ip )
 {
    UWord         hash = ip % N_CFSI_M_CACHE;
    CFSI_m_CacheEnt* ce = &cfsi_m_cache[hash];
+#  ifdef N_Q_M_STATS
    static UWord  n_q = 0, n_m = 0;
-
    n_q++;
-   if (0 && 0 == (n_q & 0x1FFFFF))
+   if (0 == (n_q & 0x1FFFFF))
       VG_(printf)("QQQ %lu %lu\n", n_q, n_m);
+#  endif
 
    if (LIKELY(ce->ip == ip) && LIKELY(ce->di != NULL)) {
       /* found an entry in the cache .. */
    } else {
       /* not found in cache.  Search and update. */
+#     ifdef N_Q_M_STATS
       n_m++;
+#     endif
       ce->ip = ip;
       find_DiCfSI( &ce->di, &ce->cfsi_m, ip );
    }

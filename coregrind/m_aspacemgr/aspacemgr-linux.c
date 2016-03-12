@@ -1082,8 +1082,13 @@ inline static Int find_nsegment_idx ( Addr a )
    static Int  cache_segidx[N_CACHE];
    static Bool cache_inited = False;
 
+#  ifdef N_Q_M_STATS
    static UWord n_q = 0;
    static UWord n_m = 0;
+   n_q++;
+   if (0 == (n_q & 0xFFFF))
+      VG_(debugLog)(0,"xxx","find_nsegment_idx: %lu %lu\n", n_q, n_m);
+#  endif
 
    UWord ix;
 
@@ -1099,10 +1104,6 @@ inline static Int find_nsegment_idx ( Addr a )
 
    ix = (a >> 12) % N_CACHE;
 
-   n_q++;
-   if (0 && 0 == (n_q & 0xFFFF))
-      VG_(debugLog)(0,"xxx","find_nsegment_idx: %lu %lu\n", n_q, n_m);
-
    if ((a >> 12) == cache_pageno[ix]
        && cache_segidx[ix] >= 0
        && cache_segidx[ix] < nsegments_used
@@ -1113,7 +1114,9 @@ inline static Int find_nsegment_idx ( Addr a )
       return cache_segidx[ix];
    }
    /* miss */
+#  ifdef N_Q_M_STATS
    n_m++;
+#  endif
    cache_segidx[ix] = find_nsegment_idx_WRK(a);
    cache_pageno[ix] = a >> 12;
    return cache_segidx[ix];

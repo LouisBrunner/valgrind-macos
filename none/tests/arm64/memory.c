@@ -280,6 +280,18 @@ TESTINST2_hide2("ldarb w21, [x22]", AREA_MID, x21,x22,0);
 
 ////////////////////////////////////////////////////////////////
 printf("STL{R,RH,RB} (entirely MISSING)\n");
+
+////////////////////////////////////////////////////////////////
+// TESTINST2_hide2 allows use of x28 as scratch
+printf("LDPSW (immediate, simm7)\n");
+
+TESTINST2_hide2("ldpsw x21, x28, [x22], #-24 ; add x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldpsw x21, x28, [x22], #-24 ; eor x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldpsw x21, x28, [x22, #-40]! ; add x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldpsw x21, x28, [x22, #-40]! ; eor x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldpsw x21, x28, [x22, #-40] ; add x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldpsw x21, x28, [x22, #-40] ; eor x21,x21,x28", AREA_MID, x21,x22,0);
+
 } /* end of test_memory_old() */
 
 
@@ -1607,6 +1619,12 @@ MEM_TEST("prfm pstl2keep, [x5,w6,uxtw #0]", 12, 4);
 MEM_TEST("prfm pstl2strm, [x5,w6,uxtw #3]", 12, 4);
 MEM_TEST("prfm pstl3keep, [x5,w6,sxtw #0]", 12, 4);
 MEM_TEST("prfm pstl3strm, [x5,w6,sxtw #3]",  12, -4);
+
+////////////////////////////////////////////////////////////////
+printf("LDPSW (immediate, simm7)\n");
+MEM_TEST("ldpsw x13, x23, [x5], #-24",   0, 0);
+MEM_TEST("ldpsw x13, x23, [x5, #-40]!",  0, 0);
+MEM_TEST("ldpsw x13, x23, [x5, #-40]",   0, 0);
 
 } /* end of test_memory2() */
 

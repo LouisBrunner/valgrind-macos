@@ -21,12 +21,12 @@ ldp w21, w28, [x22, #-40]! ; eor x21,x21,x28 :: rd 0000000004040404 rn (hidden),
 ldp w21, w28, [x22, #-40] ; add x21,x21,x28 :: rd 000000019b999794 rn (hidden), cin 0, nzcv 00000000     
 ldp w21, w28, [x22, #-40] ; eor x21,x21,x28 :: rd 0000000004040404 rn (hidden), cin 0, nzcv 00000000     
 LDR (literal, int reg)
-xyzzy00: ldr  x21, xyzzy00 - 8 :: rd aa0003f6d51b4203 rn (hidden), cin 0, nzcv 00000000     
-xyzzy01: ldr  x21, xyzzy01 + 0 :: rd aa1503e258000015 rn (hidden), cin 0, nzcv 00000000     
-xyzzy02: ldr  x21, xyzzy02 + 8 :: rd 911e43a0d53b4201 rn (hidden), cin 0, nzcv 00000000     
-xyzzy03: ldr  x21, xyzzy03 - 4 :: rd 58fffff5aa0003f6 rn (hidden), cin 0, nzcv 00000000     
-xyzzy04: ldr  x21, xyzzy04 + 0 :: rd aa1503e258000015 rn (hidden), cin 0, nzcv 00000000     
-xyzzy05: ldr  x21, xyzzy05 + 4 :: rd d53b4201aa1503e2 rn (hidden), cin 0, nzcv 00000000     
+nop; nop; nop; xyzzy00: ldr  x21, xyzzy00 - 8; nop; nop; nop :: rd d503201fd503201f rn (hidden), cin 0, nzcv 00000000     
+nop; nop; nop; xyzzy01: ldr  x21, xyzzy01 + 0; nop; nop; nop :: rd d503201f58000015 rn (hidden), cin 0, nzcv 00000000     
+nop; nop; nop; xyzzy02: ldr  x21, xyzzy02 + 8; nop; nop; nop :: rd d503201fd503201f rn (hidden), cin 0, nzcv 00000000     
+nop; nop; nop; xyzzy03: ldr  x21, xyzzy03 - 4; nop; nop; nop :: rd 58fffff5d503201f rn (hidden), cin 0, nzcv 00000000     
+nop; nop; nop; xyzzy04: ldr  x21, xyzzy04 + 0; nop; nop; nop :: rd d503201f58000015 rn (hidden), cin 0, nzcv 00000000     
+nop; nop; nop; xyzzy05: ldr  x21, xyzzy05 + 4; nop; nop; nop :: rd d503201fd503201f rn (hidden), cin 0, nzcv 00000000     
 {LD,ST}R (integer register) (entirely MISSING)
 LDRS{B,H,W} (uimm12)
 ldrsw x21, [x22, #24] :: rd ffffffff8b8a8988 rn (hidden), cin 0, nzcv 00000000     

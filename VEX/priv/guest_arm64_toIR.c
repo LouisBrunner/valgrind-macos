@@ -4804,7 +4804,6 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
       (at-EA)
       x0 101 0010 L imm7 Rt2 Rn Rt1  mmP Rt1,Rt2, [Xn|SP, #imm]
    */
-
    UInt insn_30_23 = INSN(30,23);
    if (insn_30_23 == BITS8(0,1,0,1,0,0,0,1) 
        || insn_30_23 == BITS8(0,1,0,1,0,0,1,1)
@@ -4907,6 +4906,87 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
          DIP(fmt_str, bL == 0 ? "st" : "ld",
                       nameIRegOrZR(bX == 1, rT1),
                       nameIRegOrZR(bX == 1, rT2),
+                      nameIReg64orSP(rN), simm7);
+         return True;
+      }
+   }
+
+   /* -------- LDPSW (immediate, simm7) (INT REGS) -------- */
+   /* Does 32 bit transfers which are sign extended to 64 bits.
+      simm7 is scaled by the (single-register) transfer size
+
+      (at-Rn-then-Rn=EA)
+      01 101 0001 1 imm7 Rt2 Rn Rt1  LDPSW Rt1,Rt2, [Xn|SP], #imm
+   
+      (at-EA-then-Rn=EA)
+      01 101 0011 1 imm7 Rt2 Rn Rt1  LDPSW Rt1,Rt2, [Xn|SP, #imm]!
+
+      (at-EA)
+      01 101 0010 1 imm7 Rt2 Rn Rt1  LDPSW Rt1,Rt2, [Xn|SP, #imm]
+   */
+   UInt insn_31_22 = INSN(31,22);
+   if (insn_31_22 == BITS10(0,1,1,0,1,0,0,0,1,1)
+       || insn_31_22 == BITS10(0,1,1,0,1,0,0,1,1,1)
+       || insn_31_22 == BITS10(0,1,1,0,1,0,0,1,0,1)) {
+      UInt bWBack = INSN(23,23);
+      UInt rT1    = INSN(4,0);
+      UInt rN     = INSN(9,5);
+      UInt rT2    = INSN(14,10);
+      Long simm7  = (Long)sx_to_64(INSN(21,15), 7);
+      if ((bWBack && (rT1 == rN || rT2 == rN) && rN != 31)
+          || (rT1 == rT2)) {
+         /* undecodable; fall through */
+      } else {
+         if (rN == 31) { /* FIXME generate stack alignment check */ }
+
+         // Compute the transfer address TA and the writeback address WA.
+         IRTemp tRN = newTemp(Ity_I64);
+         assign(tRN, getIReg64orSP(rN));
+         IRTemp tEA = newTemp(Ity_I64);
+         simm7 = 4 * simm7;
+         assign(tEA, binop(Iop_Add64, mkexpr(tRN), mkU64(simm7)));
+
+         IRTemp tTA = newTemp(Ity_I64);
+         IRTemp tWA = newTemp(Ity_I64);
+         switch (INSN(24,23)) {
+            case BITS2(0,1):
+               assign(tTA, mkexpr(tRN)); assign(tWA, mkexpr(tEA)); break;
+            case BITS2(1,1):
+               assign(tTA, mkexpr(tEA)); assign(tWA, mkexpr(tEA)); break;
+            case BITS2(1,0):
+               assign(tTA, mkexpr(tEA)); /* tWA is unused */ break;
+            default:
+               vassert(0); /* NOTREACHED */
+         }
+
+         // 32 bit load, sign extended to 64 bits
+         putIReg64orZR(rT1, unop(Iop_32Sto64,
+                                 loadLE(Ity_I32, binop(Iop_Add64,
+                                                       mkexpr(tTA),
+                                                       mkU64(0)))));
+         putIReg64orZR(rT2, unop(Iop_32Sto64,
+                                 loadLE(Ity_I32, binop(Iop_Add64,
+                                                       mkexpr(tTA),
+                                                       mkU64(4)))));
+         if (bWBack)
+            putIReg64orSP(rN, mkexpr(tEA));
+
+         const HChar* fmt_str = NULL;
+         switch (INSN(24,23)) {
+            case BITS2(0,1):
+               fmt_str = "ldpsw %s, %s, [%s], #%lld (at-Rn-then-Rn=EA)\n";
+               break;
+            case BITS2(1,1):
+               fmt_str = "ldpsw %s, %s, [%s, #%lld]! (at-EA-then-Rn=EA)\n";
+               break;
+            case BITS2(1,0):
+               fmt_str = "ldpsw %s, %s, [%s, #%lld] (at-Rn)\n";
+               break;
+            default:
+               vassert(0);
+         }
+         DIP(fmt_str, nameIReg64orZR(rT1),
+                      nameIReg64orZR(rT2),
                       nameIReg64orSP(rN), simm7);
          return True;
       }

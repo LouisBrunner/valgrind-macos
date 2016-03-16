@@ -8294,6 +8294,9 @@ static void repository_door_pre_mem_door_call_hook(ThreadId tid, Int fd,
          }
          break;
       case VKI_REP_PROTOCOL_ENTITY_GET_CHILD:
+#if (SOLARIS_REPCACHE_PROTOCOL_VERSION >= 31)
+      case VKI_REP_PROTOCOL_ENTITY_GET_CHILD_COMPOSED:
+#endif
          {
             struct vki_rep_protocol_entity_get_child *r =
                (struct vki_rep_protocol_entity_get_child *) p;

@@ -1223,6 +1223,7 @@ static Bool isZeroU ( IRExpr* e )
       case Ico_U16:   return toBool( e->Iex.Const.con->Ico.U16 == 0);
       case Ico_U32:   return toBool( e->Iex.Const.con->Ico.U32 == 0);
       case Ico_U64:   return toBool( e->Iex.Const.con->Ico.U64 == 0);
+      case Ico_V256:  return toBool( e->Iex.Const.con->Ico.V256 == 0x00000000);
       default: vpanic("isZeroU");
    }
 }

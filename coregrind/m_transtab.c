@@ -94,8 +94,8 @@ typedef UShort HTTno;
    address range which does not fall cleanly within any specific bin.
    Note that ECLASS_SHIFT + ECLASS_WIDTH must be < 32.
    ECLASS_N must fit in a EclassNo. */
-#define ECLASS_SHIFT 11
-#define ECLASS_WIDTH 8
+#define ECLASS_SHIFT 13
+#define ECLASS_WIDTH 9
 #define ECLASS_MISC  (1 << ECLASS_WIDTH)
 #define ECLASS_N     (1 + ECLASS_MISC)
 STATIC_ASSERT(ECLASS_SHIFT + ECLASS_WIDTH < 32);
@@ -2052,7 +2052,7 @@ void VG_(discard_translations) ( Addr guest_start, ULong range,
       and if so which one. */
 
    ec = ECLASS_MISC;
-   if (range < (1ULL << ECLASS_SHIFT))
+   if (range <= (1ULL << ECLASS_SHIFT))
       ec = range_to_eclass( guest_start, (UInt)range );
 
    /* if ec is ECLASS_MISC then we aren't looking at just a single

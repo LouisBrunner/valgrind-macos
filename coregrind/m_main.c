@@ -1509,8 +1509,8 @@ static void print_preamble ( Bool logging_to_fd,
 /*====================================================================*/
 
 /* Number of file descriptors that Valgrind tries to reserve for
-   it's own use - just a small constant. */
-#define N_RESERVED_FDS (10)
+   its own use - just a small constant. */
+#define N_RESERVED_FDS (12)
 
 static void setup_file_descriptors(void)
 {

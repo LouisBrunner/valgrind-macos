@@ -3538,34 +3538,34 @@ void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len, Addr nia )
 
 #  if 0
    /* Really slow version */
-   MC_(make_mem_undefined)(base, len, otag);
+   MC_(make_mem_undefined_w_otag)(base, len, otag);
 #  endif
 
 #  if 0
    /* Slow(ish) version, which is fairly easily seen to be correct.
    */
    if (LIKELY( VG_IS_8_ALIGNED(base) && len==128 )) {
-      make_aligned_word64_undefined(base +   0, otag);
-      make_aligned_word64_undefined(base +   8, otag);
-      make_aligned_word64_undefined(base +  16, otag);
-      make_aligned_word64_undefined(base +  24, otag);
+      make_aligned_word64_undefined_w_otag(base +   0, otag);
+      make_aligned_word64_undefined_w_otag(base +   8, otag);
+      make_aligned_word64_undefined_w_otag(base +  16, otag);
+      make_aligned_word64_undefined_w_otag(base +  24, otag);
 
-      make_aligned_word64_undefined(base +  32, otag);
-      make_aligned_word64_undefined(base +  40, otag);
-      make_aligned_word64_undefined(base +  48, otag);
-      make_aligned_word64_undefined(base +  56, otag);
+      make_aligned_word64_undefined_w_otag(base +  32, otag);
+      make_aligned_word64_undefined_w_otag(base +  40, otag);
+      make_aligned_word64_undefined_w_otag(base +  48, otag);
+      make_aligned_word64_undefined_w_otag(base +  56, otag);
 
-      make_aligned_word64_undefined(base +  64, otag);
-      make_aligned_word64_undefined(base +  72, otag);
-      make_aligned_word64_undefined(base +  80, otag);
-      make_aligned_word64_undefined(base +  88, otag);
+      make_aligned_word64_undefined_w_otag(base +  64, otag);
+      make_aligned_word64_undefined_w_otag(base +  72, otag);
+      make_aligned_word64_undefined_w_otag(base +  80, otag);
+      make_aligned_word64_undefined_w_otag(base +  88, otag);
 
-      make_aligned_word64_undefined(base +  96, otag);
-      make_aligned_word64_undefined(base + 104, otag);
-      make_aligned_word64_undefined(base + 112, otag);
-      make_aligned_word64_undefined(base + 120, otag);
+      make_aligned_word64_undefined_w_otag(base +  96, otag);
+      make_aligned_word64_undefined_w_otag(base + 104, otag);
+      make_aligned_word64_undefined_w_otag(base + 112, otag);
+      make_aligned_word64_undefined_w_otag(base + 120, otag);
    } else {
-      MC_(make_mem_undefined)(base, len, otag);
+      MC_(make_mem_undefined_w_otag)(base, len, otag);
    }
 #  endif 
 

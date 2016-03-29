@@ -35,7 +35,9 @@ EXTRA_DIST = \
 	test_tm.stderr.exp test_tm.stdout.exp test_tm.vgtest \
 	test_touch_tm.stderr.exp test_touch_tm.stdout.exp test_touch_tm.vgtest \
 	ldst_multiple.stderr.exp ldst_multiple.stdout.exp ldst_multiple.vgtest \
-	data-cache-instructions.stderr.exp data-cache-instructions.stdout.exp data-cache-instructions.vgtest
+	data-cache-instructions.stderr.exp data-cache-instructions.stdout.exp data-cache-instructions.vgtest \
+	test_isa_3_0_altivec.stderr.exp test_isa_3_0_altivec.stdout.exp test_isa_3_0_altivec.vgtest \
+	test_isa_3_0_other.stderr.exp test_isa_3_0_other.stdout.exp test_isa_3_0_other.vgtest
 
 check_PROGRAMS = \
 	allexec \
@@ -43,6 +45,7 @@ check_PROGRAMS = \
 	test_isa_2_06_part1 test_isa_2_06_part2 test_isa_2_06_part3 \
 	test_dfp1 test_dfp2 test_dfp3 test_dfp4 test_dfp5 \
 	test_isa_2_07_part1 test_isa_2_07_part2 \
+	test_isa_3_0 \
 	test_tm test_touch_tm ldst_multiple data-cache-instructions \
 	power6_mf_gpr std_reg_imm \
 	twi_tdi tw_td power6_bcmp
@@ -88,10 +91,20 @@ endif
 
 if SUPPORTS_HTM
 HTM_FLAG = -mhtm -DSUPPORTS_HTM
+else
+HTM_FLAG =
 endif
 
 jm_insns_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames \
 			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_ALTIVEC)
+
+if HAS_ISA_3_0
+BUILD_FLAGS_ISA_3_0 = -mcpu=power8
+ISA_3_0_FLAG = -DHAS_ISA_3_0
+else
+BUILD_FLAGS_ISA_3_0 =
+ISA_3_0_FLAG =
+endif
 
 test_isa_2_06_part1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_FLAG) \
 			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_VSX)
@@ -122,6 +135,8 @@ test_tm_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_
 			@FLAG_M64@ $(BUILD_FLAGS_ISA_2_07)
 test_touch_tm_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_2_07_FLAG) \
 			@FLAG_M64@ $(BUILD_FLAGS_ISA_2_07)
+test_isa_3_0_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_3_0_FLAG) \
+			@FLAG_M64@ $( $(BUILD_FLAGS_ISA_3_0) 
 
 test_isa_2_06_part3_LDADD = -lm
 test_dfp1_LDADD = -lm
@@ -133,4 +148,5 @@ test_isa_2_07_part1_LDADD = -lm
 test_isa_2_07_part2_LDADD = -lm
 test_tm_LDADD = -lm
 test_touch_tm_LDADD = -lm
+test_isa_3_0_LDADD = -lm
 

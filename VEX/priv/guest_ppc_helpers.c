@@ -500,7 +500,7 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
 
    vex_state->guest_FPROUND  = PPCrm_NEAREST;
    vex_state->guest_DFPROUND = PPCrm_NEAREST;
-   vex_state->pad1 = 0;
+   vex_state->guest_FPCC     = 0;
    vex_state->pad2 = 0;
 
    vex_state->guest_VRSAVE = 0;
@@ -667,7 +667,7 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
 
    vex_state->guest_FPROUND  = PPCrm_NEAREST;
    vex_state->guest_DFPROUND = PPCrm_NEAREST;
-   vex_state->pad1 = 0;
+   vex_state->guest_FPCC     = 0;
    vex_state->pad2 = 0;
 
    vex_state->guest_VRSAVE = 0;
@@ -820,7 +820,7 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 11,
+          .n_alwaysDefd = 12,
 
           .alwaysDefd 
 	  = { /*  0 */ ALWAYSDEFD32(guest_CIA),
@@ -833,7 +833,8 @@ VexGuestLayout
 	      /*  7 */ ALWAYSDEFD32(guest_NRADDR_GPR2),
 	      /*  8 */ ALWAYSDEFD32(guest_REDIR_SP),
 	      /*  9 */ ALWAYSDEFD32(guest_REDIR_STACK),
-	      /* 10 */ ALWAYSDEFD32(guest_IP_AT_SYSCALL)
+	      /* 10 */ ALWAYSDEFD32(guest_IP_AT_SYSCALL),
+	      /* 11 */ ALWAYSDEFD32(guest_FPCC)
             }
         };
 
@@ -861,7 +862,7 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 11,
+          .n_alwaysDefd = 12,
 
           .alwaysDefd 
 	  = { /*  0 */ ALWAYSDEFD64(guest_CIA),
@@ -874,7 +875,8 @@ VexGuestLayout
 	      /*  7 */ ALWAYSDEFD64(guest_NRADDR_GPR2),
 	      /*  8 */ ALWAYSDEFD64(guest_REDIR_SP),
 	      /*  9 */ ALWAYSDEFD64(guest_REDIR_STACK),
-	      /* 10 */ ALWAYSDEFD64(guest_IP_AT_SYSCALL)
+	      /* 10 */ ALWAYSDEFD64(guest_IP_AT_SYSCALL),
+	      /* 11 */ ALWAYSDEFD64(guest_FPCC)
             }
         };
 

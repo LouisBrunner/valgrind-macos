@@ -16492,9 +16492,9 @@ dis_vx_load ( UInt theInstr )
                                          load( Ity_I16, irx_addr ) ),
                                    mkU8( 16 * (3 - i) ) ) );
 
-         assign( tmp_low[i+1],
-                 binop( Iop_Or64,
-                        mkexpr( h_word[i] ), mkexpr( tmp_low[i] ) ) );
+      assign( tmp_low[i+1],
+              binop( Iop_Or64,
+                     mkexpr( h_word[i] ), mkexpr( tmp_low[i] ) ) );
       }
 
       for ( i = 0; i < 4; i++ ) {
@@ -20865,7 +20865,6 @@ DisResult disInstr_PPC_WRK (
    Bool      allow_VX = False;  // Equates to "supports Power ISA 2.06
    Bool      allow_DFP = False;
    Bool      allow_isa_2_07 = False;
-   Bool      allow_isa_3_0  = False;
    UInt      hwcaps = archinfo->hwcaps;
    Long      delta;
 
@@ -20878,7 +20877,6 @@ DisResult disInstr_PPC_WRK (
       allow_VX = (0 != (hwcaps & VEX_HWCAPS_PPC64_VX));
       allow_DFP = (0 != (hwcaps & VEX_HWCAPS_PPC64_DFP));
       allow_isa_2_07 = (0 != (hwcaps & VEX_HWCAPS_PPC64_ISA2_07));
-      allow_isa_3_0  = (0 != (hwcaps & VEX_HWCAPS_PPC64_ISA3_0));
    } else {
       allow_F  = (0 != (hwcaps & VEX_HWCAPS_PPC32_F));
       allow_V  = (0 != (hwcaps & VEX_HWCAPS_PPC32_V));
@@ -20887,7 +20885,6 @@ DisResult disInstr_PPC_WRK (
       allow_VX = (0 != (hwcaps & VEX_HWCAPS_PPC32_VX));
       allow_DFP = (0 != (hwcaps & VEX_HWCAPS_PPC32_DFP));
       allow_isa_2_07 = (0 != (hwcaps & VEX_HWCAPS_PPC32_ISA2_07));
-      allow_isa_3_0  = (0 != (hwcaps & VEX_HWCAPS_PPC32_ISA3_0));
    }
 
    /* The running delta */

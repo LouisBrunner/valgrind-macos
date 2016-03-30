@@ -263,6 +263,9 @@ extern void VG_(details_bug_reports_to)   ( const HChar* bug_reports_to );
 /* Should __libc_freeres() be run?  Bugs in it can crash the tool. */
 extern void VG_(needs_libc_freeres) ( void );
 
+/* Should __gnu_cxx::__freeres() be run?  Bugs in it can crash the tool. */
+extern void VG_(needs_cxx_freeres) ( void );
+
 /* Want to have errors detected by Valgrind's core reported?  Includes:
    - pthread API errors (many;  eg. unlocking a non-locked mutex) 
      [currently disabled]

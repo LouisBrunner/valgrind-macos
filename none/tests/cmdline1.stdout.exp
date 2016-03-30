@@ -90,6 +90,8 @@ usage: valgrind [options] prog-and-args
     --vgdb-shadow-registers=no|yes   let gdb see the shadow registers [no]
     --vgdb-prefix=<prefix>    prefix for vgdb FIFOs [.../vgdb-pipe]
     --run-libc-freeres=no|yes free up glibc memory at exit on Linux? [yes]
+    --run-cxx-freeres=no|yes  free up libstdc++ memory at exit on Linux
+                              and Solaris? [yes]
     --sim-hints=hint1,hint2,...  activate unusual sim behaviours [none] 
          where hint is one of:
            lax-ioctls lax-doors fuse-compatible enable-outer

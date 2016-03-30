@@ -49,7 +49,7 @@
 #include "pub_core_machine.h"      // VG_(fnptr_to_fnentry)
 #include "pub_core_aspacemgr.h"    // VG_(am_find_nsegment)
 #include "pub_core_xarray.h"
-#include "pub_core_clientstate.h"  // VG_(client___libc_freeres_wrapper)
+#include "pub_core_clientstate.h"  // VG_(client_freeres_wrapper)
 #include "pub_core_demangle.h"     // VG_(maybe_Z_demangle)
 #include "pub_core_libcproc.h"     // VG_(libdir)
 
@@ -1688,7 +1688,7 @@ void handle_maybe_load_notifier( const HChar* soname,
       return;
 
    if (VG_(strcmp)(symbol, VG_STRINGIFY(VG_NOTIFY_ON_LOAD(freeres))) == 0)
-      VG_(client___libc_freeres_wrapper) = addr;
+      VG_(client_freeres_wrapper) = addr;
    else
    if (VG_(strcmp)(symbol, VG_STRINGIFY(VG_NOTIFY_ON_LOAD(ifunc_wrapper))) == 0)
       iFuncWrapper = addr;

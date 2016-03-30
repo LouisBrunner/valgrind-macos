@@ -41,8 +41,8 @@
 // used to be many more internal client requests.
 typedef
    enum { 
-      /* Denote the finish of __libc_freeres_wrapper().  Also causes exit. */
-      VG_USERREQ__LIBC_FREERES_DONE = 0x3029,
+      /* Denote the finish of freeres_wrapper().  Also causes exit. */
+      VG_USERREQ__FREERES_DONE = 0x3029,
 
       /* Get the tool's malloc-wrapping functions */
       VG_USERREQ__GET_MALLOCFUNCS   = 0x3030,
@@ -54,6 +54,18 @@ typedef
       VG_USERREQ__ADD_IFUNC_TARGET  = 0x3104,
 
    } Vg_InternalClientRequest;
+
+
+/* Which freeres functions to run in the freeres_wrapper().
+   It is possible to run both. */
+typedef enum {
+   /* Run __gnu_cxx::__freeres(). */
+   VG_RUN__GNU_CXX__FREERES = 1,
+
+   /* Run __libc_freeres(). */
+   VG_RUN__LIBC_FREERES = 2
+
+} Vg_FreeresToRun;
 
 // Function for printing from code within Valgrind, but which runs on the
 // sim'd CPU.  Must be a function rather than macros so that va_list can

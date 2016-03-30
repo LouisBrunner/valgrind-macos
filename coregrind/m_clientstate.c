@@ -106,9 +106,9 @@ HChar* VG_(name_of_launcher) = NULL;
 Int VG_(fd_soft_limit) = -1;
 Int VG_(fd_hard_limit) = -1;
 
-/* Useful addresses extracted from the client */
-/* Where is the __libc_freeres_wrapper routine we made? */
-Addr VG_(client___libc_freeres_wrapper) = 0;
+/* Useful addresses extracted from the client. */
+/* Where is the freeres_wrapper routine we made? */
+Addr VG_(client_freeres_wrapper) = 0;
 
 /* x86-linux only: where is glibc's _dl_sysinfo_int80 function?
    Finding it isn't essential, but knowing where it is does sometimes

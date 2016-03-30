@@ -1358,6 +1358,7 @@ static void dh_pre_clo_init(void)
 //zz
    // Needs.
    VG_(needs_libc_freeres)();
+   VG_(needs_cxx_freeres)();
    VG_(needs_command_line_options)(dh_process_cmd_line_option,
                                    dh_print_usage,
                                    dh_print_debug_usage);

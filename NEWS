@@ -32,6 +32,10 @@ n-i-bz Improved thread startup time significantly on non-Linux platforms.
     Note that you must have a GDB >= 7.11 to use 'catch syscall' with
     gdbserver.
 
+* New option --run-cxx-freeres=<yes|no> can be used to change whether
+  __gnu_cxx::__freeres() cleanup function is called or not. Default is
+  'yes'.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"
@@ -48,6 +52,7 @@ where XXXXXX is the bug number as listed below.
 191069  Exiting due to signal not reported in XML output
 212352  vex amd64 unhandled opc_aux = 0x 2, first_opcode == 0xDC (FCOM)
 278744  cvtps2pd with redundant RexW
+345307  Warning about "still reachable" memory when using libstdc++ from gcc 5
 348345  Assertion fails for negative lineno
 353083  arm64 doesn't implement various xattr system calls
 353084  arm64 doesn't support sigpending system call

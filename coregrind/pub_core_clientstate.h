@@ -90,9 +90,9 @@ extern HChar* VG_(name_of_launcher);
 extern Int VG_(fd_soft_limit);
 extern Int VG_(fd_hard_limit);
 
-/* Useful addresses extracted from the client */
-/* Where is the __libc_freeres_wrapper routine we made? */
-extern Addr VG_(client___libc_freeres_wrapper);
+/* Useful addresses extracted from the client. */
+/* Where is the freeres_wrapper routine we made? */
+extern Addr VG_(client_freeres_wrapper);
 
 /* x86-linux only: where is ld.so's _dl_sysinfo_int80 function?
    Finding it isn't essential, but knowing where it is does sometimes

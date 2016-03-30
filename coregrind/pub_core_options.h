@@ -281,6 +281,13 @@ extern Bool  VG_(clo_track_fds);
    cannot be overridden from the command line. */
 extern Bool  VG_(clo_run_libc_freeres);
 
+/* Should we run __gnu_cxx::__freeres at exit for C++ programs?
+   Default: YES.  Note this is subservient to VG_(needs).cxx_freeres;
+   if the latter says False, then the setting of VG_(clo_run_cxx_freeres)
+   is ignored.  Ie if a tool says no, I don't want this to run, that
+   cannot be overridden from the command line. */
+extern Bool  VG_(clo_run_cxx_freeres);
+
 /* Should we show VEX emulation warnings?  Default: NO */
 extern Bool VG_(clo_show_emwarns);
 

@@ -1744,12 +1744,13 @@ static Bool os_client_request(ThreadId tid, UWord *args)
    vg_assert(VG_(is_running_thread)(tid));
 
    switch(args[0]) {
-   case VG_USERREQ__LIBC_FREERES_DONE:
+   case VG_USERREQ__FREERES_DONE:
       /* This is equivalent to an exit() syscall, but we don't set the
 	 exitcode (since it might already be set) */
       if (0 || VG_(clo_trace_syscalls) || VG_(clo_trace_sched))
          VG_(message)(Vg_DebugMsg, 
-                      "__libc_freeres() done; really quitting!\n");
+                      "__gnu_cxx::__freeres() and __libc_freeres() wrapper "
+                      "done; really quitting!\n");
       VG_(threads)[tid].exitreason = VgSrc_ExitThread;
       break;
 

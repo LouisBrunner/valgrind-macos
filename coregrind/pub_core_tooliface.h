@@ -81,6 +81,7 @@ extern VgDetails VG_(details);
 typedef
    struct {
       Bool libc_freeres;
+      Bool cxx_freeres;
       Bool core_errors;
       Bool tool_errors;
       Bool superblock_discards;

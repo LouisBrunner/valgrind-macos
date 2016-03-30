@@ -1930,6 +1930,37 @@ need to use them.</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.run-cxx-freeres" xreflabel="--run-cxx-freeres">
+    <term>
+      <option><![CDATA[--run-cxx-freeres=<yes|no> [default: yes] ]]></option>
+    </term>
+    <listitem>
+      <para>This option is only relevant when running Valgrind on Linux
+            or Solaris C++ programs.</para>
+
+      <para>The GNU Standard C++ library (<function>libstdc++.so</function>),
+      which is used by all C++ programs compiled with g++, may allocate memory
+      for its own uses. Usually it doesn't bother to free that memory when
+      the program ends&mdash;there would be no point, since the kernel reclaims
+      all process resources when a process exits anyway, so it would
+      just slow things down.</para>
+
+      <para>The gcc authors realised that this behaviour causes leak
+      checkers, such as Valgrind, to falsely report leaks in libstdc++, when
+      a leak check is done at exit.  In order to avoid this, they
+      provided a routine called <function>__gnu_cxx::__freeres</function>
+      specifically to make libstdc++ release all memory it has allocated.
+      Memcheck therefore tries to run
+      <function>__gnu_cxx::__freeres</function> at exit.</para>
+
+      <para>For the sake of flexibility and unforeseen problems with
+      <function>__gnu_cxx::__freeres</function>, option
+      <option>--run-cxx-freeres=no</option> exists,
+      although at the cost of possibly falsely reporting space leaks in
+      <filename>libstdc++.so</filename>.</para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.sim-hints" xreflabel="--sim-hints">
     <term>
       <option><![CDATA[--sim-hints=hint1,hint2,... ]]></option>

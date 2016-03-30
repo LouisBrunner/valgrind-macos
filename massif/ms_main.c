@@ -2569,6 +2569,7 @@ static void ms_pre_clo_init(void)
 
    // Needs.
    VG_(needs_libc_freeres)();
+   VG_(needs_cxx_freeres)();
    VG_(needs_command_line_options)(ms_process_cmd_line_option,
                                    ms_print_usage,
                                    ms_print_debug_usage);

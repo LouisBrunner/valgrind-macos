@@ -1092,13 +1092,21 @@ PRE(sys_exit)
       if (VG_(threads)[t].status == VgTs_Empty)
          continue;
 
-      VG_(threads)[t].exitreason = VgSrc_ExitProcess;
+      /* Assign the exit code, VG_(nuke_all_threads_except) will assign
+         the exitreason. */
       VG_(threads)[t].os_state.exitcode = ARG1;
-
-      /* Unblock it, if blocked. */
-      if (t != tid)
-         VG_(get_thread_out_of_syscall)(t);
    }
+
+   /* Indicate in all other threads that the process is exiting.
+      Then wait using VG_(reap_threads) for these threads to disappear.
+      See comments in syswrap-linux.c, PRE(sys_exit_group) wrapper,
+      for reasoning why this cannot give a deadlock. */
+   VG_(nuke_all_threads_except)(tid, VgSrc_ExitProcess);
+   VG_(reap_threads)(tid);
+   VG_(threads)[tid].exitreason = VgSrc_ExitThread;
+   /* We do assign VgSrc_ExitThread and not VgSrc_ExitProcess, as this thread
+      is the thread calling exit_group and so its registers must be considered
+      as not reachable. See pub_tool_machine.h VG_(apply_to_GP_regs). */
 
    /* We have to claim the syscall already succeeded. */
    SET_STATUS_Success(0);

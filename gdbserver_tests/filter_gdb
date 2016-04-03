@@ -62,6 +62,10 @@ sed -e '/^\ \ \ \ \.\.\.$/d'                                        |
 #	gdb might also try to show the "entry value" p=p@entry=0x...
 #	Some gdb versions don't show the source line:number after switching
 #		threads in #0  0x........ in do_burn ().
+#	Newer gdb say Thread .... hit Breakpoint, we expect just Breakpoint.
+#	We expect "Program received" instead of "Thread .... received"
+#	Ordering of '  Thread .... (tid .' might differ between gdb version,
+#	so remove all such lines except the "current" one (starts with '*').
 sed -e '/Remote debugging using/,/vgdb launched process attached/d'                                   \
     -e '/filter_gdb BEGIN drop/,/filter_gdb END drop/d'                                               \
     -e 's/^\[?1034hReading symbols/Reading symbols/'                                                \
@@ -74,6 +78,8 @@ sed -e '/Remote debugging using/,/vgdb launched process attached/d'             
     -e '/\[Switching to Thread ....\]/d'                                                              \
     -e 's/\(\[Switching to thread [1234] (Thread ....)\]\)#0/\1\n#0/'                                 \
     -e 's/^\([ \* ] [0-9] Thread .... (tid [0-9] VgTs_WaitSys)  0x........ in\).*$/\1 syscall .../'   \
+    -e 's/^Thread .... hit Breakpoint /Breakpoint /'                                                  \
+    -e 's/^Thread .... received /Program received /'                                                  \
     -e 's/#[0-9]\(  0x........ in sleeper_or_burner\)/#.\1/'                                          \
     -e 's/\(#0  0x........ in do_burn ()\) at sleepers.c:41/\1/'                                      \
     -e '/^Reading symbols from .*\.\.\.done\./d'                                                      \
@@ -115,6 +121,7 @@ sed -e '/Remote debugging using/,/vgdb launched process attached/d'             
     -e 's/\(^Breakpoint 1, tls_ptr (p=0x........\) <tests[0-9+]*>\() at tls.c:55\)/\1\2/'         \
     -e '/Id   Target Id         Frame/d'                                                              \
     -e 's/^\([ \*] [1234] \) *Thread /\1Thread /'                                                     \
+    -e 's/^  [0-9] Thread .... (tid [0-9] .*$//'                                                      \
     -e 's/VgTs_WaitSys) 0x/VgTs_WaitSys)  0x/'                                                        \
     -e '/Cannot access memory at address 0x......../d'                                                \
     -e '/\[New Thread/d'                                                                              \

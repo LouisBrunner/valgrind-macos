@@ -1151,6 +1151,23 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_pwritev,           sys_pwritev),          // 321
    LINXY(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo),// 322
 
+   LINXY(__NR_socket,            sys_socket),           // 326
+   LINX_(__NR_bind,              sys_bind),             // 327
+   LINX_(__NR_connect,           sys_connect),          // 328
+   LINX_(__NR_listen,            sys_listen),           // 329
+   LINXY(__NR_accept,            sys_accept),           // 330
+   LINXY(__NR_getsockname,       sys_getsockname),      // 331
+   LINXY(__NR_getpeername,       sys_getpeername),      // 332
+   LINXY(__NR_socketpair,        sys_socketpair),       // 333
+   LINX_(__NR_send,              sys_send),             // 334
+   LINX_(__NR_sendto,            sys_sendto),           // 335
+   LINXY(__NR_recv,              sys_recv),             // 336
+   LINXY(__NR_recvfrom,          sys_recvfrom),         // 337
+   LINX_(__NR_shutdown,          sys_shutdown),         // 338
+   LINX_(__NR_setsockopt,        sys_setsockopt),       // 339
+   LINXY(__NR_getsockopt,        sys_getsockopt),       // 340
+   LINX_(__NR_sendmsg,           sys_sendmsg),          // 341
+   LINXY(__NR_recvmsg,           sys_recvmsg),          // 342
    LINXY(__NR_recvmmsg,          sys_recvmmsg),         // 343
    LINXY(__NR_accept4,           sys_accept4),          // 344
 

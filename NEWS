@@ -89,6 +89,7 @@ where XXXXXX is the bug number as listed below.
 360425  arm64 unsupported instruction ldpsw
 360519  none/tests/arm64/memory.vgtest might fail with newer gcc
 360752  raise the number of reserved fds in m_main.c from 10 to 12
+361354  ppc64[le]: wire up separate socketcalls system calls
 
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64
 n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap

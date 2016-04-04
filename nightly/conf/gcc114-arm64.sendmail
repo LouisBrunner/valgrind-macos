@@ -13,4 +13,4 @@ cat "$summary"  >> $MAILFILE
 echo "  " >> $MAILFILE
 cat "$diffs"  >> $MAILFILE
 
-/usr/sbin/sendmail -t -i < $MAILFILE
+head -2250 < $MAILFILE | /usr/sbin/sendmail -t -i

@@ -316,6 +316,12 @@ enum {
    MCPE_DIE_MEM_STACK_128,
    MCPE_DIE_MEM_STACK_144,
    MCPE_DIE_MEM_STACK_160,
+   MCPE_MAKE_STACK_UNINIT_W_O,
+   MCPE_MAKE_STACK_UNINIT_NO_O,
+   MCPE_MAKE_STACK_UNINIT_128_NO_O,
+   MCPE_MAKE_STACK_UNINIT_128_NO_O_ALIGNED_16,
+   MCPE_MAKE_STACK_UNINIT_128_NO_O_ALIGNED_8,
+   MCPE_MAKE_STACK_UNINIT_128_NO_O_SLOWCASE,
    /* Do not add enumerators past this line. */
    MCPE_LAST
 };
@@ -749,8 +755,14 @@ VG_REGPARM(1) UWord MC_(helperc_LOADV16be)  ( Addr );
 VG_REGPARM(1) UWord MC_(helperc_LOADV16le)  ( Addr );
 VG_REGPARM(1) UWord MC_(helperc_LOADV8)     ( Addr );
 
-void MC_(helperc_MAKE_STACK_UNINIT) ( Addr base, UWord len,
-                                                 Addr nia );
+VG_REGPARM(3)
+void MC_(helperc_MAKE_STACK_UNINIT_w_o) ( Addr base, UWord len, Addr nia );
+
+VG_REGPARM(2)
+void MC_(helperc_MAKE_STACK_UNINIT_no_o) ( Addr base, UWord len );
+
+VG_REGPARM(1)
+void MC_(helperc_MAKE_STACK_UNINIT_128_no_o) ( Addr base );
 
 /* Origin tag load/store helpers */
 VG_REGPARM(2) void  MC_(helperc_b_store1) ( Addr a, UWord d32 );

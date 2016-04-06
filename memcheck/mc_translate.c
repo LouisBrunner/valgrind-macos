@@ -5512,20 +5512,36 @@ static
 void do_AbiHint ( MCEnv* mce, IRExpr* base, Int len, IRExpr* nia )
 {
    IRDirty* di;
-   /* Minor optimisation: if not doing origin tracking, ignore the
-      supplied nia and pass zero instead.  This is on the basis that
-      MC_(helperc_MAKE_STACK_UNINIT) will ignore it anyway, and we can
-      almost always generate a shorter instruction to put zero into a
-      register than any other value. */
-   if (MC_(clo_mc_level) < 3)
-      nia = mkIRExpr_HWord(0);
 
-   di = unsafeIRDirty_0_N(
-           0/*regparms*/,
-           "MC_(helperc_MAKE_STACK_UNINIT)",
-           VG_(fnptr_to_fnentry)( &MC_(helperc_MAKE_STACK_UNINIT) ),
-           mkIRExprVec_3( base, mkIRExpr_HWord( (UInt)len), nia )
-        );
+   if (MC_(clo_mc_level) == 3) {
+      di = unsafeIRDirty_0_N(
+              3/*regparms*/,
+              "MC_(helperc_MAKE_STACK_UNINIT_w_o)",
+              VG_(fnptr_to_fnentry)( &MC_(helperc_MAKE_STACK_UNINIT_w_o) ),
+              mkIRExprVec_3( base, mkIRExpr_HWord( (UInt)len), nia )
+           );
+   } else {
+      /* We ignore the supplied nia, since it is irrelevant. */
+      tl_assert(MC_(clo_mc_level) == 2 || MC_(clo_mc_level) == 1);
+      /* Special-case the len==128 case, since that is for amd64-ELF,
+         which is a very common target. */
+      if (len == 128) {
+         di = unsafeIRDirty_0_N(
+                 1/*regparms*/,
+                 "MC_(helperc_MAKE_STACK_UNINIT_128_no_o)",
+                 VG_(fnptr_to_fnentry)( &MC_(helperc_MAKE_STACK_UNINIT_128_no_o)),
+                 mkIRExprVec_1( base )
+              );
+      } else {
+         di = unsafeIRDirty_0_N(
+                 2/*regparms*/,
+                 "MC_(helperc_MAKE_STACK_UNINIT_no_o)",
+                 VG_(fnptr_to_fnentry)( &MC_(helperc_MAKE_STACK_UNINIT_no_o) ),
+                 mkIRExprVec_2( base, mkIRExpr_HWord( (UInt)len) )
+              );
+      }
+   }
+
    stmt( 'V', mce, IRStmt_Dirty(di) );
 }
 

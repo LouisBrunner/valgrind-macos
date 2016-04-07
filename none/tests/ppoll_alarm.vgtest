@@ -1,3 +1,4 @@
+prereq: ../../tests/os_test linux || ../../tests/os_test solaris
 prog: ppoll_alarm
 vgopts: -q
 stderr_filter: filter_stderr

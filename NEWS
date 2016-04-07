@@ -94,6 +94,7 @@ where XXXXXX is the bug number as listed below.
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64
 n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap
 n-i-bz false positive leaks due to aspacemgr merging non heap segments with heap segments.
+n-i-bz Fix ppoll_alarm exclusion on OS X
 
 Release 3.11.0 (22 September 2015)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

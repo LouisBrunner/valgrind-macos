@@ -217,7 +217,6 @@ check_PROGRAMS = \
 	mmap_fcntl_bug \
 	munmap_exe map_unaligned map_unmap mq \
 	pending \
-	ppoll_alarm \
 	procfs-cmdline-exe \
 	pselect_alarm \
 	pth_atfork1 pth_blockedsig pth_cancel1 pth_cancel2 pth_cvsimple \
@@ -251,7 +250,8 @@ endif
 
 # This doesn't appear to be compilable on Darwin.
 if ! VGCONF_OS_IS_DARWIN
-   check_PROGRAMS += rlimit64_nofile 
+   check_PROGRAMS += rlimit64_nofile \
+        ppoll_alarm
 endif
 
 # clang does not know -ansi

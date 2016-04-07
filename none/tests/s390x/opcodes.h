@@ -329,6 +329,7 @@
 #define RNSBG(r1,r2,i3,i4,i5)           RIE_RRUUU(ec,r1,r2,i3,i4,i5,54)
 #define ROSBG(r1,r2,i3,i4,i5)           RIE_RRUUU(ec,r1,r2,i3,i4,i5,56)
 #define RXSBG(r1,r2,i3,i4,i5)           RIE_RRUUU(ec,r1,r2,i3,i4,i5,57)
+#define RISBGN(r1,r2,i3,i4,i5)          RIE_RRUUU(ec,r1,r2,i3,i4,i5,59)
 #define SFPC(r1)                        RRE_R0(b384,r1)
 #define SGRK(r3,r1,r2)                  RRF_R0RR2(b9e9,r3,0,r1,r2)
 #define SHHHR(r3,r1,r2)                 RRF_R0RR2(b9c9,r3,0,r1,r2)

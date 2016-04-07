@@ -6,11 +6,12 @@
 	register unsigned long r1 asm ("1") = _r1;	\
 	register unsigned long r2 asm ("2") = _r2;	\
 	int cc;						\
-	asm volatile(	insn(1,2, i3, i4, i5)		\
+	asm volatile(   "clgr 1,2\n"                    \
+                        insn(1,2, i3, i4, i5)           \
 			"ipm %1\n"			\
 			"srl %1,28\n"			\
 			: "+d" (r1), "=d" (cc)		\
-			: "d" (r1), "d" (r2)			\
+			: "d" (r1), "d" (r2)		\
 			: "cc");			\
 	printf(#insn " r1(==%16.16lX),r2(==%16.16lX),0x" #i3 ",0x" #i4 ",0x" #i5 " = %16.16lX (cc=%d)\n", _r1, _r2, r1, cc); \
 })
@@ -73,6 +74,7 @@ int main()
 	i5sweep(RNSBG);
 	i5sweep(ROSBG);
 	i5sweep(RXSBG);
+        i5sweep(RISBGN);
 
 	return 0;
 }

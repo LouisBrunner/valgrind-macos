@@ -2819,9 +2819,9 @@ static void final_tidyup(ThreadId tid)
    /* Pass a parameter to freeres_wrapper(). */
 #  if defined(VGA_x86)
    Addr sp = VG_(threads)[tid].arch.vex.guest_ESP;
-   sp = sp - sizeof(UWord);
    *((UWord *) sp) = to_run;
    VG_TRACK(post_mem_write, Vg_CoreClientReq, tid, sp, sizeof(UWord));
+   sp = sp - sizeof(UWord);
    VG_(threads)[tid].arch.vex.guest_ESP = sp;
    VG_TRACK(post_reg_write, Vg_CoreClientReq, tid,
             offsetof(VexGuestX86State, guest_ESP),

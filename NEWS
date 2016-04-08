@@ -88,6 +88,7 @@ where XXXXXX is the bug number as listed below.
 359871  Incorrect mask handling in ppoll
 360425  arm64 unsupported instruction ldpsw
 360519  none/tests/arm64/memory.vgtest might fail with newer gcc
+360749  kludge for multiple .rodata sections on Solaris no longer needed
 360752  raise the number of reserved fds in m_main.c from 10 to 12
 361354  ppc64[le]: wire up separate socketcalls system calls
 361226  s390x: risbgn (EC59) not implemented

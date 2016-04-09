@@ -224,21 +224,27 @@ vex_revision="`svn info valgrind-new/VEX | grep Revision | sed 's/Revision[ ]*:[
 gcc_version="`gcc --version 2> /dev/null | head -1`"
 gdb_version="`gdb --version 2> /dev/null | head -1`"
 as_version="`as --version 2> /dev/null | head -1`"
-libc_so="`ls -1 /lib/libc.so.* /lib64/libc.so.* /lib32/libc.so.* /lib/*-linux-gnu/libc.so.* 2>/dev/null | tail -1`"
-libc="unknown"
-if [ "x$libc_so" != "x" ]; then
-  if [ -e "$libc_so" -a -r "$libc_so" ]; then
-    libc="`$libc_so | head -1`"
+if [ `uname -o` = "Solaris" ]; then
+  libc="Solaris libc"
+else
+  libc_so="`ls -1 /lib/libc.so.* /lib64/libc.so.* /lib32/libc.so.* /lib/*-linux-gnu/libc.so.* 2>/dev/null | tail -1`"
+  libc="unknown"
+  if [ "x$libc_so" != "x" ]; then
+    if [ -e "$libc_so" -a -r "$libc_so" ]; then
+      libc="`$libc_so | head -1`"
+    fi
   fi
+  libc=`echo $libc | sed "s/, by Roland.*//"`
 fi
-libc=`echo $libc | sed "s/, by Roland.*//"`
 uname_stuff="`uname -mrs`"
 if [ -r /etc/os-release ]; then
   vendor_stuff="`. /etc/os-release; echo ${NAME} ${VERSION}`"
-elif which lsb_release 2>&1 > /dev/null; then
+elif which lsb_release >/dev/null 2>&1; then
   vendor_stuff="`lsb_release -sicr | xargs echo`"
 elif [ -e "/etc/issue.net" -a -r "/etc/issue.net" ]; then
   vendor_stuff="`cat /etc/issue.net | head -1`"
+elif [ -r /etc/release ]; then
+  vendor_stuff="`cat /etc/release | head -1`"
 else
   vendor_stuff="unknown"
 fi

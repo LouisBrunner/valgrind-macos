@@ -2,6 +2,7 @@
    10 unique moans should be produced.
  */
 
+#include <unistd.h>
 #include <sys/ioctl.h>
 
 /* An ioctl request for a strange ioctl device driver.

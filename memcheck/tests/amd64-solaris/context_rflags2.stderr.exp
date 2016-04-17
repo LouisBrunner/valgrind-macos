@@ -1,12 +1,12 @@
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (context_rflags2.c:85)
+   at 0x........: main (context_rflags2.c:86)
  Uninitialised value was created by a heap allocation
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (context_rflags2.c:44)
+   by 0x........: main (context_rflags2.c:45)
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (context_rflags2.c:85)
+   at 0x........: main (context_rflags2.c:86)
  Uninitialised value was created by a heap allocation
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (context_rflags2.c:44)
+   by 0x........: main (context_rflags2.c:45)
 

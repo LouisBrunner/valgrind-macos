@@ -3,6 +3,7 @@
 
 #include <sys/lwp.h>
 #include <sys/mman.h>
+#include <sys/regset.h>
 #include <sys/syscall.h>
 #include <sys/ucontext.h>
 

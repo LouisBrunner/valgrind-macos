@@ -10,6 +10,8 @@
 #include <sys/syscall.h>
 #include <sys/ucontext.h>
 
+#include "config.h"
+
 static siginfo_t si;
 static ucontext_t uc;
 /* x0 is always zero, but is visible to Valgrind as uninitialised. */
@@ -31,7 +33,13 @@ int main(void)
    pid_t pid;
    upad128_t out[8];
    upad128_t y0;
-   struct fpchip_state *fs = &uc.uc_mcontext.fpregs.fp_reg_set.fpchip_state;
+
+#if defined(SOLARIS_FPCHIP_STATE_TAKES_UNDERSCORE)
+   struct _fpchip_state *fs;
+#else
+   struct fpchip_state *fs;
+#endif
+   fs = &uc.uc_mcontext.fpregs.fp_reg_set.fpchip_state;
 
    /* Uninitialised, but we know px[0] is 0x0. */
    upad128_t *px = malloc(sizeof(*px));

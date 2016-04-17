@@ -1442,7 +1442,11 @@ struct sysv_ucontext {
 #error "Unknown platform"
 #endif
 
+#if defined(SOLARIS_FPCHIP_STATE_TAKES_UNDERSCORE)
+#define vki_fpchip_state _fpchip_state
+#else
 #define vki_fpchip_state fpchip_state
+#endif /* SOLARIS_FPCHIP_STATE_TAKES_UNDERSCORE */
 
 #define VKI_GETCONTEXT GETCONTEXT
 #define VKI_SETCONTEXT SETCONTEXT

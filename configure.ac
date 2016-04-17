@@ -3520,6 +3520,23 @@ AC_MSG_RESULT([no])
 ])
 AM_CONDITIONAL(SOLARIS_SYSTEM_STATS_SYSCALL, test x$solaris_system_stats_syscall = xyes)
 
+
+# Solaris-specific check determining if fpregset_t defines struct _fpchip_state
+# (on newer illumos) or struct fpchip_state (Solaris, older illumos).
+#
+# C-level symbol: SOLARIS_FPCHIP_STATE_TAKES_UNDERSCORE
+# Automake-level symbol: none
+#
+AC_CHECK_TYPE([struct _fpchip_state],
+              [solaris_fpchip_state_takes_underscore=yes],
+              [solaris_fpchip_state_takes_underscore=no],
+              [[#include <sys/regset.h>]])
+if test "$solaris_fpchip_state_takes_underscore" = "yes"; then
+  AC_DEFINE(SOLARIS_FPCHIP_STATE_TAKES_UNDERSCORE, 1,
+            [Define to 1 if fpregset_t defines struct _fpchip_state])
+fi
+
+
 else
 AM_CONDITIONAL(SOLARIS_SUN_STUDIO_AS, false)
 AM_CONDITIONAL(SOLARIS_XPG_SYMBOLS_PRESENT, false)

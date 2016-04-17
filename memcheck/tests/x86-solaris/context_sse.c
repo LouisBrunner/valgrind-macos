@@ -16,8 +16,10 @@ static ucontext_t uc;
 static upad128_t x0;
 static upad128_t d0 = {0};
 
-static void sighandler(int sig, siginfo_t *sip, ucontext_t *ucp)
+static void sighandler(int sig, siginfo_t *sip, void *arg)
 {
+   ucontext_t *ucp = (ucontext_t *) arg;
+
    si = *sip;
    uc = *ucp;
 
@@ -47,7 +49,7 @@ int main(void)
    upad128_t *py = malloc(sizeof(*py));
    y0 = py[0];
 
-   sa.sa_handler = sighandler;
+   sa.sa_sigaction = sighandler;
    sa.sa_flags = SA_SIGINFO;
    if (sigfillset(&sa.sa_mask)) {
       perror("sigfillset");

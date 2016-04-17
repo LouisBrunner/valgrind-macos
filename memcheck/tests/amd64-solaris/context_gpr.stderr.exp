@@ -1,18 +1,18 @@
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (context_gpr.c:84)
+   at 0x........: main (context_gpr.c:86)
  Uninitialised value was created by a heap allocation
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (context_gpr.c:43)
+   by 0x........: main (context_gpr.c:45)
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (context_gpr.c:91)
+   at 0x........: main (context_gpr.c:93)
  Uninitialised value was created by a heap allocation
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (context_gpr.c:43)
+   by 0x........: main (context_gpr.c:45)
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (context_gpr.c:91)
+   at 0x........: main (context_gpr.c:93)
  Uninitialised value was created by a heap allocation
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (context_gpr.c:39)
+   by 0x........: main (context_gpr.c:41)
 

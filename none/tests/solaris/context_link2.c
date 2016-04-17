@@ -5,13 +5,13 @@
 #include <stdio.h>
 #include <ucontext.h>
 
-static void sighandler(int sig, siginfo_t *sip, ucontext_t *ucp)
+static void sighandler(int sig, siginfo_t *sip, void *arg)
 {
    ucontext_t uc2;
 
-   /* Current uc_link value has to be equal to ucp. */
+   /* Current uc_link value has to be equal to (ucontext_t *) arg. */
    getcontext(&uc2);
-   assert(uc2.uc_link == ucp);
+   assert(uc2.uc_link == arg);
 }
 
 int main(void)
@@ -26,7 +26,7 @@ int main(void)
    }
    assert(!uc.uc_link);
 
-   sa.sa_handler = sighandler;
+   sa.sa_sigaction = sighandler;
    sa.sa_flags = SA_SIGINFO;
    if (sigfillset(&sa.sa_mask)) {
       perror("sigfillset");

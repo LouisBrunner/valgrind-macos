@@ -17,10 +17,10 @@
 static siginfo_t si;
 static ucontext_t uc;
 
-static void sighandler(int sig, siginfo_t *sip, ucontext_t *ucp)
+static void sighandler(int sig, siginfo_t *sip, void *arg)
 {
    si = *sip;
-   uc = *ucp;
+   uc = *((ucontext_t *) arg);
 }
 
 int main(void)
@@ -29,7 +29,7 @@ int main(void)
    pid_t pid;
    long rflags;
 
-   sa.sa_handler = sighandler;
+   sa.sa_sigaction = sighandler;
    sa.sa_flags = SA_SIGINFO;
    if (sigfillset(&sa.sa_mask)) {
       perror("sigfillset");

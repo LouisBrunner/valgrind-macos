@@ -14,8 +14,10 @@ static ucontext_t uc;
 /* x0 is always zero, but is visible to Valgrind as uninitialised. */
 static int x0;
 
-static void sighandler(int sig, siginfo_t *sip, ucontext_t *ucp)
+static void sighandler(int sig, siginfo_t *sip, void *arg)
 {
+   ucontext_t *ucp = (ucontext_t *) arg;
+
    si = *sip;
    uc = *ucp;
 
@@ -37,7 +39,7 @@ int main(void)
    int *py = malloc(sizeof(*py));
    y0 = py[0];
 
-   sa.sa_handler = sighandler;
+   sa.sa_sigaction = sighandler;
    sa.sa_flags = SA_SIGINFO;
    if (sigfillset(&sa.sa_mask)) {
       perror("sigfillset");

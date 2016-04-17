@@ -7,8 +7,9 @@
 
 static volatile int *sp;
 
-static void sighandler(int sig, siginfo_t *sip, ucontext_t *ucp)
+static void sighandler(int sig, siginfo_t *sip, void *arg)
 {
+   ucontext_t *ucp = (ucontext_t *) arg;
    sp = (int *) &ucp->uc_mcontext.gregs[0];
 }
 
@@ -20,7 +21,7 @@ int main(void)
    volatile int zero = 0;
 
    /* Setup a signal handler. */
-   sa.sa_handler = sighandler;
+   sa.sa_sigaction = sighandler;
    sa.sa_flags = SA_SIGINFO;
    if (sigfillset(&sa.sa_mask)) {
       perror("sigfillset");

@@ -26,8 +26,10 @@ static ucontext_t uc;
 
 void break_out(void);
 
-static void sighandler(int sig, siginfo_t *sip, ucontext_t *ucp)
+static void sighandler(int sig, siginfo_t *sip, void *arg)
 {
+   ucontext_t *ucp = (ucontext_t *) arg;
+
    si = *sip;
    uc = *ucp;
 
@@ -45,7 +47,7 @@ int main(void)
    int *px = malloc(sizeof(*px));
    x1 = px[0] + 1;
 
-   sa.sa_handler = sighandler;
+   sa.sa_sigaction = sighandler;
    sa.sa_flags = SA_SIGINFO;
    if (sigfillset(&sa.sa_mask)) {
       perror("sigfillset");

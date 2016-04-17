@@ -14,9 +14,10 @@ static siginfo_t si;
 static ucontext_t uc;
 static float inhandler[8];
 
-static void sighandler(int sig, siginfo_t *sip, ucontext_t *ucp)
+static void sighandler(int sig, siginfo_t *sip, void *arg)
 {
    int i;
+   ucontext_t *ucp = (ucontext_t *) arg;
 
    si = *sip;
    uc = *ucp;
@@ -50,7 +51,7 @@ int main(void)
    float *px = malloc(sizeof(*px));
    x0 = px[0];
 
-   sa.sa_handler = sighandler;
+   sa.sa_sigaction = sighandler;
    sa.sa_flags = SA_SIGINFO;
    if (sigfillset(&sa.sa_mask)) {
       perror("sigfillset");

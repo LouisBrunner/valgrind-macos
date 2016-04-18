@@ -1,3 +1,4 @@
 prereq: test -e reserve_sysstat_addr
 prog: reserve_sysstat_addr
 vgopts: -q
+cleanup: rm -f core

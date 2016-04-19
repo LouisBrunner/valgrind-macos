@@ -138,7 +138,7 @@
 #define __NR_getdents                   SYS_getdents
 #define __NR_privsys                    SYS_privsys
 #define __NR_ucredsys                   SYS_ucredsys
-//#define __NR_sysfs                      SYS_sysfs
+#define __NR_sysfs                      SYS_sysfs
 #define __NR_getmsg                     SYS_getmsg
 #define __NR_putmsg                     SYS_putmsg
 #define __NR_setgroups                  SYS_setgroups

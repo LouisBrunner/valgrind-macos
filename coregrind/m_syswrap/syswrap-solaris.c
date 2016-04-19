@@ -951,6 +951,7 @@ DECL_TEMPLATE(solaris, sys_lwp_name);
 #endif /* SOLARIS_LWP_NAME_SYSCALL */
 DECL_TEMPLATE(solaris, sys_privsys);
 DECL_TEMPLATE(solaris, sys_ucredsys);
+DECL_TEMPLATE(solaris, sys_sysfs);
 DECL_TEMPLATE(solaris, sys_getmsg);
 DECL_TEMPLATE(solaris, sys_putmsg);
 DECL_TEMPLATE(solaris, sys_lstat);
@@ -4555,6 +4556,51 @@ POST(sys_ucredsys)
       break;
    }
 }
+
+PRE(sys_sysfs)
+{
+   /* Kernel: int sysfs(int opcode, long a1, long a2); */
+   PRINT("sys_sysfs ( %ld, %ld, %ld )", SARG1, SARG2, ARG3);
+
+   switch (ARG1 /*opcode*/) {
+   case VKI_GETFSIND:
+      /* Libc: int sysfs(int opcode, const char *fsname); */
+      PRE_REG_READ2(long, SC2("sysfs", "getfsind"), int, opcode,
+                    const char *, fsname);
+      PRE_MEM_RASCIIZ("sysfs(fsname)", ARG2);
+      break;
+   case VKI_GETFSTYP:
+      /* Libc: int sysfs(int opcode, int fs_index, char *buf); */
+      PRE_REG_READ3(long, SC2("sysfs", "getfstyp"), int, opcode,
+                    int, fs_index, char *, buf);
+      PRE_MEM_WRITE("sysfs(buf)", ARG3, VKI_FSTYPSZ + 1);
+      break;
+   case VKI_GETNFSTYP:
+      /* Libc: int sysfs(int opcode); */
+      PRE_REG_READ1(long, SC2("sysfs", "getnfstyp"), int, opcode);
+      break;
+   default:
+      VG_(unimplemented)("Syswrap of the sysfs call with opcode %ld.", SARG1);
+      /*NOTREACHED*/
+      break;
+   }
+}
+
+POST(sys_sysfs)
+{
+   switch (ARG1 /*opcode*/) {
+   case VKI_GETFSIND:
+   case VKI_GETNFSTYP:
+      break;
+   case VKI_GETFSTYP:
+      POST_MEM_WRITE(ARG3, VG_(strlen)((HChar *) ARG3) + 1);
+      break;
+   default:
+      vg_assert(0);
+      break;
+   }
+}
+
 
 PRE(sys_getmsg)
 {
@@ -10392,6 +10438,7 @@ static SyscallTableEntry syscall_table[] = {
    GENXY(__NR_getdents,             sys_getdents),              /*  81 */
    SOLXY(__NR_privsys,              sys_privsys),               /*  82 */
    SOLXY(__NR_ucredsys,             sys_ucredsys),              /*  83 */
+   SOLXY(__NR_sysfs,                sys_sysfs),                 /*  84 */
    SOLXY(__NR_getmsg,               sys_getmsg),                /*  85 */
    SOLX_(__NR_putmsg,               sys_putmsg),                /*  86 */
 #if defined(SOLARIS_OLD_SYSCALLS)

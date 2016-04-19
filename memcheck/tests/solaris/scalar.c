@@ -8,6 +8,7 @@
 #include <sys/acl.h>
 #include <sys/door.h>
 #include <sys/fcntl.h>
+#include <sys/fstyp.h>
 #include <sys/lwp.h>
 #include <sys/mman.h>
 #include <sys/mount.h>
@@ -461,14 +462,35 @@ __attribute__((noinline))
 static void sys_ucredsys(void)
 {
    GO(SYS_ucredsys, "(UCREDSYS_UCREDGET) 3s 1m");
-   SY(SYS_ucredsys, x0 + 0, x0, x0 + 1 ); FAIL;
+   SY(SYS_ucredsys, x0 + 0, x0, x0 + 1); FAIL;
 }
 
 __attribute__((noinline))
 static void sys_ucredsys2(void)
 {
    GO(SYS_ucredsys, "(UCREDSYS_GETPEERUCRED) 3s 1m");
-   SY(SYS_ucredsys, x0 + 1, x0 - 1, x0 + 1 ); FAILx(EBADF);
+   SY(SYS_ucredsys, x0 + 1, x0 - 1, x0 + 1); FAILx(EBADF);
+}
+
+__attribute__((noinline))
+static void sys_sysfs(void)
+{
+   GO(SYS_sysfs, "(GETFSIND) 2s 1m");
+   SY(SYS_sysfs, x0 + GETFSIND, x0 + 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_sysfs2(void)
+{
+   GO(SYS_sysfs, "(GETFSTYP) 3s 1m");
+   SY(SYS_sysfs, x0 + GETFSTYP, x0, x0 + 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_sysfs3(void)
+{
+   GO(SYS_sysfs, "(GETNFSTYP) 1s 0m");
+   SY(SYS_sysfs, x0 + GETNFSTYP); SUCC;
 }
 
 __attribute__((noinline))
@@ -1787,7 +1809,9 @@ int main(void)
    sys_ucredsys2();
 
    /* SYS_sysfs                  84 */
-   /* XXX Missing wrapper. */
+   sys_sysfs();
+   sys_sysfs2();
+   sys_sysfs3();
 
    /* SYS_getmsg                 85 */
    GO(SYS_getmsg, "4s 1m");

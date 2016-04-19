@@ -1496,6 +1496,41 @@ Syscall param ucredsys(buf) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
+ 84:               SYS_sysfs (GETFSIND) 2s 1m
+---------------------------------------------------------
+Syscall param sysfs_getfsind(opcode) contains uninitialised byte(s)
+   ...
+
+Syscall param sysfs_getfsind(fsname) contains uninitialised byte(s)
+   ...
+
+Syscall param sysfs(fsname) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 84:               SYS_sysfs (GETFSTYP) 3s 1m
+---------------------------------------------------------
+Syscall param sysfs_getfstyp(opcode) contains uninitialised byte(s)
+   ...
+
+Syscall param sysfs_getfstyp(fs_index) contains uninitialised byte(s)
+   ...
+
+Syscall param sysfs_getfstyp(buf) contains uninitialised byte(s)
+   ...
+
+Syscall param sysfs(buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 84:               SYS_sysfs (GETNFSTYP) 1s 0m
+---------------------------------------------------------
+Syscall param sysfs_getnfstyp(opcode) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
  85:              SYS_getmsg 4s 1m
 ---------------------------------------------------------
 Syscall param getmsg(fildes) contains uninitialised byte(s)

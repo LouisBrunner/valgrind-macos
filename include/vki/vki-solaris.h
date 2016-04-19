@@ -564,6 +564,13 @@ typedef struct vki_kcf_door_arg_s {
 #define vki_namefd namefd
 
 
+#include <sys/fstyp.h>
+#define VKI_FSTYPSZ FSTYPSZ
+#define VKI_GETFSIND GETFSIND
+#define VKI_GETFSTYP GETFSTYP
+#define VKI_GETNFSTYP GETNFSTYP
+
+
 #include <sys/ioccom.h>
 #define _VKI_IOC_DIR(x) ((x) & (IOC_VOID | IOC_OUT | IOC_IN))
 #define _VKI_IOC_SIZE(x) (((x) >> 16) & IOCPARM_MASK)

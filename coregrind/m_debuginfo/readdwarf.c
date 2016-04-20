@@ -3551,8 +3551,9 @@ static Int show_CF_instruction ( DiCursor instrIN,
          break;
 
       case DW_CFA_ORCL_arg_loc:
-         /* :TODO: Print all arguments when implemented in libdwarf. */
-         VG_(printf)("  sci:DW_CFA_ORCL_arg_loc\n");
+         reg = step_leb128( &instr, 0 );
+         len = step_leb128( &instr, 0 );
+         VG_(printf)("  sci:DW_CFA_ORCL_arg_loc(%d, length %d)\n", reg, len);
          break;
 
       default: 

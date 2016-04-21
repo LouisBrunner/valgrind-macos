@@ -19,7 +19,7 @@
     <field name="v16_int8" type="v16i8"/>
   </union>
 
-  <reg name="vr0" bitsize="128" type="vec128"/>
+  <reg name="vr0" bitsize="128" type="vec128" regnum="73"/>
   <reg name="vr1" bitsize="128" type="vec128"/>
   <reg name="vr2" bitsize="128" type="vec128"/>
   <reg name="vr3" bitsize="128" type="vec128"/>

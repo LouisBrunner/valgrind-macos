@@ -40,10 +40,29 @@
   <reg name="r30s1" bitsize="64" type="uint64"/>
   <reg name="r31s1" bitsize="64" type="uint64"/>
 
-  <reg name="pcs1" bitsize="64" type="code_ptr" regnum="64"/>
+<!--  When printing the non-shadow register names/contents, GDB prints the
+      GPRs followed by the floating point registers then the pc, msr, ...
+      registers. If the shadow GPRs and shadow pc/msr/cr... register
+      definitions are all in this file, as is done with the non-shadow register
+      definitions, the shadow register name print order changes to GPRs,
+      followed by pc/msr/cr... then the floating point registers.  Note, the
+      contents of the shadow registers still print in this same order as the
+      non-shadow registers values resulting in the shadow register names and
+      shadow register values not correctly aligning.
+
+      In order to get, the shadow register names to print in the same order
+      as the non-shadow register and correctly align with their contents,
+      the following register definitions were moved to the file
+      power64-core2-valgrind-s1.xml. The new file is included after the shadow
+      floating point XML definition file. By doing this, we get GDB to print
+      the shadow register names in the same order as the non-shadow register
+      names and thus correctly align with the order that the shadow register
+      contents are printed.   -->
+
+<!--  <reg name="pcs1" bitsize="64" type="code_ptr"/>
   <reg name="msrs1" bitsize="64" type="uint64"/>
   <reg name="crs1" bitsize="32" type="uint32"/>
   <reg name="lrs1" bitsize="64" type="code_ptr"/>
   <reg name="ctrs1" bitsize="64" type="uint64"/>
-  <reg name="xers1" bitsize="32" type="uint32"/>
+  <reg name="xers1" bitsize="32" type="uint32"/> -->
 </feature>

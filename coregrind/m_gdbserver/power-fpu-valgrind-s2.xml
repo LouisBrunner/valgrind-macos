@@ -7,7 +7,7 @@
 
 <!DOCTYPE feature SYSTEM "gdb-target.dtd">
 <feature name="org.gnu.gdb.power.fpu-valgrind-s2">
-  <reg name="f0s2" bitsize="64" type="uint64" regnum="32"/>
+  <reg name="f0s2" bitsize="64" type="uint64"/>
   <reg name="f1s2" bitsize="64" type="uint64"/>
   <reg name="f2s2" bitsize="64" type="uint64"/>
   <reg name="f3s2" bitsize="64" type="uint64"/>
@@ -40,5 +40,5 @@
   <reg name="f30s2" bitsize="64" type="uint64"/>
   <reg name="f31s2" bitsize="64" type="uint64"/>
 
-  <reg name="fpscrs2" bitsize="32" group="float" regnum="70"/>
+  <reg name="fpscrs2" bitsize="32" group="float"/>
 </feature>

@@ -16,4 +16,5 @@
   <xi:include href="power-fpu.xml"/>
   <xi:include href="power64-linux.xml"/>
   <xi:include href="power-altivec.xml"/>
+  <xi:include href="power-vsx.xml"/>
 </target>

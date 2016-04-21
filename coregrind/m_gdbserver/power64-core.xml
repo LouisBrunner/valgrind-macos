@@ -40,6 +40,13 @@
   <reg name="r30" bitsize="64" type="uint64"/>
   <reg name="r31" bitsize="64" type="uint64"/>
 
+<!-- Note, the following register definitions must be in this file by
+     the "standard target features" for this processor.  GDB will reject
+     this file description if the following register definitions are
+     not in this file.  Hence, they can't be moved to power64-core2.xml
+     for consistency with what was done for the shadow register definitions
+     to get the shadow register print order to match the print order of
+     the HW registers -->
   <reg name="pc" bitsize="64" type="code_ptr" regnum="64"/>
   <reg name="msr" bitsize="64" type="uint64"/>
   <reg name="cr" bitsize="32" type="uint32"/>

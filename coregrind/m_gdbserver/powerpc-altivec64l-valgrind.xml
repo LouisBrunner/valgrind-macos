@@ -16,12 +16,17 @@
   <xi:include href="power-fpu.xml"/>
   <xi:include href="power64-linux.xml"/>
   <xi:include href="power-altivec.xml"/>
+  <xi:include href="power-vsx.xml"/>
   <xi:include href="power64-core-valgrind-s1.xml"/>
   <xi:include href="power-fpu-valgrind-s1.xml"/>
+  <xi:include href="power64-core2-valgrind-s1.xml"/>
   <xi:include href="power64-linux-valgrind-s1.xml"/>
   <xi:include href="power-altivec-valgrind-s1.xml"/>
+  <xi:include href="power-vsx-valgrind-s1.xml"/>
   <xi:include href="power64-core-valgrind-s2.xml"/>
   <xi:include href="power-fpu-valgrind-s2.xml"/>
+  <xi:include href="power64-core2-valgrind-s2.xml"/>
   <xi:include href="power64-linux-valgrind-s2.xml"/>
   <xi:include href="power-altivec-valgrind-s2.xml"/>
+  <xi:include href="power-vsx-valgrind-s2.xml"/>
 </target>

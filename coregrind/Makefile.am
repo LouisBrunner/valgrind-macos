@@ -605,12 +605,17 @@ GDBSERVER_XML_FILES = \
 	m_gdbserver/power64-core-valgrind-s1.xml \
 	m_gdbserver/power64-core-valgrind-s2.xml \
 	m_gdbserver/power64-core.xml \
+	m_gdbserver/power64-core2-valgrind-s1.xml \
+	m_gdbserver/power64-core2-valgrind-s2.xml \
 	m_gdbserver/power64-linux-valgrind-s1.xml \
 	m_gdbserver/power64-linux-valgrind-s2.xml \
 	m_gdbserver/power64-linux.xml \
 	m_gdbserver/power-altivec-valgrind-s1.xml \
 	m_gdbserver/power-altivec-valgrind-s2.xml \
 	m_gdbserver/power-altivec.xml \
+	m_gdbserver/power-vsx-valgrind-s1.xml \
+	m_gdbserver/power-vsx-valgrind-s2.xml \
+	m_gdbserver/power-vsx.xml \
 	m_gdbserver/power-core-valgrind-s1.xml \
 	m_gdbserver/power-core-valgrind-s2.xml \
 	m_gdbserver/power-core.xml \

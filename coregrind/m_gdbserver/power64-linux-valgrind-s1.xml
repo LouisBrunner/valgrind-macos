@@ -7,6 +7,6 @@
 
 <!DOCTYPE feature SYSTEM "gdb-target.dtd">
 <feature name="org.gnu.gdb.power.linux-valgrind-s1">
-  <reg name="orig_r3s1" bitsize="64" regnum="71"/>
+  <reg name="orig_r3s1" bitsize="64"/>
   <reg name="traps1" bitsize="64"/>
 </feature>

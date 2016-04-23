@@ -11,4 +11,5 @@ Valgrind has to exit now.  Sorry.  Bye!
 
 
 sched status:
-  running_tid=0
+  scheduler not yet initialised
+

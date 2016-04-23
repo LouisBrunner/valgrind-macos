@@ -86,6 +86,8 @@ where XXXXXX is the bug number as listed below.
 359829  PowerPC test none/tests/ppc64/test_isa_2_07.c uninitialized memory
         references was fixed.
 359871  Incorrect mask handling in ppoll
+360008  Contents of Power vr registers contents is not printed correctly when
+        the --vgdb-shadow-registers=yes option is used
 360425  arm64 unsupported instruction ldpsw
 360519  none/tests/arm64/memory.vgtest might fail with newer gcc
 360749  kludge for multiple .rodata sections on Solaris no longer needed
@@ -93,8 +95,7 @@ where XXXXXX is the bug number as listed below.
 361354  ppc64[le]: wire up separate socketcalls system calls
 361226  s390x: risbgn (EC59) not implemented
 361926  Unhandled Solaris syscall: sysfs(84)
-360008  Contents of Power vr registers contents is not printed correctly when
-        the --vgdb-shadow-registers=yes option is used
+362009  Valgrind dumps core on unimplemented functionality before threads are created
 
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64
 n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap

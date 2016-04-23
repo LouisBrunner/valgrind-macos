@@ -362,38 +362,42 @@ static void show_sched_status_wrk ( Bool host_stacktrace,
    }
 
    VG_(printf)("\nsched status:\n"); 
-   VG_(printf)("  running_tid=%u\n", VG_(get_running_tid)());
-   for (i = 1; i < VG_N_THREADS; i++) {
-      VgStack* stack 
-         = (VgStack*)VG_(threads)[i].os_state.valgrind_stack_base;
-      /* If a thread slot was never used (yet), valgrind_stack_base is 0.
-         If a thread slot is used by a thread or was used by a thread which
-         has exited, then valgrind_stack_base points to the stack base. */
-      if (VG_(threads)[i].status == VgTs_Empty
-          && (!exited_threads || stack == 0)) continue;
-      VG_(printf)("\nThread %d: status = %s (lwpid %d)\n", i, 
-                  VG_(name_of_ThreadStatus)(VG_(threads)[i].status),
-                  VG_(threads)[i].os_state.lwpid);
-      if (VG_(threads)[i].status != VgTs_Empty)
-         VG_(get_and_pp_StackTrace)( i, BACKTRACE_DEPTH );
-      if (stack_usage && VG_(threads)[i].client_stack_highest_byte != 0 ) {
-         Addr start, end;
-         
-         start = end = 0;
-         VG_(stack_limits)(VG_(threads)[i].client_stack_highest_byte,
-                           &start, &end);
-         if (start != end)
-            VG_(printf)("client stack range: [%p %p] client SP: %p\n",
-                        (void*)start, (void*)end, (void*)VG_(get_SP)(i));
-         else
-            VG_(printf)("client stack range: ???????\n");
+   if (VG_(threads) == NULL) {
+      VG_(printf)("  scheduler not yet initialised\n");
+   } else {
+      VG_(printf)("  running_tid=%u\n", VG_(get_running_tid)());
+      for (i = 1; i < VG_N_THREADS; i++) {
+         VgStack *stack 
+            = (VgStack*)VG_(threads)[i].os_state.valgrind_stack_base;
+         /* If a thread slot was never used (yet), valgrind_stack_base is 0.
+            If a thread slot is used by a thread or was used by a thread which
+            has exited, then valgrind_stack_base points to the stack base. */
+         if (VG_(threads)[i].status == VgTs_Empty
+             && (!exited_threads || stack == 0)) continue;
+         VG_(printf)("\nThread %d: status = %s (lwpid %d)\n", i, 
+                     VG_(name_of_ThreadStatus)(VG_(threads)[i].status),
+                     VG_(threads)[i].os_state.lwpid);
+         if (VG_(threads)[i].status != VgTs_Empty)
+            VG_(get_and_pp_StackTrace)( i, BACKTRACE_DEPTH );
+         if (stack_usage && VG_(threads)[i].client_stack_highest_byte != 0 ) {
+            Addr start, end;
+
+            start = end = 0;
+            VG_(stack_limits)(VG_(threads)[i].client_stack_highest_byte,
+                              &start, &end);
+            if (start != end)
+               VG_(printf)("client stack range: [%p %p] client SP: %p\n",
+                           (void*)start, (void*)end, (void*)VG_(get_SP)(i));
+            else
+               VG_(printf)("client stack range: ???????\n");
+         }
+         if (stack_usage && stack != 0)
+            VG_(printf)("valgrind stack top usage: %lu of %lu\n",
+                        VG_(clo_valgrind_stacksize)
+                           - VG_(am_get_VgStack_unused_szB)
+                              (stack, VG_(clo_valgrind_stacksize)),
+                        (SizeT) VG_(clo_valgrind_stacksize));
       }
-      if (stack_usage && stack != 0)
-          VG_(printf)("valgrind stack top usage: %lu of %lu\n",
-                      VG_(clo_valgrind_stacksize)
-                        - VG_(am_get_VgStack_unused_szB)
-                               (stack, VG_(clo_valgrind_stacksize)),
-                      (SizeT) VG_(clo_valgrind_stacksize));
    }
    VG_(printf)("\n");
 }

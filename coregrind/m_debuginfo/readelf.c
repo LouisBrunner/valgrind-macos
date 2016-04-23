@@ -59,6 +59,33 @@
 #endif
 /* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
 
+#if !defined(HAVE_ELF32_CHDR)
+   typedef struct {
+      Elf32_Word  ch_type;
+      Elf32_Word  ch_size;
+      Elf32_Word  ch_addralign;
+   } Elf32_Chdr;
+#endif
+
+#if !defined(HAVE_ELF64_CHDR)
+   typedef struct {
+      Elf64_Word  ch_type;
+      Elf64_Word  ch_reserved;
+      Elf64_Xword ch_size;
+      Elf64_Xword ch_addralign;
+   } Elf64_Chdr;
+#endif
+
+#if !defined(SHF_COMPRESSED)
+   #define SHF_COMPRESSED (1 << 11)
+#endif
+
+#if !defined(ELFCOMPRESS_ZLIB)
+   #define ELFCOMPRESS_ZLIB 1
+#endif
+
+#define SIZE_OF_ZLIB_HEADER 12
+
 /*------------------------------------------------------------*/
 /*--- 32/64-bit parameterisation                           ---*/
 /*------------------------------------------------------------*/
@@ -80,6 +107,7 @@
 #  define  ElfXX_Dyn      Elf32_Dyn
 #  define  ELFXX_ST_BIND  ELF32_ST_BIND
 #  define  ELFXX_ST_TYPE  ELF32_ST_TYPE
+#  define  ElfXX_Chdr     Elf32_Chdr
 
 #elif VG_WORDSIZE == 8
 #  define  ElfXX_Ehdr     Elf64_Ehdr
@@ -93,6 +121,7 @@
 #  define  ElfXX_Dyn      Elf64_Dyn
 #  define  ELFXX_ST_BIND  ELF64_ST_BIND
 #  define  ELFXX_ST_TYPE  ELF64_ST_TYPE
+#  define  ElfXX_Chdr     Elf64_Chdr
 
 #else
 # error "VG_WORDSIZE should be 4 or 8"
@@ -1436,6 +1465,50 @@ Word file_offset_from_svma ( /*OUT*/Bool* ok,
    return 0;
 }
 
+/* Check if section is compressed and modify DiSlice if it is.
+   Returns False in case of unsupported compression type.
+*/
+static Bool check_compression(ElfXX_Shdr* h, DiSlice* s) {
+   if (h->sh_flags & SHF_COMPRESSED) {
+      ElfXX_Chdr chdr;
+      ML_(img_get)(&chdr, s->img, s->ioff, sizeof(ElfXX_Chdr));
+      if (chdr.ch_type != ELFCOMPRESS_ZLIB)
+         return False;
+      s->ioff = ML_(img_mark_compressed_part)(s->img,
+                                              s->ioff + sizeof(ElfXX_Chdr),
+                                              s->szB - sizeof(ElfXX_Chdr),
+                                              (SizeT)chdr.ch_size);
+      s->szB = chdr.ch_size;
+    } else if (h->sh_size > SIZE_OF_ZLIB_HEADER) {
+       /* Read the zlib header.  In this case, it should be "ZLIB"
+       followed by the uncompressed section size, 8 bytes in BE order. */
+       UChar tmp[SIZE_OF_ZLIB_HEADER];
+       ML_(img_get)(tmp, s->img, s->ioff, SIZE_OF_ZLIB_HEADER);
+       if (VG_(memcmp)(tmp, "ZLIB", 4) == 0) {
+          SizeT size;
+#         if (VG_WORDSIZE == 8)
+             size = tmp[4]; size <<= 8;
+             size += tmp[5]; size <<= 8;
+             size += tmp[6]; size <<= 8;
+             size += tmp[7]; size <<= 8;
+#         else
+             vg_assert((tmp[4] == 0) && (tmp[5] == 0) && (tmp[6] == 0)
+                       && (tmp[7] == 0));
+             size = 0;
+#         endif
+          size += tmp[8]; size <<= 8;
+          size += tmp[9]; size <<= 8;
+          size += tmp[10]; size <<= 8;
+          size += tmp[11];
+          s->ioff = ML_(img_mark_compressed_part)(s->img,
+                                                  s->ioff + SIZE_OF_ZLIB_HEADER,
+                                                  s->szB - SIZE_OF_ZLIB_HEADER,
+                                                  size);
+          s->szB = size;
+       }
+    }
+    return True;
+}
 
 /* The central function for reading ELF debug info.  For the
    object/exe specified by the DebugInfo, find ELF sections, then read
@@ -2407,15 +2480,20 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                _sec_escn.img  = mimg; \
                _sec_escn.ioff = (DiOffT)a_shdr.sh_offset; \
                _sec_escn.szB  = a_shdr.sh_size; \
+               if (!check_compression(&a_shdr, &_sec_escn)) { \
+                  ML_(symerr)(di, True, "   Compression type is unsupported"); \
+                  goto out; \
+               } \
                nobits         = a_shdr.sh_type == SHT_NOBITS; \
                vg_assert(_sec_escn.img  != NULL); \
                vg_assert(_sec_escn.ioff != DiOffT_INVALID); \
                TRACE_SYMTAB( "%-18s:  ioff %llu .. %llu\n", \
-                             _sec_name, (ULong)_sec_escn.ioff, \
-                             ((ULong)_sec_escn.ioff) + _sec_escn.szB - 1); \
+                             _sec_name, (ULong)a_shdr.sh_offset, \
+                             ((ULong)a_shdr.sh_offset) + a_shdr.sh_size - 1); \
                /* SHT_NOBITS sections have zero size in the file. */ \
                if (!nobits && \
-                   a_shdr.sh_offset + _sec_escn.szB > ML_(img_size)(mimg) ) { \
+                   a_shdr.sh_offset + \
+                      a_shdr.sh_size > ML_(img_real_size)(mimg)) { \
                   ML_(symerr)(di, True, \
                               "   section beyond image end?!"); \
                   goto out; \
@@ -2428,33 +2506,56 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 #        define FIND(_sec_name, _sec_escn) \
             FINDX(_sec_name, _sec_escn, /**/)
 
-         /*   NAME                  ElfSec */
-         FIND(".dynsym",            dynsym_escn)
-         FIND(".dynstr",            dynstr_escn)
-         FIND(".symtab",            symtab_escn)
-         FIND(".strtab",            strtab_escn)
+         /*      NAME                  ElfSec */
+         FIND(   ".dynsym",            dynsym_escn)
+         FIND(   ".dynstr",            dynstr_escn)
+         FIND(   ".symtab",            symtab_escn)
+         FIND(   ".strtab",            strtab_escn)
 #        if defined(VGO_solaris)
-         FIND(".SUNW_ldynsym",      ldynsym_escn)
+         FIND(   ".SUNW_ldynsym",      ldynsym_escn)
 #        endif
 
-         FIND(".gnu_debuglink",     debuglink_escn)
-         FIND(".gnu_debugaltlink",  debugaltlink_escn)
+         FIND(   ".gnu_debuglink",     debuglink_escn)
+         FIND(   ".gnu_debugaltlink",  debugaltlink_escn)
 
-         FIND(".debug_line",        debug_line_escn)
-         FIND(".debug_info",        debug_info_escn)
-         FIND(".debug_types",       debug_types_escn)
-         FIND(".debug_abbrev",      debug_abbv_escn)
-         FIND(".debug_str",         debug_str_escn)
-         FIND(".debug_ranges",      debug_ranges_escn)
-         FIND(".debug_loc",         debug_loc_escn)
-         FIND(".debug_frame",       debug_frame_escn)
+         FIND(   ".debug_line",        debug_line_escn)
+         if (!ML_(sli_is_valid)(debug_line_escn))
+            FIND(".zdebug_line",       debug_line_escn)
 
-         FIND(".debug",             dwarf1d_escn)
-         FIND(".line",              dwarf1l_escn)
+         FIND(   ".debug_info",        debug_info_escn)
+         if (!ML_(sli_is_valid)(debug_info_escn))
+            FIND(".zdebug_info",       debug_info_escn)
 
-         FIND(".opd",               opd_escn)
+         FIND(   ".debug_types",       debug_types_escn)
+         if (!ML_(sli_is_valid)(debug_types_escn))
+            FIND(".zdebug_types",      debug_types_escn)
 
-         FINDX(".eh_frame",         ehframe_escn[ehframe_mix],
+         FIND(   ".debug_abbrev",      debug_abbv_escn)
+         if (!ML_(sli_is_valid)(debug_abbv_escn))
+            FIND(".zdebug_abbrev",     debug_abbv_escn)
+
+         FIND(   ".debug_str",         debug_str_escn)
+         if (!ML_(sli_is_valid)(debug_str_escn))
+            FIND(".zdebug_str",        debug_str_escn)
+
+         FIND(   ".debug_ranges",      debug_ranges_escn)
+         if (!ML_(sli_is_valid)(debug_ranges_escn))
+            FIND(".zdebug_ranges",     debug_ranges_escn)
+
+         FIND(   ".debug_loc",         debug_loc_escn)
+         if (!ML_(sli_is_valid)(debug_loc_escn))
+            FIND(".zdebug_loc",    debug_loc_escn)
+
+         FIND(   ".debug_frame",       debug_frame_escn)
+         if (!ML_(sli_is_valid)(debug_frame_escn))
+            FIND(".zdebug_frame",      debug_frame_escn)
+
+         FIND(   ".debug",             dwarf1d_escn)
+         FIND(   ".line",              dwarf1l_escn)
+
+         FIND(   ".opd",               opd_escn)
+
+         FINDX(  ".eh_frame",          ehframe_escn[ehframe_mix],
                do { ehframe_mix++; vg_assert(ehframe_mix <= N_EHFRAME_SECTS);
                } while (0)
          )
@@ -2704,16 +2805,20 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                   _sec_escn.img  = dimg; \
                   _sec_escn.ioff = (DiOffT)a_shdr.sh_offset;  \
                   _sec_escn.szB  = a_shdr.sh_size; \
+                  if (!check_compression(&a_shdr, &_sec_escn)) { \
+                     ML_(symerr)(di, True, "   Compression type is unsupported"); \
+                     goto out; \
+                  } \
                   nobits         = a_shdr.sh_type == SHT_NOBITS; \
                   vg_assert(_sec_escn.img  != NULL); \
                   vg_assert(_sec_escn.ioff != DiOffT_INVALID); \
                   TRACE_SYMTAB( "%-18s: dioff %llu .. %llu\n", \
                                 _sec_name, \
-                                (ULong)_sec_escn.ioff, \
-                                ((ULong)_sec_escn.ioff) + _sec_escn.szB - 1); \
+                                (ULong)a_shdr.sh_offset, \
+                                ((ULong)a_shdr.sh_offset) + a_shdr.sh_size - 1); \
                   /* SHT_NOBITS sections have zero size in the file. */ \
                   if (!nobits && a_shdr.sh_offset \
-                      + _sec_escn.szB > ML_(img_size)(dimg)) { \
+                      + a_shdr.sh_size > ML_(img_real_size)(_sec_escn.img)) { \
                      ML_(symerr)(di, True, \
                                  "   section beyond image end?!"); \
                      goto out; \
@@ -2721,24 +2826,45 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                } \
             } while (0);
 
-            /* NEEDED?        NAME             ElfSec */
-            FIND(need_symtab, ".symtab",       symtab_escn)
-            FIND(need_symtab, ".strtab",       strtab_escn)
-            FIND(need_dwarf2, ".debug_line",   debug_line_escn)
-            FIND(need_dwarf2, ".debug_info",   debug_info_escn)
-            FIND(need_dwarf2, ".debug_types",  debug_types_escn)
+            /* NEEDED?               NAME                 ElfSec */
+            FIND(   need_symtab,     ".symtab",           symtab_escn)
+            FIND(   need_symtab,     ".strtab",           strtab_escn)
+            FIND(   need_dwarf2,     ".debug_line",       debug_line_escn)
+            if (!ML_(sli_is_valid)(debug_line_escn))
+               FIND(need_dwarf2,     ".zdebug_line",      debug_line_escn)
 
-            FIND(need_dwarf2, ".debug_abbrev", debug_abbv_escn)
-            FIND(need_dwarf2, ".debug_str",    debug_str_escn)
-            FIND(need_dwarf2, ".debug_ranges", debug_ranges_escn)
+            FIND(   need_dwarf2,     ".debug_info",       debug_info_escn)
+            if (!ML_(sli_is_valid)(debug_info_escn))
+               FIND(need_dwarf2,     ".zdebug_info",      debug_info_escn)
 
-            FIND(need_dwarf2, ".debug_loc",    debug_loc_escn)
-            FIND(need_dwarf2, ".debug_frame",  debug_frame_escn)
+            FIND(   need_dwarf2,     ".debug_types",      debug_types_escn)
+            if (!ML_(sli_is_valid)(debug_types_escn))
+               FIND(need_dwarf2,     ".zdebug_types",     debug_types_escn)
 
-            FIND(need_dwarf2, ".gnu_debugaltlink", debugaltlink_escn)
+            FIND(   need_dwarf2,     ".debug_abbrev",     debug_abbv_escn)
+            if (!ML_(sli_is_valid)(debug_abbv_escn))
+               FIND(need_dwarf2,     ".zdebug_abbrev",    debug_abbv_escn)
 
-            FIND(need_dwarf1, ".debug",        dwarf1d_escn)
-            FIND(need_dwarf1, ".line",         dwarf1l_escn)
+            FIND(   need_dwarf2,     ".debug_str",        debug_str_escn)
+            if (!ML_(sli_is_valid)(debug_str_escn))
+               FIND(need_dwarf2,     ".zdebug_str",       debug_str_escn)
+
+            FIND(   need_dwarf2,     ".debug_ranges",     debug_ranges_escn)
+            if (!ML_(sli_is_valid)(debug_ranges_escn))
+               FIND(need_dwarf2,     ".zdebug_ranges",    debug_ranges_escn)
+
+            FIND(   need_dwarf2,     ".debug_loc",        debug_loc_escn)
+            if (!ML_(sli_is_valid)(debug_loc_escn))
+               FIND(need_dwarf2,     ".zdebug_loc",       debug_loc_escn)
+
+            FIND(   need_dwarf2,     ".debug_frame",      debug_frame_escn)
+            if (!ML_(sli_is_valid)(debug_frame_escn))
+               FIND(need_dwarf2,     ".zdebug_frame",     debug_frame_escn)
+
+            FIND(   need_dwarf2,     ".gnu_debugaltlink", debugaltlink_escn)
+
+            FIND(   need_dwarf1,     ".debug",            dwarf1d_escn)
+            FIND(   need_dwarf1,     ".line",             dwarf1l_escn)
 
 #           undef FIND
          } /* Find all interesting sections */
@@ -2848,20 +2974,36 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                   _sec_escn.img  = aimg; \
                   _sec_escn.ioff = (DiOffT)a_shdr.sh_offset; \
                   _sec_escn.szB  = a_shdr.sh_size; \
+                  if (!check_compression(&a_shdr, &_sec_escn)) { \
+                     ML_(symerr)(di, True, "   Compression type is " \
+                                           "unsupported"); \
+                     goto out; \
+                  } \
                   vg_assert(_sec_escn.img  != NULL); \
                   vg_assert(_sec_escn.ioff != DiOffT_INVALID); \
                   TRACE_SYMTAB( "%-18s: aioff %llu .. %llu\n", \
                                 _sec_name, \
-                                (ULong)_sec_escn.ioff, \
-                                ((ULong)_sec_escn.ioff) + _sec_escn.szB - 1); \
+                                (ULong)a_shdr.sh_offset, \
+                                ((ULong)a_shdr.sh_offset) + a_shdr.sh_size - 1); \
                } \
             } while (0);
 
-            /*   NAME             ElfSec */
-            FIND(".debug_line",   debug_line_alt_escn)
-            FIND(".debug_info",   debug_info_alt_escn)
-            FIND(".debug_abbrev", debug_abbv_alt_escn)
-            FIND(".debug_str",    debug_str_alt_escn)
+            /*   NAME                 ElfSec */
+            FIND(".debug_line",       debug_line_alt_escn)
+            if (!ML_(sli_is_valid)(debug_line_alt_escn))
+               FIND(".zdebug_line",   debug_line_alt_escn)
+
+            FIND(".debug_info",       debug_info_alt_escn)
+            if (!ML_(sli_is_valid)(debug_info_alt_escn))
+               FIND(".zdebug_info",   debug_info_alt_escn)
+
+            FIND(".debug_abbrev",     debug_abbv_alt_escn)
+            if (!ML_(sli_is_valid)(debug_abbv_alt_escn))
+               FIND(".zdebug_abbrev", debug_abbv_alt_escn)
+
+            FIND(".debug_str",        debug_str_alt_escn)
+            if (!ML_(sli_is_valid)(debug_str_alt_escn))
+               FIND(".zdebug_str",    debug_str_alt_escn)
 
 #           undef FIND
          } /* Find all interesting sections */

@@ -74,8 +74,11 @@ DiImage* ML_(img_from_di_server)(const HChar* filename,
 /* Destroy an existing image. */
 void ML_(img_done)(DiImage*);
 
-/* How big is the image? */
+/* Virtual size of the image. */
 DiOffT ML_(img_size)(const DiImage* img);
+
+/* Real size of the image. */
+DiOffT ML_(img_real_size)(const DiImage* img);
 
 /* Does the section [offset, +size) exist in the image? */
 Bool ML_(img_valid)(const DiImage* img, DiOffT offset, SizeT size);
@@ -126,6 +129,13 @@ ULong  ML_(img_get_ULong) (DiImage* img, DiOffT offset);
    to do it otherwise would imply pulling the entire image across the
    connection, making the client/server split pointless. */
 UInt ML_(img_calc_gnu_debuglink_crc32)(DiImage* img);
+
+/* Mark compressed part of image defined with (offset, szC).
+   szD is length of uncompressed data (should be known before decompression).
+   Returns (virtual) position in image from which decompressed data can be
+   read. */
+DiOffT ML_(img_mark_compressed_part)(DiImage* img, DiOffT offset, SizeT szC,
+                                     SizeT szD);
 
 
 /*------------------------------------------------------------*/

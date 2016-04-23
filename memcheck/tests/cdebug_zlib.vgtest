@@ -1,0 +1,5 @@
+prog: cdebug_zlib
+prereq: test -e cdebug_zlib
+vgopts: -q
+stderr_filter: filter_stderr
+stderr_filter_args: cdebug.c

@@ -36,6 +36,10 @@ n-i-bz Improved thread startup time significantly on non-Linux platforms.
   __gnu_cxx::__freeres() cleanup function is called or not. Default is
   'yes'.
 
+* Valgrind is able to read compressed debuginfo sections in two formats:
+  - zlib ELF gABI format with SHF_COMPRESSED flag (gcc option -gz=zlib)
+  - zlib GNU format with .zdebug sections (gcc option -gz=zlib-gnu)
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"
@@ -52,6 +56,7 @@ where XXXXXX is the bug number as listed below.
 191069  Exiting due to signal not reported in XML output
 212352  vex amd64 unhandled opc_aux = 0x 2, first_opcode == 0xDC (FCOM)
 278744  cvtps2pd with redundant RexW
+303877  valgrind doesn't support compressed debuginfo sections.
 345307  Warning about "still reachable" memory when using libstdc++ from gcc 5
 348345  Assertion fails for negative lineno
 353083  arm64 doesn't implement various xattr system calls

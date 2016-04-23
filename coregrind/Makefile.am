@@ -351,6 +351,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_debuginfo/readmacho.c \
 	m_debuginfo/readpdb.c \
 	m_debuginfo/storage.c \
+	m_debuginfo/tinfl.c \
 	m_debuginfo/tytypes.c \
 	m_demangle/cp-demangle.c \
 	m_demangle/cplus-dem.c \

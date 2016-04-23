@@ -90,6 +90,8 @@ EXTRA_DIST = \
 	bug287260.stderr.exp bug287260.vgtest \
 	bug340392.stderr.exp bug340392.vgtest \
 	calloc-overflow.stderr.exp calloc-overflow.vgtest\
+	cdebug_zlib.stderr.exp cdebug_zlib.vgtest \
+	cdebug_zlib_gnu.stderr.exp cdebug_zlib_gnu.vgtest \
 	client-msg.stderr.exp client-msg.vgtest \
 	client-msg-as-xml.stderr.exp client-msg-as-xml.vgtest \
 	clientperm.stderr.exp \
@@ -396,6 +398,18 @@ endif
 
 if DWARF4
 check_PROGRAMS += dw4
+endif
+
+if GZ_ZLIB
+check_PROGRAMS += cdebug_zlib
+cdebug_zlib_SOURCES = cdebug.c
+cdebug_zlib_CFLAGS = $(AM_CFLAGS) -g -gz=zlib @FLAG_W_NO_UNINITIALIZED@
+endif
+
+if GZ_ZLIB_GNU
+check_PROGRAMS += cdebug_zlib_gnu
+cdebug_zlib_gnu_SOURCES = cdebug.c
+cdebug_zlib_gnu_CFLAGS = $(AM_CFLAGS) -g -gz=zlib-gnu @FLAG_W_NO_UNINITIALIZED@
 endif
 
 if HAVE_GNU_STPNCPY

@@ -1202,6 +1202,11 @@ AC_MSG_RESULT([no])
 ])
 
 
+# Check for ELF32/64_CHDR
+
+AC_CHECK_TYPES([Elf32_Chdr, Elf64_Chdr], [], [], [[#include <elf.h>]])
+
+
 # Check for PTHREAD_RWLOCK_T
 
 AC_MSG_CHECKING([for pthread_rwlock_t])
@@ -2089,6 +2094,46 @@ ac_have_dwarf4=no
 AC_MSG_RESULT([no])
 ])
 AM_CONDITIONAL(DWARF4, test x$ac_have_dwarf4 = xyes)
+CFLAGS=$safe_CFLAGS
+
+
+# does this compiler support -g -gz=zlib ?
+
+AC_MSG_CHECKING([if gcc accepts -g -gz=zlib])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-g -gz=zlib"
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
+  return 0;
+]])], [
+ac_have_gz_zlib=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_gz_zlib=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(GZ_ZLIB, test x$ac_have_gz_zlib = xyes)
+CFLAGS=$safe_CFLAGS
+
+
+# does this compiler support -g -gz=zlib-gnu ?
+
+AC_MSG_CHECKING([if gcc accepts -g -gz=zlib-gnu])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-g -gz=zlib-gnu"
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
+  return 0;
+]])], [
+ac_have_gz_zlib_gnu=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_gz_zlib_gnu=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(GZ_ZLIB_GNU, test x$ac_have_gz_zlib_gnu = xyes)
 CFLAGS=$safe_CFLAGS
 
 
@@ -3535,7 +3580,6 @@ if test "$solaris_fpchip_state_takes_underscore" = "yes"; then
   AC_DEFINE(SOLARIS_FPCHIP_STATE_TAKES_UNDERSCORE, 1,
             [Define to 1 if fpregset_t defines struct _fpchip_state])
 fi
-
 
 else
 AM_CONDITIONAL(SOLARIS_SUN_STUDIO_AS, false)

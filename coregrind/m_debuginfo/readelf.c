@@ -51,6 +51,7 @@
 #include "priv_readdwarf.h"        /* 'cos ELF contains DWARF */
 #include "priv_readdwarf3.h"
 #include "priv_readexidx.h"
+#include "config.h"
 
 /* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
 #include <elf.h>

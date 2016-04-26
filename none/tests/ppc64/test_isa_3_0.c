@@ -177,6 +177,9 @@ volatile int dfp_significance;
 /* global variable, ... vector insert functions. */
 volatile int x_index;
 
+/* global variable, used to pass shift info down to the test functions.*/
+volatile int x_shift;
+
 /* groups of instruction tests, calling individual tests */
 typedef void (*test_group_t) (const char *name, test_func_t func,
                               unsigned int test_flags);
@@ -281,6 +284,57 @@ static test_list_t testgroup_vsx_xxpermute[] = {
    { NULL         , NULL      },
 };
 
+static void test_dotted_extswsli (void)
+{
+#define EXTSWSLI_dotted_SHIFT(SH_X) \
+   __asm__ __volatile__ ("extswsli. %0,%1,%2" : "=r" (r17) : "r" (r14), "i" (SH_X) );
+   switch(x_shift) {
+   case SH_0:
+      EXTSWSLI_dotted_SHIFT(SH_0);
+      break;
+   case SH_1:
+      EXTSWSLI_dotted_SHIFT(SH_1);
+      break;
+   case SH_2:
+      EXTSWSLI_dotted_SHIFT(SH_2);
+      break;
+   case SH_3:
+      EXTSWSLI_dotted_SHIFT(SH_3);
+      break;
+   default:
+      printf("Unhandled shift value for extswsli. %d\n",x_shift);
+   }
+}
+
+static void test_extswsli (void)
+{
+#define EXTSWSLI_SHIFT(x) \
+   __asm__ __volatile__ ("extswsli %0,%1,%2":"=r" (r17):"r" (r14),"i"(x));
+
+   switch(x_shift) {
+   case SH_0:
+      EXTSWSLI_SHIFT(SH_0);
+      break;
+   case SH_1:
+      EXTSWSLI_SHIFT(SH_1);
+      break;
+   case SH_2:
+      EXTSWSLI_SHIFT(SH_2);
+      break;
+   case SH_3:
+      EXTSWSLI_SHIFT(SH_3);
+      break;
+   default:
+      printf("Unhandled shift value for extswsli %d\n",x_shift);
+   }
+}
+
+static test_list_t testgroup_shifted_one[] = {
+   { &test_extswsli,  "extswsli ",},
+   { &test_dotted_extswsli, "extswsli.",},
+   {           NULL,         NULL,},
+};
+
 static void test_vabsdub(void) {
    __asm__ __volatile__ ("vabsdub    %0, %1, %2" : "+v" (vec_xt): "v" (vec_xa), "v" (vec_xb));
 }
@@ -293,10 +347,96 @@ static void test_vabsduw(void) {
    __asm__ __volatile__ ("vabsduw    %0, %1, %2" : "+v" (vec_xt): "v" (vec_xa), "v" (vec_xb));
 }
 
+static void test_vcmpneb(void) {
+   __asm__ __volatile__ ("vcmpneb    %0, %1, %2" : "+v" (vec_xt): "v" (vec_xa), "v" (vec_xb));
+}
+
+static void test_dotted_vcmpneb(void) {
+   __asm__ __volatile__ ("vcmpneb.    %0, %1, %2" : "+v" (vec_xt): "v" (vec_xa), "v" (vec_xb));
+}
+
+static void test_vcmpnezb(void) {
+   __asm__ __volatile__ ("vcmpnezb    %0, %1, %2" : "+v" (vec_xt): "v" (vec_xa), "v" (vec_xb));
+}
+
+static void test_dotted_vcmpnezb(void) {
+   __asm__ __volatile__ ("vcmpnezb.    %0, %1, %2" : "+v" (vec_xt): "v" (vec_xa), "v" (vec_xb));
+}
+
+static void test_vcmpneh(void) {
+   __asm__ __volatile__ ("vcmpneh    %0, %1, %2" : "+v" (vec_xt): "v" (vec_xa), "v" (vec_xb));
+}
+
+static void test_dotted_vcmpneh(void) {
+   __asm__ __volatile__ ("vcmpneh.    %0, %1, %2" : "+v" (vec_xt): "v" (vec_xa), "v" (vec_xb));
+}
+
+static void test_vcmpnezh(void) {
+   __asm__ __volatile__ ("vcmpnezh    %0, %1, %2" : "+v" (vec_xt): "v" (vec_xa), "v" (vec_xb));
+}
+
+static void test_dotted_vcmpnezh(void) {
+   __asm__ __volatile__ ("vcmpnezh.    %0, %1, %2" : "+v" (vec_xt): "v" (vec_xa), "v" (vec_xb));
+}
+
+static void test_vcmpnew(void) {
+   __asm__ __volatile__ ("vcmpnew    %0, %1, %2" : "+v" (vec_xt): "v" (vec_xa), "v" (vec_xb));
+}
+
+static void test_dotted_vcmpnew(void) {
+   __asm__ __volatile__ ("vcmpnew.    %0, %1, %2" : "+v" (vec_xt): "v" (vec_xa), "v" (vec_xb));
+}
+
+static void test_vcmpnezw(void) {
+   __asm__ __volatile__ ("vcmpnezw    %0, %1, %2" : "+v" (vec_xt): "v" (vec_xa), "v" (vec_xb));
+}
+
+static void test_dotted_vcmpnezw(void) {
+   __asm__ __volatile__ ("vcmpnezw.    %0, %1, %2" : "+v" (vec_xt): "v" (vec_xa), "v" (vec_xb));
+}
+
+static void test_vrlwmi(void) {
+   __asm__ __volatile__ ("vrlwmi    %0, %1, %2" : "+v" (vec_xt): "v" (vec_xa), "v" (vec_xb));
+}
+
+static void test_vrldmi(void) {
+   __asm__ __volatile__ ("vrldmi    %0, %1, %2" : "+v" (vec_xt): "v" (vec_xa), "v" (vec_xb));
+}
+
+static void test_vbpermd(void) {
+/* vector bit permute doubleword */
+    __asm__ __volatile__ ("vbpermd   %0, %1, %2 " : "+v" (vec_xt): "v" (vec_xa), "v" (vec_xb));
+}
+
+static void test_vrlwnm(void) {
+   __asm__ __volatile__ ("vrlwnm    %0, %1, %2" : "+v" (vec_xt): "v" (vec_xa), "v" (vec_xb));
+}
+
+static void test_vrldnm(void) {
+   __asm__ __volatile__ ("vrldnm    %0, %1, %2" : "+v" (vec_xt): "v" (vec_xa), "v" (vec_xb));
+}
+
 static test_list_t testgroup_vsx_absolute[] = {
    { &test_vabsdub        , "vabsdub"   },
    { &test_vabsduh        , "vabsduh"   },
    { &test_vabsduw        , "vabsduw"   },
+   { &test_vcmpneb        , "vcmpneb"   },
+   { &test_dotted_vcmpneb , "vcmpneb."  },
+   { &test_vcmpnezb       , "vcmpnezb"  },
+   { &test_dotted_vcmpnezb, "vcmpnezb." },
+   { &test_vcmpneh        , "vcmpneh"   },
+   { &test_dotted_vcmpneh , "vcmpneh."  },
+   { &test_vcmpnezh       , "vcmpnezh"  },
+   { &test_dotted_vcmpnezh, "vcmpnezh." },
+   { &test_vcmpnew        , "vcmpnew"   },
+   { &test_dotted_vcmpnew , "vcmpnew."  },
+   { &test_vcmpnezw       , "vcmpnezw"  },
+   { &test_dotted_vcmpnezw, "vcmpnezw." },
+   { &test_vrlwnm         , "vrlwnm"    },
+   { &test_vrlwmi         , "vrlwmi"    },
+   { &test_vrldnm         , "vrldnm"    },
+   { &test_vrldmi         , "vrldmi"    },
+   { &test_vbpermd        , "vbpermd"   },
    { NULL                 , NULL        },
 };
 
@@ -659,6 +799,40 @@ static test_list_t testgroup_vector_loadstore[] = {
    { NULL          , NULL       },
 };
 
+static void test_lxvl(void) {
+   __asm__ __volatile__ ("lxvl %0, 14, 15" : "=wa" (vec_xt));
+}
+
+static void test_stxvl(void) {
+   __asm__ __volatile__ ("stxvl %0, 14, 15" : "=wa" (vec_xt));
+}
+
+static void test_lxsibzx(void) {
+   __asm__ __volatile__ ("lxsibzx %x0, 14, 15" : "=wa" (vec_xt));
+}
+
+static void test_lxsihzx(void) {
+   __asm__ __volatile__ ("lxsihzx %x0, 14, 15" : "=wa" (vec_xt));
+}
+
+static void test_stxsibx(void) {
+   __asm__ __volatile__ ("stxsibx %x0, 14, 15" : "=wa" (vec_xt));
+}
+
+static void test_stxsihx(void) {
+   __asm__ __volatile__ ("stxsihx %x0, 14, 15" : "=wa" (vec_xt));
+}
+
+static test_list_t testgroup_vector_scalar_loadstore_length[] = {
+   { &test_lxvl     , "lxvl     " },
+   { &test_lxsibzx  , "lxsibzx  " },
+   { &test_lxsihzx  , "lxsihzx  " },
+   { &test_stxvl    , "stxvl    " },
+   { &test_stxsibx  , "stxsibx  " },
+   { &test_stxsihx  , "stxsihx  " },
+   { NULL           , NULL        },
+};
+
 /* move from/to VSR */
 static void test_mfvsrld (void)
 {
@@ -684,6 +858,113 @@ static test_list_t testgroup_vectorscalar_move_tofrom[] = {
    { NULL         , NULL      },
 };
 
+/* vector count {leading, trailing} zero least-significant bits byte.
+ * roughly...  how many leading/trailing bytes are even. */
+static void test_vclzlsbb(void) {
+   __asm__ __volatile__ ("vclzlsbb %0, %1" : "=r"(r14) : "v"(vec_xb));
+}
+
+static void test_vctzlsbb(void) {
+   __asm__ __volatile__ ("vctzlsbb %0, %1" : "=r"(r14) : "v"(vec_xb));
+}
+
+static test_list_t testgroup_vector_count_bytes[] = {
+   { &test_vclzlsbb, "vclzlsbb" },
+   { &test_vctzlsbb, "vctzlsbb" },
+   { NULL          , NULL       },
+};
+
+static void test_vextsb2w(void) {
+   __asm__ __volatile__ ("vextsb2w %0, %1" : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_vextsb2d(void) {
+   __asm__ __volatile__ ("vextsb2d %0, %1" : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_vextsh2w(void) {
+   __asm__ __volatile__ ("vextsh2w %0, %1" : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_vextsh2d(void) {
+   __asm__ __volatile__ ("vextsh2d %0, %1" : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_vextsw2d(void) {
+   __asm__ __volatile__ ("vextsw2d %0, %1" : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_vnegw(void) {
+   __asm__ __volatile__ ("vnegw %0, %1" : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_vnegd(void) {
+   __asm__ __volatile__ ("vnegd %0, %1" : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_vprtybw(void) {
+   __asm__ __volatile__ ("vprtybw %0, %1" : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_vprtybd(void) {
+   __asm__ __volatile__ ("vprtybd %0, %1" : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_vprtybq(void) {
+   __asm__ __volatile__ ("vprtybq %0, %1" : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static test_list_t testgroup_vector_extend_sign[] = {
+   { &test_vextsb2w, "vextsb2w" },
+   { &test_vextsb2d, "vextsb2d" },
+   { &test_vextsh2w, "vextsh2w" },
+   { &test_vextsh2d, "vextsh2d" },
+   { &test_vextsw2d, "vextsw2d" },
+   { &test_vnegw   , "vnegw   " },
+   { &test_vnegd   , "vnegd   " },
+   { &test_vprtybw , "vprtybw " },
+   { &test_vprtybd , "vprtybd " },
+   { &test_vprtybq , "vprtybq " },
+   { NULL          , NULL       },
+};
+
+static void test_vextublx(void) {
+   __asm__ __volatile__ ("vextublx %0, %1, %2" : "=r"(r14) : "r" (r15), "v" (vec_xb));
+}
+
+static void test_vextubrx(void) {
+   __asm__ __volatile__ ("vextubrx %0, %1, %2" : "=r"(r14) : "r"(r15), "v"(vec_xb));
+}
+
+static void test_vextuhlx(void) {
+   if (r15 > 14) return; // limit to 14 halfwords
+   __asm__ __volatile__ ("vextuhlx %0, %1, %2" : "=r"(r14) : "r"(r15), "v"(vec_xb));
+}
+
+static void test_vextuhrx(void) {
+   if (r15 > 14) return; // limit to 14 halfwords
+   __asm__ __volatile__ ("vextuhrx %0, %1, %2" : "=r"(r14) : "r"(r15), "v"(vec_xb));
+}
+
+static void test_vextuwlx(void) {
+   if (r15 > 12) return; // limit to 12 words
+   __asm__ __volatile__ ("vextuwlx %0, %1, %2" : "=r"(r14) : "r"(r15), "v"(vec_xb));
+}
+
+static void test_vextuwrx(void) {
+   if (r15 > 12) return; // limit to 12 words
+   __asm__ __volatile__ ("vextuwrx %0, %1, %2" : "=r"(r14) : "r"(r15), "v"(vec_xb));
+}
+
+static test_list_t testgroup_vector_extract[] = {
+   { &test_vextublx, "vextublx" },
+   { &test_vextubrx, "vextubrx" },
+   { &test_vextuhlx, "vextuhlx" },
+   { &test_vextuhrx, "vextuhrx" },
+   { &test_vextuwlx, "vextuwlx" },
+   { &test_vextuwrx, "vextuwrx" },
+   { NULL          , NULL       },
+};
 
 /* ###### begin all_tests table.  */
 
@@ -723,6 +1004,11 @@ static test_group_table_t all_tests[] = {
       PPC_ALTIVEC | PPC_LOGICAL | PPC_ONE_ARG,
    },
    {
+      testgroup_vector_extend_sign,
+      "ppc vector extend sign",
+      PPC_ALTIVEC | PPC_LOGICAL | PPC_TWO_ARGS,
+   },
+   {
       testgroup_vsx_xxpermute,
       "ppc vector permutes",
       PPC_ALTIVEC | PPC_PERMUTE | PPC_THREE_ARGS,
@@ -738,6 +1024,21 @@ static test_group_table_t all_tests[] = {
       PPC_ALTIVEC | PPC_INSERTEXTRACT | PPC_ONE_IMM,
    },
    {
+      testgroup_vector_extract,
+      "ppc vector extract from vector to reg",
+      PPC_ALTIVEC | PPC_INSERTEXTRACT | PPC_TWO_ARGS,
+   },
+   {
+      testgroup_vector_count_bytes,
+      "ppc vector count leading/trailing bytes",
+      PPC_ALTIVEC | PPC_POPCNT,
+   },
+   {
+      testgroup_vector_scalar_loadstore_length,
+      "ppc vector load/store",
+      PPC_ALTIVEC | PPC_LDST | PPC_ONE_IMM,
+   },
+   {
       testgroup_vector_loadstore,
       "ppc vector load/store",
       PPC_ALTIVEC | PPC_LDST | PPC_TWO_ARGS,
@@ -745,7 +1046,12 @@ static test_group_table_t all_tests[] = {
    {
       testgroup_vectorscalar_move_tofrom,
       "ppc vector scalar move to/from",
-      PPC_MISC,
+      PPC_MISC | PPC_TWO_ARGS,
+   },
+   {
+      testgroup_shifted_one,
+      "ppc one argument plus shift",
+      PPC_MISC | PPC_THREE_ARGS,
    },
    { NULL,                   NULL,               0x00000000, },
 };
@@ -1153,10 +1459,144 @@ static void testfunction_vectorscalar_move_tofrom (const char * instruction_name
 
          (*test_function)();
 
-         printf("=> %016lx %016lx %lx %016lx ", vec_xt[1], vec_xt[0],
+         printf("=> %016lx %016lx %lx %016lx", vec_xt[1], vec_xt[0],
                 (long unsigned)r14,  (long unsigned)r15 );
          printf("\n");
       }
+   }
+}
+
+/* Some of the load/store vector instructions use a length value that
+ * is stored in bits 0:7 of RB.  */
+#define uses_bits_0to7(instruction_name) (                  \
+           (strncmp(instruction_name, "lxvl "  ,5) == 0) || \
+           (strncmp(instruction_name, "lxvll " ,6) == 0) || \
+           (strncmp(instruction_name, "stxvl " ,6) == 0) || \
+           (strncmp(instruction_name, "stxvll ",7) == 0) )
+
+static void testfunction_vector_scalar_loadstore_length (const char* instruction_name,
+                                                         test_func_t test_function,
+                                                         unsigned int ignore_flags) {
+   /* exercises vector loads from memory, and vector stores from memory.
+    * with length specification.
+    * <load or store instruction>  XS, RA, RB
+    * For these tests, RA (i.e. EA) is address of source/dest and can
+    * not be zero.
+    * The length value is in rb.  For a subset of these instructions,
+    * the length is stored in bits 0:7, versus 56:63 of r15.
+    */
+   int i;
+   unsigned long l;
+   int buffer_pattern;
+
+   VERBOSE_FUNCTION_CALLOUT
+
+   for (i = 0; i < nb_vargs; i += 2) {
+      for (l = 0; l <= 16; l += 4) {
+
+         for (buffer_pattern = 0; buffer_pattern < MAX_BUFFER_PATTERNS;
+              buffer_pattern++) {
+
+           /* set patterns on both ends */
+            vec_xt = (vector unsigned long){vsxargs[i], vsxargs[i+1]};
+            r14 = (unsigned long) & buffer;
+
+            if (uses_bits_0to7(instruction_name)) {
+               /* length is stored in bits 0:7 of gpr[r15]. */
+               r15 = (unsigned long)((0xff & l) << 56);
+
+            } else {
+               /* length is stored in gpr[r15]. */
+               r15 = l;
+            }
+
+            initialize_buffer(buffer_pattern);
+
+            printf("%s ", instruction_name);
+            printf("%016lx %016lx ", vec_xt[1], vec_xt[0] );
+            if (uses_bits_0to7(instruction_name)) {
+               printf(" &0x%lx l = 0x%2lx ",
+                      (long unsigned)r14, (long unsigned)r15>>56 );
+
+            } else {
+               printf(" &0x%lx l = 0x%2lx ",
+                      (long unsigned)r14,  (long unsigned)r15 );
+            }
+
+            dump_small_buffer();
+
+            (*test_function)();
+
+            printf("=> %016lx %016lx & %16lx %16lx", vec_xt[1], vec_xt[0],
+                   (long unsigned)r14,  (long unsigned)r15 );
+            printf("\n");
+         }
+      }
+   }
+}
+
+static void testfunction_vector_count_bytes (const char* instruction_name,
+                                             test_func_t test_function,
+                                             unsigned int ignore_flags)
+{
+   int i;
+
+   VERBOSE_FUNCTION_CALLOUT
+
+   for (i = 0; i < nb_vargs; i += 2) {
+      vec_xb = (vector unsigned long){vsxargs[i], vsxargs[i+1]};
+      r14 = 0;
+
+      printf("%s ", instruction_name);
+      printf("%016lx %016lx %2d ", vec_xb[1], vec_xb[0], (unsigned)r14);
+
+      (*test_function)();
+
+      printf("=> %2d\n", (unsigned)r14 );
+   }
+}
+
+static void testfunction_vector_extract (const char* instruction_name,
+                                         test_func_t test_function,
+                                         unsigned int ignore_flags)
+{
+   int i;
+
+   VERBOSE_FUNCTION_CALLOUT
+
+   for (i = 0; i < nb_vargs; i += 2) {
+      vec_xb = (vector unsigned long){vsxargs[i], vsxargs[i+1]};
+      for (r15 = 0; r15 < 16; r15++) {
+      r14 = 0;
+
+      printf("%s ", instruction_name);
+      printf("%016lx %016lx %2d ", vec_xb[1], vec_xb[0], (unsigned)r15);
+
+      (*test_function)();
+
+      printf("=> %16lx\n", (long unsigned)r14 );
+      }
+   }
+}
+
+static void testfunction_vector_extend_sign (const char* instruction_name,
+                                             test_func_t test_function,
+                                             unsigned int ignore_flags)
+{
+   int i;
+
+   VERBOSE_FUNCTION_CALLOUT
+
+   for (i = 0; i < nb_vargs; i += 2) {
+      vec_xb = (vector unsigned long){vsxargs[i], vsxargs[i+1]};
+      vec_xt = (vector unsigned long){0, 0};
+
+      printf("%s ", instruction_name);
+      printf("%016lx %016lx ", vec_xb[1], vec_xb[0]);
+
+      (*test_function)();
+
+      printf("=> %016lx %016lx\n", vec_xt[1], vec_xt[0]);
    }
 }
 
@@ -1288,6 +1728,7 @@ static inline void testfunction_bcd_display_outputs(const char * instruction_nam
    printf("\n");
 }
 
+
 /* ######## begin grand testing loops. */
 typedef struct insn_sel_flags_t_struct {
    int one_arg, two_args, three_args, four_args, cmp_args;
@@ -1408,6 +1849,10 @@ static void do_tests ( insn_sel_flags_t seln_flags)
                group_function = &testfunction_vector_logical_one;
                break;
 
+            case PPC_TWO_ARGS:
+               group_function = &testfunction_vector_extend_sign;
+               break;
+
             case PPC_FOUR_ARGS:
                group_function = &testfunction_vector_logical_four;
                break;
@@ -1424,6 +1869,10 @@ static void do_tests ( insn_sel_flags_t seln_flags)
                group_function = &testfunction_vector_insert_or_extract_immediate;
                break;
 
+            case PPC_TWO_ARGS:
+               group_function = testfunction_vector_extract;
+               break;
+
             default:
                printf("ERROR: PPC_ALTIVEC, PPC_INSERTEXTRACT, unhandled number of arguments. 0x%08x\n", nb_args);
                continue;
@@ -1436,6 +1885,11 @@ static void do_tests ( insn_sel_flags_t seln_flags)
 
          case PPC_LDST:
             switch(nb_args) {
+            case PPC_ONE_IMM:
+               /* Register holds immediate length value */
+               group_function = &testfunction_vector_scalar_loadstore_length;
+               break;
+
             case PPC_TWO_ARGS:
                /* Register holds address of buffer */
                group_function = &testfunction_vector_loadstore;
@@ -1447,14 +1901,29 @@ static void do_tests ( insn_sel_flags_t seln_flags)
             }  /* switch(PPC_LDST, nb_args) */
             break;
 
-         case PPC_MISC:
-            group_function = &testfunction_vectorscalar_move_tofrom;
+         case PPC_POPCNT:
+            group_function = &testfunction_vector_count_bytes;
             break;
 
          default:
             printf("ERROR: PPC_ALTIVEC, unhandled type. %d\n", type);
             continue;
          } /* switch (PPC_ALTIVEC, type) */
+         break;
+
+      case PPC_MISC:
+         switch(nb_args) {
+            case PPC_TWO_ARGS:
+               group_function = &testfunction_vectorscalar_move_tofrom;
+               break;
+            case PPC_THREE_ARGS:
+               group_function = &testfunction_one_arg_with_shift;
+               break;
+            default:
+               printf("ERROR: PPC_MISC, unhandled number of arguments. 0x%08x\n", nb_args);
+               continue;
+            }  /* switch(PPC_MISC, nb_args) */
+
          break;
 
       default:

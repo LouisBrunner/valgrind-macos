@@ -51,15 +51,6 @@ check_result_for_ternary(const irop_t *op, const test_data_t *data)
       break;
 
    case UNDEF_SOME:
-      /* The result of the Iop_BCDAdd and the Iop_BCDSub has some result
-       * vbits set.  Not sure how the vbit propagation works on these Iops.
-       * for now, just make sure there are some vbits set in the result.
-       *
-       * The Iop_BCDAdd and Iop_BCDSub iops have one immediate value in the
-       * third operand.
-       *
-       * TODO, figure out details of vbit propagation for these Iops.
-       */
       expected_vbits.num_bits = result->vbits.num_bits;
 
       if ((result->vbits.bits.u128[0] != 0) ||

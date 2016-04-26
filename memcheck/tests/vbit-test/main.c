@@ -119,18 +119,6 @@ fixup_irops(void)
       tmp->immediate_index = 2;
       tmp->immediate_type = Ity_I8;
    }
-
-   tmp = get_irop(Iop_BCDAdd);
-   if (tmp) {
-      tmp->immediate_index = 3;
-      tmp->immediate_type = Ity_I8;
-   }
-
-   tmp = get_irop(Iop_BCDSub);
-   if (tmp) {
-      tmp->immediate_index = 3;
-      tmp->immediate_type = Ity_I8;
-   }
 #endif
 }
 

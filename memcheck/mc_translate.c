@@ -852,6 +852,17 @@ static IRAtom* mkPCastTo( MCEnv* mce, IRType dst_ty, IRAtom* vbits )
                                        unop(Iop_CmpNEZ64, tmp4));
          break;
       }
+      case Ity_V128: {
+         /* Chop it in half, OR the halves together, and compare that
+          * with zero.
+          */
+         IRAtom* tmp2 = assignNew('V', mce, Ity_I64, unop(Iop_V128HIto64, vbits));
+         IRAtom* tmp3 = assignNew('V', mce, Ity_I64, unop(Iop_V128to64, vbits));
+         IRAtom* tmp4 = assignNew('V', mce, Ity_I64, binop(Iop_Or64, tmp2, tmp3));
+         tmp1         = assignNew('V', mce, Ity_I1,
+                                       unop(Iop_CmpNEZ64, tmp4));
+         break;
+      }
       default:
          ppIRType(src_ty);
          VG_(tool_panic)("mkPCastTo(1)");
@@ -2888,11 +2899,6 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
       case Iop_SetElem32x2:
          complainIfUndefined(mce, atom2, NULL);
          return assignNew('V', mce, Ity_I64, triop(op, vatom1, atom2, vatom3));
-      /* BCDIops */
-      case Iop_BCDAdd:
-      case Iop_BCDSub:
-         complainIfUndefined(mce, atom3, NULL);
-         return assignNew('V', mce, Ity_V128, triop(op, vatom1, vatom2, atom3));
 
       /* Vector FP with rounding mode as the first arg */
       case Iop_Add64Fx2:
@@ -3722,6 +3728,10 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
             Vector shifts should be fixed too. */
          complainIfUndefined(mce, atom2, NULL);
          return assignNew('V', mce, Ity_V128, binop(op, vatom1, atom2));
+
+      case Iop_BCDAdd:
+      case Iop_BCDSub:
+         return mkLazy2(mce, Ity_V128, vatom1, vatom2);
 
       /* SHA Iops */
       case Iop_SHA256:

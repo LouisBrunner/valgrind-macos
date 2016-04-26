@@ -5392,6 +5392,17 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
          addInstr(env, PPCInstr_AvHashV128Binary(op, dst, arg1, s_field));
          return dst;
       }
+
+      case Iop_BCDAdd:op = Pav_BCDAdd; goto do_AvBCDV128;
+      case Iop_BCDSub:op = Pav_BCDSub; goto do_AvBCDV128;
+      do_AvBCDV128: {
+         HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1, IEndianess);
+         HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2, IEndianess);
+         HReg dst  = newVRegV(env);
+         addInstr(env, PPCInstr_AvBCDV128Binary(op, dst, arg1, arg2));
+         return dst;
+      }
+
       default:
          break;
       } /* switch (e->Iex.Binop.op) */
@@ -5400,17 +5411,6 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
    if (e->tag == Iex_Triop) {
       IRTriop *triop = e->Iex.Triop.details;
       switch (triop->op) {
-      case Iop_BCDAdd:op = Pav_BCDAdd; goto do_AvBCDV128;
-      case Iop_BCDSub:op = Pav_BCDSub; goto do_AvBCDV128;
-      do_AvBCDV128: {
-         HReg arg1 = iselVecExpr(env, triop->arg1, IEndianess);
-         HReg arg2 = iselVecExpr(env, triop->arg2, IEndianess);
-         HReg dst  = newVRegV(env);
-         PPCRI* ps = iselWordExpr_RI(env, triop->arg3, IEndianess);
-         addInstr(env, PPCInstr_AvBCDV128Trinary(op, dst, arg1, arg2, ps));
-         return dst;
-      }
-
       case Iop_Add32Fx4: fpop = Pavfp_ADDF; goto do_32Fx4_with_rm;
       case Iop_Sub32Fx4: fpop = Pavfp_SUBF; goto do_32Fx4_with_rm;
       case Iop_Mul32Fx4: fpop = Pavfp_MULF; goto do_32Fx4_with_rm;

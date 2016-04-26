@@ -499,7 +499,7 @@ typedef
       Pin_AvCipherV128Unary,  /* AV Vector unary Cipher */
       Pin_AvCipherV128Binary, /* AV Vector binary Cipher */
       Pin_AvHashV128Binary, /* AV Vector binary Hash */
-      Pin_AvBCDV128Trinary, /* BCD Arithmetic */
+      Pin_AvBCDV128Binary,  /* BCD Arithmetic */
       Pin_Dfp64Unary,   /* DFP64  unary op */
       Pin_Dfp128Unary,  /* DFP128 unary op */
       Pin_DfpShift,     /* Decimal floating point shift by immediate value */
@@ -867,8 +867,7 @@ typedef
             HReg       dst;
             HReg      src1;
             HReg      src2;
-            PPCRI*      ps;
-         } AvBCDV128Trinary;
+         } AvBCDV128Binary;
          struct {
             PPCAvOp   op;
             HReg      dst;
@@ -1063,9 +1062,8 @@ extern PPCInstr* PPCInstr_AvCipherV128Binary ( PPCAvOp op, HReg dst,
                                                HReg srcL, HReg srcR );
 extern PPCInstr* PPCInstr_AvHashV128Binary ( PPCAvOp op, HReg dst,
                                              HReg src, PPCRI* s_field );
-extern PPCInstr* PPCInstr_AvBCDV128Trinary ( PPCAvOp op, HReg dst,
-                                             HReg src1, HReg src2,
-                                             PPCRI* ps );
+extern PPCInstr* PPCInstr_AvBCDV128Binary ( PPCAvOp op, HReg dst,
+                                            HReg src1, HReg src2 );
 extern PPCInstr* PPCInstr_Dfp64Unary  ( PPCFpOp op, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_Dfp64Binary ( PPCFpOp op, HReg dst, HReg srcL,
                                         HReg srcR );

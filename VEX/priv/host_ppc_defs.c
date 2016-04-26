@@ -1415,15 +1415,14 @@ PPCInstr* PPCInstr_AvHashV128Binary ( PPCAvOp op, HReg dst,
    i->Pin.AvHashV128Binary.s_field = s_field;
    return i;
 }
-PPCInstr* PPCInstr_AvBCDV128Trinary ( PPCAvOp op, HReg dst,
-                                      HReg src1, HReg src2, PPCRI* ps ) {
+PPCInstr* PPCInstr_AvBCDV128Binary ( PPCAvOp op, HReg dst,
+                                     HReg src1, HReg src2 ) {
    PPCInstr* i = LibVEX_Alloc_inline(sizeof(PPCInstr));
-   i->tag      = Pin_AvBCDV128Trinary;
-   i->Pin.AvBCDV128Trinary.op   = op;
-   i->Pin.AvBCDV128Trinary.dst  = dst;
-   i->Pin.AvBCDV128Trinary.src1 = src1;
-   i->Pin.AvBCDV128Trinary.src2 = src2;
-   i->Pin.AvBCDV128Trinary.ps   = ps;
+   i->tag      = Pin_AvBCDV128Binary;
+   i->Pin.AvBCDV128Binary.op   = op;
+   i->Pin.AvBCDV128Binary.dst  = dst;
+   i->Pin.AvBCDV128Binary.src1 = src1;
+   i->Pin.AvBCDV128Binary.src2 = src2;
    return i;
 }
 
@@ -2038,15 +2037,13 @@ void ppPPCInstr ( const PPCInstr* i, Bool mode64 )
       ppPPCRI(i->Pin.AvHashV128Binary.s_field);
       return;
 
-   case Pin_AvBCDV128Trinary:
-      vex_printf("%s(w) ", showPPCAvOp(i->Pin.AvBCDV128Trinary.op));
-      ppHRegPPC(i->Pin.AvBCDV128Trinary.dst);
+   case Pin_AvBCDV128Binary:
+      vex_printf("%s(w) ", showPPCAvOp(i->Pin.AvBCDV128Binary.op));
+      ppHRegPPC(i->Pin.AvBCDV128Binary.dst);
       vex_printf(",");
-      ppHRegPPC(i->Pin.AvBCDV128Trinary.src1);
+      ppHRegPPC(i->Pin.AvBCDV128Binary.src1);
       vex_printf(",");
-      ppHRegPPC(i->Pin.AvBCDV128Trinary.src2);
-      vex_printf(",");
-      ppPPCRI(i->Pin.AvBCDV128Trinary.ps);
+      ppHRegPPC(i->Pin.AvBCDV128Binary.src2);
       return;
 
    case Pin_Dfp64Unary:
@@ -2511,11 +2508,10 @@ void getRegUsage_PPCInstr ( HRegUsage* u, const PPCInstr* i, Bool mode64 )
       addHRegUse(u, HRmRead,  i->Pin.AvHashV128Binary.src);
       addRegUsage_PPCRI(u,    i->Pin.AvHashV128Binary.s_field);
       return;
-   case Pin_AvBCDV128Trinary:
-      addHRegUse(u, HRmWrite, i->Pin.AvBCDV128Trinary.dst);
-      addHRegUse(u, HRmRead,  i->Pin.AvBCDV128Trinary.src1);
-      addHRegUse(u, HRmRead,  i->Pin.AvBCDV128Trinary.src2);
-      addRegUsage_PPCRI(u,    i->Pin.AvBCDV128Trinary.ps);
+   case Pin_AvBCDV128Binary:
+      addHRegUse(u, HRmWrite, i->Pin.AvBCDV128Binary.dst);
+      addHRegUse(u, HRmRead,  i->Pin.AvBCDV128Binary.src1);
+      addHRegUse(u, HRmRead,  i->Pin.AvBCDV128Binary.src2);
       return;
    case Pin_Dfp64Unary:
       addHRegUse(u, HRmWrite, i->Pin.Dfp64Unary.dst);
@@ -2844,11 +2840,10 @@ void mapRegs_PPCInstr ( HRegRemap* m, PPCInstr* i, Bool mode64 )
       mapReg(m, &i->Pin.AvHashV128Binary.dst);
       mapReg(m, &i->Pin.AvHashV128Binary.src);
       return;
-   case Pin_AvBCDV128Trinary:
-      mapReg(m, &i->Pin.AvBCDV128Trinary.dst);
-      mapReg(m, &i->Pin.AvBCDV128Trinary.src1);
-      mapReg(m, &i->Pin.AvBCDV128Trinary.src2);
-      mapRegs_PPCRI(m, i->Pin.AvBCDV128Trinary.ps);
+   case Pin_AvBCDV128Binary:
+      mapReg(m, &i->Pin.AvBCDV128Binary.dst);
+      mapReg(m, &i->Pin.AvBCDV128Binary.src1);
+      mapReg(m, &i->Pin.AvBCDV128Binary.src2);
       return;
    case Pin_Dfp64Unary:
       mapReg(m, &i->Pin.Dfp64Unary.dst);
@@ -5104,20 +5099,22 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       p = mkFormVX( p, 4, v_dst, v_src, s_field->Pri.Imm, opc2, endness_host );
       goto done;
    }
-   case Pin_AvBCDV128Trinary: {
-      UInt v_dst  = vregEnc(i->Pin.AvBCDV128Trinary.dst);
-      UInt v_src1 = vregEnc(i->Pin.AvBCDV128Trinary.src1);
-      UInt v_src2 = vregEnc(i->Pin.AvBCDV128Trinary.src2);
-      PPCRI* ps   = i->Pin.AvBCDV128Trinary.ps;
+   case Pin_AvBCDV128Binary: {
+      UInt v_dst  = vregEnc(i->Pin.AvBCDV128Binary.dst);
+      UInt v_src1 = vregEnc(i->Pin.AvBCDV128Binary.src1);
+      UInt v_src2 = vregEnc(i->Pin.AvBCDV128Binary.src2);
+      UInt ps = 0;    /* Issue the instruction with ps=0.  The IR code will
+                       * fix up the result if ps=1.
+                       */
       UInt opc2;
-      switch (i->Pin.AvBCDV128Trinary.op) {
+      switch (i->Pin.AvBCDV128Binary.op) {
       case Pav_BCDAdd:   opc2 =  1; break; // bcdadd
       case Pav_BCDSub:   opc2 = 65; break; // bcdsub
       default:
          goto bad;
       }
       p = mkFormVXR( p, 4, v_dst, v_src1, v_src2,
-                     0x1, (ps->Pri.Imm << 9) | opc2, endness_host );
+                     0x1, ps | opc2, endness_host );
       goto done;
    }
    case Pin_AvBin32Fx4: {

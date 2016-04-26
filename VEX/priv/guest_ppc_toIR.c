@@ -21297,6 +21297,43 @@ static Bool dis_av_quad ( UInt theInstr )
    return True;
 }
 
+static IRExpr * bcd_sign_code_adjust( UInt ps, IRExpr * tmp)
+{
+   /* The Iop_BCDAdd and Iop_BCDSub will result in the corresponding Power PC
+    * instruction being issued with ps = 0.  If ps = 1, the sign code, which
+    * is in the least significant four bits of the result, needs to be updated
+    * per the ISA:
+    *
+    *    If PS=0, the sign code of the result is set to 0b1100.
+    *    If PS=1, the sign code of the result is set to 0b1111.
+    *
+    * Note, the ps value is NOT being passed down to the instruction issue
+    * because passing a constant via triop() breaks the vbit-test test.  The
+    * vbit-tester assumes it can set non-zero shadow bits for the triop()
+    * arguments.  Thus they have to be expressions not a constant.
+    */
+   IRTemp mask  = newTemp(Ity_I64);
+   IRExpr *rtn;
+
+   if ( ps == 0 ) {
+      /* sign code is correct, just return it.  */
+      rtn = tmp;
+
+   } else {
+      /* check if lower four bits are 0b1100, if so, change to 0b1111 */
+      assign( mask, unop( Iop_1Sto64,
+                          binop( Iop_CmpEQ64, mkU64( 0xC ),
+                                 binop( Iop_And64, mkU64( 0xF ),
+                                        unop( Iop_V128to64, tmp ) ) ) ) );
+      rtn = binop( Iop_64HLtoV128,
+                   unop( Iop_V128HIto64, tmp ),
+                   binop( Iop_Or64,
+                          binop( Iop_And64, mkU64( 0xF ), mkexpr( mask ) ),
+                          unop( Iop_V128to64, tmp ) ) );
+   }
+
+   return rtn;
+}
 
 /*
   AltiVec BCD Arithmetic instructions.
@@ -21329,15 +21366,19 @@ static Bool dis_av_bcd ( UInt theInstr )
    switch (opc2) {
    case 0x1:  // bcdadd
      DIP("bcdadd. v%d,v%d,v%d,%u\n", vRT_addr, vRA_addr, vRB_addr, ps);
-     assign( dst, triop( Iop_BCDAdd, mkexpr( vA ),
-                         mkexpr( vB ), mkU8( ps ) ) );
+     assign( dst, bcd_sign_code_adjust( ps,
+                                        binop( Iop_BCDAdd,
+                                               mkexpr( vA ),
+                                               mkexpr( vB ) ) ) );
      putVReg( vRT_addr, mkexpr(dst));
      return True;
 
    case 0x41:  // bcdsub
      DIP("bcdsub. v%d,v%d,v%d,%u\n", vRT_addr, vRA_addr, vRB_addr, ps);
-     assign( dst, triop( Iop_BCDSub, mkexpr( vA ),
-                         mkexpr( vB ), mkU8( ps ) ) );
+     assign( dst, bcd_sign_code_adjust( ps,
+                                        binop( Iop_BCDSub,
+                                               mkexpr( vA ),
+                                               mkexpr( vB ) ) ) );
      putVReg( vRT_addr, mkexpr(dst));
      return True;
 

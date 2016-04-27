@@ -153,7 +153,17 @@ typedef
 
 /* A translation-table entry.  This indicates precisely which areas of
    guest code are included in the translation, and contains all other
-   auxiliary info too.  */
+   auxiliary info too.  These are split into hold and cold parts,
+   TTEntryH and TTEntryC, so as to be more cache-friendly
+   (a.k.a. "faster") when searching for translations that intersect
+   with a certain guest code address range, for deletion.  In the
+   worst case this can involve a sequential scan through all the hot
+   parts, so they are packed as compactly as possible -- 32 bytes on a
+   64-bit platform, 20 bytes on a 32-bit platform.
+
+   Each TTEntry is logically a matching cold-and-hot pair, and in fact
+   it was originally one structure.  First, the cold part.
+*/
 typedef
    struct {
       union {
@@ -170,10 +180,6 @@ typedef
          TTEno next_empty_tte; // if status != InUse
       } usage;
 
-      /* Status of the slot.  Note, we need to be able to do lazy
-         deletion, hence the Deleted state. */
-      enum { InUse, Deleted, Empty } status;
-
       /* 64-bit aligned pointer to one or more 64-bit words containing
          the corresponding host code (must be in the same sector!)
          This is a pointer into the sector's tc (code) area. */
@@ -189,19 +195,13 @@ typedef
          redirection. */
       Addr entry;
 
-      /* This structure describes precisely what ranges of guest code
-         the translation covers, so we can decide whether or not to
-         delete it when translations of a given address range are
-         invalidated. */
-      VexGuestExtents vge;
-
       /* Address range summary info: these are pointers back to
          eclass[] entries in the containing Sector.  Those entries in
          turn point back here -- the two structures are mutually
          redundant but both necessary to make fast deletions work.
          The eclass info is similar to, and derived from, this entry's
          'vge' field, but it is not the same */
-      UShort n_tte2ec;      // # tte2ec pointers (1 to 3)
+      UShort   n_tte2ec;      // # tte2ec pointers (1 to 3)
       EClassNo tte2ec_ec[3];  // for each, the eclass #
       UInt     tte2ec_ix[3];  // and the index within the eclass.
       // for i in 0 .. n_tte2ec-1
@@ -269,7 +269,6 @@ typedef
          This situation is then similar to the 'erasing' case above :
          the current translation E can be erased or overwritten, as the
          execution will continue at the new translation N.
-
       */
 
       /* It is possible, although very unlikely, that a block A has
@@ -305,7 +304,66 @@ typedef
       InEdgeArr  in_edges;
       OutEdgeArr out_edges;
    }
-   TTEntry;
+   TTEntryC;
+
+/* And this is the hot part. */
+typedef
+   struct {
+      /* This structure describes precisely what ranges of guest code
+         the translation covers, so we can decide whether or not to
+         delete it when translations of a given address range are
+         invalidated.  Originally this was a VexGuestExtents, but that
+         itself is 32 bytes on a 64-bit target, and we really want to
+         squeeze in an 8-bit |status| field into the 32 byte field, so
+         as to get 2 of them in a 64 byte LLC line.  Hence the
+         VexGuestExtents fields are inlined, the _n_used field is
+         changed to a UChar (it only ever has the values 1, 2 or 3)
+         and the 8-bit status field is placed in byte 31 of the
+         structure. */
+      /* ORIGINALLY: VexGuestExtents vge; */
+      Addr   vge_base[3];
+      UShort vge_len[3];
+      UChar  vge_n_used;  /* BEWARE: is UShort in VexGuestExtents */
+
+      /* Status of the slot.  Note, we need to be able to do lazy
+         deletion, hence the Deleted state. */
+      enum { InUse, Deleted, Empty } status : 8;
+   }
+   TTEntryH;
+
+
+/* Impedance matchers, that convert between a VexGuestExtents and a
+   TTEntryH, ignoring TTEntryH::status, which doesn't exist in a
+   VexGuestExtents -- it is entirely unrelated. */
+
+/* Takes a VexGuestExtents and pushes it into a TTEntryH.  The
+   TTEntryH.status field is left unchanged. */
+static
+inline void TTEntryH__from_VexGuestExtents ( /*MOD*/TTEntryH* tteH,
+                                             const VexGuestExtents* vge )
+{
+   tteH->vge_base[0] = vge->base[0];
+   tteH->vge_base[1] = vge->base[1];
+   tteH->vge_base[2] = vge->base[2];
+   tteH->vge_len[0]  = vge->len[0];
+   tteH->vge_len[1]  = vge->len[1];
+   tteH->vge_len[2]  = vge->len[2];
+   tteH->vge_n_used  = (UChar)vge->n_used; /* BEWARE: no range check. */
+}
+
+/* Takes a TTEntryH and pushes the vge_ components into a VexGuestExtents. */
+static
+inline void TTEntryH__to_VexGuestExtents ( /*MOD*/VexGuestExtents* vge,
+                                           const TTEntryH* tteH )
+{
+   vge->base[0] = tteH->vge_base[0];
+   vge->base[1] = tteH->vge_base[1];
+   vge->base[2] = tteH->vge_base[2];
+   vge->len[0]  = tteH->vge_len[0] ;
+   vge->len[1]  = tteH->vge_len[1] ;
+   vge->len[2]  = tteH->vge_len[2] ;
+   vge->n_used  = (UShort)tteH->vge_n_used ;
+}
 
 
 /* A structure used for mapping host code addresses back to the
@@ -340,9 +398,10 @@ typedef
          exactly N_HTTES_PER_SECTOR entries. */
       TTEno* htt;
 
-      /* The TTEntry array.  This is a fixed size, always containing
-         exactly N_TTES_PER_SECTOR entries. */
-      TTEntry* tt;
+      /* The TTEntry{C,H} arrays.  These are a fixed size, always
+         containing exactly N_TTES_PER_SECTOR entries. */
+      TTEntryC* ttC;
+      TTEntryH* ttH;
 
       /* This points to the current allocation point in tc. */
       ULong* tc_next;
@@ -473,15 +532,27 @@ static void ttaux_free ( void* p )
 /*--- Chaining support                                      ---*/
 /*-------------------------------------------------------------*/
 
-static inline TTEntry* index_tte ( SECno sNo, TTEno tteNo )
+static inline TTEntryC* index_tteC ( SECno sNo, TTEno tteNo )
 {
    vg_assert(sNo < n_sectors);
    vg_assert(tteNo < N_TTES_PER_SECTOR);
    Sector* s = &sectors[sNo];
-   vg_assert(s->tt);
-   TTEntry* tte = &s->tt[tteNo];
-   vg_assert(tte->status == InUse);
-   return tte;
+   vg_assert(s->ttC && s->ttH);
+   TTEntryC* tteC = &s->ttC[tteNo];
+   TTEntryH* tteH = &s->ttH[tteNo];
+   vg_assert(tteH->status == InUse);
+   return tteC;
+}
+
+static inline TTEntryH* index_tteH ( SECno sNo, TTEno tteNo )
+{
+   vg_assert(sNo < n_sectors);
+   vg_assert(tteNo < N_TTES_PER_SECTOR);
+   Sector* s = &sectors[sNo];
+   vg_assert(s->ttH);
+   TTEntryH* tteH = &s->ttH[tteNo];
+   vg_assert(tteH->status == InUse);
+   return tteH;
 }
 
 static void InEdge__init ( InEdge* ie )
@@ -499,9 +570,14 @@ static void OutEdge__init ( OutEdge* oe )
    oe->from_offs = 0;
 }
 
-static void TTEntry__init ( TTEntry* tte )
+static void TTEntryC__init ( TTEntryC* tteC )
 {
-   VG_(memset)(tte, 0, sizeof(*tte));
+   VG_(bzero_inline)(tteC, sizeof(*tteC));
+}
+
+static void TTEntryH__init ( TTEntryH* tteH )
+{
+   VG_(bzero_inline)(tteH, sizeof(*tteH));
 }
 
 static UWord InEdgeArr__size ( const InEdgeArr* iea )
@@ -688,10 +764,10 @@ Bool HostExtent__is_dead (const HostExtent* hx, const Sector* sec)
                    " tt.entry 0x%lu tt.tcptr 0x%p\n",           \
                    hx->start, hx->len, (int)(sec - sectors),    \
                    hx->tteNo,                                   \
-                   sec->tt[tteNo].entry, sec->tt[tteNo].tcptr)
+                   sec->ttC[tteNo].entry, sec->ttC[tteNo].tcptr)
    
    /* Entry might have been invalidated and not re-used yet.*/
-   if (sec->tt[tteNo].status == Deleted) {
+   if (sec->ttH[tteNo].status == Deleted) {
       LDEBUG("found deleted entry");
       return True;
    }
@@ -701,7 +777,7 @@ Bool HostExtent__is_dead (const HostExtent* hx, const Sector* sec)
       is >= to host_extents start (i.e. the previous tcptr) + len.
       This is the case as there is no re-use of host code: a new
       entry or re-used entry always gets "higher value" host code. */
-   if ((UChar*) sec->tt[tteNo].tcptr >= hx->start + hx->len) {
+   if ((UChar*) sec->ttC[tteNo].tcptr >= hx->start + hx->len) {
       LDEBUG("found re-used entry");
       return True;
    }
@@ -747,11 +823,11 @@ Bool find_TTEntry_from_hcode( /*OUT*/SECno* from_sNo,
          if (HostExtent__is_dead (hx, sec))
             return False;
 
-         vg_assert(sec->tt[tteNo].status == InUse);
+         vg_assert(sec->ttH[tteNo].status == InUse);
          /* Can only half check that the found TTEntry contains hcode,
             due to not having a length value for the hcode in the
             TTEntry. */
-         vg_assert((UChar*)sec->tt[tteNo].tcptr <= (UChar*)hcode);
+         vg_assert((UChar*)sec->ttC[tteNo].tcptr <= (UChar*)hcode);
          /* Looks plausible */
          *from_sNo   = sno;
          *from_tteNo = tteNo;
@@ -801,9 +877,9 @@ void VG_(tt_tc_do_chaining) ( void* from__patch_addr,
    // or fast entry point.  By definition, the fast entry point
    // is exactly one event check's worth of code along from
    // the slow (tcptr) entry point.
-   TTEntry* to_tte    = index_tte(to_sNo, to_tteNo);
-   void*    host_code = ((UChar*)to_tte->tcptr)
-                        + (to_fastEP ? LibVEX_evCheckSzB(arch_host) : 0);
+   TTEntryC* to_tteC   = index_tteC(to_sNo, to_tteNo);
+   void*     host_code = ((UChar*)to_tteC->tcptr)
+                         + (to_fastEP ? LibVEX_evCheckSzB(arch_host) : 0);
 
    // stay sane -- the patch point (dst) is in this sector's code cache
    vg_assert( (UChar*)host_code >= (UChar*)sectors[to_sNo].tc );
@@ -829,7 +905,7 @@ void VG_(tt_tc_do_chaining) ( void* from__patch_addr,
       return;
    }
 
-   TTEntry* from_tte = index_tte(from_sNo, from_tteNo);
+   TTEntryC* from_tteC = index_tteC(from_sNo, from_tteNo);
 
    /* Get VEX to do the patching itself.  We have to hand it off
       since it is host-dependent. */
@@ -856,7 +932,7 @@ void VG_(tt_tc_do_chaining) ( void* from__patch_addr,
    ie.from_tteNo = from_tteNo;
    ie.to_fastEP  = to_fastEP;
    HWord from_offs = (HWord)( (UChar*)from__patch_addr
-                              - (UChar*)from_tte->tcptr );
+                              - (UChar*)from_tteC->tcptr );
    vg_assert(from_offs < 100000/* let's say */);
    ie.from_offs  = (UInt)from_offs;
 
@@ -868,8 +944,8 @@ void VG_(tt_tc_do_chaining) ( void* from__patch_addr,
    oe.from_offs = (UInt)from_offs;
 
    /* Add .. */
-   InEdgeArr__add(&to_tte->in_edges, &ie);
-   OutEdgeArr__add(&from_tte->out_edges, &oe);
+   InEdgeArr__add(&to_tteC->in_edges, &ie);
+   OutEdgeArr__add(&from_tteC->out_edges, &oe);
 }
 
 
@@ -884,10 +960,10 @@ static void unchain_one ( VexArch arch_host, VexEndness endness_host,
                           void* to_fastEPaddr, void* to_slowEPaddr )
 {
    vg_assert(ie);
-   TTEntry* tte
-      = index_tte(ie->from_sNo, ie->from_tteNo);
+   TTEntryC* tteC
+      = index_tteC(ie->from_sNo, ie->from_tteNo);
    UChar* place_to_patch
-      = ((UChar*)tte->tcptr) + ie->from_offs;
+      = ((UChar*)tteC->tcptr) + ie->from_offs;
    UChar* disp_cp_chain_me
       = VG_(fnptr_to_fnentry)(
            ie->to_fastEP ? &VG_(disp_cp_chain_me_to_fastEP)
@@ -920,58 +996,59 @@ void unchain_in_preparation_for_deletion ( VexArch arch_host,
 {
    if (DEBUG_TRANSTAB)
       VG_(printf)("QQQ unchain_in_prep %u.%u...\n", here_sNo, here_tteNo);
-   UWord    i, j, n, m;
-   Int      evCheckSzB = LibVEX_evCheckSzB(arch_host);
-   TTEntry* here_tte   = index_tte(here_sNo, here_tteNo);
+   UWord     i, j, n, m;
+   Int       evCheckSzB = LibVEX_evCheckSzB(arch_host);
+   TTEntryC* here_tteC  = index_tteC(here_sNo, here_tteNo);
+   TTEntryH* here_tteH  = index_tteH(here_sNo, here_tteNo);
    if (DEBUG_TRANSTAB)
       VG_(printf)("... QQQ tt.entry 0x%lu tt.tcptr 0x%p\n",
-                  here_tte->entry, here_tte->tcptr);
-   vg_assert(here_tte->status == InUse);
+                  here_tteC->entry, here_tteC->tcptr);
+   vg_assert(here_tteH->status == InUse);
 
    /* Visit all InEdges owned by here_tte. */
-   n = InEdgeArr__size(&here_tte->in_edges);
+   n = InEdgeArr__size(&here_tteC->in_edges);
    for (i = 0; i < n; i++) {
-      InEdge* ie = InEdgeArr__index(&here_tte->in_edges, i);
+      InEdge* ie = InEdgeArr__index(&here_tteC->in_edges, i);
       // Undo the chaining.
-      UChar* here_slow_EP = (UChar*)here_tte->tcptr;
+      UChar* here_slow_EP = (UChar*)here_tteC->tcptr;
       UChar* here_fast_EP = here_slow_EP + evCheckSzB;
       unchain_one(arch_host, endness_host, ie, here_fast_EP, here_slow_EP);
       // Find the corresponding entry in the "from" node's out_edges,
       // and remove it.
-      TTEntry* from_tte = index_tte(ie->from_sNo, ie->from_tteNo);
-      m = OutEdgeArr__size(&from_tte->out_edges);
+      TTEntryC* from_tteC = index_tteC(ie->from_sNo, ie->from_tteNo);
+      m = OutEdgeArr__size(&from_tteC->out_edges);
       vg_assert(m > 0); // it must have at least one entry
       for (j = 0; j < m; j++) {
-         OutEdge* oe = OutEdgeArr__index(&from_tte->out_edges, j);
+         OutEdge* oe = OutEdgeArr__index(&from_tteC->out_edges, j);
          if (oe->to_sNo == here_sNo && oe->to_tteNo == here_tteNo
              && oe->from_offs == ie->from_offs)
            break;
       }
       vg_assert(j < m); // "oe must be findable"
-      OutEdgeArr__deleteIndex(&from_tte->out_edges, j);
+      OutEdgeArr__deleteIndex(&from_tteC->out_edges, j);
    }
 
    /* Visit all OutEdges owned by here_tte. */
-   n = OutEdgeArr__size(&here_tte->out_edges);
+   n = OutEdgeArr__size(&here_tteC->out_edges);
    for (i = 0; i < n; i++) {
-      OutEdge* oe = OutEdgeArr__index(&here_tte->out_edges, i);
+      OutEdge* oe = OutEdgeArr__index(&here_tteC->out_edges, i);
       // Find the corresponding entry in the "to" node's in_edges,
       // and remove it.
-      TTEntry* to_tte = index_tte(oe->to_sNo, oe->to_tteNo);
-      m = InEdgeArr__size(&to_tte->in_edges);
+      TTEntryC* to_tteC = index_tteC(oe->to_sNo, oe->to_tteNo);
+      m = InEdgeArr__size(&to_tteC->in_edges);
       vg_assert(m > 0); // it must have at least one entry
       for (j = 0; j < m; j++) {
-         InEdge* ie = InEdgeArr__index(&to_tte->in_edges, j);
+         InEdge* ie = InEdgeArr__index(&to_tteC->in_edges, j);
          if (ie->from_sNo == here_sNo && ie->from_tteNo == here_tteNo
              && ie->from_offs == oe->from_offs)
            break;
       }
       vg_assert(j < m); // "ie must be findable"
-      InEdgeArr__deleteIndex(&to_tte->in_edges, j);
+      InEdgeArr__deleteIndex(&to_tteC->in_edges, j);
    }
 
-   InEdgeArr__makeEmpty(&here_tte->in_edges);
-   OutEdgeArr__makeEmpty(&here_tte->out_edges);
+   InEdgeArr__makeEmpty(&here_tteC->in_edges);
+   OutEdgeArr__makeEmpty(&here_tteC->out_edges);
 }
 
 
@@ -1005,20 +1082,20 @@ static EClassNo range_to_eclass ( Addr start, UInt len )
 
 static 
 Int vexGuestExtents_to_eclasses ( /*OUT*/EClassNo* eclasses,
-                                  const VexGuestExtents* vge )
+                                  const TTEntryH* tteH )
 {
 
 #  define SWAP(_lv1,_lv2) \
       do { Int t = _lv1; _lv1 = _lv2; _lv2 = t; } while (0)
 
-   Int i, j, n_ec;
+   UInt i, j, n_ec;
    EClassNo r;
 
-   vg_assert(vge->n_used >= 1 && vge->n_used <= 3);
+   vg_assert(tteH->vge_n_used >= 1 && tteH->vge_n_used <= 3);
 
    n_ec = 0;
-   for (i = 0; i < vge->n_used; i++) {
-      r = range_to_eclass( vge->base[i], vge->len[i] );
+   for (i = 0; i < tteH->vge_n_used; i++) {
+      r = range_to_eclass( tteH->vge_base[i], tteH->vge_len[i] );
       if (r == ECLASS_MISC) 
          goto bad;
       /* only add if we haven't already seen it */
@@ -1110,18 +1187,17 @@ void upd_eclasses_after_add ( /*MOD*/Sector* sec, TTEno tteno )
 {
    Int i, r;
    EClassNo eclasses[3];
-   TTEntry* tte;
    vg_assert(tteno >= 0 && tteno < N_TTES_PER_SECTOR);
 
-   tte = &sec->tt[tteno];
-   r = vexGuestExtents_to_eclasses( eclasses, &tte->vge );
-
+   TTEntryH* tteH = &sec->ttH[tteno];
+   r = vexGuestExtents_to_eclasses( eclasses, tteH );
    vg_assert(r >= 1 && r <= 3);
-   tte->n_tte2ec = r;
 
+   TTEntryC* tteC = &sec->ttC[tteno];
+   tteC->n_tte2ec = r;
    for (i = 0; i < r; i++) {
-      tte->tte2ec_ec[i] = eclasses[i];
-      tte->tte2ec_ix[i] = addEClassNo( sec, eclasses[i], tteno );
+      tteC->tte2ec_ec[i] = eclasses[i];
+      tteC->tte2ec_ix[i] = addEClassNo( sec, eclasses[i], tteno );
    }
 }
 
@@ -1137,7 +1213,6 @@ static Bool sanity_check_eclasses_in_sector ( const Sector* sec )
    Int      j, k, n, ec_idx;
    EClassNo i;
    EClassNo ec_num;
-   TTEntry* tte;
    TTEno    tteno;
    ULong*   tce;
 
@@ -1170,26 +1245,27 @@ static Bool sanity_check_eclasses_in_sector ( const Sector* sec )
             continue;
          if (tteno >= N_TTES_PER_SECTOR)
             BAD("implausible tteno");
-         tte = &sec->tt[tteno];
-         if (tte->status != InUse)
+         TTEntryC* tteC = &sec->ttC[tteno];
+         TTEntryH* tteH = &sec->ttH[tteno];
+         if (tteH->status != InUse)
             BAD("tteno points to non-inuse tte");
-         if (tte->n_tte2ec < 1 || tte->n_tte2ec > 3)
-            BAD("tte->n_tte2ec out of range");
+         if (tteC->n_tte2ec < 1 || tteC->n_tte2ec > 3)
+            BAD("tteC->n_tte2ec out of range");
          /* Exactly least one of tte->eclasses[0 .. tte->n_eclasses-1]
             must equal i.  Inspect tte's eclass info. */
          n = 0;
-         for (k = 0; k < tte->n_tte2ec; k++) {
-            if (k < tte->n_tte2ec-1
-                && tte->tte2ec_ec[k] >= tte->tte2ec_ec[k+1])
-               BAD("tte->tte2ec_ec[..] out of order");
-            ec_num = tte->tte2ec_ec[k];
+         for (k = 0; k < tteC->n_tte2ec; k++) {
+            if (k < tteC->n_tte2ec-1
+                && tteC->tte2ec_ec[k] >= tteC->tte2ec_ec[k+1])
+               BAD("tteC->tte2ec_ec[..] out of order");
+            ec_num = tteC->tte2ec_ec[k];
             if (ec_num < 0 || ec_num >= ECLASS_N)
-               BAD("tte->tte2ec_ec[..] out of range");
+               BAD("tteC->tte2ec_ec[..] out of range");
             if (ec_num != i)
                continue;
-            ec_idx = tte->tte2ec_ix[k];
+            ec_idx = tteC->tte2ec_ix[k];
             if (ec_idx < 0 || ec_idx >= sec->ec2tte_used[i])
-               BAD("tte->tte2ec_ix[..] out of range");
+               BAD("tteC->tte2ec_ix[..] out of range");
             if (ec_idx == j)
                n++;
          }
@@ -1207,25 +1283,26 @@ static Bool sanity_check_eclasses_in_sector ( const Sector* sec )
 
    for (tteno = 0; tteno < N_TTES_PER_SECTOR; tteno++) {
 
-      tte = &sec->tt[tteno];
-      if (tte->status == Empty || tte->status == Deleted) {
-         if (tte->n_tte2ec != 0)
-            BAD("tte->n_eclasses nonzero for unused tte");
+      TTEntryC* tteC = &sec->ttC[tteno];
+      TTEntryH* tteH = &sec->ttH[tteno];
+      if (tteH->status == Empty || tteH->status == Deleted) {
+         if (tteC->n_tte2ec != 0)
+            BAD("tteC->n_tte2ec nonzero for unused tte");
          continue;
       }
 
-      vg_assert(tte->status == InUse);
+      vg_assert(tteH->status == InUse);
 
-      if (tte->n_tte2ec < 1 || tte->n_tte2ec > 3)
-         BAD("tte->n_eclasses out of range(2)");
+      if (tteC->n_tte2ec < 1 || tteC->n_tte2ec > 3)
+         BAD("tteC->n_tte2ec out of range(2)");
 
-      for (j = 0; j < tte->n_tte2ec; j++) {
-         ec_num = tte->tte2ec_ec[j];
+      for (j = 0; j < tteC->n_tte2ec; j++) {
+         ec_num = tteC->tte2ec_ec[j];
          if (ec_num < 0 || ec_num >= ECLASS_N)
-            BAD("tte->eclass[..] out of range");
-         ec_idx = tte->tte2ec_ix[j];
+            BAD("tteC->tte2ec_ec[..] out of range");
+         ec_idx = tteC->tte2ec_ix[j];
          if (ec_idx < 0 || ec_idx >= sec->ec2tte_used[ec_num])
-            BAD("tte->ec_idx[..] out of range(2)");
+            BAD("tteC->tte2ec_ix[..] out of range(2)");
          if (sec->ec2tte[ec_num][ec_idx] != tteno)
             BAD("ec2tte does not point back to tte");
       }
@@ -1352,6 +1429,14 @@ static UInt vge_osize ( const VexGuestExtents* vge )
    return n;
 }
 
+static UInt TTEntryH__osize ( const TTEntryH* tteH )
+{
+   UInt i, n = 0;
+   for (i = 0; i < tteH->vge_n_used; i++)
+      n += (UInt)tteH->vge_len[i];
+   return n;
+}
+
 static Bool isValidSector ( SECno sector )
 {
    if (sector == INV_SNO || sector >= n_sectors)
@@ -1406,16 +1491,16 @@ static TTEno get_empty_tt_slot(SECno sNo)
    TTEno i;
 
    i = sectors[sNo].empty_tt_list;
-   sectors[sNo].empty_tt_list = sectors[sNo].tt[i].usage.next_empty_tte;
+   sectors[sNo].empty_tt_list = sectors[sNo].ttC[i].usage.next_empty_tte;
 
    vg_assert (i >= 0 && i < N_TTES_PER_SECTOR);
 
    return i;
 }
 
-static void add_in_empty_tt_list (SECno sNo, TTEno tteno)
+static void add_to_empty_tt_list (SECno sNo, TTEno tteno)
 {
-   sectors[sNo].tt[tteno].usage.next_empty_tte = sectors[sNo].empty_tt_list;
+   sectors[sNo].ttC[tteno].usage.next_empty_tte = sectors[sNo].empty_tt_list;
    sectors[sNo].empty_tt_list = tteno;
 }
 
@@ -1435,7 +1520,8 @@ static void initialiseSector ( SECno sno )
 
       /* Sector has never been used before.  Need to allocate tt and
          tc. */
-      vg_assert(sec->tt == NULL);
+      vg_assert(sec->ttC == NULL);
+      vg_assert(sec->ttH == NULL);
       vg_assert(sec->tc_next == NULL);
       vg_assert(sec->tt_n_inuse == 0);
       for (EClassNo e = 0; e < ECLASS_N; e++) {
@@ -1457,18 +1543,28 @@ static void initialiseSector ( SECno sno )
       sec->tc = (ULong*)(Addr)sr_Res(sres);
 
       sres = VG_(am_mmap_anon_float_valgrind)
-                ( N_TTES_PER_SECTOR * sizeof(TTEntry) );
+                ( N_TTES_PER_SECTOR * sizeof(TTEntryC) );
       if (sr_isError(sres)) {
-         VG_(out_of_memory_NORETURN)("initialiseSector(TT)", 
-                                     N_TTES_PER_SECTOR * sizeof(TTEntry) );
+         VG_(out_of_memory_NORETURN)("initialiseSector(TTC)", 
+                                     N_TTES_PER_SECTOR * sizeof(TTEntryC) );
 	 /*NOTREACHED*/
       }
-      sec->tt = (TTEntry*)(Addr)sr_Res(sres);
+      sec->ttC = (TTEntryC*)(Addr)sr_Res(sres);
+
+      sres = VG_(am_mmap_anon_float_valgrind)
+                ( N_TTES_PER_SECTOR * sizeof(TTEntryH) );
+      if (sr_isError(sres)) {
+         VG_(out_of_memory_NORETURN)("initialiseSector(TTH)", 
+                                     N_TTES_PER_SECTOR * sizeof(TTEntryH) );
+	 /*NOTREACHED*/
+      }
+      sec->ttH = (TTEntryH*)(Addr)sr_Res(sres);
+
       sec->empty_tt_list = HTT_EMPTY;
       for (TTEno ei = 0; ei < N_TTES_PER_SECTOR; ei++) {
-         sec->tt[ei].status   = Empty;
-         sec->tt[ei].n_tte2ec = 0;
-         add_in_empty_tt_list(sno, ei);
+         sec->ttH[ei].status   = Empty;
+         sec->ttC[ei].n_tte2ec = 0;
+         add_to_empty_tt_list(sno, ei);
       }
 
       sres = VG_(am_mmap_anon_float_valgrind)
@@ -1506,7 +1602,8 @@ static void initialiseSector ( SECno sno )
          VG_(dmsg)("transtab: " "recycle  sector %d\n", sno);
       n_sectors_recycled++;
 
-      vg_assert(sec->tt != NULL);
+      vg_assert(sec->ttC != NULL);
+      vg_assert(sec->ttH != NULL);
       vg_assert(sec->tc_next != NULL);
       n_dump_count += sec->tt_n_inuse;
 
@@ -1521,24 +1618,25 @@ static void initialiseSector ( SECno sno )
                                       sno);
       sec->empty_tt_list = HTT_EMPTY;
       for (TTEno ei = 0; ei < N_TTES_PER_SECTOR; ei++) {
-         if (sec->tt[ei].status == InUse) {
-            vg_assert(sec->tt[ei].n_tte2ec >= 1);
-            vg_assert(sec->tt[ei].n_tte2ec <= 3);
-            n_dump_osize += vge_osize(&sec->tt[ei].vge);
+         if (sec->ttH[ei].status == InUse) {
+            vg_assert(sec->ttC[ei].n_tte2ec >= 1);
+            vg_assert(sec->ttC[ei].n_tte2ec <= 3);
+            n_dump_osize += TTEntryH__osize(&sec->ttH[ei]);
             /* Tell the tool too. */
             if (VG_(needs).superblock_discards) {
+               VexGuestExtents vge_tmp;
+               TTEntryH__to_VexGuestExtents( &vge_tmp, &sec->ttH[ei] );
                VG_TDICT_CALL( tool_discard_superblock_info,
-                              sec->tt[ei].entry,
-                              sec->tt[ei].vge );
+                              sec->ttC[ei].entry, vge_tmp );
             }
             unchain_in_preparation_for_deletion(arch_host,
                                                 endness_host, sno, ei);
          } else {
-            vg_assert(sec->tt[ei].n_tte2ec == 0);
+            vg_assert(sec->ttC[ei].n_tte2ec == 0);
          }
-         sec->tt[ei].status   = Empty;
-         sec->tt[ei].n_tte2ec = 0;
-         add_in_empty_tt_list(sno, ei);
+         sec->ttH[ei].status   = Empty;
+         sec->ttC[ei].n_tte2ec = 0;
+         add_to_empty_tt_list(sno, ei);
       }
       for (HTTno hi = 0; hi < N_HTTES_PER_SECTOR; hi++)
          sec->htt[hi] = HTT_EMPTY;
@@ -1694,14 +1792,15 @@ void VG_(add_to_transtab)( const VexGuestExtents* vge,
    /* Find an empty tt slot, and use it.  There must be such a slot
       since tt is never allowed to get completely full. */
    TTEno tteix = get_empty_tt_slot(y);
-   TTEntry__init(&sectors[y].tt[tteix]);
-   sectors[y].tt[tteix].status = InUse;
-   sectors[y].tt[tteix].tcptr  = tcptr;
-   sectors[y].tt[tteix].usage.prof.count  = 0;
-   sectors[y].tt[tteix].usage.prof.weight = 
+   TTEntryC__init(&sectors[y].ttC[tteix]);
+   TTEntryH__init(&sectors[y].ttH[tteix]);
+   sectors[y].ttC[tteix].tcptr  = tcptr;
+   sectors[y].ttC[tteix].usage.prof.count  = 0;
+   sectors[y].ttC[tteix].usage.prof.weight = 
       n_guest_instrs == 0 ? 1 : n_guest_instrs;
-   sectors[y].tt[tteix].vge    = *vge;
-   sectors[y].tt[tteix].entry  = entry;
+   sectors[y].ttC[tteix].entry  = entry;
+   TTEntryH__from_VexGuestExtents( &sectors[y].ttH[tteix], vge );
+   sectors[y].ttH[tteix].status = InUse;
 
    // Point an htt entry to the tt slot
    HTTno htti = HASH_TT(entry);
@@ -1727,7 +1826,7 @@ void VG_(add_to_transtab)( const VexGuestExtents* vge,
       VexInvalRange vir
          = LibVEX_PatchProfInc( arch_host, endness_host,
                                 dstP + offs_profInc,
-                                &sectors[y].tt[tteix].usage.prof.count );
+                                &sectors[y].ttC[tteix].usage.prof.count );
       VG_(invalidate_icache)( (void*)vir.start, vir.len );
    }
 
@@ -1795,13 +1894,13 @@ Bool VG_(search_transtab) ( /*OUT*/Addr*  res_hcode,
          n_lookup_probes++;
          tti = sectors[sno].htt[k];
          if (tti < N_TTES_PER_SECTOR
-             && sectors[sno].tt[tti].entry == guest_addr) {
+             && sectors[sno].ttC[tti].entry == guest_addr) {
             /* found it */
             if (upd_cache)
                setFastCacheEntry( 
-                  guest_addr, sectors[sno].tt[tti].tcptr );
+                  guest_addr, sectors[sno].ttC[tti].tcptr );
             if (res_hcode)
-               *res_hcode = (Addr)sectors[sno].tt[tti].tcptr;
+               *res_hcode = (Addr)sectors[sno].ttC[tti].tcptr;
             if (res_sNo)
                *res_sNo = sno;
             if (res_tteNo)
@@ -1856,17 +1955,17 @@ Bool overlap1 ( Addr s1, ULong r1, Addr s2, ULong r2 )
 }
 
 static inline
-Bool overlaps ( Addr start, ULong range, const VexGuestExtents* vge )
+Bool overlaps ( Addr start, ULong range, const TTEntryH* tteH )
 {
-   if (overlap1(start, range, vge->base[0], vge->len[0]))
+   if (overlap1(start, range, tteH->vge_base[0], tteH->vge_len[0]))
       return True;
-   if (vge->n_used < 2)
+   if (tteH->vge_n_used < 2)
       return False;
-   if (overlap1(start, range, vge->base[1], vge->len[1]))
+   if (overlap1(start, range, tteH->vge_base[1], tteH->vge_len[1]))
       return True;
-   if (vge->n_used < 3)
+   if (tteH->vge_n_used < 3)
       return False;
-   if (overlap1(start, range, vge->base[2], vge->len[2]))
+   if (overlap1(start, range, tteH->vge_base[2], tteH->vge_len[2]))
       return True;
    return False;
 }
@@ -1879,23 +1978,23 @@ static void delete_tte ( /*MOD*/Sector* sec, SECno secNo, TTEno tteno,
 {
    Int      i, ec_idx;
    EClassNo ec_num;
-   TTEntry* tte;
 
    /* sec and secNo are mutually redundant; cross-check. */
    vg_assert(sec == &sectors[secNo]);
 
    vg_assert(tteno >= 0 && tteno < N_TTES_PER_SECTOR);
-   tte = &sec->tt[tteno];
-   vg_assert(tte->status == InUse);
-   vg_assert(tte->n_tte2ec >= 1 && tte->n_tte2ec <= 3);
+   TTEntryC* tteC = &sec->ttC[tteno];
+   TTEntryH* tteH = &sec->ttH[tteno];
+   vg_assert(tteH->status == InUse);
+   vg_assert(tteC->n_tte2ec >= 1 && tteC->n_tte2ec <= 3);
 
    /* Unchain .. */
    unchain_in_preparation_for_deletion(arch_host, endness_host, secNo, tteno);
 
    /* Deal with the ec-to-tte links first. */
-   for (i = 0; i < tte->n_tte2ec; i++) {
-      ec_num = tte->tte2ec_ec[i];
-      ec_idx = tte->tte2ec_ix[i];
+   for (i = 0; i < tteC->n_tte2ec; i++) {
+      ec_num = tteC->tte2ec_ec[i];
+      ec_idx = tteC->tte2ec_ix[i];
       vg_assert(ec_num >= 0 && ec_num < ECLASS_N);
       vg_assert(ec_idx >= 0);
       vg_assert(ec_idx < sec->ec2tte_used[ec_num]);
@@ -1910,7 +2009,7 @@ static void delete_tte ( /*MOD*/Sector* sec, SECno secNo, TTEno tteno,
       Note: we could avoid the below hash table search by
       adding a reference from tte to its hash position in tt. */
    HTTno j;
-   HTTno k = HASH_TT(tte->entry);
+   HTTno k = HASH_TT(tteC->entry);
    vg_assert(k >= 0 && k < N_HTTES_PER_SECTOR);
    for (j = 0; j < N_HTTES_PER_SECTOR; j++) {
       if (sec->htt[k] == tteno)
@@ -1920,21 +2019,21 @@ static void delete_tte ( /*MOD*/Sector* sec, SECno secNo, TTEno tteno,
          k = 0;
    }
    vg_assert(j < N_HTTES_PER_SECTOR);
-   sec->htt[k]   = HTT_DELETED;
-   tte->status   = Deleted;
-   tte->n_tte2ec = 0;
-   add_in_empty_tt_list(secNo, tteno);
+   sec->htt[k]    = HTT_DELETED;
+   tteH->status   = Deleted;
+   tteC->n_tte2ec = 0;
+   add_to_empty_tt_list(secNo, tteno);
 
    /* Stats .. */
    sec->tt_n_inuse--;
    n_disc_count++;
-   n_disc_osize += vge_osize(&tte->vge);
+   n_disc_osize += TTEntryH__osize(tteH);
 
    /* Tell the tool too. */
    if (VG_(needs).superblock_discards) {
-      VG_TDICT_CALL( tool_discard_superblock_info,
-                     tte->entry,
-                     tte->vge );
+      VexGuestExtents vge_tmp;
+      TTEntryH__to_VexGuestExtents( &vge_tmp, tteH );
+      VG_TDICT_CALL( tool_discard_superblock_info, tteC->entry, vge_tmp );
    }
 }
 
@@ -1952,7 +2051,6 @@ Bool delete_translations_in_sector_eclass ( /*MOD*/Sector* sec, SECno secNo,
    Int      i;
    TTEno    tteno;
    Bool     anyDeld = False;
-   TTEntry* tte;
 
    vg_assert(ec >= 0 && ec < ECLASS_N);
 
@@ -1966,10 +2064,10 @@ Bool delete_translations_in_sector_eclass ( /*MOD*/Sector* sec, SECno secNo,
 
       vg_assert(tteno < N_TTES_PER_SECTOR);
 
-      tte = &sec->tt[tteno];
-      vg_assert(tte->status == InUse);
+      TTEntryH* tteH = &sec->ttH[tteno];
+      vg_assert(tteH->status == InUse);
 
-      if (overlaps( guest_start, range, &tte->vge )) {
+      if (overlaps( guest_start, range, tteH )) {
          anyDeld = True;
          delete_tte( sec, secNo, tteno, arch_host, endness_host );
       }
@@ -1993,8 +2091,12 @@ Bool delete_translations_in_sector ( /*MOD*/Sector* sec, SECno secNo,
    Bool  anyDeld = False;
 
    for (i = 0; i < N_TTES_PER_SECTOR; i++) {
-      if (sec->tt[i].status == InUse
-          && overlaps( guest_start, range, &sec->tt[i].vge )) {
+      /* The entire and only purpose of splitting TTEntry into cold
+         and hot parts (TTEntryC and TTEntryH) is to make this search
+         loop run as fast as possible, by avoiding having to pull all
+         of the cold data up the memory hierarchy. */
+      if (UNLIKELY(sec->ttH[i].status == InUse
+                   && overlaps( guest_start, range, &sec->ttH[i] ))) {
          anyDeld = True;
          delete_tte( sec, secNo, i, arch_host, endness_host );
       }
@@ -2108,9 +2210,8 @@ void VG_(discard_translations) ( Addr guest_start, ULong range,
 
    /* Post-deletion sanity check */
    if (VG_(clo_sanity_level) >= 4) {
-      TTEno    i;
-      TTEntry* tte;
-      Bool     sane = sanity_check_all_sectors();
+      TTEno i;
+      Bool  sane = sanity_check_all_sectors();
       vg_assert(sane);
       /* But now, also check the requested address range isn't
          present anywhere. */
@@ -2119,10 +2220,10 @@ void VG_(discard_translations) ( Addr guest_start, ULong range,
          if (sec->tc == NULL)
             continue;
          for (i = 0; i < N_TTES_PER_SECTOR; i++) {
-            tte = &sec->tt[i];
-            if (tte->status != InUse)
+            TTEntryH* tteH = &sec->ttH[i];
+            if (tteH->status != InUse)
                continue;
-            vg_assert(!overlaps( guest_start, range, &tte->vge ));
+            vg_assert(!overlaps( guest_start, range, tteH ));
          }
       }
    }
@@ -2297,9 +2398,17 @@ static void unredir_discard_translations( Addr guest_start, ULong range )
    vg_assert(sanity_check_redir_tt_tc());
 
    for (i = 0; i <= unredir_tt_highwater; i++) {
-      if (unredir_tt[i].inUse
-          && overlaps( guest_start, range, &unredir_tt[i].vge))
-         unredir_tt[i].inUse = False;
+      if (unredir_tt[i].inUse) {
+         /* Fake up a TTEntryH just so we can pass it to overlaps()
+            without having to make a new version of overlaps() just for
+            this rare case. */
+         TTEntryH tmp_tteH;
+         TTEntryH__from_VexGuestExtents( &tmp_tteH, &unredir_tt[i].vge );
+         tmp_tteH.status = Empty; /* Completely irrelevant; pure paranoia. */
+         if (overlaps( guest_start, range, &tmp_tteH )) {
+            unredir_tt[i].inUse = False;
+         }
+      }
    }
 }
 
@@ -2332,6 +2441,23 @@ void VG_(init_tt_tc) ( void )
    /* check fast cache is aligned as we requested.  Not fatal if it
       isn't, but we might as well make sure. */
    vg_assert(VG_IS_16_ALIGNED( ((Addr) & VG_(tt_fast)[0]) ));
+
+   /* The TTEntryH size is critical for keeping the LLC miss rate down
+      when doing a lot of discarding.  Hence check it here.  We also
+      have a lot of TTEntryCs so let's check that too. */
+   if (sizeof(HWord) == 8) {
+      vg_assert(sizeof(TTEntryH) <= 32);
+      vg_assert(sizeof(TTEntryC) <= 112);
+   } else if (sizeof(HWord) == 4) {
+      vg_assert(sizeof(TTEntryH) <= 20);
+      vg_assert(sizeof(TTEntryC) <= 88);
+   } else {
+      vg_assert(0);
+   }
+
+   /* All the hassle about converting between TTEntryH and
+      VexGuestExtents was so as to ensure the following. */
+   vg_assert(sizeof(TTEntryH) == sizeof(VexGuestExtents));
 
    if (VG_(clo_verbosity) > 2)
       VG_(message)(Vg_DebugMsg, 
@@ -2380,24 +2506,38 @@ void VG_(init_tt_tc) ( void )
          VG_(clo_avg_transtab_entry_size) == 0 ? "using " : "ignoring ",
          VG_(details).avg_translation_sizeB);
       VG_(message)(Vg_DebugMsg,
-         "TT/TC: cache: %d sectors of %d bytes each = %d total TC\n", 
+         "TT/TC: cache: %d sectors of %'d bytes each = %'d total TC\n", 
           n_sectors, 8 * tc_sector_szQ,
           n_sectors * 8 * tc_sector_szQ );
       VG_(message)(Vg_DebugMsg,
-         "TT/TC: table: %d tables[%d]  of %d bytes each = %d total TT\n",
+         "TT/TC: table: %'d tables[%d] of C %'d + H %'d bytes each "
+         "= %'d total TT\n",
           n_sectors, N_TTES_PER_SECTOR,
-          (int)(N_TTES_PER_SECTOR * sizeof(TTEntry)),
-          (int)(n_sectors * N_TTES_PER_SECTOR * sizeof(TTEntry)));
+          (int)(N_TTES_PER_SECTOR * sizeof(TTEntryC)),
+          (int)(N_TTES_PER_SECTOR * sizeof(TTEntryH)),
+          (int)(n_sectors * N_TTES_PER_SECTOR
+                          * (sizeof(TTEntryC) + sizeof(TTEntryH))));
       VG_(message)(Vg_DebugMsg,
-         "TT/TC: table: %d tt entries each = %d total tt entries\n",
+         "TT/TC: table: %d tt entries each = %'d total tt entries\n",
          N_TTES_PER_SECTOR, n_sectors * N_TTES_PER_SECTOR);
       VG_(message)(Vg_DebugMsg,
-         "TT/TC: table: %d htt[%d] of %d bytes each = %d total HTT"
+         "TT/TC: table: %d htt[%d] of %'d bytes each = %'d total HTT"
                        " (htt[%d] %d%% max occup)\n",
          n_sectors, N_HTTES_PER_SECTOR, 
          (int)(N_HTTES_PER_SECTOR * sizeof(TTEno)),
          (int)(n_sectors * N_HTTES_PER_SECTOR * sizeof(TTEno)),
          N_HTTES_PER_SECTOR, SECTOR_TT_LIMIT_PERCENT);
+   }
+
+   if (0) {
+      VG_(printf)("XXXX sizeof(VexGuestExtents) = %d\n",
+                  (Int)sizeof(VexGuestExtents));
+      VG_(printf)("XXXX sizeof(InEdge)     = %d\n", (Int)sizeof(InEdge));
+      VG_(printf)("XXXX sizeof(OutEdge)    = %d\n", (Int)sizeof(OutEdge));
+      VG_(printf)("XXXX sizeof(InEdgeArr)  = %d\n", (Int)sizeof(InEdgeArr));
+      VG_(printf)("XXXX sizeof(OutEdgeArr) = %d\n", (Int)sizeof(OutEdgeArr));
+      VG_(printf)("XXXX sizeof(TTEntryC)   = %d\n", (Int)sizeof(TTEntryC));
+      VG_(printf)("XXXX sizeof(TTEntryH)   = %d\n", (Int)sizeof(TTEntryH));
    }
 }
 
@@ -2456,9 +2596,9 @@ void VG_(print_tt_tc_stats) ( void )
 /*--- Printing out of profiling results.                   ---*/
 /*------------------------------------------------------------*/
 
-static ULong score ( const TTEntry* tte )
+static ULong score ( const TTEntryC* tteC )
 {
-   return ((ULong)tte->usage.prof.weight) * ((ULong)tte->usage.prof.count);
+   return ((ULong)tteC->usage.prof.weight) * ((ULong)tteC->usage.prof.count);
 }
 
 ULong VG_(get_SB_profile) ( SBProfEntry tops[], UInt n_tops )
@@ -2482,10 +2622,10 @@ ULong VG_(get_SB_profile) ( SBProfEntry tops[], UInt n_tops )
       if (sectors[sno].tc == NULL)
          continue;
       for (i = 0; i < N_TTES_PER_SECTOR; i++) {
-         if (sectors[sno].tt[i].status != InUse)
+         if (sectors[sno].ttH[i].status != InUse)
             continue;
-         score_total += score(&sectors[sno].tt[i]);
-         /* Find the rank for sectors[sno].tt[i]. */
+         score_total += score(&sectors[sno].ttC[i]);
+         /* Find the rank for sectors[sno].tt{C,H}[i]. */
          r = n_tops-1;
          while (True) {
             if (r == -1)
@@ -2494,7 +2634,7 @@ ULong VG_(get_SB_profile) ( SBProfEntry tops[], UInt n_tops )
                r--; 
                continue;
              }
-             if ( score(&sectors[sno].tt[i]) > tops[r].score ) {
+             if ( score(&sectors[sno].ttC[i]) > tops[r].score ) {
                 r--;
                 continue;
              }
@@ -2507,8 +2647,8 @@ ULong VG_(get_SB_profile) ( SBProfEntry tops[], UInt n_tops )
          if (r < n_tops) {
             for (s = n_tops-1; s > r; s--)
                tops[s] = tops[s-1];
-            tops[r].addr  = sectors[sno].tt[i].entry;
-            tops[r].score = score( &sectors[sno].tt[i] );
+            tops[r].addr  = sectors[sno].ttC[i].entry;
+            tops[r].score = score( &sectors[sno].ttC[i] );
          }
       }
    }
@@ -2520,9 +2660,9 @@ ULong VG_(get_SB_profile) ( SBProfEntry tops[], UInt n_tops )
       if (sectors[sno].tc == NULL)
          continue;
       for (i = 0; i < N_TTES_PER_SECTOR; i++) {
-         if (sectors[sno].tt[i].status != InUse)
+         if (sectors[sno].ttH[i].status != InUse)
             continue;
-         sectors[sno].tt[i].usage.prof.count = 0;
+         sectors[sno].ttC[i].usage.prof.count = 0;
       }
    }
 

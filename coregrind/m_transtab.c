@@ -2448,10 +2448,18 @@ void VG_(init_tt_tc) ( void )
    if (sizeof(HWord) == 8) {
       vg_assert(sizeof(TTEntryH) <= 32);
       vg_assert(sizeof(TTEntryC) <= 112);
-   } else if (sizeof(HWord) == 4) {
+   } 
+   else if (sizeof(HWord) == 4) {
       vg_assert(sizeof(TTEntryH) <= 20);
+#     if defined(VGP_ppc32_linux)
+      /* ppc32-linux is weird.  It thinks alignof(ULong) == 8 and so the
+         structure is larger than on other 32 bit targets. */
+      vg_assert(sizeof(TTEntryC) <= 96);
+#     else
       vg_assert(sizeof(TTEntryC) <= 88);
-   } else {
+#     endif
+   }
+   else {
       vg_assert(0);
    }
 

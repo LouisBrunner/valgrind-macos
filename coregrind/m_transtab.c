@@ -2451,8 +2451,8 @@ void VG_(init_tt_tc) ( void )
    } 
    else if (sizeof(HWord) == 4) {
       vg_assert(sizeof(TTEntryH) <= 20);
-#     if defined(VGP_ppc32_linux)
-      /* ppc32-linux is weird.  It thinks alignof(ULong) == 8 and so the
+#     if defined(VGP_ppc32_linux) || defined(VGP_mips32_linux)
+      /* On PPC32 and MIPS32 platforms alignof(ULong) == 8, so the
          structure is larger than on other 32 bit targets. */
       vg_assert(sizeof(TTEntryC) <= 96);
 #     else

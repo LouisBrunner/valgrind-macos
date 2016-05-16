@@ -9061,7 +9061,8 @@ PRE(sys_door)
    case VKI_DOOR_SETPARAM:
       PRE_REG_READ3(long, "door", long, arg1, long, arg2, long, arg3);
       PRE_REG_READ_SIXTH_ONLY;
-      VG_(unimplemented)("DOOR_SETPARAM");
+      if (!ML_(fd_allowed)(ARG1, "door_setparam", tid, False))
+         SET_STATUS_Failure(VKI_EBADF);
       break;
    default:
       VG_(unimplemented)("Syswrap of the door call with subcode %ld.", SARG6);

@@ -4179,6 +4179,21 @@ Syscall param door_call(params->rbuf) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
+201:                SYS_door (DOOR_SETPARAM) 4s 0m
+---------------------------------------------------------
+Syscall param door(arg1) contains uninitialised byte(s)
+   ...
+
+Syscall param door(arg2) contains uninitialised byte(s)
+   ...
+
+Syscall param door(arg3) contains uninitialised byte(s)
+   ...
+
+Syscall param door(subcode) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
 202:            SYS_setreuid 2s 0m
 ---------------------------------------------------------
 Syscall param setreuid(ruid) contains uninitialised byte(s)

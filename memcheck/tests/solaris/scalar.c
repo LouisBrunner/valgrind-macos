@@ -1197,6 +1197,13 @@ static void sys_door5(void)
 }
 
 __attribute__((noinline))
+static void sys_door6(void)
+{
+   GO(SYS_door, "(DOOR_SETPARAM) 4s 0m");
+   SY(SYS_door, x0, x0 - 1, x0 + 1, x0, x0, x0 + DOOR_SETPARAM); FAIL;
+}
+
+__attribute__((noinline))
 static void sys_pset(void)
 {
    GO(SYS_pset, "(CREATE) 2s 1m");
@@ -2290,6 +2297,7 @@ int main(void)
    sys_door3();
    sys_door4();
    sys_door5();
+   sys_door6();
    /* XXX Additional sys_door variants still unimplemented. */
 
    /* SYS_setreuid              202 */

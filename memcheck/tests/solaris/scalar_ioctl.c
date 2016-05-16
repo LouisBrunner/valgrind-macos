@@ -159,6 +159,13 @@ static void sys_ioctl_I_PUSH(void)
 }
 
 __attribute__((noinline))
+static void sys_ioctl_I_FLUSH(void)
+{
+   GO(SYS_ioctl, "(I_FLUSH) 3s 0m");
+   SY(SYS_ioctl, x0 - 1, x0 + I_FLUSH, x0 + FLUSHR); FAIL;
+}
+
+__attribute__((noinline))
 static void sys_ioctl_I_STR(void)
 {
    GO(SYS_ioctl, "(I_STR) 3s 1m");
@@ -481,6 +488,7 @@ int main(void)
 
    /* STREAMS */
    sys_ioctl_I_PUSH();
+   sys_ioctl_I_FLUSH();
    sys_ioctl_I_STR();
    sys_ioctl_I_STR_2();
    sys_ioctl_I_FIND();

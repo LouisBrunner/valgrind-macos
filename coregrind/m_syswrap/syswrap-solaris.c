@@ -3114,6 +3114,8 @@ PRE(sys_ioctl)
    case VKI_I_PUSH:
       PRE_MEM_RASCIIZ("ioctl(I_PUSH)", ARG3);
       break;
+   case VKI_I_FLUSH:
+      break;
    case VKI_I_STR:
       {
          PRE_MEM_READ("ioctl(I_STR)", ARG3, sizeof(struct vki_strioctl));
@@ -3377,6 +3379,8 @@ POST(sys_ioctl)
 
    /* STREAMS */
    case VKI_I_PUSH:
+      break;
+   case VKI_I_FLUSH:
       break;
    case VKI_I_STR:
       {

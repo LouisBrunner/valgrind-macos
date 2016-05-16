@@ -293,6 +293,18 @@ Syscall param ioctl(I_PUSH) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
+ 54:               SYS_ioctl (I_FLUSH) 3s 0m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
  54:               SYS_ioctl (I_STR) 3s 1m
 ---------------------------------------------------------
 Syscall param ioctl(fd) contains uninitialised byte(s)
@@ -390,6 +402,9 @@ Syscall param ioctl(I_PEEK, strpeek->flags) points to unaddressable byte(s)
 Syscall param ioctl(fd) contains uninitialised byte(s)
    ...
 
+
+More than 100 errors detected.  Subsequent errors
+will still be recorded, but in less detail than before.
 Syscall param ioctl(request) contains uninitialised byte(s)
    ...
 
@@ -400,9 +415,6 @@ Syscall param ioctl(I_PEEK, strpeek->ctlbuf.maxlen) points to uninitialised byte
    ...
  Address 0x........ is on thread 1's stack
 
-
-More than 100 errors detected.  Subsequent errors
-will still be recorded, but in less detail than before.
 Syscall param ioctl(I_PEEK, strpeek->ctlbuf.buf) points to uninitialised byte(s)
    ...
  Address 0x........ is on thread 1's stack

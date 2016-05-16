@@ -1178,6 +1178,7 @@ typedef struct sigaction vki_sigaction_fromK_t;
 #include <sys/stropts.h>
 #define VKI_I_CANPUT I_CANPUT
 #define VKI_I_FIND I_FIND
+#define VKI_I_FLUSH I_FLUSH
 #define VKI_I_PEEK I_PEEK
 #define VKI_I_PUSH I_PUSH
 #define VKI_I_STR I_STR

@@ -180,6 +180,13 @@ static void sys_ioctl_I_STR_2(void)
 }
 
 __attribute__((noinline))
+static void sys_ioctl_I_FIND(void)
+{
+   GO(SYS_ioctl, "(I_FIND) 3s 1m");
+   SY(SYS_ioctl, x0 - 1, x0 + I_FIND, x0 + 1); FAIL;
+}
+
+__attribute__((noinline))
 static void sys_ioctl_I_PEEK(void)
 {
    GO(SYS_ioctl, "(I_PEEK) 3s 7m");
@@ -476,6 +483,7 @@ int main(void)
    sys_ioctl_I_PUSH();
    sys_ioctl_I_STR();
    sys_ioctl_I_STR_2();
+   sys_ioctl_I_FIND();
    sys_ioctl_I_PEEK();
    sys_ioctl_I_PEEK_2();
    sys_ioctl_I_CANPUT();

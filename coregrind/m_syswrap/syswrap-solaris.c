@@ -3127,6 +3127,9 @@ PRE(sys_ioctl)
          }
       }
       break;
+   case VKI_I_FIND:
+      PRE_MEM_RASCIIZ("ioctl(I_FIND)", ARG3);
+      break;
    case VKI_I_PEEK:
       {
          /* Try hard not to mark strpeek->*buf.len members as being read. */
@@ -3383,6 +3386,8 @@ POST(sys_ioctl)
          if ((p->ic_dp != NULL) && (p->ic_len > 0))
             POST_MEM_WRITE((Addr) p->ic_dp, p->ic_len);
       }
+      break;
+   case VKI_I_FIND:
       break;
    case VKI_I_PEEK:
       {

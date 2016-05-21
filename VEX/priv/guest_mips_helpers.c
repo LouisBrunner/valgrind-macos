@@ -1130,14 +1130,13 @@ ULong mips64_dirtyhelper_rdhwr ( ULong rt, ULong rd )
 
 #define ASM_VOLATILE_UNARY32_DOUBLE(inst)                           \
    __asm__ volatile("cfc1  $t0,  $31"   "\n\t"                      \
-                    "ctc1  %3,   $31"   "\n\t"                      \
-                    "mtc1  %1,   $f20"  "\n\t"                      \
-                    "mtc1  %2,   $f21"  "\n\t"                      \
+                    "ctc1  %2,   $31"   "\n\t"                      \
+                    "ldc1  $f20, 0(%1)" "\n\t"                      \
                     #inst" $f20, $f20"  "\n\t"                      \
                     "cfc1  %0,   $31"   "\n\t"                      \
                     "ctc1  $t0,  $31"   "\n\t"                      \
                     : "=r" (ret)                                    \
-                    : "r" (loFsVal), "r" (hiFsVal), "r" (fcsr)      \
+                    : "r" (&fsVal), "r" (fcsr)                      \
                     : "t0", "$f20", "$f21"                          \
                    );
 
@@ -1168,17 +1167,14 @@ ULong mips64_dirtyhelper_rdhwr ( ULong rt, ULong rd )
 
 #define ASM_VOLATILE_BINARY32_DOUBLE(inst)                          \
    __asm__ volatile("cfc1  $t0,  $31"         "\n\t"                \
-                    "ctc1  %5,   $31"         "\n\t"                \
-                    "mtc1  %1,   $f20"        "\n\t"                \
-                    "mtc1  %2,   $f21"        "\n\t"                \
-                    "mtc1  %3,   $f22"        "\n\t"                \
-                    "mtc1  %4,   $f23"        "\n\t"                \
+                    "ctc1  %3,   $31"         "\n\t"                \
+                    "ldc1  $f20, 0(%1)"       "\n\t"                \
+                    "ldc1  $f22, 0(%2)"       "\n\t"                \
                     #inst" $f20, $f20, $f22"  "\n\t"                \
                     "cfc1  %0,   $31"         "\n\t"                \
                     "ctc1  $t0,  $31"         "\n\t"                \
                     : "=r" (ret)                                    \
-                    : "r" (loFsVal), "r" (hiFsVal), "r" (loFtVal),  \
-                      "r" (hiFtVal), "r" (fcsr)                     \
+                    : "r" (&fsVal), "r" (&ftVal), "r" (fcsr)        \
                     : "t0", "$f20", "$f21", "$f22", "$f23"          \
                    );
 
@@ -1217,6 +1213,8 @@ extern UInt mips_dirtyhelper_calculate_FCSR_fp32 ( void* gs, UInt fs, UInt ft,
    loFtVal    = (UInt)addr[ft*2];
    hiFtVal    = (UInt)addr[ft*2+2];
 #endif
+   ULong fsVal   = ((ULong) hiFsVal) << 32 | loFsVal;
+   ULong ftVal   = ((ULong) hiFtVal) << 32 | loFtVal;
    UInt fcsr     = guest_state->guest_FCSR;
    switch (inst) {
       case ROUNDWD:

@@ -2779,6 +2779,18 @@ subject to the following constraints:</para>
 
  <itemizedlist>
   <listitem>
+    <para>Valgrind determines at startup the size of the 'brk segment'
+      using the RLIMIT_DATA rlim_cur, with a minimum of 1 MB and a
+      maximum of 8 MB. Valgrind outputs a message each time a program
+      tries to extend the brk segment beyond the size determined at
+      startup.  Most programs will work properly with this limit,
+      typically by switching to the use of mmap to get more memory.
+      If your program really needs a big brk segment, you must change
+      the 8 MB hardcoded limit and recompile Valgrind.
+   </para>
+  </listitem>
+
+  <listitem>
    <para>On x86 and amd64, there is no support for 3DNow!
    instructions.  If the translator encounters these, Valgrind will
    generate a SIGILL when the instruction is executed.  Apart from

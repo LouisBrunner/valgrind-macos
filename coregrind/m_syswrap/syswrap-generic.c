@@ -1324,6 +1324,7 @@ static Addr do_brk ( Addr newbrk, ThreadId tid )
       else
          VG_(umsg)("Cannot map memory to grow brk segment in thread #%u "
                    "to %#lx\n", tid, newbrkP);
+      VG_(umsg)("(see section Limitations in user manual)\n");
       goto bad;
    }
 

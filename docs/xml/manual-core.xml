@@ -2779,9 +2779,9 @@ subject to the following constraints:</para>
 
  <itemizedlist>
   <listitem>
-    <para>Valgrind determines at startup the size of the 'brk segment'
-      using the RLIMIT_DATA rlim_cur, with a minimum of 1 MB and a
-      maximum of 8 MB. Valgrind outputs a message each time a program
+    <para>On Linux, Valgrind determines at startup the size of the 'brk
+      segment' using the RLIMIT_DATA rlim_cur, with a minimum of 1 MB and
+      a maximum of 8 MB. Valgrind outputs a message each time a program
       tries to extend the brk segment beyond the size determined at
       startup.  Most programs will work properly with this limit,
       typically by switching to the use of mmap to get more memory.

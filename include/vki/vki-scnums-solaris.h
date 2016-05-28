@@ -204,7 +204,7 @@
 #define __NR_lwp_sema_trywait           SYS_lwp_sema_trywait
 #define __NR_lwp_detach                 SYS_lwp_detach
 //#define __NR_corectl                    SYS_corectl
-//#define __NR_modctl                     SYS_modctl
+#define __NR_modctl                     SYS_modctl
 #define __NR_fchroot                    SYS_fchroot
 #if defined(SOLARIS_SYSTEM_STATS_SYSCALL)
 #define __NR_system_stats               SYS_system_stats

@@ -3341,6 +3341,29 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL(SOLARIS_SPAWN_SYSCALL, test x$solaris_spawn_syscall = xyes)
 
 
+# Solaris-specific check determining if commands MODNVL_CTRLMAP through
+# MODDEVINFO_CACHE_TS for modctl() syscall are available (on newer Solaris).
+#
+# C-level symbol: SOLARIS_MODCTL_MODNVL
+# Automake-level symbol: SOLARIS_MODCTL_MODNVL
+#
+AC_MSG_CHECKING([for MODNVL_CTRLMAP through MODDEVINFO_CACHE_TS modctl(2) commands (Solaris-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/modctl.h>
+]], [[
+  return !(MODNVL_CTRLMAP && MODDEVINFO_CACHE_TS);
+]])], [
+solaris_modctl_modnvl=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_MODCTL_MODNVL], 1,
+          [Define to 1 if you have the `MODNVL_CTRLMAP' through `MODDEVINFO_CACHE_TS' constants.])
+], [
+solaris_modctl_modnvl=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(SOLARIS_MODCTL_MODNVL, test x$solaris_modctl_modnvl = xyes)
+
+
 # Solaris-specific check determining whether nscd (name switch cache daemon)
 # attaches its door at /system/volatile/name_service_door (Solaris)
 # or at /var/run/name_service_door (illumos).
@@ -3630,6 +3653,7 @@ AC_CHECK_HEADERS([       \
         sys/signal.h     \
         sys/signalfd.h   \
         sys/syscall.h    \
+        sys/sysnvl.h     \
         sys/time.h       \
         sys/types.h      \
         ])

@@ -642,9 +642,28 @@ typedef struct vki_kcf_door_arg_s {
 #define vki_mnttab mnttab
 
 
+#include <sys/modctl.h>
+#define VKI_MODLOAD MODLOAD
+#define VKI_MODUNLOAD MODUNLOAD
+#define VKI_MODINFO MODINFO
+#if defined(SOLARIS_MODCTL_MODNVL)
+#define VKI_MODNVL_DEVLINKSYNC MODNVL_DEVLINKSYNC
+#define VKI_MODDEVINFO_CACHE_TS MODDEVINFO_CACHE_TS
+#endif /* SOLARIS_MODCTL_MODNVL */
+#define vki_modid_t int
+#define vki_modinfo modinfo
+
+
 #include <sys/mount.h>
 #define	VKI_MS_DATA MS_DATA
 #define	VKI_MS_OPTIONSTR MS_OPTIONSTR
+
+
+#if defined(HAVE_SYS_SYSNVL_H)
+#include <sys/sysnvl.h>
+#define VKI_SYSNVL_OP_GET SYSNVL_OP_GET
+#define VKI_SYSNVL_OP_UPDATE SYSNVL_OP_UPDATE
+#endif /* HAVE_SYS_SYSNVL_H */
 
 
 #include <sys/poll.h>

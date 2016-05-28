@@ -11,6 +11,7 @@
 #include <sys/fstyp.h>
 #include <sys/lwp.h>
 #include <sys/mman.h>
+#include <sys/modctl.h>
 #include <sys/mount.h>
 #include <sys/port_impl.h>
 #include <sys/priocntl.h>
@@ -670,6 +671,27 @@ static int sys_uname2(void)
    if (name.version[version_len + 2] != ' ') x = -7; else x = -8;
    if (name.machine[machine_len + 2] != ' ') x = -9; else x = -10;
    return x;
+}
+
+__attribute__((noinline))
+static void sys_modctl(void)
+{
+   GO(SYS_modctl, "(MODLOAD) 3s 1m");
+   SY(SYS_modctl, x0 + MODLOAD, x0 - 1, x0 + 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_modctl2(void)
+{
+   GO(SYS_modctl, "(MODUNLOAD) 2s 0m");
+   SY(SYS_modctl, x0 + MODUNLOAD, x0 + 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_modctl3(void)
+{
+   GO(SYS_modctl, "(MODINFO) 3s 4m");
+   SY(SYS_modctl, x0 + MODINFO, x0 + 1, x0 - 1); FAIL;
 }
 
 __attribute__((noinline))
@@ -2053,7 +2075,9 @@ int main(void)
    /* XXX Missing wrapper. */
 
    /* SYS_modctl                152 */
-   /* XXX Missing wrapper. */
+   sys_modctl();
+   sys_modctl2();
+   sys_modctl3();
 
    /* SYS_fchroot               153 */
    GO(SYS_fchroot, "1s 0m");

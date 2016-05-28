@@ -1,0 +1,98 @@
+---------------------------------------------------------
+152:              SYS_modctl (MODNVL_DEVLINKSYNC, GET) 5s 1m
+---------------------------------------------------------
+Syscall param modctl_modnvl_devlinksync_get(cmd) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl_modnvl_devlinksync_get(a1) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl_modnvl_devlinksync_get(bufp) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl_modnvl_devlinksync_get(buflenp) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl_modnvl_devlinksync_get(genp) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl(buflenp) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+152:              SYS_modctl (MODNVL_DEVLINKSYNC, GET) 4s 2m
+---------------------------------------------------------
+Syscall param modctl_modnvl_devlinksync_get(cmd) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl_modnvl_devlinksync_get(a1) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl_modnvl_devlinksync_get(bufp) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl_modnvl_devlinksync_get(genp) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl(bufp) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param modctl(genp) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+152:              SYS_modctl (MODNVL_DEVLINKSYNC, UPDATE) 4s 1m
+---------------------------------------------------------
+Syscall param modctl_modnvl_devlinksync_update(cmd) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl_modnvl_devlinksync_update(a1) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl_modnvl_devlinksync_update(bufp) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl_modnvl_devlinksync_update(buflenp) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl(buflenp) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+152:              SYS_modctl (MODNVL_DEVLINKSYNC, UPDATE) 4s 1m
+---------------------------------------------------------
+Syscall param modctl_modnvl_devlinksync_update(cmd) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl_modnvl_devlinksync_update(a1) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl_modnvl_devlinksync_update(bufp) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl(buflenp) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+ in frame #1, created by sys_modctl4 (scalar_modctl_modnvl.c:36)
+
+Syscall param modctl(bufp) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+152:              SYS_modctl (MODDEVINFO_CACHE_TS) 2s 1m
+---------------------------------------------------------
+Syscall param modctl_moddevinfo_cache_ts(cmd) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl_moddevinfo_cache_ts(utsp) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl(utsp) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+

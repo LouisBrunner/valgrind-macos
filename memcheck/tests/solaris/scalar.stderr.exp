@@ -2466,6 +2466,59 @@ Syscall param lwp_detach(lwpid) contains uninitialised byte(s)
    ...
 
 ---------------------------------------------------------
+152:              SYS_modctl (MODLOAD) 3s 1m
+---------------------------------------------------------
+Syscall param modctl_modload(cmd) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl_modload(use_path) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl_modload(filename) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl(filaneme) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+152:              SYS_modctl (MODUNLOAD) 2s 0m
+---------------------------------------------------------
+Syscall param modctl_modunload(cmd) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl_modunload(id) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
+152:              SYS_modctl (MODINFO) 3s 4m
+---------------------------------------------------------
+Syscall param modctl_modinfo(cmd) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl_modinfo(id) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl_modinfo(umodi) contains uninitialised byte(s)
+   ...
+
+Syscall param modctl(umodi->mi_info) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param modctl(umodi->mi_id) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param modctl(umodi->mi_nextid) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param modctl(umodi) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
 153:             SYS_fchroot 1s 0m
 ---------------------------------------------------------
 Syscall param fchroot(fd) contains uninitialised byte(s)

@@ -37,6 +37,7 @@ EXTRA_DIST = \
 	scalar_lwp_name.stderr.exp scalar_lwp_name.stdout.exp scalar_lwp_name.vgtest \
 	scalar_lwp_sigqueue.stderr.exp scalar_lwp_sigqueue.stdout.exp scalar_lwp_sigqueue.vgtest \
 	scalar_lwp_sigqueue_pid.stderr.exp scalar_lwp_sigqueue_pid.vgtest \
+	scalar_modctl_modnvl.stderr.exp scalar_modctl_modnvl.stdout.exp scalar_modctl_modnvl.vgtest \
 	scalar_obsolete.stderr.exp scalar_obsolete.stdout.exp scalar_obsolete.vgtest \
 	scalar_shm_new.stderr.exp scalar_shm_new.stdout.exp scalar_shm_new.vgtest \
 	scalar_spawn.stderr.exp scalar_spawn.stdout.exp scalar_spawn.vgtest \
@@ -110,6 +111,10 @@ endif
 
 if SOLARIS_LWP_NAME_SYSCALL
 check_PROGRAMS += scalar_lwp_name
+endif
+
+if SOLARIS_MODCTL_MODNVL
+check_PROGRAMS += scalar_modctl_modnvl
 endif
 
 if SOLARIS_LWP_SIGQUEUE_SYSCALL

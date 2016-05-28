@@ -999,6 +999,7 @@ DECL_TEMPLATE(solaris, sys_yield);
 DECL_TEMPLATE(solaris, sys_lwp_sema_post);
 DECL_TEMPLATE(solaris, sys_lwp_sema_trywait);
 DECL_TEMPLATE(solaris, sys_lwp_detach);
+DECL_TEMPLATE(solaris, sys_modctl);
 DECL_TEMPLATE(solaris, sys_fchroot);
 #if defined(SOLARIS_SYSTEM_STATS_SYSCALL)
 DECL_TEMPLATE(solaris, sys_system_stats);
@@ -6624,6 +6625,143 @@ PRE(sys_lwp_detach)
    PRE_REG_READ1(long, "lwp_detach", vki_id_t, lwpid);
 }
 
+PRE(sys_modctl)
+{
+   /* int modctl(int cmd, uintptr_t a1, uintptr_t a2, uintptr_t a3,
+                 uintptr_t a4, uintptr_t a5); */
+   *flags |= SfMayBlock;
+
+   switch (ARG1 /*cmd*/) {
+   case VKI_MODLOAD:
+      /* int modctl_modload(int use_path, char *filename, int *rvp); */
+      PRINT("sys_modctl ( %ld, %ld, %#lx(%s), %#lx )",
+            SARG1, ARG2, ARG3, (HChar *) ARG3, ARG4);
+      PRE_REG_READ4(long, SC2("modctl", "modload"),
+                    int, cmd, int, use_path, char *, filename, int *, rvp);
+      PRE_MEM_RASCIIZ("modctl(filaneme)", ARG3);
+      if (ARG4 != 0) {
+         PRE_MEM_WRITE("modctl(rvp)", ARG4, sizeof(int *));
+      }
+      break;
+   case VKI_MODUNLOAD:
+      /* int modctl_modunload(modid_t id); */
+      PRINT("sys_modctl ( %ld, %ld )", SARG1, SARG2);
+      PRE_REG_READ2(long, SC2("modctl", "modunload"),
+                    int, cmd, vki_modid_t, id);
+      break;
+   case VKI_MODINFO: {
+      /* int modctl_modinfo(modid_t id, struct modinfo *umodi); */
+      PRINT("sys_modctl ( %ld, %ld, %#lx )", SARG1, SARG2, ARG3);
+      PRE_REG_READ3(long, SC2("modctl", "modinfo"),
+                    int, cmd, vki_modid_t, id, struct modinfo *, umodi);
+
+      struct vki_modinfo *umodi = (struct vki_modinfo *) ARG3;
+      PRE_FIELD_READ("modctl(umodi->mi_info)", umodi->mi_info);
+      PRE_FIELD_READ("modctl(umodi->mi_id)", umodi->mi_id);
+      PRE_FIELD_READ("modctl(umodi->mi_nextid)", umodi->mi_nextid);
+      PRE_MEM_WRITE("modctl(umodi)", ARG3, sizeof(struct vki_modinfo));
+      break;
+   }
+
+#if defined(SOLARIS_MODCTL_MODNVL)
+   case VKI_MODNVL_DEVLINKSYNC:
+      /* int modnvl_devlinksync(sysnvl_op_t a1, uintptr_t a2, uintptr_t a3,
+                                uintptr_t a4); */
+      switch (ARG2 /*op*/) {
+      case VKI_SYSNVL_OP_GET:
+         PRINT("sys_modctl ( %ld, %lu, %#lx, %#lx, %#lx )",
+               SARG1, ARG2, ARG3, ARG4, ARG5);
+         PRE_REG_READ5(long, SC3("modctl", "modnvl_devlinksync", "get"),
+                       int, cmd, sysnvl_op_t, a1, char *, bufp,
+                       uint64_t *, buflenp, uint64_t *, genp);
+
+         PRE_MEM_WRITE("modctl(buflenp)", ARG4, sizeof(vki_uint64_t));
+         if (ML_(safe_to_deref)((vki_uint64_t *) ARG4, sizeof(vki_uint64_t))) {
+            if (ARG3 != 0) {
+               PRE_MEM_WRITE("modctl(bufp)", ARG3, *(vki_uint64_t *) ARG4);
+            }
+         }
+         if (ARG5 != 0) {
+            PRE_MEM_WRITE("modctl(genp)", ARG5, sizeof(vki_uint64_t));
+         }
+         break;
+      case VKI_SYSNVL_OP_UPDATE:
+         PRINT("sys_modctl ( %ld, %lu, %#lx, %#lx )", SARG1, ARG2, ARG3, ARG4);
+         PRE_REG_READ4(long, SC3("modctl", "modnvl_devlinksync", "update"),
+                       int, cmd, sysnvl_op_t, a1, char *, bufp,
+                       uint64_t *, buflenp);
+
+         PRE_MEM_READ("modctl(buflenp)", ARG4, sizeof(vki_uint64_t));
+         if (ML_(safe_to_deref)((vki_uint64_t *) ARG4, sizeof(vki_uint64_t))) {
+            PRE_MEM_READ("modctl(bufp)", ARG3, *(vki_uint64_t *) ARG4);
+         }
+         break;
+      default:
+         VG_(unimplemented)("Syswrap of the modctl call with command "
+                            "MODNVL_DEVLINKSYNC and op %ld.", ARG2);
+         /*NOTREACHED*/
+         break;
+      }
+      break;
+
+   case VKI_MODDEVINFO_CACHE_TS:
+      /* int modctl_devinfo_cache_ts(uint64_t *utsp); */
+      PRINT("sys_modctl ( %ld, %#lx )", SARG1, ARG2);
+      PRE_REG_READ2(long, SC2("modctl", "moddevinfo_cache_ts"),
+                    int, cmd, uint64_t *, utsp);
+      PRE_MEM_WRITE("modctl(utsp)", ARG2, sizeof(vki_uint64_t));
+      break;
+#endif /* SOLARIS_MODCTL_MODNVL */
+
+   default:
+      VG_(unimplemented)("Syswrap of the modctl call with command %ld.", SARG1);
+      /*NOTREACHED*/
+      break;
+   }
+}
+
+POST(sys_modctl)
+{
+   switch (ARG1 /*cmd*/) {
+   case VKI_MODLOAD:
+      if (ARG4 != 0) {
+         POST_MEM_WRITE(ARG4, sizeof(int *));
+      }
+      break;
+   case VKI_MODUNLOAD:
+      break;
+   case VKI_MODINFO:
+      POST_MEM_WRITE(ARG3, sizeof(struct vki_modinfo));
+      break;
+#if defined(SOLARIS_MODCTL_MODNVL)
+   case VKI_MODNVL_DEVLINKSYNC:
+      switch (ARG2 /*op*/) {
+      case VKI_SYSNVL_OP_GET:
+         POST_MEM_WRITE(ARG4, sizeof(vki_uint64_t));
+         if (ARG3 != 0) {
+            POST_MEM_WRITE(ARG3, *(vki_uint64_t *) ARG4);
+         }
+         if (ARG5 != 0) {
+            POST_MEM_WRITE(ARG5, sizeof(vki_uint64_t));
+         }
+         break;
+      case VKI_SYSNVL_OP_UPDATE:
+         break;
+      default:
+         vg_assert(0);
+         break;
+      }
+      break;
+   case VKI_MODDEVINFO_CACHE_TS:
+      POST_MEM_WRITE(ARG2, sizeof(vki_uint64_t));
+      break;
+#endif /* SOLARIS_MODCTL_MODNVL */
+   default:
+      vg_assert(0);
+      break;
+   }
+}
+
 PRE(sys_fchroot)
 {
    /* int fchroot(int fd); */
@@ -10517,6 +10655,7 @@ static SyscallTableEntry syscall_table[] = {
    SOLXY(__NR_lwp_sema_post,        sys_lwp_sema_post),         /* 148 */
    SOLXY(__NR_lwp_sema_trywait,     sys_lwp_sema_trywait),      /* 149 */
    SOLX_(__NR_lwp_detach,           sys_lwp_detach),            /* 150 */
+   SOLXY(__NR_modctl,               sys_modctl),                /* 152 */
    SOLX_(__NR_fchroot,              sys_fchroot),               /* 153 */
 #if defined(SOLARIS_SYSTEM_STATS_SYSCALL)
    SOLX_(__NR_system_stats,         sys_system_stats),          /* 154 */

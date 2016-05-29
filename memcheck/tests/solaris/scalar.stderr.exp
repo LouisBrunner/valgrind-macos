@@ -2466,7 +2466,7 @@ Syscall param lwp_detach(lwpid) contains uninitialised byte(s)
    ...
 
 ---------------------------------------------------------
-152:              SYS_modctl (MODLOAD) 3s 1m
+152:              SYS_modctl (MODLOAD) 4s 1m
 ---------------------------------------------------------
 Syscall param modctl_modload(cmd) contains uninitialised byte(s)
    ...
@@ -2477,7 +2477,14 @@ Syscall param modctl_modload(use_path) contains uninitialised byte(s)
 Syscall param modctl_modload(filename) contains uninitialised byte(s)
    ...
 
+Syscall param modctl_modload(rvp) contains uninitialised byte(s)
+   ...
+
 Syscall param modctl(filaneme) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param modctl(rvp) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 

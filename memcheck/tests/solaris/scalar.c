@@ -676,8 +676,8 @@ static int sys_uname2(void)
 __attribute__((noinline))
 static void sys_modctl(void)
 {
-   GO(SYS_modctl, "(MODLOAD) 3s 1m");
-   SY(SYS_modctl, x0 + MODLOAD, x0 - 1, x0 + 1); FAIL;
+   GO(SYS_modctl, "(MODLOAD) 4s 1m");
+   SY(SYS_modctl, x0 + MODLOAD, x0 + 1, x0 - 1, x0 - 1); FAIL;
 }
 
 __attribute__((noinline))

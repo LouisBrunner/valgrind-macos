@@ -6679,18 +6679,26 @@ PRE(sys_modctl)
       break;
    }
 
-#if defined(SOLARIS_MODCTL_MODNVL)
+#  if defined(SOLARIS_MODCTL_MODNVL)
    case VKI_MODNVL_DEVLINKSYNC:
       /* int modnvl_devlinksync(sysnvl_op_t a1, uintptr_t a2, uintptr_t a3,
                                 uintptr_t a4); */
       switch (ARG2 /*op*/) {
+
+#     if defined(HAVE_SYS_SYSNVL_H)
       case VKI_SYSNVL_OP_GET:
-         PRINT("sys_modctl ( %ld, %lu, %#lx, %#lx, %#lx )",
-               SARG1, ARG2, ARG3, ARG4, ARG5);
          PRE_REG_READ5(long, SC3("modctl", "modnvl_devlinksync", "get"),
                        int, cmd, sysnvl_op_t, a1, char *, bufp,
                        uint64_t *, buflenp, uint64_t *, genp);
+#     else
+      case VKI_MODCTL_NVL_OP_GET:
+         PRE_REG_READ5(long, SC3("modctl", "modnvl_devlinksync", "get"),
+                       int, cmd, modctl_nvl_op_t, a1, char *, bufp,
+                       uint64_t *, buflenp, uint64_t *, genp);
+#     endif /* HAVE_SYS_SYSNVL_H */
 
+         PRINT("sys_modctl ( %ld, %lu, %#lx, %#lx, %#lx )",
+               SARG1, ARG2, ARG3, ARG4, ARG5);
          PRE_MEM_WRITE("modctl(buflenp)", ARG4, sizeof(vki_uint64_t));
          if (ML_(safe_to_deref)((vki_uint64_t *) ARG4, sizeof(vki_uint64_t))) {
             if (ARG3 != 0) {
@@ -6701,17 +6709,26 @@ PRE(sys_modctl)
             PRE_MEM_WRITE("modctl(genp)", ARG5, sizeof(vki_uint64_t));
          }
          break;
+
+#     if defined(HAVE_SYS_SYSNVL_H)
       case VKI_SYSNVL_OP_UPDATE:
-         PRINT("sys_modctl ( %ld, %lu, %#lx, %#lx )", SARG1, ARG2, ARG3, ARG4);
          PRE_REG_READ4(long, SC3("modctl", "modnvl_devlinksync", "update"),
                        int, cmd, sysnvl_op_t, a1, char *, bufp,
                        uint64_t *, buflenp);
+#     else
+      case VKI_MODCTL_NVL_OP_UPDATE:
+         PRE_REG_READ4(long, SC3("modctl", "modnvl_devlinksync", "update"),
+                       int, cmd, modctl_nvl_op_t, a1, char *, bufp,
+                       uint64_t *, buflenp);
+#     endif /* HAVE_SYS_SYSNVL_H */
 
+         PRINT("sys_modctl ( %ld, %lu, %#lx, %#lx )", SARG1, ARG2, ARG3, ARG4);
          PRE_MEM_READ("modctl(buflenp)", ARG4, sizeof(vki_uint64_t));
          if (ML_(safe_to_deref)((vki_uint64_t *) ARG4, sizeof(vki_uint64_t))) {
             PRE_MEM_READ("modctl(bufp)", ARG3, *(vki_uint64_t *) ARG4);
          }
          break;
+
       default:
          VG_(unimplemented)("Syswrap of the modctl call with command "
                             "MODNVL_DEVLINKSYNC and op %ld.", ARG2);
@@ -6727,7 +6744,7 @@ PRE(sys_modctl)
                     int, cmd, uint64_t *, utsp);
       PRE_MEM_WRITE("modctl(utsp)", ARG2, sizeof(vki_uint64_t));
       break;
-#endif /* SOLARIS_MODCTL_MODNVL */
+#  endif /* SOLARIS_MODCTL_MODNVL */
 
    default:
       VG_(unimplemented)("Syswrap of the modctl call with command %ld.", SARG1);
@@ -6749,10 +6766,16 @@ POST(sys_modctl)
    case VKI_MODINFO:
       POST_MEM_WRITE(ARG3, sizeof(struct vki_modinfo));
       break;
-#if defined(SOLARIS_MODCTL_MODNVL)
+#  if defined(SOLARIS_MODCTL_MODNVL)
    case VKI_MODNVL_DEVLINKSYNC:
       switch (ARG2 /*op*/) {
+
+#     if defined(HAVE_SYS_SYSNVL_H)
       case VKI_SYSNVL_OP_GET:
+#     else
+      case VKI_MODCTL_NVL_OP_GET:
+#     endif /* HAVE_SYS_SYSNVL_H */
+
          POST_MEM_WRITE(ARG4, sizeof(vki_uint64_t));
          if (ARG3 != 0) {
             POST_MEM_WRITE(ARG3, *(vki_uint64_t *) ARG4);
@@ -6761,8 +6784,14 @@ POST(sys_modctl)
             POST_MEM_WRITE(ARG5, sizeof(vki_uint64_t));
          }
          break;
+
+#     if defined(HAVE_SYS_SYSNVL_H)
       case VKI_SYSNVL_OP_UPDATE:
+#     else
+      case VKI_MODCTL_NVL_OP_UPDATE:
+#     endif /* HAVE_SYS_SYSNVL_H */
          break;
+
       default:
          vg_assert(0);
          break;
@@ -6771,7 +6800,8 @@ POST(sys_modctl)
    case VKI_MODDEVINFO_CACHE_TS:
       POST_MEM_WRITE(ARG2, sizeof(vki_uint64_t));
       break;
-#endif /* SOLARIS_MODCTL_MODNVL */
+#  endif /* SOLARIS_MODCTL_MODNVL */
+
    default:
       vg_assert(0);
       break;

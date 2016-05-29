@@ -1,4 +1,5 @@
 prereq: test -e scalar_modctl_modnvl
 prog: scalar_modctl_modnvl
 vgopts: -q
+stderr_filter: filter_scalar
 stderr_filter_args:

@@ -6,6 +6,8 @@
 
 #include <net/if.h>
 #include <sys/crypto/ioctl.h>
+#include <sys/dditypes.h>
+#include <sys/devinfo_impl.h>
 #include <sys/dtrace.h>
 #include <sys/filio.h>
 #include <sys/stat.h>		/* for _ST_FSTYPSZ */
@@ -458,6 +460,20 @@ static void sys_ioctl_DTRACEHIOC_ADDDOF(void)
    SY(SYS_ioctl, x0 - 1, x0 + DTRACEHIOC_ADDDOF, x0 + &dh); FAIL;
 }
 
+__attribute__((noinline))
+static void sys_ioctl_DINFOUSRLD(void)
+{
+   GO(SYS_ioctl, "(DINFOUSRLD) 3s 0m");
+   SY(SYS_ioctl, x0 - 1, x0 + DINFOUSRLD, x0 + 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_ioctl_DINFOIDENT(void)
+{
+   GO(SYS_ioctl, "(DINFOIDENT) 2s 0m");
+   SY(SYS_ioctl, x0 - 1, x0 + DINFOIDENT); FAIL;
+}
+
 int main(void)
 {
    /* Uninitialised, but we know px[0] is 0x0. */
@@ -526,6 +542,10 @@ int main(void)
    /* dtrace */
    sys_ioctl_DTRACEHIOC_REMOVE();
    sys_ioctl_DTRACEHIOC_ADDDOF();
+
+   /* devinfo */
+   sys_ioctl_DINFOUSRLD();
+   sys_ioctl_DINFOIDENT();
 
    return 0;
 }

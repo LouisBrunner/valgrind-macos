@@ -875,3 +875,24 @@ Syscall param ioctl(DTRACEHIOC_ADDDOF, dh->dofhp_dof points to uninitialised byt
    ...
  Address 0x........ is on thread 1's stack
 
+---------------------------------------------------------
+ 54:               SYS_ioctl (DINFOUSRLD) 3s 0m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (DINFOIDENT) 2s 0m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+

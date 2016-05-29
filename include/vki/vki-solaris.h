@@ -345,6 +345,12 @@ typedef struct vki_kcf_door_arg_s {
 #define vki_crypto_get_provider_list_t crypto_get_provider_list_t
 
 
+#include <sys/dditypes.h>
+#include <sys/devinfo_impl.h>
+#define VKI_DINFOUSRLD DINFOUSRLD
+#define VKI_DINFOIDENT DINFOIDENT
+
+
 #include <sys/dirent.h>
 #define VKI_MAXGETDENTS_SIZE MAXGETDENTS_SIZE
 #define vki_dirent dirent

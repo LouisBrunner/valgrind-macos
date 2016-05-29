@@ -826,7 +826,7 @@ static void door_record_client(ThreadId tid, Int fd,
 }
 
 /* Revokes an open door, be it server side or client side. */
-static void door_revoke(ThreadId tid, Int fd)
+static void door_record_revoke(ThreadId tid, Int fd)
 {
    OpenDoor *d = doors_recorded;
 
@@ -850,7 +850,7 @@ static void door_revoke(ThreadId tid, Int fd)
 }
 
 /* Attaches a server door to a filename. */
-static void door_server_fattach(Int fd, HChar *pathname)
+static void door_record_server_fattach(Int fd, HChar *pathname)
 {
    OpenDoor *d = doors_recorded;
 
@@ -1783,7 +1783,7 @@ PRE(sys_close)
 POST(sys_close)
 {
    WRAPPER_POST_NAME(generic, sys_close)(tid, arrghs, status);
-   door_revoke(tid, ARG1);
+   door_record_revoke(tid, ARG1);
    /* Possibly an explicitly open'ed client door fd was just closed.
       Generic sys_close wrapper calls this only if VG_(clo_track_fds) = True. */
    if (!VG_(clo_track_fds))
@@ -2278,7 +2278,8 @@ POST(sys_mount)
           (ARG6 == sizeof(struct vki_namefd)) &&
           ML_(safe_to_deref)((void *) ARG5, ARG6)) {
          /* Most likely an fattach() call for a door file descriptor. */
-         door_server_fattach(((struct vki_namefd *) ARG5)->fd, (HChar *) ARG2);
+         door_record_server_fattach(((struct vki_namefd *) ARG5)->fd,
+                                    (HChar *) ARG2);
       }
    }
 }
@@ -3021,6 +3022,7 @@ PRE(sys_ioctl)
 
    switch (cmd /*request*/) {
       /* Handle 2-arg specially here (they do not use ARG3 at all). */
+   case VKI_DINFOIDENT:
    case VKI_TIOCNOTTY:
    case VKI_TIOCSCTTY:
       PRINT("sys_ioctl ( %ld, %#lx )", SARG1, ARG2);
@@ -3295,6 +3297,13 @@ PRE(sys_ioctl)
       }
       break;
 
+   /* devinfo */
+   case VKI_DINFOUSRLD:
+      /* We should do PRE_MEM_WRITE here but the question is for how many? */
+      break;
+   case VKI_DINFOIDENT:
+      break;
+
    default:
       ML_(PRE_unknown_ioctl)(tid, ARG2, ARG3);
       break;
@@ -3495,6 +3504,13 @@ POST(sys_ioctl)
    /* dtrace */
    case VKI_DTRACEHIOC_REMOVE:
    case VKI_DTRACEHIOC_ADDDOF:
+      break;
+
+   /* devinfo */
+   case VKI_DINFOUSRLD:
+      POST_MEM_WRITE(ARG3, RES);
+      break;
+   case VKI_DINFOIDENT:
       break;
 
    default:
@@ -9266,7 +9282,7 @@ POST(sys_door)
       door_record_server(tid, ARG1, RES);
       break;
    case VKI_DOOR_REVOKE:
-      door_revoke(tid, ARG1);
+      door_record_revoke(tid, ARG1);
       if (VG_(clo_track_fds))
          ML_(record_fd_close)(ARG1);
       break;

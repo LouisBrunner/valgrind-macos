@@ -1096,6 +1096,9 @@ static SyscallTableEntry syscall_main_table[] = {
 
    GENXY(__NR_wait4,             sys_wait4),             // 260
 
+   LINXY(__NR_name_to_handle_at, sys_name_to_handle_at), // 264
+   LINXY(__NR_open_by_handle_at, sys_open_by_handle_at), // 265
+
    LINX_(__NR_syncfs,            sys_syncfs),            // 267
 
    LINXY(__NR_sendmmsg,          sys_sendmmsg),          // 269
@@ -1374,8 +1377,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ    LINXY(__NR_epoll_create1,     sys_epoll_create1),    // 357
 //ZZ    LINXY(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo),// 363
 //ZZ 
-//ZZ    LINXY(__NR_name_to_handle_at, sys_name_to_handle_at),// 370
-//ZZ    LINXY(__NR_open_by_handle_at, sys_open_by_handle_at),// 371
 //ZZ    LINXY(__NR_clock_adjtime,     sys_clock_adjtime)     // 372
 };
 

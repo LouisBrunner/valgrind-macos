@@ -103,6 +103,7 @@ where XXXXXX is the bug number as listed below.
 362009  Valgrind dumps core on unimplemented functionality before threads are created
 360035  POWER PC instruction bcdadd and bcdsubtract generate result with non-zero shadow bits
 363705  arm64 missing syscall name_to_handle_at and open_by_handle_at
+363714  ppc64 missing syscalls sync, waitid and name_to/open_by_handle_at
 
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64
 n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap

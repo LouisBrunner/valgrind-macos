@@ -821,7 +821,7 @@ static SyscallTableEntry syscall_table[] = {
 // _____(__NR_nice,              sys_nice),               //  34
 
 // _____(__NR_ftime,             sys_ftime),              //  35
-// _____(__NR_sync,              sys_sync),               //  36
+   GENX_(__NR_sync,              sys_sync),               //  36
    GENX_(__NR_kill,              sys_kill),               //  37
    GENX_(__NR_rename,            sys_rename),             //  38
    GENX_(__NR_mkdir,             sys_mkdir),              //  39
@@ -1102,7 +1102,7 @@ static SyscallTableEntry syscall_table[] = {
 
    LINX_(__NR_request_key,       sys_request_key),        // 270
    LINXY(__NR_keyctl,            sys_keyctl),             // 271
-// _____(__NR_waitid,            sys_waitid),             // 272
+   LINXY(__NR_waitid,            sys_waitid),             // 272
    LINX_(__NR_ioprio_set,        sys_ioprio_set),         // 273
    LINX_(__NR_ioprio_get,        sys_ioprio_get),         // 274
 
@@ -1170,7 +1170,8 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_recvmsg,           sys_recvmsg),          // 342
    LINXY(__NR_recvmmsg,          sys_recvmmsg),         // 343
    LINXY(__NR_accept4,           sys_accept4),          // 344
-
+   LINXY(__NR_name_to_handle_at, sys_name_to_handle_at),// 345
+   LINXY(__NR_open_by_handle_at, sys_open_by_handle_at),// 346
    LINXY(__NR_clock_adjtime,     sys_clock_adjtime),    // 347
    LINX_(__NR_syncfs,            sys_syncfs),           // 348
    LINXY(__NR_sendmmsg,          sys_sendmmsg),         // 349

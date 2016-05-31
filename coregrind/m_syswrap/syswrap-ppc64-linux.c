@@ -1179,6 +1179,8 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_process_vm_readv,  sys_process_vm_readv), // 351
    LINX_(__NR_process_vm_writev, sys_process_vm_writev),// 352
 
+   LINX_(__NR_renameat2,         sys_renameat2),        // 357
+
    LINXY(__NR_getrandom,         sys_getrandom),        // 359
    LINXY(__NR_memfd_create,      sys_memfd_create)      // 360
 };

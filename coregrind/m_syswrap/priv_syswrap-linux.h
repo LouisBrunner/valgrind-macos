@@ -172,6 +172,7 @@ DECL_TEMPLATE(linux, sys_futimesat);
 DECL_TEMPLATE(linux, sys_newfstatat);
 DECL_TEMPLATE(linux, sys_unlinkat);
 DECL_TEMPLATE(linux, sys_renameat);
+DECL_TEMPLATE(linux, sys_renameat2);
 DECL_TEMPLATE(linux, sys_linkat);
 DECL_TEMPLATE(linux, sys_symlinkat);
 DECL_TEMPLATE(linux, sys_readlinkat);

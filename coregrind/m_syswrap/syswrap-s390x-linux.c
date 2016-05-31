@@ -1047,7 +1047,7 @@ static SyscallTableEntry syscall_table[] = {
 
 // ?????(__NR_sched_setattr, ),                                       // 345
 // ?????(__NR_sched_getattr, ),                                       // 346
-// ?????(__NR_renameat2, ),                                           // 347
+   LINX_(__NR_renameat2, sys_renameat2),                              // 347
 // ?????(__NR_seccomp, ),                                             // 348
    LINXY(__NR_getrandom, sys_getrandom),                              // 349
 

@@ -4697,6 +4697,18 @@ PRE(sys_renameat)
    PRE_MEM_RASCIIZ( "renameat(newpath)", ARG4 );
 }
 
+PRE(sys_renameat2)
+{
+   PRINT("sys_renameat2 ( %ld, %#lx(%s), %ld, %#lx(%s), %lu )",
+         SARG1, ARG2, (HChar*)ARG2, SARG3, ARG4, (HChar*)ARG4, ARG5);
+   PRE_REG_READ5(long, "renameat2",
+                 int, olddfd, const char *, oldpath,
+                 int, newdfd, const char *, newpath,
+                 unsigned int, flags);
+   PRE_MEM_RASCIIZ( "renameat2(oldpath)", ARG2 );
+   PRE_MEM_RASCIIZ( "renameat2(newpath)", ARG4 );
+}
+
 PRE(sys_linkat)
 {
    *flags |= SfMayBlock;

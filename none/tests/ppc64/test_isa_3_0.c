@@ -210,6 +210,8 @@ enum test_flags {
    /* Family */
    PPC_INTEGER        = 0x00010000,
    PPC_ALTIVEC        = 0x00030000,
+   PPC_ALTIVEC_QUAD   = 0x00040000,
+   PPC_ALTIVEC_DOUBLE = 0x00050000,
    PPC_MISC           = 0x00080000,
    PPC_FAMILY_MASK    = 0x000F0000,
 
@@ -416,6 +418,14 @@ static void test_vrldnm(void) {
    __asm__ __volatile__ ("vrldnm    %0, %1, %2" : "+v" (vec_xt): "v" (vec_xa), "v" (vec_xb));
 }
 
+static void test_xviexpdp(void) {
+   __asm__ __volatile__ ("xviexpdp   %0, %1, %2 " : "+wa" (vec_xt): "wa" (vec_xa), "wa" (vec_xb));
+}
+
+static void test_xviexpsp(void) {
+   __asm__ __volatile__ ("xviexpsp   %0, %1, %2 " : "+wa" (vec_xt): "wa" (vec_xa), "wa" (vec_xb));
+}
+
 static test_list_t testgroup_vsx_absolute[] = {
    { &test_vabsdub        , "vabsdub"   },
    { &test_vabsduh        , "vabsduh"   },
@@ -437,6 +447,8 @@ static test_list_t testgroup_vsx_absolute[] = {
    { &test_vrldnm         , "vrldnm"    },
    { &test_vrldmi         , "vrldmi"    },
    { &test_vbpermd        , "vbpermd"   },
+   { &test_xviexpdp       , "xviexpdp"  },
+   { &test_xviexpsp       , "xviexpsp"  },
    { NULL                 , NULL        },
 };
 
@@ -752,11 +764,41 @@ static void test_xxbrq(void)
    __asm__ __volatile__ ("xxbrq %x0, %x1 " : "=wa" (vec_xt) : "wa" (vec_xa));
 }
 
+static void test_xvxexpdp(void) {
+   __asm__ __volatile__ ("xvxexpdp %x0, %x1 " : "=wa" (vec_xt) : "wa" (vec_xa));
+}
+
+static void test_xvxexpsp(void) {
+   __asm__ __volatile__ ("xvxexpsp %x0, %x1 " : "=wa" (vec_xt) : "wa" (vec_xa));
+}
+
+static void test_xvxsigdp(void) {
+   __asm__ __volatile__ ("xvxsigdp %x0, %x1 " : "=wa" (vec_xt) : "wa" (vec_xa));
+}
+
+static void test_xvxsigsp(void) {
+   __asm__ __volatile__ ("xvxsigsp %x0, %x1 " : "=wa" (vec_xt) : "wa" (vec_xa));
+}
+
+static void test_xsxexpdp(void) {
+   __asm__ __volatile__ ("xsxexpdp %x0, %x1 " : "=wa" (vec_xt) : "wa" (vec_xa));
+}
+
+static void test_xsxsigdp(void) {
+   __asm__ __volatile__ ("xsxsigdp %x0, %x1 " : "=wa" (vec_xt) : "wa" (vec_xa));
+}
+
 static test_list_t testgroup_vector_logical_one[] = {
    { &test_xxbrh   , "xxbrh"    },
    { &test_xxbrw   , "xxbrw"    },
    { &test_xxbrd   , "xxbrd"    },
    { &test_xxbrq   , "xxbrq"    },
+   { &test_xvxexpdp, "xvxexpdp" },
+   { &test_xvxexpsp, "xvxexpsp" },
+   { &test_xvxsigdp, "xvxsigdp" },
+   { &test_xvxsigsp, "xvxsigsp" },
+   { &test_xsxexpdp, "xsxexpdp" },
+   { &test_xsxsigdp, "xsxsigdp" },
    { NULL          , NULL       },
 };
 
@@ -823,6 +865,55 @@ static void test_stxsihx(void) {
    __asm__ __volatile__ ("stxsihx %x0, 14, 15" : "=wa" (vec_xt));
 }
 
+/* d-form vsx load/store */
+static void test_lxsd_0(void) {
+   __asm__ __volatile__ ("lxsd %0, 0(%1) " : "=v"(vec_xt) : "r"(r14));
+}
+
+static void test_stxsd_0(void) {
+   __asm__ __volatile__ ("stxsd %0, 0(%1)" : "=v"(vec_xt) : "r"(r14));
+}
+
+static void test_lxsd_16(void) {
+   __asm__ __volatile__ ("lxsd %0, 16(%1)" : "=v"(vec_xt) : "r"(r14));
+}
+
+static void test_stxsd_16(void) {
+   __asm__ __volatile__ ("stxsd %0, 16(%1)" : "=v"(vec_xt) : "r"(r14));
+}
+
+static void test_lxssp_0(void) {
+   __asm__ __volatile__ ("lxssp %0, 0(%1)" : "=wa"(vec_xt) : "r"(r14));
+}
+
+static void test_stxssp_0(void) {
+   __asm__ __volatile__ ("stxssp %0, 0(%1)" : "=wa"(vec_xt) : "r"(r14));
+}
+
+static void test_lxssp_16(void) {
+   __asm__ __volatile__ ("lxssp %0, 16(%1)" : "=wa"(vec_xt) : "r"(r14));
+}
+
+static void test_stxssp_16(void) {
+   __asm__ __volatile__ ("stxssp %0, 16(%1)" : "=wa"(vec_xt) : "r"(r14));
+}
+
+static void test_lxv_0(void) {
+   __asm__ __volatile__ ("lxv %0, 0(%1)" : "=wa"(vec_xt) : "r"(r14));
+}
+
+static void test_stxv_0(void) {
+   __asm__ __volatile__ ("stxv %0, 0(%1)" : "=wa"(vec_xt) : "r"(r14));
+}
+
+static void test_lxv_16(void) {
+   __asm__ __volatile__ ("lxv %0, 16(%1)" : "=wa"(vec_xt) : "r"(r14));
+}
+
+static void test_stxv_16(void) {
+   __asm__ __volatile__ ("stxv %0, 16(%1)" : "=wa"(vec_xt) : "r"(r14));
+}
+
 static test_list_t testgroup_vector_scalar_loadstore_length[] = {
    { &test_lxvl     , "lxvl     " },
    { &test_lxsibzx  , "lxsibzx  " },
@@ -830,6 +921,18 @@ static test_list_t testgroup_vector_scalar_loadstore_length[] = {
    { &test_stxvl    , "stxvl    " },
    { &test_stxsibx  , "stxsibx  " },
    { &test_stxsihx  , "stxsihx  " },
+   { &test_lxsd_0   , "lxsd 0   " },
+   { &test_stxsd_0  , "stxsd 0  " },
+   { &test_lxsd_16  , "lxsd 16  " },
+   { &test_stxsd_16 , "stxsd 16 " },
+   { &test_lxssp_0  , "lxssp 0  " },
+   { &test_stxssp_0 , "stxssp 0 " },
+   { &test_lxssp_16 , "lxssp 16 " },
+   { &test_stxssp_16, "stxssp 16" },
+   { &test_lxv_0    , "lxv 0    " },
+   { &test_stxv_0   , "stxv 0   " },
+   { &test_lxv_16   , "lxv 16   " },
+   { &test_stxv_16  , "stxv 16  " },
    { NULL           , NULL        },
 };
 
@@ -966,6 +1069,281 @@ static test_list_t testgroup_vector_extract[] = {
    { NULL          , NULL       },
 };
 
+#define XSCMPEXPDP(x)                                             \
+   SET_FPSCR_ZERO                                                 \
+   SET_CR_ZERO                                                    \
+   __asm__ __volatile__                                           \
+      ("xscmpexpdp %0, %1, %2"::"i"(x), "v"(vec_xa), "v"(vec_xb));\
+   GET_CR(local_cr);                                              \
+   GET_FPSCR(local_fpscr);
+
+static void test_xscmpexpdp(void) {
+   switch(x_index) {
+   case 0: XSCMPEXPDP(0); break;
+   case 1: XSCMPEXPDP(1); break;
+   case 2: XSCMPEXPDP(2); break;
+   case 3: XSCMPEXPDP(3); break;
+   case 4: XSCMPEXPDP(4); break;
+   case 5: XSCMPEXPDP(5); break;
+   case 6: XSCMPEXPDP(6); break;
+   case 7: XSCMPEXPDP(7); break;
+   default:
+      printf("Unhandled shift value for %s %x\n", __FUNCTION__, x_index);
+   };
+}
+
+static test_list_t testgroup_vector_scalar_compare_exp_double[] = {
+   { &test_xscmpexpdp , "xscmpexpdp " },
+   { NULL             , NULL          },
+};
+
+#define XSTSTDCQP(R,DCMX)                                                \
+   SET_FPSCR_ZERO                                                        \
+   SET_CR_ZERO                                                           \
+   __asm__ __volatile__                                                  \
+      ("xststdcqp %0, %1, %2":: "i"(R), "wa"(vec_xb), "i"(DCMX));        \
+   GET_CR(local_cr);                                                     \
+   GET_FPSCR(local_fpscr);
+
+#define XSTSTDCDP(R,DCMX)                                                \
+   SET_FPSCR_ZERO                                                        \
+   SET_CR_ZERO                                                           \
+   __asm__ __volatile__                                                  \
+      ("xststdcdp %0, %1, %2":: "i"(R), "wa"(vec_xb), "i"(DCMX));        \
+   GET_CR(local_cr);                                                     \
+   GET_FPSCR(local_fpscr);
+
+#define XSTSTDCSP(R,DCMX)                                                \
+   SET_FPSCR_ZERO                                                        \
+   SET_CR_ZERO                                                           \
+   __asm__ __volatile__                                                  \
+      ("xststdcsp %0, %1, %2":: "i"(R), "wa"(vec_xb), "i"(DCMX));        \
+   GET_CR(local_cr);                                                     \
+   GET_FPSCR(local_fpscr);
+
+#define XVTSTDCDP(R,DCMX)                                                \
+   SET_FPSCR_ZERO                                                        \
+   SET_CR_ZERO                                                           \
+   __asm__ __volatile__                                                  \
+      ("xvtstdcdp %0, %1, %2": "=wa"(vec_xt) : "wa"(vec_xb), "i"(DCMX)); \
+   GET_CR(local_cr);                                                     \
+   GET_FPSCR(local_fpscr);
+
+#define XVTSTDCSP(R,DCMX)                                                \
+   SET_FPSCR_ZERO                                                        \
+   SET_CR_ZERO                                                           \
+   __asm__ __volatile__                                                  \
+      ("xvtstdcsp %0, %1, %2": "=wa"(vec_xt) : "wa"(vec_xb), "i"(DCMX)); \
+   GET_CR(local_cr);                                                     \
+   GET_FPSCR(local_fpscr);
+
+static void test_xststdcqp(void) {
+   switch(x_index) {
+   case 1: XSTSTDCQP(3, 0x01); break; /* NaN */
+   case 2: XSTSTDCQP(3, 0x02); break; /* +inf */
+   case 3: XSTSTDCQP(3, 0x04); break; /* -inf */
+   case 4: XSTSTDCQP(3, 0x08); break; /* +zero */
+   case 5: XSTSTDCQP(3, 0x10); break; /* -zero */
+   case 6: XSTSTDCQP(3, 0x20); break; /* +denormal */
+   case 7: XSTSTDCQP(3, 0x40); break; /* -denormal */
+   case 0: XSTSTDCQP(3, 0x7f); break; /* all of the above */
+   }
+}
+
+static void test_xststdcdp(void) {
+   switch(x_index) {
+   case 1: XSTSTDCDP(3, 0x01); break; /* NaN */
+   case 2: XSTSTDCDP(3, 0x02); break; /* +inf */
+   case 3: XSTSTDCDP(3, 0x04); break; /* -inf */
+   case 4: XSTSTDCDP(3, 0x08); break; /* +zero */
+   case 5: XSTSTDCDP(3, 0x10); break; /* -zero */
+   case 6: XSTSTDCDP(3, 0x20); break; /* +denormal */
+   case 7: XSTSTDCDP(3, 0x40); break; /* -denormal */
+   case 0: XSTSTDCDP(3, 0x7f); break; /* all of the above */
+   }
+}
+
+static void test_xststdcsp(void) {
+   switch(x_index) {
+   case 1: XSTSTDCSP(3, 0x01); break; /* NaN */
+   case 2: XSTSTDCSP(3, 0x02); break; /* +inf */
+   case 3: XSTSTDCSP(3, 0x04); break; /* -inf */
+   case 4: XSTSTDCSP(3, 0x08); break; /* +zero */
+   case 5: XSTSTDCSP(3, 0x10); break; /* -zero */
+   case 6: XSTSTDCSP(3, 0x20); break; /* +denormal */
+   case 7: XSTSTDCSP(3, 0x40); break; /* -denormal */
+   case 0: XSTSTDCSP(3, 0x7f); break; /* all of the above */
+   }
+}
+
+static void test_xvtstdcdp(void) {
+   switch(x_index) {
+   case 1: XVTSTDCDP(3, 0x01); break; /* NaN */
+   case 2: XVTSTDCDP(3, 0x02); break; /* +inf */
+   case 3: XVTSTDCDP(3, 0x04); break; /* -inf */
+   case 4: XVTSTDCDP(3, 0x08); break; /* +zero */
+   case 5: XVTSTDCDP(3, 0x10); break; /* -zero */
+   case 6: XVTSTDCDP(3, 0x20); break; /* +denormal */
+   case 7: XVTSTDCDP(3, 0x40); break; /* -denormal */
+   case 0: XVTSTDCDP(3, 0x7f); break; /* all of the above */
+   }
+}
+
+/* Note: Due to the test groupings, the input for the xvtstdcsp test is
+ * actually 'double'.  It is good enough for this test, but may wish to break
+ * this one out eventually.
+ */
+static void test_xvtstdcsp(void) {
+   switch(x_index) {
+   case 1: XVTSTDCSP(3, 0x01); break; /* NaN */
+   case 2: XVTSTDCSP(3, 0x02); break; /* +inf */
+   case 3: XVTSTDCSP(3, 0x04); break; /* -inf */
+   case 4: XVTSTDCSP(3, 0x08); break; /* +zero */
+   case 5: XVTSTDCSP(3, 0x10); break; /* -zero */
+   case 6: XVTSTDCSP(3, 0x20); break; /* +denormal */
+   case 7: XVTSTDCSP(3, 0x40); break; /* -denormal */
+   case 0: XVTSTDCSP(3, 0x7f); break; /* all of the above */
+   }
+}
+
+static test_list_t testgroup_vector_scalar_data_class[] = {
+   { &test_xststdcqp, "xststdcqp " },
+   { &test_xststdcdp, "xststdcdp " },
+   { &test_xststdcsp, "xststdcsp " },
+   { &test_xvtstdcdp, "xvtstdcdp " },
+   { &test_xvtstdcsp, "xvtstdcsp " },
+   { NULL           , NULL         },
+};
+
+static void test_xsiexpdp(void) {
+   __asm__ __volatile__ ("xsiexpdp   %0, %1, %2 " : "+wa" (vec_xt): "r" (r14), "r" (r15));
+}
+
+static test_list_t testgroup_vector_scalar_two_double[] = {
+   { &test_xsiexpdp, "xsiexpdp" },
+   { NULL          , NULL       },
+};
+
+static void test_xsabsqp(void) {
+   __asm__ __volatile__ ("xsabsqp %0, %1" : "+v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_xsxexpqp(void) {
+   __asm__ __volatile__ ("xsxexpqp %0, %1" : "+v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_xsxsigqp(void) {
+   __asm__ __volatile__ ("xsxsigqp %0, %1" : "+v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_xsnegqp(void) {
+   __asm__ __volatile__ ("xsnegqp %0, %1" : "+v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_xsnabsqp(void) {
+   __asm__ __volatile__ ("xsnabsqp %0, %1" : "+v"(vec_xt) : "v"(vec_xb));
+}
+
+static test_list_t testgroup_vector_scalar_two_quad[] = {
+   { &test_xsabsqp  , "xsabsqp "   },
+   { &test_xsxexpqp , "xsxexpqp "  },
+   { &test_xsxsigqp , "xsxsigqp "  },
+   { &test_xsnegqp  , "xsnegqp "   },
+   { &test_xsnabsqp , "xsnabsqp "  },
+   { NULL           , NULL         },
+};
+
+static void test_xscpsgnqp(void) {
+   __asm__ __volatile__ ("xscpsgnqp  %0, %1, %2" : "+v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_xsiexpqp(void) {
+   __asm__ __volatile__ ("xsiexpqp   %0, %1, %2" : "+v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static test_list_t testgroup_vector_three_quad[] = {
+   { &test_xscpsgnqp , "xscpsgnqp "  },
+   { &test_xsiexpqp  , "xsiexpqp "   },
+   { NULL            , NULL          },
+};
+
+#define XSCMPEXPQP(x)                                                       \
+   SET_FPSCR_ZERO                                                           \
+   SET_CR_ZERO                                                              \
+   __asm__ __volatile__                                                     \
+      ("xscmpexpqp %0, %1, %2" :: "i"(x), "v"(vec_xa), "v"(vec_xb));        \
+   GET_CR(local_cr);                                                        \
+   GET_FPSCR(local_fpscr);
+
+#define XSCMPOQP(x)                                                         \
+   SET_FPSCR_ZERO                                                           \
+   SET_CR_ZERO                                                              \
+   __asm__ __volatile__                                                     \
+      ("xscmpoqp %0, %1, %2" :: "i"(x), "v"(vec_xa), "v"(vec_xb));          \
+   GET_CR(local_cr);                                                        \
+   GET_FPSCR(local_fpscr);
+
+#define XSCMPUQP(x)                                                         \
+   SET_FPSCR_ZERO                                                           \
+   SET_CR_ZERO                                                              \
+   __asm__ __volatile__                                                     \
+      ("xscmpuqp %0, %1, %2"::"i"(x), "v"(vec_xa), "v"(vec_xb));            \
+   GET_CR(local_cr);                                                        \
+   GET_FPSCR(local_fpscr);
+
+static void test_xscmpexpqp(void) {
+   switch(x_index) {
+   case 0: XSCMPEXPQP(0); break;
+   case 1: XSCMPEXPQP(1); break;
+   case 2: XSCMPEXPQP(2); break;
+   case 3: XSCMPEXPQP(3); break;
+   case 4: XSCMPEXPQP(4); break;
+   case 5: XSCMPEXPQP(5); break;
+   case 6: XSCMPEXPQP(6); break;
+   case 7: XSCMPEXPQP(7); break;
+   default:
+      printf("Unhandled shift value for %s %x\n", __FUNCTION__, x_index);
+   };
+}
+
+static void test_xscmpoqp(void) {
+   switch(x_index) {
+   case 0: XSCMPOQP(0); break;
+   case 1: XSCMPOQP(1); break;
+   case 2: XSCMPOQP(2); break;
+   case 3: XSCMPOQP(3); break;
+   case 4: XSCMPOQP(4); break;
+   case 5: XSCMPOQP(5); break;
+   case 6: XSCMPOQP(6); break;
+   case 7: XSCMPOQP(7); break;
+   default:
+      printf("Unhandled shift value for %s %x\n", __FUNCTION__, x_index);
+   };
+}
+
+static void test_xscmpuqp(void) {
+   switch(x_index) {
+   case 0: XSCMPUQP(0); break;
+   case 1: XSCMPUQP(1); break;
+   case 2: XSCMPUQP(2); break;
+   case 3: XSCMPUQP(3); break;
+   case 4: XSCMPUQP(4); break;
+   case 5: XSCMPUQP(5); break;
+   case 6: XSCMPUQP(6); break;
+   case 7: XSCMPUQP(7); break;
+   default:
+      printf("Unhandled shift value for %s %x\n", __FUNCTION__, x_index);
+   };
+}
+
+static test_list_t testgroup_vector_scalar_compare_quads[] = {
+   { &test_xscmpexpqp, "xscmpexpqp" },
+   { &test_xscmpoqp  , "xscmpoqp  " },
+   { &test_xscmpuqp  , "xscmpuqp  " },
+   { NULL            , NULL         },
+};
+
+
 /* ###### begin all_tests table.  */
 
 /* table containing all of the instruction groups */
@@ -1007,6 +1385,21 @@ static test_group_table_t all_tests[] = {
       testgroup_vector_extend_sign,
       "ppc vector extend sign",
       PPC_ALTIVEC | PPC_LOGICAL | PPC_TWO_ARGS,
+   },
+   {
+      testgroup_vector_three_quad,
+      "ppc vector three quad",
+      PPC_ALTIVEC | PPC_LOGICAL | PPC_THREE_ARGS,
+   },
+   {
+      testgroup_vector_scalar_two_quad,
+      "ppc vector scalar quad",
+      PPC_ALTIVEC_QUAD | PPC_LOGICAL | PPC_TWO_ARGS,
+   },
+   {
+      testgroup_vector_scalar_compare_quads,
+      "ppc vector scalar compare exponents quads",
+      PPC_ALTIVEC_QUAD | PPC_COMPARE,
    },
    {
       testgroup_vsx_xxpermute,
@@ -1052,6 +1445,21 @@ static test_group_table_t all_tests[] = {
       testgroup_shifted_one,
       "ppc one argument plus shift",
       PPC_MISC | PPC_THREE_ARGS,
+   },
+   {
+      testgroup_vector_scalar_compare_exp_double,
+      "ppc vector scalar compare exponents doubles",
+      PPC_ALTIVEC_DOUBLE | PPC_COMPARE | PPC_COMPARE_ARGS,
+   },
+   {
+      testgroup_vector_scalar_data_class,
+      "ppc vector scalar test data class tests",
+      PPC_ALTIVEC_DOUBLE | PPC_COMPARE | PPC_ONE_ARG,
+   },
+   {
+      testgroup_vector_scalar_two_double,
+      "ppc vector scalar tests against float double two args ",
+      PPC_ALTIVEC_DOUBLE | PPC_COMPARE | PPC_TWO_ARGS,
    },
    { NULL,                   NULL,               0x00000000, },
 };
@@ -1515,20 +1923,18 @@ static void testfunction_vector_scalar_loadstore_length (const char* instruction
             printf("%s ", instruction_name);
             printf("%016lx %016lx ", vec_xt[1], vec_xt[0] );
             if (uses_bits_0to7(instruction_name)) {
-               printf(" &0x%lx l = 0x%2lx ",
-                      (long unsigned)r14, (long unsigned)r15>>56 );
+               printf(" 0x%2lx ", (long unsigned)r15>>56 );
 
             } else {
-               printf(" &0x%lx l = 0x%2lx ",
-                      (long unsigned)r14,  (long unsigned)r15 );
+               printf(" l = 0x%2lx ", (long unsigned)r15 );
             }
 
             dump_small_buffer();
 
             (*test_function)();
 
-            printf("=> %016lx %016lx & %16lx %16lx", vec_xt[1], vec_xt[0],
-                   (long unsigned)r14,  (long unsigned)r15 );
+            printf("=> %016lx %016lx & %16lx", vec_xt[1], vec_xt[0],
+                   (long unsigned)r15 );
             printf("\n");
          }
       }
@@ -1728,6 +2134,354 @@ static inline void testfunction_bcd_display_outputs(const char * instruction_nam
    printf("\n");
 }
 
+#define uses_half_precision_input(instruction_name) (  \
+   (strncmp(instruction_name, "xscvhpdp", 8) == 0) ||  \
+   (strncmp(instruction_name, "xvcvhpsp", 8) == 0) )
+
+#define uses_single_precision_input(instruction_name) ( \
+   (strncmp(instruction_name, "xvcvsphp", 8) == 0) )
+
+#define uses_double_precision_input(instruction_name) ( \
+   (strncmp(instruction_name, "xscvdphp", 8) == 0) )
+
+#define uses_half_precision_output(instruction_name) (  \
+   (strncmp(instruction_name, "xscvdphp", 8) == 0) ||   \
+   (strncmp(instruction_name, "xvcvsphp", 8) == 0) )
+
+#define is_half_precision_instruction(instruction_name) ( \
+    uses_half_precision_input(instruction_name) ||        \
+    uses_half_precision_output(instruction_name) )
+
+/* Helper for those instructions with an unused second dword, indicating
+ * the outer loop can be short-circuited after one pass.
+ */
+#define unused_second_dword(instruction_name) (       \
+   (strncmp(instruction_name, "xscvhpdp", 8) == 0) || \
+   (strncmp(instruction_name, "xscvdphp", 8) == 0) )
+
+static void testfunction_vector_scalar_two_quad (const char* instruction_name,
+                                                 test_func_t test_function,
+                                                 unsigned int ignore_flags)
+{
+   int i;
+
+   VERBOSE_FUNCTION_CALLOUT
+
+   for (i = 0; i < nb_vargs; i += 2) {
+      if (uses_half_precision_input(instruction_name)) {
+         vec_xb = (vector unsigned long){binary16_float_vsxargs[i],
+                                         binary16_float_vsxargs[i+1]};
+      } else {
+         vec_xb = (vector unsigned long){vsxargs[i], vsxargs[i+1]};
+      }
+
+      vec_xt = (vector unsigned long){0, 0};
+
+      printf("%s ", instruction_name);
+      printf("%016lx %016lx ", vec_xb[1], vec_xb[0]);
+
+      SET_FPSCR_ZERO
+
+      (*test_function)();
+
+      GET_FPSCR(local_fpscr);
+
+      printf("=> %016lx %016lx", vec_xt[1], vec_xt[0]);
+      dissect_fpscr(local_fpscr);
+      printf("\n");
+   }
+}
+
+static void
+testfunction_vector_scalar_compare_exp_double (const char* instruction_name,
+                                               test_func_t test_function,
+                                               unsigned int ignore_test_flags){
+   int i,j;
+   /* Uses global variable x_index */
+
+   VERBOSE_FUNCTION_CALLOUT
+
+   for (i = 0; i < nb_float_vsxargs - 1; i++) {
+      for (j = 0; j < nb_float_vsxargs - 1; j++) {
+         for (x_index = 2; x_index < 3; x_index++) {
+
+            /* TODO FIXME- there was a casting issue below.  This incantation
+             * works, but I suspect can be simplified...
+             */
+            vec_xa = (vector unsigned long){(unsigned long)binary64_float_vsxargs[i+1], (unsigned long)binary64_float_vsxargs[i]};
+
+            vec_xb = (vector unsigned long){(unsigned long)binary64_float_vsxargs[j], (unsigned long)binary64_float_vsxargs[j+1]};
+
+            /* run each test against cleared CR and FPSCR */
+            /* Note that the SET_*_ZERO calls are not actually sufficient here,
+             * due to infrastructure between here and there that also set some
+             * of the CR bits. The condition regs are cleared here, but are
+             * also both cleared and read within the to-be-tested asm chunk to
+             * get accurate results.
+             */
+            SET_CR_ZERO
+            SET_FPSCR_ZERO
+
+            printf("%s %016lx %016lx %016lx %016lx",
+                   instruction_name,
+                   vec_xa[0], vec_xa[1],
+                   vec_xb[0], vec_xb[1]);
+
+            if (verbose) printf(" cr#%d ", x_index);
+
+            printf(" => ");
+
+            (*test_function)();
+
+            dissect_fpscr(local_fpscr);
+            dissect_fpscr_result_value_class(local_fpscr);
+            dissect_cr_rn(local_cr, x_index);
+            printf("\n");
+         }
+      }
+   }
+}
+
+/* These instructions set the floating point condition codes. */
+/* verify logic reversal */
+#define does_not_set_floating_point_cc(instruction_name) \
+   (strncmp(instruction_name, "xvtstdcdp", 9) == 0) |    \
+   (strncmp(instruction_name, "xvtstdcsp", 9) == 0)
+
+static void
+testfunction_vector_scalar_data_class (const char* instruction_name,
+                                       test_func_t test_function,
+                                       unsigned int ignore_test_flags) {
+   int j;
+   /* x_index is used as a key into the DCMX value.
+    *
+    *   BF, XB, DCMX
+    * For instruction tests called through this function, note that we are only
+    * utilizing bf (condition register) #3; where 3 was mostly randomly
+    * chosen, and has no special meaning.
+    */
+
+   VERBOSE_FUNCTION_CALLOUT
+
+   for (j = 0; j < nb_float_vsxargs - 1; j++) {
+      /* for dcmx field, start with x_index=1 to skip the 'all' dcmx entry. */
+      for (x_index = 1; x_index < 8; x_index++) {
+         vec_xb[0] = float_vsxargs[j];
+         vec_xb[1] = float_vsxargs[j+1];
+         vec_xt[0] = 0x0a0a0a0a0a0a0a0a;
+         vec_xt[1] = 0x0505050505050505;
+         SET_CR_ZERO
+         SET_FPSCR_ZERO
+
+         dcmx_match = 0;
+
+         (*test_function)();
+
+         /* the local_fpscr value is gathered within the test_function call. */
+         dcmx_match = (local_fpscr & FPCC_FE_BIT);
+
+         if (dcmx_match || (verbose>2)) {
+            printf("%s %016lx, %016lx ",
+                   instruction_name, vec_xb[1], vec_xb[0]);
+
+            print_dcmx_field(x_index);
+
+            if (dcmx_match)
+               printf(" => Match.  ");
+
+            printf(" %016lx, %016lx ", vec_xt[1], vec_xt[0]);
+
+            dissect_cr_rn(local_cr,3);
+            dissect_fpscr_dcmx_indicator(local_fpscr);
+            printf("\n");
+         }
+
+         printf("%s %016lx, %016lx => ",
+                instruction_name, vec_xb[1], vec_xb[0]);
+
+         printf(" %016lx, %016lx\n", vec_xt[1], vec_xt[0]);
+      }
+   }
+}
+
+static void testfunction_vector_scalar_compare_quads (const char* instruction_name,
+                                                      test_func_t test_function,
+                                                      unsigned int ignore_test_flags) {
+   /* Uses global variable x_index */
+   int i,j;
+
+   VERBOSE_FUNCTION_CALLOUT
+
+   for (i = 0; i < nb_float_vsxargs - 1; i++) {
+      for (j = 0; j < nb_float_vsxargs - 1; j++) {
+         for (x_index = 0; x_index < 3 ; x_index++) {
+            vec_xa[0] = float_vsxargs[i];
+            vec_xa[1] = float_vsxargs[i+1];
+            vec_xb[0] = float_vsxargs[j];
+            vec_xb[1] = float_vsxargs[j+1];
+
+            /* run each test against cleared CR and FPSCR */
+            /* Note that the SET_*_ZERO calls are not actually sufficient here,
+             * due to infrastructure between here and there that also set some
+             * of the CR bits. The condition regs are cleared here, but are
+             * also both cleared and read within the to-be-tested asm chunk
+             * to get accurate results.
+             */
+            printf("%s %016lx%016lx %016lx%016lx (cr#%d) => ",
+                   instruction_name,
+                   vec_xa[1], vec_xa[0],
+                   vec_xb[1], vec_xb[0],
+                   x_index);
+
+            SET_CR_ZERO
+            SET_FPSCR_ZERO
+
+            (*test_function)();
+
+            GET_CR(local_cr);
+            GET_FPSCR(local_fpscr);
+
+            dissect_fpscr(local_fpscr);
+            dissect_cr_rn(local_cr, x_index);
+            printf("\n");
+         }
+      }
+   }
+}
+
+static void testfunction_vector_three_special (const char* instruction_name,
+                                               test_func_t test_function,
+                                               unsigned int ignore_test_flags){
+   /* Notes:
+    *   vector instructions with two inputs, one output.
+    *   vrt, vra, vrb
+    */
+   int i, j;
+   int t;
+
+   VERBOSE_FUNCTION_CALLOUT
+
+   for (i = 0; i < nb_float_vsxargs - 1; i++) {
+      for (j = 0; j < nb_float_vsxargs - 1; j++) {
+         vec_xa[0] = float_vsxargs[i];
+         vec_xa[1] = float_vsxargs[i+1];
+         vec_xb[0] = float_vsxargs[j];
+         vec_xb[1] = float_vsxargs[j+1];
+
+         for (t = 0; t < 2; t++) {
+            vec_xt[0] = (t == 0) ? 0 : 0xffffffffffffffff;
+            vec_xt[1] = (t == 0) ? 0 : 0xffffffffffffffff;
+
+            SET_FPSCR_ZERO;
+            printf("%s %016lx%016lx %016lx%016lx %016lx%016lx => ",
+                   instruction_name,
+                   vec_xa[1], vec_xa[0],
+                   vec_xb[1], vec_xb[0],
+                   vec_xt[1], vec_xt[0]);
+
+            (*test_function)();
+
+            GET_FPSCR(local_fpscr);
+
+            printf(" %016lx%016lx", vec_xt[1], vec_xt[0]);
+            dissect_fpscr(local_fpscr);
+            printf("\n");
+         }
+      }
+   }
+}
+
+#define vector_instruction_is_xvcvhpsp(instruction_name) \
+   (strncmp(instruction_name, "xvcvhpsp", 8) == 0)
+
+static void testfunction_vector_scalar_two_double(const char* instruction_name,
+                                                  test_func_t test_function,
+                                                  unsigned int ignore_test_flags) {
+   /* Notes:
+    *   iterate across double values stored in xa, xb.
+    *   Or, on half-word values in vec_xb.
+    *   Results are in vec_xt.
+    */
+   int i, j;
+
+   VERBOSE_FUNCTION_CALLOUT
+
+   for (i = 0; i < nb_float_vsxargs - 1; i += 2) {
+      for (j = 0; j < nb_float_vsxargs - 1; j += 2) {
+         /* vec_xb is only used by the convert instructions, the other callers
+          * use the r14, r15 fields.
+          * The 16-bit converts reference every other half-word in the vector.
+          * For this reason, populate the input field with a cross-section of
+          * values.
+          */
+         printf("%s ",instruction_name);
+
+         if (uses_half_precision_input(instruction_name)) {
+            vec_xb = (vector unsigned long) {
+               binary16_float_vsxargs[i]         |
+               binary16_float_vsxargs[j]   << 16 |
+               binary16_float_vsxargs[i+1] << 32 |
+               binary16_float_vsxargs[j+1] << 48,
+               binary16_float_vsxargs[(nb_float_vsxargs - 1) - j - 1 ]       |
+               binary16_float_vsxargs[(nb_float_vsxargs - 1) - i - 1] << 16  |
+
+               binary16_float_vsxargs[(nb_float_vsxargs - 1) - j ] << 32  |
+               binary16_float_vsxargs[(nb_float_vsxargs - 1) - i ] << 48
+            };
+            printf("   vec_xb[1] = 0x%lx, vec_xb[0] = 0x%lx ",
+                   vec_xb[1], vec_xb[0]);
+
+         } else if (uses_single_precision_input(instruction_name)) {
+            vec_xb = (vector unsigned long) {
+               binary32_float_vsxargs[i]         |
+               binary32_float_vsxargs[i+1] << 32,
+               binary32_float_vsxargs[nb_float_vsxargs - 1 - j ]         |
+               binary32_float_vsxargs[nb_float_vsxargs - 1 - j ] << 32
+            };
+            printf("   vec_xb[1] = 0x%lx, vec_xb[0] = 0x%lx ",
+                   vec_xb[1], vec_xb[0]);
+
+         } else { /* uses double */
+            r14 = binary64_float_vsxargs[i];
+            r15 = binary64_float_vsxargs[j];
+            printf("   r14 = 0x%lx, r15 = 0x%lx ", r14, r15);
+         }
+
+         vec_xt = (vector unsigned long){0, 0};
+
+         printf("%016lx %016lx ", vec_xb[1], vec_xb[0] );
+
+         if ((verbose > 2) && uses_double_precision_input(instruction_name)) {
+            dissect_binary64_float(vec_xb[1]);
+            dissect_binary64_float(vec_xb[0]);
+         }
+
+         printf(" => ");
+         SET_FPSCR_ZERO
+
+        (*test_function)();
+
+         GET_FPSCR(local_fpscr);
+         printf(" %016lx %016lx", vec_xt[1], vec_xt[0]);
+
+         if ((verbose > 2) && uses_half_precision_output(instruction_name)) {
+            dissect_double_as_16s(vec_xt[1]);
+            dissect_double_as_16s(vec_xt[0]);
+         }
+
+         /* The xvcvhpsp instruction does not set the C and FPCC fields */
+         if (!vector_instruction_is_xvcvhpsp(instruction_name))
+            dissect_fpscr(local_fpscr);
+
+         printf("\n");
+      } // j
+
+      /* If we are doing half precision conversions, the i-loop can be
+       * short-circuited to avoid duplicate input values.  */
+      if (unused_second_dword(instruction_name))
+         i = nb_float_vsxargs+1;
+   } // i
+}
 
 /* ######## begin grand testing loops. */
 typedef struct insn_sel_flags_t_struct {
@@ -1788,6 +2542,8 @@ static void do_tests ( insn_sel_flags_t seln_flags)
       family = all_tests[i].flags & PPC_FAMILY_MASK;
       if ((family == PPC_INTEGER  && !seln_flags.integer) ||
           (family == PPC_ALTIVEC  && !seln_flags.altivec) ||
+          (family == PPC_ALTIVEC_DOUBLE  && !seln_flags.altivec_double) ||
+          (family == PPC_ALTIVEC_QUAD  && !seln_flags.altivec_quad) ||
           (family == PPC_MISC  && !seln_flags.misc))
          continue;
 
@@ -1853,6 +2609,10 @@ static void do_tests ( insn_sel_flags_t seln_flags)
                group_function = &testfunction_vector_extend_sign;
                break;
 
+            case PPC_THREE_ARGS:
+               group_function = &testfunction_vector_three_special;
+               break;
+
             case PPC_FOUR_ARGS:
                group_function = &testfunction_vector_logical_four;
                break;
@@ -1860,7 +2620,7 @@ static void do_tests ( insn_sel_flags_t seln_flags)
             default:
                printf("ERROR: PPC_ALTIVEC, PPC_LOGICAL, unhandled number of arguments. 0x%08x\n", nb_args);
                continue;
-            }  /* switch(PPC_LOGICAL, nb_args) */
+            }  /* switch(PPC_INSERTEXTRACT, nb_args) */
             break;
 
          case PPC_INSERTEXTRACT:
@@ -1876,7 +2636,7 @@ static void do_tests ( insn_sel_flags_t seln_flags)
             default:
                printf("ERROR: PPC_ALTIVEC, PPC_INSERTEXTRACT, unhandled number of arguments. 0x%08x\n", nb_args);
                continue;
-            }  /* switch(PPC_ALTIVEC, nb_args) */
+            }  /* switch(PPC_INSERTEXTRACT, nb_args) */
             break;
 
          case PPC_PERMUTE:
@@ -1926,6 +2686,53 @@ static void do_tests ( insn_sel_flags_t seln_flags)
 
          break;
 
+      case PPC_ALTIVEC_QUAD:
+         switch(type) {
+         case PPC_LOGICAL:
+            switch(nb_args) {
+            case PPC_TWO_ARGS:
+               group_function = &testfunction_vector_scalar_two_quad;
+               break;
+
+            default:
+               printf("ERROR: PPC_ALTIVEC_QUAD, PPC_LOGICAL, unhandled number of arguments. 0x%08x\n", nb_args);
+               continue;
+            }  /* switch(PPC_LOGICAL, nb_args) */
+            break;
+
+         case PPC_COMPARE:
+            group_function = &testfunction_vector_scalar_compare_quads;
+            break;
+
+         default:
+            printf("ERROR: PPC_ALTIVEC_QUAD, unhandled type. %d\n", type);
+            continue;
+         } /* switch(type) */
+         break;
+
+      case PPC_ALTIVEC_DOUBLE:
+         switch(type) {
+         case PPC_COMPARE:
+            switch(nb_args) {
+            case PPC_ONE_ARG:
+               group_function = &testfunction_vector_scalar_data_class;
+               break;
+
+            case PPC_TWO_ARGS:
+               group_function = &testfunction_vector_scalar_two_double;
+               break;
+
+            case PPC_COMPARE_ARGS:
+               group_function = &testfunction_vector_scalar_compare_exp_double;
+               break;
+
+            default:
+               printf("ERROR: PPC_ALTIVEC_DOUBLE, PPC_COMPARE, unhandled number of arguments. 0x%08x\n", nb_args);
+               continue;
+            }  /* switch(PPC_COMPARE, nb_args) */
+         }   /* switch(type) */
+         break;
+
       default:
          printf("ERROR: unknown instruction family %08x\n", family);
          continue;
@@ -1957,6 +2764,8 @@ static void usage (void)
            "Usage: test_isa_3_0 [OPTIONS]\n"
            "\t-i: test integer instructions (default)\n"
            "\t-a: test altivec instructions\n"
+           "\t-d: test altivec double instructions\n"
+           "\t-q: test altivec quad instructions\n"
            "\t-m: test miscellaneous instructions\n"
            "\t-v: be verbose\n"
            "\t-h: display this help and exit\n"
@@ -1995,6 +2804,8 @@ int main (int argc, char **argv)
    flags.integer         = 0;
    flags.misc            = 0;
    flags.altivec         = 0;
+   flags.altivec_double  = 0;
+   flags.altivec_quad    = 0;
 
    // Flags
    flags.cr              = 2;
@@ -2007,6 +2818,14 @@ int main (int argc, char **argv)
 
       case 'a':
          flags.altivec  = 1;
+         break;
+
+      case 'd':
+         flags.altivec_double  = 1;
+         break;
+
+      case 'q':
+         flags.altivec_quad  = 1;
          break;
 
       case 'm':
@@ -2068,6 +2887,8 @@ int main (int argc, char **argv)
       printf("  family: \n");
       printf("    integer        = %d\n", flags.integer);
       printf("    altivec        = %d\n", flags.altivec);
+      printf("    altivec double = %d\n", flags.altivec_double);
+      printf("    altivec quad   = %d\n", flags.altivec_quad);
       printf("    misc           = %d\n", flags.misc);
       printf("  cr update: \n");
       printf("    cr             = %d\n", flags.cr);

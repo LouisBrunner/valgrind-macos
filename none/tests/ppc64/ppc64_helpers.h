@@ -181,6 +181,24 @@ if (cr_overflow_set(this_cr))
    printf("%s(SO)", verbose ? " 0x8=Overflow" : "");
 }
 
+/* Extract one CR field */
+static int extract_cr_rn(unsigned long local_cr,unsigned long rn) {
+  unsigned int masked_cr;
+  unsigned long shifted_value;
+
+  shifted_value = local_cr >> ( ( (7 - rn) * 4 ) );
+  masked_cr = shifted_value & 0xf;
+  return masked_cr;
+}
+
+/* Display one CR field */
+static void dissect_cr_rn(unsigned long local_cr, unsigned long rn) {
+  unsigned int masked_cr;
+
+  masked_cr = extract_cr_rn(local_cr, rn);
+  __dissect_cr(masked_cr);
+}
+
 /* dissect the fpscr bits that are valid under valgrind.
  * Valgrind itself only tracks the C and FPCC fields from the
  * FPSCR.
@@ -259,6 +277,41 @@ static void dissect_fpscr_rounding_mode(unsigned long local_fpscr) {
   0 0 1 0 1 +Infinity
 */
 
+static void dissect_fpscr_result_value_class(unsigned long local_fpscr) {
+   if (local_fpscr & FPCC_C_BIT) {
+      if (local_fpscr & FPCC_FL_BIT)
+            printf("-Denormalized");
+
+      else if (local_fpscr & FPCC_FG_BIT)
+            printf("+Denormalized");
+
+      else if (local_fpscr & FPCC_FE_BIT)
+            printf("-Zero        ");
+
+      else if (local_fpscr & FPCC_FU_BIT)
+            printf("Quiet NaN    ");
+
+   } else {
+      if (local_fpscr & FPCC_FL_BIT) {
+         if (local_fpscr & FPCC_FU_BIT)
+            printf("-Infinity    ");
+
+         else
+            printf("-Normalized  ");
+
+      } else if (local_fpscr & FPCC_FG_BIT) {
+         if (local_fpscr & FPCC_FU_BIT)
+            printf("+Infinity    ");
+
+         else
+            printf("+Normalized  ");
+
+         if (local_fpscr & FPCC_FE_BIT)
+            printf("+Zero        ");
+      }
+   }
+}
+
 /* Interpret the fields in the FPCC as they apply to the DCMX checks.
  * The 'Match' indicator will typically be evaluated by the caller.
  *
@@ -273,6 +326,20 @@ static void dissect_fpscr_rounding_mode(unsigned long local_fpscr) {
     *        6       0x40  -Denormal
     *        7       0x7f  ALL bits set.
 */
+
+static void dissect_fpscr_dcmx_indicator(unsigned long local_fpscr) {
+   if (verbose > 2) printf("fpscr_cc:%lx ", local_fpscr & (FPCC_FPRF_MASK) );
+
+   // See if the data class of the src value matches the set DCMX bits.
+   if (verbose > 1) printf("%s ", (local_fpscr&FPCC_FE_BIT) ? "Match":"");
+
+   // Display the sign bit of the src value.
+   if (verbose > 1) printf("SRC sign:%s ", (local_fpscr&FPCC_FL_BIT) ? "-" : "+");
+
+   // The src value can be either a SP or DP value, this indicates
+   // if it is a valid SP value.
+   if (verbose > 1) printf("%s ", (local_fpscr&FPCC_FE_BIT) ? "SP" : "");
+}
 
 /* DFP helpers for bcd-to-dpd, dpd-to-bcd, misc.
  * pulled from vex/.../host_generic_simd64.c
@@ -1404,6 +1471,35 @@ void dump_float_vsx_table (void) {
    }
 
    printf("\n");
+}
+
+static void print_dcmx_field(unsigned long local_dcmx) {
+   /* Note - this splats out the local_dxmc field from the form used to
+    * globally pass it, with a single set bit, into the functions that use
+    * it.  The actual DCMX field is a bit-field from 0x00 to 0x3f. If
+    * multiple bits are ever set, this function and the way it is passed
+    * into the users will need to be updated.  This does not handle
+    * multiple bits being set.
+    */
+
+   printf(" DCMX=[");
+
+   switch(local_dcmx) {
+      case 0: printf("ALL"); break;
+      case 1: printf("NaN"); break;
+      case 2: printf("+inf"); break;
+      case 3: printf("-inf"); break;
+      case 4: printf("+zero"); break;
+      case 5: printf("-zero"); break;
+      case 6: printf("+denormal"); break;
+      case 7: printf("-denormal"); break;
+      default: printf("other"); break;
+   }
+
+   if (verbose > 3)
+      printf(" %lx", local_dcmx);
+
+   printf("] ");
 }
 
 #define MAX_CHAR_ARGS_ARRAY_SIZE 128

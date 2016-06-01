@@ -136,7 +136,7 @@ test_tm_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_
 test_touch_tm_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_2_07_FLAG) \
 			@FLAG_M64@ $(BUILD_FLAGS_ISA_2_07)
 test_isa_3_0_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_3_0_FLAG) \
-			@FLAG_M64@ $( $(BUILD_FLAGS_ISA_3_0) 
+			@FLAG_M64@ $(BUILD_FLAGS_ISA_3_0)
 
 test_isa_2_06_part3_LDADD = -lm
 test_dfp1_LDADD = -lm

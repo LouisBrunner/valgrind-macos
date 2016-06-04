@@ -70,6 +70,7 @@ where XXXXXX is the bug number as listed below.
 353920  unhandled amd64-solaris syscall: 170
 354392  unhandled amd64-solaris syscall: 171
 354797  Added vbit tester support for PPC 64 isa 2.07 iops
+354883  tst->os_state.pthread - magic_delta assertion failure on OSX 10.11
 354933  Fix documentation of --kernel-variant=android-no-hw-tls option
 355188  valgrind should intercept all malloc related global functions
 355455  stderr.exp of test cases wrapmalloc and wrapmallocstatic overconstrained

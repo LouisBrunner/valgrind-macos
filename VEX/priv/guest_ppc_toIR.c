@@ -10529,24 +10529,16 @@ static Bool dis_fp_scr ( UInt theInstr, Bool GX_level )
 
    case 0x086: { // mtfsfi (Move to FPSCR Field Immediate, PPC32 p481)
       UInt crfD     = IFIELD( theInstr, 23, 3 );
-      UChar b16to22 = toUChar( IFIELD( theInstr, 16, 7 ) );
+      UChar b17to22 = toUChar( IFIELD( theInstr, 17, 6 ) );
       UChar IMM     = toUChar( IFIELD( theInstr, 12, 4 ) );
       UChar b11     = toUChar( IFIELD( theInstr, 11, 1 ) );
-      UChar Wbit;
+      UChar Wbit    = toUChar( IFIELD( theInstr, 16, 1 ) );
 
-      if (b16to22 != 0 || b11 != 0) {
+      if (b17to22 != 0 || b11 != 0 || (Wbit && !GX_level)) {
          vex_printf("dis_fp_scr(ppc)(instr,mtfsfi)\n");
          return False;
-      }      
-      DIP("mtfsfi%s crf%u,%d\n", flag_rC ? ".":"", crfD, IMM);
-      if (GX_level) {
-         /* This implies that Decimal Floating Point is supported, and the
-          * FPSCR must be managed as a 64-bit register.
-          */
-         Wbit = toUChar( IFIELD(theInstr, 16, 1) );
-      } else {
-         Wbit = 0;
       }
+      DIP("mtfsfi%s crf%u,%d%s\n", flag_rC ? ".":"", crfD, IMM, Wbit ? ",1":"");
       crfD = crfD + (8 * (1 - Wbit) );
       putGST_field( PPC_GST_FPSCR, mkU32( IMM ), crfD );
       break;

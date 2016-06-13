@@ -102,6 +102,7 @@ where XXXXXX is the bug number as listed below.
 361226  s390x: risbgn (EC59) not implemented
 361926  Unhandled Solaris syscall: sysfs(84)
 362009  Valgrind dumps core on unimplemented functionality before threads are created
+362894  missing (broken) support for wbit field on mtfsfi instruction (ppc64)
 360035  POWER PC instruction bcdadd and bcdsubtract generate result with non-zero shadow bits
 363680  add renameat2() support
 363705  arm64 missing syscall name_to_handle_at and open_by_handle_at

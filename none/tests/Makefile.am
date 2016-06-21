@@ -150,7 +150,7 @@ EXTRA_DIST = \
 	procfs-non-linux.stderr.exp-with-readlinkat \
 	procfs-non-linux.stderr.exp-without-readlinkat \
 	pselect_alarm.stdout.exp pselect_alarm.stderr.exp pselect_alarm.vgtest \
-	pselect_signask_null.vgtest \
+	pselect_sigmask_null.vgtest \
 	pselect_sigmask_null.stdout.exp pselect_sigmask_null.stderr.exp \
 	pth_atfork1.stderr.exp pth_atfork1.stdout.exp pth_atfork1.vgtest \
 	pth_blockedsig.stderr.exp \

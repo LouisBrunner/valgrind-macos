@@ -1316,11 +1316,15 @@ PRE(sys_pselect6)
          pas->ss.ss = (void *)1;
          pas->ss.ss_len = pss->ss_len;
          if (pss->ss_len == sizeof(*pss->ss)) {
-            PRE_MEM_READ("pselect6(sig->ss)", (Addr)pss->ss, pss->ss_len);
-            if (ML_(safe_to_deref)(pss->ss, sizeof(*pss->ss))) {
-               pas->adjusted_ss = *pss->ss;
-               pas->ss.ss = &pas->adjusted_ss;
-               VG_(sanitize_client_sigmask)(&pas->adjusted_ss);
+            if (pss->ss == NULL) {
+               pas->ss.ss = NULL;
+            } else {
+               PRE_MEM_READ("pselect6(sig->ss)", (Addr)pss->ss, pss->ss_len);
+               if (ML_(safe_to_deref)(pss->ss, sizeof(*pss->ss))) {
+                  pas->adjusted_ss = *pss->ss;
+                  pas->ss.ss = &pas->adjusted_ss;
+                  VG_(sanitize_client_sigmask)(&pas->adjusted_ss);
+               }
             }
          }
       }

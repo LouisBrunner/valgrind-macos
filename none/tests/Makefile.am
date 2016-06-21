@@ -150,6 +150,8 @@ EXTRA_DIST = \
 	procfs-non-linux.stderr.exp-with-readlinkat \
 	procfs-non-linux.stderr.exp-without-readlinkat \
 	pselect_alarm.stdout.exp pselect_alarm.stderr.exp pselect_alarm.vgtest \
+	pselect_signask_null.vgtest \
+	pselect_sigmask_null.stdout.exp pselect_sigmask_null.stderr.exp \
 	pth_atfork1.stderr.exp pth_atfork1.stdout.exp pth_atfork1.vgtest \
 	pth_blockedsig.stderr.exp \
 	pth_blockedsig.stdout.exp pth_blockedsig.vgtest \
@@ -219,6 +221,7 @@ check_PROGRAMS = \
 	pending \
 	procfs-cmdline-exe \
 	pselect_alarm \
+	pselect_sigmask_null \
 	pth_atfork1 pth_blockedsig pth_cancel1 pth_cancel2 pth_cvsimple \
 	pth_empty pth_exit pth_exit2 pth_mutexspeed pth_once pth_rwlock \
 	pth_stackalign \

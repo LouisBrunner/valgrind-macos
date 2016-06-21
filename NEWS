@@ -107,6 +107,7 @@ where XXXXXX is the bug number as listed below.
 363680  add renameat2() support
 363705  arm64 missing syscall name_to_handle_at and open_by_handle_at
 363714  ppc64 missing syscalls sync, waitid and name_to/open_by_handle_at
+364413  pselect sycallwrapper mishandles NULL sigmask
 
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64
 n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap

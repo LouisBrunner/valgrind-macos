@@ -1,0 +1,2 @@
+prog: pselect_sigmask_null
+vgopts: -q

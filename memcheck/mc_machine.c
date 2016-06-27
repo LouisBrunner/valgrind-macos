@@ -190,6 +190,15 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(VSCR)      && sz == 4) return -1;
    if (o == GOF(VRSAVE)    && sz == 4) return -1;
    if (o == GOF(REDIR_SP)  && sz == 8) return -1;
+   if (o == GOF(NRADDR)    && sz == 8) return -1;
+   if (o == GOF(NRADDR_GPR2) && sz == 8) return -1;
+   if (o == GOF(REDIR_STACK) && sz == 8) return -1;
+   if (o == GOF(TFHAR)     && sz == 8) return -1;
+   if (o == GOF(TEXASR)    && sz == 8) return -1;
+   if (o == GOF(TEXASRU)   && sz == 8) return -1;
+   if (o == GOF(TFIAR)     && sz == 8) return -1;
+   if (o == GOF(PPR)       && sz == 8) return -1;
+   if (o == GOF(PSPB)      && sz == 8) return -1;
 
    // With ISA 2.06, the "Vector-Scalar Floating-point" category
    // provides facilities to support vector and scalar binary floating-

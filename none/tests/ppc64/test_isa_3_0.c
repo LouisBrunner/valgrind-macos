@@ -212,7 +212,11 @@ enum test_flags {
    PPC_ALTIVEC        = 0x00030000,
    PPC_ALTIVEC_QUAD   = 0x00040000,
    PPC_ALTIVEC_DOUBLE = 0x00050000,
+   PPC_DFP            = 0x00060000,
+   PPC_BCD            = 0x00070000,
    PPC_MISC           = 0x00080000,
+   PPC_NO_OP          = 0x00090000,
+   PPC_PC_IMMEDIATE   = 0x000A0000,
    PPC_FAMILY_MASK    = 0x000F0000,
 
    /* Flags: these may be combined, so use separate bit-fields. */
@@ -849,6 +853,14 @@ static void test_stxvl(void) {
    __asm__ __volatile__ ("stxvl %0, 14, 15" : "=wa" (vec_xt));
 }
 
+static void test_lxvll(void) {
+   __asm__ __volatile__ ("lxvll %0, 14, 15" : "=wa" (vec_xt));
+}
+
+static void test_stxvll(void) {
+   __asm__ __volatile__ ("stxvll %0, 14, 15" : "=wa" (vec_xt));
+}
+
 static void test_lxsibzx(void) {
    __asm__ __volatile__ ("lxsibzx %x0, 14, 15" : "=wa" (vec_xt));
 }
@@ -916,9 +928,11 @@ static void test_stxv_16(void) {
 
 static test_list_t testgroup_vector_scalar_loadstore_length[] = {
    { &test_lxvl     , "lxvl     " },
+   { &test_lxvll    , "lxvll    " },
    { &test_lxsibzx  , "lxsibzx  " },
    { &test_lxsihzx  , "lxsihzx  " },
    { &test_stxvl    , "stxvl    " },
+   { &test_stxvll   , "stxvll   " },
    { &test_stxsibx  , "stxsibx  " },
    { &test_stxsihx  , "stxsihx  " },
    { &test_lxsd_0   , "lxsd 0   " },
@@ -1215,6 +1229,388 @@ static test_list_t testgroup_vector_scalar_data_class[] = {
    { NULL           , NULL         },
 };
 
+static void test_setb (void) {
+   /* setb RT,BFA
+    * BFA is a 3-bit field. */
+
+   switch(x_index) {
+   case 0:SET_CR0_FIELD(cr_value);
+      __asm__ __volatile__ ("setb %0, 0" : "=r" (r14)); break;
+
+   case 1:SET_CR1_FIELD(cr_value);
+      __asm__ __volatile__ ("setb %0, 1" : "=r" (r14)); break;
+
+   case 2:SET_CR2_FIELD(cr_value);
+      __asm__ __volatile__ ("setb %0, 2" : "=r" (r14)); break;
+
+   case 3:SET_CR3_FIELD(cr_value);
+      __asm__ __volatile__ ("setb %0, 3" : "=r" (r14)); break;
+
+   case 4:SET_CR4_FIELD(cr_value);
+      __asm__ __volatile__ ("setb %0, 4" : "=r" (r14)); break;
+
+   case 5:SET_CR5_FIELD(cr_value);
+      __asm__ __volatile__ ("setb %0, 5" : "=r" (r14)); break;
+
+   case 6:SET_CR6_FIELD(cr_value);
+      __asm__ __volatile__ ("setb %0, 6" : "=r" (r14)); break;
+
+   case 7:SET_CR7_FIELD(cr_value);
+      __asm__ __volatile__ ("setb %0, 7" : "=r" (r14)); break;
+    }
+
+    GET_CR(local_cr);
+
+    if (verbose) {
+       dissect_cr(local_cr);
+    }
+}
+
+static test_list_t testgroup_set_boolean[] = {
+   { &test_setb, "setb"},
+   { NULL      , NULL  },
+};
+
+/* cmprb l = 0:
+ * compares r14 = src with range specified by values in r15
+ *      bits (48:55 - 56:63)].
+ *
+ *  cmprb l=1:
+ *  compares r14 = src with ranges between two pairs of values, as above and
+ *  also in r15 bits (32:39 - 40:47 .
+ */
+static void test_cmprb_l0() {
+   switch(x_index) {
+   case 0: __asm__ __volatile__ ("cmprb 0, 0, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+
+   case 1: __asm__ __volatile__ ("cmprb 1, 0, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+
+   case 2: __asm__ __volatile__ ("cmprb 2, 0, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+
+   case 3: __asm__ __volatile__ ("cmprb 3, 0, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+
+   case 4: __asm__ __volatile__ ("cmprb 4, 0, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+
+   case 5: __asm__ __volatile__ ("cmprb 5, 0, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+
+   case 6: __asm__ __volatile__ ("cmprb 6, 0, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+
+   case 7: __asm__ __volatile__ ("cmprb 7, 0, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+    }
+}
+
+static void test_cmprb_l1() {
+   switch(x_index) {
+   case 0: __asm__ __volatile__ ("cmprb 0, 1 ,%0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+
+   case 1: __asm__ __volatile__ ("cmprb 1, 1, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+
+   case 2: __asm__ __volatile__ ("cmprb 2, 1, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+
+   case 3: __asm__ __volatile__ ("cmprb 3, 1, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+
+   case 4: __asm__ __volatile__ ("cmprb 4, 1, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+
+   case 5: __asm__ __volatile__ ("cmprb 5, 1, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+
+   case 6: __asm__ __volatile__ ("cmprb 6, 1, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+
+   case 7: __asm__ __volatile__ ("cmprb 7, 1, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+    }
+}
+
+static void test_cmpeqb() {
+   switch(x_index) {
+   case 0: __asm__ __volatile__ ("cmpeqb 0,%0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+
+   case 1: __asm__ __volatile__ ("cmpeqb 1,%0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+
+   case 2: __asm__ __volatile__ ("cmpeqb 2,%0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+
+   case 3: __asm__ __volatile__ ("cmpeqb 3,%0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+
+   case 4: __asm__ __volatile__ ("cmpeqb 4,%0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+
+   case 5: __asm__ __volatile__ ("cmpeqb 5,%0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+
+   case 6: __asm__ __volatile__ ("cmpeqb 6,%0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+
+   case 7: __asm__ __volatile__ ("cmpeqb 7,%0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); break;
+    }
+}
+
+static test_list_t testgroup_char_compare[] = {
+   { &test_cmprb_l0, "cmprb l=0" },
+   { &test_cmprb_l1, "cmprb l=1" },
+   { &test_cmpeqb  , "cmpeqb"    },
+   { NULL          , NULL        },
+};
+
+static void test_bcdadd_p0(void) {
+   __asm__ __volatile__ ("bcdadd.   %0, %1, %2, 0" : "=v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_bcdadd_p1(void) {
+   __asm__ __volatile__ ("bcdadd.   %0, %1, %2, 1" : "=v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_bcdsub_p0(void) {
+   __asm__ __volatile__ ("bcdsub.   %0, %1, %2, 0" : "=v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_bcdsub_p1(void) {
+   __asm__ __volatile__ ("bcdsub.   %0, %1, %2, 1" : "=v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_bcdcpsgn(void)  {
+   __asm__ __volatile__ ("bcdcpsgn.  %0, %1, %2  ": "=v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_bcdctz_p0(void) {
+   __asm__ __volatile__ ("bcdctz.   %0, %1, 0   " : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_bcdctz_p1(void) {
+   __asm__ __volatile__ ("bcdctz.   %0, %1, 1   " : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_bcdsetsgn_p0(void) {
+   __asm__ __volatile__ ("bcdsetsgn. %0, %1, 0   " : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_bcdsetsgn_p1(void) {
+   __asm__ __volatile__ ("bcdsetsgn. %0, %1, 1   " : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_bcds_p0(void) {
+   __asm__ __volatile__ ("bcds.     %0, %1, %2, 0" : "=v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_bcds_p1(void) {
+   __asm__ __volatile__ ("bcds.     %0, %1, %2, 1" : "=v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_bcdus(void) {
+   __asm__ __volatile__ ("bcdus.    %0, %1, %2  " : "=v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_bcdsr_p0(void) {
+   __asm__ __volatile__ ("bcdsr.    %0, %1, %2, 0" : "=v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_bcdsr_p1(void) {
+   __asm__ __volatile__ ("bcdsr.    %0, %1, %2, 1" : "=v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_bcdcfn_p0(void) {
+   __asm__ __volatile__ ("bcdcfn.   %0, %1, 0   " : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_bcdcfn_p1(void) {
+   __asm__ __volatile__ ("bcdcfn.   %0, %1, 1   " : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_bcdcfz_p0(void) {
+   __asm__ __volatile__ ("bcdcfz.   %0, %1, 0   " : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_bcdcfz_p1(void) {
+   __asm__ __volatile__ ("bcdcfz.   %0, %1, 1   " : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_bcdctn(void) {
+   __asm__ __volatile__ ("bcdctn.   %0, %1     " : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static test_list_t testgroup_bcd_misc[] = {
+   { &test_bcdadd_p0   , "bcdadd. p0"    },
+   { &test_bcdadd_p1   , "bcdadd. p1"    },
+   { &test_bcdsub_p0   , "bcdsub. p0"    },
+   { &test_bcdsub_p1   , "bcdsub. p1"    },
+   { &test_bcdcfn_p0   , "bcdcfn. p0"    },
+   { &test_bcdcfn_p1   , "bcdcfn. p1"    },
+   { &test_bcdcfz_p0   , "bcdcfz. p0"    }, /* The p0, p1 substrings are used later */
+   { &test_bcdcfz_p1   , "bcdcfz. p1"    }, /* " " */
+   { &test_bcdctn      , "bcdctn."       },
+   { &test_bcdctz_p0   , "bcdctz. p0"    }, /* note: p0, p1 substrings are used later */
+   { &test_bcdctz_p1   , "bcdctz. p1"    }, /* " " */
+   { &test_bcdcpsgn    , "bcdcpsgn."     },
+   { &test_bcdsetsgn_p0, "bcdsetsgn. p0" },
+   { &test_bcdsetsgn_p1, "bcdsetsgn. p1" },
+   { &test_bcds_p0     , "bcds. p0"      },
+   { &test_bcds_p1     , "bcds. p1"      },
+   { &test_bcdus       , "bcdus. "       },
+   { &test_bcdsr_p0    , "bcdsr. p0"     },
+   { &test_bcdsr_p1    , "bcdsr. p1"     },
+   { NULL              , NULL            },
+};
+
+static void test_wait(void) {
+   __asm__ __volatile__ ("wait 0" : :);
+}
+
+static test_list_t testgroup_noop_misc[] = {
+   { &test_wait, "wait ",},
+   { NULL      , NULL,   },
+};
+
+/* The significance field can be any values within bits 10-15 of the
+ * instruction.  For this test, limiting the values to one per bit location.
+ */
+static void test_dtstsfi() {
+   _Decimal128 df14 = dfp_value.dec_val128;
+   switch(dfp_significance) {
+   case 0x00: __asm__ __volatile__ ("dtstsfi 3, 0x00, %0" : : "f" (df14));
+      GET_CR(local_cr); break;
+
+   case 0x01: __asm__ __volatile__ ("dtstsfi 3, 0x01, %0" : : "f" (df14));
+      GET_CR(local_cr); break;
+
+   case 0x02: __asm__ __volatile__ ("dtstsfi 3, 0x02, %0" : : "f" (df14));
+      GET_CR(local_cr); break;
+
+   case 0x03: __asm__ __volatile__ ("dtstsfi 3, 0x03, %0" : : "f" (df14));
+      GET_CR(local_cr); break;
+
+   case 0x04: __asm__ __volatile__ ("dtstsfi 3, 0x04, %0" : : "f" (df14));
+      GET_CR(local_cr); break;
+
+   case 0x06: __asm__ __volatile__ ("dtstsfi 3, 0x06, %0" : : "f" (df14));
+      GET_CR(local_cr); break;
+
+   case 0x08: __asm__ __volatile__ ("dtstsfi 3, 0x08, %0" : : "f" (df14));
+      GET_CR(local_cr); break;
+
+   case 0x0c: __asm__ __volatile__ ("dtstsfi 3, 0x0c, %0" : : "f" (df14));
+      GET_CR(local_cr); break;
+
+   case 0x10: __asm__ __volatile__ ("dtstsfi 3, 0x10, %0" : : "f" (df14));
+      GET_CR(local_cr); break;
+
+   case 0x18: __asm__ __volatile__ ("dtstsfi 3, 0x18, %0" : : "f" (df14));
+      GET_CR(local_cr); break;
+
+   case 0x20: __asm__ __volatile__ ("dtstsfi 3, 0x20, %0" : : "f" (df14));
+      GET_CR(local_cr); break;
+   }
+}
+
+static void test_dtstsfiq() {
+   _Decimal128 df14 = dfp_value.dec_val128;
+   switch(dfp_significance) {
+   case 0x00: __asm__ __volatile__ ("dtstsfiq 3, 0x00, %0" : : "f" (df14));
+      GET_CR(local_cr); break;
+
+   case 0x01: __asm__ __volatile__ ("dtstsfiq 3, 0x01, %0" : : "f" (df14));
+      GET_CR(local_cr); break;
+
+   case 0x02: __asm__ __volatile__ ("dtstsfiq 3, 0x02, %0" : : "f" (df14));
+      GET_CR(local_cr); break;
+
+   case 0x03: __asm__ __volatile__ ("dtstsfiq 3, 0x03, %0" : : "f" (df14));
+      GET_CR(local_cr); break;
+
+   case 0x04: __asm__ __volatile__ ("dtstsfiq 3, 0x04, %0" : : "f" (df14));
+      GET_CR(local_cr); break;
+
+   case 0x06: __asm__ __volatile__ ("dtstsfiq 3, 0x06, %0" : : "f" (df14));
+      GET_CR(local_cr); break;
+
+   case 0x08: __asm__ __volatile__ ("dtstsfiq 3, 0x08, %0" : : "f" (df14));
+      GET_CR(local_cr); break;
+
+   case 0x0c: __asm__ __volatile__ ("dtstsfiq 3, 0x0c, %0" : : "f" (df14));
+      GET_CR(local_cr); break;
+
+   case 0x10: __asm__ __volatile__ ("dtstsfiq 3, 0x10, %0" : : "f" (df14));
+      GET_CR(local_cr); break;
+
+   case 0x18: __asm__ __volatile__ ("dtstsfiq 3, 0x18, %0" : : "f" (df14));
+      GET_CR(local_cr); break;
+
+   case 0x20: __asm__ __volatile__ ("dtstsfiq 3, 0x20, %0" : : "f" (df14));
+      GET_CR(local_cr); break;
+   }
+}
+
+static test_list_t testgroup_dfp_significance[] = {
+   { &test_dtstsfi , "dtstsfi"  },
+   { &test_dtstsfiq, "dtstsfiq" },
+   { NULL          , NULL       },
+};
+
+static void test_addpcis(void)  {
+   switch (x_index) {
+   case 0x0: __asm__ __volatile__ ("addpcis 14, %0"  : : "i"(0x0) ); break;
+   case 0x1: __asm__ __volatile__ ("addpcis 14, %0"  : : "i"(0x1) ); break;
+   case 0x2: __asm__ __volatile__ ("addpcis 14, %0"  : : "i"(0x2) ); break;
+   case 0x3: __asm__ __volatile__ ("addpcis 14, %0"  : : "i"(0x40) ); break;
+   case 0x4: __asm__ __volatile__ ("addpcis 14, %0"  : : "i"(0x800) ); break;
+   case 0x5: __asm__ __volatile__ ("addpcis 14, %0"  : : "i"(0x2000) ); break;
+   case 0x6: __asm__ __volatile__ ("addpcis 14, %0"  : : "i"(0x7fff) ); break;
+   case 0x7: __asm__ __volatile__ ("addpcis 14, %0"  : : "i"(0x8000) ); break;
+   case 0x8: __asm__ __volatile__ ("addpcis 14, -%0" : : "i"(0x0) ); break;
+   case 0x9: __asm__ __volatile__ ("addpcis 14, -%0" : : "i"(0x1) ); break;
+   case 0xa: __asm__ __volatile__ ("addpcis 14, -%0" : : "i"(0x2) ); break;
+   case 0xb: __asm__ __volatile__ ("addpcis 14, -%0" : : "i"(0x40) ); break;
+   case 0xc: __asm__ __volatile__ ("addpcis 14, -%0" : : "i"(0x800) ); break;
+   case 0xd: __asm__ __volatile__ ("addpcis 14, -%0" : : "i"(0x2000) ); break;
+   case 0xe: __asm__ __volatile__ ("addpcis 14, -%0" : : "i"(0x7fff) ); break;
+   case 0xf: __asm__ __volatile__ ("addpcis 14, -%0" : : "i"(0x8000) ); break;
+   }
+}
+
+static void test_subpcis(void)  {
+   switch (x_index) {
+   case 0x0:  __asm__ __volatile__ ("subpcis 14, %0"  : : "i"(0x0) ); break;
+   case 0x1:  __asm__ __volatile__ ("subpcis 14, %0"  : : "i"(0x1) ); break;
+   case 0x2:  __asm__ __volatile__ ("subpcis 14, %0"  : : "i"(0x2) ); break;
+   case 0x3:  __asm__ __volatile__ ("subpcis 14, %0"  : : "i"(0x40) ); break;
+   case 0x4:  __asm__ __volatile__ ("subpcis 14, %0"  : : "i"(0x800) ); break;
+   case 0x5:  __asm__ __volatile__ ("subpcis 14, %0"  : : "i"(0x2000) ); break;
+   case 0x6:  __asm__ __volatile__ ("subpcis 14, %0"  : : "i"(0x7fff) ); break;
+   case 0x7:  __asm__ __volatile__ ("subpcis 14, %0"  : : "i"(0x8000) ); break;
+   case 0x8:  __asm__ __volatile__ ("subpcis 14, -%0" : : "i"(0x0) ); break;
+   case 0x9:  __asm__ __volatile__ ("subpcis 14, -%0" : : "i"(0x1) ); break;
+   case 0xa:  __asm__ __volatile__ ("subpcis 14, -%0" : : "i"(0x2) ); break;
+   case 0xb:  __asm__ __volatile__ ("subpcis 14, -%0" : : "i"(0x40) ); break;
+   case 0xc:  __asm__ __volatile__ ("subpcis 14, -%0" : : "i"(0x80) ); break;
+   case 0xd:  __asm__ __volatile__ ("subpcis 14, -%0" : : "i"(0x200) ); break;
+   case 0xe:  __asm__ __volatile__ ("subpcis 14, -%0" : : "i"(0x7fff) ); break;
+   case 0xf:  __asm__ __volatile__ ("subpcis 14, -%0" : : "i"(0x8000) ); break;
+   }
+}
+
+static test_list_t testgroup_pc_immediate_misc[] = {
+   { &test_addpcis, "addpcis " },
+   { &test_subpcis, "subpcis " },
+   { NULL         , NULL       },
+};
+
 static void test_xsiexpdp(void) {
    __asm__ __volatile__ ("xsiexpdp   %0, %1, %2 " : "+wa" (vec_xt): "r" (r14), "r" (r15));
 }
@@ -1367,6 +1763,16 @@ static test_group_table_t all_tests[] = {
       PPC_INTEGER | PPC_ARITH | PPC_THREE_ARGS,
    },
    {
+      testgroup_set_boolean,
+      "ppc set boolean",
+      PPC_INTEGER | PPC_LOGICAL | PPC_ONE_IMM,
+   },
+   {
+      testgroup_char_compare,
+      "ppc char compare",
+      PPC_INTEGER | PPC_COMPARE,
+   },
+   {
       testgroup_vsx_absolute,
       "ppc vector absolutes",
       PPC_ALTIVEC | PPC_ARITH | PPC_TWO_ARGS,
@@ -1460,6 +1866,26 @@ static test_group_table_t all_tests[] = {
       testgroup_vector_scalar_two_double,
       "ppc vector scalar tests against float double two args ",
       PPC_ALTIVEC_DOUBLE | PPC_COMPARE | PPC_TWO_ARGS,
+   },
+   {
+      testgroup_dfp_significance,
+      "ppc dfp significance",
+      PPC_DFP,
+   },
+   {
+      testgroup_bcd_misc,
+      "ppc bcd misc",
+      PPC_BCD,
+   },
+   {
+      testgroup_noop_misc,
+      "ppc noop misc",
+      PPC_NO_OP,
+   },
+   {                                                                           
+      testgroup_pc_immediate_misc,
+      "ppc addpc_misc",
+      PPC_PC_IMMEDIATE,
    },
    { NULL,                   NULL,               0x00000000, },
 };
@@ -2483,6 +2909,286 @@ static void testfunction_vector_scalar_two_double(const char* instruction_name,
    } // i
 }
 
+static void testfunction_set_boolean (const char* instruction_name,
+                                      test_func_t test_function,
+                                      unsigned int ignore_test_flags)
+{
+   int cr_base_value;
+   /* Notes:
+    * Set RT to values 0, -1, 1 depending on what bits are set in the specified
+    * CR field.  x_index references here reflect the cr_field number.
+    */
+
+   VERBOSE_FUNCTION_CALLOUT
+
+   for (x_index = 0; x_index <= 7; x_index++) {
+      for (cr_base_value = 0; cr_base_value <= 8; cr_base_value++) {
+         cr_value = (0x11111111 * cr_base_value)
+            & (0xf << (4 * (7 - x_index))) ;
+
+         r14 = 0xa5a5a5a5c7c7c7c7;
+
+         printf("%s cr_field:%1x cr_value::%08x",
+                instruction_name, x_index,cr_value);
+         printf(" => ");
+
+         (*test_function)();
+
+         printf(" %016lx\n", r14);
+      }
+   }
+}
+
+
+static void testfunction_char_compare (const char* instruction_name,
+                                       test_func_t test_function,
+                                       unsigned int ignore_test_flags)
+{
+   /* Notes:
+    *   iterate through char values stored in RA, RB.
+    *   Results stored in cr field BF.
+    */
+   int i, j;
+   int local_crf;
+
+   VERBOSE_FUNCTION_CALLOUT
+
+   for (x_index = 0; x_index <= 7; x_index++) {
+      for (i = 0; i < nb_char_ranges; i += 4) {
+         for (j = 0; j < nb_char_args; j++) {
+            r14 = char_args[j];
+
+            /* For cmprb*, only needs the lower characters. */
+            r15 = char_ranges[i] | (char_ranges[i+1] << 8) |
+                  char_ranges[i+2] << 16 | (char_ranges[i+3] << 24);
+
+            /* For cmpeqb, also load the rest of the range field, shift allk
+             * chars up by one.
+             */
+            r15 |= (r15 + 0x01010101) << 32;
+            printf("%s 0x%02lx (%c) (cmpeq:0x%016lx) (cmprb:src22(%c-%c) src21(%c-%c))",
+                   instruction_name,
+                   r14, (int)r14,
+                   r15, (int)(r15 & 0xff), (int)((r15 >> 8) & 0xff),
+                   (int)((r15 >> 16) & 0xff), (int)((r15 >> 24) & 0xff)
+                   );
+
+            printf(" =>");
+
+            (*test_function)();
+
+            GET_CR(local_cr);
+            local_crf = extract_cr_rn(local_cr, x_index);
+
+            if (verbose)
+               printf(" %s found or in range (%x)",
+                      (cr_positive_set(local_crf))?"   " : " not", local_crf);
+            else
+               if (cr_positive_set(local_crf)) printf(" in range/found");
+
+            printf("\n");
+         }
+      }
+   }
+}
+
+#define instruction_uses_quads(instruction_name) (strncmp(instruction_name, "dtstsfiq", 8) == 0)
+
+static void testfunction_dfp_significance (const char* instruction_name,
+                                           test_func_t test_function,
+                                           unsigned int ignore_test_flags)
+{
+   int local_crf;
+   int i;
+   int num_dfp_vals;
+
+   VERBOSE_FUNCTION_CALLOUT
+
+   if (instruction_uses_quads(instruction_name)) {
+      num_dfp_vals = nb_dfp128_vals;
+   } else {
+      num_dfp_vals = nb_dfp64_vals;
+   }
+
+   for (i = 0; i < num_dfp_vals; i++) {
+      if (instruction_uses_quads(instruction_name)) {
+         dfp_value.u128.vall = dfp128_vals[i * 2];
+         dfp_value.u128.valu = dfp128_vals[(i * 2) + 1];
+
+      } else {
+         // could rework this to use u64.val, but...
+         dfp_value.u128.vall = dfp128_vals[i ];
+         dfp_value.u128.valu = dfp128_vals[i ];
+      }
+
+      /* Keeping test simpler, always using cr3 within test_dtstsfi* */
+      for (dfp_significance = 0; dfp_significance <= 63;) {
+         /* Todo: tweak output here, or input values so the generated content
+          * looks better.
+          */
+         printf("%s significance(0x%02x) ",
+                instruction_name, dfp_significance);
+
+         if (instruction_uses_quads(instruction_name)) {
+            dissect_dfp128_float(dfp_value.u128.vall, dfp_value.u128.valu);
+
+            if (verbose > 6)
+               printf("(RAW) value = %16lx,%016lx ",
+                      dfp_value.u128.vall, dfp_value.u128.valu /*f14, f15 */);
+
+         } else {
+            dissect_dfp64_float(dfp_value.u128.vall);
+
+            if (verbose > 6)
+               printf("(RAW) value = %16lx ", dfp_value.u128.vall /*f14 */);
+         }
+
+         (*test_function)();
+
+         GET_CR(local_cr);
+
+         local_crf = extract_cr_rn(local_cr, /* hardcoded cr3 */ 3);
+         dissect_cr_rn(local_cr, /* hardcoded cr3 */ 3);
+
+         printf(" (%x)", local_crf);
+         printf("\n");
+
+         /* Special case for incrementation of the significance checking
+          * value.
+          */
+         if (dfp_significance < 8)
+            dfp_significance += 4;  /* 0, 4, 8 */
+
+         else if (dfp_significance < 32)
+            dfp_significance += 8; /* 16, 24, 32 */
+
+         else if (dfp_significance < 48)
+            dfp_significance += 16; /* 48 */
+
+         else
+            dfp_significance += 15; /* 63 */
+      }
+   }
+}
+
+/* packed binary decimal misc */
+
+#define convert_tofrom_instruction(instruction_name)      \
+        ( (strncmp(instruction_name, "bcdcf", 5) == 0) || \
+          (strncmp(instruction_name, "bcdct", 5) == 0) )
+
+static void testfunction_bcd_misc (const char* instruction_name,
+                                   test_func_t test_function,
+                                   unsigned int ignore_test_flags)
+{
+   int i, j;
+   int local_crf;
+   long max_xa_entries = 0;
+   long max_xb_entries = 0;
+
+   VERBOSE_FUNCTION_CALLOUT
+
+   shift_or_truncate_instruction = shift_or_truncate(instruction_name);
+
+   max_xa_entries = MAX(max_xa_entries, nb_decimal_shift_entries);
+   max_xa_entries = MAX(max_xa_entries, nb_packed_decimal_entries);
+
+   max_xb_entries = MAX(max_xb_entries, nb_zoned_decimal_entries);
+   max_xb_entries = MAX(max_xb_entries, nb_national_decimal_entries);
+   max_xb_entries = MAX(max_xb_entries, nb_packed_decimal_entries);
+
+   for (i = 0; i < (max_xa_entries - 1); i += 2) {
+      for (j = 0; j < (max_xb_entries - 1); j += 2) {
+         testfunction_bcd_setup_inputs(instruction_name, i, j);
+
+         if (short_circuit) continue;
+
+         printf("%s ",  instruction_name);
+         printf("xa:%016lx %016lx ", vec_xa[0], vec_xa[1]);
+
+         if (!shift_or_truncate_instruction)
+            dissect_packed_decimal_sign(xa_sign);
+
+         printf(" xb:%016lx %016lx ", vec_xb[0], vec_xb[1]);
+
+         if (convert_from_zoned(instruction_name)) {
+            /* convert from zoned */
+            dissect_zoned_decimal_sign(xb_sign, p_value(instruction_name));
+
+         } else if (convert_from_national(instruction_name)) {
+            /* convert from national */
+            dissect_national_decimal_sign(xb_sign);
+
+         } else {
+            /* packed decimal entries */
+            if (!shift_or_truncate_instruction)
+               dissect_packed_decimal_sign(xb_sign);
+         }
+
+         printf(" => ");
+         SET_CR_ZERO
+
+         (*test_function)();
+
+         GET_CR(local_cr);
+
+         /* note: the bcd instructions are hard wired to use cr6. */
+         local_crf = extract_cr_rn(local_cr, 6);
+         dissect_cr_rn(local_cr, 6);
+         printf(" (%x)", local_crf);
+
+         if (cr_overflow_set(local_crf)) {
+            /* If overflow (S0)  is set the results are undefined.  Force the
+             * output to print as zeros so we have consistent results for
+             * comparison.
+             */
+            printf(" xt:%016lx %016lx", 0UL, 0UL);
+
+         } else {
+            testfunction_bcd_display_outputs(instruction_name);
+         }
+
+         printf("\n");
+      } // j = xb loop.
+
+   /* Since the bcdct* convert_tofrom instructions do not use the xa
+    * field, we will short-circuit the xa (i=*) loop here.
+    */
+    if (convert_tofrom_instruction(instruction_name))
+       i = nb_packed_decimal_entries;
+   } //i = xa loop.
+}
+
+
+static void testfunction_noop_misc (const char* instruction_name,
+                                    test_func_t test_function,
+                                    unsigned int ignore_test_flags)
+{
+   VERBOSE_FUNCTION_CALLOUT
+
+   printf("%s ",  instruction_name);
+   printf(" =>");
+
+   (*test_function)();
+
+   printf("\n");
+}
+
+static void testfunction_pc_immediate_misc (const char* instruction_name,
+                                    test_func_t test_function,
+                                    unsigned int ignore_test_flags)
+{
+   VERBOSE_FUNCTION_CALLOUT
+
+   for (x_index = 0; x_index < 16; x_index++) {
+      printf("%s ",  instruction_name);
+      printf(" %016x ", x_index);
+      printf(" => ");
+      (*test_function)();
+      printf(" %016lx\n", r14);
+   }
+}
+
 /* ######## begin grand testing loops. */
 typedef struct insn_sel_flags_t_struct {
    int one_arg, two_args, three_args, four_args, cmp_args;
@@ -2544,6 +3250,10 @@ static void do_tests ( insn_sel_flags_t seln_flags)
           (family == PPC_ALTIVEC  && !seln_flags.altivec) ||
           (family == PPC_ALTIVEC_DOUBLE  && !seln_flags.altivec_double) ||
           (family == PPC_ALTIVEC_QUAD  && !seln_flags.altivec_quad) ||
+          (family == PPC_DFP   && !seln_flags.dfp) ||
+          (family == PPC_BCD   && !seln_flags.bcd) ||
+          (family == PPC_NO_OP && !seln_flags.no_op) ||
+          (family == PPC_PC_IMMEDIATE && !seln_flags.pc_immediate) ||
           (family == PPC_MISC  && !seln_flags.misc))
          continue;
 
@@ -2573,6 +3283,22 @@ static void do_tests ( insn_sel_flags_t seln_flags)
                printf("ERROR: PPC_INTEGER, unhandled number of arguments. 0x%08x\n",
                       nb_args);
             }
+            break;
+
+         case PPC_LOGICAL:
+            switch(nb_args) {
+            case PPC_ONE_IMM:
+               group_function = &testfunction_set_boolean;
+               break;
+
+            default:
+               printf("ERROR: PPC_LOGICAL, unhandled number of arguments. 0x%08x\n",
+                      nb_args);
+            }
+            break;
+
+         case PPC_COMPARE:
+            group_function = &testfunction_char_compare;
             break;
 
          default:
@@ -2733,6 +3459,22 @@ static void do_tests ( insn_sel_flags_t seln_flags)
          }   /* switch(type) */
          break;
 
+      case PPC_DFP:
+         group_function = &testfunction_dfp_significance;
+         break;
+
+      case PPC_BCD:
+         group_function = &testfunction_bcd_misc;
+         break;
+
+      case PPC_NO_OP:
+         group_function = &testfunction_noop_misc;
+         break;
+
+      case PPC_PC_IMMEDIATE:
+         group_function = &testfunction_pc_immediate_misc;
+         break;
+
       default:
          printf("ERROR: unknown instruction family %08x\n", family);
          continue;
@@ -2766,6 +3508,10 @@ static void usage (void)
            "\t-a: test altivec instructions\n"
            "\t-d: test altivec double instructions\n"
            "\t-q: test altivec quad instructions\n"
+           "\t-D: test DFP instructions\n"
+           "\t-B: test BCD instructions\n"
+           "\t-N: test No Op instructions\n"
+           "\t-P: test PC Immediate Shifted instructions\n"
            "\t-m: test miscellaneous instructions\n"
            "\t-v: be verbose\n"
            "\t-h: display this help and exit\n"
@@ -2803,6 +3549,10 @@ int main (int argc, char **argv)
    // Family
    flags.integer         = 0;
    flags.misc            = 0;
+   flags.dfp             = 0;
+   flags.bcd             = 0;
+   flags.no_op           = 0;
+   flags.pc_immediate    = 0;
    flags.altivec         = 0;
    flags.altivec_double  = 0;
    flags.altivec_quad    = 0;
@@ -2828,8 +3578,24 @@ int main (int argc, char **argv)
          flags.altivec_quad  = 1;
          break;
 
+      case 'D':
+         flags.dfp      = 1;
+         break;
+
+      case 'B':
+         flags.bcd      = 1;
+         break;
+
       case 'm':
          flags.misc     = 1;
+         break;
+
+      case 'N':
+         flags.no_op    = 1;
+         break;
+
+      case 'P':
+         flags.pc_immediate = 1;
          break;
 
       case 'h':
@@ -2889,6 +3655,8 @@ int main (int argc, char **argv)
       printf("    altivec        = %d\n", flags.altivec);
       printf("    altivec double = %d\n", flags.altivec_double);
       printf("    altivec quad   = %d\n", flags.altivec_quad);
+      printf("    DFP            = %d\n", flags.dfp);
+      printf("    BCD            = %d\n", flags.bcd);
       printf("    misc           = %d\n", flags.misc);
       printf("  cr update: \n");
       printf("    cr             = %d\n", flags.cr);

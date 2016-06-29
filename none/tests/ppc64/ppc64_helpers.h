@@ -199,6 +199,15 @@ static void dissect_cr_rn(unsigned long local_cr, unsigned long rn) {
   __dissect_cr(masked_cr);
 }
 
+/* Display all of the CR fields... */
+static void dissect_cr(unsigned long local_cr) {
+  unsigned int crn;
+
+  for (crn = 0; crn < 8; crn++) {
+     dissect_cr_rn(local_cr, crn);
+  }
+}
+
 /* dissect the fpscr bits that are valid under valgrind.
  * Valgrind itself only tracks the C and FPCC fields from the
  * FPSCR.

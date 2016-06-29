@@ -277,7 +277,7 @@ static void* fnptr_to_fnentry( const VexAbiInfo* vbi, void* f )
 #define OFFB_XER_BC      offsetofPPCGuestState(guest_XER_BC)
 #define OFFB_FPROUND     offsetofPPCGuestState(guest_FPROUND)
 #define OFFB_DFPROUND    offsetofPPCGuestState(guest_DFPROUND)
-#define OFFB_FPCC        offsetofPPCGuestState(guest_FPCC)
+#define OFFB_C_FPCC      offsetofPPCGuestState(guest_C_FPCC)
 #define OFFB_VRSAVE      offsetofPPCGuestState(guest_VRSAVE)
 #define OFFB_VSCR        offsetofPPCGuestState(guest_VSCR)
 #define OFFB_EMNOTE      offsetofPPCGuestState(guest_EMNOTE)
@@ -457,8 +457,10 @@ typedef enum {
     PPC_GST_MAX
 } PPC_GST;
 
-#define MASK_FPSCR_RN   0x3ULL  // Binary floating point rounding mode
-#define MASK_FPSCR_DRN  0x700000000ULL // Decimal floating point rounding mode
+#define MASK_FPSCR_RN     0x3ULL         // Binary floating point rounding mode
+#define MASK_FPSCR_DRN    0x700000000ULL // Decimal floating point rounding mode
+#define MASK_FPSCR_C_FPCC 0x1F000ULL     // Floating-Point Condition code FPCC
+
 #define MASK_VSCR_VALID 0x00010001
 
 
@@ -633,6 +635,8 @@ static IRExpr* mkexpr ( IRTemp tmp )
 {
    return IRExpr_RdTmp(tmp);
 }
+
+#define mkU1(_n)  IRExpr_Const(IRConst_U1(_n))
 
 static IRExpr* mkU8 ( UChar i )
 {
@@ -3205,6 +3209,31 @@ static void putGST_masked ( PPC_GST reg, IRExpr* src, ULong mask )
             )
          );
       }
+
+      if (mask & MASK_FPSCR_C_FPCC) {
+         stmt(
+            IRStmt_Put(
+               OFFB_C_FPCC,
+               unop(
+                  Iop_32to8,
+                  binop(
+                     Iop_Or32,
+                     binop(
+                        Iop_And32,
+                        unop(Iop_64to32, src),
+                        mkU32(MASK_FPSCR_C_FPCC & mask)
+                     ),
+                     binop(
+                        Iop_And32,
+                        unop(Iop_8Uto32, IRExpr_Get(OFFB_C_FPCC,Ity_I8)),
+                        mkU32(MASK_FPSCR_C_FPCC & ~mask)
+                     )
+                  )
+               )
+            )
+         );
+      }
+
       /* Similarly, update FPSCR.DRN if any bits of |mask|
          corresponding to FPSCR.DRN are set. */
       if (mask & MASK_FPSCR_DRN) {
@@ -3303,29 +3332,53 @@ static void putFPCC ( IRExpr* e )
    /* The assumption is that the value of the FPCC are passed in the lower
     * four bits of a 32 bit value.
     *
-    * Note, the FPCC bits are a field of the FPSCR
+    * Note, the C and FPCC bits which are a field of the FPSCR
     * register are stored in their own "register" in
-    * memory.  We don't need to shift it to the bits to
-    * their location in the FPSCR register.  Note, not all
-    * of the FPSCR register bits are supported.  We are
-    * writing all of the bits in the FPCC field.
+    * memory.  The FPCC bits are in the lower 4 bits.  We don't need to
+    * shift it to the bits to their location in the FPSCR register.  Note,
+    * not all of the FPSCR register bits are supported.  We are writing all
+    * of the bits in the FPCC field but not the C field.
     */
+   IRExpr* tmp;
 
-   vassert( typeOfIRExpr(irsb->tyenv, e) == Ity_I32 );
-   stmt( IRStmt_Put(OFFB_FPCC,
-                    unop( Iop_32to8,
-                          binop( Iop_And32, mkU32( 0xF ), e ) ) ) );
+   vassert( typeOfIRExpr( irsb->tyenv, e ) == Ity_I32 );
+   /* Get the C bit field */
+   tmp = binop( Iop_And32,
+                mkU32( 0x10 ),
+                unop( Iop_8Uto32, IRExpr_Get( OFFB_C_FPCC, Ity_I8 ) ) );
+
+   stmt( IRStmt_Put( OFFB_C_FPCC,
+                     unop( Iop_32to8,
+                           binop( Iop_Or32, tmp,
+                                  binop( Iop_And32, mkU32( 0xF ), e ) ) ) ) );
+
+}
+
+static IRExpr* /* ::Ity_I32 */  getC ( void )
+{
+   /* Note, the Floating-Point Result Class Descriptor (C) bit is a field of
+    * the FPSCR registered are stored in its own "register" in guest state
+    * with the FPCC bit field.   C | FPCC
+    */
+   IRTemp val = newTemp(Ity_I32);
+
+   assign( val, binop( Iop_Shr32,
+                       unop( Iop_8Uto32, IRExpr_Get( OFFB_C_FPCC, Ity_I8 ) ),
+                       mkU8( 4 ) ) );
+   return mkexpr(val);
 }
 
 static IRExpr* /* ::Ity_I32 */  getFPCC ( void )
 {
    /* Note, the FPCC bits are a field of the FPSCR
     * register are stored in their own "register" in
-    * guest state.
+    * guest state with the C bit field.   C | FPCC
     */
    IRTemp val = newTemp( Ity_I32 );
 
-   assign( val, unop( Iop_8Uto32, IRExpr_Get( OFFB_FPCC, Ity_I8 ) ) );
+   assign( val, binop( Iop_And32, unop( Iop_8Uto32,
+                                        IRExpr_Get( OFFB_C_FPCC, Ity_I8 ) ),
+                       mkU32( 0xF ) ));
    return mkexpr(val);
 }
 
@@ -3832,6 +3885,432 @@ static IRExpr * Quad_precision_gt ( IRTemp src_A, IRTemp  src_B )
                          mkAND1( sign_eq,
                                  mkOR1( mkAND1( both_pos, pos_cmp ),
                                         mkAND1( both_neg, neg_cmp ) ) ) ) );
+}
+
+/*-----------------------------------------------------------
+ * Helpers for VX instructions that work on National decimal values,
+ * Zoned decimal values and BCD values.
+ *
+ *------------------------------------------------------------*/
+static IRExpr * is_National_decimal (IRTemp src)
+{
+   /* The src is a 128-bit value containing a sign code in half word 7
+    * and seven digits in halfwords 0 to 6 (IBM numbering).  A valid
+    * national decimal value has the following:
+    *   - the sign code must be 0x002B (positive) or 0x002D (negative)
+    *   - the digits must be in the range 0x0030 to 0x0039
+    */
+   Int i;
+   IRExpr * valid_pos_sign;
+   IRExpr * valid_neg_sign;
+   IRTemp valid_num[8];
+   IRTemp digit[7];
+
+   valid_pos_sign = binop( Iop_CmpEQ64,
+                           binop( Iop_And64,
+                                  mkU64( 0xFFFF ),
+                                  unop( Iop_V128to64, mkexpr( src ) ) ),
+                           mkU64( 0x002B ) );
+
+   valid_neg_sign = binop( Iop_CmpEQ64,
+                           binop( Iop_And64,
+                                  mkU64( 0xFFFF ),
+                                  unop( Iop_V128to64, mkexpr( src ) ) ),
+                           mkU64( 0x002D ) );
+
+   valid_num[0] = newTemp( Ity_I1 );
+   digit[0] = newTemp( Ity_I64 );
+   assign( valid_num[0], mkU1( 1 ) );   // Assume true to start
+
+   for(i = 0; i < 7; i++) {
+      valid_num[i+1] = newTemp( Ity_I1 );
+      digit[i] = newTemp( Ity_I64 );
+      assign( digit[i], binop( Iop_And64,
+                               unop( Iop_V128to64,
+                                     binop( Iop_ShrV128,
+                                            mkexpr( src ),
+                                            mkU8( (7-i)*16 ) ) ),
+                               mkU64( 0xFFFF ) ) );
+
+      assign( valid_num[i+1],
+              mkAND1( mkexpr( valid_num[i] ),
+                      mkAND1( binop( Iop_CmpLE64U,
+                                     mkexpr( digit[i] ),
+                                     mkU64( 0x39 ) ),
+                              binop( Iop_CmpLE64U,
+                                     mkU64( 0x30 ),
+                                     mkexpr( digit[i] ) ) ) ) );
+   }
+
+   return mkAND1( mkOR1( valid_pos_sign, valid_neg_sign),
+                  mkexpr( valid_num[7] ) );
+}
+
+static IRExpr * is_Zoned_decimal (IRTemp src, UChar ps)
+{
+   /* The src is a 128-bit value containing a sign code the least significant
+    * two bytes. The upper pairs of bytes contain digits.  A valid Zoned
+    * decimal value has the following:
+    *   - the sign code must be between 0x0X to 0xFX inclusive (X - don't care)
+    *   - bits [0:3] of each digit must be equal to 0x3
+    *   - bits [4:7] of each digit must be between 0x0 and 0x9
+    *
+    *  If ps = 0
+    *     Positive sign codes are: 0x0, 0x1, 0x2, 0x3, 0x8, 0x9, 0xA, 0xB
+    *       (note 0bX0XX XXXX  is positive)
+    *
+    *     Negative sign codes are 0x4, 0x5, 0x6, 0x7, 0xC, 0xD, 0xE, 0xF
+    *       (note 0bX1XX XXXX  is negative)
+    *
+    *  If ps = 1, then the sign code must be in the range 0xA to 0xF
+    *     Positive sign codes are: 0xA, 0xC, 0xE, 0xF
+    *
+    *     Negative sign codes are 0xB, 0xD
+    */
+   Int i, mask_hi, mask_lo;
+   IRExpr *valid_range;
+   IRTemp valid_num[16];
+   IRTemp digit[15];
+
+   /* check the range of the sign value based on the value of ps */
+   valid_range = mkOR1(
+                       mkAND1( binop( Iop_CmpEQ64,
+                                      mkU64( 1 ),
+                                      mkU64( ps ) ),
+                               mkAND1( binop( Iop_CmpLE64U,
+                                              binop( Iop_And64,
+                                                     mkU64( 0xF0 ),
+                                                     unop( Iop_V128to64,
+                                                           mkexpr( src ) ) ),
+
+                                              mkU64( 0xF0 ) ),
+                                       binop( Iop_CmpLE64U,
+                                              mkU64( 0xA0 ),
+                                              binop( Iop_And64,
+                                                     mkU64( 0xF0 ),
+                                                     unop( Iop_V128to64,
+                                                           mkexpr( src ) ))))),
+                       binop( Iop_CmpEQ64,
+                              mkU64( 0 ),
+                              mkU64( ps ) ) );
+
+   valid_num[0] = newTemp( Ity_I1 );
+   assign( valid_num[0], mkU1( 1) );   // Assume true to start
+
+   if (ps == 0) {
+      mask_hi = 0x39;
+      mask_lo = 0x30;
+   } else {
+      mask_hi = 0xF9;
+      mask_lo = 0xF0;
+   }
+
+   for(i = 0; i < 15; i++) {
+      valid_num[i+1] = newTemp( Ity_I1 );
+      digit[i] = newTemp( Ity_I64 );
+      assign( digit[i], binop( Iop_And64,
+                               unop( Iop_V128to64,
+                                     binop( Iop_ShrV128,
+                                            mkexpr( src ),
+                                            mkU8( (15-i)*8 ) ) ),
+                               mkU64( 0xFF ) ) );
+
+      assign( valid_num[i+1],
+              mkAND1( mkexpr( valid_num[i] ),
+                      mkAND1( binop( Iop_CmpLE64U,
+                                     mkexpr( digit[i] ),
+                                     mkU64( mask_hi ) ),
+                              binop( Iop_CmpLE64U,
+                                     mkU64( mask_lo ),
+                                     mkexpr( digit[i] ) ) ) ) );
+   }
+
+   return mkAND1( valid_range, mkexpr( valid_num[15] ) );
+}
+
+static IRExpr * CmpGT128U ( IRExpr *src1, IRExpr *src2 )
+{
+   /* Unsigend compare of two 128-bit values */
+   IRExpr *pos_upper_gt, *pos_upper_eq, *pos_lower_gt;
+
+   pos_upper_gt = binop( Iop_CmpLT64U,
+                         unop( Iop_V128HIto64, src2 ),
+                         unop( Iop_V128HIto64, src1 ) );
+   pos_upper_eq = binop( Iop_CmpEQ64,
+                         unop( Iop_V128HIto64, src1 ),
+                         unop( Iop_V128HIto64, src2 ) );
+   pos_lower_gt = binop( Iop_CmpLT64U,
+                         unop( Iop_V128to64, src2),
+                         unop( Iop_V128to64, src1) );
+   return mkOR1( pos_upper_gt,
+                 mkAND1( pos_upper_eq,
+                         pos_lower_gt ) );
+}
+
+
+static IRExpr * is_BCDstring128 (UInt Signed, IRExpr *src)
+{
+
+   IRTemp valid = newTemp( Ity_I64 );
+
+   /* The src is a 128-bit value containing a MAX_DIGITS BCD digits and
+    * a sign. The upper bytes are BCD values between 0x0 and 0x9.  The sign
+    * byte is the least significant byte. This function returns 64-bit 1
+    * value if sign and digits are valid, 0 otherwise.
+    *
+    * This function was originally written using IR code.  It has been
+    * replaced with a clean helper due to the large amount of IR code
+    * needed by this function.
+    */
+   assign( valid,
+           mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                          "is_BCDstring128_helper",
+                          &is_BCDstring128_helper,
+                          mkIRExprVec_3( mkU64( Signed ),
+                                         unop( Iop_V128HIto64, src ),
+                                         unop( Iop_V128to64, src ) ) ) );
+   return mkexpr( valid );
+}
+
+static IRExpr * BCDstring_zero (IRExpr *src)
+{
+   /* The src is a 128-bit value containing a BCD string and a sign in the
+    * least significant byte.  The function returns a 1 if the BCD string
+    * values are all zero, 0 otherwise.
+    */
+   IRTemp tsrc = newTemp( Ity_V128 );
+   assign( tsrc, src);
+
+   return mkAND1( binop( Iop_CmpEQ64,
+                          mkU64( 0 ),
+                          unop( Iop_V128HIto64,
+                                mkexpr( tsrc ) ) ),
+                   binop( Iop_CmpEQ64,
+                          mkU64( 0 ),
+                          unop( Iop_V128to64,
+                                mkexpr( tsrc ) ) ) );
+}
+
+static IRExpr * check_BCD_round (IRExpr *src, IRTemp shift)
+{
+   /* The src is a 128-bit value containing 31 BCD digits with the sign in
+    * the least significant byte. The bytes are BCD values between 0x0 and 0x9.
+    * This routine checks the BCD digit in position shift (counting from
+    * the least significant digit). If the digit is greater then five,
+    * a 1 is returned indicating the string needs to be rounded up,
+    * otherwise, 0 is returned.  The value of shift (I64) is the index of
+    * the BCD digit times four bits.
+    */
+   return  binop( Iop_CmpLE64U,
+                  mkU64( 6 ),
+                  binop( Iop_And64,
+                         unop( Iop_V128to64,
+                               binop( Iop_ShrV128,
+                                      src,
+                                      unop( Iop_64to8, mkexpr( shift ) ) ) ),
+                         mkU64( 0xF ) ) );
+}
+
+static IRTemp increment_BCDstring (IRExpr *src, IRExpr *carry_in)
+{
+   /* The src is a 128-bit value containing 31 BCD digits with the sign in
+    * the least significant byte. The bytes are BCD values between 0x0 and 0x9.
+    * This function returns the BCD string incremented by 1.
+    *
+    * Call a clean helper to do the computation as it requires a lot of
+    * IR code to do this.
+    *
+    * The helper function takes a 32-bit BCD string, in a 64-bit value, and
+    * increments the string by the 32-bi carry in value.
+    *
+    * The incremented value is returned in the lower 32-bits of the result.
+    * The carry out is returned in bits [35:32] of the result.  The
+    * helper function will be called for each of the four 32-bit strings
+    * that make up the src string passing the returned carry out to the
+    * next call.
+    */
+   IRTemp bcd_result  = newTemp( Ity_V128 );
+   IRTemp bcd_result0 = newTemp( Ity_I64 );
+   IRTemp bcd_result1 = newTemp( Ity_I64 );
+   IRTemp bcd_result2 = newTemp( Ity_I64 );
+   IRTemp bcd_result3 = newTemp( Ity_I64 );
+   IRExpr *bcd_string0, *bcd_string1, *bcd_string2, *bcd_string3;
+
+   bcd_string0 = binop( Iop_And64,
+                        mkU64( 0xFFFFFFFF ), unop( Iop_V128to64, src ) );
+   bcd_string1 = binop( Iop_Shr64, unop( Iop_V128to64, src ), mkU8( 32 ) );
+   bcd_string2 = binop( Iop_And64,
+                        mkU64( 0xFFFFFFFF ), unop( Iop_V128HIto64, src ) );
+   bcd_string3 = binop( Iop_Shr64, unop( Iop_V128HIto64, src ), mkU8( 32 ) );
+
+   assign( bcd_result0,
+           mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                          "increment_BCDstring32_helper",
+                          &increment_BCDstring32_helper,
+                          mkIRExprVec_3( mkU64( True /*Signed*/ ),
+                                         bcd_string0,
+                                         binop( Iop_32HLto64, mkU32( 0 ),
+                                                carry_in ) ) ) );
+
+   assign( bcd_result1,
+           mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                          "increment_BCDstring32_helper",
+                          &increment_BCDstring32_helper,
+                          mkIRExprVec_3( mkU64( False /*Unsigned*/ ),
+                                         bcd_string1,
+                                         binop( Iop_Shr64,
+                                                mkexpr( bcd_result0 ),
+                                                mkU8( 32 ) ) ) ) );
+   assign( bcd_result2,
+           mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                          "increment_BCDstring32_helper",
+                          &increment_BCDstring32_helper,
+                          mkIRExprVec_3( mkU64( False /*Unsigned*/ ),
+                                         bcd_string2,
+                                         binop( Iop_Shr64,
+                                                mkexpr( bcd_result1 ),
+                                                mkU8( 32 ) ) ) ) );
+   assign( bcd_result3,
+           mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                          "increment_BCDstring32_helper",
+                          &increment_BCDstring32_helper,
+                          mkIRExprVec_3( mkU64( False /*Unsigned*/ ),
+                                         bcd_string3,
+                                         binop( Iop_Shr64,
+                                                mkexpr( bcd_result2 ),
+                                                mkU8( 32 ) ) ) ) );
+
+   /* Put the 128-bit result together from the intermediate results. Remember
+    * to mask out the carry out from the upper 32 bits of the results.
+    */
+   assign( bcd_result,
+           binop( Iop_64HLtoV128,
+                  binop( Iop_Or64,
+                         binop( Iop_And64,
+                                mkU64( 0xFFFFFFFF ), mkexpr (bcd_result2 ) ),
+                         binop( Iop_Shl64,
+                                mkexpr (bcd_result3 ), mkU8( 32 ) ) ),
+                  binop( Iop_Or64,
+                         binop( Iop_And64,
+                                mkU64( 0xFFFFFFFF ), mkexpr (bcd_result0 ) ),
+                         binop( Iop_Shl64,
+                                mkexpr (bcd_result1 ), mkU8( 32 ) ) ) ) );
+   return bcd_result;
+}
+
+static IRExpr * convert_to_zoned ( IRExpr *src, IRExpr *upper_byte )
+{
+   /* The function takes a V128 packed decimal value and returns
+    * the value in zoned format.  Note, the sign of the value is ignored.
+    */
+   IRTemp result_low = newTemp( Ity_I64 );
+   IRTemp result_hi  = newTemp( Ity_I64 );
+   IRTemp result     = newTemp( Ity_V128 );
+
+   /* Since we can only return 64-bits from a clean helper, we will
+    * have to get the lower and upper 64-bits separately.
+    */
+
+   assign( result_low,
+           mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                          "convert_to_zoned_helper",
+                          &convert_to_zoned_helper,
+                          mkIRExprVec_4( unop( Iop_V128HIto64, src ),
+                                         unop( Iop_V128to64, src ),
+                                         upper_byte,
+                                         mkU64( 0 ) ) ) );
+
+   assign( result_hi,
+           mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                          "convert_to_zoned_helper",
+                          &convert_to_zoned_helper,
+                          mkIRExprVec_4( unop( Iop_V128HIto64, src ),
+                                         unop( Iop_V128to64, src ),
+                                         upper_byte,
+                                         mkU64( 1 ) ) ) );
+
+
+   assign( result,
+           binop( Iop_64HLtoV128, mkexpr( result_hi ), mkexpr( result_low ) ) );
+
+   return mkexpr( result );
+}
+
+static IRExpr * convert_to_national ( IRExpr *src ) {
+   /* The function takes 128-bit value which has a 64-bit packed decimal
+    * value in the lower 64-bits of the source.  The packed decimal is
+    * converted to the national format via a clean helper.  The clean
+    * helper is used to to the large amount of IR code needed to do the
+    * conversion.  The helper returns the upper 64-bits of the 128-bit
+    * result if return_upper != 0.  Otherwise, the lower 64-bits of the
+    * result is returned.
+    */
+   IRTemp result_low = newTemp( Ity_I64 );
+   IRTemp result_hi  = newTemp( Ity_I64 );
+   IRTemp result     = newTemp( Ity_V128 );
+
+   /* Since we can only return 64-bits from a clean helper, we will
+    * have to get the lower and upper 64-bits separately.
+    */
+
+   assign( result_low,
+           mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                          "convert_to_national_helper",
+                          &convert_to_national_helper,
+                          mkIRExprVec_2( unop( Iop_V128to64, src ),
+                                         mkU64( 0 ) ) ) );
+
+   assign( result_hi,
+           mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                          "convert_to_national_helper",
+                          &convert_to_national_helper,
+                          mkIRExprVec_2( unop( Iop_V128to64, src ),
+                                         mkU64( 1 ) ) ) );
+
+   assign( result,
+           binop( Iop_64HLtoV128, mkexpr( result_hi ), mkexpr( result_low ) ) );
+
+   return mkexpr( result );
+}
+
+static IRExpr * convert_from_zoned ( IRExpr *src ) {
+   /* The function takes 128-bit zoned value and returns a signless 64-bit
+    * packed decimal value in the lower 64-bits of the 128-bit result.
+    */
+   IRTemp result = newTemp( Ity_V128 );
+
+   assign( result,
+           binop( Iop_ShlV128,
+                  binop( Iop_64HLtoV128,
+                         mkU64( 0 ),
+                         mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                                        "convert_from_zoned_helper",
+                                        &convert_from_zoned_helper,
+                                        mkIRExprVec_2( unop( Iop_V128HIto64,
+                                                             src ),
+                                                       unop( Iop_V128to64,
+                                                             src ) ) ) ),
+                  mkU8( 4 ) ) );
+
+   return mkexpr( result );
+}
+
+static IRExpr * convert_from_national ( IRExpr *src ) {
+   /* The function takes 128-bit national value and returns a 64-bit
+    * packed decimal value.
+    */
+   IRTemp result = newTemp( Ity_I64);
+
+   assign( result,
+           mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                          "convert_from_national_helper",
+                          &convert_from_national_helper,
+                          mkIRExprVec_2( unop( Iop_V128HIto64,
+                                               src ),
+                                         unop( Iop_V128to64,
+                                               src ) ) ) );
+
+   return mkexpr( result );
 }
 
 /*------------------------------------------------------------*/
@@ -4926,7 +5405,7 @@ static Bool dis_modulo_int ( UInt theInstr )
       break;
 
    default:
-      vex_printf("dis_int_cmp(ppc)(opc1)\n");
+      vex_printf("dis_modulo_int(ppc)(opc1)\n");
       return False;
    }
 
@@ -4935,6 +5414,164 @@ static Bool dis_modulo_int ( UInt theInstr )
    return True;
 }
 
+
+/*
+  Byte Compare Instructions
+*/
+static Bool dis_byte_cmp ( UInt theInstr )
+{
+   /* X-Form */
+   UChar opc1 = ifieldOPC(theInstr);
+   UInt  opc2 = ifieldOPClo10(theInstr);
+   UChar rA_addr = ifieldRegA(theInstr);
+   UChar rB_addr = ifieldRegB(theInstr);
+   IRTemp rA     = newTemp(Ity_I64);
+   IRTemp rB     = newTemp(Ity_I64);
+   UChar L    = toUChar( IFIELD( theInstr, 21, 1 ) );
+   UChar BF   = toUChar( IFIELD( theInstr, 23, 3 ) );
+
+   assign( rA, getIReg(rA_addr) );
+   assign( rB, getIReg(rB_addr) );
+
+   if (opc1 != 0x1F) {
+      vex_printf("dis_byte_cmp(ppc)(opc1)\n");
+      return False;
+   }
+
+   switch (opc2) {
+   case 0xc0: // cmprb (Compare Ranged Byte)
+      {
+         IRExpr *value;
+         IRExpr *hi_1, *lo_1, *hi_2, *lo_2;
+         IRExpr *inrange_1, *inrange_2;
+
+         DIP("cmprb %u,%u,r%u,r%u\n", BF, L, rA_addr, rB_addr);
+
+         hi_1 = binop( Iop_Shr64,
+                       binop( Iop_And64,
+                              mkexpr( rB ),
+                              mkU64( 0xFF000000 ) ),
+                       mkU8( 24 ) );
+         lo_1 = binop( Iop_Shr64,
+                       binop( Iop_And64,
+                              mkexpr( rB ),
+                              mkU64( 0xFF0000 ) ) ,
+                       mkU8( 16 ) );
+         hi_2 = binop( Iop_Shr64,
+                       binop( Iop_And64,
+                              mkexpr( rB ),
+                              mkU64( 0xFF00 ) ),
+                       mkU8( 8 ) );
+         lo_2 = binop( Iop_And64,
+                       mkexpr( rB ),
+                       mkU64( 0xFF ) );
+         value = binop( Iop_And64,
+                        mkexpr( rA ),
+                        mkU64( 0xFF ) );
+
+         inrange_1 = mkAND1( binop( Iop_CmpLE64U, value, hi_1 ),
+                             mkNOT1( binop( Iop_CmpLT64U, value, lo_1 ) ) );
+         inrange_2 = mkAND1( binop( Iop_CmpLE64U, value, hi_2 ),
+                             mkNOT1( binop( Iop_CmpLT64U, value, lo_2 ) ) );
+
+         putGST_field( PPC_GST_CR,
+                       binop( Iop_Shl32,
+                              binop( Iop_Or32,
+                                     unop( Iop_1Uto32, inrange_2 ),
+                                     binop( Iop_And32,
+                                            mkU32 ( L ),
+                                            unop( Iop_1Uto32, inrange_1 ) ) ),
+                              mkU8( 2 ) ),
+                       BF );
+      }
+      break;
+
+   case 0xE0: // cmpeqb (Compare Equal Byte)
+      {
+         Int i;
+         IRTemp tmp[9];
+         IRExpr *value;
+
+         DIP("cmpeqb %u,r%u,r%u\n", BF, rA_addr, rB_addr);
+
+         value = binop( Iop_And64,
+                        mkexpr( rA ),
+                        mkU64( 0xFF ) );
+
+         tmp[0] = newTemp(Ity_I32);
+         assign( tmp[0], mkU32( 0 ) );
+
+         for(i = 0; i < 8; i++) {
+            tmp[i+1] = newTemp(Ity_I32);
+            assign( tmp[i+1], binop( Iop_Or32,
+                                     unop( Iop_1Uto32,
+                                           binop( Iop_CmpEQ64,
+                                                  value,
+                                                  binop( Iop_And64,
+                                                         binop( Iop_Shr64,
+                                                                mkexpr( rB ),
+                                                                mkU8( i*8 ) ),
+                                                         mkU64( 0xFF ) ) ) ),
+                                     mkexpr( tmp[i] ) ) );
+         }
+
+         putGST_field( PPC_GST_CR,
+                       binop( Iop_Shl32,
+                              unop( Iop_1Uto32,
+                                    mkNOT1( binop( Iop_CmpEQ32,
+                                                   mkexpr( tmp[8] ),
+                                                   mkU32( 0 ) ) ) ),
+                              mkU8( 2 ) ),
+                       BF );
+      }
+      break;
+
+   default:
+      vex_printf("dis_byte_cmp(ppc)(opc2)\n");
+      return False;
+   }
+   return True;
+}
+
+/*
+ * Integer Miscellaneous instructions
+ */
+static Bool dis_int_misc ( UInt theInstr )
+{
+   Int wc = IFIELD(theInstr, 21, 2);
+   UChar opc1 = ifieldOPC(theInstr);
+   UInt  opc2 = ifieldOPClo10(theInstr);
+
+   if ( opc1 != 0x1F ) {
+      vex_printf("dis_modulo_int(ppc)(opc1)\n");
+      return False;
+   }
+
+   switch (opc2) {
+   case 0x01E: // wait, (X-from)
+      DIP("wait %u\n", wc);
+
+      /* The wait instruction causes instruction fetching and execution
+       * to be suspended.  Instruction fetching and execution are resumed
+       * when the events specified by the WC field occur.
+       *
+       *    0b00   Resume instruction fetching and execution when an
+       *           exception or an event-based branch exception occurs,
+       *           or a resume signal from the platform is recieved.
+       *
+       *    0b01   Reserved.
+       *
+       *  For our purposes, we will just assume the contition is always
+       * immediately satisfied.
+       */
+      break;
+   default:
+      vex_printf("dis_int_misc(ppc)(opc2)\n");
+      return False;
+}
+
+   return True;
+}
 
 /*
   Integer Compare Instructions
@@ -4961,7 +5598,7 @@ static Bool dis_int_cmp ( UInt theInstr )
       return False;
    }
    
-   if (b22 != 0) {
+   if (( b22 != 0 ) && ( opc2 != 0x080 ) ) {   // setb case exception
       vex_printf("dis_int_cmp(ppc)(b22)\n");
       return False;
    }
@@ -5041,6 +5678,50 @@ static Bool dis_int_cmp ( UInt theInstr )
          putCR0( crfD, getXER_SO() );
          break;
 
+      case 0x080: // setb (Set Boolean)
+         {
+            UChar rT_addr = ifieldRegDS(theInstr);
+            Int bfa = IFIELD(theInstr, 18, 3);
+            IRTemp cr = newTemp(Ity_I32);
+            IRTemp cr0 = newTemp(Ity_I32);
+            IRTemp cr1 = newTemp(Ity_I32);
+            IRTemp result = newTemp(Ity_I64);
+
+            DIP("setb r%u,%d\n", rT_addr, bfa);
+
+            /* Fetch the entire condition code value */
+            assign( cr, getGST( PPC_GST_CR ) );
+
+            /* Get bit zero (IBM numbering) of the CR field specified
+             * by bfa.
+             */
+            assign( cr0, binop( Iop_And32,
+                                binop( Iop_Shr32,
+                                       mkexpr( cr ),
+                                       mkU8( (7-bfa)*4 ) ),
+                                mkU32( 0x8 ) ) );
+            assign( cr1, binop( Iop_And32,
+                                binop( Iop_Shr32,
+                                       mkexpr( cr ),
+                                       mkU8( (7-bfa)*4 ) ),
+                                mkU32( 0x4 ) ) );
+            assign( result, binop( Iop_Or64,
+                                   unop( Iop_1Sto64,
+                                       binop( Iop_CmpEQ32,
+                                              mkexpr( cr0 ),
+                                              mkU32( 0x8 ) ) ),
+                                   binop( Iop_32HLto64,
+                                          mkU32( 0 ),
+                                          unop( Iop_1Uto32,
+                                                binop( Iop_CmpEQ32,
+                                                       mkexpr( cr1 ),
+                                                       mkU32( 0x4 ) ) ) ) ) );
+            if ( ty == Ity_I64 )
+               putIReg( rT_addr, mkexpr( result ) );
+            else
+               putIReg( rT_addr, unop( Iop_64to32, mkexpr(result ) ) );
+         }
+         break;
       default:
          vex_printf("dis_int_cmp(ppc)(opc2)\n");
          return False;
@@ -6888,11 +7569,62 @@ static Bool dis_branch ( UInt theInstr,
    return True;
 }
 
+/*
+ *  PC relative instruction
+ */
+static Bool dis_pc_relative ( UInt theInstr )
+{
+   /* DX-Form */
+   UChar opc1 = ifieldOPC(theInstr);
+   unsigned long long D;
+   UInt d0 = IFIELD(theInstr,  6, 10);
+   UInt d1 = IFIELD(theInstr, 16,  5);
+   UInt d2 = IFIELD(theInstr,  0,  1);
+   UChar rT_addr = ifieldRegDS(theInstr);
+   UInt  opc2    = ifieldOPClo5(theInstr);
+   IRType ty     = mode64 ? Ity_I64 : Ity_I32;
 
+   if ( opc1 != 0x13) {
+      vex_printf("dis_pc_relative(ppc)(opc1)\n");
+      return False;
+   }
+
+   switch (opc2) {
+   case 0x002:   // addpcis  (Add PC immediate Shifted DX-form)
+      {
+         IRExpr* nia     = mkSzImm(ty, nextInsnAddr());
+         IRExpr* result;
+
+         D = (d0 << 6) | (d1 << 1) | d2;
+         DIP("addpcis %u,%llu\n", rT_addr, D);
+
+         if ( (D & 0x8000) == 0x8000 )
+            D = 0xFFFFFFFFFFFF0000UL | D;  // sign extend
+
+         if ( ty == Ity_I32 ) {
+            result = binop( Iop_Add32, nia, mkU32( D << 16 ) );
+
+         } else if ( ty == Ity_I64 ) {
+            result = binop( Iop_Add64, nia, mkU64( D << 16 ) );
+
+         } else {
+            vex_printf("dis_pc_relative(unsupported type)\n");
+         }
+         putIReg( rT_addr, result);
+      }
+      break;
+
+   default:
+      vex_printf("dis_pc_relative(ppc)(opc2)\n");
+      return False;
+   }
+
+   return True;
+}
 
 /*
   Condition Register Logical Instructions
-*/
+ */
 static Bool dis_cond_logic ( UInt theInstr )
 {
    /* XL-Form */
@@ -10555,9 +11287,13 @@ static Bool dis_fp_scr ( UInt theInstr, Bool GX_level )
       IRExpr* fpscr_lower
          = binop( Iop_Or32,
                   getGST_masked( PPC_GST_FPSCR, MASK_FPSCR_RN),
-                  binop( Iop_Shl32,
-                         getFPCC(),
-                         mkU8( 63-51 ) ) );
+                  binop( Iop_Or32,
+                         binop( Iop_Shl32,
+                                getC(),
+                                mkU8(63-47) ) ,
+                         binop( Iop_Shl32,
+                                getFPCC(),
+                                mkU8(63-51) ) ) );
       IRExpr* fpscr_upper = getGST_masked_upper( PPC_GST_FPSCR,
                                                  MASK_FPSCR_DRN );
 
@@ -10621,6 +11357,12 @@ static Bool dis_fp_scr ( UInt theInstr, Bool GX_level )
                   mask |= DFP_MASK_SEED >> ( 4 * ( i + 8 * ( 1 - Wbit ) ) );
                else
                   mask |= BFP_MASK_SEED >> ( 4 * ( i + 8 * ( 1 - Wbit ) ) );
+            }
+            if ((FM & (1<<(7-i))) == 0x2) { //set the FPCC bits
+               mask |= 0xF000;
+            }
+            if ((FM & (1<<(7-i))) == 0x4) { //set the Floating-Point Class Descriptor (C) bit
+               mask |= 0x10000;
             }
          }
       }
@@ -11200,7 +11942,7 @@ static IRExpr * Count_leading_zeros_128( IRExpr * lmd, IRExpr * top_12_l,
    IRTemp low_u_flag = newTemp( Ity_I8 );
    IRTemp low_l_flag = newTemp( Ity_I8 );
 
-   /* Check the LMD, digit 16, to see if it is zero. */
+   /* Check the LMD, digit 34, to see if it is zero. */
    assign( num_lmd, unop( Iop_1Uto8, binop( Iop_CmpEQ32, lmd, mkU32( 0 ) ) ) );
 
    assign( lmd_flag, unop( Iop_Not8, mkexpr( num_lmd ) ) );
@@ -11212,7 +11954,7 @@ static IRExpr * Count_leading_zeros_128( IRExpr * lmd, IRExpr * top_12_l,
                 &top_flag,
                 top_12_l );
 
-   Count_zeros( 1,
+   Count_zeros( 2,
                 mkexpr( num_top ),
                 mkexpr( top_flag ),
                 &num_mid_u,
@@ -11221,14 +11963,14 @@ static IRExpr * Count_leading_zeros_128( IRExpr * lmd, IRExpr * top_12_l,
                        binop( Iop_Shl32, mid_60_u, mkU8( 2 ) ),
                        binop( Iop_Shr32, mid_60_l, mkU8( 30 ) ) ) );
 
-   Count_zeros( 2,
+   Count_zeros( 1,
                 mkexpr( num_mid_u ),
                 mkexpr( mid_u_flag ),
                 &num_mid_l,
                 &mid_l_flag,
                 mid_60_l );
 
-   Count_zeros( 1,
+   Count_zeros( 2,
                 mkexpr( num_mid_l ),
                 mkexpr( mid_l_flag ),
                 &num_low_u,
@@ -11237,7 +11979,7 @@ static IRExpr * Count_leading_zeros_128( IRExpr * lmd, IRExpr * top_12_l,
                        binop( Iop_Shl32, low_60_u, mkU8( 2 ) ),
                        binop( Iop_Shr32, low_60_l, mkU8( 30 ) ) ) );
 
-   Count_zeros( 2,
+   Count_zeros( 1,
                 mkexpr( num_low_u ),
                 mkexpr( low_u_flag ),
                 &num_low_l,
@@ -11263,10 +12005,10 @@ static IRExpr * Check_unordered(IRExpr * val)
                        binop( Iop_CmpEQ32,
                               mkexpr( gfield0to5 ),
                               mkU32( 0x1E ) ) ),
-                              unop( Iop_1Sto32, /* SNaN check */
-                                    binop( Iop_CmpEQ32,
-                                           mkexpr( gfield0to5 ),
-                                           mkU32( 0x1F ) ) ) );
+                 unop( Iop_1Sto32, /* SNaN check */
+                       binop( Iop_CmpEQ32,
+                              mkexpr( gfield0to5 ),
+                              mkU32( 0x1F ) ) ) );
 }
 
 #undef AND
@@ -13359,10 +14101,11 @@ static Bool dis_dfp_bcdq( UInt theInstr )
 
 static Bool dis_dfp_significant_digits( UInt theInstr )
 {
+   UInt opc1      = ifieldOPC( theInstr );
+   UInt opc2      = ifieldOPClo10(theInstr);
    UChar frA_addr = ifieldRegA( theInstr );
    UChar frB_addr = ifieldRegB( theInstr );
    IRTemp frA     = newTemp( Ity_D64 );
-   UInt opc1      = ifieldOPC( theInstr );
    IRTemp B_sig   = newTemp( Ity_I8 );
    IRTemp K       = newTemp( Ity_I8 );
    IRTemp lmd_B   = newTemp( Ity_I32 );
@@ -13375,22 +14118,37 @@ static Bool dis_dfp_significant_digits( UInt theInstr )
    IRTemp KisZero_true_mask  = newTemp( Ity_I32 );
    IRTemp KisZero_false_mask = newTemp( Ity_I32 );
    IRTemp cc = newTemp( Ity_I32 );
+   UChar  UIM     = toUChar( IFIELD( theInstr, 16, 6 ) );
+   IRTemp BCD_valid  = newTemp( Ity_I32 );
 
-   /* Get the reference singificance stored in frA */
-   assign( frA, getDReg( frA_addr ) );
+   if (opc2 == 0x2A2) {        // dtstsf   DFP Test Significance
+                               // dtstsfq  DFP Test Significance Quad
+      /* Get the reference singificance stored in frA */
+      assign( frA, getDReg( frA_addr ) );
 
-   /* Convert from 64 bit to 8 bits in two steps.  The Iop_64to8 is not 
-    * supported in 32-bit mode.
-    */
-   assign( K, unop( Iop_32to8,
-                    binop( Iop_And32,
-                           unop( Iop_64to32,
-                                 unop( Iop_ReinterpD64asI64,
-                                       mkexpr( frA ) ) ),
-                           mkU32( 0x3F ) ) ) );
+      /* Convert from 64 bit to 8 bits in two steps.  The Iop_64to8 is not
+       * supported in 32-bit mode.
+       */
+      assign( K, unop( Iop_32to8,
+                       binop( Iop_And32,
+                              unop( Iop_64to32,
+                                    unop( Iop_ReinterpD64asI64,
+                                          mkexpr( frA ) ) ),
+                              mkU32( 0x3F ) ) ) );
+
+   } else if (opc2 == 0x2A3) { // dtstsfi  DFP Test Significance Immediate
+                               // dtstsfiq DFP Test Significance Quad Immediate
+      /* get the significane from the immediate field */
+      assign( K, mkU8( UIM) );
+
+   } else {
+      vex_printf("dis_dfp_significant_digits(ppc)(opc2) wrong\n");
+      return False;
+   }
 
    switch ( opc1 ) {
    case 0x3b: // dtstsf   DFP Test Significance
+              // dtstsfi  DFP Test Significance Immediate
    {
       IRTemp frB     = newTemp( Ity_D64 );
       IRTemp frBI64  = newTemp( Ity_I64 );
@@ -13398,7 +14156,11 @@ static Bool dis_dfp_significant_digits( UInt theInstr )
       IRTemp B_bcd_l = newTemp( Ity_I32 );
       IRTemp tmp64   = newTemp( Ity_I64 );
 
-      DIP( "dtstsf %u,r%u,r%u\n", crfD, frA_addr, frB_addr );
+      if (opc2 == 0x2A2) {
+         DIP( "dtstsf %u,r%u,r%u\n", crfD, frA_addr, frB_addr );
+      } else {
+         DIP( "dtstsfi %u,%u,r%u\n", crfD, UIM, frB_addr );
+      }
 
       assign( frB, getDReg( frB_addr ) );
       assign( frBI64, unop( Iop_ReinterpD64asI64, mkexpr( frB ) ) );
@@ -13423,10 +14185,23 @@ static Bool dis_dfp_significant_digits( UInt theInstr )
                      Count_leading_zeros_60( mkexpr( lmd_B ),
                                              mkexpr( B_bcd_u ),
                                              mkexpr( B_bcd_l ) ) ) );
-      assign( Unordered_true, Check_unordered( mkexpr( frBI64 ) ) );
+
+      assign( BCD_valid,
+              binop( Iop_Or32,
+                     bcd_digit_inval( mkexpr( B_bcd_u), mkexpr( B_bcd_l) ),
+                     bcd_digit_inval( mkexpr( lmd_B), mkU32( 0 ) ) ) );
+
+      /* Set unordered to True if the number is NaN, Inf or an invalid
+       * digit.
+       */
+      assign( Unordered_true,
+              binop( Iop_Or32,
+                     Check_unordered( mkexpr( frBI64 ) ),
+                     mkexpr( BCD_valid) ) );
    }
    break;
    case 0x3F: // dtstsfq     DFP Test Significance
+              // dtstsfqi    DFP Test Significance Immediate
    {
       IRTemp frB_hi     = newTemp( Ity_D64 );
       IRTemp frB_lo     = newTemp( Ity_D64 );
@@ -13438,7 +14213,11 @@ static Bool dis_dfp_significant_digits( UInt theInstr )
       IRTemp B_mid_60_l = newTemp( Ity_I32 );
       IRTemp B_top_12_l = newTemp( Ity_I32 );
 
-      DIP( "dtstsfq %u,r%u,r%u\n", crfD, frA_addr, frB_addr );
+      if (opc2 == 0x2A2) {
+         DIP( "dtstsfq %u,r%u,r%u\n", crfD, frA_addr, frB_addr );
+      } else {
+         DIP( "dtstsfiq %u,%u,r%u\n", crfD, UIM, frB_addr );
+      }
 
       assign( frB_hi, getDReg( frB_addr ) );
       assign( frB_lo, getDReg( frB_addr + 1 ) );
@@ -13464,6 +14243,16 @@ static Bool dis_dfp_significant_digits( UInt theInstr )
                                    &B_low_60_u,
                                    &B_low_60_l );
 
+      assign( BCD_valid,
+              binop( Iop_Or32,
+                     binop( Iop_Or32,
+                            bcd_digit_inval( mkexpr( lmd_B ),
+                                             mkexpr( B_top_12_l ) ),
+                            bcd_digit_inval( mkexpr( B_mid_60_u ),
+                                             mkexpr( B_mid_60_l ) ) ),
+                     bcd_digit_inval( mkexpr( B_low_60_u ),
+                                      mkexpr( B_low_60_l ) ) ) );
+
       assign( B_sig,
               binop( Iop_Sub8,
                      mkU8( DFP_EXTND_MAX_SIG_DIGITS ),
@@ -13474,7 +14263,13 @@ static Bool dis_dfp_significant_digits( UInt theInstr )
                                               mkexpr( B_low_60_u ),
                                               mkexpr( B_low_60_l ) ) ) );
 
-      assign( Unordered_true, Check_unordered( mkexpr( frBI64_hi ) ) );
+      /* Set unordered to True if the number is NaN, Inf or an invalid
+       * digit.
+       */
+      assign( Unordered_true,
+              binop( Iop_Or32,
+                     Check_unordered( mkexpr( frBI64_hi ) ),
+                     mkexpr( BCD_valid) ) );
    }
    break;
    }
@@ -13549,7 +14344,6 @@ static Bool dis_dfp_significant_digits( UInt theInstr )
 
    return True;
 }
-
 /*------------------------------------------------------------*/
 /*--- AltiVec Instruction Translation                      ---*/
 /*------------------------------------------------------------*/
@@ -18334,8 +19128,8 @@ dis_vx_load ( UInt theInstr )
          assign( ld_result, binop( Iop_ShrV128,
                                    binop( Iop_ShlV128,
                                           binop( Iop_64HLtoV128,
-                                                 mkexpr( tmp_hi[8] ),
-                                                 mkexpr( tmp_low[8] ) ),
+                                                 mkexpr( tmp_low[8] ),
+                                                 mkexpr( tmp_hi[8] ) ),
                                           mkexpr( shift ) ),
                                    mkexpr( shift ) ) );
 
@@ -18347,6 +19141,107 @@ dis_vx_load ( UInt theInstr )
                            binop( Iop_64HLtoV128,
                                   mkexpr( nb_not_zero ),
                                   mkexpr( nb_not_zero ) ) ) );
+      break;
+   }
+
+   case 0x12D: // lxvll (Load VSX Vector Left-Justified with Length XX1 form)
+   {
+      IRTemp byte[16];
+      IRTemp tmp_low[9];
+      IRTemp tmp_hi[9];
+      IRTemp mask = newTemp(Ity_V128);
+      IRTemp rB = newTemp( Ity_I64 );
+      IRTemp nb = newTemp( Ity_I64 );
+      IRTemp nb_zero = newTemp(Ity_V128);
+      IRTemp mask_shift = newTemp(Ity_I64);
+      Int i;
+      UInt ea_off = 0;
+      IRExpr* irx_addr;
+      IRTemp base_addr = newTemp( ty );
+      IRTemp nb_compare_zero = newTemp( Ity_I64 );
+
+      DIP("lxvll %d,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
+
+      tmp_low[0] = newTemp(Ity_I64);
+      tmp_hi[0] = newTemp(Ity_I64);
+
+      assign( rB, getIReg(rB_addr));
+      assign( base_addr, ea_rAor0( rA_addr ) );
+      assign( tmp_low[0], mkU64( 0 ) );
+      assign( tmp_hi[0], mkU64( 0 ) );
+
+      /* mask_shift is number of 16 bytes minus (nb times 8-bits per byte) */
+      assign( nb, binop( Iop_Shr64, mkexpr( rB ), mkU8( 56 )  ) );
+
+      assign( nb_compare_zero, unop( Iop_1Sto64,
+                                     binop( Iop_CmpEQ64,
+                                            mkexpr( nb ),
+                                            mkU64( 0 ) ) ) );
+
+      /* nb_zero is 0xFF..FF if the nb_field = 0 */
+      assign( nb_zero, binop( Iop_64HLtoV128,
+                              mkexpr( nb_compare_zero ),
+                              mkexpr( nb_compare_zero ) ) );
+
+      assign( mask_shift, binop( Iop_Sub64,
+                                 mkU64( 16*8 ),
+                                 binop( Iop_Mul64,
+                                        mkexpr( nb ),
+                                        mkU64( 8 ) ) ) );
+
+      /* fetch all 16 bytes, we will remove what we don't want later */
+      for (i = 0; i < 8; i++) {
+         byte[i] = newTemp(Ity_I64);
+         tmp_hi[i+1] = newTemp(Ity_I64);
+
+         irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( base_addr ),
+                           ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
+         ea_off += 1;
+
+         /* Instruction always loads in Big Endian format */
+         assign( byte[i], binop( Iop_Shl64,
+                                 unop( Iop_8Uto64,
+                                       load( Ity_I8, irx_addr ) ),
+                                 mkU8( 8 * (7 - i) ) ) );
+         assign( tmp_hi[i+1],
+                 binop( Iop_Or64,
+                        mkexpr( byte[i] ), mkexpr( tmp_hi[i] ) ) );
+      }
+
+      for (i = 0; i < 8; i++) {
+         byte[i + 8]  = newTemp(Ity_I64);
+         tmp_low[i+1] = newTemp(Ity_I64);
+
+         irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( base_addr ),
+                           ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
+         ea_off += 1;
+
+         /* Instruction always loads in Big Endian format */
+        assign( byte[i+8], binop( Iop_Shl64,
+                                   unop( Iop_8Uto64,
+                                         load( Ity_I8, irx_addr ) ),
+                                   mkU8( 8 * (7 - i) ) ) );
+         assign( tmp_low[i+1], binop( Iop_Or64,
+                                      mkexpr( byte[i+8] ),
+                                      mkexpr( tmp_low[i] ) ) );
+      }
+
+      /* Create mask to clear the right most 16 - nb bytes, set to zero
+       * if nb= 0.
+       */
+      assign( mask, binop( Iop_AndV128,
+                          binop( Iop_ShlV128,
+                                  binop( Iop_ShrV128,
+                                         mkV128( 0xFFFF ),
+                                         unop( Iop_64to8, mkexpr( mask_shift ) ) ),
+                                  unop( Iop_64to8, mkexpr( mask_shift ) ) ),
+                           unop( Iop_NotV128, mkexpr( nb_zero ) ) ) );
+
+      putVSReg( XT, binop( Iop_AndV128,
+                           mkexpr( mask ),
+                           binop( Iop_64HLtoV128,
+                                  mkexpr( tmp_hi[8] ),
+                                  mkexpr( tmp_low[8] ) ) ) );
       break;
    }
 
@@ -18886,9 +19781,8 @@ dis_vx_store ( UInt theInstr )
                                unop( Iop_NotV128, mkexpr( nb_zero ) ) ),
                         binop( Iop_AndV128,
                                mkexpr( nb_zero ),
-                               binop( Iop_64HLtoV128,
-                                      mkU64( 0x0 ),
-                                      mkU64( 0x0 ) ) ) ) );
+                               mkV128( 0 ) ) ) );
+
          assign( store_val,
                  binop( Iop_OrV128,
                         binop( Iop_AndV128,
@@ -18912,9 +19806,7 @@ dis_vx_store ( UInt theInstr )
                                unop( Iop_NotV128, mkexpr( nb_zero ) ) ),
                         binop( Iop_AndV128,
                                mkexpr( nb_zero ),
-                               binop( Iop_64HLtoV128,
-                                      mkU64( 0x0 ),
-                                      mkU64( 0x0 ) ) ) ) );
+                               mkV128( 0 ) ) ) );
 
          assign( store_val,
                  binop( Iop_OrV128,
@@ -18964,6 +19856,7 @@ dis_vx_store ( UInt theInstr )
                         ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
 
       store( irx_addr, unop( Iop_64to32, mkexpr( word1 ) ) );
+
       ea_off += 4;
       irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( base_addr ),
                         ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
@@ -18972,11 +19865,274 @@ dis_vx_store ( UInt theInstr )
       break;
    }
 
+   case 0x1AD: // stxvll (Store VSX Vector Left-justified with length XX1-form)
+   {
+      UInt ea_off = 0;
+      IRExpr* irx_addr;
+      IRTemp word0[5];
+      IRTemp word1[5];
+      IRTemp word2[5];
+      IRTemp word3[5];
+      IRTemp shift = newTemp(Ity_I8);
+      IRTemp nb_gt16 = newTemp(Ity_I8);
+      IRTemp nb_zero = newTemp(Ity_V128);
+      IRTemp nb = newTemp(Ity_I8);
+      IRTemp nb_field = newTemp(Ity_I64);
+      IRTemp n_bytes = newTemp(Ity_I8);
+      IRTemp base_addr = newTemp( ty );
+      IRTemp current_mem = newTemp(Ity_V128);
+      IRTemp store_val = newTemp(Ity_V128);
+      IRTemp nb_mask = newTemp(Ity_V128);
+      IRTemp mask = newTemp( Ity_I64 );
+      IRTemp byte[16];
+      IRTemp tmp_low[9];
+      IRTemp tmp_hi[9];
+      IRTemp nb_field_compare_zero = newTemp( Ity_I64 );
+      Int i;
+
+      DIP("stxvll %d,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
+
+      assign( nb_field, binop( Iop_Shr64,
+                               getIReg(rB_addr),
+                               mkU8( 56 ) ) );
+      assign( nb, unop( Iop_64to8, mkexpr( nb_field ) ) );
+      assign( mask, mkU64( 0xFFFFFFFFFFFFFFFFULL ) );
+
+      /* nb_gt16 will be all zeros if nb > 16 */
+      assign( nb_gt16, unop( Iop_1Sto8,
+                             binop( Iop_CmpLT64U,
+                                    binop( Iop_Shr64,
+                                           mkexpr( nb_field ),
+                                           mkU8( 4 ) ),
+                                    mkU64( 1 ) ) ) );
+
+      assign( nb_field_compare_zero, unop( Iop_1Sto64,
+                                           binop( Iop_CmpEQ64,
+                                                  mkexpr( nb_field ),
+                                                  mkU64( 0 ) ) ) );
+
+      /* nb_zero is 0xFF..FF if the nb_field = 0 */
+      assign( nb_zero, binop( Iop_64HLtoV128,
+                              mkexpr( nb_field_compare_zero ),
+                              mkexpr( nb_field_compare_zero ) ) );
+
+
+      /* set n_bytes to 0 if nb >= 16.  Otherwise, set to nb. */
+      assign( n_bytes, binop( Iop_And8, mkexpr( nb ), mkexpr( nb_gt16 ) ) );
+      assign( shift,
+              unop( Iop_64to8,
+                    binop( Iop_Mul64,
+                           binop( Iop_Sub64,
+                                  mkU64( 16 ),
+                                  unop( Iop_8Uto64, mkexpr( n_bytes ) )),
+                           mkU64( 8 ) ) ) );
+
+      /* We only have a 32-bit store function. So, need to fetch the
+       * contents of memory merge with the store value and do two
+       * 32-byte stores so we preserve the contents of memory not
+       * addressed by nb.
+       */
+      assign( base_addr, ea_rAor0( rA_addr ) );
+      /* fetch all 16 bytes and store in Big Endian format */
+      word0[0] = newTemp(Ity_I64);
+      assign( word0[0], mkU64( 0 ) );
+
+      word1[0] = newTemp(Ity_I64);
+      assign( word1[0], mkU64( 0 ) );
+
+      word2[0] = newTemp(Ity_I64);
+      assign( word2[0], mkU64( 0 ) );
+
+      word3[0] = newTemp(Ity_I64);
+      assign( word3[0], mkU64( 0 ) );
+
+      for (i = 0; i < 4; i++) {
+         word0[i+1] = newTemp(Ity_I64);
+
+         irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( base_addr ),
+                           ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
+         ea_off += 1;
+
+         /* Instruction always loads in Big Endian format */
+         assign( word0[i+1],
+                 binop( Iop_Or64,
+                        binop( Iop_Shl64,
+                               unop( Iop_8Uto64,
+                                     load( Ity_I8,
+                                           irx_addr ) ),
+                               mkU8( (3-i)*8 ) ),
+                        mkexpr( word0[i] ) ) );
+      }
+
+      for (i = 0; i < 4; i++) {
+         word1[i+1] = newTemp(Ity_I64);
+
+         irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( base_addr ),
+                           ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
+         ea_off += 1;
+
+         /* Instruction always loads in Big Endian format */
+         assign( word1[i+1],
+                 binop( Iop_Or64,
+                        binop( Iop_Shl64,
+                               unop( Iop_8Uto64,
+                                     load( Ity_I8,
+                                           irx_addr ) ),
+                               mkU8( (3-i)*8 ) ),
+                        mkexpr( word1[i] ) ) );
+      }
+      for (i = 0; i < 4; i++) {
+         word2[i+1] = newTemp(Ity_I64);
+
+         irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( base_addr ),
+                           ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
+         ea_off += 1;
+
+         /* Instruction always loads in Big Endian format */
+         assign( word2[i+1],
+                 binop( Iop_Or64,
+                        binop( Iop_Shl64,
+                               unop( Iop_8Uto64,
+                                     load( Ity_I8,
+                                           irx_addr ) ),
+                               mkU8( (3-i)*8 ) ),
+                        mkexpr( word2[i] ) ) );
+      }
+      for (i = 0; i < 4; i++) {
+         word3[i+1] = newTemp(Ity_I64);
+
+         irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( base_addr ),
+                           ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
+         ea_off += 1;
+
+         /* Instruction always loads in Big Endian format */
+         assign( word3[i+1],
+                 binop( Iop_Or64,
+                        binop( Iop_Shl64,
+                               unop( Iop_8Uto64,
+                                     load( Ity_I8,
+                                           irx_addr ) ),
+                               mkU8( (3-i)*8 ) ),
+                        mkexpr( word3[i] ) ) );
+      }
+
+
+      assign( current_mem,
+              binop( Iop_64HLtoV128,
+                     binop( Iop_Or64,
+                            binop( Iop_Shl64,
+                                   mkexpr( word0[4] ),
+                                   mkU8( 32 ) ),
+                            mkexpr( word1[4] ) ),
+                     binop( Iop_Or64,
+                            binop( Iop_Shl64,
+                                   mkexpr( word2[4] ),
+                                   mkU8( 32 ) ),
+                            mkexpr( word3[4] ) ) ) );
+
+      /* Set the nb_mask to all zeros if nb = 0 so the current contents
+       * of memory get written back without modifications.
+       *
+       * The store_val is a combination of the current memory value
+       * and the bytes you want to store.  The nb_mask selects the
+       * bytes you want stored from Vs.
+       */
+      /* The instruction always uses Big Endian order */
+      assign( nb_mask,
+              binop( Iop_OrV128,
+                     binop( Iop_AndV128,
+                            binop( Iop_ShlV128,
+                                   binop( Iop_ShrV128,
+                                          binop( Iop_64HLtoV128,
+                                                 mkexpr( mask ),
+                                                 mkexpr( mask ) ),
+                                          mkexpr( shift ) ),
+                                   mkexpr( shift ) ),
+                            unop( Iop_NotV128, mkexpr( nb_zero ) ) ),
+                     binop( Iop_AndV128,
+                            mkexpr( nb_zero ),
+                            binop( Iop_64HLtoV128,
+                                   mkU64( 0x0 ),
+                                   mkU64( 0x0 ) ) ) ) );
+
+      assign( store_val,
+              binop( Iop_OrV128,
+                     binop( Iop_AndV128,
+                            mkexpr( vS ),
+                            mkexpr( nb_mask ) ),
+                     binop( Iop_AndV128,
+                            unop( Iop_NotV128, mkexpr( nb_mask ) ),
+                            mkexpr( current_mem) ) ) );
+
+      /* store the merged value in Big Endian format */
+      tmp_low[0] = newTemp(Ity_I64);
+      tmp_hi[0] = newTemp(Ity_I64);
+      assign( tmp_low[0], mkU64( 0 ) );
+      assign( tmp_hi[0], mkU64( 0 ) );
+
+      for (i = 0; i < 8; i++) {
+         byte[i] = newTemp(Ity_I64);
+         byte[i+8] = newTemp(Ity_I64);
+         tmp_low[i+1] = newTemp(Ity_I64);
+         tmp_hi[i+1]  = newTemp(Ity_I64);
+
+         assign( byte[i], binop( Iop_And64,
+                                 binop( Iop_Shr64,
+                                        unop( Iop_V128HIto64,
+                                              mkexpr( store_val ) ),
+                                        mkU8( (7-i)*8 ) ),
+                                 mkU64( 0xFF ) ) );
+         assign( byte[i+8], binop( Iop_And64,
+                                   binop( Iop_Shr64,
+                                          unop( Iop_V128to64,
+                                                mkexpr( store_val ) ),
+                                          mkU8( (7-i)*8 ) ),
+                                   mkU64( 0xFF ) ) );
+
+         assign( tmp_low[i+1],
+                 binop( Iop_Or64,
+                        mkexpr( tmp_low[i] ),
+                        binop( Iop_Shl64, mkexpr( byte[i] ), mkU8( i*8 ) ) ) );
+         assign( tmp_hi[i+1],
+                 binop( Iop_Or64,
+                        mkexpr( tmp_hi[i] ),
+                        binop( Iop_Shl64, mkexpr( byte[i+8] ),
+                               mkU8( i*8 ) ) ) );
+      }
+
+      /* Store the value in 32-byte chunks */
+      ea_off = 0;
+      irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( base_addr ),
+                        ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
+
+      store( irx_addr, unop( Iop_64to32, mkexpr( tmp_low[8] ) ) );
+
+      ea_off += 4;
+      irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( base_addr ),
+                        ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
+
+      store( irx_addr, unop( Iop_64HIto32, mkexpr( tmp_low[8] ) ) );
+
+      ea_off += 4;
+      irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( base_addr ),
+                        ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
+
+      store( irx_addr, unop( Iop_64to32, mkexpr( tmp_hi[8] ) ) );
+
+      ea_off += 4;
+      irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( base_addr ),
+                        ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
+
+      store( irx_addr, unop( Iop_64HIto32, mkexpr( tmp_hi[8] ) ) );
+
+      break;
+      }
+
    case 0x28C:
    {
       IRTemp high64 = newTemp(Ity_F64);
       IRTemp val32  = newTemp(Ity_I32);
-      DIP("stxsspx %d,r%u,r%u\n", XS, rA_addr, rB_addr);
+      DIP("stxsspx %d,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
       assign(high64, unop( Iop_ReinterpI64asF64,
                            unop( Iop_V128HIto64, mkexpr( vS ) ) ) );
       assign(val32, unop( Iop_ReinterpF32asI32,
@@ -18988,7 +20144,7 @@ dis_vx_store ( UInt theInstr )
    case 0x2CC:
    {
       IRExpr * high64;
-      DIP("stxsdx %d,r%u,r%u\n", XS, rA_addr, rB_addr);
+      DIP("stxsdx %d,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
       high64 = unop( Iop_V128HIto64, mkexpr( vS ) );
       store( mkexpr( EA ), high64 );
       break;
@@ -19045,7 +20201,7 @@ dis_vx_store ( UInt theInstr )
    case 0x3CC:
    {
       IRExpr * high64, *low64;
-      DIP("stxvd2x %d,r%u,r%u\n", XS, rA_addr, rB_addr);
+      DIP("stxvd2x %d,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
       high64 = unop( Iop_V128HIto64, mkexpr( vS ) );
       low64 = unop( Iop_V128to64, mkexpr( vS ) );
       store( mkexpr( EA ), high64 );
@@ -19060,7 +20216,7 @@ dis_vx_store ( UInt theInstr )
       IRTemp hi64 = newTemp( Ity_I64 );
       IRTemp lo64 = newTemp( Ity_I64 );
 
-      DIP("stxvw4x %d,r%u,r%u\n", XS, rA_addr, rB_addr);
+      DIP("stxvw4x %d,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
 
       // This instruction supports word-aligned stores, so EA may not be
       // quad-word aligned.  Therefore, do 4 individual word-size stores.
@@ -22860,6 +24016,120 @@ static IRExpr * bcd_sign_code_adjust( UInt ps, IRExpr * tmp)
   except when an overflow occurs.  But since we can't be 100% accurate
   in our emulation of CR6, it seems best to just not support it all.
 */
+static Bool dis_av_bcd_misc ( UInt theInstr )
+{
+   UChar opc1     = ifieldOPC(theInstr);
+   UChar vRT_addr = ifieldRegDS(theInstr);
+   UChar vRA_addr = ifieldRegA(theInstr);
+   UChar vRB_addr = ifieldRegB(theInstr);
+   IRTemp vA      = newTemp(Ity_V128);
+   IRTemp vB      = newTemp(Ity_V128);
+   UInt  opc2     = IFIELD( theInstr, 0, 11 );
+   IRExpr *pos, *neg, *valid, *zero, *sign;
+   IRTemp eq_lt_gt = newTemp( Ity_I32 );
+
+   assign( vA, getVReg(vRA_addr));
+   assign( vB, getVReg(vRB_addr));
+
+   if (opc1 != 0x4) {
+      vex_printf("dis_av_bcd_misc(ppc)(instr)\n");
+      return False;
+   }
+
+   switch (opc2) {
+   case 0x341: // bcdcpsgn. Decimal Copy Sign VX-form
+      {
+         IRExpr *sign_vb, *value_va;
+         DIP("bcdcpsgn. v%d,v%d,v%d\n", vRT_addr, vRA_addr, vRB_addr);
+
+         zero =
+            BCDstring_zero( binop( Iop_AndV128,
+                                   binop( Iop_64HLtoV128,
+                                          mkU64( 0xFFFFFFFFFFFFFFFF ),
+                                          mkU64( 0xFFFFFFFFFFFFFFF0 ) ),
+                                   mkexpr( vA ) ) );
+
+         /* Sign codes of 0xA, 0xC, 0xE or 0xF are positive, sign
+          * codes 0xB and 0xD are negative.
+          */
+         sign = binop( Iop_And64, mkU64( 0xF ),
+                       unop( Iop_V128to64, mkexpr( vB ) ) );
+
+         neg = mkOR1( binop( Iop_CmpEQ64,
+                             sign,
+                             mkU64 ( 0xB ) ),
+                      binop( Iop_CmpEQ64,
+                             sign,
+                             mkU64 ( 0xD ) ) );
+
+         pos = mkNOT1( neg );
+
+         /* invalid if vA or vB is not valid */
+         valid =
+            unop( Iop_64to32,
+                  binop( Iop_And64,
+                         is_BCDstring128( /*Signed*/True, mkexpr( vA ) ),
+                         is_BCDstring128( /*Signed*/True, mkexpr( vB ) ) ) );
+
+         sign_vb = binop( Iop_AndV128,
+                          binop( Iop_64HLtoV128,
+                                 mkU64( 0 ),
+                                 mkU64( 0xF ) ),
+                          mkexpr( vB ) );
+
+         value_va = binop( Iop_AndV128,
+                           binop( Iop_64HLtoV128,
+                                  mkU64( 0xFFFFFFFFFFFFFFFF ),
+                                  mkU64( 0xFFFFFFFFFFFFFFF0 ) ),
+                           mkexpr( vA ) );
+         putVReg( vRT_addr, binop( Iop_OrV128, sign_vb, value_va ) );
+      }
+      break;
+
+   default:
+      vex_printf("dis_av_bcd_misc(ppc)(opc2)\n");
+      return False;
+   }
+
+   /* set CR field 6 to:
+    *    0b1000  if vB less then 0, i.e. vB is neg and not zero,
+    *    0b0100  if vB greter then 0,  i.e. vB is pos and not zero,
+    *    0b1000  if vB equals 0,
+    *    0b0001  if vB is invalid  over rules lt, gt, eq
+    */
+   assign( eq_lt_gt,
+           binop( Iop_Or32,
+                  binop( Iop_Shl32,
+                         unop( Iop_1Uto32,
+                               mkAND1( neg,
+                                       mkNOT1( zero ) ) ),
+                         mkU8( 3 ) ),
+                  binop( Iop_Or32,
+                         binop( Iop_Shl32,
+                                unop( Iop_1Uto32,
+                                      mkAND1( pos,
+                                              mkNOT1( zero ) ) ),
+                                mkU8( 2 ) ),
+                         binop( Iop_Shl32,
+                                unop( Iop_1Uto32, zero ),
+                                mkU8( 1 ) ) ) ) );
+
+   IRTemp valid_mask = newTemp( Ity_I32 );
+
+   assign( valid_mask, unop( Iop_1Sto32, unop( Iop_32to1, valid ) ) );
+
+   putGST_field( PPC_GST_CR,
+                 binop( Iop_Or32,
+                        binop( Iop_And32,
+                               mkexpr( valid_mask ),
+                               mkexpr( eq_lt_gt ) ),
+                        binop( Iop_And32,
+                               unop( Iop_Not32, mkexpr( valid_mask ) ),
+                               mkU32( 1 ) ) ),
+                 6 );
+   return True;
+}
+
 static Bool dis_av_bcd ( UInt theInstr )
 {
    /* VX-Form */
@@ -22869,10 +24139,13 @@ static Bool dis_av_bcd ( UInt theInstr )
    UChar vRB_addr = ifieldRegB(theInstr);
    UChar ps       = IFIELD( theInstr, 9, 1 );
    UInt  opc2     = IFIELD( theInstr, 0, 9 );
-
    IRTemp vA    = newTemp(Ity_V128);
    IRTemp vB    = newTemp(Ity_V128);
    IRTemp dst    = newTemp(Ity_V128);
+   IRExpr *pos, *neg, *valid, *zero, *sign_digit, *in_range;
+   IRTemp eq_lt_gt = newTemp( Ity_I32 );
+   IRExpr *overflow, *value;
+
    assign( vA, getVReg(vRA_addr));
    assign( vB, getVReg(vRB_addr));
 
@@ -22882,28 +24155,1017 @@ static Bool dis_av_bcd ( UInt theInstr )
    }
 
    switch (opc2) {
-   case 0x1:  // bcdadd
-     DIP("bcdadd. v%d,v%d,v%d,%u\n", vRT_addr, vRA_addr, vRB_addr, ps);
-     assign( dst, bcd_sign_code_adjust( ps,
-                                        binop( Iop_BCDAdd,
-                                               mkexpr( vA ),
-                                               mkexpr( vB ) ) ) );
-     putVReg( vRT_addr, mkexpr(dst));
-     return True;
+   case 0x1:   // bcdadd.
+   case 0x41:  // bcdsub.
+      {
+         IRExpr *sign, *res_smaller;
+         IRExpr *signA, *signB, *sign_digitA, *sign_digitB;
+         IRExpr *zeroA, *zeroB, *posA, *posB, *negA, *negB;
 
-   case 0x41:  // bcdsub
-     DIP("bcdsub. v%d,v%d,v%d,%u\n", vRT_addr, vRA_addr, vRB_addr, ps);
-     assign( dst, bcd_sign_code_adjust( ps,
-                                        binop( Iop_BCDSub,
-                                               mkexpr( vA ),
-                                               mkexpr( vB ) ) ) );
-     putVReg( vRT_addr, mkexpr(dst));
-     return True;
+         if ( opc2 == 0x1 ) {
+            DIP("bcdadd. v%d,v%d,v%d,%u\n", vRT_addr, vRA_addr, vRB_addr, ps);
+            assign( dst, bcd_sign_code_adjust( ps,
+                                               binop( Iop_BCDAdd,
+                                                      mkexpr( vA ),
+                                                      mkexpr( vB ) ) ) );
+         } else {
+            DIP("bcdsub. v%d,v%d,v%d,%u\n", vRT_addr, vRA_addr, vRB_addr, ps);
+            assign( dst, bcd_sign_code_adjust( ps,
+                                               binop( Iop_BCDSub,
+                                                      mkexpr( vA ),
+                                                      mkexpr( vB ) ) ) );
+         }
+
+         putVReg( vRT_addr, mkexpr( dst ) );
+
+         /* set CR field 6 */
+         /* result */
+         zero = BCDstring_zero( binop( Iop_AndV128,
+                                       binop( Iop_64HLtoV128,
+                                              mkU64( 0xFFFFFFFFFFFFFFFF ),
+                                              mkU64( 0xFFFFFFFFFFFFFFF0 ) ),
+                                       mkexpr(dst) ) );  // ignore sign
+         sign_digit = binop( Iop_And64, mkU64( 0xF ),
+                             unop( Iop_V128to64, mkexpr( dst ) ) );
+
+         sign = mkOR1( binop( Iop_CmpEQ64,
+                              sign_digit,
+                              mkU64 ( 0xB ) ),
+                       binop( Iop_CmpEQ64,
+                              sign_digit,
+                              mkU64 ( 0xD ) ) );
+         neg = mkAND1( sign, mkNOT1( zero ) );
+
+         /* Pos position AKA gt = 1 if ((not neg) & (not eq zero)) */
+         pos = mkAND1( mkNOT1( sign ), mkNOT1( zero ) );
+
+         valid =
+            unop( Iop_64to32,
+                  binop( Iop_And64,
+                         is_BCDstring128( /* Signed */True, mkexpr( vA ) ),
+                         is_BCDstring128( /* Signed */True, mkexpr( vB ) ) ) );
+
+         /* src A */
+         zeroA = BCDstring_zero( binop( Iop_AndV128,
+                                        binop( Iop_64HLtoV128,
+                                               mkU64( 0xFFFFFFFFFFFFFFFF ),
+                                               mkU64( 0xFFFFFFFFFFFFFFF0 ) ),
+                                        mkexpr( vA ) ) );  // ignore sign
+         sign_digitA = binop( Iop_And64, mkU64( 0xF ),
+                              unop( Iop_V128to64, mkexpr( vA ) ) );
+
+         signA = mkOR1( binop( Iop_CmpEQ64,
+                               sign_digitA,
+                               mkU64 ( 0xB ) ),
+                        binop( Iop_CmpEQ64,
+                               sign_digitA,
+                               mkU64 ( 0xD ) ) );
+         negA = mkAND1( signA, mkNOT1( zeroA ) );
+
+         /* Pos position AKA gt = 1 if ((not neg) & (not eq zero)) */
+         posA = mkAND1( mkNOT1( signA ), mkNOT1( zeroA ) );
+
+         /* src B */
+         zeroB = BCDstring_zero( binop( Iop_AndV128,
+                                        binop( Iop_64HLtoV128,
+                                               mkU64( 0xFFFFFFFFFFFFFFFF ),
+                                               mkU64( 0xFFFFFFFFFFFFFFF0 ) ),
+                                        mkexpr( vB ) ) );  // ignore sign
+         sign_digitB = binop( Iop_And64, mkU64( 0xF ),
+                              unop( Iop_V128to64, mkexpr( vB ) ) );
+
+         signB = mkOR1( binop( Iop_CmpEQ64,
+                               sign_digitB,
+                               mkU64 ( 0xB ) ),
+                        binop( Iop_CmpEQ64,
+                               sign_digitB,
+                               mkU64 ( 0xD ) ) );
+         negB = mkAND1( signB, mkNOT1( zeroB ) );
+
+         /* Pos position AKA gt = 1 if ((not neg) & (not eq zero)) */
+         posB = mkAND1( mkNOT1( signB ), mkNOT1( zeroB ) );
+
+         res_smaller = mkAND1( CmpGT128U( mkexpr( vA ), mkexpr( dst ) ),
+                               CmpGT128U( mkexpr( vB ), mkexpr( dst ) ) );
+         if ( opc2 == 0x1) {
+            /* Overflow for Add can only occur if the signs of the operands
+             * are the same and the two operands are non-zero.  On overflow,
+             * the PPC hardware produces a result consisting of just the lower
+             * digits of the result.  So, if the result is less then both
+             * operands and the sign of the operands are the same overflow
+             * occured.
+             */
+            overflow = mkOR1( mkAND1( res_smaller, mkAND1( negA, negB ) ),
+                              mkAND1( res_smaller, mkAND1( posA, posB ) ) );
+         } else {
+            /* Overflow for Add can only occur if the signs of the operands
+             * are the different and the two operands are non-zero.  On overflow,
+             * the PPC hardware produces a result consisting of just the lower
+             * digits of the result.  So, if the result is less then both
+             * operands and the sign of the operands are different overflow
+             * occured.
+             */
+            overflow = mkOR1( mkAND1( res_smaller, mkAND1( negA, posB ) ),
+                              mkAND1( res_smaller, mkAND1( posA, negB ) ) );
+         }
+      }
+     break;
+
+   case 0x081: // bcdus.  Decimal Unsigned Shift VX-form
+   case 0x0C1: // bcds.   Decimal Shift VX-form
+   case 0x1C1: // bcdsr.  Decimal Shift and Round VX-form
+      {
+         IRExpr *shift_dir;
+         IRExpr *shift_mask, *result, *new_sign_val, *sign;
+         IRExpr *not_excess_shift, *not_excess_shift_mask;
+         IRTemp shift_dir_mask = newTemp( Ity_I64 );
+         IRTemp shift_by = newTemp( Ity_I64 );
+         IRTemp shift_field = newTemp( Ity_I64 );
+         IRTemp shifted_out = newTemp( Ity_V128 );
+         IRTemp value_shl = newTemp( Ity_V128 );
+         IRTemp value_shr = newTemp( Ity_V128 );
+         IRTemp round = newTemp( Ity_I32);
+
+         ULong value_mask_low = 0;
+         UInt max_shift = 0;
+
+         if (opc2 == 0x0C1) {
+            DIP("bcds. v%d,v%d,v%d,%d\n", vRT_addr, vRA_addr, vRB_addr, ps);
+            value_mask_low = 0xFFFFFFFFFFFFFFF0;
+            max_shift = 30 * 4; /* maximum without shifting all digits out */
+
+         }  else if (opc2 == 0x1C1) {
+            DIP("bcdsr. v%d,v%d,v%d,%d\n", vRT_addr, vRA_addr, vRB_addr, ps);
+
+            value_mask_low = 0xFFFFFFFFFFFFFFF0;
+            max_shift = 30 * 4; /* maximum without shifting all digits out */
+
+         } else {
+            DIP("bcdus. v%d,v%d,v%d,%d\n", vRT_addr, vRA_addr,
+                vRB_addr, ps);
+            value_mask_low = 0xFFFFFFFFFFFFFFFF;
+            max_shift = 31 * 4; /* maximum without shifting all digits out */
+         }
+
+         value = binop( Iop_AndV128,
+                        binop( Iop_64HLtoV128,
+                               mkU64( 0xFFFFFFFFFFFFFFFF ),
+                               mkU64( value_mask_low ) ),
+                        mkexpr( vB ) );
+
+         zero = BCDstring_zero( value );
+
+         /* Shift field is 2's complement value */
+         assign( shift_field, unop( Iop_V128to64,
+                                    binop( Iop_ShrV128,
+                                           binop( Iop_AndV128,
+                                                  binop( Iop_64HLtoV128,
+                                                         mkU64( 0xFF ),
+                                                         mkU64( 0x0) ),
+                                                  mkexpr( vA ) ),
+                                           mkU8( 64 ) ) ) );
+
+         /* if shift_dir = 0 shift left, otherwise shift right */
+         shift_dir = binop( Iop_CmpEQ64,
+                            binop( Iop_Shr64,
+                                   mkexpr( shift_field ),
+                                   mkU8( 7 ) ),
+                            mkU64( 1 ) );
+
+         assign( shift_dir_mask, unop( Iop_1Sto64, shift_dir ) );
+
+         /* Shift field is stored in 2's complement form */
+         assign(shift_by,
+                binop( Iop_Mul64,
+                       binop( Iop_Or64,
+                              binop( Iop_And64,
+                                     unop( Iop_Not64,
+                                           mkexpr( shift_dir_mask ) ),
+                                     mkexpr( shift_field ) ),
+                              binop( Iop_And64,
+                                     mkexpr( shift_dir_mask ),
+                                     binop( Iop_And64,
+                                            binop( Iop_Add64,
+                                                   mkU64( 1 ),
+                                                   unop( Iop_Not64,
+                                                         mkexpr( shift_field ) ) ),
+                                            mkU64( 0xFF ) ) ) ),
+                       mkU64( 4 ) ) );
+
+         /* If the shift exceeds 128 bits, we need to force the result
+          * to zero because Valgrind shift amount is only 7-bits. Otherwise,
+          * we get a shift amount of mod(shift_by, 127)
+          */
+         not_excess_shift = unop( Iop_1Sto64,
+                                  binop( Iop_CmpLE64U,
+                                         mkexpr( shift_by ),
+                                         mkU64( max_shift ) ) );
+
+         not_excess_shift_mask = binop( Iop_64HLtoV128,
+                                        not_excess_shift,
+                                        not_excess_shift );
+
+         assign( value_shl,
+                 binop( Iop_ShlV128, value, unop( Iop_64to8,
+                                                  mkexpr( shift_by) ) ) );
+         assign( value_shr,
+                 binop( Iop_AndV128,
+                        binop( Iop_64HLtoV128,
+                               mkU64( 0xFFFFFFFFFFFFFFFF ),
+                               mkU64( value_mask_low) ),
+                        binop( Iop_ShrV128,
+                               value,
+                               unop( Iop_64to8,
+                                     mkexpr( shift_by ) )  ) ) );
+
+         /* Overflow occurs if the shift amount is greater than zero, the
+          * operation is a left shift and any non-zero digits are left
+          * shifted out.
+          */
+         assign( shifted_out,
+                 binop( Iop_OrV128,
+                        binop( Iop_ShrV128,
+                               value,
+                               unop( Iop_64to8,
+                                     binop( Iop_Sub64,
+                                            mkU64( 32*4 ),
+                                            mkexpr( shift_by ) ) ) ),
+                        binop( Iop_AndV128,
+                               unop( Iop_NotV128,
+                                     not_excess_shift_mask ),
+                               value ) ) );
+
+         overflow = mkAND1( mkNOT1( BCDstring_zero( mkexpr( shifted_out ) ) ),
+                            mkAND1( mkNOT1( shift_dir ),
+                                    binop( Iop_CmpNE64,
+                                           mkexpr( shift_by ),
+                                           mkU64( 0 ) ) ) );
+
+         if ((opc2 == 0xC1) || (opc2 == 0x1C1)) {
+            /* Sign codes of 0xA, 0xC, 0xE or 0xF are positive, sign
+             * codes 0xB and 0xD are negative.
+             */
+            sign_digit = binop( Iop_And64, mkU64( 0xF ),
+                                unop( Iop_V128to64, mkexpr( vB ) ) );
+
+            sign = mkOR1( binop( Iop_CmpEQ64,
+                                 sign_digit,
+                                 mkU64 ( 0xB ) ),
+                          binop( Iop_CmpEQ64,
+                                 sign_digit,
+                                 mkU64 ( 0xD ) ) );
+            neg = mkAND1( sign, mkNOT1( zero ) );
+
+            /* Pos position AKA gt = 1 if ((not neg) & (not eq zero)) */
+            pos = mkAND1( mkNOT1( sign ), mkNOT1( zero ) );
+
+            valid =
+               unop( Iop_64to32,
+                     is_BCDstring128( /* Signed */True, mkexpr( vB ) ) );
+
+         } else {
+            /* string is an unsigned BCD value */
+            pos = mkU1( 1 );
+            neg = mkU1( 0 );
+            sign = mkU1( 0 );
+
+            valid =
+               unop( Iop_64to32,
+                     is_BCDstring128( /* Unsigned */False, mkexpr( vB ) ) );
+         }
+
+         /* if PS = 0
+                  vB positive, sign is C
+                  vB negative, sign is D
+            if PS = 1
+                  vB positive, sign is F
+                  vB negative, sign is D
+            Note can't use pos or neg here since they are ANDed with zero,
+            use sign instead.
+         */
+         if (ps == 0) {
+            new_sign_val = binop( Iop_Or64,
+                                  unop( Iop_1Uto64, sign ),
+                                  mkU64( 0xC ) );
+
+         } else {
+            new_sign_val = binop( Iop_Xor64,
+                                  binop( Iop_Shl64,
+                                         unop( Iop_1Uto64, sign ),
+                                         mkU8( 1 ) ),
+                                  mkU64( 0xF ) );
+         }
+
+         shift_mask = binop( Iop_64HLtoV128,
+                             unop( Iop_1Sto64, shift_dir ),
+                             unop( Iop_1Sto64, shift_dir ) );
+
+         result = binop( Iop_OrV128,
+                         binop( Iop_AndV128, mkexpr( value_shr ), shift_mask ),
+                         binop( Iop_AndV128,
+                                mkexpr( value_shl ),
+                                unop( Iop_NotV128, shift_mask ) ) );
+
+         if (opc2 == 0xC1) {    // bcds.
+            putVReg( vRT_addr, binop( Iop_OrV128,
+                                      binop( Iop_64HLtoV128,
+                                             mkU64( 0 ),
+                                             new_sign_val ),
+                                      binop( Iop_AndV128,
+                                             not_excess_shift_mask,
+                                             result ) ) );
+         } else if (opc2 == 0x1C1) {  //bcdsr.
+            /* If shifting right, need to round up if needed */
+            assign( round, unop( Iop_1Uto32,
+                                 mkAND1( shift_dir,
+                                         check_BCD_round( value,
+                                                          shift_by ) ) ) );
+
+            putVReg( vRT_addr,
+                     binop( Iop_OrV128,
+                            binop( Iop_64HLtoV128,
+                                   mkU64( 0 ),
+                                   new_sign_val ),
+                            binop( Iop_AndV128,
+                                   not_excess_shift_mask,
+                                   mkexpr( increment_BCDstring( result,
+                                                                mkexpr( round)
+                                                                ) ) ) ) );
+         } else {  // bcdus.
+            putVReg( vRT_addr, binop( Iop_AndV128,
+                                      not_excess_shift_mask,
+                                      result ) );
+         }
+      }
+      break;
+
+   case 0x101:  // bcdtrunc.   Decimal Truncate VX-form
+   case 0x141:  // bcdutrunc.  Decimal Unsigned Truncate VX-form
+      {
+         IRTemp length = newTemp( Ity_I64 );
+         IRTemp masked_out = newTemp( Ity_V128 );
+         IRExpr *new_sign_val, *result, *shift;
+         IRExpr *length_neq_128, *sign;
+         ULong value_mask_low;
+         Int max_digits;
+
+         if ( opc2 == 0x101) {     // bcdtrunc.
+            value_mask_low = 0xFFFFFFFFFFFFFFF0;
+            max_digits = 31;
+         } else {
+            value_mask_low = 0xFFFFFFFFFFFFFFFF;
+            max_digits = 32;
+         }
+
+         assign( length, binop( Iop_And64,
+                                     unop( Iop_V128HIto64,
+                                           mkexpr( vA ) ),
+                                     mkU64( 0xFFFF ) ) );
+         shift = unop( Iop_64to8,
+                       binop( Iop_Mul64,
+                              binop( Iop_Sub64,
+                                     mkU64( max_digits ),
+                                     mkexpr( length ) ),
+                              mkU64( 4 ) ) );
+
+         /* Note ShrV128 gets masked by 127 so a shift of 128 results in
+          * the value not being shifted.  A shift of 128 sets the register
+          * zero.  So if length+1 = 128, just set the value to 0.
+         */
+         length_neq_128 = mkNOT1( binop( Iop_CmpEQ64,
+                                         mkexpr( length),
+                                         mkU64( 0x1F ) ) );
+
+         assign( masked_out,
+                 binop( Iop_AndV128,
+                        binop( Iop_64HLtoV128,
+                               unop( Iop_1Sto64, length_neq_128 ),
+                               unop( Iop_1Sto64, length_neq_128 ) ),
+                        binop( Iop_ShrV128,
+                               mkexpr( vB ),
+                               unop( Iop_64to8,
+                                     binop( Iop_Mul64,
+                                            mkU64( 4 ),
+                                            binop( Iop_Add64,
+                                                   mkU64( 1 ),
+                                                   mkexpr( length ) ) ) ) )
+                        ) );
+
+         /* Overflow occurs if any of the left most 31-length digits of vB
+          * are non-zero.
+          */
+         overflow = mkNOT1( BCDstring_zero( mkexpr( masked_out ) ) );
+
+         value = binop( Iop_AndV128,
+                        binop( Iop_64HLtoV128,
+                               mkU64( 0xFFFFFFFFFFFFFFFF ),
+                               mkU64( value_mask_low ) ),
+                        mkexpr( vB ) );
+
+         /* Check if all of the non-sign digits are zero */
+         zero = BCDstring_zero( binop( Iop_AndV128,
+                                       binop( Iop_64HLtoV128,
+                                              mkU64( 0xFFFFFFFFFFFFFFFF ),
+                                              mkU64( 0xFFFFFFFFFFFFFFF0 ) ),
+                                       value ) );
+
+         if ( opc2 == 0x101) {     // bcdtrunc.
+            /* Sign codes of 0xA, 0xC, 0xE or 0xF are positive, sign
+             * codes 0xB and 0xD are negative.
+             */
+            sign_digit = binop( Iop_And64, mkU64( 0xF ),
+                                unop( Iop_V128to64, mkexpr( vB ) ) );
+
+            sign = mkOR1( binop( Iop_CmpEQ64,
+                                 sign_digit,
+                                 mkU64 ( 0xB ) ),
+                          binop( Iop_CmpEQ64,
+                                 sign_digit,
+                                 mkU64 ( 0xD ) ) );
+            neg = mkAND1( sign, mkNOT1( zero ) );
+
+            /* Pos position AKA gt = 1 if ((not neg) & (not eq zero)) */
+            pos = mkAND1( mkNOT1( sign ), mkNOT1( zero ) );
+
+            /* if PS = 0
+                  vB positive, sign is C
+                  vB negative, sign is D
+               if PS = 1
+                  vB positive, sign is F
+                  vB negative, sign is D
+               Note can't use pos or neg here since they are ANDed with zero,
+               use sign instead.
+            */
+            if (ps == 0) {
+               new_sign_val = binop( Iop_Or64,
+                                     unop( Iop_1Uto64, sign ),
+                                     mkU64( 0xC ) );
+            } else {
+               new_sign_val = binop( Iop_Xor64,
+                                     binop( Iop_Shl64,
+                                            unop( Iop_1Uto64, sign ),
+                                            mkU8 ( 1 ) ),
+                                     mkU64( 0xF ) );
+            }
+            valid =
+               unop( Iop_64to32,
+                     is_BCDstring128( /* Signed */True, mkexpr( vB ) ) );
+
+         } else {   // bcdutrunc.
+            /* unsigned value, need to make CC code happy */
+            neg = mkU1( 0 );
+            /* Pos position AKA gt = 1 if ((not neg) & (not eq zero)) */
+            pos = mkAND1( mkNOT1( neg ), mkNOT1( zero ) );
+            valid =
+               unop( Iop_64to32,
+                     is_BCDstring128( /* Signed */True, mkexpr( vB ) ) );
+         }
+
+         /* If vB is not valid, the result is undefined, but we need to
+          * match the hardware so the output of the test suite will match.
+          * Hardware sets result to 0x0.
+          */
+         result = binop( Iop_AndV128,
+                         mkV128( 0xFFFF ),
+                         binop( Iop_ShrV128,
+                                binop( Iop_ShlV128, value, shift ),
+                                shift ) );
+
+         if ( opc2 == 0x101) {     // bcdtrunc.
+            putVReg( vRT_addr, binop( Iop_OrV128,
+                                      binop( Iop_64HLtoV128,
+                                             mkU64( 0 ),
+                                             new_sign_val ),
+                                      result ) );
+         } else {
+            putVReg( vRT_addr, result );
+         }
+      }
+      break;
+
+   case 0x181:  // bcdctz., bcdctn., bcdcfz., bcdcfn., bcdsetsgn.
+      {
+         UInt inst_select = IFIELD( theInstr, 16, 5);
+
+         switch (inst_select) {
+         case 4:  // bcdctz. (Decimal Convert to Zoned VX-form)
+            {
+               IRExpr *ox_flag, *sign, *vrb_nibble30;
+               int neg_bit_shift;
+               unsigned int upper_byte, sign_byte;
+               IRTemp tmp = newTemp( Ity_V128 );
+
+               DIP("bcdctz. v%d,v%d,%d\n", vRT_addr, vRB_addr, ps);
+
+               if (ps == 0) {
+                  upper_byte = 0x30;
+                  sign_byte = 0x30;
+                  neg_bit_shift = 4+2;  /* sign byte is in bits [7:4] */
+               } else {
+                  upper_byte = 0xF0;
+                  sign_byte = 0xC0;
+                  neg_bit_shift = 4+0;
+               }
+
+               /* Grab vB bits[7:4].  It goes into bits [3:0] of the
+                * result.
+                */
+               vrb_nibble30 = binop( Iop_Shr64,
+                                     binop( Iop_And64,
+                                            unop( Iop_V128to64, mkexpr( vB ) ),
+                                            mkU64( 0xF0 ) ),
+                                     mkU8( 4 ) );
+
+               /* Upper 24 hex digits of VB, i.e. hex digits vB[0:23],
+                * must be zero for the value to be zero.  This goes
+                * in the overflow position of the condition code register.
+                */
+               ox_flag = binop( Iop_CmpEQ64,
+                                     binop( Iop_And64,
+                                            unop( Iop_V128to64, mkexpr( vB ) ),
+                                            mkU64( 0xFFFFFFFFFFFFFFFF ) ),
+                                mkU64( 0 ) );
+
+               /* zero is the same as eq_flag */
+               zero = mkAND1( binop( Iop_CmpEQ64,
+                                     binop( Iop_And64,
+                                            unop( Iop_V128HIto64, mkexpr( vB ) ),
+                                            mkU64( 0xFFFFFFFFFFFFFFFF ) ),
+                                     mkU64( 0 ) ),
+                              binop( Iop_CmpEQ64,
+                                     binop( Iop_And64,
+                                            unop( Iop_V128to64, mkexpr( vB ) ),
+                                            mkU64( 0xFFFFFFFFFFFFFFF0 ) ),
+                                     mkU64( 0 ) ) );
+
+               /* Sign codes of 0xA, 0xC, 0xE or 0xF are positive, sign
+                * codes 0xB and 0xD are negative.
+                */
+               sign_digit = binop( Iop_And64, mkU64( 0xF ),
+                                   unop( Iop_V128to64, mkexpr( vB ) ) );
+
+               /* The negative value goes in the LT bit position of the
+                * condition code register. Set neg if the sign of vB
+                * is negative and zero is true.
+                */
+               sign = mkOR1( binop( Iop_CmpEQ64,
+                                    sign_digit,
+                                    mkU64 ( 0xB ) ),
+                             binop( Iop_CmpEQ64,
+                                    sign_digit,
+                                    mkU64 ( 0xD ) ) );
+               neg = mkAND1( sign, mkNOT1( zero ) );
+
+               /* The positive value goes in the LT bit position of the
+                * condition code register. Set positive if the sign of the
+                * value is not negative.
+                */
+               pos = mkAND1( mkNOT1( sign ), mkNOT1( zero ) );
+
+               assign( tmp,
+                  convert_to_zoned( mkexpr( vB ), mkU64( upper_byte ) ) );
+
+               /* Insert the sign based on ps and sign of vB
+                * in the lower byte.
+                */
+               putVReg( vRT_addr,
+                        binop( Iop_OrV128,
+                               binop( Iop_64HLtoV128,
+                                      mkU64( 0 ),
+                                      vrb_nibble30 ),
+                               binop( Iop_OrV128,
+                                      mkexpr( tmp ),
+                                      binop( Iop_64HLtoV128,
+                                             mkU64( 0 ),
+                                             binop( Iop_Or64,
+                                                    mkU64( sign_byte ),
+                                                    binop( Iop_Shl64,
+                                                           unop( Iop_1Uto64,
+                                                                 sign ),
+                                                           mkU8( neg_bit_shift)
+                               ) ) ) ) ) );
+
+               /* A valid number must have a value that is less then or
+                * equal to 10^16 - 1.  This is checked by making sure
+                * bytes [31:16] of vB are zero.
+                */
+               in_range = binop( Iop_CmpEQ64,
+                                 binop( Iop_And64,
+                                        mkU64( 0xFFFFFFFFFFFFFFF0 ),
+                                        unop( Iop_V128HIto64, mkexpr( vB ) ) ),
+                                 mkU64( 0 ) );
+
+               /* overflow is set if ox_flag or not in_inrange.  Setting is
+                * ORed with the other condition code values.
+                */
+               overflow = mkOR1( ox_flag, mkNOT1( in_range ) );
+
+               /* The sign code must be between 0xA and 0xF and all digits are
+                * between 0x0 and 0x9. The vB must be in range to be valid.
+                * If not valid, condition code set to 0x0001.
+                */
+               valid =
+                  unop( Iop_64to32,
+                        is_BCDstring128( /* Signed */True, mkexpr( vB ) ) );
+            }
+            break;
+
+         case 5:  // bcdctn. (Decimal Convert to National VX-form)
+            {
+               IRExpr *ox_flag, *sign;
+               IRTemp tmp = newTemp( Ity_V128 );;
+
+               DIP("bcdctn. v%d,v%d\n", vRT_addr, vRB_addr);
+
+               value = binop( Iop_And64,
+                              mkU64( 0xFFFFFFFF ),
+                              unop( Iop_V128to64, mkexpr( vB ) ) );
+
+               /* A valid number must have a value that is less then or
+                * equal to 10^7 - 1.  This is checked by making sure
+                * bytes [31:8] of vB are zero.
+                */
+               in_range = mkAND1( binop( Iop_CmpEQ64,
+                                         unop( Iop_V128HIto64, mkexpr( vB ) ),
+                                         mkU64( 0 ) ),
+                                  binop( Iop_CmpEQ64,
+                                         binop( Iop_Shr64,
+                                                unop( Iop_V128to64,
+                                                      mkexpr( vB ) ),
+                                                mkU8( 32 ) ),
+                                         mkU64( 0 ) ) );
+
+               /* The sign code must be between 0xA and 0xF and all digits are
+                *  between 0x0 and 0x9.
+                */
+               valid =
+                  unop( Iop_64to32,
+                        is_BCDstring128( /* Signed */True, mkexpr( vB ) ) );
+
+               /* Upper 24 hex digits of VB, i.e. hex ditgits vB[0:23],
+                * must be zero for the ox_flag to be zero.  This goes
+                * in the LSB position (variable overflow) of the
+                * condition code register.
+                */
+               ox_flag =
+                  mkNOT1( mkAND1( binop( Iop_CmpEQ64,
+                                         binop( Iop_And64,
+                                                unop( Iop_V128HIto64,
+                                                      mkexpr( vB ) ),
+                                                mkU64( 0xFFFFFFFFFFFFFFFF ) ),
+                                         mkU64( 0 ) ),
+                                  binop( Iop_CmpEQ64,
+                                         binop( Iop_And64,
+                                                unop( Iop_V128to64,
+                                                      mkexpr( vB ) ),
+                                                mkU64( 0xFFFFFFFF00000000 ) ),
+                                         mkU64( 0 ) ) ) );
+
+               /* Set zero to 1 if all of the bytes in vB are zero.  This is
+                * used when setting the lt_flag (variable neg) and the gt_flag
+                * (variable pos).
+                */
+               zero = mkAND1( binop( Iop_CmpEQ64,
+                                     binop( Iop_And64,
+                                            unop( Iop_V128HIto64,
+                                                  mkexpr( vB ) ),
+                                            mkU64( 0xFFFFFFFFFFFFFFFF ) ),
+                                         mkU64( 0 ) ),
+                              binop( Iop_CmpEQ64,
+                                      binop( Iop_And64,
+                                             unop( Iop_V128to64, mkexpr( vB ) ),
+                                             mkU64( 0xFFFFFFFFFFFFFFF0 ) ),
+                                      mkU64( 0 ) ) );
+
+               /* Sign codes of 0xA, 0xC, 0xE or 0xF are positive, sign
+                * codes 0xB and 0xD are negative.
+                */
+               sign_digit = binop( Iop_And64, mkU64( 0xF ), value );
+
+               /* The negative value goes in the LT bit position of the
+                * condition code register. Set neg if the sign of the
+                * value is negative and the value is zero.
+                */
+               sign = mkOR1( binop( Iop_CmpEQ64,
+                                    sign_digit,
+                                    mkU64 ( 0xB ) ),
+                             binop( Iop_CmpEQ64,
+                                    sign_digit,
+                                    mkU64 ( 0xD ) ) );
+               neg = mkAND1( sign, mkNOT1( zero ) );
+
+               /* The positive value goes in the LT bit position of the
+                * condition code register. Set neg if the sign of the
+                * value is not negative and the value is zero.
+                */
+               pos = mkAND1( mkNOT1( sign ), mkNOT1( zero ) );
+
+               assign( tmp,
+                  convert_to_national( mkexpr( vB ) ) );
+
+               /* If vB is positive insert sign value 0x002B, otherwise
+                * insert 0x002D for negative. Have to use sign not neg
+                * because neg has been ANDed with zero.  This is 0x29
+                * OR'd with (sign << 1 | NOT sign) << 1.
+                * sign = 1 if vB is negative.
+                */
+               putVReg(vRT_addr,
+                        binop( Iop_OrV128,
+                               mkexpr( tmp ),
+                               binop( Iop_64HLtoV128,
+                                      mkU64( 0 ),
+                                      binop( Iop_Or64,
+                                             mkU64( 0x29 ),
+                                             binop( Iop_Or64,
+                                                    binop( Iop_Shl64,
+                                                           unop( Iop_1Uto64,
+                                                                 sign ),
+                                                           mkU8( 2 ) ),
+                                                    binop( Iop_Shl64,
+                                                           unop( Iop_1Uto64,
+                                                                 mkNOT1(sign)),
+                                                           mkU8( 1 ) )
+                                                    ) ) ) ) );
+
+
+               /* The sign code must be between 0xA and 0xF and all digits are
+                *  between 0x0 and 0x9. The vB must be in range to be valid.
+                */
+               valid =
+                  unop( Iop_64to32,
+                        is_BCDstring128( /* Signed */True, mkexpr( vB ) ) );
+
+               overflow = ox_flag;
+            }
+            break;
+
+         case 6:  // bcdcfz. (Decimal Convert From Zoned VX-form)
+            {
+               IRExpr *sign;
+               IRTemp tmp = newTemp( Ity_V128 );;
+
+               DIP("bcdcfz. v%d,v%d,%d\n", vRT_addr, vRB_addr, ps);
+
+               valid = unop( Iop_1Uto32, is_Zoned_decimal( vB, ps ) );
+
+               assign( tmp,
+                  convert_from_zoned( mkexpr( vB ) ) );
+
+               /* If the result of checking the lower 4 bits of each 8-bit
+                * value is zero, then the "number" was zero.
+                */
+               zero =
+                  binop( Iop_CmpEQ64,
+                  binop( Iop_Or64,
+                     binop( Iop_And64,
+                                          unop( Iop_V128to64, mkexpr( vB ) ),
+                                          mkU64( 0x0F0F0F0F0F0F0F0FULL ) ),
+                                   binop( Iop_And64,
+                                          unop( Iop_V128to64, mkexpr( vB ) ),
+                  mkU64( 0x0F0F0F0F0F0F0F0FULL ) ) ),
+                  mkU64( 0 ) );
+
+               /* Sign bit is in bit 6 of vB. */
+               sign_digit = binop( Iop_And64, mkU64( 0xF0 ),
+                                   unop( Iop_V128to64,  mkexpr( vB ) ) );
+
+               if ( ps == 0 ) {
+                  /* sign will be equal to 0 for positive number */
+                  sign = binop( Iop_CmpEQ64,
+                                binop( Iop_And64,
+                                       sign_digit,
+                                       mkU64( 0x40 ) ),
+                                mkU64( 0x40 ) );
+               } else {
+                  sign = mkOR1(
+                               binop( Iop_CmpEQ64, sign_digit, mkU64( 0xB0 ) ),
+                               binop( Iop_CmpEQ64, sign_digit, mkU64( 0xD0 ) ) );
+               }
+
+               /* The negative value goes in the LT bit position of the
+                * condition code register. Set neg if the sign of the
+                * value is negative and the value is zero.
+                */
+               neg = mkAND1( sign, mkNOT1( zero ) );
+
+               /* The positive value goes in the GT bit position of the
+                * condition code register. Set neg if the sign of the
+                * value is not negative and the value is zero.
+                */
+               pos = mkAND1( mkNOT1( sign ), mkNOT1( zero ) );
+
+               /* sign of the result is 0xC for positive, 0xD for negative */
+               putVReg( vRT_addr,
+                               binop( Iop_OrV128,
+                                      mkexpr( tmp ),
+                                      binop( Iop_64HLtoV128,
+                                             mkU64( 0 ),
+                                             binop( Iop_Or64,
+                                                    mkU64( 0xC ),
+                                                    unop( Iop_1Uto64, sign )
+                                                    ) ) ) );
+               /* For this instructions the LSB position in the CC
+                * field, the overflow position in the other instructions,
+                * is given by 0.  There is nothing to or with LT, EQ or GT.
+                */
+               overflow = mkU1( 0 );
+            }
+            break;
+
+         case 7:  // bcdcfn. (Decimal Convert From National VX-form)
+            {
+               IRTemp hword_7 = newTemp( Ity_I64 );
+               IRExpr *sign;
+               IRTemp tmp = newTemp( Ity_I64 );;
+
+               DIP("bcdcfn. v%d,v%d,%d\n", vRT_addr, vRB_addr, ps);
+
+               /* check that the value is valid */
+               valid = unop( Iop_1Uto32, is_National_decimal( vB ) );
+
+               assign( hword_7, binop( Iop_And64,
+                                       unop( Iop_V128to64, mkexpr( vB ) ),
+                                       mkU64( 0xFFF ) ) );
+               /* sign = 1 if vB is negative */
+               sign = binop( Iop_CmpEQ64, mkexpr( hword_7 ), mkU64( 0x002D ) );
+
+               assign( tmp, convert_from_national( mkexpr( vB ) ) );
+
+               /* If the result of checking the lower 4 bits of each 16-bit
+                * value is zero, then the "number" was zero.
+                */
+               zero =
+                  binop( Iop_CmpEQ64,
+                         binop( Iop_Or64,
+                                binop( Iop_And64,
+                                       unop( Iop_V128HIto64, mkexpr( vB ) ),
+                                       mkU64( 0x000F000F000F000FULL ) ),
+                                binop( Iop_And64,
+                                       unop( Iop_V128to64, mkexpr( vB ) ),
+                                       mkU64( 0x000F000F000F0000ULL ) ) ),
+                         mkU64( 0 ) );
+
+
+               /* The negative value goes in the LT bit position of the
+                * condition code register. Set neg if the sign of the
+               * value is negative and the value is zero.
+                */
+               neg = mkAND1( sign, mkNOT1( zero ) );
+
+               /* The positive value goes in the GT bit position of the
+                * condition code register. Set neg if the sign of the
+                * value is not negative and the value is zero.
+                */
+               pos = mkAND1( mkNOT1( sign ), mkNOT1( zero ) );
+
+               /* For this instructions the LSB position in the CC
+                * field, the overflow position in the other instructions,
+                * is given by invalid.  There is nothing to OR with the valid
+                * flag.
+                */
+               overflow = mkU1( 0 );
+
+               /* sign of the result is:
+                  ( 0b1100 OR neg) OR (ps OR  (ps AND pos) << 1 )
+               */
+
+               putVReg( vRT_addr,
+                        binop( Iop_64HLtoV128,
+                               mkU64( 0 ),
+                               binop( Iop_Or64,
+                                      binop( Iop_Or64,
+                                             binop( Iop_Shl64,
+                                                    binop( Iop_And64,
+                                                           mkU64( ps ),
+                                                           unop( Iop_1Uto64,
+                                                                 mkNOT1(sign))),
+                                                    mkU8( 1 ) ),
+                                             mkU64( ps ) ),
+                                      binop( Iop_Or64,
+                                             binop( Iop_Or64,
+                                                    mkU64( 0xC ),
+                                                    unop( Iop_1Uto64, sign ) ),
+                                             mkexpr( tmp ) ) ) ) );
+
+            }
+            break;
+
+         case 31:  // bcdsetsgn. (BCD set sign)
+            {
+               IRExpr *new_sign_val, *sign;
+
+               DIP("bcdsetsgn. v%d,v%d,%d\n", vRT_addr, vRB_addr, ps);
+
+               value = binop( Iop_AndV128,
+                              binop( Iop_64HLtoV128,
+                                     mkU64( 0xFFFFFFFFFFFFFFFF ),
+                                     mkU64( 0xFFFFFFFFFFFFFFF0 ) ),
+                              mkexpr( vB ) );
+               zero = BCDstring_zero( value );
+
+               /* Sign codes of 0xA, 0xC, 0xE or 0xF are positive, sign
+                * codes 0xB and 0xD are negative.
+                */
+               sign_digit = binop( Iop_And64, mkU64( 0xF ),
+                                   unop( Iop_V128to64, mkexpr( vB ) ) );
+
+               sign = mkOR1( binop( Iop_CmpEQ64,
+                                    sign_digit,
+                                    mkU64 ( 0xB ) ),
+                             binop( Iop_CmpEQ64,
+                                    sign_digit,
+                                    mkU64 ( 0xD ) ) );
+               neg = mkAND1( sign, mkNOT1( zero ) );
+
+               pos = mkAND1( mkNOT1( sign ), mkNOT1( zero ) );
+
+               valid =
+                  unop( Iop_64to32,
+                        is_BCDstring128( /* Signed */True, mkexpr( vB ) ) );
+
+               /* if PS = 0
+                     vB positive, sign is C
+                     vB negative, sign is D
+                  if PS = 1
+                     vB positive, sign is F
+                     vB negative, sign is D
+                  Note can't use pos or neg here since they are ANDed with
+                  zero, use sign instead.
+               */
+               if (ps == 0) {
+                  new_sign_val = binop( Iop_Or64,
+                                        unop( Iop_1Uto64, sign ),
+                                        mkU64( 0xC ) );
+
+               } else {
+                  new_sign_val = binop( Iop_Xor64,
+                                        binop( Iop_Shl64,
+                                               unop( Iop_1Uto64, sign ),
+                                               mkU8( 1 ) ),
+                                        mkU64( 0xF ) );
+               }
+
+               putVReg( vRT_addr, binop( Iop_OrV128,
+                                         binop( Iop_64HLtoV128,
+                                                mkU64( 0 ),
+                                                new_sign_val ),
+                                         value ) );
+               /* For this instructions the LSB position in the CC
+                * field, the overflow position in the other instructions,
+                * is given by invalid.
+                */
+               overflow = unop( Iop_32to1, unop( Iop_Not32, valid ) );
+            }
+            break;
+
+         default:
+            vex_printf("dis_av_bcd(ppc)(invalid inst_select)\n");
+            return False;
+         }
+      }
+      break;
 
    default:
       vex_printf("dis_av_bcd(ppc)(opc2)\n");
       return False;
    }
+
+   IRTemp valid_mask = newTemp( Ity_I32 );
+
+   assign( valid_mask, unop( Iop_1Sto32, unop( Iop_32to1, valid ) ) );
+
+   /* set CR field 6 to:
+    *    0b1000  if vB less then 0, i.e. vB is neg and not zero,
+    *    0b0100  if vB greter then 0,  i.e. vB is pos and not zero,
+    *    0b0010  if vB equals 0,
+    *    0b0001  if vB is invalid  over rules lt, gt, eq
+    */
+   assign( eq_lt_gt,
+           binop( Iop_Or32,
+                  binop( Iop_Shl32,
+                         unop( Iop_1Uto32, neg ),
+                         mkU8( 3 ) ),
+                  binop( Iop_Or32,
+                         binop( Iop_Shl32,
+                                unop( Iop_1Uto32, pos ),
+                                mkU8( 2 ) ),
+                         binop( Iop_Shl32,
+                               unop( Iop_1Uto32, zero ),
+                                mkU8( 1 ) ) ) ) );
+   /* valid is 1 if it is a valid number, complement and put in the
+    * invalid bit location, overriding ls, eq, gt, overflow.
+    */
+   putGST_field( PPC_GST_CR,
+                 binop( Iop_Or32,
+                        binop( Iop_And32,
+                               mkexpr( valid_mask ),
+                               binop( Iop_Or32,
+                                      mkexpr( eq_lt_gt ),
+                                      unop( Iop_1Uto32, overflow ) ) ),
+                        binop( Iop_And32,
+                               unop( Iop_Not32, mkexpr( valid_mask ) ),
+                               mkU32( 1 ) ) ),
+                 6 );
    return True;
 }
 
@@ -23966,7 +26228,8 @@ DisResult disInstr_PPC_WRK (
             if (dis_dfp_fmt_conv( theInstr ))
                goto decode_success;
             goto decode_failure;
-         case 0x2A2: // dtstsf - DFP number of significant digits
+         case 0x2A2: // dtstsf  - DFP number of significant digits
+         case 0x2A3: // dtstsfi - DFP number of significant digits Immediate
             if (!allow_DFP) goto decode_noDFP;
             if (dis_dfp_significant_digits(theInstr))
                goto decode_success;
@@ -24319,7 +26582,8 @@ DisResult disInstr_PPC_WRK (
             goto decode_success;
          goto decode_failure;
 
-      case 0x2A2: // dtstsfq - DFP number of significant digits
+      case 0x2A2: // dtstsfq  - DFP number of significant digits
+      case 0x2A3: // dtstsfiq - DFP number of significant digits Immediate
          if (!allow_DFP) goto decode_noDFP;
          if (dis_dfp_significant_digits(theInstr))
             goto decode_success;
@@ -24454,6 +26718,19 @@ DisResult disInstr_PPC_WRK (
       break;
 
    case 0x13:
+
+      opc2 = ifieldOPClo5(theInstr);
+      switch (opc2) {
+
+      /* PC relative load/store */
+      case 0x002:       // addpcis
+         if (dis_pc_relative(theInstr)) goto decode_success;
+         goto decode_failure;
+
+      /* fall through to the next opc2 field size */
+      }
+
+      opc2 = ifieldOPClo10(theInstr);
       switch (opc2) {
 
       /* Condition Register Logical Instructions */
@@ -24529,9 +26806,20 @@ DisResult disInstr_PPC_WRK (
 
       opc2 = IFIELD(theInstr, 1, 10);
       switch (opc2) {
+
+      /* Integer miscellaneous instructions */
+      case 0x01E:  // wait  RFC 2500
+         if (dis_int_misc( theInstr )) goto decode_success;
+         goto decode_failure;
+
+
       /* Integer Compare Instructions  */
-      case 0x000: case 0x020: // cmp, cmpl
+      case 0x000: case 0x020: case 0x080: // cmp, cmpl, setb
          if (dis_int_cmp( theInstr )) goto decode_success;
+         goto decode_failure;
+
+      case 0x0C0: case 0x0E0:   // cmprb, cmpeqb
+         if (dis_byte_cmp( theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x10B: case 0x30B: // moduw, modsw
@@ -24758,6 +27046,7 @@ DisResult disInstr_PPC_WRK (
       case 0x04C: // lxsiwax
       case 0x10C: // lxvx
       case 0x10D: // lxvl
+      case 0x12D: // lxvll
       case 0x16C: // lxvwsx
       case 0x20C: // lxsspx
       case 0x24C: // lxsdx
@@ -24779,6 +27068,7 @@ DisResult disInstr_PPC_WRK (
       case 0x08C: // stxsiwx
       case 0x18C: // stxvx
       case 0x18D: // stxvl
+      case 0x1AD: // stxvll
       case 0x28C: // stxsspx
       case 0x2CC: // stxsdx
       case 0x38C: // stxvw4x
@@ -24901,7 +27191,21 @@ DisResult disInstr_PPC_WRK (
       opc2 = IFIELD(theInstr, 0, 9);
       switch (opc2) {
       /* BCD arithmetic */
-      case 0x1: case 0x41:             // bcdadd, bcdsub
+      case 0x001: case 0x041:             // bcdadd, bcdsub
+      case 0x101: case 0x141:             // bcdtrunc., bcdutrunc.
+      case 0x081: case 0x0C1: case 0x1C1: // bcdus., bcds., bcdsr.
+      case 0x181:                         // bcdcfn., bcdcfz.
+
+         /* These instructions must have bit 21 set to 1 for a correct
+          * opcode match.
+          */
+         if ((theInstr & 0x400) != 0x400)
+            break;  /* keep looking */
+
+         if (!allow_isa_2_07) goto decode_noP8;
+         if (dis_av_bcd( theInstr )) goto decode_success;
+         goto decode_failure;
+
          if (!allow_isa_2_07) goto decode_noP8;
          if (dis_av_bcd( theInstr )) goto decode_success;
          goto decode_failure;
@@ -24912,6 +27216,14 @@ DisResult disInstr_PPC_WRK (
 
       opc2 = IFIELD(theInstr, 0, 11);
       switch (opc2) {
+      /* BCD manipulation */
+      case 0x341:                  // bcdcpsgn
+
+         if (!allow_isa_2_07) goto decode_noP8;
+         if (dis_av_bcd_misc( theInstr )) goto decode_success;
+         goto decode_failure;
+
+
       /* AV Arithmetic */
       case 0x180:                         // vaddcuw
       case 0x000: case 0x040: case 0x080: // vaddubm, vadduhm, vadduwm

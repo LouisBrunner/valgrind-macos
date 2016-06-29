@@ -237,7 +237,9 @@ typedef
        */
       /* 1324 */ UChar guest_FPROUND; // Binary Floating Point Rounding Mode
       /* 1325 */ UChar guest_DFPROUND; // Decimal Floating Point Rounding Mode
-      /* 1326 */ UChar guest_FPCC;     //  Floating-point Condition Code
+      /* 1326 */ UChar guest_C_FPCC;   // Floating-point Condition Code
+                                       // and Floating-point Condition Code
+
       /* 1327 */ UChar pad2;
 
       /* Vector Save/Restore Register */

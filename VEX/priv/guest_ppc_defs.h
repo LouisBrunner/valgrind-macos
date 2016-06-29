@@ -147,7 +147,16 @@ enum {
 
 /* --- CLEAN HELPERS --- */
 
-/* none, right now */
+extern ULong is_BCDstring128_helper( ULong Signed, ULong hi64, ULong low64 );
+extern ULong increment_BCDstring32_helper( ULong Signed,
+                                           ULong bcd_string, ULong carry_in );
+extern ULong convert_to_zoned_helper( ULong src_hi, ULong src_low,
+                                      ULong upper_byte,
+                                      ULong return_upper );
+extern ULong convert_to_national_helper( ULong src, ULong return_upper );
+extern ULong convert_from_zoned_helper( ULong src_hi, ULong src_low );
+extern ULong convert_from_national_helper( ULong src_hi, ULong src_low );
+
 
 /* --- DIRTY HELPERS --- */
 

@@ -107,6 +107,7 @@ where XXXXXX is the bug number as listed below.
 363680  add renameat2() support
 363705  arm64 missing syscall name_to_handle_at and open_by_handle_at
 363714  ppc64 missing syscalls sync, waitid and name_to/open_by_handle_at
+364058  clarify in manual limitations of array overruns detections
 364413  pselect sycallwrapper mishandles NULL sigmask
 364728  Power PC, missing support for several HW registrs in
         get_otrack_shadow_offset_wrk()

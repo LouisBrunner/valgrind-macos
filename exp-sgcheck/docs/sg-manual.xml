@@ -100,8 +100,16 @@ does not carry any restriction from one call to the next.  Indeed,
 multiple threads may make multiple simultaneous calls to
 (e.g.) <function>memcpy</function> without mutual interference.</para>
 
+<para>It is important to note that the association is done between
+  a <emphasis>binary instruction</emphasis> and an array, the
+  <emphasis>first time</emphasis> this binary instruction accesses an
+  array during a function call.  When the same instruction is executed
+  again during the same function call, then SGCheck might report a
+  problem, if these further executions are not accessing the same
+  array. This technique causes several limitations in SGCheck, see
+  <xref linkend="sg-manual.limitations"/>.
+</para>
 </sect1>
-
 
 
 
@@ -146,6 +154,9 @@ of.</para>
    function instantiation) is not checked for overrun, since SGCheck
    uses that as the "example" of how subsequent accesses should
    behave.</para>
+   <para>It also means that errors will not be found in an instruction
+     executed only once (e.g. because this instruction is not in a loop,
+     or the loop is executed only once).</para>
   </listitem>
 
   <listitem>

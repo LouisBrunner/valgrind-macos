@@ -616,7 +616,7 @@ void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
 	    if (replaced_sopatt == NULL
 		&& VG_(strcmp) ( demangled_sopatt, SO_SYN_MALLOC_NAME ) == 0)
 	      {
-		replaced_sopatt = VG_(strdup)("m_redir.rnnD.1", "*");
+		replaced_sopatt = dinfo_strdup("m_redir.rnnD.1", "*");
 		demangled_sopatt = replaced_sopatt;
 		isGlobal = True;
 	      }
@@ -640,6 +640,14 @@ void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
          spec->mark = False; /* not significant */
          spec->done = False; /* not significant */
          specList = spec;
+         /* The demangler is the owner of the demangled_sopatt memory,
+            unless it was replaced. In this case, we have to free the
+            replace_sopatt(==demangled_sopatt).  We can free it,
+            because it was dinfo_strup-ed into spec->from_sopatt. */
+         if (replaced_sopatt != NULL) {
+            vg_assert(demangled_sopatt == replaced_sopatt);
+            dinfo_free(replaced_sopatt);
+         }
       }
       free_symname_array(names_init, &twoslots[0]);
    }

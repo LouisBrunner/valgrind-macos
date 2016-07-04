@@ -59,28 +59,34 @@ where XXXXXX is the bug number as listed below.
 303877  valgrind doesn't support compressed debuginfo sections.
 345307  Warning about "still reachable" memory when using libstdc++ from gcc 5
 348345  Assertion fails for negative lineno
+351804  Crash on generating suppressions for "printf" call on OS X 10.10
 353083  arm64 doesn't implement various xattr system calls
 353084  arm64 doesn't support sigpending system call
+353137  www: update info for Supported Platforms
+353138  www: update "The Valgrind Developers" page
 353370  don't advertise RDRAND in cpuid for Core-i7-4910-like avx2 machine
 353398  WARNING: unhandled amd64-solaris syscall: 207
 353660  XML in auxwhat tag not escaping reserved symbols properly
 353680  s390x: Crash with certain glibc versions due to non-implemented TBEGIN
+353802  ELF debug info reader confused with multiple .rodata sections
 353891  Assert 'bad_scanned_addr < VG_ROUNDDN(start+len, sizeof(Addr))' failed
 353917  unhandled amd64-solaris syscall fchdir(120)
 353920  unhandled amd64-solaris syscall: 170
 354392  unhandled amd64-solaris syscall: 171
-354797  Added vbit tester support for PPC 64 isa 2.07 iops
+354797  Vbit test does not include Iops for Power 8 instruction support
 354883  tst->os_state.pthread - magic_delta assertion failure on OSX 10.11
 354933  Fix documentation of --kernel-variant=android-no-hw-tls option
 355188  valgrind should intercept all malloc related global functions
-355455  stderr.exp of test cases wrapmalloc and wrapmallocstatic overconstrained
 355454  do not intercept malloc related symbols from the runtime linker
+355455  stderr.exp of test cases wrapmalloc and wrapmallocstatic overconstrained
 356044  Dwarf line info reader misinterprets is_stmt register
+356393  valgrind (vex) crashes because isZeroU happened
 356817  valgrind.h triggers compiler errors on MSVC when defining NVALGRIND
 357833  Setting RLIMIT_DATA to zero breaks with linux 4.5+
 357871  pthread_spin_destroy not properly wrapped
-357887  Fix a file handle leak. VG_(fclose) did not close the file
+357887  Calls to VG_(fclose) do not close the file descriptor
 358030  support direct socket calls on x86 32bit (new in linux 4.3)
+358478  drd/tests/std_thread.cpp doesn't build with GCC6
 359133  Assertion 'eltSzB <= ddpa->poolSzB' failed
 359201  futex syscall "skips" argument 5 if op is FUTEX_WAIT_BITSET
 359289  s390x: popcnt (B9E1) not implemented
@@ -117,6 +123,10 @@ n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap
 n-i-bz false positive leaks due to aspacemgr merging non heap segments with heap segments.
 n-i-bz Fix ppoll_alarm exclusion on OS X
 n-i-bz Document brk segment limitation, reference manual in limit reached msg.
+n-i-bz Fix clobber list in none/tests/amd64/xacq_xrel.c [valgrind r15737]
+n-i-bz Bump allowed shift value for "add.w reg, sp, reg, lsl #N" [vex r3206]
+
+
 
 Release 3.11.0 (22 September 2015)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -499,8 +509,7 @@ where XXXXXX is the bug number as listed below.
 351140  arm64 syscalls setuid (146) and setresgid (149) not implemented
 351386  Solaris: Cannot run ld.so.1 under Valgrind
 351474  Fix VG_(iseqsigset) as obvious
-351534  Fix incorrect header guard
-351632  Fix UNKNOWN fcntl 97 on OS X 10.11
+351531  Typo in /include/vki/vki-xen-physdev.h header guard
 351756  Intercept platform_memchr$VARIANT$Haswell on OS X
 351858  ldsoexec support on Solaris
 351873  Newer gcc doesn't allow __builtin_tabortdc[i] in ppc32 mode

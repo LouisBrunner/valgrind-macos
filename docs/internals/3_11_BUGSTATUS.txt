@@ -26,6 +26,8 @@ of 3.11.0 go in here.  Bugs that didn't get fixed in 3.11.0 remain in
 357873  libstdc++ unhandled instruction: 0xF 0xC7 0xF0 0x89
         [== 353370, fixed, RDRAND ?]
 357932  vex amd64->IR: 0xF2 0x49 0xF 0x5D  and 0xF2 0x49 0xF 0x5F
+359952  Unrecognised PCMPESTRM variants
+360415  amd64 instructions ADCX and ADOX are not implemented in VEX
 
 === VEX/arm ============================================================
 
@@ -37,16 +39,20 @@ n-i-bz  Remove limit on strd's negative immediates
 356823  Unsupported ARM instruction: stlex
 357673  crash if I try to run valgrind with a binary link with libcurl
         [IR sanity check failure]
+362934  [AsusWRT] Arm v7 illegal instruction
 
 === VEX/arm64 ==========================================================
 
 357338  Unhandled instruction for SHA instructions libcrypto Boring SSL
+359838  arm64: Unhandled instruction 0xD5033F5F (clrex)
+360378  arm64: Unhandled instruction 0x5E280844 (sha1h  s4, s2)
 
 === VEX/x86 ============================================================
 
 355231  Unhandled Instruction Bytes (SSE4, vmovdqu, "0xC5 0xFA 0x6F 0x2")
 357059  x86: SSE cvtpi2ps with memory source does transition to MMX state
         [Also relevant for amd64.  Not sure this is really a bug.]
+358856  unhandled instruction bytes: 0xC4 0xE2 0x7B 0xF7
 
 === VEX/mips ===========================================================
 
@@ -54,7 +60,12 @@ n-i-bz  Remove limit on strd's negative immediates
 
 === VEX/ppc ============================================================
 
+361405  disInstr(ppc): unhandled instruction: 0xFF81010C
+364948  Add IBM ISA 3.0 support, patch set 5
+
 === VEX/s390x ==========================================================
+
+361226  s390x: risbgn (EC59) not implemented
 
 === VEX general ========================================================
 
@@ -74,6 +85,21 @@ n-i-bz  Remove limit on strd's negative immediates
         [== 345414, still open]
 358620  WARNING: unhandled syscall: 357
         [arm32, 3.7.0, also an unhandled insn]
+359705  memcheck causes segfault on a dynamically-linked test from
+        rustlang's test suite on i686
+360429  Warning: noted but unhandled ioctl 0x530d with no size/direction hints.
+360574  Wrong parameter type for an ashmem ioctl() call on Android and ARM64
+361615  Inconsistent termination when an instrumented multithreaded process
+        is terminated by signal
+361726  WARNING:unhandled syscall on ppc64
+361770  Missing F_ADD_SEALS
+362892  test apk in android5.0.2,after fix the bug 344802,android log
+        "Unable to create protected region in stack for implicit overflow 
+        check. Reason: Out of memory size:  4096"
+362939  test apk in android 5.0 or most,at 0x6A23AB4:
+        art::Thread::InstallImplicitProtection() (in /system/lib/libart.so)
+        [initimg problems on Android]
+364359  Valgrind crashes on fcntl(F_SETFL, O_NONBLOCK, fd)
 
 === Syscalls/ioctls on OSX =============================================
 
@@ -85,11 +111,16 @@ n-i-bz  Remove limit on strd's negative immediates
 
 353192  Debug info/data section not detected on AMD64
 355197  Too strong assert in variable debug info code
+359181  Buffer Overflow during Demangling
 
 === Tools/Memcheck =====================================================
 
 352364  ppc64: --expensive-definedness-checks=yes is not quite working here
 353282  False uninitialised memory after bittwiddling
+358980  32 byte leak reported when code uses dlopen and links against pthread
+361504  dlopen()/dlclose() and shared object usage check [wishlist]
+361810  valgrind duplicate stdin after fork
+364279  False "Uninitialized" on atomic_compare_exchange
 
 === Tools/DRD ==========================================================
 
@@ -101,6 +132,9 @@ n-i-bz  Remove limit on strd's negative immediates
 358213  helgrind bar_bad testcase hangs
         with new glibc pthread barrier implementation
         [Also DRD is affected]
+360557  helgrind reports data race which I can't see (involves rwlocks)
+        [probably a legit bug]
+363740  Possible data race in vgPlain_amd64_linux_REDIR_FOR_vgettimeofday
 
 === Tools/SGCheck ======================================================
 
@@ -125,13 +159,19 @@ n-i-bz  Remove limit on strd's negative immediates
 
 === other/arm ==========================================================
 
+362935  [AsusWRT] Assertion 'sizeof(TTEntryC) <= 88' failed
+364533  Process terminating with default action of signal 4 (SIGILL): dumping
+        core, : at 0x4000E7C: ??? (in /lib/ld-uClibc.so.0)
+
 === other/s390 =========================================================
+
+361253  [s390x] ex_clone.c:42: undefined reference to `pthread_create'
 
 === other/tilegx =======================================================
 
 === other/Android ======================================================
 
-=== other/OS X ========================================================
+=== other/OS X =========================================================
 
 351855  Possible false positive on OS X with setlocale
 352384  mmap-FIXED failed in UME (load_segment2)
@@ -143,8 +183,12 @@ n-i-bz  Remove limit on strd's negative immediates
         == 258140 [still open]
 354809  Error message for unsupported platform is unhelpful
 356122  Apparent infinite loop calling GLib g_get_user_special_dir() function
+359264  Memcheck shows 2,064 bytes possibly lost and 20,036 suppressed bytes
+        in simplistic program on OS X El Capitan
+363123  SIGSEGV on Mac OS with very simple threaded code
+        == 349128 [still open]
 
-=== other/Win32 =======================================================
+=== other/Win32 ========================================================
 
 === GDB server =========================================================
 
@@ -157,10 +201,14 @@ n-i-bz  Remove limit on strd's negative immediates
 352395  Please provide SVN revision info in --version
 358569  Unhandled instructions cause creation of "orphan" stack traces
         in XML output
+359645  [patch] "You need libc6-dbg" help message could be more helpful
+        with 32-bit target on-64-bit arch
 
 === MPI ================================================================
 
 === Documentation ======================================================
+
+362953  Request for an update to the Valgrind Developers page
 
 === Uncategorised/run ==================================================
 
@@ -168,18 +216,22 @@ n-i-bz  Remove limit on strd's negative immediates
 356457  valgrind: m_mallocfree.c:2042 (vgPlain_arena_free):
         Assertion 'blockSane(a, b)' failed.
         [Possible V memory corruption?]
+359249  valgrind unable to load 64-bit linux executable
+        linked with -mcmodel=medium
+360571  Error about the Android Runtime reading below the stack pointer on ARM
+362223  valgrind: m_commandline.c:79 (read_dot_valgrindrc):
+        Assertion 'n >= 0 && n <= stat_buf.size+1' failed.
+362680  --error-exitcode not honored when file descriptor leaks are found
 
-=== Uncategorised/build=================================================
+=== Uncategorised/build ================================================
 
-========================================================================
-========================================================================
-========================================================================
+358697  valgrind.h: Some code remains even when defining NVALGRIND
+359202  Add musl libc configure/compile
+359920  Configure fails with relative DESTDIR
+362033  undeclared identifier build failures for getpid(), usleep(),
+        and getuid() [Valkyrie]
 
-========================================================================
-========================================================================
-========================================================================
-
-Wed  2 Dec 16:01:07 CET 2015
+=== Intel Compiler problems ============================================
 
 357010  drd regression tests fail to compile with Intel compiler
 357011  Memcheck regression tests do not generate expected frame numbers
@@ -188,115 +240,11 @@ Wed  2 Dec 16:01:07 CET 2015
         if compiled with intel compiler
 357014  Helgrind regression tests do not match expected results
         if compiled with intel compiler
-357033  VALGRIND_DO_QUICK_LEAK_CHECK reports leaked and dubious memory
-        as reachable in intel-compiled
-357034  Inlined functions are not reported for intel-compiled applications.
-357035  Uninitialized variable of type double is reported twice
-        in intel-compiled application.
-357037  Line numbers are occasionally displayed incorrectly
-        in intel-compiled applications
 
-Thu 28 Jan 13:20:02 CET 2016
-
-358697  valgrind.h: Some code remains even when defining NVALGRIND
-358856  unhandled instruction bytes: 0xC4 0xE2 0x7B 0xF7
-358980  32 byte leak reported when code uses dlopen and links against pthread
-358988  rdrand support missing: 0x48 0xF 0xC7 0xF1 ...
-359133  m_deduppoolalloc.c:258 (vgPlain_allocEltDedupPA):
-        Assertion 'eltSzB <= ddpa->poolSzB' failed.
-359181  Buffer Overflow during Demangling
-359201  futex syscall "skips" argument 5 if op is FUTEXT_WAIT_BITSET
-359202  Add musl libc configure/compile
-359249  valgrind unable to load 64-bit linux executable
-        linked with -mcmodel=medium
-359264  Memcheck shows 2,064 bytes possibly lost and 20,036 suppressed bytes
-        in simplistic program on OS X El Capitan
-359289  s390x: popcnt (B9E1) not implemented
-359472  The Power PC vsubuqm instruction doesn't always give the correct result.
-359503  Add missing syscalls for aarch64 (arm64)
-359524  bt, btc, btr and bts instruction improperly translated by VEX on x86-64
-359645  [patch] "You need libc6-dbg" help message could be more helpful
-        with 32-bit target on-64-bit arch
-359703  s390: wire up separate socketcalls system calls
-359705  memcheck causes segfault on a dynamically-linked test from
-        rustlang's test suite on i686
-359724  getsockname syscall might crash - deref_UInt should check make
-        sure it is safe to deref
-359733  amd64 implement strchr/index override to avoid need for suppression
-        and redirection like x86
-359767  Valgrind does not support the IBM POWER ISA 3.0 instructions
-359829  Power PC test suite  none/tests/ppc64/test_isa_2_07.c uses
-        uninitialzed data
-359838  arm64: Unhandled instruction 0xD5033F5F (clrex)
-359871  Incorrect mask handling in ppoll
-359920  Configure fails with relative DESTDIR
-359950  Wrong result comparing doubles on x87
-359952  Unrecognised PCMPESTRM variants
-360008  Contents of Power vr registers contents is not printed correctly
-        when the --vgdb-shadow-registers=yes  option is used.
-360035  POWER PC instruction bcdadd and bcdsubtract generate result with
-        non-zero shadow bits
-360188  Valgrind does not build
-360378  arm64: Unhandled instruction 0x5E280844 (sha1h  s4, s2)
-360415  amd64 instructions ADCX and ADOX are not implemented in VEX
-360425  arm64 unsupported instruction ldpsw
-360429  Warning: noted but unhandled ioctl 0x530d with no size/direction hints.
-360519  none/tests/arm64/memory.vgtest might fail with newer gcc
-360557  helgrind reports data race which I can't see (involves rwlocks)
-360571  Error about the Android Runtime reading below the stack pointer on ARM
-360574  Wrong parameter type for an ashmem ioctl() call on Android and ARM64
-360749  kludge for multiple .rodata sections on Solaris no longer needed
-360752  raise the number of reserved fds in m_main.c from 10 to 12
-361207  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 2
-361226  s390x: risbgn (EC59) not implemented
-361253  [s390x] ex_clone.c:42: undefined reference to `pthread_create'
-361351  Assertion failure analyzing SDL_Init()
-361354  ppc64[le]: wire up separate socketcalls system calls
-361405  disInstr(ppc): unhandled instruction: 0xFF81010C
-361504  dlopen()/dlclose() and shared object usage check
-361615  Inconsistent termination when an instrumented multithreaded process
-        is terminated by signal
-361726  WARNING:unhandled syscall on ppc64
-361770  Missing F_ADD_SEALS
-361810  valgrind duplicate stdin after fork
-361926  unhandled x86-solaris syscall: 84
-362009  Valgrind dumps core on unimplemented functionality before threads
-        are created
-362033  undeclared identifier build failures for getpid(), usleep(),
-        and getuid()
-362223  valgrind: m_commandline.c:79 (read_dot_valgrindrc):
-        Assertion 'n >= 0 && n <= stat_buf.size+1' failed.
-362329  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 3
-362680  --error-exitcode not honored when file descriptor leaks are found
-362892  test apk in android5.0.2,after fix the bug 344802,android log
-        "Unable to create protected region in stack for implicit overflow 
-        check. Reason: Out of memory size:  4096"
-362894  missing (broken) support for wbit field on mtfsfi instruction (ppc64)
-362920  valgrind refuses to execute pkcs11-tool binary from OpenSC:
-        assertion 'tst->os_state.pthread - magic_delta == self' failed
-362934  [AsusWRT] Arm v7 illegal instruction
-362935  [AsusWRT] Assertion 'sizeof(TTEntryC) <= 88' failed
-362939  test apk in android 5.0 or most,at 0x6A23AB4:
-        art::Thread::InstallImplicitProtection() (in /system/lib/libart.so)
-362953  Request for an update to the Valgrind Developers page
-363123  SIGSEGV on Mac OS with very simple threaded code
-363497  Crash if i run valgrind on any working program -> valgrind:
-        the 'impossible' happened:    LibVEX called failure_exit()
-363680  add renameat2() support
-363705  arm64 missing syscall name_to_handle_at and open_by_handle_at
-363714  ppc64 missing syscalls sync, waitid and name_to/open_by_handle_at
-363740  Possible data race in vgPlain_amd64_linux_REDIR_FOR_vgettimeofday
-363858  Add IBM ISA 3.0 support, patch set 4
-364058  array overruns are not detected
-364279  False "Uninitialized" on atomic_compare_exchange
-364359  Valgrind crashes on fcntl(F_SETFL, O_NONBLOCK, fd)
-364413  pselect sycallwrapper mishandles NULL sigmask
-364435  Crash - Unrecognized instruction for Arm64 LDPSW
-364497  Run valgrind on nginx
-364533  Process terminating with default action of signal 4 (SIGILL): dumping
-        core, : at 0x4000E7C: ??? (in /lib/ld-uClibc.so.0)
-364728  Power PC, missing support for several HW registrs i
-        n get_otrack_shadow_offset_wrk()
-364948  Add IBM ISA 3.0 support, patch set 5
+========================================================================
+========================================================================
+========================================================================
+========================================================================
+========================================================================
 
 Mon  4 Jul 13:10:42 CEST 2016

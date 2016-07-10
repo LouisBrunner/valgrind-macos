@@ -2519,6 +2519,7 @@ void async_signalhandler ( Int sigNo,
 Bool VG_(extend_stack)(ThreadId tid, Addr addr)
 {
    SizeT udelta;
+   Addr new_stack_base;
 
    /* Get the segment containing addr. */
    const NSegment* seg = VG_(am_find_nsegment)(addr);
@@ -2536,14 +2537,15 @@ Bool VG_(extend_stack)(ThreadId tid, Addr addr)
    vg_assert(seg_next != NULL);
 
    udelta = VG_PGROUNDUP(seg_next->start - addr);
+   new_stack_base = seg_next->start - udelta;
 
    VG_(debugLog)(1, "signals", 
-                    "extending a stack base 0x%lx down by %lu\n",
-                    seg_next->start, udelta);
+                 "extending a stack base 0x%lx down by %lu"
+                 " new base 0x%lx to cover 0x%lx\n",
+                 seg_next->start, udelta, new_stack_base, addr);
    Bool overflow;
    if (! VG_(am_extend_into_adjacent_reservation_client)
        ( seg_next->start, -(SSizeT)udelta, &overflow )) {
-      Addr new_stack_base = seg_next->start - udelta;
       if (overflow)
          VG_(umsg)("Stack overflow in thread #%u: can't grow stack to %#lx\n",
                    tid, new_stack_base);
@@ -2555,7 +2557,7 @@ Bool VG_(extend_stack)(ThreadId tid, Addr addr)
 
    /* When we change the main stack, we have to let the stack handling
       code know about it. */
-   VG_(change_stack)(VG_(clstk_id), addr, VG_(clstk_end));
+   VG_(change_stack)(VG_(clstk_id), new_stack_base, VG_(clstk_end));
 
    if (VG_(clo_sanity_level) > 2)
       VG_(sanity_check_general)(False);

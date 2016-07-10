@@ -127,6 +127,7 @@ where XXXXXX is the bug number as listed below.
 364413  pselect sycallwrapper mishandles NULL sigmask
 364728  Power PC, missing support for several HW registers in
         get_otrack_shadow_offset_wrk()
+365273  Invalid write to stack location reported after signal handler runs
 
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64
 n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap

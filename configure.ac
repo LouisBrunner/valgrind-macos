@@ -3604,6 +3604,51 @@ if test "$solaris_fpchip_state_takes_underscore" = "yes"; then
             [Define to 1 if fpregset_t defines struct _fpchip_state])
 fi
 
+
+# Solaris-specific check determining if schedctl page shared between kernel
+# and userspace program is executable (illumos, older Solaris) or not (newer
+# Solaris).
+#
+# C-level symbol: SOLARIS_SCHEDCTL_PAGE_EXEC
+# Automake-level symbol: none
+#
+AC_MSG_CHECKING([if schedctl page is executable (Solaris-specific)])
+AC_RUN_IFELSE([AC_LANG_PROGRAM([[
+#include <assert.h>
+#include <fcntl.h>
+#include <procfs.h>
+#include <schedctl.h>
+#include <stdio.h>
+#include <unistd.h>
+]], [[
+    schedctl_t *scp = schedctl_init();
+    if (scp == NULL)
+        return 1;
+
+    int fd = open("/proc/self/map", O_RDONLY);
+    assert(fd >= 0);
+
+    prmap_t map;
+    ssize_t rd;
+    while ((rd = read(fd, &map, sizeof(map))) == sizeof(map)) {
+        if (map.pr_vaddr == ((uintptr_t) scp & PAGEMASK)) {
+            fprintf(stderr, "%#lx [%zu] %s\n", map.pr_vaddr, map.pr_size,
+                    (map.pr_mflags & MA_EXEC) ? "x" : "no-x");
+            return (map.pr_mflags & MA_EXEC);
+        }
+    }
+
+    return 1;
+]])], [
+solaris_schedctl_page_exec=no
+AC_MSG_RESULT([no])
+], [
+solaris_schedctl_page_exec=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_SCHEDCTL_PAGE_EXEC], 1,
+          [Define to 1 if you have the schedctl page executable.])
+])
+
 else
 AM_CONDITIONAL(SOLARIS_SUN_STUDIO_AS, false)
 AM_CONDITIONAL(SOLARIS_XPG_SYMBOLS_PRESENT, false)

@@ -9427,7 +9427,10 @@ POST(sys_schedctl)
    /* Returned address points to a block in a mapped page. */
    if (!VG_(am_find_anon_segment)(a)) {
       Addr page = VG_PGROUNDDN(a);
-      UInt prot = VKI_PROT_READ | VKI_PROT_WRITE | VKI_PROT_EXEC;
+      UInt prot = VKI_PROT_READ | VKI_PROT_WRITE;
+#     if defined(SOLARIS_SCHEDCTL_PAGE_EXEC)
+      prot |= VKI_PROT_EXEC;
+#     endif /* SOLARIS_SCHEDCTL_PAGE_EXEC */
       UInt flags = VKI_MAP_ANONYMOUS;
       /* The kernel always allocates one page for the sc_shared struct. */
       SizeT size = VKI_PAGE_SIZE;

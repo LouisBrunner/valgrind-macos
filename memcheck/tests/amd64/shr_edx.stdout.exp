@@ -1,0 +1,4 @@
+
+shrl 0x10 with unitialised bits
+non zero jump on p[2..3] 0x00000000deaddead
+zero jump on p[2..3] 0x0000000000000000

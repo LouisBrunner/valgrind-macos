@@ -136,7 +136,7 @@ n-i-bz Fix ppoll_alarm exclusion on OS X
 n-i-bz Document brk segment limitation, reference manual in limit reached msg.
 n-i-bz Fix clobber list in none/tests/amd64/xacq_xrel.c [valgrind r15737]
 n-i-bz Bump allowed shift value for "add.w reg, sp, reg, lsl #N" [vex r3206]
-
+n-i-bz amd64: memcheck false positive with shr %edx
 
 
 Release 3.11.0 (22 September 2015)

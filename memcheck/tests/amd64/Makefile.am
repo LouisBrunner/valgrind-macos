@@ -30,6 +30,7 @@ EXTRA_DIST = \
 	sh-mem-vec256-plo-yes.vgtest \
 		sh-mem-vec256-plo-yes.stderr.exp \
 		sh-mem-vec256-plo-yes.stdout.exp \
+	shr_edx.stderr.exp shr_edx.stdout.exp shr_edx.vgtest \
 	sse_memory.stderr.exp sse_memory.stdout.exp sse_memory.vgtest \
 	xor-undef-amd64.stderr.exp xor-undef-amd64.stdout.exp \
 	xor-undef-amd64.vgtest \
@@ -43,6 +44,7 @@ check_PROGRAMS = \
 	insn-bsfl \
 	insn-pmovmskb \
 	sh-mem-vec128 \
+	shr_edx \
 	sse_memory \
 	xor-undef-amd64
 if BUILD_AVX_TESTS

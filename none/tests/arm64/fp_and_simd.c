@@ -4523,10 +4523,6 @@ GEN_UNARY_TEST(xtn2, 16b, 8h)
 
 // ======================== CRYPTO ========================
 
-// These tests are believed to be correct but are disabled because
-// GNU assembler (GNU Binutils) 2.24.0.20140311 Linaro 2014.03
-// cannot be persuaded to accept those instructions (AFAICT).
-
 GEN_TWOVEC_TEST(aesd_16b_16b,    "aesd v6.16b,  v27.16b",  6, 27)
 GEN_TWOVEC_TEST(aese_16b_16b,    "aese v6.16b,  v27.16b",  6, 27)
 GEN_TWOVEC_TEST(aesimc_16b_16b,  "aesimc v6.16b,  v27.16b",  6, 27)
@@ -7385,14 +7381,22 @@ int main ( void )
 
    // ======================== CRYPTO ========================
 
+   // By default each test only runs once.  That seems a bit too minimal
+   // for the crypto ones.  So here's an extra run multiplication factor.
+   const int CRYPTO_ITER_MULTIPLIER = 10;
+   
    // aesd       16b (aes single round decryption)
    // aese       16b (aes single round encryption)
    // aesimc     16b (aes inverse mix columns)
    // aesmc      16b (aes mix columns)
-   if (0) test_aesd_16b_16b(TyNONE);
-   if (0) test_aese_16b_16b(TyNONE);
-   if (0) test_aesimc_16b_16b(TyNONE);
-   if (0) test_aesmc_16b_16b(TyNONE);
+   if (1) for (int i = 0; i < CRYPTO_ITER_MULTIPLIER; i++)
+             test_aesd_16b_16b(TyNONE);
+   if (1) for (int i = 0; i < CRYPTO_ITER_MULTIPLIER; i++)
+             test_aese_16b_16b(TyNONE);
+   if (1) for (int i = 0; i < CRYPTO_ITER_MULTIPLIER; i++)
+             test_aesimc_16b_16b(TyNONE);
+   if (1) for (int i = 0; i < CRYPTO_ITER_MULTIPLIER; i++)
+             test_aesmc_16b_16b(TyNONE);
 
    // sha1c      q_s_4s
    // sha1h      s_s

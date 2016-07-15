@@ -12860,7 +12860,75 @@ Bool dis_AdvSIMD_vector_x_indexed_elem(/*MB_OUT*/DisResult* dres, UInt insn)
 static
 Bool dis_AdvSIMD_crypto_aes(/*MB_OUT*/DisResult* dres, UInt insn)
 {
+   /* 31        23   21    16     11 9 4
+      0100 1110 size 10100 opcode 10 n d
+      Decode fields are: size,opcode
+      Size is always 00 in ARMv8, it appears.
+   */
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,24) != BITS8(0,1,0,0,1,1,1,0)
+      || INSN(21,17) != BITS5(1,0,1,0,0) || INSN(11,10) != BITS2(1,0)) {
+      return False;
+   }
+   UInt size   = INSN(23,22);
+   UInt opcode = INSN(16,12);
+   UInt nn     = INSN(9,5);
+   UInt dd     = INSN(4,0);
+
+   if (size == BITS2(0,0)
+       && (opcode == BITS5(0,0,1,0,0) || opcode == BITS5(0,0,1,0,1))) {
+      /* -------- 00,00100: AESE Vd.16b, Vn.16b -------- */
+      /* -------- 00,00101: AESD Vd.16b, Vn.16b -------- */
+      Bool   isD  = opcode == BITS5(0,0,1,0,1);
+      IRTemp op1  = newTemp(Ity_V128);
+      IRTemp op2  = newTemp(Ity_V128);
+      IRTemp xord = newTemp(Ity_V128);
+      IRTemp res  = newTemp(Ity_V128);
+      void*        helper = isD ? &arm64g_dirtyhelper_AESD
+                                : &arm64g_dirtyhelper_AESE;
+      const HChar* hname  = isD ? "arm64g_dirtyhelper_AESD"
+                                : "arm64g_dirtyhelper_AESE";
+      assign(op1, getQReg128(dd));
+      assign(op2, getQReg128(nn));
+      assign(xord, binop(Iop_XorV128, mkexpr(op1), mkexpr(op2)));
+      IRDirty* di
+         = unsafeIRDirty_1_N( res, 0/*regparms*/, hname, helper,
+                              mkIRExprVec_3(
+                                 IRExpr_VECRET(),
+                                 unop(Iop_V128HIto64, mkexpr(xord)),
+                                 unop(Iop_V128to64, mkexpr(xord)) ) );
+      stmt(IRStmt_Dirty(di));
+      putQReg128(dd, mkexpr(res));
+      DIP("aes%c %s.16b, %s.16b\n", isD ? 'd' : 'e',
+                                    nameQReg128(dd), nameQReg128(nn));
+      return True;
+   }
+
+   if (size == BITS2(0,0)
+       && (opcode == BITS5(0,0,1,1,0) || opcode == BITS5(0,0,1,1,1))) {
+      /* -------- 00,00110: AESMC  Vd.16b, Vn.16b -------- */
+      /* -------- 00,00111: AESIMC Vd.16b, Vn.16b -------- */
+      Bool   isI  = opcode == BITS5(0,0,1,1,1);
+      IRTemp src  = newTemp(Ity_V128);
+      IRTemp res  = newTemp(Ity_V128);
+      void*        helper = isI ? &arm64g_dirtyhelper_AESIMC
+                                : &arm64g_dirtyhelper_AESMC;
+      const HChar* hname  = isI ? "arm64g_dirtyhelper_AESIMC"
+                                : "arm64g_dirtyhelper_AESMC";
+      assign(src, getQReg128(nn));
+      IRDirty* di
+         = unsafeIRDirty_1_N( res, 0/*regparms*/, hname, helper,
+                              mkIRExprVec_3(
+                                 IRExpr_VECRET(),
+                                 unop(Iop_V128HIto64, mkexpr(src)),
+                                 unop(Iop_V128to64, mkexpr(src)) ) );
+      stmt(IRStmt_Dirty(di));
+      putQReg128(dd, mkexpr(res));
+      DIP("aes%s %s.16b, %s.16b\n", isI ? "imc" : "mc",
+                                    nameQReg128(dd), nameQReg128(nn));
+      return True;
+   }
+
    return False;
 #  undef INSN
 }

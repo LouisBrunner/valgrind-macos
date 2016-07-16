@@ -4548,6 +4548,7 @@ GEN_THREEVEC_TEST(sha256su1_4s_4s_4s, "sha256su1 v29.4s, v28.4s, v27.4s",
 
 int main ( void )
 {
+   int i;
    assert(sizeof(V128) == 16);
 
    // ======================== FP ========================
@@ -7389,13 +7390,13 @@ int main ( void )
    // aese       16b (aes single round encryption)
    // aesimc     16b (aes inverse mix columns)
    // aesmc      16b (aes mix columns)
-   if (1) for (int i = 0; i < CRYPTO_ITER_MULTIPLIER; i++)
+   if (1) for (i = 0; i < CRYPTO_ITER_MULTIPLIER; i++)
              test_aesd_16b_16b(TyNONE);
-   if (1) for (int i = 0; i < CRYPTO_ITER_MULTIPLIER; i++)
+   if (1) for (i = 0; i < CRYPTO_ITER_MULTIPLIER; i++)
              test_aese_16b_16b(TyNONE);
-   if (1) for (int i = 0; i < CRYPTO_ITER_MULTIPLIER; i++)
+   if (1) for (i = 0; i < CRYPTO_ITER_MULTIPLIER; i++)
              test_aesimc_16b_16b(TyNONE);
-   if (1) for (int i = 0; i < CRYPTO_ITER_MULTIPLIER; i++)
+   if (1) for (i = 0; i < CRYPTO_ITER_MULTIPLIER; i++)
              test_aesmc_16b_16b(TyNONE);
 
    // sha1c      q_s_4s

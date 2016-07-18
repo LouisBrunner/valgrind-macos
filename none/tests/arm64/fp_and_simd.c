@@ -4548,7 +4548,6 @@ GEN_THREEVEC_TEST(sha256su1_4s_4s_4s, "sha256su1 v29.4s, v28.4s, v27.4s",
 
 int main ( void )
 {
-   int i;
    assert(sizeof(V128) == 16);
 
    // ======================== FP ========================
@@ -7382,22 +7381,14 @@ int main ( void )
 
    // ======================== CRYPTO ========================
 
-   // By default each test only runs once.  That seems a bit too minimal
-   // for the crypto ones.  So here's an extra run multiplication factor.
-   const int CRYPTO_ITER_MULTIPLIER = 10;
-   
    // aesd       16b (aes single round decryption)
    // aese       16b (aes single round encryption)
    // aesimc     16b (aes inverse mix columns)
    // aesmc      16b (aes mix columns)
-   if (1) for (i = 0; i < CRYPTO_ITER_MULTIPLIER; i++)
-             test_aesd_16b_16b(TyNONE);
-   if (1) for (i = 0; i < CRYPTO_ITER_MULTIPLIER; i++)
-             test_aese_16b_16b(TyNONE);
-   if (1) for (i = 0; i < CRYPTO_ITER_MULTIPLIER; i++)
-             test_aesimc_16b_16b(TyNONE);
-   if (1) for (i = 0; i < CRYPTO_ITER_MULTIPLIER; i++)
-             test_aesmc_16b_16b(TyNONE);
+   if (1) DO50( test_aesd_16b_16b(TyNONE) );
+   if (1) DO50( test_aese_16b_16b(TyNONE) );
+   if (1) DO50( test_aesimc_16b_16b(TyNONE) );
+   if (1) DO50( test_aesmc_16b_16b(TyNONE) );
 
    // sha1c      q_s_4s
    // sha1h      s_s
@@ -7405,21 +7396,21 @@ int main ( void )
    // sha1p      q_s_4s
    // sha1su0    4s_4s_4s
    // sha1su1    4s_4s
-   if (0) test_sha1c_q_s_4s(TyNONE);
-   if (0) test_sha1h_s_s(TyNONE);
-   if (0) test_sha1m_q_s_4s(TyNONE);
-   if (0) test_sha1p_q_s_4s(TyNONE);
-   if (0) test_sha1su0_4s_4s_4s(TyNONE);
-   if (0) test_sha1su1_4s_4s(TyNONE);
+   if (1) DO50( test_sha1c_q_s_4s(TyNONE) );
+   if (1) DO50( test_sha1h_s_s(TyNONE) );
+   if (1) DO50( test_sha1m_q_s_4s(TyNONE) );
+   if (1) DO50( test_sha1p_q_s_4s(TyNONE) );
+   if (1) DO50( test_sha1su0_4s_4s_4s(TyNONE) );
+   if (1) DO50( test_sha1su1_4s_4s(TyNONE) );
 
    // sha256h2   q_q_4s
    // sha256h    q_q_4s
    // sha256su0  4s_4s
    // sha256su1  4s_4s_4s
-   if (0) test_sha256h2_q_q_4s(TyNONE);
-   if (0) test_sha256h_q_q_4s(TyNONE);
-   if (0) test_sha256su0_4s_4s(TyNONE);
-   if (0) test_sha256su1_4s_4s_4s(TyNONE);
+   if (1) DO50( test_sha256h2_q_q_4s(TyNONE) );
+   if (1) DO50( test_sha256h_q_q_4s(TyNONE) );
+   if (1) DO50( test_sha256su0_4s_4s(TyNONE) );
+   if (1) DO50( test_sha256su1_4s_4s_4s(TyNONE) );
 
    return 0;
 }

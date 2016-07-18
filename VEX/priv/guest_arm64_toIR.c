@@ -12937,7 +12937,102 @@ Bool dis_AdvSIMD_crypto_aes(/*MB_OUT*/DisResult* dres, UInt insn)
 static
 Bool dis_AdvSIMD_crypto_three_reg_sha(/*MB_OUT*/DisResult* dres, UInt insn)
 {
+   /* 31   28   23 21 20 15 14  11 9 4
+      0101 1110 sz 0  m  0  opc 00 n d
+      Decode fields are: sz,opc
+   */
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,24) != BITS8(0,1,0,1,1,1,1,0) || INSN(21,21) != 0
+       || INSN(15,15) != 0 || INSN(11,10) != BITS2(0,0)) {
+      return False;
+   }
+   UInt sz  = INSN(23,22);
+   UInt mm  = INSN(20,16);
+   UInt opc = INSN(14,12);
+   UInt nn  = INSN(9,5);
+   UInt dd  = INSN(4,0);
+   if (sz == BITS2(0,0) && opc <= BITS3(1,1,0)) {
+      /* -------- 00,000 SHA1C     Qd,    Sn,    Vm.4S -------- */
+      /* -------- 00,001 SHA1P     Qd,    Sn,    Vm.4S -------- */
+      /* -------- 00,010 SHA1M     Qd,    Sn,    Vm.4S -------- */
+      /* -------- 00,011 SHA1SU0   Vd.4S, Vn.4S, Vm.4S -------- */
+      /* -------- 00,100 SHA256H   Qd,    Qn,    Vm.4S -------- */
+      /* -------- 00,101 SHA256H2  Qd,    Qn,    Vm.4S -------- */
+      /* -------- 00,110 SHA256SU1 Vd.4S, Vn.4S, Vm.4S -------- */
+      vassert(opc < 7);
+      const HChar* inames[7]
+         = { "sha1c", "sha1p", "sha1m", "sha1su0",
+             "sha256h", "sha256h2", "sha256su1" };
+      void(*helpers[7])(V128*,ULong,ULong,ULong,ULong,ULong,ULong)
+         = { &arm64g_dirtyhelper_SHA1C,    &arm64g_dirtyhelper_SHA1P,
+             &arm64g_dirtyhelper_SHA1M,    &arm64g_dirtyhelper_SHA1SU0,
+             &arm64g_dirtyhelper_SHA256H,  &arm64g_dirtyhelper_SHA256H2,
+             &arm64g_dirtyhelper_SHA256SU1 };
+      const HChar* hnames[7]
+         = { "arm64g_dirtyhelper_SHA1C",    "arm64g_dirtyhelper_SHA1P",
+             "arm64g_dirtyhelper_SHA1M",    "arm64g_dirtyhelper_SHA1SU0",
+             "arm64g_dirtyhelper_SHA256H",  "arm64g_dirtyhelper_SHA256H2",
+             "arm64g_dirtyhelper_SHA256SU1" };
+      IRTemp vD      = newTemp(Ity_V128);
+      IRTemp vN      = newTemp(Ity_V128);
+      IRTemp vM      = newTemp(Ity_V128);
+      IRTemp vDhi    = newTemp(Ity_I64);
+      IRTemp vDlo    = newTemp(Ity_I64);
+      IRTemp vNhiPre = newTemp(Ity_I64);
+      IRTemp vNloPre = newTemp(Ity_I64);
+      IRTemp vNhi    = newTemp(Ity_I64);
+      IRTemp vNlo    = newTemp(Ity_I64);
+      IRTemp vMhi    = newTemp(Ity_I64);
+      IRTemp vMlo    = newTemp(Ity_I64);
+      assign(vD,      getQReg128(dd));
+      assign(vN,      getQReg128(nn));
+      assign(vM,      getQReg128(mm));
+      assign(vDhi,    unop(Iop_V128HIto64, mkexpr(vD)));
+      assign(vDlo,    unop(Iop_V128to64,   mkexpr(vD)));
+      assign(vNhiPre, unop(Iop_V128HIto64, mkexpr(vN)));
+      assign(vNloPre, unop(Iop_V128to64,   mkexpr(vN)));
+      assign(vMhi,    unop(Iop_V128HIto64, mkexpr(vM)));
+      assign(vMlo,    unop(Iop_V128to64,   mkexpr(vM)));
+      /* Mask off any bits of the N register operand that aren't actually
+         needed, so that Memcheck doesn't complain unnecessarily. */
+      switch (opc) {
+         case BITS3(0,0,0): case BITS3(0,0,1): case BITS3(0,1,0):
+            assign(vNhi, mkU64(0));
+            assign(vNlo, unop(Iop_32Uto64, unop(Iop_64to32, mkexpr(vNloPre))));
+            break;
+         case BITS3(0,1,1): case BITS3(1,0,0):
+         case BITS3(1,0,1): case BITS3(1,1,0):
+            assign(vNhi, mkexpr(vNhiPre));
+            assign(vNlo, mkexpr(vNloPre));
+            break;
+         default:
+            vassert(0);
+      }
+      IRTemp res = newTemp(Ity_V128);
+      IRDirty* di
+         = unsafeIRDirty_1_N( res, 0/*regparms*/, hnames[opc], helpers[opc],
+                              mkIRExprVec_7(
+                                 IRExpr_VECRET(),
+                                 mkexpr(vDhi), mkexpr(vDlo), mkexpr(vNhi),
+                                 mkexpr(vNlo), mkexpr(vMhi), mkexpr(vMlo)));
+      stmt(IRStmt_Dirty(di));
+      putQReg128(dd, mkexpr(res));
+      switch (opc) {
+         case BITS3(0,0,0): case BITS3(0,0,1): case BITS3(0,1,0):
+            DIP("%s q%u, s%u, v%u.4s\n", inames[opc], dd, nn, mm);
+            break;
+         case BITS3(0,1,1): case BITS3(1,1,0):
+            DIP("%s v%u.4s, v%u.4s, v%u.4s\n", inames[opc], dd, nn, mm);
+            break;
+         case BITS3(1,0,0): case BITS3(1,0,1):
+            DIP("%s q%u, q%u, v%u.4s\n", inames[opc], dd, nn, mm);
+            break;
+         default:
+            vassert(0);
+      }
+      return True;
+   }
+   
    return False;
 #  undef INSN
 }
@@ -12946,7 +13041,91 @@ Bool dis_AdvSIMD_crypto_three_reg_sha(/*MB_OUT*/DisResult* dres, UInt insn)
 static
 Bool dis_AdvSIMD_crypto_two_reg_sha(/*MB_OUT*/DisResult* dres, UInt insn)
 {
+   /* 31   28   23 21    16  11 9 4
+      0101 1110 sz 10100 opc 10 n d
+      Decode fields are: sz,opc
+   */
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,24) != BITS8(0,1,0,1,1,1,1,0)
+       || INSN(21,17) != BITS5(1,0,1,0,0) || INSN(11,10) != BITS2(1,0)) {
+      return False;
+   }
+   UInt sz  = INSN(23,22);
+   UInt opc = INSN(16,12);
+   UInt nn  = INSN(9,5);
+   UInt dd  = INSN(4,0);
+   if (sz == BITS2(0,0) && opc <= BITS5(0,0,0,1,0)) {
+      /* -------- 00,00000 SHA1H     Sd,    Sn    -------- */
+      /* -------- 00,00001 SHA1SU1   Vd.4S, Vn.4S -------- */
+      /* -------- 00,00010 SHA256SU0 Vd.4S, Vn.4S -------- */
+      vassert(opc < 3);
+      const HChar* inames[3] = { "sha1h", "sha1su1", "sha256su0" };
+      IRTemp vD   = newTemp(Ity_V128);
+      IRTemp vN   = newTemp(Ity_V128);
+      IRTemp vDhi = newTemp(Ity_I64);
+      IRTemp vDlo = newTemp(Ity_I64);
+      IRTemp vNhi = newTemp(Ity_I64);
+      IRTemp vNlo = newTemp(Ity_I64);
+      assign(vD,   getQReg128(dd));
+      assign(vN,   getQReg128(nn));
+      assign(vDhi, unop(Iop_V128HIto64, mkexpr(vD)));
+      assign(vDlo, unop(Iop_V128to64,   mkexpr(vD)));
+      assign(vNhi, unop(Iop_V128HIto64, mkexpr(vN)));
+      assign(vNlo, unop(Iop_V128to64,   mkexpr(vN)));
+      /* Mask off any bits of the N register operand that aren't actually
+         needed, so that Memcheck doesn't complain unnecessarily.  Also
+         construct the calls, given that the helper functions don't take
+         the same number of arguments. */
+      IRDirty* di  = NULL;
+      IRTemp   res = newTemp(Ity_V128);
+      switch (opc) {
+         case BITS5(0,0,0,0,0): {
+            IRExpr* vNloMasked = unop(Iop_32Uto64,
+                                      unop(Iop_64to32, mkexpr(vNlo)));
+            di = unsafeIRDirty_1_N( res, 0/*regparms*/,
+                                    "arm64g_dirtyhelper_SHA1H",
+                                    &arm64g_dirtyhelper_SHA1H,            
+                                    mkIRExprVec_3(
+                                       IRExpr_VECRET(),
+                                       mkU64(0), vNloMasked) );
+            break;
+         }
+         case BITS5(0,0,0,0,1):
+            di = unsafeIRDirty_1_N( res, 0/*regparms*/,
+                                    "arm64g_dirtyhelper_SHA1SU1",
+                                    &arm64g_dirtyhelper_SHA1SU1,
+                                    mkIRExprVec_5(
+                                       IRExpr_VECRET(),
+                                       mkexpr(vDhi), mkexpr(vDlo),
+                                       mkexpr(vNhi), mkexpr(vNlo)) );
+            break;
+         case BITS5(0,0,0,1,0):
+            di = unsafeIRDirty_1_N( res, 0/*regparms*/,
+                                    "arm64g_dirtyhelper_SHA256SU0",
+                                    &arm64g_dirtyhelper_SHA256SU0,
+                                    mkIRExprVec_5(
+                                       IRExpr_VECRET(),
+                                       mkexpr(vDhi), mkexpr(vDlo),
+                                       mkexpr(vNhi), mkexpr(vNlo)) );
+            break;
+         default:
+            vassert(0);
+      }
+      stmt(IRStmt_Dirty(di));
+      putQReg128(dd, mkexpr(res));
+      switch (opc) {
+         case BITS5(0,0,0,0,0):
+            DIP("%s s%u, s%u\n", inames[opc], dd, nn);
+            break;
+         case BITS5(0,0,0,0,1): case BITS5(0,0,0,1,0):
+            DIP("%s v%u.4s, v%u.4s\n", inames[opc], dd, nn);
+            break;
+         default:
+            vassert(0);
+      }
+      return True;
+   }
+   
    return False;
 #  undef INSN
 }

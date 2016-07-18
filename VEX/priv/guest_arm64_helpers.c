@@ -692,6 +692,10 @@ ULong arm64g_dirtyhelper_MRS_CNTVCT_EL0 ( void )
 }
 
 
+/*---------------------------------------------------------------*/
+/*--- Crypto instruction helpers                              ---*/
+/*---------------------------------------------------------------*/
+
 /* DIRTY HELPERS for doing AES support:
    * AESE (SubBytes, then ShiftRows)
    * AESD (InvShiftRows, then InvSubBytes)
@@ -913,6 +917,254 @@ void arm64g_dirtyhelper_AESIMC ( /*OUT*/V128* res, ULong argHi, ULong argLo )
    aesInvMixColumn(&res->w8[4]);
    aesInvMixColumn(&res->w8[8]);
    aesInvMixColumn(&res->w8[12]);
+}
+
+
+/* DIRTY HELPERS for SHA instruction support.  As with the AES helpers
+   above, these are actually pure functions and are only dirty because
+   clean helpers can't return a V128. */
+
+static inline UInt ROL32 ( UInt x, UInt sh ) {
+   vassert(sh > 0 && sh < 32);
+   return (x << sh) | (x >> (32 - sh));
+}
+
+static inline UInt ROR32 ( UInt x, UInt sh ) {
+   vassert(sh > 0 && sh < 32);
+   return (x >> sh) | (x << (32 - sh));
+}
+
+static inline UInt SHAchoose ( UInt x, UInt y, UInt z ) {
+   return ((y ^ z) & x) ^ z;
+}
+
+static inline UInt SHAmajority ( UInt x, UInt y, UInt z ) {
+   return (x & y) | ((x | y) & z);
+}
+
+static inline UInt SHAparity ( UInt x, UInt y, UInt z ) {
+   return x ^ y ^ z;
+}
+
+static inline UInt SHAhashSIGMA0 ( UInt x ) {
+   return ROR32(x, 2) ^ ROR32(x, 13) ^ ROR32(x, 22);
+}
+
+static inline UInt SHAhashSIGMA1 ( UInt x ) {
+   return ROR32(x, 6) ^ ROR32(x, 11) ^ ROR32(x, 25);
+}
+
+static void SHA256hash ( /*MOD*/V128* X, /*MOD*/V128* Y, const V128* W )
+{
+   UInt e;
+   for (e = 0; e <= 3; e++) {
+      UInt chs = SHAchoose(Y->w32[0], Y->w32[1], Y->w32[2]);
+      UInt maj = SHAmajority(X->w32[0], X->w32[1], X->w32[2]);
+      UInt t   = Y->w32[3] + SHAhashSIGMA1(Y->w32[0]) + chs + W->w32[e];
+      X->w32[3] = t + X->w32[3];
+      Y->w32[3] = t + SHAhashSIGMA0(X->w32[0]) + maj;
+      UInt ts = Y->w32[3];
+      Y->w32[3] = Y->w32[2];
+      Y->w32[2] = Y->w32[1];
+      Y->w32[1] = Y->w32[0];
+      Y->w32[0] = X->w32[3];
+      X->w32[3] = X->w32[2];
+      X->w32[2] = X->w32[1];
+      X->w32[1] = X->w32[0];
+      X->w32[0] = ts;
+   }
+}
+
+/* CALLED FROM GENERATED CODE */
+void arm64g_dirtyhelper_SHA1C ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                ULong nHi, ULong nLo, ULong mHi, ULong mLo )
+{
+   vassert(nHi == 0);
+   vassert((nLo >> 32) == 0);
+   V128 X; X.w64[1] = dHi; X.w64[0] = dLo;
+   UInt Y; Y = (UInt)nLo;
+   V128 W; W.w64[1] = mHi; W.w64[0] = mLo;
+   UInt e;
+   for (e = 0; e <= 3; e++) {
+      UInt t = SHAchoose(X.w32[1], X.w32[2], X.w32[3]);
+      Y = Y + ROL32(X.w32[0], 5) + t + W.w32[e];
+      X.w32[1] = ROL32(X.w32[1], 30);
+      UInt oldY = Y;
+      Y = X.w32[3];
+      X.w32[3] = X.w32[2];
+      X.w32[2] = X.w32[1];
+      X.w32[1] = X.w32[0];
+      X.w32[0] = oldY;
+   }
+   res->w64[1] = X.w64[1];
+   res->w64[0] = X.w64[0];
+}
+
+/* CALLED FROM GENERATED CODE */
+void arm64g_dirtyhelper_SHA1H ( /*OUT*/V128* res, ULong nHi, ULong nLo )
+{
+   vassert(nHi == 0);
+   vassert((nLo >> 32) == 0);
+   res->w32[3] = res->w32[2] = res->w32[1] = 0;
+   res->w32[0] = ROL32((UInt)nLo, 30);
+}
+
+/* CALLED FROM GENERATED CODE */
+void arm64g_dirtyhelper_SHA1M ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                ULong nHi, ULong nLo, ULong mHi, ULong mLo )
+{
+   vassert(nHi == 0);
+   vassert((nLo >> 32) == 0);
+   V128 X; X.w64[1] = dHi; X.w64[0] = dLo;
+   UInt Y; Y = (UInt)nLo;
+   V128 W; W.w64[1] = mHi; W.w64[0] = mLo;
+   UInt e;
+   for (e = 0; e <= 3; e++) {
+      UInt t = SHAmajority(X.w32[1], X.w32[2], X.w32[3]);
+      Y = Y + ROL32(X.w32[0], 5) + t + W.w32[e];
+      X.w32[1] = ROL32(X.w32[1], 30);
+      UInt oldY = Y;
+      Y = X.w32[3];
+      X.w32[3] = X.w32[2];
+      X.w32[2] = X.w32[1];
+      X.w32[1] = X.w32[0];
+      X.w32[0] = oldY;
+   }
+   res->w64[1] = X.w64[1];
+   res->w64[0] = X.w64[0];
+}
+
+/* CALLED FROM GENERATED CODE */
+void arm64g_dirtyhelper_SHA1P ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                ULong nHi, ULong nLo, ULong mHi, ULong mLo )
+{
+   vassert(nHi == 0);
+   vassert((nLo >> 32) == 0);
+   V128 X; X.w64[1] = dHi; X.w64[0] = dLo;
+   UInt Y; Y = (UInt)nLo;
+   V128 W; W.w64[1] = mHi; W.w64[0] = mLo;
+   UInt e;
+   for (e = 0; e <= 3; e++) {
+      UInt t = SHAparity(X.w32[1], X.w32[2], X.w32[3]);
+      Y = Y + ROL32(X.w32[0], 5) + t + W.w32[e];
+      X.w32[1] = ROL32(X.w32[1], 30);
+      UInt oldY = Y;
+      Y = X.w32[3];
+      X.w32[3] = X.w32[2];
+      X.w32[2] = X.w32[1];
+      X.w32[1] = X.w32[0];
+      X.w32[0] = oldY;
+   }
+   res->w64[1] = X.w64[1];
+   res->w64[0] = X.w64[0];
+}
+
+/* CALLED FROM GENERATED CODE */
+void arm64g_dirtyhelper_SHA1SU0 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                  ULong nHi, ULong nLo, ULong mHi, ULong mLo )
+{
+   res->w64[1] = nLo;
+   res->w64[0] = dHi;
+   res->w64[1] ^= dHi ^ mHi;
+   res->w64[0] ^= dLo ^ mLo;
+}
+
+/* CALLED FROM GENERATED CODE */
+void arm64g_dirtyhelper_SHA1SU1 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                  ULong nHi, ULong nLo )
+{
+   /* This computes "T = Vd ^ (Vn >>u 32)" */
+   V128 T; T.w64[1] = nHi; T.w64[0] = nLo;
+   T.w32[0] = T.w32[1];
+   T.w32[1] = T.w32[2];
+   T.w32[2] = T.w32[3];
+   T.w32[3] = 0;
+   T.w64[1] ^= dHi;
+   T.w64[0] ^= dLo;
+   /* */
+   res->w32[0] = ROL32(T.w32[0], 1);
+   res->w32[1] = ROL32(T.w32[1], 1);
+   res->w32[2] = ROL32(T.w32[2], 1);
+   res->w32[3] = ROL32(T.w32[3], 1) ^ ROL32(T.w32[0], 2);
+}
+
+/* CALLED FROM GENERATED CODE */
+void arm64g_dirtyhelper_SHA256H2 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                   ULong nHi, ULong nLo, ULong mHi, ULong mLo )
+{
+   V128 X; X.w64[1] = nHi; X.w64[0] = nLo;
+   V128 Y; Y.w64[1] = dHi; Y.w64[0] = dLo;
+   V128 W; W.w64[1] = mHi; W.w64[0] = mLo;
+   SHA256hash(&X, &Y, &W);
+   res->w64[1] = Y.w64[1];
+   res->w64[0] = Y.w64[0];
+}
+
+/* CALLED FROM GENERATED CODE */
+void arm64g_dirtyhelper_SHA256H ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                  ULong nHi, ULong nLo, ULong mHi, ULong mLo )
+{
+   V128 X; X.w64[1] = dHi; X.w64[0] = dLo;
+   V128 Y; Y.w64[1] = nHi; Y.w64[0] = nLo;
+   V128 W; W.w64[1] = mHi; W.w64[0] = mLo;
+   SHA256hash(&X, &Y, &W);
+   res->w64[1] = X.w64[1];
+   res->w64[0] = X.w64[0];
+}
+
+/* CALLED FROM GENERATED CODE */
+void arm64g_dirtyhelper_SHA256SU0 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                    ULong nHi, ULong nLo )
+
+{
+   res->w64[1] = res->w64[0] = 0;
+   V128 op1; op1.w64[1] = dHi; op1.w64[0] = dLo;
+   V128 op2; op2.w64[1] = nHi; op2.w64[0] = nLo;
+   V128 T;
+   T.w32[3] = op2.w32[0];
+   T.w32[2] = op1.w32[3];
+   T.w32[1] = op1.w32[2];
+   T.w32[0] = op1.w32[1];
+   UInt e;
+   for (e = 0; e <= 3; e++) {
+      UInt elt = T.w32[e];
+      elt = ROR32(elt, 7) ^ ROR32(elt, 18) ^ (elt >> 3);
+      res->w32[e] = elt + op1.w32[e];
+   }
+}
+
+/* CALLED FROM GENERATED CODE */
+void arm64g_dirtyhelper_SHA256SU1 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                    ULong nHi, ULong nLo,
+                                    ULong mHi, ULong mLo )
+{
+   res->w64[0] = res->w64[1] = 0;
+   V128 op1; op1.w64[1] = dHi; op1.w64[0] = dLo;
+   V128 op2; op2.w64[1] = nHi; op2.w64[0] = nLo;
+   V128 op3; op3.w64[1] = mHi; op3.w64[0] = mLo;
+   V128 T0;
+   T0.w32[3] = op3.w32[0];
+   T0.w32[2] = op2.w32[3];
+   T0.w32[1] = op2.w32[2];
+   T0.w32[0] = op2.w32[1];
+   UInt T1[2];
+   UInt e;
+   T1[1] = op3.w32[3];
+   T1[0] = op3.w32[2];
+   for (e = 0; e <= 1; e++) {
+      UInt elt = T1[e];
+      elt = ROR32(elt, 17) ^ ROR32(elt, 19) ^ (elt >> 10);
+      elt = elt + op1.w32[e] + T0.w32[e];
+      res->w32[e] = elt;
+   }
+   T1[1] = res->w32[1];
+   T1[0] = res->w32[0];
+   for (e = 2; e <= 3; e++) {
+      UInt elt = T1[e-2];
+      elt = ROR32(elt, 17) ^ ROR32(elt, 19) ^ (elt >> 10);
+      elt = elt + op1.w32[e] + T0.w32[e];
+      res->w32[e] = elt;
+   }
 }
 
 

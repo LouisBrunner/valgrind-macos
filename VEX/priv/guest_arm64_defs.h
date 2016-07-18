@@ -124,6 +124,38 @@ extern void  arm64g_dirtyhelper_AESMC  ( /*OUT*/V128* res,
 extern void  arm64g_dirtyhelper_AESIMC ( /*OUT*/V128* res,
                                          ULong argHi, ULong argLo );
 
+extern
+void arm64g_dirtyhelper_SHA1C ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                ULong nHi, ULong nLo, ULong mHi, ULong mLo );
+extern
+void arm64g_dirtyhelper_SHA1H ( /*OUT*/V128* res,
+                                ULong nHi, ULong nLo );
+extern
+void arm64g_dirtyhelper_SHA1M ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                ULong nHi, ULong nLo, ULong mHi, ULong mLo );
+extern
+void arm64g_dirtyhelper_SHA1P ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                ULong nHi, ULong nLo, ULong mHi, ULong mLo );
+extern
+void arm64g_dirtyhelper_SHA1SU0 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                  ULong nHi, ULong nLo, ULong mHi, ULong mLo );
+extern
+void arm64g_dirtyhelper_SHA1SU1 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                  ULong nHi, ULong nLo );
+extern
+void arm64g_dirtyhelper_SHA256H2 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                   ULong nHi, ULong nLo, ULong mHi, ULong mLo );
+extern
+void arm64g_dirtyhelper_SHA256H ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                  ULong nHi, ULong nLo, ULong mHi, ULong mLo );
+extern
+void arm64g_dirtyhelper_SHA256SU0 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                    ULong nHi, ULong nLo );
+extern
+void arm64g_dirtyhelper_SHA256SU1 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                    ULong nHi, ULong nLo,
+                                    ULong mHi, ULong mLo );
+
 
 /*---------------------------------------------------------*/
 /*--- Condition code stuff                              ---*/

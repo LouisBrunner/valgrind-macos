@@ -86,6 +86,7 @@ where XXXXXX is the bug number as listed below.
         == 363497
         == 364497
 356817  valgrind.h triggers compiler errors on MSVC when defining NVALGRIND
+357338  Unhandled instruction for SHA instructions libcrypto Boring SSL
 357833  Setting RLIMIT_DATA to zero breaks with linux 4.5+
 357871  pthread_spin_destroy not properly wrapped
 357887  Calls to VG_(fclose) do not close the file descriptor
@@ -102,11 +103,13 @@ where XXXXXX is the bug number as listed below.
 359767  Valgrind does not support the IBM POWER ISA 3.0 instructions
 359829  Power PC test suite none/tests/ppc64/test_isa_2_07.c uses
         uninitialized data
+359838  arm64: Unhandled instruction 0xD5033F5F (clrex)
 359871  Incorrect mask handling in ppoll
 360008  Contents of Power vr registers contents is not printed correctly when
         the --vgdb-shadow-registers=yes option is used
 360035  POWER PC instruction bcdadd and bcdsubtract generate result with
         non-zero shadow bits
+360378  arm64: Unhandled instruction 0x5E280844 (sha1h  s4, s2)
 360425  arm64 unsupported instruction ldpsw
         == 364435
 360519  none/tests/arm64/memory.vgtest might fail with newer gcc

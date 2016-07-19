@@ -1010,6 +1010,11 @@ ARM64Instr* ARM64Instr_MFence ( void ) {
    i->tag        = ARM64in_MFence;
    return i;
 }
+ARM64Instr* ARM64Instr_ClrEX ( void ) {
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
+   i->tag        = ARM64in_ClrEX;
+   return i;
+}
 ARM64Instr* ARM64Instr_VLdStH ( Bool isLoad, HReg sD, HReg rN, UInt uimm12 ) {
    ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                   = ARM64in_VLdStH;
@@ -1567,6 +1572,9 @@ void ppARM64Instr ( const ARM64Instr* i ) {
       case ARM64in_MFence:
          vex_printf("(mfence) dsb sy; dmb sy; isb");
          return;
+      case ARM64in_ClrEX:
+         vex_printf("clrex #15");
+         return;
       case ARM64in_VLdStH:
          if (i->ARM64in.VLdStH.isLoad) {
             vex_printf("ldr    ");
@@ -2058,6 +2066,8 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, const ARM64Instr* i, Bool mode64 )
          return;
       case ARM64in_MFence:
          return;
+      case ARM64in_ClrEX:
+         return;
       case ARM64in_VLdStH:
          addHRegUse(u, HRmRead, i->ARM64in.VLdStH.rN);
          if (i->ARM64in.VLdStH.isLoad) {
@@ -2317,6 +2327,8 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
       case ARM64in_StrEX:
          return;
       case ARM64in_MFence:
+         return;
+      case ARM64in_ClrEX:
          return;
       case ARM64in_VLdStH:
          i->ARM64in.VLdStH.hD = lookupHRegRemap(m, i->ARM64in.VLdStH.hD);
@@ -3797,12 +3809,10 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
          *p++ = 0xD5033FDF; /* ISB */
          goto done;
       }
-      //case ARM64in_CLREX: {
-      //   //ATC, but believed to be correct
-      //   goto bad;
-      //   *p++ = 0xD5033F5F; /* clrex */
-      //   goto done;
-      //}
+      case ARM64in_ClrEX: {
+         *p++ = 0xD5033F5F; /* clrex #15 */
+         goto done;
+      }
       case ARM64in_VLdStH: {
          /* 01 111101 01 imm12 n t   LDR Ht, [Xn|SP, #imm12 * 2]
             01 111101 00 imm12 n t   STR Ht, [Xn|SP, #imm12 * 2]

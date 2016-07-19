@@ -482,6 +482,7 @@ typedef
       ARM64in_LdrEX,
       ARM64in_StrEX,
       ARM64in_MFence,
+      ARM64in_ClrEX,
       /* ARM64in_V*: scalar ops involving vector registers */
       ARM64in_VLdStH,   /* ld/st to/from low 16 bits of vec reg, imm offset */
       ARM64in_VLdStS,   /* ld/st to/from low 32 bits of vec reg, imm offset */
@@ -673,6 +674,9 @@ typedef
             total nuclear overkill, but better safe than sorry. */
          struct {
          } MFence;
+         /* A CLREX instruction. */
+         struct {
+         } ClrEX;
          /* --- INSTRUCTIONS INVOLVING VECTOR REGISTERS --- */
          /* ld/st to/from low 16 bits of vec reg, imm offset */
          struct {
@@ -909,6 +913,7 @@ extern ARM64Instr* ARM64Instr_Mul     ( HReg dst, HReg argL, HReg argR,
 extern ARM64Instr* ARM64Instr_LdrEX   ( Int szB );
 extern ARM64Instr* ARM64Instr_StrEX   ( Int szB );
 extern ARM64Instr* ARM64Instr_MFence  ( void );
+extern ARM64Instr* ARM64Instr_ClrEX   ( void );
 extern ARM64Instr* ARM64Instr_VLdStH  ( Bool isLoad, HReg sD, HReg rN,
                                         UInt uimm12 /* 0 .. 8190, 0 % 2 */ );
 extern ARM64Instr* ARM64Instr_VLdStS  ( Bool isLoad, HReg sD, HReg rN,

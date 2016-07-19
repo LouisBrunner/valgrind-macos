@@ -6952,7 +6952,21 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       return True;
    }
 
-  //fail:
+   /* ------------------- CLREX ------------------ */
+   /* 31        23        15   11 7
+      1101 0101 0000 0011 0011 m  0101 1111  CLREX CRm
+      CRm is apparently ignored.
+   */
+   if ((INSN(31,0) & 0xFFFFF0FF) == 0xD503305F) {
+      UInt mm = INSN(11,8);
+      /* AFAICS, this simply cancels a (all?) reservations made by a
+         (any?) preceding LDREX(es).  Arrange to hand it through to
+         the back end. */
+      stmt( IRStmt_MBE(Imbe_CancelReservation) );
+      DIP("clrex #%u\n", mm);
+      return True;
+   }
+
    vex_printf("ARM64 front end: branch_etc\n");
    return False;
 #  undef INSN

@@ -3839,6 +3839,9 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          case Imbe_Fence:
             addInstr(env, ARM64Instr_MFence());
             return;
+         case Imbe_CancelReservation:
+            addInstr(env, ARM64Instr_ClrEX());
+            return;
          default:
             break;
       }

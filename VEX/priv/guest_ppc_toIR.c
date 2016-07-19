@@ -7603,13 +7603,11 @@ static Bool dis_pc_relative ( UInt theInstr )
 
          if ( ty == Ity_I32 ) {
             result = binop( Iop_Add32, nia, mkU32( D << 16 ) );
-
-         } else if ( ty == Ity_I64 ) {
-            result = binop( Iop_Add64, nia, mkU64( D << 16 ) );
-
          } else {
-            vex_printf("dis_pc_relative(unsupported type)\n");
+            vassert( ty == Ity_I64 );
+            result = binop( Iop_Add64, nia, mkU64( D << 16 ) );
          }
+
          putIReg( rT_addr, result);
       }
       break;

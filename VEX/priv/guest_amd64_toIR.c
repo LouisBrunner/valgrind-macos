@@ -32077,7 +32077,7 @@ DisResult disInstr_AMD64_WRK (
    /* All decode failures end up here. */
    if (sigill_diag) {
       vex_printf("vex amd64->IR: unhandled instruction bytes: "
-                 "0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n",
+                 "0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n",
                  getUChar(delta_start+0),
                  getUChar(delta_start+1),
                  getUChar(delta_start+2),
@@ -32085,7 +32085,9 @@ DisResult disInstr_AMD64_WRK (
                  getUChar(delta_start+4),
                  getUChar(delta_start+5),
                  getUChar(delta_start+6),
-                 getUChar(delta_start+7) );
+                 getUChar(delta_start+7),
+                 getUChar(delta_start+8),
+                 getUChar(delta_start+9) );
       vex_printf("vex amd64->IR:   REX=%d REX.W=%d REX.R=%d REX.X=%d REX.B=%d\n",
                  haveREX(pfx) ? 1 : 0, getRexW(pfx), getRexR(pfx),
                  getRexX(pfx), getRexB(pfx));

@@ -209,7 +209,7 @@ Bool pcmpXstrX_WRK_wide ( /*OUT*/V128* resV,
       unvalidated cases in the code base. */
    switch (imm8) {
       case 0x01: case 0x03: case 0x09: case 0x0B: case 0x0D:
-      case 0x13:            case 0x1B:
+                 case 0x13: case 0x19: case 0x1B:
                             case 0x39: case 0x3B:
                  case 0x45:            case 0x4B:
          break;
@@ -1255,6 +1255,99 @@ void istri_39 ( void )
 
 //////////////////////////////////////////////////////////
 //                                                      //
+//                       ISTRI_19                       //
+//                                                      //
+//////////////////////////////////////////////////////////
+
+UInt h_pcmpistri_19 ( V128* argL, V128* argR )
+{
+   V128 block[2];
+   memcpy(&block[0], argL, sizeof(V128));
+   memcpy(&block[1], argR, sizeof(V128));
+   ULong res, flags;
+   __asm__ __volatile__(
+      "subq      $1024,  %%rsp"             "\n\t"
+      "movdqu    0(%2),  %%xmm2"            "\n\t"
+      "movdqu    16(%2), %%xmm11"           "\n\t"
+      "pcmpistri $0x19,  %%xmm2, %%xmm11"   "\n\t"
+      "pushfq"                              "\n\t"
+      "popq      %%rdx"                     "\n\t"
+      "movq      %%rcx,  %0"                "\n\t"
+      "movq      %%rdx,  %1"                "\n\t"
+      "addq      $1024,  %%rsp"             "\n\t"
+      : /*out*/ "=r"(res), "=r"(flags) : "r"/*in*/(&block[0])
+      : "rcx","rdx","xmm0","xmm2","xmm11","cc","memory"
+   );
+   return ((flags & 0x8D5) << 16) | (res & 0xFFFF);
+}
+
+UInt s_pcmpistri_19 ( V128* argLU, V128* argRU )
+{
+   V128 resV;
+   UInt resOSZACP, resECX;
+   Bool ok
+      = pcmpXstrX_WRK_wide( &resV, &resOSZACP, argLU, argRU,
+			    zmask_from_V128(argLU),
+			    zmask_from_V128(argRU),
+			    0x19, False/*!isSTRM*/
+        );
+   assert(ok);
+   resECX = resV.uInt[0];
+   return (resOSZACP << 16) | resECX;
+}
+
+void istri_19 ( void )
+{
+   char* wot = "19";
+   UInt(*h)(V128*,V128*) = h_pcmpistri_19;
+   UInt(*s)(V128*,V128*) = s_pcmpistri_19;
+
+   try_istri(wot,h,s, "0000000000000000", "0000000000000000");
+
+   try_istri(wot,h,s, "aaaaaaaaaaaaaaaa", "aaaaaaaaaaaaaaaa");
+   try_istri(wot,h,s, "aaaa2aaaaaaaaaaa", "aaaaaaaaaaaaaaaa");
+   try_istri(wot,h,s, "aaaaaaaaa2aaaaaa", "aaaaaaaaaaaaaaaa");
+   try_istri(wot,h,s, "aaaaaaaaaaaaa2aa", "aaaaaaaaaaaaaaaa");
+
+   try_istri(wot,h,s, "aaaaaaaaaaaaaaaa", "aaaa2aaaaaaaaaaa");
+   try_istri(wot,h,s, "aaaaaaaaaaaaaaaa", "aaaaaaaaa2aaaaaa");
+   try_istri(wot,h,s, "aaaaaaaaaaaaaaaa", "aaaaaaaaaaaaaa2a");
+
+   try_istri(wot,h,s, "aaaaaaaaaaaaaaaa", "aaaaaaaaaaaaaaaa");
+   try_istri(wot,h,s, "baaaaaaaaaaaaaaa", "aaaaaaaaaaaaaaaa");
+   try_istri(wot,h,s, "b9aaaaaaaaaaaaaa", "aaaaaaaaaaaaaaaa");
+   try_istri(wot,h,s, "b9baaaaaaaaaaaaa", "aaaaaaaaaaaaaaaa");
+
+   try_istri(wot,h,s, "b9baaaaaaaaaaaaa", "aaaaaaaaaaaaaaaa");
+   try_istri(wot,h,s, "b9baaaaaaaaaaaaa", "aaaaaaaaaaaa7aaa");
+   try_istri(wot,h,s, "b9baaaaaaaaaaaaa", "aaaaaaaa2aaa4aaa");
+
+   try_istri(wot,h,s, "aaaaaaaaaaaaaaaa", "aaaaaaaaaaaaaaaa");
+
+   try_istri(wot,h,s, "aaaaaaaaaaaa00aa", "aaaaaaaaaaaaaaaa");
+   try_istri(wot,h,s, "aaaaaaaaaaaaaaaa", "aaaaaaaaaaaa00aa");
+   try_istri(wot,h,s, "aaaaaaaaaaaa00aa", "aaaaaaaaaaaa00aa");
+
+   try_istri(wot,h,s, "aaaaaaaa00aaaaaa", "aaaaaaaaaaaaaaaa");
+   try_istri(wot,h,s, "aaaaaaaaaaaaaaaa", "aaaaaaaaaaaa00aa");
+   try_istri(wot,h,s, "aaaaaaaa00aaaaaa", "aaaaaaaaaaaa00aa");
+
+   try_istri(wot,h,s, "aaaaaaaaaaaa00aa", "aaaaaaaaaaaaaaaa");
+   try_istri(wot,h,s, "aaaaaaaaaaaaaaaa", "aaaaaaaa00aaaaaa");
+   try_istri(wot,h,s, "aaaaaaaaaaaa00aa", "aaaaaaaa00aaaaaa");
+
+   try_istri(wot,h,s, "0000000000000000", "aaaaaaaa00aaaaaa");
+   try_istri(wot,h,s, "8000000000000000", "aaaaaaaa00aaaaaa");
+   try_istri(wot,h,s, "0000000000000001", "aaaaaaaa00aaaaaa");
+
+   try_istri(wot,h,s, "0000000000000000", "aaaaaaaaaaaaaaaa");
+   try_istri(wot,h,s, "aaaaaaaaaaaaaaaa", "0000000000000000");
+}
+
+
+
+//////////////////////////////////////////////////////////
+//                                                      //
 //                         main                         //
 //                                                      //
 //////////////////////////////////////////////////////////
@@ -1271,5 +1364,6 @@ int main ( void )
    istri_45();
    istri_01();
    istri_39();
+   istri_19();
    return 0;
 }

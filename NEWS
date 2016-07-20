@@ -105,6 +105,7 @@ where XXXXXX is the bug number as listed below.
         uninitialized data
 359838  arm64: Unhandled instruction 0xD5033F5F (clrex)
 359871  Incorrect mask handling in ppoll
+359952  Unrecognised PCMPESTRM variants (0x70, 0x19)
 360008  Contents of Power vr registers contents is not printed correctly when
         the --vgdb-shadow-registers=yes option is used
 360035  POWER PC instruction bcdadd and bcdsubtract generate result with

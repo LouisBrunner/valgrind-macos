@@ -692,6 +692,33 @@ ULong arm64g_dirtyhelper_MRS_CNTVCT_EL0 ( void )
 }
 
 
+void arm64g_dirtyhelper_PMULLQ ( /*OUT*/V128* res, ULong arg1, ULong arg2 )
+{
+   /* This doesn't need to be a dirty helper, except for the fact that
+      a clean helper can't return a 128 bit value.  This is a pretty
+      lame implementation of PMULLQ, but at least it doesn't contain any
+      data dependent branches, and has lots of ILP.  I guess we could unroll
+      the loop completely and offer extensive prayers to the gods of ILP
+      if more performance is needed. */
+   UInt i;
+   ULong accHi = 0, accLo = 0;
+   ULong op2Hi = 0, op2Lo = arg2;
+   for (i = 0; i < 64; i++) {
+      /* Make |mask| be all 0s or all 1s, a copy of arg1[i] */
+      Long mask = arg1 << (63-i);
+      mask >>= 63;
+      accHi ^= (op2Hi & mask);
+      accLo ^= (op2Lo & mask);
+      /* do: op2Hi:op2Lo <<=u 1 */
+      op2Hi <<= 1;
+      op2Hi |= ((op2Lo >> 63) & 1);
+      op2Lo <<= 1;
+   }
+   res->w64[1] = accHi;
+   res->w64[0] = accLo;
+}
+
+
 /*---------------------------------------------------------------*/
 /*--- Crypto instruction helpers                              ---*/
 /*---------------------------------------------------------------*/

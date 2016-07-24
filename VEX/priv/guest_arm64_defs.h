@@ -115,6 +115,9 @@ ULong arm64g_calculate_condition ( /* ARM64Condcode << 4 | cc_op */
 
 extern ULong arm64g_dirtyhelper_MRS_CNTVCT_EL0 ( void );
 
+extern void  arm64g_dirtyhelper_PMULLQ ( /*OUT*/V128* res,
+                                         ULong arg1, ULong arg2 );
+
 extern void  arm64g_dirtyhelper_AESE ( /*OUT*/V128* res,
                                        ULong argHi, ULong argLo );
 extern void  arm64g_dirtyhelper_AESD ( /*OUT*/V128* res,

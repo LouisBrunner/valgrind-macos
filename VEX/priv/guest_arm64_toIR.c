@@ -11153,16 +11153,41 @@ Bool dis_AdvSIMD_three_different(/*MB_OUT*/DisResult* dres, UInt insn)
    if (bitU == 0 && opcode == BITS4(1,1,1,0)) {
       /* -------- 0,1110  PMULL{2} -------- */
       /* Widens, and size refers to the narrow lanes. */
-      if (size != X00) return False;
-      IRTemp res
-         = math_BINARY_WIDENING_V128(is2, Iop_PolynomialMull8x8,
-                                     getQReg128(nn), getQReg128(mm));
-      putQReg128(dd, mkexpr(res));
-      const HChar* arrNarrow = nameArr_Q_SZ(bitQ, size);
-      const HChar* arrWide   = nameArr_Q_SZ(1,    size+1);
+      if (size != X00 && size != X11) return False;
+      IRTemp  res  = IRTemp_INVALID;
+      IRExpr* srcN = getQReg128(nn);
+      IRExpr* srcM = getQReg128(mm);
+      const HChar* arrNarrow = NULL;
+      const HChar* arrWide   = NULL;
+      if (size == X00) {
+         res = math_BINARY_WIDENING_V128(is2, Iop_PolynomialMull8x8,
+                                         srcN, srcM);
+         arrNarrow = nameArr_Q_SZ(bitQ, size);
+         arrWide   = nameArr_Q_SZ(1,    size+1);
+      } else {
+         /* The same thing as the X00 case, except we have to call
+            a helper to do it. */
+         vassert(size == X11);
+         res = newTemp(Ity_V128);
+         IROp slice
+            = is2 ? Iop_V128HIto64 : Iop_V128to64;
+         IRExpr** args
+            = mkIRExprVec_3( IRExpr_VECRET(),
+                             unop(slice, srcN), unop(slice, srcM));
+         IRDirty* di
+            = unsafeIRDirty_1_N( res, 0/*regparms*/,
+                                      "arm64g_dirtyhelper_PMULLQ",
+                                      &arm64g_dirtyhelper_PMULLQ, args);
+         stmt(IRStmt_Dirty(di));
+         /* We can't use nameArr_Q_SZ for this because it can't deal with
+            Q-sized (128 bit) results.  Hence do it by hand. */
+         arrNarrow = bitQ == 0 ? "1d" : "2d";
+         arrWide   = "1q";
+      }
+      putQReg128(dd, mkexpr(res));    
       DIP("%s%s %s.%s, %s.%s, %s.%s\n", "pmull", is2 ? "2" : "",
-          nameQReg128(dd), arrNarrow,
-          nameQReg128(nn), arrWide, nameQReg128(mm), arrWide);
+          nameQReg128(dd), arrWide,
+          nameQReg128(nn), arrNarrow, nameQReg128(mm), arrNarrow);
       return True;
    }
 

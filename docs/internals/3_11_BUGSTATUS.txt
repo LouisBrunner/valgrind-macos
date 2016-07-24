@@ -9,14 +9,6 @@ of 3.11.0 go in here.  Bugs that didn't get fixed in 3.11.0 remain in
         "unhandled instruction bytes"
         [Probably invalid]
 
-353384  unhandled instruction bytes: 0x66 0xF 0x3A 0x62 0xD1 0x62 0x41 0x3B
-        __intel_sse4_strpbrk
-        pcmpistrm $0x62,%xmm1,%xmm2
-
-353727  unhandled instruction bytes: 0x66 0xF 0x3A 0x62 0xD1 0x72 0x45 0x3B
-        __intel_sse4_strspn
-        pcmpistrm $0x72,%xmm1,%xmm2
-
 354931  Analyze of qt app results in incompatible processor message
         [Gentoo stupidity]
 
@@ -169,7 +161,6 @@ n-i-bz  Remove limit on strd's negative immediates
 
 === other/arm ==========================================================
 
-362935  [AsusWRT] Assertion 'sizeof(TTEntryC) <= 88' failed
 364533  Process terminating with default action of signal 4 (SIGILL): dumping
         core, : at 0x4000E7C: ??? (in /lib/ld-uClibc.so.0)
 

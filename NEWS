@@ -65,9 +65,11 @@ where XXXXXX is the bug number as listed below.
 353137  www: update info for Supported Platforms
 353138  www: update "The Valgrind Developers" page
 353370  don't advertise RDRAND in cpuid for Core-i7-4910-like avx2 machine
+353384  amd64->IR: 0x66 0xF 0x3A 0x62 0xD1 0x62 (pcmpXstrX $0x62)
 353398  WARNING: unhandled amd64-solaris syscall: 207
 353660  XML in auxwhat tag not escaping reserved symbols properly
 353680  s390x: Crash with certain glibc versions due to non-implemented TBEGIN
+353727  amd64->IR: 0x66 0xF 0x3A 0x62 0xD1 0x72 (pcmpXstrX $0x72)
 353802  ELF debug info reader confused with multiple .rodata sections
 353891  Assert 'bad_scanned_addr < VG_ROUNDDN(start+len, sizeof(Addr))' failed
 353917  unhandled amd64-solaris syscall fchdir(120)
@@ -123,6 +125,7 @@ where XXXXXX is the bug number as listed below.
 362009  Valgrind dumps core on unimplemented functionality before threads are created
 362329  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 3
 362894  missing (broken) support for wbit field on mtfsfi instruction (ppc64)
+362935  [AsusWRT] Assertion 'sizeof(TTEntryC) <= 88' failed
 363680  add renameat2() support
 363705  arm64 missing syscall name_to_handle_at and open_by_handle_at
 363714  ppc64 missing syscalls sync, waitid and name_to/open_by_handle_at

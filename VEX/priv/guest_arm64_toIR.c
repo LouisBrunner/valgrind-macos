@@ -10957,7 +10957,7 @@ Bool dis_AdvSIMD_three_different(/*MB_OUT*/DisResult* dres, UInt insn)
       /* -------- 1,0000 UADDL{2} -------- */
       /* -------- 0,0010 SSUBL{2} -------- */
       /* -------- 1,0010 USUBL{2} -------- */
-      /* Widens, and size refers to the narrowed lanes. */
+      /* Widens, and size refers to the narrow lanes. */
       if (size == X11) return False;
       vassert(size <= 2);
       Bool   isU   = bitU == 1;
@@ -10983,7 +10983,7 @@ Bool dis_AdvSIMD_three_different(/*MB_OUT*/DisResult* dres, UInt insn)
       /* -------- 1,0001 UADDW{2} -------- */
       /* -------- 0,0011 SSUBW{2} -------- */
       /* -------- 1,0011 USUBW{2} -------- */
-      /* Widens, and size refers to the narrowed lanes. */
+      /* Widens, and size refers to the narrow lanes. */
       if (size == X11) return False;
       vassert(size <= 2);
       Bool   isU   = bitU == 1;
@@ -11047,7 +11047,7 @@ Bool dis_AdvSIMD_three_different(/*MB_OUT*/DisResult* dres, UInt insn)
       /* -------- 1,0101 UABAL{2} -------- */
       /* -------- 0,0111 SABDL{2} -------- */
       /* -------- 1,0111 UABDL{2} -------- */
-      /* Widens, and size refers to the narrowed lanes. */
+      /* Widens, and size refers to the narrow lanes. */
       if (size == X11) return False;
       vassert(size <= 2);
       Bool   isU   = bitU == 1;
@@ -11077,7 +11077,7 @@ Bool dis_AdvSIMD_three_different(/*MB_OUT*/DisResult* dres, UInt insn)
       /* -------- 1,1000  UMLAL{2} -------- */ // 1
       /* -------- 0,1010  SMLSL{2} -------- */ // 2
       /* -------- 1,1010  UMLSL{2} -------- */ // 2
-      /* Widens, and size refers to the narrowed lanes. */
+      /* Widens, and size refers to the narrow lanes. */
       UInt ks = 3;
       switch (opcode) {
          case BITS4(1,1,0,0): ks = 0; break;
@@ -11114,7 +11114,7 @@ Bool dis_AdvSIMD_three_different(/*MB_OUT*/DisResult* dres, UInt insn)
       /* -------- 0,1101  SQDMULL{2} -------- */ // 0 (ks)
       /* -------- 0,1001  SQDMLAL{2} -------- */ // 1
       /* -------- 0,1011  SQDMLSL{2} -------- */ // 2
-      /* Widens, and size refers to the narrowed lanes. */
+      /* Widens, and size refers to the narrow lanes. */
       UInt ks = 3;
       switch (opcode) {
          case BITS4(1,1,0,1): ks = 0; break;
@@ -11152,7 +11152,7 @@ Bool dis_AdvSIMD_three_different(/*MB_OUT*/DisResult* dres, UInt insn)
 
    if (bitU == 0 && opcode == BITS4(1,1,1,0)) {
       /* -------- 0,1110  PMULL{2} -------- */
-      /* Widens, and size refers to the narrowed lanes. */
+      /* Widens, and size refers to the narrow lanes. */
       if (size != X00) return False;
       IRTemp res
          = math_BINARY_WIDENING_V128(is2, Iop_PolynomialMull8x8,

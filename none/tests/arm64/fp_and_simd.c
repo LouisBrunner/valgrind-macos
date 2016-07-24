@@ -3104,8 +3104,8 @@ GEN_BINARY_TEST(pmul, 8b, 8b, 8b)
 
 GEN_BINARY_TEST(pmull,  8h, 8b,  8b)
 GEN_BINARY_TEST(pmull2, 8h, 16b, 16b)
-//GEN_BINARY_TEST(pmull,  1q, 1d,  1d)
-//GEN_BINARY_TEST(pmull,  1q, 2d,  2d)
+GEN_BINARY_TEST(pmull,  1q, 1d,  1d)
+GEN_BINARY_TEST(pmull2, 1q, 2d,  2d)
 
 GEN_UNARY_TEST(rbit, 16b, 16b)
 GEN_UNARY_TEST(rbit, 8b, 8b)
@@ -5791,11 +5791,10 @@ int main ( void )
    if (1) test_pmul_16b_16b_16b(TyB);
    if (1) test_pmul_8b_8b_8b(TyB);
 
-   // pmull{2}  8h_8b_8b,8h_16b_16b,1q_1d_1d,1q_2d_2d
+   // pmull{2}  8h_8b_8b,8h_16b_16b
+   // pmull{2} 1q_1d_1d,1q_2d_2d is in the crypto section below
    if (1) test_pmull_8h_8b_8b(TyB);
    if (1) test_pmull2_8h_16b_16b(TyB);
-   //if (0) test_pmull_1q_1d_1d(TyD);
-   //if (0) test_pmull_1q_2d_2d(TyD);
 
    // rbit    16b,8b
    // rev16   16b,8b
@@ -7412,7 +7411,11 @@ int main ( void )
    if (1) DO50( test_sha256su0_4s_4s(TyNONE) );
    if (1) DO50( test_sha256su1_4s_4s_4s(TyNONE) );
 
-   return 0;
+   // pmull{2} 1q_1d_1d,1q_2d_2d
+   if (1) test_pmull_1q_1d_1d(TyD);
+   if (1) test_pmull2_1q_2d_2d(TyD);
+
+return 0;
 }
 
 

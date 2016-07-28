@@ -4597,6 +4597,9 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
             }
          }
          break;
+      case 12: {
+         return False;
+      }
       /* Starting from here these are FP SIMD cases */
       case 13:
          if (B == 0) {
@@ -4810,6 +4813,9 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
             }
          }
          break;
+      default:
+         /*NOTREACHED*/
+         vassert(0);
    }
 
    if (Q) {

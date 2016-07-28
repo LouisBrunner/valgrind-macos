@@ -95,7 +95,7 @@ else
 HTM_FLAG =
 endif
 
-jm_insns_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames \
+jm_insns_CFLAGS = $(AM_CFLAGS) -Wl,-z,norelro -Winline -Wall -O -g -mregnames \
 			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_ALTIVEC)
 
 if HAS_ISA_3_0

@@ -1,6 +1,7 @@
 #include "../../config.h"
 
 #define _GNU_SOURCE
+#include <inttypes.h>
 #include <stdio.h>
 #include <pthread.h>
 #include <string.h>
@@ -43,8 +44,8 @@ static void grow_the_stack(void)
 static char s[1000];
 static void describe (char* what, void* a)
 {
-   fprintf(stderr, "describing %p %s\n", a, what);
-   sprintf(s, "v.info location %p", a);
+   fprintf(stderr, "describing %#" PRIxPTR " %s\n", (uintptr_t) a, what);
+   sprintf(s, "v.info location %#" PRIxPTR, (uintptr_t) a);
    VALGRIND_MONITOR_COMMAND(s);
 }
 

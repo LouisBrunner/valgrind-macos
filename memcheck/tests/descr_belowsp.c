@@ -163,14 +163,29 @@ int main(int argc, const char** argv)
 
    grow_the_stack();
    bad_things_below_sp();
-   
-   r = pthread_create(&children, NULL, child_fn_0, NULL);
+
+   pthread_attr_t attrs;
+   r = pthread_attr_init(&attrs);
    assert(!r);
+
+#  if defined(VGO_solaris)
+   /* Solaris needs to configure at least two page sizes to have
+      a visible stack guard page. One page size is deducted for
+      an implicit mmap red zone. */
+   r = pthread_attr_setguardsize(&attrs, 2 * guess_pagesize());
+   assert(!r);
+#  endif /* VGO_solaris */
    
+   r = pthread_create(&children, &attrs, child_fn_0, NULL);
+   assert(!r);
+
+   r = pthread_attr_destroy(&attrs);
+   assert(!r);
+
    r = pthread_join(children, NULL);
    assert(!r);
-   
-   
+ 
+
    return 0;
 }
 

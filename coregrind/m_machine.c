@@ -1523,7 +1523,7 @@ Bool VG_(machine_get_hwcaps)( void )
      vki_sigaction_fromK_t saved_sigill_act, saved_sigfpe_act;
      vki_sigaction_toK_t     tmp_sigill_act,   tmp_sigfpe_act;
 
-     volatile Bool have_VFP, have_VFP2, have_VFP3, have_NEON;
+     volatile Bool have_VFP, have_VFP2, have_VFP3, have_NEON, have_V8;
      volatile Int archlevel;
      Int r;
 
@@ -1599,6 +1599,19 @@ Bool VG_(machine_get_hwcaps)( void )
            archlevel = 5;
         } else {
            __asm__ __volatile__(".word 0xE6822012"); /* PKHBT r2, r2, r2 */
+        }
+     }
+
+     /* ARMv8 insns */
+     have_V8 = True;
+     if (archlevel == 7) {
+        if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
+           have_V8 = False;
+        } else {
+           __asm__ __volatile__(".word 0xF3044F54"); /* VMAXNM.F32 q2,q2,q2 */
+        }
+        if (have_V8 && have_NEON && have_VFP3) {
+           archlevel = 8;
         }
      }
 

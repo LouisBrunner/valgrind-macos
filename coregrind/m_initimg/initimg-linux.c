@@ -691,8 +691,9 @@ Addr setup_client_stack( void*  init_sp,
                                "ARM has-neon from-auxv: %s\n",
                                has_neon ? "YES" : "NO");
               VG_(machine_arm_set_has_NEON)( has_neon );
-              #define VKI_HWCAP_TLS 32768
+#             define VKI_HWCAP_TLS 32768
               Bool has_tls = (auxv->u.a_val & VKI_HWCAP_TLS) > 0;
+#             undef VKI_HWCAP_TLS
               VG_(debugLog)(2, "initimg",
                                "ARM has-tls from-auxv: %s\n",
                                has_tls ? "YES" : "NO");

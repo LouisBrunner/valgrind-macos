@@ -1329,6 +1329,15 @@ ARMInstr* ARMInstr_VCvtSD ( Bool sToD, HReg dst, HReg src ) {
    i->ARMin.VCvtSD.src  = src;
    return i;
 }
+ARMInstr* ARMInstr_VXferQ ( Bool toQ, HReg qD, HReg dHi, HReg dLo ) {
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
+   i->tag              = ARMin_VXferQ;
+   i->ARMin.VXferQ.toQ = toQ;
+   i->ARMin.VXferQ.qD  = qD;
+   i->ARMin.VXferQ.dHi = dHi;
+   i->ARMin.VXferQ.dLo = dLo;
+   return i;
+}
 ARMInstr* ARMInstr_VXferD ( Bool toD, HReg dD, HReg rHi, HReg rLo ) {
    ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag              = ARMin_VXferD;
@@ -1800,6 +1809,29 @@ void ppARMInstr ( const ARMInstr* i ) {
          vex_printf(", ");
          ppHRegARM(i->ARMin.VCvtSD.src);
          return;
+      case ARMin_VXferQ:
+         if (i->ARMin.VXferQ.toQ) {
+            vex_printf("vmov ");
+            ppHRegARM(i->ARMin.VXferQ.qD);
+            vex_printf("-lo64, ");
+            ppHRegARM(i->ARMin.VXferQ.dLo);
+            vex_printf(" ; vmov ");
+            ppHRegARM(i->ARMin.VXferQ.qD);
+            vex_printf("-hi64, ");
+            ppHRegARM(i->ARMin.VXferQ.dHi);
+         } else {
+            vex_printf("vmov ");
+            ppHRegARM(i->ARMin.VXferQ.dLo);
+            vex_printf(", ");
+            ppHRegARM(i->ARMin.VXferQ.qD);
+            vex_printf("-lo64");
+            vex_printf(" ; vmov ");
+            ppHRegARM(i->ARMin.VXferQ.dHi);
+            vex_printf(", ");
+            ppHRegARM(i->ARMin.VXferQ.qD);
+            vex_printf("-hi64");
+         }
+         return;
       case ARMin_VXferD:
          vex_printf("vmov  ");
          if (i->ARMin.VXferD.toD) {
@@ -2201,6 +2233,17 @@ void getRegUsage_ARMInstr ( HRegUsage* u, const ARMInstr* i, Bool mode64 )
          addHRegUse(u, HRmWrite, i->ARMin.VCvtSD.dst);
          addHRegUse(u, HRmRead,  i->ARMin.VCvtSD.src);
          return;
+      case ARMin_VXferQ:
+         if (i->ARMin.VXferQ.toQ) {
+            addHRegUse(u, HRmWrite, i->ARMin.VXferQ.qD);
+            addHRegUse(u, HRmRead,  i->ARMin.VXferQ.dHi);
+            addHRegUse(u, HRmRead,  i->ARMin.VXferQ.dLo);
+         } else {
+            addHRegUse(u, HRmRead,  i->ARMin.VXferQ.qD);
+            addHRegUse(u, HRmWrite, i->ARMin.VXferQ.dHi);
+            addHRegUse(u, HRmWrite, i->ARMin.VXferQ.dLo);
+         }
+         return;
       case ARMin_VXferD:
          if (i->ARMin.VXferD.toD) {
             addHRegUse(u, HRmWrite, i->ARMin.VXferD.dD);
@@ -2421,6 +2464,11 @@ void mapRegs_ARMInstr ( HRegRemap* m, ARMInstr* i, Bool mode64 )
       case ARMin_VCvtSD:
          i->ARMin.VCvtSD.dst = lookupHRegRemap(m, i->ARMin.VCvtSD.dst);
          i->ARMin.VCvtSD.src = lookupHRegRemap(m, i->ARMin.VCvtSD.src);
+         return;
+      case ARMin_VXferQ:
+         i->ARMin.VXferQ.qD  = lookupHRegRemap(m, i->ARMin.VXferQ.qD);
+         i->ARMin.VXferQ.dHi = lookupHRegRemap(m, i->ARMin.VXferQ.dHi);
+         i->ARMin.VXferQ.dLo = lookupHRegRemap(m, i->ARMin.VXferQ.dLo);
          return;
       case ARMin_VXferD:
          i->ARMin.VXferD.dD  = lookupHRegRemap(m, i->ARMin.VXferD.dD);
@@ -3681,6 +3729,46 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
             *p++ = insn;
             goto done;
          }
+      }
+      case ARMin_VXferQ: {
+         UInt insn;
+         UInt qD  = qregEnc(i->ARMin.VXferQ.qD);
+         UInt dHi = dregEnc(i->ARMin.VXferQ.dHi);
+         UInt dLo = dregEnc(i->ARMin.VXferQ.dLo);
+         /* This is a bit tricky.  We need to make 2 D-D moves and we rely
+            on the fact that the Q register can be treated as two D registers.
+            We also rely on the fact that the register allocator will allocate
+            the two D's and the Q to disjoint parts of the register file,
+            and so we don't have to worry about the first move's destination
+            being the same as the second move's source, etc.  We do have
+            assertions though. */
+         /* The ARM ARM specifies that
+              D<2n>   maps to the least significant half of Q<n>
+              D<2n+1> maps to the most  significant half of Q<n>
+            So there are no issues with endianness here.
+         */
+         UInt qDlo = 2 * qD + 0;
+         UInt qDhi = 2 * qD + 1;
+         /* Stay sane .. */
+         vassert(qDhi != dHi && qDhi != dLo);
+         vassert(qDlo != dHi && qDlo != dLo);
+         /* vmov dX, dY is
+            F 2 (0,dX[4],1,0) dY[3:0] dX[3:0] 1 (dY[4],0,dY[4],1) dY[3:0]
+         */
+#        define VMOV_D_D(_xx,_yy) \
+            XXXXXXXX( 0xF, 0x2, BITS4(0, (((_xx) >> 4) & 1), 1, 0), \
+                      ((_yy) & 0xF), ((_xx) & 0xF), 0x1, \
+                      BITS4( (((_yy) >> 4) & 1), 0, (((_yy) >> 4) & 1), 1), \
+                      ((_yy) & 0xF) )
+         if (i->ARMin.VXferQ.toQ) {
+            insn = VMOV_D_D(qDlo, dLo); *p++ = insn;
+            insn = VMOV_D_D(qDhi, dHi); *p++ = insn;
+         } else {
+            insn = VMOV_D_D(dLo, qDlo); *p++ = insn;
+            insn = VMOV_D_D(dHi, qDhi); *p++ = insn;
+         }
+#        undef VMOV_D_D
+         goto done;
       }
       case ARMin_VXferD: {
          UInt dD  = dregEnc(i->ARMin.VXferD.dD);

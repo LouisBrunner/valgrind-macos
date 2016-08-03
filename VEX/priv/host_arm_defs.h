@@ -591,6 +591,7 @@ typedef
       ARMin_VCMovD,
       ARMin_VCMovS,
       ARMin_VCvtSD,
+      ARMin_VXferQ,
       ARMin_VXferD,
       ARMin_VXferS,
       ARMin_VCvtID,
@@ -824,6 +825,13 @@ typedef
             HReg dst;
             HReg src;
          } VCvtSD;
+         /* Transfer a NEON Q reg to/from two D registers (VMOV x 2) */
+         struct {
+            Bool toQ;
+            HReg qD;
+            HReg dHi;
+            HReg dLo;
+         } VXferQ;
          /* Transfer a VFP D reg to/from two integer registers (VMOV) */
          struct {
             Bool toD;
@@ -994,6 +1002,7 @@ extern ARMInstr* ARMInstr_VCmpD    ( HReg argL, HReg argR );
 extern ARMInstr* ARMInstr_VCMovD   ( ARMCondCode, HReg dst, HReg src );
 extern ARMInstr* ARMInstr_VCMovS   ( ARMCondCode, HReg dst, HReg src );
 extern ARMInstr* ARMInstr_VCvtSD   ( Bool sToD, HReg dst, HReg src );
+extern ARMInstr* ARMInstr_VXferQ   ( Bool toQ, HReg qD, HReg dHi, HReg dLo );
 extern ARMInstr* ARMInstr_VXferD   ( Bool toD, HReg dD, HReg rHi, HReg rLo );
 extern ARMInstr* ARMInstr_VXferS   ( Bool toS, HReg fD, HReg rLo );
 extern ARMInstr* ARMInstr_VCvtID   ( Bool iToD, Bool syned,

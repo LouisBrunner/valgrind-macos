@@ -368,6 +368,134 @@ Bool mightRequireFixedRegs ( IRExpr* e )
 }
 
 
+static
+Bool doHelperCallWithArgsOnStack ( /*OUT*/UInt*   stackAdjustAfterCall,
+                                   /*OUT*/RetLoc* retloc,
+                                   ISelEnv* env,
+                                   IRExpr* guard,
+                                   IRCallee* cee, IRType retTy, IRExpr** args )
+{
+   /* This function deals just with the case where the arg sequence is:
+      VECRET followed by between 4 and 12 Ity_I32 values.  So far no other
+      cases are necessary or supported. */
+
+   /* Check this matches the required format. */
+   if (args[0] == NULL || args[0]->tag != Iex_VECRET)
+      goto no_match;
+
+   UInt i;
+   UInt n_real_args = 0;
+   for (i = 1; args[i]; i++) {
+      IRExpr* arg = args[i];
+      if (UNLIKELY(is_IRExpr_VECRET_or_BBPTR(arg)))
+         goto no_match;
+      IRType argTy = typeOfIRExpr(env->type_env, arg);
+      if (UNLIKELY(argTy != Ity_I32))
+         goto no_match;
+      n_real_args++;
+   }
+
+   /* We expect to pass at least some args on the stack. */
+   if (n_real_args <= 3)
+      goto no_match;
+
+   /* But not too many. */
+   if (n_real_args > 12)
+      goto no_match;
+
+   /* General rules for a call:
+
+      Args 1 .. 4 go in R0 .. R3.  The rest are pushed R to L on the
+      stack; that is, arg 5 is at the lowest address, arg 6 at the
+      next lowest, etc.
+
+      The stack is to be kept 8 aligned.
+
+      It appears (for unclear reasons) that the highest 3 words made
+      available when moving SP downwards are not to be used.  For
+      example, if 5 args are to go on the stack, then SP must be moved
+      down 32 bytes, and the area at SP+20 .. SP+31 is not to be used
+      by the caller.
+   */
+
+   /* For this particular case, we use the following layout:
+
+        ------ original SP
+        112 bytes
+        ------
+        return value
+        ------ original SP - 128
+        space
+        args words, between 1 and 11
+        ------ new SP = original_SP - 256
+
+      Using 256 bytes is overkill, but it is simple and good enough.
+   */
+
+   /* This should really be
+        HReg argVRegs[n_real_args];
+      but that makes it impossible to do 'goto's forward past.
+      Hence the following kludge. */
+   vassert(n_real_args <= 11);
+   HReg argVRegs[11];
+   for (i = 0; i < 11; i++)
+      argVRegs[i] = INVALID_HREG;
+
+   /* Compute args into vregs. */
+   for (i = 0; i < n_real_args; i++) {
+      argVRegs[i] = iselIntExpr_R(env, args[i+1]);
+   }
+
+   /* Now we can compute the condition.  We can't do it earlier
+      because the argument computations could trash the condition
+      codes.  Be a bit clever to handle the common case where the
+      guard is 1:Bit. */
+   ARMCondCode cc = ARMcc_AL;
+   if (guard) {
+      if (guard->tag == Iex_Const
+          && guard->Iex.Const.con->tag == Ico_U1
+          && guard->Iex.Const.con->Ico.U1 == True) {
+         /* unconditional -- do nothing */
+      } else {
+         goto no_match; //ATC
+         cc = iselCondCode( env, guard );
+      }
+   }
+
+   HReg r0 = hregARM_R0();
+   HReg sp = hregARM_R13();
+
+   ARMRI84* c256 = ARMRI84_I84(64, 15); // 64 `ror` (15 * 2)
+
+   addInstr(env, ARMInstr_Alu(ARMalu_SUB, r0, sp, ARMRI84_I84(128, 0)));
+
+   addInstr(env, mk_iMOVds_RR(hregARM_R1(), argVRegs[0]));
+   addInstr(env, mk_iMOVds_RR(hregARM_R2(), argVRegs[1]));
+   addInstr(env, mk_iMOVds_RR(hregARM_R3(), argVRegs[2]));
+
+   addInstr(env, ARMInstr_Alu(ARMalu_SUB, sp, sp, c256));
+
+   for (i = 3; i < n_real_args; i++) {
+      addInstr(env, ARMInstr_LdSt32(ARMcc_AL, False/*store*/, argVRegs[i],
+                                    ARMAMode1_RI(sp, (i-3) * 4)));
+   }
+
+   vassert(*stackAdjustAfterCall == 0);
+   vassert(is_RetLoc_INVALID(*retloc));
+
+   *stackAdjustAfterCall = 256;
+   *retloc = mk_RetLoc_spRel(RLPri_V128SpRel, 128);
+
+   Addr32 target = (Addr)cee->addr;
+   addInstr(env, ARMInstr_Call( cc, target, 4, *retloc ));
+
+   return True; /* success */
+
+  no_match:
+   return False;
+}
+
+
 /* Do a complete function call.  |guard| is a Ity_Bit expression
    indicating whether or not the call happens.  If guard==NULL, the
    call is unconditional.  |retloc| is set to indicate where the
@@ -469,6 +597,21 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
       }
       n_args++;
    }
+
+   /* If there are more than 4 args, we are going to have to pass
+      some via memory.  Use a different function to (possibly) deal with
+      that; dealing with it here is too complex. */
+   if (n_args > ARM_N_ARGREGS) {
+      return doHelperCallWithArgsOnStack(stackAdjustAfterCall, retloc,
+                                         env, guard, cee, retTy, args );
+
+   }
+
+   /* After this point we make no attempt to pass args on the stack,
+      and just give up if that case (which is OK because it never
+      happens).  Even if there are for example only 3 args, it might
+      still be necessary to pass some of them on the stack if for example
+      two or more of them are 64-bit integers. */
 
    argregs[0] = hregARM_R0();
    argregs[1] = hregARM_R1();
@@ -653,30 +796,30 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    vassert(*stackAdjustAfterCall == 0);
    vassert(is_RetLoc_INVALID(*retloc));
    switch (retTy) {
-         case Ity_INVALID:
-            /* Function doesn't return a value. */
-            *retloc = mk_RetLoc_simple(RLPri_None);
-            break;
-         case Ity_I64:
-            *retloc = mk_RetLoc_simple(RLPri_2Int);
-            break;
-         case Ity_I32: case Ity_I16: case Ity_I8:
-            *retloc = mk_RetLoc_simple(RLPri_Int);
-            break;
-         case Ity_V128:
-            vassert(0); // ATC
-            *retloc = mk_RetLoc_spRel(RLPri_V128SpRel, 0);
-            *stackAdjustAfterCall = 16;
-            break;
-         case Ity_V256:
-            vassert(0); // ATC
-            *retloc = mk_RetLoc_spRel(RLPri_V256SpRel, 0);
-            *stackAdjustAfterCall = 32;
-            break;
-         default:
-            /* IR can denote other possible return types, but we don't
-               handle those here. */
-           vassert(0);
+      case Ity_INVALID:
+         /* Function doesn't return a value. */
+         *retloc = mk_RetLoc_simple(RLPri_None);
+         break;
+      case Ity_I64:
+         *retloc = mk_RetLoc_simple(RLPri_2Int);
+         break;
+      case Ity_I32: case Ity_I16: case Ity_I8:
+         *retloc = mk_RetLoc_simple(RLPri_Int);
+         break;
+      case Ity_V128:
+         vassert(0); // ATC
+         *retloc = mk_RetLoc_spRel(RLPri_V128SpRel, 0);
+         *stackAdjustAfterCall = 16;
+         break;
+      case Ity_V256:
+         vassert(0); // ATC
+         *retloc = mk_RetLoc_spRel(RLPri_V256SpRel, 0);
+         *stackAdjustAfterCall = 32;
+         break;
+      default:
+         /* IR can denote other possible return types, but we don't
+            handle those here. */
+         vassert(0);
    }
 
    /* Finally, generate the call itself.  This needs the *retloc value
@@ -3714,6 +3857,14 @@ static HReg iselNeon64Expr_wrk ( ISelEnv* env, IRExpr* e )
                                           res, arg, 0, False));
             return res;
          }
+         case Iop_V128to64:
+         case Iop_V128HIto64: {
+            HReg src   = iselNeonExpr(env, e->Iex.Unop.arg);
+            HReg resLo = newVRegD(env);
+            HReg resHi = newVRegD(env);
+            addInstr(env, ARMInstr_VXferQ(False/*!toQ*/, src, resHi, resLo));
+            return e->Iex.Unop.op == Iop_V128HIto64 ? resHi : resLo;
+         }
          default:
             break;
       }
@@ -4305,7 +4456,7 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
 
    if (e->tag == Iex_Binop) {
       switch (e->Iex.Binop.op) {
-         case Iop_64HLtoV128:
+         case Iop_64HLtoV128: {
             /* Try to match into single "VMOV reg, imm" instruction */
             if (e->Iex.Binop.arg1->tag == Iex_Const &&
                 e->Iex.Binop.arg2->tag == Iex_Const &&
@@ -4349,45 +4500,12 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
             }
             /* Does not match "VMOV Reg, Imm" form.  We'll have to do
                it the slow way. */
-            { 
-               /* local scope */
-               /* Done via the stack for ease of use. */
-               /* FIXME: assumes little endian host */
-               HReg       w3, w2, w1, w0;
-               HReg       res  = newVRegV(env);
-               ARMAMode1* sp_0  = ARMAMode1_RI(hregARM_R13(), 0);
-               ARMAMode1* sp_4  = ARMAMode1_RI(hregARM_R13(), 4);
-               ARMAMode1* sp_8  = ARMAMode1_RI(hregARM_R13(), 8);
-               ARMAMode1* sp_12 = ARMAMode1_RI(hregARM_R13(), 12);
-               ARMRI84*   c_16  = ARMRI84_I84(16,0);
-               /* Make space for SP */
-               addInstr(env, ARMInstr_Alu(ARMalu_SUB, hregARM_R13(),
-                                                      hregARM_R13(), c_16));
-
-               /* Store the less significant 64 bits */
-               iselInt64Expr(&w1, &w0, env, e->Iex.Binop.arg2);
-               addInstr(env, ARMInstr_LdSt32(ARMcc_AL, False/*store*/,
-                                             w0, sp_0));
-               addInstr(env, ARMInstr_LdSt32(ARMcc_AL, False/*store*/,
-                                             w1, sp_4));
-         
-               /* Store the more significant 64 bits */
-               iselInt64Expr(&w3, &w2, env, e->Iex.Binop.arg1);
-               addInstr(env, ARMInstr_LdSt32(ARMcc_AL, False/*store*/,
-                                             w2, sp_8));
-               addInstr(env, ARMInstr_LdSt32(ARMcc_AL, False/*store*/,
-                                             w3, sp_12));
-         
-                /* Load result back from stack. */
-                addInstr(env, ARMInstr_NLdStQ(True/*load*/, res,
-                                              mkARMAModeN_R(hregARM_R13())));
-
-                /* Restore SP */
-                addInstr(env, ARMInstr_Alu(ARMalu_ADD, hregARM_R13(),
-                                           hregARM_R13(), c_16));
-                return res;
-            } /* local scope */
-            goto neon_expr_bad;
+            HReg dHi = iselNeon64Expr(env, e->Iex.Binop.arg1);
+            HReg dLo = iselNeon64Expr(env, e->Iex.Binop.arg2);
+            HReg res = newVRegV(env);
+            addInstr(env, ARMInstr_VXferQ(True/*toQ*/, res, dHi, dLo));
+            return res;
+         }
          case Iop_AndV128: {
             HReg res = newVRegV(env);
             HReg argL = iselNeonExpr(env, e->Iex.Binop.arg1);
@@ -5359,7 +5477,7 @@ static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
       return dst;
    }
 
-  neon_expr_bad:
+  /* neon_expr_bad: */
    ppIRExpr(e);
    vpanic("iselNeonExpr_wrk");
 }
@@ -5974,7 +6092,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       switch (retty) {
          case Ity_INVALID: /* function doesn't return anything */
          case Ity_I64: case Ity_I32: case Ity_I16: case Ity_I8:
-         //case Ity_V128: //ATC
+         case Ity_V128:
             retty_ok = True; break;
          default:
             break;
@@ -5987,7 +6105,9 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          call is skipped. */
       UInt   addToSp = 0;
       RetLoc rloc    = mk_RetLoc_INVALID();
-      doHelperCall( &addToSp, &rloc, env, d->guard, d->cee, retty, d->args );
+      Bool   ok      = doHelperCall( &addToSp, &rloc, env,
+                                     d->guard, d->cee, retty, d->args );
+      if (!ok) goto stmt_fail;
       vassert(is_sane_RetLoc(rloc));
 
       /* Now figure out what to do with the returned value, if any. */
@@ -6026,11 +6146,6 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
             return;
          }
          case Ity_V128: {
-            vassert(0); // ATC.  The code that this produces really
-            // needs to be looked at, to verify correctness.
-            // I don't think this can ever happen though, since the
-            // ARM front end never produces 128-bit loads/stores.
-            // Hence the following is mostly theoretical.
             /* The returned value is on the stack, and *retloc tells
                us where.  Fish it off the stack and then move the
                stack pointer upwards to clear it, as directed by
@@ -6038,16 +6153,26 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
             vassert(rloc.pri == RLPri_V128SpRel);
             vassert(rloc.spOff < 256); // else ARMRI84_I84(_,0) can't encode it
             vassert(addToSp >= 16);
-            vassert(addToSp < 256); // ditto reason as for rloc.spOff
+            vassert(addToSp <= 256);
+            /* Both the stack delta and the offset must be at least 8-aligned.
+               If that isn't so, doHelperCall() has generated bad code. */
+            vassert(0 == (rloc.spOff % 8));
+            vassert(0 == (addToSp % 8));
             HReg dst = lookupIRTemp(env, d->tmp);
             HReg tmp = newVRegI(env);
-            HReg r13 = hregARM_R13(); // sp
+            HReg sp  = hregARM_R13();
             addInstr(env, ARMInstr_Alu(ARMalu_ADD,
-                                       tmp, r13, ARMRI84_I84(rloc.spOff,0)));
+                                       tmp, sp, ARMRI84_I84(rloc.spOff,0)));
             ARMAModeN* am = mkARMAModeN_R(tmp);
+            /* This load could be done with its effective address 0 % 8,
+               because that's the best stack alignment that we can be
+               assured of. */
             addInstr(env, ARMInstr_NLdStQ(True/*load*/, dst, am));
-            addInstr(env, ARMInstr_Alu(ARMalu_ADD,
-                                       r13, r13, ARMRI84_I84(addToSp,0)));
+
+            ARMRI84* spAdj
+               = addToSp == 256 ? ARMRI84_I84(64, 15) // 64 `ror` (15 * 2)
+                                : ARMRI84_I84(addToSp, 0);
+            addInstr(env, ARMInstr_Alu(ARMalu_ADD, sp, sp, spAdj));
             return;
          }
          default:

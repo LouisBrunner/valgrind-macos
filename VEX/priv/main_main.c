@@ -1933,8 +1933,8 @@ static void check_hwcaps ( VexArch arch, UInt hwcaps )
 
       case VexArchARM: {
          Bool NEON  = ((hwcaps & VEX_HWCAPS_ARM_NEON) != 0);
+         Bool VFP3  = ((hwcaps & VEX_HWCAPS_ARM_VFP3) != 0);
          UInt level = VEX_ARM_ARCHLEVEL(hwcaps);
-
          switch (level) {
             case 5:
                if (NEON)
@@ -1947,6 +1947,11 @@ static void check_hwcaps ( VexArch arch, UInt hwcaps )
                           "NEON instructions are not supported for ARMv6.\n");
                return;
             case 7:
+               return;
+            case 8:
+               if (!NEON || !VFP3)
+                  invalid_hwcaps(arch, hwcaps,
+                          "NEON and VFP3 are required for ARMv8.\n");
                return;
             default:
                invalid_hwcaps(arch, hwcaps,

@@ -8837,8 +8837,11 @@ Bool dis_neon_load_or_store ( UInt theInstr,
 
    Finally, the caller must indicate whether this occurs in ARM or in
    Thumb code.
+
+   This only handles NEON for ARMv7 and below.  The NEON extensions
+   for v8 are handled by decode_V8_instruction.
 */
-static Bool decode_NEON_instruction (
+static Bool decode_NEON_instruction_ARMv7_and_below (
                /*MOD*/DisResult* dres,
                UInt              insn32,
                IRTemp            condT,
@@ -8915,7 +8918,7 @@ static Bool decode_NEON_instruction (
    Caller must supply an IRTemp 'condT' holding the gating condition,
    or IRTemp_INVALID indicating the insn is always executed.
 
-   Caller must also supply an ARMCondcode 'cond'.  This is only used
+   Caller must also supply an ARMCondcode 'conq'.  This is only used
    for debug printing, no other purpose.  For ARM, this is simply the
    top 4 bits of the original instruction.  For Thumb, the condition
    is not (really) known until run time, and so ARMCondAL should be
@@ -12581,6 +12584,198 @@ static Bool decode_V6MEDIA_instruction (
 
 
 /*------------------------------------------------------------*/
+/*--- V8 instructions                                      ---*/
+/*------------------------------------------------------------*/
+
+/* Break a V128-bit value up into four 32-bit ints. */
+
+static void breakupV128to32s ( IRTemp t128,
+                               /*OUTs*/
+                               IRTemp* t3, IRTemp* t2,
+                               IRTemp* t1, IRTemp* t0 )
+{
+   IRTemp hi64 = newTemp(Ity_I64);
+   IRTemp lo64 = newTemp(Ity_I64);
+   assign( hi64, unop(Iop_V128HIto64, mkexpr(t128)) );
+   assign( lo64, unop(Iop_V128to64,   mkexpr(t128)) );
+
+   vassert(t0 && *t0 == IRTemp_INVALID);
+   vassert(t1 && *t1 == IRTemp_INVALID);
+   vassert(t2 && *t2 == IRTemp_INVALID);
+   vassert(t3 && *t3 == IRTemp_INVALID);
+
+   *t0 = newTemp(Ity_I32);
+   *t1 = newTemp(Ity_I32);
+   *t2 = newTemp(Ity_I32);
+   *t3 = newTemp(Ity_I32);
+   assign( *t0, unop(Iop_64to32,   mkexpr(lo64)) );
+   assign( *t1, unop(Iop_64HIto32, mkexpr(lo64)) );
+   assign( *t2, unop(Iop_64to32,   mkexpr(hi64)) );
+   assign( *t3, unop(Iop_64HIto32, mkexpr(hi64)) );
+}
+
+
+/* Both ARM and Thumb */
+
+/* Translate a V8 instruction.  If successful, returns True and *dres
+   may or may not be updated.  If unsuccessful, returns False and
+   doesn't change *dres nor create any IR.
+
+   The Thumb and ARM encodings are potentially different.  In both
+   ARM and Thumb mode, the caller must pass the entire 32 bits of
+   the instruction.  Callers may pass any instruction; this function
+   ignores anything it doesn't recognise.
+
+   Caller must supply an IRTemp 'condT' holding the gating condition,
+   or IRTemp_INVALID indicating the insn is always executed.
+
+   If we are decoding an ARM instruction which is in the NV space
+   then it is expected that condT will be IRTemp_INVALID, and that is
+   asserted for.  That condition is ensured by the logic near the top
+   of disInstr_ARM_WRK, that sets up condT.
+
+   When decoding for Thumb, the caller must pass the ITState pre/post
+   this instruction, so that we can generate a SIGILL in the cases where
+   the instruction may not be in an IT block.  When decoding for ARM,
+   both of these must be IRTemp_INVALID.
+
+   Finally, the caller must indicate whether this occurs in ARM or in
+   Thumb code.
+*/
+static Bool decode_V8_instruction (
+               /*MOD*/DisResult* dres,
+               UInt              insnv8,
+               IRTemp            condT,
+               Bool              isT,
+               IRTemp            old_itstate,
+               IRTemp            new_itstate
+            )
+{
+#  define INSNA(_bMax,_bMin)   SLICE_UInt(insnv8, (_bMax), (_bMin))
+#  define INSNT0(_bMax,_bMin)  SLICE_UInt( ((insnv8 >> 16) & 0xFFFF), \
+                                           (_bMax), (_bMin) )
+#  define INSNT1(_bMax,_bMin)  SLICE_UInt( ((insnv8 >> 0)  & 0xFFFF), \
+                                           (_bMax), (_bMin) )
+   //HChar dis_buf[128];
+   //dis_buf[0] = 0;
+
+   if (isT) {
+      vassert(old_itstate != IRTemp_INVALID);
+      vassert(new_itstate != IRTemp_INVALID);
+   } else {
+      vassert(old_itstate == IRTemp_INVALID);
+      vassert(new_itstate == IRTemp_INVALID);
+   }
+
+   /* ARMCondcode 'conq' is only used for debug printing and for no other
+      purpose.  For ARM, this is simply the top 4 bits of the instruction.
+      For Thumb, the condition is not (really) known until run time, and so
+      we set it to ARMCondAL in order that printing of these instructions
+      does not show any condition. */
+   ARMCondcode conq;
+   if (isT) {
+      conq = ARMCondAL;
+   } else {
+      conq = (ARMCondcode)INSNA(31,28);
+      if (conq == ARMCondNV || conq == ARMCondAL) {
+         vassert(condT == IRTemp_INVALID);
+      } else {
+         vassert(condT != IRTemp_INVALID);
+      }
+      vassert(conq >= ARMCondEQ && conq <= ARMCondNV);
+   }
+
+   /* ----------- AESD.8 q_q ----------- */
+   /*     31   27   23  21 19 17 15 11   7      3
+      T1: 1111 1111 1 D 11 sz 00 d  0011 00 M 0 m  AESE Qd, Qm
+      A1: 1111 0011 1 D 11 sz 00 d  0011 00 M 0 m  AESE Qd, Qm
+
+      T1: 1111 1111 1 D 11 sz 00 d  0011 01 M 0 m  AESD Qd, Qm
+      A1: 1111 0011 1 D 11 sz 00 d  0011 01 M 0 m  AESD Qd, Qm
+
+      T1: 1111 1111 1 D 11 sz 00 d  0011 10 M 0 m  AESMC Qd, Qm
+      A1: 1111 0011 1 D 11 sz 00 d  0011 10 M 0 m  AESMC Qd, Qm
+
+      T1: 1111 1111 1 D 11 sz 00 d  0011 11 M 0 m  AESIMC Qd, Qm
+      A1: 1111 0011 1 D 11 sz 00 d  0011 11 M 0 m  AESIMC Qd, Qm
+
+      sz must be 00
+      ARM encoding is in NV space
+   */
+   {
+     UInt regD = 99, regM = 99, opc = 4/*invalid*/;
+     Bool gate = True;
+
+     UInt high9 = isT ? BITS9(1,1,1,1,1,1,1,1,1) : BITS9(1,1,1,1,0,0,1,1,1);
+     if (INSNA(31,23) == high9 && INSNA(21,16) == BITS6(1,1,0,0,0,0)
+         && INSNA(11,8) == BITS4(0,0,1,1) && INSNA(4,4) == 0) {
+        UInt bitD = INSNA(22,22);
+        UInt fldD = INSNA(15,12);
+        UInt bitM = INSNA(5,5);
+        UInt fldM = INSNA(3,0);
+        opc  = INSNA(7,6);
+        regD = (bitD << 4) | fldD;
+        regM = (bitM << 4) | fldM;
+     }
+     if ((regD & 1) == 1 || (regM & 1) == 1)
+        gate = False;
+
+     if (gate) {
+        if (isT) {
+           gen_SIGILL_T_if_in_ITBlock(old_itstate, new_itstate);
+        }
+        IRTemp op1 = newTemp(Ity_V128);
+        IRTemp op2 = newTemp(Ity_V128);
+        IRTemp src = newTemp(Ity_V128);
+        IRTemp res = newTemp(Ity_V128);
+        assign(op1,  getQReg(regD >> 1));
+        assign(op2,  getQReg(regM >> 1));
+        assign(src,  opc == BITS2(0,0) || opc == BITS2(0,1)
+                        ? binop(Iop_XorV128, mkexpr(op1), mkexpr(op2))
+                        : mkexpr(op2));
+
+        void* helpers[4]
+           = { &armg_dirtyhelper_AESE,  &armg_dirtyhelper_AESD,
+               &armg_dirtyhelper_AESMC, &armg_dirtyhelper_AESIMC };
+        const HChar* hNames[4]
+           = { "armg_dirtyhelper_AESE",  "armg_dirtyhelper_AESD",
+               "armg_dirtyhelper_AESMC", "armg_dirtyhelper_AESIMC" };
+        const HChar* iNames[4]
+           = { "aese", "aesd", "aesmc", "aesimc" };
+
+        vassert(opc >= 0 && opc <= 3);
+        void*        helper = helpers[opc];
+        const HChar* hname  = hNames[opc];
+
+        IRTemp w32_3, w32_2, w32_1, w32_0;
+        w32_3 = w32_2 = w32_1 = w32_0 = IRTemp_INVALID;
+        breakupV128to32s( src, &w32_3, &w32_2, &w32_1, &w32_0 );
+
+        IRDirty* di
+          = unsafeIRDirty_1_N( res, 0/*regparms*/, hname, helper,
+                               mkIRExprVec_5(
+                                  IRExpr_VECRET(),
+                                  mkexpr(w32_3), mkexpr(w32_2),
+                                  mkexpr(w32_1), mkexpr(w32_0)) );
+        stmt(IRStmt_Dirty(di));
+
+        putQReg(regD >> 1, mkexpr(res), IRTemp_INVALID);
+        DIP("%s.8 q%d, q%d\n", iNames[opc], regD >> 1, regM >> 1);
+        return True;
+     }
+     /* fall through */
+   }
+
+   /* ---------- Doesn't match anything. ---------- */
+   return False;
+
+#  undef INSNA
+#  undef INSNT0
+#  undef INSNT1
+}
+
+
+/*------------------------------------------------------------*/
 /*--- LDMxx/STMxx helper (both ARM and Thumb32)            ---*/
 /*------------------------------------------------------------*/
 
@@ -14456,10 +14651,12 @@ static Bool decode_CP10_CP11_instruction (
    *dres may or may not be updated.  If failure, returns False and
    doesn't change *dres nor create any IR.
 
-   Note that all NEON instructions (in ARM mode) are handled through
-   here, since they are all in NV space.
+   Note that all NEON instructions (in ARM mode) up to and including
+   ARMv7, but not later, are handled through here, since they are all
+   in NV space.
 */
-static Bool decode_NV_instruction ( /*MOD*/DisResult* dres,
+static Bool decode_NV_instruction_ARMv7_and_below
+                                 ( /*MOD*/DisResult* dres,
                                     const VexArchInfo* archinfo,
                                     UInt insn )
 {
@@ -14585,7 +14782,7 @@ static Bool decode_NV_instruction ( /*MOD*/DisResult* dres,
 
    /* ------------------- NEON ------------------- */
    if (archinfo->hwcaps & VEX_HWCAPS_ARM_NEON) {
-      Bool ok_neon = decode_NEON_instruction(
+      Bool ok_neon = decode_NEON_instruction_ARMv7_and_below(
                         dres, insn, IRTemp_INVALID/*unconditional*/, 
                         False/*!isT*/
                      );
@@ -14627,15 +14824,9 @@ DisResult disInstr_ARM_WRK (
 
    DisResult dres;
    UInt      insn;
-   //Bool      allow_VFP = False;
-   //UInt      hwcaps = archinfo->hwcaps;
    IRTemp    condT; /* :: Ity_I32 */
    UInt      summary;
    HChar     dis_buf[128];  // big enough to hold LDMIA etc text
-
-   /* What insn variants are we supporting today? */
-   //allow_VFP  = (0 != (hwcaps & VEX_HWCAPS_ARM_VFP));
-   // etc etc
 
    /* Set result defaults. */
    dres.whatNext    = Dis_Continue;
@@ -14751,11 +14942,12 @@ DisResult disInstr_ARM_WRK (
       case ARMCondNV: {
          // Illegal instruction prior to v5 (see ARM ARM A3-5), but
          // some cases are acceptable
-         Bool ok = decode_NV_instruction(&dres, archinfo, insn);
+         Bool ok
+            = decode_NV_instruction_ARMv7_and_below(&dres, archinfo, insn);
          if (ok)
             goto decode_success;
          else
-            goto decode_failure;
+            goto after_v7_decoder;
       }
       case ARMCondAL: // Always executed
          break;
@@ -15685,7 +15877,7 @@ DisResult disInstr_ARM_WRK (
    }
 
    /* --- NB: ARM interworking branches are in NV space, hence
-      are handled elsewhere by decode_NV_instruction.
+      are handled elsewhere by decode_NV_instruction_ARMv7_and_below.
       ---
    */
 
@@ -17341,7 +17533,8 @@ DisResult disInstr_ARM_WRK (
    /* ----------------------------------------------------------- */
 
    /* These are all in NV space, and so are taken care of (far) above,
-      by a call from this function to decode_NV_instruction(). */
+      by a call from this function to
+      decode_NV_instruction_ARMv7_and_below(). */
 
    /* ----------------------------------------------------------- */
    /* -- v6 media instructions (in ARM mode)                   -- */
@@ -17353,6 +17546,24 @@ DisResult disInstr_ARM_WRK (
                    );
      if (ok_v6m)
         goto decode_success;
+   }
+
+   /* ----------------------------------------------------------- */
+   /* -- v8 instructions (in ARM mode)                         -- */
+   /* ----------------------------------------------------------- */
+
+  after_v7_decoder:
+
+   /* If we get here, it means that all attempts to decode the
+      instruction as ARMv7 or earlier have failed.  So, if we're doing
+      ARMv8 or later, here is the point to try for it. */
+
+   if (VEX_ARM_ARCHLEVEL(archinfo->hwcaps) >= 8) {
+      Bool ok_v8
+         = decode_V8_instruction( &dres, insn, condT, False/*!isT*/,
+                                  IRTemp_INVALID, IRTemp_INVALID );
+      if (ok_v8)
+         goto decode_success;
    }
 
    /* ----------------------------------------------------------- */
@@ -17497,17 +17708,11 @@ DisResult disInstr_THUMB_WRK (
    DisResult dres;
    UShort    insn0; /*  first 16 bits of the insn */
    UShort    insn1; /* second 16 bits of the insn */
-   //Bool      allow_VFP = False;
-   //UInt      hwcaps = archinfo->hwcaps;
    HChar     dis_buf[128];  // big enough to hold LDMIA etc text
 
    /* Summary result of the ITxxx backwards analysis: False == safe
       but suboptimal. */
    Bool guaranteedUnconditional = False;
-
-   /* What insn variants are we supporting today? */
-   //allow_VFP  = (0 != (hwcaps & VEX_HWCAPS_ARM_VFP));
-   // etc etc
 
    /* Set result defaults. */
    dres.whatNext    = Dis_Continue;
@@ -21921,12 +22126,12 @@ DisResult disInstr_THUMB_WRK (
    }
 
    /* ----------------------------------------------------------- */
-   /* -- NEON instructions (in Thumb mode)                     -- */
+   /* -- NEON instructions (only v7 and below, in Thumb mode)  -- */
    /* ----------------------------------------------------------- */
 
    if (archinfo->hwcaps & VEX_HWCAPS_ARM_NEON) {
       UInt insn32 = (INSN0(15,0) << 16) | INSN1(15,0);
-      Bool ok_neon = decode_NEON_instruction(
+      Bool ok_neon = decode_NEON_instruction_ARMv7_and_below(
                         &dres, insn32, condT, True/*isT*/
                      );
       if (ok_neon)
@@ -21944,6 +22149,23 @@ DisResult disInstr_THUMB_WRK (
                    );
      if (ok_v6m)
         goto decode_success;
+   }
+
+   /* ----------------------------------------------------------- */
+   /* -- v8 instructions (in Thumb mode)                       -- */
+   /* ----------------------------------------------------------- */
+
+   /* If we get here, it means that all attempts to decode the
+      instruction as ARMv7 or earlier have failed.  So, if we're doing
+      ARMv8 or later, here is the point to try for it. */
+
+   if (VEX_ARM_ARCHLEVEL(archinfo->hwcaps) >= 8) {
+      UInt insn32 = (INSN0(15,0) << 16) | INSN1(15,0);
+      Bool ok_v8
+         = decode_V8_instruction( &dres, insn32, condT, True/*isT*/,
+                                  old_itstate, new_itstate );
+      if (ok_v8)
+         goto decode_success;
    }
 
    /* ----------------------------------------------------------- */

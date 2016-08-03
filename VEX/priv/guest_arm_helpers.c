@@ -38,6 +38,7 @@
 #include "main_globals.h"
 #include "guest_generic_bb_to_IR.h"
 #include "guest_arm_defs.h"
+#include "guest_arm64_defs.h"  /* for crypto helper functions */
 
 
 /* This file contains helper functions for arm guest code.  Calls to
@@ -531,6 +532,68 @@ UInt armg_calculate_condition ( UInt cond_n_op /* (ARMCondcode << 4) | cc_op */,
                     cond, cc_op, cc_dep1, cc_dep2, cc_dep3 );
          vpanic("armg_calculate_condition(ARM)");
    }
+}
+
+
+/*---------------------------------------------------------------*/
+/*--- Crypto instruction helpers                              ---*/
+/*---------------------------------------------------------------*/
+
+/* DIRTY HELPERS for doing AES support:
+   * AESE (SubBytes, then ShiftRows)
+   * AESD (InvShiftRows, then InvSubBytes)
+   * AESMC (MixColumns)
+   * AESIMC (InvMixColumns)
+   These don't actually have to be dirty helpers -- they could be
+   clean, but for the fact that they return a V128 and a clean helper
+   can't do that.
+
+   These just call onwards to the implementations of the same in
+   guest_arm64_helpers.c.  In all of these cases, we expect |res| to
+   be at least 8 aligned.
+*/
+/* CALLED FROM GENERATED CODE */
+void armg_dirtyhelper_AESE ( /*OUT*/V128* res,
+                             UInt argW3, UInt argW2,
+                             UInt argW1, UInt argW0 )
+{
+   vassert(0 == (((HWord)res) & (8-1)));
+   ULong argHi = (((ULong)argW3) << 32) | ((ULong)argW2);
+   ULong argLo = (((ULong)argW1) << 32) | ((ULong)argW0);
+   arm64g_dirtyhelper_AESE(res, argHi, argLo);
+}
+
+/* CALLED FROM GENERATED CODE */
+void armg_dirtyhelper_AESD ( /*OUT*/V128* res,
+                             UInt argW3, UInt argW2,
+                             UInt argW1, UInt argW0 )
+{
+   vassert(0 == (((HWord)res) & (8-1)));
+   ULong argHi = (((ULong)argW3) << 32) | ((ULong)argW2);
+   ULong argLo = (((ULong)argW1) << 32) | ((ULong)argW0);
+   arm64g_dirtyhelper_AESD(res, argHi, argLo);
+}
+
+/* CALLED FROM GENERATED CODE */
+void armg_dirtyhelper_AESMC ( /*OUT*/V128* res,
+                              UInt argW3, UInt argW2,
+                              UInt argW1, UInt argW0 )
+{
+   vassert(0 == (((HWord)res) & (8-1)));
+   ULong argHi = (((ULong)argW3) << 32) | ((ULong)argW2);
+   ULong argLo = (((ULong)argW1) << 32) | ((ULong)argW0);
+   arm64g_dirtyhelper_AESMC(res, argHi, argLo);
+}
+
+/* CALLED FROM GENERATED CODE */
+void armg_dirtyhelper_AESIMC ( /*OUT*/V128* res,
+                               UInt argW3, UInt argW2,
+                               UInt argW1, UInt argW0 )
+{
+   vassert(0 == (((HWord)res) & (8-1)));
+   ULong argHi = (((ULong)argW3) << 32) | ((ULong)argW2);
+   ULong argLo = (((ULong)argW1) << 32) | ((ULong)argW0);
+   arm64g_dirtyhelper_AESIMC(res, argHi, argLo);
 }
 
 

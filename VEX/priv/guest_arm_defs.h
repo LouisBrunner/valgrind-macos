@@ -111,6 +111,28 @@ extern
 UInt armg_calculate_flag_qc ( UInt resL1, UInt resL2,
                               UInt resR1, UInt resR2 );
 
+/* --- DIRTY HELPERS --- */
+
+extern
+void armg_dirtyhelper_AESE ( /*OUT*/V128* res,
+                             UInt argW3, UInt argW2,
+                             UInt argW1, UInt argW0 );
+
+extern
+void armg_dirtyhelper_AESD ( /*OUT*/V128* res,
+                             UInt argW3, UInt argW2,
+                             UInt argW1, UInt argW0 );
+
+extern
+void armg_dirtyhelper_AESMC ( /*OUT*/V128* res,
+                              UInt argW3, UInt argW2,
+                              UInt argW1, UInt argW0 );
+
+extern
+void armg_dirtyhelper_AESIMC ( /*OUT*/V128* res,
+                               UInt argW3, UInt argW2,
+                               UInt argW1, UInt argW0 );
+
 
 /*---------------------------------------------------------*/
 /*--- Condition code stuff                              ---*/

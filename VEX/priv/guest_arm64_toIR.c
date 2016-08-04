@@ -3497,6 +3497,75 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
           nameIReg32orZR(mm), nameIReg64orZR(aa));
       return True;
    }
+
+   /* -------------------- CRC32/CRC32C -------------------- */   
+   /* 31 30           20 15   11 9 4
+      sf 00 1101 0110 m  0100 sz n d   CRC32<sz>  Wd, Wn, Wm|Xm
+      sf 00 1101 0110 m  0101 sz n d   CRC32C<sz> Wd, Wn, Wm|Xm
+   */
+   if (INSN(30,21) == BITS10(0,0,1,1,0,1,0,1,1,0)
+       && INSN(15,13) == BITS3(0,1,0)) {
+      UInt bitSF = INSN(31,31);
+      UInt mm    = INSN(20,16);
+      UInt bitC  = INSN(12,12);
+      UInt sz    = INSN(11,10);
+      UInt nn    = INSN(9,5);
+      UInt dd    = INSN(4,0);
+      vassert(sz >= 0 && sz <= 3);
+      if ((bitSF == 0 && sz <= BITS2(1,0))
+          || (bitSF == 1 && sz == BITS2(1,1))) {
+         UInt ix = (bitC == 1 ? 4 : 0) | sz;
+         void* helpers[8]
+            = { &arm64g_calc_crc32b,   &arm64g_calc_crc32h,
+                &arm64g_calc_crc32w,   &arm64g_calc_crc32x,
+                &arm64g_calc_crc32cb,  &arm64g_calc_crc32ch,
+                &arm64g_calc_crc32cw,  &arm64g_calc_crc32cx };
+         const HChar* hNames[8]
+            = { "arm64g_calc_crc32b",  "arm64g_calc_crc32h",
+                "arm64g_calc_crc32w",  "arm64g_calc_crc32x",
+                "arm64g_calc_crc32cb", "arm64g_calc_crc32ch",
+                "arm64g_calc_crc32cw", "arm64g_calc_crc32cx" };
+         const HChar* iNames[8]
+            = { "crc32b",  "crc32h",  "crc32w",  "crc32x",
+                "crc32cb", "crc32ch", "crc32cw", "crc32cx" };
+
+         IRTemp srcN = newTemp(Ity_I64);
+         assign(srcN, unop(Iop_32Uto64, unop(Iop_64to32, getIReg64orZR(nn))));
+
+         IRTemp  srcM = newTemp(Ity_I64);
+         IRExpr* at64 = getIReg64orZR(mm);
+         switch (sz) {
+            case BITS2(0,0):
+               assign(srcM, binop(Iop_And64, at64, mkU64(0xFF))); break;
+            case BITS2(0,1):
+               assign(srcM, binop(Iop_And64, at64, mkU64(0xFFFF))); break;
+            case BITS2(1,0):
+               assign(srcM, binop(Iop_And64, at64, mkU64(0xFFFFFFFF))); break;
+            case BITS2(1,1):
+               assign(srcM, at64); break;
+            default:
+               vassert(0);
+         }
+
+         vassert(ix >= 0 && ix <= 7);
+
+         putIReg64orZR(
+            dd,
+            unop(Iop_32Uto64,
+                 unop(Iop_64to32,
+                      mkIRExprCCall(Ity_I64, 0/*regparm*/,
+                                    hNames[ix], helpers[ix],
+                                    mkIRExprVec_2(mkexpr(srcN),
+                                                  mkexpr(srcM))))));
+
+         DIP("%s %s, %s, %s\n", iNames[ix],
+             nameIReg32orZR(dd),
+             nameIReg32orZR(nn), nameIRegOrZR(bitSF == 1, mm));
+         return True;
+      }
+      /* fall through */
+   }
+
    vex_printf("ARM64 front end: data_processing_register\n");
    return False;
 #  undef INSN

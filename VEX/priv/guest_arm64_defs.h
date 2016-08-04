@@ -110,6 +110,15 @@ ULong arm64g_calculate_condition ( /* ARM64Condcode << 4 | cc_op */
 //ZZ UInt armg_calculate_flag_qc ( UInt resL1, UInt resL2,
 //ZZ                               UInt resR1, UInt resR2 );
 
+extern ULong arm64g_calc_crc32b ( ULong acc, ULong bits );
+extern ULong arm64g_calc_crc32h ( ULong acc, ULong bits );
+extern ULong arm64g_calc_crc32w ( ULong acc, ULong bits );
+extern ULong arm64g_calc_crc32x ( ULong acc, ULong bits );
+
+extern ULong arm64g_calc_crc32cb ( ULong acc, ULong bits );
+extern ULong arm64g_calc_crc32ch ( ULong acc, ULong bits );
+extern ULong arm64g_calc_crc32cw ( ULong acc, ULong bits );
+extern ULong arm64g_calc_crc32cx ( ULong acc, ULong bits );
 
 /* --- DIRTY HELPERS --- */
 

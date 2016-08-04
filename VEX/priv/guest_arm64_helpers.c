@@ -677,6 +677,88 @@ ULong arm64g_calculate_condition ( /* ARM64Condcode << 4 | cc_op */
 }
 
 
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong arm64g_calc_crc32b ( ULong acc, ULong bits )
+{
+   UInt  i;
+   ULong crc = (bits & 0xFFULL) ^ acc;
+   for (i = 0; i < 8; i++)
+      crc = (crc >> 1) ^ ((crc & 1) ? 0xEDB88320ULL : 0);
+   return crc;
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong arm64g_calc_crc32h ( ULong acc, ULong bits )
+{
+   UInt  i;
+   ULong crc = (bits & 0xFFFFULL) ^ acc;
+   for (i = 0; i < 16; i++)
+      crc = (crc >> 1) ^ ((crc & 1) ? 0xEDB88320ULL : 0);
+   return crc;
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong arm64g_calc_crc32w ( ULong acc, ULong bits )
+{
+   UInt  i;
+   ULong crc = (bits & 0xFFFFFFFFULL) ^ acc;
+   for (i = 0; i < 32; i++)
+      crc = (crc >> 1) ^ ((crc & 1) ? 0xEDB88320ULL : 0);
+   return crc;
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong arm64g_calc_crc32x ( ULong acc, ULong bits )
+{
+   UInt  i;
+   ULong crc = bits ^ acc;
+   for (i = 0; i < 64; i++)
+      crc = (crc >> 1) ^ ((crc & 1) ? 0xEDB88320ULL : 0);
+   return crc;
+
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong arm64g_calc_crc32cb ( ULong acc, ULong bits )
+{
+   UInt  i;
+   ULong crc = (bits & 0xFFULL) ^ acc;
+   for (i = 0; i < 8; i++)
+      crc = (crc >> 1) ^ ((crc & 1) ? 0x82F63B78ULL : 0);
+   return crc;
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong arm64g_calc_crc32ch ( ULong acc, ULong bits )
+{
+   UInt  i;
+   ULong crc = (bits & 0xFFFFULL) ^ acc;
+   for (i = 0; i < 16; i++)
+      crc = (crc >> 1) ^ ((crc & 1) ? 0x82F63B78ULL : 0);
+   return crc;
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong arm64g_calc_crc32cw ( ULong acc, ULong bits )
+{
+   UInt  i;
+   ULong crc = (bits & 0xFFFFFFFFULL) ^ acc;
+   for (i = 0; i < 32; i++)
+      crc = (crc >> 1) ^ ((crc & 1) ? 0x82F63B78ULL : 0);
+   return crc;
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong arm64g_calc_crc32cx ( ULong acc, ULong bits )
+{
+   UInt  i;
+   ULong crc = bits ^ acc;
+   for (i = 0; i < 64; i++)
+      crc = (crc >> 1) ^ ((crc & 1) ? 0x82F63B78ULL : 0);
+   return crc;
+}
+
+
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (non-referentially-transparent) */
 /* Horrible hack.  On non-arm64 platforms, return 0. */

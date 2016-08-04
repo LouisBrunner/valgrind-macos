@@ -1,0 +1,2 @@
+prog: crc32
+vgopts: -q

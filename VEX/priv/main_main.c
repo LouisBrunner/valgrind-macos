@@ -916,8 +916,13 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
    irsb = do_iropt_BB ( irsb, specHelper, preciseMemExnsFn, pxControl,
                               vta->guest_bytes_addr,
                               vta->arch_guest );
-   sanityCheckIRSB( irsb, "after initial iropt", 
-                    True/*must be flat*/, guest_word_type );
+
+   // JRS 2016 Aug 03: Sanity checking is expensive, we already checked
+   // the output of the front end, and iropt never screws up the IR by
+   // itself, unless it is being hacked on.  So remove this post-iropt
+   // check in "production" use.
+   // sanityCheckIRSB( irsb, "after initial iropt", 
+   //                  True/*must be flat*/, guest_word_type );
 
    if (vex_traceflags & VEX_TRACE_OPT1) {
       vex_printf("\n------------------------" 
@@ -953,9 +958,12 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
       vex_printf("\n");
    }
 
-   if (vta->instrument1 || vta->instrument2)
-      sanityCheckIRSB( irsb, "after instrumentation",
-                       True/*must be flat*/, guest_word_type );
+   // JRS 2016 Aug 03: as above, this never actually fails in practice.
+   // And we'll sanity check anyway after the post-instrumentation
+   // cleanup pass.  So skip this check in "production" use.
+   // if (vta->instrument1 || vta->instrument2)
+   //    sanityCheckIRSB( irsb, "after instrumentation",
+   //                     True/*must be flat*/, guest_word_type );
 
    /* Do a post-instrumentation cleanup pass. */
    if (vta->instrument1 || vta->instrument2) {

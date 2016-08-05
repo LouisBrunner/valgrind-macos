@@ -6584,6 +6584,7 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
    return sb_out;
 }
 
+
 /*------------------------------------------------------------*/
 /*--- Post-tree-build final tidying                        ---*/
 /*------------------------------------------------------------*/
@@ -6602,17 +6603,69 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
    reference, which is kinda pointless.  MC_(final_tidy) therefore
    looks for such repeated calls and removes all but the first. */
 
-/* A struct for recording which (helper, guard) pairs we have already
+
+/* With some testing on perf/bz2.c, on amd64 and x86, compiled with
+   gcc-5.3.1 -O2, it appears that 16 entries in the array are enough to
+   get almost all the benefits of this transformation whilst causing
+   the slide-back case to just often enough to be verifiably
+   correct.  For posterity, the numbers are:
+
+   bz2-32
+
+   1   111,840 -> 1,702,810; ratio 15.2
+   2   111,840 -> 1,656,644; ratio 14.8
+   3   111,840 -> 1,650,457; ratio 14.7
+   4   111,840 -> 1,649,103; ratio 14.7
+   5   111,840 -> 1,648,655; ratio 14.7
+   6   111,840 -> 1,648,435; ratio 14.7
+   7   111,840 -> 1,648,304; ratio 14.7
+   8   111,840 -> 1,648,304; ratio 14.7
+   10  111,840 -> 1,648,171; ratio 14.7
+   12  111,840 -> 1,648,109  ratio 14.7
+   16  111,840 -> 1,647,947; ratio 14.7
+   32  111,840 -> 1,647,881; ratio 14.7
+   inf 111,840 -> 1,647,881; ratio 14.7
+
+   bz2-64
+
+   1   106,628 -> 1,811,992; ratio 17.0
+   2   106,628 -> 1,797,805; ratio 16.9
+   3   106,628 -> 1,792,429; ratio 16.8
+   4   106,628 -> 1,791,037; ratio 16.8
+   5   106,628 -> 1,790,929; ratio 16.8
+   6   106,628 -> 1,790,810; ratio 16.8
+   7   106,628 -> 1,790,764; ratio 16.8
+   8   106,628 -> 1,790,764; ratio 16.8
+   10  106,628 -> 1,790,764; ratio 16.8
+   12  106,628 -> 1,790,764; ratio 16.8
+   16  106,628 -> 1,790,701; ratio 16.8
+   32  106,628 -> 1,790,671; ratio 16.8
+   inf 106,628 -> 1,790,671; ratio 16.8
+*/
+
+/* Structs for recording which (helper, guard) pairs we have already
    seen. */
+
+#define N_TIDYING_PAIRS 16
+
 typedef
    struct { void* entry; IRExpr* guard; }
    Pair;
+
+typedef
+   struct {
+      Pair pairs[N_TIDYING_PAIRS +1/*for bounds checking*/];
+      UInt pairsUsed;
+   }
+   Pairs;
+
 
 /* Return True if e1 and e2 definitely denote the same value (used to
    compare guards).  Return False if unknown; False is the safe
    answer.  Since guest registers and guest memory do not have the
    SSA property we must return False if any Gets or Loads appear in
-   the expression. */
+   the expression.  This implicitly assumes that e1 and e2 have the
+   same IR type, which is always true here -- the type is Ity_I1. */
 
 static Bool sameIRValue ( IRExpr* e1, IRExpr* e2 )
 {
@@ -6661,45 +6714,98 @@ static Bool sameIRValue ( IRExpr* e1, IRExpr* e2 )
    True if so.  If not, add an entry. */
 
 static 
-Bool check_or_add ( XArray* /*of Pair*/ pairs, IRExpr* guard, void* entry )
+Bool check_or_add ( Pairs* tidyingEnv, IRExpr* guard, void* entry )
 {
-   Pair  p;
-   Pair* pp;
-   Int   i, n = VG_(sizeXA)( pairs );
+   UInt i, n = tidyingEnv->pairsUsed;
+   tl_assert(n <= N_TIDYING_PAIRS);
    for (i = 0; i < n; i++) {
-      pp = VG_(indexXA)( pairs, i );
-      if (pp->entry == entry && sameIRValue(pp->guard, guard))
+      if (tidyingEnv->pairs[i].entry == entry
+          && sameIRValue(tidyingEnv->pairs[i].guard, guard))
          return True;
    }
-   p.guard = guard;
-   p.entry = entry;
-   VG_(addToXA)( pairs, &p );
+   /* (guard, entry) wasn't found in the array.  Add it at the end.
+      If the array is already full, slide the entries one slot
+      backwards.  This means we will lose to ability to detect
+      duplicates from the pair in slot zero, but that happens so
+      rarely that it's unlikely to have much effect on overall code
+      quality.  Also, this strategy loses the check for the oldest
+      tracked exit (memory reference, basically) and so that is (I'd
+      guess) least likely to be re-used after this point. */
+   tl_assert(i == n);
+   if (n == N_TIDYING_PAIRS) {
+      for (i = 1; i < N_TIDYING_PAIRS; i++) {
+         tidyingEnv[n-1] = tidyingEnv[n];
+      }
+      tidyingEnv->pairs[N_TIDYING_PAIRS-1].entry = entry;
+      tidyingEnv->pairs[N_TIDYING_PAIRS-1].guard = guard;
+   } else {
+      tl_assert(n < N_TIDYING_PAIRS);
+      tidyingEnv->pairs[n].entry = entry;
+      tidyingEnv->pairs[n].guard = guard;
+      n++;
+      tidyingEnv->pairsUsed = n;
+   }
    return False;
 }
 
 static Bool is_helperc_value_checkN_fail ( const HChar* name )
 {
-   return
-      0==VG_(strcmp)(name, "MC_(helperc_value_check0_fail_no_o)")
-      || 0==VG_(strcmp)(name, "MC_(helperc_value_check1_fail_no_o)")
-      || 0==VG_(strcmp)(name, "MC_(helperc_value_check4_fail_no_o)")
-      || 0==VG_(strcmp)(name, "MC_(helperc_value_check8_fail_no_o)")
-      || 0==VG_(strcmp)(name, "MC_(helperc_value_check0_fail_w_o)")
-      || 0==VG_(strcmp)(name, "MC_(helperc_value_check1_fail_w_o)")
-      || 0==VG_(strcmp)(name, "MC_(helperc_value_check4_fail_w_o)")
-      || 0==VG_(strcmp)(name, "MC_(helperc_value_check8_fail_w_o)");
+   /* This is expensive because it happens a lot.  We are checking to
+      see whether |name| is one of the following 8 strings:
+
+         MC_(helperc_value_check8_fail_no_o)
+         MC_(helperc_value_check4_fail_no_o)
+         MC_(helperc_value_check0_fail_no_o)
+         MC_(helperc_value_check1_fail_no_o)
+         MC_(helperc_value_check8_fail_w_o)
+         MC_(helperc_value_check0_fail_w_o)
+         MC_(helperc_value_check1_fail_w_o)
+         MC_(helperc_value_check4_fail_w_o)
+
+      To speed it up, check the common prefix just once, rather than
+      all 8 times.
+   */
+   const HChar* prefix = "MC_(helperc_value_check";
+
+   HChar n, p;
+   while (True) {
+      n = *name;
+      p = *prefix;
+      if (p == 0) break; /* ran off the end of the prefix */
+      /* We still have some prefix to use */
+      if (n == 0) return False; /* have prefix, but name ran out */
+      if (n != p) return False; /* have both pfx and name, but no match */
+      name++;
+      prefix++;
+   }
+
+   /* Check the part after the prefix. */
+   tl_assert(*prefix == 0 && *name != 0);
+   return    0==VG_(strcmp)(name, "8_fail_no_o)")
+          || 0==VG_(strcmp)(name, "4_fail_no_o)")
+          || 0==VG_(strcmp)(name, "0_fail_no_o)")
+          || 0==VG_(strcmp)(name, "1_fail_no_o)")
+          || 0==VG_(strcmp)(name, "8_fail_w_o)")
+          || 0==VG_(strcmp)(name, "4_fail_w_o)")
+          || 0==VG_(strcmp)(name, "0_fail_w_o)")
+          || 0==VG_(strcmp)(name, "1_fail_w_o)");
 }
 
 IRSB* MC_(final_tidy) ( IRSB* sb_in )
 {
-   Int i;
+   Int       i;
    IRStmt*   st;
    IRDirty*  di;
    IRExpr*   guard;
    IRCallee* cee;
    Bool      alreadyPresent;
-   XArray*   pairs = VG_(newXA)( VG_(malloc), "mc.ft.1",
-                                 VG_(free), sizeof(Pair) );
+   Pairs     pairs;
+
+   pairs.pairsUsed = 0;
+
+   pairs.pairs[N_TIDYING_PAIRS].entry = (void*)0x123;
+   pairs.pairs[N_TIDYING_PAIRS].guard = (IRExpr*)0x456;
+
    /* Scan forwards through the statements.  Each time a call to one
       of the relevant helpers is seen, check if we have made a
       previous call to the same helper using the same guard
@@ -6720,15 +6826,20 @@ IRSB* MC_(final_tidy) ( IRSB* sb_in )
           guard 'guard'.  Check if we have already seen a call to this
           function with the same guard.  If so, delete it.  If not,
           add it to the set of calls we do know about. */
-      alreadyPresent = check_or_add( pairs, guard, cee->addr );
+      alreadyPresent = check_or_add( &pairs, guard, cee->addr );
       if (alreadyPresent) {
          sb_in->stmts[i] = IRStmt_NoOp();
          if (0) VG_(printf)("XX\n");
       }
    }
-   VG_(deleteXA)( pairs );
+
+   tl_assert(pairs.pairs[N_TIDYING_PAIRS].entry == (void*)0x123);
+   tl_assert(pairs.pairs[N_TIDYING_PAIRS].guard == (IRExpr*)0x456);
+
    return sb_in;
 }
+
+#undef N_TIDYING_PAIRS
 
 
 /*------------------------------------------------------------*/
@@ -7482,6 +7593,62 @@ static void schemeS ( MCEnv* mce, IRStmt* st )
          ppIRStmt(st); 
          VG_(tool_panic)("memcheck:schemeS");
    }
+}
+
+
+/*------------------------------------------------------------*/
+/*--- Startup assertion checking                           ---*/
+/*------------------------------------------------------------*/
+
+void MC_(do_instrumentation_startup_checks)( void )
+{
+   /* Make a best-effort check to see that is_helperc_value_checkN_fail
+      is working as we expect. */
+
+#  define CHECK(_expected, _string) \
+      tl_assert((_expected) == is_helperc_value_checkN_fail(_string))
+
+   /* It should identify these 8, and no others, as targets. */
+   CHECK(True, "MC_(helperc_value_check8_fail_no_o)");
+   CHECK(True, "MC_(helperc_value_check4_fail_no_o)");
+   CHECK(True, "MC_(helperc_value_check0_fail_no_o)");
+   CHECK(True, "MC_(helperc_value_check1_fail_no_o)");
+   CHECK(True, "MC_(helperc_value_check8_fail_w_o)");
+   CHECK(True, "MC_(helperc_value_check0_fail_w_o)");
+   CHECK(True, "MC_(helperc_value_check1_fail_w_o)");
+   CHECK(True, "MC_(helperc_value_check4_fail_w_o)");
+
+   /* Ad-hoc selection of other strings gathered via a quick test. */
+   CHECK(False, "amd64g_dirtyhelper_CPUID_avx2");
+   CHECK(False, "amd64g_dirtyhelper_RDTSC");
+   CHECK(False, "MC_(helperc_b_load1)");
+   CHECK(False, "MC_(helperc_b_load2)");
+   CHECK(False, "MC_(helperc_b_load4)");
+   CHECK(False, "MC_(helperc_b_load8)");
+   CHECK(False, "MC_(helperc_b_load16)");
+   CHECK(False, "MC_(helperc_b_load32)");
+   CHECK(False, "MC_(helperc_b_store1)");
+   CHECK(False, "MC_(helperc_b_store2)");
+   CHECK(False, "MC_(helperc_b_store4)");
+   CHECK(False, "MC_(helperc_b_store8)");
+   CHECK(False, "MC_(helperc_b_store16)");
+   CHECK(False, "MC_(helperc_b_store32)");
+   CHECK(False, "MC_(helperc_LOADV8)");
+   CHECK(False, "MC_(helperc_LOADV16le)");
+   CHECK(False, "MC_(helperc_LOADV32le)");
+   CHECK(False, "MC_(helperc_LOADV64le)");
+   CHECK(False, "MC_(helperc_LOADV128le)");
+   CHECK(False, "MC_(helperc_LOADV256le)");
+   CHECK(False, "MC_(helperc_STOREV16le)");
+   CHECK(False, "MC_(helperc_STOREV32le)");
+   CHECK(False, "MC_(helperc_STOREV64le)");
+   CHECK(False, "MC_(helperc_STOREV8)");
+   CHECK(False, "track_die_mem_stack_8");
+   CHECK(False, "track_new_mem_stack_8_w_ECU");
+   CHECK(False, "MC_(helperc_MAKE_STACK_UNINIT_w_o)");
+   CHECK(False, "VG_(unknown_SP_update_w_ECU)");
+
+#  undef CHECK
 }
 
 

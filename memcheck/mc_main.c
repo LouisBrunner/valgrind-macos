@@ -8142,6 +8142,9 @@ static void mc_pre_clo_init(void)
    tl_assert(MASK(4) == 0xFFFFFFF000000003ULL);
    tl_assert(MASK(8) == 0xFFFFFFF000000007ULL);
 #  endif
+
+   /* Check some assertions to do with the instrumentation machinery. */
+   MC_(do_instrumentation_startup_checks)();
 }
 
 STATIC_ASSERT(sizeof(UWord) == sizeof(SizeT));

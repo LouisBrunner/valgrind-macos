@@ -788,6 +788,9 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
 
 IRSB* MC_(final_tidy) ( IRSB* );
 
+/* Check some assertions to do with the instrumentation machinery. */
+void MC_(do_instrumentation_startup_checks)( void );
+
 #endif /* ndef __MC_INCLUDE_H */
 
 /*--------------------------------------------------------------------*/

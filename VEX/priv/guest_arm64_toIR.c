@@ -148,8 +148,9 @@ static inline UInt getUIntLittleEndianly ( const UChar* p )
 static ULong sx_to_64 ( ULong x, UInt n )
 {
    vassert(n > 1 && n < 64);
+   x <<= (64-n);
    Long r = (Long)x;
-   r = (r << (64-n)) >> (64-n);
+   r >>= (64-n);
    return (ULong)r;
 }
 
@@ -2590,7 +2591,7 @@ Bool dis_ARM64_data_processing_immediate(/*MB_OUT*/DisResult* dres,
                   IRTemp old = newTemp(Ity_I32);
                   assign(old, getIReg32orZR(dd));
                   vassert(hw <= 1);
-                  UInt mask = 0xFFFF << (16 * hw);
+                  UInt mask = ((UInt)0xFFFF) << (16 * hw);
                   IRExpr* res
                      = binop(Iop_Or32, 
                              binop(Iop_And32, mkexpr(old), mkU32(~mask)),

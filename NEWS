@@ -40,6 +40,10 @@ n-i-bz Improved thread startup time significantly on non-Linux platforms.
   - zlib ELF gABI format with SHF_COMPRESSED flag (gcc option -gz=zlib)
   - zlib GNU format with .zdebug sections (gcc option -gz=zlib-gnu)
 
+* Modest JIT-cost improvements: the cost of instrumenting code blocks
+  for the most common use case (x86_64-linux, Memcheck) has been
+  reduced by 10%-15%.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"
@@ -116,6 +120,7 @@ where XXXXXX is the bug number as listed below.
 360425  arm64 unsupported instruction ldpsw
         == 364435
 360519  none/tests/arm64/memory.vgtest might fail with newer gcc
+360574  Wrong parameter type for an ashmem ioctl() call on Android and ARM64
 360749  kludge for multiple .rodata sections on Solaris no longer needed
 360752  raise the number of reserved fds in m_main.c from 10 to 12
 361207  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 2
@@ -136,6 +141,7 @@ where XXXXXX is the bug number as listed below.
         get_otrack_shadow_offset_wrk()
 365273  Invalid write to stack location reported after signal handler runs
 365912  ppc64BE segfault during jm-insns test (RELRO)
+366344  Multiple unhandled instruction for Aarch64
 
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64
 n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap

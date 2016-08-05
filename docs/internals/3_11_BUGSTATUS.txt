@@ -90,7 +90,6 @@ n-i-bz  Remove limit on strd's negative immediates
 359705  memcheck causes segfault on a dynamically-linked test from
         rustlang's test suite on i686
 360429  Warning: noted but unhandled ioctl 0x530d with no size/direction hints.
-360574  Wrong parameter type for an ashmem ioctl() call on Android and ARM64
 361615  Inconsistent termination when an instrumented multithreaded process
         is terminated by signal
 361726  WARNING:unhandled syscall on ppc64

@@ -1011,66 +1011,125 @@ Superblock* maybe_findSb ( Arena* a, Addr ad )
 // payload size, not block size.
 
 // Convert a payload size in bytes to a freelist number.
-static
+static __attribute__((noinline))
+UInt pszB_to_listNo_SLOW ( SizeT pszB__divided_by__VG_MIN_MALLOC_SZB )
+{
+   SizeT n = pszB__divided_by__VG_MIN_MALLOC_SZB;
+
+   if (n < 299) {
+      if (n < 114) {
+         if (n < 85) {
+            if (n < 74) {
+               /* -- Exponential slope up, factor 1.05 -- */
+               if (n < 67) return 64;
+               if (n < 70) return 65;
+               /* else */  return 66;
+            } else {
+               if (n < 77) return 67;
+               if (n < 81) return 68;
+               /* else */  return 69;
+            }
+         } else {
+            if (n < 99) {
+               if (n < 90) return 70;
+               if (n < 94) return 71;
+               /* else */  return 72;
+            } else {
+               if (n < 104) return 73;
+               if (n < 109) return 74;
+               /* else */   return 75;
+            }
+         }
+      } else {
+         if (n < 169) {
+            if (n < 133) {
+               if (n < 120) return 76;
+               if (n < 126) return 77;
+               /* else */   return 78;
+            } else {
+               if (n < 139) return 79;
+               /* -- Exponential slope up, factor 1.10 -- */
+               if (n < 153) return 80;
+               /* else */   return 81;
+            }
+         } else {
+            if (n < 224) {
+               if (n < 185) return 82;
+               if (n < 204) return 83;
+               /* else */   return 84;
+            } else {
+               if (n < 247) return 85;
+               if (n < 272) return 86;
+               /* else */   return 87;
+            }
+         }
+      }
+   } else {
+      if (n < 1331) {
+         if (n < 530) {
+            if (n < 398) {
+               if (n < 329) return 88;
+               if (n < 362) return 89;
+               /* else */   return 90;
+            } else {
+               if (n < 438) return 91;
+               if (n < 482) return 92;
+               /* else */   return 93;
+            }
+         } else {
+            if (n < 770) {
+               if (n < 583) return 94;
+               if (n < 641) return 95;
+               /* -- Exponential slope up, factor 1.20 -- */
+               /* else */   return 96;
+            } else {
+               if (n < 924) return 97;
+               if (n < 1109) return 98;
+               /* else */    return 99;
+            }
+         }
+      } else {
+         if (n < 3974) {
+            if (n < 2300) {
+               if (n < 1597) return 100;
+               if (n < 1916) return 101;
+               return 102;
+            } else {
+               if (n < 2760) return 103;
+               if (n < 3312) return 104;
+               /* else */    return 105;
+            }
+         } else {
+            if (n < 6868) {
+               if (n < 4769) return 106;
+               if (n < 5723) return 107;
+               /* else */    return 108;
+            } else {
+               if (n < 8241) return 109;
+               if (n < 9890) return 110;
+               /* else */    return 111;
+            }
+         }
+      }
+   }
+   /*NOTREACHED*/
+   vg_assert(0);
+}
+
+static inline
 UInt pszB_to_listNo ( SizeT pszB )
 {
    SizeT n = pszB / VG_MIN_MALLOC_SZB;
-   vg_assert(0 == pszB % VG_MIN_MALLOC_SZB);
+   vg_assert(0 == (pszB % VG_MIN_MALLOC_SZB));
 
    // The first 64 lists hold blocks of size VG_MIN_MALLOC_SZB * list_num.
-   // The final 48 hold bigger blocks.
-   if (n < 64)   return (UInt)n;
-   /* Exponential slope up, factor 1.05 */
-   if (n < 67) return 64;
-   if (n < 70) return 65;
-   if (n < 74) return 66;
-   if (n < 77) return 67;
-   if (n < 81) return 68;
-   if (n < 85) return 69;
-   if (n < 90) return 70;
-   if (n < 94) return 71;
-   if (n < 99) return 72;
-   if (n < 104) return 73;
-   if (n < 109) return 74;
-   if (n < 114) return 75;
-   if (n < 120) return 76;
-   if (n < 126) return 77;
-   if (n < 133) return 78;
-   if (n < 139) return 79;
-   /* Exponential slope up, factor 1.10 */
-   if (n < 153) return 80;
-   if (n < 169) return 81;
-   if (n < 185) return 82;
-   if (n < 204) return 83;
-   if (n < 224) return 84;
-   if (n < 247) return 85;
-   if (n < 272) return 86;
-   if (n < 299) return 87;
-   if (n < 329) return 88;
-   if (n < 362) return 89;
-   if (n < 398) return 90;
-   if (n < 438) return 91;
-   if (n < 482) return 92;
-   if (n < 530) return 93;
-   if (n < 583) return 94;
-   if (n < 641) return 95;
-   /* Exponential slope up, factor 1.20 */
-   if (n < 770) return 96;
-   if (n < 924) return 97;
-   if (n < 1109) return 98;
-   if (n < 1331) return 99;
-   if (n < 1597) return 100;
-   if (n < 1916) return 101;
-   if (n < 2300) return 102;
-   if (n < 2760) return 103;
-   if (n < 3312) return 104;
-   if (n < 3974) return 105;
-   if (n < 4769) return 106;
-   if (n < 5723) return 107;
-   if (n < 6868) return 108;
-   if (n < 8241) return 109;
-   if (n < 9890) return 110;
-   return 111;
+   // The final 48 hold bigger blocks and are dealt with by the _SLOW
+   // case.
+   if (LIKELY(n < 64)) {
+      return (UInt)n;
+   } else {
+      return pszB_to_listNo_SLOW(n);
+   }
 }
 
 // What is the minimum payload size for a given list?

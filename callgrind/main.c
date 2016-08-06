@@ -637,7 +637,6 @@ void addEvent_Dr ( ClgState* clgs, InstrInfo* inode, Int datasize, IRAtom* ea )
 static
 void addEvent_Dw ( ClgState* clgs, InstrInfo* inode, Int datasize, IRAtom* ea )
 {
-   Event* lastEvt;
    Event* evt;
    tl_assert(isIRAtom(ea));
    tl_assert(datasize >= 1);
@@ -645,15 +644,16 @@ void addEvent_Dw ( ClgState* clgs, InstrInfo* inode, Int datasize, IRAtom* ea )
    tl_assert(datasize <= CLG_(min_line_size));
 
    /* Is it possible to merge this write with the preceding read? */
-   lastEvt = &clgs->events[clgs->events_used-1];
-   if (clgs->events_used > 0
-       && lastEvt->tag       == Ev_Dr
-       && lastEvt->Ev.Dr.szB == datasize
-       && lastEvt->inode     == inode
-       && eqIRAtom(lastEvt->Ev.Dr.ea, ea))
-   {
-      lastEvt->tag   = Ev_Dm;
-      return;
+   if (clgs->events_used > 0) {
+      Event* lastEvt = &clgs->events[clgs->events_used-1];
+      if (   lastEvt->tag       == Ev_Dr
+          && lastEvt->Ev.Dr.szB == datasize
+          && lastEvt->inode     == inode
+          && eqIRAtom(lastEvt->Ev.Dr.ea, ea))
+      {
+         lastEvt->tag   = Ev_Dm;
+         return;
+      }
    }
 
    /* No.  Add as normal. */

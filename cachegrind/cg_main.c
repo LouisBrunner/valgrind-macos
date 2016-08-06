@@ -914,7 +914,6 @@ void addEvent_Dr ( CgState* cgs, InstrInfo* inode, Int datasize, IRAtom* ea )
 static
 void addEvent_Dw ( CgState* cgs, InstrInfo* inode, Int datasize, IRAtom* ea )
 {
-   Event* lastEvt;
    Event* evt;
 
    tl_assert(isIRAtom(ea));
@@ -924,15 +923,16 @@ void addEvent_Dw ( CgState* cgs, InstrInfo* inode, Int datasize, IRAtom* ea )
       return;
 
    /* Is it possible to merge this write with the preceding read? */
-   lastEvt = &cgs->events[cgs->events_used-1];
-   if (cgs->events_used > 0
-       && lastEvt->tag       == Ev_Dr
-       && lastEvt->Ev.Dr.szB == datasize
-       && lastEvt->inode     == inode
-       && eqIRAtom(lastEvt->Ev.Dr.ea, ea))
-   {
-      lastEvt->tag   = Ev_Dm;
-      return;
+   if (cgs->events_used > 0) {
+      Event* lastEvt = &cgs->events[cgs->events_used-1];
+      if (   lastEvt->tag       == Ev_Dr
+          && lastEvt->Ev.Dr.szB == datasize
+          && lastEvt->inode     == inode
+          && eqIRAtom(lastEvt->Ev.Dr.ea, ea))
+      {
+         lastEvt->tag   = Ev_Dm;
+         return;
+      }
    }
 
    /* No.  Add as normal. */

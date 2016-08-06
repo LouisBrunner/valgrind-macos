@@ -2776,33 +2776,38 @@ static inline UInt qregEnc ( HReg r )
 #define X1111  BITS4(1,1,1,1)
 
 #define XXXXX___(zzx7,zzx6,zzx5,zzx4,zzx3) \
-   ((((zzx7) & 0xF) << 28) | (((zzx6) & 0xF) << 24) |  \
+   (((((UInt)(zzx7)) & 0xF) << 28) | \
+    (((zzx6) & 0xF) << 24) |  \
     (((zzx5) & 0xF) << 20) | (((zzx4) & 0xF) << 16) |  \
     (((zzx3) & 0xF) << 12))
 
 #define XXXXXX__(zzx7,zzx6,zzx5,zzx4,zzx3,zzx2)        \
-   ((((zzx7) & 0xF) << 28) | (((zzx6) & 0xF) << 24) |  \
+   (((((UInt)(zzx7)) & 0xF) << 28) | \
+    (((zzx6) & 0xF) << 24) |  \
     (((zzx5) & 0xF) << 20) | (((zzx4) & 0xF) << 16) |  \
     (((zzx3) & 0xF) << 12) | (((zzx2) & 0xF) <<  8))
 
 #define XXXXX__X(zzx7,zzx6,zzx5,zzx4,zzx3,zzx0)        \
-   ((((zzx7) & 0xF) << 28) | (((zzx6) & 0xF) << 24) |  \
+   (((((UInt)(zzx7)) & 0xF) << 28) | \
+    (((zzx6) & 0xF) << 24) |  \
     (((zzx5) & 0xF) << 20) | (((zzx4) & 0xF) << 16) |  \
     (((zzx3) & 0xF) << 12) | (((zzx0) & 0xF) <<  0))
 
 #define XXX___XX(zzx7,zzx6,zzx5,zzx1,zzx0) \
-  ((((zzx7) & 0xF) << 28) | (((zzx6) & 0xF) << 24) | \
+  (((((UInt)(zzx7)) & 0xF) << 28) | \
+   (((zzx6) & 0xF) << 24) | \
    (((zzx5) & 0xF) << 20) | (((zzx1) & 0xF) << 4) | \
    (((zzx0) & 0xF) << 0))
 
 #define XXXXXXXX(zzx7,zzx6,zzx5,zzx4,zzx3,zzx2,zzx1,zzx0)  \
-   ((((zzx7) & 0xF) << 28) | (((zzx6) & 0xF) << 24) |  \
+   (((((UInt)(zzx7)) & 0xF) << 28) | \
+    (((zzx6) & 0xF) << 24) |  \
     (((zzx5) & 0xF) << 20) | (((zzx4) & 0xF) << 16) |  \
     (((zzx3) & 0xF) << 12) | (((zzx2) & 0xF) <<  8) |  \
     (((zzx1) & 0xF) <<  4) | (((zzx0) & 0xF) <<  0))
 
 #define XX______(zzx7,zzx6) \
-   ((((zzx7) & 0xF) << 28) | (((zzx6) & 0xF) << 24))
+   (((((UInt)(zzx7)) & 0xF) << 28) | (((zzx6) & 0xF) << 24))
 
 /* Generate a skeletal insn that involves an a RI84 shifter operand.
    Returns a word which is all zeroes apart from bits 25 and 11..0,
@@ -4838,8 +4843,11 @@ VexInvalRange chainXDirect_ARM ( VexEndness endness_host,
 
    /* And make the modifications. */
    if (shortOK) {
-      Int simm24 = (Int)(delta >> 2);
-      vassert(simm24 == ((simm24 << 8) >> 8));
+      UInt uimm24      = (UInt)(delta >> 2);
+      UInt uimm24_shl8 = uimm24 << 8;
+      Int  simm24      = (Int)uimm24_shl8;
+      simm24 >>= 8;
+      vassert(uimm24 == simm24);
       p[0] = 0xEA000000 | (simm24 & 0x00FFFFFF);
       p[1] = 0xFF000000;
       p[2] = 0xFF000000;

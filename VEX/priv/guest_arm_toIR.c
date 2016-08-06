@@ -1598,8 +1598,9 @@ static void armUnsignedSatQ( IRTemp* res,  /* OUT - Ity_I32 */
                              IRTemp regT,  /* value to clamp - Ity_I32 */
                              UInt imm5 )   /* saturation ceiling */
 {
-   UInt ceil  = (1 << imm5) - 1;    // (2^imm5)-1
-   UInt floor = 0;
+   ULong ceil64  = (1ULL << imm5) - 1;    // (2^imm5)-1
+   UInt  ceil    = (UInt)ceil64;
+   UInt  floor   = 0;
 
    IRTemp nd0 = newTemp(Ity_I32);
    IRTemp nd1 = newTemp(Ity_I32);
@@ -1642,8 +1643,10 @@ static void armSignedSatQ( IRTemp regT,    /* value to clamp - Ity_I32 */
                            IRTemp* res,    /* OUT - Ity_I32 */
                            IRTemp* resQ )  /* OUT - Ity_I32  */
 {
-   Int ceil  =  (1 << (imm5-1)) - 1;  //  (2^(imm5-1))-1
-   Int floor = -(1 << (imm5-1));      // -(2^(imm5-1))
+   Long ceil64  =  (1LL << (imm5-1)) - 1;  //  (2^(imm5-1))-1
+   Long floor64 = -(1LL << (imm5-1));      // -(2^(imm5-1))
+   Int  ceil    = (Int)ceil64;
+   Int  floor   = (Int)floor64;
 
    IRTemp nd0 = newTemp(Ity_I32);
    IRTemp nd1 = newTemp(Ity_I32);
@@ -8874,8 +8877,8 @@ static Bool decode_NEON_instruction_ARMv7_and_below (
        && INSN(27,24) == BITS4(1,1,1,1)) {
       // Thumb, DP
       UInt reformatted = INSN(23,0);
-      reformatted |= (INSN(28,28) << 24); // U bit
-      reformatted |= (BITS7(1,1,1,1,0,0,1) << 25);
+      reformatted |= (((UInt)INSN(28,28)) << 24); // U bit
+      reformatted |= (((UInt)BITS7(1,1,1,1,0,0,1)) << 25);
       return dis_neon_data_processing(reformatted, condT);
    }
 
@@ -8889,7 +8892,7 @@ static Bool decode_NEON_instruction_ARMv7_and_below (
    }
    if (isT && INSN(31,24) == BITS8(1,1,1,1,1,0,0,1)) {
       UInt reformatted = INSN(23,0);
-      reformatted |= (BITS8(1,1,1,1,0,1,0,0) << 24);
+      reformatted |= (((UInt)BITS8(1,1,1,1,0,1,0,0)) << 24);
       return dis_neon_load_or_store(reformatted, isT, condT);
    }
 
@@ -14542,7 +14545,7 @@ static Bool decode_CP10_CP11_instruction (
 
       IRExpr* rm     = mkU32(Irrm_NEAREST);
       IRTemp  scale  = newTemp(Ity_F64);
-      assign(scale, unop(Iop_I32UtoF64, mkU32( 1 << (frac_bits-1) )));
+      assign(scale, unop(Iop_I32UtoF64, mkU32( ((UInt)1) << (frac_bits-1) )));
 
       if (frac_bits >= 1 && frac_bits <= 32 && !to_fixed && !dp_op
                                             && size == 32) {
@@ -14719,8 +14722,9 @@ static Bool decode_NV_instruction_ARMv7_and_below
    // and set CPSR.T = 1, that is, switch to Thumb mode
    if (INSN(31,25) == BITS7(1,1,1,1,1,0,1)) {
       UInt bitH   = INSN(24,24);
-      Int  uimm24 = INSN(23,0);
-      Int  simm24 = (((uimm24 << 8) >> 8) << 2) + (bitH << 1);
+      UInt uimm24 = INSN(23,0);   uimm24 <<= 8;
+      Int  simm24 = (Int)uimm24;  simm24 >>= 8;
+      simm24 = (((UInt)simm24) << 2) + (bitH << 1);
       /* Now this is a bit tricky.  Since we're decoding an ARM insn,
          it is implies that CPSR.T == 0.  Hence the current insn's
          address is guaranteed to be of the form X--(30)--X00.  So, no
@@ -15756,10 +15760,9 @@ DisResult disInstr_ARM_WRK (
    //
    if (BITS8(1,0,1,0,0,0,0,0) == (INSN(27,20) & BITS8(1,1,1,0,0,0,0,0))) {
       UInt link   = (insn >> 24) & 1;
-      UInt uimm24 = insn & ((1<<24)-1);
-      Int  simm24 = (Int)uimm24;
-      UInt dst    = guest_R15_curr_instr_notENC + 8
-                    + (((simm24 << 8) >> 8) << 2);
+      UInt uimm24 = insn & ((1<<24)-1);  uimm24 <<= 8;
+      Int  simm24 = (Int)uimm24;         simm24 >>= 8;
+      UInt dst    = guest_R15_curr_instr_notENC + 8 + (((UInt)simm24) << 2);
       IRJumpKind jk = link ? Ijk_Call : Ijk_Boring;
       if (link) {
          putIRegA(14, mkU32(guest_R15_curr_instr_notENC + 4),
@@ -16539,7 +16542,7 @@ DisResult disInstr_ARM_WRK (
          IRTemp src    = newTemp(Ity_I32);
          IRTemp olddst = newTemp(Ity_I32);
          IRTemp newdst = newTemp(Ity_I32);
-         UInt   mask = 1 << (msb - lsb);
+         UInt   mask   = ((UInt)1) << (msb - lsb);
          mask = (mask - 1) + mask;
          vassert(mask != 0); // guaranteed by "msb < lsb" check above
          mask <<= lsb;
@@ -19353,8 +19356,8 @@ DisResult disInstr_THUMB_WRK (
 
    case BITS5(1,1,1,0,0): {
       /* ---------------- B #simm11 ---------------- */
-      Int  simm11 = INSN0(10,0);
-           simm11 = (simm11 << 21) >> 20;
+      UInt uimm11 = INSN0(10,0);  uimm11 <<= 21;
+      Int  simm11 = (Int)uimm11;  simm11 >>= 20;
       UInt dst    = simm11 + guest_R15_curr_instr_notENC + 4;
       /* Only allowed outside or last-in IT block; SIGILL if not so. */
       gen_SIGILL_T_if_in_but_NLI_ITBlock(old_itstate, new_itstate);
@@ -19383,8 +19386,8 @@ DisResult disInstr_THUMB_WRK (
    case BITS4(1,1,0,1): {
       /* ---------------- Bcond #simm8 ---------------- */
       UInt cond  = INSN0(11,8);
-      Int  simm8 = INSN0(7,0);
-           simm8 = (simm8 << 24) >> 23;
+      UInt uimm8 = INSN0(7,0);  uimm8 <<= 24;
+      Int  simm8 = (Int)uimm8;  simm8 >>= 23;
       UInt dst   = simm8 + guest_R15_curr_instr_notENC + 4;
       if (cond != ARMCondAL && cond != ARMCondNV) {
          /* Not allowed in an IT block; SIGILL if so. */
@@ -19472,13 +19475,15 @@ DisResult disInstr_THUMB_WRK (
       UInt bJ2  = INSN1(11,11);
       UInt bI1  = 1 ^ (bJ1 ^ bS);
       UInt bI2  = 1 ^ (bJ2 ^ bS);
-      Int simm25
+      UInt uimm25
          =   (bS          << (1 + 1 + 10 + 11 + 1))
            | (bI1         << (1 + 10 + 11 + 1))
            | (bI2         << (10 + 11 + 1))
            | (INSN0(9,0)  << (11 + 1))
            | (INSN1(10,0) << 1);
-      simm25 = (simm25 << 7) >> 7;
+      uimm25 <<= 7;
+      Int simm25 = (Int)uimm25;
+      simm25 >>= 7;
 
       vassert(0 == (guest_R15_curr_instr_notENC & 1));
       UInt dst = simm25 + guest_R15_curr_instr_notENC + 4;
@@ -20900,13 +20905,15 @@ DisResult disInstr_THUMB_WRK (
        && INSN1(12,12) == 0) {
       UInt cond = INSN0(9,6);
       if (cond != ARMCondAL && cond != ARMCondNV) {
-         Int simm21
+         UInt uimm21
             =   (INSN0(10,10) << (1 + 1 + 6 + 11 + 1))
               | (INSN1(11,11) << (1 + 6 + 11 + 1))
               | (INSN1(13,13) << (6 + 11 + 1))
               | (INSN0(5,0)   << (11 + 1))
               | (INSN1(10,0)  << 1);
-         simm21 = (simm21 << 11) >> 11;
+         uimm21 <<= 11;
+         Int simm21 = (Int)uimm21;
+         simm21 >>= 11;
 
          vassert(0 == (guest_R15_curr_instr_notENC & 1));
          UInt dst = simm21 + guest_R15_curr_instr_notENC + 4;
@@ -20944,13 +20951,15 @@ DisResult disInstr_THUMB_WRK (
          UInt bJ2 = INSN1(11,11);
          UInt bI1 = 1 ^ (bJ1 ^ bS);
          UInt bI2 = 1 ^ (bJ2 ^ bS);
-         Int simm25
+         UInt uimm25
             =   (bS          << (1 + 1 + 10 + 11 + 1))
               | (bI1         << (1 + 10 + 11 + 1))
               | (bI2         << (10 + 11 + 1))
               | (INSN0(9,0)  << (11 + 1))
               | (INSN1(10,0) << 1);
-         simm25 = (simm25 << 7) >> 7;
+         uimm25 <<= 7;
+         Int simm25 = (Int)uimm25;
+         simm25 >>= 7;
 
          vassert(0 == (guest_R15_curr_instr_notENC & 1));
          UInt dst = simm25 + guest_R15_curr_instr_notENC + 4;
@@ -21392,7 +21401,7 @@ DisResult disInstr_THUMB_WRK (
          IRTemp src    = newTemp(Ity_I32);
          IRTemp olddst = newTemp(Ity_I32);
          IRTemp newdst = newTemp(Ity_I32);
-         UInt   mask = 1 << (msb - lsb);
+         UInt   mask   = ((UInt)1) << (msb - lsb);
          mask = (mask - 1) + mask;
          vassert(mask != 0); // guaranteed by "msb < lsb" check above
          mask <<= lsb;

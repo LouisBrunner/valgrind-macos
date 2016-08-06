@@ -13,8 +13,8 @@
 \
 	__asm__ volatile( \
 		"movs %3,%3;" \
-		"msrne cpsr_f,#(1<<29);" \
-		"msreq cpsr_f,#0;" \
+		"msrne cpsr_fs,#(1<<29);" \
+		"msreq cpsr_fs,#0;" \
 		"mov " #RM ",%2;" \
                 /* set #RD to 0x55555555 so we can see which parts get overwritten */ \
                 "mov " #RD ", #0x55" "\n\t" \
@@ -30,7 +30,7 @@
 	printf("%s :: rd 0x%08x rm 0x%08x, carryin %d, cpsr 0x%08x %c%c%c%c\n", \
 		instruction, out, RMval, \
 		carryin ? 1 : 0, \
-		cpsr & 0xffff0000, \
+		cpsr & 0xff0f0000, \
 		((1<<31) & cpsr) ? 'N' : ' ', \
 		((1<<30) & cpsr) ? 'Z' : ' ', \
 		((1<<29) & cpsr) ? 'C' : ' ', \
@@ -45,8 +45,8 @@
 \
 	__asm__ volatile( \
 		"movs %4,%4;" \
-		"msrne cpsr_f,#(1<<29);" \
-		"msreq cpsr_f,#0;" \
+		"msrne cpsr_fs,#(1<<29);" \
+		"msreq cpsr_fs,#0;" \
 		"mov " #RM ",%2;" \
 		"mov " #RN ",%3;" \
 		instruction ";" \
@@ -59,7 +59,7 @@
 	printf("%s :: rd 0x%08x rm 0x%08x, rn 0x%08x, carryin %d, cpsr 0x%08x %c%c%c%c\n", \
 		instruction, out, RMval, RNval, \
 		carryin ? 1 : 0, \
-		cpsr & 0xffff0000, \
+		cpsr & 0xff0f0000, \
 		((1<<31) & cpsr) ? 'N' : ' ', \
 		((1<<30) & cpsr) ? 'Z' : ' ', \
 		((1<<29) & cpsr) ? 'C' : ' ', \
@@ -74,8 +74,8 @@
 \
 	__asm__ volatile( \
 		"movs %5,%5;" \
-		"msrne cpsr_f,#(1<<29);" \
-		"msreq cpsr_f,#0;" \
+		"msrne cpsr_fs,#(1<<29);" \
+		"msreq cpsr_fs,#0;" \
 		"mov " #RM ",%2;" \
 		"mov " #RN ",%3;" \
 		"mov " #RS ",%4;" \
@@ -89,7 +89,7 @@
 	printf("%s :: rd 0x%08x rm 0x%08x, rn 0x%08x rs 0x%08x, carryin %d, cpsr 0x%08x %c%c%c%c\n", \
 		instruction, out, RMval, RNval, RSval, \
 		carryin ? 1 : 0, \
-		cpsr & 0xffff0000, \
+		cpsr & 0xff0f0000, \
 		((1<<31) & cpsr) ? 'N' : ' ', \
 		((1<<30) & cpsr) ? 'Z' : ' ', \
 		((1<<29) & cpsr) ? 'C' : ' ', \
@@ -105,8 +105,8 @@
 \
 	__asm__ volatile( \
 		"movs %7,%7;" \
-		"msrne cpsr_f,#(1<<29);" \
-		"msreq cpsr_f,#0;" \
+		"msrne cpsr_fs,#(1<<29);" \
+		"msreq cpsr_fs,#0;" \
 		"mov " #RD ",%3;" \
 		"mov " #RD2 ",%4;" \
 		"mov " #RM ",%5;" \
@@ -122,7 +122,7 @@
 	printf("%s :: rd 0x%08x rd2 0x%08x, rm 0x%08x rs 0x%08x, carryin %d, cpsr 0x%08x %c%c%c%c\n", \
 		instruction, out, out2, RMval, RSval, \
 		carryin ? 1 : 0, \
-		cpsr & 0xffff0000, \
+		cpsr & 0xff0f0000, \
 		((1<<31) & cpsr) ? 'N' : ' ', \
 		((1<<30) & cpsr) ? 'Z' : ' ', \
 		((1<<29) & cpsr) ? 'C' : ' ', \

@@ -22,7 +22,7 @@ static int gen_cvin(int cvin)
 	unsigned int cpsr; \
 \
 	__asm__ volatile( \
-                "msr cpsr_f, %2;" \
+                "msr cpsr_fs, %2;" \
 		instruction ";" \
 		"mov %0," #RD ";" \
 		"mrs %1,cpsr;" \
@@ -33,7 +33,7 @@ static int gen_cvin(int cvin)
 	printf("%s :: rd 0x%08x, c:v-in %d, cpsr 0x%08x %c%c%c%c\n", \
 		instruction, out, \
 		cvin, \
-		cpsr & 0xffff0000, \
+		cpsr & 0xff0f0000, \
 		((1<<31) & cpsr) ? 'N' : ' ', \
 		((1<<30) & cpsr) ? 'Z' : ' ', \
 		((1<<29) & cpsr) ? 'C' : ' ', \
@@ -50,7 +50,7 @@ static int gen_cvin(int cvin)
 	unsigned int cpsr; \
 \
 	__asm__ volatile( \
-                "msr cpsr_f, %2;" \
+                "msr cpsr_fs, %2;" \
                 "mov " #RD ",%3;" \
 		instruction ";" \
 		"mov %0," #RD ";" \
@@ -62,7 +62,7 @@ static int gen_cvin(int cvin)
 	printf("%s :: rd 0x%08x, c:v-in %d, cpsr 0x%08x %c%c%c%c\n", \
 		instruction, out, \
 		cvin, \
-		cpsr & 0xffff0000, \
+		cpsr & 0xff0f0000, \
 		((1<<31) & cpsr) ? 'N' : ' ', \
 		((1<<30) & cpsr) ? 'Z' : ' ', \
 		((1<<29) & cpsr) ? 'C' : ' ', \
@@ -77,7 +77,7 @@ static int gen_cvin(int cvin)
 	unsigned int cpsr; \
 \
 	__asm__ volatile( \
-                "msr cpsr_f, %3;" \
+                "msr cpsr_fs, %3;" \
 		"mov " #RM ",%2;" \
                 /* set #RD to 0x55555555 so we can see which parts get overwritten */ \
                 "mov " #RD ", #0x55" "\n\t" \
@@ -93,7 +93,7 @@ static int gen_cvin(int cvin)
 	printf("%s :: rd 0x%08x rm 0x%08x, c:v-in %d, cpsr 0x%08x %c%c%c%c\n", \
 		instruction, out, RMval, \
 		cvin, \
-		cpsr & 0xffff0000, \
+		cpsr & 0xff0f0000, \
 		((1<<31) & cpsr) ? 'N' : ' ', \
 		((1<<30) & cpsr) ? 'Z' : ' ', \
 		((1<<29) & cpsr) ? 'C' : ' ', \
@@ -109,7 +109,7 @@ static int gen_cvin(int cvin)
 	unsigned int cpsr; \
 \
 	__asm__ volatile( \
-                "msr cpsr_f, %3;" \
+                "msr cpsr_fs, %3;" \
 		"mov " #RM ",%2;" \
                 "mov " #RD ",%4;" \
 		instruction ";" \
@@ -122,7 +122,7 @@ static int gen_cvin(int cvin)
 	printf("%s :: rd 0x%08x rm 0x%08x, c:v-in %d, cpsr 0x%08x %c%c%c%c\n", \
 		instruction, out, RMval, \
 		cvin, \
-		cpsr & 0xffff0000, \
+		cpsr & 0xff0f0000, \
 		((1<<31) & cpsr) ? 'N' : ' ', \
 		((1<<30) & cpsr) ? 'Z' : ' ', \
 		((1<<29) & cpsr) ? 'C' : ' ', \
@@ -138,7 +138,7 @@ static int gen_cvin(int cvin)
 	unsigned int cpsr; \
 \
 	__asm__ volatile( \
-                "msr cpsr_f, %4;" \
+                "msr cpsr_fs, %4;" \
 		"mov " #RM ",%2;" \
 		"mov " #RN ",%3;" \
 		instruction ";" \
@@ -151,7 +151,7 @@ static int gen_cvin(int cvin)
 	printf("%s :: rd 0x%08x rm 0x%08x, rn 0x%08x, c:v-in %d, cpsr 0x%08x %c%c%c%c\n", \
 		instruction, out, RMval, RNval, \
 		cvin, \
-		cpsr & 0xffff0000, \
+		cpsr & 0xff0f0000, \
 		((1<<31) & cpsr) ? 'N' : ' ', \
 		((1<<30) & cpsr) ? 'Z' : ' ', \
 		((1<<29) & cpsr) ? 'C' : ' ', \
@@ -165,7 +165,7 @@ static int gen_cvin(int cvin)
 	unsigned int cpsr; \
 \
 	__asm__ volatile( \
-                "msr cpsr_f, %5;" \
+                "msr cpsr_fs, %5;" \
 		"mov " #RM ",%2;" \
 		"mov " #RN ",%3;" \
 		"mov " #RS ",%4;" \
@@ -179,7 +179,7 @@ static int gen_cvin(int cvin)
 	printf("%s :: rd 0x%08x rm 0x%08x, rn 0x%08x rs 0x%08x, c:v-in %d, cpsr 0x%08x %c%c%c%c\n", \
 		instruction, out, RMval, RNval, RSval, \
 		cvin, \
-		cpsr & 0xffff0000, \
+		cpsr & 0xff0f0000, \
 		((1<<31) & cpsr) ? 'N' : ' ', \
 		((1<<30) & cpsr) ? 'Z' : ' ', \
 		((1<<29) & cpsr) ? 'C' : ' ', \
@@ -194,7 +194,7 @@ static int gen_cvin(int cvin)
 	unsigned int cpsr; \
 \
 	__asm__ volatile( \
-                "msr cpsr_f, %7;" \
+                "msr cpsr_fs, %7;" \
 		"mov " #RD ",%3;" \
 		"mov " #RD2 ",%4;" \
 		"mov " #RM ",%5;" \
@@ -210,7 +210,7 @@ static int gen_cvin(int cvin)
 	printf("%s :: rd 0x%08x rd2 0x%08x, rm 0x%08x rs 0x%08x, c:v-in %d, cpsr 0x%08x %c%c%c%c\n", \
 		instruction, out, out2, RMval, RSval, \
 		cvin, \
-		cpsr & 0xffff0000, \
+		cpsr & 0xff0f0000, \
 		((1<<31) & cpsr) ? 'N' : ' ', \
 		((1<<30) & cpsr) ? 'Z' : ' ', \
 		((1<<29) & cpsr) ? 'C' : ' ', \
@@ -225,7 +225,7 @@ static int gen_cvin(int cvin)
     unsigned int cpsr; \
     __asm__ volatile(\
       ".align 4;" \
-      "msr cpsr_f, %2;" \
+      "msr cpsr_fs, %2;" \
       "mov " #RD ", #0;" \
       ".align 2;" \
       ".thumb;" \
@@ -248,7 +248,7 @@ static int gen_cvin(int cvin)
     ); \
     printf("%s :: rd 0x%08x, cpsr 0x%08x %c%c%c%c\n", \
           instruction, out, \
-		cpsr & 0xffff0000, \
+		cpsr & 0xff0f0000, \
 		((1<<31) & cpsr) ? 'N' : ' ', \
 		((1<<30) & cpsr) ? 'Z' : ' ', \
 		((1<<29) & cpsr) ? 'C' : ' ', \
@@ -264,7 +264,7 @@ static int gen_cvin(int cvin)
     unsigned int cpsr; \
     __asm__ volatile(\
       ".align 4;" \
-      "msr cpsr_f, %3;" \
+      "msr cpsr_fs, %3;" \
       ".align 2;" \
       ".thumb;" \
       ".syntax unified;" \
@@ -287,7 +287,7 @@ static int gen_cvin(int cvin)
     ); \
     printf("%s :: s0 0x%08x s1 0x%08x, cpsr 0x%08x %c%c%c%c\n", \
         instruction, out, out2, \
-		cpsr & 0xffff0000, \
+		cpsr & 0xff0f0000, \
 		((1<<31) & cpsr) ? 'N' : ' ', \
 		((1<<30) & cpsr) ? 'Z' : ' ', \
 		((1<<29) & cpsr) ? 'C' : ' ', \
@@ -302,7 +302,7 @@ static int gen_cvin(int cvin)
     unsigned int cpsr; \
     __asm__ volatile(\
       ".align 4;" \
-      "msr cpsr_f, %3;" \
+      "msr cpsr_fs, %3;" \
       "mov " #RD ", #0;" \
       "mov " #RD2 ", #0;" \
       ".align 2;" \
@@ -327,7 +327,7 @@ static int gen_cvin(int cvin)
     ); \
     printf("%s :: rd 0x%08x rd2 0x%08x, cpsr 0x%08x %c%c%c%c\n", \
         instruction, out, out2, \
-		cpsr & 0xffff0000, \
+		cpsr & 0xff0f0000, \
 		((1<<31) & cpsr) ? 'N' : ' ', \
 		((1<<30) & cpsr) ? 'Z' : ' ', \
 		((1<<29) & cpsr) ? 'C' : ' ', \
@@ -358,7 +358,7 @@ void test_ldr_pc(void) {
         __asm__ volatile(
             ".thumb;\n"
             ".syntax unified                  ;\n"
-            "msr  cpsr_f, %3                  ;\n"
+            "msr  cpsr_fs, %3                 ;\n"
             "mov  r9, %2                      ;\n"
             "movw r2, #:lower16:.ldrwpclabel1 ;\n"
             "movt r2, #:upper16:.ldrwpclabel1 ;\n"
@@ -386,7 +386,7 @@ void test_ldr_pc(void) {
                "cpsr 0x%08x %c%c%c%c\n",        \
             out, \
             cvin, \
-            cpsr & 0xffff0000, \
+            cpsr & 0xff0f0000, \
             ((1<<31) & cpsr) ? 'N' : ' ', \
             ((1<<30) & cpsr) ? 'Z' : ' ', \
             ((1<<29) & cpsr) ? 'C' : ' ', \

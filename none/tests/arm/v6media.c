@@ -37,7 +37,7 @@ static int gen_cin(int cin)
   printf("%s :: rd 0x%08x rm 0x%08x, carryin %d, cpsr 0x%08x %c%c%c%c%c ge[3:0]=%d%d%d%d\n", \
     instruction, out, RMval,      \
     carryin ? 1 : 0,     \
-    cpsr & 0xffff0000,            \
+    cpsr & 0xff0f0000,            \
     ((1<<31) & cpsr) ? 'N' : ' ', \
     ((1<<30) & cpsr) ? 'Z' : ' ', \
     ((1<<29) & cpsr) ? 'C' : ' ', \
@@ -66,7 +66,7 @@ static int gen_cin(int cin)
   printf("%s :: rd 0x%08x rm 0x%08x, rn 0x%08x, carryin %d, cpsr 0x%08x %c%c%c%c%c ge[3:0]=%d%d%d%d\n", \
     instruction, out, RMval, RNval, \
     carryin ? 1 : 0,  \
-    cpsr & 0xffff0000, \
+    cpsr & 0xff0f0000, \
     ((1<<31) & cpsr) ? 'N' : ' ', \
     ((1<<30) & cpsr) ? 'Z' : ' ', \
     ((1<<29) & cpsr) ? 'C' : ' ', \
@@ -96,7 +96,7 @@ static int gen_cin(int cin)
   printf("%s :: rd 0x%08x rm 0x%08x, rn 0x%08x rs 0x%08x, carryin %d, cpsr 0x%08x %c%c%c%c%c ge[3:0]=%d%d%d%d\n", \
     instruction, out, RMval, RNval, RSval, \
     carryin ? 1 : 0,   \
-    cpsr & 0xffff0000, \
+    cpsr & 0xff0f0000, \
     ((1<<31) & cpsr) ? 'N' : ' ', \
     ((1<<30) & cpsr) ? 'Z' : ' ', \
     ((1<<29) & cpsr) ? 'C' : ' ', \
@@ -129,7 +129,7 @@ static int gen_cin(int cin)
   printf("%s :: rd 0x%08x rd2 0x%08x, rm 0x%08x rs 0x%08x, carryin %d, cpsr 0x%08x %c%c%c%c%c ge[3:0]=%d%d%d%d\n", \
     instruction, out, out2, RMval, RSval, \
     carryin ? 1 : 0,   \
-    cpsr & 0xffff0000, \
+    cpsr & 0xff0f0000, \
     ((1<<31) & cpsr) ? 'N' : ' ', \
     ((1<<30) & cpsr) ? 'Z' : ' ', \
     ((1<<29) & cpsr) ? 'C' : ' ', \

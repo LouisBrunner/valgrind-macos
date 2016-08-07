@@ -217,6 +217,12 @@ void armg_dirtyhelper_SHA1H (
         UInt argM3, UInt argM2, UInt argM1, UInt argM0
      );
 
+extern
+void armg_dirtyhelper_VMULLP64 (
+        /*OUT*/V128* res,
+        UInt argN1, UInt argN0, UInt argM1, UInt argM0
+     );
+
 
 /*---------------------------------------------------------*/
 /*--- Condition code stuff                              ---*/

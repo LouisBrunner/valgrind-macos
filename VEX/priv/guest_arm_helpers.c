@@ -780,6 +780,18 @@ void armg_dirtyhelper_SHA1H (
    arm64g_dirtyhelper_SHA1H(res, argMhi, argMlo);
 }
 
+/* CALLED FROM GENERATED CODE */
+void armg_dirtyhelper_VMULLP64 (
+        /*OUT*/V128* res,
+        UInt argN1, UInt argN0, UInt argM1, UInt argM0
+     )
+{
+   vassert(0 == (((HWord)res) & (8-1)));
+   ULong argN = (((ULong)argN1) << 32) | ((ULong)argN0);
+   ULong argM = (((ULong)argM1) << 32) | ((ULong)argM0);
+   arm64g_dirtyhelper_PMULLQ(res, argN, argM);
+}
+
 
 /*---------------------------------------------------------------*/
 /*--- Flag-helpers translation-time function specialisers.    ---*/

@@ -3041,6 +3041,12 @@ Bool dis_neon_vdup ( UInt theInstr, IRTemp condT )
 static
 Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
 {
+   /* In paths where this returns False, indicating a non-decodable
+      instruction, there may still be some IR assignments to temporaries
+      generated.  This is inconvenient but harmless, and the post-front-end
+      IR optimisation pass will just remove them anyway.  So there's no
+      effort made here to tidy it up.
+   */
    UInt Q = (theInstr >> 6) & 1;
    UInt dreg = get_neon_d_regno(theInstr);
    UInt nreg = get_neon_n_regno(theInstr);
@@ -4834,6 +4840,12 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
 static
 Bool dis_neon_data_3diff ( UInt theInstr, IRTemp condT )
 {
+   /* In paths where this returns False, indicating a non-decodable
+      instruction, there may still be some IR assignments to temporaries
+      generated.  This is inconvenient but harmless, and the post-front-end
+      IR optimisation pass will just remove them anyway.  So there's no
+      effort made here to tidy it up.
+   */
    UInt A = (theInstr >> 8) & 0xf;
    UInt B = (theInstr >> 20) & 3;
    UInt U = (theInstr >> 24) & 1;
@@ -5191,11 +5203,15 @@ Bool dis_neon_data_3diff ( UInt theInstr, IRTemp condT )
                   op = Iop_PolynomialMull8x8;
                break;
             case 1:
+               if (P) return False;
                op = (U) ? Iop_Mull16Ux4 : Iop_Mull16Sx4;
                break;
             case 2:
+               if (P) return False;
                op = (U) ? Iop_Mull32Ux2 : Iop_Mull32Sx2;
                break;
+            case 3:
+               return False;
             default:
                vassert(0);
          }
@@ -12928,7 +12944,7 @@ static Bool decode_V8_instruction (
    {
      Bool gate = False;
 
-     UInt hi9 = isT ? BITS9(1,1,1,1,1,1,1,1,1) : BITS9(1,1,1,1,0,0,1,1,0);
+     UInt hi9 = isT ? BITS9(1,1,1,1,1,1,1,1,1) : BITS9(1,1,1,1,0,0,1,1,1);
      if (INSNA(31,23) == hi9 && INSNA(21,16) == BITS6(1,1,1,0,1,0)
          && INSNA(11,7) == BITS5(0,0,1,1,1) && INSNA(4,4) == 0) {
         gate = True;
@@ -12998,7 +13014,7 @@ static Bool decode_V8_instruction (
    {
      Bool gate = False;
 
-     UInt hi9 = isT ? BITS9(1,1,1,1,1,1,1,1,1) : BITS9(1,1,1,1,0,0,1,1,0);
+     UInt hi9 = isT ? BITS9(1,1,1,1,1,1,1,1,1) : BITS9(1,1,1,1,0,0,1,1,1);
      if (INSNA(31,23) == hi9 && INSNA(21,16) == BITS6(1,1,1,0,0,1)
          && INSNA(11,6) == BITS6(0,0,1,0,1,1) && INSNA(4,4) == 0) {
         gate = True;
@@ -13038,6 +13054,64 @@ static Bool decode_V8_instruction (
         putQReg(regD >> 1, mkexpr(res), IRTemp_INVALID);
 
         DIP("%s.8 q%u, q%u\n", iname, regD >> 1, regM >> 1);
+        return True;
+     }
+     /* fall through */
+   }
+
+   /* ----------- VMULL.P64 ----------- */
+   /*
+          31   27   23  21 19 15 11   7       3
+      T2: 1110 1111 1 D 10 n  d  1110 N 0 M 0 m
+      A2: 1111 0010 -------------------------
+
+      The ARM documentation is pretty difficult to follow here.
+      Same comments about conditionalisation as for the AES group above apply.
+   */
+   {
+     Bool gate = False;
+
+     UInt hi9 = isT ? BITS9(1,1,1,0,1,1,1,1,1) : BITS9(1,1,1,1,0,0,1,0,1);
+     if (INSNA(31,23) == hi9 && INSNA(21,20) == BITS2(1,0)
+         && INSNA(11,8) == BITS4(1,1,1,0)
+         && INSNA(6,6) == 0 && INSNA(4,4) == 0) {
+        gate = True;
+     }
+
+     UInt regN = (INSNA(7,7)   << 4)  | INSNA(19,16);
+     UInt regD = (INSNA(22,22) << 4)  | INSNA(15,12);
+     UInt regM = (INSNA(5,5)   << 4)  | INSNA(3,0);
+
+     if ((regD & 1) == 1)
+        gate = False;
+
+     if (gate) {
+        const HChar* iname = "vmull";
+        void (*helper)(V128*,UInt,UInt,UInt,UInt) = &armg_dirtyhelper_VMULLP64;
+        const HChar* hname                        = "armg_dirtyhelper_VMULLP64";
+
+        if (isT) {
+           gen_SIGILL_T_if_in_ITBlock(old_itstate, new_itstate);
+        }
+
+        IRTemp srcN = newTemp(Ity_I64);
+        IRTemp srcM = newTemp(Ity_I64);
+        assign(srcN, getDRegI64(regN));
+        assign(srcM, getDRegI64(regM));
+        
+        IRExpr** argvec = mkIRExprVec_5(IRExpr_VECRET(),
+                                        unop(Iop_64HIto32, mkexpr(srcN)),
+                                        unop(Iop_64to32,   mkexpr(srcN)),
+                                        unop(Iop_64HIto32, mkexpr(srcM)),
+                                        unop(Iop_64to32, mkexpr(srcM)));
+
+        IRTemp res = newTemp(Ity_V128);
+        IRDirty* di = unsafeIRDirty_1_N( res, 0/*regparms*/,
+                                         hname, helper, argvec );
+        stmt(IRStmt_Dirty(di));
+        putQReg(regD >> 1, mkexpr(res), IRTemp_INVALID);
+
+        DIP("%s.p64 q%u, q%u, w%u\n", iname, regD >> 1, regN, regM);
         return True;
      }
      /* fall through */

@@ -49,15 +49,15 @@ static inline UChar randUChar ( void )
    return (seed >> 17) & 0xFF;
 }
 
-static ULong randULong ( LaneTy ty )
-{
-   Int i;
-   ULong r = 0;
-   for (i = 0; i < 8; i++) {
-      r = (r << 8) | (ULong)(0xFF & randUChar());
-   }
-   return r;
-}
+//static ULong randULong ( LaneTy ty )
+//{
+//   Int i;
+//   ULong r = 0;
+//   for (i = 0; i < 8; i++) {
+//      r = (r << 8) | (ULong)(0xFF & randUChar());
+//   }
+//   return r;
+//}
 
 /* Generates a random V128.  Ensures that that it contains normalised
    FP numbers when viewed as either F32x4 or F64x2, so that it is
@@ -87,16 +87,16 @@ static void showV128 ( V128* v )
       printf("%02x", (Int)v->u8[i]);
 }
 
-static void showBlock ( const char* msg, V128* block, Int nBlock )
-{
-   Int i;
-   printf("%s\n", msg);
-   for (i = 0; i < nBlock; i++) {
-      printf("  ");
-      showV128(&block[i]);
-      printf("\n");
-   }
-}
+//static void showBlock ( const char* msg, V128* block, Int nBlock )
+//{
+//   Int i;
+//   printf("%s\n", msg);
+//   for (i = 0; i < nBlock; i++) {
+//      printf("  ");
+//      showV128(&block[i]);
+//      printf("\n");
+//   }
+//}
 
 
 /* ---------------------------------------------------------------- */
@@ -204,8 +204,14 @@ GEN_THREEVEC_TEST(sha256h_q_q_q,   "sha256h.32 q10, q9, q8",     10, 9, 8)
 GEN_TWOVEC_TEST(sha256su0_q_q,     "sha256su0.32 q11, q10",      11, 10)
 GEN_THREEVEC_TEST(sha256su1_q_q_q, "sha256su1.32 q12, q11, q10", 12, 11, 10)
 
-// This is a bit complex.
-//GEN_THREEVEC_TEST(pmull_q_d_d,  1q, 1d,  1d)
+// This is a bit complex.  This really mentions three registers, so it
+// should really be a THREEVEC variant.  But the two source registers
+// are D registers.  So we say it is just a TWOVEC insn, producing a Q
+// and taking a single Q (q7); q7 is the d14-d15 register pair, which
+// is why the insn itself is mentions d14 and d15 whereas the
+// numbers that follow mention q7.  The result (q7) is 128 bits wide and
+// so is unaffected by these shenanigans.
+GEN_TWOVEC_TEST(pmull_q_d_d,  "vmull.p64 q13, d14, d15", 13, 7)
 
 int main ( void )
 {
@@ -220,7 +226,6 @@ int main ( void )
    if (1) DO50( test_aesimc_q_q(TyNONE) );
    if (1) DO50( test_aesmc_q_q(TyNONE) );
 
-#if 0
    // sha1c.32   q_q_q
    // sha1h.32   q_q
    // sha1m.32   q_q_q
@@ -244,7 +249,7 @@ int main ( void )
    if (1) DO50( test_sha256su1_q_q_q(TyNONE) );
 
    // vmull.64  q_d_d
-   if (1) test_pmull_q_d_d(TyD);
-#endif
+   if (1) DO50( test_pmull_q_d_d(TyD) );
+
    return 0;
 }

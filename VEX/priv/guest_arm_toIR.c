@@ -12688,7 +12688,7 @@ static Bool decode_V8_instruction (
       vassert(conq >= ARMCondEQ && conq <= ARMCondNV);
    }
 
-   /* ----------- AESD.8 q_q ----------- */
+   /* ----------- {AESD, AESE, AESMC, AESIMC}.8 q_q ----------- */
    /*     31   27   23  21 19 17 15 11   7      3
       T1: 1111 1111 1 D 11 sz 00 d  0011 00 M 0 m  AESE Qd, Qm
       A1: 1111 0011 1 D 11 sz 00 d  0011 00 M 0 m  AESE Qd, Qm
@@ -12703,7 +12703,8 @@ static Bool decode_V8_instruction (
       A1: 1111 0011 1 D 11 sz 00 d  0011 11 M 0 m  AESIMC Qd, Qm
 
       sz must be 00
-      ARM encoding is in NV space
+      ARM encoding is in NV space.
+      In Thumb mode, we must not be in an IT block.
    */
    {
      UInt regD = 99, regM = 99, opc = 4/*invalid*/;
@@ -12727,6 +12728,9 @@ static Bool decode_V8_instruction (
         if (isT) {
            gen_SIGILL_T_if_in_ITBlock(old_itstate, new_itstate);
         }
+        /* In ARM mode, this is statically unconditional.  In Thumb mode,
+           this must be dynamically unconditional, and we've SIGILLd if not.
+           In either case we can create unconditional IR. */
         IRTemp op1 = newTemp(Ity_V128);
         IRTemp op2 = newTemp(Ity_V128);
         IRTemp src = newTemp(Ity_V128);
@@ -12764,6 +12768,276 @@ static Bool decode_V8_instruction (
 
         putQReg(regD >> 1, mkexpr(res), IRTemp_INVALID);
         DIP("%s.8 q%d, q%d\n", iNames[opc], regD >> 1, regM >> 1);
+        return True;
+     }
+     /* fall through */
+   }
+
+   /* ----------- SHA 3-reg insns q_q_q ----------- */
+   /*
+          31   27   23      19 15 11   7       3
+      T1: 1110 1111 0  D 00 n  d  1100 N Q M 0 m  SHA1C Qd, Qn, Qm  ix=0
+      A1: 1111 0010 ----------------------------
+
+      T1: 1110 1111 0  D 01 n  d  1100 N Q M 0 m  SHA1P Qd, Qn, Qm  ix=1
+      A1: 1111 0010 ----------------------------
+
+      T1: 1110 1111 0  D 10 n  d  1100 N Q M 0 m  SHA1M Qd, Qn, Qm  ix=2
+      A1: 1111 0010 ----------------------------
+
+      T1: 1110 1111 0  D 11 n  d  1100 N Q M 0 m  SHA1SU0 Qd, Qn, Qm  ix=3
+      A1: 1111 0010 ----------------------------
+      (that's a complete set of 4, based on insn[21,20])
+
+      T1: 1111 1111 0  D 00 n  d  1100 N Q M 0 m  SHA256H Qd, Qn, Qm  ix=4
+      A1: 1111 0011 ----------------------------
+
+      T1: 1111 1111 0  D 01 n  d  1100 N Q M 0 m  SHA256H2 Qd, Qn, Qm  ix=5
+      A1: 1111 0011 ----------------------------
+
+      T1: 1111 1111 0  D 10 n  d  1100 N Q M 0 m  SHA256SU1 Qd, Qn, Qm  ix=6
+      A1: 1111 0011 ----------------------------
+      (3/4 of a complete set of 4, based on insn[21,20])
+
+      Q must be 1.  Same comments about conditionalisation as for the AES
+      group above apply.
+   */
+   {
+     UInt ix = 8; /* invalid */
+     Bool gate = False;
+
+     UInt hi9_sha1   = isT ? BITS9(1,1,1,0,1,1,1,1,0)
+                           : BITS9(1,1,1,1,0,0,1,0,0);
+     UInt hi9_sha256 = isT ? BITS9(1,1,1,1,1,1,1,1,0)
+                           : BITS9(1,1,1,1,0,0,1,1,0);
+     if ((INSNA(31,23) == hi9_sha1 || INSNA(31,23) == hi9_sha256)
+         && INSNA(11,8) == BITS4(1,1,0,0)
+         && INSNA(6,6) == 1 && INSNA(4,4) == 0) {
+        ix = INSNA(21,20);
+        if (INSNA(31,23) == hi9_sha256)
+           ix |= 4;
+        if (ix < 7)
+           gate = True;
+     }
+
+     UInt regN = (INSNA(7,7)   << 4)  | INSNA(19,16);
+     UInt regD = (INSNA(22,22) << 4)  | INSNA(15,12);
+     UInt regM = (INSNA(5,5)   << 4)  | INSNA(3,0);
+     if ((regD & 1) == 1 || (regM & 1) == 1 || (regN & 1) == 1)
+        gate = False;
+
+     if (gate) {
+        vassert(ix >= 0 && ix < 7);
+        const HChar* inames[7]
+           = { "sha1c", "sha1p", "sha1m", "sha1su0",
+               "sha256h", "sha256h2", "sha256su1" };
+        void(*helpers[7])(V128*,UInt,UInt,UInt,UInt,UInt,UInt,
+                                UInt,UInt,UInt,UInt,UInt,UInt)
+           = { &armg_dirtyhelper_SHA1C,    &armg_dirtyhelper_SHA1P,
+               &armg_dirtyhelper_SHA1M,    &armg_dirtyhelper_SHA1SU0,
+               &armg_dirtyhelper_SHA256H,  &armg_dirtyhelper_SHA256H2,
+               &armg_dirtyhelper_SHA256SU1 };
+        const HChar* hnames[7]
+           = { "armg_dirtyhelper_SHA1C",    "armg_dirtyhelper_SHA1P",
+               "armg_dirtyhelper_SHA1M",    "armg_dirtyhelper_SHA1SU0",
+               "armg_dirtyhelper_SHA256H",  "armg_dirtyhelper_SHA256H2",
+               "armg_dirtyhelper_SHA256SU1" };
+
+        /* This is a really lame way to implement this, even worse than
+           the arm64 version.  But at least it works. */
+
+        if (isT) {
+           gen_SIGILL_T_if_in_ITBlock(old_itstate, new_itstate);
+        }
+
+        IRTemp vD = newTemp(Ity_V128);
+        IRTemp vN = newTemp(Ity_V128);
+        IRTemp vM = newTemp(Ity_V128);
+        assign(vD,  getQReg(regD >> 1));
+        assign(vN,  getQReg(regN >> 1));
+        assign(vM,  getQReg(regM >> 1));
+
+        IRTemp d32_3, d32_2, d32_1, d32_0;
+        d32_3 = d32_2 = d32_1 = d32_0 = IRTemp_INVALID;
+        breakupV128to32s( vD, &d32_3, &d32_2, &d32_1, &d32_0 );
+
+        IRTemp n32_3_pre, n32_2_pre, n32_1_pre, n32_0_pre;
+        n32_3_pre = n32_2_pre = n32_1_pre = n32_0_pre = IRTemp_INVALID;
+        breakupV128to32s( vN, &n32_3_pre, &n32_2_pre, &n32_1_pre, &n32_0_pre );
+
+        IRTemp m32_3, m32_2, m32_1, m32_0;
+        m32_3 = m32_2 = m32_1 = m32_0 = IRTemp_INVALID;
+        breakupV128to32s( vM, &m32_3, &m32_2, &m32_1, &m32_0 );
+
+        IRTemp n32_3 = newTemp(Ity_I32);
+        IRTemp n32_2 = newTemp(Ity_I32);
+        IRTemp n32_1 = newTemp(Ity_I32);
+        IRTemp n32_0 = newTemp(Ity_I32);
+
+        /* Mask off any bits of the N register operand that aren't actually
+           needed, so that Memcheck doesn't complain unnecessarily. */
+        switch (ix) {
+           case 0: case 1: case 2:
+              assign(n32_3, mkU32(0));
+              assign(n32_2, mkU32(0));
+              assign(n32_1, mkU32(0));
+              assign(n32_0, mkexpr(n32_0_pre));
+              break;
+           case 3: case 4: case 5: case 6:
+              assign(n32_3, mkexpr(n32_3_pre));
+              assign(n32_2, mkexpr(n32_2_pre));
+              assign(n32_1, mkexpr(n32_1_pre));
+              assign(n32_0, mkexpr(n32_0_pre));
+              break;
+           default:
+              vassert(0);
+        }
+
+        IRExpr** argvec
+           = mkIRExprVec_13(
+                IRExpr_VECRET(),
+                mkexpr(d32_3), mkexpr(d32_2), mkexpr(d32_1), mkexpr(d32_0), 
+                mkexpr(n32_3), mkexpr(n32_2), mkexpr(n32_1), mkexpr(n32_0), 
+                mkexpr(m32_3), mkexpr(m32_2), mkexpr(m32_1), mkexpr(m32_0)
+             );
+
+        IRTemp res = newTemp(Ity_V128);
+        IRDirty* di = unsafeIRDirty_1_N( res, 0/*regparms*/,
+                                         hnames[ix], helpers[ix], argvec );
+        stmt(IRStmt_Dirty(di));
+        putQReg(regD >> 1, mkexpr(res), IRTemp_INVALID);
+
+        DIP("%s.8 q%u, q%u, q%u\n",
+            inames[ix], regD >> 1, regN >> 1, regM >> 1);
+        return True;
+     }
+     /* fall through */
+   }
+
+   /* ----------- SHA1SU1, SHA256SU0 ----------- */
+   /*
+          31   27   23  21 19   15 11   7      3
+      T1: 1111 1111 1 D 11 1010 d  0011 10 M 0 m  SHA1SU1 Qd, Qm
+      A1: 1111 0011 ----------------------------
+
+      T1: 1111 1111 1 D 11 1010 d  0011 11 M 0 m  SHA256SU0 Qd, Qm
+      A1: 1111 0011 ----------------------------
+
+      Same comments about conditionalisation as for the AES group above apply.
+   */
+   {
+     Bool gate = False;
+
+     UInt hi9 = isT ? BITS9(1,1,1,1,1,1,1,1,1) : BITS9(1,1,1,1,0,0,1,1,0);
+     if (INSNA(31,23) == hi9 && INSNA(21,16) == BITS6(1,1,1,0,1,0)
+         && INSNA(11,7) == BITS5(0,0,1,1,1) && INSNA(4,4) == 0) {
+        gate = True;
+     }
+
+     UInt regD = (INSNA(22,22) << 4) | INSNA(15,12);
+     UInt regM = (INSNA(5,5)   << 4) | INSNA(3,0);
+     if ((regD & 1) == 1 || (regM & 1) == 1)
+        gate = False;
+
+     Bool is_1SU1 = INSNA(6,6) == 0;
+
+     if (gate) {
+        const HChar* iname
+           = is_1SU1 ? "sha1su1" : "sha256su0";
+        void (*helper)(V128*,UInt,UInt,UInt,UInt,UInt,UInt,UInt,UInt)
+           = is_1SU1 ? &armg_dirtyhelper_SHA1SU1
+                     : *armg_dirtyhelper_SHA256SU0;
+        const HChar* hname
+           = is_1SU1 ? "armg_dirtyhelper_SHA1SU1"
+                     : "armg_dirtyhelper_SHA256SU0";
+
+        if (isT) {
+           gen_SIGILL_T_if_in_ITBlock(old_itstate, new_itstate);
+        }
+
+        IRTemp vD = newTemp(Ity_V128);
+        IRTemp vM = newTemp(Ity_V128);
+        assign(vD,  getQReg(regD >> 1));
+        assign(vM,  getQReg(regM >> 1));
+
+        IRTemp d32_3, d32_2, d32_1, d32_0;
+        d32_3 = d32_2 = d32_1 = d32_0 = IRTemp_INVALID;
+        breakupV128to32s( vD, &d32_3, &d32_2, &d32_1, &d32_0 );
+
+        IRTemp m32_3, m32_2, m32_1, m32_0;
+        m32_3 = m32_2 = m32_1 = m32_0 = IRTemp_INVALID;
+        breakupV128to32s( vM, &m32_3, &m32_2, &m32_1, &m32_0 );
+
+        IRExpr** argvec
+           = mkIRExprVec_9(
+                IRExpr_VECRET(),
+                mkexpr(d32_3), mkexpr(d32_2), mkexpr(d32_1), mkexpr(d32_0), 
+                mkexpr(m32_3), mkexpr(m32_2), mkexpr(m32_1), mkexpr(m32_0)
+             );
+
+        IRTemp res = newTemp(Ity_V128);
+        IRDirty* di = unsafeIRDirty_1_N( res, 0/*regparms*/,
+                                         hname, helper, argvec );
+        stmt(IRStmt_Dirty(di));
+        putQReg(regD >> 1, mkexpr(res), IRTemp_INVALID);
+
+        DIP("%s.8 q%u, q%u\n", iname, regD >> 1, regM >> 1);
+        return True;
+     }
+     /* fall through */
+   }
+
+   /* ----------- SHA1H ----------- */
+   /*
+          31   27   23  21 19   15 11   7      3
+      T1: 1111 1111 1 D 11 1001 d  0010 11 M 0 m  SHA1H Qd, Qm
+      A1: 1111 0011 ----------------------------
+
+      Same comments about conditionalisation as for the AES group above apply.
+   */
+   {
+     Bool gate = False;
+
+     UInt hi9 = isT ? BITS9(1,1,1,1,1,1,1,1,1) : BITS9(1,1,1,1,0,0,1,1,0);
+     if (INSNA(31,23) == hi9 && INSNA(21,16) == BITS6(1,1,1,0,0,1)
+         && INSNA(11,6) == BITS6(0,0,1,0,1,1) && INSNA(4,4) == 0) {
+        gate = True;
+     }
+
+     UInt regD = (INSNA(22,22) << 4) | INSNA(15,12);
+     UInt regM = (INSNA(5,5)   << 4) | INSNA(3,0);
+     if ((regD & 1) == 1 || (regM & 1) == 1)
+        gate = False;
+
+     if (gate) {
+        const HChar* iname = "sha1h";
+        void (*helper)(V128*,UInt,UInt,UInt,UInt) = &armg_dirtyhelper_SHA1H;
+        const HChar* hname                        = "armg_dirtyhelper_SHA1H";
+
+        if (isT) {
+           gen_SIGILL_T_if_in_ITBlock(old_itstate, new_itstate);
+        }
+
+        IRTemp vM = newTemp(Ity_V128);
+        assign(vM,  getQReg(regM >> 1));
+
+        IRTemp m32_3, m32_2, m32_1, m32_0;
+        m32_3 = m32_2 = m32_1 = m32_0 = IRTemp_INVALID;
+        breakupV128to32s( vM, &m32_3, &m32_2, &m32_1, &m32_0 );
+        /* m32_3, m32_2, m32_1 are just abandoned.  No harm; iropt will
+           remove them. */
+
+        IRExpr*  zero   = mkU32(0);
+        IRExpr** argvec = mkIRExprVec_5(IRExpr_VECRET(),
+                                        zero, zero, zero, mkexpr(m32_0));
+
+        IRTemp res = newTemp(Ity_V128);
+        IRDirty* di = unsafeIRDirty_1_N( res, 0/*regparms*/,
+                                         hname, helper, argvec );
+        stmt(IRStmt_Dirty(di));
+        putQReg(regD >> 1, mkexpr(res), IRTemp_INVALID);
+
+        DIP("%s.8 q%u, q%u\n", iname, regD >> 1, regM >> 1);
         return True;
      }
      /* fall through */

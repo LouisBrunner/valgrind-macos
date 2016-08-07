@@ -436,9 +436,9 @@ Bool doHelperCallWithArgsOnStack ( /*OUT*/UInt*   stackAdjustAfterCall,
         HReg argVRegs[n_real_args];
       but that makes it impossible to do 'goto's forward past.
       Hence the following kludge. */
-   vassert(n_real_args <= 11);
-   HReg argVRegs[11];
-   for (i = 0; i < 11; i++)
+   vassert(n_real_args <= 12);
+   HReg argVRegs[12];
+   for (i = 0; i < 12; i++)
       argVRegs[i] = INVALID_HREG;
 
    /* Compute args into vregs. */

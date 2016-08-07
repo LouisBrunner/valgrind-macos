@@ -553,47 +553,231 @@ UInt armg_calculate_condition ( UInt cond_n_op /* (ARMCondcode << 4) | cc_op */,
    be at least 8 aligned.
 */
 /* CALLED FROM GENERATED CODE */
-void armg_dirtyhelper_AESE ( /*OUT*/V128* res,
-                             UInt argW3, UInt argW2,
-                             UInt argW1, UInt argW0 )
+void armg_dirtyhelper_AESE (
+        /*OUT*/V128* res,
+        UInt arg32_3, UInt arg32_2, UInt arg32_1, UInt arg32_0
+     )
 {
    vassert(0 == (((HWord)res) & (8-1)));
-   ULong argHi = (((ULong)argW3) << 32) | ((ULong)argW2);
-   ULong argLo = (((ULong)argW1) << 32) | ((ULong)argW0);
+   ULong argHi = (((ULong)arg32_3) << 32) | ((ULong)arg32_2);
+   ULong argLo = (((ULong)arg32_1) << 32) | ((ULong)arg32_0);
    arm64g_dirtyhelper_AESE(res, argHi, argLo);
 }
 
 /* CALLED FROM GENERATED CODE */
-void armg_dirtyhelper_AESD ( /*OUT*/V128* res,
-                             UInt argW3, UInt argW2,
-                             UInt argW1, UInt argW0 )
+void armg_dirtyhelper_AESD (
+        /*OUT*/V128* res,
+        UInt arg32_3, UInt arg32_2, UInt arg32_1, UInt arg32_0
+     )
 {
    vassert(0 == (((HWord)res) & (8-1)));
-   ULong argHi = (((ULong)argW3) << 32) | ((ULong)argW2);
-   ULong argLo = (((ULong)argW1) << 32) | ((ULong)argW0);
+   ULong argHi = (((ULong)arg32_3) << 32) | ((ULong)arg32_2);
+   ULong argLo = (((ULong)arg32_1) << 32) | ((ULong)arg32_0);
    arm64g_dirtyhelper_AESD(res, argHi, argLo);
 }
 
 /* CALLED FROM GENERATED CODE */
-void armg_dirtyhelper_AESMC ( /*OUT*/V128* res,
-                              UInt argW3, UInt argW2,
-                              UInt argW1, UInt argW0 )
+void armg_dirtyhelper_AESMC (
+        /*OUT*/V128* res,
+        UInt arg32_3, UInt arg32_2, UInt arg32_1, UInt arg32_0
+     )
 {
    vassert(0 == (((HWord)res) & (8-1)));
-   ULong argHi = (((ULong)argW3) << 32) | ((ULong)argW2);
-   ULong argLo = (((ULong)argW1) << 32) | ((ULong)argW0);
+   ULong argHi = (((ULong)arg32_3) << 32) | ((ULong)arg32_2);
+   ULong argLo = (((ULong)arg32_1) << 32) | ((ULong)arg32_0);
    arm64g_dirtyhelper_AESMC(res, argHi, argLo);
 }
 
 /* CALLED FROM GENERATED CODE */
-void armg_dirtyhelper_AESIMC ( /*OUT*/V128* res,
-                               UInt argW3, UInt argW2,
-                               UInt argW1, UInt argW0 )
+void armg_dirtyhelper_AESIMC (
+        /*OUT*/V128* res,
+        UInt arg32_3, UInt arg32_2, UInt arg32_1, UInt arg32_0
+     )
 {
    vassert(0 == (((HWord)res) & (8-1)));
-   ULong argHi = (((ULong)argW3) << 32) | ((ULong)argW2);
-   ULong argLo = (((ULong)argW1) << 32) | ((ULong)argW0);
+   ULong argHi = (((ULong)arg32_3) << 32) | ((ULong)arg32_2);
+   ULong argLo = (((ULong)arg32_1) << 32) | ((ULong)arg32_0);
    arm64g_dirtyhelper_AESIMC(res, argHi, argLo);
+}
+
+
+/* DIRTY HELPERS for the SHA instruction family.  Same comments
+   as for the AES group above apply.
+*/
+
+/* CALLED FROM GENERATED CODE */
+void armg_dirtyhelper_SHA1C (
+        /*OUT*/V128* res,
+        UInt argD3, UInt argD2, UInt argD1, UInt argD0,
+        UInt argN3, UInt argN2, UInt argN1, UInt argN0,
+        UInt argM3, UInt argM2, UInt argM1, UInt argM0
+     )
+{
+   vassert(0 == (((HWord)res) & (8-1)));
+   ULong argDhi = (((ULong)argD3) << 32) | ((ULong)argD2);
+   ULong argDlo = (((ULong)argD1) << 32) | ((ULong)argD0);
+   ULong argNhi = (((ULong)argN3) << 32) | ((ULong)argN2);
+   ULong argNlo = (((ULong)argN1) << 32) | ((ULong)argN0);
+   ULong argMhi = (((ULong)argM3) << 32) | ((ULong)argM2);
+   ULong argMlo = (((ULong)argM1) << 32) | ((ULong)argM0);
+   arm64g_dirtyhelper_SHA1C(res, argDhi, argDlo,
+                                 argNhi, argNlo, argMhi, argMlo);
+}
+
+/* CALLED FROM GENERATED CODE */
+void armg_dirtyhelper_SHA1P (
+        /*OUT*/V128* res,
+        UInt argD3, UInt argD2, UInt argD1, UInt argD0,
+        UInt argN3, UInt argN2, UInt argN1, UInt argN0,
+        UInt argM3, UInt argM2, UInt argM1, UInt argM0
+     )
+{
+   vassert(0 == (((HWord)res) & (8-1)));
+   ULong argDhi = (((ULong)argD3) << 32) | ((ULong)argD2);
+   ULong argDlo = (((ULong)argD1) << 32) | ((ULong)argD0);
+   ULong argNhi = (((ULong)argN3) << 32) | ((ULong)argN2);
+   ULong argNlo = (((ULong)argN1) << 32) | ((ULong)argN0);
+   ULong argMhi = (((ULong)argM3) << 32) | ((ULong)argM2);
+   ULong argMlo = (((ULong)argM1) << 32) | ((ULong)argM0);
+   arm64g_dirtyhelper_SHA1P(res, argDhi, argDlo,
+                                 argNhi, argNlo, argMhi, argMlo);
+}
+
+/* CALLED FROM GENERATED CODE */
+void armg_dirtyhelper_SHA1M (
+        /*OUT*/V128* res,
+        UInt argD3, UInt argD2, UInt argD1, UInt argD0,
+        UInt argN3, UInt argN2, UInt argN1, UInt argN0,
+        UInt argM3, UInt argM2, UInt argM1, UInt argM0
+     )
+{
+   vassert(0 == (((HWord)res) & (8-1)));
+   ULong argDhi = (((ULong)argD3) << 32) | ((ULong)argD2);
+   ULong argDlo = (((ULong)argD1) << 32) | ((ULong)argD0);
+   ULong argNhi = (((ULong)argN3) << 32) | ((ULong)argN2);
+   ULong argNlo = (((ULong)argN1) << 32) | ((ULong)argN0);
+   ULong argMhi = (((ULong)argM3) << 32) | ((ULong)argM2);
+   ULong argMlo = (((ULong)argM1) << 32) | ((ULong)argM0);
+   arm64g_dirtyhelper_SHA1M(res, argDhi, argDlo,
+                                 argNhi, argNlo, argMhi, argMlo);
+}
+
+/* CALLED FROM GENERATED CODE */
+void armg_dirtyhelper_SHA1SU0 (
+        /*OUT*/V128* res,
+        UInt argD3, UInt argD2, UInt argD1, UInt argD0,
+        UInt argN3, UInt argN2, UInt argN1, UInt argN0,
+        UInt argM3, UInt argM2, UInt argM1, UInt argM0
+     )
+{
+   vassert(0 == (((HWord)res) & (8-1)));
+   ULong argDhi = (((ULong)argD3) << 32) | ((ULong)argD2);
+   ULong argDlo = (((ULong)argD1) << 32) | ((ULong)argD0);
+   ULong argNhi = (((ULong)argN3) << 32) | ((ULong)argN2);
+   ULong argNlo = (((ULong)argN1) << 32) | ((ULong)argN0);
+   ULong argMhi = (((ULong)argM3) << 32) | ((ULong)argM2);
+   ULong argMlo = (((ULong)argM1) << 32) | ((ULong)argM0);
+   arm64g_dirtyhelper_SHA1SU0(res, argDhi, argDlo,
+                                   argNhi, argNlo, argMhi, argMlo);
+}
+
+/* CALLED FROM GENERATED CODE */
+void armg_dirtyhelper_SHA256H (
+        /*OUT*/V128* res,
+        UInt argD3, UInt argD2, UInt argD1, UInt argD0,
+        UInt argN3, UInt argN2, UInt argN1, UInt argN0,
+        UInt argM3, UInt argM2, UInt argM1, UInt argM0
+     )
+{
+   vassert(0 == (((HWord)res) & (8-1)));
+   ULong argDhi = (((ULong)argD3) << 32) | ((ULong)argD2);
+   ULong argDlo = (((ULong)argD1) << 32) | ((ULong)argD0);
+   ULong argNhi = (((ULong)argN3) << 32) | ((ULong)argN2);
+   ULong argNlo = (((ULong)argN1) << 32) | ((ULong)argN0);
+   ULong argMhi = (((ULong)argM3) << 32) | ((ULong)argM2);
+   ULong argMlo = (((ULong)argM1) << 32) | ((ULong)argM0);
+   arm64g_dirtyhelper_SHA256H(res, argDhi, argDlo,
+                                   argNhi, argNlo, argMhi, argMlo);
+}
+
+/* CALLED FROM GENERATED CODE */
+void armg_dirtyhelper_SHA256H2 (
+        /*OUT*/V128* res,
+        UInt argD3, UInt argD2, UInt argD1, UInt argD0,
+        UInt argN3, UInt argN2, UInt argN1, UInt argN0,
+        UInt argM3, UInt argM2, UInt argM1, UInt argM0
+     )
+{
+   vassert(0 == (((HWord)res) & (8-1)));
+   ULong argDhi = (((ULong)argD3) << 32) | ((ULong)argD2);
+   ULong argDlo = (((ULong)argD1) << 32) | ((ULong)argD0);
+   ULong argNhi = (((ULong)argN3) << 32) | ((ULong)argN2);
+   ULong argNlo = (((ULong)argN1) << 32) | ((ULong)argN0);
+   ULong argMhi = (((ULong)argM3) << 32) | ((ULong)argM2);
+   ULong argMlo = (((ULong)argM1) << 32) | ((ULong)argM0);
+   arm64g_dirtyhelper_SHA256H2(res, argDhi, argDlo,
+                                    argNhi, argNlo, argMhi, argMlo);
+}
+
+/* CALLED FROM GENERATED CODE */
+void armg_dirtyhelper_SHA256SU1 (
+        /*OUT*/V128* res,
+        UInt argD3, UInt argD2, UInt argD1, UInt argD0,
+        UInt argN3, UInt argN2, UInt argN1, UInt argN0,
+        UInt argM3, UInt argM2, UInt argM1, UInt argM0
+     )
+{
+   vassert(0 == (((HWord)res) & (8-1)));
+   ULong argDhi = (((ULong)argD3) << 32) | ((ULong)argD2);
+   ULong argDlo = (((ULong)argD1) << 32) | ((ULong)argD0);
+   ULong argNhi = (((ULong)argN3) << 32) | ((ULong)argN2);
+   ULong argNlo = (((ULong)argN1) << 32) | ((ULong)argN0);
+   ULong argMhi = (((ULong)argM3) << 32) | ((ULong)argM2);
+   ULong argMlo = (((ULong)argM1) << 32) | ((ULong)argM0);
+   arm64g_dirtyhelper_SHA256SU1(res, argDhi, argDlo,
+                                     argNhi, argNlo, argMhi, argMlo);
+}
+
+/* CALLED FROM GENERATED CODE */
+void armg_dirtyhelper_SHA1SU1 (
+        /*OUT*/V128* res,
+        UInt argD3, UInt argD2, UInt argD1, UInt argD0,
+        UInt argM3, UInt argM2, UInt argM1, UInt argM0
+     )
+{
+   vassert(0 == (((HWord)res) & (8-1)));
+   ULong argDhi = (((ULong)argD3) << 32) | ((ULong)argD2);
+   ULong argDlo = (((ULong)argD1) << 32) | ((ULong)argD0);
+   ULong argMhi = (((ULong)argM3) << 32) | ((ULong)argM2);
+   ULong argMlo = (((ULong)argM1) << 32) | ((ULong)argM0);
+   arm64g_dirtyhelper_SHA1SU1(res, argDhi, argDlo, argMhi, argMlo);
+}
+
+/* CALLED FROM GENERATED CODE */
+void armg_dirtyhelper_SHA256SU0 (
+        /*OUT*/V128* res,
+        UInt argD3, UInt argD2, UInt argD1, UInt argD0,
+        UInt argM3, UInt argM2, UInt argM1, UInt argM0
+     )
+{
+   vassert(0 == (((HWord)res) & (8-1)));
+   ULong argDhi = (((ULong)argD3) << 32) | ((ULong)argD2);
+   ULong argDlo = (((ULong)argD1) << 32) | ((ULong)argD0);
+   ULong argMhi = (((ULong)argM3) << 32) | ((ULong)argM2);
+   ULong argMlo = (((ULong)argM1) << 32) | ((ULong)argM0);
+   arm64g_dirtyhelper_SHA256SU0(res, argDhi, argDlo, argMhi, argMlo);
+}
+     
+/* CALLED FROM GENERATED CODE */
+void armg_dirtyhelper_SHA1H (
+        /*OUT*/V128* res,
+        UInt argM3, UInt argM2, UInt argM1, UInt argM0
+     )
+{
+   vassert(0 == (((HWord)res) & (8-1)));
+   ULong argMhi = (((ULong)argM3) << 32) | ((ULong)argM2);
+   ULong argMlo = (((ULong)argM1) << 32) | ((ULong)argM0);
+   arm64g_dirtyhelper_SHA1H(res, argMhi, argMlo);
 }
 
 

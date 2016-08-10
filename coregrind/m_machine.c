@@ -1738,19 +1738,38 @@ Bool VG_(machine_get_hwcaps)( void )
         }
      }
 
-     /* Check if CPU has FPU and 32 dbl. prec. FP registers */
-     int FIR = 0;
-     __asm__ __volatile__(
-        "cfc1 %0, $0"  "\n\t"
-        : "=r" (FIR)
-     );
-     if (FIR & (1 << FP64)) {
-        vai.hwcaps |= VEX_MIPS_CPU_32FPR;
-     }
-
      VG_(convert_sigaction_fromK_to_toK)(&saved_sigill_act, &tmp_sigill_act);
      VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
      VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
+
+#    if defined(VGP_mips32_linux)
+     Int fpmode = VG_(prctl)(VKI_PR_GET_FP_MODE);
+#    else
+     Int fpmode = -1;
+#    endif
+
+     if (fpmode < 0) {
+        /* prctl(PR_GET_FP_MODE) is not supported by Kernel,
+           we are using alternative way to determine FP mode */
+        ULong result = 0;
+        __asm__ volatile (
+           ".set push\n\t"
+           ".set noreorder\n\t"
+           ".set oddspreg\n\t"
+           "lui $t0, 0x3FF0\n\t"
+           "ldc1 $f0, %0\n\t"
+           "mtc1 $t0, $f1\n\t"
+           "sdc1 $f0, %0\n\t"
+           ".set pop\n\t"
+           : "+m"(result)
+           :
+           : "t0", "$f0", "$f1", "memory");
+
+        fpmode = (result != 0x3FF0000000000000ull);
+     }
+
+     if (fpmode != 0)
+        vai.hwcaps |= VEX_MIPS_HOST_FR;
 
      VG_(debugLog)(1, "machine", "hwcaps = 0x%x\n", vai.hwcaps);
      VG_(machine_get_cache_info)(&vai);
@@ -1771,6 +1790,8 @@ Bool VG_(machine_get_hwcaps)( void )
 #    else
      vai.endness = VexEndness_INVALID;
 #    endif
+
+     vai.hwcaps |= VEX_MIPS_HOST_FR;
 
      VG_(machine_get_cache_info)(&vai);
 

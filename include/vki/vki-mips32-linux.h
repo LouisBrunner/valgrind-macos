@@ -982,11 +982,78 @@ enum vki_sock_type {
 #define ARCH_HAS_SOCKET_TYPES 1
 
 //----------------------------------------------------------------------
+// From linux-3.7.0/arch/mips/include/uapi/asm/errno.h
+//----------------------------------------------------------------------
+
+#define VKI_ELIBBAD      84  /* Accessing a corrupted shared library */
+#define VKI_EOPNOTSUPP   122 /* Operation not supported on transport
+                                 endpoint */
+
+//----------------------------------------------------------------------
 // From linux-3.13.0/include/asm/errno.h
 //----------------------------------------------------------------------
 
 #define	VKI_ENOSYS       89  /* Function not implemented */
 #define	VKI_EOVERFLOW    79  /* Value too large for defined data type */
+
+//----------------------------------------------------------------------
+// From linux-3.14.0/arch/mips/include/asm/elf.h
+//----------------------------------------------------------------------
+
+#define VKI_EF_MIPS_FP64    0x00000200
+
+//----------------------------------------------------------------------
+// From linux-4.1.0/arch/mips/include/asm/elf.h
+//----------------------------------------------------------------------
+
+#define VKI_MIPS_ABI_FP_UNKNOWN (-1)
+#define VKI_MIPS_ABI_FP_ANY       0  /* FP ABI doesn't matter */
+#define VKI_MIPS_ABI_FP_DOUBLE    1  /* -mdouble-float */
+#define VKI_MIPS_ABI_FP_SINGLE    2  /* -msingle-float */
+#define VKI_MIPS_ABI_FP_SOFT      3  /* -msoft-float */
+#define VKI_MIPS_ABI_FP_OLD_64    4  /* -mips32r2 -mfp64 */
+#define VKI_MIPS_ABI_FP_XX        5  /* -mfpxx */
+#define VKI_MIPS_ABI_FP_64        6  /* -mips32r2 -mfp64 */
+#define VKI_MIPS_ABI_FP_64A       7  /* -mips32r2 -mfp64 -mno-odd-spreg */
+
+struct vki_arch_elf_state {
+   int fp_abi;
+   int interp_fp_abi;
+   int overall_fp_mode;
+};
+
+#define VKI_INIT_ARCH_ELF_STATE {             \
+   .fp_abi = VKI_MIPS_ABI_FP_UNKNOWN,         \
+   .interp_fp_abi = VKI_MIPS_ABI_FP_UNKNOWN,  \
+   .overall_fp_mode = -1,                     \
+}
+
+struct vki_mips_elf_abiflags_v0 {
+   vki_u16 version;     /* Version of flags structure */
+   vki_u8  isa_level;   /* The level of the ISA: 1-5, 32, 64 */
+   vki_u8  isa_rev;     /* The revision of ISA: 0 for MIPS V and below,
+                           1-n otherwise */
+   vki_u8  gpr_size;    /* The size of general purpose registers */
+   vki_u8  cpr1_size;   /* The size of co-processor 1 registers */
+   vki_u8  cpr2_size;   /* The size of co-processor 2 registers */
+   vki_u8  fp_abi;      /* The floating-point ABI */
+   vki_u32 isa_ext;     /* Mask of processor-specific extensions */
+   vki_u32 ases;        /* Mask of ASEs used */
+   vki_u32 flags1;      /* Mask of general flags */
+   vki_u32 flags2;
+};
+
+#define VKI_PT_MIPS_ABIFLAGS   0x70000003
+
+//----------------------------------------------------------------------
+// From linux-4.1.0/arch/mips/kernel/elf.c
+//----------------------------------------------------------------------
+
+enum {
+   VKI_FP_FRE,
+   VKI_FP_FR0,
+   VKI_FP_FR1,
+};
 
 #endif // __VKI_MIPS32_LINUX_H
 

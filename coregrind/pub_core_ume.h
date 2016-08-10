@@ -70,6 +70,11 @@ typedef
       Bool  ldsoexec;          // OUT: the program is the runtime linker itself
 #endif
 
+#if defined(VGO_linux)
+      // INOUT: architecture-specific ELF loading state
+      struct vki_arch_elf_state *arch_elf_state;
+#endif
+
       Addr entry;        // OUT: entrypoint in main executable
       Addr init_ip;      // OUT: address of first instruction to execute
       Addr brkbase;      // OUT: base address of brk segment

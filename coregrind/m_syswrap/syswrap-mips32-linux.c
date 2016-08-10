@@ -526,6 +526,7 @@ DECL_TEMPLATE (mips_linux, sys_rt_sigreturn);
 DECL_TEMPLATE (mips_linux, sys_cacheflush);
 DECL_TEMPLATE (mips_linux, sys_set_thread_area);
 DECL_TEMPLATE (mips_linux, sys_pipe);
+DECL_TEMPLATE (mips_linux, sys_prctl);
 
 PRE(sys_mmap2) 
 {
@@ -784,6 +785,52 @@ POST(sys_pipe)
    }
 }
 
+PRE (sys_prctl)
+{
+   switch (ARG1) {
+      case VKI_PR_SET_FP_MODE:
+      {
+         VexArchInfo vai;
+         VG_(machine_get_VexArchInfo)(NULL, &vai);
+         /* Reject unsupported modes */
+         if ((ARG2 & ~VKI_PR_FP_MODE_FR) ||
+             ((ARG2 & VKI_PR_FP_MODE_FR) &&
+              !VEX_MIPS_HOST_FP_MODE(vai.hwcaps))) {
+            SET_STATUS_Failure(VKI_EOPNOTSUPP);
+         } else {
+            if (!(VG_(threads)[tid].arch.vex.guest_CP0_status &
+                  MIPS_CP0_STATUS_FR) != !(ARG2 & VKI_PR_FP_MODE_FR)) {
+               ThreadId t;
+               for (t = 1; t < VG_N_THREADS; t++) {
+                  if (VG_(threads)[t].status != VgTs_Empty) {
+                     if (ARG2 & VKI_PR_FP_MODE_FR) {
+                        VG_(threads)[t].arch.vex.guest_CP0_status |=
+                        MIPS_CP0_STATUS_FR;
+                     } else {
+                        VG_(threads)[t].arch.vex.guest_CP0_status &=
+                        ~MIPS_CP0_STATUS_FR;
+                     }
+                  }
+               }
+               /* Discard all translations */
+               VG_(discard_translations)(0, 0xfffffffful, "prctl(PR_SET_FP_MODE)");
+            }
+            SET_STATUS_Success(0);
+         }
+         break;
+      }
+      case VKI_PR_GET_FP_MODE:
+         if (VG_(threads)[tid].arch.vex.guest_CP0_status & MIPS_CP0_STATUS_FR)
+            SET_STATUS_Success(VKI_PR_FP_MODE_FR);
+         else
+            SET_STATUS_Success(0);
+         break;
+      default:
+         WRAPPER_PRE_NAME(linux, sys_prctl)(tid, layout, arrghs, status, flags);
+         break;
+   }
+}
+
 #undef PRE
 #undef POST
 
@@ -991,7 +1038,7 @@ static SyscallTableEntry syscall_main_table[] = {
    //..
    LINX_ (__NR_setresgid,              sys_setresgid),               // 190
    LINXY (__NR_getresgid,              sys_getresgid),               // 191
-   LINXY (__NR_prctl,                  sys_prctl),                   // 192
+   PLAX_ (__NR_prctl,                  sys_prctl),                   // 192
    PLAX_ (__NR_rt_sigreturn,           sys_rt_sigreturn),            // 193
    LINXY (__NR_rt_sigaction,           sys_rt_sigaction),            // 194
    LINXY (__NR_rt_sigprocmask,         sys_rt_sigprocmask),          // 195

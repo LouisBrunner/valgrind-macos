@@ -4692,6 +4692,32 @@ struct vki_serial_struct {
 	unsigned long	iomap_base;	/* cookie passed into ioremap */
 };
 
+//----------------------------------------------------------------------
+// From linux-3.19.0/fs/binfmt_elf.c
+//----------------------------------------------------------------------
+
+#if !defined(VKI_INIT_ARCH_ELF_STATE)
+   /* This structure is used to preserve architecture specific data during
+      the loading of an ELF file, throughout the checking of architecture
+      specific ELF headers & through to the point where the ELF load is
+      known to be proceeding. This implementation is a dummy for
+      architectures which require no specific state. */
+   struct vki_arch_elf_state {
+   };
+
+#  define VKI_INIT_ARCH_ELF_STATE { }
+
+#endif
+
+//----------------------------------------------------------------------
+// From linux-4.0/include/uapi/linux/prctl.h
+//----------------------------------------------------------------------
+
+#define VKI_PR_SET_FP_MODE          45
+#define VKI_PR_GET_FP_MODE          46
+# define VKI_PR_FP_MODE_FR          (1 << 0)     /* 64b FP registers  */
+# define VKI_PR_FP_MODE_FRE         (1 << 1)     /* 32b compatibility */
+
 #endif // __VKI_LINUX_H
 
 /*--------------------------------------------------------------------*/

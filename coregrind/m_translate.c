@@ -1683,6 +1683,11 @@ Bool VG_(translate) ( ThreadId tid,
 #  if defined(VGP_amd64_solaris)
    vex_abiinfo.guest_amd64_assume_fs_is_const = True;
 #  endif
+#  if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
+   ThreadArchState* arch = &VG_(threads)[tid].arch;
+   vex_abiinfo.guest_mips_fp_mode64 =
+      !!(arch->vex.guest_CP0_status & MIPS_CP0_STATUS_FR);
+#  endif
 
    /* Set up closure args. */
    closure.tid    = tid;

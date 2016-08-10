@@ -88,6 +88,8 @@ struct _IIFinaliseImageInfo {
    Addr  initial_client_IP;
    Addr  initial_client_TOC;
    UInt* client_auxv;
+   /* ------ Arch-specific ELF loading state ------ */
+   struct vki_arch_elf_state arch_elf_state;
 };
 
 /* ------------------------- Darwin ------------------------- */

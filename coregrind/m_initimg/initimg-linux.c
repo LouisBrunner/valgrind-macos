@@ -66,7 +66,7 @@
 
 /* Load the client whose name is VG_(argv_the_exename). */
 
-static void load_client ( /*OUT*/ExeInfo* info, 
+static void load_client ( /*MOD*/ExeInfo* info, 
                           /*OUT*/Addr*    client_ip,
 			  /*OUT*/Addr*    client_toc)
 {
@@ -82,7 +82,6 @@ static void load_client ( /*OUT*/ExeInfo* info,
       VG_(exit)(127);      // 127 is Posix NOTFOUND
    }
 
-   VG_(memset)(info, 0, sizeof(*info));
    ret = VG_(do_exec)(exe_name, info);
    if (ret < 0) {
       VG_(printf)("valgrind: could not execute '%s'\n", exe_name);
@@ -918,8 +917,14 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii,
    ExeInfo info;
    HChar** env = NULL;
 
-   IIFinaliseImageInfo iifii;
-   VG_(memset)( &iifii, 0, sizeof(iifii) );
+   IIFinaliseImageInfo iifii = {
+      .clstack_max_size = 0,
+      .initial_client_SP = 0,
+      .initial_client_IP = 0,
+      .initial_client_TOC = 0,
+      .client_auxv = NULL,
+      .arch_elf_state = VKI_INIT_ARCH_ELF_STATE,
+   };
 
    //--------------------------------------------------------------
    // Load client executable, finding in $PATH if necessary
@@ -930,6 +935,9 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii,
 
    if (VG_(args_the_exename) == NULL)
       VG_(err_missing_prog)();
+
+   VG_(memset)(&info, 0, sizeof(info));
+   info.arch_elf_state = &iifii.arch_elf_state;
 
    load_client(&info, &iifii.initial_client_IP, &iifii.initial_client_TOC);
 
@@ -1173,6 +1181,10 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    arch->vex.guest_r29 = iifii.initial_client_SP;
    arch->vex.guest_PC = iifii.initial_client_IP;
    arch->vex.guest_r31 = iifii.initial_client_SP;
+
+   if (iifii.arch_elf_state.overall_fp_mode == VKI_FP_FR1) {
+      arch->vex.guest_CP0_status |= MIPS_CP0_STATUS_FR;
+   }
 
 #   elif defined(VGP_mips64_linux)
    vg_assert(0 == sizeof(VexGuestMIPS64State) % LibVEX_GUEST_STATE_ALIGN);

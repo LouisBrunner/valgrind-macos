@@ -461,6 +461,9 @@ static inline Bool sr_EQ ( UInt sysno, SysRes sr1, SysRes sr2 ) {
 #define STATIC_ASSERT(x)  extern int VG_(VG_(VG_(unused)))[(x) ? 1 : -1] \
                                      __attribute__((unused))
 
+#define VG_MAX(a,b) ((a) > (b) ? a : b)
+#define VG_MIN(a,b) ((a) < (b) ? a : b)
+
 #endif /* __PUB_TOOL_BASICS_H */
 
 /*--------------------------------------------------------------------*/

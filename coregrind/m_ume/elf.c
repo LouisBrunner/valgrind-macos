@@ -74,6 +74,237 @@ struct elfinfo
    Int          fd;
 };
 
+#if defined(VGO_linux)
+
+/*
+   arch_elf_pt_proc() - check a PT_LOPROC..PT_HIPROC ELF program header
+      @ehdr: The main ELF header
+      @phdr: The program header to check
+      @fd:  The ELF file filedescriptor
+      @is_interpreter:  True if the phdr is from the interpreter of the ELF
+      being loaded, else false.
+      @state:  Architecture-specific state preserved throughout the process
+      of loading the ELF.
+
+   Inspects the program header phdr to validate its correctness and/or
+   suitability for the system. Called once per ELF program header in the
+   range PT_LOPROC to PT_HIPROC, for both the ELF being loaded and its
+   interpreter.
+
+   Return: Zero to proceed with the ELF load, non-zero to fail the ELF load
+           with that return code.
+
+   arch_check_elf()
+      @ehdr: The main ELF header
+      @has_interpreter: True if the ELF has an interpreter, else false.
+      @state:  Architecture-specific state preserved throughout the process
+      of loading the ELF.
+
+   Provides a final opportunity for architecture code to reject the loading
+   of the ELF. This is called after all program headers to be checked by
+   arch_elf_pt_proc have been.
+
+   Return: Zero to proceed with the ELF load, non-zero to fail the ELF load
+           with that return code.
+
+   Ref: linux/fs/binfmt_elf.c
+ */
+
+#   if defined(VGP_mips32_linux)
+
+/* Ref: linux/arch/mips/kernel/elf.c */
+static inline Int arch_elf_pt_proc(ESZ(Ehdr) *ehdr,
+                                   ESZ(Phdr) *phdr,
+                                   Int fd, Bool is_interpreter,
+                                   struct vki_arch_elf_state *state)
+{
+   struct vki_mips_elf_abiflags_v0 abiflags;
+   SysRes sres;
+
+   if ( (ehdr->e_ident[EI_CLASS] == ELFCLASS32) &&
+        (ehdr->e_flags & VKI_EF_MIPS_FP64) ) {
+      /*
+       * Set MIPS_ABI_FP_OLD_64 for EF_MIPS_FP64. We will override it
+       * later if needed
+       */
+      if (is_interpreter)
+         state->interp_fp_abi = VKI_MIPS_ABI_FP_OLD_64;
+      else
+         state->fp_abi = VKI_MIPS_ABI_FP_OLD_64;
+   }
+
+   if (phdr->p_type != VKI_PT_MIPS_ABIFLAGS)
+      return 0;
+
+   if (phdr->p_filesz < sizeof(abiflags))
+      return VKI_EINVAL;
+
+   sres = VG_(pread)(fd, &abiflags, sizeof(abiflags), phdr->p_offset);
+
+   if (sr_isError(sres))
+      return sr_Err(sres);
+
+   if (sr_Res(sres) != sizeof(abiflags))
+      return VKI_EIO;
+
+   /* Record the required FP ABIs for use by arch_check_elf */
+   if (is_interpreter)
+      state->interp_fp_abi = abiflags.fp_abi;
+   else
+      state->fp_abi = abiflags.fp_abi;
+
+   return 0;
+}
+
+/* Ref: linux/arch/mips/kernel/elf.c */
+static inline Int arch_check_elf(ESZ(Ehdr) *ehdr,
+                                 Bool has_interpreter,
+                                 struct vki_arch_elf_state *state)
+{
+   struct mode_req {
+      Bool single;
+      Bool soft;
+      Bool fr1;
+      Bool frdefault;
+      Bool fre;
+   };
+
+   struct mode_req fpu_reqs[] = {
+      [VKI_MIPS_ABI_FP_ANY]    = { True,  True,  True,  True,  True  },
+      [VKI_MIPS_ABI_FP_DOUBLE] = { False, False, False, True,  True  },
+      [VKI_MIPS_ABI_FP_SINGLE] = { True,  False, False, False, False },
+      [VKI_MIPS_ABI_FP_SOFT]   = { False, True,  False, False, False },
+      [VKI_MIPS_ABI_FP_OLD_64] = { False, False, False, False, False },
+      [VKI_MIPS_ABI_FP_XX]     = { False, False, True,  True,  True  },
+      [VKI_MIPS_ABI_FP_64]     = { False, False, True,  False, False },
+      [VKI_MIPS_ABI_FP_64A]    = { False, False, True,  False, True  }
+   };
+
+   /* Mode requirements when .MIPS.abiflags is not present in the ELF.
+      Not present means that everything is acceptable except FR1. */
+   struct mode_req none_req = { True, True, False, True, True };
+
+   struct mode_req prog_req, interp_req;
+   Int fp_abi, interp_fp_abi, abi0, abi1, max_abi;
+   Bool is_mips64;
+
+   VexArchInfo vai;
+   VG_(machine_get_VexArchInfo)(NULL, &vai);
+
+   fp_abi = state->fp_abi;
+
+   if (has_interpreter) {
+      interp_fp_abi = state->interp_fp_abi;
+
+      abi0 = VG_MIN(fp_abi, interp_fp_abi);
+      abi1 = VG_MAX(fp_abi, interp_fp_abi);
+   } else {
+      abi0 = abi1 = fp_abi;
+   }
+
+   is_mips64 = (ehdr->e_ident[EI_CLASS] == ELFCLASS64) ||
+               (ehdr->e_flags & EF_MIPS_ABI2);
+
+   if (is_mips64) {
+      /* MIPS64 code always uses FR=1, thus the default is easy */
+      state->overall_fp_mode = VKI_FP_FR1;
+
+      /* Disallow access to the various FPXX & FP64 ABIs */
+      max_abi = VKI_MIPS_ABI_FP_SOFT;
+   } else {
+      /* Default to a mode capable of running code expecting FR=0 */
+
+      /* TODO: Should be changed during implementation of MIPS-R6 support.
+         state->overall_fp_mode = cpu_has_mips_r6 ? VKI_FP_FRE : VKI_FP_FR0; */
+      state->overall_fp_mode = VKI_FP_FR0;
+
+      /* Allow all ABIs we know about */
+      max_abi = VKI_MIPS_ABI_FP_64A;
+   }
+
+   if ((abi0 > max_abi && abi0 != VKI_MIPS_ABI_FP_UNKNOWN) ||
+       (abi1 > max_abi && abi1 != VKI_MIPS_ABI_FP_UNKNOWN))
+      return VKI_ELIBBAD;
+
+   /* It's time to determine the FPU mode requirements */
+   prog_req = (abi0 == VKI_MIPS_ABI_FP_UNKNOWN) ? none_req : fpu_reqs[abi0];
+   interp_req = (abi1 == VKI_MIPS_ABI_FP_UNKNOWN) ? none_req : fpu_reqs[abi1];
+
+   /* Check whether the program's and interp's ABIs have a matching FPU
+      mode requirement. */
+   prog_req.single = interp_req.single && prog_req.single;
+   prog_req.soft = interp_req.soft && prog_req.soft;
+   prog_req.fr1 = interp_req.fr1 && prog_req.fr1;
+   prog_req.frdefault = interp_req.frdefault && prog_req.frdefault;
+   prog_req.fre = interp_req.fre && prog_req.fre;
+
+   /* Determine the desired FPU mode
+
+      Decision making:
+
+      - We want FR_FRE if FRE=1 and both FR=1 and FR=0 are false. This
+        means that we have a combination of program and interpreter
+        that inherently require the hybrid FP mode.
+      - If FR1 and FRDEFAULT is true, that means we hit the any-abi or
+        fpxx case. This is because, in any-ABI (or no-ABI) we have no FPU
+        instructions so we don't care about the mode. We will simply use
+        the one preferred by the hardware. In fpxx case, that ABI can
+        handle both FR=1 and FR=0, so, again, we simply choose the one
+        preferred by the hardware. Next, if we only use single-precision
+        FPU instructions, and the default ABI FPU mode is not good
+        (ie single + any ABI combination), we set again the FPU mode to the
+        one is preferred by the hardware. Next, if we know that the code
+        will only use single-precision instructions, shown by single being
+        true but frdefault being false, then we again set the FPU mode to
+        the one that is preferred by the hardware.
+      - We want FP_FR1 if that's the only matching mode and the default one
+        is not good.
+      - Return with ELIBADD if we can't find a matching FPU mode. */
+   if (prog_req.fre && !prog_req.frdefault && !prog_req.fr1)
+      state->overall_fp_mode = VKI_FP_FRE;
+   else if ((prog_req.fr1 && prog_req.frdefault) ||
+            (prog_req.single && !prog_req.frdefault))
+      state->overall_fp_mode = VEX_MIPS_HOST_FP_MODE(vai.hwcaps) ?
+                               VKI_FP_FR1 : VKI_FP_FR0;
+   else if (prog_req.fr1)
+      state->overall_fp_mode = VKI_FP_FR1;
+   else if (!prog_req.fre && !prog_req.frdefault &&
+            !prog_req.fr1 && !prog_req.single && !prog_req.soft)
+      return VKI_ELIBBAD;
+
+  /* TODO: Currently, Valgrind doesn't support FRE and doesn't support FR1
+     emulation on FR0 system, so in those cases we are forced to
+     reject the ELF. */
+     if ((state->overall_fp_mode == VKI_FP_FRE) ||
+         ((state->overall_fp_mode == VKI_FP_FR1) &&
+          !VEX_MIPS_HOST_FP_MODE(vai.hwcaps)))
+        return VKI_ELIBBAD;
+
+  return 0;
+}
+
+#   else
+
+static inline Int arch_elf_pt_proc(ESZ(Ehdr) *ehdr,
+                                   ESZ(Phdr) *phdr,
+                                   Int fd, Bool is_interpreter,
+                                   struct vki_arch_elf_state *state)
+{
+  /* Dummy implementation, always proceed */
+  return 0;
+}
+
+static inline Int arch_check_elf(ESZ(Ehdr) *ehdr,
+                                 Bool has_interpreter,
+                                 struct vki_arch_elf_state *state)
+{
+  /* Dummy implementation, always proceed */
+  return 0;
+}
+
+#   endif
+#endif
+
 static void check_mmap(SysRes res, Addr base, SizeT len)
 {
    if (sr_isError(res)) {
@@ -316,6 +547,10 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
    ESZ(Addr) thrptr_addr = 0;
 #  endif
 
+#  if defined(VGO_linux)
+   Int retval;
+#  endif
+
 #  if defined(HAVE_PIE)
    ebase = info->exe_base;
 #  endif
@@ -435,6 +670,15 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
             }
 #           endif
 
+#           if defined(VGO_linux)
+            if ((iph->p_type >= PT_LOPROC) && (iph->p_type <= PT_HIPROC)) {
+               retval = arch_elf_pt_proc(&interp->e, iph, intfd, True,
+                                         info->arch_elf_state);
+               if (retval)
+                 return retval;
+            }
+#           endif
+
             if (iph->p_type != PT_LOAD || iph->p_memsz == 0)
                continue;
             
@@ -481,11 +725,27 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
          break;
 #     endif
 
+#     if defined(VGO_linux)
+      case PT_LOPROC ... PT_HIPROC:
+         retval = arch_elf_pt_proc(&e->e, ph, fd, False, info->arch_elf_state);
+         if (retval)
+            return retval;
+         break;
+#     endif
+
       default:
          // do nothing
          break;
       }
    }
+
+#  if defined(VGO_linux)
+   retval = arch_check_elf(&e->e,
+                           interp != NULL,
+                           info->arch_elf_state);
+   if (retval)
+      return retval;
+#  endif
 
    if (info->phdr == 0)
       info->phdr = minaddr + ebase + e->e.e_phoff;

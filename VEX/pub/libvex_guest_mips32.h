@@ -147,7 +147,9 @@ typedef
       /* 472 */ ULong guest_ac2;
       /* 480 */ ULong guest_ac3;
 
-        UInt padding;
+      /* 488 */ UInt guest_CP0_status;
+
+      /* 492 */ UInt padding;
 } VexGuestMIPS32State;
 /*---------------------------------------------------------------*/
 /*--- Utility functions for MIPS32 guest stuff.               ---*/
@@ -160,6 +162,8 @@ typedef
 extern
 void LibVEX_GuestMIPS32_initialise ( /*OUT*/VexGuestMIPS32State* vex_state );
 
+/* FR bit of CP0_STATUS_FR register */
+#define MIPS_CP0_STATUS_FR (1ul << 26)
 
 #endif /* ndef __LIBVEX_PUB_GUEST_MIPS32_H */
 

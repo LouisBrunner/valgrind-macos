@@ -123,6 +123,8 @@ typedef
       /*   548 */ UInt guest_FENR;
       /*   552 */ UInt guest_FCSR;
 
+      /*   556 */ UInt guest_CP0_status;
+
       /* TLS pointer for the thread. It's read-only in user space. On Linux it
          is set in user space by various thread-related syscalls.
          User Local Register.
@@ -158,6 +160,9 @@ typedef
 
 extern
 void LibVEX_GuestMIPS64_initialise ( /*OUT*/VexGuestMIPS64State* vex_state );
+
+/* FR bit of CP0_STATUS_FR register */
+#define MIPS_CP0_STATUS_FR (1ul << 26)
 
 #endif /* ndef __LIBVEX_PUB_GUEST_MIPS64_H */
 

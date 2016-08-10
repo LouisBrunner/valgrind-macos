@@ -4183,10 +4183,7 @@ HInstrArray *iselSB_MIPS ( const IRSB* bb,
            || archinfo_host->endness == VexEndnessBE);
 
    mode64 = arch_host != VexArchMIPS32;
-#if (__mips_fpr==64)
-   fp_mode64 = (VEX_MIPS_HAS_32_64BIT_FPRS(hwcaps_host)
-                || arch_host == VexArchMIPS64);
-#endif
+   fp_mode64 = VEX_MIPS_HOST_FP_MODE(hwcaps_host);
 
    /* Make up an initial environment to use. */
    env = LibVEX_Alloc_inline(sizeof(ISelEnv));

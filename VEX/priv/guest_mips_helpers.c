@@ -165,6 +165,8 @@ void LibVEX_GuestMIPS32_initialise( /*OUT*/ VexGuestMIPS32State * vex_state)
 
    vex_state->guest_COND = 0;
 
+   vex_state->guest_CP0_status = 0;
+
    /* MIPS32 DSP ASE(r2) specific registers */
    vex_state->guest_DSPControl = 0;   /* DSPControl register */
    vex_state->guest_ac0 = 0;          /* Accumulator 0 */
@@ -272,6 +274,8 @@ void LibVEX_GuestMIPS64_initialise ( /*OUT*/ VexGuestMIPS64State * vex_state )
    vex_state->guest_NRADDR = 0;
 
    vex_state->guest_COND = 0;
+
+   vex_state->guest_CP0_status = MIPS_CP0_STATUS_FR;
 }
 
 /*-----------------------------------------------------------*/

@@ -17300,10 +17300,7 @@ DisResult disInstr_MIPS( IRSB*        irsb_IN,
    vassert(guest_arch == VexArchMIPS32 || guest_arch == VexArchMIPS64);
 
    mode64 = guest_arch != VexArchMIPS32;
-#if (__mips_fpr==64)
-   fp_mode64 = (VEX_MIPS_HAS_32_64BIT_FPRS(archinfo->hwcaps)
-                || guest_arch == VexArchMIPS64);
-#endif
+   fp_mode64 = abiinfo->guest_mips_fp_mode64;
 
    guest_code = guest_code_IN;
    irsb = irsb_IN;

@@ -227,8 +227,7 @@ typedef
 
 /*
  * Instead of Company Options values, bits 31:24 will be packed with
- * additional information, such as isa level and presence of FPU unit
- * with 32 64-bit registers.
+ * additional information, such as isa level and FP mode.
  */
 #define VEX_MIPS_CPU_ISA_M32R1      0x01000000
 #define VEX_MIPS_CPU_ISA_M32R2      0x02000000
@@ -236,8 +235,8 @@ typedef
 #define VEX_MIPS_CPU_ISA_M64R2      0x08000000
 #define VEX_MIPS_CPU_ISA_M32R6      0x10000000
 #define VEX_MIPS_CPU_ISA_M64R6      0x20000000
-/* CPU has FPU and 32 dbl. prec. FP registers */
-#define VEX_MIPS_CPU_32FPR          0x40000000
+/* FP mode is FR = 1 (32 dbl. prec. FP registers) */
+#define VEX_MIPS_HOST_FR            0x40000000
 /* Get MIPS Extended Information */
 #define VEX_MIPS_EX_INFO(x) ((x) & 0xFF000000)
 /* Get MIPS Company ID from HWCAPS */
@@ -246,10 +245,10 @@ typedef
 #define VEX_MIPS_PROC_ID(x) ((x) & 0x0000FF00)
 /* Get MIPS Revision from HWCAPS */
 #define VEX_MIPS_REV(x) ((x) & 0x000000FF)
-/* Check if the processor has 32 64-bit FP registers */
-#define VEX_MIPS_HAS_32_64BIT_FPRS(x) (VEX_MIPS_EX_INFO(x) | VEX_MIPS_CPU_32FPR)
+/* Get host FP mode */
+#define VEX_MIPS_HOST_FP_MODE(x) (!!(VEX_MIPS_EX_INFO(x) & VEX_MIPS_HOST_FR))
 /* Check if the processor supports MIPS32R2. */
-#define VEX_MIPS_CPU_HAS_MIPS32R2(x) (VEX_MIPS_EX_INFO(x) | \
+#define VEX_MIPS_CPU_HAS_MIPS32R2(x) (VEX_MIPS_EX_INFO(x) & \
                                       VEX_MIPS_CPU_ISA_M32R2)
 /* Check if the processor supports DSP ASE Rev 2. */
 #define VEX_MIPS_PROC_DSP2(x) ((VEX_MIPS_COMP_ID(x) == VEX_PRID_COMP_MIPS) && \
@@ -406,6 +405,8 @@ typedef
          function descriptor on the host, or to the function code
          itself?  True => descriptor, False => code. */
       Bool host_ppc_calls_use_fndescrs;
+
+      Bool guest_mips_fp_mode64;
    }
    VexAbiInfo;
 

@@ -1594,6 +1594,10 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
    XArray* /* of RangeAndBias */ svma_ranges = NULL;
 
+#  if defined(SOLARIS_PT_SUNDWTRACE_THRP)
+   Addr dtrace_data_vaddr = 0;
+#  endif
+
    vg_assert(di);
    vg_assert(di->fsm.have_rx_map == True);
    vg_assert(di->fsm.have_rw_map == True);
@@ -1815,6 +1819,16 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                   }
                }
                if (!loaded) {
+#                 if defined(SOLARIS_PT_SUNDWTRACE_THRP)
+                  if ((a_phdr.p_memsz == VKI_PT_SUNWDTRACE_SIZE)
+                     && ((a_phdr.p_flags & (PF_R | PF_W | PF_X)) == PF_R)) {
+                     TRACE_SYMTAB("PT_LOAD[%ld]:   ignore dtrace_data program "
+                                  "header\n", i);
+                     dtrace_data_vaddr = a_phdr.p_vaddr;
+                     continue;
+                  }
+#                 endif /* SOLARIS_PT_SUNDWTRACE_THRP */
+
                   ML_(symerr)(di, False,
                               "ELF section outside all mapped regions");
                   /* This problem might be solved by further memory mappings.
@@ -2020,6 +2034,12 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* Accept .data where mapped as rw (data), even if zero-sized */
       if (0 == VG_(strcmp)(name, ".data")) {
+#        if defined(SOLARIS_PT_SUNDWTRACE_THRP)
+         if ((size == VKI_PT_SUNWDTRACE_SIZE) && (svma == dtrace_data_vaddr)) {
+            TRACE_SYMTAB("ignoring .data section for dtrace_data "
+                         "%#lx .. %#lx\n", svma, svma + size - 1);
+         } else
+#        endif /* SOLARIS_PT_SUNDWTRACE_THRP */
          if (inrw && !di->data_present) {
             di->data_present = True;
             di->data_svma = svma;

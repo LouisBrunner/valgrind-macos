@@ -3649,6 +3649,29 @@ AC_DEFINE([SOLARIS_SCHEDCTL_PAGE_EXEC], 1,
           [Define to 1 if you have the schedctl page executable.])
 ])
 
+
+# Solaris-specific check determining if PT_SUNWDTRACE program header provides
+# scratch space for DTrace fasttrap provider (illumos, older Solaris) or just
+# an initial thread pointer for libc (newer Solaris).
+#
+# C-level symbol: SOLARIS_PT_SUNDWTRACE_THRP
+# Automake-level symbol: none
+#
+AC_MSG_CHECKING([if PT_SUNWDTRACE serves for initial thread pointer (Solaris-specific)])
+AC_RUN_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/fasttrap_isa.h>
+]], [[
+    return !FT_SCRATCHSIZE;
+]])], [
+solaris_pt_sunwdtrace_thrp=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_PT_SUNDWTRACE_THRP], 1,
+          [Define to 1 if PT_SUNWDTRACE program header provides just an initial thread pointer for libc.])
+], [
+solaris_pt_sunwdtrace_thrp=no
+AC_MSG_RESULT([no])
+])
+
 else
 AM_CONDITIONAL(SOLARIS_SUN_STUDIO_AS, false)
 AM_CONDITIONAL(SOLARIS_XPG_SYMBOLS_PRESENT, false)

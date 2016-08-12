@@ -55,6 +55,11 @@
 #include <elf.h>
 #if defined(VGO_solaris)
 #  include <sys/fasttrap.h> // PT_SUNWDTRACE_SIZE
+#  if defined(SOLARIS_PT_SUNDWTRACE_THRP)
+#     define PT_SUNWDTRACE_PROTECTION (PF_R)
+#  else
+#     define PT_SUNWDTRACE_PROTECTION (PF_R | PF_W | PF_X)
+#  endif
 #endif
 /* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
 
@@ -617,9 +622,13 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
 
 #     if defined(VGO_solaris)
       case PT_SUNWDTRACE:
-         if (ph->p_memsz < PT_SUNWDTRACE_SIZE ||
-             (ph->p_flags & (PF_R | PF_W | PF_X)) != (PF_R | PF_W | PF_X)) {
+         if (ph->p_memsz < PT_SUNWDTRACE_SIZE) {
             VG_(printf)("valgrind: m_ume.c: too small SUNWDTRACE size\n");
+            return VKI_ENOEXEC;
+         }
+         if ((ph->p_flags & PT_SUNWDTRACE_PROTECTION)
+                != PT_SUNWDTRACE_PROTECTION) {
+            VG_(printf)("valgrind: m_ume.c: SUNWDTRACE protection mismatch\n");
             return VKI_ENOEXEC;
          }
 
@@ -657,10 +666,14 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
 
 #           if defined(VGO_solaris)
             if (iph->p_type == PT_SUNWDTRACE) {
-               if (iph->p_memsz < PT_SUNWDTRACE_SIZE ||
-                   (iph->p_flags & (PF_R | PF_W | PF_X))
-                      != (PF_R | PF_W | PF_X)) {
+               if (iph->p_memsz < PT_SUNWDTRACE_SIZE) {
                   VG_(printf)("valgrind: m_ume.c: too small SUNWDTRACE size\n");
+                  return VKI_ENOEXEC;
+               }
+               if ((iph->p_flags & PT_SUNWDTRACE_PROTECTION)
+                      != PT_SUNWDTRACE_PROTECTION) {
+                  VG_(printf)("valgrind: m_ume.c: SUNWDTRACE protection "
+                              "mismatch\n");
                   return VKI_ENOEXEC;
                }
 

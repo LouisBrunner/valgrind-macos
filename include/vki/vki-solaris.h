@@ -483,6 +483,10 @@ typedef struct vki_kcf_door_arg_s {
 #endif /* SOLARIS_EXECVE_SYSCALL_TAKES_FLAGS */
 
 
+#include <sys/fasttrap.h>
+#define VKI_PT_SUNWDTRACE_SIZE PT_SUNWDTRACE_SIZE
+
+
 #include <sys/fcntl.h>
 #define VKI_O_RDONLY O_RDONLY
 #define VKI_O_WRONLY O_WRONLY

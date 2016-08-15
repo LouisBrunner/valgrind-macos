@@ -1461,7 +1461,6 @@ void do_shadow_PUT ( MCEnv* mce,  Int offset,
 
    ty = typeOfIRExpr(mce->sb->tyenv, vatom);
    tl_assert(ty != Ity_I1);
-   tl_assert(ty != Ity_I128);
    if (isAlwaysDefd(mce, offset, sizeofIRType(ty))) {
       /* later: no ... */
       /* emit code to emit a complaint if any of the vbits are 1. */
@@ -1783,8 +1782,25 @@ IRAtom* mkLazy4 ( MCEnv* mce, IRType finalVty,
       operation.  Here are some special cases which use PCast only
       twice rather than three times. */
 
-   /* I32 x I64 x I64 x I64 -> I64 */
    /* Standard FP idiom: rm x FParg1 x FParg2 x FParg3 -> FPresult */
+
+   if (t1 == Ity_I32 && t2 == Ity_I128 && t3 == Ity_I128 && t4 == Ity_I128
+       && finalVty == Ity_I128) {
+      if (0) VG_(printf)("mkLazy4: I32 x I128 x I128 x I128 -> I128\n");
+      /* Widen 1st arg to I128.  Since 1st arg is typically a rounding
+         mode indication which is fully defined, this should get
+         folded out later. */
+      at = mkPCastTo(mce, Ity_I128, va1);
+      /* Now fold in 2nd, 3rd, 4th args. */
+      at = mkUifU(mce, Ity_I128, at, va2);
+      at = mkUifU(mce, Ity_I128, at, va3);
+      at = mkUifU(mce, Ity_I128, at, va4);
+      /* and PCast once again. */
+      at = mkPCastTo(mce, Ity_I128, at);
+      return at;
+   }
+
+   /* I32 x I64 x I64 x I64 -> I64 */
    if (t1 == Ity_I32 && t2 == Ity_I64 && t3 == Ity_I64 && t4 == Ity_I64
        && finalVty == Ity_I64) {
       if (0) VG_(printf)("mkLazy4: I32 x I64 x I64 x I64 -> I64\n");
@@ -2510,6 +2526,7 @@ IROp vanillaNarrowingOpOfShape ( IROp qnarrowOp )
       case Iop_QNarrowUn32Uto16Ux4:
       case Iop_QNarrowUn32Sto16Sx4:
       case Iop_QNarrowUn32Sto16Ux4:
+      case Iop_F32toF16x4:
          return Iop_NarrowUn32to16x4;
       case Iop_QNarrowUn16Uto8Ux8:
       case Iop_QNarrowUn16Sto8Sx8:
@@ -2581,6 +2598,7 @@ IRAtom* vectorNarrowUnV128 ( MCEnv* mce, IROp narrow_op,
       case Iop_NarrowUn16to8x8:
       case Iop_NarrowUn32to16x4:
       case Iop_NarrowUn64to32x2:
+      case Iop_F32toF16x4:
          at1 = assignNew('V', mce, Ity_I64, unop(narrow_op, vatom1));
          return at1;
       default:
@@ -2619,6 +2637,7 @@ IRAtom* vectorWidenI64 ( MCEnv* mce, IROp longen_op,
       case Iop_Widen16Sto32x4: pcast = mkPCast32x4; break;
       case Iop_Widen32Uto64x2: pcast = mkPCast64x2; break;
       case Iop_Widen32Sto64x2: pcast = mkPCast64x2; break;
+      case Iop_F16toF32x4:     pcast = mkPCast32x4; break;
       default: VG_(tool_panic)("vectorWidenI64");
    }
    tl_assert(isShadowAtom(mce,vatom1));
@@ -2807,6 +2826,13 @@ IRAtom* expr2vbits_Qop ( MCEnv* mce,
          /* I32(rm) x F32 x F32 x F32 -> F32 */
          return mkLazy4(mce, Ity_I32, vatom1, vatom2, vatom3, vatom4);
 
+      case Iop_MAddF128:
+      case Iop_MSubF128:
+      case Iop_NegMAddF128:
+      case Iop_NegMSubF128:
+         /* I32(rm) x F128 x F128 x F128 -> F128 */
+         return mkLazy4(mce, Ity_I128, vatom1, vatom2, vatom3, vatom4);
+
       /* V256-bit data-steering */
       case Iop_64x4toV256:
          return assignNew('V', mce, Ity_V256,
@@ -2839,12 +2865,12 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
    tl_assert(sameKindedAtoms(atom3,vatom3));
    switch (op) {
       case Iop_AddF128:
-      case Iop_AddD128:
       case Iop_SubF128:
-      case Iop_SubD128:
       case Iop_MulF128:
-      case Iop_MulD128:
       case Iop_DivF128:
+      case Iop_AddD128:
+      case Iop_SubD128:
+      case Iop_MulD128:
       case Iop_DivD128:
       case Iop_QuantizeD128:
          /* I32(rm) x F128/D128 x F128/D128 -> F128/D128 */
@@ -3419,6 +3445,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_CipherLV128:
       case Iop_NCipherV128:
       case Iop_NCipherLV128:
+      case Iop_MulI128by10E:
+      case Iop_MulI128by10ECarry:
         return binary64Ix2(mce, vatom1, vatom2);
 
       case Iop_QNarrowBin64Sto32Sx4:
@@ -3723,6 +3751,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       case Iop_ShrV128:
       case Iop_ShlV128:
+      case Iop_I128StoBCD128:
          /* Same scheme as with all other shifts.  Note: 10 Nov 05:
             this is wrong now, scalar shifts are done properly lazily.
             Vector shifts should be fixed too. */
@@ -3861,6 +3890,10 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_D128toI32S: /* IRRoundingMode(I32) x D128 -> signed I32  */
       case Iop_D128toI32U: /* IRRoundingMode(I32) x D128 -> unsigned I32  */
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);
+
+      case Iop_F128toI128S:   /* IRRoundingMode(I32) x F128 -> signed I128 */
+      case Iop_RndF128:       /* IRRoundingMode(I32) x F128 -> F128 */
+         return mkLazy2(mce, Ity_I128, vatom1, vatom2);
 
       case Iop_F128toI64S: /* IRRoundingMode(I32) x F128 -> signed I64  */
       case Iop_F128toI64U: /* IRRoundingMode(I32) x F128 -> unsigned I64  */
@@ -4373,7 +4406,19 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
 
       case Iop_NegF128:
       case Iop_AbsF128:
+      case Iop_RndF128:
+      case Iop_TruncF128toI64S: /* F128 -> I64S */
+      case Iop_TruncF128toI32S: /* F128 -> I32S (result stored in 64-bits) */
+      case Iop_TruncF128toI64U: /* F128 -> I64U */
+      case Iop_TruncF128toI32U: /* F128 -> I32U (result stored in 64-bits) */
          return mkPCastTo(mce, Ity_I128, vatom);
+
+      case Iop_BCD128toI128S:
+      case Iop_MulI128by10:
+      case Iop_MulI128by10Carry:
+      case Iop_F16toF64x2:
+      case Iop_F64toF16x2:
+         return vatom;
 
       case Iop_I32StoF128: /* signed I32 -> F128 */
       case Iop_I64StoF128: /* signed I64 -> F128 */
@@ -4510,6 +4555,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_Clz8x16:
       case Iop_Cls8x16:
       case Iop_Abs8x16:
+      case Iop_Ctz8x16:
          return mkPCast8x16(mce, vatom);
 
       case Iop_CmpNEZ16x4:
@@ -4522,6 +4568,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_Clz16x8:
       case Iop_Cls16x8:
       case Iop_Abs16x8:
+      case Iop_Ctz16x8:
          return mkPCast16x8(mce, vatom);
 
       case Iop_CmpNEZ32x2:
@@ -4539,6 +4586,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_FtoI32Sx4_RZ:
       case Iop_Abs32x4:
       case Iop_RSqrtEst32Ux4:
+      case Iop_Ctz32x4:
          return mkPCast32x4(mce, vatom);
 
       case Iop_CmpwNEZ32:
@@ -4551,6 +4599,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_CipherSV128:
       case Iop_Clz64x2:
       case Iop_Abs64x2:
+      case Iop_Ctz64x2:
          return mkPCast64x2(mce, vatom);
 
       case Iop_PwBitMtxXpose64x2:
@@ -4568,6 +4617,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_QNarrowUn64Sto32Sx2:
       case Iop_QNarrowUn64Sto32Ux2:
       case Iop_QNarrowUn64Uto32Ux2:
+      case Iop_F32toF16x4:
          return vectorNarrowUnV128(mce, op, vatom);
 
       case Iop_Widen8Sto16x8:
@@ -4576,6 +4626,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_Widen16Uto32x4:
       case Iop_Widen32Sto64x2:
       case Iop_Widen32Uto64x2:
+      case Iop_F16toF32x4:
          return vectorWidenI64(mce, op, vatom);
 
       case Iop_PwAddL32Ux2:

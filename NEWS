@@ -142,6 +142,11 @@ where XXXXXX is the bug number as listed below.
 365273  Invalid write to stack location reported after signal handler runs
 365912  ppc64BE segfault during jm-insns test (RELRO)
 366344  Multiple unhandled instruction for Aarch64
+359767  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 1/5
+361207  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 2/5
+362329  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 3/5
+363858  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 4/5
+364948  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 5/5
 
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64
 n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap

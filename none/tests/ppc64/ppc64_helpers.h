@@ -30,6 +30,14 @@ typedef uint64_t  HWord_t;
 #define AB_DPRINTF(fmt, args...) do { } while (0)
 #endif
 
+/* Exhaustive tests?
+ * Due to the excessive size of the test results, allow a #ifdef to
+ * enable/disable most of the input values.
+ * Off by default.
+ */
+// #define EXHAUSTIVE_TESTS 1
+
+
 #define ALLCR "cr0","cr1","cr2","cr3","cr4","cr5","cr6","cr7"
 
 #define SET_CR(_arg) \
@@ -183,29 +191,29 @@ if (cr_overflow_set(this_cr))
 
 /* Extract one CR field */
 static int extract_cr_rn(unsigned long local_cr,unsigned long rn) {
-  unsigned int masked_cr;
-  unsigned long shifted_value;
+   unsigned int masked_cr;
+   unsigned long shifted_value;
 
-  shifted_value = local_cr >> ( ( (7 - rn) * 4 ) );
-  masked_cr = shifted_value & 0xf;
-  return masked_cr;
+   shifted_value = local_cr >> ( ( (7 - rn) * 4 ) );
+   masked_cr = shifted_value & 0xf;
+   return masked_cr;
 }
 
 /* Display one CR field */
 static void dissect_cr_rn(unsigned long local_cr, unsigned long rn) {
-  unsigned int masked_cr;
+   unsigned int masked_cr;
 
-  masked_cr = extract_cr_rn(local_cr, rn);
-  __dissect_cr(masked_cr);
+   masked_cr = extract_cr_rn(local_cr, rn);
+   __dissect_cr(masked_cr);
 }
 
 /* Display all of the CR fields... */
 static void dissect_cr(unsigned long local_cr) {
-  unsigned int crn;
+   unsigned int crn;
 
-  for (crn = 0; crn < 8; crn++) {
-     dissect_cr_rn(local_cr, crn);
-  }
+   for (crn = 0; crn < 8; crn++) {
+      dissect_cr_rn(local_cr, crn);
+   }
 }
 
 /* dissect the fpscr bits that are valid under valgrind.
@@ -422,6 +430,7 @@ typedef union dfp_union {
  */
 
 static unsigned long dfp128_vals[] = {
+#ifdef EXHAUSTIVE_TESTS
    // Some finite numbers
    0x2208000000000000ULL, 0x0000000000000001ULL, //  1 *10^0
    0xa208800000000000ULL, 0x0000000000000001ULL, // -1 *10^1
@@ -457,13 +466,21 @@ static unsigned long dfp128_vals[] = {
 
    // flavors of NAN
    0x7c00000000000000ULL, 0x0000000000000000ULL, // quiet
-   0xfc00000000000000ULL, 0xc00100035b007700ULL,
-   0x7e00000000000000ULL, 0xfe000000d0e0a0d0ULL, // signaling
+   0xfc00000000000000ULL, 0xc00100035b007700ULL, // NAN
+   0x7e00000000000000ULL, 0xfe000000d0e0a0d0ULL, // signaling NAN
 
    // flavors of Infinity
    0x7800000000000000ULL, 0x0000000000000000ULL, // +inf
    0xf800000000000000ULL, 0x0000000000000000ULL, // -inf
    0xf900000000000000ULL, 0x0000000000000000ULL  // -inf
+#else
+   0x2208000000000000ULL, 0x0000000000000001ULL, //  1 *10^0
+   0x77ffffffffffffffULL, 0xffffffffffffffffULL, // max possible value *10^6111 (largest exp)
+   0xa208000000000000ULL, 0x0000000000000000ULL, // -0*10^0
+   0xfc00000000000000ULL, 0xc00100035b007700ULL, // NAN
+   0x7e00000000000000ULL, 0xfe000000d0e0a0d0ULL, // signaling NAN
+   0xf800000000000000ULL, 0x0000000000000000ULL, // -inf
+#endif
 };
 
 #define NUM_DFP128_VALS (sizeof(dfp128_vals) / 8)
@@ -472,7 +489,7 @@ unsigned long nb_dfp128_vals = NUM_DFP128_VALS;
 /* Todo: update dfp64_vals to match dfp128_vals content. */
 
 static unsigned long dfp64_vals[] = {
-   //
+#ifdef EXHAUSTIVE_TESTS
    0x77fcffffffffffffULL, // max possible value 9..9 *10^369 (largest exp)
    0x0000000000000001ULL, // min possible nonzero value 1 *10^-398. (smallest exp)
    0x4248000000000001ULL, // 1*10^260
@@ -498,6 +515,12 @@ static unsigned long dfp64_vals[] = {
    0x7800000000000000ULL, //+Inf
    0xf800000000000000ULL, //-Inf
    0x7a34000000000000ULL, //+Inf
+#else
+   0x77fcffffffffffffULL, // max possible value 9..9 *10^369 (largest exp)
+   0x4248000000000000ULL, // 0 * 10 ^260
+   0xfe000000d0e0a0d0ULL, //signaling NaN
+   0xf800000000000000ULL, //-Inf
+#endif
 };
 
 #define NUM_DFP64_VALS (sizeof(dfp64_vals) / 8)
@@ -1348,21 +1371,33 @@ static inline void dissect_binary16_float(uint64_t value) {
 
 /* a table of exponent values for use in the float precision tests. */
 unsigned long exponent_table[] = {
+#ifdef EXHAUSTIVE_TESTS
   0x0000,   /* +/-0 or +/-DENormalized, depending on associated mantissa. */
   0x1a,     /* within NORmalized for 16,32,64,128-bit.                    */
   0x1f,     /* +/-INF or +/-NaN for 16bit, NORmalized for 32,64,128       */
   0xff,     /* +/-INF or +/-NaN for 32bit, NORmalized for 64,128          */
   0x7ff,    /* +/-INF or +/-NaN for 32 and 64bit, NORmalized for 128      */
   0x7fff,   /* +/-INF or +/-NaN for 128bit.                               */
-#define MAX_EXPONENTS 6
+#else
+  0x0000,   /* +/-0 or +/-DENormalized, depending on associated mantissa. */
+  0xff,     /* +/-INF or +/-NaN for 32bit, NORmalized for 64,128          */
+  0x7ff,    /* +/-INF or +/-NaN for 32 and 64bit, NORmalized for 128      */
+  0x7fff,   /* +/-INF or +/-NaN for 128bit.                               */
+#endif
 };
+#define MAX_EXPONENTS  (sizeof(exponent_table) / sizeof(unsigned long))
 
 unsigned long mantissa_table[] = {
+#ifdef EXHAUSTIVE_TESTS
   0xbeefbeefbeef, /* NOR or DEN or NaN */
   0x000000000000, /* ZERO or INF */
   0x7fffffffffff, /* NOR or DEN or NaN */
-#define MAX_MANTISSAS 3
+#else
+  0x000000000000, /* ZERO or INF */
+  0x7fffffffffff, /* NOR or DEN or NaN */
+#endif
 };
+#define MAX_MANTISSAS (sizeof(mantissa_table) / sizeof(unsigned long))
 
 /* build in 64-bit chunks, low doubleword is zero. */
 static unsigned long * float_vsxargs;
@@ -1522,9 +1557,15 @@ static void build_char_table(void) {
 
    char_args = memalign(32, MAX_CHAR_ARGS_ARRAY_SIZE * sizeof(char));
 
+#ifdef EXHAUSTIVE_TESTS
    for (ichar = 'a'; ichar <= 'z'; ichar++) { char_args[i++] = ichar; }
    for (ichar = '0'; ichar <= '9'; ichar++) { char_args[i++] = ichar; }
    for (ichar = 'A'; ichar <= 'Z'; ichar++) { char_args[i++] = ichar; }
+#else
+   for (ichar = 'a'; ichar <= 'z'; ichar+=6) { char_args[i++] = ichar; }
+   for (ichar = '0'; ichar <= '9'; ichar+=6) { char_args[i++] = ichar; }
+   for (ichar = 'A'; ichar <= 'Z'; ichar+=6) { char_args[i++] = ichar; }
+#endif
 
    char_args[i++] = ' ';
    char_args[i++] = '+';
@@ -1645,7 +1686,7 @@ static void build_vsx_table (void)
    // Permutes work against two (non-paired) VSX regs, so these are
    //  also grouped by twos.
    vsxargs = memalign(16, MAX_VSX_ARRAY_SIZE * sizeof(unsigned long));
-
+#ifdef EXHAUSTIVE_TESTS
    vsxargs[i++] = 0x0000000000000000UL; vsxargs[i++] = 0x0000000000000000UL;
    vsxargs[i++] = 0x0102030405060708UL; vsxargs[i++] = 0x0102010201020102UL;
 
@@ -1663,6 +1704,13 @@ static void build_vsx_table (void)
 
    vsxargs[i++] = 0x0011223344556677UL; vsxargs[i++] = 0x8899aabbccddeeffUL;
    vsxargs[i++] = 0xf0e0d0c0b0a09080UL; vsxargs[i++] = 0x7060504030201000UL;
+#else
+   vsxargs[i++] = 0x0000000000000000UL; vsxargs[i++] = 0x0000000000000000UL;
+   vsxargs[i++] = 0x0102030405060708UL; vsxargs[i++] = 0x0102010201020102UL;
+
+   vsxargs[i++] = 0x0011223344556677UL; vsxargs[i++] = 0x8899aabbccddeeffUL;
+   vsxargs[i++] = 0xf0e0d0c0b0a09080UL; vsxargs[i++] = 0x7060504030201000UL;
+#endif
 
    // these next three groups are specific for vector rotate tests.
    //  bits 11:15,19:23,27:31 of each 32-bit word contain mb,me,sh values.
@@ -1693,12 +1741,16 @@ static void build_vector_permute_table(void)
 
    vpcv = memalign(16, MAX_VPCV_SIZE * sizeof(unsigned long));
 
+#ifdef EXHAUSTIVE_TESTS
    /* These two lines are complementary pairs of each other. */
    vpcv[i++]=0x12021a0817141317ULL; vpcv[i++]=0x100d1b05070f0205ULL;
    vpcv[i++]=0x0d1d0517080b0c08ULL; vpcv[i++]=0x0f12041a18101d1cULL;
    vpcv[i++]=0x100d1b070f020505ULL; vpcv[i++]=0x0e201f1400130105ULL;
    vpcv[i++]=0x0705030a0b01ea0cULL; vpcv[i++]=0x0e0c09010602080dULL;
-
+#else
+   vpcv[i++]=0x12021a0817141317ULL; vpcv[i++]=0x100d1b05070f0205ULL;
+   vpcv[i++]=0x0705030a0b01ea0cULL; vpcv[i++]=0x0e0c09010602080dULL;
+#endif
    nb_vpcv=i;
    AB_DPRINTF("Registered %d permute control vectors \n", nb_vpcv);
 
@@ -1791,9 +1843,11 @@ static void build_packed_decimal_table(void)
 {
    long sign_index;
    long sign_value;
-   int scramble;
    unsigned long i = 0;
    unsigned long value;
+ #ifdef EXHAUSTIVE_TESTS
+   int scramble;
+#endif
 
    if (verbose) printf("%s\n", __FUNCTION__);
 
@@ -1814,6 +1868,7 @@ static void build_packed_decimal_table(void)
         i+=2;
       }
 
+#ifdef EXHAUSTIVE_TESTS
       for (scramble = 1; scramble <= 4; scramble++) {
         packed_decimal_table[i]    = 0x3210321032103210 * scramble;
         packed_decimal_table[i+1]  = sign_value;
@@ -1824,6 +1879,7 @@ static void build_packed_decimal_table(void)
         if (verbose>3) printf("\n");
         i+=2;
       }
+#endif
 
       /* Add some entries that will provide interesting output from
        * the convert TO tests.
@@ -1839,6 +1895,7 @@ static void build_packed_decimal_table(void)
 
       i += 2;
 
+#ifdef EXHAUSTIVE_TESTS
       packed_decimal_table[i]    = 0x0000000000000000;
       packed_decimal_table[i+1]  = sign_value;
       packed_decimal_table[i+1] += 0x0000000098765430;
@@ -1860,6 +1917,7 @@ static void build_packed_decimal_table(void)
       if (verbose>3) printf("\n");
 
       i += 2;
+#endif
 
       packed_decimal_table[i]    = 0x0030000000000000;
       packed_decimal_table[i+1]  = sign_value;
@@ -1910,11 +1968,16 @@ unsigned int national_decimal_sign_codes[] = {
 #define NR_NATIONAL_DECIMAL_SIGNS 2
 
 unsigned int national_decimal_values[] = {
+#ifdef EXHAUSTIVE_TESTS
    0x0030, 0x0031, 0x0032, 0x0033, 0x0034,
    0x0035, 0x0036, 0x0037, 0x0038, 0x0039
+#else
+   0x0030, 0x0031, 
+   0x0035, 0x0039
+#endif
 };
 
-#define NR_NATIONAL_DECIMAL_VALUES 10
+#define NR_NATIONAL_DECIMAL_VALUES (sizeof(national_decimal_values) / sizeof(unsigned int))
 
 static unsigned long * national_decimal_table;
 
@@ -2003,6 +2066,7 @@ static void build_national_decimal_table(void)
          }
          i += 2;
       }
+#ifdef EXHAUSTIVE_TESTS
       { /* a few more for fun */
          national_decimal_table[i]    = 0x0031003200330034;
          national_decimal_table[i+1]  = 0x0035003600370000;
@@ -2026,6 +2090,7 @@ static void build_national_decimal_table(void)
          }
          i += 2;
       }
+#endif
    }
 
    if (verbose > 2) printf("\n");
@@ -2174,22 +2239,36 @@ static void dissect_zoned_decimal(unsigned long dword1, unsigned long dword0,
    printf(" ]");
 }
 
-// Randomly chosen coverage for k includes values: 0,2,4,7,9
-#define SELECTIVE_INCREMENT_ZONED(k) \
+#ifdef EXHAUSTIVE_TESTS
+// Randomly chosen exhaustive coverage for k includes values: 0,2,4,7,9
+# define SELECTIVE_INCREMENT_ZONED(k) \
    if (k == 7) k = 9;                    \
       else if (k == 4) k = 7;            \
          else if (k == 2) k = 4;         \
             else if (k == 0) k = 2;      \
                else k++;
-
-// Randomly chosen coverage for signs includes values: 0,1,4,a,b,f
-#define SELECTIVE_INCREMENT_SIGNS(signs)              \
+// Randomly chosen exhaustive coverage for signs includes values: 0,1,4,a,b,f
+# define SELECTIVE_INCREMENT_SIGNS(signs)              \
          if (signs == 0x0) signs = 0x1;                   \
          else if (signs == 0x1) signs = 0x4;              \
             else if (signs == 0x4) signs = 0xa;           \
                else if (signs == 0xa) signs = 0xb;        \
                   else if (signs == 0xb) signs = 0xf;     \
                      else signs++;
+#else
+// Randomly chosen coverage for k includes values: 0,7,9
+# define SELECTIVE_INCREMENT_ZONED(k) \
+   if (k == 7) k = 9;                 \
+      else if (k == 0) k = 7;      \
+         else k++;
+// Randomly chosen coverage for signs includes values: 0,4,b,f
+# define SELECTIVE_INCREMENT_SIGNS(signs)                  \
+      if (signs == 0x0) signs = 0x4;                      \
+            else if (signs == 0x4) signs = 0xb;           \
+                  else if (signs == 0xb) signs = 0xf;     \
+                     else signs++;
+#endif
+
 
 static void build_zoned_decimal_table(void)
 {

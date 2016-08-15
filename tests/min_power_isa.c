@@ -45,6 +45,11 @@ int main(int argc, char **argv)
    isa_level = 7;
 #endif
 
+#ifdef HAS_ISA_3_0
+   if (debug) printf("HAS_ISA_3_0 is set\n");
+   isa_level = 8;
+#endif
+
    /* return 0 for supported (success), 1 for not supported (failure) */
    if (strcmp (min_isa, "2.05") == 0) {
       return !(isa_level >= 5);
@@ -54,6 +59,9 @@ int main(int argc, char **argv)
 
    } else if (strcmp (min_isa, "2.07") == 0) {
       return !(isa_level >= 7);
+
+   } else if (strcmp (min_isa, "3.0") == 0) {
+      return !(isa_level >= 8);
 
    } else {
       fprintf(stderr, "ERROR: invalid ISA version.  Valid versions numbers are:\n" );

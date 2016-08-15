@@ -224,6 +224,34 @@ enum test_flags {
    PPC_XER_CA         = 0x02000000,
 };
 
+static void test_cnttzw (void)
+{
+   __asm__ __volatile__ ("cnttzw       17, 14");
+}
+
+static void test_cnttzd (void)
+{
+   __asm__ __volatile__ ("cnttzd       17, 14");
+}
+
+static void test_dotted_cnttzw (void)
+{
+   __asm__ __volatile__ ("cnttzw.      17, 14");
+}
+
+static void test_dotted_cnttzd (void)
+{
+   __asm__ __volatile__ ("cnttzd.      17, 14");
+}
+
+static test_list_t testgroup_logical_one[] = {
+   { &test_cnttzw       , "cnttzw"  },
+   { &test_cnttzd       , "cnttzd"  },
+   { &test_dotted_cnttzw, "cnttzw." },
+   { &test_dotted_cnttzd, "cnttzd." },
+   { NULL               , NULL      },
+};
+
 static void test_modsw (void)
 {
    __asm__ __volatile__ ("modsw          17, 14, 15");
@@ -250,6 +278,60 @@ static test_list_t testgroup_ia_ops_two[] = {
     { &test_modsd, "modsd" },
     { &test_modud, "modud" },
     { NULL       , NULL             },
+};
+
+static void test_dotted_extswsli (void)
+{
+   switch(x_shift) {
+   case SH_0:
+      __asm__ __volatile__ ("extswsli. %0, %1, %2" : "=r" (r17) : "r" (r14), "i" (SH_0) );
+      break;
+
+   case SH_1:
+      __asm__ __volatile__ ("extswsli. %0, %1, %2" : "=r" (r17) : "r" (r14), "i" (SH_1) );
+      break;
+
+   case SH_2:
+      __asm__ __volatile__ ("extswsli. %0, %1, %2" : "=r" (r17) : "r" (r14), "i" (SH_2) );
+      break;
+
+   case SH_3:
+      __asm__ __volatile__ ("extswsli. %0, %1, %2" : "=r" (r17) : "r" (r14), "i" (SH_3) );
+      break;
+
+   default:
+      printf("Unhandled shift value for extswsli. %d\n", x_shift);
+   }
+}
+
+static void test_extswsli (void)
+{
+   switch(x_shift) {
+   case SH_0:
+      __asm__ __volatile__ ("extswsli %0, %1, %2" : "=r" (r17) : "r" (r14), "i"(SH_0));
+      break;
+
+   case SH_1:
+      __asm__ __volatile__ ("extswsli %0, %1, %2" : "=r" (r17) : "r" (r14), "i"(SH_1));
+      break;
+
+   case SH_2:
+      __asm__ __volatile__ ("extswsli %0, %1, %2" : "=r" (r17) : "r" (r14), "i"(SH_2));
+      break;
+
+   case SH_3:
+      __asm__ __volatile__ ("extswsli %0, %1, %2" : "=r" (r17) : "r" (r14), "i"(SH_3));
+      break;
+
+   default:
+      printf("Unhandled shift value for extswsli %d\n", x_shift);
+   }
+}
+
+static test_list_t testgroup_shifted_one[] = {
+      { &test_extswsli       , "extswsli " },
+      { &test_dotted_extswsli, "extswsli." },
+      { NULL                 , NULL        },
 };
 
 static void test_maddhd (void)
@@ -288,57 +370,6 @@ static test_list_t testgroup_vsx_xxpermute[] = {
    { &test_xxperm , "xxperm"  },
    { &test_xxpermr, "xxpermr" },
    { NULL         , NULL      },
-};
-
-static void test_dotted_extswsli (void)
-{
-#define EXTSWSLI_dotted_SHIFT(SH_X) \
-   __asm__ __volatile__ ("extswsli. %0,%1,%2" : "=r" (r17) : "r" (r14), "i" (SH_X) );
-   switch(x_shift) {
-   case SH_0:
-      EXTSWSLI_dotted_SHIFT(SH_0);
-      break;
-   case SH_1:
-      EXTSWSLI_dotted_SHIFT(SH_1);
-      break;
-   case SH_2:
-      EXTSWSLI_dotted_SHIFT(SH_2);
-      break;
-   case SH_3:
-      EXTSWSLI_dotted_SHIFT(SH_3);
-      break;
-   default:
-      printf("Unhandled shift value for extswsli. %d\n",x_shift);
-   }
-}
-
-static void test_extswsli (void)
-{
-#define EXTSWSLI_SHIFT(x) \
-   __asm__ __volatile__ ("extswsli %0,%1,%2":"=r" (r17):"r" (r14),"i"(x));
-
-   switch(x_shift) {
-   case SH_0:
-      EXTSWSLI_SHIFT(SH_0);
-      break;
-   case SH_1:
-      EXTSWSLI_SHIFT(SH_1);
-      break;
-   case SH_2:
-      EXTSWSLI_SHIFT(SH_2);
-      break;
-   case SH_3:
-      EXTSWSLI_SHIFT(SH_3);
-      break;
-   default:
-      printf("Unhandled shift value for extswsli %d\n",x_shift);
-   }
-}
-
-static test_list_t testgroup_shifted_one[] = {
-   { &test_extswsli,  "extswsli ",},
-   { &test_dotted_extswsli, "extswsli.",},
-   {           NULL,         NULL,},
 };
 
 static void test_vabsdub(void) {
@@ -1031,6 +1062,22 @@ static void test_vprtybq(void) {
    __asm__ __volatile__ ("vprtybq %0, %1" : "=v"(vec_xt) : "v"(vec_xb));
 }
 
+static void test_vctzb(void) {
+   __asm__ __volatile__ ("vctzb %0, %1" : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_vctzh(void) {
+   __asm__ __volatile__ ("vctzh %0, %1" : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_vctzw(void) {
+   __asm__ __volatile__ ("vctzw %0, %1" : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_vctzd(void) {
+   __asm__ __volatile__ ("vctzd %0, %1" : "=v"(vec_xt) : "v"(vec_xb));
+}
+
 static test_list_t testgroup_vector_extend_sign[] = {
    { &test_vextsb2w, "vextsb2w" },
    { &test_vextsb2d, "vextsb2d" },
@@ -1042,6 +1089,10 @@ static test_list_t testgroup_vector_extend_sign[] = {
    { &test_vprtybw , "vprtybw " },
    { &test_vprtybd , "vprtybd " },
    { &test_vprtybq , "vprtybq " },
+   { &test_vctzb   , "vctzb   " },
+   { &test_vctzh   , "vctzh   " },
+   { &test_vctzw   , "vctzw   " },
+   { &test_vctzd   , "vctzd   " },
    { NULL          , NULL       },
 };
 
@@ -1224,8 +1275,8 @@ static test_list_t testgroup_vector_scalar_data_class[] = {
    { &test_xststdcqp, "xststdcqp " },
    { &test_xststdcdp, "xststdcdp " },
    { &test_xststdcsp, "xststdcsp " },
-   { &test_xvtstdcdp, "xvtstdcdp " },
    { &test_xvtstdcsp, "xvtstdcsp " },
+   { &test_xvtstdcdp, "xvtstdcdp " },
    { NULL           , NULL         },
 };
 
@@ -1370,6 +1421,18 @@ static test_list_t testgroup_char_compare[] = {
    { NULL          , NULL        },
 };
 
+static void test_bcdtrunc_p0(void) {
+   __asm__ __volatile__ ("bcdtrunc.  %0, %1, %2, 0": "=v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_bcdtrunc_p1(void) {
+   __asm__ __volatile__ ("bcdtrunc.  %0, %1, %2, 1": "=v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_bcdutrunc(void) {
+   __asm__ __volatile__ ("bcdutrunc. %0, %1, %2  ": "=v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
 static void test_bcdadd_p0(void) {
    __asm__ __volatile__ ("bcdadd.   %0, %1, %2, 0" : "=v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
 }
@@ -1446,6 +1509,34 @@ static void test_bcdctn(void) {
    __asm__ __volatile__ ("bcdctn.   %0, %1     " : "=v"(vec_xt) : "v"(vec_xb));
 }
 
+static void test_vmul10uq(void) {
+   __asm__ __volatile__ ("vmul10uq   %0, %1     " : "=v"(vec_xt) : "v"(vec_xa));
+}
+
+static void test_vmul10cuq(void) {
+   __asm__ __volatile__ ("vmul10cuq  %0, %1     " : "=v"(vec_xt) : "v"(vec_xa));
+}
+
+static void test_vmul10euq(void) {
+   __asm__ __volatile__ ("vmul10euq  %0, %1, %2  " : "=v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_vmul10ecuq(void) {
+   __asm__ __volatile__ ("vmul10ecuq %0, %1, %2  " : "=v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_bcdctsq(void) {
+   __asm__ __volatile__ ("bcdctsq.   %0, %1     " : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_bcdcfsq_p0(void) {
+   __asm__ __volatile__ ("bcdcfsq.   %0, %1, 0   " : "=v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_bcdcfsq_p1(void) {
+   __asm__ __volatile__ ("bcdcfsq.   %0, %1, 1   " : "=v"(vec_xt) : "v"(vec_xb));
+}
+
 static test_list_t testgroup_bcd_misc[] = {
    { &test_bcdadd_p0   , "bcdadd. p0"    },
    { &test_bcdadd_p1   , "bcdadd. p1"    },
@@ -1455,7 +1546,7 @@ static test_list_t testgroup_bcd_misc[] = {
    { &test_bcdcfn_p1   , "bcdcfn. p1"    },
    { &test_bcdcfz_p0   , "bcdcfz. p0"    }, /* The p0, p1 substrings are used later */
    { &test_bcdcfz_p1   , "bcdcfz. p1"    }, /* " " */
-   { &test_bcdctn      , "bcdctn."       },
+   { &test_bcdctn      , "bcdctn.   "    },
    { &test_bcdctz_p0   , "bcdctz. p0"    }, /* note: p0, p1 substrings are used later */
    { &test_bcdctz_p1   , "bcdctz. p1"    }, /* " " */
    { &test_bcdcpsgn    , "bcdcpsgn."     },
@@ -1466,6 +1557,16 @@ static test_list_t testgroup_bcd_misc[] = {
    { &test_bcdus       , "bcdus. "       },
    { &test_bcdsr_p0    , "bcdsr. p0"     },
    { &test_bcdsr_p1    , "bcdsr. p1"     },
+   { &test_bcdtrunc_p0 , "bcdtrunc. p0"  },
+   { &test_bcdtrunc_p1 , "bcdtrunc. p1"  },
+   { &test_bcdutrunc   , "bcdutrunc. "   },
+   { &test_vmul10uq    , "vmul10uq "     },
+   { &test_vmul10cuq   , "vmul10cuq "    },
+   { &test_vmul10euq   , "vmul10euq "    },
+   { &test_vmul10ecuq  , "vmul10ecuq "   },
+   { &test_bcdctsq     , "bcdctsq."      },
+   { &test_bcdcfsq_p0  , "bcdcfsq. p0"   },
+   { &test_bcdcfsq_p1  , "bcdcfsq. p1"   },
    { NULL              , NULL            },
 };
 
@@ -1615,13 +1716,70 @@ static void test_xsiexpdp(void) {
    __asm__ __volatile__ ("xsiexpdp   %0, %1, %2 " : "+wa" (vec_xt): "r" (r14), "r" (r15));
 }
 
+static void test_xscvhpdp(void) {
+   __asm__ __volatile__ ("xscvhpdp %x0, %x1 " : "+wa" (vec_xt) : "wa" (vec_xb));
+}
+
+static void test_xscvdphp(void) {
+   __asm__ __volatile__ ("xscvdphp %x0, %x1 " : "+wi" (vec_xt) : "wi" (vec_xb));
+}
+
+static void test_xvcvhpsp(void) {
+   __asm__ __volatile__ ("xvcvhpsp %x0, %x1 " : "+ww" (vec_xt) : "ww" (vec_xb));
+}
+
+static void test_xvcvsphp(void) {
+   __asm__ __volatile__ ("xvcvsphp %x0, %x1 " : "+ww" (vec_xt) : "ww" (vec_xb));
+}
+
 static test_list_t testgroup_vector_scalar_two_double[] = {
    { &test_xsiexpdp, "xsiexpdp" },
+   { &test_xscvhpdp, "xscvhpdp" },
+   { &test_xscvdphp, "xscvdphp" },
+   { &test_xvcvhpsp, "xvcvhpsp" },
+   { &test_xvcvsphp, "xvcvsphp" },
    { NULL          , NULL       },
 };
 
+
 static void test_xsabsqp(void) {
    __asm__ __volatile__ ("xsabsqp %0, %1" : "+v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_xscvdpqp(void) {
+   __asm__ __volatile__ ("xscvdpqp %0, %1" : "+v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_xscvqpdp(void) {
+   __asm__ __volatile__ ("xscvqpdp %0, %1" : "+v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_xscvqpdpo(void) {
+   __asm__ __volatile__ ("xscvqpdpo %0, %1" : "+v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_xscvqpsdz(void) {
+   __asm__ __volatile__ ("xscvqpsdz %0, %1" : "+v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_xscvqpswz(void) {
+   __asm__ __volatile__ ("xscvqpswz %0, %1" : "+v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_xscvqpudz(void) {
+   __asm__ __volatile__ ("xscvqpudz %0, %1" : "+v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_xscvqpuwz(void) {
+   __asm__ __volatile__ ("xscvqpuwz %0, %1" : "+v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_xscvsdqp(void) {
+   __asm__ __volatile__ ("xscvsdqp %0, %1" : "+v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_xscvudqp(void) {
+   __asm__ __volatile__ ("xscvudqp %0, %1" : "+v"(vec_xt) : "v"(vec_xb));
 }
 
 static void test_xsxexpqp(void) {
@@ -1640,26 +1798,125 @@ static void test_xsnabsqp(void) {
    __asm__ __volatile__ ("xsnabsqp %0, %1" : "+v"(vec_xt) : "v"(vec_xb));
 }
 
+static void test_xssqrtqp(void) {
+   __asm__ __volatile__ ("xssqrtqp %0, %1" : "+v"(vec_xt) : "v"(vec_xb));
+}
+
+static void test_xssqrtqpo(void) {
+   __asm__ __volatile__ ("xssqrtqpo %0, %1" : "+v"(vec_xt) : "v"(vec_xb));
+}
+
 static test_list_t testgroup_vector_scalar_two_quad[] = {
    { &test_xsabsqp  , "xsabsqp "   },
+   { &test_xscvdpqp , "xscvdpqp "  },
+   { &test_xscvqpdp , "xscvqpdp "  },
+   { &test_xscvqpdpo, "xscvqpdpo " },
+   { &test_xscvqpsdz, "xscvqpsdz " },
+   { &test_xscvqpswz, "xscvqpswz " },
+   { &test_xscvqpudz, "xscvqpudz " },
+   { &test_xscvqpuwz, "xscvqpuwz " },
+   { &test_xscvsdqp , "xscvsdqp "  },
+   { &test_xscvudqp , "xscvudqp "  },
    { &test_xsxexpqp , "xsxexpqp "  },
    { &test_xsxsigqp , "xsxsigqp "  },
    { &test_xsnegqp  , "xsnegqp "   },
    { &test_xsnabsqp , "xsnabsqp "  },
+   { &test_xssqrtqp , "xssqrtqp "  },
+   { &test_xssqrtqpo, "xssqrtqpo " },
    { NULL           , NULL         },
 };
 
+static void test_xsaddqp(void) {
+   __asm__ __volatile__ ("xsaddqp    %0, %1, %2" : "+v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_xsaddqpo(void) {
+   __asm__ __volatile__ ("xsaddqpo   %0, %1, %2" : "+v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
 static void test_xscpsgnqp(void) {
    __asm__ __volatile__ ("xscpsgnqp  %0, %1, %2" : "+v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_xsdivqp(void) {
+   __asm__ __volatile__ ("xsdivqp    %0, %1, %2" : "+v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_xsdivqpo(void) {
+   __asm__ __volatile__ ("xsdivqpo   %0, %1, %2" : "+v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
 }
 
 static void test_xsiexpqp(void) {
    __asm__ __volatile__ ("xsiexpqp   %0, %1, %2" : "+v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
 }
 
+static void test_xsmaddqp(void) {
+   __asm__ __volatile__ ("xsmaddqp   %0, %1, %2" : "+v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_xsmaddqpo(void) {
+   __asm__ __volatile__ ("xsmaddqpo  %0, %1, %2" : "+v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_xsmsubqp(void) {
+   __asm__ __volatile__ ("xsmsubqp   %0, %1, %2" : "+v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_xsmsubqpo(void) {
+   __asm__ __volatile__ ("xsmsubqpo  %0, %1, %2" : "+v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_xsmulqp(void) {
+   __asm__ __volatile__ ("xsmulqp   %0, %1, %2" : "+v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_xsmulqpo(void) {
+   __asm__ __volatile__ ("xsmulqpo  %0, %1, %2" : "+v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_xsnmaddqp(void) {
+   __asm__ __volatile__ ("xsnmaddqp  %0, %1, %2" : "+v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_xsnmaddqpo(void) {
+   __asm__ __volatile__ ("xsnmaddqpo %0, %1, %2" : "+v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_xsnmsubqp(void) {
+   __asm__ __volatile__ ("xsnmsubqp  %0, %1, %2" : "+v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_xsnmsubqpo(void) {
+   __asm__ __volatile__ ("xsnmsubqpo %0, %1, %2" : "+v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_xssubqp(void) {
+   __asm__ __volatile__ ("xssubqp    %0, %1, %2" : "+v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
+static void test_xssubqpo(void) {
+   __asm__ __volatile__ ("xssubqpo   %0, %1, %2" : "+v"(vec_xt) : "v"(vec_xa), "v"(vec_xb));
+}
+
 static test_list_t testgroup_vector_three_quad[] = {
+   { &test_xsaddqp   , "xsaddqp "    },
+   { &test_xsaddqpo  , "xsaddqpo "   },
    { &test_xscpsgnqp , "xscpsgnqp "  },
+   { &test_xsdivqp   , "xsdivqp "    },
+   { &test_xsdivqpo  , "xsdivqpo "   },
    { &test_xsiexpqp  , "xsiexpqp "   },
+   { &test_xsmaddqp  , "xsmaddqp "   },
+   { &test_xsmaddqpo , "xsmaddqpo "  },
+   { &test_xsmsubqp  , "xsmsubqp "   },
+   { &test_xsmsubqpo , "xsmsubqpo "  },
+   { &test_xsmulqp   , "xsmulqp "    },
+   { &test_xsmulqpo  , "xsmulqpo "   },
+   { &test_xsnmaddqp , "xsnmaddqp "  },
+   { &test_xsnmaddqpo, "xsnmaddqpo " },
+   { &test_xsnmsubqp , "xsnmsubqp "  },
+   { &test_xsnmsubqpo, "xsnmsubqpo " },
+   { &test_xssubqp   , "xssubqp "    },
+   { &test_xssubqpo  , "xssubqpo "   },
    { NULL            , NULL          },
 };
 
@@ -1739,6 +1996,79 @@ static test_list_t testgroup_vector_scalar_compare_quads[] = {
    { NULL            , NULL         },
 };
 
+#define XSRQPI(R,RMC)                                                        \
+   SET_FPSCR_ZERO                                                            \
+   SET_CR_ZERO                                                               \
+   __asm__ __volatile__                                                      \
+      ("xsrqpi %1, %0, %2, %3" : "=v"(vec_xt) : "i"(R), "v"(vec_xb), "i"(RMC)); \
+   GET_CR(local_cr);                                                         \
+   GET_FPSCR(local_fpscr);
+
+#define XSRQPIX(R,RMC)                                                       \
+   SET_FPSCR_ZERO                                                            \
+   SET_CR_ZERO                                                               \
+   __asm__ __volatile__                                                      \
+      ("xsrqpix %1, %0, %2, %3" : "=v"(vec_xt) : "i"(R), "v"(vec_xb), "i"(RMC));\
+   GET_CR(local_cr);                                                         \
+   GET_FPSCR(local_fpscr);
+
+#define XSRQPXP(R,RMC)                                                       \
+   SET_FPSCR_ZERO                                                            \
+   SET_CR_ZERO                                                               \
+   __asm__ __volatile__                                                      \
+      ("xsrqpxp %1, %0, %2, %3" : "=v"(vec_xt) : "i"(R), "v"(vec_xb), "i"(RMC));\
+   GET_CR(local_cr);                                                         \
+   GET_FPSCR(local_fpscr);
+
+/* For the scalar round to quad instructions, x_index is used to key into
+ * two fields; x_index bit [2] becomes the one-bit 'R' and x_index bits [0, 1]
+ * becomes the two-bit 'RMC'.
+ */
+static void test_xsrqpi(void) {
+   switch(x_index) {
+   case 0: XSRQPI(0, 0); break;
+   case 1: XSRQPI(0, 1); break;
+   case 2: XSRQPI(0, 2); break;
+   case 3: XSRQPI(0, 3); break;
+   case 4: XSRQPI(1, 0); break;
+   case 5: XSRQPI(1, 1); break;
+   case 6: XSRQPI(1, 2); break;
+   case 7: XSRQPI(1, 3); break;
+   }
+}
+static void test_xsrqpix(void) {
+   switch(x_index) {
+   case 0: XSRQPIX(0, 0); break;
+   case 1: XSRQPIX(0, 1); break;
+   case 2: XSRQPIX(0, 2); break;
+   case 3: XSRQPIX(0, 3); break;
+   case 4: XSRQPIX(1, 0); break;
+   case 5: XSRQPIX(1, 1); break;
+   case 6: XSRQPIX(1, 2); break;
+   case 7: XSRQPIX(1, 3); break;
+   }
+}
+
+static void test_xsrqpxp(void) {
+   switch(x_index) {
+   case 0: XSRQPXP(0, 0); break;
+   case 1: XSRQPXP(0, 1); break;
+   case 2: XSRQPXP(0, 2); break;
+   case 3: XSRQPXP(0, 3); break;
+   case 4: XSRQPXP(1, 0); break;
+   case 5: XSRQPXP(1, 1); break;
+   case 6: XSRQPXP(1, 2); break;
+   case 7: XSRQPXP(1, 3); break;
+   }
+}
+
+static test_list_t testgroup_vector_scalar_rounding_quads[] = {
+   { &test_xsrqpi , "xsrqpi " },
+   { &test_xsrqpix, "xsrqpix" },
+   { &test_xsrqpxp, "xsrqpxp" },
+   { NULL         , NULL      },
+};
+
 
 /* ###### begin all_tests table.  */
 
@@ -1758,9 +2088,19 @@ static test_group_table_t all_tests[] = {
       PPC_INTEGER | PPC_ARITH | PPC_TWO_ARGS,
    },
    {
+      testgroup_shifted_one,
+      "ppc one argument plus shift",
+      PPC_MISC | PPC_CR | PPC_TWO_ARGS,
+   },
+   {
       testgroup_three_args,
       "ppc three parameter ops",
       PPC_INTEGER | PPC_ARITH | PPC_THREE_ARGS,
+   },
+   {
+      testgroup_logical_one,
+      "ppc count zeros",
+      PPC_INTEGER | PPC_LOGICAL | PPC_ONE_ARG,
    },
    {
       testgroup_set_boolean,
@@ -1805,12 +2145,17 @@ static test_group_table_t all_tests[] = {
    {
       testgroup_vector_scalar_compare_quads,
       "ppc vector scalar compare exponents quads",
-      PPC_ALTIVEC_QUAD | PPC_COMPARE,
+      PPC_ALTIVEC_QUAD | PPC_COMPARE | PPC_COMPARE_ARGS,
+   },
+   {
+      testgroup_vector_scalar_rounding_quads,
+      "ppc vector scalar rounding quads",
+      PPC_ALTIVEC_QUAD | PPC_ROUND,
    },
    {
       testgroup_vsx_xxpermute,
       "ppc vector permutes",
-      PPC_ALTIVEC | PPC_PERMUTE | PPC_THREE_ARGS,
+      PPC_ALTIVEC | PPC_PERMUTE,
    },
    {
       testgroup_vector_four,
@@ -1846,11 +2191,6 @@ static test_group_table_t all_tests[] = {
       testgroup_vectorscalar_move_tofrom,
       "ppc vector scalar move to/from",
       PPC_MISC | PPC_TWO_ARGS,
-   },
-   {
-      testgroup_shifted_one,
-      "ppc one argument plus shift",
-      PPC_MISC | PPC_THREE_ARGS,
    },
    {
       testgroup_vector_scalar_compare_exp_double,
@@ -1916,6 +2256,47 @@ static void testfunction_int_two_args (const char* instruction_name,
                 (long unsigned)iargs[j], (long unsigned)res,
                 cr);
       }
+      if (verbose) printf("\n");
+   }
+}
+
+#define instruction_sets_cr0_to_zero(inst_name)   \
+   ( (strncmp(inst_name, "cnttzw.", 7) == 0 ) ||   \
+     (strncmp(inst_name, "cnttzd.", 7) == 0 ) )
+
+static void testfunction_logical_one (const char* instruction_name,
+                                      test_func_t func,
+                                      unsigned int test_flags) {
+   int i;
+   volatile HWord_t res;
+   volatile unsigned int cr;
+
+   VERBOSE_FUNCTION_CALLOUT
+
+   for (i = 0; i < nb_iargs; i++) {
+
+      r14 = iargs[i];
+
+      /* The logical instructions will set CR fields to zero, so
+       * lets start with some non zero content in CR0.
+       */
+      SET_CR0_FIELD(0xF);
+
+      (*func)();
+
+      res = r17;
+      GET_CR(cr);
+
+      printf("%s %016lx => %016lx",
+             instruction_name, (long unsigned)iargs[i], (long unsigned)res);
+
+      if (instruction_sets_cr0_to_zero(instruction_name)
+          && ((cr & 0xF0000000) != 0 )) {
+         /* The dotted version sets the CR0 to 0, verify */
+         printf(" Expected cr0 to be zero, it is (%08x)\n", cr & 0xF0000000);
+      }
+      printf("\n");
+
       if (verbose) printf("\n");
    }
 }
@@ -2775,6 +3156,41 @@ static void testfunction_vector_scalar_compare_quads (const char* instruction_na
    }
 }
 
+static void testfunction_vector_scalar_rounding_quads (const char* instruction_name,
+                                                       test_func_t test_function,
+                                                       unsigned int ignore_test_flags) {
+   /* Uses global variable x_index */
+   /* For this function, x_index is used as a key into R and RMC values.
+    * Also note, the fpscr.rn value may be used to affect the rounding mode.
+    * that variation is not evaluated here. */
+   int j;
+
+   VERBOSE_FUNCTION_CALLOUT
+
+   for (j = 0; j < nb_float_vsxargs - 1; j++) {
+      for (x_index = 0; x_index < 8; x_index++) {
+         vec_xb[0] = float_vsxargs[j];
+         vec_xb[1] = float_vsxargs[j+1];
+
+         printf("%s %016lx%016lx (R=%x) (RMC=%x) => ",
+                instruction_name,
+                vec_xb[1], vec_xb[0],
+                (x_index & 0x4) >> 2, x_index & 0x3);
+
+         SET_CR_ZERO
+         SET_FPSCR_ZERO
+
+         (*test_function)();
+
+         GET_FPSCR(local_fpscr);
+
+         printf("%016lx%016lx", vec_xt[1], vec_xt[0]);
+         dissect_fpscr(local_fpscr);
+         printf("\n");
+      }
+   }
+}
+
 static void testfunction_vector_three_special (const char* instruction_name,
                                                test_func_t test_function,
                                                unsigned int ignore_test_flags){
@@ -3191,18 +3607,19 @@ static void testfunction_pc_immediate_misc (const char* instruction_name,
 
 /* ######## begin grand testing loops. */
 typedef struct insn_sel_flags_t_struct {
-   int one_arg, two_args, three_args, four_args, cmp_args;
-   int arith, logical, compare, popcnt, ldst, insert_extract;
-   int integer, floats, p405, altivec, altivec_double, altivec_quad;
-   int faltivec, vector, misc, dfp, bcd, no_op, pc_immediate;
-   int cr;
+   unsigned int one_arg, two_args, three_args, four_args, cmp_args, ld_args, st_args,
+      one_imed_args;
+   unsigned int arith, logical, compare, popcnt, ldst, insert_extract, permute, round;
+   unsigned int integer, altivec, altivec_quad, altivec_double, dfp, bcd, misc,
+      no_op, pc_immediate;
+   unsigned int cr;
 } insn_sel_flags_t;
 
 static void do_tests ( insn_sel_flags_t seln_flags)
 {
    test_group_t group_function;
    test_list_t *tests;
-   int nb_args, type, family;
+   unsigned int nb_args, type, family;
    int i, j, n;
 
    n = 0;
@@ -3231,7 +3648,10 @@ static void do_tests ( insn_sel_flags_t seln_flags)
           (nb_args == 2 && !seln_flags.two_args)   ||
           (nb_args == 3 && !seln_flags.three_args) ||
           (nb_args == 4 && !seln_flags.four_args)  ||
-          (nb_args == 5 && !seln_flags.cmp_args))
+          (nb_args == 5 && !seln_flags.cmp_args)   ||
+          (nb_args == 6 && !seln_flags.ld_args)    ||
+          (nb_args == 7 && !seln_flags.st_args)    ||
+          (nb_args == 8 && !seln_flags.one_imed_args))
          continue;
 
       /* Check instruction type */
@@ -3246,15 +3666,21 @@ static void do_tests ( insn_sel_flags_t seln_flags)
 
       /* Check instruction family */
       family = all_tests[i].flags & PPC_FAMILY_MASK;
-      if ((family == PPC_INTEGER  && !seln_flags.integer) ||
-          (family == PPC_ALTIVEC  && !seln_flags.altivec) ||
-          (family == PPC_ALTIVEC_DOUBLE  && !seln_flags.altivec_double) ||
-          (family == PPC_ALTIVEC_QUAD  && !seln_flags.altivec_quad) ||
-          (family == PPC_DFP   && !seln_flags.dfp) ||
-          (family == PPC_BCD   && !seln_flags.bcd) ||
-          (family == PPC_NO_OP && !seln_flags.no_op) ||
-          (family == PPC_PC_IMMEDIATE && !seln_flags.pc_immediate) ||
-          (family == PPC_MISC  && !seln_flags.misc))
+
+      /* do each check each case individually to reduce computation */
+      if (family == PPC_INTEGER  && seln_flags.integer == 0) continue;
+      if (family == PPC_ALTIVEC  && seln_flags.altivec == 0) continue;
+      if (family == PPC_DFP   && seln_flags.dfp == 0)        continue;
+      if (family == PPC_BCD   && seln_flags.bcd == 0)        continue;
+      if (family == PPC_NO_OP && seln_flags.no_op == 0)      continue;
+      if (family == PPC_MISC  && seln_flags.misc == 0)       continue;
+      if (family == PPC_ALTIVEC_DOUBLE  && seln_flags.altivec_double == 0)
+         continue;
+
+      if (family == PPC_ALTIVEC_QUAD  && seln_flags.altivec_quad == 0)
+         continue;
+
+      if (family == PPC_PC_IMMEDIATE && seln_flags.pc_immediate == 0)
          continue;
 
       /* Check flags update */
@@ -3291,6 +3717,10 @@ static void do_tests ( insn_sel_flags_t seln_flags)
                group_function = &testfunction_set_boolean;
                break;
 
+            case PPC_ONE_ARG:
+               group_function = &testfunction_logical_one;
+               break;
+
             default:
                printf("ERROR: PPC_LOGICAL, unhandled number of arguments. 0x%08x\n",
                       nb_args);
@@ -3304,7 +3734,7 @@ static void do_tests ( insn_sel_flags_t seln_flags)
          default:
             printf("ERROR: PPC_INTEGER, unhandled type  0x%08x\n", type);
             continue;
-         } /* switch (nb_args) */
+         } /* switch (type) */
          break;
 
       case PPC_ALTIVEC:
@@ -3409,7 +3839,6 @@ static void do_tests ( insn_sel_flags_t seln_flags)
                printf("ERROR: PPC_MISC, unhandled number of arguments. 0x%08x\n", nb_args);
                continue;
             }  /* switch(PPC_MISC, nb_args) */
-
          break;
 
       case PPC_ALTIVEC_QUAD:
@@ -3428,6 +3857,10 @@ static void do_tests ( insn_sel_flags_t seln_flags)
 
          case PPC_COMPARE:
             group_function = &testfunction_vector_scalar_compare_quads;
+            break;
+
+         case PPC_ROUND:
+            group_function = &testfunction_vector_scalar_rounding_quads;
             break;
 
          default:
@@ -3456,6 +3889,12 @@ static void do_tests ( insn_sel_flags_t seln_flags)
                printf("ERROR: PPC_ALTIVEC_DOUBLE, PPC_COMPARE, unhandled number of arguments. 0x%08x\n", nb_args);
                continue;
             }  /* switch(PPC_COMPARE, nb_args) */
+            break;
+
+         default:
+            printf("ERROR: PPC_ALTIVEC_DOUBLE, unhandled type. %d\n", type);
+            continue;
+
          }   /* switch(type) */
          break;
 
@@ -3537,25 +3976,30 @@ int main (int argc, char **argv)
    flags.three_args      = 1;
    flags.four_args       = 1;
    flags.cmp_args        = 1;
+   flags.ld_args         = 1;
+   flags.st_args         = 1;
+   flags.one_imed_args   = 1;
 
    // Type
    flags.arith           = 1;
    flags.logical         = 1;
-   flags.popcnt          = 1;
    flags.compare         = 1;
    flags.ldst            = 1;
+   flags.popcnt          = 1;
    flags.insert_extract  = 1;
+   flags.permute         = 1;
+   flags.round           = 1;
 
    // Family
    flags.integer         = 0;
-   flags.misc            = 0;
-   flags.dfp             = 0;
-   flags.bcd             = 0;
-   flags.no_op           = 0;
-   flags.pc_immediate    = 0;
    flags.altivec         = 0;
    flags.altivec_double  = 0;
    flags.altivec_quad    = 0;
+   flags.dfp             = 0;
+   flags.bcd             = 0;
+   flags.misc            = 0;
+   flags.no_op           = 0;
+   flags.pc_immediate    = 0;
 
    // Flags
    flags.cr              = 2;
@@ -3644,6 +4088,9 @@ int main (int argc, char **argv)
       printf("    three_args     = %d\n", flags.three_args);
       printf("    four_args      = %d\n", flags.four_args);
       printf("    cmp_args       = %d\n", flags.cmp_args);
+      printf("    load_args      = %d\n", flags.ld_args);
+      printf("    store_args     = %d\n", flags.st_args);
+      printf("    one_im_args    = %d\n", flags.one_imed_args);
       printf("  type: \n");
       printf("    arith          = %d\n", flags.arith);
       printf("    logical        = %d\n", flags.logical);
@@ -3657,6 +4104,7 @@ int main (int argc, char **argv)
       printf("    altivec quad   = %d\n", flags.altivec_quad);
       printf("    DFP            = %d\n", flags.dfp);
       printf("    BCD            = %d\n", flags.bcd);
+      printf("    PC immediate shifted = %d\n", flags.pc_immediate);
       printf("    misc           = %d\n", flags.misc);
       printf("  cr update: \n");
       printf("    cr             = %d\n", flags.cr);

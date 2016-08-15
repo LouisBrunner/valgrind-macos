@@ -498,6 +498,8 @@ const HChar* showPPCUnaryOp ( PPCUnaryOp op ) {
    case Pun_NEG:   return "neg";
    case Pun_CLZ32: return "cntlzw";
    case Pun_CLZ64: return "cntlzd";
+   case Pun_CTZ32: return "cnttzw";
+   case Pun_CTZ64: return "cnttzd";
    case Pun_EXTSW: return "extsw";
    default: vpanic("showPPCUnaryOp");
    }
@@ -550,6 +552,31 @@ const HChar* showPPCFpOp ( PPCFpOp op ) {
       case Pfp_FRIN:   return "frin";
       case Pfp_FRIP:   return "frip";
       case Pfp_FRIZ:   return "friz";
+      case Pfp_FPADDQ:     return "xsaddqp";
+      case Pfp_FPSUBQ:     return "xsubqp";
+      case Pfp_FPMULQ:     return "xsmulqp";
+      case Pfp_FPDIVQ:     return "xsdivqp";
+      case Pfp_FPMULADDQ:        return "xsmaddqp";
+      case Pfp_FPMULSUBQ:        return "xsmsubqp";
+      case Pfp_FPNEGMULADDQ:     return "xsnmaddqp";
+      case Pfp_FPNEGMULSUBQ:     return "xsnmsubqp";
+      case Pfp_FPADDQRNDODD:     return "xsaddqpo";
+      case Pfp_FPSUBQRNDODD:     return "xsubqpo";
+      case Pfp_FPMULQRNDODD:     return "xsmulqpo";
+      case Pfp_FPDIVQRNDODD:     return "xsaddqpo";
+      case Pfp_FPMULADDQRNDODD:      return "xsmaddqpo";
+      case Pfp_FPMULSUBQRNDODD:      return "xsmsubqpo";
+      case Pfp_FPNEGMULADDQRNDODD:   return "xsnmaddqpo";
+      case Pfp_FPNEGMULSUBQRNDODD:   return "xsnmsubqpo";
+      case Pfp_FPQTOD:               return "xscvqpdp";
+      case Pfp_FPQTODRNDODD:         return "xscvqpdpo";
+      case Pfp_FPDTOQ:               return "xscvdpqp";
+      case Pfp_IDSTOQ:               return "xscvsdqp";
+      case Pfp_IDUTOQ:               return "xscvudqp";
+      case Pfp_TRUNCFPQTOISD:        return "xscvqpsdz";
+      case Pfp_TRUNCFPQTOISW:        return "xscvqpswz";
+      case Pfp_TRUNCFPQTOIUD:        return "xscvqpudz";
+      case Pfp_TRUNCFPQTOIUW:        return "xscvqpuwz";
       case Pfp_DFPADD:     return "dadd";
       case Pfp_DFPADDQ:    return "daddq";
       case Pfp_DFPSUB:     return "dsub";
@@ -650,6 +677,20 @@ const HChar* showPPCAvOp ( PPCAvOp op ) {
    /* BCD */
    case Pav_BCDAdd:     return "bcdadd.";  // qw
    case Pav_BCDSub:     return "bcdsub.";  // qw
+   case Pav_I128StoBCD128: return  "bcdcfsq.";  //qw
+   case Pav_BCD128toI128S: return  "bcdctsq.";  //qw
+
+   /* I128 mult by 10 */
+   case Pav_MulI128by10:       return  "vmul10uq";  //qw
+   case Pav_MulI128by10Carry:  return  "vmul10cuq";  //qw
+   case Pav_MulI128by10E:      return  "vmul10euq";  //qw
+   case Pav_MulI128by10ECarry: return  "vmul10ecuq";  //qw
+
+      /* F128 to I128 signed */
+   case Pav_F128toI128S:    return "xsrqpi|x";   //qw
+
+      /* F128 round to F128 */
+   case Pav_ROUNDFPQ:       return "xsrqpxp";
 
    /* Polynomial arith */
    case Pav_POLYMULADD: return "vpmsum";   // b, h, w, d
@@ -664,9 +705,30 @@ const HChar* showPPCAvOp ( PPCAvOp op ) {
    case Pav_ZEROCNTHALF: case Pav_ZEROCNTDBL:
       return "vclz_";                           // b, h, w, d
 
+   /* trailing zero count */
+   case Pav_TRAILINGZEROCNTBYTE: case Pav_TRAILINGZEROCNTWORD:
+   case Pav_TRAILINGZEROCNTHALF: case Pav_TRAILINGZEROCNTDBL:
+      return "vctz_";                           // b, h, w, d
+
    /* vector gather (byte-by-byte bit matrix transpose) */
    case Pav_BITMTXXPOSE:
       return "vgbbd";
+
+   /* Vector Half-precision format to single precision conversion */
+   case Pav_F16toF32x4:
+      return"xvcvhpsp";
+
+   /* Vector Single-precision format to Half-precision conversion */
+   case Pav_F32toF16x4:
+      return"xvcvsphp";
+
+   /* Vector Half-precision format to Double precision conversion */
+   case Pav_F16toF64x2:
+      return"xvcvhpdp";
+
+      /* Vector Half-precision format to Double precision conversion */
+   case Pav_F64toF16x2:
+      return"xvcvdphp";
 
    default: vpanic("showPPCAvOp");
    }
@@ -923,6 +985,32 @@ PPCInstr* PPCInstr_FpBinary ( PPCFpOp op, HReg dst,
    i->Pin.FpBinary.dst  = dst;
    i->Pin.FpBinary.srcL = srcL;
    i->Pin.FpBinary.srcR = srcR;
+   return i;
+}
+PPCInstr* PPCInstr_Fp128Unary(PPCFpOp op, HReg dst, HReg src) {
+   PPCInstr* i = LibVEX_Alloc_inline( sizeof(PPCInstr) );
+   i->tag = Pin_Fp128Unary;
+   i->Pin.Fp128Unary.op = op;
+   i->Pin.Fp128Unary.dst = dst;
+   i->Pin.Fp128Unary.src = src;
+   return i;
+}
+PPCInstr* PPCInstr_Fp128Binary(PPCFpOp op, HReg dst, HReg srcL, HReg srcR) {
+   PPCInstr* i = LibVEX_Alloc_inline( sizeof(PPCInstr) );
+   i->tag = Pin_Fp128Binary;
+   i->Pin.Fp128Binary.op = op;
+   i->Pin.Fp128Binary.dst = dst;
+   i->Pin.Fp128Binary.srcL = srcL;
+   i->Pin.Fp128Binary.srcR = srcR;
+   return i;
+}
+PPCInstr* PPCInstr_Fp128Trinary(PPCFpOp op, HReg dst, HReg srcL, HReg srcR) {
+   PPCInstr* i = LibVEX_Alloc_inline( sizeof(PPCInstr) );
+   i->tag = Pin_Fp128Trinary;
+   i->Pin.Fp128Trinary.op = op;
+   i->Pin.Fp128Trinary.dst = dst;
+   i->Pin.Fp128Trinary.srcL = srcL;
+   i->Pin.Fp128Trinary.srcR = srcR;
    return i;
 }
 PPCInstr* PPCInstr_FpMulAcc ( PPCFpOp op, HReg dst, HReg srcML, 
@@ -1266,6 +1354,16 @@ PPCInstr* PPCInstr_AvBinary ( PPCAvOp op, HReg dst,
    i->Pin.AvBinary.dst  = dst;
    i->Pin.AvBinary.srcL = srcL;
    i->Pin.AvBinary.srcR = srcR;
+   return i;
+}
+PPCInstr* PPCInstr_AvBinaryInt ( PPCAvOp op, HReg dst,
+                                 HReg src, PPCRI* val ) {
+   PPCInstr* i            = LibVEX_Alloc_inline(sizeof(PPCInstr));
+   i->tag                 = Pin_AvBinaryInt;
+   i->Pin.AvBinaryInt.op  = op;
+   i->Pin.AvBinaryInt.dst = dst;
+   i->Pin.AvBinaryInt.src = src;
+   i->Pin.AvBinaryInt.val = val;
    return i;
 }
 PPCInstr* PPCInstr_AvBin8x16 ( PPCAvOp op, HReg dst,
@@ -1716,6 +1814,28 @@ void ppPPCInstr ( const PPCInstr* i, Bool mode64 )
       vex_printf(",");
       ppHRegPPC(i->Pin.FpBinary.srcR);
       return;
+   case Pin_Fp128Unary:
+      vex_printf("%s ", showPPCFpOp(i->Pin.Fp128Unary.op));
+      ppHRegPPC(i->Pin.Fp128Unary.dst);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.Fp128Unary.src);
+      return;
+   case Pin_Fp128Binary:
+      vex_printf("%s ", showPPCFpOp(i->Pin.Fp128Binary.op));
+      ppHRegPPC(i->Pin.Fp128Binary.dst);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.Fp128Binary.srcL);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.Fp128Binary.srcR);
+      return;
+   case Pin_Fp128Trinary:
+      vex_printf("%s ", showPPCFpOp(i->Pin.Fp128Trinary.op));
+      ppHRegPPC(i->Pin.Fp128Trinary.dst);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.Fp128Trinary.srcL);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.Fp128Trinary.srcR);
+      return;
    case Pin_FpMulAcc:
       vex_printf("%s ", showPPCFpOp(i->Pin.FpMulAcc.op));
       ppHRegPPC(i->Pin.FpMulAcc.dst);
@@ -1872,6 +1992,14 @@ void ppPPCInstr ( const PPCInstr* i, Bool mode64 )
       ppHRegPPC(i->Pin.AvBinary.srcL);
       vex_printf(",");
       ppHRegPPC(i->Pin.AvBinary.srcR);
+      return;
+   case Pin_AvBinaryInt:
+      vex_printf("%s ", showPPCAvOp(i->Pin.AvBinaryInt.op));
+      ppHRegPPC(i->Pin.AvBinaryInt.dst);
+      vex_printf(",");
+      ppHRegPPC(i->Pin.AvBinaryInt.src);
+      vex_printf(",");
+      ppPPCRI(i->Pin.AvBinaryInt.val);
       return;
    case Pin_AvBin8x16:
       vex_printf("%s(b) ", showPPCAvOp(i->Pin.AvBin8x16.op));
@@ -2364,6 +2492,21 @@ void getRegUsage_PPCInstr ( HRegUsage* u, const PPCInstr* i, Bool mode64 )
       addHRegUse(u, HRmRead,  i->Pin.FpBinary.srcL);
       addHRegUse(u, HRmRead,  i->Pin.FpBinary.srcR);
       return;
+
+   case Pin_Fp128Unary:
+      addHRegUse(u, HRmWrite, i->Pin.Fp128Unary.dst);
+      addHRegUse(u, HRmRead, i->Pin.Fp128Unary.src);
+      return;
+   case Pin_Fp128Binary:
+      addHRegUse(u, HRmWrite, i->Pin.Fp128Binary.dst);
+      addHRegUse(u, HRmRead, i->Pin.Fp128Binary.srcL);
+      addHRegUse(u, HRmRead, i->Pin.Fp128Binary.srcR);
+      return;
+   case Pin_Fp128Trinary:
+      addHRegUse(u, HRmModify, i->Pin.Fp128Trinary.dst);
+      addHRegUse(u, HRmRead, i->Pin.Fp128Trinary.srcL);
+      addHRegUse(u, HRmRead, i->Pin.Fp128Trinary.srcR);
+      return;
    case Pin_FpMulAcc:
       addHRegUse(u, HRmWrite, i->Pin.FpMulAcc.dst);
       addHRegUse(u, HRmRead,  i->Pin.FpMulAcc.srcML);
@@ -2428,6 +2571,10 @@ void getRegUsage_PPCInstr ( HRegUsage* u, const PPCInstr* i, Bool mode64 )
          addHRegUse(u, HRmRead,  i->Pin.AvBinary.srcL);
          addHRegUse(u, HRmRead,  i->Pin.AvBinary.srcR);
       }
+      return;
+   case Pin_AvBinaryInt:
+      addHRegUse(u, HRmWrite, i->Pin.AvBinaryInt.dst);
+      addHRegUse(u, HRmRead,  i->Pin.AvBinaryInt.src);
       return;
    case Pin_AvBin8x16:
       addHRegUse(u, HRmWrite, i->Pin.AvBin8x16.dst);
@@ -2715,6 +2862,20 @@ void mapRegs_PPCInstr ( HRegRemap* m, PPCInstr* i, Bool mode64 )
       mapReg(m, &i->Pin.FpBinary.srcL);
       mapReg(m, &i->Pin.FpBinary.srcR);
       return;
+   case Pin_Fp128Unary:
+      mapReg(m, &i->Pin.Fp128Unary.dst);
+      mapReg(m, &i->Pin.Fp128Unary.src);
+      return;
+   case Pin_Fp128Binary:
+      mapReg(m, &i->Pin.Fp128Binary.dst);
+      mapReg(m, &i->Pin.Fp128Binary.srcL);
+      mapReg(m, &i->Pin.Fp128Binary.srcR);
+      return;
+   case Pin_Fp128Trinary:
+      mapReg(m, &i->Pin.Fp128Trinary.dst);
+      mapReg(m, &i->Pin.Fp128Trinary.srcL);
+      mapReg(m, &i->Pin.Fp128Trinary.srcR);
+      return;
    case Pin_FpMulAcc:
       mapReg(m, &i->Pin.FpMulAcc.dst);
       mapReg(m, &i->Pin.FpMulAcc.srcML);
@@ -2764,6 +2925,10 @@ void mapRegs_PPCInstr ( HRegRemap* m, PPCInstr* i, Bool mode64 )
       mapReg(m, &i->Pin.AvBinary.dst);
       mapReg(m, &i->Pin.AvBinary.srcL);
       mapReg(m, &i->Pin.AvBinary.srcR);
+      return;
+   case Pin_AvBinaryInt:
+      mapReg(m, &i->Pin.AvBinaryInt.dst);
+      mapReg(m, &i->Pin.AvBinaryInt.src);
       return;
    case Pin_AvBin8x16:
       mapReg(m, &i->Pin.AvBin8x16.dst);
@@ -3672,6 +3837,95 @@ static UChar* mkFormVX ( UChar* p, UInt opc1, UInt r1, UInt r2,
    return emit32(p, theInstr, endness_host);
 }
 
+static UChar* mkFormVSXRND ( UChar* p, UInt opc1, UInt R, UInt r1,
+                             UInt r2, UInt RMC, UInt opc2, UChar EX,
+                             VexEndness endness_host )
+{
+   /* The register mapping is all done using VR register numbers for the
+    * V128 support.  This means that the operands for this instruction have
+    * been loaded into a VR register. The 32 VR registers map to VSR registers
+    * 32 to 63. For these instructions, the hardware adds 32 to the source
+    * and destination register numbers.  Do not need to adjust the register
+    * numbers for these instructions.
+    */
+
+   UInt theInstr;
+
+   vassert(opc1 < 0x40);
+   vassert(r1   < 0x20);
+   vassert(r2   < 0x20);
+   vassert(opc2 < 0x100);
+   vassert(EX  < 0x2);
+   vassert(R   < 0x2);
+   vassert(RMC < 0x4);
+
+   theInstr = ((opc1<<26)  | (r1<<21) | (R<<16) | (r2<<11) | (RMC<<9) |
+               (opc2 << 1) | EX);
+   return emit32(p, theInstr, endness_host);
+}
+
+static UChar* mkFormVX_BX_TX ( UChar* p, UInt opc1, UInt r1, UInt r2,
+                               UInt r3, UInt opc2, VexEndness endness_host )
+{
+   /* The register mapping is all done using VR register numbers for the
+    * V128 support.  This means that the operands for this instruction have
+    * been loaded into a VR register. The 32 VR registers map to VSR registers
+    * 32 to 63. So to make the issued instruction reference the
+    * corresponding VR register we have to add 32 to the source and
+    * destination operand numbers, then load the new operand number into the
+    * correct bit fields.
+    *
+    * r1 = 32xTX + T; r3 = 32xBX + B;
+    * TX is bit 0, BX is bit 1, T is in bits [25:21], B is in bit [14:11]
+    * opc2 is in bits [10:2]
+    */
+   UInt T, TX, B, BX;
+
+   UInt theInstr;
+
+   r1 += 32;   // adjust the VSR register number to map to the VR number
+   r3 += 32;
+
+   vassert(opc1 < 0x40);
+   vassert(r1   < 0x40);
+   vassert(r2   < 0x20);
+   vassert(r3   < 0x40);
+   vassert(opc2 < 0x800);
+
+   T  = r1 & 0x1F;
+   TX = r1 >> 5;
+   B  = r3 & 0x1F;
+   BX = r3 >> 5;
+   theInstr = ((opc1<<26) | (T<<21) | (r2<<16) | (B<<11) | (opc2<<2)
+               | (BX<<1) | TX);
+   return emit32(p, theInstr, endness_host);
+}
+
+static UChar* mkFormVXR0 ( UChar* p, UInt opc1, UInt r1, UInt r2,
+                           UInt r3, UInt opc2, UChar R0,
+                           VexEndness endness_host )
+{
+   /* The register mapping is all done using VR register numbers for the
+    * V128 support.  This means that the operands for this instruction have
+    * been loaded into a VR register. The 32 VR registers map to VSR registers
+    * 32 to 63.  For these instructions, the hardware adds 32 to the source
+    * and destination register numbers.  Do not need to adjust the register
+    * numbers for these instructions.
+    */
+
+   UInt theInstr;
+
+   vassert(opc1 < 0x40);
+   vassert(r1   < 0x20);  // register numbers are between 0 and 31 (5-bits)
+   vassert(r2   < 0x20);
+   vassert(r3   < 0x20);
+   vassert(opc2 < 0x800);
+   vassert(R0 < 0x2);
+
+   theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) | (r3<<11) | (opc2<<1) | R0);
+   return emit32(p, theInstr, endness_host);
+}
+
 static UChar* mkFormVXI ( UChar* p, UInt opc1, UInt r1, UInt r2,
                           UInt r3, UInt opc2, VexEndness endness_host )
 {
@@ -4009,6 +4263,15 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       case Pun_CLZ64:  // cntlzd r_dst, r_src
          vassert(mode64);
          p = mkFormX(p, 31, r_src, r_dst, 0, 58, 0, endness_host);
+         break;
+      case Pun_CTZ32:  // cnttzw r_dst, r_src
+         /* Note oder of src and dst is backwards from normal */
+         p = mkFormX(p, 31, r_src, r_dst, 0, 538, 0, endness_host);
+         break;
+      case Pun_CTZ64:  // cnttzd r_dst, r_src
+         /* Note oder of src and dst is backwards from normal */
+         vassert(mode64);
+         p = mkFormX(p, 31, r_src, r_dst, 0, 570, 0, endness_host);
          break;
       case Pun_EXTSW:  // extsw r_dst, r_src
          vassert(mode64);
@@ -4605,6 +4868,178 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       goto done;
    }
 
+   case Pin_Fp128Unary: {
+      /* Note Fp128 instructions use the vector scalar registers.  The register
+       * mapping for the V128 type assumes the a vector instruction.  The
+       * PPC hardware has a single register file that the vector scalar
+       * registers and the vector registers map to.  The 32 vector
+       * registers instructions map to the same registers as the vector
+       * scalar registers 32 to 63.  mkFormVXR0 does the needed
+       * adjustment.
+      */
+      UInt fr_dst = vregEnc(i->Pin.Fp128Unary.dst);
+      UInt fr_src = vregEnc(i->Pin.Fp128Unary.src);
+
+      switch (i->Pin.Fp128Unary.op) {
+      case Pfp_FPSQRTQ:         // xssqrtqp, use rounding specified by RN
+         p = mkFormVXR0( p, 63, fr_dst, 27, fr_src, 804, 0, endness_host );
+         break;
+      case Pfp_FPSQRTQRNDODD:   // xssqrtqpo, use rounding specified by RN
+         p = mkFormVXR0( p, 63, fr_dst, 27, fr_src, 804, 1, endness_host );
+         break;
+      case Pfp_FPQTOD:         // xscvqpdp, use rounding specified by RN
+         p = mkFormVXR0( p, 63, fr_dst, 20, fr_src, 836, 0, endness_host );
+         break;
+      case Pfp_FPQTODRNDODD:   // xscvqpdpo, use rounding specified by RN
+         p = mkFormVXR0( p, 63, fr_dst, 20, fr_src, 836, 1, endness_host );
+        break;
+      case Pfp_FPDTOQ:         // xscvdpqp
+         p = mkFormVXR0( p, 63, fr_dst, 22, fr_src, 836, 0, endness_host );
+         break;
+      case Pfp_IDSTOQ:         // xscvsdqp
+         p = mkFormVXR0( p, 63, fr_dst, 10, fr_src, 836, 0, endness_host );
+         break;
+      case Pfp_IDUTOQ:         // xscvudqp
+         p = mkFormVXR0( p, 63, fr_dst, 2, fr_src, 836, 0, endness_host );
+         break;
+      case Pfp_TRUNCFPQTOISD:   // xscvqpsdz
+         p = mkFormVXR0( p, 63, fr_dst, 25, fr_src, 836, 0, endness_host );
+         break;
+     case Pfp_TRUNCFPQTOISW:   // xscvqpswz
+         p = mkFormVXR0( p, 63, fr_dst, 9, fr_src, 836, 0, endness_host );
+         break;
+     case Pfp_TRUNCFPQTOIUD:   // xscvqpudz
+         p = mkFormVXR0( p, 63, fr_dst, 17, fr_src, 836, 0, endness_host );
+         break;
+      case Pfp_TRUNCFPQTOIUW:   // xscvqpuwz
+         p = mkFormVXR0( p, 63, fr_dst, 1, fr_src, 836, 0, endness_host );
+         break;
+      default:
+	 goto bad;
+      }
+      goto done;
+   }
+
+   case Pin_Fp128Binary: {
+      /* Note Fp128 instructions use the vector registers */
+      UInt fr_dst  = vregEnc(i->Pin.Fp128Binary.dst);
+      UInt fr_srcL = vregEnc(i->Pin.Fp128Binary.srcL);
+      UInt fr_srcR = vregEnc(i->Pin.Fp128Binary.srcR);
+
+      /* Note this issues a Vector scalar instruction.  The register
+       * mapping for the V128 type assumes the a vector instruction.  The
+       * PPC hardware has a single register file that the vector scalar
+       * registers and the vector registers map to.  The 32 vector
+       * registers instructions map to the same registers as the vector
+       * scalar registers 32 to 63.  For these instructions the HW adds
+       * 32 to the register numbers to access the VSRR register.  No need
+       * to adjust the numbers to map to the VR register that contians the
+       * operands.
+       */
+
+      switch (i->Pin.Fp128Binary.op) {
+      case Pfp_FPADDQ:         // xsaddqp, use rounding specified by RN
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 4, 0, endness_host );
+         break;
+      case Pfp_FPADDQRNDODD:   // xsaddqpo, round to odd
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 4, 1, endness_host );
+         break;
+      case Pfp_FPSUBQ:         // xssubqp, use rounding specified by RN
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 516, 0, endness_host );
+         break;
+      case Pfp_FPSUBQRNDODD:   // xssubqpo, round to odd
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 516, 1, endness_host );
+         break;
+      case Pfp_FPMULQ:         // xsmulqp, use rounding specified by RN
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 36, 0, endness_host );
+         break;
+      case Pfp_FPMULQRNDODD:   // xsmulqpo, round to odd
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 36, 1, endness_host );
+         break;
+      case Pfp_FPDIVQ:         // xsdivqp, use rounding specified by RN
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 548, 0, endness_host );
+         break;
+      case Pfp_FPDIVQRNDODD:   // xsdivqpo, round to odd
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 548, 1, endness_host );
+         break;
+      case Pfp_FPMULADDQ:      // xsmaddqp, use rounding specified by RN
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 388, 0, endness_host );
+         break;
+      case Pfp_FPMULADDQRNDODD:   // xsmaddqpo, round to odd
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 388, 1, endness_host );
+         break;
+      case Pfp_FPMULSUBQ:         // xsmsubqp, use rounding specified by RN
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 420, 0, endness_host );
+         break;
+      case Pfp_FPMULSUBQRNDODD:   // xsmsubsqpo, round to odd
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 420, 1, endness_host );
+         break;
+      case Pfp_FPNEGMULADDQ:      // xsnmaddqp, use rounding specified by RN
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 452, 0, endness_host );
+         break;
+      case Pfp_FPNEGMULADDQRNDODD:   // xsnmaddqpo, round to odd
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 452, 1, endness_host );
+         break;
+      case Pfp_FPNEGMULSUBQ:         // xsnmsubqp, use rounding specified by RN
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 484, 0, endness_host );
+         break;
+      case Pfp_FPNEGMULSUBQRNDODD:   // xsnmsubsqpo, round to odd
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 484, 1, endness_host );
+         break;
+     default:
+          goto bad;
+      }
+      goto done;
+   }
+
+   case Pin_Fp128Trinary: {
+      /* Note Fp128 instructions use the vector registers */
+      UInt fr_dst  = vregEnc(i->Pin.Fp128Binary.dst);
+      UInt fr_srcL = vregEnc(i->Pin.Fp128Binary.srcL);
+      UInt fr_srcR = vregEnc(i->Pin.Fp128Binary.srcR);
+
+      /* Note this issues a Vector scalar instruction.  The register
+       * mapping for the V128 type assumes the a vector instruction.  The
+       * PPC hardware has a single register file that the vector scalar
+       * registers and the vector registers map to.  The 32 vector
+       * registers instructions map to the same registers as the vector
+       * scalar registers 32 to 63.  For these instructions the HW adds
+       * 32 to the register numbers to access the VSRR register.  No need
+       * to adjust the numbers to map to the VR register that contians the
+       * operands.
+       */
+
+      switch (i->Pin.Fp128Binary.op) {
+      case Pfp_FPMULADDQ:      // xsmaddqp, use rounding specified by RN
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 388, 0, endness_host );
+         break;
+      case Pfp_FPMULADDQRNDODD:   // xsmaddqpo, round to odd
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 388, 1, endness_host );
+         break;
+      case Pfp_FPMULSUBQ:         // xsmsubqp, use rounding specified by RN
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 420, 0, endness_host );
+         break;
+      case Pfp_FPMULSUBQRNDODD:   // xsmsubsqpo, round to odd
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 420, 1, endness_host );
+         break;
+      case Pfp_FPNEGMULADDQ:      // xsnmaddqp, use rounding specified by RN
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 452, 0, endness_host );
+         break;
+      case Pfp_FPNEGMULADDQRNDODD:   // xsnmaddqpo, round to odd
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 452, 1, endness_host );
+         break;
+      case Pfp_FPNEGMULSUBQ:         // xsnmsubqp, use rounding specified by RN
+        p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 484, 0, endness_host );
+         break;
+      case Pfp_FPNEGMULSUBQRNDODD:   // xsnmsubsqpo, round to odd
+         p = mkFormVXR0( p, 63, fr_dst, fr_srcL, fr_srcR, 484, 1, endness_host );
+         break;
+      default:
+          goto bad;
+      }
+      goto done;
+   }
+
    case Pin_FpMulAcc: {
       UInt fr_dst    = fregEnc(i->Pin.FpMulAcc.dst);
       UInt fr_srcML  = fregEnc(i->Pin.FpMulAcc.srcML);
@@ -4807,7 +5242,8 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
    case Pin_AvUnary: {
       UInt v_dst = vregEnc(i->Pin.AvUnary.dst);
       UInt v_src = vregEnc(i->Pin.AvUnary.src);
-      UInt opc2;
+      UInt opc2, opc3;
+
       switch (i->Pin.AvUnary.op) {
       case Pav_MOV:       opc2 = 1156; break; // vor vD,vS,vS
       case Pav_NOT:       opc2 = 1284; break; // vnor vD,vS,vS
@@ -4822,7 +5258,19 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       case Pav_ZEROCNTHALF: opc2 = 1858; break; // vclzh
       case Pav_ZEROCNTWORD: opc2 = 1922; break; // vclzw
       case Pav_ZEROCNTDBL:  opc2 = 1986; break; // vclzd
+      case Pav_TRAILINGZEROCNTBYTE: opc2 = 1538; break; // vctzb
+      case Pav_TRAILINGZEROCNTHALF: opc2 = 1538; break; // vctzh
+      case Pav_TRAILINGZEROCNTWORD: opc2 = 1538; break; // vctzw
+      case Pav_TRAILINGZEROCNTDBL:  opc2 = 1538; break; // vctzd
       case Pav_BITMTXXPOSE: opc2 = 1292; break; // vgbbd
+      case Pav_BCD128toI128S: opc2 = 385; break; //bcdctsq.
+      case Pav_MulI128by10:      opc2 = 513; break; // vmul10uq
+      case Pav_MulI128by10Carry: opc2 =   1; break; // vmul10cuq
+      case Pav_F16toF64x2: opc2 = 347; opc3 = 16; break; // xvcvhpdp
+      case Pav_F64toF16x2: opc2 = 347; opc3 = 17; break; // xvcvdphp
+      case Pav_F16toF32x4: opc2 = 475; opc3 = 24; break; // xvcvhpsp
+      case Pav_F32toF16x4: opc2 = 475; opc3 = 25; break; // xvcvsphp
+
       default:
          goto bad;
       }
@@ -4830,6 +5278,55 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       case Pav_MOV:
       case Pav_NOT:
          p = mkFormVX( p, 4, v_dst, v_src, v_src, opc2, endness_host );
+         break;
+      case Pav_F16toF32x4:
+         {
+            /* I64 source has four 16-bit float values in the upper 64-bit
+             * of the source vector register, lower 64-bits are undefined.
+             */
+            /* Scatter the four F16 values in the Vector register */
+            p = mkFormVX( p, 4, v_dst, 0, v_src, 590, endness_host );// vupkhsh
+
+            /* The layout of the vector register is now: S0F0 S1F1 S2F2 S3F3
+             * where S is the sign extension of the 16-bit F value.  We don't
+             * care about the extended signs.
+             */
+
+            /* Input, in v_dst, is now correct for the xvcvhpsp instruction */
+            p = mkFormVX_BX_TX( p, 60, v_dst, opc3, v_dst, opc2,
+                                endness_host );
+         }
+         break;
+      case Pav_F64toF16x2:
+      case Pav_F16toF64x2:
+      case Pav_F32toF16x4:
+         /* Note this issues a Vector scalar instruction.  The register
+          * mapping for the V128 type assumes the a vector instruction.  The
+          * PPC hardware has a single register file that the vector scalar
+          * registers and the vector registers map to.  The 32 vector registers
+          * instructions map to the same registers as the vector scalar
+          * registers 32 to 63.  mkFormVX_BX_TX does the needed adjustment.
+          */
+         p = mkFormVX_BX_TX( p, 60, v_dst, opc3, v_src, opc2, endness_host );
+         break;
+      case Pav_BCD128toI128S:  // bcdctsq
+         p = mkFormVX( p, 4, v_dst, 0, v_src, (1<<10 | 385), endness_host );
+         break;
+      case Pav_MulI128by10:
+      case Pav_MulI128by10Carry:
+         p = mkFormVX( p, 4, v_dst, v_src, 0, opc2, endness_host );
+         break;
+      case Pav_TRAILINGZEROCNTBYTE:
+         p = mkFormVX( p, 4, v_dst, 28, v_src, opc2, endness_host );
+         break;
+      case Pav_TRAILINGZEROCNTHALF:
+         p = mkFormVX( p, 4, v_dst, 29, v_src, opc2, endness_host );
+         break;
+      case Pav_TRAILINGZEROCNTWORD:
+         p = mkFormVX( p, 4, v_dst, 30, v_src, opc2, endness_host );
+         break;
+      case Pav_TRAILINGZEROCNTDBL:
+         p = mkFormVX( p, 4, v_dst, 31, v_src, opc2, endness_host );
          break;
       default:
          p = mkFormVX( p, 4, v_dst, 0, v_src, opc2, endness_host );
@@ -4858,10 +5355,68 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       case Pav_AND:       opc2 = 1028; break; // vand
       case Pav_OR:        opc2 = 1156; break; // vor
       case Pav_XOR:       opc2 = 1220; break; // vxor
+      /* Mult by 10 */
+      case Pav_MulI128by10E:      opc2 = 577; break; // vmul10euq
+      case Pav_MulI128by10ECarry: opc2 =  65; break; // vmul10ecuq
       default:
          goto bad;
       }
       p = mkFormVX( p, 4, v_dst, v_srcL, v_srcR, opc2, endness_host );
+      goto done;
+   }
+
+   case Pin_AvBinaryInt: {
+       UInt   ps = i->Pin.AvBinaryInt.val->Pri.Imm;
+       UInt   dst = vregEnc(i->Pin.AvBinaryInt.dst);
+       UInt   src = vregEnc(i->Pin.AvBinaryInt.src);
+
+       switch (i->Pin.AvBinaryInt.op) {
+       /* BCD */
+       case Pav_I128StoBCD128:   // bcdcfsq
+          {
+              /* v_srcR actually contains the value of the one-bit ps field */
+              int opc2 = 385;
+              p = mkFormVX( p, 4, dst, 2, src,
+                            (1 << 10 | (ps << 9) | opc2), endness_host );
+           }
+       break;
+
+       case Pav_F128toI128S:  // xsrqpi, xsrqpix
+           {
+              int opc2 = 5;
+              UInt EX  = ps & 0x1;
+              UInt R   = (ps >> 3) & 0x1;
+              UInt RMC = (ps >> 1) & 0x3;
+              /* Note this issues a Vector scalar instruction.  The register
+               * mapping for the V128 type assumes the a vector instruction.  The
+               * PPC hardware has a single register file that the vector scalar
+               * registers and the vector registers map to.  The 32 vector
+               * registers instructions map to the same registers as the vector
+               * scalar registers 32 to 63.  For these instructions the HW adds
+               * 32 to the register numbers to access the VSRR register.  No need
+               * to adjust the numbers to map to the VR register that contians
+               * the operands.
+               */
+              p = mkFormVSXRND( p, 63, R, dst, src, RMC, opc2, EX,
+                                endness_host );
+           }
+	break;
+
+        case Pav_ROUNDFPQ:   // xsrqpxp
+           {
+              int opc2 = 37;
+              UInt EX  = ps & 0x1;
+              UInt RMC = (ps >> 1) & 0x3;
+              UInt R   = (ps >> 3) & 0x1;
+              p = mkFormVSXRND( p, 63, R, dst, src, RMC, opc2, EX,
+                                endness_host );
+           }
+	break;
+
+        default:
+           goto bad;
+
+      }
       goto done;
    }
 

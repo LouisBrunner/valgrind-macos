@@ -670,6 +670,10 @@ typedef
 
       /* :: IRRoundingMode(I32) x F128 x F128 -> F128 */
       Iop_AddF128, Iop_SubF128, Iop_MulF128, Iop_DivF128,
+      Iop_MAddF128,    // (A * B) + C
+      Iop_MSubF128,    // (A * B) - C
+      Iop_NegMAddF128, // -((A * B) + C)
+      Iop_NegMSubF128, // -((A * B) - C)
 
       /* :: F128 -> F128 */
       Iop_NegF128, Iop_AbsF128,
@@ -688,8 +692,18 @@ typedef
       Iop_F128toI64S, /* IRRoundingMode(I32) x F128 -> signed I64  */
       Iop_F128toI32U, /* IRRoundingMode(I32) x F128 -> unsigned I32  */
       Iop_F128toI64U, /* IRRoundingMode(I32) x F128 -> unsigned I64  */
+      Iop_F128toI128S,/* IRRoundingMode(I32) x F128 -> signed I128 */
       Iop_F128toF64,  /* IRRoundingMode(I32) x F128 -> F64         */
       Iop_F128toF32,  /* IRRoundingMode(I32) x F128 -> F32         */
+      Iop_RndF128,    /* IRRoundingMode(I32) x F128 -> F128         */
+
+      /* Truncate to the specified value, source and result
+       * are stroed in a F128 register.
+       */
+      Iop_TruncF128toI32S,  /* truncate F128 -> I32         */
+      Iop_TruncF128toI32U,  /* truncate F128 -> I32         */
+      Iop_TruncF128toI64U,  /* truncate F128 -> I64         */
+      Iop_TruncF128toI64S,  /* truncate F128 -> I64         */
 
       /* --- guest x86/amd64 specifics, not mandated by 754. --- */
 
@@ -919,6 +933,9 @@ typedef
       Iop_Clz8x8, Iop_Clz16x4, Iop_Clz32x2,
       Iop_Cls8x8, Iop_Cls16x4, Iop_Cls32x2,
       Iop_Clz64x2,
+
+      /*Vector COUNT trailing zeros */
+      Iop_Ctz8x16, Iop_Ctz16x8, Iop_Ctz32x4, Iop_Ctz64x2, 
 
       /* VECTOR x VECTOR SHIFT / ROTATE */
       Iop_Shl8x8, Iop_Shl16x4, Iop_Shl32x2,
@@ -1270,6 +1287,12 @@ typedef
        * signed code. */
       Iop_BCDAdd, Iop_BCDSub,
 
+      /* Conversion signed 128-bit integer to signed BCD 128-bit */
+      Iop_I128StoBCD128,
+
+      /* Conversion signed BCD 128-bit to 128-bit integer */
+      Iop_BCD128toI128S,
+
       /* Conversion I64 -> D64 */
       Iop_ReinterpI64asD64,
 
@@ -1338,6 +1361,9 @@ typedef
       /* --- Single to/from half conversion --- */
       /* FIXME: what kind of rounding in F32x4 -> F16x4 case? */
       Iop_F32toF16x4, Iop_F16toF32x4,         /* F32x4 <-> F16x4      */
+
+      /* -- Double to/from half conversion -- */
+      Iop_F64toF16x2, Iop_F16toF64x2,
 
       /* --- 32x4 lowest-lane-only scalar FP --- */
 
@@ -1768,6 +1794,22 @@ typedef
       /* Vector Reciprocal Estimate and Vector Reciprocal Square Root Estimate
          See floating-point equivalents for details. */
       Iop_RecipEst32Ux4, Iop_RSqrtEst32Ux4,
+
+      /* 128-bit multipy by 10 instruction, result is lower 128-bits */
+      Iop_MulI128by10,
+
+      /* 128-bit multipy by 10 instruction, result is carry out from the MSB */
+      Iop_MulI128by10Carry,
+
+      /* 128-bit multipy by 10 instruction, result is lower 128-bits of the
+       * source times 10 plus the carry in
+       */
+      Iop_MulI128by10E,
+
+      /* 128-bit multipy by 10 instruction, result is carry out from the MSB
+       * of the source times 10 plus the carry in
+       */
+      Iop_MulI128by10ECarry,
 
       /* ------------------ 256-bit SIMD Integer. ------------------ */
 

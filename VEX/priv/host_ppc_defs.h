@@ -291,6 +291,8 @@ typedef
       Pun_NOT,
       Pun_CLZ32,
       Pun_CLZ64,
+      Pun_CTZ32,
+      Pun_CTZ64,
       Pun_EXTSW
    }
    PPCUnaryOp;
@@ -334,6 +336,24 @@ typedef
       /* Ternary */
       Pfp_MADDD,  Pfp_MSUBD,
       Pfp_MADDS,  Pfp_MSUBS,
+      Pfp_FPADDQ, Pfp_FPADDQRNDODD,
+      Pfp_FPSUBQ, Pfp_FPSUBQRNDODD,
+      Pfp_FPMULQ, Pfp_FPMULQRNDODD,
+      Pfp_FPDIVQ, Pfp_FPDIVQRNDODD,
+      Pfp_FPMULADDQ, Pfp_FPMULADDQRNDODD,
+      Pfp_FPMULSUBQ, Pfp_FPMULSUBQRNDODD,
+      Pfp_FPNEGMULADDQ, Pfp_FPNEGMULADDQRNDODD,
+      Pfp_FPNEGMULSUBQ, Pfp_FPNEGMULSUBQRNDODD,
+      Pfp_FPSQRTQ, Pfp_FPSQRTQRNDODD,
+      Pfp_FPQTOD, Pfp_FPQTODRNDODD,
+      Pfp_FPQTOW, Pfp_FPQTOWRNDODD,
+      Pfp_FPDTOQ,
+      Pfp_IDSTOQ,
+      Pfp_IDUTOQ,
+      Pfp_TRUNCFPQTOISD,
+      Pfp_TRUNCFPQTOISW,
+      Pfp_TRUNCFPQTOIUD,
+      Pfp_TRUNCFPQTOIUW,
       Pfp_DFPADD, Pfp_DFPADDQ,
       Pfp_DFPSUB, Pfp_DFPSUBQ,
       Pfp_DFPMUL, Pfp_DFPMULQ,
@@ -409,11 +429,51 @@ typedef
       /* BCD Arithmetic */
       Pav_BCDAdd, Pav_BCDSub,
 
+      /* Conversion signed 128-bit value to signed BCD 128-bit */
+      Pav_I128StoBCD128,
+
+      /* Conversion signed BCD 128-bit to signed 128-bit value */
+      Pav_BCD128toI128S,
+
       /* zero count */
       Pav_ZEROCNTBYTE, Pav_ZEROCNTWORD, Pav_ZEROCNTHALF, Pav_ZEROCNTDBL,
 
+      /* trailing zero count */
+      Pav_TRAILINGZEROCNTBYTE, Pav_TRAILINGZEROCNTWORD,
+      Pav_TRAILINGZEROCNTHALF, Pav_TRAILINGZEROCNTDBL,
+
       /* Vector bit matrix transpose by byte */
       Pav_BITMTXXPOSE,
+
+      /* Vector Half-precision format to single precision conversion */
+      Pav_F16toF32x4,
+
+      /* Vector Single precision format to Half-precision conversion */
+      Pav_F32toF16x4,
+
+      /* Vector Half-precision format to Double precision conversion */
+      Pav_F16toF64x2,
+
+      /* Vector Double precision format to Half-precision conversion */
+      Pav_F64toF16x2,
+
+      /* 128 bit mult by 10 */
+      Pav_MulI128by10,
+
+      /* 128 bit mult by 10, carry out */
+      Pav_MulI128by10Carry,
+
+      /* 128 bit mult by 10 plus carry in */
+      Pav_MulI128by10E,
+
+      /* 128 bit mult by 10 plus carry in, carry out */
+      Pav_MulI128by10ECarry,
+
+      /* F128 to I128 */
+      Pav_F128toI128S,
+
+      /* Round F128 to F128 */
+      Pav_ROUNDFPQ,
    }
    PPCAvOp;
 
@@ -466,6 +526,9 @@ typedef
 
       Pin_FpUnary,    /* FP unary op */
       Pin_FpBinary,   /* FP binary op */
+      Pin_Fp128Unary,   /* FP unary op for 128-bit floating point */
+      Pin_Fp128Binary,  /* FP binary op for 128-bit floating point */
+      Pin_Fp128Trinary, /* FP trinary op for 128-bit floating point */
       Pin_FpMulAcc,   /* FP multipy-accumulate style op */
       Pin_FpLdSt,     /* FP load/store */
       Pin_FpSTFIW,    /* stfiwx */
@@ -481,6 +544,7 @@ typedef
       Pin_AvUnary,    /* AV unary general reg=>reg */
 
       Pin_AvBinary,   /* AV binary general reg,reg=>reg */
+      Pin_AvBinaryInt,/* AV binary  reg,int=>reg */
       Pin_AvBin8x16,  /* AV binary, 8x4 */
       Pin_AvBin16x8,  /* AV binary, 16x4 */
       Pin_AvBin32x4,  /* AV binary, 32x4 */
@@ -700,6 +764,23 @@ typedef
          } FpBinary;
          struct {
             PPCFpOp op;
+            HReg dst;
+            HReg src;
+         } Fp128Unary;
+         struct {
+            PPCFpOp op;
+            HReg dst;
+            HReg srcL;
+            HReg srcR;
+         } Fp128Binary;
+         struct {
+            PPCFpOp op;
+            HReg dst;
+            HReg srcL;
+            HReg srcR;
+         } Fp128Trinary;
+         struct {
+            PPCFpOp op;
             HReg    dst;
             HReg    srcML;
             HReg    srcMR;
@@ -775,6 +856,12 @@ typedef
             HReg    srcL;
             HReg    srcR;
          } AvBinary;
+         struct {
+            PPCAvOp op;
+            HReg    dst;
+            HReg    src;
+            PPCRI*  val;
+         } AvBinaryInt;
          struct {
             PPCAvOp op;
             HReg    dst;
@@ -1025,6 +1112,11 @@ extern PPCInstr* PPCInstr_Set        ( PPCCondCode cond, HReg dst );
 extern PPCInstr* PPCInstr_MfCR       ( HReg dst );
 extern PPCInstr* PPCInstr_MFence     ( void );
 
+extern PPCInstr* PPCInstr_Fp128Unary    ( PPCFpOp op, HReg dst, HReg src );
+extern PPCInstr* PPCInstr_Fp128Binary   ( PPCFpOp op, HReg dst, HReg srcL, HReg srcR );
+extern PPCInstr* PPCInstr_Fp128Trinary  ( PPCFpOp op, HReg dst, HReg srcL,
+                                          HReg srcR);
+
 extern PPCInstr* PPCInstr_FpUnary    ( PPCFpOp op, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_FpBinary   ( PPCFpOp op, HReg dst, HReg srcL, HReg srcR );
 extern PPCInstr* PPCInstr_FpMulAcc   ( PPCFpOp op, HReg dst, HReg srcML, 
@@ -1043,6 +1135,7 @@ extern PPCInstr* PPCInstr_RdWrLR     ( Bool wrLR, HReg gpr );
 extern PPCInstr* PPCInstr_AvLdSt     ( Bool isLoad, UChar sz, HReg, PPCAMode* );
 extern PPCInstr* PPCInstr_AvUnary    ( PPCAvOp op, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_AvBinary   ( PPCAvOp op, HReg dst, HReg srcL, HReg srcR );
+extern PPCInstr* PPCInstr_AvBinaryInt( PPCAvOp op, HReg dst, HReg src, PPCRI* val );
 extern PPCInstr* PPCInstr_AvBin8x16  ( PPCAvOp op, HReg dst, HReg srcL, HReg srcR );
 extern PPCInstr* PPCInstr_AvBin16x8  ( PPCAvOp op, HReg dst, HReg srcL, HReg srcR );
 extern PPCInstr* PPCInstr_AvBin32x4  ( PPCAvOp op, HReg dst, HReg srcL, HReg srcR );

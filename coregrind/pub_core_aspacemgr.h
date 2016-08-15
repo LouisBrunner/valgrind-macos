@@ -378,6 +378,11 @@ extern Bool VG_(get_changed_segments)(
       Int css_size, /*OUT*/Int* css_used);
 #endif
 
+#if defined(VGO_solaris)
+extern Bool VG_(am_search_for_new_segment)(Addr *start, SizeT *size,
+                                           UInt *prot);
+#endif
+
 #endif   // __PUB_CORE_ASPACEMGR_H
 
 /*--------------------------------------------------------------------*/

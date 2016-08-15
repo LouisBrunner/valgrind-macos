@@ -6520,6 +6520,27 @@ PRE(sys_forksys)
       /* vfork */
       if (ARG1 == 2)
          VG_(close)(fds[1]);
+
+#     if defined(SOLARIS_PT_SUNDWTRACE_THRP)
+      /* Kernel can map a new page as a scratch space of the DTrace fasttrap
+         provider. There is no way we can directly get its address - it's all
+         private to the kernel. Fish it the slow way. */
+      Addr addr;
+      SizeT size;
+      UInt prot;
+      Bool found = VG_(am_search_for_new_segment)(&addr, &size, &prot);
+      if (found) {
+         VG_(debugLog)(1, "syswrap-solaris", "PRE(forksys), new segment: "
+                       "vaddr=%#lx, size=%#lx, prot=%#x\n", addr, size, prot);
+         vg_assert(prot == (VKI_PROT_READ | VKI_PROT_EXEC));
+         vg_assert(size == VKI_PAGE_SIZE);
+         ML_(notify_core_and_tool_of_mmap)(addr, size, prot, VKI_MAP_ANONYMOUS,
+                                           -1, 0);
+
+         /* Note: We don't notify the debuginfo reader about this mapping
+            because there is no debug information stored in this segment. */
+      }
+#     endif /* SOLARIS_PT_SUNDWTRACE_THRP */
    }
    else {
       VG_(do_atfork_parent)(tid);
@@ -9345,7 +9366,7 @@ POST(sys_door)
                                                  -1, 0);
 
                /* Note: We don't notify the debuginfo reader about this
-                  mapping because there are no debug information stored in
+                  mapping because there is no debug information stored in
                   this segment. */
             }
 

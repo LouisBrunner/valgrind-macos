@@ -4057,6 +4057,51 @@ static void parse_procselfmaps (
       (*record_gap)(gap_start, Addr_MAX - gap_start + 1);
 }
 
+/* parse_procselfmaps() callbacks do not allow for easy thread safety. */
+static Addr found_addr;
+static SizeT found_size;
+static UInt found_prot;
+
+/* Reports a new mapping into variables above. */
+static void new_segment_found_callback(Addr addr, SizeT len, UInt prot,
+   ULong dev, ULong ino, Off64T offset, const HChar *filename)
+{
+   aspacem_assert(addr <= addr + len - 1); 
+
+   Int iLo = find_nsegment_idx(addr);
+   Int iHi = find_nsegment_idx(addr + len - 1);
+   aspacem_assert(iLo <= iHi);
+   aspacem_assert(nsegments[iLo].start <= addr);
+   aspacem_assert(nsegments[iHi].end   >= addr + len - 1);
+
+   /* Do not perform any sanity checks. That is done in other places.
+      Just find if a reported mapping is found in aspacemgr's book keeping. */
+   for (Int i = iLo; i <= iHi; i++) {
+      if ((nsegments[i].kind == SkFree) || (nsegments[i].kind == SkResvn)) {
+         found_addr = addr;
+         found_size = len;
+         found_prot = prot;
+         break;
+      }
+   }
+}
+
+/* Returns True if a new segment was found. */
+Bool VG_(am_search_for_new_segment)(Addr *addr, SizeT *size, UInt *prot)
+{
+   found_addr = 0;
+   parse_procselfmaps(new_segment_found_callback, NULL);
+
+   if (found_addr != 0) {
+      *addr = found_addr;
+      *size = found_size;
+      *prot = found_prot;
+      return True;
+   } else {
+      return False;
+   }
+}
+
 #endif // defined(VGO_solaris)
 
 /*------END-procmaps-parser-for-Solaris--------------------------*/

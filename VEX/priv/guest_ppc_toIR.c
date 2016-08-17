@@ -18381,7 +18381,7 @@ dis_vxs_misc( UInt theInstr, UInt opc2, int allow_isa_3_0 )
             assign( value, unop( Iop_64to32, unop( Iop_V128HIto64,
                                                    mkexpr( result ) ) ) );
             putVSReg( XT, mkexpr( result ) );
-            generate_store_FPRF( Ity_I32, value );
+            generate_store_FPRF( Ity_I16, value );
             return True;
 
          } else {

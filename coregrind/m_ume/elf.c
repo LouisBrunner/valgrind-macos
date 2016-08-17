@@ -626,8 +626,7 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
             VG_(printf)("valgrind: m_ume.c: too small SUNWDTRACE size\n");
             return VKI_ENOEXEC;
          }
-         if ((ph->p_flags & PT_SUNWDTRACE_PROTECTION)
-                != PT_SUNWDTRACE_PROTECTION) {
+         if ((ph->p_flags & (PF_R | PF_W | PF_X)) != PT_SUNWDTRACE_PROTECTION) {
             VG_(printf)("valgrind: m_ume.c: SUNWDTRACE protection mismatch\n");
             return VKI_ENOEXEC;
          }
@@ -670,7 +669,7 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
                   VG_(printf)("valgrind: m_ume.c: too small SUNWDTRACE size\n");
                   return VKI_ENOEXEC;
                }
-               if ((iph->p_flags & PT_SUNWDTRACE_PROTECTION)
+               if ((iph->p_flags & (PF_R | PF_W | PF_X))
                       != PT_SUNWDTRACE_PROTECTION) {
                   VG_(printf)("valgrind: m_ume.c: SUNWDTRACE protection "
                               "mismatch\n");

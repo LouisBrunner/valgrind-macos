@@ -5242,7 +5242,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
    case Pin_AvUnary: {
       UInt v_dst = vregEnc(i->Pin.AvUnary.dst);
       UInt v_src = vregEnc(i->Pin.AvUnary.src);
-      UInt opc2, opc3;
+      UInt opc2 = 0xFFFFFFFF, opc3 = 0xFFFFFFFF; /* invalid */
 
       switch (i->Pin.AvUnary.op) {
       case Pav_MOV:       opc2 = 1156; break; // vor vD,vS,vS

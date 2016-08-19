@@ -3469,6 +3469,10 @@ static IRExpr * fp_exp_part( IRType size, IRTemp src )
       tsrc  = unop( Iop_64HIto32, mkexpr( src ) );
       mask  = mkU32( 0x7FF );
       shift_by = mkU8( 52 - 32 );
+
+   } else {
+      /*NOTREACHED*/
+      vassert(0); // Stops gcc complaining at "-Og"
    }
 
    return binop( Iop_And32, binop( Iop_Shr32, tsrc, shift_by ), mask );

@@ -264,6 +264,14 @@ static UInt setbit32 ( UInt x, Int ix, UInt b )
    (((_b9) << 9) | ((_b8) << 8)                                \
     | BITS8((_b7),(_b6),(_b5),(_b4),(_b3),(_b2),(_b1),(_b0)))
 
+#define BITS11(_b10,_b9,_b8,_b7,_b6,_b5,_b4,_b3,_b2,_b1,_b0)  \
+   ( ((_b10) << 10) | ((_b9) << 9) | ((_b8) << 8)              \
+    | BITS8((_b7),(_b6),(_b5),(_b4),(_b3),(_b2),(_b1),(_b0)))
+
+#define BITS12(_b11,_b10,_b9,_b8,_b7,_b6,_b5,_b4,_b3,_b2,_b1,_b0)  \
+   ( ((_b11) << 11) | ((_b10) << 10) | ((_b9) << 9) | ((_b8) << 8) \
+    | BITS8((_b7),(_b6),(_b5),(_b4),(_b3),(_b2),(_b1),(_b0)))
+
 /* produces _uint[_bMax:_bMin] */
 #define SLICE_UInt(_uint,_bMax,_bMin) \
    (( ((UInt)(_uint)) >> (_bMin)) \
@@ -12670,13 +12678,7 @@ static Bool decode_V8_instruction (
                IRTemp            new_itstate
             )
 {
-#  define INSNA(_bMax,_bMin)   SLICE_UInt(insnv8, (_bMax), (_bMin))
-#  define INSNT0(_bMax,_bMin)  SLICE_UInt( ((insnv8 >> 16) & 0xFFFF), \
-                                           (_bMax), (_bMin) )
-#  define INSNT1(_bMax,_bMin)  SLICE_UInt( ((insnv8 >> 0)  & 0xFFFF), \
-                                           (_bMax), (_bMin) )
-   //HChar dis_buf[128];
-   //dis_buf[0] = 0;
+#  define INSN(_bMax,_bMin)   SLICE_UInt(insnv8, (_bMax), (_bMin))
 
    if (isT) {
       vassert(old_itstate != IRTemp_INVALID);
@@ -12695,7 +12697,7 @@ static Bool decode_V8_instruction (
    if (isT) {
       conq = ARMCondAL;
    } else {
-      conq = (ARMCondcode)INSNA(31,28);
+      conq = (ARMCondcode)INSN(31,28);
       if (conq == ARMCondNV || conq == ARMCondAL) {
          vassert(condT == IRTemp_INVALID);
       } else {
@@ -12727,13 +12729,13 @@ static Bool decode_V8_instruction (
      Bool gate = True;
 
      UInt high9 = isT ? BITS9(1,1,1,1,1,1,1,1,1) : BITS9(1,1,1,1,0,0,1,1,1);
-     if (INSNA(31,23) == high9 && INSNA(21,16) == BITS6(1,1,0,0,0,0)
-         && INSNA(11,8) == BITS4(0,0,1,1) && INSNA(4,4) == 0) {
-        UInt bitD = INSNA(22,22);
-        UInt fldD = INSNA(15,12);
-        UInt bitM = INSNA(5,5);
-        UInt fldM = INSNA(3,0);
-        opc  = INSNA(7,6);
+     if (INSN(31,23) == high9 && INSN(21,16) == BITS6(1,1,0,0,0,0)
+         && INSN(11,8) == BITS4(0,0,1,1) && INSN(4,4) == 0) {
+        UInt bitD = INSN(22,22);
+        UInt fldD = INSN(15,12);
+        UInt bitM = INSN(5,5);
+        UInt fldM = INSN(3,0);
+        opc  = INSN(7,6);
         regD = (bitD << 4) | fldD;
         regM = (bitM << 4) | fldM;
      }
@@ -12826,19 +12828,19 @@ static Bool decode_V8_instruction (
                            : BITS9(1,1,1,1,0,0,1,0,0);
      UInt hi9_sha256 = isT ? BITS9(1,1,1,1,1,1,1,1,0)
                            : BITS9(1,1,1,1,0,0,1,1,0);
-     if ((INSNA(31,23) == hi9_sha1 || INSNA(31,23) == hi9_sha256)
-         && INSNA(11,8) == BITS4(1,1,0,0)
-         && INSNA(6,6) == 1 && INSNA(4,4) == 0) {
-        ix = INSNA(21,20);
-        if (INSNA(31,23) == hi9_sha256)
+     if ((INSN(31,23) == hi9_sha1 || INSN(31,23) == hi9_sha256)
+         && INSN(11,8) == BITS4(1,1,0,0)
+         && INSN(6,6) == 1 && INSN(4,4) == 0) {
+        ix = INSN(21,20);
+        if (INSN(31,23) == hi9_sha256)
            ix |= 4;
         if (ix < 7)
            gate = True;
      }
 
-     UInt regN = (INSNA(7,7)   << 4)  | INSNA(19,16);
-     UInt regD = (INSNA(22,22) << 4)  | INSNA(15,12);
-     UInt regM = (INSNA(5,5)   << 4)  | INSNA(3,0);
+     UInt regN = (INSN(7,7)   << 4)  | INSN(19,16);
+     UInt regD = (INSN(22,22) << 4)  | INSN(15,12);
+     UInt regM = (INSN(5,5)   << 4)  | INSN(3,0);
      if ((regD & 1) == 1 || (regM & 1) == 1 || (regN & 1) == 1)
         gate = False;
 
@@ -12945,17 +12947,17 @@ static Bool decode_V8_instruction (
      Bool gate = False;
 
      UInt hi9 = isT ? BITS9(1,1,1,1,1,1,1,1,1) : BITS9(1,1,1,1,0,0,1,1,1);
-     if (INSNA(31,23) == hi9 && INSNA(21,16) == BITS6(1,1,1,0,1,0)
-         && INSNA(11,7) == BITS5(0,0,1,1,1) && INSNA(4,4) == 0) {
+     if (INSN(31,23) == hi9 && INSN(21,16) == BITS6(1,1,1,0,1,0)
+         && INSN(11,7) == BITS5(0,0,1,1,1) && INSN(4,4) == 0) {
         gate = True;
      }
 
-     UInt regD = (INSNA(22,22) << 4) | INSNA(15,12);
-     UInt regM = (INSNA(5,5)   << 4) | INSNA(3,0);
+     UInt regD = (INSN(22,22) << 4) | INSN(15,12);
+     UInt regM = (INSN(5,5)   << 4) | INSN(3,0);
      if ((regD & 1) == 1 || (regM & 1) == 1)
         gate = False;
 
-     Bool is_1SU1 = INSNA(6,6) == 0;
+     Bool is_1SU1 = INSN(6,6) == 0;
 
      if (gate) {
         const HChar* iname
@@ -13015,13 +13017,13 @@ static Bool decode_V8_instruction (
      Bool gate = False;
 
      UInt hi9 = isT ? BITS9(1,1,1,1,1,1,1,1,1) : BITS9(1,1,1,1,0,0,1,1,1);
-     if (INSNA(31,23) == hi9 && INSNA(21,16) == BITS6(1,1,1,0,0,1)
-         && INSNA(11,6) == BITS6(0,0,1,0,1,1) && INSNA(4,4) == 0) {
+     if (INSN(31,23) == hi9 && INSN(21,16) == BITS6(1,1,1,0,0,1)
+         && INSN(11,6) == BITS6(0,0,1,0,1,1) && INSN(4,4) == 0) {
         gate = True;
      }
 
-     UInt regD = (INSNA(22,22) << 4) | INSNA(15,12);
-     UInt regM = (INSNA(5,5)   << 4) | INSNA(3,0);
+     UInt regD = (INSN(22,22) << 4) | INSN(15,12);
+     UInt regM = (INSN(5,5)   << 4) | INSN(3,0);
      if ((regD & 1) == 1 || (regM & 1) == 1)
         gate = False;
 
@@ -13072,15 +13074,15 @@ static Bool decode_V8_instruction (
      Bool gate = False;
 
      UInt hi9 = isT ? BITS9(1,1,1,0,1,1,1,1,1) : BITS9(1,1,1,1,0,0,1,0,1);
-     if (INSNA(31,23) == hi9 && INSNA(21,20) == BITS2(1,0)
-         && INSNA(11,8) == BITS4(1,1,1,0)
-         && INSNA(6,6) == 0 && INSNA(4,4) == 0) {
+     if (INSN(31,23) == hi9 && INSN(21,20) == BITS2(1,0)
+         && INSN(11,8) == BITS4(1,1,1,0)
+         && INSN(6,6) == 0 && INSN(4,4) == 0) {
         gate = True;
      }
 
-     UInt regN = (INSNA(7,7)   << 4)  | INSNA(19,16);
-     UInt regD = (INSNA(22,22) << 4)  | INSNA(15,12);
-     UInt regM = (INSNA(5,5)   << 4)  | INSNA(3,0);
+     UInt regN = (INSN(7,7)   << 4)  | INSN(19,16);
+     UInt regD = (INSN(22,22) << 4)  | INSN(15,12);
+     UInt regM = (INSN(5,5)   << 4)  | INSN(3,0);
 
      if ((regD & 1) == 1)
         gate = False;
@@ -13117,12 +13119,113 @@ static Bool decode_V8_instruction (
      /* fall through */
    }
 
+   /* ----------- LDA{,B,H}, STL{,B,H} ----------- */
+   /*     31   27   23   19   15 11   7    3
+      A1: cond 0001 1001  n    t 1100 1001 1111  LDA  Rt, [Rn]
+      A1: cond 0001 1111  n    t 1100 1001 1111  LDAH Rt, [Rn]
+      A1: cond 0001 1101  n    t 1100 1001 1111  LDAB Rt, [Rn]
+
+      A1: cond 0001 1000  n 1111 1100 1001    t  STL  Rt, [Rn]
+      A1: cond 0001 1110  n 1111 1100 1001    t  STLH Rt, [Rn]
+      A1: cond 0001 1100  n 1111 1100 1001    t  STLB Rt, [Rn]
+
+      T1: 1110 1000 1101  n    t 1111 1010 1111  LDA  Rt, [Rn]
+      T1: 1110 1000 1101  n    t 1111 1001 1111  LDAH Rt, [Rn]
+      T1: 1110 1000 1101  n    t 1111 1000 1111  LDAB Rt, [Rn]
+
+      T1: 1110 1000 1100  n    t 1111 1010 1111  STL  Rt, [Rn]
+      T1: 1110 1000 1100  n    t 1111 1001 1111  STLH Rt, [Rn]
+      T1: 1110 1000 1100  n    t 1111 1000 1111  STLB Rt, [Rn]
+   */
+   {
+     UInt nn     = 16; // invalid
+     UInt tt     = 16; // invalid
+     UInt sz     = 4;  // invalid
+     Bool isLoad = False;
+     Bool gate   = False;
+     if (isT) {
+        if (INSN(31,21) == BITS11(1,1,1,0,1,0,0,0,1,1,0)
+            && INSN(11,6) == BITS6(1,1,1,1,1,0)
+            && INSN(3,0) == BITS4(1,1,1,1)) {
+           nn     = INSN(19,16);
+           tt     = INSN(15,12);
+           isLoad = INSN(20,20) == 1;
+           sz     = INSN(5,4); // 00:B 01:H 10:W 11:invalid
+           gate   = sz != BITS2(1,1) && tt != 15 && nn != 15;
+        }
+     } else {
+        if (INSN(27,23) == BITS5(0,0,0,1,1) && INSN(20,20) == 1
+            && INSN(11,0) == BITS12(1,1,0,0,1,0,0,1,1,1,1,1)) {
+           nn     = INSN(19,16);
+           tt     = INSN(15,12);
+           isLoad = True;
+           sz     = INSN(22,21); // 10:B 11:H 00:W 01:invalid
+           gate   = sz != BITS2(0,1) && tt != 15 && nn != 15;
+        }
+        else
+        if (INSN(27,23) == BITS5(0,0,0,1,1) && INSN(20,20) == 0
+            && INSN(15,4) == BITS12(1,1,1,1,1,1,0,0,1,0,0,1)) {
+           nn     = INSN(19,16);
+           tt     = INSN(3,0);
+           isLoad = False;
+           sz     = INSN(22,21);  // 10:B 11:H 00:W 01:invalid
+           gate   = sz != BITS2(0,1) && tt != 15 && nn != 15;
+        }
+        if (gate) {
+           // Rearrange sz bits to be the same as the Thumb case
+           switch (sz) {
+              case 2: sz = 0; break;
+              case 3: sz = 1; break;
+              case 0: sz = 2; break;
+              default: /*NOTREACHED*/vassert(0);
+           }
+        }
+     }
+     // For both encodings, the instruction is guarded by condT, which
+     // is passed in by the caller.  Note that the the loads and stores
+     // are conditional, so we don't have to truncate the IRSB at this
+     // point, but the fence is unconditional.  There's no way to
+     // represent a conditional fence (without a side exit), but it
+     // doesn't matter from a correctness standpoint that it is
+     // unconditional -- it just loses a bit of performance in the
+     // case where the condition doesn't hold.
+     if (gate) {
+        vassert(sz <= 2 && nn <= 14 && tt <= 14);
+        IRExpr* ea = llGetIReg(nn);
+        if (isLoad) {
+           static IRLoadGOp cvt[3]
+              = { ILGop_8Uto32, ILGop_16Uto32, ILGop_Ident32 };
+           IRTemp data = newTemp(Ity_I32);
+           loadGuardedLE(data, cvt[sz], ea, mkU32(0)/*alt*/, condT);
+           if (isT) {
+              putIRegT(tt, mkexpr(data), condT);
+           } else {
+              putIRegA(tt, mkexpr(data), condT, Ijk_INVALID);
+           }
+           stmt(IRStmt_MBE(Imbe_Fence));
+        } else {
+           stmt(IRStmt_MBE(Imbe_Fence));
+           IRExpr* data = llGetIReg(tt);
+           switch (sz) {
+              case 0: data = unop(Iop_32to8,  data); break;
+              case 1: data = unop(Iop_32to16, data); break;
+              case 2: break;
+              default: vassert(0);
+           }
+           storeGuardedLE(ea, data, condT);
+        }
+        const HChar* ldNames[3] = { "ldab", "ldah", "lda" };
+        const HChar* stNames[3] = { "stlb", "stlh", "stl" };
+        DIP("%s r%u, [r%u]", (isLoad ? ldNames : stNames)[sz], tt, nn);
+        return True;
+     }
+     /* else fall through */
+   }
+
    /* ---------- Doesn't match anything. ---------- */
    return False;
 
-#  undef INSNA
-#  undef INSNT0
-#  undef INSNT1
+#  undef INSN
 }
 
 

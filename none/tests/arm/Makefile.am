@@ -12,7 +12,10 @@ EXTRA_DIST = \
 	v6intARM.stdout.exp v6intARM.stderr.exp v6intARM.vgtest \
 	v6intThumb.stdout.exp v6intThumb.stderr.exp v6intThumb.vgtest \
 	v6media.stdout.exp v6media.stderr.exp v6media.vgtest \
-	v8crypto.stdout.exp v8crypto.stderr.exp v8crypto.vgtest \
+	v8crypto_a.stdout.exp v8crypto_a.stderr.exp v8crypto_a.vgtest \
+	v8crypto_t.stdout.exp v8crypto_t.stderr.exp v8crypto_t.vgtest \
+	v8memory_a.stdout.exp v8memory_a.stderr.exp v8memory_a.vgtest \
+	v8memory_t.stdout.exp v8memory_t.stderr.exp v8memory_t.vgtest \
 	vcvt_fixed_float_VFP.stdout.exp vcvt_fixed_float_VFP.stderr.exp \
 		vcvt_fixed_float_VFP.vgtest \
 	vfp.stdout.exp vfp.stderr.exp vfp.vgtest \
@@ -28,7 +31,10 @@ check_PROGRAMS = \
 	v6intARM \
 	v6intThumb \
 	v6media \
-	v8crypto \
+	v8crypto_a \
+	v8crypto_t \
+	v8memory_a \
+	v8memory_t \
 	vcvt_fixed_float_VFP \
 	vfp \
 	vfpv4_fma
@@ -51,7 +57,13 @@ v6intThumb_CFLAGS = $(AM_CFLAGS) -g -O0 -mcpu=cortex-a8 -mthumb
 
 v6media_CFLAGS    = $(AM_CFLAGS) -g -O0 -mcpu=cortex-a8 -mthumb
 
-v8crypto_CFLAGS   = $(AM_CFLAGS) -g -O0 -mfpu=crypto-neon-fp-armv8
+v8crypto_a_CFLAGS = $(AM_CFLAGS) -g -O0 -mfpu=crypto-neon-fp-armv8 -marm
+v8crypto_t_CFLAGS = $(AM_CFLAGS) -g -O0 -mfpu=crypto-neon-fp-armv8 -mthumb
+
+v8memory_a_CFLAGS = $(AM_CFLAGS) -g -O0 \
+			-march=armv8-a -mfpu=crypto-neon-fp-armv8 -marm
+v8memory_t_CFLAGS = $(AM_CFLAGS) -g -O0 \
+			-march=armv8-a -mfpu=crypto-neon-fp-armv8 -mthumb
 
 vfp_CFLAGS        = $(AM_CFLAGS) -g -O0 -mcpu=cortex-a8 \
 			-mfpu=neon \

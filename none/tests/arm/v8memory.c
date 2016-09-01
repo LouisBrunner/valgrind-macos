@@ -7,6 +7,11 @@ gcc -g -o v8memory_t -march=armv8-a -mfpu=crypto-neon-fp-armv8 \
    none/tests/arm/v8memory.c -I. -Wall -mthumb   
 */
 
+/* These tests unfortunately are unable to check the relative
+   placement (or, even, presence) of the required memory fences
+   relative to the store/load required.  They only verify the
+   data-movement component. */
+
 #include <stdio.h>
 #include <malloc.h>  // memalign
 #include <string.h>  // memset
@@ -126,7 +131,7 @@ int main ( void )
    MEM_TEST("stl  r6, [r10]")
    MEM_TEST("stlb r9, [r10]")
    MEM_TEST("stlh r3, [r10]")
-#if 0
+
    ////////////////////////////////////////////////////////////////
    printf("LDAEX{,B,H,D} (reg)\n\n");
    MEM_TEST("ldaex  r6, [r10]")
@@ -135,6 +140,7 @@ int main ( void )
    MEM_TEST("ldaexd r2, r3, [r10]")
 
    ////////////////////////////////////////////////////////////////
+   // These verify that stlex* do notice a cleared (missing) reservation.
    printf("STLEX{,B,H,D} (reg) -- expected to fail\n\n");
    MEM_TEST("clrex; stlex  r9, r6, [r10]")
    MEM_TEST("clrex; stlexb r9, r6, [r10]")
@@ -142,14 +148,17 @@ int main ( void )
    MEM_TEST("clrex; stlexd r9, r2, r3, [r10]")
 
    ////////////////////////////////////////////////////////////////
+   // These verify that stlex* do notice a successful reservation.
+   // By using ldaex* to create the reservation in the first place,
+   // they also verify that ldaex* actually create a reservation.
    printf("STLEX{,B,H,D} (reg) -- expected to succeed\n\n");
-   MEM_TEST("ldrex  r2, [r10] ; stlex  r9, r6, [r10]")
-   MEM_TEST("ldrexb r2, [r10] ; stlexb r9, r6, [r10]")
-   MEM_TEST("ldrexh r2, [r10] ; stlexh r9, r3, [r10]")
+   MEM_TEST("ldaex  r2, [r10] ; stlex  r9, r6, [r10]")
+   MEM_TEST("ldaexb r2, [r10] ; stlexb r9, r6, [r10]")
+   MEM_TEST("ldaexh r2, [r10] ; stlexh r9, r3, [r10]")
    MEM_TEST("mov r4, r2 ; mov r5, r3 ; " // preserve r2/r3 around the ldrexd
-            "ldrexd r2, r3, [r10] ; "
+            "ldaexd r2, r3, [r10] ; "
             "mov r2, r4 ; mov r3, r5 ; "
             "stlexd r9, r2, r3, [r10]")
-#endif
+
    return 0;
 }

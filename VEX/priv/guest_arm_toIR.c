@@ -13140,7 +13140,7 @@ static Bool decode_V8_instruction (
    {
      UInt nn     = 16; // invalid
      UInt tt     = 16; // invalid
-     UInt sz     = 4;  // invalid
+     UInt szBlg2 = 4;  // invalid
      Bool isLoad = False;
      Bool gate   = False;
      if (isT) {
@@ -13150,8 +13150,8 @@ static Bool decode_V8_instruction (
            nn     = INSN(19,16);
            tt     = INSN(15,12);
            isLoad = INSN(20,20) == 1;
-           sz     = INSN(5,4); // 00:B 01:H 10:W 11:invalid
-           gate   = sz != BITS2(1,1) && tt != 15 && nn != 15;
+           szBlg2 = INSN(5,4); // 00:B 01:H 10:W 11:invalid
+           gate   = szBlg2 != BITS2(1,1) && tt != 15 && nn != 15;
         }
      } else {
         if (INSN(27,23) == BITS5(0,0,0,1,1) && INSN(20,20) == 1
@@ -13159,8 +13159,8 @@ static Bool decode_V8_instruction (
            nn     = INSN(19,16);
            tt     = INSN(15,12);
            isLoad = True;
-           sz     = INSN(22,21); // 10:B 11:H 00:W 01:invalid
-           gate   = sz != BITS2(0,1) && tt != 15 && nn != 15;
+           szBlg2     = INSN(22,21); // 10:B 11:H 00:W 01:invalid
+           gate   = szBlg2 != BITS2(0,1) && tt != 15 && nn != 15;
         }
         else
         if (INSN(27,23) == BITS5(0,0,0,1,1) && INSN(20,20) == 0
@@ -13168,15 +13168,15 @@ static Bool decode_V8_instruction (
            nn     = INSN(19,16);
            tt     = INSN(3,0);
            isLoad = False;
-           sz     = INSN(22,21);  // 10:B 11:H 00:W 01:invalid
-           gate   = sz != BITS2(0,1) && tt != 15 && nn != 15;
+           szBlg2     = INSN(22,21);  // 10:B 11:H 00:W 01:invalid
+           gate   = szBlg2 != BITS2(0,1) && tt != 15 && nn != 15;
         }
         if (gate) {
-           // Rearrange sz bits to be the same as the Thumb case
-           switch (sz) {
-              case 2: sz = 0; break;
-              case 3: sz = 1; break;
-              case 0: sz = 2; break;
+           // Rearrange szBlg2 bits to be the same as the Thumb case
+           switch (szBlg2) {
+              case 2: szBlg2 = 0; break;
+              case 3: szBlg2 = 1; break;
+              case 0: szBlg2 = 2; break;
               default: /*NOTREACHED*/vassert(0);
            }
         }
@@ -13185,18 +13185,18 @@ static Bool decode_V8_instruction (
      // is passed in by the caller.  Note that the the loads and stores
      // are conditional, so we don't have to truncate the IRSB at this
      // point, but the fence is unconditional.  There's no way to
-     // represent a conditional fence (without a side exit), but it
+     // represent a conditional fence without a side exit, but it
      // doesn't matter from a correctness standpoint that it is
      // unconditional -- it just loses a bit of performance in the
      // case where the condition doesn't hold.
      if (gate) {
-        vassert(sz <= 2 && nn <= 14 && tt <= 14);
+        vassert(szBlg2 <= 2 && nn <= 14 && tt <= 14);
         IRExpr* ea = llGetIReg(nn);
         if (isLoad) {
            static IRLoadGOp cvt[3]
               = { ILGop_8Uto32, ILGop_16Uto32, ILGop_Ident32 };
            IRTemp data = newTemp(Ity_I32);
-           loadGuardedLE(data, cvt[sz], ea, mkU32(0)/*alt*/, condT);
+           loadGuardedLE(data, cvt[szBlg2], ea, mkU32(0)/*alt*/, condT);
            if (isT) {
               putIRegT(tt, mkexpr(data), condT);
            } else {
@@ -13206,7 +13206,7 @@ static Bool decode_V8_instruction (
         } else {
            stmt(IRStmt_MBE(Imbe_Fence));
            IRExpr* data = llGetIReg(tt);
-           switch (sz) {
+           switch (szBlg2) {
               case 0: data = unop(Iop_32to8,  data); break;
               case 1: data = unop(Iop_32to16, data); break;
               case 2: break;
@@ -13216,9 +13216,247 @@ static Bool decode_V8_instruction (
         }
         const HChar* ldNames[3] = { "ldab", "ldah", "lda" };
         const HChar* stNames[3] = { "stlb", "stlh", "stl" };
-        DIP("%s r%u, [r%u]", (isLoad ? ldNames : stNames)[sz], tt, nn);
+        DIP("%s r%u, [r%u]", (isLoad ? ldNames : stNames)[szBlg2], tt, nn);
         return True;
      }
+     /* else fall through */
+   }
+
+   /* ----------- LDAEX{,B,H,D}, STLEX{,B,H,D} ----------- */
+   /*     31   27   23   19 15 11   7    3
+      A1: cond 0001 1101 n  t  1110 1001 1111  LDAEXB Rt, [Rn]
+      A1: cond 0001 1111 n  t  1110 1001 1111  LDAEXH Rt, [Rn]
+      A1: cond 0001 1001 n  t  1110 1001 1111  LDAEX  Rt, [Rn]
+      A1: cond 0001 1011 n  t  1110 1001 1111  LDAEXD Rt, Rt+1, [Rn]
+
+      A1: cond 0001 1100 n  d  1110 1001 t     STLEXB Rd, Rt, [Rn]
+      A1: cond 0001 1110 n  d  1110 1001 t     STLEXH Rd, Rt, [Rn]
+      A1: cond 0001 1000 n  d  1110 1001 t     STLEX  Rd, Rt, [Rn]
+      A1: cond 0001 1010 n  d  1110 1001 t     STLEXD Rd, Rt, Rt+1, [Rn]
+
+          31  28   24    19 15 11   7    3
+      T1: 111 0100 01101 n  t  1111 1100 1111  LDAEXB Rt, [Rn]
+      T1: 111 0100 01101 n  t  1111 1101 1111  LDAEXH Rt, [Rn]
+      T1: 111 0100 01101 n  t  1111 1110 1111  LDAEX  Rt, [Rn]
+      T1: 111 0100 01101 n  t  t2   1111 1111  LDAEXD Rt, Rt2, [Rn]
+
+      T1: 111 0100 01100 n  t  1111 1100 d     STLEXB Rd, Rt, [Rn]
+      T1: 111 0100 01100 n  t  1111 1101 d     STLEXH Rd, Rt, [Rn]
+      T1: 111 0100 01100 n  t  1111 1110 d     STLEX  Rd, Rt, [Rn]
+      T1: 111 0100 01100 n  t  t2   1111 d     STLEXD Rd, Rt, Rt2, [Rn]
+   */
+   {
+     UInt nn     = 16; // invalid
+     UInt tt     = 16; // invalid
+     UInt tt2    = 16; // invalid
+     UInt dd     = 16; // invalid
+     UInt szBlg2 = 4;  // invalid
+     Bool isLoad = False;
+     Bool gate   = False;
+     if (isT) {
+        if (INSN(31,21) == BITS11(1,1,1,0,1,0,0,0,1,1,0)
+            && INSN(7,6) == BITS2(1,1)) {
+           isLoad = INSN(20,20) == 1;
+           nn     = INSN(19,16);
+           tt     = INSN(15,12);
+           tt2    = INSN(11,8);
+           szBlg2 = INSN(5,4);
+           dd     = INSN(3,0);
+           gate   = True;
+           if (szBlg2 < BITS2(1,1) && tt2 != BITS4(1,1,1,1)) gate = False;
+           if (isLoad && dd != BITS4(1,1,1,1)) gate = False;
+           // re-set not-used register values to invalid
+           if (szBlg2 < BITS2(1,1)) tt2 = 16;
+           if (isLoad) dd = 16;
+        }
+     } else {
+        /* ARM encoding.  Do the load and store cases separately as
+           the register numbers are in different places and a combined decode
+           is too confusing. */
+        if (INSN(27,23) == BITS5(0,0,0,1,1) && INSN(20,20) == 1
+            && INSN(11,0) == BITS12(1,1,1,0,1,0,0,1,1,1,1,1)) {
+           szBlg2 = INSN(22,21);
+           isLoad = True;
+           nn     = INSN(19,16);
+           tt     = INSN(15,12);
+           gate   = True;
+        }
+        else
+        if (INSN(27,23) == BITS5(0,0,0,1,1) && INSN(20,20) == 0
+            && INSN(11,4) == BITS8(1,1,1,0,1,0,0,1)) {
+           szBlg2 = INSN(22,21);
+           isLoad = False;
+           nn     = INSN(19,16);
+           dd     = INSN(15,12);
+           tt     = INSN(3,0);
+           gate   = True;
+        }
+        if (gate) {
+           // Rearrange szBlg2 bits to be the same as the Thumb case
+           switch (szBlg2) {
+              case 2: szBlg2 = 0; break;
+              case 3: szBlg2 = 1; break;
+              case 0: szBlg2 = 2; break;
+              case 1: szBlg2 = 3; break;
+              default: /*NOTREACHED*/vassert(0);
+           }
+        }
+     }
+     // Perform further checks on register numbers
+     if (gate) {
+        /**/ if (isT && isLoad) {
+           // Thumb load
+           if (szBlg2 < 3) {
+              if (! (tt != 13 && tt != 15 && nn != 15)) gate = False;
+           } else {
+              if (! (tt != 13 && tt != 15 && tt2 != 13 && tt2 != 15
+                     && tt != tt2 && nn != 15)) gate = False;
+           }
+        }
+        else if (isT && !isLoad) {
+           // Thumb store
+           if (szBlg2 < 3) {
+              if (! (dd != 13 && dd != 15 && tt != 13 && tt != 15
+                     && nn != 15 && dd != nn && dd != tt)) gate = False;
+           } else {
+              if (! (dd != 13 && dd != 15 && tt != 13 && tt != 15
+                     && tt2 != 13 && tt2 != 15 && nn != 15 && dd != nn
+                     && dd != tt && dd != tt2)) gate = False;
+           }
+        }
+        else if (!isT && isLoad) {
+           // ARM Load
+           if (szBlg2 < 3) {
+              if (! (tt != 15 && nn != 15)) gate = False;
+           } else {
+              if (! (tt & 1) == 0 && tt != 14 && nn != 15) gate = False;
+              vassert(tt2 == 16/*invalid*/);
+              tt2 = tt + 1;
+           }
+        }
+        else if (!isT && !isLoad) {
+           // ARM Store
+           if (szBlg2 < 3) {
+              if (! (dd != 15 && tt != 15 && nn != 15
+                     && dd != nn && dd != tt)) gate = False;
+           } else {
+              if (! (dd != 15 && (tt & 1) == 0 && tt != 14 && nn != 15
+                     && dd != nn && dd != tt && dd != tt+1)) gate = False;
+              vassert(tt2 == 16/*invalid*/);
+              tt2 = tt + 1;
+           }
+        }
+        else /*NOTREACHED*/vassert(0);
+     }
+     // Paranoia ..
+     vassert(szBlg2 <= 3);
+     if (szBlg2 < 3) { vassert(tt2 == 16/*invalid*/); }
+                else { vassert(tt2 <= 14); }
+     if (isLoad) { vassert(dd == 16/*invalid*/); }
+            else { vassert(dd <= 14); }
+     // If we're still good even after all that, generate the IR.
+     if (gate) {
+        /* First, go unconditional.  Staying in-line is too complex. */
+        if (isT) {
+           vassert(condT != IRTemp_INVALID);
+           mk_skip_over_T32_if_cond_is_false( condT );
+        } else {
+           if (condT != IRTemp_INVALID) {
+              mk_skip_over_A32_if_cond_is_false( condT );
+              condT = IRTemp_INVALID;
+           }
+        }
+        /* Now the load or store. */
+        IRType ty = Ity_INVALID; /* the type of the transferred data */
+        const HChar* nm = NULL;
+        switch (szBlg2) {
+           case 0: nm = "b"; ty = Ity_I8;  break;
+           case 1: nm = "h"; ty = Ity_I16; break;
+           case 2: nm = "";  ty = Ity_I32; break;
+           case 3: nm = "d"; ty = Ity_I64; break;
+           default: vassert(0);
+        }
+        IRExpr* ea = isT ? getIRegT(nn) : getIRegA(nn);
+        if (isLoad) {
+           // LOAD.  Transaction, then fence.
+           IROp widen = Iop_INVALID;
+           switch (szBlg2) {
+              case 0: widen = Iop_8Uto32;  break;
+              case 1: widen = Iop_16Uto32; break;
+              case 2: case 3: break;
+              default: vassert(0);
+           }
+           IRTemp  res = newTemp(ty);
+           // FIXME: assumes little-endian guest
+           stmt( IRStmt_LLSC(Iend_LE, res, ea, NULL/*this is a load*/) );
+
+#          define PUT_IREG(_nnz, _eez) \
+              do { vassert((_nnz) <= 14); /* no writes to the PC */ \
+                   if (isT) { putIRegT((_nnz), (_eez), IRTemp_INVALID); } \
+                       else { putIRegA((_nnz), (_eez), \
+                              IRTemp_INVALID, Ijk_Boring); } } while(0)
+           if (ty == Ity_I64) {
+              // FIXME: assumes little-endian guest
+              PUT_IREG(tt,  unop(Iop_64to32, mkexpr(res)));
+              PUT_IREG(tt2, unop(Iop_64HIto32, mkexpr(res)));
+           } else {
+              PUT_IREG(tt, widen == Iop_INVALID
+                              ? mkexpr(res) : unop(widen, mkexpr(res)));
+           }
+           stmt(IRStmt_MBE(Imbe_Fence));
+           if (ty == Ity_I64) {
+              DIP("ldrex%s%s r%u, r%u, [r%u]\n",
+                  nm, isT ? "" : nCC(conq), tt, tt2, nn);
+           } else {
+              DIP("ldrex%s%s r%u, [r%u]\n", nm, isT ? "" : nCC(conq), tt, nn);
+           }           
+#          undef PUT_IREG
+        } else {
+           // STORE.  Fence, then transaction.
+           IRTemp resSC1, resSC32, data;
+           IROp   narrow = Iop_INVALID;
+           switch (szBlg2) {
+              case 0: narrow = Iop_32to8; break;
+              case 1: narrow = Iop_32to16; break;
+              case 2: case 3: break;
+              default: vassert(0);
+           }
+           stmt(IRStmt_MBE(Imbe_Fence));
+           data = newTemp(ty);
+#          define GET_IREG(_nnz) (isT ? getIRegT(_nnz) : getIRegA(_nnz))
+           assign(data,
+                  ty == Ity_I64
+                     // FIXME: assumes little-endian guest
+                     ? binop(Iop_32HLto64, GET_IREG(tt2), GET_IREG(tt))
+                     : narrow == Iop_INVALID
+                        ? GET_IREG(tt)
+                        : unop(narrow, GET_IREG(tt)));
+#          undef GET_IREG
+           resSC1 = newTemp(Ity_I1);
+           // FIXME: assumes little-endian guest
+           stmt( IRStmt_LLSC(Iend_LE, resSC1, ea, mkexpr(data)) );
+
+           /* Set rDD to 1 on failure, 0 on success.  Currently we have
+              resSC1 == 0 on failure, 1 on success. */
+           resSC32 = newTemp(Ity_I32);
+           assign(resSC32,
+                  unop(Iop_1Uto32, unop(Iop_Not1, mkexpr(resSC1))));
+           vassert(dd <= 14); /* no writes to the PC */
+           if (isT) {
+              putIRegT(dd, mkexpr(resSC32), IRTemp_INVALID);
+           } else {
+              putIRegA(dd, mkexpr(resSC32), IRTemp_INVALID, Ijk_Boring);
+           }
+           if (ty == Ity_I64) {
+              DIP("strex%s%s r%u, r%u, r%u, [r%u]\n",
+                  nm, isT ? "" : nCC(conq), dd, tt, tt2, nn);
+           } else {
+              DIP("strex%s%s r%u, r%u, [r%u]\n",
+                  nm, isT ? "" : nCC(conq), dd, tt, nn);
+           }
+        } /* if (isLoad) */
+        return True;
+     } /* if (gate) */
      /* else fall through */
    }
 

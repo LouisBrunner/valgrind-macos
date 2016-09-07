@@ -195,8 +195,8 @@ typedef
    }
    CoreSuppKind;
 
-/* Max number of callers for context in a suppression. */
-#define VG_MAX_SUPP_CALLERS  24
+/* Max number of callers for context in a suppression is
+   VG_DEEPEST_BACKTRACE. */
 
 /* For each caller specified for a suppression, record the nature of
    the caller name.  Not of interest to tools. */
@@ -410,8 +410,7 @@ static void gen_suppression(const Error* err)
    // Print stack trace elements
    UInt n_ips = VG_(get_ExeContext_n_ips)(ec);
    vg_assert(n_ips > 0);
-   if (n_ips > VG_MAX_SUPP_CALLERS)
-      n_ips = VG_MAX_SUPP_CALLERS;
+   vg_assert(n_ips <= VG_DEEPEST_BACKTRACE);
    VG_(apply_StackTrace)(printSuppForIp_nonXML,
                          text,
                          VG_(get_ExeContext_StackTrace)(ec),
@@ -1260,7 +1259,7 @@ static void load_one_suppressions_file ( Int clo_suppressions_i )
    HChar* tool_names;
    HChar* supp_name;
    const HChar* err_str = NULL;
-   SuppLoc tmp_callers[VG_MAX_SUPP_CALLERS];
+   SuppLoc tmp_callers[VG_DEEPEST_BACKTRACE];
 
    // Check it's not a directory.
    if (VG_(is_dir)( filename )) {
@@ -1289,7 +1288,7 @@ static void load_one_suppressions_file ( Int clo_suppressions_i )
       supp->count = 0;
 
       // Initialise temporary reading-in buffer.
-      for (i = 0; i < VG_MAX_SUPP_CALLERS; i++) {
+      for (i = 0; i < VG_DEEPEST_BACKTRACE; i++) {
          tmp_callers[i].ty   = NoName;
          tmp_callers[i].name_is_simple_str = False;
          tmp_callers[i].name = NULL;
@@ -1391,7 +1390,7 @@ static void load_one_suppressions_file ( Int clo_suppressions_i )
                BOMB("missing stack trace");
             }
          }
-         if (i == VG_MAX_SUPP_CALLERS)
+         if (i == VG_DEEPEST_BACKTRACE)
             BOMB("too many callers in stack trace");
          if (i > 0 && i >= VG_(clo_backtrace_size)) 
             break;

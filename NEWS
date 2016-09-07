@@ -26,6 +26,11 @@ n-i-bz Improved thread startup time significantly on non-Linux platforms.
   "nouserintercepts" can be any non-existing library name).
   This new functionality is not implemented for darwin/macosx.
 
+* The maximum number of callers in a suppression entry is now equal to
+  the maximum size for --num-callers (500).
+  Note that --gen-suppressions=yes|all similarly generate suppression
+  containing up to --num-callers frames.
+
 * New and modified GDB server monitor features:
 
   - Valgrind's gdbserver now accepts the command 'catch syscall'.
@@ -58,6 +63,7 @@ To see details of a given bug, visit
 where XXXXXX is the bug number as listed below.
 
 191069  Exiting due to signal not reported in XML output
+199468  Suppressions: stack size limited to 25 while --num-callers allows more frames
 212352  vex amd64 unhandled opc_aux = 0x 2, first_opcode == 0xDC (FCOM)
 278744  cvtps2pd with redundant RexW
 303877  valgrind doesn't support compressed debuginfo sections.

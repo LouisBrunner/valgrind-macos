@@ -167,7 +167,7 @@ case "${is_clang}-${gcc_version}" in
 	AC_MSG_RESULT([ok (clang-${gcc_version})])
 	;;
      *)
-	AC_MSG_RESULT([no (${gcc_version})])
+	AC_MSG_RESULT([no (${is_clang}-${gcc_version})])
 	AC_MSG_ERROR([please use gcc >= 3.0 or clang >= 2.9 or icc >= 13.0])
 	;;
 esac

@@ -44,7 +44,6 @@ check_PROGRAMS = \
 	insn-bsfl \
 	insn-pmovmskb \
 	sh-mem-vec128 \
-	shr_edx \
 	sse_memory \
 	xor-undef-amd64
 if BUILD_AVX_TESTS
@@ -55,7 +54,9 @@ if HAVE_ASM_CONSTRAINT_P
 endif
 # clang 3.5.0 barfs about -mfancy-math-387
 if !COMPILER_IS_CLANG
- check_PROGRAMS += more_x87_fp
+ check_PROGRAMS += \
+ 	more_x87_fp \
+ 	shr_edx
 endif
 
 AM_CFLAGS    += @FLAG_M64@

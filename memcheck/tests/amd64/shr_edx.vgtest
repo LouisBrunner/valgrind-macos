@@ -1,2 +1,3 @@
+prereq: test -e shr_edx
 prog: shr_edx
 vgopts: -q

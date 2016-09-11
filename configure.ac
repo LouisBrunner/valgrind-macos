@@ -154,7 +154,7 @@ AM_CONDITIONAL(COMPILER_IS_ICC, test $is_clang = icc)
 # Note: m4 arguments are quoted with [ and ] so square brackets in shell
 # statements have to be quoted.
 case "${is_clang}-${gcc_version}" in
-     applellvm-5.1|applellvm-6.*|applellvm-7.*)
+     applellvm-5.1|applellvm-6.*|applellvm-7.*|applellvm-8.*)
 	AC_MSG_RESULT([ok (Apple LLVM version ${gcc_version})])
 	;;
      icc-1[[3-9]].*)

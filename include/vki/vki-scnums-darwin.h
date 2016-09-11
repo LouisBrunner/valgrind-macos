@@ -767,7 +767,6 @@
 #elif DARWIN_VERS == DARWIN_10_10
 #define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(490)
 #elif DARWIN_VERS == DARWIN_10_11
-// TODO Confirm against final release
 #define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(500)
 #else
 #error unknown darwin version

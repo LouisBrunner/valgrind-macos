@@ -105,6 +105,7 @@ where XXXXXX is the bug number as listed below.
 358030  support direct socket calls on x86 32bit (new in linux 4.3)
 358478  drd/tests/std_thread.cpp doesn't build with GCC6
 359133  Assertion 'eltSzB <= ddpa->poolSzB' failed
+359181  Buffer Overflow during Demangling
 359201  futex syscall "skips" argument 5 if op is FUTEX_WAIT_BITSET
 359289  s390x: popcnt (B9E1) not implemented
 359472  The Power PC vsubuqm instruction doesn't always give the correct result

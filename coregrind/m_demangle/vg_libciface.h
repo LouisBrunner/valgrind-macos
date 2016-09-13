@@ -64,15 +64,29 @@
 #define strpbrk(_ss,_aa)     VG_(strpbrk)((_ss),(_aa))
 #define strspn(_ss,_aa)      VG_(strspn)((_ss),(_aa))
 #define strstr(_hh,_nn)      VG_(strstr)((_hh),(_nn))
+/* strtol supports base 16 or else assumes it is base 10 */
+#define strtol(s,r,b)         ((b) == 16 ? \
+                               VG_(strtoll16) ((s),(r)) \
+                               : VG_(strtoll10) ((s),(r)))
+
 
 #define size_t SizeT
 
 #define xmalloc(_nn)      \
    VG_(arena_malloc)(VG_AR_DEMANGLE, "m_demangle.xmalloc", (_nn))
+#define xmalloc_failed(_sz) abort()
 #define xrealloc(_pt,_sz) \
    VG_(arena_realloc)(VG_AR_DEMANGLE,"m_demangle.xrealloc",(_pt),(_sz))
 #define xstrdup(_str) \
    VG_(arena_strdup)(VG_AR_DEMANGLE,"m_demangle.xstrdup",(_str))
+
+static inline void *xmemdup(const void *in, size_t c_size, size_t a_size) {
+   void *dst;
+   dst = VG_(arena_malloc)(VG_AR_DEMANGLE, "m_demangle.xmemdup", a_size);
+   if (a_size > c_size)
+      memset ((char *) dst + c_size, 0, a_size - c_size);
+   return memcpy (dst, in, c_size);
+}
 
 /* Required by safe-ctype.h */
 
@@ -96,6 +110,11 @@
 #define XNEW(_Ty) \
         ((_Ty *) xmalloc(sizeof (_Ty)))
 
+#define XDELETEVEC(P) \
+	free ((void*) (P))
+
+#define XDUPVEC(T, P, N) \
+	((T *) xmemdup ((P), sizeof (T) * (N), sizeof (T) * (N)))
 
 /*--------------------------------------------------------------------*/
 /*--- end                                           vg_libciface.h ---*/

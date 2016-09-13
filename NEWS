@@ -154,6 +154,7 @@ where XXXXXX is the bug number as listed below.
 363858  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 4/5
 364948  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 5/5
 366138  Fix configure errors out when using Xcode 8 (clang 8.0.0)
+368461  mmapunmap test fails on ppc64
 
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64
 n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap
@@ -163,7 +164,6 @@ n-i-bz Document brk segment limitation, reference manual in limit reached msg.
 n-i-bz Fix clobber list in none/tests/amd64/xacq_xrel.c [valgrind r15737]
 n-i-bz Bump allowed shift value for "add.w reg, sp, reg, lsl #N" [vex r3206]
 n-i-bz amd64: memcheck false positive with shr %edx
-
 
 Release 3.11.0 (22 September 2015)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

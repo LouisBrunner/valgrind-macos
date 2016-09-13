@@ -1379,8 +1379,6 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]])], [
 ac_have_altivec=yes
 AC_MSG_RESULT([yes])
-AC_DEFINE([HAS_ALTIVEC], 1,
-          [Define to 1 if gcc/as can do Altivec.])
 ], [
 ac_have_altivec=no
 AC_MSG_RESULT([no])

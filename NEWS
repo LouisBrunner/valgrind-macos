@@ -155,6 +155,7 @@ where XXXXXX is the bug number as listed below.
 363858  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 4/5
 364948  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 5/5
 366138  Fix configure errors out when using Xcode 8 (clang 8.0.0)
+368412  False positive result for altivec capability check
 368461  mmapunmap test fails on ppc64
 
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64

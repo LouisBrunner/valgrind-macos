@@ -49,14 +49,6 @@
     <frame>
       <ip>0x........</ip>
       <obj>...</obj>
-      <fn>pthread_create_WRK</fn>
-      <dir>...</dir>
-      <file>hg_intercepts.c</file>
-      <line>...</line>
-    </frame>
-    <frame>
-      <ip>0x........</ip>
-      <obj>...</obj>
       <fn>pthread_create</fn>
       <dir>...</dir>
       <file>hg_intercepts.c</file>

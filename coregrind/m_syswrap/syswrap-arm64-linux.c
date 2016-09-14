@@ -1023,7 +1023,7 @@ static SyscallTableEntry syscall_main_table[] = {
 
    GENXY(__NR_gettimeofday,      sys_gettimeofday),      // 169
    GENX_(__NR_settimeofday,      sys_settimeofday),      // 170
-
+   LINXY(__NR_adjtimex,          sys_adjtimex),          // 171
    GENX_(__NR_getpid,            sys_getpid),            // 172
    GENX_(__NR_getppid,           sys_getppid),           // 173
    GENX_(__NR_getuid,            sys_getuid),            // 174
@@ -1225,7 +1225,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //ZZ 
 //ZZ //zz    //   (__NR_setdomainname,     sys_setdomainname),  // 121 */*(?)
 //ZZ //   PLAX_(__NR_modify_ldt,        sys_modify_ldt),     // 123
-//ZZ //zz    LINXY(__NR_adjtimex,          sys_adjtimex),       // 124
 //ZZ //zz 
 //ZZ    LINXY(__NR_sigprocmask,       sys_sigprocmask),    // 126
 //ZZ //zz    // Nb: create_module() was removed 2.4-->2.6

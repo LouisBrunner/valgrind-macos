@@ -808,26 +808,29 @@ PRE(sys_adjtimex)
    struct vki_timex *tx = (struct vki_timex *)ARG1;
    PRINT("sys_adjtimex ( %#lx )", ARG1);
    PRE_REG_READ1(long, "adjtimex", struct timex *, buf);
-   PRE_MEM_READ( "adjtimex(timex->modes)", ARG1, sizeof(tx->modes));
+
+   if (ML_(safe_to_deref) (tx, sizeof(struct vki_timex))) {
+      PRE_MEM_READ( "adjtimex(timex->modes)", ARG1, sizeof(tx->modes));
 
 #define ADJX(bits,field) 				\
-   if (tx->modes & (bits))                              \
-      PRE_MEM_READ( "adjtimex(timex->"#field")",	\
-		    (Addr)&tx->field, sizeof(tx->field))
+         if (tx->modes & (bits))                              \
+         PRE_MEM_READ( "adjtimex(timex->"#field")",	\
+		       (Addr)&tx->field, sizeof(tx->field))
 
-   if (tx->modes & VKI_ADJ_ADJTIME) {
-      if (!(tx->modes & VKI_ADJ_OFFSET_READONLY))
-         PRE_MEM_READ( "adjtimex(timex->offset)", (Addr)&tx->offset, sizeof(tx->offset));
-   } else {
-      ADJX(VKI_ADJ_OFFSET, offset);
-      ADJX(VKI_ADJ_FREQUENCY, freq);
-      ADJX(VKI_ADJ_MAXERROR, maxerror);
-      ADJX(VKI_ADJ_ESTERROR, esterror);
-      ADJX(VKI_ADJ_STATUS, status);
-      ADJX(VKI_ADJ_TIMECONST|VKI_ADJ_TAI, constant);
-      ADJX(VKI_ADJ_TICK, tick);
-   }
+      if (tx->modes & VKI_ADJ_ADJTIME) {
+         if (!(tx->modes & VKI_ADJ_OFFSET_READONLY))
+            PRE_MEM_READ( "adjtimex(timex->offset)", (Addr)&tx->offset, sizeof(tx->offset));
+      } else {
+         ADJX(VKI_ADJ_OFFSET, offset);
+         ADJX(VKI_ADJ_FREQUENCY, freq);
+         ADJX(VKI_ADJ_MAXERROR, maxerror);
+         ADJX(VKI_ADJ_ESTERROR, esterror);
+         ADJX(VKI_ADJ_STATUS, status);
+         ADJX(VKI_ADJ_TIMECONST|VKI_ADJ_TAI, constant);
+         ADJX(VKI_ADJ_TICK, tick);
+      }
 #undef ADJX
+   }
 
    PRE_MEM_WRITE( "adjtimex(timex)", ARG1, sizeof(struct vki_timex));
 }

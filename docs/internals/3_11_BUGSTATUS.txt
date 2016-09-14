@@ -35,6 +35,9 @@ AMD XOP-prefixed insns:
 356611  vex amd64->IR: 0x8F 0xEA 0xF8 0x10 0xC9 0x3 0x1D 0x0
         [== 328357, still open]
 
+339596  vex amd64->IR: 0x8F 0xE8 0x78 0xCD 0xC1 0x4 0xC5 0xF9
+        [AMD XOP/FMA support]
+
 === VEX/arm ============================================================
 
 352630  valgrind: Unrecognised instruction at address 0x4fc4d33.
@@ -73,16 +76,13 @@ n-i-bz  Remove limit on strd's negative immediates
 
 === Syscalls/ioctls on Linux ===========================================
 
-351632  UNKNOWN fcntl 97 on OS X 10.11
+348616  Wine/valgrind: Warning: noted but unhandled ioctl 0x5390 with
+        no size/direction hints. (DVD_READ_STRUCT) 
 352742  Custom allocator using sbrk() fails after about 800MB when running
         under memcheck
 352767  Wine/valgrind: Warning: noted but unhandled ioctl 0x5307 with
         no size/direction hints. (CDROMSTOP)
 355803  Add Lustre's IOC_MDC_GETFILESTRIPE ioctl [has patch]
-356676  Unhandled arm64-linux syscalls: 125 and 126 (sched_get_priority_max/min)
-        [may already be fixed by 359503]
-356678  unhandled arm64-linux syscall: 232 (mincore)
-        [may already be fixed by 359503]
 357781  unhandled amd64-linux syscall: 317
         [== 345414, still open]
 358620  WARNING: unhandled syscall: 357
@@ -104,6 +104,7 @@ n-i-bz  Remove limit on strd's negative immediates
 
 === Syscalls/ioctls on OSX =============================================
 
+351632  UNKNOWN fcntl 97 on OS X 10.11
 352021  Signals are ignored in OS X 10.10
 353346  WARNING: unhandled amd64-darwin syscall: unix:330
         == 211362 [not fixed]

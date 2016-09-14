@@ -97,6 +97,8 @@ where XXXXXX is the bug number as listed below.
 356393  valgrind (vex) crashes because isZeroU happened
         == 363497
         == 364497
+356676  arm64-linux: unhandled syscalls 125, 126 (sched_get_priority_max/min)
+356678  arm64-linux: unhandled syscall 232 (mincore)
 356817  valgrind.h triggers compiler errors on MSVC when defining NVALGRIND
 357338  Unhandled instruction for SHA instructions libcrypto Boring SSL
 357833  Setting RLIMIT_DATA to zero breaks with linux 4.5+

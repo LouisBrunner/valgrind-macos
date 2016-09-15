@@ -75,6 +75,7 @@ where XXXXXX is the bug number as listed below.
 353137  www: update info for Supported Platforms
 353138  www: update "The Valgrind Developers" page
 353370  don't advertise RDRAND in cpuid for Core-i7-4910-like avx2 machine
+        == 365325
 353384  amd64->IR: 0x66 0xF 0x3A 0x62 0xD1 0x62 (pcmpXstrX $0x62)
 353398  WARNING: unhandled amd64-solaris syscall: 207
 353660  XML in auxwhat tag not escaping reserved symbols properly
@@ -89,6 +90,7 @@ where XXXXXX is the bug number as listed below.
 354883  tst->os_state.pthread - magic_delta assertion failure on OSX 10.11
         == 361351
         == 362920
+        == 366222
 354933  Fix documentation of --kernel-variant=android-no-hw-tls option
 355188  valgrind should intercept all malloc related global functions
 355454  do not intercept malloc related symbols from the runtime linker
@@ -133,8 +135,8 @@ where XXXXXX is the bug number as listed below.
 360749  kludge for multiple .rodata sections on Solaris no longer needed
 360752  raise the number of reserved fds in m_main.c from 10 to 12
 361207  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 2
-361354  ppc64[le]: wire up separate socketcalls system calls
 361226  s390x: risbgn (EC59) not implemented
+361354  ppc64[le]: wire up separate socketcalls system calls
 361926  Unhandled Solaris syscall: sysfs(84)
 362009  Valgrind dumps core on unimplemented functionality before threads are created
 362329  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 3
@@ -156,11 +158,15 @@ where XXXXXX is the bug number as listed below.
 362329  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 3/5
 363858  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 4/5
 364948  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 5/5
+365912  ppc64BE segfault during jm-insns test (RELRO)
 366138  Fix configure errors out when using Xcode 8 (clang 8.0.0)
+366344  Multiple unhandled instruction for Aarch64
+        (0x0EE0E020, 0x1AC15800, 0x4E284801, 0x5E040023, 0x5E056060)
 368412  False positive result for altivec capability check
 368461  mmapunmap test fails on ppc64
 368416  Add tc06_two_races_xml.exp output for ppc64
 368412  False positive result for altivec capability check
+368461  mmapunmap test fails on ppc64
 
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64
 n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap

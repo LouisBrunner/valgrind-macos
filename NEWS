@@ -76,6 +76,7 @@ where XXXXXX is the bug number as listed below.
 353138  www: update "The Valgrind Developers" page
 353370  don't advertise RDRAND in cpuid for Core-i7-4910-like avx2 machine
         == 365325
+        == 357873
 353384  amd64->IR: 0x66 0xF 0x3A 0x62 0xD1 0x62 (pcmpXstrX $0x62)
 353398  WARNING: unhandled amd64-solaris syscall: 207
 353660  XML in auxwhat tag not escaping reserved symbols properly

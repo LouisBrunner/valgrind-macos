@@ -2380,6 +2380,26 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL(BUILD_VPCLMULQDQ_TESTS, test x$ac_have_as_vpclmulqdq = xyes)
 
 
+# does the x86/amd64 assembler understand FMA4 instructions?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_AFM4_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if x86/amd64 assembler supports FMA4 'vfmaddpd'])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  do {
+   __asm__ __volatile__(
+      "vfmaddpd %%xmm7,%%xmm8,%%xmm6,%%xmm9" : : : );
+  } while (0)
+]])], [
+ac_have_as_vfmaddpd=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_vfmaddpd=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_FMA4_TESTS, test x$ac_have_as_vfmaddpd = xyes)
+
+
 # does the x86/amd64 assembler understand the LZCNT instruction?
 # Note, this doesn't generate a C-level symbol.  It generates a
 # automake-level symbol (BUILD_LZCNT_TESTS), used in test Makefile.am's

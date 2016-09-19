@@ -1,0 +1,6 @@
+prog: fma4
+# The "correct" test includes ../../../tests/x86_amd64_features amd64-fma4
+# But since VEX just uses AVX instructions to implement the fma4 one, just
+# check that we could create the test binary and whether we have AVX.
+prereq: test -x fma4 && ../../../tests/x86_amd64_features amd64-avx
+vgopts: -q

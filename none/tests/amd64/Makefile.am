@@ -42,6 +42,7 @@ EXTRA_DIST = \
 	cmpxchg.vgtest cmpxchg.stdout.exp cmpxchg.stderr.exp \
 	faultstatus.disabled faultstatus.stderr.exp \
 	fcmovnu.vgtest fcmovnu.stderr.exp fcmovnu.stdout.exp \
+	fma4.vgtest fma4.stdout.exp fma4.stderr.exp \
 	fxtract.vgtest fxtract.stderr.exp fxtract.stdout.exp \
 	fxtract.stdout.exp-older-glibc \
 	getseg.stdout.exp getseg.stderr.exp getseg.vgtest \
@@ -108,6 +109,9 @@ endif
 if BUILD_AVX_TESTS
 if BUILD_VPCLMULQDQ_TESTS
   check_PROGRAMS += avx-1
+endif
+if BUILD_FMA4_TESTS
+  check_PROGRAMS += fma4
 endif
 endif
 if BUILD_AVX2_TESTS
@@ -185,6 +189,8 @@ insn_fpu_SOURCES	= insn_fpu.def
 insn_fpu_LDADD		= -lm
 insn_pclmulqdq_SOURCES  = insn_pclmulqdq.def
 fxtract_LDADD		= -lm
+fma4_CFLAGS		= $(AM_CFKAGS) -std=c99
+fma4_LDADD		= -lm
 
 .def.c: $(srcdir)/gen_insn_test.pl
 	$(PERL) $(srcdir)/gen_insn_test.pl < $< > $@

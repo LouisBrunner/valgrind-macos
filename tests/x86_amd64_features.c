@@ -125,6 +125,10 @@ static Bool go(char* cpu)
      level = 1;
      cmask = (1 << 27) | (1 << 28);
      require_xgetbv = True;
+   } else if (strcmp (cpu,  "amd64-fma4" ) == 0) {
+     level = 0x80000001;
+     cmask = 1 << 16;
+     require_amd = True;
 #endif
    } else {
      return UNRECOGNISED_FEATURE;

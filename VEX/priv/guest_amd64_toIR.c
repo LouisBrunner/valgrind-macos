@@ -30096,6 +30096,136 @@ Long dis_ESC_0F38__VEX (
    return delta;
 }
 
+/* operand format:
+ * [0] = dst
+ * [n] = srcn
+ */
+static Long decode_vregW(Int count, Long delta, UChar modrm, Prefix pfx,
+                         const VexAbiInfo* vbi, IRTemp *v, UInt *dst, Int swap)
+{
+   v[0] = newTemp(Ity_V128);
+   v[1] = newTemp(Ity_V128);
+   v[2] = newTemp(Ity_V128);
+   v[3] = newTemp(Ity_V128);
+   IRTemp addr = IRTemp_INVALID;
+   Int    alen = 0;
+   HChar  dis_buf[50];
+
+   *dst = gregOfRexRM(pfx, modrm);
+   assign( v[0], getXMMReg(*dst) );
+
+   if ( epartIsReg( modrm ) ) {
+      UInt ereg = eregOfRexRM(pfx, modrm);
+      assign(swap ? v[count-1] : v[count-2], getXMMReg(ereg) );
+      DIS(dis_buf, "%s", nameXMMReg(ereg));
+   } else {
+      Bool extra_byte = (getUChar(delta - 3) & 0xF) != 9;
+                 addr = disAMode(&alen, vbi, pfx, delta, dis_buf, extra_byte);
+      assign(swap ? v[count-1] : v[count-2], loadLE(Ity_V128, mkexpr(addr)));
+      delta += alen - 1;
+   }
+
+   UInt vvvv = getVexNvvvv(pfx);
+   switch(count) {
+      case 2:
+         DIP( "%s,%s", nameXMMReg(*dst), dis_buf );
+         break;
+      case 3:
+         assign( swap ? v[1] : v[2], getXMMReg(vvvv) );
+         DIP( "%s,%s,%s", nameXMMReg(*dst), nameXMMReg(vvvv), dis_buf );
+         break;
+      case 4:
+         {
+            assign( v[1], getXMMReg(vvvv) );
+            UInt src2 = getUChar(delta + 1) >> 4;
+            assign( swap ? v[2] : v[3], getXMMReg(src2) );
+            DIP( "%s,%s,%s,%s", nameXMMReg(*dst), nameXMMReg(vvvv),
+                                nameXMMReg(src2), dis_buf );
+         }
+         break;
+   }
+   return delta + 1;
+}
+
+static Long dis_FMA4 (Prefix pfx, Long delta, UChar opc,
+                      Bool* uses_vvvv, const VexAbiInfo* vbi )
+{
+   UInt dst;
+   *uses_vvvv = True;
+
+   UChar  modrm   = getUChar(delta);
+
+   Bool zero_64F = False;
+   Bool zero_96F = False;
+   UInt is_F32   = ((opc & 0x01) == 0x00) ? 1 : 0;
+   Bool neg      = (opc & 0xF0) == 0x70;
+   Bool alt      = (opc & 0xF0) == 0x50;
+   Bool sub      = alt ? (opc & 0x0E) != 0x0E : (opc & 0x0C) == 0x0C;
+
+   IRTemp operand[4];
+   switch(opc & 0xF) {
+      case 0x0A: zero_96F = (opc >> 4) != 0x05; break;
+      case 0x0B: zero_64F = (opc >> 4) != 0x05; break;
+      case 0x0E: zero_96F = (opc >> 4) != 0x05; break;
+      case 0x0F: zero_64F = (opc >> 4) != 0x05; break;
+      default: break;
+   }
+   DIP("vfm%s",                  neg ?   "n" : "");
+   if(alt) DIP("%s",             sub ? "add" : "sub");
+   DIP("%s",                     sub ? "sub" : "add");
+   DIP("%c ", (zero_64F || zero_96F) ?   's' : 'p');
+   DIP("%c ",                is_F32  ?   's' : 'd');
+   delta = decode_vregW(4, delta, modrm, pfx, vbi, operand, &dst, getRexW(pfx));
+   DIP("\n");
+   IRExpr *src[3];
+
+   void (*putXMM[2])(UInt,Int,IRExpr*) = {&putXMMRegLane64F, &putXMMRegLane32F};
+
+   IROp size_op[] = {Iop_V128to64, Iop_V128HIto64, Iop_64to32, Iop_64HIto32};
+   IROp neg_op[]  = {Iop_NegF64, Iop_NegF32};
+   int i, j;
+   for(i = 0; i < is_F32 * 2 + 2; i++) {
+      for(j = 0; j < 3; j++) {
+         if(is_F32) {
+            src[j] = unop(Iop_ReinterpI32asF32,
+                        unop(size_op[i%2+2],
+                           unop(size_op[i/2],
+                                 mkexpr(operand[j + 1])
+                              )
+                           ));
+         } else {
+            src[j] = unop(Iop_ReinterpI64asF64,
+                        unop(size_op[i%2],
+                           mkexpr(operand[j + 1])
+                        ));
+         }
+      }
+      putXMM[is_F32](dst, i, IRExpr_Qop(is_F32 ? Iop_MAddF32 : Iop_MAddF64,
+                                             get_FAKE_roundingmode(),
+                                             neg ? unop(neg_op[is_F32], src[0])
+                                                 : src[0],
+                                             src[1],
+                                             sub ? unop(neg_op[is_F32], src[2])
+                                                 : src[2]
+                                          ));
+      if(alt) {
+         sub = !sub;
+      }
+   }
+
+   /* Zero out top bits of ymm/xmm register. */
+   putYMMRegLane128( dst, 1, mkV128(0) );
+
+   if(zero_64F || zero_96F) {
+      putXMMRegLane64( dst, 1, IRExpr_Const(IRConst_U64(0)));
+   }
+
+   if(zero_96F) {
+      putXMMRegLane32( dst, 1, IRExpr_Const(IRConst_U32(0)));
+   }
+
+   return delta+1;
+}
 
 /*------------------------------------------------------------*/
 /*---                                                      ---*/
@@ -31638,6 +31768,16 @@ Long dis_ESC_0F3A__VEX (
          delta = dis_PCMPxSTRx( vbi, pfx, delta, True/*isAvx*/, opc );
          if (delta > delta0) goto decode_success;
          /* else fall though; dis_PCMPxSTRx failed to decode it */
+      }
+      break;
+   case 0x5C ... 0x5F:
+   case 0x68 ... 0x6F:
+   case 0x78 ... 0x7F:
+      if (have66noF2noF3(pfx) && 0==getVexL(pfx)/*128*/) {
+         Long delta0 = delta;
+         delta = dis_FMA4( pfx, delta, opc, uses_vvvv, vbi );
+         if (delta > delta0) goto decode_success;
+         /* else fall though; dis_FMA4 failed to decode it */
       }
       break;
 

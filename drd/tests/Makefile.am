@@ -81,8 +81,10 @@ EXTRA_DIST =                                        \
 	atomic_var.stderr.exp			    \
 	atomic_var.vgtest			    \
 	bar_bad.stderr.exp			    \
+	bar_bad.stderr.exp-nohang		    \
 	bar_bad.vgtest				    \
 	bar_bad_xml.stderr.exp			    \
+	bar_bad_xml.stderr.exp-nohang		    \
 	bar_bad_xml.vgtest			    \
 	bar_trivial.stderr.exp			    \
 	bar_trivial.stdout.exp			    \

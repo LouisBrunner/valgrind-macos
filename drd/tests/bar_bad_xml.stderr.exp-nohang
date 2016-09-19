@@ -204,6 +204,31 @@ destroy a barrier that has waiting threads
 
 
 destroy a barrier that was never initialised
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>GenericErr</kind>
+  <what>Not a barrier</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>pthread_barrier_destroy</fn>
+      <dir>...</dir>
+      <file>drd_pthread_intercepts.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>bar_bad.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</error>
+
 
 <status>
   <state>FINISHED</state>
@@ -211,6 +236,10 @@ destroy a barrier that was never initialised
 </status>
 
 <errorcounts>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
   <pair>
     <count>...</count>
     <unique>0x........</unique>

@@ -34,5 +34,9 @@ barrier 0x........ was first observed at:
 
 
 destroy a barrier that was never initialised
+Not a barrier
+   at 0x........: pthread_barrier_destroy (drd_pthread_intercepts.c:?)
+   by 0x........: main (bar_bad.c:?)
 
-ERROR SUMMARY: 5 errors from 4 contexts (suppressed: 0 from 0)
+
+ERROR SUMMARY: 6 errors from 5 contexts (suppressed: 0 from 0)

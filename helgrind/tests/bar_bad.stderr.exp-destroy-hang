@@ -1,0 +1,72 @@
+
+initialise a barrier with zero count
+---Thread-Announcement------------------------------------------
+
+Thread #x is the program's root thread
+
+----------------------------------------------------------------
+
+Thread #x: pthread_barrier_init: 'count' argument is zero
+   at 0x........: pthread_barrier_init (hg_intercepts.c:...)
+   by 0x........: main (bar_bad.c:43)
+
+----------------------------------------------------------------
+
+Thread #x's call to pthread_barrier_init failed
+   with error code 22 (EINVAL: Invalid argument)
+   at 0x........: pthread_barrier_init (hg_intercepts.c:...)
+   by 0x........: main (bar_bad.c:43)
+
+
+initialise a barrier twice
+----------------------------------------------------------------
+
+Thread #x: pthread_barrier_init: barrier is already initialised
+   at 0x........: pthread_barrier_init (hg_intercepts.c:...)
+   by 0x........: main (bar_bad.c:49)
+
+
+initialise a barrier which has threads waiting on it
+----------------------------------------------------------------
+
+Thread #x: pthread_barrier_init: barrier is already initialised
+   at 0x........: pthread_barrier_init (hg_intercepts.c:...)
+   by 0x........: main (bar_bad.c:64)
+
+----------------------------------------------------------------
+
+Thread #x: pthread_barrier_init: threads are waiting at barrier
+   at 0x........: pthread_barrier_init (hg_intercepts.c:...)
+   by 0x........: main (bar_bad.c:64)
+
+
+destroy a barrier that has waiting threads
+----------------------------------------------------------------
+
+Thread #x: pthread_barrier_destroy: threads are waiting at barrier
+   at 0x........: pthread_barrier_destroy (hg_intercepts.c:...)
+   by 0x........: main (bar_bad.c:82)
+
+---Thread-Announcement------------------------------------------
+
+Thread #x was created
+   ...
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (bar_bad.c:76)
+
+----------------------------------------------------------------
+
+Thread #x: pthread_barrier_wait: barrier is uninitialised
+   at 0x........: pthread_barrier_wait (hg_intercepts.c:...)
+   by 0x........: sleep1 (bar_bad.c:22)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+
+
+destroy a barrier that was never initialised
+----------------------------------------------------------------
+
+Thread #x: pthread_barrier_destroy: barrier was never initialised
+   at 0x........: pthread_barrier_destroy (hg_intercepts.c:...)
+   by 0x........: main (bar_bad.c:96)
+

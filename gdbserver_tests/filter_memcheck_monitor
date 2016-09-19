@@ -22,8 +22,13 @@ $dir/filter_vgdb                                       |
 # Bypass a s390x kernel bug which makes faultstatus test3 fail. In our case, we are
 # not interested in checking the si_code, but rather the signal passing
 # in mcsig(no)pass
+#
+# When doing inferior function calls from gdb (in mcmain_pic) there might be
+# extra heap usage from gdb that we aren't interested in tracking.
+#
 sed -e '/Cannot access memory at address 0x......../d'                   \
     -e '/^[1-9][0-9]*	\.\.\/sysdeps\/powerpc\/powerpc32\/dl-start\.S: No such file or directory\./d' \
     -e '/^Missing separate debuginfo/d'                                  \
     -e '/^Try: zypper install -C/d'                                      \
-    -e 's/Test 3:   FAIL: expected si_code==2, not 128/Test 3:   PASS/'
+    -e 's/Test 3:   FAIL: expected si_code==2, not 128/Test 3:   PASS/'  \
+    -e '/^  total heap usage: /d'

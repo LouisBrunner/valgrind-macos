@@ -12,11 +12,14 @@ EXTRA_DIST = \
 
 check_PROGRAMS = \
 	allexec \
-        crc32 \
         cvtf_imm \
 	fp_and_simd \
 	integer \
 	memory
+
+if BUILD_ARMV8_CRC_TESTS
+  check_PROGRAMS += crc32
+endif
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@

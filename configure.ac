@@ -2685,6 +2685,29 @@ AC_MSG_RESULT([no])
 
 AM_CONDITIONAL(BUILD_IFUNC_TESTS, test x$ac_have_ifunc_attr = xyes)
 
+# Does the C compiler support the armv8 crc feature flag
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_ARMV8_CRC_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if gcc supports the armv8 crc feature flag])
+
+save_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -march=armv8-a+crc -Werror"
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+int main()
+{
+    return 0;
+}
+]])], [
+ac_have_armv8_crc_feature=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_armv8_crc_feature=no
+AC_MSG_RESULT([no])
+])
+CFLAGS="$save_CFLAGS"
+
+AM_CONDITIONAL(BUILD_ARMV8_CRC_TESTS, test x$ac_have_armv8_crc_feature = xyes)
+
 
 # XXX JRS 2010 Oct 13: what is this for?  For sure, we don't need this
 # when building the tool executables.  I think we should get rid of it.

@@ -169,6 +169,7 @@ where XXXXXX is the bug number as listed below.
 368412  False positive result for altivec capability check
 368461  mmapunmap test fails on ppc64
 369000  AMD64 fma4 instructions unsupported.
+361253  [s390x] ex_clone.c:42: undefined reference to `pthread_create'
 
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64
 n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap

@@ -63,4 +63,4 @@ cu21_1_CFLAGS    = $(AM_CFLAGS) -DM3=1
 cu24_1_CFLAGS    = $(AM_CFLAGS) -DM3=1
 fixbr_CFLAGS     = $(AM_CFLAGS) @FLAG_MLONG_DOUBLE_128@
 fpext_CFLAGS     = $(AM_CFLAGS) @FLAG_MLONG_DOUBLE_128@
-ex_clone_LDFLAGS = -lpthread
+ex_clone_LDADD   = -lpthread

@@ -31,27 +31,31 @@ AMD XOP-prefixed insns:
 === VEX/arm ============================================================
 
 352630  valgrind: Unrecognised instruction at address 0x4fc4d33.
+        [what insn is this?]
+
 354274  arm: unhandled instruction: 0xEBAD 0x0AC1 (sub.w   sl, sp, r1, lsl #3)
+        [harmless, has patch]
+
 355526  disInstr(arm): unhandled instruction: 0x1823E91
+        [what insn is this?]
+
 n-i-bz  Remove limit on strd's negative immediates
         [dev@, Michael Daniels, 19 Nov 2015, easy fix, should land]
-356823  Unsupported ARM instruction: stlex
-357673  crash if I try to run valgrind with a binary link with libcurl
-        [IR sanity check failure]
+
 362934  [AsusWRT] Arm v7 illegal instruction
+        [unclear what this is; a SIGILL on generated code]
 
 === VEX/arm64 ==========================================================
 
 === VEX/x86 ============================================================
 
-355231  Unhandled Instruction Bytes (SSE4, vmovdqu, "0xC5 0xFA 0x6F 0x2")
 357059  x86: SSE cvtpi2ps with memory source does transition to MMX state
         [Also relevant for amd64.  Not sure this is really a bug.]
-358856  unhandled instruction bytes: 0xC4 0xE2 0x7B 0xF7
 
 === VEX/mips ===========================================================
 
 356112  mips: replace addi with addiu
+
 366079  FPXX Support for MIPS32 Valgrind
 
 === VEX/ppc ============================================================
@@ -61,6 +65,7 @@ n-i-bz  Remove limit on strd's negative immediates
 === VEX/s390x ==========================================================
 
 366413  s390x: New z13 instructions not implemented
+        [Per cborntraeger, is not important for 3.12.0]
 
 === VEX general ========================================================
 
@@ -105,8 +110,11 @@ n-i-bz  Remove limit on strd's negative immediates
 === Debuginfo reader ===================================================
 
 353192  Debug info/data section not detected on AMD64
+        [To do with rwx, combined code+data sections]
+
 355197  Too strong assert in variable debug info code
-359181  Buffer Overflow during Demangling
+        [Still relevant?]
+
 365750  Valgrind fails on binary with .text section not in default place
         [Horrible hack to do with relocating .text section]
 
@@ -158,6 +166,10 @@ n-i-bz  Remove limit on strd's negative immediates
 
 351282  valgrind 3.10.1 MIPS softfloat build broken with GCC 4.9.3 /
         binutils 2.25.1
+
+351692  Dumps created by valgrind are not readable by gdb
+        [mips32 specific?]
+
 352197  mips: mmap2() not wrapped correctly for page size > 4096
 
 === other/ppc ==========================================================
@@ -176,8 +188,6 @@ n-i-bz  Remove limit on strd's negative immediates
 368823  run_a_thread_NORETURN assembly code typo for VGP_arm64_linux target
 
 === other/s390 =========================================================
-
-361253  [s390x] ex_clone.c:42: undefined reference to `pthread_create'
 
 === other/tilegx =======================================================
 
@@ -223,11 +233,8 @@ n-i-bz  Remove limit on strd's negative immediates
 
 === Documentation ======================================================
 
-362953  Request for an update to the Valgrind Developers page
-
 === Uncategorised/run ==================================================
 
-351692  Dumps created by valgrind are not readable by gdb
 356457  valgrind: m_mallocfree.c:2042 (vgPlain_arena_free):
         Assertion 'blockSane(a, b)' failed.
         [Possible V memory corruption?]
@@ -258,9 +265,30 @@ n-i-bz  Remove limit on strd's negative immediates
         if compiled with intel compiler
 
 ========================================================================
+
+* mention that x86-linux is deprecated
+
 ========================================================================
 ========================================================================
 ========================================================================
 ========================================================================
 
 Thu 15 Sep 12:55:21 CEST 2016
+
+========================================================================
+========================================================================
+
+3_12_BRANCH: vex 3250  is a copy of trunk 3249
+             val 15963 is a copy of trunk 15962
+
+
+TO MERGE (trunk -> 3_12_BRANCH)
+15966 (t) -> 15967 (b) a missing helgrind test file
+15968 (t) -> 15969 (b) Add none/tests/ppc64/ppc64_helpers.h to noinst_HEADERS.
+15970 (t) -> 15972 (b) fix for bugzilla 361253  [s390x]
+15971 (t) -> 15973 (b) Add feature check for tests that use -march=armv8-a+crc.
+
+3.12.0.BETA1 is 3_12_BRANCHes at 15973/3250.
+
+========================================================================
+========================================================================

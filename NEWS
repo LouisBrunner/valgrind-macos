@@ -103,7 +103,9 @@ where XXXXXX is the bug number as listed below.
 356676  arm64-linux: unhandled syscalls 125, 126 (sched_get_priority_max/min)
 356678  arm64-linux: unhandled syscall 232 (mincore)
 356817  valgrind.h triggers compiler errors on MSVC when defining NVALGRIND
+356823  Unsupported ARM instruction: stlex
 357338  Unhandled instruction for SHA instructions libcrypto Boring SSL
+357673  crash if I try to run valgrind with a binary link with libcurl
 357833  Setting RLIMIT_DATA to zero breaks with linux 4.5+
 357871  pthread_spin_destroy not properly wrapped
 357887  Calls to VG_(fclose) do not close the file descriptor
@@ -118,7 +120,7 @@ where XXXXXX is the bug number as listed below.
 359703  s390: wire up separate socketcalls system calls
 359724  getsockname might crash - deref_UInt should call safe_to_deref
 359733  amd64 implement ld.so strchr/index override like x86
-359767  Valgrind does not support the IBM POWER ISA 3.0 instructions
+359767  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 1/5
 359829  Power PC test suite none/tests/ppc64/test_isa_2_07.c uses
         uninitialized data
 359838  arm64: Unhandled instruction 0xD5033F5F (clrex)
@@ -135,31 +137,28 @@ where XXXXXX is the bug number as listed below.
 360574  Wrong parameter type for an ashmem ioctl() call on Android and ARM64
 360749  kludge for multiple .rodata sections on Solaris no longer needed
 360752  raise the number of reserved fds in m_main.c from 10 to 12
-361207  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 2
+361207  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 2/5
 361226  s390x: risbgn (EC59) not implemented
+361253  [s390x] ex_clone.c:42: undefined reference to `pthread_create'
 361354  ppc64[le]: wire up separate socketcalls system calls
 361926  Unhandled Solaris syscall: sysfs(84)
 362009  Valgrind dumps core on unimplemented functionality before threads are created
-362329  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 3
+362329  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 3/5
 362894  missing (broken) support for wbit field on mtfsfi instruction (ppc64)
 362935  [AsusWRT] Assertion 'sizeof(TTEntryC) <= 88' failed
+362953  Request for an update to the Valgrind Developers page
 363680  add renameat2() support
 363705  arm64 missing syscall name_to_handle_at and open_by_handle_at
 363714  ppc64 missing syscalls sync, waitid and name_to/open_by_handle_at
-363858  Add IBM ISA 3.0 support, patch set 4
+363858  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 4/5
 364058  clarify in manual limitations of array overruns detections
 364413  pselect sycallwrapper mishandles NULL sigmask
 364728  Power PC, missing support for several HW registers in
         get_otrack_shadow_offset_wrk()
+364948  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 5/5
 365273  Invalid write to stack location reported after signal handler runs
 365912  ppc64BE segfault during jm-insns test (RELRO)
 366344  Multiple unhandled instruction for Aarch64
-359767  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 1/5
-361207  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 2/5
-362329  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 3/5
-363858  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 4/5
-364948  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 5/5
-365912  ppc64BE segfault during jm-insns test (RELRO)
 366138  Fix configure errors out when using Xcode 8 (clang 8.0.0)
 366344  Multiple unhandled instruction for Aarch64
         (0x0EE0E020, 0x1AC15800, 0x4E284801, 0x5E040023, 0x5E056060)

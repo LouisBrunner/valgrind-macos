@@ -34,7 +34,7 @@ void *exit1 ( void* arg )
 int main ( void )
 {
   pthread_barrier_t *bar1, *bar2, *bar3, *bar4, *bar5;
-  int r;
+  /* int r; unused since pthread_cancel are commented out */
   pthread_t thr1, thr2, slp1, slp2, ext1;
 
   /* initialise a barrier with a zero count */

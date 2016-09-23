@@ -189,7 +189,7 @@ insn_fpu_SOURCES	= insn_fpu.def
 insn_fpu_LDADD		= -lm
 insn_pclmulqdq_SOURCES  = insn_pclmulqdq.def
 fxtract_LDADD		= -lm
-fma4_CFLAGS		= $(AM_CFKAGS) -std=c99
+fma4_CFLAGS		= $(AM_CFLAGS) -std=c99
 if VGCONF_OS_IS_SOLARIS
 fma4_CFLAGS		+= -D__EXTENSIONS__
 endif

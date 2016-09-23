@@ -190,6 +190,9 @@ insn_fpu_LDADD		= -lm
 insn_pclmulqdq_SOURCES  = insn_pclmulqdq.def
 fxtract_LDADD		= -lm
 fma4_CFLAGS		= $(AM_CFKAGS) -std=c99
+if VGCONF_OS_IS_SOLARIS
+fma4_CFLAGS		+= -D__EXTENSIONS__
+endif
 fma4_LDADD		= -lm
 
 .def.c: $(srcdir)/gen_insn_test.pl

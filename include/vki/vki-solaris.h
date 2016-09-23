@@ -644,10 +644,12 @@ typedef struct vki_kcf_door_arg_s {
 
 
 #include <sys/mntio.h>
+#define VKI_MNTIOC_GETEXTMNTENT MNTIOC_GETEXTMNTENT
 #define VKI_MNTIOC_GETMNTANY MNTIOC_GETMNTANY
 
 
 #include <sys/mnttab.h>
+#define vki_extmnttab extmnttab
 #define vki_mntentbuf mntentbuf
 #define vki_mnttab mnttab
 

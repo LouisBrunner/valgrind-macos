@@ -1653,11 +1653,6 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 }
 
 
-/* 
-   This causes all threads to forceably exit.  They aren't actually
-   dead by the time this returns; you need to call
-   VG_(reap_threads)() to wait for them.
- */
 void VG_(nuke_all_threads_except) ( ThreadId me, VgSchedReturnCode src )
 {
    ThreadId tid;

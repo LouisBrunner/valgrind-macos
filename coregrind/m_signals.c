@@ -1654,8 +1654,8 @@ static Bool is_signal_from_kernel(ThreadId tid, int signum, int si_code)
 
 /* 
    Perform the default action of a signal.  If the signal is fatal, it
-   marks all threads as needing to exit, but it doesn't actually kill
-   the process or thread.
+   terminates all other threads, but it doesn't actually kill
+   the process and calling thread.
 
    If we're not being quiet, then print out some more detail about
    fatal signals (esp. core dumping signals).
@@ -1933,12 +1933,13 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
       VG_(setrlimit)(VKI_RLIMIT_CORE, &zero);
    }
 
-   /* stash fatal signal in main thread */
    // what's this for?
    //VG_(threads)[VG_(master_tid)].os_state.fatalsig = sigNo;
 
-   /* everyone dies */
+   /* everyone but tid dies */
    VG_(nuke_all_threads_except)(tid, VgSrc_FatalSig);
+   VG_(reap_threads)(tid);
+   /* stash fatal signal in this thread */
    VG_(threads)[tid].exitreason = VgSrc_FatalSig;
    VG_(threads)[tid].os_state.fatalsig = sigNo;
 }

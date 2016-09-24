@@ -143,6 +143,7 @@ where XXXXXX is the bug number as listed below.
 361226  s390x: risbgn (EC59) not implemented
 361253  [s390x] ex_clone.c:42: undefined reference to `pthread_create'
 361354  ppc64[le]: wire up separate socketcalls system calls
+361615  Inconsistent termination for multithreaded process terminated by signal
 361926  Unhandled Solaris syscall: sysfs(84)
 362009  Valgrind dumps core on unimplemented functionality before threads are created
 362329  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 3/5

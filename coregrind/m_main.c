@@ -2705,7 +2705,11 @@ void shutdown_actions_NORETURN( ThreadId tid,
       sys_exit, do likewise; if the (last) thread stopped due to a fatal
       signal, terminate the entire system with that same fatal signal. */
    VG_(debugLog)(1, "core_os", 
-                    "VG_(terminate_NORETURN)(tid=%u)\n", tid);
+                 "VG_(terminate_NORETURN)(tid=%u) schedretcode %s"
+                 " os_state.exit_code %d fatalsig %d\n",
+                 tid, VG_(name_of_VgSchedReturnCode)(tids_schedretcode),
+                 VG_(threads)[tid].os_state.exitcode, 
+                 VG_(threads)[tid].os_state.fatalsig);
 
    switch (tids_schedretcode) {
    case VgSrc_ExitThread:  /* the normal way out (Linux, Solaris) */

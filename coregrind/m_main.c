@@ -2706,7 +2706,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
       signal, terminate the entire system with that same fatal signal. */
    VG_(debugLog)(1, "core_os", 
                  "VG_(terminate_NORETURN)(tid=%u) schedretcode %s"
-                 " os_state.exit_code %d fatalsig %d\n",
+                 " os_state.exit_code %ld fatalsig %d\n",
                  tid, VG_(name_of_VgSchedReturnCode)(tids_schedretcode),
                  VG_(threads)[tid].os_state.exitcode, 
                  VG_(threads)[tid].os_state.fatalsig);

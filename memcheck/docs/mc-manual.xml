@@ -2320,6 +2320,40 @@ inform Memcheck about changes to the state of a mempool:</para>
   </listitem>
 
   <listitem>
+    <para>
+    <varname>VALGRIND_CREATE_META_MEMPOOL(pool, rzB, is_zeroed, flags)</varname>:
+    This does the same as <varname>VALGRIND_CREATE_MEMPOOL</varname>,
+    but allows you to specify two seldom-used options for custom
+    allocators (or-ed together) in the <varname>flags<varname> argument:</para>
+    <itemizedlist>
+      <listitem>
+	<para>
+	  <varname>VALGRIND_MEMPOOL_AUTO_FREE</varname>.
+	  This indicates that items allocated from this
+	  memory pool are automatically freed when
+	  <varname>VALGRIND_MEMPOOL_FREE</varname>
+	  is used on a block. This allows a custom allocator to delete
+	  (part of) a memory pool without explicitly deleting all allocated
+	  items. Without this option, such an action will report all items
+	  in the pool as memory leaks.
+	</para>
+      </listitem>
+      <listitem>
+	<para>
+	  <varname>VALGRIND_MEMPOOL_METAPOOL</varname>.
+	  This indicates that memory that has been
+	  marked as being allocated with
+	  <varname>VALGRIND_MALLOCLIKE_BLOCK</varname> is used
+	  by a custom allocator to pass out memory to an application (again
+	  marked with <varname>VALGRIND_MALLOCLIKE_BLOCK</varname>).
+	  Without this option, such overlapping memory blocks may trigger
+	  a fatal error message in memcheck.
+	</para>
+      </listitem>
+    <itemizedlist>
+  </listitem>
+
+  <listitem>
     <para><varname>VALGRIND_DESTROY_MEMPOOL(pool)</varname>:
     This request tells Memcheck that a pool is being torn down. Memcheck
     then removes all records of chunks associated with the pool, as well

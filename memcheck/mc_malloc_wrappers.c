@@ -338,7 +338,8 @@ UInt MC_(n_where_pointers) (void)
 /* Allocate memory and note change in memory available */
 void* MC_(new_block) ( ThreadId tid,
                        Addr p, SizeT szB, SizeT alignB,
-                       Bool is_zeroed, MC_AllocKind kind, VgHashTable *table)
+                       Bool is_zeroed, MC_AllocKind kind,
+                       VgHashTable *table)
 {
    MC_Chunk* mc;
 
@@ -674,14 +675,52 @@ void MC_(handle_resizeInPlace)(ThreadId tid, Addr p,
 
 static void check_mempool_sane(MC_Mempool* mp); /*forward*/
 
+static void free_mallocs_in_mempool_block (MC_Mempool* mp,
+                                           Addr StartAddr,
+                                           Addr EndAddr)
+{
+   MC_Chunk *mc;
+   ThreadId tid;
+   Bool found;
 
-void MC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed)
+   tl_assert(mp->auto_free);
+
+   if (VG_(clo_verbosity) > 2) {
+      VG_(message)(Vg_UserMsg,
+          "free_mallocs_in_mempool_block: Start 0x%lx size %lu\n",
+          StartAddr, (SizeT) (EndAddr - StartAddr));
+   }
+
+   tid = VG_(get_running_tid)();
+
+   do {
+      found = False;
+
+      VG_(HT_ResetIter)(MC_(malloc_list));
+      while (!found && (mc = VG_(HT_Next)(MC_(malloc_list))) ) {
+         if (mc->data >= StartAddr && mc->data + mc->szB < EndAddr) {
+            if (VG_(clo_verbosity) > 2) {
+               VG_(message)(Vg_UserMsg, "Auto-free of 0x%lx size=%lu\n",
+                               mc->data, (mc->szB + 0UL));
+            }
+
+            mc = VG_(HT_remove) ( MC_(malloc_list), (UWord) mc->data);
+            die_and_free_mem(tid, mc, mp->rzB);
+            found = True;
+         }
+      }
+   } while (found);
+}
+
+void MC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed,
+                         Bool auto_free, Bool metapool)
 {
    MC_Mempool* mp;
 
    if (VG_(clo_verbosity) > 2) {
-      VG_(message)(Vg_UserMsg, "create_mempool(0x%lx, %u, %d)\n",
-                               pool, rzB, is_zeroed);
+      VG_(message)(Vg_UserMsg,
+         "create_mempool(0x%lx, rzB=%u, zeroed=%d, autofree=%d, metapool=%d)\n",
+                          pool, rzB, is_zeroed, auto_free, metapool);
       VG_(get_and_pp_StackTrace)
          (VG_(get_running_tid)(), MEMPOOL_DEBUG_STACKTRACE_DEPTH);
    }
@@ -695,6 +734,8 @@ void MC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed)
    mp->pool       = pool;
    mp->rzB        = rzB;
    mp->is_zeroed  = is_zeroed;
+   mp->auto_free  = auto_free;
+   mp->metapool   = metapool;
    mp->chunks     = VG_(HT_construct)( "MC_(create_mempool)" );
    check_mempool_sane(mp);
 
@@ -882,10 +923,14 @@ void MC_(mempool_free)(Addr pool, Addr addr)
       return;
    }
 
+   if (mp->auto_free) {
+      free_mallocs_in_mempool_block(mp, mc->data, mc->data + (mc->szB + 0UL));
+   }
+
    if (VG_(clo_verbosity) > 2) {
       VG_(message)(Vg_UserMsg, 
-		   "mempool_free(0x%lx, 0x%lx) freed chunk of %lu bytes\n",
-		   pool, addr, mc->szB + 0UL);
+                   "mempool_free(0x%lx, 0x%lx) freed chunk of %lu bytes\n",
+                   pool, addr, mc->szB + 0UL);
    }
 
    die_and_free_mem ( tid, mc, mp->rzB );

@@ -10,6 +10,11 @@ Release 3.12.0 is under development, not yet released.
 
 * Memcheck:
 
+  - Added meta mempool support for describing a custom allocator which:
+     - Auto-frees all chunks assuming that destroying a pool destroys all
+       objects in the pool
+     - Uses itself to allocate other memory blocks
+
 * Helgrind:
 
 * Callgrind:
@@ -165,6 +170,7 @@ where XXXXXX is the bug number as listed below.
 366138  Fix configure errors out when using Xcode 8 (clang 8.0.0)
 366344  Multiple unhandled instruction for Aarch64
         (0x0EE0E020, 0x1AC15800, 0x4E284801, 0x5E040023, 0x5E056060)
+367995  Integration of memcheck with custom memory allocator
 368412  False positive result for altivec capability check
 368461  mmapunmap test fails on ppc64
 368416  Add tc06_two_races_xml.exp output for ppc64

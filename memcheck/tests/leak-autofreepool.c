@@ -35,7 +35,7 @@ struct pool
 struct cell
 {  
   struct cell *next;
-  int x;
+  char x[16 - sizeof(void*)];
 };
 
 static struct pool _PlainPool, *PlainPool = &_PlainPool;

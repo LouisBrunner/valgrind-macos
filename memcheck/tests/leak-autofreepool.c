@@ -1,4 +1,4 @@
-
+#include <time.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <assert.h>
@@ -182,7 +182,7 @@ int main( int argc, char** argv )
    int arg;
    size_t i;
 
-   assert(argc == 2);
+   assert(argc == 2 || argc == 3);
    assert(argv[1]);
    assert(strlen(argv[1]) == 1);
    assert(argv[1][0] >= '0' && argv[1][0] <= '9');
@@ -222,5 +222,62 @@ int main( int argc, char** argv )
    // Cleanup.
    VALGRIND_DESTROY_MEMPOOL(PlainPool);
 
+   // Perf test
+   if (argc == 3) {
+      struct pool perf_plain_pool;
+      void *perf_plain_block;
+      struct pool perf_meta_pool;
+      void *perf_meta_block;
+      size_t pool_block_size;
+      int n;
+      int nr_elts = atoi( argv[2] );
+      time_t dnow;
+#define tprintf(...) (dnow = time(NULL),          \
+                      printf(__VA_ARGS__),        \
+                      printf(" %s", ctime(&dnow)))
+
+      pool_block_size = nr_elts * sizeof(struct cell) + sizeof(uint8_t) + 1;
+
+      // Create perf meta pool
+      VALGRIND_CREATE_META_MEMPOOL
+         (&perf_meta_pool, 0, 0,
+          VALGRIND_MEMPOOL_AUTO_FREE | VALGRIND_MEMPOOL_METAPOOL);
+      perf_meta_block = malloc(pool_block_size);
+
+      VALGRIND_MEMPOOL_ALLOC(&perf_meta_pool, perf_meta_block, 
+                             pool_block_size);
+
+      perf_meta_pool.buf = (uint8_t *) perf_meta_block;
+      perf_meta_pool.allocated = pool_block_size;
+      perf_meta_pool.used = 0;
+
+                               
+      perf_meta_pool.buf  += sizeof(uint8_t);
+      perf_meta_pool.used += sizeof(uint8_t);
+
+      // Create perf plain pool
+      VALGRIND_CREATE_MEMPOOL(&perf_plain_pool, 0, 0);
+      perf_plain_block = malloc(pool_block_size);
+   
+      perf_plain_pool.buf = (uint8_t *) perf_plain_block;
+      perf_plain_pool.allocated = pool_block_size;;
+      perf_plain_pool.used = 0;
+
+      perf_plain_pool.buf  += sizeof(uint8_t);
+      perf_plain_pool.used += sizeof(uint8_t);
+      
+      tprintf("allocating %d elts", nr_elts);
+      for (n = 0; n < nr_elts; n++) {
+         (void) allocate_meta_style (&perf_meta_pool, sizeof(struct cell));
+         (void) allocate_plain_style (&perf_plain_pool, sizeof(struct cell));
+      }
+
+      tprintf("freeing mempool");
+      VALGRIND_MEMPOOL_FREE(&perf_meta_pool, perf_meta_block);
+      tprintf("destroying mempool");
+      VALGRIND_DESTROY_MEMPOOL(&perf_meta_pool);
+      tprintf("done");
+
+   }
    return 0;
 }

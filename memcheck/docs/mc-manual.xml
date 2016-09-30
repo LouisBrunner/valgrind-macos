@@ -2324,7 +2324,7 @@ inform Memcheck about changes to the state of a mempool:</para>
     <varname>VALGRIND_CREATE_META_MEMPOOL(pool, rzB, is_zeroed, flags)</varname>:
     This does the same as <varname>VALGRIND_CREATE_MEMPOOL</varname>,
     but allows you to specify two seldom-used options for custom
-    allocators (or-ed together) in the <varname>flags<varname> argument:</para>
+    allocators (or-ed together) in the <varname>flags</varname> argument:</para>
     <itemizedlist>
       <listitem>
 	<para>
@@ -2350,7 +2350,7 @@ inform Memcheck about changes to the state of a mempool:</para>
 	  a fatal error message in memcheck.
 	</para>
       </listitem>
-    <itemizedlist>
+    </itemizedlist>
   </listitem>
 
   <listitem>

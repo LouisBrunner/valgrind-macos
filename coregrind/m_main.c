@@ -2166,36 +2166,10 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    /* Hook to delay things long enough so we can get the pid and
       attach GDB in another shell. */
    if (VG_(clo_wait_for_gdb)) {
-      ULong iters, q;
-      VG_(debugLog)(1, "main", "Wait for GDB\n");
-      VG_(printf)("pid=%d, entering delay loop\n", VG_(getpid)());
-
-#     if defined(VGP_x86_linux)
-      iters = 10;
-#     elif defined(VGP_amd64_linux) || defined(VGP_ppc64be_linux) \
-         || defined(VGP_ppc64le_linux) || defined(VGP_tilegx_linux)
-      iters = 10;
-#     elif defined(VGP_ppc32_linux)
-      iters = 5;
-#     elif defined(VGP_arm_linux)
-      iters = 5;
-#     elif defined(VGP_arm64_linux)
-      iters = 5;
-#     elif defined(VGP_s390x_linux)
-      iters = 10;
-#     elif defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
-      iters = 10;
-#     elif defined(VGO_darwin)
-      iters = 3;
-#     elif defined(VGO_solaris)
-      iters = 10;
-#     else
-#       error "Unknown plat"
-#     endif
-
-      iters *= 1000ULL * 1000 * 1000;
-      for (q = 0; q < iters; q++) 
-         __asm__ __volatile__("" ::: "memory","cc");
+      const int ms = 5000; // milliseconds
+      VG_(debugLog)(1, "main", "Wait for GDB during %d ms\n", ms);
+      VG_(printf)("pid=%d, entering delay %d ms loop\n", VG_(getpid)(), ms);
+      VG_(poll)(NULL, 0, ms);
    }
 
    //--------------------------------------------------------------

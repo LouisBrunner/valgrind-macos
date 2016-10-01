@@ -25,7 +25,7 @@ EXTRA_DIST = \
 
 AM_CCASFLAGS += -ffreestanding
 
-LDFLAGS += -nostartfiles -nodefaultlibs
+AM_LDFLAGS = -nostartfiles -nodefaultlibs
 
 clone_test_SOURCES = clone_test.S
 complex_rep_SOURCES = complex_rep.S

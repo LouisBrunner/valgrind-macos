@@ -16,7 +16,7 @@ EXTRA_DIST = \
 
 AM_CCASFLAGS += -ffreestanding -Xassembler -I$(top_srcdir)/exp-bbv/tests
 
-LDFLAGS += -nostartfiles -nodefaultlibs
+AM_LDFLAGS = -nostartfiles -nodefaultlibs
 
 ll_SOURCES = ll.S
 million_SOURCES = million.S

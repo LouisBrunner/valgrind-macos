@@ -179,6 +179,7 @@ where XXXXXX is the bug number as listed below.
 369000  AMD64 fma4 instructions unsupported.
 361253  [s390x] ex_clone.c:42: undefined reference to `pthread_create'
 369169  ppc64 fails jm_int_isa_2_07 test
+369209  valgrind loops and eats up all memory if cwd doesn't exist.
 
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64
 n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap

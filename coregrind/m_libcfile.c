@@ -548,16 +548,12 @@ Int VG_(unlink) ( const HChar* file_name )
    Hence VG_(record_startup_wd) notes it (in a platform dependent way)
    and VG_(get_startup_wd) produces the noted value. */
 static HChar *startup_wd;
-static Bool   startup_wd_acquired = False;
 
 /* Record the process' working directory at startup.  Is intended to
    be called exactly once, at startup, before the working directory
-   changes.  Return True for success, False for failure, so that the
-   caller can bomb out suitably without creating module cycles if
-   there is a problem. */
-Bool VG_(record_startup_wd) ( void )
+   changes. */
+void VG_(record_startup_wd) ( void )
 {
-   vg_assert(!startup_wd_acquired);
 #  if defined(VGO_linux) || defined(VGO_solaris)
    /* Simple: just ask the kernel */
    SysRes res;
@@ -567,11 +563,15 @@ Bool VG_(record_startup_wd) ( void )
       startup_wd = VG_(realloc)("startup_wd", startup_wd, szB);
       VG_(memset)(startup_wd, 0, szB);
       res = VG_(do_syscall2)(__NR_getcwd, (UWord)startup_wd, szB-1);
-   } while (sr_isError(res));
+   } while (sr_isError(res) && sr_Err(res) == VKI_ERANGE);
+
+   if (sr_isError(res)) {
+      VG_(free)(startup_wd);
+      startup_wd = NULL;
+      return;
+   }
 
    vg_assert(startup_wd[szB-1] == 0);
-   startup_wd_acquired = True;
-   return True;
 
 #  elif defined(VGO_darwin)
    /* We can't ask the kernel, so instead rely on launcher-*.c to
@@ -585,23 +585,19 @@ Bool VG_(record_startup_wd) ( void )
                           (Int)VG_(getppid)());
      wd = VG_(getenv)( envvar );
      if (wd == NULL)
-        return False;
+        return;
      SizeT need = VG_(strlen)(wd) + 1;
      startup_wd = VG_(malloc)("startup_wd", need);
      VG_(strcpy)(startup_wd, wd);
-     startup_wd_acquired = True;
-     return True;
    }
 #  else
 #    error Unknown OS
 #  endif
 }
 
-/* Return the previously acquired startup_wd. */
+/* Return the previously acquired startup_wd or NULL. */
 const HChar *VG_(get_startup_wd) ( void )
 {
-   vg_assert(startup_wd_acquired);
-
    return startup_wd;
 }
 

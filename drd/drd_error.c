@@ -32,7 +32,6 @@
 #include "pub_tool_basics.h"
 #include "pub_tool_libcassert.h"  /* tl_assert()              */
 #include "pub_tool_libcbase.h"    /* strlen()                 */
-#include "pub_tool_libcfile.h"    /* VG_(get_startup_wd)()    */
 #include "pub_tool_libcprint.h"   /* VG_(printf)()            */
 #include "pub_tool_machine.h"
 #include "pub_tool_mallocfree.h"  /* VG_(malloc), VG_(free)   */

@@ -102,11 +102,10 @@ extern Int VG_(mkstemp) ( const HChar* part_of_name, /*OUT*/HChar* fullname );
 
 /* Record the process' working directory at startup.  Is intended to
    be called exactly once, at startup, before the working directory
-   changes.  Return True for success, False for failure, so that the
-   caller can bomb out suitably without creating module cycles if
-   there is a problem.  The saved value can later be acquired by
-   calling VG_(get_startup_wd) (in pub_tool_libcfile.h). */
-extern Bool VG_(record_startup_wd) ( void );
+   changes.  The saved value can later be acquired by calling
+   VG_(get_startup_wd) (in pub_tool_libcfile.h).  Note that might
+   return if the working directory couldn't be found.  */
+extern void VG_(record_startup_wd) ( void );
 
 #endif   // __PUB_CORE_LIBCFILE_H
 

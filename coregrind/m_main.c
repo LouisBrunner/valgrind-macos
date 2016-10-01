@@ -2166,7 +2166,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    /* Hook to delay things long enough so we can get the pid and
       attach GDB in another shell. */
    if (VG_(clo_wait_for_gdb)) {
-      const int ms = 5000; // milliseconds
+      const int ms = 8000; // milliseconds
       VG_(debugLog)(1, "main", "Wait for GDB during %d ms\n", ms);
       VG_(printf)("pid=%d, entering delay %d ms loop\n", VG_(getpid)(), ms);
       VG_(poll)(NULL, 0, ms);

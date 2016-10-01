@@ -634,7 +634,7 @@ static SysRes sys_set_thread_area ( ThreadId tid, vki_modify_ldt_t* info )
    vg_assert(8 == sizeof(VexGuestX86SegDescr));
    vg_assert(sizeof(HWord) == sizeof(VexGuestX86SegDescr*));
 
-   if (info == NULL)
+   if (info == NULL || ! ML_(safe_to_deref)(info, sizeof(vki_modify_ldt_t)))
       return VG_(mk_SysRes_Error)( VKI_EFAULT );
 
    gdt = (VexGuestX86SegDescr*)VG_(threads)[tid].arch.vex.guest_GDT;
@@ -686,7 +686,7 @@ static SysRes sys_get_thread_area ( ThreadId tid, vki_modify_ldt_t* info )
    vg_assert(sizeof(HWord) == sizeof(VexGuestX86SegDescr*));
    vg_assert(8 == sizeof(VexGuestX86SegDescr));
 
-   if (info == NULL)
+   if (info == NULL || ! ML_(safe_to_deref)(info, sizeof(vki_modify_ldt_t)))
       return VG_(mk_SysRes_Error)( VKI_EFAULT );
 
    idx = info->entry_number;

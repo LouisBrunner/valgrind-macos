@@ -596,24 +596,31 @@ SysRes write_ldt ( ThreadId tid, void* ptr, UInt bytecount, Int oldmode )
 static SysRes sys_modify_ldt ( ThreadId tid,
                                Int func, void* ptr, UInt bytecount )
 {
-   SysRes ret = VG_(mk_SysRes_Error)( VKI_ENOSYS );
+   SysRes ret;
 
-   switch (func) {
-   case 0:
-      ret = read_ldt(tid, ptr, bytecount);
-      break;
-   case 1:
-      ret = write_ldt(tid, ptr, bytecount, 1);
-      break;
-   case 2:
-      VG_(unimplemented)("sys_modify_ldt: func == 2");
-      /* god knows what this is about */
-      /* ret = read_default_ldt(ptr, bytecount); */
-      /*UNREACHED*/
-      break;
-   case 0x11:
-      ret = write_ldt(tid, ptr, bytecount, 0);
-      break;
+   if (func != 0 && func != 1 && func != 2 && func != 0x11) {
+      ret = VG_(mk_SysRes_Error)( VKI_ENOSYS );
+   } else if (ptr != NULL && ! ML_(safe_to_deref)(ptr, bytecount)) {
+      ret = VG_(mk_SysRes_Error)( VKI_EFAULT );
+   } else {
+      switch (func) {
+      case 0:
+         ret = read_ldt(tid, ptr, bytecount);
+         break;
+      case 1:
+         ret = write_ldt(tid, ptr, bytecount, 1);
+         break;
+      case 2:
+         ret = VG_(mk_SysRes_Error)( VKI_ENOSYS );
+         VG_(unimplemented)("sys_modify_ldt: func == 2");
+         /* god knows what this is about */
+         /* ret = read_default_ldt(ptr, bytecount); */
+         /*UNREACHED*/
+         break;
+      case 0x11:
+         ret = write_ldt(tid, ptr, bytecount, 0);
+         break;
+      }
    }
    return ret;
 }

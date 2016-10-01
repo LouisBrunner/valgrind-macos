@@ -5487,7 +5487,8 @@ PRE(sys_fcntl)
 
    default:
       PRINT("sys_fcntl[UNKNOWN] ( %lu, %lu, %lu )", ARG1, ARG2, ARG3);
-      I_die_here;
+      VG_(umsg)("Warning: unimplemented fcntl command: %lu\n", ARG2);
+      SET_STATUS_Failure( VKI_EINVAL );
       break;
    }
 

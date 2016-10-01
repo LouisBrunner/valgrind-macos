@@ -3408,8 +3408,23 @@ PRE(sys_rt_sigprocmask)
       PRE_MEM_WRITE( "rt_sigprocmask(oldset)", ARG3, sizeof(vki_sigset_t));
 
    // Like the kernel, we fail if the sigsetsize is not exactly what we expect.
+   // Since we want to use the set and oldset for bookkeeping we also want
+   // to make sure they are addressable otherwise, like the kernel, we EFAULT.
    if (sizeof(vki_sigset_t) != ARG4)
-      SET_STATUS_Failure( VKI_EMFILE );
+      SET_STATUS_Failure( VKI_EINVAL );
+   else if (ARG2 != 0
+             && ! ML_(safe_to_deref)((void *)ARG2, sizeof(vki_sigset_t))) {
+            VG_(dmsg)("Warning: Bad set handler address %p in sigprocmask\n",
+                      (void *)ARG2);
+            SET_STATUS_Failure ( VKI_EFAULT );
+         }
+   else if (ARG3 != 0
+             && ! ML_(safe_to_deref)((void *)ARG3, sizeof(vki_sigset_t))) {
+            VG_(dmsg)("Warning: Bad oldset address %p in sigprocmask\n",
+                      (void *)ARG3);
+            SET_STATUS_Failure ( VKI_EFAULT );
+         }
+
    else {
       SET_STATUS_from_SysRes( 
                   VG_(do_sys_sigprocmask) ( tid, ARG1 /*how*/, 

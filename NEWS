@@ -187,6 +187,7 @@ where XXXXXX is the bug number as listed below.
 369362  Bad sigaction arguments crash valgrind
 369383  x86 sys_modify_ldt wrapper crashes on bad ptr
 369402  Bad set/get_thread_area pointer crashes valgrind
+369441  bad lvec argument crashes process_vm_readv/writev syscall wrappers
 
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64
 n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap

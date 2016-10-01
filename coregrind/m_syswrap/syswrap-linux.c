@@ -5004,8 +5004,8 @@ PRE(sys_process_vm_readv)
                  ARG2, ARG3 * sizeof(struct vki_iovec) );
    PRE_MEM_READ( "process_vm_readv(rvec)",
                  ARG4, ARG5 * sizeof(struct vki_iovec) );
-   if (ARG2 != 0) {
-      /* TODO: Don't do any of the following if lvec is invalid */
+   if (ARG2 != 0
+       && ML_(safe_to_deref) ((void *)ARG2, sizeof(struct vki_iovec) * ARG3)) {
       const struct vki_iovec *vec = (const struct vki_iovec *)ARG2;
       UInt i;
       for (i = 0; i < ARG3; i++)
@@ -5042,8 +5042,8 @@ PRE(sys_process_vm_writev)
                  ARG2, ARG3 * sizeof(struct vki_iovec) );
    PRE_MEM_READ( "process_vm_writev(rvec)",
                  ARG4, ARG5 * sizeof(struct vki_iovec) );
-   if (ARG2 != 0) {
-      /* TODO: Don't do any of the following if lvec is invalid */
+   if (ARG2 != 0
+       && ML_(safe_to_deref) ((void *)ARG2, sizeof(struct vki_iovec) * ARG3)) {
       const struct vki_iovec *vec = (const struct vki_iovec *)ARG2;
       UInt i;
       for (i = 0; i < ARG3; i++)

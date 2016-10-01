@@ -1056,15 +1056,19 @@ void msghdr_foreachfield (
 
       VG_(sprintf) ( fieldName, "(%s.msg_iov)", name );
 
-      foreach_func ( tid, True, fieldName, 
-                     (Addr)iov, msg->msg_iovlen * sizeof( struct vki_iovec ) );
+      if (ML_(safe_to_deref)(&msg->msg_iovlen, sizeof (UInt))) {
+         foreach_func ( tid, True, fieldName, (Addr)iov,
+                        msg->msg_iovlen * sizeof( struct vki_iovec ) );
 
-      for ( i = 0; i < msg->msg_iovlen; ++i, ++iov ) {
-         UInt iov_len = iov->iov_len <= length ? iov->iov_len : length;
-         VG_(sprintf) ( fieldName, "(%s.msg_iov[%u])", name, i );
-         foreach_func ( tid, False, fieldName, 
-                        (Addr)iov->iov_base, iov_len );
-         length = length - iov_len;
+         for ( i = 0; i < msg->msg_iovlen && length > 0; ++i, ++iov ) {
+            if (ML_(safe_to_deref)(&iov->iov_len, sizeof (UInt))) {
+               UInt iov_len = iov->iov_len <= length ? iov->iov_len : length;
+               VG_(sprintf) ( fieldName, "(%s.msg_iov[%u])", name, i );
+               foreach_func ( tid, False, fieldName,
+                              (Addr)iov->iov_base, iov_len );
+               length = length - iov_len;
+            }
+         }
       }
    }
 

@@ -181,6 +181,7 @@ where XXXXXX is the bug number as listed below.
 369169  ppc64 fails jm_int_isa_2_07 test
 369209  valgrind loops and eats up all memory if cwd doesn't exist.
 369356  pre_mem_read_sockaddr syscall wrapper can crash with bad sockaddr
+369359  msghdr_foreachfield can crash when handling bad iovec
 
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64
 n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap

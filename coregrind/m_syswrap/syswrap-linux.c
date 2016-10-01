@@ -5310,10 +5310,14 @@ PRE(sys_vmsplice)
       for (iov = (struct vki_iovec *)ARG2;
            iov < (struct vki_iovec *)ARG2 + ARG3; iov++) 
       {
-         if ((fdfl & VKI_O_ACCMODE) == VKI_O_RDONLY)
-            PRE_MEM_WRITE( "vmsplice(iov[...])", (Addr)iov->iov_base, iov->iov_len );
-         else
-            PRE_MEM_READ( "vmsplice(iov[...])", (Addr)iov->iov_base, iov->iov_len );
+         if (ML_(safe_to_deref) (iov, sizeof(struct vki_iovec))) {
+            if ((fdfl & VKI_O_ACCMODE) == VKI_O_RDONLY)
+               PRE_MEM_WRITE( "vmsplice(iov[...])",
+                             (Addr)iov->iov_base, iov->iov_len );
+            else
+               PRE_MEM_READ( "vmsplice(iov[...])",
+                            (Addr)iov->iov_base, iov->iov_len );
+         }
       }
    }
 }

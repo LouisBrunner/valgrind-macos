@@ -4321,7 +4321,8 @@ static IRExpr * CmpGT128U ( IRExpr *src1, IRExpr *src2 )
 }
 
 
-static IRExpr * is_BCDstring128 (UInt Signed, IRExpr *src)
+static IRExpr * is_BCDstring128 ( const VexAbiInfo* vbi,
+                                  UInt Signed, IRExpr *src )
 {
 
    IRTemp valid = newTemp( Ity_I64 );
@@ -4338,7 +4339,7 @@ static IRExpr * is_BCDstring128 (UInt Signed, IRExpr *src)
    assign( valid,
            mkIRExprCCall( Ity_I64, 0 /*regparms*/,
                           "is_BCDstring128_helper",
-                          &is_BCDstring128_helper,
+                          fnptr_to_fnentry( vbi, &is_BCDstring128_helper ),
                           mkIRExprVec_3( mkU64( Signed ),
                                          unop( Iop_V128HIto64, src ),
                                          unop( Iop_V128to64, src ) ) ) );
@@ -4383,7 +4384,8 @@ static IRExpr * check_BCD_round (IRExpr *src, IRTemp shift)
                          mkU64( 0xF ) ) );
 }
 
-static IRTemp increment_BCDstring (IRExpr *src, IRExpr *carry_in)
+static IRTemp increment_BCDstring ( const VexAbiInfo* vbi,
+                                    IRExpr *src, IRExpr *carry_in )
 {
    /* The src is a 128-bit value containing 31 BCD digits with the sign in
     * the least significant byte. The bytes are BCD values between 0x0 and 0x9.
@@ -4418,7 +4420,8 @@ static IRTemp increment_BCDstring (IRExpr *src, IRExpr *carry_in)
    assign( bcd_result0,
            mkIRExprCCall( Ity_I64, 0 /*regparms*/,
                           "increment_BCDstring32_helper",
-                          &increment_BCDstring32_helper,
+                          fnptr_to_fnentry( vbi,
+                                            &increment_BCDstring32_helper ),
                           mkIRExprVec_3( mkU64( True /*Signed*/ ),
                                          bcd_string0,
                                          binop( Iop_32HLto64, mkU32( 0 ),
@@ -4427,7 +4430,8 @@ static IRTemp increment_BCDstring (IRExpr *src, IRExpr *carry_in)
    assign( bcd_result1,
            mkIRExprCCall( Ity_I64, 0 /*regparms*/,
                           "increment_BCDstring32_helper",
-                          &increment_BCDstring32_helper,
+                          fnptr_to_fnentry( vbi,
+                                            &increment_BCDstring32_helper ),
                           mkIRExprVec_3( mkU64( False /*Unsigned*/ ),
                                          bcd_string1,
                                          binop( Iop_Shr64,
@@ -4436,7 +4440,8 @@ static IRTemp increment_BCDstring (IRExpr *src, IRExpr *carry_in)
    assign( bcd_result2,
            mkIRExprCCall( Ity_I64, 0 /*regparms*/,
                           "increment_BCDstring32_helper",
-                          &increment_BCDstring32_helper,
+                          fnptr_to_fnentry( vbi,
+                                            &increment_BCDstring32_helper ),
                           mkIRExprVec_3( mkU64( False /*Unsigned*/ ),
                                          bcd_string2,
                                          binop( Iop_Shr64,
@@ -4445,7 +4450,8 @@ static IRTemp increment_BCDstring (IRExpr *src, IRExpr *carry_in)
    assign( bcd_result3,
            mkIRExprCCall( Ity_I64, 0 /*regparms*/,
                           "increment_BCDstring32_helper",
-                          &increment_BCDstring32_helper,
+                          fnptr_to_fnentry( vbi,
+                                            &increment_BCDstring32_helper ),
                           mkIRExprVec_3( mkU64( False /*Unsigned*/ ),
                                          bcd_string3,
                                          binop( Iop_Shr64,
@@ -4470,7 +4476,8 @@ static IRTemp increment_BCDstring (IRExpr *src, IRExpr *carry_in)
    return bcd_result;
 }
 
-static IRExpr * convert_to_zoned ( IRExpr *src, IRExpr *upper_byte )
+static IRExpr * convert_to_zoned ( const VexAbiInfo* vbi,
+                                   IRExpr *src, IRExpr *upper_byte )
 {
    /* The function takes a V128 packed decimal value and returns
     * the value in zoned format.  Note, the sign of the value is ignored.
@@ -4486,7 +4493,7 @@ static IRExpr * convert_to_zoned ( IRExpr *src, IRExpr *upper_byte )
    assign( result_low,
            mkIRExprCCall( Ity_I64, 0 /*regparms*/,
                           "convert_to_zoned_helper",
-                          &convert_to_zoned_helper,
+                          fnptr_to_fnentry( vbi, &convert_to_zoned_helper ),
                           mkIRExprVec_4( unop( Iop_V128HIto64, src ),
                                          unop( Iop_V128to64, src ),
                                          upper_byte,
@@ -4495,7 +4502,7 @@ static IRExpr * convert_to_zoned ( IRExpr *src, IRExpr *upper_byte )
    assign( result_hi,
            mkIRExprCCall( Ity_I64, 0 /*regparms*/,
                           "convert_to_zoned_helper",
-                          &convert_to_zoned_helper,
+                          fnptr_to_fnentry( vbi, &convert_to_zoned_helper ),
                           mkIRExprVec_4( unop( Iop_V128HIto64, src ),
                                          unop( Iop_V128to64, src ),
                                          upper_byte,
@@ -4508,7 +4515,7 @@ static IRExpr * convert_to_zoned ( IRExpr *src, IRExpr *upper_byte )
    return mkexpr( result );
 }
 
-static IRExpr * convert_to_national ( IRExpr *src ) {
+static IRExpr * convert_to_national ( const VexAbiInfo* vbi,  IRExpr *src ) {
    /* The function takes 128-bit value which has a 64-bit packed decimal
     * value in the lower 64-bits of the source.  The packed decimal is
     * converted to the national format via a clean helper.  The clean
@@ -4528,14 +4535,14 @@ static IRExpr * convert_to_national ( IRExpr *src ) {
    assign( result_low,
            mkIRExprCCall( Ity_I64, 0 /*regparms*/,
                           "convert_to_national_helper",
-                          &convert_to_national_helper,
+                          fnptr_to_fnentry( vbi, &convert_to_national_helper ),
                           mkIRExprVec_2( unop( Iop_V128to64, src ),
                                          mkU64( 0 ) ) ) );
 
    assign( result_hi,
            mkIRExprCCall( Ity_I64, 0 /*regparms*/,
                           "convert_to_national_helper",
-                          &convert_to_national_helper,
+                          fnptr_to_fnentry( vbi, &convert_to_national_helper ),
                           mkIRExprVec_2( unop( Iop_V128to64, src ),
                                          mkU64( 1 ) ) ) );
 
@@ -4545,7 +4552,7 @@ static IRExpr * convert_to_national ( IRExpr *src ) {
    return mkexpr( result );
 }
 
-static IRExpr * convert_from_zoned ( IRExpr *src ) {
+static IRExpr * convert_from_zoned ( const VexAbiInfo* vbi, IRExpr *src ) {
    /* The function takes 128-bit zoned value and returns a signless 64-bit
     * packed decimal value in the lower 64-bits of the 128-bit result.
     */
@@ -4557,7 +4564,8 @@ static IRExpr * convert_from_zoned ( IRExpr *src ) {
                          mkU64( 0 ),
                          mkIRExprCCall( Ity_I64, 0 /*regparms*/,
                                         "convert_from_zoned_helper",
-                                        &convert_from_zoned_helper,
+                                        fnptr_to_fnentry( vbi,
+                                                          &convert_from_zoned_helper ),
                                         mkIRExprVec_2( unop( Iop_V128HIto64,
                                                              src ),
                                                        unop( Iop_V128to64,
@@ -4567,7 +4575,7 @@ static IRExpr * convert_from_zoned ( IRExpr *src ) {
    return mkexpr( result );
 }
 
-static IRExpr * convert_from_national ( IRExpr *src ) {
+static IRExpr * convert_from_national ( const VexAbiInfo* vbi, IRExpr *src ) {
    /* The function takes 128-bit national value and returns a 64-bit
     * packed decimal value.
     */
@@ -4576,7 +4584,8 @@ static IRExpr * convert_from_national ( IRExpr *src ) {
    assign( result,
            mkIRExprCCall( Ity_I64, 0 /*regparms*/,
                           "convert_from_national_helper",
-                          &convert_from_national_helper,
+                          fnptr_to_fnentry( vbi,
+                                            &convert_from_national_helper ),
                           mkIRExprVec_2( unop( Iop_V128HIto64,
                                                src ),
                                          unop( Iop_V128to64,
@@ -22076,7 +22085,7 @@ static Bool dis_av_load ( const VexAbiInfo* vbi, UInt theInstr )
             d = unsafeIRDirty_0_N (
                            0/*regparms*/,
                            "ppc64g_dirtyhelper_LVS",
-                           &ppc64g_dirtyhelper_LVS,
+                           fnptr_to_fnentry( vbi, &ppc64g_dirtyhelper_LVS ),
                            args_le );
       }
       DIP("lvsl v%d,r%u,r%u\n", vD_addr, rA_addr, rB_addr);
@@ -22126,7 +22135,7 @@ static Bool dis_av_load ( const VexAbiInfo* vbi, UInt theInstr )
             d = unsafeIRDirty_0_N (
                            0/*regparms*/,
                            "ppc64g_dirtyhelper_LVS",
-                           &ppc64g_dirtyhelper_LVS,
+                           fnptr_to_fnentry( vbi, &ppc64g_dirtyhelper_LVS ),
                            args_le );
       }
       DIP("lvsr v%d,r%u,r%u\n", vD_addr, rA_addr, rB_addr);
@@ -25035,7 +25044,7 @@ static IRExpr * bcd_sign_code_adjust( UInt ps, IRExpr * tmp)
   except when an overflow occurs.  But since we can't be 100% accurate
   in our emulation of CR6, it seems best to just not support it all.
 */
-static Bool dis_av_bcd_misc ( UInt theInstr )
+static Bool dis_av_bcd_misc ( UInt theInstr, const VexAbiInfo* vbi )
 {
    UChar opc1     = ifieldOPC(theInstr);
    UChar vRT_addr = ifieldRegDS(theInstr);
@@ -25087,8 +25096,10 @@ static Bool dis_av_bcd_misc ( UInt theInstr )
          valid =
             unop( Iop_64to32,
                   binop( Iop_And64,
-                         is_BCDstring128( /*Signed*/True, mkexpr( vA ) ),
-                         is_BCDstring128( /*Signed*/True, mkexpr( vB ) ) ) );
+                         is_BCDstring128( vbi,
+                                          /*Signed*/True, mkexpr( vA ) ),
+                         is_BCDstring128( vbi,
+                                          /*Signed*/True, mkexpr( vB ) ) ) );
 
          sign_vb = binop( Iop_AndV128,
                           binop( Iop_64HLtoV128,
@@ -25149,7 +25160,7 @@ static Bool dis_av_bcd_misc ( UInt theInstr )
    return True;
 }
 
-static Bool dis_av_bcd ( UInt theInstr )
+static Bool dis_av_bcd ( UInt theInstr, const VexAbiInfo* vbi )
 {
    /* VX-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -25221,8 +25232,10 @@ static Bool dis_av_bcd ( UInt theInstr )
          valid =
             unop( Iop_64to32,
                   binop( Iop_And64,
-                         is_BCDstring128( /* Signed */True, mkexpr( vA ) ),
-                         is_BCDstring128( /* Signed */True, mkexpr( vB ) ) ) );
+                         is_BCDstring128( vbi,
+                                          /* Signed */True, mkexpr( vA ) ),
+                         is_BCDstring128( vbi,
+                                          /* Signed */True, mkexpr( vB ) ) ) );
 
          /* src A */
          zeroA = BCDstring_zero( binop( Iop_AndV128,
@@ -25440,7 +25453,7 @@ static Bool dis_av_bcd ( UInt theInstr )
 
             valid =
                unop( Iop_64to32,
-                     is_BCDstring128( /* Signed */True, mkexpr( vB ) ) );
+                     is_BCDstring128( vbi, /* Signed */True, mkexpr( vB ) ) );
 
          } else {
             /* string is an unsigned BCD value */
@@ -25450,7 +25463,8 @@ static Bool dis_av_bcd ( UInt theInstr )
 
             valid =
                unop( Iop_64to32,
-                     is_BCDstring128( /* Unsigned */False, mkexpr( vB ) ) );
+                     is_BCDstring128( vbi, /* Unsigned */False,
+                                      mkexpr( vB ) ) );
          }
 
          /* if PS = 0
@@ -25507,7 +25521,7 @@ static Bool dis_av_bcd ( UInt theInstr )
                                    new_sign_val ),
                             binop( Iop_AndV128,
                                    not_excess_shift_mask,
-                                   mkexpr( increment_BCDstring( result,
+                                   mkexpr( increment_BCDstring( vbi, result,
                                                                 mkexpr( round)
                                                                 ) ) ) ) );
          } else {  // bcdus.
@@ -25623,7 +25637,7 @@ static Bool dis_av_bcd ( UInt theInstr )
             }
             valid =
                unop( Iop_64to32,
-                     is_BCDstring128( /* Signed */True, mkexpr( vB ) ) );
+                     is_BCDstring128( vbi, /* Signed */True, mkexpr( vB ) ) );
 
          } else {   // bcdutrunc.
             /* Check if all of the digits are zero */
@@ -25636,7 +25650,8 @@ static Bool dis_av_bcd ( UInt theInstr )
             pos = mkNOT1( zero );
             valid =
                unop( Iop_64to32,
-                     is_BCDstring128( /* Unsigned */False, mkexpr( vB ) ) );
+                     is_BCDstring128( vbi, /* Unsigned */False,
+                                      mkexpr( vB ) ) );
          }
 
          /* If vB is not valid, the result is undefined, but we need to
@@ -25708,7 +25723,8 @@ static Bool dis_av_bcd ( UInt theInstr )
                /* Check each of the nibbles for a valid digit 0 to 9 */
                valid =
                   unop( Iop_64to32,
-                        is_BCDstring128( /* Signed */True, mkexpr( vB ) ) );
+                        is_BCDstring128( vbi, /* Signed */True,
+                                         mkexpr( vB ) ) );
                overflow = mkU1( 0 );  // not used
             }
             break;
@@ -25863,7 +25879,8 @@ static Bool dis_av_bcd ( UInt theInstr )
                pos = mkAND1( mkNOT1( sign ), mkNOT1( zero ) );
 
                assign( tmp,
-                  convert_to_zoned( mkexpr( vB ), mkU64( upper_byte ) ) );
+                       convert_to_zoned( vbi, mkexpr( vB ),
+                                         mkU64( upper_byte ) ) );
 
                /* Insert the sign based on ps and sign of vB
                 * in the lower byte.
@@ -25906,7 +25923,8 @@ static Bool dis_av_bcd ( UInt theInstr )
                 */
                valid =
                   unop( Iop_64to32,
-                        is_BCDstring128( /* Signed */True, mkexpr( vB ) ) );
+                        is_BCDstring128( vbi, /* Signed */True,
+                                         mkexpr( vB ) ) );
             }
             break;
 
@@ -25940,7 +25958,8 @@ static Bool dis_av_bcd ( UInt theInstr )
                 */
                valid =
                   unop( Iop_64to32,
-                        is_BCDstring128( /* Signed */True, mkexpr( vB ) ) );
+                        is_BCDstring128( vbi, /* Signed */True,
+                                         mkexpr( vB ) ) );
 
                /* Upper 24 hex digits of VB, i.e. hex ditgits vB[0:23],
                 * must be zero for the ox_flag to be zero.  This goes
@@ -26001,7 +26020,7 @@ static Bool dis_av_bcd ( UInt theInstr )
                pos = mkAND1( mkNOT1( sign ), mkNOT1( zero ) );
 
                assign( tmp,
-                  convert_to_national( mkexpr( vB ) ) );
+                       convert_to_national( vbi, mkexpr( vB ) ) );
 
                /* If vB is positive insert sign value 0x002B, otherwise
                 * insert 0x002D for negative. Have to use sign not neg
@@ -26009,7 +26028,7 @@ static Bool dis_av_bcd ( UInt theInstr )
                 * OR'd with (sign << 1 | NOT sign) << 1.
                 * sign = 1 if vB is negative.
                 */
-               putVReg(vRT_addr,
+               putVReg( vRT_addr,
                         binop( Iop_OrV128,
                                mkexpr( tmp ),
                                binop( Iop_64HLtoV128,
@@ -26033,7 +26052,8 @@ static Bool dis_av_bcd ( UInt theInstr )
                 */
                valid =
                   unop( Iop_64to32,
-                        is_BCDstring128( /* Signed */True, mkexpr( vB ) ) );
+                        is_BCDstring128( vbi, /* Signed */True,
+                                         mkexpr( vB ) ) );
 
                overflow = ox_flag;
             }
@@ -26049,7 +26069,7 @@ static Bool dis_av_bcd ( UInt theInstr )
                valid = unop( Iop_1Uto32, is_Zoned_decimal( vB, ps ) );
 
                assign( tmp,
-                  convert_from_zoned( mkexpr( vB ) ) );
+                       convert_from_zoned( vbi, mkexpr( vB ) ) );
 
                /* If the result of checking the lower 4 bits of each 8-bit
                 * value is zero, then the "number" was zero.
@@ -26129,7 +26149,7 @@ static Bool dis_av_bcd ( UInt theInstr )
                /* sign = 1 if vB is negative */
                sign = binop( Iop_CmpEQ64, mkexpr( hword_7 ), mkU64( 0x002D ) );
 
-               assign( tmp, convert_from_national( mkexpr( vB ) ) );
+               assign( tmp, convert_from_national( vbi, mkexpr( vB ) ) );
 
                /* If the result of checking the lower 4 bits of each 16-bit
                 * value is zero, then the "number" was zero.
@@ -26221,7 +26241,8 @@ static Bool dis_av_bcd ( UInt theInstr )
 
                valid =
                   unop( Iop_64to32,
-                        is_BCDstring128( /* Signed */True, mkexpr( vB ) ) );
+                        is_BCDstring128( vbi, /* Signed */True,
+                                         mkexpr( vB ) ) );
 
                /* if PS = 0
                      vB positive, sign is C
@@ -28388,7 +28409,7 @@ DisResult disInstr_PPC_WRK (
             case 0x181:                         // bcdcfn., bcdcfz.
                                                 // bcdctz., bcdcfsq., bcdctsq.
                if (!allow_isa_2_07) goto decode_noP8;
-               if (dis_av_bcd( theInstr )) goto decode_success;
+               if (dis_av_bcd( theInstr, abiinfo )) goto decode_success;
               goto decode_failure;
          default:
               break;  // Fall through...
@@ -28401,7 +28422,7 @@ DisResult disInstr_PPC_WRK (
       case 0x341:                  // bcdcpsgn
 
          if (!allow_isa_2_07) goto decode_noP8;
-         if (dis_av_bcd_misc( theInstr )) goto decode_success;
+         if (dis_av_bcd_misc( theInstr, abiinfo )) goto decode_success;
          goto decode_failure;
 
 

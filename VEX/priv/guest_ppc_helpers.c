@@ -220,6 +220,11 @@ IRExpr* guest_ppc64_spechelper ( const HChar* function_name,
 /*--- Misc BCD clean helpers.                                 ---*/
 /*---------------------------------------------------------------*/
 
+/* NOTE, the clean and dirty helpers need to called using the
+ * fnptr_to_fnentry() function wrapper to handle the Big Endian
+ * pointer-to-function ABI and the Little Endian ABI.
+ */
+
 /* This C-helper takes a 128-bit BCD value as two 64-bit pieces.
  * It checks the string to see if it is a valid 128-bit BCD value.
  * A valid BCD value has a sign value in bits [3:0] between 0xA

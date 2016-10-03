@@ -20181,10 +20181,10 @@ dis_vx_store ( UInt theInstr )
    {
       UInt ea_off = 0;
       IRExpr* irx_addr;
-      IRTemp word0 = newTemp( Ity_I32 );
-      IRTemp word1 = newTemp( Ity_I32 );
-      IRTemp word2 = newTemp( Ity_I32 );
-      IRTemp word3 = newTemp( Ity_I32 );
+      IRTemp word0 = newTemp( Ity_I64 );
+      IRTemp word1 = newTemp( Ity_I64 );
+      IRTemp word2 = newTemp( Ity_I64 );
+      IRTemp word3 = newTemp( Ity_I64 );
       DIP("stxvx %d,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
 
       assign( word0,  binop( Iop_Shr64,
@@ -20346,7 +20346,7 @@ dis_vx_store ( UInt theInstr )
                                       mkexpr( shift ) ),
                                mkexpr( nb_mask ) ),
                         binop( Iop_AndV128,
-                               unop( Iop_Not64, mkexpr( nb_mask ) ),
+                               unop( Iop_NotV128, mkexpr( nb_mask ) ),
                                mkexpr( current_mem) ) ) );
 
       } else {

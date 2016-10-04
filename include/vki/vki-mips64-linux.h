@@ -1011,6 +1011,13 @@ enum vki_sock_type {
 #define	VKI_ENOSYS       89  /* Function not implemented */
 #define	VKI_EOVERFLOW    79  /* Value too large for defined data type */
 
+//----------------------------------------------------------------------
+// From linux-3.7.0/arch/mips/include/uapi/asm/errno.h
+//----------------------------------------------------------------------
+
+#define VKI_EOPNOTSUPP   122 /* Operation not supported on transport
+                                endpoint */
+
 #endif // __VKI_MIPS64_LINUX_H
 
 /*--------------------------------------------------------------------*/

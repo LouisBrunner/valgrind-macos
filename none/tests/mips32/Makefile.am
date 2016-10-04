@@ -6,6 +6,8 @@ dist_noinst_SCRIPTS = filter_stderr
 EXTRA_DIST = \
 	block_size.stdout.exp block_size.stderr.exp block_size.vgtest \
 	branches.stdout.exp branches.stderr.exp branches.vgtest \
+	change_fp_mode.stdout.exp change_fp_mode.stdout.exp-fpu32 \
+	change_fp_mode.stderr.exp change_fp_mode.vgtest  \
 	FPUarithmetic.stdout.exp FPUarithmetic.stdout.exp-mips32 \
 	FPUarithmetic.stderr.exp FPUarithmetic.vgtest \
 	LoadStore.stdout.exp LoadStore.stdout.exp-BE LoadStore.stderr.exp \
@@ -42,6 +44,7 @@ check_PROGRAMS = \
 	allexec \
 	block_size \
 	branches \
+	change_fp_mode \
 	FPUarithmetic \
 	LoadStore \
 	LoadStore1 \

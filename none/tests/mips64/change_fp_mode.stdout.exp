@@ -1,0 +1,147 @@
+fr_prctl: 1, fr_detected: 1
+lwc1 $f0, 0($t0) :: lo32(f1): 5a5a, lo32(f0): 12345678
+lwc1 $f1, 0($t0) :: lo32(f1): 12345678, lo32(f0): 5a5a
+lwxc1 $f0, $0($t0) :: lo32(f1): 5a5a, lo32(f0): 12345678
+lwxc1 $f1, $0($t0) :: lo32(f1): 12345678, lo32(f0): 5a5a
+ldc1 $f0, 0($t0) :: lo32(f1): 5a5a, lo32(f0): 90abcdef
+ldc1 $f1, 0($t0) :: lo32(f1): 90abcdef, lo32(f0): 5a5a
+ldxc1 $f0, $0($t0) :: lo32(f1): 5a5a, lo32(f0): 90abcdef
+ldxc1 $f1, $0($t0) :: lo32(f1): 90abcdef, lo32(f0): 5a5a
+swc1 $f0, 0($t0) :: mem: 90abcdef
+swc1 $f1, 0($t0) :: mem: 5a5a
+swxc1 $f0, $0($t0) :: mem: 90abcdef
+swxc1 $f1, $0($t0) :: mem: 5a5a
+sdc1 $f0, 0($t0) :: mem: 1234567890abcdef
+sdc1 $f1, 0($t0) :: mem: 5a5a
+sdxc1 $f0, $0($t0) :: mem: 1234567890abcdef
+sdxc1 $f1, $0($t0) :: mem: 5a5a
+mtc1 $t0, $f0 :: lo32(f1): 5a5a, lo32(f0): 90abcdef
+mtc1 $t0, $f1 :: lo32(f1): 90abcdef, lo32(f0): 5a5a
+dmtc1 $t0, $f0 :: lo32(f1): 5a5a, lo32(f0): 90abcdef
+dmtc1 $t0, $f1 :: lo32(f1): 90abcdef, lo32(f0): 5a5a
+mfc1 $t0, $f0 :: t0: ffffffff90abcdef
+mfc1 $t0, $f1 :: t0: 5a5a
+dmfc1 $t0, $f0 :: t0: 1234567890abcdef
+dmfc1 $t0, $f1 :: t0: 5a5a
+movn.s $f0, $f2, $t0 :: lo32(f1): 6b6b, lo32(f0): 90abcdef
+movn.s $f0, $f1, $t0 :: lo32(f1): 6b6b, lo32(f0): 6b6b
+movn.s $f1, $f2, $t0 :: lo32(f1): 90abcdef, lo32(f0): 5a5a
+movn.s $f0, $f2, $0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movn.s $f0, $f1, $0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movn.s $f1, $f2, $0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movn.d $f0, $f2, $t0 :: lo32(f1): 6b6b, lo32(f0): 90abcdef
+movn.d $f0, $f1, $t0 :: lo32(f1): 6b6b, lo32(f0): 6b6b
+movn.d $f1, $f2, $t0 :: lo32(f1): 90abcdef, lo32(f0): 5a5a
+movn.d $f0, $f2, $0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movn.d $f0, $f1, $0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movn.d $f1, $f2, $0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movz.s $f0, $f2, $t0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movz.s $f0, $f1, $t0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movz.s $f1, $f2, $t0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movz.s $f0, $f2, $0 :: lo32(f1): 6b6b, lo32(f0): 90abcdef
+movz.s $f0, $f1, $0 :: lo32(f1): 6b6b, lo32(f0): 6b6b
+movz.s $f1, $f2, $0 :: lo32(f1): 90abcdef, lo32(f0): 5a5a
+movz.d $f0, $f2, $t0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movz.d $f0, $f1, $t0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movz.d $f1, $f2, $t0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movz.d $f0, $f2, $0 :: lo32(f1): 6b6b, lo32(f0): 90abcdef
+movz.d $f0, $f1, $0 :: lo32(f1): 6b6b, lo32(f0): 6b6b
+movz.d $f1, $f2, $0 :: lo32(f1): 90abcdef, lo32(f0): 5a5a
+fr_prctl: 0, fr_detected: 0
+lwc1 $f0, 0($t0) :: lo32(f1): 5a5a, lo32(f0): 12345678
+lwc1 $f1, 0($t0) :: lo32(f1): 12345678, lo32(f0): 5a5a
+lwxc1 $f0, $0($t0) :: lo32(f1): 5a5a, lo32(f0): 12345678
+lwxc1 $f1, $0($t0) :: lo32(f1): 12345678, lo32(f0): 5a5a
+ldc1 $f0, 0($t0) :: lo32(f1): 12345678, lo32(f0): 90abcdef
+ldc1 $f1, 0($t0) :: lo32(f1): 12345678, lo32(f0): 90abcdef
+ldxc1 $f0, $0($t0) :: lo32(f1): 12345678, lo32(f0): 90abcdef
+ldxc1 $f1, $0($t0) :: lo32(f1): 12345678, lo32(f0): 90abcdef
+swc1 $f0, 0($t0) :: mem: 90abcdef
+swc1 $f1, 0($t0) :: mem: 12345678
+swxc1 $f0, $0($t0) :: mem: 90abcdef
+swxc1 $f1, $0($t0) :: mem: 12345678
+sdc1 $f0, 0($t0) :: mem: 1234567890abcdef
+sdc1 $f1, 0($t0) :: mem: 1234567890abcdef
+sdxc1 $f0, $0($t0) :: mem: 1234567890abcdef
+sdxc1 $f1, $0($t0) :: mem: 1234567890abcdef
+mtc1 $t0, $f0 :: lo32(f1): 5a5a, lo32(f0): 90abcdef
+mtc1 $t0, $f1 :: lo32(f1): 90abcdef, lo32(f0): 5a5a
+dmtc1 $t0, $f0 :: lo32(f1): 12345678, lo32(f0): 90abcdef
+dmtc1 $t0, $f1 :: lo32(f1): 12345678, lo32(f0): 90abcdef
+mfc1 $t0, $f0 :: t0: ffffffff90abcdef
+mfc1 $t0, $f1 :: t0: 12345678
+dmfc1 $t0, $f0 :: t0: 1234567890abcdef
+dmfc1 $t0, $f1 :: t0: 1234567890abcdef
+movn.s $f0, $f2, $t0 :: lo32(f1): 6b6b, lo32(f0): 90abcdef
+movn.s $f0, $f1, $t0 :: lo32(f1): 6b6b, lo32(f0): 6b6b
+movn.s $f1, $f2, $t0 :: lo32(f1): 90abcdef, lo32(f0): 5a5a
+movn.s $f0, $f2, $0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movn.s $f0, $f1, $0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movn.s $f1, $f2, $0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movn.d $f0, $f2, $t0 :: lo32(f1): 12345678, lo32(f0): 90abcdef
+movn.d $f0, $f1, $t0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movn.d $f1, $f2, $t0 :: lo32(f1): 12345678, lo32(f0): 90abcdef
+movn.d $f0, $f2, $0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movn.d $f0, $f1, $0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movn.d $f1, $f2, $0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movz.s $f0, $f2, $t0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movz.s $f0, $f1, $t0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movz.s $f1, $f2, $t0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movz.s $f0, $f2, $0 :: lo32(f1): 6b6b, lo32(f0): 90abcdef
+movz.s $f0, $f1, $0 :: lo32(f1): 6b6b, lo32(f0): 6b6b
+movz.s $f1, $f2, $0 :: lo32(f1): 90abcdef, lo32(f0): 5a5a
+movz.d $f0, $f2, $t0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movz.d $f0, $f1, $t0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movz.d $f1, $f2, $t0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movz.d $f0, $f2, $0 :: lo32(f1): 12345678, lo32(f0): 90abcdef
+movz.d $f0, $f1, $0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movz.d $f1, $f2, $0 :: lo32(f1): 12345678, lo32(f0): 90abcdef
+fr_prctl: 1, fr_detected: 1
+lwc1 $f0, 0($t0) :: lo32(f1): 5a5a, lo32(f0): 12345678
+lwc1 $f1, 0($t0) :: lo32(f1): 12345678, lo32(f0): 5a5a
+lwxc1 $f0, $0($t0) :: lo32(f1): 5a5a, lo32(f0): 12345678
+lwxc1 $f1, $0($t0) :: lo32(f1): 12345678, lo32(f0): 5a5a
+ldc1 $f0, 0($t0) :: lo32(f1): 5a5a, lo32(f0): 90abcdef
+ldc1 $f1, 0($t0) :: lo32(f1): 90abcdef, lo32(f0): 5a5a
+ldxc1 $f0, $0($t0) :: lo32(f1): 5a5a, lo32(f0): 90abcdef
+ldxc1 $f1, $0($t0) :: lo32(f1): 90abcdef, lo32(f0): 5a5a
+swc1 $f0, 0($t0) :: mem: 90abcdef
+swc1 $f1, 0($t0) :: mem: 5a5a
+swxc1 $f0, $0($t0) :: mem: 90abcdef
+swxc1 $f1, $0($t0) :: mem: 5a5a
+sdc1 $f0, 0($t0) :: mem: 1234567890abcdef
+sdc1 $f1, 0($t0) :: mem: 5a5a
+sdxc1 $f0, $0($t0) :: mem: 1234567890abcdef
+sdxc1 $f1, $0($t0) :: mem: 5a5a
+mtc1 $t0, $f0 :: lo32(f1): 5a5a, lo32(f0): 90abcdef
+mtc1 $t0, $f1 :: lo32(f1): 90abcdef, lo32(f0): 5a5a
+dmtc1 $t0, $f0 :: lo32(f1): 5a5a, lo32(f0): 90abcdef
+dmtc1 $t0, $f1 :: lo32(f1): 90abcdef, lo32(f0): 5a5a
+mfc1 $t0, $f0 :: t0: ffffffff90abcdef
+mfc1 $t0, $f1 :: t0: 5a5a
+dmfc1 $t0, $f0 :: t0: 1234567890abcdef
+dmfc1 $t0, $f1 :: t0: 5a5a
+movn.s $f0, $f2, $t0 :: lo32(f1): 6b6b, lo32(f0): 90abcdef
+movn.s $f0, $f1, $t0 :: lo32(f1): 6b6b, lo32(f0): 6b6b
+movn.s $f1, $f2, $t0 :: lo32(f1): 90abcdef, lo32(f0): 5a5a
+movn.s $f0, $f2, $0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movn.s $f0, $f1, $0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movn.s $f1, $f2, $0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movn.d $f0, $f2, $t0 :: lo32(f1): 6b6b, lo32(f0): 90abcdef
+movn.d $f0, $f1, $t0 :: lo32(f1): 6b6b, lo32(f0): 6b6b
+movn.d $f1, $f2, $t0 :: lo32(f1): 90abcdef, lo32(f0): 5a5a
+movn.d $f0, $f2, $0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movn.d $f0, $f1, $0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movn.d $f1, $f2, $0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movz.s $f0, $f2, $t0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movz.s $f0, $f1, $t0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movz.s $f1, $f2, $t0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movz.s $f0, $f2, $0 :: lo32(f1): 6b6b, lo32(f0): 90abcdef
+movz.s $f0, $f1, $0 :: lo32(f1): 6b6b, lo32(f0): 6b6b
+movz.s $f1, $f2, $0 :: lo32(f1): 90abcdef, lo32(f0): 5a5a
+movz.d $f0, $f2, $t0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movz.d $f0, $f1, $t0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movz.d $f1, $f2, $t0 :: lo32(f1): 6b6b, lo32(f0): 5a5a
+movz.d $f0, $f2, $0 :: lo32(f1): 6b6b, lo32(f0): 90abcdef
+movz.d $f0, $f1, $0 :: lo32(f1): 6b6b, lo32(f0): 6b6b
+movz.d $f1, $f2, $0 :: lo32(f1): 90abcdef, lo32(f0): 5a5a

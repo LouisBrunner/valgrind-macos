@@ -1238,7 +1238,7 @@ Bool FPU_rounding_mode_isOdd (IRExpr* mode) {
       return False;
 
    vassert(mode->Iex.Const.con->tag == Ico_U32);
-   vassert(mode->Iex.Const.con->Ico.U8 == 0x8);
+   vassert(mode->Iex.Const.con->Ico.U32 == 0x8);
    return True;
 }
 

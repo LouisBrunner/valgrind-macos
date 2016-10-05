@@ -51,7 +51,9 @@ extern void VG_(exit_thread)(ThreadId tid);
    If it isn't blocked in a syscall, has no effect on the thread. */
 extern void VG_(get_thread_out_of_syscall)(ThreadId tid);
 
-/* Nuke all threads except tid. */
+/* This causes all threads except tid to forceably exit.  They aren't actually
+   dead by the time this returns; you need to call
+   VG_(reap_threads)() to wait for them. */
 extern void VG_(nuke_all_threads_except) ( ThreadId me,
                                            VgSchedReturnCode reason );
 

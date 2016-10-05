@@ -167,6 +167,7 @@ EXTRA_DIST = \
 	pth_rwlock.stderr.exp pth_rwlock.vgtest \
 	pth_stackalign.stderr.exp \
 	pth_stackalign.stdout.exp pth_stackalign.vgtest \
+	pth_term_signal.stderr.exp pth_term_signal.vgtest \
 	rcrl.stderr.exp rcrl.stdout.exp rcrl.vgtest \
 	readline1.stderr.exp readline1.stdout.exp \
 	readline1.vgtest \
@@ -224,7 +225,7 @@ check_PROGRAMS = \
 	pselect_sigmask_null \
 	pth_atfork1 pth_blockedsig pth_cancel1 pth_cancel2 pth_cvsimple \
 	pth_empty pth_exit pth_exit2 pth_mutexspeed pth_once pth_rwlock \
-	pth_stackalign \
+	pth_stackalign pth_term_signal\
 	rcrl readline1 \
 	require-text-symbol \
 	res_search resolv \
@@ -315,6 +316,7 @@ if VGCONF_OS_IS_SOLARIS
 pth_rwlock_CFLAGS	+= --std=c99
 endif
 pth_stackalign_LDADD	= -lpthread
+pth_term_signal_LDADD	= -lpthread
 res_search_LDADD        = -lresolv -lpthread
 resolv_CFLAGS		= $(AM_CFLAGS)
 resolv_LDADD            = -lresolv -lpthread

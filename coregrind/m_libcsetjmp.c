@@ -594,7 +594,7 @@ __asm__(
 /* Checking whether second argument is zero. */
 "   bnez $a1, 1f                \n\t"
 "   nop                         \n\t"
-"   addi $a1, $a1, 1            \n\t"  /* We must return 1 if val=0. */
+"   addiu $a1, $a1, 1           \n\t"  /* We must return 1 if val=0. */
 "1:                             \n\t"
 "   move $v0, $a1               \n\t"  /* Return value of second argument. */
 "   j    $ra                    \n\t"

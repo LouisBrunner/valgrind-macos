@@ -196,7 +196,7 @@ VG_(disp_cp_xindir):
         addu $13, $13, $14
 
         lw $12, 0($13) /* t3 = VG_(tt_fast)[hash] :: ULong* */
-        addi $13, $13, 4
+        addiu $13, $13, 4
         lw $25, 0($13) /* little-endian, so comparing 1st 32bit word */
         nop
 

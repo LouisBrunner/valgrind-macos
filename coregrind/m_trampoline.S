@@ -1278,8 +1278,8 @@ VG_(mips32_linux_REDIR_FOR_strlen):
       //la $a0, string
       j strlen_cond
    strlen_loop:
-      addi $v0, $v0, 1
-      addi $a0, $a0, 1
+      addiu $v0, $v0, 1
+      addiu $a0, $a0, 1
    strlen_cond:
       lbu $t0, ($a0)
       bne $t0, $zero, strlen_loop

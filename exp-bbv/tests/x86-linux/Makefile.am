@@ -16,7 +16,7 @@ EXTRA_DIST = \
 
 AM_CCASFLAGS += -ffreestanding -Xassembler -I$(top_srcdir)/exp-bbv/tests
 
-LDFLAGS += @FLAG_M32@ -static -nostartfiles -nodefaultlibs
+AM_LDFLAGS = @FLAG_M32@ -static -nostartfiles -nodefaultlibs
 
 clone_test_SOURCES = clone_test.S
 ll_SOURCES = ll.S

@@ -18,7 +18,7 @@ EXTRA_DIST = \
 
 AM_CCASFLAGS += -ffreestanding
 
-LDFLAGS += @FLAG_M32@ -static -nostartfiles -nodefaultlibs
+AM_LDFLAGS = @FLAG_M32@ -static -nostartfiles -nodefaultlibs
 
 complex_rep_SOURCES = complex_rep.S
 fldcw_check_SOURCES = fldcw_check.S

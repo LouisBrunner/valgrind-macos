@@ -282,11 +282,64 @@ Thu 15 Sep 12:55:21 CEST 2016
              val 15963 is a copy of trunk 15962
 
 
-TO MERGE (trunk -> 3_12_BRANCH)
-15966 (t) -> 15967 (b) a missing helgrind test file
-15968 (t) -> 15969 (b) Add none/tests/ppc64/ppc64_helpers.h to noinst_HEADERS.
-15970 (t) -> 15972 (b) fix for bugzilla 361253  [s390x]
-15971 (t) -> 15973 (b) Add feature check for tests that use -march=armv8-a+crc.
+TO MERGE (trunk -> 3_12_BRANCH unless otherwise indicated):
+
+15966 -> 15967 a missing helgrind test file
+15968 -> 15969 Add none/tests/ppc64/ppc64_helpers.h to noinst_HEADERS.
+15970 -> 15972 fix for bugzilla 361253  [s390x]
+15971 -> 15973 Add feature check for tests that use -march=armv8-a+crc.
+15975 -> 16007 Avoid unused variable warning.
+15976 Prelim support for macOS Sierra (10.12).  Partial fix for #365327.
+15977 -> 16008 ppcBE, fix the expected output file for
+               none/tests/ppc64/jm_int_isa_2_07.stdout.exp
+15978 -> 16009 Use proper compiler flags on Solaris for fma4 test.
+15979 -> 16010 Fix expected error output of drd/tests/bar_bad* on Solaris.
+15980 -> 16009 Fix none/tests/amd64/Makefile.am typo s/AM_CFKAGS/AM_CFLAGS/
+15981 -> 16016 Add ioctl wrapper for MNTIOC_GETEXTMNTENT.
+15982 -> 16011 Fix #361615 - Inconsistent termination for multithreaded process
+               terminated by signal
+15983 -> 16011 Fix warning introduced by revision 15982
+15984 -> 16012 Added meta mempool support into memcheck  Fixes BZ#367995
+15985 -> 16012 Fix test so that leaked bytes is the same in 32 and 64 bits
+15986 -> 16012 Add an optional 2nd arg to leak-autofreepool to test performance
+15987 -> 16012 mc-manual.xml: Fix some mismatched open/close tags.
+15988 -> 16013 Use AM_LDFLAGS instead of LDFLAGS in exp-bbv/tests Makefiles.
+15989 -> 16014 Don't require the current working directory to exist. #369209.
+
+15990 -> 16015 Fix pre_mem_read_sockaddr crash on invalid syscall arguments.
+               Bug #369356.
+15991 -> 16015 Fix crash in msghdr_foreachfield when iov_len isn't safe to
+               dereference.  #369359
+15992 -> 16015 Fix crash when old/new sigprocmask isn't safe to dereference.
+               Bug #369360.
+15993 -> 16015 Fix crash in vmsplice linux kernel wrapper when iovec is bad.
+               Bug #369361.
+15994 -> 16015 Fix crash in linux [rt_]sigaction wrapper with bad old/new
+               sigaction handler. #369362
+15995 -> 16015 Fix crash in sys_modify_ldt wrapper on bad ptr. Bug #369383.
+15996 -> 16015 linux-x86 check get/set_thread_area pointer before use.
+               Bug #369402.
+15997 -> 16015 Don't check bad iovec array in process_vm_readv/writev.
+               Bug #369441.
+15998 -> 16015 Don't crash, but warn and return EINVAL on unknown fcntl command.
+(TODO: ask mjw about these)
+
+15999 -> 16017 Replace --wait-for-gdb=yes memory loop by a call to VG_(poll)
+               (5000 milliseconds)
+16000 -> 16017 Well, 5 seconds is too short for me to type a attach pid command
+               so increase to 8 seconds.
+3251  -> 3254  Fix for clean helpers on BE
+3252  -> 3255  Fix rounding mode check and instruction stxvl
+16001 -> 16019 mips32: test for syscalls prctl(GET/SET_FP_MODE)
+16002 Update svn:ignore list
+3253  -> 3256  mips64: support for fp32 mode
+16003 -> 16020 mips64: support for prctl(GET/SET_FP_MODE) syscalls
+16004 -> 16021 mips64: support for prctl(GET/SET_FP_MODE) syscalls
+16005 mips: update svn:ignore list
+16006 -> 16022 dhat: add "tot-blocks-allocd" metric
+
+16018 mips: replace use of (d)addi with (d)addiu
+(tracked up to and including 16022)
 
 3.12.0.BETA1 is 3_12_BRANCHes at 15973/3250.
 

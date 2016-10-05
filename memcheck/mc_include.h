@@ -93,6 +93,9 @@ typedef
       Addr          pool;           // pool identifier
       SizeT         rzB;            // pool red-zone size
       Bool          is_zeroed;      // allocations from this pool are zeroed
+      Bool          auto_free;      // De-alloc block frees all chunks in block
+      Bool          metapool;       // These chunks are VALGRIND_MALLOC_LIKE
+                                    // memory, and used as pool.
       VgHashTable  *chunks;         // chunks associated with this pool
    }
    MC_Mempool;
@@ -105,7 +108,8 @@ void* MC_(new_block)  ( ThreadId tid,
 void MC_(handle_free) ( ThreadId tid,
                         Addr p, UInt rzB, MC_AllocKind kind );
 
-void MC_(create_mempool)  ( Addr pool, UInt rzB, Bool is_zeroed );
+void MC_(create_mempool)  ( Addr pool, UInt rzB, Bool is_zeroed,
+                            Bool auto_free, Bool metapool );
 void MC_(destroy_mempool) ( Addr pool );
 void MC_(mempool_alloc)   ( ThreadId tid, Addr pool,
                             Addr addr, SizeT size );
@@ -114,6 +118,7 @@ void MC_(mempool_trim)    ( Addr pool, Addr addr, SizeT size );
 void MC_(move_mempool)    ( Addr poolA, Addr poolB );
 void MC_(mempool_change)  ( Addr pool, Addr addrA, Addr addrB, SizeT size );
 Bool MC_(mempool_exists)  ( Addr pool );
+Bool MC_(is_mempool_block)( MC_Chunk* mc_search );
 
 /* Searches for a recently freed block which might bracket Addr a.
    Return the MC_Chunk* for this block or NULL if no bracketting block

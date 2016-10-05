@@ -61,7 +61,8 @@ dist_noinst_SCRIPTS = \
 	filter_stderr filter_xml \
 	filter_strchr \
 	filter_varinfo3 \
-	filter_memcheck
+	filter_memcheck \
+	filter_overlaperror
 
 noinst_HEADERS = leak.h
 
@@ -155,6 +156,12 @@ EXTRA_DIST = \
 	leak-pool-3.vgtest leak-pool-3.stderr.exp \
 	leak-pool-4.vgtest leak-pool-4.stderr.exp \
 	leak-pool-5.vgtest leak-pool-5.stderr.exp \
+	leak-autofreepool-0.vgtest leak-autofreepool-0.stderr.exp \
+	leak-autofreepool-1.vgtest leak-autofreepool-1.stderr.exp \
+	leak-autofreepool-2.vgtest leak-autofreepool-2.stderr.exp \
+	leak-autofreepool-3.vgtest leak-autofreepool-3.stderr.exp \
+	leak-autofreepool-4.vgtest leak-autofreepool-4.stderr.exp \
+	leak-autofreepool-5.vgtest leak-autofreepool-5.stderr.exp \
 	leak-tree.vgtest leak-tree.stderr.exp \
 	leak-segv-jmp.vgtest leak-segv-jmp.stderr.exp \
 	lks.vgtest lks.stdout.exp lks.supp lks.stderr.exp \
@@ -347,6 +354,7 @@ check_PROGRAMS = \
 	leak-cycle \
 	leak-delta \
 	leak-pool \
+	leak-autofreepool \
 	leak-tree \
 	leak-segv-jmp \
 	long-supps \

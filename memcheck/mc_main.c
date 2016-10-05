@@ -7032,8 +7032,13 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          Addr pool      = (Addr)arg[1];
          UInt rzB       =       arg[2];
          Bool is_zeroed = (Bool)arg[3];
+         UInt flags     =       arg[4];
 
-         MC_(create_mempool) ( pool, rzB, is_zeroed );
+         // The create_mempool function does not know these mempool flags,
+         // pass as booleans.
+         MC_(create_mempool) ( pool, rzB, is_zeroed, 
+                               (flags & VALGRIND_MEMPOOL_AUTO_FREE),
+                               (flags & VALGRIND_MEMPOOL_METAPOOL) );
          return True;
       }
 

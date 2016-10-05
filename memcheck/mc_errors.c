@@ -925,6 +925,30 @@ void MC_(record_user_error) ( ThreadId tid, Addr a,
    VG_(maybe_record_error)( tid, Err_User, a, /*s*/NULL, &extra );
 }
 
+Bool MC_(is_mempool_block)(MC_Chunk* mc_search)
+{
+   MC_Mempool* mp;
+
+   if (!MC_(mempool_list))
+      return False;
+
+   // A chunk can only come from a mempool if a custom allocator
+   // is used. No search required for other kinds.
+   if (mc_search->allockind == MC_AllocCustom) {
+      VG_(HT_ResetIter)( MC_(mempool_list) );
+      while ( (mp = VG_(HT_Next)(MC_(mempool_list))) ) {
+         MC_Chunk* mc;
+         VG_(HT_ResetIter)(mp->chunks);
+         while ( (mc = VG_(HT_Next)(mp->chunks)) ) {
+            if (mc == mc_search)
+               return True;
+         }
+      }
+   }
+
+   return False;
+}
+ 
 /*------------------------------------------------------------*/
 /*--- Other error operations                               ---*/
 /*------------------------------------------------------------*/
@@ -1016,7 +1040,8 @@ Bool addr_is_in_MC_Chunk_with_REDZONE_SZB(MC_Chunk* mc, Addr a, SizeT rzB)
 
 // Forward declarations
 static Bool client_block_maybe_describe( Addr a, AddrInfo* ai );
-static Bool mempool_block_maybe_describe( Addr a, AddrInfo* ai );
+static Bool mempool_block_maybe_describe( Addr a, Bool is_metapool,
+                                          AddrInfo* ai );
 
 
 /* Describe an address as best you can, for error messages,
@@ -1031,10 +1056,12 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
    if (client_block_maybe_describe( a, ai )) {
       return;
    }
-   /* -- Perhaps it's in mempool block? -- */
-   if (mempool_block_maybe_describe( a, ai )) {
+
+   /* -- Perhaps it's in mempool block (non-meta)? -- */
+   if (mempool_block_maybe_describe( a, /*is_metapool*/ False, ai)) {
       return;
    }
+
    /* Blocks allocated by memcheck malloc functions are either
       on the recently freed list or on the malloc-ed list.
       Custom blocks can be on both : a recently freed block might
@@ -1046,7 +1073,8 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
    /* -- Search for a currently malloc'd block which might bracket it. -- */
    VG_(HT_ResetIter)(MC_(malloc_list));
    while ( (mc = VG_(HT_Next)(MC_(malloc_list))) ) {
-      if (addr_is_in_MC_Chunk_default_REDZONE_SZB(mc, a)) {
+      if (!MC_(is_mempool_block)(mc) && 
+           addr_is_in_MC_Chunk_default_REDZONE_SZB(mc, a)) {
          ai->tag = Addr_Block;
          ai->Addr.Block.block_kind = Block_Mallocd;
          if (MC_(get_freed_block_bracketting)( a ))
@@ -1063,7 +1091,7 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
    }
    /* -- Search for a recently freed block which might bracket it. -- */
    mc = MC_(get_freed_block_bracketting)( a );
-   if (mc) {
+   if (mc && !MC_(is_mempool_block)(mc)) {
       ai->tag = Addr_Block;
       ai->Addr.Block.block_kind = Block_Freed;
       ai->Addr.Block.block_desc = "block";
@@ -1072,6 +1100,16 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
       ai->Addr.Block.allocated_at = MC_(allocated_at)(mc);
       VG_(initThreadInfo) (&ai->Addr.Block.alloc_tinfo);
       ai->Addr.Block.freed_at = MC_(freed_at)(mc);
+      return;
+   }
+
+   /* -- Perhaps it's in a meta mempool block? -- */
+   /* This test is done last, because metapool blocks overlap with blocks
+      handed out to the application. That makes every heap address part of
+      a metapool block, so the interesting cases are handled first.
+      This final search is a last-ditch attempt. When found, it is probably
+      an error in the custom allocator itself. */
+   if (mempool_block_maybe_describe( a, /*is_metapool*/ True, ai )) {
       return;
    }
 
@@ -1215,7 +1253,7 @@ static Bool client_block_maybe_describe( Addr a,
 }
 
 
-static Bool mempool_block_maybe_describe( Addr a,
+static Bool mempool_block_maybe_describe( Addr a, Bool is_metapool,
                                           /*OUT*/AddrInfo* ai )
 {
    MC_Mempool* mp;
@@ -1223,7 +1261,7 @@ static Bool mempool_block_maybe_describe( Addr a,
 
    VG_(HT_ResetIter)( MC_(mempool_list) );
    while ( (mp = VG_(HT_Next)(MC_(mempool_list))) ) {
-      if (mp->chunks != NULL) {
+      if (mp->chunks != NULL && mp->metapool == is_metapool) {
          MC_Chunk* mc;
          VG_(HT_ResetIter)(mp->chunks);
          while ( (mc = VG_(HT_Next)(mp->chunks)) ) {

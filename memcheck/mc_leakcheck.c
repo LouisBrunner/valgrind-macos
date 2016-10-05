@@ -1760,6 +1760,25 @@ static void scan_memory_root_set(Addr searched, SizeT szB)
    VG_(free)(seg_starts);
 }
 
+static MC_Mempool *find_mp_of_chunk (MC_Chunk* mc_search)
+{
+   MC_Mempool* mp;
+
+   tl_assert( MC_(mempool_list) );
+
+   VG_(HT_ResetIter)( MC_(mempool_list) );
+   while ( (mp = VG_(HT_Next)(MC_(mempool_list))) ) {
+         MC_Chunk* mc;
+         VG_(HT_ResetIter)(mp->chunks);
+         while ( (mc = VG_(HT_Next)(mp->chunks)) ) {
+            if (mc == mc_search)
+               return mp;
+         }
+   }
+
+   return NULL;
+}
+
 /*------------------------------------------------------------*/
 /*--- Top-level entry point.                               ---*/
 /*------------------------------------------------------------*/
@@ -1816,7 +1835,7 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams* lcp)
       tl_assert( lc_chunks[i]->data <= lc_chunks[i+1]->data);
    }
 
-   // Sanity check -- make sure they don't overlap.  The one exception is that
+   // Sanity check -- make sure they don't overlap.  One exception is that
    // we allow a MALLOCLIKE block to sit entirely within a malloc() block.
    // This is for bug 100628.  If this occurs, we ignore the malloc() block
    // for leak-checking purposes.  This is a hack and probably should be done
@@ -1825,6 +1844,9 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams* lcp)
    // for mempool chunks, but if custom-allocated blocks are put in a separate
    // table from normal heap blocks it makes free-mismatch checking more
    // difficult.
+   // Another exception: Metapool memory blocks overlap by definition. The meta-
+   // block is allocated (by a custom allocator), and chunks of that block are
+   // allocated again for use by the application: Not an error.
    //
    // If this check fails, it probably means that the application
    // has done something stupid with VALGRIND_MALLOCLIKE_BLOCK client
@@ -1867,15 +1889,48 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams* lcp)
          lc_n_chunks--;
 
       } else {
-         VG_(umsg)("Block 0x%lx..0x%lx overlaps with block 0x%lx..0x%lx\n",
-                   start1, end1, start2, end2);
-         VG_(umsg)("Blocks allocation contexts:\n"),
-         VG_(pp_ExeContext)( MC_(allocated_at)(ch1));
-         VG_(umsg)("\n"),
-         VG_(pp_ExeContext)(  MC_(allocated_at)(ch2));
-         VG_(umsg)("This is usually caused by using VALGRIND_MALLOCLIKE_BLOCK");
-         VG_(umsg)("in an inappropriate way.\n");
-         tl_assert (0);
+         // Overlap is allowed ONLY when one of the two candicates is a block
+         // from a memory pool that has the metapool attribute set.
+         // All other mixtures trigger the error + assert.
+         MC_Mempool* mp;
+         Bool ch1_is_meta = False, ch2_is_meta = False;
+         Bool Inappropriate = False;
+
+         if (MC_(is_mempool_block)(ch1)) {
+            mp = find_mp_of_chunk(ch1);
+            if (mp && mp->metapool) {
+               ch1_is_meta = True;
+            }
+         }
+
+         if (MC_(is_mempool_block)(ch2)) {
+            mp = find_mp_of_chunk(ch2);
+            if (mp && mp->metapool) {
+               ch2_is_meta = True;
+            }
+         }
+         
+         // If one of the blocks is a meta block, the other must be entirely
+         // within that meta block, or something is really wrong with the custom
+         // allocator.
+         if (ch1_is_meta != ch2_is_meta) {
+            if ( (ch1_is_meta && (start2 < start1 || end2 > end1)) ||
+                 (ch2_is_meta && (start1 < start2 || end1 > end2)) ) {
+               Inappropriate = True;
+            }
+         }
+
+         if (ch1_is_meta == ch2_is_meta || Inappropriate) {
+            VG_(umsg)("Block 0x%lx..0x%lx overlaps with block 0x%lx..0x%lx\n",
+                      start1, end1, start2, end2);
+            VG_(umsg)("Blocks allocation contexts:\n"),
+            VG_(pp_ExeContext)( MC_(allocated_at)(ch1));
+            VG_(umsg)("\n"),
+            VG_(pp_ExeContext)(  MC_(allocated_at)(ch2));
+            VG_(umsg)("This is usually caused by using ");
+            VG_(umsg)("VALGRIND_MALLOCLIKE_BLOCK in an inappropriate way.\n");
+            tl_assert (0);
+         }
       }
    }
 

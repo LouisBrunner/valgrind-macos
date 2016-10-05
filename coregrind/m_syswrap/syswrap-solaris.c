@@ -3042,6 +3042,21 @@ PRE(sys_ioctl)
       break;
 
    /* mntio */
+   case VKI_MNTIOC_GETEXTMNTENT:
+      {
+         PRE_MEM_READ("ioctl(MNTIOC_GETEXTMNTENT)",
+                      ARG3, sizeof(struct vki_mntentbuf));
+
+         struct vki_mntentbuf *embuf = (struct vki_mntentbuf *) ARG3;
+         if (ML_(safe_to_deref(embuf, sizeof(*embuf)))) {
+            PRE_MEM_WRITE("ioctl(MNTIOC_GETEXTMNTENT, embuf->mbuf_emp)",
+                          (Addr) embuf->mbuf_emp, sizeof(struct vki_extmnttab));
+            PRE_MEM_WRITE("ioctl(MNTIOC_GETEXTMNTENT, embuf->mbuf_buf)",
+                          (Addr) embuf->mbuf_buf, embuf->mbuf_bufsize);
+         }
+      }
+      break;
+
    case VKI_MNTIOC_GETMNTANY:
       {
          PRE_MEM_READ("ioctl(MNTIOC_GETMNTANY)",
@@ -3050,13 +3065,11 @@ PRE(sys_ioctl)
          struct vki_mntentbuf *embuf = (struct vki_mntentbuf *) ARG3;
          if (ML_(safe_to_deref(embuf, sizeof(*embuf)))) {
             PRE_MEM_READ("ioctl(MNTIOC_GETMNTANY, embuf->mbuf_emp)",
-                         (Addr) embuf->mbuf_emp,
-                         sizeof(struct vki_mnttab));
+                         (Addr) embuf->mbuf_emp, sizeof(struct vki_mnttab));
             PRE_MEM_WRITE("ioctl(MNTIOC_GETMNTANY, embuf->mbuf_buf)",
-                          (Addr) embuf->mbuf_buf,
-                          embuf->mbuf_bufsize);
-            struct vki_mnttab *mnt
-               = (struct vki_mnttab *) embuf->mbuf_emp;
+                          (Addr) embuf->mbuf_buf, embuf->mbuf_bufsize);
+
+            struct vki_mnttab *mnt = (struct vki_mnttab *) embuf->mbuf_emp;
             if (ML_(safe_to_deref(mnt, sizeof(struct vki_mnttab)))) {
                if (mnt->mnt_special != NULL)
                   PRE_MEM_RASCIIZ("ioctl(MNTIOC_GETMNTANY, mnt->mnt_special)",
@@ -3331,6 +3344,32 @@ POST(sys_ioctl)
       break;
 
    /* mntio */
+   case VKI_MNTIOC_GETEXTMNTENT:
+      {
+         struct vki_mntentbuf *embuf = (struct vki_mntentbuf *) ARG3;
+         struct vki_extmnttab *mnt = (struct vki_extmnttab *) embuf->mbuf_emp;
+
+         POST_MEM_WRITE((Addr) mnt, sizeof(struct vki_extmnttab));
+         if (mnt != NULL) {
+            if (mnt->mnt_special != NULL)
+               POST_MEM_WRITE((Addr) mnt->mnt_special,
+                              VG_(strlen)(mnt->mnt_special) + 1);
+            if (mnt->mnt_mountp != NULL)
+               POST_MEM_WRITE((Addr) mnt->mnt_mountp,
+                              VG_(strlen)(mnt->mnt_mountp) + 1);
+            if (mnt->mnt_fstype != NULL)
+               POST_MEM_WRITE((Addr) mnt->mnt_fstype,
+                              VG_(strlen)(mnt->mnt_fstype) + 1);
+            if (mnt->mnt_mntopts != NULL)
+               POST_MEM_WRITE((Addr) mnt->mnt_mntopts,
+                              VG_(strlen)(mnt->mnt_mntopts) + 1);
+            if (mnt->mnt_time != NULL)
+               POST_MEM_WRITE((Addr) mnt->mnt_time,
+                              VG_(strlen)(mnt->mnt_time) + 1);
+         }
+      }
+      break;
+
    case VKI_MNTIOC_GETMNTANY:
       {
          struct vki_mntentbuf *embuf = (struct vki_mntentbuf *) ARG3;

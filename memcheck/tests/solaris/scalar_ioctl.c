@@ -28,6 +28,46 @@ static void sys_ioctl_POOL_STATUSQ(void)
 
 /* mntio */
 __attribute__((noinline))
+static void sys_ioctl_MNTIOC_GETEXTMNTENT(void)
+{
+   GO(SYS_ioctl, "(MNTIOC_GETEXTMNTENT) 3s 1m");
+   SY(SYS_ioctl, x0 - 1, x0 + MNTIOC_GETEXTMNTENT, x0 + 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_ioctl_MNTIOC_GETEXTMNTENT_2(void)
+{
+   struct mntentbuf embuf;
+
+   embuf.mbuf_emp = (void *) (x0 + 1);
+   embuf.mbuf_buf = (void *) (x0 + 1);
+   embuf.mbuf_bufsize = x0 + 1;
+
+   GO(SYS_ioctl, "(MNTIOC_GETEXTMNTENT) 4s 2m");
+   SY(SYS_ioctl, x0 - 1, x0 + MNTIOC_GETEXTMNTENT, &embuf + x0); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_ioctl_MNTIOC_GETEXTMNTENT_3(void)
+{
+   struct extmnttab mnt;
+   struct mntentbuf embuf;
+
+   mnt.mnt_special = (void *) (x0 + 1);
+   mnt.mnt_mountp = (void *) (x0 + 1);
+   mnt.mnt_fstype = (void *) (x0 + 1);
+   mnt.mnt_mntopts = (void *) (x0 + 1);
+   mnt.mnt_time = (void *) (x0 + 1);
+
+   embuf.mbuf_emp = x0 + &mnt;
+   embuf.mbuf_buf = (void *) (x0 + 1);
+   embuf.mbuf_bufsize = x0 + 1;
+
+   GO(SYS_ioctl, "(MNTIOC_GETEXTMNTENT) 5s 6m");
+   SY(SYS_ioctl, x0 - 1, x0 + MNTIOC_GETEXTMNTENT, &embuf + x0); FAIL;
+}
+
+__attribute__((noinline))
 static void sys_ioctl_MNTIOC_GETMNTANY(void)
 {
    GO(SYS_ioctl, "(MNTIOC_GETMNTANY) 3s 1m");
@@ -484,6 +524,9 @@ int main(void)
    sys_ioctl_POOL_STATUSQ();
 
    /* mntio */
+   sys_ioctl_MNTIOC_GETEXTMNTENT();
+   sys_ioctl_MNTIOC_GETEXTMNTENT_2();
+   sys_ioctl_MNTIOC_GETEXTMNTENT_3();
    sys_ioctl_MNTIOC_GETMNTANY();
    sys_ioctl_MNTIOC_GETMNTANY_2();
    sys_ioctl_MNTIOC_GETMNTANY_3();

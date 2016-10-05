@@ -15,6 +15,66 @@ Syscall param ioctl(POOL_STATUSQ) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
+ 54:               SYS_ioctl (MNTIOC_GETEXTMNTENT) 3s 1m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(MNTIOC_GETEXTMNTENT) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (MNTIOC_GETEXTMNTENT) 4s 2m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(MNTIOC_GETEXTMNTENT) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param ioctl(MNTIOC_GETEXTMNTENT, embuf->mbuf_emp) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param ioctl(MNTIOC_GETEXTMNTENT, embuf->mbuf_buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+ 54:               SYS_ioctl (MNTIOC_GETEXTMNTENT) 5s 6m
+---------------------------------------------------------
+Syscall param ioctl(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(request) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(arg) contains uninitialised byte(s)
+   ...
+
+Syscall param ioctl(MNTIOC_GETEXTMNTENT) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param ioctl(MNTIOC_GETEXTMNTENT, embuf->mbuf_buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
  54:               SYS_ioctl (MNTIOC_GETMNTANY) 3s 1m
 ---------------------------------------------------------
 Syscall param ioctl(fd) contains uninitialised byte(s)
@@ -343,6 +403,9 @@ Syscall param ioctl(I_STR, strioctl->ic_dp) points to unaddressable byte(s)
 ---------------------------------------------------------
  54:               SYS_ioctl (I_FIND) 3s 1m
 ---------------------------------------------------------
+
+More than 100 errors detected.  Subsequent errors
+will still be recorded, but in less detail than before.
 Syscall param ioctl(fd) contains uninitialised byte(s)
    ...
 
@@ -402,9 +465,6 @@ Syscall param ioctl(I_PEEK, strpeek->flags) points to unaddressable byte(s)
 Syscall param ioctl(fd) contains uninitialised byte(s)
    ...
 
-
-More than 100 errors detected.  Subsequent errors
-will still be recorded, but in less detail than before.
 Syscall param ioctl(request) contains uninitialised byte(s)
    ...
 

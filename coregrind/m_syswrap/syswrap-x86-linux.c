@@ -596,7 +596,9 @@ SysRes write_ldt ( ThreadId tid, void* ptr, UInt bytecount, Int oldmode )
 static SysRes sys_modify_ldt ( ThreadId tid,
                                Int func, void* ptr, UInt bytecount )
 {
-   SysRes ret;
+   /* Set return value to something "safe".  I think this will never
+      actually be returned, though. */
+   SysRes ret = VG_(mk_SysRes_Error)( VKI_ENOSYS );
 
    if (func != 0 && func != 1 && func != 2 && func != 0x11) {
       ret = VG_(mk_SysRes_Error)( VKI_ENOSYS );
@@ -634,8 +636,10 @@ static SysRes sys_set_thread_area ( ThreadId tid, vki_modify_ldt_t* info )
    vg_assert(8 == sizeof(VexGuestX86SegDescr));
    vg_assert(sizeof(HWord) == sizeof(VexGuestX86SegDescr*));
 
-   if (info == NULL || ! ML_(safe_to_deref)(info, sizeof(vki_modify_ldt_t)))
+   if (info == NULL || ! ML_(safe_to_deref)(info, sizeof(vki_modify_ldt_t))) {
+      VG_(umsg)("Warning: bad u_info address %p in set_thread_area\n", info);
       return VG_(mk_SysRes_Error)( VKI_EFAULT );
+   }
 
    gdt = (VexGuestX86SegDescr*)VG_(threads)[tid].arch.vex.guest_GDT;
 
@@ -686,8 +690,10 @@ static SysRes sys_get_thread_area ( ThreadId tid, vki_modify_ldt_t* info )
    vg_assert(sizeof(HWord) == sizeof(VexGuestX86SegDescr*));
    vg_assert(8 == sizeof(VexGuestX86SegDescr));
 
-   if (info == NULL || ! ML_(safe_to_deref)(info, sizeof(vki_modify_ldt_t)))
+   if (info == NULL || ! ML_(safe_to_deref)(info, sizeof(vki_modify_ldt_t))) {
+      VG_(umsg)("Warning: bad u_info address %p in get_thread_area\n", info);
       return VG_(mk_SysRes_Error)( VKI_EFAULT );
+   }
 
    idx = info->entry_number;
 

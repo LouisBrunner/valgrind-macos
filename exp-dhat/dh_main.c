@@ -1065,8 +1065,9 @@ static void dh_print_usage(void)
 "            sort the allocation points by the metric\n"
 "            defined by <string>, thusly:\n"
 "                max-bytes-live    maximum live bytes [default]\n"
-"                tot-bytes-allocd  total allocation (turnover)\n"
+"                tot-bytes-allocd  bytes allocated in total (turnover)\n"
 "                max-blocks-live   maximum live blocks\n"
+"                tot-blocks-allocd blocks allocated in total (turnover)\n"
    );
 }
 
@@ -1175,6 +1176,9 @@ static ULong get_metric__tot_bytes ( APInfo* api ) {
 static ULong get_metric__max_blocks_live ( APInfo* api ) {
    return api->max_blocks_live;
 }
+static ULong get_metric__tot_blocks ( APInfo* api ) {
+   return api->tot_blocks;
+}
 
 /* Given a string, return the metric-access function and also a Bool
    indicating whether we want increasing or decreasing values of the
@@ -1197,6 +1201,11 @@ static Bool identify_metric ( /*OUT*/ULong(**get_metricP)(APInfo*),
    }
    if (0 == VG_(strcmp)(metric_name, "max-blocks-live")) {
       *get_metricP = get_metric__max_blocks_live;
+      *increasingP = False;
+      return True;
+   }
+   if (0 == VG_(strcmp)(metric_name, "tot-blocks-allocd")) {
+      *get_metricP = get_metric__tot_blocks;
       *increasingP = False;
       return True;
    }

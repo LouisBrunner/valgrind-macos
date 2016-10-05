@@ -372,16 +372,17 @@ to be the case, but it could happen.</para>
        allocation points according to some metric, and shows the
        highest scoring entries.  <varname>--sort-by</varname>
        selects the metric used for sorting:</para>
-      <para><varname>max-bytes-live   </varname>    maximum live bytes [default]</para>
-      <para><varname>tot-bytes-allocd </varname>  total allocation (turnover)</para>
-      <para><varname>max-blocks-live  </varname>   maximum live blocks</para>
+      <para><varname>max-bytes-live   </varname>  maximum live bytes [default]</para>
+      <para><varname>tot-bytes-allocd </varname>  bytes allocates in total (turnover)</para>
+      <para><varname>max-blocks-live  </varname>  maximum live blocks</para>
+      <para><varname>tot-blocks-allocd </varname> blocks allocated in total (turnover)</para>
       <para>This controls the order in which allocation points are
        displayed.  You can choose to look at allocation points with
-       the highest maximum liveness, or the highest total turnover, or
-       by the highest number of live blocks.  These give usefully
-       different pictures of program behaviour.  For example, sorting
-       by maximum live blocks tends to show up allocation points
-       creating large numbers of small objects.</para>
+       the highest number of live bytes, or the highest total byte turnover, or
+       by the highest number of live blocks, or the highest total block
+       turnover.  These give usefully different pictures of program behaviour.
+       For example, sorting by maximum live blocks tends to show up allocation
+       points creating large numbers of small objects.</para>
     </listitem>
   </varlistentry>
 

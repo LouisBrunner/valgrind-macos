@@ -140,6 +140,7 @@ EXTRA_DIST = \
 	mq.stderr.exp mq.vgtest \
 	munmap_exe.stderr.exp munmap_exe.vgtest \
 	nestedfns.stderr.exp nestedfns.stdout.exp nestedfns.vgtest \
+	nocwd.stdout.exp nocwd.stderr.exp nocwd.vgtest \
 	nodir.stderr.exp nodir.vgtest \
 	pending.stdout.exp pending.stderr.exp pending.vgtest \
 	ppoll_alarm.stdout.exp ppoll_alarm.stderr.exp ppoll_alarm.vgtest \
@@ -219,6 +220,7 @@ check_PROGRAMS = \
 	manythreads \
 	mmap_fcntl_bug \
 	munmap_exe map_unaligned map_unmap mq \
+	nocwd \
 	pending \
 	procfs-cmdline-exe \
 	pselect_alarm \

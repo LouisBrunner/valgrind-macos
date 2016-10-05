@@ -1853,12 +1853,9 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    // Record the working directory at startup
    //   p: none
    VG_(debugLog)(1, "main", "Getting the working directory at startup\n");
-   { Bool ok = VG_(record_startup_wd)();
-     if (!ok) 
-        VG_(err_config_error)( "Can't establish current working "
-                               "directory at startup\n");
-   }
-   VG_(debugLog)(1, "main", "... %s\n", VG_(get_startup_wd)() );
+   VG_(record_startup_wd)();
+   const HChar *wd = VG_(get_startup_wd)();
+   VG_(debugLog)(1, "main", "... %s\n", wd != NULL ? wd : "<NO CWD>" );
 
    //============================================================
    // Command line argument handling order:

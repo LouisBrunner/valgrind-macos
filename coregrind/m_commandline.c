@@ -220,9 +220,10 @@ void VG_(split_up_argv)( Int argc, HChar** argv )
 
       // Don't read ./.valgrindrc if "." is the same as "$HOME", else its
       // contents will be applied twice. (bug #142488)
+      // Also don't try to read it if there is no cwd.
       if (home) {
          const HChar *cwd = VG_(get_startup_wd)();
-         f2_clo = ( VG_STREQ(home, cwd)
+         f2_clo = ( (cwd == NULL || VG_STREQ(home, cwd))
                        ? NULL : read_dot_valgrindrc(".") );
       }
 

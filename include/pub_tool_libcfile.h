@@ -104,7 +104,8 @@ extern const HChar* VG_(dirname) ( const HChar* path );
 extern const HChar* VG_(tmpdir)(void);
 
 /* Return the working directory at startup. The returned string is
-   persistent. */
+   persistent. Might be NULL if the current working directory doesn't
+   exist. */
 extern const HChar *VG_(get_startup_wd) ( void );
 
 #endif   // __PUB_TOOL_LIBCFILE_H

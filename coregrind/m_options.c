@@ -273,6 +273,10 @@ HChar* VG_(expand_file_name)(const HChar* option_name, const HChar* format)
 
    // If 'out' is not an absolute path name, prefix it with the startup dir.
    if (out[0] != '/') {
+      if (base_dir == NULL) {
+         message = "Current working dir doesn't exist, use absolute path\n";
+         goto bad;
+      }
       len = VG_(strlen)(base_dir) + 1 + VG_(strlen)(out) + 1;
 
       HChar *absout = VG_(malloc)("options.efn.4", len);

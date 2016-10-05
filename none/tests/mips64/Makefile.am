@@ -10,6 +10,7 @@ EXTRA_DIST = \
 	branch_and_jump_instructions.stdout.exp \
 	branch_and_jump_instructions.stderr.exp branch_and_jump_instructions.vgtest \
 	branches.stdout.exp branches.stderr.exp branches.vgtest \
+	change_fp_mode.stderr.exp change_fp_mode.stdout.exp change_fp_mode.vgtest \
 	cvm_bbit.stdout.exp cvm_bbit.stdout.exp-non-octeon \
 	cvm_bbit.stderr.exp cvm_bbit.vgtest \
 	cvm_ins.stdout.exp cvm_ins.stdout.exp-non-octeon \
@@ -65,6 +66,7 @@ check_PROGRAMS = \
 	arithmetic_instruction \
 	branch_and_jump_instructions \
 	branches \
+	change_fp_mode \
 	cvm_bbit \
 	cvm_ins \
 	cvm_lx_ins \

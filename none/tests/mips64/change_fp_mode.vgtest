@@ -1,0 +1,2 @@
+prog: change_fp_mode
+vgopts: -q

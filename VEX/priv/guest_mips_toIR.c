@@ -13392,33 +13392,6 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          }
       }
       break;  /* COP1 */
-   case 0x10:  /* COP0 */
-      if (rs == 0) {  /* MFC0 */
-         DIP("mfc0 r%u, r%u, %u", rt, rd, sel);
-         IRTemp   val  = newTemp(Ity_I32);
-         IRExpr** args = mkIRExprVec_3 (IRExpr_BBPTR(), mkU32(rd), mkU32(sel));
-         IRDirty *d = unsafeIRDirty_1_N(val,
-                                        0,
-                                        "mips32_dirtyhelper_mfc0",
-                                        &mips32_dirtyhelper_mfc0,
-                                        args);
-         stmt(IRStmt_Dirty(d));
-         putIReg(rt, mkexpr(val));
-      } else if (rs == 1) {
-         /* Doubleword Move from Coprocessor 0 - DMFC0; MIPS64 */
-         DIP("dmfc0 r%u, r%u, %u", rt, rd, sel);
-         IRTemp   val  = newTemp(Ity_I64);
-         IRExpr** args = mkIRExprVec_3 (IRExpr_BBPTR(), mkU64(rd), mkU64(sel));
-         IRDirty *d = unsafeIRDirty_1_N(val,
-                                        0,
-                                        "mips64_dirtyhelper_dmfc0",
-                                        &mips64_dirtyhelper_dmfc0,
-                                        args);
-         stmt(IRStmt_Dirty(d));
-         putDReg(rt, mkexpr(val));
-      } else
-         goto decode_failure;
-      break;
 
    case 0x31:  /* LWC1 */
       /* Load Word to Floating Point - LWC1 (MIPS32) */

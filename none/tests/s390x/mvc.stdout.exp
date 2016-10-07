@@ -15,3 +15,7 @@ after:  target = |-xxx-----------------|
 ------- Non-destructive overlap  buf[0:4] = buf[10:14]
 before: buf = |0123456789abcde|
 after:  buf = |abcde56789abcde|
+
+------- Move inverse 17 bytes from BUFFER to TARGET
+before: target = |-xxx-----------------|
+after:  target = |Xfedcba9876543210----|

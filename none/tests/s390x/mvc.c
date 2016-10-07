@@ -57,6 +57,13 @@ int main(void)
    asm volatile( "mvc 0(5,%0),10(%1)\n"
                  ::"a" (buf),"a" (buf): "memory");
    printf("after:  buf = |%s|\n", buf);
-   
+   printf("\n");
+
+   /* Move inverse (mvcin) */
+   printf("------- Move inverse 17 bytes from BUFFER to TARGET\n");
+   printf("before: target = |%s|\n", target);
+   asm volatile( "mvcin 0(17,%0),0(%1)\n"
+                 ::"a" (target),"a" (buffer + 16): "memory");
+   printf("after:  target = |%s|\n", target);
    return 0;
 }

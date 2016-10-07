@@ -1435,8 +1435,12 @@ AM_CONDITIONAL([HAS_VSX], [test x$ac_compiler_supports_vsx_flag = xyes \
 AC_MSG_CHECKING([that assembler knows DFP])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
+  #ifdef __s390__
+  __asm__ __volatile__("adtr 1, 2, 3")
+  #else
   __asm__ __volatile__("dadd 1, 2, 3");
   __asm__ __volatile__("dcffix 1, 2");
+  #endif
 ]])], [
 ac_asm_have_dfp=yes
 AC_MSG_RESULT([yes])
@@ -1449,8 +1453,12 @@ safe_CFLAGS=$CFLAGS
 CFLAGS="-mhard-dfp -Werror"
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
+  #ifdef __s390__
+  __asm__ __volatile__("adtr 1, 2, 3")
+  #else
   __asm__ __volatile__("dadd 1, 2, 3");
   __asm__ __volatile__("dcffix 1, 2");
+  #endif
 ]])], [
 ac_compiler_have_dfp=yes
 AC_MSG_RESULT([yes])
@@ -1475,7 +1483,7 @@ ac_compiler_have_dfp_type=no
 AC_MSG_RESULT([no])
 ])
 AM_CONDITIONAL(BUILD_DFP_TESTS, test x$ac_compiler_have_dfp_type = xyes \
-                                  -a xHWCAP_$HAS_DFP = xyes )
+                                  -a x$HWCAP_HAS_DFP = xyes )
 
 
 # HTM (Hardware Transactional Memory)

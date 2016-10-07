@@ -2349,7 +2349,8 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e,
          HReg r2 = newVRegI(env);    /* I16*/
          HReg r3 = newVRegI(env);    /* I16*/
          HReg vsrc  = iselVecExpr(env, e->Iex.Unop.arg, IEndianess);
-         PPCAMode *am_off0, *am_off2, *am_off4, *am_off6, *am_off8, *am_off12;
+         PPCAMode *am_off0, *am_off2, *am_off4, *am_off6, *am_off8;
+         PPCAMode *am_off10, *am_off12, *am_off14;
          HReg r_aligned16;
 
          sub_from_sp( env, 32 );     // Move SP down
@@ -2364,22 +2365,25 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e,
          am_off4  = PPCAMode_IR( 4, r_aligned16 );
          am_off6  = PPCAMode_IR( 6, r_aligned16 );
          am_off8  = PPCAMode_IR( 8, r_aligned16 );
+         am_off10 = PPCAMode_IR( 10, r_aligned16 );
          am_off12 = PPCAMode_IR( 12, r_aligned16 );
+         am_off14 = PPCAMode_IR( 14, r_aligned16 );
 
          /* Store v128 result to stack. */
-         if (IEndianess == Iend_LE) {
-            addInstr(env, PPCInstr_AvLdSt(False/*store*/, 16, vdst, am_off0));
-         } else {
-            addInstr(env, PPCInstr_AvLdSt(False/*store*/, 16, vdst, am_off8));
-         }
+         addInstr(env, PPCInstr_AvLdSt(False/*store*/, 16, vdst, am_off0));
 
          /* fetch four I16 from V128, store into contiguous I64 via stack,  */
-
-         /* get 16-bit values */
-         addInstr(env, PPCInstr_Load( 2, r3, am_off12, mode64));
-         addInstr(env, PPCInstr_Load( 2, r2, am_off8, mode64));
-         addInstr(env, PPCInstr_Load( 2, r1, am_off4, mode64));
-         addInstr(env, PPCInstr_Load( 2, r0, am_off0, mode64));
+         if (IEndianess == Iend_LE) {
+            addInstr(env, PPCInstr_Load( 2, r3, am_off12, mode64));
+            addInstr(env, PPCInstr_Load( 2, r2, am_off8, mode64));
+            addInstr(env, PPCInstr_Load( 2, r1, am_off4, mode64));
+            addInstr(env, PPCInstr_Load( 2, r0, am_off0, mode64));
+         } else {
+            addInstr(env, PPCInstr_Load( 2, r0, am_off14, mode64));
+            addInstr(env, PPCInstr_Load( 2, r1, am_off10, mode64));
+            addInstr(env, PPCInstr_Load( 2, r2, am_off6, mode64));
+            addInstr(env, PPCInstr_Load( 2, r3, am_off2, mode64));
+         }
 
          /* store in contiguous 64-bit values */
          addInstr(env, PPCInstr_Store( 2, am_off6, r3, mode64));
@@ -2388,11 +2392,8 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e,
          addInstr(env, PPCInstr_Store( 2, am_off0, r0, mode64));
 
          /* Fetch I64 */
-         if (IEndianess == Iend_LE) {
-            addInstr(env, PPCInstr_Load(8, dst, am_off0, mode64));
-         } else {
-            addInstr(env, PPCInstr_Load(8, dst, am_off8, mode64));
-         }
+         addInstr(env, PPCInstr_Load(8, dst, am_off0, mode64));
+
          add_to_sp( env, 32 );          // Reset SP
          return dst;
       }
@@ -4197,7 +4198,12 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
           */
          sub_from_sp( env, 16 );
          addInstr(env, PPCInstr_AvLdSt(False/*store*/, 16, tmp, zero_r1));
-         addInstr(env, PPCInstr_FpLdSt(True/*load*/, 8, fr_dst, eight_r1));
+         if (IEndianess == Iend_LE)
+            addInstr(env, PPCInstr_FpLdSt(True/*load*/, 8, fr_dst, eight_r1));
+         else
+            /* High 64-bits stored at lower address */
+            addInstr(env, PPCInstr_FpLdSt(True/*load*/, 8, fr_dst, zero_r1));
+
          add_to_sp( env, 16 );
 
          return fr_dst;

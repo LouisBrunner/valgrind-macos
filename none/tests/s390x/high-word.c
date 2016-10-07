@@ -5,8 +5,8 @@
 #define BRASLCLOBBER "0","1","2","3","4","5","14",      \
       "f0","f1","f2","f3","f4","f5","f6","f7","memory","cc"
 
-static void inner_iter() { putchar('.'); }
-static void outer_iter() { putchar('+'); }
+void inner_iter() { putchar('.'); }
+void outer_iter() { putchar('+'); }
 
 static void
 check_brcth(int m, int n)

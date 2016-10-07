@@ -38,8 +38,10 @@ EXTRA_DIST = \
 	test_touch_tm.stderr.exp test_touch_tm.stdout.exp test_touch_tm.vgtest \
 	ldst_multiple.stderr.exp ldst_multiple.stdout.exp ldst_multiple.vgtest \
 	data-cache-instructions.stderr.exp data-cache-instructions.stdout.exp data-cache-instructions.vgtest \
-	test_isa_3_0_altivec.stderr.exp test_isa_3_0_altivec.stdout.exp test_isa_3_0_altivec.vgtest \
-	test_isa_3_0_other.stderr.exp test_isa_3_0_other.stdout.exp test_isa_3_0_other.vgtest
+	test_isa_3_0_altivec.stderr.exp test_isa_3_0_altivec.stdout.exp \
+	test_isa_3_0_altivec.stdout.exp-LE test_isa_3_0_altivec.vgtest \
+	test_isa_3_0_other.stderr.exp test_isa_3_0_other.stdout.exp \
+   test_isa_3_0_other.stdout.exp-LE test_isa_3_0_other.vgtest
 
 check_PROGRAMS = \
 	allexec \

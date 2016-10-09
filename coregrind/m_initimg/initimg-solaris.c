@@ -959,6 +959,8 @@ IIFinaliseImageInfo VG_(ii_create_image)(IICreateImageInfo iicii,
       }
    }
 
+   VG_(free)(info.interp_name);
+   VG_(free)(info.interp_args);
    return iifii;
 }
 

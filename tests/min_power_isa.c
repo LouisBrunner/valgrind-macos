@@ -5,7 +5,7 @@
 /* main() */
 int main(int argc, char **argv)
 {
-   /* This program is passed in a minimum ISA that the underlying hardwre
+   /* This program is passed in a minimum ISA that the underlying hardware
     * needs to support.  If the HW supports this ISA or newer, return 0
     * for supported.  Otherwise, return 1 for not supported.  Return 2 for
     * usage error.
@@ -45,8 +45,8 @@ int main(int argc, char **argv)
    isa_level = 7;
 #endif
 
-#ifdef HAS_ISA_3_0
-   if (debug) printf("HAS_ISA_3_0 is set\n");
+#ifdef HAS_ISA_3_00
+   if (debug) printf("HAS_ISA_3_00 is set\n");
    isa_level = 8;
 #endif
 
@@ -60,12 +60,12 @@ int main(int argc, char **argv)
    } else if (strcmp (min_isa, "2.07") == 0) {
       return !(isa_level >= 7);
 
-   } else if (strcmp (min_isa, "3.0") == 0) {
+   } else if (strcmp (min_isa, "3.00") == 0) {
       return !(isa_level >= 8);
 
    } else {
       fprintf(stderr, "ERROR: invalid ISA version.  Valid versions numbers are:\n" );
-      fprintf(stderr, "       2.05, 2.06, 2.07\n" );
+      fprintf(stderr, "       2.05, 2.06, 2.07, 3.00\n" );
       exit(2);
    }
 

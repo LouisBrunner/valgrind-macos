@@ -14,7 +14,7 @@ CAPABILITY_WORD=$1
 P_HWCAP_1=" vsx arch_2_06 power6x dfp pa6t arch_2_05 ic_snoop smt booke"
 P_HWCAP_2=" cellbe power5+ power5 power4 notb efpdouble efpsingle spe"
 P_HWCAP_3=" ucache 4xxmac mmu fpu altivec ppc601 ppc64 ppc32 "
-P_HWCAP2_1=" tar isel ebb dscr htm arch_2_07 "
+P_HWCAP2_1=" tar isel ebb dscr htm arch_2_07 arch_3_00 "
 CAPABILITY_FOUND="no"
 for POTENTIAL_CAP in $P_HWCAP_1 $P_HWCAP_2 $P_HWCAP_3 $P_HWCAP2_1 ; do
 	if [ "x$CAPABILITY_WORD" = "x$POTENTIAL_CAP" ]; then

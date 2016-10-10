@@ -190,6 +190,8 @@ where XXXXXX is the bug number as listed below.
 369441  bad lvec argument crashes process_vm_readv/writev syscall wrappers
 369446  valgrind crashes on unknown fcntl command
 369439  S390x: Unhandled insns RISBLG/RISBHG and LDE/LDER 
+369175  jm_vec_isa_2_07 test crashes on ppc64
+370265  ISA 3.0 HW cap stuff needs updating
 
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64
 n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap

@@ -64,7 +64,7 @@ int main(int argc, char **argv)
       return !(isa_level >= 8);
 
    } else {
-      fprintf(stderr, "ERROR: invalid ISA version.  Valid versions numbers are:\n" );
+      fprintf(stderr, "ERROR: invalid ISA version '%s'.  Valid versions numbers are:\n", min_isa);
       fprintf(stderr, "       2.05, 2.06, 2.07, 3.00\n" );
       exit(2);
    }

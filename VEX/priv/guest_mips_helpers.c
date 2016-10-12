@@ -459,75 +459,93 @@ ULong mips64_dirtyhelper_rdhwr ( ULong rt, ULong rd )
 #endif
 
 #define ASM_VOLATILE_UNARY32(inst)                                  \
-   __asm__ volatile("cfc1  $t0,  $31"   "\n\t"                      \
+   __asm__ volatile(".set  push"        "\n\t"                      \
+                    ".set  hardfloat"   "\n\t"                      \
+                    "cfc1  $t0,  $31"   "\n\t"                      \
                     "ctc1  %2,   $31"   "\n\t"                      \
                     "mtc1  %1,   $f20"  "\n\t"                      \
                     #inst" $f20, $f20"  "\n\t"                      \
                     "cfc1  %0,   $31"   "\n\t"                      \
                     "ctc1  $t0,  $31"   "\n\t"                      \
+                    ".set  pop"         "\n\t"                      \
                     : "=r" (ret)                                    \
                     : "r" (loFsVal), "r" (fcsr)                     \
                     : "t0", "$f20"                                  \
                    );
 
 #define ASM_VOLATILE_UNARY32_DOUBLE(inst)                           \
-   __asm__ volatile("cfc1  $t0,  $31"   "\n\t"                      \
+   __asm__ volatile(".set  push"        "\n\t"                      \
+                    ".set  hardfloat"   "\n\t"                      \
+                    "cfc1  $t0,  $31"   "\n\t"                      \
                     "ctc1  %2,   $31"   "\n\t"                      \
                     "ldc1  $f20, 0(%1)" "\n\t"                      \
                     #inst" $f20, $f20"  "\n\t"                      \
                     "cfc1  %0,   $31"   "\n\t"                      \
                     "ctc1  $t0,  $31"   "\n\t"                      \
+                    ".set  pop"         "\n\t"                      \
                     : "=r" (ret)                                    \
                     : "r" (&fsVal), "r" (fcsr)                      \
                     : "t0", "$f20", "$f21"                          \
                    );
 
 #define ASM_VOLATILE_UNARY64(inst)                                  \
-   __asm__ volatile("cfc1  $t0,  $31"    "\n\t"                     \
+   __asm__ volatile(".set  push"         "\n\t"                     \
+                    ".set  hardfloat"    "\n\t"                     \
+                    "cfc1  $t0,  $31"    "\n\t"                     \
                     "ctc1  %2,   $31"    "\n\t"                     \
                     "ldc1  $f24, 0(%1)"  "\n\t"                     \
                     #inst" $f24, $f24"   "\n\t"                     \
                     "cfc1  %0,   $31"    "\n\t"                     \
                     "ctc1  $t0,  $31"    "\n\t"                     \
+                    ".set  pop"          "\n\t"                     \
                     : "=r" (ret)                                    \
                     : "r" (&(addr[fs])), "r" (fcsr)                 \
                     : "t0", "$f24"                                  \
                    );
 
 #define ASM_VOLATILE_BINARY32(inst)                                 \
-   __asm__ volatile("cfc1  $t0,  $31"         "\n\t"                \
+   __asm__ volatile(".set  push"              "\n\t"                \
+                    ".set  hardfloat"         "\n\t"                \
+                    "cfc1  $t0,  $31"         "\n\t"                \
                     "ctc1  %3,   $31"         "\n\t"                \
                     "mtc1  %1,   $f20"        "\n\t"                \
                     "mtc1  %2,   $f22"        "\n\t"                \
                     #inst" $f20, $f20, $f22"  "\n\t"                \
                     "cfc1  %0,   $31"         "\n\t"                \
                     "ctc1  $t0,  $31"         "\n\t"                \
+                    ".set  pop"               "\n\t"                \
                     : "=r" (ret)                                    \
                     : "r" (loFsVal), "r" (loFtVal), "r" (fcsr)      \
                     : "t0", "$f20", "$f22"                          \
                    );
 
 #define ASM_VOLATILE_BINARY32_DOUBLE(inst)                          \
-   __asm__ volatile("cfc1  $t0,  $31"         "\n\t"                \
+   __asm__ volatile(".set  push"              "\n\t"                \
+                    ".set  hardfloat"         "\n\t"                \
+                    "cfc1  $t0,  $31"         "\n\t"                \
                     "ctc1  %3,   $31"         "\n\t"                \
                     "ldc1  $f20, 0(%1)"       "\n\t"                \
                     "ldc1  $f22, 0(%2)"       "\n\t"                \
                     #inst" $f20, $f20, $f22"  "\n\t"                \
                     "cfc1  %0,   $31"         "\n\t"                \
                     "ctc1  $t0,  $31"         "\n\t"                \
+                    ".set  pop"               "\n\t"                \
                     : "=r" (ret)                                    \
                     : "r" (&fsVal), "r" (&ftVal), "r" (fcsr)        \
                     : "t0", "$f20", "$f21", "$f22", "$f23"          \
                    );
 
 #define ASM_VOLATILE_BINARY64(inst)                                     \
-   __asm__ volatile("cfc1  $t0,  $31"         "\n\t"                    \
+   __asm__ volatile(".set  push"              "\n\t"                    \
+                    ".set  hardfloat"         "\n\t"                    \
+                    "cfc1  $t0,  $31"         "\n\t"                    \
                     "ctc1  %3,   $31"         "\n\t"                    \
                     "ldc1  $f24, 0(%1)"       "\n\t"                    \
                     "ldc1  $f26, 0(%2)"       "\n\t"                    \
                     #inst" $f24, $f24, $f26"  "\n\t"                    \
                     "cfc1  %0,   $31"         "\n\t"                    \
                     "ctc1  $t0,  $31"         "\n\t"                    \
+                    ".set  pop"               "\n\t"                    \
                     : "=r" (ret)                                        \
                     : "r" (&(addr[fs])), "r" (&(addr[ft])), "r" (fcsr)  \
                     : "t0", "$f24", "$f26"                              \

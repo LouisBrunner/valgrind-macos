@@ -1,3 +1,5 @@
+#if defined(__mips_hard_float)
+
 #include <stdio.h>
 
 typedef enum {
@@ -289,4 +291,9 @@ int main()
    }
    return 0;
 }
+#else
+int main() {
+   return 0;
+}
+#endif
 

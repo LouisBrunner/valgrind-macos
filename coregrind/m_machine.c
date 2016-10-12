@@ -1738,10 +1738,6 @@ Bool VG_(machine_get_hwcaps)( void )
         }
      }
 
-     VG_(convert_sigaction_fromK_to_toK)(&saved_sigill_act, &tmp_sigill_act);
-     VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
-     VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
-
 #    if defined(VGP_mips32_linux)
      Int fpmode = VG_(prctl)(VKI_PR_GET_FP_MODE);
 #    else
@@ -1752,24 +1748,32 @@ Bool VG_(machine_get_hwcaps)( void )
         /* prctl(PR_GET_FP_MODE) is not supported by Kernel,
            we are using alternative way to determine FP mode */
         ULong result = 0;
-        __asm__ volatile (
-           ".set push\n\t"
-           ".set noreorder\n\t"
-           ".set oddspreg\n\t"
-           "lui $t0, 0x3FF0\n\t"
-           "ldc1 $f0, %0\n\t"
-           "mtc1 $t0, $f1\n\t"
-           "sdc1 $f0, %0\n\t"
-           ".set pop\n\t"
-           : "+m"(result)
-           :
-           : "t0", "$f0", "$f1", "memory");
 
-        fpmode = (result != 0x3FF0000000000000ull);
+        if (!VG_MINIMAL_SETJMP(env_unsup_insn)) {
+           __asm__ volatile (
+              ".set push\n\t"
+              ".set noreorder\n\t"
+              ".set oddspreg\n\t"
+              ".set hardfloat\n\t"
+              "lui $t0, 0x3FF0\n\t"
+              "ldc1 $f0, %0\n\t"
+              "mtc1 $t0, $f1\n\t"
+              "sdc1 $f0, %0\n\t"
+              ".set pop\n\t"
+              : "+m"(result)
+              :
+              : "t0", "$f0", "$f1", "memory");
+
+           fpmode = (result != 0x3FF0000000000000ull);
+        }
      }
 
      if (fpmode != 0)
         vai.hwcaps |= VEX_MIPS_HOST_FR;
+
+     VG_(convert_sigaction_fromK_to_toK)(&saved_sigill_act, &tmp_sigill_act);
+     VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
+     VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
 
      VG_(debugLog)(1, "machine", "hwcaps = 0x%x\n", vai.hwcaps);
      VG_(machine_get_cache_info)(&vai);

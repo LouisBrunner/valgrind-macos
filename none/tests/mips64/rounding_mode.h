@@ -60,4 +60,15 @@ void set_rounding_mode(round_mode_t mode)
          break;
       }
 }
+
+void clear_fcc(){
+   __asm__ __volatile__(
+      "cfc1 $t0, $31"            "\n\t"
+      "and  $t0, $t0, 0x17FFFFF" "\n\t"
+      "ctc1 $t0, $31"            "\n\t"
+      :
+      :
+      : "t0"
+   );
+}
 #endif

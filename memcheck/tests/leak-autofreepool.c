@@ -43,15 +43,21 @@ static struct pool _MetaPool,  *MetaPool  = &_MetaPool;
 
 #define N 10
 #define POOL_BLOCK_SIZE   4096
+#define NOISE_SIZE        256
+
 // For easy testing, the plain mempool uses N allocations, the
 // metapool 2 * N (so 10 reported leaks are from the plain pool, 20 must be
-// from the metapool.
+// from the metapool).
 
 static int    MetaPoolFlags = 0;
 static int    CleanupBeforeExit = 0;
+static int    GenerateNoise = 0;
+static int    NoiseCounter = 0;
 
 static struct cell *cells_plain[2 * N];
 static struct cell *cells_meta[2 * N];
+
+static unsigned char *noise[3 * N];
 
 static char   PlainBlock[POOL_BLOCK_SIZE];
 static char   MetaBlock[POOL_BLOCK_SIZE];
@@ -106,7 +112,7 @@ static void *allocate_plain_style (struct pool *p, size_t n)
   void *a = p->buf + p->used;
   assert(p->used + n < p->allocated);
 
-  // And this is custom allocator that knows what it is allocating from a pool.
+  // And this is custom allocator that knows that it is allocating from a pool.
   VALGRIND_MEMPOOL_ALLOC(p, a, n);
   p->used += n;
 
@@ -172,9 +178,47 @@ static void set_flags ( int n )
         CleanupBeforeExit = 0;
         break;
 
+     case 6:
+        // Test the VG_(HT_remove_at_Iter)() function, which removes a chunk
+        // from a hashlist without the need to reset the iterator. The pool
+        // is auto_freed, and the best test for the function (besides the ones
+        // already done above) is by allocating lots of other chunks that are
+        // NOT part of the pool so the MC_Alloc lists contain other stuff.
+	// That will make the iterator find stuff AND skip stuff.
+        MetaPoolFlags     = VALGRIND_MEMPOOL_AUTO_FREE | VALGRIND_MEMPOOL_METAPOOL;
+        CleanupBeforeExit = 1;
+        GenerateNoise     = 1;
+        break;
+
      default:
         assert(0);
   }
+}
+
+static void GenerateNoisyBit (void)
+{
+   // In case the HT_remove_at_Iter messes up the administration, the wrong
+   // blocks may be deleted from the list, making access to these noise-blocks
+   // invalid. So fill 256-byte blocks with easily tested contents.
+
+   noise[NoiseCounter] = malloc(NOISE_SIZE);
+   assert(noise[NoiseCounter] != NULL);
+   memset(noise[NoiseCounter],(unsigned char) (NoiseCounter % 256), NOISE_SIZE);
+   NoiseCounter++;
+}
+
+static void CheckNoiseContents (void)
+{
+   int i;
+
+   for (i = 0; i < NoiseCounter; i++) {
+      unsigned char Check = (unsigned char) ( i % 256);
+      int j;
+
+      for (j = 0; j < NOISE_SIZE; j++) {
+         assert(noise[i][j] == Check);
+      }
+   }
 }
 
 int main( int argc, char** argv )
@@ -195,11 +239,17 @@ int main( int argc, char** argv )
    // N plain allocs
    for (i = 0; i < N; ++i) {
       cells_plain[i] = allocate_plain_style(PlainPool,sizeof(struct cell));  
+
+      if (GenerateNoise)
+         GenerateNoisyBit();
    }
 
    // 2*N meta allocs
    for (i = 0; i < 2 * N; ++i) {
       cells_meta[i] = allocate_meta_style(MetaPool,sizeof(struct cell));  
+
+      if (GenerateNoise)
+         GenerateNoisyBit();
    }
 
    // Leak the memory from the pools by losing the pointers.
@@ -211,18 +261,43 @@ int main( int argc, char** argv )
       cells_meta[i] = NULL;
    }
 
+   if (GenerateNoise)
+      CheckNoiseContents();
+
    // This must free MALLOCLIKE allocations from the pool when
    // VALGRIND_MEMPOOL_AUTO_FREE
    // is set for the pool and report leaks when not.
+
    if (CleanupBeforeExit) {
       VALGRIND_MEMPOOL_FREE(MetaPool, MetaBlock);
-      VALGRIND_DESTROY_MEMPOOL(MetaPool);
+
+      if (GenerateNoise)
+         CheckNoiseContents();
+
+       VALGRIND_DESTROY_MEMPOOL(MetaPool);
+
+      if (GenerateNoise)
+         CheckNoiseContents();
+
    }
 
    // Cleanup.
    VALGRIND_DESTROY_MEMPOOL(PlainPool);
 
-   // Perf test
+   if (GenerateNoise)
+      CheckNoiseContents();
+
+   // Try to trigger an error in the bookkeeping by freeing the noise bits.
+   // Valgrind should report no leaks, and zero memory in use. If the 
+   // new HT_remove_at_Iter function would corrupt the bookkeeping in any
+   // way, this should bring it out!
+   if (GenerateNoise) {
+      for (i = 0; i < NoiseCounter; i++)
+         free(noise[i]);
+   }
+
+
+  // Perf test
    if (argc == 3) {
       struct pool perf_plain_pool;
       void *perf_plain_block;

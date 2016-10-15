@@ -179,6 +179,7 @@ where XXXXXX is the bug number as listed below.
 369000  AMD64 fma4 instructions unsupported.
 361253  [s390x] ex_clone.c:42: undefined reference to `pthread_create'
 369169  ppc64 fails jm_int_isa_2_07 test
+369175  jm_vec_isa_2_07 test crashes on ppc64
 369209  valgrind loops and eats up all memory if cwd doesn't exist.
 369356  pre_mem_read_sockaddr syscall wrapper can crash with bad sockaddr
 369359  msghdr_foreachfield can crash when handling bad iovec
@@ -190,12 +191,14 @@ where XXXXXX is the bug number as listed below.
 369441  bad lvec argument crashes process_vm_readv/writev syscall wrappers
 369446  valgrind crashes on unknown fcntl command
 369439  S390x: Unhandled insns RISBLG/RISBHG and LDE/LDER 
-369175  jm_vec_isa_2_07 test crashes on ppc64
+369468  Remove quadratic metapool alg. using VG_(HT_remove_at_Iter)
+        (VgHashTable *table)
 370265  ISA 3.0 HW cap stuff needs updating
 
 n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64
 n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap
-n-i-bz false positive leaks due to aspacemgr merging non heap segments with heap segments.
+n-i-bz false positive leaks due to aspacemgr merging non heap segments
+       with heap segments.
 n-i-bz Fix ppoll_alarm exclusion on OS X
 n-i-bz Document brk segment limitation, reference manual in limit reached msg.
 n-i-bz Fix clobber list in none/tests/amd64/xacq_xrel.c [valgrind r15737]

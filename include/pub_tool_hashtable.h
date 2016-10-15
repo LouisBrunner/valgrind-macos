@@ -121,6 +121,14 @@ extern void VG_(HT_ResetIter) ( VgHashTable *table );
    assurance. */
 extern void* VG_(HT_Next) ( VgHashTable *table );
 
+/* Remove the element pointed to by the iterator and leave the iterator
+   in a state where VG_(HT_Next) will return the element just after the removed
+   node.
+   This allows removing elements from the table whilst iterating over it.
+   Note that removing an entry does not resize the hash table, making this
+   safe. */
+extern void VG_(HT_remove_at_Iter)( VgHashTable *table );
+
 /* Destroy a table and deallocates the memory used by the nodes using
    freenode_fn.*/
 extern void VG_(HT_destruct) ( VgHashTable *table, void(*freenode_fn)(void*) );

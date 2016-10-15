@@ -1,0 +1,4 @@
+prog: leak-autofreepool
+vgopts: --leak-check=full --show-possibly-lost=no --track-origins=yes
+args: 6
+stderr_filter: filter_overlaperror

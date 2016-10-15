@@ -711,12 +711,17 @@ void MC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed,
 {
    MC_Mempool* mp;
 
-   if (VG_(clo_verbosity) > 2) {
+   if (VG_(clo_verbosity) > 2 || (auto_free && !metapool)) {
       VG_(message)(Vg_UserMsg,
-         "create_mempool(0x%lx, rzB=%u, zeroed=%d, autofree=%d, metapool=%d)\n",
-                          pool, rzB, is_zeroed, auto_free, metapool);
+                   "create_mempool(0x%lx, rzB=%u, zeroed=%d,"
+                   " autofree=%d, metapool=%d)\n",
+                   pool, rzB, is_zeroed,
+                   auto_free, metapool);
       VG_(get_and_pp_StackTrace)
          (VG_(get_running_tid)(), MEMPOOL_DEBUG_STACKTRACE_DEPTH);
+      if (auto_free && !metapool)
+         VG_(tool_panic)("Inappropriate use of mempool:"
+                         " an auto free pool must be a meta pool. Aborting\n");
    }
 
    mp = VG_(HT_lookup)(MC_(mempool_list), (UWord)pool);

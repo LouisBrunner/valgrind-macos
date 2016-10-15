@@ -7,7 +7,7 @@
 
 #include "../memcheck.h"
 
-// Test VALGRIND_CREATE_META_MEMPOOL features, the VALGRIND_MEMPOOL_METAPOOL and
+// Test VALGRIND_CREATE_MEMPOOL_EXT features, the VALGRIND_MEMPOOL_METAPOOL and
 // VALGRIND_MEMPOOL_AUTO_FREE flags.
 // Also show that without these, having a custom allocator that:
 // - Allocates a MEMPOOL
@@ -64,7 +64,7 @@ static char   MetaBlock[POOL_BLOCK_SIZE];
 
 void create_meta_pool (void)
 {
-   VALGRIND_CREATE_META_MEMPOOL(MetaPool, 0, 0, MetaPoolFlags);
+   VALGRIND_CREATE_MEMPOOL_EXT(MetaPool, 0, 0, MetaPoolFlags);
    VALGRIND_MEMPOOL_ALLOC(MetaPool, MetaBlock, POOL_BLOCK_SIZE);
 
    MetaPool->buf = (uint8_t *) MetaBlock;
@@ -124,7 +124,7 @@ static void *allocate_plain_style (struct pool *p, size_t n)
 static void set_flags ( int n )
 {
   switch (n) {
-     // Case 0: No special flags. VALGRIND_CREATE_META_MEMPOOL is same as
+     // Case 0: No special flags. VALGRIND_CREATE_MEMPOOL_EXT is same as
      // VALGRIND_CREATE_MEMPOOL.
      // When mempools are destroyed, the METAPOOL leaks because auto-free is
      // missing. Must show 2*N (20) leaks.
@@ -148,13 +148,15 @@ static void set_flags ( int n )
      // Same as before, but now the MALLOCLIKE blocks are auto-freed.
      // Must show 0 leaks.
      case 2:
-        MetaPoolFlags = VALGRIND_MEMPOOL_AUTO_FREE | VALGRIND_MEMPOOL_METAPOOL;
+        MetaPoolFlags = VALGRIND_MEMPOOL_METAPOOL | VALGRIND_MEMPOOL_AUTO_FREE;
         CleanupBeforeExit = 1;
         break;
 
-     case 3:
-        // Just auto-free, with cleanup. The cleanup removes the overlapping
-        // blocks, so this is the same as case 2: No leaks, no problems.
+     case 3: // Note: this is incorrect behaviour, and aborts valgrind.
+        // (so it is not exercised during regression testing).
+        // Just auto-free, not marked with meta pool flag.
+        // This is an error, and will cause valgrind to abort when the pool
+        // is created.
         MetaPoolFlags     = VALGRIND_MEMPOOL_AUTO_FREE;
         CleanupBeforeExit = 1;
         break;
@@ -185,7 +187,7 @@ static void set_flags ( int n )
         // already done above) is by allocating lots of other chunks that are
         // NOT part of the pool so the MC_Alloc lists contain other stuff.
 	// That will make the iterator find stuff AND skip stuff.
-        MetaPoolFlags     = VALGRIND_MEMPOOL_AUTO_FREE | VALGRIND_MEMPOOL_METAPOOL;
+        MetaPoolFlags     = VALGRIND_MEMPOOL_METAPOOL | VALGRIND_MEMPOOL_AUTO_FREE;
         CleanupBeforeExit = 1;
         GenerateNoise     = 1;
         break;
@@ -314,9 +316,9 @@ int main( int argc, char** argv )
       pool_block_size = nr_elts * sizeof(struct cell) + sizeof(uint8_t) + 1;
 
       // Create perf meta pool
-      VALGRIND_CREATE_META_MEMPOOL
+      VALGRIND_CREATE_MEMPOOL_EXT
          (&perf_meta_pool, 0, 0,
-          VALGRIND_MEMPOOL_AUTO_FREE | VALGRIND_MEMPOOL_METAPOOL);
+          VALGRIND_MEMPOOL_METAPOOL | VALGRIND_MEMPOOL_AUTO_FREE);
       perf_meta_block = malloc(pool_block_size);
 
       VALGRIND_MEMPOOL_ALLOC(&perf_meta_pool, perf_meta_block, 

@@ -2320,34 +2320,53 @@ inform Memcheck about changes to the state of a mempool:</para>
   </listitem>
 
   <listitem>
+    <!-- Note: the below is mostly a copy of valgrind.h. Keep in sync! -->
     <para>
-    <varname>VALGRIND_CREATE_META_MEMPOOL(pool, rzB, is_zeroed, flags)</varname>:
-    This does the same as <varname>VALGRIND_CREATE_MEMPOOL</varname>,
-    but allows you to specify two seldom-used options for custom
-    allocators (or-ed together) in the <varname>flags</varname> argument:</para>
+      <varname>VALGRIND_CREATE_MEMPOOL_EXT(pool, rzB, is_zeroed, flags)</varname>:
+      Create a memory pool with some flags (that can
+      be OR-ed together) specifying extended behaviour.  When flags is
+      zero, the behaviour is identical to
+    <varname>VALGRIND_CREATE_MEMPOOL</varname>.</para>
     <itemizedlist>
       <listitem>
-	<para>
-	  <varname>VALGRIND_MEMPOOL_AUTO_FREE</varname>.
-	  This indicates that items allocated from this
-	  memory pool are automatically freed when
-	  <varname>VALGRIND_MEMPOOL_FREE</varname>
-	  is used on a block. This allows a custom allocator to delete
-	  (part of) a memory pool without explicitly deleting all allocated
-	  items. Without this option, such an action will report all items
-	  in the pool as memory leaks.
+	<para> The flag <varname>VALGRIND_MEMPOOL_METAPOOL</varname>
+          specifies that the pieces of memory associated with the pool
+          using <varname>VALGRIND_MEMPOOL_ALLOC</varname> will be used
+          by the application as superblocks to dole out MALLOC_LIKE
+          blocks using <varname>VALGRIND_MALLOCLIKE_BLOCK</varname>.
+          In other words, a meta pool is a "2 levels" pool : first
+          level is the blocks described
+          by <varname>VALGRIND_MEMPOOL_ALLOC</varname>.  The second
+          level blocks are described
+          using <varname>VALGRIND_MALLOCLIKE_BLOCK</varname>.  Note
+          that the association between the pool and the second level
+          blocks is implicit : second level blocks will be located
+          inside first level blocks. It is necessary to use
+          the <varname>VALGRIND_MEMPOOL_METAPOOL</varname> flag for
+          such 2 levels pools, as otherwise valgrind will detect
+          overlapping memory blocks, and will abort execution
+          (e.g. during leak search).
 	</para>
       </listitem>
       <listitem>
 	<para>
-	  <varname>VALGRIND_MEMPOOL_METAPOOL</varname>.
-	  This indicates that memory that has been
-	  marked as being allocated with
-	  <varname>VALGRIND_MALLOCLIKE_BLOCK</varname> is used
-	  by a custom allocator to pass out memory to an application (again
-	  marked with <varname>VALGRIND_MALLOCLIKE_BLOCK</varname>).
-	  Without this option, such overlapping memory blocks may trigger
-	  a fatal error message in memcheck.
+	  <varname>VALGRIND_MEMPOOL_AUTO_FREE</varname>.  Such a meta
+          pool can also be marked as an 'auto free' pool using the
+          flag <varname>VALGRIND_MEMPOOL_AUTO_FREE</varname>, which
+          must be OR-ed together with
+          the <varname>VALGRIND_MEMPOOL_METAPOOL</varname>. For an
+          'auto free' pool, <varname>VALGRIND_MEMPOOL_FREE</varname>
+          will automatically free the second level blocks that are
+          contained inside the first level block freed
+          with <varname>VALGRIND_MEMPOOL_FREE</varname>.  In other
+          words, calling <varname>VALGRIND_MEMPOOL_FREE</varname> will
+          cause implicit calls
+          to <varname>VALGRIND_FREELIKE_BLOCK</varname> for all the
+          second level blocks included in the first level block.
+          Note: it is an error to use
+          the <varname>VALGRIND_MEMPOOL_AUTO_FREE</varname> flag
+          without the
+         <varname>VALGRIND_MEMPOOL_METAPOOL</varname> flag.
 	</para>
       </listitem>
     </itemizedlist>

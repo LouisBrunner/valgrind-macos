@@ -2098,7 +2098,7 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
    /* If this is one of V's areas, check carefully the block we're
       getting back.  This picks up simple block-end overruns. */
    if (aid != VG_AR_CLIENT)
-      vg_assert(blockSane(a, b));
+      vg_assert(is_inuse_block(b) && blockSane(a, b));
 
    b_bszB   = get_bszB(b);
    b_pszB   = bszB_to_pszB(a, b_bszB);

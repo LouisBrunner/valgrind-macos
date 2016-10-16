@@ -581,14 +581,10 @@ static Addr setup_client_stack(Addr init_sp,
    *ptr++ = argc;
 
    /* Copy-out client argv. */
-   if (info->interp_name) {
+   if (info->interp_name)
       *ptr++ = (Addr)copy_str(&strtab, info->interp_name);
-      VG_(free)(info->interp_name);
-   }
-   if (info->interp_args) {
+   if (info->interp_args)
       *ptr++ = (Addr)copy_str(&strtab, info->interp_args);
-      VG_(free)(info->interp_args);
-   }
 
    *ptr++ = (Addr)copy_str(&strtab, VG_(args_the_exename));
    for (i = 0; i < VG_(sizeXA)(VG_(args_for_client)); i++)
@@ -959,8 +955,8 @@ IIFinaliseImageInfo VG_(ii_create_image)(IICreateImageInfo iicii,
       }
    }
 
-   VG_(free)(info.interp_name);
-   VG_(free)(info.interp_args);
+   VG_(free)(info.interp_name); VG_(free)(info->interp_name);
+   VG_(free)(info.interp_args); VG_(free)(info->interp_args);
    return iifii;
 }
 

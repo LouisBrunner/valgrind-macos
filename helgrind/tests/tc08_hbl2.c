@@ -125,11 +125,11 @@
 #  define INC(_lval,_lqual)                         \
      __asm__ __volatile__ (                         \
       "L1xyzzy1" _lqual":\n"                        \
-      "        move $t0, %0\n"                      \
-      "        ll   $t1, 0($t0)\n"                  \
-      "        addi $t1, $t1, 1\n"                  \
-      "        sc   $t1, 0($t0)\n"                  \
-      "        beqz $t1, L1xyzzy1" _lqual           \
+      "        move  $t0, %0\n"                     \
+      "        ll    $t1, 0($t0)\n"                 \
+      "        addiu $t1, $t1, 1\n"                 \
+      "        sc    $t1, 0($t0)\n"                 \
+      "        beqz  $t1, L1xyzzy1" _lqual          \
       : /*out*/ : /*in*/ "r"(&(_lval))              \
       : /*trash*/ "t0", "t1", "memory"              \
         )

@@ -530,7 +530,7 @@ DECL_TEMPLATE (mips_linux, sys_prctl);
 
 PRE(sys_mmap2) 
 {
-  /* Exactly like sys_mmap() except the file offset is specified in pagesize
+  /* Exactly like sys_mmap() except the file offset is specified in 4096 byte 
      units rather than bytes, so that it can be used for files bigger than
      2^32 bytes. */
   SysRes r;
@@ -540,7 +540,7 @@ PRE(sys_mmap2)
                 unsigned long, prot, unsigned long, flags,
                 unsigned long, fd, unsigned long, offset);
   r = mips_PRE_sys_mmap(tid, ARG1, ARG2, ARG3, ARG4, ARG5,
-                        VKI_PAGE_SIZE * (Off64T) ARG6);
+                        4096 * (Off64T) ARG6);
   SET_STATUS_from_SysRes(r);
 } 
 

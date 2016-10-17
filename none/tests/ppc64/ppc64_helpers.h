@@ -566,12 +566,16 @@ static void initialize_buffer(int t)
    int x;
 
    for (x = 0; x < BUFFER_SIZE; x++)
-      switch(t) {
+      /* Don't want each of the 32-bit chunks to be identical. Loads of a
+       * byte from the wrong 32-bit chuck are not detectable if the chunks
+       * are identical.
+       */
+      switch((t+x)%BUFFER_SIZE) {
       case 0:
          buffer[x] = 0xffffffffffffffff;
          break;
       case 1:
-         buffer[x] = 0xaaaaaaaaaaaaaaaa;
+         buffer[x] = 0x0001020304050607;
          break;
       case 2:
          buffer[x] = 0x5555555555555555;
@@ -595,7 +599,7 @@ static void initialize_buffer(int t)
 unsigned long pattern[PATTERN_SIZE] = {
 	0xffffffffffffffff,
 	0xaaaaaaaaaaaaaaaa,
-	0x5555555555555555,
+	0x5152535455565758,
 	0x0000000000000000,
 	0xffaa5599113377cc,
 };

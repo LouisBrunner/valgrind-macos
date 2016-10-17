@@ -33,9 +33,6 @@ AMD XOP-prefixed insns:
 352630  valgrind: Unrecognised instruction at address 0x4fc4d33.
         [what insn is this?]
 
-354274  arm: unhandled instruction: 0xEBAD 0x0AC1 (sub.w   sl, sp, r1, lsl #3)
-        [harmless, has patch]
-
 355526  disInstr(arm): unhandled instruction: 0x1823E91
         [what insn is this?]
 
@@ -268,6 +265,9 @@ n-i-bz  Remove limit on strd's negative immediates
 
 * mention that x86-linux is deprecated
 
+* the mempool changes (367995) are still under discussion
+  (PhilippeW, dev list, 6 Oct 2016) and may need further cleanup
+
 ========================================================================
 ========================================================================
 ========================================================================
@@ -275,8 +275,66 @@ n-i-bz  Remove limit on strd's negative immediates
 
 Thu 15 Sep 12:55:21 CEST 2016
 
+368863  WARNING: unhandled arm64-linux syscall: 100
+368864  WARNING: unhandled arm64-linux syscall: 262
+368865  WARNING: unhandled arm64-linux syscall: 272
+368866  WARNING: unhandled arm64-linux syscall: 238
+368868  disInstr(arm64): unhandled instruction 0xD53BE000 = cntfrq_el0 (ARMv8) 
+368873  Please add FreeBSD to supported OS list
+368913  WARNING: unhandled arm64-linux syscall: 117
+368914  WARNING: unhandled arm64-linux syscall: 142
+368916  WARNING: unhandled arm64-linux syscall: 234
+368917  WARNING: unhandled arm64-linux syscall: 218
+368918  WARNING: unhandled arm64-linux syscall: 127
+368919  WARNING: unhandled arm64-linux syscall: 274
+368920  WARNING: unhandled arm64-linux syscall: 275
+368921  WARNING: unhandled arm64-linux syscall: 162
+368922  WARNING: unhandled arm64-linux syscall: 161
+368923  WARNING: unhandled arm64-linux syscall: 268
+368924  WARNING: unhandled arm64-linux syscall: 84
+368925  WARNING: unhandled arm64-linux syscall: 130
+368926  WARNING: unhandled arm64-linux syscall: 97
+368960  WARNING: unhandled amd64-linux syscall: 163
+369026  WARNING: unhandled amd64-linux syscall: 169
+369027  WARNING: unhandled amd64-linux syscall: 216 (remap_file_pages)
+369028  WARNING: unhandled amd64-linux syscall: 314 (sched_setattr)
+369029  WARNING: unhandled amd64-linux syscall: 315 (sched_getattr)
+369030  WARNING: unhandled amd64-linux syscall: 171 (setdomainname)
+369031  WARNING: unhandled amd64-linux syscall: 308 (setns)
+369032  WARNING: unhandled amd64-linux syscall: 205 (set_thread_area)
+369033  WARNING: unhandled amd64-linux syscall: 139 (sysfs)
+369034  WARNING: unhandled amd64-linux syscall: 136 (ustat)
+369053  AMD64 fma4 instructions missing 256 bit support
+
+369264  Fedora 24 i686 and vex x86->IR:
+        unhandled instruction bytes: 0xC5 0xF8 0x10 0x3 (32 bit AVX) -> wontfix
+
+369409  null pointer dereference  in vgPlain_do_syscall
+        possibly a dup of (fixed) 353370
+ 
+369456  callgrind_control failed to find an active callgrind run.
+        OSX specific
+
+369459  valgrind on arm64 violates the ARMv8 spec (ldxr/stxr)
+
+369509  ARMv8.1 LSE instructions are not supported
+369723  __builtin_longjmp not supported in clang/llvm on Android arm64 target
+        Has patch
+
+369854  Valgrind reports an Invalid Read in __intel_new_memcpy
+        Should be handled by --partial-loads-ok=yes
+
+370028  Reduce the number of compiler warnings on MIPS platforms
+370635  arm64 missing syscall getcpu
+370941  Investigate using new VG_(HT_remove_at_Iter)() at other places
+        in memcheck
+
+Mon 17 Oct 16:50:15 CEST 2016
+
 ========================================================================
 ========================================================================
+
+
 
 3_12_BRANCH: vex 3250  is a copy of trunk 3249
              val 15963 is a copy of trunk 15962
@@ -289,7 +347,9 @@ TO MERGE (trunk -> 3_12_BRANCH unless otherwise indicated):
 15970 -> 15972 fix for bugzilla 361253  [s390x]
 15971 -> 15973 Add feature check for tests that use -march=armv8-a+crc.
 15975 -> 16007 Avoid unused variable warning.
+
 15976 Prelim support for macOS Sierra (10.12).  Partial fix for #365327.
+
 15977 -> 16008 ppcBE, fix the expected output file for
                none/tests/ppc64/jm_int_isa_2_07.stdout.exp
 15978 -> 16009 Use proper compiler flags on Solaris for fma4 test.
@@ -305,7 +365,6 @@ TO MERGE (trunk -> 3_12_BRANCH unless otherwise indicated):
 15987 -> 16012 mc-manual.xml: Fix some mismatched open/close tags.
 15988 -> 16013 Use AM_LDFLAGS instead of LDFLAGS in exp-bbv/tests Makefiles.
 15989 -> 16014 Don't require the current working directory to exist. #369209.
-
 15990 -> 16015 Fix pre_mem_read_sockaddr crash on invalid syscall arguments.
                Bug #369356.
 15991 -> 16015 Fix crash in msghdr_foreachfield when iov_len isn't safe to
@@ -322,8 +381,6 @@ TO MERGE (trunk -> 3_12_BRANCH unless otherwise indicated):
 15997 -> 16015 Don't check bad iovec array in process_vm_readv/writev.
                Bug #369441.
 15998 -> 16015 Don't crash, but warn and return EINVAL on unknown fcntl command.
-(TODO: ask mjw about these)
-
 15999 -> 16017 Replace --wait-for-gdb=yes memory loop by a call to VG_(poll)
                (5000 milliseconds)
 16000 -> 16017 Well, 5 seconds is too short for me to type a attach pid command
@@ -331,15 +388,53 @@ TO MERGE (trunk -> 3_12_BRANCH unless otherwise indicated):
 3251  -> 3254  Fix for clean helpers on BE
 3252  -> 3255  Fix rounding mode check and instruction stxvl
 16001 -> 16019 mips32: test for syscalls prctl(GET/SET_FP_MODE)
+
 16002 Update svn:ignore list
+
 3253  -> 3256  mips64: support for fp32 mode
 16003 -> 16020 mips64: support for prctl(GET/SET_FP_MODE) syscalls
 16004 -> 16021 mips64: support for prctl(GET/SET_FP_MODE) syscalls
+
 16005 mips: update svn:ignore list
+
 16006 -> 16022 dhat: add "tot-blocks-allocd" metric
 
-16018 mips: replace use of (d)addi with (d)addiu
-(tracked up to and including 16022)
+16018  M mips: replace use of (d)addi with (d)addiu
+3257   M Relax the overly-restrictive implementation of (T3) SUB{S}.W Rd,
+         SP, Rm, {shift}.  #354274
+16023  Update 3_11_BUGSTATUS.txt
+16024  M Fix n-i-bz bug in auto free pool: a block using the last byte
+         of the meta pool was not auto-freed.
+16025  M Add a warning to the get/set_thread_area wrapper for bad info pointers.
+3258   M mips: remove support for mfc0/dmfc0
+16026  M mips32: fix the wrong offset for mmap2()
+3259   M s390: support RISBLG/RISBHG, MVCIN, LDE/LDER
+16027  M s390: support RISBLG/RISBHG, MVCIN, LDE/LDER
+16028  M s390/highword fix compile warning with some compilers
+16029  M actually test high-word by providing the plumbing...
+16030  M fix building the dfp testcase
+16031  M mips32: add pselect6 to the list of supported syscalls
+3260   M ISA 3.0 BE fixes for various new instructions
+16032  M ISA 3.0 BE testsuite fixes
+16033  M Fix some (small) leaks found by self-hosting valgrind
+16034  M Power configure fixes.
+16035  M Update NEWS file for bugzillas 369175 and 370265
+16036  M Fix corruption introduced by revision 16033
+16037  M Fix for missing ISA changes in HW cap stuff needs updating patch
+16038  M mips: clear fcc bits in fcsr after calling printf()
+3261   M mips: allow VEX to be compiled for soft-float
+16039  M mips: allow Valgrind to be compiled for soft-float
+3262   M mips: fix incorrect implementation of luxc1/suxc1 instructions
+16040  M mips32: add the test cases for luxc1/suxc1 instructions
+3263   M mips64: fix error introduced by r3262
+16041  M fix 369468 Remove quadratic metapool alg. using VG_(HT_remove_at_Iter)(VgHashTable *table)
+16042  M Clarify name and description/manual for meta mempool
+16043  M Introduce leak-pool-3.* back into EXTRA_DIST as they are not related
+to leak-autofreepool tests.  This is a follow up fix for r16042.
+16044  M Further fixes following fix of leak in 16033
+16045  M Follow up for r16044.  Fix compilation problem on Solaris.
+
+(tracked up to and including 16045/3263)
 
 3.12.0.BETA1 is 3_12_BRANCHes at 15973/3250.
 

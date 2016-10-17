@@ -5,6 +5,7 @@ Release 3.12.0 is under development, not yet released.
 * ================== PLATFORM CHANGES =================
 
 * Preliminary support for macOS 10.12 (Sierra) has been added.
+* mips: support for O32 FPXX ABI has been added.
 
 * ==================== TOOL CHANGES ====================
 
@@ -93,6 +94,7 @@ where XXXXXX is the bug number as listed below.
 353891  Assert 'bad_scanned_addr < VG_ROUNDDN(start+len, sizeof(Addr))' failed
 353917  unhandled amd64-solaris syscall fchdir(120)
 353920  unhandled amd64-solaris syscall: 170
+354274  arm: unhandled instruction: 0xEBAD 0x0AC1 (sub.w sl, sp, r1, lsl #3)
 354392  unhandled amd64-solaris syscall: 171
 354797  Vbit test does not include Iops for Power 8 instruction support
 354883  tst->os_state.pthread - magic_delta assertion failure on OSX 10.11

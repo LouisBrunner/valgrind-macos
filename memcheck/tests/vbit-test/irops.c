@@ -1287,8 +1287,8 @@ get_irop(IROp op)
          case Iop_MulI128by10Carry:
          case Iop_MulI128by10E:
          case Iop_MulI128by10ECarry: {
-            /* IROps require a processor that supports ISA 2.07 (Power 8) or newer */
-            rc = system(MIN_POWER_ISA " 3.0 ");
+            /* IROps require a processor that supports ISA 3.00 (Power 9) or newer */
+            rc = system(MIN_POWER_ISA " 3.00 ");
             rc /= 256;
             /* MIN_POWER_ISA returns 0 if underlying HW supports the
              * specified ISA or newer. Returns 1 if the HW does not support

@@ -68,7 +68,7 @@ epar,"extract primary ASN",N/A,"privileged instruction"
 epair,"extract primary ASN and instance",N/A,"privileged instruction"
 ereg,"extract stacked registers","not implemented",
 esar,"extract secondary ASN",N/A,"privileged instruction",
-esair,"extract secondary ASN and instance,N/A,"privileged instruction",
+esair,"extract secondary ASN and instance",N/A,"privileged instruction",
 esta,"extract stacked state","not implemented",
 ex,execute,implemented,
 hdr,"halve (long)","won't do","hfp instruction"
@@ -125,7 +125,7 @@ msch,"modify subchannel",N/A,"privileged instruction"
 msta,"modify stacked state","not implemented",
 mvc,move,implemented,
 mvcdk,"move with destination key",N/A,"privileged instruction"
-mvcin,"move inverse","not implemented",
+mvcin,"move inverse",implemented,
 mvck,"move with key",N/A,"privileged instruction"
 mvcl,"move long",implemented,
 mvcp,"move to primary",N/A,"privileged instruction"
@@ -548,8 +548,8 @@ lxdr,"load lengthened long to extended hfp","won't do","hfp instruction"
 lxd,"load lengthened long to extended hfp","won't do","hfp instruction"
 lxer,"load lengthened short to extended hfp","won't do","hfp instruction"
 lxe,"load lengthened short to extended hfp","won't do","hfp instruction"
-lder,"load lengthened short to long hfp","won't do","hfp instruction"
-lde,"load lengthened short to long hfp","won't do","hfp instruction"
+lder,"load lengthened short to long hfp",implemented,"hfp instruction"
+lde,"load lengthened short to long hfp",implemented,"hfp instruction"
 lnxr,"load negative extended hfp","won't do","hfp instruction"
 lpxr,"load positive extended hfp","won't do","hfp instruction"
 lexr,"load rounded extended to short hfp","won't do","hfp instruction"
@@ -840,7 +840,7 @@ alhhhr,"add logical high high",implemented,
 alhhlr,"add logical high low",implemented,
 alsih,"add logical with signed immediate high with cc",implemented,
 alsihn,"add logical with signed immediate high no cc",implemented,
-brcth,"branch relative on count high","not implemented",
+brcth,"branch relative on count high",implemented,
 chhr,"compare high high",implemented,
 chlr,"compare high low",implemented,
 chf,"compare high",implemented,
@@ -854,8 +854,8 @@ lhh,"load halfword high",implemented,
 lfh,"load high",implemented,
 llch,"load logical character high",implemented,
 llhh,"load logical halfword high",implemented,
-risbhg,"rotate then insert selected bits high","not implemented",
-risblg,"rotate then insert selected bits low","not implemented",
+risbhg,"rotate then insert selected bits high",implemented,
+risblg,"rotate then insert selected bits low",implemented,
 stch,"store character high",implemented,
 sthh,"store halfword high",implemented,
 stfh,"store high",implemented,
@@ -980,3 +980,520 @@ cdzt,"convert from zoned long","not implemented",zEC12,
 cxzt,"convert from zoned extended","not implemented",zEC12,
 czdt,"convert to zoned long","not implemented",zEC12,
 czxt,"convert to zoned extended","not implemented",zEC12,
+vfsdb,"vector fp subtract","not implemented",z13
+vlpf,"vector load positive word","not implemented",z13
+verllh,"vector element rotate left logical mem halfword","not implemented",z13
+vzero,"vector set to zero","not implemented",z13
+vmalof,"vector multiply and add logical odd word","not implemented",z13
+vleif,"vector load word element immediate","not implemented",z13
+vlpb,"vector load positive byte","not implemented",z13
+vmxlh,"vector maximum logical halfword","not implemented",z13
+vpksfs,"vector pack saturate word","not implemented",z13
+vfenezh,"vector find element not equal halfword","not implemented",z13
+vecl,"vector element compare logical","not implemented",z13
+verimb,"vector element rotate and insert under mask byte","not implemented",z13
+vaccq,"vector add compute carry quadword","not implemented",z13
+vleh,"vector load halfword element","not implemented",z13
+vst,"vector store","not implemented",z13
+vsteg,"vector store double word element","not implemented",z13
+vmnf,"vector minimum word","not implemented",z13
+vavgl,"vector average logical","not implemented",z13
+vfpsodb,"vector fp perform sign operation","not implemented",z13
+llzrgf,"load logical and zero rightmost bytes 32->64","not implemented",z13
+vledb,"vector fp load rounded","not implemented",z13
+vldeb,"vector fp load lengthened","not implemented",z13
+vclzg,"vector count leading zeros doubleword","not implemented",z13
+vecg,"vector element compare double word","not implemented",z13
+vpksgs,"vector pack saturate double word","not implemented",z13
+vsel,"vector select","not implemented",z13
+vllezb,"vector load logical byte element and zero","not implemented",z13
+vfaezh,"vector find any element equal","not implemented",z13
+vftci,"vector fp test data class immediate","not implemented",z13
+veclb,"vector element compare logical byte","not implemented",z13
+vuplhw,"vector unpack low halfword","not implemented",z13
+veslvb,"vector element shift left reg byte","not implemented",z13
+vuplh,"vector unpack logical high","not implemented",z13
+vlde,"vector fp load lengthened","not implemented",z13
+vmoh,"vector multiply odd halfword","not implemented",z13
+vfaehs,"vector find any element equal","not implemented",z13
+vftcidb,"vector fp test data class immediate","not implemented",z13
+vaq,"vector add quad word","not implemented",z13
+vlgvh,"vector load gr from vr halfword element","not implemented",z13
+vchlg,"vector compare high logical double word","not implemented",z13
+vlvgp,"vector load VR from GRs disjoint","not implemented",z13
+vceqg,"vector compare equal double word","not implemented",z13
+vfeezh,"vector find element equal halfword","not implemented",z13
+vlvgf,"vector load VR word element from GR","not implemented",z13
+vsteb,"vector store byte element","not implemented",z13
+vgmb,"vector generate mask byte","not implemented",z13
+vpklsf,"vector pack logical saturate word","not implemented",z13
+vmao,"vector multiply and add odd","not implemented",z13
+vchf,"vector compare high word","not implemented",z13
+vesraf,"vector element shift right arithmetic mem word","not implemented",z13
+vsbiq,"vector subtract with borrow indication quadword","not implemented",z13
+vuphb,"vector unpack high byte","not implemented",z13
+vgfmb,"vector galois field multiply sum byte","not implemented",z13
+vrepih,"vector replicate immediate halfword","not implemented",z13
+vcdlg,"vector fp convert from logical 64 bit","not implemented",z13
+cxpt,"convert from packed to extended dfp","not implemented",z13
+vceqb,"vector compare equal byte","not implemented",z13
+vstrczfs,"vector string range compare word","not implemented",z13
+vpklshs,"vector pack logical saturate halfword","not implemented",z13
+vlvgb,"vector load VR byte element from GR","not implemented",z13
+lcbb,"load count to block boundary","not implemented",z13
+vlcf,"vector load complement word","not implemented",z13
+vlvg,"vector load VR element from GR","not implemented",z13
+vmalef,"vector multiply and add logical even word","not implemented",z13
+vn,"vector and","not implemented",z13
+vmae,"vector multiply and add even","not implemented",z13
+vstrc,"vector string range compare","not implemented",z13
+vfcedb,"vector fp compare equal","not implemented",z13
+vgfm,"vector galois field multiply sum","not implemented",z13
+vlrepb,"vector load and replicate byte elements","not implemented",z13
+vgfmag,"vector galois field multiply sum and accumulate doubleword","not implemented",z13
+vflndb,"vector fp perform sign operation","not implemented",z13
+vmaeb,"vector multiply and add even byte","not implemented",z13
+vpkg,"vector pack double word","not implemented",z13
+vsb,"vector subtract byte","not implemented",z13
+vchl,"vector compare high logical","not implemented",z13
+vlvgh,"vector load VR halfword element from GR","not implemented",z13
+locghi,"load halfword immediate on condition into 64 bit gpr","not implemented",z13
+vmalb,"vector multiply and add low byte","not implemented",z13
+vchlgs,"vector compare high logical double word","not implemented",z13
+vstef,"vector store word element","not implemented",z13
+lzrf,"load and zero rightmost byte 32->32","not implemented",z13
+vmrlh,"vector merge low halfword","not implemented",z13
+vchbs,"vector compare high byte","not implemented",z13
+vesrlf,"vector element shift right logical mem word","not implemented",z13
+vmxf,"vector maximum word","not implemented",z13
+vgmh,"vector generate mask halfword","not implemented",z13
+vfenezb,"vector find element not equal byte","not implemented",z13
+vpklsgs,"vector pack logical saturate double word","not implemented",z13
+vpksg,"vector pack saturate double word","not implemented",z13
+vfaeh,"vector find any element equal halfword","not implemented",z13
+vmlof,"vector multiply logical odd word","not implemented",z13
+vmahh,"vector multiply and add high halfword","not implemented",z13
+vx,"vector exclusive or","not implemented",z13
+vchlfs,"vector compare high logical word","not implemented",z13
+vacccq,"vector add with carry compute carry quadword","not implemented",z13
+vchb,"vector compare high byte","not implemented",z13
+vmaloh,"vector multiply and add logical odd halfword","not implemented",z13
+vmleh,"vector multiply logical even halfword","not implemented",z13
+verimh,"vector element rotate and insert under mask halfword","not implemented",z13
+vlrepf,"vector load and replicate word elements","not implemented",z13
+vgfmg,"vector galois field multiply sum doubleword","not implemented",z13
+vpklsg,"vector pack logical saturate double word","not implemented",z13
+vesrlvf,"vector element shift right logical reg word","not implemented",z13
+vrepg,"vector replicate double word","not implemented",z13
+vmalob,"vector multiply and add logical odd byte","not implemented",z13
+vmxb,"vector maximum byte","not implemented",z13
+vmnl,"vector minimum logical","not implemented",z13
+vmng,"vector minimum doubleword","not implemented",z13
+vchlb,"vector compare high logical byte","not implemented",z13
+wfadb,"vector fp add","not implemented",z13
+vmrl,"vector merge low","not implemented",z13
+wfk,"vector fp compare and signal scalar","not implemented",z13
+vno,"vector nor","not implemented",z13
+vstrcf,"vector string range compare word","not implemented",z13
+vfmsdb,"vector fp multiply and subtract","not implemented",z13
+vavgh,"vector average half word","not implemented",z13
+vchlhs,"vector compare high logical half word","not implemented",z13
+vah,"vector add halfword","not implemented",z13
+vmalhh,"vector multiply and add logical high halfword","not implemented",z13
+wldeb,"vector fp load lengthened","not implemented",z13
+vmrh,"vector merge high","not implemented",z13
+vclgdb,"vector fp convert to logical 64 bit","not implemented",z13
+wfsqdb,"vector fp square root","not implemented",z13
+vpopct,"vector population count","not implemented",z13
+vfenef,"vector find element not equal word","not implemented",z13
+vgfmf,"vector galois field multiply sum word","not implemented",z13
+vgmf,"vector generate mask word","not implemented",z13
+vleg,"vector load double word element","not implemented",z13
+vmn,"vector minimum","not implemented",z13
+vrepi,"vector replicate immediate","not implemented",z13
+vsegb,"vector sign extend byte to double word","not implemented",z13
+cpxt,"convert from extended dfp to packed","not implemented",z13
+wftcidb,"vector fp test data class immediate","not implemented",z13
+wfchedbs,"vector fp compare high or equal","not implemented",z13
+vpks,"vector pack saturate","not implemented",z13
+veslg,"vector element shift left mem doubleword","not implemented",z13
+vupllb,"vector unpack logical low byte","not implemented",z13
+vscbig,"vector subtract compute borrow indication doubleword","not implemented",z13
+vsegh,"vector sign extend halfword to double word","not implemented",z13
+vsumb,"vector sum across word - byte elements","not implemented",z13
+vgeg,"vector gather element 8 byte elements","not implemented",z13
+vcgd,"vector fp convert to fixed 64 bit","not implemented",z13
+vuplhb,"vector unpack logical high byte","not implemented",z13
+verllv,"vector element rotate left logical reg","not implemented",z13
+vavgb,"vector average byte","not implemented",z13
+veclh,"vector element compare logical half word","not implemented",z13
+vfmadb,"vector fp multiply and add","not implemented",z13
+vesravb,"vector element shift right arithmetic reg byte","not implemented",z13
+vmaleb,"vector multiply and add logical even byte","not implemented",z13
+vuplf,"vector unpack low word","not implemented",z13
+vsbi,"vector subtract with borrow indication","not implemented",z13
+vupll,"vector unpack logical low","not implemented",z13
+vmrhh,"vector merge high halfword","not implemented",z13
+vfenezbs,"vector find element not equal byte","not implemented",z13
+vmhb,"vector multiply high byte","not implemented",z13
+vfmdb,"vector fp multiply","not implemented",z13
+vesrlg,"vector element shift right logical mem doubleword","not implemented",z13
+vmahb,"vector multiply and add high byte","not implemented",z13
+vstrczf,"vector string range compare word","not implemented",z13
+wfcedb,"vector fp compare equal","not implemented",z13
+vscbih,"vector subtract compute borrow indication halfword","not implemented",z13
+vlch,"vector load complement halfword","not implemented",z13
+vfenebs,"vector find element not equal byte","not implemented",z13
+vpklsh,"vector pack logical saturate halfword","not implemented",z13
+vlgv,"vector load gr from vr element","not implemented",z13
+vchfs,"vector compare high word","not implemented",z13
+vctzb,"vector count trailing zeros byte","not implemented",z13
+vfaef,"vector find any element equal word","not implemented",z13
+vstrch,"vector string range compare halfword","not implemented",z13
+wfidb,"vector load fp integer","not implemented",z13
+vmrhb,"vector merge high byte","not implemented",z13
+vuph,"vector unpack high","not implemented",z13
+vperm,"vector permute","not implemented",z13
+vrep,"vector replicate","not implemented",z13
+vmalhb,"vector multiply and add logical high byte","not implemented",z13
+vleib,"vector load byte element immediate","not implemented",z13
+vavg,"vector average","not implemented",z13
+vfenefs,"vector find element not equal word","not implemented",z13
+vsumh,"vector sum across word - halfword elements","not implemented",z13
+vchh,"vector compare high half word","not implemented",z13
+wcdgb,"vector fp convert from fixed 64 bit","not implemented",z13
+verllvb,"vector element rotate left logical reg byte","not implemented",z13
+vec,"vector element compare","not implemented",z13
+vpdi,"vector permute double word immediate","not implemented",z13
+vfchedb,"vector fp compare high or equal","not implemented",z13
+vchlh,"vector compare high logical half word","not implemented",z13
+vmaleh,"vector multiply and add logical even halfword","not implemented",z13
+vstrcb,"vector string range compare byte","not implemented",z13
+vsumqg,"vector sum across quadword - doubleword elements","not implemented",z13
+vlc,"vector load complement","not implemented",z13
+vlreph,"vector load and replicate halfword elements","not implemented",z13
+vistrb,"vector isolate string byte","not implemented",z13
+vmo,"vector multiply odd","not implemented",z13
+vmxg,"vector maximum doubleword","not implemented",z13
+vsrab,"vector shift right arithmetic by byte","not implemented",z13
+vsbcbiq,"vector subtract with borrow compute borrow indication quadword","not implemented",z13
+wfchdb,"vector fp compare high","not implemented",z13
+vmlhf,"vector multiply logical high word","not implemented",z13
+vesra,"vector element shift right arithmetic mem","not implemented",z13
+vmnh,"vector minimum halfword","not implemented",z13
+vled,"vector fp load rounded","not implemented",z13
+vstrczbs,"vector string range compare byte","not implemented",z13
+vaccb,"vector add compute carry byte","not implemented",z13
+vmahf,"vector multiply and add high word","not implemented",z13
+wfcedbs,"vector fp compare equal","not implemented",z13
+vmeh,"vector multiply even halfword","not implemented",z13
+vclzb,"vector count leading zeros byte","not implemented",z13
+vmh,"vector multiply high","not implemented",z13
+vllez,"vector load logical element and zero","not implemented",z13
+vnc,"vector and with complement","not implemented",z13
+vesrlvg,"vector element shift right logical reg doubleword","not implemented",z13
+vrepif,"vector replicate immediate word","not implemented",z13
+vfd,"vector fp divide","not implemented",z13
+vesrlb,"vector element shift right logical mem byte","not implemented",z13
+vavglg,"vector average logical double word","not implemented",z13
+vpksh,"vector pack saturate halfword","not implemented",z13
+veslv,"vector element shift left reg","not implemented",z13
+vone,"vector set to ones","not implemented",z13
+vsrl,"vector shift right logical","not implemented",z13
+vcdg,"vector fp convert from fixed 64 bit","not implemented",z13
+vmlhw,"vector multiply low halfword","not implemented",z13
+vscbib,"vector subtract compute borrow indication byte","not implemented",z13
+vrepib,"vector replicate immediate byte","not implemented",z13
+vpk,"vector pack","not implemented",z13
+vmhh,"vector multiply high halfword","not implemented",z13
+vfaezhs,"vector find any element equal","not implemented",z13
+vaf,"vector add word","not implemented",z13
+vmalh,"vector multiply and add logical high","not implemented",z13
+vgmg,"vector generate mask double word","not implemented",z13
+vstrczh,"vector string range compare halfword","not implemented",z13
+vag,"vector add double word","not implemented",z13
+vllezf,"vector load logical word element and zero","not implemented",z13
+vistrbs,"vector isolate string byte","not implemented",z13
+vstm,"vector store multiple","not implemented",z13
+vgfmh,"vector galois field multiply sum halfword","not implemented",z13
+verllvf,"vector element rotate left logical reg word","not implemented",z13
+vsra,"vector shift right arithmetic","not implemented",z13
+vslb,"vector shift left by byte","not implemented",z13
+vesravf,"vector element shift right arithmetic reg word","not implemented",z13
+vfcedbs,"vector fp compare equal","not implemented",z13
+vceqbs,"vector compare equal byte","not implemented",z13
+vsbcbi,"vector subtract with borrow compute borrow indication","not implemented",z13
+vmle,"vector multiply logical even","not implemented",z13
+vfaezfs,"vector find any element equal","not implemented",z13
+vsumg,"vector sum across doubleword","not implemented",z13
+vfaeb,"vector find any element equal byte","not implemented",z13
+vleih,"vector load halfword element immediate","not implemented",z13
+vmlob,"vector multiply logical odd byte","not implemented",z13
+vllezh,"vector load logical halfword element and zero","not implemented",z13
+vmalo,"vector multiply and add logical odd","not implemented",z13
+vclzh,"vector count leading zeros halfword","not implemented",z13
+vesravh,"vector element shift right arithmetic reg halfword","not implemented",z13
+vceqfs,"vector compare equal word","not implemented",z13
+vlp,"vector load positive","not implemented",z13
+wfmsdb,"vector fp multiply and subtract","not implemented",z13
+vstrcbs,"vector string range compare byte","not implemented",z13
+vaccg,"vector add compute carry doubleword","not implemented",z13
+wfsdb,"vector fp subtract","not implemented",z13
+vfee,"vector find element equal","not implemented",z13
+vmxh,"vector maximum halfword","not implemented",z13
+vtm,"vector test under mask","not implemented",z13
+vctzf,"vector count trailing zeros word","not implemented",z13
+vfms,"vector fp multiply and subtract","not implemented",z13
+vavgg,"vector average double word","not implemented",z13
+vistr,"vector isolate string","not implemented",z13
+vesrlvb,"vector element shift right logical reg byte","not implemented",z13
+vesrl,"vector element shift right logical mem","not implemented",z13
+vmah,"vector multiply and add high","not implemented",z13
+vesrlvh,"vector element shift right logical reg halfword","not implemented",z13
+vesrah,"vector element shift right arithmetic mem halfword","not implemented",z13
+vrepig,"vector replicate immediate double word","not implemented",z13
+wfddb,"vector fp divide","not implemented",z13
+vmhf,"vector multiply high word","not implemented",z13
+vupllf,"vector unpack logical low word","not implemented",z13
+veslf,"vector element shift left mem word","not implemented",z13
+wflpdb,"vector fp perform sign operation","not implemented",z13
+vscbi,"vector subtract compute borrow indication","not implemented",z13
+vmnlb,"vector minimum logical byte","not implemented",z13
+veslh,"vector element shift left mem halfword","not implemented",z13
+vfaebs,"vector find any element equal","not implemented",z13
+vleb,"vector load byte element","not implemented",z13
+vfaezb,"vector find any element equal","not implemented",z13
+vlbb,"vector load to block boundary","not implemented",z13
+vflcdb,"vector fp perform sign operation","not implemented",z13
+vmlo,"vector multiply logical odd","not implemented",z13
+vlgvf,"vector load gr from vr word element","not implemented",z13
+vavgf,"vector average word","not implemented",z13
+veslvh,"vector element shift left reg halfword","not implemented",z13
+vacch,"vector add compute carry halfword","not implemented",z13
+vsumgh,"vector sum across doubleword - halfword","not implemented",z13
+vmaeh,"vector multiply and add even halfword","not implemented",z13
+vmnlh,"vector minimum logical halfword","not implemented",z13
+vstl,"vector store with length","not implemented",z13
+wfmadb,"vector fp multiply and add","not implemented",z13
+vme,"vector multiply even","not implemented",z13
+wfmdb,"vector fp multiply","not implemented",z13
+wflcdb,"vector fp perform sign operation","not implemented",z13
+vreph,"vector replicate halfword","not implemented",z13
+vclgd,"vector fp convert to logical 64 bit","not implemented",z13
+vpkls,"vector pack logical saturate","not implemented",z13
+vsf,"vector subtract word","not implemented",z13
+vflpdb,"vector fp perform sign operation","not implemented",z13
+vesrlv,"vector element shift right logical reg","not implemented",z13
+vpklsfs,"vector pack logical saturate word","not implemented",z13
+vcdgb,"vector fp convert from fixed 64 bit","not implemented",z13
+verll,"vector element rotate left logical mem","not implemented",z13
+vfeezf,"vector find element equal word","not implemented",z13
+wclgdb,"vector fp convert to logical 64 bit","not implemented",z13
+vgfma,"vector galois field multiply sum and accumulate","not implemented",z13
+vmob,"vector multiply odd byte","not implemented",z13
+vfeneb,"vector find element not equal byte","not implemented",z13
+vfene,"vector find element not equal","not implemented",z13
+vfenezfs,"vector find element not equal word","not implemented",z13
+vmal,"vector multiply and add low","not implemented",z13
+vfchdb,"vector fp compare high","not implemented",z13
+vfeezb,"vector find element equal byte","not implemented",z13
+vfae,"vector find any element equal","not implemented",z13
+vfchdbs,"vector fp compare high","not implemented",z13
+vsceg,"vector scatter element 8 byte","not implemented",z13
+vfeezfs,"vector find element equal word","not implemented",z13
+vsumgf,"vector sum across doubleword - word","not implemented",z13
+vmnb,"vector minimum byte","not implemented",z13
+vlef,"vector load word element","not implemented",z13
+vceqgs,"vector compare equal double word","not implemented",z13
+vech,"vector element compare half word","not implemented",z13
+vctz,"vector count trailing zeros","not implemented",z13
+vmloh,"vector multiply logical odd halfword","not implemented",z13
+vaccc,"vector add with carry compute carry","not implemented",z13
+vmale,"vector multiply and add logical even","not implemented",z13
+vsteh,"vector store halfword element","not implemented",z13
+vceq,"vector compare equal","not implemented",z13
+vfchedbs,"vector fp compare high or equal","not implemented",z13
+vesl,"vector element shift left mem","not implemented",z13
+vesrav,"vector element shift right arithmetic reg","not implemented",z13
+vfma,"vector fp multiply and add","not implemented",z13
+vmnlg,"vector minimum logical doubleword","not implemented",z13
+vclz,"vector count leading zeros","not implemented",z13
+vmrlf,"vector merge low word","not implemented",z13
+vistrh,"vector isolate string halfword","not implemented",z13
+vmxlb,"vector maximum logical byte","not implemented",z13
+vfs,"vector fp subtract","not implemented",z13
+vfm,"vector fp multiply","not implemented",z13
+vll,"vector load with length","not implemented",z13
+vleig,"vector load double word element immediate","not implemented",z13
+vfaezbs,"vector find any element equal","not implemented",z13
+veslvg,"vector element shift left reg doubleword","not implemented",z13
+locfh,"load high on condition from memory","not implemented",z13
+vfeeb,"vector find element equal byte","not implemented",z13
+vsumq,"vector sum across quadword","not implemented",z13
+vmleb,"vector multiply logical even byte","not implemented",z13
+vesrag,"vector element shift right arithmetic mem doubleword","not implemented",z13
+vceqh,"vector compare equal half word","not implemented",z13
+vmalf,"vector multiply and add low word","not implemented",z13
+vstrchs,"vector string range compare halfword","not implemented",z13
+vcgdb,"vector fp convert to fixed 64 bit","not implemented",z13
+vsq,"vector subtract quadword","not implemented",z13
+vnot,"vector not","not implemented",z13
+vfch,"vector fp compare high","not implemented",z13
+lochi,"load halfword immediate on condition into 32 bit gpr","not implemented",z13
+verllvh,"vector element rotate left logical reg halfword","not implemented",z13
+cpdt,"convert from long dfp to packed","not implemented",z13
+vrepb,"vector replicate byte","not implemented",z13
+ppno,"perform pseudorandom number operation","not implemented",z13
+vfeef,"vector find element equal word","not implemented",z13
+vac,"vector add with carry","not implemented",z13
+verimf,"vector element rotate and insert under mask word","not implemented",z13
+vfi,"vector load fp integer","not implemented",z13
+vistrfs,"vector isolate string word","not implemented",z13
+vecf,"vector element compare word","not implemented",z13
+vfeezbs,"vector find element equal byte","not implemented",z13
+wflndb,"vector fp perform sign operation","not implemented",z13
+vscbif,"vector subtract compute borrow indication word","not implemented",z13
+vchhs,"vector compare high half word","not implemented",z13
+vmlb,"vector multiply low byte","not implemented",z13
+veslvf,"vector element shift left reg word","not implemented",z13
+vfaefs,"vector find any element equal","not implemented",z13
+vlrep,"vector load and replicate","not implemented",z13
+vaccf,"vector add compute carry word","not implemented",z13
+vpksf,"vector pack saturate word","not implemented",z13
+vavglf,"vector average logical word","not implemented",z13
+vmef,"vector multiply even word","not implemented",z13
+vuplhh,"vector unpack logical high halfword","not implemented",z13
+vmxl,"vector maximum logical","not implemented",z13
+vgfmah,"vector galois field multiply sum and accumulate halfword","not implemented",z13
+vmalhf,"vector multiply and add logical high word","not implemented",z13
+vsh,"vector subtract halfword","not implemented",z13
+vuplb,"vector unpack low byte","not implemented",z13
+vsegf,"vector sign extend word to double word","not implemented",z13
+vmxlf,"vector maximum logical word","not implemented",z13
+wcdlgb,"vector fp convert from logical 64 bit","not implemented",z13
+vstrczb,"vector string range compare byte","not implemented",z13
+vsldb,"vector shift left double by byte","not implemented",z13
+vesrlh,"vector element shift right logical mem halfword","not implemented",z13
+cdpt,"convert from packed to long dfp","not implemented",z13
+vlcb,"vector load complement byte","not implemented",z13
+wfpsodb,"vector fp perform sign operation","not implemented",z13
+vsum,"vector sum across word","not implemented",z13
+vfeehs,"vector find element equal halfword","not implemented",z13
+vml,"vector multiply low","not implemented",z13
+vuphh,"vector unpack high halfword","not implemented",z13
+vavglb,"vector average logical byte","not implemented",z13
+vmlf,"vector multiply low word","not implemented",z13
+wledb,"vector fp load rounded","not implemented",z13
+vstrcfs,"vector string range compare word","not implemented",z13
+wcgdb,"vector fp convert to fixed 64 bit","not implemented",z13
+vlph,"vector load positive halfword","not implemented",z13
+vfenezf,"vector find element not equal word","not implemented",z13
+vseg,"vector sign extend to double word","not implemented",z13
+vcksm,"vector checksum","not implemented",z13
+vsrlb,"vector shift right logical by byte","not implemented",z13
+verimg,"vector element rotate and insert under mask doubleword","not implemented",z13
+vesravg,"vector element shift right arithmetic reg doubleword","not implemented",z13
+vmlhh,"vector multiply logical high halfword","not implemented",z13
+vfaezf,"vector find any element equal","not implemented",z13
+vfenehs,"vector find element not equal halfword","not implemented",z13
+vlr,"vector register load","not implemented",z13
+vgbm,"vector generate byte mask","not implemented",z13
+vmnlf,"vector minimum logical word","not implemented",z13
+vlm,"vector load multiple","not implemented",z13
+vmrlb,"vector merge low byte","not implemented",z13
+vavglh,"vector average logical half word","not implemented",z13
+wfkdb,"vector fp compare and signal scalar","not implemented",z13
+veslb,"vector element shift left mem byte","not implemented",z13
+wfchedb,"vector fp compare high or equal","not implemented",z13
+vllezg,"vector load logical double word element and zero","not implemented",z13
+vmaob,"vector multiply and add odd byte","not implemented",z13
+vmrhf,"vector merge high word","not implemented",z13
+vchg,"vector compare high double word","not implemented",z13
+locfhr,"load high on condition from gpr","not implemented",z13
+vlpg,"vector load positive doubleword","not implemented",z13
+vcdlgb,"vector fp convert from logical 64 bit","not implemented",z13
+vstrczhs,"vector string range compare halfword","not implemented",z13
+vecb,"vector element compare byte","not implemented",z13
+vmxlg,"vector maximum logical doubleword","not implemented",z13
+vfpso,"vector fp perform sign operation","not implemented",z13
+verim,"vector element rotate and insert under mask","not implemented",z13
+vsumqf,"vector sum across quadword - word elements","not implemented",z13
+vfeefs,"vector find element equal word","not implemented",z13
+vfche,"vector fp compare high or equal","not implemented",z13
+vistrhs,"vector isolate string halfword","not implemented",z13
+vsl,"vector shift left","not implemented",z13
+vfenezhs,"vector find element not equal halfword","not implemented",z13
+vsg,"vector subtract doubleword","not implemented",z13
+vclzf,"vector count leading zeros word","not implemented",z13
+wfcdb,"vector fp compare scalar","not implemented",z13
+vmaoh,"vector multiply and add odd halfword","not implemented",z13
+vchgs,"vector compare high double word","not implemented",z13
+vchlf,"vector compare high logical word","not implemented",z13
+va,"vector add","not implemented",z13
+vmrlg,"vector merge low double word","not implemented",z13
+vlcg,"vector load complement doubleword","not implemented",z13
+vceqf,"vector compare equal word","not implemented",z13
+vacq,"vector add with carry quadword","not implemented",z13
+vmaof,"vector multiply and add odd word","not implemented",z13
+vfadb,"vector fp add","not implemented",z13
+vmlef,"vector multiply logical even word","not implemented",z13
+wfc,"vector fp compare scalar","not implemented",z13
+vmx,"vector maximum","not implemented",z13
+vmlh,"vector multiply logical high","not implemented",z13
+vmeb,"vector multiply even byte","not implemented",z13
+vfddb,"vector fp divide","not implemented",z13
+vpkshs,"vector pack saturate halfword","not implemented",z13
+vpkf,"vector pack word","not implemented",z13
+vlrepg,"vector load and replicate double word elements","not implemented",z13
+vmaef,"vector multiply and add even word","not implemented",z13
+vfeneh,"vector find element not equal halfword","not implemented",z13
+vgfmaf,"vector galois field multiply sum and accumulate word","not implemented",z13
+vctzg,"vector count trailing zeros doubleword","not implemented",z13
+lzrg,"load and zero rightmost byte 64->64","not implemented",z13
+vmof,"vector multiply odd word","not implemented",z13
+vfsqdb,"vector fp square root","not implemented",z13
+vlgvg,"vector load gr from vr double word element","not implemented",z13
+verllf,"vector element rotate left logical mem word","not implemented",z13
+verllg,"vector element rotate left logical mem doubleword","not implemented",z13
+vrepf,"vector replicate word","not implemented",z13
+vfeezhs,"vector find element equal halfword","not implemented",z13
+wfchdbs,"vector fp compare high","not implemented",z13
+lochhi,"load halfword high immediate on condition","not implemented",z13
+vmalhw,"vector multiply and add low halfword","not implemented",z13
+vmlhb,"vector multiply logical high byte","not implemented",z13
+vfeeh,"vector find element equal halfword","not implemented",z13
+vgm,"vector generate mask","not implemented",z13
+vgfmab,"vector galois field multiply sum and accumulate byte","not implemented",z13
+vmrhg,"vector merge high double word","not implemented",z13
+veclg,"vector element compare logical double word","not implemented",z13
+vl,"vector memory load","not implemented",z13
+vctzh,"vector count trailing zeros halfword","not implemented",z13
+vuplhf,"vector unpack logical high word","not implemented",z13
+verllvg,"vector element rotate left logical reg doubleword","not implemented",z13
+vupl,"vector unpack low","not implemented",z13
+vlgvb,"vector load gr from vr byte element","not implemented",z13
+vab,"vector add byte","not implemented",z13
+vch,"vector compare high","not implemented",z13
+veclf,"vector element compare logical word","not implemented",z13
+vgef,"vector gather element 4 byte elements","not implemented",z13
+vscbiq,"vector subtract compute borrow indication quadword","not implemented",z13
+cdgtr,"convert from fixed long dfp","not implemented",z13
+vesrab,"vector element shift right arithmetic mem byte","not implemented",z13
+vfsq,"vector fp square root","not implemented",z13
+vscef,"vector scatter element 4 byte","not implemented",z13
+vpkh,"vector pack halfword","not implemented",z13
+vfa,"vector fp add","not implemented",z13
+vo,"vector or","not implemented",z13
+verllb,"vector element rotate left logical mem byte","not implemented",z13
+stocfh,"store high on condition","not implemented",z13
+vchlbs,"vector compare high logical byte","not implemented",z13
+vuphf,"vector unpack high word","not implemented",z13
+vacc,"vector add compute carry","not implemented",z13
+vistrf,"vector isolate string word","not implemented",z13
+vceqhs,"vector compare equal half word","not implemented",z13
+vfidb,"vector load fp integer","not implemented",z13
+vupllh,"vector unpack logical low halfword","not implemented",z13
+vfce,"vector fp compare equal","not implemented",z13
+vs,"vector subtract","not implemented",z13
+vfeebs,"vector find element equal byte","not implemented",z13
+vlvgg,"vector load VR double word element from GR","not implemented",z13

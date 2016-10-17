@@ -93,11 +93,6 @@ typedef enum {
    SUBS,     SUBD,    DIVS
 } flt_op;
 
-extern UInt mips32_dirtyhelper_mfc0 ( UInt rd, UInt sel );
-
-extern ULong mips64_dirtyhelper_dmfc0 ( UInt rd, UInt sel );
-
-
 #if defined(__mips__) && ((defined(__mips_isa_rev) && __mips_isa_rev >= 2))
 extern UInt mips32_dirtyhelper_rdhwr ( UInt rt, UInt rd );
 extern ULong mips64_dirtyhelper_rdhwr ( ULong rt, ULong rd );

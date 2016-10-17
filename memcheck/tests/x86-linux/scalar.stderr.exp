@@ -3380,6 +3380,7 @@ Syscall param set_thread_area(u_info) points to unaddressable byte(s)
    by 0x........: main (scalar.c:1084)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
+Warning: bad u_info address 0x........ in set_thread_area
 -----------------------------------------------------
 244:__NR_get_thread_area 1s 1m
 -----------------------------------------------------
@@ -3392,6 +3393,7 @@ Syscall param get_thread_area(u_info) points to unaddressable byte(s)
    by 0x........: main (scalar.c:1088)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
+Warning: bad u_info address 0x........ in get_thread_area
 -----------------------------------------------------
 245:       __NR_io_setup 2s 1m
 -----------------------------------------------------

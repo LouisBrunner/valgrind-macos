@@ -698,7 +698,7 @@ static void free_mallocs_in_mempool_block (MC_Mempool* mp,
 
       VG_(HT_ResetIter)(MC_(malloc_list));
       while (!found && (mc = VG_(HT_Next)(MC_(malloc_list))) ) {
-         if (mc->data >= StartAddr && mc->data + mc->szB < EndAddr) {
+         if (mc->data >= StartAddr && mc->data + mc->szB <= EndAddr) {
             if (VG_(clo_verbosity) > 2) {
                VG_(message)(Vg_UserMsg, "Auto-free of 0x%lx size=%lu\n",
                                mc->data, (mc->szB + 0UL));

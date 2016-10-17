@@ -94,7 +94,7 @@
 #include <stdint.h>
 
 /* This test is only valid on machines that support IBM POWER ISA 3.0. */
-#ifdef HAS_ISA_3_0
+#ifdef HAS_ISA_3_00
 
 #include <assert.h>
 #include <ctype.h>     // isspace
@@ -3957,12 +3957,12 @@ static void usage (void)
            );
 }
 
-#endif   // HAS_ISA_3_0
+#endif   // HAS_ISA_3_00
 int main (int argc, char **argv)
 {
 
-#ifndef HAS_ISA_3_0
-   printf("NO ISA 3.0 SUPPORT\n");
+#ifndef HAS_ISA_3_00
+   printf("NO ISA 3.00 SUPPORT\n");
    return 0;
 
 #else

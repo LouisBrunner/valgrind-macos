@@ -115,7 +115,7 @@ Int VG_(load_script)(Int fd, const HChar* name, ExeInfo* info)
          cp++;
       *cp = '\0';
    }
-   
+   VG_(free)(info->interp_name);   
    info->interp_name = VG_(strdup)("ume.ls.1", interp);
    vg_assert(NULL != info->interp_name);
    if (arg != NULL && *arg != '\0') {

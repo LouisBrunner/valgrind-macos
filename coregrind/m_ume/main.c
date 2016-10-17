@@ -223,9 +223,9 @@ static Int do_exec_shell_followup(Int ret, const HChar* exe_name, ExeInfo* info)
 
       // Looks like a script.  Run it with /bin/sh.  This includes
       // zero-length files.
-
+      VG_(free)(info->interp_name);
       info->interp_name = VG_(strdup)("ume.desf.1", default_interp_name);
-      info->interp_args = NULL;
+      VG_(free)(info->interp_args); info->interp_args = NULL;
       if (info->argv && info->argv[0] != NULL)
          info->argv[0] = exe_name;
 
@@ -281,9 +281,9 @@ static Int do_exec_shell_followup(Int ret, const HChar* exe_name, ExeInfo* info)
 Int VG_(do_exec)(const HChar* exe_name, ExeInfo* info)
 {
    Int ret;
-   
-   info->interp_name = NULL;
-   info->interp_args = NULL;
+
+   VG_(free)(info->interp_name); info->interp_name = NULL;
+   VG_(free)(info->interp_args); info->interp_args = NULL;
 
    ret = VG_(do_exec_inner)(exe_name, info);
 

@@ -1,0 +1,19 @@
+brcth 5 x 3 (cnt=0x500000003): ...+...+...+...+...+ (cnt=0x0)
+brcth 1 x 30 (cnt=0x10000001e): ..............................+ (cnt=0x0)
+brcth 16 x 1 (cnt=0x1000000001): .+.+.+.+.+.+.+.+.+.+.+.+.+.+.+.+ (cnt=0x0)
+RISBLG r1(==3a41e0a2afde1559),r2(==765487c11cd04ac4),0x00,0x1f,0x00 = 3a41e0a21cd04ac4
+RISBLG r1(==765487c11cd04ac4),r2(==3a41e0a2afde1559),0x00,0x9f,0x00 = 765487c1afde1559
+RISBLG r1(==765487c11cd04ac4),r2(==3a41e0a2afde1559),0x00,0x1f,0x20 = 765487c13a41e0a2
+RISBLG r1(==3a41e0a2afde1559),r2(==765487c11cd04ac4),0x00,0x9f,0x20 = 3a41e0a2765487c1
+RISBHG r1(==b9cd1bdd399bef32),r2(==f8efadb884334ddd),0x00,0x1f,0x00 = f8efadb8399bef32
+RISBHG r1(==f8efadb884334ddd),r2(==b9cd1bdd399bef32),0x00,0x9f,0x00 = b9cd1bdd84334ddd
+RISBHG r1(==f8efadb884334ddd),r2(==b9cd1bdd399bef32),0x00,0x1f,0x20 = 399bef3284334ddd
+RISBHG r1(==b9cd1bdd399bef32),r2(==f8efadb884334ddd),0x00,0x9f,0x20 = 84334ddd399bef32
+RISBLG r1(==b9cd1bdd399bef32),r2(==3a41e0a2afde1559),0x0b,0x13,0x05 = b9cd1bdd3982af32
+RISBLG r1(==b9cd1bdd399bef32),r2(==3a41e0a2afde1559),0x0b,0x93,0x05 = b9cd1bdd0002a000
+RISBHG r1(==3a41e0a2afde1559),r2(==b9cd1bdd399bef32),0x03,0x0c,0x25 = 3379e0a2afde1559
+RISBHG r1(==3a41e0a2afde1559),r2(==b9cd1bdd399bef32),0x03,0x8c,0x25 = 13780000afde1559
+RISBLG r1(==765487c11cd04ac4),r2(==f8efadb884334ddd),0x1d,0x07,0x0c = 765487c134d04ac6
+RISBLG r1(==765487c11cd04ac4),r2(==f8efadb884334ddd),0x1d,0x87,0x0c = 765487c134000006
+RISBHG r1(==f8efadb884334ddd),r2(==765487c11cd04ac4),0x0c,0x03,0x25 = 98e9588e84334ddd
+RISBHG r1(==f8efadb884334ddd),r2(==765487c11cd04ac4),0x0c,0x83,0x25 = 9009588e84334ddd

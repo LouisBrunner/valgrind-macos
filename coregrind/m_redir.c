@@ -1821,7 +1821,7 @@ static void handle_require_text_symbols ( const DebugInfo* di )
 
    /* All required specs were found.  Just free memory and return. */
    for (i = 0; i < VG_(sizeXA)(fnpatts); i++)
-      VG_(free)(VG_(indexXA)(fnpatts, i));
+      VG_(free)(*(HChar**) VG_(indexXA)(fnpatts, i));
    VG_(deleteXA)(fnpatts);
 }
 

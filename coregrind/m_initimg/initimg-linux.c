@@ -1017,6 +1017,8 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii,
       setup_client_dataseg( dseg_max_size );
    }
 
+   VG_(free)(info.interp_name);
+   VG_(free)(info.interp_args);
    return iifii;
 }
 

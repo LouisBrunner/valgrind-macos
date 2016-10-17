@@ -566,6 +566,8 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii,
    // Tell aspacem about commpage, etc
    record_system_memory();
 
+   VG_(free)(info.interp_name);
+   VG_(free)(info.interp_args);
    return iifii;
 }
 

@@ -511,6 +511,25 @@ Bool VG_(parse_Addr) ( const HChar** ppc, Addr* result )
    return True;
 }
 
+Bool VG_(parse_UInt) ( const HChar** ppc, UInt* result )
+{
+   ULong res64 = 0;
+   Int used, limit = 10;
+   used = 0;
+   while (VG_(isdigit)(**ppc)) {
+      res64 = res64 * 10 + ((ULong)(**ppc)) - (ULong)'0';
+      (*ppc)++;
+      used++;
+      if (used > limit) return False;
+   }
+   if (used == 0)
+      return False;
+   if ((res64 >> 32) != 0)
+      return False;
+   *result = (UInt)res64;
+   return True;
+}
+
 Bool VG_(parse_enum_set) ( const HChar *tokens,
                            Bool  allow_all,
                            const HChar *input,

@@ -572,6 +572,10 @@ void MC_(pp_describe_addr) (Addr a);
 /* Is this address in a user-specified "ignored range" ? */
 Bool MC_(in_ignored_range) ( Addr a );
 
+/* Is this address in a user-specified "ignored range of offsets below
+   the current thread's stack pointer?" */
+Bool MC_(in_ignored_range_below_sp) ( Addr sp, Addr a, UInt szB );
+
 
 /*------------------------------------------------------------*/
 /*--- Client blocks                                        ---*/
@@ -714,6 +718,12 @@ extern Bool MC_(clo_show_mismatched_frees);
 /* Should we use expensive definedness checking for add/sub and compare
    operations? Default: NO */
 extern Bool MC_(clo_expensive_definedness_checks);
+
+/* Do we have a range of stack offsets to ignore?  Default: NO */
+extern Bool MC_(clo_ignore_range_below_sp);
+extern UInt MC_(clo_ignore_range_below_sp__first_offset);
+extern UInt MC_(clo_ignore_range_below_sp__last_offset);
+
 
 /*------------------------------------------------------------*/
 /*--- Instrumentation                                      ---*/

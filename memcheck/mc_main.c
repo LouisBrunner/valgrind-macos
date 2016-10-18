@@ -1121,9 +1121,32 @@ Bool MC_(in_ignored_range) ( Addr a )
    /*NOTREACHED*/
 }
 
-/* Parse two Addr separated by a dash, or fail. */
+Bool MC_(in_ignored_range_below_sp) ( Addr sp, Addr a, UInt szB )
+{
+   if (LIKELY(!MC_(clo_ignore_range_below_sp)))
+       return False;
+   tl_assert(szB >= 1 && szB <= 32);
+   tl_assert(MC_(clo_ignore_range_below_sp__first_offset)
+             > MC_(clo_ignore_range_below_sp__last_offset));
+   Addr range_lo = sp - MC_(clo_ignore_range_below_sp__first_offset);
+   Addr range_hi = sp - MC_(clo_ignore_range_below_sp__last_offset);
+   if (range_lo >= range_hi) {
+      /* Bizarre.  We have a wraparound situation.  What should we do? */
+      return False; // Play safe
+   } else {
+      /* This is the expected case. */
+      if (range_lo <= a && a + szB - 1 <= range_hi)
+         return True;
+      else
+         return False;
+   }
+   /*NOTREACHED*/
+   tl_assert(0);
+}
 
-static Bool parse_range ( const HChar** ppc, Addr* result1, Addr* result2 )
+/* Parse two Addrs (in hex) separated by a dash, or fail. */
+
+static Bool parse_Addr_pair ( const HChar** ppc, Addr* result1, Addr* result2 )
 {
    Bool ok = VG_(parse_Addr) (ppc, result1);
    if (!ok)
@@ -1132,6 +1155,23 @@ static Bool parse_range ( const HChar** ppc, Addr* result1, Addr* result2 )
       return False;
    (*ppc)++;
    ok = VG_(parse_Addr) (ppc, result2);
+   if (!ok)
+      return False;
+   return True;
+}
+
+/* Parse two UInts (32 bit unsigned, in decimal) separated by a dash,
+   or fail. */
+
+static Bool parse_UInt_pair ( const HChar** ppc, UInt* result1, UInt* result2 )
+{
+   Bool ok = VG_(parse_UInt) (ppc, result1);
+   if (!ok)
+      return False;
+   if (**ppc != '-')
+      return False;
+   (*ppc)++;
+   ok = VG_(parse_UInt) (ppc, result2);
    if (!ok)
       return False;
    return True;
@@ -1148,7 +1188,7 @@ static Bool parse_ignore_ranges ( const HChar* str0 )
    while (1) {
       Addr start = ~(Addr)0;
       Addr end   = (Addr)0;
-      Bool ok    = parse_range(ppc, &start, &end);
+      Bool ok    = parse_Addr_pair(ppc, &start, &end);
       if (!ok)
          return False;
       if (start > end)
@@ -5976,6 +6016,9 @@ KeepStacktraces MC_(clo_keep_stacktraces)     = KS_alloc_and_free;
 Int           MC_(clo_mc_level)               = 2;
 Bool          MC_(clo_show_mismatched_frees)  = True;
 Bool          MC_(clo_expensive_definedness_checks) = False;
+Bool          MC_(clo_ignore_range_below_sp)               = False;
+UInt          MC_(clo_ignore_range_below_sp__first_offset) = 0;
+UInt          MC_(clo_ignore_range_below_sp__last_offset)  = 0;
 
 static const HChar * MC_(parse_leak_heuristics_tokens) =
    "-,stdstring,length64,newarray,multipleinheritance";
@@ -6106,6 +6149,48 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
       }
    }
 
+   else if VG_STR_CLO(arg, "--ignore-range-below-sp", tmp_str) {
+      /* This seems at first a bit weird, but: in order to imply
+         a non-wrapped-around address range, the first offset needs to be
+         larger than the second one.  For example
+            --ignore-range-below-sp=8192,8189
+         would cause accesses to in the range [SP-8192, SP-8189] to be
+         ignored. */
+      UInt offs1 = 0, offs2 = 0;
+      Bool ok = parse_UInt_pair(&tmp_str, &offs1, &offs2);
+      // Ensure we used all the text after the '=' sign.
+      if (ok && *tmp_str != 0) ok = False;
+      if (!ok) {
+         VG_(message)(Vg_DebugMsg, 
+                      "ERROR: --ignore-range-below-sp: invalid syntax. "
+                      " Expected \"...=decimalnumber-decimalnumber\".\n");
+         return False;
+      }  
+      if (offs1 > 1000*1000 /*arbitrary*/ || offs2 > 1000*1000 /*ditto*/) {
+         VG_(message)(Vg_DebugMsg, 
+                      "ERROR: --ignore-range-below-sp: suspiciously large "
+                      "offset(s): %u and %u\n", offs1, offs2);
+         return False;
+      }
+      if (offs1 <= offs2) {
+         VG_(message)(Vg_DebugMsg, 
+                      "ERROR: --ignore-range-below-sp: invalid offsets "
+                      "(the first must be larger): %u and %u\n", offs1, offs2);
+         return False;
+      }
+      tl_assert(offs1 > offs2);
+      if (offs1 - offs2 > 4096 /*arbitrary*/) {
+         VG_(message)(Vg_DebugMsg, 
+                      "ERROR: --ignore-range-below-sp: suspiciously large "
+                      "range: %u-%u (size %u)\n", offs1, offs2, offs1 - offs2);
+         return False;
+      }
+      MC_(clo_ignore_range_below_sp) = True;
+      MC_(clo_ignore_range_below_sp__first_offset) = offs1;
+      MC_(clo_ignore_range_below_sp__last_offset)  = offs2;
+      return True;
+   }
+
    else if VG_BHEX_CLO(arg, "--malloc-fill", MC_(clo_malloc_fill), 0x00,0xFF) {}
    else if VG_BHEX_CLO(arg, "--free-fill",   MC_(clo_free_fill),   0x00,0xFF) {}
 
@@ -6163,8 +6248,11 @@ static void mc_print_usage(void)
 "                                     Use extra-precise definedness tracking [no]\n"
 "    --freelist-vol=<number>          volume of freed blocks queue     [20000000]\n"
 "    --freelist-big-blocks=<number>   releases first blocks with size>= [1000000]\n"
-"    --workaround-gcc296-bugs=no|yes  self explanatory [no]\n"
+"    --workaround-gcc296-bugs=no|yes  self explanatory [no].  Deprecated.\n"
+"                                     Use --ignore-range-below-sp instead.\n"
 "    --ignore-ranges=0xPP-0xQQ[,0xRR-0xSS]   assume given addresses are OK\n"
+"    --ignore-range-below-sp=<number>-<number>  do not report errors for\n"
+"                                     accesses at the given offsets below SP\n"
 "    --malloc-fill=<hexnumber>        fill malloc'd areas with given value\n"
 "    --free-fill=<hexnumber>          fill free'd areas with given value\n"
 "    --keep-stacktraces=alloc|free|alloc-and-free|alloc-then-free|none\n"
@@ -7667,12 +7755,23 @@ static void mc_post_clo_init ( void )
       MC_(clo_leak_check) = LC_Full;
    }
 
-   if (MC_(clo_freelist_big_blocks) >= MC_(clo_freelist_vol))
+   if (MC_(clo_freelist_big_blocks) >= MC_(clo_freelist_vol)
+       && VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {
       VG_(message)(Vg_UserMsg,
                    "Warning: --freelist-big-blocks value %lld has no effect\n"
                    "as it is >= to --freelist-vol value %lld\n",
                    MC_(clo_freelist_big_blocks),
                    MC_(clo_freelist_vol));
+   }
+
+   if (MC_(clo_workaround_gcc296_bugs)
+       && VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {
+      VG_(umsg)(
+         "Warning: --workaround-gcc296-bugs=yes is deprecated.\n"
+         "Warning: Instead use: --ignore-range-below-sp=1024-1\n"
+         "\n"
+      );
+   }
 
    tl_assert( MC_(clo_mc_level) >= 1 && MC_(clo_mc_level) <= 3 );
 

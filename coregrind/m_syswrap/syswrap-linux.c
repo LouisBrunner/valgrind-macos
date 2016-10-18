@@ -270,12 +270,12 @@ static void run_a_thread_NORETURN ( Word tidW )
 #elif defined(VGP_arm64_linux)
       asm volatile (
          "str  %w1, %0\n"     /* set tst->status = VgTs_Empty (32-bit store) */
-         "mov  x8,  %2\n"     /* set %r7 = __NR_exit */
-         "ldr  x0,  %3\n"     /* set %r0 = tst->os_state.exitcode */
+         "mov  x8,  %2\n"     /* set %x8 = __NR_exit */
+         "ldr  x0,  %3\n"     /* set %x0 = tst->os_state.exitcode */
          "svc  0x00000000\n"  /* exit(tst->os_state.exitcode) */
          : "=m" (tst->status)
          : "r" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode)
-         : "r0", "r7"
+         : "x0", "x8"
       );
 #elif defined(VGP_s390x_linux)
       asm volatile (

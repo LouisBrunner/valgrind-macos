@@ -13530,14 +13530,22 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       }
 
       case 0x5:  /* Load Doubleword Indexed Unaligned to Floating Point - LUXC1;
-                    MIPS32r2 */
+                    MIPS32r2 and MIPS64 */
          DIP("luxc1 f%u, r%u(r%u)", fd, rt, rs);
-         t0 = newTemp(Ity_I64);
-         t1 = newTemp(Ity_I64);
-         assign(t0, binop(Iop_Add64, getIReg(rs), getIReg(rt)));
-         assign(t1, binop(Iop_And64, mkexpr(t0),
-                                     mkU64(0xfffffffffffffff8ULL)));
-         putFReg(fd, load(Ity_F64, mkexpr(t1)));
+         if ((mode64 || VEX_MIPS_CPU_HAS_MIPS32R2(archinfo->hwcaps))
+             && fp_mode64) {
+            t0 = newTemp(ty);
+            t1 = newTemp(ty);
+            assign(t0, binop(mode64 ? Iop_Add64 : Iop_Add32,
+                             getIReg(rs), getIReg(rt)));
+            assign(t1, binop(mode64 ? Iop_Add64 : Iop_And32,
+                             mkexpr(t0),
+                             mode64 ? mkU64(0xfffffffffffffff8ULL)
+                                    : mkU32(0xfffffff8ULL)));
+            putFReg(fd, load(Ity_F64, mkexpr(t1)));
+         } else {
+            ILLEGAL_INSTRUCTON;
+         }
          break;
 
       case 0x8: {  /* Store Word Indexed from Floating Point - SWXC1 */
@@ -13563,11 +13571,20 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       case 0xD:  /* Store Doubleword Indexed Unaligned from Floating Point -
                     SUXC1; MIPS64 MIPS32r2 */
          DIP("suxc1 f%u, r%u(r%u)", fd, rt, rs);
-         t0 = newTemp(Ity_I64);
-         t1 = newTemp(Ity_I64);
-         assign(t0, binop(Iop_Add64, getIReg(rs), getIReg(rt)));
-         assign(t1, binop(Iop_And64, mkexpr(t0), mkU64(0xfffffffffffffff8ULL)));
-         store(mkexpr(t1), getFReg(fs));
+         if ((mode64 || VEX_MIPS_CPU_HAS_MIPS32R2(archinfo->hwcaps))
+             && fp_mode64) {
+            t0 = newTemp(ty);
+            t1 = newTemp(ty);
+            assign(t0, binop(mode64 ? Iop_Add64 : Iop_Add32,
+                             getIReg(rs), getIReg(rt)));
+            assign(t1, binop(mode64 ? Iop_Add64 : Iop_And32,
+                             mkexpr(t0),
+                             mode64 ? mkU64(0xfffffffffffffff8ULL)
+                                    : mkU32(0xfffffff8ULL)));
+            store(mkexpr(t1), getFReg(fs));
+         } else {
+            ILLEGAL_INSTRUCTON;
+         }
          break;
 
       case 0x0F: {

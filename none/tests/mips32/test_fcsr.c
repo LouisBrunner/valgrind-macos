@@ -1,3 +1,5 @@
+#if defined(__mips_hard_float)
+
 #include <stdio.h>
 
 int main ()
@@ -23,3 +25,8 @@ int main ()
    printf("FCSR::1: 0x%x, 2: 0x%x\n", out[0], out[1]);
    return 0;
 }
+#else
+int main() {
+   return 0;
+}
+#endif

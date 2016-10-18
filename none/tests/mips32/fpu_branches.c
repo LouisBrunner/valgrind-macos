@@ -1,3 +1,5 @@
+#if defined(__mips_hard_float)
+
 #include <stdio.h>
 
 #define MAX_ARR 24
@@ -314,4 +316,8 @@ int main()
    }
    return 0;
 }
-
+#else
+int main() {
+   return 0;
+}
+#endif

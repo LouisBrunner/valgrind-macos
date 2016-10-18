@@ -1,3 +1,5 @@
+#if defined(__mips_hard_float)
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -235,4 +237,8 @@ int main()
 
    return 0;
 }
-
+#else
+int main() {
+   return 0;
+}
+#endif

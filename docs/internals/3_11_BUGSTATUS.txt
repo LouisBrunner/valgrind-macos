@@ -340,7 +340,7 @@ Mon 17 Oct 16:50:15 CEST 2016
              val 15963 is a copy of trunk 15962
 
 
-TO MERGE (trunk -> 3_12_BRANCH unless otherwise indicated):
+MERGED (trunk -> 3_12_BRANCH unless otherwise indicated):
 
 15966 -> 15967 a missing helgrind test file
 15968 -> 15969 Add none/tests/ppc64/ppc64_helpers.h to noinst_HEADERS.
@@ -398,41 +398,51 @@ TO MERGE (trunk -> 3_12_BRANCH unless otherwise indicated):
 16005 mips: update svn:ignore list
 
 16006 -> 16022 dhat: add "tot-blocks-allocd" metric
+16018 -> 16047 mips: replace use of (d)addi with (d)addiu
+3257  -> 3264  Relax the overly-restrictive implementation of (T3) SUB{S}.W Rd,
+               SP, Rm, {shift}.  #354274
 
-16018  M mips: replace use of (d)addi with (d)addiu
-3257   M Relax the overly-restrictive implementation of (T3) SUB{S}.W Rd,
-         SP, Rm, {shift}.  #354274
 16023  Update 3_11_BUGSTATUS.txt
-16024  M Fix n-i-bz bug in auto free pool: a block using the last byte
-         of the meta pool was not auto-freed.
-16025  M Add a warning to the get/set_thread_area wrapper for bad info pointers.
-3258   M mips: remove support for mfc0/dmfc0
-16026  M mips32: fix the wrong offset for mmap2()
-3259   M s390: support RISBLG/RISBHG, MVCIN, LDE/LDER
-16027  M s390: support RISBLG/RISBHG, MVCIN, LDE/LDER
-16028  M s390/highword fix compile warning with some compilers
-16029  M actually test high-word by providing the plumbing...
-16030  M fix building the dfp testcase
-16031  M mips32: add pselect6 to the list of supported syscalls
-3260   M ISA 3.0 BE fixes for various new instructions
-16032  M ISA 3.0 BE testsuite fixes
-16033  M Fix some (small) leaks found by self-hosting valgrind
-16034  M Power configure fixes.
-16035  M Update NEWS file for bugzillas 369175 and 370265
-16036  M Fix corruption introduced by revision 16033
-16037  M Fix for missing ISA changes in HW cap stuff needs updating patch
-16038  M mips: clear fcc bits in fcsr after calling printf()
-3261   M mips: allow VEX to be compiled for soft-float
-16039  M mips: allow Valgrind to be compiled for soft-float
-3262   M mips: fix incorrect implementation of luxc1/suxc1 instructions
-16040  M mips32: add the test cases for luxc1/suxc1 instructions
-3263   M mips64: fix error introduced by r3262
-16041  M fix 369468 Remove quadratic metapool alg. using VG_(HT_remove_at_Iter)(VgHashTable *table)
-16042  M Clarify name and description/manual for meta mempool
-16043  M Introduce leak-pool-3.* back into EXTRA_DIST as they are not related
-to leak-autofreepool tests.  This is a follow up fix for r16042.
-16044  M Further fixes following fix of leak in 16033
-16045  M Follow up for r16044.  Fix compilation problem on Solaris.
+
+16024 -> 16048 Fix n-i-bz bug in auto free pool: a block using the last byte
+               of the meta pool was not auto-freed.
+16025 -> 16049 Add a warning to the get/set_thread_area wrapper
+               for bad info pointers.
+3258  -> 3265  mips: remove support for mfc0/dmfc0
+16026 -> 16050 mips32: fix the wrong offset for mmap2()
+3259  -> 3266  s390: support RISBLG/RISBHG, MVCIN, LDE/LDER
+16027 -> 16051 s390: support RISBLG/RISBHG, MVCIN, LDE/LDER
+16028 -> 16052 s390/highword fix compile warning with some compilers
+16029 -> 16053 actually test high-word by providing the plumbing...
+16030 -> 16054 fix building the dfp testcase
+16031 -> 16055 mips32: add pselect6 to the list of supported syscalls
+
+3260  -> 3267  ISA 3.0 BE fixes for various new instructions
+16032 -> 16056 ISA 3.0 BE testsuite fixes
+16034 -> 16057 Power configure fixes.
+16035 -> 16058 Update NEWS file for bugzillas 369175 and 370265
+16037 -> 16059 Fix for missing ISA changes in HW cap stuff needs updating patch
+
+16033 -> 16060 Fix some (small) leaks found by self-hosting valgrind
+16036 -> 16061 Fix corruption introduced by revision 16033
+16044 -> 16062 Further fixes following fix of leak in 16033
+16045 -> 16063 Follow up for r16044.  Fix compilation problem on Solaris.
+
+16038 -> 16064 mips: clear fcc bits in fcsr after calling printf()
+
+3261  -> 3268  mips: allow VEX to be compiled for soft-float
+16039 -> 16065 mips: allow Valgrind to be compiled for soft-float
+
+3262  -> 3269  mips: fix incorrect implementation of luxc1/suxc1 instructions
+3263  -> 3270  mips64: fix error introduced by r3262
+16040 -> 16066 mips32: add the test cases for luxc1/suxc1 instructions
+
+16041 -> 16067 fix 369468 Remove quadratic metapool alg.
+               using VG_(HT_remove_at_Iter)(VgHashTable *table)
+16042 -> 16068 Clarify name and description/manual for meta mempool
+16043 -> 16069 Introduce leak-pool-3.* back into EXTRA_DIST as they are not
+               related to leak-autofreepool tests.  This is a follow up
+               fix for r16042.
 
 (tracked up to and including 16045/3263)
 

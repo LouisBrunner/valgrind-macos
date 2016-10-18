@@ -3329,6 +3329,36 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
       return;
    }
 
+   /* --------- CCALL --------- */
+   if(e->tag == Iex_CCall) {
+      IRType ty = typeOfIRExpr(env->type_env,e);
+      Bool mode64 = env->mode64;
+
+      vassert(ty == e->Iex.CCall.retty); /* well-formedness of IR */
+
+      /* be very restrictive for now.  Only 32-bit ints allowed for
+         args, and 32 bits or host machine word for return type. */
+      vassert(!(ty == Ity_I32 || (mode64 && ty == Ity_I64)));
+
+      /* Marshal args, do the call, clear stack. */
+      UInt   addToSp = 0;
+      RetLoc rloc    = mk_RetLoc_INVALID();
+      doHelperCall( &addToSp, &rloc, env, NULL/*guard*/,
+                    e->Iex.CCall.cee, e->Iex.CCall.retty, e->Iex.CCall.args,
+                    IEndianess );
+      vassert(is_sane_RetLoc(rloc));
+
+      vassert(rloc.pri == RLPri_2Int);
+      vassert(addToSp == 0);
+
+      /* GPR3 now holds the destination address from Pin_Goto */
+      HReg r_dst = newVRegI(env);
+      addInstr(env, mk_iMOVds_RR(r_dst, hregPPC_GPR3(mode64)));
+      *rHi = r_dst;
+      *rLo = r_dst;
+      return;
+   }
+
    /* 64-bit ITE */
    if (e->tag == Iex_ITE) { // VFD
       HReg e0Lo, e0Hi, eXLo, eXHi;

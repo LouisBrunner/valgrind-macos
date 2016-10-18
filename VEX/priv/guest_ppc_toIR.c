@@ -4354,14 +4354,39 @@ static IRExpr * BCDstring_zero (IRExpr *src)
    IRTemp tsrc = newTemp( Ity_V128 );
    assign( tsrc, src);
 
-   return mkAND1( binop( Iop_CmpEQ64,
-                          mkU64( 0 ),
-                          unop( Iop_V128HIto64,
-                                mkexpr( tsrc ) ) ),
-                   binop( Iop_CmpEQ64,
-                          mkU64( 0 ),
-                          unop( Iop_V128to64,
-                                mkexpr( tsrc ) ) ) );
+   if ( mode64 ) {
+      return mkAND1( binop( Iop_CmpEQ64,
+                            mkU64( 0 ),
+                            unop( Iop_V128HIto64,
+                                  mkexpr( tsrc ) ) ),
+                     binop( Iop_CmpEQ64,
+                            mkU64( 0 ),
+                            unop( Iop_V128to64,
+                                  mkexpr( tsrc ) ) ) );
+   } else {
+      /* make this work in 32-bit mode */
+      return mkAND1(
+                    mkAND1( binop( Iop_CmpEQ32,
+                                   mkU32( 0 ),
+                                   unop( Iop_64HIto32,
+                                         unop( Iop_V128HIto64,
+                                               mkexpr( tsrc ) ) ) ),
+                            binop( Iop_CmpEQ32,
+                                   mkU32( 0 ),
+                                   unop( Iop_64to32,
+                                         unop( Iop_V128HIto64,
+                                               mkexpr( tsrc ) ) ) ) ),
+                    mkAND1( binop( Iop_CmpEQ32,
+                                   mkU32( 0 ),
+                                   unop( Iop_64HIto32,
+                                         unop( Iop_V128to64,
+                                               mkexpr( tsrc ) ) ) ),
+                            binop( Iop_CmpEQ32,
+                                   mkU32( 0 ),
+                                   unop( Iop_64to32,
+                                         unop( Iop_V128to64,
+                                               mkexpr( tsrc ) ) ) ) ) );
+   }
 }
 
 static IRExpr * check_BCD_round (IRExpr *src, IRTemp shift)
@@ -4591,6 +4616,64 @@ static IRExpr * convert_from_national ( const VexAbiInfo* vbi, IRExpr *src ) {
                                          unop( Iop_V128to64,
                                                src ) ) ) );
 
+   return mkexpr( result );
+}
+
+static IRExpr * UNSIGNED_CMP_GT_V128 ( IRExpr *vA, IRExpr *vB ) {
+   /* This function does an unsigned compare of two V128 values. The
+    * function is for use in 32-bit mode only as it is expensive.  The
+    * issue is that compares (GT, LT, EQ) are not supported for operands
+    * larger then 32-bits when running in 32-bit mode.  The function returns
+    * a 1-bit expression, 1 for TRUE and 0 for FALSE.
+    */
+   IRTemp vA_word0 = newTemp( Ity_I32);
+   IRTemp vA_word1 = newTemp( Ity_I32);
+   IRTemp vA_word2 = newTemp( Ity_I32);
+   IRTemp vA_word3 = newTemp( Ity_I32);
+   IRTemp vB_word0 = newTemp( Ity_I32);
+   IRTemp vB_word1 = newTemp( Ity_I32);
+   IRTemp vB_word2 = newTemp( Ity_I32);
+   IRTemp vB_word3 = newTemp( Ity_I32);
+
+   IRTemp eq_word1 = newTemp( Ity_I1);
+   IRTemp eq_word2 = newTemp( Ity_I1);
+   IRTemp eq_word3 = newTemp( Ity_I1);
+
+
+   IRExpr *gt_word0, *gt_word1, *gt_word2, *gt_word3;
+   IRExpr *eq_word3_2, *eq_word3_2_1;
+   IRTemp result = newTemp( Ity_I1 );
+
+   assign( vA_word0, unop( Iop_64to32, unop( Iop_V128to64, vA ) ) );
+   assign( vA_word1, unop( Iop_64HIto32, unop( Iop_V128to64, vA ) ) );
+   assign( vA_word2, unop( Iop_64to32, unop( Iop_V128HIto64, vA ) ) );
+   assign( vA_word3, unop( Iop_64HIto32, unop( Iop_V128HIto64, vA ) ) );
+
+   assign( vB_word0, unop( Iop_64to32, unop( Iop_V128to64, vB ) ) );
+   assign( vB_word1, unop( Iop_64HIto32, unop( Iop_V128to64, vB ) ) );
+   assign( vB_word2, unop( Iop_64to32, unop( Iop_V128HIto64, vB ) ) );
+   assign( vB_word3, unop( Iop_64HIto32, unop( Iop_V128HIto64, vB ) ) );
+
+   assign( eq_word3, binop( Iop_CmpEQ32, mkexpr( vA_word3 ),
+                            mkexpr( vB_word3 ) ) );
+   assign( eq_word2, binop( Iop_CmpEQ32, mkexpr( vA_word2 ),
+                            mkexpr( vB_word2 ) ) );
+   assign( eq_word1, binop( Iop_CmpEQ32, mkexpr( vA_word1 ),
+                            mkexpr( vB_word1 ) ) );
+
+   gt_word3 = binop( Iop_CmpLT32U, mkexpr( vB_word3 ), mkexpr( vA_word3 ) );
+   gt_word2 = binop( Iop_CmpLT32U, mkexpr( vB_word2 ), mkexpr( vA_word2 ) );
+   gt_word1 = binop( Iop_CmpLT32U, mkexpr( vB_word1 ), mkexpr( vA_word1 ) );
+   gt_word0 = binop( Iop_CmpLT32U, mkexpr( vB_word0 ), mkexpr( vA_word0 ) );
+
+   eq_word3_2   = mkAND1( mkexpr( eq_word3 ), mkexpr( eq_word2 ) );
+   eq_word3_2_1 = mkAND1( mkexpr( eq_word1 ), eq_word3_2 );
+
+   assign( result, mkOR1(
+                         mkOR1( gt_word3,
+                                mkAND1( mkexpr( eq_word3 ), gt_word2 ) ),
+                         mkOR1( mkAND1( eq_word3_2, gt_word1 ),
+                                mkAND1( eq_word3_2_1, gt_word0 ) ) ) );
    return mkexpr( result );
 }
 
@@ -25122,6 +25205,8 @@ static IRExpr * bcd_sign_code_adjust( UInt ps, IRExpr * tmp)
     * because passing a constant via triop() breaks the vbit-test test.  The
     * vbit-tester assumes it can set non-zero shadow bits for the triop()
     * arguments.  Thus they have to be expressions not a constant.
+    * Use 32-bit compare instructiions as 64-bit compares are not supported
+    * in 32-bit mode.
     */
    IRTemp mask  = newTemp(Ity_I64);
    IRExpr *rtn;
@@ -25131,11 +25216,14 @@ static IRExpr * bcd_sign_code_adjust( UInt ps, IRExpr * tmp)
       rtn = tmp;
 
    } else {
-      /* check if lower four bits are 0b1100, if so, change to 0b1111 */
+      /* Check if lower four bits are 0b1100, if so, change to 0b1111 */
+      /* Make this work in 32-bit mode using only 32-bit compares */
       assign( mask, unop( Iop_1Sto64,
-                          binop( Iop_CmpEQ64, mkU64( 0xC ),
-                                 binop( Iop_And64, mkU64( 0xF ),
-                                        unop( Iop_V128to64, tmp ) ) ) ) );
+                          binop( Iop_CmpEQ32, mkU32( 0xC ),
+                                 binop( Iop_And32, mkU32( 0xF ),
+                                        unop( Iop_64to32,
+                                              unop( Iop_V128to64, tmp )
+                                              ) ) ) ) );
       rtn = binop( Iop_64HLtoV128,
                    unop( Iop_V128HIto64, tmp ),
                    binop( Iop_Or64,
@@ -25297,6 +25385,10 @@ static Bool dis_av_bcd ( UInt theInstr, const VexAbiInfo* vbi )
    case 0x1:   // bcdadd.
    case 0x41:  // bcdsub.
       {
+         /* NOTE 64 bit compares are not supported in 32-bit mode.  Use
+          * 32-bit compares only.
+          */
+
          IRExpr *sign, *res_smaller;
          IRExpr *signA, *signB, *sign_digitA, *sign_digitB;
          IRExpr *zeroA, *zeroB, *posA, *posB, *negA, *negB;
@@ -25316,7 +25408,6 @@ static Bool dis_av_bcd ( UInt theInstr, const VexAbiInfo* vbi )
          }
 
          putVReg( vRT_addr, mkexpr( dst ) );
-
          /* set CR field 6 */
          /* result */
          zero = BCDstring_zero( binop( Iop_AndV128,
@@ -25324,27 +25415,28 @@ static Bool dis_av_bcd ( UInt theInstr, const VexAbiInfo* vbi )
                                               mkU64( 0xFFFFFFFFFFFFFFFF ),
                                               mkU64( 0xFFFFFFFFFFFFFFF0 ) ),
                                        mkexpr(dst) ) );  // ignore sign
-         sign_digit = binop( Iop_And64, mkU64( 0xF ),
-                             unop( Iop_V128to64, mkexpr( dst ) ) );
 
-         sign = mkOR1( binop( Iop_CmpEQ64,
+         sign_digit = binop( Iop_And32, mkU32( 0xF ),
+                             unop( Iop_64to32,
+                                   unop( Iop_V128to64, mkexpr( dst ) ) ) );
+
+         sign = mkOR1( binop( Iop_CmpEQ32,
                               sign_digit,
-                              mkU64 ( 0xB ) ),
-                       binop( Iop_CmpEQ64,
+                              mkU32 ( 0xB ) ),
+                       binop( Iop_CmpEQ32,
                               sign_digit,
-                              mkU64 ( 0xD ) ) );
+                              mkU32 ( 0xD ) ) );
          neg = mkAND1( sign, mkNOT1( zero ) );
 
          /* Pos position AKA gt = 1 if ((not neg) & (not eq zero)) */
          pos = mkAND1( mkNOT1( sign ), mkNOT1( zero ) );
-
-         valid =
-            unop( Iop_64to32,
-                  binop( Iop_And64,
-                         is_BCDstring128( vbi,
-                                          /* Signed */True, mkexpr( vA ) ),
-                         is_BCDstring128( vbi,
-                                          /* Signed */True, mkexpr( vB ) ) ) );
+         valid =  unop( Iop_64to32,
+                        binop( Iop_And64,
+                               is_BCDstring128( vbi,
+                                                /*Signed*/True, mkexpr( vA ) ),
+                               is_BCDstring128( vbi,
+                                                /*Signed*/True, mkexpr( vB ) )
+                                                ) );
 
          /* src A */
          zeroA = BCDstring_zero( binop( Iop_AndV128,
@@ -25352,17 +25444,17 @@ static Bool dis_av_bcd ( UInt theInstr, const VexAbiInfo* vbi )
                                                mkU64( 0xFFFFFFFFFFFFFFFF ),
                                                mkU64( 0xFFFFFFFFFFFFFFF0 ) ),
                                         mkexpr( vA ) ) );  // ignore sign
-         sign_digitA = binop( Iop_And64, mkU64( 0xF ),
-                              unop( Iop_V128to64, mkexpr( vA ) ) );
+         sign_digitA = binop( Iop_And32, mkU32( 0xF ),
+                              unop( Iop_64to32,
+                                    unop( Iop_V128to64, mkexpr( vA ) ) ) );
 
-         signA = mkOR1( binop( Iop_CmpEQ64,
+         signA = mkOR1( binop( Iop_CmpEQ32,
                                sign_digitA,
-                               mkU64 ( 0xB ) ),
-                        binop( Iop_CmpEQ64,
+                               mkU32 ( 0xB ) ),
+                        binop( Iop_CmpEQ32,
                                sign_digitA,
-                               mkU64 ( 0xD ) ) );
+                               mkU32 ( 0xD ) ) );
          negA = mkAND1( signA, mkNOT1( zeroA ) );
-
          /* Pos position AKA gt = 1 if ((not neg) & (not eq zero)) */
          posA = mkAND1( mkNOT1( signA ), mkNOT1( zeroA ) );
 
@@ -25372,22 +25464,35 @@ static Bool dis_av_bcd ( UInt theInstr, const VexAbiInfo* vbi )
                                                mkU64( 0xFFFFFFFFFFFFFFFF ),
                                                mkU64( 0xFFFFFFFFFFFFFFF0 ) ),
                                         mkexpr( vB ) ) );  // ignore sign
-         sign_digitB = binop( Iop_And64, mkU64( 0xF ),
-                              unop( Iop_V128to64, mkexpr( vB ) ) );
+         sign_digitB = binop( Iop_And32, mkU32( 0xF ),
+                              unop( Iop_64to32,
+                                    unop( Iop_V128to64, mkexpr( vB ) ) ) );
 
-         signB = mkOR1( binop( Iop_CmpEQ64,
+         signB = mkOR1( binop( Iop_CmpEQ32,
                                sign_digitB,
-                               mkU64 ( 0xB ) ),
-                        binop( Iop_CmpEQ64,
+                               mkU32 ( 0xB ) ),
+                        binop( Iop_CmpEQ32,
                                sign_digitB,
-                               mkU64 ( 0xD ) ) );
+                               mkU32 ( 0xD ) ) );
          negB = mkAND1( signB, mkNOT1( zeroB ) );
+
 
          /* Pos position AKA gt = 1 if ((not neg) & (not eq zero)) */
          posB = mkAND1( mkNOT1( signB ), mkNOT1( zeroB ) );
 
-         res_smaller = mkAND1( CmpGT128U( mkexpr( vA ), mkexpr( dst ) ),
-                               CmpGT128U( mkexpr( vB ), mkexpr( dst ) ) );
+
+         if (mode64) {
+	    res_smaller = mkAND1( CmpGT128U( mkexpr( vA ), mkexpr( dst ) ),
+				  CmpGT128U( mkexpr( vB ), mkexpr( dst ) ) );
+
+         } else {
+            /* Have to do this with 32-bit compares, expensive */
+            res_smaller = mkAND1( UNSIGNED_CMP_GT_V128( mkexpr( vA ),
+                                                        mkexpr( dst ) ),
+                                  UNSIGNED_CMP_GT_V128( mkexpr( vB ),
+                                                        mkexpr( dst ) ) );
+         }
+
          if ( opc2 == 0x1) {
             /* Overflow for Add can only occur if the signs of the operands
              * are the same and the two operands are non-zero.  On overflow,

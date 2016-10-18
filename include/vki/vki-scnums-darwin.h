@@ -756,6 +756,32 @@
 			/* 499  */
 #endif /* DARWIN_VERS >= DARWIN_10_11 */
 
+// TODO Update with macOS 10.12 kernel (xnu) source code release
+#if DARWIN_VERS >= DARWIN_10_12
+			/* 500  */
+			/* 501  */
+			/* 502  */
+			/* 503  */
+			/* 504  */
+			/* 505  */
+			/* 506  */
+			/* 507  */
+			/* 508  */
+			/* 509  */
+			/* 510  */
+			/* 511  */
+			/* 512  */
+			/* 513  */
+			/* 514  */
+			/* 515  */
+			/* 516  */
+			/* 517  */
+			/* 518  */
+			/* 519  */
+			/* 520  */
+			/* 521  */
+#endif /* DARWIN_VERS >= DARWIN_10_12 */
+
 #if DARWIN_VERS < DARWIN_10_6
 #define	__NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(427)
 #elif DARWIN_VERS < DARWIN_10_7
@@ -768,6 +794,9 @@
 #define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(490)
 #elif DARWIN_VERS == DARWIN_10_11
 #define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(500)
+#elif DARWIN_VERS == DARWIN_10_12
+// TODO Confirm against final release
+#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(522)
 #else
 #error unknown darwin version
 #endif

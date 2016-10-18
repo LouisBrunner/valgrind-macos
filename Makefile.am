@@ -47,6 +47,7 @@ SUPP_FILES = \
 	darwin9.supp darwin9-drd.supp \
 	darwin10.supp darwin10-drd.supp \
 	darwin11.supp darwin12.supp darwin13.supp darwin14.supp darwin15.supp \
+	darwin16.supp \
 	bionic.supp \
 	solaris11.supp solaris12.supp
 DEFAULT_SUPP_FILES = @DEFAULT_SUPP@

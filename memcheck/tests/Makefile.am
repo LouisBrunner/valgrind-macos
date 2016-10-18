@@ -153,13 +153,11 @@ EXTRA_DIST = \
 	leak-pool-0.vgtest leak-pool-0.stderr.exp \
 	leak-pool-1.vgtest leak-pool-1.stderr.exp \
 	leak-pool-2.vgtest leak-pool-2.stderr.exp \
-	leak-pool-3.vgtest leak-pool-3.stderr.exp \
 	leak-pool-4.vgtest leak-pool-4.stderr.exp \
 	leak-pool-5.vgtest leak-pool-5.stderr.exp \
 	leak-autofreepool-0.vgtest leak-autofreepool-0.stderr.exp \
 	leak-autofreepool-1.vgtest leak-autofreepool-1.stderr.exp \
 	leak-autofreepool-2.vgtest leak-autofreepool-2.stderr.exp \
-	leak-autofreepool-3.vgtest leak-autofreepool-3.stderr.exp \
 	leak-autofreepool-4.vgtest leak-autofreepool-4.stderr.exp \
 	leak-autofreepool-5.vgtest leak-autofreepool-5.stderr.exp \
 	leak-autofreepool-6.vgtest leak-autofreepool-6.stderr.exp \

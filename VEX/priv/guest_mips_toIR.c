@@ -13538,7 +13538,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             t1 = newTemp(ty);
             assign(t0, binop(mode64 ? Iop_Add64 : Iop_Add32,
                              getIReg(rs), getIReg(rt)));
-            assign(t1, binop(mode64 ? Iop_Add64 : Iop_And32,
+            assign(t1, binop(mode64 ? Iop_And64 : Iop_And32,
                              mkexpr(t0),
                              mode64 ? mkU64(0xfffffffffffffff8ULL)
                                     : mkU32(0xfffffff8ULL)));
@@ -13577,7 +13577,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             t1 = newTemp(ty);
             assign(t0, binop(mode64 ? Iop_Add64 : Iop_Add32,
                              getIReg(rs), getIReg(rt)));
-            assign(t1, binop(mode64 ? Iop_Add64 : Iop_And32,
+            assign(t1, binop(mode64 ? Iop_And64 : Iop_And32,
                              mkexpr(t0),
                              mode64 ? mkU64(0xfffffffffffffff8ULL)
                                     : mkU32(0xfffffff8ULL)));

@@ -365,7 +365,9 @@ void* VG_(HT_Next)(VgHashTable *table)
    vg_assert(table);
    /* See long comment on HT_Next prototype in pub_tool_hashtable.h.
       In short if this fails, it means the caller tried to modify the
-      table whilst iterating over it, which is a bug. */
+      table whilst iterating over it, which is a bug.
+      One exception: HT_remove_at_Iter can remove the current entry and
+      leave the iterator in a valid state for HT_Next. */
    vg_assert(table->iterOK);
 
    if (table->iterNode && table->iterNode->next) {
@@ -381,6 +383,37 @@ void* VG_(HT_Next)(VgHashTable *table)
       }
    }
    return NULL;
+}
+
+void VG_(HT_remove_at_Iter)(VgHashTable *table)
+{
+   vg_assert(table);
+   vg_assert(table->iterOK);
+   vg_assert(table->iterNode);
+
+   const UInt curChain = table->iterChain - 1; // chain of iterNode.
+   
+
+   if (table->chains[curChain] == table->iterNode) {
+      /* iterNode is the first of its chain -> remove it from the chain. */
+      table->chains[curChain] = table->iterNode->next;
+      /* Setup the iterator to visit first node of curChain: */
+      table->iterNode  = NULL;
+      table->iterChain = curChain;
+   } else {
+      /* iterNode is somewhere inside curChain chain */
+      VgHashNode* prev = table->chains[curChain];
+
+      while (prev->next != table->iterNode)
+         prev = prev->next;
+      /* Remove iterNode from the chain. */
+      prev->next = table->iterNode->next;
+      /* Setup the iterator to visit prev->next, which is the node
+         that was after the deleted node. */
+      table->iterNode = prev;
+   }
+
+   table->n_elements--;
 }
 
 void VG_(HT_destruct)(VgHashTable *table, void(*freenode_fn)(void*))

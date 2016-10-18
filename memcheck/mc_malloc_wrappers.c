@@ -681,7 +681,6 @@ static void free_mallocs_in_mempool_block (MC_Mempool* mp,
 {
    MC_Chunk *mc;
    ThreadId tid;
-   Bool found;
 
    tl_assert(mp->auto_free);
 
@@ -693,23 +692,18 @@ static void free_mallocs_in_mempool_block (MC_Mempool* mp,
 
    tid = VG_(get_running_tid)();
 
-   do {
-      found = False;
+   VG_(HT_ResetIter)(MC_(malloc_list));
+   while ( (mc = VG_(HT_Next)(MC_(malloc_list))) ) {
+      if (mc->data >= StartAddr && mc->data + mc->szB <= EndAddr) {
+	 if (VG_(clo_verbosity) > 2) {
+	    VG_(message)(Vg_UserMsg, "Auto-free of 0x%lx size=%lu\n",
+			    mc->data, (mc->szB + 0UL));
+	 }
 
-      VG_(HT_ResetIter)(MC_(malloc_list));
-      while (!found && (mc = VG_(HT_Next)(MC_(malloc_list))) ) {
-         if (mc->data >= StartAddr && mc->data + mc->szB <= EndAddr) {
-            if (VG_(clo_verbosity) > 2) {
-               VG_(message)(Vg_UserMsg, "Auto-free of 0x%lx size=%lu\n",
-                               mc->data, (mc->szB + 0UL));
-            }
-
-            mc = VG_(HT_remove) ( MC_(malloc_list), (UWord) mc->data);
-            die_and_free_mem(tid, mc, mp->rzB);
-            found = True;
-         }
+	 VG_(HT_remove_at_Iter)(MC_(malloc_list));
+	 die_and_free_mem(tid, mc, mp->rzB);
       }
-   } while (found);
+   }
 }
 
 void MC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed,

@@ -1,5 +1,6 @@
 #if defined(__mips_hard_float)
-
+#include <setjmp.h>
+#include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -13,6 +14,18 @@ unsigned int mem[] = {
    0x42026580, 0xB750E388,
    0x3E45798E, 0xE2308C3A,
    0x3FBF9ADD, 0x3746F65F
+};
+
+long long meml[] = {
+   0x236457894095A266, 0x7777777766666666,
+   0xBFF00000aaaaccde, 0x0004563217800000,
+   0x3FF0556644770000, 0x0002255889900000,
+   0x25254123698a2e2b, 0x21a2b3d6f62d2d2a,
+   0xFFaabb22ccFFFFFF, 0x542698eeFFFFFFFF,
+   0x41D2658041D26580, 0xB487E5C9B487E5C9,
+   0x420774411aa26580, 0xaabbccddB750E388,
+   0xffffeeee3E45798E, 0xccccccccE2308C3A,
+   0x123abb983FBF9ADD, 0x002255443746F65F
 };
 
 float fs_f[] = {
@@ -118,6 +131,22 @@ float mem1f[] = {
           instruction, (uint32_t)out, (uint32_t)(out >> 32));    \
 }
 
+// luxc1 $f0, $a3($v0)
+#define TESTINSN6LOADlu(instruction, indexVal, fd, index, base)  \
+{                                                                \
+   uint64_t out;                                                 \
+   __asm__ volatile(                                             \
+      "move $" #base ", %0\n\t"                                  \
+      "li $" #index ", " #indexVal"\n\t"                         \
+      instruction "\n\t"                                         \
+      "sdc1 $"#fd ", 0(%1)"                                      \
+      : : "r" (meml), "r" (&out)                                 \
+      : #base, #index, "$"#fd, "memory"                          \
+   );                                                            \
+   printf("%s :: ft lo: 0x%x, ft hi: 0x%x\n",                    \
+          instruction, (uint32_t)out, (uint32_t)(out >> 32));    \
+}
+
 // sdc1 $f0, 0($t0)
 #define TESTINST1(offset)                                        \
 {                                                                \
@@ -158,6 +187,28 @@ float mem1f[] = {
           out, out1);                                            \
 }
 
+// SUXC1 $f0, $t2($t0)
+#define TESTINST1b(offset, unligned_offset)                      \
+{                                                                \
+   unsigned int out;                                             \
+   unsigned int out1;                                            \
+   __asm__ volatile(                                             \
+      "move $t0, %2\n\t"                                         \
+      "move $t1, %3\n\t"                                         \
+      "li $t2, "#unligned_offset"\n\t"                           \
+      "ldc1 $f0, "#offset"($t1)\n\t"                             \
+      "suxc1 $f0, $t2($t0) \n\t"                                 \
+      "lw %0, "#offset"($t0)\n\t"                                \
+      "addi $t0, $t0, 4 \n\t"                                    \
+      "lw %1, "#offset"($t0)\n\t"                                \
+      : "=r" (out), "=r" (out1)                                  \
+      : "r" (mem1), "r" (fs_d)                                   \
+      : "t2", "t1", "t0", "$f0", "memory"                        \
+   );                                                            \
+   printf("suxc1 $f0, #t2($t0) :: out: 0x%x : out1: 0x%x\n",     \
+          out, out1);                                            \
+}
+
 // swc1 $f0, 0($t0)
 #define TESTINST2(offset)                                        \
 {                                                                \
@@ -193,6 +244,19 @@ float mem1f[] = {
    );                                                            \
    printf("swxc1 $f0, 0($t0) :: out: 0x%x\n",                    \
           out);                                                  \
+}
+
+#define TEST_FPU64                \
+   __asm__ __volatile__(          \
+      "cvt.l.s $f0, $f0"  "\n\t"  \
+      :                           \
+      :                           \
+      : "$f0"                     \
+   );
+
+static void handler(int sig)
+{
+   exit(0);
 }
 
 void ppMem(double *m, int len)
@@ -405,6 +469,66 @@ int main()
    ppMemF(mem1f, 16);
 #endif
 
+#if (__mips==32) && (__mips_isa_rev>=2) && (__mips_fpr==64 || __mips_fpr==xx)
+   signal(SIGILL, handler);
+   /* Test fpu64 mode. */
+   TEST_FPU64;
+
+   printf("luxc1\n");
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 0, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 8, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 16, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 24, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 32, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 40, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 48, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 56, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 64, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 0, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 8, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 16, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 24, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 32, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 40, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 48, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 56, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 64, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 0, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 8, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 16, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 24, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 32, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 40, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 48, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 56, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 64, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 0, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 8, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 16, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 24, f0, a3, v0);
+   TESTINSN6LOADlu("luxc1 $f0, $a3($v0)", 32, f0, a3, v0);
+
+   printf("SUXC1\n");
+   TESTINST1b(0, 0);
+   TESTINST1b(0, 1);
+   TESTINST1b(8, 8);
+   TESTINST1b(8, 9);
+   TESTINST1b(16, 16);
+   TESTINST1b(16, 17);
+   TESTINST1b(24, 24);
+   TESTINST1b(24, 25);
+   TESTINST1b(32, 32);
+   TESTINST1b(32, 35);
+   TESTINST1b(40, 40);
+   TESTINST1b(40, 42);
+   TESTINST1b(48, 48);
+   TESTINST1b(48, 50);
+   TESTINST1b(56, 56);
+   TESTINST1b(56, 60);
+   TESTINST1b(64, 64);
+   TESTINST1b(64, 67);
+   ppMem(mem1, 16);
+#endif
    return 0;
 }
 #else

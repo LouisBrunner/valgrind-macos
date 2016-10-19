@@ -4210,7 +4210,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
          HReg tmp = newVRegV(env);
          PPCAMode* zero_r1 = PPCAMode_IR( 0, StackFramePtr(env->mode64) );
          PPCAMode* eight_r1 = PPCAMode_IR( 8, StackFramePtr(env->mode64) );
-         PPCAvFpOp fpop = Pavfp_INVALID;
+         PPCFpOp fpop = Pfp_INVALID;
 
          if (FPU_rounding_mode_isOdd(e->Iex.Binop.arg1)) {
             /* use rounding mode specified by RN. Issue inst with R0 = 0 */
@@ -4495,7 +4495,7 @@ static HReg iselFp128Expr( ISelEnv* env, IRExpr* e, IREndness IEndianess )
 static HReg iselFp128Expr_wrk( ISelEnv* env, IRExpr* e, IREndness IEndianess)
 {
    Bool mode64 = env->mode64;
-   PPCAvFpOp fpop = Pavfp_INVALID;
+   PPCFpOp fpop = Pfp_INVALID;
    IRType  ty = typeOfIRExpr(env->type_env,e);
 
    vassert(e);

@@ -51,10 +51,6 @@ n-i-bz  Remove limit on strd's negative immediates
 
 === VEX/mips ===========================================================
 
-356112  mips: replace addi with addiu
-
-366079  FPXX Support for MIPS32 Valgrind
-
 === VEX/ppc ============================================================
 
 361405  disInstr(ppc): unhandled instruction: 0xFF81010C
@@ -82,8 +78,7 @@ n-i-bz  Remove limit on strd's negative immediates
 359705  memcheck causes segfault on a dynamically-linked test from
         rustlang's test suite on i686
 360429  Warning: noted but unhandled ioctl 0x530d with no size/direction hints.
-361615  Inconsistent termination when an instrumented multithreaded process
-        is terminated by signal
+        (has patch, should take)
 361726  WARNING:unhandled syscall on ppc64
 361770  Missing F_ADD_SEALS
 362892  test apk in android5.0.2,after fix the bug 344802,android log
@@ -125,7 +120,6 @@ n-i-bz  Remove limit on strd's negative immediates
 364279  False "Uninitialized" on atomic_compare_exchange
 366035  valgrind misses buffer overflow, segfaults in malloc in localtime
 366817  VALGRIND_MEMPOOL_CHANGE has a performance bug
-367995  Integration of memcheck with custom memory allocator
 368507  valgrind throws std::bad_alloc on memory allocations larger than 34255421416 bytes
 
 === Tools/DRD ==========================================================
@@ -157,17 +151,10 @@ n-i-bz  Remove limit on strd's negative immediates
 
 === other/x86 ==========================================================
 
-368120  x86_linux asm _start functions do not keep 16-byte aligned stack pointer
-
 === other/mips =========================================================
-
-351282  valgrind 3.10.1 MIPS softfloat build broken with GCC 4.9.3 /
-        binutils 2.25.1
 
 351692  Dumps created by valgrind are not readable by gdb
         [mips32 specific?]
-
-352197  mips: mmap2() not wrapped correctly for page size > 4096
 
 === other/ppc ==========================================================
 
@@ -179,10 +166,9 @@ n-i-bz  Remove limit on strd's negative immediates
         core, : at 0x4000E7C: ??? (in /lib/ld-uClibc.so.0)
 
 368529  Android arm target link error, missing atexit and pthread_atfork
+        (should take patch)
 
 === other/arm64 ========================================================
-
-368823  run_a_thread_NORETURN assembly code typo for VGP_arm64_linux target
 
 === other/s390 =========================================================
 
@@ -237,7 +223,6 @@ n-i-bz  Remove limit on strd's negative immediates
         [Possible V memory corruption?]
 359249  valgrind unable to load 64-bit linux executable
         linked with -mcmodel=medium
-360571  Error about the Android Runtime reading below the stack pointer on ARM
 362223  valgrind: m_commandline.c:79 (read_dot_valgrindrc):
         Assertion 'n >= 0 && n <= stat_buf.size+1' failed.
 362680  --error-exitcode not honored when file descriptor leaks are found
@@ -245,6 +230,7 @@ n-i-bz  Remove limit on strd's negative immediates
 === Uncategorised/build ================================================
 
 358697  valgrind.h: Some code remains even when defining NVALGRIND
+        (we should fix this)
 359202  Add musl libc configure/compile
 359920  Configure fails with relative DESTDIR
 362033  undeclared identifier build failures for getpid(), usleep(),
@@ -265,9 +251,6 @@ n-i-bz  Remove limit on strd's negative immediates
 
 * mention that x86-linux is deprecated
 
-* the mempool changes (367995) are still under discussion
-  (PhilippeW, dev list, 6 Oct 2016) and may need further cleanup
-
 ========================================================================
 ========================================================================
 ========================================================================
@@ -279,7 +262,8 @@ Thu 15 Sep 12:55:21 CEST 2016
 368864  WARNING: unhandled arm64-linux syscall: 262
 368865  WARNING: unhandled arm64-linux syscall: 272
 368866  WARNING: unhandled arm64-linux syscall: 238
-368868  disInstr(arm64): unhandled instruction 0xD53BE000 = cntfrq_el0 (ARMv8) 
+368868  disInstr(arm64): unhandled instruction 0xD53BE000 = cntfrq_el0 (ARMv8)
+        (should fix this for 3.12.1)
 368873  Please add FreeBSD to supported OS list
 368913  WARNING: unhandled arm64-linux syscall: 117
 368914  WARNING: unhandled arm64-linux syscall: 142
@@ -306,9 +290,6 @@ Thu 15 Sep 12:55:21 CEST 2016
 369034  WARNING: unhandled amd64-linux syscall: 136 (ustat)
 369053  AMD64 fma4 instructions missing 256 bit support
 
-369264  Fedora 24 i686 and vex x86->IR:
-        unhandled instruction bytes: 0xC5 0xF8 0x10 0x3 (32 bit AVX) -> wontfix
-
 369409  null pointer dereference  in vgPlain_do_syscall
         possibly a dup of (fixed) 353370
  
@@ -326,19 +307,21 @@ Thu 15 Sep 12:55:21 CEST 2016
 
 370028  Reduce the number of compiler warnings on MIPS platforms
 370635  arm64 missing syscall getcpu
-370941  Investigate using new VG_(HT_remove_at_Iter)() at other places
-        in memcheck
+        (should fix this for 3.12.1)
 
-Mon 17 Oct 16:50:15 CEST 2016
+371065  www: add CfP for FOSDEM 2017 in valgrind.org NEWS section
+371128  BCD add/sub instructions on Power BE in 32-bit mode do not work.
+
+Wed 19 Oct 17:07:42 CEST 2016
 
 ========================================================================
 ========================================================================
-
 
 
 3_12_BRANCH: vex 3250  is a copy of trunk 3249
              val 15963 is a copy of trunk 15962
 
+3.12.0.BETA1 is 3_12_BRANCHes at 15973/3250.
 
 MERGED (trunk -> 3_12_BRANCH unless otherwise indicated):
 
@@ -347,9 +330,8 @@ MERGED (trunk -> 3_12_BRANCH unless otherwise indicated):
 15970 -> 15972 fix for bugzilla 361253  [s390x]
 15971 -> 15973 Add feature check for tests that use -march=armv8-a+crc.
 15975 -> 16007 Avoid unused variable warning.
-
-15976 Prelim support for macOS Sierra (10.12).  Partial fix for #365327.
-
+15976 -> 16071 Prelim support for macOS Sierra (10.12).
+               Partial fix for #365327.
 15977 -> 16008 ppcBE, fix the expected output file for
                none/tests/ppc64/jm_int_isa_2_07.stdout.exp
 15978 -> 16009 Use proper compiler flags on Solaris for fma4 test.
@@ -444,9 +426,15 @@ MERGED (trunk -> 3_12_BRANCH unless otherwise indicated):
                related to leak-autofreepool tests.  This is a follow up
                fix for r16042.
 
-(tracked up to and including 16045/3263)
+3271  M Fix PPC BE in 32-bit mode (Iop_CmpXX64 not supported in 32-bit mode)
+16072 M Fix PPC BE in 32-bit mode (Iop_CmpXX64 not supported in 32-bit mode)
+16073 M Add --ignore-range-below-sp=<offset>-<offset>
+16074 M Fix run_a_thread_NORETURN assembly code typo for VGP_arm64_linux
+16075 M x86_linux asm _start functions do not keep 16-byte aligned %esp.
+3272  M Fix incorrect register-number constraint check for LDAEX{,B,H,D}
+3273  M Fix two cases of PPCAvFpOp vs PPCFpOp enum confusion.
 
-3.12.0.BETA1 is 3_12_BRANCHes at 15973/3250.
+(tracked up to and including 16075/3273)
 
 ========================================================================
 ========================================================================

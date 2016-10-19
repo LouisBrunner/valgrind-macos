@@ -77,7 +77,9 @@ where XXXXXX is the bug number as listed below.
 303877  valgrind doesn't support compressed debuginfo sections.
 345307  Warning about "still reachable" memory when using libstdc++ from gcc 5
 348345  Assertion fails for negative lineno
+351282  V 3.10.1 MIPS softfloat build broken with GCC 4.9.3 / binutils 2.25.1
 351804  Crash on generating suppressions for "printf" call on OS X 10.10
+352197  mips: mmap2() not wrapped correctly for page size > 4096
 353083  arm64 doesn't implement various xattr system calls
 353084  arm64 doesn't support sigpending system call
 353137  www: update info for Supported Platforms
@@ -106,6 +108,7 @@ where XXXXXX is the bug number as listed below.
 355454  do not intercept malloc related symbols from the runtime linker
 355455  stderr.exp of test cases wrapmalloc and wrapmallocstatic overconstrained
 356044  Dwarf line info reader misinterprets is_stmt register
+356112  mips: replace addi with addiu
 356393  valgrind (vex) crashes because isZeroU happened
         == 363497
         == 364497
@@ -143,6 +146,7 @@ where XXXXXX is the bug number as listed below.
 360425  arm64 unsupported instruction ldpsw
         == 364435
 360519  none/tests/arm64/memory.vgtest might fail with newer gcc
+360571  Error about the Android Runtime reading below the stack pointer on ARM
 360574  Wrong parameter type for an ashmem ioctl() call on Android and ARM64
 360749  kludge for multiple .rodata sections on Solaris no longer needed
 360752  raise the number of reserved fds in m_main.c from 10 to 12
@@ -168,18 +172,19 @@ where XXXXXX is the bug number as listed below.
 364948  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 5/5
 365273  Invalid write to stack location reported after signal handler runs
 365912  ppc64BE segfault during jm-insns test (RELRO)
-366344  Multiple unhandled instruction for Aarch64
+366079  FPXX Support for MIPS32 Valgrind
 366138  Fix configure errors out when using Xcode 8 (clang 8.0.0)
 366344  Multiple unhandled instruction for Aarch64
         (0x0EE0E020, 0x1AC15800, 0x4E284801, 0x5E040023, 0x5E056060)
 367995  Integration of memcheck with custom memory allocator
+368120  x86_linux asm _start functions do not keep 16-byte aligned stack pointer
 368412  False positive result for altivec capability check
 368461  mmapunmap test fails on ppc64
 368416  Add tc06_two_races_xml.exp output for ppc64
 368412  False positive result for altivec capability check
 368461  mmapunmap test fails on ppc64
+368823  run_a_thread_NORETURN assembly code typo for VGP_arm64_linux target
 369000  AMD64 fma4 instructions unsupported.
-361253  [s390x] ex_clone.c:42: undefined reference to `pthread_create'
 369169  ppc64 fails jm_int_isa_2_07 test
 369175  jm_vec_isa_2_07 test crashes on ppc64
 369209  valgrind loops and eats up all memory if cwd doesn't exist.

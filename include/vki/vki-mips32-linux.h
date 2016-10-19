@@ -815,56 +815,60 @@ struct vki_pt_regs {
 #endif
 } __attribute__ ((aligned (8)));
 
-
-#define vki_user_regs_struct vki_pt_regs
-
-#define MIPS_lo  	lo
-#define MIPS_hi  	hi
-//#define MIPS_pc		regs[32]
-#define MIPS_r31		regs[31]
-#define MIPS_r30		regs[30]
-#define MIPS_r29		regs[29]
-#define MIPS_r28		regs[28]
-#define MIPS_r27		regs[27]
-#define MIPS_r26		regs[26]
-#define MIPS_r25		regs[25]
-#define MIPS_r24		regs[24]
-#define MIPS_r23		regs[23]
-#define MIPS_r22		regs[22]
-#define MIPS_r21		regs[21]
-#define MIPS_r20		regs[20]
-#define MIPS_r19		regs[19]
-#define MIPS_r18		regs[18]
-#define MIPS_r17		regs[17]
-#define MIPS_r16		regs[16]
-#define MIPS_r15		regs[15]
-#define MIPS_r14		regs[14]
-#define MIPS_r13		regs[13]
-#define MIPS_r12		regs[12]
-#define MIPS_r11		regs[11]
-#define MIPS_r10		regs[10]
-#define MIPS_r9		regs[9]
-#define MIPS_r8		regs[8]
-#define MIPS_r7		regs[7]
-#define MIPS_r6		regs[6]
-#define MIPS_r5		regs[5]
-#define MIPS_r4		regs[4]
-#define MIPS_r3		regs[3]
-#define MIPS_r2		regs[2]
-#define MIPS_r1		regs[1]
-#define MIPS_r0		regs[0]
-
 #define VKI_PTRACE_GETREGS            12
 #define VKI_PTRACE_SETREGS            13
 #define VKI_PTRACE_GETFPREGS          14
 #define VKI_PTRACE_SETFPREGS          15
 //----------------------------------------------------------------------
-// From linux-2.6.35.5/include/asm-mips/elf.h
+// From linux-4.5/arch/mips/include/uapi/asm/reg.h
+//----------------------------------------------------------------------
+#define VKI_MIPS32_EF_R0               6
+#define VKI_MIPS32_EF_R1               7
+#define VKI_MIPS32_EF_R2               8
+#define VKI_MIPS32_EF_R3               9
+#define VKI_MIPS32_EF_R4              10
+#define VKI_MIPS32_EF_R5              11
+#define VKI_MIPS32_EF_R6              12
+#define VKI_MIPS32_EF_R7              13
+#define VKI_MIPS32_EF_R8              14
+#define VKI_MIPS32_EF_R9              15
+#define VKI_MIPS32_EF_R10             16
+#define VKI_MIPS32_EF_R11             17
+#define VKI_MIPS32_EF_R12             18
+#define VKI_MIPS32_EF_R13             19
+#define VKI_MIPS32_EF_R14             20
+#define VKI_MIPS32_EF_R15             21
+#define VKI_MIPS32_EF_R16             22
+#define VKI_MIPS32_EF_R17             23
+#define VKI_MIPS32_EF_R18             24
+#define VKI_MIPS32_EF_R19             25
+#define VKI_MIPS32_EF_R20             26
+#define VKI_MIPS32_EF_R21             27
+#define VKI_MIPS32_EF_R22             28
+#define VKI_MIPS32_EF_R23             29
+#define VKI_MIPS32_EF_R24             30
+#define VKI_MIPS32_EF_R25             31
+#define VKI_MIPS32_EF_R26             32
+#define VKI_MIPS32_EF_R27             33
+#define VKI_MIPS32_EF_R28             34
+#define VKI_MIPS32_EF_R29             35
+#define VKI_MIPS32_EF_R30             36
+#define VKI_MIPS32_EF_R31             37
+#define VKI_MIPS32_EF_LO              38
+#define VKI_MIPS32_EF_HI              39
+#define VKI_MIPS32_EF_CP0_EPC         40
+#define VKI_MIPS32_EF_CP0_BADVADDR    41
+#define VKI_MIPS32_EF_CP0_STATUS      42
+#define VKI_MIPS32_EF_CP0_CAUSE       43
+#define VKI_MIPS32_EF_UNUSED0         44
+
+//----------------------------------------------------------------------
+// From linux-4.5/arch/mips/include/asm/elf.h
 //----------------------------------------------------------------------
 typedef unsigned long vki_elf_greg_t;
 
-#define VKI_ELF_NGREG (sizeof (struct vki_user_regs_struct) / sizeof(vki_elf_greg_t))
-#define VKI_ELF_NFPREG			33	/* includes fpscr */
+#define VKI_ELF_NGREG      45
+#define VKI_ELF_NFPREG     33 /* includes fpscr */
 
 typedef vki_elf_greg_t vki_elf_gregset_t[VKI_ELF_NGREG];
 

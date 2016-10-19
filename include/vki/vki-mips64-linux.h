@@ -841,43 +841,48 @@ struct vki_pt_regs {
 #endif
 } __attribute__ ((aligned (8)));
 
+//----------------------------------------------------------------------
+// From linux-4.5/arch/mips/include/uapi/asm/reg.h
+//----------------------------------------------------------------------
 
-#define vki_user_regs_struct vki_pt_regs
-
-#define MIPS_lo     lo
-#define MIPS_hi     hi
-#define MIPS_r31    regs[31]
-#define MIPS_r30    regs[30]
-#define MIPS_r29    regs[29]
-#define MIPS_r28    regs[28]
-#define MIPS_r27    regs[27]
-#define MIPS_r26    regs[26]
-#define MIPS_r25    regs[25]
-#define MIPS_r24    regs[24]
-#define MIPS_r23    regs[23]
-#define MIPS_r22    regs[22]
-#define MIPS_r21    regs[21]
-#define MIPS_r20    regs[20]
-#define MIPS_r19    regs[19]
-#define MIPS_r18    regs[18]
-#define MIPS_r17    regs[17]
-#define MIPS_r16    regs[16]
-#define MIPS_r15    regs[15]
-#define MIPS_r14    regs[14]
-#define MIPS_r13    regs[13]
-#define MIPS_r12    regs[12]
-#define MIPS_r11    regs[11]
-#define MIPS_r10    regs[10]
-#define MIPS_r9     regs[9]
-#define MIPS_r8     regs[8]
-#define MIPS_r7     regs[7]
-#define MIPS_r6     regs[6]
-#define MIPS_r5     regs[5]
-#define MIPS_r4     regs[4]
-#define MIPS_r3     regs[3]
-#define MIPS_r2     regs[2]
-#define MIPS_r1     regs[1]
-#define MIPS_r0     regs[0]
+#define VKI_MIPS64_EF_R0             0
+#define VKI_MIPS64_EF_R1             1
+#define VKI_MIPS64_EF_R2             2
+#define VKI_MIPS64_EF_R3             3
+#define VKI_MIPS64_EF_R4             4
+#define VKI_MIPS64_EF_R5             5
+#define VKI_MIPS64_EF_R6             6
+#define VKI_MIPS64_EF_R7             7
+#define VKI_MIPS64_EF_R8             8
+#define VKI_MIPS64_EF_R9             9
+#define VKI_MIPS64_EF_R10           10
+#define VKI_MIPS64_EF_R11           11
+#define VKI_MIPS64_EF_R12           12
+#define VKI_MIPS64_EF_R13           13
+#define VKI_MIPS64_EF_R14           14
+#define VKI_MIPS64_EF_R15           15
+#define VKI_MIPS64_EF_R16           16
+#define VKI_MIPS64_EF_R17           17
+#define VKI_MIPS64_EF_R18           18
+#define VKI_MIPS64_EF_R19           19
+#define VKI_MIPS64_EF_R20           20
+#define VKI_MIPS64_EF_R21           21
+#define VKI_MIPS64_EF_R22           22
+#define VKI_MIPS64_EF_R23           23
+#define VKI_MIPS64_EF_R24           24
+#define VKI_MIPS64_EF_R25           25
+#define VKI_MIPS64_EF_R26           26
+#define VKI_MIPS64_EF_R27           27
+#define VKI_MIPS64_EF_R28           28
+#define VKI_MIPS64_EF_R29           29
+#define VKI_MIPS64_EF_R30           30
+#define VKI_MIPS64_EF_R31           31
+#define VKI_MIPS64_EF_LO            32
+#define VKI_MIPS64_EF_HI            33
+#define VKI_MIPS64_EF_CP0_EPC       34
+#define VKI_MIPS64_EF_CP0_BADVADDR  35
+#define VKI_MIPS64_EF_CP0_STATUS    36
+#define VKI_MIPS64_EF_CP0_CAUSE     37
 
 //----------------------------------------------------------------------
 // From linux-2.6.35.9/include/asm-i386/ptrace.h

@@ -2985,12 +2985,13 @@ asm("\n"
     "\tmovl  $vgPlain_interim_stack, %eax\n"
     "\taddl  $"VG_STRINGIFY(VG_STACK_GUARD_SZB)", %eax\n"
     "\taddl  $"VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)", %eax\n"
+    /* allocate at least 16 bytes on the new stack, and aligned */
     "\tsubl  $16, %eax\n"
     "\tandl  $~15, %eax\n"
     /* install it, and collect the original one */
     "\txchgl %eax, %esp\n"
     /* call _start_in_C_linux, passing it the startup %esp */
-    "\tpushl %eax\n"
+    "\tmovl  %eax, (%esp)\n" 
     "\tcall  _start_in_C_linux\n"
     "\thlt\n"
     ".previous\n"

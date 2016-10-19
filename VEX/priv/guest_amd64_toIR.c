@@ -12848,8 +12848,10 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          IRTemp rmode = newTemp(Ity_I32);
 
          modrm = getUChar(delta);
-         do_MMX_preamble();
          if (epartIsReg(modrm)) {
+            /* Only switch to MMX mode if the source is a MMX register.
+               See comments on CVTPI2PD for details.  Fixes #357059. */
+            do_MMX_preamble();
             assign( arg64, getMMXReg(eregLO3ofRM(modrm)) );
             delta += 1;
             DIP("cvtpi2ps %s,%s\n", nameMMXReg(eregLO3ofRM(modrm)),

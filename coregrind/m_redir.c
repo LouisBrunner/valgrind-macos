@@ -1297,6 +1297,10 @@ static const HChar* complain_about_stripped_glibc_ldso[]
     "",
     "  On Debian, Ubuntu:                 libc6-dbg",
     "  On SuSE, openSuSE, Fedora, RHEL:   glibc-debuginfo",
+    "",
+    "Note that if you are debugging a 32 bit process on a",
+    "64 bit system, you will need a corresponding 32 bit debuginfo",
+    "package (e.g. libc6-dbg:i386).",
     NULL
   };
 

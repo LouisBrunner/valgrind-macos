@@ -1,2 +1,3 @@
 prog: power_ISA2_05
-vgopts: --workaround-gcc296-bugs=yes
+##  depricated option   --workaround-gcc296-bugs=yes
+vgopts: --ignore-range-below-sp=1024-1

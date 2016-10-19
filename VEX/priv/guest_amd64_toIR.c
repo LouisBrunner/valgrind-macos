@@ -13520,7 +13520,8 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          goto decode_success;
       }
       /* F2 0F 5D = MINSD -- min 64F0x2 from R/M to R */
-      if (haveF2no66noF3(pfx) && sz == 4) {
+      if (haveF2no66noF3(pfx)
+          && (sz == 4 || /* ignore redundant REX.W */ sz == 8)) {
          delta = dis_SSE_E_to_G_lo64( vbi, pfx, delta, "minsd", Iop_Min64F0x2 );
          goto decode_success;
       }
@@ -13566,7 +13567,8 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          goto decode_success;
       }
       /* F2 0F 5F = MAXSD -- max 64F0x2 from R/M to R */
-      if (haveF2no66noF3(pfx) && sz == 4) {
+      if (haveF2no66noF3(pfx)
+          && (sz == 4 || /* ignore redundant REX.W */ sz == 8)) {
          delta = dis_SSE_E_to_G_lo64( vbi, pfx, delta, "maxsd", Iop_Max64F0x2 );
          goto decode_success;
       }

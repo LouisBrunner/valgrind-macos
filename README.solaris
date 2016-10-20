@@ -52,6 +52,8 @@ Main currently-known incompatibilities:
   syscalls [3]
 - posix_spawn() functionality is backed up by true spawn() syscall on Solaris 12
   whereas illumos and Solaris 11 leverage vfork()
+- illumos and older Solaris use utimesys() syscall whereas newer Solaris
+  uses utimensat()
 
 [1] http://docs.oracle.com/cd/E26502_01/html/E28556/gkzlf.html#gkzip
 [2] https://www.illumos.org/issues/521

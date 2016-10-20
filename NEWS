@@ -1,10 +1,39 @@
-Release 3.12.0 (?? ????????? 201?)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Release 3.12.0 is under development, not yet released.
+
+Release 3.12.0 (20 October 2016)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+3.12.0 is a feature release with many improvements and the usual
+collection of bug fixes.
+
+This release supports X86/Linux, AMD64/Linux, ARM32/Linux,
+ARM64/Linux, PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux,
+MIPS32/Linux, MIPS64/Linux, ARM/Android, ARM64/Android,
+MIPS32/Android, X86/Android, X86/Solaris, AMD64/Solaris, X86/MacOSX
+10.10 and AMD64/MacOSX 10.10.  There is also preliminary support for
+X86/MacOSX 10.11/12, AMD64/MacOSX 10.11/12 and TILEGX/Linux.
 
 * ================== PLATFORM CHANGES =================
 
-* Preliminary support for macOS 10.12 (Sierra) has been added.
+* POWER: Support for ISA 3.0 has been added
+
+* mips: support for O32 FPXX ABI has been added.
+* mips: improved recognition of different processors
+* mips: determination of page size now done at run time
+
+* amd64: Partial support for AMD FMA4 instructions.
+
+* arm, arm64: Support for v8 crypto and CRC instructions.
+
+* Improvements and robustification of the Solaris port.
+
+* Preliminary support for MacOS 10.12 (Sierra) has been added.
+
+Whilst 3.12.0 continues to support the 32-bit x86 instruction set, we
+would prefer users to migrate to 64-bit x86 (a.k.a amd64 or x86_64)
+where possible.  Valgrind's support for 32-bit x86 has stagnated in
+recent years and has fallen far behind that for 64-bit x86
+instructions.  By contrast 64-bit x86 is well supported, up to and
+including AVX2.
 
 * ==================== TOOL CHANGES ====================
 
@@ -15,33 +44,39 @@ Release 3.12.0 is under development, not yet released.
        objects in the pool
      - Uses itself to allocate other memory blocks
 
-* Helgrind:
-
-* Callgrind:
+  - New flag --ignore-range-below-sp to ignore memory accesses below
+    the stack pointer, if you really have to.  The related flag
+    --workaround-gcc296-bugs=yes is now deprecated.  Use
+    --ignore-range-below-sp=1024-1 as a replacement.
 
 * DRD:
-n-i-bz Improved thread startup time significantly on non-Linux platforms.
+
+  - Improved thread startup time significantly on non-Linux platforms.
+
+* DHAT
+
+  - Added collection of the metric "tot-blocks-allocd"
 
 * ==================== OTHER CHANGES ====================
 
 * Replacement/wrapping of malloc/new related functions is now done not just
   for system libraries by default, but for any globally defined malloc/new
-  related function (both in shared libraries and staticly linked alternative
-  malloc implementations). Dynamic (runtime) linker is excluded, though.
+  related function (both in shared libraries and statically linked alternative
+  malloc implementations).  The dynamic (runtime) linker is excluded, though.
   To only intercept malloc/new related functions in
   system libraries use --soname-synonyms=somalloc=nouserintercepts (where
   "nouserintercepts" can be any non-existing library name).
-  This new functionality is not implemented for darwin/macosx.
+  This new functionality is not implemented for MacOS X.
 
 * The maximum number of callers in a suppression entry is now equal to
   the maximum size for --num-callers (500).
-  Note that --gen-suppressions=yes|all similarly generate suppression
+  Note that --gen-suppressions=yes|all similarly generates suppressions
   containing up to --num-callers frames.
 
 * New and modified GDB server monitor features:
 
   - Valgrind's gdbserver now accepts the command 'catch syscall'.
-    Note that you must have a GDB >= 7.11 to use 'catch syscall' with
+    Note that you must have GDB >= 7.11 to use 'catch syscall' with
     gdbserver.
 
 * New option --run-cxx-freeres=<yes|no> can be used to change whether
@@ -55,6 +90,13 @@ n-i-bz Improved thread startup time significantly on non-Linux platforms.
 * Modest JIT-cost improvements: the cost of instrumenting code blocks
   for the most common use case (x86_64-linux, Memcheck) has been
   reduced by 10%-15%.
+
+* Improved performance for programs that do a lot of discarding of
+  instruction address ranges of 8KB or less.
+
+* The C++ symbol demangler has been updated.
+
+* More robustness against invalid syscall parameters on Linux.
 
 * ==================== FIXED BUGS ====================
 
@@ -70,13 +112,17 @@ To see details of a given bug, visit
 where XXXXXX is the bug number as listed below.
 
 191069  Exiting due to signal not reported in XML output
-199468  Suppressions: stack size limited to 25 while --num-callers allows more frames
+199468  Suppressions: stack size limited to 25
+        while --num-callers allows more frames
 212352  vex amd64 unhandled opc_aux = 0x 2, first_opcode == 0xDC (FCOM)
 278744  cvtps2pd with redundant RexW
 303877  valgrind doesn't support compressed debuginfo sections.
 345307  Warning about "still reachable" memory when using libstdc++ from gcc 5
 348345  Assertion fails for negative lineno
+351282  V 3.10.1 MIPS softfloat build broken with GCC 4.9.3 / binutils 2.25.1
+351692  Dumps created by valgrind are not readable by gdb (mips32 specific)
 351804  Crash on generating suppressions for "printf" call on OS X 10.10
+352197  mips: mmap2() not wrapped correctly for page size > 4096
 353083  arm64 doesn't implement various xattr system calls
 353084  arm64 doesn't support sigpending system call
 353137  www: update info for Supported Platforms
@@ -93,6 +139,7 @@ where XXXXXX is the bug number as listed below.
 353891  Assert 'bad_scanned_addr < VG_ROUNDDN(start+len, sizeof(Addr))' failed
 353917  unhandled amd64-solaris syscall fchdir(120)
 353920  unhandled amd64-solaris syscall: 170
+354274  arm: unhandled instruction: 0xEBAD 0x0AC1 (sub.w sl, sp, r1, lsl #3)
 354392  unhandled amd64-solaris syscall: 171
 354797  Vbit test does not include Iops for Power 8 instruction support
 354883  tst->os_state.pthread - magic_delta assertion failure on OSX 10.11
@@ -104,16 +151,21 @@ where XXXXXX is the bug number as listed below.
 355454  do not intercept malloc related symbols from the runtime linker
 355455  stderr.exp of test cases wrapmalloc and wrapmallocstatic overconstrained
 356044  Dwarf line info reader misinterprets is_stmt register
+356112  mips: replace addi with addiu
 356393  valgrind (vex) crashes because isZeroU happened
         == 363497
         == 364497
 356676  arm64-linux: unhandled syscalls 125, 126 (sched_get_priority_max/min)
 356678  arm64-linux: unhandled syscall 232 (mincore)
 356817  valgrind.h triggers compiler errors on MSVC when defining NVALGRIND
+356823  Unsupported ARM instruction: stlex
+357059  x86/amd64: SSE cvtpi2ps with memory source does transition to MMX state
 357338  Unhandled instruction for SHA instructions libcrypto Boring SSL
+357673  crash if I try to run valgrind with a binary link with libcurl
 357833  Setting RLIMIT_DATA to zero breaks with linux 4.5+
 357871  pthread_spin_destroy not properly wrapped
 357887  Calls to VG_(fclose) do not close the file descriptor
+357932  amd64->IR: accept redundant REX prefixes for {minsd,maxsd} m128, xmm.
 358030  support direct socket calls on x86 32bit (new in linux 4.3)
 358478  drd/tests/std_thread.cpp doesn't build with GCC6
 359133  Assertion 'eltSzB <= ddpa->poolSzB' failed
@@ -122,10 +174,11 @@ where XXXXXX is the bug number as listed below.
 359289  s390x: popcnt (B9E1) not implemented
 359472  The Power PC vsubuqm instruction doesn't always give the correct result
 359503  Add missing syscalls for aarch64 (arm64)
+359645  "You need libc6-dbg" help message could be more helpful
 359703  s390: wire up separate socketcalls system calls
 359724  getsockname might crash - deref_UInt should call safe_to_deref
 359733  amd64 implement ld.so strchr/index override like x86
-359767  Valgrind does not support the IBM POWER ISA 3.0 instructions
+359767  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 1/5
 359829  Power PC test suite none/tests/ppc64/test_isa_2_07.c uses
         uninitialized data
 359838  arm64: Unhandled instruction 0xD5033F5F (clrex)
@@ -139,46 +192,44 @@ where XXXXXX is the bug number as listed below.
 360425  arm64 unsupported instruction ldpsw
         == 364435
 360519  none/tests/arm64/memory.vgtest might fail with newer gcc
+360571  Error about the Android Runtime reading below the stack pointer on ARM
 360574  Wrong parameter type for an ashmem ioctl() call on Android and ARM64
 360749  kludge for multiple .rodata sections on Solaris no longer needed
 360752  raise the number of reserved fds in m_main.c from 10 to 12
-361207  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 2
+361207  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 2/5
 361226  s390x: risbgn (EC59) not implemented
+361253  [s390x] ex_clone.c:42: undefined reference to `pthread_create'
 361354  ppc64[le]: wire up separate socketcalls system calls
 361615  Inconsistent termination for multithreaded process terminated by signal
 361926  Unhandled Solaris syscall: sysfs(84)
-362009  Valgrind dumps core on unimplemented functionality before threads are created
-362329  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 3
+362009  V dumps core on unimplemented functionality before threads are created
+362329  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 3/5
 362894  missing (broken) support for wbit field on mtfsfi instruction (ppc64)
 362935  [AsusWRT] Assertion 'sizeof(TTEntryC) <= 88' failed
+362953  Request for an update to the Valgrind Developers page
 363680  add renameat2() support
 363705  arm64 missing syscall name_to_handle_at and open_by_handle_at
 363714  ppc64 missing syscalls sync, waitid and name_to/open_by_handle_at
-363858  Add IBM ISA 3.0 support, patch set 4
+363858  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 4/5
 364058  clarify in manual limitations of array overruns detections
 364413  pselect sycallwrapper mishandles NULL sigmask
 364728  Power PC, missing support for several HW registers in
         get_otrack_shadow_offset_wrk()
+364948  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 5/5
 365273  Invalid write to stack location reported after signal handler runs
 365912  ppc64BE segfault during jm-insns test (RELRO)
-366344  Multiple unhandled instruction for Aarch64
-359767  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 1/5
-361207  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 2/5
-362329  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 3/5
-363858  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 4/5
-364948  Valgrind does not support the IBM POWER ISA 3.0 instructions, part 5/5
-365912  ppc64BE segfault during jm-insns test (RELRO)
+366079  FPXX Support for MIPS32 Valgrind
 366138  Fix configure errors out when using Xcode 8 (clang 8.0.0)
 366344  Multiple unhandled instruction for Aarch64
         (0x0EE0E020, 0x1AC15800, 0x4E284801, 0x5E040023, 0x5E056060)
 367995  Integration of memcheck with custom memory allocator
+368120  x86_linux asm _start functions do not keep 16-byte aligned stack pointer
 368412  False positive result for altivec capability check
-368461  mmapunmap test fails on ppc64
 368416  Add tc06_two_races_xml.exp output for ppc64
-368412  False positive result for altivec capability check
+368419  Perf Events ioctls not implemented
 368461  mmapunmap test fails on ppc64
+368823  run_a_thread_NORETURN assembly code typo for VGP_arm64_linux target
 369000  AMD64 fma4 instructions unsupported.
-361253  [s390x] ex_clone.c:42: undefined reference to `pthread_create'
 369169  ppc64 fails jm_int_isa_2_07 test
 369175  jm_vec_isa_2_07 test crashes on ppc64
 369209  valgrind loops and eats up all memory if cwd doesn't exist.
@@ -192,20 +243,25 @@ where XXXXXX is the bug number as listed below.
 369441  bad lvec argument crashes process_vm_readv/writev syscall wrappers
 369446  valgrind crashes on unknown fcntl command
 369439  S390x: Unhandled insns RISBLG/RISBHG and LDE/LDER 
-369468  Remove quadratic metapool alg. using VG_(HT_remove_at_Iter)
-        (VgHashTable *table)
+369468  Remove quadratic metapool algorithm using VG_(HT_remove_at_Iter)
 370265  ISA 3.0 HW cap stuff needs updating
 371128  BCD add and subtract instructions on Power BE in 32-bit mode do not work
+n-i-bz  Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64
+n-i-bz  massif --pages-as-heap=yes does not report peak caused by mmap+munmap
+n-i-bz  false positive leaks due to aspacemgr merging heap & non heap segments
+n-i-bz  Fix ppoll_alarm exclusion on OS X
+n-i-bz  Document brk segment limitation, reference manual in limit reached msg.
+n-i-bz  Fix clobber list in none/tests/amd64/xacq_xrel.c [valgrind r15737]
+n-i-bz  Bump allowed shift value for "add.w reg, sp, reg, lsl #N" [vex r3206]
+n-i-bz  amd64: memcheck false positive with shr %edx
+n-i-bz  arm3: Allow early writeback of SP base register in "strd rD, [sp, #-16]"
+n-i-bz  ppc: Fix two cases of PPCAvFpOp vs PPCFpOp enum confusion
+n-i-bz  arm: Fix incorrect register-number constraint check for LDAEX{,B,H,D}
+n-i-bz  DHAT: added collection of the metric "tot-blocks-allocd" 
 
-n-i-bz Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64
-n-i-bz massif --pages-as-heap=yes does not report peak caused by mmap+munmap
-n-i-bz false positive leaks due to aspacemgr merging non heap segments
-       with heap segments.
-n-i-bz Fix ppoll_alarm exclusion on OS X
-n-i-bz Document brk segment limitation, reference manual in limit reached msg.
-n-i-bz Fix clobber list in none/tests/amd64/xacq_xrel.c [valgrind r15737]
-n-i-bz Bump allowed shift value for "add.w reg, sp, reg, lsl #N" [vex r3206]
-n-i-bz amd64: memcheck false positive with shr %edx
+(3.12.0.RC1:  20 October 2016, vex r3282, valgrind r16092)
+
+
 
 Release 3.11.0 (22 September 2015)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

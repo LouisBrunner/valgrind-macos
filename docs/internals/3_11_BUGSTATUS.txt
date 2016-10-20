@@ -8,11 +8,6 @@ of 3.11.0 go in here.  Bugs that didn't get fixed in 3.11.0 remain in
 356715  vex amd64->IR: 0xC4 0xE2 0x7D 0x13 0x4 0x4A 0xC5 0xFC
         vcvtph2ps (%rdx,%rcx,2),%ymm0
 
-357932  vex amd64->IR: 0xF2 0x49 0xF 0x5D  and 0xF2 0x49 0xF 0x5F
-        rex.WB minsd (%r8),%xmm0
-        rex.WB maxsd (%r8),%xmm0
-        redundant rex prefixes
-
 360415  amd64 instructions ADCX and ADOX are not implemented in VEX
         [has patch, could possibly take it, but needs cleanup/verification]
 
@@ -45,9 +40,6 @@ n-i-bz  Remove limit on strd's negative immediates
 === VEX/arm64 ==========================================================
 
 === VEX/x86 ============================================================
-
-357059  x86: SSE cvtpi2ps with memory source does transition to MMX state
-        [Also relevant for amd64.  Not sure this is really a bug.]
 
 === VEX/mips ===========================================================
 
@@ -89,8 +81,8 @@ n-i-bz  Remove limit on strd's negative immediates
         [initimg problems on Android]
 364359  Valgrind crashes on fcntl(F_SETFL, O_NONBLOCK, fd)
 367942  Segfault vgPlain_do_sys_sigaction (m_signals.c:1138)
-368419  Perf Events ioctls not implemented
 368791  unhandled syscall: 167 (swapon, amd64-linux)
+        (should fix this for 3.12.1)
 
 === Syscalls/ioctls on OSX =============================================
 
@@ -121,6 +113,7 @@ n-i-bz  Remove limit on strd's negative immediates
 366035  valgrind misses buffer overflow, segfaults in malloc in localtime
 366817  VALGRIND_MEMPOOL_CHANGE has a performance bug
 368507  valgrind throws std::bad_alloc on memory allocations larger than 34255421416 bytes
+        (increase usable address space post release, on trunk)
 
 === Tools/DRD ==========================================================
 
@@ -152,9 +145,6 @@ n-i-bz  Remove limit on strd's negative immediates
 === other/x86 ==========================================================
 
 === other/mips =========================================================
-
-351692  Dumps created by valgrind are not readable by gdb
-        [mips32 specific?]
 
 === other/ppc ==========================================================
 
@@ -209,8 +199,6 @@ n-i-bz  Remove limit on strd's negative immediates
 352395  Please provide SVN revision info in --version
 358569  Unhandled instructions cause creation of "orphan" stack traces
         in XML output
-359645  [patch] "You need libc6-dbg" help message could be more helpful
-        with 32-bit target on-64-bit arch
 
 === MPI ================================================================
 
@@ -248,9 +236,6 @@ n-i-bz  Remove limit on strd's negative immediates
         if compiled with intel compiler
 
 ========================================================================
-
-* mention that x86-linux is deprecated
-
 ========================================================================
 ========================================================================
 ========================================================================
@@ -310,7 +295,6 @@ Thu 15 Sep 12:55:21 CEST 2016
         (should fix this for 3.12.1)
 
 371065  www: add CfP for FOSDEM 2017 in valgrind.org NEWS section
-371128  BCD add/sub instructions on Power BE in 32-bit mode do not work.
 
 Wed 19 Oct 17:07:42 CEST 2016
 
@@ -426,15 +410,23 @@ MERGED (trunk -> 3_12_BRANCH unless otherwise indicated):
                related to leak-autofreepool tests.  This is a follow up
                fix for r16042.
 
-3271  M Fix PPC BE in 32-bit mode (Iop_CmpXX64 not supported in 32-bit mode)
-16072 M Fix PPC BE in 32-bit mode (Iop_CmpXX64 not supported in 32-bit mode)
-16073 M Add --ignore-range-below-sp=<offset>-<offset>
-16074 M Fix run_a_thread_NORETURN assembly code typo for VGP_arm64_linux
-16075 M x86_linux asm _start functions do not keep 16-byte aligned %esp.
-3272  M Fix incorrect register-number constraint check for LDAEX{,B,H,D}
-3273  M Fix two cases of PPCAvFpOp vs PPCFpOp enum confusion.
+3271  -> 3277  Fix PPC BE in 32-bit mode (Iop_CmpXX64 not supported)
+16072 -> 16082 Fix PPC BE in 32-bit mode (Iop_CmpXX64 not supported)
+16073 -> 16083 Add --ignore-range-below-sp=<offset>-<offset>
+16074 -> 16084 Fix run_a_thread_NORETURN assembly code typo for VGP_arm64_linux
+16075 -> 16085 x86_linux asm _start functions do not keep 16-byte aligned %esp.
+3272  -> 3278  Fix incorrect register-number constraint check for LDAEX{,B,H,D}
+3273  -> 3279  Fix two cases of PPCAvFpOp vs PPCFpOp enum confusion.
+3274  -> 3280  Accept redundant REX prefixes for {minsd,maxsd} m128, xmm.
+3275  -> 3281  CVTPI2PS: Only switch to MMX mode if the source is a MMX reg
+16077 -> 16086 Add support for Linux perf-events ioctls.
+16078 -> 16087 "You need libc6-dbg" help message could be more helpful.
+3276  -> 3282  Allow early wback of SP base register in "strd rD, [sp, #-16]"
+16079 -> 16088 Update memcheck/tests/ppc64/power_ISA2_05.vgtest
+16080 -> 16089 mips: fix coredump creation in Valgrind
+16081 -> 16090 Add another incompatibility between illumos and Solaris kernels.
 
-(tracked up to and including 16075/3273)
+(tracked up to and including 16090/3282)
 
 ========================================================================
 ========================================================================

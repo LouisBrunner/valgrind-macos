@@ -2946,6 +2946,16 @@ struct vki_perf_event_attr {
 	};
 };
 
+#define VKI_PERF_EVENT_IOC_ENABLE       _VKI_IO ('$', 0)
+#define VKI_PERF_EVENT_IOC_DISABLE      _VKI_IO ('$', 1)
+#define VKI_PERF_EVENT_IOC_REFRESH      _VKI_IO ('$', 2)
+#define VKI_PERF_EVENT_IOC_RESET        _VKI_IO ('$', 3)
+#define VKI_PERF_EVENT_IOC_PERIOD       _VKI_IOW('$', 4, __vki_u64)
+#define VKI_PERF_EVENT_IOC_SET_OUTPUT   _VKI_IO ('$', 5)
+#define VKI_PERF_EVENT_IOC_SET_FILTER   _VKI_IOW('$', 6, char *)
+#define VKI_PERF_EVENT_IOC_ID           _VKI_IOR('$', 7, __vki_u64 *)
+#define VKI_PERF_EVENT_IOC_SET_BPF      _VKI_IOW('$', 8, __vki_u32)
+
 /*--------------------------------------------------------------------*/
 // From linux-2.6.32.4/include/linux/getcpu.h
 /*--------------------------------------------------------------------*/

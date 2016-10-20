@@ -5640,6 +5640,10 @@ PRE(sys_ioctl)
    case VKI_FIONCLEX:
    case VKI_TIOCNOTTY:
 
+   /* linux perf_event ioctls */
+   case VKI_PERF_EVENT_IOC_ENABLE:
+   case VKI_PERF_EVENT_IOC_DISABLE:
+
       /* linux/soundcard interface (ALSA) */
    case VKI_SNDRV_PCM_IOCTL_HW_FREE:
    case VKI_SNDRV_PCM_IOCTL_HWSYNC:
@@ -8496,6 +8500,25 @@ PRE(sys_ioctl)
       break;
    }
 
+   case VKI_PERF_EVENT_IOC_RESET:
+   case VKI_PERF_EVENT_IOC_REFRESH:
+   case VKI_PERF_EVENT_IOC_SET_OUTPUT:
+   case VKI_PERF_EVENT_IOC_SET_BPF:
+      /* These take scalar arguments, so already handled above */
+      break;
+
+   case VKI_PERF_EVENT_IOC_PERIOD:
+      PRE_MEM_READ("ioctl(VKI_PERF_EVENT_IOC_PERIOD)", (Addr)ARG3, sizeof(__vki_u64));
+      break;
+
+   case VKI_PERF_EVENT_IOC_SET_FILTER:
+      PRE_MEM_RASCIIZ("ioctl(VKI_PERF_EVENT_IOC_SET_FILTER).filter", ARG3);
+      break;
+
+   case VKI_PERF_EVENT_IOC_ID:
+      PRE_MEM_WRITE("ioctl(VKI_PERF_EVENT_IOC_ID)", (Addr)ARG3, sizeof(__vki_u64));
+      break;
+
    default:
       /* EVIOC* are variable length and return size written on success */
       switch (ARG2 & ~(_VKI_IOC_SIZEMASK << _VKI_IOC_SIZESHIFT)) {
@@ -10386,6 +10409,20 @@ POST(sys_ioctl)
       break;
    }
    case VKI_TIOCSSERIAL:
+      break;
+
+   case VKI_PERF_EVENT_IOC_ENABLE:
+   case VKI_PERF_EVENT_IOC_DISABLE:
+   case VKI_PERF_EVENT_IOC_REFRESH:
+   case VKI_PERF_EVENT_IOC_RESET:
+   case VKI_PERF_EVENT_IOC_PERIOD:
+   case VKI_PERF_EVENT_IOC_SET_OUTPUT:
+   case VKI_PERF_EVENT_IOC_SET_FILTER:
+   case VKI_PERF_EVENT_IOC_SET_BPF:
+      break;
+
+   case VKI_PERF_EVENT_IOC_ID:
+      POST_MEM_WRITE((Addr)ARG3, sizeof(__vki_u64));
       break;
 
    default:

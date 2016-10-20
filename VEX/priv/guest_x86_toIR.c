@@ -8565,8 +8565,10 @@ DisResult disInstr_X86_WRK (
       vassert(sz == 4);
 
       modrm = getIByte(delta+2);
-      do_MMX_preamble();
       if (epartIsReg(modrm)) {
+         /* Only switch to MMX mode if the source is a MMX register.
+            See comments on CVTPI2PD for details.  Fixes #357059. */
+         do_MMX_preamble();
          assign( arg64, getMMXReg(eregOfRM(modrm)) );
          delta += 2+1;
          DIP("cvtpi2ps %s,%s\n", nameMMXReg(eregOfRM(modrm)),

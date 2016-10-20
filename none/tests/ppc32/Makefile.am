@@ -38,7 +38,8 @@ EXTRA_DIST = \
 	test_dfp3.stderr.exp test_dfp3.stdout.exp test_dfp3.vgtest \
 	test_dfp4.stderr.exp test_dfp4.stdout.exp test_dfp4.vgtest \
 	test_dfp5.stderr.exp test_dfp5.stdout.exp test_dfp5.vgtest \
-	jm_vec_isa_2_07.stderr.exp jm_vec_isa_2_07.stdout.exp jm_vec_isa_2_07.vgtest \
+	jm_vec_isa_2_07.stderr.exp jm_vec_isa_2_07.vgtest \
+	jm_vec_isa_2_07.stdout.exp jm_vec_isa_2_07.stdout.exp-LE \
 	jm_fp_isa_2_07.stderr.exp jm_fp_isa_2_07.stdout.exp jm_fp_isa_2_07.vgtest \
 	jm_int_isa_2_07.stderr.exp jm_int_isa_2_07.vgtest \
 	jm_int_isa_2_07.stdout.exp \

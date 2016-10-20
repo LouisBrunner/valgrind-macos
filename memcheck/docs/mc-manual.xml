@@ -1107,9 +1107,38 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
       conversions.  This is in violation of the 32-bit PowerPC ELF
       specification, which makes no provision for locations below the
       stack pointer to be accessible.</para>
+
+      <para>This option is deprecated as of version 3.12 and may be
+      removed from future versions.  You should instead use
+      <option>--ignore-range-below-sp</option> to specify the exact
+      range of offsets below the stack pointer that should be ignored.
+      A suitable equivalent
+      is <option>--ignore-range-below-sp=1024-1</option>.
+      </para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.ignore-range-below-sp"
+                xreflabel="--ignore-range-below-sp">
+    <term>
+      <option><![CDATA[--ignore-range-below-sp=<number>-<number> ]]></option>
+    </term>
+    <listitem>
+      <para>This is a more general replacement for the deprecated
+      <option>--workaround-gcc296-bugs</option> option.  When
+       specified, it causes Memcheck not to report errors for accesses
+       at the specified offsets below the stack pointer.  The two
+       offsets must be positive decimal numbers and -- somewhat
+       counterintuitively -- the first one must be larger, in order to
+       imply a non-wraparound address range to ignore.  For example,
+       to ignore 4 byte accesses at 8192 bytes below the stack
+       pointer,
+       use <option>--ignore-range-below-sp=8192-8189</option>.  Only
+       one range may be specified.
+      </para>
+    </listitem>
+  </varlistentry>
+  
   <varlistentry id="opt.show-mismatched-frees"
                 xreflabel="--show-mismatched-frees">
     <term>

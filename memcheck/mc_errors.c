@@ -746,11 +746,18 @@ void MC_(record_address_error) ( ThreadId tid, Addr a, Int szB,
    if (VG_(is_watched)( (isWrite ? write_watchpoint : read_watchpoint), a, szB))
       return;
 
-   just_below_esp = is_just_below_ESP( VG_(get_SP)(tid), a );
+   Addr current_sp = VG_(get_SP)(tid);
+   just_below_esp = is_just_below_ESP( current_sp, a );
 
    /* If this is caused by an access immediately below %ESP, and the
       user asks nicely, we just ignore it. */
    if (MC_(clo_workaround_gcc296_bugs) && just_below_esp)
+      return;
+
+   /* Also, if this is caused by an access in the range of offsets
+      below the stack pointer as described by
+      --ignore-range-below-sp, ignore it. */
+   if (MC_(in_ignored_range_below_sp)( current_sp, a, szB ))
       return;
 
    extra.Err.Addr.isWrite   = isWrite;

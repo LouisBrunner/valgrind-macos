@@ -4058,6 +4058,19 @@ UWord voucher_mach_msg_set ( UWord arg1 )
 
 #endif
 
+#if defined(VGO_darwin) && DARWIN_VERS == DARWIN_10_10
+
+/* This might also be needed for > DARWIN_10_10, but I have no way
+   to test for that.  Hence '==' rather than '>=' in the version
+   test above. */
+void __bzero ( void* s, UWord n );
+void __bzero ( void* s, UWord n )
+{
+   (void) VG_(memset)( s, 0, n );
+}
+
+#endif
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

@@ -210,7 +210,7 @@ AM_CCASFLAGS_ARM64_LINUX  = @FLAG_M64@ -g
 
 AM_FLAG_M3264_X86_DARWIN = -arch i386
 AM_CFLAGS_X86_DARWIN     = $(WERROR) -arch i386 $(AM_CFLAGS_BASE) \
-				-mmacosx-version-min=10.5 \
+				-mmacosx-version-min=10.6 \
 				-fno-stack-protector -fno-pic -fno-PIC
 
 AM_CFLAGS_PSO_X86_DARWIN = $(AM_CFLAGS_X86_DARWIN) $(AM_CFLAGS_PSO_BASE)
@@ -218,7 +218,7 @@ AM_CCASFLAGS_X86_DARWIN  = -arch i386 -g
 
 AM_FLAG_M3264_AMD64_DARWIN = -arch x86_64
 AM_CFLAGS_AMD64_DARWIN     = $(WERROR) -arch x86_64 $(AM_CFLAGS_BASE) \
-			    -mmacosx-version-min=10.5 -fno-stack-protector
+			    -mmacosx-version-min=10.6 -fno-stack-protector
 AM_CFLAGS_PSO_AMD64_DARWIN = $(AM_CFLAGS_AMD64_DARWIN) $(AM_CFLAGS_PSO_BASE)
 AM_CCASFLAGS_AMD64_DARWIN  = -arch x86_64 -g
 

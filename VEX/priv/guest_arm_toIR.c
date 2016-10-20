@@ -13329,7 +13329,7 @@ static Bool decode_V8_instruction (
            if (szBlg2 < 3) {
               if (! (tt != 15 && nn != 15)) gate = False;
            } else {
-              if (! (tt & 1) == 0 && tt != 14 && nn != 15) gate = False;
+              if (! ((tt & 1) == 0 && tt != 14 && nn != 15)) gate = False;
               vassert(tt2 == 16/*invalid*/);
               tt2 = tt + 1;
            }

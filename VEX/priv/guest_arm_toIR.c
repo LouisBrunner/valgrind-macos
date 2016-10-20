@@ -17431,15 +17431,17 @@ DisResult disInstr_ARM_WRK (
         ignore alignment issues for the time being. */
 
      /* For almost all cases, we do the writeback after the transfers.
-        However, that leaves the stack "uncovered" in this case:
+        However, that leaves the stack "uncovered" in cases like:
            strd    rD, [sp, #-8]
+           strd    rD, [sp, #-16]
         In which case, do the writeback to SP now, instead of later.
         This is bad in that it makes the insn non-restartable if the
         accesses fault, but at least keeps Memcheck happy. */
      Bool writeback_already_done = False;
      if (bS == 1 /*store*/ && summary == (2 | 16)
          && rN == 13 && rN != rD && rN != rD+1
-         && bU == 0/*minus*/ && imm8 == 8) {
+         && bU == 0/*minus*/
+         && (imm8 == 8 || imm8 == 16)) {
         putIRegA( rN, mkexpr(eaT), condT, Ijk_Boring );
         writeback_already_done = True;
      }
@@ -21521,15 +21523,17 @@ DisResult disInstr_THUMB_WRK (
          IRTemp transAddr = bP == 1 ? postAddr : preAddr;
 
          /* For almost all cases, we do the writeback after the transfers.
-            However, that leaves the stack "uncovered" in this case:
+            However, that leaves the stack "uncovered" in cases like:
                strd    rD, [sp, #-8]
+               strd    rD, [sp, #-16]
             In which case, do the writeback to SP now, instead of later.
             This is bad in that it makes the insn non-restartable if the
             accesses fault, but at least keeps Memcheck happy. */
          Bool writeback_already_done = False;
          if (bL == 0/*store*/ && bW == 1/*wb*/
              && rN == 13 && rN != rT && rN != rT2
-             && bU == 0/*minus*/ && (imm8 << 2) == 8) {
+             && bU == 0/*minus*/
+             && ((imm8 << 2) == 8 || (imm8 << 2) == 16)) {
             putIRegT(rN, mkexpr(postAddr), condT);
             writeback_already_done = True;
          }

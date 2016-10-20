@@ -83,8 +83,9 @@ asm(
 ".globl vgModuleLocal_call_on_new_stack_0_1\n"
 "vgModuleLocal_call_on_new_stack_0_1:\n"
 "   movl %esp, %esi\n"     // remember old stack pointer
-"   movl 4(%esi), %esp\n"  // set stack
-"   pushl 16(%esi)\n"      // arg1 to stack
+"   movl 4(%esi), %esp\n"  // set stack, assume %esp is now 16-byte aligned
+"   subl $12, %esp\n"      // skip 12 bytes
+"   pushl 16(%esi)\n"      // arg1 to stack, %esp is 16-byte aligned
 "   pushl  8(%esi)\n"      // retaddr to stack
 "   pushl 12(%esi)\n"      // f to stack
 "   movl $0, %eax\n"       // zero all GP regs
@@ -150,7 +151,8 @@ asm(
 "        movl     4+"FSZ"(%esp), %ecx\n"    /* syscall arg2: child stack */
 "        movl    12+"FSZ"(%esp), %ebx\n"    /* fn arg */
 "        movl     0+"FSZ"(%esp), %eax\n"    /* fn */
-"        lea     -8(%ecx), %ecx\n"          /* make space on stack */
+"        andl    $-16, %ecx\n"              /* align to 16-byte */
+"        lea     -20(%ecx), %ecx\n"         /* allocate 16*n+4 bytes on stack */
 "        movl    %ebx, 4(%ecx)\n"           /*   fn arg */
 "        movl    %eax, 0(%ecx)\n"           /*   fn */
 
@@ -165,7 +167,7 @@ asm(
 "        jnz     1f\n"
 
          /* CHILD - call thread function */
-"        popl    %eax\n"
+"        popl    %eax\n"                    /* child %esp is 16-byte aligned */
 "        call    *%eax\n"                   /* call fn */
 
          /* exit with result */

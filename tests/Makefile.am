@@ -44,6 +44,7 @@ noinst_HEADERS = \
 check_PROGRAMS = \
 	arch_test \
 	os_test \
+	libc_test \
 	true \
 	x86_amd64_features \
 	s390x_features \

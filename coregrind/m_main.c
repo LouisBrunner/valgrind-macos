@@ -3489,6 +3489,10 @@ void* __memset_chk(void *s, int c, SizeT n, SizeT n2) {
     // skip check
   return VG_(memset)(s,c,n);
 }
+void __bzero(void* s, UWord n);
+void __bzero(void* s, UWord n) {
+    (void)VG_(memset)(s,0,n);
+}
 void bzero(void *s, SizeT n);
 void bzero(void *s, SizeT n) {
     VG_(memset)(s,0,n);
@@ -4054,19 +4058,6 @@ UWord voucher_mach_msg_set ( UWord arg1 );
 UWord voucher_mach_msg_set ( UWord arg1 )
 {
    return 0;
-}
-
-#endif
-
-#if defined(VGO_darwin) && DARWIN_VERS == DARWIN_10_10
-
-/* This might also be needed for > DARWIN_10_10, but I have no way
-   to test for that.  Hence '==' rather than '>=' in the version
-   test above. */
-void __bzero ( void* s, UWord n );
-void __bzero ( void* s, UWord n )
-{
-   (void) VG_(memset)( s, 0, n );
 }
 
 #endif

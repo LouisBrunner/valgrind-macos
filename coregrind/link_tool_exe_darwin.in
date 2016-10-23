@@ -36,7 +36,7 @@
 #
 #   (64-bit):
 #
-#   /usr/bin/ld -static -arch x86_64 -macosx_version_min 10.5 \
+#   /usr/bin/ld -static -arch x86_64 -macosx_version_min 10.6 \
 #      -o memcheck-amd64-darwin -u __start -e __start \
 #      -image_base 0x138000000 -stack_addr 0x13c000000 \
 #      -stack_size 0x800000 \
@@ -46,7 +46,7 @@
 #
 #   (32-bit)
 #
-#   /usr/bin/ld -static -arch i386 -macosx_version_min 10.5 \
+#   /usr/bin/ld -static -arch i386 -macosx_version_min 10.6 \
 #      -o memcheck-x86-darwin -u __start -e __start \
 #      -image_base 0x38000000 -stack_addr 0x3c000000 \
 #      -stack_size 0x800000 \
@@ -150,7 +150,7 @@ if ("$cc" =~ /clang$/) {
 }
 
 $cmd = "$cmd -arch $archstr";
-$cmd = "$cmd -macosx_version_min 10.5";
+$cmd = "$cmd -macosx_version_min 10.6";
 $cmd = "$cmd -o $outname";
 $cmd = "$cmd -u __start -e __start";
 

@@ -259,7 +259,9 @@ n-i-bz  ppc: Fix two cases of PPCAvFpOp vs PPCFpOp enum confusion
 n-i-bz  arm: Fix incorrect register-number constraint check for LDAEX{,B,H,D}
 n-i-bz  DHAT: added collection of the metric "tot-blocks-allocd" 
 
-(3.12.0.RC1:  20 October 2016, vex r3282, valgrind r16092)
+(3.12.0.RC1:  20 October 2016, vex r3282, valgrind r16094)
+(3.12.0.RC2:  20 October 2016, vex r3282, valgrind r16096)
+(3.12.0:      21 October 2016, vex r3282, valgrind r16098)
 
 
 

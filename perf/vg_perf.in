@@ -71,7 +71,8 @@ usage: vg_perf [options] [files or dirs]
     --outer-valgrind: run these Valgrind(s) under the given outer valgrind.
       These Valgrind(s) must be configured with --enable-inner.
     --outer-tool: tool to use by the outer valgrind (default cachegrind).
-    --outer-args: use this as outer tool args.
+    --outer-args: use this as outer tool args. If the outer args are starting with +,
+      the given outer args are appended to the outer args predefined by vg_perf.
 
   Any tools named in --tools must be present in all directories specified
   with --vg.  (This is not checked.)
@@ -321,7 +322,7 @@ sub do_one_test($$)
             $tool_abbrev =~ s/(..).*/$1/;
             printf("  %s:", $tool_abbrev);
             my $run_outer_args = "";
-            if (not defined $outer_args) {
+            if ((not defined $outer_args) || ($outer_args =~ /^\+/)) {
                 $run_outer_args = 
                       " -v --command-line-only=yes"
                     . " --run-libc-freeres=no --sim-hints=enable-outer"
@@ -335,6 +336,10 @@ sub do_one_test($$)
                     . " --callgrind:dump-instr=yes --callgrind:collect-jumps=yes"
                     . " --callgrind:callgrind-out-file=callgrind.out.$vgdirname.$tool_abbrev.$name.%p"
                     . " ";
+                 if (defined $outer_args) {
+                    $outer_args =~ s/^\+(.*)/$1/;
+                    $run_outer_args = $run_outer_args . $outer_args;
+                 }
             } else {
                 $run_outer_args = $outer_args;
             }
@@ -351,8 +356,8 @@ sub do_one_test($$)
                 $vgsetup = "VALGRIND_LIB_INNER=$vgdir/.in_place ";
                 $vgcmd   = "$outer_valgrind "
                          . "--tool=" . $outer_tool . " "
-                         . "$run_outer_args "
                          . "--log-file=" . "$outer_tool.outer.log.$vgdirname.$tool_abbrev.$name.%p "
+                         . "$run_outer_args "
                          . $vgcmd;
             } else {
                 # Set both VALGRIND_LIB and VALGRIND_LIB_INNER

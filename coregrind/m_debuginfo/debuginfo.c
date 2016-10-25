@@ -1736,13 +1736,15 @@ static void search_all_loctabs ( Addr ptr, /*OUT*/DebugInfo** pdi,
    call has come from VG_(get_fnname_raw)().  findText
    indicates whether we're looking for a text symbol or a data symbol
    -- caller must choose one kind or the other.
-   Note: the string returned in *BUF is persistent as long as 
+   NOTE: See IMPORTANT COMMENT above about persistence and ownership
+   in pub_tool_debuginfo.h 
+   get_sym_name and the fact it calls the demangler is the main reason
+   for non persistence of the information returned by m_debuginfo.c
+   functions : the string returned in *BUF is persistent as long as 
    (1) the DebugInfo it belongs to is not discarded
-   (2) the segment containing the address is not merged with another segment
-   (3) the demangler is not invoked again
-   In other words: if in doubt, save it away.
+   (2) the demangler is not invoked again
    Also, the returned string is owned by "somebody else". Callers must
-   not free it or modify it. */
+   not free it or modify it.*/
 static
 Bool get_sym_name ( Bool do_cxx_demangling, Bool do_z_demangling,
                     Bool do_below_main_renaming,
@@ -1822,8 +1824,8 @@ Addr VG_(get_tocptr) ( Addr guest_code_addr )
 
 /* This is available to tools... always demangle C++ names,
    match anywhere in function, but don't show offsets.
-   NOTE: See important comment about the persistence and memory ownership
-   of the return string at function get_sym_name */
+   NOTE: See IMPORTANT COMMENT above about persistence and ownership
+   in pub_tool_debuginfo.h */
 Bool VG_(get_fnname) ( Addr a, const HChar** buf )
 {
    return get_sym_name ( /*C++-demangle*/True, /*Z-demangle*/True,
@@ -1837,8 +1839,8 @@ Bool VG_(get_fnname) ( Addr a, const HChar** buf )
 
 /* This is available to tools... always demangle C++ names,
    match anywhere in function, and show offset if nonzero.
-   NOTE: See important comment about the persistence and memory ownership
-   of the return string at function get_sym_name */
+   NOTE: See IMPORTANT COMMENT above about persistence and ownership
+   in pub_tool_debuginfo.h */
 Bool VG_(get_fnname_w_offset) ( Addr a, const HChar** buf )
 {
    return get_sym_name ( /*C++-demangle*/True, /*Z-demangle*/True,
@@ -1853,8 +1855,8 @@ Bool VG_(get_fnname_w_offset) ( Addr a, const HChar** buf )
 /* This is available to tools... always demangle C++ names,
    only succeed if 'a' matches first instruction of function,
    and don't show offsets.
-   NOTE: See important comment about the persistence and memory ownership
-   of the return string at function get_sym_name */
+   NOTE: See IMPORTANT COMMENT above about persistence and ownership
+   in pub_tool_debuginfo.h */
 Bool VG_(get_fnname_if_entry) ( Addr a, const HChar** buf )
 {
    const HChar *tmp;
@@ -1875,8 +1877,8 @@ Bool VG_(get_fnname_if_entry) ( Addr a, const HChar** buf )
 /* This is only available to core... don't C++-demangle, don't Z-demangle,
    don't rename below-main, match anywhere in function, and don't show
    offsets.
-   NOTE: See important comment about the persistence and memory ownership
-   of the return string at function get_sym_name */
+   NOTE: See IMPORTANT COMMENT above about persistence and ownership
+   in pub_tool_debuginfo.h  */
 Bool VG_(get_fnname_raw) ( Addr a, const HChar** buf )
 {
    return get_sym_name ( /*C++-demangle*/False, /*Z-demangle*/False,
@@ -1891,8 +1893,8 @@ Bool VG_(get_fnname_raw) ( Addr a, const HChar** buf )
 /* This is only available to core... don't demangle C++ names, but do
    do Z-demangling and below-main-renaming, match anywhere in function, and
    don't show offsets.
-   NOTE: See important comment about the persistence and memory ownership
-   of the return string at function get_sym_name */
+   NOTE: See IMPORTANT COMMENT above about persistence and ownership
+   in pub_tool_debuginfo.h */
 Bool VG_(get_fnname_no_cxx_demangle) ( Addr a, const HChar** buf,
                                        const InlIPCursor* iipc )
 {
@@ -1974,8 +1976,8 @@ Vg_FnNameKind VG_(get_fnname_kind_from_IP) ( Addr ip )
 /* Looks up data_addr in the collection of data symbols, and if found
    puts a pointer to its name into dname. The name is zero terminated.
    Also data_addr's offset from the symbol start is put into *offset.
-   NOTE: See important comment about the persistence and memory ownership
-   of the return string at function get_sym_name */
+   NOTE: See IMPORTANT COMMENT above about persistence and ownership
+   in pub_tool_debuginfo.h  */
 Bool VG_(get_datasym_and_offset)( Addr data_addr,
                                   /*OUT*/const HChar** dname,
                                   /*OUT*/PtrdiffT* offset )
@@ -1995,7 +1997,7 @@ Bool VG_(get_datasym_and_offset)( Addr data_addr,
    (1) the DebugInfo it belongs to is not discarded
    (2) the segment containing the address is not merged with another segment
 */
-Bool VG_(get_objname) ( Addr a, const HChar** buf )
+Bool VG_(get_objname) ( Addr a, const HChar** objname )
 {
    DebugInfo* di;
    const NSegment *seg;
@@ -2008,7 +2010,7 @@ Bool VG_(get_objname) ( Addr a, const HChar** buf )
           && di->text_size > 0
           && di->text_avma <= a 
           && a < di->text_avma + di->text_size) {
-         *buf = di->fsm.filename;
+         *objname = di->fsm.filename;
          return True;
       }
    }
@@ -2019,7 +2021,7 @@ Bool VG_(get_objname) ( Addr a, const HChar** buf )
       when running programs under wine. */
    if ( (seg = VG_(am_find_nsegment)(a)) != NULL 
         && (filename = VG_(am_get_filename)(seg)) != NULL ) {
-     *buf = filename;
+      *objname = filename;
       return True;
    }
    return False;
@@ -4349,7 +4351,7 @@ const HChar* VG_(pp_SectKind)( VgSectKind kind )
    in *name. The returned name, if any, should be saved away, if there is
    a chance that a debug-info will be discarded and the name is being
    used later on. */
-VgSectKind VG_(DebugInfo_sect_kind)( /*OUT*/const HChar** name, Addr a)
+VgSectKind VG_(DebugInfo_sect_kind)( /*OUT*/const HChar** objname, Addr a)
 {
    DebugInfo* di;
    VgSectKind res = Vg_SectUnknown;
@@ -4426,11 +4428,11 @@ VgSectKind VG_(DebugInfo_sect_kind)( /*OUT*/const HChar** name, Addr a)
    vg_assert( (di == NULL && res == Vg_SectUnknown)
               || (di != NULL && res != Vg_SectUnknown) );
 
-   if (name) {
+   if (objname) {
       if (di && di->fsm.filename) {
-         *name = di->fsm.filename;
+         *objname = di->fsm.filename;
       } else {
-         *name = "???";
+         *objname = "???";
       }
    }
 

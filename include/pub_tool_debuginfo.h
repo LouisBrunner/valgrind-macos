@@ -38,12 +38,44 @@
 /*=== Obtaining debug information                                  ===*/
 /*====================================================================*/
 
+/* IMPORTANT COMMENT about memory persistence and ownership.
+
+   Many functions below are returning a string in a HChar** argument.
+   This memory must not be freed by the caller : it belongs to the debuginfo
+   module. The returned string is *not* guaranteed to be persistent.
+   The exact persistence depends on the kind of information returned,
+   and of the internal implementation of the debuginfo module.
+   In other words: use the memory directly after the call, and if in doubt,
+   save it away.
+
+   In general, all returned strings will be invalidated when the
+   DebugInfo they correspond to is discarded. This is the case for
+   the filename, dirname, fnname and objname.
+   An objname might also be invalidated by changes to the address
+   space manager segments, e.g. if a segment is merged with another
+   segment.
+
+   Retrieving a fnname might imply a call to the c++ demangler.
+   A returned fnname is invalidated if any other call to the demangler
+   is done. In particular, this means that the memory returned by one of
+   the VG_(get_fnname...) functions is invalidated by :
+     * another call to any of the functions VG_(get_fnname...).
+     * any other call that will directly or indirectly invoke the
+       c++ demangler. Such an indirect call to the demangler can a.o. be
+       done by calls to pub_tool_errormgr.h functions.
+   So, among others, the following is WRONG:
+       VG_(get_fnname)(a1, &fnname1);
+       VG_(get_fnname)(a2, &fnname2);
+       ... it is WRONG to use fnname1 here ....
+*/
+
 /* Get the file/function/line number of the instruction at address
    'a'.  For these four, if debug info for the address is found, it
    copies the info into the buffer/UInt and returns True.  If not, it
    returns False.  VG_(get_fnname) always
    demangles C++ function names.  VG_(get_fnname_w_offset) is the
-   same, except it appends "+N" to symbol names to indicate offsets.  */
+   same, except it appends "+N" to symbol names to indicate offsets.
+   NOTE: See IMPORTANT COMMENT above about persistence and ownership. */
 extern Bool VG_(get_filename) ( Addr a, const HChar** filename );
 extern Bool VG_(get_fnname)   ( Addr a, const HChar** fnname );
 extern Bool VG_(get_linenum)  ( Addr a, UInt* linenum );
@@ -58,9 +90,7 @@ extern Bool VG_(get_fnname_w_offset)
    it is available; if not available, '\0' is written to the first
    byte.
 
-   The character strings returned in *filename and *dirname are not
-   persistent. They will be freed when the DebugInfo they belong to
-   is discarded.
+   NOTE: See IMPORTANT COMMENT above about persistence and ownership.
 
    Returned value indicates whether any filename/line info could be
    found. */
@@ -76,7 +106,8 @@ extern Bool VG_(get_filename_linenum)
    instruction in a function.  Use this to instrument the start of
    a particular function.  Nb: if an executable/shared object is stripped
    of its symbols, this function will not be able to recognise function
-   entry points within it. */
+   entry points within it.
+   NOTE: See IMPORTANT COMMENT above about persistence and ownership. */
 extern Bool VG_(get_fnname_if_entry) ( Addr a, const HChar** fnname );
 
 typedef
@@ -120,7 +151,9 @@ Bool VG_(get_data_description)(
      );
 
 /* Succeeds if the address is within a shared object or the main executable.
-   It doesn't matter if debug info is present or not. */
+   It first searches if Addr a belongs to the text segment of debug info.
+   If not found, it asks the address space manager whether it
+   knows the name of the file associated with this mapping. */
 extern Bool VG_(get_objname)  ( Addr a, const HChar** objname );
 
 
@@ -261,10 +294,10 @@ typedef
 const HChar* VG_(pp_SectKind)( VgSectKind kind );
 
 /* Given an address 'a', make a guess of which section of which object
-   it comes from.  If name is non-NULL, then the object's name is put
-   into *name. The returned name is persistent as long as the debuginfo
-   it belongs to isn't discarded. */
-VgSectKind VG_(DebugInfo_sect_kind)( /*OUT*/const HChar** name, Addr a);
+   it comes from.  If objname is non-NULL, then the object's name is put
+   into *objname. This only looks in debug info, it does not examine
+   the address space manager mapped files. */
+VgSectKind VG_(DebugInfo_sect_kind)( /*OUT*/const HChar** objname, Addr a);
 
 
 #endif   // __PUB_TOOL_DEBUGINFO_H

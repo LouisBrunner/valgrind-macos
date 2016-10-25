@@ -3938,6 +3938,7 @@ PRE(sys_fcntl)
 
    /* These ones use ARG3 as "arg". */
    case VKI_F_DUPFD:
+   case VKI_F_DUPFD_CLOEXEC:
    case VKI_F_SETFD:
    case VKI_F_SETFL:
    case VKI_F_DUP2FD:
@@ -4032,8 +4033,15 @@ POST(sys_fcntl)
       if (!ML_(fd_allowed)(RES, "fcntl(F_DUPFD)", tid, True)) {
          VG_(close)(RES);
          SET_STATUS_Failure(VKI_EMFILE);
-      }
-      else if (VG_(clo_track_fds))
+      } else if (VG_(clo_track_fds))
+         ML_(record_fd_open_named)(tid, RES);
+      break;
+
+   case VKI_F_DUPFD_CLOEXEC:
+      if (!ML_(fd_allowed)(RES, "fcntl(F_DUPFD_CLOEXEC)", tid, True)) {
+         VG_(close)(RES);
+         SET_STATUS_Failure(VKI_EMFILE);
+      } else if (VG_(clo_track_fds))
          ML_(record_fd_open_named)(tid, RES);
       break;
 
@@ -4041,8 +4049,7 @@ POST(sys_fcntl)
       if (!ML_(fd_allowed)(RES, "fcntl(F_DUP2FD)", tid, True)) {
          VG_(close)(RES);
          SET_STATUS_Failure(VKI_EMFILE);
-      }
-      else if (VG_(clo_track_fds))
+      } else if (VG_(clo_track_fds))
          ML_(record_fd_open_named)(tid, RES);
       break;
 

@@ -308,6 +308,13 @@ static void sys_fcntl2(void)
 __attribute__((noinline))
 static void sys_fcntl3(void)
 {
+   GO(SYS_fcntl, "(DUPFD_CLOEXEC) 3s 0m");
+   SY(SYS_fcntl, x0 - 1, x0 + F_DUPFD_CLOEXEC, x0); FAILx(EBADF);
+}
+
+__attribute__((noinline))
+static void sys_fcntl4(void)
+{
    GO(SYS_fcntl, "(GETLK) 3s 5m");
    SY(SYS_fcntl, x0 - 1, x0 + F_GETLK, x0); FAILx(EBADF);
 }
@@ -1755,6 +1762,7 @@ int main(void)
    sys_fcntl();
    sys_fcntl2();
    sys_fcntl3();
+   sys_fcntl4();
 
    /* SYS_ulimit                 63 */
    /* XXX Missing wrapper. */

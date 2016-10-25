@@ -500,6 +500,7 @@ typedef struct vki_kcf_door_arg_s {
 #define VKI_O_LARGEFILE O_LARGEFILE
 
 #define VKI_F_DUPFD F_DUPFD
+#define VKI_F_DUPFD_CLOEXEC F_DUPFD_CLOEXEC
 #define VKI_F_GETFD F_GETFD
 #define VKI_F_SETFD F_SETFD
 #define VKI_F_GETFL F_GETFL

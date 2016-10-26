@@ -1049,6 +1049,18 @@ Syscall param fcntl(arg) contains uninitialised byte(s)
    ...
 
 ---------------------------------------------------------
+ 62:               SYS_fcntl (DUPFD_CLOEXEC) 3s 0m
+---------------------------------------------------------
+Syscall param fcntl(fildes) contains uninitialised byte(s)
+   ...
+
+Syscall param fcntl(cmd) contains uninitialised byte(s)
+   ...
+
+Syscall param fcntl(arg) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
  62:               SYS_fcntl (GETLK) 3s 5m
 ---------------------------------------------------------
 Syscall param fcntl(fildes) contains uninitialised byte(s)

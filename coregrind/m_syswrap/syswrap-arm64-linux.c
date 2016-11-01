@@ -1048,7 +1048,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_semop,             sys_semop),             // 193
    LINX_(__NR_shmget,            sys_shmget),            // 194
    LINXY(__NR_shmctl,            sys_shmctl),            // 195
-   LINXY(__NR_shmat,             wrap_sys_shmat),        // 196
+   LINXY(__NR_shmat,             sys_shmat),             // 196
    LINXY(__NR_shmdt,             sys_shmdt),             // 197
    LINXY(__NR_socket,            sys_socket),            // 198
    LINXY(__NR_socketpair,        sys_socketpair),        // 199

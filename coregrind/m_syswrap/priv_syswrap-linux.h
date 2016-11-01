@@ -337,7 +337,7 @@ DECL_TEMPLATE(linux, sys_semop);
 DECL_TEMPLATE(linux, sys_semctl);
 DECL_TEMPLATE(linux, sys_semtimedop);
 /* Shared memory */
-DECL_TEMPLATE(linux, wrap_sys_shmat);
+DECL_TEMPLATE(linux, sys_shmat);
 DECL_TEMPLATE(linux, sys_shmget);
 DECL_TEMPLATE(linux, sys_shmdt);
 DECL_TEMPLATE(linux, sys_shmctl);

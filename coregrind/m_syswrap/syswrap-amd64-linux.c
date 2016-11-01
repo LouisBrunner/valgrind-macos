@@ -730,7 +730,7 @@ static SyscallTableEntry syscall_table[] = {
    GENX_(__NR_madvise,           sys_madvise),        // 28 
    LINX_(__NR_shmget,            sys_shmget),         // 29 
 
-   LINXY(__NR_shmat,             wrap_sys_shmat),     // 30 
+   LINXY(__NR_shmat,             sys_shmat),          // 30 
    LINXY(__NR_shmctl,            sys_shmctl),         // 31 
    GENXY(__NR_dup,               sys_dup),            // 32 
    GENXY(__NR_dup2,              sys_dup2),           // 33 

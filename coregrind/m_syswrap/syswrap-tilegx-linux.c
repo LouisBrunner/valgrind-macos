@@ -484,7 +484,7 @@ DECL_TEMPLATE (tilegx_linux, sys_msgrcv);
 DECL_TEMPLATE (tilegx_linux, sys_msgsnd);
 DECL_TEMPLATE (tilegx_linux, sys_msgctl);
 DECL_TEMPLATE (tilegx_linux, sys_shmget);
-DECL_TEMPLATE (tilegx_linux, wrap_sys_shmat);
+DECL_TEMPLATE (tilegx_linux, sys_shmat);
 DECL_TEMPLATE (tilegx_linux, sys_shmdt);
 DECL_TEMPLATE (tilegx_linux, sys_shmdt);
 DECL_TEMPLATE (tilegx_linux, sys_shmctl);
@@ -1026,10 +1026,10 @@ PRE(sys_shmget)
   PRE_REG_READ3(long, "shmget", vki_key_t, key, vki_size_t, size, int, shmflg);
 }
 
-PRE(wrap_sys_shmat)
+PRE(sys_shmat)
 {
   UWord arg2tmp;
-  PRINT("wrap_sys_shmat ( %ld, %#lx, %ld )", SARG1, ARG2, SARG3);
+  PRINT("sys_shmat ( %ld, %#lx, %ld )", SARG1, ARG2, SARG3);
   PRE_REG_READ3(long, "shmat",
                 int, shmid, const void *, shmaddr, int, shmflg);
   arg2tmp = ML_(generic_PRE_sys_shmat)(tid, ARG1,ARG2,ARG3);
@@ -1038,7 +1038,7 @@ PRE(wrap_sys_shmat)
   else
     ARG2 = arg2tmp;  // used in POST
 }
-POST(wrap_sys_shmat)
+POST(sys_shmat)
 {
   ML_(generic_POST_sys_shmat)(tid, RES,ARG1,ARG2,ARG3);
 }
@@ -1319,7 +1319,7 @@ static SyscallTableEntry syscall_table[] = {
   PLAX_(__NR_semtimedop,        sys_semtimedop),           // 192
   PLAX_(__NR_semop,             sys_semop),                // 193
   PLAX_(__NR_shmget,            sys_shmget),               // 194
-  PLAXY(__NR_shmat,             wrap_sys_shmat),           // 196
+  PLAXY(__NR_shmat,             sys_shmat),                // 196
   PLAXY(__NR_shmctl,            sys_shmctl),               // 195
   PLAXY(__NR_shmdt,             sys_shmdt),                // 197
   PLAXY(__NR_socket,            sys_socket),               // 198

@@ -706,7 +706,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENXY (__NR_mincore, sys_mincore),
    GENX_ (__NR_madvise, sys_madvise),
    LINX_ (__NR_shmget, sys_shmget),
-   LINXY (__NR_shmat, wrap_sys_shmat),
+   LINXY (__NR_shmat, sys_shmat),
    LINXY (__NR_shmctl, sys_shmctl),
    GENXY (__NR_dup, sys_dup),
    GENXY (__NR_dup2, sys_dup2),

@@ -1152,7 +1152,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_readlinkat,    sys_readlinkat),       // 
    LINX_(__NR_fchmodat,       sys_fchmodat),         //
    LINX_(__NR_faccessat,    sys_faccessat),        //
-   LINXY(__NR_shmat,         wrap_sys_shmat),       //305
+   LINXY(__NR_shmat,             sys_shmat),       //305
    LINXY(__NR_shmdt,             sys_shmdt),          //306 
    LINX_(__NR_shmget,            sys_shmget),         //307 
    LINXY(__NR_shmctl,            sys_shmctl),         // 308 

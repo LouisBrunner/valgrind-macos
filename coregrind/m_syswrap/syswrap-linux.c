@@ -4004,10 +4004,10 @@ PRE(sys_shmget)
    }
 }
 
-PRE(wrap_sys_shmat)
+PRE(sys_shmat)
 {
    UWord arg2tmp;
-   PRINT("wrap_sys_shmat ( %ld, %#lx, %ld )", SARG1, ARG2, SARG3);
+   PRINT("sys_shmat ( %ld, %#lx, %ld )", SARG1, ARG2, SARG3);
    PRE_REG_READ3(long, "shmat",
                  int, shmid, const void *, shmaddr, int, shmflg);
 #if defined(VGP_arm_linux)
@@ -4025,7 +4025,7 @@ PRE(wrap_sys_shmat)
       ARG2 = arg2tmp;  // used in POST
 }
 
-POST(wrap_sys_shmat)
+POST(sys_shmat)
 {
    ML_(generic_POST_sys_shmat)(tid, RES,ARG1,ARG2,ARG3);
 }

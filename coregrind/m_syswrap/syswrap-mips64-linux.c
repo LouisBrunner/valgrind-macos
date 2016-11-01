@@ -464,7 +464,7 @@ POST(sys_ptrace)
    }
 }
 
-PRE (sys_mmap)
+PRE(sys_mmap)
 {
    SysRes r;
    PRINT("sys_mmap ( %#lx, %lu, %ld, %ld, %ld, %lu )",
@@ -616,7 +616,7 @@ POST(sys_pipe)
    }
 }
 
-PRE (sys_prctl)
+PRE(sys_prctl)
 {
    switch (ARG1) {
       case VKI_PR_SET_FP_MODE:
@@ -660,6 +660,11 @@ PRE (sys_prctl)
          WRAPPER_PRE_NAME(linux, sys_prctl)(tid, layout, arrghs, status, flags);
          break;
    }
+}
+
+POST(sys_prctl)
+{
+   WRAPPER_POST_NAME(linux, sys_prctl)(tid, arrghs, status);
 }
 
 #undef PRE
@@ -833,7 +838,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_vhangup, sys_vhangup),
    LINX_ (__NR_pivot_root,sys_pivot_root),
    LINXY (__NR__sysctl, sys_sysctl),
-   PLAX_ (__NR_prctl, sys_prctl),
+   PLAXY (__NR_prctl, sys_prctl),
    LINXY (__NR_adjtimex, sys_adjtimex),
    GENX_ (__NR_setrlimit, sys_setrlimit),
    GENX_ (__NR_chroot, sys_chroot),

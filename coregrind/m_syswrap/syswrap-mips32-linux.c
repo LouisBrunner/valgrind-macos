@@ -560,7 +560,7 @@ PRE(sys_mmap)
 // We're going to need something like linux/core_os32.h for such
 // things, eventually, I think.  --njn
  
-PRE (sys_lstat64) 
+PRE(sys_lstat64) 
 {
   PRINT ("sys_lstat64 ( %#lx(%s), %#lx )", ARG1, (HChar *) ARG1, ARG2);
   PRE_REG_READ2 (long, "lstat64", char *, file_name, struct stat64 *, buf);
@@ -568,7 +568,7 @@ PRE (sys_lstat64)
   PRE_MEM_WRITE ("lstat64(buf)", ARG2, sizeof (struct vki_stat64));
 } 
 
-POST (sys_lstat64) 
+POST(sys_lstat64) 
 {
   vg_assert (SUCCESS);
   if (RES == 0)
@@ -577,7 +577,7 @@ POST (sys_lstat64)
     }
 } 
 
-PRE (sys_stat64) 
+PRE(sys_stat64) 
 {
   PRINT ("sys_stat64 ( %#lx(%s), %#lx )", ARG1, (HChar *) ARG1, ARG2);
   PRE_REG_READ2 (long, "stat64", char *, file_name, struct stat64 *, buf);
@@ -585,12 +585,12 @@ PRE (sys_stat64)
   PRE_MEM_WRITE ("stat64(buf)", ARG2, sizeof (struct vki_stat64));
 }
 
-POST (sys_stat64)
+POST(sys_stat64)
 {
   POST_MEM_WRITE (ARG2, sizeof (struct vki_stat64));
 }
 
-PRE (sys_fstatat64)
+PRE(sys_fstatat64)
 {
   // ARG4 =  int flags;  Flags are or'ed together, therefore writing them
   // as a hex constant is more meaningful.
@@ -602,24 +602,24 @@ PRE (sys_fstatat64)
   PRE_MEM_WRITE ("fstatat64(buf)", ARG3, sizeof (struct vki_stat64));
 }
 
-POST (sys_fstatat64)
+POST(sys_fstatat64)
 {
   POST_MEM_WRITE (ARG3, sizeof (struct vki_stat64));
 }
 
-PRE (sys_fstat64)
+PRE(sys_fstat64)
 {
   PRINT ("sys_fstat64 ( %lu, %#lx )", SARG1, ARG2);
   PRE_REG_READ2 (long, "fstat64", unsigned long, fd, struct stat64 *, buf);
   PRE_MEM_WRITE ("fstat64(buf)", ARG2, sizeof (struct vki_stat64));
 }
 
-POST (sys_fstat64)
+POST(sys_fstat64)
 {
   POST_MEM_WRITE (ARG2, sizeof (struct vki_stat64));
 } 
 
-PRE (sys_clone) 
+PRE(sys_clone) 
   {
     Bool badarg = False;
     UInt cloneflags;
@@ -709,7 +709,7 @@ PRE (sys_clone)
       }
 }
 
-PRE (sys_sigreturn) 
+PRE(sys_sigreturn) 
 {
   PRINT ("sys_sigreturn ( )");
   vg_assert (VG_ (is_valid_tid) (tid));
@@ -724,7 +724,7 @@ PRE (sys_sigreturn)
   *flags |= SfPollAfter;
 }
 
-PRE (sys_rt_sigreturn) 
+PRE(sys_rt_sigreturn) 
 {
   PRINT ("rt_sigreturn ( )");
   vg_assert (VG_ (is_valid_tid) (tid));
@@ -740,7 +740,7 @@ PRE (sys_rt_sigreturn)
   *flags |= SfPollAfter;
 }
 
-PRE (sys_set_thread_area) 
+PRE(sys_set_thread_area) 
 {
    PRINT ("set_thread_area (%lx)", ARG1);
    PRE_REG_READ1(long, "set_thread_area", unsigned long, addr);
@@ -748,7 +748,7 @@ PRE (sys_set_thread_area)
 }
 
 /* Very much MIPS specific */
-PRE (sys_cacheflush)
+PRE(sys_cacheflush)
 {
   PRINT ("cacheflush (%lx, %ld, %ld)", ARG1, SARG2, SARG3);
   PRE_REG_READ3(long, "cacheflush", unsigned long, addr,
@@ -785,7 +785,7 @@ POST(sys_pipe)
    }
 }
 
-PRE (sys_prctl)
+PRE(sys_prctl)
 {
    switch (ARG1) {
       case VKI_PR_SET_FP_MODE:
@@ -829,6 +829,11 @@ PRE (sys_prctl)
          WRAPPER_PRE_NAME(linux, sys_prctl)(tid, layout, arrghs, status, flags);
          break;
    }
+}
+
+POST(sys_prctl)
+{
+   WRAPPER_POST_NAME(linux, sys_prctl)(tid, arrghs, status);
 }
 
 #undef PRE
@@ -1038,7 +1043,7 @@ static SyscallTableEntry syscall_main_table[] = {
    //..
    LINX_ (__NR_setresgid,              sys_setresgid),               // 190
    LINXY (__NR_getresgid,              sys_getresgid),               // 191
-   PLAX_ (__NR_prctl,                  sys_prctl),                   // 192
+   PLAXY (__NR_prctl,                  sys_prctl),                   // 192
    PLAX_ (__NR_rt_sigreturn,           sys_rt_sigreturn),            // 193
    LINXY (__NR_rt_sigaction,           sys_rt_sigaction),            // 194
    LINXY (__NR_rt_sigprocmask,         sys_rt_sigprocmask),          // 195

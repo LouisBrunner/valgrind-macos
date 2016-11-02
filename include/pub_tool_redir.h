@@ -185,9 +185,10 @@
      @         -->  ZA    (at)
      $         -->  ZD    (dollar)
      (         -->  ZL    (left)
+     %         -->  ZP    (percent)
      )         -->  ZR    (right)
+     /         -->  ZS    (slash) 
      Z         -->  ZZ    (Z)
-     /         -->  ZS    (slash)
 
    Everything else is left unchanged.
 */

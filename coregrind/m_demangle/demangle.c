@@ -281,6 +281,7 @@ Bool VG_(maybe_Z_demangle) ( const HChar* sym,
          case 'A': EMITSO('@'); break;
          case 'D': EMITSO('$'); break;
          case 'L': EMITSO('('); break;
+         case 'P': EMITSO('%'); break;
          case 'R': EMITSO(')'); break;
          case 'S': EMITSO('/'); break;
          case 'Z': EMITSO('Z'); break;
@@ -331,7 +332,9 @@ Bool VG_(maybe_Z_demangle) ( const HChar* sym,
          case 'A': EMITFN('@'); break;
          case 'D': EMITFN('$'); break;
          case 'L': EMITFN('('); break;
+         case 'P': EMITFN('%'); break;
          case 'R': EMITFN(')'); break;
+         case 'S': EMITFN('/'); break;
          case 'Z': EMITFN('Z'); break;
          default: error = True; goto out;
       }

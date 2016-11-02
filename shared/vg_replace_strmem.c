@@ -1040,6 +1040,7 @@ static inline void my_exit ( int x )
 
 #elif defined(VGO_solaris)
  MEMCPY(VG_Z_LIBC_SONAME,  memcpy)
+ MEMCPY(VG_Z_LIBC_SONAME,  memcpyZPZa)
  MEMCPY(VG_Z_LD_SO_1,      memcpy)
 
 #endif
@@ -1187,9 +1188,9 @@ static inline void my_exit ( int x )
    pointless. */
 
 #define MEMSET(soname, fnname) \
-   void* VG_REPLACE_FUNCTION_EZU(20210,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZZ(20210,soname,fnname) \
             (void *s, Int c, SizeT n); \
-   void* VG_REPLACE_FUNCTION_EZU(20210,soname,fnname) \
+   void* VG_REPLACE_FUNCTION_EZZ(20210,soname,fnname) \
             (void *s, Int c, SizeT n) \
    { \
       if (sizeof(void*) == 8) { \
@@ -1240,6 +1241,7 @@ static inline void my_exit ( int x )
 
 #elif defined(VGO_solaris)
  MEMSET(VG_Z_LIBC_SONAME, memset)
+ MEMSET(VG_Z_LIBC_SONAME, memsetZPZa)
 
 #endif
 
@@ -1269,6 +1271,7 @@ static inline void my_exit ( int x )
 
 #elif defined(VGO_solaris)
  MEMMOVE(VG_Z_LIBC_SONAME, memmove)
+ MEMMOVE(VG_Z_LIBC_SONAME, memmoveZPZa)
  MEMMOVE(VG_Z_LD_SO_1,     memmove)
 
 #endif

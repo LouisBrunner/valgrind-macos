@@ -30,3 +30,4 @@ AM_CFLAGS    += @FLAG_M32@
 AM_CXXFLAGS  += @FLAG_M32@
 AM_CCASFLAGS += @FLAG_M32@
 
+scalar_CFLAGS = $(AM_CFLAGS) -I../solaris

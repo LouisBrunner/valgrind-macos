@@ -9,7 +9,6 @@
 #include <sys/door.h>
 #include <sys/fcntl.h>
 #include <sys/fstyp.h>
-#include <sys/lwp.h>
 #include <sys/mman.h>
 #include <sys/modctl.h>
 #include <sys/mount.h>
@@ -2138,14 +2137,7 @@ int main(void)
    SY(SYS_lwp_sigmask, x0, x0, x0, x0, x0); FAIL;
 
    /* SYS_lwp_private           166 */
-   GO(SYS_lwp_private, "3s 1m");
-#if defined(__i386)
-   SY(SYS_lwp_private, x0 + _LWP_GETPRIVATE, x0 + _LWP_GSBASE, x0); FAIL;
-#elif defined(__amd64)
-   SY(SYS_lwp_private, x0 + _LWP_GETPRIVATE, x0 + _LWP_FSBASE, x0); FAIL;
-#else
-#error Unsupported platform
-#endif
+   /* Tested in amd64-solaris/scalar and x86-solaris/scalar */
 
    /* SYS_lwp_wait              167 */
    GO(SYS_lwp_wait, "2s 1m");

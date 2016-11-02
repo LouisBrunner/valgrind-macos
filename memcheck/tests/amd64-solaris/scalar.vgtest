@@ -1,0 +1,3 @@
+prog: scalar
+vgopts: -q
+stderr_filter_args:

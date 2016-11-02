@@ -1,9 +1,10 @@
 /* Basic syscall test for Solaris/x86 specific syscalls. */
 
-#include "../solaris/scalar.h"
+#include "scalar.h"
 
 #include <string.h>
 #include <sys/fcntl.h>
+#include <sys/lwp.h>
 #include <sys/statvfs.h>
 
 /* Helper functions.  These are necessary if we've got two tests for a single
@@ -62,6 +63,10 @@ int main(void)
    /* SYS_openat64               69 */
    sys_openat64();
    sys_openat642();
+
+   /* SYS_lwp_private           166 */
+   GO(SYS_lwp_private, "3s 1m");
+   SY(SYS_lwp_private, x0 + _LWP_GETPRIVATE, x0 + _LWP_GSBASE, x0); FAIL;
 
    /* SYS_llseek                175 */
    GO(SYS_llseek, "4s 0m");

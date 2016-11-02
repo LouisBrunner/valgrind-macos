@@ -57,6 +57,22 @@ Syscall param openat64(filename) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
+166:         SYS_lwp_private 3s 1m
+---------------------------------------------------------
+Syscall param lwp_private(cmd) contains uninitialised byte(s)
+   ...
+
+Syscall param lwp_private(which) contains uninitialised byte(s)
+   ...
+
+Syscall param lwp_private(base) contains uninitialised byte(s)
+   ...
+
+Syscall param lwp_private(base) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
 175:              SYS_llseek 4s 0m
 ---------------------------------------------------------
 Syscall param llseek(fildes) contains uninitialised byte(s)

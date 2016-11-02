@@ -19,7 +19,7 @@
 typedef int    Bool;
 
 /* Assumes the versions are x.y.z, with y and z optional. */
-static Bool matches_version(char *min_version) {
+static __attribute__((unused)) Bool matches_version(char *min_version) {
    int a1=0, a2=0, a3=0, g1=0, g2=0, g3=0;  // 'a' = actual;  'g' = given
    const char *aversion;
 

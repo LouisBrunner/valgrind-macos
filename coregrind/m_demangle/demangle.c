@@ -10,6 +10,10 @@
    Copyright (C) 2000-2015 Julian Seward 
       jseward@acm.org
 
+   Rust demangler components are
+   Copyright (C) 2016-2016 David Tolnay
+      dtolnay@gmail.com
+
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
    published by the Free Software Foundation; either version 2 of the
@@ -39,12 +43,26 @@
 #include "vg_libciface.h"
 #include "demangle.h"
 
-/* The demangler's job is to take a raw symbol name and turn it into
-   something a Human Bean can understand.  There are two levels of
-   mangling.
+/* fwds */
+static Bool rust_is_mangled ( const HChar* );
+static void rust_demangle_sym ( HChar* );
 
-   1. First, C++ names are mangled by the compiler.  So we'll have to
-      undo that.
+
+/*------------------------------------------------------------*/
+/*---                                                      ---*/
+/*------------------------------------------------------------*/
+
+/* The demangler's job is to take a raw symbol name and turn it into
+   something a Human Bean can understand.  Our mangling model
+   comprises a three stage pipeline.  Mangling pushes names forward
+   through the pipeline (0, then 1, then 2) and demangling is
+   obviously the reverse.  In practice it is highly unlikely that a
+   name would require all stages, but it is not impossible either.
+
+   0. If we're working with Rust, Rust names are lightly mangled by
+      the Rust front end.
+
+   1. Then the name is subject to standard C++ mangling.
 
    2. Optionally, in relatively rare cases, the resulting name is then
       itself encoded using Z-escaping (see pub_core_redir.h) so as to
@@ -52,20 +70,32 @@
 
    Therefore, VG_(demangle) first tries to undo (2).  If successful,
    the soname part is discarded (humans don't want to see that).
-   Then, it tries to undo (1) (using demangling code from GNU/FSF).
+   Then, it tries to undo (1) (using demangling code from GNU/FSF) and
+   finally it tries to undo (0).
 
-   Finally, change the name of all symbols which are known to be
+   Finally, it changes the name of all symbols which are known to be
    functions below main() to "(below main)".  This helps reduce
    variability of stack traces, something which has been a problem for
    the testsuite for a long time.
 
    --------
-   If do_cxx_demangle == True, does all the above stages:
+   If do_cxx_demangle == True, it does all the above stages:
    - undo (2) [Z-encoding]
    - undo (1) [C++ mangling]
+   - if (1) succeeds, undo (0) [Rust mangling]
    - do the below-main hack
 
-   If do_cxx_demangle == False, the middle stage is skipped:
+   Rust demangling (0) is only done if C++ demangling (1) succeeds
+   because Rust demangling is performed in-place, and it is difficult
+   to prove that we "own" the storage -- hence, that the in-place
+   operation is safe -- unless it is clear that it has come from the
+   C++ demangler, which returns its output in a heap-allocated buffer
+   which we can be sure we own.  In practice (Nov 2016) this does not
+   seem to be a problem, since the Rust compiler appears to apply C++
+   mangling after Rust mangling, so we never encounter symbols that
+   require Rust demangling but not C++ demangling.
+
+   If do_cxx_demangle == False, the C++ and Rust stags are skipped:
    - undo (2) [Z-encoding]
    - do the below-main hack
 */
@@ -89,7 +119,7 @@
    that buffer is owned by VG_(demangle). That means two things:
    (1) Users of VG_(demangle) must not free that buffer.
    (2) If the demangled name needs to be stashed away for later use,
-       the contents of the buffer needs to be copied. It is not sufficient
+       the contents of the buffer need to be copied. It is not sufficient
        to just store the pointer as it will point to deallocated memory
        after the next VG_(demangle) invocation. */
 void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
@@ -112,14 +142,35 @@ void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
 
    /* Possibly undo (1) */
    if (do_cxx_demangling && VG_(clo_demangle)) {
+      /* !!! vvv STATIC vvv !!! */
       static HChar* demangled = NULL;
+      /* !!! ^^^ STATIC ^^^ !!! */
 
       /* Free up previously demangled name */
-      if (demangled) VG_(arena_free) (VG_AR_DEMANGLE, demangled);
-
+      if (demangled) {
+         VG_(arena_free) (VG_AR_DEMANGLE, demangled);
+         demangled = NULL;
+      }
       demangled = ML_(cplus_demangle) ( orig, DMGL_ANSI | DMGL_PARAMS );
 
       *result = (demangled == NULL) ? orig : demangled;
+
+      if (demangled) {
+         /* Possibly undo (0).  This is the only place where it is
+            safe, from a storage management perspective, to
+            Rust-demangle the symbol.  That's because Rust demangling
+            happens in place, so we need to be sure that the storage
+            it is happening in is actually owned by us, and non-const.
+            In this case, the value returned by ML_(cplus_demangle)
+            does have that property. */
+         if (rust_is_mangled(demangled)) {
+            rust_demangle_sym(demangled);
+         }
+         *result = demangled;
+      } else {
+         *result = orig;
+      }
+
    } else {
       *result = orig;
    }
@@ -351,6 +402,297 @@ Bool VG_(maybe_Z_demangle) ( const HChar* sym,
                    "m_demangle: error Z-demangling: %s\n", sym);
       return False;
    }
+
+   return True;
+}
+
+
+/*------------------------------------------------------------*/
+/*--- DEMANGLE RUST NAMES                                  ---*/
+/*------------------------------------------------------------*/
+
+/*
+ * Mangled Rust symbols look like this:
+ *
+ *     _$LT$std..sys..fd..FileDesc$u20$as$u20$core..ops..Drop$GT$::drop::hc68340e1baa4987a
+ *
+ * The original symbol is:
+ *
+ *     <std::sys::fd::FileDesc as core::ops::Drop>::drop
+ *
+ * The last component of the path is a 64-bit hash in lowercase hex, prefixed
+ * with "h". Rust does not have a global namespace between crates, an illusion
+ * which Rust maintains by using the hash to distinguish things that would
+ * otherwise have the same symbol.
+ *
+ * Any path component not starting with a XID_Start character is prefixed with
+ * "_".
+ *
+ * The following escape sequences are used:
+ *
+ *     ","  =>  $C$
+ *     "@"  =>  $SP$
+ *     "*"  =>  $BP$
+ *     "&"  =>  $RF$
+ *     "<"  =>  $LT$
+ *     ">"  =>  $GT$
+ *     "("  =>  $LP$
+ *     ")"  =>  $RP$
+ *     " "  =>  $u20$
+ *     "\"" =>  $u22$
+ *     "'"  =>  $u27$
+ *     "+"  =>  $u2b$
+ *     ";"  =>  $u3b$
+ *     "["  =>  $u5b$
+ *     "]"  =>  $u5d$
+ *     "{"  =>  $u7b$
+ *     "}"  =>  $u7d$
+ *     "~"  =>  $u7e$
+ *
+ * A double ".." means "::" and a single "." means "-".
+ *
+ * The only characters allowed in the mangled symbol are a-zA-Z0-9 and _.:$
+ */
+
+static const HChar *hash_prefix = "::h";
+static const SizeT  hash_prefix_len = 3;
+static const SizeT  hash_len = 16;
+
+static Bool is_prefixed_hash(const HChar *start);
+static Bool looks_like_rust(const HChar *sym, SizeT len);
+static Bool unescape(const HChar **in, HChar **out,
+                     const HChar *seq, HChar value);
+
+/*
+ * INPUT:
+ *     sym: symbol that has been through BFD-demangling
+ *
+ * This function looks for the following indicators:
+ *
+ *  1. The hash must consist of "h" followed by 16 lowercase hex digits.
+ *
+ *  2. As a sanity check, the hash must use between 5 and 15 of the 16 possible
+ *     hex digits. This is true of 99.9998% of hashes so once in your life you
+ *     may see a false negative. The point is to notice path components that
+ *     could be Rust hashes but are probably not, like "haaaaaaaaaaaaaaaa". In
+ *     this case a false positive (non-Rust symbol has an important path
+ *     component removed because it looks like a Rust hash) is worse than a
+ *     false negative (the rare Rust symbol is not demangled) so this sets the
+ *     balance in favor of false negatives.
+ *
+ *  3. There must be no characters other than a-zA-Z0-9 and _.:$
+ *
+ *  4. There must be no unrecognized $-sign sequences.
+ *
+ *  5. There must be no sequence of three or more dots in a row ("...").
+ */
+static Bool rust_is_mangled(const HChar *sym)
+{
+   SizeT len, len_without_hash;
+
+   if (!sym)
+      return False;
+
+   len = VG_(strlen)(sym);
+   if (len <= hash_prefix_len + hash_len)
+      /* Not long enough to contain "::h" + hash + something else */
+      return False;
+
+   len_without_hash = len - (hash_prefix_len + hash_len);
+   if (!is_prefixed_hash(sym + len_without_hash))
+      return False;
+
+   return looks_like_rust(sym, len_without_hash);
+}
+
+/*
+ * A hash is the prefix "::h" followed by 16 lowercase hex digits. The hex
+ * digits must comprise between 5 and 15 (inclusive) distinct digits.
+ */
+static Bool is_prefixed_hash(const HChar *str)
+{
+   const HChar *end;
+   Bool seen[16];
+   SizeT i;
+   Int count;
+
+   if (VG_(strncmp)(str, hash_prefix, hash_prefix_len))
+      return False;
+   str += hash_prefix_len;
+
+   VG_(memset)(seen, False, sizeof(seen));
+   for (end = str + hash_len; str < end; str++)
+      if (*str >= '0' && *str <= '9')
+         seen[*str - '0'] = True;
+      else if (*str >= 'a' && *str <= 'f')
+         seen[*str - 'a' + 10] = True;
+      else
+         return False;
+
+   /* Count how many distinct digits seen */
+   count = 0;
+   for (i = 0; i < 16; i++)
+      if (seen[i])
+         count++;
+
+   return count >= 5 && count <= 15;
+}
+
+static Bool looks_like_rust(const HChar *str, SizeT len)
+{
+   const HChar *end = str + len;
+
+   while (str < end) {
+      switch (*str) {
+      case '$':
+         if (!VG_(strncmp)(str, "$C$", 3))
+            str += 3;
+         else if (!VG_(strncmp)(str, "$SP$", 4)
+                  || !VG_(strncmp)(str, "$BP$", 4)
+                  || !VG_(strncmp)(str, "$RF$", 4)
+                  || !VG_(strncmp)(str, "$LT$", 4)
+                  || !VG_(strncmp)(str, "$GT$", 4)
+                  || !VG_(strncmp)(str, "$LP$", 4)
+                  || !VG_(strncmp)(str, "$RP$", 4))
+            str += 4;
+         else if (!VG_(strncmp)(str, "$u20$", 5)
+                  || !VG_(strncmp)(str, "$u22$", 5)
+                  || !VG_(strncmp)(str, "$u27$", 5)
+                  || !VG_(strncmp)(str, "$u2b$", 5)
+                  || !VG_(strncmp)(str, "$u3b$", 5)
+                  || !VG_(strncmp)(str, "$u5b$", 5)
+                  || !VG_(strncmp)(str, "$u5d$", 5)
+                  || !VG_(strncmp)(str, "$u7b$", 5)
+                  || !VG_(strncmp)(str, "$u7d$", 5)
+                  || !VG_(strncmp)(str, "$u7e$", 5))
+            str += 5;
+         else
+            return False;
+         break;
+      case '.':
+         /* Do not allow three or more consecutive dots */
+         if (!VG_(strncmp)(str, "...", 3))
+            return False;
+         /* Fall through */
+      case 'a' ... 'z':
+      case 'A' ... 'Z':
+      case '0' ... '9':
+      case '_':
+      case ':':
+         str++;
+         break;
+      default:
+         return False;
+      }
+   }
+
+   return True;
+}
+
+/*
+ * INPUT:
+ *     sym: symbol for which rust_is_mangled(sym) returns True
+ *
+ * The input is demangled in-place because the mangled name is always longer
+ * than the demangled one.
+ */
+static void rust_demangle_sym(HChar *sym)
+{
+   const HChar *in;
+   HChar *out;
+   const HChar *end;
+
+   if (!sym)
+      return;
+
+   const SizeT  sym_len     = VG_(strlen)(sym);
+   const HChar* never_after = sym + sym_len;
+
+   in = sym;
+   out = sym;
+   end = sym + sym_len - (hash_prefix_len + hash_len);
+
+   while (in < end) {
+      switch (*in) {
+      case '$':
+         if (!(unescape(&in, &out, "$C$", ',')
+               || unescape(&in, &out, "$SP$", '@')
+               || unescape(&in, &out, "$BP$", '*')
+               || unescape(&in, &out, "$RF$", '&')
+               || unescape(&in, &out, "$LT$", '<')
+               || unescape(&in, &out, "$GT$", '>')
+               || unescape(&in, &out, "$LP$", '(')
+               || unescape(&in, &out, "$RP$", ')')
+               || unescape(&in, &out, "$u20$", ' ')
+               || unescape(&in, &out, "$u22$", '\"')
+               || unescape(&in, &out, "$u27$", '\'')
+               || unescape(&in, &out, "$u2b$", '+')
+               || unescape(&in, &out, "$u3b$", ';')
+               || unescape(&in, &out, "$u5b$", '[')
+               || unescape(&in, &out, "$u5d$", ']')
+               || unescape(&in, &out, "$u7b$", '{')
+               || unescape(&in, &out, "$u7d$", '}')
+               || unescape(&in, &out, "$u7e$", '~'))) {
+            goto fail;
+         }
+         break;
+      case '_':
+         /*
+          * If this is the start of a path component and the next
+          * character is an escape sequence, ignore the
+          * underscore. The mangler inserts an underscore to make
+          * sure the path component begins with a XID_Start
+          * character.
+          */
+         if ((in == sym || in[-1] == ':') && in[1] == '$')
+            in++;
+         else
+            *out++ = *in++;
+         break;
+      case '.':
+         if (in[1] == '.') {
+            /* ".." becomes "::" */
+            *out++ = ':';
+            *out++ = ':';
+            in += 2;
+         } else {
+            /* "." becomes "-" */
+            *out++ = '-';
+            in++;
+         }
+         break;
+      case 'a' ... 'z':
+      case 'A' ... 'Z':
+      case '0' ... '9':
+      case ':':
+         *out++ = *in++;
+         break;
+      default:
+         goto fail;
+      }
+   }
+   goto done;
+
+  fail:
+   *out++ = '?'; /* This is pretty lame, but it's hard to do better. */
+  done:
+   *out++ = '\0';
+
+   vg_assert(out <= never_after);
+}
+
+static Bool unescape(const HChar **in, HChar **out,
+                     const HChar *seq, HChar value)
+{
+   SizeT len = VG_(strlen)(seq);
+
+   if (VG_(strncmp)(*in, seq, len))
+      return False;
+
+   **out = value;
+
+   *in += len;
+   *out += 1;
 
    return True;
 }

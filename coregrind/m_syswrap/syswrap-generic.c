@@ -4129,6 +4129,8 @@ PRE(sys_readlink)
    PRE_MEM_WRITE( "readlink(buf)", ARG2,ARG3 );
 
 
+   {
+#if defined(VGO_linux) || defined(VGO_solaris)
 #if defined(VGO_linux)
 #define PID_EXEPATH  "/proc/%d/exe"
 #define SELF_EXEPATH "/proc/self/exe"
@@ -4138,7 +4140,6 @@ PRE(sys_readlink)
 #define SELF_EXEPATH "/proc/self/path/a.out"
 #define SELF_EXEFD   "/proc/self/path/%d"
 #endif
-   {
       /*
        * Handle the case where readlink is looking at /proc/self/exe or
        * /proc/<pid>/exe, or equivalent on Solaris.
@@ -4151,7 +4152,9 @@ PRE(sys_readlink)
          VG_(sprintf)(name, SELF_EXEFD, VG_(cl_exec_fd));
          SET_STATUS_from_SysRes( VG_(do_syscall3)(saved, (UWord)name, 
                                                          ARG2, ARG3));
-      } else {
+      } else
+#endif
+      {
          /* Normal case */
          SET_STATUS_from_SysRes( VG_(do_syscall3)(saved, ARG1, ARG2, ARG3));
       }

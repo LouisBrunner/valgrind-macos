@@ -1567,8 +1567,13 @@ void VG_(redir_initialise) ( void )
 
       /* this is mandatory - can't sanely continue without it */
       add_hardwired_spec(
-         "ld.so.3", "strlen",
+         "ld.so.1", "strlen",
          (Addr)&VG_(mips32_linux_REDIR_FOR_strlen),
+         complain_about_stripped_glibc_ldso
+      );
+      add_hardwired_spec(
+         "ld.so.1", "index",
+         (Addr)&VG_(mips32_linux_REDIR_FOR_index),
          complain_about_stripped_glibc_ldso
       );
    }
@@ -1578,8 +1583,13 @@ void VG_(redir_initialise) ( void )
 
       /* this is mandatory - can't sanely continue without it */
       add_hardwired_spec(
-         "ld.so.3", "strlen",
+         "ld.so.1", "strlen",
          (Addr)&VG_(mips64_linux_REDIR_FOR_strlen),
+         complain_about_stripped_glibc_ldso
+      );
+      add_hardwired_spec(
+         "ld.so.1", "index",
+         (Addr)&VG_(mips64_linux_REDIR_FOR_index),
          complain_about_stripped_glibc_ldso
       );
    }

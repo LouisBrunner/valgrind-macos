@@ -1269,23 +1269,42 @@ VG_(mips32_linux_SUBST_FOR_rt_sigreturn):
 	
 /* There's no particular reason that this needs to be handwritten
    assembly, but since that's what this file contains, here's a
-   simple strlen implementation (written in C and compiled by gcc.)
+   simple index() and strlen() implementations.
 */
+
+.set push
+.set noreorder
+
+.global VG_(mips32_linux_REDIR_FOR_index)
+.type   VG_(mips32_linux_REDIR_FOR_index), @function
+VG_(mips32_linux_REDIR_FOR_index):
+      move $v0, $a0
+   index_loop:
+      lbu $t0, 0($v0)
+      beq $t0, $a1, index_end
+      nop
+      bne $t0, $zero, index_loop
+      addiu $v0, $v0, 1
+      move $v0, $zero
+   index_end:
+      jr $ra
+      nop
+.size VG_(mips32_linux_REDIR_FOR_index), .-VG_(mips32_linux_REDIR_FOR_index)
+
 .global VG_(mips32_linux_REDIR_FOR_strlen)
 .type   VG_(mips32_linux_REDIR_FOR_strlen), @function
 VG_(mips32_linux_REDIR_FOR_strlen):
-      li $v0, 0
-      //la $a0, string
-      j strlen_cond
+      move $v0, $a0
    strlen_loop:
-      addiu $v0, $v0, 1
-      addiu $a0, $a0, 1
-   strlen_cond:
-      lbu $t0, ($a0)
+      lbu $t0, 0($a0)
       bne $t0, $zero, strlen_loop
-    jr $ra
-
+      addiu $a0, $a0, 1
+      subu $v0, $a0, $v0
+      jr $ra
+      addiu $v0, $v0, -1
 .size VG_(mips32_linux_REDIR_FOR_strlen), .-VG_(mips32_linux_REDIR_FOR_strlen)
+
+.set pop
 
 .global VG_(trampoline_stuff_end)
 VG_(trampoline_stuff_end):
@@ -1319,29 +1338,42 @@ VG_(mips64_linux_SUBST_FOR_rt_sigreturn):
 
 /* There's no particular reason that this needs to be handwritten
    assembly, but since that's what this file contains, here's a
-   simple strlen implementation (written in C and compiled by gcc.)
+   simple index() and strlen() implementations.
 */
+
+.set push
+.set noreorder
+
+.global VG_(mips64_linux_REDIR_FOR_index)
+.type   VG_(mips64_linux_REDIR_FOR_index), @function
+VG_(mips64_linux_REDIR_FOR_index):
+      move $v0, $a0
+   index_loop:
+      lbu $t0, 0($v0)
+      beq $t0, $a1, index_end
+      nop
+      bne $t0, $zero, index_loop
+      daddiu $v0, $v0, 1
+      move $v0, $zero
+   index_end:
+      jr $ra
+      nop
+.size VG_(mips64_linux_REDIR_FOR_index), .-VG_(mips64_linux_REDIR_FOR_index)
+
 .global VG_(mips64_linux_REDIR_FOR_strlen)
 .type   VG_(mips64_linux_REDIR_FOR_strlen), @function
 VG_(mips64_linux_REDIR_FOR_strlen):
-        lbu $12, 0($4)
-        li  $13, 0
-        beq $12, $0, M01 
-        nop
-
-M02: 
-        addiu $13, $13, 1 
-        addiu $4, $4, 1 
-        lbu $12, 0($4) 
-        bne $12, $0, M02 
-        nop 
-
-M01: 
-        move $2, $13 
-        jr $31 
-        nop
-
+      move $v0, $a0
+   strlen_loop:
+      lbu $t0, 0($a0)
+      bne $t0, $zero, strlen_loop
+      daddiu $a0, $a0, 1
+      dsubu $v0, $a0, $v0
+      jr $ra
+      daddiu $v0, $v0, -1
 .size VG_(mips64_linux_REDIR_FOR_strlen), .-VG_(mips64_linux_REDIR_FOR_strlen)
+
+.set pop
 
 .global VG_(trampoline_stuff_end)
 VG_(trampoline_stuff_end):

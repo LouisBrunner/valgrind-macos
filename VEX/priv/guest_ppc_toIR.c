@@ -27218,7 +27218,9 @@ static struct vsx_insn vsx_xx3[] = {
 #define VSX_XX3_LEN (sizeof vsx_xx3 / sizeof *vsx_xx3)
 
 
-// ATTENTION: This search functions assumes vsx_all array is sorted.
+/* ATTENTION: These search functions assumes vsx_xx2 and vsx_xx3 arrays
+ * are sorted.
+ */
 static Int findVSXextOpCode_xx2(UInt opcode)
 {
    Int low, mid, high;

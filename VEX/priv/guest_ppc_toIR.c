@@ -18146,7 +18146,7 @@ dis_vvec_cmp( UInt theInstr, UInt opc2 )
    assign( vB, getVSReg( XB ) );
 
    switch (opc2) {
-      case 0x18C: case 0x38C:  // xvcmpeqdp[.] (VSX Vector Compare Equal To Double-Precision [ & Record ])
+      case 0x18C:  // xvcmpeqdp[.] (VSX Vector Compare Equal To Double-Precision [ & Record ])
       {
          DIP("xvcmpeqdp%s crf%d,fr%u,fr%u\n", (flag_rC ? ".":""),
              XT, XA, XB);
@@ -18154,7 +18154,7 @@ dis_vvec_cmp( UInt theInstr, UInt opc2 )
          break;
       }
 
-      case 0x1CC: case 0x3CC: // xvcmpgedp[.] (VSX Vector Compare Greater Than or Equal To Double-Precision [ & Record ])
+      case 0x1CC:  // xvcmpgedp[.] (VSX Vector Compare Greater Than or Equal To Double-Precision [ & Record ])
       {
          DIP("xvcmpgedp%s crf%d,fr%u,fr%u\n", (flag_rC ? ".":""),
              XT, XA, XB);
@@ -18162,7 +18162,7 @@ dis_vvec_cmp( UInt theInstr, UInt opc2 )
          break;
       }
 
-      case 0x1AC: case 0x3AC: // xvcmpgtdp[.] (VSX Vector Compare Greater Than Double-Precision [ & Record ])
+      case 0x1AC:  // xvcmpgtdp[.] (VSX Vector Compare Greater Than Double-Precision [ & Record ])
       {
          DIP("xvcmpgtdp%s crf%d,fr%u,fr%u\n", (flag_rC ? ".":""),
              XT, XA, XB);
@@ -18170,7 +18170,7 @@ dis_vvec_cmp( UInt theInstr, UInt opc2 )
          break;
       }
 
-      case 0x10C: case 0x30C: // xvcmpeqsp[.] (VSX Vector Compare Equal To Single-Precision [ & Record ])
+      case 0x10C:  // xvcmpeqsp[.] (VSX Vector Compare Equal To Single-Precision [ & Record ])
       {
          IRTemp vD = newTemp(Ity_V128);
 
@@ -18184,7 +18184,7 @@ dis_vvec_cmp( UInt theInstr, UInt opc2 )
          break;
       }
 
-      case 0x14C: case 0x34C: // xvcmpgesp[.] (VSX Vector Compare Greater Than or Equal To Single-Precision [ & Record ])
+      case 0x14C:  // xvcmpgesp[.] (VSX Vector Compare Greater Than or Equal To Single-Precision [ & Record ])
       {
          IRTemp vD = newTemp(Ity_V128);
 
@@ -18198,7 +18198,7 @@ dis_vvec_cmp( UInt theInstr, UInt opc2 )
          break;
       }
 
-      case 0x12C: case 0x32C: //xvcmpgtsp[.] (VSX Vector Compare Greater Than Single-Precision [ & Record ])
+      case 0x12C:  //xvcmpgtsp[.] (VSX Vector Compare Greater Than Single-Precision [ & Record ])
       {
          IRTemp vD = newTemp(Ity_V128);
 
@@ -27043,17 +27043,93 @@ struct vsx_insn {
 };
 
 //  ATTENTION:  Keep this array sorted on the opcocde!!!
-static struct vsx_insn vsx_all[] = {
-      { 0x0, "xsaddsp" },
-      { 0x4, "xsmaddasp" },
-      { 0x8, "xxsldwi" },
+static struct vsx_insn vsx_xx2[] = {
       { 0x14, "xsrsqrtesp" },
       { 0x16, "xssqrtsp" },
       { 0x18, "xxsel" },
+      { 0x34, "xsresp" },
+      { 0x90, "xscvdpuxws" },
+      { 0x92, "xsrdpi" },
+      { 0x94, "xsrsqrtedp" },
+      { 0x96, "xssqrtdp" },
+      { 0xb0, "xscvdpsxws" },
+      { 0xb2, "xsrdpiz" },
+      { 0xb4, "xsredp" },
+      { 0xd2, "xsrdpip" },
+      { 0xd4, "xstsqrtdp" },
+      { 0xd6, "xsrdpic" },
+      { 0xf2, "xsrdpim" },
+      { 0x112, "xvrspi" },
+      { 0x116, "xvsqrtsp" },
+      { 0x130, "xvcvspsxws" },
+      { 0x132, "xvrspiz" },
+      { 0x134, "xvresp" },
+      { 0x148, "xxspltw" },
+      { 0x14A, "xxextractuw" },
+      { 0x150, "xvcvuxwsp" },
+      { 0x152, "xvrspip" },
+      { 0x154, "xvtsqrtsp" },
+      { 0x156, "xvrspic" },
+      { 0x16A, "xxinsertw" },
+      { 0x170, "xvcvsxwsp" },
+      { 0x172, "xvrspim" },
+      { 0x190, "xvcvdpuxws" },
+      { 0x192, "xvrdpi" },
+      { 0x194, "xvrsqrtedp" },
+      { 0x196, "xvsqrtdp" },
+      { 0x1b0, "xvcvdpsxws" },
+      { 0x1b2, "xvrdpiz" },
+      { 0x1b4, "xvredp" },
+      { 0x1d0, "xvcvuxwdp" },
+      { 0x1d2, "xvrdpip" },
+      { 0x1d4, "xvtsqrtdp" },
+      { 0x1d6, "xvrdpic" },
+      { 0x1f0, "xvcvsxwdp" },
+      { 0x1f2, "xvrdpim" },
+      { 0x212, "xscvdpsp" },
+      { 0x216, "xscvdpspn" },
+      { 0x232, "xxrsp" },
+      { 0x250, "xscvuxdsp" },
+      { 0x254, "xststdcsp" },
+      { 0x270, "xscvsxdsp" },
+      { 0x290, "xscvdpuxds" },
+      { 0x292, "xscvspdp" },
+      { 0x296, "xscvspdpn" },
+      { 0x2b0, "xscvdpsxds" },
+      { 0x2b2, "xsabsdp" },
+      { 0x2b6, "xsxexpdp_xsxigdp" },
+      { 0x2d0, "xscvuxddp" },
+      { 0x2d2, "xsnabsdp" },
+      { 0x2d4, "xststdcdp" },
+      { 0x2e4, "xsnmsubmdp" },
+      { 0x2f0, "xscvsxddp" },
+      { 0x2f2, "xsnegdp" },
+      { 0x310, "xvcvspuxds" },
+      { 0x312, "xvcvdpsp" },
+      { 0x330, "xvcvspsxds" },
+      { 0x332, "xvabssp" },
+      { 0x350, "xvcvuxdsp" },
+      { 0x352, "xvnabssp" },
+      { 0x370, "xvcvsxdsp" },
+      { 0x372, "xvnegsp" },
+      { 0x390, "xvcvdpuxds" },
+      { 0x392, "xvcvspdp" },
+      { 0x3b0, "xvcvdpsxds" },
+      { 0x3b2, "xvabsdp" },
+      { 0x3b6, "xxbr[h|w|d|q]|xvxexpdp|xvxexpsp|xvxsigdp|xvxsigsp|xvcvhpsp|xvcvsphp|xscvdphp|xscvhpdp" },
+      { 0x3d0, "xvcvuxddp" },
+      { 0x3d2, "xvnabsdp" },
+      { 0x3f2, "xvnegdp" }
+};
+#define VSX_XX2_LEN (sizeof vsx_xx2 / sizeof *vsx_xx2)
+
+//  ATTENTION:  Keep this array sorted on the opcocde!!!
+static struct vsx_insn vsx_xx3[] = {
+      { 0x0,  "xsaddsp" },
+      { 0x4,  "xsmaddasp" },
+      { 0x9,  "xsmaddmsp" },
       { 0x20, "xssubsp" },
       { 0x24, "xsmaddmsp" },
-      { 0x28, "xxpermdi" },
-      { 0x34, "xsresp" },
       { 0x3A, "xxpermr" },
       { 0x40, "xsmulsp" },
       { 0x44, "xsmsubasp" },
@@ -27064,174 +27140,112 @@ static struct vsx_insn vsx_all[] = {
       { 0x80, "xsadddp" },
       { 0x84, "xsmaddadp" },
       { 0x8c, "xscmpudp" },
-      { 0x90, "xscvdpuxws" },
-      { 0x92, "xsrdpi" },
-      { 0x94, "xsrsqrtedp" },
-      { 0x96, "xssqrtdp" },
       { 0xa0, "xssubdp" },
       { 0xa4, "xsmaddmdp" },
       { 0xac, "xscmpodp" },
-      { 0xb0, "xscvdpsxws" },
-      { 0xb2, "xsrdpiz" },
-      { 0xb4, "xsredp" },
       { 0xc0, "xsmuldp" },
       { 0xc4, "xsmsubadp" },
       { 0xc8, "xxmrglw" },
-      { 0xd2, "xsrdpip" },
       { 0xd4, "xstsqrtdp" },
-      { 0xd6, "xsrdpic" },
       { 0xe0, "xsdivdp" },
       { 0xe4, "xsmsubmdp" },
       { 0xe8, "xxpermr" },
       { 0xeC, "xscmpexpdp" },
-      { 0xf2, "xsrdpim" },
       { 0xf4, "xstdivdp" },
       { 0x100, "xvaddsp" },
       { 0x104, "xvmaddasp" },
-      { 0x10c, "xvcmpeqsp" },
+      { 0x10C, "xvcmpeqsp" },
       { 0x110, "xvcvspuxws" },
-      { 0x112, "xvrspi" },
       { 0x114, "xvrsqrtesp" },
-      { 0x116, "xvsqrtsp" },
       { 0x120, "xvsubsp" },
       { 0x124, "xvmaddmsp" },
-      { 0x12c, "xvcmpgtsp" },
       { 0x130, "xvcvspsxws" },
-      { 0x132, "xvrspiz" },
-      { 0x134, "xvresp" },
       { 0x140, "xvmulsp" },
       { 0x144, "xvmsubasp" },
-      { 0x148, "xxspltw" },
-      { 0x14A, "xxextractuw" },
-      { 0x14c, "xvcmpgesp" },
-      { 0x150, "xvcvuxwsp" },
-      { 0x152, "xvrspip" },
-      { 0x154, "xvtsqrtsp" },
-      { 0x156, "xvrspic" },
+      { 0x14C, "xvcmpgesp", },
       { 0x160, "xvdivsp" },
       { 0x164, "xvmsubmsp" },
-      { 0x16A, "xxinsertw" },
-      { 0x170, "xvcvsxwsp" },
-      { 0x172, "xvrspim" },
       { 0x174, "xvtdivsp" },
       { 0x180, "xvadddp" },
       { 0x184, "xvmaddadp" },
-      { 0x18c, "xvcmpeqdp" },
-      { 0x190, "xvcvdpuxws" },
-      { 0x192, "xvrdpi" },
-      { 0x194, "xvrsqrtedp" },
-      { 0x196, "xvsqrtdp" },
+      { 0x18C, "xvcmpeqdp" },
       { 0x1a0, "xvsubdp" },
       { 0x1a4, "xvmaddmdp" },
-      { 0x1ac, "xvcmpgtdp" },
-      { 0x1b0, "xvcvdpsxws" },
-      { 0x1b2, "xvrdpiz" },
-      { 0x1b4, "xvredp" },
+      { 0x1aC, "xvcmpgtdp" },
       { 0x1c0, "xvmuldp" },
       { 0x1c4, "xvmsubadp" },
       { 0x1cc, "xvcmpgedp" },
-      { 0x1d0, "xvcvuxwdp" },
-      { 0x1d2, "xvrdpip" },
-      { 0x1d4, "xvtsqrtdp" },
-      { 0x1d6, "xvrdpic" },
       { 0x1e0, "xvdivdp" },
       { 0x1e4, "xvmsubmdp" },
-      { 0x1f0, "xvcvsxwdp" },
-      { 0x1f2, "xvrdpim" },
       { 0x1f4, "xvtdivdp" },
       { 0x204, "xsnmaddasp" },
       { 0x208, "xxland" },
-      { 0x212, "xscvdpsp" },
-      { 0x216, "xscvdpspn" },
       { 0x224, "xsnmaddmsp" },
       { 0x228, "xxlandc" },
-      { 0x232, "xxrsp" },
       { 0x244, "xsnmsubasp" },
       { 0x248, "xxlor" },
-      { 0x250, "xscvuxdsp" },
-      { 0x254, "xststdcsp" },
       { 0x264, "xsnmsubmsp" },
       { 0x268, "xxlxor" },
-      { 0x270, "xscvsxdsp" },
       { 0x280, "xsmaxdp" },
       { 0x284, "xsnmaddadp" },
       { 0x288, "xxlnor" },
-      { 0x290, "xscvdpuxds" },
-      { 0x292, "xscvspdp" },
-      { 0x296, "xscvspdpn" },
       { 0x2a0, "xsmindp" },
       { 0x2a4, "xsnmaddmdp" },
       { 0x2a8, "xxlorc" },
-      { 0x2b0, "xscvdpsxds" },
-      { 0x2b2, "xsabsdp" },
-      { 0x2b6, "xsxexpdp_xsxigdp" },
       { 0x2c0, "xscpsgndp" },
       { 0x2c4, "xsnmsubadp" },
       { 0x2c8, "xxlnand" },
-      { 0x2d0, "xscvuxddp" },
-      { 0x2d2, "xsnabsdp" },
-      { 0x2d4, "xststdcdp" },
       { 0x2e4, "xsnmsubmdp" },
       { 0x2e8, "xxleqv" },
-      { 0x2f0, "xscvsxddp" },
-      { 0x2f2, "xsnegdp" },
       { 0x300, "xvmaxsp" },
       { 0x304, "xvnmaddasp" },
-      { 0x30c, "xvcmpeqsp." },
-      { 0x310, "xvcvspuxds" },
-      { 0x312, "xvcvdpsp" },
       { 0x320, "xvminsp" },
       { 0x324, "xvnmaddmsp" },
-      { 0x32c, "xvcmpgtsp." },
-      { 0x330, "xvcvspsxds" },
-      { 0x332, "xvabssp" },
       { 0x340, "xvcpsgnsp" },
       { 0x344, "xvnmsubasp" },
-      { 0x34c, "xvcmpgesp." },
-      { 0x350, "xvcvuxdsp" },
-      { 0x352, "xvnabssp" },
-      { 0x354, "xvtstdcsp" },
       { 0x360, "xviexpsp" },
       { 0x364, "xvnmsubmsp" },
-      { 0x370, "xvcvsxdsp" },
-      { 0x372, "xvnegsp" },
       { 0x380, "xvmaxdp" },
       { 0x384, "xvnmaddadp" },
-      { 0x38c, "xvcmpeqdp." },
-      { 0x390, "xvcvdpuxds" },
-      { 0x392, "xvcvspdp" },
-      { 0x396, "xsiexpdp" },
       { 0x3a0, "xvmindp" },
       { 0x3a4, "xvnmaddmdp" },
-      { 0x3ac, "xvcmpgtdp." },
-      { 0x3b0, "xvcvdpsxds" },
-      { 0x3b2, "xvabsdp" },
-      { 0x3b6, "xxbr[h|w|d|q]|xvxexpdp|xvxexpsp|xvxsigdp|xvxsigsp|xvcvhpsp|xvcvsphp|xscvdphp|xscvhpdp" },
       { 0x3c0, "xvcpsgndp" },
       { 0x3c4, "xvnmsubadp" },
-      { 0x3cc, "xvcmpgedp." },
-      { 0x3d0, "xvcvuxddp" },
-      { 0x3d2, "xvnabsdp" },
-      { 0x3d4, "xvtstdcdp" },
       { 0x3e0, "xviexpdp" },
       { 0x3e4, "xvnmsubmdp" },
       { 0x3f0, "xvcvsxddp" },
-      { 0x3f2, "xvnegdp" }
 };
-#define VSX_ALL_LEN (sizeof vsx_all / sizeof *vsx_all)
+#define VSX_XX3_LEN (sizeof vsx_xx3 / sizeof *vsx_xx3)
 
 
-// ATTENTION: This search function assumes vsx_all array is sorted.
-static Int findVSXextOpCode(UInt opcode)
+// ATTENTION: This search functions assumes vsx_all array is sorted.
+static Int findVSXextOpCode_xx2(UInt opcode)
 {
    Int low, mid, high;
    low = 0;
-   high = VSX_ALL_LEN - 1;
+   high = VSX_XX2_LEN - 1;
    while (low <= high) {
       mid = (low + high)/2;
-      if (opcode < vsx_all[mid].opcode)
+      if (opcode < vsx_xx2[mid].opcode)
          high = mid - 1;
-      else if (opcode > vsx_all[mid].opcode)
+      else if (opcode > vsx_xx2[mid].opcode)
+         low = mid + 1;
+      else
+         return mid;
+   }
+   return -1;
+}
+
+static Int findVSXextOpCode_xx3(UInt opcode)
+{
+   Int low, mid, high;
+   low = 0;
+   high = VSX_XX3_LEN - 1;
+   while (low <= high) {
+      mid = (low + high)/2;
+      if (opcode < vsx_xx3[mid].opcode)
+         high = mid - 1;
+      else if (opcode > vsx_xx3[mid].opcode)
          low = mid + 1;
       else
          return mid;
@@ -27244,31 +27258,68 @@ static Int findVSXextOpCode(UInt opcode)
  * passed, and we then try to match it up with one of the VSX forms
  * below.
  */
-static UInt get_VSX60_opc2(UInt opc2_full)
+static UInt get_VSX60_opc2(UInt opc2_full, UInt theInstr)
 {
-#define XX2_MASK 0x000003FE
+#define XX2_1_MASK 0x000003FF    // xsiexpdp specific
+#define XX2_2_MASK 0x000003FE
 #define XX3_1_MASK 0x000003FC
 #define XX3_2_MASK 0x000001FC
-#define XX3_3_MASK 0x0000007C
-#define XX4_MASK 0x00000018
-#define VDCMX_MASK 0x000003B8
+#define XX3_4_MASK 0x0000027C
+#define XX3_5_MASK 0x000003DC
+#define XX4_MASK   0x00000018
+
    Int ret;
    UInt vsxExtOpcode = 0;
 
-   if (( ret = findVSXextOpCode(opc2_full & XX2_MASK)) >= 0)
-      vsxExtOpcode = vsx_all[ret].opcode;
-   else if (( ret = findVSXextOpCode(opc2_full & XX3_1_MASK)) >= 0)
-      vsxExtOpcode = vsx_all[ret].opcode;
-   else if (( ret = findVSXextOpCode(opc2_full & VDCMX_MASK)) >= 0)
-      vsxExtOpcode = vsx_all[ret].opcode;
-   else if (( ret = findVSXextOpCode(opc2_full & XX3_2_MASK)) >= 0)
-      vsxExtOpcode = vsx_all[ret].opcode;
-   else if (( ret = findVSXextOpCode(opc2_full & XX3_3_MASK)) >= 0)
-      vsxExtOpcode = vsx_all[ret].opcode;
-   else if (( ret = findVSXextOpCode(opc2_full & XX4_MASK)) >= 0)
-      vsxExtOpcode = vsx_all[ret].opcode;
+   if (( ret = findVSXextOpCode_xx2(opc2_full & XX2_2_MASK)) >= 0)
+      return vsx_xx2[ret].opcode;
+   else if ((opc2_full & XX2_1_MASK) == 0x396 )   // xsiexpdp
+      return 0x396;
+   else if (( ret = findVSXextOpCode_xx3(opc2_full & XX3_1_MASK)) >= 0)
+      return vsx_xx3[ret].opcode;
+   else {
 
-   return vsxExtOpcode;
+      /* There are only a few codes in each of these cases it is
+       * probably faster to check for the codes then do the array lookups.
+       */
+      vsxExtOpcode = opc2_full & XX3_2_MASK;
+
+      switch (vsxExtOpcode) {
+      case 0x10C: return vsxExtOpcode;   // xvcmpeqsp
+      case 0x12C: return vsxExtOpcode;   // xvcmpgtsp, xvcmpgtsp.
+      case 0x14C: return vsxExtOpcode;   // xvcmpgesp, xvcmpgesp.
+      case 0x18C: return vsxExtOpcode;   // xvcmpeqdp, xvcmpeqdp.
+      case 0x1AC: return vsxExtOpcode;   // xvcmpgtdp, xvcmpgtdp.
+      case 0x1CC: return vsxExtOpcode;   // xvcmpgedp, xvcmpgedp.
+      default:  break;
+      }
+
+      vsxExtOpcode = opc2_full & XX3_4_MASK;
+
+      switch (vsxExtOpcode) {
+      case 0x8:   return vsxExtOpcode;   // xxsldwi
+      case 0x28:  return vsxExtOpcode;   // xxpermdi
+      default:  break;
+      }
+
+      vsxExtOpcode = opc2_full & XX3_5_MASK;
+
+      switch (vsxExtOpcode) {
+      case 0x354:  return vsxExtOpcode;   // xvtstdcsp
+      case 0x3D4:  return vsxExtOpcode;   // xvtstdcdp
+      default:  break;
+      }
+
+      if (( opc2_full & XX4_MASK ) == XX4_MASK ) {   // xxsel
+         vsxExtOpcode = 0x18;
+         return vsxExtOpcode;
+      }
+   }
+
+   vex_printf( "Error: undefined opcode 0x %x, the instruction = 0x %x\n",
+               opc2_full, theInstr );
+   vpanic( "ERROR: get_VSX60_opc2()\n" );
+   return 0;
 }
 
 /*------------------------------------------------------------*/
@@ -27718,7 +27769,7 @@ DisResult disInstr_PPC_WRK (
       opc2 = ifieldOPClo10(theInstr);
       UInt opc2hi = IFIELD(theInstr, 7, 4);
       UInt opc2lo = IFIELD(theInstr, 3, 3);
-      UInt vsxOpc2 = get_VSX60_opc2(opc2);
+      UInt vsxOpc2;
 
       if (( opc2hi == 13 ) && ( opc2lo == 5)) { //xvtstdcsp
          if (dis_vxs_misc(theInstr, 0x354, allow_isa_3_0))
@@ -27746,6 +27797,8 @@ DisResult disInstr_PPC_WRK (
          if (dis_vxs_misc(theInstr, opc2, allow_isa_3_0)) goto decode_success;
          goto decode_failure;
       }
+
+      vsxOpc2 = get_VSX60_opc2(opc2, theInstr);
 
       switch (vsxOpc2) {
          case 0x8: case 0x28: case 0x48: case 0xc8: // xxsldwi, xxpermdi, xxmrghw, xxmrglw
@@ -27851,12 +27904,12 @@ DisResult disInstr_PPC_WRK (
             if (dis_vx_conv(theInstr, vsxOpc2)) goto decode_success;
             goto decode_failure;
 
-         case 0x18C: case 0x38C: // xvcmpeqdp[.]
-         case 0x10C: case 0x30C: // xvcmpeqsp[.]
-         case 0x14C: case 0x34C: // xvcmpgesp[.]
-         case 0x12C: case 0x32C: // xvcmpgtsp[.]
-         case 0x1CC: case 0x3CC: // xvcmpgedp[.]
-         case 0x1AC: case 0x3AC: // xvcmpgtdp[.]
+         case 0x18C:             // xvcmpeqdp[.]
+         case 0x10C:             // xvcmpeqsp[.]
+         case 0x14C:             // xvcmpgesp[.]
+         case 0x12C:             // xvcmpgtsp[.]
+         case 0x1CC:             // xvcmpgedp[.]
+         case 0x1AC:             // xvcmpgtdp[.]
              if (dis_vvec_cmp(theInstr, vsxOpc2)) goto decode_success;
              goto decode_failure;
 

@@ -274,6 +274,8 @@ where XXXXXX is the bug number as listed below.
 369468  Remove quadratic metapool algorithm using VG_(HT_remove_at_Iter)
 370265  ISA 3.0 HW cap stuff needs updating
 371128  BCD add and subtract instructions on Power BE in 32-bit mode do not work
+372195  Power PC, xxsel instruction is not always recognized
+
 n-i-bz  Fix incorrect (or infinite loop) unwind on RHEL7 x86 and amd64
 n-i-bz  massif --pages-as-heap=yes does not report peak caused by mmap+munmap
 n-i-bz  false positive leaks due to aspacemgr merging heap & non heap segments

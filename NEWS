@@ -23,6 +23,7 @@ where XXXXXX is the bug number as listed below.
 
 371412  Rename wrap_sys_shmat to sys_shmat like other wrappers
 371869  support '%' in symbol Z-encoding
+372120  c++ demangler demangles symbols which are not c++
 
 
 

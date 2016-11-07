@@ -141,7 +141,8 @@ void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
    }
 
    /* Possibly undo (1) */
-   if (do_cxx_demangling && VG_(clo_demangle)) {
+   if (do_cxx_demangling && VG_(clo_demangle)
+       && orig != NULL && orig[0] == '_' && orig[1] == 'Z') {
       /* !!! vvv STATIC vvv !!! */
       static HChar* demangled = NULL;
       /* !!! ^^^ STATIC ^^^ !!! */

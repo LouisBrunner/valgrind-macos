@@ -44,8 +44,8 @@
 // individually.
 // Once allocated, an element must not be modified anymore.
 //
-// Elements can be inserted in the pool using VG_(allocEltDedupPA)
-// or using VG_(allocFixedEltDedupPA).
+// Elements can be inserted in the pool using VG_(allocEltDedupPA),
+// VG_(allocFixedEltDedupPA) or VG_(allocStrDedupPA).
 //
 // Use VG_(allocFixedEltDedupPA) to allocate elements that are all of
 // the same size and that you want to identify with a (small) number:
@@ -64,6 +64,10 @@
 // when performance to access elements is critical.
 // The address of an element allocated with VG_(allocEltDedupPA) does
 // not change, even if new elements are inserted in the pool.
+//
+// Use VG_(allocStrDedupPA) to create a pool of strings (in other words, a
+//  dictionnary of strings). Similarly to VG_(allocFixedEltDedupPA), strings
+// inserted in a dedup pool can be identified by an element number.
 //
 // In the same pool, you can only use one of the allocate element functions.
 // 
@@ -93,28 +97,41 @@ extern DedupPoolAlloc* VG_(newDedupPA) ( SizeT  poolSzB,
                                          const  HChar* cc,
                                          void   (*free_fn)(void*) );
 
-/* Allocates a new element from ddpa with eltSzB bytes to store elt.
+/* Allocates or retrieve element from ddpa with eltSzB bytes to store elt.
    This function never returns NULL.
    If ddpa already contains an element equal to elt, then the address of
    the already existing element is returned.
    Equality between elements is done by comparing all bytes.
    So, if void *elt points to a struct, be sure to initialise all components
    and the holes between components. */
-extern const void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa,
-                                         SizeT eltSzB, const void *elt);
+extern const void* VG_(allocEltDedupPA) (DedupPoolAlloc* ddpa,
+                                         SizeT eltSzB, const void* elt);
 
-/* Allocates a new (fixed size) element from ddpa. Returns the
-   unique number identifying this element. This function never returns NULL.
+/* Allocates or retrieve a (fixed size) element from ddpa. Returns the
+   unique number identifying this element.
    Similarly to VG_(allocEltDedupPA), this will return the unique number
    of an already existing identical element to elt. */
-extern UInt VG_(allocFixedEltDedupPA) (DedupPoolAlloc *ddpa,
-                                       SizeT eltSzB, const void *elt);
+extern UInt VG_(allocFixedEltDedupPA) (DedupPoolAlloc* ddpa,
+                                       SizeT eltSzB, const void* elt);
 
 /* Translate an element number to its address. Note that the address
    corresponding to eltNr can change if new elements are inserted
    in the pool. */
-extern void* VG_(indexEltNumber) (DedupPoolAlloc *ddpa,
+extern void* VG_(indexEltNumber) (DedupPoolAlloc* ddpa,
                                   UInt eltNr);
+
+/* Allocates or retrieve a string element from ddpa. Returns the
+   unique number identifying this string.
+   newStr is set to True if the str is a newly inserted string, False
+   if the str was already present in the pool.
+   Similarly to VG_(allocEltDedupPA), this will return the unique number
+   of an already existing identical string. */
+extern UInt VG_(allocStrDedupPA) (DedupPoolAlloc *ddpa,
+                                  const HChar* str,
+                                  Bool* newStr);
+/* Note: Implementing a function to return the string value from its strNr
+   implies some overhead, so will be done only if/when needed. */
+
 
 /* The Dedup Pool Allocator must maintain a data structure to avoid
    duplicates as long as new elements can be allocated from the pool.
@@ -123,14 +140,14 @@ extern void* VG_(indexEltNumber) (DedupPoolAlloc *ddpa,
    it is an error to call VG_(allocEltDedupPA) or VG_(allocFixedEltDedupPA).
    If shrink_block is not NULL, the last pool will be shrunk using
    shrink_block. */
-extern void VG_(freezeDedupPA) (DedupPoolAlloc *ddpa,
+extern void VG_(freezeDedupPA) (DedupPoolAlloc* ddpa,
                                 void (*shrink_block)(void*, SizeT));
 
 /* How many (unique) elements are there in this ddpa now? */
-extern UInt VG_(sizeDedupPA) (DedupPoolAlloc *ddpa);
+extern UInt VG_(sizeDedupPA) (DedupPoolAlloc* ddpa);
 
 /* Free all memory associated with a DedupPoolAlloc. */
-extern void VG_(deleteDedupPA) ( DedupPoolAlloc *ddpa);
+extern void VG_(deleteDedupPA) ( DedupPoolAlloc* ddpa);
 
 #endif   // __PUB_TOOL_DEDUPPOOLALLOC_
 

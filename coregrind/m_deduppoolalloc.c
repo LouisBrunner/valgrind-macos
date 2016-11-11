@@ -41,6 +41,7 @@
 struct _DedupPoolAlloc {
    SizeT  poolSzB; /* Minimum size of a pool. */
    SizeT  fixedSzb; /* If using VG_(allocFixedEltDedupPA), size of elements */
+   Bool   strPA;    /* True if this is a string dedup pool */
    SizeT  eltAlign;
    void*   (*alloc_fn)(const HChar*, SizeT); /* pool allocator */
    const HChar*  cc; /* pool allocator's cost centre */
@@ -75,7 +76,8 @@ typedef
    struct _ht_node {
       struct _ht_node *next; // Read/Write by hashtable (pub_tool_hashtable.h)
       UWord   key;           // Read by hashtable (pub_tool_hashtable.h)
-      SizeT   eltSzB;
+      SizeT   eltSzBorStrNr; // for a normal pool, elt size 
+                             // for a string pool, the unique str number
       const void *elt;
    }
    ht_node;
@@ -97,6 +99,7 @@ DedupPoolAlloc* VG_(newDedupPA) ( SizeT  poolSzB,
    VG_(memset)(ddpa, 0, sizeof(*ddpa));
    ddpa->poolSzB  = poolSzB;
    ddpa->fixedSzb = 0;
+   ddpa->strPA = False;
    ddpa->eltAlign = eltAlign;
    ddpa->alloc_fn = alloc_fn;
    ddpa->cc       = cc;
@@ -189,12 +192,22 @@ static Word cmp_pool_elt (const void* node1, const void* node2 )
    /* As this function is called by hashtable, that has already checked
       for key equality, it is likely that it is the 'good' element.
       So, we handle the equal case first. */
-   if (hnode1->eltSzB == hnode2->eltSzB)
-      return VG_(memcmp) (hnode1->elt, hnode2->elt, hnode1->eltSzB);
-   else if (hnode1->eltSzB < hnode2->eltSzB)
+   if (hnode1->eltSzBorStrNr == hnode2->eltSzBorStrNr)
+      return VG_(memcmp) (hnode1->elt, hnode2->elt, hnode1->eltSzBorStrNr);
+   else if (hnode1->eltSzBorStrNr < hnode2->eltSzBorStrNr)
       return -1;
    else
       return 1;
+}
+
+/* String compare function for 'gen' hash table.
+   Similarly to cmp_pool_elt, no need to compare the key. */
+static Word cmp_pool_str (const void* node1, const void* node2 )
+{
+   const ht_node* hnode1 = node1;
+   const ht_node* hnode2 = node2;
+
+   return VG_(strcmp)(hnode1->elt, hnode2->elt);
 }
 
 /* Print some stats. */
@@ -209,7 +222,10 @@ static void print_stats (DedupPoolAlloc *ddpa)
                 VG_(sizeXA)(ddpa->pools),
                 ddpa->curpool ?
                 (long int) (ddpa->curpool_limit - ddpa->curpool_free + 1) : 0);
-   VG_(HT_print_stats) (ddpa->ht_elements, cmp_pool_elt);
+   if (ddpa->strPA)
+      VG_(HT_print_stats) (ddpa->ht_elements, cmp_pool_str);
+   else
+      VG_(HT_print_stats) (ddpa->ht_elements, cmp_pool_elt);
 }
 
 /* Dummy free, as the ht elements are allocated in a pool, and
@@ -247,8 +263,8 @@ static UInt sdbm_hash (const UChar* buf, UInt len )
   return h;
 }
 
-const void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa, SizeT eltSzB,
-                                  const void *elt)
+static ht_node* allocEltDedupPA (DedupPoolAlloc *ddpa, SizeT eltSzB,
+                                 const void *elt)
 {
    ht_node ht_elt;
    void* elt_ins;
@@ -260,12 +276,16 @@ const void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa, SizeT eltSzB,
 
    ht_elt.key = sdbm_hash (elt, eltSzB);
 
-   ht_elt.eltSzB = eltSzB;
    ht_elt.elt = elt;
 
-   ht_ins = VG_(HT_gen_lookup) (ddpa->ht_elements, &ht_elt, cmp_pool_elt);
+   if (ddpa->strPA)
+      ht_ins = VG_(HT_gen_lookup) (ddpa->ht_elements, &ht_elt, cmp_pool_str);
+   else {
+      ht_elt.eltSzBorStrNr = eltSzB;
+      ht_ins = VG_(HT_gen_lookup) (ddpa->ht_elements, &ht_elt, cmp_pool_elt);
+   }
    if (ht_ins)
-      return ht_ins->elt;
+      return ht_ins;
 
    /* Not found -> we need to allocate a new element from the pool
       and insert it in the hash table of inserted elements. */
@@ -291,10 +311,37 @@ const void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa, SizeT eltSzB,
    VG_(memcpy)(elt_ins, elt, eltSzB);
    ht_ins = VG_(allocEltPA) (ddpa->ht_node_pa);
    ht_ins->key = ht_elt.key;
-   ht_ins->eltSzB = eltSzB;
+   if (ddpa->strPA)
+      ht_ins->eltSzBorStrNr = VG_(HT_count_nodes)(ddpa->ht_elements) + 1;
+   else
+      ht_ins->eltSzBorStrNr = eltSzB;
    ht_ins->elt = elt_ins;
    VG_(HT_add_node)(ddpa->ht_elements, ht_ins);
-   return elt_ins;
+   return ht_ins;
+}
+
+const void* VG_(allocEltDedupPA) (DedupPoolAlloc *ddpa, SizeT eltSzB,
+                                  const void *elt)
+{
+   return allocEltDedupPA(ddpa, eltSzB, elt)->elt;
+}
+
+UInt VG_(allocStrDedupPA) (DedupPoolAlloc *ddpa,
+                           const HChar* str,
+                           Bool* newStr)
+{
+   if (!ddpa->strPA) {
+      // First insertion in this ddpa
+      vg_assert (ddpa->nr_alloc_calls == 0);
+      vg_assert (ddpa->fixedSzb == 0);
+      ddpa->strPA = True;
+   }
+
+   const UInt nr_str = VG_(HT_count_nodes)(ddpa->ht_elements);
+   const ht_node* ht_ins = allocEltDedupPA(ddpa, VG_(strlen)(str)+1, str);
+
+   *newStr = nr_str < VG_(HT_count_nodes)(ddpa->ht_elements);
+   return ht_ins->eltSzBorStrNr;
 }
 
 static __inline__
@@ -311,6 +358,7 @@ UInt VG_(allocFixedEltDedupPA) (DedupPoolAlloc *ddpa,
 {
    if (ddpa->fixedSzb == 0) {
       // First insertion in this ddpa
+      vg_assert (!ddpa->strPA);
       vg_assert (ddpa->nr_alloc_calls == 0);
       vg_assert (eltSzB > 0);
       ddpa->fixedSzb = eltSzB;

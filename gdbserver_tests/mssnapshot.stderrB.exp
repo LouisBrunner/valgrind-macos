@@ -23,5 +23,7 @@ massif monitor commands:
   all_snapshots [<filename>]
       saves all snapshot(s) taken so far in <filename>
              default <filename> is massif.vgdb.out
+  xtmemory [<filename>]
+        dump xtree memory profile in <filename> (default xtmemory.kcg)
 monitor command request to kill this process
 Remote connection closed

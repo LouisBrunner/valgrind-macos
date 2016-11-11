@@ -69,11 +69,6 @@
 //   [Introduction of --time-unit=i as the default slowed things down by
 //   roughly 0--20%.]
 //
-// - get_XCon accounts for about 9% of konqueror startup time.  Try
-//   keeping XPt children sorted by 'ip' and use binary search in get_XCon.
-//   Requires factoring out binary search code from various places into a
-//   VG_(bsearch) function.  
-//
 // Todo -- low priority:
 // - In each XPt, record both bytes and the number of allocations, and
 //   possibly the global number of allocations.
@@ -168,11 +163,14 @@ Number of snapshots: 50
 #include "pub_tool_machine.h"
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_options.h"
+#include "pub_tool_poolalloc.h"
 #include "pub_tool_replacemalloc.h"
 #include "pub_tool_stacktrace.h"
 #include "pub_tool_threadstate.h"
 #include "pub_tool_tooliface.h"
 #include "pub_tool_xarray.h"
+#include "pub_tool_xtree.h"
+#include "pub_tool_xtmemory.h"
 #include "pub_tool_clientstate.h"
 #include "pub_tool_gdbserver.h"
 
@@ -184,7 +182,7 @@ Number of snapshots: 50
 
 // The size of the stacks and heap is tracked.  The heap is tracked in a lot
 // of detail, enough to tell how many bytes each line of code is responsible
-// for, more or less.  The main data structure is a tree representing the
+// for, more or less.  The main data structure is an xtree maintaining the
 // call tree beneath all the allocation functions like malloc().
 // (Alternatively, if --pages-as-heap=yes is specified, memory is tracked at
 // the page level, and each page is treated much like a heap block.  We use
@@ -216,8 +214,8 @@ Number of snapshots: 50
 
 // Used for printing things when clo_verbosity > 1.
 #define VERB(verb, format, args...) \
-   if (VG_(clo_verbosity) > verb) { \
-      VG_(dmsg)("Massif: " format, ##args); \
+   if (UNLIKELY(VG_(clo_verbosity) > verb)) { \
+      VG_(dmsg)("Massif: " format, ##args);   \
    }
 
 //------------------------------------------------------------//
@@ -241,17 +239,12 @@ static UInt n_ignored_heap_frees    = 0;
 static UInt n_ignored_heap_reallocs = 0;
 static UInt n_stack_allocs          = 0;
 static UInt n_stack_frees           = 0;
-static UInt n_xpts                  = 0;
-static UInt n_xpt_init_expansions   = 0;
-static UInt n_xpt_later_expansions  = 0;
-static UInt n_sxpt_allocs           = 0;
-static UInt n_sxpt_frees            = 0;
+
 static UInt n_skipped_snapshots     = 0;
 static UInt n_real_snapshots        = 0;
 static UInt n_detailed_snapshots    = 0;
 static UInt n_peak_snapshots        = 0;
 static UInt n_cullings              = 0;
-static UInt n_XCon_redos            = 0;
 
 //------------------------------------------------------------//
 //--- Globals                                              ---//
@@ -347,25 +340,6 @@ static void init_ignore_fns(void)
    ignore_fns = VG_(newXA)(VG_(malloc), "ms.main.iif.1",
                                         VG_(free), sizeof(HChar*));
 }
-
-// Determines if the named function is a member of the XArray.
-static Bool is_member_fn(const XArray* fns, const HChar* fnname)
-{
-   HChar** fn_ptr;
-   Int i;
- 
-   // Nb: It's a linear search through the list, because we're comparing
-   // strings rather than pointers to strings.
-   // Nb: This gets called a lot.  It was an OSet, but they're quite slow to
-   // iterate through so it wasn't a good choice.
-   for (i = 0; i < VG_(sizeXA)(fns); i++) {
-      fn_ptr = VG_(indexXA)(fns, i);
-      if (VG_STREQ(fnname, *fn_ptr))
-         return True;
-   }
-   return False;
-}
-
 
 //------------------------------------------------------------//
 //--- Command line args                                    ---//
@@ -481,511 +455,165 @@ static void ms_print_debug_usage(void)
 
 
 //------------------------------------------------------------//
-//--- XPts, XTrees and XCons                               ---//
+//--- XTrees                                               ---//
 //------------------------------------------------------------//
 
-// An XPt represents an "execution point", ie. a code address.  Each XPt is
-// part of a tree of XPts (an "execution tree", or "XTree").  The details of
-// the heap are represented by a single XTree.
+// The details of the heap are represented by a single XTree.
+// This XTree maintains the nr of allocated bytes for each
+// stacktrace/execontext.
 //
-// The root of the tree is 'alloc_xpt', which represents all allocation
-// functions, eg:
+// The root of the Xtree will be output as a top node  'alloc functions',
+//  which represents all allocation functions, eg:
 // - malloc/calloc/realloc/memalign/new/new[];
 // - user-specified allocation functions (using --alloc-fn);
 // - custom allocation (MALLOCLIKE) points
-// It's a bit of a fake XPt (ie. its 'ip' is zero), and is only used because
-// it makes the code simpler.
-//
-// Any child of 'alloc_xpt' is called a "top-XPt".  The XPts at the bottom
-// of an XTree (leaf nodes) are "bottom-XPTs".
-//
-// Each path from a top-XPt to a bottom-XPt through an XTree gives an
-// execution context ("XCon"), ie. a stack trace.  (And sub-paths represent
-// stack sub-traces.)  The number of XCons in an XTree is equal to the
-// number of bottom-XPTs in that XTree.
-//
-//      alloc_xpt       XTrees are bi-directional.
-//        | ^
-//        v |
-//     > parent <       Example: if child1() calls parent() and child2()
-//    /    |     \      also calls parent(), and parent() calls malloc(),
-//   |    / \     |     the XTree will look like this.
-//   |   v   v    |
-//  child1   child2
-//
-// (Note that malformed stack traces can lead to difficulties.  See the
-// comment at the bottom of get_XCon.)
-//
-// XTrees and XPts are mirrored by SXTrees and SXPts, where the 'S' is short
-// for "saved".  When the XTree is duplicated for a snapshot, we duplicate
-// it as an SXTree, which is similar but omits some things it does not need,
-// and aggregates up insignificant nodes.  This is important as an SXTree is
-// typically much smaller than an XTree.
-
-// XXX: make XPt and SXPt extensible arrays, to avoid having to do two
-// allocations per Pt.
-
-typedef struct _XPt XPt;
-struct _XPt {
-   Addr  ip;              // code address
-
-   // Bottom-XPts: space for the precise context.
-   // Other XPts:  space of all the descendent bottom-XPts.
-   // Nb: this value goes up and down as the program executes.
-   SizeT szB;
-
-   XPt*  parent;           // pointer to parent XPt
-
-   // Children.
-   // n_children and max_children are 32-bit integers.  16-bit integers
-   // are too small -- a very big program might have more than 65536
-   // allocation points (ie. top-XPts) -- Konqueror starting up has 1800.
-   UInt  n_children;       // number of children
-   UInt  max_children;     // capacity of children array
-   XPt** children;         // pointers to children XPts
-};
-
-typedef
-   enum {
-      SigSXPt,
-      InsigSXPt
-   }
-   SXPtTag;
-
-typedef struct _SXPt SXPt;
-struct _SXPt {
-   SXPtTag tag;
-   SizeT szB;              // memory size for the node, be it Sig or Insig
-   union {
-      // An SXPt representing a single significant code location.  Much like
-      // an XPt, minus the fields that aren't necessary.
-      struct {
-         Addr   ip;
-         UInt   n_children;
-         SXPt** children;
-      } 
-      Sig;
-
-      // An SXPt representing one or more code locations, all below the
-      // significance threshold.
-      struct {
-         Int   n_xpts;     // number of aggregated XPts
-      } 
-      Insig;
-   };
-};
-
-// Fake XPt representing all allocation functions like malloc().  Acts as
-// parent node to all top-XPts.
-static XPt* alloc_xpt;
-
-static XPt* new_XPt(Addr ip, XPt* parent)
+static XTree* heap_xt;
+/* heap_xt contains a SizeT: the nr of allocated bytes by this execontext. */
+static void init_szB(void* value)
 {
-   // XPts are never freed, so we can use VG_(perm_malloc) to allocate them.
-   // Note that we cannot use VG_(perm_malloc) for the 'children' array, because
-   // that needs to be resizable.
-   XPt* xpt    = VG_(perm_malloc)(sizeof(XPt), vg_alignof(XPt));
-   xpt->ip     = ip;
-   xpt->szB    = 0;
-   xpt->parent = parent;
-
-   // We don't initially allocate any space for children.  We let that
-   // happen on demand.  Many XPts (ie. all the bottom-XPts) don't have any
-   // children anyway.
-   xpt->n_children   = 0;
-   xpt->max_children = 0;
-   xpt->children     = NULL;
-
-   // Update statistics
-   n_xpts++;
-
-   return xpt;
+   *((SizeT*)value) = 0;
+}
+static void add_szB(void* to, const void* value)
+{
+   *((SizeT*)to) += *((const SizeT*)value);
+}
+static void sub_szB(void* from, const void* value)
+{
+   *((SizeT*)from) -= *((const SizeT*)value);
+}
+static ULong alloc_szB(const void* value)
+{
+   return (ULong)*((const SizeT*)value);
 }
 
-static void add_child_xpt(XPt* parent, XPt* child)
-{
-   // Expand 'children' if necessary.
-   tl_assert(parent->n_children <= parent->max_children);
-   if (parent->n_children == parent->max_children) {
-      if (0 == parent->max_children) {
-         parent->max_children = 4;
-         parent->children = VG_(malloc)( "ms.main.acx.1",
-                                         parent->max_children * sizeof(XPt*) );
-         n_xpt_init_expansions++;
-      } else {
-         parent->max_children *= 2;    // Double size
-         parent->children = VG_(realloc)( "ms.main.acx.2",
-                                          parent->children,
-                                          parent->max_children * sizeof(XPt*) );
-         n_xpt_later_expansions++;
-      }
-   }
-
-   // Insert new child XPt in parent's children list.
-   parent->children[ parent->n_children++ ] = child;
-}
-
-// Reverse comparison for a reverse sort -- biggest to smallest.
-static Int SXPt_revcmp_szB(const void* n1, const void* n2)
-{
-   const SXPt* sxpt1 = *(const SXPt *const *)n1;
-   const SXPt* sxpt2 = *(const SXPt *const *)n2;
-   return ( sxpt1->szB < sxpt2->szB ?  1
-          : sxpt1->szB > sxpt2->szB ? -1
-          :                            0);
-}
 
 //------------------------------------------------------------//
 //--- XTree Operations                                     ---//
 //------------------------------------------------------------//
 
-// Duplicates an XTree as an SXTree.
-static SXPt* dup_XTree(XPt* xpt, SizeT total_szB)
-{
-   Int  i, n_sig_children, n_insig_children, n_child_sxpts;
-   SizeT sig_child_threshold_szB;
-   SXPt* sxpt;
-
-   // Number of XPt children  Action for SXPT
-   // ------------------      ---------------
-   // 0 sig, 0 insig          alloc 0 children
-   // N sig, 0 insig          alloc N children, dup all
-   // N sig, M insig          alloc N+1, dup first N, aggregate remaining M
-   // 0 sig, M insig          alloc 1, aggregate M
-
-   // Work out how big a child must be to be significant.  If the current
-   // total_szB is zero, then we set it to 1, which means everything will be
-   // judged insignificant -- this is sensible, as there's no point showing
-   // any detail for this case.  Unless they used --threshold=0, in which
-   // case we show them everything because that's what they asked for.
-   //
-   // Nb: We do this once now, rather than once per child, because if we do
-   // that the cost of all the divisions adds up to something significant.
-   if (0 == total_szB && 0 != clo_threshold) {
-      sig_child_threshold_szB = 1;
-   } else {
-      sig_child_threshold_szB = (SizeT)((total_szB * clo_threshold) / 100);
-   }
-
-   // How many children are significant?  And do we need an aggregate SXPt?
-   n_sig_children = 0;
-   for (i = 0; i < xpt->n_children; i++) {
-      if (xpt->children[i]->szB >= sig_child_threshold_szB) {
-         n_sig_children++;
-      }
-   }
-   n_insig_children = xpt->n_children - n_sig_children;
-   n_child_sxpts = n_sig_children + ( n_insig_children > 0 ? 1 : 0 );
-
-   // Duplicate the XPt.
-   sxpt                 = VG_(malloc)("ms.main.dX.1", sizeof(SXPt));
-   n_sxpt_allocs++;
-   sxpt->tag            = SigSXPt;
-   sxpt->szB            = xpt->szB;
-   sxpt->Sig.ip         = xpt->ip;
-   sxpt->Sig.n_children = n_child_sxpts;
-
-   // Create the SXPt's children.
-   if (n_child_sxpts > 0) {
-      Int j;
-      SizeT sig_children_szB = 0, insig_children_szB = 0;
-      sxpt->Sig.children = VG_(malloc)("ms.main.dX.2", 
-                                       n_child_sxpts * sizeof(SXPt*));
-
-      // Duplicate the significant children.  (Nb: sig_children_szB +
-      // insig_children_szB doesn't necessarily equal xpt->szB.)
-      j = 0;
-      for (i = 0; i < xpt->n_children; i++) {
-         if (xpt->children[i]->szB >= sig_child_threshold_szB) {
-            sxpt->Sig.children[j++] = dup_XTree(xpt->children[i], total_szB);
-            sig_children_szB   += xpt->children[i]->szB;
-         } else {
-            insig_children_szB += xpt->children[i]->szB;
-         }
-      }
-
-      // Create the SXPt for the insignificant children, if any, and put it
-      // in the last child entry.
-      if (n_insig_children > 0) {
-         // Nb: We 'n_sxpt_allocs' here because creating an Insig SXPt
-         // doesn't involve a call to dup_XTree().
-         SXPt* insig_sxpt = VG_(malloc)("ms.main.dX.3", sizeof(SXPt));
-         n_sxpt_allocs++;
-         insig_sxpt->tag = InsigSXPt;
-         insig_sxpt->szB = insig_children_szB;
-         insig_sxpt->Insig.n_xpts = n_insig_children;
-         sxpt->Sig.children[n_sig_children] = insig_sxpt;
-      }
-   } else {
-      sxpt->Sig.children = NULL;
-   }
-
-   return sxpt;
-}
-
-static void free_SXTree(SXPt* sxpt)
-{
-   Int  i;
-   tl_assert(sxpt != NULL);
-
-   switch (sxpt->tag) {
-    case SigSXPt:
-      // Free all children SXPts, then the children array.
-      for (i = 0; i < sxpt->Sig.n_children; i++) {
-         free_SXTree(sxpt->Sig.children[i]);
-         sxpt->Sig.children[i] = NULL;
-      }
-      VG_(free)(sxpt->Sig.children);  sxpt->Sig.children = NULL;
-      break;
-
-    case InsigSXPt:
-      break;
-
-    default: tl_assert2(0, "free_SXTree: unknown SXPt tag");
-   }
-   
-   // Free the SXPt itself.
-   VG_(free)(sxpt);     sxpt = NULL;
-   n_sxpt_frees++;
-}
-
-// Sanity checking:  we periodically check the heap XTree with
-// ms_expensive_sanity_check.
-static void sanity_check_XTree(XPt* xpt, XPt* parent)
-{
-   tl_assert(xpt != NULL);
-
-   // Check back-pointer.
-   tl_assert2(xpt->parent == parent,
-      "xpt->parent = %p, parent = %p\n", xpt->parent, parent);
-
-   // Check children counts look sane.
-   tl_assert(xpt->n_children <= xpt->max_children);
-
-   // Unfortunately, xpt's size is not necessarily equal to the sum of xpt's
-   // children's sizes.  See comment at the bottom of get_XCon.
-}
-
-// Sanity checking:  we check SXTrees (which are in snapshots) after
-// snapshots are created, before they are deleted, and before they are
-// printed.
-static void sanity_check_SXTree(SXPt* sxpt)
-{
-   Int i;
-
-   tl_assert(sxpt != NULL);
-
-   // Check the sum of any children szBs equals the SXPt's szB.  Check the
-   // children at the same time.
-   switch (sxpt->tag) {
-    case SigSXPt: {
-      if (sxpt->Sig.n_children > 0) {
-         for (i = 0; i < sxpt->Sig.n_children; i++) {
-            sanity_check_SXTree(sxpt->Sig.children[i]);
-         }
-      }
-      break;
-    }
-    case InsigSXPt:
-      break;         // do nothing
-
-    default: tl_assert2(0, "sanity_check_SXTree: unknown SXPt tag");
-   }
-}
-
-
-//------------------------------------------------------------//
-//--- XCon Operations                                      ---//
-//------------------------------------------------------------//
-
-// This is the limit on the number of removed alloc-fns that can be in a
-// single XCon.
+// This is the limit on the number of filtered alloc-fns that can be in a
+// single stacktrace.
 #define MAX_OVERESTIMATE   50
 #define MAX_IPS            (MAX_DEPTH + MAX_OVERESTIMATE)
 
-// Determine if the given IP belongs to a function that should be ignored.
-static Bool fn_should_be_ignored(Addr ip)
-{
-   const HChar *buf;
-   return
-      ( VG_(get_fnname)(ip, &buf) && is_member_fn(ignore_fns, buf)
-      ? True : False );
-}
-
-// Get the stack trace for an XCon, filtering out uninteresting entries:
+// filtering out uninteresting entries:
 // alloc-fns and entries above alloc-fns, and entries below main-or-below-main.
 //   Eg:       alloc-fn1 / alloc-fn2 / a / b / main / (below main) / c
 //   becomes:  a / b / main
 // Nb: it's possible to end up with an empty trace, eg. if 'main' is marked
 // as an alloc-fn.  This is ok.
 static
-Int get_IPs( ThreadId tid, Bool exclude_first_entry, Addr ips[])
+void filter_IPs (Addr* ips, Int n_ips,
+                 UInt* top, UInt* n_ips_sel)
 {
-   Int n_ips, i, n_alloc_fns_removed;
-   Int overestimate;
-   Bool redo;
+   Int i;
+   Bool top_has_fnname;
+   const HChar *fnname;
 
-   // We ask for a few more IPs than clo_depth suggests we need.  Then we
-   // remove every entry that is an alloc-fn.  Depending on the
-   // circumstances, we may need to redo it all, asking for more IPs.
-   // Details:
-   // - If the original stack trace is smaller than asked-for, redo=False
-   // - Else if after filtering we have >= clo_depth IPs,      redo=False
-   // - Else redo=True
-   // In other words, to redo, we'd have to get a stack trace as big as we
-   // asked for and remove more than 'overestimate' alloc-fns.
+   *top = 0;
+   *n_ips_sel = n_ips;
 
-   // Main loop.
-   redo = True;      // Assume this to begin with.
-   for (overestimate = 3; redo; overestimate += 6) {
-      // This should never happen -- would require MAX_OVERESTIMATE
-      // alloc-fns to be removed from the stack trace.
-      if (overestimate > MAX_OVERESTIMATE)
-         VG_(tool_panic)("get_IPs: ips[] too small, inc. MAX_OVERESTIMATE?");
-
-      // Ask for more IPs than clo_depth suggests we need.
-      n_ips = VG_(get_StackTrace)( tid, ips, clo_depth + overestimate,
-                                   NULL/*array to dump SP values in*/,
-                                   NULL/*array to dump FP values in*/,
-                                   0/*first_ip_delta*/ );
-      tl_assert(n_ips > 0);
-
-      // If the original stack trace is smaller than asked-for, redo=False.
-      if (n_ips < clo_depth + overestimate) { redo = False; }
-
-      // Filter out alloc fns.  If requested, we automatically remove the
-      // first entry (which presumably will be something like malloc or
-      // __builtin_new that we're sure to filter out) without looking at it,
-      // because VG_(get_fnname) is expensive.
-      n_alloc_fns_removed = ( exclude_first_entry ? 1 : 0 );
-      for (i = n_alloc_fns_removed; i < n_ips; i++) {
-         const HChar *buf;
-         if (VG_(get_fnname)(ips[i], &buf)) {
-            if (is_member_fn(alloc_fns, buf)) {
-               n_alloc_fns_removed++;
-            } else {
-               break;
-            }
-         }
-      }
-      // Remove the alloc fns by shuffling the rest down over them.
-      n_ips -= n_alloc_fns_removed;
-      for (i = 0; i < n_ips; i++) {
-         ips[i] = ips[i + n_alloc_fns_removed];
-      }
-
-      // If after filtering we have >= clo_depth IPs, redo=False
-      if (n_ips >= clo_depth) {
-         redo = False;
-         n_ips = clo_depth;      // Ignore any IPs below --depth.
-      }
-
-      if (redo) {
-         n_XCon_redos++;
+   // Advance *top as long as we find alloc functions
+   // PW Nov 2016 xtree work:
+   //  old massif code was doing something really strange(?buggy):
+   //  'sliding' a bunch of functions without names by removing an
+   //  alloc function 'inside' a stacktrace e.g.
+   //    0x1 0x2 0x3 alloc func1 main
+   //  becomes   0x1 0x2 0x3 func1 main
+   for (i = *top; i < n_ips; i++) {
+      top_has_fnname = VG_(get_fnname)(ips[*top], &fnname);
+      if (top_has_fnname &&  VG_(strIsMemberXA)(alloc_fns, fnname)) {
+         VERB(4, "filtering alloc fn %s\n", fnname);
+         (*top)++;
+         (*n_ips_sel)--;
+      } else {
+         break;
       }
    }
-   return n_ips;
+
+   // filter the whole stacktrace if this allocation has to be ignored.
+   if (*n_ips_sel > 0 
+       && top_has_fnname 
+       && VG_(strIsMemberXA)(ignore_fns, fnname)) {
+      VERB(4, "ignored allocation from fn %s\n", fnname);
+      *top = n_ips;
+      *n_ips_sel = 0;
+   }
+       
+
+   if (!VG_(clo_show_below_main) && *n_ips_sel > 0 ) {
+      Int mbm = VG_(XT_offset_main_or_below_main)(ips, n_ips);
+
+      if (mbm < *top) {
+         // Special case: the first main (or below main) function is an
+         // alloc function.
+         *n_ips_sel = 1;
+         VERB(4, "main/below main: keeping 1 fn\n");
+      } else {
+         *n_ips_sel -= n_ips - mbm - 1;
+         VERB(4, "main/below main: filtering %d\n", n_ips - mbm - 1);
+      }
+   }
+
+   // filter the frames if we have more than clo_depth
+   if (*n_ips_sel > clo_depth) {
+      VERB(4, "filtering IPs above clo_depth\n");
+      *n_ips_sel = clo_depth;
+   }
 }
 
-// Gets an XCon and puts it in the tree.  Returns the XCon's bottom-XPt.
-// Unless the allocation should be ignored, in which case we return NULL.
-static XPt* get_XCon( ThreadId tid, Bool exclude_first_entry )
+// Capture a stacktrace, and make an ec of it, without the first entry
+// if exclude_first_entry is True.
+static ExeContext* make_ec(ThreadId tid, Bool exclude_first_entry)
 {
    static Addr ips[MAX_IPS];
-   Int i;
-   XPt* xpt = alloc_xpt;
 
    // After this call, the IPs we want are in ips[0]..ips[n_ips-1].
-   Int n_ips = get_IPs(tid, exclude_first_entry, ips);
-
-   // Should we ignore this allocation?  (Nb: n_ips can be zero, eg. if
-   // 'main' is marked as an alloc-fn.)
-   if (n_ips > 0 && fn_should_be_ignored(ips[0])) {
-      return NULL;
-   }
-
-   // Now do the search/insertion of the XCon.
-   for (i = 0; i < n_ips; i++) {
-      Addr ip = ips[i];
-      Int ch;
-      // Look for IP in xpt's children.
-      // Linear search, ugh -- about 10% of time for konqueror startup tried
-      // caching last result, only hit about 4% for konqueror.
-      // Nb:  this search hits about 98% of the time for konqueror
-      for (ch = 0; True; ch++) {
-         if (ch == xpt->n_children) {
-            // IP not found in the children.
-            // Create and add new child XPt, then stop.
-            XPt* new_child_xpt = new_XPt(ip, xpt);
-            add_child_xpt(xpt, new_child_xpt);
-            xpt = new_child_xpt;
-            break;
-
-         } else if (ip == xpt->children[ch]->ip) {
-            // Found the IP in the children, stop.
-            xpt = xpt->children[ch];
-            break;
-         }
-      }
-   }
-
-   // [Note: several comments refer to this comment.  Do not delete it
-   // without updating them.]
-   //
-   // A complication... If all stack traces were well-formed, then the
-   // returned xpt would always be a bottom-XPt.  As a consequence, an XPt's
-   // size would always be equal to the sum of its children's sizes, which
-   // is an excellent sanity check.  
-   //
-   // Unfortunately, stack traces occasionally are malformed, ie. truncated.
-   // This allows a stack trace to be a sub-trace of another, eg. a/b/c is a
-   // sub-trace of a/b/c/d.  So we can't assume this xpt is a bottom-XPt;
-   // nor can we do sanity check an XPt's size against its children's sizes.
-   // This is annoying, but must be dealt with.  (Older versions of Massif
-   // had this assertion in, and it was reported to fail by real users a
-   // couple of times.)  Even more annoyingly, I can't come up with a simple
-   // test case that exhibit such a malformed stack trace, so I can't
-   // regression test it.  Sigh.
-   //
-   // However, we can print a warning, so that if it happens (unexpectedly)
-   // in existing regression tests we'll know.  Also, it warns users that
-   // the output snapshots may not add up the way they might expect.
-   //
-   //tl_assert(0 == xpt->n_children); // Must be bottom-XPt
-   if (0 != xpt->n_children) {
-      static Int n_moans = 0;
-      if (n_moans < 3) {
-         VG_(umsg)(
-            "Warning: Malformed stack trace detected.  In Massif's output,\n");
-         VG_(umsg)(
-            "         the size of an entry's child entries may not sum up\n");
-         VG_(umsg)(
-            "         to the entry's size as they normally do.\n");
-         n_moans++;
-         if (3 == n_moans)
-            VG_(umsg)(
-            "         (And Massif now won't warn about this again.)\n");
-      }
-   }
-   return xpt;
+   Int n_ips = VG_(get_StackTrace)( tid, ips, clo_depth +  MAX_OVERESTIMATE,
+                                    NULL/*array to dump SP values in*/,
+                                    NULL/*array to dump FP values in*/,
+                                    0/*first_ip_delta*/ );
+   if (exclude_first_entry && n_ips > 0) {
+      const HChar *fnname;
+      VERB(4, "removing top fn %s from stacktrace\n", 
+           VG_(get_fnname)(ips[0], &fnname) ? fnname : "???");
+      return VG_(make_ExeContext_from_StackTrace)(ips+1, n_ips-1);
+   } else
+      return VG_(make_ExeContext_from_StackTrace)(ips, n_ips);
 }
 
-// Update 'szB' of every XPt in the XCon, by percolating upwards.
-static void update_XCon(XPt* xpt, SSizeT space_delta)
+// Create (or update) in heap_xt an xec corresponding to the stacktrace of tid.
+// req_szB is added to the xec (unless ec is fully filtered).
+// Returns the correspding XTree xec.
+// exclude_first_entry is an optimisation: if True, automatically removes
+// the top level IP from the stacktrace. Should be set to True if it is known
+// that this is an alloc fn. The top function presumably will be something like
+// malloc or __builtin_new that we're sure to filter out).
+static Xecu add_heap_xt( ThreadId tid, SizeT req_szB, Bool exclude_first_entry)
+{
+   ExeContext *ec = make_ec(tid, exclude_first_entry);
+
+   if (UNLIKELY(VG_(clo_xtree_memory) == Vg_XTMemory_Full))
+      VG_(XTMemory_Full_alloc)(req_szB, ec);
+   return VG_(XT_add_to_ec) (heap_xt, ec, &req_szB);
+}
+
+// Substract req_szB from the heap_xt where.
+static void sub_heap_xt(Xecu where, SizeT req_szB, Bool exclude_first_entry)
 {
    tl_assert(clo_heap);
-   tl_assert(NULL != xpt);
 
-   if (0 == space_delta)
+   if (0 == req_szB)
       return;
 
-   while (xpt != alloc_xpt) {
-      if (space_delta < 0) tl_assert(xpt->szB >= -space_delta);
-      xpt->szB += space_delta;
-      xpt = xpt->parent;
+   VG_(XT_sub_from_xecu) (heap_xt, where, &req_szB);
+   if (UNLIKELY(VG_(clo_xtree_memory) == Vg_XTMemory_Full)) {
+      ExeContext *ec_free = make_ec(VG_(get_running_tid)(),
+                                    exclude_first_entry);
+      VG_(XTMemory_Full_free)(req_szB,
+                              VG_(XT_get_ec_from_xecu)(heap_xt, where),
+                              ec_free);
    }
-   if (space_delta < 0) tl_assert(alloc_xpt->szB >= -space_delta);
-   alloc_xpt->szB += space_delta;
 }
 
 
@@ -1021,8 +649,8 @@ typedef
       SizeT heap_szB;
       SizeT heap_extra_szB;// Heap slop + admin bytes.
       SizeT stacks_szB;
-      SXPt* alloc_sxpt;    // Heap XTree root, if a detailed snapshot,
-   }                       // otherwise NULL.
+      XTree* xt;    // Snapshot of heap_xt, if a detailed snapshot,
+   }                // otherwise NULL.
    Snapshot;
 
 static UInt      next_snapshot_i = 0;  // Index of where next snapshot will go.
@@ -1036,7 +664,7 @@ static Bool is_snapshot_in_use(Snapshot* snapshot)
       tl_assert(snapshot->heap_extra_szB == 0);
       tl_assert(snapshot->heap_szB       == 0);
       tl_assert(snapshot->stacks_szB     == 0);
-      tl_assert(snapshot->alloc_sxpt     == NULL);
+      tl_assert(snapshot->xt             == NULL);
       return False;
    } else {
       tl_assert(snapshot->time           != UNUSED_SNAPSHOT_TIME);
@@ -1046,7 +674,7 @@ static Bool is_snapshot_in_use(Snapshot* snapshot)
 
 static Bool is_detailed_snapshot(Snapshot* snapshot)
 {
-   return (snapshot->alloc_sxpt ? True : False);
+   return (snapshot->xt ? True : False);
 }
 
 static Bool is_uncullable_snapshot(Snapshot* snapshot)
@@ -1058,9 +686,8 @@ static Bool is_uncullable_snapshot(Snapshot* snapshot)
 
 static void sanity_check_snapshot(Snapshot* snapshot)
 {
-   if (snapshot->alloc_sxpt) {
-      sanity_check_SXTree(snapshot->alloc_sxpt);
-   }
+   // Not much we can sanity check.
+   tl_assert(snapshot->xt == NULL || snapshot->kind != Unused);
 }
 
 // All the used entries should look used, all the unused ones should be clear.
@@ -1075,7 +702,7 @@ static void sanity_check_snapshots_array(void)
    }
 }
 
-// This zeroes all the fields in the snapshot, but does not free the heap
+// This zeroes all the fields in the snapshot, but does not free the xt
 // XTree if present.  It also does a sanity check unless asked not to;  we
 // can't sanity check at startup when clearing the initial snapshots because
 // they're full of junk.
@@ -1087,20 +714,20 @@ static void clear_snapshot(Snapshot* snapshot, Bool do_sanity_check)
    snapshot->heap_extra_szB = 0;
    snapshot->heap_szB       = 0;
    snapshot->stacks_szB     = 0;
-   snapshot->alloc_sxpt     = NULL;
+   snapshot->xt             = NULL;
 }
 
-// This zeroes all the fields in the snapshot, and frees the heap XTree if
+// This zeroes all the fields in the snapshot, and frees the heap XTree xt if
 // present.
 static void delete_snapshot(Snapshot* snapshot)
 {
    // Nb: if there's an XTree, we free it after calling clear_snapshot,
    // because clear_snapshot does a sanity check which includes checking the
    // XTree.
-   SXPt* tmp_sxpt = snapshot->alloc_sxpt;
+   XTree* tmp_xt = snapshot->xt;
    clear_snapshot(snapshot, /*do_sanity_check*/True);
-   if (tmp_sxpt) {
-      free_SXTree(tmp_sxpt);
+   if (tmp_xt) {
+       VG_(XT_delete)(tmp_xt);
    }
 }
 
@@ -1308,10 +935,7 @@ take_snapshot(Snapshot* snapshot, SnapshotKind kind, Time my_time,
    if (clo_heap) {
       snapshot->heap_szB = heap_szB;
       if (is_detailed) {
-         SizeT total_szB = heap_szB + heap_extra_szB + stacks_szB;
-         snapshot->alloc_sxpt = dup_XTree(alloc_xpt, total_szB);
-         tl_assert(           alloc_xpt->szB == heap_szB);
-         tl_assert(snapshot->alloc_sxpt->szB == heap_szB);
+         snapshot->xt = VG_(XT_snapshot)(heap_xt);
       }
       snapshot->heap_extra_szB = heap_extra_szB;
    }
@@ -1448,7 +1072,7 @@ static Bool ms_cheap_sanity_check ( void )
 
 static Bool ms_expensive_sanity_check ( void )
 {
-   sanity_check_XTree(alloc_xpt, /*parent*/NULL);
+   tl_assert(heap_xt);
    sanity_check_snapshots_array();
    return True;
 }
@@ -1458,9 +1082,9 @@ static Bool ms_expensive_sanity_check ( void )
 //--- Heap management                                      ---//
 //------------------------------------------------------------//
 
-// Metadata for heap blocks.  Each one contains a pointer to a bottom-XPt,
-// which is a foothold into the XCon at which it was allocated.  From
-// HP_Chunks, XPt 'space' fields are incremented (at allocation) and
+// Metadata for heap blocks.  Each one contains an Xecu,
+// which identifies the XTree ec at which it was allocated.  From
+// HP_Chunks, XTree ec 'space' field is incremented (at allocation) and
 // decremented (at deallocation).
 //
 // Nb: first two fields must match core's VgHashNode.
@@ -1470,9 +1094,12 @@ typedef
       Addr              data;       // Ptr to actual block
       SizeT             req_szB;    // Size requested
       SizeT             slop_szB;   // Extra bytes given above those requested
-      XPt*              where;      // Where allocated; bottom-XPt
+      Xecu              where;      // Where allocated; XTree xecu from heap_xt
    }
    HP_Chunk;
+
+/* Pool allocator for HP_Chunk. */   
+static PoolAlloc *HP_chunk_poolalloc = NULL;
 
 static VgHashTable *malloc_list  = NULL;   // HP_Chunks
 
@@ -1501,27 +1128,24 @@ void* record_block( ThreadId tid, void* p, SizeT req_szB, SizeT slop_szB,
                     Bool exclude_first_entry, Bool maybe_snapshot )
 {
    // Make new HP_Chunk node, add to malloc_list
-   HP_Chunk* hc = VG_(malloc)("ms.main.rb.1", sizeof(HP_Chunk));
+   HP_Chunk* hc = VG_(allocEltPA)(HP_chunk_poolalloc);
    hc->req_szB  = req_szB;
    hc->slop_szB = slop_szB;
    hc->data     = (Addr)p;
-   hc->where    = NULL;
+   hc->where    = 0;
    VG_(HT_add_node)(malloc_list, hc);
 
    if (clo_heap) {
       VERB(3, "<<< record_block (%lu, %lu)\n", req_szB, slop_szB);
 
-      hc->where = get_XCon( tid, exclude_first_entry );
+      hc->where = add_heap_xt( tid, req_szB, exclude_first_entry);
 
-      if (hc->where) {
+      if (VG_(XT_n_ips_sel)(heap_xt, hc->where) > 0) {
          // Update statistics.
          n_heap_allocs++;
 
          // Update heap stats.
          update_heap_stats(req_szB, clo_heap_admin + slop_szB);
-
-         // Update XTree.
-         update_XCon(hc->where, req_szB);
 
          // Maybe take a snapshot.
          if (maybe_snapshot) {
@@ -1568,7 +1192,7 @@ void* alloc_and_record_block ( ThreadId tid, SizeT req_szB, SizeT req_alignB,
 }
 
 static __inline__
-void unrecord_block ( void* p, Bool maybe_snapshot )
+void unrecord_block ( void* p, Bool maybe_snapshot, Bool exclude_first_entry )
 {
    // Remove HP_Chunk from malloc_list
    HP_Chunk* hc = VG_(HT_remove)(malloc_list, (UWord)p);
@@ -1579,7 +1203,7 @@ void unrecord_block ( void* p, Bool maybe_snapshot )
    if (clo_heap) {
       VERB(3, "<<< unrecord_block\n");
 
-      if (hc->where) {
+      if (VG_(XT_n_ips_sel)(heap_xt, hc->where) > 0) {
          // Update statistics.
          n_heap_frees++;
 
@@ -1592,7 +1216,7 @@ void unrecord_block ( void* p, Bool maybe_snapshot )
          update_heap_stats(-hc->req_szB, -clo_heap_admin - hc->slop_szB);
 
          // Update XTree.
-         update_XCon(hc->where, -hc->req_szB);
+         sub_heap_xt(hc->where, hc->req_szB, exclude_first_entry);
 
          // Maybe take a snapshot.
          if (maybe_snapshot) {
@@ -1609,7 +1233,7 @@ void unrecord_block ( void* p, Bool maybe_snapshot )
    }
 
    // Actually free the chunk, and the heap block (if necessary)
-   VG_(free)( hc );  hc = NULL;
+   VG_(freeEltPA) (HP_chunk_poolalloc, hc);  hc = NULL;
 }
 
 // Nb: --ignore-fn is tricky for realloc.  If the block's original alloc was
@@ -1618,13 +1242,17 @@ void unrecord_block ( void* p, Bool maybe_snapshot )
 // could end up with negative heap sizes.  This isn't a danger if we are
 // growing such a block, but for consistency (it also simplifies things) we
 // ignore such reallocs as well.
+// PW Nov 2016 xtree work: why can't we just consider that a realloc of an
+// ignored  alloc is just a new alloc (i.e. do not remove the old sz from the
+// stats). Then everything would be fine, and a non ignored realloc would be
+// counted properly.
 static __inline__
 void* realloc_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
 {
    HP_Chunk* hc;
    void*     p_new;
    SizeT     old_req_szB, old_slop_szB, new_slop_szB, new_actual_szB;
-   XPt      *old_where, *new_where;
+   Xecu      old_where;
    Bool      is_ignored = False;
 
    // Remove the old block
@@ -1640,7 +1268,7 @@ void* realloc_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
    if (clo_heap) {
       VERB(3, "<<< realloc_block (%lu)\n", new_req_szB);
 
-      if (hc->where) {
+      if (VG_(XT_n_ips_sel)(heap_xt, hc->where) > 0) {
          // Update statistics.
          n_heap_reallocs++;
 
@@ -1682,18 +1310,26 @@ void* realloc_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
       hc->req_szB  = new_req_szB;
       hc->slop_szB = new_slop_szB;
       old_where    = hc->where;
-      hc->where    = NULL;
+      hc->where    = 0;
 
       // Update XTree.
       if (clo_heap) {
-         new_where = get_XCon( tid, /*exclude_first_entry*/True);
-         if (!is_ignored && new_where) {
-            hc->where = new_where;
-            update_XCon(old_where, -old_req_szB);
-            update_XCon(new_where,  new_req_szB);
+         hc->where = add_heap_xt( tid, new_req_szB,
+                                  /*exclude_first_entry*/True);
+         if (!is_ignored && VG_(XT_n_ips_sel)(heap_xt, hc->where) > 0) {
+            sub_heap_xt(old_where, old_req_szB, /*exclude_first_entry*/True);
          } else {
             // The realloc itself is ignored.
             is_ignored = True;
+
+            /* XTREE??? hack to have something compatible with pre
+               m_xtree massif: if the previous alloc/realloc was
+               ignored, and this one is not ignored, then keep the
+               previous where, to continue marking this memory as
+               ignored. */
+            if (VG_(XT_n_ips_sel)(heap_xt, hc->where) > 0
+                && VG_(XT_n_ips_sel)(heap_xt, old_where) == 0)
+               hc->where = old_where;
 
             // Update statistics.
             n_ignored_heap_reallocs++;
@@ -1712,7 +1348,7 @@ void* realloc_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
       if (!is_ignored) {
          // Update heap stats.
          update_heap_stats(new_req_szB - old_req_szB,
-                          new_slop_szB - old_slop_szB);
+                           new_slop_szB - old_slop_szB);
 
          // Maybe take a snapshot.
          maybe_take_snapshot(Normal, "realloc");
@@ -1761,19 +1397,19 @@ static void *ms_memalign ( ThreadId tid, SizeT alignB, SizeT szB )
 
 static void ms_free ( ThreadId tid __attribute__((unused)), void* p )
 {
-   unrecord_block(p, /*maybe_snapshot*/True);
+   unrecord_block(p, /*maybe_snapshot*/True, /*exclude_first_entry*/True);
    VG_(cli_free)(p);
 }
 
 static void ms___builtin_delete ( ThreadId tid, void* p )
 {
-   unrecord_block(p, /*maybe_snapshot*/True);
+   unrecord_block(p, /*maybe_snapshot*/True, /*exclude_first_entry*/True);
    VG_(cli_free)(p);
 }
 
 static void ms___builtin_vec_delete ( ThreadId tid, void* p )
 {
-   unrecord_block(p, /*maybe_snapshot*/True);
+   unrecord_block(p, /*maybe_snapshot*/True, /*exclude_first_entry*/True);
    VG_(cli_free)(p);
 }
 
@@ -1817,11 +1453,13 @@ void ms_unrecord_page_mem( Addr a, SizeT len )
    tl_assert(VG_IS_PAGE_ALIGNED(len));
    tl_assert(len >= VKI_PAGE_SIZE);
    // Unrecord the first page. This might be the peak, so do a snapshot.
-   unrecord_block((void*)a, /*maybe_snapshot*/True);
+   unrecord_block((void*)a, /*maybe_snapshot*/True,
+                  /*exclude_first_entry*/False);
    a += VKI_PAGE_SIZE;
    // Then unrecord the remaining pages, but without snapshots.
    for (end = a + len - VKI_PAGE_SIZE; a < end; a += VKI_PAGE_SIZE) {
-      unrecord_block((void*)a, /*maybe_snapshot*/False);
+      unrecord_block((void*)a, /*maybe_snapshot*/False,
+                     /*exclude_first_entry*/False);
    }
 }
 
@@ -1953,17 +1591,20 @@ static void die_mem_stack_signal(Addr a, SizeT len)
 
 static void print_monitor_help ( void )
 {
-   VG_(gdb_printf) ("\n");
-   VG_(gdb_printf) ("massif monitor commands:\n");
-   VG_(gdb_printf) ("  snapshot [<filename>]\n");
-   VG_(gdb_printf) ("  detailed_snapshot [<filename>]\n");
-   VG_(gdb_printf) ("      takes a snapshot (or a detailed snapshot)\n");
-   VG_(gdb_printf) ("      and saves it in <filename>\n");
-   VG_(gdb_printf) ("             default <filename> is massif.vgdb.out\n");
-   VG_(gdb_printf) ("  all_snapshots [<filename>]\n");
-   VG_(gdb_printf) ("      saves all snapshot(s) taken so far in <filename>\n");
-   VG_(gdb_printf) ("             default <filename> is massif.vgdb.out\n");
-   VG_(gdb_printf) ("\n");
+   VG_(gdb_printf) (
+"\n"
+"massif monitor commands:\n"
+"  snapshot [<filename>]\n"
+"  detailed_snapshot [<filename>]\n"
+"      takes a snapshot (or a detailed snapshot)\n"
+"      and saves it in <filename>\n"
+"             default <filename> is massif.vgdb.out\n"
+"  all_snapshots [<filename>]\n"
+"      saves all snapshot(s) taken so far in <filename>\n"
+"             default <filename> is massif.vgdb.out\n"
+"  xtmemory [<filename>]\n"
+"        dump xtree memory profile in <filename> (default xtmemory.kcg)\n"
+"\n");
 }
 
 
@@ -1985,14 +1626,14 @@ static Bool ms_handle_client_request ( ThreadId tid, UWord* argv, UWord* ret )
       void* p        = (void*)argv[1];
       SizeT newSizeB =       argv[3];
 
-      unrecord_block(p, /*maybe_snapshot*/True);
+      unrecord_block(p, /*maybe_snapshot*/True, /*exclude_first_entry*/False);
       record_block(tid, p, newSizeB, /*slop_szB*/0,
                    /*exclude_first_entry*/False, /*maybe_snapshot*/True);
       return True;
    }
    case VG_USERREQ__FREELIKE_BLOCK: {
       void* p = (void*)argv[1];
-      unrecord_block(p, /*maybe_snapshot*/True);
+      unrecord_block(p, /*maybe_snapshot*/True, /*exclude_first_entry*/False);
       *ret = 0;
       return True;
    }
@@ -2107,157 +1748,25 @@ IRSB* ms_instrument ( VgCallbackClosure* closure,
 //--- Writing snapshots                                    ---//
 //------------------------------------------------------------//
 
-#define FP(format, args...) ({ VG_(fprintf)(fp, format, ##args); })
-
-static void pp_snapshot_SXPt(VgFile *fp, SXPt* sxpt, Int depth,
-                             HChar* depth_str, Int depth_str_len,
-                             SizeT snapshot_heap_szB, SizeT snapshot_total_szB)
+static void pp_snapshot(MsFile *fp, Snapshot* snapshot, Int snapshot_n)
 {
-   Int   i, j, n_insig_children_sxpts;
-   SXPt* child = NULL;
+   const Massif_Header header = (Massif_Header) {
+      .snapshot_n    = snapshot_n,
+      .time          = snapshot->time,
+      .sz_B          = snapshot->heap_szB,
+      .extra_B       = snapshot->heap_extra_szB,
+      .stacks_B      = snapshot->stacks_szB,
+      .detailed      = is_detailed_snapshot(snapshot),
+      .peak          = Peak == snapshot->kind,
+      .top_node_desc = clo_pages_as_heap ?
+        "(page allocation syscalls) mmap/mremap/brk, --alloc-fns, etc."
+        : "(heap allocation functions) malloc/new/new[], --alloc-fns, etc.",
+      .sig_threshold = clo_threshold
+   };
 
-   // Used for printing function names.  Is made static to keep it out
-   // of the stack frame -- this function is recursive.  Obviously this
-   // now means its contents are trashed across the recursive call.
-   const HChar* ip_desc;
-
-   switch (sxpt->tag) {
-    case SigSXPt:
-      // Print the SXPt itself.
-      if (0 == depth) {
-         if (clo_heap) {
-            ip_desc = 
-               ( clo_pages_as_heap
-               ? "(page allocation syscalls) mmap/mremap/brk, --alloc-fns, etc."
-               : "(heap allocation functions) malloc/new/new[], --alloc-fns, etc."
-               );
-         } else {
-            // XXX: --alloc-fns?
-
-            // Nick thinks this case cannot happen. ip_desc would be
-            // conceptually uninitialised here. Therefore:
-            tl_assert2(0, "pp_snapshot_SXPt: unexpected");
-         }
-      } else {
-         // If it's main-or-below-main, we (if appropriate) ignore everything
-         // below it by pretending it has no children.
-         if ( ! VG_(clo_show_below_main) ) {
-            Vg_FnNameKind kind = VG_(get_fnname_kind_from_IP)(sxpt->Sig.ip);
-            if (Vg_FnNameMain == kind || Vg_FnNameBelowMain == kind) {
-               sxpt->Sig.n_children = 0;
-            }
-         }
-
-         // We need the -1 to get the line number right, But I'm not sure why.
-         ip_desc = VG_(describe_IP)(sxpt->Sig.ip-1, NULL);
-      }
-      
-      // Do the non-ip_desc part first...
-      FP("%sn%u: %lu ", depth_str, sxpt->Sig.n_children, sxpt->szB);
-
-      // For ip_descs beginning with "0xABCD...:" addresses, we first
-      // measure the length of the "0xabcd: " address at the start of the
-      // ip_desc.
-      j = 0;
-      if ('0' == ip_desc[0] && 'x' == ip_desc[1]) {
-         j = 2;
-         while (True) {
-            if (ip_desc[j]) {
-               if (':' == ip_desc[j]) break;
-               j++;
-            } else {
-               tl_assert2(0, "ip_desc has unexpected form: %s\n", ip_desc);
-            }
-         }
-      }
-      // It used to be that ip_desc was truncated at the end.
-      // But there does not seem to be a good reason for that. Besides,
-      // the string was truncated at the right, which is less than ideal.
-      // Truncation at the beginning of the string would have been preferable.
-      // Think several nested namespaces in C++....
-      // Anyhow, we spit out the full-length string now.
-      FP("%s\n", ip_desc);
-
-      // Indent.
-      tl_assert(depth+1 < depth_str_len-1);    // -1 for end NUL char
-      depth_str[depth+0] = ' ';
-      depth_str[depth+1] = '\0';
-
-      // Sort SXPt's children by szB (reverse order:  biggest to smallest).
-      // Nb: we sort them here, rather than earlier (eg. in dup_XTree), for
-      // two reasons.  First, if we do it during dup_XTree, it can get
-      // expensive (eg. 15% of execution time for konqueror
-      // startup/shutdown).  Second, this way we get the Insig SXPt (if one
-      // is present) in its sorted position, not at the end.
-      VG_(ssort)(sxpt->Sig.children, sxpt->Sig.n_children, sizeof(SXPt*),
-                 SXPt_revcmp_szB);
-
-      // Print the SXPt's children.  They should already be in sorted order.
-      n_insig_children_sxpts = 0;
-      for (i = 0; i < sxpt->Sig.n_children; i++) {
-         child = sxpt->Sig.children[i];
-
-         if (InsigSXPt == child->tag)
-            n_insig_children_sxpts++;
-
-         // Ok, print the child.  NB: contents of ip_desc will be
-         // trashed by this recursive call.  Doesn't matter currently,
-         // but worth noting.
-         pp_snapshot_SXPt(fp, child, depth+1, depth_str, depth_str_len,
-            snapshot_heap_szB, snapshot_total_szB);
-      }
-
-      // Unindent.
-      depth_str[depth+0] = '\0';
-      depth_str[depth+1] = '\0';
-
-      // There should be 0 or 1 Insig children SXPts.
-      tl_assert(n_insig_children_sxpts <= 1);
-      break;
-
-    case InsigSXPt: {
-      const HChar* s = ( 1 == sxpt->Insig.n_xpts ? "," : "s, all" );
-      FP("%sn0: %lu in %d place%s below massif's threshold (%.2f%%)\n",
-         depth_str, sxpt->szB, sxpt->Insig.n_xpts, s, clo_threshold);
-      break;
-    }
-
-    default:
-      tl_assert2(0, "pp_snapshot_SXPt: unrecognised SXPt tag");
-   }
-}
-
-static void pp_snapshot(VgFile *fp, Snapshot* snapshot, Int snapshot_n)
-{
    sanity_check_snapshot(snapshot);
 
-   FP("#-----------\n");
-   FP("snapshot=%d\n", snapshot_n);
-   FP("#-----------\n");
-   FP("time=%lld\n",            snapshot->time);
-   FP("mem_heap_B=%lu\n",       snapshot->heap_szB);
-   FP("mem_heap_extra_B=%lu\n", snapshot->heap_extra_szB);
-   FP("mem_stacks_B=%lu\n",     snapshot->stacks_szB);
-
-   if (is_detailed_snapshot(snapshot)) {
-      // Detailed snapshot -- print heap tree.
-      Int   depth_str_len = clo_depth + 3;
-      HChar* depth_str = VG_(malloc)("ms.main.pps.1", 
-                                     sizeof(HChar) * depth_str_len);
-      SizeT snapshot_total_szB =
-         snapshot->heap_szB + snapshot->heap_extra_szB + snapshot->stacks_szB;
-      depth_str[0] = '\0';   // Initialise depth_str to "".
-
-      FP("heap_tree=%s\n", ( Peak == snapshot->kind ? "peak" : "detailed" ));
-      pp_snapshot_SXPt(fp, snapshot->alloc_sxpt, 0, depth_str,
-                       depth_str_len, snapshot->heap_szB,
-                       snapshot_total_szB);
-
-      VG_(free)(depth_str);
-
-   } else {
-      FP("heap_tree=empty\n");
-   }
+   VG_(XT_massif_print)(fp, snapshot->xt, &header, alloc_szB);
 }
 
 static void write_snapshots_to_file(const HChar* massif_out_file, 
@@ -2265,46 +1774,20 @@ static void write_snapshots_to_file(const HChar* massif_out_file,
                                     Int nr_elements)
 {
    Int i;
-   VgFile *fp;
+   MsFile *fp;
 
-   fp = VG_(fopen)(massif_out_file, VKI_O_CREAT|VKI_O_TRUNC|VKI_O_WRONLY,
-                                    VKI_S_IRUSR|VKI_S_IWUSR);
-   if (fp == NULL) {
-      // If the file can't be opened for whatever reason (conflict
-      // between multiple cachegrinded processes?), give up now.
-      VG_(umsg)("error: can't open output file '%s'\n", massif_out_file );
-      VG_(umsg)("       ... so profiling results will be missing.\n");
-      return;
-   }
-
-   // Print massif-specific options that were used.
-   // XXX: is it worth having a "desc:" line?  Could just call it "options:"
-   // -- this file format isn't as generic as Cachegrind's, so the
-   // implied genericity of "desc:" is bogus.
-   FP("desc:");
-   for (i = 0; i < VG_(sizeXA)(args_for_massif); i++) {
-      HChar* arg = *(HChar**)VG_(indexXA)(args_for_massif, i);
-      FP(" %s", arg);
-   }
-   if (0 == i) FP(" (none)");
-   FP("\n");
-
-   // Print "cmd:" line.
-   FP("cmd: ");
-   FP("%s", VG_(args_the_exename));
-   for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
-      HChar* arg = * (HChar**) VG_(indexXA)( VG_(args_for_client), i );
-      FP(" %s", arg);
-   }
-   FP("\n");
-
-   FP("time_unit: %s\n", TimeUnit_to_string(clo_time_unit));
+   fp = VG_(XT_massif_open)(massif_out_file,
+                            NULL,
+                            args_for_massif,
+                            TimeUnit_to_string(clo_time_unit));
+   if (fp == NULL)
+      return; // Error reported by VG_(XT_massif_open)
 
    for (i = 0; i < nr_elements; i++) {
       Snapshot* snapshot = & snapshots_array[i];
       pp_snapshot(fp, snapshot, i);     // Detailed snapshot!
    }
-   VG_(fclose) (fp);
+   VG_(XT_massif_close) (fp);
 }
 
 static void write_snapshots_array_to_file(void)
@@ -2355,6 +1838,26 @@ static void handle_all_snapshots_monitor_command (const HChar *filename)
                             snapshots, next_snapshot_i);
 }
 
+static void xtmemory_report_next_block(XT_Allocs* xta, ExeContext** ec_alloc)
+{
+   const HP_Chunk* hc = VG_(HT_Next)(malloc_list);
+   if (hc) {
+      xta->nbytes = hc->req_szB;
+      xta->nblocks = 1;
+      *ec_alloc = VG_(XT_get_ec_from_xecu)(heap_xt, hc->where);
+   } else
+      xta->nblocks = 0;
+}
+static void ms_xtmemory_report ( const HChar* filename, Bool fini )
+{ 
+   // Make xtmemory_report_next_block ready to be called.
+   VG_(HT_ResetIter)(malloc_list);
+   VG_(XTMemory_report)(filename, fini, xtmemory_report_next_block,
+                        VG_(XT_filter_maybe_below_main));
+   /* As massif already filters one top function, use as filter
+      VG_(XT_filter_maybe_below_main). */
+}
+
 static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
 {
    HChar* wcmd;
@@ -2364,7 +1867,8 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
    VG_(strcpy) (s, req);
 
    wcmd = VG_(strtok_r) (s, " ", &ssaveptr);
-   switch (VG_(keyword_id) ("help snapshot detailed_snapshot all_snapshots", 
+   switch (VG_(keyword_id) ("help snapshot detailed_snapshot all_snapshots"
+                            " xtmemory", 
                             wcmd, kwd_report_duplicated_matches)) {
    case -2: /* multiple matches */
       return True;
@@ -2391,6 +1895,12 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       handle_all_snapshots_monitor_command (filename);
       return True;
    }
+   case  4: { /* xtmemory */
+      HChar* filename;
+      filename = VG_(strtok_r) (NULL, " ", &ssaveptr);
+      ms_xtmemory_report (filename, False);
+      return True;
+   }
    default: 
       tl_assert(0);
       return False;
@@ -2409,23 +1919,14 @@ static void ms_print_stats (void)
    STATS("ignored heap frees:    %u\n", n_ignored_heap_frees);
    STATS("ignored heap reallocs: %u\n", n_ignored_heap_reallocs);
    STATS("stack allocs:          %u\n", n_stack_allocs);
-   STATS("stack frees:           %u\n", n_stack_frees);
-   STATS("XPts:                  %u\n", n_xpts);
-   STATS("top-XPts:              %u (%u%%)\n",
-      alloc_xpt->n_children,
-      ( n_xpts ? alloc_xpt->n_children * 100 / n_xpts : 0));
-   STATS("XPt init expansions:   %u\n", n_xpt_init_expansions);
-   STATS("XPt later expansions:  %u\n", n_xpt_later_expansions);
-   STATS("SXPt allocs:           %u\n", n_sxpt_allocs);
-   STATS("SXPt frees:            %u\n", n_sxpt_frees);
    STATS("skipped snapshots:     %u\n", n_skipped_snapshots);
    STATS("real snapshots:        %u\n", n_real_snapshots);
    STATS("detailed snapshots:    %u\n", n_detailed_snapshots);
    STATS("peak snapshots:        %u\n", n_peak_snapshots);
    STATS("cullings:              %u\n", n_cullings);
-   STATS("XCon redos:            %u\n", n_XCon_redos);
 #undef STATS
 }
+
 
 //------------------------------------------------------------//
 //--- Finalisation                                         ---//
@@ -2433,11 +1934,10 @@ static void ms_print_stats (void)
 
 static void ms_fini(Int exit_status)
 {
+   ms_xtmemory_report(VG_(clo_xtree_memory_file), True);
+
    // Output.
    write_snapshots_array_to_file();
-
-   // Stats
-   tl_assert(n_xpts > 0);  // always have alloc_xpt
 
    if (VG_(clo_stats))
       ms_print_stats();
@@ -2454,6 +1954,12 @@ static void ms_post_clo_init(void)
    HChar* LD_PRELOAD_val;
    HChar* s;
    HChar* s2;
+
+   /* We will record execontext up to clo_depth + overestimate and
+      we will store this as ec => we need to increase the backtrace size
+      if smaller than what we will store. */
+   if (VG_(clo_backtrace_size) < clo_depth + MAX_OVERESTIMATE)
+      VG_(clo_backtrace_size) = clo_depth + MAX_OVERESTIMATE;
 
    // Check options.
    if (clo_pages_as_heap) {
@@ -2545,6 +2051,13 @@ static void ms_post_clo_init(void)
       clear_snapshot( & snapshots[i], /*do_sanity_check*/False );
    }
    sanity_check_snapshots_array();
+
+   if (VG_(clo_xtree_memory) == Vg_XTMemory_Full)
+      // Activate full xtree memory profiling.
+      // As massif already filters one top function, use as filter
+      // VG_(XT_filter_maybe_below_main).
+      VG_(XTMemory_Full_init)(VG_(XT_filter_maybe_below_main));
+
 }
 
 static void ms_pre_clo_init(void)
@@ -2590,10 +2103,21 @@ static void ms_pre_clo_init(void)
                                    0 );
 
    // HP_Chunks.
+   HP_chunk_poolalloc = VG_(newPA)
+      (sizeof(HP_Chunk),
+       1000,
+       VG_(malloc),
+       "massif MC_Chunk pool",
+       VG_(free));
    malloc_list = VG_(HT_construct)( "Massif's malloc list" );
 
-   // Dummy node at top of the context structure.
-   alloc_xpt = new_XPt(/*ip*/0, /*parent*/NULL);
+   // Heap XTree
+   heap_xt = VG_(XT_create)(VG_(malloc),
+                            "ms.xtrees",
+                            VG_(free),
+                            sizeof(SizeT),
+                            init_szB, add_szB, sub_szB,
+                            filter_IPs);
 
    // Initialise alloc_fns and ignore_fns.
    init_alloc_fns();

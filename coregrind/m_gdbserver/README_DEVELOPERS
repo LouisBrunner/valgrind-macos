@@ -32,7 +32,7 @@ documented in Appendix D of gdb user manual.
 The standard gdb distribution has a standalone gdbserver (a small
 executable) which implements this protocol and the needed system calls
 to allow gdb to remotely debug process running on a linux or MacOS or
-...
+Solaris...
 
 Activation of gdbserver code inside valgrind
 --------------------------------------------
@@ -206,6 +206,12 @@ process using gdbserver.
 Do not kill -9 vgdb while it has interrupted the valgrind process,
 otherwise the valgrind process will very probably stay stopped or die.
 
+On Solaris, this forced invocation is implemented via agent thread.
+The process is first stopped (all the threads at once), and special agent
+thread is created which will force gbdserver invocation. After its
+work is done, the agent thread is destroyed and process resumed.
+Agent thread functionality is a Solaris OS feature, used also by debuggers.
+Therefore vgdb-invoker-solaris implementation is really small.
 
 Implementation is based on the gdbserver code from gdb 6.6
 ----------------------------------------------------------
@@ -257,7 +263,7 @@ Mandatory:
 The main thing to do is to make a file valgrind-low-hal9000.c.
 Start from an existing file (e.g. valgrind-low-x86.c).
 The data structures 'struct reg regs'
-and 'const char *expedite_regs' are build from files
+and 'const char *expedite_regs' are built from files
 in the gdb sources, e.g. for an new arch hal9000
    cd gdb/regformats
    sh ./regdat.sh reg-hal9000.dat hal9000
@@ -286,6 +292,9 @@ For other platforms (i.e. Macos), more work is needed as the ptrace calls
 on Macos are either different and/or incomplete (and so, 'Mach' specific
 things are needed e.g. to attach to threads etc).
 A courageous Mac aficionado is welcome on this aspect.
+
+For Solaris, only architecture specific functionality in vgdb-invoker-solaris.c
+needs to be implemented, similar to Linux above.
 
 Optional:
 To let gdb see the Valgrind shadow registers, xml description

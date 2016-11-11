@@ -58,6 +58,12 @@ usage: valgrind [options] prog-and-args
     --alignment=<number>      set minimum alignment of heap allocations [not used by this tool]
     --redzone-size=<number>   set minimum size of redzones added before/after
                               heap blocks (in bytes). [not used by this tool]
+    --xtree-memory=none|allocs|full   profile heap memory in an xtree [none]
+                              and produces a report at the end of the execution
+                              none: no profiling, allocs: current allocated
+                              size/blocks, full: profile current and cumulative
+                              allocated size/blocks and freed size/blocks.
+    --xtree-memory-file=<file>   xtree memory report file [xtmemory.kcg.%p]
 
   uncommon user options for all Valgrind tools:
     --fullpath-after=         (with nothing after the '=')

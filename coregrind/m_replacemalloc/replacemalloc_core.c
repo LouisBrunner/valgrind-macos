@@ -65,6 +65,16 @@ Bool VG_(replacement_malloc_process_cmd_line_option)(const HChar* arg)
             VG_MIN_MALLOC_SZB);
       }
    }
+   else if VG_XACT_CLO(arg, "--xtree-memory=none",
+                       VG_(clo_xtree_memory), Vg_XTMemory_None) {}
+   else if VG_XACT_CLO(arg, "--xtree-memory=allocs",
+                       VG_(clo_xtree_memory), Vg_XTMemory_Allocs) {}
+   else if VG_XACT_CLO(arg, "--xtree-memory=full",
+                       VG_(clo_xtree_memory), Vg_XTMemory_Full) {}
+   else if VG_STR_CLO (arg, "--xtree-memory-file",
+                       VG_(clo_xtree_memory_file)) {}
+   else if VG_BOOL_CLO(arg, "--xtree-compress-strings",
+                       VG_(clo_xtree_compress_strings)) {}
 
    else if VG_BOOL_CLO(arg, "--trace-malloc",  VG_(clo_trace_malloc)) {}
    else 

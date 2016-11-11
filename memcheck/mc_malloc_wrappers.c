@@ -36,12 +36,16 @@
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcprint.h"
+#include "pub_tool_libcproc.h"
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_options.h"
 #include "pub_tool_replacemalloc.h"
 #include "pub_tool_threadstate.h"
 #include "pub_tool_tooliface.h"     // Needed for mc_include.h
 #include "pub_tool_stacktrace.h"    // For VG_(get_and_pp_StackTrace)
+#include "pub_tool_xarray.h"
+#include "pub_tool_xtree.h"
+#include "pub_tool_xtmemory.h"
 
 #include "mc_include.h"
 
@@ -303,20 +307,33 @@ void  MC_(set_allocated_at) (ThreadId tid, MC_Chunk* mc)
       default: tl_assert (0);
    }
    mc->where[0] = VG_(record_ExeContext) ( tid, 0/*first_ip_delta*/ );
+   if (UNLIKELY(VG_(clo_xtree_memory) == Vg_XTMemory_Full))
+       VG_(XTMemory_Full_alloc)(mc->szB, mc->where[0]);
 }
 
 void  MC_(set_freed_at) (ThreadId tid, MC_Chunk* mc)
 {
-   UInt pos;
+   Int pos;
+   ExeContext* ec_free;
+
    switch (MC_(clo_keep_stacktraces)) {
       case KS_none:            return;
-      case KS_alloc:           return;
+      case KS_alloc:           pos = -1; break;
       case KS_free:            pos = 0; break;
       case KS_alloc_then_free: pos = 0; break;
       case KS_alloc_and_free:  pos = 1; break;
       default: tl_assert (0);
    }
-   mc->where[pos] = VG_(record_ExeContext) ( tid, 0/*first_ip_delta*/ );
+   /* We need the execontext for the free operation, either to store
+      it in the mc chunk and/or for full xtree memory profiling.
+      Note: we are guaranteed to find the ec_alloc in mc->where[0], as
+      mc_post_clo_init verifies the consistency of --xtree-memory and
+      --keep-stacktraces. */
+   ec_free = VG_(record_ExeContext) ( tid, 0/*first_ip_delta*/ );
+   if (UNLIKELY(VG_(clo_xtree_memory) == Vg_XTMemory_Full))
+       VG_(XTMemory_Full_free)(mc->szB, mc->where[0], ec_free);
+   if (pos >= 0)
+      mc->where[pos] = ec_free;
 }
 
 UInt MC_(n_where_pointers) (void)
@@ -650,6 +667,9 @@ void MC_(handle_resizeInPlace)(ThreadId tid, Addr p,
 
    if (oldSizeB == newSizeB)
       return;
+
+   if (UNLIKELY(VG_(clo_xtree_memory) == Vg_XTMemory_Full))
+       VG_(XTMemory_Full_resize_in_place)(oldSizeB,  newSizeB, mc->where[0]);
 
    mc->szB = newSizeB;
    if (newSizeB < oldSizeB) {
@@ -1117,6 +1137,25 @@ Bool MC_(mempool_exists)(Addr pool)
    return True;
 }
 
+static void xtmemory_report_next_block(XT_Allocs* xta, ExeContext** ec_alloc)
+{
+   MC_Chunk* mc = VG_(HT_Next)(MC_(malloc_list));
+   if (mc) {
+      xta->nbytes = mc->szB;
+      xta->nblocks = 1;
+      *ec_alloc = MC_(allocated_at)(mc);
+   } else
+      xta->nblocks = 0;
+}
+
+void MC_(xtmemory_report) ( const HChar* filename, Bool fini )
+{ 
+   // Make xtmemory_report_next_block ready to be called.
+   VG_(HT_ResetIter)(MC_(malloc_list));
+
+   VG_(XTMemory_report)(filename, fini, xtmemory_report_next_block,
+                        VG_(XT_filter_1top_and_maybe_below_main));
+}
 
 /*------------------------------------------------------------*/
 /*--- Statistics printing                                  ---*/

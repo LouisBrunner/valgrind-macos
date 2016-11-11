@@ -52,6 +52,8 @@ memcheck monitor commands:
         shows places pointing inside <len> (default 1) bytes at <addr>
         (with len 1, only shows "start pointers" pointing exactly to <addr>,
          with len > 1, will also show "interior pointers")
+  xtmemory [<filename>]
+        dump xtree memory profile in <filename> (default xtmemory.kcg)
 general valgrind monitor commands:
   help [debug]            : monitor command help. With debug: + debugging commands
   v.wait [<ms>]           : sleep <ms> (default 0) then continue
@@ -121,4 +123,6 @@ memcheck monitor commands:
         shows places pointing inside <len> (default 1) bytes at <addr>
         (with len 1, only shows "start pointers" pointing exactly to <addr>,
          with len > 1, will also show "interior pointers")
+  xtmemory [<filename>]
+        dump xtree memory profile in <filename> (default xtmemory.kcg)
 monitor command request to kill this process

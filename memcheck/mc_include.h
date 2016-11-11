@@ -144,6 +144,8 @@ void MC_(make_mem_undefined_w_otag)( Addr a, SizeT len, UInt otag );
 void MC_(make_mem_defined)         ( Addr a, SizeT len );
 void MC_(copy_address_range_state) ( Addr src, Addr dst, SizeT len );
 
+void MC_(xtmemory_report) ( const HChar* filename, Bool fini );
+
 void MC_(print_malloc_stats) ( void );
 /* nr of free operations done */
 SizeT MC_(get_cmalloc_n_frees) ( void );

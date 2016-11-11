@@ -47,6 +47,9 @@
 #include "pub_tool_replacemalloc.h"
 #include "pub_tool_tooliface.h"
 #include "pub_tool_threadstate.h"
+#include "pub_tool_xarray.h"
+#include "pub_tool_xtree.h"
+#include "pub_tool_xtmemory.h"
 
 #include "mc_include.h"
 #include "memcheck.h"   /* for client requests */
@@ -6400,6 +6403,8 @@ static void print_monitor_help ( void )
 "        shows places pointing inside <len> (default 1) bytes at <addr>\n"
 "        (with len 1, only shows \"start pointers\" pointing exactly to <addr>,\n"
 "         with len > 1, will also show \"interior pointers\")\n"
+"  xtmemory [<filename>]\n"
+"        dump xtree memory profile in <filename> (default xtmemory.kcg)\n"
 "\n");
 }
 
@@ -6515,7 +6520,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       command. This ensures a shorter abbreviation for the user. */
    switch (VG_(keyword_id) 
            ("help get_vbits leak_check make_memory check_memory "
-            "block_list who_points_at xb", 
+            "block_list who_points_at xb xtmemory", 
             wcmd, kwd_report_duplicated_matches)) {
    case -2: /* multiple matches */
       return True;
@@ -6871,6 +6876,13 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
                 (void *)address, szB, unaddressable);
          }
       }
+      return True;
+   }
+
+   case  8: { /* xtmemory */
+      HChar* filename;
+      filename = VG_(strtok_r) (NULL, " ", &ssaveptr);
+      MC_(xtmemory_report)(filename, False);
       return True;
    }
 
@@ -7889,6 +7901,17 @@ static void mc_post_clo_init ( void )
    /* Do not check definedness of guest state if --undef-value-errors=no */
    if (MC_(clo_mc_level) >= 2)
       VG_(track_pre_reg_read) ( mc_pre_reg_read );
+
+   if (VG_(clo_xtree_memory) == Vg_XTMemory_Full) {
+      if (MC_(clo_keep_stacktraces) == KS_none
+          || MC_(clo_keep_stacktraces) == KS_free)
+         VG_(fmsg_bad_option)("--keep-stacktraces",
+                              "To use --xtree-memory=full, you must"
+                              " keep at least the alloc stacktrace\n");
+      // Activate full xtree memory profiling.
+      VG_(XTMemory_Full_init)(VG_(XT_filter_1top_and_maybe_below_main));
+   }
+   
 }
 
 static void print_SM_info(const HChar* type, Int n_SMs)
@@ -7997,6 +8020,7 @@ static void mc_print_stats (void)
 
 static void mc_fini ( Int exitcode )
 {
+   MC_(xtmemory_report) (VG_(clo_xtree_memory_file), True);
    MC_(print_malloc_stats)();
 
    if (MC_(clo_leak_check) != LC_Off) {

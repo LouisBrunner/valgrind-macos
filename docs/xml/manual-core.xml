@@ -1011,7 +1011,7 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       <option>--xml=yes</option>.  Any <option>%p</option> or
       <option>%q</option> sequences appearing in the filename are expanded
       in exactly the same way as they are for <option>--log-file</option>.
-      See the description of <option>--log-file</option> for details.
+      See the description of  <xref linkend="opt.log-file"/> for details.
       </para>
     </listitem>
   </varlistentry>
@@ -1683,6 +1683,74 @@ Massif, Helgrind, DRD), the following options apply.</para>
       used by Valgrind.  Decreasing the redzone size will reduce the
       memory needed by Valgrind but also reduces the chances of
       detecting over/underruns, so is not recommended.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.xtree-memory" xreflabel="--xtree-memory">
+    <term>
+      <option><![CDATA[--xtree-memory=none|allocs|full [none] ]]></option>
+    </term>
+    <listitem>
+      <para> Tools replacing Valgrind's <function>malloc,
+      realloc,</function> etc, can optionally produce an execution
+      tree detailing which piece of code is responsible for heap
+      memory usage. See <xref linkend="manual-core.xtree"/>
+      for a detailed explanation about execution trees. </para>
+      
+      <para> When set to <varname>none</varname>, no memory execution
+      tree is produced.</para>
+      
+      <para> When set to <varname>allocs</varname>, the memory
+      execution tree gives the current number of allocated bytes and
+      the current number of allocated blocks. </para>
+      
+      <para> When set to <varname>full</varname>, the memory execution
+      tree gives 6 different measurements : the current number of
+      allocated bytes and blocks (same values as
+      for <varname>allocs</varname>), the total number of allocated
+      bytes and blocks, the total number of freed bytes and
+      blocks.</para>
+      
+      <para>Note that the overhead in cpu and memory to produce
+        an xtree depends on the tool. The overhead in cpu is small for
+        the value <varname>allocs</varname>, as the information needed
+        to produce this report is maintained in any case by the tool.
+        For massif and helgrind, specifying <varname>full</varname>
+        implies to capture a stack trace for each free operation,
+        while normally these tools only capture an allocation stack
+        trace.  For memcheck, the cpu overhead for the
+        value <varname>full</varname> is small, as this can only be
+        used in combination with
+        <option>--keep-stacktraces=alloc-and-free</option> or
+        <option>--keep-stacktraces=alloc-then-free</option>, which
+        already records a stack trace for each free operation. The
+        memory overhead varies between 5 and 10 words per unique
+        stacktrace in the xtree, plus the memory needed to record the
+        stack trace for the free operations, if needed specifically
+        for the xtree.
+      </para>
+    </listitem>
+  </varlistentry>
+  
+  <varlistentry id="opt.xtree-memory-file" xreflabel="--xtree-memory-file">
+    <term>
+      <option><![CDATA[--xtree-memory-file=<filename> [default:
+      xtmemory.kcg.%p] ]]></option>
+    </term>
+    <listitem>
+      <para>Specifies that Valgrind should produce the xtree memory
+      report in the specified file.  Any <option>%p</option> or
+      <option>%q</option> sequences appearing in the filename are expanded
+      in exactly the same way as they are for <option>--log-file</option>.
+      See the description of <xref linkend="opt.log-file"/>
+      for details. </para>
+      <para>If the filename contains the extension  <option>.ms</option>,
+        then the produced file format will be a massif output file format.
+        If the filename contains the extension  <option>.kcg</option>
+        or no extension is provided or recognised,
+        then the produced file format will be a callgrind output format.</para>
+      <para>See <xref linkend="manual-core.xtree"/>
+      for a detailed explanation about execution trees formats. </para>
     </listitem>
   </varlistentry>
 
@@ -2673,11 +2741,231 @@ will create a core dump in the usual way.</para>
 </sect1>
 
 
+<sect1 id="manual-core.xtree" xreflabel="Execution Trees">
+<title>Execution Trees</title>
 
+<para>An execution tree (xtree) is made of a set of stack traces, each
+  stack trace is associated with some resource consumptions or event
+  counts.  Depending on the xtree, different event counts/resource
+  consumptions can be recorded in the xtree.</para>
 
+<para> A typical usage for an xtree is to show a graphical or textual
+  representation of the heap usage of a program. The below figure is
+  a heap usage xtree graphical representation produced by
+  kcachegrind. In the kcachegrind output, you can see that main
+  current heap usage (allocated indirectly) is 528 bytes : 388 bytes
+  allocated indirectly via a call to function f1 and 140 bytes
+  indirectly allocated via a call to function f2. f2 has allocated
+  memory by calling g2, while f1 has allocated memory by calling g11
+  and g12. g11, g12 and g1 have directly called a memory allocation
+  function (malloc), and so have a non zero 'Self' value. Note that when
+  kcachegrind shows an xtree, the 'Called' column and call nr indications in
+  the Call Graph are not significant (always set to 0 or 1, independently
+  of the real nr of calls. A future version of kcachegrind will not show
+  anymore such irrelevant xtree call number information.</para>
 
+<graphic fileref="images/kcachegrind_xtree.png" scalefit="1"/>
 
+<para>An xtree heap memory report is produced at the end of the
+  execution when required using the
+  option <option>--xtree-memory</option>.  It can also be produced on
+  demand using the <option>xtmemory</option> monitor command (see
+  <xref linkend="manual-core-adv.valgrind-monitor-commands"/>). Currently,
+  an xtree heap memory report can be produced by
+  the <option>memcheck</option>, <option>helgrind</option>
+  and <option>massif</option> tools.</para>
 
+  <para>The xtrees produced by the option
+  <xref linkend="opt.xtree-memory"/> or the <option>xtmemory</option>
+  monitor command are showing the following events/resource
+  consumption describing heap usage:</para>
+<itemizedlist>
+  <listitem>
+    <para><option>curB</option> current number of Bytes allocated. The
+      number of allocated bytes is added to the <option>curB</option>
+      value of a stack trace for each allocation. It is decreased when
+      a block allocated by this stack trace is released (by another
+      "freeing" stack trace)</para>
+  </listitem>
+    
+  <listitem>
+    <para><option>curBk</option> current number of Blocks allocated,
+      maintained similary to curB : +1 for each allocation, -1 when
+      the block is freed.</para>
+  </listitem>
+    
+  <listitem>
+    <para><option>totB</option> total allocated Bytes. This is
+      increased for each allocation with the number of allocated bytes.</para>
+  </listitem>
+    
+  <listitem>
+    <para><option>totBk</option> total allocated Blocks, maintained similary
+      to totB : +1 for each allocation.</para>
+  </listitem>
+    
+  <listitem>
+    <para><option>totFdB</option> total Freed Bytes, increased each time
+      a block is released by this ("freeing") stack trace : + nr freed bytes
+      for each free operation.</para>
+  </listitem>
+    
+  <listitem>
+    <para><option>totFdBk</option> total Freed Blocks, maintained similarly
+      to totFdB : +1 for each free operation.</para>
+  </listitem>
+</itemizedlist>
+<para>Note that the last 4 counts are produced only when the
+  <option>--xtree-memory=full</option> was given at startup.</para>
+
+<para>Xtrees can be saved in 2 file formats, the "Callgrind Format" and
+the "Massif Format".</para>
+<itemizedlist>
+  
+  <listitem>
+    <para>Callgrind Format</para>
+    <para>An xtree file in the Callgrind Format contains a single callgraph,
+      associating each stack trace with the values recorded
+      in the xtree. </para>
+    <para>Different Callgrind Format file visualisers are available:</para>
+    <para>Valgrind distribution includes the <option>callgrind_annotate</option>
+      command line utility that reads in the xtree data, and prints a sorted
+      lists of functions, optionally with source annotation. Note that due to
+      xtree specificities, you must give the option
+      <option>--inclusive=yes</option> to callgrind_annotate.</para>
+    <para>For graphical visualization of the data, you can use
+      <ulink url="&cl-gui-url;">KCachegrind</ulink>, which is a KDE/Qt based
+      GUI that makes it easy to navigate the large amount of data that
+      an xtree can contain.</para>
+  </listitem>
+    
+  <listitem>
+    <para>Massif Format</para>
+    <para>An xtree file in the Massif Format contains one detailed tree
+      callgraph data for each type of event recorded in the xtree.  So,
+      for <option>--xtree-memory=alloc</option>, the output file will
+      contain 2 detailed trees (for the counts <option>curB</option>
+      and <option>curBk</option>),
+      while <option>--xtree-memory=full</option> will give a file
+      with 6 detailed trees.</para>
+    <para>Different Massif Format file visualisers are available. Valgrind
+      distribution includes the <option>ms_print</option>
+      command line utility that produces an easy to read reprentation of
+      a massif output file. See <xref linkend="ms-manual.running-massif"/> and
+      <xref linkend="ms-manual.using"/> for more details
+      about visualising Massif Format output files.</para>
+  </listitem>
+
+</itemizedlist>
+
+<para>Note that it is recommended to use the "Callgrind Format" as it
+  is more compact than the Massif Format, and the Callgrind Format
+  visualiser are more versatile that the Massif Format
+  visualisers. kcachegrind is particularly easy to use to analyse
+  big xtree data.</para>
+
+<para>To clarify the xtree concept, the below gives several extracts of
+  the output produced by the following commands:
+<screen><![CDATA[
+valgrind --xtree-memory=full --xtree-memory-file=xtmemory.kcg mfg
+callgrind_annotate --auto=yes --inclusive=yes --sort=curB:100,curBk:100,totB:100,totBk:100,totFdB:100,totFdBk:100  xtmemory.kcg
+]]></screen>
+</para>
+
+<para>The below extract shows that the program mfg has allocated in
+  total 770 bytes in 60 different blocks. Of these 60 blocks, 19 were
+  freed, releasing a total of 242 bytes. The heap currently contains
+  528 bytes in 41 blocks.</para>
+<screen><![CDATA[
+--------------------------------------------------------------------------------
+curB curBk totB totBk totFdB totFdBk 
+--------------------------------------------------------------------------------
+ 528    41  770    60    242      19  PROGRAM TOTALS
+]]></screen>
+
+<para>The below gives more details about which functions have
+  allocated or released memory. As an example, we see that main has
+  (directly or indirectly) allocated 770 bytes of memory and freed
+  (directly or indirectly) 242 bytes of memory. The function f1 has
+  (directly or indirectly) allocated 570 bytes of memory, and has not
+  (directly or indirectly) freed memory.  Of the 570 bytes allocated
+  by function f1, 388 bytes (34 blocks) have not been
+  released.</para>
+<screen><![CDATA[
+--------------------------------------------------------------------------------
+curB curBk totB totBk totFdB totFdBk  file:function
+--------------------------------------------------------------------------------
+ 528    41  770    60    242      19  mfg.c:main
+ 388    34  570    50      0       0  mfg.c:f1
+ 220    20  330    30      0       0  mfg.c:g11
+ 168    14  240    20      0       0  mfg.c:g12
+ 140     7  200    10      0       0  mfg.c:g2
+ 140     7  200    10      0       0  mfg.c:f2
+   0     0    0     0    131      10  mfg.c:freeY
+   0     0    0     0    111       9  mfg.c:freeX
+]]></screen>
+
+<para>The below gives a more detailed information about the callgraph
+  and which source lines/calls have (directly or indirectly) allocated or
+  released memory. The below shows that the 770 bytes allocated by
+  main have been indirectly allocated by calls to f1 and f2.
+  Similarly, we see that the 570 bytes allocated by f1 have been
+  indirectly allocated by calls to g11 and g12. Of the 330 bytes allocated
+  by the 30 calls to g11, 168 bytes have not been freed.
+  The function freeY (called once by main) has released in total
+  10 blocks and 131 bytes. </para>
+<screen><![CDATA[
+--------------------------------------------------------------------------------
+-- Auto-annotated source: /home/philippe/valgrind/littleprogs/ + mfg.c
+--------------------------------------------------------------------------------
+curB curBk totB totBk totFdB totFdBk 
+....
+   .     .    .     .      .       .  static void freeY(void)
+   .     .    .     .      .       .  {
+   .     .    .     .      .       .     int i;
+   .     .    .     .      .       .     for (i = 0; i < next_ptr; i++)
+   .     .    .     .      .       .        if(i % 5 == 0 && ptrs[i] != NULL)
+   0     0    0     0    131      10           free(ptrs[i]);
+   .     .    .     .      .       .  }
+   .     .    .     .      .       .  static void f1(void)
+   .     .    .     .      .       .  {
+   .     .    .     .      .       .     int i;
+   .     .    .     .      .       .     for (i = 0; i < 30; i++)
+ 220    20  330    30      0       0        g11();
+   .     .    .     .      .       .     for (i = 0; i < 20; i++)
+ 168    14  240    20      0       0        g12();
+   .     .    .     .      .       .  }
+   .     .    .     .      .       .  int main()
+   .     .    .     .      .       .  {
+ 388    34  570    50      0       0     f1();
+ 140     7  200    10      0       0     f2();
+   0     0    0     0    111       9     freeX();
+   0     0    0     0    131      10     freeY();
+   .     .    .     .      .       .     return 0;
+   .     .    .     .      .       .  }
+]]></screen>
+
+<para>Heap memory xtrees are helping to understand how your (big)
+  program is using the heap. A full heap memory xtree helps to pin
+  point some code that allocates a lot of small objects : allocating
+  such small objects might be replaced by more efficient technique,
+  such as allocating a big block using malloc, and then diviving this
+  block into smaller blocks in order to decrease the cpu and/or memory
+  overhead of allocating a lot of small blocks. Such full xtree information
+  complements e.g. what callgrind can show: callgrind can show the number
+  of calls to a function (such as malloc) but does not indicate the volume
+  of memory allocated (or freed).</para>
+
+<para>A full heap memory xtree also can identify the code that allocates
+  and frees a lot of blocks : the total foot print of the program might
+  not reflect the fact that the same memory was over and over allocated
+  then released.</para>
+
+<para>Finally, Xtree visualisers such as kcachegrind are helping to
+  identify big memory consumers, in order to possibly optimise the
+  amount of memory needed by your program.</para>
+
+</sect1>
 
 <sect1 id="manual-core.install" xreflabel="Building and Installing">
 <title>Building and Installing Valgrind</title>

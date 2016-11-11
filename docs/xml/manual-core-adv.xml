@@ -1390,6 +1390,13 @@ client request.
     to a huge value and continue execution.</para>
   </listitem>
 
+  <listitem>
+    <para><varname>xtmemory [&lt;filename&gt; default xtmemory.kcg]</varname>
+      requests the tool to produce an xtree heap memory report.
+      See <xref linkend="manual-core.xtree"/> for
+      a detailed explanation about execution trees. </para>
+  </listitem>
+
 </itemizedlist>
 
 <para>The following Valgrind monitor commands are useful for

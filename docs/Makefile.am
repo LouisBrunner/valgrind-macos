@@ -19,6 +19,7 @@ EXTRA_DIST = \
 	images/next.png \
 	images/prev.png \
 	images/up.png \
+	images/kcachegrind_xtree.png \
 	internals/3_0_BUGSTATUS.txt \
 	internals/3_1_BUGSTATUS.txt \
 	internals/3_2_BUGSTATUS.txt \
@@ -173,6 +174,7 @@ print-docs:
 	export XML_CATALOG_FILES=$(XML_CATALOG_FILES) && \
 	mkdir -p $(myprintdir) && \
 	mkdir -p $(myprintdir)/images && \
+	cp $(myimgdir)/*.png $(myprintdir)/images && \
 	$(XSLTPROC) $(XSLTPROC_FLAGS) -o $(myprintdir)/index.fo $(XSL_FO_STYLE) $(myxmldir)/index.xml && \
 	(cd $(myprintdir) && \
          ( pdfxmltex index.fo && \

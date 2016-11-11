@@ -2,9 +2,59 @@ Release 3.13.0 (?? ????????? 201?)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
 Release 3.13.0 is under development, not yet released.
 
+3.13.0 is a feature release with many improvements and the usual
+collection of bug fixes.
+
+This release supports X86/Linux, AMD64/Linux, ARM32/Linux,
+ARM64/Linux, PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux,
+MIPS32/Linux, MIPS64/Linux, ARM/Android, ARM64/Android,
+MIPS32/Android, X86/Android, X86/Solaris, AMD64/Solaris, X86/MacOSX
+10.10 and AMD64/MacOSX 10.10.  There is also preliminary support for
+X86/MacOSX 10.11/12, AMD64/MacOSX 10.11/12 and TILEGX/Linux.
+
+A significant change in 3.13 is the addition of the 'xtree' concept:
+An xtree is a tree of stacktraces with data associated to the stacktraces.
+This xtree is used by various tools (memcheck, helgrind, massif) to
+report the heap consumption of your program. The xtree reporting
+is controlled by the new options --xtree-memory=none|allocs|full and
+--xtree-memory-file=<file>.
+An heap xtree memory profiling can also be produced on demand using
+a gdbserver monitor command.
+The xtree can be output in 2 formats: 'callgrind format'
+and 'massif format. The existing visualisers for these formats (e.g.
+callgrind_annotate, kcachegrind, ms_print) can be used to visualise
+and analyse these reports.
+For more details, read the user manual.
+
 * ================== PLATFORM CHANGES =================
 
 * ==================== TOOL CHANGES ====================
+
+* Memcheck:
+
+  - Support for --xtree-memory profiling.
+  
+  - A new monitor command 'xtmemory [<filename>]>' produces a
+    heap usage profile report.
+
+* Massif:
+
+  - Support for --xtree-memory profiling.
+  
+  - A new monitor command 'xtmemory [<filename>]>' produces a
+    heap usage profile report.
+
+  - For some workloads (typically, for big applications), Massif
+    memory consumption and CPU consumption decreases significantly.
+
+* Helgrind:
+
+  - Support for --xtree-memory profiling.
+  
+  - A new monitor command 'xtmemory [<filename>]>' produces a
+    heap usage profile report.
+
+
 
 * ==================== OTHER CHANGES ====================
 
@@ -23,6 +73,7 @@ where XXXXXX is the bug number as listed below.
 
 371412  Rename wrap_sys_shmat to sys_shmat like other wrappers
 371869  support '%' in symbol Z-encoding
+371916  execution tree xtree concept
 372120  c++ demangler demangles symbols which are not c++
 
 

@@ -105,8 +105,7 @@
 /*--- fwdses                                               ---*/
 /*------------------------------------------------------------*/
 
-static UInt debuginfo_generation = 0;
-static void cfsi_m_cache__invalidate ( void );
+static void caches__invalidate (void);
 
 
 /*------------------------------------------------------------*/
@@ -586,8 +585,8 @@ void VG_(di_initialise) ( void )
       less independently. */
    vg_assert(debugInfo_list == NULL);
 
-   /* flush the CFI fast query cache. */
-   cfsi_m_cache__invalidate();
+   /* flush the debug info caches. */
+   caches__invalidate();
 }
 
 
@@ -757,8 +756,8 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
 
       TRACE_SYMTAB("\n------ Canonicalising the "
                    "acquired info ------\n");
-      /* invalidate the CFI unwind cache. */
-      cfsi_m_cache__invalidate();
+      /* invalidate the debug info caches. */
+      caches__invalidate();
       /* prepare read data for use */
       ML_(canonicaliseTables)( di );
       /* Check invariants listed in
@@ -1082,7 +1081,7 @@ void VG_(di_notify_munmap)( Addr a, SizeT len )
    if (0) VG_(printf)("DISCARD %#lx %#lx\n", a, a+len);
    anyFound = discard_syms_in_range(a, len);
    if (anyFound)
-      cfsi_m_cache__invalidate();
+      caches__invalidate();
 }
 
 
@@ -1099,7 +1098,7 @@ void VG_(di_notify_mprotect)( Addr a, SizeT len, UInt prot )
    if (0 && !exe_ok) {
       Bool anyFound = discard_syms_in_range(a, len);
       if (anyFound)
-         cfsi_m_cache__invalidate();
+         caches__invalidate();
    }
 }
 
@@ -1394,9 +1393,9 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
    if (VG_(clo_verbosity) > 0)
       VG_(message)(Vg_UserMsg, "LOAD_PDB_DEBUGINFO: pdbname: %s\n", pdbname);
 
-   /* play safe; always invalidate the CFI cache.  I don't know if
+   /* play safe; always invalidate the debug info caches.  I don't know if
       this is necessary, but anyway .. */
-   cfsi_m_cache__invalidate();
+   caches__invalidate();
    /* dump old info for this range, if any */
    discard_syms_in_range( avma_obj, total_size );
 
@@ -1728,6 +1727,35 @@ static void search_all_loctabs ( Addr ptr, /*OUT*/DebugInfo** pdi,
    *pdi = NULL;
 }
 
+/* Caching of queries to symbol names. */
+// Prime number, giving about 6Kbytes cache on 32 bits,
+//                           12Kbytes cache on 64 bits.
+#define N_SYM_NAME_CACHE 509
+
+typedef
+   struct { Addr sym_avma; const HChar* sym_name; PtrdiffT offset; }
+   Sym_Name_CacheEnt;
+/* Sym_Name_CacheEnt associates a queried address to the sym name found.
+   By nature, if a sym name was found, it means the searched address
+   stored in the cache is an avma (see e.g. search_all_symtabs).
+   Note however that the caller is responsibe to work with 'avma'
+   addresses e.g. when calling VG_(get_fnname) : m_debuginfo.c has
+   no way to differentiate an 'svma a' from an 'avma a'. It is however
+   unlikely that svma would percolate outside of this module. */
+
+static Sym_Name_CacheEnt sym_name_cache[N_SYM_NAME_CACHE];
+
+static const HChar* no_sym_name = "<<<noname>>>";
+/* We need a special marker for the address 0 : a not used entry has
+   a zero sym_avma. So, if ever the 0 address is really queried, we need
+   to be able to detect there is no sym name for this address.
+   If on some platforms, 0 is associated to a symbol, the cache would
+   work properly. */
+
+static void sym_name_cache__invalidate ( void ) {
+   VG_(memset)(&sym_name_cache, 0, sizeof(sym_name_cache));
+   sym_name_cache[0].sym_name = no_sym_name;
+}
 
 /* The whole point of this whole big deal: map a code address to a
    plausible symbol name.  Returns False if no idea; otherwise True.
@@ -1752,34 +1780,46 @@ Bool get_sym_name ( Bool do_cxx_demangling, Bool do_z_demangling,
                     Bool match_anywhere_in_sym, Bool show_offset,
                     Bool findText, /*OUT*/PtrdiffT* offsetP )
 {
-   DebugInfo* di;
-   Word       sno;
-   PtrdiffT   offset;
+   UWord         hash = a % N_SYM_NAME_CACHE;
+   Sym_Name_CacheEnt* se =  &sym_name_cache[hash];
 
-   search_all_symtabs ( a, &di, &sno, match_anywhere_in_sym, findText );
-   if (di == NULL) {
+   if (UNLIKELY(se->sym_avma != a)) {
+      DebugInfo* di;
+      Word       sno;
+
+      search_all_symtabs ( a, &di, &sno, match_anywhere_in_sym, findText );
+      se->sym_avma = a;
+      if (di == NULL || a == 0)
+         se->sym_name = no_sym_name;
+      else {
+         vg_assert(di->symtab[sno].pri_name);
+         se->sym_name = di->symtab[sno].pri_name;
+         se->offset = a - di->symtab[sno].avmas.main;
+      }
+   }
+
+   if (se->sym_name == no_sym_name) {
       *buf = "";
       return False;
    }
 
-   vg_assert(di->symtab[sno].pri_name);
    VG_(demangle) ( do_cxx_demangling, do_z_demangling,
-                   di->symtab[sno].pri_name, buf );
+                   se->sym_name, buf );
 
    /* Do the below-main hack */
    // To reduce the endless nuisance of multiple different names 
    // for "the frame below main()" screwing up the testsuite, change all
    // known incarnations of said into a single name, "(below main)", if
    // --show-below-main=yes.
-   if ( do_below_main_renaming && ! VG_(clo_show_below_main) &&
-        Vg_FnNameBelowMain == VG_(get_fnname_kind)(*buf) )
+   if ( do_below_main_renaming && ! VG_(clo_show_below_main)
+        && Vg_FnNameBelowMain == VG_(get_fnname_kind)(*buf) )
    {
      *buf = "(below main)";
    }
-   offset = a - di->symtab[sno].avmas.main;
-   if (offsetP) *offsetP = offset;
 
-   if (show_offset && offset != 0) {
+   if (offsetP) *offsetP = se->offset;
+
+   if (show_offset && se->offset != 0) {
       static HChar *bufwo;      // buf with offset
       static SizeT  bufwo_szB;
       SizeT  need, len;
@@ -1793,8 +1833,8 @@ Bool get_sym_name ( Bool do_cxx_demangling, Bool do_z_demangling,
 
       VG_(strcpy)(bufwo, *buf);
       VG_(sprintf)(bufwo + len, "%c%ld",
-                   offset < 0 ? '-' : '+',
-                   offset < 0 ? -offset : offset);
+                   se->offset < 0 ? '-' : '+',
+                   se->offset < 0 ? -se->offset : se->offset);
       *buf = bufwo;
    }
 
@@ -2654,12 +2694,6 @@ static CFSI_m_CacheEnt cfsi_m_cache[N_CFSI_M_CACHE];
 
 static void cfsi_m_cache__invalidate ( void ) {
    VG_(memset)(&cfsi_m_cache, 0, sizeof(cfsi_m_cache));
-   debuginfo_generation++;
-}
-
-UInt VG_(debuginfo_generation) (void)
-{
-   return debuginfo_generation;
 }
 
 static inline CFSI_m_CacheEnt* cfsi_m_cache__find ( Addr ip )
@@ -4438,6 +4472,19 @@ VgSectKind VG_(DebugInfo_sect_kind)( /*OUT*/const HChar** objname, Addr a)
 
    return res;
 
+}
+
+static UInt debuginfo_generation = 0;
+
+UInt VG_(debuginfo_generation) (void)
+{
+   return debuginfo_generation;
+}
+
+static void caches__invalidate ( void ) {
+   cfsi_m_cache__invalidate();
+   sym_name_cache__invalidate();
+   debuginfo_generation++;
 }
 
 /*--------------------------------------------------------------------*/

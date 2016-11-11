@@ -207,7 +207,6 @@ extern Bool  VG_(clo_profile_heap);
 extern Int VG_(clo_core_redzone_size);
 // VG_(clo_redzone_size) has default value -1, indicating to keep
 // the tool provided value.
-extern Int VG_(clo_redzone_size);
 /* DEBUG: display gory details for the k'th most popular error.
    default: Infinity. */
 extern Int   VG_(clo_dump_error);

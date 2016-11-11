@@ -234,6 +234,8 @@ noinst_HEADERS = \
 	pub_core_vkiscnums_asm.h\
 	pub_core_wordfm.h	\
 	pub_core_xarray.h	\
+	pub_core_xtree.h	\
+	pub_core_xtmemory.h	\
 	m_aspacemgr/priv_aspacemgr.h \
 	m_debuginfo/priv_misc.h	\
 	m_debuginfo/priv_storage.h	\
@@ -332,6 +334,8 @@ COREGRIND_SOURCES_COMMON = \
 	m_vkiscnums.c \
 	m_wordfm.c \
 	m_xarray.c \
+	m_xtree.c \
+	m_xtmemory.c \
 	m_aspacehl.c \
 	m_aspacemgr/aspacemgr-common.c \
 	m_aspacemgr/aspacemgr-linux.c \

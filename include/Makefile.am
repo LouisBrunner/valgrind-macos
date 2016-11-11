@@ -43,6 +43,8 @@ nobase_pkginclude_HEADERS = \
 	pub_tool_vkiscnums_asm.h	\
 	pub_tool_wordfm.h		\
 	pub_tool_xarray.h		\
+	pub_tool_xtree.h		\
+	pub_tool_xtmemory.h		\
 	valgrind.h			\
 	vki/vki-linux.h			\
 	vki/vki-darwin.h		\

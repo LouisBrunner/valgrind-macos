@@ -223,6 +223,26 @@ extern const HChar* VG_(clo_xml_user_comment);
 extern VexControl VG_(clo_vex_control);
 extern VexRegisterUpdates VG_(clo_px_file_backed);
 
+extern Int VG_(clo_redzone_size);
+
+typedef 
+   enum { 
+      Vg_XTMemory_None,   // Do not do any xtree memory profiling.
+      Vg_XTMemory_Allocs, // Currently allocated size xtree memory profiling
+      Vg_XTMemory_Full,   // Full profiling : Current allocated size, total
+      // allocated size, nr of blocks, total freed size, ...
+   } 
+   VgXTMemory;
+// Tools that replace malloc can optionally implement memory profiling
+// following the value of VG_(clo_xtree_profile_memory) to produce a report
+// at the end of execution.
+extern VgXTMemory VG_(clo_xtree_memory);
+/* Holds the filename to use for xtree memory profiling output, before expansion
+   of %p and %q templates. */
+extern const HChar* VG_(clo_xtree_memory_file);
+/* Compress strings in xtree dumps. */
+extern Bool VG_(clo_xtree_compress_strings);
+
 /* Number of parents of a backtrace.  Default: 12  */
 extern Int   VG_(clo_backtrace_size);
 

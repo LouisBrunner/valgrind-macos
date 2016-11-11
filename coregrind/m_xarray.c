@@ -373,6 +373,16 @@ void VG_(xaprintf)( XArray* dst, const HChar* format, ... )
    va_end(vargs);
 }
 
+Bool VG_(strIsMemberXA)(const XArray* xa, const HChar* str )
+{
+   Word i;
+   HChar** members = (HChar**)xa->arr;
+
+   for (i = 0; i < xa->usedsizeE; i++)
+      if (VG_(strcmp)(str, members[i]) == 0)
+         return True;
+   return False;
+}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                               m_xarray.c ---*/

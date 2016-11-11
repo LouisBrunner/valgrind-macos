@@ -166,6 +166,8 @@ extern void VG_(getContentsXA_UNSAFE)( XArray* sr,
 extern void VG_(xaprintf)( XArray* dst, const HChar* format, ... )
                          PRINTF_CHECK(2, 3);
 
+/* Convenience function: linear search in an XArray of HChar*. */
+extern Bool VG_(strIsMemberXA)(const XArray* xa, const HChar* str );
 #endif   // __PUB_TOOL_XARRAY_H
 
 /*--------------------------------------------------------------------*/

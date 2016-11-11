@@ -44,6 +44,8 @@ void  VG_(assert_fail)(Bool isCore, const HChar* assertion, const HChar* file,
   abort();
 }
 
+Int VG_(strcmp)( const HChar* s1, const HChar* s2 )
+{ return strcmp(s1, s2); }
 void* VG_(memset)(void *s, Int c, SizeT sz)
 { return memset(s, c, sz); }
 void* VG_(memcpy)(void *d, const void *s, SizeT sz)

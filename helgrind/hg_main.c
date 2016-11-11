@@ -57,6 +57,8 @@
 #include "pub_tool_aspacemgr.h" // VG_(am_is_valid_for_client)
 #include "pub_tool_poolalloc.h"
 #include "pub_tool_addrinfo.h"
+#include "pub_tool_xtree.h"
+#include "pub_tool_xtmemory.h"
 
 #include "hg_basics.h"
 #include "hg_wordset.h"
@@ -4157,6 +4159,8 @@ void* handle_alloc ( ThreadId tid,
    md->thr     = map_threads_lookup( tid );
 
    VG_(HT_add_node)( hg_mallocmeta_table, (VgHashNode*)md );
+   if (UNLIKELY(VG_(clo_xtree_memory) == Vg_XTMemory_Full))
+      VG_(XTMemory_Full_alloc)(md->szB, md->where);
 
    /* Tell the lower level memory wranglers. */
    evh__new_mem_heap( p, szB, is_zeroed );
@@ -4211,6 +4215,10 @@ static void handle_free ( ThreadId tid, void* p )
 
    tl_assert(md->payload == (Addr)p);
    szB = md->szB;
+   if (UNLIKELY(VG_(clo_xtree_memory) == Vg_XTMemory_Full)) {
+      ExeContext* ec_free = VG_(record_ExeContext)( tid, 0 );
+      VG_(XTMemory_Full_free)(md->szB, md->where, ec_free);
+   }
 
    /* Nuke the metadata block */
    old_md = (MallocMeta*)
@@ -4885,6 +4893,25 @@ static void gnat_dmmls_INIT (void)
                                sizeof(GNAT_dmml) );
    }
 }
+
+static void xtmemory_report_next_block(XT_Allocs* xta, ExeContext** ec_alloc)
+{
+   const MallocMeta* md = VG_(HT_Next)(hg_mallocmeta_table);
+   if (md) {
+      xta->nbytes = md->szB;
+      xta->nblocks = 1;
+      *ec_alloc = md->where;
+   } else
+      xta->nblocks = 0;
+}
+static void HG_(xtmemory_report) ( const HChar* filename, Bool fini )
+{ 
+   // Make xtmemory_report_next_block ready to be called.
+   VG_(HT_ResetIter)(hg_mallocmeta_table);
+   VG_(XTMemory_report)(filename, fini, xtmemory_report_next_block,
+                        VG_(XT_filter_1top_and_maybe_below_main));
+}
+
 static void print_monitor_help ( void )
 {
    VG_(gdb_printf) 
@@ -4895,6 +4922,8 @@ static void print_monitor_help ( void )
 "           with no lock_addr, show status of all locks\n"
 "  accesshistory <addr> [<len>]   : show access history recorded\n"
 "                     for <len> (or 1) bytes at <addr>\n"
+"  xtmemory [<filename>]\n"
+"        dump xtree memory profile in <filename> (default xtmemory.kcg)\n"
 "\n");
 }
 
@@ -4913,7 +4942,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       starts with the same first letter(s) as an already existing
       command. This ensures a shorter abbreviation for the user. */
    switch (VG_(keyword_id) 
-           ("help info accesshistory", 
+           ("help info accesshistory xtmemory", 
             wcmd, kwd_report_duplicated_matches)) {
    case -2: /* multiple matches */
       return True;
@@ -4985,6 +5014,13 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
          }
          return True;
       }
+
+   case  3: { /* xtmemory */
+      HChar* filename;
+      filename = VG_(strtok_r) (NULL, " ", &ssaveptr);
+      HG_(xtmemory_report)(filename, False);
+      return True;
+   }
 
    default: 
       tl_assert(0);
@@ -5668,6 +5704,7 @@ static void hg_print_stats (void)
 
 static void hg_fini ( Int exitcode )
 {
+   HG_(xtmemory_report) (VG_(clo_xtree_memory_file), True);
    if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {
       VG_(message)(Vg_UserMsg, 
                    "For counts of detected and suppressed errors, "
@@ -5740,6 +5777,9 @@ static void hg_post_clo_init ( void )
       laog__init();
 
    initialise_data_structures(hbthr_root);
+   if (VG_(clo_xtree_memory) == Vg_XTMemory_Full)
+      // Activate full xtree memory profiling.
+      VG_(XTMemory_Full_init)(VG_(XT_filter_1top_and_maybe_below_main));
 }
 
 static void hg_info_location (Addr a)

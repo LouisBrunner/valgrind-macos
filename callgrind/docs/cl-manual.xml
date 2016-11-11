@@ -1257,6 +1257,8 @@ their arguments.</para>
     </term>
     <listitem>
       <para>Sort columns by events A,B,C [event column order].</para>
+      <para>Optionally, each event is followed by a : and a threshold,
+        to specify different thresholds depending on the event.</para>
     </listitem>
   </varlistentry>
 

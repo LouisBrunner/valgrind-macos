@@ -429,6 +429,9 @@ sub read_input_file()
 	$has_line = ($positions =~ /line/);
 	$has_addr = ($positions =~ /(addr|instr)/);
       }
+      elsif (/^event:\s+.*$/) { 
+        # ignore lines giving a long name to an event
+      }
       elsif (/^events:\s+(.*)$/) {
 	$events = $1;
 	
@@ -1216,9 +1219,17 @@ sub annotate_ann_files($)
     if ($did_annotations) {
         my $percent_printed_CC;
         foreach (my $i = 0; $i < @$summary_CC; $i++) {
-            $percent_printed_CC->[$i] = 
-                sprintf("%.0f", 
-                        $printed_totals_CC->[$i] / $summary_CC->[$i] * 100);
+            # Some files (in particular the files produced by --xtree-memory)
+            # have non additive self costs, so have a special case for these
+            # to print all functions and also to avoid a division by 0.
+            if ($summary_CC->[$i] == 0
+                || $printed_totals_CC->[$i] > $summary_CC->[$i]) {
+                $percent_printed_CC->[$i] = "100";
+            } else {
+                $percent_printed_CC->[$i] = 
+                    sprintf("%.0f", 
+                            $printed_totals_CC->[$i] / $summary_CC->[$i] * 100);
+            }
         }
         my $pp_CC_col_widths = compute_CC_col_widths($percent_printed_CC);
         print($fancy);

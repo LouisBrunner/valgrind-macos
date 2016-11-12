@@ -43,7 +43,9 @@
 #   --outer-valgrind: run this valgrind under the given outer valgrind.
 #     This valgrind must be configured with --enable-inner.
 #   --outer-tool: tool to use by the outer valgrind (default memcheck).
-#   --outer-args: use this as outer tool args.
+#   --outer-args: use this as outer tool args. If the outer args are starting
+#      with +, the given outer args are appended to the outer args predefined
+#      by vg_regtest.
 #   --loop-till-fail: loops on the test(s) till one fail, then exit
 #              This is useful to obtain detailed trace or --keep-unfiltered
 #              output of a non deterministic test failure
@@ -182,6 +184,7 @@ chomp(my $tests_dir = `pwd`);
 my $outer_valgrind;
 my $outer_tool = "memcheck";
 my $outer_args;
+my $run_outer_args = "";
 
 my $valgrind_lib = "$tests_dir/.in_place";
 my $keepunfiltered = 0;
@@ -255,8 +258,8 @@ sub process_command_line()
     
     if (defined $outer_valgrind) {
       $outer_valgrind = validate_program($tests_dir, $outer_valgrind, 1, 1);
-      if (not defined $outer_args) {
-          $outer_args = 
+      if ((not defined $outer_args)  || ($outer_args =~ /^\+/)) {
+          $run_outer_args = 
                 " --command-line-only=yes"
               . " --run-libc-freeres=no --sim-hints=enable-outer"
               . " --smc-check=all-non-file"
@@ -265,7 +268,16 @@ sub process_command_line()
               . " --suppressions=" 
               . validate_program($tests_dir,"./tests/outer_inner.supp",1,0)
               . " --memcheck:leak-check=full --memcheck:show-reachable=no"
+              . " --num-callers=40"
               . " ";
+              # we use a (relatively) big --num-callers, to allow the outer to report
+              # also the inner guest stack trace, when reporting an error.
+          if (defined $outer_args) {
+             $outer_args =~ s/^\+(.*)/$1/;
+             $run_outer_args = $run_outer_args . $outer_args;
+          }
+      } else {
+          $run_outer_args = $outer_args;
       }
     }
 
@@ -505,8 +517,8 @@ sub do_one_test($$)
         mysystem(   "$envvars VALGRIND_LIB_INNER=$valgrind_lib "
                   . "$outer_valgrind "
                   . "--tool=" . $outer_tool . " "
-                  . "$outer_args "
                   . "--log-file=" . "$name.outer.log "
+                  . "$run_outer_args "
                   . "$valgrind --command-line-only=yes --memcheck:leak-check=no "
                   . "--sim-hints=no-inner-prefix "
                   . "--tool=$tool $extraopts $vgopts "

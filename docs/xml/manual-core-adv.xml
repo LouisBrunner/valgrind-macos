@@ -1057,6 +1057,12 @@ $5 = 36
      OS X or Android.
      </para>
 
+     <para>Unblocking processes blocked in system calls is implemented
+     via agent thread on Solaris. This is quite a different approach
+     than using ptrace on Linux, but leads to equivalent result - Valgrind
+     gdbserver is invoked. Note that agent thread is a Solaris OS
+     feature and cannot be disabled.
+     </para>
    </listitem>
 
    <listitem>

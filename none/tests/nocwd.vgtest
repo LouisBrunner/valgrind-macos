@@ -1,2 +1,3 @@
 prog: nocwd
 vgopts: -q --trace-children=yes
+cleanup: chmod u+rwx /tmp/wd_test_*; rm -rf /tmp/wd_test_*

@@ -1797,28 +1797,25 @@ void VG_(apply_StackTrace)(
         StackTrace ips, UInt n_ips
      )
 {
-   Bool main_done = False;
-   Int i = 0;
+   Int i;
 
    vg_assert(n_ips > 0);
-   do {
-      Addr ip = ips[i];
-
-      // Stop after the first appearance of "main" or one of the other names
-      // (the appearance of which is a pretty good sign that we've gone past
-      // main without seeing it, for whatever reason)
-      if ( ! VG_(clo_show_below_main) ) {
-         Vg_FnNameKind kind = VG_(get_fnname_kind_from_IP)(ip);
-         if (Vg_FnNameMain == kind || Vg_FnNameBelowMain == kind) {
-            main_done = True;
-         }
+   if ( ! VG_(clo_show_below_main) ) {
+      // Search (from the outer frame onwards) the appearance of "main"
+      // or the last appearance of a below main function.
+      // Then decrease n_ips so as to not call action for the below main
+      for (i = n_ips - 1; i >= 0; i--) {
+         Vg_FnNameKind kind = VG_(get_fnname_kind_from_IP)(ips[i]);
+         if (Vg_FnNameMain == kind || Vg_FnNameBelowMain == kind)
+            n_ips = i + 1;
+         if (Vg_FnNameMain == kind)
+            break;
       }
+   }
 
+   for (i = 0; i < n_ips; i++)
       // Act on the ip
-      action(i, ip, opaque);
-
-      i++;
-   } while (i < n_ips && !main_done);
+      action(i, ips[i], opaque);
 }
 
 

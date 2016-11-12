@@ -1108,7 +1108,6 @@ extern void ML_(finish_CFSI_arrays) ( struct _DebugInfo* di );
 /* Find a symbol-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
 extern Word ML_(search_one_symtab) ( const DebugInfo* di, Addr ptr,
-                                     Bool match_anywhere_in_sym,
                                      Bool findText );
 
 /* Find a location-table index containing the specified pointer, or -1

@@ -1646,7 +1646,6 @@ void VG_(delete_IIPC)(InlIPCursor *iipc)
 */
 static void search_all_symtabs ( Addr ptr, /*OUT*/DebugInfo** pdi,
                                            /*OUT*/Word* symno,
-                                 Bool match_anywhere_in_sym,
                                  Bool findText )
 {
    Word       sno;
@@ -1690,8 +1689,7 @@ static void search_all_symtabs ( Addr ptr, /*OUT*/DebugInfo** pdi,
 
       if (!inRange) continue;
 
-      sno = ML_(search_one_symtab) ( 
-               di, ptr, match_anywhere_in_sym, findText );
+      sno = ML_(search_one_symtab) ( di, ptr, findText );
       if (sno == -1) goto not_found;
       *symno = sno;
       *pdi = di;
@@ -1733,7 +1731,12 @@ static void search_all_loctabs ( Addr ptr, /*OUT*/DebugInfo** pdi,
 #define N_SYM_NAME_CACHE 509
 
 typedef
-   struct { Addr sym_avma; const HChar* sym_name; PtrdiffT offset; }
+   struct {
+      Addr sym_avma;
+      const HChar* sym_name;
+      PtrdiffT offset : (sizeof(PtrdiffT)*8)-1; 
+      Bool isText : 1;
+   }
    Sym_Name_CacheEnt;
 /* Sym_Name_CacheEnt associates a queried address to the sym name found.
    By nature, if a sym name was found, it means the searched address
@@ -1783,12 +1786,13 @@ Bool get_sym_name ( Bool do_cxx_demangling, Bool do_z_demangling,
    UWord         hash = a % N_SYM_NAME_CACHE;
    Sym_Name_CacheEnt* se =  &sym_name_cache[hash];
 
-   if (UNLIKELY(se->sym_avma != a)) {
+   if (UNLIKELY(se->sym_avma != a || se->isText != findText)) {
       DebugInfo* di;
       Word       sno;
 
-      search_all_symtabs ( a, &di, &sno, match_anywhere_in_sym, findText );
+      search_all_symtabs ( a, &di, &sno, findText );
       se->sym_avma = a;
+      se->isText = findText;
       if (di == NULL || a == 0)
          se->sym_name = no_sym_name;
       else {
@@ -1798,7 +1802,8 @@ Bool get_sym_name ( Bool do_cxx_demangling, Bool do_z_demangling,
       }
    }
 
-   if (se->sym_name == no_sym_name) {
+   if (se->sym_name == no_sym_name
+       || (!match_anywhere_in_sym && se->offset != 0)) {
       *buf = "";
       return False;
    }
@@ -1834,7 +1839,7 @@ Bool get_sym_name ( Bool do_cxx_demangling, Bool do_z_demangling,
       VG_(strcpy)(bufwo, *buf);
       VG_(sprintf)(bufwo + len, "%c%ld",
                    se->offset < 0 ? '-' : '+',
-                   se->offset < 0 ? -se->offset : se->offset);
+                   (PtrdiffT) (se->offset < 0 ? -se->offset : se->offset));
       *buf = bufwo;
    }
 
@@ -1851,7 +1856,6 @@ Addr VG_(get_tocptr) ( Addr guest_code_addr )
    Word       sno;
    search_all_symtabs ( guest_code_addr, 
                         &si, &sno,
-                        True/*match_anywhere_in_fun*/,
                         True/*consider text symbols only*/ );
    if (si == NULL) 
       return 0;
@@ -1873,7 +1877,7 @@ Bool VG_(get_fnname) ( Addr a, const HChar** buf )
                          a, buf,
                          /*match_anywhere_in_fun*/True, 
                          /*show offset?*/False,
-                         /*text syms only*/True,
+                         /*text sym*/True,
                          /*offsetP*/NULL );
 }
 
@@ -1888,7 +1892,7 @@ Bool VG_(get_fnname_w_offset) ( Addr a, const HChar** buf )
                          a, buf,
                          /*match_anywhere_in_fun*/True, 
                          /*show offset?*/True,
-                         /*text syms only*/True,
+                         /*text sym*/True,
                          /*offsetP*/NULL );
 }
 
@@ -1907,7 +1911,7 @@ Bool VG_(get_fnname_if_entry) ( Addr a, const HChar** buf )
                          a, &tmp,
                          /*match_anywhere_in_fun*/False, 
                          /*show offset?*/False,
-                         /*text syms only*/True,
+                         /*text sym*/True,
                          /*offsetP*/NULL );
    if (res)
       *buf = tmp;
@@ -1926,7 +1930,7 @@ Bool VG_(get_fnname_raw) ( Addr a, const HChar** buf )
                          a, buf,
                          /*match_anywhere_in_fun*/True, 
                          /*show offset?*/False,
-                         /*text syms only*/True,
+                         /*text sym*/True,
                          /*offsetP*/NULL );
 }
 
@@ -1945,7 +1949,7 @@ Bool VG_(get_fnname_no_cxx_demangle) ( Addr a, const HChar** buf,
                             a, buf,
                             /*match_anywhere_in_fun*/True, 
                             /*show offset?*/False,
-                            /*text syms only*/True,
+                            /*text sym*/True,
                             /*offsetP*/NULL );
    } else {
       const DiInlLoc *next_inl = iipc && iipc->next_inltab >= 0
@@ -1970,7 +1974,7 @@ Bool VG_(get_inst_offset_in_function)( Addr a,
                          a, &fnname,
                          /*match_anywhere_in_sym*/True, 
                          /*show offset?*/False,
-                         /*text syms only*/True,
+                         /*text sym*/True,
                          offset );
 }
 
@@ -2027,7 +2031,7 @@ Bool VG_(get_datasym_and_offset)( Addr data_addr,
                        data_addr, dname,
                        /*match_anywhere_in_sym*/True, 
                        /*show offset?*/False,
-                       /*data syms only please*/False,
+                       /*text sym*/False,
                        offset );
 }
 

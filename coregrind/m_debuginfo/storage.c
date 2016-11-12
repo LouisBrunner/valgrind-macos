@@ -2360,11 +2360,10 @@ void ML_(canonicaliseTables) ( struct _DebugInfo* di )
    if not found.  Binary search.  */
 
 Word ML_(search_one_symtab) ( const DebugInfo* di, Addr ptr,
-                              Bool match_anywhere_in_sym,
                               Bool findText )
 {
    Addr a_mid_lo, a_mid_hi;
-   Word mid, size, 
+   Word mid,
         lo = 0, 
         hi = di->symtab_used-1;
    while (True) {
@@ -2372,10 +2371,7 @@ Word ML_(search_one_symtab) ( const DebugInfo* di, Addr ptr,
       if (lo > hi) return -1; /* not found */
       mid      = (lo + hi) / 2;
       a_mid_lo = di->symtab[mid].avmas.main;
-      size = ( match_anywhere_in_sym
-             ? di->symtab[mid].size
-             : 1);
-      a_mid_hi = ((Addr)di->symtab[mid].avmas.main) + size - 1;
+      a_mid_hi = ((Addr)di->symtab[mid].avmas.main) + di->symtab[mid].size - 1;
 
       if (ptr < a_mid_lo) { hi = mid-1; continue; } 
       if (ptr > a_mid_hi) { lo = mid+1; continue; }

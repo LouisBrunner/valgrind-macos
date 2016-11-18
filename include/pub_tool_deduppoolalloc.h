@@ -93,9 +93,9 @@ typedef  struct _DedupPoolAlloc  DedupPoolAlloc;
    This function never returns NULL. */
 extern DedupPoolAlloc* VG_(newDedupPA) ( SizeT  poolSzB,
                                          SizeT  eltAlign,
-                                         void*  (*alloc)(const HChar*, SizeT),
+                                         Alloc_Fn_t alloc_fn,
                                          const  HChar* cc,
-                                         void   (*free_fn)(void*) );
+                                         Free_Fn_t free_fn );
 
 /* Allocates or retrieve element from ddpa with eltSzB bytes to store elt.
    This function never returns NULL.

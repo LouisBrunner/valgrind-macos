@@ -96,9 +96,9 @@ typedef void (*XT_filter_IPs_t) (Addr* ips, Int n_ips,
    alloc_fn must not return NULL (that is, if it returns it must have
    succeeded.).
    See respective typedef for *_fn arguments. */
-extern XTree* VG_(XT_create) ( void*(*alloc_fn)(const HChar*, SizeT), 
+extern XTree* VG_(XT_create) ( Alloc_Fn_t alloc_fn,
                                const HChar* cc,
-                               void(*free_fn) (void*),
+                               Free_Fn_t free_fn,
                                Word dataSzB,
                                XT_init_data_t init_data_fn,
                                XT_add_data_t add_data_fn,

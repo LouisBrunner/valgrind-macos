@@ -36,9 +36,9 @@ struct _PoolAlloc {
    UWord   nrRef;         /* nr reference to this pool allocator */
    UWord   elemSzB;       /* element size */
    UWord   nPerPool;      /* # elems per pool */
-   void*   (*alloc_fn)(const HChar*, SizeT); /* pool allocator */
-   const HChar*  cc; /* pool allocator's cost centre */
-   void    (*free_fn)(void*); /* pool allocator's free-er */
+   Alloc_Fn_t alloc_fn;   /* pool allocator */
+   const HChar*  cc;      /* pool allocator's cost centre */
+   Free_Fn_t free_fn;     /* pool allocator's free-er */
    /* XArray of void* (pointers to pools).  The pools themselves.
       Each element is a pointer to a block of size (elemSzB *
       nPerPool) bytes. */
@@ -50,9 +50,9 @@ struct _PoolAlloc {
 
 PoolAlloc* VG_(newPA) ( UWord  elemSzB,
                         UWord  nPerPool,
-                        void*  (*alloc_fn)(const HChar*, SizeT),
+                        Alloc_Fn_t alloc_fn,
                         const  HChar* cc,
-                        void   (*free_fn)(void*) )
+                        Free_Fn_t free_fn )
 {
    PoolAlloc* pa;
    vg_assert(0 == (elemSzB % sizeof(UWord)));

@@ -77,13 +77,8 @@
 
 typedef struct _OSet     OSet;
 
-// - Cmp:   returns -1, 0 or 1 if key is <, == or > elem.
-// - Alloc: allocates a chunk of memory.
-// - Free:  frees a chunk of memory allocated with Alloc.
-
+// - OSetCmp_t:   returns -1, 0 or 1 if key is <, == or > elem.
 typedef Word  (*OSetCmp_t)         ( const void* key, const void* elem );
-typedef void* (*OSetAlloc_t)       ( const HChar* cc, SizeT szB );
-typedef void  (*OSetFree_t)        ( void* p );
 
 /*--------------------------------------------------------------------*/
 /*--- Creating and destroying OSets (UWord)                        ---*/
@@ -103,8 +98,8 @@ typedef void  (*OSetFree_t)        ( void* p );
 //   to allow the destruction of any attached resources;  if NULL it is not
 //   called.
 
-extern OSet* VG_(OSetWord_Create) ( OSetAlloc_t alloc_fn, const HChar* cc, 
-                                    OSetFree_t free_fn );
+extern OSet* VG_(OSetWord_Create) ( Alloc_Fn_t alloc_fn, const HChar* cc,
+                                    Free_Fn_t free_fn );
 extern void  VG_(OSetWord_Destroy) ( OSet* os );
 
 /*--------------------------------------------------------------------*/
@@ -204,14 +199,14 @@ extern Bool  VG_(OSetWord_Next)         ( OSet* os, /*OUT*/UWord* val );
 //   lead to assertions in Valgrind's allocator.
 
 extern OSet* VG_(OSetGen_Create)    ( PtrdiffT keyOff, OSetCmp_t cmp,
-                                      OSetAlloc_t alloc_fn, const HChar* cc,
-                                      OSetFree_t free_fn);
+                                      Alloc_Fn_t alloc_fn, const HChar* cc,
+                                      Free_Fn_t free_fn);
 
 
 extern OSet* VG_(OSetGen_Create_With_Pool)    ( PtrdiffT keyOff, OSetCmp_t cmp,
-                                                OSetAlloc_t alloc_fn,
+                                                Alloc_Fn_t alloc_fn,
                                                 const HChar* cc,
-                                                OSetFree_t free_fn,
+                                                Free_Fn_t free_fn,
                                                 SizeT poolSize,
                                                 SizeT maxEltSize);
 // Same as VG_(OSetGen_Create) but created OSet will use a pool allocator to

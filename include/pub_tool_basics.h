@@ -129,6 +129,17 @@ typedef  struct { UWord uw1; UWord uw2; }  UWordPair;
 /* ThreadIds are simply indices into the VG_(threads)[] array. */
 typedef UInt ThreadId;
 
+/* Many data structures need to allocate and release memory.
+   The allocation/release functions must be provided by the caller.
+   The Alloc_Fn_t function must allocate a chunk of memory of size szB.
+   cc is the Cost Centre for this allocated memory. This constant string
+   is used to provide Valgrind's heap profiling, activated by
+   --profile-heap=no|yes.
+   The corresponding Free_Fn_t frees the memory chunk p. */
+
+typedef void* (*Alloc_Fn_t)       ( const HChar* cc, SizeT szB );
+typedef void  (*Free_Fn_t)        ( void* p );
+
 /* An abstraction of syscall return values.
    Linux/MIPS32 and Linux/MIPS64:
       When _isError == False, 

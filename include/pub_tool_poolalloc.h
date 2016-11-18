@@ -56,9 +56,9 @@ typedef  struct _PoolAlloc  PoolAlloc;
    This function never returns NULL. */
 extern PoolAlloc* VG_(newPA) ( UWord  elemSzB,
                                UWord  nPerPool,
-                               void*  (*alloc)(const HChar*, SizeT),
+                               Alloc_Fn_t alloc_fn,
                                const  HChar* cc,
-                               void   (*free_fn)(void*) );
+                               Free_Fn_t free_fn );
 
 
 /* Free all memory associated with a PoolAlloc. */

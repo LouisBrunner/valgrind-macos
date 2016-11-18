@@ -73,9 +73,9 @@ typedef
    struct _XT_shared {
       UWord nrRef; /* nr of XTrees referencing this shared memory. */
 
-      void* (*alloc_fn)( const HChar*, SizeT ); /* alloc fn (nofail) */
+      Alloc_Fn_t alloc_fn;                /* alloc fn (nofail) */
       const HChar* cc;                    /* cost centre for alloc */
-      void  (*free_fn)( void* );         /* free fn */
+      Free_Fn_t free_fn;                  /* free fn */
 
       /* The data associated to each ec is stored in 2 arrays:
            an xec array, shared between an xt and all its snapshots.
@@ -102,7 +102,7 @@ typedef
    (with the index ecu/4). */
 #define NO_OFFSET 0xffffffff
 
-static XT_shared* new_XT_shared (void*  (*alloc_fn)(const HChar*, SizeT),
+static XT_shared* new_XT_shared (Alloc_Fn_t alloc_fn,
                                  const  HChar* cc,
                                  void   (*free_fn)(void*))
 {
@@ -208,9 +208,9 @@ static UWord release_XT_shared(XT_shared* shared)
 
    
 struct _XTree {
-   void* (*alloc_fn)( const HChar*, SizeT ); /* alloc fn (nofail) */
+   Alloc_Fn_t alloc_fn;                /* alloc fn (nofail) */
    const HChar* cc;                    /* cost centre for alloc */
-   void  (*free_fn)( void* );         /* free fn */
+   Free_Fn_t free_fn;                  /* free fn */
    Word  dataSzB;   /* data size in bytes */
    XT_init_data_t init_data_fn;
    XT_add_data_t add_data_fn;
@@ -224,9 +224,9 @@ struct _XTree {
 };
 
 
-XTree* VG_(XT_create) ( void*(*alloc_fn)(const HChar*, SizeT), 
+XTree* VG_(XT_create) ( Alloc_Fn_t alloc_fn,
                         const HChar* cc,
-                        void(*free_fn) (void*),
+                        Free_Fn_t free_fn,
                         Word dataSzB,
                         XT_init_data_t init_data_fn,
                         XT_add_data_t add_data_fn,

@@ -112,9 +112,9 @@ struct _OSetNode {
 struct _OSet {
    SizeT       keyOff;     // key offset
    OSetCmp_t   cmp;        // compare a key and an element, or NULL
-   OSetAlloc_t alloc_fn;   // allocator
+   Alloc_Fn_t  alloc_fn;   // allocator
    const HChar* cc;        // cost centre for allocator
-   OSetFree_t  free_fn;    // deallocator
+   Free_Fn_t   free_fn;    // deallocator
    PoolAlloc*  node_pa;    // (optional) pool allocator for nodes.
    SizeT       maxEltSize; // for node_pa, must be > 0. Otherwise unused.
    UInt        nElems;     // number of elements in the tree
@@ -286,8 +286,8 @@ static inline Bool stackPop(AvlTree* t, AvlNode** n, Int* i)
 
 // The underscores avoid GCC complaints about overshadowing global names.
 AvlTree* VG_(OSetGen_Create)(PtrdiffT keyOff, OSetCmp_t cmp,
-                             OSetAlloc_t alloc_fn, const HChar* cc,
-                             OSetFree_t free_fn)
+                             Alloc_Fn_t alloc_fn, const HChar* cc,
+                             Free_Fn_t free_fn)
 {
    AvlTree* t;
 
@@ -315,8 +315,8 @@ AvlTree* VG_(OSetGen_Create)(PtrdiffT keyOff, OSetCmp_t cmp,
 }
 
 AvlTree* VG_(OSetGen_Create_With_Pool)(PtrdiffT keyOff, OSetCmp_t cmp,
-                                       OSetAlloc_t alloc_fn, const HChar* cc,
-                                       OSetFree_t free_fn,
+                                       Alloc_Fn_t alloc_fn, const HChar* cc,
+                                       Free_Fn_t free_fn,
                                        SizeT poolSize,
                                        SizeT maxEltSize)
 {
@@ -361,8 +361,8 @@ AvlTree* VG_(OSetGen_EmptyClone) (const AvlTree* os)
    return t;
 }
 
-AvlTree* VG_(OSetWord_Create)(OSetAlloc_t alloc_fn, const HChar* cc, 
-                              OSetFree_t free_fn)
+AvlTree* VG_(OSetWord_Create)(Alloc_Fn_t alloc_fn, const HChar* cc,
+                              Free_Fn_t free_fn)
 {
    return VG_(OSetGen_Create)(/*keyOff*/0, /*cmp*/NULL, alloc_fn, cc, free_fn);
 }

@@ -47,9 +47,9 @@ typedef  struct _RangeMap  RangeMap;
    succeeded.)  The new array will contain a single range covering the
    entire key space, which will be bound to the value |initialVal|.
    This function never returns NULL. */
-RangeMap* VG_(newRangeMap) ( void*(*alloc_fn)(const HChar*,SizeT), 
+RangeMap* VG_(newRangeMap) ( Alloc_Fn_t alloc_fn,
                              const HChar* cc,
-                             void(*free_fn)(void*),
+                             Free_Fn_t free_fn,
                              UWord initialVal );
 
 /* Free all memory associated with a RangeMap. */

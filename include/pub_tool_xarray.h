@@ -54,9 +54,9 @@ typedef Int (*XACmpFn_t)(const void *, const void *);
    for elements of the specified size.  alloc_fn must not return NULL (that
    is, if it returns it must have succeeded.)
    This function never returns NULL. */
-extern XArray* VG_(newXA) ( void*(*alloc_fn)(const HChar*,SizeT), 
+extern XArray* VG_(newXA) ( Alloc_Fn_t alloc_fn,
                             const HChar* cc,
-                            void(*free_fn)(void*),
+                            Free_Fn_t free_fn,
                             Word elemSzB );
 
 /* Free all memory associated with an XArray. */

@@ -317,6 +317,40 @@ void VG_(client_exit)( Int status )
    exit_wrk (status, False);
 }
 
+static void print_thread_state (Bool stack_usage,
+                                const HChar* prefix, ThreadId i)
+{
+   VgStack *stack 
+      = (VgStack*)VG_(threads)[i].os_state.valgrind_stack_base;
+
+   VG_(printf)("\n%sThread %d: status = %s (lwpid %d)\n", prefix, i, 
+               VG_(name_of_ThreadStatus)(VG_(threads)[i].status),
+               VG_(threads)[i].os_state.lwpid);
+   if (VG_(threads)[i].status != VgTs_Empty)
+      VG_(get_and_pp_StackTrace)( i, BACKTRACE_DEPTH );
+   if (stack_usage && VG_(threads)[i].client_stack_highest_byte != 0 ) {
+      Addr start, end;
+      
+      start = end = 0;
+      VG_(stack_limits)(VG_(get_SP)(i), &start, &end);
+      if (start != end)
+         VG_(printf)("%sclient stack range: [%p %p] client SP: %p\n",
+                     prefix,
+                     (void*)start, (void*)end, (void*)VG_(get_SP)(i));
+      else
+         VG_(printf)("%sclient stack range: ??????? client SP: %p\n",
+                     prefix,
+                     (void*)VG_(get_SP)(i));
+   }
+   if (stack_usage && stack != 0)
+      VG_(printf)
+         ("%svalgrind stack top usage: %lu of %lu\n",
+          prefix,
+          VG_(clo_valgrind_stacksize)
+          - VG_(am_get_VgStack_unused_szB) (stack,
+                                            VG_(clo_valgrind_stacksize)),
+          (SizeT) VG_(clo_valgrind_stacksize));
+}
 
 // Print the scheduler status.
 static void show_sched_status_wrk ( Bool host_stacktrace,
@@ -374,29 +408,24 @@ static void show_sched_status_wrk ( Bool host_stacktrace,
             has exited, then valgrind_stack_base points to the stack base. */
          if (VG_(threads)[i].status == VgTs_Empty
              && (!exited_threads || stack == 0)) continue;
-         VG_(printf)("\nThread %d: status = %s (lwpid %d)\n", i, 
-                     VG_(name_of_ThreadStatus)(VG_(threads)[i].status),
-                     VG_(threads)[i].os_state.lwpid);
-         if (VG_(threads)[i].status != VgTs_Empty)
-            VG_(get_and_pp_StackTrace)( i, BACKTRACE_DEPTH );
-         if (stack_usage && VG_(threads)[i].client_stack_highest_byte != 0 ) {
-            Addr start, end;
+         print_thread_state(stack_usage, "", i);
+         if (VG_(inner_threads) != NULL) {
+            /* An inner V has informed us (the outer) of its thread array.
+               Report the inner guest stack trace. */
+            UInt inner_tid;
 
-            start = end = 0;
-            VG_(stack_limits)(VG_(threads)[i].client_stack_highest_byte,
-                              &start, &end);
-            if (start != end)
-               VG_(printf)("client stack range: [%p %p] client SP: %p\n",
-                           (void*)start, (void*)end, (void*)VG_(get_SP)(i));
-            else
-               VG_(printf)("client stack range: ???????\n");
+            for (inner_tid = 1; inner_tid < VG_N_THREADS; inner_tid++) {
+               if (VG_(threads)[i].os_state.lwpid 
+                   == VG_(inner_threads)[inner_tid].os_state.lwpid) {
+                  ThreadState* save_outer_vg_threads = VG_(threads);
+
+                  VG_(threads) = VG_(inner_threads);
+                  print_thread_state(stack_usage, "INNER ", inner_tid);
+                  VG_(threads) = save_outer_vg_threads;
+                  break;
+               }
+            }
          }
-         if (stack_usage && stack != 0)
-            VG_(printf)("valgrind stack top usage: %lu of %lu\n",
-                        VG_(clo_valgrind_stacksize)
-                           - VG_(am_get_VgStack_unused_szB)
-                              (stack, VG_(clo_valgrind_stacksize)),
-                        (SizeT) VG_(clo_valgrind_stacksize));
       }
    }
    VG_(printf)("\n");

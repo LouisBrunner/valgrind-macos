@@ -37,6 +37,10 @@
 #include "pub_core_options.h"
 #include "pub_core_stacks.h"
 #include "pub_core_tooliface.h"
+#include "pub_core_inner.h"
+#if defined(ENABLE_INNER_CLIENT_REQUEST)
+#include "pub_core_clreq.h"
+#endif 
 
 // For expensive debugging
 #define EDEBUG(fmt, args...) //VG_(debugLog)(2, "stacks", fmt, ## args)
@@ -91,6 +95,8 @@ typedef struct _Stack {
    Addr start; // Lowest stack byte, included.
    Addr end;   // Highest stack byte, included.
    struct _Stack *next;
+   UWord outer_id; /* For an inner valgrind, stack id registered in outer
+                      valgrind. */
 } Stack;
 
 static Stack *stacks;
@@ -205,7 +211,7 @@ UWord VG_(register_stack)(Addr start, Addr end)
 
    VG_(debugLog)(2, "stacks", "register [start-end] [%p-%p] as stack %lu\n",
                     (void*)start, (void*)end, i->id);
-
+   INNER_REQUEST(i->outer_id = VALGRIND_STACK_REGISTER(start, end));
    return i->id;
 }
 
@@ -231,6 +237,7 @@ void VG_(deregister_stack)(UWord id)
          } else {
             prev->next = i->next;
          }
+         INNER_REQUEST(VALGRIND_STACK_DEREGISTER(i->outer_id));
          VG_(free)(i);
          return;
       }
@@ -257,6 +264,7 @@ void VG_(change_stack)(UWord id, Addr start, Addr end)
          /* FIXME : swap start/end like VG_(register_stack) ??? */
          i->start = start;
          i->end = end;
+         INNER_REQUEST(VALGRIND_STACK_CHANGE(i->outer_id, start, end));
          return;
       }
       i = i->next;

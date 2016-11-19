@@ -6642,8 +6642,9 @@ typedef
 
 /* !! ABIWARNING !! ABIWARNING !! ABIWARNING !! ABIWARNING !! 
    This enum comprises an ABI exported by Valgrind to programs
-   which use client requests.  DO NOT CHANGE THE ORDER OF THESE
-   ENTRIES, NOR DELETE ANY -- add new ones at the end. */
+   which use client requests.  DO NOT CHANGE THE NUMERIC VALUES OF THESE
+   ENTRIES, NOR DELETE ANY -- add new ones at the end of the most
+   relevant group. */
 typedef
    enum { VG_USERREQ__RUNNING_ON_VALGRIND  = 0x1001,
           VG_USERREQ__DISCARD_TRANSLATIONS = 0x1002,
@@ -6713,8 +6714,13 @@ typedef
              Other values are not allowed. */
           VG_USERREQ__CHANGE_ERR_DISABLEMENT = 0x1801,
 
+          /* Some requests used for Valgrind internal, such as
+             self-test or self-hosting. */
           /* Initialise IR injection */
-          VG_USERREQ__VEX_INIT_FOR_IRI = 0x1901
+          VG_USERREQ__VEX_INIT_FOR_IRI = 0x1901,
+          /* Used by Inner Valgrind to inform Outer Valgrind where to
+             find the list of inner guest threads */
+          VG_USERREQ__INNER_THREADS    = 0x1902
    } Vg_ClientRequest;
 
 #if !defined(__GNUC__)
@@ -6739,6 +6745,10 @@ typedef
 #define VALGRIND_DISCARD_TRANSLATIONS(_qzz_addr,_qzz_len)              \
     VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__DISCARD_TRANSLATIONS,  \
                                     _qzz_addr, _qzz_len, 0, 0, 0)
+
+#define VALGRIND_INNER_THREADS(_qzz_addr)                               \
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__INNER_THREADS,           \
+                                   _qzz_addr, 0, 0, 0, 0)
 
 
 /* These requests are for getting Valgrind itself to print something.

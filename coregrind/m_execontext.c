@@ -326,6 +326,12 @@ static void resize_ec_htab ( void )
    ec_htab_size_idx++;
 }
 
+/* Used by the outer as a marker to separate the frames of the inner valgrind
+   from the frames of the inner guest frames. */
+static void _______VVVVVVVV_appended_inner_guest_stack_VVVVVVVV_______ (void)
+{
+}
+
 /* Do the first part of getting a stack trace: actually unwind the
    stack, and hand the results off to the duplicate-trace-finder
    (_wrk2). */
@@ -350,6 +356,38 @@ static ExeContext* record_ExeContext_wrk ( ThreadId tid, Word first_ip_delta,
                                    NULL/*array to dump SP values in*/,
                                    NULL/*array to dump FP values in*/,
                                    first_ip_delta );
+      if (VG_(inner_threads) != NULL
+          && n_ips + 1 < VG_(clo_backtrace_size)) {
+         /* An inner V has informed us (the outer) of its thread array.
+            Append the inner guest stack trace, if we still have some
+            room in the ips array for the separator and (some) inner
+            guest IPs. */
+         UInt inner_tid;
+
+         for (inner_tid = 1; inner_tid < VG_N_THREADS; inner_tid++) {
+            if (VG_(threads)[tid].os_state.lwpid 
+                == VG_(inner_threads)[inner_tid].os_state.lwpid) {
+               ThreadState* save_outer_vg_threads = VG_(threads);
+               UInt n_ips_inner_guest;
+
+               /* Append the separator + the inner guest stack trace. */
+               ips[n_ips] = (Addr)
+                  _______VVVVVVVV_appended_inner_guest_stack_VVVVVVVV_______;
+               n_ips++;
+               VG_(threads) = VG_(inner_threads);
+               n_ips_inner_guest 
+                  = VG_(get_StackTrace)( inner_tid,
+                                         ips + n_ips,
+                                         VG_(clo_backtrace_size) - n_ips,
+                                         NULL/*array to dump SP values in*/,
+                                         NULL/*array to dump FP values in*/,
+                                         first_ip_delta );
+               n_ips += n_ips_inner_guest;
+               VG_(threads) = save_outer_vg_threads;
+               break;
+            }
+         }
+      }
    }
 
    return record_ExeContext_wrk2 ( ips, n_ips );

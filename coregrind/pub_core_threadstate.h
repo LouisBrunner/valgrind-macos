@@ -409,10 +409,15 @@ ThreadState;
 /*--- The thread table.                                    ---*/
 /*------------------------------------------------------------*/
 
-/* A statically allocated array of threads.  NOTE: [0] is
-   never used, to simplify the simulation of initialisers for
-   LinuxThreads. */
+/* An array of threads, dynamically allocated by VG_(init_Threads).
+   NOTE: [0] is never used, to simplify the simulation of initialisers
+   for LinuxThreads. */
 extern ThreadState *VG_(threads);
+
+/* In an outer valgrind, VG_(inner_threads) stores the address of
+   the inner VG_(threads) array, as reported by the inner using
+   the client request INNER_THREADS. */
+extern ThreadState *VG_(inner_threads);
 
 // The running thread.  m_scheduler should be the only other module
 // to write to this.

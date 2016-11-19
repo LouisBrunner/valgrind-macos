@@ -58,6 +58,11 @@ For more details, read the user manual.
 
 * ==================== OTHER CHANGES ====================
 
+* For Valgrind developers: in an outer/inner setup, the outer Valgrind
+  will append the inner guest stacktrace to the inner host stacktrace.
+  This helps to investigate the errors reported by the outer, when they
+  are caused by the inner guest program (such as an inner regtest).
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

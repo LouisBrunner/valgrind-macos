@@ -2007,6 +2007,15 @@ void do_client_request ( ThreadId tid )
          SET_CLREQ_RETVAL( tid, 0 );     /* return value is meaningless */
 	 break;
 
+      case VG_USERREQ__INNER_THREADS:
+         if (VG_(clo_verbosity) > 2)
+            VG_(printf)( "client request: INNER_THREADS,"
+                         " addr %p\n",
+                         (void*)arg[1] );
+         VG_(inner_threads) = (ThreadState*)arg[1];
+         SET_CLREQ_RETVAL( tid, 0 );     /* return value is meaningless */
+	 break;
+
       case VG_USERREQ__COUNT_ERRORS:  
          SET_CLREQ_RETVAL( tid, VG_(get_n_errs_found)() );
          break;

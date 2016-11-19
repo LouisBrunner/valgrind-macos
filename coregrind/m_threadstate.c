@@ -47,6 +47,8 @@ ThreadId VG_(running_tid) = VG_INVALID_THREADID;
 ThreadState *VG_(threads);
 UInt VG_N_THREADS;
 
+ThreadState *VG_(inner_threads);
+
 /*------------------------------------------------------------*/
 /*--- Operations.                                          ---*/
 /*------------------------------------------------------------*/
@@ -68,6 +70,7 @@ void VG_(init_Threads)(void)
                                     sizeof(VG_(threads)[tid].os_state.exitcode),
                                     ""));
    }
+   INNER_REQUEST(VALGRIND_INNER_THREADS(VG_(threads)));
 }
 
 const HChar* VG_(name_of_ThreadStatus) ( ThreadStatus status )

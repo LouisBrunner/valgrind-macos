@@ -3558,6 +3558,12 @@ PRE(sys_rt_sigsuspend)
    PRE_REG_READ2(int, "rt_sigsuspend", vki_sigset_t *, mask, vki_size_t, size)
    if (ARG1 != (Addr)NULL) {
       PRE_MEM_READ( "rt_sigsuspend(mask)", ARG1, sizeof(vki_sigset_t) );
+      VG_(sigdelset)((vki_sigset_t*)ARG1, VG_SIGVGKILL); 
+      /* We cannot mask VG_SIGVGKILL, as otherwise this thread would not
+         be killable by VG_(nuke_all_threads_except).
+         We thus silently ignore the user request to mask this signal.
+         Note that this is similar to what is done for e.g.
+         sigprocmask (see m_signals.c calculate_SKSS_from_SCSS).  */
    }
 }
 

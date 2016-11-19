@@ -354,7 +354,9 @@ typedef struct {
       different values is during the execution of a sigsuspend, where
       tmp_sig_mask is the temporary mask which sigsuspend installs.
       It is only consulted to compute the signal mask applied to a
-      signal handler. */
+      signal handler. 
+      PW Nov 2016 : it is not clear if and where this tmp_sig_mask
+      is set when an handler runs "inside" a sigsuspend. */
    vki_sigset_t tmp_sig_mask;
 
    /* A little signal queue for signals we can't get the kernel to

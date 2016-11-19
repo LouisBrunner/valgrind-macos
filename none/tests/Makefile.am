@@ -189,6 +189,7 @@ EXTRA_DIST = \
 	shortpush.stderr.exp shortpush.vgtest \
 	shorts.stderr.exp shorts.vgtest \
 	sigstackgrowth.stdout.exp sigstackgrowth.stderr.exp sigstackgrowth.vgtest \
+	sigsusp.stderr.exp sigsusp.vgtest \
 	stackgrowth.stdout.exp stackgrowth.stderr.exp stackgrowth.vgtest \
 	syscall-restart1.vgtest syscall-restart1.stdout.exp syscall-restart1.stderr.exp \
 	syscall-restart2.vgtest syscall-restart2.stdout.exp syscall-restart2.stderr.exp \
@@ -233,7 +234,7 @@ check_PROGRAMS = \
 	require-text-symbol \
 	res_search resolv \
 	rlimit_nofile selfrun sem semlimit sha1_test \
-	shortpush shorts stackgrowth sigstackgrowth \
+	shortpush shorts stackgrowth sigstackgrowth sigsusp \
 	syscall-restart1 syscall-restart2 \
 	syslog \
 	system \
@@ -332,6 +333,7 @@ sha1_test_CFLAGS	= $(AM_CFLAGS)
 if VGCONF_OS_IS_SOLARIS
 sha1_test_CFLAGS	+= -Du_int32_t=uint32_t
 endif
+sigsusp_LDADD		= -lpthread
 thread_exits_LDADD	= -lpthread
 threaded_fork_LDADD	= -lpthread
 threadederrno_CFLAGS	= $(AM_CFLAGS)

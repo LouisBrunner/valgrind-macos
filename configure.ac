@@ -2778,10 +2778,10 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL(SOLARIS_SUN_STUDIO_AS, test x$solaris_have_sun_studio_as = xyes)
 
 # Solaris-specific check determining if symbols __xpg4 and __xpg6
-# are present in linked elfs when gcc is invoked with -std=gnu99.
+# are present in linked shared libraries when gcc is invoked with -std=gnu99.
 # See solaris/vgpreload-solaris.mapfile for details.
-# gcc on Solaris instructs linker to include these symbols,
-# gcc on illumos does not.
+# gcc on older Solaris instructs linker to include these symbols,
+# gcc on illumos and newer Solaris does not.
 #
 # C-level symbol: none
 # Automake-level symbol: SOLARIS_XPG_SYMBOLS_PRESENT
@@ -2789,34 +2789,21 @@ AM_CONDITIONAL(SOLARIS_SUN_STUDIO_AS, test x$solaris_have_sun_studio_as = xyes)
 save_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS -std=gnu99"
 AC_MSG_CHECKING([if xpg symbols are present with -std=gnu99 (Solaris-specific)])
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <limits.h>
+temp_dir=$( /usr/bin/mktemp -d )
+cat <<_ACEOF >${temp_dir}/mylib.c
 #include <stdio.h>
-#include <stdlib.h>
-
-int main(int argc, const char *argv[]) {
-    char command[PATH_MAX + 50];
-    snprintf(command, sizeof(command), "nm %s | egrep '__xpg[4,6]'", argv[0]);
-
-    FILE *output = popen(command, "r");
-    if (output == NULL) return -1;
-
-    char buf[100];
-    if (fgets(buf, sizeof(buf), output) != NULL) {
-        pclose(output);
-        return 0;
-    } else {
-        pclose(output);
-        return 1;
-    }
-}
-]])], [
-solaris_xpg_symbols_present=yes
-AC_MSG_RESULT([yes])
-], [
-solaris_xpg_symbols_present=no
-AC_MSG_RESULT([no])
-])
+int myfunc(void) { printf("LaPutyka\n"); }
+_ACEOF
+${CC} ${CFLAGS} -fpic -shared -o ${temp_dir}/mylib.so ${temp_dir}/mylib.c
+xpg_present=$( /usr/bin/nm ${temp_dir}/mylib.so | ${EGREP} '(__xpg4|__xpg6)' )
+if test "x${xpg_present}" = "x" ; then
+    solaris_xpg_symbols_present=no
+    AC_MSG_RESULT([no])
+else
+    solaris_xpg_symbols_present=yes
+    AC_MSG_RESULT([yes])
+fi
+rm -rf ${temp_dir}
 AM_CONDITIONAL(SOLARIS_XPG_SYMBOLS_PRESENT, test x$solaris_xpg_symbols_present = xyes)
 CFLAGS="$save_CFLAGS"
 

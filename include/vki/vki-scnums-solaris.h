@@ -157,7 +157,7 @@
 #define __NR_nfssys                     SYS_nfssys
 #define __NR_waitid                     SYS_waitid
 #define __NR_waitsys                    SYS_waitsys /* = SYS_waitid (historical) */
-//#define __NR_sigsendsys                 SYS_sigsendsys
+#define __NR_sigsendsys                 SYS_sigsendsys
 //#define __NR_hrtsys                     SYS_hrtsys
 #if defined(SOLARIS_UTIMESYS_SYSCALL)
 #define __NR_utimesys                   SYS_utimesys

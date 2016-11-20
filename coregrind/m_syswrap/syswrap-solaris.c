@@ -966,6 +966,7 @@ DECL_TEMPLATE(solaris, sys_statvfs);
 DECL_TEMPLATE(solaris, sys_fstatvfs);
 DECL_TEMPLATE(solaris, sys_nfssys);
 DECL_TEMPLATE(solaris, sys_waitid);
+DECL_TEMPLATE(solaris, sys_sigsendsys);
 #if defined(SOLARIS_UTIMESYS_SYSCALL)
 DECL_TEMPLATE(solaris, sys_utimesys);
 #endif /* SOLARIS_UTIMESYS_SYSCALL */
@@ -5128,6 +5129,57 @@ PRE(sys_waitid)
 POST(sys_waitid)
 {
    POST_MEM_WRITE(ARG3, sizeof(vki_siginfo_t));
+}
+
+PRE(sys_sigsendsys)
+{
+   /* int sigsendsys(procset_t *psp, int sig); */
+   PRINT("sys_sigsendsys( %#lx, %ld )", ARG1, SARG2);
+   PRE_REG_READ2(long, "sigsendsys", vki_procset_t *, psp, int, signal);
+   PRE_MEM_READ("sigsendsys(psp)", ARG1, sizeof(vki_procset_t));
+
+   if (!ML_(client_signal_OK)(ARG1)) {
+      SET_STATUS_Failure(VKI_EINVAL);
+   }
+   if (!ML_(safe_to_deref)((void *) ARG1, sizeof(vki_procset_t))) {
+      SET_STATUS_Failure(VKI_EFAULT);
+   }
+   
+   /* Exit early if there are problems. */
+   if (FAILURE)
+      return;
+
+   vki_procset_t *psp = (vki_procset_t *) ARG1;
+   switch (psp->p_op) {
+      case VKI_POP_AND:
+         break;
+      default:
+         VG_(unimplemented)("Syswrap of the sigsendsys call with op %u.",
+                            psp->p_op);
+   }
+
+   vki_id_t pid;
+   if ((psp->p_lidtype == VKI_P_PID) && (psp->p_ridtype == VKI_P_ALL)) {
+      pid = psp->p_lid;
+   } else if ((psp->p_lidtype == VKI_P_ALL) && (psp->p_ridtype == VKI_P_PID)) {
+      pid = psp->p_rid;
+   } else {
+      VG_(unimplemented)("Syswrap of the sigsendsys call with lidtype %u and"
+                         "ridtype %u.", psp->p_lidtype, psp->p_ridtype);
+   }
+
+   if (VG_(clo_trace_signals))
+      VG_(message)(Vg_DebugMsg, "sigsendsys: sending signal to process %u\n",
+                   pid);
+
+   /* Handle SIGKILL specially. */
+   if (ARG2 == VKI_SIGKILL && ML_(do_sigkill)(pid, -1)) {
+      SET_STATUS_Success(0);
+      return;
+   }
+
+   /* Check to see if this gave us a pending signal. */
+   *flags |= SfPollAfter;
 }
 
 #if defined(SOLARIS_UTIMESYS_SYSCALL)
@@ -10749,6 +10801,7 @@ static SyscallTableEntry syscall_table[] = {
    SOLXY(__NR_fstatvfs,             sys_fstatvfs),              /* 104 */
    SOLXY(__NR_nfssys,               sys_nfssys),                /* 106 */
    SOLXY(__NR_waitid,               sys_waitid),                /* 107 */
+   SOLX_(__NR_sigsendsys,           sys_sigsendsys),            /* 108 */
 #if defined(SOLARIS_UTIMESYS_SYSCALL)
    SOLX_(__NR_utimesys,             sys_utimesys),              /* 110 */
 #endif /* SOLARIS_UTIMESYS_SYSCALL */

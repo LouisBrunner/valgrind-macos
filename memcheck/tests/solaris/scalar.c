@@ -1934,7 +1934,8 @@ int main(void)
    SY(SYS_waitid, x0 - 1, x0, x0, x0); FAIL;
 
    /* SYS_sigsendsys            108 */
-   /* XXX Missing wrapper. */
+   GO(SYS_sigsendsys, "2s 1m");
+   SY(SYS_sigsendsys, x0 - 1, x0); FAIL;
 
    /* SYS_hrtsys                109 */
    /* XXX Missing wrapper. */

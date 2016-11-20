@@ -814,6 +814,7 @@ typedef struct vki_kcf_door_arg_s {
 #define VKI_P_PID P_PID
 #define VKI_P_PGID P_PGID
 #define VKI_P_ALL P_ALL
+#define VKI_POP_AND POP_AND
 #define vki_procset_t procset_t
 
 

@@ -1851,6 +1851,19 @@ Syscall param waitid(infop) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
+108:          SYS_sigsendsys 2s 1m
+---------------------------------------------------------
+Syscall param sigsendsys(psp) contains uninitialised byte(s)
+   ...
+
+Syscall param sigsendsys(signal) contains uninitialised byte(s)
+   ...
+
+Syscall param sigsendsys(psp) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
 111:           SYS_sigresend 3s 2m
 ---------------------------------------------------------
 Syscall param sigresend(signal) contains uninitialised byte(s)

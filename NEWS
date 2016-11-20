@@ -12,19 +12,19 @@ MIPS32/Android, X86/Android, X86/Solaris, AMD64/Solaris, X86/MacOSX
 10.10 and AMD64/MacOSX 10.10.  There is also preliminary support for
 X86/MacOSX 10.11/12, AMD64/MacOSX 10.11/12 and TILEGX/Linux.
 
-A significant change in 3.13 is the addition of the 'xtree' concept:
-An xtree is a tree of stacktraces with data associated to the stacktraces.
-This xtree is used by various tools (memcheck, helgrind, massif) to
-report the heap consumption of your program. The xtree reporting
-is controlled by the new options --xtree-memory=none|allocs|full and
---xtree-memory-file=<file>.
-An heap xtree memory profiling can also be produced on demand using
-a gdbserver monitor command.
-The xtree can be output in 2 formats: 'callgrind format'
-and 'massif format. The existing visualisers for these formats (e.g.
-callgrind_annotate, kcachegrind, ms_print) can be used to visualise
-and analyse these reports.
-For more details, read the user manual.
+* The 'xtree concept' was added in 3.13:
+   An xtree is a tree of stacktraces with data associated to the stacktraces.
+   This xtree is used by various tools (memcheck, helgrind, massif) to
+   report the heap consumption of your program. The xtree reporting
+   is controlled by the new options --xtree-memory=none|allocs|full and
+   --xtree-memory-file=<file>.
+   An heap xtree memory profiling can also be produced on demand using
+   the gdbserver monitor command 'xtmemory [<filename>]>'.
+   The xtree can be output in 2 formats: 'callgrind format'
+   and 'massif format. The existing visualisers for these formats (e.g.
+   callgrind_annotate, kcachegrind, ms_print) can be used to visualise
+   and analyse these reports.
+   For more details, read the user manual.
 
 * ================== PLATFORM CHANGES =================
 
@@ -32,28 +32,18 @@ For more details, read the user manual.
 
 * Memcheck:
 
-  - Support for --xtree-memory profiling.
-  
-  - A new monitor command 'xtmemory [<filename>]>' produces a
-    heap usage profile report.
+  - Support for --xtree-memory and 'xtmemory [<filename>]>'.
 
 * Massif:
 
-  - Support for --xtree-memory profiling.
-  
-  - A new monitor command 'xtmemory [<filename>]>' produces a
-    heap usage profile report.
+  - Support for --xtree-memory and 'xtmemory [<filename>]>'.
 
   - For some workloads (typically, for big applications), Massif
     memory consumption and CPU consumption decreases significantly.
 
 * Helgrind:
 
-  - Support for --xtree-memory profiling.
-  
-  - A new monitor command 'xtmemory [<filename>]>' produces a
-    heap usage profile report.
-
+  - Support for --xtree-memory and 'xtmemory [<filename>]>'.
 
 
 * ==================== OTHER CHANGES ====================
@@ -62,6 +52,7 @@ For more details, read the user manual.
   will append the inner guest stacktrace to the inner host stacktrace.
   This helps to investigate the errors reported by the outer, when they
   are caused by the inner guest program (such as an inner regtest).
+  See README_DEVELOPERS for more info.
 
 * ==================== FIXED BUGS ====================
 

@@ -294,6 +294,7 @@ static void usage_NORETURN ( Bool debug_help )
 "\n"
 "  debugging options for Valgrind tools that replace malloc:\n"
 "    --trace-malloc=no|yes     show client malloc details? [no]\n"
+"    --xtree-compress-strings=no|yes   compress strings in xtree callgrind format [yes]\n"
 "\n";
 
    const HChar usage3[] =

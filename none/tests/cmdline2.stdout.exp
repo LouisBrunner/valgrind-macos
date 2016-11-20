@@ -205,6 +205,7 @@ usage: valgrind [options] prog-and-args
 
   debugging options for Valgrind tools that replace malloc:
     --trace-malloc=no|yes     show client malloc details? [no]
+    --xtree-compress-strings=no|yes   compress strings in xtree callgrind format [yes]
 
   debugging options for Nulgrind:
     (none)

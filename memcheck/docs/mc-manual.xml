@@ -57,8 +57,12 @@ problems that are common in C and C++ programs.</para>
 
 <para>Problems like these can be difficult to find by other means,
 often remaining undetected for long periods, then causing occasional,
-difficult-to-diagnose crashes.</para>
+  difficult-to-diagnose crashes.</para>
 
+<para>Memcheck also provides <xref linkend="manual-core.xtree"/> memory
+  profiling using the command line
+  option <computeroutput>--xtree-memory</computeroutput> and the monitor command
+   <computeroutput>xtmemory</computeroutput>.</para>
 </sect1>
 
 
@@ -1040,6 +1044,13 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
       and/or by using a smaller value for the
       option <varname>--num-callers</varname>.
       </para>
+      
+      <para>If you want to use
+        <computeroutput>--xtree-memory=full</computeroutput> memory profiling
+        (see <xref linkend="manual-core.xtree"/> ), then you cannot
+        specify <varname>--keep-stacktraces=free</varname>
+        or <varname>--keep-stacktraces=none</varname>.</para>
+
     </listitem>
   </varlistentry>
 

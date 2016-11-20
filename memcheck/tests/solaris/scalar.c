@@ -1885,7 +1885,8 @@ int main(void)
    SY(SYS_sigprocmask, x0, x0 + 1, x0 + 1); FAILx(EFAULT);
 
    /* SYS_sigsuspend             96 */
-   /* XXX Missing wrapper. */
+   GO(SYS_sigsuspend, "1s 1m");
+   SY(SYS_sigsuspend, x0 + 1); FAILx(EFAULT);
 
    /* SYS_sigaltstack            97 */
    GO(SYS_sigaltstack, "2s 2m");

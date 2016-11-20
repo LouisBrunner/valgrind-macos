@@ -144,7 +144,7 @@
 #define __NR_setgroups                  SYS_setgroups
 #define __NR_getgroups                  SYS_getgroups
 #define __NR_sigprocmask                SYS_sigprocmask
-//#define __NR_sigsuspend                 SYS_sigsuspend
+#define __NR_sigsuspend                 SYS_sigsuspend
 #define __NR_sigaltstack                SYS_sigaltstack
 #define __NR_sigaction                  SYS_sigaction
 #define __NR_sigpending                 SYS_sigpending

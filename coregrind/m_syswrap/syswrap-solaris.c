@@ -956,6 +956,7 @@ DECL_TEMPLATE(solaris, sys_getmsg);
 DECL_TEMPLATE(solaris, sys_putmsg);
 DECL_TEMPLATE(solaris, sys_lstat);
 DECL_TEMPLATE(solaris, sys_sigprocmask);
+DECL_TEMPLATE(solaris, sys_sigsuspend);
 DECL_TEMPLATE(solaris, sys_sigaction);
 DECL_TEMPLATE(solaris, sys_sigpending);
 DECL_TEMPLATE(solaris, sys_getsetcontext);
@@ -4805,6 +4806,26 @@ POST(sys_sigprocmask)
 {
    if (ARG3)
       POST_MEM_WRITE(ARG3, sizeof(vki_sigset_t));
+}
+
+PRE(sys_sigsuspend)
+{
+   *flags |= SfMayBlock;
+
+   /* int sigsuspend(const sigset_t *set); */
+   PRINT("sys_sigsuspend ( %#lx )", ARG1);
+   PRE_REG_READ1(long, "sigsuspend", vki_sigset_t *, set);
+   PRE_MEM_READ("sigsuspend(set)", ARG1, sizeof(vki_sigset_t));
+
+   /* Be safe. */
+   if (ARG1 && ML_(safe_to_deref((void *) ARG1, sizeof(vki_sigset_t)))) {
+      VG_(sigdelset)((vki_sigset_t *) ARG1, VG_SIGVGKILL); 
+      /* We cannot mask VG_SIGVGKILL, as otherwise this thread would not
+         be killable by VG_(nuke_all_threads_except).
+         We thus silently ignore the user request to mask this signal.
+         Note that this is similar to what is done for e.g.
+         sigprocmask (see m_signals.c calculate_SKSS_from_SCSS).  */
+   }
 }
 
 PRE(sys_sigaction)
@@ -10717,6 +10738,7 @@ static SyscallTableEntry syscall_table[] = {
    GENX_(__NR_fchown,               sys_fchown),                /*  94 */
 #endif /* SOLARIS_OLD_SYSCALLS */
    SOLXY(__NR_sigprocmask,          sys_sigprocmask),           /*  95 */
+   SOLX_(__NR_sigsuspend,           sys_sigsuspend),            /*  96 */
    GENXY(__NR_sigaltstack,          sys_sigaltstack),           /*  97 */
    SOLXY(__NR_sigaction,            sys_sigaction),             /*  98 */
    SOLXY(__NR_sigpending,           sys_sigpending),            /*  99 */

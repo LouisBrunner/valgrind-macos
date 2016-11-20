@@ -1623,6 +1623,16 @@ Syscall param sigprocmask(oset) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
+ 96:          SYS_sigsuspend 1s 1m
+---------------------------------------------------------
+Syscall param sigsuspend(set) contains uninitialised byte(s)
+   ...
+
+Syscall param sigsuspend(set) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
  97:         SYS_sigaltstack 2s 2m
 ---------------------------------------------------------
 Syscall param sigaltstack(ss) contains uninitialised byte(s)

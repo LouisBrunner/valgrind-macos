@@ -168,7 +168,7 @@ EXTRA_DIST = \
 	pth_rwlock.stderr.exp pth_rwlock.vgtest \
 	pth_stackalign.stderr.exp \
 	pth_stackalign.stdout.exp pth_stackalign.vgtest \
-	pth_2sig.stderr.exp pth_2sig.vgtest \
+	pth_2sig.stderr.exp-linux pth_2sig.stderr.exp-solaris pth_2sig.vgtest \
 	pth_term_signal.stderr.exp pth_term_signal.vgtest \
 	rcrl.stderr.exp rcrl.stdout.exp rcrl.vgtest \
 	readline1.stderr.exp readline1.stdout.exp \

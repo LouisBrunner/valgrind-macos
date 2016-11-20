@@ -1,5 +1,2 @@
-# Disable this test on Solaris for now until it is investigated
-# why it messes badly with the regression test suite.
-prereq: (! ../../tests/os_test solaris)
 prog: pth_2sig
 vgopts: -q

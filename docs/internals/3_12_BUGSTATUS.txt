@@ -1,0 +1,454 @@
+
+Created Mon 21 Nov 12:58:23 CET 2016.  All bugs after the release of
+3.12.0 go in here.  Also, this contains bugs from 3_11_BUGSTATUS.txt
+that didn't get fixed in 3.12.  These are marked "(carried over)".
+
+=== VEX/amd64 ==========================================================
+
+(carried over)
+356715  vex amd64->IR: 0xC4 0xE2 0x7D 0x13 0x4 0x4A 0xC5 0xFC
+        vcvtph2ps (%rdx,%rcx,2),%ymm0
+
+(carried over)
+360415  amd64 instructions ADCX and ADOX are not implemented in VEX
+        [has patch, could possibly take it, but needs cleanup/verification]
+
+(carried over)
+367543  bt/btc/btr/bts x86/x86_64 instructions are poorly-handled wrt flags
+        [Z flag behaviour is wrong]
+
+AMD XOP-prefixed insns:
+
+(carried over)
+356611  vex amd64->IR: 0x8F 0xEA 0xF8 0x10 0xC9 0x3 0x1D 0x0
+        [== 328357, still open]
+
+(carried over)
+339596  vex amd64->IR: 0x8F 0xE8 0x78 0xCD 0xC1 0x4 0xC5 0xF9
+        [AMD XOP/FMA support]
+        == 356138
+
+=== VEX/arm ============================================================
+
+(carried over)
+352630  valgrind: Unrecognised instruction at address 0x4fc4d33.
+        [what insn is this?]
+
+(carried over)
+355526  disInstr(arm): unhandled instruction: 0x1823E91
+        [what insn is this?]
+
+(carried over)
+n-i-bz  Remove limit on strd's negative immediates
+        [dev@, Michael Daniels, 19 Nov 2015, easy fix, should land]
+
+(carried over)
+362934  [AsusWRT] Arm v7 illegal instruction
+        [unclear what this is; a SIGILL on generated code]
+
+=== VEX/arm64 ==========================================================
+
+=== VEX/x86 ============================================================
+
+=== VEX/mips ===========================================================
+
+=== VEX/ppc ============================================================
+
+(carried over)
+361405  disInstr(ppc): unhandled instruction: 0xFF81010C
+
+=== VEX/s390x ==========================================================
+
+(carried over)
+366413  s390x: New z13 instructions not implemented
+        [Per cborntraeger, is not important for 3.12.0]
+
+=== VEX general ========================================================
+
+=== Syscalls/ioctls on Linux ===========================================
+
+(carried over)
+348616  Wine/valgrind: Warning: noted but unhandled ioctl 0x5390 with
+        no size/direction hints. (DVD_READ_STRUCT) 
+
+(carried over)
+352742  Custom allocator using sbrk() fails after about 800MB when running
+        under memcheck
+
+(carried over)
+352767  Wine/valgrind: Warning: noted but unhandled ioctl 0x5307 with
+        no size/direction hints. (CDROMSTOP)
+
+(carried over)
+355803  Add Lustre's IOC_MDC_GETFILESTRIPE ioctl [has patch]
+
+(carried over)
+357781  unhandled amd64-linux syscall: 317
+        [== 345414, still open]
+
+(carried over)
+358620  WARNING: unhandled syscall: 357
+        [arm32, 3.7.0, also an unhandled insn]
+
+(carried over)
+359705  memcheck causes segfault on a dynamically-linked test from
+        rustlang's test suite on i686
+
+(carried over)
+360429  Warning: noted but unhandled ioctl 0x530d with no size/direction hints.
+        (has patch, should take)
+
+(carried over)
+361726  WARNING:unhandled syscall on ppc64
+
+(carried over)
+361770  Missing F_ADD_SEALS
+
+(carried over)
+362892  test apk in android5.0.2,after fix the bug 344802,android log
+        "Unable to create protected region in stack for implicit overflow 
+        check. Reason: Out of memory size:  4096"
+
+(carried over)
+362939  test apk in android 5.0 or most,at 0x6A23AB4:
+        art::Thread::InstallImplicitProtection() (in /system/lib/libart.so)
+        [initimg problems on Android]
+
+(carried over)
+364359  Valgrind crashes on fcntl(F_SETFL, O_NONBLOCK, fd)
+
+(carried over)
+367942  Segfault vgPlain_do_sys_sigaction (m_signals.c:1138)
+
+(carried over)
+368791  unhandled syscall: 167 (swapon, amd64-linux)
+        (should fix this for 3.12.1)
+
+=== Syscalls/ioctls on OSX =============================================
+
+(carried over)
+351632  UNKNOWN fcntl 97 on OS X 10.11
+
+(carried over)
+352021  Signals are ignored in OS X 10.10
+
+(carried over)
+353346  WARNING: unhandled amd64-darwin syscall: unix:330
+        == 211362 [not fixed]
+
+=== Debuginfo reader ===================================================
+
+(carried over)
+353192  Debug info/data section not detected on AMD64
+        [To do with rwx, combined code+data sections]
+
+(carried over)
+355197  Too strong assert in variable debug info code
+        [Still relevant?]
+
+(carried over)
+365750  Valgrind fails on binary with .text section not in default place
+        [Horrible hack to do with relocating .text section]
+
+=== Tools/Memcheck =====================================================
+
+(carried over)
+352364  ppc64: --expensive-definedness-checks=yes is not quite working here
+
+(carried over)
+353282  False uninitialised memory after bittwiddling
+
+(carried over)
+358980  32 byte leak reported when code uses dlopen and links against pthread
+
+(carried over)
+361504  dlopen()/dlclose() and shared object usage check [wishlist]
+
+(carried over)
+361810  valgrind duplicate stdin after fork
+
+(carried over)
+364279  False "Uninitialized" on atomic_compare_exchange
+
+(carried over)
+366035  valgrind misses buffer overflow, segfaults in malloc in localtime
+
+(carried over)
+366817  VALGRIND_MEMPOOL_CHANGE has a performance bug
+
+(carried over)
+368507  valgrind throws std::bad_alloc on memory allocations larger
+        than 34255421416 bytes
+        (increase usable address space post release, on trunk)
+
+=== Tools/DRD ==========================================================
+
+(carried over)
+356374  Assertion 'DRD_(g_threadinfo)[tid].pt_threadid
+        != INVALID_POSIX_THREADID' failed
+
+=== Tools/Helgrind =====================================================
+
+(carried over)
+358213  helgrind bar_bad testcase hangs
+        with new glibc pthread barrier implementation
+        [Also DRD is affected]
+
+(carried over)
+360557  helgrind reports data race which I can't see (involves rwlocks)
+        [probably a legit bug]
+
+(carried over)
+363740  Possible data race in vgPlain_amd64_linux_REDIR_FOR_vgettimeofday
+
+=== Tools/SGCheck ======================================================
+
+=== Tools/Massif =======================================================
+
+=== Tools/Cachegrind ===================================================
+
+=== Tools/Callgrind ====================================================
+
+(carried over)
+356675  callgrind test apk in android 5.0.2
+        [Unclear what this is.  Might also be ARM or Android specific]
+
+=== Tools/Lackey =======================================================
+
+=== other/x86 ==========================================================
+
+=== other/mips =========================================================
+
+=== other/ppc ==========================================================
+
+365208  valgrind stuck after redirecting "memcpy"
+
+=== other/arm ==========================================================
+
+(carried over)
+364533  Process terminating with default action of signal 4 (SIGILL): dumping
+        core, : at 0x4000E7C: ??? (in /lib/ld-uClibc.so.0)
+
+(carried over)
+368529  Android arm target link error, missing atexit and pthread_atfork
+        (should take patch)
+
+=== other/arm64 ========================================================
+
+=== other/s390 =========================================================
+
+=== other/tilegx =======================================================
+
+=== other/Android ======================================================
+
+=== other/OS X =========================================================
+
+(carried over)
+351855  Possible false positive on OS X with setlocale
+
+(carried over)
+352384  mmap-FIXED failed in UME (load_segment2)
+
+(carried over)
+352567  Assertion tres.status == VexTransOK failed in m_translate.c
+        vgPlain_translate
+
+(carried over)
+353470  memcheck/tests/execve2 fails on OS X 10.11
+
+(carried over)
+353471  memcheck/tests/x86/xor-undef-x86 fails on OS X 10.11
+
+(carried over)
+354428  Bad report memory leak in OS X 10.11
+        == 258140 [still open]
+
+(carried over)
+354809  Error message for unsupported platform is unhelpful
+
+(carried over)
+356122  Apparent infinite loop calling GLib g_get_user_special_dir() function
+
+(carried over)
+359264  Memcheck shows 2,064 bytes possibly lost and 20,036 suppressed bytes
+        in simplistic program on OS X El Capitan
+
+(carried over)
+363123  SIGSEGV on Mac OS with very simple threaded code
+        == 349128 [still open]
+
+(carried over)
+365327  Support macOS Sierra (10.12)
+
+(carried over)
+366131  Illegal opcode in OS X 11.0 when using function getpwuid()
+
+=== other/Win32 ========================================================
+
+=== GDB server =========================================================
+
+351792  vgdb doesn't support remote file transfers
+356174  Enhance the embedded gdbserver to allow LLDB to use it
+
+=== Output =============================================================
+
+351857  confusing error message about valid command line option
+352395  Please provide SVN revision info in --version
+358569  Unhandled instructions cause creation of "orphan" stack traces
+        in XML output
+
+=== MPI ================================================================
+
+=== Documentation ======================================================
+
+=== Uncategorised/run ==================================================
+
+(carried over)
+356457  valgrind: m_mallocfree.c:2042 (vgPlain_arena_free):
+        Assertion 'blockSane(a, b)' failed.
+        [Possible V memory corruption?]
+
+(carried over)
+359249  valgrind unable to load 64-bit linux executable
+        linked with -mcmodel=medium
+
+(carried over)
+362223  valgrind: m_commandline.c:79 (read_dot_valgrindrc):
+        Assertion 'n >= 0 && n <= stat_buf.size+1' failed.
+
+(carried over)
+362680  --error-exitcode not honored when file descriptor leaks are found
+
+=== Uncategorised/build ================================================
+
+(carried over)
+358697  valgrind.h: Some code remains even when defining NVALGRIND
+        (we should fix this)
+
+(carried over)
+359202  Add musl libc configure/compile
+
+(carried over)
+359920  Configure fails with relative DESTDIR
+
+(carried over)
+362033  undeclared identifier build failures for getpid(), usleep(),
+        and getuid() [Valkyrie]
+
+(carried over)
+366345  Dirty compile from m_libcbase.c and vgdb-invoker-ptrace.c
+
+=== Intel Compiler problems ============================================
+
+(carried over)
+357010  drd regression tests fail to compile with Intel compiler
+
+(carried over)
+357011  Memcheck regression tests do not generate expected frame numbers
+        if compiled with intel compiler
+
+(carried over)
+357012  Memcheck regression tests do not match expected results
+        if compiled with intel compiler
+
+(carried over)
+357014  Helgrind regression tests do not match expected results
+        if compiled with intel compiler
+
+========================================================================
+========================================================================
+========================================================================
+========================================================================
+========================================================================
+
+Thu 15 Sep 12:55:21 CEST 2016
+
+368863  WARNING: unhandled arm64-linux syscall: 100
+368864  WARNING: unhandled arm64-linux syscall: 262
+368865  WARNING: unhandled arm64-linux syscall: 272
+368866  WARNING: unhandled arm64-linux syscall: 238
+368868  disInstr(arm64): unhandled instruction 0xD53BE000 = cntfrq_el0 (ARMv8)
+        (should fix this for 3.12.1)
+368873  Please add FreeBSD to supported OS list
+368913  WARNING: unhandled arm64-linux syscall: 117
+368914  WARNING: unhandled arm64-linux syscall: 142
+368916  WARNING: unhandled arm64-linux syscall: 234
+368917  WARNING: unhandled arm64-linux syscall: 218
+368918  WARNING: unhandled arm64-linux syscall: 127
+368919  WARNING: unhandled arm64-linux syscall: 274
+368920  WARNING: unhandled arm64-linux syscall: 275
+368921  WARNING: unhandled arm64-linux syscall: 162
+368922  WARNING: unhandled arm64-linux syscall: 161
+368923  WARNING: unhandled arm64-linux syscall: 268
+368924  WARNING: unhandled arm64-linux syscall: 84
+368925  WARNING: unhandled arm64-linux syscall: 130
+368926  WARNING: unhandled arm64-linux syscall: 97
+368960  WARNING: unhandled amd64-linux syscall: 163
+369026  WARNING: unhandled amd64-linux syscall: 169
+369027  WARNING: unhandled amd64-linux syscall: 216 (remap_file_pages)
+369028  WARNING: unhandled amd64-linux syscall: 314 (sched_setattr)
+369029  WARNING: unhandled amd64-linux syscall: 315 (sched_getattr)
+369030  WARNING: unhandled amd64-linux syscall: 171 (setdomainname)
+369031  WARNING: unhandled amd64-linux syscall: 308 (setns)
+369032  WARNING: unhandled amd64-linux syscall: 205 (set_thread_area)
+369033  WARNING: unhandled amd64-linux syscall: 139 (sysfs)
+369034  WARNING: unhandled amd64-linux syscall: 136 (ustat)
+369053  AMD64 fma4 instructions missing 256 bit support
+
+369409  null pointer dereference  in vgPlain_do_syscall
+        possibly a dup of (fixed) 353370
+ 
+369456  callgrind_control failed to find an active callgrind run.
+        OSX specific
+
+369459  valgrind on arm64 violates the ARMv8 spec (ldxr/stxr)
+
+369509  ARMv8.1 LSE instructions are not supported
+369723  __builtin_longjmp not supported in clang/llvm on Android arm64 target
+        Has patch
+
+369854  Valgrind reports an Invalid Read in __intel_new_memcpy
+        Should be handled by --partial-loads-ok=yes
+
+370028  Reduce the number of compiler warnings on MIPS platforms
+370635  arm64 missing syscall getcpu
+        (should fix this for 3.12.1)
+
+371065  www: add CfP for FOSDEM 2017 in valgrind.org NEWS section
+
+Wed 19 Oct 17:07:42 CEST 2016
+
+371128  BCD add and subtract insns on Power BE in 32-bit mode do not work.
+371225  Fix order of timer_{gettime,getoverrun,settime} syscalls on arm64
+371227  Clean AArch64 syscall table
+371396  helgrind and drd pth_cond_destroy_busy testcase hang with
+        new glibc cond var implementation
+! 344139  x86 stack-seg overrides, needed by the Wine people
+371411  Unify fstat64/fstatat64 wrappers
+371439  Get coredump working on arm64
+371471  Valgrind complains about non legit memory leaks on placement new (C++)
+371491  handleAddrOverrides() is truncating the segment base address when
+        ASO prefix is used
+371503  disInstr(arm64): unhandled instruction 0xF89F0000
+371668  ppc64 clobbering of R2 is invalid.
+371770  Memleak trace back for overwritten or freed memory pointers
+371869  support '%' in symbol Z-encodin
+371916  execution tree xtree concept
+371966  No uninitialised values reported with PGI -Mstack_arrays
+371989  PCMPISTRM $0x72 validity bit propagation is imprecise
+372120  c++ demangler demangles symbols which are not c++
+372182  Support more languages/demangling styles than just C++ (and Rust)
+372185  Support of valgrind on ARMv8 with 32 bit executable
+372188  vex amd64->IR: 0x66 0xF 0x3A 0x62 0x4A 0x10 0x10 0x48 0x83 0xC2
+372195  Power PC, xxsel instruction is not always recognized.
+372358  vex amd64->IR: 0xC5 0xFA 0x7F 0x45 0x80 0xC5 0xFA 0x7F 0x4D 0x90
+372504  Hanging on exit_group
+372513  WARNING: unhandled ppc64be-linux syscall: 251
+372600  process loops forever when fatal signals are arriving quickly
+
+Mon 21 Nov 13:13:47 CET 2016
+
+
+========================================================================
+========================================================================
+

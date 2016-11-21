@@ -298,6 +298,8 @@ Thu 15 Sep 12:55:21 CEST 2016
 
 Wed 19 Oct 17:07:42 CEST 2016
 
+344139  x86 stack-seg overrides, needed by the Wine people
+
 ========================================================================
 ========================================================================
 
@@ -426,7 +428,10 @@ MERGED (trunk -> 3_12_BRANCH unless otherwise indicated):
 16080 -> 16089 mips: fix coredump creation in Valgrind
 16081 -> 16090 Add another incompatibility between illumos and Solaris kernels.
 
-(tracked up to and including 16090/3282)
+16095 (B) -> 16099 (T) Build fixes for MacOS X 10.10.5.
+
+(tracked up to and including 16098/3282)
+3.12.0 final is 16098/3282.
 
 ========================================================================
 ========================================================================

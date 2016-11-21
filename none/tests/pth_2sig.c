@@ -14,7 +14,8 @@ void *slavethread(void *arg)
 
 int main(int argc, char **argv)
 {
-    for (int i = 0; i < 10; i++) {
+    int i;
+    for (i = 0; i < 10; i++) {
         pthread_t slave;
         if (pthread_create(&slave, 0, slavethread, 0)) {
             perror("pthread_create");
@@ -26,7 +27,7 @@ int main(int argc, char **argv)
     switch (fork()) {
         case 0: // child
             sleep(2); // Should be enough to ensure (some) threads are created
-            for (int i = 0; i < 20 && kill(pid, SIGTERM) == 0; i++)
+            for (i = 0; i < 20 && kill(pid, SIGTERM) == 0; i++)
                 ;
             exit(0);
         case -1:

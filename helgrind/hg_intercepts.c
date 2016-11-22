@@ -673,7 +673,11 @@ static int thr_join_WRK(thread_t joinee, thread_t *departed, void **thread_retur
 // We wrap two hook procedures called by the gnat gcc Ada runtime
 // that allows helgrind to understand the semantic of Ada task dependencies
 // and termination.
-
+//   procedure Master_Hook
+//     (Dependent    : Task_Id;
+//      Parent       : Task_Id;
+//      Master_Level : Integer);
+// where    type Task_Id is access all Ada_Task_Control_Block;
 // System.Tasking.Debug.Master_Hook is called by a task Dependent to
 // indicate that its master is identified by master+master_level.
 void I_WRAP_SONAME_FNNAME_ZU
@@ -707,6 +711,10 @@ void I_WRAP_SONAME_FNNAME_ZU
 
 // System.Tasking.Debug.Master_Completed_Hook is called by a task to
 // indicate that it has completed a master.
+//  procedure Master_Completed_Hook
+//     (Self_ID      : Task_Id;
+//      Master_Level : Integer);
+// where    type Task_Id is access all Ada_Task_Control_Block;
 // This indicates that all its Dependent tasks (that identified themselves
 // with the Master_Hook call) are terminated. Helgrind can consider
 // at this point that the equivalent of a 'pthread_join' has been done

@@ -68,5 +68,5 @@ destroy a barrier that was never initialised
 
 Thread #x: pthread_barrier_destroy: barrier was never initialised
    at 0x........: pthread_barrier_destroy (hg_intercepts.c:...)
-   by 0x........: main (bar_bad.c:96)
+   by 0x........: main (bar_bad.c:98)
 

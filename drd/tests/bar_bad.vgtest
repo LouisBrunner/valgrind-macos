@@ -1,2 +1,3 @@
 prereq: test -e ../../helgrind/tests/bar_bad && ./supported_libpthread
 prog: ../../helgrind/tests/bar_bad
+vgopts: --fair-sched=try

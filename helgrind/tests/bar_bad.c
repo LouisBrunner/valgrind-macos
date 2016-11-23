@@ -81,6 +81,8 @@ int main ( void )
   /* and now destroy */
   pthread_barrier_destroy(bar4);
 
+  pthread_cancel(slp2);
+
   /* destroy a barrier that was never initialised.  This is a bit
      tricky, in that we have to fill the barrier with bytes which
      ensure that the pthread_barrier_destroy call doesn't crash for

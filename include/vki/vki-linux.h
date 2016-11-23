@@ -1885,6 +1885,7 @@ struct vki_scsi_idlun {
 #define VKI_CDROM_DISC_STATUS		0x5327	/* get CD type information */
 #define VKI_CDROM_GET_CAPABILITY	0x5331	/* get capabilities */
 
+#define VKI_DVD_READ_STRUCT		0x5390  /* read structure */
 #define VKI_CDROM_SEND_PACKET		0x5393	/* send a packet to the drive */
 
 struct vki_cdrom_msf0		

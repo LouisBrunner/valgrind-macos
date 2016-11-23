@@ -5674,7 +5674,10 @@ PRE(sys_ioctl)
    case VKI_CDROM_DISC_STATUS:
    case VKI_CDROMSTOP:
 
-   /* KVM ioctls that dont check for a numeric value as parameter */
+   /* DVD stuff */
+   case VKI_DVD_READ_STRUCT:
+
+   /* KVM ioctls that don't check for a numeric value as parameter */
    case VKI_KVM_S390_ENABLE_SIE:
    case VKI_KVM_CREATE_IRQCHIP:
    case VKI_KVM_S390_INITIAL_RESET:
@@ -9224,6 +9227,10 @@ POST(sys_ioctl)
    case VKI_CDROM_CLEAR_OPTIONS: /* 0x5321 */
       break;
    case VKI_CDROM_GET_CAPABILITY: /* 0x5331 */
+      break;
+
+      /* DVD stuff */
+   case VKI_DVD_READ_STRUCT:
       break;
 
    case VKI_FIGETBSZ:

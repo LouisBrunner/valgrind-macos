@@ -1865,6 +1865,7 @@ struct vki_scsi_idlun {
                                 	           (struct cdrom_tochdr) */
 #define VKI_CDROMREADTOCENTRY		0x5306 /* Read TOC entry 
                                 	           (struct cdrom_tocentry) */
+#define VKI_CDROMSTOP			0x5307 /* Stop the cdrom drive */
 #define VKI_CDROMSUBCHNL		0x530b /* Read subchannel data 
                                 	           (struct cdrom_subchnl) */
 #define VKI_CDROMREADMODE2		0x530c /* Read CDROM mode 2 data (2336 Bytes) 

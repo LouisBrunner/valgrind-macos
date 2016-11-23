@@ -5672,6 +5672,7 @@ PRE(sys_ioctl)
    
    /* CDROM stuff. */
    case VKI_CDROM_DISC_STATUS:
+   case VKI_CDROMSTOP:
 
    /* KVM ioctls that dont check for a numeric value as parameter */
    case VKI_KVM_S390_ENABLE_SIE:
@@ -9188,6 +9189,7 @@ POST(sys_ioctl)
 
       /* CD ROM stuff (??)  */
    case VKI_CDROM_DISC_STATUS:
+   case VKI_CDROMSTOP:
       break;
    case VKI_CDROMSUBCHNL:
       POST_MEM_WRITE(ARG3, sizeof(struct vki_cdrom_subchnl));

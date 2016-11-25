@@ -28,6 +28,8 @@ X86/MacOSX 10.11/12, AMD64/MacOSX 10.11/12 and TILEGX/Linux.
 
 * ================== PLATFORM CHANGES =================
 
+  Support for demangling Rust symbols (n-i-bz)
+
 * ==================== TOOL CHANGES ====================
 
 * Memcheck:
@@ -67,12 +69,16 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
+348616  Wine/valgrind: noted but unhandled ioctl 0x5390 [..] (DVD_READ_STRUCT)
+352767  Wine/valgrind: noted but unhandled ioctl 0x5307 [..] (CDROMSTOP)
 371412  Rename wrap_sys_shmat to sys_shmat like other wrappers
 371869  support '%' in symbol Z-encoding
 371916  execution tree xtree concept
 372120  c++ demangler demangles symbols which are not c++
 372504  Hanging on exit_group
 372600  process loops forever when fatal signals are arriving quickly
+
+
 
 Release 3.12.0 (20 October 2016)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -264,13 +264,14 @@ static void exit_wrk( Int status, Bool gdbserver_call_allowed)
    if (gdbserver_call_allowed && !exit_called) {
       const ThreadId atid = 1; // Arbitrary tid used to call/terminate gdbsrv.
       exit_called = True;
-      if (status != 0 && VG_(gdbserver_stop_at) (VgdbStopAt_ValgrindAbExit)) {
+      if (status != 0 
+          && VgdbStopAtiS(VgdbStopAt_ValgrindAbExit, VG_(clo_vgdb_stop_at))) {
          if (VG_(gdbserver_init_done)()) {
             VG_(umsg)("(action at valgrind abnormal exit) vgdb me ... \n");
             VG_(gdbserver) (atid);
          } else {
-            VG_(umsg)("(action at valgrind abnormal exit) "
-                      "Early valgrind exit : vgdb not yet usable\n");
+            VG_(umsg)("(action at valgrind abnormal exit)\n"
+                      "valgrind exit is too early => vgdb not yet usable\n");
          }
       }
       if (VG_(gdbserver_init_done)()) {

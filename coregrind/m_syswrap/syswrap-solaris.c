@@ -195,7 +195,7 @@ static void run_a_thread_NORETURN(Word tidW)
       VG_TRACK(die_mem_munmap, a, sizeof(struct vki_sc_shared));
 
    /* Deregister thread's stack. */
-   if (tst->os_state.stk_id != (UWord)-1)
+   if (tst->os_state.stk_id != NULL_STK_ID)
       VG_(deregister_stack)(tst->os_state.stk_id);
 
    /* Tell the tool this thread is exiting. */
@@ -708,14 +708,13 @@ static void set_stack(ThreadId tid, vki_stack_t *st)
       new_start = new_end + 1 - new_size;
    }
 
-   if (tst->os_state.stk_id == (UWord)-1) {
+   if (tst->os_state.stk_id == NULL_STK_ID) {
       /* This thread doesn't have a stack set yet. */
       VG_(debugLog)(2, "syswrap-solaris",
                        "Stack set to %#lx-%#lx (new) for thread %u.\n",
                        new_start, new_end, tid);
       tst->os_state.stk_id = VG_(register_stack)(new_start, new_end);
-   }
-   else {
+   } else {
       /* Change a thread stack. */
       VG_(debugLog)(2, "syswrap-solaris",
                        "Stack set to %#lx-%#lx (change) for thread %u.\n",
@@ -7037,7 +7036,7 @@ PRE(sys_lwp_create)
       later by libc by a setustack() call (the getsetcontext syscall). */
    ctst->client_stack_highest_byte = 0;
    ctst->client_stack_szB = 0;
-   vg_assert(ctst->os_state.stk_id == (UWord)(-1));
+   vg_assert(ctst->os_state.stk_id == NULL_STK_ID);
 
    /* Inform a tool that a new thread is created.  This has to be done before
       any other core->tool event is sent. */

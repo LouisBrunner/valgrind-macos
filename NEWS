@@ -47,6 +47,8 @@ X86/MacOSX 10.11/12, AMD64/MacOSX 10.11/12 and TILEGX/Linux.
 
   - Support for --xtree-memory and 'xtmemory [<filename>]>'.
 
+  - addition of client request VALGRIND_HG_GNAT_DEPENDENT_MASTER_JOIN,
+    useful for Ada gnat compiled applications.
 
 * ==================== OTHER CHANGES ====================
 

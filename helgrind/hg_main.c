@@ -4883,7 +4883,7 @@ typedef
       Word  master_level; // level of dependency between master and dependent
       Thread* hg_dependent; // helgrind Thread* for dependent task.
    }
-   GNAT_dmml;
+   GNAT_dmml; // (d)ependent (m)aster (m)aster_(l)evel.
 static XArray* gnat_dmmls;   /* of GNAT_dmml */
 static void gnat_dmmls_INIT (void)
 {
@@ -5106,6 +5106,41 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          else
             *ret = -1;
          break;
+
+      /* This thread (tid) (a master) is informing us that it has
+         seen the termination of a dependent task, and that this should
+         be considered as a join between master and dependent. */
+      case _VG_USERREQ__HG_GNAT_DEPENDENT_MASTER_JOIN: {
+         Word n;
+         const Thread *stayer = map_threads_maybe_lookup( tid );
+         const void *dependent = (void*)args[1];
+         const void *master = (void*)args[2];
+
+         if (0)
+         VG_(printf)("HG_GNAT_DEPENDENT_MASTER_JOIN (tid %d): "
+                     "self_id = %p Thread* = %p dependent %p\n",
+                     (Int)tid, master, stayer, dependent);
+
+         gnat_dmmls_INIT();
+         /* Similar loop as for master completed hook below, but stops at
+            the first matching occurence, only comparing master and
+            dependent. */
+         for (n = VG_(sizeXA) (gnat_dmmls) - 1; n >= 0; n--) {
+            GNAT_dmml *dmml = (GNAT_dmml*) VG_(indexXA)(gnat_dmmls, n);
+            if (dmml->master == master
+                && dmml->dependent == dependent) {
+               if (0)
+               VG_(printf)("quitter %p dependency to stayer %p (join)\n",
+                           dmml->hg_dependent->hbthr,  stayer->hbthr);
+               tl_assert(dmml->hg_dependent->hbthr != stayer->hbthr);
+               generate_quitter_stayer_dependence (dmml->hg_dependent->hbthr,
+                                                   stayer->hbthr);
+               VG_(removeIndexXA) (gnat_dmmls, n);
+               break;
+            }
+         }
+         break;
+      }
 
       /* --- --- Client requests for Helgrind's use only --- --- */
 

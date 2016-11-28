@@ -84,11 +84,14 @@ void ML_(guess_and_register_stack) (Addr sp, ThreadState* tst)
       tst->client_stack_highest_byte = (Addr)VG_PGROUNDUP(sp)-1;
       tst->client_stack_szB = tst->client_stack_highest_byte - seg->start + 1;
 
-      VG_(register_stack)(seg->start, tst->client_stack_highest_byte);
+      tst->os_state.stk_id 
+         = VG_(register_stack)(seg->start, tst->client_stack_highest_byte);
 
       if (debug)
-	 VG_(printf)("tid %u: guessed client stack range [%#lx-%#lx]\n",
-		     tst->tid, seg->start, tst->client_stack_highest_byte);
+	 VG_(printf)("tid %u: guessed client stack range [%#lx-%#lx]"
+                     " as stk_id %lu\n",
+		     tst->tid, seg->start, tst->client_stack_highest_byte,
+                     tst->os_state.stk_id);
    } else {
       VG_(message)(Vg_UserMsg,
                    "!? New thread %u starts with SP(%#lx) unmapped\n",

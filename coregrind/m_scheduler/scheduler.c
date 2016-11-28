@@ -488,6 +488,7 @@ static void os_state_clear(ThreadState *tst)
 {
    tst->os_state.lwpid       = 0;
    tst->os_state.threadgroup = 0;
+   tst->os_state.stk_id = NULL_STK_ID;
 #  if defined(VGO_linux)
    /* no other fields to clear */
 #  elif defined(VGO_darwin)
@@ -504,7 +505,6 @@ static void os_state_clear(ThreadState *tst)
 #  if defined(VGP_x86_solaris)
    tst->os_state.thrptr = 0;
 #  endif
-   tst->os_state.stk_id = (UWord)-1;
    tst->os_state.ustack = NULL;
    tst->os_state.in_door_return = False;
    tst->os_state.door_return_procedure = 0;

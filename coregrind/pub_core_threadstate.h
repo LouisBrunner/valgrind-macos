@@ -114,6 +114,8 @@ typedef
    ThreadArchState;
 
 
+#define NULL_STK_ID (~(UWord)0)
+
 /* OS-specific thread state.  IMPORTANT: if you add fields to this,
    you _must_ add code to os_state_clear() to initialise those
    fields. */
@@ -128,6 +130,12 @@ typedef
       /* runtime details */
       Addr valgrind_stack_base;    // Valgrind's stack (VgStack*)
       Addr valgrind_stack_init_SP; // starting value for SP
+
+      /* Client stack is registered as stk_id (on linux/darwin, by
+         ML_(guess_and_register_stack)).
+         Stack id NULL_STK_ID means that the user stack is not (yet)
+         registered. */
+      UWord stk_id;
 
       /* exit details */
       Word exitcode; // in the case of exitgroup, set by someone else
@@ -280,10 +288,6 @@ typedef
          register is assumed to be always zero and vex->guest_FS_CONST holds
          the 64-bit offset associated with a %fs value of zero. */
 #     endif
-
-      /* Stack id (value (UWord)(-1) means that there is no stack). This
-         tracks a stack that is set in restore_stack(). */
-      UWord stk_id;
 
       /* Simulation of the kernel's lwp->lwp_ustack. Set in the PRE wrapper
          of the getsetcontext syscall, for SETUSTACK. Used in

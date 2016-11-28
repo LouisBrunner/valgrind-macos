@@ -79,7 +79,7 @@ where XXXXXX is the bug number as listed below.
 372120  c++ demangler demangles symbols which are not c++
 372504  Hanging on exit_group
 372600  process loops forever when fatal signals are arriving quickly
-
+373046  Stacks registered by core are never deregistered
 
 
 Release 3.12.0 (20 October 2016)

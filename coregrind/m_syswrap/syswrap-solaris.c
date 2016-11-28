@@ -5157,7 +5157,7 @@ PRE(sys_sigsendsys)
                             psp->p_op);
    }
 
-   vki_id_t pid;
+   UInt pid;
    if ((psp->p_lidtype == VKI_P_PID) && (psp->p_ridtype == VKI_P_ALL)) {
       pid = psp->p_lid;
    } else if ((psp->p_lidtype == VKI_P_ALL) && (psp->p_ridtype == VKI_P_PID)) {
@@ -5168,7 +5168,7 @@ PRE(sys_sigsendsys)
    }
 
    if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg, "sigsendsys: sending signal to process %u\n",
+      VG_(message)(Vg_DebugMsg, "sigsendsys: sending signal to process %d\n",
                    pid);
 
    /* Handle SIGKILL specially. */
@@ -8348,8 +8348,8 @@ PRE(sys_sigqueue)
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,
-                   "sigqueue: signal %lu queued for pid %lu\n",
-                   ARG2, ARG1);
+                   "sigqueue: signal %ld queued for pid %ld\n",
+                   SARG2, SARG1);
 
    /* Check to see if this gave us a pending signal. */
    *flags |= SfPollAfter;

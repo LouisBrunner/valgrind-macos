@@ -6,6 +6,7 @@ dist_noinst_SCRIPTS = \
 	gen-mdg \
 	gsl16test \
 	gsl19test \
+	make_or_upd_vgversion_h \
 	nightly-build-summary \
 	update-demangler \
 	posixtestsuite-1.5.1-diff-results

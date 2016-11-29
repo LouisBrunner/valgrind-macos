@@ -72,6 +72,7 @@ To see details of a given bug, visit
 where XXXXXX is the bug number as listed below.
 
 348616  Wine/valgrind: noted but unhandled ioctl 0x5390 [..] (DVD_READ_STRUCT)
+352395  Please provide SVN revision info in --version -v
 352767  Wine/valgrind: noted but unhandled ioctl 0x5307 [..] (CDROMSTOP)
 371412  Rename wrap_sys_shmat to sys_shmat like other wrappers
 371869  support '%' in symbol Z-encoding
@@ -80,7 +81,6 @@ where XXXXXX is the bug number as listed below.
 372504  Hanging on exit_group
 372600  process loops forever when fatal signals are arriving quickly
 373046  Stacks registered by core are never deregistered
-
 
 Release 3.12.0 (20 October 2016)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

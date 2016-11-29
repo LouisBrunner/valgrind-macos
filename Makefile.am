@@ -62,7 +62,7 @@ vglib_DATA = default.supp
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = valgrind.pc
 
-BUILT_SOURCES  = default.supp valgrind.pc
+BUILT_SOURCES  = default.supp vgversion.h valgrind.pc
 CLEANFILES     = default.supp
 
 default.supp: $(DEFAULT_SUPP_FILES)
@@ -116,10 +116,13 @@ EXTRA_DIST = \
 	valgrind.spec \
 	autogen.sh
 
+dist-hook: vgversion.h
+	cp -p include/vgversion.h $(distdir)/include/vgversion.h
+
 dist_noinst_SCRIPTS = \
 	vg-in-place
 
-all-local: default.supp
+all-local: default.supp vgversion.h
 	mkdir -p $(inplacedir)
 	rm -f $(inplacedir)/default.supp
 	ln -s ../default.supp $(inplacedir)
@@ -129,3 +132,7 @@ clean-local:
 
 # Need config.h in the installed tree, since some files depend on it
 pkginclude_HEADERS = config.h
+
+# vgversion.h defines accurate versions to report with -v --version
+vgversion.h:
+	auxprogs/make_or_upd_vgversion_h

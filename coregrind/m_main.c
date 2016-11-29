@@ -28,6 +28,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#include "vgversion.h"
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_vkiscnums.h"
@@ -378,6 +379,7 @@ static void early_process_cmd_line_options ( /*OUT*/Int* need_help,
 {
    UInt   i;
    HChar* str;
+   Int need_version = 0;
 
    vg_assert( VG_(args_for_valgrind) );
 
@@ -387,12 +389,13 @@ static void early_process_cmd_line_options ( /*OUT*/Int* need_help,
       str = * (HChar**) VG_(indexXA)( VG_(args_for_valgrind), i );
       vg_assert(str);
 
-      // Nb: the version string goes to stdout.
-      if VG_XACT_CLO(str, "--version", VG_(log_output_sink).fd, 1) {
-         VG_(log_output_sink).is_socket = False;
-         VG_(printf)("valgrind-" VERSION "\n");
-         VG_(exit)(0);
-      }
+      if VG_XACT_CLO(str, "--version", need_version, 1) {}
+      else if (VG_STREQ(str, "-v") ||
+               VG_STREQ(str, "--verbose"))
+         VG_(clo_verbosity)++;
+      else if (VG_STREQ(str, "-q") ||
+               VG_STREQ(str, "--quiet"))
+         VG_(clo_verbosity)--;
       else if VG_XACT_CLO(str, "--help", *need_help, *need_help+1) {}
       else if VG_XACT_CLO(str, "-h",     *need_help, *need_help+1) {}
 
@@ -419,6 +422,17 @@ static void early_process_cmd_line_options ( /*OUT*/Int* need_help,
                             "enable-outer,no-inner-prefix,"
                             "no-nptl-pthread-stackcache",
                             VG_(clo_sim_hints)) {}
+   }
+
+   if (need_version) {
+      // Nb: the version string goes to stdout.
+      VG_(log_output_sink).fd = 1;
+      VG_(log_output_sink).is_socket = False;
+      if (VG_(clo_verbosity) <= 1)
+         VG_(printf)("valgrind-" VERSION "\n");
+      else
+         VG_(printf)("valgrind-" VERSION "-" VGSVN "-vex-" VEXSVN "\n");
+      VG_(exit)(0);
    }
 
    /* For convenience */
@@ -557,6 +571,10 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
       else if VG_STREQN(20, arg, "--command-line-only=") {}
       else if VG_STREQ(     arg, "--")                   {}
       else if VG_STREQ(     arg, "-d")                   {}
+      else if VG_STREQ(     arg, "-q")                   {}
+      else if VG_STREQ(     arg, "--quiet")              {}
+      else if VG_STREQ(     arg, "-v")                   {}
+      else if VG_STREQ(     arg, "--verbose")            {}
       else if VG_STREQN(17, arg, "--max-stackframe=")    {}
       else if VG_STREQN(17, arg, "--main-stacksize=")    {}
       else if VG_STREQN(14, arg, "--max-threads=")       {}
@@ -587,15 +605,8 @@ void main_process_cmd_line_options ( /*OUT*/Bool* logging_to_fd,
              " (or --vex-iropt-register-updates=allregs-at-each-insn)\n");
       }
 
-      // These options are new.
-      else if (VG_STREQ(arg, "-v") ||
-               VG_STREQ(arg, "--verbose"))
-         VG_(clo_verbosity)++;
-
-      else if (VG_STREQ(arg, "-q") ||
-               VG_STREQ(arg, "--quiet"))
-         VG_(clo_verbosity)--;
-
+      /* These options are new, not yet handled by
+         early_process_cmd_line_options. */
       else if VG_BOOL_CLO(arg, "--sigill-diagnostics", VG_(clo_sigill_diag))
          sigill_diag_set = True;
 

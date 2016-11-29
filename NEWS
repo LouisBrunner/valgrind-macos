@@ -74,6 +74,8 @@ where XXXXXX is the bug number as listed below.
 348616  Wine/valgrind: noted but unhandled ioctl 0x5390 [..] (DVD_READ_STRUCT)
 352395  Please provide SVN revision info in --version -v
 352767  Wine/valgrind: noted but unhandled ioctl 0x5307 [..] (CDROMSTOP)
+358213  helgrind/drd bar_bad testcase hangs or crashes with new glibc pthread
+        barrier implementation
 371412  Rename wrap_sys_shmat to sys_shmat like other wrappers
 371869  support '%' in symbol Z-encoding
 371916  execution tree xtree concept

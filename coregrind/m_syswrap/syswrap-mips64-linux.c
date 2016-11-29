@@ -317,6 +317,7 @@ DECL_TEMPLATE (mips_linux, sys_ptrace);
 DECL_TEMPLATE (mips_linux, sys_mmap);
 DECL_TEMPLATE (mips_linux, sys_rt_sigreturn);
 DECL_TEMPLATE (mips_linux, sys_pipe);
+DECL_TEMPLATE (mips_linux, sys_fadvise64);
 
 PRE(sys_tee)
 {
@@ -667,6 +668,13 @@ POST(sys_prctl)
    WRAPPER_POST_NAME(linux, sys_prctl)(tid, arrghs, status);
 }
 
+PRE(sys_fadvise64)
+{
+   PRINT("sys_fadvise64 ( %ld, %ld, %lu, %ld )", SARG1, SARG2, ARG3, SARG4);
+   PRE_REG_READ4(long, "fadvise64",
+                 int, fd, vki_loff_t, offset, vki_loff_t, len, int, advice);
+}
+
 #undef PRE
 #undef POST
 
@@ -898,7 +906,7 @@ static SyscallTableEntry syscall_main_table[] = {
    /* LINXY(__NR_fcntl64,sys_fcntl64), */
    LINX_ (__NR_set_tid_address, sys_set_tid_address),
    LINX_ (__NR_semtimedop, sys_semtimedop),
-   LINX_ (__NR_fadvise64, sys_fadvise64),
+   PLAX_ (__NR_fadvise64, sys_fadvise64),
    LINXY (__NR_timer_create, sys_timer_create),
    LINXY (__NR_timer_settime, sys_timer_settime),
    LINXY (__NR_timer_gettime, sys_timer_gettime),

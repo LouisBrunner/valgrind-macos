@@ -518,6 +518,7 @@ DECL_TEMPLATE (mips_linux, sys_mmap);
 DECL_TEMPLATE (mips_linux, sys_mmap2);
 DECL_TEMPLATE (mips_linux, sys_stat64);
 DECL_TEMPLATE (mips_linux, sys_lstat64);
+DECL_TEMPLATE (mips_linux, sys_fadvise64);
 DECL_TEMPLATE (mips_linux, sys_fstatat64);
 DECL_TEMPLATE (mips_linux, sys_fstat64);
 DECL_TEMPLATE (mips_linux, sys_clone);
@@ -588,6 +589,22 @@ PRE(sys_stat64)
 POST(sys_stat64)
 {
   POST_MEM_WRITE (ARG2, sizeof (struct vki_stat64));
+}
+
+PRE(sys_fadvise64)
+{
+    PRINT("sys_fadvise64 ( %ld, %llu, %llu, %ld )",
+          SARG1, MERGE64(ARG3,ARG4), MERGE64(ARG5, ARG6), SARG7);
+
+   if (VG_(tdict).track_pre_reg_read) {
+      PRRSN;
+      PRA1("fadvise64", int, fd);
+      PRA3("fadvise64", vki_u32, MERGE64_FIRST(offset));
+      PRA4("fadvise64", vki_u32, MERGE64_SECOND(offset));
+      PRA5("fadvise64", vki_u32, MERGE64_FIRST(len));
+      PRA6("fadvise64", vki_u32, MERGE64_SECOND(len));
+      PRA7("fadvise64", int, advice);
+   }
 }
 
 PRE(sys_fstatat64)
@@ -1101,7 +1118,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_epoll_wait,             sys_epoll_wait),              // 250
    //..
    LINX_ (__NR_set_tid_address,        sys_set_tid_address),         // 252
-   LINX_ (__NR_fadvise64,              sys_fadvise64),               // 254
+   PLAX_ (__NR_fadvise64,              sys_fadvise64),               // 254
    GENXY (__NR_statfs64,               sys_statfs64),                // 255
    GENXY (__NR_fstatfs64,              sys_fstatfs64),               // 256
    //..

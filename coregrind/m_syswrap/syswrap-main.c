@@ -549,8 +549,9 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       canonical->arg2  = gst->guest_r5;    // a1
       canonical->arg3  = gst->guest_r6;    // a2
       canonical->arg4  = gst->guest_r7;    // a3
-      canonical->arg5  = *((UInt*) (gst->guest_r29 + 16));    // 16(guest_SP/sp)
-      canonical->arg6  = *((UInt*) (gst->guest_r29 + 20));    // 20(sp)
+      canonical->arg5  = *((UInt*) (gst->guest_r29 + 16));    // 16(guest_SP)
+      canonical->arg6  = *((UInt*) (gst->guest_r29 + 20));    // 20(guest_SP)
+      canonical->arg7  = *((UInt*) (gst->guest_r29 + 24));    // 24(guest_SP)
       canonical->arg8 = 0;
    } else {
       // Fixme hack handle syscall()
@@ -1490,7 +1491,7 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
    layout->o_arg4   = OFFSET_mips32_r7;
    layout->s_arg5   = sizeof(UWord) * 4;
    layout->s_arg6   = sizeof(UWord) * 5;
-   layout->uu_arg7  = -1; /* impossible value */
+   layout->s_arg7   = sizeof(UWord) * 6;
    layout->uu_arg8  = -1; /* impossible value */
 
 #elif defined(VGP_mips64_linux)

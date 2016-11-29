@@ -110,7 +110,7 @@ typedef
       Int o_arg4;
       Int s_arg5;
       Int s_arg6;
-      Int uu_arg7;
+      Int s_arg7;
       Int uu_arg8;
 #     elif defined(VGP_x86_darwin) || defined(VGP_x86_solaris)
       Int s_arg1;
@@ -181,16 +181,7 @@ typedef
    fixed sized table exposed to the caller, but that's too inflexible;
    hence now use a function which can do arbitrary messing around to
    find the required entry. */
-#if defined(VGP_mips32_linux)
-   /* Up to 6 parameters, 4 in registers 2 on stack. */
-#  define PRA1(s,t,a) PRRAn(1,s,t,a)
-#  define PRA2(s,t,a) PRRAn(2,s,t,a)
-#  define PRA3(s,t,a) PRRAn(3,s,t,a)
-#  define PRA4(s,t,a) PRRAn(4,s,t,a)
-#  define PRA5(s,t,a) PSRAn(5,s,t,a)
-#  define PRA6(s,t,a) PSRAn(6,s,t,a)
 
-#endif
 #if defined(VGO_linux)
 extern
 SyscallTableEntry* ML_(get_linux_syscall_entry)( UInt sysno );
@@ -407,6 +398,7 @@ static inline UWord getERR ( SyscallStatus* st ) {
 #  define PRA4(s,t,a) PRRAn(4,s,t,a)
 #  define PRA5(s,t,a) PSRAn(5,s,t,a)
 #  define PRA6(s,t,a) PSRAn(6,s,t,a)
+#  define PRA7(s,t,a) PSRAn(7,s,t,a)
 
 #elif defined(VGO_linux) && !defined(VGP_mips32_linux)
    /* Up to 6 parameters, all in registers. */
@@ -637,6 +629,19 @@ static inline UWord getERR ( SyscallStatus* st ) {
 #define POST_FIELD_WRITE(zzfield) \
     POST_MEM_WRITE((UWord)&zzfield, sizeof(zzfield))
 
+// Macros to support 64-bit syscall args split into two 32 bit values
+#define LOHI64(lo,hi)   ( ((ULong)(lo)) | (((ULong)(hi)) << 32) )
+#if defined(VG_LITTLEENDIAN)
+#define MERGE64(lo,hi)   ( ((ULong)(lo)) | (((ULong)(hi)) << 32) )
+#define MERGE64_FIRST(name) name##_low
+#define MERGE64_SECOND(name) name##_high
+#elif defined(VG_BIGENDIAN)
+#define MERGE64(hi,lo)   ( ((ULong)(lo)) | (((ULong)(hi)) << 32) )
+#define MERGE64_FIRST(name) name##_high
+#define MERGE64_SECOND(name) name##_low
+#else
+#error Unknown endianness
+#endif
 
 #endif   // __PRIV_TYPES_N_MACROS_H
 

@@ -2429,19 +2429,6 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
 #define PRE(name)      DEFN_PRE_TEMPLATE(generic, name)
 #define POST(name)     DEFN_POST_TEMPLATE(generic, name)
 
-// Macros to support 64-bit syscall args split into two 32 bit values
-#if defined(VG_LITTLEENDIAN)
-#define MERGE64(lo,hi)   ( ((ULong)(lo)) | (((ULong)(hi)) << 32) )
-#define MERGE64_FIRST(name) name##_low
-#define MERGE64_SECOND(name) name##_high
-#elif defined(VG_BIGENDIAN)
-#define MERGE64(hi,lo)   ( ((ULong)(lo)) | (((ULong)(hi)) << 32) )
-#define MERGE64_FIRST(name) name##_high
-#define MERGE64_SECOND(name) name##_low
-#else
-#error Unknown endianness
-#endif
-
 PRE(sys_exit)
 {
    ThreadState* tst;

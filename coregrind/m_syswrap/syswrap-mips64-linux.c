@@ -84,12 +84,30 @@ asm (
 ".text\n"
 ".globl vgModuleLocal_call_on_new_stack_0_1\n"
 "vgModuleLocal_call_on_new_stack_0_1:\n"
-"   move $29, $4\n"  /* set stack */
-"   move $4,  $7\n"  /* arg1 to $4 */
+"   move $29, $4\n"   /* set stack */
+"   move $4,  $7\n"   /* arg1 to $4 */
 "   move $25, $6\n"
-"   move $31, $5\n"  /* retaddr to $ra */
-"   jr $25\n"        /* jump to f */
-"   break 0x7\n"     /* should never get here */
+"   move $31, $5\n"   /* retaddr to $ra */
+"   li   $2, 0\n\t"   /* zero all GP regs */
+"   li   $3, 0\n\t"
+"   li   $5, 0\n\t"
+"   li   $6, 0\n\t"
+"   li   $7, 0\n\t"
+"   li   $12, 0\n\t"
+"   li   $13, 0\n\t"
+"   li   $14, 0\n\t"
+"   li   $15, 0\n\t"
+"   li   $16, 0\n\t"
+"   li   $17, 0\n\t"
+"   li   $18, 0\n\t"
+"   li   $19, 0\n\t"
+"   li   $20, 0\n\t"
+"   li   $21, 0\n\t"
+"   li   $22, 0\n\t"
+"   li   $23, 0\n\t"
+"   li   $24, 0\n\t"
+"   jr $25\n"         /* jump to f */
+"   break 0x7\n"      /* should never get here */
 ".previous\n"
 );
 

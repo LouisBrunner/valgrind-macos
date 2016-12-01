@@ -77,41 +77,41 @@
    stack, and use 'retaddr' as f's return-to address.  Also, clear all
    the integer registers before entering f.*/ 
 
-__attribute__ ((noreturn)) 
-void ML_ (call_on_new_stack_0_1) (Addr stack, Addr retaddr, 
+__attribute__ ((noreturn))
+void ML_ (call_on_new_stack_0_1) (Addr stack, Addr retaddr,
                                   void (*f) (Word), Word arg1);
 //    a0 = stack
 //    a1 = retaddr
 //    a2 = f
 //    a3 = arg1
 asm (
-".text\n" 
-".globl vgModuleLocal_call_on_new_stack_0_1\n" 
+".text\n"
+".globl vgModuleLocal_call_on_new_stack_0_1\n"
 "vgModuleLocal_call_on_new_stack_0_1:\n" 
-"   move	$29, $4\n\t"	// stack to %sp
-"   move	$25, $6\n\t"	// f to t9/$25 
-"   move 	$4, $7\n\t"	// arg1 to $a0
-"   li 		$2, 0\n\t"	// zero all GP regs
-"   li 		$3, 0\n\t" 
-"   li 		$5, 0\n\t" 
-"   li 		$6, 0\n\t" 
-"   li 		$7, 0\n\t" 
-
-"   li 		$12, 0\n\t" 
-"   li 		$13, 0\n\t" 
-"   li 		$14, 0\n\t" 
-"   li 		$15, 0\n\t" 
-"   li 		$16, 0\n\t" 
-"   li 		$17, 0\n\t" 
-"   li 		$18, 0\n\t" 
-"   li 		$19, 0\n\t" 
-"   li 		$20, 0\n\t" 
-"   li 		$21, 0\n\t" 
-"   li 		$22, 0\n\t" 
-"   li 		$23, 0\n\t" 
-"   li 		$24, 0\n\t" 
-"   jr 		$25\n\t"	// jump to dst
-"   break	0x7\n"	// should never get here
+"   move  $29, $4\n\t"  // stack to %sp
+"   move  $31, $5\n\t"  // retaddr to $ra
+"   move  $25, $6\n\t"  // f to t9/$25
+"   move  $4, $7\n\t"   // arg1 to $a0
+"   li    $2, 0\n\t"    // zero all GP regs
+"   li    $3, 0\n\t"
+"   li    $5, 0\n\t"
+"   li    $6, 0\n\t"
+"   li    $7, 0\n\t"
+"   li    $12, 0\n\t"
+"   li    $13, 0\n\t"
+"   li    $14, 0\n\t"
+"   li    $15, 0\n\t"
+"   li    $16, 0\n\t"
+"   li    $17, 0\n\t"
+"   li    $18, 0\n\t"
+"   li    $19, 0\n\t"
+"   li    $20, 0\n\t"
+"   li    $21, 0\n\t"
+"   li    $22, 0\n\t"
+"   li    $23, 0\n\t"
+"   li    $24, 0\n\t"
+"   jr    $25\n\t"      // jump to dst
+"   break 0x7\n"        // should never get here
 ".previous\n" 
 );
 

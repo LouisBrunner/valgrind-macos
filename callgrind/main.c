@@ -1975,6 +1975,16 @@ void CLG_(post_clo_init)(void)
                 "sp-at-mem-access\n");
    }
 
+   if (CLG_(clo).collect_systime) {
+      VG_(needs_syscall_wrapper)(CLG_(pre_syscalltime),
+                                 CLG_(post_syscalltime));
+      syscalltime = CLG_MALLOC("cl.main.pci.1",
+                               VG_N_THREADS * sizeof syscalltime[0]);
+      for (UInt i = 0; i < VG_N_THREADS; ++i) {
+         syscalltime[i] = 0;
+      }
+   }
+
    if (VG_(clo_px_file_backed) != VexRegUpdSpAtMemAccess) {
       CLG_DEBUG(1, " Using user specified value for "
                 "--px-file-backed\n");
@@ -2063,8 +2073,6 @@ void CLG_(pre_clo_init)(void)
 
     VG_(needs_client_requests)(CLG_(handle_client_request));
     VG_(needs_print_stats)    (clg_print_stats);
-    VG_(needs_syscall_wrapper)(CLG_(pre_syscalltime),
-			       CLG_(post_syscalltime));
 
     VG_(track_start_client_code)  ( & clg_start_client_code_callback );
     VG_(track_pre_deliver_signal) ( & CLG_(pre_signal) );
@@ -2072,11 +2080,6 @@ void CLG_(pre_clo_init)(void)
 
     CLG_(set_clo_defaults)();
 
-    syscalltime = CLG_MALLOC("cl.main.pci.1",
-                             VG_N_THREADS * sizeof syscalltime[0]);
-    for (UInt i = 0; i < VG_N_THREADS; ++i) {
-       syscalltime[i] = 0;
-    }
 }
 
 VG_DETERMINE_INTERFACE_VERSION(CLG_(pre_clo_init))

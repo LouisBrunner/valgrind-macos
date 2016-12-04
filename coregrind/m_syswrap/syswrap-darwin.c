@@ -226,7 +226,7 @@ static void run_a_thread_NORETURN ( Word tidW )
          "WARNING: of the VALGRIND_DISABLE_ERROR_REPORTING macros.\n"
       );
       VG_(debugLog)(
-         1, "syswrap-linux", 
+         1, "syswrap-darwin", 
             "run_a_thread_NORETURN(tid=%u): "
             "WARNING: exiting thread has err_disablement_level = %u\n",
             tid, tst->err_disablement_level

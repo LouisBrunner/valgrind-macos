@@ -53,6 +53,7 @@
 #include "pub_core_scheduler.h"
 #include "pub_core_sigframe.h"      // For VG_(sigframe_destroy)()
 #include "pub_core_signals.h"
+#include "pub_core_stacks.h"
 #include "pub_core_syscall.h"
 #include "pub_core_syswrap.h"
 #include "pub_core_tooliface.h"
@@ -204,6 +205,10 @@ static void run_a_thread_NORETURN ( Word tidW )
 
    c = VG_(count_living_threads)();
    vg_assert(c >= 1); /* stay sane */
+
+   /* Deregister thread's stack. */
+   if (tst->os_state.stk_id != NULL_STK_ID)
+      VG_(deregister_stack)(tst->os_state.stk_id);
 
    // Tell the tool this thread is exiting
    VG_TRACK( pre_thread_ll_exit, tid );

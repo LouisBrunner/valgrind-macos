@@ -60,6 +60,54 @@
    __asm__ __volatile__( "li 11, 0" : : :/*trash*/"r11" ); \
    __asm__ __volatile__( "li 12, 0" : : :/*trash*/"r12" ); \
   } while (0)
+#elif (__mips == 32)
+#define CLEAR_CALLER_SAVED_REGS                                              \
+   do {                                                                      \
+      __asm__ __volatile__ ("move $1,  $0 \n\t"   /* at = 0 */               \
+                            "move $2,  $0 \n\t"   /* v0 = 0 */               \
+                            "move $3,  $0 \n\t"   /* v1 = 0 */               \
+                            "move $4,  $0 \n\t"   /* a0 = 0 */               \
+                            "move $5,  $0 \n\t"   /* a1 = 0 */               \
+                            "move $6,  $0 \n\t"   /* a2 = 0 */               \
+                            "move $7,  $0 \n\t"   /* a3 = 0 */               \
+                            "move $8,  $0 \n\t"   /* t0 = 0 */               \
+                            "move $9,  $0 \n\t"   /* t1 = 0 */               \
+                            "move $10, $0 \n\t"   /* t2 = 0 */               \
+                            "move $11, $0 \n\t"   /* t3 = 0 */               \
+                            "move $12, $0 \n\t"   /* t4 = 0 */               \
+                            "move $13, $0 \n\t"   /* t5 = 0 */               \
+                            "move $14, $0 \n\t"   /* t6 = 0 */               \
+                            "move $15, $0 \n\t"   /* t7 = 0 */               \
+                            "move $24, $0 \n\t"   /* t8 = 0 */               \
+                            "move $25, $0 \n\t"   /* t9 = 0 */               \
+                            : : : "$1", "$2", "$3", "$4", "$5", "$6", "$7",  \
+                                  "$8", "$9", "$10", "$11", "$12", "$13",    \
+                                  "$14", "$15", "$24", "$25");               \
+   } while (0)
+#elif (__mips == 64)
+#define CLEAR_CALLER_SAVED_REGS                                              \
+   do {                                                                      \
+      __asm__ __volatile__ ("move $1,  $0 \n\t"  /* at = 0 */                \
+                            "move $2,  $0 \n\t"  /* v0 = 0 */                \
+                            "move $3,  $0 \n\t"  /* v1 = 0 */                \
+                            "move $4,  $0 \n\t"  /* a0 = 0 */                \
+                            "move $5,  $0 \n\t"  /* a1 = 0 */                \
+                            "move $6,  $0 \n\t"  /* a2 = 0 */                \
+                            "move $7,  $0 \n\t"  /* a3 = 0 */                \
+                            "move $8,  $0 \n\t"  /* a4 = 0 */                \
+                            "move $9,  $0 \n\t"  /* a5 = 0 */                \
+                            "move $10, $0 \n\t"  /* a6 = 0 */                \
+                            "move $11, $0 \n\t"  /* a7 = 0 */                \
+                            "move $12, $0 \n\t"  /* t0 = 0 */                \
+                            "move $13, $0 \n\t"  /* t1 = 0 */                \
+                            "move $14, $0 \n\t"  /* t2 = 0 */                \
+                            "move $15, $0 \n\t"  /* t3 = 0 */                \
+                            "move $24, $0 \n\t"  /* t8 = 0 */                \
+                            "move $25, $0 \n\t"  /* t9 = 0 */                \
+                            : : : "$1", "$2", "$3", "$4", "$5", "$6", "$7",  \
+                                  "$8", "$9", "$10", "$11", "$12", "$13",    \
+                                  "$14", "$15", "$24", "$25");               \
+   } while (0)
 #else
 #define CLEAR_CALLER_SAVED_REGS  /*nothing*/
 #endif

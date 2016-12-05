@@ -10,6 +10,12 @@ endif
 if VGCONF_ARCHS_INCLUDE_AMD64
 SUBDIRS += amd64
 endif
+if VGCONF_ARCHS_INCLUDE_MIPS32
+SUBDIRS += mips32
+endif
+if VGCONF_ARCHS_INCLUDE_MIPS64
+SUBDIRS += mips64
+endif
 if VGCONF_ARCHS_INCLUDE_PPC32
 SUBDIRS += ppc32
 endif
@@ -50,7 +56,7 @@ endif
 
 DIST_SUBDIRS = x86 amd64 ppc32 ppc64 s390x linux \
 		darwin solaris x86-linux amd64-linux arm64-linux \
-		x86-solaris amd64-solaris \
+		x86-solaris amd64-solaris mips32 mips64 \
 		common .
 
 dist_noinst_SCRIPTS = \

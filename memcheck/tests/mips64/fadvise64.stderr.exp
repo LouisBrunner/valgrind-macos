@@ -1,0 +1,16 @@
+Syscall param fadvise64(fd) contains uninitialised byte(s)
+   ...
+   by 0x........: main (fadvise64.c:10)
+
+Syscall param fadvise64(offset) contains uninitialised byte(s)
+   ...
+   by 0x........: main (fadvise64.c:11)
+
+Syscall param fadvise64(len) contains uninitialised byte(s)
+   ...
+   by 0x........: main (fadvise64.c:12)
+
+Syscall param fadvise64(advice) contains uninitialised byte(s)
+   ...
+   by 0x........: main (fadvise64.c:13)
+

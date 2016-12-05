@@ -62,6 +62,7 @@ int main(void)
    // See leak-cases.c for why we do the work in f().
    f();
 
+   CLEAR_CALLER_SAVED_REGS;
    GET_FINAL_LEAK_COUNTS;
 
    PRINT_LEAK_COUNTS(stderr);

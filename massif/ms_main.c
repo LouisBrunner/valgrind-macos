@@ -627,11 +627,6 @@ static void sub_heap_xt(Xecu where, SizeT req_szB, Bool exclude_first_entry)
 // limit again, we again cull and then take them even more slowly, and so
 // on.
 
-// Time is measured either in i or ms or bytes, depending on the --time-unit
-// option.  It's a Long because it can exceed 32-bits reasonably easily, and
-// because we need to allow negative values to represent unset times.
-typedef Long Time;
-
 #define UNUSED_SNAPSHOT_TIME  -333  // A conspicuous negative number.
 
 typedef

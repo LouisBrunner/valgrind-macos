@@ -6,8 +6,8 @@ Continuing.
 Breakpoint 1, f () at leak-tree.c:42
 42	   t->l    = mk();   // B
 Continuing.
-Breakpoint 2, main () at leak-tree.c:67
-67	   PRINT_LEAK_COUNTS(stderr);
+Breakpoint 2, main () at leak-tree.c:68
+68	   PRINT_LEAK_COUNTS(stderr);
 Searching for pointers to 0x........
 *0x........ points at 0x........
  Address 0x........ is 0 bytes inside data symbol "t"

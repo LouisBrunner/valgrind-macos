@@ -46,84 +46,87 @@
 
 typedef
    struct {
+      /*    0 */ ULong host_EvC_FAILADDR;
+      /*    8 */ UInt host_EvC_COUNTER;
+      /*   12 */ UInt _padding1;
+
       /* CPU Registers */
-      /*   0 */ ULong guest_r0;   /* Hardwired to 0 */
-      /*   8 */ ULong guest_r1;   /* Assembler temporary */
-      /*   16 */ ULong guest_r2;  /* Values for function returns ...*/
-      /*   24 */ ULong guest_r3;  /* ...and expression evaluation */
-      /*   32 */ ULong guest_r4;  /* Function arguments */
-      /*   40 */ ULong guest_r5;
-      /*   48 */ ULong guest_r6;
-      /*   56 */ ULong guest_r7;
-      /*   64 */ ULong guest_r8;
-      /*   72 */ ULong guest_r9;
-      /*   80 */ ULong guest_r10;
-      /*   88 */ ULong guest_r11;
-      /*   96 */ ULong guest_r12;  /* Temporaries */
-      /*   104 */ ULong guest_r13;
-      /*   112 */ ULong guest_r14;
-      /*   120 */ ULong guest_r15;
-      /*   128 */ ULong guest_r16;  /* Saved temporaries */
-      /*   136 */ ULong guest_r17;
-      /*   144 */ ULong guest_r18;
-      /*   152 */ ULong guest_r19;
-      /*   160 */ ULong guest_r20;
-      /*   168 */ ULong guest_r21;
-      /*   176 */ ULong guest_r22;
-      /*   184 */ ULong guest_r23;
-      /*   192 */ ULong guest_r24;  /* Temporaries */
-      /*   200 */ ULong guest_r25;
-      /*   208 */ ULong guest_r26;  /* Reserved for OS kernel */
-      /*   216 */ ULong guest_r27;
-      /*   224 */ ULong guest_r28;  /* Global pointer */
-      /*   232 */ ULong guest_r29;  /* Stack pointer */
-      /*   240 */ ULong guest_r30;  /* Frame pointer */
-      /*   248 */ ULong guest_r31;  /* Return address */
-      /*   256 */ ULong guest_PC;   /* Program counter */
-      /*   264 */ ULong guest_HI;   /* Multiply and divide reg higher result */
-      /*   272 */ ULong guest_LO;   /* Multiply and divide reg lower result */
+      /*   16 */ ULong guest_r0;   /* Hardwired to 0. */
+      /*   24 */ ULong guest_r1;   /* Assembler temporary */
+      /*   32 */ ULong guest_r2;   /* Values for function returns ...*/
+      /*   40 */ ULong guest_r3;   /* ... and expression evaluation */
+      /*   48 */ ULong guest_r4;   /* Function arguments */
+      /*   56 */ ULong guest_r5;
+      /*   64 */ ULong guest_r6;
+      /*   72 */ ULong guest_r7;
+      /*   80 */ ULong guest_r8;
+      /*   88 */ ULong guest_r9;
+      /*   96 */ ULong guest_r10;
+      /*  104 */ ULong guest_r11;
+      /*  112 */ ULong guest_r12;  /* Temporaries */
+      /*  120 */ ULong guest_r13;
+      /*  128 */ ULong guest_r14;
+      /*  136 */ ULong guest_r15;
+      /*  144 */ ULong guest_r16;  /* Saved temporaries */
+      /*  152 */ ULong guest_r17;
+      /*  160 */ ULong guest_r18;
+      /*  168 */ ULong guest_r19;
+      /*  176 */ ULong guest_r20;
+      /*  184 */ ULong guest_r21;
+      /*  192 */ ULong guest_r22;
+      /*  200 */ ULong guest_r23;
+      /*  208 */ ULong guest_r24;  /* Temporaries */
+      /*  216 */ ULong guest_r25;
+      /*  224 */ ULong guest_r26;  /* Reserved for OS kernel */
+      /*  232 */ ULong guest_r27;
+      /*  240 */ ULong guest_r28;  /* Global pointer */
+      /*  248 */ ULong guest_r29;  /* Stack pointer */
+      /*  256 */ ULong guest_r30;  /* Frame pointer */
+      /*  264 */ ULong guest_r31;  /* Return address */
+      /*  272 */ ULong guest_PC;   /* Program counter */
+      /*  280 */ ULong guest_HI;   /* Multiply and divide reg higher result */
+      /*  288 */ ULong guest_LO;   /* Multiply and divide reg lower result */
 
       /* FPU Registers */
-      /*   280 */ ULong guest_f0;   /* Floting point gen purpose registers */
-      /*   288 */ ULong guest_f1;
-      /*   296 */ ULong guest_f2;
-      /*   304 */ ULong guest_f3;
-      /*   312 */ ULong guest_f4;
-      /*   320 */ ULong guest_f5;
-      /*   328 */ ULong guest_f6;
-      /*   336 */ ULong guest_f7;
-      /*   344 */ ULong guest_f8;
-      /*   352 */ ULong guest_f9;
-      /*   360 */ ULong guest_f10;
-      /*   368 */ ULong guest_f11;
-      /*   376 */ ULong guest_f12;
-      /*   384 */ ULong guest_f13;
-      /*   392 */ ULong guest_f14;
-      /*   400 */ ULong guest_f15;
-      /*   408 */ ULong guest_f16;
-      /*   416 */ ULong guest_f17;
-      /*   424 */ ULong guest_f18;
-      /*   432 */ ULong guest_f19;
-      /*   440 */ ULong guest_f20;
-      /*   448 */ ULong guest_f21;
-      /*   456 */ ULong guest_f22;
-      /*   464 */ ULong guest_f23;
-      /*   472 */ ULong guest_f24;
-      /*   480 */ ULong guest_f25;
-      /*   488 */ ULong guest_f26;
-      /*   496 */ ULong guest_f27;
-      /*   504 */ ULong guest_f28;
-      /*   512 */ ULong guest_f29;
-      /*   520 */ ULong guest_f30;
-      /*   528 */ ULong guest_f31;
+      /*  296 */ ULong guest_f0;   /* Floating point gen. purpose registers */
+      /*  304 */ ULong guest_f1;
+      /*  312 */ ULong guest_f2;
+      /*  320 */ ULong guest_f3;
+      /*  328 */ ULong guest_f4;
+      /*  336 */ ULong guest_f5;
+      /*  344 */ ULong guest_f6;
+      /*  352 */ ULong guest_f7;
+      /*  360 */ ULong guest_f8;
+      /*  368 */ ULong guest_f9;
+      /*  376 */ ULong guest_f10;
+      /*  384 */ ULong guest_f11;
+      /*  392 */ ULong guest_f12;
+      /*  400 */ ULong guest_f13;
+      /*  408 */ ULong guest_f14;
+      /*  416 */ ULong guest_f15;
+      /*  424 */ ULong guest_f16;
+      /*  432 */ ULong guest_f17;
+      /*  440 */ ULong guest_f18;
+      /*  448 */ ULong guest_f19;
+      /*  456 */ ULong guest_f20;
+      /*  464 */ ULong guest_f21;
+      /*  472 */ ULong guest_f22;
+      /*  480 */ ULong guest_f23;
+      /*  488 */ ULong guest_f24;
+      /*  496 */ ULong guest_f25;
+      /*  504 */ ULong guest_f26;
+      /*  512 */ ULong guest_f27;
+      /*  520 */ ULong guest_f28;
+      /*  528 */ ULong guest_f29;
+      /*  536 */ ULong guest_f30;
+      /*  544 */ ULong guest_f31;
 
-      /*   536 */ UInt guest_FIR;
-      /*   540 */ UInt guest_FCCR;
-      /*   544 */ UInt guest_FEXR;
-      /*   548 */ UInt guest_FENR;
-      /*   552 */ UInt guest_FCSR;
-
-      /*   556 */ UInt guest_CP0_status;
+      /*  552 */ UInt guest_FIR;
+      /*  556 */ UInt guest_FCCR;
+      /*  560 */ UInt guest_FEXR;
+      /*  564 */ UInt guest_FENR;
+      /*  568 */ UInt guest_FCSR;
+      /*  572 */ UInt guest_CP0_status;
 
       /* TLS pointer for the thread. It's read-only in user space. On Linux it
          is set in user space by various thread-related syscalls.
@@ -132,29 +135,27 @@ typedef
          UserLocal register, if it is implemented. In some operating
          environments, the UserLocal register is a pointer to a thread-specific
          storage block.
-       */
-        ULong guest_ULR;         /* 560 */
+      */
+      /*  576 */ ULong guest_ULR;
 
       /* Emulation notes */
-        UInt guest_EMNOTE;       /* 568 */
+      /*  584 */ UInt guest_EMNOTE;
+      /*  588 */ UInt guest_COND;
 
       /* For clflush: record start and length of area to invalidate */
-        ULong guest_CMSTART;     /* 576 */
-        ULong guest_CMLEN;       /* 584 */
+      /*  592 */ ULong guest_CMSTART;
+      /*  600 */ ULong guest_CMLEN;
 
-        ULong guest_NRADDR;      /* 592 */
+      /*  608 */ ULong guest_NRADDR;
 
-        ULong host_EvC_FAILADDR; /* 600 */
-        UInt host_EvC_COUNTER;   /* 608 */
-        UInt guest_COND;         /* 612 */
-        UInt padding[2];
+      /*  616 */ ULong _padding2;
 } VexGuestMIPS64State;
 
 /*---------------------------------------------------------------*/
 /*--- Utility functions for MIPS64 guest stuff.               ---*/
 /*---------------------------------------------------------------*/
 
-/* ALL THE FOLLOWING ARE VISIBLE TO LIBRARY CLIENT */
+/* ALL THE FOLLOWING ARE VISIBLE TO LIBRARY CLIENT. */
 
 /* Initialise all guest MIPS64 state. */
 

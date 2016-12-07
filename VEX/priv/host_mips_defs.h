@@ -123,6 +123,9 @@ ST_IN HReg hregMIPS_GPR31 ( Bool mode64 ) { return GPR(mode64, 31, 37, 45); }
 #define StackFramePointer(_mode64)     hregMIPS_GPR30(_mode64)
 #define StackPointer(_mode64)          hregMIPS_GPR29(_mode64)
 
+/* guest_COND offset */
+#define COND_OFFSET(_mode64) ((_mode64) ? 588 : 448)
+
 /* Num registers used for function calls */
 #if defined(VGP_mips32_linux)
   /* a0, a1, a2, a3 */

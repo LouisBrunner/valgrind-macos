@@ -36,9 +36,6 @@
 #include "host_generic_regs.h"
 #include "host_mips_defs.h"
 
-/* guest_COND offset. */
-#define COND_OFFSET(__mode64) (__mode64 ? 612 : 448)
-
 /* Register number for guest state pointer in host code. */
 #define GuestSP 23
 

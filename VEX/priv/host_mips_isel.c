@@ -61,9 +61,6 @@ static Bool fp_mode64 = False;
 /* FPR register class for mips32/64 */
 #define HRcFPR(_mode64) ((_mode64) ? HRcFlt64 : HRcFlt32)
 
-/* guest_COND offset */
-#define COND_OFFSET(_mode64) ((_mode64) ? 612 : 448)
-
 /*---------------------------------------------------------*/
 /*--- ISelEnv                                           ---*/
 /*---------------------------------------------------------*/

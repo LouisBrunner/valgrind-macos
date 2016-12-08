@@ -2186,7 +2186,7 @@ void VG_(synth_sigfpe)(ThreadId tid, UInt code)
    info.si_signo = VKI_SIGFPE;
    info.si_code = code;
 
-   if (VG_(gdbserver_report_signal) (VKI_SIGFPE, tid)) {
+   if (VG_(gdbserver_report_signal) (&info, tid)) {
       resume_scheduler(tid);
       deliver_signal(tid, &info, &uc);
    }

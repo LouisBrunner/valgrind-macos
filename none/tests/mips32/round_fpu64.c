@@ -72,7 +72,8 @@ const double fs_d[] = {
       : "$f0"                     \
    );
 
-#if (__mips==32) && (__mips_isa_rev>=2) && ((__mips_fpr==64) || (__mips_fpr==xx))
+#if (__mips==32) && (__mips_isa_rev>=2) && \
+    ((__mips_fpr==64) || (__mips_fpr==xx))
 void set_rounding_mode(round_mode_t mode)
 {
    switch(mode) {
@@ -190,7 +191,8 @@ int FCSRRoundingMode(flt_round_op_t op)
 
 int main()
 {
-#if (__mips==32) && (__mips_isa_rev>=2) && ((__mips_fpr==64) || (__mips_fpr==xx))
+#if (__mips==32) && (__mips_isa_rev>=2) && \
+    ((__mips_fpr==64) || (__mips_fpr==xx))
    flt_round_op_t op;
    signal(SIGILL, handler);
    /* Test fpu64 mode. */

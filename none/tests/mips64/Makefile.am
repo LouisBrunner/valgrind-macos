@@ -18,7 +18,8 @@ EXTRA_DIST = \
 	cvm_lx_ins.stdout.exp-LE cvm_lx_ins.stdout.exp-BE \
 	cvm_lx_ins.stdout.exp-non-octeon \
 	cvm_lx_ins.stderr.exp cvm_lx_ins.vgtest \
-	cvm_atomic.stdout.exp-LE cvm_atomic.stdout.exp-non-octeon \
+	cvm_atomic.stdout.exp-LE cvm_atomic.stdout.exp-BE \
+	cvm_atomic.stdout.exp-non-octeon \
 	cvm_atomic.stderr.exp cvm_atomic.vgtest \
 	cvm_atomic_thread.stdout.exp-LE cvm_atomic_thread.stdout.exp-non-octeon \
 	cvm_atomic_thread.stderr.exp cvm_atomic_thread.vgtest \

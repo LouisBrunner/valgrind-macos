@@ -93,9 +93,8 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
    VG_TRACK(pre_thread_first_insn, tid);
 
    tst->os_state.lwpid = VG_(gettid)();
-   /* Set the threadgroup for real.  This overwrites the provisional
-      value set in do_clone() syswrap-*-linux.c.  See comments in
-      do_clone for background, also #226116. */
+   /* Set the threadgroup for real.  This overwrites the provisional value set
+      in do_clone().  See comments in do_clone for background, also #226116. */
    tst->os_state.threadgroup = VG_(getpid)();
 
    /* Thread created with all signals blocked; scheduler will set the
@@ -430,17 +429,327 @@ void VG_(main_thread_wrapper_NORETURN)(ThreadId tid)
    vg_assert(0);
 }
 
+/* Clone a new thread. Note that in the clone syscalls, we hard-code
+   tlsaddr argument as NULL : the guest TLS is emulated via guest
+   registers, and Valgrind itself has no thread local storage. */
+static SysRes clone_new_thread ( Word (*fn)(void *), 
+                                 void* stack, 
+                                 Word  flags, 
+                                 ThreadState* ctst,
+                                 Int* child_tidptr, 
+                                 Int* parent_tidptr)
+{
+   SysRes res;
+   /* Note that in all the below, we make sys_clone appear to have returned
+      Success(0) in the child, by assigning the relevant child guest
+      register(s) just before the clone syscall. */
+#if defined(VGP_x86_linux)
+   Int          eax;
+   ctst->arch.vex.guest_EAX = 0;
+   eax = do_syscall_clone_x86_linux
+      (ML_(start_thread_NORETURN), stack, flags, ctst,
+       child_tidptr, parent_tidptr, NULL);
+   res = VG_(mk_SysRes_x86_linux)( eax );
+#elif defined(VGP_amd64_linux)
+   Long         rax;
+   ctst->arch.vex.guest_RAX = 0;
+   rax = do_syscall_clone_amd64_linux
+      (ML_(start_thread_NORETURN), stack, flags, ctst,
+       child_tidptr, parent_tidptr, NULL);
+   res = VG_(mk_SysRes_amd64_linux)( rax );
+#elif defined(VGP_ppc32_linux)
+   ULong        word64;
+   UInt old_cr = LibVEX_GuestPPC32_get_CR( &ctst->arch.vex );
+   /* %r3 = 0 */
+   ctst->arch.vex.guest_GPR3 = 0;
+   /* %cr0.so = 0 */
+   LibVEX_GuestPPC32_put_CR( old_cr & ~(1<<28), &ctst->arch.vex );
+   word64 = do_syscall_clone_ppc32_linux
+      (ML_(start_thread_NORETURN), stack, flags, ctst,
+       child_tidptr, parent_tidptr, NULL);
+   /* High half word64 is syscall return value.  Low half is
+      the entire CR, from which we need to extract CR0.SO. */
+   /* VG_(printf)("word64 = 0x%llx\n", word64); */
+   res = VG_(mk_SysRes_ppc32_linux)(/*val*/(UInt)(word64 >> 32), 
+                                    /*errflag*/ (((UInt)word64) >> 28) & 1);
+#elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
+   ULong        word64;
+   UInt old_cr = LibVEX_GuestPPC64_get_CR( &ctst->arch.vex );
+   /* %r3 = 0 */
+   ctst->arch.vex.guest_GPR3 = 0;
+   /* %cr0.so = 0 */
+   LibVEX_GuestPPC64_put_CR( old_cr & ~(1<<28), &ctst->arch.vex );
+   word64 = do_syscall_clone_ppc64_linux
+      (ML_(start_thread_NORETURN), stack, flags, ctst,
+       child_tidptr, parent_tidptr, NULL);
+   /* Low half word64 is syscall return value.  Hi half is
+      the entire CR, from which we need to extract CR0.SO. */
+   /* VG_(printf)("word64 = 0x%llx\n", word64); */
+   res = VG_(mk_SysRes_ppc64_linux)
+      (/*val*/(UInt)(word64 & 0xFFFFFFFFULL), 
+       /*errflag*/ (UInt)((word64 >> (32+28)) & 1));
+#elif defined(VGP_s390x_linux)
+   ULong        r2;
+   ctst->arch.vex.guest_r2 = 0;
+   r2 = do_syscall_clone_s390x_linux
+      (stack, flags, parent_tidptr, child_tidptr, NULL,
+       ML_(start_thread_NORETURN), ctst);
+   res = VG_(mk_SysRes_s390x_linux)( r2 );
+#elif defined(VGP_arm64_linux)
+   ULong        x0;
+   ctst->arch.vex.guest_X0 = 0;
+   x0 = do_syscall_clone_arm64_linux
+      (ML_(start_thread_NORETURN), stack, flags, ctst,
+       child_tidptr, parent_tidptr, NULL);
+   res = VG_(mk_SysRes_arm64_linux)( x0 );
+#elif defined(VGP_arm_linux)
+   UInt r0;
+   ctst->arch.vex.guest_R0 = 0;
+   r0 = do_syscall_clone_arm_linux
+      (ML_(start_thread_NORETURN), stack, flags, ctst,
+       child_tidptr, parent_tidptr, NULL);
+   res = VG_(mk_SysRes_arm_linux)( r0 );
+#elif defined(VGP_mips64_linux)
+   UInt ret = 0;
+   ctst->arch.vex.guest_r2 = 0;
+   ctst->arch.vex.guest_r7 = 0;
+   ret = do_syscall_clone_mips64_linux
+      (ML_(start_thread_NORETURN), stack, flags, ctst,
+       parent_tidptr, NULL, child_tidptr);
+   res = VG_(mk_SysRes_mips64_linux)( /* val */ ret, 0, /* errflag */ 0);
+#elif defined(VGP_mips32_linux)
+   UInt ret = 0;
+   ctst->arch.vex.guest_r2 = 0;
+   ctst->arch.vex.guest_r7 = 0;
+   ret = do_syscall_clone_mips_linux
+      (ML_(start_thread_NORETURN), stack, flags, ctst,
+       child_tidptr, parent_tidptr, NULL);
+   /* High half word64 is syscall return value.  Low half is
+      the entire CR, from which we need to extract CR0.SO. */ 
+   res = VG_ (mk_SysRes_mips32_linux) (/*val */ ret, 0, /*errflag */ 0);
+#elif defined(VGP_tilegx_linux)
+   Long ret = 0;
+   ctst->arch.vex.guest_r0 = 0;
+   ctst->arch.vex.guest_r3 = 0;
+   ret = do_syscall_clone_tilegx_linux
+      (ML_ (start_thread_NORETURN), stack, flags, ctst,
+       child_tidptr, parent_tidptr, NULL);
+   /* High half word64 is syscall return value. */
+   res = VG_(mk_SysRes_tilegx_linux) (/*val */ ret);
+#else
+# error Unknown platform
+#endif
+   return res;
+}
 
-/* Do a clone which is really a fork() */
-SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
-                            Int* parent_tidptr, Int* child_tidptr )
+static void setup_child ( /*OUT*/ ThreadArchState *child, 
+                          /*IN*/  ThreadArchState *parent )
+{  
+   /* We inherit our parent's guest state. */
+   child->vex = parent->vex;
+   child->vex_shadow1 = parent->vex_shadow1;
+   child->vex_shadow2 = parent->vex_shadow2;
+
+#if defined(VGP_x86_linux)
+   extern void ML_(x86_setup_LDT_GDT) ( /*OUT*/ ThreadArchState *child, 
+                                        /*IN*/  ThreadArchState *parent );
+   ML_(x86_setup_LDT_GDT)(child, parent);
+#endif
+}
+
+static SysRes setup_child_tls (ThreadId ctid, Addr tlsaddr)
+{
+   static const Bool debug = False;
+   ThreadState* ctst = VG_(get_ThreadState)(ctid);
+   // res is succesful by default, overriden if a real syscall is needed/done.
+   SysRes res = VG_(mk_SysRes_Success)(0);
+
+   if (debug)
+      VG_(printf)("clone child has SETTLS: tls at %#lx\n", tlsaddr);
+
+#if defined(VGP_x86_linux)
+   vki_modify_ldt_t* tlsinfo = (vki_modify_ldt_t*)tlsaddr;
+   if (debug)
+      VG_(printf)("clone child has SETTLS: tls info at %p: idx=%u "
+                  "base=%#lx limit=%x; esp=%#x fs=%x gs=%x\n",
+                  tlsinfo, tlsinfo->entry_number, 
+                  tlsinfo->base_addr, tlsinfo->limit,
+                  ctst->arch.vex.guest_ESP,
+                  ctst->arch.vex.guest_FS, ctst->arch.vex.guest_GS);
+   res = ML_(x86_sys_set_thread_area)(ctid, tlsinfo);
+#elif defined(VGP_amd64_linux)
+   ctst->arch.vex.guest_FS_CONST = tlsaddr;
+#elif defined(VGP_ppc32_linux)
+   ctst->arch.vex.guest_GPR2 = tlsaddr;
+#elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
+   ctst->arch.vex.guest_GPR13 = tlsaddr;
+#elif defined(VGP_s390x_linux)
+   ctst->arch.vex.guest_a0 = (UInt) (tlsaddr >> 32);
+   ctst->arch.vex.guest_a1 = (UInt) tlsaddr;
+#elif defined(VGP_arm64_linux)
+   /* Just assign the tls pointer in the guest TPIDR_EL0. */
+   ctst->arch.vex.guest_TPIDR_EL0 = tlsaddr;
+#elif defined(VGP_arm_linux)
+   /* Just assign the tls pointer in the guest TPIDRURO. */
+   ctst->arch.vex.guest_TPIDRURO = tlsaddr;
+#elif defined(VGP_mips64_linux)
+   ctst->arch.vex.guest_ULR = tlsaddr;
+   ctst->arch.vex.guest_r27 = tlsaddr;
+#elif defined(VGP_mips32_linux)
+   ctst->arch.vex.guest_ULR = tlsaddr;
+   ctst->arch.vex.guest_r27 = tlsaddr;
+#elif defined(VGP_tilegx_linux)
+   ctst->arch.vex.guest_r53 = tlsaddr;
+#else
+# error Unknown platform
+#endif
+   return res;
+} 
+
+/* 
+   When a client clones, we need to keep track of the new thread.  This means:
+   1. allocate a ThreadId+ThreadState+stack for the thread
+
+   2. initialize the thread's new VCPU state
+
+   3. create the thread using the same args as the client requested,
+   but using the scheduler entrypoint for EIP, and a separate stack
+   for ESP.
+ */
+static SysRes do_clone ( ThreadId ptid, 
+                         UWord flags, Addr sp, 
+                         Int* parent_tidptr, 
+                         Int* child_tidptr, 
+                         Addr tlsaddr)
+{
+   ThreadId     ctid = VG_(alloc_ThreadState)();
+   ThreadState* ptst = VG_(get_ThreadState)(ptid);
+   ThreadState* ctst = VG_(get_ThreadState)(ctid);
+   UWord*       stack;
+   SysRes       res;
+   vki_sigset_t blockall, savedmask;
+
+   VG_(sigfillset)(&blockall);
+
+   vg_assert(VG_(is_running_thread)(ptid));
+   vg_assert(VG_(is_valid_tid)(ctid));
+
+   stack = (UWord*)ML_(allocstack)(ctid);
+   if (stack == NULL) {
+      res = VG_(mk_SysRes_Error)( VKI_ENOMEM );
+      goto out;
+   }
+
+   /* Copy register state
+
+      Both parent and child return to the same place, and the code
+      following the clone syscall works out which is which, so we
+      don't need to worry about it.
+
+      The parent gets the child's new tid returned from clone, but the
+      child gets 0.
+
+      If the clone call specifies a NULL sp for the new thread, then
+      it actually gets a copy of the parent's sp.
+   */
+   setup_child( &ctst->arch, &ptst->arch );
+
+   if (sp != 0)
+      VG_(set_SP)(ctid, sp);
+
+   ctst->os_state.parent = ptid;
+
+   /* inherit signal mask */
+   ctst->sig_mask     = ptst->sig_mask;
+   ctst->tmp_sig_mask = ptst->sig_mask;
+
+   /* Start the child with its threadgroup being the same as the
+      parent's.  This is so that any exit_group calls that happen
+      after the child is created but before it sets its
+      os_state.threadgroup field for real (in thread_wrapper in
+      syswrap-linux.c), really kill the new thread.  a.k.a this avoids
+      a race condition in which the thread is unkillable (via
+      exit_group) because its threadgroup is not set.  The race window
+      is probably only a few hundred or a few thousand cycles long.
+      See #226116. */
+   ctst->os_state.threadgroup = ptst->os_state.threadgroup;
+
+   ML_(guess_and_register_stack) (sp, ctst);
+   
+   /* Assume the clone will succeed, and tell any tool that wants to
+      know that this thread has come into existence.  We cannot defer
+      it beyond this point because setup_tls, just below,
+      causes checks to assert by making references to the new ThreadId
+      if we don't state the new thread exists prior to that point.
+      If the clone fails, we'll send out a ll_exit notification for it
+      at the out: label below, to clean up. */
+   vg_assert(VG_(owns_BigLock_LL)(ptid));
+   VG_TRACK ( pre_thread_ll_create, ptid, ctid );
+
+   if (flags & VKI_CLONE_SETTLS) {
+      res = setup_child_tls(ctid, tlsaddr);
+      if (sr_isError(res))
+	 goto out;
+   }
+   flags &= ~VKI_CLONE_SETTLS;
+
+   /* start the thread with everything blocked */
+   VG_(sigprocmask)(VKI_SIG_SETMASK, &blockall, &savedmask);
+
+   /* Create the new thread */
+   res = clone_new_thread ( ML_(start_thread_NORETURN), stack, flags, ctst,
+                            child_tidptr, parent_tidptr);
+
+   VG_(sigprocmask)(VKI_SIG_SETMASK, &savedmask, NULL);
+
+  out:
+   if (sr_isError(res)) {
+      /* clone failed */
+      VG_(cleanup_thread)(&ctst->arch);
+      ctst->status = VgTs_Empty;
+      /* oops.  Better tell the tool the thread exited in a hurry :-) */
+      VG_TRACK( pre_thread_ll_exit, ctid );
+   }
+
+#if defined(VGP_mips64_linux) || defined(VGP_mips32_linux)
+   // ??? why do we set unconditionally r2 to 0, even when error out ???
+   ptst->arch.vex.guest_r2 = 0;
+#elif defined(VGP_tilegx_linux)
+   // ??? why do we set unconditionally r0 to 0, even when error out ???
+   ptst->arch.vex.guest_r0 = 0;
+#endif
+
+   return res;
+}
+
+/* Do a clone which is really a fork().
+   ML_(do_fork_clone) uses the clone syscall to fork a child process.
+   Note that this should not be called for a thread creation.
+   Also, some flags combinations are not supported, and such combinations
+   are handled either by masking the non supported flags or by asserting.
+
+   The CLONE_VFORK flag is accepted, as this just tells that the parent is
+   suspended till the child exits or calls execve. We better keep this flag,
+   just in case the guests parent/client code depends on this synchronisation.
+
+   We cannot keep the flag CLONE_VM, as Valgrind will do whatever host
+   instructions in the child process, that will mess up the parent host
+   memory. So, we hope for the best and assumes that the guest application does
+   not (really) depends on sharing the memory between parent and child in the
+   interval between clone and exits/execve.
+
+   If child_sp != 0, the child (guest) sp will be set to child_sp just after the
+   clone syscall, before child guest instructions are executed. */
+static SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
+                                   Int* parent_tidptr, Int* child_tidptr,
+                                   Addr child_sp)
 {
    vki_sigset_t fork_saved_mask;
    vki_sigset_t mask;
    SysRes       res;
 
    if (flags & (VKI_CLONE_SETTLS | VKI_CLONE_FS | VKI_CLONE_VM 
-                | VKI_CLONE_FILES | VKI_CLONE_VFORK))
+                | VKI_CLONE_FILES))
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
    /* Block all signals during fork, so that we can fix things up in
@@ -476,6 +785,8 @@ SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
 
    if (!sr_isError(res) && sr_Res(res) == 0) {
       /* child */
+      if (child_sp != 0)
+          VG_(set_SP)(tid, child_sp);
       VG_(do_atfork_child)(tid);
 
       /* restore signal mask */
@@ -508,7 +819,6 @@ SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
    return res;
 }
 
-
 /* ---------------------------------------------------------------------
    PRE/POST wrappers for arch-generic, Linux-specific syscalls
    ------------------------------------------------------------------ */
@@ -518,6 +828,157 @@ SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
 
 #define PRE(name)       DEFN_PRE_TEMPLATE(linux, name)
 #define POST(name)      DEFN_POST_TEMPLATE(linux, name)
+
+PRE(sys_clone)
+{
+   UInt cloneflags;
+   Bool badarg = False;
+
+   PRINT("sys_clone ( %lx, %#lx, %#lx, %#lx, %#lx )",ARG1,ARG2,ARG3,ARG4,ARG5);
+
+// Order of arguments differs between platforms.
+#if defined(VGP_x86_linux) \
+    || defined(VGP_ppc32_linux) \
+    || defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)	\
+    || defined(VGP_arm_linux) || defined(VGP_mips32_linux) \
+    || defined(VGP_mips64_linux) || defined(VGP_arm64_linux)
+#define ARG_CHILD_TIDPTR ARG5
+#define PRA_CHILD_TIDPTR PRA5
+#define ARG_TLS          ARG4
+#define PRA_TLS          PRA4
+#elif defined(VGP_amd64_linux) || defined(VGP_tilegx_linux) \
+    || defined(VGP_s390x_linux)
+#define ARG_CHILD_TIDPTR ARG4
+#define PRA_CHILD_TIDPTR PRA4
+#define ARG_TLS          ARG5
+#define PRA_TLS          PRA5
+#else
+# error Unknown platform
+#endif
+// And s390x is even more special, and inverts flags and child stack args
+#if defined(VGP_s390x_linux)
+#define ARG_FLAGS       ARG2
+#define PRA_FLAGS       PRA2
+#define ARG_CHILD_STACK ARG1
+#define PRA_CHILD_STACK PRA1
+#else
+#define ARG_FLAGS       ARG1
+#define PRA_FLAGS       PRA1
+#define ARG_CHILD_STACK ARG2
+#define PRA_CHILD_STACK PRA2
+#endif
+
+   if (VG_(tdict).track_pre_reg_read) {
+      PRA_FLAGS("clone", unsigned long, flags);
+      PRA_CHILD_STACK("clone",  void *, child_stack);
+   }
+
+   if (ARG_FLAGS & VKI_CLONE_PARENT_SETTID) {
+      if (VG_(tdict).track_pre_reg_read) {
+         PRA3("clone", int *, parent_tidptr);
+      }
+      PRE_MEM_WRITE("clone(parent_tidptr)", ARG3, sizeof(Int));
+      if (!VG_(am_is_valid_for_client)(ARG3, sizeof(Int), 
+                                             VKI_PROT_WRITE)) {
+         badarg = True;
+      }
+   }
+   if (ARG_FLAGS & VKI_CLONE_SETTLS) {
+      if (VG_(tdict).track_pre_reg_read) {
+         PRA_TLS("clone", vki_modify_ldt_t *, tlsinfo);
+      }
+      /* Not very clear what is vki_modify_ldt_t: for many platforms, it is a
+         dummy type (that we define as a char). We only dereference/check the
+         ARG_TLS pointer if the type looks like a real type, i.e. sizeof > 1. */
+      if (sizeof(vki_modify_ldt_t) > 1) {
+         PRE_MEM_READ("clone(tlsinfo)", ARG_TLS, sizeof(vki_modify_ldt_t));
+         if (!VG_(am_is_valid_for_client)(ARG_TLS, sizeof(vki_modify_ldt_t), 
+                                          VKI_PROT_READ)) {
+            badarg = True;
+         }
+      }
+   }
+   if (ARG_FLAGS & (VKI_CLONE_CHILD_SETTID | VKI_CLONE_CHILD_CLEARTID)) {
+      if (VG_(tdict).track_pre_reg_read) {
+         PRA_CHILD_TIDPTR("clone", int *, child_tidptr);
+      }
+      PRE_MEM_WRITE("clone(child_tidptr)", ARG_CHILD_TIDPTR, sizeof(Int));
+      if (!VG_(am_is_valid_for_client)(ARG_CHILD_TIDPTR, sizeof(Int), 
+                                             VKI_PROT_WRITE)) {
+         badarg = True;
+      }
+   }
+
+   if (badarg) {
+      SET_STATUS_Failure( VKI_EFAULT );
+      return;
+   }
+
+   cloneflags = ARG_FLAGS;
+
+   if (!ML_(client_signal_OK)(ARG_FLAGS & VKI_CSIGNAL)) {
+      SET_STATUS_Failure( VKI_EINVAL );
+      return;
+   }
+
+   /* Only look at the flags we really care about */
+   switch (cloneflags & (VKI_CLONE_VM | VKI_CLONE_FS 
+                         | VKI_CLONE_FILES | VKI_CLONE_VFORK)) {
+   case VKI_CLONE_VM | VKI_CLONE_FS | VKI_CLONE_FILES:
+      /* thread creation */
+      SET_STATUS_from_SysRes(
+         do_clone(tid,
+                  ARG_FLAGS,               /* flags */
+                  (Addr)ARG_CHILD_STACK,   /* child ESP */
+                  (Int*)ARG3,              /* parent_tidptr */
+                  (Int*)ARG_CHILD_TIDPTR,  /* child_tidptr */
+                  (Addr)ARG_TLS));         /* set_tls */
+      break;
+
+   case VKI_CLONE_VFORK | VKI_CLONE_VM: /* vfork */
+      // FALLTHROUGH - assume vfork (somewhat) == fork, see ML_(do_fork_clone).
+      cloneflags &= ~VKI_CLONE_VM;
+
+   case 0: /* plain fork */
+      SET_STATUS_from_SysRes(
+         ML_(do_fork_clone)(tid,
+                       cloneflags,      /* flags */
+                       (Int*)ARG3,     /* parent_tidptr */
+                       (Int*)ARG_CHILD_TIDPTR,     /* child_tidptr */
+                       (Addr)ARG_CHILD_STACK));
+      break;
+
+   default:
+      /* should we just ENOSYS? */
+      VG_(message)(Vg_UserMsg, "Unsupported clone() flags: 0x%lx\n", ARG_FLAGS);
+      VG_(message)(Vg_UserMsg, "\n");
+      VG_(message)(Vg_UserMsg, "The only supported clone() uses are:\n");
+      VG_(message)(Vg_UserMsg, " - via a threads library (LinuxThreads or NPTL)\n");
+      VG_(message)(Vg_UserMsg, " - via the implementation of fork or vfork\n");
+      VG_(unimplemented)
+         ("Valgrind does not support general clone().");
+   }
+
+   if (SUCCESS) {
+      if (ARG_FLAGS & VKI_CLONE_PARENT_SETTID)
+         POST_MEM_WRITE(ARG3, sizeof(Int));
+      if (ARG_FLAGS & (VKI_CLONE_CHILD_SETTID | VKI_CLONE_CHILD_CLEARTID))
+         POST_MEM_WRITE(ARG_CHILD_TIDPTR, sizeof(Int));
+
+      /* Thread creation was successful; let the child have the chance
+         to run */
+      *flags |= SfYieldAfter;
+   }
+
+#undef ARG_CHILD_TIDPTR
+#undef PRA_CHILD_TIDPTR
+#undef ARG_TLS
+#undef PRA_TLS
+#undef ARG_FLAGS
+#undef PRA_FLAGS
+#undef ARG_CHILD_STACK
+#undef PRA_CHILD_STACK
+}
 
 /* ---------------------------------------------------------------------
    *mount wrappers

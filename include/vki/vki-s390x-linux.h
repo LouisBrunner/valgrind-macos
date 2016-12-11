@@ -822,6 +822,8 @@ struct vki_ucontext {
 	vki_sigset_t	      uc_sigmask; /* mask last for extensibility */
 };
 
+typedef char vki_modify_ldt_t;
+
 //----------------------------------------------------------------------
 // From linux-2.6.16.60/include/asm-s390/ipcbuf.h
 //----------------------------------------------------------------------

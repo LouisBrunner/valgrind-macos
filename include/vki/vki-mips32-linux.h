@@ -679,7 +679,7 @@ struct vki_ucontext {
 };
 
 // CAB: TODO
-typedef void vki_modify_ldt_t;
+typedef char vki_modify_ldt_t;
 
 //----------------------------------------------------------------------
 // From linux-2.6.35.5/include/asm-mips/ipcbuf.h

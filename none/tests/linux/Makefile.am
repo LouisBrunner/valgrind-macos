@@ -7,6 +7,7 @@ EXTRA_DIST = \
 	blockfault.stderr.exp blockfault.vgtest \
 	brk-overflow1.stderr.exp brk-overflow1.vgtest \
 	brk-overflow2.stderr.exp brk-overflow2.vgtest \
+	clonev.stderr.exp clonev.vgtest \
 	mremap.stderr.exp mremap.stderr.exp-glibc27 mremap.stdout.exp \
 	    mremap.vgtest \
 	mremap2.stderr.exp mremap2.stdout.exp mremap2.vgtest \
@@ -21,6 +22,7 @@ check_PROGRAMS = \
 	blockfault \
 	brk-overflow1 \
 	brk-overflow2 \
+	clonev \
 	mremap \
 	mremap2 \
 	mremap3 \
@@ -35,6 +37,7 @@ AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 # Special needs
+clonev_LDADD = -lpthread
 pthread_stack_LDADD = -lpthread
 
 stack_overflow_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@ \

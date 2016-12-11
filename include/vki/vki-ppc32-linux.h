@@ -811,10 +811,9 @@ struct vki_ucontext {
 //.. };
 //.. 
 //.. // [[Nb: for our convenience within Valgrind, use a more specific name]]
-//.. typedef struct vki_user_desc vki_modify_ldt_t;
 
 // CAB: TODO
-typedef void vki_modify_ldt_t;
+typedef char vki_modify_ldt_t;
 
 
 //----------------------------------------------------------------------

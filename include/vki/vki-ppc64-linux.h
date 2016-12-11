@@ -685,6 +685,9 @@ struct vki_ucontext {
   struct vki_sigcontext uc_mcontext;  /* last for extensibility */
 };
 
+// CAB: TODO
+typedef char vki_modify_ldt_t;
+
 //----------------------------------------------------------------------
 // From linux-2.6.13/include/asm-ppc64/ipcbuf.h
 //----------------------------------------------------------------------

@@ -28,7 +28,12 @@ X86/MacOSX 10.11/12, AMD64/MacOSX 10.11/12 and TILEGX/Linux.
 
 * ================== PLATFORM CHANGES =================
 
-  Support for demangling Rust symbols (n-i-bz)
+  - Support for demangling Rust symbols (n-i-bz)
+  
+  - On linux, clone handling was improved to honour the CLONE_VFORK flag
+    and setting a child stack. Note however that CLONE_VFORK | CLONE_VM
+    is handled like CLONE_VFORK (so removing CLONE_VM flag).
+    Applications that depends on CLONE_VM exact semantic will (still) not work.
 
 * ==================== TOOL CHANGES ====================
 
@@ -71,6 +76,8 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
+342040  Valgrind mishandles clone with CLONE_VFORK | CLONE_VM that clones
+        to a different stack.
 348616  Wine/valgrind: noted but unhandled ioctl 0x5390 [..] (DVD_READ_STRUCT)
 352395  Please provide SVN revision info in --version -v
 352767  Wine/valgrind: noted but unhandled ioctl 0x5307 [..] (CDROMSTOP)
@@ -83,6 +90,7 @@ where XXXXXX is the bug number as listed below.
 372504  Hanging on exit_group
 372600  process loops forever when fatal signals are arriving quickly
 373046  Stacks registered by core are never deregistered
+373192  Calling posix_spawn in glibc 2.24 completely broken
 
 Release 3.12.0 (20 October 2016)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

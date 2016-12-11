@@ -138,14 +138,7 @@ asm(
 #define __NR_CLONE        VG_STRINGIFY(__NR_clone)
 #define __NR_EXIT         VG_STRINGIFY(__NR_exit)
 
-extern
-ULong do_syscall_clone_s390x_linux ( void  *stack,
-                                     ULong flags,
-                                     Int   *parent_tid,
-                                     Int   *child_tid,
-                                     Addr  tlsaddr,
-                                     Word (*fn)(void *),
-                                     void  *arg);
+// See priv_syswrap-linux.h for arg profile.
 asm(
    "   .text\n"
    "   .align  4\n"
@@ -182,126 +175,6 @@ void VG_(cleanup_thread) ( ThreadArchState* arch )
   /* only used on x86 for descriptor tables */
 }
 
-static void setup_child ( /*OUT*/ ThreadArchState *child,
-                   /*IN*/  ThreadArchState *parent )
-{
-   /* We inherit our parent's guest state. */
-   child->vex = parent->vex;
-   child->vex_shadow1 = parent->vex_shadow1;
-   child->vex_shadow2 = parent->vex_shadow2;
-}
-
-
-/*
-   When a client clones, we need to keep track of the new thread.  This means:
-   1. allocate a ThreadId+ThreadState+stack for the thread
-
-   2. initialize the thread's new VCPU state
-
-   3. create the thread using the same args as the client requested,
-   but using the scheduler entrypoint for IP, and a separate stack
-   for SP.
- */
-static SysRes do_clone ( ThreadId ptid,
-                         Addr sp, ULong flags,
-                         Int *parent_tidptr,
-                         Int *child_tidptr,
-                         Addr tlsaddr)
-{
-   static const Bool debug = False;
-
-   ThreadId     ctid = VG_(alloc_ThreadState)();
-   ThreadState* ptst = VG_(get_ThreadState)(ptid);
-   ThreadState* ctst = VG_(get_ThreadState)(ctid);
-   UWord*       stack;
-   SysRes       res;
-   ULong        r2;
-   vki_sigset_t blockall, savedmask;
-
-   VG_(sigfillset)(&blockall);
-
-   vg_assert(VG_(is_running_thread)(ptid));
-   vg_assert(VG_(is_valid_tid)(ctid));
-
-   stack = (UWord*)ML_(allocstack)(ctid);
-   if (stack == NULL) {
-      res = VG_(mk_SysRes_Error)( VKI_ENOMEM );
-      goto out;
-   }
-
-   /* Copy register state
-
-      Both parent and child return to the same place, and the code
-      following the clone syscall works out which is which, so we
-      don't need to worry about it.
-
-      The parent gets the child's new tid returned from clone, but the
-      child gets 0.
-
-      If the clone call specifies a NULL sp for the new thread, then
-      it actually gets a copy of the parent's sp.
-   */
-   setup_child( &ctst->arch, &ptst->arch );
-
-   /* Make sys_clone appear to have returned Success(0) in the
-      child. */
-   ctst->arch.vex.guest_r2 = 0;
-
-   if (sp != 0)
-      ctst->arch.vex.guest_SP = sp;
-
-   ctst->os_state.parent = ptid;
-
-   /* inherit signal mask */
-   ctst->sig_mask = ptst->sig_mask;
-   ctst->tmp_sig_mask = ptst->sig_mask;
-
-   /* have the parents thread group */
-   ctst->os_state.threadgroup = ptst->os_state.threadgroup;
-
-   ML_(guess_and_register_stack) (sp, ctst);
-
-   /* Assume the clone will succeed, and tell any tool that wants to
-      know that this thread has come into existence.  If the clone
-      fails, we'll send out a ll_exit notification for it at the out:
-      label below, to clean up. */
-   vg_assert(VG_(owns_BigLock_LL)(ptid));
-   VG_TRACK ( pre_thread_ll_create, ptid, ctid );
-
-   if (flags & VKI_CLONE_SETTLS) {
-      if (debug)
-	 VG_(printf)("clone child has SETTLS: tls at %#lx\n", tlsaddr);
-      ctst->arch.vex.guest_a0 = (UInt) (tlsaddr >> 32);
-      ctst->arch.vex.guest_a1 = (UInt) tlsaddr;
-   }
-   flags &= ~VKI_CLONE_SETTLS;
-
-   /* start the thread with everything blocked */
-   VG_(sigprocmask)(VKI_SIG_SETMASK, &blockall, &savedmask);
-
-   /* Create the new thread */
-   r2 = do_syscall_clone_s390x_linux(
-            stack, flags, parent_tidptr, child_tidptr, tlsaddr,
-            ML_(start_thread_NORETURN), &VG_(threads)[ctid]);
-
-   res = VG_(mk_SysRes_s390x_linux)( r2 );
-
-   VG_(sigprocmask)(VKI_SIG_SETMASK, &savedmask, NULL);
-
-  out:
-   if (sr_isError(res)) {
-      /* clone failed */
-      ctst->status = VgTs_Empty;
-      /* oops.  Better tell the tool the thread exited in a hurry :-) */
-      VG_TRACK( pre_thread_ll_exit, ctid );
-   }
-
-   return res;
-
-}
-
-
-
 /* ---------------------------------------------------------------------
    PRE/POST wrappers for s390x/Linux-specific syscalls
    ------------------------------------------------------------------ */
@@ -317,7 +190,6 @@ static SysRes do_clone ( ThreadId ptid,
 
 DECL_TEMPLATE(s390x_linux, sys_ptrace);
 DECL_TEMPLATE(s390x_linux, sys_mmap);
-DECL_TEMPLATE(s390x_linux, sys_clone);
 DECL_TEMPLATE(s390x_linux, sys_sigreturn);
 DECL_TEMPLATE(s390x_linux, sys_rt_sigreturn);
 DECL_TEMPLATE(s390x_linux, sys_fadvise64);
@@ -450,99 +322,6 @@ PRE(sys_mmap)
 
    r = ML_(generic_PRE_sys_mmap)( tid, a0, a1, a2, a3, a4, (Off64T)a5 );
    SET_STATUS_from_SysRes(r);
-}
-
-PRE(sys_clone)
-{
-   UInt cloneflags;
-
-   PRINT("sys_clone ( %lx, %#lx, %#lx, %#lx, %#lx )",ARG1,ARG2,ARG3,ARG4, ARG5);
-   PRE_REG_READ2(int, "clone",
-                 void *,        child_stack,
-                 unsigned long, flags);
-
-   if (ARG2 & VKI_CLONE_PARENT_SETTID) {
-      if (VG_(tdict).track_pre_reg_read)
-         PRA3("clone(parent_tidptr)", int *, parent_tidptr);
-      PRE_MEM_WRITE("clone(parent_tidptr)", ARG3, sizeof(Int));
-      if (!VG_(am_is_valid_for_client)(ARG3, sizeof(Int),
-                                             VKI_PROT_WRITE)) {
-         SET_STATUS_Failure( VKI_EFAULT );
-         return;
-      }
-   }
-   if (ARG2 & (VKI_CLONE_CHILD_SETTID | VKI_CLONE_CHILD_CLEARTID)) {
-      if (VG_(tdict).track_pre_reg_read)
-         PRA4("clone(child_tidptr)", int *, child_tidptr);
-      PRE_MEM_WRITE("clone(child_tidptr)", ARG4, sizeof(Int));
-      if (!VG_(am_is_valid_for_client)(ARG4, sizeof(Int),
-                                             VKI_PROT_WRITE)) {
-         SET_STATUS_Failure( VKI_EFAULT );
-         return;
-      }
-   }
-
-   /* The kernel simply copies reg6 (ARG5) into AR0 and AR1, no checks */
-   if (ARG2 & VKI_CLONE_SETTLS) {
-      if (VG_(tdict).track_pre_reg_read) {
-         PRA5("clone", Addr, tlsinfo);
-      }
-   }
-
-   cloneflags = ARG2;
-
-   if (!ML_(client_signal_OK)(ARG2 & VKI_CSIGNAL)) {
-      SET_STATUS_Failure( VKI_EINVAL );
-      return;
-   }
-
-   /* Only look at the flags we really care about */
-   switch (cloneflags & (VKI_CLONE_VM | VKI_CLONE_FS
-                         | VKI_CLONE_FILES | VKI_CLONE_VFORK)) {
-   case VKI_CLONE_VM | VKI_CLONE_FS | VKI_CLONE_FILES:
-      /* thread creation */
-      SET_STATUS_from_SysRes(
-         do_clone(tid,
-                  (Addr)ARG1,   /* child SP */
-                  ARG2,         /* flags */
-                  (Int *)ARG3,  /* parent_tidptr */
-                  (Int *)ARG4, /* child_tidptr */
-                  (Addr)ARG5)); /*  tlsaddr */
-      break;
-
-   case VKI_CLONE_VFORK | VKI_CLONE_VM: /* vfork */
-      /* FALLTHROUGH - assume vfork == fork */
-      cloneflags &= ~(VKI_CLONE_VFORK | VKI_CLONE_VM);
-
-   case 0: /* plain fork */
-      SET_STATUS_from_SysRes(
-         ML_(do_fork_clone)(tid,
-                       cloneflags,      /* flags */
-                       (Int *)ARG3,     /* parent_tidptr */
-                       (Int *)ARG4));   /* child_tidptr */
-      break;
-
-   default:
-      /* should we just ENOSYS? */
-      VG_(message)(Vg_UserMsg, "Unsupported clone() flags: 0x%lx\n", ARG2);
-      VG_(message)(Vg_UserMsg, "\n");
-      VG_(message)(Vg_UserMsg, "The only supported clone() uses are:\n");
-      VG_(message)(Vg_UserMsg, " - via a threads library (NPTL)\n");
-      VG_(message)(Vg_UserMsg, " - via the implementation of fork or vfork\n");
-      VG_(unimplemented)
-         ("Valgrind does not support general clone().");
-   }
-
-   if (SUCCESS) {
-      if (ARG2 & VKI_CLONE_PARENT_SETTID)
-         POST_MEM_WRITE(ARG3, sizeof(Int));
-      if (ARG2 & (VKI_CLONE_CHILD_SETTID | VKI_CLONE_CHILD_CLEARTID))
-         POST_MEM_WRITE(ARG4, sizeof(Int));
-
-      /* Thread creation was successful; let the child have the chance
-         to run */
-      *flags |= SfYieldAfter;
-   }
 }
 
 PRE(sys_sigreturn)
@@ -775,7 +554,7 @@ static SyscallTableEntry syscall_table[] = {
    GENX_(__NR_fsync,  sys_fsync),                                     // 118
    PLAX_(__NR_sigreturn, sys_sigreturn),                              // 119
 
-   PLAX_(__NR_clone,  sys_clone),                                     // 120
+   LINX_(__NR_clone,  sys_clone),                                     // 120
 // ?????(__NR_setdomainname, ),                                       // 121
    GENXY(__NR_uname, sys_newuname),                                   // 122
    GENX_(123, sys_ni_syscall), /* unimplemented (by the kernel) */    // 123

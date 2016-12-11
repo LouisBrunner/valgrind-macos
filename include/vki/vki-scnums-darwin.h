@@ -395,7 +395,9 @@
 #if DARWIN_VERS >= DARWIN_10_12
 #define __NR_kdebug_typefilter VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(177)
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
-			/* 178  */
+#if DARWIN_VERS >= DARWIN_10_11
+#define __NR_kdebug_trace_string VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(178)
+#endif /* DARWIN_VERS >= DARWIN_10_11 */
 			/* 179  */
 #define	__NR_kdebug_trace   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(180)
 #define	__NR_setgid         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(181)
@@ -645,7 +647,9 @@
 			/* 372  */
 #endif
 			/* 373  */
-			/* 374  */
+#if DARWIN_VERS >= DARWIN_10_11
+#define	__NR_kevent_qos             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(374)
+#endif /* DARWIN_VERS >= DARWIN_10_11 */
 			/* 375  */
 			/* 376  */
 			/* 377  */
@@ -755,18 +759,17 @@
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
 			/* 489  */
 
-// TODO Update with OS X 10.11 kernel (xnu) source code release
 #if DARWIN_VERS >= DARWIN_10_11
-			/* 490  */
-			/* 491  */
-			/* 492  */
-			/* 493  */
-			/* 494  */
+#define	__NR_netagent_trigger       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(490)
+#define	__NR_stack_snapshot_with_config       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(491)
+#define	__NR_microstackshot         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(492)
+#define	__NR_grab_pgo_data          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(493)
+#define	__NR_persona                VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(494)
 			/* 495  */
 			/* 496  */
 			/* 497  */
 			/* 498  */
-			/* 499  */
+#define	__NR_work_interval_ctl      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(499)
 #endif /* DARWIN_VERS >= DARWIN_10_11 */
 
 #if DARWIN_VERS >= DARWIN_10_12

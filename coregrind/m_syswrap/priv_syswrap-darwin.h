@@ -237,7 +237,9 @@ DECL_TEMPLATE(darwin, csops);                   // 169
 #if DARWIN_VERS >= DARWIN_10_12
 // NYI kdebug_typefilter                        // 177
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
-// 178
+#if DARWIN_VERS >= DARWIN_10_11
+// NYI kdebug_trace_string                      // 178
+#endif /* DARWIN_VERS >= DARWIN_10_11 */
 // 179
 DECL_TEMPLATE(darwin, kdebug_trace);            // 180
 // GEN setgid 181
@@ -465,7 +467,9 @@ DECL_TEMPLATE(darwin, kevent64);                // 369
 DECL_TEMPLATE(darwin, __thread_selfid);         // 372
 #endif
 // 373
-// 374
+#if DARWIN_VERS >= DARWIN_10_11
+// NYI kevent_qos                               // 374
+#endif /* DARWIN_VERS >= DARWIN_10_11 */
 // 375
 // 376
 // 377
@@ -590,6 +594,18 @@ DECL_TEMPLATE(darwin, guarded_writev_np);           // 487
 // NYI renameatx_np                                 // 488
 // NYI mremap_encrypted  // 489
 #endif /* DARWIN_VERS >= DARWIN_10_10 */
+#if DARWIN_VERS >= DARWIN_10_11
+// NYI netagent_trigger                             // 490
+// NYI stack_snapshot_with_config                   // 491
+// NYI microstackshot                               // 492
+// NYI grab_pgo_data                                // 493
+// NYI persona                                      // 494
+// 495
+// 496
+// 497
+// 498
+// NYI work_interval_ctl                            // 499
+#endif /* DARWIN_VERS >= DARWIN_10_11 */
 #if DARWIN_VERS >= DARWIN_10_12
 // NYI getentropy                                   // 500
 // NYI necp_open                                    // 501

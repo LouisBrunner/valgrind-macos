@@ -10298,6 +10298,20 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACX_(__NR_guarded_writev_np, guarded_writev_np),    // 487
 // _____(__NR___mremap_encrypted),                      // 489
 #endif
+#if DARWIN_VERS >= DARWIN_10_11
+// _____(__NR_kdebug_trace_string),                     // 178
+// _____(__NR_kevent_qos),                              // 374
+// _____(__NR_netagent_trigger),                        // 490
+// _____(__NR_stack_snapshot_with_config),              // 491
+// _____(__NR_microstackshot),                          // 492
+// _____(__NR_grab_pgo_data),                           // 493
+// _____(__NR_persona),                                 // 494
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(495)),        // ???
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(496)),        // ???
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(497)),        // ???
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(498)),        // ???
+// _____(__NR_work_interval_ctl),                       // 499
+#endif
 #if DARWIN_VERS >= DARWIN_10_12
 // _____(__NR_kdebug_typefilter),                       // 177
 // _____(__NR_clonefileat),                             // 462

@@ -10296,8 +10296,34 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACX_(__NR_guarded_write_np, guarded_write_np),      // 485
    MACX_(__NR_guarded_pwrite_np, guarded_pwrite_np),    // 486
    MACX_(__NR_guarded_writev_np, guarded_writev_np),    // 487
-// _____(__NR___rename_ext),                            // 488
 // _____(__NR___mremap_encrypted),                      // 489
+#endif
+#if DARWIN_VERS >= DARWIN_10_12
+// _____(__NR_kdebug_typefilter),                       // 177
+// _____(__NR_clonefileat),                             // 462
+// _____(__NR_renameatx_np),                            // 488
+// _____(__NR_getentropy),                              // 500
+// _____(__NR_necp_open),                               // 501
+// _____(__NR_necp_client_action),                      // 502
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(503)),        // ???
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(504)),        // ???
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(505)),        // ???
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(506)),        // ???
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(507)),        // ???
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(508)),        // ???
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(509)),        // ???
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(510)),        // ???
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(511)),        // ???
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(512)),        // ???
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(513)),        // ???
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(514)),        // ???
+// _____(__NR_ulock_wait),                              // 515
+// _____(__NR_ulock_wake),                              // 516
+// _____(__NR_fclonefileat),                            // 517
+// _____(__NR_fs_snapshot),                             // 518
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(519)),        // ???
+// _____(__NR_terminate_with_payload),                  // 520
+// _____(__NR_abort_with_payload),                      // 521
 #endif
 // _____(__NR_MAXSYSCALL)
    MACX_(__NR_DARWIN_FAKE_SIGRETURN, FAKE_SIGRETURN)

@@ -391,7 +391,10 @@
 			/* 174  old getdents */
 			/* 175  old gc_control */
 #define	__NR_add_profil     VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(176)
-			/* 177  */
+
+#if DARWIN_VERS >= DARWIN_10_12
+#define __NR_kdebug_typefilter VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(177)
+#endif /* DARWIN_VERS >= DARWIN_10_12 */
 			/* 178  */
 			/* 179  */
 #define	__NR_kdebug_trace   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(180)
@@ -732,15 +735,25 @@
 #if DARWIN_VERS >= DARWIN_10_10
 #define __NR_necp_match_policy      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(460)
 #define __NR_getattrlistbulk        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(461)
+#endif /* DARWIN_VERS >= DARWIN_10_10 */
+
+#if DARWIN_VERS >= DARWIN_10_12
+#define __NR_clonefileat            VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(462)
+#endif /* DARWIN_VERS >= DARWIN_10_12 */
+
+#if DARWIN_VERS >= DARWIN_10_10
 #define __NR_readlinkat             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(473)
 #define __NR_bsdthread_ctl          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(478)
 #define __NR_guarded_open_dprotected_np VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(484)
 #define __NR_guarded_write_np       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(485)
 #define __NR_guarded_pwrite_np      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(486)
 #define __NR_guarded_writev_np      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(487)
-			/* 488  */
-			/* 489  */
 #endif /* DARWIN_VERS >= DARWIN_10_10 */
+
+#if DARWIN_VERS >= DARWIN_10_12
+#define	__NR_renameatx_np           VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(488)
+#endif /* DARWIN_VERS >= DARWIN_10_12 */
+			/* 489  */
 
 // TODO Update with OS X 10.11 kernel (xnu) source code release
 #if DARWIN_VERS >= DARWIN_10_11
@@ -756,11 +769,10 @@
 			/* 499  */
 #endif /* DARWIN_VERS >= DARWIN_10_11 */
 
-// TODO Update with macOS 10.12 kernel (xnu) source code release
 #if DARWIN_VERS >= DARWIN_10_12
-			/* 500  */
-			/* 501  */
-			/* 502  */
+#define	__NR_getentropy             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(500)
+#define	__NR_necp_open              VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(501)
+#define	__NR_necp_client_action     VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(502)
 			/* 503  */
 			/* 504  */
 			/* 505  */
@@ -773,13 +785,13 @@
 			/* 512  */
 			/* 513  */
 			/* 514  */
-			/* 515  */
-			/* 516  */
-			/* 517  */
-			/* 518  */
+#define	__NR_ulock_wait             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(515)
+#define	__NR_ulock_wake             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(516)
+#define	__NR_fclonefileat           VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(517)
+#define	__NR_fs_snapshot            VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(518)
 			/* 519  */
-			/* 520  */
-			/* 521  */
+#define	__NR_terminate_with_payload VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(520)
+#define	__NR_abort_with_payload     VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(521)
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
 
 #if DARWIN_VERS < DARWIN_10_6
@@ -795,7 +807,6 @@
 #elif DARWIN_VERS == DARWIN_10_11
 #define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(500)
 #elif DARWIN_VERS == DARWIN_10_12
-// TODO Confirm against final release
 #define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(522)
 #else
 #error unknown darwin version

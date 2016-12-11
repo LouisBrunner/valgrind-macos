@@ -234,7 +234,9 @@ DECL_TEMPLATE(darwin, csops);                   // 169
 // old getdents
 // old gc_control
 // NYI add_profil 176
-// 177
+#if DARWIN_VERS >= DARWIN_10_12
+// NYI kdebug_typefilter                        // 177
+#endif /* DARWIN_VERS >= DARWIN_10_12 */
 // 178
 // 179
 DECL_TEMPLATE(darwin, kdebug_trace);            // 180
@@ -555,7 +557,11 @@ DECL_TEMPLATE(darwin, disconnectx);              // 448
 // NYI coalition_info  // 459
 DECL_TEMPLATE(darwin, necp_match_policy);        // 460
 DECL_TEMPLATE(darwin, getattrlistbulk);          // 461
-// 462
+#endif /* DARWIN_VERS >= DARWIN_10_10 */
+#if DARWIN_VERS >= DARWIN_10_12
+// NYI clonefileat     // 462
+#endif /* DARWIN_VERS >= DARWIN_10_12 */
+#if DARWIN_VERS >= DARWIN_10_10
 // NYI openat          // 463
 // NYI openat_nocancel // 464
 // NYI renameat        // 465
@@ -581,9 +587,33 @@ DECL_TEMPLATE(darwin, guarded_open_dprotected_np);  // 484
 DECL_TEMPLATE(darwin, guarded_write_np);            // 485
 DECL_TEMPLATE(darwin, guarded_pwrite_np);           // 486
 DECL_TEMPLATE(darwin, guarded_writev_np);           // 487
-// NYI rename_ext      // 488
+// NYI renameatx_np                                 // 488
 // NYI mremap_encrypted  // 489
 #endif /* DARWIN_VERS >= DARWIN_10_10 */
+#if DARWIN_VERS >= DARWIN_10_12
+// NYI getentropy                                   // 500
+// NYI necp_open                                    // 501
+// NYI necp_client_action                           // 502
+// 503
+// 504
+// 505
+// 506
+// 507
+// 508
+// 509
+// 510
+// 511
+// 512
+// 513
+// 514
+// NYI ulock_wait                                   // 515
+// NYI ulock_wake                                   // 516
+// NYI fclonefileat                                 // 517
+// NYI fs_snapshot                                  // 518
+// 519
+// NYI terminate_with_payload                       // 520
+// NYI abort_with_payload                           // 521
+#endif /* DARWIN_VERS >= DARWIN_10_12 */
 
 // Mach message helpers
 DECL_TEMPLATE(darwin, mach_port_set_context);

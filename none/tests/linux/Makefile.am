@@ -7,7 +7,7 @@ EXTRA_DIST = \
 	blockfault.stderr.exp blockfault.vgtest \
 	brk-overflow1.stderr.exp brk-overflow1.vgtest \
 	brk-overflow2.stderr.exp brk-overflow2.vgtest \
-	clonev.stderr.exp clonev.vgtest \
+	clonev.stdout.exp clonev.stderr.exp clonev.vgtest \
 	mremap.stderr.exp mremap.stderr.exp-glibc27 mremap.stdout.exp \
 	    mremap.vgtest \
 	mremap2.stderr.exp mremap2.stdout.exp mremap2.vgtest \

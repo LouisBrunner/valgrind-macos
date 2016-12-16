@@ -1119,12 +1119,12 @@ static void calculateFCSR(UInt fs, UInt ft, UInt inst, Bool sz32, UInt opN)
 {
    IRDirty *d;
    IRTemp fcsr = newTemp(Ity_I32);
-   /* IRExpr_BBPTR() => Need to pass pointer to guest state to helper. */
+   /* IRExpr_GSPTR() => Need to pass pointer to guest state to helper. */
    if (fp_mode64)
       d = unsafeIRDirty_1_N(fcsr, 0,
                             "mips_dirtyhelper_calculate_FCSR_fp64",
                             &mips_dirtyhelper_calculate_FCSR_fp64,
-                            mkIRExprVec_4(IRExpr_BBPTR(),
+                            mkIRExprVec_4(IRExpr_GSPTR(),
                                           mkU32(fs),
                                           mkU32(ft),
                                           mkU32(inst)));
@@ -1132,7 +1132,7 @@ static void calculateFCSR(UInt fs, UInt ft, UInt inst, Bool sz32, UInt opN)
       d = unsafeIRDirty_1_N(fcsr, 0,
                             "mips_dirtyhelper_calculate_FCSR_fp32",
                             &mips_dirtyhelper_calculate_FCSR_fp32,
-                            mkIRExprVec_4(IRExpr_BBPTR(),
+                            mkIRExprVec_4(IRExpr_GSPTR(),
                                           mkU32(fs),
                                           mkU32(ft),
                                           mkU32(inst)));

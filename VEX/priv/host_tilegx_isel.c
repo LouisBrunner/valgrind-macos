@@ -225,7 +225,7 @@ static void doHelperCall ( ISelEnv * env, IRExpr * guard, IRCallee * cee,
 
 
   UInt nVECRETs = 0;
-  UInt nBBPTRs  = 0;
+  UInt nGSPTRs  = 0;
 
   /* TILEGX calling convention: up to 10 registers (r0 ... r9)
      are allowed to be used for passing integer arguments. They correspond
@@ -241,14 +241,14 @@ static void doHelperCall ( ISelEnv * env, IRExpr * guard, IRCallee * cee,
     IRExpr* arg = args[i];
     if (UNLIKELY(arg->tag == Iex_VECRET)) {
       nVECRETs++;
-    } else if (UNLIKELY(arg->tag == Iex_BBPTR)) {
-      nBBPTRs++;
+    } else if (UNLIKELY(arg->tag == Iex_GSPTR)) {
+      nGSPTRs++;
     }
   }
 
-  if (nVECRETs || nBBPTRs)
-    vex_printf("nVECRETs=%u, nBBPTRs=%u\n",
-               nVECRETs, nBBPTRs);
+  if (nVECRETs || nGSPTRs)
+    vex_printf("nVECRETs=%u, nGSPTRs=%u\n",
+               nVECRETs, nGSPTRs);
 
   if (TILEGX_N_REGPARMS < n_args) {
     vpanic("doHelperCall(TILEGX): cannot currently handle > 10 args");

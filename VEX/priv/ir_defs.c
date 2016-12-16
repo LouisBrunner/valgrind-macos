@@ -1382,8 +1382,8 @@ void ppIRExpr ( const IRExpr* e )
     case Iex_VECRET:
       vex_printf("VECRET");
       break;
-    case Iex_BBPTR:
-      vex_printf("BBPTR");
+    case Iex_GSPTR:
+      vex_printf("GSPTR");
       break;
     default:
       vpanic("ppIRExpr");
@@ -1909,9 +1909,9 @@ IRExpr* IRExpr_VECRET ( void ) {
    e->tag    = Iex_VECRET;
    return e;
 }
-IRExpr* IRExpr_BBPTR ( void ) {
+IRExpr* IRExpr_GSPTR ( void ) {
    IRExpr* e = LibVEX_Alloc_inline(sizeof(IRExpr));
-   e->tag    = Iex_BBPTR;
+   e->tag    = Iex_GSPTR;
    return e;
 }
 
@@ -2386,8 +2386,8 @@ IRExpr* deepCopyIRExpr ( const IRExpr* e )
       case Iex_VECRET:
          return IRExpr_VECRET();
 
-      case Iex_BBPTR:
-         return IRExpr_BBPTR();
+      case Iex_GSPTR:
+         return IRExpr_GSPTR();
 
       case Iex_Binder:
          return IRExpr_Binder(e->Iex.Binder.binder);
@@ -3670,8 +3670,8 @@ IRType typeOfIRExpr ( const IRTypeEnv* tyenv, const IRExpr* e )
          vpanic("typeOfIRExpr: Binder is not a valid expression");
       case Iex_VECRET:
          vpanic("typeOfIRExpr: VECRET is not a valid expression");
-      case Iex_BBPTR:
-         vpanic("typeOfIRExpr: BBPTR is not a valid expression");
+      case Iex_GSPTR:
+         vpanic("typeOfIRExpr: GSPTR is not a valid expression");
       default:
          ppIRExpr(e);
          vpanic("typeOfIRExpr");
@@ -3709,13 +3709,13 @@ Bool isPlausibleIRType ( IRType ty )
    }
 */
 
-static inline Bool isIRAtom_or_VECRET_or_BBPTR ( const IRExpr* e )
+static inline Bool isIRAtom_or_VECRET_or_GSPTR ( const IRExpr* e )
 {
   if (isIRAtom(e)) {
     return True;
   }
 
-  return UNLIKELY(is_IRExpr_VECRET_or_BBPTR(e));
+  return UNLIKELY(is_IRExpr_VECRET_or_GSPTR(e));
 }
 
 Bool isFlatIRStmt ( const IRStmt* st )
@@ -3805,7 +3805,7 @@ Bool isFlatIRStmt ( const IRStmt* st )
          if (!isIRAtom(di->guard)) 
             return False;
          for (i = 0; di->args[i]; i++)
-            if (!isIRAtom_or_VECRET_or_BBPTR(di->args[i])) 
+            if (!isIRAtom_or_VECRET_or_GSPTR(di->args[i])) 
                return False;
          if (di->mAddr && !isIRAtom(di->mAddr)) 
             return False;
@@ -3950,7 +3950,7 @@ void useBeforeDef_Expr ( const IRSB* bb, const IRStmt* stmt,
       case Iex_CCall:
          for (i = 0; expr->Iex.CCall.args[i]; i++) {
             const IRExpr* arg = expr->Iex.CCall.args[i];
-            if (UNLIKELY(is_IRExpr_VECRET_or_BBPTR(arg))) {
+            if (UNLIKELY(is_IRExpr_VECRET_or_GSPTR(arg))) {
                /* These aren't allowed in CCall lists.  Let's detect
                   and throw them out here, though, rather than
                   segfaulting a bit later on. */
@@ -4032,7 +4032,7 @@ void useBeforeDef_Stmt ( const IRSB* bb, const IRStmt* stmt, Int* def_counts )
          d = stmt->Ist.Dirty.details;
          for (i = 0; d->args[i] != NULL; i++) {
             IRExpr* arg = d->args[i];
-            if (UNLIKELY(is_IRExpr_VECRET_or_BBPTR(arg))) {
+            if (UNLIKELY(is_IRExpr_VECRET_or_GSPTR(arg))) {
                /* This is ensured by isFlatIRStmt */
               ;
             } else {
@@ -4232,8 +4232,8 @@ void tcExpr ( const IRSB* bb, const IRStmt* stmt, const IRExpr* expr,
             if (i >= 32)
                sanityCheckFail(bb,stmt,"Iex.CCall: > 32 args");
             IRExpr* arg = expr->Iex.CCall.args[i];
-            if (UNLIKELY(is_IRExpr_VECRET_or_BBPTR(arg)))
-               sanityCheckFail(bb,stmt,"Iex.CCall.args: is VECRET/BBPTR");
+            if (UNLIKELY(is_IRExpr_VECRET_or_GSPTR(arg)))
+               sanityCheckFail(bb,stmt,"Iex.CCall.args: is VECRET/GSPTR");
             tcExpr(bb,stmt, arg, gWordTy);
          }
          if (expr->Iex.CCall.retty == Ity_I1)
@@ -4472,21 +4472,21 @@ void tcStmt ( const IRSB* bb, const IRStmt* stmt, IRType gWordTy )
             if (retTy == Ity_I1)
                sanityCheckFail(bb,stmt,"IRStmt.Dirty.dst :: Ity_I1");
          }
-         UInt nVECRETs = 0, nBBPTRs = 0;
+         UInt nVECRETs = 0, nGSPTRs = 0;
          for (i = 0; d->args[i] != NULL; i++) {
             if (i >= 32)
                sanityCheckFail(bb,stmt,"IRStmt.Dirty: > 32 args");
             const IRExpr* arg = d->args[i];
             if (UNLIKELY(arg->tag == Iex_VECRET)) {
                nVECRETs++;
-            } else if (UNLIKELY(arg->tag == Iex_BBPTR)) {
-               nBBPTRs++;
+            } else if (UNLIKELY(arg->tag == Iex_GSPTR)) {
+               nGSPTRs++;
             } else {
                if (typeOfIRExpr(tyenv, arg) == Ity_I1)
                   sanityCheckFail(bb,stmt,"IRStmt.Dirty.arg[i] :: Ity_I1");
             }
-            if (nBBPTRs > 1) {
-               sanityCheckFail(bb,stmt,"IRStmt.Dirty.args: > 1 BBPTR arg");
+            if (nGSPTRs > 1) {
+               sanityCheckFail(bb,stmt,"IRStmt.Dirty.args: > 1 GSPTR arg");
             }
             if (nVECRETs == 1) {
                /* Fn must return V128 or V256. */
@@ -4505,15 +4505,15 @@ void tcStmt ( const IRSB* bb, const IRStmt* stmt, IRType gWordTy )
                                "IRStmt.Dirty.args: > 1 VECRET present");
             }
          }
-         if (nBBPTRs > 1) {
+         if (nGSPTRs > 1) {
             sanityCheckFail(bb,stmt,
-                            "IRStmt.Dirty.args: > 1 BBPTR present");
+                            "IRStmt.Dirty.args: > 1 GSPTR present");
          }
          /* If you ask for the baseblock pointer, you have to make
             some declaration about access to the guest state too. */
-         if (d->nFxState == 0 && nBBPTRs != 0) {
+         if (d->nFxState == 0 && nGSPTRs != 0) {
             sanityCheckFail(bb,stmt,
-                            "IRStmt.Dirty.args: BBPTR requested, "
+                            "IRStmt.Dirty.args: GSPTR requested, "
                             "but no fxState declared");
          }
         break;

@@ -352,7 +352,7 @@ static Int pushArg ( ISelEnv* env, IRExpr* arg, HReg r_vecRetAddr )
       addInstr(env, X86Instr_Push(X86RMI_Reg(r_vecRetAddr)));
       return 1;
    }
-   if (UNLIKELY(arg->tag == Iex_BBPTR)) {
+   if (UNLIKELY(arg->tag == Iex_GSPTR)) {
       addInstr(env, X86Instr_Push(X86RMI_Reg(hregX86_EBP())));
       return 1;
    }
@@ -402,7 +402,7 @@ void callHelperAndClearArgs ( ISelEnv* env, X86CondCode cc,
 static
 Bool mightRequireFixedRegs ( IRExpr* e )
 {
-   if (UNLIKELY(is_IRExpr_VECRET_or_BBPTR(e))) {
+   if (UNLIKELY(is_IRExpr_VECRET_or_GSPTR(e))) {
       // These are always "safe" -- either a copy of %esp in some
       // arbitrary vreg, or a copy of %ebp, respectively.
       return False;
@@ -443,9 +443,9 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    *retloc               = mk_RetLoc_INVALID();
 
    /* These are used for cross-checking that IR-level constraints on
-      the use of Iex_VECRET and Iex_BBPTR are observed. */
+      the use of Iex_VECRET and Iex_GSPTR are observed. */
    UInt nVECRETs = 0;
-   UInt nBBPTRs  = 0;
+   UInt nGSPTRs  = 0;
 
    /* Marshal args for a call, do the call, and clear the stack.
       Complexities to consider:
@@ -458,7 +458,7 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
         is enough to preallocate the return space before marshalling
         any arguments, in this case.
 
-        |args| may also contain IRExpr_BBPTR(), in which case the
+        |args| may also contain IRExpr_GSPTR(), in which case the
         value in %ebp is passed as the corresponding argument.
 
       * If the callee claims regparmness of 1, 2 or 3, we must pass the
@@ -510,13 +510,13 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
       n_args++;
       if (UNLIKELY(arg->tag == Iex_VECRET)) {
          nVECRETs++;
-      } else if (UNLIKELY(arg->tag == Iex_BBPTR)) {
-         nBBPTRs++;
+      } else if (UNLIKELY(arg->tag == Iex_GSPTR)) {
+         nGSPTRs++;
       }
    }
 
    /* If this fails, the IR is ill-formed */
-   vassert(nBBPTRs == 0 || nBBPTRs == 1);
+   vassert(nGSPTRs == 0 || nGSPTRs == 1);
 
    /* If we have a VECRET, allocate space on the stack for the return
       value, and record the stack pointer after that. */
@@ -588,7 +588,7 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
             if (UNLIKELY(arg->tag == Iex_VECRET)) {
                vassert(0); //ATC
             }
-            else if (UNLIKELY(arg->tag == Iex_BBPTR)) {
+            else if (UNLIKELY(arg->tag == Iex_GSPTR)) {
                vassert(0); //ATC
             } else {
                vassert(typeOfIRExpr(env->type_env, arg) == Ity_I32);
@@ -615,7 +615,7 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
                                              X86RMI_Reg(r_vecRetAddr),
                                              argregs[argreg]));
             }
-            else if (UNLIKELY(arg->tag == Iex_BBPTR)) {
+            else if (UNLIKELY(arg->tag == Iex_GSPTR)) {
                vassert(0); //ATC
             } else {
                vassert(typeOfIRExpr(env->type_env, arg) == Ity_I32);

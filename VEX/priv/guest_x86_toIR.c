@@ -4030,7 +4030,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                                 0/*regparms*/, 
                                 "x86g_dirtyhelper_FLDENV", 
                                 &x86g_dirtyhelper_FLDENV,
-                                mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
+                                mkIRExprVec_2( IRExpr_GSPTR(), mkexpr(addr) )
                              );
                d->tmp   = ew;
                /* declare we're reading memory */
@@ -4126,7 +4126,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                                0/*regparms*/, 
                                "x86g_dirtyhelper_FSTENV", 
                                &x86g_dirtyhelper_FSTENV,
-                               mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
+                               mkIRExprVec_2( IRExpr_GSPTR(), mkexpr(addr) )
                             );
                /* declare we're writing memory */
                d->mFx   = Ifx_Write;
@@ -4842,7 +4842,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                                 0/*regparms*/, 
                                 "x86g_dirtyhelper_FINIT", 
                                 &x86g_dirtyhelper_FINIT,
-                                mkIRExprVec_1(IRExpr_BBPTR())
+                                mkIRExprVec_1(IRExpr_GSPTR())
                              );
 
                /* declare we're writing guest state */
@@ -5041,7 +5041,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                                 0/*regparms*/, 
                                 "x86g_dirtyhelper_FRSTOR", 
                                 &x86g_dirtyhelper_FRSTOR,
-                                mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
+                                mkIRExprVec_2( IRExpr_GSPTR(), mkexpr(addr) )
                              );
                d->tmp   = ew;
                /* declare we're reading memory */
@@ -5100,7 +5100,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                                0/*regparms*/, 
                                "x86g_dirtyhelper_FSAVE", 
                                &x86g_dirtyhelper_FSAVE,
-                               mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
+                               mkIRExprVec_2( IRExpr_GSPTR(), mkexpr(addr) )
                             );
                /* declare we're writing memory */
                d->mFx   = Ifx_Write;
@@ -8337,7 +8337,7 @@ DisResult disInstr_X86_WRK (
              0/*regparms*/, 
              "x86g_dirtyhelper_FXSAVE", 
              &x86g_dirtyhelper_FXSAVE,
-             mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
+             mkIRExprVec_2( IRExpr_GSPTR(), mkexpr(addr) )
           );
 
       /* declare we're writing memory */
@@ -8411,7 +8411,7 @@ DisResult disInstr_X86_WRK (
              0/*regparms*/, 
              "x86g_dirtyhelper_FXRSTOR", 
              &x86g_dirtyhelper_FXRSTOR,
-             mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
+             mkIRExprVec_2( IRExpr_GSPTR(), mkexpr(addr) )
           );
 
       /* declare we're reading memory */
@@ -14874,7 +14874,7 @@ DisResult disInstr_X86_WRK (
 
          vassert(fName); vassert(fAddr);
          d = unsafeIRDirty_0_N ( 0/*regparms*/, 
-                                 fName, fAddr, mkIRExprVec_1(IRExpr_BBPTR()) );
+                                 fName, fAddr, mkIRExprVec_1(IRExpr_GSPTR()) );
          /* declare guest state effects */
          d->nFxState = 4;
          vex_bzero(&d->fxState, sizeof(d->fxState));

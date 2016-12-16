@@ -407,9 +407,9 @@ static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
    *retloc               = mk_RetLoc_INVALID();
 
    /* These are used for cross-checking that IR-level constraints on
-      the use of IRExpr_VECRET() and IRExpr_BBPTR() are observed. */
+      the use of IRExpr_VECRET() and IRExpr_GSPTR() are observed. */
    UInt nVECRETs = 0;
-   UInt nBBPTRs  = 0;
+   UInt nGSPTRs  = 0;
 
    /* MIPS O32 calling convention: up to four registers ($a0 ... $a3)
       are allowed to be used for passing integer arguments. They correspond
@@ -431,7 +431,7 @@ static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
       stack, it is enough to preallocate the return space before
       marshalling any arguments, in this case.
 
-      |args| may also contain IRExpr_BBPTR(), in which case the value
+      |args| may also contain IRExpr_GSPTR(), in which case the value
       in the guest state pointer register is passed as the
       corresponding argument. */
 
@@ -440,8 +440,8 @@ static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
       IRExpr* arg = args[i];
       if (UNLIKELY(arg->tag == Iex_VECRET)) {
          nVECRETs++;
-      } else if (UNLIKELY(arg->tag == Iex_BBPTR)) {
-         nBBPTRs++;
+      } else if (UNLIKELY(arg->tag == Iex_GSPTR)) {
+         nGSPTRs++;
       }
       n_args++;
    }
@@ -512,7 +512,7 @@ static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
          vassert(argreg < MIPS_N_REGPARMS);
 
          IRType  aTy = Ity_INVALID;
-         if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg)))
+         if (LIKELY(!is_IRExpr_VECRET_or_GSPTR(arg)))
             aTy = typeOfIRExpr(env->type_env, arg);
 
          if (aTy == Ity_I32 || mode64) {
@@ -532,7 +532,7 @@ static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
             argiregs |= (1 << (argreg + 4));
             addInstr(env, mk_iMOVds_RR( argregs[argreg], rLo));
             argreg++;
-         } else if (arg->tag == Iex_BBPTR) {
+         } else if (arg->tag == Iex_GSPTR) {
             vassert(0);  // ATC
             addInstr(env, mk_iMOVds_RR(argregs[argreg],
                                        GuestStatePointer(mode64)));
@@ -553,10 +553,10 @@ static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
          IRExpr* arg = args[i];
 
          IRType  aTy = Ity_INVALID;
-         if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg)))
+         if (LIKELY(!is_IRExpr_VECRET_or_GSPTR(arg)))
             aTy  = typeOfIRExpr(env->type_env, arg);
 
-         if (aTy == Ity_I32 || (mode64 && arg->tag != Iex_BBPTR)) {
+         if (aTy == Ity_I32 || (mode64 && arg->tag != Iex_GSPTR)) {
             tmpregs[argreg] = iselWordExpr_R(env, arg);
             argreg++;
          } else if (aTy == Ity_I64) {  /* Ity_I64 */
@@ -570,7 +570,7 @@ static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
             argreg++;
             tmpregs[argreg] = raHi;
             argreg++;
-         } else if (arg->tag == Iex_BBPTR) {
+         } else if (arg->tag == Iex_GSPTR) {
             tmpregs[argreg] = GuestStatePointer(mode64);
             argreg++;
          }
@@ -607,7 +607,7 @@ static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
 
    /* Do final checks, set the return values, and generate the call
       instruction proper. */
-   vassert(nBBPTRs == 0 || nBBPTRs == 1);
+   vassert(nGSPTRs == 0 || nGSPTRs == 1);
    vassert(nVECRETs == (retTy == Ity_V128 || retTy == Ity_V256) ? 1 : 0);
    vassert(*stackAdjustAfterCall == 0);
    vassert(is_RetLoc_INVALID(*retloc));

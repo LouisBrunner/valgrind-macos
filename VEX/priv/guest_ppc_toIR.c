@@ -22247,14 +22247,14 @@ static Bool dis_av_load ( const VexAbiInfo* vbi, UInt theInstr )
       IRDirty* d;
       UInt vD_off = vectorGuestRegOffset(vD_addr);
       IRExpr** args_be = mkIRExprVec_5(
-                         IRExpr_BBPTR(),
+                         IRExpr_GSPTR(),
                          mkU32(vD_off),
                          binop(Iop_And32, mkNarrowTo32(ty, mkexpr(EA)),
                                           mkU32(0xF)),
                          mkU32(0)/*left*/,
                          mkU32(1)/*Big Endian*/);
       IRExpr** args_le = mkIRExprVec_5(
-                         IRExpr_BBPTR(),
+                         IRExpr_GSPTR(),
                          mkU32(vD_off),
                          binop(Iop_And32, mkNarrowTo32(ty, mkexpr(EA)),
                                           mkU32(0xF)),
@@ -22296,14 +22296,14 @@ static Bool dis_av_load ( const VexAbiInfo* vbi, UInt theInstr )
       IRDirty* d;
       UInt vD_off = vectorGuestRegOffset(vD_addr);
       IRExpr** args_be = mkIRExprVec_5(
-                             IRExpr_BBPTR(),
+                             IRExpr_GSPTR(),
                              mkU32(vD_off),
                              binop(Iop_And32, mkNarrowTo32(ty, mkexpr(EA)),
                                               mkU32(0xF)),
                              mkU32(1)/*right*/,
                              mkU32(1)/*Big Endian*/);
       IRExpr** args_le = mkIRExprVec_5(
-                             IRExpr_BBPTR(),
+                             IRExpr_GSPTR(),
                              mkU32(vD_off),
                              binop(Iop_And32, mkNarrowTo32(ty, mkexpr(EA)),
                                               mkU32(0xF)),

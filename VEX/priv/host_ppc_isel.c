@@ -736,9 +736,9 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    *retloc               = mk_RetLoc_INVALID();
 
    /* These are used for cross-checking that IR-level constraints on
-      the use of IRExpr_VECRET() and IRExpr_BBPTR() are observed. */
+      the use of IRExpr_VECRET() and IRExpr_GSPTR() are observed. */
    UInt nVECRETs = 0;
-   UInt nBBPTRs  = 0;
+   UInt nGSPTRs  = 0;
 
    /* Marshal args for a call and do the call.
 
@@ -756,7 +756,7 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
       stack, it is enough to preallocate the return space before
       marshalling any arguments, in this case.
 
-      |args| may also contain IRExpr_BBPTR(), in which case the value
+      |args| may also contain IRExpr_GSPTR(), in which case the value
       in the guest state pointer register is passed as the
       corresponding argument.
 
@@ -852,7 +852,7 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    if (go_fast) {
       for (i = 0; i < n_args; i++) {
          IRExpr* arg = args[i];
-         if (UNLIKELY(arg->tag == Iex_BBPTR)) {
+         if (UNLIKELY(arg->tag == Iex_GSPTR)) {
             /* that's OK */
          } 
          else if (UNLIKELY(arg->tag == Iex_VECRET)) {
@@ -880,7 +880,7 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
          IRExpr* arg = args[i];
          vassert(argreg < PPC_N_REGPARMS);
 
-         if (arg->tag == Iex_BBPTR) {
+         if (arg->tag == Iex_GSPTR) {
             argiregs |= (1 << (argreg+3));
             addInstr(env, mk_iMOVds_RR( argregs[argreg],
                                         GuestStatePtr(mode64) ));
@@ -954,11 +954,11 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
       for (i = 0; i < n_args; i++) {
          IRExpr* arg = args[i];
          vassert(argreg < PPC_N_REGPARMS);
-         if (UNLIKELY(arg->tag == Iex_BBPTR)) {
+         if (UNLIKELY(arg->tag == Iex_GSPTR)) {
             tmpregs[argreg] = newVRegI(env);
             addInstr(env, mk_iMOVds_RR( tmpregs[argreg],
                                         GuestStatePtr(mode64) ));
-            nBBPTRs++;
+            nGSPTRs++;
          }
          else if (UNLIKELY(arg->tag == Iex_VECRET)) {
             /* We stashed the address of the return slot earlier, so just
@@ -1025,7 +1025,7 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
       vassert(nVECRETs == 0);
    }
 
-   vassert(nBBPTRs == 0 || nBBPTRs == 1);
+   vassert(nGSPTRs == 0 || nGSPTRs == 1);
 
    vassert(*stackAdjustAfterCall == 0);
    vassert(is_RetLoc_INVALID(*retloc));

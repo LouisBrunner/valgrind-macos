@@ -370,7 +370,7 @@ static AMD64Instr* iselIntExpr_single_instruction ( ISelEnv* env,
    vassert(e->tag != Iex_VECRET);
 
    /* In this case we give out a copy of the BaseBlock pointer. */
-   if (UNLIKELY(e->tag == Iex_BBPTR)) {
+   if (UNLIKELY(e->tag == Iex_GSPTR)) {
       return mk_iMOVsd_RR( hregAMD64_RBP(), dst );
    }
 
@@ -442,9 +442,9 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    *retloc               = mk_RetLoc_INVALID();
 
    /* These are used for cross-checking that IR-level constraints on
-      the use of IRExpr_VECRET() and IRExpr_BBPTR() are observed. */
+      the use of IRExpr_VECRET() and IRExpr_GSPTR() are observed. */
    UInt nVECRETs = 0;
-   UInt nBBPTRs  = 0;
+   UInt nGSPTRs  = 0;
 
    /* Marshal args for a call and do the call.
 
@@ -462,7 +462,7 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
       stack, it is enough to preallocate the return space before
       marshalling any arguments, in this case.
 
-      |args| may also contain IRExpr_BBPTR(), in which case the
+      |args| may also contain IRExpr_GSPTR(), in which case the
       value in %rbp is passed as the corresponding argument.
 
       Generating code which is both efficient and correct when
@@ -556,7 +556,7 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    /* FAST SCHEME */
    /* In this loop, we process args that can be computed into the
       destination (real) register with a single instruction, without
-      using any fixed regs.  That also includes IRExpr_BBPTR(), but
+      using any fixed regs.  That also includes IRExpr_GSPTR(), but
       not IRExpr_VECRET().  Indeed, if the IR is well-formed, we can
       never see IRExpr_VECRET() at this point, since the return-type
       check above should ensure all those cases use the slow scheme
@@ -564,7 +564,7 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    vassert(n_args >= 0 && n_args <= 6);
    for (i = 0; i < n_args; i++) {
       IRExpr* arg = args[i];
-      if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg))) {
+      if (LIKELY(!is_IRExpr_VECRET_or_GSPTR(arg))) {
          vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I64);
       }
       fastinstrs[i] 
@@ -610,10 +610,10 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    vassert(n_args >= 0 && n_args <= 6);
    for (i = 0; i < n_args; i++) {
       IRExpr* arg = args[i];
-      if (UNLIKELY(arg->tag == Iex_BBPTR)) {
+      if (UNLIKELY(arg->tag == Iex_GSPTR)) {
          tmpregs[i] = newVRegI(env);
          addInstr(env, mk_iMOVsd_RR( hregAMD64_RBP(), tmpregs[i]));
-         nBBPTRs++;
+         nGSPTRs++;
       }
       else if (UNLIKELY(arg->tag == Iex_VECRET)) {
          /* We stashed the address of the return slot earlier, so just
@@ -661,7 +661,7 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
       vassert(nVECRETs == 0);
    }
 
-   vassert(nBBPTRs == 0 || nBBPTRs == 1);
+   vassert(nGSPTRs == 0 || nGSPTRs == 1);
 
    vassert(*stackAdjustAfterCall == 0);
    vassert(is_RetLoc_INVALID(*retloc));

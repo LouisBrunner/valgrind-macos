@@ -449,7 +449,7 @@ void set_FPCR_rounding_mode ( ISelEnv* env, IRExpr* mode )
 static
 Bool mightRequireFixedRegs ( IRExpr* e )
 {
-   if (UNLIKELY(is_IRExpr_VECRET_or_BBPTR(e))) {
+   if (UNLIKELY(is_IRExpr_VECRET_or_GSPTR(e))) {
       // These are always "safe" -- either a copy of SP in some
       // arbitrary vreg, or a copy of x21, respectively.
       return False;
@@ -493,9 +493,9 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    *retloc               = mk_RetLoc_INVALID();
 
    /* These are used for cross-checking that IR-level constraints on
-      the use of IRExpr_VECRET() and IRExpr_BBPTR() are observed. */
+      the use of IRExpr_VECRET() and IRExpr_GSPTR() are observed. */
    UInt nVECRETs = 0;
-   UInt nBBPTRs  = 0;
+   UInt nGSPTRs  = 0;
 
    /* Marshal args for a call and do the call.
 
@@ -513,7 +513,7 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
       preallocate the return space before marshalling any arguments,
       in this case.
 
-      |args| may also contain IRExpr_BBPTR(), in which case the
+      |args| may also contain IRExpr_GSPTR(), in which case the
       value in x21 is passed as the corresponding argument.
 
       Generating code which is both efficient and correct when
@@ -560,14 +560,14 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
       IRExpr* arg = args[i];
       if (UNLIKELY(arg->tag == Iex_VECRET)) {
          nVECRETs++;
-      } else if (UNLIKELY(arg->tag == Iex_BBPTR)) {
-         nBBPTRs++;
+      } else if (UNLIKELY(arg->tag == Iex_GSPTR)) {
+         nGSPTRs++;
       }
       n_args++;
    }
 
    /* If this fails, the IR is ill-formed */
-   vassert(nBBPTRs == 0 || nBBPTRs == 1);
+   vassert(nGSPTRs == 0 || nGSPTRs == 1);
 
    /* If we have a VECRET, allocate space on the stack for the return
       value, and record the stack pointer after that. */
@@ -640,7 +640,7 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
          IRExpr* arg = args[i];
 
          IRType  aTy = Ity_INVALID;
-         if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg)))
+         if (LIKELY(!is_IRExpr_VECRET_or_GSPTR(arg)))
             aTy = typeOfIRExpr(env->type_env, args[i]);
 
          if (nextArgReg >= ARM64_N_ARGREGS)
@@ -651,7 +651,7 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
                                            iselIntExpr_R(env, args[i]) ));
             nextArgReg++;
          }
-         else if (arg->tag == Iex_BBPTR) {
+         else if (arg->tag == Iex_GSPTR) {
             vassert(0); //ATC
             addInstr(env, ARM64Instr_MovI( argregs[nextArgReg],
                                            hregARM64_X21() ));
@@ -679,7 +679,7 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
          IRExpr* arg = args[i];
 
          IRType  aTy = Ity_INVALID;
-         if (LIKELY(!is_IRExpr_VECRET_or_BBPTR(arg)))
+         if (LIKELY(!is_IRExpr_VECRET_or_GSPTR(arg)))
             aTy = typeOfIRExpr(env->type_env, args[i]);
 
          if (nextArgReg >= ARM64_N_ARGREGS)
@@ -689,7 +689,7 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
             tmpregs[nextArgReg] = iselIntExpr_R(env, args[i]);
             nextArgReg++;
          }
-         else if (arg->tag == Iex_BBPTR) {
+         else if (arg->tag == Iex_GSPTR) {
             vassert(0); //ATC
             tmpregs[nextArgReg] = hregARM64_X21();
             nextArgReg++;
@@ -733,7 +733,7 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
 
    /* Do final checks, set the return values, and generate the call
       instruction proper. */
-   vassert(nBBPTRs == 0 || nBBPTRs == 1);
+   vassert(nGSPTRs == 0 || nGSPTRs == 1);
    vassert(nVECRETs == (retTy == Ity_V128 || retTy == Ity_V256) ? 1 : 0);
    vassert(*stackAdjustAfterCall == 0);
    vassert(is_RetLoc_INVALID(*retloc));

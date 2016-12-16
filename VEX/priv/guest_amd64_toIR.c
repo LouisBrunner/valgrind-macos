@@ -5214,7 +5214,7 @@ static void gen_FINIT_SEQUENCE ( IRExpr* guard )
                     0/*regparms*/, 
                     "amd64g_dirtyhelper_FINIT", 
                     &amd64g_dirtyhelper_FINIT,
-                    mkIRExprVec_1( IRExpr_BBPTR() )
+                    mkIRExprVec_1( IRExpr_GSPTR() )
                  );
 
    /* declare we're writing guest state */
@@ -5584,7 +5584,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                                  0/*regparms*/, 
                                  "amd64g_dirtyhelper_FLDENV", 
                                  &amd64g_dirtyhelper_FLDENV,
-                                 mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
+                                 mkIRExprVec_2( IRExpr_GSPTR(), mkexpr(addr) )
                               );
                d->tmp       = w64;
                /* declare we're reading memory */
@@ -5681,7 +5681,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                                0/*regparms*/, 
                                "amd64g_dirtyhelper_FSTENV", 
                                &amd64g_dirtyhelper_FSTENV,
-                               mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
+                               mkIRExprVec_2( IRExpr_GSPTR(), mkexpr(addr) )
                             );
                /* declare we're writing memory */
                d->mFx   = Ifx_Write;
@@ -6551,7 +6551,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                          0/*regparms*/, 
                          "amd64g_dirtyhelper_FRSTOR",
                          &amd64g_dirtyhelper_FRSTOR,
-                         mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
+                         mkIRExprVec_2( IRExpr_GSPTR(), mkexpr(addr) )
                       );
                   d->mSize = 108;
                }
@@ -6632,7 +6632,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                          0/*regparms*/, 
                          "amd64g_dirtyhelper_FNSAVE",
                          &amd64g_dirtyhelper_FNSAVE,
-                         mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
+                         mkIRExprVec_2( IRExpr_GSPTR(), mkexpr(addr) )
                       );
                   d->mSize = 108;
                }
@@ -11598,7 +11598,7 @@ static void gen_XSAVE_SEQUENCE ( IRTemp addr, IRTemp rfbm )
                     0/*regparms*/, 
                     "amd64g_dirtyhelper_XSAVE_COMPONENT_0",
                     &amd64g_dirtyhelper_XSAVE_COMPONENT_0,
-                    mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
+                    mkIRExprVec_2( IRExpr_GSPTR(), mkexpr(addr) )
                  );
    d0->guard = binop(Iop_CmpEQ64, binop(Iop_And64, mkexpr(rfbm), mkU64(1)),
                      mkU64(1));
@@ -11658,7 +11658,7 @@ static void gen_XSAVE_SEQUENCE ( IRTemp addr, IRTemp rfbm )
                     0/*regparms*/, 
                     "amd64g_dirtyhelper_XSAVE_COMPONENT_1_EXCLUDING_XMMREGS",
                     &amd64g_dirtyhelper_XSAVE_COMPONENT_1_EXCLUDING_XMMREGS,
-                    mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
+                    mkIRExprVec_2( IRExpr_GSPTR(), mkexpr(addr) )
                  );
    d1->guard = guard_1or2;
 
@@ -11821,7 +11821,7 @@ static void gen_XRSTOR_SEQUENCE ( IRTemp addr, IRTemp xstate_bv, IRTemp rfbm )
                     0/*regparms*/, 
                     "amd64g_dirtyhelper_XRSTOR_COMPONENT_0",
                     &amd64g_dirtyhelper_XRSTOR_COMPONENT_0,
-                    mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
+                    mkIRExprVec_2( IRExpr_GSPTR(), mkexpr(addr) )
                  );
    d0->guard = binop(Iop_CmpNE64, mkexpr(restore_0), mkU64(0));
 
@@ -11902,7 +11902,7 @@ static void gen_XRSTOR_SEQUENCE ( IRTemp addr, IRTemp xstate_bv, IRTemp rfbm )
                     0/*regparms*/, 
                     "amd64g_dirtyhelper_XRSTOR_COMPONENT_1_EXCLUDING_XMMREGS",
                     &amd64g_dirtyhelper_XRSTOR_COMPONENT_1_EXCLUDING_XMMREGS,
-                    mkIRExprVec_2( IRExpr_BBPTR(), mkexpr(addr) )
+                    mkIRExprVec_2( IRExpr_GSPTR(), mkexpr(addr) )
                 ) ;
    d1->guard = restore_1or2e;
 
@@ -17681,7 +17681,7 @@ static Long dis_AESx ( const VexAbiInfo* vbi, Prefix pfx,
    IRExpr*  gstOffLe     = mkU64(gstOffL);
    IRExpr*  gstOffRe     = mkU64(gstOffR);
    IRExpr** args
-      = mkIRExprVec_5( IRExpr_BBPTR(), opc4, gstOffDe, gstOffLe, gstOffRe );
+      = mkIRExprVec_5( IRExpr_GSPTR(), opc4, gstOffDe, gstOffLe, gstOffRe );
 
    IRDirty* d    = unsafeIRDirty_0_N( 0/*regparms*/, nm, fn, args );
    /* It's not really a dirty call, but we can't use the clean helper
@@ -17771,7 +17771,7 @@ static Long dis_AESKEYGENASSIST ( const VexAbiInfo* vbi, Prefix pfx,
    IRExpr*  gstOffLe     = mkU64(gstOffL);
    IRExpr*  gstOffRe     = mkU64(gstOffR);
    IRExpr** args
-      = mkIRExprVec_4( IRExpr_BBPTR(), imme, gstOffLe, gstOffRe );
+      = mkIRExprVec_4( IRExpr_GSPTR(), imme, gstOffLe, gstOffRe );
 
    IRDirty* d    = unsafeIRDirty_0_N( 0/*regparms*/, nm, fn, args );
    /* It's not really a dirty call, but we can't use the clean helper
@@ -18711,7 +18711,7 @@ static Long dis_PCMPxSTRx ( const VexAbiInfo* vbi, Prefix pfx,
    IRExpr*  edxIN        = isISTRx ? mkU64(0) : getIRegRDX(8);
    IRExpr*  eaxIN        = isISTRx ? mkU64(0) : getIRegRAX(8);
    IRExpr** args
-      = mkIRExprVec_6( IRExpr_BBPTR(),
+      = mkIRExprVec_6( IRExpr_GSPTR(),
                        opc4_and_imm, gstOffLe, gstOffRe, edxIN, eaxIN );
 
    IRTemp   resT = newTemp(Ity_I64);
@@ -21645,7 +21645,7 @@ Long dis_ESC_0F (
          void*        fAddr = &amd64g_dirtyhelper_RDTSCP;
          IRDirty* d
             = unsafeIRDirty_0_N ( 0/*regparms*/, 
-                                  fName, fAddr, mkIRExprVec_1(IRExpr_BBPTR()) );
+                                  fName, fAddr, mkIRExprVec_1(IRExpr_GSPTR()) );
          /* declare guest state effects */
          d->nFxState = 3;
          vex_bzero(&d->fxState, sizeof(d->fxState));
@@ -21966,7 +21966,7 @@ Long dis_ESC_0F (
 
       vassert(fName); vassert(fAddr);
       d = unsafeIRDirty_0_N ( 0/*regparms*/, 
-                              fName, fAddr, mkIRExprVec_1(IRExpr_BBPTR()) );
+                              fName, fAddr, mkIRExprVec_1(IRExpr_GSPTR()) );
       /* declare guest state effects */
       d->nFxState = 4;
       vex_bzero(&d->fxState, sizeof(d->fxState));

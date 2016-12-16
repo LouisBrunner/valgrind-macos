@@ -527,14 +527,14 @@ doHelperCall(/*OUT*/UInt *stackAdjustAfterCall,
       special node IRExpr_VECRET(). For s390, however, V128 and V256 return
       values do not occur as we generally do not support vector types.
 
-      |args| may also contain IRExpr_BBPTR(), in which case the value
+      |args| may also contain IRExpr_GSPTR(), in which case the value
       in the guest state pointer register is passed as the
       corresponding argument.
 
       These are used for cross-checking that IR-level constraints on
-      the use of IRExpr_VECRET() and IRExpr_BBPTR() are observed. */
+      the use of IRExpr_VECRET() and IRExpr_GSPTR() are observed. */
    UInt nVECRETs = 0;
-   UInt nBBPTRs  = 0;
+   UInt nGSPTRs  = 0;
 
    n_args = 0;
    for (i = 0; args[i]; i++)
@@ -553,8 +553,8 @@ doHelperCall(/*OUT*/UInt *stackAdjustAfterCall,
    for (i = 0; i < n_args; ++i) {
       if (UNLIKELY(args[i]->tag == Iex_VECRET)) {
          nVECRETs++;
-      } else if (UNLIKELY(args[i]->tag == Iex_BBPTR)) {
-         nBBPTRs++;
+      } else if (UNLIKELY(args[i]->tag == Iex_GSPTR)) {
+         nGSPTRs++;
       } else {
          IRType type = typeOfIRExpr(env->type_env, args[i]);
          if (type != Ity_I64) {
@@ -570,7 +570,7 @@ doHelperCall(/*OUT*/UInt *stackAdjustAfterCall,
       vpanic("cannot continue due to errors in argument passing");
 
    /* If these fail, the IR is ill-formed */
-   vassert(nBBPTRs == 0 || nBBPTRs == 1);
+   vassert(nGSPTRs == 0 || nGSPTRs == 1);
    vassert(nVECRETs == 0);
 
    argreg = 0;
@@ -578,7 +578,7 @@ doHelperCall(/*OUT*/UInt *stackAdjustAfterCall,
    /* Compute the function arguments into a temporary register each */
    for (i = 0; i < n_args; i++) {
       IRExpr *arg = args[i];
-      if (UNLIKELY(arg->tag == Iex_BBPTR)) {
+      if (UNLIKELY(arg->tag == Iex_GSPTR)) {
          /* If we need the guest state pointer put it in a temporary arg reg */
          tmpregs[argreg] = newVRegI(env);
          addInstr(env, s390_insn_move(sizeof(ULong), tmpregs[argreg],

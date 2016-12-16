@@ -1957,7 +1957,7 @@ typedef
       Iex_ITE,
       Iex_CCall,
       Iex_VECRET,
-      Iex_BBPTR
+      Iex_GSPTR
    }
    IRExprTag;
 
@@ -2132,7 +2132,7 @@ struct _IRExpr {
          quite poor code to be generated.  Try to avoid it.
 
          In principle it would be allowable to have the arg vector
-         contain an IRExpr_VECRET(), although not IRExpr_BBPTR(). However,
+         contain an IRExpr_VECRET(), although not IRExpr_GSPTR(). However,
          at the moment there is no requirement for clean helper calls to
          be able to return V128 or V256 values.  Hence this is not allowed.
 
@@ -2196,8 +2196,8 @@ struct _IRQop {
    only appear at most once in an argument list, and it may not appear
    at all in argument lists for clean helper calls. */
 
-static inline Bool is_IRExpr_VECRET_or_BBPTR ( const IRExpr* e ) {
-   return e->tag == Iex_VECRET || e->tag == Iex_BBPTR;
+static inline Bool is_IRExpr_VECRET_or_GSPTR ( const IRExpr* e ) {
+   return e->tag == Iex_VECRET || e->tag == Iex_GSPTR;
 }
 
 
@@ -2217,7 +2217,7 @@ extern IRExpr* IRExpr_Const  ( IRConst* con );
 extern IRExpr* IRExpr_CCall  ( IRCallee* cee, IRType retty, IRExpr** args );
 extern IRExpr* IRExpr_ITE    ( IRExpr* cond, IRExpr* iftrue, IRExpr* iffalse );
 extern IRExpr* IRExpr_VECRET ( void );
-extern IRExpr* IRExpr_BBPTR  ( void );
+extern IRExpr* IRExpr_GSPTR  ( void );
 
 /* Deep-copy an IRExpr. */
 extern IRExpr* deepCopyIRExpr ( const IRExpr* );
@@ -2376,10 +2376,10 @@ extern void ppIRJumpKind ( IRJumpKind );
      number of times at a fixed interval, if required.
 
    Normally, code is generated to pass just the args to the helper.
-   However, if IRExpr_BBPTR() is present in the argument list (at most
-   one instance is allowed), then the baseblock pointer is passed for
+   However, if IRExpr_GSPTR() is present in the argument list (at most
+   one instance is allowed), then the guest state pointer is passed for
    that arg, so that the callee can access the guest state.  It is
-   invalid for .nFxState to be zero but IRExpr_BBPTR() to be present,
+   invalid for .nFxState to be zero but IRExpr_GSPTR() to be present,
    since .nFxState==0 is a claim that the call does not access guest
    state.
 
@@ -2416,7 +2416,7 @@ typedef
          allowed. */
       IRCallee* cee;    /* where to call */
       IRExpr*   guard;  /* :: Ity_Bit.  Controls whether call happens */
-      /* The args vector may contain IRExpr_BBPTR() and/or
+      /* The args vector may contain IRExpr_GSPTR() and/or
          IRExpr_VECRET(), in both cases, at most once. */
       IRExpr**  args;   /* arg vector, ends in NULL. */
       IRTemp    tmp;    /* to assign result to, or IRTemp_INVALID if none */

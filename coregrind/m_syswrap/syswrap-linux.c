@@ -711,10 +711,7 @@ static SysRes do_clone ( ThreadId ptid,
       VG_TRACK( pre_thread_ll_exit, ctid );
    }
 
-#if defined(VGP_mips64_linux) || defined(VGP_mips32_linux)
-   // ??? why do we set unconditionally r2 to 0, even when error out ???
-   ptst->arch.vex.guest_r2 = 0;
-#elif defined(VGP_tilegx_linux)
+#if defined(VGP_tilegx_linux)
    // ??? why do we set unconditionally r0 to 0, even when error out ???
    ptst->arch.vex.guest_r0 = 0;
 #endif

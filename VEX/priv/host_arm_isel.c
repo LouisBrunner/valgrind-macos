@@ -233,9 +233,9 @@ static HReg        iselIntExpr_R_wrk      ( ISelEnv* env, IRExpr* e );
 static HReg        iselIntExpr_R          ( ISelEnv* env, IRExpr* e );
 
 static void        iselInt64Expr_wrk      ( HReg* rHi, HReg* rLo, 
-                                            ISelEnv* env, IRExpr* e );
+                                            ISelEnv* env, const IRExpr* e );
 static void        iselInt64Expr          ( HReg* rHi, HReg* rLo, 
-                                            ISelEnv* env, IRExpr* e );
+                                            ISelEnv* env, const IRExpr* e );
 
 static HReg        iselDblExpr_wrk        ( ISelEnv* env, IRExpr* e );
 static HReg        iselDblExpr            ( ISelEnv* env, IRExpr* e );
@@ -243,11 +243,11 @@ static HReg        iselDblExpr            ( ISelEnv* env, IRExpr* e );
 static HReg        iselFltExpr_wrk        ( ISelEnv* env, IRExpr* e );
 static HReg        iselFltExpr            ( ISelEnv* env, IRExpr* e );
 
-static HReg        iselNeon64Expr_wrk     ( ISelEnv* env, IRExpr* e );
-static HReg        iselNeon64Expr         ( ISelEnv* env, IRExpr* e );
+static HReg        iselNeon64Expr_wrk     ( ISelEnv* env, const IRExpr* e );
+static HReg        iselNeon64Expr         ( ISelEnv* env, const IRExpr* e );
 
-static HReg        iselNeonExpr_wrk       ( ISelEnv* env, IRExpr* e );
-static HReg        iselNeonExpr           ( ISelEnv* env, IRExpr* e );
+static HReg        iselNeonExpr_wrk       ( ISelEnv* env, const IRExpr* e );
+static HReg        iselNeonExpr           ( ISelEnv* env, const IRExpr* e );
 
 /*---------------------------------------------------------*/
 /*--- ISEL: Misc helpers                                ---*/
@@ -1655,7 +1655,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //zz         DEFINE_PATTERN(p_32to1_then_1Uto8,
 //zz                        unop(Iop_1Uto8,unop(Iop_32to1,bind(0))));
 //zz         if (matchIRExpr(&mi,p_32to1_then_1Uto8,e)) {
-//zz            IRExpr* expr32 = mi.bindee[0];
+//zz            const IRExpr* expr32 = mi.bindee[0];
 //zz            HReg dst = newVRegI(env);
 //zz            HReg src = iselIntExpr_R(env, expr32);
 //zz            addInstr(env, mk_iMOVsd_RR(src,dst) );
@@ -2053,7 +2053,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    either real or virtual regs; in any case they must not be changed
    by subsequent code emitted by the caller.  */
 
-static void iselInt64Expr ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
+static void iselInt64Expr ( HReg* rHi, HReg* rLo, ISelEnv* env,
+                            const IRExpr* e )
 {
    iselInt64Expr_wrk(rHi, rLo, env, e);
 #  if 0
@@ -2066,7 +2067,8 @@ static void iselInt64Expr ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 }
 
 /* DO NOT CALL THIS DIRECTLY ! */
-static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
+static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env,
+                                const IRExpr* e )
 {
    vassert(e);
    vassert(typeOfIRExpr(env->type_env,e) == Ity_I64);
@@ -2317,7 +2319,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 /*--- ISEL: Vector (NEON) expressions (64 or 128 bit)   ---*/
 /*---------------------------------------------------------*/
 
-static HReg iselNeon64Expr ( ISelEnv* env, IRExpr* e )
+static HReg iselNeon64Expr ( ISelEnv* env, const IRExpr* e )
 {
    HReg r;
    vassert(env->hwcaps & VEX_HWCAPS_ARM_NEON);
@@ -2328,7 +2330,7 @@ static HReg iselNeon64Expr ( ISelEnv* env, IRExpr* e )
 }
 
 /* DO NOT CALL THIS DIRECTLY */
-static HReg iselNeon64Expr_wrk ( ISelEnv* env, IRExpr* e )
+static HReg iselNeon64Expr_wrk ( ISelEnv* env, const IRExpr* e )
 {
    IRType ty = typeOfIRExpr(env->type_env, e);
    MatchInfo mi;
@@ -3938,7 +3940,7 @@ static HReg iselNeon64Expr_wrk ( ISelEnv* env, IRExpr* e )
 }
 
 
-static HReg iselNeonExpr ( ISelEnv* env, IRExpr* e )
+static HReg iselNeonExpr ( ISelEnv* env, const IRExpr* e )
 {
    HReg r;
    vassert(env->hwcaps & VEX_HWCAPS_ARM_NEON);
@@ -3949,7 +3951,7 @@ static HReg iselNeonExpr ( ISelEnv* env, IRExpr* e )
 }
 
 /* DO NOT CALL THIS DIRECTLY */
-static HReg iselNeonExpr_wrk ( ISelEnv* env, IRExpr* e )
+static HReg iselNeonExpr_wrk ( ISelEnv* env, const IRExpr* e )
 {
    IRType ty = typeOfIRExpr(env->type_env, e);
    MatchInfo mi;

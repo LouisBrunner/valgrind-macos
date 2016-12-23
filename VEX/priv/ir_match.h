@@ -68,7 +68,7 @@
 
 typedef
    struct {
-      IRExpr* bindee[N_IRMATCH_BINDERS];
+      const IRExpr* bindee[N_IRMATCH_BINDERS];
    }
    MatchInfo;
 
@@ -78,7 +78,8 @@ typedef
    succeeded. */
 
 extern
-Bool matchIRExpr ( MatchInfo* mi, IRExpr* p/*attern*/, IRExpr* e/*xpr*/ );
+Bool matchIRExpr ( MatchInfo* mi, const IRExpr* p/*attern*/,
+                   const IRExpr* e/*xpr*/ );
 
 
 #endif /* ndef __VEX_IR_MATCH_H */

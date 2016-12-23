@@ -247,37 +247,37 @@ static HReg newVRegV ( ISelEnv* env )
    checks that all returned registers are virtual.  You should not
    call the _wrk version directly.
 */
-static X86RMI*     iselIntExpr_RMI_wrk ( ISelEnv* env, IRExpr* e );
-static X86RMI*     iselIntExpr_RMI     ( ISelEnv* env, IRExpr* e );
+static X86RMI*     iselIntExpr_RMI_wrk ( ISelEnv* env, const IRExpr* e );
+static X86RMI*     iselIntExpr_RMI     ( ISelEnv* env, const IRExpr* e );
 
-static X86RI*      iselIntExpr_RI_wrk ( ISelEnv* env, IRExpr* e );
-static X86RI*      iselIntExpr_RI     ( ISelEnv* env, IRExpr* e );
+static X86RI*      iselIntExpr_RI_wrk ( ISelEnv* env, const IRExpr* e );
+static X86RI*      iselIntExpr_RI     ( ISelEnv* env, const IRExpr* e );
 
-static X86RM*      iselIntExpr_RM_wrk ( ISelEnv* env, IRExpr* e );
-static X86RM*      iselIntExpr_RM     ( ISelEnv* env, IRExpr* e );
+static X86RM*      iselIntExpr_RM_wrk ( ISelEnv* env, const IRExpr* e );
+static X86RM*      iselIntExpr_RM     ( ISelEnv* env, const IRExpr* e );
 
-static HReg        iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e );
-static HReg        iselIntExpr_R     ( ISelEnv* env, IRExpr* e );
+static HReg        iselIntExpr_R_wrk ( ISelEnv* env, const IRExpr* e );
+static HReg        iselIntExpr_R     ( ISelEnv* env, const IRExpr* e );
 
-static X86AMode*   iselIntExpr_AMode_wrk ( ISelEnv* env, IRExpr* e );
-static X86AMode*   iselIntExpr_AMode     ( ISelEnv* env, IRExpr* e );
+static X86AMode*   iselIntExpr_AMode_wrk ( ISelEnv* env, const IRExpr* e );
+static X86AMode*   iselIntExpr_AMode     ( ISelEnv* env, const IRExpr* e );
 
 static void        iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, 
-                                       ISelEnv* env, IRExpr* e );
+                                       ISelEnv* env, const IRExpr* e );
 static void        iselInt64Expr     ( HReg* rHi, HReg* rLo, 
-                                       ISelEnv* env, IRExpr* e );
+                                       ISelEnv* env, const IRExpr* e );
 
-static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e );
-static X86CondCode iselCondCode     ( ISelEnv* env, IRExpr* e );
+static X86CondCode iselCondCode_wrk ( ISelEnv* env, const IRExpr* e );
+static X86CondCode iselCondCode     ( ISelEnv* env, const IRExpr* e );
 
-static HReg        iselDblExpr_wrk ( ISelEnv* env, IRExpr* e );
-static HReg        iselDblExpr     ( ISelEnv* env, IRExpr* e );
+static HReg        iselDblExpr_wrk ( ISelEnv* env, const IRExpr* e );
+static HReg        iselDblExpr     ( ISelEnv* env, const IRExpr* e );
 
-static HReg        iselFltExpr_wrk ( ISelEnv* env, IRExpr* e );
-static HReg        iselFltExpr     ( ISelEnv* env, IRExpr* e );
+static HReg        iselFltExpr_wrk ( ISelEnv* env, const IRExpr* e );
+static HReg        iselFltExpr     ( ISelEnv* env, const IRExpr* e );
 
-static HReg        iselVecExpr_wrk ( ISelEnv* env, IRExpr* e );
-static HReg        iselVecExpr     ( ISelEnv* env, IRExpr* e );
+static HReg        iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e );
+static HReg        iselVecExpr     ( ISelEnv* env, const IRExpr* e );
 
 
 /*---------------------------------------------------------*/
@@ -835,7 +835,7 @@ static void roundToF64 ( ISelEnv* env, HReg reg )
    or sign extend partial values if necessary.
 */
 
-static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
+static HReg iselIntExpr_R ( ISelEnv* env, const IRExpr* e )
 {
    HReg r = iselIntExpr_R_wrk(env, e);
    /* sanity checks ... */
@@ -848,7 +848,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 }
 
 /* DO NOT CALL THIS DIRECTLY ! */
-static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
+static HReg iselIntExpr_R_wrk ( ISelEnv* env, const IRExpr* e )
 {
    MatchInfo mi;
 
@@ -1161,7 +1161,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          DEFINE_PATTERN(p_32to1_then_1Uto8,
                         unop(Iop_1Uto8,unop(Iop_32to1,bind(0))));
          if (matchIRExpr(&mi,p_32to1_then_1Uto8,e)) {
-            IRExpr* expr32 = mi.bindee[0];
+            const IRExpr* expr32 = mi.bindee[0];
             HReg dst = newVRegI(env);
             HReg src = iselIntExpr_R(env, expr32);
             addInstr(env, mk_iMOVsd_RR(src,dst) );
@@ -1546,7 +1546,7 @@ static Bool sane_AMode ( X86AMode* am )
    }
 }
 
-static X86AMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e )
+static X86AMode* iselIntExpr_AMode ( ISelEnv* env, const IRExpr* e )
 {
    X86AMode* am = iselIntExpr_AMode_wrk(env, e);
    vassert(sane_AMode(am));
@@ -1554,7 +1554,7 @@ static X86AMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e )
 }
 
 /* DO NOT CALL THIS DIRECTLY ! */
-static X86AMode* iselIntExpr_AMode_wrk ( ISelEnv* env, IRExpr* e )
+static X86AMode* iselIntExpr_AMode_wrk ( ISelEnv* env, const IRExpr* e )
 {
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32);
@@ -1621,7 +1621,7 @@ static X86AMode* iselIntExpr_AMode_wrk ( ISelEnv* env, IRExpr* e )
 /* Similarly, calculate an expression into an X86RMI operand.  As with
    iselIntExpr_R, the expression can have type 32, 16 or 8 bits.  */
 
-static X86RMI* iselIntExpr_RMI ( ISelEnv* env, IRExpr* e )
+static X86RMI* iselIntExpr_RMI ( ISelEnv* env, const IRExpr* e )
 {
    X86RMI* rmi = iselIntExpr_RMI_wrk(env, e);
    /* sanity checks ... */
@@ -1641,7 +1641,7 @@ static X86RMI* iselIntExpr_RMI ( ISelEnv* env, IRExpr* e )
 }
 
 /* DO NOT CALL THIS DIRECTLY ! */
-static X86RMI* iselIntExpr_RMI_wrk ( ISelEnv* env, IRExpr* e )
+static X86RMI* iselIntExpr_RMI_wrk ( ISelEnv* env, const IRExpr* e )
 {
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
@@ -1684,7 +1684,7 @@ static X86RMI* iselIntExpr_RMI_wrk ( ISelEnv* env, IRExpr* e )
 /* Calculate an expression into an X86RI operand.  As with
    iselIntExpr_R, the expression can have type 32, 16 or 8 bits. */
 
-static X86RI* iselIntExpr_RI ( ISelEnv* env, IRExpr* e )
+static X86RI* iselIntExpr_RI ( ISelEnv* env, const IRExpr* e )
 {
    X86RI* ri = iselIntExpr_RI_wrk(env, e);
    /* sanity checks ... */
@@ -1701,7 +1701,7 @@ static X86RI* iselIntExpr_RI ( ISelEnv* env, IRExpr* e )
 }
 
 /* DO NOT CALL THIS DIRECTLY ! */
-static X86RI* iselIntExpr_RI_wrk ( ISelEnv* env, IRExpr* e )
+static X86RI* iselIntExpr_RI_wrk ( ISelEnv* env, const IRExpr* e )
 {
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
@@ -1731,7 +1731,7 @@ static X86RI* iselIntExpr_RI_wrk ( ISelEnv* env, IRExpr* e )
 /* Similarly, calculate an expression into an X86RM operand.  As with
    iselIntExpr_R, the expression can have type 32, 16 or 8 bits.  */
 
-static X86RM* iselIntExpr_RM ( ISelEnv* env, IRExpr* e )
+static X86RM* iselIntExpr_RM ( ISelEnv* env, const IRExpr* e )
 {
    X86RM* rm = iselIntExpr_RM_wrk(env, e);
    /* sanity checks ... */
@@ -1749,7 +1749,7 @@ static X86RM* iselIntExpr_RM ( ISelEnv* env, IRExpr* e )
 }
 
 /* DO NOT CALL THIS DIRECTLY ! */
-static X86RM* iselIntExpr_RM_wrk ( ISelEnv* env, IRExpr* e )
+static X86RM* iselIntExpr_RM_wrk ( ISelEnv* env, const IRExpr* e )
 {
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
@@ -1776,14 +1776,14 @@ static X86RM* iselIntExpr_RM_wrk ( ISelEnv* env, IRExpr* e )
    condition code which would correspond when the expression would
    notionally have returned 1. */
 
-static X86CondCode iselCondCode ( ISelEnv* env, IRExpr* e )
+static X86CondCode iselCondCode ( ISelEnv* env, const IRExpr* e )
 {
    /* Uh, there's nothing we can sanity check here, unfortunately. */
    return iselCondCode_wrk(env,e);
 }
 
 /* DO NOT CALL THIS DIRECTLY ! */
-static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
+static X86CondCode iselCondCode_wrk ( ISelEnv* env, const IRExpr* e )
 {
    MatchInfo mi;
 
@@ -2069,7 +2069,8 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    either real or virtual regs; in any case they must not be changed
    by subsequent code emitted by the caller.  */
 
-static void iselInt64Expr ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
+static void iselInt64Expr ( HReg* rHi, HReg* rLo, ISelEnv* env,
+                            const IRExpr* e )
 {
    iselInt64Expr_wrk(rHi, rLo, env, e);
 #  if 0
@@ -2082,7 +2083,8 @@ static void iselInt64Expr ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 }
 
 /* DO NOT CALL THIS DIRECTLY ! */
-static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
+static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env,
+                                const IRExpr* e )
 {
    MatchInfo mi;
    HWord fn = 0; /* helper fn for most SIMD64 stuff */
@@ -2871,7 +2873,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 /* Nothing interesting here; really just wrappers for
    64-bit stuff. */
 
-static HReg iselFltExpr ( ISelEnv* env, IRExpr* e )
+static HReg iselFltExpr ( ISelEnv* env, const IRExpr* e )
 {
    HReg r = iselFltExpr_wrk( env, e );
 #  if 0
@@ -2883,7 +2885,7 @@ static HReg iselFltExpr ( ISelEnv* env, IRExpr* e )
 }
 
 /* DO NOT CALL THIS DIRECTLY */
-static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
+static HReg iselFltExpr_wrk ( ISelEnv* env, const IRExpr* e )
 {
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_F32);
@@ -2988,7 +2990,7 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
     positive zero         0           0             .000000---0
 */
 
-static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
+static HReg iselDblExpr ( ISelEnv* env, const IRExpr* e )
 {
    HReg r = iselDblExpr_wrk( env, e );
 #  if 0
@@ -3000,7 +3002,7 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
 }
 
 /* DO NOT CALL THIS DIRECTLY */
-static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
+static HReg iselDblExpr_wrk ( ISelEnv* env, const IRExpr* e )
 {
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(e);
@@ -3239,7 +3241,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
 /*--- ISEL: SIMD (Vector) expressions, 128 bit.         ---*/
 /*---------------------------------------------------------*/
 
-static HReg iselVecExpr ( ISelEnv* env, IRExpr* e )
+static HReg iselVecExpr ( ISelEnv* env, const IRExpr* e )
 {
    HReg r = iselVecExpr_wrk( env, e );
 #  if 0
@@ -3252,7 +3254,7 @@ static HReg iselVecExpr ( ISelEnv* env, IRExpr* e )
 
 
 /* DO NOT CALL THIS DIRECTLY */
-static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
+static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e )
 {
 
 #  define REQUIRE_SSE1                                    \

@@ -42,7 +42,7 @@
 /* Assign a value to a binder.  Checks for obvious stupidities. */
 
 static 
-void setBindee ( MatchInfo* mi, Int n, IRExpr* bindee )
+void setBindee ( MatchInfo* mi, Int n, const IRExpr* bindee )
 {
    if (n < 0 || n >= N_IRMATCH_BINDERS)
       vpanic("setBindee: out of range index");
@@ -57,7 +57,8 @@ void setBindee ( MatchInfo* mi, Int n, IRExpr* bindee )
    found into 'mi'. */
 
 static 
-Bool matchWrk ( MatchInfo* mi, IRExpr* p/*attern*/, IRExpr* e/*xpr*/ )
+Bool matchWrk ( MatchInfo* mi, const IRExpr* p/*attern*/,
+                const IRExpr* e/*xpr*/ )
 {
    switch (p->tag) {
       case Iex_Binder: /* aha, what we were looking for. */
@@ -96,7 +97,8 @@ Bool matchWrk ( MatchInfo* mi, IRExpr* p/*attern*/, IRExpr* e/*xpr*/ )
 
 /* Top level entry point to the matcher. */
 
-Bool matchIRExpr ( MatchInfo* mi, IRExpr* p/*attern*/, IRExpr* e/*xpr*/ )
+Bool matchIRExpr ( MatchInfo* mi, const IRExpr* p/*attern*/,
+                   const IRExpr* e/*xpr*/ )
 {
    Int i;
    for (i = 0; i < N_IRMATCH_BINDERS; i++)

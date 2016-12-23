@@ -379,9 +379,9 @@ static HReg newVRegV ( ISelEnv* env )
 */
 /* 32-bit mode: compute an I8/I16/I32 into a GPR.
    64-bit mode: compute an I8/I16/I32/I64 into a GPR. */
-static HReg          iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e,
+static HReg          iselWordExpr_R_wrk ( ISelEnv* env, const IRExpr* e,
                                           IREndness IEndianess );
-static HReg          iselWordExpr_R     ( ISelEnv* env, IRExpr* e,
+static HReg          iselWordExpr_R     ( ISelEnv* env, const IRExpr* e,
                                           IREndness IEndianess );
 
 /* 32-bit mode: Compute an I8/I16/I32 into a RH
@@ -394,33 +394,33 @@ static HReg          iselWordExpr_R     ( ISelEnv* env, IRExpr* e,
    return can have their sign inverted if need be. 
 */
 static PPCRH*        iselWordExpr_RH_wrk ( ISelEnv* env, 
-                                           Bool syned, IRExpr* e,
+                                           Bool syned, const IRExpr* e,
                                            IREndness IEndianess );
 static PPCRH*        iselWordExpr_RH     ( ISelEnv* env, 
-                                           Bool syned, IRExpr* e,
+                                           Bool syned, const IRExpr* e,
                                            IREndness IEndianess );
 
 /* 32-bit mode: compute an I32 into a RI (reg or 32-bit immediate).
    64-bit mode: compute an I64 into a RI (reg or 64-bit immediate). */
-static PPCRI*        iselWordExpr_RI_wrk ( ISelEnv* env, IRExpr* e,
+static PPCRI*        iselWordExpr_RI_wrk ( ISelEnv* env, const IRExpr* e,
                                            IREndness IEndianess );
-static PPCRI*        iselWordExpr_RI     ( ISelEnv* env, IRExpr* e,
+static PPCRI*        iselWordExpr_RI     ( ISelEnv* env, const IRExpr* e,
                                            IREndness IEndianess );
 
 /* In 32 bit mode ONLY, compute an I8 into a
    reg-or-5-bit-unsigned-immediate, the latter being an immediate in
    the range 1 .. 31 inclusive.  Used for doing shift amounts. */
-static PPCRH*        iselWordExpr_RH5u_wrk ( ISelEnv* env, IRExpr* e,
+static PPCRH*        iselWordExpr_RH5u_wrk ( ISelEnv* env, const IRExpr* e,
                                              IREndness IEndianess );
-static PPCRH*        iselWordExpr_RH5u     ( ISelEnv* env, IRExpr* e,
+static PPCRH*        iselWordExpr_RH5u     ( ISelEnv* env, const IRExpr* e,
                                              IREndness IEndianess );
 
 /* In 64-bit mode ONLY, compute an I8 into a
    reg-or-6-bit-unsigned-immediate, the latter being an immediate in
    the range 1 .. 63 inclusive.  Used for doing shift amounts. */
-static PPCRH*        iselWordExpr_RH6u_wrk ( ISelEnv* env, IRExpr* e,
+static PPCRH*        iselWordExpr_RH6u_wrk ( ISelEnv* env, const IRExpr* e,
                                              IREndness IEndianess );
-static PPCRH*        iselWordExpr_RH6u     ( ISelEnv* env, IRExpr* e,
+static PPCRH*        iselWordExpr_RH6u     ( ISelEnv* env, const IRExpr* e,
                                              IREndness IEndianess );
 
 /* 32-bit mode: compute an I32 into an AMode.
@@ -434,77 +434,79 @@ static PPCRH*        iselWordExpr_RH6u     ( ISelEnv* env, IRExpr* e,
 
    Since there are no such restrictions on 32-bit insns, xferTy is
    ignored for 32-bit code generation. */
-static PPCAMode*     iselWordExpr_AMode_wrk ( ISelEnv* env, IRExpr* e,
+static PPCAMode*     iselWordExpr_AMode_wrk ( ISelEnv* env, const IRExpr* e,
                                               IRType xferTy,
                                               IREndness IEndianess );
-static PPCAMode*     iselWordExpr_AMode     ( ISelEnv* env, IRExpr* e,
+static PPCAMode*     iselWordExpr_AMode     ( ISelEnv* env, const IRExpr* e,
                                               IRType xferTy,
                                               IREndness IEndianess );
 
 static void iselInt128Expr_to_32x4_wrk ( HReg* rHi, HReg* rMedHi,
                                          HReg* rMedLo, HReg* rLo,
-                                         ISelEnv* env, IRExpr* e,
+                                         ISelEnv* env, const IRExpr* e,
                                          IREndness IEndianess );
 static void iselInt128Expr_to_32x4     ( HReg* rHi, HReg* rMedHi,
                                          HReg* rMedLo, HReg* rLo,
-                                         ISelEnv* env, IRExpr* e,
+                                         ISelEnv* env, const IRExpr* e,
                                          IREndness IEndianess );
 
 
 /* 32-bit mode ONLY: compute an I64 into a GPR pair. */
 static void          iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
-                                         ISelEnv* env, IRExpr* e,
+                                         ISelEnv* env, const IRExpr* e,
                                          IREndness IEndianess );
 static void          iselInt64Expr     ( HReg* rHi, HReg* rLo,
-                                         ISelEnv* env, IRExpr* e,
+                                         ISelEnv* env, const IRExpr* e,
                                          IREndness IEndianess );
 
 /* 64-bit mode ONLY: compute an I128 into a GPR64 pair. */
 static void          iselInt128Expr_wrk ( HReg* rHi, HReg* rLo, 
-                                          ISelEnv* env, IRExpr* e,
+                                          ISelEnv* env, const IRExpr* e,
                                           IREndness IEndianess );
 
 static void          iselInt128Expr     ( HReg* rHi, HReg* rLo, 
-                                          ISelEnv* env, IRExpr* e,
+                                          ISelEnv* env, const IRExpr* e,
                                           IREndness IEndianess );
 
-static PPCCondCode   iselCondCode_wrk ( ISelEnv* env, IRExpr* e,
+static PPCCondCode   iselCondCode_wrk ( ISelEnv* env, const IRExpr* e,
                                         IREndness IEndianess );
-static PPCCondCode   iselCondCode     ( ISelEnv* env, IRExpr* e,
+static PPCCondCode   iselCondCode     ( ISelEnv* env, const IRExpr* e,
                                         IREndness IEndianess );
 
-static HReg          iselDblExpr_wrk ( ISelEnv* env, IRExpr* e,
+static HReg          iselDblExpr_wrk ( ISelEnv* env, const IRExpr* e,
                                        IREndness IEndianess );
-static HReg          iselDblExpr     ( ISelEnv* env, IRExpr* e,
-                                       IREndness IEndianess );
-
-static HReg          iselFltExpr_wrk ( ISelEnv* env, IRExpr* e,
-                                       IREndness IEndianess );
-static HReg          iselFltExpr     ( ISelEnv* env, IRExpr* e,
+static HReg          iselDblExpr     ( ISelEnv* env, const IRExpr* e,
                                        IREndness IEndianess );
 
-static HReg          iselVecExpr_wrk ( ISelEnv* env, IRExpr* e,
+static HReg          iselFltExpr_wrk ( ISelEnv* env, const IRExpr* e,
                                        IREndness IEndianess );
-static HReg          iselVecExpr     ( ISelEnv* env, IRExpr* e,
+static HReg          iselFltExpr     ( ISelEnv* env, const IRExpr* e,
+                                       IREndness IEndianess );
+
+static HReg          iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e,
+                                       IREndness IEndianess );
+static HReg          iselVecExpr     ( ISelEnv* env, const IRExpr* e,
                                        IREndness IEndianess );
 
 /* 64-bit mode ONLY. */
-static HReg          iselDfp32Expr_wrk ( ISelEnv* env, IRExpr* e,
+static HReg          iselDfp32Expr_wrk ( ISelEnv* env, const IRExpr* e,
                                          IREndness IEndianess );
-static HReg          iselDfp32Expr     ( ISelEnv* env, IRExpr* e,
+static HReg          iselDfp32Expr     ( ISelEnv* env, const IRExpr* e,
                                          IREndness IEndianess );
-static HReg          iselDfp64Expr_wrk ( ISelEnv* env, IRExpr* e,
+static HReg          iselDfp64Expr_wrk ( ISelEnv* env, const IRExpr* e,
                                          IREndness IEndianess );
-static HReg          iselDfp64Expr     ( ISelEnv* env, IRExpr* e,
+static HReg          iselDfp64Expr     ( ISelEnv* env, const IRExpr* e,
                                          IREndness IEndianess );
-static HReg iselFp128Expr_wrk ( ISelEnv* env, IRExpr* e, IREndness IEndianess);
-static HReg iselFp128Expr     ( ISelEnv* env, IRExpr* e, IREndness IEndianess);
+static HReg iselFp128Expr_wrk ( ISelEnv* env, const IRExpr* e,
+                                IREndness IEndianess);
+static HReg iselFp128Expr     ( ISelEnv* env, const IRExpr* e,
+                                IREndness IEndianess);
 
 /* 64-bit mode ONLY: compute an D128 into a GPR64 pair. */
 static void iselDfp128Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env,
-                                 IRExpr* e, IREndness IEndianess );
+                                 const IRExpr* e, IREndness IEndianess );
 static void iselDfp128Expr     ( HReg* rHi, HReg* rLo, ISelEnv* env,
-                                 IRExpr* e, IREndness IEndianess );
+                                 const IRExpr* e, IREndness IEndianess );
 
 /*---------------------------------------------------------*/
 /*--- ISEL: Misc helpers                                ---*/
@@ -1396,7 +1398,8 @@ static HReg isNan ( ISelEnv* env, HReg vSrc, IREndness IEndianess )
    if necessary.
 */
 
-static HReg iselWordExpr_R ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
+static HReg iselWordExpr_R ( ISelEnv* env, const IRExpr* e,
+                             IREndness IEndianess )
 {
    HReg r = iselWordExpr_R_wrk(env, e, IEndianess);
    /* sanity checks ... */
@@ -1410,7 +1413,7 @@ static HReg iselWordExpr_R ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
 }
 
 /* DO NOT CALL THIS DIRECTLY ! */
-static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e,
+static HReg iselWordExpr_R_wrk ( ISelEnv* env, const IRExpr* e,
                                  IREndness IEndianess )
 {
    Bool mode64 = env->mode64;
@@ -1871,7 +1874,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, IRExpr* e,
       DEFINE_PATTERN(p_32to1_then_1Uto8,
                      unop(Iop_1Uto8,unop(Iop_32to1,bind(0))));
       if (matchIRExpr(&mi,p_32to1_then_1Uto8,e)) {
-         IRExpr* expr32 = mi.bindee[0];
+         const IRExpr* expr32 = mi.bindee[0];
          HReg r_dst = newVRegI(env);
          HReg r_src = iselWordExpr_R(env, expr32, IEndianess);
          addInstr(env, PPCInstr_Alu(Palu_AND, r_dst,
@@ -2604,7 +2607,7 @@ static Bool sane_AMode ( ISelEnv* env, PPCAMode* am )
 }
 
 static 
-PPCAMode* iselWordExpr_AMode ( ISelEnv* env, IRExpr* e, IRType xferTy,
+PPCAMode* iselWordExpr_AMode ( ISelEnv* env, const IRExpr* e, IRType xferTy,
                                IREndness IEndianess )
 {
    PPCAMode* am = iselWordExpr_AMode_wrk(env, e, xferTy, IEndianess);
@@ -2613,7 +2616,7 @@ PPCAMode* iselWordExpr_AMode ( ISelEnv* env, IRExpr* e, IRType xferTy,
 }
 
 /* DO NOT CALL THIS DIRECTLY ! */
-static PPCAMode* iselWordExpr_AMode_wrk ( ISelEnv* env, IRExpr* e,
+static PPCAMode* iselWordExpr_AMode_wrk ( ISelEnv* env, const IRExpr* e,
                                           IRType xferTy, IREndness IEndianess )
 {
    IRType ty = typeOfIRExpr(env->type_env,e);
@@ -2695,7 +2698,7 @@ static PPCAMode* iselWordExpr_AMode_wrk ( ISelEnv* env, IRExpr* e,
    signed immediates that are return can have their sign inverted if
    need be. */
 
-static PPCRH* iselWordExpr_RH ( ISelEnv* env, Bool syned, IRExpr* e,
+static PPCRH* iselWordExpr_RH ( ISelEnv* env, Bool syned, const IRExpr* e,
                                 IREndness IEndianess )
 {
   PPCRH* ri = iselWordExpr_RH_wrk(env, syned, e, IEndianess);
@@ -2716,7 +2719,7 @@ static PPCRH* iselWordExpr_RH ( ISelEnv* env, Bool syned, IRExpr* e,
 }
 
 /* DO NOT CALL THIS DIRECTLY ! */
-static PPCRH* iselWordExpr_RH_wrk ( ISelEnv* env, Bool syned, IRExpr* e,
+static PPCRH* iselWordExpr_RH_wrk ( ISelEnv* env, Bool syned, const IRExpr* e,
                                     IREndness IEndianess )
 {
    ULong u;
@@ -2760,7 +2763,8 @@ static PPCRH* iselWordExpr_RH_wrk ( ISelEnv* env, Bool syned, IRExpr* e,
    iselIntExpr_R, the expression can have type 32, 16 or 8 bits, or,
    in 64-bit mode, 64 bits. */
 
-static PPCRI* iselWordExpr_RI ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
+static PPCRI* iselWordExpr_RI ( ISelEnv* env, const IRExpr* e,
+                                IREndness IEndianess )
 {
    PPCRI* ri = iselWordExpr_RI_wrk(env, e, IEndianess);
    /* sanity checks ... */
@@ -2777,7 +2781,7 @@ static PPCRI* iselWordExpr_RI ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
 }
 
 /* DO NOT CALL THIS DIRECTLY ! */
-static PPCRI* iselWordExpr_RI_wrk ( ISelEnv* env, IRExpr* e,
+static PPCRI* iselWordExpr_RI_wrk ( ISelEnv* env, const IRExpr* e,
                                     IREndness IEndianess )
 {
    Long  l;
@@ -2810,7 +2814,7 @@ static PPCRI* iselWordExpr_RI_wrk ( ISelEnv* env, IRExpr* e,
    being an immediate in the range 1 .. 31 inclusive.  Used for doing
    shift amounts.  Only used in 32-bit mode. */
 
-static PPCRH* iselWordExpr_RH5u ( ISelEnv* env, IRExpr* e,
+static PPCRH* iselWordExpr_RH5u ( ISelEnv* env, const IRExpr* e,
                                   IREndness IEndianess )
 {
    PPCRH* ri;
@@ -2832,7 +2836,7 @@ static PPCRH* iselWordExpr_RH5u ( ISelEnv* env, IRExpr* e,
 }
 
 /* DO NOT CALL THIS DIRECTLY ! */
-static PPCRH* iselWordExpr_RH5u_wrk ( ISelEnv* env, IRExpr* e,
+static PPCRH* iselWordExpr_RH5u_wrk ( ISelEnv* env, const IRExpr* e,
                                       IREndness IEndianess )
 {
    IRType ty = typeOfIRExpr(env->type_env,e);
@@ -2857,7 +2861,7 @@ static PPCRH* iselWordExpr_RH5u_wrk ( ISelEnv* env, IRExpr* e,
    being an immediate in the range 1 .. 63 inclusive.  Used for doing
    shift amounts.  Only used in 64-bit mode. */
 
-static PPCRH* iselWordExpr_RH6u ( ISelEnv* env, IRExpr* e,
+static PPCRH* iselWordExpr_RH6u ( ISelEnv* env, const IRExpr* e,
                                   IREndness IEndianess )
 {
    PPCRH* ri; 
@@ -2879,7 +2883,7 @@ static PPCRH* iselWordExpr_RH6u ( ISelEnv* env, IRExpr* e,
 }
 
 /* DO NOT CALL THIS DIRECTLY ! */
-static PPCRH* iselWordExpr_RH6u_wrk ( ISelEnv* env, IRExpr* e,
+static PPCRH* iselWordExpr_RH6u_wrk ( ISelEnv* env, const IRExpr* e,
                                       IREndness IEndianess )
 {
    IRType ty = typeOfIRExpr(env->type_env,e);
@@ -2904,7 +2908,7 @@ static PPCRH* iselWordExpr_RH6u_wrk ( ISelEnv* env, IRExpr* e,
    condition code which would correspond when the expression would
    notionally have returned 1. */
 
-static PPCCondCode iselCondCode ( ISelEnv* env, IRExpr* e,
+static PPCCondCode iselCondCode ( ISelEnv* env, const IRExpr* e,
                                   IREndness IEndianess )
 {
    /* Uh, there's nothing we can sanity check here, unfortunately. */
@@ -2912,7 +2916,7 @@ static PPCCondCode iselCondCode ( ISelEnv* env, IRExpr* e,
 }
 
 /* DO NOT CALL THIS DIRECTLY ! */
-static PPCCondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e,
+static PPCCondCode iselCondCode_wrk ( ISelEnv* env, const IRExpr* e,
                                       IREndness IEndianess )
 {
    vassert(e);
@@ -3100,8 +3104,8 @@ static PPCCondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e,
    case they must not be changed by subsequent code emitted by the
    caller.  */
 
-static void iselInt128Expr ( HReg* rHi, HReg* rLo,
-                             ISelEnv* env, IRExpr* e, IREndness IEndianess )
+static void iselInt128Expr ( HReg* rHi, HReg* rLo, ISelEnv* env,
+                             const IRExpr* e, IREndness IEndianess )
 {
    vassert(env->mode64);
    iselInt128Expr_wrk(rHi, rLo, env, e, IEndianess);
@@ -3115,8 +3119,8 @@ static void iselInt128Expr ( HReg* rHi, HReg* rLo,
 }
 
 /* DO NOT CALL THIS DIRECTLY ! */
-static void iselInt128Expr_wrk ( HReg* rHi, HReg* rLo,
-                                 ISelEnv* env, IRExpr* e, IREndness IEndianess )
+static void iselInt128Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env,
+                                 const IRExpr* e, IREndness IEndianess )
 {
    Bool mode64 = env->mode64;
 
@@ -3197,7 +3201,7 @@ static void iselInt128Expr_wrk ( HReg* rHi, HReg* rLo,
 
 /* 32-bit mode ONLY: compute a 128-bit value into a register quad */
 static void iselInt128Expr_to_32x4 ( HReg* rHi, HReg* rMedHi, HReg* rMedLo,
-                                     HReg* rLo, ISelEnv* env, IRExpr* e,
+                                     HReg* rLo, ISelEnv* env, const IRExpr* e,
                                      IREndness IEndianess )
 {
    vassert(!env->mode64);
@@ -3217,7 +3221,7 @@ static void iselInt128Expr_to_32x4 ( HReg* rHi, HReg* rMedHi, HReg* rMedLo,
 
 static void iselInt128Expr_to_32x4_wrk ( HReg* rHi, HReg* rMedHi,
                                          HReg* rMedLo, HReg* rLo,
-                                         ISelEnv* env, IRExpr* e,
+                                         ISelEnv* env, const IRExpr* e,
                                          IREndness IEndianess )
 {
    vassert(e);
@@ -3255,7 +3259,7 @@ static void iselInt128Expr_to_32x4_wrk ( HReg* rHi, HReg* rMedHi,
    caller.  */
 
 static void iselInt64Expr ( HReg* rHi, HReg* rLo,
-                            ISelEnv* env, IRExpr* e,
+                            ISelEnv* env, const IRExpr* e,
                             IREndness IEndianess )
 {
    vassert(!env->mode64);
@@ -3271,7 +3275,7 @@ static void iselInt64Expr ( HReg* rHi, HReg* rLo,
 
 /* DO NOT CALL THIS DIRECTLY ! */
 static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
-                                ISelEnv* env, IRExpr* e,
+                                ISelEnv* env, const IRExpr* e,
                                 IREndness IEndianess )
 {
    vassert(e);
@@ -3893,7 +3897,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo,
 /* Nothing interesting here; really just wrappers for
    64-bit stuff. */
 
-static HReg iselFltExpr ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
+static HReg iselFltExpr ( ISelEnv* env, const IRExpr* e, IREndness IEndianess )
 {
   HReg r = iselFltExpr_wrk( env, e, IEndianess );
 #  if 0
@@ -3905,7 +3909,8 @@ static HReg iselFltExpr ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
 }
 
 /* DO NOT CALL THIS DIRECTLY */
-static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
+static HReg iselFltExpr_wrk ( ISelEnv* env, const IRExpr* e,
+                              IREndness IEndianess )
 {
    Bool        mode64 = env->mode64;
 
@@ -4065,7 +4070,7 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
     positive zero         0           0             .000000---0
 */
 
-static HReg iselDblExpr ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
+static HReg iselDblExpr ( ISelEnv* env, const IRExpr* e, IREndness IEndianess )
 {
    HReg r = iselDblExpr_wrk( env, e, IEndianess );
 #  if 0
@@ -4077,7 +4082,8 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
 }
 
 /* DO NOT CALL THIS DIRECTLY */
-static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
+static HReg iselDblExpr_wrk ( ISelEnv* env, const IRExpr* e,
+                              IREndness IEndianess )
 {
    Bool mode64 = env->mode64;
    IRType ty = typeOfIRExpr(env->type_env,e);
@@ -4431,7 +4437,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
    vpanic("iselDblExpr_wrk(ppc)");
 }
 
-static HReg iselDfp32Expr(ISelEnv* env, IRExpr* e, IREndness IEndianess)
+static HReg iselDfp32Expr(ISelEnv* env, const IRExpr* e, IREndness IEndianess)
 {
    HReg r = iselDfp32Expr_wrk( env, e, IEndianess );
    vassert(hregClass(r) == HRcFlt64);
@@ -4440,7 +4446,8 @@ static HReg iselDfp32Expr(ISelEnv* env, IRExpr* e, IREndness IEndianess)
 }
 
 /* DO NOT CALL THIS DIRECTLY */
-static HReg iselDfp32Expr_wrk(ISelEnv* env, IRExpr* e, IREndness IEndianess)
+static HReg iselDfp32Expr_wrk(ISelEnv* env, const IRExpr* e,
+                              IREndness IEndianess)
 {
    Bool mode64 = env->mode64;
    IRType ty = typeOfIRExpr( env->type_env, e );
@@ -4483,7 +4490,7 @@ static HReg iselDfp32Expr_wrk(ISelEnv* env, IRExpr* e, IREndness IEndianess)
    vpanic( "iselDfp32Expr_wrk(ppc)" );
 }
 
-static HReg iselFp128Expr( ISelEnv* env, IRExpr* e, IREndness IEndianess )
+static HReg iselFp128Expr( ISelEnv* env, const IRExpr* e, IREndness IEndianess )
 {
    HReg r = iselFp128Expr_wrk( env, e, IEndianess );
    vassert(hregClass(r) == HRcVec128);
@@ -4492,7 +4499,8 @@ static HReg iselFp128Expr( ISelEnv* env, IRExpr* e, IREndness IEndianess )
 }
 
 /* DO NOT CALL THIS DIRECTLY */
-static HReg iselFp128Expr_wrk( ISelEnv* env, IRExpr* e, IREndness IEndianess)
+static HReg iselFp128Expr_wrk( ISelEnv* env, const IRExpr* e,
+                               IREndness IEndianess)
 {
    Bool mode64 = env->mode64;
    PPCFpOp fpop = Pfp_INVALID;
@@ -4799,7 +4807,7 @@ static HReg iselFp128Expr_wrk( ISelEnv* env, IRExpr* e, IREndness IEndianess)
    vpanic( "iselFp128Expr(ppc64)" );
 }
 
-static HReg iselDfp64Expr(ISelEnv* env, IRExpr* e, IREndness IEndianess)
+static HReg iselDfp64Expr(ISelEnv* env, const IRExpr* e, IREndness IEndianess)
 {
    HReg r = iselDfp64Expr_wrk( env, e, IEndianess );
    vassert(hregClass(r) == HRcFlt64);
@@ -4808,7 +4816,8 @@ static HReg iselDfp64Expr(ISelEnv* env, IRExpr* e, IREndness IEndianess)
 }
 
 /* DO NOT CALL THIS DIRECTLY */
-static HReg iselDfp64Expr_wrk(ISelEnv* env, IRExpr* e, IREndness IEndianess)
+static HReg iselDfp64Expr_wrk(ISelEnv* env, const IRExpr* e,
+                              IREndness IEndianess)
 {
    Bool mode64 = env->mode64;
    IRType ty = typeOfIRExpr( env->type_env, e );
@@ -5082,7 +5091,7 @@ static HReg iselDfp64Expr_wrk(ISelEnv* env, IRExpr* e, IREndness IEndianess)
    vpanic( "iselDfp64Expr_wrk(ppc)" );
 }
 
-static void iselDfp128Expr(HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e,
+static void iselDfp128Expr(HReg* rHi, HReg* rLo, ISelEnv* env, const IRExpr* e,
                            IREndness IEndianess)
 {
    iselDfp128Expr_wrk( rHi, rLo, env, e, IEndianess );
@@ -5091,8 +5100,8 @@ static void iselDfp128Expr(HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e,
 }
 
 /* DO NOT CALL THIS DIRECTLY */
-static void iselDfp128Expr_wrk(HReg* rHi, HReg *rLo, ISelEnv* env, IRExpr* e,
-                               IREndness IEndianess)
+static void iselDfp128Expr_wrk(HReg* rHi, HReg *rLo, ISelEnv* env,
+                               const IRExpr* e, IREndness IEndianess)
 {
    vassert( e );
    vassert( typeOfIRExpr(env->type_env,e) == Ity_D128 );
@@ -5359,7 +5368,7 @@ static void iselDfp128Expr_wrk(HReg* rHi, HReg *rLo, ISelEnv* env, IRExpr* e,
 /*--- ISEL: SIMD (Vector) expressions, 128 bit.         ---*/
 /*---------------------------------------------------------*/
 
-static HReg iselVecExpr ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
+static HReg iselVecExpr ( ISelEnv* env, const IRExpr* e, IREndness IEndianess )
 {
    HReg r = iselVecExpr_wrk( env, e, IEndianess );
 #  if 0
@@ -5371,7 +5380,8 @@ static HReg iselVecExpr ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
 }
 
 /* DO NOT CALL THIS DIRECTLY */
-static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e, IREndness IEndianess )
+static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e,
+                              IREndness IEndianess )
 {
    Bool mode64 = env->mode64;
    PPCAvOp op = Pav_INVALID;

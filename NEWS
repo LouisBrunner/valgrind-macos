@@ -92,6 +92,7 @@ where XXXXXX is the bug number as listed below.
 373046  Stacks registered by core are never deregistered
 373192  Calling posix_spawn in glibc 2.24 completely broken
 373555  Rename BBPTR to GSPTR as it denotes guest state pointer only
+373938  const IRExpr arguments for matchIRExpr()
 
 Release 3.12.0 (20 October 2016)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

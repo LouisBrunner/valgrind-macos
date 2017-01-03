@@ -17,6 +17,8 @@ Requirements
 - GNU make is also required. On Solaris, this can be quickly achieved with:
     $ PATH=/usr/gnu/bin:$PATH; export PATH
 - For remote debugging support, working GDB is required (see below).
+- For running regression tests, GNU sed, grep, awk, diff are required.
+  This can be quickly achieved on Solaris by prepending /usr/gnu/bin to PATH.
 
 
 Compilation
@@ -123,7 +125,6 @@ TODO list
 - Provide better error reporting for various subsyscalls.
 - Implement storing of extra register state in signal frame.
 - Performance comparison against other platforms.
-
 - Prevent SIGPIPE when writing to a socket (coregrind/m_libcfile.c).
 - Implement ticket locking for fair scheduling (--fair-sched=yes).
 - Implement support in DRD and Helgrind tools for thr_join() with thread == 0.
@@ -137,6 +138,8 @@ TODO list
   to see this in effect. Would require awareness of syscall parameter semantics.
 - Correctly print arguments of DW_CFA_ORCL_arg_loc in show_CF_instruction() when
   it is implemented in libdwarf.
+- Handle a situation when guest program sets SC_CANCEL_FLG in schedctl and
+  Valgrind needs to invoke a syscall on its own.
 
 
 Contacts

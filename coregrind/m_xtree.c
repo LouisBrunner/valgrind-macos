@@ -135,9 +135,9 @@ static void delete_XT_shared (XT_shared* shared)
    shared->free_fn(shared);
 }
 
-/* Compare 2 entries in ips_order_xecu by StackTrace elements. Note
-   that a not existing ips is considered smaller than any other
-   address. */
+/* Compare 2 entries in ips_order_xecu by StackTrace elements.
+   In case stack traces are of different length, an 'absent' ips is
+   considered smaller than any other address. */
 static XArray* xec_data_for_sort; // Needed to translate an xecu into an xec
 static Int ips_order_cmp(const void* vleft, const void* vright)
 {
@@ -270,7 +270,7 @@ XTree* VG_(XT_snapshot)(XTree* xt)
    nxt = xt->alloc_fn(xt->cc, sizeof(struct _XTree) );
 
    *nxt = *xt;
-   addRef_XT_shared (nxt->shared);
+   addRef_XT_shared(nxt->shared);
    nxt->tmp_data = nxt->alloc_fn(nxt->cc, nxt->dataSzB);
    nxt->data = VG_(cloneXA)(nxt->cc, xt->data);
 
@@ -404,8 +404,13 @@ static void FP_cmd(VgFile* fp)
 
 /* ----------- Callgrind output ------------------------------------------- */
 
-/* Output a callgrind file element in compressed or not compressed format,
-   according to VG_(clo_xtree_compress_strings). */
+/* Output a callgrind format element in compressed format:
+     "name=(pos)" or "name=(pos) value" (if value_new)
+   or not compressed format: "name=value"
+   VG_(clo_xtree_compress_strings) indicates if the compressed format is used.
+   name is the format element (e.g. fl, fn, cfi, cfn, ...).
+   pos is the value dictionary position, used for compressed format.
+   value_new is True if this is the first usage of value. */
 static void FP_pos_str(VgFile* fp, const HChar* name, UInt pos,
                        const HChar* value, Bool value_new)
 {
@@ -453,15 +458,15 @@ void VG_(XT_callgrind_print)
       HChar* p;
 
       VG_(strcpy)(strtok_events, events);
-      for (e = VG_(strtok_r) (strtok_events, ",", &ssaveptr); 
+      for (e = VG_(strtok_r)(strtok_events, ",", &ssaveptr); 
            e != NULL; 
-           e = VG_(strtok_r) (NULL, ",", &ssaveptr))
+           e = VG_(strtok_r)(NULL, ",", &ssaveptr))
          FP("event: %s\n", e);
       FP("events:");
       VG_(strcpy)(strtok_events, events);
-      for (e = VG_(strtok_r) (strtok_events, ",", &ssaveptr); 
+      for (e = VG_(strtok_r)(strtok_events, ",", &ssaveptr); 
            e != NULL; 
-           e = VG_(strtok_r) (NULL, ",", &ssaveptr)) {
+           e = VG_(strtok_r)(NULL, ",", &ssaveptr)) {
          p = e;
          while (*p) {
             if (*p == ':')
@@ -482,7 +487,8 @@ void VG_(XT_callgrind_print)
          continue;
 
       const HChar* img = img_value(VG_(indexXA)(xt->data, xecu));
-      
+     
+      // CALLED_FLF gets the Filename/Line number/Function name for ips[n]
 #define CALLED_FLF(n)                                                   \
       if ((n) < 0                                                       \
           || !VG_(get_filename_linenum)(ips[(n)],                       \
@@ -511,10 +517,10 @@ void VG_(XT_callgrind_print)
       if (img) {
          const HChar* called_filename;
          UInt called_filename_nr;
-         Bool called_filename_new;
+         Bool called_filename_new; // True the first time we see this filename.
          const HChar* called_fnname;
          UInt called_fnname_nr;
-         Bool called_fnname_new;
+         Bool called_fnname_new; // True the first time we see this fnname.
          UInt called_linenum;
          UInt prev_linenum;
 
@@ -540,7 +546,7 @@ void VG_(XT_callgrind_print)
             else
                FP("%d\n", called_linenum); //no self cost.
             prev_linenum = called_linenum;
-            CALLED_FLF (ips_idx-1);
+            CALLED_FLF(ips_idx-1);
             if (ips_idx >= 1) {
                FP_pos_str(fp, "cfi", called_filename_nr,
                           called_filename, called_filename_new);
@@ -580,7 +586,6 @@ void VG_(XT_callgrind_print)
 /* For Massif output, some functions from the execontext are not output, a.o.
    the allocation functions at the top of the stack and the functions below
    main. So, the StackTrace of the execontexts in the xtree must be filtered.
-   The functions below main.
    Ms_Ec defines the subset of the stacktrace relevant for the report. */
 typedef
    struct {
@@ -708,7 +713,7 @@ static void ms_make_groups (UInt depth, Ms_Ec* ms_ec, UInt n_ec, SizeT sig_sz,
    }
 
    /* Sort on total size, bigger size first. */
-   VG_(ssort) (*groups, *n_groups, sizeof(Ms_Group), ms_group_revcmp_total);
+   VG_(ssort)(*groups, *n_groups, sizeof(Ms_Group), ms_group_revcmp_total);
 }
 
 static void ms_output_group (VgFile* fp, UInt depth, Ms_Group* group,
@@ -721,15 +726,15 @@ static void ms_output_group (VgFile* fp, UInt depth, Ms_Group* group,
    // If this is an insignificant group, handle it specially
    if (group->ms_ec == NULL) {
       const HChar* s = ( 1 ==  group->n_ec? "," : "s, all" );
-      vg_assert (group->group_ip == 0);
+      vg_assert(group->group_ip == 0);
       FP("%*sn0: %lu in %d place%s below massif's threshold (%.2f%%)\n",
          depth+1, "", group->total, group->n_ec, s, sig_pct_threshold);
       return;
    }
 
    // Normal group => output the group and its subgroups.
-   ms_make_groups (depth+1, group->ms_ec, group->n_ec, sig_sz,
-                   &n_groups, &groups);
+   ms_make_groups(depth+1, group->ms_ec, group->n_ec, sig_sz,
+                  &n_groups, &groups);
 
    FP("%*s" "n%u: %ld %s\n", 
       depth + 1, "",
@@ -745,7 +750,7 @@ static void ms_output_group (VgFile* fp, UInt depth, Ms_Group* group,
 
    /* Output sub groups of this group. */
    for (i = 0; i < n_groups; i++)
-      ms_output_group (fp, depth+1, &groups[i], sig_sz, sig_pct_threshold);
+      ms_output_group(fp, depth+1, &groups[i], sig_sz, sig_pct_threshold);
 
    VG_(free)(groups);
 }
@@ -762,7 +767,7 @@ static void prepare_ms_ec (XTree* xt,
    Ms_Ec* ms_ec = VG_(malloc)("XT_massif_print.ms_ec", n_xecu * sizeof(Ms_Ec));
    UInt n_xecu_sel = 0; // Nr of xecu that are selected for output.
 
-   vg_assert (n_data_xecu <= n_xecu);
+   vg_assert(n_data_xecu <= n_xecu);
 
    // Ensure we have in shared->ips_order_xecu our xecu sorted by StackTrace.
    ensure_ips_order_xecu_valid(shared);
@@ -909,7 +914,7 @@ void VG_(XT_massif_print)
 
       /* Produce the groups at depth 0 */
       DMSG(1, "XT_massif_print producing depth 0 groups\n");
-      ms_make_groups (0, ms_ec, n_ec, sig_sz, &n_groups, &groups);
+      ms_make_groups(0, ms_ec, n_ec, sig_sz, &n_groups, &groups);
 
       /* Output the top node. */
       FP("n%u: %llu %s\n", n_groups, top_total, header->top_node_desc);
@@ -917,7 +922,7 @@ void VG_(XT_massif_print)
       /* Output depth 0 groups. */
       DMSG(1, "XT_massif_print outputing %u depth 0 groups\n", n_groups);
       for (i = 0; i < n_groups; i++)
-         ms_output_group (fp, 0, &groups[i], sig_sz, header->sig_threshold);
+         ms_output_group(fp, 0, &groups[i], sig_sz, header->sig_threshold);
 
       VG_(free)(groups);
       VG_(free)(ms_ec);

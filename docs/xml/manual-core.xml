@@ -2761,7 +2761,7 @@ will create a core dump in the usual way.</para>
   function (malloc), and so have a non zero 'Self' value. Note that when
   kcachegrind shows an xtree, the 'Called' column and call nr indications in
   the Call Graph are not significant (always set to 0 or 1, independently
-  of the real nr of calls. A future version of kcachegrind will not show
+  of the real nr of calls. The kcachegrind versions >= 0.8.0 do not show
   anymore such irrelevant xtree call number information.</para>
 
 <graphic fileref="images/kcachegrind_xtree.png" scalefit="1"/>
@@ -2858,11 +2858,11 @@ the "Massif Format".</para>
 
 </itemizedlist>
 
-<para>Note that it is recommended to use the "Callgrind Format" as it
-  is more compact than the Massif Format, and the Callgrind Format
-  visualiser are more versatile that the Massif Format
-  visualisers. kcachegrind is particularly easy to use to analyse
-  big xtree data.</para>
+<para>Note that the Callgrind Format is more compact than the Massif Format,
+  and contains the full data : there is no filtering during file production,
+  filtering is done by visualisers such as kcachegrind. kcachegrind is
+  particularly easy to use to analyse big xtree data containing multiple
+  events counts or resources consumption.</para>
 
 <para>To clarify the xtree concept, the below gives several extracts of
   the output produced by the following commands:

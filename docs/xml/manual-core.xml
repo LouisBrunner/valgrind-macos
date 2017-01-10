@@ -2858,11 +2858,15 @@ the "Massif Format".</para>
 
 </itemizedlist>
 
-<para>Note that the Callgrind Format is more compact than the Massif Format,
-  and contains the full data : there is no filtering during file production,
-  filtering is done by visualisers such as kcachegrind. kcachegrind is
-  particularly easy to use to analyse big xtree data containing multiple
-  events counts or resources consumption.</para>
+<para>Note that for equivalent information, the Callgrind Format is more compact
+  than the Massif Format.  However, the Callgrind Format always contains the
+  full data: there is no filtering done during file production, filtering is
+  done by visualisers such as kcachegrind. kcachegrind is particularly easy to
+  use to analyse big xtree data containing multiple events counts or resources
+  consumption.  The Massif Format (optionally) only contains a part of the data.
+  For example, the Massif tool might filter some of the data, according to the
+  <option>--threshold</option> option.
+</para>
 
 <para>To clarify the xtree concept, the below gives several extracts of
   the output produced by the following commands:

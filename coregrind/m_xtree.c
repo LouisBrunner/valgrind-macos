@@ -546,8 +546,8 @@ void VG_(XT_callgrind_print)
             else
                FP("%d\n", called_linenum); //no self cost.
             prev_linenum = called_linenum;
-            CALLED_FLF(ips_idx-1);
             if (ips_idx >= 1) {
+               CALLED_FLF(ips_idx-1);
                FP_pos_str(fp, "cfi", called_filename_nr,
                           called_filename, called_filename_new);
                FP_pos_str(fp, "cfn", called_fnname_nr,

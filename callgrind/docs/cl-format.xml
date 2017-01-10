@@ -6,10 +6,7 @@
 <chapter id="cl-format" xreflabel="Callgrind Format Specification">
 <title>Callgrind Format Specification</title>
 
-<para>This chapter describes the Callgrind Profile Format, Version 1.</para>
-
-<para>A synonymous name is "Calltree Profile Format". These names actually mean
-the same since Callgrind was previously named Calltree.</para>
+<para>This chapter describes the Callgrind Format, Version 1.</para>
 
 <para>The format description is meant for the user to be able to understand the
 file contents; but more important, it is given for authors of measurement or
@@ -28,6 +25,10 @@ For detailed syntax, look at the format reference.</para>
 
 <sect2 id="cl-format.overview.basics" xreflabel="Basic Structure">
 <title>Basic Structure</title>
+
+<para>To uniquely specify that a file is a callgrind profile, it
+should add "# callgrind format" as first line. This is optional but
+recommended for easy format detection.</para>
 
 <para>Each file has a header part of an arbitrary number of lines of the
 format "key: value". After the header, lines specifying profile costs
@@ -58,7 +59,8 @@ are bound to simulations of simple machine models for acceptable slowdown.
 However, any profiling tool could use the format described in this chapter.</para>
 
 <para>
-<screen>events: Cycles Instructions Flops
+<screen># callgrind format
+events: Cycles Instructions Flops
 fl=file.f
 fn=main
 15 90 14 2
@@ -130,7 +132,9 @@ reference below for details.</para>
 <function>main</function> calls <function>func1</function> once and
 <function>func2</function> 3 times. <function>func1</function> calls
 <function>func2</function> 2 times.
-<screen>events: Instructions
+
+<screen># callgrind format
+events: Instructions
 
 fl=file1.c
 fn=main
@@ -186,8 +190,9 @@ integer ID to a name, and "spec=(ID)" to reference a previously defined ID
 mapping. There is a separate ID mapping for each position specification,
 i.e. you can use ID 1 for both a file name and a symbol name.</para>
 
-<para>With string compression, the example from 1.4 looks like this:
-<screen>events: Instructions
+<para>With string compression, the example from above looks like this:
+<screen># callgrind format
+events: Instructions
 
 fl=(1) file1.c
 fn=(1) main
@@ -216,7 +221,8 @@ the meaning of subsequent cost lines or associations, they can appear
 everywhere in the file without any negative consequence. Especially, you can
 define name compression mappings directly after the header, and before any cost
 lines. Thus, the above example can also be written as
-<screen>events: Instructions
+<screen># callgrind format
+events: Instructions
 
 # define file ID mapping
 fl=(1) file1.c
@@ -256,7 +262,8 @@ prefixed by "-"), any relative specification is non-ambiguous; additionally,
 absolute and relative subposition specifications can be mixed freely.
 Assume the following example (subpositions can always be specified
 as hexadecimal numbers, beginning with "0x"):
-<screen>positions: instr line
+<screen># callgrind format
+positions: instr line
 events: ticks
 
 fn=func
@@ -265,7 +272,8 @@ fn=func
 0x80001238 91 6</screen></para>
 
 <para>With subposition compression, this looks like
-<screen>positions: instr line
+<screen># callgrind format
+positions: instr line
 events: ticks
 
 fn=func
@@ -326,7 +334,8 @@ for "Ir and "Dr".</para>
 <title>Grammar</title>
 
 <para>
-<screen>ProfileDataFile := FormatVersion? Creator? PartData*</screen>
+<screen>ProfileDataFile := FormatSpec? FormatVersion? Creator? PartData*</screen>
+<screen>FormatSpec := "# callgrind format\n"</screen>
 <screen>FormatVersion := "version: 1\n"</screen>
 <screen>Creator := "creator:" NoNewLineChar* "\n"</screen>
 <screen>PartData := (HeaderLine "\n")+ (BodyLine "\n")+</screen>
@@ -379,7 +388,7 @@ for "Ir and "Dr".</para>
 </para>
 
 <para>A profile data file ("ProfileDataFile") starts with basic information
-  such as the version and creator information, and then has a list of parts, where
+  such as a format marker, the version and creator information, and then has a list of parts, where
   each part has its own header and body. Parts typically are different threads
   and/or time spans/phases within a profiled application run.</para>
 
@@ -396,11 +405,23 @@ for "Ir and "Dr".</para>
 
 <itemizedlist>
   <listitem>
+    <para><computeroutput># callgrind format</computeroutput> [Callgrind]</para>
+    <para>This line specifies that the file is a callgrind profile,
+      and it has to be the first line. It was added late to the
+      format (with Valgrind 3.13) and is optional, as all readers also
+      should work with older callgrind profiles not including this line.
+      However, generation of this line is recommended to allow desktop
+      environments and file managers to uniquely detect the format.</para>
+  </listitem>
+
+  <listitem>
     <para><computeroutput>version: number</computeroutput> [Callgrind]</para>
     <para>This is used to distinguish future profile data formats.  A 
     major version of 0 or 1 is supposed to be upwards compatible with 
     Cachegrind's format.  It is optional; if not appearing, version 1 
-    is assumed.  Otherwise, this has to be the first header line.</para>
+    is assumed.  Otherwise, it has to follow directly after the format
+    specification (i.e. be the first line if the optional format
+    specification is skipped).</para>
   </listitem>
 
   <listitem>

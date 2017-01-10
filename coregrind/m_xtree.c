@@ -442,6 +442,7 @@ void VG_(XT_callgrind_print)
    filename_ddpa = VG_(newDedupPA)(16000, 1, xt->alloc_fn,
                                    "XT_callgrind_print.fl", xt->free_fn);
 
+   FP("# callgrind format\n");
    FP("version: 1\n");
    FP("creator: xtree-1\n");
    FP("pid: %d\n", VG_(getpid)());

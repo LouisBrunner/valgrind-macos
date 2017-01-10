@@ -1215,6 +1215,9 @@ static VgFile *new_dumpfile(int tid, const HChar* trigger)
 
 
     if (!appending) {
+	/* callgrind format specification, has to be on 1st line */
+	VG_(fprintf)(fp, "# callgrind format\n");
+
 	/* version */
 	VG_(fprintf)(fp, "version: 1\n");
 

@@ -13348,12 +13348,14 @@ static Bool decode_V8_instruction (
         }
         else /*NOTREACHED*/vassert(0);
      }
-     // Paranoia ..
-     vassert(szBlg2 <= 3);
-     if (szBlg2 < 3) { vassert(tt2 == 16/*invalid*/); }
-                else { vassert(tt2 <= 14); }
-     if (isLoad) { vassert(dd == 16/*invalid*/); }
-            else { vassert(dd <= 14); }
+     if (gate) {
+        // Paranoia ..
+        vassert(szBlg2 <= 3);
+        if (szBlg2 < 3) { vassert(tt2 == 16/*invalid*/); }
+                   else { vassert(tt2 <= 14); }
+        if (isLoad) { vassert(dd == 16/*invalid*/); }
+               else { vassert(dd <= 14); }
+     }
      // If we're still good even after all that, generate the IR.
      if (gate) {
         /* First, go unconditional.  Staying in-line is too complex. */

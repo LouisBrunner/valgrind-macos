@@ -318,7 +318,11 @@ void  MC_(set_freed_at) (ThreadId tid, MC_Chunk* mc)
 
    switch (MC_(clo_keep_stacktraces)) {
       case KS_none:            return;
-      case KS_alloc:           pos = -1; break;
+      case KS_alloc:           
+                               if (LIKELY(VG_(clo_xtree_memory) 
+                                          != Vg_XTMemory_Full))
+                                  return;
+                               pos = -1; break;
       case KS_free:            pos = 0; break;
       case KS_alloc_then_free: pos = 0; break;
       case KS_alloc_and_free:  pos = 1; break;
@@ -332,7 +336,7 @@ void  MC_(set_freed_at) (ThreadId tid, MC_Chunk* mc)
    ec_free = VG_(record_ExeContext) ( tid, 0/*first_ip_delta*/ );
    if (UNLIKELY(VG_(clo_xtree_memory) == Vg_XTMemory_Full))
        VG_(XTMemory_Full_free)(mc->szB, mc->where[0], ec_free);
-   if (pos >= 0)
+   if (LIKELY(pos >= 0))
       mc->where[pos] = ec_free;
 }
 

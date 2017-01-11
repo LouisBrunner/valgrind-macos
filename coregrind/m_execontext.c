@@ -186,7 +186,7 @@ void VG_(print_ExeContext_stats) ( Bool with_stacktraces )
       "   exectx: %'lu lists, %'llu contexts (avg %3.2f per list)"
       " (avg %3.2f IP per context)\n",
       ec_htab_size, ec_totstored, (Double)ec_totstored / (Double)ec_htab_size,
-      (Double)total_n_ips / (Double)ec_htab_size
+      (Double)total_n_ips / (Double)ec_totstored
    );
    VG_(message)(Vg_DebugMsg, 
       "   exectx: %'llu searches, %'llu full compares (%'llu per 1000)\n",

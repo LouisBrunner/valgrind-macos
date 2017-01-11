@@ -1,7 +1,10 @@
 
 /*
 gcc -o v8fpsimd_a v8fpsimd_a.c -march=armv8-a -mfpu=crypto-neon-fp-armv8 \
-    -I../../.. -Wall -g -marm
+       -I../../.. -Wall -g -marm
+
+gcc -o v8fpsimd_t v8fpsimd_a.c -march=armv8-a -mfpu=crypto-neon-fp-armv8 \
+       -I../../.. -Wall -g
 */
 
 #include <stdio.h>
@@ -140,6 +143,20 @@ static void showV128 ( V128* v )
    } while (0)
 
 
+/* Are we compiling for thumb or arm encodings?  This has a bearing
+   on the inline assembly syntax needed below. */
+
+#if defined(__thumb__) || defined(__thumb2__)
+#  define IT_EQ "it eq ; "
+#  define IT_NE "it ne ; "
+#  define IT_AL /* */
+#else
+#  define IT_EQ /* */
+#  define IT_NE /* */
+#  define IT_AL /* */
+#endif
+
+
 /* Generate a test that involves two vector regs,
    with no bias as towards which is input or output. 
    It's OK to use r8 as scratch.
@@ -164,8 +181,20 @@ static void showV128 ( V128* v )
    so a Q value of 8 or above is definitely invalid for a S register.
    None of this is checked, though, so be careful when creating the
    Q numbers.
+
+   It would be clearer and easier to write the Q numbers using integer
+   division.  For example, in
+
+      GEN_TWOVEC_QDS_TEST(vcvtn_s32_f64, "vcvtn.s32.f64 s27, d5",  6,2)
+
+   instead of writing "6, 2" at the end, write "(27/4), (5/2)".  This
+   would make clear the connection between the register numbers and
+   the Q numbers.  Unfortunately those expressions need to expanded to
+   single digits at C-preprocessing time, and cpp won't do that.  So
+   we have to do it the hard and error-prone way.
 */
-#define GEN_TWOVEC_QDS_TEST(TESTNAME,INSN,QVECREG1NO,QVECREG2NO) \
+#define GEN_TWOVEC_QDS_TEST(TESTNAME,INSN_PRE,INSN, \
+                            QVECREG1NO,QVECREG2NO) \
   __attribute__((noinline)) \
   static void test_##TESTNAME ( LaneTy ty ) { \
      Int i; \
@@ -180,15 +209,18 @@ static void showV128 ( V128* v )
         randV128(&block[3], ty); \
         __asm__ __volatile__( \
            "mov r9, #0 ; vmsr fpscr, r9 ; " \
+           "msr apsr_nzcvq, r9 ; " \
            "add r9, %0, #0  ; vld1.8 { q"#QVECREG1NO" }, [r9] ; " \
            "add r9, %0, #16 ; vld1.8 { q"#QVECREG2NO" }, [r9] ; " \
-           INSN " ; " \
+           INSN_PRE INSN " ; " \
            "add r9, %0, #32 ; vst1.8 { q"#QVECREG1NO" }, [r9] ; " \
            "add r9, %0, #48 ; vst1.8 { q"#QVECREG2NO" }, [r9] ; " \
            "vmrs r9, fpscr ; str r9, [%0, #64] " \
            : : "r"(&block[0]) \
              : "cc", "memory", "q"#QVECREG1NO, "q"#QVECREG2NO, "r8", "r9" \
         ); \
+        /* Don't use INSN_PRE in printing, since that differs */ \
+        /* between ARM and Thumb and hence makes their outputs differ. */ \
         printf(INSN   "   "); \
         UInt fpscr = 0xFFFFFFFF & block[4].u32[0]; \
         showV128(&block[0]); printf("  "); \
@@ -202,7 +234,8 @@ static void showV128 ( V128* v )
 /* Generate a test that involves three vector regs,
    with no bias as towards which is input or output.  It's also OK
    to use r8 as scratch. */
-#define GEN_THREEVEC_QDS_TEST(TESTNAME,INSN,QVECREG1NO,QVECREG2NO,QVECREG3NO) \
+#define GEN_THREEVEC_QDS_TEST(TESTNAME,INSN_PRE, \
+                              INSN,QVECREG1NO,QVECREG2NO,QVECREG3NO) \
   __attribute__((noinline)) \
   static void test_##TESTNAME ( LaneTy ty ) { \
      Int i; \
@@ -220,10 +253,11 @@ static void showV128 ( V128* v )
         randV128(&block[5], ty); \
         __asm__ __volatile__( \
            "mov r9, #0 ; vmsr fpscr, r9 ; " \
+           "msr apsr_nzcvq, r9 ; " \
            "add r9, %0, #0  ; vld1.8 { q"#QVECREG1NO" }, [r9] ; " \
            "add r9, %0, #16 ; vld1.8 { q"#QVECREG2NO" }, [r9] ; " \
            "add r9, %0, #32 ; vld1.8 { q"#QVECREG3NO" }, [r9] ; " \
-           INSN " ; " \
+           INSN_PRE INSN " ; " \
            "add r9, %0, #48 ; vst1.8 { q"#QVECREG1NO" }, [r9] ; " \
            "add r9, %0, #64 ; vst1.8 { q"#QVECREG2NO" }, [r9] ; " \
            "add r9, %0, #80 ; vst1.8 { q"#QVECREG3NO" }, [r9] ; " \
@@ -232,6 +266,8 @@ static void showV128 ( V128* v )
            : "cc", "memory", "q"#QVECREG1NO, "q"#QVECREG2NO, "q"#QVECREG3NO, \
              "r8", "r9" \
         ); \
+        /* Don't use INSN_PRE in printing, since that differs */ \
+        /* between ARM and Thumb and hence makes their outputs differ. */ \
         printf(INSN   "   "); \
         UInt fpscr = 0xFFFFFFFF & block[6].u32[0]; \
         showV128(&block[0]); printf("  "); \
@@ -243,123 +279,155 @@ static void showV128 ( V128* v )
      } \
   }
 
-GEN_THREEVEC_QDS_TEST(vselge_f32, "vselge.f32 s15,s16,s20", 3,4,5) 
-GEN_THREEVEC_QDS_TEST(vselge_f64, "vselge.f64 d7, d8, d10", 3,4,5) 
+GEN_THREEVEC_QDS_TEST(vselge_f32, IT_AL, "vselge.f32 s15,s16,s20", 3,4,5) 
+GEN_THREEVEC_QDS_TEST(vselge_f64, IT_AL, "vselge.f64 d7, d8, d10", 3,4,5) 
 
-GEN_THREEVEC_QDS_TEST(vselgt_f32, "vselgt.f32 s15,s16,s20", 3,4,5) 
-GEN_THREEVEC_QDS_TEST(vselgt_f64, "vselgt.f64 d7, d8, d10", 3,4,5) 
+GEN_THREEVEC_QDS_TEST(vselgt_f32, IT_AL, "vselgt.f32 s15,s16,s20", 3,4,5) 
+GEN_THREEVEC_QDS_TEST(vselgt_f64, IT_AL, "vselgt.f64 d7, d8, d10", 3,4,5) 
 
-GEN_THREEVEC_QDS_TEST(vseleq_f32, "vseleq.f32 s15,s16,s20", 3,4,5) 
-GEN_THREEVEC_QDS_TEST(vseleq_f64, "vseleq.f64 d7, d8, d10", 3,4,5) 
+GEN_THREEVEC_QDS_TEST(vseleq_f32, IT_AL, "vseleq.f32 s15,s16,s20", 3,4,5) 
+GEN_THREEVEC_QDS_TEST(vseleq_f64, IT_AL, "vseleq.f64 d7, d8, d10", 3,4,5) 
 
-GEN_THREEVEC_QDS_TEST(vselvs_f32, "vselvs.f32 s15,s16,s20", 3,4,5) 
-GEN_THREEVEC_QDS_TEST(vselvs_f64, "vselvs.f64 d7, d8, d10", 3,4,5) 
+GEN_THREEVEC_QDS_TEST(vselvs_f32, IT_AL, "vselvs.f32 s15,s16,s20", 3,4,5) 
+GEN_THREEVEC_QDS_TEST(vselvs_f64, IT_AL, "vselvs.f64 d7, d8, d10", 3,4,5) 
 
-GEN_THREEVEC_QDS_TEST(vmaxnm_f32, "vmaxnm.f32 s15,s16,s20", 3,4,5) 
-GEN_THREEVEC_QDS_TEST(vmaxnm_f64, "vmaxnm.f64 d7, d8, d10", 3,4,5) 
+GEN_THREEVEC_QDS_TEST(vmaxnm_f32, IT_AL, "vmaxnm.f32 s15,s16,s20", 3,4,5) 
+GEN_THREEVEC_QDS_TEST(vmaxnm_f64, IT_AL, "vmaxnm.f64 d7, d8, d10", 3,4,5) 
 
-GEN_THREEVEC_QDS_TEST(vminnm_f32, "vminnm.f32 s15,s16,s20", 3,4,5) 
-GEN_THREEVEC_QDS_TEST(vminnm_f64, "vminnm.f64 d7, d8, d10", 3,4,5) 
+GEN_THREEVEC_QDS_TEST(vminnm_f32, IT_AL, "vminnm.f32 s15,s16,s20", 3,4,5) 
+GEN_THREEVEC_QDS_TEST(vminnm_f64, IT_AL, "vminnm.f64 d7, d8, d10", 3,4,5) 
 
-GEN_TWOVEC_QDS_TEST(vcvtn_s32_f64, "vcvtn.s32.f64 s27, d5",  6,2)
-GEN_TWOVEC_QDS_TEST(vcvta_s32_f64, "vcvta.s32.f64 s4,  d20", 1,10)
-GEN_TWOVEC_QDS_TEST(vcvtp_s32_f64, "vcvtp.s32.f64 s7,  d31", 1,15)
-GEN_TWOVEC_QDS_TEST(vcvtm_s32_f64, "vcvtm.s32.f64 s1,  d0",  0,0)
+GEN_TWOVEC_QDS_TEST(vcvtn_s32_f64, IT_AL, "vcvtn.s32.f64 s27, d5",  6,2)
+GEN_TWOVEC_QDS_TEST(vcvta_s32_f64, IT_AL, "vcvta.s32.f64 s4,  d20", 1,10)
+GEN_TWOVEC_QDS_TEST(vcvtp_s32_f64, IT_AL, "vcvtp.s32.f64 s7,  d31", 1,15)
+GEN_TWOVEC_QDS_TEST(vcvtm_s32_f64, IT_AL, "vcvtm.s32.f64 s1,  d0",  0,0)
 
-GEN_TWOVEC_QDS_TEST(vcvtn_s32_f32, "vcvtn.s32.f32 s27, s5",  6,1)
-GEN_TWOVEC_QDS_TEST(vcvta_s32_f32, "vcvta.s32.f32 s4,  s20", 1,5)
-GEN_TWOVEC_QDS_TEST(vcvtp_s32_f32, "vcvtp.s32.f32 s7,  s31", 1,7)
-GEN_TWOVEC_QDS_TEST(vcvtm_s32_f32, "vcvtm.s32.f32 s1,  s0",  0,0)
+GEN_TWOVEC_QDS_TEST(vcvtn_s32_f32, IT_AL, "vcvtn.s32.f32 s27, s5",  6,1)
+GEN_TWOVEC_QDS_TEST(vcvta_s32_f32, IT_AL, "vcvta.s32.f32 s4,  s20", 1,5)
+GEN_TWOVEC_QDS_TEST(vcvtp_s32_f32, IT_AL, "vcvtp.s32.f32 s7,  s31", 1,7)
+GEN_TWOVEC_QDS_TEST(vcvtm_s32_f32, IT_AL, "vcvtm.s32.f32 s1,  s0",  0,0)
 
-GEN_TWOVEC_QDS_TEST(vcvtn_u32_f64, "vcvtn.u32.f64 s27, d5",  6,2)
-GEN_TWOVEC_QDS_TEST(vcvta_u32_f64, "vcvta.u32.f64 s4,  d20", 1,10)
-GEN_TWOVEC_QDS_TEST(vcvtp_u32_f64, "vcvtp.u32.f64 s7,  d31", 1,15)
-GEN_TWOVEC_QDS_TEST(vcvtm_u32_f64, "vcvtm.u32.f64 s1,  d0",  0,0)
+GEN_TWOVEC_QDS_TEST(vcvtn_u32_f64, IT_AL, "vcvtn.u32.f64 s27, d5",  6,2)
+GEN_TWOVEC_QDS_TEST(vcvta_u32_f64, IT_AL, "vcvta.u32.f64 s4,  d20", 1,10)
+GEN_TWOVEC_QDS_TEST(vcvtp_u32_f64, IT_AL, "vcvtp.u32.f64 s7,  d31", 1,15)
+GEN_TWOVEC_QDS_TEST(vcvtm_u32_f64, IT_AL, "vcvtm.u32.f64 s1,  d0",  0,0)
 
-GEN_TWOVEC_QDS_TEST(vcvtn_u32_f32, "vcvtn.u32.f32 s27, s5",  6,1)
-GEN_TWOVEC_QDS_TEST(vcvta_u32_f32, "vcvta.u32.f32 s4,  s20", 1,5)
-GEN_TWOVEC_QDS_TEST(vcvtp_u32_f32, "vcvtp.u32.f32 s7,  s31", 1,7)
-GEN_TWOVEC_QDS_TEST(vcvtm_u32_f32, "vcvtm.u32.f32 s1,  s0",  0,0)
+GEN_TWOVEC_QDS_TEST(vcvtn_u32_f32, IT_AL, "vcvtn.u32.f32 s27, s5",  6,1)
+GEN_TWOVEC_QDS_TEST(vcvta_u32_f32, IT_AL, "vcvta.u32.f32 s4,  s20", 1,5)
+GEN_TWOVEC_QDS_TEST(vcvtp_u32_f32, IT_AL, "vcvtp.u32.f32 s7,  s31", 1,7)
+GEN_TWOVEC_QDS_TEST(vcvtm_u32_f32, IT_AL, "vcvtm.u32.f32 s1,  s0",  0,0)
 
-GEN_TWOVEC_QDS_TEST(vcvtb_f64_f16, "vcvtb.f64.f16 d27, s18", 13, 4)
-GEN_TWOVEC_QDS_TEST(vcvtt_f64_f16, "vcvtt.f64.f16 d28, s17", 14, 4)
+GEN_TWOVEC_QDS_TEST(vcvtb_f64_f16, IT_AL, "vcvtb.f64.f16 d27, s18", 13, 4)
+GEN_TWOVEC_QDS_TEST(vcvtt_f64_f16, IT_AL, "vcvtt.f64.f16 d28, s17", 14, 4)
 
-GEN_TWOVEC_QDS_TEST(vcvtb_f16_f64, "vcvtb.f16.f64 s9, d17", 2, 8)
-GEN_TWOVEC_QDS_TEST(vcvtt_f16_f64, "vcvtt.f16.f64 s8, d27", 2, 13)
+GEN_TWOVEC_QDS_TEST(vcvtb_f16_f64, IT_AL, "vcvtb.f16.f64 s9, d17", 2, 8)
+GEN_TWOVEC_QDS_TEST(vcvtt_f16_f64, IT_AL, "vcvtt.f16.f64 s8, d27", 2, 13)
 
-GEN_TWOVEC_QDS_TEST(vrintzeq_f64_f64, "vrintzeq.f64.f64 d0, d9",   0, 4)
-GEN_TWOVEC_QDS_TEST(vrintzne_f64_f64, "vrintzne.f64.f64 d1, d10",  0, 5)
-GEN_TWOVEC_QDS_TEST(vrintzal_f64_f64, "vrintzal.f64.f64 d2, d11",  1, 5)
+GEN_TWOVEC_QDS_TEST(vrintzeq_f64_f64, IT_EQ, "vrintzeq.f64.f64 d0, d9",  0, 4)
+GEN_TWOVEC_QDS_TEST(vrintzne_f64_f64, IT_NE, "vrintzne.f64.f64 d1, d10", 0, 5)
+GEN_TWOVEC_QDS_TEST(vrintzal_f64_f64, IT_AL,   "vrintz.f64.f64 d2, d11", 1, 5)
 
-GEN_TWOVEC_QDS_TEST(vrintreq_f64_f64, "vrintreq.f64.f64 d3, d12",  1, 6)
-GEN_TWOVEC_QDS_TEST(vrintrne_f64_f64, "vrintrne.f64.f64 d4, d13",  2, 6)
-GEN_TWOVEC_QDS_TEST(vrintral_f64_f64, "vrintral.f64.f64 d5, d14",  2, 7)
+GEN_TWOVEC_QDS_TEST(vrintreq_f64_f64, IT_EQ, "vrintreq.f64.f64 d3, d12", 1, 6)
+GEN_TWOVEC_QDS_TEST(vrintrne_f64_f64, IT_NE, "vrintrne.f64.f64 d4, d13", 2, 6)
+GEN_TWOVEC_QDS_TEST(vrintral_f64_f64, IT_AL,   "vrintr.f64.f64 d5, d14", 2, 7)
 
-GEN_TWOVEC_QDS_TEST(vrintxeq_f64_f64, "vrintxeq.f64.f64 d6, d15",  3, 7)
-GEN_TWOVEC_QDS_TEST(vrintxne_f64_f64, "vrintxne.f64.f64 d7, d16",  3, 8)
-GEN_TWOVEC_QDS_TEST(vrintxal_f64_f64, "vrintxal.f64.f64 d8, d8",   4, 4)
+GEN_TWOVEC_QDS_TEST(vrintxeq_f64_f64, IT_EQ, "vrintxeq.f64.f64 d6, d15", 3, 7)
+GEN_TWOVEC_QDS_TEST(vrintxne_f64_f64, IT_NE, "vrintxne.f64.f64 d7, d16", 3, 8)
+GEN_TWOVEC_QDS_TEST(vrintxal_f64_f64, IT_AL,   "vrintx.f64.f64 d8, d8",  4, 4)
 
-GEN_TWOVEC_QDS_TEST(vrintzeq_f32_f32, "vrintzeq.f32.f32 s0, s9",   0, 2)
-GEN_TWOVEC_QDS_TEST(vrintzne_f32_f32, "vrintzne.f32.f32 s1, s10",  0, 2)
-GEN_TWOVEC_QDS_TEST(vrintzal_f32_f32, "vrintzal.f32.f32 s2, s11",  0, 2)
+GEN_TWOVEC_QDS_TEST(vrintzeq_f32_f32, IT_EQ, "vrintzeq.f32.f32 s0, s9",  0, 2)
+GEN_TWOVEC_QDS_TEST(vrintzne_f32_f32, IT_NE, "vrintzne.f32.f32 s1, s10", 0, 2)
+GEN_TWOVEC_QDS_TEST(vrintzal_f32_f32, IT_AL,   "vrintz.f32.f32 s2, s11", 0, 2)
 
-GEN_TWOVEC_QDS_TEST(vrintreq_f32_f32, "vrintreq.f32.f32 s3, s12",  0, 3)
-GEN_TWOVEC_QDS_TEST(vrintrne_f32_f32, "vrintrne.f32.f32 s4, s13",  1, 3)
-GEN_TWOVEC_QDS_TEST(vrintral_f32_f32, "vrintral.f32.f32 s5, s14",  1, 3)
+GEN_TWOVEC_QDS_TEST(vrintreq_f32_f32, IT_EQ, "vrintreq.f32.f32 s3, s12", 0, 3)
+GEN_TWOVEC_QDS_TEST(vrintrne_f32_f32, IT_NE, "vrintrne.f32.f32 s4, s13", 1, 3)
+GEN_TWOVEC_QDS_TEST(vrintral_f32_f32, IT_AL,   "vrintr.f32.f32 s5, s14", 1, 3)
 
-GEN_TWOVEC_QDS_TEST(vrintxeq_f32_f32, "vrintxeq.f32.f32 s6, s15",  1, 3)
-GEN_TWOVEC_QDS_TEST(vrintxne_f32_f32, "vrintxne.f32.f32 s7, s16",  1, 4)
-GEN_TWOVEC_QDS_TEST(vrintxal_f32_f32, "vrintxal.f32.f32 s8, s8",   2, 2)
+GEN_TWOVEC_QDS_TEST(vrintxeq_f32_f32, IT_EQ, "vrintxeq.f32.f32 s6, s15", 1, 3)
+GEN_TWOVEC_QDS_TEST(vrintxne_f32_f32, IT_NE, "vrintxne.f32.f32 s7, s16", 1, 4)
+GEN_TWOVEC_QDS_TEST(vrintxal_f32_f32, IT_AL,   "vrintx.f32.f32 s8, s8",  2, 2)
 
-GEN_TWOVEC_QDS_TEST(vrintn_f64_f64, "vrintn.f64.f64 d3,  d15",  1,  7)
-GEN_TWOVEC_QDS_TEST(vrinta_f64_f64, "vrinta.f64.f64 d6,  d18",  3,  9)
-GEN_TWOVEC_QDS_TEST(vrintp_f64_f64, "vrintp.f64.f64 d9,  d21",  4, 10)
-GEN_TWOVEC_QDS_TEST(vrintm_f64_f64, "vrintm.f64.f64 d12, d12",  6,  6)
+GEN_TWOVEC_QDS_TEST(vrintn_f64_f64, IT_AL, "vrintn.f64.f64 d3,  d15",  1,  7)
+GEN_TWOVEC_QDS_TEST(vrinta_f64_f64, IT_AL, "vrinta.f64.f64 d6,  d18",  3,  9)
+GEN_TWOVEC_QDS_TEST(vrintp_f64_f64, IT_AL, "vrintp.f64.f64 d9,  d21",  4, 10)
+GEN_TWOVEC_QDS_TEST(vrintm_f64_f64, IT_AL, "vrintm.f64.f64 d12, d12",  6,  6)
 
-GEN_TWOVEC_QDS_TEST(vrintn_f32_f32, "vrintn.f32.f32 s3,  s15",  0,  3)
-GEN_TWOVEC_QDS_TEST(vrinta_f32_f32, "vrinta.f32.f32 s6,  s18",  1,  4)
-GEN_TWOVEC_QDS_TEST(vrintp_f32_f32, "vrintp.f32.f32 s9,  s21",  2,  5)
-GEN_TWOVEC_QDS_TEST(vrintm_f32_f32, "vrintm.f32.f32 s12, s12",  3,  3)
+GEN_TWOVEC_QDS_TEST(vrintn_f32_f32, IT_AL, "vrintn.f32.f32 s3,  s15",  0,  3)
+GEN_TWOVEC_QDS_TEST(vrinta_f32_f32, IT_AL, "vrinta.f32.f32 s6,  s18",  1,  4)
+GEN_TWOVEC_QDS_TEST(vrintp_f32_f32, IT_AL, "vrintp.f32.f32 s9,  s21",  2,  5)
+GEN_TWOVEC_QDS_TEST(vrintm_f32_f32, IT_AL, "vrintm.f32.f32 s12, s12",  3,  3)
 
-GEN_THREEVEC_QDS_TEST(vmaxnm_f32_vec64,  "vmaxnm.f32 d15,d16,d20", 7,8,10)
-GEN_THREEVEC_QDS_TEST(vmaxnm_f32_vec128, "vmaxnm.f32 q7, q8, q10", 7,8,10)
+GEN_THREEVEC_QDS_TEST(vmaxnm_f32_vec64,
+                      IT_AL, "vmaxnm.f32 d15,d16,d20", 7,8,10)
+GEN_THREEVEC_QDS_TEST(vmaxnm_f32_vec128,
+                      IT_AL, "vmaxnm.f32 q7, q8, q10", 7,8,10)
 
-GEN_THREEVEC_QDS_TEST(vminnm_f32_vec64,  "vminnm.f32 d15,d16,d20", 7,8,10)
-GEN_THREEVEC_QDS_TEST(vminnm_f32_vec128, "vminnm.f32 q7, q8, q10", 7,8,10)
+GEN_THREEVEC_QDS_TEST(vminnm_f32_vec64,
+                      IT_AL, "vminnm.f32 d15,d16,d20", 7,8,10)
+GEN_THREEVEC_QDS_TEST(vminnm_f32_vec128,
+                      IT_AL, "vminnm.f32 q7, q8, q10", 7,8,10)
 
-GEN_TWOVEC_QDS_TEST(vcvtn_s32_f32_vec64, "vcvtn.s32.f32 d0,  d20",  0, 10)
-GEN_TWOVEC_QDS_TEST(vcvta_s32_f32_vec64, "vcvta.s32.f32 d5,  d25",  2, 12)
-GEN_TWOVEC_QDS_TEST(vcvtp_s32_f32_vec64, "vcvtp.s32.f32 d10, d30",  5, 15)
-GEN_TWOVEC_QDS_TEST(vcvtm_s32_f32_vec64, "vcvtm.s32.f32 d15, d15",  7, 7)
+GEN_TWOVEC_QDS_TEST(vcvtn_s32_f32_vec64,
+                    IT_AL, "vcvtn.s32.f32 d0,  d20",  0, 10)
+GEN_TWOVEC_QDS_TEST(vcvta_s32_f32_vec64,
+                    IT_AL, "vcvta.s32.f32 d5,  d25",  2, 12)
+GEN_TWOVEC_QDS_TEST(vcvtp_s32_f32_vec64,
+                    IT_AL, "vcvtp.s32.f32 d10, d30",  5, 15)
+GEN_TWOVEC_QDS_TEST(vcvtm_s32_f32_vec64,
+                    IT_AL, "vcvtm.s32.f32 d15, d15",  7, 7)
 
-GEN_TWOVEC_QDS_TEST(vcvtn_s32_f32_vec128, "vcvtn.s32.f32 q15, q0",  15, 0)
-GEN_TWOVEC_QDS_TEST(vcvta_s32_f32_vec128, "vcvta.s32.f32 q14, q1",  14, 1)
-GEN_TWOVEC_QDS_TEST(vcvtp_s32_f32_vec128, "vcvtp.s32.f32 q13, q2",  13, 2)
-GEN_TWOVEC_QDS_TEST(vcvtm_s32_f32_vec128, "vcvtm.s32.f32 q12, q3",  12, 3)
+GEN_TWOVEC_QDS_TEST(vcvtn_s32_f32_vec128,
+                    IT_AL, "vcvtn.s32.f32 q15, q0",  15, 0)
+GEN_TWOVEC_QDS_TEST(vcvta_s32_f32_vec128,
+                    IT_AL, "vcvta.s32.f32 q14, q1",  14, 1)
+GEN_TWOVEC_QDS_TEST(vcvtp_s32_f32_vec128,
+                    IT_AL, "vcvtp.s32.f32 q13, q2",  13, 2)
+GEN_TWOVEC_QDS_TEST(vcvtm_s32_f32_vec128,
+                    IT_AL, "vcvtm.s32.f32 q12, q3",  12, 3)
 
-GEN_TWOVEC_QDS_TEST(vcvtn_u32_f32_vec64, "vcvtn.u32.f32 d0,  d20", 0, 10)
-GEN_TWOVEC_QDS_TEST(vcvta_u32_f32_vec64, "vcvta.u32.f32 d5,  d25", 2, 12)
-GEN_TWOVEC_QDS_TEST(vcvtp_u32_f32_vec64, "vcvtp.u32.f32 d10, d30", 5, 15)
-GEN_TWOVEC_QDS_TEST(vcvtm_u32_f32_vec64, "vcvtm.u32.f32 d15, d15", 7, 7)
+GEN_TWOVEC_QDS_TEST(vcvtn_u32_f32_vec64,
+                    IT_AL, "vcvtn.u32.f32 d0,  d20", 0, 10)
+GEN_TWOVEC_QDS_TEST(vcvta_u32_f32_vec64,
+                    IT_AL, "vcvta.u32.f32 d5,  d25", 2, 12)
+GEN_TWOVEC_QDS_TEST(vcvtp_u32_f32_vec64,
+                    IT_AL, "vcvtp.u32.f32 d10, d30", 5, 15)
+GEN_TWOVEC_QDS_TEST(vcvtm_u32_f32_vec64,
+                    IT_AL, "vcvtm.u32.f32 d15, d15", 7, 7)
 
-GEN_TWOVEC_QDS_TEST(vcvtn_u32_f32_vec128, "vcvtn.u32.f32 q15, q0",  15, 0)
-GEN_TWOVEC_QDS_TEST(vcvta_u32_f32_vec128, "vcvta.u32.f32 q14, q1",  14, 1)
-GEN_TWOVEC_QDS_TEST(vcvtp_u32_f32_vec128, "vcvtp.u32.f32 q13, q2",  13, 2)
-GEN_TWOVEC_QDS_TEST(vcvtm_u32_f32_vec128, "vcvtm.u32.f32 q12, q3",  12, 3)
+GEN_TWOVEC_QDS_TEST(vcvtn_u32_f32_vec128,
+                    IT_AL, "vcvtn.u32.f32 q15, q0",  15, 0)
+GEN_TWOVEC_QDS_TEST(vcvta_u32_f32_vec128,
+                    IT_AL, "vcvta.u32.f32 q14, q1",  14, 1)
+GEN_TWOVEC_QDS_TEST(vcvtp_u32_f32_vec128,
+                    IT_AL, "vcvtp.u32.f32 q13, q2",  13, 2)
+GEN_TWOVEC_QDS_TEST(vcvtm_u32_f32_vec128,
+                    IT_AL, "vcvtm.u32.f32 q12, q3",  12, 3)
 
-GEN_TWOVEC_QDS_TEST(vrintn_f32_f32_vec64, "vrintn.f32.f32 d0,  d18", 0, 9)
-GEN_TWOVEC_QDS_TEST(vrinta_f32_f32_vec64, "vrinta.f32.f32 d3,  d21", 1, 10)
-GEN_TWOVEC_QDS_TEST(vrintp_f32_f32_vec64, "vrintp.f32.f32 d6,  d24", 3, 12)
-GEN_TWOVEC_QDS_TEST(vrintm_f32_f32_vec64, "vrintm.f32.f32 d9,  d27", 4, 13)
-GEN_TWOVEC_QDS_TEST(vrintz_f32_f32_vec64, "vrintz.f32.f32 d12, d30", 6, 15)
-GEN_TWOVEC_QDS_TEST(vrintx_f32_f32_vec64, "vrintx.f32.f32 d15, d15", 7, 7)
+GEN_TWOVEC_QDS_TEST(vrintn_f32_f32_vec64,
+                    IT_AL, "vrintn.f32.f32 d0,  d18", 0, 9)
+GEN_TWOVEC_QDS_TEST(vrinta_f32_f32_vec64,
+                    IT_AL, "vrinta.f32.f32 d3,  d21", 1, 10)
+GEN_TWOVEC_QDS_TEST(vrintp_f32_f32_vec64,
+                    IT_AL, "vrintp.f32.f32 d6,  d24", 3, 12)
+GEN_TWOVEC_QDS_TEST(vrintm_f32_f32_vec64,
+                    IT_AL, "vrintm.f32.f32 d9,  d27", 4, 13)
+GEN_TWOVEC_QDS_TEST(vrintz_f32_f32_vec64,
+                    IT_AL, "vrintz.f32.f32 d12, d30", 6, 15)
+GEN_TWOVEC_QDS_TEST(vrintx_f32_f32_vec64,
+                    IT_AL, "vrintx.f32.f32 d15, d15", 7, 7)
 
-GEN_TWOVEC_QDS_TEST(vrintn_f32_f32_vec128, "vrintn.f32.f32 q0,  q2",   0, 2)
-GEN_TWOVEC_QDS_TEST(vrinta_f32_f32_vec128, "vrinta.f32.f32 q3,  q5",   3, 5)
-GEN_TWOVEC_QDS_TEST(vrintp_f32_f32_vec128, "vrintp.f32.f32 q6,  q8",   6, 8)
-GEN_TWOVEC_QDS_TEST(vrintm_f32_f32_vec128, "vrintm.f32.f32 q9,  q11",  9, 11)
-GEN_TWOVEC_QDS_TEST(vrintz_f32_f32_vec128, "vrintz.f32.f32 q12, q14",  12, 14)
-GEN_TWOVEC_QDS_TEST(vrintx_f32_f32_vec128, "vrintx.f32.f32 q15, q15",  15, 15)
+GEN_TWOVEC_QDS_TEST(vrintn_f32_f32_vec128,
+                    IT_AL, "vrintn.f32.f32 q0,  q2",   0, 2)
+GEN_TWOVEC_QDS_TEST(vrinta_f32_f32_vec128,
+                    IT_AL, "vrinta.f32.f32 q3,  q5",   3, 5)
+GEN_TWOVEC_QDS_TEST(vrintp_f32_f32_vec128,
+                    IT_AL, "vrintp.f32.f32 q6,  q8",   6, 8)
+GEN_TWOVEC_QDS_TEST(vrintm_f32_f32_vec128,
+                    IT_AL, "vrintm.f32.f32 q9,  q11",  9, 11)
+GEN_TWOVEC_QDS_TEST(vrintz_f32_f32_vec128,
+                    IT_AL, "vrintz.f32.f32 q12, q14",  12, 14)
+GEN_TWOVEC_QDS_TEST(vrintx_f32_f32_vec128,
+                    IT_AL, "vrintx.f32.f32 q15, q15",  15, 15)
 
 int main ( void )
 {

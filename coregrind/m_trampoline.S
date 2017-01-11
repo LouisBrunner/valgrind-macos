@@ -1527,7 +1527,7 @@ VG_(amd64_solaris_REDIR_FOR_strcpy):
         movq    %rdi, %rdx              /* copy s1 */
 1:
         movzbl  (%rsi), %eax            /* load one input character */
-        movb    %al, (%rdx)             /* copy to output/s2 */
+        movb    %al, (%rdx)             /* copy to output/s1 */
         incq    %rsi                    /* skip to the next output character */
         incq    %rdx                    /* skip to the next input character */
         testb   %al, %al                /* is the copied character null? */
@@ -1548,7 +1548,7 @@ VG_(amd64_solaris_REDIR_FOR_strncpy):
         testq   %rdx, %rdx              /* is the remaining size zero? */
         jz      3f                      /* yes, all done */
         movzbl  (%rsi), %eax            /* load one input character */
-        movb    %al, (%rcx)             /* copy to output/s2 */
+        movb    %al, (%rcx)             /* copy to output/s1 */
         decq    %rdx                    /* decrement the remaining size */
         incq    %rsi                    /* skip to the next output character */
         incq    %rcx                    /* skip to the next input character */

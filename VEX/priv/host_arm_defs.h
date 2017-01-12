@@ -595,6 +595,7 @@ typedef
       ARMin_VXferD,
       ARMin_VXferS,
       ARMin_VCvtID,
+      ARMin_VRIntR,
       ARMin_FPSCR,
       ARMin_MFence,
       ARMin_CLREX,
@@ -853,6 +854,13 @@ typedef
             HReg dst;
             HReg src;
          } VCvtID;
+         /* Round a F32 or F64 value to the nearest integral value,
+            according to the FPSCR.RM.  For ARM >= V8 hosts only. */
+         struct {
+            Bool isF64;
+            HReg dst;
+            HReg src;
+         } VRIntR;
          /* Move a 32-bit value to/from the FPSCR (FMXR, FMRX) */
          struct {
             Bool toFPSCR;
@@ -1007,6 +1015,7 @@ extern ARMInstr* ARMInstr_VXferD   ( Bool toD, HReg dD, HReg rHi, HReg rLo );
 extern ARMInstr* ARMInstr_VXferS   ( Bool toS, HReg fD, HReg rLo );
 extern ARMInstr* ARMInstr_VCvtID   ( Bool iToD, Bool syned,
                                      HReg dst, HReg src );
+extern ARMInstr* ARMInstr_VRIntR   ( Bool isF64, HReg dst, HReg src );
 extern ARMInstr* ARMInstr_FPSCR    ( Bool toFPSCR, HReg iReg );
 extern ARMInstr* ARMInstr_MFence   ( void );
 extern ARMInstr* ARMInstr_CLREX    ( void );

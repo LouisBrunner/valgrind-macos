@@ -13510,6 +13510,59 @@ static Bool decode_V8_instruction (
    }
    /* fall through */
 
+   /* -------- VRINT{A,N,P,M}.F64 d_d, VRINT{A,N,P,M}.F32 s_s -------- */
+   /*        31        22 21   17 15 11  8 7  5 4 3
+      T1/A1: 111111101 D  1110 rm Vd 101 1 01 M 0 Vm VRINT{A,N,P,M}.F64 Dd, Dm
+      T1/A1: 111111101 D  1110 rm Vd 101 0 01 M 0 Vm VRINT{A,N,P,M}.F32 Sd, Sm
+
+      ARM encoding is in NV space.
+      In Thumb mode, we must not be in an IT block.
+   */
+   if (INSN(31,23) == BITS9(1,1,1,1,1,1,1,0,1)
+       && INSN(21,18) == BITS4(1,1,1,0) && INSN(11,9) == BITS3(1,0,1)
+       && INSN(7,6) == BITS2(0,1) && INSN(4,4) == 0) {
+      UInt bit_D  = INSN(22,22);
+      UInt fld_rm = INSN(17,16);
+      UInt fld_d  = INSN(15,12);
+      Bool isF64  = INSN(8,8) == 1;
+      UInt bit_M  = INSN(5,5);
+      UInt fld_m  = INSN(3,0);
+
+      UInt dd = isF64 ? ((bit_D << 4) | fld_d) : ((fld_d << 1) | bit_D);
+      UInt mm = isF64 ? ((bit_M << 4) | fld_m) : ((fld_m << 1) | bit_M);
+
+      if (isT) {
+         gen_SIGILL_T_if_in_ITBlock(old_itstate, new_itstate);
+      }
+      /* In ARM mode, this is statically unconditional.  In Thumb mode,
+         this must be dynamically unconditional, and we've SIGILLd if not.
+         In either case we can create unconditional IR. */
+
+      UChar c = '?';
+      IRRoundingMode rm = Irrm_NEAREST;
+      switch (fld_rm) {
+         /* The use of NEAREST for both the 'a' and 'n' cases is a bit of a
+            kludge since it doesn't take into account the nearest-even vs
+            nearest-away semantics. */
+         case BITS2(0,0): c = 'a'; rm = Irrm_NEAREST; break;
+         case BITS2(0,1): c = 'n'; rm = Irrm_NEAREST; break;
+         case BITS2(1,0): c = 'p'; rm = Irrm_PosINF;  break;
+         case BITS2(1,1): c = 'm'; rm = Irrm_NegINF;  break;
+         default: vassert(0);
+      }
+
+      IRExpr* srcM = (isF64 ? llGetDReg : llGetFReg)(mm);
+      IRExpr* res  = binop(isF64 ? Iop_RoundF64toInt : Iop_RoundF32toInt,
+                           mkU32((UInt)rm), srcM);
+      (isF64 ? llPutDReg : llPutFReg)(dd, res);
+
+      UChar rch = isF64 ? 'd' : 'f';
+      DIP("vrint%c.%s %c%u, %c%u\n",
+          c, isF64 ? "f64" : "f32", rch, dd, rch, mm);
+      return True;
+   }
+   /* fall through */
+
    /* ---------- Doesn't match anything. ---------- */
    return False;
 

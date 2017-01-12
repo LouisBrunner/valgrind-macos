@@ -1365,6 +1365,15 @@ ARMInstr* ARMInstr_VCvtID ( Bool iToD, Bool syned,
    i->ARMin.VCvtID.src   = src;
    return i;
 }
+ARMInstr* ARMInstr_VRIntR ( Bool isF64, HReg dst, HReg src )
+{
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
+   i->tag                = ARMin_VRIntR;
+   i->ARMin.VRIntR.isF64 = isF64;
+   i->ARMin.VRIntR.dst   = dst ;
+   i->ARMin.VRIntR.src   = src;
+   return i;
+}
 ARMInstr* ARMInstr_FPSCR ( Bool toFPSCR, HReg iReg ) {
    ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag                 = ARMin_FPSCR;
@@ -1873,6 +1882,14 @@ void ppARMInstr ( const ARMInstr* i ) {
          ppHRegARM(i->ARMin.VCvtID.src);
          return;
       }
+      case ARMin_VRIntR: {
+         const HChar* sz = i->ARMin.VRIntR.isF64 ? "f64" : "f32";
+         vex_printf("vrintr.%s.%s ", sz, sz);
+         ppHRegARM(i->ARMin.VRIntR.dst);
+         vex_printf(", ");
+         ppHRegARM(i->ARMin.VRIntR.src);
+         return;
+      }
       case ARMin_FPSCR:
          if (i->ARMin.FPSCR.toFPSCR) {
             vex_printf("fmxr  fpscr, ");
@@ -2268,6 +2285,10 @@ void getRegUsage_ARMInstr ( HRegUsage* u, const ARMInstr* i, Bool mode64 )
          addHRegUse(u, HRmWrite, i->ARMin.VCvtID.dst);
          addHRegUse(u, HRmRead,  i->ARMin.VCvtID.src);
          return;
+      case ARMin_VRIntR:
+         addHRegUse(u, HRmWrite, i->ARMin.VRIntR.dst);
+         addHRegUse(u, HRmRead,  i->ARMin.VRIntR.src);
+         return;
       case ARMin_FPSCR:
          if (i->ARMin.FPSCR.toFPSCR)
             addHRegUse(u, HRmRead, i->ARMin.FPSCR.iReg);
@@ -2482,6 +2503,10 @@ void mapRegs_ARMInstr ( HRegRemap* m, ARMInstr* i, Bool mode64 )
       case ARMin_VCvtID:
          i->ARMin.VCvtID.dst = lookupHRegRemap(m, i->ARMin.VCvtID.dst);
          i->ARMin.VCvtID.src = lookupHRegRemap(m, i->ARMin.VCvtID.src);
+         return;
+      case ARMin_VRIntR:
+         i->ARMin.VRIntR.dst = lookupHRegRemap(m, i->ARMin.VRIntR.dst);
+         i->ARMin.VRIntR.src = lookupHRegRemap(m, i->ARMin.VRIntR.src);
          return;
       case ARMin_FPSCR:
          i->ARMin.FPSCR.iReg = lookupHRegRemap(m, i->ARMin.FPSCR.iReg);
@@ -3851,6 +3876,29 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
          }
          /*UNREACHED*/
          vassert(0);
+      }
+      case ARMin_VRIntR: { /* NB: ARM v8 and above only */
+         Bool isF64 = i->ARMin.VRIntR.isF64;
+         UInt rDst  = (isF64 ? dregEnc : fregEnc)(i->ARMin.VRIntR.dst);
+         UInt rSrc  = (isF64 ? dregEnc : fregEnc)(i->ARMin.VRIntR.src);
+         /* The encoding of registers here differs strangely for the
+            F32 and F64 cases. */
+         UInt D, Vd, M, Vm;
+         if (isF64) {
+            D  = (rDst >> 4) & 1;
+            Vd = rDst & 0xF;
+            M  = (rSrc >> 4) & 1;
+            Vm = rSrc & 0xF;
+         } else {
+            Vd = (rDst >> 1) & 0xF;
+            D  = rDst & 1;
+            Vm = (rSrc >> 1) & 0xF;
+            M  = rSrc & 1;
+         }
+         vassert(D <= 1 && Vd <= 15 && M <= 1 && Vm <= 15);
+         *p++ = XXXXXXXX(0xE, X1110, X1011 | (D << 2), X0110, Vd,
+                         isF64 ? X1011 : X1010, X0100 | (M << 1), Vm);
+         goto done;
       }
       case ARMin_FPSCR: {
          Bool toFPSCR = i->ARMin.FPSCR.toFPSCR;

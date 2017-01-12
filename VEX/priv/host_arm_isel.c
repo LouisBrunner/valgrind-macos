@@ -5603,6 +5603,21 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, ARMInstr_VUnaryD(ARMvfpu_SQRT, dst, src));
             return dst;
          }
+         case Iop_RoundF64toInt: {
+            /* We can only generate this on a >= V8 capable target.  But
+               that's OK since we should only be asked to generate for V8
+               capable guests, and we assume here that host == guest. */
+            if (VEX_ARM_ARCHLEVEL(env->hwcaps) >= 8) {
+               HReg src = iselDblExpr(env, e->Iex.Binop.arg2);
+               HReg dst = newVRegD(env);
+               set_VFP_rounding_mode(env, e->Iex.Binop.arg1);
+               addInstr(env, ARMInstr_VRIntR(True/*isF64*/, dst, src));
+               set_VFP_rounding_default(env);
+               return dst;
+            }
+            /* not a V8 target, so we can't select insns for this. */
+            break;
+         }
          default:
             break;
       }
@@ -5744,6 +5759,21 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, ARMInstr_VCvtSD(False/*!sToD*/, valS, valD));
             set_VFP_rounding_default(env);
             return valS;
+         }
+         case Iop_RoundF32toInt: {
+            /* We can only generate this on a >= V8 capable target.  But
+               that's OK since we should only be asked to generate for V8
+               capable guests, and we assume here that host == guest. */
+            if (VEX_ARM_ARCHLEVEL(env->hwcaps) >= 8) {
+               HReg src = iselFltExpr(env, e->Iex.Binop.arg2);
+               HReg dst = newVRegF(env);
+               set_VFP_rounding_mode(env, e->Iex.Binop.arg1);
+               addInstr(env, ARMInstr_VRIntR(False/*!isF64*/, dst, src));
+               set_VFP_rounding_default(env);
+               return dst;
+            }
+            /* not a V8 target, so we can't select insns for this. */
+            break;
          }
          default:
             break;

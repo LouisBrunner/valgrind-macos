@@ -31,6 +31,7 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
+#include "pub_core_vkiscnums.h"
 #include "pub_core_debuglog.h"
 #include "pub_core_gdbserver.h"  // VG_(gdb_printf)
 #include "pub_core_libcbase.h"
@@ -39,9 +40,275 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"   // VG_(getpid)(), VG_(read_millisecond_timer()
 #include "pub_core_mallocfree.h" // VG_(malloc)
+#include "pub_core_machine.h"    // VG_(machine_get_VexArchInfo)
 #include "pub_core_options.h"
 #include "pub_core_clreq.h"      // For RUNNING_ON_VALGRIND
+#include "pub_core_clientstate.h"
+#include "pub_core_syscall.h"    // VG_(strerror)
+#include "pub_core_tooliface.h"  // VG_(details)
 
+
+/*====================================================================*/
+/*=== Printing the preamble                                        ===*/
+/*====================================================================*/
+
+// Print the argument, escaping any chars that require it.
+static void umsg_arg(const HChar *arg)
+{
+   SizeT len = VG_(strlen)(arg);
+   const HChar *special = " \\<>";
+   for (UInt i = 0; i < len; i++) {
+      if (VG_(strchr)(special, arg[i])) {
+         VG_(umsg)("\\");   // escape with a backslash if necessary
+      }
+      VG_(umsg)("%c", arg[i]);
+   }
+}
+
+// Send output to the XML-stream and escape any XML meta-characters.
+static void xml_arg(const HChar *arg)
+{
+   VG_(printf_xml)("%pS", arg);
+}
+
+// Write the name and value of log file qualifiers to the xml file.
+// We can safely assume here that the format string is well-formed.
+// It has been checked earlier in VG_(expand_file_name) when processing
+// command line options.
+static void print_file_vars(const HChar *format)
+{
+   UInt i = 0;
+   
+   while (format[i]) {
+      if (format[i] == '%') {
+         // We saw a '%'.  What's next...
+         i++;
+         if ('q' == format[i]) {
+            i++;
+            if ('{' == format[i]) {
+               // Get the env var name, print its contents.
+               UInt begin_qualname = ++i;
+               while (True) {
+                  if ('}' == format[i]) {
+                     UInt qualname_len = i - begin_qualname;
+                     HChar qualname[qualname_len + 1];
+                     VG_(strncpy)(qualname, format + begin_qualname,
+                                  qualname_len);
+                     qualname[qualname_len] = '\0';
+                     HChar *qual = VG_(getenv)(qualname);
+                     i++;
+                     VG_(printf_xml)("<logfilequalifier> <var>%pS</var> "
+                                     "<value>%pS</value> </logfilequalifier>\n",
+                                     qualname, qual);
+                     break;
+                  }
+                  i++;
+               }
+            }
+         }
+      } else {
+         i++;
+      }
+   }
+}
+
+/* Ok, the logging sink is running now.  Print a suitable preamble.
+   If logging to file or a socket, write details of parent PID and
+   command line args, to help people trying to interpret the
+   results of a run which encompasses multiple processes. */
+void VG_(print_preamble)(Bool logging_to_fd)
+{
+   const HChar *xpre  = VG_(clo_xml) ? "  <line>" : "";
+   const HChar *xpost = VG_(clo_xml) ? "</line>" : "";
+   UInt (*umsg_or_xml)( const HChar *, ... )
+      = VG_(clo_xml) ? VG_(printf_xml) : VG_(umsg);
+   void (*umsg_or_xml_arg)( const HChar *) = VG_(clo_xml) ? xml_arg : umsg_arg;
+
+   vg_assert( VG_(args_for_client) );
+   vg_assert( VG_(args_for_valgrind) );
+   vg_assert( VG_(clo_toolname) );
+
+   if (VG_(clo_xml)) {
+      VG_(printf_xml)("<?xml version=\"1.0\"?>\n");
+      VG_(printf_xml)("\n");
+      VG_(printf_xml)("<valgrindoutput>\n");
+      VG_(printf_xml)("\n");
+      VG_(printf_xml)("<protocolversion>4</protocolversion>\n");
+      VG_(printf_xml)("<protocoltool>%s</protocoltool>\n", VG_(clo_toolname));
+      VG_(printf_xml)("\n");
+   }
+
+   if (VG_(clo_xml) || VG_(clo_verbosity) > 0) {
+
+      if (VG_(clo_xml))
+         VG_(printf_xml)("<preamble>\n");
+
+      /* Tool details */
+      umsg_or_xml(VG_(clo_xml) ? "%s%pS%pS%pS, %pS%s\n" : "%s%s%s%s, %s%s\n",
+                  xpre,
+                  VG_(details).name, 
+                  NULL == VG_(details).version ? "" : "-",
+                  NULL == VG_(details).version ? "" : VG_(details).version,
+                  VG_(details).description,
+                  xpost);
+
+      if (VG_(strlen)(VG_(clo_toolname)) >= 4 &&
+          VG_STREQN(4, VG_(clo_toolname), "exp-")) {
+         umsg_or_xml("%sNOTE: This is an Experimental-Class Valgrind Tool%s\n",
+                     xpre, xpost);
+      }
+
+      umsg_or_xml(VG_(clo_xml) ? "%s%pS%s\n" : "%s%s%s\n",
+                  xpre, VG_(details).copyright_author, xpost);
+
+      /* Core details */
+      umsg_or_xml(
+         "%sUsing Valgrind-%s and LibVEX; rerun with -h for copyright info%s\n",
+         xpre, VERSION, xpost);
+
+      // Print the command line.  At one point we wrapped at 80 chars and
+      // printed a '\' as a line joiner, but that makes it hard to cut and
+      // paste the command line (because of the "==pid==" prefixes), so we now
+      // favour utility and simplicity over aesthetics.
+      umsg_or_xml("%sCommand: ", xpre);
+      umsg_or_xml_arg(VG_(args_the_exename));
+          
+      for (UInt i = 0; i < VG_(sizeXA)( VG_(args_for_client)); i++) {
+         HChar *s = *(HChar **)VG_(indexXA)( VG_(args_for_client), i);
+         umsg_or_xml(" ");
+         umsg_or_xml_arg(s);
+      }
+      umsg_or_xml("%s\n", xpost);
+
+      if (VG_(clo_xml))
+         VG_(printf_xml)("</preamble>\n");
+   }
+
+   // Print the parent PID, and other stuff, if necessary.
+   if (!VG_(clo_xml) && VG_(clo_verbosity) > 0 && !logging_to_fd) {
+      VG_(umsg)("Parent PID: %d\n", VG_(getppid)());
+   } else if (VG_(clo_xml)) {
+      VG_(printf_xml)("\n");
+      VG_(printf_xml)("<pid>%d</pid>\n", VG_(getpid)());
+      VG_(printf_xml)("<ppid>%d</ppid>\n", VG_(getppid)());
+      VG_(printf_xml)("<tool>%pS</tool>\n", VG_(clo_toolname));
+      if (VG_(clo_xml_fname_unexpanded) != NULL)
+         print_file_vars(VG_(clo_xml_fname_unexpanded));
+      if (VG_(clo_xml_user_comment)) {
+         /* Note: the user comment itself is XML and is therefore to
+            be passed through verbatim (%s) rather than escaped (%pS). */
+         VG_(printf_xml)("<usercomment>%s</usercomment>\n",
+                         VG_(clo_xml_user_comment));
+      }
+      VG_(printf_xml)("\n");
+      VG_(printf_xml)("<args>\n");
+
+      VG_(printf_xml)("  <vargv>\n");
+      if (VG_(name_of_launcher))
+         VG_(printf_xml)("    <exe>%pS</exe>\n", VG_(name_of_launcher));
+      else
+         VG_(printf_xml)("    <exe>%pS</exe>\n", "(launcher name unknown)");
+      for (UInt i = 0; i < VG_(sizeXA)( VG_(args_for_valgrind) ); i++) {
+         VG_(printf_xml)(
+            "    <arg>%pS</arg>\n",
+            *(HChar **) VG_(indexXA)( VG_(args_for_valgrind), i));
+      }
+      VG_(printf_xml)("  </vargv>\n");
+
+      VG_(printf_xml)("  <argv>\n");
+      VG_(printf_xml)("    <exe>%pS</exe>\n", VG_(args_the_exename));
+      for (UInt i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
+         VG_(printf_xml)(
+            "    <arg>%pS</arg>\n",
+            *(HChar **) VG_(indexXA)( VG_(args_for_client), i));
+      }
+      VG_(printf_xml)("  </argv>\n");
+
+      VG_(printf_xml)("</args>\n");
+   }
+
+   // Last thing in the preamble is a blank line.
+   if (VG_(clo_xml))
+      VG_(printf_xml)("\n");
+   else if (VG_(clo_verbosity) > 0)
+      VG_(umsg)("\n");
+
+   if (VG_(clo_verbosity) > 1) {
+# if defined(VGO_linux)
+      SysRes fd;
+# endif
+      VexArch vex_arch;
+      VexArchInfo vex_archinfo;
+      if (!logging_to_fd)
+         VG_(message)(Vg_DebugMsg, "\n");
+      VG_(message)(Vg_DebugMsg, "Valgrind options:\n");
+      for (UInt i = 0; i < VG_(sizeXA)( VG_(args_for_valgrind) ); i++) {
+         VG_(message)(Vg_DebugMsg, 
+                     "   %s\n", 
+                     *(HChar **) VG_(indexXA)( VG_(args_for_valgrind), i));
+      }
+
+# if defined(VGO_linux)
+      VG_(message)(Vg_DebugMsg, "Contents of /proc/version:\n");
+      fd = VG_(open)("/proc/version", VKI_O_RDONLY, 0);
+      if (sr_isError(fd)) {
+         VG_(message)(Vg_DebugMsg, "  can't open /proc/version\n");
+      } else {
+         const SizeT bufsiz = 255;
+         HChar version_buf[bufsiz+1];
+         VG_(message)(Vg_DebugMsg, "  ");
+         Int n, fdno = sr_Res(fd);
+         do {
+            n = VG_(read)(fdno, version_buf, bufsiz);
+            if (n < 0) {
+               VG_(message)(Vg_DebugMsg, "  error reading /proc/version\n");
+               break;
+            }
+            version_buf[n] = '\0';
+            VG_(message)(Vg_DebugMsg, "%s", version_buf);
+         } while (n == bufsiz);
+         VG_(message)(Vg_DebugMsg, "\n");
+         VG_(close)(fdno);
+      }
+# elif defined(VGO_darwin)
+      VG_(message)(Vg_DebugMsg, "Output from sysctl({CTL_KERN,KERN_VERSION}):\n");
+      /* Note: preferable to use sysctlbyname("kern.version", kernelVersion, &len, NULL, 0)
+         however that syscall is OS X 10.10+ only. */
+      Int mib[] = {CTL_KERN, KERN_VERSION};
+      SizeT len;
+      VG_(sysctl)(mib, sizeof(mib)/sizeof(Int), NULL, &len, NULL, 0);
+      HChar *kernelVersion = VG_(malloc)("main.pp.1", len);
+      VG_(sysctl)(mib, sizeof(mib)/sizeof(Int), kernelVersion, &len, NULL, 0);
+      VG_(message)(Vg_DebugMsg, "  %s\n", kernelVersion);
+      VG_(free)( kernelVersion );
+# elif defined(VGO_solaris)
+      /* There is no /proc/version file on Solaris so we try to get some
+         system information using the uname(2) syscall. */
+      struct vki_utsname uts;
+      VG_(message)(Vg_DebugMsg, "System information:\n");
+      SysRes res = VG_(do_syscall1)(__NR_uname, (UWord)&uts);
+      if (sr_isError(res))
+         VG_(message)(Vg_DebugMsg, "  uname() failed\n");
+      else
+         VG_(message)(Vg_DebugMsg, "  %s %s %s %s\n",
+                      uts.sysname, uts.release, uts.version, uts.machine);
+# endif
+
+      VG_(machine_get_VexArchInfo)(&vex_arch, &vex_archinfo);
+      VG_(message)(
+         Vg_DebugMsg, 
+         "Arch and hwcaps: %s, %s, %s\n",
+         LibVEX_ppVexArch    ( vex_arch ),
+         LibVEX_ppVexEndness ( vex_archinfo.endness ),
+         LibVEX_ppVexHwCaps  ( vex_arch, vex_archinfo.hwcaps )
+      );
+      VG_(message)(Vg_DebugMsg, 
+                  "Page sizes: currently %u, max supported %u\n", 
+                  (UInt) VKI_PAGE_SIZE, (UInt) VKI_MAX_PAGE_SIZE);
+      VG_(message)(Vg_DebugMsg,
+                   "Valgrind library directory: %s\n", VG_(libdir));
+   }
+}
 
 /* ---------------------------------------------------------------------
    Writing to file or a socket
@@ -54,19 +321,260 @@
    After startup, the gdbserver monitor command might temporarily
    set the fd of log_output_sink to -2 to indicate that output is
    to be given to gdb rather than output to the startup fd */
-OutputSink VG_(log_output_sink) = {  2, False }; /* 2 = stderr */
-OutputSink VG_(xml_output_sink) = { -1, False }; /* disabled */
- 
+OutputSink VG_(log_output_sink) = {  2, VgLogTo_Fd, NULL }; /* 2 = stderr */
+OutputSink VG_(xml_output_sink) = { -1, VgLogTo_Fd, NULL }; /* disabled */
+
+static void revert_sink_to_stderr ( OutputSink *sink )
+{
+   sink->fd = 2; /* stderr */
+   sink->type = VgLogTo_Fd;
+   VG_(free)(sink->fsname_expanded);
+   sink->fsname_expanded = NULL;
+}
+
+static Int prepare_sink_fd(const HChar *clo_fname_unexpanded, OutputSink *sink,
+                           Bool is_xml)
+{
+   vg_assert(clo_fname_unexpanded != NULL);
+   vg_assert(VG_(strlen)(clo_fname_unexpanded) <= 900); /* paranoia */
+
+   // Nb: we overwrite an existing file of this name without asking
+   // any questions.
+   HChar *logfilename = VG_(expand_file_name)(
+                                         (is_xml) ? "--xml-file" : "--log-file",
+                                         clo_fname_unexpanded);
+   SysRes sres = VG_(open)(logfilename, 
+                           VKI_O_CREAT|VKI_O_WRONLY|VKI_O_TRUNC, 
+                           VKI_S_IRUSR|VKI_S_IWUSR|VKI_S_IRGRP|VKI_S_IROTH);
+   if (!sr_isError(sres)) {
+      Int fd = sr_Res(sres);
+      sink->fsname_expanded = logfilename;
+      sink->type = VgLogTo_File;
+      return fd;
+   } else {
+      VG_(fmsg)("Cannot create %s file '%s': %s\n", 
+                (is_xml) ? "XML" : "log", logfilename,
+                VG_(strerror)(sr_Err(sres)));
+      VG_(exit)(1);
+      /*NOTREACHED*/
+   }
+}
+
+static Int prepare_sink_socket(const HChar *clo_fname_unexpanded,
+                               OutputSink *sink, Bool is_xml)
+{
+   vg_assert(clo_fname_unexpanded != NULL);
+   vg_assert(VG_(strlen)(clo_fname_unexpanded) <= 900); /* paranoia */
+
+   Int fd = VG_(connect_via_socket)(clo_fname_unexpanded);
+   if (fd == -1) {
+      VG_(fmsg)("Invalid %s spec of '%s'\n",
+                (is_xml) ? "--xml-socket" : "--log-socket",
+                clo_fname_unexpanded);
+      VG_(exit)(1);
+      /*NOTREACHED*/
+   }
+   if (fd == -2) {
+      VG_(umsg)("Failed to connect to %slogging server '%s'.\n"
+                "%s will be sent to stderr instead.\n",
+                (is_xml) ? "XML " : "",
+                (is_xml) ? "XML output" : "Logging messages",
+                clo_fname_unexpanded); 
+      /* We don't change anything here. */
+      vg_assert(sink->fd == 2);
+      vg_assert(sink->type == VgLogTo_Fd);
+      return 2;
+   } else {
+      vg_assert(fd > 0);
+      sink->type = VgLogTo_Socket;
+      return fd;
+   }
+}
+
+static void finalize_sink_fd(OutputSink *sink, Int new_fd, Bool is_xml)
+{
+   // Move new_fd into the safe range, so it doesn't conflict with any app fds.
+   Int safe_fd = VG_(fcntl)(new_fd, VKI_F_DUPFD, VG_(fd_hard_limit));
+   if (safe_fd < 0) {
+      VG_(message)(Vg_UserMsg, "Valgrind: failed to move %s file descriptor "
+                               "into safe range, using stderr\n",
+                               (is_xml) ? "XML" : "log");
+      revert_sink_to_stderr(sink);
+   } else {
+      VG_(fcntl)(safe_fd, VKI_F_SETFD, VKI_FD_CLOEXEC);
+      sink->fd = safe_fd;
+   }
+}
+
+/* Re-opens an output file sink when exanded file name differs from what we
+   have now. Returns 'True' if the sink was reopened  */
+static Bool reopen_sink_if_needed(const HChar *clo_fname_unexpanded,
+                                  OutputSink *sink, Bool is_xml)
+{
+   if (sink->type == VgLogTo_File) {
+      /* Try to expand --log|xml-file again and see if it differs from what
+         we have now. */
+      HChar *logfilename = VG_(expand_file_name)(
+                                         (is_xml) ? "--xml-file" : "--log-file",
+                                         clo_fname_unexpanded);
+      if (VG_(strcmp)(logfilename, sink->fsname_expanded) != 0) {
+         Int fd = prepare_sink_fd(clo_fname_unexpanded, sink, is_xml);
+         finalize_sink_fd(sink, fd, is_xml);
+         return True;
+      }
+      VG_(free)(logfilename);
+   }
+
+   return False;
+}
+
+void VG_(logging_atfork_child)(ThreadId tid)
+{
+   /* If --child-silent-after-fork=yes was specified, set the output file
+      descriptors to 'impossible' values. This is noticed by
+      send_bytes_to_logging_sink(), which duly stops writing any further
+      output. */
+   if (VG_(clo_child_silent_after_fork)) {
+      if (VG_(log_output_sink).type != VgLogTo_Socket) {
+         VG_(log_output_sink).fd = -1;
+         VG_(log_output_sink).type = VgLogTo_Fd;
+      }
+      if (VG_(xml_output_sink).type != VgLogTo_Socket) {
+         VG_(xml_output_sink).fd = -1;
+         VG_(xml_output_sink).type = VgLogTo_Fd;
+      }
+   } else {
+      if (reopen_sink_if_needed(VG_(clo_log_fname_unexpanded),
+                                &VG_(log_output_sink), False) ||
+          reopen_sink_if_needed(VG_(clo_xml_fname_unexpanded),
+                                &VG_(xml_output_sink), True)) {
+         VG_(print_preamble)(VG_(log_output_sink).type != VgLogTo_File);
+      }
+   }
+}
+
+/* Initializes normal log and xml sinks (of type fd, file, or socket).
+   Any problem encountered is considered a hard error and causes V. to exit.
+
+   Comments on how the logging options are handled:
+
+   User can specify:
+      --log-fd=      for a fd to write to (default setting, fd = 2)
+      --log-file=    for a file name to write to
+      --log-socket=  for a socket to write to
+
+   As a result of examining these and doing relevant socket/file
+   opening, a final fd is established.  This is stored in
+   VG_(log_output_sink) in m_libcprint.  Also, if --log-file=STR was
+   specified, then it is stored in VG_(clo_log_fname_unexpanded), in m_options.
+   And then STR, after expansion of %p and %q templates within
+   it, is stored in VG_(log_output_sink), just in case anybody wants to know
+   what it is.
+
+   When printing, VG_(log_output_sink) is consulted to find the
+   fd to send output to.
+
+   Exactly analogous actions are undertaken for the XML output
+   channel, with the one difference that the default fd is -1, meaning
+   the channel is disabled by default. */
+void VG_(init_log_xml_sinks)(VgLogTo log_to, VgLogTo xml_to,
+                             Int /*initial*/log_fd, Int /*initial*/xml_fd)
+{
+   // VG_(clo_log_fd) is used by all the messaging.  It starts as 2 (stderr)
+   // and we cannot change it until we know what we are changing it to is ok.
+
+   /* Start setting up logging now. After this is done, VG_(log_output_sink)
+      and (if relevant) VG_(xml_output_sink) should be connected to whatever
+      sink has been selected, and we indiscriminately chuck stuff into it
+      without worrying what the nature of it is.
+      Oh the wonder of Unix streams. */
+
+   vg_assert(VG_(log_output_sink).fd == 2 /* stderr */);
+   vg_assert(VG_(log_output_sink).type == VgLogTo_Fd);
+   vg_assert(VG_(log_output_sink).fsname_expanded == NULL);
+
+   vg_assert(VG_(xml_output_sink).fd == -1 /* disabled */);
+   vg_assert(VG_(xml_output_sink).type == VgLogTo_Fd);
+   vg_assert(VG_(xml_output_sink).fsname_expanded == NULL);
+
+   /* --- set up the normal text output channel --- */
+   switch (log_to) {
+      case VgLogTo_Fd: 
+         vg_assert(VG_(clo_log_fname_unexpanded) == NULL);
+         break;
+
+      case VgLogTo_File:
+         log_fd = prepare_sink_fd(VG_(clo_log_fname_unexpanded),
+                                  &VG_(log_output_sink), False);
+         break;
+
+      case VgLogTo_Socket:
+         log_fd = prepare_sink_socket(VG_(clo_log_fname_unexpanded),
+                                      &VG_(log_output_sink), False);
+         break;
+   }
+
+   /* --- set up the XML output channel --- */
+   switch (xml_to) {
+      case VgLogTo_Fd: 
+         vg_assert(VG_(clo_xml_fname_unexpanded) == NULL);
+         break;
+
+      case VgLogTo_File:
+         xml_fd = prepare_sink_fd(VG_(clo_xml_fname_unexpanded),
+                                  &VG_(xml_output_sink), True);
+         break;
+
+      case VgLogTo_Socket:
+         log_fd = prepare_sink_socket(VG_(clo_xml_fname_unexpanded),
+                                      &VG_(xml_output_sink), True);
+         break;
+   }
+
+   /* If we've got this far, and XML mode was requested, but no XML
+      output channel appears to have been specified, just stop.  We
+      could continue, and XML output will simply vanish into nowhere,
+      but that is likely to confuse the hell out of users, which is
+      distinctly Ungood. */
+   if (VG_(clo_xml) && xml_fd == -1) {
+      VG_(fmsg_bad_option)(
+          "--xml=yes, but no XML destination specified",
+          "--xml=yes has been specified, but there is no XML output\n"
+          "destination.  You must specify an XML output destination\n"
+          "using --xml-fd, --xml-file or --xml-socket.\n"
+      );
+   }
+
+   // Finalise the output fds: the log fd ..
+   if (log_fd >= 0) {
+      finalize_sink_fd(&VG_(log_output_sink), log_fd, False);
+   } else {
+      // If they said --log-fd=-1, don't print anything.  Plausible for use in
+      // regression testing suites that use client requests to count errors.
+      VG_(log_output_sink).fd = -1;
+      VG_(log_output_sink).type = VgLogTo_Fd;
+   }
+
+   // Finalise the output fds: and the XML fd ..
+   if (xml_fd >= 0) {
+      finalize_sink_fd(&VG_(xml_output_sink), xml_fd, True);
+   } else {
+      // If they said --xml-fd=-1, don't print anything.  Plausible for use in
+      // regression testing suites that use client requests to count errors.
+      VG_(xml_output_sink).fd = -1;
+      VG_(xml_output_sink).type = VgLogTo_Fd;
+   }
+}
+
 /* Do the low-level send of a message to the logging sink. */
 static
 void send_bytes_to_logging_sink ( OutputSink* sink, const HChar* msg, Int nbytes )
 {
-   if (sink->is_socket) {
+   if (sink->type == VgLogTo_Socket) {
       Int rc = VG_(write_socket)( sink->fd, msg, nbytes );
       if (rc == -1) {
          // For example, the listener process died.  Switch back to stderr.
-         sink->is_socket = False;
-         sink->fd = 2;
+         revert_sink_to_stderr(sink);
          VG_(write)( sink->fd, msg, nbytes );
       }
    } else {
@@ -557,8 +1065,7 @@ UInt VG_(message) ( VgMsgKind kind, const HChar* format, ... )
 
 static void revert_to_stderr ( void )
 {
-   VG_(log_output_sink).fd = 2; /* stderr */
-   VG_(log_output_sink).is_socket = False;
+   revert_sink_to_stderr(&VG_(log_output_sink));
 }
 
 /* VG_(message) variants with hardwired first argument. */

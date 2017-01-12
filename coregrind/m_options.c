@@ -45,6 +45,7 @@
 
 /* Define, and set defaults. */
 
+const HChar *VG_(clo_toolname) = "memcheck";    // default to Memcheck
 VexControl VG_(clo_vex_control);
 VexRegisterUpdates VG_(clo_px_file_backed) = VexRegUpd_INVALID;
 
@@ -79,8 +80,8 @@ Bool   VG_(clo_trace_children) = False;
 const HChar* VG_(clo_trace_children_skip) = NULL;
 const HChar* VG_(clo_trace_children_skip_by_arg) = NULL;
 Bool   VG_(clo_child_silent_after_fork) = False;
-const HChar* VG_(clo_log_fname_expanded) = NULL;
-const HChar* VG_(clo_xml_fname_expanded) = NULL;
+const HChar *VG_(clo_log_fname_unexpanded) = NULL;
+const HChar *VG_(clo_xml_fname_unexpanded) = NULL;
 Bool   VG_(clo_time_stamp)     = False;
 Int    VG_(clo_input_fd)       = 0; /* stdin */
 Bool   VG_(clo_default_supp)   = True;

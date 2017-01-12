@@ -81,6 +81,7 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
+162848  --log-file output isn't split when a program forks
 342040  Valgrind mishandles clone with CLONE_VFORK | CLONE_VM that clones
         to a different stack.
 348616  Wine/valgrind: noted but unhandled ioctl 0x5390 [..] (DVD_READ_STRUCT)

@@ -39,6 +39,9 @@
 #include "pub_tool_options.h"
 #include "pub_core_xarray.h"
 
+/* Valgrind tool name. Defaults to "memcheck". */
+extern const HChar *VG_(clo_toolname);
+
 /* Should we stop collecting errors if too many appear?  default: YES */
 extern Bool  VG_(clo_error_limit);
 /* Alternative exit code to hand to parent if errors were found.
@@ -117,9 +120,9 @@ extern const HChar* VG_(clo_trace_children_skip_by_arg);
 extern Bool  VG_(clo_child_silent_after_fork);
 
 /* If the user specified --log-file=STR and/or --xml-file=STR, these
-   hold STR after expansion of the %p and %q templates. */
-extern const HChar* VG_(clo_log_fname_expanded);
-extern const HChar* VG_(clo_xml_fname_expanded);
+   hold STR before expansion. */
+extern const HChar *VG_(clo_log_fname_unexpanded);
+extern const HChar *VG_(clo_xml_fname_unexpanded);
 
 /* Add timestamps to log messages?  default: NO */
 extern Bool  VG_(clo_time_stamp);

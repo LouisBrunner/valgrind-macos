@@ -5618,6 +5618,21 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
             /* not a V8 target, so we can't select insns for this. */
             break;
          }
+         case Iop_MaxNumF64:
+         case Iop_MinNumF64: {
+            /* Same comments regarding V8 support as for Iop_RoundF64toInt. */
+            if (VEX_ARM_ARCHLEVEL(env->hwcaps) >= 8) {
+               HReg srcL  = iselDblExpr(env, e->Iex.Binop.arg1);
+               HReg srcR  = iselDblExpr(env, e->Iex.Binop.arg2);
+               HReg dst   = newVRegD(env);
+               Bool isMax = e->Iex.Binop.op == Iop_MaxNumF64;
+               addInstr(env, ARMInstr_VMinMaxNum(
+                                True/*isF64*/, isMax, dst, srcL, srcR));
+               return dst;
+            }
+            /* not a V8 target, so we can't select insns for this. */
+            break;
+         }
          default:
             break;
       }
@@ -5770,6 +5785,21 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
                set_VFP_rounding_mode(env, e->Iex.Binop.arg1);
                addInstr(env, ARMInstr_VRIntR(False/*!isF64*/, dst, src));
                set_VFP_rounding_default(env);
+               return dst;
+            }
+            /* not a V8 target, so we can't select insns for this. */
+            break;
+         }
+         case Iop_MaxNumF32:
+         case Iop_MinNumF32: {
+            /* Same comments regarding V8 support as for Iop_RoundF32toInt. */
+            if (VEX_ARM_ARCHLEVEL(env->hwcaps) >= 8) {
+               HReg srcL  = iselFltExpr(env, e->Iex.Binop.arg1);
+               HReg srcR  = iselFltExpr(env, e->Iex.Binop.arg2);
+               HReg dst   = newVRegF(env);
+               Bool isMax = e->Iex.Binop.op == Iop_MaxNumF32;
+               addInstr(env, ARMInstr_VMinMaxNum(
+                                False/*!isF64*/, isMax, dst, srcL, srcR));
                return dst;
             }
             /* not a V8 target, so we can't select insns for this. */

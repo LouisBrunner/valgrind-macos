@@ -13665,6 +13665,50 @@ static Bool decode_V8_instruction (
       return True;
    }
 
+   /* ----------- V{MAX,MIN}NM{.F64 d_d_d, .F32 s_s_s} ----------- */
+   /* 31   27    22 21 19 15 11  8 7 6  5 4 3
+      1111 11101 D  00 Vn Vd 101 1 N op M 0 Vm  V{MIN,MAX}NM.F64 Dd, Dn, Dm
+      1111 11101 D  00 Vn Vd 101 0 N op M 0 Vm  V{MIN,MAX}NM.F32 Sd, Sn, Sm
+
+      ARM encoding is in NV space.
+      In Thumb mode, we must not be in an IT block.
+   */
+   if (INSN(31,23) == BITS9(1,1,1,1,1,1,1,0,1) && INSN(21,20) == BITS2(0,0)
+       && INSN(11,9) == BITS3(1,0,1) && INSN(4,4) == 0) {
+      UInt bit_D  = INSN(22,22);
+      UInt fld_Vn = INSN(19,16);
+      UInt fld_Vd = INSN(15,12);
+      Bool isF64  = INSN(8,8) == 1;
+      UInt bit_N  = INSN(7,7);
+      Bool isMAX  = INSN(6,6) == 0;
+      UInt bit_M  = INSN(5,5);
+      UInt fld_Vm = INSN(3,0);
+
+      UInt dd = isF64 ? ((bit_D << 4) | fld_Vd) : ((fld_Vd << 1) | bit_D);
+      UInt nn = isF64 ? ((bit_N << 4) | fld_Vn) : ((fld_Vn << 1) | bit_N);
+      UInt mm = isF64 ? ((bit_M << 4) | fld_Vm) : ((fld_Vm << 1) | bit_M);
+
+      if (isT) {
+         gen_SIGILL_T_if_in_ITBlock(old_itstate, new_itstate);
+      }
+      /* In ARM mode, this is statically unconditional.  In Thumb mode,
+         this must be dynamically unconditional, and we've SIGILLd if not.
+         In either case we can create unconditional IR. */
+
+      IROp op = isF64 ? (isMAX ? Iop_MaxNumF64 : Iop_MinNumF64)
+                      : (isMAX ? Iop_MaxNumF32 : Iop_MinNumF32);
+      IRExpr* srcN = (isF64 ? llGetDReg : llGetFReg)(nn);
+      IRExpr* srcM = (isF64 ? llGetDReg : llGetFReg)(mm);
+      IRExpr* res  = binop(op, srcN, srcM);
+      (isF64 ? llPutDReg : llPutFReg)(dd, res);
+
+      UChar rch = isF64 ? 'd' : 'f';
+      DIP("v%snm.%s %c%u, %c%u, %c%u\n",
+          isMAX ? "max" : "min", isF64 ? "f64" : "f32",
+          rch, dd, rch, nn, rch, mm);
+      return True;
+   }
+
    /* ---------- Doesn't match anything. ---------- */
    return False;
 

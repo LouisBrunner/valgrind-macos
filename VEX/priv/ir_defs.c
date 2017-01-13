@@ -354,6 +354,11 @@ void ppIROp ( IROp op )
       case Iop_RecpExpF64: vex_printf("RecpExpF64"); return;
       case Iop_RecpExpF32: vex_printf("RecpExpF32"); return;
 
+      case Iop_MaxNumF64: vex_printf("MaxNumF64"); return;
+      case Iop_MinNumF64: vex_printf("MinNumF64"); return;
+      case Iop_MaxNumF32: vex_printf("MaxNumF32"); return;
+      case Iop_MinNumF32: vex_printf("MinNumF32"); return;
+
       case Iop_F16toF64: vex_printf("F16toF64"); return;
       case Iop_F64toF16: vex_printf("F64toF16"); return;
       case Iop_F16toF32: vex_printf("F16toF32"); return;
@@ -2838,7 +2843,13 @@ void typeOfPrimop ( IROp op,
       case Iop_RecpExpF32:
          BINARY(ity_RMode,Ity_F32, Ity_F32);
 
-      case Iop_CmpF32:
+      case Iop_MaxNumF64: case Iop_MinNumF64:
+         BINARY(Ity_F64,Ity_F64, Ity_F64);
+
+      case Iop_MaxNumF32: case Iop_MinNumF32:
+         BINARY(Ity_F32,Ity_F32, Ity_F32);
+
+     case Iop_CmpF32:
          BINARY(Ity_F32,Ity_F32, Ity_I32);
 
       case Iop_CmpF64:

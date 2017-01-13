@@ -596,6 +596,7 @@ typedef
       ARMin_VXferS,
       ARMin_VCvtID,
       ARMin_VRIntR,
+      ARMin_VMinMaxNum,
       ARMin_FPSCR,
       ARMin_MFence,
       ARMin_CLREX,
@@ -861,6 +862,15 @@ typedef
             HReg dst;
             HReg src;
          } VRIntR;
+         /* Do Min/Max of F32 or F64 values, propagating the numerical arg
+            if the other is a qNaN.  For ARM >= V8 hosts only. */
+         struct {
+            Bool isF64;
+            Bool isMax;
+            HReg dst;
+            HReg srcL;
+            HReg srcR;
+         } VMinMaxNum;
          /* Move a 32-bit value to/from the FPSCR (FMXR, FMRX) */
          struct {
             Bool toFPSCR;
@@ -1016,6 +1026,8 @@ extern ARMInstr* ARMInstr_VXferS   ( Bool toS, HReg fD, HReg rLo );
 extern ARMInstr* ARMInstr_VCvtID   ( Bool iToD, Bool syned,
                                      HReg dst, HReg src );
 extern ARMInstr* ARMInstr_VRIntR   ( Bool isF64, HReg dst, HReg src );
+extern ARMInstr* ARMInstr_VMinMaxNum ( Bool isF64, Bool isMax,
+                                       HReg dst, HReg srcL, HReg srcR );
 extern ARMInstr* ARMInstr_FPSCR    ( Bool toFPSCR, HReg iReg );
 extern ARMInstr* ARMInstr_MFence   ( void );
 extern ARMInstr* ARMInstr_CLREX    ( void );

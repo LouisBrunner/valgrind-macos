@@ -1374,6 +1374,18 @@ ARMInstr* ARMInstr_VRIntR ( Bool isF64, HReg dst, HReg src )
    i->ARMin.VRIntR.src   = src;
    return i;
 }
+ARMInstr* ARMInstr_VMinMaxNum ( Bool isF64, Bool isMax,
+                                HReg dst, HReg srcL, HReg srcR )
+{
+   ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
+   i->tag = ARMin_VMinMaxNum;
+   i->ARMin.VMinMaxNum.isF64 = isF64;
+   i->ARMin.VMinMaxNum.isMax = isMax;
+   i->ARMin.VMinMaxNum.dst   = dst ;
+   i->ARMin.VMinMaxNum.srcL  = srcL;
+   i->ARMin.VMinMaxNum.srcR  = srcR;
+   return i;
+}
 ARMInstr* ARMInstr_FPSCR ( Bool toFPSCR, HReg iReg ) {
    ARMInstr* i = LibVEX_Alloc_inline(sizeof(ARMInstr));
    i->tag                 = ARMin_FPSCR;
@@ -1890,6 +1902,17 @@ void ppARMInstr ( const ARMInstr* i ) {
          ppHRegARM(i->ARMin.VRIntR.src);
          return;
       }
+      case ARMin_VMinMaxNum: {
+         const HChar* sz = i->ARMin.VMinMaxNum.isF64 ? "f64" : "f32";
+         const HChar* nm = i->ARMin.VMinMaxNum.isMax ? "vmaxnm" : "vminnm";
+         vex_printf("%s.%s ", nm, sz);
+         ppHRegARM(i->ARMin.VMinMaxNum.dst);
+         vex_printf(", ");
+         ppHRegARM(i->ARMin.VMinMaxNum.srcL);
+         vex_printf(", ");
+         ppHRegARM(i->ARMin.VMinMaxNum.srcR);
+         return;
+      }
       case ARMin_FPSCR:
          if (i->ARMin.FPSCR.toFPSCR) {
             vex_printf("fmxr  fpscr, ");
@@ -2289,6 +2312,11 @@ void getRegUsage_ARMInstr ( HRegUsage* u, const ARMInstr* i, Bool mode64 )
          addHRegUse(u, HRmWrite, i->ARMin.VRIntR.dst);
          addHRegUse(u, HRmRead,  i->ARMin.VRIntR.src);
          return;
+      case ARMin_VMinMaxNum:
+         addHRegUse(u, HRmWrite, i->ARMin.VMinMaxNum.dst);
+         addHRegUse(u, HRmRead,  i->ARMin.VMinMaxNum.srcL);
+         addHRegUse(u, HRmRead,  i->ARMin.VMinMaxNum.srcR);
+         return;
       case ARMin_FPSCR:
          if (i->ARMin.FPSCR.toFPSCR)
             addHRegUse(u, HRmRead, i->ARMin.FPSCR.iReg);
@@ -2507,6 +2535,14 @@ void mapRegs_ARMInstr ( HRegRemap* m, ARMInstr* i, Bool mode64 )
       case ARMin_VRIntR:
          i->ARMin.VRIntR.dst = lookupHRegRemap(m, i->ARMin.VRIntR.dst);
          i->ARMin.VRIntR.src = lookupHRegRemap(m, i->ARMin.VRIntR.src);
+         return;
+      case ARMin_VMinMaxNum:
+         i->ARMin.VMinMaxNum.dst
+            = lookupHRegRemap(m, i->ARMin.VMinMaxNum.dst);
+         i->ARMin.VMinMaxNum.srcL
+            = lookupHRegRemap(m, i->ARMin.VMinMaxNum.srcL);
+         i->ARMin.VMinMaxNum.srcR
+            = lookupHRegRemap(m, i->ARMin.VMinMaxNum.srcR);
          return;
       case ARMin_FPSCR:
          i->ARMin.FPSCR.iReg = lookupHRegRemap(m, i->ARMin.FPSCR.iReg);
@@ -3898,6 +3934,38 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
          vassert(D <= 1 && Vd <= 15 && M <= 1 && Vm <= 15);
          *p++ = XXXXXXXX(0xE, X1110, X1011 | (D << 2), X0110, Vd,
                          isF64 ? X1011 : X1010, X0100 | (M << 1), Vm);
+         goto done;
+      }
+      case ARMin_VMinMaxNum: {
+         Bool isF64 = i->ARMin.VMinMaxNum.isF64;
+         Bool isMax = i->ARMin.VMinMaxNum.isMax;
+         UInt rDst  = (isF64 ? dregEnc : fregEnc)(i->ARMin.VMinMaxNum.dst);
+         UInt rSrcL = (isF64 ? dregEnc : fregEnc)(i->ARMin.VMinMaxNum.srcL);
+         UInt rSrcR = (isF64 ? dregEnc : fregEnc)(i->ARMin.VMinMaxNum.srcR);
+         /* The encoding of registers here differs strangely for the
+            F32 and F64 cases. */
+         UInt D, Vd, N, Vn, M, Vm;
+         if (isF64) {
+            D  = (rDst >> 4) & 1;
+            Vd = rDst & 0xF;
+            N  = (rSrcL >> 4) & 1;
+            Vn = rSrcL & 0xF;
+            M  = (rSrcR >> 4) & 1;
+            Vm = rSrcR & 0xF;
+         } else {
+            Vd = (rDst >> 1) & 0xF;
+            D  = rDst & 1;
+            Vn = (rSrcL >> 1) & 0xF;
+            N  = rSrcL & 1;
+            Vm = (rSrcR >> 1) & 0xF;
+            M  = rSrcR & 1;
+         }
+         vassert(D <= 1 && Vd <= 15 && M <= 1 && Vm <= 15 && N <= 1
+                 && Vn <= 15);
+         *p++ = XXXXXXXX(X1111,X1110, X1000 | (D << 2), Vn, Vd,
+                         X1010 | (isF64 ? 1 : 0), 
+                         (N << 3) | ((isMax ? 0 : 1) << 2) | (M << 1) | 0,
+                         Vm);
          goto done;
       }
       case ARMin_FPSCR: {

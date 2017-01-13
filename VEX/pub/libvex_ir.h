@@ -776,6 +776,13 @@ typedef
       Iop_RecpExpF64,  /* FRECPX d  :: IRRoundingMode(I32) x F64 -> F64 */
       Iop_RecpExpF32,  /* FRECPX s  :: IRRoundingMode(I32) x F32 -> F32 */
 
+      /* --------- Possibly required by IEEE 754-2008. --------- */
+
+      Iop_MaxNumF64,  /* max, F64, numerical operand if other is a qNaN */
+      Iop_MinNumF64,  /* min, F64, ditto */
+      Iop_MaxNumF32,  /* max, F32, ditto */
+      Iop_MinNumF32,  /* min, F32, ditto */
+
       /* ------------------ 16-bit scalar FP ------------------ */
 
       Iop_F16toF64,  /*                       F16 -> F64 */

@@ -55,7 +55,8 @@ EXTRA_DIST = \
 	test_block_size.vgtest \
 	test_fcsr.stdout.exp test_fcsr.stderr.exp \
 	test_fcsr.vgtest \
-	test_math.stdout.exp test_math.stderr.exp test_math.vgtest \
+	test_math.stdout.exp test_math.stdout.exp-older-gcc \
+	test_math.stderr.exp test_math.vgtest \
 	unaligned_load.stdout.exp-BE unaligned_load.stdout.exp-LE \
 	unaligned_load.stderr.exp unaligned_load.vgtest \
 	unaligned_load_store.stdout.exp-LE unaligned_load_store.stdout.exp-BE \

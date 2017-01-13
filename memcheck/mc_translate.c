@@ -1611,6 +1611,14 @@ IRAtom* mkLazy2 ( MCEnv* mce, IRType finalVty, IRAtom* va1, IRAtom* va2 )
       return at;
    }
 
+   /* I32 x I32 -> I32 */
+   if (t1 == Ity_I32 && t2 == Ity_I32 && finalVty == Ity_I32) {
+      if (0) VG_(printf)("mkLazy2: I32 x I32 -> I32\n");
+      at = mkUifU(mce, Ity_I32, va1, va2);
+      at = mkPCastTo(mce, Ity_I32, at);
+      return at;
+   }
+
    if (0) {
       VG_(printf)("mkLazy2 ");
       ppIRType(t1);
@@ -3941,6 +3949,16 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_CmpExpD64:
       case Iop_CmpExpD128:
          return mkLazy2(mce, Ity_I32, vatom1, vatom2);
+
+      case Iop_MaxNumF32:
+      case Iop_MinNumF32:
+         /* F32 x F32 -> F32 */
+         return mkLazy2(mce, Ity_I32, vatom1, vatom2);
+
+      case Iop_MaxNumF64:
+      case Iop_MinNumF64:
+         /* F64 x F64 -> F64 */
+         return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
       /* non-FP after here */
 

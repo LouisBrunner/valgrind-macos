@@ -13709,6 +13709,49 @@ static Bool decode_V8_instruction (
       return True;
    }
 
+   /* ----------- VRINTX.F64.F64 d_d, VRINTX.F32.F32 s_s ----------- */
+   /*     31   27    22 21     15 11  8 7  5 4 3
+      T1: 1110 11101 D  110111 Vd 101 1 01 M 0 Vm VRINTX<c>.F64.F64 Dd, Dm
+      A1: cond 11101 D  110111 Vd 101 1 01 M 0 Vm
+
+      T1: 1110 11101 D  110111 Vd 101 0 01 M 0 Vm VRINTX<c>.F32.F32 Dd, Dm
+      A1: cond 11101 D  110111 Vd 101 0 01 M 0 Vm
+
+      Like VRINT{Z,R}{.F64.F64, .F32.F32} just above, this can be conditional.
+      This produces the same code as the VRINTR case since we ignore the
+      requirement to signal inexactness.
+   */
+   if ((isT ? (INSN(31,28) == BITS4(1,1,1,0)) : True)
+       && INSN(27,23) == BITS5(1,1,1,0,1) && INSN(21,16) == BITS6(1,1,0,1,1,1)
+       && INSN(11,9) == BITS3(1,0,1) && INSN(7,6) == BITS2(0,1)
+       && INSN(4,4) == 0) {
+      UInt bit_D  = INSN(22,22);
+      UInt fld_Vd = INSN(15,12);
+      Bool isF64  = INSN(8,8) == 1;
+      UInt bit_M  = INSN(5,5);
+      UInt fld_Vm = INSN(3,0);
+      UInt dd = isF64 ? ((bit_D << 4) | fld_Vd) : ((fld_Vd << 1) | bit_D);
+      UInt mm = isF64 ? ((bit_M << 4) | fld_Vm) : ((fld_Vm << 1) | bit_M);
+
+      if (isT) vassert(condT != IRTemp_INVALID);
+      IRType ty  = isF64 ? Ity_F64 : Ity_F32;
+      IRTemp src = newTemp(ty);
+      IRTemp res = newTemp(ty);
+      assign(src, (isF64 ? getDReg : getFReg)(mm));
+
+      IRTemp rm = newTemp(Ity_I32);
+      assign(rm, mkexpr(mk_get_IR_rounding_mode()));
+      assign(res, binop(isF64 ? Iop_RoundF64toInt : Iop_RoundF32toInt,
+                        mkexpr(rm), mkexpr(src)));
+      (isF64 ? putDReg : putFReg)(dd, mkexpr(res), condT);
+
+      UChar rch = isF64 ? 'd' : 'f';
+      DIP("vrint%c.%s.%s %c%u, %c%u\n",
+          'x',
+          isF64 ? "f64" : "f32", isF64 ? "f64" : "f32", rch, dd, rch, mm);
+      return True;
+   }
+
    /* ---------- Doesn't match anything. ---------- */
    return False;
 

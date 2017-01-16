@@ -3392,6 +3392,8 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                          reg_t, dreg, reg_t, nreg, reg_t, mreg);
                      break;
                   }
+                  default:
+                     vassert(0);
                }
             } else {
                switch(C) {
@@ -3489,6 +3491,8 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                          Q ? 'q' : 'd', dreg,
                          Q ? 'q' : 'd', nreg, Q ? 'q' : 'd', mreg);
                      break;
+                  default:
+                     vassert(0);
                }
             }
          }
@@ -4611,6 +4615,8 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                DIP("vpadd.i%d %c%u, %c%u, %c%u\n",
                    8 << size, Q ? 'q' : 'd',
                    dreg, Q ? 'q' : 'd', nreg, Q ? 'q' : 'd', mreg);
+            } else {
+               return False;
             }
          }
          break;
@@ -4768,6 +4774,8 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                DIP("vacg%c.f32 %c%u, %c%u, %c%u\n", op_bit ? 't' : 'e',
                    Q ? 'q' : 'd', dreg, Q ? 'q' : 'd', nreg,
                    Q ? 'q' : 'd', mreg);
+            } else {
+               return False;
             }
          }
          break;
@@ -4827,6 +4835,8 @@ Bool dis_neon_data_3same ( UInt theInstr, IRTemp condT )
                   DIP("vrsqrts.f32 %c%u, %c%u, %c%u\n", Q ? 'q' : 'd', dreg,
                       Q ? 'q' : 'd', nreg, Q ? 'q' : 'd', mreg);
                }
+            } else {
+               return False;
             }
          }
          break;

@@ -13857,6 +13857,182 @@ static Bool decode_V8_instruction (
       /* else fall through */
    }
 
+   /* ----------- VCVT{A,N,P,M}{.F32 d_d, .F32 q_q} ----------- */
+   /*     31   27    22 21     15 11 9  7  6 5 4 3
+      T1: 1111 11111 D  111011 Vd 00 rm op Q M 0 Vm
+      A1: 1111 00111 D  111011 Vd 00 rm op Q M 0 Vm
+
+      ARM encoding is in NV space.
+      In Thumb mode, we must not be in an IT block.
+   */
+   if (INSN(31,23) == (isT ? BITS9(1,1,1,1,1,1,1,1,1)
+                           : BITS9(1,1,1,1,0,0,1,1,1))
+       && INSN(21,16) == BITS6(1,1,1,0,1,1) && INSN(11,10) == BITS2(0,0)
+       && INSN(4,4) == 0) {
+      UInt bit_D  = INSN(22,22);
+      UInt fld_Vd = INSN(15,12);
+      UInt fld_rm = INSN(9,8);
+      Bool isU    = INSN(7,7) == 1;
+      Bool isQ    = INSN(6,6) == 1;
+      UInt bit_M  = INSN(5,5);
+      UInt fld_Vm = INSN(3,0);
+
+      /* dd, nn, mm are D-register numbers. */
+      UInt dd = (bit_D << 4) | fld_Vd;
+      UInt mm = (bit_M << 4) | fld_Vm;
+
+      if (! (isQ && ((dd & 1) == 1 || (mm & 1) == 1))) {
+         /* Do this piecewise on f regs. */
+         UInt ddF = dd << 1;
+         UInt mmF = mm << 1;
+
+         if (isT) {
+            gen_SIGILL_T_if_in_ITBlock(old_itstate, new_itstate);
+         }
+         /* In ARM mode, this is statically unconditional.  In Thumb mode,
+            this must be dynamically unconditional, and we've SIGILLd if not.
+            In either case we can create unconditional IR. */
+
+         UChar cvtc = '?';
+         IRRoundingMode rm = Irrm_NEAREST;
+         switch (fld_rm) {
+            /* The use of NEAREST for both the 'a' and 'n' cases is a bit of a
+               kludge since it doesn't take into account the nearest-even vs
+               nearest-away semantics. */
+            case BITS2(0,0): cvtc = 'a'; rm = Irrm_NEAREST; break;
+            case BITS2(0,1): cvtc = 'n'; rm = Irrm_NEAREST; break;
+            case BITS2(1,0): cvtc = 'p'; rm = Irrm_PosINF;  break;
+            case BITS2(1,1): cvtc = 'm'; rm = Irrm_NegINF;  break;
+            default: vassert(0);
+         }
+
+         IROp cvt = isU ? Iop_F64toI32U : Iop_F64toI32S;
+
+         IRTemp r0 = newTemp(Ity_F32);
+         IRTemp r1 = newTemp(Ity_F32);
+         IRTemp r2 = isQ ? newTemp(Ity_F32) : IRTemp_INVALID;
+         IRTemp r3 = isQ ? newTemp(Ity_F32) : IRTemp_INVALID;
+
+         IRExpr* rmE = mkU32((UInt)rm);
+
+         assign(r0, unop(Iop_ReinterpI32asF32,
+                         binop(cvt, rmE, unop(Iop_F32toF64,
+                                              llGetFReg_up_to_64(mmF+0)))));
+         assign(r1, unop(Iop_ReinterpI32asF32,
+                         binop(cvt, rmE, unop(Iop_F32toF64,
+                                              llGetFReg_up_to_64(mmF+1)))));
+         if (isQ) {
+            assign(r2, unop(Iop_ReinterpI32asF32,
+                            binop(cvt, rmE, unop(Iop_F32toF64,
+                                                 llGetFReg_up_to_64(mmF+2)))));
+            assign(r3, unop(Iop_ReinterpI32asF32,
+                            binop(cvt, rmE, unop(Iop_F32toF64,
+                                                 llGetFReg_up_to_64(mmF+3)))));
+         }
+
+         llPutFReg_up_to_64(ddF+0, mkexpr(r0));
+         llPutFReg_up_to_64(ddF+1, mkexpr(r1));
+         if (isQ) {
+            llPutFReg_up_to_64(ddF+2, mkexpr(r2));
+            llPutFReg_up_to_64(ddF+3, mkexpr(r3));
+         }
+
+         HChar rch = isQ ? 'q' : 'd';
+         UInt  sh  = isQ ? 1 : 0;
+         DIP("vcvt%c.%c32.f32 %c%u, %c%u\n",
+              cvtc, isU ? 'u' : 's', rch, dd >> sh, rch, mm >> sh);
+         return True;
+      }
+      /* else fall through */
+   }
+
+   /* ----------- VRINT{A,N,P,M,X,Z}{.F32 d_d, .F32 q_q} ----------- */
+   /*     31   27    22 21     15 11 9  6 5 4 3
+      T1: 1111 11111 D  111010 Vd 01 op Q M 0 Vm
+      A1: 1111 00111 D  111010 Vd 01 op Q M 0 Vm
+
+      ARM encoding is in NV space.
+      In Thumb mode, we must not be in an IT block.
+   */
+   if (INSN(31,23) == (isT ? BITS9(1,1,1,1,1,1,1,1,1)
+                           : BITS9(1,1,1,1,0,0,1,1,1))
+       && INSN(21,16) == BITS6(1,1,1,0,1,0) && INSN(11,10) == BITS2(0,1)
+       && INSN(4,4) == 0) {
+      UInt bit_D  = INSN(22,22);
+      UInt fld_Vd = INSN(15,12);
+      UInt fld_op = INSN(9,7);
+      Bool isQ    = INSN(6,6) == 1;
+      UInt bit_M  = INSN(5,5);
+      UInt fld_Vm = INSN(3,0);
+
+      /* dd, nn, mm are D-register numbers. */
+      UInt dd = (bit_D << 4) | fld_Vd;
+      UInt mm = (bit_M << 4) | fld_Vm;
+
+      if (! (fld_op == BITS3(1,0,0) || fld_op == BITS3(1,1,0))
+          && ! (isQ && ((dd & 1) == 1 || (mm & 1) == 1))) {
+         /* Do this piecewise on f regs. */
+         UInt ddF = dd << 1;
+         UInt mmF = mm << 1;
+
+         if (isT) {
+            gen_SIGILL_T_if_in_ITBlock(old_itstate, new_itstate);
+         }
+         /* In ARM mode, this is statically unconditional.  In Thumb mode,
+            this must be dynamically unconditional, and we've SIGILLd if not.
+            In either case we can create unconditional IR. */
+
+         UChar cvtc = '?';
+         IRRoundingMode rm = Irrm_NEAREST;
+         switch (fld_op) {
+            /* Various kludges:
+               - The use of NEAREST for both the 'a' and 'n' cases,
+                 since it doesn't take into account the nearest-even vs
+                 nearest-away semantics.
+               - For the 'x' case, we don't signal inexactness.
+            */
+            case BITS3(0,1,0): cvtc = 'a'; rm = Irrm_NEAREST; break;
+            case BITS3(0,0,0): cvtc = 'n'; rm = Irrm_NEAREST; break;
+            case BITS3(1,1,1): cvtc = 'p'; rm = Irrm_PosINF;  break;
+            case BITS3(1,0,1): cvtc = 'm'; rm = Irrm_NegINF;  break;
+            case BITS3(0,1,1): cvtc = 'z'; rm = Irrm_ZERO;    break;
+            case BITS3(0,0,1): cvtc = 'x'; rm = Irrm_NEAREST; break;
+            case BITS3(1,0,0):
+            case BITS3(1,1,0):
+            default: vassert(0);
+         }
+
+         IRTemp r0 = newTemp(Ity_F32);
+         IRTemp r1 = newTemp(Ity_F32);
+         IRTemp r2 = isQ ? newTemp(Ity_F32) : IRTemp_INVALID;
+         IRTemp r3 = isQ ? newTemp(Ity_F32) : IRTemp_INVALID;
+
+         IRExpr* rmE = mkU32((UInt)rm);
+         IROp    rnd = Iop_RoundF32toInt;
+
+         assign(r0, binop(rnd, rmE, llGetFReg_up_to_64(mmF+0)));
+         assign(r1, binop(rnd, rmE, llGetFReg_up_to_64(mmF+1)));
+         if (isQ) {
+            assign(r2, binop(rnd, rmE, llGetFReg_up_to_64(mmF+2)));
+            assign(r3, binop(rnd, rmE, llGetFReg_up_to_64(mmF+3)));
+         }
+
+         llPutFReg_up_to_64(ddF+0, mkexpr(r0));
+         llPutFReg_up_to_64(ddF+1, mkexpr(r1));
+         if (isQ) {
+            llPutFReg_up_to_64(ddF+2, mkexpr(r2));
+            llPutFReg_up_to_64(ddF+3, mkexpr(r3));
+         }
+
+         HChar rch = isQ ? 'q' : 'd';
+         UInt  sh  = isQ ? 1 : 0;
+         DIP("vrint%c.f32.f32 %c%u, %c%u\n",
+             cvtc, rch, dd >> sh, rch, mm >> sh);
+         return True;
+      }
+      /* else fall through */
+   }
+
    /* ---------- Doesn't match anything. ---------- */
    return False;
 

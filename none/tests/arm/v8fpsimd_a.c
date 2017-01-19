@@ -222,7 +222,7 @@ static void showV128 ( V128* v )
         /* Don't use INSN_PRE in printing, since that differs */ \
         /* between ARM and Thumb and hence makes their outputs differ. */ \
         printf(INSN   "   "); \
-        UInt fpscr = 0xFFFFFFFF & block[4].u32[0]; \
+        UInt fpscr = 0xFFFFFFE0 & block[4].u32[0]; \
         showV128(&block[0]); printf("  "); \
         showV128(&block[1]); printf("  "); \
         showV128(&block[2]); printf("  "); \
@@ -269,7 +269,7 @@ static void showV128 ( V128* v )
         /* Don't use INSN_PRE in printing, since that differs */ \
         /* between ARM and Thumb and hence makes their outputs differ. */ \
         printf(INSN   "   "); \
-        UInt fpscr = 0xFFFFFFFF & block[6].u32[0]; \
+        UInt fpscr = 0xFFFFFFE0 & block[6].u32[0]; \
         showV128(&block[0]); printf("  "); \
         showV128(&block[1]); printf("  "); \
         showV128(&block[2]); printf("  "); \
@@ -469,11 +469,11 @@ int main ( void )
    if (1) DO50( test_vcvtp_u32_f32(TySF) );
    if (1) DO50( test_vcvtm_u32_f32(TySF) );
 
-   if (1) DO50( test_vcvtb_f64_f16(TyDF) );
-   if (1) DO50( test_vcvtt_f64_f16(TyDF) );
+   if (0) DO50( test_vcvtb_f64_f16(TyDF) );
+   if (0) DO50( test_vcvtt_f64_f16(TyDF) );
 
-   if (1) DO50( test_vcvtb_f16_f64(TyHF) );
-   if (1) DO50( test_vcvtt_f16_f64(TyHF) );
+   if (0) DO50( test_vcvtb_f16_f64(TyHF) );
+   if (0) DO50( test_vcvtt_f16_f64(TyHF) );
 
    if (1) DO50( test_vrintzeq_f64_f64(TyDF) );
    if (1) DO50( test_vrintzne_f64_f64(TyDF) );

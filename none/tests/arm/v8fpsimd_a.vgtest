@@ -1,0 +1,2 @@
+prog: v8fpsimd_a
+vgopts: -q

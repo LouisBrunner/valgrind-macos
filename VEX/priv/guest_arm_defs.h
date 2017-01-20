@@ -40,7 +40,7 @@
 /*---------------------------------------------------------*/
 
 /* Convert one ARM insn to IR.  See the type DisOneInstrFn in
-   bb_to_IR.h. */
+  geust_generic_ bb_to_IR.h. */
 extern
 DisResult disInstr_ARM ( IRSB*        irbb,
                          Bool         (*resteerOkFn) ( void*, Addr ),

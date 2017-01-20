@@ -49,7 +49,7 @@
 /*---------------------------------------------------------*/
 
 /* Convert one ppc insn to IR.  See the type DisOneInstrFn in
-   bb_to_IR.h. */
+   guest_generic_bb_to_IR.h. */
 extern
 DisResult disInstr_PPC ( IRSB*        irbb,
                          Bool         (*resteerOkFn) ( void*, Addr ),

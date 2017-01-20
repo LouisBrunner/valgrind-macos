@@ -40,7 +40,7 @@
 /*---------------------------------------------------------*/
 
 /* Convert one TILEGX insn to IR.  See the type DisOneInstrFn in
-   bb_to_IR.h. */
+   guest_generic_bb_to_IR.h. */
 extern DisResult disInstr_TILEGX ( IRSB* irbb,
                                    Bool (*resteerOkFn) ( void *, Addr ),
                                    Bool resteerCisOk,

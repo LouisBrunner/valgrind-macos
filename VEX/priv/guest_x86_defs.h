@@ -48,7 +48,7 @@
 /*---------------------------------------------------------*/
 
 /* Convert one x86 insn to IR.  See the type DisOneInstrFn in
-   bb_to_IR.h. */
+   guest_generic_bb_to_IR.h. */
 extern
 DisResult disInstr_X86 ( IRSB*        irbb,
                          Bool         (*resteerOkFn) ( void*, Addr ),

@@ -294,11 +294,37 @@ void translate_to_hw_format ( /* IN  */ vki_modify_ldt_t* inn,
    out->LdtEnt.Words.word2 = entry_2;
 }
 
-/* Create a zeroed-out GDT. */
-static VexGuestX86SegDescr* alloc_zeroed_x86_GDT ( void )
+/* Create initial GDT. */
+static VexGuestX86SegDescr* alloc_system_x86_GDT ( void )
 {
    Int nbytes = VEX_GUEST_X86_GDT_NENT * sizeof(VexGuestX86SegDescr);
-   return VG_(calloc)("di.syswrap-x86.azxG.1", nbytes, 1);
+   VexGuestX86SegDescr* gdt = VG_(calloc)("di.syswrap-x86.azxG.1", nbytes, 1);
+   vki_modify_ldt_t info;
+   UShort seg;
+
+   VG_(memset)(&info, 0, sizeof(info));
+   info.entry_number    = 0;
+   info.base_addr       = 0;
+   info.limit           = 0xfffff;
+   info.seg_32bit       = 1;
+   info.contents        = 0;
+   info.read_exec_only  = 0;
+   info.limit_in_pages  = 1;
+   info.seg_not_present = 0;
+   info.useable         = 0;
+   info.reserved        = 0;
+
+   asm volatile("movw %%ds, %0" : : "m" (seg));
+   if (!(seg & 4)) translate_to_hw_format(&info, &gdt[seg >> 3], 0);
+   asm volatile("movw %%ss, %0" : : "m" (seg));
+   if (!(seg & 4)) translate_to_hw_format(&info, &gdt[seg >> 3], 0);
+
+   info.contents        = 2;
+
+   asm volatile("movw %%cs, %0" : : "m" (seg));
+   if (!(seg & 4)) translate_to_hw_format(&info, &gdt[seg >> 3], 0);
+
+   return gdt;
 }
 
 /* Create a zeroed-out LDT. */
@@ -505,7 +531,7 @@ SysRes ML_(x86_sys_set_thread_area) ( ThreadId tid, vki_modify_ldt_t* info )
 
    /* If the thread doesn't have a GDT, allocate it now. */
    if (!gdt) {
-      gdt = alloc_zeroed_x86_GDT();
+      gdt = alloc_system_x86_GDT();
       VG_(threads)[tid].arch.vex.guest_GDT = (HWord)gdt;
    }
 
@@ -564,7 +590,7 @@ static SysRes sys_get_thread_area ( ThreadId tid, vki_modify_ldt_t* info )
 
    /* If the thread doesn't have a GDT, allocate it now. */
    if (!gdt) {
-      gdt = alloc_zeroed_x86_GDT();
+      gdt = alloc_system_x86_GDT();
       VG_(threads)[tid].arch.vex.guest_GDT = (HWord)gdt;
    }
 
@@ -616,7 +642,7 @@ void ML_(x86_setup_LDT_GDT) ( /*OUT*/ ThreadArchState *child,
    child->vex.guest_GDT = (HWord)NULL;
 
    if (parent->vex.guest_GDT != (HWord)NULL) {
-      child->vex.guest_GDT = (HWord)alloc_zeroed_x86_GDT();
+      child->vex.guest_GDT = (HWord)alloc_system_x86_GDT();
       copy_GDT_from_to( (VexGuestX86SegDescr*)parent->vex.guest_GDT,
                         (VexGuestX86SegDescr*)child->vex.guest_GDT );
    }

@@ -1409,6 +1409,7 @@ const HChar* sorbTxt ( UChar sorb )
       case 0x26: return "%es:";
       case 0x64: return "%fs:";
       case 0x65: return "%gs:";
+      case 0x36: return "%ss:";
       default: vpanic("sorbTxt(x86,guest)");
    }
 }
@@ -1433,6 +1434,7 @@ IRExpr* handleSegOverride ( UChar sorb, IRExpr* virtual )
       case 0x26: sreg = R_ES; break;
       case 0x64: sreg = R_FS; break;
       case 0x65: sreg = R_GS; break;
+      case 0x36: sreg = R_SS; break;
       default: vpanic("handleSegOverride(x86,guest)");
    }
 
@@ -8101,7 +8103,7 @@ DisResult disInstr_X86_WRK (
    Int sz = 4;
 
    /* sorb holds the segment-override-prefix byte, if any.  Zero if no
-      prefix has been seen, else one of {0x26, 0x3E, 0x64, 0x65}
+      prefix has been seen, else one of {0x26, 0x36, 0x3E, 0x64, 0x65}
       indicating the prefix.  */
    UChar sorb = 0;
 
@@ -8255,6 +8257,7 @@ DisResult disInstr_X86_WRK (
          case 0x26: /* %ES: */
          case 0x64: /* %FS: */
          case 0x65: /* %GS: */
+         case 0x36: /* %SS: */
             if (sorb != 0) 
                goto decode_failure; /* only one seg override allowed */
             sorb = pre;
@@ -8274,9 +8277,6 @@ DisResult disInstr_X86_WRK (
             }
             break;
          }
-         case 0x36: /* %SS: */
-            /* SS override cases are not handled */
-            goto decode_failure;
          default: 
             goto not_a_prefix;
       }

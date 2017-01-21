@@ -6252,7 +6252,7 @@ static void mc_print_usage(void)
 "    --show-reachable=no --show-possibly-lost=no\n"
 "                                     same as --show-leak-kinds=definite\n"
 "    --xtree-leak=no|yes              output leak result in xtree format? [no]\n"
-"    --xtree-leak-file=<file>         xtree leak report file [xtleak.kcg.%%p.%%n]\n"
+"    --xtree-leak-file=<file>         xtree leak report file [xtleak.kcg.%%p]\n"
 "    --undef-value-errors=no|yes      check for undefined value errors [yes]\n"
 "    --track-origins=no|yes           show origins of undefined values? [no]\n"
 "    --partial-loads-ok=no|yes        too hard to explain here; see manual [yes]\n"

@@ -496,12 +496,12 @@ void VG_(XT_callgrind_print)
                                         &called_filename,               \
                                         NULL,                           \
                                         &called_linenum)) {             \
-         called_filename = "file ???";                                  \
+         called_filename = "UnknownFile???";                            \
          called_linenum = 0;                                            \
       }                                                                 \
       if ((n) < 0                                                       \
           || !VG_(get_fnname)(ips[(n)], &called_fnname)) {              \
-         called_fnname = "???";                                         \
+         called_fnname = "UnknownFn???";                                \
       }                                                                 \
       called_filename_nr = VG_(allocStrDedupPA)(filename_ddpa,          \
                                                 called_filename,        \

@@ -1690,6 +1690,8 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
                               lcp->xt_filename,
                               XT_Leak_events,
                               MC_(XT_Leak_img));
+      if (VG_(clo_verbosity) >= 1 || lcp->requested_by_monitor_command)
+         VG_(umsg)("xtree leak report: %s\n", lcp->xt_filename);
       VG_(XT_delete)(leak_xt);
    }
 

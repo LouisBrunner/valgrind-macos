@@ -887,7 +887,9 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
     </term>
     <listitem>
       <para>If set to yes, the results for the leak search done at exit will be
-       output in a 'Callgrind Format' execution tree file. The produced file
+        output in a 'Callgrind Format' execution tree file. Note that this
+        automatically sets the option <option>--leak-check=full</option>.
+        The produced file
        will contain the following events:</para>
       <itemizedlist>
         <listitem><para><option>RB</option> : Reachable Bytes</para></listitem> 

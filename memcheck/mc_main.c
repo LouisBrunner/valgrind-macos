@@ -6012,6 +6012,8 @@ UInt          MC_(clo_leak_check_heuristics)  =   H2S(LchStdString)
                                                 | H2S( LchLength64)
                                                 | H2S( LchNewArray)
                                                 | H2S( LchMultipleInheritance);
+Bool          MC_(clo_xtree_leak)             = False;
+const HChar*  MC_(clo_xtree_leak_file) = "xtleak.kcg.%p";
 Bool          MC_(clo_workaround_gcc296_bugs) = False;
 Int           MC_(clo_malloc_fill)            = -1;
 Int           MC_(clo_free_fill)              = -1;
@@ -6213,6 +6215,11 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
    else if VG_BOOL_CLO(arg, "--expensive-definedness-checks",
                        MC_(clo_expensive_definedness_checks)) {}
 
+   else if VG_BOOL_CLO(arg, "--xtree-leak",
+                       MC_(clo_xtree_leak)) {}
+   else if VG_STR_CLO (arg, "--xtree-leak-file",
+                       MC_(clo_xtree_leak_file)) {}
+
    else
       return VG_(replacement_malloc_process_cmd_line_option)(arg);
 
@@ -6244,6 +6251,8 @@ static void mc_print_usage(void)
 "                                     same as --show-leak-kinds=definite,possible\n"
 "    --show-reachable=no --show-possibly-lost=no\n"
 "                                     same as --show-leak-kinds=definite\n"
+"    --xtree-leak=no|yes              output leak result in xtree format? [no]\n"
+"    --xtree-leak-file=<file>         xtree leak report file [xtleak.kcg.%%p.%%n]\n"
 "    --undef-value-errors=no|yes      check for undefined value errors [yes]\n"
 "    --track-origins=no|yes           show origins of undefined values? [no]\n"
 "    --partial-loads-ok=no|yes        too hard to explain here; see manual [yes]\n"
@@ -6378,12 +6387,13 @@ static void print_monitor_help ( void )
 "  check_memory [addressable|defined] <addr> [<len>]\n"
 "        check that <len> (or 1) bytes at <addr> have the given accessibility\n"
 "            and outputs a description of <addr>\n"
-"  leak_check [full*|summary]\n"
+"  leak_check [full*|summary|xtleak]\n"
 "                [kinds kind1,kind2,...|reachable|possibleleak*|definiteleak]\n"
 "                [heuristics heur1,heur2,...]\n"
 "                [increased*|changed|any]\n"
 "                [unlimited*|limited <max_loss_records_output>]\n"
 "            * = defaults\n"
+"         xtleak produces an xtree full leak result in xtleak.kcg.%%p.%%n\n"
 "       where kind is one of:\n"
 "         definite indirect possible reachable all none\n"
 "       where heur is one of:\n"
@@ -6404,7 +6414,7 @@ static void print_monitor_help ( void )
 "        (with len 1, only shows \"start pointers\" pointing exactly to <addr>,\n"
 "         with len > 1, will also show \"interior pointers\")\n"
 "  xtmemory [<filename>]\n"
-"        dump xtree memory profile in <filename> (default xtmemory.kcg)\n"
+"        dump xtree memory profile in <filename> (default xtmemory.kcg.%%p.%%n)\n"
 "\n");
 }
 
@@ -6567,6 +6577,7 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
    case  2: { /* leak_check */
       Int err = 0;
       LeakCheckParams lcp;
+      HChar* xt_filename = NULL;
       HChar* kw;
       
       lcp.mode               = LC_Full;
@@ -6576,12 +6587,13 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       lcp.deltamode          = LCD_Increased;
       lcp.max_loss_records_output = 999999999;
       lcp.requested_by_monitor_command = True;
+      lcp.xt_filename = NULL;
       
       for (kw = VG_(strtok_r) (NULL, " ", &ssaveptr); 
            kw != NULL; 
            kw = VG_(strtok_r) (NULL, " ", &ssaveptr)) {
          switch (VG_(keyword_id) 
-                 ("full summary "
+                 ("full summary xtleak "
                   "kinds reachable possibleleak definiteleak "
                   "heuristics "
                   "increased changed any "
@@ -6593,7 +6605,14 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
             lcp.mode = LC_Full; break;
          case  1: /* summary */
             lcp.mode = LC_Summary; break;
-         case  2: { /* kinds */
+         case  2: /* xtleak */
+            lcp.mode = LC_Full;
+            xt_filename 
+               = VG_(expand_file_name)("--xtleak-mc_main.c",
+                                       "xtleak.kcg.%p.%n");
+            lcp.xt_filename = xt_filename;
+            break;
+         case  3: { /* kinds */
             wcmd = VG_(strtok_r) (NULL, " ", &ssaveptr);
             if (wcmd == NULL 
                 || !VG_(parse_enum_set)(MC_(parse_leak_kinds_tokens),
@@ -6605,17 +6624,17 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
             }
             break;
          }
-         case  3: /* reachable */
+         case  4: /* reachable */
             lcp.show_leak_kinds = MC_(all_Reachedness)();
             break;
-         case  4: /* possibleleak */
+         case  5: /* possibleleak */
             lcp.show_leak_kinds 
                = R2S(Possible) | R2S(IndirectLeak) | R2S(Unreached);
             break;
-         case  5: /* definiteleak */
+         case  6: /* definiteleak */
             lcp.show_leak_kinds = R2S(Unreached);
             break;
-         case  6: { /* heuristics */
+         case  7: { /* heuristics */
             wcmd = VG_(strtok_r) (NULL, " ", &ssaveptr);
             if (wcmd == NULL 
                 || !VG_(parse_enum_set)(MC_(parse_leak_heuristics_tokens),
@@ -6627,15 +6646,15 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
             }
             break;
          }
-         case  7: /* increased */
+         case  8: /* increased */
             lcp.deltamode = LCD_Increased; break;
-         case  8: /* changed */
+         case  9: /* changed */
             lcp.deltamode = LCD_Changed; break;
-         case  9: /* any */
+         case 10: /* any */
             lcp.deltamode = LCD_Any; break;
-         case 10: /* unlimited */
+         case 11: /* unlimited */
             lcp.max_loss_records_output = 999999999; break;
-         case 11: { /* limited */
+         case 12: { /* limited */
             Int int_value;
             const HChar* endptr;
 
@@ -6663,6 +6682,8 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
       }
       if (!err)
          MC_(detect_memory_leaks)(tid, &lcp);
+      if (xt_filename != NULL)
+         VG_(free)(xt_filename);
       return True;
    }
       
@@ -6990,6 +7011,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          }
          lcp.max_loss_records_output = 999999999;
          lcp.requested_by_monitor_command = False;
+         lcp.xt_filename = NULL;
          
          MC_(detect_memory_leaks)(tid, &lcp);
          *ret = 0; /* return value is meaningless */
@@ -8025,6 +8047,7 @@ static void mc_fini ( Int exitcode )
 
    if (MC_(clo_leak_check) != LC_Off) {
       LeakCheckParams lcp;
+      HChar* xt_filename = NULL;
       lcp.mode = MC_(clo_leak_check);
       lcp.show_leak_kinds = MC_(clo_show_leak_kinds);
       lcp.heuristics = MC_(clo_leak_check_heuristics);
@@ -8032,7 +8055,16 @@ static void mc_fini ( Int exitcode )
       lcp.deltamode = LCD_Any;
       lcp.max_loss_records_output = 999999999;
       lcp.requested_by_monitor_command = False;
+      if (MC_(clo_xtree_leak)) {
+         xt_filename = VG_(expand_file_name)("--xtree-leak-file",
+                                             MC_(clo_xtree_leak_file));
+         lcp.xt_filename = xt_filename;
+      }
+      else
+         lcp.xt_filename = NULL;
       MC_(detect_memory_leaks)(1/*bogus ThreadId*/, &lcp);
+      if (MC_(clo_xtree_leak))
+         VG_(free)(xt_filename);
    } else {
       if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {
          VG_(umsg)(

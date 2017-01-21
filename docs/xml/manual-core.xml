@@ -888,6 +888,12 @@ in most cases.  We group the available options by rough categories.</para>
       all those processes will go into one file, possibly jumbled up, and
       possibly incomplete.</para>
 
+      <para><option>%n</option> is replaced with a file sequence number
+      unique for this process.
+      This is useful for processes that produces several files
+      from the same filename template.</para>
+
+
       <para><option>%q{FOO}</option> is replaced with the contents of the
       environment variable <varname>FOO</varname>.  If the
       <option>{FOO}</option> part is malformed, it causes an abort.  This
@@ -2747,7 +2753,9 @@ will create a core dump in the usual way.</para>
 <para>An execution tree (xtree) is made of a set of stack traces, each
   stack trace is associated with some resource consumptions or event
   counts.  Depending on the xtree, different event counts/resource
-  consumptions can be recorded in the xtree.</para>
+  consumptions can be recorded in the xtree. Multiple tools can
+  produce memory use xtree. Memcheck can output the leak search results
+  in an xtree.</para>
 
 <para> A typical usage for an xtree is to show a graphical or textual
   representation of the heap usage of a program. The below figure is

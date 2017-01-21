@@ -46,6 +46,8 @@
 #include "pub_tool_signals.h"       // Needed for mc_include.h
 #include "pub_tool_libcsetjmp.h"    // setjmp facilities
 #include "pub_tool_tooliface.h"     // Needed for mc_include.h
+#include "pub_tool_xarray.h"
+#include "pub_tool_xtree.h"
 
 #include "mc_include.h"
 
@@ -1301,6 +1303,189 @@ static void get_printing_rules(LeakCheckParams* lcp,
       && RiS(lr->key.state,lcp->errors_for_leak_kinds);
 }
 
+//
+// Types and functions for xtree leak report.
+//
+
+static XTree* leak_xt;
+
+/* Sizes and delta sizes for a loss record output in an xtree.
+   As the output format can only show positive values, we need values for
+   the increase and decrease cases. */
+typedef
+   struct _XT_BIBK {
+      ULong szB;           // Current values
+      ULong indirect_szB;
+      ULong num_blocks;
+   } XT_BIBK; // Bytes, Indirect bytes, BlocKs
+
+typedef 
+   enum { 
+      XT_Value    =0,
+      XT_Increase =1,
+      XT_Decrease =2
+  }
+  XT_VID; // Value or Increase or Decrease
+
+typedef
+   struct _XT_lr {
+      XT_BIBK vid[3]; // indexed by XT_VID
+   } XT_lr;
+
+typedef
+   struct _XT_Leak {
+      XT_lr xt_lr[4]; // indexed by Reachedness
+   } XT_Leak;
+
+static void MC_(XT_Leak_init)(void* xtl)
+{
+   VG_(memset) (xtl, 0, sizeof(XT_Leak));
+}
+static void MC_(XT_Leak_add) (void* to, const void* xtleak)
+{
+   XT_Leak* xto = to;
+   const XT_Leak* xtl = xtleak;
+
+   for (int r = Reachable; r <= Unreached; r++)
+      for (int d = 0; d < 3; d++) {
+         xto->xt_lr[r].vid[d].szB += xtl->xt_lr[r].vid[d].szB;
+         xto->xt_lr[r].vid[d].indirect_szB += xtl->xt_lr[r].vid[d].indirect_szB;
+         xto->xt_lr[r].vid[d].num_blocks += xtl->xt_lr[r].vid[d].num_blocks;
+      }
+}
+static void XT_insert_lr (LossRecord* lr)
+{
+   XT_Leak xtl;
+   Reachedness i = lr->key.state;
+
+   MC_(XT_Leak_init)(&xtl);
+   
+   xtl.xt_lr[i].vid[XT_Value].szB = lr->szB;
+   xtl.xt_lr[i].vid[XT_Value].indirect_szB = lr->indirect_szB;
+   xtl.xt_lr[i].vid[XT_Value].num_blocks = lr->num_blocks;
+
+   if (lr->szB > lr->old_szB)
+      xtl.xt_lr[i].vid[XT_Increase].szB = lr->szB - lr->old_szB;
+   else
+      xtl.xt_lr[i].vid[XT_Decrease].szB = lr->old_szB - lr->szB;
+   if (lr->indirect_szB > lr->old_indirect_szB)
+      xtl.xt_lr[i].vid[XT_Increase].indirect_szB 
+         = lr->indirect_szB - lr->old_indirect_szB;
+   else
+      xtl.xt_lr[i].vid[XT_Decrease].indirect_szB 
+         = lr->old_indirect_szB - lr->indirect_szB;
+   if (lr->num_blocks > lr->old_num_blocks)
+      xtl.xt_lr[i].vid[XT_Increase].num_blocks 
+         = lr->num_blocks - lr->old_num_blocks;
+   else
+      xtl.xt_lr[i].vid[XT_Decrease].num_blocks 
+         = lr->old_num_blocks - lr->num_blocks;
+
+   VG_(XT_add_to_ec)(leak_xt, lr->key.allocated_at, &xtl);
+}
+
+static void MC_(XT_Leak_sub) (void* from, const void* xtleak)
+{
+   tl_assert(0); // Should not be called.
+}
+static const HChar* MC_(XT_Leak_img) (const void* xtleak)
+{
+   static XT_Leak zero;
+   static HChar buf[600];
+   UInt off = 0;
+
+   const XT_Leak* xtl = xtleak;
+
+   if (VG_(memcmp)(xtl, &zero, sizeof(XT_Leak)) != 0) {
+      for (UInt d = XT_Value; d <= XT_Decrease; d++) {
+         // print szB. We add indirect_szB to have the Unreachable showing
+         // the total bytes loss, including indirect loss. This is similar
+         // to the textual and xml reports.
+         for (UInt r = Reachable; r <= Unreached; r++)
+            off += VG_(sprintf) (buf + off, " %llu",
+                                 xtl->xt_lr[r].vid[d].szB
+                                   + xtl->xt_lr[r].vid[d].indirect_szB);
+         // print indirect_szB, only for reachedness having such values)
+         for (UInt r = Reachable; r <= Unreached; r++)
+            if (r == Unreached)
+               off += VG_(sprintf) (buf + off, " %llu",
+                                    xtl->xt_lr[r].vid[d].indirect_szB);
+         // print num_blocks
+         for (UInt r = Reachable; r <= Unreached; r++)
+            off += VG_(sprintf) (buf + off, " %llu",
+                                 xtl->xt_lr[r].vid[d].num_blocks);
+      }
+      return buf + 1; // + 1 to skip the useless first space
+   } else {
+      return NULL;
+   }
+}
+
+/* The short event name is made of 2 or 3 or 4 letters:
+     an optional delta indication:  i = increase  d = decrease
+     a loss kind: R = Reachable P = Possibly I = Indirectly D = Definitely
+     an optional i to indicate this loss record has indirectly lost bytes
+     B = Bytes or Bk = Blocks.
+   Note that indirectly lost bytes/blocks can thus be counted in 2
+   loss records: the loss records for their "own" allocation stack trace,
+   and the loss record of the 'main' Definitely or Possibly loss record
+   in the indirectly lost count for these loss records. */
+static const HChar* XT_Leak_events = 
+   ////// XT_Value szB
+   "RB : Reachable Bytes"                                  ","
+   "PB : Possibly lost Bytes"                              ","
+   "IB : Indirectly lost Bytes"                            ","
+   "DB : Definitely lost Bytes (direct plus indirect)"     ","
+
+   ////// XT_Value indirect_szB
+   // no RiB
+   // no PiB
+   // no IiB 
+   "DiB : Definitely indirectly lost Bytes (subset of DB)" ","
+
+   ////// XT_Value num_blocks 
+   "RBk : reachable Blocks"                                ","
+   "PBk : Possibly lost Blocks"                            ","
+   "IBk : Indirectly lost Blocks"                          ","
+   "DBk : Definitely lost Blocks"                          ","
+
+   ////// XT_Increase szB
+   "iRB : increase Reachable Bytes"                        ","
+   "iPB : increase Possibly lost Bytes"                    ","
+   "iIB : increase Indirectly lost Bytes"                  ","
+   "iDB : increase Definitely lost Bytes"                  ","
+
+   ////// XT_Increase indirect_szB
+   // no iRiB
+   // no iPiB
+   // no iIiB
+   "iDiB : increase Definitely indirectly lost Bytes"      ","
+
+   ////// XT_Increase num_blocks
+   "iRBk : increase reachable Blocks"                      ","
+   "iPBk : increase Possibly lost Blocks"                  ","
+   "iIBk : increase Indirectly lost Blocks"                ","
+   "iDBk : increase Definitely lost Blocks"                ","
+
+
+   ////// XT_Decrease szB
+   "dRB : decrease Reachable Bytes"                        ","
+   "dPB : decrease Possibly lost Bytes"                    ","
+   "dIB : decrease Indirectly lost Bytes"                  ","
+   "dDB : decrease Definitely lost Bytes"                  ","
+
+   ////// XT_Decrease indirect_szB
+   // no dRiB
+   // no dPiB
+   // no dIiB
+   "dDiB : decrease Definitely indirectly lost Bytes"      ","
+
+   ////// XT_Decrease num_blocks
+   "dRBk : decrease reachable Blocks"                      ","
+   "dPBk : decrease Possibly lost Blocks"                  ","
+   "dIBk : decrease Indirectly lost Blocks"                ","
+   "dDBk : decrease Definitely lost Blocks";
+
 static void print_results(ThreadId tid, LeakCheckParams* lcp)
 {
    Int          i, n_lossrecords, start_lr_output_scan;
@@ -1452,14 +1637,28 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
       }
    }
 
+   if (lcp->xt_filename != NULL)
+      leak_xt = VG_(XT_create) (VG_(malloc),
+                                "mc_leakcheck.leak_xt",
+                                VG_(free),
+                                sizeof(XT_Leak),
+                                MC_(XT_Leak_init),
+                                MC_(XT_Leak_add),
+                                MC_(XT_Leak_sub),
+                                VG_(XT_filter_maybe_below_main));
+
    // Print the loss records (in size order) and collect summary stats.
    for (i = start_lr_output_scan; i < n_lossrecords; i++) {
       Bool count_as_error, print_record;
       lr = lr_array[i];
       get_printing_rules(lcp, lr, &count_as_error, &print_record);
       is_suppressed = 
-         MC_(record_leak_error) ( tid, i+1, n_lossrecords, lr, print_record,
-                                  count_as_error );
+         MC_(record_leak_error) 
+           ( tid, i+1, n_lossrecords, lr, 
+             lcp->xt_filename == NULL ? print_record : False,
+             count_as_error );
+      if (lcp->xt_filename != NULL && !is_suppressed && print_record)
+         XT_insert_lr (lr);
 
       if (is_suppressed) {
          MC_(blocks_suppressed) += lr->num_blocks;
@@ -1484,6 +1683,14 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
       } else {
          VG_(tool_panic)("unknown loss mode");
       }
+   }
+
+   if (lcp->xt_filename != NULL) {
+      VG_(XT_callgrind_print)(leak_xt,
+                              lcp->xt_filename,
+                              XT_Leak_events,
+                              MC_(XT_Leak_img));
+      VG_(XT_delete)(leak_xt);
    }
 
    if (VG_(clo_verbosity) > 0 && !VG_(clo_xml)) {

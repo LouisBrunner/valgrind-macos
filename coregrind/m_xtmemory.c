@@ -288,7 +288,8 @@ void VG_(XTMemory_report)
       = VG_(expand_file_name)("--xtree-memory-file",
                               (filename == NULL) ?
                               (fini ? 
-                               VG_(clo_xtree_memory_file) : "xtmemory.kcg")
+                               VG_(clo_xtree_memory_file)
+                               : "xtmemory.kcg.%p.%n")
                               : filename);
 
    /* fini is False => even if user kept --xtree-memory=none, we

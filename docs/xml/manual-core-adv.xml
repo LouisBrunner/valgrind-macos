@@ -1397,7 +1397,7 @@ client request.
   </listitem>
 
   <listitem>
-    <para><varname>xtmemory [&lt;filename&gt; default xtmemory.kcg]</varname>
+    <para><varname>xtmemory [&lt;filename&gt; default xtmemory.kcg.%p.%n]</varname>
       requests the tool to produce an xtree heap memory report.
       See <xref linkend="manual-core.xtree"/> for
       a detailed explanation about execution trees. </para>

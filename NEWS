@@ -24,6 +24,7 @@ X86/MacOSX 10.11/12, AMD64/MacOSX 10.11/12 and TILEGX/Linux.
    and 'massif format. The existing visualisers for these formats (e.g.
    callgrind_annotate, kcachegrind, ms_print) can be used to visualise
    and analyse these reports.
+   Memcheck can also produce leak reports in an xtree callgrind format.
    For more details, read the user manual.
 
 * ================== PLATFORM CHANGES =================
@@ -40,6 +41,13 @@ X86/MacOSX 10.11/12, AMD64/MacOSX 10.11/12 and TILEGX/Linux.
 * Memcheck:
 
   - Support for --xtree-memory and 'xtmemory [<filename>]>'.
+
+  - New command line options --xtree-leak=no|yes and --xtree-leak-file=<file>
+    to produce the end of execution leak report in a xtree callgrind format
+    file.
+
+  - New option 'xtleak' in the memcheck leak_check monitor command, to
+    produce the leak report in an xtree file.
 
 * Massif:
 
@@ -67,6 +75,9 @@ X86/MacOSX 10.11/12, AMD64/MacOSX 10.11/12 and TILEGX/Linux.
   and file managers, the format was extended to have an optional
   first line uniquely identifying the format ("# callgrind format").
   Callgrind creates this line now (also the new xtree functionality).
+
+* File name template arguments (such as --log-file, --xtree-memory-file, ...)
+  have a new %n format letter that is replaced by a sequence number.
 
 * ==================== FIXED BUGS ====================
 

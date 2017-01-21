@@ -880,6 +880,56 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
     <para> Note that  <option>--show-possibly-lost=no</option> has no effect
       if <option>--show-reachable=yes</option> is specified.</para>
   </varlistentry>
+
+  <varlistentry id="opt.xtree-leak" xreflabel="--xtree-leak">
+    <term>
+      <option><![CDATA[--xtree-leak=<no|yes> [no] ]]></option>
+    </term>
+    <listitem>
+      <para>If set to yes, the results for the leak search done at exit will be
+       output in a 'Callgrind Format' execution tree file. The produced file
+       will contain the following events:</para>
+      <itemizedlist>
+        <listitem><para><option>RB</option> : Reachable Bytes</para></listitem> 
+         <listitem><para><option>PB</option> : Possibly lost Bytes</para></listitem>
+         <listitem><para><option>IB</option> : Indirectly lost Bytes</para></listitem>
+         <listitem><para><option>DB</option> : Definitely lost Bytes (direct plus indirect)</para></listitem>
+         <listitem><para><option>DiB</option> : Definitely indirectly lost Bytes (subset of DB)</para></listitem>
+         <listitem><para><option>RBk</option> : reachable Blocks</para></listitem>
+         <listitem><para><option>PBk</option> : Possibly lost Blocks</para></listitem>
+         <listitem><para><option>IBk</option> : Indirectly lost Blocks</para></listitem>
+         <listitem><para><option>DBk</option> : Definitely lost Blocks</para></listitem>
+      </itemizedlist>
+      
+      <para>The increase or decrease for all events above will also be output in
+        the file to provide the delta (increase or decreaseà between 2
+        successive leak searches. For example, <option>iRB</option> is the
+        increase of the <option>RB</option> event, <option>dPBk</option> is the
+        decrease of <option>PBk</option> event. The values for the increase and
+        decrease events will be zero for the first leak search done.</para>
+      
+      <para>See <xref linkend="manual-core.xtree"/> for a detailed explanation
+        about execution trees.</para>
+    </listitem>
+  </varlistentry>
+  
+  <varlistentry id="opt.xtree-leak-file" xreflabel="--xtree-leak-file">
+    <term>
+      <option><![CDATA[--xtree-leak-file=<filename> [default:
+      xtleak.kcg.%p] ]]></option>
+    </term>
+    <listitem>
+      <para>Specifies that Valgrind should produce the xtree leak
+        report in the specified file.  Any <option>%p</option>,
+        <option>%q</option> or  <option>%n</option> sequences appearing in
+        the filename are expanded
+        in exactly the same way as they are for <option>--log-file</option>.
+        See the description of <xref linkend="opt.log-file"/>
+        for details. </para>
+      <para>See <xref linkend="manual-core.xtree"/>
+      for a detailed explanation about execution trees formats. </para>
+    </listitem>
+  </varlistentry>
   
   <varlistentry id="opt.undef-value-errors" xreflabel="--undef-value-errors">
     <term>
@@ -1834,7 +1884,7 @@ Address 0x8049E28 len 1 defined
   </listitem>
 
   <listitem>
-    <para><varname>leak_check [full*|summary]
+    <para><varname>leak_check [full*|summary|xtleak]
                               [kinds &lt;set&gt;|reachable|possibleleak*|definiteleak]
                               [heuristics heur1,heur2,...]
                               [increased*|changed|any]
@@ -1843,7 +1893,7 @@ Address 0x8049E28 len 1 defined
     performs a leak check. The <varname>*</varname> in the arguments
     indicates the default values. </para>
 
-    <para> If the <varname>[full*|summary]</varname> argument is
+    <para> If the <varname>[full*|summary|xtleak]</varname> argument is
     <varname>summary</varname>, only a summary of the leak search is given;
     otherwise a full leak report is produced.  A full leak report gives
     detailed information for each leak: the stack trace where the leaked blocks
@@ -1857,6 +1907,13 @@ Address 0x8049E28 len 1 defined
     of leak records to output. If this maximum is reached, the leak
     search  outputs the records with the biggest number of bytes.
     </para>
+    <para>The value <varname>xtleak</varname> also produces a full leak report,
+      but output it as an xtree in a file xtleak.kcg.%p.%n (see <xref linkend="opt.log-file"/>).
+      See <xref linkend="manual-core.xtree"/>
+      for a detailed explanation about execution trees formats.
+      See <xref linkend="opt.xtree-leak"/> for the description of the events
+      in a xtree leak file.
+      </para>
 
     <para>The <varname>kinds</varname> argument controls what kind of blocks
     are shown for a <varname>full</varname> leak search.  The set of leak kinds

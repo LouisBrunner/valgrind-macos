@@ -226,6 +226,19 @@ HChar* VG_(expand_file_name)(const HChar* option_name, const HChar* format)
             j += VG_(sprintf)(&out[j], "%d", pid);
             i++;
          } 
+         else if ('n' == format[i]) {
+            // Print a seq nr.
+            static Int last_pid;
+            static Int seq_nr;
+            Int pid = VG_(getpid)();
+            if (last_pid != pid)
+               seq_nr = 0;
+            last_pid = pid;
+            seq_nr++;
+            ENSURE_THIS_MUCH_SPACE(10);
+            j += VG_(sprintf)(&out[j], "%d", seq_nr);
+            i++;
+         } 
          else if ('q' == format[i]) {
             i++;
             if ('{' == format[i]) {

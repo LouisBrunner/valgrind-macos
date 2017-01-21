@@ -386,7 +386,7 @@ typedef
                         //   least one interior-pointer along the way.
       IndirectLeak =2,  // Leaked, but reachable from another leaked block
                         //   (be it Unreached or IndirectLeak).
-      Unreached    =3,  // Not reached, ie. leaked. 
+      Unreached    =3   // Not reached, ie. leaked. 
                         //   (At best, only reachable from itself via a cycle.)
   }
   Reachedness;
@@ -461,6 +461,7 @@ typedef
       LeakCheckDeltaMode deltamode;
       UInt max_loss_records_output; // limit on the nr of loss records output.
       Bool requested_by_monitor_command; // True when requested by gdb/vgdb.
+      const HChar* xt_filename; // if != NULL, produce an xtree leak file.
    }
    LeakCheckParams;
 

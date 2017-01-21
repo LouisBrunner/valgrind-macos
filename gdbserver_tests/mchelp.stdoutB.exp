@@ -27,12 +27,13 @@ memcheck monitor commands:
   check_memory [addressable|defined] <addr> [<len>]
         check that <len> (or 1) bytes at <addr> have the given accessibility
             and outputs a description of <addr>
-  leak_check [full*|summary]
+  leak_check [full*|summary|xtleak]
                 [kinds kind1,kind2,...|reachable|possibleleak*|definiteleak]
                 [heuristics heur1,heur2,...]
                 [increased*|changed|any]
                 [unlimited*|limited <max_loss_records_output>]
             * = defaults
+         xtleak produces an xtree full leak result in xtleak.kcg.%p.%n
        where kind is one of:
          definite indirect possible reachable all none
        where heur is one of:
@@ -53,7 +54,7 @@ memcheck monitor commands:
         (with len 1, only shows "start pointers" pointing exactly to <addr>,
          with len > 1, will also show "interior pointers")
   xtmemory [<filename>]
-        dump xtree memory profile in <filename> (default xtmemory.kcg)
+        dump xtree memory profile in <filename> (default xtmemory.kcg.%p.%n)
 general valgrind monitor commands:
   help [debug]            : monitor command help. With debug: + debugging commands
   v.wait [<ms>]           : sleep <ms> (default 0) then continue
@@ -98,12 +99,13 @@ memcheck monitor commands:
   check_memory [addressable|defined] <addr> [<len>]
         check that <len> (or 1) bytes at <addr> have the given accessibility
             and outputs a description of <addr>
-  leak_check [full*|summary]
+  leak_check [full*|summary|xtleak]
                 [kinds kind1,kind2,...|reachable|possibleleak*|definiteleak]
                 [heuristics heur1,heur2,...]
                 [increased*|changed|any]
                 [unlimited*|limited <max_loss_records_output>]
             * = defaults
+         xtleak produces an xtree full leak result in xtleak.kcg.%p.%n
        where kind is one of:
          definite indirect possible reachable all none
        where heur is one of:
@@ -124,5 +126,5 @@ memcheck monitor commands:
         (with len 1, only shows "start pointers" pointing exactly to <addr>,
          with len > 1, will also show "interior pointers")
   xtmemory [<filename>]
-        dump xtree memory profile in <filename> (default xtmemory.kcg)
+        dump xtree memory profile in <filename> (default xtmemory.kcg.%p.%n)
 monitor command request to kill this process

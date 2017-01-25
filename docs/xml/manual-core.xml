@@ -886,7 +886,11 @@ in most cases.  We group the available options by rough categories.</para>
       calling exec afterwards, and you don't use this specifier
       (or the <option>%q</option> specifier below), the Valgrind output from
       all those processes will go into one file, possibly jumbled up, and
-      possibly incomplete.</para>
+      possibly incomplete. Note: If the program forks and calls exec afterwards,
+      Valgrind output of the child from the period between fork and exec
+      will be lost. Fortunately this gap is really tiny for most programs;
+      and modern programs use <computeroutput>posix_spawn</computeroutput>
+      anyway.</para>
 
       <para><option>%n</option> is replaced with a file sequence number
       unique for this process.
@@ -912,7 +916,7 @@ in most cases.  We group the available options by rough categories.</para>
       causes an abort.</para>
 
       <para>If the file name specifies a relative file name, it is put
-      in the program's initial working directory : this is the current
+      in the program's initial working directory: this is the current
       directory when the program started its execution after the fork
       or after the exec.  If it specifies an absolute file name (ie.
       starts with '/') then it is put there.

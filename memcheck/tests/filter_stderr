@@ -24,6 +24,7 @@ perl -p -e "s/in loss record \d+ of \d+/in loss record ... of .../" |
 
 # Filter out glibc debuginfo if installed.
 perl -p -e "s/\(syscall-template.S:[0-9]*\)/(in \/...libc...)/" |
+perl -p -e "s/sendmsg \(sendmsg.c:[0-9]*\)/sendmsg (in \/...libc...)/" |
 perl -p -e "s/\(socket.S:[0-9]*\)/(in \/...libc...)/" |
 
 # Newer architectures (aarch64) implement poll by calling ppoll directly.

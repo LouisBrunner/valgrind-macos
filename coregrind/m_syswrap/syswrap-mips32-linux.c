@@ -437,7 +437,58 @@ PRE(sys_mmap)
                 int, prot, int, flags, int, fd, unsigned long, offset);
   r = mips_PRE_sys_mmap(tid, ARG1, ARG2, ARG3, ARG4, ARG5, (Off64T) ARG6);
   SET_STATUS_from_SysRes(r);
-} 
+}
+
+PRE(sys_ptrace)
+{
+   PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", SARG1, SARG2, ARG3, ARG4);
+   PRE_REG_READ4(int, "ptrace",
+                 long, request, long, pid, unsigned long, addr,
+                 unsigned long, data);
+   switch (ARG1) {
+      case VKI_PTRACE_PEEKTEXT:
+      case VKI_PTRACE_PEEKDATA:
+      case VKI_PTRACE_PEEKUSR:
+         PRE_MEM_WRITE("ptrace(peek)", ARG4, sizeof(long));
+         break;
+      case VKI_PTRACE_GETEVENTMSG:
+         PRE_MEM_WRITE("ptrace(geteventmsg)", ARG4, sizeof(unsigned long));
+         break;
+      case VKI_PTRACE_GETSIGINFO:
+         PRE_MEM_WRITE("ptrace(getsiginfo)", ARG4, sizeof(vki_siginfo_t));
+         break;
+      case VKI_PTRACE_SETSIGINFO:
+         PRE_MEM_READ("ptrace(setsiginfo)", ARG4, sizeof(vki_siginfo_t));
+         break;
+      case VKI_PTRACE_GETREGSET:
+         ML_(linux_PRE_getregset)(tid, ARG3, ARG4);
+         break;
+      default:
+        break;
+   }
+}
+
+POST(sys_ptrace)
+{
+   switch (ARG1) {
+      case VKI_PTRACE_PEEKTEXT:
+      case VKI_PTRACE_PEEKDATA:
+      case VKI_PTRACE_PEEKUSR:
+         POST_MEM_WRITE (ARG4, sizeof(long));
+         break;
+      case VKI_PTRACE_GETEVENTMSG:
+         POST_MEM_WRITE (ARG4, sizeof(unsigned long));
+      break;
+      case VKI_PTRACE_GETSIGINFO:
+         POST_MEM_WRITE (ARG4, sizeof(vki_siginfo_t));
+         break;
+      case VKI_PTRACE_GETREGSET:
+         ML_(linux_POST_getregset)(tid, ARG3, ARG4);
+         break;
+      default:
+      break;
+   }
+}
 
 // XXX: lstat64/fstat64/stat64 are generic, but not necessarily
 // applicable to every architecture -- I think only to 32-bit archs.
@@ -690,7 +741,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_ (__NR_setuid,                 sys_setuid),                  // 23
    GENX_ (__NR_getuid,                 sys_getuid),                  // 24
    LINX_ (__NR_stime,                  sys_stime),                   // 25
-   //..    PLAXY(__NR_ptrace,            sys_ptrace),            // 26
+   PLAXY(__NR_ptrace,                  sys_ptrace),                  // 26
    GENX_ (__NR_alarm,                  sys_alarm),                   // 27
    //..    //   (__NR_oldfstat,          sys_fstat),  // 28
    GENX_ (__NR_pause,                  sys_pause),                   // 29

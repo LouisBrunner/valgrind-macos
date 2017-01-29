@@ -896,7 +896,7 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
          <listitem><para><option>PB</option> : Possibly lost Bytes</para></listitem>
          <listitem><para><option>IB</option> : Indirectly lost Bytes</para></listitem>
          <listitem><para><option>DB</option> : Definitely lost Bytes (direct plus indirect)</para></listitem>
-         <listitem><para><option>DiB</option> : Definitely indirectly lost Bytes (subset of DB)</para></listitem>
+         <listitem><para><option>DIB</option> : Definitely Indirectly lost Bytes (subset of DB)</para></listitem>
          <listitem><para><option>RBk</option> : reachable Blocks</para></listitem>
          <listitem><para><option>PBk</option> : Possibly lost Blocks</para></listitem>
          <listitem><para><option>IBk</option> : Indirectly lost Blocks</para></listitem>

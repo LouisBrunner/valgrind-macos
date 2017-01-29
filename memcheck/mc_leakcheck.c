@@ -1438,10 +1438,10 @@ static const HChar* XT_Leak_events =
    "DB : Definitely lost Bytes (direct plus indirect)"     ","
 
    ////// XT_Value indirect_szB
-   // no RiB
-   // no PiB
-   // no IiB 
-   "DiB : Definitely indirectly lost Bytes (subset of DB)" ","
+   // no RIB
+   // no PIB
+   // no IIB 
+   "DIB : Definitely Indirectly lost Bytes (subset of DB)" ","
 
    ////// XT_Value num_blocks 
    "RBk : reachable Blocks"                                ","
@@ -1456,10 +1456,10 @@ static const HChar* XT_Leak_events =
    "iDB : increase Definitely lost Bytes"                  ","
 
    ////// XT_Increase indirect_szB
-   // no iRiB
-   // no iPiB
-   // no iIiB
-   "iDiB : increase Definitely indirectly lost Bytes"      ","
+   // no iRIB
+   // no iPIB
+   // no iIIB
+   "iDIB : increase Definitely Indirectly lost Bytes"      ","
 
    ////// XT_Increase num_blocks
    "iRBk : increase reachable Blocks"                      ","
@@ -1475,10 +1475,10 @@ static const HChar* XT_Leak_events =
    "dDB : decrease Definitely lost Bytes"                  ","
 
    ////// XT_Decrease indirect_szB
-   // no dRiB
-   // no dPiB
-   // no dIiB
-   "dDiB : decrease Definitely indirectly lost Bytes"      ","
+   // no dRIB
+   // no dPIB
+   // no dIIB
+   "dDIB : decrease Definitely Indirectly lost Bytes"      ","
 
    ////// XT_Decrease num_blocks
    "dRBk : decrease reachable Blocks"                      ","

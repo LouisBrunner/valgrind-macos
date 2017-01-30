@@ -716,9 +716,48 @@ Bool valgrind_get_tls_addr (ThreadState *tst,
    // Check we can access the dtv entry for modid
    CHECK_DEREF(dtv + 2 * modid, sizeof(CORE_ADDR), "dtv[2*modid]");
 
-   // And finally compute the address of the tls variable.
-   *tls_addr = *(dtv + 2 * modid) + offset;
-   
+   // Compute the base address of the tls block.
+   *tls_addr = *(dtv + 2 * modid);
+
+#if defined(VGA_mips32) || defined(VGA_mips64)
+   if (*tls_addr & 1) {
+      /* This means that computed address is not valid, most probably
+         because given module uses Static TLS.
+         However, the best we can is to try to compute address using
+         static TLS. This is what libthread_db does.
+         Ref. GLIBC/nptl_db/td_thr_tlsbase.c:td_thr_tlsbase().
+      */
+
+      CORE_ADDR tls_offset_addr;
+      PtrdiffT tls_offset;
+
+      dlog(1, "computing tls_addr using static TLS\n");
+
+      /* Assumes that tls_offset is placed right before tls_modid.
+         To check the assumption, start a gdb on none/tests/tls and do:
+         p &((struct link_map*)0x0)->l_tls_modid
+         p &((struct link_map*)0x0)->l_tls_offset */
+      tls_offset_addr = lm + lm_modid_offset - sizeof(PtrdiffT);
+
+      // Check we can read the tls_offset.
+      CHECK_DEREF(tls_offset_addr, sizeof(PtrdiffT), "link_map tls_offset");
+      tls_offset = *(PtrdiffT *)(tls_offset_addr);
+
+      /* Following two values represent platform dependent constants
+         NO_TLS_OFFSET and FORCED_DYNAMIC_TLS_OFFSET, respectively. */
+      if ((tls_offset == -1) || (tls_offset == -2)) {
+         dlog(2, "link_map tls_offset is not valid for static TLS\n");
+         return False;
+      }
+
+      // This calculation is also platform dependent.
+      *tls_addr = ((CORE_ADDR)dtv_loc + 2 * sizeof(CORE_ADDR) + tls_offset);
+   }
+#endif
+
+   // Finally, add tls variable offset to tls block base address.
+   *tls_addr += offset;
+
    return True;
 
 #undef CHECK_DEREF

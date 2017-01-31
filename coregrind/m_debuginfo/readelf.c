@@ -692,15 +692,15 @@ Bool get_elf_symbol_info (
       in_rx = (ML_(find_rx_mapping)(
                       di,
                       (*sym_avmas_out).main,
-                      (*sym_avmas_out).main + *sym_size_out) != NULL);
+                      (*sym_avmas_out).main + *sym_size_out - 1) != NULL);
       if (in_text)
          vg_assert(in_rx);
       if (!in_rx) {
          TRACE_SYMTAB(
             "ignore -- %#lx .. %#lx outside .text svma range %#lx .. %#lx\n",
-            (*sym_avmas_out).main, (*sym_avmas_out).main + *sym_size_out,
+            (*sym_avmas_out).main, (*sym_avmas_out).main + *sym_size_out - 1,
             di->text_avma,
-            di->text_avma + di->text_size);
+            di->text_avma + di->text_size - 1);
          return False;
       }
    } else {
@@ -708,7 +708,7 @@ Bool get_elf_symbol_info (
          TRACE_SYMTAB(
             "ignore -- %#lx .. %#lx outside .data / .sdata / .rodata "
             "/ .bss / .sbss svma ranges\n",
-            (*sym_avmas_out).main, (*sym_avmas_out).main + *sym_size_out);
+            (*sym_avmas_out).main, (*sym_avmas_out).main + *sym_size_out - 1);
          return False;
       }
    }

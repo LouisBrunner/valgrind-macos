@@ -111,6 +111,8 @@ where XXXXXX is the bug number as listed below.
 373555  Rename BBPTR to GSPTR as it denotes guest state pointer only
 373938  const IRExpr arguments for matchIRExpr()
 375514  valgrind_get_tls_addr() does not work in case of static TLS
+375772  +1 error in get_elf_symbol_info() when computing value of 'hi' address
+        for ML_(find_rx_mapping)()
 
 Release 3.12.0 (20 October 2016)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1,3 +1,4 @@
+#define _GLIBCXX_USE_CXX11_ABI 0
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <stdio.h>

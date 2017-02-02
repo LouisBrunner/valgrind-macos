@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
    printf("%d copies of f(), %d reps\n", n_fns, n_reps);
    
    char* a = mmap(0, FN_SIZE * n_fns, 
-                     PROT_EXEC|PROT_WRITE, 
+                     PROT_EXEC|PROT_WRITE|PROT_READ, 
                      MAP_PRIVATE|MAP_ANONYMOUS, -1,0);
    assert(a != (char*)MAP_FAILED);
 

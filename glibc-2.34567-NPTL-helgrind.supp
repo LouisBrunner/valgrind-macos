@@ -267,6 +267,18 @@
    fun:pthread_create@*
 }
 
+{
+   helgrind---_dl_allocate_tls2
+   Helgrind:Race
+   fun:memcpy
+   fun:__mempcpy_inline
+   fun:_dl_allocate_tls_init
+   ...
+   fun:pthread_create@@GLIBC_2.2*
+   fun:pthread_create_WRK
+   fun:pthread_create@*
+}
+
 ####################################################
 # To do with GNU libgomp
 #

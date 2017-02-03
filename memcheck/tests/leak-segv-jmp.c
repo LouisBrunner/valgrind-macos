@@ -287,7 +287,7 @@ void f(void)
    long pagesize;
 #define RNDPAGEDOWN(a) ((long)a & ~(pagesize-1))
    int i;
-   const int nr_ptr = (10000 * 4)/sizeof(char*);
+   const int nr_ptr = (10000 * 20)/sizeof(char*);
 
    b10 = calloc (nr_ptr * sizeof(char*), 1);
    for (i = 0; i < nr_ptr; i++)

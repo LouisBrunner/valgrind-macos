@@ -2773,6 +2773,9 @@ SysRes am_munmap_both_wrk ( /*OUT*/Bool* need_discard,
    Bool   d;
    SysRes sres;
 
+   /* Be safe with this regardless of return path. */
+   *need_discard = False;
+
    if (!VG_IS_PAGE_ALIGNED(start))
       goto eINVAL;
 

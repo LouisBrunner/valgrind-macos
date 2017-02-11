@@ -2196,9 +2196,9 @@ static void mips_load_store32(IRTemp op1addr, IRTemp new_val,
 
    cas = mkIRCAS(IRTemp_INVALID, old_mem,
 #if defined (_MIPSEL)
-               Iend_LE, mkexpr(op1addr),
-#elif defined (_MIPSEB)
-               Iend_BE, mkexpr(op1addr),
+                 Iend_LE, mkexpr(op1addr),
+#else /* _MIPSEB */
+                 Iend_BE, mkexpr(op1addr),
 #endif
                  NULL, mkexpr(expd), /* expected value */
                  NULL, mkexpr(new_val)  /* new value */);
@@ -2220,9 +2220,9 @@ static void mips_load_store64(IRTemp op1addr, IRTemp new_val,
    vassert(mode64);
    cas = mkIRCAS(IRTemp_INVALID, old_mem,
 #if defined (_MIPSEL)
-               Iend_LE, mkexpr(op1addr),
-#elif defined (_MIPSEB)
-               Iend_BE, mkexpr(op1addr),
+                 Iend_LE, mkexpr(op1addr),
+#else /* _MIPSEB */
+                 Iend_BE, mkexpr(op1addr),
 #endif
                  NULL, mkexpr(expd), /* expected value */
                  NULL, mkexpr(new_val)  /* new value */);

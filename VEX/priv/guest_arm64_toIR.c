@@ -7025,6 +7025,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
    /* -------------------- HINT ------------------- */
    /* 31        23        15   11   4 3
       1101 0101 0000 0011 0010 imm7 1 1111
+      Catch otherwise unhandled HINT instructions - any
+      like YIELD which are explicitly handled should go
+      above this case.
    */
    if (INSN(31,24) == BITS8(1,1,0,1,0,1,0,1)
        && INSN(23,16) == BITS8(0,0,0,0,0,0,1,1)

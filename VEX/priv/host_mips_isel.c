@@ -1000,7 +1000,7 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
                   break;
                case Iop_CmpNE64:
                   cc = MIPScc_NE;
-                  size32 = True;
+                  size32 = False;
                   break;
                case Iop_CmpLT32S:
                   cc = MIPScc_LT;
@@ -2080,7 +2080,7 @@ static MIPSCondCode iselCondCode_wrk(ISelEnv * env, IRExpr * e)
             break;
          case Iop_CmpNE64:
             cc = MIPScc_NE;
-            size32 = True;
+            size32 = False;
             break;
          case Iop_CmpLT32S:
             cc = MIPScc_LT;

@@ -604,6 +604,10 @@ typedef struct vki_kcf_door_arg_s {
 #define vki_semid64_ds semid_ds64
 
 
+#include <sys/lgrp_user.h>
+#define vki_lgrp_view_t lgrp_view_t
+
+
 #include <sys/lgrp_user_impl.h>
 #define VKI_LGRP_SYS_MEMINFO LGRP_SYS_MEMINFO
 #define VKI_LGRP_SYS_GENERATION LGRP_SYS_GENERATION

@@ -730,6 +730,27 @@ static void sys_lgrpsys3(void)
 }
 
 __attribute__((noinline))
+static void sys_lgrpsys4(void)
+{
+   GO(SYS_lgrpsys, "(LGRP_SYS_GENERATION) 2s 0m");
+   SY(SYS_lgrpsys, x0 + LGRP_SYS_GENERATION, x0 + 0); SUCC;
+}
+
+__attribute__((noinline))
+static void sys_lgrpsys5(void)
+{
+   GO(SYS_lgrpsys, "(LGRP_SYS_VERSION) 2s 0m");
+   SY(SYS_lgrpsys, x0 + LGRP_SYS_VERSION, x0 + 0); SUCC;
+}
+
+__attribute__((noinline))
+static void sys_lgrpsys6(void)
+{
+   GO(SYS_lgrpsys, "(LGRP_SYS_SNAPSHOT) 3s 1m");
+   SY(SYS_lgrpsys, x0 + LGRP_SYS_SNAPSHOT, x0 + 10, x0 + 1); FAIL;
+}
+
+__attribute__((noinline))
 static void sys_rusagesys(void)
 {
    GO(SYS_rusagesys, "(_RUSAGESYS_GETRUSAGE) 2s 1m");
@@ -2217,6 +2238,9 @@ int main(void)
    sys_lgrpsys();
    sys_lgrpsys2();
    sys_lgrpsys3();
+   sys_lgrpsys4();
+   sys_lgrpsys5();
+   sys_lgrpsys6();
 
    /* SYS_rusagesys             181 */
    sys_rusagesys();

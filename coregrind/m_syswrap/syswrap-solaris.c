@@ -28,7 +28,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-/* Copyright 2013-2016, Ivo Raisr <ivosh@ivosh.net>. */
+/* Copyright 2013-2017, Ivo Raisr <ivosh@ivosh.net>. */
 
 /* Copyright 2015-2015, Tomas Jedlicka <jedlickat@gmail.com>. */
 
@@ -7517,6 +7517,25 @@ PRE(sys_lgrpsys)
                        (Addr) minfo->mi_validity, SARG2 * sizeof(vki_uint_t));
       }
       break;
+   case VKI_LGRP_SYS_GENERATION:
+      /* Liblgrp: lgrp_gen_t lgrp_generation(lgrp_view_t view); */
+      PRINT("sys_lgrpsys ( %ld, %ld )", SARG1, SARG2);
+      PRE_REG_READ2(long, SC2("lgrpsys", "generation"), int, subcode,
+                    vki_lgrp_view_t, view);
+      break;
+   case VKI_LGRP_SYS_VERSION:
+      /* Liblgrp: int lgrp_version(int version); */
+      PRINT("sys_lgrpsys ( %ld, %ld )", SARG1, SARG2);
+      PRE_REG_READ2(long, SC2("lgrpsys", "version"), int, subcode,
+                    int, version);
+      break;
+   case VKI_LGRP_SYS_SNAPSHOT:
+      /* Liblgrp: int lgrp_snapshot(void *buf, size_t bufsize); */
+      PRINT("sys_lgrpsys ( %ld, %lu, %#lx )", SARG1, ARG2, ARG3);
+      PRE_REG_READ3(long, SC2("lgrpsys", "snapshot"), int, subcode,
+                    vki_size_t, bufsize, void *, buf);
+      PRE_MEM_WRITE("lgrpsys(buf)", ARG3, ARG2);
+      break;
    default:
       VG_(unimplemented)("Syswrap of the lgrpsys call with subcode %ld.",
                          SARG1);
@@ -7535,6 +7554,12 @@ POST(sys_lgrpsys)
                         SARG2 * minfo->mi_info_count * sizeof(vki_uint64_t));
          POST_MEM_WRITE((Addr) minfo->mi_validity, SARG2 * sizeof(vki_uint_t));
       }
+      break;
+   case VKI_LGRP_SYS_GENERATION:
+   case VKI_LGRP_SYS_VERSION:
+      break;
+   case VKI_LGRP_SYS_SNAPSHOT:
+      POST_MEM_WRITE(ARG3, RES);
       break;
    default:
       vg_assert(0);

@@ -1025,6 +1025,7 @@ DECL_TEMPLATE(solaris, sys_lwp_cond_signal);
 DECL_TEMPLATE(solaris, sys_lwp_cond_broadcast);
 DECL_TEMPLATE(solaris, sys_pread);
 DECL_TEMPLATE(solaris, sys_pwrite);
+DECL_TEMPLATE(solaris, sys_lgrpsys);
 DECL_TEMPLATE(solaris, sys_rusagesys);
 DECL_TEMPLATE(solaris, sys_port);
 DECL_TEMPLATE(solaris, sys_pollsys);
@@ -7494,6 +7495,53 @@ POST(sys_getpagesizes)
       POST_MEM_WRITE(ARG2, RES * sizeof(vki_size_t));
 }
 
+PRE(sys_lgrpsys)
+{
+   /* Kernel: int lgrpsys(int subcode, long ia, void *ap); */
+   switch (ARG1 /*subcode*/) {
+   case VKI_LGRP_SYS_MEMINFO:
+      PRINT("sys_lgrpsys ( %ld, %ld, %#lx )", SARG1, SARG2, ARG3);
+      PRE_REG_READ3(long, SC2("lgrpsys", "meminfo"), int, subcode,
+                    int, addr_count, vki_meminfo_t *, minfo);
+      PRE_MEM_READ("lgrpsys(minfo)", ARG3, sizeof(vki_meminfo_t));
+
+      if (ML_(safe_to_deref)((vki_meminfo_t *) ARG3, sizeof(vki_meminfo_t))) {
+         vki_meminfo_t *minfo = (vki_meminfo_t *) ARG3;
+         PRE_MEM_READ("lgrpsys(minfo->mi_inaddr)",
+                      (Addr) minfo->mi_inaddr, SARG2 * sizeof(vki_uint64_t));
+         PRE_MEM_READ("lgrpsys(minfo->mi_info_req)", (Addr) minfo->mi_info_req,
+                      minfo->mi_info_count * sizeof(vki_uint_t));
+         PRE_MEM_WRITE("lgrpsys(minfo->mi_outdata)", (Addr) minfo->mi_outdata,
+                       SARG2 * minfo->mi_info_count * sizeof(vki_uint64_t));
+         PRE_MEM_WRITE("lgrpsys(minfo->mi_validity)",
+                       (Addr) minfo->mi_validity, SARG2 * sizeof(vki_uint_t));
+      }
+      break;
+   default:
+      VG_(unimplemented)("Syswrap of the lgrpsys call with subcode %ld.",
+                         SARG1);
+      /*NOTREACHED*/
+      break;
+   }
+}
+
+POST(sys_lgrpsys)
+{
+   switch (ARG1 /*subcode*/) {
+   case VKI_LGRP_SYS_MEMINFO:
+      {
+         vki_meminfo_t *minfo = (vki_meminfo_t *) ARG3;
+         POST_MEM_WRITE((Addr) minfo->mi_outdata,
+                        SARG2 * minfo->mi_info_count * sizeof(vki_uint64_t));
+         POST_MEM_WRITE((Addr) minfo->mi_validity, SARG2 * sizeof(vki_uint_t));
+      }
+      break;
+   default:
+      vg_assert(0);
+      break;
+   }
+}
+
 PRE(sys_rusagesys)
 {
    /* Kernel: int rusagesys(int code, void *arg1, void *arg2,
@@ -7554,7 +7602,6 @@ POST(sys_rusagesys)
       vg_assert(0);
       break;
    }
-
 }
 
 PRE(sys_port)
@@ -10864,6 +10911,7 @@ static SyscallTableEntry syscall_table[] = {
 #if defined(VGP_x86_solaris)
    PLAX_(__NR_llseek,               sys_llseek32),              /* 175 */
 #endif /* VGP_x86_solaris */
+   SOLXY(__NR_lgrpsys,              sys_lgrpsys),               /* 180 */
    SOLXY(__NR_rusagesys,            sys_rusagesys),             /* 181 */
    SOLXY(__NR_port,                 sys_port),                  /* 182 */
    SOLXY(__NR_pollsys,              sys_pollsys),               /* 183 */

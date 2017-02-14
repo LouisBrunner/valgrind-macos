@@ -9,6 +9,7 @@
 #include <sys/door.h>
 #include <sys/fcntl.h>
 #include <sys/fstyp.h>
+#include <sys/lgrp_user_impl.h>
 #include <sys/mman.h>
 #include <sys/modctl.h>
 #include <sys/mount.h>
@@ -698,6 +699,34 @@ static void sys_modctl3(void)
 {
    GO(SYS_modctl, "(MODINFO) 3s 4m");
    SY(SYS_modctl, x0 + MODINFO, x0 + 1, x0 - 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_lgrpsys(void)
+{
+   GO(SYS_lgrpsys, "(LGRP_SYS_MEMINFO) 3s 1m");
+   SY(SYS_lgrpsys, x0 + LGRP_SYS_MEMINFO, x0 + 0, x0 + 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_lgrpsys2(void)
+{
+   GO(SYS_lgrpsys, "(LGRP_SYS_MEMINFO) 3s 1m");
+   SY(SYS_lgrpsys, x0 + LGRP_SYS_MEMINFO, x0 + 1, x0 + 1); FAIL;
+}
+
+__attribute__((noinline))
+static void sys_lgrpsys3(void)
+{
+   meminfo_t minfo;
+   minfo.mi_inaddr = (void *)(x0 + 1);
+   minfo.mi_info_req = (void *)(x0 + 1);
+   minfo.mi_info_count = x0 + 1;
+   minfo.mi_outdata = (void *)(x0 + 1);
+   minfo.mi_validity = (void *)(x0 + 1);
+
+   GO(SYS_lgrpsys, "(LGRP_SYS_MEMINFO) 4s 4m");
+   SY(SYS_lgrpsys, x0 + LGRP_SYS_MEMINFO, x0 + 1, x0 + &minfo); FAIL;
 }
 
 __attribute__((noinline))
@@ -2185,7 +2214,9 @@ int main(void)
    /* XXX Missing wrapper. */
 
    /* SYS_lgrpsys               180 */
-   /* XXX Missing wrapper. */
+   sys_lgrpsys();
+   sys_lgrpsys2();
+   sys_lgrpsys3();
 
    /* SYS_rusagesys             181 */
    sys_rusagesys();

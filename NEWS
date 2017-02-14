@@ -114,6 +114,7 @@ where XXXXXX is the bug number as listed below.
 375772  +1 error in get_elf_symbol_info() when computing value of 'hi' address
         for ML_(find_rx_mapping)()
 375806  Test helgrind/tests/tc22_exit_w_lock fails with glibc 2.24
+376455  Solaris: unhandled syscall lgrpsys(180)
 
 Release 3.12.0 (20 October 2016)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

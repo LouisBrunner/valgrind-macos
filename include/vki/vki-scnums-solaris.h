@@ -237,8 +237,7 @@
 //#define __NR_brand                      SYS_brand
 //#define __NR_kaio                       SYS_kaio
 //#define __NR_cpc                        SYS_cpc
-//#define __NR_lgrpsys                    SYS_lgrpsys
-//#define __NR_meminfosys                 SYS_meminfosys /* = SYS_lgrpsys */
+#define __NR_lgrpsys                    SYS_lgrpsys
 #define __NR_rusagesys                  SYS_rusagesys
 #define __NR_port                       SYS_port
 #define __NR_pollsys                    SYS_pollsys

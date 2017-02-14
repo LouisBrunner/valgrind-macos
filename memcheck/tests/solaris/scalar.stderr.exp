@@ -2806,6 +2806,70 @@ Syscall param pwrite(buf) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
+180:             SYS_lgrpsys (LGRP_SYS_MEMINFO) 3s 1m
+---------------------------------------------------------
+Syscall param lgrpsys_meminfo(subcode) contains uninitialised byte(s)
+   ...
+
+Syscall param lgrpsys_meminfo(addr_count) contains uninitialised byte(s)
+   ...
+
+Syscall param lgrpsys_meminfo(minfo) contains uninitialised byte(s)
+   ...
+
+Syscall param lgrpsys(minfo) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+180:             SYS_lgrpsys (LGRP_SYS_MEMINFO) 3s 1m
+---------------------------------------------------------
+Syscall param lgrpsys_meminfo(subcode) contains uninitialised byte(s)
+   ...
+
+Syscall param lgrpsys_meminfo(addr_count) contains uninitialised byte(s)
+   ...
+
+Syscall param lgrpsys_meminfo(minfo) contains uninitialised byte(s)
+   ...
+
+Syscall param lgrpsys(minfo) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+180:             SYS_lgrpsys (LGRP_SYS_MEMINFO) 4s 4m
+---------------------------------------------------------
+Syscall param lgrpsys_meminfo(subcode) contains uninitialised byte(s)
+   ...
+
+Syscall param lgrpsys_meminfo(addr_count) contains uninitialised byte(s)
+   ...
+
+Syscall param lgrpsys_meminfo(minfo) contains uninitialised byte(s)
+   ...
+
+Syscall param lgrpsys(minfo) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param lgrpsys(minfo->mi_inaddr) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param lgrpsys(minfo->mi_info_req) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param lgrpsys(minfo->mi_outdata) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param lgrpsys(minfo->mi_validity) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
 181:           SYS_rusagesys (_RUSAGESYS_GETRUSAGE) 2s 1m
 ---------------------------------------------------------
 Syscall param rusagesys_getrusage(code) contains uninitialised byte(s)

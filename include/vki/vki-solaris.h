@@ -605,10 +605,10 @@ typedef struct vki_kcf_door_arg_s {
 
 
 #include <sys/lgrp_user.h>
-#define vki_lgrp_view_t lgrp_view_t
-
-
+#if defined(HAVE_SYS_LGRP_USER_IMPL_H)
+/* Include implementation specific header file on newer Solaris. */
 #include <sys/lgrp_user_impl.h>
+#endif /* HAVE_SYS_LGRP_USER_IMPL_H */
 #define VKI_LGRP_SYS_MEMINFO LGRP_SYS_MEMINFO
 #define VKI_LGRP_SYS_GENERATION LGRP_SYS_GENERATION
 #define VKI_LGRP_SYS_VERSION LGRP_SYS_VERSION
@@ -621,6 +621,7 @@ typedef struct vki_kcf_door_arg_s {
 #define VKI_LGRP_SYS_AFF_INHERIT_SET LGRP_SYS_AFF_INHERIT_SET
 #define VKI_LGRP_SYS_DEVICE_LGRPS LGRP_SYS_DEVICE_LGRPS
 #define VKI_LGRP_SYS_MAXSOCKETS_GET LGRP_SYS_MAXSOCKETS_GET
+#define vki_lgrp_view_t lgrp_view_t
 
 
 #include <sys/loadavg.h>

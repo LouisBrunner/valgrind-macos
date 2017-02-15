@@ -2757,6 +2757,8 @@ fi
 #----------------------------------------------------------------------------
 
 if test "$VGCONF_OS" = "solaris" ; then
+AC_CHECK_HEADERS([sys/lgrp_user_impl.h])
+
 # Solaris-specific check determining if the Sun Studio Assembler is used to
 # build Valgrind.  The test checks if the x86/amd64 assembler understands the
 # cmovl.l instruction, if yes then it's Sun Assembler.

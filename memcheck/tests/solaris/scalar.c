@@ -1,6 +1,7 @@
 /* Basic syscall test, see memcheck/tests/x86-linux/scalar.c for more info. */
 
 #include "scalar.h"
+#include "config.h"
 
 #include <bsm/audit.h>
 #include <nfs/nfs.h>
@@ -9,7 +10,10 @@
 #include <sys/door.h>
 #include <sys/fcntl.h>
 #include <sys/fstyp.h>
+#include <sys/lgrp_user.h>
+#if defined(HAVE_SYS_LGRP_USER_IMPL_H)
 #include <sys/lgrp_user_impl.h>
+#endif /* HAVE_SYS_LGRP_USER_IMPL_H */
 #include <sys/mman.h>
 #include <sys/modctl.h>
 #include <sys/mount.h>

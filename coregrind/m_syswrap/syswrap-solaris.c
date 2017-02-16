@@ -1076,6 +1076,7 @@ DECL_TEMPLATE(solaris, sys_umount2);
 DECL_TEMPLATE(solaris, fast_gethrtime);
 DECL_TEMPLATE(solaris, fast_gethrvtime);
 DECL_TEMPLATE(solaris, fast_gethrestime);
+DECL_TEMPLATE(solaris, fast_getlgrp);
 #if defined(SOLARIS_GETHRT_FASTTRAP)
 DECL_TEMPLATE(solaris, fast_gethrt);
 #endif /* SOLARIS_GETHRT_FASTTRAP */
@@ -10674,6 +10675,13 @@ PRE(fast_gethrestime)
    PRE_REG_READ0(long, "gethrestime");
 }
 
+PRE(fast_getlgrp)
+{
+   /* Fasttrap number shared between gethomelgroup() and getcpuid(). */
+   PRINT("fast_getlgrp ( )");
+   PRE_REG_READ0(long, "getlgrp");
+}
+
 #if defined(SOLARIS_GETHRT_FASTTRAP)
 PRE(fast_gethrt)
 {
@@ -11011,7 +11019,8 @@ static SyscallTableEntry syscall_table[] = {
 static SyscallTableEntry fasttrap_table[] = {
    SOLX_(__NR_gethrtime,            fast_gethrtime),            /*   3 */
    SOLX_(__NR_gethrvtime,           fast_gethrvtime),           /*   4 */
-   SOLX_(__NR_gethrestime,          fast_gethrestime)           /*   5 */
+   SOLX_(__NR_gethrestime,          fast_gethrestime),          /*   5 */
+   SOLX_(__NR_getlgrp,              fast_getlgrp)               /*   6 */
 #if defined(SOLARIS_GETHRT_FASTTRAP)
    ,
    SOLXY(__NR_gethrt,               fast_gethrt)                /*   7 */

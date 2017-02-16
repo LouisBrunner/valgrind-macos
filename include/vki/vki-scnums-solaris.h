@@ -28,7 +28,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-/* Copyright 2013-2016, Ivo Raisr <ivosh@ivosh.net>. */
+/* Copyright 2013-2017, Ivo Raisr <ivosh@ivosh.net>. */
 
 /* Copyright 2013, OmniTI Computer Consulting, Inc. All rights reserved. */
 
@@ -353,10 +353,8 @@
    VG_SOLARIS_SYSCALL_CONSTRUCT_FASTTRAP(T_GETHRVTIME)
 #define __NR_gethrestime \
    VG_SOLARIS_SYSCALL_CONSTRUCT_FASTTRAP(T_GETHRESTIME)
-/*
 #define __NR_getlgrp \
    VG_SOLARIS_SYSCALL_CONSTRUCT_FASTTRAP(T_GETLGRP)
-*/
 #if defined(SOLARIS_GETHRT_FASTTRAP)
 #define __NR_gethrt \
    VG_SOLARIS_SYSCALL_CONSTRUCT_FASTTRAP(T_GETHRT)

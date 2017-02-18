@@ -116,6 +116,7 @@ where XXXXXX is the bug number as listed below.
 375806  Test helgrind/tests/tc22_exit_w_lock fails with glibc 2.24
 376455  Solaris: unhandled syscall lgrpsys(180)
 376518  Solaris: unhandled fast trap getlgrp(6)
+376611  ppc64 and arm64 don't know about prlimit64 syscall
 
 Release 3.12.0 (20 October 2016)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

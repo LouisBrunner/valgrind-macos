@@ -905,6 +905,7 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_pwritev,           sys_pwritev),          // 321
    LINXY(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo),// 322
 
+   LINXY(__NR_prlimit64,         sys_prlimit64),        // 325
    LINXY(__NR_socket,            sys_socket),           // 326
    LINX_(__NR_bind,              sys_bind),             // 327
    LINX_(__NR_connect,           sys_connect),          // 328

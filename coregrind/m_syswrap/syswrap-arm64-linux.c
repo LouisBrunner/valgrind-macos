@@ -185,8 +185,6 @@ asm(
 #undef __NR_EXIT
 
 // forward declaration
-static void setup_child ( ThreadArchState*, ThreadArchState* );
-static void assign_guest_tls(ThreadId ctid, Addr tlsptr);
 //ZZ static SysRes sys_set_tls ( ThreadId tid, Addr tlsptr );
             
 /* ---------------------------------------------------------------------
@@ -198,19 +196,6 @@ static void assign_guest_tls(ThreadId ctid, Addr tlsptr);
 void VG_(cleanup_thread) ( ThreadArchState* arch )
 {
 }  
-
-void setup_child ( /*OUT*/ ThreadArchState *child,
-                   /*IN*/  ThreadArchState *parent )
-{
-   child->vex = parent->vex;
-   child->vex_shadow1 = parent->vex_shadow1;
-   child->vex_shadow2 = parent->vex_shadow2;
-}
-
-static void assign_guest_tls(ThreadId tid, Addr tlsptr)
-{
-   VG_(threads)[tid].arch.vex.guest_TPIDR_EL0 = tlsptr;
-}
 
 //ZZ /* Assigns tlsptr to the guest TPIDRURO.
 //ZZ    If needed for the specific hardware, really executes

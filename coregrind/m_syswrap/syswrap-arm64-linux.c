@@ -735,9 +735,9 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_init_module,       sys_init_module),       // 105
 
    LINXY(__NR_timer_create,      sys_timer_create),      // 107
-   LINXY(__NR_timer_settime,     sys_timer_settime),     // 108
-   LINXY(__NR_timer_gettime,     sys_timer_gettime),     // 109
-   LINX_(__NR_timer_getoverrun,  sys_timer_getoverrun),  // 110
+   LINXY(__NR_timer_gettime,     sys_timer_gettime),     // 108
+   LINX_(__NR_timer_getoverrun,  sys_timer_getoverrun),  // 109
+   LINXY(__NR_timer_settime,     sys_timer_settime),     // 110
    LINX_(__NR_timer_delete,      sys_timer_delete),      // 111
    LINX_(__NR_clock_settime,     sys_clock_settime),     // 112
    LINXY(__NR_clock_gettime,     sys_clock_gettime),     // 113

@@ -734,7 +734,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENXY(__NR_setitimer,         sys_setitimer),         // 103
    GENX_(__NR_kexec_load,        sys_ni_syscall),        // 104
    LINX_(__NR_init_module,       sys_init_module),       // 105
-   //   (__NR_delete_module,     sys_delete_module),     // 106
+   LINX_(__NR_delete_module,     sys_delete_module),     // 106
    LINXY(__NR_timer_create,      sys_timer_create),      // 107
    LINXY(__NR_timer_gettime,     sys_timer_gettime),     // 108
    LINX_(__NR_timer_getoverrun,  sys_timer_getoverrun),  // 109

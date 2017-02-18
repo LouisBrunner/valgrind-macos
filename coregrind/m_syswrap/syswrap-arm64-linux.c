@@ -725,7 +725,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_exit_group,        sys_exit_group),        // 94
    LINXY(__NR_waitid,            sys_waitid),            // 95
    LINX_(__NR_set_tid_address,   sys_set_tid_address),   // 96
-   //   (__NR_unshare,           sys_unshare),           // 97
+   LINX_(__NR_unshare,           sys_unshare),           // 97
    LINXY(__NR_futex,             sys_futex),             // 98
    LINX_(__NR_set_robust_list,   sys_set_robust_list),   // 99
    //   (__NR_get_robust_list,   sys_get_robust_list),   // 100

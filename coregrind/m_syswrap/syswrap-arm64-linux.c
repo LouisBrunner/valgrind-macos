@@ -867,7 +867,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_get_mempolicy,     sys_get_mempolicy),     // 236
    LINX_(__NR_set_mempolicy,     sys_set_mempolicy),     // 237
    //   (__NR_migrate_pages,     sys_migrate_pages),     // 238
-   //   (__NR_move_pages,        sys_move_pages),        // 239
+   LINXY(__NR_move_pages,        sys_move_pages),        // 239
    //   (__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo), // 240
    LINXY(__NR_perf_event_open,   sys_perf_event_open),   // 241
    LINXY(__NR_accept4,           sys_accept4),           // 242

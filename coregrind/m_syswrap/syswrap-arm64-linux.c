@@ -728,7 +728,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_unshare,           sys_unshare),           // 97
    LINXY(__NR_futex,             sys_futex),             // 98
    LINX_(__NR_set_robust_list,   sys_set_robust_list),   // 99
-   //   (__NR_get_robust_list,   sys_get_robust_list),   // 100
+   LINXY(__NR_get_robust_list,   sys_get_robust_list),   // 100
    GENXY(__NR_nanosleep,         sys_nanosleep),         // 101
    GENXY(__NR_getitimer,         sys_getitimer),         // 102
    GENXY(__NR_setitimer,         sys_setitimer),         // 103

@@ -846,7 +846,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENXY(__NR_munmap,            sys_munmap),            // 215
    GENX_(__NR_mremap,            sys_mremap),            // 216
    LINX_(__NR_add_key,           sys_add_key),           // 217
-   //   (__NR_request_key,       sys_request_key),       // 218
+   LINX_(__NR_request_key,       sys_request_key),       // 218
    LINXY(__NR_keyctl,            sys_keyctl),            // 219
    LINX_(__NR_clone,             sys_clone),             // 220
    GENX_(__NR_execve,            sys_execve),            // 221

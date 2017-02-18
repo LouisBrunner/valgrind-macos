@@ -874,7 +874,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_recvmmsg,          sys_recvmmsg),          // 243
    GENXY(__NR_wait4,             sys_wait4),             // 260
    LINXY(__NR_prlimit64,         sys_prlimit64),         // 261
-   //   (__NR_fanotify_init,     sys_fanotify_init),     // 262
+   LINXY(__NR_fanotify_init,     sys_fanotify_init),     // 262
    //   (__NR_fanotify_mark,     sys_fanotify_mark),     // 263
    LINXY(__NR_name_to_handle_at, sys_name_to_handle_at), // 264
    LINXY(__NR_open_by_handle_at, sys_open_by_handle_at), // 265

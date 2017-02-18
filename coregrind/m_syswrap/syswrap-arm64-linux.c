@@ -712,7 +712,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_(__NR_sync,              sys_sync),              // 81
    GENX_(__NR_fsync,             sys_fsync),             // 82
    GENX_(__NR_fdatasync,         sys_fdatasync),         // 83
-   //   (__NR_sync_file_range,   sys_sync_file_range),   // 84
+   LINX_(__NR_sync_file_range,   sys_sync_file_range),   // 84
    LINXY(__NR_timerfd_create,    sys_timerfd_create),    // 85
    LINXY(__NR_timerfd_settime,   sys_timerfd_settime),   // 86
    LINXY(__NR_timerfd_gettime,   sys_timerfd_gettime),   // 87

@@ -669,7 +669,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_renameat,          sys_renameat),          // 38
    LINX_(__NR_umount2,           sys_umount),            // 39
    LINX_(__NR_mount,             sys_mount),             // 40
-   //   (__NR_pivot_root,        sys_pivot_root),        // 41
+   LINX_(__NR_pivot_root,        sys_pivot_root),        // 41
    //   (__NR_nfsservctl,        sys_nfsservctl),        // 42
    GENXY(__NR_statfs,            sys_statfs),            // 43
    GENXY(__NR_fstatfs,           sys_fstatfs),           // 44

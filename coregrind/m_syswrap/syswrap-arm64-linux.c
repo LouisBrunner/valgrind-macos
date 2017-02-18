@@ -878,7 +878,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_fanotify_mark,     sys_fanotify_mark),     // 263
    LINXY(__NR_name_to_handle_at, sys_name_to_handle_at), // 264
    LINXY(__NR_open_by_handle_at, sys_open_by_handle_at), // 265
-   //   (__NR_clock_adjtime,     sys_clock_adjtime),     // 266
+   LINXY(__NR_clock_adjtime,     sys_clock_adjtime),     // 266
    LINX_(__NR_syncfs,            sys_syncfs),            // 267
    //   (__NR_setns,             sys_ni_syscall),        // 268
    LINXY(__NR_sendmmsg,          sys_sendmmsg),          // 269

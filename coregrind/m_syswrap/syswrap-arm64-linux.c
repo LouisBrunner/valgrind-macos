@@ -789,7 +789,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENXY(__NR_getgroups,         sys_getgroups),         // 158
    GENX_(__NR_setgroups,         sys_setgroups),         // 159
    GENXY(__NR_uname,             sys_newuname),          // 160
-   //   (__NR_sethostname,       sys_sethostname),       // 161 
+   GENX_(__NR_sethostname,       sys_sethostname),       // 161
    //   (__NR_setdomainname,     sys_setdomainname),     // 162 
    GENXY(__NR_getrlimit,         sys_old_getrlimit),     // 163
    GENX_(__NR_setrlimit,         sys_setrlimit),         // 164

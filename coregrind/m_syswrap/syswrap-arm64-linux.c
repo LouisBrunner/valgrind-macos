@@ -796,7 +796,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENXY(__NR_getrusage,         sys_getrusage),         // 165
    GENX_(__NR_umask,             sys_umask),             // 166
    LINXY(__NR_prctl,             sys_prctl),             // 167 
-   //   (__NR_getcpu,            sys_getcpu),            // 168
+   LINXY(__NR_getcpu,            sys_getcpu),            // 168
    GENXY(__NR_gettimeofday,      sys_gettimeofday),      // 169
    GENX_(__NR_settimeofday,      sys_settimeofday),      // 170
    LINXY(__NR_adjtimex,          sys_adjtimex),          // 171

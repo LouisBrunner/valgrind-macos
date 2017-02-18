@@ -758,7 +758,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_sched_rr_get_interval,   sys_sched_rr_get_interval),// 127
    //   (__NR_restart_syscall,   sys_restart_syscall),   // 128
    GENX_(__NR_kill,              sys_kill),              // 129
-   //   (__NR_tkill,             sys_tkill),             // 130
+   LINXY(__NR_tkill,             sys_tkill),             // 130
    LINX_(__NR_tgkill,            sys_tgkill),            // 131
    GENXY(__NR_sigaltstack,       sys_sigaltstack),       // 132
    LINX_(__NR_rt_sigsuspend,     sys_rt_sigsuspend),     // 133

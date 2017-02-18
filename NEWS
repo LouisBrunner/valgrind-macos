@@ -100,6 +100,16 @@ where XXXXXX is the bug number as listed below.
 352767  Wine/valgrind: noted but unhandled ioctl 0x5307 [..] (CDROMSTOP)
 358213  helgrind/drd bar_bad testcase hangs or crashes with new glibc pthread
         barrier implementation
+368863  WARNING: unhandled arm64-linux syscall: 100 (get_robust_list)
+368865  WARNING: unhandled arm64-linux syscall: 272 (kcmp)
+368917  WARNING: unhandled arm64-linux syscall: 218 (request_key)
+368918  WARNING: unhandled arm64-linux syscall: 127 (sched_rr_get_interval)
+368922  WARNING: unhandled arm64-linux syscall: 161 (sethostname)
+368924  WARNING: unhandled arm64-linux syscall: 84 (sync_file_range)
+368925  WARNING: unhandled arm64-linux syscall: 130 (tkill)
+368926  WARNING: unhandled arm64-linux syscall: 97 (unshare)
+370635  arm64 missing syscall getcpu
+371225  Fix order of timer_{gettime,getoverrun,settime} syscalls on arm64
 371412  Rename wrap_sys_shmat to sys_shmat like other wrappers
 371869  support '%' in symbol Z-encoding
 371916  execution tree xtree concept
@@ -108,6 +118,8 @@ where XXXXXX is the bug number as listed below.
 372600  process loops forever when fatal signals are arriving quickly
 373046  Stacks registered by core are never deregistered
 373192  Calling posix_spawn in glibc 2.24 completely broken
+373488  Support for fanotify API on ARM64 architecture
+	== 368864  WARNING: unhandled arm64-linux syscall: 262 (fanotify_init)
 373555  Rename BBPTR to GSPTR as it denotes guest state pointer only
 373938  const IRExpr arguments for matchIRExpr()
 375514  valgrind_get_tls_addr() does not work in case of static TLS

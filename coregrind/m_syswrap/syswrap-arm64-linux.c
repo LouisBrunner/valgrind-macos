@@ -884,7 +884,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_sendmmsg,          sys_sendmmsg),          // 269
    LINXY(__NR_process_vm_readv,  sys_process_vm_readv),  // 270
    LINX_(__NR_process_vm_writev, sys_process_vm_writev), // 271
-   //   (__NR_kcmp,              sys_kcmp),              // 272
+   LINX_(__NR_kcmp,              sys_kcmp),              // 272
    //   (__NR_finit_module,      sys_ni_syscall),        // 273
    //   (__NR_sched_setattr,     sys_ni_syscall),        // 274
    //   (__NR_sched_getattr,     sys_ni_syscall),        // 275

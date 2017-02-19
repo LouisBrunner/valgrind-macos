@@ -4,7 +4,7 @@
 # But if this signal is masked, then vgdb does not recuperate the control
 # and Valgrind dies. See function give_control_back_to_vgdb in m_gdbserver.c
 prog: sleepers
-args: 1 10000000 0 -S-S-S-S
+args: 1 10000000 0 -S-S-S-S 1
 vgopts: --tool=none --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-nlsigvgdb
 stderr_filter: filter_stderr
 prereq: test -e gdb -a -f vgdb.invoker

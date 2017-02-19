@@ -1,4 +1,4 @@
-loops/sleep_ms/burn/threads_spec:  1 0 2000000000 ------B-
+loops/sleep_ms/burn/threads_spec/affinity:  1 0 2000000000 ------B- 1
 main ready to sleep and/or burn
 pid .... Thread .... inferior call pushed from gdb in mcinfcallRU.stdinB.gdb
 Reset valgrind output to log (orderly_finish)

@@ -1,4 +1,4 @@
-loops/sleep_ms/burn/threads_spec:  100 100000000 1000000000 -S-S-SB-
+loops/sleep_ms/burn/threads_spec/affinity:  100 100000000 1000000000 -S-S-SB- 1
 Brussels ready to sleep and/or burn
 London ready to sleep and/or burn
 Petaouchnok ready to sleep and/or burn

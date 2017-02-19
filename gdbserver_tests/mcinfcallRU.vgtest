@@ -2,7 +2,7 @@
 prog: sleepers
 # We would like to use B-B-B-B- instead of ------B- but this gives
 # too much dependencies to the scheduler fairness.
-args: 1 0 2000000000 ------B-
+args: 1 0 2000000000 ------B- 1
 vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcinfcallRU
 # filter_gdb to replace pid and Thread numbers in the output of the program:
 stderr_filter: filter_gdb

@@ -3,7 +3,7 @@
 # vgdb must queue these signals and deliver them before PTRACE_DETACHing.
 # sleepers is started with argument so that it will mostly sleep.
 prog: sleepers
-args: 1000000000 1000000000 1 BSBSBSBS
+args: 1000000000 1000000000 1 BSBSBSBS 1
 vgopts: --tool=none --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-nlvgdbsigqueue
 stderr_filter: filter_stderr
 prereq: test -e gdb -a -f vgdb.invoker

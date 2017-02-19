@@ -137,7 +137,7 @@ int main (int argc, char *argv[])
   pthread_t ebbr, egll, zzzz;
   struct spec b, l, p, m;
   char *some_mem __attribute__((unused)) = malloc(100);
-  setaffinity();
+  if (argc > 5 && atoi(argv[5])) setaffinity();
   setup_sigusr_handler();
   if (argc > 1)
      loops = atoi(argv[1]);
@@ -153,8 +153,8 @@ int main (int argc, char *argv[])
   else
      threads_spec = "BSBSBSBS";
   
-  fprintf(stderr, "loops/sleep_ms/burn/threads_spec:  %d %d %d %s\n",
-          loops, sleepms, burn, threads_spec);
+  fprintf(stderr, "loops/sleep_ms/burn/threads_spec/affinity:  %d %d %d %s %d\n",
+          loops, sleepms, burn, threads_spec, argc > 5 && atoi(argv[5]));
   fflush(stderr);
 
   b.name = "Brussels";

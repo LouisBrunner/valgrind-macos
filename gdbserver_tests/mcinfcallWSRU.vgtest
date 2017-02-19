@@ -3,7 +3,7 @@
 prog: sleepers
 # We would like to have two threads running (i.e. -S-SB-B-)
 # but this introduces too much dependencies to scheduler fairness.
-args: 100 100000000 1000000000 -S-S-SB-
+args: 100 100000000 1000000000 -S-S-SB- 1
 vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcinfcallWSRU
 # We need a non buggy gdb.step on arm thumb.
 # Disable on Darwin: inferior call rejected as it cannot find malloc.

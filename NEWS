@@ -129,6 +129,7 @@ where XXXXXX is the bug number as listed below.
 376455  Solaris: unhandled syscall lgrpsys(180)
 376518  Solaris: unhandled fast trap getlgrp(6)
 376611  ppc64 and arm64 don't know about prlimit64 syscall
+376729  PPC64, remove R2 from the clobber list
 
 Release 3.12.0 (20 October 2016)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

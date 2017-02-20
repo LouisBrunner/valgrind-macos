@@ -215,7 +215,7 @@ static UInt local_sys_write_stderr ( const HChar* buf, Int n )
       :
       : "b" (block)
       : "cc","memory","cr0","ctr",
-        "r0","r2","r3","r4","r5","r6","r7","r8","r9","r10","r11","r12"
+        "r0","r3","r4","r5","r6","r7","r8","r9","r10","r11","r12"
    );
    if (block[0] < 0)
       block[0] = -1;
@@ -231,7 +231,7 @@ static UInt local_sys_getpid ( void )
       : "=&r" (__res)
       : "i" (__NR_getpid)
       : "cc","memory","cr0","ctr",
-        "r0","r2","r4","r5","r6","r7","r8","r9","r10","r11","r12"
+        "r0","r4","r5","r6","r7","r8","r9","r10","r11","r12"
    );
    return (UInt)__res;
 }

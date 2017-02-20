@@ -2708,7 +2708,7 @@ typedef
 #define __CALLER_SAVED_REGS                                       \
    "lr", "ctr", "xer",                                            \
    "cr0", "cr1", "cr2", "cr3", "cr4", "cr5", "cr6", "cr7",        \
-   "r0", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",   \
+   "r0", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",         \
    "r11", "r12", "r13"
 
 /* Macros to save and align the stack before making a function
@@ -3264,7 +3264,7 @@ typedef
 #define __CALLER_SAVED_REGS                                       \
    "lr", "ctr", "xer",                                            \
    "cr0", "cr1", "cr2", "cr3", "cr4", "cr5", "cr6", "cr7",        \
-   "r0", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",   \
+   "r0", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",         \
    "r11", "r12", "r13"
 
 /* Macros to save and align the stack before making a function

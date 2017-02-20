@@ -1168,7 +1168,7 @@ const HChar *VG_(sr_as_string) ( SysRes sr )
    return buf;
 }
 
-#elif defined(VGO_darwin) || (VGO_solaris)
+#elif defined(VGO_darwin) || defined(VGO_solaris)
 
 const HChar *VG_(sr_as_string) ( SysRes sr )
 {

@@ -1353,6 +1353,34 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
                            binop(Iop_Shl64, cc_dep2, mkU8(48))));
       }
 
+      /* 8, 9 */
+      if (isU64(cc_op, AMD64G_CC_OP_SUBW) && isU64(cond, AMD64CondS)
+                                          && isU64(cc_dep2, 0)) {
+         /* word sub/cmp of zero, then S --> test (dst-0 <s 0)
+                                         --> test dst <s 0
+                                         --> (ULong)dst[15]
+            This is yet another scheme by which clang figures out if the
+            top bit of a word is 1 or 0.  See also LOGICB/CondS below. */
+         /* Note: isU64(cc_dep2, 0) is correct, even though this is
+            for an 16-bit comparison, since the args to the helper
+            function are always U64s. */
+         return binop(Iop_And64,
+                      binop(Iop_Shr64,cc_dep1,mkU8(15)),
+                      mkU64(1));
+      }
+      if (isU64(cc_op, AMD64G_CC_OP_SUBW) && isU64(cond, AMD64CondNS)
+                                          && isU64(cc_dep2, 0)) {
+         /* word sub/cmp of zero, then NS --> test !(dst-0 <s 0)
+                                          --> test !(dst <s 0)
+                                          --> (ULong) !dst[15]
+         */
+         return binop(Iop_Xor64,
+                      binop(Iop_And64,
+                            binop(Iop_Shr64,cc_dep1,mkU8(15)),
+                            mkU64(1)),
+                      mkU64(1));
+      }
+
       /* 14, */
       if (isU64(cc_op, AMD64G_CC_OP_SUBW) && isU64(cond, AMD64CondLE)) {
          /* word sub/cmp, then LE (signed less than or equal) 
@@ -1604,12 +1632,31 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
                            mkU64(0)));
       }
 
+      /*---------------- SHRQ ----------------*/
+
+      if (isU64(cc_op, AMD64G_CC_OP_SHRQ) && isU64(cond, AMD64CondZ)) {
+         /* SHRQ, then Z --> test dep1 == 0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ64, cc_dep1, mkU64(0)));
+      }
+      if (isU64(cc_op, AMD64G_CC_OP_SHRQ) && isU64(cond, AMD64CondNZ)) {
+         /* SHRQ, then NZ --> test dep1 != 0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpNE64, cc_dep1, mkU64(0)));
+      }
+
       /*---------------- SHRL ----------------*/
 
       if (isU64(cc_op, AMD64G_CC_OP_SHRL) && isU64(cond, AMD64CondZ)) {
          /* SHRL, then Z --> test dep1 == 0 */
          return unop(Iop_1Uto64,
                      binop(Iop_CmpEQ32, unop(Iop_64to32, cc_dep1),
+                           mkU32(0)));
+      }
+      if (isU64(cc_op, AMD64G_CC_OP_SHRL) && isU64(cond, AMD64CondNZ)) {
+         /* SHRL, then NZ --> test dep1 != 0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpNE32, unop(Iop_64to32, cc_dep1),
                            mkU32(0)));
       }
 
@@ -1731,6 +1778,20 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
                      binop(Iop_CmpLT64U, 
                            binop(Iop_And64,cc_dep1,mkU64(0xFF)),
                            binop(Iop_And64,cc_dep2,mkU64(0xFF))));
+      }
+      if (isU64(cc_op, AMD64G_CC_OP_ADDQ)) {
+         /* C after add denotes sum <u either arg */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpLT64U, 
+                           binop(Iop_Add64, cc_dep1, cc_dep2), 
+                           cc_dep1));
+      }
+      if (isU64(cc_op, AMD64G_CC_OP_ADDL)) {
+         /* C after add denotes sum <u either arg */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpLT32U, 
+                           unop(Iop_64to32, binop(Iop_Add64, cc_dep1, cc_dep2)),
+                           unop(Iop_64to32, cc_dep1)));
       }
       if (isU64(cc_op, AMD64G_CC_OP_LOGICQ)
           || isU64(cc_op, AMD64G_CC_OP_LOGICL)

@@ -6,7 +6,7 @@
 # sleepers is started with argument so that it will compute during ages.
 # The variable modifications means it will exit in a reasonable time.
 prog: ../sleepers
-args: 1000000000 5000 1000000000 BSBSBSBS
+args: 1000000000 5000 1000000000 BSBSBSBS 1
 vgopts: --tool=none --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-solaris-nlcontrolc
 stderr_filter: filter_stderr
 prereq: test -e ../gdb -a -f ../vgdb.invoker

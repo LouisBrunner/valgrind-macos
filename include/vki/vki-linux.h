@@ -674,7 +674,8 @@ __KINLINE struct vki_cmsghdr * __vki_cmsg_nxthdr(void *__ctl, __vki_kernel_size_
 {
 	struct vki_cmsghdr * __ptr;
 
-	__ptr = (struct vki_cmsghdr*)(((unsigned char *) __cmsg) +  VKI_CMSG_ALIGN(__cmsg->cmsg_len));
+	__ptr = ASSUME_ALIGNED(struct vki_cmsghdr *,
+        	((unsigned char *) __cmsg) +  VKI_CMSG_ALIGN(__cmsg->cmsg_len));
 	if ((unsigned long)((char*)(__ptr+1) - (char *) __ctl) > __size)
 		return (struct vki_cmsghdr *)0;
 

@@ -468,6 +468,17 @@ static inline Bool sr_EQ ( UInt sysno, SysRes sr1, SysRes sr2 ) {
       } var = { .in = x }; var.out;  \
    })
 
+/* Some architectures (eg. mips, arm) do not support unaligned memory access
+   by hardware, so GCC warns about suspicious situations. This macro could
+   be used to avoid these warnings but only after careful examination. */
+#define ASSUME_ALIGNED(D, x)                 \
+   ({                                        \
+      union {                                \
+         void *in;                           \
+         D out;                              \
+      } var = {.in = (void *) (x)}; var.out; \
+   })
+
 // Poor man's static assert
 #define STATIC_ASSERT(x)  extern int VG_(VG_(VG_(unused)))[(x) ? 1 : -1] \
                                      __attribute__((unused))

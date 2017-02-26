@@ -108,6 +108,7 @@ where XXXXXX is the bug number as listed below.
 368924  WARNING: unhandled arm64-linux syscall: 84 (sync_file_range)
 368925  WARNING: unhandled arm64-linux syscall: 130 (tkill)
 368926  WARNING: unhandled arm64-linux syscall: 97 (unshare)
+370028  Reduce the number of compiler warnings on MIPS platforms (partial fix)
 370635  arm64 missing syscall getcpu
 371225  Fix order of timer_{gettime,getoverrun,settime} syscalls on arm64
 371412  Rename wrap_sys_shmat to sys_shmat like other wrappers

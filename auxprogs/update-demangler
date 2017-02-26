@@ -88,10 +88,18 @@ cp    ../gcc-$new_gcc_revision/libiberty/rust-demangle.c .
 cp    ../gcc-$new_gcc_revision/libiberty/safe-ctype.c .
 cd ..
 
-# 5) Check out valgrind coregrind/m_demangle into old_m_demangle
+# 5) Sparse check out valgrind coregrind/m_demangle into old_m_demangle
 echo "Checking out coregrind/m_demangle"
-svn co svn://svn.valgrind.org/valgrind/trunk/coregrind/m_demangle old_m_demangle > /dev/null
-rm -rf old_m_demangle/.svn
+mkdir valgrind-sparse-clone
+cd valgrind-sparse-clone
+git init
+git remote add origin -f git://sourceware.org/git/valgrind.git/
+git config core.sparsecheckout true
+echo "coregrind/m_demangle/*" > .git/info/sparse-checkout
+git pull origin master
+cd ..
+mv valgrind-sparse-clone/coregrind/m_demangle old_m_demangle
+rm -rf valgrind-sparse-clone
 
 # 6) Create new_m_demangle
 cp -rp old_m_demangle new_m_demangle

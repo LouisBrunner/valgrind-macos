@@ -428,7 +428,7 @@ static void early_process_cmd_line_options ( /*OUT*/Int* need_help )
       if (VG_(clo_verbosity) <= 1)
          VG_(printf)("valgrind-" VERSION "\n");
       else
-         VG_(printf)("valgrind-" VERSION "-" VGSVN "-vex-" VEXSVN "\n");
+         VG_(printf)("valgrind-" VERSION "-" VGGIT "\n");
       VG_(exit)(0);
    }
 

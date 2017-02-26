@@ -7,13 +7,13 @@ program.
 
 BASIC OPERATIONS
 ----------------
-When run, the system checks out two trees:  the SVN trunk from 24 hours ago
-and the SVN trunk from now.  ("24 hours ago" and "now" are determined when
+When run, the system clones and checks out two trees: one from 24 hours ago
+and the HEAD from now.  ("24 hours ago" and "now" are determined when
 the script starts running, so if any commits happen while the tests are
 running they will not be tested.)
 
 If the two trees are different (i.e. there have been commits in the past 24
-hours, either to the trunk or a branch) it builds ("make"), installs ("make
+hours, either to the master or a branch) it builds ("make"), installs ("make
 install") and runs the regression tests ("make regtest") in both, and
 compares the results.  Note that the "make install" isn't necessary in order
 to run the tests because the regression tests use the code built (with
@@ -31,24 +31,25 @@ SETTING UP
 ----------
 To set up nightly testing for a machine, do the following.
 
-(1) Check out just this directory from the repository, eg:
+(1) Clone a shallow copy from the repository, eg:
 
-        svn co svn://svn.valgrind.org/valgrind/trunk/nightly $DIR
+        git clone --depth 1 git://sourceware.org/git/valgrind.git/ $DIR
 
     where $DIR is the name of the directory you want it to be in.
+    You'll probably want to include "nightly" in the directory name.
     
-    Note that this doesn't check out the whole Valgrind tree, just the
-    directory containing the nightly testing stuff.  This is possible
-    because the testing script doesn't check the code in the tree it belongs
-    to; rather it checks out new trees (within $DIR) and tests them
-    independently.
+    Note that this doesn't clone the whole repo history, just the latest
+    revision of everything in the repository. Under $DIR, only directory
+    "nightly" is of interest to us - the rest is ignored. In other words: the
+    testing script clones and checks out new trees (within $DIR/nightly) and
+    tests them independently.
 
 (2) Choose a tag that identifies the test results.  This is usually the
     machine name.  We'll call it $TAG in what follows.
 
-(3) Create a configuration file $DIR/conf/$TAG.conf.  It is sourced by the
-    'nightly' script, and can define any or all of the following environment
-    variables.  (In most cases, only ABT_DETAILS is needed.)
+(3) Create a configuration file $DIR/nightly/conf/$TAG.conf. It is sourced
+    by the 'nightly' script, and can define any or all of the following
+    environment variables. (In most cases, only ABT_DETAILS is needed.)
 
     - ABT_DETAILS: describes the machine in more detail, eg. the OS.  The
       default is empty, but you should define it.  An example:
@@ -99,12 +100,12 @@ To set up nightly testing for a machine, do the following.
       (default value: --reps=3)
 
     Note that the appropriate syntax to use in this file will depend on the
-    shell from which the $DIR/bin/nightly script is run (which in turn may
-    depend on what shell is used by cron or any similar program).
+    shell from which the $DIR/nightly/bin/nightly script is run (which in turn
+    may depend on what shell is used by cron or any similar program).
 
-(4) Create a mailer script $DIR/conf/$TAG.sendmail.  It must be executable.
-    It's used to send email results to the desired recipient (e.g. 
-    valgrind-developers@lists.sourceforge.net)  It must handle three command
+(4) Create a mailer script $DIR/nightly/conf/$TAG.sendmail. It must be
+    executable. It's used to send email results to the desired recipient (e.g.
+    valgrind-developers@lists.sourceforge.net). It must handle three command
     line arguments.
 
     - The first argument is the email subject line.  It contains
@@ -132,13 +133,13 @@ To set up nightly testing for a machine, do the following.
 
 (5) To run the tests, execute:
 
-       $DIR/bin/nightly $DIR $TAG
+       $DIR/nightly/bin/nightly $DIR/nightly $TAG
 
     You probably want to put this command into a cron file or equivalent
     so it is run regularly (preferably every night).  Actually, it's
     probably better to put that command inside a script, and run the script
-    from cron, rather than running $DIR/bin/nightly directly.  That way you
-    can put any other configuration stuff that's necessary inside the
+    from cron, rather than running $DIR/nightly/bin/nightly directly. That way
+    you can put any other configuration stuff that's necessary inside the
     script (e.g. make sure that programs used by the mailer script are in
     your PATH).
 
@@ -147,34 +148,34 @@ OUTPUT FILES
 ------------
 If the tests are run, the following files are produced:
 
-- $DIR/old.verbose and $DIR/new.verbose contain full output of the whole
-  process for each of the two trees.
+- $DIR/nightly/old.verbose and $DIR/nightly/new.verbose contain full output of
+  the whole process for each of the two trees.
 
-- $DIR/old.short and $DIR/new.short contain summary output of the process
-  for each of the two trees.  The diff between these two files goes in
-  $DIR/diff.short.
+- $DIR/nightly/old.short and $DIR/nightly/new.short contain summary output of
+  the process for each of the two trees. The diff between these two files goes
+  in $DIR/nightly/diff.short.
 
-- $DIR/final contains the overall summary, constructed from $DIR/old.short,
-  $DIR/new.short, $DIR/diff.short and some other bits and pieces.  (The name
-  of this file is what's passed as the second argument to
-  $DIR/conf/$TAG.sendmail.)
+- $DIR/nighlty/final contains the overall summary, constructed from
+  $DIR/nightly/old.short, $DIR/nightly/new.short, $DIR/nightly/diff.short and
+  some other bits and pieces. (The name of this file is what's passed as the
+  second argument to $DIR/nightly/conf/$TAG.sendmail.)
 
-- $DIR/diffs holds the diffs from all the failing tests in the newer tree,
-  concatenated together;  the diff from each failure is truncated at 100
-  lines to minimise possible size blow-outs.  (The name of this file is
-  what's passed as the third argument to $DIR/conf/$TAG.sendmail.)  
+- $DIR/nightly/diffs holds the diffs from all the failing tests in the newer
+  tree, concatenated together; the diff from each failure is truncated at 100
+  lines to minimise possible size blow-outs. (The name of this file is
+  what's passed as the third argument to $DIR/nightly/conf/$TAG.sendmail.)
 
-- $DIR/sendmail.log contains the output (stdout and stderr) from
-  $DIR/conf/$TAG.sendmail goes in $DIR/sendmail.log.  
+- $DIR/nightly/sendmail.log contains the output (stdout and stderr) from
+  $DIR/nightly/conf/$TAG.sendmail goes in $DIR/nightly/sendmail.log.
 
-- $DIR/valgrind-old/ and $DIR/valgrind-new/ contain the tested trees (and
-  $DIR/valgrind-old/Inst/ and $DIR/valgrind-new/Inst/ contain the installed
-  code).
+- $DIR/nightly/valgrind-old/ and $DIR/nightly/valgrind-new/ contain the tested
+  trees (and $DIR/nightly/valgrind-old/Inst/ and $DIR/nightly/valgrind-new/Inst/
+  contain the installed code).
 
 If the tests aren't run, the following file is produced:
 
-- $DIR/unchanged.log is created only if no tests were run because the two
-  trees were identical.  It will contain a short explanatory message.
+- $DIR/nightly/unchanged.log is created only if no tests were run because the
+  two trees were identical. It will contain a short explanatory message.
 
 Each time the tests are run, all files from previous runs are deleted.
 
@@ -203,13 +204,11 @@ isn't easy.
 MAINTENANCE
 -----------
 The scripts in the nightly/ directory occasionally get updated.  If that
-happens, you can just "svn update" within $DIR to get the updated versions,
+happens, you can just "git pull" within $DIR to get the updated versions,
 which will then be used the next time the tests run.  (It's possible that
 the scripts will be changed in a way that requires changes to the files in
-$DIR/conf/, but we try to avoid this.)
+$DIR/nightly/conf/, but we try to avoid this.)
 
 If you want such updates to happen automatically, you could write a script
 that does all the steps in SETTING UP above, and instead run that script
 from cron.
-
-

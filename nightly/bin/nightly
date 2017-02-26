@@ -9,23 +9,6 @@
 # Helper functions
 #----------------------------------------------------------------------------
 
-# Returns the revision number for the source files at date $1 in Subversion
-# repo $2. Note: the "--depth" command line argument is supported from
-# Subversion version 1.5 on.
-get_svn_revision() {
-  (
-    cd $DIR
-    rm -rf infodir
-    if ! svn co -r "{$1}" --depth empty "$2" infodir > /dev/null 2>&1; then
-      # Subversion 1.4 or before.
-      rm -rf infodir
-      svn co -r "{$1}" --non-recursive "$2" infodir > /dev/null
-    fi
-    svn info infodir | sed -n 's/^Revision: //p'
-    rm -rf infodir
-  )
-}
-
 runcmd () {
    logfile=$1
    str=$2
@@ -59,8 +42,7 @@ runcmd () {
 # Startup
 #----------------------------------------------------------------------------
 
-valgrind_svn_repo="svn://svn.valgrind.org/valgrind/trunk"
-vex_svn_repo="svn://svn.valgrind.org/vex/trunk"
+valgrind_git_repo="git://sourceware.org/git/valgrind.git/"
 
 # Must have exactly two arguments
 if [ $# -ne 2 ] ; then
@@ -75,34 +57,11 @@ TAG=$2
 # Get times and date
 START=`date "+%F %H:%M:%S %Z"`
 
-# This is one of the formats SVN accepts.  Yes, the 'T' appears in the final
-# string, it's supposed to be like that.
-svn_date_format="+%Y-%m-%dT%H:%M:%S"
-
-# The time-and-date from 24 hours ago is tricky;  Linux and Darwin have
-# different ways of getting it, so we try things until something works.
-svn_old_date=
-if [ "z" = "z${svn_old_date}" ] ; then
-    # Linux method.
-    svn_old_date=`date --date=yesterday $svn_date_format 2> /dev/null`
-fi
-if [ "z" = "z${svn_old_date}" ] ; then
-    # Darwin method.
-    svn_old_date=`date -v-24H $svn_date_format 2> /dev/null`
-fi
-if [ "z" = "z${svn_old_date}" ] ; then
-    echo "Sorry, can't work out the time and date for 24 hours ago, aborting"
-    exit 1;
-fi
-
-# The time-and-date for now is easy.
-svn_new_date=`date $svn_date_format`
-
 cd $DIR
 
 # Clean up output files produced by a previous run.
 rm -rf diffs diffs.txt diff.short final new.short new.verbose old.short old.verbose
-rm -rf sendmail.log unchanged.log valgrind-old valgrind-new
+rm -rf sendmail.log unchanged.log valgrind-repo valgrind-old valgrind-new
 
 # Setup any relevant environment variables from conf/<tag>.conf.
 . conf/$TAG.conf
@@ -128,16 +87,16 @@ fi
 # Check out, build, test
 #----------------------------------------------------------------------------
 
-vg_old_rev="`get_svn_revision ${svn_old_date} ${valgrind_svn_repo}`"
-vg_new_rev="`get_svn_revision ${svn_new_date} ${valgrind_svn_repo}`"
-vex_old_rev="`get_svn_revision ${svn_old_date} ${vex_svn_repo}`"
-vex_new_rev="`get_svn_revision ${svn_new_date} ${vex_svn_repo}`"
-if [ "${vg_old_rev}" = "${vg_new_rev}" -a "${vex_old_rev}" = "${vex_new_rev}" ]
-then
-  echo "Both {$svn_old_date} and {$svn_new_date} correspond to Valgrind r${vg_new_rev} / VEX r${vex_new_rev}"\
-       "-- skipping nightly build." >unchanged.log
+# Clone the GIT repository first. We will query it and copy it afterwards.
+git clone --quiet git://sourceware.org/git/valgrind.git/ valgrind-repo
+
+cd valgrind-repo
+commits=$( git rev-list --after="24 hours ago" master )
+if [ -z "$commits" ]; then
+  echo "There are no new commits since yesterday -- skipping nightly build." > unchanged.log
   exit 0
 fi
+cd ..
 
 # Do everything twice -- once for the 24 hours old Valgrind, and once 
 # for the current one.
@@ -150,18 +109,16 @@ for logfile in old new ; do
 
    # Choose the current Valgrind, or one from 24 hours ago
    if [ $logfile = "old" ] ; then
-      svn_date=$svn_old_date
+      git_commit=$( echo $commits | awk '{print $NF}' )
    else
-      svn_date=$svn_new_date
+      git_commit="HEAD"
    fi
-
-   # Get dates for the old and new versions
 
    # Check out, build, run tests
    runcmd $logfile \
-          "Checking out valgrind source tree" \
-          "svn co ${valgrind_svn_repo} -r {$svn_date} valgrind-$logfile\
-           && svn update -r {$svn_date} valgrind-$logfile/VEX" && \
+          "Checking out Valgrind source tree" \
+          "cp -r --preserve=links valgrind-repo valgrind-$logfile\
+           && git checkout ${git_commit}" && \
    \
    runcmd $logfile \
           "Configuring valgrind             " \
@@ -219,8 +176,7 @@ fi
 END=`date "+%F %H:%M:%S %Z"`
 
 # Gather some information about this run and its environment
-valgrind_revision="`svn info valgrind-new | grep Revision | sed 's/Revision[ ]*:[ ]*//'`"
-vex_revision="`svn info valgrind-new/VEX | grep Revision | sed 's/Revision[ ]*:[ ]*//'`"
+valgrind_revision=$( ./valgrind-new/vg-in-place -v --version )
 gcc_version="`gcc --version 2> /dev/null | head -1`"
 gdb_version="`gdb --version 2> /dev/null | head -1`"
 as_version="`as --version 2> /dev/null | head -1`"
@@ -250,7 +206,6 @@ else
 fi
 
 echo "valgrind revision: $valgrind_revision" >  final
-echo "VEX revision:      $vex_revision"      >> final
 echo "C compiler:        $gcc_version"       >> final
 echo "GDB:               $gdb_version"       >> final
 echo "Assembler:         $as_version"        >> final

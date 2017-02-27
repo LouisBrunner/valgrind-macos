@@ -4362,7 +4362,7 @@ void tcStmt ( const IRSB* bb, const IRStmt* stmt, IRType gWordTy )
                                       ":: guest word type");
          if (typeOfIRExpr(tyenv, lg->alt) != typeOfIRTemp(tyenv, lg->dst))
              sanityCheckFail(bb,stmt,"IRStmt.LoadG: dst/alt type mismatch");
-         IRTemp cvtRes = Ity_INVALID, cvtArg = Ity_INVALID;
+         IRType cvtRes = Ity_INVALID, cvtArg = Ity_INVALID;
          typeOfIRLoadGOp(lg->cvt, &cvtRes, &cvtArg);
          if (cvtRes != typeOfIRTemp(tyenv, lg->dst))
             sanityCheckFail(bb,stmt,"IRStmt.LoadG: dst/loaded type mismatch");

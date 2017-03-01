@@ -450,7 +450,94 @@ Wed 19 Oct 17:07:42 CEST 2016
 
 Mon 21 Nov 13:13:47 CET 2016
 
+n-i-bz  major perf problems w/ stack registration + stack recycling
+372772  Brew doesn't allow for Valgrind 3.12.0 installation on Sierra OSX
+372779  valgrind will hang
+372794  LibVEX (arm32 front end): 'Assertion szBlg2 <= 3' failed
+372828  vex amd64->IR: 0x66 0x4D 0xF 0x38 0xF6 0xD2 0x66 0x4D
+372861  Test pselect_alarm for Bug 359871 seg faults on RHEL 4
+ 
+Fri 25 Nov 11:47:59 CET 2016
+
+other stuff to fix: annoying duplicate brk() message
 
 ========================================================================
 ========================================================================
 
+Stuff that we should merge (trunk -> 3.12.1)
+
+372504  Hanging on exit_group
+372600  process loops forever when fatal signals are arriving quickly
+n-i-bz  Demangle Rust
+n-i-bz  major perf problems w/ stack registration + stack recycling
+
+========================================================================
+========================================================================
+
+Summary of commits after the 3.12.0 release (3282, 16098) to see which
+we might want to merge for 3.12.1.
+
+16098 .. 16102 tag/release artefacts (nothing interesting)
+
+"*" marks possible merge candidates
+
+* 16103 bzero is non-POSIX (deprecated), accordingly __bzero template required for all macOS versions. n-i-bz.
+16104 perf/vg_perf --outer-args:  either replace the predefined outer args,
+* 16105 Solaris: Add wrapper for fcntl(F_DUPFD_CLOEXEC) n-i-bz
+16106 Add some more comments in pub_tool_debuginfo.h about memory persistence/ownership
+* 16107 Follow up to SVN r16105.  Forgot to include scalar.stderr.exp changes in the commit.
+16108 Now that 3.12 is out, update version under development to 3.13.0.SVN
+16109 371412 Rename wrap_sys_shmat to sys_shmat like other wrappers
+* 16110 mips: add POST function to sys_prctl.  Add missing POST wrapper for sys_prctl.  This fixes regressions from r15934 (on MIPS32 platforms) and r16003 (on MIPS64 platforms).
+16111 Some small optimisation+some code reformatting
+* 16112  Support '%' in symbol Z-encoding.  Fixes BZ #371869.
+16113 Fix compiler warning about unused function on Solaris
+16114 Move scalar test of lwp_private syscall to platform specific directories.  n-i-bz
+* 16115  Add demangling support for Rust symbols.  Derived from a patch by
+David Tolnay <dtolnay@gmail.com>.  n-i-bz.
+16116 Fix compile error on macOS introduced in r16111. n-i-bz.
+* 16117 mips: Add redir for index function in ld.so.1
+* 16118 Bug #372120 - c++ demangler demangles symbols which are not c++.
+* 3284  Fix xxsel parsing error.
+* 3285  Fix xxsel parsing error, update.
+16120  Support pool of unique string in pub_tool_deduppoolalloc.h [xtree]
+16121  Implement a cache 'address -> symbol name' in m_debuginfo.c [xtree]
+16122  Add VG_(strIsMemberXA) in pub_tool_xarray.h [xtree]
+16124  Addition of the options --xtree-memory and --xtree-memory-file [xtree]
+? 16125  Small changes in callgrind_annotate and callgrind manual
+16126 Locally define vgPlain_scrcmp in 2 unit tests [xtree]
+16127 Support for xtree memory profiling and xtmemory gdbsrv monitor command in helgrind [xtree]
+16128 Support for xtree memory profiling and xtmemory gdbsrv monitor command in memcheck [xtree]
+16129 Update massif implementation to xtree
+16130 Provide Solaris specifics in coregrind/m_gdbserver/README_DEVELOPERS.  n-i-bz
+16131 Update documentation and NEWS for xtree concept. [xtree]
+16132 Provide a paragraph about Solaris agent thread in advanced concepts. n-i-bz
+16133 Outer/inner setup : allow append to outer args, use a bigger --num-callers
+16134 Cleanup none/tests/nocwd.vgtest tmp dirs.
+16135 When --show-below-main=no, search main from the outermost stackframe
+16136 Fix sym name cache: handles the difference between text and data, + match in symbol
+* sym name cache to cache the 'isText' characteristic of the cached sym_name
+16137 Activate perf tests on arm64
+16138 Add typedef Alloc_Fn_t/Free_Fn_t in pub_tool_basics.h, use them everywhere
+16139 Improve the outer/inner setup: have the outer reporting the inner guest stacktrace
+* 16140 Fix Bug 372600 - process loops forever when fatal signals are arriving quickly
+* 16141 Fix 372504  Hanging on exit_group
+? 16142 Fix the configure test for presense of __xpg[4,6] symbols
+16143 Disable test none/tests/pth_2sig on Solaris for now until it is investigated
+16144 *? Solaris: Add syscall wrapper for sigsuspend(95).  NB: this includes the sigsuspend masking fix, for Solaris
+16145 Solaris: Add syscall wrapper for sigsendsys(108) n-i-bz
+16146 xtree: some documentation and --help-debug fine tuning
+16147 Fix test none/tests/pth_2sig on Solaris.
+16148 Fix none/tests/pth_2sig.c build with (default) -std=gnu90.
+16149 Update (of 3_11_BUGSTATUS.txt)
+16150 Add a tracking file for bugs in 3.12.
+16151 Comments change only: add the profile of the hook called by the gnat runtime
+* 16152 Bug 352767 - Wine/valgrind: Warning: noted but unhandled ioctl 0x5307 with no size/direction hints. (CDROMSTOP).
+* 16153 Bug 348616 - Wine/valgrind: Warning: noted but unhandled ioctl 0x5390 with no size/direction hints. (DVD_READ_STRUCT)
+16154 make bar_bad tests more deterministic
+16155 Update (NEWS)
+
+Fri 25 Nov 12:30:15 CET 2016
+
+========================================================================
+========================================================================

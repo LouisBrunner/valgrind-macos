@@ -3918,6 +3918,22 @@ void useBeforeDef_Temp ( const IRSB* bb, const IRStmt* stmt, IRTemp tmp,
 }
 
 static
+void assignedOnce_Temp(const IRSB *bb, const IRStmt *stmt, IRTemp tmp,
+                       Int *def_counts, UInt n_def_counts,
+                       const HChar *err_msg_out_of_range,
+                       const HChar *err_msg_assigned_more_than_once)
+{
+   if (tmp < 0 || tmp >= n_def_counts) {
+      sanityCheckFail(bb, stmt, err_msg_out_of_range);
+   }
+
+   def_counts[tmp]++;
+   if (def_counts[tmp] > 1) {
+      sanityCheckFail(bb, stmt, err_msg_assigned_more_than_once);
+   }
+}
+
+static
 void useBeforeDef_Expr ( const IRSB* bb, const IRStmt* stmt,
                          const IRExpr* expr, Int* def_counts )
 {
@@ -4061,6 +4077,58 @@ void useBeforeDef_Stmt ( const IRSB* bb, const IRStmt* stmt, Int* def_counts )
          break;
       default: 
          vpanic("useBeforeDef_Stmt");
+   }
+}
+
+static
+void assignedOnce_Stmt(const IRSB *bb, const IRStmt *stmt,
+                       Int *def_counts, UInt n_def_counts)
+{
+   switch (stmt->tag) {
+   case Ist_WrTmp:
+      assignedOnce_Temp(
+         bb, stmt, stmt->Ist.WrTmp.tmp, def_counts, n_def_counts,
+         "IRStmt.Tmp: destination tmp is out of range",
+         "IRStmt.Tmp: destination tmp is assigned more than once");
+      break;
+   case Ist_LoadG:
+      assignedOnce_Temp(
+         bb, stmt, stmt->Ist.LoadG.details->dst, def_counts, n_def_counts,
+         "IRStmt.LoadG: destination tmp is out of range",
+         "IRStmt.LoadG: destination tmp is assigned more than once");
+      break;
+   case Ist_Dirty:
+      if (stmt->Ist.Dirty.details->tmp != IRTemp_INVALID) {
+         assignedOnce_Temp(
+            bb, stmt, stmt->Ist.Dirty.details->tmp, def_counts, n_def_counts,
+            "IRStmt.Dirty: destination tmp is out of range",
+            "IRStmt.Dirty: destination tmp is assigned more than once");
+      }
+      break;
+   case Ist_CAS:
+      if (stmt->Ist.CAS.details->oldHi != IRTemp_INVALID) {
+         assignedOnce_Temp(
+            bb, stmt, stmt->Ist.CAS.details->oldHi, def_counts, n_def_counts,
+            "IRStmt.CAS: destination tmpHi is out of range",
+            "IRStmt.CAS: destination tmpHi is assigned more than once");
+      }
+      assignedOnce_Temp(
+         bb, stmt, stmt->Ist.CAS.details->oldLo, def_counts, n_def_counts,
+         "IRStmt.CAS: destination tmpLo is out of range",
+         "IRStmt.CAS: destination tmpLo is assigned more than once");
+      break;
+   case Ist_LLSC:
+      assignedOnce_Temp(
+         bb, stmt, stmt->Ist.LLSC.result, def_counts, n_def_counts,
+         "IRStmt.LLSC: destination tmp is out of range",
+         "IRStmt.LLSC: destination tmp is assigned more than once");
+      break;
+   // Ignore all other cases
+   case Ist_NoOp: case Ist_IMark: case Ist_AbiHint: case Ist_Put: case Ist_PutI:
+   case Ist_Store: case Ist_StoreG: case Ist_MBE: case Ist_Exit:
+      break;
+   default:
+      vassert(0);
    }
 }
 
@@ -4614,79 +4682,12 @@ void sanityCheckIRSB ( const IRSB* bb, const HChar* caller,
       useBeforeDef_Stmt(bb,stmt,def_counts);
 
       /* Now make note of any temps defd by this statement. */
-      switch (stmt->tag) {
-      case Ist_WrTmp:
-         if (stmt->Ist.WrTmp.tmp < 0 || stmt->Ist.WrTmp.tmp >= n_temps)
-            sanityCheckFail(bb, stmt, 
-               "IRStmt.Tmp: destination tmp is out of range");
-         def_counts[stmt->Ist.WrTmp.tmp]++;
-         if (def_counts[stmt->Ist.WrTmp.tmp] > 1)
-            sanityCheckFail(bb, stmt, 
-               "IRStmt.Tmp: destination tmp is assigned more than once");
-         break;
-      case Ist_LoadG: {
-         const IRLoadG* lg = stmt->Ist.LoadG.details;
-         if (lg->dst < 0 || lg->dst >= n_temps)
-             sanityCheckFail(bb, stmt, 
-                "IRStmt.LoadG: destination tmp is out of range");
-         def_counts[lg->dst]++;
-         if (def_counts[lg->dst] > 1)
-             sanityCheckFail(bb, stmt, 
-                "IRStmt.LoadG: destination tmp is assigned more than once");
-         break;
-      }
-      case Ist_Dirty: {
-         const IRDirty* d = stmt->Ist.Dirty.details;
-         if (d->tmp != IRTemp_INVALID) {
-            if (d->tmp < 0 || d->tmp >= n_temps)
-               sanityCheckFail(bb, stmt, 
-                  "IRStmt.Dirty: destination tmp is out of range");
-            def_counts[d->tmp]++;
-            if (def_counts[d->tmp] > 1)
-               sanityCheckFail(bb, stmt, 
-                  "IRStmt.Dirty: destination tmp is assigned more than once");
-         }
-         break;
-      }
-      case Ist_CAS: {
-         const IRCAS* cas = stmt->Ist.CAS.details;
-         if (cas->oldHi != IRTemp_INVALID) {
-            if (cas->oldHi < 0 || cas->oldHi >= n_temps)
-                sanityCheckFail(bb, stmt, 
-                   "IRStmt.CAS: destination tmpHi is out of range");
-             def_counts[cas->oldHi]++;
-             if (def_counts[cas->oldHi] > 1)
-                sanityCheckFail(bb, stmt, 
-                   "IRStmt.CAS: destination tmpHi is assigned more than once");
-         }
-         if (cas->oldLo < 0 || cas->oldLo >= n_temps)
-            sanityCheckFail(bb, stmt, 
-               "IRStmt.CAS: destination tmpLo is out of range");
-         def_counts[cas->oldLo]++;
-         if (def_counts[cas->oldLo] > 1)
-            sanityCheckFail(bb, stmt, 
-               "IRStmt.CAS: destination tmpLo is assigned more than once");
-         break;
-      }
-      case Ist_LLSC:
-         if (stmt->Ist.LLSC.result < 0 || stmt->Ist.LLSC.result >= n_temps)
-            sanityCheckFail(bb, stmt,
-               "IRStmt.LLSC: destination tmp is out of range");
-         def_counts[stmt->Ist.LLSC.result]++;
-         if (def_counts[stmt->Ist.LLSC.result] > 1)
-            sanityCheckFail(bb, stmt,
-               "IRStmt.LLSC: destination tmp is assigned more than once");
-         break;
-      default:
-         /* explicitly handle the rest, so as to keep gcc quiet */
-         break;
-      }
+      assignedOnce_Stmt(bb, stmt, def_counts, n_temps);
    }
 
    /* Typecheck everything. */
    for (i = 0; i < bb->stmts_used; i++)
-      if (bb->stmts[i])
-         tcStmt( bb, bb->stmts[i], guest_word_size );
+      tcStmt(bb, bb->stmts[i], guest_word_size);
    if (typeOfIRExpr(bb->tyenv,bb->next) != guest_word_size)
       sanityCheckFail(bb, NULL, "bb->next field has wrong type");
    /* because it would intersect with host_EvC_* */

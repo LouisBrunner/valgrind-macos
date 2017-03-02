@@ -3715,7 +3715,7 @@ PRE(sys_sigaction)
       PRE_MEM_READ( "sigaction(act->sa_handler)", (Addr)&sa->ksa_handler, sizeof(sa->ksa_handler));
       PRE_MEM_READ( "sigaction(act->sa_mask)", (Addr)&sa->sa_mask, sizeof(sa->sa_mask));
       PRE_MEM_READ( "sigaction(act->sa_flags)", (Addr)&sa->sa_flags, sizeof(sa->sa_flags));
-      if (ML_(safe_to_deref)(sa,sizeof(sa))
+      if (ML_(safe_to_deref)(sa,sizeof(struct vki_old_sigaction))
           && (sa->sa_flags & VKI_SA_RESTORER))
          PRE_MEM_READ( "sigaction(act->sa_restorer)", (Addr)&sa->sa_restorer, sizeof(sa->sa_restorer));
    }
@@ -3828,7 +3828,7 @@ PRE(sys_rt_sigaction)
       PRE_MEM_READ( "rt_sigaction(act->sa_handler)", (Addr)&sa->ksa_handler, sizeof(sa->ksa_handler));
       PRE_MEM_READ( "rt_sigaction(act->sa_mask)", (Addr)&sa->sa_mask, sizeof(sa->sa_mask));
       PRE_MEM_READ( "rt_sigaction(act->sa_flags)", (Addr)&sa->sa_flags, sizeof(sa->sa_flags));
-      if (ML_(safe_to_deref)(sa,sizeof(sa))
+      if (ML_(safe_to_deref)(sa,sizeof(vki_sigaction_toK_t))
           && (sa->sa_flags & VKI_SA_RESTORER))
          PRE_MEM_READ( "rt_sigaction(act->sa_restorer)", (Addr)&sa->sa_restorer, sizeof(sa->sa_restorer));
    }

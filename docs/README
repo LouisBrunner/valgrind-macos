@@ -67,9 +67,9 @@ overview:
 - 'make install' installs the HTML docs in
   $(install)/share/doc/valgrind/html/, if they are present.  (They will
   be present if you are installing from the result of a 'make dist'.
-  They might not be present if you are developing in a Subversion
-  workspace and have not built them.)  It doesn't install the XML docs,
-  as they're not useful installed.
+  They might not be present if you are developing in a git workspace and
+  have not built them.)  It doesn't install the XML docs, as they're not
+  useful installed.
 
 If the XML processing tools ever mature enough to become standard, we
 could just build the docs from XML when doing 'make install', which

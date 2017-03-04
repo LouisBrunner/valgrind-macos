@@ -64,9 +64,8 @@ version of rgrep, use a command something like this:
 
    find . -name '*.h' \
           -type f \
-          -not -path '*.svn\/*' | xargs grep "$1"
+          -not -path '*.git\/*' | xargs grep "$1"
 
 The -name option gives the file wildcard, the -type says "look in normal
-files only" and the -not -path tells it to not look in Subversions hidden
-directories.
+files only" and the -not -path tells it to not look in git hidden directories.
 

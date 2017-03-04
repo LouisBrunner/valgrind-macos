@@ -186,7 +186,7 @@ If something goes wrong, looking at the output files can be useful.  For
 example, if no email was sent but you expected one, check sendmail.log to
 see if the mailer script had a problem.  Or check if unchanged.log exists.
 
-Occasionally the SVN server isn't available when the tests runs, for either
+Occasionally the git server isn't available when the tests runs, for either
 or both trees.  When this happens the email will be sent but it won't be
 very informative.  Usually it's just a temporary server problem and it'll
 run fine the next time without you having to do anything.
@@ -195,7 +195,7 @@ Note that the test suite is imperfect:
 - There are very few machines where all tests pass;  that's why the old/new
   diff is produced.  Some of the tests may not be as portable as intended.
 - Some tests are non-deterministic, and so may pass one day and fail the
-  next.  
+  next.
 
 Improving the test suite to avoid these problems is a long-term goal but it
 isn't easy.

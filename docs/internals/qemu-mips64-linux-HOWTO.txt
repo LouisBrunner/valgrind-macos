@@ -101,7 +101,7 @@ ssh -XC -p 5555 username@localhost
   (on the guest)
   become root
 
-  apt-get install make g++ gcc subversion emacs gdb automake autoconf
+  apt-get install make g++ gcc git emacs gdb automake autoconf
   apt-get gcc-multilib g++-multilib
 
 Configuring V on the guest:

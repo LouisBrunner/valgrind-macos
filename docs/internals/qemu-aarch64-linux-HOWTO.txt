@@ -97,6 +97,6 @@ ssh -XC -p 5555 username@localhost
 
   (on the guest)
   become root
-  apt-get install make gcc g++ automake autoconf emacs subversion gdb
+  apt-get install make gcc g++ automake autoconf emacs git gdb
 
 Hack on, etc.

@@ -42,12 +42,12 @@ First of all:
 
   Suggestion for next release: when a bug is fixed, update NEWS
   directly => less chance to forget, and NEWS always up to date
-  in SVN.
+  in GIT.
 
 - Other files that might need updating:  README, README_DEVELOPERS,
   README_PACKAGERS.
 
-- Add X.Y.Z and X.Y+1.Z.SVN versions to Bugzilla.
+- Add X.Y.Z and X.Y+1.Z.GIT versions to Bugzilla.
 
 - Add "wantedX.Y.Z+1" and "wantedX.Y+1.Z" milestones to Bugzilla.
 
@@ -141,47 +141,30 @@ For the official release:
   - Make sure regtests run ok on all platforms of interest.
   - Make sure Mozilla and OpenOffice run ok on all platforms of interest.
 
-- Change release number in AC_INIT() in configure.in to "X.Y.Z".
+- Change release number in AC_INIT() in configure.ac to "X.Y.Z".
 
 - Make the tarball ("make dist").
 
 - Check tarball builds, installs, regtests on platforms of interest.
   If not, fix and repeat until success.
 
-- Tag the repositories ("VALGRIND_X_Y_Z" and "VEX_X_Y_Z").  Point the Vex
-  external for VALGRIND_X_Y_Z to VEX_X_Y_Z.
+- Tag the repository ("VALGRIND_X_Y_Z").
 
-  If it's a X.Y.0 release, make "VALGRIND_X_Y_BRANCH" and "VEX_X_Y_BRANCH"
-  branches too.  Useful examples (X.Y.0 major release):
-
-    cd valgrind
-    svn copy trunk tags/VALGRIND_3_3_0
-    svn copy trunk branches/VALGRIND_3_3_BRANCH
-
-    cd vex
-    svn copy trunk tags/VEX_3_3_0
-    svn copy trunk branches/VEX_3_3_BRANCH
+  If it's a X.Y.0 release, make "VALGRIND_X_Y_BRANCH" branch, too.
+  Useful examples (X.Y.0 major release):
 
     cd valgrind
-    cd tags/VALGRIND_3_3_0
-    svn propset svn:externals \
-       "VEX svn://svn.valgrind.org/vex/tags/VEX_3_3_0" .
-    cd branches/VALGRIND_3_3_BRANCH
-    svn propset svn:externals \
-       "VEX svn://svn.valgrind.org/vex/branches/VEX_3_3_BRANCH" .
+    git checkout HEAD
+    git tag VALGRIND_3_3_0
+    git branch VALGRIND_3_3_BRANCH
+    git push
 
   (X.Y.Z minor release):
 
-    cd vex
-    svn copy branches/VEX_3_6_BRANCH tags/VEX_3_6_1
-
     cd valgrind
-    svn copy branches/VALGRIND_3_6_BRANCH tags/VALGRIND_3_6_1
-
-    cd tags/VALGRIND_3_6_1
-    svn propset svn:externals \
-       "VEX svn://svn.valgrind.org/vex/tags/VEX_3_6_1" .
-
+    git checkout VALGRIND_3_6_BRANCH
+    git tag VALGRIND_3_6_1
+    git push
 
 
 - Update website: 
@@ -195,10 +178,10 @@ For the official release:
   - Update the "release-date" and "release-version" in php/.htconfx.
   - Other pages that might need updating:  downloads/repository.html.
 
-- Change release number in AC_INIT() in configure.in to "X.Y.Z.SVN", where
+- Change release number in AC_INIT() in configure.ac to "X.Y.Z.GIT", where
   X.Y.Z is one more than the release just done.
 
-- Make sure the release notes are present in the NEWS file on the trunk and
+- Make sure the release notes are present in the NEWS file on the master and
   the branch.
 
 - Announce the release:

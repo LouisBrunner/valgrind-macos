@@ -365,26 +365,17 @@ n-i-bz  Remove limit on strd's negative immediates
 
 Thu 15 Sep 12:55:21 CEST 2016
 
-368863  WARNING: unhandled arm64-linux syscall: 100
-368864  WARNING: unhandled arm64-linux syscall: 262
-368865  WARNING: unhandled arm64-linux syscall: 272
-368866  WARNING: unhandled arm64-linux syscall: 238
+368866  WARNING: unhandled arm64-linux syscall: 238 (migrate_pages)
 368868  disInstr(arm64): unhandled instruction 0xD53BE000 = cntfrq_el0 (ARMv8)
         (should fix this for 3.12.1)
 368873  Please add FreeBSD to supported OS list
 368913  WARNING: unhandled arm64-linux syscall: 117
 368914  WARNING: unhandled arm64-linux syscall: 142
 368916  WARNING: unhandled arm64-linux syscall: 234
-368917  WARNING: unhandled arm64-linux syscall: 218
-368918  WARNING: unhandled arm64-linux syscall: 127
 368919  WARNING: unhandled arm64-linux syscall: 274
 368920  WARNING: unhandled arm64-linux syscall: 275
 368921  WARNING: unhandled arm64-linux syscall: 162
-368922  WARNING: unhandled arm64-linux syscall: 161
 368923  WARNING: unhandled arm64-linux syscall: 268
-368924  WARNING: unhandled arm64-linux syscall: 84
-368925  WARNING: unhandled arm64-linux syscall: 130
-368926  WARNING: unhandled arm64-linux syscall: 97
 368960  WARNING: unhandled amd64-linux syscall: 163
 369026  WARNING: unhandled amd64-linux syscall: 169
 369027  WARNING: unhandled amd64-linux syscall: 216 (remap_file_pages)
@@ -416,48 +407,69 @@ Thu 15 Sep 12:55:21 CEST 2016
 370635  arm64 missing syscall getcpu
         (should fix this for 3.12.1)
 
-371065  www: add CfP for FOSDEM 2017 in valgrind.org NEWS section
-
 Wed 19 Oct 17:07:42 CEST 2016
 
-371128  BCD add and subtract insns on Power BE in 32-bit mode do not work.
-371225  Fix order of timer_{gettime,getoverrun,settime} syscalls on arm64
 371227  Clean AArch64 syscall table
 371396  helgrind and drd pth_cond_destroy_busy testcase hang with
-        new glibc cond var implementation
-! 344139  x86 stack-seg overrides, needed by the Wine people
+        new glibc cond var implementation (workaround committed as 16097)
 371411  Unify fstat64/fstatat64 wrappers
 371439  Get coredump working on arm64
-371471  Valgrind complains about non legit memory leaks on placement new (C++)
 371491  handleAddrOverrides() is truncating the segment base address when
-        ASO prefix is used
+        ASO prefix is used (EASY FIX)
 371503  disInstr(arm64): unhandled instruction 0xF89F0000
-371668  ppc64 clobbering of R2 is invalid.
-371770  Memleak trace back for overwritten or freed memory pointers
-371869  support '%' in symbol Z-encodin
-371916  execution tree xtree concept
+371770  Memleak trace back for overwritten or freed memory pointers (WISHLIST)
+371916  execution tree xtree concept (SHOULD BE CLOSED?)
 371966  No uninitialised values reported with PGI -Mstack_arrays
 371989  PCMPISTRM $0x72 validity bit propagation is imprecise
-372120  c++ demangler demangles symbols which are not c++
 372182  Support more languages/demangling styles than just C++ (and Rust)
-372185  Support of valgrind on ARMv8 with 32 bit executable
-372188  vex amd64->IR: 0x66 0xF 0x3A 0x62 0x4A 0x10 0x10 0x48 0x83 0xC2
-372195  Power PC, xxsel instruction is not always recognized.
-372358  vex amd64->IR: 0xC5 0xFA 0x7F 0x45 0x80 0xC5 0xFA 0x7F 0x4D 0x90
-372504  Hanging on exit_group
+372188  vex amd64->IR: 0x66 0xF 0x3A 0x62 0x4A 0x10 0x10 0x48 (PCMPxSTRx $0x10)
 372513  WARNING: unhandled ppc64be-linux syscall: 251
-372600  process loops forever when fatal signals are arriving quickly
 
 Mon 21 Nov 13:13:47 CET 2016
 
 n-i-bz  major perf problems w/ stack registration + stack recycling
 372772  Brew doesn't allow for Valgrind 3.12.0 installation on Sierra OSX
 372779  valgrind will hang
-372794  LibVEX (arm32 front end): 'Assertion szBlg2 <= 3' failed
 372828  vex amd64->IR: 0x66 0x4D 0xF 0x38 0xF6 0xD2 0x66 0x4D
 372861  Test pselect_alarm for Bug 359871 seg faults on RHEL 4
+--Q
  
 Fri 25 Nov 11:47:59 CET 2016
+372909] New: glibc 2.23+ fopen/printf change causes valgrind to report 1024
+byte allocation
+373046] New: Stacks registered by core are never deregistered
+373069] New: memcheck/tests/leak_cpp_interior fails with GCC 5.1+
+373166] New: drd and helgrind will crash wth vex amd64->IR: unhandled instruction bytes 0xFF 0xFF 0x48 0x85 0xC0 0x74 0x8 0x4D 0x89 0xE7
+373176] New: Invalid stack trace
+373192] New: Calling posix_spawn completely broken
+373488] New: Support for fanotify API on ARM64 architecture
+373555] New: rename BBPTR to GSPTR as it denotes guest state only
+373938] New: const IRExpr arguments to matchIRExpr()
+373990] New: Potential shift left overflow in guest_arm_toIR.c
+374482] New: the 'impossible' happened:  run_innerloop detected host state invariant failure
+374719] New: some spelling fixes
+374814] New: VALGRIND INTERNAL ERROR: Valgrind received a signal 11 (SIGSEGV) - exiting
+374850] New: The Impossible Happened
+374940] New: i386: Stack access at -1(%%esp)
+374963] New: increase valgrind's load address to prevent mmap failure
+375008] New: amd64->IR: unhandled instruction bytes: 0x8F 0x6A 0x78 0x10 0xD8 0x4 0x4 0x0 0x0 0x8F
+375150] New: Assertion 'tres.status == VexTransOK' failed - Ubuntu, Mint, and Fedora (OS tested so far)
+375171] New: Crash when running "hello world"
+375415] New: free list of blocks, mempool blocks and describe addr do not work properly together
+375514] New: valgrind_get_tls_addr() does not work in case of static TLS
+375772] New: +1 error in get_elf_symbol_info() when computing value of 'hi' address for ML_(find_rx_mapping)
+375839] New: Temporary storage exhusted , when long sequence of vfmadd231ps instructions to be executed
+375845] New: Unrecognised instruction using std::random_device
+376257] New: helgrind history full speed up using a cached stack
+376455] New: Solaris 11.3 : unhandled syscall meminfo() : 180
+ 376611] New: ppc64 and arm64 don't know about prlimit64 syscall
+ 376729] New: PPC64, remove R2 from the clobber list
+376869] New: unhandled syscall: 531
+376870] New: The impossible happened on Mavericks 10.9
+376956] New: Memcheck crashes on access(NULL, F_OK) done by Free Pascal application
+377006] New: valgrind/memcheck segfaults under certain kernel versions (amd64) but not others.
+377066] New: Some Valgrind unit tests fail to compile on Ubuntu 16.10 with PIE enabled by default
+377159] New: "vex: the `impossible' happened" still present
 
 other stuff to fix: annoying duplicate brk() message
 
@@ -538,6 +550,165 @@ David Tolnay <dtolnay@gmail.com>.  n-i-bz.
 16155 Update (NEWS)
 
 Fri 25 Nov 12:30:15 CET 2016
+
+16156 include/valgrind.h: Fix spelling in a source code comment
+16157 Ensure the 'too early msg to use vgdb stop at valgrind abnormal exit' is produced
+16158 Addition of helgrind client request  VALGRIND_HG_GNAT_DEPENDENT_MASTER_JOIN
+* 16159 Fix 373046 - Stacks registered by core are never deregistered
+16160 Use NULL_STK_ID consistently throughout whole Valgrind.
+16161 Fix compiler warning on Solaris.
+? 16162 mips32: fix fadvise64 system call
+? 16163 mips64: fix fadvise64 syscall wrappers
+16164 352395 - Please provide SVN revision info in --version -v
+16165 Update NEWS for the fixing of 358213 helgrind/drd bar_bad
+? 16166 mips: fix call_on_new_stack_0_1 code
+16167 Small optimisation: no need to have a syscall wrapper unless collect systime is yes
+? 16168 Stacks registered by core are never deregistered (macOS-specific follow-up). Refer r16159.
+
+16169 Fix typo in syswrap-darwin log output. n-i-bz.
+16170 Update SVN ignore propset for include/vgversion.h. n-i-bz.
+16171 Update SVN ignore propset for tests/libc_test. n-i-bz. Refer r16097.
+16172 mips: implement CLEAR_CALLER_SAVED_REGS for memcheck tests
+
+16173Add CLEAR_CALLER_SAVED_REGS in leak-tree test 
+16174Remove second definition of typedef ‘Time’
+16175mips: add regression test for fadvise64
+
+16176Some housekeeping related to recent r16175.
+16177Adjust line number in mcblocklistsearch.stderrB.exp.
+
+16178mips: add fadvise64 to svn ignore list
+16179Update memcheck/tests/amd64-linux ignore list
+16180 mips: fix VG_(gdbserver_report_signal) arguments (dep 15248)
+16181 mips32: allow execution of round_fpu64 test for fpxx
+
+16182 mips32: minor style change to r16181
+3286 missingmips: small changes in VexGuestMIPS{32|64}State structs
+3287 Rename BBPTR to GSPTR as it denotes guest state pointer only
+16183mips64: add cvm_atomic.stdout.exp-BE
+16184Add placeholders for all new macOS 10.12 syscalls. Related to bz#365327.
+16185Add placeholders for all new OS X 10.11 syscalls. Related to bz#348909.
+
+16186Fix 342040 Valgrind mishandles clone with CLONE_VFORK | CLONE_VM that clones to a different stack
+Fix 373192 Calling posix_spawn in glibc 2.24 completely broken
+
+16187Add missing EXTRA_DIST clonev.stdout.exp
+
+16188mips: remove some old cruft from clone functions
+16189Rename BBPTR to GSPTR as it denotes guest state pointer only
+Fixes BZ#373555.
+16190mips: fix "cast-equal" warnings in coredump-elf.cRelated BZ#370028
+16191Update NEWS for recent VEX commit r3288.
+16192 Add Solaris specific notes on running regression tests
+16193 xtree: minor updates to documentation, comments and indentation, no functional change.
+3288 missingconst IRExpr arguments for matchIRExpr()BZ#373938
+* 3289 Fix assertion failure in decode_V8_instruction.  Fixes #372794.
+--
+16194 Add test cases for 32-bit v8 FP and SIMD insns.
+16195 xtree: CALLED_FLF must be called only up to ips[0] + minor doc update
+16196 missingAdd a format marker to callgrind files
+16197 Fix comments in m_trampoline.S for amd64/Solaris redirs.
+16198 Make this compile for both ARM and Thumb encodings,
+16199 Do not capture the free stacktrace in memcheck, ..
+3290 Implement ARMv8 VSEL<c>.F64 d_d_d, VSEL<c>.F32 s_s_s.
+16200 Fix a bug when --log-file output isn't split when a program forks.  BZ#162848
+3291 Implement VRINT{A,N,P,M}.F64 d_d, VRINT{A,N,P,M}.F32 s_s.
+3292 Implement:
+  VRINT{Z,R}.F64.F64 d_d, VRINT{Z,R}.F32.F32 s_s
+  VCVT{A,N,P,M}{.S32,.U32}{.F64,.F32}
+16201 mips64: update exp file for test_math
+3293 Implement
+  V{MIN,MAX}NM.F64 Dd, Dn, Dm
+  V{MIN,MAX}NM.F32 Sd, Sn, Sm
+16202 Add support for Iop_MaxNumF64, Iop_MinNumF64, Iop_MaxNumF32 and
+Iop_MinNumF32, as introduced in vex r3293.
+3294 Implement VRINTX.F64.F64 d_d, VRINTX.F32.F32 s_s.
+3295 dis_neon_data_3same: don't silently accept invalid instructions.
+3296 Implement V{MAX,MIN}NM{.F32 d_d_d, .F32 q_q_q}.
+3297 Implement:
+  VCVT{A,N,P,M}{.F32 d_d, .F32 q_q}
+  VRINT{A,N,P,M,X,Z}{.F32 d_d, .F32 q_q}
+16203 Connect the v8 FP and SIMD tests to the build system.
+16204 x86-linux: Initialize x86 system GDT on first use.  Bug 344139 comment
+3.
+3298 Small comment fix: point at the correct file name
+3299 x86: Recognize the SS segment prefix on x86.  Bug 344139 comment 4.
+16205 Allow memcheck to output the leak results as a callgrind xtree file.
+16206 xtree leak.
+As option --xtree-leak=yes is useless without a full leak report,
+16207 Fix --help for --xtree-leak-file
+16208 Similar to xtree memory, give a user msg with the xtree leak filename
+16209 xtree: use  "UnknownFile???" and "UnknownFn???" instead of "???"
+and "file ???"
+16210 Document limitation of --log-file when a program forks.
+Follow up to r16200 and BZ#162848.
+
+16211 mips32: add support for ptrace syscall
+16212 mips: fix target_get_drv() function
+16213 Adding new filter to memcheck/tests/filter_stderr
+16214 Samll changes on xtree leak event short names
+16215 missingmips: implement calculation for static TLS  Related issue #375514.
+
+* 16216 Fix +1 error in get_elf_symbol_info() when computing value of 'hi' address for ML_(find_rx_mapping)()
+Fixes BZ#375772
+16217 missingforce old implementation of std::string for leak_cpp_interior
+test Related issue #373069
+
+16218 Add PROT_READ flag to mmap, as Valgrind needs to be able to read the
+code before it executes it.
+16219 add suppression for helgrind/tests/tc22_exit_w_lock
+16220 fix leak-segv-jmp test for platforms with 64K pagesize
+16221 am_munmap_both_wrk: safely initialise out-param for all return paths.
+3300mips: rewrite mips_irgen_load_and_add32|64 and code around it
+3301Fix non-mips build breakage from VEX r3300
+3302Handle unknown HINT instructions on aarch64 by ignoring them. BZ#376279.
+3303Add comment about HINT instructions.
+
+3304 mips64: do correct 32-bit comparison for Iop_CmpNE32
+16223 add none/tests/linux/clonev to svn:ignore list
+16224 Solaris: Add syscall wrapper for lgrpsys(180)
+Fixes BZ#376455.
+16225 Solaris: Add additional subcodes for lgrpsys(180) syscall
+Fixes BZ#376455.
+16226 missingSolaris: include <sys/lgrp_user_impl.h> only on newer Solaris. BZ#376455. 
+16227 Solaris: Add syscall wrapper for fast trap getlgrp(6)
+Fixes BZ#376518.
+16228 Bug 376611 - ppc64 and arm64 don't know about prlimit64 syscall.
+16229 fix order of timer_* syscalls on aarch64 - bug #371225
+16230 aarch64: add missing syscalls into table
+16231 aarch64: remove bogus syscall part
+16232 aarch64: enable pivot_root syscall (generic wrapper)
+16233 aarch64: enable sync_file_range syscall (generic wrapper)
+16234 aarch64: enable unshare syscall (generic wrapper)
+16235 aarch64: enable get_robust_list syscall (generic wrapper)
+16236 aarch64: enable delete_module syscall (generic wrapper)
+16237 aarch64: enable sched_rr_get_interval syscall (generic wrapper)
+16238 aarch64: enable tkill syscall (generic wrapper)
+16239 aarch64: enable request_key syscall (generic wrapper)
+16240 aarch64: enable move_pages syscall (generic wrapper)
+16241 aarch64: enable rt_tgsigqueueinfo syscall (generic wrapper)
+16242 aarch64: enable fanotify_init syscall (generic wrapper)
+16243 missingaarch64: enable fanotify_mark syscall (generic wrapper)
+16244 aarch64: enable clock_adjtime syscall (generic wrapper)
+16245 aarch64: enable kcmp syscall (generic wrapper)
+16246 aarch64: enable getcpu syscall (generic wrapper)
+16247 aarch64: enable sethostname syscall (generic wrapper)
+16248 aarch64: mark not implemented syscalls as such
+16249 Remove arm64 specific (unused) setup_child () and assign_guest_tls ().
+16250 Update NEWS with bug numbers of recently implemented linux-arm64 syscalls.
+16251 modifty sleepers to have easier evaluation of interaction between cpu freq scaling
+and scheduler lock (pipe based or futex based)
+16252 Fix sr_EQ() comparison on Solaris syscall failure
+16253 Follow up to SVN r16251
+Fix expected output for gdbserver_tests/solaris/nlcontrolc.
+16254 Thusly, remove R2 from the clobber list. Bugzilla is 376729.
+3305 Push some spec rules for amd64 that have been sitting around for a while:
+16255 Follow up to SVN r16253 (fix expected output of gdbserver_tests/solaris/nlcontrolc)
+16256 Introduce macro ASSUME_ALIGNED and use it in vki-linux.h.
+3306 Fix incorrect variable type (IRTemp->IRType)
+16257 Update trunk/docs/internals/3_12_BUGSTATUS.txt
+16258 Fix two safe_to_deref/sizeof mismatches in
+sys_sigaction/sys_rt_sigaction.
 
 ========================================================================
 ========================================================================

@@ -95,6 +95,7 @@ where XXXXXX is the bug number as listed below.
 162848  --log-file output isn't split when a program forks
 342040  Valgrind mishandles clone with CLONE_VFORK | CLONE_VM that clones
         to a different stack.
+344139  x86 stack-seg overrides, needed by the Wine people
 348616  Wine/valgrind: noted but unhandled ioctl 0x5390 [..] (DVD_READ_STRUCT)
 352395  Please provide SVN revision info in --version -v
 352767  Wine/valgrind: noted but unhandled ioctl 0x5307 [..] (CDROMSTOP)
@@ -112,11 +113,15 @@ where XXXXXX is the bug number as listed below.
 370635  arm64 missing syscall getcpu
 371225  Fix order of timer_{gettime,getoverrun,settime} syscalls on arm64
 371412  Rename wrap_sys_shmat to sys_shmat like other wrappers
+371471  Valgrind complains about non legit memory leaks on placement new (C++)
 371869  support '%' in symbol Z-encoding
 371916  execution tree xtree concept
 372120  c++ demangler demangles symbols which are not c++
+372185  Support of valgrind on ARMv8 with 32 bit executable
+372195  Power PC, xxsel instruction is not always recognized.
 372504  Hanging on exit_group
 372600  process loops forever when fatal signals are arriving quickly
+372794  LibVEX (arm32 front end): 'Assertion szBlg2 <= 3' failed
 373046  Stacks registered by core are never deregistered
 373192  Calling posix_spawn in glibc 2.24 completely broken
 373488  Support for fanotify API on ARM64 architecture
@@ -131,6 +136,7 @@ where XXXXXX is the bug number as listed below.
 376518  Solaris: unhandled fast trap getlgrp(6)
 376611  ppc64 and arm64 don't know about prlimit64 syscall
 376729  PPC64, remove R2 from the clobber list
+        == 371668
 
 Release 3.12.0 (20 October 2016)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

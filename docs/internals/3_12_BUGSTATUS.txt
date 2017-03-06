@@ -432,46 +432,34 @@ n-i-bz  major perf problems w/ stack registration + stack recycling
 372779  valgrind will hang
 372828  vex amd64->IR: 0x66 0x4D 0xF 0x38 0xF6 0xD2 0x66 0x4D
 372861  Test pselect_alarm for Bug 359871 seg faults on RHEL 4
---Q
  
 Fri 25 Nov 11:47:59 CET 2016
-372909] New: glibc 2.23+ fopen/printf change causes valgrind to report 1024
-byte allocation
-373046] New: Stacks registered by core are never deregistered
-373069] New: memcheck/tests/leak_cpp_interior fails with GCC 5.1+
-373166] New: drd and helgrind will crash wth vex amd64->IR: unhandled instruction bytes 0xFF 0xFF 0x48 0x85 0xC0 0x74 0x8 0x4D 0x89 0xE7
-373176] New: Invalid stack trace
-373192] New: Calling posix_spawn completely broken
-373488] New: Support for fanotify API on ARM64 architecture
-373555] New: rename BBPTR to GSPTR as it denotes guest state only
-373938] New: const IRExpr arguments to matchIRExpr()
-373990] New: Potential shift left overflow in guest_arm_toIR.c
-374482] New: the 'impossible' happened:  run_innerloop detected host state invariant failure
-374719] New: some spelling fixes
-374814] New: VALGRIND INTERNAL ERROR: Valgrind received a signal 11 (SIGSEGV) - exiting
-374850] New: The Impossible Happened
-374940] New: i386: Stack access at -1(%%esp)
-374963] New: increase valgrind's load address to prevent mmap failure
-375008] New: amd64->IR: unhandled instruction bytes: 0x8F 0x6A 0x78 0x10 0xD8 0x4 0x4 0x0 0x0 0x8F
-375150] New: Assertion 'tres.status == VexTransOK' failed - Ubuntu, Mint, and Fedora (OS tested so far)
-375171] New: Crash when running "hello world"
-375415] New: free list of blocks, mempool blocks and describe addr do not work properly together
-375514] New: valgrind_get_tls_addr() does not work in case of static TLS
-375772] New: +1 error in get_elf_symbol_info() when computing value of 'hi' address for ML_(find_rx_mapping)
-375839] New: Temporary storage exhusted , when long sequence of vfmadd231ps instructions to be executed
-375845] New: Unrecognised instruction using std::random_device
-376257] New: helgrind history full speed up using a cached stack
-376455] New: Solaris 11.3 : unhandled syscall meminfo() : 180
- 376611] New: ppc64 and arm64 don't know about prlimit64 syscall
- 376729] New: PPC64, remove R2 from the clobber list
-376869] New: unhandled syscall: 531
-376870] New: The impossible happened on Mavericks 10.9
-376956] New: Memcheck crashes on access(NULL, F_OK) done by Free Pascal application
-377006] New: valgrind/memcheck segfaults under certain kernel versions (amd64) but not others.
-377066] New: Some Valgrind unit tests fail to compile on Ubuntu 16.10 with PIE enabled by default
-377159] New: "vex: the `impossible' happened" still present
+
+373166  vex amd64->IR: 0xFF 0xFF 0x48 0x85 0xC0 0x74 0x8 0x4D 0x89 0xE7
+373990  Potential shift left overflow in guest_arm_toIR.c
+375171  VG_(scheduler): run_innerloop detected host state invariant failure
+        == 374482
+        == 374850
+374719  some spelling fixes
+374814  VALGRIND INTERNAL ERROR: signal 11 (SIGSEGV) - exiting
+374963  increase valgrind's load address to prevent mmap failure
+375008  amd64->IR: 0x8F 0x6A 0x78 0x10 0xD8 0x4 0x4 0x0 0x0 0x8F
+375415  free list of blocks, mempool blocks and describe addr
+        do not work properly together
+375839  Temporary storage exhausted, with long sequence of vfmadd231ps insns
+        == 377159  "vex: the `impossible' happened" still present
+        == 375150  Assertion 'tres.status == VexTransOK' failed
+376257  helgrind history full speed up using a cached stack
+376870  The impossible happened on Mavericks 10.9
+376956  Memcheck crashes on access(NULL, F_OK) done by Free Pascal application
+377006  valgrind/memcheck segfaults under certain kernel versions (amd64)
+        but not others.
+377066  Some Valgrind unit tests fail to compile on Ubuntu 16.10 with
+        PIE enabled by default
 
 other stuff to fix: annoying duplicate brk() message
+
+Mon  6 Mar 21:02:39 CET 2017
 
 ========================================================================
 ========================================================================
@@ -709,6 +697,8 @@ Fix expected output for gdbserver_tests/solaris/nlcontrolc.
 16257 Update trunk/docs/internals/3_12_BUGSTATUS.txt
 16258 Fix two safe_to_deref/sizeof mismatches in
 sys_sigaction/sys_rt_sigaction.
+
+Mon  6 Mar 21:02:39 CET 2017
 
 ========================================================================
 ========================================================================

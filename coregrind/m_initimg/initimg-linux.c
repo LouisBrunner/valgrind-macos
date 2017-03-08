@@ -789,7 +789,8 @@ Addr setup_client_stack( void*  init_sp,
             break;
 
 #        if !defined(VGP_ppc32_linux) && !defined(VGP_ppc64be_linux) \
-            && !defined(VGP_ppc64le_linux)
+            && !defined(VGP_ppc64le_linux) \
+            && !defined(VGP_mips32_linux) && !defined(VGP_mips64_linux)
          case AT_SYSINFO_EHDR: {
             /* Trash this, because we don't reproduce it */
             const NSegment* ehdrseg = VG_(am_find_nsegment)((Addr)auxv->u.a_ptr);

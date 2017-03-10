@@ -11310,13 +11310,16 @@ static Bool dis_fp_pair ( UInt theInstr )
    UChar b0            = ifieldBIT0(theInstr);
    Bool is_load        = 0;
 
-   if ((frT_hi_addr %2) != 0) {
-      vex_printf("dis_fp_pair(ppc) : odd frT register\n");
-      return False;
-   }
-
    switch (opc1) {
    case 0x1F: // register offset
+      /* These instructions work on a pair of registers.  The specified
+       * register must be even.
+       */
+      if ((frT_hi_addr %2) != 0) {
+         vex_printf("dis_fp_pair(ppc) ldpx or stdpx: odd frT register\n");
+         return False;
+      }
+
       switch(opc2) {
       case 0x317:     // lfdpx (FP Load Double Pair X-form, ISA 2.05  p125)
          DIP("ldpx fr%u,r%u,r%u\n", frT_hi_addr, rA_addr, rB_addr);
@@ -11346,6 +11349,14 @@ static Bool dis_fp_pair ( UInt theInstr )
 
       switch(opc2) {
       case 0x0:     // lfdp (FP Load Double Pair DS-form, ISA 2.05  p125)
+         /* This instruction works on a pair of registers.  The specified
+          * register must be even.
+          */
+         if ((frT_hi_addr %2) != 0) {
+            vex_printf("dis_fp_pair(ppc) lfdp : odd frT register\n");
+            return False;
+         }
+
          DIP("lfdp fr%u,%d(r%u)\n", frT_hi_addr, simm16, rA_addr);
          assign( EA_hi, ea_rAor0_simm( rA_addr, simm16  ) );
          is_load = 1;
@@ -11390,6 +11401,14 @@ static Bool dis_fp_pair ( UInt theInstr )
       switch(opc2) {
       case 0x0:
          // stfdp (FP Store Double Pair DS-form, ISA 2.05  p125)
+         /* This instruction works on a pair of registers.  The specified
+          * register must be even.
+          */
+         if ((frT_hi_addr %2) != 0) {
+            vex_printf("dis_fp_pair(ppc) stfdp : odd frT register\n");
+            return False;
+         }
+
          DIP("stfdp fr%u,%d(r%u)\n", frT_hi_addr, simm16, rA_addr);
          assign( EA_hi, ea_rAor0_simm( rA_addr, simm16  ) );
          break;

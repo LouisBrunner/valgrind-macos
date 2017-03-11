@@ -9520,6 +9520,8 @@ POST(sys_ioctl)
    case VKI_SNDRV_TIMER_IOCTL_STOP:
    case VKI_SNDRV_TIMER_IOCTL_CONTINUE:
    case VKI_SNDRV_TIMER_IOCTL_PAUSE:
+      break;
+
    case VKI_SNDRV_CTL_IOCTL_PVERSION: {
       POST_MEM_WRITE( (Addr)ARG3, sizeof(int) );
       break;

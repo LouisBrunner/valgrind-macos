@@ -1537,7 +1537,7 @@ ac_asm_have_isa_3_00=no
 AC_MSG_RESULT([no])
 ])
 
-AM_CONDITIONAL(HAS_ISA_3_00, test x$ac_asm_have_isa_3_00 = xyes \
+AM_CONDITIONAL(HAS_ISA_3_00, [test x$ac_asm_have_isa_3_00 = xyes \
                              -a x$HWCAP_HAS_ISA_3_00 = xyes])
 
 # Check for pthread_create@GLIBC2.0

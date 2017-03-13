@@ -549,6 +549,9 @@ static inline UInt getUInt(const UChar * p)
    dres.jk_StopHere = Ijk_SigILL; \
    dres.whatNext    = Dis_StopHere;
 
+#define LLADDR_INVALID \
+   (mode64 ? mkU64(0xFFFFFFFFFFFFFFFFULL) : mkU32(0xFFFFFFFF))
+
 /*------------------------------------------------------------*/
 /*---                  Field helpers                       ---*/
 /*------------------------------------------------------------*/
@@ -1087,6 +1090,22 @@ static IRExpr *getFCSR(void)
       return IRExpr_Get(offsetof(VexGuestMIPS32State, guest_FCSR), Ity_I32);
 }
 
+static IRExpr *getLLaddr(void)
+{
+   if (mode64)
+      return IRExpr_Get(offsetof(VexGuestMIPS64State, guest_LLaddr), Ity_I64);
+   else
+      return IRExpr_Get(offsetof(VexGuestMIPS32State, guest_LLaddr), Ity_I32);
+}
+
+static IRExpr *getLLdata(void)
+{
+   if (mode64)
+      return IRExpr_Get(offsetof(VexGuestMIPS64State, guest_LLdata), Ity_I64);
+   else
+      return IRExpr_Get(offsetof(VexGuestMIPS32State, guest_LLdata), Ity_I32);
+}
+
 /* Get byte from register reg, byte pos from 0 to 3 (or 7 for MIPS64) . */
 static IRExpr *getByteFromReg(UInt reg, UInt byte_pos)
 {
@@ -1107,6 +1126,22 @@ static void putFCSR(IRExpr * e)
       stmt(IRStmt_Put(offsetof(VexGuestMIPS64State, guest_FCSR), e));
    else
       stmt(IRStmt_Put(offsetof(VexGuestMIPS32State, guest_FCSR), e));
+}
+
+static void putLLaddr(IRExpr * e)
+{
+   if (mode64)
+      stmt(IRStmt_Put(offsetof(VexGuestMIPS64State, guest_LLaddr), e));
+   else
+      stmt(IRStmt_Put(offsetof(VexGuestMIPS32State, guest_LLaddr), e));
+}
+
+static void putLLdata(IRExpr * e)
+{
+   if (mode64)
+      stmt(IRStmt_Put(offsetof(VexGuestMIPS64State, guest_LLdata), e));
+   else
+      stmt(IRStmt_Put(offsetof(VexGuestMIPS32State, guest_LLdata), e));
 }
 
 /* fs   - fpu source register number.
@@ -1337,6 +1372,16 @@ static IRExpr *mkWidenFromF32(IRType ty, IRExpr * src)
       return unop(Iop_ReinterpI64asF64, mkexpr(t1));
    } else
       return src;
+}
+
+/* Convenience function to move to next instruction on condition. */
+static void mips_next_insn_if(IRExpr *condition) {
+   vassert(typeOfIRExpr(irsb->tyenv, condition) == Ity_I1);
+
+   stmt(IRStmt_Exit(condition, Ijk_Boring,
+        mode64 ? IRConst_U64(guest_PC_curr_instr + 4) :
+                 IRConst_U32(guest_PC_curr_instr + 4),
+        OFFB_PC));
 }
 
 static IRExpr *dis_branch_likely(IRExpr * guard, UInt imm)
@@ -16935,64 +16980,106 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       putIReg(rt, mkWidenFrom32(ty, load(Ity_I32, mkexpr(t1)), False));
       break;
 
-   case 0x30:  /* LL / LWC0 */
+   case 0x30:  /* LL */
       DIP("ll r%u, %u(r%u)", rt, imm, rs);
       LOAD_STORE_PATTERN;
-
-      t2 = newTemp(Ity_I32);
-#if defined (_MIPSEL)
-      stmt(IRStmt_LLSC(Iend_LE, t2, mkexpr(t1), NULL /* this is a load */ ));
-#elif defined (_MIPSEB)
-      stmt(IRStmt_LLSC(Iend_BE, t2, mkexpr(t1), NULL /* this is a load */ ));
-#endif
-      if (mode64)
-         putIReg(rt, unop(Iop_32Sto64, mkexpr(t2)));
-      else
+      if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM) {
+         t2 = newTemp(ty);
+         assign(t2, mkWidenFrom32(ty, load(Ity_I32, mkexpr(t1)), True));
+         putLLaddr(mkexpr(t1));
+         putLLdata(mkexpr(t2));
          putIReg(rt, mkexpr(t2));
+      } else {
+         t2 = newTemp(Ity_I32);
+         stmt(IRStmt_LLSC(MIPS_IEND, t2, mkexpr(t1), NULL));
+         putIReg(rt, mkWidenFrom32(ty, mkexpr(t2), True));
+      }
       break;
 
    case 0x34:  /* Load Linked Doubleword - LLD; MIPS64 */
       DIP("lld r%u, %u(r%u)", rt, imm, rs);
-      LOAD_STORE_PATTERN;
-
-      t2 = newTemp(Ity_I64);
-#if defined (_MIPSEL)
-      stmt(IRStmt_LLSC
-           (Iend_LE, t2, mkexpr(t1), NULL /* this is a load */ ));
-#elif defined (_MIPSEB)
-      stmt(IRStmt_LLSC
-           (Iend_BE, t2, mkexpr(t1), NULL /* this is a load */ ));
-#endif
-
-      putIReg(rt, mkexpr(t2));
+      if (mode64) {
+         LOAD_STORE_PATTERN;
+         t2 = newTemp(Ity_I64);
+         if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM) {
+            assign(t2, load(Ity_I64, mkexpr(t1)));
+            putLLaddr(mkexpr(t1));
+            putLLdata(mkexpr(t2));
+         } else {
+            stmt(IRStmt_LLSC(MIPS_IEND, t2, mkexpr(t1), NULL));
+         }
+         putIReg(rt, mkexpr(t2));
+      } else {
+         ILLEGAL_INSTRUCTON;
+      }
       break;
 
-   case 0x38:  /* SC / SWC0 */
+   case 0x38:  /* SC */
       DIP("sc r%u, %u(r%u)", rt, imm, rs);
-      LOAD_STORE_PATTERN;
-
       t2 = newTemp(Ity_I1);
-#if defined (_MIPSEL)
-      stmt(IRStmt_LLSC(Iend_LE, t2, mkexpr(t1), mkNarrowTo32(ty, getIReg(rt))));
-#elif defined (_MIPSEB)
-      stmt(IRStmt_LLSC(Iend_BE, t2, mkexpr(t1), mkNarrowTo32(ty, getIReg(rt))));
-#endif
+      LOAD_STORE_PATTERN;
+      if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM) {
+         t3 = newTemp(Ity_I32);
+         assign(t2, binop(mode64 ? Iop_CmpNE64 : Iop_CmpNE32,
+                          mkexpr(t1), getLLaddr()));
+         assign(t3, mkNarrowTo32(ty, getIReg(rt)));
+         putLLaddr(LLADDR_INVALID);
+         putIReg(rt, getIReg(0));
 
-      putIReg(rt, unop(mode64 ? Iop_1Uto64 : Iop_1Uto32, mkexpr(t2)));
+         mips_next_insn_if(mkexpr(t2));
+
+         t4 = newTemp(Ity_I32);
+         t5 = newTemp(Ity_I32);
+
+         assign(t5, mkNarrowTo32(ty, getLLdata()));
+
+         stmt(IRStmt_CAS(mkIRCAS(IRTemp_INVALID, t4, /* old_mem */
+              MIPS_IEND, mkexpr(t1),                 /* addr */
+              NULL, mkexpr(t5),                      /* expected value */
+              NULL, mkexpr(t3)                       /* new value */)));
+
+         putIReg(rt, unop(mode64 ? Iop_1Uto64 : Iop_1Uto32,
+                          binop(Iop_CmpEQ32, mkexpr(t4), mkexpr(t5))));
+      } else {
+         stmt(IRStmt_LLSC(MIPS_IEND, t2, mkexpr(t1),
+                          mkNarrowTo32(ty, getIReg(rt))));
+         putIReg(rt, unop(mode64 ? Iop_1Uto64 : Iop_1Uto32, mkexpr(t2)));
+      }
       break;
 
    case 0x3C:  /* Store Conditional Doubleword - SCD; MIPS64 */
-      DIP("sdc r%u, %u(r%u)", rt, imm, rs);
-      LOAD_STORE_PATTERN;
+      DIP("scd r%u, %u(r%u)", rt, imm, rs);
+      if (mode64) {
+         t2 = newTemp(Ity_I1);
+         LOAD_STORE_PATTERN;
+         if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM) {
+            t3 = newTemp(Ity_I64);
+            assign(t2, binop(Iop_CmpNE64, mkexpr(t1), getLLaddr()));
+            assign(t3, getIReg(rt));
+            putLLaddr(LLADDR_INVALID);
+            putIReg(rt, getIReg(0));
 
-      t2 = newTemp(Ity_I1);
-#if defined (_MIPSEL)
-      stmt(IRStmt_LLSC(Iend_LE, t2, mkexpr(t1), getIReg(rt)));
-#elif defined (_MIPSEB)
-      stmt(IRStmt_LLSC(Iend_BE, t2, mkexpr(t1), getIReg(rt)));
-#endif
+            mips_next_insn_if(mkexpr(t2));
 
-      putIReg(rt, unop(Iop_1Uto64, mkexpr(t2)));
+            t4 = newTemp(Ity_I64);
+            t5 = newTemp(Ity_I64);
+
+            assign(t5, getLLdata());
+
+            stmt(IRStmt_CAS(mkIRCAS(IRTemp_INVALID, t4, /* old_mem */
+                 MIPS_IEND, mkexpr(t1),                 /* addr */
+                 NULL, mkexpr(t5),                      /* expected value */
+                 NULL, mkexpr(t3)                       /* new value */)));
+
+            putIReg(rt, unop(Iop_1Uto64,
+                             binop(Iop_CmpEQ64, mkexpr(t4), mkexpr(t5))));
+         } else {
+            stmt(IRStmt_LLSC(MIPS_IEND, t2, mkexpr(t1), getIReg(rt)));
+            putIReg(rt, unop(Iop_1Uto64, mkexpr(t2)));
+         }
+      } else {
+         ILLEGAL_INSTRUCTON;
+      }
       break;
 
    case 0x37:  /* Load Doubleword - LD; MIPS64 */

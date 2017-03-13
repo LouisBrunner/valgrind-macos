@@ -151,7 +151,10 @@ typedef
 
       /*  488 */ UInt guest_CP0_status;
 
-      /*  492 */ UInt _padding2;
+      /*  492 */ UInt guest_LLaddr;
+      /*  496 */ UInt guest_LLdata;
+
+      /*  500 */ UInt _padding2[3];
 } VexGuestMIPS32State;
 /*---------------------------------------------------------------*/
 /*--- Utility functions for MIPS32 guest stuff.               ---*/

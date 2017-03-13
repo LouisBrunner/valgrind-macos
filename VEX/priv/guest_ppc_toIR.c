@@ -29122,7 +29122,7 @@ DisResult disInstr_PPC ( IRSB*        irsb_IN,
 
    mask64 = VEX_HWCAPS_PPC64_V | VEX_HWCAPS_PPC64_FX
             | VEX_HWCAPS_PPC64_GX | VEX_HWCAPS_PPC64_VX | VEX_HWCAPS_PPC64_DFP
-            | VEX_HWCAPS_PPC64_ISA2_07;
+            | VEX_HWCAPS_PPC64_ISA2_07 | VEX_HWCAPS_PPC64_ISA3_0;
 
    if (mode64) {
       vassert((hwcaps_guest & mask32) == 0);

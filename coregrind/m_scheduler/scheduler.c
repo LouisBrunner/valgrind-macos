@@ -957,6 +957,10 @@ void run_thread_for_a_while ( /*OUT*/HWord* two_words,
    vg_assert(VG_(in_generated_code) == True);
    VG_(in_generated_code) = False;
 
+#if defined(VGA_mips32) || defined(VGA_mips64)
+   tst->arch.vex.guest_LLaddr = (HWord)(-1);
+#endif
+
    if (jumped != (HWord)0) {
       /* We get here if the client took a fault that caused our signal
          handler to longjmp. */

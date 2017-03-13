@@ -1159,6 +1159,9 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(ac2)  && sz == 8) return o;
    if (o == GOF(ac3)  && sz == 8) return o;
 
+   if (o == GOF(LLaddr) && sz == 4) return -1;  /* slot unused */
+   if (o == GOF(LLdata) && sz == 4) return -1;  /* slot unused */
+
    VG_(printf)("MC_(get_otrack_shadow_offset)(mips)(off=%d,sz=%d)\n",
                offset,szB);
    tl_assert(0);
@@ -1237,6 +1240,9 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o >= GOF(f31) && o+sz <= GOF(f31)+SZB(f31)) return GOF(f31);
 
    if ((o > GOF(NRADDR)) && (o <= GOF(NRADDR) +12 )) return -1;
+
+   if (o == GOF(LLaddr) && sz == 8) return -1;  /* slot unused */
+   if (o == GOF(LLdata) && sz == 8) return -1;  /* slot unused */
 
    VG_(printf)("MC_(get_otrack_shadow_offset)(mips)(off=%d,sz=%d)\n",
                offset,szB);

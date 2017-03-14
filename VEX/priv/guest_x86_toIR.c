@@ -3172,7 +3172,7 @@ UInt dis_Grp5 ( UChar sorb, Bool locked, Int sz, Int delta,
 
 /* Code shared by all the string ops */
 static
-void dis_string_op_increment(Int sz, Int t_inc)
+void dis_string_op_increment(Int sz, IRTemp t_inc)
 {
    if (sz == 4 || sz == 2) {
       assign( t_inc, 

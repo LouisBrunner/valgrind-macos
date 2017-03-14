@@ -93,9 +93,12 @@ To see details of a given bug, visit
 where XXXXXX is the bug number as listed below.
 
 162848  --log-file output isn't split when a program forks
+341481  MIPS64: Iop_CmpNE32 triggers false warning on MIPS64 platforms
 342040  Valgrind mishandles clone with CLONE_VFORK | CLONE_VM that clones
         to a different stack.
 344139  x86 stack-seg overrides, needed by the Wine people
+344524  store conditional of guest applications always fail - observed on
+        Octeon3(MIPS)
 348616  Wine/valgrind: noted but unhandled ioctl 0x5390 [..] (DVD_READ_STRUCT)
 352395  Please provide SVN revision info in --version -v
 352767  Wine/valgrind: noted but unhandled ioctl 0x5307 [..] (CDROMSTOP)
@@ -133,6 +136,7 @@ where XXXXXX is the bug number as listed below.
 375772  +1 error in get_elf_symbol_info() when computing value of 'hi' address
         for ML_(find_rx_mapping)()
 375806  Test helgrind/tests/tc22_exit_w_lock fails with glibc 2.24
+376142  Segfaults on MIPS Cavium Octeon boards
 376455  Solaris: unhandled syscall lgrpsys(180)
 376518  Solaris: unhandled fast trap getlgrp(6)
 376611  ppc64 and arm64 don't know about prlimit64 syscall

@@ -349,6 +349,9 @@ PRE(sys_ptrace)
 POST(sys_ptrace)
 {
    switch (ARG1) {
+   case VKI_PTRACE_TRACEME:
+         ML_(linux_POST_traceme)(tid);
+         break;
    case VKI_PTRACE_PEEKTEXT:
    case VKI_PTRACE_PEEKDATA:
    case VKI_PTRACE_PEEKUSR:

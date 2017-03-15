@@ -1667,6 +1667,7 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
    Bool core      = False;	/* kills process w/ core */
    struct vki_rlimit corelim;
    Bool could_core;
+   ThreadState* tst = VG_(get_ThreadState)(tid);
 
    vg_assert(VG_(is_running_thread)(tid));
    
@@ -1728,6 +1729,12 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
    if (!terminate)
       return;			/* nothing to do */
 
+   if (terminate && (tst->ptrace & VKI_PT_PTRACED)
+       && (sigNo != VKI_SIGKILL)) {
+      VG_(kill)(VG_(getpid)(), VKI_SIGSTOP);
+      return;
+   }
+
    could_core = core;
 
    if (core) {
@@ -1746,7 +1753,6 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
       if (VG_(clo_xml)) {
          VG_(printf_xml)("<fatal_signal>\n");
          VG_(printf_xml)("  <tid>%d</tid>\n", tid);
-         ThreadState* tst = VG_(get_ThreadState)(tid);
          if (tst->thread_name) {
             VG_(printf_xml)("  <threadname>%s</threadname>\n",
                             tst->thread_name);

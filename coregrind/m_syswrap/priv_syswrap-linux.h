@@ -318,6 +318,7 @@ extern void ML_(linux_POST_sys_sendmmsg)   ( TId, UW, UW, UW, UW, UW );
 // Linux-specific (but non-arch-specific) ptrace wrapper helpers
 extern void ML_(linux_PRE_getregset) ( ThreadId, long, long );
 extern void ML_(linux_PRE_setregset) ( ThreadId, long, long );
+extern void ML_(linux_POST_traceme)  ( ThreadId );
 extern void ML_(linux_POST_getregset)( ThreadId, long, long );
 
 #undef TId

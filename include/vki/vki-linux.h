@@ -2324,6 +2324,8 @@ typedef __vki_kernel_uid32_t vki_qid_t; /* Type in which we store ids in memory 
 #define VKI_PTRACE_GETREGSET	0x4204
 #define VKI_PTRACE_SETREGSET	0x4205
 
+#define VKI_PT_PTRACED 0x00000001
+
 //----------------------------------------------------------------------
 // From linux-2.6.14/include/sound/asound.h
 //----------------------------------------------------------------------

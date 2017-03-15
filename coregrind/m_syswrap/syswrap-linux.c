@@ -11101,6 +11101,13 @@ ML_(linux_POST_sys_sendmmsg) (ThreadId tid, UWord res,
    ------------------------------------------------------------------ */
 
 void
+ML_(linux_POST_traceme) ( ThreadId tid )
+{
+  ThreadState *tst = VG_(get_ThreadState)(tid);
+  tst->ptrace = VKI_PT_PTRACED;
+}
+
+void
 ML_(linux_PRE_getregset) ( ThreadId tid, long arg3, long arg4 )
 {
    struct vki_iovec *iov = (struct vki_iovec *) arg4;

@@ -396,6 +396,10 @@ static inline Bool sr_EQ ( UInt sysno, SysRes sr1, SysRes sr2 ) {
 #   define offsetof(type,memb) ((SizeT)(HWord)&((type*)0)->memb)
 #endif
 
+#if !defined(container_of)
+#   define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))
+#endif
+
 /* Alignment */
 /* We use a prefix vg_ for vg_alignof as its behaviour slightly
    differs from the standard alignof/gcc defined __alignof__

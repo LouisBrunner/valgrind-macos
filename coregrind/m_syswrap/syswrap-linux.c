@@ -6069,6 +6069,11 @@ POST(sys_fcntl64)
    ioctl wrappers
    ------------------------------------------------------------------ */
 
+struct vg_drm_version_info {
+   struct vki_drm_version data;
+   struct vki_drm_version *orig; // Original ARG3 pointer value at syscall entry.
+};
+
 PRE(sys_ioctl)
 {
    *flags |= SfMayBlock;
@@ -7686,7 +7691,8 @@ PRE(sys_ioctl)
 
    case VKI_DRM_IOCTL_VERSION:
       if (ARG3) {
-         struct vki_drm_version *data = (struct vki_drm_version *)ARG3;
+         struct vki_drm_version* data = (struct vki_drm_version *)ARG3;
+         struct vg_drm_version_info* info;
 	 PRE_MEM_WRITE("ioctl(DRM_VERSION).version_major", (Addr)&data->version_major, sizeof(data->version_major));
          PRE_MEM_WRITE("ioctl(DRM_VERSION).version_minor", (Addr)&data->version_minor, sizeof(data->version_minor));
          PRE_MEM_WRITE("ioctl(DRM_VERSION).version_patchlevel", (Addr)&data->version_patchlevel, sizeof(data->version_patchlevel));
@@ -7699,6 +7705,10 @@ PRE(sys_ioctl)
          PRE_MEM_READ("ioctl(DRM_VERSION).desc_len", (Addr)&data->desc_len, sizeof(data->desc_len));
          PRE_MEM_READ("ioctl(DRM_VERSION).desc", (Addr)&data->desc, sizeof(data->desc));
          PRE_MEM_WRITE("ioctl(DRM_VERSION).desc", (Addr)data->desc, data->desc_len);
+         info = VG_(malloc)("syswrap.ioctl.1", sizeof(*info));
+         info->data = *data;
+         info->orig = data;
+         ARG3 = (Addr)&info->data;
       }
       break;
    case VKI_DRM_IOCTL_GET_UNIQUE:
@@ -10174,16 +10184,24 @@ POST(sys_ioctl)
 
    case VKI_DRM_IOCTL_VERSION:
       if (ARG3) {
-         struct vki_drm_version *data = (struct vki_drm_version *)ARG3;
+         struct vki_drm_version* data = (struct vki_drm_version *)ARG3;
+         struct vg_drm_version_info* info = container_of(data, struct vg_drm_version_info, data);
+         const vki_size_t orig_name_len = info->orig->name_len;
+         const vki_size_t orig_date_len = info->orig->date_len;
+         const vki_size_t orig_desc_len = info->orig->desc_len;
+         *info->orig = info->data;
+         ARG3 = (Addr)info->orig;
+         data = info->orig;
+         VG_(free)(info);
 	 POST_MEM_WRITE((Addr)&data->version_major, sizeof(data->version_major));
          POST_MEM_WRITE((Addr)&data->version_minor, sizeof(data->version_minor));
          POST_MEM_WRITE((Addr)&data->version_patchlevel, sizeof(data->version_patchlevel));
          POST_MEM_WRITE((Addr)&data->name_len, sizeof(data->name_len));
-         POST_MEM_WRITE((Addr)data->name, data->name_len);
+         POST_MEM_WRITE((Addr)data->name, VG_MIN(data->name_len, orig_name_len));
          POST_MEM_WRITE((Addr)&data->date_len, sizeof(data->date_len));
-         POST_MEM_WRITE((Addr)data->date, data->date_len);
+         POST_MEM_WRITE((Addr)data->date, VG_MIN(data->date_len, orig_date_len));
          POST_MEM_WRITE((Addr)&data->desc_len, sizeof(data->desc_len));
-         POST_MEM_WRITE((Addr)data->desc, data->desc_len);
+         POST_MEM_WRITE((Addr)data->desc, VG_MIN(data->desc_len, orig_desc_len));
       }
       break;
    case VKI_DRM_IOCTL_GET_UNIQUE:

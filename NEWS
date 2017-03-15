@@ -142,6 +142,8 @@ where XXXXXX is the bug number as listed below.
 376611  ppc64 and arm64 don't know about prlimit64 syscall
 376729  PPC64, remove R2 from the clobber list
         == 371668
+376956  syswrap of SNDDRV and DRM_IOCTL_VERSION causing some addresses
+        to be wrongly marked as addressable
 377427  PPC64, lxv instruction failing on odd destination register 
 377478  PPC64: ISA 3.0 setup fixes
 

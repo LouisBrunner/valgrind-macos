@@ -1729,11 +1729,13 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
    if (!terminate)
       return;			/* nothing to do */
 
+#if defined(VGO_linux)
    if (terminate && (tst->ptrace & VKI_PT_PTRACED)
        && (sigNo != VKI_SIGKILL)) {
       VG_(kill)(VG_(getpid)(), VKI_SIGSTOP);
       return;
    }
+#endif
 
    could_core = core;
 

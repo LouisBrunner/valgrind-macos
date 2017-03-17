@@ -9013,9 +9013,9 @@ PRE(sys_ioctl)
 
 POST(sys_ioctl)
 {
-   vg_assert(SUCCESS || (FAILURE && VKI_DRM_IOCTL_VERSION == ARG2));
-
    ARG2 = (UInt)ARG2;
+
+   vg_assert(SUCCESS || (FAILURE && VKI_DRM_IOCTL_VERSION == ARG2));
 
    /* --- BEGIN special IOCTL handlers for specific Android hardware --- */
 

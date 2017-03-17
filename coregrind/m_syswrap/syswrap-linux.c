@@ -7706,6 +7706,8 @@ PRE(sys_ioctl)
          PRE_MEM_READ("ioctl(DRM_VERSION).desc", (Addr)&data->desc, sizeof(data->desc));
          PRE_MEM_WRITE("ioctl(DRM_VERSION).desc", (Addr)data->desc, data->desc_len);
          info = VG_(malloc)("syswrap.ioctl.1", sizeof(*info));
+         // To ensure we VG_(free) info even when syscall fails:
+         *flags |= SfPostOnFail;
          info->data = *data;
          info->orig = data;
          ARG3 = (Addr)&info->data;
@@ -9011,7 +9013,7 @@ PRE(sys_ioctl)
 
 POST(sys_ioctl)
 {
-   vg_assert(SUCCESS);
+   vg_assert(SUCCESS || (FAILURE && VKI_DRM_IOCTL_VERSION == ARG2));
 
    ARG2 = (UInt)ARG2;
 
@@ -10193,15 +10195,17 @@ POST(sys_ioctl)
          ARG3 = (Addr)info->orig;
          data = info->orig;
          VG_(free)(info);
-	 POST_MEM_WRITE((Addr)&data->version_major, sizeof(data->version_major));
-         POST_MEM_WRITE((Addr)&data->version_minor, sizeof(data->version_minor));
-         POST_MEM_WRITE((Addr)&data->version_patchlevel, sizeof(data->version_patchlevel));
-         POST_MEM_WRITE((Addr)&data->name_len, sizeof(data->name_len));
-         POST_MEM_WRITE((Addr)data->name, VG_MIN(data->name_len, orig_name_len));
-         POST_MEM_WRITE((Addr)&data->date_len, sizeof(data->date_len));
-         POST_MEM_WRITE((Addr)data->date, VG_MIN(data->date_len, orig_date_len));
-         POST_MEM_WRITE((Addr)&data->desc_len, sizeof(data->desc_len));
-         POST_MEM_WRITE((Addr)data->desc, VG_MIN(data->desc_len, orig_desc_len));
+         if (SUCCESS) {
+            POST_MEM_WRITE((Addr)&data->version_major, sizeof(data->version_major));
+            POST_MEM_WRITE((Addr)&data->version_minor, sizeof(data->version_minor));
+            POST_MEM_WRITE((Addr)&data->version_patchlevel, sizeof(data->version_patchlevel));
+            POST_MEM_WRITE((Addr)&data->name_len, sizeof(data->name_len));
+            POST_MEM_WRITE((Addr)data->name, VG_MIN(data->name_len, orig_name_len));
+            POST_MEM_WRITE((Addr)&data->date_len, sizeof(data->date_len));
+            POST_MEM_WRITE((Addr)data->date, VG_MIN(data->date_len, orig_date_len));
+            POST_MEM_WRITE((Addr)&data->desc_len, sizeof(data->desc_len));
+            POST_MEM_WRITE((Addr)data->desc, VG_MIN(data->desc_len, orig_desc_len));
+         }
       }
       break;
    case VKI_DRM_IOCTL_GET_UNIQUE:

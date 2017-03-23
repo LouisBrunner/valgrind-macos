@@ -1610,9 +1610,11 @@ PRE(sys_futex)
       }
       break;
    case VKI_FUTEX_WAKE_BITSET:
-      PRE_REG_READ6(long, "futex", 
-                    vki_u32 *, futex, int, op, int, val,
-                    int, dummy, int, dummy2, int, val3);
+      PRE_REG_READ3(long, "futex",
+                    vki_u32 *, futex, int, op, int, val);
+      if (VG_(tdict).track_pre_reg_read) {
+         PRA6("futex", int, val3);
+      }
       break;
    case VKI_FUTEX_WAIT:
    case VKI_FUTEX_LOCK_PI:
@@ -1622,10 +1624,10 @@ PRE(sys_futex)
       break;
    case VKI_FUTEX_WAKE:
    case VKI_FUTEX_FD:
-   case VKI_FUTEX_TRYLOCK_PI:
       PRE_REG_READ3(long, "futex", 
                     vki_u32 *, futex, int, op, int, val);
       break;
+   case VKI_FUTEX_TRYLOCK_PI:
    case VKI_FUTEX_UNLOCK_PI:
    default:
       PRE_REG_READ2(long, "futex", vki_u32 *, futex, int, op);
@@ -1655,13 +1657,10 @@ PRE(sys_futex)
    case VKI_FUTEX_FD:
    case VKI_FUTEX_TRYLOCK_PI:
    case VKI_FUTEX_UNLOCK_PI:
-      PRE_MEM_READ( "futex(futex)", ARG1, sizeof(Int) );
-     break;
-
    case VKI_FUTEX_WAKE:
    case VKI_FUTEX_WAKE_BITSET:
-      /* no additional pointers */
-      break;
+      PRE_MEM_READ( "futex(futex)", ARG1, sizeof(Int) );
+     break;
 
    default:
       SET_STATUS_Failure( VKI_ENOSYS );   // some futex function we don't understand

@@ -1958,7 +1958,7 @@ Syscall param fremovexattr(name) points to unaddressable byte(s)
 130:          __NR_tkill n/a
 -----------------------------------------------------
 -----------------------------------------------------
- 98:          __NR_futex 5s 2m
+ 98:          __NR_futex 4s 2m
 -----------------------------------------------------
 Syscall param futex(futex) contains uninitialised byte(s)
    ...

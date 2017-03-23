@@ -1654,8 +1654,8 @@ int main(void)
    #define FUTEX_WAIT   0
    #endif
    // XXX: again, glibc not doing 6th arg means we have only 5s errors
-   GO(__NR_futex, "5s 2m");
-   SY(__NR_futex, x0+FUTEX_WAIT, x0, x0, x0+1, x0, x0); FAIL;
+   GO(__NR_futex, "4s 2m");
+   SY(__NR_futex, x0+FUTEX_WAIT, x0, x0, x0+1); FAIL;
 
    // __NR_sched_setaffinity 241
    GO(__NR_sched_setaffinity, "3s 1m");

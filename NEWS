@@ -147,6 +147,9 @@ where XXXXXX is the bug number as listed below.
 377376  memcheck/tests/linux/getregset fails with glibc2.24
 377427  PPC64, lxv instruction failing on odd destination register 
 377478  PPC64: ISA 3.0 setup fixes
+377698  Missing memory check for futex() uaddr arg for FUTEX_WAKE
+        and FUTEX_WAKE_BITSET, check only 4 args for FUTEX_WAKE_BITSET,
+        and 2 args for FUTEX_TRYLOCK_PI
 377717  Fix massive space leak when reading compressed debuginfo sections
 
 Release 3.12.0 (20 October 2016)

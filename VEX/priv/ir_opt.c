@@ -6007,7 +6007,7 @@ static void print_flat_expr ( IRExpr** env, IRExpr* e )
       case Iex_RdTmp:
          ppIRTemp(e->Iex.RdTmp.tmp);
          vex_printf("=");
-         print_flat_expr(env, chase(env, e));
+         print_flat_expr(env, chase1(env, e));
          break;
       case Iex_Const:
       case Iex_CCall:

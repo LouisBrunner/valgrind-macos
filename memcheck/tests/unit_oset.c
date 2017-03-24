@@ -208,7 +208,8 @@ void example1singleset(OSet* oset, char *descr)
    // Check that we can remove half of the elements, and that their values
    // are as expected.
    for (i = 0; i < NN; i += 2) {
-      assert( pv = VG_(OSetGen_Remove)(oset, vs[i]) );
+      pv = VG_(OSetGen_Remove)(oset, vs[i]);
+      assert( pv );
       assert( pv == vs[i] );
    }
 
@@ -217,7 +218,8 @@ void example1singleset(OSet* oset, char *descr)
 
    // Check we can find the remaining elements (with the right values).
    for (i = 1; i < NN; i += 2) {
-      assert( pv = VG_(OSetGen_LookupWithCmp)(oset, vs[i], NULL) );
+      pv = VG_(OSetGen_LookupWithCmp)(oset, vs[i], NULL);
+      assert( pv );
       assert( pv == vs[i] );
    }
 
@@ -229,7 +231,8 @@ void example1singleset(OSet* oset, char *descr)
    // Check that we can remove the remaining half of the elements, and that
    // their values are as expected.
    for (i = 1; i < NN; i += 2) {
-      assert( pv = VG_(OSetGen_Remove)(oset, vs[i]) );
+      pv = VG_(OSetGen_Remove)(oset, vs[i]);
+      assert( pv );
       assert( pv == vs[i] );
    }
 

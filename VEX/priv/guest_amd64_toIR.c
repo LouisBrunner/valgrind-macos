@@ -1533,9 +1533,19 @@ static IRExpr* getYMMRegLane128 ( UInt ymmreg, Int laneno )
    return IRExpr_Get( ymmGuestRegLane128offset(ymmreg,laneno), Ity_V128 );
 }
 
+static IRExpr* getYMMRegLane64F ( UInt ymmreg, Int laneno )
+{
+   return IRExpr_Get( ymmGuestRegLane64offset(ymmreg,laneno), Ity_F64 );
+}
+
 static IRExpr* getYMMRegLane64 ( UInt ymmreg, Int laneno )
 {
    return IRExpr_Get( ymmGuestRegLane64offset(ymmreg,laneno), Ity_I64 );
+}
+
+static IRExpr* getYMMRegLane32F ( UInt ymmreg, Int laneno )
+{
+   return IRExpr_Get( ymmGuestRegLane32offset(ymmreg,laneno), Ity_F32 );
 }
 
 static IRExpr* getYMMRegLane32 ( UInt ymmreg, Int laneno )
@@ -27545,11 +27555,7 @@ static Long dis_FMA ( const VexAbiInfo* vbi, Prefix pfx, Long delta, UChar opc )
    UInt   rV      = getVexNvvvv(pfx);
    Bool   scalar  = (opc & 0xF) > 7 && (opc & 1);
    IRType ty      = getRexW(pfx) ? Ity_F64 : Ity_F32;
-   IRType vty     = scalar ? ty : getVexL(pfx) ? Ity_V256 : Ity_V128;
-   IRTemp vX      = newTemp(vty);
-   IRTemp vY      = newTemp(vty);
-   IRTemp vZ      = newTemp(vty);
-   IRExpr *x[8], *y[8], *z[8];
+   IRType vty     = scalar ? ty : (getVexL(pfx) ? Ity_V256 : Ity_V128);
    IRTemp addr    = IRTemp_INVALID;
    HChar  dis_buf[50];
    Int    alen    = 0;
@@ -27559,76 +27565,60 @@ static Long dis_FMA ( const VexAbiInfo* vbi, Prefix pfx, Long delta, UChar opc )
    Bool   negateRes   = False;
    Bool   negateZeven = False;
    Bool   negateZodd  = False;
-   Int    i, j;
-   Int    count;
-   static IROp ops[] = { Iop_V256to64_0, Iop_V256to64_1,
-                         Iop_V256to64_2, Iop_V256to64_3,
-                         Iop_V128to64, Iop_V128HIto64 };
+   UInt   count = 0;
 
    switch (opc & 0xF) {
-   case 0x6:
-      name = "addsub";
-      negateZeven = True;
-      break;
-   case 0x7:
-      name = "subadd";
-      negateZodd = True;
-      break;
-   case 0x8:
-   case 0x9:
-      name = "add";
-      break;
-   case 0xA:
-   case 0xB:
-      name = "sub";
-      negateZeven = True;
-      negateZodd = True;
-      break;
-   case 0xC:
-   case 0xD:
-      name = "add";
-      negateRes = True;
-      negateZeven = True;
-      negateZodd = True;
-      break;
-   case 0xE:
-   case 0xF:
-      name = "sub";
-      negateRes = True;
-      break;
-   default:
-      vpanic("dis_FMA(amd64)");
-      break;
+      case 0x6: name = "addsub"; negateZeven = True; break;
+      case 0x7: name = "subadd"; negateZodd = True; break;
+      case 0x8:
+      case 0x9: name = "add"; break;
+      case 0xA:
+      case 0xB: name = "sub"; negateZeven = True; negateZodd = True;
+         break;
+      case 0xC:
+      case 0xD: name = "add"; negateRes = True; negateZeven = True;
+                                                negateZodd = True; break;
+      case 0xE:
+      case 0xF: name = "sub"; negateRes = True; break;
+      default:  vpanic("dis_FMA(amd64)"); break;
    }
    switch (opc & 0xF0) {
-   case 0x90: order = "132"; break;
-   case 0xA0: order = "213"; break;
-   case 0xB0: order = "231"; break;
-   default: vpanic("dis_FMA(amd64)"); break;
+      case 0x90: order = "132"; break;
+      case 0xA0: order = "213"; break;
+      case 0xB0: order = "231"; break;
+      default:   vpanic("dis_FMA(amd64)"); break;
    }
-   if (scalar)
-      suffix = ty == Ity_F64 ? "sd" : "ss";
-   else
-      suffix = ty == Ity_F64 ? "pd" : "ps";
-
    if (scalar) {
-      assign( vX, ty == Ity_F64
-                  ? getXMMRegLane64F(rG, 0) : getXMMRegLane32F(rG, 0) );
-      assign( vZ, ty == Ity_F64
-                  ? getXMMRegLane64F(rV, 0) : getXMMRegLane32F(rV, 0) );
+      suffix = ty == Ity_F64 ? "sd" : "ss";
    } else {
-      assign( vX, vty == Ity_V256 ? getYMMReg(rG) : getXMMReg(rG) );
-      assign( vZ, vty == Ity_V256 ? getYMMReg(rV) : getXMMReg(rV) );
+      suffix = ty == Ity_F64 ? "pd" : "ps";
+   }
+
+   // Figure out |count| (the number of elements) by considering |vty| and |ty|.
+   count = sizeofIRType(vty) / sizeofIRType(ty);
+   vassert(count == 1 || count == 2 || count == 4 || count == 8);
+
+   // Fetch operands into the first |count| elements of |sX|, |sY| and |sZ|.
+   UInt i;
+   IRExpr *sX[8], *sY[8], *sZ[8], *res[8];
+   for (i = 0; i < 8; i++) sX[i] = sY[i] = sZ[i] = res[i] = NULL;
+
+   IRExpr* (*getYMMRegLane)(UInt,Int)
+      = ty == Ity_F32 ? getYMMRegLane32F : getYMMRegLane64F;
+   void (*putYMMRegLane)(UInt,Int,IRExpr*)
+      = ty == Ity_F32 ? putYMMRegLane32F : putYMMRegLane64F;
+
+   for (i = 0; i < count; i++) {
+      sX[i] = getYMMRegLane(rG, i);
+      sZ[i] = getYMMRegLane(rV, i);
    }
 
    if (epartIsReg(modrm)) {
       UInt rE = eregOfRexRM(pfx, modrm);
       delta += 1;
-      if (scalar)
-         assign( vY, ty == Ity_F64
-                     ? getXMMRegLane64F(rE, 0) : getXMMRegLane32F(rE, 0) );
-      else
-         assign( vY, vty == Ity_V256 ? getYMMReg(rE) : getXMMReg(rE) );
+      for (i = 0; i < count; i++) {
+         sY[i] = getYMMRegLane(rE, i);
+      }
       if (vty == Ity_V256) {
          DIP("vf%sm%s%s%s %s,%s,%s\n", negateRes ? "n" : "",
              name, order, suffix, nameYMMReg(rE), nameYMMReg(rV),
@@ -27641,7 +27631,10 @@ static Long dis_FMA ( const VexAbiInfo* vbi, Prefix pfx, Long delta, UChar opc )
    } else {
       addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
       delta += alen;
-      assign(vY, loadLE(vty, mkexpr(addr)));
+      for (i = 0; i < count; i++) {
+         sY[i] = loadLE(ty, binop(Iop_Add64, mkexpr(addr),
+                                  mkU64(i * sizeofIRType(ty))));
+      }
       if (vty == Ity_V256) {
          DIP("vf%sm%s%s%s %s,%s,%s\n", negateRes ? "n" : "",
              name, order, suffix, dis_buf, nameYMMReg(rV),
@@ -27653,73 +27646,50 @@ static Long dis_FMA ( const VexAbiInfo* vbi, Prefix pfx, Long delta, UChar opc )
       }
    }
 
-   /* vX/vY/vZ now in 132 order.  If it is different order, swap the
-      arguments.  */
+   /* vX/vY/vZ are now in 132 order.  If the instruction requires a different
+      order, swap them around.  */
+
+#  define COPY_ARR(_dst, _src) \
+      do { for (int j = 0; j < 8; j++) { _dst[j] = _src[j]; } } while (0)
+
    if ((opc & 0xF0) != 0x90) {
-      IRTemp tem = vX;
+      IRExpr* temp[8];
+      COPY_ARR(temp, sX);
       if ((opc & 0xF0) == 0xA0) {
-         vX = vZ;
-         vZ = vY;
-         vY = tem;
+         COPY_ARR(sX, sZ);
+         COPY_ARR(sZ, sY);
+         COPY_ARR(sY, temp);
       } else {
-         vX = vZ;
-         vZ = tem;
+         COPY_ARR(sX, sZ);
+         COPY_ARR(sZ, temp);
       }
    }
 
-   if (scalar) {
-      count = 1;
-      x[0] = mkexpr(vX);
-      y[0] = mkexpr(vY);
-      z[0] = mkexpr(vZ);
-   } else if (ty == Ity_F32) {
-      count = vty == Ity_V256 ? 8 : 4;
-      j = vty == Ity_V256 ? 0 : 4;
-      for (i = 0; i < count; i += 2) {
-         IRTemp tem = newTemp(Ity_I64);
-         assign(tem, unop(ops[i / 2 + j], mkexpr(vX)));
-         x[i] = unop(Iop_64to32, mkexpr(tem));
-         x[i + 1] = unop(Iop_64HIto32, mkexpr(tem));
-         tem = newTemp(Ity_I64);
-         assign(tem, unop(ops[i / 2 + j], mkexpr(vY)));
-         y[i] = unop(Iop_64to32, mkexpr(tem));
-         y[i + 1] = unop(Iop_64HIto32, mkexpr(tem));
-         tem = newTemp(Ity_I64);
-         assign(tem, unop(ops[i / 2 + j], mkexpr(vZ)));
-         z[i] = unop(Iop_64to32, mkexpr(tem));
-         z[i + 1] = unop(Iop_64HIto32, mkexpr(tem));
-      }
-   } else {
-      count = vty == Ity_V256 ? 4 : 2;
-      j = vty == Ity_V256 ? 0 : 4;
-      for (i = 0; i < count; i++) {
-         x[i] = unop(ops[i + j], mkexpr(vX));
-         y[i] = unop(ops[i + j], mkexpr(vY));
-         z[i] = unop(ops[i + j], mkexpr(vZ));
-      }
-   }
-   if (!scalar)
-      for (i = 0; i < count; i++) {
-         IROp op = ty == Ity_F64
-                   ? Iop_ReinterpI64asF64 : Iop_ReinterpI32asF32;
-         x[i] = unop(op, x[i]);
-         y[i] = unop(op, y[i]);
-         z[i] = unop(op, z[i]);
-      }
+#  undef COPY_ARR
+
    for (i = 0; i < count; i++) {
-      if ((i & 1) ? negateZodd : negateZeven)
-         z[i] = unop(ty == Ity_F64 ? Iop_NegF64 : Iop_NegF32, z[i]);
-      x[i] = IRExpr_Qop(ty == Ity_F64 ? Iop_MAddF64 : Iop_MAddF32,
-                        get_FAKE_roundingmode(), x[i], y[i], z[i]);
-      if (negateRes)
-         x[i] = unop(ty == Ity_F64 ? Iop_NegF64 : Iop_NegF32, x[i]);
-      if (ty == Ity_F64)
-         putYMMRegLane64F( rG, i, x[i] );
-      else
-         putYMMRegLane32F( rG, i, x[i] );
+      IROp opNEG = ty == Ity_F64 ? Iop_NegF64 : Iop_NegF32;
+      if ((i & 1) ? negateZodd : negateZeven) {
+         sZ[i] = unop(opNEG, sZ[i]);
+      }
+      res[i] = IRExpr_Qop(ty == Ity_F64 ? Iop_MAddF64 : Iop_MAddF32,
+                          get_FAKE_roundingmode(), sX[i], sY[i], sZ[i]);
+      if (negateRes) {
+         res[i] = unop(opNEG, res[i]);
+      }
    }
-   if (vty != Ity_V256)
-      putYMMRegLane128( rG, 1, mkV128(0) );
+
+   for (i = 0; i < count; i++) {
+      putYMMRegLane(rG, i, res[i]);
+   }
+
+   switch (vty) {
+      case Ity_F32:  putYMMRegLane32(rG, 1, mkU32(0)); /*fallthru*/
+      case Ity_F64:  putYMMRegLane64(rG, 1, mkU64(0)); /*fallthru*/
+      case Ity_V128: putYMMRegLane128(rG, 1, mkV128(0)); /*fallthru*/
+      case Ity_V256: break;
+      default: vassert(0);
+   }
 
    return delta;
 }

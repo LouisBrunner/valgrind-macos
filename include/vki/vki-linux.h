@@ -1416,6 +1416,22 @@ struct vki_dirent64 {
 #define VKI_F_SETPIPE_SZ    (VKI_F_LINUX_SPECIFIC_BASE + 7)
 #define VKI_F_GETPIPE_SZ    (VKI_F_LINUX_SPECIFIC_BASE + 8)
 
+struct vki_flock {
+	short			l_type;
+	short			l_whence;
+	__vki_kernel_off_t	l_start;
+	__vki_kernel_off_t	l_len;
+	__vki_kernel_pid_t	l_pid;
+};
+
+struct vki_flock64 {
+	short			l_type;
+	short			l_whence;
+	__vki_kernel_loff_t	l_start;
+	__vki_kernel_loff_t	l_len;
+	__vki_kernel_pid_t	l_pid;
+};
+
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/sysctl.h
 //----------------------------------------------------------------------

@@ -5898,19 +5898,45 @@ PRE(sys_fcntl)
    case VKI_F_GETLK:
    case VKI_F_SETLK:
    case VKI_F_SETLKW:
-#  if defined(VGP_x86_linux) || defined(VGP_mips64_linux)
-   case VKI_F_GETLK64:
-   case VKI_F_SETLK64:
-   case VKI_F_SETLKW64:
-#  endif
    case VKI_F_OFD_GETLK:
    case VKI_F_OFD_SETLK:
    case VKI_F_OFD_SETLKW:
       PRINT("sys_fcntl[ARG3=='lock'] ( %lu, %lu, %#lx )", ARG1, ARG2, ARG3);
       PRE_REG_READ3(long, "fcntl",
                     unsigned int, fd, unsigned int, cmd,
-                    struct flock64 *, lock);
+                    struct vki_flock *, lock);
+      {
+         struct vki_flock *lock = (struct vki_flock *) ARG3;
+         PRE_FIELD_READ("fcntl(lock->l_type)", lock->l_type);
+         PRE_FIELD_READ("fcntl(lock->l_whence)", lock->l_whence);
+         PRE_FIELD_READ("fcntl(lock->l_start)", lock->l_start);
+         PRE_FIELD_READ("fcntl(lock->l_len)", lock->l_len);
+         if (ARG2 == VKI_F_GETLK || ARG2 == VKI_F_OFD_GETLK) {
+            PRE_FIELD_WRITE("fcntl(lock->l_pid)", lock->l_pid);
+         }
+      }
       break;
+
+#  if defined(VGP_x86_linux) || defined(VGP_mips64_linux)
+   case VKI_F_GETLK64:
+   case VKI_F_SETLK64:
+   case VKI_F_SETLKW64:
+      PRINT("sys_fcntl[ARG3=='lock'] ( %lu, %lu, %#lx )", ARG1, ARG2, ARG3);
+      PRE_REG_READ3(long, "fcntl",
+                    unsigned int, fd, unsigned int, cmd,
+                    struct flock64 *, lock);
+      {
+         struct vki_flock64 *lock = (struct vki_flock64 *) ARG3;
+         PRE_FIELD_READ("fcntl(lock->l_type)", lock->l_type);
+         PRE_FIELD_READ("fcntl(lock->l_whence)", lock->l_whence);
+         PRE_FIELD_READ("fcntl(lock->l_start)", lock->l_start);
+         PRE_FIELD_READ("fcntl(lock->l_len)", lock->l_len);
+         if (ARG2 == VKI_F_GETLK64) {
+            PRE_FIELD_WRITE("fcntl(lock->l_pid)", lock->l_pid);
+         }
+      }
+      break;
+#  endif
 
    case VKI_F_SETOWN_EX:
       PRINT("sys_fcntl[F_SETOWN_EX] ( %lu, %lu, %lu )", ARG1, ARG2, ARG3);
@@ -5965,6 +5991,14 @@ POST(sys_fcntl)
       }
    } else if (ARG2 == VKI_F_GETOWN_EX) {
       POST_MEM_WRITE(ARG3, sizeof(struct vki_f_owner_ex));
+   } else if (ARG2 == VKI_F_GETLK || ARG2 == VKI_F_OFD_GETLK) {
+      struct vki_flock *lock = (struct vki_flock *) ARG3;
+      POST_FIELD_WRITE(lock->l_pid);
+#  if defined(VGP_x86_linux) || defined(VGP_mips64_linux)
+   } else if (ARG2 == VKI_F_GETLK64) {
+      struct vki_flock64 *lock = (struct vki_flock64 *) ARG3;
+      PRE_FIELD_WRITE("fcntl(lock->l_pid)", lock->l_pid);
+#  endif
    }
 }
 

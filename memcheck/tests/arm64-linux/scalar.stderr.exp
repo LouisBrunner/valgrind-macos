@@ -271,11 +271,36 @@ Syscall param fcntl(arg) contains uninitialised byte(s)
    by 0x........: main (scalar.c:277)
 
 -----------------------------------------------------
- 25:          __NR_fcntl (GETLK) 1s 0m
+ 25:          __NR_fcntl (GETLK) 1s 5m
 -----------------------------------------------------
 Syscall param fcntl(lock) contains uninitialised byte(s)
    ...
    by 0x........: main (scalar.c:283)
+
+Syscall param fcntl(lock->l_type) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:283)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param fcntl(lock->l_whence) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:283)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param fcntl(lock->l_start) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:283)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param fcntl(lock->l_len) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:283)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param fcntl(lock->l_pid) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:283)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
 154:        __NR_setpgid 2s 0m
@@ -555,6 +580,9 @@ Syscall param setpriority(which) contains uninitialised byte(s)
    ...
    by 0x........: main (scalar.c:458)
 
+
+More than 100 errors detected.  Subsequent errors
+will still be recorded, but in less detail than before.
 Syscall param setpriority(who) contains uninitialised byte(s)
    ...
    by 0x........: main (scalar.c:458)
@@ -579,9 +607,6 @@ Syscall param statfs(path) points to unaddressable byte(s)
    by 0x........: main (scalar.c:466)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-
-More than 100 errors detected.  Subsequent errors
-will still be recorded, but in less detail than before.
 Syscall param statfs(buf) points to unaddressable byte(s)
    ...
    by 0x........: main (scalar.c:466)

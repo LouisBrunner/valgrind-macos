@@ -279,7 +279,7 @@ int main(void)
    // For F_GETLK the 3rd arg is 'lock'.  On x86, this fails w/EBADF.  But
    // on amd64 in 32-bit mode it fails w/EFAULT.  We don't check the 1st two
    // args for the reason given above.
-   GO(__NR_fcntl, "(GETLK) 1s 0m");
+   GO(__NR_fcntl, "(GETLK) 1s 5m");
    SY(__NR_fcntl, -1, F_GETLK, x0); FAIL; //FAILx(EBADF);
 
    // __NR_mpx arm64 doesn't implement mpx

@@ -433,6 +433,7 @@ VexTranslateResult LibVEX_Translate ( VexTranslateArgs* vta )
          mapRegs      = (__typeof__(mapRegs)) AMD64FN(mapRegs_AMD64Instr);
          genSpill     = (__typeof__(genSpill)) AMD64FN(genSpill_AMD64);
          genReload    = (__typeof__(genReload)) AMD64FN(genReload_AMD64);
+         directReload = (__typeof__(directReload)) AMD64FN(directReload_AMD64);
          ppInstr      = (__typeof__(ppInstr)) AMD64FN(ppAMD64Instr);
          ppReg        = (__typeof__(ppReg)) AMD64FN(ppHRegAMD64);
          iselSB       = AMD64FN(iselSB_AMD64);

@@ -802,6 +802,9 @@ extern void genSpill_AMD64  ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
 extern void genReload_AMD64 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                               HReg rreg, Int offset, Bool );
 
+extern AMD64Instr* directReload_AMD64 ( AMD64Instr* i,
+                                        HReg vreg, Short spill_off );
+
 extern const RRegUniverse* getRRegUniverse_AMD64 ( void );
 
 extern HInstrArray* iselSB_AMD64           ( const IRSB*, 

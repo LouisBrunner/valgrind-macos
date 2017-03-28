@@ -1995,6 +1995,43 @@ void genReload_AMD64 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
    }
 }
 
+AMD64Instr* directReload_AMD64( AMD64Instr* i, HReg vreg, Short spill_off )
+{
+   vassert(spill_off >= 0 && spill_off < 10000); /* let's say */
+
+   /* Deal with form: src=RMI_Reg, dst=Reg where src == vreg 
+      Convert to: src=RMI_Mem, dst=Reg 
+   */
+   if (i->tag == Ain_Alu64R
+       && (i->Ain.Alu64R.op == Aalu_MOV || i->Ain.Alu64R.op == Aalu_OR
+           || i->Ain.Alu64R.op == Aalu_XOR)
+       && i->Ain.Alu64R.src->tag == Armi_Reg
+       && sameHReg(i->Ain.Alu64R.src->Armi.Reg.reg, vreg)) {
+      vassert(! sameHReg(i->Ain.Alu64R.dst, vreg));
+      return AMD64Instr_Alu64R( 
+                i->Ain.Alu64R.op, 
+                AMD64RMI_Mem( AMD64AMode_IR( spill_off, hregAMD64_RBP())),
+                i->Ain.Alu64R.dst
+             );
+   }
+
+   /* Deal with form: src=RMI_Imm, dst=Reg where dst == vreg 
+      Convert to: src=RI_Imm, dst=Mem
+   */
+   if (i->tag == Ain_Alu64R
+       && (i->Ain.Alu64R.op == Aalu_CMP)
+       && i->Ain.Alu64R.src->tag == Armi_Imm
+       && sameHReg(i->Ain.Alu64R.dst, vreg)) {
+      return AMD64Instr_Alu64M( 
+                i->Ain.Alu64R.op,
+                AMD64RI_Imm( i->Ain.Alu64R.src->Armi.Imm.imm32 ),
+                AMD64AMode_IR( spill_off, hregAMD64_RBP())
+             );
+   }
+
+   return NULL;
+}
+
 
 /* --------- The amd64 assembler (bleh.) --------- */
 
@@ -2607,6 +2644,39 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
                goto bad;
          }
       }
+      /* ADD/SUB/ADC/SBB/AND/OR/XOR/CMP.  MUL is not
+         allowed here. (This is derived from the x86 version of same). */
+      opc = subopc_imm = opc_imma = 0;
+      switch (i->Ain.Alu64M.op) {
+         case Aalu_CMP: opc = 0x39; subopc_imm = 7; break;
+         default: goto bad;
+      }
+      switch (i->Ain.Alu64M.src->tag) {
+         /*
+         case Xri_Reg:
+            *p++ = toUChar(opc);
+            p = doAMode_M(p, i->Xin.Alu32M.src->Xri.Reg.reg,
+                             i->Xin.Alu32M.dst);
+            goto done;
+         */
+         case Ari_Imm:
+            if (fits8bits(i->Ain.Alu64M.src->Ari.Imm.imm32)) {
+               *p++ = rexAMode_M_enc(subopc_imm, i->Ain.Alu64M.dst);
+               *p++ = 0x83;
+               p    = doAMode_M_enc(p, subopc_imm, i->Ain.Alu64M.dst);
+               *p++ = toUChar(0xFF & i->Ain.Alu64M.src->Ari.Imm.imm32);
+               goto done;
+            } else {
+               *p++ = rexAMode_M_enc(subopc_imm, i->Ain.Alu64M.dst);
+               *p++ = 0x81;
+               p    = doAMode_M_enc(p, subopc_imm, i->Ain.Alu64M.dst);
+               p    = emit32(p, i->Ain.Alu64M.src->Ari.Imm.imm32);
+               goto done;
+            }
+         default: 
+            goto bad;
+      }
+
       break;
 
    case Ain_Sh64:

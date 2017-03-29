@@ -8114,6 +8114,7 @@ DisResult disInstr_X86_WRK (
    dres.whatNext    = Dis_Continue;
    dres.len         = 0;
    dres.continueAt  = 0;
+   dres.hint        = Dis_HintNone;
    dres.jk_StopHere = Ijk_INVALID;
 
    *expect_CAS = False;

@@ -16832,6 +16832,7 @@ disInstr_S390_WRK(const UChar *insn)
    dres.len        = insn_length;
    dres.continueAt = 0;
    dres.jk_StopHere = Ijk_INVALID;
+   dres.hint        = Dis_HintNone;
 
    /* fixs390: consider chasing of conditional jumps */
 

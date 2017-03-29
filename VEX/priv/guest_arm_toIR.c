@@ -16099,6 +16099,7 @@ DisResult disInstr_ARM_WRK (
    dres.len         = 4;
    dres.continueAt  = 0;
    dres.jk_StopHere = Ijk_INVALID;
+   dres.hint        = Dis_HintNone;
 
    /* Set default actions for post-insn handling of writes to r15, if
       required. */
@@ -18986,6 +18987,7 @@ DisResult disInstr_THUMB_WRK (
    dres.len         = 2;
    dres.continueAt  = 0;
    dres.jk_StopHere = Ijk_INVALID;
+   dres.hint        = Dis_HintNone;
 
    /* Set default actions for post-insn handling of writes to r15, if
       required. */

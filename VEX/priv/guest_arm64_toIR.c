@@ -14305,6 +14305,7 @@ Bool disInstr_ARM64_WRK (
    dres->len         = 4;
    dres->continueAt  = 0;
    dres->jk_StopHere = Ijk_INVALID;
+   dres->hint        = Dis_HintNone;
 
    /* At least this is simple on ARM64: insns are all 4 bytes long, and
       4-aligned.  So just fish the whole thing out of memory right now

@@ -323,6 +323,7 @@ static DisResult disInstr_TILEGX_WRK ( Bool(*resteerOkFn) (void *, Addr),
   dres.len = 0;
   dres.continueAt = 0;
   dres.jk_StopHere = Ijk_INVALID;
+  dres.hint        = Dis_HintNone;
 
   /* Verify the code addr is 8-byte aligned. */
   vassert((((Addr)code) & 7) == 0);

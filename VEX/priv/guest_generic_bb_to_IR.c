@@ -237,6 +237,13 @@ IRSB* bb_to_IR (
       vassert((offB_GUEST_IP % 8) == 0);
    }
 
+   /* Although we will try to disassemble up to vex_control.guest_max_insns
+      insns into the block, the individual insn assemblers may hint to us that a
+      disassembled instruction is verbose.  In that case we will lower the limit
+      so as to ensure that the JIT doesn't run out of space.  See bug 375839 for
+      the motivating example. */
+   Int guest_max_insns_really = vex_control.guest_max_insns;
+
    /* Start a new, empty extent. */
    vge->n_used  = 1;
    vge->base[0] = guest_IP_bbstart;
@@ -284,7 +291,7 @@ IRSB* bb_to_IR (
 
    /* Process instructions. */
    while (True) {
-      vassert(n_instrs < vex_control.guest_max_insns);
+      vassert(n_instrs < guest_max_insns_really);
 
       /* Regardless of what chase_into_ok says, is chasing permissible
          at all right now?  Set resteerOKfn accordingly. */
@@ -383,6 +390,23 @@ IRSB* bb_to_IR (
       if (n_cond_resteers_allowed == 0)
          vassert(dres.whatNext != Dis_ResteerC);
 
+      /* If the disassembly function passed us a hint, take note of it. */
+      if (LIKELY(dres.hint == Dis_HintNone)) {
+         /* Do nothing */
+      } else {
+         vassert(dres.hint == Dis_HintVerbose);
+         /* The current insn is known to be verbose.  Lower the max insns limit
+            if necessary so as to avoid running the JIT out of space in the
+            event that we've encountered the start of a long sequence of them.
+            This is expected to be a very rare event.  In any case the remaining
+            limit (30 insns) is still so high that most blocks will terminate
+            anyway before then.  So this is very unlikely to give a perf hit in
+            practice.  See bug 375839 for the motivating example. */
+         if (guest_max_insns_really > 30) {
+            guest_max_insns_really = 30;
+         }
+      }
+
       /* Fill in the insn-mark length field. */
       vassert(first_stmt_idx >= 0 && first_stmt_idx < irsb->stmts_used);
       imark = irsb->stmts[first_stmt_idx];
@@ -435,7 +459,7 @@ IRSB* bb_to_IR (
          case Dis_Continue:
             vassert(dres.continueAt == 0);
             vassert(dres.jk_StopHere == Ijk_INVALID);
-            if (n_instrs < vex_control.guest_max_insns) {
+            if (n_instrs < guest_max_insns_really) {
                /* keep going */
             } else {
                /* We have to stop.  See comment above re irsb field

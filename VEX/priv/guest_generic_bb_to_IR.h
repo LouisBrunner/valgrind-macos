@@ -76,10 +76,16 @@ typedef
          Dis_ResteerC:  (speculatively, of course) followed a
                         conditional branch; continue at 'continueAt'
       */
-      enum { Dis_StopHere, Dis_Continue, 
+      enum { Dis_StopHere=0x10, Dis_Continue, 
              Dis_ResteerU, Dis_ResteerC } whatNext;
 
-      /* For Dis_StopHere, we need to end the block and create a
+      /* Any other hints that we should feed back to the disassembler?
+         Dis_HintNone:     no hint
+         Dis_HintVerbose:  this insn potentially generates a lot of code
+      */
+      enum { Dis_HintNone=0x20, Dis_HintVerbose } hint;
+
+      /* For whatNext==Dis_StopHere, we need to end the block and create a
          transfer to whatever the NIA is.  That will have presumably
          been set by the IR generated for this insn.  So we need to
          know the jump kind to use.  Should Ijk_INVALID in other Dis_
@@ -89,7 +95,6 @@ typedef
       /* For Dis_Resteer, this is the guest address we should continue
          at.  Otherwise ignored (should be zero). */
       Addr   continueAt;
-
    }
 
    DisResult;

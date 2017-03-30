@@ -203,6 +203,7 @@ EXTRA_DIST = \
 	tls.vgtest tls.stderr.exp tls.stdout.exp  \
 	unit_debuglog.stderr.exp unit_debuglog.vgtest \
 	vgprintf.stderr.exp vgprintf.vgtest \
+	vgprintf_nvalgrind.stderr.exp vgprintf_nvalgrind.vgtest \
 	process_vm_readv_writev.stderr.exp process_vm_readv_writev.vgtest
 
 check_PROGRAMS = \
@@ -248,6 +249,7 @@ check_PROGRAMS = \
 	unit_debuglog \
 	valgrind_cpp_test \
 	vgprintf \
+	vgprintf_nvalgrind \
 	coolo_sigaction \
 	gxx304 \
 	process_vm_readv_writev
@@ -361,6 +363,9 @@ if VGCONF_OS_IS_DARWIN
 else
  tls2_so_LDFLAGS	= -shared
 endif
+
+vgprintf_nvalgrind_SOURCES = vgprintf.c
+vgprintf_nvalgrind_CFLAGS = -DNVALGRIND
 
 valgrind_cpp_test_SOURCES = valgrind_cpp_test.cpp
 valgrind_cpp_test_LDADD   = -lstdc++

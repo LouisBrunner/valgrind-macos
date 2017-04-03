@@ -776,8 +776,17 @@ typedef
    VexTranslateArgs;
 
 
+/* Runs the entire compilation pipeline. */
 extern 
-VexTranslateResult LibVEX_Translate ( VexTranslateArgs* );
+VexTranslateResult LibVEX_Translate ( /*MOD*/ VexTranslateArgs* );
+
+/* Runs the first half of the compilation pipeline: lifts guest code to IR,
+   optimises, instruments and optimises it some more. */
+extern
+IRSB* LibVEX_FrontEnd ( /*MOD*/ VexTranslateArgs*,
+                        /*OUT*/ VexTranslateResult* res,
+                        /*OUT*/ VexRegisterUpdates* pxControl );
+
 
 /* A subtlety re interaction between self-checking translations and
    bb-chasing.  The supplied chase_into_ok function should say NO

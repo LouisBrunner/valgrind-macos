@@ -3843,7 +3843,9 @@ static void iselStmt(ISelEnv * env, IRStmt * stmt)
                /* The returned value is in $v0.  Park it in the register
                   associated with tmp. */
                HReg r_dst = lookupIRTemp(env, d->tmp);
-               addInstr(env, mk_iMOVds_RR(r_dst, hregMIPS_GPR2(mode64)));
+               addInstr(env, MIPSInstr_Shft(Mshft_SLL, True, r_dst,
+                                            hregMIPS_GPR2(mode64),
+                                            MIPSRH_Imm(False, 0)));
                vassert(rloc.pri == RLPri_Int);
                vassert(addToSp == 0);
                return;

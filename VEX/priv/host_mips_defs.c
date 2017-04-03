@@ -1584,15 +1584,8 @@ void getRegUsage_MIPSInstr(HRegUsage * u, const MIPSInstr * i, Bool mode64)
          addHRegUse(u, HRmWrite, i->Min.Shft.dst);
          return;
       case Min_Cmp:
-         if (i->Min.Cmp.sz32 && mode64 &&
-            (i->Min.Cmp.cond != MIPScc_EQ) &&
-            (i->Min.Cmp.cond != MIPScc_NE)) {
-            addHRegUse(u, HRmModify, i->Min.Cmp.srcL);
-            addHRegUse(u, HRmModify, i->Min.Cmp.srcR);
-         } else {
-            addHRegUse(u, HRmRead, i->Min.Cmp.srcL);
-            addHRegUse(u, HRmRead, i->Min.Cmp.srcR);
-         }
+         addHRegUse(u, HRmRead, i->Min.Cmp.srcL);
+         addHRegUse(u, HRmRead, i->Min.Cmp.srcR);
          addHRegUse(u, HRmWrite, i->Min.Cmp.dst);
          return;
       case Min_Unary:
@@ -2761,68 +2754,35 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
          UInt r_srcL = iregNo(i->Min.Cmp.srcL, mode64);
          UInt r_srcR = iregNo(i->Min.Cmp.srcR, mode64);
          UInt r_dst = iregNo(i->Min.Cmp.dst, mode64);
-         Bool sz32 = i->Min.Cmp.sz32;
 
          switch (i->Min.Cmp.cond) {
             case MIPScc_EQ:
                /* xor r_dst, r_srcL, r_srcR
                   sltiu r_dst, r_dst, 1 */
                p = mkFormR(p, 0, r_srcL, r_srcR, r_dst, 0, 38);
-               if (mode64 && sz32) {
-                  /* sll r_dst, r_dst, 0 */
-                  p = mkFormS(p, 0, r_dst, 0, r_dst, 0, 0);
-               }
                p = mkFormI(p, 11, r_dst, r_dst, 1);
                break;
             case MIPScc_NE:
                /* xor r_dst, r_srcL, r_srcR
                   sltu r_dst, zero, r_dst */
                p = mkFormR(p, 0, r_srcL, r_srcR, r_dst, 0, 38);
-               if (mode64 && sz32) {
-                  /* sll r_dst, r_dst, 0 */
-                  p = mkFormS(p, 0, r_dst, 0, r_dst, 0, 0);
-               }
                p = mkFormR(p, 0, 0, r_dst, r_dst, 0, 43);
                break;
             case MIPScc_LT:
-               if (mode64 && sz32) {
-                  /* sll r_srcL, r_srcL, 0
-                     sll r_srcR, r_srcR, 0 */
-                  p = mkFormS(p, 0, r_srcL, 0, r_srcL, 0, 0);
-                  p = mkFormS(p, 0, r_srcR, 0, r_srcR, 0, 0);
-               }
                /* slt r_dst, r_srcL, r_srcR */
                p = mkFormR(p, 0, r_srcL, r_srcR, r_dst, 0, 42);
                break;
             case MIPScc_LO:
-               if (mode64 && sz32) {
-                  /* sll r_srcL, r_srcL, 0
-                     sll r_srcR, r_srcR, 0 */
-                  p = mkFormS(p, 0, r_srcL, 0, r_srcL, 0, 0);
-                  p = mkFormS(p, 0, r_srcR, 0, r_srcR, 0, 0);
-               }
                /* sltu r_dst, r_srcL, r_srcR */
                p = mkFormR(p, 0, r_srcL, r_srcR, r_dst, 0, 43);
                break;
             case MIPScc_LE:
-               if (mode64 && sz32) {
-                  /* sll r_srcL, r_srcL, 0
-                     sll r_srcR, r_srcR, 0 */
-                  p = mkFormS(p, 0, r_srcL, 0, r_srcL, 0, 0);
-                  p = mkFormS(p, 0, r_srcR, 0, r_srcR, 0, 0);
-               }
                /* slt r_dst, r_srcR, r_srcL
                   xori r_dst, r_dst, 1 */
                p = mkFormR(p, 0, r_srcR, r_srcL, r_dst, 0, 42);
                p = mkFormI(p, 14, r_dst, r_dst, 1);
                break;
             case MIPScc_LS:
-               if (mode64 && sz32) {
-                  /* sll r_srcL, r_srcL, 0
-                     sll r_srcR, r_srcR, 0 */
-                  p = mkFormS(p, 0, r_srcL, 0, r_srcL, 0, 0);
-                  p = mkFormS(p, 0, r_srcR, 0, r_srcR, 0, 0);
-               }
                /* sltu r_dst, rsrcR, r_srcL
                   xori r_dsr, r_dst, 1 */
                p = mkFormR(p, 0, r_srcR, r_srcL, r_dst, 0, 43);

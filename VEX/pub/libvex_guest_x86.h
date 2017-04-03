@@ -194,8 +194,8 @@ typedef
       UShort guest_GS;
       UShort guest_SS;
       /* LDT/GDT stuff. */
-      HWord  guest_LDT; /* host addr, a VexGuestX86SegDescr* */
-      HWord  guest_GDT; /* host addr, a VexGuestX86SegDescr* */
+      ULong  guest_LDT; /* host addr, a VexGuestX86SegDescr* */
+      ULong  guest_GDT; /* host addr, a VexGuestX86SegDescr* */
 
       /* Emulation notes */
       UInt   guest_EMNOTE;
@@ -223,6 +223,8 @@ typedef
 
       /* Padding to make it have an 16-aligned size */
       UInt padding1;
+      UInt padding2;
+      UInt padding3;
    }
    VexGuestX86State;
 

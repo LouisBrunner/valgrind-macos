@@ -370,16 +370,16 @@ static void deallocate_LGDTs_for_thread ( VexGuestX86State* vex )
 
    if (0)
       VG_(printf)("deallocate_LGDTs_for_thread: "
-                  "ldt = 0x%lx, gdt = 0x%lx\n",
+                  "ldt = 0x%llx, gdt = 0x%llx\n",
                   vex->guest_LDT, vex->guest_GDT );
 
    if (vex->guest_LDT != (HWord)NULL) {
-      free_LDT_or_GDT( (VexGuestX86SegDescr*)vex->guest_LDT );
+      free_LDT_or_GDT( (VexGuestX86SegDescr*)(HWord)vex->guest_LDT );
       vex->guest_LDT = (HWord)NULL;
    }
 
    if (vex->guest_GDT != (HWord)NULL) {
-      free_LDT_or_GDT( (VexGuestX86SegDescr*)vex->guest_GDT );
+      free_LDT_or_GDT( (VexGuestX86SegDescr*)(HWord)vex->guest_GDT );
       vex->guest_GDT = (HWord)NULL;
    }
 }
@@ -412,7 +412,7 @@ SysRes read_ldt ( ThreadId tid, UChar* ptr, UInt bytecount )
    vg_assert(sizeof(HWord) == sizeof(VexGuestX86SegDescr*));
    vg_assert(8 == sizeof(VexGuestX86SegDescr));
 
-   ldt = (UChar*)(VG_(threads)[tid].arch.vex.guest_LDT);
+   ldt = (UChar*)(HWord)(VG_(threads)[tid].arch.vex.guest_LDT);
    res = VG_(mk_SysRes_Success)( 0 );
    if (ldt == NULL)
       /* LDT not allocated, meaning all entries are null */
@@ -446,7 +446,7 @@ SysRes write_ldt ( ThreadId tid, void* ptr, UInt bytecount, Int oldmode )
    vg_assert(8 == sizeof(VexGuestX86SegDescr));
    vg_assert(sizeof(HWord) == sizeof(VexGuestX86SegDescr*));
 
-   ldt      = (VexGuestX86SegDescr*)VG_(threads)[tid].arch.vex.guest_LDT;
+   ldt      = (VexGuestX86SegDescr*)(HWord)VG_(threads)[tid].arch.vex.guest_LDT;
    ldt_info = (vki_modify_ldt_t*)ptr;
 
    res = VG_(mk_SysRes_Error)( VKI_EINVAL );
@@ -527,7 +527,7 @@ SysRes ML_(x86_sys_set_thread_area) ( ThreadId tid, vki_modify_ldt_t* info )
       return VG_(mk_SysRes_Error)( VKI_EFAULT );
    }
 
-   gdt = (VexGuestX86SegDescr*)VG_(threads)[tid].arch.vex.guest_GDT;
+   gdt = (VexGuestX86SegDescr*)(HWord)VG_(threads)[tid].arch.vex.guest_GDT;
 
    /* If the thread doesn't have a GDT, allocate it now. */
    if (!gdt) {
@@ -586,7 +586,7 @@ static SysRes sys_get_thread_area ( ThreadId tid, vki_modify_ldt_t* info )
    if (idx < 0 || idx >= VEX_GUEST_X86_GDT_NENT)
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
-   gdt = (VexGuestX86SegDescr*)VG_(threads)[tid].arch.vex.guest_GDT;
+   gdt = (VexGuestX86SegDescr*)(HWord)VG_(threads)[tid].arch.vex.guest_GDT;
 
    /* If the thread doesn't have a GDT, allocate it now. */
    if (!gdt) {
@@ -632,8 +632,8 @@ void ML_(x86_setup_LDT_GDT) ( /*OUT*/ ThreadArchState *child,
    } else {
       /* No luck .. we have to take a copy of the parent's. */
       child->vex.guest_LDT = (HWord)alloc_zeroed_x86_LDT();
-      copy_LDT_from_to( (VexGuestX86SegDescr*)parent->vex.guest_LDT, 
-                        (VexGuestX86SegDescr*)child->vex.guest_LDT );
+      copy_LDT_from_to( (VexGuestX86SegDescr*)(HWord)parent->vex.guest_LDT, 
+                        (VexGuestX86SegDescr*)(HWord)child->vex.guest_LDT );
    }
 
    /* Either we start with an empty GDT (the usual case) or inherit a
@@ -643,8 +643,8 @@ void ML_(x86_setup_LDT_GDT) ( /*OUT*/ ThreadArchState *child,
 
    if (parent->vex.guest_GDT != (HWord)NULL) {
       child->vex.guest_GDT = (HWord)alloc_system_x86_GDT();
-      copy_GDT_from_to( (VexGuestX86SegDescr*)parent->vex.guest_GDT,
-                        (VexGuestX86SegDescr*)child->vex.guest_GDT );
+      copy_GDT_from_to( (VexGuestX86SegDescr*)(HWord)parent->vex.guest_GDT,
+                        (VexGuestX86SegDescr*)(HWord)child->vex.guest_GDT );
    }
 }  
 

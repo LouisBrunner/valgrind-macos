@@ -93,6 +93,7 @@ To see details of a given bug, visit
 where XXXXXX is the bug number as listed below.
 
 162848  --log-file output isn't split when a program forks
+340777  Illegal instruction on mips (ar71xx)
 341481  MIPS64: Iop_CmpNE32 triggers false warning on MIPS64 platforms
 342040  Valgrind mishandles clone with CLONE_VFORK | CLONE_VM that clones
         to a different stack.

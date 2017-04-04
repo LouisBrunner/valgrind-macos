@@ -438,6 +438,9 @@ IRSB* LibVEX_FrontEnd ( /*MOD*/ VexTranslateArgs* vta,
          break;
 
       case VexArchS390X:
+         /* KLUDGE: export hwcaps. */
+         s390_host_hwcaps = vta->archinfo_host.hwcaps;
+
          preciseMemExnsFn 
             = S390FN(guest_s390x_state_requires_precise_mem_exns);
          disInstrFn              = S390FN(disInstr_S390);
@@ -951,8 +954,6 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
 
       case VexArchS390X:
          mode64       = True;
-         /* KLUDGE: export hwcaps. */
-         s390_host_hwcaps = vta->archinfo_host.hwcaps;
          rRegUniv     = S390FN(getRRegUniverse_S390());
          isMove       = CAST_TO_TYPEOF(isMove) S390FN(isMove_S390Instr);
          getRegUsage  

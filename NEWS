@@ -274,6 +274,7 @@ where XXXXXX is the bug number as listed below.
 303877  valgrind doesn't support compressed debuginfo sections.
 345307  Warning about "still reachable" memory when using libstdc++ from gcc 5
 348345  Assertion fails for negative lineno
+348924  MIPS: Load doubles through memory so the code compiles with the FPXX ABI
 351282  V 3.10.1 MIPS softfloat build broken with GCC 4.9.3 / binutils 2.25.1
 351692  Dumps created by valgrind are not readable by gdb (mips32 specific)
 351804  Crash on generating suppressions for "printf" call on OS X 10.10

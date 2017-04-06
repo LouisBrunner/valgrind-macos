@@ -105,6 +105,7 @@ where XXXXXX is the bug number as listed below.
 352767  Wine/valgrind: noted but unhandled ioctl 0x5307 [..] (CDROMSTOP)
 358213  helgrind/drd bar_bad testcase hangs or crashes with new glibc pthread
         barrier implementation
+359202  Add musl libc configure/compile
 368863  WARNING: unhandled arm64-linux syscall: 100 (get_robust_list)
 368865  WARNING: unhandled arm64-linux syscall: 272 (kcmp)
 368917  WARNING: unhandled arm64-linux syscall: 218 (request_key)

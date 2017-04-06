@@ -57,7 +57,7 @@
 void VG_NOTIFY_ON_LOAD(freeres)(Vg_FreeresToRun to_run);
 void VG_NOTIFY_ON_LOAD(freeres)(Vg_FreeresToRun to_run)
 {
-#  if !defined(__UCLIBC__) \
+#  if !defined(__UCLIBC__) && !defined(MUSL_LIBC) \
       && !defined(VGPV_arm_linux_android) \
       && !defined(VGPV_x86_linux_android) \
       && !defined(VGPV_mips32_linux_android) \

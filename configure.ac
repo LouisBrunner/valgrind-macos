@@ -990,6 +990,13 @@ if test x$VGCONF_PLATFORM_PRI_CAPS = xX86_SOLARIS \
     GLIBC_VERSION="solaris"
 fi
 
+# GLIBC_VERSION is empty if a musl libc is used, so use the toolchain tuple
+# in this case.
+if test x$GLIBC_VERSION = x; then
+    if $CC -dumpmachine | grep -q musl; then
+        GLIBC_VERSION=musl
+    fi
+fi
 
 AC_MSG_CHECKING([the glibc version])
 
@@ -1045,10 +1052,15 @@ case "${GLIBC_VERSION}" in
 	# DEFAULT_SUPP set in host_os switch-case above.
 	# No other suppression file is used.
 	;;
+     musl)
+	AC_MSG_RESULT(Musl)
+	AC_DEFINE([MUSL_LIBC], 1, [Define to 1 if you're using Musl libc])
+	# no DEFAULT_SUPP file yet for musl libc.
+	;;
      2.0|2.1|*)
 	AC_MSG_RESULT([unsupported version ${GLIBC_VERSION}])
-	AC_MSG_ERROR([Valgrind requires glibc version 2.2 or later,])
-	AC_MSG_ERROR([Darwin libc, Bionic libc or Solaris libc])
+	AC_MSG_ERROR([Valgrind requires glibc version 2.2 or later, uClibc,])
+	AC_MSG_ERROR([musl libc, Darwin libc, Bionic libc or Solaris libc])
 	;;
 esac
 

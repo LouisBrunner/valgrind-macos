@@ -14,7 +14,7 @@
 #define NNN 3456987  // Number of repetition.
 
 /* Expected values */
-long long int p1_expd[N] = { 2156643710, 2156643710, 3456986, 6913974,
+int p1_expd[N] = { 2156643710, 2156643710, 3456986, 6913974,
                              4288053322, 0, 4294967295,
                              6913974, 21777111,
                              3456986, 2153186724,
@@ -34,7 +34,7 @@ long long int p2_expd[N] = { 12633614303292, 12633614303292, 3555751, 6913974,
 
 #define IS_8_ALIGNED(_ptr)   (0 == (((unsigned long)(_ptr)) & 7))
 
-__attribute__((noinline)) void atomic_saa ( long long int* p, int n )
+__attribute__((noinline)) void atomic_saa ( int* p, int n )
 {
 #if (_MIPS_ARCH_OCTEON2)
    unsigned long block[2] = { (unsigned long)p, (unsigned long)n };
@@ -66,7 +66,7 @@ __attribute__((noinline)) void atomic_saad ( long long int* p, int n )
 #endif
 }
 
-__attribute__((noinline)) void atomic_laa ( long long int* p, int n )
+__attribute__((noinline)) void atomic_laa ( int* p, int n )
 {
 #if (_MIPS_ARCH_OCTEON2)
    unsigned long block[2] = { (unsigned long)p, (unsigned long)n };
@@ -98,7 +98,7 @@ __attribute__((noinline)) void atomic_laad ( long long int* p, int n )
 #endif
 }
 
-__attribute__((noinline)) void atomic_law ( long long int* p, int n )
+__attribute__((noinline)) void atomic_law ( int* p, int n )
 {
 #if (_MIPS_ARCH_OCTEON2)
    unsigned long block[2] = { (unsigned long)p, (unsigned long)n };
@@ -130,7 +130,7 @@ __attribute__((noinline)) void atomic_lawd ( long long int* p, int n )
 #endif
 }
 
-__attribute__((noinline)) void atomic_lai ( long long int* p )
+__attribute__((noinline)) void atomic_lai ( int* p )
 {
 #if (_MIPS_ARCH_OCTEON2)
    unsigned long block[2] = { (unsigned long)p };
@@ -162,7 +162,7 @@ __attribute__((noinline)) void atomic_laid ( long long int* p )
 #endif
 }
 
-__attribute__((noinline)) void atomic_lad ( long long int* p )
+__attribute__((noinline)) void atomic_lad ( int* p )
 {
 #if (_MIPS_ARCH_OCTEON2)
    unsigned long block[2] = { (unsigned long)p };
@@ -194,7 +194,7 @@ __attribute__((noinline)) void atomic_ladd ( long long int* p )
 #endif
 }
 
-__attribute__((noinline)) void atomic_lac ( long long int* p )
+__attribute__((noinline)) void atomic_lac ( int* p )
 {
 #if (_MIPS_ARCH_OCTEON2)
    unsigned long block[2] = { (unsigned long)p };
@@ -226,7 +226,7 @@ __attribute__((noinline)) void atomic_lacd ( long long int* p )
 #endif
 }
 
-__attribute__((noinline)) void atomic_las ( long long int* p )
+__attribute__((noinline)) void atomic_las ( int* p )
 {
 #if (_MIPS_ARCH_OCTEON2)
    unsigned long block[2] = { (unsigned long)p };
@@ -307,7 +307,7 @@ int main ( int argc, char** argv )
 #if (_MIPS_ARCH_OCTEON2)
    int    i, status;
    char*  page[N];
-   long long int* p1[N];
+   int* p1[N];
    long long int* p2[N];
    pid_t  child, pc2;
 
@@ -321,8 +321,8 @@ int main ( int argc, char** argv )
          perror("mmap failed");
          exit(1);
       }
-      p1[i] = (long long int*)(page[i]+0);
-      p2[i] = (long long int*)(page[i]+256);
+      p1[i] = (int*)(page[i] + 0);
+      p2[i] = (long long int*)(page[i] + 256);
 
       assert( IS_8_ALIGNED(p1[i]) );
       assert( IS_8_ALIGNED(p2[i]) );
@@ -345,11 +345,11 @@ int main ( int argc, char** argv )
       printf("child\n");
       for (i = 0; i < NNN; i++) {
          atomic_saa(p1[0], i);
-         atomic_saad(p2[0], i+98765 ); /* ensure we hit the upper 32 bits */
+         atomic_saad(p2[0], i + 98765 ); /* ensure we hit the upper 32 bits */
          atomic_laa(p1[1], i);
-         atomic_laad(p2[1], i+98765 ); /* ensure we hit the upper 32 bits */
+         atomic_laad(p2[1], i + 98765 ); /* ensure we hit the upper 32 bits */
          atomic_law(p1[2], i);
-         atomic_lawd(p2[2], i+98765 ); /* ensure we hit the upper 32 bits */
+         atomic_lawd(p2[2], i + 98765 ); /* ensure we hit the upper 32 bits */
          atomic_lai(p1[3]);
          atomic_laid(p2[3]);
          atomic_lad(p1[4]);
@@ -381,11 +381,11 @@ int main ( int argc, char** argv )
 
    for (i = 0; i < NNN; i++) {
       atomic_saa(p1[0], i);
-      atomic_saad(p2[0], i+98765); /* ensure we hit the upper 32 bits */
+      atomic_saad(p2[0], i + 98765); /* ensure we hit the upper 32 bits */
       atomic_laa(p1[1], i);
-      atomic_laad(p2[1], i+98765); /* ensure we hit the upper 32 bits */
+      atomic_laad(p2[1], i + 98765); /* ensure we hit the upper 32 bits */
       atomic_law(p1[2], i);
-      atomic_lawd(p2[2], i+98765 ); /* ensure we hit the upper 32 bits */
+      atomic_lawd(p2[2], i + 98765 ); /* ensure we hit the upper 32 bits */
       atomic_lai(p1[3]);
       atomic_laid(p2[3]);
       atomic_lad(p1[4]);
@@ -414,25 +414,25 @@ int main ( int argc, char** argv )
    /* assert that child finished normally */
    assert(WIFEXITED(status));
 
-   printf("Store Atomic Add: 32 bit %lld, 64 bit %lld\n",      *p1[0], *p2[0]);
-   printf("Load Atomic Add: 32 bit %lld, 64 bit %lld\n",       *p1[1], *p2[1]);
-   printf("Load Atomic Swap: 32 bit %lld, 64 bit %lld\n",      *p1[2], *p2[2]);
-   printf("Load Atomic Increment: 32 bit %lld, 64 bit %lld\n", *p1[3], *p2[3]);
-   printf("Load Atomic Decrement: 32 bit %lld, 64 bit %lld\n", *p1[4], *p2[4]);
-   printf("Load Atomic Clear: 32 bit %lld, 64 bit %lld\n",     *p1[5], *p2[5]);
-   printf("Load Atomic Set: 32 bit %lld, 64 bit %lld\n",       *p1[6], *p2[6]);
-   printf("laa and saa: base1: %lld, base2: %lld\n",           *p1[7], *p1[8]);
-   printf("laad and saad: base1: %lld, base2: %lld\n",         *p2[7], *p2[8]);
-   printf("law and saa: base1: %lld, base2: %lld\n",           *p1[9], *p1[10]);
-   printf("lawd and saad: base1: %lld, base2: %lld\n",         *p2[9], *p2[10]);
-   printf("lai and saa: base1: %lld, base2: %lld\n",          *p1[11], *p1[12]);
-   printf("laid and saad: base1: %lld, base2: %lld\n",        *p2[11], *p2[12]);
-   printf("las and saa: base1: %lld, base2: %lld\n",          *p1[13], *p1[14]);
-   printf("lasd and saad: base1: %lld, base2: %lld\n",        *p2[13], *p2[14]);
-   printf("lad and saa: base1: %lld, base2: %lld\n",          *p1[15], *p1[16]);
-   printf("ladd and saad: base1: %lld, base2: %lld\n",        *p2[15], *p2[16]);
-   printf("lac and saa: base1: %lld, base2: %lld\n",          *p1[17], *p1[18]);
-   printf("lacd and saad: base1: %lld, base2: %lld\n",        *p2[17], *p2[18]);
+   printf("Store Atomic Add: 32 bit %u, 64 bit %lld\n",      *p1[0], *p2[0]);
+   printf("Load Atomic Add: 32 bit %u, 64 bit %lld\n",       *p1[1], *p2[1]);
+   printf("Load Atomic Swap: 32 bit %u, 64 bit %lld\n",      *p1[2], *p2[2]);
+   printf("Load Atomic Increment: 32 bit %u, 64 bit %lld\n", *p1[3], *p2[3]);
+   printf("Load Atomic Decrement: 32 bit %u, 64 bit %lld\n", *p1[4], *p2[4]);
+   printf("Load Atomic Clear: 32 bit %u, 64 bit %lld\n",     *p1[5], *p2[5]);
+   printf("Load Atomic Set: 32 bit %u, 64 bit %lld\n",       *p1[6], *p2[6]);
+   printf("laa and saa: base1: %u, base2: %u\n",             *p1[7], *p1[8]);
+   printf("laad and saad: base1: %lld, base2: %lld\n",       *p2[7], *p2[8]);
+   printf("law and saa: base1: %u, base2: %u\n",             *p1[9], *p1[10]);
+   printf("lawd and saad: base1: %lld, base2: %lld\n",       *p2[9], *p2[10]);
+   printf("lai and saa: base1: %u, base2: %u\n",             *p1[11], *p1[12]);
+   printf("laid and saad: base1: %lld, base2: %lld\n",       *p2[11], *p2[12]);
+   printf("las and saa: base1: %u, base2: %u\n",             *p1[13], *p1[14]);
+   printf("lasd and saad: base1: %lld, base2: %lld\n",       *p2[13], *p2[14]);
+   printf("lad and saa: base1: %u, base2: %u\n",             *p1[15], *p1[16]);
+   printf("ladd and saad: base1: %lld, base2: %lld\n",       *p2[15], *p2[16]);
+   printf("lac and saa: base1: %u, base2: %u\n",             *p1[17], *p1[18]);
+   printf("lacd and saad: base1: %lld, base2: %lld\n",       *p2[17], *p2[18]);
 
    for (i = 0; i < N; i++) {
       if (p1_expd[i] == *p1[i] && p2_expd[i] == *p2[i]) {

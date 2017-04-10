@@ -2826,14 +2826,26 @@ PRE(sys_execve)
    SysRes       res;
    Bool         setuid_allowed, trace_this_child;
 
-   PRINT("sys_execve ( %#lx(%s), %#lx, %#lx )", ARG1, (char*)ARG1, ARG2, ARG3);
+   PRINT("sys_execve ( %#lx(%s), %#lx, %#lx )", ARG1, (HChar*)ARG1, ARG2, ARG3);
    PRE_REG_READ3(vki_off_t, "execve",
                  char *, filename, char **, argv, char **, envp);
    PRE_MEM_RASCIIZ( "execve(filename)", ARG1 );
-   if (ARG2 != 0)
+   if (ARG2 != 0) {
+      /* At least the terminating NULL must be addressable. */
+      if (!ML_(safe_to_deref)((HChar **) ARG2, sizeof(HChar *))) {
+         SET_STATUS_Failure(VKI_EFAULT);
+         return;
+      }
       ML_(pre_argv_envp)( ARG2, tid, "execve(argv)", "execve(argv[i])" );
-   if (ARG3 != 0)
+   }
+   if (ARG3 != 0) {
+      /* At least the terminating NULL must be addressable. */
+      if (!ML_(safe_to_deref)((HChar **) ARG3, sizeof(HChar *))) {
+         SET_STATUS_Failure(VKI_EFAULT);
+         return;
+      }
       ML_(pre_argv_envp)( ARG3, tid, "execve(envp)", "execve(envp[i])" );
+   }
 
    vg_assert(VG_(is_valid_tid)(tid));
    tst = VG_(get_ThreadState)(tid);

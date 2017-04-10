@@ -85,10 +85,18 @@ int main(void)
    SY(__NR_unlink, x0); FAIL;
 
    // __NR_execve 11
-   // Nb: could have 3 memory errors if we pass x0+1 as the 2nd and 3rd
-   // args, except for bug #93174.
    GO(__NR_execve, "3s 1m");
-   SY(__NR_execve, x0, x0, x0); FAIL;
+   SY(__NR_execve, x0 + 1, x0 + 1, x0); FAIL;
+
+   GO(__NR_execve, "3s 1m");
+   SY(__NR_execve, x0 + 1, x0, x0 + 1); FAIL;
+
+   char *argv_envp[] = {(char *) (x0 + 1), NULL};
+   GO(__NR_execve, "4s 2m");
+   SY(__NR_execve, x0 + 1, x0 + argv_envp, x0); FAIL;
+
+   GO(__NR_execve, "4s 2m");
+   SY(__NR_execve, x0 + 1, x0, x0 + argv_envp); FAIL;
 
    // __NR_chdir 12
    GO(__NR_chdir, "1s 1m");

@@ -154,6 +154,7 @@ where XXXXXX is the bug number as listed below.
         and 2 args for FUTEX_TRYLOCK_PI
 377717  Fix massive space leak when reading compressed debuginfo sections
 377930  fcntl syscall wrapper is missing flock structure check
+378535  Valgrind reports INTERNAL ERROR in execve syscall wrapper
 
 Release 3.12.0 (20 October 2016)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

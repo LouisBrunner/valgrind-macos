@@ -2071,7 +2071,7 @@ PRE(sys_set_tid_address)
 
 PRE(sys_tkill)
 {
-   PRINT("sys_tgkill ( %ld, %ld )", SARG1, SARG2);
+   PRINT("sys_tkill ( %ld, %ld )", SARG1, SARG2);
    PRE_REG_READ2(long, "tkill", int, tid, int, sig);
    if (!ML_(client_signal_OK)(ARG2)) {
       SET_STATUS_Failure( VKI_EINVAL );

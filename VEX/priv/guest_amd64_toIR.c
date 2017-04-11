@@ -28152,6 +28152,7 @@ Long dis_ESC_0F38__VEX (
             )
          );
          *uses_vvvv = True;
+         dres->hint = Dis_HintVerbose;
          goto decode_success;
       }
       break;

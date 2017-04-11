@@ -17249,7 +17249,10 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          break;
       case Dis_ResteerU:
       case Dis_ResteerC:
-         putPC(mkU32(dres.continueAt));
+         if (mode64)
+            putPC(mkU64(dres.continueAt));
+         else
+            putPC(mkU32(dres.continueAt));
          break;
       case Dis_StopHere:
          break;

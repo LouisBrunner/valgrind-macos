@@ -17,8 +17,8 @@ set -e
 #---------------------------------------------------------------------
 
 # You need to modify these revision numbers for your update.
-old_gcc_revision=r212125  # the revision of the previous update
-new_gcc_revision=r240068  # the revision for this update
+old_gcc_revision=r240068  # the revision of the previous update
+new_gcc_revision=r246502  # the revision for this update
 
 # Unless the organization of demangler related files has changed, no
 # changes below this line should be necessary.
@@ -56,6 +56,7 @@ cp    ../gcc-$old_gcc_revision/libiberty/cp-demangle.h .
 cp    ../gcc-$old_gcc_revision/libiberty/cplus-dem.c .
 cp    ../gcc-$old_gcc_revision/libiberty/dyn-string.c .
 cp    ../gcc-$old_gcc_revision/libiberty/d-demangle.c .
+cp    ../gcc-$old_gcc_revision/libiberty/rust-demangle.c .
 cp    ../gcc-$old_gcc_revision/libiberty/safe-ctype.c .
 cd ..
 
@@ -83,6 +84,7 @@ cp    ../gcc-$new_gcc_revision/libiberty/cp-demangle.h .
 cp    ../gcc-$new_gcc_revision/libiberty/cplus-dem.c .
 cp    ../gcc-$new_gcc_revision/libiberty/dyn-string.c .
 cp    ../gcc-$new_gcc_revision/libiberty/d-demangle.c .
+cp    ../gcc-$new_gcc_revision/libiberty/rust-demangle.c .
 cp    ../gcc-$new_gcc_revision/libiberty/safe-ctype.c .
 cd ..
 

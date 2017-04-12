@@ -362,6 +362,11 @@ IRSB* LibVEX_FrontEnd ( /*MOD*/ VexTranslateArgs* vta,
 
    vex_traceflags = vta->traceflags;
 
+   /* KLUDGE: export hwcaps. */
+   if (vta->arch_host == VexArchS390X) {
+      s390_host_hwcaps = vta->archinfo_host.hwcaps;
+   }
+
    /* First off, check that the guest and host insn sets
       are supported. */
 
@@ -438,9 +443,6 @@ IRSB* LibVEX_FrontEnd ( /*MOD*/ VexTranslateArgs* vta,
          break;
 
       case VexArchS390X:
-         /* KLUDGE: export hwcaps. */
-         s390_host_hwcaps = vta->archinfo_host.hwcaps;
-
          preciseMemExnsFn 
             = S390FN(guest_s390x_state_requires_precise_mem_exns);
          disInstrFn              = S390FN(disInstr_S390);

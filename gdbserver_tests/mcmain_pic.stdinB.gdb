@@ -1,7 +1,7 @@
 # connect gdb to Valgrind gdbserver:
 target remote | ./vgdb --wait=60 --vgdb-prefix=./vgdb-prefix-mcmain_pic
 echo vgdb launched process attached\n
-set heuristic-fence-post 999999
+source mcmain_pic.heur
 monitor v.set vgdb-error 999999
 #
 # break

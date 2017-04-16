@@ -3,7 +3,7 @@
 # information via the gdbserver protocol packet qXfer:auxv:read:
 # The content of the auxv data can be shown by gdb using
 # gdb command 'info auxv'
-prereq: test -e gdb.pic
+prereq: test -e gdb.pic && if ../tests/arch_test mips32 || ../tests/arch_test mips64 ; then  echo "set heuristic-fence-post 999999"  ; else  echo '' ; fi > mcmain_pic.heur
 prog: main_pic
 vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcmain_pic
 stdout_filter: filter_gdb

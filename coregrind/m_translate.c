@@ -1696,7 +1696,7 @@ Bool VG_(translate) ( ThreadId tid,
    /* Compute guest__use_fallback_LLSC, overiding any settings of
       VG_(clo_fallback_llsc) that we know would cause the guest to
       fail (loop). */
-   if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM) {
+   if (VEX_MIPS_COMP_ID(vex_archinfo.hwcaps) == VEX_PRID_COMP_CAVIUM) {
       /* We must use the fallback scheme. */
       vex_abiinfo.guest__use_fallback_LLSC = True;
    } else {

@@ -369,6 +369,11 @@ void LibVEX_default_VexArchInfo ( /*OUT*/VexArchInfo* vai );
       guest is ppc32-linux                ==> const False
       guest is other                      ==> inapplicable
 
+   guest__use_fallback_LLSC
+      guest is mips32                     ==> applicable, default True
+      guest is mips64                     ==> applicable, default True
+      guest is arm64                      ==> applicable, default False
+
    host_ppc_calls_use_fndescrs:
       host is ppc32-linux                 ==> False
       host is ppc64-linux                 ==> True
@@ -401,11 +406,17 @@ typedef
          is assumed equivalent to a fn which always returns False. */
       Bool (*guest_ppc_zap_RZ_at_bl)(Addr);
 
+      /* Potentially for all guests that use LL/SC: use the fallback
+         (synthesised) implementation rather than passing LL/SC on to
+         the host? */
+      Bool guest__use_fallback_LLSC;
+
       /* PPC32/PPC64 HOSTS only: does '&f' give us a pointer to a
          function descriptor on the host, or to the function code
          itself?  True => descriptor, False => code. */
       Bool host_ppc_calls_use_fndescrs;
 
+      /* ??? Description ??? */
       Bool guest_mips_fp_mode64;
    }
    VexAbiInfo;

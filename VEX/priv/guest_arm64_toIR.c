@@ -1147,6 +1147,10 @@ static IRExpr* narrowFrom64 ( IRType dstTy, IRExpr* e )
 #define OFFB_CMSTART  offsetof(VexGuestARM64State,guest_CMSTART)
 #define OFFB_CMLEN    offsetof(VexGuestARM64State,guest_CMLEN)
 
+#define OFFB_LLSC_SIZE offsetof(VexGuestARM64State,guest_LLSC_SIZE)
+#define OFFB_LLSC_ADDR offsetof(VexGuestARM64State,guest_LLSC_ADDR)
+#define OFFB_LLSC_DATA offsetof(VexGuestARM64State,guest_LLSC_DATA)
+
 
 /* ---------------- Integer registers ---------------- */
 
@@ -4702,7 +4706,9 @@ const HChar* nameArr_Q_SZ ( UInt bitQ, UInt size )
 
 
 static
-Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
+Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
+                          const VexAbiInfo* abiinfo
+)
 {
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
 
@@ -6457,6 +6463,32 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
       sz 001000 000 s     0 11111 n t   STX{R,RH,RB}  Ws, Rt, [Xn|SP]
       sz 001000 000 s     1 11111 n t   STLX{R,RH,RB} Ws, Rt, [Xn|SP]
    */
+   /* For the "standard" implementation we pass through the LL and SC to
+      the host.  For the "fallback" implementation, for details see
+        https://bugs.kde.org/show_bug.cgi?id=344524 and
+        https://bugs.kde.org/show_bug.cgi?id=369459,
+      but in short:
+
+      LoadLinked(addr)
+        gs.LLsize = load_size // 1, 2, 4 or 8
+        gs.LLaddr = addr
+        gs.LLdata = zeroExtend(*addr)
+
+      StoreCond(addr, data)
+        tmp_LLsize = gs.LLsize
+        gs.LLsize = 0 // "no transaction"
+        if tmp_LLsize != store_size        -> fail
+        if addr != gs.LLaddr               -> fail
+        if zeroExtend(*addr) != gs.LLdata  -> fail
+        cas_ok = CAS(store_size, addr, gs.LLdata -> data)
+        if !cas_ok                         -> fail
+        succeed
+
+      When thread scheduled
+        gs.LLsize = 0 // "no transaction"
+        (coregrind/m_scheduler/scheduler.c, run_thread_for_a_while()
+         has to do this bit)
+   */   
    if (INSN(29,23) == BITS7(0,0,1,0,0,0,0)
        && (INSN(23,21) & BITS3(1,0,1)) == BITS3(0,0,0)
        && INSN(14,10) == BITS5(1,1,1,1,1)) {
@@ -6478,29 +6510,99 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
 
       if (isLD && ss == BITS5(1,1,1,1,1)) {
          IRTemp res = newTemp(ty);
-         stmt(IRStmt_LLSC(Iend_LE, res, mkexpr(ea), NULL/*LL*/));
-         putIReg64orZR(tt, widenUto64(ty, mkexpr(res)));
+         if (abiinfo->guest__use_fallback_LLSC) {
+            // Do the load first so we don't update any guest state
+            // if it faults.
+            IRTemp loaded_data64 = newTemp(Ity_I64);
+            assign(loaded_data64, widenUto64(ty, loadLE(ty, mkexpr(ea))));
+            stmt( IRStmt_Put( OFFB_LLSC_DATA, mkexpr(loaded_data64) ));
+            stmt( IRStmt_Put( OFFB_LLSC_ADDR, mkexpr(ea) ));
+            stmt( IRStmt_Put( OFFB_LLSC_SIZE, mkU64(szB) ));
+            putIReg64orZR(tt, mkexpr(loaded_data64));
+         } else {
+            stmt(IRStmt_LLSC(Iend_LE, res, mkexpr(ea), NULL/*LL*/));
+            putIReg64orZR(tt, widenUto64(ty, mkexpr(res)));
+         }
          if (isAcqOrRel) {
             stmt(IRStmt_MBE(Imbe_Fence));
          }
-         DIP("ld%sx%s %s, [%s]\n", isAcqOrRel ? "a" : "", suffix[szBlg2],
-             nameIRegOrZR(szB == 8, tt), nameIReg64orSP(nn));
+         DIP("ld%sx%s %s, [%s] %s\n", isAcqOrRel ? "a" : "", suffix[szBlg2],
+             nameIRegOrZR(szB == 8, tt), nameIReg64orSP(nn),
+             abiinfo->guest__use_fallback_LLSC
+                ? "(fallback implementation)" : "");
          return True;
       }
       if (!isLD) {
          if (isAcqOrRel) {
             stmt(IRStmt_MBE(Imbe_Fence));
          }
-         IRTemp  res  = newTemp(Ity_I1);
          IRExpr* data = narrowFrom64(ty, getIReg64orZR(tt));
-         stmt(IRStmt_LLSC(Iend_LE, res, mkexpr(ea), data));
-         /* IR semantics: res is 1 if store succeeds, 0 if it fails.
-            Need to set rS to 1 on failure, 0 on success. */
-         putIReg64orZR(ss, binop(Iop_Xor64, unop(Iop_1Uto64, mkexpr(res)),
-                                            mkU64(1)));
-         DIP("st%sx%s %s, %s, [%s]\n", isAcqOrRel ? "a" : "", suffix[szBlg2],
+         if (abiinfo->guest__use_fallback_LLSC) {
+            // This is really ugly, since we don't have any way to do
+            // proper if-then-else.  First, set up as if the SC failed,
+            // and jump forwards if it really has failed.
+
+            // Continuation address
+            IRConst* nia = IRConst_U64(guest_PC_curr_instr + 4);
+
+            // "the SC failed".  Any non-zero value means failure.
+            putIReg64orZR(ss, mkU64(1));
+          
+            IRTemp tmp_LLsize = newTemp(Ity_I64);
+            assign(tmp_LLsize, IRExpr_Get(OFFB_LLSC_SIZE, Ity_I64));
+            stmt( IRStmt_Put( OFFB_LLSC_SIZE, mkU64(0) // "no transaction"
+            ));
+            // Fail if no or wrong-size transaction
+            vassert(szB == 8 || szB == 4 || szB == 2 || szB == 1);
+            stmt( IRStmt_Exit(
+                     binop(Iop_CmpNE64, mkexpr(tmp_LLsize), mkU64(szB)),
+                     Ijk_Boring, nia, OFFB_PC
+            ));
+            // Fail if the address doesn't match the LL address
+            stmt( IRStmt_Exit(
+                      binop(Iop_CmpNE64, mkexpr(ea),
+                                         IRExpr_Get(OFFB_LLSC_ADDR, Ity_I64)),
+                      Ijk_Boring, nia, OFFB_PC
+            ));
+            // Fail if the data doesn't match the LL data
+            IRTemp llsc_data64 = newTemp(Ity_I64);
+            assign(llsc_data64, IRExpr_Get(OFFB_LLSC_DATA, Ity_I64));
+            stmt( IRStmt_Exit(
+                      binop(Iop_CmpNE64, widenUto64(ty, loadLE(ty, mkexpr(ea))),
+                                         mkexpr(llsc_data64)),
+                      Ijk_Boring, nia, OFFB_PC
+            ));
+            // Try to CAS the new value in.
+            IRTemp old = newTemp(ty);
+            IRTemp expd = newTemp(ty);
+            assign(expd, narrowFrom64(ty, mkexpr(llsc_data64)));
+            stmt( IRStmt_CAS(mkIRCAS(/*oldHi*/IRTemp_INVALID, old,
+                                     Iend_LE, mkexpr(ea),
+                                     /*expdHi*/NULL, mkexpr(expd),
+                                     /*dataHi*/NULL, data
+            )));
+            // Fail if the CAS failed (viz, old != expd)
+            stmt( IRStmt_Exit(
+                      binop(Iop_CmpNE64,
+                            widenUto64(ty, mkexpr(old)),
+                            widenUto64(ty, mkexpr(expd))),
+                      Ijk_Boring, nia, OFFB_PC
+            ));
+            // Otherwise we succeeded (!)
+            putIReg64orZR(ss, mkU64(0));
+         } else {
+            IRTemp res = newTemp(Ity_I1);
+            stmt(IRStmt_LLSC(Iend_LE, res, mkexpr(ea), data));
+            /* IR semantics: res is 1 if store succeeds, 0 if it fails.
+               Need to set rS to 1 on failure, 0 on success. */
+            putIReg64orZR(ss, binop(Iop_Xor64, unop(Iop_1Uto64, mkexpr(res)),
+                                               mkU64(1)));
+         }
+         DIP("st%sx%s %s, %s, [%s] %s\n", isAcqOrRel ? "a" : "", suffix[szBlg2],
              nameIRegOrZR(False, ss),
-             nameIRegOrZR(szB == 8, tt), nameIReg64orSP(nn));
+             nameIRegOrZR(szB == 8, tt), nameIReg64orSP(nn),
+             abiinfo->guest__use_fallback_LLSC
+                ? "(fallback implementation)" : "");
          return True;
       }
       /* else fall through */
@@ -6589,7 +6691,8 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn)
 
 static
 Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
-                          const VexArchInfo* archinfo)
+                          const VexArchInfo* archinfo,
+                          const VexAbiInfo* abiinfo)
 {
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
 
@@ -7048,7 +7151,11 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       /* AFAICS, this simply cancels a (all?) reservations made by a
          (any?) preceding LDREX(es).  Arrange to hand it through to
          the back end. */
-      stmt( IRStmt_MBE(Imbe_CancelReservation) );
+      if (abiinfo->guest__use_fallback_LLSC) {
+         stmt( IRStmt_Put( OFFB_LLSC_SIZE, mkU64(0) )); // "no transaction"
+      } else {
+         stmt( IRStmt_MBE(Imbe_CancelReservation) );
+      }
       DIP("clrex #%u\n", mm);
       return True;
    }
@@ -14411,12 +14518,12 @@ Bool disInstr_ARM64_WRK (
          break;
       case BITS4(1,0,1,0): case BITS4(1,0,1,1):
          // Branch, exception generation and system instructions
-         ok = dis_ARM64_branch_etc(dres, insn, archinfo);
+         ok = dis_ARM64_branch_etc(dres, insn, archinfo, abiinfo);
          break;
       case BITS4(0,1,0,0): case BITS4(0,1,1,0):
       case BITS4(1,1,0,0): case BITS4(1,1,1,0):
          // Loads and stores
-         ok = dis_ARM64_load_store(dres, insn);
+         ok = dis_ARM64_load_store(dres, insn, abiinfo);
          break;
       case BITS4(0,1,0,1): case BITS4(1,1,0,1):
          // Data processing - register

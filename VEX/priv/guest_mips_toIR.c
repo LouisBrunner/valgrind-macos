@@ -16984,7 +16984,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
    case 0x30:  /* LL */
       DIP("ll r%u, %u(r%u)", rt, imm, rs);
       LOAD_STORE_PATTERN;
-      if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM) {
+      if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM
+          || abiinfo->guest__use_fallback_LLSC) {
          t2 = newTemp(ty);
          assign(t2, mkWidenFrom32(ty, load(Ity_I32, mkexpr(t1)), True));
          putLLaddr(mkexpr(t1));
@@ -17002,7 +17003,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       if (mode64) {
          LOAD_STORE_PATTERN;
          t2 = newTemp(Ity_I64);
-         if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM) {
+         if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM
+             || abiinfo->guest__use_fallback_LLSC) {
             assign(t2, load(Ity_I64, mkexpr(t1)));
             putLLaddr(mkexpr(t1));
             putLLdata(mkexpr(t2));
@@ -17019,7 +17021,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       DIP("sc r%u, %u(r%u)", rt, imm, rs);
       t2 = newTemp(Ity_I1);
       LOAD_STORE_PATTERN;
-      if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM) {
+      if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM
+          || abiinfo->guest__use_fallback_LLSC) {
          t3 = newTemp(Ity_I32);
          assign(t2, binop(mode64 ? Iop_CmpNE64 : Iop_CmpNE32,
                           mkexpr(t1), getLLaddr()));
@@ -17053,7 +17056,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       if (mode64) {
          t2 = newTemp(Ity_I1);
          LOAD_STORE_PATTERN;
-         if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM) {
+         if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM
+             || abiinfo->guest__use_fallback_LLSC) {
             t3 = newTemp(Ity_I64);
             assign(t2, binop(Iop_CmpNE64, mkexpr(t1), getLLaddr()));
             assign(t3, getIReg(rt));

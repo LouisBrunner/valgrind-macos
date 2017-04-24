@@ -481,6 +481,7 @@ typedef
       ARM64in_Mul,
       ARM64in_LdrEX,
       ARM64in_StrEX,
+      ARM64in_CAS,
       ARM64in_MFence,
       ARM64in_ClrEX,
       /* ARM64in_V*: scalar ops involving vector registers */
@@ -668,6 +669,32 @@ typedef
          struct {
             Int  szB; /* 1, 2, 4 or 8 */
          } StrEX;
+         /* x1 = CAS(x3(addr), x5(expected) -> x7(new)),
+            where x1[8*szB-1 : 0] == x5[8*szB-1 : 0] indicates success,
+                  x1[8*szB-1 : 0] != x5[8*szB-1 : 0] indicates failure.
+            Uses x8 as scratch (but that's not allocatable).
+            Hence: RD x3, x5, x7; WR x1
+
+            (szB=8)  mov  x8, x5
+            (szB=4)  and  x8, x5, #0xFFFFFFFF
+            (szB=2)  and  x8, x5, #0xFFFF
+            (szB=1)  and  x8, x5, #0xFF
+            -- x8 is correctly zero-extended expected value
+            ldxr    x1, [x3]
+            -- x1 is correctly zero-extended actual value
+            cmp     x1, x8
+            bne     after
+            -- if branch taken, failure; x1[[8*szB-1 : 0] holds old value
+            -- attempt to store
+            stxr    w1, x7, [x3]
+            -- if store successful, x1==0, so the eor is "x1 := x5"
+            -- if store failed,     x1==1, so the eor makes x1 != x5
+            eor     x1, x5, x1
+           after:
+         */
+         struct {
+            Int szB; /* 1, 2, 4 or 8 */
+         } CAS;
          /* Mem fence.  An insn which fences all loads and stores as
             much as possible before continuing.  On ARM64 we emit the
             sequence "dsb sy ; dmb sy ; isb sy", which is probably
@@ -912,6 +939,7 @@ extern ARM64Instr* ARM64Instr_Mul     ( HReg dst, HReg argL, HReg argR,
                                         ARM64MulOp op );
 extern ARM64Instr* ARM64Instr_LdrEX   ( Int szB );
 extern ARM64Instr* ARM64Instr_StrEX   ( Int szB );
+extern ARM64Instr* ARM64Instr_CAS     ( Int szB );
 extern ARM64Instr* ARM64Instr_MFence  ( void );
 extern ARM64Instr* ARM64Instr_ClrEX   ( void );
 extern ARM64Instr* ARM64Instr_VLdStH  ( Bool isLoad, HReg sD, HReg rN,

@@ -298,10 +298,9 @@ static HReg widen_s_16_to_64 ( ISelEnv* env, HReg src )
    a new register, and return the new register. */
 static HReg widen_z_16_to_64 ( ISelEnv* env, HReg src )
 {
-   HReg      dst = newVRegI(env);
-   ARM64RI6* n48 = ARM64RI6_I6(48);
-   addInstr(env, ARM64Instr_Shift(dst, src, n48, ARM64sh_SHL));
-   addInstr(env, ARM64Instr_Shift(dst, dst, n48, ARM64sh_SHR));
+   HReg      dst  = newVRegI(env);
+   ARM64RIL* mask = ARM64RIL_I13(1, 0, 15); /* encodes 0xFFFF */
+   addInstr(env, ARM64Instr_Logic(dst, src, mask, ARM64lo_AND));
    return dst;
 }
 
@@ -329,10 +328,9 @@ static HReg widen_s_8_to_64 ( ISelEnv* env, HReg src )
 
 static HReg widen_z_8_to_64 ( ISelEnv* env, HReg src )
 {
-   HReg      dst = newVRegI(env);
-   ARM64RI6* n56 = ARM64RI6_I6(56);
-   addInstr(env, ARM64Instr_Shift(dst, src, n56, ARM64sh_SHL));
-   addInstr(env, ARM64Instr_Shift(dst, dst, n56, ARM64sh_SHR));
+   HReg      dst  = newVRegI(env);
+   ARM64RIL* mask = ARM64RIL_I13(1, 0, 7); /* encodes 0xFF */
+   addInstr(env, ARM64Instr_Logic(dst, src, mask, ARM64lo_AND));
    return dst;
 }
 

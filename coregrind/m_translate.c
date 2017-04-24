@@ -1663,30 +1663,51 @@ Bool VG_(translate) ( ThreadId tid,
    vex_abiinfo.guest_amd64_assume_fs_is_const = True;
    vex_abiinfo.guest_amd64_assume_gs_is_const = True;
 #  endif
+
 #  if defined(VGP_amd64_darwin)
    vex_abiinfo.guest_amd64_assume_gs_is_const = True;
 #  endif
+
+#  if defined(VGP_amd64_solaris)
+   vex_abiinfo.guest_amd64_assume_fs_is_const = True;
+#  endif
+
 #  if defined(VGP_ppc32_linux)
    vex_abiinfo.guest_ppc_zap_RZ_at_blr        = False;
    vex_abiinfo.guest_ppc_zap_RZ_at_bl         = NULL;
 #  endif
+
 #  if defined(VGP_ppc64be_linux)
    vex_abiinfo.guest_ppc_zap_RZ_at_blr        = True;
    vex_abiinfo.guest_ppc_zap_RZ_at_bl         = const_True;
    vex_abiinfo.host_ppc_calls_use_fndescrs    = True;
 #  endif
+
 #  if defined(VGP_ppc64le_linux)
    vex_abiinfo.guest_ppc_zap_RZ_at_blr        = True;
    vex_abiinfo.guest_ppc_zap_RZ_at_bl         = const_True;
    vex_abiinfo.host_ppc_calls_use_fndescrs    = False;
 #  endif
-#  if defined(VGP_amd64_solaris)
-   vex_abiinfo.guest_amd64_assume_fs_is_const = True;
-#  endif
+
 #  if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
    ThreadArchState* arch = &VG_(threads)[tid].arch;
    vex_abiinfo.guest_mips_fp_mode64 =
       !!(arch->vex.guest_CP0_status & MIPS_CP0_STATUS_FR);
+   /* Compute guest__use_fallback_LLSC, overiding any settings of
+      VG_(clo_fallback_llsc) that we know would cause the guest to
+      fail (loop). */
+   if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM) {
+      /* We must use the fallback scheme. */
+      vex_abiinfo.guest__use_fallback_LLSC = True;
+   } else {
+      vex_abiinfo.guest__use_fallback_LLSC
+         = SimHintiS(SimHint_fallback_llsc, VG_(clo_sim_hints));
+   }
+#  endif
+
+#  if defined(VGP_arm64_linux)
+   vex_abiinfo.guest__use_fallback_LLSC
+      = SimHintiS(SimHint_fallback_llsc, VG_(clo_sim_hints));
 #  endif
 
    /* Set up closure args. */

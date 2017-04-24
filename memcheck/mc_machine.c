@@ -1040,6 +1040,10 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(CMSTART) && sz == 8) return -1; // untracked
    if (o == GOF(CMLEN)   && sz == 8) return -1; // untracked
 
+   if (o == GOF(LLSC_SIZE) && sz == 8) return -1; // untracked
+   if (o == GOF(LLSC_ADDR) && sz == 8) return o;
+   if (o == GOF(LLSC_DATA) && sz == 8) return o;
+
    VG_(printf)("MC_(get_otrack_shadow_offset)(arm64)(off=%d,sz=%d)\n",
                offset,szB);
    tl_assert(0);

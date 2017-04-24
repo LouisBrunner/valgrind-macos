@@ -222,14 +222,15 @@ typedef
       SimHint_fuse_compatible,
       SimHint_enable_outer,
       SimHint_no_inner_prefix,
-      SimHint_no_nptl_pthread_stackcache
+      SimHint_no_nptl_pthread_stackcache,
+      SimHint_fallback_llsc
    }
    SimHint;
 
 // Build mask to check or set SimHint a membership
 #define SimHint2S(a) (1 << (a))
 // SimHint h is member of the Set s ?
-#define SimHintiS(h,s) ((s) & SimHint2S(h))
+#define SimHintiS(h,s) (((s) & SimHint2S(h)) != 0)
 extern UInt VG_(clo_sim_hints);
 
 /* Show symbols in the form 'name+offset' ?  Default: NO */

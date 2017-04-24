@@ -101,7 +101,7 @@ usage: valgrind [options] prog-and-args
     --sim-hints=hint1,hint2,...  activate unusual sim behaviours [none] 
          where hint is one of:
            lax-ioctls lax-doors fuse-compatible enable-outer
-           no-inner-prefix no-nptl-pthread-stackcache none
+           no-inner-prefix no-nptl-pthread-stackcache fallback-llsc none
     --fair-sched=no|yes|try   schedule threads fairly on multicore systems [no]
     --kernel-variant=variant1,variant2,...
          handle non-standard kernel variants [none]

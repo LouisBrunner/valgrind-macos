@@ -187,7 +187,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --sim-hints=hint1,hint2,...  activate unusual sim behaviours [none] \n"
 "         where hint is one of:\n"
 "           lax-ioctls lax-doors fuse-compatible enable-outer\n"
-"           no-inner-prefix no-nptl-pthread-stackcache none\n"
+"           no-inner-prefix no-nptl-pthread-stackcache fallback-llsc none\n"
 "    --fair-sched=no|yes|try   schedule threads fairly on multicore systems [no]\n"
 "    --kernel-variant=variant1,variant2,...\n"
 "         handle non-standard kernel variants [none]\n"
@@ -417,7 +417,7 @@ static void early_process_cmd_line_options ( /*OUT*/Int* need_help )
       else if VG_USETX_CLO (str, "--sim-hints",
                             "lax-ioctls,lax-doors,fuse-compatible,"
                             "enable-outer,no-inner-prefix,"
-                            "no-nptl-pthread-stackcache",
+                            "no-nptl-pthread-stackcache,fallback-llsc",
                             VG_(clo_sim_hints)) {}
    }
 

@@ -925,6 +925,14 @@ void run_thread_for_a_while ( /*OUT*/HWord* two_words,
    tst->arch.vex.host_EvC_FAILADDR
       = (HWord)VG_(fnptr_to_fnentry)( &VG_(disp_cp_evcheck_fail) );
 
+   /* Invalidate any in-flight LL/SC transactions, in the case that we're
+      using the fallback LL/SC implementation.  See bugs 344524 and 369459. */
+#  if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
+   tst->arch.vex.guest_LLaddr = (HWord)(-1);
+#  elif defined(VGP_arm64_linux)
+   tst->arch.vex.guest_LLSC_SIZE = 0;
+#  endif
+
    if (0) {
       vki_sigset_t m;
       Int i, err = VG_(sigprocmask)(VKI_SIG_SETMASK, NULL, &m);
@@ -956,10 +964,6 @@ void run_thread_for_a_while ( /*OUT*/HWord* two_words,
 
    vg_assert(VG_(in_generated_code) == True);
    VG_(in_generated_code) = False;
-
-#if defined(VGA_mips32) || defined(VGA_mips64)
-   tst->arch.vex.guest_LLaddr = (HWord)(-1);
-#endif
 
    if (jumped != (HWord)0) {
       /* We get here if the client took a fault that caused our signal

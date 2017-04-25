@@ -13090,12 +13090,16 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
                   case 0x15:  /* L */
                      DIP("cvt.s.l %u, %u", fd, fs);
-                     calculateFCSR(fs, 0, CVTSL, False, 1);
-                     t0 = newTemp(Ity_I64);
-                     assign(t0, unop(Iop_ReinterpF64asI64, getFReg(fs)));
+                     if (fp_mode64) {
+                        calculateFCSR(fs, 0, CVTSL, False, 1);
+                        t0 = newTemp(Ity_I64);
+                        assign(t0, unop(Iop_ReinterpF64asI64, getFReg(fs)));
 
-                     putFReg(fd, mkWidenFromF32(tyF, binop(Iop_I64StoF32,
-                                 get_IR_roundingmode(), mkexpr(t0))));
+                        putFReg(fd, mkWidenFromF32(tyF, binop(Iop_I64StoF32,
+                                    get_IR_roundingmode(), mkexpr(t0))));
+                     } else {
+                        ILLEGAL_INSTRUCTON;
+                     }
                      break;
 
                   default:

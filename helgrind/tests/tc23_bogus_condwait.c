@@ -69,7 +69,7 @@ int main ( void )
   r= pthread_cond_wait(&cv, (pthread_mutex_t*)(4 + (char*)&mx[0]) );
 
   /* mx is not locked */
-  r= pthread_cond_wait(&cv, &mx[0]);
+  r= pthread_cond_wait(&cv, &mx[3]);
 
   /* wrong flavour of lock */
   r= pthread_cond_wait(&cv, (pthread_mutex_t*)&rwl );

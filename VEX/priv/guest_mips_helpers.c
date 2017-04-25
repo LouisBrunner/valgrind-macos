@@ -497,6 +497,7 @@ ULong mips64_dirtyhelper_rdhwr ( ULong rt, ULong rd )
 #define ASM_VOLATILE_UNARY64(inst)                                  \
    __asm__ volatile(".set  push"         "\n\t"                     \
                     ".set  hardfloat"    "\n\t"                     \
+                    ".set  fp=64"        "\n\t"                     \
                     "cfc1  $t0,  $31"    "\n\t"                     \
                     "ctc1  %2,   $31"    "\n\t"                     \
                     "ldc1  $f24, 0(%1)"  "\n\t"                     \

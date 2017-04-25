@@ -625,45 +625,6 @@ extern UInt mips_dirtyhelper_calculate_FCSR_fp32 ( void* gs, UInt fs, UInt ft,
       case ROUNDWS:
          ASM_VOLATILE_UNARY32(round.w.s)
          break;
-#if ((__mips == 32) && defined(__mips_isa_rev) && (__mips_isa_rev >= 2)) \
-    || (__mips == 64)
-      case CEILLS:
-         ASM_VOLATILE_UNARY32(ceil.l.s)
-         break;
-      case CEILLD:
-         ASM_VOLATILE_UNARY32_DOUBLE(ceil.l.d)
-         break;
-      case CVTDL:
-         ASM_VOLATILE_UNARY32_DOUBLE(cvt.d.l)
-         break;
-      case CVTLS:
-         ASM_VOLATILE_UNARY32(cvt.l.s)
-         break;
-      case CVTLD:
-         ASM_VOLATILE_UNARY32_DOUBLE(cvt.l.d)
-         break;
-      case CVTSL:
-         ASM_VOLATILE_UNARY32_DOUBLE(cvt.s.l)
-         break;
-      case FLOORLS:
-         ASM_VOLATILE_UNARY32(floor.l.s)
-         break;
-      case FLOORLD:
-         ASM_VOLATILE_UNARY32_DOUBLE(floor.l.d)
-         break;
-      case ROUNDLS:
-         ASM_VOLATILE_UNARY32(round.l.s)
-         break;
-      case ROUNDLD:
-         ASM_VOLATILE_UNARY32_DOUBLE(round.l.d)
-         break;
-      case TRUNCLS:
-         ASM_VOLATILE_UNARY32(trunc.l.s)
-         break;
-      case TRUNCLD:
-         ASM_VOLATILE_UNARY32_DOUBLE(trunc.l.d)
-         break;
-#endif
       case ADDS:
           ASM_VOLATILE_BINARY32(add.s)
           break;

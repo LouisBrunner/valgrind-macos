@@ -800,8 +800,8 @@ int main(void)
    SY(__NR_rt_sigqueueinfo, x0, x0+1, x0); FAIL;
 
    // __NR_rt_sigsuspend 179
-   GO(__NR_rt_sigsuspend, "ignore");
-   // (I don't know how to test this...)
+   GO(__NR_rt_sigsuspend, "2s 1m");
+   SY(__NR_rt_sigsuspend, x0 + 1, x0 + sizeof(sigset_t)); FAILx(EFAULT);
 
    // __NR_pread64 180
    GO(__NR_pread64, "5s 1m");

@@ -156,6 +156,7 @@ where XXXXXX is the bug number as listed below.
 377930  fcntl syscall wrapper is missing flock structure check
 378535  Valgrind reports INTERNAL ERROR in execve syscall wrapper
 378673  Update libiberty demangler
+379094  Valgrind reports INTERNAL ERROR in rt_sigsuspend syscall wrapper
 
 Release 3.12.0 (20 October 2016)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

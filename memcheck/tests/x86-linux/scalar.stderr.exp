@@ -2343,8 +2343,21 @@ Syscall param rt_sigqueueinfo(uinfo) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
-179:  __NR_rt_sigsuspend ignore
+179:  __NR_rt_sigsuspend 2s 1m
 -----------------------------------------------------
+Syscall param rt_sigsuspend(mask) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:804)
+
+Syscall param rt_sigsuspend(size) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:804)
+
+Syscall param rt_sigsuspend(mask) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:804)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
 -----------------------------------------------------
 180:        __NR_pread64 5s 1m
 -----------------------------------------------------

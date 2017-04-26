@@ -18,7 +18,7 @@ Mutex not locked: mutex 0x........, recursion count 0, owner 0.
    by 0x........: main (tc23_bogus_condwait.c:72)
 mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
-   by 0x........: main (tc23_bogus_condwait.c:51)
+   by 0x........: main (tc23_bogus_condwait.c:54)
 
 The object at address 0x........ is not a mutex.
    at 0x........: pthread_cond_wait (drd_pthread_intercepts.c:?)

@@ -1452,7 +1452,26 @@ PRE(sys_prctl)
       break;
    case VKI_PR_SET_NAME:
       PRE_REG_READ2(int, "prctl", int, option, char *, name);
-      PRE_MEM_RASCIIZ("prctl(set-name)", ARG2);
+      /* The name can be up to TASK_COMM_LEN(16) bytes long, including
+         the terminating null byte. So do not check more than 16 bytes. */
+      if (ML_(safe_to_deref)((const HChar *) ARG2, VKI_TASK_COMM_LEN)) {
+         SizeT len = VG_(strnlen)((const HChar *) ARG2, VKI_TASK_COMM_LEN);
+         if (len < VKI_TASK_COMM_LEN) {
+            PRE_MEM_RASCIIZ("prctl(set-name)", ARG2);
+         } else {
+            PRE_MEM_READ("prctl(set-name)", ARG2, VKI_TASK_COMM_LEN);
+         }
+      } else {
+         /* Do it the slow way, one byte at a time, while checking for
+            terminating '\0'. */
+         const HChar *name = (const HChar *) ARG2;
+         for (UInt i = 0; i < VKI_TASK_COMM_LEN; i++) {
+            PRE_MEM_READ("prctl(set-name)", (Addr) &name[i], 1);
+            if (!ML_(safe_to_deref)(&name[i], 1) || name[i] == '\0') {
+               break;
+            }
+         }
+      }
       break;
    case VKI_PR_GET_NAME:
       PRE_REG_READ2(int, "prctl", int, option, char *, name);
@@ -1516,12 +1535,12 @@ POST(sys_prctl)
          const HChar* new_name = (const HChar*) ARG2;
          if (new_name) {    // Paranoia
             ThreadState* tst = VG_(get_ThreadState)(tid);
-            SizeT new_len = VG_(strlen)(new_name);
+            SizeT new_len = VG_(strnlen)(new_name, VKI_TASK_COMM_LEN);
 
             /* Don't bother reusing the memory. This is a rare event. */
             tst->thread_name =
               VG_(realloc)("syswrap.prctl", tst->thread_name, new_len + 1);
-            VG_(strcpy)(tst->thread_name, new_name);
+            VG_(strlcpy)(tst->thread_name, new_name, new_len + 1);
          }
       }
       break;

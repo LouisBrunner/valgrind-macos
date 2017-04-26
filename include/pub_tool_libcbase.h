@@ -80,11 +80,13 @@ extern double VG_(strtod)  ( const HChar* str, HChar** endptr );
                              && VG_(strncmp)((s1),(s2),(n))==0) ? True : False )
 
 extern SizeT  VG_(strlen)         ( const HChar* str );
+extern SizeT  VG_(strnlen)        ( const HChar* str, SizeT n );
 extern HChar* VG_(strcat)         ( HChar* dest, const HChar* src );
 extern HChar* VG_(strncat)        ( HChar* dest, const HChar* src, SizeT n );
 extern HChar* VG_(strpbrk)        ( const HChar* s, const HChar* accpt );
 extern HChar* VG_(strcpy)         ( HChar* dest, const HChar* src );
 extern HChar* VG_(strncpy)        ( HChar* dest, const HChar* src, SizeT ndest );
+extern SizeT  VG_(strlcpy)        ( HChar* dest, const HChar* src, SizeT n );
 extern Int    VG_(strcmp)         ( const HChar* s1, const HChar* s2 );
 extern Int    VG_(strcasecmp)     ( const HChar* s1, const HChar* s2 );
 extern Int    VG_(strncmp)        ( const HChar* s1, const HChar* s2, SizeT nmax );

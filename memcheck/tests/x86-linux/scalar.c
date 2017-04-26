@@ -6,6 +6,7 @@
 #include <sched.h>
 #include <signal.h>
 #include <linux/mman.h> // MREMAP_FIXED
+#include <sys/prctl.h>
 
 // Here we are trying to trigger every syscall error (scalar errors and
 // memory errors) for every syscall.  We do this by passing a lot of bogus
@@ -774,6 +775,16 @@ int main(void)
    // __NR_prctl 172
    GO(__NR_prctl, "5s 0m");
    SY(__NR_prctl, x0, x0, x0, x0, x0); FAIL;
+
+   char buf16[16] = "123456789012345.";
+   buf16[15] = x0; // this will cause 'using unitialised value'
+   GO(__NR_prctl, "2s 0m");
+   SY(__NR_prctl, x0 + PR_SET_NAME, buf16); SUCC;
+
+   char buf17[17] = "1234567890123456.";
+   buf17[16] = x0; // this must not cause 'using unitialised value'
+   GO(__NR_prctl, "1s 0m");
+   SY(__NR_prctl, x0 + PR_SET_NAME, buf17); SUCC;
 
    // __NR_rt_sigreturn 173
    GO(__NR_rt_sigreturn, "n/a");

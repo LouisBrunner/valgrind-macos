@@ -266,6 +266,14 @@ SizeT VG_(strlen) ( const HChar* str )
    return i;
 }
 
+SizeT VG_(strnlen)(const HChar* str, SizeT n)
+{
+   SizeT i = 0;
+   while (i < n && str[i] != 0)
+      i++;
+   return i;
+}
+
 HChar* VG_(strcat) ( HChar* dest, const HChar* src )
 {
    HChar* dest_orig = dest;
@@ -317,6 +325,29 @@ HChar* VG_(strncpy) ( HChar* dest, const HChar* src, SizeT ndest )
          return dest;
       }
    }
+}
+
+/* Copies up to n-1 bytes from src to dst. Then nul-terminate dst if n > 0.
+   Returns strlen(src). Does not zero-fill the remainder of dst. */
+SizeT VG_(strlcpy)(HChar *dst, const HChar *src, SizeT n)
+{
+   const HChar *src_orig = src;
+   SizeT m = 0;
+
+   while (m < n - 1 && *src != '\0') {
+      m++;
+      *dst++ = *src++;
+   }
+
+   /* Nul-terminate dst. */ \
+   if (n > 0)
+      *dst = 0;
+
+   /* Finish counting strlen(src). */ \
+   while (*src != '\0')
+      src++;
+
+   return src - src_orig;
 }
 
 Int VG_(strcmp) ( const HChar* s1, const HChar* s2 )

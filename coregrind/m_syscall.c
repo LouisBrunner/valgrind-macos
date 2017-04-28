@@ -790,42 +790,49 @@ extern int do_syscall_WRK (
           int a4, int a5, int a6, int syscall_no, UWord *err,
           UWord *valHi, UWord* valLo
        );
-asm(
-".globl do_syscall_WRK\n"
-".ent do_syscall_WRK\n"
-".text\n"
-"do_syscall_WRK:\n"   
-"   lw $2, 24($29)\n"    
-"   syscall\n"
-"   lw $8, 28($29)\n" 
-"   sw $7, ($8)\n"
-"   lw $8, 32($29)\n" 
-"   sw $3, ($8)\n"   // store valHi
-"   lw $8, 36($29)\n" 
-"   sw $2, ($8)\n"   // store valLo
-"   jr $31\n"
-"   nop\n"
-".previous\n"
-".end do_syscall_WRK\n"
+asm (
+   ".text                                  \n\t"
+   ".globl do_syscall_WRK                  \n\t"
+   ".type  do_syscall_WRK, @function       \n\t"
+   ".set push                              \n\t"
+   ".set noreorder                         \n\t"
+   "do_syscall_WRK:                        \n\t"
+   "   lw $2, 24($29)                      \n\t"
+   "   syscall                             \n\t"
+   "   lw $8, 28($29)                      \n\t"
+   "   sw $7, ($8)                         \n\t"
+   "   lw $8, 32($29)                      \n\t"
+   "   sw $3, ($8)                         \n\t" /* store valHi */
+   "   lw $8, 36($29)                      \n\t"
+   "   jr $31                              \n\t"
+   "   sw $2, ($8)                         \n\t" /* store valLo */
+   ".size do_syscall_WRK, .-do_syscall_WRK \n\t"
+   ".set pop                               \n\t"
+   ".previous                              \n\t"
 );
 
 #elif defined(VGP_mips64_linux)
 extern UWord do_syscall_WRK ( UWord a1, UWord a2, UWord a3, UWord a4, UWord a5,
-                              UWord a6, UWord syscall_no, ULong* V1_val );
+                              UWord a6, UWord syscall_no, ULong* V1_A3_val );
 asm (
-".text\n"
-".globl do_syscall_WRK\n"
-"do_syscall_WRK:\n"
-"   daddiu $29, $29, -8\n"
-"   sd $11, 0($29)\n"
-"   move $2, $10\n"
-"   syscall\n"
-"   ld $11, 0($29)\n"
-"   daddiu $29, $29, 8\n"
-"   sd $3, 0($11)\n"  /* store vale of v1 in last param */
-"   sd $7, 8($11)\n"  /* store vale of a3 in last param */
-"   jr $31\n"
-".previous\n"
+   ".text                                  \n\t"
+   ".globl do_syscall_WRK                  \n\t"
+   ".type  do_syscall_WRK, @function       \n\t"
+   ".set push                              \n\t"
+   ".set noreorder                         \n\t"
+   "do_syscall_WRK:                        \n\t"
+   "   daddiu $29, $29, -8                 \n\t"
+   "   sd $11, 0($29)                      \n\t"
+   "   move $2, $10                        \n\t"
+   "   syscall                             \n\t"
+   "   ld $11, 0($29)                      \n\t"
+   "   daddiu $29, $29, 8                  \n\t"
+   "   sd $3, 0($11)                       \n\t" /* store v1 in last param */
+   "   jr $31                              \n\t"
+   "   sd $7, 8($11)                       \n\t" /* store a3 in last param */
+   ".size do_syscall_WRK, .-do_syscall_WRK \n\t"
+   ".set pop                               \n\t"
+   ".previous                              \n\t"
 );
 
 #elif defined(VGP_tilegx_linux)

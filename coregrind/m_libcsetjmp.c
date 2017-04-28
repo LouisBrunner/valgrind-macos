@@ -575,6 +575,7 @@ __asm__(
 "   nop                         \n\t"
 ".previous                      \n\t"
 "                               \n\t"
+".text                          \n\t"
 ".globl VG_MINIMAL_LONGJMP;     \n\t"
 ".align 2;                      \n\t"
 "VG_MINIMAL_LONGJMP:            \n\t"  /* a0 = jmp_buf */

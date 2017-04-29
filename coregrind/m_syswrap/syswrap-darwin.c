@@ -9761,6 +9761,22 @@ PRE(guarded_writev_np)
 
 
 /* ---------------------------------------------------------------------
+ Added for macOS 10.12 (Sierra)
+ ------------------------------------------------------------------ */
+
+#if DARWIN_VERS >= DARWIN_10_12
+
+PRE(getentropy)
+{
+    PRINT("getentropy(buffer:%#lx, size:%ld) FIXME", ARG1, ARG2);
+    PRE_REG_READ2(int, "getentropy",
+                  void*, buffer, size_t, size);
+}
+
+#endif /* DARWIN_VERS >= DARWIN_10_12 */
+
+
+/* ---------------------------------------------------------------------
    syscall tables
    ------------------------------------------------------------------ */
 
@@ -10316,7 +10332,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_kdebug_typefilter),                       // 177
 // _____(__NR_clonefileat),                             // 462
 // _____(__NR_renameatx_np),                            // 488
-// _____(__NR_getentropy),                              // 500
+   MACX_(__NR_getentropy, getentropy),                  // 500
 // _____(__NR_necp_open),                               // 501
 // _____(__NR_necp_client_action),                      // 502
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(503)),        // ???

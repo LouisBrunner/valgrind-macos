@@ -607,7 +607,7 @@ DECL_TEMPLATE(darwin, guarded_writev_np);           // 487
 // NYI work_interval_ctl                            // 499
 #endif /* DARWIN_VERS >= DARWIN_10_11 */
 #if DARWIN_VERS >= DARWIN_10_12
-// NYI getentropy                                   // 500
+DECL_TEMPLATE(darwin, getentropy);                  // 500
 // NYI necp_open                                    // 501
 // NYI necp_client_action                           // 502
 // 503

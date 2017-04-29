@@ -623,7 +623,7 @@ DECL_TEMPLATE(darwin, getentropy);                  // 500
 // 513
 // 514
 // NYI ulock_wait                                   // 515
-// NYI ulock_wake                                   // 516
+DECL_TEMPLATE(darwin, ulock_wake);                  // 516
 // NYI fclonefileat                                 // 517
 // NYI fs_snapshot                                  // 518
 // 519

@@ -9773,6 +9773,14 @@ PRE(getentropy)
                   void*, buffer, size_t, size);
 }
 
+PRE(ulock_wake)
+{
+    PRINT("ulock_wake(operation:%ld, addr:%#lx, wake_value:%ld) FIXME",
+        ARG1, ARG2, ARG3);
+    PRE_REG_READ3(int, "ulock_wake",
+                  uint32_t, operation, void*, addr, uint64_t, wake_value);
+}
+
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
 
 
@@ -10348,7 +10356,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(513)),        // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(514)),        // ???
 // _____(__NR_ulock_wait),                              // 515
-// _____(__NR_ulock_wake),                              // 516
+   MACX_(__NR_ulock_wake, ulock_wake),                  // 516
 // _____(__NR_fclonefileat),                            // 517
 // _____(__NR_fs_snapshot),                             // 518
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(519)),        // ???

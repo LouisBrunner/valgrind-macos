@@ -138,16 +138,12 @@ open_dylinker(const HChar *filename, vki_uint8_t **out_linker_entry)
    res = VG_(open)(filename, VKI_O_RDONLY, 0);
    fd = sr_Res(res);
    if (sr_isError(res)) {
-      print("couldn't open dylinker: ");
-      print(filename);
-      print("\n");
+      VG_(printf)("couldn't open dylinker: %s\n", filename);
       return -1;
    }
    err = VG_(fstat)(fd, &sb);
    if (err) {
-      print("couldn't stat dylinker: ");
-      print(filename);
-      print("\n");
+      VG_(printf)("couldn't stat dylinker: %s\n", filename);
       VG_(close)(fd);
       return -1;
    }
@@ -156,9 +152,7 @@ open_dylinker(const HChar *filename, vki_uint8_t **out_linker_entry)
    err = load_mach_file(fd, 0, filesize, MH_DYLINKER, filename, 
                         NULL, NULL, NULL, out_linker_entry, NULL);
    if (err) {
-      print("...while loading dylinker: ");
-      print(filename);
-      print("\n");
+      VG_(printf)("...while loading dylinker: %s\n", filename);
    }
    VG_(close)(fd);
    return err;

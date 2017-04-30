@@ -10326,6 +10326,16 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 #endif
 #if DARWIN_VERS >= DARWIN_10_9
     MACX_(__NR_fileport_makeport, fileport_makeport),
+// _____(__NR_fileport_makefd),                         // 431
+// _____(__NR_audit_session_port),                      // 432
+// _____(__NR_pid_suspend),                             // 433
+// _____(__NR_pid_resume),                              // 434
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(435)),        // ???
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(436)),        // ???
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(437)),        // ???
+// _____(__NR_shared_region_map_and_slide_np),          // 438
+// _____(__NR_kas_info),                                // 439
+// _____(__NR_memorystatus_control),                    // 440
     MACX_(__NR_guarded_open_np, guarded_open_np),
     MACX_(__NR_guarded_close_np, guarded_close_np),
     MACX_(__NR_guarded_kqueue_np, guarded_kqueue_np),

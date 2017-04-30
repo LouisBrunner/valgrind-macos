@@ -713,9 +713,9 @@
 #define __NR_audit_session_port     VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(432)
 #define __NR_pid_suspend            VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(433)
 #define __NR_pid_resume             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(434)
-
-
-
+			/* 435  */
+			/* 436  */
+			/* 437  */
 #define __NR_shared_region_map_and_slide_np  VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(438)
 #define __NR_kas_info               VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(439)
 #define __NR_memorystatus_control   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(440)
@@ -723,7 +723,7 @@
 #define __NR_guarded_close_np       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(442)
 #define __NR_guarded_kqueue_np      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(443)
 #define __NR_change_fdguard_np      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(444)
-
+			/* 445  */
 #define __NR_proc_rlimit_control    VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(446)
 #define __NR_connectx               VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(447)
 #define __NR_disconnectx            VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(448)

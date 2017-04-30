@@ -569,7 +569,7 @@ DECL_TEMPLATE(darwin, getattrlistbulk);          // 461
 // NYI openat          // 463
 // NYI openat_nocancel // 464
 // NYI renameat        // 465
-// NYI faccessat       // 466
+DECL_TEMPLATE(darwin, faccessat);                // 466
 // NYI fchmodat        // 467
 // NYI fchownat        // 468
 // NYI fstatat         // 469

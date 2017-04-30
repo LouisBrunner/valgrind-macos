@@ -746,6 +746,7 @@
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
 
 #if DARWIN_VERS >= DARWIN_10_10
+#define __NR_faccessat              VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(466)
 #define __NR_readlinkat             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(473)
 #define __NR_bsdthread_ctl          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(478)
 #define __NR_csrctl                 VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(483)

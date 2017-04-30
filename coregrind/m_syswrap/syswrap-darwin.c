@@ -9707,6 +9707,14 @@ PRE(faccessat)
                   int, fd, user_addr_t, path, int, amode, int, flag);
 }
 
+PRE(fstatat64)
+{
+    PRINT("fstatat64(FIXME)(fd:%ld, path:%#lx(%s), ub:%#lx, flag:%#lx)",
+        ARG1, ARG2, (HChar*)ARG2, ARG3, ARG4);
+    PRE_REG_READ4(int, "fstatat64",
+                  int, fd, user_addr_t, path, user_addr_t, ub, int, flag);
+}
+
 PRE(readlinkat)
 {
     Word  saved = SYSNO;
@@ -10330,6 +10338,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACXY(__NR_necp_match_policy,   necp_match_policy),  // 460
    MACXY(__NR_getattrlistbulk,     getattrlistbulk),    // 461
    MACX_(__NR_faccessat,           faccessat),          // 466
+   MACX_(__NR_fstatat64,           fstatat64),          // 470
    MACX_(__NR_readlinkat,          readlinkat),         // 473
    MACX_(__NR_bsdthread_ctl,       bsdthread_ctl),      // 478
    MACX_(__NR_csrctl,              csrctl),             // 483

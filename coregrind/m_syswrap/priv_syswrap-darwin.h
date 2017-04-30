@@ -573,7 +573,7 @@ DECL_TEMPLATE(darwin, faccessat);                // 466
 // NYI fchmodat        // 467
 // NYI fchownat        // 468
 // NYI fstatat         // 469
-// NYI fstatat64       // 470
+DECL_TEMPLATE(darwin, fstatat64);                // 470
 // NYI linkat          // 471
 // NYI unlinkat        // 472
 DECL_TEMPLATE(darwin, readlinkat);               // 473

@@ -158,6 +158,7 @@ where XXXXXX is the bug number as listed below.
 378673  Update libiberty demangler
 379039  syscall wrapper for prctl(PR_SET_NAME) must not check more than 16 bytes
 379094  Valgrind reports INTERNAL ERROR in rt_sigsuspend syscall wrapper
+379390  unhandled syscall: mach:70 (host_create_mach_voucher_trap)
 
 Release 3.12.0 (20 October 2016)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

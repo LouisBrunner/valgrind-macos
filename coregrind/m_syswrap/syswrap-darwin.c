@@ -9804,6 +9804,14 @@ PRE(ulock_wake)
                   uint32_t, operation, void*, addr, uint64_t, wake_value);
 }
 
+PRE(host_create_mach_voucher_trap)
+{
+    // munge_wwww -- no need to call helper
+    PRINT("host_create_mach_voucher_trap"
+        "(host:%#lx, recipes:%#lx, recipes_size:%ld, voucher:%#lx) FIXME",
+        ARG1, ARG2, ARG3, ARG4);
+}
+
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
 
 
@@ -10549,8 +10557,12 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(66)), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(67)), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(68)), 
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(69)), 
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(69)),
+#if DARWIN_VERS >= DARWIN_10_12
+   MACX_(__NR_host_create_mach_voucher_trap, host_create_mach_voucher_trap),
+#else 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(70)), 
+#endif
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(71)), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(72)), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(73)), 

@@ -745,6 +745,11 @@ DECL_TEMPLATE(darwin, semaphore_timedwait);
 DECL_TEMPLATE(darwin, semaphore_timedwait_signal);
 DECL_TEMPLATE(darwin, task_for_pid);
 DECL_TEMPLATE(darwin, pid_for_task);
+
+#if DARWIN_VERS >= DARWIN_10_12
+DECL_TEMPLATE(darwin, host_create_mach_voucher_trap);
+#endif /* DARWIN_VERS >= DARWIN_10_12 */
+
 DECL_TEMPLATE(darwin, mach_timebase_info);
 DECL_TEMPLATE(darwin, mach_wait_until);
 DECL_TEMPLATE(darwin, mk_timer_create);

@@ -202,6 +202,10 @@
 #define __NR_syscall_thread_switch            VG_DARWIN_SYSCALL_CONSTRUCT_MACH(61)
 #define __NR_clock_sleep_trap                 VG_DARWIN_SYSCALL_CONSTRUCT_MACH(62)
 
+#if DARWIN_VERS >= DARWIN_10_12
+#define __NR_host_create_mach_voucher_trap    VG_DARWIN_SYSCALL_CONSTRUCT_MACH(70)
+#endif
+
 #define __NR_mach_timebase_info               VG_DARWIN_SYSCALL_CONSTRUCT_MACH(89)
 #define __NR_mach_wait_until                  VG_DARWIN_SYSCALL_CONSTRUCT_MACH(90)
 #define __NR_mk_timer_create                  VG_DARWIN_SYSCALL_CONSTRUCT_MACH(91)

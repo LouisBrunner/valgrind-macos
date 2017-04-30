@@ -525,6 +525,31 @@
 }
 
 {
+   OSX1012:dyld-3
+   Memcheck:Cond
+   fun:bcmp
+   fun:_ZN16ImageLoaderMachO18validateFirstPagesEPK21linkedit_data_commandiPKhmxRKN11ImageLoader11LinkContextE
+   ...
+}
+
+{
+   OSX1012:dyld-4
+   Memcheck:Value8
+   fun:bcmp
+   fun:_ZN16ImageLoaderMachO18validateFirstPagesEPK21linkedit_data_commandiPKhmxRKN11ImageLoader11LinkContextE
+   ...
+}
+
+{
+   OSX1012:dyld-5
+   Memcheck:Cond
+   fun:_ZN16ImageLoaderMachO18validateFirstPagesEPK21linkedit_data_commandiPKhmxRKN11ImageLoader11LinkContextE
+   fun:_ZN26ImageLoaderMachOCompressed19instantiateFromFileEPKciPKhmyyRK4statjjPK21linkedit_data_commandPK23encryption_info_commandRKN11ImageLoader11LinkContextE
+   fun:_ZN16ImageLoaderMachO19instantiateFromFileEPKciPKhmyyRK4statRKN11ImageLoader11LinkContextE
+   fun:_ZN4dyldL10loadPhase6EiRK4statPKcRKNS_11LoadContextE
+}
+
+{
    OSX1012:libsystem_kernel-1
    Memcheck:Cond
    obj:*libsystem_kernel*dylib*

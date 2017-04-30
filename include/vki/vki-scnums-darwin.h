@@ -748,6 +748,7 @@
 #if DARWIN_VERS >= DARWIN_10_10
 #define __NR_readlinkat             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(473)
 #define __NR_bsdthread_ctl          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(478)
+#define __NR_csrctl                 VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(483)
 #define __NR_guarded_open_dprotected_np VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(484)
 #define __NR_guarded_write_np       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(485)
 #define __NR_guarded_pwrite_np      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(486)

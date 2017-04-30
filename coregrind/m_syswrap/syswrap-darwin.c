@@ -9731,6 +9731,13 @@ PRE(bsdthread_ctl)
                  void*, cmd, void*, arg1, void*, arg2, void*, arg3);
 }
 
+PRE(csrctl)
+{
+   PRINT("csrctl(op:%ld, useraddr:%#lx, usersize:%#lx) FIXME", ARG1, ARG2, ARG3);
+   PRE_REG_READ3(int, "csrctl",
+                 uint32_t, op, user_addr_t, useraddr, user_addr_t, usersize);
+}
+
 PRE(guarded_open_dprotected_np)
 {
     PRINT("guarded_open_dprotected_np("
@@ -10316,6 +10323,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACXY(__NR_getattrlistbulk,     getattrlistbulk),    // 461
    MACX_(__NR_readlinkat,          readlinkat),         // 473
    MACX_(__NR_bsdthread_ctl,       bsdthread_ctl),      // 478
+   MACX_(__NR_csrctl,              csrctl),             // 483
    MACX_(__NR_guarded_open_dprotected_np, guarded_open_dprotected_np),  // 484
    MACX_(__NR_guarded_write_np, guarded_write_np),      // 485
    MACX_(__NR_guarded_pwrite_np, guarded_pwrite_np),    // 486

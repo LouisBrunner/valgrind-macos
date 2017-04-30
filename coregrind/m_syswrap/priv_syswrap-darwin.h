@@ -586,7 +586,7 @@ DECL_TEMPLATE(darwin, bsdthread_ctl);            // 478
 // NYI recvmsg_x       // 480
 // NYI sendmsg_x       // 481
 // NYI thread_selfusage  // 482
-// NYI csrctl          // 483
+DECL_TEMPLATE(darwin, csrctl);                      // 483
 DECL_TEMPLATE(darwin, guarded_open_dprotected_np);  // 484
 DECL_TEMPLATE(darwin, guarded_write_np);            // 485
 DECL_TEMPLATE(darwin, guarded_pwrite_np);           // 486

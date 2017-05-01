@@ -749,6 +749,7 @@ DECL_TEMPLATE(darwin, pid_for_task);
 #if DARWIN_VERS >= DARWIN_10_12
 DECL_TEMPLATE(darwin, host_create_mach_voucher_trap);
 DECL_TEMPLATE(darwin, task_register_dyld_image_infos);
+DECL_TEMPLATE(darwin, task_register_dyld_shared_cache_image_info);
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
 
 DECL_TEMPLATE(darwin, mach_timebase_info);

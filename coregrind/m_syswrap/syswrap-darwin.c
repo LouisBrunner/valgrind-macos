@@ -8212,6 +8212,10 @@ PRE(mach_msg_task)
    case 3444:
       CALL_PRE(task_register_dyld_image_infos);
       return;
+
+   case 3447:
+      CALL_PRE(task_register_dyld_shared_cache_image_info);
+      return;
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
       
    case 3801:
@@ -9840,6 +9844,43 @@ PRE(task_register_dyld_image_infos)
 }
 
 POST(task_register_dyld_image_infos)
+{
+#pragma pack(4)
+    typedef struct {
+       mach_msg_header_t Head;
+       NDR_record_t NDR;
+       kern_return_t RetCode;
+    } Reply;
+#pragma pack()
+    
+    Reply *reply = (Reply *)ARG1;
+    if (!reply->RetCode) {
+    } else {
+        PRINT("mig return %d", reply->RetCode);
+    }
+}
+
+PRE(task_register_dyld_shared_cache_image_info)
+{
+#pragma pack(4)
+    typedef struct {
+       mach_msg_header_t Head;
+       NDR_record_t NDR;
+       dyld_kernel_image_info_t dyld_cache_image;
+       boolean_t no_cache;
+       boolean_t private_cache;
+    } Request;
+#pragma pack()
+    
+    // Request *req = (Request *)ARG1;
+    
+    PRINT("task_register_dyld_shared_cache_image_info(%s)",
+        name_for_port(MACH_REMOTE));
+    
+    AFTER = POST_FN(task_register_dyld_shared_cache_image_info);
+}
+
+POST(task_register_dyld_shared_cache_image_info)
 {
 #pragma pack(4)
     typedef struct {

@@ -160,6 +160,8 @@ where XXXXXX is the bug number as listed below.
 379094  Valgrind reports INTERNAL ERROR in rt_sigsuspend syscall wrapper
 379371  UNKNOWN task message [id 3444, to mach_task_self(), reply 0x603]
         (task_register_dyld_image_infos)
+379372  UNKNOWN task message [id 3447, to mach_task_self(), reply 0x603]
+        (task_register_dyld_shared_cache_image_info)
 379390  unhandled syscall: mach:70 (host_create_mach_voucher_trap)
 
 Release 3.12.0 (20 October 2016)

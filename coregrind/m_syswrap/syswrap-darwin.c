@@ -8207,6 +8207,12 @@ PRE(mach_msg_task)
    case 3420:
       CALL_PRE(task_policy_set);
       return;
+
+#if DARWIN_VERS >= DARWIN_10_12
+   case 3444:
+      CALL_PRE(task_register_dyld_image_infos);
+      return;
+#endif /* DARWIN_VERS >= DARWIN_10_12 */
       
    case 3801:
       CALL_PRE(vm_allocate);
@@ -9810,6 +9816,44 @@ PRE(host_create_mach_voucher_trap)
     PRINT("host_create_mach_voucher_trap"
         "(host:%#lx, recipes:%#lx, recipes_size:%ld, voucher:%#lx) FIXME",
         ARG1, ARG2, ARG3, ARG4);
+}
+
+PRE(task_register_dyld_image_infos)
+{
+#pragma pack(4)
+    typedef struct {
+       mach_msg_header_t Head;
+       /* start of the kernel processed data */
+       mach_msg_body_t msgh_body;
+       mach_msg_ool_descriptor_t dyld_images;
+       /* end of the kernel processed data */
+       NDR_record_t NDR;
+       mach_msg_type_number_t dyld_imagesCnt;
+    } Request;
+#pragma pack()
+    
+    // Request *req = (Request *)ARG1;
+    
+    PRINT("task_register_dyld_image_infos(%s)", name_for_port(MACH_REMOTE));
+    
+    AFTER = POST_FN(task_register_dyld_image_infos);
+}
+
+POST(task_register_dyld_image_infos)
+{
+#pragma pack(4)
+    typedef struct {
+       mach_msg_header_t Head;
+       NDR_record_t NDR;
+       kern_return_t RetCode;
+    } Reply;
+#pragma pack()
+    
+    Reply *reply = (Reply *)ARG1;
+    if (!reply->RetCode) {
+    } else {
+        PRINT("mig return %d", reply->RetCode);
+    }
 }
 
 #endif /* DARWIN_VERS >= DARWIN_10_12 */

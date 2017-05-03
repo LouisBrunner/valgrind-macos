@@ -537,6 +537,8 @@ UInt LibVEX_GuestPPC32_get_XER ( /*IN*/const VexGuestPPC32State* vex_state )
    w |= ( (((UInt)vex_state->guest_XER_SO) & 0x1) << 31 );
    w |= ( (((UInt)vex_state->guest_XER_OV) & 0x1) << 30 );
    w |= ( (((UInt)vex_state->guest_XER_CA) & 0x1) << 29 );
+   w |= ( (((UInt)vex_state->guest_XER_OV32) & 0x1) << 19 );
+   w |= ( (((UInt)vex_state->guest_XER_CA32) & 0x1) << 18 );
    return w;
 }
 
@@ -550,6 +552,8 @@ UInt LibVEX_GuestPPC64_get_XER ( /*IN*/const VexGuestPPC64State* vex_state )
    w |= ( (((UInt)vex_state->guest_XER_SO) & 0x1) << 31 );
    w |= ( (((UInt)vex_state->guest_XER_OV) & 0x1) << 30 );
    w |= ( (((UInt)vex_state->guest_XER_CA) & 0x1) << 29 );
+   w |= ( (((UInt)vex_state->guest_XER_OV32) & 0x1) << 19 );
+   w |= ( (((UInt)vex_state->guest_XER_CA32) & 0x1) << 18 );
    return w;
 }
 
@@ -562,6 +566,8 @@ void LibVEX_GuestPPC32_put_XER ( UInt xer_native,
    vex_state->guest_XER_SO = toUChar((xer_native >> 31) & 0x1);
    vex_state->guest_XER_OV = toUChar((xer_native >> 30) & 0x1);
    vex_state->guest_XER_CA = toUChar((xer_native >> 29) & 0x1);
+   vex_state->guest_XER_OV32 = toUChar((xer_native >> 19) & 0x1);
+   vex_state->guest_XER_CA32 = toUChar((xer_native >> 18) & 0x1);
 }
 
 /* VISIBLE TO LIBVEX CLIENT */
@@ -573,6 +579,8 @@ void LibVEX_GuestPPC64_put_XER ( UInt xer_native,
    vex_state->guest_XER_SO = toUChar((xer_native >> 31) & 0x1);
    vex_state->guest_XER_OV = toUChar((xer_native >> 30) & 0x1);
    vex_state->guest_XER_CA = toUChar((xer_native >> 29) & 0x1);
+   vex_state->guest_XER_OV32 = toUChar((xer_native >> 19) & 0x1);
+   vex_state->guest_XER_CA32 = toUChar((xer_native >> 18) & 0x1);
 }
 
 /* VISIBLE TO LIBVEX CLIENT */
@@ -696,6 +704,9 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
    vex_state->guest_XER_CA = 0;
    vex_state->guest_XER_BC = 0;
 
+   vex_state->guest_XER_OV32 = 0;
+   vex_state->guest_XER_CA32 = 0;
+
    vex_state->guest_CR0_321 = 0;
    vex_state->guest_CR0_0   = 0;
    vex_state->guest_CR1_321 = 0;
@@ -740,7 +751,7 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
    vex_state->guest_PSPB = 0x100;  // an arbitrary non-zero value to start with
 
    vex_state->padding1 = 0;
-   vex_state->padding2 = 0;
+   /*   vex_state->padding2 = 0;  currently not used */
 }
 
 

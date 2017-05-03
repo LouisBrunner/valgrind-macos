@@ -239,6 +239,9 @@ static void* fnptr_to_fnentry( const VexAbiInfo* vbi, void* f )
    }
 }
 
+/* The OV32 and CA32 bits were added with ISA3.0 */
+static Bool OV32_CA32_supported = False;
+
 #define SIGN_BIT  0x8000000000000000ULL
 #define SIGN_MASK 0x7fffffffffffffffULL
 #define SIGN_BIT32  0x80000000
@@ -273,7 +276,9 @@ static void* fnptr_to_fnentry( const VexAbiInfo* vbi, void* f )
 #define OFFB_CTR         offsetofPPCGuestState(guest_CTR)
 #define OFFB_XER_SO      offsetofPPCGuestState(guest_XER_SO)
 #define OFFB_XER_OV      offsetofPPCGuestState(guest_XER_OV)
+#define OFFB_XER_OV32    offsetofPPCGuestState(guest_XER_OV32)
 #define OFFB_XER_CA      offsetofPPCGuestState(guest_XER_CA)
+#define OFFB_XER_CA32    offsetofPPCGuestState(guest_XER_CA32)
 #define OFFB_XER_BC      offsetofPPCGuestState(guest_XER_BC)
 #define OFFB_FPROUND     offsetofPPCGuestState(guest_FPROUND)
 #define OFFB_DFPROUND    offsetofPPCGuestState(guest_DFPROUND)
@@ -2201,18 +2206,46 @@ static void putXER_SO ( IRExpr* e )
 
 static void putXER_OV ( IRExpr* e )
 {
+   /* Interface to write XER[OV] */
    IRExpr* ov;
    vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I8);
    ov = binop(Iop_And8, e, mkU8(1));
    stmt( IRStmt_Put( OFFB_XER_OV, ov ) );
 }
 
+static void putXER_OV32 ( IRExpr* e )
+{
+   /*Interface to write XER[OV32] */
+   IRExpr* ov;
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I8);
+   ov = binop(Iop_And8, e, mkU8(1));
+
+   /* The OV32 bit was added to XER in ISA 3.0.  Do not write unless we
+    * ISA 3.0 or beyond is supported. */
+   if( OV32_CA32_supported )
+      stmt( IRStmt_Put( OFFB_XER_OV32, ov ) );
+}
+
 static void putXER_CA ( IRExpr* e )
 {
+   /* Interface to write XER[CA] */
    IRExpr* ca;
    vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I8);
    ca = binop(Iop_And8, e, mkU8(1));
    stmt( IRStmt_Put( OFFB_XER_CA, ca ) );
+}
+
+static void putXER_CA32 ( IRExpr* e )
+{
+   /* Interface to write XER[CA32] */
+   IRExpr* ca;
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I8);
+   ca = binop(Iop_And8, e, mkU8(1));
+
+   /* The CA32 bit was added to XER in ISA 3.0.  Do not write unless we
+    * ISA 3.0 or beyond is supported. */
+   if( OV32_CA32_supported )
+      stmt( IRStmt_Put( OFFB_XER_CA32, ca ) );
 }
 
 static void putXER_BC ( IRExpr* e )
@@ -2228,7 +2261,7 @@ static IRExpr* /* :: Ity_I8 */ getXER_SO ( void )
    return IRExpr_Get( OFFB_XER_SO, Ity_I8 );
 }
 
-static IRExpr* /* :: Ity_I32 */ getXER_SO32 ( void )
+static IRExpr* /* :: Ity_I32 */ getXER_SO_32 ( void )
 {
    return binop( Iop_And32, unop(Iop_8Uto32, getXER_SO()), mkU32(1) );
 }
@@ -2238,14 +2271,34 @@ static IRExpr* /* :: Ity_I8 */ getXER_OV ( void )
    return IRExpr_Get( OFFB_XER_OV, Ity_I8 );
 }
 
-static IRExpr* /* :: Ity_I32 */ getXER_OV32 ( void )
+static IRExpr* /* :: Ity_I8 */ getXER_OV32 ( void )
 {
+   return IRExpr_Get( OFFB_XER_OV32, Ity_I8 );
+}
+
+static IRExpr* /* :: Ity_I32 */ getXER_OV_32 ( void )
+{
+   /* get XER[OV], 32-bit interface */
    return binop( Iop_And32, unop(Iop_8Uto32, getXER_OV()), mkU32(1) );
 }
 
-static IRExpr* /* :: Ity_I32 */ getXER_CA32 ( void )
+static IRExpr* /* :: Ity_I32 */ getXER_OV32_32 ( void )
 {
+   /* get XER[OV32], 32-bit interface */
+   return binop( Iop_And32, unop(Iop_8Uto32, getXER_OV32()), mkU32(1) );
+}
+
+static IRExpr* /* :: Ity_I32 */ getXER_CA_32 ( void )
+{
+   /* get XER[CA], 32-bit interface */
    IRExpr* ca = IRExpr_Get( OFFB_XER_CA, Ity_I8 );
+   return binop( Iop_And32, unop(Iop_8Uto32, ca ), mkU32(1) );
+}
+
+static IRExpr* /* :: Ity_I32 */ getXER_CA32_32 ( void )
+{
+   /* get XER[CA32], 32-bit interface */
+   IRExpr* ca = IRExpr_Get( OFFB_XER_CA32, Ity_I8 );
    return binop( Iop_And32, unop(Iop_8Uto32, ca ), mkU32(1) );
 }
 
@@ -2254,7 +2307,7 @@ static IRExpr* /* :: Ity_I8 */ getXER_BC ( void )
    return IRExpr_Get( OFFB_XER_BC, Ity_I8 );
 }
 
-static IRExpr* /* :: Ity_I32 */ getXER_BC32 ( void )
+static IRExpr* /* :: Ity_I32 */ getXER_BC_32 ( void )
 {
    IRExpr* bc = IRExpr_Get( OFFB_XER_BC, Ity_I8 );
    return binop( Iop_And32, unop(Iop_8Uto32, bc), mkU32(0x7F) );
@@ -2264,15 +2317,11 @@ static IRExpr* /* :: Ity_I32 */ getXER_BC32 ( void )
 /* RES is the result of doing OP on ARGL and ARGR.  Set %XER.OV and
    %XER.SO accordingly. */
 
-static void set_XER_OV_32( UInt op, IRExpr* res,
-                           IRExpr* argL, IRExpr* argR )
+static IRExpr* calculate_XER_OV_32( UInt op, IRExpr* res,
+                                    IRExpr* argL, IRExpr* argR )
 {
    IRTemp  t64;
    IRExpr* xer_ov;
-   vassert(op < PPCG_FLAG_OP_NUMBER);
-   vassert(typeOfIRExpr(irsb->tyenv,res)  == Ity_I32);
-   vassert(typeOfIRExpr(irsb->tyenv,argL) == Ity_I32);
-   vassert(typeOfIRExpr(irsb->tyenv,argR) == Ity_I32);
 
 #  define INT32_MIN 0x80000000
 
@@ -2381,15 +2430,11 @@ static void set_XER_OV_32( UInt op, IRExpr* res,
 
 
    default: 
-      vex_printf("set_XER_OV: op = %u\n", op);
-      vpanic("set_XER_OV(ppc)");
+      vex_printf("calculate_XER_OV_32: op = %u\n", op);
+      vpanic("calculate_XER_OV_32(ppc)");
    }
-   
-   /* xer_ov MUST denote either 0 or 1, no other value allowed */
-   putXER_OV( unop(Iop_32to8, xer_ov) );
 
-   /* Update the summary overflow */
-   putXER_SO( binop(Iop_Or8, getXER_SO(), getXER_OV()) );
+   return xer_ov;
 
 #  undef INT32_MIN
 #  undef AND3
@@ -2398,14 +2443,27 @@ static void set_XER_OV_32( UInt op, IRExpr* res,
 #  undef NOT
 }
 
-static void set_XER_OV_64( UInt op, IRExpr* res,
-                           IRExpr* argL, IRExpr* argR )
+static void set_XER_OV_OV32_32( UInt op, IRExpr* res,
+                                IRExpr* argL, IRExpr* argR )
 {
    IRExpr* xer_ov;
+
    vassert(op < PPCG_FLAG_OP_NUMBER);
-   vassert(typeOfIRExpr(irsb->tyenv,res)  == Ity_I64);
-   vassert(typeOfIRExpr(irsb->tyenv,argL) == Ity_I64);
-   vassert(typeOfIRExpr(irsb->tyenv,argR) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv,res)  == Ity_I32);
+   vassert(typeOfIRExpr(irsb->tyenv,argL) == Ity_I32);
+   vassert(typeOfIRExpr(irsb->tyenv,argR) == Ity_I32);
+
+   xer_ov = calculate_XER_OV_32( op, res, argL, argR );
+
+   /* xer_ov MUST denote either 0 or 1, no other value allowed */
+   putXER_OV( unop(Iop_32to8, xer_ov) );
+   putXER_OV32( unop(Iop_32to8, xer_ov) );
+}
+
+static IRExpr* calculate_XER_OV_64( UInt op, IRExpr* res,
+                                 IRExpr* argL, IRExpr* argR )
+{
+   IRExpr* xer_ov;
 
 #  define INT64_MIN 0x8000000000000000ULL
 
@@ -2485,7 +2543,7 @@ static void set_XER_OV_64( UInt op, IRExpr* res,
          = unop(Iop_64to1, binop(Iop_Shr64, xer_ov, mkU8(63)));
       break;
       
-   case PPCG_FLAG_OP_DIVDE:
+   case /* 14 */ PPCG_FLAG_OP_DIVDE:
 
       /* If argR == 0, we must set the OV bit.  But there's another condition
        * where we can get overflow set for divde . . . when the
@@ -2499,7 +2557,7 @@ static void set_XER_OV_64( UInt op, IRExpr* res,
                                            binop( Iop_CmpNE64, argR, mkU64( 0 ) ) ) ) );
       break;
 
-   case PPCG_FLAG_OP_DIVDEU:
+   case /* 17 */ PPCG_FLAG_OP_DIVDEU:
      /* If argR == 0 or if argL >= argR, set OV. */
      xer_ov = mkOR1( binop( Iop_CmpEQ64, argR, mkU64( 0 ) ),
                          binop( Iop_CmpLE64U, argR, argL ) );
@@ -2522,15 +2580,11 @@ static void set_XER_OV_64( UInt op, IRExpr* res,
    }
       
    default: 
-      vex_printf("set_XER_OV: op = %u\n", op);
-      vpanic("set_XER_OV(ppc64)");
+      vex_printf("calculate_XER_OV_64: op = %u\n", op);
+      vpanic("calculate_XER_OV_64(ppc64)");
    }
-   
-   /* xer_ov MUST denote either 0 or 1, no other value allowed */
-   putXER_OV( unop(Iop_1Uto8, xer_ov) );
 
-   /* Update the summary overflow */
-   putXER_SO( binop(Iop_Or8, getXER_SO(), getXER_OV()) );
+   return xer_ov;
 
 #  undef INT64_MIN
 #  undef AND3
@@ -2539,13 +2593,62 @@ static void set_XER_OV_64( UInt op, IRExpr* res,
 #  undef NOT
 }
 
-static void set_XER_OV ( IRType ty, UInt op, IRExpr* res,
-                         IRExpr* argL, IRExpr* argR )
+static void set_XER_OV_64( UInt op, IRExpr* res,
+                           IRExpr* argL, IRExpr* argR )
 {
-   if (ty == Ity_I32)
-      set_XER_OV_32( op, res, argL, argR );
-   else
+   IRExpr* xer_ov;
+   vassert(op < PPCG_FLAG_OP_NUMBER);
+   vassert(typeOfIRExpr(irsb->tyenv,res)  == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv,argL) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv,argR) == Ity_I64);
+
+   /* xer_ov MUST denote either 0 or 1, no other value allowed */
+   xer_ov = calculate_XER_OV_64( op, res, argL, argR);
+   putXER_OV( unop(Iop_1Uto8, xer_ov) );
+
+   /* Update the summary overflow */
+   putXER_SO( binop(Iop_Or8, getXER_SO(), getXER_OV()) );
+}
+
+static void update_SO( void ) {
+   /* Update the summary overflow bit */
+   putXER_SO( binop(Iop_Or8, getXER_SO(), getXER_OV()) );
+}
+
+static void copy_OV_to_OV32( void ) {
+   /* Update the OV32 to match OV */
+   putXER_OV32( getXER_OV() );
+}
+
+static void set_XER_OV_OV32 ( IRType ty, UInt op, IRExpr* res,
+                              IRExpr* argL, IRExpr* argR )
+{
+   if (ty == Ity_I32) {
+      set_XER_OV_OV32_32( op, res, argL, argR );
+   } else {
+      IRExpr* xer_ov_32;
       set_XER_OV_64( op, res, argL, argR );
+      xer_ov_32 = calculate_XER_OV_32( op, unop(Iop_64to32, res),
+                                       unop(Iop_64to32, argL),
+                                       unop(Iop_64to32, argR));
+      putXER_OV32( unop(Iop_32to8, xer_ov_32) );
+   }
+}
+
+static void set_XER_OV_OV32_SO ( IRType ty, UInt op, IRExpr* res,
+                                 IRExpr* argL, IRExpr* argR )
+{
+   if (ty == Ity_I32) {
+      set_XER_OV_OV32_32( op, res, argL, argR );
+   } else {
+      IRExpr* xer_ov_32;
+      set_XER_OV_64( op, res, argL, argR );
+      xer_ov_32 = calculate_XER_OV_32( op, unop(Iop_64to32, res),
+                                       unop(Iop_64to32, argL),
+                                       unop(Iop_64to32, argR));
+      putXER_OV32( unop(Iop_32to8, xer_ov_32) );
+   }
+   update_SO();
 }
 
 
@@ -2553,21 +2656,10 @@ static void set_XER_OV ( IRType ty, UInt op, IRExpr* res,
 /* RES is the result of doing OP on ARGL and ARGR with the old %XER.CA
    value being OLDCA.  Set %XER.CA accordingly. */
 
-static void set_XER_CA_32 ( UInt op, IRExpr* res,
-                            IRExpr* argL, IRExpr* argR, IRExpr* oldca )
+static IRExpr* calculate_XER_CA_32 ( UInt op, IRExpr* res,
+                                     IRExpr* argL, IRExpr* argR, IRExpr* oldca )
 {
    IRExpr* xer_ca;
-   vassert(op < PPCG_FLAG_OP_NUMBER);
-   vassert(typeOfIRExpr(irsb->tyenv,res)   == Ity_I32);
-   vassert(typeOfIRExpr(irsb->tyenv,argL)  == Ity_I32);
-   vassert(typeOfIRExpr(irsb->tyenv,argR)  == Ity_I32);
-   vassert(typeOfIRExpr(irsb->tyenv,oldca) == Ity_I32);
-
-   /* Incoming oldca is assumed to hold the values 0 or 1 only.  This
-      seems reasonable given that it's always generated by
-      getXER_CA32(), which masks it accordingly.  In any case it being
-      0 or 1 is an invariant of the ppc guest state representation;
-      if it has any other value, that invariant has been violated. */
 
    switch (op) {
    case /* 0 */ PPCG_FLAG_OP_ADD:
@@ -2667,25 +2759,35 @@ static void set_XER_CA_32 ( UInt op, IRExpr* res,
       vpanic("set_XER_CA(ppc)");
    }
 
-   /* xer_ca MUST denote either 0 or 1, no other value allowed */
-   putXER_CA( unop(Iop_32to8, xer_ca) );
+   return xer_ca;
 }
 
-static void set_XER_CA_64 ( UInt op, IRExpr* res,
+static void set_XER_CA_32 ( UInt op, IRExpr* res,
                             IRExpr* argL, IRExpr* argR, IRExpr* oldca )
 {
    IRExpr* xer_ca;
    vassert(op < PPCG_FLAG_OP_NUMBER);
-   vassert(typeOfIRExpr(irsb->tyenv,res)   == Ity_I64);
-   vassert(typeOfIRExpr(irsb->tyenv,argL)  == Ity_I64);
-   vassert(typeOfIRExpr(irsb->tyenv,argR)  == Ity_I64);
-   vassert(typeOfIRExpr(irsb->tyenv,oldca) == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv,res)   == Ity_I32);
+   vassert(typeOfIRExpr(irsb->tyenv,argL)  == Ity_I32);
+   vassert(typeOfIRExpr(irsb->tyenv,argR)  == Ity_I32);
+   vassert(typeOfIRExpr(irsb->tyenv,oldca) == Ity_I32);
 
    /* Incoming oldca is assumed to hold the values 0 or 1 only.  This
       seems reasonable given that it's always generated by
-      getXER_CA32(), which masks it accordingly.  In any case it being
+      getXER_CA_32(), which masks it accordingly.  In any case it being
       0 or 1 is an invariant of the ppc guest state representation;
       if it has any other value, that invariant has been violated. */
+
+   xer_ca = calculate_XER_CA_32( op, res, argL, argR, oldca);
+
+   /* xer_ca MUST denote either 0 or 1, no other value allowed */
+   putXER_CA( unop(Iop_32to8, xer_ca) );
+}
+
+static IRExpr* calculate_XER_CA_64 ( UInt op, IRExpr* res,
+                                     IRExpr* argL, IRExpr* argR, IRExpr* oldca )
+{
+   IRExpr* xer_ca;
 
    switch (op) {
    case /* 0 */ PPCG_FLAG_OP_ADD:
@@ -2843,17 +2945,39 @@ static void set_XER_CA_64 ( UInt op, IRExpr* res,
       vpanic("set_XER_CA(ppc64)");
    }
 
+   return xer_ca;
+}
+
+static void set_XER_CA_64 ( UInt op, IRExpr* res,
+                            IRExpr* argL, IRExpr* argR, IRExpr* oldca )
+{
+   IRExpr* xer_ca;
+   vassert(op < PPCG_FLAG_OP_NUMBER);
+   vassert(typeOfIRExpr(irsb->tyenv,res)   == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv,argL)  == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv,argR)  == Ity_I64);
+   vassert(typeOfIRExpr(irsb->tyenv,oldca) == Ity_I64);
+
+   /* Incoming oldca is assumed to hold the values 0 or 1 only.  This
+      seems reasonable given that it's always generated by
+      getXER_CA_32(), which masks it accordingly.  In any case it being
+      0 or 1 is an invariant of the ppc guest state representation;
+      if it has any other value, that invariant has been violated. */
+
+   xer_ca = calculate_XER_CA_64( op, res, argL, argR, oldca );
+
    /* xer_ca MUST denote either 0 or 1, no other value allowed */
    putXER_CA( unop(Iop_32to8, xer_ca) );
 }
 
-static void set_XER_CA ( IRType ty, UInt op, IRExpr* res,
-                         IRExpr* argL, IRExpr* argR, IRExpr* oldca )
+static void set_XER_CA_CA32 ( IRType ty, UInt op, IRExpr* res,
+                              IRExpr* argL, IRExpr* argR, IRExpr* oldca )
 {
-   if (ty == Ity_I32)
+   if (ty == Ity_I32) {
       set_XER_CA_32( op, res, argL, argR, oldca );
-   else
+   } else {
       set_XER_CA_64( op, res, argL, argR, oldca );
+   }
 }
 
 
@@ -2913,11 +3037,15 @@ static IRExpr* /* :: Ity_I32/64 */ getGST ( PPC_GST reg )
    case PPC_GST_XER:
       return binop(Iop_Or32,
                    binop(Iop_Or32,
-                         binop( Iop_Shl32, getXER_SO32(), mkU8(31)),
-                         binop( Iop_Shl32, getXER_OV32(), mkU8(30))),
+                         binop(Iop_Or32,
+                               binop( Iop_Shl32, getXER_SO_32(), mkU8(31)),
+                               binop( Iop_Shl32, getXER_OV_32(), mkU8(30))),
+                         binop(Iop_Or32,
+                               binop( Iop_Shl32, getXER_CA_32(), mkU8(29)),
+                               getXER_BC_32())),
                    binop(Iop_Or32,
-                         binop( Iop_Shl32, getXER_CA32(), mkU8(29)),
-                         getXER_BC32()));
+                         binop( Iop_Shl32, getXER_OV32_32(), mkU8(19)),
+                         binop( Iop_Shl32, getXER_CA32_32(), mkU8(18))));
 
    case PPC_GST_TFHAR:
       return IRExpr_Get( OFFB_TFHAR, ty );
@@ -3032,9 +3160,9 @@ static IRExpr* /* ::Ity_I32 */ getGST_field ( PPC_GST reg, UInt fld )
       vassert(fld ==7);
       return binop(Iop_Or32,
                    binop(Iop_Or32,
-                         binop(Iop_Shl32, getXER_SO32(), mkU8(3)),
-                         binop(Iop_Shl32, getXER_OV32(), mkU8(2))),
-                   binop(      Iop_Shl32, getXER_CA32(), mkU8(1)));
+                         binop(Iop_Shl32, getXER_SO_32(), mkU8(3)),
+                         binop(Iop_Shl32, getXER_OV_32(), mkU8(2))),
+                   binop(      Iop_Shl32, getXER_CA_32(), mkU8(1)));
       break;
 
    default:
@@ -3084,6 +3212,8 @@ static void putGST ( PPC_GST reg, IRExpr* src )
       putXER_SO( unop(Iop_32to8, binop(Iop_Shr32, src, mkU8(31))) );
       putXER_OV( unop(Iop_32to8, binop(Iop_Shr32, src, mkU8(30))) );
       putXER_CA( unop(Iop_32to8, binop(Iop_Shr32, src, mkU8(29))) );
+      putXER_OV32( unop(Iop_32to8, binop(Iop_Shr32, src, mkU8(19))) );
+      putXER_CA32( unop(Iop_32to8, binop(Iop_Shr32, src, mkU8(18))) );
       putXER_BC( unop(Iop_32to8, src) );
       break;
       
@@ -4858,18 +4988,18 @@ static Bool dis_int_arith ( UInt theInstr )
       DIP("addic r%u,r%u,%d\n", rD_addr, rA_addr, (Int)simm16);
       assign( rD, binop( mkSzOp(ty, Iop_Add8), mkexpr(rA),
                          mkSzExtendS16(ty, uimm16) ) );
-      set_XER_CA( ty, PPCG_FLAG_OP_ADD, 
-                  mkexpr(rD), mkexpr(rA), mkSzExtendS16(ty, uimm16),
-                  mkSzImm(ty, 0)/*old xer.ca, which is ignored*/ );
+      set_XER_CA_CA32( ty, PPCG_FLAG_OP_ADD,
+                       mkexpr(rD), mkexpr(rA), mkSzExtendS16(ty, uimm16),
+                       mkSzImm(ty, 0)/*old xer.ca, which is ignored*/ );
       break;
     
    case 0x0D: // addic. (Add Immediate Carrying and Record, PPC32 p352)
       DIP("addic. r%u,r%u,%d\n", rD_addr, rA_addr, (Int)simm16);
       assign( rD, binop( mkSzOp(ty, Iop_Add8), mkexpr(rA),
                          mkSzExtendS16(ty, uimm16) ) );
-      set_XER_CA( ty, PPCG_FLAG_OP_ADD, 
-                  mkexpr(rD), mkexpr(rA), mkSzExtendS16(ty, uimm16),
-                  mkSzImm(ty, 0)/*old xer.ca, which is ignored*/ );
+      set_XER_CA_CA32( ty, PPCG_FLAG_OP_ADD,
+                       mkexpr(rD), mkexpr(rA), mkSzExtendS16(ty, uimm16),
+                       mkSzImm(ty, 0)/*old xer.ca, which is ignored*/ );
       do_rc = True;  // Always record to CR
       flag_rC = 1;
       break;
@@ -4917,9 +5047,9 @@ static Bool dis_int_arith ( UInt theInstr )
       assign( rD, binop( mkSzOp(ty, Iop_Sub8),
                          mkSzExtendS16(ty, uimm16),
                          mkexpr(rA)) );
-      set_XER_CA( ty, PPCG_FLAG_OP_SUBFI, 
-                  mkexpr(rD), mkexpr(rA), mkSzExtendS16(ty, uimm16),
-                  mkSzImm(ty, 0)/*old xer.ca, which is ignored*/ );
+      set_XER_CA_CA32( ty, PPCG_FLAG_OP_SUBFI,
+                       mkexpr(rD), mkexpr(rA), mkSzExtendS16(ty, uimm16),
+                       mkSzImm(ty, 0)/*old xer.ca, which is ignored*/ );
       break;
 
    /* XO-Form */
@@ -4934,8 +5064,8 @@ static Bool dis_int_arith ( UInt theInstr )
          assign( rD, binop( mkSzOp(ty, Iop_Add8),
                             mkexpr(rA), mkexpr(rB) ) );
          if (flag_OE) {
-            set_XER_OV( ty, PPCG_FLAG_OP_ADD,
-                        mkexpr(rD), mkexpr(rA), mkexpr(rB) );
+            set_XER_OV_OV32_SO( ty, PPCG_FLAG_OP_ADD,
+                                mkexpr(rD), mkexpr(rA), mkexpr(rB) );
          }
          break;
 
@@ -4945,12 +5075,12 @@ static Bool dis_int_arith ( UInt theInstr )
              rD_addr, rA_addr, rB_addr);
          assign( rD, binop( mkSzOp(ty, Iop_Add8),
                             mkexpr(rA), mkexpr(rB)) );
-         set_XER_CA( ty, PPCG_FLAG_OP_ADD, 
-                     mkexpr(rD), mkexpr(rA), mkexpr(rB),
-                     mkSzImm(ty, 0)/*old xer.ca, which is ignored*/ );
+         set_XER_CA_CA32( ty, PPCG_FLAG_OP_ADD,
+                          mkexpr(rD), mkexpr(rA), mkexpr(rB),
+                          mkSzImm(ty, 0)/*old xer.ca, which is ignored*/ );
          if (flag_OE) {
-            set_XER_OV( ty, PPCG_FLAG_OP_ADD, 
-                        mkexpr(rD), mkexpr(rA), mkexpr(rB) );
+            set_XER_OV_OV32_SO( ty, PPCG_FLAG_OP_ADD,
+                                mkexpr(rD), mkexpr(rA), mkexpr(rB) );
          }
          break;
          
@@ -4960,16 +5090,35 @@ static Bool dis_int_arith ( UInt theInstr )
              flag_OE ? "o" : "", flag_rC ? ".":"",
              rD_addr, rA_addr, rB_addr);
          // rD = rA + rB + XER[CA]
-         assign( old_xer_ca, mkWidenFrom32(ty, getXER_CA32(), False) );
+         assign( old_xer_ca, mkWidenFrom32(ty, getXER_CA_32(), False) );
          assign( rD, binop( mkSzOp(ty, Iop_Add8), mkexpr(rA),
                             binop( mkSzOp(ty, Iop_Add8),
                                    mkexpr(rB), mkexpr(old_xer_ca))) );
-         set_XER_CA( ty, PPCG_FLAG_OP_ADDE, 
-                     mkexpr(rD), mkexpr(rA), mkexpr(rB),
-                     mkexpr(old_xer_ca) );
+         set_XER_CA_CA32( ty, PPCG_FLAG_OP_ADDE,
+                          mkexpr(rD), mkexpr(rA), mkexpr(rB),
+                          mkexpr(old_xer_ca) );
          if (flag_OE) {
-            set_XER_OV( ty, PPCG_FLAG_OP_ADDE, 
-                        mkexpr(rD), mkexpr(rA), mkexpr(rB) );
+            set_XER_OV_OV32_SO( ty, PPCG_FLAG_OP_ADDE,
+                                mkexpr(rD), mkexpr(rA), mkexpr(rB) );
+         }
+         break;
+      }
+
+      case 0xAA: {// addex (Add Extended alternate carry bit Z23-form)
+         DIP("addex r%u,r%u,r%u,%d\n", rD_addr, rA_addr, rB_addr, (Int)flag_OE);
+         assign( rD, binop( mkSzOp(ty, Iop_Add8), mkexpr(rA),
+                            binop( mkSzOp(ty, Iop_Add8), mkexpr(rB),
+                                   mkWidenFrom8( ty, getXER_OV(), False ) ) ) );
+
+         /* CY bit is same as OE bit */
+         if (flag_OE == 0) {
+            /* Exception, do not set SO bit */
+            set_XER_OV_OV32( ty, PPCG_FLAG_OP_ADDE,
+                             mkexpr(rD), mkexpr(rA), mkexpr(rB) );
+         } else {
+            /* CY=1, 2 and 3 (AKA flag_OE) are reserved */
+            vex_printf("addex instruction, CY = %d is reserved.\n", flag_OE);
+            vpanic("addex instruction\n");
          }
          break;
       }
@@ -4986,17 +5135,17 @@ static Bool dis_int_arith ( UInt theInstr )
              rD_addr, rA_addr, rB_addr);
          // rD = rA + (-1) + XER[CA]
          // => Just another form of adde
-         assign( old_xer_ca, mkWidenFrom32(ty, getXER_CA32(), False) );
+         assign( old_xer_ca, mkWidenFrom32(ty, getXER_CA_32(), False) );
          min_one = mkSzImm(ty, (Long)-1);
          assign( rD, binop( mkSzOp(ty, Iop_Add8), mkexpr(rA),
                             binop( mkSzOp(ty, Iop_Add8),
                                    min_one, mkexpr(old_xer_ca)) ));
-         set_XER_CA( ty, PPCG_FLAG_OP_ADDE,
-                     mkexpr(rD), mkexpr(rA), min_one,
-                     mkexpr(old_xer_ca) );
+         set_XER_CA_CA32( ty, PPCG_FLAG_OP_ADDE,
+                          mkexpr(rD), mkexpr(rA), min_one,
+                          mkexpr(old_xer_ca) );
          if (flag_OE) {
-            set_XER_OV( ty, PPCG_FLAG_OP_ADDE, 
-                        mkexpr(rD), mkexpr(rA), min_one );
+            set_XER_OV_OV32_SO( ty, PPCG_FLAG_OP_ADDE,
+                                mkexpr(rD), mkexpr(rA), min_one );
          }
          break;
       }
@@ -5012,15 +5161,15 @@ static Bool dis_int_arith ( UInt theInstr )
              rD_addr, rA_addr, rB_addr);
          // rD = rA + (0) + XER[CA]
          // => Just another form of adde
-         assign( old_xer_ca, mkWidenFrom32(ty, getXER_CA32(), False) );
+         assign( old_xer_ca, mkWidenFrom32(ty, getXER_CA_32(), False) );
          assign( rD, binop( mkSzOp(ty, Iop_Add8),
                             mkexpr(rA), mkexpr(old_xer_ca)) );
-         set_XER_CA( ty, PPCG_FLAG_OP_ADDE, 
-                     mkexpr(rD), mkexpr(rA), mkSzImm(ty, 0), 
-                     mkexpr(old_xer_ca) );
+         set_XER_CA_CA32( ty, PPCG_FLAG_OP_ADDE,
+                          mkexpr(rD), mkexpr(rA), mkSzImm(ty, 0),
+                          mkexpr(old_xer_ca) );
          if (flag_OE) {
-            set_XER_OV( ty, PPCG_FLAG_OP_ADDE, 
-                        mkexpr(rD), mkexpr(rA), mkSzImm(ty, 0) );
+            set_XER_OV_OV32_SO( ty, PPCG_FLAG_OP_ADDE,
+                                mkexpr(rD), mkexpr(rA), mkSzImm(ty, 0) );
          }
          break;
       }
@@ -5042,14 +5191,14 @@ static Bool dis_int_arith ( UInt theInstr )
             assign( rD, mk64lo32Uto64( binop(Iop_DivS64, dividend,
                                                          divisor) ) );
             if (flag_OE) {
-               set_XER_OV( ty, PPCG_FLAG_OP_DIVW, 
-                           mkexpr(rD), dividend, divisor );
+               set_XER_OV_OV32_SO( ty, PPCG_FLAG_OP_DIVW,
+                                   mkexpr(rD), dividend, divisor );
             }
          } else {
             assign( rD, binop(Iop_DivS32, mkexpr(rA), mkexpr(rB)) );
             if (flag_OE) {
-               set_XER_OV( ty, PPCG_FLAG_OP_DIVW, 
-                           mkexpr(rD), mkexpr(rA), mkexpr(rB) );
+               set_XER_OV_OV32_SO( ty, PPCG_FLAG_OP_DIVW,
+                                   mkexpr(rD), mkexpr(rA), mkexpr(rB) );
             }
          }
          /* Note:
@@ -5073,14 +5222,14 @@ static Bool dis_int_arith ( UInt theInstr )
             assign( rD, mk64lo32Uto64( binop(Iop_DivU64, dividend,
                                                          divisor) ) );
             if (flag_OE) {
-               set_XER_OV( ty, PPCG_FLAG_OP_DIVWU, 
-                           mkexpr(rD), dividend, divisor );
+               set_XER_OV_OV32_SO( ty, PPCG_FLAG_OP_DIVWU,
+                                   mkexpr(rD), dividend, divisor );
             }
          } else {
             assign( rD, binop(Iop_DivU32, mkexpr(rA), mkexpr(rB)) );
             if (flag_OE) {
-               set_XER_OV( ty, PPCG_FLAG_OP_DIVWU, 
-                           mkexpr(rD), mkexpr(rA), mkexpr(rB) );
+               set_XER_OV_OV32_SO( ty, PPCG_FLAG_OP_DIVWU,
+                                   mkexpr(rD), mkexpr(rA), mkexpr(rB) );
             }
          }
          /* Note: ditto comment divw, for (x / 0) */
@@ -5141,17 +5290,17 @@ static Bool dis_int_arith ( UInt theInstr )
             IRExpr *b = unop(Iop_64to32, mkexpr(rB) );
             assign( rD, binop(Iop_MullS32, a, b) );
             if (flag_OE) {
-               set_XER_OV( ty, PPCG_FLAG_OP_MULLW, 
-                           mkexpr(rD),
-                           unop(Iop_32Uto64, a), unop(Iop_32Uto64, b) );
+               set_XER_OV_OV32_SO( ty, PPCG_FLAG_OP_MULLW,
+                                mkexpr(rD),
+                                unop(Iop_32Uto64, a), unop(Iop_32Uto64, b) );
             }
          } else {
             assign( rD, unop(Iop_64to32,
                              binop(Iop_MullU32,
                                    mkexpr(rA), mkexpr(rB))) );
             if (flag_OE) {
-               set_XER_OV( ty, PPCG_FLAG_OP_MULLW, 
-                           mkexpr(rD), mkexpr(rA), mkexpr(rB) );
+               set_XER_OV_OV32_SO( ty, PPCG_FLAG_OP_MULLW,
+                                   mkexpr(rD), mkexpr(rA), mkexpr(rB) );
             }
          }
          break;
@@ -5169,8 +5318,8 @@ static Bool dis_int_arith ( UInt theInstr )
                             unop( mkSzOp(ty, Iop_Not8), mkexpr(rA) ),
                             mkSzImm(ty, 1)) );
          if (flag_OE) {
-            set_XER_OV( ty, PPCG_FLAG_OP_NEG, 
-                        mkexpr(rD), mkexpr(rA), mkexpr(rB) );
+            set_XER_OV_OV32_SO( ty, PPCG_FLAG_OP_NEG,
+                                mkexpr(rD), mkexpr(rA), mkexpr(rB) );
          }
          break;
 
@@ -5182,8 +5331,8 @@ static Bool dis_int_arith ( UInt theInstr )
          assign( rD, binop( mkSzOp(ty, Iop_Sub8),
                             mkexpr(rB), mkexpr(rA)) );
          if (flag_OE) {
-            set_XER_OV( ty, PPCG_FLAG_OP_SUBF, 
-                        mkexpr(rD), mkexpr(rA), mkexpr(rB) );
+            set_XER_OV_OV32_SO( ty, PPCG_FLAG_OP_SUBF,
+                                mkexpr(rD), mkexpr(rA), mkexpr(rB) );
          }
          break;
 
@@ -5194,12 +5343,12 @@ static Bool dis_int_arith ( UInt theInstr )
          // rD = rB - rA
          assign( rD, binop( mkSzOp(ty, Iop_Sub8),
                             mkexpr(rB), mkexpr(rA)) );
-         set_XER_CA( ty, PPCG_FLAG_OP_SUBFC, 
-                     mkexpr(rD), mkexpr(rA), mkexpr(rB),
-                     mkSzImm(ty, 0)/*old xer.ca, which is ignored*/ );
+         set_XER_CA_CA32( ty, PPCG_FLAG_OP_SUBFC,
+                          mkexpr(rD), mkexpr(rA), mkexpr(rB),
+                          mkSzImm(ty, 0)/*old xer.ca, which is ignored*/ );
          if (flag_OE) {
-            set_XER_OV( ty, PPCG_FLAG_OP_SUBFC, 
-                        mkexpr(rD), mkexpr(rA), mkexpr(rB) );
+            set_XER_OV_OV32_SO( ty, PPCG_FLAG_OP_SUBFC,
+                                mkexpr(rD), mkexpr(rA), mkexpr(rB) );
          }
          break;
          
@@ -5209,17 +5358,17 @@ static Bool dis_int_arith ( UInt theInstr )
              flag_OE ? "o" : "", flag_rC ? ".":"",
              rD_addr, rA_addr, rB_addr);
          // rD = (log not)rA + rB + XER[CA]
-         assign( old_xer_ca, mkWidenFrom32(ty, getXER_CA32(), False) );
+         assign( old_xer_ca, mkWidenFrom32(ty, getXER_CA_32(), False) );
          assign( rD, binop( mkSzOp(ty, Iop_Add8),
                             unop( mkSzOp(ty, Iop_Not8), mkexpr(rA)),
                             binop( mkSzOp(ty, Iop_Add8),
                                    mkexpr(rB), mkexpr(old_xer_ca))) );
-         set_XER_CA( ty, PPCG_FLAG_OP_SUBFE, 
-                     mkexpr(rD), mkexpr(rA), mkexpr(rB), 
-                     mkexpr(old_xer_ca) );
+         set_XER_CA_CA32( ty, PPCG_FLAG_OP_SUBFE,
+                          mkexpr(rD), mkexpr(rA), mkexpr(rB),
+                          mkexpr(old_xer_ca) );
          if (flag_OE) {
-            set_XER_OV( ty, PPCG_FLAG_OP_SUBFE, 
-                        mkexpr(rD), mkexpr(rA), mkexpr(rB) );
+            set_XER_OV_OV32_SO( ty, PPCG_FLAG_OP_SUBFE,
+                                mkexpr(rD), mkexpr(rA), mkexpr(rB) );
          }
          break;
       }
@@ -5236,18 +5385,18 @@ static Bool dis_int_arith ( UInt theInstr )
              rD_addr, rA_addr);
          // rD = (log not)rA + (-1) + XER[CA]
          // => Just another form of subfe
-         assign( old_xer_ca, mkWidenFrom32(ty, getXER_CA32(), False) );
+         assign( old_xer_ca, mkWidenFrom32(ty, getXER_CA_32(), False) );
          min_one = mkSzImm(ty, (Long)-1);
          assign( rD, binop( mkSzOp(ty, Iop_Add8),
                             unop( mkSzOp(ty, Iop_Not8), mkexpr(rA)),
                             binop( mkSzOp(ty, Iop_Add8),
                                    min_one, mkexpr(old_xer_ca))) );
-         set_XER_CA( ty, PPCG_FLAG_OP_SUBFE,
-                     mkexpr(rD), mkexpr(rA), min_one,
-                     mkexpr(old_xer_ca) );
+         set_XER_CA_CA32( ty, PPCG_FLAG_OP_SUBFE,
+                          mkexpr(rD), mkexpr(rA), min_one,
+                          mkexpr(old_xer_ca) );
          if (flag_OE) {
-            set_XER_OV( ty, PPCG_FLAG_OP_SUBFE, 
-                        mkexpr(rD), mkexpr(rA), min_one );
+            set_XER_OV_OV32_SO( ty, PPCG_FLAG_OP_SUBFE,
+                                mkexpr(rD), mkexpr(rA), min_one );
          }
          break;
       }
@@ -5263,16 +5412,16 @@ static Bool dis_int_arith ( UInt theInstr )
              rD_addr, rA_addr);
          // rD = (log not)rA + (0) + XER[CA]
          // => Just another form of subfe
-         assign( old_xer_ca, mkWidenFrom32(ty, getXER_CA32(), False) );
+         assign( old_xer_ca, mkWidenFrom32(ty, getXER_CA_32(), False) );
          assign( rD, binop( mkSzOp(ty, Iop_Add8),
                            unop( mkSzOp(ty, Iop_Not8),
                                  mkexpr(rA)), mkexpr(old_xer_ca)) );
-         set_XER_CA( ty, PPCG_FLAG_OP_SUBFE,
-                     mkexpr(rD), mkexpr(rA), mkSzImm(ty, 0), 
-                     mkexpr(old_xer_ca) );
+         set_XER_CA_CA32( ty, PPCG_FLAG_OP_SUBFE,
+                          mkexpr(rD), mkexpr(rA), mkSzImm(ty, 0),
+                          mkexpr(old_xer_ca) );
          if (flag_OE) {
-            set_XER_OV( ty, PPCG_FLAG_OP_SUBFE,
-                        mkexpr(rD), mkexpr(rA), mkSzImm(ty, 0) );
+            set_XER_OV_OV32_SO( ty, PPCG_FLAG_OP_SUBFE,
+                                mkexpr(rD), mkexpr(rA), mkSzImm(ty, 0) );
          }
          break;
       }
@@ -5310,8 +5459,14 @@ static Bool dis_int_arith ( UInt theInstr )
              rD_addr, rA_addr, rB_addr);
          assign( rD, binop(Iop_Mul64, mkexpr(rA), mkexpr(rB)) );
          if (flag_OE) {
-            set_XER_OV( ty, PPCG_FLAG_OP_MULLD, 
-                        mkexpr(rD), mkexpr(rA), mkexpr(rB) );
+            set_XER_OV_64( PPCG_FLAG_OP_MULLD,
+                           mkexpr(rD), mkexpr(rA), mkexpr(rB) );
+            /* OV is set to 1 if product isn't representable.
+             * In this case also need to set OV32 and SO to 1,
+             * i.e. copy OV to OV32 and SO.
+             */
+            copy_OV_to_OV32();
+            update_SO();
          }
          break;
 
@@ -5321,8 +5476,8 @@ static Bool dis_int_arith ( UInt theInstr )
              rD_addr, rA_addr, rB_addr);
          assign( rD, binop(Iop_DivS64, mkexpr(rA), mkexpr(rB)) );
          if (flag_OE) {
-            set_XER_OV( ty, PPCG_FLAG_OP_DIVW, 
-                        mkexpr(rD), mkexpr(rA), mkexpr(rB) );
+            set_XER_OV_OV32_SO( ty, PPCG_FLAG_OP_DIVW,
+                                mkexpr(rD), mkexpr(rA), mkexpr(rB) );
          }
          break;
          /* Note:
@@ -5336,8 +5491,8 @@ static Bool dis_int_arith ( UInt theInstr )
              rD_addr, rA_addr, rB_addr);
          assign( rD, binop(Iop_DivU64, mkexpr(rA), mkexpr(rB)) );
          if (flag_OE) {
-            set_XER_OV( ty, PPCG_FLAG_OP_DIVWU, 
-                        mkexpr(rD), mkexpr(rA), mkexpr(rB) );
+            set_XER_OV_OV32_SO( ty, PPCG_FLAG_OP_DIVWU,
+                                mkexpr(rD), mkexpr(rA), mkexpr(rB) );
          }
          break;
          /* Note: ditto comment divd, for (x / 0) */
@@ -5369,8 +5524,9 @@ static Bool dis_int_arith ( UInt theInstr )
          }
 
          if (flag_OE) {
-            set_XER_OV_32( PPCG_FLAG_OP_DIVWEU,
-                           mkexpr(res), dividend, divisor );
+            set_XER_OV_OV32_32( PPCG_FLAG_OP_DIVWEU,
+                                mkexpr(res), dividend, divisor );
+            update_SO( );
          }
          break;
       }
@@ -5404,8 +5560,9 @@ static Bool dis_int_arith ( UInt theInstr )
          }
 
          if (flag_OE) {
-            set_XER_OV_32( PPCG_FLAG_OP_DIVWE,
-                           mkexpr(res), dividend, divisor );
+            set_XER_OV_OV32_32( PPCG_FLAG_OP_DIVWE,
+                                mkexpr(res), dividend, divisor );
+            update_SO( );
          }
          break;
       }
@@ -5427,6 +5584,8 @@ static Bool dis_int_arith ( UInt theInstr )
          if (flag_OE) {
             set_XER_OV_64( PPCG_FLAG_OP_DIVDE, mkexpr( rD ),
                            mkexpr( rA ), mkexpr( rB ) );
+           copy_OV_to_OV32();
+           update_SO();
          }
          break;
 
@@ -5439,6 +5598,8 @@ static Bool dis_int_arith ( UInt theInstr )
         if (flag_OE) {
            set_XER_OV_64( PPCG_FLAG_OP_DIVDEU, mkexpr( rD ),
                           mkexpr( rA ), mkexpr( rB ) );
+           copy_OV_to_OV32();
+           update_SO();
         }
         break;
 
@@ -8862,11 +9023,11 @@ static Bool dis_int_shift ( UInt theInstr )
                                           mkexpr(sh_amt)) ) );
          assign( rA, mkWidenFrom32(ty, e_tmp, /* Signed */True) );
 
-         set_XER_CA( ty, PPCG_FLAG_OP_SRAW,
-                     mkexpr(rA),
-                     mkWidenFrom32(ty, mkexpr(rS_lo32), True),
-                     mkWidenFrom32(ty, mkexpr(sh_amt), True ),
-                     mkWidenFrom32(ty, getXER_CA32(), True) );
+         set_XER_CA_CA32( ty, PPCG_FLAG_OP_SRAW,
+                          mkexpr(rA),
+                          mkWidenFrom32(ty, mkexpr(rS_lo32), True),
+                          mkWidenFrom32(ty, mkexpr(sh_amt), True ),
+                          mkWidenFrom32(ty, getXER_CA_32(), True) );
          break;
       }
          
@@ -8884,11 +9045,11 @@ static Bool dis_int_shift ( UInt theInstr )
                                          mkU8(sh_imm)) );
          }
 
-         set_XER_CA( ty, PPCG_FLAG_OP_SRAWI, 
-                     mkexpr(rA),
-                     mkWidenFrom32(ty, mkexpr(rS_lo32), /* Syned */True),
-                     mkSzImm(ty, sh_imm),
-                     mkWidenFrom32(ty, getXER_CA32(), /* Syned */False) );
+         set_XER_CA_CA32( ty, PPCG_FLAG_OP_SRAWI,
+                          mkexpr(rA),
+                          mkWidenFrom32(ty, mkexpr(rS_lo32), /* Syned */True),
+                          mkSzImm(ty, sh_imm),
+                          mkWidenFrom32(ty, getXER_CA_32(), /* Syned */False) );
          break;
       
       case 0x218: // srw (Shift Right Word, PPC32 p508)
@@ -8959,9 +9120,9 @@ static Bool dis_int_shift ( UInt theInstr )
                                           mkU64(63),
                                           mkexpr(sh_amt)) ))
                );
-         set_XER_CA( ty, PPCG_FLAG_OP_SRAD,
-                     mkexpr(rA), mkexpr(rS), mkexpr(sh_amt),
-                     mkWidenFrom32(ty, getXER_CA32(), /* Syned */False) );
+         set_XER_CA_CA32( ty, PPCG_FLAG_OP_SRAD,
+                          mkexpr(rA), mkexpr(rS), mkexpr(sh_amt),
+                          mkWidenFrom32(ty, getXER_CA_32(), /* Syned */False) );
          break;
       }
 
@@ -8972,11 +9133,11 @@ static Bool dis_int_shift ( UInt theInstr )
              flag_rC ? ".":"", rA_addr, rS_addr, sh_imm);
          assign( rA, binop(Iop_Sar64, getIReg(rS_addr), mkU8(sh_imm)) );
 
-         set_XER_CA( ty, PPCG_FLAG_OP_SRADI, 
-                     mkexpr(rA),
-                     getIReg(rS_addr),
-                     mkU64(sh_imm), 
-                     mkWidenFrom32(ty, getXER_CA32(), /* Syned */False) );
+         set_XER_CA_CA32( ty, PPCG_FLAG_OP_SRADI,
+                          mkexpr(rA),
+                          getIReg(rS_addr),
+                          mkU64(sh_imm),
+                          mkWidenFrom32(ty, getXER_CA_32(), /* Syned */False) );
          break;
 
       case 0x21B: // srd (Shift Right DWord, PPC64 p574)
@@ -11482,6 +11643,13 @@ static Bool dis_fp_pair ( UInt theInstr )
 
          store( mkexpr(EA), unop( Iop_V128HIto64,
                                   getVSReg( vRS+32 ) ) );
+         /* HW is clearing vector element 1.  Don't see that in the ISA but
+          * matching the HW.
+          */
+         putVSReg( vRS+32, binop( Iop_64HLtoV128,
+                                  unop( Iop_V128HIto64,
+                                        getVSReg( vRS+32 ) ),
+                                  mkU64( 0 ) ) );
          return True;
 
       case 0x3:
@@ -11767,7 +11935,13 @@ static Bool dis_fp_scr ( UInt theInstr, Bool GX_level )
 
    case 0x247: { // mffs (Move from FPSCR, PPC32 p468)
       UChar   frD_addr  = ifieldRegDS(theInstr);
-      UInt    b11to20   = IFIELD(theInstr, 11, 10);
+      UChar   frB_addr  = ifieldRegB(theInstr);
+      IRTemp  frB = newTemp(Ity_F64);
+      UInt    b11to12   = IFIELD(theInstr, 19, 2);
+      UInt    b13to15   = IFIELD(theInstr, 16, 3);
+      UInt    RN        = IFIELD(theInstr, 11, 2);
+      UInt    DRN       = IFIELD(theInstr, 11, 3);
+
       /* The FPSCR_DRN, FPSCR_RN and FPSCR_FPCC are all stored in
        * their own 8-bit entries with distinct offsets.  The FPSCR
        * register is handled as two 32-bit values.  We need to
@@ -11783,17 +11957,117 @@ static Bool dis_fp_scr ( UInt theInstr, Bool GX_level )
                          binop( Iop_Shl32,
                                 getFPCC(),
                                 mkU8(63-51) ) ) );
-      IRExpr* fpscr_upper = getGST_masked_upper( PPC_GST_FPSCR,
-                                                 MASK_FPSCR_DRN );
+      IRExpr* fpscr_upper = getGST_masked_upper( PPC_GST_FPSCR, MASK_FPSCR_DRN );
 
-      if (b11to20 != 0) {
-         vex_printf("dis_fp_scr(ppc)(instr,mffs)\n");
+      if ((b11to12 == 0) && (b13to15 == 0)) {
+            DIP("mffs%s fr%u\n", flag_rC ? ".":"", frD_addr);
+            putFReg( frD_addr,
+                     unop( Iop_ReinterpI64asF64,
+                           binop( Iop_32HLto64, fpscr_upper, fpscr_lower ) ) );
+
+      } else if ((b11to12 == 0) && (b13to15 == 1)) {
+            DIP("mffsce fr%u\n", frD_addr);
+            /* Technically as of 4/5/2017 we are not tracking VE, OE, UE, ZE,
+               or XE but in case that changes in the future, do the masking. */
+            putFReg( frD_addr,
+                     unop( Iop_ReinterpI64asF64,
+                           binop( Iop_32HLto64, fpscr_upper,
+                                  binop( Iop_And32, fpscr_lower,
+                                         mkU32( 0xFFFFFF07 ) ) ) ) );
+
+      } else if ((b11to12 == 2) && (b13to15 == 4)) {
+            IRTemp  frB_int = newTemp(Ity_I64);
+
+            DIP("mffscdrn fr%u,fr%u\n", frD_addr, frB_addr);
+
+            assign( frB, getFReg(frB_addr));
+            assign( frB_int, unop( Iop_ReinterpF64asI64, mkexpr( frB ) ) );
+
+            /* Clear all of the FPSCR bits except for the DRN field, VE,
+               OE, UE, ZE and XE bits and write the result to the frD
+               register. Note, currently the exception bits are not tracked but
+               will mask anyway in case that changes in the future. */
+            putFReg( frD_addr,
+                     unop( Iop_ReinterpI64asF64,
+                           binop( Iop_32HLto64,
+                                  binop( Iop_And32, mkU32(0x7), fpscr_upper ),
+                                  binop( Iop_And32, mkU32(0xFF), fpscr_lower ) ) ) );
+
+            /* Put new_DRN bits into the FPSCR register */
+            putGST_masked( PPC_GST_FPSCR, mkexpr( frB_int ), MASK_FPSCR_DRN );
+
+      } else if ((b11to12 == 2) && (b13to15 == 5)) {
+            DIP("mffscdrni fr%u,%d\n", frD_addr, DRN);
+
+            /* Clear all of the FPSCR bits except for the DRN field, VE,
+               OE, UE, ZE and XE bits and write the result to the frD
+               register. Note, currently the exception bits are not tracked but
+               will mask anyway in case that changes in the future. */
+            putFReg( frD_addr,
+                     unop( Iop_ReinterpI64asF64,
+                           binop( Iop_32HLto64,
+                                  binop( Iop_And32, mkU32(0x7), fpscr_upper ),
+                                  binop( Iop_And32, mkU32(0xFF), fpscr_lower ) ) ) );
+
+            /* Put new_DRN bits into the FPSCR register */
+            putGST_masked( PPC_GST_FPSCR, binop( Iop_32HLto64, mkU32( DRN ),
+                                                 mkU32( 0 ) ), MASK_FPSCR_DRN );
+
+      } else if ((b11to12 == 2) && (b13to15 == 6)) {
+            IRTemp  frB_int = newTemp(Ity_I64);
+
+            DIP("mffscrn fr%u,fr%u\n", frD_addr,frB_addr);
+
+            assign( frB, getFReg(frB_addr));
+            assign( frB_int, unop( Iop_ReinterpF64asI64, mkexpr( frB ) ) );
+
+            /* Clear all of the FPSCR bits except for the DRN field, VE,
+               OE, UE, ZE and XE bits and write the result to the frD
+               register. Note, currently the exception bits are not tracked but
+               will mask anyway in case that changes in the future. */
+            putFReg( frD_addr,
+                     unop( Iop_ReinterpI64asF64,
+                           binop( Iop_32HLto64,
+                                  binop( Iop_And32, mkU32(0x7), fpscr_upper ),
+                                  binop( Iop_And32, mkU32(0xFF), fpscr_lower ) ) ) );
+
+            /* Put new_CRN bits into the FPSCR register */
+            putGST_masked( PPC_GST_FPSCR, mkexpr( frB_int ), MASK_FPSCR_RN );
+
+      } else if ((b11to12 == 2) && (b13to15 == 7)) {
+            DIP("mffscrni fr%u,%u\n", frD_addr, RN);
+
+            /* Clear all of the FPSCR bits except for the DRN field, VE,
+               OE, UE, ZE and XE bits and write the result to the frD
+               register. Note, currently the exception bits are not tracked but
+               will mask anyway in case that changes in the future. */
+            putFReg( frD_addr,
+                     unop( Iop_ReinterpI64asF64,
+                           binop( Iop_32HLto64,
+                                  binop( Iop_And32, mkU32(0x7), fpscr_upper ),
+                                  binop( Iop_And32, mkU32(0xFF), fpscr_lower ) ) ) );
+
+            /* Put new_RN bits into the FPSCR register */
+            putGST_masked( PPC_GST_FPSCR, binop( Iop_32HLto64, mkU32( 0 ),
+                                                 mkU32( RN ) ), MASK_FPSCR_RN );
+
+      } else if ((b11to12 == 3) && (b13to15 == 0)) {
+            DIP("mffsl fr%u\n", frD_addr);
+            /* Technically as of 4/5/2017 we are not tracking VE, OE, UE, ZE,
+               XE, FR, FI, C, FL, FG, FE, FU.  Also only track DRN in the upper
+               bits but in case that changes in the future we will do the
+               masking. */
+            putFReg( frD_addr,
+                     unop( Iop_ReinterpI64asF64,
+                           binop( Iop_32HLto64,
+                                  binop( Iop_And32, fpscr_upper,
+                                         mkU32( 0x7 ) ),
+                                  binop( Iop_And32, fpscr_lower,
+                                         mkU32( 0x7F0FF ) ) ) ) );
+      } else {
+         vex_printf("dis_fp_scr(ppc)(mff**) Unrecognized instruction.\n");
          return False;
       }
-      DIP("mffs%s fr%u\n", flag_rC ? ".":"", frD_addr);
-      putFReg( frD_addr,
-          unop( Iop_ReinterpI64asF64,
-                binop( Iop_32HLto64, fpscr_upper, fpscr_lower ) ) );
       break;
    }
 
@@ -11822,11 +12096,11 @@ static Bool dis_fp_scr ( UInt theInstr, Bool GX_level )
          /* new 64 bit move variant for power 6.  If L field (bit 25) is
           * a one do a full 64 bit move.  Note, the FPSCR is not really
           * properly modeled.  This instruciton only changes the value of
-          * the rounding mode.  The HW exception bits do not get set in
-          * the simulator.  1/12/09
+          * the rounding mode bit fields RN and DRN.  The HW exception bits
+          * do not get set in the simulator.  1/12/09
           */
          DIP("mtfsf%s %d,fr%u (L=1)\n", flag_rC ? ".":"", FM, frB_addr);
-         mask = 0xFF;
+         mask = 0x1F000000FF;
 
       } else {
          DIP("mtfsf%s %d,fr%u\n", flag_rC ? ".":"", FM, frB_addr);
@@ -23415,6 +23689,85 @@ static Bool dis_av_multarith ( UInt theInstr )
       break;
    }
 
+   case 0x23: { // vmsumudm
+      DIP("vmsumudm v%d,v%d,v%d,v%d\n",
+          vD_addr, vA_addr, vB_addr, vC_addr);
+      /* This instruction takes input vectors VA, VB consisting of 2 usigned
+         64-bit integer elements and a 128 bit unsigned input U128_C.  The
+         instruction performs the following operation:
+
+            VA[0] * VB[0] -> U128_mul_result0;
+            VA[1] * VB[1] -> U128_mul_result1;
+            U128_C + U128_mul_result0 + U128_mul_result1 -> U128_partial_sum;
+            carry out and overflow is discarded.
+      */
+
+      /* The Iop_MulI128low assumes the upper 64-bits in the two input operands
+         are zero. */
+      IRTemp mul_result0 = newTemp( Ity_I128 );
+      IRTemp mul_result1 = newTemp( Ity_I128 );
+      IRTemp partial_sum_hi = newTemp( Ity_I64 );
+      IRTemp partial_sum_low = newTemp( Ity_I64 );
+      IRTemp result_hi  = newTemp( Ity_I64 );
+      IRTemp result_low = newTemp( Ity_I64 );
+      IRExpr *ca_sum, *ca_result;
+
+
+      /* Do multiplications */
+      assign ( mul_result0, binop( Iop_MullU64,
+                                   unop( Iop_V128to64, mkexpr( vA ) ),
+                                   unop( Iop_V128to64, mkexpr( vB) ) ) );
+
+      assign ( mul_result1, binop( Iop_MullU64,
+                                   unop( Iop_V128HIto64, mkexpr( vA ) ),
+                                   unop( Iop_V128HIto64, mkexpr( vB) ) ) );
+
+      /* Add the two 128-bit results using 64-bit unsigned adds, calculate carry
+         from low 64-bits add into sum of upper 64-bits.  Throw away carry out
+         of the upper 64-bit sum. */
+      assign ( partial_sum_low, binop( Iop_Add64,
+                                       unop( Iop_128to64, mkexpr( mul_result0 ) ),
+                                       unop( Iop_128to64, mkexpr( mul_result1 ) )
+                                       ) );
+
+      /* ca_sum is type U32 */
+      ca_sum =  calculate_XER_CA_64 ( PPCG_FLAG_OP_ADD,
+                                      mkexpr(partial_sum_low ),
+                                      unop( Iop_128to64, mkexpr( mul_result0 ) ),
+                                      unop( Iop_128to64, mkexpr( mul_result1 ) ),
+                                      mkU64( 0 ) );
+
+      assign ( partial_sum_hi,
+               binop( Iop_Add64,
+                      binop( Iop_Add64,
+                             unop( Iop_128HIto64, mkexpr( mul_result0 ) ),
+                             unop( Iop_128HIto64, mkexpr( mul_result1 ) ) ),
+                      binop( Iop_32HLto64, mkU32( 0 ), ca_sum ) ) );
+
+      /* Now add in the value of C */
+      assign ( result_low, binop( Iop_Add64,
+                                  mkexpr( partial_sum_low ),
+                                  unop( Iop_V128to64, mkexpr( vC ) ) ) );
+
+      /* ca_result is type U32 */
+      ca_result =  calculate_XER_CA_64(  PPCG_FLAG_OP_ADD,
+                                         mkexpr( result_low ),
+                                         mkexpr( partial_sum_low ),
+                                         unop( Iop_V128to64,
+                                               mkexpr( vC ) ),
+                                         mkU64( 0 ) );
+
+      assign ( result_hi,
+               binop( Iop_Add64,
+                      binop( Iop_Add64,
+                             mkexpr( partial_sum_hi ),
+                             unop( Iop_V128HIto64, mkexpr( vC ) ) ),
+                      binop( Iop_32HLto64, mkU32( 0 ), ca_result ) ) );
+
+      putVReg( vD_addr, binop( Iop_64HLtoV128,
+                               mkexpr( result_hi ), mkexpr ( result_low ) ) );
+      break;
+   }
 
    /* Multiply-Sum */
    case 0x24: { // vmsumubm (Multiply Sum Unsigned B Modulo, AV p204)
@@ -27366,6 +27719,8 @@ DisResult disInstr_PPC_WRK (
    DisResult dres;
    UInt      theInstr;
    IRType    ty = mode64 ? Ity_I64 : Ity_I32;
+   UInt      hwcaps = archinfo->hwcaps;
+   Long      delta;
    Bool      allow_F  = False;
    Bool      allow_V  = False;
    Bool      allow_FX = False;
@@ -27374,8 +27729,6 @@ DisResult disInstr_PPC_WRK (
    Bool      allow_DFP = False;
    Bool      allow_isa_2_07 = False;
    Bool      allow_isa_3_0  = False;
-   UInt      hwcaps = archinfo->hwcaps;
-   Long      delta;
 
    /* What insn variants are we supporting today? */
    if (mode64) {
@@ -27397,6 +27750,9 @@ DisResult disInstr_PPC_WRK (
       allow_isa_2_07 = (0 != (hwcaps & VEX_HWCAPS_PPC32_ISA2_07));
       allow_isa_3_0  = (0 != (hwcaps & VEX_HWCAPS_PPC32_ISA3_0));
    }
+
+   /* Enable writting the OV32 and CA32 bits added with ISA3.0 */
+   OV32_CA32_supported = allow_isa_3_0;
 
    /* The running delta */
    delta = (Long)mkSzAddr(ty, (ULong)delta64);
@@ -28116,7 +28472,8 @@ DisResult disInstr_PPC_WRK (
       case 0x040: // mcrfs
       case 0x046: // mtfsb0
       case 0x086: // mtfsfi
-      case 0x247: // mffs
+      case 0x247: // mffs, mmfs., mffsce, mffscdrn, mffscdrni,
+                  // mffscrn, mffscrn, mffscri, mffsl
       case 0x2C7: // mtfsf
          // Some of the above instructions need to know more about the
          // ISA level supported by the host.
@@ -28261,6 +28618,7 @@ DisResult disInstr_PPC_WRK (
       switch (opc2) {
       /* Integer Arithmetic Instructions */
       case 0x10A: case 0x00A: case 0x08A: // add,   addc,  adde
+      case 0x0AA:                         // addex
       case 0x0EA: case 0x0CA: case 0x1EB: // addme, addze, divw
       case 0x1CB: case 0x04B: case 0x00B: // divwu, mulhw, mulhwu
       case 0x0EB: case 0x068: case 0x028: // mullw, neg,   subf
@@ -28643,6 +29001,7 @@ DisResult disInstr_PPC_WRK (
       switch (opc2) {
       /* AV Mult-Add, Mult-Sum */
       case 0x20: case 0x21: case 0x22: // vmhaddshs, vmhraddshs, vmladduhm
+      case 0x23:                       // vmsumudm
       case 0x24: case 0x25: case 0x26: // vmsumubm, vmsummbm, vmsumuhm
       case 0x27: case 0x28: case 0x29: // vmsumuhs, vmsumshm, vmsumshs
          if (!allow_V) goto decode_noV;

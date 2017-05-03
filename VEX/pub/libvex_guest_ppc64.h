@@ -211,52 +211,56 @@ typedef
       /* XER pieces */
       /* 1304 */ UChar guest_XER_SO; /* in lsb */
       /* 1305 */ UChar guest_XER_OV; /* in lsb */
-      /* 1306 */ UChar guest_XER_CA; /* in lsb */
-      /* 1307 */ UChar guest_XER_BC; /* all bits */
+      /* 1306 */ UChar guest_XER_OV32; /* in lsb */
+      /* 1307 */ UChar guest_XER_CA; /* in lsb */
+      /* 1308 */ UChar guest_XER_CA32; /* in lsb */
+      /* 1309 */ UChar guest_XER_BC; /* all bits */
 
       /* CR pieces */
-      /* 1308 */ UChar guest_CR0_321; /* in [3:1] */
-      /* 1309 */ UChar guest_CR0_0;   /* in lsb */
-      /* 1310 */ UChar guest_CR1_321; /* in [3:1] */
-      /* 1311 */ UChar guest_CR1_0;   /* in lsb */
-      /* 1312 */ UChar guest_CR2_321; /* in [3:1] */
-      /* 1313 */ UChar guest_CR2_0;   /* in lsb */
-      /* 1314 */ UChar guest_CR3_321; /* in [3:1] */
-      /* 1315 */ UChar guest_CR3_0;   /* in lsb */
-      /* 1316 */ UChar guest_CR4_321; /* in [3:1] */
-      /* 1317 */ UChar guest_CR4_0;   /* in lsb */
-      /* 1318 */ UChar guest_CR5_321; /* in [3:1] */
-      /* 1319 */ UChar guest_CR5_0;   /* in lsb */
-      /* 1320 */ UChar guest_CR6_321; /* in [3:1] */
-      /* 1321 */ UChar guest_CR6_0;   /* in lsb */
-      /* 1322 */ UChar guest_CR7_321; /* in [3:1] */
-      /* 1323 */ UChar guest_CR7_0;   /* in lsb */
+      /* 1310 */ UChar guest_CR0_321; /* in [3:1] */
+      /* 1311 */ UChar guest_CR0_0;   /* in lsb */
+      /* 1312 */ UChar guest_CR1_321; /* in [3:1] */
+      /* 1313 */ UChar guest_CR1_0;   /* in lsb */
+      /* 1314 */ UChar guest_CR2_321; /* in [3:1] */
+      /* 1315 */ UChar guest_CR2_0;   /* in lsb */
+      /* 1316 */ UChar guest_CR3_321; /* in [3:1] */
+      /* 1317 */ UChar guest_CR3_0;   /* in lsb */
+      /* 1318 */ UChar guest_CR4_321; /* in [3:1] */
+      /* 1319 */ UChar guest_CR4_0;   /* in lsb */
+      /* 1320 */ UChar guest_CR5_321; /* in [3:1] */
+      /* 1321 */ UChar guest_CR5_0;   /* in lsb */
+      /* 1322 */ UChar guest_CR6_321; /* in [3:1] */
+      /* 1323 */ UChar guest_CR6_0;   /* in lsb */
+      /* 1324 */ UChar guest_CR7_321; /* in [3:1] */
+      /* 1325 */ UChar guest_CR7_0;   /* in lsb */
 
       /* FP Status and  Control Register fields. Only rounding mode fields
        * and Floating-point Condition Code (FPCC) fields are supported.
        */
-      /* 1324 */ UChar guest_FPROUND; // Binary Floating Point Rounding Mode
-      /* 1325 */ UChar guest_DFPROUND; // Decimal Floating Point Rounding Mode
-      /* 1326 */ UChar guest_C_FPCC;   // Floating-point Condition Code
+      /* 1326 */ UChar guest_FPROUND; // Binary Floating Point Rounding Mode
+      /* 1327 */ UChar guest_DFPROUND; // Decimal Floating Point Rounding Mode
+      /* 1328 */ UChar guest_C_FPCC;   // Floating-point Condition Code
                                        // and Floating-point Condition Code
 
-      /* 1327 */ UChar pad2;
+      /* 1329 */ UChar pad2;
+      /* 1330 */ UChar pad3;
+      /* 1331 */ UChar pad4;
 
       /* Vector Save/Restore Register */
-      /* 1328 */ UInt guest_VRSAVE;
+      /* 1332 */ UInt guest_VRSAVE;
 
       /* Vector Status and Control Register */
-      /* 1332 */ UInt guest_VSCR;
+      /* 1336 */ UInt guest_VSCR;
 
       /* Emulation notes */
-      /* 1336 */ UInt guest_EMNOTE;
+      /* 1340 */ UInt guest_EMNOTE;
 
       /* gcc adds 4 bytes padding here: pre-empt it. */
-      /* 1340 */ UInt  padding;
+      /* 1344 */ UInt  padding;
 
       /* For icbi: record start and length of area to invalidate */
-      /* 1344 */ ULong guest_CMSTART;
-      /* 1352 */ ULong guest_CMLEN;
+      /* 1348 */ ULong guest_CMSTART;
+      /* 1356 */ ULong guest_CMLEN;
 
       /* Used to record the unredirected guest address at the start of
          a translation whose start has been redirected.  By reading
@@ -264,35 +268,35 @@ typedef
          find out what the corresponding no-redirection address was.
          Note, this is only set for wrap-style redirects, not for
          replace-style ones. */
-      /* 1360 */ ULong guest_NRADDR;
-      /* 1368 */ ULong guest_NRADDR_GPR2;
+      /* 1364 */ ULong guest_NRADDR;
+      /* 1372 */ ULong guest_NRADDR_GPR2;
 
      /* A grows-upwards stack for hidden saves/restores of LR and R2
         needed for function interception and wrapping on ppc64-linux.
         A horrible hack.  REDIR_SP points to the highest live entry,
         and so starts at -1. */
-      /* 1376 */ ULong guest_REDIR_SP;
-      /* 1384 */ ULong guest_REDIR_STACK[VEX_GUEST_PPC64_REDIR_STACK_SIZE];
+      /* 1380 */ ULong guest_REDIR_SP;
+      /* 1388 */ ULong guest_REDIR_STACK[VEX_GUEST_PPC64_REDIR_STACK_SIZE];
 
       /* Needed for Darwin: CIA at the last SC insn.  Used when backing up
          to restart a syscall that has been interrupted by a signal. */
-      /* 1640 */ ULong guest_IP_AT_SYSCALL;
+      /* 1646 */ ULong guest_IP_AT_SYSCALL;
 
       /* SPRG3, which AIUI is readonly in user space.  Needed for
          threading on AIX. */
-      /* 1648 */ ULong guest_SPRG3_RO;
+      /* 1654 */ ULong guest_SPRG3_RO;
 
-      /* 1656 */ ULong guest_TFHAR;     // Transaction Failure Handler Address Register 
-      /* 1664 */ ULong guest_TEXASR;    // Transaction EXception And Summary Register
-      /* 1672 */ ULong guest_TFIAR;     // Transaction Failure Instruction Address Register
-      /* 1680 */ ULong guest_PPR;       // Program Priority register
-      /* 1688 */ UInt  guest_TEXASRU;   // Transaction EXception And Summary Register Upper
-      /* 1692 */ UInt  guest_PSPB;      // Problem State Priority Boost register
+      /* 1662 */ ULong guest_TFHAR;     // Transaction Failure Handler Address Register
+      /* 1670 */ ULong guest_TEXASR;    // Transaction EXception And Summary Register
+      /* 1678 */ ULong guest_TFIAR;     // Transaction Failure Instruction Address Register
+      /* 1686 */ ULong guest_PPR;       // Program Priority register
+      /* 1694 */ UInt  guest_TEXASRU;   // Transaction EXception And Summary Register Upper
+      /* 1698 */ UInt  guest_PSPB;      // Problem State Priority Boost register
 
       /* Padding to make it have an 16-aligned size */
-      /* 1696   UInt  padding1;  currently not needed */
-      /* 1700   UInt  padding2;  currently not needed */
-      /* 1708   UInt  padding3;  currently not needed */
+      /* 1698 */   UInt  padding1;
+   /* 1702    UInt  padding2; */
+   /* 1706    UInt  padding3; */
 
    }
    VexGuestPPC64State;

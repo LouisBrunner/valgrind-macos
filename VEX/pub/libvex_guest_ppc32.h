@@ -173,49 +173,53 @@ typedef
       /* XER pieces */
       /* 1164 */ UChar guest_XER_SO; /* in lsb */
       /* 1165 */ UChar guest_XER_OV; /* in lsb */
-      /* 1166 */ UChar guest_XER_CA; /* in lsb */
-      /* 1167 */ UChar guest_XER_BC; /* all bits */
+      /* 1166 */ UChar guest_XER_OV32; /* in lsb */
+      /* 1167 */ UChar guest_XER_CA; /* in lsb */
+      /* 1168 */ UChar guest_XER_CA32; /* in lsb */
+      /* 1169 */ UChar guest_XER_BC; /* all bits */
 
       /* CR pieces */
-      /* 1168 */ UChar guest_CR0_321; /* in [3:1] */
-      /* 1169 */ UChar guest_CR0_0;   /* in lsb */
-      /* 1170 */ UChar guest_CR1_321; /* in [3:1] */
-      /* 1171 */ UChar guest_CR1_0;   /* in lsb */
-      /* 1172 */ UChar guest_CR2_321; /* in [3:1] */
-      /* 1173 */ UChar guest_CR2_0;   /* in lsb */
-      /* 1174 */ UChar guest_CR3_321; /* in [3:1] */
-      /* 1175 */ UChar guest_CR3_0;   /* in lsb */
-      /* 1176 */ UChar guest_CR4_321; /* in [3:1] */
-      /* 1177 */ UChar guest_CR4_0;   /* in lsb */
-      /* 1178 */ UChar guest_CR5_321; /* in [3:1] */
-      /* 1179 */ UChar guest_CR5_0;   /* in lsb */
-      /* 1180 */ UChar guest_CR6_321; /* in [3:1] */
-      /* 1181 */ UChar guest_CR6_0;   /* in lsb */
-      /* 1182 */ UChar guest_CR7_321; /* in [3:1] */
-      /* 1183 */ UChar guest_CR7_0;   /* in lsb */
+      /* 1170 */ UChar guest_CR0_321; /* in [3:1] */
+      /* 1171 */ UChar guest_CR0_0;   /* in lsb */
+      /* 1172 */ UChar guest_CR1_321; /* in [3:1] */
+      /* 1173 */ UChar guest_CR1_0;   /* in lsb */
+      /* 1174 */ UChar guest_CR2_321; /* in [3:1] */
+      /* 1175 */ UChar guest_CR2_0;   /* in lsb */
+      /* 1176 */ UChar guest_CR3_321; /* in [3:1] */
+      /* 1177 */ UChar guest_CR3_0;   /* in lsb */
+      /* 1178 */ UChar guest_CR4_321; /* in [3:1] */
+      /* 1179 */ UChar guest_CR4_0;   /* in lsb */
+      /* 1180 */ UChar guest_CR5_321; /* in [3:1] */
+      /* 1181 */ UChar guest_CR5_0;   /* in lsb */
+      /* 1182 */ UChar guest_CR6_321; /* in [3:1] */
+      /* 1183 */ UChar guest_CR6_0;   /* in lsb */
+      /* 1184 */ UChar guest_CR7_321; /* in [3:1] */
+      /* 1185 */ UChar guest_CR7_0;   /* in lsb */
 
       /* FP Status and  Control Register fields. Only rounding mode fields
        * and Floating-point Condition Code (FPCC) fields in the FPSCR are
        * supported.
        */
-      /* 1184 */ UChar guest_FPROUND; // Binary Floating Point Rounding Mode
-      /* 1185 */ UChar guest_DFPROUND; // Decimal Floating Point Rounding Mode
-      /* 1186 */ UChar guest_C_FPCC;   // Floating-Point Result Class Descriptor
+      /* 1186 */ UChar guest_FPROUND; // Binary Floating Point Rounding Mode
+      /* 1187 */ UChar guest_DFPROUND; // Decimal Floating Point Rounding Mode
+      /* 1188 */ UChar guest_C_FPCC;   // Floating-Point Result Class Descriptor
                                        // and Floating-point Condition Code
-      /* 1187 */ UChar pad2;
+      /* 1189 */ UChar pad0;
+      /* 1190 */ UChar pad1;
+      /* 1191 */ UChar pad2;
 
       /* Vector Save/Restore Register */
-      /* 1188 */ UInt guest_VRSAVE;
+      /* 1192 */ UInt guest_VRSAVE;
 
       /* Vector Status and Control Register */
-      /* 1192 */ UInt guest_VSCR;
+      /* 1196 */ UInt guest_VSCR;
 
       /* Emulation notes */
-      /* 1196 */ UInt guest_EMNOTE;
+      /* 1200 */ UInt guest_EMNOTE;
 
       /* For icbi: record start and length of area to invalidate */
-      /* 1200 */ UInt guest_CMSTART;
-      /* 1204 */ UInt guest_CMLEN;
+      /* 1204 */ UInt guest_CMSTART;
+      /* 1208 */ UInt guest_CMLEN;
 
       /* Used to record the unredirected guest address at the start of
          a translation whose start has been redirected.  By reading
@@ -223,34 +227,35 @@ typedef
          find out what the corresponding no-redirection address was.
          Note, this is only set for wrap-style redirects, not for
          replace-style ones. */
-      /* 1208 */ UInt guest_NRADDR;
-      /* 1212 */ UInt guest_NRADDR_GPR2; /* needed by aix */
+      /* 1212 */ UInt guest_NRADDR;
+      /* 1216 */ UInt guest_NRADDR_GPR2; /* needed by aix */
 
      /* A grows-upwards stack for hidden saves/restores of LR and R2
         needed for function interception and wrapping on ppc32-aix5.
         A horrible hack.  REDIR_SP points to the highest live entry,
         and so starts at -1. */
-      /* 1216 */ UInt guest_REDIR_SP;
-      /* 1220 */ UInt guest_REDIR_STACK[VEX_GUEST_PPC32_REDIR_STACK_SIZE];
+      /* 1220 */ UInt guest_REDIR_SP;
+      /* 1224 */ UInt guest_REDIR_STACK[VEX_GUEST_PPC32_REDIR_STACK_SIZE];
 
       /* Needed for Darwin (but mandated for all guest architectures):
          CIA at the last SC insn.  Used when backing up to restart a
          syscall that has been interrupted by a signal. */
-      /* 1348 */ UInt guest_IP_AT_SYSCALL;
+      /* 134C */ UInt guest_IP_AT_SYSCALL;
 
       /* SPRG3, which AIUI is readonly in user space.  Needed for
          threading on AIX. */
-      /* 1352 */ UInt guest_SPRG3_RO;
-      /* 1356 */ UInt  padding1;
-      /* 1360 */ ULong guest_TFHAR;     // Transaction Failure Handler Address Register 
-      /* 1368 */ ULong guest_TEXASR;    // Transaction EXception And Summary Register
-      /* 1376 */ ULong guest_TFIAR;     // Transaction Failure Instruction Address Register
-      /* 1384 */ ULong guest_PPR;       // Program Priority register
-      /* 1392 */ UInt  guest_TEXASRU;   // Transaction EXception And Summary Register Upper
-      /* 1396 */ UInt  guest_PSPB;      // Problem State Priority Boost register
+      /* 1356 */ UInt guest_SPRG3_RO;
+      /* 1360 */ UInt  padding1;
+      /* 1364 */ ULong guest_TFHAR;     // Transaction Failure Handler Address Register
+      /* 1372 */ ULong guest_TEXASR;    // Transaction EXception And Summary Register
+      /* 1380 */ ULong guest_TFIAR;     // Transaction Failure Instruction Address Register
+      /* 1388 */ ULong guest_PPR;       // Program Priority register
+      /* 1396 */ UInt  guest_TEXASRU;   // Transaction EXception And Summary Register Upper
+      /* 1400 */ UInt  guest_PSPB;      // Problem State Priority Boost register
       /* Padding to make it have an 16-aligned size */
-      /* 1400 */ UInt  padding2;
-      /* 1404 */ UInt  padding3;
+      /* 1404 */ UInt  padding2;
+      /* 1408 */ UInt  padding3;
+      /* 1412 */ UInt  padding4;
    }
    VexGuestPPC32State;
 

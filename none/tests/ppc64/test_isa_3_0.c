@@ -147,6 +147,7 @@ static vector unsigned long vec_xa, vec_xb, vec_xc, vec_xt;
  */
 unsigned long local_cr;
 unsigned long local_fpscr;
+unsigned long local_xer;
 volatile unsigned int cr_value;
 
 /* global for holding the DFP values */
@@ -178,6 +179,7 @@ volatile int dfp_significance;
 volatile int x_index;
 
 /* global variable, used to pass shift info down to the test functions.*/
+/* Also used to control DRM,RM values for mffs* functions. */
 volatile int x_shift;
 
 /* groups of instruction tests, calling individual tests */
@@ -217,6 +219,7 @@ enum test_flags {
    PPC_MISC           = 0x00080000,
    PPC_NO_OP          = 0x00090000,
    PPC_PC_IMMEDIATE   = 0x000A0000,
+   PPC_MFFS           = 0x000B0000,
    PPC_FAMILY_MASK    = 0x000F0000,
 
    /* Flags: these may be combined, so use separate bit-fields. */
@@ -272,12 +275,18 @@ static void test_modud (void)
    __asm__ __volatile__ ("modud          17, 14, 15");
 }
 
+static void test_addex(void) {
+   /* addex RT,RA,RB,CY  # at the time of this writing, only CY=0 is valid.  CY values of 1,2,3 are reserved. */
+   __asm__ __volatile__ ("addex   %0, %1, %2, 0" : "=r" (r17) : "r" (r14), "r" (r15) );
+}
+
 static test_list_t testgroup_ia_ops_two[] = {
-    { &test_modsw, "modsw" },
-    { &test_moduw, "moduw" },
-    { &test_modsd, "modsd" },
-    { &test_modud, "modud" },
-    { NULL       , NULL             },
+   { &test_modsw, "modsw" },
+   { &test_moduw, "moduw" },
+   { &test_modsd, "modsd" },
+   { &test_modud, "modud" },
+   //   { &test_addex, "addex" },
+   { NULL       , NULL             },
 };
 
 static void test_dotted_extswsli (void)
@@ -492,9 +501,15 @@ static void test_vpermr(void)
     __asm__ __volatile__ ("vpermr   %0, %1, %2, %3 " : "+v" (vec_xt): "v" (vec_xa), "v" (vec_xb), "v" (vec_xc));
 }
 
+static void test_vmsumudm(void)
+{ /* vector multiply-sum unsigned byte modulo. */
+    __asm__ __volatile__ ("vmsumudm  %0, %1, %2, %3 " : "+v" (vec_xt): "v" (vec_xa), "v" (vec_xb), "v" (vec_xc));
+}
+
 /* vector, 3->1 unique; four arguments. xt, xa, xb, xc (xc = permute) */
 static test_list_t testgroup_vector_four[] = {
-   { &test_vpermr, "vpermr" },
+   { &test_vpermr,   "vpermr" },
+   { &test_vmsumudm, "vmsumudm" },
    { NULL        , NULL     },
 };
 
@@ -2069,6 +2084,99 @@ static test_list_t testgroup_vector_scalar_rounding_quads[] = {
    { NULL         , NULL      },
 };
 
+/* Move From FPSCR variants:
+ * Move From FpScr [ &
+ *                    Clear Enables |
+ *                    Lightweight |
+ *                    Control    [&
+ *                                 set DRN [ Immediate] |
+ *                                 set RN  [ Immediate ] ]]
+ */
+/* mffs FRT # Move From FPSCR*/
+static void test_mffs (void) {
+   __asm__ __volatile__ ("mffs %0"  : "=f"(f14) );
+   GET_FPSCR(local_fpscr);
+}
+
+/* mffsce FRT # Move From FPSCR and Clear Enables */
+static void test_mffsce (void) {
+   __asm__ __volatile__ ("mffsce %0"  : "=f"(f14) );
+   GET_FPSCR(local_fpscr);
+}
+
+/* mffscdrn FRT,FRB # Move From FpScr and Control &set DRN */
+static void test_mffscdrn (void) {
+   __asm__ __volatile__ ("mffscdrn %0,%1"  : "=f"(f14): "f"(f15) );
+   GET_FPSCR(local_fpscr);
+}
+
+/* mffscdrni FRT,DRM # Move From FpScr & Control &set DRN Immediate*/
+static void test_mffscdrni (void) {
+   switch(x_shift) {
+      default:
+      case 0:
+         __asm__ __volatile__ ("mffscdrni %0,0"  : "=f"(f14) );
+         GET_FPSCR(local_fpscr);
+         break;
+      case 1:
+         __asm__ __volatile__ ("mffscdrni %0,1"  : "=f"(f14) );
+         GET_FPSCR(local_fpscr);
+         break;
+      case 2:
+         __asm__ __volatile__ ("mffscdrni %0,2"  : "=f"(f14) );
+         GET_FPSCR(local_fpscr);
+         break;
+   }
+}
+
+/* mffscrn FRT,FRB # Move From FpScr and Control &set RN*/
+static void test_mffscrn (void) {
+   __asm__ __volatile__ ("mffscrn %0,%1"  : "=f"(f14):"f"(f15));
+   GET_FPSCR(local_fpscr);
+}
+
+/* mffscrni FRT,RM # Move from FpScr and Control &set RN Immediate*/
+static void test_mffscrni (void) {
+   switch(x_shift) {
+      case 0:
+         __asm__ __volatile__ ("mffscrni %0,0"  : "=f"(f14) );
+         GET_FPSCR(local_fpscr);
+         break;
+      case 1:
+         __asm__ __volatile__ ("mffscrni %0,1"  : "=f"(f14) );
+         GET_FPSCR(local_fpscr);
+         break;
+      case 2:
+         __asm__ __volatile__ ("mffscrni %0,2"  : "=f"(f14) );
+         GET_FPSCR(local_fpscr);
+         break;
+   }
+}
+
+/* mffsl FRT  # Move From FpScr Lightweight */
+static void test_mffsl (void) {
+   __asm__ __volatile__ ("mffsl %0"  : "=f"(f14) );
+   GET_FPSCR(local_fpscr);
+}
+
+/* mffs* instructions using FRT only. */
+/* Note to self - Watch DRM,RM fields. */
+static test_list_t testgroup_mffs_misc[] = {
+   { &test_mffsce,    "mffsce" },
+   { &test_mffsl,     "mffsl" },
+   { &test_mffs,      "mffs" },
+   { NULL               , NULL      },
+};
+
+/* mffs* instructions using FRT,FRB. */
+static test_list_t testgroup_mffs_misc_one[] = {
+   { &test_mffscdrni, "mffscdrni" },
+   { &test_mffscdrn,  "mffscdrn" },
+   { &test_mffscrni,  "mffscrni" },
+   { &test_mffscrn,   "mffscrn" },
+   { NULL               , NULL      },
+};
+
 
 /* ###### begin all_tests table.  */
 
@@ -2227,8 +2335,41 @@ static test_group_table_t all_tests[] = {
       "ppc addpc_misc",
       PPC_PC_IMMEDIATE,
    },
+   {
+      testgroup_mffs_misc,
+      "ppc mffpscr",
+      PPC_MFFS,
+   },
+   {
+      testgroup_mffs_misc_one,
+      "ppc mffpscr",
+      PPC_MFFS,
+   },
+   {
+      testgroup_ia_ops_two,
+      "PPC integer arith instructions with two args",
+      PPC_INTEGER | PPC_ARITH | PPC_TWO_ARGS,
+   },
+   {
+      testgroup_mffs_misc,
+      "ppc mffpscr",
+      PPC_MFFS,
+   },
+   {
+      testgroup_mffs_misc_one,
+      "ppc mffpscr",
+      PPC_MFFS,
+   },
+   {
+      testgroup_vector_four,
+     "ppc vector three args + dest",
+      PPC_ALTIVEC | PPC_LOGICAL | PPC_FOUR_ARGS,
+   },
    { NULL,                   NULL,               0x00000000, },
 };
+
+#define instruction_touches_xer(instruction_name) \
+   (strncmp(instruction_name, "addex", 5) == 0)
 
 static void testfunction_int_two_args (const char* instruction_name,
                                        test_func_t func,
@@ -2249,12 +2390,17 @@ static void testfunction_int_two_args (const char* instruction_name,
          SET_CR_ZERO;
          (*func)();
          GET_CR(cr);
+         GET_XER(local_xer);
          res = r17;
 
-         printf("%s %016lx, %016lx => %016lx (%08x)\n",
+         printf("%s %016lx, %016lx => %016lx (%08x)",
                 instruction_name, (long unsigned)iargs[i],
                 (long unsigned)iargs[j], (long unsigned)res,
                 cr);
+         if (instruction_touches_xer(instruction_name)) {
+            dissect_xer(local_xer);
+         }
+         printf("\n");
       }
       if (verbose) printf("\n");
    }
@@ -3601,7 +3747,79 @@ static void testfunction_pc_immediate_misc (const char* instruction_name,
       printf(" %016x ", x_index);
       printf(" => ");
       (*test_function)();
-      printf(" %016lx\n", r14);
+      /*      printf(" %016lx\n", r14); */
+      printf(" %016x\n", 0);  /* test is not portable just print zero */
+   }
+}
+
+/* Identify those mffs* variants that take additional arguments.
+ * This includes the immediate mffs*i variants. */
+#define is_not_simple_mffs_instruction(instruction_name) \
+	( (strncmp(instruction_name,"mffscdrn",8)==0) || \
+	  (strncmp(instruction_name,"mffscrn",7)==0) )
+
+/* Because some of the mffs* variants here are updating the fpscr as part
+ * of the read, be sure to dissect both the retrieved (f14) and the updated
+ * (local_fpscr) fpscr values. */
+static void testfunction_mffs(const char* instruction_name,
+                                    test_func_t test_function,
+                                    unsigned int ignore_test_flags)
+{
+   union reg_t {
+      unsigned long int uli;
+      double            dble;
+   } f14_reg, f15_reg;
+
+   /*This function uses global variable x_shift */
+   VERBOSE_FUNCTION_CALLOUT
+
+   if (is_not_simple_mffs_instruction(instruction_name)) {
+      /* iterate x_shift across values used for RN,RM */
+      for (x_shift = 0; x_shift < 3; x_shift++) {
+         printf("%s ",  instruction_name);
+         /* make sure bits in f14 get cleared so we can
+            see correct resulg*/
+         f14_reg.uli = 0x3FFFFFFFFUL;
+
+         if (strcmp("mffscdrn", instruction_name) == 0) {
+            /* instruction uses input reg f15 as input for DRN field */
+            f15_reg.uli = (unsigned long int)x_shift << 32;
+            printf(" f15 0X%lx  ", f15_reg.uli);
+
+            /* Setup input register value */
+            f15 = f15_reg.dble;
+
+         } else if (strcmp("mffscrn", instruction_name) == 0) {
+            /* instruction uses input reg f15 as input for RN field */
+            f15_reg.uli = (unsigned long int)x_shift;
+            printf(" f15 0X%lx  ", f15_reg.uli);
+
+            /* Setup input register value */
+            f15 = f15_reg.dble;
+
+         } else {
+            printf(" %x ", x_shift);
+         }
+
+
+         (*test_function)();
+         printf(" => ");
+         f14_reg.dble = f14;
+         printf(" 0X%lx\n", f14_reg.uli);
+         dissect_fpscr(f14);
+         printf(" local_fpscr: ");
+         dissect_fpscr(local_fpscr);
+         printf("\n");
+      }
+   } else {
+         printf("%s ",  instruction_name);
+         printf(" => ");
+         (*test_function)();
+         printf(" %016f\n", f14);
+         dissect_fpscr(f14);
+         printf("\n");
+         dissect_fpscr(local_fpscr);
+         printf("\n");
    }
 }
 
@@ -3610,7 +3828,7 @@ typedef struct insn_sel_flags_t_struct {
    unsigned int one_arg, two_args, three_args, four_args, cmp_args, ld_args, st_args,
       one_imed_args;
    unsigned int arith, logical, compare, popcnt, ldst, insert_extract, permute, round;
-   unsigned int integer, altivec, altivec_quad, altivec_double, dfp, bcd, misc,
+   unsigned int integer, altivec, altivec_quad, altivec_double, dfp, bcd, misc, mffs,
       no_op, pc_immediate;
    unsigned int cr;
 } insn_sel_flags_t;
@@ -3639,6 +3857,12 @@ static void do_tests ( insn_sel_flags_t seln_flags)
       dissect_fpscr_rounding_mode(0x0000000000000001);
       dissect_fpscr_rounding_mode(0x0000000000000000);
       printf("\n");
+      printf("XER bits: (64)");
+      dissect_xer(0xffffffffffffffff);
+      printf("\n");
+      printf("XER bits: (32)");
+      dissect_xer(0xffffffff);
+      printf("\n\n");
    }
 
    for (i=0; all_tests[i].name != NULL; i++) {
@@ -3674,6 +3898,7 @@ static void do_tests ( insn_sel_flags_t seln_flags)
       if (family == PPC_BCD   && seln_flags.bcd == 0)        continue;
       if (family == PPC_NO_OP && seln_flags.no_op == 0)      continue;
       if (family == PPC_MISC  && seln_flags.misc == 0)       continue;
+      if (family == PPC_MFFS  && seln_flags.mffs == 0)       continue;
       if (family == PPC_ALTIVEC_DOUBLE  && seln_flags.altivec_double == 0)
          continue;
 
@@ -3693,6 +3918,10 @@ static void do_tests ( insn_sel_flags_t seln_flags)
 
       /* Select the test group */
       switch (family) {
+      case PPC_MFFS:
+         group_function = &testfunction_mffs;
+         break;
+
       case PPC_INTEGER:
          switch(type) {
          case PPC_ARITH:
@@ -3952,6 +4181,7 @@ static void usage (void)
            "\t-N: test No Op instructions\n"
            "\t-P: test PC Immediate Shifted instructions\n"
            "\t-m: test miscellaneous instructions\n"
+           "\t-M: test MFFS instructions\n"
            "\t-v: be verbose\n"
            "\t-h: display this help and exit\n"
            );
@@ -3998,13 +4228,14 @@ int main (int argc, char **argv)
    flags.dfp             = 0;
    flags.bcd             = 0;
    flags.misc            = 0;
+   flags.mffs            = 0;
    flags.no_op           = 0;
    flags.pc_immediate    = 0;
 
    // Flags
    flags.cr              = 2;
 
-   while ((c = getopt(argc, argv, "ifmadqhvADBNP")) != -1) {
+   while ((c = getopt(argc, argv, "ifmadqhvADBMNP")) != -1) {
       switch (c) {
       case 'i':
          flags.integer  = 1;
@@ -4032,6 +4263,10 @@ int main (int argc, char **argv)
 
       case 'm':
          flags.misc     = 1;
+         break;
+
+      case 'M':
+         flags.mffs     = 1;
          break;
 
       case 'N':

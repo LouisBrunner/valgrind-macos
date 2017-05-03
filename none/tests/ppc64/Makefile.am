@@ -7,6 +7,9 @@ noinst_HEADERS = ppc64_helpers.h
 
 EXTRA_DIST = \
 	jm-int.stderr.exp jm-int.stdout.exp jm-int.vgtest jm-int.stdout.exp-LE \
+   jm-int.stdout.exp-LE-ISA3_0 \
+	jm-int_other.stderr.exp jm-int_other.stdout.exp jm-int_other.vgtest \
+	jm-int_other.stdout.exp-LE \
 	jm-fp.stderr.exp  jm-fp.stdout.exp  jm-fp.vgtest jm-fp.stdout.exp-LE jm-fp.stdout.exp-LE2 jm-fp.stdout.exp-BE2 \
 	jm-vmx.stderr.exp jm-vmx.stdout.exp jm-vmx.stdout.exp_Minus_nan jm-vmx.stdout.exp-LE \
 	jm-vmx.vgtest \
@@ -22,7 +25,11 @@ EXTRA_DIST = \
 	test_isa_2_06_part1.stderr.exp  test_isa_2_06_part1.stdout.exp  test_isa_2_06_part1.vgtest \
 	test_isa_2_06_part1.stdout.exp-LE \
 	test_isa_2_06_part2.stderr.exp  test_isa_2_06_part2.stdout.exp  test_isa_2_06_part2.vgtest \
+	test_isa_2_06_part2-div.stderr.exp  test_isa_2_06_part2-div.stdout.exp \
+	test_isa_2_06_part2-div.stdout.exp-LE-ISA3_0 test_isa_2_06_part2-div.vgtest \
 	test_isa_2_06_part3.stderr.exp  test_isa_2_06_part3.stdout.exp  test_isa_2_06_part3.vgtest \
+	test_isa_2_06_part3-div.stderr.exp  test_isa_2_06_part3-div.stdout.exp \
+	test_isa_2_06_part3-div.stdout.exp-LE-ISA3_0  test_isa_2_06_part3-div.vgtest \
 	test_dfp1.stderr.exp test_dfp1.stdout.exp test_dfp1.vgtest \
 	test_dfp2.stderr.exp test_dfp2.stdout.exp test_dfp2.vgtest \
 	test_dfp2.stdout.exp_Without_dcffix \

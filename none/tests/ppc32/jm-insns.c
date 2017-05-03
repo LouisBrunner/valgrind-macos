@@ -7620,7 +7620,10 @@ static void usage (void)
 #else // #if !defined (USAGE_SIMPLE)
    fprintf(stderr,
            "Usage: jm-insns [OPTION]\n"
-           "\t-i: test integer instructions (default)\n"
+           "\t-i: test integer arithmetic instructions (default)\n"
+           "\t-l: test integer logical instructions (default)\n"
+           "\t-c: test integer compare instructions (default)\n"
+           "\t-L: test integer load/store instructions (default)\n"
            "\t-f: test floating point instructions\n"
            "\t-a: test altivec instructions\n"
            "\t-m: test miscellaneous instructions\n"
@@ -7767,7 +7770,8 @@ int main (int argc, char **argv)
 #else // #if !defined (USAGE_SIMPLE)
 ////////////////////////////////////////////////////////////////////////
    /* Simple usage:
-      ./jm-insns -i   => int insns
+      ./jm-insns -i   => int arithmetic insns
+      ./jm-insns -l   => int logical insns
       ./jm-insns -f   => fp  insns
       ./jm-insns -a   => av  insns
       ./jm-insns -m   => miscellaneous insns
@@ -7782,10 +7786,10 @@ int main (int argc, char **argv)
    flags.two_args   = 1;
    flags.three_args = 1;
    // Type
-   flags.arith      = 1;
-   flags.logical    = 1;
-   flags.compare    = 1;
-   flags.ldst       = 1;
+   flags.arith      = 0;
+   flags.logical    = 0;
+   flags.compare    = 0;
+   flags.ldst       = 0;
    // Family
    flags.integer    = 0;
    flags.floats     = 0;
@@ -7796,22 +7800,51 @@ int main (int argc, char **argv)
    // Flags
    flags.cr         = 2;
 
-   while ((c = getopt(argc, argv, "ifmahvA")) != -1) {
+   while ((c = getopt(argc, argv, "ilcLfmahvA")) != -1) {
       switch (c) {
       case 'i':
+         flags.arith    = 1;
+         flags.integer  = 1;
+         break;
+      case 'l':
+         flags.logical  = 1;
+         flags.integer  = 1;
+         break;
+      case 'c':
+         flags.compare  = 1;
+         flags.integer  = 1;
+         break;
+      case 'L':
+         flags.ldst     = 1;
          flags.integer  = 1;
          break;
       case 'f':
+         flags.arith  = 1;
+         flags.logical  = 1;
+         flags.compare  = 1;
+         flags.ldst     = 1;
          flags.floats   = 1;
          break;
       case 'a':
+         flags.arith    = 1;
+         flags.logical  = 1;
+         flags.compare  = 1;
+         flags.ldst     = 1;
          flags.altivec  = 1;
          flags.faltivec = 1;
          break;
       case 'm':
+         flags.arith    = 1;
+         flags.logical  = 1;
+         flags.compare  = 1;
+         flags.ldst     = 1;
          flags.misc     = 1;
          break;
       case 'A':
+         flags.arith    = 1;
+         flags.logical  = 1;
+         flags.compare  = 1;
+         flags.ldst     = 1;
          flags.integer  = 1;
          flags.floats   = 1;
          flags.altivec  = 1;

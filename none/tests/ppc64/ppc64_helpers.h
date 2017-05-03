@@ -123,7 +123,7 @@ static char * fpscr_strings[] = {
 " 7-RSVD", " 8-RSVD", " 9-RSVD", "10-RSVD", "11-RSVD", "12-RSVD", "13-RSVD",
 "14-RSVD", "15-RSVD", "16-RSVD", "17-RSVD", "18-RSVD", "19-RSVD", "20-RSVD",
 "21-RSVD", "22-RSVD", "23-RSVD", "24-RSVD", "25-RSVD", "26-RSVD", "27-RSVD",
-"28-RSVD", "29-RSVD", "30-RSVD", "31-RSVD",
+"28-RSVD", "29-DRN0", "30-DRN1", "31-DRN2",
 /* 32 */ "FX", "FEX", "VX",
 /* 35 */ "OX", "UX", "ZX", "XX", "VXSNAN",
 /* 40 */ "VXISI (inf-inf)", "VXIDI (inf/inf)", "VXZDZ (0/0)",
@@ -217,15 +217,32 @@ static void dissect_cr(unsigned long local_cr) {
 }
 
 /* dissect the fpscr bits that are valid under valgrind.
- * Valgrind itself only tracks the C and FPCC fields from the
- * FPSCR.
+ * Valgrind tracks the C (FPSCR[47]), FPCC (FPSCR[48:51)
+ * DRN (FPSCR[29:31]) and RN (FPSCR[62:63]).
  */
 static void dissect_fpscr_valgrind(unsigned long local_fpscr) {
    int i;
-   int mybit;
+   long mybit;
 
+   /* Print DRN fields */
+   for (i = 29; i < 32; i++) {
+      mybit = 1LL << (63 - i);
+      if (mybit & local_fpscr) {
+         printf(" %s",fpscr_strings[i]);
+      }
+   }
+
+   /* Print C and FPCC fields */
    for (i = 47; i < 52; i++) {
-      mybit = 1 << (63 - i);
+      mybit = 1LL << (63 - i);
+      if (mybit & local_fpscr) {
+         printf(" %s",fpscr_strings[i]);
+      }
+   }
+
+   /* Print RN field */
+   for (i = 62; i < 64; i++) {
+      mybit = 1LL << (63 - i);
       if (mybit & local_fpscr) {
          printf(" %s",fpscr_strings[i]);
       }
@@ -240,11 +257,11 @@ static void dissect_fpscr_raw(unsigned long local_fpscr) {
 /* Due to the additional involved logic, the rounding mode (RN) bits 61-62
  * are handled within dissect_fpscr_rounding_mode(). */
    int i;
-   int mybit;
+   long mybit;
 
    for (i = 0; i < 61; i++) {
       /* also note that the bit numbering is backwards. */
-      mybit = 1 << (63 - i);
+      mybit = 1LL << (63 - i);
       if (mybit & local_fpscr) {
          printf(" %s", fpscr_strings[i]);
       }
@@ -357,6 +374,45 @@ static void dissect_fpscr_dcmx_indicator(unsigned long local_fpscr) {
    // if it is a valid SP value.
    if (verbose > 1) printf("%s ", (local_fpscr&FPCC_FE_BIT) ? "SP" : "");
 }
+
+/* dissect_xer helpers*/
+static char * xer_strings[] = {
+" 0-RSVD", " 1-RSVD", " 2-RSVD", " 3-RSVD", " 4-RSVD", " 5-RSVD", " 6-RSVD",
+" 7-RSVD", " 8-RSVD", " 9-RSVD", "10-RSVD", "11-RSVD", "12-RSVD", "13-RSVD",
+"14-RSVD", "15-RSVD", "16-RSVD", "17-RSVD", "18-RSVD", "19-RSVD",
+"20-RSVD", "21-RSVD", "22-RSVD", "23-RSVD", "24-RSVD", "25-RSVD",
+"26-RSVD", "27-RSVD", "28-RSVD", "29-RSVD", "30-RSVD", "31-RSVD",
+/* 32 */ "SO", "OV", "CA",
+/* 35 */ "35-RSVD", "36-RSVD", "37-RSVD", "38-RSVD", "39-RSVD",
+/* 40 */ "40-RSVD", "41-RSVD", "42-RSVD", "43-RSVD",
+/* 44 */ "OV32", "CA32",
+/* 46 */ "46-RSVD", "47-RSVD", "48-RSVD", "49-RSVD", "50-RSVD", "51-RSVD",
+         "52-RSVD", "53-RSVD", "54-RSVD", "55-RSVD", "56-RSVD",
+/* 57:63 # bytes transferred by a Load/Store String Indexed instruction. */
+         "LSI/SSI-0", "LSI/SSI-1", "LSI/SSI-2", "LSI/SSI-3",
+         "LSI/SSI-4", "LSI/SSI-5", "LSI/SSI-6",
+};
+
+/* Dissect the XER register contents.
+ */
+static void dissect_xer_raw(unsigned long local_xer) {
+   int i;
+   long mybit;
+
+   for (i = 0; i <= 63; i++) {
+      mybit = 1ULL << (63 - i); /* compensate for reversed bit numbering. */
+      if (mybit & local_xer)
+         printf(" %s", xer_strings[i]);
+   }
+}
+
+/* */
+static void dissect_xer(unsigned long local_xer) {
+   if (verbose > 1)
+      printf(" [[ xer:%lx ]]", local_xer);
+   dissect_xer_raw(local_xer);
+}
+
 
 /* DFP helpers for bcd-to-dpd, dpd-to-bcd, misc.
  * pulled from vex/.../host_generic_simd64.c

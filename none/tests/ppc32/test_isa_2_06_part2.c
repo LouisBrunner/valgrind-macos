@@ -29,6 +29,7 @@
 #include <malloc.h>
 #include <altivec.h>
 #include <math.h>
+#include <unistd.h>    // getopt
 
 #ifndef __powerpc64__
 typedef uint32_t HWord_t;
@@ -92,6 +93,9 @@ static volatile unsigned int div_flags, div_xer;
 typedef void (*test_func_t)(void);
 typedef struct test_table test_table_t;
 
+/* Defines for the instructiion groups, use bit field to identify */
+#define SCALAR_DIV_INST    0x0001
+#define OTHER_INST  0x0002
 
 /* These functions below that construct a table of floating point
  * values were lifted from none/tests/ppc32/jm-insns.c.
@@ -541,6 +545,7 @@ struct test_table
 {
    test_func_t test_category;
    char * name;
+   unsigned int test_group;
 };
 
 typedef enum {
@@ -1741,32 +1746,43 @@ static test_table_t
          all_tests[] =
 {
                     { &test_vx_vector_one_fp_arg,
-                      "Test VSX vector single arg instructions"},
+                      "Test VSX vector single arg instructions", OTHER_INST },
                     { &test_vx_vector_fp_ops,
-                      "Test VSX floating point compare and basic arithmetic instructions" },
+                      "Test VSX floating point compare and basic arithmetic instructions", OTHER_INST },
 #ifdef __powerpc64__
                      { &test_bpermd,
-                       "Test bit permute double"},
+                       "Test bit permute double", OTHER_INST },
 #endif
                      { &test_xxsel,
-                         "Test xxsel instruction" },
+                         "Test xxsel instruction", OTHER_INST },
                      { &test_xxspltw,
-                         "Test xxspltw instruction" },
+                         "Test xxspltw instruction", OTHER_INST },
                      { &test_div_extensions,
-                       "Test div extensions" },
+                       "Test div extensions", SCALAR_DIV_INST },
                      { &test_fct_ops,
-                       "Test floating point convert [word | doubleword] unsigned, with round toward zero" },
+                       "Test floating point convert [word | doubleword] unsigned, with round toward zero", OTHER_INST },
 #ifdef __powerpc64__
                      { &test_stdbrx,
-                      "Test stdbrx instruction"},
+                      "Test stdbrx instruction", OTHER_INST },
 #endif
                      { &test_vx_aORm_fp_ops,
-                      "Test floating point arithmetic instructions -- with a{d|s}p or m{d|s}p"},
+		       "Test floating point arithmetic instructions -- with a{d|s}p or m{d|s}p", OTHER_INST },
                      { &test_vx_simple_scalar_fp_ops,
-                      "Test scalar floating point arithmetic instructions"},
+                      "Test scalar floating point arithmetic instructions", OTHER_INST },
                      { NULL, NULL }
 };
 #endif // HAS_VSX
+
+static void usage (void)
+{
+  fprintf(stderr,
+	  "Usage: test_isa_3_0 [OPTIONS]\n"
+	  "\t-d: test scalar division instructions (default)\n"
+	  "\t-o: test non scalar division instructions (default)\n"
+	  "\t-A: test all instructions (default)\n"
+	  "\t-h: display this help and exit\n"
+	  );
+}
 
 int main(int argc, char *argv[])
 {
@@ -1775,11 +1791,47 @@ int main(int argc, char *argv[])
    test_table_t aTest;
    test_func_t func;
    int i = 0;
+   int c;
+   unsigned int test_run_mask = 0;
+
+   /* NOTE, ISA 3.0 introduces the OV32 and CA32 bits in the FPSCR. These
+    * bits are set on various arithimetic instructions.  This means this
+    * test generates different FPSCR output for pre ISA 3.0 versus ISA 3.0
+    * hardware.  The tests have been grouped so that the tests that generate
+    * different results are in one test and the rest are in a different test.
+    * this minimizes the size of the result expect files for the two cases.
+    */
+
+   while ((c = getopt(argc, argv, "doAh")) != -1) {
+      switch (c) {
+      case 'd':
+	test_run_mask |= SCALAR_DIV_INST;
+         break;
+      case 'o':
+	test_run_mask |= OTHER_INST;
+         break;
+      case 'A':
+	test_run_mask = 0xFFFF;
+         break;
+      case 'h':
+         usage();
+         return 0;
+
+      default:
+         usage();
+         fprintf(stderr, "Unknown argument: '%c'\n", c);
+         return 1;
+      }
+   }
 
    while ((func = all_tests[i].test_category)) {
       aTest = all_tests[i];
-      printf( "%s\n", aTest.name );
-      (*func)();
+      if(test_run_mask & aTest.test_group) {
+	/* Test group  specified on command line */
+
+	printf( "%s\n", aTest.name );
+	(*func)();
+      }
       i++;
    }
    if (spec_fargs)

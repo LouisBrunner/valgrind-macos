@@ -10,6 +10,7 @@ EXTRA_DIST = \
 	bug139050-ppc32.vgtest \
 	ldstrev.stderr.exp ldstrev.stdout.exp ldstrev.vgtest \
 	jm-int.stderr.exp jm-int.stdout.exp jm-int.vgtest \
+	jm-int_other.stderr.exp jm-int_other.stdout.exp jm-int_other.vgtest \
 	jm-fp.stderr.exp jm-fp.stdout.exp jm-fp.vgtest jm-fp.stdout.exp-BE2 \
 	jm-vmx.stderr.exp jm-vmx.stdout.exp jm-vmx.stdout.exp_Minus_nan \
 	jm-vmx.vgtest \
@@ -32,6 +33,8 @@ EXTRA_DIST = \
 	test_isa_2_06_part1.stderr.exp  test_isa_2_06_part1.stdout.exp  test_isa_2_06_part1.vgtest \
 	test_isa_2_06_part2.stderr.exp  test_isa_2_06_part2.stdout.exp  test_isa_2_06_part2.vgtest \
 	test_isa_2_06_part3.stderr.exp  test_isa_2_06_part3.stdout.exp  test_isa_2_06_part3.vgtest \
+	test_isa_2_06_part2-div.stderr.exp  test_isa_2_06_part2-div.stdout.exp  test_isa_2_06_part2-div.vgtest \
+	test_isa_2_06_part3-div.stderr.exp  test_isa_2_06_part3-div.stdout.exp  test_isa_2_06_part3-div.vgtest \
 	test_dfp1.stderr.exp test_dfp1.stdout.exp test_dfp1.vgtest \
 	test_dfp2.stderr.exp test_dfp2.stdout.exp test_dfp2.vgtest \
 	test_dfp2.stdout.exp_Without_dcffix \

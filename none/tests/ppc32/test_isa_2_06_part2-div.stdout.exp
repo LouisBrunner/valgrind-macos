@@ -1,0 +1,31 @@
+Test div extensions
+#0: divweu: 0x00000000 / 0x00000002 = 0x00000000; CR=0; XER=0
+#1: divweu: 0x00000002 / 0x00000000 = 0x00000000; CR=0; XER=0
+#2: divweu: 0x7abc1234 / 0xf0000000 = 0x82eabe15; CR=0; XER=0
+#3: divweu: 0xfabc1234 / 0x00000005 = 0x00000000; CR=0; XER=0
+#4: divweu: 0x0000004d / 0x00000042 = 0x00000000; CR=0; XER=0
+#5: divweu: 0x00000005 / 0xfabc1234 = 0x00000005; CR=0; XER=0
+
+#0: divweu.: 0x00000000 / 0x00000002 = 0x00000000; CR=2; XER=0
+#1: divweu.: 0x00000002 / 0x00000000 = 0x00000000; CR=2; XER=0
+#2: divweu.: 0x7abc1234 / 0xf0000000 = 0x82eabe15; CR=8; XER=0
+#3: divweu.: 0xfabc1234 / 0x00000005 = 0x00000000; CR=2; XER=0
+#4: divweu.: 0x0000004d / 0x00000042 = 0x00000000; CR=2; XER=0
+#5: divweu.: 0x00000005 / 0xfabc1234 = 0x00000005; CR=4; XER=0
+
+
+#0: divweuo: 0x00000000 / 0x00000002 = 0x00000000; CR=0; XER=0
+#1: divweuo: 0x00000002 / 0x00000000 = 0x00000000; CR=0; XER=c0000000
+#2: divweuo: 0x7abc1234 / 0xf0000000 = 0x82eabe15; CR=0; XER=0
+#3: divweuo: 0xfabc1234 / 0x00000005 = 0x00000000; CR=0; XER=c0000000
+#4: divweuo: 0x0000004d / 0x00000042 = 0x00000000; CR=0; XER=c0000000
+#5: divweuo: 0x00000005 / 0xfabc1234 = 0x00000005; CR=0; XER=0
+
+#0: divweuo.: 0x00000000 / 0x00000002 = 0x00000000; CR=2; XER=0
+#1: divweuo.: 0x00000002 / 0x00000000 = 0x00000000; CR=3; XER=c0000000
+#2: divweuo.: 0x7abc1234 / 0xf0000000 = 0x82eabe15; CR=8; XER=0
+#3: divweuo.: 0xfabc1234 / 0x00000005 = 0x00000000; CR=3; XER=c0000000
+#4: divweuo.: 0x0000004d / 0x00000042 = 0x00000000; CR=3; XER=c0000000
+#5: divweuo.: 0x00000005 / 0xfabc1234 = 0x00000005; CR=4; XER=0
+
+

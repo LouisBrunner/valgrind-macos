@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2011-2015 Petr Pavlu
+   Copyright (C) 2011-2017 Petr Pavlu
       setup@dagobah.cz
 
    This program is free software; you can redistribute it and/or
@@ -29,7 +29,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-/* Copyright 2013-2015, Ivo Raisr <ivosh@ivosh.net>. */
+/* Copyright 2013-2017, Ivo Raisr <ivosh@ivosh.net>. */
 
 #if defined(VGO_solaris)
 

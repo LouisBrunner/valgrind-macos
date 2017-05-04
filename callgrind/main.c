@@ -8,10 +8,10 @@
    This file is part of Callgrind, a Valgrind tool for call graph
    profiling programs.
 
-   Copyright (C) 2002-2015, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
+   Copyright (C) 2002-2017, Josef Weidendorfer (Josef.Weidendorfer@gmx.de)
 
    This tool is derived from and contains code from Cachegrind
-   Copyright (C) 2002-2015 Nicholas Nethercote (njn@valgrind.org)
+   Copyright (C) 2002-2017 Nicholas Nethercote (njn@valgrind.org)
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -2048,7 +2048,7 @@ void CLG_(pre_clo_init)(void)
     VG_(details_name)            ("Callgrind");
     VG_(details_version)         (NULL);
     VG_(details_description)     ("a call-graph generating cache profiler");
-    VG_(details_copyright_author)("Copyright (C) 2002-2015, and GNU GPL'd, "
+    VG_(details_copyright_author)("Copyright (C) 2002-2017, and GNU GPL'd, "
 				  "by Josef Weidendorfer et al.");
     VG_(details_bug_reports_to)  (VG_BUGS_TO);
     VG_(details_avg_translation_sizeB) ( 500 );

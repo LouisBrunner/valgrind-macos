@@ -5,8 +5,8 @@
 
 /*
  * test_isa_3_0.c:
- * Copyright (c) 2016 Carl Love <cel@us.ibm.com>
- * Copyright (c) 2016 Will Schmidt <will_schmidt@vnet.ibm.com>
+ * Copyright (C) 2016-2017 Carl Love <cel@us.ibm.com>
+ * Copyright (C) 2016-2017 Will Schmidt <will_schmidt@vnet.ibm.com>
  *
  * This testfile contains tests for the ISA 3.0 instructions.
  * The framework of this test file was based on the framework

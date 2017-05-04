@@ -16,7 +16,7 @@
    This file is part of DRD, a heavyweight Valgrind tool for detecting
    errors in multithreaded programs.
 
-   Copyright (C) 2008-2009 Bart Van Assche. All rights reserved.
+   Copyright (C) 2008-2017 Bart Van Assche. All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions

@@ -411,8 +411,8 @@ and indicates it is waiting for a connection from a GDB:</para>
 
 <programlisting><![CDATA[
 ==2418== Memcheck, a memory error detector
-==2418== Copyright (C) 2002-2010, and GNU GPL'd, by Julian Seward et al.
-==2418== Using Valgrind-3.7.0.SVN and LibVEX; rerun with -h for copyright info
+==2418== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==2418== Using Valgrind-3.13.0.SVN and LibVEX; rerun with -h for copyright info
 ==2418== Command: ./prog
 ==2418== 
 ==2418== (action at startup) vgdb me ... 

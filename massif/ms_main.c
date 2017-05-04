@@ -6,7 +6,7 @@
    This file is part of Massif, a Valgrind tool for profiling memory
    usage of programs.
 
-   Copyright (C) 2003-2015 Nicholas Nethercote
+   Copyright (C) 2003-2017 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or
@@ -2066,7 +2066,7 @@ static void ms_pre_clo_init(void)
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a heap profiler");
    VG_(details_copyright_author)(
-      "Copyright (C) 2003-2015, and GNU GPL'd, by Nicholas Nethercote");
+      "Copyright (C) 2003-2017, and GNU GPL'd, by Nicholas Nethercote");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
 
    VG_(details_avg_translation_sizeB) ( 330 );

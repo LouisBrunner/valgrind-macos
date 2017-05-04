@@ -11,7 +11,7 @@
       derived from readelf.c and valgrind-20031012-wine/vg_symtab2.c
       derived from wine-1.0/tools/winedump/pdb.c and msc.c
 
-   Copyright (C) 2000-2015 Julian Seward
+   Copyright (C) 2000-2017 Julian Seward
       jseward@acm.org
    Copyright 2006 Eric Pouech (winedump/pdb.c and msc.c)
       GNU Lesser General Public License version 2.1 or later applies.

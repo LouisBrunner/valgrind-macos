@@ -1,6 +1,6 @@
 /*
  * ppc64_helpers.h
- * Copyright (c) 2016 Will Schmidt <will_schmidt@vnet.ibm.com>
+ * Copyright (C) 2016-2017 Will Schmidt <will_schmidt@vnet.ibm.com>
  *
  * This file contains helper functions for the ISA 3.0 test suite.
  */

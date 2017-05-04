@@ -7,11 +7,11 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2016-2016 Philippe Waroquiers
+   Copyright (C) 2016-2017 Philippe Waroquiers
 
    This code generalises the XTree idea that was implemented in
    the massif tool in Valgrind versions <= 3.12, which is
-      Copyright (C) 2005-2015 Nicholas Nethercote
+      Copyright (C) 2005-2017 Nicholas Nethercote
        njn@valgrind.org
 
    The XTree implementation in this file is however implemented completely

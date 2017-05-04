@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2014-2015 Ivo Raisr <ivosh@ivosh.net>
+   Copyright (C) 2014-2017 Ivo Raisr <ivosh@ivosh.net>
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as

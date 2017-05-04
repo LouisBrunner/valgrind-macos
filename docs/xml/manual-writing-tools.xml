@@ -155,8 +155,8 @@ top-level directory <computeroutput>valgrind/</computeroutput>.</para>
    The output should be something like this:</para>
 <programlisting><![CDATA[
   ==738== foobar-0.0.1, a foobarring tool.
-  ==738== Copyright (C) 2002-2009, and GNU GPL'd, by J. Programmer.
-  ==738== Using Valgrind-3.5.0.SVN and LibVEX; rerun with -h for copyright info
+  ==738== Copyright (C) 2002-2017, and GNU GPL'd, by J. Programmer.
+  ==738== Using Valgrind-3.13.0.SVN and LibVEX; rerun with -h for copyright info
   ==738== Command: date
   ==738==
   Tue Nov 27 12:40:49 EST 2007

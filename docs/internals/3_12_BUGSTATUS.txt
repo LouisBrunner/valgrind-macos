@@ -558,35 +558,35 @@ Fri 25 Nov 12:30:15 CET 2016
 16171 Update SVN ignore propset for tests/libc_test. n-i-bz. Refer r16097.
 16172 mips: implement CLEAR_CALLER_SAVED_REGS for memcheck tests
 
-16173Add CLEAR_CALLER_SAVED_REGS in leak-tree test 
-16174Remove second definition of typedef ‘Time’
-16175mips: add regression test for fadvise64
+16173 Add CLEAR_CALLER_SAVED_REGS in leak-tree test 
+16174 Remove second definition of typedef ‘Time’
+16175 mips: add regression test for fadvise64
 
-16176Some housekeeping related to recent r16175.
-16177Adjust line number in mcblocklistsearch.stderrB.exp.
+16176 Some housekeeping related to recent r16175.
+16177 Adjust line number in mcblocklistsearch.stderrB.exp.
 
-16178mips: add fadvise64 to svn ignore list
-16179Update memcheck/tests/amd64-linux ignore list
+16178 mips: add fadvise64 to svn ignore list
+16179 Update memcheck/tests/amd64-linux ignore list
 16180 mips: fix VG_(gdbserver_report_signal) arguments (dep 15248)
 16181 mips32: allow execution of round_fpu64 test for fpxx
 
 16182 mips32: minor style change to r16181
 3286 missingmips: small changes in VexGuestMIPS{32|64}State structs
 3287 Rename BBPTR to GSPTR as it denotes guest state pointer only
-16183mips64: add cvm_atomic.stdout.exp-BE
-16184Add placeholders for all new macOS 10.12 syscalls. Related to bz#365327.
-16185Add placeholders for all new OS X 10.11 syscalls. Related to bz#348909.
+16183 mips64: add cvm_atomic.stdout.exp-BE
+16184 Add placeholders for all new macOS 10.12 syscalls. Related to bz#365327.
+16185 Add placeholders for all new OS X 10.11 syscalls. Related to bz#348909.
 
-16186Fix 342040 Valgrind mishandles clone with CLONE_VFORK | CLONE_VM that clones to a different stack
+16186 Fix 342040 Valgrind mishandles clone with CLONE_VFORK | CLONE_VM that clones to a different stack
 Fix 373192 Calling posix_spawn in glibc 2.24 completely broken
 
-16187Add missing EXTRA_DIST clonev.stdout.exp
+16187 Add missing EXTRA_DIST clonev.stdout.exp
 
-16188mips: remove some old cruft from clone functions
-16189Rename BBPTR to GSPTR as it denotes guest state pointer only
+16188 mips: remove some old cruft from clone functions
+16189 Rename BBPTR to GSPTR as it denotes guest state pointer only
 Fixes BZ#373555.
-16190mips: fix "cast-equal" warnings in coredump-elf.cRelated BZ#370028
-16191Update NEWS for recent VEX commit r3288.
+16190 mips: fix "cast-equal" warnings in coredump-elf.cRelated BZ#370028
+16191 Update NEWS for recent VEX commit r3288.
 16192 Add Solaris specific notes on running regression tests
 16193 xtree: minor updates to documentation, comments and indentation, no functional change.
 3288 missingconst IRExpr arguments for matchIRExpr()BZ#373938
@@ -647,10 +647,10 @@ code before it executes it.
 16219 add suppression for helgrind/tests/tc22_exit_w_lock
 16220 fix leak-segv-jmp test for platforms with 64K pagesize
 16221 am_munmap_both_wrk: safely initialise out-param for all return paths.
-3300mips: rewrite mips_irgen_load_and_add32|64 and code around it
-3301Fix non-mips build breakage from VEX r3300
-3302Handle unknown HINT instructions on aarch64 by ignoring them. BZ#376279.
-3303Add comment about HINT instructions.
+3300 mips: rewrite mips_irgen_load_and_add32|64 and code around it
+3301 Fix non-mips build breakage from VEX r3300
+3302 Handle unknown HINT instructions on aarch64 by ignoring them. BZ#376279.
+3303 Add comment about HINT instructions.
 
 3304 mips64: do correct 32-bit comparison for Iop_CmpNE32
 16223 add none/tests/linux/clonev to svn:ignore list
@@ -702,3 +702,9 @@ Mon  6 Mar 21:02:39 CET 2017
 
 ========================================================================
 ========================================================================
+
+- increase usable memory?
+- get rid of repeated brk message
+- progress stuff?
+- resize translation caches
+- expensive interpretation by default?

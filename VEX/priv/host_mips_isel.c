@@ -129,14 +129,12 @@ typedef
 
 static HReg lookupIRTemp(ISelEnv * env, IRTemp tmp)
 {
-   vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
    return env->vregmap[tmp];
 }
 
 static void lookupIRTemp64(HReg * vrHI, HReg * vrLO, ISelEnv * env, IRTemp tmp)
 {
-   vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
    vassert(! hregIsInvalid(env->vregmapHI[tmp]));
    *vrLO = env->vregmap[tmp];
@@ -147,7 +145,6 @@ static void
 lookupIRTempPair(HReg * vrHI, HReg * vrLO, ISelEnv * env, IRTemp tmp)
 {
    vassert(env->mode64);
-   vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
    vassert(! hregIsInvalid(env->vregmapHI[tmp]));
    *vrLO = env->vregmap[tmp];
@@ -395,8 +392,8 @@ static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
                          IRCallee* cee, IRType retTy, IRExpr** args )
 {
    MIPSCondCode cc;
-   HReg argregs[MIPS_N_REGPARMS];
-   HReg tmpregs[MIPS_N_REGPARMS];
+   HReg argregs[8];
+   HReg tmpregs[8];
    Bool go_fast;
    Int n_args, i, argreg;
    UInt argiregs;

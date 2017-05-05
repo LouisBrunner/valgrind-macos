@@ -1576,6 +1576,14 @@ void VG_(redir_initialise) ( void )
          (Addr)&VG_(mips32_linux_REDIR_FOR_index),
          complain_about_stripped_glibc_ldso
       );
+#  if defined(VGPV_mips32_linux_android)
+      add_hardwired_spec(
+         "NONE", "__dl_strlen",
+         (Addr)&VG_(mips32_linux_REDIR_FOR_strlen),
+         NULL
+      );
+#  endif
+
    }
 
 #  elif defined(VGP_mips64_linux)

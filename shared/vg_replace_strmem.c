@@ -254,6 +254,10 @@ static inline void my_exit ( int x )
   STRCHR(VG_Z_LD_LINUX_X86_64_SO_2, index)
 # endif
 
+#if defined(VGPV_mips32_linux_android)
+  STRCHR(NONE,        __dl_strchr)
+#endif
+
 #elif defined(VGO_darwin)
  STRCHR(VG_Z_LIBC_SONAME, strchr)
 # if DARWIN_VERS == DARWIN_10_9

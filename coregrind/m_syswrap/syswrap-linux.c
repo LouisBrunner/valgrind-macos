@@ -11190,12 +11190,12 @@ ML_(linux_PRE_getregset) ( ThreadId tid, long arg3, long arg4 )
 {
    struct vki_iovec *iov = (struct vki_iovec *) arg4;
 
-   PRE_MEM_READ("ptrace(getregset iovec->iov_base)",
-		(unsigned long) &iov->iov_base, sizeof(iov->iov_base));
-   PRE_MEM_READ("ptrace(getregset iovec->iov_len)",
-		(unsigned long) &iov->iov_len, sizeof(iov->iov_len));
-   PRE_MEM_WRITE("ptrace(getregset *(iovec->iov_base))",
-		 (unsigned long) iov->iov_base, iov->iov_len);
+   PRE_FIELD_READ("ptrace(getregset iovec->iov_base)", iov->iov_base);
+   PRE_FIELD_READ("ptrace(getregset iovec->iov_len)", iov->iov_len);
+   if (ML_(safe_to_deref)(iov, sizeof(struct vki_iovec))) {
+      PRE_MEM_WRITE("ptrace(getregset *(iovec->iov_base))",
+                    (Addr) iov->iov_base, iov->iov_len);
+   }
 }
 
 void
@@ -11203,12 +11203,12 @@ ML_(linux_PRE_setregset) ( ThreadId tid, long arg3, long arg4 )
 {
    struct vki_iovec *iov = (struct vki_iovec *) arg4;
 
-   PRE_MEM_READ("ptrace(setregset iovec->iov_base)",
-		(unsigned long) &iov->iov_base, sizeof(iov->iov_base));
-   PRE_MEM_READ("ptrace(setregset iovec->iov_len)",
-		(unsigned long) &iov->iov_len, sizeof(iov->iov_len));
-   PRE_MEM_READ("ptrace(setregset *(iovec->iov_base))",
-		(unsigned long) iov->iov_base, iov->iov_len);
+   PRE_FIELD_READ("ptrace(setregset iovec->iov_base)", iov->iov_base);
+   PRE_FIELD_READ("ptrace(setregset iovec->iov_len)", iov->iov_len);
+   if (ML_(safe_to_deref)(iov, sizeof(struct vki_iovec))) {
+      PRE_MEM_READ("ptrace(setregset *(iovec->iov_base))",
+                   (Addr) iov->iov_base, iov->iov_len);
+   }
 }
 
 void

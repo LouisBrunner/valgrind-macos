@@ -93,7 +93,7 @@ struct _WordFM {
 /* forward */
 static Bool avl_removeroot_wrk(AvlNode** t, Word(*kCmp)(UWord,UWord));
 
-/* Swing to the left.  Warning: no balance maintainance. */
+/* Swing to the left.  Warning: no balance maintenance. */
 static void avl_swl ( AvlNode** root )
 {
    AvlNode* a  = *root;
@@ -103,7 +103,7 @@ static void avl_swl ( AvlNode** root )
    b->child[0] = a;
 }
 
-/* Swing to the right.  Warning: no balance maintainance. */
+/* Swing to the right.  Warning: no balance maintenance. */
 static void avl_swr ( AvlNode** root )
 {
    AvlNode* a  = *root;
@@ -113,7 +113,7 @@ static void avl_swr ( AvlNode** root )
    b->child[1] = a;
 }
 
-/* Balance maintainance after especially nasty swings. */
+/* Balance maintenance after especially nasty swings. */
 static void avl_nasty ( AvlNode* root )
 {
    switch (root->balance) {

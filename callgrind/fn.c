@@ -110,7 +110,7 @@ static Bool check_code(obj_node* obj,
 /* _ld_runtime_resolve, located in ld.so, needs special handling:
  * The jump at end into the resolved function should not be
  * represented as a call (as usually done in callgrind with jumps),
- * but as a return + call. Otherwise, the repeated existance of
+ * but as a return + call. Otherwise, the repeated existence of
  * _ld_runtime_resolve in call chains will lead to huge cycles,
  * making the profile almost worthless.
  *

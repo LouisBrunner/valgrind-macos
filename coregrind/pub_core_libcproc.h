@@ -39,7 +39,7 @@
 #include "config.h"           // Crucial: ensure we get ENABLE_INNER
 #include "pub_tool_libcproc.h"
 
-/* The directory we look for all our auxillary files in.  Useful for
+/* The directory we look for all our auxiliary files in.  Useful for
    running Valgrind out of a build tree without having to do "make
    install".  Inner valgrinds require a different lib variable, else
    they end up picking up .so's etc intended for the outer

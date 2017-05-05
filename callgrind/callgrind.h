@@ -109,7 +109,7 @@ typedef
 
 /* Start full callgrind instrumentation if not already switched on.
    When cache simulation is done, it will flush the simulated cache;
-   this will lead to an artifical cache warmup phase afterwards with
+   this will lead to an artificial cache warmup phase afterwards with
    cache misses which would not have happened in reality. */
 #define CALLGRIND_START_INSTRUMENTATION                              \
   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__START_INSTRUMENTATION, \

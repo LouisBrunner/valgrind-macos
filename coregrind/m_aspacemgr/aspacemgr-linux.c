@@ -260,7 +260,7 @@
   Loss of pointercheck
   ~~~~~~~~~~~~~~~~~~~~
   Up to and including Valgrind 2.4.1, x86 segmentation was used to
-  enforce seperation of V and C, so that wild writes by C could not
+  enforce separation of V and C, so that wild writes by C could not
   trash V.  This got called "pointercheck".  Unfortunately, the new
   more flexible memory layout, plus the need to be portable across
   different architectures, means doing this in hardware is no longer
@@ -1861,7 +1861,7 @@ Addr VG_(am_get_advisory) ( const MapRequest*  req,
         the outcome of the search and the kind of request made, decide
         whether the request is allowable and what address to advise.
 
-      The Default Policy is overriden by Policy Exception #1:
+      The Default Policy is overridden by Policy Exception #1:
 
         If the request is for a fixed client map, we are prepared to
         grant it providing all areas inside the request are either
@@ -1869,7 +1869,7 @@ Addr VG_(am_get_advisory) ( const MapRequest*  req,
         other words we are prepared to let the client trash its own
         mappings if it wants to.
 
-      The Default Policy is overriden by Policy Exception #2:
+      The Default Policy is overridden by Policy Exception #2:
 
         If the request is for a hinted client map, we are prepared to
         grant it providing all areas inside the request are either

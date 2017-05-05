@@ -242,7 +242,7 @@ static inline UWord sr_Err ( SysRes sr ) {
 }
 static inline Bool sr_EQ ( UInt sysno, SysRes sr1, SysRes sr2 ) {
    /* This uglyness of hardcoding syscall numbers is necessary to
-      avoid having this header file be dependant on
+      avoid having this header file be dependent on
       include/vki/vki-scnums-mips{32,64}-linux.h.  It seems pretty
       safe given that it is inconceivable that the syscall numbers
       for such simple syscalls would ever change.  To make it 

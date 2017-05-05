@@ -1217,7 +1217,7 @@ VG_(s390x_linux_SUBST_FOR_rt_sigreturn):
 .type   VG_(s390x_linux_REDIR_FOR_index),@function
 VG_(s390x_linux_REDIR_FOR_index):
 #
-#   %r2 = addess of string
+#   %r2 = address of string
 #   %r3 = character to find
 #
         lghi    %r0,255

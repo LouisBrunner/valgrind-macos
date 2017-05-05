@@ -343,7 +343,7 @@ enum vki_rep_protocol_requestid {
 #error Unsupported repcache protocol version
 #endif
 
-/* The following definitions are currently stable accross all repcache protocol
+/* The following definitions are currently stable across all repcache protocol
    versions. If there is any change to them, they need to be versioned
    properly so that Valgrind works on older versions. */
 

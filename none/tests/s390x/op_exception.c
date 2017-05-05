@@ -2,7 +2,7 @@
 suppressing. That means that the program check old psw will point to
 the instruction after the illegal one (according to the calculated length).
 There are some programs out there that use this mechanism to detect available
-intruction (sigh).
+instruction (sigh).
 This patch checks, that valgrind makes forard progress. */
 #include <signal.h>
 #include <stdio.h>

@@ -316,7 +316,7 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
     what is happening within a given function or starting from a given
     program phase. To this end, you can disable event aggregation for
     uninteresting program parts. While attribution of events to
-    functions as well as producing seperate output per program phase
+    functions as well as producing separate output per program phase
     can be done by other means (see previous section), there are two
     benefits by disabling aggregation. First, this is very
     fine-granular (e.g. just for a loop within a function).  Second,
@@ -432,7 +432,7 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   cycles, this does not hold true: callees of a function in a cycle include
   the function itself. Therefore, KCachegrind does cycle detection
   and skips visualization of any inclusive cost for calls inside
-  of cycles. Further, all functions in a cycle are collapsed into artifical
+  of cycles. Further, all functions in a cycle are collapsed into artificial
   functions called like <computeroutput>Cycle 1</computeroutput>.</para>
 
   <para>Now, when a program exposes really big cycles (as is
@@ -1194,7 +1194,7 @@ their arguments.</para>
     <listitem>
       <para>Start full Callgrind instrumentation if not already enabled.
       When cache simulation is done, this will flush the simulated cache
-      and lead to an artifical cache warmup phase afterwards with
+      and lead to an artificial cache warmup phase afterwards with
       cache misses which would not have happened in reality.  See also
       option <option><xref linkend="opt.instr-atstart"/></option>.</para>
     </listitem>

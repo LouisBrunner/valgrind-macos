@@ -19,7 +19,7 @@
 #   first arg
 #      the alternative load address
 #   all the rest of the args
-#      the gcc invokation to do the final link, that
+#      the gcc invocation to do the final link, that
 #      the build system would have done, left to itself
 #
 # We just let the script 'die' if something is wrong, rather than do
@@ -30,7 +30,7 @@
 #
 # So: what we actually do is:
 #
-# Look at the specified gcc invokation.  Ignore all parts of it except
+# Look at the specified gcc invocation.  Ignore all parts of it except
 # the *.a, *.o and -o outfile parts.  Wrap them up in a new command
 # which looks (eg) as follows:
 #
@@ -65,7 +65,7 @@
 # executable for which we are linking.  We need to know this because
 # we must tell the linker that, by handing it either "-arch x86_64" or
 # "-arch i386".  Fortunately we can figure this out by scanning the
-# gcc invokation, which itself must contain either "-arch x86_64" or
+# gcc invocation, which itself must contain either "-arch x86_64" or
 # "-arch i386".
 
 use warnings;

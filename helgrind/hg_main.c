@@ -3459,7 +3459,7 @@ void evh__HG_RTLD_BIND_CLEAR(ThreadId tid, Int flags)
 
    The common case is that some thread T holds (eg) L1 L2 and L3 and
    is repeatedly acquiring and releasing Ln, and there is no ordering
-   error in what it is doing.  Hence it repeatly:
+   error in what it is doing.  Hence it repeatedly:
 
    (1) searches laog to see if Ln --*--> {L1,L2,L3}, which always 
        produces the answer No (because there is no error).

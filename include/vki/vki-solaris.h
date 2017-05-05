@@ -507,7 +507,7 @@ typedef struct vki_kcf_door_arg_s {
 #define VKI_F_GETXFL F_GETXFL
 #define VKI_F_SETFL F_SETFL
 
-/* SVR3 rfs compability const, declared only if _KERNEL or _KMEMUSER is
+/* SVR3 rfs compatibility const, declared only if _KERNEL or _KMEMUSER is
    defined. */
 #if 0
 #define VKI_F_O_GETLK F_O_GETLK

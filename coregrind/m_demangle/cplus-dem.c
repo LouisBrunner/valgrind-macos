@@ -983,7 +983,7 @@ ada_demangle (const char *mangled, int option ATTRIBUTE_UNUSED)
     goto unknown;
 
   /* Most of the demangling will trivially remove chars.  Operator names
-     may add one char but because they are always preceeded by '__' which is
+     may add one char but because they are always preceded by '__' which is
      replaced by '.', they eventually never expand the size.
      A few special names such as '___elabs' add a few chars (at most 7), but
      they occur only once.  */
@@ -2004,7 +2004,7 @@ demangle_integral_value (struct work_stuff *work,
 	  string_append (s, buf);
 
 	  /* Numbers not otherwise delimited, might have an underscore
-	     appended as a delimeter, which we should skip.
+	     appended as a delimiter, which we should skip.
 
 	     ??? This used to always remove a following underscore, which
 	     is wrong.  If other (arbitrary) cases are followed by an

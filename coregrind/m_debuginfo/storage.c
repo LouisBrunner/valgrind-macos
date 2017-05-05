@@ -1713,7 +1713,7 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
                di->symtab[r].sec_names = NULL;
             }
             /* Completely zap the entry -- paranoia to make it more
-               likely we'll notice if we inadvertantly use it
+               likely we'll notice if we inadvertently use it
                again. */
             VG_(memset)(&di->symtab[r], 0, sizeof(DiSym));
          } else {

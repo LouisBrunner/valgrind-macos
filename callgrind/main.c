@@ -1998,13 +1998,13 @@ void CLG_(post_clo_init)(void)
       VG_(message)(Vg_UserMsg, 
                    "callgrind only works with --vex-iropt-unroll-thresh=0\n"
                    "=> resetting it back to 0\n");
-      VG_(clo_vex_control).iropt_unroll_thresh = 0;   // cannot be overriden.
+      VG_(clo_vex_control).iropt_unroll_thresh = 0;   // cannot be overridden.
    }
    if (VG_(clo_vex_control).guest_chase_thresh != 0) {
       VG_(message)(Vg_UserMsg,
                    "callgrind only works with --vex-guest-chase-thresh=0\n"
                    "=> resetting it back to 0\n");
-      VG_(clo_vex_control).guest_chase_thresh = 0; // cannot be overriden.
+      VG_(clo_vex_control).guest_chase_thresh = 0; // cannot be overridden.
    }
    
    CLG_DEBUG(1, "  dump threads: %s\n", CLG_(clo).separate_threads ? "Yes":"No");
@@ -2057,8 +2057,8 @@ void CLG_(pre_clo_init)(void)
        = VG_(clo_px_file_backed)
        = VexRegUpdSpAtMemAccess; // overridable by the user.
 
-    VG_(clo_vex_control).iropt_unroll_thresh = 0;   // cannot be overriden.
-    VG_(clo_vex_control).guest_chase_thresh = 0;    // cannot be overriden.
+    VG_(clo_vex_control).iropt_unroll_thresh = 0;   // cannot be overridden.
+    VG_(clo_vex_control).guest_chase_thresh = 0;    // cannot be overridden.
 
     VG_(basic_tool_funcs)        (CLG_(post_clo_init),
                                   CLG_(instrument),

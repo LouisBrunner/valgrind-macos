@@ -1986,7 +1986,7 @@ POST(hvm_op)
    case VKI_XEN_HVMOP_set_mem_type:
    case VKI_XEN_HVMOP_set_mem_access:
    case VKI_XEN_HVMOP_inject_trap:
-      /* No output paramters */
+      /* No output parameters */
       break;
 
    case VKI_XEN_HVMOP_get_param:

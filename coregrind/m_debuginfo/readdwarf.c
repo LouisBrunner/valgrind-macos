@@ -853,7 +853,7 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
       if ( acode != abcode ) {
          /* This isn't illegal, but somewhat unlikely. Normally the
           * first abbrev describes the first DIE, the compile_unit.
-          * But maybe this abbrevation data is shared with another
+          * But maybe this abbreviation data is shared with another
           * or it is a NULL entry used for padding. See para 7.5.3. */
          abbrev_img = lookup_abbrev( ML_(cur_plus)(debugabbrev_img, atoffs),
                                      acode );
@@ -1899,7 +1899,7 @@ typedef
       Int     data_a_f;
       Addr    initloc;
       Int     ra_reg;
-      /* The rest of these fields can be modifed by
+      /* The rest of these fields can be modified by
          run_CF_instruction. */
       /* The LOC entry */
       Addr    loc;

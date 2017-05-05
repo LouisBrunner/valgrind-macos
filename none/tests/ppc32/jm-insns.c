@@ -45,7 +45,7 @@ case I chased).
  * I always get the result in r17 and also save XER and CCR for fixed-point
  * operations. I also check FPSCR for floating points operations.
  *
- * Improvments:
+ * Improvements:
  * a more clever FPSCR management is needed: for now, I always test
  * the round-to-zero case. Other rounding modes also need to be tested.
  */
@@ -98,7 +98,7 @@ case I chased).
  * }
  *
  *
- * Details of intruction patching for immediate operands
+ * Details of instruction patching for immediate operands
  * -----------------------------------------------------
  * All the immediate insn test functions are of the form {imm_insn, blr}
  * In order to patch one of these functions, we simply copy both insns
@@ -3367,7 +3367,7 @@ static test_t tests_av_float_ops_spe[] = {
 
 /* Power ISA 2.03 support dcbtct and dcbtstct with valid hint values b00000 - 0b00111.
  * The ISA 2.06 added support for more valid hint values, but rather than tie ourselves
- * in knots trying to test all permuations of ISAs and valid hint values, we'll just
+ * in knots trying to test all permutations of ISAs and valid hint values, we'll just
  * verify some of the base hint values from ISA 2.03.
  *
  * In a similar vein, in ISA 2.03, dcbtds had valid values of 0b01000 - 0b01010, whereas

@@ -9,7 +9,7 @@ the object file metadata (symbols, debug info, etc).
 
 Segments describe memory mapped into the address space, and so any
 address-space chaging operation needs to update the Segment structure.
-After the process is initalized, this means one of:
+After the process is initialized, this means one of:
 
     * mmap
     * munmap

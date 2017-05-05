@@ -1,6 +1,6 @@
 # this test the case of two errors, one considered not dangerous and
 # suppressed, the other considered dangerous, and the user does
-# not want to supress it.
+# not want to suppress it.
 # The suppression entry only match the non dangerous error.
 # However, when a medium resolution is used to compare 2 errors,
 # only the last 4 calls are used to determine that two errors are similar

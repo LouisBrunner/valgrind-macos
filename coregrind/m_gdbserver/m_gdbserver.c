@@ -811,7 +811,7 @@ static int interrupts_non_interruptible = 0;
 
 /* When all threads are blocked in a system call, the Valgrind
    scheduler cannot poll the shared memory for gdbserver activity.  In
-   such a case, vgdb will force the invokation of gdbserver using
+   such a case, vgdb will force the invocation of gdbserver using
    ptrace. To do that, vgdb 'pushes' a call to invoke_gdbserver
    on the stack using ptrace. invoke_gdbserver must not return.
    Instead, it must call give_control_back_to_vgdb.

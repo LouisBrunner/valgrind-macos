@@ -486,7 +486,7 @@ enum target_signal target_signal_from_host (int hostsig)
 }
 
 /* Convert a OURSIG (an enum target_signal) to the form used by the
-   target operating system (refered to as the ``host'') or zero if the
+   target operating system (referred to as the ``host'') or zero if the
    equivalent host signal is not available.  Set/clear OURSIG_OK
    accordingly. */
 

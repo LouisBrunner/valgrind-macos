@@ -31,7 +31,7 @@
 //----------------------------------------------------------------------
 // This file is based on:
 //
-//   ANSI C Library for maintainance of AVL Balanced Trees
+//   ANSI C Library for maintenance of AVL Balanced Trees
 //   (C) 2000 Daniel Nagy, Budapest University of Technology and Economics
 //   Released under GNU General Public License (GPL) version 2
 //----------------------------------------------------------------------
@@ -200,7 +200,7 @@ inline Word slow_cmp(const AvlTree* t, const void* k, const AvlNode* n)
 }
 
 
-// Swing to the left.   Warning: no balance maintainance.
+// Swing to the left.   Warning: no balance maintenance.
 static void avl_swl ( AvlNode** root )
 {
    AvlNode* a = *root;
@@ -210,7 +210,7 @@ static void avl_swl ( AvlNode** root )
    b->left  = a;
 }
 
-// Swing to the right.  Warning: no balance maintainance.
+// Swing to the right.  Warning: no balance maintenance.
 static void avl_swr ( AvlNode** root )
 {
    AvlNode* a = *root;
@@ -220,7 +220,7 @@ static void avl_swr ( AvlNode** root )
    b->right = a;
 }
 
-// Balance maintainance after especially nasty swings.
+// Balance maintenance after especially nasty swings.
 static void avl_nasty ( AvlNode* root )
 {
    switch (root->balance) {

@@ -357,7 +357,7 @@ int main(int argc, char** argv, char** envp)
 
    /* Figure out the name of this executable (viz, the launcher), so
       we can tell stage2.  stage2 will use the name for recursive
-      invokations of valgrind on child processes. */
+      invocations of valgrind on child processes. */
    memset(launcher_name, 0, PATH_MAX+1);
    for (i = 0; envp[i]; i++) 
        ; /* executable path is after last envp item */
@@ -410,7 +410,7 @@ int main(int argc, char** argv, char** envp)
    }
    new_argv[new_argc++] = NULL;
 
-   /* Build the stage2 invokation, and execve it.  Bye! */
+   /* Build the stage2 invocation, and execve it.  Bye! */
    asprintf(&toolfile, "%s/%s-%s-darwin", valgrind_lib, toolname, arch);
    if (access(toolfile, R_OK|X_OK) != 0) {
       barf("tool '%s' not installed (%s) (%s)", toolname, toolfile, strerror(errno));

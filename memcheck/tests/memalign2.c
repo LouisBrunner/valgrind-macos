@@ -36,9 +36,9 @@ int main ( void )
    // if the superblock is used to provide a big aligned block
    // (see bug 250101, comment #14).
    // Valgrind m_mallocfree.c will allocate a big superblock for the memalign
-   // call and will split it in two. This splitted superblock was
+   // call and will split it in two. This split superblock was
    // wrongly marked as reclaimable, which was then causing
-   // assert failures (as reclaimable blocks cannot be splitted).
+   // assert failures (as reclaimable blocks cannot be split).
    p = memalign(1024 * 1024, 4 * 1024 * 1024 + 1);   assert(0 == (long)p % (1024 * 1024));
    // We allocate (and then free) a piece of memory smaller than
    // the hole created in the big superblock.

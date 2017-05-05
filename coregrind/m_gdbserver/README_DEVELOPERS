@@ -113,7 +113,7 @@ to use --vgdb=full. This is because the error is detected by memcheck
 before modifying the value. gdb checks that the value has not changed
 and so "does not believe" the information that the write watchpoint
 was triggered, and continues the execution. At the next watchpoint
-occurence, gdb sees the value has changed. But the watchpoints are all
+occurrence, gdb sees the value has changed. But the watchpoints are all
 reported "off by one". To avoid this, Valgrind gdbserver must
 terminate the current instruction before reporting the write watchpoint.
 Terminating precisely the current instruction implies to have

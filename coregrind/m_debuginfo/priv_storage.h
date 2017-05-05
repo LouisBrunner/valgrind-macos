@@ -913,7 +913,7 @@ struct _DebugInfo {
       cfsi_m_ix as in many case, one byte is good enough. For big
       objects, 2 bytes are needed. No object has yet been found where
       4 bytes are needed (but the code is ready to handle this case).
-      Not covered ranges ('cfi holes') are stored explicitely in
+      Not covered ranges ('cfi holes') are stored explicitly in
       cfsi_base/cfsi_m_ix as this is more memory efficient than storing
       a length for each covered range : on x86 or amd64, we typically have
       a hole every 8 covered ranges. On arm64, we have very few holes

@@ -123,7 +123,7 @@ static void add_args_from_string ( HChar* s )
    in the stated order.
 
    VG_(args_for_valgrind_noexecpass) is set to be the number of items
-   in the first three categories.  They are not passed to child invokations
+   in the first three categories.  They are not passed to child invocations
    at exec, whereas the last group is.
 
    If the last group contains --command-line-only=yes, then the 

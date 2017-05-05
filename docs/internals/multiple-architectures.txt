@@ -129,7 +129,7 @@ for the primary architecture.  These places are (at least):
 * the launcher, valgrind.c
 * all the architecture-independent regression tests
 * the performance tests
-* optionally, auxilary programs like hp2ps and valgrind-listener
+* optionally, auxiliary programs like hp2ps and valgrind-listener
 
 In order to do that, we need to know what flags to use to build for
 the primary target, and in particular whether to hand -m32 or -m64 to
@@ -148,7 +148,7 @@ merely facilitates getting hold of it without the surrounding gunk.
 This leads to the final complication: building the regression tests.
 Most of them are architecture-neutral and so should be built for the
 primary target.  The /test/ Makefile.am's duly include
-AM_FLAG_M3264_PRI in the compilation invokations, and you should
+AM_FLAG_M3264_PRI in the compilation invocations, and you should
 ensure you preserve that when adding more tests.
 
 However, there are some arch-specific test directories (eg,

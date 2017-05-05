@@ -153,7 +153,7 @@ extern UInt VG_(debuginfo_generation) (void);
 
 /* True if some FPO information is loaded.
    It is useless to call VG_(use_FPO_info) if this returns False.
-   Note that the return value should preferrably be cached in
+   Note that the return value should preferably be cached in
    the stack unwind code, and re-queried when the debug info generation
    changes. */
 extern Bool VG_(FPO_info_present)(void);

@@ -192,10 +192,10 @@ AC_MSG_CHECKING([for a supported CPU])
 # Power PC returns powerpc for Big Endian.  This was not changed when Little
 # Endian support was added to the 64-bit architecture.  The 64-bit Little
 # Endian systems explicitly state le in the host_cpu.  For clarity in the
-# Valgrind code, the ARCH_MAX name will state LE or BE for the endianess of
+# Valgrind code, the ARCH_MAX name will state LE or BE for the endianness of
 # the 64-bit system.  Big Endian is the only mode supported on 32-bit Power PC.
 # The abreviation PPC or ppc refers to 32-bit and 64-bit systems with either
-# Endianess.  The name PPC64 or ppc64 to 64-bit systems of either Endianess.
+# Endianness.  The name PPC64 or ppc64 to 64-bit systems of either Endianness.
 # The names ppc64be or PPC64BE refer to only 64-bit systems that are Big
 # Endian.  Similarly, ppc64le or PPC64LE refer to only 64-bit systems that are
 # Little Endian.
@@ -2231,7 +2231,7 @@ AC_LINK_IFELSE(
 CFLAGS=$safe_CFLAGS
 
 # If the linker only supports -Ttext (not -Ttext-segment) then we will
-# have to strip any build-id ELF NOTEs from the staticly linked tools.
+# have to strip any build-id ELF NOTEs from the statically linked tools.
 # Otherwise the build-id NOTE might end up at the default load address.
 # (Pedantically if the linker is gold then -Ttext is fine, but newer
 # gold versions also support -Ttext-segment. So just assume that unless

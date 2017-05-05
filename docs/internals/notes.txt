@@ -127,7 +127,7 @@ startup code, and should not be visible in generic core service code.
 Redirection mechanism
 ~~~~~~~~~~~~~~~~~~~~~
 How this works is difficult to understand.  This should be fixed.  The
-list of unresolved redirections should be a seperate data structure
+list of unresolved redirections should be a separate data structure
 from the currently active (addr, addr) mapping.
 
 There's a whole big #ifdef TEST section in vg_symtab2.c which has

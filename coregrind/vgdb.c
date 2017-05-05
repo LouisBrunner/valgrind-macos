@@ -1010,7 +1010,7 @@ void standalone_send_commands(int pid,
       write_buf(to_pid, hexcommand, strlen(hexcommand), 
                 "writing hex command to pid", /* notify */ True);
 
-      /* we exit of the below loop explicitely when the command has
+      /* we exit of the below loop explicitly when the command has
          been handled or because a signal handler will set
          shutting_down. */
       while (!shutting_down) {

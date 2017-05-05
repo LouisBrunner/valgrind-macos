@@ -527,7 +527,7 @@ typedef struct vki_siginfo {
  * SIGBUS si_codes
  */
 #define VKI_BUS_ADRALN	(__VKI_SI_FAULT|1)	/* invalid address alignment */
-#define VKI_BUS_ADRERR	(__VKI_SI_FAULT|2)	/* non-existant physical address */
+#define VKI_BUS_ADRERR	(__VKI_SI_FAULT|2)	/* non-existent physical address */
 #define VKI_BUS_OBJERR	(__VKI_SI_FAULT|3)	/* object specific hardware error */
 
 /*
@@ -2794,7 +2794,7 @@ typedef vki_uint32_t vki_key_perm_t;
 #define VKI_SIOCSIWPOWER	0x8B2C	/* set Power Management settings */
 #define VKI_SIOCGIWPOWER	0x8B2D	/* get Power Management settings */
 
-/* WPA : Generic IEEE 802.11 informatiom element (e.g., for WPA/RSN/WMM). */
+/* WPA : Generic IEEE 802.11 information element (e.g., for WPA/RSN/WMM). */
 #define VKI_SIOCSIWGENIE	0x8B30		/* set generic IE */
 #define VKI_SIOCGIWGENIE	0x8B31		/* get generic IE */
 
@@ -2821,7 +2821,7 @@ struct	vki_iw_param
   __vki_s32	value;		/* The value of the parameter itself */
   __vki_u8	fixed;		/* Hardware should not use auto select */
   __vki_u8	disabled;	/* Disable the feature */
-  __vki_u16	flags;		/* Various specifc flags (if any) */
+  __vki_u16	flags;		/* Various specific flags (if any) */
 };
 
 struct	vki_iw_point

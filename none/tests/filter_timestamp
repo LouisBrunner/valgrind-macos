@@ -21,7 +21,7 @@ $dir/filter_stderr |
 # We replace the last 5 numbers to allow for a wide range of possible times.
 # It's not a great test, but it will catch some breakage (eg. if the times
 # don't start near 0, as happened in bug 200990, or if the space following
-# the time is omitted, as happend in r10465).
+# the time is omitted, as happened in r10465).
 #
 perl -p -e "s/^00:00:00:\d\d\.\d\d\d $/00:00:00:XX:YYY/"
 

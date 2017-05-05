@@ -524,7 +524,7 @@ Bool get_elf_symbol_info (
       http://gcc.gnu.org/ml/gcc-patches/2004-08/msg00557.html
    */
 #  if defined(VGP_ppc64be_linux)
-   /* Host and guest may have different Endianess, used by BE only */
+   /* Host and guest may have different Endianness, used by BE only */
    is_in_opd = False;
 #  endif
 

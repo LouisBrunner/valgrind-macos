@@ -510,7 +510,7 @@ void detach_from_all_threads (pid_t pid)
 
    if (!pid_found && pid) {
       /* No threads are live. Process is busy stopping.
-         We need to detach from pid explicitely. */
+         We need to detach from pid explicitly. */
       DEBUG(1, "no thread live => PTRACE_DETACH pid %d\n", pid);
       res = ptrace (PTRACE_DETACH, pid, NULL, NULL);
       if (res != 0)

@@ -88,9 +88,9 @@ typedef struct
     * a corresponding OS thread that is detached.
     */
    Bool      detached_posix_thread;
-   /** Wether recording of memory load accesses is currently enabled. */
+   /** Whether recording of memory load accesses is currently enabled. */
    Bool      is_recording_loads;
-   /** Wether recording of memory load accesses is currently enabled. */
+   /** Whether recording of memory load accesses is currently enabled. */
    Bool      is_recording_stores;
    /** pthread_create() nesting level. */
    Int       pthread_create_nesting_level;

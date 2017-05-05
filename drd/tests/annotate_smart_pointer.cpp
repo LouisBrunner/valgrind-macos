@@ -7,7 +7,7 @@
  * - whether or not the smart pointer objects are shared over threads.
  * - whether or not the smart pointer object itself is thread-safe.
  *
- * Most smart pointer implemenations are not thread-safe
+ * Most smart pointer implementations are not thread-safe
  * (e.g. boost::shared_ptr<>, tr1::shared_ptr<> and the smart_ptr<>
  * implementation below). This means that it is not safe to modify a shared
  * pointer object that is shared over threads without proper synchronization.

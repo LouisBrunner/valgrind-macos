@@ -48,7 +48,7 @@ static VexEndness running_endness (void)
 #elif __BYTE_ORDER == __BIG_ENDIAN
    return VexEndnessBE;
 #else
-   fprintf(stderr, "cannot determine endianess\n");
+   fprintf(stderr, "cannot determine endianness\n");
    exit(1);
 #endif
 }
@@ -98,10 +98,10 @@ static VexEndness arch_endness (VexArch va) {
    case VexArchMIPS64:
       /* mips32/64 supports BE or LE, but at compile time.
          If mips64 is compiled on a non mips system, the VEX lib
-         is missing bit and pieces of code related to endianess.
+         is missing bit and pieces of code related to endianness.
          The mandatory code for this test is then compiled as BE.
          So, if this test runs on a mips system, returns the
-         running endianess. Otherwise, returns BE as this one
+         running endianness. Otherwise, returns BE as this one
          has the more chances to work. */
       {
          VexArch ga;
@@ -265,7 +265,7 @@ int main(int argc, char **argv)
    //   endness(host)   != endness(guest)     (not well supported)
    //   wordsize (host) != wordsize (guest)   (not well supported)
    // The not well supported combinations are not run, unless requested
-   // explicitely via command line arguments.
+   // explicitly via command line arguments.
    if (multiarch) {
       VexArch va;
       for (va = VexArchX86; va <= VexArchTILEGX; va++) {

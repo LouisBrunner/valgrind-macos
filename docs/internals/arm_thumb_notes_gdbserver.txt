@@ -45,8 +45,8 @@ at several places in the gdbserver code.
   instruction must be discarded to have the SB re-instrumented for gdbserver.
   At least at this moment (r2155/r11786), the extents for ARM/thumb blocks
   contains addresses with the thumb bit set. It is not clear that this is
-  a good thing: extents should preferrably reference the real address range of
-  instructions, not an adress range which can be "off by one" due to the
+  a good thing: extents should preferably reference the real address range of
+  instructions, not an address range which can be "off by one" due to the
   fact that the instruction is a thumb instruction.
  
   Due to this "off by one", gdbserver is discarding a range of two bytes
@@ -77,7 +77,7 @@ at several places in the gdbserver code.
      * use the debug info : this solution was discarded as often debug
        info does not allow a 100% correct solution. debug info is acceptable
        for vg.translate (which is only for internal valgrind debugging),
-       but is better not used for 'end user functionnality'.
+       but is better not used for 'end user functionality'.
      * Derive the thumb bit for a SB from the extent address.
        This was discarded as this implies that an SB cannot mix thumb
        and ARM code. This implied to disable chasing at transition between

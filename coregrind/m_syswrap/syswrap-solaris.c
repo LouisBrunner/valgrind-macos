@@ -5301,7 +5301,7 @@ PRE(sys_sigresend)
    ARG4 = ARG3;
 
    /* Fake the requested sigmask with a block-all mask.  If the syscall
-      suceeds then we will block "all" signals for a few instructions (in
+      succeeds then we will block "all" signals for a few instructions (in
       syscall-x86-solaris.S) but the correct mask will be almost instantly set
       again by a call to sigprocmask (also in syscall-x86-solaris.S).  If the
       syscall fails then the mask is not changed, so everything is ok too. */

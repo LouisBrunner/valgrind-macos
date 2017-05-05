@@ -4031,7 +4031,7 @@ PRE(getdirentries64)
 }
 POST(getdirentries64) 
 {
-   /* Disabled; see coments in the PRE wrapper.
+   /* Disabled; see comments in the PRE wrapper.
       POST_MEM_WRITE(ARG4, sizeof(vki_off_t));
    */
    // GrP fixme be specific about d_name? (fixme copied from 32 bit version)

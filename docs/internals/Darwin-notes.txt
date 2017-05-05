@@ -39,7 +39,7 @@ the entire Valgrind run mysteriously disappears, rather than spinning
 using native Darwin semaphores.
 
 Because the pipe-based semaphore intensively uses sys_read/sys_write,
-it is not surprising that it inadvertantly was eating up cancellation
+it is not surprising that it inadvertently was eating up cancellation
 requests directed to client threads.  With abovementioned change in
 force the pipe-based semaphore appears to work correctly.
 

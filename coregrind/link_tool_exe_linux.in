@@ -19,7 +19,7 @@
 #   first arg
 #      the alternative load address
 #   all the rest of the args
-#      the gcc invokation to do the final link, that
+#      the gcc invocation to do the final link, that
 #      the build system would have done, left to itself
 #
 # We just let the script 'die' if something is wrong, rather than do

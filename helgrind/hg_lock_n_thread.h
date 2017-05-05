@@ -100,7 +100,7 @@ typedef
          the same thing implicitly. This is necessary because for example
          Solaris libc caches many objects and reuses them for different threads
          and that confuses Helgrind. With libvki it would be possible to
-         explictly use VG_USERREQ__HG_CLEAN_MEMORY on such objects.
+         explicitly use VG_USERREQ__HG_CLEAN_MEMORY on such objects.
          Also mutex activity is ignored so that they do not impose false
          ordering between creator and created thread. */
       Int pthread_create_nesting_level;

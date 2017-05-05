@@ -275,7 +275,7 @@ Int VG_(sigaction) ( Int signum,
       whatever we were provided with.  This is OK because all the
       sigaction requests come from m_signals, and are not directly
       what the client program requested, so there is no chance that we
-      will inadvertantly ignore the sa_tramp field requested by the
+      will inadvertently ignore the sa_tramp field requested by the
       client.  (In fact m_signals does ignore it when building signal
       frames for the client, but that's a completely different
       matter).

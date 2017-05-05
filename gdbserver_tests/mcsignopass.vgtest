@@ -2,7 +2,7 @@
 # We detect this two ways:
 #   the gdb output will not contain the signal handling
 #   faultstatus C code will report a failure for the signal not passed
-#      (i.e. SIGBUG, Test 3). Other tests will be succesful, because signals
+#      (i.e. SIGBUG, Test 3). Other tests will be successful, because signals
 #      are eventually passed.
 prereq: test -e gdb
 prog: ../none/tests/faultstatus

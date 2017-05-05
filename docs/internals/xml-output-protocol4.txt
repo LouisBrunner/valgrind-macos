@@ -791,5 +791,5 @@ Definition:
   If the signal reason is not related to an address, the tag is omitted.
 
 * STACK is defined above and shows where the thread was when it
-  catched the signal.  When sending the signal to itself using raise,
+  caught the signal.  When sending the signal to itself using raise,
   then raise is visible in this stack.

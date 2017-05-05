@@ -1,6 +1,6 @@
 prog: new_override
 # Don't override the user defined somalloc functions in this test.
 # The test depends on some side effects and initializing memory done by
-# the user overidden operator new.
+# the user overridden operator new.
 vgopts: --soname-synonyms=somalloc=nouseroverride
 stderr_filter: filter_allocs

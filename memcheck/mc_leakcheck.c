@@ -714,7 +714,7 @@ void leak_search_fault_catcher ( Int sigNo, Addr addr,
    /* Signal handler runs with the signal masked.
       Unmask the handled signal before longjmp-ing or return-ing.
       Note that during leak search, we expect only SIGSEGV or SIGBUS
-      and we do not expect another occurence until we longjmp-ed!return-ed
+      and we do not expect another occurrence until we longjmp-ed!return-ed
       to resume the leak search. So, it is safe to unmask the signal
       here. */
    /* First get current mask (by passing NULL as first arg) */

@@ -230,7 +230,7 @@ typedef
    } VgdbShared64;
 
 // The below typedef makes the life of valgrind easier.
-// vgdb must however work explicitely with the specific 32 or 64 bits version.
+// vgdb must however work explicitly with the specific 32 or 64 bits version.
 
 #if VEX_HOST_WORDSIZE == 8
 typedef VgdbShared64 VgdbShared;

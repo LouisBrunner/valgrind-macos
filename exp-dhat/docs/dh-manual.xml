@@ -389,7 +389,7 @@ to be the case, but it could happen.</para>
 </variablelist>
 
 <para>One important point to note is that each allocation stack counts
-as a seperate allocation point.  Because stacks by default have 12
+as a separate allocation point.  Because stacks by default have 12
 frames, this tends to spread data out over multiple allocation points.
 You may want to use the flag --num-callers=4 or some such small
 number, to reduce the spreading.</para>

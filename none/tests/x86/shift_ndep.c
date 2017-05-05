@@ -18,7 +18,7 @@ int shift_ndep( void )
      expected final value for x is -2 + 1 + 1 = 0.
 
      If instead the shift clears CC_NDEP (as it would legally do if
-     the shift amount were non-zero), this will be interpeted as
+     the shift amount were non-zero), this will be interpreted as
      clearing the carry bit, so the adc will be a no-op and the final
      value of %x will instead be -1.
   */

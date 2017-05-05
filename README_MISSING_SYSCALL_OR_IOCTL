@@ -140,7 +140,7 @@ following:
     LINX_, LINXY, PLAX_, PLAXY.
     GEN* for generic syscalls (in syswrap-generic.c), LIN* for linux
     specific ones (in syswrap-linux.c) and PLA* for the platform
-    dependant ones (in syswrap-$(PLATFORM)-linux.c).
+    dependent ones (in syswrap-$(PLATFORM)-linux.c).
     The *XY variant if it requires a PRE() and POST() function, and
     the *X_ variant if it only requires a PRE()
     function.  

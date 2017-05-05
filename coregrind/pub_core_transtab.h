@@ -68,7 +68,7 @@ extern void VG_(init_tt_tc)       ( void );
 #define MIN_N_SECTORS 2
 #define MAX_N_SECTORS 24
 
-/* Default for the nr of sectors, if not overriden by command line.
+/* Default for the nr of sectors, if not overridden by command line.
    On Android, space is limited, so try to get by with fewer sectors.
    On other platforms we can go to town.  16 sectors gives theoretical
    capacity of about 440MB of JITted code in 1.05 million translations

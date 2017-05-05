@@ -31,7 +31,7 @@ my $ala = $ARGV[0];
 die "Bogus alt-load address"
     if (length($ala) < 3 || index($ala, "0x") != 0);
 
-# the cc invokation to do the final link
+# the cc invocation to do the final link
 my $cc = $ARGV[1];
 
 # and the 'restargs' are argv[2 ..]

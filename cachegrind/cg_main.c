@@ -294,7 +294,7 @@ static LineCC* get_lineCC(Addr origAddr)
  * As this can be detected at instrumentation time, and results
  * in faster simulation, special-casing is benefical.
  *
- * Abbrevations used in var/function names:
+ * Abbreviations used in var/function names:
  *  IrNoX - instruction read does not cross cache lines
  *  IrGen - generic instruction read; not detected as IrNoX
  *  Ir    - not known / not important whether it is an IrNoX

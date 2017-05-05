@@ -233,7 +233,7 @@ tool-specific macros).</para>
     memcheck leak search can be requested from the client program
     using VALGRIND_DO_LEAK_CHECK or via the monitor command "leak_search".
     Note that the syntax of the command string is only verified at
-    run-time. So, if it exists, it is preferrable to use a specific
+    run-time. So, if it exists, it is preferable to use a specific
     client request to have better compile time verifications of the
     arguments.
     </para>
@@ -1448,7 +1448,7 @@ problems or bugs.</para>
   </listitem>
 
   <listitem>
-    <para><varname>v.info exectxt</varname> shows informations about
+    <para><varname>v.info exectxt</varname> shows information about
     the "executable contexts" (i.e. the stack traces) recorded by
     Valgrind.  For some programs, Valgrind can record a very high
     number of such stack traces, causing a high memory usage.  This

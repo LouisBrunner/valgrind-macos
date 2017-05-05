@@ -66,7 +66,7 @@ extern UInt VG_(get_StackTrace) ( ThreadId tid,
 
 // Apply a function to every element in the StackTrace.  The parameter
 // 'n' gives the index of the passed ip.  'opaque' is an arbitrary
-// pointer provided to each invokation of 'action' (a poor man's
+// pointer provided to each invocation of 'action' (a poor man's
 // closure).  Doesn't go below main() unless --show-below-main=yes is
 // set.
 extern void VG_(apply_StackTrace)(

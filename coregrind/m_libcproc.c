@@ -951,7 +951,7 @@ Int VG_(gettimeofday)(struct vki_timeval *tv, struct vki_timezone *tz)
 
    if (! sr_isError(res)) return 0;
 
-   /* Make sure, argument values are determinstic upon failure */
+   /* Make sure, argument values are deterministic upon failure */
    if (tv) *tv = (struct vki_timeval){ .tv_sec = 0, .tv_usec = 0 };
    if (tz) *tz = (struct vki_timezone){ .tz_minuteswest = 0, .tz_dsttime = 0 };
 

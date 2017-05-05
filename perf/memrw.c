@@ -26,7 +26,7 @@ static int nr_loops; // nr of loops reading or writing the ws
 static int nr_thr; // nr of threads (hardcoded to 1 currently)
 static int nr_repeat; // nr of times we will allocate, use, then free total+ws
 
-// Note: the total nr of MB is what is explicitely allocated.
+// Note: the total nr of MB is what is explicitly allocated.
 // On top of that, we have the stacks, local vars, lib vars, ...
 // The working set is just the first nr_b_ws blocks of nr_b.
 

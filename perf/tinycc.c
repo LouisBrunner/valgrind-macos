@@ -2309,7 +2309,7 @@ static struct BufferedFile *file;
 static int ch, tok;
 static CValue tokc;
 static CString tokcstr; /* current parsed string, if any */
-/* additional informations about token */
+/* additional information about token */
 static int tok_flags;
 #define TOK_FLAG_BOL   0x0001 /* beginning of line before */
 #define TOK_FLAG_BOF   0x0002 /* beginning of file before */
@@ -2435,7 +2435,7 @@ struct TCCState {
     Section *plt;
     unsigned long *got_offsets;
     int nb_got_offsets;
-    /* give the correspondance from symtab indexes to dynsym indexes */
+    /* give the correspondence from symtab indexes to dynsym indexes */
     int *symtab_to_dynsym;
 
     /* temporary dynamic symbol sections (for dll loading) */
@@ -5508,7 +5508,7 @@ typedef struct ExprValue {
 #define MAX_ASM_OPERANDS 30
 
 typedef struct ASMOperand {
-    int id; /* GCC 3 optionnal identifier (0 if number only supported */
+    int id; /* GCC 3 optional identifier (0 if number only supported */
     char *constraint;
     char asm_str[16]; /* computed asm string for operand */
     SValue *vt; /* C value of the expression */
@@ -10846,7 +10846,7 @@ void gen_opl(int op)
             c = (int)vtop->c.i;
             /* constant: simpler */
             /* NOTE: all comments are for SHL. the other cases are
-               done by swaping words */
+               done by swapping words */
             vpop();
             if (op != TOK_SHL)
                 vswap();
@@ -11821,7 +11821,7 @@ static void gen_assign_cast(CType *dt)
             goto type_ok;
         }
         type1 = pointed_type(dt);
-        /* a function is implicitely a function pointer */
+        /* a function is implicitly a function pointer */
         if (sbt == VT_FUNC) {
             if ((type1->t & VT_BTYPE) != VT_VOID &&
                 !is_compatible_types(pointed_type(dt), st))
@@ -18803,7 +18803,7 @@ static void build_got(TCCState *s1)
 }
 
 /* put a got entry corresponding to a symbol in symtab_section. 'size'
-   and 'info' can be modifed if more precise info comes from the DLL */
+   and 'info' can be modified if more precise info comes from the DLL */
 static void put_got_entry(TCCState *s1,
                           int reloc_type, unsigned long size, int info, 
                           int sym_index)
@@ -19579,7 +19579,7 @@ int tcc_output_file(TCCState *s1, const char *filename)
             }
         }
 
-        /* if interpreter, then add corresponing program header */
+        /* if interpreter, then add corresponding program header */
         if (interp) {
             ph = &phdr[0];
             
@@ -19593,7 +19593,7 @@ int tcc_output_file(TCCState *s1, const char *filename)
             ph->p_align = interp->sh_addralign;
         }
         
-        /* if dynamic section, then add corresponing program header */
+        /* if dynamic section, then add corresponding program header */
         if (dynamic) {
             Elf32_Sym *sym_end;
 

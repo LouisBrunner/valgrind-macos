@@ -7876,7 +7876,7 @@ static void mc_post_clo_init ( void )
    // As for the portability of all this:
    //
    //   sbrk and brk are not POSIX.  However, any system that is a derivative
-   //   of *nix has sbrk and brk because there are too many softwares (such as
+   //   of *nix has sbrk and brk because there are too many software (such as
    //   the Bourne shell) which rely on the traditional memory map (.text,
    //   .data+.bss, stack) and the existence of sbrk/brk.
    //

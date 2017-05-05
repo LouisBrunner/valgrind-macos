@@ -154,7 +154,7 @@ typedef
 // 8-bytes on 32-bit machines with an 8-byte VG_MIN_MALLOC_SZB -- because
 // it's too hard to make a constant expression that works perfectly in all
 // cases.
-// 'unsplittable' is set to NULL if superblock can be splitted, otherwise
+// 'unsplittable' is set to NULL if superblock can be split, otherwise
 // it is set to the address of the superblock. An unsplittable superblock
 // will contain only one allocated block. An unsplittable superblock will
 // be unmapped when its (only) allocated block is freed.
@@ -198,7 +198,7 @@ typedef
       SizeT        min_unsplittable_sblock_szB;
       // Minimum unsplittable superblock size in bytes. To be marked as
       // unsplittable, a superblock must have a 
-      // size >= min_unsplittable_sblock_szB and cannot be splitted.
+      // size >= min_unsplittable_sblock_szB and cannot be split.
       // So, to avoid big overhead, superblocks used to provide aligned
       // blocks on big alignments are splittable.
       // Unsplittable superblocks will be reclaimed when their (only) 
@@ -550,7 +550,7 @@ static ArenaId arenaP_to_ArenaId ( Arena *a )
 }
 
 // Initialise an arena.  rz_szB is the (default) minimum redzone size;
-// It might be overriden by VG_(clo_redzone_size) or VG_(clo_core_redzone_size).
+// It might be overridden by VG_(clo_redzone_size) or VG_(clo_core_redzone_size).
 // it might be made bigger to ensure that VG_MIN_MALLOC_SZB is observed.
 static
 void arena_init ( ArenaId aid, const HChar* name, SizeT rz_szB,
@@ -1859,7 +1859,7 @@ void* VG_(arena_malloc) ( ArenaId aid, const HChar* cc, SizeT req_pszB )
    vg_assert(b_bszB >= req_bszB);
 
    // Could we split this block and still get a useful fragment?
-   // A block in an unsplittable superblock can never be splitted.
+   // A block in an unsplittable superblock can never be split.
    frag_bszB = b_bszB - req_bszB;
    if (frag_bszB >= min_useful_bszB(a)
        && (NULL == new_sb || ! new_sb->unsplittable)) {
@@ -2002,7 +2002,7 @@ void deferred_reclaimSuperblock ( Arena* a, Superblock* sb)
 
 /* b must be a free block, of size b_bszB.
    If b is followed by another free block, merge them.
-   If b is preceeded by another free block, merge them.
+   If b is preceded by another free block, merge them.
    If the merge results in the superblock being fully free,
    deferred_reclaimSuperblock the superblock. */
 static void mergeWithFreeNeighbours (Arena* a, Superblock* sb,
@@ -2248,7 +2248,7 @@ void* VG_(arena_memalign) ( ArenaId aid, const HChar* cc,
    {
       /* As we will split the block given back by VG_(arena_malloc),
          we have to (temporarily) disable unsplittable for this arena,
-         as unsplittable superblocks cannot be splitted. */
+         as unsplittable superblocks cannot be split. */
       const SizeT save_min_unsplittable_sblock_szB 
          = a->min_unsplittable_sblock_szB;
       a->min_unsplittable_sblock_szB = MAX_PSZB;

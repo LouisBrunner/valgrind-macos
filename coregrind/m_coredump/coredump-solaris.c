@@ -682,7 +682,7 @@ static vki_prpriv_t *create_prpriv(SizeT *size)
 
 static vki_priv_impl_info_t *create_priv_info(SizeT *size)
 {
-   /* Size of the returned priv_impl_info_t is apriori unkown. */
+   /* Size of the returned priv_impl_info_t is apriori unknown. */
    vki_priv_impl_info_t first_cut[100];
    SysRes sres = VG_(do_syscall5)(SYS_privsys, VKI_PRIVSYS_GETIMPLINFO,
                                   0, 0, (UWord) first_cut,

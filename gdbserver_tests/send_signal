@@ -2,7 +2,7 @@
 
 # send_signal sends signal $1 to the Valgrind process using prefix $2 in $3 seconds
 # If there are some args after $3, the rest of these args is a command and its arg
-# which is run every second. When this command is succesful, then the sleep and
+# which is run every second. When this command is successful, then the sleep and
 # the signal sending is done
 SIG=$1
 shift

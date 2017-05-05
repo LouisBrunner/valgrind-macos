@@ -2,7 +2,7 @@
 
 # simulate control_c by sending SIGUSR1 to the vgdb using prefix $1 in $2 seconds
 # If there are some args after $2, the rest of these args is a command and its arg
-# which is run every second. When this command is succesful, then the sleep and
+# which is run every second. When this command is successful, then the sleep and
 # the control c simul is done.
 PREFIX=$1
 shift

@@ -15096,31 +15096,19 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             if (rd == 29) {
                putIReg(rt, getULR());
 #if defined(__mips__) && ((defined(__mips_isa_rev) && __mips_isa_rev >= 2))
-            } else if (rd == 1
+            } else if (rd <= 3
                        || (rd == 31
                            && VEX_MIPS_COMP_ID(archinfo->hwcaps)
                                                     == VEX_PRID_COMP_CAVIUM)) {
-               if (mode64) {
-                  IRTemp   val  = newTemp(Ity_I64);
-                  IRExpr** args = mkIRExprVec_2 (mkU64(rt), mkU64(rd));
-                  IRDirty *d = unsafeIRDirty_1_N(val,
-                                                 0,
-                                                 "mips64_dirtyhelper_rdhwr",
-                                                 &mips64_dirtyhelper_rdhwr,
-                                                 args);
-                  stmt(IRStmt_Dirty(d));
-                  putIReg(rt, mkexpr(val));
-               } else {
-                  IRTemp   val  = newTemp(Ity_I32);
-                  IRExpr** args = mkIRExprVec_2 (mkU32(rt), mkU32(rd));
-                  IRDirty *d = unsafeIRDirty_1_N(val,
-                                                 0,
-                                                 "mips32_dirtyhelper_rdhwr",
-                                                 &mips32_dirtyhelper_rdhwr,
-                                                 args);
-                  stmt(IRStmt_Dirty(d));
-                  putIReg(rt, mkexpr(val));
-               }
+               IRExpr** args = mkIRExprVec_2 (mkU32(rt), mkU32(rd));
+               IRTemp   val  = newTemp(ty);
+               IRDirty *d = unsafeIRDirty_1_N(val,
+                                              0,
+                                              "mips_dirtyhelper_rdhwr",
+                                              &mips_dirtyhelper_rdhwr,
+                                              args);
+               stmt(IRStmt_Dirty(d));
+               putIReg(rt, mkexpr(val));
 #endif
             } else
                goto decode_failure;

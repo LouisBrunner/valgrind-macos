@@ -425,31 +425,24 @@ VexGuestLayout mips64Guest_layout = {
 };
 
 #if defined(__mips__) && ((defined(__mips_isa_rev) && __mips_isa_rev >= 2))
-UInt mips32_dirtyhelper_rdhwr ( UInt rt, UInt rd )
+HWord mips_dirtyhelper_rdhwr ( UInt rt, UInt rd )
 {
-   UInt x = 0;
+   HWord x = 0;
    switch (rd) {
-      case 1:  /* x = SYNCI_StepSize() */
+      case 0:  /* x = CPUNum() */
+         __asm__ __volatile__("rdhwr %0, $0\n\t" : "=r" (x) );
+         break;
+
+      case 1:  /* x = SYNCI_Step() */
          __asm__ __volatile__("rdhwr %0, $1\n\t" : "=r" (x) );
          break;
 
-      case 31:  /* x = CVMX_get_cycles() */
-         __asm__ __volatile__("rdhwr %0, $31\n\t" : "=r" (x) );
+      case 2:  /* x = CC() */
+         __asm__ __volatile__("rdhwr %0, $2\n\t" : "=r" (x) );
          break;
 
-      default:
-         vassert(0);
-         break;
-   }
-   return x;
-}
-
-ULong mips64_dirtyhelper_rdhwr ( ULong rt, ULong rd )
-{
-   ULong x = 0;
-   switch (rd) {
-      case 1:  /* x = SYNCI_StepSize() */
-         __asm__ __volatile__("rdhwr %0, $1\n\t" : "=r" (x) );
+      case 3:  /* x = CCRes() */
+         __asm__ __volatile__("rdhwr %0, $3\n\t" : "=r" (x) );
          break;
 
       case 31:  /* x = CVMX_get_cycles() */

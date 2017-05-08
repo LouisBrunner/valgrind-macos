@@ -1,1 +1,0 @@
-../allexec.c

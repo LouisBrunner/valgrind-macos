@@ -285,16 +285,6 @@ UWord do_acasW ( UWord* addr, UWord expected, UWord nyu )
    return success;
 }
 
-#elif defined(VGA_tilegx)
-
-/* return 1 if success, 0 if failure */
-UWord do_acasW(UWord* addr, UWord expected, UWord nyu )
-{
-  /* Load the compare value into special register 0x2780 */
-  __insn_mtspr(0x2780, expected);
-  return __insn_cmpexch(addr, nyu);
-}
-
 #endif
 
 void atomic_incW ( UWord* w )

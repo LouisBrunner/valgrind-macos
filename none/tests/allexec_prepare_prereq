@@ -33,6 +33,5 @@ pair ppc32                      ppc64
 pair s390x_unexisting_in_32bits s390x
 pair arm                        arm64
 pair mips32                     mips64
-pair tilegx_unexisting_32bits   tilegx
 
 exit 0

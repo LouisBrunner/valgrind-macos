@@ -301,15 +301,6 @@ static void run_a_thread_NORETURN ( Word tidW )
          : "r" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode)
          : "cc", "memory" , "v0", "a0"
       );
-#elif defined(VGP_tilegx_linux)
-      asm volatile (
-         "st4    %0,  %1\n"      /* set tst->status = VgTs_Empty */
-         "moveli r10, %2\n"      /* set r10 = __NR_exit */
-         "move   r0,  %3\n"      /* set  r0 = tst->os_state.exitcode */
-         "swint1\n"              /* exit(tst->os_state.exitcode) */
-         : "=m" (tst->status)
-         : "r" (VgTs_Empty), "n" (__NR_exit), "r" (tst->os_state.exitcode)
-         : "r0", "r1", "r2", "r3", "r4", "r5");
 #else
 # error Unknown platform
 #endif
@@ -527,15 +518,6 @@ static SysRes clone_new_thread ( Word (*fn)(void *),
    /* High half word64 is syscall return value.  Low half is
       the entire CR, from which we need to extract CR0.SO. */ 
    res = VG_ (mk_SysRes_mips32_linux) (/*val */ ret, 0, /*errflag */ 0);
-#elif defined(VGP_tilegx_linux)
-   Long ret = 0;
-   ctst->arch.vex.guest_r0 = 0;
-   ctst->arch.vex.guest_r3 = 0;
-   ret = do_syscall_clone_tilegx_linux
-      (ML_ (start_thread_NORETURN), stack, flags, ctst,
-       child_tidptr, parent_tidptr, NULL);
-   /* High half word64 is syscall return value. */
-   res = VG_(mk_SysRes_tilegx_linux) (/*val */ ret);
 #else
 # error Unknown platform
 #endif
@@ -598,8 +580,6 @@ static SysRes setup_child_tls (ThreadId ctid, Addr tlsaddr)
 #elif defined(VGP_mips32_linux)
    ctst->arch.vex.guest_ULR = tlsaddr;
    ctst->arch.vex.guest_r27 = tlsaddr;
-#elif defined(VGP_tilegx_linux)
-   ctst->arch.vex.guest_r53 = tlsaddr;
 #else
 # error Unknown platform
 #endif
@@ -711,11 +691,6 @@ static SysRes do_clone ( ThreadId ptid,
       VG_TRACK( pre_thread_ll_exit, ctid );
    }
 
-#if defined(VGP_tilegx_linux)
-   // ??? why do we set unconditionally r0 to 0, even when error out ???
-   ptst->arch.vex.guest_r0 = 0;
-#endif
-
    return res;
 }
 
@@ -766,7 +741,7 @@ static SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
    res = VG_(do_syscall5)( __NR_clone, flags, 
                            (UWord)NULL, (UWord)parent_tidptr, 
                            (UWord)NULL, (UWord)child_tidptr );
-#elif defined(VGP_amd64_linux) || defined(VGP_tilegx_linux)
+#elif defined(VGP_amd64_linux)
    /* note that the last two arguments are the opposite way round to x86 and
       ppc32 as the amd64 kernel expects the arguments in a different order */
    res = VG_(do_syscall5)( __NR_clone, flags, 
@@ -832,8 +807,7 @@ PRE(sys_clone)
 #define PRA_CHILD_TIDPTR PRA5
 #define ARG_TLS          ARG4
 #define PRA_TLS          PRA4
-#elif defined(VGP_amd64_linux) || defined(VGP_tilegx_linux) \
-    || defined(VGP_s390x_linux)
+#elif defined(VGP_amd64_linux) || defined(VGP_s390x_linux)
 #define ARG_CHILD_TIDPTR ARG4
 #define PRA_CHILD_TIDPTR PRA4
 #define ARG_TLS          ARG5
@@ -5865,7 +5839,7 @@ POST(sys_lookup_dcookie)
 #endif
 
 #if defined(VGP_amd64_linux) || defined(VGP_s390x_linux)        \
-      || defined(VGP_tilegx_linux) || defined(VGP_arm64_linux)
+      || defined(VGP_arm64_linux)
 PRE(sys_lookup_dcookie)
 {
    *flags |= SfMayBlock;

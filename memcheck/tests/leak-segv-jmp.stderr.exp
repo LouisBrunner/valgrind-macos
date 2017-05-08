@@ -14,8 +14,8 @@ To see them, rerun with: --leak-check=full --show-leak-kinds=all
 expecting a leak
 1,000 bytes in 1 blocks are definitely lost in loss record ... of ...
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: f (leak-segv-jmp.c:295)
-   by 0x........: main (leak-segv-jmp.c:370)
+   by 0x........: f (leak-segv-jmp.c:271)
+   by 0x........: main (leak-segv-jmp.c:346)
 
 LEAK SUMMARY:
    definitely lost: 1,000 bytes in 1 blocks
@@ -30,8 +30,8 @@ mprotect result 0
 expecting a leak again
 1,000 bytes in 1 blocks are definitely lost in loss record ... of ...
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: f (leak-segv-jmp.c:295)
-   by 0x........: main (leak-segv-jmp.c:370)
+   by 0x........: f (leak-segv-jmp.c:271)
+   by 0x........: main (leak-segv-jmp.c:346)
 
 LEAK SUMMARY:
    definitely lost: 1,000 bytes in 1 blocks
@@ -46,8 +46,8 @@ full mprotect result 0
 expecting a leak again after full mprotect
 1,000 bytes in 1 blocks are definitely lost in loss record ... of ...
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: f (leak-segv-jmp.c:295)
-   by 0x........: main (leak-segv-jmp.c:370)
+   by 0x........: f (leak-segv-jmp.c:271)
+   by 0x........: main (leak-segv-jmp.c:346)
 
 LEAK SUMMARY:
    definitely lost: 1,000 bytes in 1 blocks
@@ -62,13 +62,13 @@ mprotect result 0
 expecting heuristic not to crash after full mprotect
 1,000 bytes in 1 blocks are definitely lost in loss record ... of ...
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: f (leak-segv-jmp.c:295)
-   by 0x........: main (leak-segv-jmp.c:370)
+   by 0x........: f (leak-segv-jmp.c:271)
+   by 0x........: main (leak-segv-jmp.c:346)
 
 200,000 bytes in 1 blocks are possibly lost in loss record ... of ...
    at 0x........: calloc (vg_replace_malloc.c:...)
-   by 0x........: f (leak-segv-jmp.c:342)
-   by 0x........: main (leak-segv-jmp.c:370)
+   by 0x........: f (leak-segv-jmp.c:318)
+   by 0x........: main (leak-segv-jmp.c:346)
 
 LEAK SUMMARY:
    definitely lost: 1,000 bytes in 1 blocks

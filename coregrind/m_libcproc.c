@@ -662,7 +662,7 @@ Int VG_(gettid)(void)
        * the /proc/self link is pointing...
        */
 
-#     if defined(VGP_arm64_linux) || defined(VGP_tilegx_linux)
+#     if defined(VGP_arm64_linux)
       res = VG_(do_syscall4)(__NR_readlinkat, VKI_AT_FDCWD,
                              (UWord)"/proc/self",
                              (UWord)pid, sizeof(pid));
@@ -787,7 +787,7 @@ Int VG_(getgroups)( Int size, UInt* list )
    if (size < 0) return -1;
 
 #  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
-      || defined(VGP_mips64_linux) || defined(VGP_tilegx_linux)
+      || defined(VGP_mips64_linux)
    Int    i;
    SysRes sres;
    UShort list16[size];
@@ -845,7 +845,7 @@ Int VG_(ptrace) ( Int request, Int pid, void *addr, void *data )
 
 Int VG_(fork) ( void )
 {
-#  if defined(VGP_arm64_linux) || defined(VGP_tilegx_linux)
+#  if defined(VGP_arm64_linux)
    SysRes res;
    res = VG_(do_syscall5)(__NR_clone, VKI_SIGCHLD,
                           (UWord)NULL, (UWord)NULL, (UWord)NULL, (UWord)NULL);
@@ -1185,25 +1185,6 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    SysRes sres = VG_(do_syscall3)(__NR_cacheflush, (UWord) ptr,
                                  (UWord) nbytes, (UWord) 3);
    vg_assert( !sr_isError(sres) );
-
-#  elif defined(VGA_tilegx)
-   const HChar *start, *end;
-
-   /* L1 ICache is 32KB. cacheline size is 64 bytes. */
-   if (nbytes > 0x8000) nbytes = 0x8000;
-
-   start = (const HChar *)((unsigned long)ptr & -64ULL);
-   end = (const HChar*)ptr + nbytes - 1;
-
-   __insn_mf();
-
-   do {
-     const HChar* p;
-     for (p = start; p <= end; p += 64)
-       __insn_icoh(p);
-   } while (0);
-
-   __insn_drain();
 
 #  endif
 }

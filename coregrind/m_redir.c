@@ -1602,15 +1602,6 @@ void VG_(redir_initialise) ( void )
       );
    }
 
-#  elif defined(VGP_tilegx_linux)
-   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
-
-      add_hardwired_spec(
-         "ld.so.1", "strlen",
-         (Addr)&VG_(tilegx_linux_REDIR_FOR_strlen), NULL
-      );
-   }
-
 #  elif defined(VGP_x86_solaris)
    /* If we're using memcheck, use these intercepts right from
       the start, otherwise ld.so makes a lot of noise. */

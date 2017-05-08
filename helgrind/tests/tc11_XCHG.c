@@ -18,7 +18,6 @@
 #undef PLAT_arm_linux
 #undef PLAT_s390x_linux
 #undef PLAT_mips32_linux
-#undef PLAT_tilegx_linux
 #undef PLAT_x86_solaris
 #undef PLAT_amd64_solaris
 
@@ -42,8 +41,6 @@
 #  define PLAT_s390x_linux 1
 #elif defined(__linux__) && defined(__mips__)
 #  define PLAT_mips32_linux 1
-#elif defined(__linux__) && defined(__tilegx__)
-#  define PLAT_tilegx_linux 1
 #elif defined(__sun__) && defined(__i386__)
 #  define PLAT_x86_solaris 1
 #elif defined(__sun__) && defined(__x86_64__)
@@ -125,12 +122,6 @@
 #  define XCHG_M_R_with_redundant_LOCK(_addr,_lval) \
       XCHG_M_R(_addr,_lval)
 
-#elif defined(PLAT_tilegx_linux)
-#  define XCHG_M_R(_addr,_lval) \
-  _lval = __insn_exch4(&_addr, _lval)
-
-#  define XCHG_M_R_with_redundant_LOCK(_addr,_lval) \
-  XCHG_M_R(_addr, _lval)
 #else
 #  error "Unsupported architecture"
 

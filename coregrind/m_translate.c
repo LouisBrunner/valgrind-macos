@@ -760,7 +760,7 @@ void log_bytes ( const HChar* bytes, SizeT nbytes )
 static Bool translations_allowable_from_seg ( NSegment const* seg, Addr addr )
 {
 #  if defined(VGA_x86) || defined(VGA_s390x) || defined(VGA_mips32)     \
-     || defined(VGA_mips64) || defined(VGA_tilegx)
+     || defined(VGA_mips64)
    Bool allowR = True;
 #  else
    Bool allowR = False;

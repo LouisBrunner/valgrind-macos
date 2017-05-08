@@ -440,14 +440,7 @@ extern UInt do_syscall_clone_mips_linux ( Word (*fn) (void *), //a0     0    32
                                           Int*  child_tid,     //stack  16   48
                                           Int*  parent_tid,    //stack  20   52
                                           void* tls_ptr);      //stack  24   56
-extern Long do_syscall_clone_tilegx_linux ( Word (*fn) (void *),  //r0
-                                            void* stack,          //r1
-                                            Long  flags,          //r2
-                                            void* arg,            //r3
-                                            Long* child_tid,      //r4
-                                            Long* parent_tid,     //r5
-                                            void* tls_ptr );      //r6
- #endif   // __PRIV_SYSWRAP_LINUX_H
+#endif   // __PRIV_SYSWRAP_LINUX_H
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

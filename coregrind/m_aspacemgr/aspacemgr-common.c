@@ -158,8 +158,7 @@ SysRes VG_(am_do_mmap_NO_NOTIFY)( Addr start, SizeT length, UInt prot,
 #  elif defined(VGP_amd64_linux) \
         || defined(VGP_ppc64be_linux)  || defined(VGP_ppc64le_linux) \
         || defined(VGP_s390x_linux) || defined(VGP_mips32_linux) \
-        || defined(VGP_mips64_linux) || defined(VGP_arm64_linux) \
-        || defined(VGP_tilegx_linux)
+        || defined(VGP_mips64_linux) || defined(VGP_arm64_linux)
    res = VG_(do_syscall6)(__NR_mmap, (UWord)start, length, 
                          prot, flags, fd, offset);
 #  elif defined(VGP_x86_darwin)
@@ -258,9 +257,6 @@ SysRes ML_(am_open) ( const HChar* pathname, Int flags, Int mode )
    /* ARM64 wants to use __NR_openat rather than __NR_open. */
    SysRes res = VG_(do_syscall4)(__NR_openat,
                                  VKI_AT_FDCWD, (UWord)pathname, flags, mode);
-#  elif defined(VGP_tilegx_linux)
-   SysRes res = VG_(do_syscall4)(__NR_openat, VKI_AT_FDCWD, (UWord)pathname,
-                                 flags, mode);
 #  elif defined(VGO_linux) || defined(VGO_darwin)
    SysRes res = VG_(do_syscall3)(__NR_open, (UWord)pathname, flags, mode);
 #  elif defined(VGO_solaris)
@@ -289,9 +285,6 @@ Int ML_(am_readlink)(const HChar* path, HChar* buf, UInt bufsiz)
 #  if defined(VGP_arm64_linux)
    res = VG_(do_syscall4)(__NR_readlinkat, VKI_AT_FDCWD,
                                            (UWord)path, (UWord)buf, bufsiz);
-#  elif defined(VGP_tilegx_linux)
-   res = VG_(do_syscall4)(__NR_readlinkat, VKI_AT_FDCWD, (UWord)path,
-                          (UWord)buf, bufsiz);
 #  elif defined(VGO_linux) || defined(VGO_darwin)
    res = VG_(do_syscall3)(__NR_readlink, (UWord)path, (UWord)buf, bufsiz);
 #  elif defined(VGO_solaris)

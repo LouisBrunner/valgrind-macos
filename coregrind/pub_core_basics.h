@@ -96,10 +96,6 @@ typedef
             ULong r31;  /* Return address of the last subroutine call */
             ULong r28;
          } MIPS64;
-         struct {
-            ULong r52;
-            ULong r55;
-         } TILEGX;
       } misc;
    }
    UnwindStartRegs;

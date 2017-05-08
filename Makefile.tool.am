@@ -79,9 +79,6 @@ TOOL_LDFLAGS_MIPS64_LINUX = \
 	-static -nodefaultlibs -nostartfiles -u __start @FLAG_NO_BUILD_ID@ \
 	@FLAG_M64@
 
-TOOL_LDFLAGS_TILEGX_LINUX = \
-	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M64@
-
 TOOL_LDFLAGS_X86_SOLARIS = \
 	$(TOOL_LDFLAGS_COMMON_SOLARIS) @FLAG_M32@
 
@@ -144,9 +141,6 @@ LIBREPLACEMALLOC_MIPS32_LINUX = \
 LIBREPLACEMALLOC_MIPS64_LINUX = \
 	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-mips64-linux.a
 
-LIBREPLACEMALLOC_TILEGX_LINUX = \
-	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-tilegx-linux.a
-
 LIBREPLACEMALLOC_X86_SOLARIS = \
 	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-x86-solaris.a
 
@@ -207,11 +201,6 @@ LIBREPLACEMALLOC_LDFLAGS_MIPS32_LINUX = \
 LIBREPLACEMALLOC_LDFLAGS_MIPS64_LINUX = \
 	-Wl,--whole-archive \
 	$(LIBREPLACEMALLOC_MIPS64_LINUX) \
-	-Wl,--no-whole-archive
-
-LIBREPLACEMALLOC_LDFLAGS_TILEGX_LINUX = \
-	-Wl,--whole-archive \
-	$(LIBREPLACEMALLOC_TILEGX_LINUX) \
 	-Wl,--no-whole-archive
 
 LIBREPLACEMALLOC_LDFLAGS_X86_SOLARIS = \

@@ -10,7 +10,7 @@ ARM64/Linux, PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux,
 MIPS32/Linux, MIPS64/Linux, ARM/Android, ARM64/Android,
 MIPS32/Android, X86/Android, X86/Solaris, AMD64/Solaris, X86/MacOSX
 10.10 and AMD64/MacOSX 10.10.  There is also preliminary support for
-X86/MacOSX 10.11/12, AMD64/MacOSX 10.11/12 and TILEGX/Linux.
+X86/MacOSX 10.11/12, and AMD64/MacOSX 10.11/12.
 
 * The 'xtree concept' was added in 3.13:
    An xtree is a tree of stacktraces with data associated to the stacktraces.
@@ -35,6 +35,8 @@ X86/MacOSX 10.11/12, AMD64/MacOSX 10.11/12 and TILEGX/Linux.
     and setting a child stack. Note however that CLONE_VFORK | CLONE_VM
     is handled like CLONE_VFORK (so removing CLONE_VM flag).
     Applications that depends on CLONE_VM exact semantic will (still) not work.
+
+  - TileGX/Linux port was removed because the platform is essientially dead.
 
 * ==================== TOOL CHANGES ====================
 
@@ -169,6 +171,7 @@ where XXXXXX is the bug number as listed below.
         (task_register_dyld_shared_cache_image_info)
 379390  unhandled syscall: mach:70 (host_create_mach_voucher_trap)
 379473  MIPS: add support for rdhwr cycle counter register
+379504  remove TileGX/Linux port
 
 Release 3.12.0 (20 October 2016)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

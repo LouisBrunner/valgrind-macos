@@ -86,7 +86,6 @@ extern SysRes VG_(mk_SysRes_mips32_linux)( UWord v0, UWord v1,
                                            UWord a3 );
 extern SysRes VG_(mk_SysRes_mips64_linux)( ULong v0, ULong v1,
                                            ULong a3 );
-extern SysRes VG_(mk_SysRes_tilegx_linux)( Long val );
 extern SysRes VG_(mk_SysRes_x86_solaris) ( Bool isErr, UInt val, UInt val2 );
 extern SysRes VG_(mk_SysRes_amd64_solaris) ( Bool isErr, ULong val, ULong val2 );
 extern SysRes VG_(mk_SysRes_Error)       ( UWord val );

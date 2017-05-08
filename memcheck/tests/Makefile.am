@@ -220,11 +220,9 @@ EXTRA_DIST = \
 	origin5-bz2.stderr.exp-glibc212-s390x \
 	origin5-bz2.stderr.exp-glibc234-s390x \
 	origin5-bz2.stderr.exp-glibc218-mips32 \
-	origin5-bz2.stderr.exp-glibc212-tilegx \
 	origin6-fp.vgtest origin6-fp.stdout.exp \
 	origin6-fp.stderr.exp-glibc25-amd64 \
 	origin6-fp.stderr.exp-glibc27-ppc64 \
-	origin6-fp.stderr.exp-glibc212-tilegx \
 	overlap.stderr.exp overlap.stdout.exp overlap.vgtest \
 	partiallydefinedeq.vgtest partiallydefinedeq.stderr.exp \
 	partiallydefinedeq.stderr.exp4 \

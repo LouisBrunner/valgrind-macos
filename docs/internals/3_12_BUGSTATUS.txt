@@ -323,8 +323,6 @@ n-i-bz  Remove limit on strd's negative immediates
 
 === other/s390 =========================================================
 
-=== other/tilegx =======================================================
-
 === other/Android ======================================================
 
 374814  VALGRIND INTERNAL ERROR: signal 11 (SIGSEGV) - exiting

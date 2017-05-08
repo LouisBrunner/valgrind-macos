@@ -64,9 +64,6 @@
 #elif defined(VGA_mips64)
 #  include "libvex_guest_mips64.h"
    typedef VexGuestMIPS64State VexGuestArchState;
-#elif defined(VGA_tilegx)
-#  include "libvex_guest_tilegx.h"
-   typedef VexGuestTILEGXState VexGuestArchState;
 #else
 #  error Unknown arch
 #endif

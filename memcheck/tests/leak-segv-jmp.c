@@ -163,30 +163,6 @@ extern UWord do_syscall_WRK (
                  : "v0", "v1", "a0", "a1", "a2", "a3", "$8", "$9");
    return out;
 }
-#elif defined(VGP_tilegx_linux)
-extern UWord do_syscall_WRK (
-          UWord syscall_no,
-          UWord a1, UWord a2, UWord a3,
-          UWord a4, UWord a5, UWord a6
-       )
-{
-   UWord out;
-   __asm__ __volatile__ (
-                 "move r10, %1\n\t"
-                 "move r0,  %2\n\t"
-                 "move r1,  %3\n\t"
-                 "move r2,  %4\n\t"
-                 "move r3,  %5\n\t"
-                 "move r4,  %6\n\t"
-                 "move r5,  %7\n\t"
-                 "swint1      \n\t"
-                 "move %0,  r0\n\t"
-                 : /*out*/ "=r" (out)
-                 : "r"(syscall_no), "r"(a1), "r"(a2), "r"(a3),
-                   "r"(a4), "r"(a5), "r"(a6)
-                 : "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r10");
-   return out;
-}
 
 #elif defined(VGP_x86_solaris)
 extern ULong

@@ -74,8 +74,6 @@ __attribute__((noinline)) static void get_guest_arch(VexArch    *ga)
    *ga = VexArchMIPS32;
 #elif defined(VGA_mips64)
    *ga = VexArchMIPS64;
-#elif defined(VGA_tilegx)
-   *ga = VexArchTILEGX;
 #else
    missing arch;
 #endif
@@ -112,7 +110,6 @@ static VexEndness arch_endness (VexArch va) {
          else
             return VexEndnessBE;
       }
-   case VexArchTILEGX: return VexEndnessLE;
    default: failure_exit();
    }
 }
@@ -131,7 +128,6 @@ static UInt arch_hwcaps (VexArch va) {
    case VexArchS390X:  return VEX_HWCAPS_S390X_LDISP;
    case VexArchMIPS32: return VEX_PRID_COMP_MIPS;
    case VexArchMIPS64: return VEX_PRID_COMP_MIPS;
-   case VexArchTILEGX: return 0;
    default: failure_exit();
    }
 }
@@ -148,7 +144,6 @@ static Bool mode64 (VexArch va) {
    case VexArchS390X:  return True;
    case VexArchMIPS32: return False;
    case VexArchMIPS64: return True;
-   case VexArchTILEGX: return True;
    default: failure_exit();
    }
 }
@@ -268,7 +263,7 @@ int main(int argc, char **argv)
    // explicitly via command line arguments.
    if (multiarch) {
       VexArch va;
-      for (va = VexArchX86; va <= VexArchTILEGX; va++) {
+      for (va = VexArchX86; va <= VexArchMIPS64; va++) {
          vta.arch_host = va;
          vta.archinfo_host.endness = arch_endness (vta.arch_host);
          vta.archinfo_host.hwcaps = arch_hwcaps (vta.arch_host);

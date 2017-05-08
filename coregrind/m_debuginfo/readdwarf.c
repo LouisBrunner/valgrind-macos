@@ -1732,10 +1732,6 @@ void ML_(read_debuginfo_dwarf1) (
 #  define FP_REG         30
 #  define SP_REG         29
 #  define RA_REG_DEFAULT 31
-#elif defined(VGP_tilegx_linux)
-#  define FP_REG         52
-#  define SP_REG         54
-#  define RA_REG_DEFAULT 55
 #else
 #  error "Unknown platform"
 #endif
@@ -1748,7 +1744,7 @@ void ML_(read_debuginfo_dwarf1) (
      || defined(VGP_ppc64le_linux) || defined(VGP_mips32_linux) \
      || defined(VGP_mips64_linux)
 # define N_CFI_REGS 72
-#elif defined(VGP_arm_linux) || defined(VGP_tilegx_linux)
+#elif defined(VGP_arm_linux)
 # define N_CFI_REGS 320
 #elif defined(VGP_arm64_linux)
 # define N_CFI_REGS 128
@@ -2058,8 +2054,7 @@ static Bool summarise_context(/*OUT*/Addr* base,
    if (ctxs->cfa_is_regoff && ctxs->cfa_reg == SP_REG) {
       si_m->cfa_off = ctxs->cfa_off;
 #     if defined(VGA_x86) || defined(VGA_amd64) || defined(VGA_s390x) \
-         || defined(VGA_mips32) || defined(VGA_mips64) \
-         || defined(VGA_tilegx)
+         || defined(VGA_mips32) || defined(VGA_mips64)
       si_m->cfa_how = CFIC_IA_SPREL;
 #     elif defined(VGA_arm)
       si_m->cfa_how = CFIC_ARM_R13REL;
@@ -2073,8 +2068,7 @@ static Bool summarise_context(/*OUT*/Addr* base,
    if (ctxs->cfa_is_regoff && ctxs->cfa_reg == FP_REG) {
       si_m->cfa_off = ctxs->cfa_off;
 #     if defined(VGA_x86) || defined(VGA_amd64) || defined(VGA_s390x) \
-         || defined(VGA_mips32) || defined(VGA_mips64) \
-         || defined(VGA_tilegx)
+         || defined(VGA_mips32) || defined(VGA_mips64)
       si_m->cfa_how = CFIC_IA_BPREL;
 #     elif defined(VGA_arm)
       si_m->cfa_how = CFIC_ARM_R12REL;
@@ -2363,48 +2357,6 @@ static Bool summarise_context(/*OUT*/Addr* base,
    *len  = (UInt)(ctx->loc - loc_start);
 
    return True;
-#  elif defined(VGA_tilegx)
-
-   /* --- entire tail of this fn specialised for tilegx --- */
-
-   SUMMARISE_HOW(si_m->ra_how, si_m->ra_off,
-                               ctxs->reg[ctx->ra_reg] );
-   SUMMARISE_HOW(si_m->fp_how, si_m->fp_off,
-                               ctxs->reg[FP_REG] );
-   SUMMARISE_HOW(si_m->sp_how, si_m->sp_off,
-                               ctxs->reg[SP_REG] );
-   si_m->sp_how = CFIR_CFAREL;
-   si_m->sp_off = 0;
-
-   if (si_m->fp_how == CFIR_UNKNOWN)
-       si_m->fp_how = CFIR_SAME;
-   if (si_m->cfa_how == CFIR_UNKNOWN) {
-      si_m->cfa_how = CFIC_IA_SPREL;
-      si_m->cfa_off = 160;
-   }
-   if (si_m->ra_how == CFIR_UNKNOWN) {
-      if (!debuginfo->cfsi_exprs)
-         debuginfo->cfsi_exprs = VG_(newXA)( ML_(dinfo_zalloc),
-                                             "di.ccCt.2a",
-                                             ML_(dinfo_free),
-                                             sizeof(CfiExpr) );
-      si_m->ra_how = CFIR_EXPR;
-      si_m->ra_off = ML_(CfiExpr_CfiReg)( debuginfo->cfsi_exprs,
-                                          Creg_TILEGX_LR);
-   }
-
-   if (si_m->ra_how == CFIR_SAME)
-      { why = 3; goto failed; }
-
-   if (loc_start >= ctx->loc) 
-      { why = 4; goto failed; }
-   if (ctx->loc - loc_start > 10000000 /* let's say */)
-      { why = 5; goto failed; }
-
-   *base = loc_start + ctx->initloc;
-   *len  = (UInt)(ctx->loc - loc_start);
-
-   return True;
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
    /* These don't use CFI based unwinding (is that really true?) */
 
@@ -2501,13 +2453,6 @@ static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
          I_die_here;
 #        elif defined(VGA_ppc32) || defined(VGA_ppc64be) \
             || defined(VGA_ppc64le)
-#        elif defined(VGA_tilegx)
-         if (dwreg == SP_REG)
-            return ML_(CfiExpr_CfiReg)( dstxa, Creg_TILEGX_SP );
-         if (dwreg == FP_REG)
-            return ML_(CfiExpr_CfiReg)( dstxa, Creg_TILEGX_BP );
-         if (dwreg == srcuc->ra_reg)
-            return ML_(CfiExpr_CfiReg)( dstxa, Creg_TILEGX_IP );
 #        else
 #           error "Unknown arch"
 #        endif

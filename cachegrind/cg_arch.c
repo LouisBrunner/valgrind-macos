@@ -477,13 +477,6 @@ configure_caches(cache_t *I1c, cache_t *D1c, cache_t *LLc,
    *D1c = (cache_t) {  65536, 2, 64 };
    *LLc = (cache_t) { 262144, 8, 64 };
 
-#elif defined(VGA_tilegx)
-
-   // Set caches to default for Tilegx.
-   *I1c = (cache_t) { 0x8000,  2, 64 };
-   *D1c = (cache_t) { 0x8000,  2, 64 };
-   *LLc = (cache_t) { 0x40000, 8, 64 };
-
 #else
 
 #error "Unknown arch"

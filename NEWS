@@ -160,6 +160,7 @@ where XXXXXX is the bug number as listed below.
 377930  fcntl syscall wrapper is missing flock structure check
 378535  Valgrind reports INTERNAL ERROR in execve syscall wrapper
 378673  Update libiberty demangler
+378931  Add ISA 3.0B additional isnstructions, add OV32, CA32 setting support
 379039  syscall wrapper for prctl(PR_SET_NAME) must not check more than 16 bytes
 379094  Valgrind reports INTERNAL ERROR in rt_sigsuspend syscall wrapper
 379371  UNKNOWN task message [id 3444, to mach_task_self(), reply 0x603]
@@ -167,7 +168,7 @@ where XXXXXX is the bug number as listed below.
 379372  UNKNOWN task message [id 3447, to mach_task_self(), reply 0x603]
         (task_register_dyld_shared_cache_image_info)
 379390  unhandled syscall: mach:70 (host_create_mach_voucher_trap)
-378931  Add ISA 3.0B additional isnstructions, add OV32, CA32 setting support
+379473  MIPS: add support for rdhwr cycle counter register
 
 Release 3.12.0 (20 October 2016)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

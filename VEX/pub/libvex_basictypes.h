@@ -183,10 +183,6 @@ typedef  unsigned long HWord;
 #   define VEX_HOST_WORDSIZE 4
 #   define VEX_REGPARM(_n) /* */
 
-#elif defined(__tilegx__)
-#   define VEX_HOST_WORDSIZE 8
-#   define VEX_REGPARM(_n) /* */
-
 #else
 #   error "Vex: Fatal: Can't establish the host architecture"
 #endif

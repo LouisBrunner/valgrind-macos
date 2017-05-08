@@ -45,7 +45,6 @@
 #include "libvex_guest_s390x.h"
 #include "libvex_guest_mips32.h"
 #include "libvex_guest_mips64.h"
-#include "libvex_guest_tilegx.h"
 
 #include "main_globals.h"
 #include "main_util.h"
@@ -59,7 +58,6 @@
 #include "host_arm64_defs.h"
 #include "host_s390_defs.h"
 #include "host_mips_defs.h"
-#include "host_tilegx_defs.h"
 
 #include "guest_generic_bb_to_IR.h"
 #include "guest_x86_defs.h"
@@ -69,7 +67,6 @@
 #include "guest_ppc_defs.h"
 #include "guest_s390_defs.h"
 #include "guest_mips_defs.h"
-#include "guest_tilegx_defs.h"
 
 #include "host_generic_simd128.h"
 
@@ -156,14 +153,6 @@
 #else
 #define MIPS64FN(f) NULL
 #define MIPS64ST(f) vassert(0)
-#endif
-
-#if defined(VGA_tilegx) || defined(VEXMULTIARCH)
-#define TILEGXFN(f) f
-#define TILEGXST(f) f
-#else
-#define TILEGXFN(f) NULL
-#define TILEGXST(f) vassert(0)
 #endif
 
 
@@ -529,24 +518,6 @@ IRSB* LibVEX_FrontEnd ( /*MOD*/ VexTranslateArgs* vta,
          vassert(sizeof( ((VexGuestMIPS64State*)0)->guest_NRADDR ) == 8);
          break;
 
-      case VexArchTILEGX:
-         preciseMemExnsFn =
-            TILEGXFN(guest_tilegx_state_requires_precise_mem_exns);
-         disInstrFn              = TILEGXFN(disInstr_TILEGX);
-         specHelper              = TILEGXFN(guest_tilegx_spechelper);
-         guest_layout            = TILEGXFN(&tilegxGuest_layout);
-         offB_CMSTART            = offsetof(VexGuestTILEGXState,guest_CMSTART);
-         offB_CMLEN              = offsetof(VexGuestTILEGXState,guest_CMLEN);
-         offB_GUEST_IP           = offsetof(VexGuestTILEGXState,guest_pc);
-         szB_GUEST_IP            = sizeof( ((VexGuestTILEGXState*)0)->guest_pc );
-         vassert(vta->archinfo_guest.endness == VexEndnessLE);
-         vassert(0 ==
-                 sizeof(VexGuestTILEGXState) % LibVEX_GUEST_STATE_ALIGN);
-         vassert(sizeof( ((VexGuestTILEGXState*)0)->guest_CMSTART    ) == 8);
-         vassert(sizeof( ((VexGuestTILEGXState*)0)->guest_CMLEN      ) == 8);
-         vassert(sizeof( ((VexGuestTILEGXState*)0)->guest_NRADDR     ) == 8);
-         break;
-
       default:
          vpanic("LibVEX_Translate: unsupported guest insn set");
    }
@@ -872,14 +843,6 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
          offB_HOST_EvC_FAILADDR = offsetof(VexGuestMIPS64State,host_EvC_FAILADDR);
          break;
 
-      case VexArchTILEGX:
-         preciseMemExnsFn =
-            TILEGXFN(guest_tilegx_state_requires_precise_mem_exns);
-         guest_sizeB            = sizeof(VexGuestTILEGXState);
-         offB_HOST_EvC_COUNTER  = offsetof(VexGuestTILEGXState,host_EvC_COUNTER);
-         offB_HOST_EvC_FAILADDR = offsetof(VexGuestTILEGXState,host_EvC_FAILADDR);
-         break;
-
       default:
          vpanic("LibVEX_Codegen: unsupported guest insn set");
    }
@@ -1035,22 +998,6 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
          emit         = CAST_TO_TYPEOF(emit) MIPS64FN(emit_MIPSInstr);
          vassert(vta->archinfo_host.endness == VexEndnessLE
                  || vta->archinfo_host.endness == VexEndnessBE);
-         break;
-
-      case VexArchTILEGX:
-         mode64      = True;
-         rRegUniv    = TILEGXFN(getRRegUniverse_TILEGX());
-         isMove      = CAST_TO_TYPEOF(isMove) TILEGXFN(isMove_TILEGXInstr);
-         getRegUsage =
-            CAST_TO_TYPEOF(getRegUsage) TILEGXFN(getRegUsage_TILEGXInstr);
-         mapRegs     = CAST_TO_TYPEOF(mapRegs) TILEGXFN(mapRegs_TILEGXInstr);
-         genSpill    = CAST_TO_TYPEOF(genSpill) TILEGXFN(genSpill_TILEGX);
-         genReload   = CAST_TO_TYPEOF(genReload) TILEGXFN(genReload_TILEGX);
-         ppInstr     = CAST_TO_TYPEOF(ppInstr) TILEGXFN(ppTILEGXInstr);
-         ppReg       = CAST_TO_TYPEOF(ppReg) TILEGXFN(ppHRegTILEGX);
-         iselSB      = TILEGXFN(iselSB_TILEGX);
-         emit        = CAST_TO_TYPEOF(emit) TILEGXFN(emit_TILEGXInstr);
-         vassert(vta->archinfo_host.endness == VexEndnessLE);
          break;
 
       default:
@@ -1283,12 +1230,6 @@ VexInvalRange LibVEX_Chain ( VexArch     arch_host,
                                            place_to_chain,
                                            disp_cp_chain_me_EXPECTED,
                                            place_to_jump_to, True/*!mode64*/));
-
-      case VexArchTILEGX:
-         TILEGXST(return chainXDirect_TILEGX(endness_host,
-                                             place_to_chain,
-                                             disp_cp_chain_me_EXPECTED,
-                                             place_to_jump_to, True/*!mode64*/));
       default:
          vassert(0);
    }
@@ -1346,13 +1287,6 @@ VexInvalRange LibVEX_UnChain ( VexArch     arch_host,
                                              place_to_unchain,
                                              place_to_jump_to_EXPECTED,
                                              disp_cp_chain_me, True/*!mode64*/));
-
-      case VexArchTILEGX:
-         TILEGXST(return unchainXDirect_TILEGX(endness_host,
-                                      place_to_unchain,
-                                      place_to_jump_to_EXPECTED,
-                                               disp_cp_chain_me, True/*!mode64*/));
-
       default:
          vassert(0);
    }
@@ -1381,8 +1315,6 @@ Int LibVEX_evCheckSzB ( VexArch    arch_host )
             MIPS32ST(cached = evCheckSzB_MIPS()); break;
          case VexArchMIPS64:
             MIPS64ST(cached = evCheckSzB_MIPS()); break;
-         case VexArchTILEGX:
-            TILEGXST(cached = evCheckSzB_TILEGX()); break;
          default:
             vassert(0);
       }
@@ -1423,10 +1355,6 @@ VexInvalRange LibVEX_PatchProfInc ( VexArch    arch_host,
       case VexArchMIPS64:
          MIPS64ST(return patchProfInc_MIPS(endness_host, place_to_patch,
                                            location_of_counter, True/*!mode64*/));
-      case VexArchTILEGX:
-         TILEGXST(return patchProfInc_TILEGX(endness_host, place_to_patch,
-                                             location_of_counter,
-                                             True/*!mode64*/));
       default:
          vassert(0);
    }
@@ -1506,7 +1434,6 @@ const HChar* LibVEX_ppVexArch ( VexArch arch )
       case VexArchS390X:    return "S390X";
       case VexArchMIPS32:   return "MIPS32";
       case VexArchMIPS64:   return "MIPS64";
-      case VexArchTILEGX:   return "TILEGX";
       default:              return "VexArch???";
    }
 }
@@ -1574,7 +1501,6 @@ static IRType arch_word_size (VexArch arch) {
       case VexArchMIPS64:
       case VexArchPPC64:
       case VexArchS390X:
-      case VexArchTILEGX:
          return Ity_I64;
 
       default:
@@ -1871,11 +1797,6 @@ static const HChar* show_hwcaps_mips64 ( UInt hwcaps )
    return "Unsupported baseline";
 }
 
-static const HChar* show_hwcaps_tilegx ( UInt hwcaps )
-{
-   return "tilegx-baseline";
-}
-
 #undef NUM_HWCAPS
 
 /* Thie function must not return NULL. */
@@ -1892,7 +1813,6 @@ static const HChar* show_hwcaps ( VexArch arch, UInt hwcaps )
       case VexArchS390X:  return show_hwcaps_s390x(hwcaps);
       case VexArchMIPS32: return show_hwcaps_mips32(hwcaps);
       case VexArchMIPS64: return show_hwcaps_mips64(hwcaps);
-      case VexArchTILEGX: return show_hwcaps_tilegx(hwcaps);
       default: return NULL;
    }
 }
@@ -2115,9 +2035,6 @@ static void check_hwcaps ( VexArch arch, UInt hwcaps )
             default:
                invalid_hwcaps(arch, hwcaps, "Unsupported baseline\n");
          }
-
-      case VexArchTILEGX:
-         return;
 
       default:
          vpanic("unknown architecture");

@@ -228,7 +228,7 @@ typedef struct
 
 static void DRD_(init)(void) __attribute__((constructor));
 static void DRD_(check_threading_library)(void);
-static void DRD_(set_main_thread_state)(void);
+static void DRD_(set_pthread_id)(void);
 static void DRD_(sema_init)(DrdSema* sema);
 static void DRD_(sema_destroy)(DrdSema* sema);
 static void DRD_(sema_down)(DrdSema* sema);
@@ -250,7 +250,7 @@ static void DRD_(sema_up)(DrdSema* sema);
 static void DRD_(init)(void)
 {
    DRD_(check_threading_library)();
-   DRD_(set_main_thread_state)();
+   DRD_(set_pthread_id)();
 #if defined(VGO_solaris)
    if ((DRD_(rtld_bind_guard) == NULL) || (DRD_(rtld_bind_clear) == NULL)) {
       fprintf(stderr,
@@ -501,12 +501,10 @@ static void DRD_(check_threading_library)(void)
 }
 
 /**
- * The main thread is the only thread not created by pthread_create().
- * Update DRD's state information about the main thread.
+ * Update DRD's state information about the current thread.
  */
-static void DRD_(set_main_thread_state)(void)
+static void DRD_(set_pthread_id)(void)
 {
-   // Make sure that DRD knows about the main thread's POSIX thread ID.
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__SET_PTHREADID,
                                    pthread_self(), 0, 0, 0, 0);
 }

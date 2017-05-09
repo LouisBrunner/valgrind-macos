@@ -1,0 +1,4 @@
+prereq: test -e dlopen_main && ./supported_libpthread
+vgopts: --read-var-info=yes --check-stack-var=yes --show-confl-seg=no
+prog: dlopen_main ./dlopen_lib.so
+stderr_filter: filter_stderr

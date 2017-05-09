@@ -103,6 +103,8 @@ EXTRA_DIST =                                        \
 	custom_alloc.vgtest			    \
 	custom_alloc_fiw.stderr.exp		    \
 	custom_alloc_fiw.vgtest			    \
+        dlopen.stderr.exp                           \
+        dlopen.vgtest                               \
 	fp_race.stderr.exp                          \
 	fp_race.stderr.exp-mips32-be                \
 	fp_race.stderr.exp-mips32-le                \
@@ -361,6 +363,8 @@ check_PROGRAMS =      \
   bug-235681          \
   custom_alloc        \
   concurrent_close    \
+  dlopen_main         \
+  dlopen_lib.so       \
   fp_race             \
   free_is_write	      \
   hold_lock           \
@@ -455,6 +459,10 @@ LDADD = -lpthread
 
 
 concurrent_close_SOURCES    = concurrent_close.cpp
+dlopen_main_LDADD           = -ldl
+dlopen_lib_so_SOURCES       = dlopen_lib.c
+dlopen_lib_so_CFLAGS        = -fPIC
+dlopen_lib_so_LDFLAGS       = -shared -fPIC
 monitor_example_SOURCES     = monitor_example.cpp
 new_delete_SOURCES          = new_delete.cpp
 new_delete_CXXFLAGS         = $(AM_CXXFLAGS) @FLAG_W_NO_MISMATCHED_NEW_DELETE@

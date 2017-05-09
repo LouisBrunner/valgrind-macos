@@ -121,6 +121,7 @@ where XXXXXX is the bug number as listed below.
 370028  Reduce the number of compiler warnings on MIPS platforms (partial fix)
 370635  arm64 missing syscall getcpu
 371225  Fix order of timer_{gettime,getoverrun,settime} syscalls on arm64
+371227  Clean AArch64 syscall table
 371412  Rename wrap_sys_shmat to sys_shmat like other wrappers
 371471  Valgrind complains about non legit memory leaks on placement new (C++)
 371869  support '%' in symbol Z-encoding
@@ -143,6 +144,9 @@ where XXXXXX is the bug number as listed below.
 375772  +1 error in get_elf_symbol_info() when computing value of 'hi' address
         for ML_(find_rx_mapping)()
 375806  Test helgrind/tests/tc22_exit_w_lock fails with glibc 2.24
+375839  Temporary storage exhausted, with long sequence of vfmadd231ps insns
+        == 377159  "vex: the `impossible' happened" still present
+        == 375150  Assertion 'tres.status == VexTransOK' failed
 376142  Segfaults on MIPS Cavium Octeon boards
 376279  disInstr(arm64): unhandled instruction 0xD50320FF
 376455  Solaris: unhandled syscall lgrpsys(180)

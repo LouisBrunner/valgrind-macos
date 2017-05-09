@@ -34,6 +34,7 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcfile.h"
 #include "pub_core_libcprint.h"
+#include "pub_core_libcproc.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_machine.h"
 #include "pub_core_cpuid.h"
@@ -1675,7 +1676,7 @@ Bool VG_(machine_get_hwcaps)( void )
      }
 
 #    if defined(VGP_mips32_linux)
-     Int fpmode = VG_(prctl)(VKI_PR_GET_FP_MODE);
+     Int fpmode = VG_(prctl)(VKI_PR_GET_FP_MODE, 0, 0, 0, 0);
 #    else
      Int fpmode = -1;
 #    endif

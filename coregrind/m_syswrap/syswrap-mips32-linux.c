@@ -411,6 +411,7 @@ DECL_TEMPLATE (mips_linux, sys_cacheflush);
 DECL_TEMPLATE (mips_linux, sys_set_thread_area);
 DECL_TEMPLATE (mips_linux, sys_pipe);
 DECL_TEMPLATE (mips_linux, sys_prctl);
+DECL_TEMPLATE (mips_linux, sys_ptrace);
 
 PRE(sys_mmap2) 
 {

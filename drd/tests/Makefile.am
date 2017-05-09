@@ -103,8 +103,9 @@ EXTRA_DIST =                                        \
 	custom_alloc.vgtest			    \
 	custom_alloc_fiw.stderr.exp		    \
 	custom_alloc_fiw.vgtest			    \
-        dlopen.stderr.exp                           \
-        dlopen.vgtest                               \
+	dlopen.stderr.exp			    \
+	dlopen.stdout.exp			    \
+	dlopen.vgtest				    \
 	fp_race.stderr.exp                          \
 	fp_race.stderr.exp-mips32-be                \
 	fp_race.stderr.exp-mips32-le                \

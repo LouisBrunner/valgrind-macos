@@ -172,6 +172,7 @@ where XXXXXX is the bug number as listed below.
 379390  unhandled syscall: mach:70 (host_create_mach_voucher_trap)
 379473  MIPS: add support for rdhwr cycle counter register
 379504  remove TileGX/Linux port
+356374  Assertion 'DRD_(g_threadinfo)[tid].pt_threadid != INVALID_POSIX_THREADID' failed
 
 Release 3.12.0 (20 October 2016)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

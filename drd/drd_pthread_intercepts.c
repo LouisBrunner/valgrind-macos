@@ -556,6 +556,14 @@ int pthread_create_intercept(pthread_t* thread, const pthread_attr_t* attr,
    assert(thread_args.detachstate == PTHREAD_CREATE_JOINABLE
           || thread_args.detachstate == PTHREAD_CREATE_DETACHED);
 
+   /*
+    * The DRD_(set_pthread_id)() from DRD_(init)() may encounter that
+    * pthread_self() == 0, e.g. when the main program is not linked with the
+    * pthread library and when a pthread_create() call occurs from within a
+    * shared library. Hence call DRD_(set_pthread_id)() again to ensure that
+    * DRD knows the identity of the current thread. See also B.Z. 356374.
+    */
+   DRD_(set_pthread_id)();
    DRD_(entering_pthread_create)();
    CALL_FN_W_WWWW(ret, fn, thread, attr, DRD_(thread_wrapper), &thread_args);
    DRD_(left_pthread_create)();

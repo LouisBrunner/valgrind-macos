@@ -36,7 +36,7 @@ X86/MacOSX 10.11/12, and AMD64/MacOSX 10.11/12.
     is handled like CLONE_VFORK (so removing CLONE_VM flag).
     Applications that depends on CLONE_VM exact semantic will (still) not work.
 
-  - TileGX/Linux port was removed because the platform is essientially dead.
+  - TileGX/Linux port was removed because the platform is essentially dead.
 
 * ==================== TOOL CHANGES ====================
 

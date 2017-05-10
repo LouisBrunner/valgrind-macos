@@ -172,7 +172,9 @@ allexec_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 # generic C ones
 amd64locked_CFLAGS	= $(AM_CFLAGS) -O
 bug132918_LDADD		= -lm
-fxtract_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_OVERFLOW@
+cmpxchg_CFLAGS		= $(AM_CFLAGS) @FLAG_NO_PIE@
+fcmovnu_CFLAGS		= $(AM_CFLAGS) @FLAG_NO_PIE@
+fxtract_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_OVERFLOW@ @FLAG_NO_PIE@
 insn_basic_SOURCES	= insn_basic.def
 insn_basic_LDADD	= -lm
 insn_mmx_SOURCES	= insn_mmx.def
@@ -194,6 +196,10 @@ if VGCONF_OS_IS_SOLARIS
 fma4_CFLAGS		+= -D__EXTENSIONS__
 endif
 fma4_LDADD		= -lm
+jrcxz_CFLAGS		= $(AM_CFLAGS) @FLAG_NO_PIE@
+looper_CFLAGS		= $(AM_CFLAGS) @FLAG_NO_PIE@
+sbbmisc_CFLAGS		= $(AM_CFLAGS) @FLAG_NO_PIE@
+shrld_CFLAGS		= $(AM_CFLAGS) @FLAG_NO_PIE@
 
 .def.c: $(srcdir)/gen_insn_test.pl
 	$(PERL) $(srcdir)/gen_insn_test.pl < $< > $@

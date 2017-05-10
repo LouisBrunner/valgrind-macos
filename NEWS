@@ -156,6 +156,8 @@ where XXXXXX is the bug number as listed below.
         == 371668
 376956  syswrap of SNDDRV and DRM_IOCTL_VERSION causing some addresses
         to be wrongly marked as addressable
+377066  Some Valgrind unit tests fail to compile on Ubuntu 16.10 with
+        PIE enabled by default
 377376  memcheck/tests/linux/getregset fails with glibc2.24
 377427  PPC64, lxv instruction failing on odd destination register 
 377478  PPC64: ISA 3.0 setup fixes

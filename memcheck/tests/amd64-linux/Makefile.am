@@ -23,4 +23,4 @@ AM_CXXFLAGS  += @FLAG_M64@
 AM_CCASFLAGS += @FLAG_M64@
 
 defcfaexpr_SOURCES	= defcfaexpr.S
-
+defcfaexpr_CFLAGS	= $(AM_CFLAGS) @FLAG_NO_PIE@ 

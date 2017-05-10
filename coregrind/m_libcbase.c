@@ -753,24 +753,26 @@ void* VG_(memset) ( void *destV, Int c, SizeT sz )
       d++;
       sz--;
    }
+   UInt* d4 = ASSUME_ALIGNED(UInt*, d);
    if (sz == 0)
       return destV;
    c4 = uc;
    c4 |= (c4 << 8);
    c4 |= (c4 << 16);
    while (sz >= 16) {
-      ((UInt*)d)[0] = c4;
-      ((UInt*)d)[1] = c4;
-      ((UInt*)d)[2] = c4;
-      ((UInt*)d)[3] = c4;
-      d += 16;
+      d4[0] = c4;
+      d4[1] = c4;
+      d4[2] = c4;
+      d4[3] = c4;
+      d4 += 4;
       sz -= 16;
    }
    while (sz >= 4) {
-      ((UInt*)d)[0] = c4;
-      d += 4;
+      d4[0] = c4;
+      d4 += 1;
       sz -= 4;
    }
+   d = (UChar*) d4;
    while (sz >= 1) {
       d[0] = c;
       d++;
@@ -824,7 +826,8 @@ Int VG_(memcmp) ( const void* s1, const void* s2, SizeT n )
 #define BM_SWAP(a, b)                                    \
    swaptype != 0                                         \
       ? bm_swapfunc(a, b, es, swaptype)                  \
-      : (void)BM_EXCH(*(Word*)(a), *(Word*)(b), t)
+      : (void)BM_EXCH(*ASSUME_ALIGNED(Word*, (a)),       \
+                      *ASSUME_ALIGNED(Word*, (b)), t)
 
 #define BM_VECSWAP(a, b, n)                              \
    if (n > 0) bm_swapfunc(a, b, n, swaptype)
@@ -833,7 +836,7 @@ Int VG_(memcmp) ( const void* s1, const void* s2, SizeT n )
    if (swaptype != 0)                                    \
       pv = a, BM_SWAP(pv, pm);                           \
    else                                                  \
-      pv = (Char*)&v, v = *(Word*)pm
+      pv = (Char*)&v, v = *ASSUME_ALIGNED(Word*, pm)
 
 static Char* bm_med3 ( Char* a, Char* b, Char* c, 
                        Int (*cmp)(const void*, const void*) ) {
@@ -848,7 +851,7 @@ static void bm_swapfunc ( Char* a, Char* b, SizeT n, Int swaptype )
       Word t;
       for ( ; n > 0; a += sizeof(Word), b += sizeof(Word),
                                         n -= sizeof(Word))
-         BM_EXCH(*(Word*)a, *(Word*)b, t);
+         BM_EXCH(*ASSUME_ALIGNED(Word*, a), *ASSUME_ALIGNED(Word*, b), t);
    } else {
       Char t;
       for ( ; n > 0; a += 1, b += 1, n -= 1)

@@ -311,8 +311,6 @@ int main ( int argc, char** argv )
    long long int* p2[N];
    pid_t  child, pc2;
 
-   printf("parent, pre-fork\n");
-
    for (i = 0; i < N; i++) {
       page[i] = mmap( 0, sysconf(_SC_PAGESIZE),
                       PROT_READ|PROT_WRITE,
@@ -342,7 +340,6 @@ int main ( int argc, char** argv )
 
    if (child == 0) {
       /* --- CHILD --- */
-      printf("child\n");
       for (i = 0; i < NNN; i++) {
          atomic_saa(p1[0], i);
          atomic_saad(p2[0], i + 98765 ); /* ensure we hit the upper 32 bits */
@@ -377,8 +374,6 @@ int main ( int argc, char** argv )
    }
 
    /* --- PARENT --- */
-   printf("parent\n");
-
    for (i = 0; i < NNN; i++) {
       atomic_saa(p1[0], i);
       atomic_saad(p2[0], i + 98765); /* ensure we hit the upper 32 bits */

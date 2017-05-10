@@ -1,7 +1,3 @@
-parent, pre-fork
-child
-parent, pre-fork
-parent
 Store Atomic Add: 32 bit 2156643710, 64 bit 12633614303292
 Load Atomic Add: 32 bit 2156643710, 64 bit 12633614303292
 Load Atomic Swap: 32 bit 3456986, 64 bit 3555751

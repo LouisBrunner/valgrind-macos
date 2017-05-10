@@ -729,6 +729,7 @@ PRE(domctl)
    case 0x00000009:
    case 0x0000000a:
    case 0x0000000b:
+   case 0x0000000c:
 	   break;
    default:
       bad_intf_version(tid, layout, arrghs, status, flags,
@@ -789,6 +790,12 @@ PRE(domctl)
                 PRE_MEM_WRITE("XEN_DOMCTL_gethvmcontext_partial *buffer",
                    (Addr)domctl->u.hvmcontext_partial.buffer.p,
                    VKI_HVM_SAVE_LENGTH(CPU));
+           break;
+       case VKI_HVM_SAVE_CODE(MTRR):
+           if ( domctl->u.hvmcontext_partial.buffer.p )
+	        PRE_MEM_WRITE("XEN_DOMCTL_gethvmcontext_partial *buffer",
+		   (Addr)domctl->u.hvmcontext_partial.buffer.p,
+		   VKI_HVM_SAVE_LENGTH(MTRR));
            break;
        default:
            bad_subop(tid, layout, arrghs, status, flags,
@@ -1273,7 +1280,7 @@ PRE(domctl)
       case 0x000000b:
           if (domctl->u.monitor_op_0000000b.op == VKI_XEN_DOMCTL_MONITOR_OP_ENABLE ||
               domctl->u.monitor_op_0000000b.op == VKI_XEN_DOMCTL_MONITOR_OP_ENABLE) {
-             switch(domctl->u.monitor_op_0000000b.event) {
+             switch (domctl->u.monitor_op_0000000b.event) {
              case VKI_XEN_DOMCTL_MONITOR_EVENT_WRITE_CTRLREG:
                 __PRE_XEN_DOMCTL_READ(monitor_op, monitor_op_0000000b, u.mov_to_cr);
                 break;
@@ -1282,6 +1289,8 @@ PRE(domctl)
                 break;
              case VKI_XEN_DOMCTL_MONITOR_EVENT_GUEST_REQUEST:
                 __PRE_XEN_DOMCTL_READ(monitor_op, monitor_op_0000000b, u.guest_request);
+                break;
+             case VKI_XEN_DOMCTL_MONITOR_OP_GET_CAPABILITIES:
                 break;
              }
           }

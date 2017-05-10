@@ -136,6 +136,7 @@ where XXXXXX is the bug number as listed below.
 372794  LibVEX (arm32 front end): 'Assertion szBlg2 <= 3' failed
 373046  Stacks registered by core are never deregistered
 373069  memcheck/tests/leak_cpp_interior fails with GCC 5.1+
+373086  Implement additional Xen hypercalls
 373192  Calling posix_spawn in glibc 2.24 completely broken
 373488  Support for fanotify API on ARM64 architecture
 	== 368864  WARNING: unhandled arm64-linux syscall: 262 (fanotify_init)

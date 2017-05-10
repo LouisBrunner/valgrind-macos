@@ -37,6 +37,7 @@
  * - 0x00000009: Xen 4.3 & 4.4
  * - 0x0000000a: Xen 4.5
  * - 0x0000000b: Xen 4.6
+ * - 0x0000000c: Xen 4.7
  *
  * When adding a new subop be sure to include the variants used by all
  * of the above, both here and in syswrap-xen.c
@@ -552,6 +553,28 @@ struct vki_xen_domctl_monitor_op_0000000b {
     } u;
 };
 
+
+struct vki_xen_domctl_monitor_op {
+    vki_uint32_t op;
+#define VKI_XEN_DOMCTL_MONITOR_OP_ENABLE            0
+#define VKI_XEN_DOMCTL_MONITOR_OP_DISABLE           1
+#define VKI_XEN_DOMCTL_MONITOR_OP_GET_CAPABILITIES  2
+#define VKI_XEN_DOMCTL_MONITOR_OP_EMULATE_EACH_REP  3
+    vki_uint32_t event;
+    union {
+        struct {
+            vki_uint8_t index;
+            vki_uint8_t sync;
+            vki_uint8_t onchangeonly;
+        } mov_to_cr;
+        struct {
+            vki_uint8_t extended_capture;
+        } mov_to_msr;
+        struct {
+            vki_uint8_t sync;
+        } guest_request;
+    } u;
+};
 
 struct vki_xen_domctl {
     vki_uint32_t cmd;

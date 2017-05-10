@@ -188,8 +188,6 @@ n-i-bz  Remove limit on strd's negative immediates
 372861  Test pselect_alarm for Bug 359871 seg faults on RHEL 4
 	[has a suggested solution]
 
-377891  Update Xen 4.6 domctl wrappers
-
 378892  Unhandled amd64-linux syscall: 324
 
 === Syscalls/ioctls on OSX =============================================
@@ -578,9 +576,6 @@ maybe change to 0x5800'0000
 377066  Some Valgrind unit tests fail to compile on Ubuntu 16.10 with
         PIE enabled by default
 	[Ivosh will fix it as it is annoying]
-
-**
-377891  Update Xen 4.6 domctl wrappers
 
 **
 n-i-bz  major perf problems w/ stack registration + stack recycling

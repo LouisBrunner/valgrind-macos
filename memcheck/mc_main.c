@@ -277,9 +277,12 @@ static INLINE Bool is_start_of_sm ( Addr a ) {
    return (start_of_this_sm(a) == a);
 }
 
+STATIC_ASSERT(SM_CHUNKS % 2 == 0);
+
 typedef 
-   struct {
+   union {
       UChar vabits8[SM_CHUNKS];
+      UShort vabits16[SM_CHUNKS/2];
    }
    SecMap;
 
@@ -1383,7 +1386,7 @@ ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
                       && nBits == 64 && VG_IS_8_ALIGNED(a))) {
       SecMap* sm       = get_secmap_for_reading(a);
       UWord   sm_off16 = SM_OFF_16(a);
-      UWord   vabits16 = ((UShort*)(sm->vabits8))[sm_off16];
+      UWord   vabits16 = sm->vabits16[sm_off16];
       if (LIKELY(vabits16 == VA_BITS16_DEFINED))
          return V_BITS64_DEFINED;
       if (LIKELY(vabits16 == VA_BITS16_UNDEFINED))
@@ -1536,7 +1539,7 @@ void mc_STOREVn_slow ( Addr a, SizeT nBits, ULong vbytes, Bool bigendian )
                       && nBits == 64 && VG_IS_8_ALIGNED(a))) {
       SecMap* sm       = get_secmap_for_reading(a);
       UWord   sm_off16 = SM_OFF_16(a);
-      UWord   vabits16 = ((UShort*)(sm->vabits8))[sm_off16];
+      UWord   vabits16 = sm->vabits16[sm_off16];
       if (LIKELY( !is_distinguished_sm(sm) && 
                           (VA_BITS16_DEFINED   == vabits16 ||
                            VA_BITS16_UNDEFINED == vabits16) )) {
@@ -1544,10 +1547,10 @@ void mc_STOREVn_slow ( Addr a, SizeT nBits, ULong vbytes, Bool bigendian )
          /* is mapped, and is addressible. */
          // Convert full V-bits in register to compact 2-bit form.
          if (LIKELY(V_BITS64_DEFINED == vbytes)) {
-            ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_DEFINED;
+            sm->vabits16[sm_off16] = VA_BITS16_DEFINED;
             return;
          } else if (V_BITS64_UNDEFINED == vbytes) {
-            ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_UNDEFINED;
+            sm->vabits16[sm_off16] = VA_BITS16_UNDEFINED;
             return;
          }
          /* else fall into the slow case */
@@ -1744,7 +1747,7 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
       if (lenA < 8) break;
       PROF_EVENT(MCPE_SET_ADDRESS_RANGE_PERMS_LOOP8A);
       sm_off16 = SM_OFF_16(a);
-      ((UShort*)(sm->vabits8))[sm_off16] = vabits16;
+      sm->vabits16[sm_off16] = vabits16;
       a    += 8;
       lenA -= 8;
    }
@@ -1817,7 +1820,7 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
       if (lenB < 8) break;
       PROF_EVENT(MCPE_SET_ADDRESS_RANGE_PERMS_LOOP8B);
       sm_off16 = SM_OFF_16(a);
-      ((UShort*)(sm->vabits8))[sm_off16] = vabits16;
+      sm->vabits16[sm_off16] = vabits16;
       a    += 8;
       lenB -= 8;
    }
@@ -2760,7 +2763,7 @@ static INLINE void make_aligned_word64_undefined ( Addr a )
 
       sm       = get_secmap_for_writing_low(a);
       sm_off16 = SM_OFF_16(a);
-      ((UShort*)(sm->vabits8))[sm_off16] = VA_BITS16_UNDEFINED;
+      sm->vabits16[sm_off16] = VA_BITS16_UNDEFINED;
    }
 #endif
 }
@@ -2804,7 +2807,7 @@ void make_aligned_word64_noaccess ( Addr a )
 
       sm       = get_secmap_for_writing_low(a);
       sm_off16 = SM_OFF_16(a);
-      ((UShort*)(sm->vabits8))[sm_off16] = VA_BITS16_NOACCESS;
+      sm->vabits16[sm_off16] = VA_BITS16_NOACCESS;
 
       //// BEGIN inlined, specialised version of MC_(helperc_b_store8)
       //// Clear the origins for a+0 .. a+7.
@@ -3633,9 +3636,9 @@ void MC_(helperc_MAKE_STACK_UNINIT_w_o) ( Addr base, UWord len, Addr nia )
            /* Now we know that the entire address range falls within a
               single secondary map, and that that secondary 'lives' in
               the main primary map. */
-            SecMap* sm    = get_secmap_for_writing_low(a_lo);
-            UWord   v_off = SM_OFF(a_lo);
-            UShort* p     = (UShort*)(&sm->vabits8[v_off]);
+            SecMap* sm      = get_secmap_for_writing_low(a_lo);
+            UWord   v_off16 = SM_OFF_16(a_lo);
+            UShort* p       = &sm->vabits16[v_off16];
             p[ 0] = VA_BITS16_UNDEFINED;
             p[ 1] = VA_BITS16_UNDEFINED;
             p[ 2] = VA_BITS16_UNDEFINED;
@@ -3686,9 +3689,9 @@ void MC_(helperc_MAKE_STACK_UNINIT_w_o) ( Addr base, UWord len, Addr nia )
            /* Now we know that the entire address range falls within a
               single secondary map, and that that secondary 'lives' in
               the main primary map. */
-            SecMap* sm    = get_secmap_for_writing_low(a_lo);
-            UWord   v_off = SM_OFF(a_lo);
-            UShort* p     = (UShort*)(&sm->vabits8[v_off]);
+            SecMap* sm      = get_secmap_for_writing_low(a_lo);
+            UWord   v_off16 = SM_OFF_16(a_lo);
+            UShort* p       = &sm->vabits16[v_off16];
             p[ 0] = VA_BITS16_UNDEFINED;
             p[ 1] = VA_BITS16_UNDEFINED;
             p[ 2] = VA_BITS16_UNDEFINED;
@@ -3830,9 +3833,9 @@ void MC_(helperc_MAKE_STACK_UNINIT_no_o) ( Addr base, UWord len )
            /* Now we know that the entire address range falls within a
               single secondary map, and that that secondary 'lives' in
               the main primary map. */
-            SecMap* sm    = get_secmap_for_writing_low(a_lo);
-            UWord   v_off = SM_OFF(a_lo);
-            UShort* p     = (UShort*)(&sm->vabits8[v_off]);
+            SecMap* sm      = get_secmap_for_writing_low(a_lo);
+            UWord   v_off16 = SM_OFF_16(a_lo);
+            UShort* p       = &sm->vabits16[v_off16];
             p[ 0] = VA_BITS16_UNDEFINED;
             p[ 1] = VA_BITS16_UNDEFINED;
             p[ 2] = VA_BITS16_UNDEFINED;
@@ -3867,9 +3870,9 @@ void MC_(helperc_MAKE_STACK_UNINIT_no_o) ( Addr base, UWord len )
            /* Now we know that the entire address range falls within a
               single secondary map, and that that secondary 'lives' in
               the main primary map. */
-            SecMap* sm    = get_secmap_for_writing_low(a_lo);
-            UWord   v_off = SM_OFF(a_lo);
-            UShort* p     = (UShort*)(&sm->vabits8[v_off]);
+            SecMap* sm      = get_secmap_for_writing_low(a_lo);
+            UWord   v_off16 = SM_OFF_16(a_lo);
+            UShort* p       = &sm->vabits16[v_off16];
             p[ 0] = VA_BITS16_UNDEFINED;
             p[ 1] = VA_BITS16_UNDEFINED;
             p[ 2] = VA_BITS16_UNDEFINED;
@@ -3982,7 +3985,7 @@ void MC_(helperc_MAKE_STACK_UNINIT_128_no_o) ( Addr base )
             PROF_EVENT(MCPE_MAKE_STACK_UNINIT_128_NO_O_ALIGNED_16);
             SecMap* sm    = get_secmap_for_writing_low(a_lo);
             UWord   v_off = SM_OFF(a_lo);
-            UInt*   w32   = (UInt*)(&sm->vabits8[v_off]);
+            UInt*   w32   = ASSUME_ALIGNED(UInt*, &sm->vabits8[v_off]);
             w32[ 0] = VA_BITS32_UNDEFINED;
             w32[ 1] = VA_BITS32_UNDEFINED;
             w32[ 2] = VA_BITS32_UNDEFINED;
@@ -4015,10 +4018,10 @@ void MC_(helperc_MAKE_STACK_UNINIT_128_no_o) ( Addr base )
            /* Now we know that the entire address range falls within a
               single secondary map, and that that secondary 'lives' in
               the main primary map. */
-            SecMap* sm    = get_secmap_for_writing_low(a_lo);
-            UWord   v_off = SM_OFF(a_lo);
-            UShort* w16   = (UShort*)(&sm->vabits8[v_off]);
-            UInt*   w32   = (UInt*)(&w16[1]);
+            SecMap* sm      = get_secmap_for_writing_low(a_lo);
+            UWord   v_off16 = SM_OFF_16(a_lo);
+            UShort* w16     = &sm->vabits16[v_off16];
+            UInt*   w32     = ASSUME_ALIGNED(UInt*, &w16[1]);
             /* The following assertion is commented out for obvious
                performance reasons, but was verified as valid when
                running the entire testsuite and also Firefox. */
@@ -4769,7 +4772,7 @@ void mc_LOADV_128_or_256 ( /*OUT*/ULong* res,
       for (j = 0; j < nULongs; j++) {
          sm       = get_secmap_for_reading_low(a + 8*j);
          sm_off16 = SM_OFF_16(a + 8*j);
-         vabits16 = ((UShort*)(sm->vabits8))[sm_off16];
+         vabits16 = sm->vabits16[sm_off16];
 
          // Convert V bits from compact memory form to expanded
          // register form.
@@ -4831,7 +4834,7 @@ ULong mc_LOADV64 ( Addr a, Bool isBigEndian )
 
       sm       = get_secmap_for_reading_low(a);
       sm_off16 = SM_OFF_16(a);
-      vabits16 = ((UShort*)(sm->vabits8))[sm_off16];
+      vabits16 = sm->vabits16[sm_off16];
 
       // Handle common case quickly: a is suitably aligned, is mapped, and
       // addressible.
@@ -4965,7 +4968,7 @@ void mc_STOREV64 ( Addr a, ULong vbits64, Bool isBigEndian )
 
       sm       = get_secmap_for_reading_low(a);
       sm_off16 = SM_OFF_16(a);
-      vabits16 = ((UShort*)(sm->vabits8))[sm_off16];
+      vabits16 = sm->vabits16[sm_off16];
 
       // To understand the below cleverness, see the extensive comments
       // in MC_(helperc_STOREV8).
@@ -4974,7 +4977,7 @@ void mc_STOREV64 ( Addr a, ULong vbits64, Bool isBigEndian )
             return;
          }
          if (!is_distinguished_sm(sm) && VA_BITS16_UNDEFINED == vabits16) {
-            ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_DEFINED;
+            sm->vabits16[sm_off16] = VA_BITS16_DEFINED;
             return;
          }
          PROF_EVENT(MCPE_STOREV64_SLOW2);
@@ -4986,7 +4989,7 @@ void mc_STOREV64 ( Addr a, ULong vbits64, Bool isBigEndian )
             return;
          }
          if (!is_distinguished_sm(sm) && VA_BITS16_DEFINED == vabits16) {
-            ((UShort*)(sm->vabits8))[sm_off16] = (UShort)VA_BITS16_UNDEFINED;
+            sm->vabits16[sm_off16] = VA_BITS16_UNDEFINED;
             return;
          } 
          PROF_EVENT(MCPE_STOREV64_SLOW3);

@@ -1883,6 +1883,8 @@ struct vki_scsi_idlun {
                                 	           (struct cdrom_subchnl) */
 #define VKI_CDROMREADMODE2		0x530c /* Read CDROM mode 2 data (2336 Bytes) 
                                 	           (struct cdrom_read) */
+#define VKI_CDROMREADMODE1		0x530d /* Read CDROM mode 1 data (2048 Bytes)
+                                                   (struct cdrom_read) */
 #define VKI_CDROMREADAUDIO		0x530e /* (struct cdrom_read_audio) */
 #define VKI_CDROMMULTISESSION		0x5310 /* Obtain the start-of-last-session 
                                 	           address of multi session disks 
@@ -2009,6 +2011,7 @@ struct vki_cdrom_generic_command
 #define VKI_CD_HEAD_SIZE          4 /* header (address) bytes per raw data frame */
 #define VKI_CD_FRAMESIZE_RAW   2352 /* bytes per frame, "raw" mode */
 #define VKI_CD_FRAMESIZE_RAW0 (VKI_CD_FRAMESIZE_RAW-VKI_CD_SYNC_SIZE-VKI_CD_HEAD_SIZE) /*2336*/
+#define VKI_CD_FRAMESIZE_RAW1  2048 /* bytes per frame, mode 1*/
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/soundcard.h

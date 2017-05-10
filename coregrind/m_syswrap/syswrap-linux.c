@@ -6943,8 +6943,13 @@ PRE(sys_ioctl)
       PRE_MEM_WRITE( "ioctl(CDROMSUBCHNL)", ARG3, 
 		     sizeof(struct vki_cdrom_subchnl));
       break;
-   case VKI_CDROMREADMODE2:
-      PRE_MEM_READ( "ioctl(CDROMREADMODE2)", ARG3, VKI_CD_FRAMESIZE_RAW0 );
+   case VKI_CDROMREADMODE1: /*0x530d*/
+      PRE_MEM_READ("ioctl(CDROMREADMODE1)", ARG3, VKI_CD_FRAMESIZE_RAW1);
+      PRE_MEM_WRITE("ioctl(CDROMREADMODE1)", ARG3, VKI_CD_FRAMESIZE_RAW1);
+      break;
+   case VKI_CDROMREADMODE2: /*0x530c*/
+      PRE_MEM_READ("ioctl(CDROMREADMODE2)", ARG3, VKI_CD_FRAMESIZE_RAW0);
+      PRE_MEM_WRITE("ioctl(CDROMREADMODE2)", ARG3, VKI_CD_FRAMESIZE_RAW0);
       break;
    case VKI_CDROMREADTOCHDR:
       PRE_MEM_WRITE( "ioctl(CDROMREADTOCHDR)", ARG3, 
@@ -9690,6 +9695,12 @@ POST(sys_ioctl)
       break;
    case VKI_CDROMVOLREAD:
       POST_MEM_WRITE(ARG3, sizeof(struct vki_cdrom_volctrl));
+      break;
+   case VKI_CDROMREADMODE1:
+      POST_MEM_WRITE(ARG3, VKI_CD_FRAMESIZE_RAW1);
+      break;
+   case VKI_CDROMREADMODE2:
+      POST_MEM_WRITE(ARG3, VKI_CD_FRAMESIZE_RAW0);
       break;
    case VKI_CDROMREADRAW:
       POST_MEM_WRITE(ARG3, VKI_CD_FRAMESIZE_RAW);

@@ -483,49 +483,127 @@ Mon  6 Mar 21:02:39 CET 2017
 ========================================================================
 ========================================================================
 ========================================================================
-Should take in:
 
+Should fix for 3.13:
+** = higher priority, do these first
+*  = lower priority, do these if time available
+
+**
+352364  ppc64: --expensive-definedness-checks=yes is not quite working here
+
+**
 360415  amd64 instructions ADCX and ADOX are not implemented in VEX
 	[has a plausible patch]
 
-339596  AMD64 xop instructions unsupported. vex amd64->IR: unhandled instruction bytes: 0x8F 0xE8 0x78 0xCD 0xC1 0x4 0xC5 0xF9
-	[has plausible patches]
-
-322935  disInstr(arm): unhandled instruction: 0xF1010200, valgrind: Unrecognised instruction on Raspbian
-        [should document that Raspian is not supported]
-
+**
 360429  Warning: noted but unhandled ioctl 0x530d with no size/direction hints.
-        [has patch, should take]
+        (has patch, should take)
 
-368791  unhandled syscall: 167 (swapon, amd64-linux)
-	[hoist mips64-linux specific wrapper as a linux specific one]
-
-368529  Android arm target link error, missing atexit and pthread_atfork
-	[has patch, should take]
-
+**
 362223  assertion failed when .valgrindrc is a directory instead of a file
 	[really easy to fix]
 
-369723  __builtin_longjmp not supported in clang/llvm on Android arm64 target
-        [has patch at android-review.googlesource.com]
+**
+(carried over)
+367543  bt/btc/btr/bts x86/x86_64 instructions are poorly-handled wrt flags
+        [Z flag behaviour is wrong]
 
+**
+(carried over)
+368507  valgrind throws std::bad_alloc on memory allocations larger
+        than 34255421416 bytes
+        (increase usable address space post release, on trunk)
+
+**
+368868  disInstr(arm64): unhandled instruction 0xD53BE000 = cntfrq_el0 (ARMv8)
+        (should fix this for 3.12.1)
+
+**
+369459  valgrind on arm64 violates the ARMv8 spec (ldxr/stxr)
+        (is mostly fixed)
+
+**
+370028  Reduce the number of compiler warnings on MIPS platforms
+(easy patch)
+
+**
 371491  handleAddrOverrides() is truncating the segment base address when
         ASO prefix is used
 	[has patch, easy fix]
 
-373990  Potential shift left overflow in guest_arm_toIR.c
-	[suggested fix available]
+**
+371503  disInstr(arm64): unhandled instruction 0xF89F0000
 
-374963  increase valgrind's load address to prevent mmap failure
-	[has patch, requested documentation update]
+**
+372188  vex amd64->IR: 0x66 0xF 0x3A 0x62 0x4A 0x10 0x10 0x48 (PCMPxSTRx $0x10)
 
+**
+372828  vex amd64->IR: 0x66 0x4D 0xF 0x38 0xF6 0xD2 0x66 0x4D
+
+**
 377066  Some Valgrind unit tests fail to compile on Ubuntu 16.10 with
         PIE enabled by default
 	[Ivosh will fix it as it is annoying]
 
-368507  valgrind throws std::bad_alloc on memory allocations larger
-        than 34255421416 bytes
-	[should take in after 3.13]
+**
+n-i-bz  major perf problems w/ stack registration + stack recycling
+Should be fixed.  Try again with ./mach gtest
+
+* 
+371989  PCMPISTRM $0x72 validity bit propagation is imprecise
+(at least comment on it)
+
+*
+322935  disInstr(arm): unhandled instruction: 0xF1010200, valgrind:
+        Unrecognised instruction on Raspbian
+        [should document that Raspian is not supported]
+
+*
+(carried over)
+353192  Debug info/data section not detected on AMD64
+        [To do with rwx, combined code+data sections]
+
+*
+(carried over)
+358980  32 byte leak reported when code uses dlopen and links against pthread
+
+*
+(carried over)
+364279  False "Uninitialized" on atomic_compare_exchange
+
+*
+368529  Android arm target link error, missing atexit and pthread_atfork
+	[has patch, should take]
+
+*
+368791  unhandled syscall: 167 (swapon, amd64-linux)
+	[hoist mips64-linux specific wrapper as a linux specific one]
+
+*
+369723  __builtin_longjmp not supported in clang/llvm on Android arm64 target
+        [has patch at android-review.googlesource.com]
+
+*
+369854  Valgrind reports an Invalid Read in __intel_new_memcpy
+        Should be handled by --partial-loads-ok=yes
+
+*
+371396  helgrind and drd pth_cond_destroy_busy testcase hang with
+        new glibc cond var implementation (workaround committed as 16097)
+
+*
+373990  Potential shift left overflow in guest_arm_toIR.c
+	[suggested fix available]
+
+**
+374963  increase valgrind's load address to prevent mmap failure
+maybe change to 0x5800'0000
+
+*
+n-i-bz  Remove limit on strd's negative immediates
+        [dev@, Michael Daniels, 19 Nov 2015, easy fix, should land]
+
+--------------------
 
 ========================================================================
 ========================================================================

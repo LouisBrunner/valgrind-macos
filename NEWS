@@ -105,6 +105,8 @@ where XXXXXX is the bug number as listed below.
 348616  Wine/valgrind: noted but unhandled ioctl 0x5390 [..] (DVD_READ_STRUCT)
 352395  Please provide SVN revision info in --version -v
 352767  Wine/valgrind: noted but unhandled ioctl 0x5307 [..] (CDROMSTOP)
+356374  Assertion 'DRD_(g_threadinfo)[tid].pt_threadid !=
+        INVALID_POSIX_THREADID' failed
 358213  helgrind/drd bar_bad testcase hangs or crashes with new glibc pthread
         barrier implementation
 358697  valgrind.h: Some code remains even when defining NVALGRIND
@@ -147,6 +149,7 @@ where XXXXXX is the bug number as listed below.
 375839  Temporary storage exhausted, with long sequence of vfmadd231ps insns
         == 377159  "vex: the `impossible' happened" still present
         == 375150  Assertion 'tres.status == VexTransOK' failed
+        == 378068  valgrind crashes on AVX2 function in FFmpeg
 376142  Segfaults on MIPS Cavium Octeon boards
 376279  disInstr(arm64): unhandled instruction 0xD50320FF
 376455  Solaris: unhandled syscall lgrpsys(180)
@@ -166,6 +169,7 @@ where XXXXXX is the bug number as listed below.
         and 2 args for FUTEX_TRYLOCK_PI
 377717  Fix massive space leak when reading compressed debuginfo sections
 377930  fcntl syscall wrapper is missing flock structure check
+378524  libvexmultiarch_test regression on s390x and ppc64
 378535  Valgrind reports INTERNAL ERROR in execve syscall wrapper
 378673  Update libiberty demangler
 378931  Add ISA 3.0B additional isnstructions, add OV32, CA32 setting support
@@ -178,7 +182,7 @@ where XXXXXX is the bug number as listed below.
 379390  unhandled syscall: mach:70 (host_create_mach_voucher_trap)
 379473  MIPS: add support for rdhwr cycle counter register
 379504  remove TileGX/Linux port
-356374  Assertion 'DRD_(g_threadinfo)[tid].pt_threadid != INVALID_POSIX_THREADID' failed
+
 
 Release 3.12.0 (20 October 2016)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

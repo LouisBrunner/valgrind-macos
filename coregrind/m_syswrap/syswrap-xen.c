@@ -728,6 +728,7 @@ PRE(domctl)
    case 0x00000008:
    case 0x00000009:
    case 0x0000000a:
+   case 0x0000000b:
 	   break;
    default:
       bad_intf_version(tid, layout, arrghs, status, flags,
@@ -806,20 +807,114 @@ PRE(domctl)
       break;
 
    case VKI_XEN_DOMCTL_test_assign_device:
-      __PRE_XEN_DOMCTL_READ(test_assign_device, assign_device, machine_sbdf);
+      switch (domctl->interface_version) {
+      case 0x00000007: /* pre-4.6 */
+      case 0x00000008:
+      case 0x00000009:
+      case 0x0000000a:
+         __PRE_XEN_DOMCTL_READ(test_assign_device, assign_device_00000007, machine_sbdf);
+         break;
+      case 0x0000000b:
+         __PRE_XEN_DOMCTL_READ(test_assign_device, assign_device_0000000b, dev);
+         __PRE_XEN_DOMCTL_READ(test_assign_device, assign_device_0000000b, flag);
+         switch (domctl->u.assign_device_0000000b.dev) {
+         case VKI_XEN_DOMCTL_DEV_PCI:
+            __PRE_XEN_DOMCTL_READ(test_assign_device, assign_device_0000000b, u.pci);
+            break;
+         case VKI_XEN_DOMCTL_DEV_DT:
+            __PRE_XEN_DOMCTL_READ(test_assign_device, assign_device_0000000b, u.dt);
+            PRE_MEM_READ("XEN_DOMTCL_test_assign_device.dt",
+                          (Addr)domctl->u.assign_device_0000000b.u.dt.path.p,
+                          domctl->u.assign_device_0000000b.u.dt.size);
+            break;
+         default:
+            bad_subop(tid, layout, arrghs, status, flags,
+                         "__HYPERVISOR_domctl_test_assign_device dev",
+                         domctl->u.assign_device_0000000b.dev);
+            break;
+         }
+         break;
+      }
       break;
    case VKI_XEN_DOMCTL_assign_device:
-      __PRE_XEN_DOMCTL_READ(assign_device, assign_device, machine_sbdf);
+      switch (domctl->interface_version) {
+      case 0x00000007: /* pre-4.6 */
+      case 0x00000008:
+      case 0x00000009:
+      case 0x0000000a:
+         __PRE_XEN_DOMCTL_READ(assign_device, assign_device_00000007, machine_sbdf);
+         break;
+      case 0x0000000b:
+         __PRE_XEN_DOMCTL_READ(assign_device, assign_device_0000000b, dev);
+         __PRE_XEN_DOMCTL_READ(assign_device, assign_device_0000000b, flag);
+         switch (domctl->u.assign_device_0000000b.dev) {
+         case VKI_XEN_DOMCTL_DEV_PCI:
+            __PRE_XEN_DOMCTL_READ(assign_device, assign_device_0000000b, u.pci);
+            break;
+         case VKI_XEN_DOMCTL_DEV_DT:
+            __PRE_XEN_DOMCTL_READ(assign_device, assign_device_0000000b, u.dt);
+            PRE_MEM_READ("XEN_DOMTCL_assign_device.dt",
+                          (Addr)domctl->u.assign_device_0000000b.u.dt.path.p,
+                          domctl->u.assign_device_0000000b.u.dt.size);
+            break;
+         default:
+            bad_subop(tid, layout, arrghs, status, flags,
+                         "__HYPERVISOR_domctl_assign_device dev",
+                         domctl->u.assign_device_0000000b.dev);
+            break;
+         }
+         break;
+      }
       break;
    case VKI_XEN_DOMCTL_deassign_device:
-      __PRE_XEN_DOMCTL_READ(deassign_device, assign_device, machine_sbdf);
+      switch (domctl->interface_version) {
+      case 0x00000007: /* pre-4.6 */
+      case 0x00000008:
+      case 0x00000009:
+      case 0x0000000a:
+         __PRE_XEN_DOMCTL_READ(deassign_device, assign_device_00000007, machine_sbdf);
+         break;
+      case 0x0000000b:
+         __PRE_XEN_DOMCTL_READ(deassign_device, assign_device_0000000b, dev);
+         __PRE_XEN_DOMCTL_READ(deassign_device, assign_device_0000000b, flag);
+         switch (domctl->u.assign_device_0000000b.dev) {
+         case VKI_XEN_DOMCTL_DEV_PCI:
+            __PRE_XEN_DOMCTL_READ(deassign_device, assign_device_0000000b, u.pci);
+            break;
+         case VKI_XEN_DOMCTL_DEV_DT:
+            __PRE_XEN_DOMCTL_READ(deassign_device, assign_device_0000000b, u.dt);
+            PRE_MEM_READ("XEN_DOMTCL_assign_device.dt",
+                          (Addr)domctl->u.assign_device_0000000b.u.dt.path.p,
+                          domctl->u.assign_device_0000000b.u.dt.size);
+            break;
+         default:
+            bad_subop(tid, layout, arrghs, status, flags,
+                         "__HYPERVISOR_domctl_deassign_device dev",
+                         domctl->u.assign_device_0000000b.dev);
+            break;
+         }
+         break;
+      }
       break;
 
    case VKI_XEN_DOMCTL_settscinfo:
-      __PRE_XEN_DOMCTL_READ(settscinfo, tsc_info, info.tsc_mode);
-      __PRE_XEN_DOMCTL_READ(settscinfo, tsc_info, info.gtsc_khz);
-      __PRE_XEN_DOMCTL_READ(settscinfo, tsc_info, info.incarnation);
-      __PRE_XEN_DOMCTL_READ(settscinfo, tsc_info, info.elapsed_nsec);
+      switch (domctl->interface_version) {
+      case 0x00000007: /* pre-4.6 */
+      case 0x00000008:
+      case 0x00000009:
+      case 0x0000000a:
+         __PRE_XEN_DOMCTL_READ(settscinfo, tsc_info_00000007, info.tsc_mode);
+         __PRE_XEN_DOMCTL_READ(settscinfo, tsc_info_00000007, info.gtsc_khz);
+         __PRE_XEN_DOMCTL_READ(settscinfo, tsc_info_00000007, info.incarnation);
+         __PRE_XEN_DOMCTL_READ(settscinfo, tsc_info_00000007, info.elapsed_nsec);
+         break;
+      case 0x0000000b:
+         __PRE_XEN_DOMCTL_READ(settscinfo, tsc_info_0000000b, tsc_mode);
+         __PRE_XEN_DOMCTL_READ(settscinfo, tsc_info_0000000b, gtsc_khz);
+         __PRE_XEN_DOMCTL_READ(settscinfo, tsc_info_0000000b, incarnation);
+         __PRE_XEN_DOMCTL_READ(settscinfo, tsc_info_0000000b, elapsed_nsec);
+         break;
+      }
       break;
 
    case VKI_XEN_DOMCTL_irq_permission:
@@ -1136,8 +1231,20 @@ PRE(domctl)
       break;
 
    case VKI_XEN_DOMCTL_mem_event_op:
-      PRE_XEN_DOMCTL_READ(mem_event_op, op);
-      PRE_XEN_DOMCTL_READ(mem_event_op, mode);
+   //case VKI_XEN_DOMCTL_vm_event_op: /* name change in 4.6 */
+      switch (domctl->interface_version) {
+      case 0x00000007: /* pre-4.6 */
+      case 0x00000008:
+      case 0x00000009:
+      case 0x0000000a:
+         __PRE_XEN_DOMCTL_READ(mem_event_op, mem_event_op_00000007, op);
+         __PRE_XEN_DOMCTL_READ(mem_event_op, mem_event_op_00000007, mode);
+         break;
+      case 0x0000000b:
+         __PRE_XEN_DOMCTL_READ(vm_event_op, vm_event_op_0000000b, op);
+         __PRE_XEN_DOMCTL_READ(vm_event_op, vm_event_op_0000000b, mode);
+         break;
+      }
       break;
 
    case VKI_XEN_DOMCTL_debug_op:
@@ -1159,6 +1266,28 @@ PRE(domctl)
                    (Addr)domctl->u.vcpu_msrs.msrs.p,
                    sizeof(vki_xen_domctl_vcpu_msr_t) *
                    domctl->u.vcpu_msrs.msr_count);
+      break;
+
+   case VKI_XEN_DOMCTL_monitor_op:
+      switch (domctl->interface_version) {
+      case 0x000000b:
+          if (domctl->u.monitor_op_0000000b.op == VKI_XEN_DOMCTL_MONITOR_OP_ENABLE ||
+              domctl->u.monitor_op_0000000b.op == VKI_XEN_DOMCTL_MONITOR_OP_ENABLE) {
+             switch(domctl->u.monitor_op_0000000b.event) {
+             case VKI_XEN_DOMCTL_MONITOR_EVENT_WRITE_CTRLREG:
+                __PRE_XEN_DOMCTL_READ(monitor_op, monitor_op_0000000b, u.mov_to_cr);
+                break;
+             case VKI_XEN_DOMCTL_MONITOR_EVENT_MOV_TO_MSR:
+                __PRE_XEN_DOMCTL_READ(monitor_op, monitor_op_0000000b, u.mov_to_msr);
+                break;
+             case VKI_XEN_DOMCTL_MONITOR_EVENT_GUEST_REQUEST:
+                __PRE_XEN_DOMCTL_READ(monitor_op, monitor_op_0000000b, u.guest_request);
+                break;
+             }
+          }
+
+         break;
+      }
       break;
 
    default:
@@ -1669,6 +1798,7 @@ POST(domctl){
    case 0x00000008:
    case 0x00000009:
    case 0x0000000a:
+   case 0x0000000b:
 	   break;
    default:
 	   return;
@@ -1720,10 +1850,23 @@ POST(domctl){
       break;
 
    case VKI_XEN_DOMCTL_gettscinfo:
-      __POST_XEN_DOMCTL_WRITE(settscinfo, tsc_info, info.tsc_mode);
-      __POST_XEN_DOMCTL_WRITE(settscinfo, tsc_info, info.gtsc_khz);
-      __POST_XEN_DOMCTL_WRITE(settscinfo, tsc_info, info.incarnation);
-      __POST_XEN_DOMCTL_WRITE(settscinfo, tsc_info, info.elapsed_nsec);
+      switch (domctl->interface_version) {
+      case 0x00000007: /* pre-4.6 */
+      case 0x00000008:
+      case 0x00000009:
+      case 0x0000000a:
+         __POST_XEN_DOMCTL_WRITE(gettscinfo, tsc_info_00000007, out_info);
+         POST_MEM_WRITE((Addr)domctl->u.tsc_info_00000007.out_info.p,
+                        sizeof(vki_xen_guest_tsc_info_t));
+         break;
+      case 0x0000000b:
+         __POST_XEN_DOMCTL_WRITE(gettscinfo, tsc_info_0000000b, tsc_mode);
+         __POST_XEN_DOMCTL_WRITE(gettscinfo, tsc_info_0000000b, gtsc_khz);
+         __POST_XEN_DOMCTL_WRITE(gettscinfo, tsc_info_0000000b, incarnation);
+         __POST_XEN_DOMCTL_WRITE(gettscinfo, tsc_info_0000000b, elapsed_nsec);
+         break;
+      }
+      break;
       break;
 
    case VKI_XEN_DOMCTL_getvcpuinfo:
@@ -1959,10 +2102,42 @@ POST(domctl){
       break;
 
    case VKI_XEN_DOMCTL_mem_event_op:
-       POST_XEN_DOMCTL_WRITE(mem_event_op, port);
+   //case VKI_XEN_DOMCTL_vm_event_op: /* name change in 4.6 */
+      switch (domctl->interface_version) {
+      case 0x00000007: /* pre-4.6 */
+      case 0x00000008:
+      case 0x00000009:
+      case 0x0000000a:
+         __POST_XEN_DOMCTL_WRITE(mem_event_op, mem_event_op_00000007, port);
+         break;
+      case 0x0000000b:
+         __POST_XEN_DOMCTL_WRITE(vm_event_op, vm_event_op_0000000b, port);
+         break;
+      }
+      break;
 
-       break;
+   case VKI_XEN_DOMCTL_monitor_op:
+      switch (domctl->interface_version) {
+      case 0x000000b:
+          if (domctl->u.monitor_op_0000000b.op == VKI_XEN_DOMCTL_MONITOR_OP_GET_CAPABILITIES) {
+             switch(domctl->u.monitor_op_0000000b.event) {
+             case VKI_XEN_DOMCTL_MONITOR_EVENT_WRITE_CTRLREG:
+                __POST_XEN_DOMCTL_WRITE(monitor_op, monitor_op_0000000b, u.mov_to_cr);
+                break;
+             case VKI_XEN_DOMCTL_MONITOR_EVENT_MOV_TO_MSR:
+                __POST_XEN_DOMCTL_WRITE(monitor_op, monitor_op_0000000b, u.mov_to_msr);
+                break;
+             case VKI_XEN_DOMCTL_MONITOR_EVENT_GUEST_REQUEST:
+                __POST_XEN_DOMCTL_WRITE(monitor_op, monitor_op_0000000b, u.guest_request);
+                break;
+             }
+          }
+
+         break;
+      }
+      break;
    }
+
 #undef POST_XEN_DOMCTL_WRITE
 #undef __POST_XEN_DOMCTL_WRITE
 }

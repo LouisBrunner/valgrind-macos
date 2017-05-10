@@ -168,6 +168,7 @@ where XXXXXX is the bug number as listed below.
         and FUTEX_WAKE_BITSET, check only 4 args for FUTEX_WAKE_BITSET,
         and 2 args for FUTEX_TRYLOCK_PI
 377717  Fix massive space leak when reading compressed debuginfo sections
+377891  Update Xen 4.6 domctl wrappers
 377930  fcntl syscall wrapper is missing flock structure check
 378524  libvexmultiarch_test regression on s390x and ppc64
 378535  Valgrind reports INTERNAL ERROR in execve syscall wrapper

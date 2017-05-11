@@ -101,9 +101,9 @@ const unsigned int mem[] = {
      instruction "\n\t" \
      "move %0, $" #RT "\n\t" \
      : "=&r" (out) \
-	 : "r" (mem), "r" (RTval) \
-	 : #RT, "cc", "memory" \
-	 ); \
+     : "r" (mem), "r" (RTval) \
+     : #RT, "cc", "memory" \
+   ); \
    printf("%s :: rt 0x%08x\n", \
           instruction, out); \
 }
@@ -120,9 +120,9 @@ const unsigned int mem[] = {
       "mfhi %0\n\t" \
       "mflo %1\n\t" \
      : "=&r" (HI), "=&r" (LO) \
-	 : "r" (RSval)\
-	 : "cc", "memory" \
-	 ); \
+     : "r" (RSval) \
+     : "cc", "memory" \
+   ); \
    printf("mfhi mflo :: HI: 0x%x, LO: 0x%x\n", \
           HI, LO); \
 }
@@ -662,7 +662,7 @@ int main(int argc, char **argv)
    TESTINSN5LOAD("lb $t0, 52($t1)", 0, 52, t0);
    TESTINSN5LOAD("lb $t0, 56($t1)", 0, 56, t0);
    TESTINSN5LOAD("lb $t0, 60($t1)", 0, 60, t0);
-   TESTINSN5LOAD("lb $t0, 64($t1)", 0, 64, t0);
+   TESTINSN5LOAD("lb $t0, 1($t1)", 0, 1, t0);
    TESTINSN5LOAD("lb $t0, 2($t1)", 0, 2, t0);
    TESTINSN5LOAD("lb $t0, 6($t1)", 0, 6, t0);
    TESTINSN5LOAD("lb $t0, 10($t1)", 0, 10, t0);
@@ -691,7 +691,7 @@ int main(int argc, char **argv)
    TESTINSN5LOAD("lbu $t0, 52($t1)", 0, 52, t0);
    TESTINSN5LOAD("lbu $t0, 56($t1)", 0, 56, t0);
    TESTINSN5LOAD("lbu $t0, 60($t1)", 0, 60, t0);
-   TESTINSN5LOAD("lbu $t0, 64($t1)", 0, 64, t0);
+   TESTINSN5LOAD("lbu $t0, 1($t1)", 0, 1, t0);
    TESTINSN5LOAD("lbu $t0, 2($t1)", 0, 2, t0);
    TESTINSN5LOAD("lbu $t0, 6($t1)", 0, 6, t0);
    TESTINSN5LOAD("lbu $t0, 10($t1)", 0, 10, t0);
@@ -720,7 +720,7 @@ int main(int argc, char **argv)
    TESTINSN5LOAD("lh $t0, 52($t1)", 0, 52, t0);
    TESTINSN5LOAD("lh $t0, 56($t1)", 0, 56, t0);
    TESTINSN5LOAD("lh $t0, 60($t1)", 0, 60, t0);
-   TESTINSN5LOAD("lh $t0, 64($t1)", 0, 64, t0);
+   TESTINSN5LOAD("lh $t0, 62($t1)", 0, 62, t0);
    TESTINSN5LOAD("lh $t0, 2($t1)", 0, 2, t0);
    TESTINSN5LOAD("lh $t0, 6($t1)", 0, 6, t0);
    TESTINSN5LOAD("lh $t0, 10($t1)", 0, 10, t0);
@@ -749,7 +749,7 @@ int main(int argc, char **argv)
    TESTINSN5LOAD("lhu $t0, 52($t1)", 0, 52, t0);
    TESTINSN5LOAD("lhu $t0, 56($t1)", 0, 56, t0);
    TESTINSN5LOAD("lhu $t0, 60($t1)", 0, 60, t0);
-   TESTINSN5LOAD("lhu $t0, 64($t1)", 0, 64, t0);
+   TESTINSN5LOAD("lhu $t0, 62($t1)", 0, 62, t0);
    TESTINSN5LOAD("lhu $t0, 2($t1)", 0, 2, t0);
    TESTINSN5LOAD("lhu $t0, 6($t1)", 0, 6, t0);
    TESTINSN5LOAD("lhu $t0, 10($t1)", 0, 10, t0);
@@ -786,7 +786,6 @@ int main(int argc, char **argv)
    TESTINSN5LOAD("lw $t0, 52($t1)", 0, 52, t0);
    TESTINSN5LOAD("lw $t0, 56($t1)", 0, 56, t0);
    TESTINSN5LOAD("lw $t0, 60($t1)", 0, 60, t0);
-   TESTINSN5LOAD("lw $t0, 64($t1)", 0, 64, t0);
    TESTINSN5LOAD("lw $t0, 2($t1)", 0, 2, t0);
    TESTINSN5LOAD("lw $t0, 6($t1)", 0, 6, t0);
    TESTINSN5LOAD("lw $t0, 10($t1)", 0, 10, t0);
@@ -799,62 +798,48 @@ int main(int argc, char **argv)
    TESTINSN5LOAD("lw $t0, 38($t1)", 0, 38, t0);
 
    printf("LWL\n");
-   TESTINSN5LOAD("lwl $t0, 0($t1)", 0, 0, t0);
-   TESTINSN5LOAD("lwl $t0, 4($t1)", 0, 4, t0);
-   TESTINSN5LOAD("lwl $t0, 8($t1)", 0, 8, t0);
-   TESTINSN5LOAD("lwl $t0, 12($t1)", 0, 12, t0);
-   TESTINSN5LOAD("lwl $t0, 16($t1)", 0, 16, t0);
-   TESTINSN5LOAD("lwl $t0, 20($t1)", 0, 20, t0);
-   TESTINSN5LOAD("lwl $t0, 24($t1)", 0, 24, t0);
-   TESTINSN5LOAD("lwl $t0, 28($t1)", 0, 28, t0);
-   TESTINSN5LOAD("lwl $t0, 32($t1)", 0, 32, t0);
-   TESTINSN5LOAD("lwl $t0, 36($t1)", 0, 36, t0);
-   TESTINSN5LOAD("lwl $t0, 40($t1)", 0, 40, t0);
-   TESTINSN5LOAD("lwl $t0, 44($t1)", 0, 44, t0);
-   TESTINSN5LOAD("lwl $t0, 48($t1)", 0, 48, t0);
-   TESTINSN5LOAD("lwl $t0, 52($t1)", 0, 52, t0);
-   TESTINSN5LOAD("lwl $t0, 56($t1)", 0, 56, t0);
-   TESTINSN5LOAD("lwl $t0, 60($t1)", 0, 60, t0);
-   TESTINSN5LOAD("lwl $t0, 64($t1)", 0, 64, t0);
-   TESTINSN5LOAD("lwl $t0, 2($t1)", 0, 2, t0);
+   TESTINSN5LOAD("lwl $t0, 3($t1)", 0, 3, t0);
    TESTINSN5LOAD("lwl $t0, 6($t1)", 0, 6, t0);
-   TESTINSN5LOAD("lwl $t0, 10($t1)", 0, 10, t0);
-   TESTINSN5LOAD("lwl $t0, 14($t1)", 0, 14, t0);
+   TESTINSN5LOAD("lwl $t0, 9($t1)", 0, 9, t0);
+   TESTINSN5LOAD("lwl $t0, 12($t1)", 0, 12, t0);
+   TESTINSN5LOAD("lwl $t0, 15($t1)", 0, 15, t0);
    TESTINSN5LOAD("lwl $t0, 18($t1)", 0, 18, t0);
-   TESTINSN5LOAD("lwl $t0, 22($t1)", 0, 22, t0);
-   TESTINSN5LOAD("lwl $t0, 26($t1)", 0, 26, t0);
+   TESTINSN5LOAD("lwl $t0, 21($t1)", 0, 21, t0);
+   TESTINSN5LOAD("lwl $t0, 24($t1)", 0, 24, t0);
+   TESTINSN5LOAD("lwl $t0, 27($t1)", 0, 27, t0);
    TESTINSN5LOAD("lwl $t0, 30($t1)", 0, 30, t0);
-   TESTINSN5LOAD("lwl $t0, 34($t1)", 0, 34, t0);
-   TESTINSN5LOAD("lwl $t0, 38($t1)", 0, 38, t0);
+   TESTINSN5LOAD("lwl $t0, 33($t1)", 0, 33, t0);
+   TESTINSN5LOAD("lwl $t0, 36($t1)", 0, 36, t0);
+   TESTINSN5LOAD("lwl $t0, 39($t1)", 0, 39, t0);
+   TESTINSN5LOAD("lwl $t0, 42($t1)", 0, 42, t0);
+   TESTINSN5LOAD("lwl $t0, 45($t1)", 0, 45, t0);
+   TESTINSN5LOAD("lwl $t0, 48($t1)", 0, 48, t0);
+   TESTINSN5LOAD("lwl $t0, 51($t1)", 0, 51, t0);
+   TESTINSN5LOAD("lwl $t0, 54($t1)", 0, 54, t0);
+   TESTINSN5LOAD("lwl $t0, 57($t1)", 0, 57, t0);
+   TESTINSN5LOAD("lwl $t0, 60($t1)", 0, 60, t0);
 
    printf("LWR\n");
-   TESTINSN5LOAD("lwr $t0, 0($t1)", 0, 0, t0);
-   TESTINSN5LOAD("lwr $t0, 4($t1)", 0, 4, t0);
-   TESTINSN5LOAD("lwr $t0, 8($t1)", 0, 8, t0);
+   TESTINSN5LOAD("lwr $t0, 3($t1)", 0, 0, t0);
+   TESTINSN5LOAD("lwr $t0, 6($t1)", 0, 4, t0);
+   TESTINSN5LOAD("lwr $t0, 9($t1)", 0, 8, t0);
    TESTINSN5LOAD("lwr $t0, 12($t1)", 0, 12, t0);
-   TESTINSN5LOAD("lwr $t0, 16($t1)", 0, 16, t0);
-   TESTINSN5LOAD("lwr $t0, 20($t1)", 0, 20, t0);
-   TESTINSN5LOAD("lwr $t0, 24($t1)", 0, 24, t0);
-   TESTINSN5LOAD("lwr $t0, 28($t1)", 0, 28, t0);
-   TESTINSN5LOAD("lwr $t0, 32($t1)", 0, 32, t0);
-   TESTINSN5LOAD("lwr $t0, 36($t1)", 0, 36, t0);
-   TESTINSN5LOAD("lwr $t0, 40($t1)", 0, 40, t0);
-   TESTINSN5LOAD("lwr $t0, 44($t1)", 0, 44, t0);
-   TESTINSN5LOAD("lwr $t0, 48($t1)", 0, 48, t0);
-   TESTINSN5LOAD("lwr $t0, 52($t1)", 0, 52, t0);
-   TESTINSN5LOAD("lwr $t0, 56($t1)", 0, 56, t0);
-   TESTINSN5LOAD("lwr $t0, 60($t1)", 0, 60, t0);
-   TESTINSN5LOAD("lwr $t0, 64($t1)", 0, 64, t0);
-   TESTINSN5LOAD("lwr $t0, 2($t1)", 0, 2, t0);
-   TESTINSN5LOAD("lwr $t0, 6($t1)", 0, 6, t0);
-   TESTINSN5LOAD("lwr $t0, 10($t1)", 0, 10, t0);
-   TESTINSN5LOAD("lwr $t0, 14($t1)", 0, 14, t0);
-   TESTINSN5LOAD("lwr $t0, 18($t1)", 0, 18, t0);
-   TESTINSN5LOAD("lwr $t0, 22($t1)", 0, 22, t0);
-   TESTINSN5LOAD("lwr $t0, 26($t1)", 0, 26, t0);
-   TESTINSN5LOAD("lwr $t0, 30($t1)", 0, 30, t0);
-   TESTINSN5LOAD("lwr $t0, 34($t1)", 0, 34, t0);
-   TESTINSN5LOAD("lwr $t0, 38($t1)", 0, 38, t0);
+   TESTINSN5LOAD("lwr $t0, 15($t1)", 0, 16, t0);
+   TESTINSN5LOAD("lwr $t0, 18($t1)", 0, 20, t0);
+   TESTINSN5LOAD("lwr $t0, 21($t1)", 0, 24, t0);
+   TESTINSN5LOAD("lwr $t0, 24($t1)", 0, 28, t0);
+   TESTINSN5LOAD("lwr $t0, 27($t1)", 0, 32, t0);
+   TESTINSN5LOAD("lwr $t0, 30($t1)", 0, 36, t0);
+   TESTINSN5LOAD("lwr $t0, 33($t1)", 0, 40, t0);
+   TESTINSN5LOAD("lwr $t0, 36($t1)", 0, 44, t0);
+   TESTINSN5LOAD("lwr $t0, 39($t1)", 0, 48, t0);
+   TESTINSN5LOAD("lwr $t0, 42($t1)", 0, 52, t0);
+   TESTINSN5LOAD("lwr $t0, 45($t1)", 0, 56, t0);
+   TESTINSN5LOAD("lwr $t0, 48($t1)", 0, 60, t0);
+   TESTINSN5LOAD("lwr $t0, 51($t1)", 0, 64, t0);
+   TESTINSN5LOAD("lwr $t0, 54($t1)", 0, 2, t0);
+   TESTINSN5LOAD("lwr $t0, 57($t1)", 0, 6, t0);
+   TESTINSN5LOAD("lwr $t0, 60($t1)", 0, 10, t0);
 
    printf("MADD\n");
    TESTINST3a("madd  $t0, $t1", 0x6, 0x2, t0, t1);
@@ -1211,8 +1196,8 @@ int main(int argc, char **argv)
    TESTINST2("rotr $t0, $t1, 0x0000000F", 0x31415927, 0x0000000F, t0, t1);
    TESTINST2("rotr $t0, $t1, 0x00000010", 0x31415927, 0x00000010, t0, t1);
    TESTINST2("rotr $t0, $t1, 0x0000001F", 0x31415927, 0x0000001F, t0, t1);
-   TESTINST2("rotr $t0, $t1, 0x00000020", 0x31415927, 0x00000020, t0, t1);
-   TESTINST2("rotr $t0, $t1, 0x00000021", 0x31415927, 0x00000021, t0, t1);
+   TESTINST2("rotr $t0, $t1, 0x0000001A", 0x31415927, 0x0000001A, t0, t1);
+   TESTINST2("rotr $t0, $t1, 0x00000007", 0x31415927, 0x00000007, t0, t1);
    TESTINST2("rotr $t0, $t1, 0x00000000", 0x00088000, 0x00000000, t0, t1);
    TESTINST2("rotr $t0, $t1, 0x00000001", 0x00088000, 0x00000001, t0, t1);
    TESTINST2("rotr $t0, $t1, 31", 0x00088000, 31, t0, t1);
@@ -1220,7 +1205,7 @@ int main(int argc, char **argv)
    TESTINST2("rotr $t0, $t1, 17", 0x00010000, 17, t0, t1);
    TESTINST2("rotr $t0, $t1, 18", 0x00010000, 18, t0, t1);
    TESTINST2("rotr $t0, $t1, 0", 0, 0, t0, t1);
-   TESTINST2("rotr $t0, $t1, 0xffff", 0xffff, 0xffff, t0, t1);
+   TESTINST2("rotr $t0, $t1, 0x1F", 0xFFFF, 0x1F, t0, t1);
 #endif
 
 #if (__mips==32) && (__mips_isa_rev>=2)

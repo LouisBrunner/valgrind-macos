@@ -30,9 +30,6 @@ that didn't get fixed in 3.12.  These are marked "(carried over)".
 373166  vex amd64->IR: 0xFF 0xFF 0x48 0x85 0xC0 0x74 0x8 0x4D 0x89 0xE7
 	[not clear what's going on here]
 
-377066  Some Valgrind unit tests fail to compile on Ubuntu 16.10 with
-        PIE enabled by default
-
 379525  Support more x86 nop opcodes
 
 AMD XOP-prefixed insns:
@@ -130,10 +127,6 @@ n-i-bz  Remove limit on strd's negative immediates
 (carried over)
 359705  memcheck causes segfault on a dynamically-linked test from
         rustlang's test suite on i686
-
-(carried over)
-360429  Warning: noted but unhandled ioctl 0x530d with no size/direction hints.
-        (has patch, should take)
 
 (carried over)
 361726  WARNING:unhandled syscall on ppc64
@@ -473,9 +466,6 @@ n-i-bz  Remove limit on strd's negative immediates
 (carried over)
 366345  Dirty compile from m_libcbase.c and vgdb-invoker-ptrace.c
 
-377066  Some Valgrind unit tests fail to compile on Ubuntu 16.10 with
-        PIE enabled by default
-
 379502  Checking the code of Valgrind dynamic analyzer by a static analyzer
 
 379537  Client requests can't be used in C++11 constexpr functions
@@ -522,14 +512,10 @@ Should fix for 3.13:
 **
 360415  amd64 instructions ADCX and ADOX are not implemented in VEX
 	[has a plausible patch]
-
-**
-360429  Warning: noted but unhandled ioctl 0x530d with no size/direction hints.
-        (has patch, should take)
-
+        == 372828 (vex amd64->IR: 0x66 0xF 0x3A 0x62 0x4A 0x10)
 **
 362223  assertion failed when .valgrindrc is a directory instead of a file
-	[really easy to fix]
+	[has patch by Ivo]
 
 **
 (carried over)
@@ -566,16 +552,8 @@ Should fix for 3.13:
 372188  vex amd64->IR: 0x66 0xF 0x3A 0x62 0x4A 0x10 0x10 0x48 (PCMPxSTRx $0x10)
 
 **
-372828  vex amd64->IR: 0x66 0x4D 0xF 0x38 0xF6 0xD2 0x66 0x4D
-
-**
 374963  increase valgrind's load address to prevent mmap failure
 maybe change to 0x5800'0000
-
-**
-377066  Some Valgrind unit tests fail to compile on Ubuntu 16.10 with
-        PIE enabled by default
-	[Ivosh will fix it as it is annoying]
 
 **
 n-i-bz  major perf problems w/ stack registration + stack recycling

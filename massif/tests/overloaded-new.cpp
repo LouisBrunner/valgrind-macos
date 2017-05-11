@@ -14,32 +14,32 @@ typedef struct {
            int array[1000];
         } s;
 
-__attribute__((noinline)) void* operator new (std::size_t n) throw (std::bad_alloc)
+__attribute__((noinline)) void* operator new (std::size_t n)
 {
     return malloc(n);
 }
 
-__attribute__((noinline)) void* operator new (std::size_t n, std::nothrow_t const &) throw ()
+__attribute__((noinline)) void* operator new (std::size_t n, std::nothrow_t const &)
 {
     return malloc(n);
 }
 
-__attribute__((noinline)) void* operator new[] (std::size_t n) throw (std::bad_alloc)
+__attribute__((noinline)) void* operator new[] (std::size_t n)
 {
     return malloc(n);
 }
 
-__attribute__((noinline)) void* operator new[] (std::size_t n, std::nothrow_t const &) throw ()
+__attribute__((noinline)) void* operator new[] (std::size_t n, std::nothrow_t const &)
 {
     return malloc(n);
 }
 
-__attribute__((noinline)) void operator delete (void* p) throw()
+__attribute__((noinline)) void operator delete (void* p)
 {
     return free(p);
 }
 
-__attribute__((noinline)) void operator delete[] (void* p) throw()
+__attribute__((noinline)) void operator delete[] (void* p)
 {
     return free(p);
 }

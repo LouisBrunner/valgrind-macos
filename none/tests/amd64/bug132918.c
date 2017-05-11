@@ -24,8 +24,8 @@ static void do_fprem ( Res* res, double x, double y )
      "fnstsw  %%ax\n\t"
      "movq    %%rax,%0\n\t"
      "movq    %%r15,%%rax"
-     : /*out*/ "=r" (c3210)
-     : /*in*/  "m" (f64), "m" (xx), "m" (yy)
+     : /*out*/ "=r" (c3210), "=m" (f64)
+     : /*in*/  "m" (xx), "m" (yy)
      : /*trash*/ "r15", "rax", "%st", "%st(1)", "cc"
    );
   res->d = f64;

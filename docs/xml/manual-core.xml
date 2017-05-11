@@ -2567,8 +2567,8 @@ precedence over those in
 </para>
 
 <para>Please note that the <computeroutput>./.valgrindrc</computeroutput>
-file is ignored if it is marked as world writeable or not owned 
-by the current user. This is because the
+file is ignored if it is not a regular file, or is marked as world writeable,
+or is not owned by the current user. This is because the
 <computeroutput>./.valgrindrc</computeroutput> can contain options that are
 potentially harmful or can be used by a local attacker to execute code under
 your user account.

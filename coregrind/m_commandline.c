@@ -55,8 +55,6 @@ static void add_string ( XArray* /* of HChar* */xa, HChar* str )
 
 static HChar* read_dot_valgrindrc ( const HChar* dir )
 {
-   Int    n;
-   SysRes fd;
    struct vg_stat stat_buf;
    HChar* f_clo = NULL;
    const  HChar dot_valgrindrc[] = ".valgrindrc";
@@ -66,15 +64,18 @@ static HChar* read_dot_valgrindrc ( const HChar* dir )
    HChar filename[VG_(strlen)(dir) + 1 + VG_(strlen)(dot_valgrindrc) + 1];
    VG_(sprintf)(filename, "%s/%s", dir, dot_valgrindrc);
 
-   fd = VG_(open)(filename, 0, VKI_S_IRUSR);
+   SysRes fd = VG_(open)(filename, 0, VKI_S_IRUSR);
    if ( !sr_isError(fd) ) {
       Int res = VG_(fstat)( sr_Res(fd), &stat_buf );
-      // Ignore if not owned by current user or world writeable (CVE-2008-4865)
-      if (!res && stat_buf.uid == VG_(geteuid)()
-          && (!(stat_buf.mode & VKI_S_IWOTH))) {
+      /* Ignore if not owned by the current user, or is not a regular file,
+         or is world writeable (CVE-2008-4865). */
+      if (res == 0
+          && stat_buf.uid == VG_(geteuid)()
+          && (stat_buf.mode & VKI_S_IFREG)
+          && !(stat_buf.mode & VKI_S_IWOTH)) {
          if ( stat_buf.size > 0 ) {
             f_clo = VG_(malloc)("commandline.rdv.1", stat_buf.size+1);
-            n = VG_(read)(sr_Res(fd), f_clo, stat_buf.size);
+            Int n = VG_(read)(sr_Res(fd), f_clo, stat_buf.size);
             if (n == -1) n = 0;
             vg_assert(n >= 0 && n <= stat_buf.size+1);
             f_clo[n] = '\0';
@@ -82,8 +83,9 @@ static HChar* read_dot_valgrindrc ( const HChar* dir )
       }
       else
          VG_(message)(Vg_UserMsg,
-               "%s was not read as it is either world writeable or not "
-               "owned by the current user\n", filename);
+            "%s was not read as it is either not a regular file,\n"
+            "    or is world writeable, or is not owned by the current user.\n",
+            filename);
 
       VG_(close)(sr_Res(fd));
    }

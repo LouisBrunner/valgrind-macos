@@ -115,6 +115,12 @@
    fun:pthread_cancel_init
 }
 {
+   drd-libpthread-pthread_cancel
+   drd:ConflictingAccess
+   fun:pthread_cancel
+   fun:pthread_cancel_intercept
+}
+{
    drd-libpthread-_Unwind_ForcedUnwind
    drd:ConflictingAccess
    ...

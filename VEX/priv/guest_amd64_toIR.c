@@ -2121,6 +2121,54 @@ static void helper_SBB ( Int sz,
 }
 
 
+/* Given ta1, ta2 and tres, compute tres = ADCX(ta1,ta2) or tres = ADOX(ta1,ta2)
+   and set flags appropriately.
+*/
+static void helper_ADCX_ADOX ( Bool isADCX, Int sz,
+                               IRTemp tres, IRTemp ta1, IRTemp ta2 )
+{
+   UInt    thunkOp;
+   IRType  ty        = szToITy(sz);
+   IRTemp  oldflags  = newTemp(Ity_I64);
+   IRTemp  oldOC     = newTemp(Ity_I64); // old O or C flag
+   IRTemp  oldOCn    = newTemp(ty);      // old O or C flag, narrowed
+   IROp    plus      = mkSizedOp(ty, Iop_Add8);
+   IROp    xor       = mkSizedOp(ty, Iop_Xor8);
+
+   vassert(typeOfIRTemp(irsb->tyenv, tres) == ty);
+
+   switch (sz) {
+      case 8:  thunkOp = isADCX ? AMD64G_CC_OP_ADCX64
+                                : AMD64G_CC_OP_ADOX64; break;
+      case 4:  thunkOp = isADCX ? AMD64G_CC_OP_ADCX32
+                                : AMD64G_CC_OP_ADOX32; break;
+      default: vassert(0);
+   }
+
+   assign( oldflags, mk_amd64g_calculate_rflags_all() );
+
+   /* oldOC = old overflow/carry flag, 0 or 1 */
+   assign( oldOC, binop(Iop_And64,
+                        binop(Iop_Shr64,
+                              mkexpr(oldflags),
+                              mkU8(isADCX ? AMD64G_CC_SHIFT_C
+                                          : AMD64G_CC_SHIFT_O)),
+                        mkU64(1)) );
+
+   assign( oldOCn, narrowTo(ty, mkexpr(oldOC)) );
+
+   assign( tres, binop(plus,
+                       binop(plus,mkexpr(ta1),mkexpr(ta2)),
+                       mkexpr(oldOCn)) );
+
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(thunkOp) ) );
+   stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(ta1))  ));
+   stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto64(binop(xor, mkexpr(ta2), 
+                                                         mkexpr(oldOCn)) )) );
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkexpr(oldflags) ) );
+}
+
+
 /* -------------- Helpers for disassembly printing. -------------- */
 
 static const HChar* nameGrp1 ( Int opc_aux )
@@ -2894,6 +2942,10 @@ static UInt lengthAMode ( Prefix pfx, Long delta )
 /*--- Disassembling common idioms                          ---*/
 /*------------------------------------------------------------*/
 
+typedef
+  enum { WithFlagNone=2, WithFlagCarry, WithFlagCarryX, WithFlagOverX }
+  WithFlag;
+
 /* Handle binary integer instructions of the form
       op E, G  meaning
       op reg-or-mem, reg
@@ -2924,8 +2976,8 @@ static UInt lengthAMode ( Prefix pfx, Long delta )
 static
 ULong dis_op2_E_G ( const VexAbiInfo* vbi,
                     Prefix      pfx,
-                    Bool        addSubCarry,
-                    IROp        op8, 
+                    IROp        op8,
+                    WithFlag    flag,
                     Bool        keep,
                     Int         size, 
                     Long        delta0,
@@ -2940,36 +2992,62 @@ ULong dis_op2_E_G ( const VexAbiInfo* vbi,
    UChar   rm   = getUChar(delta0);
    IRTemp  addr = IRTemp_INVALID;
 
-   /* addSubCarry == True indicates the intended operation is
-      add-with-carry or subtract-with-borrow. */
-   if (addSubCarry) {
-      vassert(op8 == Iop_Add8 || op8 == Iop_Sub8);
-      vassert(keep);
+   /* Stay sane -- check for valid (op8, flag, keep) combinations. */
+   switch (op8) {
+      case Iop_Add8:
+         switch (flag) {
+            case WithFlagNone: case WithFlagCarry:
+            case WithFlagCarryX: case WithFlagOverX:
+               vassert(keep);
+               break;
+            default:
+               vassert(0);
+         }
+         break;
+      case Iop_Sub8:
+         vassert(flag == WithFlagNone || flag == WithFlagCarry);
+         if (flag == WithFlagCarry) vassert(keep);
+         break;
+      case Iop_And8:
+         vassert(flag == WithFlagNone);
+         break;
+      case Iop_Or8: case Iop_Xor8:
+         vassert(flag == WithFlagNone);
+         vassert(keep);
+         break;
+      default:
+         vassert(0);
    }
 
    if (epartIsReg(rm)) {
       /* Specially handle XOR reg,reg, because that doesn't really
          depend on reg, and doing the obvious thing potentially
          generates a spurious value check failure due to the bogus
-         dependency. */
-      if ((op8 == Iop_Xor8 || (op8 == Iop_Sub8 && addSubCarry))
+         dependency.  Ditto SUB/SBB reg,reg. */
+      if ((op8 == Iop_Xor8 || ((op8 == Iop_Sub8) && keep))
           && offsetIRegG(size,pfx,rm) == offsetIRegE(size,pfx,rm)) {
-         if (False && op8 == Iop_Sub8)
-            vex_printf("vex amd64->IR: sbb %%r,%%r optimisation(1)\n");
          putIRegG(size,pfx,rm, mkU(ty,0));
       }
 
       assign( dst0, getIRegG(size,pfx,rm) );
       assign( src,  getIRegE(size,pfx,rm) );
 
-      if (addSubCarry && op8 == Iop_Add8) {
+      if (op8 == Iop_Add8 && flag == WithFlagCarry) {
          helper_ADC( size, dst1, dst0, src,
                      /*no store*/IRTemp_INVALID, IRTemp_INVALID, 0 );
          putIRegG(size, pfx, rm, mkexpr(dst1));
       } else
-      if (addSubCarry && op8 == Iop_Sub8) {
+      if (op8 == Iop_Sub8 && flag == WithFlagCarry) {
          helper_SBB( size, dst1, dst0, src,
                      /*no store*/IRTemp_INVALID, IRTemp_INVALID, 0 );
+         putIRegG(size, pfx, rm, mkexpr(dst1));
+      } else
+      if (op8 == Iop_Add8 && flag == WithFlagCarryX) {
+         helper_ADCX_ADOX( True/*isADCX*/, size, dst1, dst0, src );
+         putIRegG(size, pfx, rm, mkexpr(dst1));
+      } else
+      if (op8 == Iop_Add8 && flag == WithFlagOverX) {
+         helper_ADCX_ADOX( False/*!isADCX*/, size, dst1, dst0, src );
          putIRegG(size, pfx, rm, mkexpr(dst1));
       } else {
          assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
@@ -2991,15 +3069,23 @@ ULong dis_op2_E_G ( const VexAbiInfo* vbi,
       assign( dst0, getIRegG(size,pfx,rm) );
       assign( src,  loadLE(szToITy(size), mkexpr(addr)) );
 
-      if (addSubCarry && op8 == Iop_Add8) {
+      if (op8 == Iop_Add8 && flag == WithFlagCarry) {
          helper_ADC( size, dst1, dst0, src,
                      /*no store*/IRTemp_INVALID, IRTemp_INVALID, 0 );
          putIRegG(size, pfx, rm, mkexpr(dst1));
       } else
-      if (addSubCarry && op8 == Iop_Sub8) {
+      if (op8 == Iop_Sub8 && flag == WithFlagCarry) {
          helper_SBB( size, dst1, dst0, src,
                      /*no store*/IRTemp_INVALID, IRTemp_INVALID, 0 );
          putIRegG(size, pfx, rm, mkexpr(dst1));
+      } else
+      if (op8 == Iop_Add8 && flag == WithFlagCarryX) {
+         /* normal store */
+         helper_ADCX_ADOX( True/*isADCX*/, size, dst1, dst0, src );
+      } else
+      if (op8 == Iop_Add8 && flag == WithFlagOverX) {
+         /* normal store */
+         helper_ADCX_ADOX( False/*!isADCX*/, size, dst1, dst0, src );
       } else {
          assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
          if (isAddSub(op8))
@@ -3040,10 +3126,10 @@ ULong dis_op2_E_G ( const VexAbiInfo* vbi,
 static
 ULong dis_op2_G_E ( const VexAbiInfo* vbi,
                     Prefix      pfx,
-                    Bool        addSubCarry,
-                    IROp        op8, 
+                    IROp        op8,
+                    WithFlag    flag,
                     Bool        keep,
-                    Int         size, 
+                    Int         size,
                     Long        delta0,
                     const HChar* t_amd64opc )
 {
@@ -3056,19 +3142,33 @@ ULong dis_op2_G_E ( const VexAbiInfo* vbi,
    UChar   rm   = getUChar(delta0);
    IRTemp  addr = IRTemp_INVALID;
 
-   /* addSubCarry == True indicates the intended operation is
-      add-with-carry or subtract-with-borrow. */
-   if (addSubCarry) {
-      vassert(op8 == Iop_Add8 || op8 == Iop_Sub8);
-      vassert(keep);
+   /* Stay sane -- check for valid (op8, flag, keep) combinations. */
+   switch (op8) {
+      case Iop_Add8:
+         vassert(flag == WithFlagNone || flag == WithFlagCarry);
+         vassert(keep);
+         break;
+      case Iop_Sub8:
+         vassert(flag == WithFlagNone || flag == WithFlagCarry);
+         if (flag == WithFlagCarry) vassert(keep);
+         break;
+      case Iop_And8: case Iop_Or8: case Iop_Xor8:
+         vassert(flag == WithFlagNone);
+         vassert(keep);
+         break;
+      default:
+         vassert(0);
    }
+
+   /* flag != WithFlagNone is only allowed for Add and Sub and indicates the
+      intended operation is add-with-carry or subtract-with-borrow. */
 
    if (epartIsReg(rm)) {
       /* Specially handle XOR reg,reg, because that doesn't really
          depend on reg, and doing the obvious thing potentially
          generates a spurious value check failure due to the bogus
-         dependency.  Ditto SBB reg,reg. */
-      if ((op8 == Iop_Xor8 || (op8 == Iop_Sub8 && addSubCarry))
+         dependency.  Ditto SUB/SBB reg,reg. */
+      if ((op8 == Iop_Xor8 || ((op8 == Iop_Sub8) && keep))
           && offsetIRegG(size,pfx,rm) == offsetIRegE(size,pfx,rm)) {
          putIRegE(size,pfx,rm, mkU(ty,0));
       }
@@ -3076,12 +3176,12 @@ ULong dis_op2_G_E ( const VexAbiInfo* vbi,
       assign(dst0, getIRegE(size,pfx,rm));
       assign(src,  getIRegG(size,pfx,rm));
 
-      if (addSubCarry && op8 == Iop_Add8) {
+      if (op8 == Iop_Add8 && flag == WithFlagCarry) {
          helper_ADC( size, dst1, dst0, src,
                      /*no store*/IRTemp_INVALID, IRTemp_INVALID, 0 );
          putIRegE(size, pfx, rm, mkexpr(dst1));
       } else
-      if (addSubCarry && op8 == Iop_Sub8) {
+      if (op8 == Iop_Sub8 && flag == WithFlagCarry) {
          helper_SBB( size, dst1, dst0, src,
                      /*no store*/IRTemp_INVALID, IRTemp_INVALID, 0 );
          putIRegE(size, pfx, rm, mkexpr(dst1));
@@ -3107,7 +3207,7 @@ ULong dis_op2_G_E ( const VexAbiInfo* vbi,
       assign(dst0, loadLE(ty,mkexpr(addr)));
       assign(src,  getIRegG(size,pfx,rm));
 
-      if (addSubCarry && op8 == Iop_Add8) {
+      if (op8 == Iop_Add8 && flag == WithFlagCarry) {
          if (haveLOCK(pfx)) {
             /* cas-style store */
             helper_ADC( size, dst1, dst0, src,
@@ -3118,7 +3218,7 @@ ULong dis_op2_G_E ( const VexAbiInfo* vbi,
                         /*store*/addr, IRTemp_INVALID, 0 );
          }
       } else
-      if (addSubCarry && op8 == Iop_Sub8) {
+      if (op8 == Iop_Sub8 && flag == WithFlagCarry) {
          if (haveLOCK(pfx)) {
             /* cas-style store */
             helper_SBB( size, dst1, dst0, src,
@@ -19876,20 +19976,20 @@ Long dis_ESC_NONE (
 
    case 0x00: /* ADD Gb,Eb */
       if (!validF2orF3) goto decode_failure;
-      delta = dis_op2_G_E ( vbi, pfx, False, Iop_Add8, True, 1, delta, "add" );
+      delta = dis_op2_G_E ( vbi, pfx, Iop_Add8, WithFlagNone, True, 1, delta, "add" );
       return delta;
    case 0x01: /* ADD Gv,Ev */
       if (!validF2orF3) goto decode_failure;
-      delta = dis_op2_G_E ( vbi, pfx, False, Iop_Add8, True, sz, delta, "add" );
+      delta = dis_op2_G_E ( vbi, pfx, Iop_Add8, WithFlagNone, True, sz, delta, "add" );
       return delta;
 
    case 0x02: /* ADD Eb,Gb */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op2_E_G ( vbi, pfx, False, Iop_Add8, True, 1, delta, "add" );
+      delta = dis_op2_E_G ( vbi, pfx, Iop_Add8, WithFlagNone, True, 1, delta, "add" );
       return delta;
    case 0x03: /* ADD Ev,Gv */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op2_E_G ( vbi, pfx, False, Iop_Add8, True, sz, delta, "add" );
+      delta = dis_op2_E_G ( vbi, pfx, Iop_Add8, WithFlagNone, True, sz, delta, "add" );
       return delta;
 
    case 0x04: /* ADD Ib, AL */
@@ -19903,20 +20003,20 @@ Long dis_ESC_NONE (
 
    case 0x08: /* OR Gb,Eb */
       if (!validF2orF3) goto decode_failure;
-      delta = dis_op2_G_E ( vbi, pfx, False, Iop_Or8, True, 1, delta, "or" );
+      delta = dis_op2_G_E ( vbi, pfx, Iop_Or8, WithFlagNone, True, 1, delta, "or" );
       return delta;
    case 0x09: /* OR Gv,Ev */
       if (!validF2orF3) goto decode_failure;
-      delta = dis_op2_G_E ( vbi, pfx, False, Iop_Or8, True, sz, delta, "or" );
+      delta = dis_op2_G_E ( vbi, pfx, Iop_Or8, WithFlagNone, True, sz, delta, "or" );
       return delta;
 
    case 0x0A: /* OR Eb,Gb */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op2_E_G ( vbi, pfx, False, Iop_Or8, True, 1, delta, "or" );
+      delta = dis_op2_E_G ( vbi, pfx, Iop_Or8, WithFlagNone, True, 1, delta, "or" );
       return delta;
    case 0x0B: /* OR Ev,Gv */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op2_E_G ( vbi, pfx, False, Iop_Or8, True, sz, delta, "or" );
+      delta = dis_op2_E_G ( vbi, pfx, Iop_Or8, WithFlagNone, True, sz, delta, "or" );
       return delta;
 
    case 0x0C: /* OR Ib, AL */
@@ -19930,20 +20030,20 @@ Long dis_ESC_NONE (
 
    case 0x10: /* ADC Gb,Eb */
       if (!validF2orF3) goto decode_failure;
-      delta = dis_op2_G_E ( vbi, pfx, True, Iop_Add8, True, 1, delta, "adc" );
+      delta = dis_op2_G_E ( vbi, pfx, Iop_Add8, WithFlagCarry, True, 1, delta, "adc" );
       return delta;
    case 0x11: /* ADC Gv,Ev */
       if (!validF2orF3) goto decode_failure;
-      delta = dis_op2_G_E ( vbi, pfx, True, Iop_Add8, True, sz, delta, "adc" );
+      delta = dis_op2_G_E ( vbi, pfx, Iop_Add8, WithFlagCarry, True, sz, delta, "adc" );
       return delta;
 
    case 0x12: /* ADC Eb,Gb */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op2_E_G ( vbi, pfx, True, Iop_Add8, True, 1, delta, "adc" );
+      delta = dis_op2_E_G ( vbi, pfx, Iop_Add8, WithFlagCarry, True, 1, delta, "adc" );
       return delta;
    case 0x13: /* ADC Ev,Gv */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op2_E_G ( vbi, pfx, True, Iop_Add8, True, sz, delta, "adc" );
+      delta = dis_op2_E_G ( vbi, pfx, Iop_Add8, WithFlagCarry, True, sz, delta, "adc" );
       return delta;
 
    case 0x14: /* ADC Ib, AL */
@@ -19957,20 +20057,20 @@ Long dis_ESC_NONE (
 
    case 0x18: /* SBB Gb,Eb */
       if (!validF2orF3) goto decode_failure;
-      delta = dis_op2_G_E ( vbi, pfx, True, Iop_Sub8, True, 1, delta, "sbb" );
+      delta = dis_op2_G_E ( vbi, pfx, Iop_Sub8, WithFlagCarry, True, 1, delta, "sbb" );
       return delta;
    case 0x19: /* SBB Gv,Ev */
       if (!validF2orF3) goto decode_failure;
-      delta = dis_op2_G_E ( vbi, pfx, True, Iop_Sub8, True, sz, delta, "sbb" );
+      delta = dis_op2_G_E ( vbi, pfx, Iop_Sub8, WithFlagCarry, True, sz, delta, "sbb" );
       return delta;
 
    case 0x1A: /* SBB Eb,Gb */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op2_E_G ( vbi, pfx, True, Iop_Sub8, True, 1, delta, "sbb" );
+      delta = dis_op2_E_G ( vbi, pfx, Iop_Sub8, WithFlagCarry, True, 1, delta, "sbb" );
       return delta;
    case 0x1B: /* SBB Ev,Gv */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op2_E_G ( vbi, pfx, True, Iop_Sub8, True, sz, delta, "sbb" );
+      delta = dis_op2_E_G ( vbi, pfx, Iop_Sub8, WithFlagCarry, True, sz, delta, "sbb" );
       return delta;
 
    case 0x1C: /* SBB Ib, AL */
@@ -19984,20 +20084,20 @@ Long dis_ESC_NONE (
 
    case 0x20: /* AND Gb,Eb */
       if (!validF2orF3) goto decode_failure;
-      delta = dis_op2_G_E ( vbi, pfx, False, Iop_And8, True, 1, delta, "and" );
+      delta = dis_op2_G_E ( vbi, pfx, Iop_And8, WithFlagNone, True, 1, delta, "and" );
       return delta;
    case 0x21: /* AND Gv,Ev */
       if (!validF2orF3) goto decode_failure;
-      delta = dis_op2_G_E ( vbi, pfx, False, Iop_And8, True, sz, delta, "and" );
+      delta = dis_op2_G_E ( vbi, pfx, Iop_And8, WithFlagNone, True, sz, delta, "and" );
       return delta;
 
    case 0x22: /* AND Eb,Gb */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op2_E_G ( vbi, pfx, False, Iop_And8, True, 1, delta, "and" );
+      delta = dis_op2_E_G ( vbi, pfx, Iop_And8, WithFlagNone, True, 1, delta, "and" );
       return delta;
    case 0x23: /* AND Ev,Gv */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op2_E_G ( vbi, pfx, False, Iop_And8, True, sz, delta, "and" );
+      delta = dis_op2_E_G ( vbi, pfx, Iop_And8, WithFlagNone, True, sz, delta, "and" );
       return delta;
 
    case 0x24: /* AND Ib, AL */
@@ -20011,20 +20111,20 @@ Long dis_ESC_NONE (
 
    case 0x28: /* SUB Gb,Eb */
       if (!validF2orF3) goto decode_failure;
-      delta = dis_op2_G_E ( vbi, pfx, False, Iop_Sub8, True, 1, delta, "sub" );
+      delta = dis_op2_G_E ( vbi, pfx, Iop_Sub8, WithFlagNone, True, 1, delta, "sub" );
       return delta;
    case 0x29: /* SUB Gv,Ev */
       if (!validF2orF3) goto decode_failure;
-      delta = dis_op2_G_E ( vbi, pfx, False, Iop_Sub8, True, sz, delta, "sub" );
+      delta = dis_op2_G_E ( vbi, pfx, Iop_Sub8, WithFlagNone, True, sz, delta, "sub" );
       return delta;
 
    case 0x2A: /* SUB Eb,Gb */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op2_E_G ( vbi, pfx, False, Iop_Sub8, True, 1, delta, "sub" );
+      delta = dis_op2_E_G ( vbi, pfx, Iop_Sub8, WithFlagNone, True, 1, delta, "sub" );
       return delta;
    case 0x2B: /* SUB Ev,Gv */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op2_E_G ( vbi, pfx, False, Iop_Sub8, True, sz, delta, "sub" );
+      delta = dis_op2_E_G ( vbi, pfx, Iop_Sub8, WithFlagNone, True, sz, delta, "sub" );
       return delta;
 
    case 0x2C: /* SUB Ib, AL */
@@ -20038,20 +20138,20 @@ Long dis_ESC_NONE (
 
    case 0x30: /* XOR Gb,Eb */
       if (!validF2orF3) goto decode_failure;
-      delta = dis_op2_G_E ( vbi, pfx, False, Iop_Xor8, True, 1, delta, "xor" );
+      delta = dis_op2_G_E ( vbi, pfx, Iop_Xor8, WithFlagNone, True, 1, delta, "xor" );
       return delta;
    case 0x31: /* XOR Gv,Ev */
       if (!validF2orF3) goto decode_failure;
-      delta = dis_op2_G_E ( vbi, pfx, False, Iop_Xor8, True, sz, delta, "xor" );
+      delta = dis_op2_G_E ( vbi, pfx, Iop_Xor8, WithFlagNone, True, sz, delta, "xor" );
       return delta;
 
    case 0x32: /* XOR Eb,Gb */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op2_E_G ( vbi, pfx, False, Iop_Xor8, True, 1, delta, "xor" );
+      delta = dis_op2_E_G ( vbi, pfx, Iop_Xor8, WithFlagNone, True, 1, delta, "xor" );
       return delta;
    case 0x33: /* XOR Ev,Gv */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op2_E_G ( vbi, pfx, False, Iop_Xor8, True, sz, delta, "xor" );
+      delta = dis_op2_E_G ( vbi, pfx, Iop_Xor8, WithFlagNone, True, sz, delta, "xor" );
       return delta;
 
    case 0x34: /* XOR Ib, AL */
@@ -20065,20 +20165,20 @@ Long dis_ESC_NONE (
 
    case 0x38: /* CMP Gb,Eb */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op2_G_E ( vbi, pfx, False, Iop_Sub8, False, 1, delta, "cmp" );
+      delta = dis_op2_G_E ( vbi, pfx, Iop_Sub8, WithFlagNone, False, 1, delta, "cmp" );
       return delta;
    case 0x39: /* CMP Gv,Ev */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op2_G_E ( vbi, pfx, False, Iop_Sub8, False, sz, delta, "cmp" );
+      delta = dis_op2_G_E ( vbi, pfx, Iop_Sub8, WithFlagNone, False, sz, delta, "cmp" );
       return delta;
 
    case 0x3A: /* CMP Eb,Gb */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op2_E_G ( vbi, pfx, False, Iop_Sub8, False, 1, delta, "cmp" );
+      delta = dis_op2_E_G ( vbi, pfx, Iop_Sub8, WithFlagNone, False, 1, delta, "cmp" );
       return delta;
    case 0x3B: /* CMP Ev,Gv */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op2_E_G ( vbi, pfx, False, Iop_Sub8, False, sz, delta, "cmp" );
+      delta = dis_op2_E_G ( vbi, pfx, Iop_Sub8, WithFlagNone, False, sz, delta, "cmp" );
       return delta;
 
    case 0x3C: /* CMP Ib, AL */
@@ -20323,12 +20423,14 @@ Long dis_ESC_NONE (
 
    case 0x84: /* TEST Eb,Gb */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op2_E_G ( vbi, pfx, False, Iop_And8, False, 1, delta, "test" );
+      delta = dis_op2_E_G ( vbi, pfx, Iop_And8, WithFlagNone, False,
+                            1, delta, "test" );
       return delta;
 
    case 0x85: /* TEST Ev,Gv */
       if (haveF2orF3(pfx)) goto decode_failure;
-      delta = dis_op2_E_G ( vbi, pfx, False, Iop_And8, False, sz, delta, "test" );
+      delta = dis_op2_E_G ( vbi, pfx, Iop_And8, WithFlagNone, False,
+                            sz, delta, "test" );
       return delta;
 
    /* XCHG reg,mem automatically asserts LOCK# even without a LOCK
@@ -22547,7 +22649,6 @@ Long dis_ESC_0F38 (
 
    default:
       break;
-
    }
 
    /* =-=-=-=-=-=-=-=-= SSSE3ery =-=-=-=-=-=-=-=-= */
@@ -22568,6 +22669,40 @@ Long dis_ESC_0F38 (
       delta = dis_ESC_0F38__SSE4 ( &decode_OK, vbi, pfx, sz, deltaIN );
       if (decode_OK)
          return delta;
+   }
+
+   /* Ignore previous decode attempts and restart from the beginning of
+      the instruction. */
+   delta = deltaIN;
+   opc   = getUChar(delta);
+   delta++;
+
+   switch (opc) {
+
+   case 0xF6: {
+      /* 66 0F 38 F6 = ADCX r32/64(G), m32/64(E) */
+      /* F3 0F 38 F6 = ADOX r32/64(G), m32/64(E) */
+      /* These were introduced in Broadwell.  Gate them on AVX2 so as to at
+         least reject them on earlier guests.  Has no host requirements. */
+      if (have66noF2noF3(pfx) && (archinfo->hwcaps & VEX_HWCAPS_AMD64_AVX2)) {
+         if (sz == 2) {
+            sz = 4; /* 66 prefix but operand size is 4/8 */
+         }
+         delta = dis_op2_E_G ( vbi, pfx, Iop_Add8, WithFlagCarryX, True,
+                               sz, delta, "adcx" );
+         return delta;
+      }
+      if (haveF3no66noF2(pfx) && (archinfo->hwcaps & VEX_HWCAPS_AMD64_AVX2)) {
+         delta = dis_op2_E_G ( vbi, pfx, Iop_Add8, WithFlagOverX, True,
+                               sz, delta, "adox" );
+         return delta;
+      }
+      /* else fall through */
+      break;
+   }
+
+   default:
+      break;
    }
 
   /*decode_failure:*/

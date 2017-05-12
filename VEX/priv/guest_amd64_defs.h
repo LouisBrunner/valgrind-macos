@@ -541,6 +541,12 @@ enum {
     AMD64G_CC_OP_BLSR32,  /* 59 */
     AMD64G_CC_OP_BLSR64,  /* 60 DEP1 = res, DEP2 = arg, NDEP = unused */
 
+    AMD64G_CC_OP_ADCX32,  /* 61 DEP1 = argL, DEP2 = argR ^ oldCarry, .. */
+    AMD64G_CC_OP_ADCX64,  /* 62 .. NDEP = old flags */
+
+    AMD64G_CC_OP_ADOX32,  /* 63 DEP1 = argL, DEP2 = argR ^ oldOverflow, .. */
+    AMD64G_CC_OP_ADOX64,  /* 64 .. NDEP = old flags */
+
     AMD64G_CC_OP_NUMBER
 };
 

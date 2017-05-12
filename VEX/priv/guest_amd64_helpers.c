@@ -560,6 +560,26 @@ static inline ULong idULong ( ULong x )
 
 /*-------------------------------------------------------------*/
 
+#define ACTIONS_ADX(DATA_BITS,DATA_UTYPE,FLAGNAME)		\
+{								\
+   PREAMBLE(DATA_BITS);						\
+   { ULong ocf;	/* o or c */					\
+     ULong argL, argR, oldOC, res;				\
+     oldOC = (CC_NDEP >> AMD64G_CC_SHIFT_##FLAGNAME) & 1;	\
+     argL  = CC_DEP1;						\
+     argR  = CC_DEP2 ^ oldOC;					\
+     res   = (argL + argR) + oldOC;				\
+     if (oldOC)							\
+        ocf = (DATA_UTYPE)res <= (DATA_UTYPE)argL;		\
+     else							\
+        ocf = (DATA_UTYPE)res < (DATA_UTYPE)argL;		\
+     return (CC_NDEP & ~AMD64G_CC_MASK_##FLAGNAME)		\
+            | (ocf << AMD64G_CC_SHIFT_##FLAGNAME);		\
+   }								\
+}
+
+/*-------------------------------------------------------------*/
+
 
 #if PROFILE_RFLAGS
 
@@ -734,6 +754,12 @@ ULong amd64g_calculate_rflags_all_WRK ( ULong cc_op,
 
       case AMD64G_CC_OP_BLSR32: ACTIONS_BLSR( 32, UInt   );
       case AMD64G_CC_OP_BLSR64: ACTIONS_BLSR( 64, ULong  );
+
+      case AMD64G_CC_OP_ADCX32: ACTIONS_ADX( 32, UInt,  C );
+      case AMD64G_CC_OP_ADCX64: ACTIONS_ADX( 64, ULong, C );
+
+      case AMD64G_CC_OP_ADOX32: ACTIONS_ADX( 32, UInt,  O );
+      case AMD64G_CC_OP_ADOX64: ACTIONS_ADX( 64, ULong, O );
 
       default:
          /* shouldn't really make these calls from generated code */

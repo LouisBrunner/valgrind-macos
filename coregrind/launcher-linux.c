@@ -129,7 +129,11 @@ static const char *find_client(const char *clientname)
 static const char *select_platform(const char *clientname)
 {
    int fd;
-   char header[4096];
+   union {
+      char c[4096];
+      Elf32_Ehdr ehdr32;
+      Elf64_Ehdr ehdr64;
+   } header;
    ssize_t n_bytes;
    const char *platform = NULL;
 
@@ -146,7 +150,7 @@ static const char *select_platform(const char *clientname)
 
    VG_(debugLog)(2, "launcher", "opened '%s'\n", clientname);
 
-   n_bytes = read(fd, header, sizeof(header));
+   n_bytes = read(fd, header.c, sizeof(header));
    close(fd);
    if (n_bytes < 2) {
       return NULL;
@@ -155,25 +159,25 @@ static const char *select_platform(const char *clientname)
    VG_(debugLog)(2, "launcher", "read %ld bytes from '%s'\n",
                     (long int)n_bytes, clientname);
 
-   if (header[0] == '#' && header[1] == '!') {
+   if (header.c[0] == '#' && header.c[1] == '!') {
       int i = 2;
 
       STATIC_ASSERT(VKI_BINPRM_BUF_SIZE < sizeof header);
       if (n_bytes > VKI_BINPRM_BUF_SIZE)
          n_bytes = VKI_BINPRM_BUF_SIZE - 1;
-      header[n_bytes] = '\0';
-      char *eol = strchr(header, '\n');
+      header.c[n_bytes] = '\0';
+      char *eol = strchr(header.c, '\n');
       if (eol != NULL)
          *eol = '\0';
  
       // Skip whitespace.
-      while  (header[i] == ' '|| header[i] == '\t')
+      while (header.c[i] == ' '|| header.c[i] == '\t')
          i++;
 
       // Get the interpreter name.
-      const char *interp = header + i;
+      const char *interp = header.c + i;
 
-      if (header[i] == '\0') {
+      if (header.c[i] == '\0') {
          // No interpreter was found; fall back to default shell
 #  if defined(VGPV_arm_linux_android) \
       || defined(VGPV_x86_linux_android) \
@@ -184,108 +188,106 @@ static const char *select_platform(const char *clientname)
          interp = "/bin/sh";
 #  endif
       } else {
-         while (header[i]) {
-            if (header[i] == ' ' || header[i] == '\t') break;
+         while (header.c[i]) {
+            if (header.c[i] == ' ' || header.c[i] == '\t') break;
             i++;
          }
-         header[i] = '\0';
+         header.c[i] = '\0';
       }
 
       platform = select_platform(interp);
 
-   } else if (n_bytes >= SELFMAG && memcmp(header, ELFMAG, SELFMAG) == 0) {
+   } else if (n_bytes >= SELFMAG && memcmp(header.c, ELFMAG, SELFMAG) == 0) {
 
-      if (n_bytes >= sizeof(Elf32_Ehdr) && header[EI_CLASS] == ELFCLASS32) {
-         const Elf32_Ehdr *ehdr = (Elf32_Ehdr *)header;
+      if (n_bytes >= sizeof(Elf32_Ehdr) && header.c[EI_CLASS] == ELFCLASS32) {
 
-         if (header[EI_DATA] == ELFDATA2LSB) {
+         if (header.c[EI_DATA] == ELFDATA2LSB) {
 #           if defined(VGO_solaris)
-            if (ehdr->e_machine == EM_386 &&
-                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
-                 ehdr->e_ident[EI_OSABI] == ELFOSABI_SOLARIS)) {
+            if (header.ehdr32.e_machine == EM_386 &&
+                (header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_SOLARIS)) {
                platform = "x86-solaris";
             }
             else
 #           endif
-            if (ehdr->e_machine == EM_386 &&
-                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
-                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+            if (header.ehdr32.e_machine == EM_386 &&
+                (header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "x86-linux";
             }
             else 
-            if (ehdr->e_machine == EM_ARM &&
-                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
-                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+            if (header.ehdr32.e_machine == EM_ARM &&
+                (header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "arm-linux";
             }
             else
-            if (ehdr->e_machine == EM_MIPS &&
-                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
-                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+            if (header.ehdr32.e_machine == EM_MIPS &&
+                (header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "mips32-linux";
             }
          }
-         else if (header[EI_DATA] == ELFDATA2MSB) {
-            if (ehdr->e_machine == EM_PPC &&
-                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
-                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+         else if (header.c[EI_DATA] == ELFDATA2MSB) {
+            if (header.ehdr32.e_machine == EM_PPC &&
+                (header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "ppc32-linux";
             }
             else 
-            if (ehdr->e_machine == EM_MIPS &&
-                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
-                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+            if (header.ehdr32.e_machine == EM_MIPS &&
+                (header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "mips32-linux";
             }
          }
 
-      } else if (n_bytes >= sizeof(Elf64_Ehdr) && header[EI_CLASS] == ELFCLASS64) {
-         const Elf64_Ehdr *ehdr = (Elf64_Ehdr *)header;
+      } else if (n_bytes >= sizeof(Elf64_Ehdr) && header.c[EI_CLASS] == ELFCLASS64) {
 
-         if (header[EI_DATA] == ELFDATA2LSB) {
+         if (header.c[EI_DATA] == ELFDATA2LSB) {
 #           if defined(VGO_solaris)
-            if (ehdr->e_machine == EM_X86_64 &&
-                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
-                 ehdr->e_ident[EI_OSABI] == ELFOSABI_SOLARIS)) {
+            if (header.ehdr64.e_machine == EM_X86_64 &&
+                (header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_SOLARIS)) {
                platform = "amd64-solaris";
             }
             else
 #           endif
-            if (ehdr->e_machine == EM_X86_64 &&
-                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
-                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+            if (header.ehdr64.e_machine == EM_X86_64 &&
+                (header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "amd64-linux";
-            } else if (ehdr->e_machine == EM_MIPS &&
-                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
-                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+            } else if (header.ehdr64.e_machine == EM_MIPS &&
+                (header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "mips64-linux";
-            } else if (ehdr->e_machine == EM_AARCH64 &&
-                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
-                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+            } else if (header.ehdr64.e_machine == EM_TILEGX &&
+                (header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "arm64-linux";
-            } else if (ehdr->e_machine == EM_PPC64 &&
-                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
-                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+            } else if (header.ehdr64.e_machine == EM_PPC64 &&
+                (header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "ppc64le-linux";
             }
-         } else if (header[EI_DATA] == ELFDATA2MSB) {
+         } else if (header.c[EI_DATA] == ELFDATA2MSB) {
 #           if !defined(VGPV_arm_linux_android) \
                && !defined(VGPV_x86_linux_android) \
                && !defined(VGPV_mips32_linux_android) \
                && !defined(VGPV_arm64_linux_android)
-            if (ehdr->e_machine == EM_PPC64 &&
-                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
-                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+            if (header.ehdr64.e_machine == EM_PPC64 &&
+                (header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "ppc64be-linux";
             } 
             else 
-            if (ehdr->e_machine == EM_S390 &&
-                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
-                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+            if (header.ehdr64.e_machine == EM_S390 &&
+                (header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "s390x-linux";
-            } else if (ehdr->e_machine == EM_MIPS &&
-                (ehdr->e_ident[EI_OSABI] == ELFOSABI_SYSV ||
-                 ehdr->e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+            } else if (header.ehdr64.e_machine == EM_MIPS &&
+                (header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "mips64-linux";
             }
 #           endif

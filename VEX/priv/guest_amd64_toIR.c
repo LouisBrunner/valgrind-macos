@@ -18783,7 +18783,7 @@ static Long dis_PCMPxSTRx ( const VexAbiInfo* vbi, Prefix pfx,
    switch (imm) {
       case 0x00: case 0x02:
       case 0x08: case 0x0A: case 0x0C: case 0x0E:
-                 case 0x12: case 0x14:
+      case 0x10: case 0x12: case 0x14:
       case 0x18: case 0x1A:
       case 0x30:            case 0x34:
       case 0x38: case 0x3A:

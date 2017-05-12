@@ -148,6 +148,9 @@ typedef
    } 
    Block;
 
+/* Ensure that Block payloads can be safely cast to various pointers below. */
+STATIC_ASSERT(VG_MIN_MALLOC_SZB % sizeof(void *) == 0);
+
 // A superblock.  'padding' is never used, it just ensures that if the
 // entire Superblock is aligned to VG_MIN_MALLOC_SZB, then payload_bytes[]
 // will be too.  It can add small amounts of padding unnecessarily -- eg.
@@ -296,8 +299,9 @@ static __inline__
 SizeT get_bszB_as_is ( Block* b )
 {
    UByte* b2     = (UByte*)b;
-   SizeT bszB_lo = *(SizeT*)&b2[0 + hp_overhead_szB()];
-   SizeT bszB_hi = *(SizeT*)&b2[mk_plain_bszB(bszB_lo) - sizeof(SizeT)];
+   SizeT bszB_lo = *ASSUME_ALIGNED(SizeT*, &b2[0 + hp_overhead_szB()]);
+   SizeT bszB_hi = *ASSUME_ALIGNED(SizeT*,
+                                   &b2[mk_plain_bszB(bszB_lo) - sizeof(SizeT)]);
    vg_assert2(bszB_lo == bszB_hi, 
       "Heap block lo/hi size mismatch: lo = %llu, hi = %llu.\n%s",
       (ULong)bszB_lo, (ULong)bszB_hi, probably_your_fault);
@@ -316,8 +320,8 @@ static __inline__
 void set_bszB ( Block* b, SizeT bszB )
 {
    UByte* b2 = (UByte*)b;
-   *(SizeT*)&b2[0 + hp_overhead_szB()]               = bszB;
-   *(SizeT*)&b2[mk_plain_bszB(bszB) - sizeof(SizeT)] = bszB;
+   *ASSUME_ALIGNED(SizeT*, &b2[0 + hp_overhead_szB()])               = bszB;
+   *ASSUME_ALIGNED(SizeT*, &b2[mk_plain_bszB(bszB) - sizeof(SizeT)]) = bszB;
 }
 
 //---------------------------------------------------------------------------
@@ -408,25 +412,27 @@ static __inline__
 void set_prev_b ( Block* b, Block* prev_p )
 { 
    UByte* b2 = (UByte*)b;
-   *(Block**)&b2[hp_overhead_szB() + sizeof(SizeT)] = prev_p;
+   *ASSUME_ALIGNED(Block**, &b2[hp_overhead_szB() + sizeof(SizeT)]) = prev_p;
 }
 static __inline__
 void set_next_b ( Block* b, Block* next_p )
 {
    UByte* b2 = (UByte*)b;
-   *(Block**)&b2[get_bszB(b) - sizeof(SizeT) - sizeof(void*)] = next_p;
+   *ASSUME_ALIGNED(Block**,
+                   &b2[get_bszB(b) - sizeof(SizeT) - sizeof(void*)]) = next_p;
 }
 static __inline__
 Block* get_prev_b ( Block* b )
 { 
    UByte* b2 = (UByte*)b;
-   return *(Block**)&b2[hp_overhead_szB() + sizeof(SizeT)];
+   return *ASSUME_ALIGNED(Block**, &b2[hp_overhead_szB() + sizeof(SizeT)]);
 }
 static __inline__
 Block* get_next_b ( Block* b )
 { 
    UByte* b2 = (UByte*)b;
-   return *(Block**)&b2[get_bszB(b) - sizeof(SizeT) - sizeof(void*)];
+   return *ASSUME_ALIGNED(Block**,
+                          &b2[get_bszB(b) - sizeof(SizeT) - sizeof(void*)]);
 }
 
 //---------------------------------------------------------------------------
@@ -437,14 +443,14 @@ void set_cc ( Block* b, const HChar* cc )
 { 
    UByte* b2 = (UByte*)b;
    vg_assert( VG_(clo_profile_heap) );
-   *(const HChar**)&b2[0] = cc;
+   *ASSUME_ALIGNED(const HChar**, &b2[0]) = cc;
 }
 static __inline__
 const HChar* get_cc ( Block* b )
 {
    UByte* b2 = (UByte*)b;
    vg_assert( VG_(clo_profile_heap) );
-   return *(const HChar**)&b2[0];
+   return *ASSUME_ALIGNED(const HChar**, &b2[0]);
 }
 
 //---------------------------------------------------------------------------
@@ -454,7 +460,7 @@ static __inline__
 Block* get_predecessor_block ( Block* b )
 {
    UByte* b2 = (UByte*)b;
-   SizeT  bszB = mk_plain_bszB( (*(SizeT*)&b2[-sizeof(SizeT)]) );
+   SizeT  bszB = mk_plain_bszB(*ASSUME_ALIGNED(SizeT*, &b2[-sizeof(SizeT)]));
    return (Block*)&b2[-bszB];
 }
 

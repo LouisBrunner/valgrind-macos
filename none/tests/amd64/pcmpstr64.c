@@ -205,7 +205,7 @@ Bool pcmpXstrX_WRK ( /*OUT*/V128* resV,
    switch (imm8) {
       case 0x00: case 0x02:
       case 0x08: case 0x0A: case 0x0C: case 0x0E:
-                 case 0x12: case 0x14:
+      case 0x10: case 0x12: case 0x14:
       case 0x18: case 0x1A:
       case 0x30:            case 0x34:
       case 0x38: case 0x3A:
@@ -2217,6 +2217,88 @@ void istri_72 ( void )
 
 //////////////////////////////////////////////////////////
 //                                                      //
+//                       ISTRI_10                       //
+//                                                      //
+//////////////////////////////////////////////////////////
+
+UInt h_pcmpistri_10 ( V128* argL, V128* argR )
+{
+   V128 block[2];
+   memcpy(&block[0], argL, sizeof(V128));
+   memcpy(&block[1], argR, sizeof(V128));
+   ULong res, flags;
+   __asm__ __volatile__(
+      "subq      $1024,  %%rsp"             "\n\t"
+      "movdqu    0(%2),  %%xmm2"            "\n\t"
+      "movdqu    16(%2), %%xmm11"           "\n\t"
+      "pcmpistri $0x10,  %%xmm2, %%xmm11"   "\n\t"
+//"pcmpistrm $0x10, %%xmm2, %%xmm11"   "\n\t"
+//"movd %%xmm0, %%ecx" "\n\t"
+      "pushfq"                              "\n\t"
+      "popq      %%rdx"                     "\n\t"
+      "movq      %%rcx,  %0"                "\n\t"
+      "movq      %%rdx,  %1"                "\n\t"
+      "addq      $1024,  %%rsp"             "\n\t"
+      : /*out*/ "=r"(res), "=r"(flags) : "r"/*in*/(&block[0])
+      : "rcx","rdx","xmm0","xmm2","xmm11","cc","memory"
+   );
+   return ((flags & 0x8D5) << 16) | (res & 0xFFFF);
+}
+
+UInt s_pcmpistri_10 ( V128* argLU, V128* argRU )
+{
+   V128 resV;
+   UInt resOSZACP, resECX;
+   Bool ok
+      = pcmpXstrX_WRK( &resV, &resOSZACP, argLU, argRU,
+                       zmask_from_V128(argLU),
+                       zmask_from_V128(argRU),
+                       0x10, False/*!isSTRM*/
+        );
+   assert(ok);
+   resECX = resV.uInt[0];
+   return (resOSZACP << 16) | resECX;
+}
+
+void istri_10 ( void )
+{
+   char* wot = "10";
+   UInt(*h)(V128*,V128*) = h_pcmpistri_10;
+   UInt(*s)(V128*,V128*) = s_pcmpistri_10;
+
+   try_istri(wot,h,s, "abcdacbdabcdabcd", "000000000000000a"); 
+   try_istri(wot,h,s, "abcdabcdabcdabcd", "000000000000000b"); 
+   try_istri(wot,h,s, "abcdabcdabcdabcd", "00000000000000ab"); 
+   try_istri(wot,h,s, "abcdabc0abcdabcd", "000000000000abcd"); 
+
+   try_istri(wot,h,s, "abcdabcdabcdabcd", "000000000000abcd"); 
+   try_istri(wot,h,s, "0bcdabcdabcdabcd", "000000000000abcd"); 
+   try_istri(wot,h,s, "abcdabcdabcda0cd", "000000000000abcd"); 
+   try_istri(wot,h,s, "abcdabcdabcdab0d", "000000000000abcd"); 
+   try_istri(wot,h,s, "abcdabcdabcdabc0", "000000000000abcd"); 
+
+   try_istri(wot,h,s, "abcdabcdabcdabcd", "000000000000abcd"); 
+   try_istri(wot,h,s, "abcdabcdabcdabcd", "000000000000a0cd"); 
+   try_istri(wot,h,s, "abcdabcdabcdabcd", "000000000000ab0d"); 
+   try_istri(wot,h,s, "abcdabcdabcdabcd", "000000000000abc0"); 
+
+   try_istri(wot,h,s, "0000000000000000", "0000000000000000"); 
+   try_istri(wot,h,s, "aaaaaaaaaaaaaaaa", "aaaaaaaaaaaaaaaa"); 
+
+   try_istri(wot,h,s, "0000abcdabcdabcd", "000000000000abcd"); 
+   try_istri(wot,h,s, "0000abcdabcdabcd", "000000000000dcba"); 
+   try_istri(wot,h,s, "0000abcdabcdabcd", "000000000000bbbb"); 
+   try_istri(wot,h,s, "0000abcdabcdabcd", "000000000000baba"); 
+
+   try_istri(wot,h,s, "0000abcdabcdabcd", "00000000000baba0"); 
+
+   try_istri(wot,h,s, "0ddc0ffeebadf00d", "00000000cafebabe"); 
+   try_istri(wot,h,s, "0ddc0ffeebadfeed", "00000000cafebabe"); 
+}
+
+
+//////////////////////////////////////////////////////////
+//                                                      //
 //                         main                         //
 //                                                      //
 //////////////////////////////////////////////////////////
@@ -2244,5 +2326,6 @@ int main ( void )
    istri_70();
    istri_62();
    istri_72();
+   istri_10();
    return 0;
 }

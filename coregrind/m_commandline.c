@@ -71,7 +71,7 @@ static HChar* read_dot_valgrindrc ( const HChar* dir )
          or is world writeable (CVE-2008-4865). */
       if (res == 0
           && stat_buf.uid == VG_(geteuid)()
-          && (stat_buf.mode & VKI_S_IFREG)
+          && VKI_S_ISREG(stat_buf.mode)
           && !(stat_buf.mode & VKI_S_IWOTH)) {
          if ( stat_buf.size > 0 ) {
             f_clo = VG_(malloc)("commandline.rdv.1", stat_buf.size+1);

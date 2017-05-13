@@ -113,6 +113,7 @@ where XXXXXX is the bug number as listed below.
 359202  Add musl libc configure/compile
 360429  unhandled ioctl 0x530d with no size/direction hints (CDROMREADMODE1)
 362223  assertion failed when .valgrindrc is a directory instead of a file
+367543  bt/btc/btr/bts x86/x86_64 instructions are poorly-handled wrt flags
 367942  Segfault vgPlain_do_sys_sigaction (m_signals.c:1138)
 368863  WARNING: unhandled arm64-linux syscall: 100 (get_robust_list)
 368865  WARNING: unhandled arm64-linux syscall: 272 (kcmp)
@@ -128,10 +129,12 @@ where XXXXXX is the bug number as listed below.
 371227  Clean AArch64 syscall table
 371412  Rename wrap_sys_shmat to sys_shmat like other wrappers
 371471  Valgrind complains about non legit memory leaks on placement new (C++)
+371491  handleAddrOverrides() is [incorrect] when ASO prefix is used
 371869  support '%' in symbol Z-encoding
 371916  execution tree xtree concept
 372120  c++ demangler demangles symbols which are not c++
 372185  Support of valgrind on ARMv8 with 32 bit executable
+372188  vex amd64->IR: 0x66 0xF 0x3A 0x62 0x4A 0x10 0x10 0x48 (PCMPxSTRx $0x10)
 372195  Power PC, xxsel instruction is not always recognized.
 372504  Hanging on exit_group
 372600  process loops forever when fatal signals are arriving quickly

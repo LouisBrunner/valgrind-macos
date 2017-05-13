@@ -27,6 +27,7 @@ EXTRA_DIST = \
 	avx2-1.vgtest avx2-1.stdout.exp avx2-1.stderr.exp \
 	asorep.stderr.exp asorep.stdout.exp asorep.vgtest \
 	bmi.stderr.exp bmi.stdout.exp bmi.vgtest \
+	bt_flags.stderr.exp bt_flags.stdout.exp bt_flags.vgtest \
 	fma.stderr.exp fma.stdout.exp fma.vgtest \
 	bug127521-64.vgtest bug127521-64.stdout.exp bug127521-64.stderr.exp \
 	bug132813-amd64.vgtest bug132813-amd64.stdout.exp \
@@ -90,6 +91,7 @@ EXTRA_DIST = \
 check_PROGRAMS = \
 	allexec \
 	amd64locked \
+	bt_flags \
 	bug127521-64 bug132813-amd64 bug132918 bug137714-amd64 \
 	clc \
 	cmpxchg \

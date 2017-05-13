@@ -141,22 +141,26 @@ void test(void)
    res += x2[20]; // invalid
 
    fprintf(stderr,
+           "\n------ Illegal memory pool address  ------\n\n");
+   VALGRIND_MEMPOOL_FREE(p1, x1); // Should be p1->mem
+
+   fprintf(stderr,
            "\n------ read free in malloc-backed pool ------\n\n");
-   VALGRIND_MEMPOOL_FREE(p1, x1);
+   VALGRIND_MEMPOOL_FREE(p1->mem, x1);
    res += x1[5];
 
    fprintf(stderr,
            "\n------ read free in mmap-backed pool ------\n\n");
-   VALGRIND_MEMPOOL_FREE(p2, x2);
+   VALGRIND_MEMPOOL_FREE(p2->mem, x2);
    res += x2[11];
 
    fprintf(stderr,
            "\n------ double free in malloc-backed pool ------\n\n");
-   VALGRIND_MEMPOOL_FREE(p1, x1);
+   VALGRIND_MEMPOOL_FREE(p1->mem, x1);
 
    fprintf(stderr,
            "\n------ double free in mmap-backed pool ------\n\n");
-   VALGRIND_MEMPOOL_FREE(p2, x2);
+   VALGRIND_MEMPOOL_FREE(p2->mem, x2);
 
    {
       // test that redzone are still protected even if the user forgets

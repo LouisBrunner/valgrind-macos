@@ -8215,18 +8215,31 @@ ULong dis_bt_G_E ( const VexAbiInfo* vbi,
       }
    }
   
-   /* Side effect done; now get selected bit into Carry flag */
-   /* Flags: C=selected bit, O,S,Z,A,P undefined, so are set to zero. */
+   /* Side effect done; now get selected bit into Carry flag.  The Intel docs
+      (as of 2015, at least) say that C holds the result, Z is unchanged, and
+      O,S,A and P are undefined.  However, on Skylake it appears that O,S,A,P
+      are also unchanged, so let's do that. */
+   const ULong maskC     = AMD64G_CC_MASK_C;
+   const ULong maskOSZAP = AMD64G_CC_MASK_O | AMD64G_CC_MASK_S
+                           | AMD64G_CC_MASK_Z | AMD64G_CC_MASK_A
+                           | AMD64G_CC_MASK_P;
+
+   IRTemp old_rflags = newTemp(Ity_I64);
+   assign(old_rflags, mk_amd64g_calculate_rflags_all());
+
+   IRTemp new_rflags = newTemp(Ity_I64);
+   assign(new_rflags,
+          binop(Iop_Or64,
+                binop(Iop_And64, mkexpr(old_rflags), mkU64(maskOSZAP)),
+                binop(Iop_And64,
+                      binop(Iop_Shr64, 
+                            unop(Iop_8Uto64, mkexpr(t_fetched)),
+                            mkexpr(t_bitno2)),
+                      mkU64(maskC))));
+
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(AMD64G_CC_OP_COPY) ));
    stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
-   stmt( IRStmt_Put( 
-            OFFB_CC_DEP1,
-            binop(Iop_And64,
-                  binop(Iop_Shr64, 
-                        unop(Iop_8Uto64, mkexpr(t_fetched)),
-                        mkexpr(t_bitno2)),
-                  mkU64(1)))
-       );
+   stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(new_rflags) ));
    /* Set NDEP even though it isn't used.  This makes redundant-PUT
       elimination of previous stores to this field work better. */
    stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));

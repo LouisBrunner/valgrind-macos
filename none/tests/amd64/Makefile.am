@@ -42,6 +42,9 @@ EXTRA_DIST = \
 	crc32.vgtest crc32.stdout.exp crc32.stderr.exp \
 	cmpxchg.vgtest cmpxchg.stdout.exp cmpxchg.stderr.exp \
 	faultstatus.disabled faultstatus.stderr.exp \
+	fb_test_amd64.vgtest \
+	fb_test_amd64.stderr.exp fb_test_amd64.stdout.exp \
+	fb_test_amd64.h fb_test_amd64_muldiv.h fb_test_amd64_shift.h \
 	fcmovnu.vgtest fcmovnu.stderr.exp fcmovnu.stdout.exp \
 	fma4.vgtest fma4.stdout.exp fma4.stderr.exp \
 	fxtract.vgtest fxtract.stderr.exp fxtract.stdout.exp \
@@ -95,6 +98,7 @@ check_PROGRAMS = \
 	bug127521-64 bug132813-amd64 bug132918 bug137714-amd64 \
 	clc \
 	cmpxchg \
+	fb_test_amd64 \
 	getseg \
 	$(INSN_TESTS) \
 	nan80and64 \
@@ -175,6 +179,8 @@ allexec_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 amd64locked_CFLAGS	= $(AM_CFLAGS) -O
 bug132918_LDADD		= -lm
 cmpxchg_CFLAGS		= $(AM_CFLAGS) @FLAG_NO_PIE@
+fb_test_amd64_CFLAGS	= $(AM_CFLAGS) -O -fno-strict-aliasing
+fb_test_amd64_LDADD	= -lm
 fcmovnu_CFLAGS		= $(AM_CFLAGS) @FLAG_NO_PIE@
 fxtract_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_OVERFLOW@ @FLAG_NO_PIE@
 insn_basic_SOURCES	= insn_basic.def

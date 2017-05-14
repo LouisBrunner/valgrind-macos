@@ -6647,6 +6647,9 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
       return True;
    }
 
+   /* The PRFM cases that follow are possibly allow Rt values (the
+      prefetch operation) which are not allowed by the documentation.
+      This should be looked into. */
    /* ------------------ PRFM (immediate) ------------------ */
    /* 31           21    9 4
       11 111 00110 imm12 n t   PRFM pfrop=Rt, [Xn|SP, #pimm]
@@ -6677,6 +6680,23 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
          DIP("prfm prfop=%u, %s\n", tt, dis_buf);
          return True;
       }
+   }
+
+   /* ------------------ PRFM (unscaled offset) ------------------ */
+   /* 31 29      22 20   11 9  4
+      11 1110001 00 imm9 00 Rn Rt    PRFM pfrop=Rt, [Xn|SP, #simm]
+   */
+   if (INSN(31,21) == BITS11(1,1, 1,1,1,0,0,0,1, 0,0)
+       && INSN(11,10) == BITS2(0,0)) {
+      ULong  imm9   = INSN(20,12);
+      UInt   nn     = INSN(9,5);
+      UInt   tt     = INSN(4,0);
+      ULong  offset = sx_to_64(imm9, 9);
+      IRTemp ea     = newTemp(Ity_I64);
+      assign(ea, binop(Iop_Add64, getIReg64orSP(nn), mkU64(offset)));
+      /* No actual code to generate. */
+      DIP("prfum prfop=%u, [%s, #0x%llx]\n", tt, nameIReg64orSP(nn), offset);
+      return True;
    }
 
    vex_printf("ARM64 front end: load_store\n");

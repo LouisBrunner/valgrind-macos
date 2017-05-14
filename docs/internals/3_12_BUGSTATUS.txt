@@ -9,10 +9,6 @@ that didn't get fixed in 3.12.  These are marked "(carried over)".
 356715  vex amd64->IR: 0xC4 0xE2 0x7D 0x13 0x4 0x4A 0xC5 0xFC
         vcvtph2ps (%rdx,%rcx,2),%ymm0
 
-(carried over)
-360415  amd64 instructions ADCX and ADOX are not implemented in VEX
-        [has patch, could possibly take it, but needs cleanup/verification]
-
 369409  vex amd64->IR: 0x48 0xF 0xC7 0xF0 0x72 0x2 0xE2 0xF8 (
 
 372828  vex amd64->IR: 0x66 0x4D 0xF 0x38 0xF6 0xD2 0x66 0x4D
@@ -55,9 +51,6 @@ n-i-bz  Remove limit on strd's negative immediates
 
 373990  Potential shift left overflow in guest_arm_toIR.c
 
-368868  disInstr(arm64): unhandled instruction 0xD53BE000 = cntfrq_el0 (ARMv8)
-        (should fix this for 3.13?)
-
 369459  valgrind on arm64 violates the ARMv8 spec (ldxr/stxr)
 	[fixed with --sim-hints=fallback-llsc?]
 
@@ -73,14 +66,9 @@ n-i-bz  Remove limit on strd's negative immediates
 
 === VEX/arm64 ==========================================================
 
-368868  disInstr(arm64): unhandled instruction 0xD53BE000 = cntfrq_el0 (ARMv8)
-        (should fix this for 3.12.1)
-
 369459  valgrind on arm64 violates the ARMv8 spec (ldxr/stxr)
 
 369509  ARMv8.1 LSE instructions are not supported
-
-371503  disInstr(arm64): unhandled instruction 0xF89F0000 (prfum)
 
 377966  disInstr(arm64): unhandled instruction 0xD50B7425
 
@@ -497,19 +485,10 @@ Should fix for 3.13:
 352364  ppc64: --expensive-definedness-checks=yes is not quite working here
 
 **
-360415  amd64 instructions ADCX and ADOX are not implemented in VEX
-	[has a plausible patch]
-        == 372828 (vex amd64->IR: 0x66 0xF 0x3A 0x62 0x4A 0x10)
-
-**
 (carried over)
 368507  valgrind throws std::bad_alloc on memory allocations larger
         than 34255421416 bytes
         (increase usable address space post release, on trunk)
-
-**
-368868  disInstr(arm64): unhandled instruction 0xD53BE000 = cntfrq_el0 (ARMv8)
-        (should fix this for 3.12.1)
 
 **
 369459  valgrind on arm64 violates the ARMv8 spec (ldxr/stxr)
@@ -518,11 +497,6 @@ Should fix for 3.13:
 **
 370028  Reduce the number of compiler warnings on MIPS platforms
 (easy patch)
-
-**
-371503  disInstr(arm64): unhandled instruction 0xF89F0000
-
-**
 
 **
 374963  increase valgrind's load address to prevent mmap failure

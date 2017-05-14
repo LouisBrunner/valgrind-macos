@@ -774,6 +774,21 @@ ULong arm64g_dirtyhelper_MRS_CNTVCT_EL0 ( void )
 }
 
 
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-arm64 platforms, return 0. */
+ULong arm64g_dirtyhelper_MRS_CNTFRQ_EL0 ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   ULong w = 0x5555555555555555ULL; /* overwritten */
+   __asm__ __volatile__("mrs %0, cntfrq_el0" : "=r"(w));
+   return w;
+#  else
+   return 0ULL;
+#  endif
+}
+
+
 void arm64g_dirtyhelper_PMULLQ ( /*OUT*/V128* res, ULong arg1, ULong arg2 )
 {
    /* This doesn't need to be a dirty helper, except for the fact that

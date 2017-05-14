@@ -7008,6 +7008,27 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       DIP("mrs %s, cntvct_el0\n", nameIReg64orZR(tt));
       return True;
    }   
+   /* ---- Cases for CNTFRQ_EL0 ----
+      This is always RO at EL0, so it's safe to pass through to the host.
+      D5 3B E0 000 Rt  MRS Xt, cntfrq_el0
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53BE000) {
+      UInt     tt   = INSN(4,0);
+      IRTemp   val  = newTemp(Ity_I64);
+      IRExpr** args = mkIRExprVec_0();
+      IRDirty* d    = unsafeIRDirty_1_N ( 
+                         val, 
+                         0/*regparms*/, 
+                         "arm64g_dirtyhelper_MRS_CNTFRQ_EL0",
+                         &arm64g_dirtyhelper_MRS_CNTFRQ_EL0,
+                         args 
+                      );
+      /* execute the dirty call, dumping the result in val. */
+      stmt( IRStmt_Dirty(d) );
+      putIReg64orZR(tt, mkexpr(val));
+      DIP("mrs %s, cntfrq_el0\n", nameIReg64orZR(tt));
+      return True;
+   }   
 
    /* ------------------ IC_IVAU ------------------ */
    /* D5 0B 75 001 Rt  ic ivau, rT

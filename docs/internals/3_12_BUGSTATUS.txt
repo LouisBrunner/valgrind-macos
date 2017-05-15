@@ -286,10 +286,6 @@ n-i-bz  Remove limit on strd's negative immediates
 
 === other/x86 ==========================================================
 
-=== other/mips =========================================================
-
-370028  Reduce the number of compiler warnings on MIPS platforms
-
 === other/ppc ==========================================================
 
 365208  valgrind stuck after redirecting "memcpy"
@@ -322,7 +318,7 @@ n-i-bz  Remove limit on strd's negative immediates
 === other/mips =========================================================
 
 370028  Reduce the number of compiler warnings on MIPS platforms
-	[1 patch landed, 3 still to go]
+	[several patches landed, some still in works]
 
 === other/s390 =========================================================
 
@@ -411,8 +407,6 @@ n-i-bz  Remove limit on strd's negative immediates
 
 368873  Please add FreeBSD to supported OS list
 
-378430  www: update Valgrind alias mirrors
-
 === Uncategorised/run ==================================================
 
 (carried over)
@@ -496,11 +490,11 @@ Should fix for 3.13:
 
 **
 370028  Reduce the number of compiler warnings on MIPS platforms
-(easy patch)
+	(2017-05-15: all ready patches are in)
 
 **
 374963  increase valgrind's load address to prevent mmap failure
-maybe change to 0x5800'0000
+	(has a patch with a change to 0x5800'0000)
 
 **
 n-i-bz  major perf problems w/ stack registration + stack recycling
@@ -554,9 +548,6 @@ Should be fixed.  Try again with ./mach gtest
 
 *
 377966  disInstr(arm64): unhandled instruction 0xD50B7425
-
-*
-378430  www: update Valgrind alias mirrors
 
 *
 378622  False positive with GCC 6.3.1 and -funswitch-loops (-O3)

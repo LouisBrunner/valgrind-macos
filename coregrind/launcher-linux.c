@@ -261,7 +261,7 @@ static const char *select_platform(const char *clientname)
                 (header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
                  header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "mips64-linux";
-            } else if (header.ehdr64.e_machine == EM_TILEGX &&
+            } else if (header.ehdr64.e_machine == EM_AARCH64 &&
                 (header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
                  header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "arm64-linux";

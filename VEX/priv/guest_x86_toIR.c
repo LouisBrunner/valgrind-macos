@@ -15319,11 +15319,11 @@ DisResult disInstr_X86_WRK (
              see it (pass-through semantics).  I can't see any way to
              construct a faked-up value, so don't bother to try. */
          modrm = getUChar(delta);
-         addr = disAMode ( &alen, sorb, delta, dis_buf );
-         delta += alen;
          if (epartIsReg(modrm)) goto decode_failure;
          if (gregOfRM(modrm) != 0 && gregOfRM(modrm) != 1)
             goto decode_failure;
+         addr = disAMode ( &alen, sorb, delta, dis_buf );
+         delta += alen;
          switch (gregOfRM(modrm)) {
             case 0: DIP("sgdt %s\n", dis_buf); break;
             case 1: DIP("sidt %s\n", dis_buf); break;

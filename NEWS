@@ -193,6 +193,7 @@ where XXXXXX is the bug number as listed below.
 379390  unhandled syscall: mach:70 (host_create_mach_voucher_trap)
 379473  MIPS: add support for rdhwr cycle counter register
 379504  remove TileGX/Linux port
+379838  disAMode(x86): not an addr!
 
 
 Release 3.12.0 (20 October 2016)

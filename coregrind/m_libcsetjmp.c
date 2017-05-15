@@ -555,54 +555,140 @@ __asm__(
 __asm__(
 ".text                          \n\t"
 ".globl VG_MINIMAL_SETJMP;      \n\t"
-".align 2;                      \n\t"
-"VG_MINIMAL_SETJMP:             \n\t"  /* a0 = jmp_buf */
-"   sw   $s0,  0($a0)           \n\t"  /* Save registers s0-s7. */
-"   sw   $s1,  4($a0)           \n\t"
-"   sw   $s2,  8($a0)           \n\t"
-"   sw   $s3, 12($a0)           \n\t"
-"   sw   $s4, 16($a0)           \n\t"
-"   sw   $s5, 20($a0)           \n\t"
-"   sw   $s6, 24($a0)           \n\t"
-"   sw   $s7, 28($a0)           \n\t"
-"   sw   $s8, 32($a0)           \n\t"  /* Frame pointer. */
-"   sw   $ra, 36($a0)           \n\t"  /* Return address. */
-"   sw   $gp, 40($a0)           \n\t"  /* Global data pointer. */
-"   sw   $sp, 44($a0)           \n\t"  /* Stack pointer. */
-
-"   move $v0, $zero             \n\t"  /* Return zero. */
-"   j    $ra                    \n\t"
-"   nop                         \n\t"
+".set push                      \n\t"
+".set noreorder                 \n\t"
+"VG_MINIMAL_SETJMP:             \n\t"
+#if defined(__mips_hard_float)
+"   sdc1 $f20, 56($a0)          \n\t"
+"   sdc1 $f22, 64($a0)          \n\t"
+"   sdc1 $f24, 72($a0)          \n\t"
+"   sdc1 $f26, 80($a0)          \n\t"
+"   sdc1 $f28, 88($a0)          \n\t"
+"   sdc1 $f30, 96($a0)          \n\t"
+#endif
+"   sw   $gp,  44($a0)          \n\t"
+"   sw   $s0,   8($a0)          \n\t"
+"   sw   $s1,  12($a0)          \n\t"
+"   sw   $s2,  16($a0)          \n\t"
+"   sw   $s3,  20($a0)          \n\t"
+"   sw   $s4,  24($a0)          \n\t"
+"   sw   $s5,  28($a0)          \n\t"
+"   sw   $s6,  32($a0)          \n\t"
+"   sw   $s7,  36($a0)          \n\t"
+"   sw   $ra,   0($a0)          \n\t"
+"   sw   $sp,   4($a0)          \n\t"
+"   sw   $fp,  40($a0)          \n\t"
+"   jr   $ra                    \n\t"
+"   move $v0, $zero             \n\t"
+".set pop                       \n\t"
 ".previous                      \n\t"
 "                               \n\t"
 ".text                          \n\t"
 ".globl VG_MINIMAL_LONGJMP;     \n\t"
-".align 2;                      \n\t"
-"VG_MINIMAL_LONGJMP:            \n\t"  /* a0 = jmp_buf */
-"   lw   $s0,  0($a0)           \n\t"  /* Restore registers s0-s7. */
-"   lw   $s1,  4($a0)           \n\t"
-"   lw   $s2,  8($a0)           \n\t"
-"   lw   $s3, 12($a0)           \n\t"
-"   lw   $s4, 16($a0)           \n\t"
-"   lw   $s5, 20($a0)           \n\t"
-"   lw   $s6, 24($a0)           \n\t"
-"   lw   $s7, 28($a0)           \n\t"
-"   lw   $s8, 32($a0)           \n\t"  /* Frame pointer. */
-"   lw   $ra, 36($a0)           \n\t"  /* Return address. */
-"   lw   $gp, 40($a0)           \n\t"  /* Global data pointer. */
-"   lw   $sp, 44($a0)           \n\t"  /* Stack pointer. */
-
-/* Checking whether second argument is zero. */
-"   bnez $a1, 1f                \n\t"
-"   nop                         \n\t"
-"   addiu $a1, $a1, 1           \n\t"  /* We must return 1 if val=0. */
+".set push                      \n\t"
+".set noreorder                 \n\t"
+"VG_MINIMAL_LONGJMP:            \n\t"
+#if defined(__mips_hard_float)
+"   ldc1    $f20, 56($a0)       \n\t"
+"   ldc1    $f22, 64($a0)       \n\t"
+"   ldc1    $f24, 72($a0)       \n\t"
+"   ldc1    $f26, 80($a0)       \n\t"
+"   ldc1    $f28, 88($a0)       \n\t"
+"   ldc1    $f30, 96($a0)       \n\t"
+#endif
+"   lw      $gp,  44($a0)       \n\t"
+"   lw      $s0,   8($a0)       \n\t"
+"   lw      $s1,  12($a0)       \n\t"
+"   lw      $s2,  16($a0)       \n\t"
+"   lw      $s3,  20($a0)       \n\t"
+"   lw      $s4,  24($a0)       \n\t"
+"   lw      $s5,  28($a0)       \n\t"
+"   lw      $s6,  32($a0)       \n\t"
+"   lw      $s7,  36($a0)       \n\t"
+"   lw      $ra,   0($a0)       \n\t"
+"   lw      $sp,   4($a0)       \n\t"
+"   bnez    $a1,   1f           \n\t"
+"   lw      $fp,  40($a0)       \n\t"
+"   addiu   $a1, $a1, 1         \n\t"
 "1:                             \n\t"
-"   move $v0, $a1               \n\t"  /* Return value of second argument. */
-"   j    $ra                    \n\t"
-"   nop                         \n\t"
+"   jr      $ra                 \n\t"
+"   move    $v0, $a1            \n\t"
+".set pop                       \n\t"
 ".previous                      \n\t"
 );
 #endif  /* VGP_mips32_linux */
+
+#if defined(VGP_mips64_linux)
+
+__asm__(
+".text                          \n\t"
+".globl VG_MINIMAL_SETJMP;      \n\t"
+".set push                      \n\t"
+".set noreorder                 \n\t"
+"VG_MINIMAL_SETJMP:             \n\t"
+#if defined(__mips_hard_float)
+"   sdc1    $f24, 104($a0)      \n\t"
+"   sdc1    $f25, 112($a0)      \n\t"
+"   sdc1    $f26, 120($a0)      \n\t"
+"   sdc1    $f27, 128($a0)      \n\t"
+"   sdc1    $f28, 136($a0)      \n\t"
+"   sdc1    $f29, 144($a0)      \n\t"
+"   sdc1    $f30, 152($a0)      \n\t"
+"   sdc1    $f31, 160($a0)      \n\t"
+#endif
+"   sd      $gp,   88($a0)      \n\t"
+"   sd      $s0,   16($a0)      \n\t"
+"   sd      $s1,   24($a0)      \n\t"
+"   sd      $s2,   32($a0)      \n\t"
+"   sd      $s3,   40($a0)      \n\t"
+"   sd      $s4,   48($a0)      \n\t"
+"   sd      $s5,   56($a0)      \n\t"
+"   sd      $s6,   64($a0)      \n\t"
+"   sd      $s7,   72($a0)      \n\t"
+"   sd      $ra,    0($a0)      \n\t"
+"   sd      $sp,    8($a0)      \n\t"
+"   sd      $fp,   80($a0)      \n\t"
+"   jr      $ra                 \n\t"
+"   move    $v0, $zero          \n\t"
+".set pop                       \n\t"
+".previous                      \n\t"
+"                               \n\t"
+".text                          \n\t"
+".globl VG_MINIMAL_LONGJMP;     \n\t"
+".set push                      \n\t"
+".set noreorder                 \n\t"
+"VG_MINIMAL_LONGJMP:            \n\t"
+#if defined(__mips_hard_float)
+"   ldc1    $f24, 104($a0)      \n\t"
+"   ldc1    $f25, 112($a0)      \n\t"
+"   ldc1    $f26, 120($a0)      \n\t"
+"   ldc1    $f27, 128($a0)      \n\t"
+"   ldc1    $f28, 136($a0)      \n\t"
+"   ldc1    $f29, 144($a0)      \n\t"
+"   ldc1    $f30, 152($a0)      \n\t"
+"   ldc1    $f31, 160($a0)      \n\t"
+#endif
+"   ld      $gp,   88($a0)      \n\t"
+"   ld      $s0,   16($a0)      \n\t"
+"   ld      $s1,   24($a0)      \n\t"
+"   ld      $s2,   32($a0)      \n\t"
+"   ld      $s3,   40($a0)      \n\t"
+"   ld      $s4,   48($a0)      \n\t"
+"   ld      $s5,   56($a0)      \n\t"
+"   ld      $s6,   64($a0)      \n\t"
+"   ld      $s7,   72($a0)      \n\t"
+"   ld      $ra,    0($a0)      \n\t"
+"   ld      $sp,    8($a0)      \n\t"
+"   bnez    $a1, 1f             \n\t"
+"   ld      $fp,   80($a0)      \n\t"
+"   daddiu  $a1, $a1, 1         \n\t"
+"1:                             \n\t"
+"   jr      $ra                 \n\t"
+"   move    $v0, $a1            \n\t"
+".set pop                       \n\t"
+".previous                      \n\t"
+);
+#endif  /* VGP_mips64_linux */
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

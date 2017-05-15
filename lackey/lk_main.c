@@ -1011,7 +1011,7 @@ static void lk_fini(Int exitcode)
       VG_(umsg)("Jccs:\n");
       VG_(umsg)("  total:         %'llu\n", total_Jccs);
       VG_(umsg)("  taken:         %'llu (%.0f%%)\n",
-                taken_Jccs, taken_Jccs * 100.0 / total_Jccs ?: 1);
+                taken_Jccs, taken_Jccs * 100.0 / (total_Jccs ? total_Jccs : 1));
       
       VG_(umsg)("\n");
       VG_(umsg)("Executed:\n");

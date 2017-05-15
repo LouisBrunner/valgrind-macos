@@ -107,7 +107,7 @@ void reset_valgrind_sink(const char *info)
        && initial_valgrind_sink_saved) {
       VG_(log_output_sink).fd = initial_valgrind_sink.fd;
       VG_(umsg) ("Reset valgrind output to log (%s)\n",
-                 (info = NULL ? "" : info));
+                 (info == NULL ? "" : info));
    }
 }
 

@@ -2422,6 +2422,7 @@ void abort(void){
    libgcc which boil down to an abort or raise, that's usually defined
    in libc. Instead, define them here. */
 #if defined(VGP_arm_linux)
+
 void raise(void);
 void raise(void){
    VG_(printf)("Something called raise().\n");
@@ -2440,7 +2441,15 @@ void __aeabi_unwind_cpp_pr1(void){
    vg_assert(0);
 }
 
-#if defined(__ANDROID__)
+#endif /* defined(VGP_arm_linux) */
+
+/* Some Android helpers.  See bug 368529. */
+#if defined(__clang__) \
+    && (defined(VGPV_arm_linux_android) \
+        || defined(VGPV_x86_linux_android) \
+        || defined(VGPV_mips32_linux_android) \
+        || defined(VGPV_arm64_linux_android))
+
 /* Replace __aeabi_memcpy* functions with vgPlain_memcpy. */
 void *__aeabi_memcpy(void *dest, const void *src, SizeT n);
 void *__aeabi_memcpy(void *dest, const void *src, SizeT n)
@@ -2478,8 +2487,7 @@ void *__aeabi_memclr8(void *dest, SizeT n)
 {
     return VG_(memset)(dest, 0, n);
 }
-#endif /* defined(__ANDROID__) */
-#endif /* defined(VGP_arm_linux) */
+#endif /* clang and android, basically */
 
 /* ---------------- Requirement 2 ---------------- */
 

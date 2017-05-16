@@ -19,7 +19,8 @@ dist_noinst_SCRIPTS =		    \
 
 noinst_HEADERS =                                    \
 	tsan_thread_wrappers_pthread.h		    \
-	unified_annotations.h
+	unified_annotations.h			    \
+	dlopen_lib.h
 
 EXTRA_DIST =                                        \
 	annotate_barrier.stderr.exp		    \

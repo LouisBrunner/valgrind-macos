@@ -135,4 +135,4 @@ pkginclude_HEADERS = config.h
 
 # vgversion.h defines accurate versions to report with -v --version
 vgversion.h:
-	auxprogs/make_or_upd_vgversion_h
+	$(top_srcdir)/auxprogs/make_or_upd_vgversion_h

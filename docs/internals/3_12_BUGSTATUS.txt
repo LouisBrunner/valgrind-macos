@@ -300,10 +300,6 @@ n-i-bz  Remove limit on strd's negative immediates
 364533  Process terminating with default action of signal 4 (SIGILL): dumping
         core, : at 0x4000E7C: ??? (in /lib/ld-uClibc.so.0)
 
-(carried over)
-368529  Android arm target link error, missing atexit and pthread_atfork
-        (should take patch)
-
 374814  VALGRIND INTERNAL ERROR: signal 11 (SIGSEGV) - exiting
         possibly TLS related
 
@@ -514,10 +510,6 @@ Should be fixed.  Try again with ./mach gtest
 *
 (carried over)
 364279  False "Uninitialized" on atomic_compare_exchange
-
-*
-368529  Android arm target link error, missing atexit and pthread_atfork
-	[has patch, should take]
 
 *
 368791  unhandled syscall: 167 (swapon, amd64-linux)

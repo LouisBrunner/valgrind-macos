@@ -1468,6 +1468,7 @@ void LibVEX_default_VexArchInfo ( /*OUT*/VexArchInfo* vai )
    vai->ppc_dcbzl_szB           = 0;
    vai->arm64_dMinLine_lg2_szB  = 0;
    vai->arm64_iMinLine_lg2_szB  = 0;
+   vai->arm64_requires_fallback_LLSC = False;
    vai->hwcache_info.num_levels = 0;
    vai->hwcache_info.num_caches = 0;
    vai->hwcache_info.caches     = NULL;

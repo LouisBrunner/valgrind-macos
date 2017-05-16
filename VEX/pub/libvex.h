@@ -323,6 +323,9 @@ typedef
          line size of 64 bytes would be encoded here as 6. */
       UInt arm64_dMinLine_lg2_szB;
       UInt arm64_iMinLine_lg2_szB;
+      /* ARM64: does the host require us to use the fallback LLSC
+         implementation? */
+      Bool arm64_requires_fallback_LLSC;
    }
    VexArchInfo;
 

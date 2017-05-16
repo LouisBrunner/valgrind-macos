@@ -15091,29 +15091,31 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             goto decode_failure;;
          }
          break;
-      case 0x3B: {  /* RDHWR */
+      case 0x3B: /* RDHWR */
          DIP("rdhwr r%u, r%u", rt, rd);
+         if (VEX_MIPS_CPU_HAS_MIPS32R2(archinfo->hwcaps) ||
+             (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_BROADCOM)) {
             if (rd == 29) {
                putIReg(rt, getULR());
-#if defined(__mips__) && ((defined(__mips_isa_rev) && __mips_isa_rev >= 2))
             } else if (rd <= 3
                        || (rd == 31
                            && VEX_MIPS_COMP_ID(archinfo->hwcaps)
                                                     == VEX_PRID_COMP_CAVIUM)) {
-               IRExpr** args = mkIRExprVec_2 (mkU32(rt), mkU32(rd));
+               IRExpr** arg = mkIRExprVec_1(mkU32(rd));
                IRTemp   val  = newTemp(ty);
                IRDirty *d = unsafeIRDirty_1_N(val,
                                               0,
                                               "mips_dirtyhelper_rdhwr",
                                               &mips_dirtyhelper_rdhwr,
-                                              args);
+                                              arg);
                stmt(IRStmt_Dirty(d));
                putIReg(rt, mkexpr(val));
-#endif
             } else
                goto decode_failure;
-            break;
+         } else {
+            ILLEGAL_INSTRUCTON;
          }
+         break;
       case 0x04:  /* INS */
          msb = get_msb(cins);
          lsb = get_lsb(cins);
@@ -17298,6 +17300,8 @@ DisResult disInstr_MIPS( IRSB*        irsb_IN,
 
    mode64 = guest_arch != VexArchMIPS32;
    fp_mode64 = abiinfo->guest_mips_fp_mode64;
+
+   vassert(VEX_MIPS_HOST_FP_MODE(archinfo->hwcaps) >= fp_mode64);
 
    guest_code = guest_code_IN;
    irsb = irsb_IN;

@@ -424,29 +424,35 @@ VexGuestLayout mips64Guest_layout = {
                   }
 };
 
-#if defined(__mips__) && ((defined(__mips_isa_rev) && __mips_isa_rev >= 2))
-HWord mips_dirtyhelper_rdhwr ( UInt rt, UInt rd )
+#define ASM_VOLATILE_RDHWR(opcode)                                 \
+   __asm__ __volatile__(".word 0x7C02003B | "#opcode" << 11  \n\t" \
+                        : "+r" (x) : :                             \
+                       )
+
+HWord mips_dirtyhelper_rdhwr ( UInt rd )
 {
-   HWord x = 0;
+#if defined(__mips__)
+   register HWord x __asm__("v0") = 0;
+
    switch (rd) {
       case 0:  /* x = CPUNum() */
-         __asm__ __volatile__("rdhwr %0, $0\n\t" : "=r" (x) );
+         ASM_VOLATILE_RDHWR(0); /* rdhwr v0, $0 */
          break;
 
       case 1:  /* x = SYNCI_Step() */
-         __asm__ __volatile__("rdhwr %0, $1\n\t" : "=r" (x) );
+         ASM_VOLATILE_RDHWR(1); /* rdhwr v0, $1 */
          break;
 
       case 2:  /* x = CC() */
-         __asm__ __volatile__("rdhwr %0, $2\n\t" : "=r" (x) );
+         ASM_VOLATILE_RDHWR(2); /* rdhwr v0, $2 */
          break;
 
       case 3:  /* x = CCRes() */
-         __asm__ __volatile__("rdhwr %0, $3\n\t" : "=r" (x) );
+         ASM_VOLATILE_RDHWR(3); /* rdhwr v0, $3 */
          break;
 
       case 31:  /* x = CVMX_get_cycles() */
-         __asm__ __volatile__("rdhwr %0, $31\n\t" : "=r" (x) );
+         ASM_VOLATILE_RDHWR(31); /* rdhwr v0, $31 */
          break;
 
       default:
@@ -454,8 +460,10 @@ HWord mips_dirtyhelper_rdhwr ( UInt rt, UInt rd )
          break;
    }
    return x;
-}
+#else
+   return 0;
 #endif
+}
 
 #define ASM_VOLATILE_UNARY32(inst)                                  \
    __asm__ volatile(".set  push"        "\n\t"                      \
@@ -648,7 +656,8 @@ extern UInt mips_dirtyhelper_calculate_FCSR_fp64 ( void* gs, UInt fs, UInt ft,
                                                    flt_op inst )
 {
    UInt ret = 0;
-#if defined(__mips__)
+#if defined(__mips__) && ((__mips == 64) ||                                  \
+                          (defined(__mips_isa_rev) && (__mips_isa_rev >= 2)))
 #if defined(VGA_mips32)
    VexGuestMIPS32State* guest_state = (VexGuestMIPS32State*)gs;
 #else
@@ -699,8 +708,6 @@ extern UInt mips_dirtyhelper_calculate_FCSR_fp64 ( void* gs, UInt fs, UInt ft,
       case ROUNDWS:
          ASM_VOLATILE_UNARY64(round.w.s)
          break;
-#if ((__mips == 32) && defined(__mips_isa_rev) && (__mips_isa_rev >= 2)) \
-    || (__mips == 64)
       case CEILLS:
          ASM_VOLATILE_UNARY64(ceil.l.s)
          break;
@@ -737,7 +744,6 @@ extern UInt mips_dirtyhelper_calculate_FCSR_fp64 ( void* gs, UInt fs, UInt ft,
       case TRUNCLD:
          ASM_VOLATILE_UNARY64(trunc.l.d)
          break;
-#endif
       case ADDS:
           ASM_VOLATILE_BINARY64(add.s)
           break;

@@ -100,9 +100,7 @@ typedef enum {
    #define MIPS_IEND Iend_BE
 #endif
 
-#if defined(__mips__) && ((defined(__mips_isa_rev) && __mips_isa_rev >= 2))
-extern HWord mips_dirtyhelper_rdhwr ( UInt rt, UInt rd );
-#endif
+extern HWord mips_dirtyhelper_rdhwr ( UInt rd );
 
 /* Calculate FCSR in fp32 mode. */
 extern UInt mips_dirtyhelper_calculate_FCSR_fp32 ( void* guest_state, UInt fs,

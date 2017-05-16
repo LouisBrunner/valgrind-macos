@@ -1655,7 +1655,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
       |                                |
       |--------------------------------|
       |          client stack          |
-      |--------------------------------| 0x38000000
+      |--------------------------------| 0x58000000
       |            V's text            |
       |--------------------------------|
       |                                |
@@ -1688,7 +1688,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
       |                                |
       |--------------------------------|
       |          client stack          |
-      |--------------------------------| 0x00000000_38000000
+      |--------------------------------| 0x00000000_58000000
       |            V's text            |
       |--------------------------------|
       |                                |
@@ -1723,9 +1723,9 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
 
    aspacem_cStart = aspacem_minAddr;
 #  ifdef ENABLE_INNER
-   suggested_clstack_end = (Addr) 0x27ff0000 - 1; // 64kB below V's text
-#  else
    suggested_clstack_end = (Addr) 0x37ff0000 - 1; // 64kB below V's text
+#  else
+   suggested_clstack_end = (Addr) 0x57ff0000 - 1; // 64kB below V's text
 #  endif
 
    // --- Linux --------------------------------------------

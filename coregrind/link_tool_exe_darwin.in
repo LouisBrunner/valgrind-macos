@@ -38,7 +38,7 @@
 #
 #   /usr/bin/ld -static -arch x86_64 -macosx_version_min 10.6 \
 #      -o memcheck-amd64-darwin -u __start -e __start \
-#      -image_base 0x138000000 -stack_addr 0x13c000000 \
+#      -image_base 0x158000000 -stack_addr 0x13c000000 \
 #      -stack_size 0x800000 \
 #      memcheck_amd*.o \
 #      ../coregrind/libcoregrind-amd64-darwin.a \
@@ -48,7 +48,7 @@
 #
 #   /usr/bin/ld -static -arch i386 -macosx_version_min 10.6 \
 #      -o memcheck-x86-darwin -u __start -e __start \
-#      -image_base 0x38000000 -stack_addr 0x3c000000 \
+#      -image_base 0x58000000 -stack_addr 0x3c000000 \
 #      -stack_size 0x800000 \
 #      memcheck_x86*.o \
 #      ../coregrind/libcoregrind-x86-darwin.a \

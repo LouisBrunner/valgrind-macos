@@ -1516,9 +1516,9 @@ problems or bugs.</para>
 
 <screen><![CDATA[
 (gdb) monitor v.set hostvisibility yes
-(gdb) add-symbol-file /path/to/tool/executable/file/memcheck-x86-linux 0x38000000
+(gdb) add-symbol-file /path/to/tool/executable/file/memcheck-x86-linux 0x58000000
 add symbol table from file "/path/to/tool/executable/file/memcheck-x86-linux" at
-	.text_addr = 0x38000000
+	.text_addr = 0x58000000
 (y or n) y
 Reading symbols from /path/to/tool/executable/file/memcheck-x86-linux...done.
 (gdb) 

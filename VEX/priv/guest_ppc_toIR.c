@@ -11584,7 +11584,7 @@ static Bool dis_fp_pair ( UInt theInstr )
 
          word[0] = newTemp(Ity_I64);
          word[1] = newTemp(Ity_I64);
-         DS  = IFIELD( theInstr, 4, 11);   // DQ in the instruction definition
+         DS  = IFIELD( theInstr, 4, 12);   // DQ in the instruction definition
          assign( EA, ea_rAor0_simm( rA_addr, DS<<4  ) );
 
          if ( IFIELD( theInstr, 0, 3) == 1) {
@@ -18560,16 +18560,19 @@ dis_vxs_misc( UInt theInstr, UInt opc2, int allow_isa_3_0 )
    switch ( opc2 ) {
       case 0x0ec: // xscmpexpdp (VSX Scalar Compare Exponents Double-Precision)
       {
+         /* Compare 64-bit data, 128-bit layout:
+            src1[0:63] is double word, src1[64:127] is unused
+            src2[0:63] is double word, src2[64:127] is unused
+         */
          IRExpr *bit4, *bit5, *bit6, *bit7;
          UInt BF = IFIELD( theInstr, 23, 3 );
          IRTemp eq_lt_gt = newTemp( Ity_I32 );
          IRTemp CC = newTemp( Ity_I32 );
          IRTemp vA_hi = newTemp( Ity_I64 );
          IRTemp vB_hi = newTemp( Ity_I64 );
-         UChar rA_addr = ifieldRegA(theInstr);
-         UChar rB_addr = ifieldRegB(theInstr);
+         IRExpr *mask = mkU64( 0x7FF0000000000000 );
 
-         DIP("xscmpexpdp %d,v%d,v%d\n", BF, rA_addr, rB_addr);
+         DIP("xscmpexpdp %d,v%d,v%d\n", BF, XA, XB);
 
          assign( vA_hi, unop( Iop_V128HIto64, mkexpr( vA ) ) );
          assign( vB_hi, unop( Iop_V128HIto64, mkexpr( vB ) ) );
@@ -18577,31 +18580,31 @@ dis_vxs_misc( UInt theInstr, UInt opc2, int allow_isa_3_0 )
          /* A exp < B exp */
          bit4 = binop( Iop_CmpLT64U,
                       binop( Iop_And64,
-                            mkexpr( vA_hi ),
-                             mkU64( 0x7FFF0000000000 ) ),
+                             mkexpr( vA_hi ),
+                             mask ),
                       binop( Iop_And64,
                              mkexpr( vB_hi ),
-                             mkU64( 0x7FFF0000000000 ) ) );
+                             mask ) );
          /*  A exp > B exp */
          bit5 = binop( Iop_CmpLT64U,
                       binop( Iop_And64,
                              mkexpr( vB_hi ),
-                             mkU64( 0x7FFF00000000000 ) ),
+                             mask ),
                       binop( Iop_And64,
                              mkexpr( vA_hi ),
-                             mkU64( 0x7FFF00000000000 ) ) );
+                             mask ) );
          /* test equal */
          bit6 = binop( Iop_CmpEQ64,
                       binop( Iop_And64,
                              mkexpr( vA_hi ),
-                             mkU64( 0x7FFF00000000000 ) ),
+                             mask ),
                       binop( Iop_And64,
-                            mkexpr( vB_hi ),
-                             mkU64( 0x7FFF00000000000 ) ) );
+                             mkexpr( vB_hi ),
+                             mask ) );
 
          /* exp A or exp B is NaN */
-         bit7 = mkOR1( is_NaN( Ity_V128, vA ),
-                       is_NaN( Ity_V128, vB ) );
+         bit7 = mkOR1( is_NaN( Ity_I64, vA_hi ),
+                       is_NaN( Ity_I64, vB_hi ) );
 
          assign( eq_lt_gt, binop( Iop_Or32,
                                   binop( Iop_Shl32,
@@ -18616,7 +18619,7 @@ dis_vxs_misc( UInt theInstr, UInt opc2, int allow_isa_3_0 )
                                                 mkU8( 1 ) ) ) ) );
          assign(CC, binop( Iop_Or32,
                            mkexpr( eq_lt_gt ) ,
-                           unop( Iop_1Uto32, bit7 ) ) );
+                           unop( Iop_1Sto32, bit7 ) ) );
 
          putGST_field( PPC_GST_CR, mkexpr( CC ), BF );
          putFPCC( mkexpr( CC ) );
@@ -20634,24 +20637,45 @@ dis_vx_store ( UInt theInstr )
                             unop( Iop_V128to64, mkexpr( vS ) ),
                             mkU64( 0xFFFFFFFF ) ) );
 
-      store( mkexpr( EA ), unop( Iop_64to32, mkexpr( word0 ) ) );
+      if (host_endness == VexEndnessBE) {
+         store( mkexpr( EA ), unop( Iop_64to32, mkexpr( word0 ) ) );
 
-      ea_off += 4;
-      irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
-                        ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
+         ea_off += 4;
+         irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
+                           ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
 
-      store( irx_addr, unop( Iop_64to32, mkexpr( word1 ) ) );
+         store( irx_addr, unop( Iop_64to32, mkexpr( word1 ) ) );
 
-      ea_off += 4;
-      irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
-                        ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
+         ea_off += 4;
+         irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
+                           ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
 
-      store( irx_addr, unop( Iop_64to32, mkexpr( word2 ) ) );
-      ea_off += 4;
-      irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
-                        ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
+         store( irx_addr, unop( Iop_64to32, mkexpr( word2 ) ) );
+         ea_off += 4;
+         irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
+                           ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
 
-      store( irx_addr, unop( Iop_64to32, mkexpr( word3 ) ) );
+         store( irx_addr, unop( Iop_64to32, mkexpr( word3 ) ) );
+      } else {
+         store( mkexpr( EA ), unop( Iop_64to32, mkexpr( word3 ) ) );
+
+         ea_off += 4;
+         irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
+                           ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
+
+         store( irx_addr, unop( Iop_64to32, mkexpr( word2 ) ) );
+
+         ea_off += 4;
+         irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
+                           ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
+
+         store( irx_addr, unop( Iop_64to32, mkexpr( word1 ) ) );
+         ea_off += 4;
+         irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
+                           ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
+
+         store( irx_addr, unop( Iop_64to32, mkexpr( word0 ) ) );
+      }
       break;
    }
 

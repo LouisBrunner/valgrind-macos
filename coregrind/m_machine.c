@@ -634,7 +634,7 @@ static UInt VG_(get_machine_model)(void)
    return model;
 }
 
-#endif /* VGA_s390x */
+#endif /* defined(VGA_s390x) */
 
 #if defined(VGA_mips32) || defined(VGA_mips64)
 
@@ -755,12 +755,65 @@ static Bool VG_(parse_cpuinfo)(void)
    return True;
 }
 
-#endif
+#endif /* defined(VGA_mips32) || defined(VGA_mips64) */
 
-/* Determine what insn set and insn set variant the host has, and
-   record it.  To be called once at system startup.  Returns False if
-   this a CPU incapable of running Valgrind.
-   Also determine information about the caches on this host. */
+#if defined(VGP_arm64_linux)
+
+/* Check to see whether we are running on a Cavium core, and if so auto-enable
+   the fallback LLSC implementation.  See #369459. */
+
+static Bool VG_(parse_cpuinfo)(void)
+{
+   const char *search_Cavium_str = "CPU implementer\t: 0x43";
+
+   Int    n, fh;
+   SysRes fd;
+   SizeT  num_bytes, file_buf_size;
+   HChar  *file_buf;
+
+   /* Slurp contents of /proc/cpuinfo into FILE_BUF */
+   fd = VG_(open)( "/proc/cpuinfo", 0, VKI_S_IRUSR );
+   if ( sr_isError(fd) ) return False;
+
+   fh  = sr_Res(fd);
+
+   /* Determine the size of /proc/cpuinfo.
+      Work around broken-ness in /proc file system implementation.
+      fstat returns a zero size for /proc/cpuinfo although it is
+      claimed to be a regular file. */
+   num_bytes = 0;
+   file_buf_size = 1000;
+   file_buf = VG_(malloc)("cpuinfo", file_buf_size + 1);
+   while (42) {
+      n = VG_(read)(fh, file_buf, file_buf_size);
+      if (n < 0) break;
+
+      num_bytes += n;
+      if (n < file_buf_size) break;  /* reached EOF */
+   }
+
+   if (n < 0) num_bytes = 0;   /* read error; ignore contents */
+
+   if (num_bytes > file_buf_size) {
+      VG_(free)( file_buf );
+      VG_(lseek)( fh, 0, VKI_SEEK_SET );
+      file_buf = VG_(malloc)( "cpuinfo", num_bytes + 1 );
+      n = VG_(read)( fh, file_buf, num_bytes );
+      if (n < 0) num_bytes = 0;
+   }
+
+   file_buf[num_bytes] = '\0';
+   VG_(close)(fh);
+
+   /* Parse file */
+   if (VG_(strstr)(file_buf, search_Cavium_str) != NULL)
+      vai.arm64_requires_fallback_LLSC = True;
+
+   VG_(free)(file_buf);
+   return True;
+}
+
+#endif /* defined(VGP_arm64_linux) */
 
 Bool VG_(machine_get_hwcaps)( void )
 {
@@ -1588,6 +1641,11 @@ Bool VG_(machine_get_hwcaps)( void )
 
      VG_(machine_get_cache_info)(&vai);
 
+     /* Check whether we need to use the fallback LLSC implementation.
+        If the check fails, give up. */
+     if (! VG_(parse_cpuinfo)())
+        return False;
+
      /* 0 denotes 'not set'.  The range of legitimate values here,
         after being set that is, is 2 though 17 inclusive. */
      vg_assert(vai.arm64_dMinLine_lg2_szB == 0);
@@ -1600,6 +1658,8 @@ Bool VG_(machine_get_hwcaps)( void )
                       "ctr_el0.iMinLine_szB = %d\n",
                    1 << vai.arm64_dMinLine_lg2_szB,
                    1 << vai.arm64_iMinLine_lg2_szB);
+     VG_(debugLog)(1, "machine", "ARM64: requires_fallback_LLSC: %s\n",
+                   vai.arm64_requires_fallback_LLSC ? "yes" : "no");
 
      return True;
    }

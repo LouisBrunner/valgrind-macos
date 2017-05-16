@@ -1707,7 +1707,10 @@ Bool VG_(translate) ( ThreadId tid,
 
 #  if defined(VGP_arm64_linux)
    vex_abiinfo.guest__use_fallback_LLSC
-      = SimHintiS(SimHint_fallback_llsc, VG_(clo_sim_hints));
+      = /* The user asked explicitly */
+        SimHintiS(SimHint_fallback_llsc, VG_(clo_sim_hints))
+        || /* we autodetected that it is necessary */
+           vex_archinfo.arm64_requires_fallback_LLSC;
 #  endif
 
    /* Set up closure args. */

@@ -2439,7 +2439,47 @@ void __aeabi_unwind_cpp_pr1(void){
    VG_(printf)("Something called __aeabi_unwind_cpp_pr1()\n");
    vg_assert(0);
 }
-#endif
+
+#if defined(__ANDROID__)
+/* Replace __aeabi_memcpy* functions with vgPlain_memcpy. */
+void *__aeabi_memcpy(void *dest, const void *src, SizeT n);
+void *__aeabi_memcpy(void *dest, const void *src, SizeT n)
+{
+    return VG_(memcpy)(dest, src, n);
+}
+
+void *__aeabi_memcpy4(void *dest, const void *src, SizeT n);
+void *__aeabi_memcpy4(void *dest, const void *src, SizeT n)
+{
+    return VG_(memcpy)(dest, src, n);
+}
+
+void *__aeabi_memcpy8(void *dest, const void *src, SizeT n);
+void *__aeabi_memcpy8(void *dest, const void *src, SizeT n)
+{
+    return VG_(memcpy)(dest, src, n);
+}
+
+/* Replace __aeabi_memclr* functions with vgPlain_memset. */
+void *__aeabi_memclr(void *dest, SizeT n);
+void *__aeabi_memclr(void *dest, SizeT n)
+{
+    return VG_(memset)(dest, 0, n);
+}
+
+void *__aeabi_memclr4(void *dest, SizeT n);
+void *__aeabi_memclr4(void *dest, SizeT n)
+{
+    return VG_(memset)(dest, 0, n);
+}
+
+void *__aeabi_memclr8(void *dest, SizeT n);
+void *__aeabi_memclr8(void *dest, SizeT n)
+{
+    return VG_(memset)(dest, 0, n);
+}
+#endif /* defined(__ANDROID__) */
+#endif /* defined(VGP_arm_linux) */
 
 /* ---------------- Requirement 2 ---------------- */
 

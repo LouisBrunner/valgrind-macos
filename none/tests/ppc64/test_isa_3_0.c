@@ -1153,7 +1153,7 @@ static test_list_t testgroup_vector_extract[] = {
    SET_FPSCR_ZERO                                                 \
    SET_CR_ZERO                                                    \
    __asm__ __volatile__                                           \
-      ("xscmpexpdp %0, %1, %2"::"i"(x), "v"(vec_xa), "v"(vec_xb));\
+      ("xscmpexpdp %0, %1, %2"::"i"(x), "wa"(vec_xa), "wa"(vec_xb));\
    GET_CR(local_cr);                                              \
    GET_FPSCR(local_fpscr);
 

@@ -128,7 +128,7 @@ all-local: default.supp vgversion.h
 	ln -s ../default.supp $(inplacedir)
 
 clean-local:
-	rm -rf $(inplacedir)
+	rm -rf $(inplacedir) include/vgversion.h
 
 # Need config.h in the installed tree, since some files depend on it
 pkginclude_HEADERS = config.h

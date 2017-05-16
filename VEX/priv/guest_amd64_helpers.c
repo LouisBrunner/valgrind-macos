@@ -1939,18 +1939,17 @@ ULong amd64g_calculate_FXAM ( ULong tag, ULong dbl )
    themselves are not transferred into the guest state. */
 static
 VexEmNote do_put_x87 ( Bool moveRegs,
-                       /*IN*/UChar* x87_state,
+                       /*IN*/Fpu_State* x87_state,
                        /*OUT*/VexGuestAMD64State* vex_state )
 {
    Int        stno, preg;
    UInt       tag;
    ULong*     vexRegs = (ULong*)(&vex_state->guest_FPREG[0]);
    UChar*     vexTags = (UChar*)(&vex_state->guest_FPTAG[0]);
-   Fpu_State* x87     = (Fpu_State*)x87_state;
-   UInt       ftop    = (x87->env[FP_ENV_STAT] >> 11) & 7;
-   UInt       tagw    = x87->env[FP_ENV_TAG];
-   UInt       fpucw   = x87->env[FP_ENV_CTRL];
-   UInt       c3210   = x87->env[FP_ENV_STAT] & 0x4700;
+   UInt       ftop    = (x87_state->env[FP_ENV_STAT] >> 11) & 7;
+   UInt       tagw    = x87_state->env[FP_ENV_TAG];
+   UInt       fpucw   = x87_state->env[FP_ENV_CTRL];
+   UInt       c3210   = x87_state->env[FP_ENV_STAT] & 0x4700;
    VexEmNote  ew;
    UInt       fpround;
    ULong      pair;
@@ -1971,7 +1970,7 @@ VexEmNote do_put_x87 ( Bool moveRegs,
       } else {
          /* register is non-empty */
          if (moveRegs)
-            convert_f80le_to_f64le( &x87->reg[10*stno], 
+            convert_f80le_to_f64le( &x87_state->reg[10*stno], 
                                     (UChar*)&vexRegs[preg] );
          vexTags[preg] = 1;
       }
@@ -2000,23 +1999,23 @@ VexEmNote do_put_x87 ( Bool moveRegs,
    we can approximate it. */
 static
 void do_get_x87 ( /*IN*/VexGuestAMD64State* vex_state,
-                  /*OUT*/UChar* x87_state )
+                  /*OUT*/Fpu_State* x87_state )
 {
    Int        i, stno, preg;
    UInt       tagw;
    ULong*     vexRegs = (ULong*)(&vex_state->guest_FPREG[0]);
    UChar*     vexTags = (UChar*)(&vex_state->guest_FPTAG[0]);
-   Fpu_State* x87     = (Fpu_State*)x87_state;
    UInt       ftop    = vex_state->guest_FTOP;
    UInt       c3210   = vex_state->guest_FC3210;
 
    for (i = 0; i < 14; i++)
-      x87->env[i] = 0;
+      x87_state->env[i] = 0;
 
-   x87->env[1] = x87->env[3] = x87->env[5] = x87->env[13] = 0xFFFF;
-   x87->env[FP_ENV_STAT] 
+   x87_state->env[1] = x87_state->env[3] = x87_state->env[5]
+      = x87_state->env[13] = 0xFFFF;
+   x87_state->env[FP_ENV_STAT] 
       = toUShort(((ftop & 7) << 11) | (c3210 & 0x4700));
-   x87->env[FP_ENV_CTRL] 
+   x87_state->env[FP_ENV_CTRL] 
       = toUShort(amd64g_create_fpucw( vex_state->guest_FPROUND ));
 
    /* Dump the register stack in ST order. */
@@ -2027,15 +2026,15 @@ void do_get_x87 ( /*IN*/VexGuestAMD64State* vex_state,
          /* register is empty */
          tagw |= (3 << (2*preg));
          convert_f64le_to_f80le( (UChar*)&vexRegs[preg], 
-                                 &x87->reg[10*stno] );
+                                 &x87_state->reg[10*stno] );
       } else {
          /* register is full. */
          tagw |= (0 << (2*preg));
          convert_f64le_to_f80le( (UChar*)&vexRegs[preg], 
-                                 &x87->reg[10*stno] );
+                                 &x87_state->reg[10*stno] );
       }
    }
-   x87->env[FP_ENV_TAG] = toUShort(tagw);
+   x87_state->env[FP_ENV_TAG] = toUShort(tagw);
 }
 
 
@@ -2067,7 +2066,7 @@ void amd64g_dirtyhelper_XSAVE_COMPONENT_0
    Int       r, stno;
    UShort    *srcS, *dstS;
 
-   do_get_x87( gst, (UChar*)&tmp );
+   do_get_x87( gst, &tmp );
 
    /* Now build the proper fxsave x87 image from the fsave x87 image
       we just made. */
@@ -2236,7 +2235,7 @@ VexEmNote amd64g_dirtyhelper_XRSTOR_COMPONENT_0
    tmp.env[FP_ENV_TAG] = fp_tags;
 
    /* Now write 'tmp' into the guest state. */
-   VexEmNote warnX87 = do_put_x87( True/*moveRegs*/, (UChar*)&tmp, gst );
+   VexEmNote warnX87 = do_put_x87( True/*moveRegs*/, &tmp, gst );
 
    return warnX87;
 }
@@ -2440,7 +2439,7 @@ ULong amd64g_create_fpucw ( ULong fpround )
 VexEmNote amd64g_dirtyhelper_FLDENV ( /*OUT*/VexGuestAMD64State* vex_state,
                                       /*IN*/HWord x87_state)
 {
-   return do_put_x87( False, (UChar*)x87_state, vex_state );
+   return do_put_x87( False, (Fpu_State*)x87_state, vex_state );
 }
 
 
@@ -2492,7 +2491,7 @@ void amd64g_dirtyhelper_FSTENV ( /*IN*/VexGuestAMD64State* vex_state,
 void amd64g_dirtyhelper_FNSAVE ( /*IN*/VexGuestAMD64State* vex_state,
                                  /*OUT*/HWord x87_state)
 {
-   do_get_x87( vex_state, (UChar*)x87_state );
+   do_get_x87( vex_state, (Fpu_State*)x87_state );
 }
 
 
@@ -2546,7 +2545,7 @@ void amd64g_dirtyhelper_FNSAVES ( /*IN*/VexGuestAMD64State* vex_state,
 VexEmNote amd64g_dirtyhelper_FRSTOR ( /*OUT*/VexGuestAMD64State* vex_state,
                                       /*IN*/HWord x87_state)
 {
-   return do_put_x87( True, (UChar*)x87_state, vex_state );
+   return do_put_x87( True, (Fpu_State*)x87_state, vex_state );
 }
 
 

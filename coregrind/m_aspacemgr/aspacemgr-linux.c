@@ -1620,6 +1620,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
 
    aspacem_minAddr = VG_(clo_aspacem_minAddr);
 
+   // --- Darwin -------------------------------------------
 #if defined(VGO_darwin)
 
 # if VG_WORDSIZE == 4
@@ -1637,6 +1638,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
 
    suggested_clstack_end = -1; // ignored; Mach-O specifies its stack
 
+   // --- Solaris ------------------------------------------
 #elif defined(VGO_solaris)
 #  if VG_WORDSIZE == 4
    /*
@@ -1692,7 +1694,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
       |                                |
       |--------------------------------|
       |     dynamic shared objects     |
-      |--------------------------------| 0x0000000f_ffffffff
+      |--------------------------------| 0x0000001f_ffffffff
       |                                |
       |                                |
       |--------------------------------|
@@ -1702,18 +1704,18 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
       */
 
    /* Kernel likes to place objects at the end of the address space.
-      However accessing memory beyond 64GB makes memcheck slow
+      However accessing memory beyond 128GB makes memcheck slow
       (see memcheck/mc_main.c, internal representation). Therefore:
       - mmapobj() syscall is emulated so that libraries are subject to
         Valgrind's aspacemgr control
       - Kernel shared pages (such as schedctl and hrt) are left as they are
         because kernel cannot be told where they should be put */
 #    ifdef ENABLE_INNER
-     aspacem_maxAddr = (Addr) 0x00000007ffffffff; // 32GB
-     aspacem_vStart  = (Addr) 0x0000000400000000; // 16GB
-#    else
      aspacem_maxAddr = (Addr) 0x0000000fffffffff; // 64GB
      aspacem_vStart  = (Addr) 0x0000000800000000; // 32GB
+#    else
+     aspacem_maxAddr = (Addr) 0x0000001fffffffff; // 128GB
+     aspacem_vStart  = (Addr) 0x0000001000000000; // 64GB
 #    endif
 #  else
 #    error "Unknown word size"
@@ -1726,6 +1728,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    suggested_clstack_end = (Addr) 0x37ff0000 - 1; // 64kB below V's text
 #  endif
 
+   // --- Linux --------------------------------------------
 #else
 
    /* Establish address limits and block out unusable parts
@@ -1736,7 +1739,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
                     sp_at_startup );
 
 #  if VG_WORDSIZE == 8
-     aspacem_maxAddr = (Addr)0x1000000000ULL - 1; // 64G
+     aspacem_maxAddr = (Addr)0x2000000000ULL - 1; // 128G
 #    ifdef ENABLE_INNER
      { Addr cse = VG_PGROUNDDN( sp_at_startup ) - 1;
        if (aspacem_maxAddr > cse)
@@ -1751,13 +1754,14 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    aspacem_vStart = VG_PGROUNDUP(aspacem_minAddr 
                                  + (aspacem_maxAddr - aspacem_minAddr + 1) / 2);
 #  ifdef ENABLE_INNER
-   aspacem_vStart -= 0x10000000; // 256M
+   aspacem_vStart -= 0x20000000; // 512M
 #  endif
 
    suggested_clstack_end = aspacem_maxAddr - 16*1024*1024ULL
                                            + VKI_PAGE_SIZE;
 
 #endif
+   // --- (end) --------------------------------------------
 
    aspacem_assert(VG_IS_PAGE_ALIGNED(aspacem_minAddr));
    aspacem_assert(VG_IS_PAGE_ALIGNED(aspacem_maxAddr + 1));

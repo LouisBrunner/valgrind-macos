@@ -726,6 +726,18 @@ static Bool VG_(parse_cpuinfo)(void)
           vai.hwcaps |= VEX_MIPS_CPU_ISA_M64R2;
       if (VG_(strstr) (isa, "mips64r6") != NULL)
           vai.hwcaps |= VEX_MIPS_CPU_ISA_M64R6;
+
+      /*
+       * TODO(petarj): Remove this Cavium workaround once Linux kernel folks
+       * decide to change incorrect settings in
+       * mips/include/asm/mach-cavium-octeon/cpu-feature-overrides.h.
+       * The current settings show mips32r1, mips32r2 and mips64r1 as
+       * unsupported ISAs by Cavium MIPS CPUs.
+       */
+      if (VEX_MIPS_COMP_ID(vai.hwcaps) == VEX_PRID_COMP_CAVIUM) {
+         vai.hwcaps |= VEX_MIPS_CPU_ISA_M32R1 | VEX_MIPS_CPU_ISA_M32R2 |
+                       VEX_MIPS_CPU_ISA_M64R1;
+      }
    } else {
       /*
        * Kernel does not provide information about supported ISAs.

@@ -317,9 +317,6 @@ n-i-bz  Remove limit on strd's negative immediates
 
 === other/mips =========================================================
 
-370028  Reduce the number of compiler warnings on MIPS platforms
-	[several patches landed, some still in works]
-
 === other/s390 =========================================================
 
 === other/Android ======================================================
@@ -487,10 +484,6 @@ Should fix for 3.13:
 **
 369459  valgrind on arm64 violates the ARMv8 spec (ldxr/stxr)
         (is mostly fixed)
-
-**
-370028  Reduce the number of compiler warnings on MIPS platforms
-	(2017-05-15: all ready patches are in)
 
 **
 374963  increase valgrind's load address to prevent mmap failure

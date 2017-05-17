@@ -3091,8 +3091,13 @@ static IRExpr* /* ::Ity_I32 */ getGST_masked ( PPC_GST reg, ULong mask )
        * floating point rounding mode and Floating-point Condition code, so
        * if the mask isn't asking for either of these, just return 0x0.
        */
-      if ( mask & MASK_FPSCR_RN ) {
-         assign( val, unop( Iop_8Uto32, IRExpr_Get( OFFB_FPROUND, Ity_I8 ) ) );
+      if ( mask & ( MASK_FPSCR_C_FPCC | MASK_FPSCR_RN ) ) {
+         assign( val, binop( Iop_Or32,
+                             unop( Iop_8Uto32, IRExpr_Get( OFFB_FPROUND, Ity_I8 ) ),
+                             binop( Iop_Shl32,
+                                    unop( Iop_8Uto32,
+                                          IRExpr_Get( OFFB_C_FPCC, Ity_I8 ) ),
+                                    mkU8( 12 ) ) ) );
       } else {
          assign( val, mkU32(0x0) );
       }
@@ -3386,27 +3391,27 @@ static void putGST_masked ( PPC_GST reg, IRExpr* src, ULong mask )
       }
 
       if (mask & MASK_FPSCR_C_FPCC) {
+         /* FPCC bits are in [47:51] */
          stmt(
             IRStmt_Put(
                OFFB_C_FPCC,
                unop(
-                  Iop_32to8,
-                  binop(
-                     Iop_Or32,
-                     binop(
-                        Iop_And32,
-                        unop(Iop_64to32, src),
-                        mkU32(MASK_FPSCR_C_FPCC & mask)
-                     ),
-                     binop(
-                        Iop_And32,
-                        unop(Iop_8Uto32, IRExpr_Get(OFFB_C_FPCC,Ity_I8)),
-                        mkU32(MASK_FPSCR_C_FPCC & ~mask)
-                     )
-                  )
-               )
-            )
-         );
+                    Iop_32to8,
+                    binop(Iop_Shr32,
+                          binop(
+                                Iop_Or32,
+                                binop(
+                                      Iop_And32,
+                                      unop(Iop_64to32, src),
+                                      mkU32(MASK_FPSCR_C_FPCC & mask) ),
+                                binop(
+                                      Iop_And32,
+                                      unop(Iop_8Uto32,
+                                           IRExpr_Get(OFFB_C_FPCC,Ity_I8)),
+                                      mkU32(MASK_FPSCR_C_FPCC & ~mask)
+                                      ) ),
+                          mkU8( 12 ) )
+                    ) ) );
       }
 
       /* Similarly, update FPSCR.DRN if any bits of |mask|
@@ -11949,7 +11954,7 @@ static Bool dis_fp_scr ( UInt theInstr, Bool GX_level )
        */
       IRExpr* fpscr_lower
          = binop( Iop_Or32,
-                  getGST_masked( PPC_GST_FPSCR, MASK_FPSCR_RN),
+                  getGST_masked( PPC_GST_FPSCR, (MASK_FPSCR_RN | MASK_FPSCR_C_FPCC) ),
                   binop( Iop_Or32,
                          binop( Iop_Shl32,
                                 getC(),
@@ -12096,11 +12101,11 @@ static Bool dis_fp_scr ( UInt theInstr, Bool GX_level )
          /* new 64 bit move variant for power 6.  If L field (bit 25) is
           * a one do a full 64 bit move.  Note, the FPSCR is not really
           * properly modeled.  This instruciton only changes the value of
-          * the rounding mode bit fields RN and DRN.  The HW exception bits
+          * the rounding mode bit fields RN, FPCC and DRN.  The HW exception bits
           * do not get set in the simulator.  1/12/09
           */
          DIP("mtfsf%s %d,fr%u (L=1)\n", flag_rC ? ".":"", FM, frB_addr);
-         mask = 0x1F000000FF;
+         mask = 0x1F0001F003;
 
       } else {
          DIP("mtfsf%s %d,fr%u\n", flag_rC ? ".":"", FM, frB_addr);
@@ -18618,8 +18623,10 @@ dis_vxs_misc( UInt theInstr, UInt opc2, int allow_isa_3_0 )
                                                 unop( Iop_1Uto32, bit6 ),
                                                 mkU8( 1 ) ) ) ) );
          assign(CC, binop( Iop_Or32,
-                           mkexpr( eq_lt_gt ) ,
-                           unop( Iop_1Sto32, bit7 ) ) );
+                           binop( Iop_And32,
+                                  mkexpr( eq_lt_gt ) ,
+                                  unop( Iop_Not32, unop( Iop_1Sto32, bit7 ) ) ),
+                           unop( Iop_1Uto32, bit7 ) ) );
 
          putGST_field( PPC_GST_CR, mkexpr( CC ), BF );
          putFPCC( mkexpr( CC ) );

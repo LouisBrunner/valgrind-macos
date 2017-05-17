@@ -362,6 +362,7 @@ void xxprintf_done(void)
    printf("\n");
 }
 
+__attribute__((format(__printf__, 1, 2)))
 void xxprintf (const char *format, ...)
 {
    char buf[128];
@@ -947,9 +948,9 @@ void test_fcvt(double a)
     la = a;
     xxprintf("(float)%f = %f\n", a, fa);
     xxprintf("(long double)%f = %Lf\n", a, la);
-    xxprintf("a=%016Lx\n", *(long long *)&a);
-    xxprintf("la=%016Lx %04x\n", *(long long *)&la, 
-           *(unsigned short *)((char *)(&la) + 8));
+    xxprintf("a=%016llx\n", *(unsigned long long int *) &a);
+    xxprintf("la=%016llx %04x\n", *(unsigned long long int *) &la,
+             *(unsigned short *) ((char *)(&la) + 8));
 
     /* test all roundings */
     asm volatile ("fstcw %0" : "=m" (fpuc));
@@ -963,7 +964,7 @@ void test_fcvt(double a)
         asm volatile ("fldcw %0" : : "m" (fpuc));
         xxprintf("(short)a = %d\n", wa);
         xxprintf("(int)a = %d\n", ia);
-        xxprintf("(int64_t)a = %Ld\n", lla);
+        xxprintf("(int64_t)a = %lld\n", lla);
         xxprintf("rint(a) = %f\n", ra);
     }
 }

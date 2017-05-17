@@ -98,7 +98,6 @@ check_PROGRAMS = \
 	bug127521-64 bug132813-amd64 bug132918 bug137714-amd64 \
 	clc \
 	cmpxchg \
-	fb_test_amd64 \
 	getseg \
 	$(INSN_TESTS) \
 	nan80and64 \
@@ -113,6 +112,7 @@ if BUILD_ADDR32_TESTS
  check_PROGRAMS += asorep
 endif
 if BUILD_AVX_TESTS
+  check_PROGRAMS += fb_test_amd64
 if BUILD_VPCLMULQDQ_TESTS
   check_PROGRAMS += avx-1
 endif

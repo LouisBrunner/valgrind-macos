@@ -1,1 +1,2 @@
 prog: fb_test_amd64
+prereq: test -x fb_test_amd64 && ../../../tests/x86_amd64_features amd64-avx

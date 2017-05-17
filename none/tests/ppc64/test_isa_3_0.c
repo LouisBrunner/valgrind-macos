@@ -285,7 +285,7 @@ static test_list_t testgroup_ia_ops_two[] = {
    { &test_moduw, "moduw" },
    { &test_modsd, "modsd" },
    { &test_modud, "modud" },
-   //   { &test_addex, "addex" },
+   //{ &test_addex, "addex" },
    { NULL       , NULL             },
 };
 
@@ -509,7 +509,7 @@ static void test_vmsumudm(void)
 /* vector, 3->1 unique; four arguments. xt, xa, xb, xc (xc = permute) */
 static test_list_t testgroup_vector_four[] = {
    { &test_vpermr,   "vpermr" },
-   { &test_vmsumudm, "vmsumudm" },
+   //   { &test_vmsumudm, "vmsumudm" },
    { NULL        , NULL     },
 };
 
@@ -2162,18 +2162,18 @@ static void test_mffsl (void) {
 /* mffs* instructions using FRT only. */
 /* Note to self - Watch DRM,RM fields. */
 static test_list_t testgroup_mffs_misc[] = {
-   { &test_mffsce,    "mffsce" },
-   { &test_mffsl,     "mffsl" },
+   //   { &test_mffsce,    "mffsce" },
+   //   { &test_mffsl,     "mffsl" },
    { &test_mffs,      "mffs" },
    { NULL               , NULL      },
 };
 
 /* mffs* instructions using FRT,FRB. */
 static test_list_t testgroup_mffs_misc_one[] = {
-   { &test_mffscdrni, "mffscdrni" },
-   { &test_mffscdrn,  "mffscdrn" },
-   { &test_mffscrni,  "mffscrni" },
-   { &test_mffscrn,   "mffscrn" },
+   //   { &test_mffscdrni, "mffscdrni" },
+   //   { &test_mffscdrn,  "mffscdrn" },
+   //   { &test_mffscrni,  "mffscrni" },
+   //   { &test_mffscrn,   "mffscrn" },
    { NULL               , NULL      },
 };
 
@@ -2344,26 +2344,6 @@ static test_group_table_t all_tests[] = {
       testgroup_mffs_misc_one,
       "ppc mffpscr",
       PPC_MFFS,
-   },
-   {
-      testgroup_ia_ops_two,
-      "PPC integer arith instructions with two args",
-      PPC_INTEGER | PPC_ARITH | PPC_TWO_ARGS,
-   },
-   {
-      testgroup_mffs_misc,
-      "ppc mffpscr",
-      PPC_MFFS,
-   },
-   {
-      testgroup_mffs_misc_one,
-      "ppc mffpscr",
-      PPC_MFFS,
-   },
-   {
-      testgroup_vector_four,
-     "ppc vector three args + dest",
-      PPC_ALTIVEC | PPC_LOGICAL | PPC_FOUR_ARGS,
    },
    { NULL,                   NULL,               0x00000000, },
 };
@@ -3806,6 +3786,7 @@ static void testfunction_mffs(const char* instruction_name,
          printf(" => ");
          f14_reg.dble = f14;
          printf(" 0X%lx\n", f14_reg.uli);
+         printf(" fpscr: f14 ");
          dissect_fpscr(f14);
          printf(" local_fpscr: ");
          dissect_fpscr(local_fpscr);
@@ -3816,8 +3797,10 @@ static void testfunction_mffs(const char* instruction_name,
          printf(" => ");
          (*test_function)();
          printf(" %016f\n", f14);
+         printf(" fpscr: f14 ");
          dissect_fpscr(f14);
          printf("\n");
+         printf(" local_fpscr: ");
          dissect_fpscr(local_fpscr);
          printf("\n");
    }

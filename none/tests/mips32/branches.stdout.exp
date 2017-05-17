@@ -24,30 +24,30 @@ B :: 22, RSval: 21
 B :: 23, RSval: 22
 B :: 24, RSval: 23
 b 
-B :: 3, RSval: 0
-B :: 4, RSval: 1
-B :: 5, RSval: 2
-B :: 6, RSval: 3
-B :: 7, RSval: 4
-B :: 8, RSval: 5
-B :: 9, RSval: 6
-B :: 10, RSval: 7
-B :: 11, RSval: 8
-B :: 12, RSval: 9
-B :: 13, RSval: 10
-B :: 14, RSval: 11
-B :: 15, RSval: 12
-B :: 16, RSval: 13
-B :: 17, RSval: 14
-B :: 18, RSval: 15
-B :: 19, RSval: 16
-B :: 20, RSval: 17
-B :: 21, RSval: 18
-B :: 22, RSval: 19
-B :: 23, RSval: 20
-B :: 24, RSval: 21
-B :: 25, RSval: 22
-B :: 26, RSval: 23
+B :: 6, RSval: 0
+B :: 7, RSval: 1
+B :: 8, RSval: 2
+B :: 9, RSval: 3
+B :: 10, RSval: 4
+B :: 11, RSval: 5
+B :: 12, RSval: 6
+B :: 13, RSval: 7
+B :: 14, RSval: 8
+B :: 15, RSval: 9
+B :: 16, RSval: 10
+B :: 17, RSval: 11
+B :: 18, RSval: 12
+B :: 19, RSval: 13
+B :: 20, RSval: 14
+B :: 21, RSval: 15
+B :: 22, RSval: 16
+B :: 23, RSval: 17
+B :: 24, RSval: 18
+B :: 25, RSval: 19
+B :: 26, RSval: 20
+B :: 27, RSval: 21
+B :: 28, RSval: 22
+B :: 29, RSval: 23
 b, bal, jr 
 B BAL JR :: 6, RSval: 0
 B BAL JR :: 7, RSval: 1
@@ -244,141 +244,141 @@ bnez :: 14, RSval: 4095
 bnez :: 15, RSval: -1
 bnez :: 16, RSval: -1
 beql
-beql :: 9, RSval: 0, RTval: 1
-beql :: 2, RSval: 1, RTval: 1
-beql :: 3, RSval: -1, RTval: -1
-beql :: 12, RSval: -1, RTval: -2
-beql :: 13, RSval: -2, RTval: -1
+beql :: 6, RSval: 0, RTval: 1
+beql :: 5, RSval: 1, RTval: 1
 beql :: 6, RSval: -1, RTval: -1
-beql :: 7, RSval: 5, RTval: 5
-beql :: 16, RSval: -3, RTval: -4
-beql :: 9, RSval: 125, RTval: 125
-beql :: 10, RSval: -2147483648, RTval: -2147483648
-beql :: 19, RSval: -1, RTval: -2147483648
-beql :: 12, RSval: 598, RTval: 598
-beql :: 13, RSval: 85, RTval: 85
-beql :: 22, RSval: 4095, RTval: 221
-beql :: 23, RSval: -1, RTval: 5
-beql :: 16, RSval: -1, RTval: -1
+beql :: 9, RSval: -1, RTval: -2
+beql :: 10, RSval: -2, RTval: -1
+beql :: 9, RSval: -1, RTval: -1
+beql :: 10, RSval: 5, RTval: 5
+beql :: 13, RSval: -3, RTval: -4
+beql :: 12, RSval: 125, RTval: 125
+beql :: 13, RSval: -2147483648, RTval: -2147483648
+beql :: 16, RSval: -1, RTval: -2147483648
+beql :: 15, RSval: 598, RTval: 598
+beql :: 16, RSval: 85, RTval: 85
+beql :: 19, RSval: 4095, RTval: 221
+beql :: 20, RSval: -1, RTval: 5
+beql :: 19, RSval: -1, RTval: -1
 BGEZALL
-bgezall :: 1, RSval: 0
-bgezall :: 2, RSval: 1
+bgezall :: 4, RSval: 0
+bgezall :: 5, RSval: 1
+bgezall :: 8, RSval: -1
+bgezall :: 9, RSval: -1
+bgezall :: 10, RSval: -2
 bgezall :: 11, RSval: -1
-bgezall :: 12, RSval: -1
-bgezall :: 13, RSval: -2
-bgezall :: 14, RSval: -1
-bgezall :: 7, RSval: 5
-bgezall :: 16, RSval: -3
-bgezall :: 9, RSval: 125
-bgezall :: 18, RSval: -2147483648
-bgezall :: 19, RSval: -1
-bgezall :: 12, RSval: 598
-bgezall :: 13, RSval: 85
-bgezall :: 14, RSval: 4095
-bgezall :: 23, RSval: -1
-bgezall :: 24, RSval: -1
+bgezall :: 10, RSval: 5
+bgezall :: 13, RSval: -3
+bgezall :: 12, RSval: 125
+bgezall :: 15, RSval: -2147483648
+bgezall :: 16, RSval: -1
+bgezall :: 15, RSval: 598
+bgezall :: 16, RSval: 85
+bgezall :: 17, RSval: 4095
+bgezall :: 20, RSval: -1
+bgezall :: 21, RSval: -1
 BGEZL
-bgezl :: 1, RSval: 0
-bgezl :: 2, RSval: 1
+bgezl :: 4, RSval: 0
+bgezl :: 5, RSval: 1
+bgezl :: 8, RSval: -1
+bgezl :: 9, RSval: -1
+bgezl :: 10, RSval: -2
 bgezl :: 11, RSval: -1
-bgezl :: 12, RSval: -1
-bgezl :: 13, RSval: -2
-bgezl :: 14, RSval: -1
-bgezl :: 7, RSval: 5
-bgezl :: 16, RSval: -3
-bgezl :: 9, RSval: 125
-bgezl :: 18, RSval: -2147483648
-bgezl :: 19, RSval: -1
-bgezl :: 12, RSval: 598
-bgezl :: 13, RSval: 85
-bgezl :: 14, RSval: 4095
-bgezl :: 23, RSval: -1
-bgezl :: 24, RSval: -1
+bgezl :: 10, RSval: 5
+bgezl :: 13, RSval: -3
+bgezl :: 12, RSval: 125
+bgezl :: 15, RSval: -2147483648
+bgezl :: 16, RSval: -1
+bgezl :: 15, RSval: 598
+bgezl :: 16, RSval: 85
+bgezl :: 17, RSval: 4095
+bgezl :: 20, RSval: -1
+bgezl :: 21, RSval: -1
 BGTZL
-bgtzl :: 9, RSval: 0
-bgtzl :: 2, RSval: 1
+bgtzl :: 6, RSval: 0
+bgtzl :: 5, RSval: 1
+bgtzl :: 8, RSval: -1
+bgtzl :: 9, RSval: -1
+bgtzl :: 10, RSval: -2
 bgtzl :: 11, RSval: -1
-bgtzl :: 12, RSval: -1
-bgtzl :: 13, RSval: -2
-bgtzl :: 14, RSval: -1
-bgtzl :: 7, RSval: 5
-bgtzl :: 16, RSval: -3
-bgtzl :: 9, RSval: 125
-bgtzl :: 18, RSval: -2147483648
-bgtzl :: 19, RSval: -1
-bgtzl :: 12, RSval: 598
-bgtzl :: 13, RSval: 85
-bgtzl :: 14, RSval: 4095
-bgtzl :: 23, RSval: -1
-bgtzl :: 24, RSval: -1
+bgtzl :: 10, RSval: 5
+bgtzl :: 13, RSval: -3
+bgtzl :: 12, RSval: 125
+bgtzl :: 15, RSval: -2147483648
+bgtzl :: 16, RSval: -1
+bgtzl :: 15, RSval: 598
+bgtzl :: 16, RSval: 85
+bgtzl :: 17, RSval: 4095
+bgtzl :: 20, RSval: -1
+bgtzl :: 21, RSval: -1
 BLEZL
-blezl :: 1, RSval: 0
-blezl :: 10, RSval: 1
-blezl :: 3, RSval: -1
-blezl :: 4, RSval: -1
-blezl :: 5, RSval: -2
+blezl :: 4, RSval: 0
+blezl :: 7, RSval: 1
 blezl :: 6, RSval: -1
-blezl :: 15, RSval: 5
-blezl :: 8, RSval: -3
-blezl :: 17, RSval: 125
-blezl :: 10, RSval: -2147483648
-blezl :: 11, RSval: -1
-blezl :: 20, RSval: 598
-blezl :: 21, RSval: 85
-blezl :: 22, RSval: 4095
-blezl :: 15, RSval: -1
-blezl :: 16, RSval: -1
+blezl :: 7, RSval: -1
+blezl :: 8, RSval: -2
+blezl :: 9, RSval: -1
+blezl :: 12, RSval: 5
+blezl :: 11, RSval: -3
+blezl :: 14, RSval: 125
+blezl :: 13, RSval: -2147483648
+blezl :: 14, RSval: -1
+blezl :: 17, RSval: 598
+blezl :: 18, RSval: 85
+blezl :: 19, RSval: 4095
+blezl :: 18, RSval: -1
+blezl :: 19, RSval: -1
 BGEZALL
 bgezall :: 9, RSval: 0
 bgezall :: 10, RSval: 1
+bgezall :: 7, RSval: -1
+bgezall :: 8, RSval: -1
+bgezall :: 9, RSval: -2
 bgezall :: 10, RSval: -1
-bgezall :: 11, RSval: -1
-bgezall :: 12, RSval: -2
-bgezall :: 13, RSval: -1
 bgezall :: 15, RSval: 5
-bgezall :: 15, RSval: -3
+bgezall :: 12, RSval: -3
 bgezall :: 17, RSval: 125
-bgezall :: 17, RSval: -2147483648
-bgezall :: 18, RSval: -1
+bgezall :: 14, RSval: -2147483648
+bgezall :: 15, RSval: -1
 bgezall :: 20, RSval: 598
 bgezall :: 21, RSval: 85
 bgezall :: 22, RSval: 4095
-bgezall :: 22, RSval: -1
-bgezall :: 23, RSval: -1
+bgezall :: 19, RSval: -1
+bgezall :: 20, RSval: -1
 BLTZL
-bltzl :: 9, RSval: 0
-bltzl :: 10, RSval: 1
-bltzl :: 3, RSval: -1
-bltzl :: 4, RSval: -1
-bltzl :: 5, RSval: -2
+bltzl :: 6, RSval: 0
+bltzl :: 7, RSval: 1
 bltzl :: 6, RSval: -1
-bltzl :: 15, RSval: 5
-bltzl :: 8, RSval: -3
-bltzl :: 17, RSval: 125
-bltzl :: 10, RSval: -2147483648
-bltzl :: 11, RSval: -1
-bltzl :: 20, RSval: 598
-bltzl :: 21, RSval: 85
-bltzl :: 22, RSval: 4095
-bltzl :: 15, RSval: -1
-bltzl :: 16, RSval: -1
+bltzl :: 7, RSval: -1
+bltzl :: 8, RSval: -2
+bltzl :: 9, RSval: -1
+bltzl :: 12, RSval: 5
+bltzl :: 11, RSval: -3
+bltzl :: 14, RSval: 125
+bltzl :: 13, RSval: -2147483648
+bltzl :: 14, RSval: -1
+bltzl :: 17, RSval: 598
+bltzl :: 18, RSval: 85
+bltzl :: 19, RSval: 4095
+bltzl :: 18, RSval: -1
+bltzl :: 19, RSval: -1
 BNEL
-bnel :: 1, RSval: 0, RTval: 1
-bnel :: 10, RSval: 1, RTval: 1
+bnel :: 4, RSval: 0, RTval: 1
+bnel :: 7, RSval: 1, RTval: 1
+bnel :: 8, RSval: -1, RTval: -1
+bnel :: 7, RSval: -1, RTval: -2
+bnel :: 8, RSval: -2, RTval: -1
 bnel :: 11, RSval: -1, RTval: -1
-bnel :: 4, RSval: -1, RTval: -2
-bnel :: 5, RSval: -2, RTval: -1
-bnel :: 14, RSval: -1, RTval: -1
-bnel :: 15, RSval: 5, RTval: 5
-bnel :: 8, RSval: -3, RTval: -4
-bnel :: 17, RSval: 125, RTval: 125
-bnel :: 18, RSval: -2147483648, RTval: -2147483648
-bnel :: 11, RSval: -1, RTval: -2147483648
-bnel :: 20, RSval: 598, RTval: 598
-bnel :: 21, RSval: 85, RTval: 85
-bnel :: 14, RSval: 4095, RTval: 221
-bnel :: 15, RSval: -1, RTval: 5
-bnel :: 24, RSval: -1, RTval: -1
+bnel :: 12, RSval: 5, RTval: 5
+bnel :: 11, RSval: -3, RTval: -4
+bnel :: 14, RSval: 125, RTval: 125
+bnel :: 15, RSval: -2147483648, RTval: -2147483648
+bnel :: 14, RSval: -1, RTval: -2147483648
+bnel :: 17, RSval: 598, RTval: 598
+bnel :: 18, RSval: 85, RTval: 85
+bnel :: 17, RSval: 4095, RTval: 221
+bnel :: 18, RSval: -1, RTval: 5
+bnel :: 21, RSval: -1, RTval: -1
 j, jal, jr 
 J JAL JR :: 6, RSval: 0
 J JAL JR :: 7, RSval: 1

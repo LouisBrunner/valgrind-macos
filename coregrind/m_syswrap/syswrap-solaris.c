@@ -10953,7 +10953,7 @@ static SyscallTableEntry syscall_table[] = {
    SOLXY(__NR_auditsys,             sys_auditsys),              /* 186 */
    SOLX_(__NR_p_online,             sys_p_online),              /* 189 */
    SOLX_(__NR_sigqueue,             sys_sigqueue),              /* 190 */
-   SOLX_(__NR_clock_gettime,        sys_clock_gettime),         /* 191 */
+   SOLXY(__NR_clock_gettime,        sys_clock_gettime),         /* 191 */
    SOLX_(__NR_clock_settime,        sys_clock_settime),         /* 192 */
    SOLXY(__NR_clock_getres,         sys_clock_getres),          /* 193 */
    SOLXY(__NR_timer_create,         sys_timer_create),          /* 194 */

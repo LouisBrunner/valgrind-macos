@@ -22695,9 +22695,9 @@ Long dis_ESC_0F38 (
    case 0xF6: {
       /* 66 0F 38 F6 = ADCX r32/64(G), m32/64(E) */
       /* F3 0F 38 F6 = ADOX r32/64(G), m32/64(E) */
-      /* These were introduced in Broadwell.  Gate them on AVX2 so as to at
+      /* These were introduced in Broadwell.  Gate them on AVX so as to at
          least reject them on earlier guests.  Has no host requirements. */
-      if (have66noF2noF3(pfx) && (archinfo->hwcaps & VEX_HWCAPS_AMD64_AVX2)) {
+      if (have66noF2noF3(pfx) && (archinfo->hwcaps & VEX_HWCAPS_AMD64_AVX)) {
          if (sz == 2) {
             sz = 4; /* 66 prefix but operand size is 4/8 */
          }
@@ -22705,7 +22705,7 @@ Long dis_ESC_0F38 (
                                sz, delta, "adcx" );
          return delta;
       }
-      if (haveF3no66noF2(pfx) && (archinfo->hwcaps & VEX_HWCAPS_AMD64_AVX2)) {
+      if (haveF3no66noF2(pfx) && (archinfo->hwcaps & VEX_HWCAPS_AMD64_AVX)) {
          delta = dis_op2_E_G ( vbi, pfx, Iop_Add8, WithFlagOverX, True,
                                sz, delta, "adox" );
          return delta;

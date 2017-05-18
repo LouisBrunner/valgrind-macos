@@ -117,7 +117,7 @@ EXTRA_DIST = \
 	autogen.sh
 
 dist-hook: include/vgversion.h
-	cp -p include/vgversion.h $(distdir)/include/vgversion.h
+	cp -p include/vgversion.h $(distdir)/include/vgversion_dist.h
 
 dist_noinst_SCRIPTS = \
 	vg-in-place

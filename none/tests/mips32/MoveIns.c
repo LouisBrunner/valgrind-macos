@@ -354,7 +354,7 @@ int main()
    TESTINSNMOVEtd("mthc1 $v1, $f6",  12,  24,  f6, v1);
    TESTINSNMOVEtd("mthc1 $a0, $f8",  16,  32,  f8, a0);
    TESTINSNMOVEtd("mthc1 $a1, $f10", 20,  40, f10, a1);
-   TESTINSNMOVEtd("mthc1 $a2, $f12", 24,  48, f12, a1);
+   TESTINSNMOVEtd("mthc1 $a2, $f12", 24,  48, f12, a2);
    TESTINSNMOVEtd("mthc1 $a3, $f14", 28,  56, f14, a3);
    TESTINSNMOVEtd("mthc1 $s0, $f16", 32,  64, f16, s0);
    TESTINSNMOVEtd("mthc1 $s1, $f18", 36,  72, f18, s1);

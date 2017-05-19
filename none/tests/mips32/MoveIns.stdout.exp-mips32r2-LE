@@ -78,7 +78,7 @@ mthc1 $v0, $f4 :: out: bff0000007788000
 mthc1 $v1, $f6 :: out: 36500000
 mthc1 $a0, $f8 :: out: 3ff0000056789600
 mthc1 $a1, $f10 :: out: 78000000
-mthc1 $a2, $f12 :: out: 1252a2e2b
+mthc1 $a2, $f12 :: out: 252a2e2b252a2e2b
 mthc1 $a3, $f14 :: out: 262d2d2a962d2d2a
 mthc1 $s0, $f16 :: out: ffffffff87654321
 mthc1 $s1, $f18 :: out: ffffffff68466667

@@ -1511,7 +1511,7 @@ void ppMIPSInstr(const MIPSInstr * i, Bool mode64)
          return;
       }
       case Min_MfFCSR: {
-         vex_printf("ctc1 ");
+         vex_printf("cfc1 ");
          ppHRegMIPS(i->Min.MfFCSR.dst, mode64);
          vex_printf(", $31");
          return;

@@ -63,7 +63,9 @@
 #elif (__mips == 32)
 #define CLEAR_CALLER_SAVED_REGS                                              \
    do {                                                                      \
-      __asm__ __volatile__ ("move $1,  $0 \n\t"   /* at = 0 */               \
+      __asm__ __volatile__ (".set push    \n\t"                              \
+                            ".set noat    \n\t"                              \
+                            "move $1,  $0 \n\t"   /* at = 0 */               \
                             "move $2,  $0 \n\t"   /* v0 = 0 */               \
                             "move $3,  $0 \n\t"   /* v1 = 0 */               \
                             "move $4,  $0 \n\t"   /* a0 = 0 */               \
@@ -80,6 +82,7 @@
                             "move $15, $0 \n\t"   /* t7 = 0 */               \
                             "move $24, $0 \n\t"   /* t8 = 0 */               \
                             "move $25, $0 \n\t"   /* t9 = 0 */               \
+                            ".set pop     \n\t"                              \
                             : : : "$1", "$2", "$3", "$4", "$5", "$6", "$7",  \
                                   "$8", "$9", "$10", "$11", "$12", "$13",    \
                                   "$14", "$15", "$24", "$25");               \
@@ -87,7 +90,9 @@
 #elif (__mips == 64)
 #define CLEAR_CALLER_SAVED_REGS                                              \
    do {                                                                      \
-      __asm__ __volatile__ ("move $1,  $0 \n\t"  /* at = 0 */                \
+      __asm__ __volatile__ (".set push    \n\t"                              \
+                            ".set noat    \n\t"                              \
+                            "move $1,  $0 \n\t"  /* at = 0 */                \
                             "move $2,  $0 \n\t"  /* v0 = 0 */                \
                             "move $3,  $0 \n\t"  /* v1 = 0 */                \
                             "move $4,  $0 \n\t"  /* a0 = 0 */                \
@@ -104,6 +109,7 @@
                             "move $15, $0 \n\t"  /* t3 = 0 */                \
                             "move $24, $0 \n\t"  /* t8 = 0 */                \
                             "move $25, $0 \n\t"  /* t9 = 0 */                \
+                            ".set pop     \n\t"                              \
                             : : : "$1", "$2", "$3", "$4", "$5", "$6", "$7",  \
                                   "$8", "$9", "$10", "$11", "$12", "$13",    \
                                   "$14", "$15", "$24", "$25");               \

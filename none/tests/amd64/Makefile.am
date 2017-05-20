@@ -111,8 +111,10 @@ check_PROGRAMS = \
 if BUILD_ADDR32_TESTS
  check_PROGRAMS += asorep
 endif
-if BUILD_AVX_TESTS
+if BUILD_ADX_TESTS
   check_PROGRAMS += fb_test_amd64
+endif
+if BUILD_AVX_TESTS
 if BUILD_VPCLMULQDQ_TESTS
   check_PROGRAMS += avx-1
 endif

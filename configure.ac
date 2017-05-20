@@ -2661,6 +2661,26 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL(BUILD_MPX_TESTS, test x$ac_have_as_mpx = xyes)
 
 
+# does the amd64 assembler understand ADX instructions?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_ADX_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if amd64 assembler knows the ADX instructions])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  do {
+    asm ("adcxq %r14,%r8");
+  } while (0)
+]])], [
+ac_have_as_adx=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_adx=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_ADX_TESTS, test x$ac_have_as_adx = xyes)
+
+
 # Does the C compiler support the "ifunc" attribute
 # Note, this doesn't generate a C-level symbol.  It generates a
 # automake-level symbol (BUILD_IFUNC_TESTS), used in test Makefile.am's

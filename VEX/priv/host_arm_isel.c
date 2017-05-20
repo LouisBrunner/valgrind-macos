@@ -792,7 +792,7 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    /* Do final checks, set the return values, and generate the call
       instruction proper. */
    vassert(nGSPTRs == 0 || nGSPTRs == 1);
-   vassert(nVECRETs == (retTy == Ity_V128 || retTy == Ity_V256) ? 1 : 0);
+   vassert(nVECRETs == ((retTy == Ity_V128 || retTy == Ity_V256) ? 1 : 0));
    vassert(*stackAdjustAfterCall == 0);
    vassert(is_RetLoc_INVALID(*retloc));
    switch (retTy) {

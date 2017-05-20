@@ -1098,7 +1098,7 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
    }
    /* -- Search for a recently freed block which might bracket it. -- */
    mc = MC_(get_freed_block_bracketting)( a );
-   if (mc && !MC_(is_mempool_block)(mc)) {
+   if (mc) {
       ai->tag = Addr_Block;
       ai->Addr.Block.block_kind = Block_Freed;
       ai->Addr.Block.block_desc = "block";

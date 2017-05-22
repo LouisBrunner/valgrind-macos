@@ -273,6 +273,7 @@ DECL_TEMPLATE(linux, sys_stime);  /* maybe generic?  I'm not sure */
 
 // Linux specific (kernel modules)
 DECL_TEMPLATE(linux, sys_init_module);
+DECL_TEMPLATE(linux, sys_finit_module);
 DECL_TEMPLATE(linux, sys_delete_module);
 
 // Linux-specific (oprofile-related)

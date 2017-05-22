@@ -5722,6 +5722,17 @@ PRE(sys_init_module)
    PRE_MEM_RASCIIZ( "init_module(uargs)", ARG3 );
 }
 
+PRE(sys_finit_module)
+{
+   *flags |= SfMayBlock;
+
+   PRINT("sys_finit_module ( %lx, %#lx(\"%s\"), %lx )",
+         ARG1, ARG2, (HChar*)ARG2, ARG3);
+   PRE_REG_READ3(long, "finit_module",
+                 int, fd, const char *, params, int, flags);
+   PRE_MEM_RASCIIZ("finit_module(params)", ARG2);
+}
+
 PRE(sys_delete_module)
 {
    *flags |= SfMayBlock;

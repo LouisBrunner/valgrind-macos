@@ -284,7 +284,7 @@ static void set_MIPS_rounding_mode(ISelEnv * env, IRExpr * mode)
    addInstr(env, MIPSInstr_Shft(Mshft_SLL, True, tmp, irrm,
                                 MIPSRH_Imm(False, 1)));
    addInstr(env, MIPSInstr_Alu(Malu_XOR, tmp, irrm, MIPSRH_Reg(tmp)));
-   addInstr(env, MIPSInstr_Alu(Malu_AND, irrm, tmp, MIPSRH_Imm(False, 3)));
+   addInstr(env, MIPSInstr_Alu(Malu_AND, tmp, tmp, MIPSRH_Imm(False, 3)));
    /* save old value of FCSR */
    addInstr(env, MIPSInstr_MfFCSR(fcsr_old));
    sub_from_sp(env, 8); /*  Move SP down 8 bytes */
@@ -294,7 +294,7 @@ static void set_MIPS_rounding_mode(ISelEnv * env, IRExpr * mode)
    addInstr(env, MIPSInstr_Store(4, am_addr, fcsr_old, mode64));
 
    /* set new value of FCSR */
-   addInstr(env, MIPSInstr_MtFCSR(irrm));
+   addInstr(env, MIPSInstr_MtFCSR(tmp));
 }
 
 static void set_MIPS_rounding_default(ISelEnv * env)

@@ -2127,6 +2127,39 @@ need to use them.</para>
           functionality with completely proprietary semantics may report
           large number of false positives.</para>
         </listitem>
+        <listitem>
+          <para><option>fallback-llsc: </option>(MIPS and ARM64 only): Enables
+            an alternative implementation of Load-Linked (LL) and
+            Store-Conditional (SC) instructions.  The standard implementation
+            gives more correct behaviour, but can cause indefinite looping on
+            certain processor implementations that are intolerant of extra
+            memory references between LL and SC.  So far this is known only to
+            happen on Cavium 3 cores.
+
+            You should not need to use this flag, since the relevant cores are
+            detected at startup and the alternative implementation is
+            automatically enabled if necessary.  There is no equivalent
+            anti-flag: you cannot force-disable the alternative
+            implementation, if it is automatically enabled.
+
+            The underlying problem exists because the "standard"
+            implementation of LL and SC is done by copying through LL and SC
+            instructions into the instrumented code.  However, tools may
+            insert extra instrumentation memory references in between the LL
+            and SC instructions.  These memory references are not present in
+            the original uninstrumented code, and their presence in the
+            instrumented code can cause the SC instructions to persistently
+            fail, leading to indefinite looping in LL-SC blocks.
+
+            The alternative implementation gives correct behaviour of LL and
+            SC instructions between threads in a process, up to and including
+            the ABA scenario.  It also gives correct behaviour between a
+            Valgrinded thread and a non-Valgrinded thread running in a
+            different process, that communicate via shared memory, but only up
+            to and including correct CAS behaviour -- in this case the ABA
+            scenario may not be correctly handled.
+          </para>
+        </listitem>
       </itemizedlist>
     </listitem>
   </varlistentry>

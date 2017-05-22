@@ -66,20 +66,20 @@ extern void VG_(init_tt_tc)       ( void );
 /* Limits for number of sectors the TC is divided into.  If you need a larger
    overall translation cache, increase MAX_N_SECTORS. */ 
 #define MIN_N_SECTORS 2
-#define MAX_N_SECTORS 24
+#define MAX_N_SECTORS 48
 
 /* Default for the nr of sectors, if not overridden by command line.
    On Android, space is limited, so try to get by with fewer sectors.
-   On other platforms we can go to town.  16 sectors gives theoretical
-   capacity of about 440MB of JITted code in 1.05 million translations
+   On other platforms we can go to town.  32 sectors gives theoretical
+   capacity of about 880MB of JITted code in 2.1 million translations
    (realistically, about 2/3 of that) for Memcheck. */
 #if defined(VGPV_arm_linux_android) \
     || defined(VGPV_x86_linux_android) \
     || defined(VGPV_mips32_linux_android) \
     || defined(VGPV_arm64_linux_android)
-# define N_SECTORS_DEFAULT 6
+# define N_SECTORS_DEFAULT 12
 #else
-# define N_SECTORS_DEFAULT 16
+# define N_SECTORS_DEFAULT 32
 #endif
 
 extern
@@ -116,6 +116,7 @@ extern void VG_(discard_translations) ( Addr  start, ULong range,
 extern void VG_(print_tt_tc_stats) ( void );
 
 extern UInt VG_(get_bbs_translated) ( void );
+extern UInt VG_(get_bbs_discarded_or_dumped) ( void );
 
 /* Add to / search the auxiliary, small, unredirected translation
    table. */

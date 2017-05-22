@@ -3385,18 +3385,17 @@ static HReg iselFltExpr_wrk(ISelEnv * env, IRExpr * e)
 
    /* --------- ITE --------- */
    if (e->tag == Iex_ITE) {
-      if (ty == Ity_F64
-          && typeOfIRExpr(env->type_env, e->Iex.ITE.cond) == Ity_I1) {
-         vassert(mode64);
-         HReg r0 = iselFltExpr(env, e->Iex.ITE.iffalse);
-         HReg r1 = iselFltExpr(env, e->Iex.ITE.iftrue);
-         HReg r_cond = iselWordExpr_R(env, e->Iex.ITE.cond);
-         HReg r_dst = newVRegF(env);
-         addInstr(env, MIPSInstr_FpUnary(Mfp_MOVD, r_dst, r0));
-         addInstr(env, MIPSInstr_MoveCond(MFpMoveCond_movnd, r_dst, r1,
-                                            r_cond));
-         return r_dst;
-      }
+      vassert(typeOfIRExpr(env->type_env, e->Iex.ITE.cond) == Ity_I1);
+      HReg r0 = iselFltExpr(env, e->Iex.ITE.iffalse);
+      HReg r1 = iselFltExpr(env, e->Iex.ITE.iftrue);
+      HReg r_cond = iselWordExpr_R(env, e->Iex.ITE.cond);
+      HReg r_dst = newVRegF(env);
+      addInstr(env, MIPSInstr_FpUnary((ty == Ity_F64) ? Mfp_MOVD : Mfp_MOVS,
+                                      r_dst, r0));
+      addInstr(env, MIPSInstr_MoveCond((ty == Ity_F64) ? MFpMoveCond_movnd :
+                                                         MFpMoveCond_movns,
+                                       r_dst, r1, r_cond));
+      return r_dst;
    }
 
    vex_printf("iselFltExpr(mips): No such tag(0x%x)\n", e->tag);

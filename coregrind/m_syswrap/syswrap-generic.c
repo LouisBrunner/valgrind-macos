@@ -1322,16 +1322,29 @@ static Addr do_brk ( Addr newbrk, ThreadId tid )
    vg_assert(delta > 0);
    vg_assert(VG_IS_PAGE_ALIGNED(delta));
    
-   Bool overflow;
+   Bool overflow = False;
    if (! VG_(am_extend_into_adjacent_reservation_client)( aseg->start, delta,
                                                           &overflow)) {
-      if (overflow)
-         VG_(umsg)("brk segment overflow in thread #%u: can't grow to %#lx\n",
-                   tid, newbrkP);
-      else
-         VG_(umsg)("Cannot map memory to grow brk segment in thread #%u "
-                   "to %#lx\n", tid, newbrkP);
-      VG_(umsg)("(see section Limitations in user manual)\n");
+      if (overflow) {
+         static Bool alreadyComplained = False;
+         if (!alreadyComplained) {
+            alreadyComplained = True;
+            if (VG_(clo_verbosity) > 0) {
+               VG_(umsg)("brk segment overflow in thread #%u: "
+                         "can't grow to %#lx\n",
+                         tid, newbrkP);
+               VG_(umsg)("(see section Limitations in user manual)\n");
+               VG_(umsg)("NOTE: further instances of this message "
+                         "will not be shown\n");
+            }
+         }
+      } else {
+         if (VG_(clo_verbosity) > 0) {
+            VG_(umsg)("Cannot map memory to grow brk segment in thread #%u "
+                      "to %#lx\n", tid, newbrkP);
+            VG_(umsg)("(see section Limitations in user manual)\n");
+         }
+      }
       goto bad;
    }
 

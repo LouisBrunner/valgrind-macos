@@ -378,8 +378,8 @@ static Int prepare_sink_socket(const HChar *clo_fname_unexpanded,
       VG_(umsg)("Failed to connect to %slogging server '%s'.\n"
                 "%s will be sent to stderr instead.\n",
                 (is_xml) ? "XML " : "",
-                (is_xml) ? "XML output" : "Logging messages",
-                clo_fname_unexpanded); 
+                clo_fname_unexpanded,
+                (is_xml) ? "XML output" : "Logging messages");
       /* We don't change anything here. */
       vg_assert(sink->fd == 2);
       vg_assert(sink->type == VgLogTo_Fd);

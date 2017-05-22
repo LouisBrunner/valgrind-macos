@@ -21153,10 +21153,10 @@ DisResult disInstr_THUMB_WRK (
           && rD != 15 && rN == 13 && imm5 <= 31 && how == 0) {
          valid = True;
       }
-      /* also allow "sub.w reg, sp, reg   lsl #N for N=0,1,2 or 3
+      /* also allow "sub.w reg, sp, reg   lsl #N for N=0 .. 5
          (T1) "SUB (SP minus register) */
       if (!valid && INSN0(8,5) == BITS4(1,1,0,1) // sub
-          && rD != 15 && rN == 13 && imm5 <= 3 && how == 0) {
+          && rD != 15 && rN == 13 && imm5 <= 5 && how == 0) {
          valid = True;
       }
       if (valid) {

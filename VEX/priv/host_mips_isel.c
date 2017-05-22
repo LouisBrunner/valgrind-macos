@@ -2945,6 +2945,19 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
             return;
          }
 
+         case Iop_Not64: {
+            HReg tLo = newVRegI(env);
+            HReg tHi = newVRegI(env);
+            iselInt64Expr(&tHi, &tLo, env, e->Iex.Unop.arg);
+            addInstr(env, MIPSInstr_Alu(Malu_NOR, tLo, tLo, MIPSRH_Reg(tLo)));
+            addInstr(env, MIPSInstr_Alu(Malu_NOR, tHi, tHi, MIPSRH_Reg(tHi)));
+
+            *rHi = tHi;
+            *rLo = tLo;
+
+            return;
+         }
+
          default:
             vex_printf("UNARY: No such op: ");
             ppIROp(e->Iex.Unop.op);

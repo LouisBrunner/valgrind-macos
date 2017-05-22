@@ -1407,7 +1407,8 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
 #  if !defined(VGO_darwin)
    if (0 == VG_(strcmp)(VG_(clo_toolname), "memcheck")
        || 0 == VG_(strcmp)(VG_(clo_toolname), "helgrind")
-       || 0 == VG_(strcmp)(VG_(clo_toolname), "drd")) {
+       || 0 == VG_(strcmp)(VG_(clo_toolname), "drd")
+       || 0 == VG_(strcmp)(VG_(clo_toolname), "exp-dhat")) {
       /* Change the default setting.  Later on (just below)
          main_process_cmd_line_options should pick up any
          user-supplied setting for it and will override the default

@@ -1,8 +1,5 @@
 
 brk segment overflow in thread #1: can't grow to 0x........
 (see section Limitations in user manual)
-brk segment overflow in thread #1: can't grow to 0x........
-(see section Limitations in user manual)
-brk segment overflow in thread #1: can't grow to 0x........
-(see section Limitations in user manual)
+NOTE: further instances of this message will not be shown
 

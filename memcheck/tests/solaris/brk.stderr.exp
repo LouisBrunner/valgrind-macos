@@ -1,3 +1,4 @@
+
 Invalid read of size 1
    at 0x........: test_begin (brk.c:19)
    by 0x........: main (brk.c:78)
@@ -8,4 +9,15 @@ Invalid read of size 1
    by 0x........: main (brk.c:78)
  Address 0x........ is 0 bytes after the brk data segment limit 0x........
 
-brk segment overflow in thread #1: can't grow to 0x........
+brk segment overflow in thread #1: can not grow to 0x........
+(See section Limitations in the user manual.)
+NOTE: further instances of this message will not be shown.
+
+HEAP SUMMARY:
+    in use at exit: 0 bytes in 0 blocks
+  total heap usage: 0 allocs, 0 frees, 0 bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
+
+For counts of detected and suppressed errors, rerun with: -v
+ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

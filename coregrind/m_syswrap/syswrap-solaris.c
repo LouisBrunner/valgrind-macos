@@ -1966,6 +1966,24 @@ void VG_(track_client_dataseg)(ThreadId tid)
    VG_TRACK(die_mem_brk, VG_(brk_base), seg->end + 1 - VG_(brk_base));
 }
 
+static void PRINTF_CHECK(1, 2)
+possibly_complain_brk(const HChar *format, ...)
+{
+   static Bool alreadyComplained = False;
+   if (!alreadyComplained) {
+      alreadyComplained = True;
+      if (VG_(clo_verbosity) > 0) {
+         va_list vargs;
+         va_start(vargs, format);
+         VG_(vmessage)(Vg_UserMsg, format, vargs);
+         va_end(vargs);
+         VG_(umsg)("(See section Limitations in the user manual.)\n");
+         VG_(umsg)("NOTE: further instances of this message will not be "
+                   "shown.\n");
+      }
+   }
+}
+
 PRE(sys_brk)
 {
    /* unsigned long brk(caddr_t end_data_segment); */
@@ -2013,8 +2031,8 @@ PRE(sys_brk)
       vg_assert(VG_(brk_base) == VG_(brk_limit));
 
       if (!VG_(setup_client_dataseg)()) {
-         VG_(umsg)("Cannot map memory to initialize brk segment in thread #%d "
-                   "at %#lx\n", tid, VG_(brk_base));
+         possibly_complain_brk("Cannot map memory to initialize brk segment in "
+                               "thread #%d at %#lx\n", tid, VG_(brk_base));
          SET_STATUS_Failure(VKI_ENOMEM);
          return;
       }
@@ -2156,8 +2174,8 @@ PRE(sys_brk)
          Bool ok = VG_(am_create_reservation)(resvn_start, resvn_size, SmLower,
                                               anon_size);
          if (!ok) {
-            VG_(umsg)("brk segment overflow in thread #%d: can't grow "
-                      "to %#lx\n", tid, new_brk);
+            possibly_complain_brk("brk segment overflow in thread #%d: can not "
+                                  "grow to %#lx\n", tid, new_brk);
             SET_STATUS_Failure(VKI_ENOMEM);
             return;
          }
@@ -2170,8 +2188,8 @@ PRE(sys_brk)
          /* Address space manager will merge old and new data segments. */
          sres = VG_(am_mmap_anon_fixed_client)(anon_start, anon_size, prot);
          if (sr_isError(sres)) {
-            VG_(umsg)("Cannot map memory to grow brk segment in thread #%d "
-                      "to %#lx\n", tid, new_brk);
+            possibly_complain_brk("Cannot map memory to grow brk segment in "
+                                  "thread #%d to %#lx\n", tid, new_brk);
             SET_STATUS_Failure(VKI_ENOMEM);
             return;
          }

@@ -110,7 +110,7 @@ usage: valgrind [options] prog-and-args
            android-gpu-sgx5xx android-gpu-adreno3xx none
     --merge-recursive-frames=<number>  merge frames between identical
            program counters in max <number> frames) [0]
-    --num-transtab-sectors=<number> size of translated code cache [16]
+    --num-transtab-sectors=<number> size of translated code cache [32]
            more sectors may increase performance, but use more memory.
     --avg-transtab-entry-size=<number> avg size in bytes of a translated
            basic block [0, meaning use tool provided default]

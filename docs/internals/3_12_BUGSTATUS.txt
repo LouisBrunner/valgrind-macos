@@ -16,8 +16,6 @@ that didn't get fixed in 3.12.  These are marked "(carried over)".
 373166  vex amd64->IR: 0xFF 0xFF 0x48 0x85 0xC0 0x74 0x8 0x4D 0x89 0xE7
 	[not clear what's going on here]
 
-379525  Support more x86 nop opcodes
-
 AMD XOP-prefixed insns:
 
 (carried over)
@@ -515,9 +513,6 @@ Should be fixed.  Try again with ./mach gtest
 378892  Unhandled amd64-linux syscall: 324
 
 *
-379525  Support more x86 nop opcodes
-
-*
 n-i-bz  Remove limit on strd's negative immediates
         [dev@, Michael Daniels, 19 Nov 2015, easy fix, should land]
 
@@ -526,11 +521,3 @@ n-i-bz  Remove limit on strd's negative immediates
 ========================================================================
 ========================================================================
 
-. - increase usable memory?
-. - get rid of repeated brk message
-. - progress stuff? NO
-. - resize translation caches
-. - expensive interpretation by default? NO
-. - turn on inline debuginfo reading for more tools
-. - make fair-sched the default on Linux
-. - reduce PAUSE hold length

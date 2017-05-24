@@ -37,7 +37,7 @@ then
     if grep -q unknown include/vgversion.h.tmp ||
        cmp -s include/vgversion.h include/vgversion.h.tmp
     then
-        rm include/vgversion.h.tmp
+        rm -f include/vgversion.h.tmp
     else
         mv include/vgversion.h.tmp include/vgversion.h
     fi

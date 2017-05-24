@@ -51,9 +51,6 @@ n-i-bz  Remove limit on strd's negative immediates
 
 373990  Potential shift left overflow in guest_arm_toIR.c
 
-369459  valgrind on arm64 violates the ARMv8 spec (ldxr/stxr)
-	[fixed with --sim-hints=fallback-llsc?]
-
 369509  ARMv8.1 LSE instructions are not supported
 
 369723  __builtin_longjmp not supported in clang/llvm on Android arm64 target
@@ -65,8 +62,6 @@ n-i-bz  Remove limit on strd's negative immediates
 378249  Valgrind Crashed on raspberian armv71 instrtuction set
 
 === VEX/arm64 ==========================================================
-
-369459  valgrind on arm64 violates the ARMv8 spec (ldxr/stxr)
 
 369509  ARMv8.1 LSE instructions are not supported
 
@@ -219,11 +214,6 @@ n-i-bz  Remove limit on strd's negative immediates
 
 (carried over)
 366817  VALGRIND_MEMPOOL_CHANGE has a performance bug
-
-(carried over)
-368507  valgrind throws std::bad_alloc on memory allocations larger
-        than 34255421416 bytes
-        (increase usable address space post release, on trunk)
 
 371989  PCMPISTRM $0x72 validity bit propagation is imprecise
 
@@ -409,8 +399,6 @@ n-i-bz  Remove limit on strd's negative immediates
 (carried over)
 362680  --error-exitcode not honored when file descriptor leaks are found
 
-374963  increase valgrind's load address to prevent mmap failure
-
 377006  valgrind/memcheck segfaults under certain kernel versions (amd64)
         but not others.
 
@@ -467,23 +455,6 @@ Wed 10 May 10:24:16 CEST 2017
 Should fix for 3.13:
 ** = higher priority, do these first
 *  = lower priority, do these if time available
-
-**
-352364  ppc64: --expensive-definedness-checks=yes is not quite working here
-
-**
-(carried over)
-368507  valgrind throws std::bad_alloc on memory allocations larger
-        than 34255421416 bytes
-        (increase usable address space post release, on trunk)
-
-**
-369459  valgrind on arm64 violates the ARMv8 spec (ldxr/stxr)
-        (is mostly fixed)
-
-**
-374963  increase valgrind's load address to prevent mmap failure
-	(has a patch with a change to 0x5800'0000)
 
 **
 n-i-bz  major perf problems w/ stack registration + stack recycling
@@ -555,8 +526,11 @@ n-i-bz  Remove limit on strd's negative immediates
 ========================================================================
 ========================================================================
 
-- increase usable memory?
-- get rid of repeated brk message
-- progress stuff?
-- resize translation caches
-- expensive interpretation by default?
+. - increase usable memory?
+. - get rid of repeated brk message
+. - progress stuff? NO
+. - resize translation caches
+. - expensive interpretation by default? NO
+. - turn on inline debuginfo reading for more tools
+. - make fair-sched the default on Linux
+. - reduce PAUSE hold length

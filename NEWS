@@ -117,6 +117,7 @@ where XXXXXX is the bug number as listed below.
 362223  assertion failed when .valgrindrc is a directory instead of a file
 367543  bt/btc/btr/bts x86/x86_64 instructions are poorly-handled wrt flags
 367942  Segfault vgPlain_do_sys_sigaction (m_signals.c:1138)
+368507  can't malloc chunks larger than about 34GB
 368529  Android arm target link error, missing atexit and pthread_atfork
 368863  WARNING: unhandled arm64-linux syscall: 100 (get_robust_list)
 368865  WARNING: unhandled arm64-linux syscall: 272 (kcmp)
@@ -127,6 +128,7 @@ where XXXXXX is the bug number as listed below.
 368924  WARNING: unhandled arm64-linux syscall: 84 (sync_file_range)
 368925  WARNING: unhandled arm64-linux syscall: 130 (tkill)
 368926  WARNING: unhandled arm64-linux syscall: 97 (unshare)
+369459  valgrind on arm64 violates the ARMv8 spec (ldxr/stxr)
 370028  Reduce the number of compiler warnings on MIPS platforms
 370635  arm64 missing syscall getcpu
 371225  Fix order of timer_{gettime,getoverrun,settime} syscalls on arm64
@@ -198,8 +200,11 @@ where XXXXXX is the bug number as listed below.
 379838  disAMode(x86): not an addr!
 379703  PC ISA 3.0 fixes: stxvx, stxv, xscmpexpdp instructions, expected output
         update.
+379890  arm: unhandled instruction: 0xEBAD 0x1B05 (sub.w fp, sp, r5, lsl #4)
 379895  clock_gettime does not execute POST syscall wrapper
 379925  PPC64, mtffs does not set the FPCC and C bits in the FPSCR register correctly
+379966  WARNING: unhandled amd64-linux syscall: 313 (finit_module)
+
 
 Release 3.12.0 (20 October 2016)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

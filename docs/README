@@ -81,6 +81,24 @@ Notes on building PDF / PS documents
 Below are random notes and recollections about how to build PDF / PS
 documents from the XML source at various times on various Linux distros.
 
+Notes [May 2017]
+----------------
+Fedora 25: the "Notes [Sept 2015]" are still valid.  But to summarise,
+two steps are necessary:
+
+(1) install packages as listed below
+(2) apply Mark's epstopdf-base.sty hack as documented in "Notes [Mar 2015]"
+
+Packages to install:
+
+  sudo dnf install texlive-xmltex texlive-xmltex-bin texlive-xmltex-doc \
+    texlive dblatex texlive-xmltex docbook-style-xsl docbook-dtds \
+    docbook-style-xsl.noarch docbook-simple.noarch docbook-simple.noarch \
+    docbook-slides.noarch docbook-style-dsssl.noarch docbook-utils.noarch \
+    docbook-utils-pdf.noarch docbook5-schemas.noarch \
+    docbook5-style-xsl.noarch passivetex
+
+
 Notes [Sept 2015]
 -----------------
 Fedora 21 and 22: Had mucho trouble with building the print docs on

@@ -21830,13 +21830,22 @@ Long dis_ESC_0F (
       }
       return delta;
 
+   case 0x19:
+   case 0x1C:
+   case 0x1D:
+   case 0x1E:
    case 0x1F:
-      if (haveF2orF3(pfx)) goto decode_failure;
+      // Intel CET instructions can have any prefixes before NOPs
+      // and can use any ModRM, SIB and disp
       modrm = getUChar(delta);
-      if (epartIsReg(modrm)) goto decode_failure;
-      addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-      delta += alen;
-      DIP("nop%c %s\n", nameISize(sz), dis_buf);
+      if (epartIsReg(modrm)) {
+         delta += 1;
+         DIP("nop%c\n", nameISize(sz));
+      } else {
+         addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+         delta += alen;
+         DIP("nop%c %s\n", nameISize(sz), dis_buf);
+      }
       return delta;
 
    case 0x31: { /* RDTSC */

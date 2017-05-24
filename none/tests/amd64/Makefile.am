@@ -38,6 +38,7 @@ EXTRA_DIST = \
 	bug132918.stdout.exp-older-glibc \
 	bug156404-amd64.vgtest bug156404-amd64.stdout.exp \
 	bug156404-amd64.stderr.exp \
+	cet_nops.vgtest cet_nops.stdout.exp cet_nops.stderr.exp \
 	clc.vgtest clc.stdout.exp clc.stderr.exp \
 	crc32.vgtest crc32.stdout.exp crc32.stderr.exp \
 	cmpxchg.vgtest cmpxchg.stdout.exp cmpxchg.stderr.exp \
@@ -96,6 +97,7 @@ check_PROGRAMS = \
 	amd64locked \
 	bt_flags \
 	bug127521-64 bug132813-amd64 bug132918 bug137714-amd64 \
+	cet_nops \
 	clc \
 	cmpxchg \
 	getseg \

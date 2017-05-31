@@ -2086,7 +2086,8 @@ need to use them.</para>
         </listitem>
         <listitem>
           <para><option>no-nptl-pthread-stackcache: </option>
-            This hint is only relevant when running Valgrind on Linux.</para>
+            This hint is only relevant when running Valgrind on Linux;
+            it is ignored on Solaris and Mac OS X.</para>
 
           <para>The GNU glibc pthread library
             (<function>libpthread.so</function>), which is used by

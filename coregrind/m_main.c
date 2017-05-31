@@ -434,6 +434,11 @@ static void early_process_cmd_line_options ( /*OUT*/Int* need_help )
 
    /* For convenience */
    VG_N_THREADS = VG_(clo_max_threads);
+
+#  if defined(VGO_solaris) || defined(VGO_darwin)
+   /* Sim hint no-nptl-pthread-stackcache should be ignored. */
+   VG_(clo_sim_hints) &= ~SimHint2S(SimHint_no_nptl_pthread_stackcache);
+#  endif
 }
 
 /* The main processing for command line options.  See comments above

@@ -8231,8 +8231,58 @@ DisResult disInstr_X86_WRK (
             goto decode_success;
          }
       }
-   }       
 
+      // Intel CET requires the following opcodes to be treated as NOPs
+      // with any prefix and ModRM, SIB and disp combination:
+      // "0F 19", "0F 1C", "0F 1D", "0F 1E", "0F 1F"
+      UInt opcode_index = 0;
+      // Skip any prefix combination
+      UInt addr_override = 0;
+      UInt temp_sz = 4;
+      Bool is_prefix = True;
+      while (is_prefix) {
+         switch (code[opcode_index]) {
+            case 0x66:
+               temp_sz = 2;
+               opcode_index++;
+               break;
+            case 0x67:
+               addr_override = 1;
+               opcode_index++;
+               break;
+            case 0x26: case 0x3E: // if we set segment override here,
+            case 0x64: case 0x65: //  disAMode segfaults
+            case 0x2E: case 0x36:
+            case 0xF0: case 0xF2: case 0xF3:
+               opcode_index++;
+               break;
+            default: 
+               is_prefix = False;
+         }
+      }
+      // Check the opcode
+      if (code[opcode_index] == 0x0F) {
+         switch (code[opcode_index+1]) {
+            case 0x19:
+            case 0x1C: case 0x1D:
+            case 0x1E: case 0x1F:
+               delta += opcode_index+2;
+               modrm = getUChar(delta);
+               if (epartIsReg(modrm)) {
+                  delta += 1;
+                  DIP("nop%c\n", nameISize(temp_sz));
+               }
+               else {
+                  addr = disAMode(&alen, 0/*"no sorb"*/, delta, dis_buf);
+                  delta += alen - addr_override;
+                  DIP("nop%c %s\n", nameISize(temp_sz), dis_buf);
+               }
+               goto decode_success;
+            default:
+               break;
+         }
+      }
+   }
    /* Normal instruction handling starts here. */
 
    /* Deal with some but not all prefixes: 

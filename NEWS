@@ -1,46 +1,86 @@
-Release 3.13.0 (?? ????????? 201?)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
-Release 3.13.0 is under development, not yet released.
+Release 3.13.0 (?? June 2017)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-3.13.0 is a feature release with many improvements and the usual
-collection of bug fixes.
+3.13.0 is a feature release with many improvements and the usual collection of
+bug fixes.
 
-This release supports X86/Linux, AMD64/Linux, ARM32/Linux,
-ARM64/Linux, PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux,
-MIPS32/Linux, MIPS64/Linux, ARM/Android, ARM64/Android,
-MIPS32/Android, X86/Android, X86/Solaris, AMD64/Solaris, X86/MacOSX
-10.10 and AMD64/MacOSX 10.10.  There is also preliminary support for
-X86/MacOSX 10.11/12, and AMD64/MacOSX 10.11/12.
+This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
+PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,
+MIPS64/Linux, ARM/Android, ARM64/Android, MIPS32/Android, X86/Android,
+X86/Solaris, AMD64/Solaris and AMD64/MacOSX 10.12.
 
-* The 'xtree concept' was added in 3.13:
-   An xtree is a tree of stacktraces with data associated to the stacktraces.
-   This xtree is used by various tools (memcheck, helgrind, massif) to
-   report the heap consumption of your program. The xtree reporting
-   is controlled by the new options --xtree-memory=none|allocs|full and
-   --xtree-memory-file=<file>.
-   An heap xtree memory profiling can also be produced on demand using
-   the gdbserver monitor command 'xtmemory [<filename>]>'.
-   The xtree can be output in 2 formats: 'callgrind format'
-   and 'massif format. The existing visualisers for these formats (e.g.
-   callgrind_annotate, kcachegrind, ms_print) can be used to visualise
-   and analyse these reports.
-   Memcheck can also produce leak reports in an xtree callgrind format.
-   For more details, read the user manual.
+* ==================== CORE CHANGES ===================
+
+* The translation cache size has been increased to keep up with the demands of
+  large applications.  The maximum number of sectors has increased from 24 to
+  48.  The default number of sectors has increased from 16 to 32 on all
+  targets except Android, where the increase is from 6 to 12.
+
+* The amount of memory that Valgrind can use has been increased from 64GB to
+  128GB.  In particular this means your application can allocate up to about
+  60GB when running on Memcheck.
+
+* Valgrind's default load address has been changed from 0x3800'0000 to
+  0x5800'0000, so as to make it possible to load larger executables.  This
+  should make it possible to load executables of size at least 1200MB.
+
+* A massive spaceleak caused by reading compressed debuginfo files has been
+  fixed.  Valgrind should now be entirely usable with gcc-7.0 "-gz" created
+  debuginfo.
+
+* The C++ demangler has been updated.
+
+* Support for demangling Rust symbols has been added.
+
+* A new representation of stack traces, the "XTree", has been added.  An XTree
+  is a tree of stacktraces with data associated with the stacktraces.  This is
+  used by various tools (Memcheck, Helgrind, Massif) to report on the heap
+  consumption of your program.  Reporting is controlled by the new options
+  --xtree-memory=none|allocs|full and --xtree-memory-file=<file>.
+
+  A report can also be produced on demand using the gdbserver monitor command
+  'xtmemory [<filename>]>'.  The XTree can be output in 2 formats: 'callgrind
+  format' and 'massif format. The existing visualisers for these formats (e.g.
+  callgrind_annotate, KCachegrind, ms_print) can be used to visualise and
+  analyse these reports.
+
+  Memcheck can also produce XTree leak reports using the Callgrind file
+  format.  For more details, see the user manual.
 
 * ================== PLATFORM CHANGES =================
 
-  - Support for demangling Rust symbols (n-i-bz)
-  
-  - On linux, clone handling was improved to honour the CLONE_VFORK flag
-    and setting a child stack. Note however that CLONE_VFORK | CLONE_VM
-    is handled like CLONE_VFORK (so removing CLONE_VM flag).
-    Applications that depends on CLONE_VM exact semantic will (still) not work.
+* ppc64: support for ISA 3.0B and various fixes for existing 3.0 support
 
-  - TileGX/Linux port was removed because the platform is essentially dead.
+* amd64: fixes for JIT failure problems on long AVX2 code blocks
+
+* amd64 and x86: support for CET prefixes has been added
+
+* arm32: a few missing ARMv8 instructions have been implemented
+
+* arm64, mips64, mips32: an alternative implementation of Load-Linked and
+  Store-Conditional instructions has been added.  This is to deal with
+  processor implementations that implement the LL/SC specifications strictly
+  and as a result cause Valgrind to hang in certain situations.  The
+  alternative implementation is automatically enabled at startup, as required.
+  You can use the option --sim-hints=fallback-llsc to force-enable it if you
+  want.
+
+* Support for OSX 10.12 has been improved.
+
+* On Linux, clone handling has been improved to honour CLONE_VFORK that
+  involves a child stack.  Note however that CLONE_VFORK | CLONE_VM is handled
+  like CLONE_VFORK (by removing CLONE_VM), so applications that depend on
+  CLONE_VM exact semantics will (still) not work.
+
+* The TileGX/Linux port has been removed because it appears to be both unused
+  and unsupported.
 
 * ==================== TOOL CHANGES ====================
 
 * Memcheck:
+
+  - Memcheck should give fewer false positives when running optimised
+    Clang/LLVM generated code.
 
   - Support for --xtree-memory and 'xtmemory [<filename>]>'.
 
@@ -48,38 +88,41 @@ X86/MacOSX 10.11/12, and AMD64/MacOSX 10.11/12.
     to produce the end of execution leak report in a xtree callgrind format
     file.
 
-  - New option 'xtleak' in the memcheck leak_check monitor command, to
-    produce the leak report in an xtree file.
+  - New option 'xtleak' in the memcheck leak_check monitor command, to produce
+    the leak report in an xtree file.
 
 * Massif:
 
   - Support for --xtree-memory and 'xtmemory [<filename>]>'.
 
-  - For some workloads (typically, for big applications), Massif
-    memory consumption and CPU consumption decreases significantly.
+  - For some workloads (typically, for big applications), Massif memory
+    consumption and CPU consumption has decreased significantly.
 
 * Helgrind:
 
   - Support for --xtree-memory and 'xtmemory [<filename>]>'.
 
-  - addition of client request VALGRIND_HG_GNAT_DEPENDENT_MASTER_JOIN,
-    useful for Ada gnat compiled applications.
+  - addition of client request VALGRIND_HG_GNAT_DEPENDENT_MASTER_JOIN, useful
+    for Ada gnat compiled applications.
 
 * ==================== OTHER CHANGES ====================
 
-* For Valgrind developers: in an outer/inner setup, the outer Valgrind
-  will append the inner guest stacktrace to the inner host stacktrace.
-  This helps to investigate the errors reported by the outer, when they
-  are caused by the inner guest program (such as an inner regtest).
-  See README_DEVELOPERS for more info.
+* For Valgrind developers: in an outer/inner setup, the outer Valgrind will
+  append the inner guest stacktrace to the inner host stacktrace.  This helps
+  to investigate the errors reported by the outer, when they are caused by the
+  inner guest program (such as an inner regtest).  See README_DEVELOPERS for
+  more info.
 
-* To allow fast detection of callgrind files in desktop environments
-  and file managers, the format was extended to have an optional
-  first line uniquely identifying the format ("# callgrind format").
-  Callgrind creates this line now (also the new xtree functionality).
+* To allow fast detection of callgrind files by desktop environments and file
+  managers, the format was extended to have an optional first line that
+  uniquely identifies the format ("# callgrind format").  Callgrind creates
+  this line now, as does the new xtree functionality.
 
 * File name template arguments (such as --log-file, --xtree-memory-file, ...)
   have a new %n format letter that is replaced by a sequence number.
+
+* "--version -v" now shows the SVN revision numbers from which Valgrind was
+  built.
 
 * ==================== FIXED BUGS ====================
 
@@ -199,21 +242,14 @@ where XXXXXX is the bug number as listed below.
 379504  remove TileGX/Linux port
 379525  Support more x86 nop opcodes
 379838  disAMode(x86): not an addr!
-379703  PC ISA 3.0 fixes: stxvx, stxv, xscmpexpdp instructions, expected output
-        update.
+379703  PC ISA 3.0 fixes: stxvx, stxv, xscmpexpdp instructions
 379890  arm: unhandled instruction: 0xEBAD 0x1B05 (sub.w fp, sp, r5, lsl #4)
 379895  clock_gettime does not execute POST syscall wrapper
-379925  PPC64, mtffs does not set the FPCC and C bits in the FPSCR register correctly
+379925  PPC64, mtffs does not set the FPCC and C bits in the FPSCR correctly
 379966  WARNING: unhandled amd64-linux syscall: 313 (finit_module)
 
-. - increase usable memory?
-. - get rid of repeated brk message
-. - progress stuff? NO
-. - resize translation caches
-. - expensive interpretation by default? NO
-. - turn on inline debuginfo reading for more tools
-. - make fair-sched the default on Linux
-. - reduce PAUSE hold length
+(3.13.0.RC1:  2 June 2017, vex r3XXX, valgrind r16XXX)
+
 
 
 Release 3.12.0 (20 October 2016)

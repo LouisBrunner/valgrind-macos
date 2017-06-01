@@ -105,13 +105,8 @@ Bool   VG_(clo_debug_dump_syms) = False;
 Bool   VG_(clo_debug_dump_line) = False;
 Bool   VG_(clo_debug_dump_frames) = False;
 Bool   VG_(clo_trace_redir)    = False;
-
-#if defined(VGO_linux)
-enum FairSchedType VG_(clo_fair_sched) = enable_fair_sched;
-#else
-enum FairSchedType VG_(clo_fair_sched) = disable_fair_sched;
-#endif
-
+enum FairSchedType
+       VG_(clo_fair_sched)     = disable_fair_sched;
 Bool   VG_(clo_trace_sched)    = False;
 Bool   VG_(clo_profile_heap)   = False;
 Int    VG_(clo_core_redzone_size) = CORE_REDZONE_DEFAULT_SZB;

@@ -247,6 +247,7 @@ where XXXXXX is the bug number as listed below.
 379895  clock_gettime does not execute POST syscall wrapper
 379925  PPC64, mtffs does not set the FPCC and C bits in the FPSCR correctly
 379966  WARNING: unhandled amd64-linux syscall: 313 (finit_module)
+380200  xtree generated callgrind files refer to files without directory name
 
 (3.13.0.RC1:  2 June 2017, vex r3XXX, valgrind r16XXX)
 

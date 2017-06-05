@@ -1,3 +1,43 @@
+Release 3.14.0 (?? ????????? 201?)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+Release 3.14.0 is under development, not yet released.
+
+3.14.0 is a feature release with many improvements and the usual collection of
+bug fixes.
+
+This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
+PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,
+MIPS64/Linux, ARM/Android, ARM64/Android, MIPS32/Android, X86/Android,
+X86/Solaris, AMD64/Solaris and AMD64/MacOSX 10.12.
+
+* ==================== CORE CHANGES ===================
+
+
+* ================== PLATFORM CHANGES =================
+
+
+* ==================== TOOL CHANGES ====================
+
+
+* ==================== OTHER CHANGES ====================
+
+
+* ==================== FIXED BUGS ====================
+
+The following bugs have been fixed or resolved.  Note that "n-i-bz"
+stands for "not in bugzilla" -- that is, a bug that was reported to us
+but never got a bugzilla entry.  We encourage you to file bugs in
+bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
+than mailing the developers (or mailing lists) directly -- bugs that
+are not entered into bugzilla tend to get forgotten about or ignored.
+
+To see details of a given bug, visit
+  https://bugs.kde.org/show_bug.cgi?id=XXXXXX
+where XXXXXX is the bug number as listed below.
+
+380397  s390x: __GI_strcspn() replacemenet needed
+
+
 Release 3.13.0 (15 June 2017)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

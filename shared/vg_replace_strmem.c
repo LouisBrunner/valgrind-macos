@@ -1721,6 +1721,7 @@ static inline void my_exit ( int x )
 
 #if defined(VGO_linux)
  STRCSPN(VG_Z_LIBC_SONAME,          strcspn)
+ STRCSPN(VG_Z_LIBC_SONAME,          __GI_strcspn)
 
 #elif defined(VGO_darwin)
 

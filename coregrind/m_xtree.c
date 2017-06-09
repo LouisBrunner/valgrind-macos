@@ -433,6 +433,10 @@ void VG_(XT_callgrind_print)
    VgFile* fp = xt_open(outfilename);
    DedupPoolAlloc* fnname_ddpa;
    DedupPoolAlloc* filename_ddpa;
+   HChar* filename_buf = NULL;
+   UInt filename_buf_size = 0;
+   const HChar* filename_dir;
+   const HChar* filename_name;
 
    if (fp == NULL)
       return;
@@ -489,23 +493,43 @@ void VG_(XT_callgrind_print)
 
       const HChar* img = img_value(VG_(indexXA)(xt->data, xecu));
      
-      // CALLED_FLF gets the Filename/Line number/Function name for ips[n]
+      // CALLED_FLF gets the Dir+Filename/Line number/Function name for ips[n]
+      // in the variables called_filename/called_linenum/called_fnname.
+      // The booleans called_filename_new/called_fnname_new are set to True
+      // the first time the called_filename/called_fnname are encountered.
+      // The called_filename_nr/called_fnname_nr are numbers identifying
+      // the strings  called_filename/called_fnname.
 #define CALLED_FLF(n)                                                   \
       if ((n) < 0                                                       \
           || !VG_(get_filename_linenum)(ips[(n)],                       \
-                                        &called_filename,               \
-                                        NULL,                           \
+                                        &filename_name,                 \
+                                        &filename_dir,                  \
                                         &called_linenum)) {             \
-         called_filename = "UnknownFile???";                            \
+         filename_name = "UnknownFile???";                              \
          called_linenum = 0;                                            \
       }                                                                 \
       if ((n) < 0                                                       \
           || !VG_(get_fnname)(ips[(n)], &called_fnname)) {              \
          called_fnname = "UnknownFn???";                                \
       }                                                                 \
+      {                                                                 \
+         UInt needed_size = VG_(strlen)(filename_dir) + 1               \
+            + VG_(strlen)(filename_name) + 1;                           \
+         if (filename_buf_size < needed_size) {                         \
+            filename_buf_size = needed_size;                            \
+            filename_buf = VG_(realloc)(xt->cc, filename_buf,           \
+                                        filename_buf_size);             \
+         }                                                              \
+      }                                                                 \
+      VG_(strcpy)(filename_buf, filename_dir);                          \
+      if (filename_buf[0] != '\0') {                                    \
+         VG_(strcat)(filename_buf, "/");                                \
+      }                                                                 \
+      VG_(strcat)(filename_buf, filename_name);                         \
       called_filename_nr = VG_(allocStrDedupPA)(filename_ddpa,          \
-                                                called_filename,        \
+                                                filename_buf,           \
                                                 &called_filename_new);  \
+      called_filename = filename_buf;                                   \
       called_fnname_nr = VG_(allocStrDedupPA)(fnname_ddpa,              \
                                               called_fnname,            \
                                               &called_fnname_new);
@@ -579,6 +603,7 @@ void VG_(XT_callgrind_print)
    VG_(fclose)(fp);
    VG_(deleteDedupPA)(fnname_ddpa);
    VG_(deleteDedupPA)(filename_ddpa);
+   VG_(free)(filename_buf);
 }
 
 

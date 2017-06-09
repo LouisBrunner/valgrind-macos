@@ -480,7 +480,8 @@ static inline Bool sr_EQ ( UInt sysno, SysRes sr1, SysRes sr2 ) {
       union {                                \
          void *in;                           \
          D out;                              \
-      } var = {.in = (void *) (x)}; var.out; \
+      } var;                                 \
+      var.in = (void *) (x); var.out;        \
    })
 
 // Poor man's static assert

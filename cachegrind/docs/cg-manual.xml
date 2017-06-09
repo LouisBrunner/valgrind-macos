@@ -1134,7 +1134,7 @@ switch (e)
 <programlisting><![CDATA[
 enum E { A, B, C };
 enum E e;
-enum E table[] = { 1, 2, 3 };
+int table[] = { 1, 2, 3 };
 int i;
 ...
 i += table[e];

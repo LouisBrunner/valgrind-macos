@@ -1208,7 +1208,7 @@ void VG_(flush_dcache) ( void *ptr, SizeT nbytes )
    cls = 4 * (1ULL << (0xF & (ctr_el0 >> 16)));
 
    /* Stay sane .. */
-   vg_assert(cls == 64);
+   vg_assert(cls == 64 || cls == 128);
 
    startaddr &= ~(cls - 1);
    for (addr = startaddr; addr < endaddr; addr += cls) {

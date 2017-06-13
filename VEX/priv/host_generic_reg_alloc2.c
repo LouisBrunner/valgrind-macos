@@ -433,7 +433,7 @@ HInstrArray* doRegisterAllocation (
 
    /* .. and the redundant backward map */
    /* Each value is 0 .. n_rregs-1 or is INVALID_RREG_NO.
-      This inplies n_rregs must be <= 32768. */
+      This implies n_rregs must be <= 32768. */
    Short*     vreg_state;  /* [0 .. n_vregs-1] */
 
    /* The vreg -> rreg map constructed and then applied to each
@@ -554,8 +554,7 @@ HInstrArray* doRegisterAllocation (
 
    /* An array to hold the reg-usage info for the incoming
       instructions. */
-   reg_usage_arr
-      = LibVEX_Alloc_inline(sizeof(HRegUsage) * instrs_in->arr_used-1);
+   reg_usage_arr = LibVEX_Alloc_inline(sizeof(HRegUsage) * instrs_in->arr_used);
 
    /* ------ end of SET UP TO COMPUTE VREG LIVE RANGES ------ */
 

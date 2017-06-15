@@ -254,6 +254,7 @@ n-i-bz  Fix pub_tool_basics.h build issue with g++ 4.4.7.
 
 (3.13.0.RC1:  2 June 2017, vex r3386, valgrind r16434)
 (3.13.0.RC2:  9 June 2017, vex r3389, valgrind r16443)
+(3.13.0:     14 June 2017, vex r3396, valgrind r16446)
 
 
 

@@ -289,8 +289,13 @@ where XXXXXX is the bug number as listed below.
 379925  PPC64, mtffs does not set the FPCC and C bits in the FPSCR correctly
 379966  WARNING: unhandled amd64-linux syscall: 313 (finit_module)
 380200  xtree generated callgrind files refer to files without directory name
+380202  Assertion failure for cache line size (cls == 64) on aarch64.
+380397  s390x: __GI_strcspn() replacement needed
+n-i-bz  Fix pub_tool_basics.h build issue with g++ 4.4.7.
 
-(3.13.0.RC1:  2 June 2017, vex r3XXX, valgrind r16XXX)
+(3.13.0.RC1:  2 June 2017, vex r3386, valgrind r16434)
+(3.13.0.RC2:  9 June 2017, vex r3389, valgrind r16443)
+(3.13.0:     14 June 2017, vex r3396, valgrind r16446)
 
 
 

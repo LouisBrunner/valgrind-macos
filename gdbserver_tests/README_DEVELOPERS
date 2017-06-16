@@ -52,7 +52,7 @@ Then file a bug in bugzilla, giving the following information:
     gdbserver_tests/gdb --version
     uname -a
     cat /etc/issue
-    valgrind --version (and/or svn version)
+    valgrind --version -v
   and attach a tar file containing all the *.out and *.diff
   files in gdbserver_tests directory
 

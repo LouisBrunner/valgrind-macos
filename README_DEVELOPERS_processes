@@ -12,8 +12,8 @@ more in details afterwards.
 * Major release production: 
   See docs/internals/release-HOWTO.txt (currently a bit out of date)
 
-* Various guidelines/recommended usage for valgrind SVN
-  See docs/internals/svn-HOWTO.txt
+* Various guidelines/recommended usage for valgrind GIT
+  See docs/internals/git-HOWTO.txt
 
 * Minor/correction release production: TBD
 
@@ -57,12 +57,6 @@ Update of the NEWS file.
 
   Some special cases:
   -------------------
-  Some bugs or changes only touch the VEX SVN repository, so it is not
-  possible to commit the NEWS change together with the code changes.
-  In such a case, first commit the VEX change. Then just after, commit
-  the NEWS change. In the bugzilla status, reference (at least) the Valgrind
-  revision number.
-
   Some changes or bug fixes are very big and might be implemented over
   a significant period. In such a case, update the NEWS as part of the
   final commit.
@@ -78,20 +72,3 @@ Update of the NEWS file.
   fixed in the commit that fixed 307106.
   Change also the status of the duplicated bug  in bugzilla,
   indicating in the comment the commit revision that fixed the 'master bug'.
-
-
-
-Minor/correction release:
-=========================
-Describe here how to do changes and bug fixed in a minor (correction) release
-and how/when to merge the branch to the trunk.
-
-Proposal to be discussed:
-When a bug is fixed on the branch, the NEWS file is updated on the branch
-(i.e. a 3.9.1 section is created if needed).
-
-When often to merge the branch to trunk ?
-  after each fix ?
-  just after the correction release is produced ?
-
-How is the branch merged to the trunk ?

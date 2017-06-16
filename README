@@ -65,9 +65,9 @@ specified with --prefix= when building.
 
 Building and installing it
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-To install from the Subversion repository :
+To install from the GIT repository:
 
-  0. Check out the code from SVN, following the instructions at
+  0. Clone the code from GIT, following the instructions at
      http://www.valgrind.org/downloads/repository.html.
 
   1. cd into the source directory.

@@ -20,13 +20,14 @@
  The GNU General Public License is contained in the file COPYING.
  */
 
-#ifdef HAS_VSX
-
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
+
+#ifdef HAS_VSX
+
 #include <altivec.h>
 
 #ifndef __powerpc64__

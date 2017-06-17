@@ -79,5 +79,16 @@ int main (void)
   }
 #endif
 
+#if defined(HAVE_EPOLL_CREATE) && defined(HAVE_EPOLL_PWAIT)
+  {
+    int fd3;
+    struct epoll_event evs[10];
+
+    fd3 = epoll_create (10);
+    /* epoll_pwait can take a NULL sigmask. */
+    epoll_pwait (fd3, evs, 10, 1, NULL);
+  }
+#endif
+
   return 0;
 }

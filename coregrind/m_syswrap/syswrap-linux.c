@@ -1901,7 +1901,7 @@ PRE(sys_epoll_pwait)
                  int, maxevents, int, timeout, vki_sigset_t *, sigmask,
                  vki_size_t, sigsetsize);
    PRE_MEM_WRITE( "epoll_pwait(events)", ARG2, sizeof(struct vki_epoll_event)*ARG3);
-   if (ARG4)
+   if (ARG5)
       PRE_MEM_READ( "epoll_pwait(sigmask)", ARG5, sizeof(vki_sigset_t) );
 }
 POST(sys_epoll_pwait)

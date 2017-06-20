@@ -29356,62 +29356,70 @@ DisResult disInstr_PPC_WRK (
 
    decode_noF:
       vassert(!allow_F);
-      vex_printf("disInstr(ppc): found the Floating Point instruction 0x%x that\n"
-		 "can't be handled by Valgrind on this host.  This instruction\n"
-		 "requires a host that supports Floating Point instructions.\n",
-		 theInstr);
+      if (sigill_diag)
+         vex_printf("disInstr(ppc): found the Floating Point instruction 0x%x that\n"
+		    "can't be handled by Valgrind on this host.  This instruction\n"
+		    "requires a host that supports Floating Point instructions.\n",
+		    theInstr);
       goto not_supported;
    decode_noV:
       vassert(!allow_V);
-      vex_printf("disInstr(ppc): found an AltiVec or an e500 instruction 0x%x\n"
-		 "that can't be handled by Valgrind.  If this instruction is an\n"
-		 "Altivec instruction, Valgrind must be run on a host that supports"
-		 "AltiVec instructions.  If the application was compiled for e500, then\n"
-		 "unfortunately Valgrind does not yet support e500 instructions.\n",
-		 theInstr);
+      if (sigill_diag)
+         vex_printf("disInstr(ppc): found an AltiVec or an e500 instruction 0x%x\n"
+		    "that can't be handled by Valgrind.  If this instruction is an\n"
+		    "Altivec instruction, Valgrind must be run on a host that supports"
+		    "AltiVec instructions.  If the application was compiled for e500, then\n"
+		    "unfortunately Valgrind does not yet support e500 instructions.\n",
+		    theInstr);
       goto not_supported;
    decode_noVX:
       vassert(!allow_VX);
-      vex_printf("disInstr(ppc): found the instruction 0x%x that is defined in the\n"
-		 "Power ISA 2.06 ABI but can't be handled by Valgrind on this host.\n"
-		 "This instruction \nrequires a host that supports the ISA 2.06 ABI.\n",
-		 theInstr);
+      if (sigill_diag)
+         vex_printf("disInstr(ppc): found the instruction 0x%x that is defined in the\n"
+		    "Power ISA 2.06 ABI but can't be handled by Valgrind on this host.\n"
+		    "This instruction \nrequires a host that supports the ISA 2.06 ABI.\n",
+		    theInstr);
       goto not_supported;
    decode_noFX:
       vassert(!allow_FX);
-      vex_printf("disInstr(ppc): found the General Purpose-Optional instruction 0x%x\n"
-		 "that can't be handled by Valgrind on this host. This instruction\n"
-		 "requires a host that supports the General Purpose-Optional instructions.\n",
-		 theInstr);
+      if (sigill_diag)
+         vex_printf("disInstr(ppc): found the General Purpose-Optional instruction 0x%x\n"
+		    "that can't be handled by Valgrind on this host. This instruction\n"
+		    "requires a host that supports the General Purpose-Optional instructions.\n",
+		    theInstr);
       goto not_supported;
    decode_noGX:
       vassert(!allow_GX);
-      vex_printf("disInstr(ppc): found the Graphics-Optional instruction 0x%x\n"
-		 "that can't be handled by Valgrind on this host. This instruction\n"
-		 "requires a host that supports the Graphic-Optional instructions.\n",
-		 theInstr);
+      if (sigill_diag)
+         vex_printf("disInstr(ppc): found the Graphics-Optional instruction 0x%x\n"
+		    "that can't be handled by Valgrind on this host. This instruction\n"
+		    "requires a host that supports the Graphic-Optional instructions.\n",
+		    theInstr);
       goto not_supported;
    decode_noDFP:
       vassert(!allow_DFP);
-      vex_printf("disInstr(ppc): found the decimal floating point (DFP) instruction 0x%x\n"
-		 "that can't be handled by Valgrind on this host.  This instruction\n"
-		 "requires a host that supports DFP instructions.\n",
-		 theInstr);
+      if (sigill_diag)
+         vex_printf("disInstr(ppc): found the decimal floating point (DFP) instruction 0x%x\n"
+		    "that can't be handled by Valgrind on this host.  This instruction\n"
+		    "requires a host that supports DFP instructions.\n",
+		    theInstr);
       goto not_supported;
    decode_noP8:
       vassert(!allow_isa_2_07);
-      vex_printf("disInstr(ppc): found the Power 8 instruction 0x%x that can't be handled\n"
-		 "by Valgrind on this host.  This instruction requires a host that\n"
-		 "supports Power 8 instructions.\n",
-		 theInstr);
+      if (sigill_diag)
+         vex_printf("disInstr(ppc): found the Power 8 instruction 0x%x that can't be handled\n"
+		    "by Valgrind on this host.  This instruction requires a host that\n"
+		    "supports Power 8 instructions.\n",
+		    theInstr);
       goto not_supported;
 
    decode_noP9:
       vassert(!allow_isa_3_0);
-      vex_printf("disInstr(ppc): found the Power 9 instruction 0x%x that can't be handled\n"
-                 "by Valgrind on this host.  This instruction requires a host that\n"
-		 "supports Power 9 instructions.\n",
-		 theInstr);
+      if (sigill_diag)
+         vex_printf("disInstr(ppc): found the Power 9 instruction 0x%x that can't be handled\n"
+                    "by Valgrind on this host.  This instruction requires a host that\n"
+		    "supports Power 9 instructions.\n",
+		    theInstr);
       goto not_supported;
 
    decode_failure:

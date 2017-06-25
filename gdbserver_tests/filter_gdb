@@ -72,7 +72,7 @@ sed -e '/Remote debugging using/,/vgdb launched process attached/d'             
     -e '/^Missing separate debuginfo/d'                                                               \
     -e '/\/_exit.c: No such file or directory/d'                                                      \
     -e '/^Try: zypper install -C/d'                                                                   \
-    -e 's/\(relaying data between gdb and process \)[0-9][0-9]*/\1..../'                              \
+    -e '/relaying data between gdb and process/d'                                                     \
     -e 's/pid [0-9][0-9]*/pid ..../g'                                                                 \
     -e 's/Thread [0-9][0-9]*/Thread ..../g'                                                           \
     -e '/\[Switching to Thread ....\]/d'                                                              \

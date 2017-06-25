@@ -1,4 +1,3 @@
-relaying data between gdb and process ....
 vgdb-error value changed from 0 to 999999
 general valgrind monitor commands:
   help [debug]            : monitor command help. With debug: + debugging commands

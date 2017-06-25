@@ -646,6 +646,10 @@ static void gdbserver_cleanup_in_child_after_fork(ThreadId me)
    
    if (VG_(clo_trace_children)) {
       VG_(gdbserver_prerun_action) (me);
+   } else {
+      /* After fork, if we do not trace the children, disable vgdb
+         poll to avoid gdbserver being called unexpectedly. */
+      VG_(disable_vgdb_poll) ();
    }
 }
 

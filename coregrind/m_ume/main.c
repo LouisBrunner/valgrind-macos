@@ -140,7 +140,7 @@ Int VG_(do_exec_inner)(const HChar* exe, ExeInfo* info)
    Int fd;
    Int ret;
 
-   res = VG_(pre_exec_check)(exe, &fd, VG_(geteuid)() == 0/*allow_setuid*/);
+   res = VG_(pre_exec_check)(exe, &fd, False/*allow_setuid*/);
    if (sr_isError(res))
       return sr_Err(res);
 

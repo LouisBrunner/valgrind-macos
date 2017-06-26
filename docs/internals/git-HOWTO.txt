@@ -1,0 +1,55 @@
+Introduction
+------------
+
+During the summer of 2017 the Valgrind source code repository was migrated
+from the Subversion source control system to the git source control system. In
+this document it is explained how to access the Valgrind git repository. For
+more information about the migration process, see also Ivo Raisr,
+Migrating Valgrind sources from SVN to GIT, valgrind-developers mailing list,
+June 16, 2017
+(http://valgrind.10908.n7.nabble.com/Migrating-Valgrind-sources-from-SVN-to-GIT-td57939.html).
+
+Valgrind Users
+--------------
+
+Valgrind users can clone the Valgrind source code repository as follows:
+
+git clone git://sourceware.org/git/valgrind.git/
+
+Valgrind Developers
+-------------------
+
+Anyone who has been granted write access to the Valgrind repository on the
+sourceware server has been assigned a user name on that server
+(${swusername}). Read/write access to the Valgrind source code
+repository can be enabled as follows:
+* If you have not yet cloned the Valgrind git repository, run the following
+  command:
+  git clone ssh://${swusername}@sourceware.org/git/valgrind.git
+* If you have already cloned the Valgrind git repository, run the following
+  command:
+  git remote origin update ssh://${swusername}@sourceware.org/git/valgrind.git
+
+Note: the ${swusername}@ part can be left out from the repository URL if the
+following information is added to $HOME/.ssh/config:
+
+Host sourceware.org
+        User ${swusername}
+
+Preparing and publishing changes
+--------------------------------
+
+For small changes, create a branch in your local repository and prepare the
+changes as one or more patches. Before publishing the changes, run git pull
+--rebase, resolve any rebase conflicts if needed, retest if necessary, and
+publish the changes by running git push HEAD:master. If anyone else has
+published changes after the rebase and before the push then the push will fail
+and the rebase, retest and push steps will have to be repeated.
+
+For large changes, create a branch in your local repository and prepare the
+changes as a series of patches. Once all changes are ready, switch to the
+master branch, update it by running git pull --rebase, merge your branch with
+the master branch and publish the changes by running git push master. If
+anyone else has published changes after the update and before the push step
+then the push will fail and the update, merge and push steps will have to be
+repeated.

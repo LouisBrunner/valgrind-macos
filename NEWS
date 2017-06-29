@@ -40,6 +40,7 @@ where XXXXXX is the bug number as listed below.
 381272  ppc64 doesn't compile test_isa_2_06_partx.c without VSX support
 381289  epoll_pwait can have a NULL sigmask
 381274  powerpc too chatty even with --sigill-diagnostics=no
+381769  Use ucontext_t instead of struct ucontext
 
 
 Release 3.13.0 (15 June 2017)

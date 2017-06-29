@@ -10,7 +10,7 @@
 // This test is checking the libc context calls (setcontext, etc.) and
 // checks that Valgrind notices their stack changes properly.
 
-typedef  struct ucontext  mycontext;
+typedef  ucontext_t  mycontext;
 
 mycontext ctx1, ctx2, oldc;
 int count;

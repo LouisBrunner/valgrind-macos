@@ -41,6 +41,7 @@ where XXXXXX is the bug number as listed below.
 381289  epoll_pwait can have a NULL sigmask
 381274  powerpc too chatty even with --sigill-diagnostics=no
 381769  Use ucontext_t instead of struct ucontext
+381805  arm32 needs ld.so index hardwire for new glibc security fixes
 
 
 Release 3.13.0 (15 June 2017)

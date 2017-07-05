@@ -625,26 +625,26 @@ VG_(arm_linux_REDIR_FOR_strlen):
 	bx	lr
 	UD2_4
 
-//.global VG_(arm_linux_REDIR_FOR_index)
-//VG_(arm_linux_REDIR_FOR_index):
-//	ldrb	r3, [r0, #0]	@ zero_extendqisi2
-//	and	r1, r1, #255
-//	cmp	r3, r1
-//	@ lr needed for prologue
-//	bne	.L9
-//	bx	lr
-//.L12:
-//	ldrb	r3, [r0, #1]!	@ zero_extendqisi2
-//	cmp	r3, r1
-//	beq	.L11
-//.L9:
-//	cmp	r3, #0
-//	bne	.L12
-//	mov	r0, #0
-//	bx	lr
-//.L11:
-//	bx	lr
-//	UD2_4
+.global VG_(arm_linux_REDIR_FOR_index)
+VG_(arm_linux_REDIR_FOR_index):
+	ldrb	r3, [r0, #0]	@ zero_extendqisi2
+	and	r1, r1, #255
+	cmp	r3, r1
+	@ lr needed for prologue
+	bne	.L9
+	bx	lr
+.L12:
+	ldrb	r3, [r0, #1]!	@ zero_extendqisi2
+	cmp	r3, r1
+	beq	.L11
+.L9:
+	cmp	r3, #0
+	bne	.L12
+	mov	r0, #0
+	bx	lr
+.L11:
+	bx	lr
+	UD2_4
 
 .global VG_(arm_linux_REDIR_FOR_memcpy)
 VG_(arm_linux_REDIR_FOR_memcpy):

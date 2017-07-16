@@ -2110,7 +2110,7 @@ AC_MSG_CHECKING([if gcc accepts -g -gz=zlib])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-g -gz=zlib"
 
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[ ]], [[
   return 0;
 ]])], [
 ac_have_gz_zlib=yes
@@ -2130,7 +2130,7 @@ AC_MSG_CHECKING([if gcc accepts -g -gz=zlib-gnu])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-g -gz=zlib-gnu"
 
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[ ]], [[
   return 0;
 ]])], [
 ac_have_gz_zlib_gnu=yes

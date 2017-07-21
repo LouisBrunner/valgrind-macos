@@ -1327,9 +1327,9 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
    sres = VG_(stat)(pdbname, &stat_buf);
    if (sr_isError(sres)) {
       VG_(message)(Vg_UserMsg, "Warning: Missing or un-stat-able %s\n",
-                               pdbname);
-   if (VG_(clo_verbosity) > 0)
-      VG_(message)(Vg_UserMsg, "LOAD_PDB_DEBUGINFO: missing: %s\n", pdbname);
+                   pdbname);
+      if (VG_(clo_verbosity) > 0)
+         VG_(message)(Vg_UserMsg, "LOAD_PDB_DEBUGINFO: missing: %s\n", pdbname);
       goto out;
    }
    pdb_mtime = stat_buf.mtime;

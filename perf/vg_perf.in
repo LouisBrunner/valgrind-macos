@@ -67,6 +67,8 @@ usage: vg_perf [options] [files or dirs]
                           [Valgrind in the current directory, i.e. --vg=.]
                           Can be specified multiple times.
                           The "in-place" build is used.
+    --terse: terse output. Prints only program name and speedup's for specified
+      tools.
 
     --outer-valgrind: run these Valgrind(s) under the given outer valgrind.
       These Valgrind(s) must be configured with --enable-inner.
@@ -92,6 +94,7 @@ my $cleanup;            # cleanup command to run
 my $n_reps = 1;         # Run each test $n_reps times and choose the best one.
 my @vgdirs;             # Dirs of the various Valgrinds being measured.
 my @tools = ("none", "memcheck");   # tools being measured
+my $terse = 0;          # Terse output.
 
 # Outer valgrind to use, and args to use for it.
 # If this is set, --valgrind should be set to the installed inner valgrind,
@@ -158,6 +161,8 @@ sub process_command_line()
                 add_vgdir($1);
             } elsif ($arg =~ /^--tools=(.+)$/) {
                 @tools = split(/,/, $1);
+            } elsif ($arg =~ /^--terse$/) {
+                $terse = 1;
             } elsif ($arg =~ /^--outer-valgrind=(.*)$/) {
                 $outer_valgrind = $1;
             } elsif ($arg =~ /^--outer-tool=(.*)$/) {
@@ -307,15 +312,19 @@ sub do_one_test($$)
 
     foreach my $vgdir (@vgdirs) {
         # Benchmark name
-        printf("%-8s ", $name);
+        if (!$terse) {
+            printf("%-8s ", $name);
+        }
 
         # Print the Valgrind version if we are measuring more than one.
         my $vgdirname = $vgdir;
         chomp($vgdirname = `basename $vgdir`);
         printf("%-10s:", $vgdirname);
-        
+
         # Native execution time
-        printf("%4.2fs", $tNative);
+        if (!$terse) {
+            printf("%4.2fs", $tNative);
+        }
 
         foreach my $tool (@tools) {
             # First two chars of toolname for abbreviation
@@ -371,7 +380,9 @@ sub do_one_test($$)
             }
             my $cmd     = "$vgsetup $timecmd $vgcmd $prog $args";
             my $tTool   = time_prog($cmd, $n_reps);
-            printf("%4.1fs (%4.1fx,", $tTool, $tTool/$tNative);
+            if (!$terse) {
+                printf("%4.1fs (%4.1fx,", $tTool, $tTool/$tNative);
+            }
 
             # If it's the first timing for this tool on this benchmark,
             # record the time so we can get the percentage speedup of the
@@ -379,10 +390,13 @@ sub do_one_test($$)
             # the speedup.
             if (not defined $first_tTool{$tool}) {
                 $first_tTool{$tool} = $tTool;
-                print(" -----)");
+                print(" -----");
             } else {
                 my $speedup = 100 - (100 * $tTool / $first_tTool{$tool});
-                printf("%5.1f%%)", $speedup);
+                printf("%5.1f%%", $speedup);
+            }
+            if (!$terse) {
+               print(")");
             }
 
             $num_timings_done++;

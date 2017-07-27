@@ -38,6 +38,13 @@
 
 #include "libvex_basictypes.h"
 
+#include "libvex_inner.h"
+#if defined(ENABLE_INNER_CLIENT_REQUEST)
+/* Including here memcheck include file is kind of a hack, but this is needed
+   to have self-hosting checking VEX. Note however that this is included only
+   when Valgrind and VEX are configured using --enable-inner. */
+#include "memcheck/memcheck.h"
+#endif
 
 /* Misc. */
 
@@ -129,6 +136,10 @@ extern void   private_LibVEX_alloc_OOM(void) __attribute__((noreturn));
    boundary. */
 #define REQ_ALIGN 8
 
+#if defined(ENABLE_INNER)
+#define VEX_REDZONE_SIZEB (2*REQ_ALIGN)
+#endif
+
 static inline void* LibVEX_Alloc_inline ( SizeT nbytes )
 {
    struct align {
@@ -160,12 +171,15 @@ static inline void* LibVEX_Alloc_inline ( SizeT nbytes )
    HChar* next;
    SizeT  ALIGN;
    ALIGN  = offsetof(struct align,x) - 1;
-   nbytes = (nbytes + ALIGN) & ~ALIGN;
    curr   = private_LibVEX_alloc_curr;
-   next   = curr + nbytes;
+   next   = curr + ((nbytes + ALIGN) & ~ALIGN);
+   INNER_REQUEST(next += 2 * VEX_REDZONE_SIZEB);
    if (next >= private_LibVEX_alloc_last)
       private_LibVEX_alloc_OOM();
    private_LibVEX_alloc_curr = next;
+   INNER_REQUEST(curr += VEX_REDZONE_SIZEB);
+   INNER_REQUEST(VALGRIND_MEMPOOL_ALLOC(private_LibVEX_alloc_first,
+                                        curr, nbytes));
    return curr;
 #endif
 }

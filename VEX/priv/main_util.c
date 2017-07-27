@@ -52,7 +52,14 @@
    into memory, the rate falls by about a factor of 3. 
 */
 
+#if defined(ENABLE_INNER)
+/* 5 times more memory to be on the safe side:  consider each allocation is
+   8 bytes, and we need 16 bytes redzone before and after. */
+#define N_TEMPORARY_BYTES (5*5000000)
+static Bool mempools_created = False;
+#else
 #define N_TEMPORARY_BYTES 5000000
+#endif
 
 static HChar  temporary[N_TEMPORARY_BYTES] __attribute__((aligned(REQ_ALIGN)));
 static HChar* temporary_first = &temporary[0];
@@ -61,7 +68,12 @@ static HChar* temporary_last  = &temporary[N_TEMPORARY_BYTES-1];
 
 static ULong  temporary_bytes_allocd_TOT = 0;
 
+#if defined(ENABLE_INNER)
+/* See N_TEMPORARY_BYTES */
+#define N_PERMANENT_BYTES (5*10000)
+#else
 #define N_PERMANENT_BYTES 10000
+#endif
 
 static HChar  permanent[N_PERMANENT_BYTES] __attribute__((aligned(REQ_ALIGN)));
 static HChar* permanent_first = &permanent[0];
@@ -177,6 +189,18 @@ void vexSetAllocModeTEMP_and_clear ( void )
    /* vassert(vex_initdone); */ /* causes infinite assert loops */
    temporary_bytes_allocd_TOT 
       += (ULong)(private_LibVEX_alloc_curr - private_LibVEX_alloc_first);
+
+#if defined(ENABLE_INNER)
+   if (mempools_created) {
+      VALGRIND_MEMPOOL_TRIM(&temporary[0], &temporary[0], 0);
+   } else {
+      VALGRIND_CREATE_MEMPOOL(&temporary[0], VEX_REDZONE_SIZEB, 0);
+      VALGRIND_CREATE_MEMPOOL(&permanent[0], VEX_REDZONE_SIZEB, 0);
+      VALGRIND_MAKE_MEM_NOACCESS(&permanent[0], N_PERMANENT_BYTES);
+      mempools_created = True;
+   }
+   VALGRIND_MAKE_MEM_NOACCESS(&temporary[0], N_TEMPORARY_BYTES);
+#endif
 
    mode = VexAllocModeTEMP;
    temporary_curr            = &temporary[0];

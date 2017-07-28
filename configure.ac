@@ -2177,6 +2177,27 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL([HAVE_ASM_CONSTRAINT_P], [test x$ac_have_asm_constraint_p = xyes])
 
 
+# Does this compiler and linker support -pie?
+# Some compilers actually do not support -pie and report its usage
+# as an error. We need to check if it is safe to use it first.
+
+AC_MSG_CHECKING([if gcc accepts -pie])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-pie"
+
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[ ]], [[
+  return 0;
+]])], [
+AC_SUBST([FLAG_PIE], ["-pie"])
+AC_MSG_RESULT([yes])
+], [
+AC_SUBST([FLAG_PIE], [""])
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+
 # Does this compiler support -no-pie?
 # On Ubuntu 16.10+, gcc produces position independent executables (PIE) by
 # default. However this gets in the way with some tests, we use -no-pie

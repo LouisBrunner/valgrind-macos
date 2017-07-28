@@ -167,5 +167,5 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 LDADD = -lpthread
 
-main_pic_LDFLAGS = -pie
+main_pic_LDFLAGS = @FLAG_PIE@
 main_pic_CFLAGS	 = $(AM_CFLAGS) -fPIC

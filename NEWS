@@ -44,7 +44,7 @@ where XXXXXX is the bug number as listed below.
 381805  arm32 needs ld.so index hardwire for new glibc security fixes
 382256  gz compiler flag test doesn't work for gold
 382407  vg_perf needs "--terse" command line option
-
+382515  "Assertion 'di->have_dinfo' failed." on wine's dlls/mscoree/tests/mscoree.c
 
 Release 3.13.0 (15 June 2017)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

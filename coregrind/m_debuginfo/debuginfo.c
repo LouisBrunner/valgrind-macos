@@ -1404,19 +1404,22 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
 
      /* don't set up any of the di-> fields; let
         ML_(read_pdb_debug_info) do it. */
-     ML_(read_pdb_debug_info)( di, avma_obj, bias_obj,
-                               pdbimage, n_pdbimage, pdbname, pdb_mtime );
-     // JRS fixme: take notice of return value from read_pdb_debug_info,
-     // and handle failure
-     vg_assert(di->have_dinfo); // fails if PDB read failed
+     if (ML_(read_pdb_debug_info)( di, avma_obj, bias_obj,
+                                   pdbimage, n_pdbimage, pdbname, pdb_mtime )) {
+        vg_assert(di->have_dinfo); // fails if PDB read failed
+        if (VG_(clo_verbosity) > 0) {
+           VG_(message)(Vg_UserMsg, "LOAD_PDB_DEBUGINFO: done:    "
+                        "%lu syms, %lu src locs, %lu fpo recs\n",
+                        di->symtab_used, di->loctab_used, di->fpo_size);
+        }
+     } else {
+        VG_(message)(Vg_UserMsg, "LOAD_PDB_DEBUGINFO: failed loading info "
+                     "from %s\n", pdbname);
+        discard_DebugInfo (di);
+     }
      VG_(am_munmap_valgrind)( (Addr)pdbimage, n_pdbimage );
      VG_(close)(fd_pdbimage);
 
-     if (VG_(clo_verbosity) > 0) {
-        VG_(message)(Vg_UserMsg, "LOAD_PDB_DEBUGINFO: done:    "
-                                 "%lu syms, %lu src locs, %lu fpo recs\n",
-                     di->symtab_used, di->loctab_used, di->fpo_size);
-     }
    }
 
   out:

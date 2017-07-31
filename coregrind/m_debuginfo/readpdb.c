@@ -1019,10 +1019,17 @@ static void* find_pdb_header( void* pdbimage,
 {
    static const HChar pdbtxt[]= "Microsoft C/C++";
    HChar* txteof = VG_(strchr)(pdbimage, '\032');
-   if (! txteof)
+   if (! txteof) {
+      VG_(umsg)("LOAD_PDB_DEBUGINFO: \\032 header character not found. "
+                " possible invalid/unsupported pdb file format?\n");
       return NULL;
-   if (0!=VG_(strncmp)(pdbimage, pdbtxt, -1+ sizeof(pdbtxt)))
+   }
+   if (0!=VG_(strncmp)(pdbimage, pdbtxt, -1+ sizeof(pdbtxt))) {
+      VG_(umsg)("LOAD_PDB_DEBUGINFO: %s header string not found. "
+                " possible invalid/unsupported pdb file format?\n",
+                pdbtxt);;
       return NULL;
+   }
 
    *signature = *(unsigned*)(1+ txteof);
    HChar *img_addr = pdbimage;    // so we can do address arithmetic
@@ -2270,13 +2277,19 @@ Bool ML_(read_pdb_debug_info)(
        VG_(umsg)("LOAD_PDB_DEBUGINFO: Processing PDB file %s\n", pdbname );
 
    dos_avma = (IMAGE_DOS_HEADER *)obj_avma;
-   if (dos_avma->e_magic != IMAGE_DOS_SIGNATURE)
-      return False;
+   if (dos_avma->e_magic != IMAGE_DOS_SIGNATURE) {
+      VG_(umsg)("LOAD_PDB_DEBUGINFO: IMAGE_DOS_SIGNATURE not found. "
+                " possible invalid/unsupported pdb file format?\n");
+       return False;
+   }
 
    ntheaders_avma
       = (IMAGE_NT_HEADERS *)((Char*)dos_avma + dos_avma->e_lfanew);
-   if (ntheaders_avma->Signature != IMAGE_NT_SIGNATURE)
+   if (ntheaders_avma->Signature != IMAGE_NT_SIGNATURE) {
+      VG_(umsg)("LOAD_PDB_DEBUGINFO: IMAGE_NT_SIGNATURE not found. "
+                " possible invalid/unsupported pdb file format?\n");
       return False;
+   }
 
    sectp_avma
       = (IMAGE_SECTION_HEADER *)(
@@ -2412,8 +2425,11 @@ Bool ML_(read_pdb_debug_info)(
     */
    signature = 0;
    hdr = find_pdb_header( pdbimage, &signature );
-   if (0==hdr)
+   if (0==hdr) {
+      VG_(umsg)("LOAD_PDB_DEBUGINFO: find_pdb_header found no hdr. "
+                " possible invalid/unsupported pdb file format?\n");
       return False; /* JRS: significance? no pdb header? */
+   }
 
    VG_(memset)(&reader, 0, sizeof(reader));
    reader.u.jg.header = hdr;

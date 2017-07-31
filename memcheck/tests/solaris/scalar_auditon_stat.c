@@ -1,6 +1,6 @@
 /* Scalar test for commands A_GETSTAT and A_SETSTAT for auditon(2) subcode
-   of the auditsys() syscall. Available on Solaris 11 and illumos,
-   removed in Solaris 12. */
+   of the auditsys() syscall. Available on Solaris 11.3 and illumos,
+   removed in Solaris 11.4. */
 
 #include "scalar.h"
 

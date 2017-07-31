@@ -52,8 +52,8 @@ Main currently-known incompatibilities:
 - syscall number for unlinkat() is 76 on Solaris 11, but 65 on illumos [2]
 - illumos (in April 2013) changed interface of the accept() and pipe()
   syscalls [3]
-- posix_spawn() functionality is backed up by true spawn() syscall on Solaris 12
-  whereas illumos and Solaris 11 leverage vfork()
+- posix_spawn() functionality is backed up by true spawn() syscall on Solaris 11.4
+  whereas illumos and Solaris 11.3 leverage vfork()
 - illumos and older Solaris use utimesys() syscall whereas newer Solaris
   uses utimensat()
 

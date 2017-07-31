@@ -428,7 +428,16 @@ case "${host_os}" in
      solaris2.11*)
         AC_MSG_RESULT([ok (${host_os})])
         VGCONF_OS="solaris"
-        DEFAULT_SUPP="solaris11.supp ${DEFAULT_SUPP}"
+
+        uname_v=$( uname -v )
+        case "$uname_v" in
+             11.4.*)
+                 DEFAULT_SUPP="solaris12.supp ${DEFAULT_SUPP}"
+                 ;;
+             *)
+                 DEFAULT_SUPP="solaris11.supp ${DEFAULT_SUPP}"
+                 ;;
+	esac
         ;;
 
      solaris2.12*)
@@ -3058,11 +3067,11 @@ AM_CONDITIONAL(SOLARIS_LWP_SIGQUEUE_SYSCALL, test x$solaris_lwp_sigqueue_syscall
 # Solaris-specific check determining if the lwp_sigqueue() syscall
 # takes both pid and thread id arguments or just thread id.
 #
-# Old syscall (available on Solaris 11.x):
+# Old syscall (available up to Solaris 11.3):
 # int lwp_sigqueue(id_t lwpid, int sig, void *value,
 #                  int si_code, timespec_t *timeout);
 #
-# New syscall (available on Solaris 12):
+# New syscall (available since Solaris 11.4):
 # int lwp_sigqueue(pid_t pid, id_t lwpid, int sig, void *value,
 #                  int si_code, timespec_t *timeout);
 #
@@ -3178,7 +3187,7 @@ AM_CONDITIONAL(SOLARIS_ZONE_DEFUNCT, test x$solaris_zone_defunct = xyes)
 # Solaris-specific check determining if commands A_GETSTAT and A_SETSTAT
 # for auditon(2) subcode of the auditsys() syscall are available.
 # These commands are available in Solaris 11 and illumos but were removed
-# in Solaris 12.
+# in Solaris 11.4.
 #
 # C-level symbol: SOLARIS_AUDITON_STAT
 # Automake-level symbol: SOLARIS_AUDITON_STAT
@@ -3350,8 +3359,8 @@ AM_CONDITIONAL(SOLARIS_TSOL_CLEARANCE, test x$solaris_tsol_clearance = xyes)
 
 
 # Solaris-specific check determining if the new pset() syscall subcode
-# PSET_GET_NAME is available. This subcode was added in Solaris 12 but
-# is missing on illumos and Solaris 11.
+# PSET_GET_NAME is available. This subcode was added in Solaris 11.4 but
+# is missing on illumos and Solaris 11.3.
 #
 # C-level symbol: SOLARIS_PSET_GET_NAME
 # Automake-level symbol: SOLARIS_PSET_GET_NAME
@@ -3616,7 +3625,7 @@ AC_DEFINE_UNQUOTED([SOLARIS_REPCACHE_PROTOCOL_VERSION], [$version],
 # Solaris-specific check determining if "sysstat" segment reservation type
 # is available.
 #
-# New "sysstat" segment reservation (available on Solaris 12):
+# New "sysstat" segment reservation (available on Solaris 11.4):
 # - program header type:    PT_SUNW_SYSSTAT
 # - auxiliary vector entry: AT_SUN_SYSSTAT_ADDR
 #
@@ -3643,7 +3652,7 @@ AM_CONDITIONAL(SOLARIS_RESERVE_SYSSTAT_ADDR, test x$solaris_reserve_sysstat_addr
 # Solaris-specific check determining if "sysstat_zone" segment reservation type
 # is available.
 #
-# New "sysstat_zone" segment reservation (available on Solaris 12):
+# New "sysstat_zone" segment reservation (available on Solaris 11.4):
 # - program header type:    PT_SUNW_SYSSTAT_ZONE
 # - auxiliary vector entry: AT_SUN_SYSSTAT_ZONE_ADDR
 #

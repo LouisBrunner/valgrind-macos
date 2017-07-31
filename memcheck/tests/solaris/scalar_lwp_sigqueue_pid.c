@@ -1,5 +1,5 @@
 /* Test for lwp_sigqueue syscall which accepts pid along the thread id.
-   Available since Solaris 12.
+   Available since Solaris 11.4.
  */
 
 #include "scalar.h"

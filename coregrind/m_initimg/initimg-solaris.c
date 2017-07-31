@@ -369,7 +369,7 @@ static void copy_auxv_entry(const vki_auxv_t *orig_auxv, Int type,
 
    Note that auxiliary vector is *not* created by kernel on illumos and
    Solaris 11 if the program is statically linked (which is our case).
-   Although we now taught Solaris 12 to create the auxiliary vector, we still
+   Although we now taught Solaris 11.4 to create the auxiliary vector, we still
    have to build auxv from scratch, to make the code consistent. */
 
 static Addr setup_client_stack(Addr init_sp,

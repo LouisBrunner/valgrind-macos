@@ -1598,7 +1598,7 @@ static void print_monitor_help ( void )
 "      saves all snapshot(s) taken so far in <filename>\n"
 "             default <filename> is massif.vgdb.out\n"
 "  xtmemory [<filename>]\n"
-"        dump xtree memory profile in <filename> (default xtmemory.kcg)\n"
+"        dump xtree memory profile in <filename> (default xtmemory.kcg.%%p.%%n)\n"
 "\n");
 }
 

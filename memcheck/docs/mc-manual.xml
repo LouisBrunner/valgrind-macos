@@ -904,7 +904,7 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
       </itemizedlist>
       
       <para>The increase or decrease for all events above will also be output in
-        the file to provide the delta (increase or decreaseà between 2
+        the file to provide the delta (increase or decrease) between 2
         successive leak searches. For example, <option>iRB</option> is the
         increase of the <option>RB</option> event, <option>dPBk</option> is the
         decrease of <option>PBk</option> event. The values for the increase and
@@ -2175,6 +2175,13 @@ Address 0x8049E28 len 1 defined
 
   </listitem>
 
+  <listitem>
+    <para><varname>xtmemory [&lt;filename&gt; default xtmemory.kcg.%p.%n]</varname>
+      requests Memcheck tool to produce an xtree heap memory report.
+      See <xref linkend="manual-core.xtree"/> for
+      a detailed explanation about execution trees. </para>
+  </listitem>
+  
 </itemizedlist>
 
 </sect1>

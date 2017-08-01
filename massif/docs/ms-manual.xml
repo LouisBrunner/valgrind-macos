@@ -888,6 +888,12 @@ gdbserver (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>).
     &lt;filename&gt; (default massif.vgdb.out).
     </para>
   </listitem>
+  <listitem>
+    <para><varname>xtmemory [&lt;filename&gt; default xtmemory.kcg.%p.%n]</varname>
+      requests Massif tool to produce an xtree heap memory report.
+      See <xref linkend="manual-core.xtree"/> for
+      a detailed explanation about execution trees. </para>
+  </listitem>
 </itemizedlist>
 </sect1>
 

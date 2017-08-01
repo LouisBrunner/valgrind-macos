@@ -4923,7 +4923,7 @@ static void print_monitor_help ( void )
 "  accesshistory <addr> [<len>]   : show access history recorded\n"
 "                     for <len> (or 1) bytes at <addr>\n"
 "  xtmemory [<filename>]\n"
-"        dump xtree memory profile in <filename> (default xtmemory.kcg)\n"
+"        dump xtree memory profile in <filename> (default xtmemory.kcg.%%p.%%n)\n"
 "\n");
 }
 

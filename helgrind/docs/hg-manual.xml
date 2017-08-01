@@ -1401,6 +1401,12 @@ write of size 4 at 0x8049D88 by thread #9 tid 2
 ]]></programlisting>
 
   </listitem>
+  <listitem>
+    <para><varname>xtmemory [&lt;filename&gt; default xtmemory.kcg.%p.%n]</varname>
+      requests Helgrind tool to produce an xtree heap memory report.
+      See <xref linkend="manual-core.xtree"/> for
+      a detailed explanation about execution trees. </para>
+  </listitem>
 
 </itemizedlist>
 

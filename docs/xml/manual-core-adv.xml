@@ -1398,7 +1398,7 @@ client request.
 
   <listitem>
     <para><varname>xtmemory [&lt;filename&gt; default xtmemory.kcg.%p.%n]</varname>
-      requests the tool to produce an xtree heap memory report.
+      requests the tool (Memcheck, Massif, Helgrind) to produce an xtree heap memory report. 
       See <xref linkend="manual-core.xtree"/> for
       a detailed explanation about execution trees. </para>
   </listitem>

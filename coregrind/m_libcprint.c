@@ -526,7 +526,7 @@ void VG_(init_log_xml_sinks)(VgLogTo log_to, VgLogTo xml_to,
          break;
 
       case VgLogTo_Socket:
-         log_fd = prepare_sink_socket(VG_(clo_xml_fname_unexpanded),
+         xml_fd = prepare_sink_socket(VG_(clo_xml_fname_unexpanded),
                                       &VG_(xml_output_sink), True);
          break;
    }

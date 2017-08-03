@@ -142,6 +142,74 @@ TODO list
   Valgrind needs to invoke a syscall on its own.
 
 
+Summary of Solaris 11 Kernel Interfaces Used
+--------------------------------------------
+Valgrind uses directly the following kernel interfaces (not exhaustive list).
+Then, of course, it has very intimate knowledge of all syscalls, many ioctls
+and some door calls because it has wrappers around them.
+- Syscalls:
+  . clock_gettime
+  . close
+  . connect
+  . execve
+  . exit
+  . faccessat
+  . fcntl
+  . forksys
+  . fstatat
+  . getcwd
+  . getdents
+  . geteuid
+  . getgid
+  . getgroups
+  . getpeername
+  . getpid
+  . getrlimit
+  . getsockname
+  . getsockopt
+  . gettimeofday
+  . kill
+  . lseek
+  . lwp_create
+  . lwp_exit
+  . lwp_self
+  . lwp_sigqueue
+  . mknodat
+  . mmap
+  . mprotect
+  . munmap
+  . openat
+  . pipe
+  . pollsys
+  . pread
+  . prgpsys
+  . pwrite
+  . read
+  . readlinkat
+  . renameat
+  . rt_sigprocmask
+  . send
+  . setrlimit
+  . setsockopt
+  . sigaction
+  . sigreturn
+  . sigtimedwait
+  . so_socket
+  . spawn
+  . uname
+  . unlinkat
+  . waitsys
+  . write
+- Signal frames. Valgrind decomposes and synthetizes signal frames.
+- Flag sc_sigblock flag in the schedctl structure by replacing
+  function block_all_signals() from libc. The replacement emulates lwp_sigmask
+  syscall. More details in coregrind/vg_preloaded.c.
+- Initial stack layout for the main thread is synthetized.
+- procfs agent thread and other procfs commands for manipulating the process.
+- mmapobj syscall is emulated because it gets in the way of the address space
+  manager's control.
+
+
 Contacts
 --------
 Please send bug reports and any questions about the port to:

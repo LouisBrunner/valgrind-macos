@@ -177,6 +177,20 @@ ThreadId VG_(lwpid_to_vgtid)(Int lwp)
    return VG_INVALID_THREADID;
 }
 
+ThreadId VG_(lwpid_to_vgtid_dead_ok)(Int lwp)
+{
+   ThreadId tid = VG_(lwpid_to_vgtid)(lwp);
+
+   if (tid != VG_INVALID_THREADID)
+      return tid;
+   
+   for(tid = 1; tid < VG_N_THREADS; tid++)
+      if (VG_(threads)[tid].os_state.lwpid == lwp)
+	 return tid;
+
+   return VG_INVALID_THREADID;
+}
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

@@ -343,7 +343,7 @@ static void show_sched_status_wrk ( Bool host_stacktrace,
       Addr ips[BACKTRACE_DEPTH];
       Int  n_ips;
       ThreadState *tst 
-         = VG_(get_ThreadState)( VG_(lwpid_to_vgtid)( VG_(gettid)() ) );
+         = VG_(get_ThreadState)( VG_(lwpid_to_vgtid_dead_ok)(VG_(gettid)()));
  
       // If necessary, fake up an ExeContext which is of our actual real CPU
       // state.  Could cause problems if we got the panic/exception within the

@@ -466,6 +466,13 @@ extern Int VG_(count_runnable_threads)(void);
    ThreadId */
 extern ThreadId VG_(lwpid_to_vgtid)(Int lwpid);
 
+
+/* Same as VG_(lwpid_to_vgtid), but if no corresponding living thread is found,
+   searches also in dead threads.
+   This can be used when the tid is exiting, but the corresponding
+   lwpid is still running. */
+extern ThreadId VG_(lwpid_to_vgtid_dead_ok)(Int lwpid);
+
 #endif   // __PUB_CORE_THREADSTATE_H
 
 /*--------------------------------------------------------------------*/

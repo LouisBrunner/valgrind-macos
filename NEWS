@@ -46,6 +46,7 @@ where XXXXXX is the bug number as listed below.
 382407  vg_perf needs "--terse" command line option
 382515  "Assertion 'di->have_dinfo' failed." on wine's dlls/mscoree/tests/mscoree.c
 382998  xml-socket doesn't work
+383275  massif valgrind: m_xarray.c:162 (ensureSpaceXA): Assertion '!xa->arr' failed
 
 Release 3.13.0 (15 June 2017)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

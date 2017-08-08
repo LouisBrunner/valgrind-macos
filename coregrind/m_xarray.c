@@ -149,8 +149,10 @@ void VG_(hintSizeXA) ( XArray* xa, Word n)
    vg_assert(xa->usedsizeE == 0);
    vg_assert(xa->totsizeE == 0);
    vg_assert(!xa->arr);
-   xa->arr = xa->alloc_fn(xa->cc, n * xa->elemSzB);
-   xa->totsizeE = n;
+   if (n > 0) {
+      xa->arr = xa->alloc_fn(xa->cc, n * xa->elemSzB);
+      xa->totsizeE = n;
+   }
 }
 
 static inline void ensureSpaceXA ( XArray* xa )

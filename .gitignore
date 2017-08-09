@@ -1,3 +1,4 @@
+*.o
 
 # /
 /.in_place
@@ -290,6 +291,7 @@
 
 # /drd/tests/
 /drd/tests/*.dSYM
+/drd/tests/*.so
 /drd/tests/*.stderr.diff*
 /drd/tests/*.stderr.out
 /drd/tests/*.stdout.diff*
@@ -314,6 +316,7 @@
 /drd/tests/circular_buffer
 /drd/tests/concurrent_close
 /drd/tests/custom_alloc
+/drd/tests/dlopen_lib.so
 /drd/tests/dlopen_main
 /drd/tests/drd_bitmap_test
 /drd/tests/fp_race
@@ -792,6 +795,7 @@
 
 # /memcheck/tests/
 /memcheck/tests/*.dSYM
+/memcheck/tests/*.so
 /memcheck/tests/*.stderr.diff*
 /memcheck/tests/*.stderr.out
 /memcheck/tests/*.stdout.diff*

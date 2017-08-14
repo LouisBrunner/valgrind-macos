@@ -1,0 +1,5 @@
+
+This directory and its children contain LibVEX, a library for dynamic
+binary instrumentation and translation.  See LICENSE.README for
+licensing and contribution information.
+

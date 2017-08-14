@@ -1,0 +1,19 @@
+       0:       e1a0c00d        mov     ip, sp
+. 0 00008000 4
+. 0d c0 a0 e1
+
+       4:       e92dd810        stmdb   sp!, {r4, fp, ip, lr, pc}
+. 1 00008004 4
+. 10 d8 2d e9
+
+       8:       e24cb004        sub     fp, ip, #4      ; 0x4
+. 2 00008008 4
+. 04 b0 4c e2
+
+       c:       e3a00014        mov     r0, #20 ; 0x14
+. 3 0000800C 4
+. 14 00 a0 e3
+
+      10:       ebfffffe        bl      0 <newHHW>
+. 4 00008010 4
+. fe ff ff eb

@@ -1,0 +1,55 @@
+
+Last updated 15 Nov 04
+~~~~~~~~~~~~~~~~~~~~~~
+
+Critical (correctness)
+~~~~~~~~~~~~~~~~~~~~~~
+x86 isel: should free up all fp reg tags when calling a helper.
+And save FP and SSE insns across the helper.
+
+iropt: reconsider precise exceptions
+
+x86 guest: look at FP accuracy
+
+
+Optimisation opportunities
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+Improved isel for memcheck artefacts on x86 (generate neg ; sbbl)
+
+Assess tt_fast miss rates 
+
+improve stack-update pass
+
+proper profiling machinery
+
+do not CSE exprs :: Ity_Bit
+
+x86 iselIntExpr_RMI: actually generate the M case if possible
+
+
+JIT speedups
+~~~~~~~~~~~~
+Ensure incremental flatness throughout
+
+Profile again with cachegrind/calltree
+
+change IRTemp to 16 bits?
+
+
+Integration
+~~~~~~~~~~~
+Get rid of sloppy-malloc
+
+Get rid of partial-loads-ok
+
+Optimisation after first instrumentation rather than 2nd ?
+
+disallow dirty helpers from writing SP/IP
+
+write API doc, clarify IR semantics
+
+make IR utils module
+
+generic stack pointer identification at startup?
+
+New memstack_k: old or new sp?

@@ -1728,7 +1728,7 @@ Massif, Helgrind, DRD), the following options apply.</para>
         For massif and helgrind, specifying <varname>full</varname>
         implies to capture a stack trace for each free operation,
         while normally these tools only capture an allocation stack
-        trace.  For memcheck, the cpu overhead for the
+        trace.  For Memcheck, the cpu overhead for the
         value <varname>full</varname> is small, as this can only be
         used in combination with
         <option>--keep-stacktraces=alloc-and-free</option> or

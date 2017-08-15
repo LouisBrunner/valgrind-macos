@@ -1,0 +1,8 @@
+#!/bin/sh
+
+subject=$1
+body=$2
+file=$3
+filename=$( basename $3 )
+
+(cat "$body" "$file") | mailx -s "$subject" -r "Ivo Raisr <ivosh@ivosh.net>" valgrind-testresults@lists.sourceforge.net

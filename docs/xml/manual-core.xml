@@ -399,7 +399,7 @@ Valgrind prints out one line for each used suppression, giving the number of tim
 it got used, its name and the filename and line number where the suppression is
 defined. Depending on the suppression kind, the filename and line number are optionally
 followed by additional information (such as the number of blocks and bytes suppressed
-by a memcheck leak suppression). Here's the suppressions used by a
+by a Memcheck leak suppression). Here's the suppressions used by a
 run of <computeroutput>valgrind -v --tool=memcheck ls -l</computeroutput>:</para>
 
 <programlisting><![CDATA[

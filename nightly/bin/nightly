@@ -88,11 +88,12 @@ fi
 #----------------------------------------------------------------------------
 
 # Clone the GIT repository first. We will query it and copy it afterwards.
-git clone --quiet git://sourceware.org/git/valgrind.git/ valgrind-repo
+git clone --quiet $valgrind_git_repo valgrind-repo
 
 cd valgrind-repo
 commits=$( git rev-list --after="24 hours ago" master )
 if [ -z "$commits" ]; then
+  cd ..
   echo "There are no new commits since yesterday -- skipping nightly build." > unchanged.log
   exit 0
 fi
@@ -117,8 +118,7 @@ for logfile in old new ; do
    # Check out, build, run tests
    runcmd $logfile \
           "Checking out Valgrind source tree" \
-          "cp -r --preserve=links valgrind-repo valgrind-$logfile\
-           && git checkout ${git_commit}" && \
+          "cp -r --preserve=links valgrind-repo valgrind-$logfile && cd valgrind-$logfile && git checkout ${git_commit}" && \
    \
    runcmd $logfile \
           "Configuring valgrind             " \

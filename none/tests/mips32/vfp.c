@@ -3,6 +3,7 @@
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 unsigned int mem[] = {
    0x4095A266, 0x66666666,
@@ -246,6 +247,7 @@ float mem1f[] = {
           out);                                                  \
 }
 
+#if (__mips==32) && (__mips_isa_rev>=2) && (__mips_fpr==64 || __mips_fpr==xx)
 #define TEST_FPU64                \
    __asm__ __volatile__(          \
       "cvt.l.s $f0, $f0"  "\n\t"  \
@@ -258,6 +260,7 @@ static void handler(int sig)
 {
    exit(0);
 }
+#endif
 
 void ppMem(double *m, int len)
 {

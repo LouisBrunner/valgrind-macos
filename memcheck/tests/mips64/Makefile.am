@@ -9,3 +9,5 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 
 check_PROGRAMS = \
 	fadvise64
+
+fadvise64_CFLAGS = $(AM_CFLAGS) -Wno-uninitialized

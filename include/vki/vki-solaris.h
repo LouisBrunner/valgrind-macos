@@ -42,7 +42,7 @@
 #ifndef __VKI_SOLARIS_H
 #define __VKI_SOLARIS_H
 
-#include "../../config.h"
+#include "config.h"
 
 /* _XOPEN_SOURCE equal to at least '500' is required so that various system
    structures have all necessary attributes (for example struct msghdr). */

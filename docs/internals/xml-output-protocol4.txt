@@ -9,9 +9,8 @@ are four variants of Protocol 4, one for each tool, since they
 produce different errors.  The four variants differ only in the
 definition of the ERROR nonterminal and are otherwise identical.
 
-NOTE that Protocol 4 (for the current svn trunk, which will eventually
-become 3.7.x) is still under development.  The text herein should not
-be regarded as the final definition.
+NOTE that Protocol 4 (for the current git master) is still under development.
+The text herein should not be regarded as the final definition.
 
 
 Identification of Protocols
@@ -498,14 +497,17 @@ KIND for Memcheck
 This is a small enumeration indicating roughly the nature of an error.
 The possible values are:
 
-   InvalidFree
+   UninitValue
 
-      free/delete/delete[] on an invalid pointer
+      other use of undefined value (primarily memory addresses)
 
-   MismatchedFree
+   UninitCondition
 
-      free/delete/delete[] does not match allocation function
-      (eg doing new[] then free on the result)
+      conditional jump/move depends on undefined value
+
+   CoreMemError
+
+      caused by unaddressable bytes in a signal handler frame
 
    InvalidRead
 
@@ -519,22 +521,6 @@ The possible values are:
 
       jump to an invalid address
 
-   Overlap
-
-      args overlap other otherwise bogus in eg memcpy
-
-   InvalidMemPool
-
-      invalid mem pool specified in client request
-
-   UninitCondition
-
-      conditional jump/move depends on undefined value
-
-   UninitValue
-
-      other use of undefined value (primarily memory addresses)
-
    SyscallParam
 
       system call params are undefined or point to
@@ -543,6 +529,19 @@ The possible values are:
    ClientCheck
 
       "error" resulting from a client check request
+
+   InvalidFree
+
+      free/delete/delete[] on an invalid pointer
+
+   MismatchedFree
+
+      free/delete/delete[] does not match allocation function
+      (eg doing new[] then free on the result)
+
+   Overlap
+
+      args overlap other otherwise bogus in eg memcpy
 
    Leak_DefinitelyLost
 
@@ -561,6 +560,15 @@ The possible values are:
    Leak_StillReachable
 
       memory leak; pointers to un-freed blocks are still available
+
+   InvalidMemPool
+
+      invalid mem pool specified in client request
+
+   FishyValue
+
+      arguments to memory allocation function are very large,
+      indicating probable integer overflow or cast from negative signed
 
 
 ====================================================================

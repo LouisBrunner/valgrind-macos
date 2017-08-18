@@ -229,6 +229,8 @@ enum target_signal
     TARGET_EXC_SOFTWARE,
     TARGET_EXC_BREAKPOINT,
 
+    TARGET_SIGNAL_LIBRT,
+
     /* If you are adding a new signal, add it just above this comment.  */
 
     /* Last and unused enum value, for sizing arrays, etc.  */

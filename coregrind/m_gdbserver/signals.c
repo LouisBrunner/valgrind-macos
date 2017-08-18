@@ -197,6 +197,8 @@ static struct {
       {"EXC_SOFTWARE", "Software generated exception"},
       {"EXC_BREAKPOINT", "Breakpoint"},
 
+      {"SIGLIBRT", "librt internal signal"},
+
       /* Last entry, used to check whether the table is the right size.  */
       {NULL, "TARGET_SIGNAL_MAGIC"}
    };
@@ -465,6 +467,10 @@ enum target_signal target_signal_from_host (int hostsig)
    if (hostsig == VKI_SIGINFO)
       return TARGET_SIGNAL_INFO;
 #endif
+#if defined (VKI_SIGLIBRT)
+   if (hostsig == VKI_SIGLIBRT)
+      return TARGET_SIGNAL_LIBRT;
+#endif
 
 #if defined (VKI_SIGRTMIN)
    if (hostsig >= VKI_SIGRTMIN && hostsig < VKI_SIGRTMAX) {
@@ -713,6 +719,10 @@ int do_target_signal_to_host (enum target_signal oursig,
 #if defined (VKI_SIGINFO)
    case TARGET_SIGNAL_INFO:
       return VKI_SIGINFO;
+#endif
+#if defined (SIGLIBRT)
+   case TARGET_SIGNAL_LIBRT:
+      return SIGLIBRT;
 #endif
 
    default:

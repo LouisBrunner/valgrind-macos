@@ -503,6 +503,12 @@ typedef
 
       Iop_DivModS64to64, // :: I64,I64 -> I128
                          // of which lo half is div and hi half is mod
+      Iop_DivModU64to64, // :: I64,I64 -> I128
+                         // of which lo half is div and hi half is mod
+      Iop_DivModS32to32, // :: I32,I32 -> I64
+                         // of which lo half is div and hi half is mod
+      Iop_DivModU32to32, // :: I32,I32 -> I64
+                         // of which lo half is div and hi half is mod
 
       /* Integer conversions.  Some of these are redundant (eg
          Iop_64to8 is the same as Iop_64to32 and then Iop_32to8), but

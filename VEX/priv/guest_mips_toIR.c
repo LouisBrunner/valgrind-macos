@@ -15661,20 +15661,19 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          if (mode64) {
             t2 = newTemp(Ity_I64);
 
-            assign(t2, binop(Iop_DivModS64to32,
-                             getIReg(rs), mkNarrowTo32(ty, getIReg(rt))));
+            assign(t2, binop(Iop_DivModS32to32,
+                             mkNarrowTo32(ty, getIReg(rs)),
+                             mkNarrowTo32(ty, getIReg(rt))));
 
             putHI(mkWidenFrom32(ty, unop(Iop_64HIto32, mkexpr(t2)), True));
             putLO(mkWidenFrom32(ty, unop(Iop_64to32, mkexpr(t2)), True));
          } else {
             t1 = newTemp(Ity_I64);
-            t2 = newTemp(Ity_I64);
 
-            assign(t1, unop(Iop_32Sto64, getIReg(rs)));
-            assign(t2, binop(Iop_DivModS64to32, mkexpr(t1), getIReg(rt)));
+            assign(t1, binop(Iop_DivModS32to32, getIReg(rs), getIReg(rt)));
 
-            putHI(unop(Iop_64HIto32, mkexpr(t2)));
-            putLO(unop(Iop_64to32, mkexpr(t2)));
+            putHI(unop(Iop_64HIto32, mkexpr(t1)));
+            putLO(unop(Iop_64to32, mkexpr(t1)));
          }
          break;
 
@@ -15683,18 +15682,18 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          if (mode64) {
             t2 = newTemp(Ity_I64);
 
-            assign(t2, binop(Iop_DivModU64to32,
-                             getIReg(rs), mkNarrowTo32(ty, getIReg(rt))));
+            assign(t2, binop(Iop_DivModU32to32,
+                             mkNarrowTo32(ty, getIReg(rs)),
+                             mkNarrowTo32(ty, getIReg(rt))));
 
             putHI(mkWidenFrom32(ty, unop(Iop_64HIto32, mkexpr(t2)), True));
             putLO(mkWidenFrom32(ty, unop(Iop_64to32, mkexpr(t2)), True));
          } else {
             t1 = newTemp(Ity_I64);
-            t2 = newTemp(Ity_I64);
-            assign(t1, unop(Iop_32Uto64, getIReg(rs)));
-            assign(t2, binop(Iop_DivModU64to32, mkexpr(t1), getIReg(rt)));
-            putHI(unop(Iop_64HIto32, mkexpr(t2)));
-            putLO(unop(Iop_64to32, mkexpr(t2)));
+
+            assign(t1, binop(Iop_DivModU32to32, getIReg(rs), getIReg(rt)));
+            putHI(unop(Iop_64HIto32, mkexpr(t1)));
+            putLO(unop(Iop_64to32, mkexpr(t1)));
          }
          break;
 
@@ -15731,14 +15730,11 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       case 0x1F:  /* Doubleword Divide Unsigned DDIVU; MIPS64 check this */
          DIP("ddivu r%u, r%u", rs, rt);
          t1 = newTemp(Ity_I128);
-         t2 = newTemp(Ity_I128);
 
-         assign(t1, binop(Iop_64HLto128, mkU64(0), getIReg(rs)));
+         assign(t1, binop(Iop_DivModU64to64, getIReg(rs), getIReg(rt)));
 
-         assign(t2, binop(Iop_DivModU128to64, mkexpr(t1), getIReg(rt)));
-
-         putHI(unop(Iop_128HIto64, mkexpr(t2)));
-         putLO(unop(Iop_128to64, mkexpr(t2)));
+         putHI(unop(Iop_128HIto64, mkexpr(t1)));
+         putLO(unop(Iop_128to64, mkexpr(t1)));
          break;
 
       case 0x10: {  /* MFHI */

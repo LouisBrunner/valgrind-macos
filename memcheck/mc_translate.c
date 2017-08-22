@@ -3977,13 +3977,26 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_32HLto64:
          return assignNew('V', mce, Ity_I64, binop(op, vatom1, vatom2));
 
-      case Iop_DivModS64to64:
+      case Iop_DivModU64to64:
+      case Iop_DivModS64to64: {
+         IRAtom* vTmp64 = mkLazy2(mce, Ity_I64, vatom1, vatom2);
+         return assignNew('V', mce, Ity_I128,
+                          binop(Iop_64HLto128, vTmp64, vTmp64));
+      }
+
       case Iop_MullS64:
       case Iop_MullU64: {
          IRAtom* vLo64 = mkLeft64(mce, mkUifU64(mce, vatom1,vatom2));
          IRAtom* vHi64 = mkPCastTo(mce, Ity_I64, vLo64);
          return assignNew('V', mce, Ity_I128,
                           binop(Iop_64HLto128, vHi64, vLo64));
+      }
+
+      case Iop_DivModU32to32:
+      case Iop_DivModS32to32: {
+         IRAtom* vTmp32 = mkLazy2(mce, Ity_I32, vatom1, vatom2);
+         return assignNew('V', mce, Ity_I64,
+                          binop(Iop_32HLto64, vTmp32, vTmp32));
       }
 
       case Iop_MullS32:

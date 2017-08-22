@@ -1188,36 +1188,6 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             return r_ccIR;
          }
 
-         if (e->Iex.Binop.op == Iop_DivModU64to32 ||
-             e->Iex.Binop.op == Iop_DivModS64to32) {
-            HReg tLo = newVRegI(env);
-            HReg tHi = newVRegI(env);
-            HReg mask = newVRegI(env);
-            HReg tLo_1 = newVRegI(env);
-            HReg tHi_1 = newVRegI(env);
-            HReg r_dst = newVRegI(env);
-            Bool syned = toBool(e->Iex.Binop.op == Iop_DivModS64to32);
-
-            HReg r_srcR = iselWordExpr_R(env, e->Iex.Binop.arg2);
-            HReg r_srcL = iselWordExpr_R(env, e->Iex.Binop.arg1);
-
-            addInstr(env, MIPSInstr_Div(syned, True, r_srcL, r_srcR));
-            addInstr(env, MIPSInstr_Mfhi(tHi));
-            addInstr(env, MIPSInstr_Mflo(tLo));
-
-            addInstr(env, MIPSInstr_Shft(Mshft_SLL, False, tHi_1, tHi,
-                                         MIPSRH_Imm(False, 32)));
-
-            addInstr(env, MIPSInstr_LI(mask, 0xffffffff));
-            addInstr(env, MIPSInstr_Alu(Malu_AND, tLo_1, tLo,
-                          MIPSRH_Reg(mask)));
-
-            addInstr(env, MIPSInstr_Alu(Malu_OR, r_dst, tHi_1,
-                          MIPSRH_Reg(tLo_1)));
-
-            return r_dst;
-         }
-
          if (e->Iex.Binop.op == Iop_DivModU32to32 ||
              e->Iex.Binop.op == Iop_DivModS32to32) {
             HReg tLo = newVRegI(env);
@@ -2262,25 +2232,6 @@ static void iselInt128Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env,
             return;
          }
 
-         case Iop_DivModU128to64:
-         case Iop_DivModS128to64: {
-            vassert(mode64);
-            HReg rHi1, rLo1;
-            iselInt128Expr(&rHi1, &rLo1, env, e->Iex.Binop.arg1);
-
-            HReg r_srcR = iselWordExpr_R(env, e->Iex.Binop.arg2);
-            HReg tLo = newVRegI(env);
-            HReg tHi = newVRegI(env);
-            Bool syned = toBool(e->Iex.Binop.op == Iop_DivModS128to64);
-
-            addInstr(env, MIPSInstr_Div(syned, False, rLo1, r_srcR));
-            addInstr(env, MIPSInstr_Mfhi(tHi));
-            addInstr(env, MIPSInstr_Mflo(tLo));
-            *rHi = tHi;
-            *rLo = tLo;
-            return;
-         }
-
          default:
             break;
       }
@@ -2468,23 +2419,6 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
             addInstr(env, MIPSInstr_Mul(syned /*Unsigned or Signed */,
                                         True /*widen */ , True,
                                         r_dst, r_srcL, r_srcR));
-            addInstr(env, MIPSInstr_Mfhi(tHi));
-            addInstr(env, MIPSInstr_Mflo(tLo));
-            *rHi = tHi;
-            *rLo = tLo;
-
-            return;
-         }
-         case Iop_DivModS64to32:
-         case Iop_DivModU64to32: {
-            HReg r_sHi, r_sLo;
-            HReg tLo = newVRegI(env);
-            HReg tHi = newVRegI(env);
-            Bool syned = toBool(op_binop == Iop_DivModS64to32);
-            HReg r_srcR = iselWordExpr_R(env, e->Iex.Binop.arg2);
-
-            iselInt64Expr(&r_sHi, &r_sLo, env, e->Iex.Binop.arg1);
-            addInstr(env, MIPSInstr_Div(syned, True, r_sLo, r_srcR));
             addInstr(env, MIPSInstr_Mfhi(tHi));
             addInstr(env, MIPSInstr_Mflo(tLo));
             *rHi = tHi;

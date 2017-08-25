@@ -56,19 +56,18 @@ ST_IN HReg hregAMD64_R13   ( void ) { return mkHReg(False, HRcInt64,  13,  5); }
 ST_IN HReg hregAMD64_R14   ( void ) { return mkHReg(False, HRcInt64,  14,  6); }
 ST_IN HReg hregAMD64_R15   ( void ) { return mkHReg(False, HRcInt64,  15,  7); }
 ST_IN HReg hregAMD64_RBX   ( void ) { return mkHReg(False, HRcInt64,   3,  8); }
+ST_IN HReg hregAMD64_R10   ( void ) { return mkHReg(False, HRcInt64,  10,  9); }
 
-ST_IN HReg hregAMD64_XMM3  ( void ) { return mkHReg(False, HRcVec128,  3,  9); }
-ST_IN HReg hregAMD64_XMM4  ( void ) { return mkHReg(False, HRcVec128,  4, 10); }
-ST_IN HReg hregAMD64_XMM5  ( void ) { return mkHReg(False, HRcVec128,  5, 11); }
-ST_IN HReg hregAMD64_XMM6  ( void ) { return mkHReg(False, HRcVec128,  6, 12); }
-ST_IN HReg hregAMD64_XMM7  ( void ) { return mkHReg(False, HRcVec128,  7, 13); }
-ST_IN HReg hregAMD64_XMM8  ( void ) { return mkHReg(False, HRcVec128,  8, 14); }
-ST_IN HReg hregAMD64_XMM9  ( void ) { return mkHReg(False, HRcVec128,  9, 15); }
-ST_IN HReg hregAMD64_XMM10 ( void ) { return mkHReg(False, HRcVec128, 10, 16); }
-ST_IN HReg hregAMD64_XMM11 ( void ) { return mkHReg(False, HRcVec128, 11, 17); }
-ST_IN HReg hregAMD64_XMM12 ( void ) { return mkHReg(False, HRcVec128, 12, 18); }
-
-ST_IN HReg hregAMD64_R10   ( void ) { return mkHReg(False, HRcInt64,  10, 19); }
+ST_IN HReg hregAMD64_XMM3  ( void ) { return mkHReg(False, HRcVec128,  3, 10); }
+ST_IN HReg hregAMD64_XMM4  ( void ) { return mkHReg(False, HRcVec128,  4, 11); }
+ST_IN HReg hregAMD64_XMM5  ( void ) { return mkHReg(False, HRcVec128,  5, 12); }
+ST_IN HReg hregAMD64_XMM6  ( void ) { return mkHReg(False, HRcVec128,  6, 13); }
+ST_IN HReg hregAMD64_XMM7  ( void ) { return mkHReg(False, HRcVec128,  7, 14); }
+ST_IN HReg hregAMD64_XMM8  ( void ) { return mkHReg(False, HRcVec128,  8, 15); }
+ST_IN HReg hregAMD64_XMM9  ( void ) { return mkHReg(False, HRcVec128,  9, 16); }
+ST_IN HReg hregAMD64_XMM10 ( void ) { return mkHReg(False, HRcVec128, 10, 17); }
+ST_IN HReg hregAMD64_XMM11 ( void ) { return mkHReg(False, HRcVec128, 11, 18); }
+ST_IN HReg hregAMD64_XMM12 ( void ) { return mkHReg(False, HRcVec128, 12, 19); }
 
 ST_IN HReg hregAMD64_RAX   ( void ) { return mkHReg(False, HRcInt64,   0, 20); }
 ST_IN HReg hregAMD64_RCX   ( void ) { return mkHReg(False, HRcInt64,   1, 21); }
@@ -81,7 +80,7 @@ ST_IN HReg hregAMD64_XMM0  ( void ) { return mkHReg(False, HRcVec128,  0, 26); }
 ST_IN HReg hregAMD64_XMM1  ( void ) { return mkHReg(False, HRcVec128,  1, 27); }
 #undef ST_IN
 
-extern void ppHRegAMD64 ( HReg );
+extern UInt ppHRegAMD64 ( HReg );
 
 
 /* --------- Condition codes, AMD encoding. --------- */
@@ -801,7 +800,7 @@ extern void genSpill_AMD64  ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                               HReg rreg, Int offset, Bool );
 extern void genReload_AMD64 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                               HReg rreg, Int offset, Bool );
-
+extern AMD64Instr* genMove_AMD64(HReg from, HReg to, Bool);
 extern AMD64Instr* directReload_AMD64 ( AMD64Instr* i,
                                         HReg vreg, Short spill_off );
 

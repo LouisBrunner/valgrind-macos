@@ -64,7 +64,7 @@ const RRegUniverse* getRRegUniverse_ARM64 ( void )
    /* Add the registers.  The initial segment of this array must be
       those available for allocation by reg-alloc, and those that
       follow are not available for allocation. */
-
+   ru->allocable_start[HRcInt64] = ru->size;
    ru->regs[ru->size++] = hregARM64_X22();
    ru->regs[ru->size++] = hregARM64_X23();
    ru->regs[ru->size++] = hregARM64_X24();
@@ -81,6 +81,7 @@ const RRegUniverse* getRRegUniverse_ARM64 ( void )
    ru->regs[ru->size++] = hregARM64_X5();
    ru->regs[ru->size++] = hregARM64_X6();
    ru->regs[ru->size++] = hregARM64_X7();
+   ru->allocable_end[HRcInt64] = ru->size - 1;
    // X8 is used as a ProfInc temporary, not available to regalloc.
    // X9 is a chaining/spill temporary, not available to regalloc.
 
@@ -94,19 +95,23 @@ const RRegUniverse* getRRegUniverse_ARM64 ( void )
    // X21 is the guest state pointer, not available to regalloc.
 
    // vector regs.  Unfortunately not callee-saved.
+   ru->allocable_start[HRcVec128] = ru->size;
    ru->regs[ru->size++] = hregARM64_Q16();
    ru->regs[ru->size++] = hregARM64_Q17();
    ru->regs[ru->size++] = hregARM64_Q18();
    ru->regs[ru->size++] = hregARM64_Q19();
    ru->regs[ru->size++] = hregARM64_Q20();
+   ru->allocable_end[HRcVec128] = ru->size - 1;
 
    // F64 regs, all of which are callee-saved
+   ru->allocable_start[HRcFlt64] = ru->size;
    ru->regs[ru->size++] = hregARM64_D8();
    ru->regs[ru->size++] = hregARM64_D9();
    ru->regs[ru->size++] = hregARM64_D10();
    ru->regs[ru->size++] = hregARM64_D11();
    ru->regs[ru->size++] = hregARM64_D12();
    ru->regs[ru->size++] = hregARM64_D13();
+   ru->allocable_end[HRcFlt64] = ru->size - 1;
 
    ru->allocable = ru->size;
    /* And other regs, not available to the allocator. */
@@ -142,43 +147,41 @@ const RRegUniverse* getRRegUniverse_ARM64 ( void )
 }
 
 
-void ppHRegARM64 ( HReg reg )  {
+UInt ppHRegARM64 ( HReg reg )  {
    Int r;
    /* Be generic for all virtual regs. */
    if (hregIsVirtual(reg)) {
-      ppHReg(reg);
-      return;
+      return ppHReg(reg);
    }
    /* But specific for real regs. */
    switch (hregClass(reg)) {
       case HRcInt64:
          r = hregEncoding(reg);
          vassert(r >= 0 && r < 31);
-         vex_printf("x%d", r);
-         return;
+         return vex_printf("x%d", r);
       case HRcFlt64:
          r = hregEncoding(reg);
          vassert(r >= 0 && r < 32);
-         vex_printf("d%d", r);
-         return;
+         return vex_printf("d%d", r);
       case HRcVec128:
          r = hregEncoding(reg);
          vassert(r >= 0 && r < 32);
-         vex_printf("q%d", r);
-         return;
+         return vex_printf("q%d", r);
       default:
          vpanic("ppHRegARM64");
    }
 }
 
-static void ppHRegARM64asSreg ( HReg reg ) {
-   ppHRegARM64(reg);
-   vex_printf("(S-reg)");
+static UInt ppHRegARM64asSreg ( HReg reg ) {
+   UInt written = ppHRegARM64(reg);
+   written += vex_printf("(S-reg)");
+   return written;
 }
 
-static void ppHRegARM64asHreg ( HReg reg ) {
-   ppHRegARM64(reg);
-   vex_printf("(H-reg)");
+static UInt ppHRegARM64asHreg ( HReg reg ) {
+   UInt written = ppHRegARM64(reg);
+   written += vex_printf("(H-reg)");
+   return written;
 }
 
 
@@ -1745,7 +1748,7 @@ void ppARM64Instr ( const ARM64Instr* i ) {
          ppHRegARM64asSreg(i->ARM64in.VCmpS.argR);
          return;
       case ARM64in_VFCSel: {
-         void (*ppHRegARM64fp)(HReg)
+         UInt (*ppHRegARM64fp)(HReg)
             = (i->ARM64in.VFCSel.isD ? ppHRegARM64 : ppHRegARM64asSreg);
          vex_printf("fcsel  ");
          ppHRegARM64fp(i->ARM64in.VFCSel.dst);
@@ -2613,6 +2616,21 @@ void genReload_ARM64 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
       default:
          ppHRegClass(rclass);
          vpanic("genReload_ARM: unimplemented regclass");
+   }
+}
+
+ARM64Instr* genMove_ARM64(HReg from, HReg to, Bool mode64)
+{
+   switch (hregClass(from)) {
+   case HRcInt64:
+      return ARM64Instr_MovI(to, from);
+   case HRcFlt64:
+      return ARM64Instr_VMov(8, to, from);
+   case HRcVec128:
+      return ARM64Instr_VMov(16, to, from);
+   default:
+      ppHRegClass(hregClass(from));
+      vpanic("genMove_ARM64: unimplemented regclass");
    }
 }
 

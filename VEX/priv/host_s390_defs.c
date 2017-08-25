@@ -366,10 +366,10 @@ ppS390Instr(const s390_insn *insn, Bool mode64)
    vex_printf("%s", s390_insn_as_string(insn));
 }
 
-void
+UInt
 ppHRegS390(HReg reg)
 {
-   vex_printf("%s", s390_hreg_as_string(reg));
+   return vex_printf("%s", s390_hreg_as_string(reg));
 }
 
 /*------------------------------------------------------------*/
@@ -402,15 +402,19 @@ getRRegUniverse_S390(void)
              FPR12 - FPR15 are also used as register pairs for 128-bit
              floating point operations
    */
-   UInt regno;
-   for (regno = 1; regno <= 11; ++regno) {
+   ru->allocable_start[HRcInt64] = ru->size;
+   for (UInt regno = 1; regno <= 11; ++regno) {
       gpr_index[regno] = ru->size;
       ru->regs[ru->size++] = s390_hreg_gpr(regno);
    }
-   for (regno = 0; regno <= 15; ++regno) {
+   ru->allocable_end[HRcInt64] = ru->size - 1;
+
+   ru->allocable_start[HRcFlt64] = ru->size;
+   for (UInt regno = 0; regno <= 15; ++regno) {
       fpr_index[regno] = ru->size;
       ru->regs[ru->size++] = s390_hreg_fpr(regno);
    }
+   ru->allocable_end[HRcFlt64] = ru->size - 1;
    ru->allocable = ru->size;
 
    /* Add the registers that are not available for allocation.
@@ -513,6 +517,17 @@ genReload_S390(HInstr **i1, HInstr **i2, HReg rreg, Int offsetB, Bool mode64)
    default:
       ppHRegClass(hregClass(rreg));
       vpanic("genReload_S390: unimplemented regclass");
+   }
+}
+
+s390_insn* genMove_S390(HReg from, HReg to, Bool mode64)
+{
+   switch (hregClass(from)) {
+   case HRcInt64:
+      return s390_insn_move(sizeofIRType(Ity_I64), to, from);
+   default:
+      ppHRegClass(hregClass(from));
+      vpanic("genMove_S390: unimplemented regclass");
    }
 }
 

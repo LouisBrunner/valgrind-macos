@@ -286,6 +286,7 @@ static void usage_NORETURN ( Bool debug_help )
 "         0000 0000   show summary profile only\n"
 "        (Nb: you need --trace-notbelow and/or --trace-notabove\n"
 "             with --trace-flags for full details)\n"
+"    --vex-regalloc-version=2|3             [3]\n"
 "\n"
 "  debugging options for Valgrind tools that report errors\n"
 "    --dump-error=<number>     show translation for basic block associated\n"
@@ -708,6 +709,8 @@ void main_process_cmd_line_options( void )
                        VG_(clo_vex_control).iropt_verbosity, 0, 10) {}
       else if VG_BINT_CLO(arg, "--vex-iropt-level",
                        VG_(clo_vex_control).iropt_level, 0, 2) {}
+      else if VG_BINT_CLO(arg, "--vex-regalloc-version",
+                       VG_(clo_vex_control).regalloc_version, 2, 3) {}
 
       else if VG_STRINDEX_CLO(arg, "--vex-iropt-register-updates",
                                    pxStrings, ix) {

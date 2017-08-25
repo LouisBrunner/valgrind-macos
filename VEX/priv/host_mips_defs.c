@@ -63,6 +63,7 @@ const RRegUniverse* getRRegUniverse_MIPS ( Bool mode64 )
    /* Add the registers.  The initial segment of this array must be
       those available for allocation by reg-alloc, and those that
       follow are not available for allocation. */
+   ru->allocable_start[(mode64) ? HRcInt64 : HRcInt32] = ru->size;
    ru->regs[ru->size++] = hregMIPS_GPR16(mode64);
    ru->regs[ru->size++] = hregMIPS_GPR17(mode64);
    ru->regs[ru->size++] = hregMIPS_GPR18(mode64);
@@ -76,7 +77,10 @@ const RRegUniverse* getRRegUniverse_MIPS ( Bool mode64 )
    ru->regs[ru->size++] = hregMIPS_GPR14(mode64);
    ru->regs[ru->size++] = hregMIPS_GPR15(mode64);
    ru->regs[ru->size++] = hregMIPS_GPR24(mode64);
+   ru->allocable_end[(mode64) ? HRcInt64 : HRcInt32] = ru->size - 1;
+
    /* s7  (=guest_state) */
+   ru->allocable_start[(mode64) ? HRcFlt64 : HRcFlt32] = ru->size;
    ru->regs[ru->size++] = hregMIPS_F16(mode64);
    ru->regs[ru->size++] = hregMIPS_F18(mode64);
    ru->regs[ru->size++] = hregMIPS_F20(mode64);
@@ -85,8 +89,11 @@ const RRegUniverse* getRRegUniverse_MIPS ( Bool mode64 )
    ru->regs[ru->size++] = hregMIPS_F26(mode64);
    ru->regs[ru->size++] = hregMIPS_F28(mode64);
    ru->regs[ru->size++] = hregMIPS_F30(mode64);
+   ru->allocable_end[(mode64) ? HRcFlt64 : HRcFlt32] = ru->size - 1;
+
    if (!mode64) {
       /* Fake double floating point */
+      ru->allocable_start[HRcFlt64] = ru->size;
       ru->regs[ru->size++] = hregMIPS_D0(mode64);
       ru->regs[ru->size++] = hregMIPS_D1(mode64);
       ru->regs[ru->size++] = hregMIPS_D2(mode64);
@@ -95,6 +102,7 @@ const RRegUniverse* getRRegUniverse_MIPS ( Bool mode64 )
       ru->regs[ru->size++] = hregMIPS_D5(mode64);
       ru->regs[ru->size++] = hregMIPS_D6(mode64);
       ru->regs[ru->size++] = hregMIPS_D7(mode64);
+      ru->allocable_end[HRcFlt64] = ru->size - 1;
    }
 
    ru->allocable = ru->size;
@@ -126,7 +134,7 @@ const RRegUniverse* getRRegUniverse_MIPS ( Bool mode64 )
 }
 
 
-void ppHRegMIPS(HReg reg, Bool mode64)
+UInt ppHRegMIPS(HReg reg, Bool mode64)
 {
    Int r;
    static const HChar *ireg32_names[35]
@@ -151,8 +159,7 @@ void ppHRegMIPS(HReg reg, Bool mode64)
 
    /* Be generic for all virtual regs. */
    if (hregIsVirtual(reg)) {
-      ppHReg(reg);
-      return;
+      return ppHReg(reg);
    }
 
    /* But specific for real regs. */
@@ -164,29 +171,23 @@ void ppHRegMIPS(HReg reg, Bool mode64)
       case HRcInt32:
          r = hregEncoding(reg);
          vassert(r >= 0 && r < 32);
-         vex_printf("%s", ireg32_names[r]);
-         return;
+         return vex_printf("%s", ireg32_names[r]);
       case HRcInt64:
          r = hregEncoding (reg);
          vassert (r >= 0 && r < 32);
-         vex_printf ("%s", ireg32_names[r]);
-         return;
+         return vex_printf ("%s", ireg32_names[r]);
       case HRcFlt32:
          r = hregEncoding(reg);
          vassert(r >= 0 && r < 32);
-         vex_printf("%s", freg32_names[r]);
-         return;
+         return vex_printf("%s", freg32_names[r]);
       case HRcFlt64:
          r = hregEncoding(reg);
          vassert(r >= 0 && r < 32);
-         vex_printf("%s", freg64_names[r]);
-         return;
+         return vex_printf("%s", freg64_names[r]);
       default:
          vpanic("ppHRegMIPS");
          break;
    }
-
-   return;
 }
 
 
@@ -2026,6 +2027,18 @@ void genReload_MIPS( /*OUT*/ HInstr ** i1, /*OUT*/ HInstr ** i2, HReg rreg,
          ppHRegClass(hregClass(rreg));
          vpanic("genReload_MIPS: unimplemented regclass");
          break;
+   }
+}
+
+MIPSInstr* genMove_MIPS(HReg from, HReg to, Bool mode64)
+{
+   switch (hregClass(from)) {
+   case HRcInt32:
+   case HRcInt64:
+      return MIPSInstr_Alu(Malu_OR, to, from, MIPSRH_Reg(from));
+   default:
+      ppHRegClass(hregClass(from));
+      vpanic("genMove_MIPS: unimplemented regclass");
    }
 }
 

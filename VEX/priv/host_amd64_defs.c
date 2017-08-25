@@ -63,6 +63,7 @@ const RRegUniverse* getRRegUniverse_AMD64 ( void )
    /* Add the registers.  The initial segment of this array must be
       those available for allocation by reg-alloc, and those that
       follow are not available for allocation. */
+   ru->allocable_start[HRcInt64] = ru->size;
    ru->regs[ru->size++] = hregAMD64_RSI();
    ru->regs[ru->size++] = hregAMD64_RDI();
    ru->regs[ru->size++] = hregAMD64_R8();
@@ -72,6 +73,10 @@ const RRegUniverse* getRRegUniverse_AMD64 ( void )
    ru->regs[ru->size++] = hregAMD64_R14();
    ru->regs[ru->size++] = hregAMD64_R15();
    ru->regs[ru->size++] = hregAMD64_RBX();
+   ru->regs[ru->size++] = hregAMD64_R10();
+   ru->allocable_end[HRcInt64] = ru->size - 1;
+
+   ru->allocable_start[HRcVec128] = ru->size;
    ru->regs[ru->size++] = hregAMD64_XMM3();
    ru->regs[ru->size++] = hregAMD64_XMM4();
    ru->regs[ru->size++] = hregAMD64_XMM5();
@@ -82,8 +87,9 @@ const RRegUniverse* getRRegUniverse_AMD64 ( void )
    ru->regs[ru->size++] = hregAMD64_XMM10();
    ru->regs[ru->size++] = hregAMD64_XMM11();
    ru->regs[ru->size++] = hregAMD64_XMM12();
-   ru->regs[ru->size++] = hregAMD64_R10();
+   ru->allocable_end[HRcVec128] = ru->size - 1;
    ru->allocable = ru->size;
+
    /* And other regs, not available to the allocator. */
    ru->regs[ru->size++] = hregAMD64_RAX();
    ru->regs[ru->size++] = hregAMD64_RCX();
@@ -101,7 +107,7 @@ const RRegUniverse* getRRegUniverse_AMD64 ( void )
 }
 
 
-void ppHRegAMD64 ( HReg reg ) 
+UInt ppHRegAMD64 ( HReg reg )
 {
    Int r;
    static const HChar* ireg64_names[16] 
@@ -109,27 +115,24 @@ void ppHRegAMD64 ( HReg reg )
          "%r8",  "%r9",  "%r10", "%r11", "%r12", "%r13", "%r14", "%r15" };
    /* Be generic for all virtual regs. */
    if (hregIsVirtual(reg)) {
-      ppHReg(reg);
-      return;
+      return ppHReg(reg);
    }
    /* But specific for real regs. */
    switch (hregClass(reg)) {
       case HRcInt64:
          r = hregEncoding(reg);
          vassert(r >= 0 && r < 16);
-         vex_printf("%s", ireg64_names[r]);
-         return;
+         return vex_printf("%s", ireg64_names[r]);
       case HRcVec128:
          r = hregEncoding(reg);
          vassert(r >= 0 && r < 16);
-         vex_printf("%%xmm%d", r);
-         return;
+         return vex_printf("%%xmm%d", r);
       default:
          vpanic("ppHRegAMD64");
    }
 }
 
-static void ppHRegAMD64_lo32 ( HReg reg ) 
+static UInt ppHRegAMD64_lo32 ( HReg reg )
 {
    Int r;
    static const HChar* ireg32_names[16] 
@@ -137,17 +140,16 @@ static void ppHRegAMD64_lo32 ( HReg reg )
          "%r8d", "%r9d", "%r10d", "%r11d", "%r12d", "%r13d", "%r14d", "%r15d" };
    /* Be generic for all virtual regs. */
    if (hregIsVirtual(reg)) {
-      ppHReg(reg);
-      vex_printf("d");
-      return;
+      UInt written = ppHReg(reg);
+      written += vex_printf("d");
+      return written;
    }
    /* But specific for real regs. */
    switch (hregClass(reg)) {
       case HRcInt64:
          r = hregEncoding(reg);
          vassert(r >= 0 && r < 16);
-         vex_printf("%s", ireg32_names[r]);
-         return;
+         return vex_printf("%s", ireg32_names[r]);
       default:
          vpanic("ppHRegAMD64_lo32: invalid regclass");
    }
@@ -1992,6 +1994,19 @@ void genReload_AMD64 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
       default: 
          ppHRegClass(hregClass(rreg));
          vpanic("genReload_AMD64: unimplemented regclass");
+   }
+}
+
+AMD64Instr* genMove_AMD64(HReg from, HReg to, Bool mode64)
+{
+   switch (hregClass(from)) {
+   case HRcInt64:
+      return AMD64Instr_Alu64R(Aalu_MOV, AMD64RMI_Reg(from), to);
+   case HRcVec128:
+      return AMD64Instr_SseReRg(Asse_MOV, from, to);
+   default:
+      ppHRegClass(hregClass(from));
+      vpanic("genMove_AMD64: unimplemented regclass");
    }
 }
 

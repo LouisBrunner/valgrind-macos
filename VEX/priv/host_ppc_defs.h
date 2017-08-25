@@ -122,7 +122,7 @@ ST_IN HReg hregPPC_VR29  ( Bool mode64 ) { return VR (mode64, 29,  43, 45); }
 /* Num registers used for function calls */
 #define PPC_N_REGPARMS 8
 
-extern void ppHRegPPC ( HReg );
+extern UInt ppHRegPPC ( HReg );
 
 
 /* --------- Condition codes --------- */
@@ -1215,6 +1215,7 @@ extern void genSpill_PPC  ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                             HReg rreg, Int offsetB, Bool mode64 );
 extern void genReload_PPC ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                             HReg rreg, Int offsetB, Bool mode64 );
+extern PPCInstr* genMove_PPC(HReg from, HReg to, Bool mode64);
 
 extern const RRegUniverse* getRRegUniverse_PPC ( Bool mode64 );
 

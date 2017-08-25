@@ -74,7 +74,7 @@ ST_IN HReg hregX86_ESP   ( void ) { return mkHReg(False, HRcInt32,  4, 20); }
 ST_IN HReg hregX86_EBP   ( void ) { return mkHReg(False, HRcInt32,  5, 21); }
 #undef ST_IN
 
-extern void ppHRegX86 ( HReg );
+extern UInt ppHRegX86 ( HReg );
 
 
 /* --------- Condition codes, Intel encoding. --------- */
@@ -730,7 +730,7 @@ extern void genSpill_X86  ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                             HReg rreg, Int offset, Bool );
 extern void genReload_X86 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                             HReg rreg, Int offset, Bool );
-
+extern X86Instr* genMove_X86(HReg from, HReg to, Bool);
 extern X86Instr* directReload_X86 ( X86Instr* i, HReg vreg, Short spill_off );
 
 extern const RRegUniverse* getRRegUniverse_X86 ( void );

@@ -93,7 +93,7 @@ typedef  struct { UInt u32; }  HReg;
    available on any specific host.  For example on x86, the available
    classes are: Int32, Flt64, Vec128 only.
 
-   IMPORTANT NOTE: host_generic_reg_alloc2.c needs how much space is
+   IMPORTANT NOTE: host_generic_reg_alloc*.c needs to know how much space is
    needed to spill each class of register.  It allocates the following
    amount of space:
 
@@ -106,7 +106,7 @@ typedef  struct { UInt u32; }  HReg;
       HRcVec128    128 bits
 
    If you add another regclass, you must remember to update
-   host_generic_reg_alloc2.c accordingly.  
+   host_generic_reg_alloc*.c and RRegUniverse accordingly.
 
    When adding entries to enum HRegClass, do not use any value > 14 or < 1.
 */
@@ -118,15 +118,17 @@ typedef
       HRcFlt32=5,     /* 32-bit float */
       HRcFlt64=6,     /* 64-bit float */
       HRcVec64=7,     /* 64-bit SIMD */
-      HRcVec128=8     /* 128-bit SIMD */
+      HRcVec128=8,    /* 128-bit SIMD */
+      HrcLAST=HRcVec128
    }
    HRegClass;
 
 extern void ppHRegClass ( HRegClass );
 
 
-/* Print an HReg in a generic (non-target-specific) way. */
-extern void ppHReg ( HReg );
+/* Print an HReg in a generic (non-target-specific) way.
+   Returns number of HChar's written. */
+extern UInt ppHReg ( HReg );
 
 /* Construct.  The goal here is that compiler can fold this down to a
    constant in the case where the four arguments are constants, which
@@ -149,7 +151,7 @@ static inline HReg mkHReg ( Bool virtual, HRegClass rc, UInt enc, UInt ix )
 static inline HRegClass hregClass ( HReg r )
 {
    HRegClass rc = (HRegClass)((r.u32 >> 27) & 0xF);
-   vassert(rc >= HRcInt32 && rc <= HRcVec128);
+   vassert(rc >= HRcInt32 && rc <= HrcLAST);
    return rc;
 }
 
@@ -221,6 +223,25 @@ typedef
          index here, since this is the only place where we map index
          numbers to actual registers. */
       HReg regs[N_RREGUNIVERSE_REGS];
+
+      /* Ranges for groups of allocable registers. Used to quickly address only
+         a group of allocable registers belonging to the same register class.
+         Indexes into |allocable_{start,end}| are HRcClass entries, such as
+         HRcInt64. Values in |allocable_{start,end}| give a valid range into
+         |regs| where registers corresponding to the given register class are
+         found.
+
+         For example, let's say allocable_start[HRcInt64] == 10 and
+         allocable_end[HRcInt64] == 14. Then regs[10], regs[11], regs[12],
+         regs[13], and regs[14] give all registers of register class HRcInt64.
+
+         If a register class is not present, then values of the corresponding
+         |allocable_{start,end}| elements are equal to N_RREGUNIVERSE_REGS.
+
+         Naturally registers in |regs| must form contiguous groups. This is
+         checked by RRegUniverse__check_is_sane(). */
+      UInt allocable_start[HrcLAST + 1];
+      UInt allocable_end[HrcLAST + 1];
    }
    RRegUniverse;
 
@@ -305,7 +326,7 @@ extern Bool HRegUsage__contains ( const HRegUsage*, HReg );
 /*---------------------------------------------------------*/
 
 /* Note that such maps can only map virtual regs to real regs.
-   addToHRegRenap will barf if given a pair not of that form.  As a
+   addToHRegRemap will barf if given a pair not of that form.  As a
    result, no valid HRegRemap will bind a real reg to anything, and so
    if lookupHRegMap is given a real reg, it returns it unchanged.
    This is precisely the behaviour that the register allocator needs
@@ -442,40 +463,49 @@ static inline Bool is_RetLoc_INVALID ( RetLoc rl ) {
 /*--- Reg alloc: TODO: move somewhere else              ---*/
 /*---------------------------------------------------------*/
 
-extern
-HInstrArray* doRegisterAllocation (
+/* Control of the VEX register allocator. */
+typedef
+   struct {
+      /* The real-register universe to use.  This contains facts about real
+         registers, one of which is the set of registers available for
+         allocation. */
+      const RRegUniverse* univ;
 
-   /* Incoming virtual-registerised code. */ 
+      /* Return True iff the given insn is a reg-reg move, in which case also
+         return the src and dst regs. */
+      Bool (*isMove)(const HInstr*, HReg*, HReg*);
+
+      /* Get info about register usage in this insn. */
+      void (*getRegUsage)(HRegUsage*, const HInstr*, Bool);
+
+      /* Apply a reg-reg mapping to an insn. */
+      void (*mapRegs)(HRegRemap*, HInstr*, Bool);
+
+      /* Return insn(s) to spill/restore a real register to a spill slot offset.
+         Also a function to move between registers.
+         And optionally a function to do direct reloads. */
+      void    (*genSpill)(HInstr**, HInstr**, HReg, Int, Bool);
+      void    (*genReload)(HInstr**, HInstr**, HReg, Int, Bool);
+      HInstr* (*genMove)(HReg from, HReg to, Bool);
+      HInstr* (*directReload)(HInstr*, HReg, Short);
+      UInt    guest_sizeB;
+
+      /* For debug printing only. */
+      void (*ppInstr)(const HInstr*, Bool);
+      UInt (*ppReg)(HReg);
+
+      /* 32/64bit mode */
+      Bool mode64;
+   }
+   RegAllocControl;
+
+extern HInstrArray* doRegisterAllocation_v2(
    HInstrArray* instrs_in,
-
-   /* The real-register universe to use.  This contains facts about
-      real registers, one of which is the set of registers available
-      for allocation. */
-   const RRegUniverse* univ,
-
-   /* Return True iff the given insn is a reg-reg move, in which
-      case also return the src and dst regs. */
-   Bool (*isMove) (const HInstr*, HReg*, HReg*),
-
-   /* Get info about register usage in this insn. */
-   void (*getRegUsage) (HRegUsage*, const HInstr*, Bool),
-
-   /* Apply a reg-reg mapping to an insn. */
-   void (*mapRegs) (HRegRemap*, HInstr*, Bool),
-
-   /* Return insn(s) to spill/restore a real reg to a spill slot
-      offset.  And optionally a function to do direct reloads. */
-   void    (*genSpill) (  HInstr**, HInstr**, HReg, Int, Bool ),
-   void    (*genReload) ( HInstr**, HInstr**, HReg, Int, Bool ),
-   HInstr* (*directReload) ( HInstr*, HReg, Short ),
-   Int     guest_sizeB,
-
-   /* For debug printing only. */
-   void (*ppInstr) ( const HInstr*, Bool ),
-   void (*ppReg) ( HReg ),
-
-   /* 32/64bit mode */
-   Bool mode64
+   const RegAllocControl* con
+);
+extern HInstrArray* doRegisterAllocation_v3(
+   HInstrArray* instrs_in,
+   const RegAllocControl* con
 );
 
 

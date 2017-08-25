@@ -198,6 +198,7 @@ usage: valgrind [options] prog-and-args
          0000 0000   show summary profile only
         (Nb: you need --trace-notbelow and/or --trace-notabove
              with --trace-flags for full details)
+    --vex-regalloc-version=2|3             [3]
 
   debugging options for Valgrind tools that report errors
     --dump-error=<number>     show translation for basic block associated

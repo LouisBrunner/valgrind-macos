@@ -283,13 +283,40 @@ Bool vex_streq ( const HChar* s1, const HChar* s2 )
    }
 }
 
+/* Vectorised memset, copied from Valgrind's m_libcbase.c. */
 void vex_bzero ( void* sV, SizeT n )
 {
-   SizeT i;
-   UChar* s = (UChar*)sV;
-   /* No laughing, please.  Just don't call this too often.  Thank you
-      for your attention. */
-   for (i = 0; i < n; i++) s[i] = 0;
+#  define IS_4_ALIGNED(aaa_p) (0 == (((HWord)(aaa_p)) & ((HWord)0x3)))
+
+   UChar* d = sV;
+
+   while ((!IS_4_ALIGNED(d)) && n >= 1) {
+      d[0] = 0;
+      d++;
+      n--;
+   }
+   if (n == 0)
+      return;
+   while (n >= 16) {
+      ((UInt*)d)[0] = 0;
+      ((UInt*)d)[1] = 0;
+      ((UInt*)d)[2] = 0;
+      ((UInt*)d)[3] = 0;
+      d += 16;
+      n -= 16;
+   }
+   while (n >= 4) {
+      ((UInt*)d)[0] = 0;
+      d += 4;
+      n -= 4;
+   }
+   while (n >= 1) {
+      d[0] = 0;
+      d++;
+      n--;
+   }
+   return;
+#  undef IS_4_ALIGNED
 }
 
 

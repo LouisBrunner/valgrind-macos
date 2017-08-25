@@ -497,6 +497,11 @@ typedef
       /* EXPERIMENTAL: chase across conditional branches?  Not all
          front ends honour this.  Default: NO. */
       Bool guest_chase_cond;
+      /* Register allocator version. Allowed values are:
+         - '2': previous, good and slow implementation.
+         - '3': current, faster implementation; perhaps producing slightly worse
+                spilling decisions. */
+      UInt regalloc_version;
    }
    VexControl;
 

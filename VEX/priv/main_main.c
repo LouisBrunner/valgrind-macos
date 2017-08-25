@@ -186,6 +186,7 @@ void LibVEX_default_VexControl ( /*OUT*/ VexControl* vcon )
    vcon->guest_max_insns                = 60;
    vcon->guest_chase_thresh             = 10;
    vcon->guest_chase_cond               = False;
+   vcon->regalloc_version               = 3;
 }
 
 
@@ -225,6 +226,7 @@ void LibVEX_Init (
    vassert(vcon->guest_chase_thresh < vcon->guest_max_insns);
    vassert(vcon->guest_chase_cond == True 
            || vcon->guest_chase_cond == False);
+   vassert(vcon->regalloc_version == 2 || vcon->regalloc_version == 3);
 
    /* Check that Vex has been built with sizes of basic types as
       stated in priv/libvex_basictypes.h.  Failure of any of these is
@@ -712,9 +714,10 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
    void         (*mapRegs)      ( HRegRemap*, HInstr*, Bool );
    void         (*genSpill)     ( HInstr**, HInstr**, HReg, Int, Bool );
    void         (*genReload)    ( HInstr**, HInstr**, HReg, Int, Bool );
+   HInstr*      (*genMove)      ( HReg, HReg, Bool );
    HInstr*      (*directReload) ( HInstr*, HReg, Short );
    void         (*ppInstr)      ( const HInstr*, Bool );
-   void         (*ppReg)        ( HReg );
+   UInt         (*ppReg)        ( HReg );
    HInstrArray* (*iselSB)       ( const IRSB*, VexArch, const VexArchInfo*,
                                   const VexAbiInfo*, Int, Int, Bool, Bool,
                                   Addr );
@@ -741,6 +744,7 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
    mapRegs                 = NULL;
    genSpill                = NULL;
    genReload               = NULL;
+   genMove                 = NULL;
    directReload            = NULL;
    ppInstr                 = NULL;
    ppReg                   = NULL;
@@ -859,6 +863,7 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
          mapRegs      = CAST_TO_TYPEOF(mapRegs) X86FN(mapRegs_X86Instr);
          genSpill     = CAST_TO_TYPEOF(genSpill) X86FN(genSpill_X86);
          genReload    = CAST_TO_TYPEOF(genReload) X86FN(genReload_X86);
+         genMove      = CAST_TO_TYPEOF(genMove) X86FN(genMove_X86);
          directReload = CAST_TO_TYPEOF(directReload) X86FN(directReload_X86);
          ppInstr      = CAST_TO_TYPEOF(ppInstr) X86FN(ppX86Instr);
          ppReg        = CAST_TO_TYPEOF(ppReg) X86FN(ppHRegX86);
@@ -876,6 +881,7 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
          mapRegs      = CAST_TO_TYPEOF(mapRegs) AMD64FN(mapRegs_AMD64Instr);
          genSpill     = CAST_TO_TYPEOF(genSpill) AMD64FN(genSpill_AMD64);
          genReload    = CAST_TO_TYPEOF(genReload) AMD64FN(genReload_AMD64);
+         genMove      = CAST_TO_TYPEOF(genMove) AMD64FN(genMove_AMD64);
          directReload = CAST_TO_TYPEOF(directReload) AMD64FN(directReload_AMD64);
          ppInstr      = CAST_TO_TYPEOF(ppInstr) AMD64FN(ppAMD64Instr);
          ppReg        = CAST_TO_TYPEOF(ppReg) AMD64FN(ppHRegAMD64);
@@ -893,6 +899,7 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
          mapRegs      = CAST_TO_TYPEOF(mapRegs) PPC32FN(mapRegs_PPCInstr);
          genSpill     = CAST_TO_TYPEOF(genSpill) PPC32FN(genSpill_PPC);
          genReload    = CAST_TO_TYPEOF(genReload) PPC32FN(genReload_PPC);
+         genMove      = CAST_TO_TYPEOF(genMove) PPC32FN(genMove_PPC);
          ppInstr      = CAST_TO_TYPEOF(ppInstr) PPC32FN(ppPPCInstr);
          ppReg        = CAST_TO_TYPEOF(ppReg) PPC32FN(ppHRegPPC);
          iselSB       = PPC32FN(iselSB_PPC);
@@ -909,6 +916,7 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
          mapRegs      = CAST_TO_TYPEOF(mapRegs) PPC64FN(mapRegs_PPCInstr);
          genSpill     = CAST_TO_TYPEOF(genSpill) PPC64FN(genSpill_PPC);
          genReload    = CAST_TO_TYPEOF(genReload) PPC64FN(genReload_PPC);
+         genMove      = CAST_TO_TYPEOF(genMove) PPC64FN(genMove_PPC);
          ppInstr      = CAST_TO_TYPEOF(ppInstr) PPC64FN(ppPPCInstr);
          ppReg        = CAST_TO_TYPEOF(ppReg) PPC64FN(ppHRegPPC);
          iselSB       = PPC64FN(iselSB_PPC);
@@ -926,6 +934,7 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
          mapRegs      = CAST_TO_TYPEOF(mapRegs) S390FN(mapRegs_S390Instr);
          genSpill     = CAST_TO_TYPEOF(genSpill) S390FN(genSpill_S390);
          genReload    = CAST_TO_TYPEOF(genReload) S390FN(genReload_S390);
+         genMove      = CAST_TO_TYPEOF(genMove) S390FN(genMove_S390);
          // fixs390: consider implementing directReload_S390
          ppInstr      = CAST_TO_TYPEOF(ppInstr) S390FN(ppS390Instr);
          ppReg        = CAST_TO_TYPEOF(ppReg) S390FN(ppHRegS390);
@@ -943,6 +952,7 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
          mapRegs      = CAST_TO_TYPEOF(mapRegs) ARMFN(mapRegs_ARMInstr);
          genSpill     = CAST_TO_TYPEOF(genSpill) ARMFN(genSpill_ARM);
          genReload    = CAST_TO_TYPEOF(genReload) ARMFN(genReload_ARM);
+         genMove      = CAST_TO_TYPEOF(genMove) ARMFN(genMove_ARM);
          ppInstr      = CAST_TO_TYPEOF(ppInstr) ARMFN(ppARMInstr);
          ppReg        = CAST_TO_TYPEOF(ppReg) ARMFN(ppHRegARM);
          iselSB       = ARMFN(iselSB_ARM);
@@ -959,6 +969,7 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
          mapRegs      = CAST_TO_TYPEOF(mapRegs) ARM64FN(mapRegs_ARM64Instr);
          genSpill     = CAST_TO_TYPEOF(genSpill) ARM64FN(genSpill_ARM64);
          genReload    = CAST_TO_TYPEOF(genReload) ARM64FN(genReload_ARM64);
+         genMove      = CAST_TO_TYPEOF(genMove) ARM64FN(genMove_ARM64);
          ppInstr      = CAST_TO_TYPEOF(ppInstr) ARM64FN(ppARM64Instr);
          ppReg        = CAST_TO_TYPEOF(ppReg) ARM64FN(ppHRegARM64);
          iselSB       = ARM64FN(iselSB_ARM64);
@@ -975,6 +986,7 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
          mapRegs      = CAST_TO_TYPEOF(mapRegs) MIPS32FN(mapRegs_MIPSInstr);
          genSpill     = CAST_TO_TYPEOF(genSpill) MIPS32FN(genSpill_MIPS);
          genReload    = CAST_TO_TYPEOF(genReload) MIPS32FN(genReload_MIPS);
+         genMove      = CAST_TO_TYPEOF(genMove) MIPS32FN(genMove_MIPS);
          ppInstr      = CAST_TO_TYPEOF(ppInstr) MIPS32FN(ppMIPSInstr);
          ppReg        = CAST_TO_TYPEOF(ppReg) MIPS32FN(ppHRegMIPS);
          iselSB       = MIPS32FN(iselSB_MIPS);
@@ -992,6 +1004,7 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
          mapRegs      = CAST_TO_TYPEOF(mapRegs) MIPS64FN(mapRegs_MIPSInstr);
          genSpill     = CAST_TO_TYPEOF(genSpill) MIPS64FN(genSpill_MIPS);
          genReload    = CAST_TO_TYPEOF(genReload) MIPS64FN(genReload_MIPS);
+         genMove      = CAST_TO_TYPEOF(genMove) MIPS64FN(genMove_MIPS);
          ppInstr      = CAST_TO_TYPEOF(ppInstr) MIPS64FN(ppMIPSInstr);
          ppReg        = CAST_TO_TYPEOF(ppReg) MIPS64FN(ppHRegMIPS);
          iselSB       = MIPS64FN(iselSB_MIPS);
@@ -1068,11 +1081,22 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
    }
 
    /* Register allocate. */
-   rcode = doRegisterAllocation ( vcode, rRegUniv,
-                                  isMove, getRegUsage, mapRegs, 
-                                  genSpill, genReload, directReload, 
-                                  guest_sizeB,
-                                  ppInstr, ppReg, mode64 );
+   RegAllocControl con = {
+      .univ = rRegUniv, .isMove = isMove, .getRegUsage = getRegUsage,
+      .mapRegs = mapRegs, .genSpill = genSpill, .genReload = genReload,
+      .genMove = genMove, .directReload = directReload,
+      .guest_sizeB = guest_sizeB, .ppInstr = ppInstr, .ppReg = ppReg,
+      .mode64 = mode64};
+   switch (vex_control.regalloc_version) {
+   case 2:
+      rcode = doRegisterAllocation_v2(vcode, &con);
+      break;
+   case 3:
+      rcode = doRegisterAllocation_v3(vcode, &con);
+      break;
+   default:
+      vassert(0);
+   }
 
    vexAllocSanityCheck();
 

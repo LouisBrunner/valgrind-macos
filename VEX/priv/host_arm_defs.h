@@ -81,7 +81,7 @@ ST_IN HReg hregARM_Q14 ( void ) { return mkHReg(False, HRcVec128, 14, 32); }
 ST_IN HReg hregARM_Q15 ( void ) { return mkHReg(False, HRcVec128, 15, 33); }
 #undef ST_IN
 
-extern void ppHRegARM ( HReg );
+extern UInt ppHRegARM ( HReg );
 
 /* Number of registers used arg passing in function calls */
 #define ARM_N_ARGREGS 4   /* r0, r1, r2, r3 */
@@ -1070,6 +1070,7 @@ extern void genSpill_ARM  ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                             HReg rreg, Int offset, Bool );
 extern void genReload_ARM ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
                             HReg rreg, Int offset, Bool );
+extern ARMInstr* genMove_ARM(HReg from, HReg to, Bool);
 
 extern const RRegUniverse* getRRegUniverse_ARM ( void );
 

@@ -40,6 +40,7 @@ where XXXXXX is the bug number as listed below.
 381272  ppc64 doesn't compile test_isa_2_06_partx.c without VSX support
 381289  epoll_pwait can have a NULL sigmask
 381274  powerpc too chatty even with --sigill-diagnostics=no
+381553  VEX register allocator v3
 381769  Use ucontext_t instead of struct ucontext
 381805  arm32 needs ld.so index hardwire for new glibc security fixes
 382256  gz compiler flag test doesn't work for gold

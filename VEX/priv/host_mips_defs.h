@@ -135,7 +135,7 @@ ST_IN HReg hregMIPS_GPR31 ( Bool mode64 ) { return GPR(mode64, 31, 37, 45); }
 # define MIPS_N_REGPARMS 8
 #endif
 
-extern void ppHRegMIPS ( HReg, Bool );
+extern UInt ppHRegMIPS ( HReg, Bool );
 
 
 /* --------- Condition codes, Intel encoding. --------- */
@@ -700,6 +700,7 @@ extern void genSpill_MIPS ( /*OUT*/ HInstr ** i1, /*OUT*/ HInstr ** i2,
                             HReg rreg, Int offset, Bool);
 extern void genReload_MIPS( /*OUT*/ HInstr ** i1, /*OUT*/ HInstr ** i2,
                             HReg rreg, Int offset, Bool);
+extern MIPSInstr* genMove_MIPS(HReg from, HReg to, Bool mode64);
 
 extern const RRegUniverse* getRRegUniverse_MIPS ( Bool mode64 );
 

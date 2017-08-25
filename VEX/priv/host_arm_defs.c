@@ -68,6 +68,7 @@ const RRegUniverse* getRRegUniverse_ARM ( void )
 
    /* Callee saves ones are listed first, since we prefer them
       if they're available. */
+   ru->allocable_start[HRcInt32] = ru->size;
    ru->regs[ru->size++] = hregARM_R4();
    ru->regs[ru->size++] = hregARM_R5();
    ru->regs[ru->size++] = hregARM_R6();
@@ -80,24 +81,34 @@ const RRegUniverse* getRRegUniverse_ARM ( void )
    ru->regs[ru->size++] = hregARM_R2();
    ru->regs[ru->size++] = hregARM_R3();
    ru->regs[ru->size++] = hregARM_R9();
+   ru->allocable_end[HRcInt32] = ru->size - 1;
+
    /* FP registers.  Note: these are all callee-save.  Yay!  Hence we
       don't need to mention them as trashed in getHRegUsage for
       ARMInstr_Call. */
+   ru->allocable_start[HRcFlt64] = ru->size;
    ru->regs[ru->size++] = hregARM_D8();
    ru->regs[ru->size++] = hregARM_D9();
    ru->regs[ru->size++] = hregARM_D10();
    ru->regs[ru->size++] = hregARM_D11();
    ru->regs[ru->size++] = hregARM_D12();
+   ru->allocable_end[HRcFlt64] = ru->size - 1;
+
+   ru->allocable_start[HRcFlt32] = ru->size;
    ru->regs[ru->size++] = hregARM_S26();
    ru->regs[ru->size++] = hregARM_S27();
    ru->regs[ru->size++] = hregARM_S28();
    ru->regs[ru->size++] = hregARM_S29();
    ru->regs[ru->size++] = hregARM_S30();
+   ru->allocable_end[HRcFlt32] = ru->size - 1;
+
+   ru->allocable_start[HRcVec128] = ru->size;
    ru->regs[ru->size++] = hregARM_Q8();
    ru->regs[ru->size++] = hregARM_Q9();
    ru->regs[ru->size++] = hregARM_Q10();
    ru->regs[ru->size++] = hregARM_Q11();
    ru->regs[ru->size++] = hregARM_Q12();
+   ru->allocable_end[HRcVec128] = ru->size - 1;
    ru->allocable = ru->size;
 
    /* And other regs, not available to the allocator. */
@@ -140,35 +151,30 @@ const RRegUniverse* getRRegUniverse_ARM ( void )
 }
 
 
-void ppHRegARM ( HReg reg )  {
+UInt ppHRegARM ( HReg reg )  {
    Int r;
    /* Be generic for all virtual regs. */
    if (hregIsVirtual(reg)) {
-      ppHReg(reg);
-      return;
+      return ppHReg(reg);
    }
    /* But specific for real regs. */
    switch (hregClass(reg)) {
       case HRcInt32:
          r = hregEncoding(reg);
          vassert(r >= 0 && r < 16);
-         vex_printf("r%d", r);
-         return;
+         return vex_printf("r%d", r);
       case HRcFlt64:
          r = hregEncoding(reg);
          vassert(r >= 0 && r < 32);
-         vex_printf("d%d", r);
-         return;
+         return vex_printf("d%d", r);
       case HRcFlt32:
          r = hregEncoding(reg);
          vassert(r >= 0 && r < 32);
-         vex_printf("s%d", r);
-         return;
+         return vex_printf("s%d", r);
       case HRcVec128:
          r = hregEncoding(reg);
          vassert(r >= 0 && r < 16);
-         vex_printf("q%d", r);
-         return;
+         return vex_printf("q%d", r);
       default:
          vpanic("ppHRegARM");
    }
@@ -2772,6 +2778,22 @@ void genReload_ARM ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
    }
 }
 
+ARMInstr* genMove_ARM(HReg from, HReg to, Bool mode64)
+{
+   switch (hregClass(from)) {
+   case HRcInt32:
+      return ARMInstr_Mov(to, ARMRI84_R(from));
+   case HRcFlt32:
+      return ARMInstr_VUnaryS(ARMvfpu_COPY, to, from);
+   case HRcFlt64:
+      return ARMInstr_VUnaryD(ARMvfpu_COPY, to, from);
+   case HRcVec128:
+      return ARMInstr_NUnary(ARMneon_COPY, to, from, 4, False);
+   default:
+      ppHRegClass(hregClass(from));
+      vpanic("genMove_ARM: unimplemented regclass");
+   }
+}
 
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is

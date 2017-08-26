@@ -7,7 +7,7 @@ extract_git_version()
         REV=$(git show --format=%H#%ci -s $(git rev-parse HEAD) |
                      sed -e 's/ .*//' -e 's/[0-9a-f]\{30\}#/#/' -e 's/-//g' \
                          -e 's/#/-/')
-        X=$(git status -s -uno | sed -e 's/.*/X/')
+        X=$(git status -s -uno | sed -e 's/.*/X/' | uniq)
         echo $REV$X
     else
         echo "unknown"

@@ -941,8 +941,9 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
       <para>Controls whether Memcheck reports
       uses of undefined value errors.  Set this to
       <varname>no</varname> if you don't want to see undefined value
-      errors.  It also has the side effect of speeding up
-      Memcheck somewhat.
+      errors. It also has the side effect of speeding up Memcheck somewhat.
+      AddrCheck (removed in Valgrind 3.1.0) functioned like Memcheck with
+      <option>--undef-value-errors=no</option>.
       </para>
     </listitem>
   </varlistentry>

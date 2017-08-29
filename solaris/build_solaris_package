@@ -1,7 +1,7 @@
 #!/usr/bin/ksh
 #
 # Builds a Solaris IPS package called "valgrind" from the source
-# directory. The Valgrind and VEX revisions are taken from that
+# directory. The Valgrind revision is taken from that
 # source directory and written to solaris/valgrind.p5m IPS manifest.
 #
 # Requires the following packages to be installed on Solaris 11:
@@ -22,6 +22,7 @@
 # - pkgrepo set -s $repo_uri publisher/prefix=valgrind
 #
 
+GITREPO=git://sourceware.org/git/valgrind.git/
 TMPDIR=/var/tmp/valgrind-build
 SRCDIR=$TMPDIR/sources
 INSTALLDIR=$TMPDIR/install
@@ -58,25 +59,25 @@ create_dirs() {
 
 export_sources() {
     printf "Exporting sources... "
-    svn export --quiet --ignore-externals $source_directory $SRCDIR \
-        2> $TMPDIR/svn-export-valgrind.log.stderr
-    (( $? != 0 )) && fail "Failed to export working copy from $source_directory."
-    svn export --quiet --ignore-externals $source_directory/VEX $SRCDIR/VEX \
-        2> $TMPDIR/svn-export-vex.log.stderr
-    (( $? != 0 )) && fail "Failed to export working copy from $source_directory/VEX."
+    old_dir=$( pwd )
+    git_commit=$( cd $source_directory; git rev-parse HEAD )
+
+    git clone ${GITREPO} ${SRCDIR} 2> $TMPDIR/git-clone-valgrind.log.stderr
+    (( $? != 0 )) && fail "Failed to clone git repo from $source_directory."
+    cd ${SRCDIR}
+    git checkout ${git_commit} 2> $TMPDIR/git-checkout-valgrind.log.stderr
+    (( $? != 0 )) && fail "Failed to checkout git commit ${git_commit}."
+    cd "$old_dir"
     printf "done.\n"
 }
 
 modify_ips_manifest() {
-    valgrind_rev=$( svn info $source_directory | grep Revision | sed -e 's/Revision: //' )
-    vex_rev=$( svn info $source_directory/VEX | grep Revision | sed -e 's/Revision: //' )
+    valgrind_commit=$( cd $source_directory; git rev-parse --short=11 HEAD )
+    [[ -z $valgrind_commit ]] && fail "Failed to find Valgrind revision."
 
-    [[ -z $valgrind_rev ]] && fail "Failed to find Valgrind revision."
-    [[ -z $vex_rev ]] && fail "Failed to find VEX revision."
+    echo "Valgrind commit: $valgrind_commit."
 
-    echo "Valgrind revision: $valgrind_rev, VEX revision $vex_rev."
-
-    sed -i -e "s/VVVVV-XXXX/${valgrind_rev}-${vex_rev}/" $SRCDIR/$IPS_MANIFEST
+    sed -i -e "s/VVVVV/${valgrind_commit}/" $SRCDIR/$IPS_MANIFEST
 }
 
 run_autogen() {

@@ -12,7 +12,7 @@ echo "Bcc: valgrind@wildebeest.org" >> $MAILFILE
 echo "  " >> $MAILFILE
 cat "$summary"  >> $MAILFILE
 echo "  " >> $MAILFILE
-cat "$diffs"  >> $MAILFILE
+cat "$diffs" | head -2000  >> $MAILFILE
 
 MAILLATEST="$HOME/valgrind-results/latest"
 rm -f $MAILLATEST

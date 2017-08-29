@@ -58,10 +58,11 @@ create_dirs() {
 }
 
 export_sources() {
-    printf "Exporting sources... "
     old_dir=$( pwd )
     git_commit=$( cd $source_directory; git rev-parse HEAD )
+    echo "Valgrind git commit: $git_commit."
 
+    printf "Exporting sources... "
     git clone ${GITREPO} ${SRCDIR} 2> $TMPDIR/git-clone-valgrind.log.stderr
     (( $? != 0 )) && fail "Failed to clone git repo from $source_directory."
     cd ${SRCDIR}
@@ -72,12 +73,10 @@ export_sources() {
 }
 
 modify_ips_manifest() {
-    valgrind_commit=$( cd $source_directory; git rev-parse --short=11 HEAD )
-    [[ -z $valgrind_commit ]] && fail "Failed to find Valgrind revision."
+    current_date=$( date '+%Y%m%d' )
+    [[ -z $current_date ]] && fail "Failed to determine current date."
 
-    echo "Valgrind commit: $valgrind_commit."
-
-    sed -i -e "s/VVVVV/${valgrind_commit}/" $SRCDIR/$IPS_MANIFEST
+    sed -i -e "s/VVVVV/${current_date}/" $SRCDIR/$IPS_MANIFEST
 }
 
 run_autogen() {

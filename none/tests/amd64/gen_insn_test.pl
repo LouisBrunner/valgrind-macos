@@ -16,7 +16,7 @@ our %ArgTypes = (
                  m32 => "reg32_t",
                  m64 => "reg64_t",
                  m128 => "reg128_t",
-                 eflags => "reg32_t",
+                 rflags => "reg64_t",
                  st => "reg64_t",
                  fpucw => "reg16_t",
                  fpusw => "reg16_t"
@@ -222,8 +222,8 @@ while (<>)
 
     my @presets;
     my $presetc = 0;
-    my $eflagsmask;
-    my $eflagsset;
+    my $rflagsmask;
+    my $rflagsset;
     my $fpucwmask;
     my $fpucwset;
     my $fpuswmask;
@@ -305,7 +305,7 @@ while (<>)
 
             $presetc++;
         }
-        elsif ($preset =~ /^(eflags)\[([^\]]+)\]$/)
+        elsif ($preset =~ /^(rflags)\[([^\]]+)\]$/)
         {
             my $type = $1;
             my @values = split(/,/, $2);
@@ -313,8 +313,8 @@ while (<>)
             $values[0] = oct($values[0]) if $values[0] =~ /^0/;
             $values[1] = oct($values[1]) if $values[1] =~ /^0/;
 
-            $eflagsmask = sprintf "0x%08x", $values[0] ^ 0xffffffff;
-            $eflagsset = sprintf "0x%08x", $values[1];
+            $rflagsmask = sprintf "0x%016x", ~$values[0];
+            $rflagsset = sprintf "0x%016x", $values[1];
         }
         elsif ($preset =~ /^(fpucw)\[([^\]]+)\]$/)
         {
@@ -544,7 +544,7 @@ while (<>)
 
             print qq|   $ArgTypes{$type} $name;\n|;
         }
-        elsif ($result =~ /^eflags\[([^\]]+)\]$/)
+        elsif ($result =~ /^rflags\[([^\]]+)\]$/)
         {
             my @values = split(/,/, $1);
             
@@ -553,19 +553,19 @@ while (<>)
             
             my $result = {
                 name => $name,
-                type => "eflags",
-                subtype => "ud",
-                values => [ map { sprintf "0x%08x", $_ } @values ]
+                type => "rflags",
+                subtype => "uq",
+                values => [ map { sprintf "0x%016x", $_ } @values ]
             };
 
             push @results, $result;
             
-            print qq|   $ArgTypes{eflags} $name;\n|;
+            print qq|   $ArgTypes{rflags} $name;\n|;
 
-            if (!defined($eflagsmask) && !defined($eflagsset))
+            if (!defined($rflagsmask) && !defined($rflagsset))
             {
-                $eflagsmask = sprintf "0x%08x", $values[0] ^ 0xffffffff;
-                $eflagsset = sprintf "0x%08x", $values[0] & ~$values[1];
+                $rflagsmask = sprintf "0x%016x", ~$values[0];
+                $rflagsset = sprintf "0x%016x", $values[0] & ~$values[1];
             }
         }
         elsif ($result =~ /^fpucw\[([^\]]+)\]$/)
@@ -722,12 +722,11 @@ while (<>)
         }
     }
 
-    if (defined($eflagsmask) || defined($eflagsset))
+    if (defined($rflagsmask) || defined($rflagsset))
     {
         print qq|         \"pushfq\\n\"\n|;
-        print qq|         \"andl \$$eflagsmask, (%%rsp)\\n\"\n| if defined($eflagsmask);
-        print qq|         \"andl \$0, 4(%%rsp)\\n\"\n| if defined($eflagsmask);
-        print qq|         \"orq \$$eflagsset, (%%rsp)\\n\"\n| if defined($eflagsset);
+        print qq|         \"andq \$$rflagsmask, (%%rsp)\\n\"\n| if defined($rflagsmask);
+        print qq|         \"orq \$$rflagsset, (%%rsp)\\n\"\n| if defined($rflagsset);
         print qq|         \"popfq\\n\"\n|;
     }
 
@@ -747,7 +746,7 @@ while (<>)
     
     foreach my $arg (@args)
     {
-        next if $arg->{type} eq "eflags";
+        next if $arg->{type} eq "rflags";
 
         if ($arg->{type} =~ /^(r8|r16|r32|r64|mm|xmm)$/)
         {
@@ -815,7 +814,7 @@ while (<>)
         {
             $fpresults[$RegNums{$result->{register}}] = $result;
         }
-        elsif ($result->{type} eq "eflags")
+        elsif ($result->{type} eq "rflags")
         {
             print qq|         \"pushfq\\n\"\n|;
             print qq|         \"popq %$result->{argnum}\\n\"\n|;
@@ -925,9 +924,9 @@ while (<>)
             my $suffix = $SubTypeSuffixes{$subtype};
             my @values = @{$result->{values}};
             
-            if ($type eq "eflags")
+            if ($type eq "rflags")
             {
-                print qq|${prefix}\($result->{name}.ud[0] & $values[0]UL\) == $values[1]UL|;
+                print qq|${prefix}\($result->{name}.uq[0] & $values[0]UL\) == $values[1]UL|;
             }
             elsif ($type =~ /^fpu[cs]w$/)
             {
@@ -972,9 +971,9 @@ while (<>)
             my $suffix = $SubTypeSuffixes{$subtype};
             my @values = @{$result->{values}};
             
-            if ($type eq "eflags")
+            if ($type eq "rflags")
             {
-                print qq|         printf("  eflags & 0x%lx = 0x%lx (expected 0x%lx)\\n", $values[0]UL, $result->{name}.ud\[0\] & $values[0]UL, $values[1]UL);\n|;
+                print qq|         printf("  rflags & 0x%lx = 0x%lx (expected 0x%lx)\\n", $values[0]UL, $result->{name}.ud\[0\] & $values[0]UL, $values[1]UL);\n|;
             }
             elsif ($type =~ /^fpu[cs]w$/)
             {

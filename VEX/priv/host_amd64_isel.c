@@ -2205,8 +2205,6 @@ static AMD64CondCode iselCondCode ( ISelEnv* env, const IRExpr* e )
 /* DO NOT CALL THIS DIRECTLY ! */
 static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, const IRExpr* e )
 {
-   MatchInfo mi;
-
    vassert(e);
    vassert(typeOfIRExpr(env->type_env,e) == Ity_I1);
 
@@ -2277,10 +2275,25 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, const IRExpr* e )
 
    /* --- patterns rooted at: CmpNEZ32 --- */
 
-   /* CmpNEZ32(x) */
-   if (e->tag == Iex_Unop 
+   if (e->tag == Iex_Unop
        && e->Iex.Unop.op == Iop_CmpNEZ32) {
-      HReg      r1   = iselIntExpr_R(env, e->Iex.Unop.arg);
+      IRExpr* arg = e->Iex.Unop.arg;
+      if (arg->tag == Iex_Binop
+          && (arg->Iex.Binop.op == Iop_Or32
+              || arg->Iex.Binop.op == Iop_And32)) {
+         /* CmpNEZ32(Or32(x,y)) */
+         /* CmpNEZ32(And32(x,y)) */
+         HReg      r0   = iselIntExpr_R(env, arg->Iex.Binop.arg1);
+         AMD64RMI* rmi1 = iselIntExpr_RMI(env, arg->Iex.Binop.arg2);
+         HReg      tmp  = newVRegI(env);
+         addInstr(env, mk_iMOVsd_RR(r0, tmp));
+         addInstr(env, AMD64Instr_Alu32R(
+                          arg->Iex.Binop.op == Iop_Or32 ? Aalu_OR : Aalu_AND,
+                          rmi1, tmp));
+         return Acc_NZ;
+      }
+      /* CmpNEZ32(x) */
+      HReg      r1   = iselIntExpr_R(env, arg);
       AMD64RMI* rmi2 = AMD64RMI_Imm(0);
       addInstr(env, AMD64Instr_Alu32R(Aalu_CMP,rmi2,r1));
       return Acc_NZ;
@@ -2288,25 +2301,25 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, const IRExpr* e )
 
    /* --- patterns rooted at: CmpNEZ64 --- */
 
-   /* CmpNEZ64(Or64(x,y)) */
-   {
-      DECLARE_PATTERN(p_CmpNEZ64_Or64);
-      DEFINE_PATTERN(p_CmpNEZ64_Or64,
-                     unop(Iop_CmpNEZ64, binop(Iop_Or64, bind(0), bind(1))));
-      if (matchIRExpr(&mi, p_CmpNEZ64_Or64, e)) {
-         HReg      r0   = iselIntExpr_R(env, mi.bindee[0]);
-         AMD64RMI* rmi1 = iselIntExpr_RMI(env, mi.bindee[1]);
+   if (e->tag == Iex_Unop
+       && e->Iex.Unop.op == Iop_CmpNEZ64) {
+      IRExpr* arg = e->Iex.Unop.arg;
+      if (arg->tag == Iex_Binop
+          && (arg->Iex.Binop.op == Iop_Or64
+              || arg->Iex.Binop.op == Iop_And64)) {
+         /* CmpNEZ64(Or64(x,y)) */
+         /* CmpNEZ64(And64(x,y)) */
+         HReg      r0   = iselIntExpr_R(env, arg->Iex.Binop.arg1);
+         AMD64RMI* rmi1 = iselIntExpr_RMI(env, arg->Iex.Binop.arg2);
          HReg      tmp  = newVRegI(env);
          addInstr(env, mk_iMOVsd_RR(r0, tmp));
-         addInstr(env, AMD64Instr_Alu64R(Aalu_OR,rmi1,tmp));
+         addInstr(env, AMD64Instr_Alu64R(
+                          arg->Iex.Binop.op == Iop_Or64 ? Aalu_OR : Aalu_AND,
+                          rmi1, tmp));
          return Acc_NZ;
       }
-   }
-
-   /* CmpNEZ64(x) */
-   if (e->tag == Iex_Unop 
-       && e->Iex.Unop.op == Iop_CmpNEZ64) {
-      HReg      r1   = iselIntExpr_R(env, e->Iex.Unop.arg);
+      /* CmpNEZ64(x) */
+      HReg      r1   = iselIntExpr_R(env, arg);
       AMD64RMI* rmi2 = AMD64RMI_Imm(0);
       addInstr(env, AMD64Instr_Alu64R(Aalu_CMP,rmi2,r1));
       return Acc_NZ;

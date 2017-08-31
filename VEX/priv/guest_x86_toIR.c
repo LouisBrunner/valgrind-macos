@@ -13067,6 +13067,11 @@ DisResult disInstr_X86_WRK (
        goto decode_success;
    }
 
+   /* 67 E8 = CALL with redundant addr16 prefix */
+   if (insn[0] == 0x67 && insn[1] == 0xE8) {
+      delta++;
+   }
+
    /* ---------------------------------------------------- */
    /* --- start of the baseline insn decoder            -- */
    /* ---------------------------------------------------- */

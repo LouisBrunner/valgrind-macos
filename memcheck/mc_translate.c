@@ -937,6 +937,46 @@ static IRAtom* mkPCastXXtoXXlsb ( MCEnv* mce, IRAtom* varg, IRType ty )
    tl_assert(0);
 }
 
+/* --------- Optimistic casts. --------- */
+
+/* The function takes and returns an expression of type TY. If any of the
+   VBITS indicate defined (value == 0) the resulting expression has all bits
+   set to 0. Otherwise, all bits are 1.  In words, if any bits are defined
+   then all bits are made to be defined.
+
+   In short we compute (vbits - (vbits >>u 1)) >>s (bitsize(vbits)-1).
+*/
+static IRAtom* mkOCastAt( MCEnv* mce, IRType ty, IRAtom* vbits )
+{
+   IROp opSUB, opSHR, opSAR;
+   UInt sh;
+
+   switch (ty) {
+      case Ity_I64:
+         opSUB = Iop_Sub64; opSHR = Iop_Shr64; opSAR = Iop_Sar64; sh = 63;
+         break;
+      case Ity_I32:
+         opSUB = Iop_Sub32; opSHR = Iop_Shr32; opSAR = Iop_Sar32; sh = 31;
+         break;
+      case Ity_I16:
+         opSUB = Iop_Sub16; opSHR = Iop_Shr16; opSAR = Iop_Sar16; sh = 15;
+         break;
+      case Ity_I8:
+         opSUB = Iop_Sub8; opSHR = Iop_Shr8; opSAR = Iop_Sar8; sh = 7;
+         break;
+      default:
+         ppIRType(ty);
+         VG_(tool_panic)("mkOCastTo");
+   }
+
+   IRAtom *shr1, *at;
+   shr1 = assignNew('V', mce,ty, binop(opSHR, vbits, mkU8(1)));
+   at   = assignNew('V', mce,ty, binop(opSUB, vbits, shr1));
+   at   = assignNew('V', mce,ty, binop(opSAR, at, mkU8(sh)));
+   return at;
+}
+
+
 /* --------- Accurate interpretation of CmpEQ/CmpNE. --------- */
 /* 
    Normally, we can do CmpEQ/CmpNE by doing UifU on the arguments, and
@@ -951,12 +991,12 @@ static IRAtom* mkPCastXXtoXXlsb ( MCEnv* mce, IRAtom* varg, IRType ty )
 
    PCastTo<1> (
       -- naive version
-      PCastTo<sz>( UifU<sz>(vxx, vyy) )
+      UifU<sz>(vxx, vyy)
 
       `DifD<sz>`
 
       -- improvement term
-      PCastTo<sz>( PCast<sz>( CmpEQ<sz> ( vec, 1...1 ) ) )
+      OCast<sz>(vec)
    )
 
    where
@@ -967,27 +1007,47 @@ static IRAtom* mkPCastXXtoXXlsb ( MCEnv* mce, IRAtom* varg, IRType ty )
                    vyy,   // 0 iff bit defined
                    Not<sz>(Xor<sz>( xx, yy )) // 0 iff bits different
                  )
-                    
+
      If any bit of vec is 0, the result is defined and so the 
      improvement term should produce 0...0, else it should produce
      1...1.
 
      Hence require for the improvement term:
 
-        if vec == 1...1 then 1...1 else 0...0
-     ->
-        PCast<sz>( CmpEQ<sz> ( vec, 1...1 ) )
+        OCast(vec) = if vec == 1...1 then 1...1 else 0...0
 
-   This was extensively re-analysed and checked on 6 July 05.
+     which you can think of as an "optimistic cast" (OCast, the opposite of
+     the normal "pessimistic cast" (PCast) family.  An OCast says all bits
+     are defined if any bit is defined.
+
+     It is possible to show that
+
+         if vec == 1...1 then 1...1 else 0...0
+
+     can be implemented in straight-line code as
+
+         (vec - (vec >>u 1)) >>s (word-size-in-bits - 1)
+
+   We note that vec contains the sub-term Or<sz>(vxx, vyy).  Since UifU is
+   implemented with Or (since 1 signifies undefinedness), this is a
+   duplicate of the UifU<sz>(vxx, vyy) term and so we can CSE it out, giving
+   a final version of:
+
+   let naive = UifU<sz>(vxx, vyy)
+       vec   = Or<sz>(naive, Not<sz>(Xor<sz)(xx, yy))
+   in
+       PCastTo<1>( DifD<sz>(naive, OCast<sz>(vec)) )
+
+   This was extensively re-analysed and checked on 6 July 05 and again
+   in July 2017.
 */
 static IRAtom* expensiveCmpEQorNE ( MCEnv*  mce,
                                     IRType  ty,
                                     IRAtom* vxx, IRAtom* vyy, 
                                     IRAtom* xx,  IRAtom* yy )
 {
-   IRAtom *naive, *vec, *improvement_term;
-   IRAtom *improved, *final_cast, *top;
-   IROp   opDIFD, opUIFU, opXOR, opNOT, opCMP, opOR;
+   IRAtom *naive, *vec, *improved, *final_cast;
+   IROp   opDIFD, opUIFU, opOR, opXOR, opNOT;
 
    tl_assert(isShadowAtom(mce,vxx));
    tl_assert(isShadowAtom(mce,vyy));
@@ -997,57 +1057,54 @@ static IRAtom* expensiveCmpEQorNE ( MCEnv*  mce,
    tl_assert(sameKindedAtoms(vyy,yy));
  
    switch (ty) {
+      case Ity_I8:
+         opDIFD = Iop_And8;
+         opUIFU = Iop_Or8;
+         opOR   = Iop_Or8;
+         opXOR  = Iop_Xor8;
+         opNOT  = Iop_Not8;
+         break;
       case Ity_I16:
-         opOR   = Iop_Or16;
          opDIFD = Iop_And16;
          opUIFU = Iop_Or16;
-         opNOT  = Iop_Not16;
+         opOR   = Iop_Or16;
          opXOR  = Iop_Xor16;
-         opCMP  = Iop_CmpEQ16;
-         top    = mkU16(0xFFFF);
+         opNOT  = Iop_Not16;
          break;
       case Ity_I32:
-         opOR   = Iop_Or32;
          opDIFD = Iop_And32;
          opUIFU = Iop_Or32;
-         opNOT  = Iop_Not32;
+         opOR   = Iop_Or32;
          opXOR  = Iop_Xor32;
-         opCMP  = Iop_CmpEQ32;
-         top    = mkU32(0xFFFFFFFF);
+         opNOT  = Iop_Not32;
          break;
       case Ity_I64:
-         opOR   = Iop_Or64;
          opDIFD = Iop_And64;
          opUIFU = Iop_Or64;
-         opNOT  = Iop_Not64;
+         opOR   = Iop_Or64;
          opXOR  = Iop_Xor64;
-         opCMP  = Iop_CmpEQ64;
-         top    = mkU64(0xFFFFFFFFFFFFFFFFULL);
+         opNOT  = Iop_Not64;
          break;
       default:
          VG_(tool_panic)("expensiveCmpEQorNE");
    }
 
    naive 
-      = mkPCastTo(mce,ty,
-                  assignNew('V', mce, ty, binop(opUIFU, vxx, vyy)));
+      = assignNew('V', mce, ty, binop(opUIFU, vxx, vyy));
 
    vec 
       = assignNew(
            'V', mce,ty, 
            binop( opOR,
-                  assignNew('V', mce,ty, binop(opOR, vxx, vyy)),
+                  naive,
                   assignNew(
-                     'V', mce,ty, 
-                     unop( opNOT,
-                           assignNew('V', mce,ty, binop(opXOR, xx, yy))))));
-
-   improvement_term
-      = mkPCastTo( mce,ty,
-                   assignNew('V', mce,Ity_I1, binop(opCMP, vec, top)));
+                     'V', mce,ty,
+                     unop(opNOT,
+                          assignNew('V', mce,ty, binop(opXOR, xx, yy))))));
 
    improved
-      = assignNew( 'V', mce,ty, binop(opDIFD, naive, improvement_term) );
+      = assignNew( 'V', mce,ty, 
+                   binop(opDIFD, naive, mkOCastAt(mce, ty, vec)));
 
    final_cast
       = mkPCastTo( mce, Ity_I1, improved );
@@ -4087,12 +4144,9 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Add8:
          return mkLeft8(mce, mkUifU8(mce, vatom1,vatom2));
 
-      case Iop_CmpEQ64: 
-      case Iop_CmpNE64:
-         if (mce->bogusLiterals)
-            goto expensive_cmp64;
-         else
-            goto cheap_cmp64;
+      ////---- CmpXX64
+      case Iop_CmpEQ64: case Iop_CmpNE64:
+         if (mce->bogusLiterals) goto expensive_cmp64; else goto cheap_cmp64;
 
       expensive_cmp64:
       case Iop_ExpCmpNE64:
@@ -4103,12 +4157,9 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_CmpLT64U: case Iop_CmpLT64S:
          return mkPCastTo(mce, Ity_I1, mkUifU64(mce, vatom1,vatom2));
 
-      case Iop_CmpEQ32: 
-      case Iop_CmpNE32:
-         if (mce->bogusLiterals)
-            goto expensive_cmp32;
-         else
-            goto cheap_cmp32;
+      ////---- CmpXX32
+      case Iop_CmpEQ32: case Iop_CmpNE32:
+         if (mce->bogusLiterals) goto expensive_cmp32; else goto cheap_cmp32;
 
       expensive_cmp32:
       case Iop_ExpCmpNE32:
@@ -4119,14 +4170,28 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_CmpLT32U: case Iop_CmpLT32S:
          return mkPCastTo(mce, Ity_I1, mkUifU32(mce, vatom1,vatom2));
 
+      ////---- CmpXX16
       case Iop_CmpEQ16: case Iop_CmpNE16:
-         return mkPCastTo(mce, Ity_I1, mkUifU16(mce, vatom1,vatom2));
+         if (mce->bogusLiterals) goto expensive_cmp16; else goto cheap_cmp16;
 
+      expensive_cmp16:
       case Iop_ExpCmpNE16:
          return expensiveCmpEQorNE(mce,Ity_I16, vatom1,vatom2, atom1,atom2 );
 
+      cheap_cmp16:
+         return mkPCastTo(mce, Ity_I1, mkUifU16(mce, vatom1,vatom2));
+
+      ////---- CmpXX8
       case Iop_CmpEQ8: case Iop_CmpNE8:
+         if (mce->bogusLiterals) goto expensive_cmp8; else goto cheap_cmp8;
+
+      expensive_cmp8:
+         return expensiveCmpEQorNE(mce,Ity_I8, vatom1,vatom2, atom1,atom2 );
+
+      cheap_cmp8:
          return mkPCastTo(mce, Ity_I1, mkUifU8(mce, vatom1,vatom2));
+
+      ////---- end CmpXX{64,32,16,8}
 
       case Iop_CasCmpEQ8:  case Iop_CasCmpNE8:
       case Iop_CasCmpEQ16: case Iop_CasCmpNE16:

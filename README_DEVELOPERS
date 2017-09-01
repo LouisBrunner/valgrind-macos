@@ -151,19 +151,18 @@ This section explains :
 (1) Check out 2 trees, "Inner" and "Outer".  Inner runs the app
     directly.  Outer runs Inner.
 
-(2) Configure inner with --enable-inner and build/install as usual.
+(2) Configure Inner with --enable-inner and build as usual.
 
-(3) Configure Outer normally and build/install as usual.
+(3) Configure Outer normally and build+install as usual.
+    Note: You must use a "make install"-ed valgrind.
+    Do *not* use vg-in-place for the Outer valgrind.
 
 (4) Choose a very simple program (date) and try
 
     outer/.../bin/valgrind --sim-hints=enable-outer --trace-children=yes  \
        --smc-check=all-non-file \
        --run-libc-freeres=no --tool=cachegrind -v \
-       inner/.../bin/valgrind --vgdb-prefix=./inner --tool=none -v prog
-
-Note: You must use a "make install"-ed valgrind.
-Do *not* use vg-in-place for the outer valgrind.
+       inner/.../vg-in-place --vgdb-prefix=./inner --tool=none -v prog
 
 If you omit the --trace-children=yes, you'll only monitor Inner's launcher
 program, not its stage2. Outer needs --run-libc-freeres=no, as otherwise
@@ -191,12 +190,12 @@ setup, this prefix causes the reg test diff to fail. Give
 --sim-hints=no-inner-prefix to the Inner to disable the production
 of the prefix in the stdout/stderr output of Inner.
 
-The allocator (coregrind/m_mallocfree.c) is annotated with client requests
-so Memcheck can be used to find leaks and use after free in an Inner
-Valgrind.
+The allocators in coregrind/m_mallocfree.c and VEX/priv/main_util.h are
+annotated with client requests so Memcheck can be used to find leaks
+and use after free in an Inner Valgrind.
 
 The Valgrind "big lock" is annotated with helgrind client requests
-so helgrind and drd can be used to find race conditions in an Inner
+so Helgrind and DRD can be used to find race conditions in an Inner
 Valgrind.
 
 All this has not been tested much, so don't be surprised if you hit problems.

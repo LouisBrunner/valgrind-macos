@@ -1177,6 +1177,33 @@ Syscall param getfsstat64(buf) points to unaddressable byte(s)
 (369-379):       unused
 -----------------------------------------------------
 -----------------------------------------------------
+x200018a(394):        __NR_pselect 1s 6m
+-----------------------------------------------------
+Syscall param pselect(readfds) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:684)
+
+Syscall param pselect(writefds) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:684)
+
+Syscall param pselect(readfds) points to uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:684)
+ Address 0x........ is on thread 1's stack
+ in frame #1, created by main (scalar.c:12)
+
+Syscall param pselect(writefds) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:684)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param pselect(exceptfds) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:684)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+-----------------------------------------------------
 x270f(9999):                9999 1e
 -----------------------------------------------------
 WARNING: unhandled amd64-darwin syscall: unix:9999

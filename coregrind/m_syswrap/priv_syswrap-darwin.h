@@ -489,7 +489,11 @@ DECL_TEMPLATE(darwin, __mac_syscall);           // 381
 // NYI __mac_get_lcid 391
 // NYI __mac_get_lctx 392
 // NYI __mac_set_lctx 393
+#if DARWIN_VERS >= DARWIN_10_11
+DECL_TEMPLATE(darwin, pselect);                 // 394
+#else
 // NYI setlcid 394
+#endif /* DARWIN_VERS >= DARWIN_10_11 */
 // NYI getlcid 395
 // GEN read_nocancel 396
 // GEN write_nocancel 397

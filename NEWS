@@ -35,6 +35,7 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
+379748  Fix missing pselect syscall (OS X 10.11)
 380397  s390x: __GI_strcspn() replacemenet needed
 381162  possible array overrun in VEX register allocator
 381272  ppc64 doesn't compile test_isa_2_06_partx.c without VSX support

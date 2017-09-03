@@ -673,7 +673,13 @@
 #define __NR___mac_get_lcid VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(391)
 #define __NR___mac_get_lctx VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(392)
 #define __NR___mac_set_lctx VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(393)
+
+#if DARWIN_VERS >= DARWIN_10_11
+#define __NR_pselect        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(394)
+#else
 #define __NR_setlcid        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(394)
+#endif /* DARWIN_VERS >= DARWIN_10_11 */
+
 #define __NR_getlcid        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(395)
 #define __NR_read_nocancel          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(396)
 #define __NR_write_nocancel         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(397)

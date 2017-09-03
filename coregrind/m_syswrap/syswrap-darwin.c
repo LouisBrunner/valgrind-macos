@@ -9794,6 +9794,39 @@ PRE(guarded_writev_np)
 
 
 /* ---------------------------------------------------------------------
+   Added for OSX 10.11 (El Capitan)
+   ------------------------------------------------------------------ */
+
+#if DARWIN_VERS >= DARWIN_10_11
+
+PRE(pselect)
+{
+   *flags |= SfMayBlock;
+   PRINT("pselect ( %ld, %#lx, %#lx, %#lx, %#lx, %#lx )", SARG1, ARG2, ARG3,
+         ARG4, ARG5, ARG6);
+   PRE_REG_READ5(long, "pselect",
+                 int, n, vki_fd_set *, readfds, vki_fd_set *, writefds,
+                 vki_fd_set *, exceptfds, struct vki_timeval *, timeout);
+   // XXX: this possibly understates how much memory is read.
+   if (ARG2 != 0)
+      PRE_MEM_READ( "pselect(readfds)",
+		     ARG2, ARG1/8 /* __FD_SETSIZE/8 */ );
+   if (ARG3 != 0)
+      PRE_MEM_READ( "pselect(writefds)",
+		     ARG3, ARG1/8 /* __FD_SETSIZE/8 */ );
+   if (ARG4 != 0)
+      PRE_MEM_READ( "pselect(exceptfds)",
+		     ARG4, ARG1/8 /* __FD_SETSIZE/8 */ );
+   if (ARG5 != 0)
+      PRE_timeval_READ( "pselect(timeout)", ARG5 );
+   if (ARG6 != 0)
+      PRE_MEM_READ( "pselect(sigmask)", ARG6, sizeof(vki_sigset_t) );
+}
+
+#endif /* DARWIN_VERS >= DARWIN_10_11 */
+
+
+/* ---------------------------------------------------------------------
  Added for macOS 10.12 (Sierra)
  ------------------------------------------------------------------ */
 
@@ -10454,6 +10487,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 #if DARWIN_VERS >= DARWIN_10_11
 // _____(__NR_kdebug_trace_string),                     // 178
 // _____(__NR_kevent_qos),                              // 374
+   MACX_(__NR_pselect, pselect),                        // 394
 // _____(__NR_netagent_trigger),                        // 490
 // _____(__NR_stack_snapshot_with_config),              // 491
 // _____(__NR_microstackshot),                          // 492

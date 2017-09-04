@@ -162,23 +162,25 @@ typedef
    spill, or -1 if none was found.  */
 static
 Int findMostDistantlyMentionedVReg ( 
-   HRegUsage*   reg_usages_in,
-   Int          search_from_instr,
-   Int          num_instrs,
-   RRegState*   state,
-   Int          n_state
+   HRegUsage*             reg_usages_in,
+   Int                    search_from_instr,
+   Int                    num_instrs,
+   RRegState*             rreg_state,
+   HRegClass              hreg_class,
+   const RegAllocControl* con
 )
 {
-   Int k, m;
+   Int m;
    Int furthest_k = -1;
    Int furthest   = -1;
    vassert(search_from_instr >= 0);
-   for (k = 0; k < n_state; k++) {
-      if (!state[k].is_spill_cand)
+   for (UInt k = con->univ->allocable_start[hreg_class];
+        k <= con->univ->allocable_end[hreg_class]; k++) {
+      if (!rreg_state[k].is_spill_cand)
          continue;
-      vassert(state[k].disp == Bound);
+      vassert(rreg_state[k].disp == Bound);
       for (m = search_from_instr; m < num_instrs; m++) {
-         if (HRegUsage__contains(&reg_usages_in[m], state[k].vreg))
+         if (HRegUsage__contains(&reg_usages_in[m], rreg_state[k].vreg))
             break;
       }
       if (m > furthest) {
@@ -210,7 +212,7 @@ static void ensureRRLRspace_SLOW ( RRegLR** info, Int* size, Int used )
    Int     k;
    RRegLR* arr2;
    if (0)
-      vex_printf("ensureRRISpace: %d -> %d\n", *size, 2 * *size);
+      vex_printf("ensureRRLRspace: %d -> %d\n", *size, 2 * *size);
    vassert(used == *size);
    arr2 = LibVEX_Alloc_inline(2 * *size * sizeof(RRegLR));
    for (k = 0; k < *size; k++)
@@ -1291,9 +1293,9 @@ HInstrArray* doRegisterAllocation_v2 (
             as possible. */
          Int k_suboptimal = -1;
          Int k;
-         for (k = 0; k < n_rregs; k++) {
-            if (rreg_state[k].disp != Free
-                || hregClass(con->univ->regs[k]) != hregClass(vreg))
+         for (k = con->univ->allocable_start[hregClass(vreg)];
+              k <= con->univ->allocable_end[hregClass(vreg)]; k++) {
+            if (rreg_state[k].disp != Free)
                continue;
             if (rreg_state[k].has_hlrs) {
                /* Well, at least we can use k_suboptimal if we really
@@ -1308,7 +1310,7 @@ HInstrArray* doRegisterAllocation_v2 (
          if (k_suboptimal >= 0)
             k = k_suboptimal;
 
-         if (k < n_rregs) {
+         if (k <= con->univ->allocable_end[hregClass(vreg)]) {
             rreg_state[k].disp = Bound;
             rreg_state[k].vreg = vreg;
             Int p = hregIndex(vreg);
@@ -1356,11 +1358,10 @@ HInstrArray* doRegisterAllocation_v2 (
          /* First, mark in the rreg_state, those rregs which are not spill
             candidates, due to holding a vreg mentioned by this
             instruction.  Or being of the wrong class. */
-         for (k = 0; k < n_rregs; k++) {
+         for (k = con->univ->allocable_start[hregClass(vreg)];
+              k <= con->univ->allocable_end[hregClass(vreg)]; k++) {
             rreg_state[k].is_spill_cand = False;
             if (rreg_state[k].disp != Bound)
-               continue;
-            if (hregClass(con->univ->regs[k]) != hregClass(vreg))
                continue;
             rreg_state[k].is_spill_cand = True;
             /* Note, the following loop visits only the virtual regs
@@ -1380,7 +1381,8 @@ HInstrArray* doRegisterAllocation_v2 (
             of consequent reloads required. */
          Int spillee
             = findMostDistantlyMentionedVReg ( 
-                 reg_usage_arr, ii+1, instrs_in->arr_used, rreg_state, n_rregs );
+                 reg_usage_arr, ii+1, instrs_in->arr_used, rreg_state,
+                 hregClass(vreg), con);
 
          if (spillee == -1) {
             /* Hmmmmm.  There don't appear to be any spill candidates.

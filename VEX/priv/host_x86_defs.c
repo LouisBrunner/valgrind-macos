@@ -64,12 +64,12 @@ const RRegUniverse* getRRegUniverse_X86 ( void )
       those available for allocation by reg-alloc, and those that
       follow are not available for allocation. */
    ru->allocable_start[HRcInt32] = ru->size;
-   ru->regs[ru->size++] = hregX86_EAX();
    ru->regs[ru->size++] = hregX86_EBX();
-   ru->regs[ru->size++] = hregX86_ECX();
-   ru->regs[ru->size++] = hregX86_EDX();
    ru->regs[ru->size++] = hregX86_ESI();
    ru->regs[ru->size++] = hregX86_EDI();
+   ru->regs[ru->size++] = hregX86_EAX();
+   ru->regs[ru->size++] = hregX86_ECX();
+   ru->regs[ru->size++] = hregX86_EDX();
    ru->allocable_end[HRcInt32] = ru->size - 1;
 
    ru->allocable_start[HRcFlt64] = ru->size;

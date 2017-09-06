@@ -47,12 +47,12 @@
 */
 
 #define ST_IN static inline
-ST_IN HReg hregX86_EAX   ( void ) { return mkHReg(False, HRcInt32,  0,  0); }
-ST_IN HReg hregX86_EBX   ( void ) { return mkHReg(False, HRcInt32,  3,  1); }
-ST_IN HReg hregX86_ECX   ( void ) { return mkHReg(False, HRcInt32,  1,  2); }
-ST_IN HReg hregX86_EDX   ( void ) { return mkHReg(False, HRcInt32,  2,  3); }
-ST_IN HReg hregX86_ESI   ( void ) { return mkHReg(False, HRcInt32,  6,  4); }
-ST_IN HReg hregX86_EDI   ( void ) { return mkHReg(False, HRcInt32,  7,  5); }
+ST_IN HReg hregX86_EBX   ( void ) { return mkHReg(False, HRcInt32,  3,  0); }
+ST_IN HReg hregX86_ESI   ( void ) { return mkHReg(False, HRcInt32,  6,  1); }
+ST_IN HReg hregX86_EDI   ( void ) { return mkHReg(False, HRcInt32,  7,  2); }
+ST_IN HReg hregX86_EAX   ( void ) { return mkHReg(False, HRcInt32,  0,  3); }
+ST_IN HReg hregX86_ECX   ( void ) { return mkHReg(False, HRcInt32,  1,  4); }
+ST_IN HReg hregX86_EDX   ( void ) { return mkHReg(False, HRcInt32,  2,  5); }
 
 ST_IN HReg hregX86_FAKE0 ( void ) { return mkHReg(False, HRcFlt64,  0,  6); }
 ST_IN HReg hregX86_FAKE1 ( void ) { return mkHReg(False, HRcFlt64,  1,  7); }

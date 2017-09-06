@@ -69,6 +69,24 @@ const RRegUniverse* getRRegUniverse_PPC ( Bool mode64 )
    // GPR1 = stack pointer
    // GPR2 = TOC pointer
    ru->allocable_start[(mode64) ? HRcInt64 : HRcInt32] = ru->size;
+   // GPR14 and above are callee save. List them first.
+   ru->regs[ru->size++] = hregPPC_GPR14(mode64);
+   ru->regs[ru->size++] = hregPPC_GPR15(mode64);
+   ru->regs[ru->size++] = hregPPC_GPR16(mode64);
+   ru->regs[ru->size++] = hregPPC_GPR17(mode64);
+   ru->regs[ru->size++] = hregPPC_GPR18(mode64);
+   ru->regs[ru->size++] = hregPPC_GPR19(mode64);
+   ru->regs[ru->size++] = hregPPC_GPR20(mode64);
+   ru->regs[ru->size++] = hregPPC_GPR21(mode64);
+   ru->regs[ru->size++] = hregPPC_GPR22(mode64);
+   ru->regs[ru->size++] = hregPPC_GPR23(mode64);
+   ru->regs[ru->size++] = hregPPC_GPR24(mode64);
+   ru->regs[ru->size++] = hregPPC_GPR25(mode64);
+   ru->regs[ru->size++] = hregPPC_GPR26(mode64);
+   ru->regs[ru->size++] = hregPPC_GPR27(mode64);
+   ru->regs[ru->size++] = hregPPC_GPR28(mode64);
+
+   // Caller save registers now.
    ru->regs[ru->size++] = hregPPC_GPR3(mode64);
    ru->regs[ru->size++] = hregPPC_GPR4(mode64);
    ru->regs[ru->size++] = hregPPC_GPR5(mode64);
@@ -85,22 +103,6 @@ const RRegUniverse* getRRegUniverse_PPC ( Bool mode64 )
       ru->regs[ru->size++] = hregPPC_GPR12(mode64);
    }
    // GPR13 = thread specific pointer
-   // GPR14 and above are callee save.  Yay.
-   ru->regs[ru->size++] = hregPPC_GPR14(mode64);
-   ru->regs[ru->size++] = hregPPC_GPR15(mode64);
-   ru->regs[ru->size++] = hregPPC_GPR16(mode64);
-   ru->regs[ru->size++] = hregPPC_GPR17(mode64);
-   ru->regs[ru->size++] = hregPPC_GPR18(mode64);
-   ru->regs[ru->size++] = hregPPC_GPR19(mode64);
-   ru->regs[ru->size++] = hregPPC_GPR20(mode64);
-   ru->regs[ru->size++] = hregPPC_GPR21(mode64);
-   ru->regs[ru->size++] = hregPPC_GPR22(mode64);
-   ru->regs[ru->size++] = hregPPC_GPR23(mode64);
-   ru->regs[ru->size++] = hregPPC_GPR24(mode64);
-   ru->regs[ru->size++] = hregPPC_GPR25(mode64);
-   ru->regs[ru->size++] = hregPPC_GPR26(mode64);
-   ru->regs[ru->size++] = hregPPC_GPR27(mode64);
-   ru->regs[ru->size++] = hregPPC_GPR28(mode64);
    ru->allocable_end[(mode64) ? HRcInt64 : HRcInt32] = ru->size - 1;
    // GPR29 is reserved for the dispatcher
    // GPR30 is reserved as AltiVec spill reg temporary

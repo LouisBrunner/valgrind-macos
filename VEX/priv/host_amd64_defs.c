@@ -64,15 +64,15 @@ const RRegUniverse* getRRegUniverse_AMD64 ( void )
       those available for allocation by reg-alloc, and those that
       follow are not available for allocation. */
    ru->allocable_start[HRcInt64] = ru->size;
-   ru->regs[ru->size++] = hregAMD64_RSI();
-   ru->regs[ru->size++] = hregAMD64_RDI();
-   ru->regs[ru->size++] = hregAMD64_R8();
-   ru->regs[ru->size++] = hregAMD64_R9();
    ru->regs[ru->size++] = hregAMD64_R12();
    ru->regs[ru->size++] = hregAMD64_R13();
    ru->regs[ru->size++] = hregAMD64_R14();
    ru->regs[ru->size++] = hregAMD64_R15();
    ru->regs[ru->size++] = hregAMD64_RBX();
+   ru->regs[ru->size++] = hregAMD64_RSI();
+   ru->regs[ru->size++] = hregAMD64_RDI();
+   ru->regs[ru->size++] = hregAMD64_R8();
+   ru->regs[ru->size++] = hregAMD64_R9();
    ru->regs[ru->size++] = hregAMD64_R10();
    ru->allocable_end[HRcInt64] = ru->size - 1;
 
@@ -1460,18 +1460,16 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, const AMD64Instr* i, Bool mode64 )
          /* This is a bit subtle. */
          /* First off, claim it trashes all the caller-saved regs
             which fall within the register allocator's jurisdiction.
-            These I believe to be: rax rcx rdx rsi rdi r8 r9 r10 r11 
-            and all the xmm registers.
-         */
+            These I believe to be: rax rcx rdx rdi rsi r8 r9 r10
+            and all the xmm registers. */
          addHRegUse(u, HRmWrite, hregAMD64_RAX());
          addHRegUse(u, HRmWrite, hregAMD64_RCX());
          addHRegUse(u, HRmWrite, hregAMD64_RDX());
-         addHRegUse(u, HRmWrite, hregAMD64_RSI());
          addHRegUse(u, HRmWrite, hregAMD64_RDI());
+         addHRegUse(u, HRmWrite, hregAMD64_RSI());
          addHRegUse(u, HRmWrite, hregAMD64_R8());
          addHRegUse(u, HRmWrite, hregAMD64_R9());
          addHRegUse(u, HRmWrite, hregAMD64_R10());
-         addHRegUse(u, HRmWrite, hregAMD64_R11());
          addHRegUse(u, HRmWrite, hregAMD64_XMM0());
          addHRegUse(u, HRmWrite, hregAMD64_XMM1());
          addHRegUse(u, HRmWrite, hregAMD64_XMM3());

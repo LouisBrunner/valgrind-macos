@@ -57,35 +57,35 @@
   mkHReg(False,  HRcVec128, \
          (_enc), (_mode64) ? (_ix64) : (_ix32))
 
-ST_IN HReg hregPPC_GPR3  ( Bool mode64 ) { return GPR(mode64,  3,   0,  0); }
-ST_IN HReg hregPPC_GPR4  ( Bool mode64 ) { return GPR(mode64,  4,   1,  1); }
-ST_IN HReg hregPPC_GPR5  ( Bool mode64 ) { return GPR(mode64,  5,   2,  2); }
-ST_IN HReg hregPPC_GPR6  ( Bool mode64 ) { return GPR(mode64,  6,   3,  3); }
-ST_IN HReg hregPPC_GPR7  ( Bool mode64 ) { return GPR(mode64,  7,   4,  4); }
-ST_IN HReg hregPPC_GPR8  ( Bool mode64 ) { return GPR(mode64,  8,   5,  5); }
-ST_IN HReg hregPPC_GPR9  ( Bool mode64 ) { return GPR(mode64,  9,   6,  6); }
-ST_IN HReg hregPPC_GPR10 ( Bool mode64 ) { return GPR(mode64, 10,   7,  7); }
+ST_IN HReg hregPPC_GPR14 ( Bool mode64 ) { return GPR(mode64, 14,   0,  0); }
+ST_IN HReg hregPPC_GPR15 ( Bool mode64 ) { return GPR(mode64, 15,   1,  1); }
+ST_IN HReg hregPPC_GPR16 ( Bool mode64 ) { return GPR(mode64, 16,   2,  2); }
+ST_IN HReg hregPPC_GPR17 ( Bool mode64 ) { return GPR(mode64, 17,   3,  3); }
+ST_IN HReg hregPPC_GPR18 ( Bool mode64 ) { return GPR(mode64, 18,   4,  4); }
+ST_IN HReg hregPPC_GPR19 ( Bool mode64 ) { return GPR(mode64, 19,   5,  5); }
+ST_IN HReg hregPPC_GPR20 ( Bool mode64 ) { return GPR(mode64, 20,   6,  6); }
+ST_IN HReg hregPPC_GPR21 ( Bool mode64 ) { return GPR(mode64, 21,   7,  7); }
+ST_IN HReg hregPPC_GPR22 ( Bool mode64 ) { return GPR(mode64, 22,   8,  8); }
+ST_IN HReg hregPPC_GPR23 ( Bool mode64 ) { return GPR(mode64, 23,   9,  9); }
+ST_IN HReg hregPPC_GPR24 ( Bool mode64 ) { return GPR(mode64, 24,  10, 10); }
+ST_IN HReg hregPPC_GPR25 ( Bool mode64 ) { return GPR(mode64, 25,  11, 11); }
+ST_IN HReg hregPPC_GPR26 ( Bool mode64 ) { return GPR(mode64, 26,  12, 12); }
+ST_IN HReg hregPPC_GPR27 ( Bool mode64 ) { return GPR(mode64, 27,  13, 13); }
+ST_IN HReg hregPPC_GPR28 ( Bool mode64 ) { return GPR(mode64, 28,  14, 44); }
+
+ST_IN HReg hregPPC_GPR3  ( Bool mode64 ) { return GPR(mode64,  3,  15, 15); }
+ST_IN HReg hregPPC_GPR4  ( Bool mode64 ) { return GPR(mode64,  4,  16, 16); }
+ST_IN HReg hregPPC_GPR5  ( Bool mode64 ) { return GPR(mode64,  5,  17, 17); }
+ST_IN HReg hregPPC_GPR6  ( Bool mode64 ) { return GPR(mode64,  6,  18, 18); }
+ST_IN HReg hregPPC_GPR7  ( Bool mode64 ) { return GPR(mode64,  7,  19, 19); }
+ST_IN HReg hregPPC_GPR8  ( Bool mode64 ) { return GPR(mode64,  8,  20, 20); }
+ST_IN HReg hregPPC_GPR9  ( Bool mode64 ) { return GPR(mode64,  9,  21, 21); }
+ST_IN HReg hregPPC_GPR10 ( Bool mode64 ) { return GPR(mode64, 10,  22, 22); }
 
 // r11 and r12 are only allocatable in 32-bit mode.  Hence the 64-bit
 // index numbering doesn't advance for these two.
-ST_IN HReg hregPPC_GPR11 ( Bool mode64 ) { return GPR(mode64, 11,   0,  8); }
-ST_IN HReg hregPPC_GPR12 ( Bool mode64 ) { return GPR(mode64, 12,   0,  9); }
-
-ST_IN HReg hregPPC_GPR14 ( Bool mode64 ) { return GPR(mode64, 14,   8, 10); }
-ST_IN HReg hregPPC_GPR15 ( Bool mode64 ) { return GPR(mode64, 15,   9, 11); }
-ST_IN HReg hregPPC_GPR16 ( Bool mode64 ) { return GPR(mode64, 16,  10, 12); }
-ST_IN HReg hregPPC_GPR17 ( Bool mode64 ) { return GPR(mode64, 17,  11, 13); }
-ST_IN HReg hregPPC_GPR18 ( Bool mode64 ) { return GPR(mode64, 18,  12, 14); }
-ST_IN HReg hregPPC_GPR19 ( Bool mode64 ) { return GPR(mode64, 19,  13, 15); }
-ST_IN HReg hregPPC_GPR20 ( Bool mode64 ) { return GPR(mode64, 20,  14, 16); }
-ST_IN HReg hregPPC_GPR21 ( Bool mode64 ) { return GPR(mode64, 21,  15, 17); }
-ST_IN HReg hregPPC_GPR22 ( Bool mode64 ) { return GPR(mode64, 22,  16, 18); }
-ST_IN HReg hregPPC_GPR23 ( Bool mode64 ) { return GPR(mode64, 23,  17, 19); }
-ST_IN HReg hregPPC_GPR24 ( Bool mode64 ) { return GPR(mode64, 24,  18, 20); }
-ST_IN HReg hregPPC_GPR25 ( Bool mode64 ) { return GPR(mode64, 25,  19, 21); }
-ST_IN HReg hregPPC_GPR26 ( Bool mode64 ) { return GPR(mode64, 26,  20, 22); }
-ST_IN HReg hregPPC_GPR27 ( Bool mode64 ) { return GPR(mode64, 27,  21, 23); }
-ST_IN HReg hregPPC_GPR28 ( Bool mode64 ) { return GPR(mode64, 28,  22, 24); }
+ST_IN HReg hregPPC_GPR11 ( Bool mode64 ) { return GPR(mode64, 11,  22, 23); }
+ST_IN HReg hregPPC_GPR12 ( Bool mode64 ) { return GPR(mode64, 12,  22, 24); }
 
 ST_IN HReg hregPPC_FPR14 ( Bool mode64 ) { return FPR(mode64, 14,  23, 25); }
 ST_IN HReg hregPPC_FPR15 ( Bool mode64 ) { return FPR(mode64, 15,  24, 26); }

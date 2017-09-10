@@ -9580,8 +9580,20 @@ PRE(kernelrpc_mach_port_construct_trap)
 {
    UWord a1; UWord a2; ULong a3; UWord a4;
    munge_wwlw(&a1, &a2, &a3, &a4, ARG1, ARG2, ARG3, ARG4, ARG5);
-   PRINT("kernelrpc_mach_port_construct_trap(FIXME)"
-         "(%lx,%lx,%llx,%lx)", a1, a2, a3, a4);
+   PRINT("kernelrpc_mach_port_construct_trap"
+         "(target: %s, options: %#lx, content: %llx, name: %p)",
+         name_for_port(a1), a2, a3, *(mach_port_name_t**)a4);
+   PRE_MEM_WRITE("kernelrpc_mach_port_construct_trap(name)", a4,
+                 sizeof(mach_port_name_t*));
+}
+POST(kernelrpc_mach_port_construct_trap)
+{
+   UWord a1; UWord a2; ULong a3; UWord a4;
+   munge_wwlw(&a1, &a2, &a3, &a4, ARG1, ARG2, ARG3, ARG4, ARG5);
+   PRINT("-> name:%p", *(mach_port_name_t**)a4);
+   if (ML_(safe_to_deref)((mach_port_name_t*)a4, sizeof(mach_port_name_t*))) {
+      POST_MEM_WRITE(a4, sizeof(mach_port_name_t*));
+   }
 }
 
 PRE(kernelrpc_mach_port_destruct_trap)
@@ -10597,7 +10609,7 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
 #  endif
 
 #  if DARWIN_VERS >= DARWIN_10_9
-   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(24), kernelrpc_mach_port_construct_trap),
+   MACXY(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(24), kernelrpc_mach_port_construct_trap),
    MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(25), kernelrpc_mach_port_destruct_trap),
 #  else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(24)), 

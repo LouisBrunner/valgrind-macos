@@ -665,24 +665,6 @@
    obj:*GPUSupport.framework*GPUSupportMercury*
 }
 
-{
-   OSX1010:mach_msg_trap-1
-   Memcheck:Param
-   msg->desc.port.name
-   fun:mach_msg_trap
-   obj:*libsystem_kernel.dylib*
-   obj:*SystemConfiguration.framework*SystemConfiguration*
-}
-
-{
-   OSX1010:mach_msg_trap-2
-   Memcheck:Param
-   msg->desc.port.name
-   fun:mach_msg_trap
-   obj:*SystemConfiguration.framework*SystemConfiguration*
-   obj:*SystemConfiguration.framework*SystemConfiguration*
-}
-
 # See https://bugs.kde.org/show_bug.cgi?id=188572 about this;  it's
 # unavoidable due to BSD setenv() semantics.
 {

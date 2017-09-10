@@ -1,0 +1,768 @@
+
+# Suppressions for Darwin 17.x / macOS 10.13 High Sierra
+
+############################################
+## Leaks.  For other stuff see below.
+
+{
+   OSX1013:1-Leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_?alloc
+   ...
+   fun:_read_images
+}
+
+{
+   OSX1013:2-Leak
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc_zone_?alloc
+   ...
+   fun:_read_images
+}
+
+{
+   OSX1013:3-Leak
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc_zone_?alloc
+   fun:recursive_mutex_init
+   ...
+   fun:_os_object_init
+   fun:libdispatch_init
+   fun:libSystem_initializer
+   ...
+}
+
+{
+   OSX1013:4-Leak
+   Memcheck:Leak
+   fun:malloc_zone_?alloc
+   ...
+   fun:dyld_register_image_state_change_handler
+   ...
+}
+
+{
+   OSX1013:5-Leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:?alloc
+   ...
+   fun:dyld_register_image_state_change_handler
+   ...
+}
+
+{
+   OSX1013:6-Leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc_zone_?alloc
+   ...
+   fun:map_images_nolock
+   fun:map_2_images
+   ...
+}
+
+{
+   OSX1013:7-Leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_?alloc
+   ...
+   fun:map_images_nolock
+   fun:map_2_images
+   ...
+}
+
+{
+   OSX1013:8-Leak
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:?alloc
+   ...
+   fun:libSystem_initializer
+   ...
+}
+
+{
+   OSX1013:9-Leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc_zone_?alloc
+   ...
+   fun:libSystem_initializer
+   ...
+}
+
+{
+   OSX1013:10-Leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:?alloc
+   ...
+   fun:libSystem_initializer
+   ...
+}
+
+#{
+#   OSX1013:11-Leak
+#   Memcheck:Leak
+#   match-leak-kinds: definite
+#   fun:malloc
+#   fun:currentlocale
+#}
+#
+#{
+#   OSX1013:12-Leak
+#   Memcheck:Leak
+#   match-leak-kinds: possible
+#   fun:malloc
+#   fun:tzsetwall_basic
+#   fun:_st_tzset_basic
+#}
+
+{
+   OSX1013:13-Leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc_zone_memalign
+   ...
+   fun:_ZN4dyld24initializeMainExecutableEv
+   ...
+}
+
+{
+   OSX1013:14-Leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:?alloc
+   ...
+   fun:libSystem_atfork_child
+   ...
+}
+
+{
+   OSX1013:15-Leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:__smakebuf
+   ...
+   fun:printf
+   ...
+}
+
+{
+   OSX1013:16-Leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:?alloc
+   ...
+   fun:_read_images
+}
+
+{
+   OSX1013:17-Leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:?alloc
+   ...
+   fun:_read_images
+}
+
+{
+   OSX1013:18-Leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc_zone_?alloc
+   ...
+   fun:_read_images
+}
+
+{
+   OSX1013:19-Leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_?alloc
+   ...
+   fun:*NX*Map*
+   fun:*NX*Map*
+}
+
+{
+   OSX1013:20-Leak
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:?alloc
+   ...
+   fun:libSystem_initializer
+   ...
+}
+
+{
+   OSX1013:21-Leak
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc_zone_memalign
+   ...
+   fun:_ZN4dyld24initializeMainExecutableEv
+   ...
+}
+
+
+############################################
+## Non-leak errors
+
+##{
+##   OSX1013:CoreFoundation-1
+##   Memcheck:Cond
+##   obj:*CoreFoundation.framework*CoreFoundation*
+##   obj:*CoreFoundation.framework*CoreFoundation*
+##   obj:*CoreFoundation.framework*CoreFoundation*
+##}
+
+{
+   OSX1013:CoreFoundation-2
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*libdispatch.dylib*
+   obj:*libdispatch.dylib*
+}
+
+{
+   OSX1013:CoreFoundation-3
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*Foundation.framework*Foundation*
+}
+
+{
+   OSX1013:CoreFoundation-4
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*SystemConfiguration.framework*SystemConfiguration*
+}
+
+{
+   OSX1013:CoreFoundation-5
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*HIServices.framework*HIServices*
+}
+
+{
+   OSX1013:CoreFoundation-6
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*SystemConfiguration.framework*SystemConfiguration*
+   obj:*SystemConfiguration.framework*SystemConfiguration*
+}
+
+{
+   OSX1013:CoreFoundation-7
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*SystemConfiguration.framework*SystemConfiguration*
+   obj:*CoreFoundation.framework*CoreFoundation*
+}
+
+{
+   OSX1013:CoreFoundation-8
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*IOKit.framework*IOKit*
+}
+
+{
+   OSX1013:CoreFoundation-9
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*Foundation.framework*Foundation*
+   obj:*AppKit.framework*AppKit*
+}
+
+{
+   OSX1013:CoreFoundation-10
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*HIToolbox.framework*HIToolbox*
+   obj:*HIToolbox.framework*HIToolbox*
+}
+
+{
+   OSX1013:CoreFoundation-11
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*AE.framework*AE*
+   obj:*AE.framework*AE*
+}
+
+{
+   OSX1013:CoreFoundation-12
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*HIToolbox.framework*HIToolbox*
+}
+
+{
+   OSX1013:CoreFoundation-13
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*AE.framework*AE*
+}
+
+{
+   OSX1013:AppKit-1
+   Memcheck:Cond
+   obj:*AppKit.framework*AppKit*
+   obj:*AppKit.framework*AppKit*
+   obj:*AppKit.framework*AppKit*
+}
+
+{
+   OSX1013:AppKit-2
+   Memcheck:Cond
+   obj:*AppKit.framework*AppKit*
+   obj:*AppKit.framework*AppKit*
+   obj:*libdispatch.dylib*
+}
+
+#{
+#   OSX1013:AppKit-3
+#   Memcheck:Cond
+#   obj:*AppKit.framework*AppKit*
+#   obj:*libdispatch.dylib*
+#   obj:*libdispatch.dylib*
+#}
+
+##{
+##   OSX1013:AppKit-4
+##   Memcheck:Cond
+##   obj:*AppKit.framework*AppKit*
+##   obj:*AppKit.framework*AppKit*
+##   obj:*CoreFoundation.framework*CoreFoundation*
+##}
+
+{
+   OSX1013:AppKit-5
+   Memcheck:Cond
+   obj:*AppKit.framework*AppKit*
+   obj:*AppKit.framework*AppKit*
+   obj:*Foundation.framework*Foundation*
+}
+
+{
+   OSX1013:AppKit-6
+   Memcheck:Cond
+   obj:*AppKit.framework*AppKit*
+   obj:*Foundation.framework*Foundation*
+   obj:*AppKit.framework*AppKit*
+}
+
+{
+   OSX1013:AppKit-7
+   Memcheck:Cond
+   obj:*AppKit.framework*AppKit*
+   obj:*libdispatch.dylib*
+   obj:*libdispatch.dylib*
+}
+
+{
+   OSX1013:AppKit-8
+   Memcheck:Cond
+   obj:*AppKit.framework*AppKit*
+   obj:*Foundation.framework*Foundation*
+   obj:*Foundation.framework*Foundation*
+}
+
+{
+   OSX1013:ColorSync-1
+   Memcheck:Cond
+   obj:*ColorSync.framework*ColorSync*
+   obj:*ColorSync.framework*ColorSync*
+   obj:*ColorSync.framework*ColorSync*
+}
+
+#{
+#   OSX1013:ColorSync-2
+#   Memcheck:Value8
+#   obj:*ColorSync.framework*ColorSync*
+#   obj:*ColorSync.framework*ColorSync*
+#   obj:*ColorSync.framework*ColorSync*
+#}
+
+{
+   OSX1013:CoreGraphics-1
+   Memcheck:Cond
+   obj:*CoreGraphics.framework*CoreGraphics*
+   obj:*CoreGraphics.framework*CoreGraphics*
+}
+
+#{
+#   OSX1013:CoreGraphics-2
+#   Memcheck:Value8
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#}
+
+{
+   OSX1013:CoreGraphics-3
+   Memcheck:Cond
+   obj:*CoreGraphics.framework*CoreGraphics*
+   obj:*CoreGraphics.framework*libRIP*
+   obj:*CoreGraphics.framework*libRIP*
+}
+
+#{
+#   OSX1013:CoreGraphics-4
+#   Memcheck:Cond
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*CoreGraphics.framework*libRIP*
+#}
+
+{
+   OSX1013:CoreGraphics-5
+   Memcheck:Cond
+   obj:*CoreGraphics.framework*CoreGraphics*
+   obj:*libdispatch.dylib*
+   obj:*libdispatch.dylib*
+}
+
+#{
+#   OSX1013:CoreGraphics-6
+#   Memcheck:Cond
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*HIToolbox.framework*HIToolbox*
+#}
+
+{
+   OSX1013:HIServices-1
+   Memcheck:Cond
+   obj:*HIServices.framework*HIServices*
+   obj:*HIToolbox.framework*HIToolbox*
+   obj:*HIToolbox.framework*HIToolbox*
+}
+
+{
+   OSX1013:LaunchServices-1
+   Memcheck:Cond
+   obj:*LaunchServices.framework*LaunchServices*
+   obj:*AppKit.framework*AppKit*
+   obj:*AppKit.framework*AppKit*
+}
+
+{
+   OSX1013:LaunchServices-2
+   Memcheck:Cond
+   obj:*LaunchServices.framework*LaunchServices*
+   obj:*libdispatch.dylib*
+   obj:*libdispatch.dylib*
+}
+
+{
+   OSX1013:QuartzCore-1
+   Memcheck:Cond
+   obj:*QuartzCore.framework*QuartzCore
+   obj:*QuartzCore.framework*QuartzCore
+   obj:*QuartzCore.framework*QuartzCore
+}
+
+#{
+#   OSX1013:vImage-1
+#   Memcheck:Cond
+#   obj:*vImage.framework*vImage*
+#   obj:*vImage.framework*vImage*
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#}
+
+{
+   OSX1013:zlib-C
+   Memcheck:Cond
+   obj:/usr/lib/libz.*dylib
+   obj:/usr/lib/libz.*dylib
+}
+
+{
+   OSX1013:zlib-8
+   Memcheck:Value8
+   obj:/usr/lib/libz.*dylib
+   obj:/usr/lib/libz.*dylib
+}
+
+{
+   OSX1013:32bit:_libxpc_initializer
+   Memcheck:Cond
+   obj:/usr/lib/system/libsystem_c.dylib
+   obj:/usr/lib/system/libsystem_c.dylib
+   fun:_libxpc_initializer
+   obj:/usr/lib/libSystem.B.dylib
+   fun:*ImageLoaderMachO*doModInitFunctions*
+}
+
+{
+   OSX1013:dyld-1
+   Memcheck:Cond
+   fun:*ImageLoader*weakBind*
+   fun:*ImageLoader*link*
+   fun:*dyld*link*
+}
+
+{
+   OSX1013:dyld-2
+   Memcheck:Cond
+   fun:exit
+   obj:*libdyld*dylib*
+}
+
+{
+   OSX1013:dyld-3
+   Memcheck:Cond
+   fun:bcmp
+   fun:_ZN16ImageLoaderMachO18validateFirstPagesEPK21linkedit_data_commandiPKhmxRKN11ImageLoader11LinkContextE
+   ...
+}
+
+{
+   OSX1013:dyld-4
+   Memcheck:Value8
+   fun:bcmp
+   fun:_ZN16ImageLoaderMachO18validateFirstPagesEPK21linkedit_data_commandiPKhmxRKN11ImageLoader11LinkContextE
+   ...
+}
+
+{
+   OSX1013:dyld-5
+   Memcheck:Cond
+   fun:_ZN16ImageLoaderMachO18validateFirstPagesEPK21linkedit_data_commandiPKhmxRKN11ImageLoader11LinkContextE
+   fun:_ZN26ImageLoaderMachOCompressed19instantiateFromFileEPKciPKhmyyRK4statjjPK21linkedit_data_commandPK23encryption_info_commandRKN11ImageLoader11LinkContextE
+   fun:_ZN16ImageLoaderMachO19instantiateFromFileEPKciPKhmyyRK4statRKN11ImageLoader11LinkContextE
+   fun:_ZN4dyldL10loadPhase6EiRK4statPKcRKNS_11LoadContextE
+}
+
+{
+   OSX1013:libsystem_kernel-1
+   Memcheck:Cond
+   obj:*libsystem_kernel*dylib*
+   obj:*libsystem_kernel*dylib*
+   obj:*CoreFoundation.framework*CoreFoundation*
+}
+
+{
+   OSX1013:CoreServicesInternal-1
+   Memcheck:Cond
+   obj:*CoreServicesInternal.framework*CoreServicesInternal*
+   obj:*CoreServices.framework*LaunchServices*
+   obj:*CoreServices.framework*LaunchServices*
+}
+
+{
+   OSX1013:CoreServicesInternal-2
+   Memcheck:Cond
+   obj:*CoreServicesInternal.framework*CoreServicesInternal*
+   obj:*CoreServicesInternal.framework*CoreServicesInternal*
+   obj:*CoreServicesInternal.framework*CoreServicesInternal*
+}
+
+{
+   OSX1013:CoreServicesInternal-3
+   Memcheck:Cond
+   obj:*CoreServicesInternal.framework*CoreServicesInternal*
+   obj:*CoreServicesInternal.framework*CoreServicesInternal*
+   obj:*CoreFoundation.framework*CoreFoundation*
+}
+
+{
+   OSX1013:CoreServices-1
+   Memcheck:Cond
+   obj:*CoreServices.framework*LaunchServices*
+   obj:*CoreServices.framework*LaunchServices*
+   obj:*CoreServices.framework*LaunchServices*
+}
+
+##{
+##   OSX1013:libsystem_pthread-1
+##   Memcheck:Cond
+##   obj:*libsystem_pthread*dylib*
+##   obj:*ImageIO.framework*ImageIO*
+##   obj:*ImageIO.framework*ImageIO*
+##}
+
+{
+   OSX1013:ApplicationServices-1
+   Memcheck:Cond
+   obj:*ApplicationServices.framework*ATS*
+   obj:*libsystem_pthread*dylib*
+   obj:*libsystem_platform*dylib*
+}
+
+{
+   OSX1013:HIToolbox-1
+   Memcheck:Cond
+   obj:*HIToolbox.framework*HIToolbox*
+   obj:*HIToolbox.framework*HIToolbox*
+   obj:*HIToolbox.framework*HIToolbox*
+}
+
+{
+   OSX1013:RawCamera-1
+   Memcheck:Cond
+   obj:*RawCamera.bundle*RawCamera*
+   obj:*libdispatch.dylib*
+   obj:*libdispatch.dylib*
+}
+
+##{
+##   OSX1013:CoreImage-1
+##   Memcheck:Cond
+##   obj:*CoreImage.framework*CoreImage*
+##   obj:*CoreImage.framework*CoreImage*
+##   obj:*CoreImage.framework*CoreImage*
+##}
+
+##{
+##   OSX1013:strncpy-1
+##   Memcheck:Cond
+##   fun:strncpy
+##   obj:*CoreServicesInternal.framework*CoreServicesInternal
+##   obj:*CoreServicesInternal.framework*CoreServicesInternal
+##}
+
+{
+   OSX1013:pthread_rwlock_init
+   Memcheck:Cond
+   fun:pthread_rwlock_init
+   obj:*ImageIO.framework*ImageIO*
+   obj:*ImageIO.framework*ImageIO*
+}
+
+{
+   OSX1013:CFBasicHash
+   Memcheck:Value8
+   fun:*CFBasicHash*
+   fun:*CF*
+}
+
+{
+   OSX1013:AppleIntelHD4000GraphicsGLDriver-1-Addr8
+   Memcheck:Addr8
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+}
+{
+   OSX1013:AppleIntelHD4000GraphicsGLDriver-1-Addr8
+   Memcheck:Addr4
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+}
+
+{
+   OSX1013:AppleIntelHD4000GraphicsGLDriver-2-Addr8
+   Memcheck:Addr8
+   fun:*platform_memmove*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+}
+{
+   OSX1013:AppleIntelHD4000GraphicsGLDriver-2-Addr2
+   Memcheck:Addr2
+   fun:*platform_memmove*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+}
+
+{
+   OSX1013:AppleIntelHD4000GraphicsGLDriver-3-Addr8
+   Memcheck:Addr8
+   fun:*platform_memmove*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*GLEngine.bundle*GLEngine*
+}
+{
+   OSX1013:AppleIntelHD4000GraphicsGLDriver-3-Addr2
+   Memcheck:Addr2
+   fun:*platform_memmove*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*GLEngine.bundle*GLEngine*
+}
+{
+   OSX1013:AppleIntelHD4000GraphicsGLDriver-3-Addr1
+   Memcheck:Addr1
+   fun:*platform_memmove*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*GLEngine.bundle*GLEngine*
+}
+
+{
+   OSX1013:AppleIntelHD4000GraphicsGLDriver-4
+   Memcheck:Addr8
+   fun:*platform_bzero*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+}
+
+{
+   OSX1013:AppleIntelHD4000GraphicsGLDriver-6-Addr8
+   Memcheck:Addr8
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*GLEngine.bundle*GLEngine*
+}
+{
+   OSX1013:AppleIntelHD4000GraphicsGLDriver-6-Addr4
+   Memcheck:Addr4
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*GLEngine.bundle*GLEngine*
+}
+
+{
+   OSX1013:AppleIntelHD4000GraphicsGLDriver-7
+   Memcheck:Addr4
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*GLEngine.bundle*GLEngine*
+}
+
+{
+   OSX1013:OSAtomicAdd32
+   Memcheck:Addr4
+   fun:*OSAtomicAdd32*
+   obj:*IOAccelerator.framework*IOAccelerator*
+   obj:*GPUSupport.framework*GPUSupportMercury*
+}
+
+{
+   OSX1013:IOAccelerator-1
+   Memcheck:Addr4
+   obj:*IOAccelerator.framework*IOAccelerator*
+   obj:*GPUSupport.framework*GPUSupportMercury*
+}
+
+# See https://bugs.kde.org/show_bug.cgi?id=188572 about this;  it's
+# unavoidable due to BSD setenv() semantics.
+{
+   macos-__setenv-leak-see-our-bug-188572
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:_owned_ptr_alloc
+   fun:setenv
+}
+
+# See https://bugs.kde.org/show_bug.cgi?id=196528
+{
+macos-__pthread_rwlock_init-see-our-bug-196528
+Memcheck:Cond
+fun:pthread_rwlock_init
+}

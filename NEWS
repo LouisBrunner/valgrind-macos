@@ -35,6 +35,7 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
+255603  exp-sgcheck Assertion '!already_present' failed
 379373  Fix syscall param msg->desc.port.name points to uninitialised byte(s)
         on macOS 10.12
 379748  Fix missing pselect syscall (OS X 10.11)

@@ -2993,6 +2993,20 @@ static Bool subrange_type_denotes_array_bounds ( const D3TypeParser* parser,
               && parser->qparentE[parser->sp].tag == Te_TyArray);
 }
 
+/* True if the form is one of the forms supported to give an array bound.
+   For some arrays (scope local arrays with variable size), 
+   a DW_FORM_ref4 was used, and was wrongly used as the bound value.
+   So, refuse the forms that are known to give a problem. */
+static Bool form_expected_for_bound ( DW_FORM form ) {
+   if (form == DW_FORM_ref1 
+       || form == DW_FORM_ref2
+       || form == DW_FORM_ref4
+       || form == DW_FORM_ref8)
+      return False;
+
+   return True;
+}
+
 /* Parse a type-related DIE.  'parser' holds the current parser state.
    'admin' is where the completed types are dumped.  'dtag' is the tag
    for this DIE.  'c_die' points to the start of the data fields (FORM
@@ -3598,11 +3612,13 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          nf_i++;
          if (attr == 0 && form == 0) break;
          get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
-         if (attr == DW_AT_lower_bound && cts.szB > 0) {
+         if (attr == DW_AT_lower_bound && cts.szB > 0 
+             && form_expected_for_bound (form)) {
             lower      = (Long)cts.u.val;
             have_lower = True;
          }
-         if (attr == DW_AT_upper_bound && cts.szB > 0) {
+         if (attr == DW_AT_upper_bound && cts.szB > 0 
+             && form_expected_for_bound (form)) {
             upper      = (Long)cts.u.val;
             have_upper = True;
          }

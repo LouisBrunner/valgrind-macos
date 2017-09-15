@@ -10,6 +10,8 @@ static void DivideByZero() {
   volatile float result __attribute__((unused)) = 123.0f / zero;
 }
 
+volatile double cube = 27.0;
+
 int main () {
    /* Testing lrint. */
    fesetround(FE_UPWARD); // lrint/lrintf/lrintl obey the rounding mode.
@@ -100,7 +102,7 @@ int main () {
    printf("tgamma(5.0): %lf\n", tgamma(5.0));
 
    /* Test cbrt. */
-   printf("cbrt(27.0): %lf\n", cbrt(27.0));
+   printf("cbrt(27.0): %lf\n", cbrt(cube));
 
    /* Test dividing by zero. */
    // Clearing clears.

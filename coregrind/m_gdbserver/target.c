@@ -712,6 +712,7 @@ Bool valgrind_get_tls_addr (ThreadState *tst,
    // Check we can read the modid
    CHECK_DEREF(lm+lm_modid_offset, sizeof(unsigned long int), "link_map modid");
    modid = *(unsigned long int *)(lm+lm_modid_offset);
+   dlog (2, "tid %u modid %lu\n", tst->tid, modid);
 
    // Check we can access the dtv entry for modid
    CHECK_DEREF(dtv + 2 * modid, sizeof(CORE_ADDR), "dtv[2*modid]");
@@ -719,7 +720,6 @@ Bool valgrind_get_tls_addr (ThreadState *tst,
    // Compute the base address of the tls block.
    *tls_addr = *(dtv + 2 * modid);
 
-#if defined(VGA_mips32) || defined(VGA_mips64)
    if (*tls_addr & 1) {
       /* This means that computed address is not valid, most probably
          because given module uses Static TLS.
@@ -731,17 +731,24 @@ Bool valgrind_get_tls_addr (ThreadState *tst,
       CORE_ADDR tls_offset_addr;
       PtrdiffT tls_offset;
 
-      dlog(1, "computing tls_addr using static TLS\n");
+      dlog(2, "tls_addr (%p & 1) => computing tls_addr using static TLS\n",
+           (void*) *tls_addr);
 
       /* Assumes that tls_offset is placed right before tls_modid.
          To check the assumption, start a gdb on none/tests/tls and do:
-         p &((struct link_map*)0x0)->l_tls_modid
-         p &((struct link_map*)0x0)->l_tls_offset */
+           p &((struct link_map*)0x0)->l_tls_modid
+           p &((struct link_map*)0x0)->l_tls_offset
+         Instead of assuming this, we could calculate this similarly to
+         lm_modid_offset, by extending getplatformoffset to support querying
+         more than one offset.
+      */
       tls_offset_addr = lm + lm_modid_offset - sizeof(PtrdiffT);
 
       // Check we can read the tls_offset.
       CHECK_DEREF(tls_offset_addr, sizeof(PtrdiffT), "link_map tls_offset");
       tls_offset = *(PtrdiffT *)(tls_offset_addr);
+      dlog(2, "tls_offset_addr %p tls_offset %ld\n",
+           (void*)tls_offset_addr, (long)tls_offset);
 
       /* Following two values represent platform dependent constants
          NO_TLS_OFFSET and FORCED_DYNAMIC_TLS_OFFSET, respectively. */
@@ -751,9 +758,18 @@ Bool valgrind_get_tls_addr (ThreadState *tst,
       }
 
       // This calculation is also platform dependent.
+#if defined(VGA_mips32) || defined(VGA_mips64)
       *tls_addr = ((CORE_ADDR)dtv_loc + 2 * sizeof(CORE_ADDR) + tls_offset);
-   }
+#elif defined(VGA_ppc64be) || defined(VGA_ppc64le)
+      *tls_addr = ((CORE_ADDR)dtv_loc + sizeof(CORE_ADDR) + tls_offset);
+#elif defined(VGA_x86) || defined(VGA_amd64) || defined(VGA_s390x)
+      *tls_addr = (CORE_ADDR)dtv_loc - tls_offset - sizeof(CORE_ADDR);
+#else
+      // ppc32, arm, arm64
+      dlog(0, "target.c is missing platform code for static TLS\n");
+      return False;
 #endif
+   }
 
    // Finally, add tls variable offset to tls block base address.
    *tls_addr += offset;

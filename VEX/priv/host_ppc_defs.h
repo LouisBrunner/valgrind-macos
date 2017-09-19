@@ -71,7 +71,7 @@ ST_IN HReg hregPPC_GPR24 ( Bool mode64 ) { return GPR(mode64, 24,  10, 10); }
 ST_IN HReg hregPPC_GPR25 ( Bool mode64 ) { return GPR(mode64, 25,  11, 11); }
 ST_IN HReg hregPPC_GPR26 ( Bool mode64 ) { return GPR(mode64, 26,  12, 12); }
 ST_IN HReg hregPPC_GPR27 ( Bool mode64 ) { return GPR(mode64, 27,  13, 13); }
-ST_IN HReg hregPPC_GPR28 ( Bool mode64 ) { return GPR(mode64, 28,  14, 44); }
+ST_IN HReg hregPPC_GPR28 ( Bool mode64 ) { return GPR(mode64, 28,  14, 14); }
 
 ST_IN HReg hregPPC_GPR3  ( Bool mode64 ) { return GPR(mode64,  3,  15, 15); }
 ST_IN HReg hregPPC_GPR4  ( Bool mode64 ) { return GPR(mode64,  4,  16, 16); }

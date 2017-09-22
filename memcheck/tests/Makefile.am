@@ -64,6 +64,7 @@ dist_noinst_SCRIPTS = \
 	filter_allocs \
 	filter_dw4 \
 	filter_leak_cases_possible \
+	filter_leak_cpp_interior \
 	filter_stderr filter_xml \
 	filter_strchr \
 	filter_varinfo3 \
@@ -114,7 +115,6 @@ EXTRA_DIST = \
 		cond_st.stderr.exp-64bit-non-arm \
 		cond_st.stderr.exp-32bit-non-arm \
 	leak_cpp_interior.stderr.exp leak_cpp_interior.stderr.exp-64bit leak_cpp_interior.vgtest \
-		leak_cpp_interior.stderr.exp-solaris leak_cpp_interior.stderr.exp-64bit-solaris \
 	custom_alloc.stderr.exp custom_alloc.vgtest \
 		custom_alloc.stderr.exp-s390x-mvc \
 	custom-overlap.stderr.exp custom-overlap.vgtest \

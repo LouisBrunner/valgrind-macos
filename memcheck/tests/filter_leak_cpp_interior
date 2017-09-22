@@ -1,0 +1,13 @@
+#! /bin/sh
+#
+# Remove the suppressed line and the total heap usage line.
+# Replace the absolute number of bytes different of 0  by x.
+./filter_stderr "$@" |
+    sed -e '/        suppressed:/d'\
+        -e '/  total heap usage:/d'\
+        -e 's/[1-9][0-9,]* bytes/x bytes/' \
+        -e 's/[1-9][0-9,]* (\([+-]\)[1-9][0-9,]*) bytes/x (\1x) bytes/' \
+        -e 's/0 (\([+-]\)[1-9][0-9,]*) bytes/0 (\1x) bytes/' \
+        -e 's/[1-9][0-9,]* (\([+-]\)0) bytes/x (\10) bytes/'
+
+        

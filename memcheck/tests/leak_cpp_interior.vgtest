@@ -1,2 +1,3 @@
 prog: leak_cpp_interior
-vgopts: --leak-check=summary --leak-check-heuristics=multipleinheritance,stdstring,newarray,length64
+vgopts: --leak-check=summary --leak-check-heuristics=multipleinheritance,stdstring,newarray,length64 --suppressions=libstdc++.supp
+stderr_filter: filter_leak_cpp_interior

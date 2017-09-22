@@ -1,0 +1,75 @@
+# Below is a temporary patch (slightly modified) from
+#   345307 - Warning about "still reachable" memory when using libstdc++ from gcc 5
+# This patch is not needed anymore if libstdc++ provides __gnu_cxx::__freeres
+# but we still need to ignore these allocations during the leak_cpp_interior
+# to have the test behaviour not depending on libstdc++ version.
+
+
+
+# Some programs are using the C++ STL and string classes.
+# Valgrind reports 'still reachable' memory leaks involving these classes
+# at the exit of the program, but there should be none.
+#
+# Many implementations of the C++ standard libraries use their own memory
+# pool allocators.  Memory for quite a number of destructed objects is not
+# immediately freed and given back to the OS, but kept in the pool(s) for
+# later re-use.  The fact that the pools are not freed at the exit of the
+# program cause Valgrind to report this memory as still reachable.
+#
+# The behavior not to free pools at the exit could be called a bug of the
+# library though.
+#
+# Using GCC, you can force the STL to use malloc and to free memory as soon
+# as possible by globally disabling memory caching.  Beware! Doing so will
+# probably slow down your program, sometimes drastically.
+#
+# There are other ways to disable memory pooling: using the malloc_alloc
+# template with your objects (not portable, but should work for GCC) or
+# even writing your own memory allocators.   But beware: allocators belong
+# to the more messy parts of the STL and people went to great lengths to
+# make the STL portable across platforms.  Chances are good that your
+# solution will work on your platform, but not on others.
+#
+# 72,704 bytes in 1 blocks are still reachable in loss record 1 of 1
+#       at 0x4C28D06: malloc (vg_replace_malloc.c:299)
+#       by 0x50C317F: ??? (in /usr/lib64/libstdc++.so.6.0.21)
+#       by 0x400F759: call_init.part.0 (dl-init.c:72)
+#       by 0x400F86A: call_init (dl-init.c:30)
+#       by 0x400F86A: _dl_init (dl-init.c:120)
+#       by 0x4000CB9: ??? (in /usr/lib64/ld-2.22.so)
+#
+# HEAP SUMMARY:
+#     in use at exit: 72,704 bytes in 1 blocks
+#   total heap usage: 4 allocs, 3 frees, 72,864 bytes allocated
+#
+# LEAK SUMMARY:
+#    definitely lost: 0 bytes in 0 blocks
+#    indirectly lost: 0 bytes in 0 blocks
+#      possibly lost: 0 bytes in 0 blocks
+#    still reachable: 72,704 bytes in 1 blocks
+#         suppressed: 0 bytes in 0 blocks
+
+{
+   malloc-leaks-cxx-stl-string-classes
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:*lib*/libstdc++.so*
+   fun:call_init.part.0
+   fun:call_init
+   fun:_dl_init
+   obj:*lib*/ld-2.*.so
+}
+{
+  malloc-leaks-cxx-stl-string-classes-debug
+  Memcheck:Leak
+  match-leak-kinds: reachable
+  fun:malloc
+  fun:pool
+  fun:__static_initialization_and_destruction_0
+  fun:_GLOBAL__sub_I_eh_alloc.cc
+  fun:call_init.part.0
+  fun:call_init
+  fun:_dl_init
+  obj:*lib*/ld-2.*.so
+}

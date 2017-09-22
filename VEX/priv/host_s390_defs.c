@@ -48,7 +48,6 @@
 /*--- Forward declarations                                 ---*/
 /*------------------------------------------------------------*/
 
-static Bool s390_insn_is_reg_reg_move(const s390_insn *, HReg *src, HReg *dst);
 static void s390_insn_map_regs(HRegRemap *, s390_insn *);
 static void s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *);
 static UInt s390_tchain_load64_len(void);
@@ -467,16 +466,6 @@ mapRegs_S390Instr(HRegRemap *m, s390_insn *insn, Bool mode64)
 }
 
 
-/* Figure out if the given insn represents a reg-reg move, and if so
-   assign the source and destination to *src and *dst.  If in doubt say No.
-   Used by the register allocator to do move coalescing. */
-Bool
-isMove_S390Instr(const s390_insn *insn, HReg *src, HReg *dst)
-{
-   return s390_insn_is_reg_reg_move(insn, src, dst);
-}
-
-
 /* Generate s390 spill/reload instructions under the direction of the
    register allocator.  Note it's critical these don't write the
    condition codes. This is like an Ist_Put */
@@ -587,6 +576,12 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
    case S390_INSN_MOVE:
       addHRegUse(u, HRmRead,  insn->variant.move.src);
       addHRegUse(u, HRmWrite, insn->variant.move.dst);
+
+      if (hregClass(insn->variant.move.src) == hregClass(insn->variant.move.dst)) {
+         u->isRegRegMove = True;
+         u->regMoveSrc   = insn->variant.move.src;
+         u->regMoveDst   = insn->variant.move.dst;
+      }
       break;
 
    case S390_INSN_MEMCPY:
@@ -1215,23 +1210,6 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
    default:
       vpanic("s390_insn_map_regs");
    }
-}
-
-
-/* Return True, if INSN is a move between two registers of the same class.
-   In that case assign the source and destination registers to SRC and DST,
-   respectively. */
-static Bool
-s390_insn_is_reg_reg_move(const s390_insn *insn, HReg *src, HReg *dst)
-{
-   if (insn->tag == S390_INSN_MOVE &&
-       hregClass(insn->variant.move.src) == hregClass(insn->variant.move.dst)) {
-      *src = insn->variant.move.src;
-      *dst = insn->variant.move.dst;
-      return True;
-   }
-
-   return False;
 }
 
 

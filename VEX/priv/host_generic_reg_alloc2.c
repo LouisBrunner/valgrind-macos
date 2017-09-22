@@ -45,8 +45,6 @@
 
 /* TODO 27 Oct 04:
 
-   Better consistency checking from what isMove tells us.
-
    We can possibly do V-V coalescing even when the src is spilled,
    providing we can arrange for the dst to have the same spill slot.
 
@@ -515,6 +513,10 @@ HInstrArray* doRegisterAllocation_v2 (
    for (Int ii = 0; ii < instrs_in->arr_used; ii++) {
 
       con->getRegUsage(&reg_usage_arr[ii], instrs_in->arr[ii], con->mode64);
+      reg_usage_arr[ii].isVregVregMove
+         = reg_usage_arr[ii].isRegRegMove
+           && hregIsVirtual(reg_usage_arr[ii].regMoveSrc)
+           && hregIsVirtual(reg_usage_arr[ii].regMoveDst);
 
       if (0) {
          vex_printf("\n%d  stage1: ", ii);
@@ -1025,12 +1027,10 @@ HInstrArray* doRegisterAllocation_v2 (
       /* If doing a reg-reg move between two vregs, and the src's live
          range ends here and the dst's live range starts here, bind
          the dst to the src's rreg, and that's all. */
-      HReg vregS = INVALID_HREG;
-      HReg vregD = INVALID_HREG;
-      if ( con->isMove(instrs_in->arr[ii], &vregS, &vregD) ) {
-         if (!hregIsVirtual(vregS)) goto cannot_coalesce;
-         if (!hregIsVirtual(vregD)) goto cannot_coalesce;
-         /* Check that *isMove is not telling us a bunch of lies ... */
+      if (reg_usage_arr[ii].isVregVregMove) {
+         HReg vregS = reg_usage_arr[ii].regMoveSrc;
+         HReg vregD = reg_usage_arr[ii].regMoveDst;
+         /* Check that |isVregVregMove| is not telling us a bunch of lies ... */
          vassert(hregClass(vregS) == hregClass(vregD));
          Int k = hregIndex(vregS);
          Int m = hregIndex(vregD);

@@ -742,7 +742,6 @@ UInt ppHRegS390(HReg);
    of the underlying instruction set. */
 void  getRegUsage_S390Instr( HRegUsage *, const s390_insn *, Bool );
 void  mapRegs_S390Instr    ( HRegRemap *, s390_insn *, Bool );
-Bool  isMove_S390Instr     ( const s390_insn *, HReg *, HReg * );
 Int   emit_S390Instr       ( Bool *, UChar *, Int, const s390_insn *, Bool,
                              VexEndness, const void *, const void *,
                              const void *, const void *);

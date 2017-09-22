@@ -1606,6 +1606,15 @@ void getRegUsage_MIPSInstr(HRegUsage * u, const MIPSInstr * i, Bool mode64)
          addHRegUse(u, HRmRead, i->Min.Alu.srcL);
          addRegUsage_MIPSRH(u, i->Min.Alu.srcR);
          addHRegUse(u, HRmWrite, i->Min.Alu.dst);
+
+         /* or Rd,Rs,Rs == mr Rd,Rs */
+         if ((i->Min.Alu.op == Malu_OR)
+             && (i->Min.Alu.srcR->tag == Mrh_Reg)
+             && sameHReg(i->Min.Alu.srcR->Mrh.Reg.reg, i->Min.Alu.srcL)) {
+            u->isRegRegMove = True;
+            u->regMoveSrc   = i->Min.Alu.srcL;
+            u->regMoveDst   = i->Min.Alu.dst;
+         }
          return;
       case Min_Shft:
          addHRegUse(u, HRmRead, i->Min.Shft.srcL);
@@ -1988,28 +1997,6 @@ void mapRegs_MIPSInstr(HRegRemap * m, MIPSInstr * i, Bool mode64)
          break;
    }
 
-}
-
-/* Figure out if i represents a reg-reg move, and if so assign the
-   source and destination to *src and *dst.  If in doubt say No.  Used
-   by the register allocator to do move coalescing.
-*/
-Bool isMove_MIPSInstr(const MIPSInstr * i, HReg * src, HReg * dst)
-{
-   /* Moves between integer regs */
-   if (i->tag == Min_Alu) {
-      /* or Rd,Rs,Rs == mr Rd,Rs */
-      if (i->Min.Alu.op != Malu_OR)
-         return False;
-      if (i->Min.Alu.srcR->tag != Mrh_Reg)
-         return False;
-      if (!sameHReg(i->Min.Alu.srcR->Mrh.Reg.reg, i->Min.Alu.srcL))
-         return False;
-      *src = i->Min.Alu.srcL;
-      *dst = i->Min.Alu.dst;
-      return True;
-   }
-   return False;
 }
 
 /* Generate mips spill/reload instructions under the direction of the

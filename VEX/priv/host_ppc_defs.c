@@ -2362,6 +2362,15 @@ void getRegUsage_PPCInstr ( HRegUsage* u, const PPCInstr* i, Bool mode64 )
       addHRegUse(u, HRmRead,  i->Pin.Alu.srcL);
       addRegUsage_PPCRH(u,    i->Pin.Alu.srcR);
       addHRegUse(u, HRmWrite, i->Pin.Alu.dst);
+
+      // or Rd,Rs,Rs == mr Rd,Rs
+      if ((i->Pin.Alu.op == Palu_OR)
+          && (i->Pin.Alu.srcR->tag == Prh_Reg)
+          && sameHReg(i->Pin.Alu.srcR->Prh.Reg.reg, i->Pin.Alu.srcL)) {
+         u->isRegRegMove = True;
+         u->regMoveSrc   = i->Pin.Alu.srcL;
+         u->regMoveDst   = i->Pin.Alu.dst;
+      }
       return;
    case Pin_Shft:
       addHRegUse(u, HRmRead,  i->Pin.Shft.srcL);
@@ -2489,6 +2498,12 @@ void getRegUsage_PPCInstr ( HRegUsage* u, const PPCInstr* i, Bool mode64 )
    case Pin_FpUnary:
       addHRegUse(u, HRmWrite, i->Pin.FpUnary.dst);
       addHRegUse(u, HRmRead,  i->Pin.FpUnary.src);
+
+      if (i->Pin.FpUnary.op == Pfp_MOV) {
+         u->isRegRegMove = True;
+         u->regMoveSrc   = i->Pin.FpUnary.src;
+         u->regMoveDst   = i->Pin.FpUnary.dst;
+      }
       return;
    case Pin_FpBinary:
       addHRegUse(u, HRmWrite, i->Pin.FpBinary.dst);
@@ -3118,37 +3133,6 @@ void mapRegs_PPCInstr ( HRegRemap* m, PPCInstr* i, Bool mode64 )
       vpanic("mapRegs_PPCInstr");
    }
 }
-
-/* Figure out if i represents a reg-reg move, and if so assign the
-   source and destination to *src and *dst.  If in doubt say No.  Used
-   by the register allocator to do move coalescing. 
-*/
-Bool isMove_PPCInstr ( const PPCInstr* i, HReg* src, HReg* dst )
-{
-   /* Moves between integer regs */
-   if (i->tag == Pin_Alu) {
-      // or Rd,Rs,Rs == mr Rd,Rs
-      if (i->Pin.Alu.op != Palu_OR)
-         return False;
-      if (i->Pin.Alu.srcR->tag != Prh_Reg)
-         return False;
-      if (! sameHReg(i->Pin.Alu.srcR->Prh.Reg.reg, i->Pin.Alu.srcL))
-         return False;
-      *src = i->Pin.Alu.srcL;
-      *dst = i->Pin.Alu.dst;
-      return True;
-   }
-   /* Moves between FP regs */
-   if (i->tag == Pin_FpUnary) {
-      if (i->Pin.FpUnary.op != Pfp_MOV)
-         return False;
-      *src = i->Pin.FpUnary.src;
-      *dst = i->Pin.FpUnary.dst;
-      return True;
-   }
-   return False;
-}
-
 
 /* Generate ppc spill/reload instructions under the direction of the
    register allocator.  Note it's critical these don't write the

@@ -184,6 +184,9 @@ void ppHRegUsage ( const RRegUniverse* univ, HRegUsage* tab )
       ppHReg(tab->vRegs[i]);
       vex_printf("\n");
    }
+   if (tab->isRegRegMove) {
+      vex_printf("   (is a reg-reg move)\n");
+   }
    vex_printf("}\n");
 }
 

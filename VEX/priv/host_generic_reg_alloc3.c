@@ -72,6 +72,18 @@ typedef
       /* The "home" spill slot. The offset is relative to the beginning of
          the guest state. */
       UShort spill_offset;
+
+      /* This vreg (vregS) is coalesced to another vreg
+         if |coalescedTo| != INVALID_HREG.
+         Coalescing means that there is a MOV instruction which occurs in the
+         instruction stream right at vregS' dead_before
+         and vregD's live_after. */
+      HReg coalescedTo;    /* Which vreg it is coalesced to. */
+      HReg coalescedFirst; /* First vreg in the coalescing chain. */
+
+      /* If this vregS is coalesced to another vregD, what is the combined
+         dead_before for vregS+vregD. Used to effectively allocate registers. */
+      Short effective_dead_before;
    }
    VRegState;
 
@@ -190,13 +202,20 @@ static inline void print_state(
    const RRegLRState* rreg_lr_state,
    UShort current_ii)
 {
+#  define RIGHT_JUSTIFY(_total, _written)                   \
+      do {                                                  \
+         for (Int w = (_total) - (_written); w > 0; w--) {  \
+            vex_printf(" ");                                \
+         }                                                  \
+      } while (0)
+
    for (UInt v_idx = 0; v_idx < n_vregs; v_idx++) {
       const VRegState* vreg = &vreg_state[v_idx];
 
       if (vreg->live_after == INVALID_INSTRNO) {
          continue; /* This is a dead vreg. Never comes into live. */
       }
-      vex_printf("vreg_state[%3u] \t", v_idx);
+      vex_printf("vreg_state[%3u]    ", v_idx);
 
       UInt written;
       switch (vreg->disp) {
@@ -213,15 +232,26 @@ static inline void print_state(
       default:
          vassert(0);
       }
+      RIGHT_JUSTIFY(25, written);
 
-      for (Int w = 30 - written; w > 0; w--) {
-         vex_printf(" ");
-      }
+      written = vex_printf("lr: [%d, %d) ",
+                           vreg->live_after, vreg->dead_before);
+      RIGHT_JUSTIFY(15, written);
+
+      written = vex_printf("effective lr: [%d, %d)",
+                           vreg->live_after, vreg->effective_dead_before);
+      RIGHT_JUSTIFY(25, written);
 
       if (vreg->live_after > (Short) current_ii) {
          vex_printf("[not live yet]\n");
       } else if ((Short) current_ii >= vreg->dead_before) {
-         vex_printf("[now dead]\n");
+         if (hregIsInvalid(vreg->coalescedTo)) {
+            vex_printf("[now dead]\n");
+         } else {
+            vex_printf("[now dead, coalesced to ");
+            con->ppReg(vreg->coalescedTo);
+            vex_printf("]\n");
+         }
       } else {
          vex_printf("[live]\n");
       }
@@ -232,9 +262,7 @@ static inline void print_state(
       const RRegLRState* rreg_lrs = &rreg_lr_state[r_idx];
       vex_printf("rreg_state[%2u] = ", r_idx);
       UInt written = con->ppReg(con->univ->regs[r_idx]);
-      for (Int w = 10 - written; w > 0; w--) {
-         vex_printf(" ");
-      }
+      RIGHT_JUSTIFY(10, written);
 
       switch (rreg->disp) {
       case Free:
@@ -255,6 +283,8 @@ static inline void print_state(
          break;
       }
    }
+
+#  undef RIGHT_JUSTIFY
 }
 
 static inline void emit_instr(HInstr* instr, HInstrArray* instrs_out,
@@ -383,8 +413,8 @@ static inline HReg find_vreg_to_spill(
    a callee-save register because it won't be used for parameter passing
    around helper function calls. */
 static Bool find_free_rreg(
-   VRegState* vreg_state, UInt n_vregs,
-   RRegState* rreg_state, UInt n_rregs,
+   const VRegState* vreg_state, UInt n_vregs,
+   const RRegState* rreg_state, UInt n_rregs,
    const RRegLRState* rreg_lr_state,
    UInt current_ii, HRegClass target_hregclass,
    Bool reserve_phase, const RegAllocControl* con, UInt* r_idx_found)
@@ -476,6 +506,10 @@ HInstrArray* doRegisterAllocation_v3(
    HRegUsage* reg_usage
       = LibVEX_Alloc_inline(sizeof(HRegUsage) * instrs_in->arr_used);
 
+   /* Mark vreg indexes where coalesce chains start at. */
+   UInt* coalesce_heads = LibVEX_Alloc_inline(n_vregs * sizeof(UInt));
+   UInt nr_coalesce_heads = 0;
+
    /* The live range numbers are signed shorts, and so limiting the
       number of instructions to 15000 comfortably guards against them
       overflowing 32k. */
@@ -512,9 +546,9 @@ HInstrArray* doRegisterAllocation_v3(
    instruction and makes free the corresponding rreg. */
 #  define FIND_OR_MAKE_FREE_RREG(_ii, _v_idx, _reg_class, _reserve_phase)      \
    ({                                                                          \
-      UInt _r_free_idx = -1;                                                   \
+      UInt _r_free_idx;                                                        \
       Bool free_rreg_found = find_free_rreg(                                   \
-                vreg_state, n_vregs,  rreg_state, n_rregs, rreg_lr_state,      \
+                vreg_state, n_vregs, rreg_state, n_rregs, rreg_lr_state,       \
                 (_ii), (_reg_class), (_reserve_phase), con, &_r_free_idx);     \
       if (!free_rreg_found) {                                                  \
          HReg vreg_to_spill = find_vreg_to_spill(                              \
@@ -536,12 +570,15 @@ HInstrArray* doRegisterAllocation_v3(
 
    /* --- Stage 0. Initialize the state. --- */
    for (UInt v_idx = 0; v_idx < n_vregs; v_idx++) {
-      vreg_state[v_idx].live_after   = INVALID_INSTRNO;
-      vreg_state[v_idx].dead_before  = INVALID_INSTRNO;
-      vreg_state[v_idx].reg_class    = HRcINVALID;
-      vreg_state[v_idx].disp         = Unallocated;
-      vreg_state[v_idx].rreg         = INVALID_HREG;
-      vreg_state[v_idx].spill_offset = 0;
+      vreg_state[v_idx].live_after            = INVALID_INSTRNO;
+      vreg_state[v_idx].dead_before           = INVALID_INSTRNO;
+      vreg_state[v_idx].reg_class             = HRcINVALID;
+      vreg_state[v_idx].disp                  = Unallocated;
+      vreg_state[v_idx].rreg                  = INVALID_HREG;
+      vreg_state[v_idx].spill_offset          = 0;
+      vreg_state[v_idx].coalescedTo           = INVALID_HREG;
+      vreg_state[v_idx].coalescedFirst        = INVALID_HREG;
+      vreg_state[v_idx].effective_dead_before = INVALID_INSTRNO;
    }
 
    for (UInt r_idx = 0; r_idx < n_rregs; r_idx++) {
@@ -565,6 +602,10 @@ HInstrArray* doRegisterAllocation_v3(
       const HInstr* instr = instrs_in->arr[ii];
 
       con->getRegUsage(&reg_usage[ii], instr, con->mode64);
+      reg_usage[ii].isVregVregMove
+         = reg_usage[ii].isRegRegMove
+           && hregIsVirtual(reg_usage[ii].regMoveSrc)
+           && hregIsVirtual(reg_usage[ii].regMoveDst);
 
       if (0) {
          vex_printf("\n%u  stage 1: ", ii);
@@ -602,23 +643,24 @@ HInstrArray* doRegisterAllocation_v3(
             if (vreg_state[v_idx].live_after == INVALID_INSTRNO) {
                OFFENDING_VREG(v_idx, instr, "Read");
             }
-            vreg_state[v_idx].dead_before = toShort(ii + 1);
             break;
          case HRmWrite:
             if (vreg_state[v_idx].live_after == INVALID_INSTRNO) {
                vreg_state[v_idx].live_after = toShort(ii);
             }
-            vreg_state[v_idx].dead_before = toShort(ii + 1);
             break;
          case HRmModify:
             if (vreg_state[v_idx].live_after == INVALID_INSTRNO) {
                OFFENDING_VREG(v_idx, instr, "Modify");
             }
-            vreg_state[v_idx].dead_before = toShort(ii + 1);
             break;
          default:
             vassert(0);
          }
+
+         vreg_state[v_idx].dead_before = toShort(ii + 1);
+         vreg_state[v_idx].effective_dead_before
+            = vreg_state[v_idx].dead_before;
       }
 
       /* Process real registers mentioned in the instruction. */
@@ -703,7 +745,59 @@ HInstrArray* doRegisterAllocation_v3(
       }
    }
 
-   /* --- Stage 2. Allocate spill slots. --- */
+
+   /* --- Stage 2. MOV coalescing (preparation). --- */
+   /* Optimise register coalescing:
+         MOV  v <-> v   coalescing (done here).
+         MOV  v <-> r   coalescing (TODO: not yet, not here). */
+   /* If doing a reg-reg move between two vregs, and the src's live range ends
+     here and the dst's live range starts here, coalesce the src vreg
+     to the dst vreg. */
+   Bool coalesce_happened = False;
+   for (UShort ii = 0; ii < instrs_in->arr_used; ii++) {
+      if (reg_usage[ii].isVregVregMove) {
+         HReg vregS = reg_usage[ii].regMoveSrc;
+         HReg vregD = reg_usage[ii].regMoveDst;
+
+         /* Check that |isVregVregMove| is not telling us a bunch of lies ... */
+         vassert(hregClass(vregS) == hregClass(vregD));
+         UInt vs_idx = hregIndex(vregS);
+         UInt vd_idx = hregIndex(vregD);
+         vassert(IS_VALID_VREGNO(vs_idx));
+         vassert(IS_VALID_VREGNO(vd_idx));
+         vassert(! sameHReg(vregS, vregD));
+         VRegState* vs_st = &vreg_state[vs_idx];
+         VRegState* vd_st = &vreg_state[vd_idx];
+
+         if ((vs_st->dead_before == ii + 1) && (vd_st->live_after == ii)) {
+            /* Live ranges are adjacent. */
+
+            vs_st->coalescedTo = vregD;
+            if (hregIsInvalid(vs_st->coalescedFirst)) {
+               vd_st->coalescedFirst = vregS;
+               coalesce_heads[nr_coalesce_heads] = vs_idx;
+               nr_coalesce_heads += 1;
+            } else {
+               vd_st->coalescedFirst = vs_st->coalescedFirst;
+            }
+
+            vreg_state[hregIndex(vd_st->coalescedFirst)].effective_dead_before
+               = vd_st->dead_before;
+
+            if (DEBUG_REGALLOC) {
+               vex_printf("vreg coalescing: ");
+               con->ppReg(vregS);
+               vex_printf(" -> ");
+               con->ppReg(vregD);
+               vex_printf("\n");
+            }
+
+            coalesce_happened = True;
+         }
+      }
+   }
+
+   /* --- Stage 3. Allocate spill slots. --- */
 
    /* Each spill slot is 8 bytes long. For vregs which take more than 64 bits
       to spill (for example classes Flt64 and Vec128), we have to allocate two
@@ -742,6 +836,11 @@ HInstrArray* doRegisterAllocation_v3(
          vassert(vreg_state[v_idx].reg_class == HRcINVALID);
          continue;
       }
+      if (! hregIsInvalid(vreg_state[v_idx].coalescedFirst)) {
+         /* Coalesced vregs should share the same spill slot with the first vreg
+            in the coalescing chain. But we don't have that information, yet. */
+         continue;
+      }
 
       /* The spill slots are 64 bits in size.  As per the comment on definition
          of HRegClass in host_generic_regs.h, that means, to spill a vreg of
@@ -763,8 +862,10 @@ HInstrArray* doRegisterAllocation_v3(
             if (ss_no >= N_SPILL64S - 1) {
                vpanic("N_SPILL64S is too low in VEX. Increase and recompile.");
             }
-            ss_busy_until_before[ss_no + 0] = vreg_state[v_idx].dead_before;
-            ss_busy_until_before[ss_no + 1] = vreg_state[v_idx].dead_before;
+            ss_busy_until_before[ss_no + 0]
+               = vreg_state[v_idx].effective_dead_before;
+            ss_busy_until_before[ss_no + 1]
+               = vreg_state[v_idx].effective_dead_before;
             break;
          default:
             /* The ordinary case -- just find a single lowest-numbered spill
@@ -777,7 +878,8 @@ HInstrArray* doRegisterAllocation_v3(
             if (ss_no == N_SPILL64S) {
                vpanic("N_SPILL64S is too low in VEX. Increase and recompile.");
             }
-            ss_busy_until_before[ss_no] = vreg_state[v_idx].dead_before;
+            ss_busy_until_before[ss_no]
+               = vreg_state[v_idx].effective_dead_before;
             break;
       }
 
@@ -798,15 +900,38 @@ HInstrArray* doRegisterAllocation_v3(
       }
    }
 
+   /* Fill in the spill offsets and effective_dead_before for coalesced vregs.*/
+   for (UInt i = 0; i < nr_coalesce_heads; i++) {
+      UInt vs_idx = coalesce_heads[i];
+      Short effective_dead_before = vreg_state[vs_idx].effective_dead_before;
+      UShort spill_offset         = vreg_state[vs_idx].spill_offset;
+      HReg vregD = vreg_state[vs_idx].coalescedTo;
+      while (! hregIsInvalid(vregD)) {
+         UInt vd_idx = hregIndex(vregD);
+         vreg_state[vd_idx].effective_dead_before = effective_dead_before;
+         vreg_state[vd_idx].spill_offset          = spill_offset;
+         vregD = vreg_state[vd_idx].coalescedTo;
+      }
+   }
+
+   if (DEBUG_REGALLOC && coalesce_happened) {
+      UInt ii = 0;
+      vex_printf("After vreg<->vreg MOV coalescing:\n");
+      PRINT_STATE;
+   }
+
    if (0) {
       vex_printf("\n\n");
-      for (UInt v_idx = 0; v_idx < n_vregs; v_idx++)
-         vex_printf("vreg %3u    --> spill offset %u\n",
-                    v_idx, vreg_state[v_idx].spill_offset);
+      for (UInt v_idx = 0; v_idx < n_vregs; v_idx++) {
+         if (vreg_state[v_idx].live_after != INVALID_INSTRNO) {
+            vex_printf("vreg %3u    --> spill offset %u\n",
+                       v_idx, vreg_state[v_idx].spill_offset);
+         }
+      }
    }
 
 
-   /* --- State 3. Process instructions. --- */
+   /* --- State 4. Process instructions. --- */
    for (UShort ii = 0; ii < instrs_in->arr_used; ii++) {
       HInstr* instr = instrs_in->arr[ii];
 
@@ -873,65 +998,82 @@ HInstrArray* doRegisterAllocation_v3(
                vassert((Short) ii < rreg_lrs->lr_current->dead_before);
             }
          }
+
+         /* Sanity check: if vregS has been marked as coalesced to vregD,
+            then the effective live range of vregS must also cover live range
+            of vregD. */
+         /* The following sanity check is quite expensive. Some basic blocks
+            contain very lengthy coalescing chains... */
+         if (SANITY_CHECKS_EVERY_INSTR) {
+            for (UInt vs_idx = 0; vs_idx < n_vregs; vs_idx++) {
+               const VRegState* vS_st = &vreg_state[vs_idx];
+               HReg vregD = vS_st->coalescedTo;
+               while (! hregIsInvalid(vregD)) {
+                  const VRegState* vD_st = &vreg_state[hregIndex(vregD)];
+                  vassert(vS_st->live_after <= vD_st->live_after);
+                  vassert(vS_st->effective_dead_before >= vD_st->dead_before);
+                  vregD = vD_st->coalescedTo;
+               }
+            }
+         }
       }
 
 
-      /* --- MOV coalescing --- */
+      /* --- MOV coalescing (finishing) --- */
       /* Optimise register coalescing:
-            MOV  v <-> v   coalescing (done here).
+            MOV  v <-> v   coalescing (finished here).
             MOV  v <-> r   coalescing (TODO: not yet). */
-      /* If doing a reg-reg move between two vregs, and the src's live
-         range ends here and the dst's live range starts here, bind the dst
-         to the src's rreg, and that's all. */
-      HReg vregS = INVALID_HREG;
-      HReg vregD = INVALID_HREG;
-      if (con->isMove(instr, &vregS, &vregD)) {
-         if (hregIsVirtual(vregS) && hregIsVirtual(vregD)) {
-            /* Check that |isMove| is not telling us a bunch of lies ... */
-            vassert(hregClass(vregS) == hregClass(vregD));
-            UInt vs_idx = hregIndex(vregS);
-            UInt vd_idx = hregIndex(vregD);
-            vassert(IS_VALID_VREGNO(vs_idx));
-            vassert(IS_VALID_VREGNO(vd_idx));
+      if (reg_usage[ii].isVregVregMove) {
+         HReg vregS = reg_usage[ii].regMoveSrc;
+         HReg vregD = reg_usage[ii].regMoveDst;
+         UInt vs_idx = hregIndex(vregS);
+         UInt vd_idx = hregIndex(vregD);
 
-            if ((vreg_state[vs_idx].dead_before == ii + 1)
-                && (vreg_state[vd_idx].live_after == ii)
-                && (vreg_state[vs_idx].disp == Assigned)) {
+         if (sameHReg(vreg_state[vs_idx].coalescedTo, vregD)) {
+            /* Finally do the coalescing. */
 
-               /* Live ranges are adjacent and source vreg is bound.
-                  Finally we can do the coalescing.  */
-               HReg rreg = vreg_state[vs_idx].rreg;
-               vreg_state[vd_idx].disp = Assigned;
+            HReg rreg = vreg_state[vs_idx].rreg;
+            switch (vreg_state[vs_idx].disp) {
+            case Assigned:
                vreg_state[vd_idx].rreg = rreg;
-               FREE_VREG(&vreg_state[vs_idx]);
-
                UInt r_idx = hregIndex(rreg);
                vassert(rreg_state[r_idx].disp == Bound);
-               rreg_state[r_idx].vreg          = vregD;
-               rreg_state[r_idx].eq_spill_slot = False;
+               rreg_state[r_idx].vreg = vregD;
+               break;
+            case Spilled:
+               vassert(hregIsInvalid(vreg_state[vs_idx].rreg));
+               break;
+            default:
+               vassert(0);
+            }
 
-               if (DEBUG_REGALLOC) {
-                  vex_printf("coalesced: ");
-                  con->ppReg(vregS);
-                  vex_printf(" -> ");
-                  con->ppReg(vregD);
-                  vex_printf("\n\n");
-               }
+            vreg_state[vd_idx].disp = vreg_state[vs_idx].disp;
+            FREE_VREG(&vreg_state[vs_idx]);
 
-               /* In rare cases it can happen that vregD's live range ends
-                  here. Check and eventually free the vreg and rreg.
-                  This effectively means that either the translated program
-                  contained dead code (but VEX iropt passes are pretty good
-                  at eliminating it) or the VEX backend generated dead code. */
-               if (vreg_state[vd_idx].dead_before <= (Short) ii + 1) {
-                  FREE_VREG(&vreg_state[vd_idx]);
+            if (DEBUG_REGALLOC) {
+               vex_printf("coalesced: ");
+               con->ppReg(vregS);
+               vex_printf(" -> ");
+               con->ppReg(vregD);
+               vex_printf("\n\n");
+            }
+
+            /* In rare cases it can happen that vregD's live range ends here.
+               Check and eventually free the vreg and rreg.
+               This effectively means that either the translated program
+               contained dead code (but VEX iropt passes are pretty good
+               at eliminating it) or the VEX backend generated dead code. */
+            if (vreg_state[vd_idx].dead_before <= (Short) ii + 1) {
+               if (vreg_state[vd_idx].disp == Assigned) {
+                  UInt r_idx = hregIndex(rreg);
                   FREE_RREG(&rreg_state[r_idx]);
                }
-
-               /* Move on to the next instruction. We skip the post-instruction
-                  stuff because all required house-keeping was done here. */
-               continue;
+               FREE_VREG(&vreg_state[vd_idx]);
             }
+
+            /* Move on to the next instruction. We skip the post-instruction
+               stuff because all required house-keeping was done here. */
+            continue;
          }
       }
 

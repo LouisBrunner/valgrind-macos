@@ -785,7 +785,6 @@ extern void ppAMD64Instr ( const AMD64Instr*, Bool );
    of the underlying instruction set. */
 extern void getRegUsage_AMD64Instr ( HRegUsage*, const AMD64Instr*, Bool );
 extern void mapRegs_AMD64Instr     ( HRegRemap*, AMD64Instr*, Bool );
-extern Bool isMove_AMD64Instr      ( const AMD64Instr*, HReg*, HReg* );
 extern Int          emit_AMD64Instr   ( /*MB_MOD*/Bool* is_profInc,
                                         UChar* buf, Int nbuf,
                                         const AMD64Instr* i, 

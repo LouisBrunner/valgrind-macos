@@ -1234,6 +1234,12 @@ void getRegUsage_X86Instr (HRegUsage* u, const X86Instr* i, Bool mode64)
          addRegUsage_X86RMI(u, i->Xin.Alu32R.src);
          if (i->Xin.Alu32R.op == Xalu_MOV) {
             addHRegUse(u, HRmWrite, i->Xin.Alu32R.dst);
+
+            if (i->Xin.Alu32R.src->tag == Xrmi_Reg) {
+               u->isRegRegMove = True;
+               u->regMoveSrc   = i->Xin.Alu32R.src->Xrmi.Reg.reg;
+               u->regMoveDst   = i->Xin.Alu32R.dst;
+            }
             return;
          }
          if (i->Xin.Alu32R.op == Xalu_CMP) { 
@@ -1374,6 +1380,12 @@ void getRegUsage_X86Instr (HRegUsage* u, const X86Instr* i, Bool mode64)
       case Xin_FpUnary:
          addHRegUse(u, HRmRead, i->Xin.FpUnary.src);
          addHRegUse(u, HRmWrite, i->Xin.FpUnary.dst);
+
+         if (i->Xin.FpUnary.op == Xfp_MOV) {
+            u->isRegRegMove = True;
+            u->regMoveSrc   = i->Xin.FpUnary.src;
+            u->regMoveDst   = i->Xin.FpUnary.dst;
+         }
          return;
       case Xin_FpBinary:
          addHRegUse(u, HRmRead, i->Xin.FpBinary.srcL);
@@ -1469,6 +1481,12 @@ void getRegUsage_X86Instr (HRegUsage* u, const X86Instr* i, Bool mode64)
             addHRegUse(u, i->Xin.SseReRg.op == Xsse_MOV 
                              ? HRmWrite : HRmModify, 
                           i->Xin.SseReRg.dst);
+
+            if (i->Xin.SseReRg.op == Xsse_MOV) {
+               u->isRegRegMove = True;
+               u->regMoveSrc   = i->Xin.SseReRg.src;
+               u->regMoveDst   = i->Xin.SseReRg.dst;
+            }
          }
          return;
       case Xin_SseCMov:
@@ -1667,41 +1685,6 @@ void mapRegs_X86Instr ( HRegRemap* m, X86Instr* i, Bool mode64 )
          vpanic("mapRegs_X86Instr");
    }
 }
-
-/* Figure out if i represents a reg-reg move, and if so assign the
-   source and destination to *src and *dst.  If in doubt say No.  Used
-   by the register allocator to do move coalescing. 
-*/
-Bool isMove_X86Instr ( const X86Instr* i, HReg* src, HReg* dst )
-{
-   /* Moves between integer regs */
-   if (i->tag == Xin_Alu32R) {
-      if (i->Xin.Alu32R.op != Xalu_MOV)
-         return False;
-      if (i->Xin.Alu32R.src->tag != Xrmi_Reg)
-         return False;
-      *src = i->Xin.Alu32R.src->Xrmi.Reg.reg;
-      *dst = i->Xin.Alu32R.dst;
-      return True;
-   }
-   /* Moves between FP regs */
-   if (i->tag == Xin_FpUnary) {
-      if (i->Xin.FpUnary.op != Xfp_MOV)
-         return False;
-      *src = i->Xin.FpUnary.src;
-      *dst = i->Xin.FpUnary.dst;
-      return True;
-   }
-   if (i->tag == Xin_SseReRg) {
-      if (i->Xin.SseReRg.op != Xsse_MOV)
-         return False;
-      *src = i->Xin.SseReRg.src;
-      *dst = i->Xin.SseReRg.dst;
-      return True;
-   }
-   return False;
-}
-
 
 /* Generate x86 spill/reload instructions under the direction of the
    register allocator.  Note it's critical these don't write the

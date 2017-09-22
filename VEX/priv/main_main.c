@@ -709,7 +709,6 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
    /* This the bundle of functions we need to do the back-end stuff
       (insn selection, reg-alloc, assembly) whilst being insulated
       from the target instruction set. */
-   Bool         (*isMove)       ( const HInstr*, HReg*, HReg* );
    void         (*getRegUsage)  ( HRegUsage*, const HInstr*, Bool );
    void         (*mapRegs)      ( HRegRemap*, HInstr*, Bool );
    void         (*genSpill)     ( HInstr**, HInstr**, HReg, Int, Bool );
@@ -739,7 +738,6 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
    HInstrArray*    vcode;
    HInstrArray*    rcode;
 
-   isMove                  = NULL;
    getRegUsage             = NULL;
    mapRegs                 = NULL;
    genSpill                = NULL;
@@ -857,7 +855,6 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
       case VexArchX86:
          mode64       = False;
          rRegUniv     = X86FN(getRRegUniverse_X86());
-         isMove       = CAST_TO_TYPEOF(isMove) X86FN(isMove_X86Instr);
          getRegUsage  
             = CAST_TO_TYPEOF(getRegUsage) X86FN(getRegUsage_X86Instr);
          mapRegs      = CAST_TO_TYPEOF(mapRegs) X86FN(mapRegs_X86Instr);
@@ -875,7 +872,6 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
       case VexArchAMD64:
          mode64       = True;
          rRegUniv     = AMD64FN(getRRegUniverse_AMD64());
-         isMove       = CAST_TO_TYPEOF(isMove) AMD64FN(isMove_AMD64Instr);
          getRegUsage  
             = CAST_TO_TYPEOF(getRegUsage) AMD64FN(getRegUsage_AMD64Instr);
          mapRegs      = CAST_TO_TYPEOF(mapRegs) AMD64FN(mapRegs_AMD64Instr);
@@ -893,7 +889,6 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
       case VexArchPPC32:
          mode64       = False;
          rRegUniv     = PPC32FN(getRRegUniverse_PPC(mode64));
-         isMove       = CAST_TO_TYPEOF(isMove) PPC32FN(isMove_PPCInstr);
          getRegUsage  
             = CAST_TO_TYPEOF(getRegUsage) PPC32FN(getRegUsage_PPCInstr);
          mapRegs      = CAST_TO_TYPEOF(mapRegs) PPC32FN(mapRegs_PPCInstr);
@@ -910,7 +905,6 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
       case VexArchPPC64:
          mode64       = True;
          rRegUniv     = PPC64FN(getRRegUniverse_PPC(mode64));
-         isMove       = CAST_TO_TYPEOF(isMove) PPC64FN(isMove_PPCInstr);
          getRegUsage  
             = CAST_TO_TYPEOF(getRegUsage) PPC64FN(getRegUsage_PPCInstr);
          mapRegs      = CAST_TO_TYPEOF(mapRegs) PPC64FN(mapRegs_PPCInstr);
@@ -928,7 +922,6 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
       case VexArchS390X:
          mode64       = True;
          rRegUniv     = S390FN(getRRegUniverse_S390());
-         isMove       = CAST_TO_TYPEOF(isMove) S390FN(isMove_S390Instr);
          getRegUsage  
             = CAST_TO_TYPEOF(getRegUsage) S390FN(getRegUsage_S390Instr);
          mapRegs      = CAST_TO_TYPEOF(mapRegs) S390FN(mapRegs_S390Instr);
@@ -946,7 +939,6 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
       case VexArchARM:
          mode64       = False;
          rRegUniv     = ARMFN(getRRegUniverse_ARM());
-         isMove       = CAST_TO_TYPEOF(isMove) ARMFN(isMove_ARMInstr);
          getRegUsage  
             = CAST_TO_TYPEOF(getRegUsage) ARMFN(getRegUsage_ARMInstr);
          mapRegs      = CAST_TO_TYPEOF(mapRegs) ARMFN(mapRegs_ARMInstr);
@@ -963,7 +955,6 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
       case VexArchARM64:
          mode64       = True;
          rRegUniv     = ARM64FN(getRRegUniverse_ARM64());
-         isMove       = CAST_TO_TYPEOF(isMove) ARM64FN(isMove_ARM64Instr);
          getRegUsage  
             = CAST_TO_TYPEOF(getRegUsage) ARM64FN(getRegUsage_ARM64Instr);
          mapRegs      = CAST_TO_TYPEOF(mapRegs) ARM64FN(mapRegs_ARM64Instr);
@@ -980,7 +971,6 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
       case VexArchMIPS32:
          mode64       = False;
          rRegUniv     = MIPS32FN(getRRegUniverse_MIPS(mode64));
-         isMove       = CAST_TO_TYPEOF(isMove) MIPS32FN(isMove_MIPSInstr);
          getRegUsage  
             = CAST_TO_TYPEOF(getRegUsage) MIPS32FN(getRegUsage_MIPSInstr);
          mapRegs      = CAST_TO_TYPEOF(mapRegs) MIPS32FN(mapRegs_MIPSInstr);
@@ -998,7 +988,6 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
       case VexArchMIPS64:
          mode64       = True;
          rRegUniv     = MIPS64FN(getRRegUniverse_MIPS(mode64));
-         isMove       = CAST_TO_TYPEOF(isMove) MIPS64FN(isMove_MIPSInstr);
          getRegUsage  
             = CAST_TO_TYPEOF(getRegUsage) MIPS64FN(getRegUsage_MIPSInstr);
          mapRegs      = CAST_TO_TYPEOF(mapRegs) MIPS64FN(mapRegs_MIPSInstr);
@@ -1082,11 +1071,10 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
 
    /* Register allocate. */
    RegAllocControl con = {
-      .univ = rRegUniv, .isMove = isMove, .getRegUsage = getRegUsage,
-      .mapRegs = mapRegs, .genSpill = genSpill, .genReload = genReload,
-      .genMove = genMove, .directReload = directReload,
-      .guest_sizeB = guest_sizeB, .ppInstr = ppInstr, .ppReg = ppReg,
-      .mode64 = mode64};
+      .univ = rRegUniv, .getRegUsage = getRegUsage, .mapRegs = mapRegs,
+      .genSpill = genSpill, .genReload = genReload, .genMove = genMove,
+      .directReload = directReload, .guest_sizeB = guest_sizeB,
+      .ppInstr = ppInstr, .ppReg = ppReg, .mode64 = mode64};
    switch (vex_control.regalloc_version) {
    case 2:
       rcode = doRegisterAllocation_v2(vcode, &con);

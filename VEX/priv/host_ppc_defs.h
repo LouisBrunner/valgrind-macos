@@ -1201,7 +1201,6 @@ extern void ppPPCInstr(const PPCInstr*, Bool mode64);
    of the underlying instruction set. */
 extern void getRegUsage_PPCInstr ( HRegUsage*, const PPCInstr*, Bool mode64 );
 extern void mapRegs_PPCInstr     ( HRegRemap*, PPCInstr* , Bool mode64);
-extern Bool isMove_PPCInstr      ( const PPCInstr*, HReg*, HReg* );
 extern Int          emit_PPCInstr   ( /*MB_MOD*/Bool* is_profInc,
                                       UChar* buf, Int nbuf, const PPCInstr* i, 
                                       Bool mode64,

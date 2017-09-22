@@ -1958,6 +1958,9 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, const ARM64Instr* i, Bool mode64 )
       case ARM64in_MovI:
          addHRegUse(u, HRmWrite, i->ARM64in.MovI.dst);
          addHRegUse(u, HRmRead,  i->ARM64in.MovI.src);
+         u->isRegRegMove = True;
+         u->regMoveSrc   = i->ARM64in.MovI.src;
+         u->regMoveDst   = i->ARM64in.MovI.dst;
          return;
       case ARM64in_Imm64:
          addHRegUse(u, HRmWrite, i->ARM64in.Imm64.dst);
@@ -2238,6 +2241,9 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, const ARM64Instr* i, Bool mode64 )
       case ARM64in_VMov:
          addHRegUse(u, HRmWrite, i->ARM64in.VMov.dst);
          addHRegUse(u, HRmRead,  i->ARM64in.VMov.src);
+         u->isRegRegMove = True;
+         u->regMoveSrc   = i->ARM64in.VMov.src;
+         u->regMoveDst   = i->ARM64in.VMov.dst;
          return;
       case ARM64in_EvCheck:
          /* We expect both amodes only to mention x21, so this is in
@@ -2509,29 +2515,6 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
          vpanic("mapRegs_ARM64Instr");
    }
 }
-
-/* Figure out if i represents a reg-reg move, and if so assign the
-   source and destination to *src and *dst.  If in doubt say No.  Used
-   by the register allocator to do move coalescing. 
-*/
-Bool isMove_ARM64Instr ( const ARM64Instr* i, HReg* src, HReg* dst )
-{
-   switch (i->tag) {
-      case ARM64in_MovI:
-         *src = i->ARM64in.MovI.src;
-         *dst = i->ARM64in.MovI.dst;
-         return True;
-      case ARM64in_VMov:
-         *src = i->ARM64in.VMov.src;
-         *dst = i->ARM64in.VMov.dst;
-         return True;
-      default:
-         break;
-   }
-
-   return False;
-}
-
 
 /* Generate arm spill/reload instructions under the direction of the
    register allocator.  Note it's critical these don't write the

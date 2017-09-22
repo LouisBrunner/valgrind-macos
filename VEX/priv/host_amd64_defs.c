@@ -1406,6 +1406,12 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, const AMD64Instr* i, Bool mode64 )
          addRegUsage_AMD64RMI(u, i->Ain.Alu64R.src);
          if (i->Ain.Alu64R.op == Aalu_MOV) {
             addHRegUse(u, HRmWrite, i->Ain.Alu64R.dst);
+
+            if (i->Ain.Alu64R.src->tag == Armi_Reg) {
+               u->isRegRegMove = True;
+               u->regMoveSrc   = i->Ain.Alu64R.src->Armi.Reg.reg;
+               u->regMoveDst   = i->Ain.Alu64R.dst;
+            }
             return;
          }
          if (i->Ain.Alu64R.op == Aalu_CMP) { 
@@ -1668,6 +1674,12 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, const AMD64Instr* i, Bool mode64 )
             addHRegUse(u, i->Ain.SseReRg.op == Asse_MOV 
                              ? HRmWrite : HRmModify, 
                           i->Ain.SseReRg.dst);
+
+            if (i->Ain.SseReRg.op == Asse_MOV) {
+               u->isRegRegMove = True;
+               u->regMoveSrc   = i->Ain.SseReRg.src;
+               u->regMoveDst   = i->Ain.SseReRg.dst;
+            }
          }
          return;
       case Ain_SseCMov:
@@ -1694,6 +1706,12 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, const AMD64Instr* i, Bool mode64 )
       //uu       addHRegUse(u, i->Ain.AvxReRg.op == Asse_MOV 
       //uu                        ? HRmWrite : HRmModify, 
       //uu                     i->Ain.AvxReRg.dst);
+      //uu
+      //uu       if (i->Ain.AvxReRg.op == Asse_MOV) {
+      //uu          u->isRegRegMove = True;
+      //uu          u->regMoveSrc   = i->Ain.AvxReRg.src;
+      //uu          u->regMoveDst   = i->Ain.AvxReRg.dst;
+      //uu       }
       //uu    }
       //uu    return;
       case Ain_EvCheck:
@@ -1909,43 +1927,6 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i, Bool mode64 )
          vpanic("mapRegs_AMD64Instr");
    }
 }
-
-/* Figure out if i represents a reg-reg move, and if so assign the
-   source and destination to *src and *dst.  If in doubt say No.  Used
-   by the register allocator to do move coalescing. 
-*/
-Bool isMove_AMD64Instr ( const AMD64Instr* i, HReg* src, HReg* dst )
-{
-   switch (i->tag) {
-      case Ain_Alu64R:
-         /* Moves between integer regs */
-         if (i->Ain.Alu64R.op != Aalu_MOV)
-            return False;
-         if (i->Ain.Alu64R.src->tag != Armi_Reg)
-            return False;
-         *src = i->Ain.Alu64R.src->Armi.Reg.reg;
-         *dst = i->Ain.Alu64R.dst;
-         return True;
-      case Ain_SseReRg:
-         /* Moves between SSE regs */
-         if (i->Ain.SseReRg.op != Asse_MOV)
-            return False;
-         *src = i->Ain.SseReRg.src;
-         *dst = i->Ain.SseReRg.dst;
-         return True;
-      //uu case Ain_AvxReRg:
-      //uu    /* Moves between AVX regs */
-      //uu    if (i->Ain.AvxReRg.op != Asse_MOV)
-      //uu       return False;
-      //uu    *src = i->Ain.AvxReRg.src;
-      //uu    *dst = i->Ain.AvxReRg.dst;
-      //uu    return True;
-      default:
-         return False;
-   }
-   /*NOTREACHED*/
-}
-
 
 /* Generate amd64 spill/reload instructions under the direction of the
    register allocator.  Note it's critical these don't write the

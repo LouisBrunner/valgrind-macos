@@ -993,7 +993,6 @@ extern void ppARM64Instr ( const ARM64Instr* );
    of the underlying instruction set. */
 extern void getRegUsage_ARM64Instr ( HRegUsage*, const ARM64Instr*, Bool );
 extern void mapRegs_ARM64Instr     ( HRegRemap*, ARM64Instr*, Bool );
-extern Bool isMove_ARM64Instr      ( const ARM64Instr*, HReg*, HReg* );
 extern Int  emit_ARM64Instr        ( /*MB_MOD*/Bool* is_profInc,
                                      UChar* buf, Int nbuf, const ARM64Instr* i,
                                      Bool mode64,

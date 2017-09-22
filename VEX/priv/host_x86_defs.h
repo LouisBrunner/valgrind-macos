@@ -716,7 +716,6 @@ extern void ppX86Instr ( const X86Instr*, Bool );
    of the underlying instruction set. */
 extern void         getRegUsage_X86Instr ( HRegUsage*, const X86Instr*, Bool );
 extern void         mapRegs_X86Instr     ( HRegRemap*, X86Instr*, Bool );
-extern Bool         isMove_X86Instr      ( const X86Instr*, HReg*, HReg* );
 extern Int          emit_X86Instr   ( /*MB_MOD*/Bool* is_profInc,
                                       UChar* buf, Int nbuf, const X86Instr* i, 
                                       Bool mode64,

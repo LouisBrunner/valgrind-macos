@@ -2108,6 +2108,12 @@ void getRegUsage_ARMInstr ( HRegUsage* u, const ARMInstr* i, Bool mode64 )
       case ARMin_Mov:
          addHRegUse(u, HRmWrite, i->ARMin.Mov.dst);
          addRegUsage_ARMRI84(u, i->ARMin.Mov.src);
+
+         if (i->ARMin.Mov.src->tag == ARMri84_R) {
+            u->isRegRegMove = True;
+            u->regMoveSrc   = i->ARMin.Mov.src->ARMri84.R.reg;
+            u->regMoveDst   = i->ARMin.Mov.dst;
+         }
          return;
       case ARMin_Imm32:
          addHRegUse(u, HRmWrite, i->ARMin.Imm32.dst);
@@ -2256,10 +2262,22 @@ void getRegUsage_ARMInstr ( HRegUsage* u, const ARMInstr* i, Bool mode64 )
       case ARMin_VUnaryD:
          addHRegUse(u, HRmWrite, i->ARMin.VUnaryD.dst);
          addHRegUse(u, HRmRead, i->ARMin.VUnaryD.src);
+
+         if (i->ARMin.VUnaryD.op == ARMvfpu_COPY) {
+            u->isRegRegMove = True;
+            u->regMoveSrc   = i->ARMin.VUnaryD.src;
+            u->regMoveDst   = i->ARMin.VUnaryD.dst;
+         }
          return;
       case ARMin_VUnaryS:
          addHRegUse(u, HRmWrite, i->ARMin.VUnaryS.dst);
          addHRegUse(u, HRmRead, i->ARMin.VUnaryS.src);
+
+         if (i->ARMin.VUnaryS.op == ARMvfpu_COPY) {
+            u->isRegRegMove = True;
+            u->regMoveSrc   = i->ARMin.VUnaryS.src;
+            u->regMoveDst   = i->ARMin.VUnaryS.dst;
+         }
          return;
       case ARMin_VCmpD:
          addHRegUse(u, HRmRead, i->ARMin.VCmpD.argL);
@@ -2350,6 +2368,12 @@ void getRegUsage_ARMInstr ( HRegUsage* u, const ARMInstr* i, Bool mode64 )
       case ARMin_NUnary:
          addHRegUse(u, HRmWrite, i->ARMin.NUnary.dst);
          addHRegUse(u, HRmRead, i->ARMin.NUnary.src);
+
+         if (i->ARMin.NUnary.op == ARMneon_COPY) {
+            u->isRegRegMove = True;
+            u->regMoveSrc   = i->ARMin.NUnary.src;
+            u->regMoveDst   = i->ARMin.NUnary.dst;
+         }
          return;
       case ARMin_NUnaryS:
          addHRegUse(u, HRmWrite, i->ARMin.NUnaryS.dst->reg);
@@ -2619,50 +2643,6 @@ void mapRegs_ARMInstr ( HRegRemap* m, ARMInstr* i, Bool mode64 )
          vpanic("mapRegs_ARMInstr");
    }
 }
-
-/* Figure out if i represents a reg-reg move, and if so assign the
-   source and destination to *src and *dst.  If in doubt say No.  Used
-   by the register allocator to do move coalescing. 
-*/
-Bool isMove_ARMInstr ( const ARMInstr* i, HReg* src, HReg* dst )
-{
-   /* Moves between integer regs */
-   switch (i->tag) {
-      case ARMin_Mov:
-         if (i->ARMin.Mov.src->tag == ARMri84_R) {
-            *src = i->ARMin.Mov.src->ARMri84.R.reg;
-            *dst = i->ARMin.Mov.dst;
-            return True;
-         }
-         break;
-      case ARMin_VUnaryD:
-         if (i->ARMin.VUnaryD.op == ARMvfpu_COPY) {
-            *src = i->ARMin.VUnaryD.src;
-            *dst = i->ARMin.VUnaryD.dst;
-            return True;
-         }
-         break;
-      case ARMin_VUnaryS:
-         if (i->ARMin.VUnaryS.op == ARMvfpu_COPY) {
-            *src = i->ARMin.VUnaryS.src;
-            *dst = i->ARMin.VUnaryS.dst;
-            return True;
-         }
-         break;
-      case ARMin_NUnary:
-         if (i->ARMin.NUnary.op == ARMneon_COPY) {
-            *src = i->ARMin.NUnary.src;
-            *dst = i->ARMin.NUnary.dst;
-            return True;
-         }
-         break;
-      default:
-         break;
-   }
-
-   return False;
-}
-
 
 /* Generate arm spill/reload instructions under the direction of the
    register allocator.  Note it's critical these don't write the

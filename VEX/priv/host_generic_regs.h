@@ -300,6 +300,16 @@ typedef
       HReg     vRegs[N_HREGUSAGE_VREGS];
       HRegMode vMode[N_HREGUSAGE_VREGS];
       UInt     n_vRegs;
+
+      /* Hint to the register allocator: this instruction is actually a move
+         between two registers: regMoveSrc -> regMoveDst. */
+      Bool     isRegRegMove;
+      HReg     regMoveSrc;
+      HReg     regMoveDst;
+
+      /* Used internally by the register allocator. The reg-reg move is
+         actually a vreg-vreg move. */
+      Bool     isVregVregMove;
    }
    HRegUsage;
 
@@ -307,9 +317,10 @@ extern void ppHRegUsage ( const RRegUniverse*, HRegUsage* );
 
 static inline void initHRegUsage ( HRegUsage* tab )
 {
-   tab->rRead    = 0;
-   tab->rWritten = 0;
-   tab->n_vRegs  = 0;
+   tab->rRead        = 0;
+   tab->rWritten     = 0;
+   tab->n_vRegs      = 0;
+   tab->isRegRegMove = False;
 }
 
 /* Add a register to a usage table.  Combine incoming read uses with
@@ -470,10 +481,6 @@ typedef
          registers, one of which is the set of registers available for
          allocation. */
       const RRegUniverse* univ;
-
-      /* Return True iff the given insn is a reg-reg move, in which case also
-         return the src and dst regs. */
-      Bool (*isMove)(const HInstr*, HReg*, HReg*);
 
       /* Get info about register usage in this insn. */
       void (*getRegUsage)(HRegUsage*, const HInstr*, Bool);

@@ -701,7 +701,6 @@ extern void ppMIPSInstr(const MIPSInstr *, Bool mode64);
    of the underlying instruction set. */
 extern void getRegUsage_MIPSInstr (HRegUsage *, const MIPSInstr *, Bool);
 extern void mapRegs_MIPSInstr     (HRegRemap *, MIPSInstr *, Bool mode64);
-extern Bool isMove_MIPSInstr      (const MIPSInstr *, HReg *, HReg *);
 extern Int        emit_MIPSInstr (/*MB_MOD*/Bool* is_profInc,
                                   UChar* buf, Int nbuf, const MIPSInstr* i,
                                   Bool mode64,

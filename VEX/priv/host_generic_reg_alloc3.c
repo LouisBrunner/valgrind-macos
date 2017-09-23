@@ -408,22 +408,27 @@ static inline HReg find_vreg_to_spill(
 }
 
 /* Find a free rreg of the correct class.
-   Tries to find an rreg whose live range (if any) is as far ahead in the
-   incoming instruction stream as possible. An ideal rreg candidate is
-   a callee-save register because it won't be used for parameter passing
-   around helper function calls. */
+   Tries to find an rreg whose hard live range (if any) starts after the vreg's
+   live range ends. If that is not possible, then at least whose live range
+   is as far ahead in the incoming instruction stream as possible.
+   An ideal rreg candidate is a caller-save register for short-lived vregs
+   and a callee-save register for long-lived vregs because it won't need to
+   be spilled around helper calls. */
 static Bool find_free_rreg(
    const VRegState* vreg_state, UInt n_vregs,
    const RRegState* rreg_state, UInt n_rregs,
    const RRegLRState* rreg_lr_state,
-   UInt current_ii, HRegClass target_hregclass,
+   UInt v_idx, UInt current_ii, HRegClass target_hregclass,
    Bool reserve_phase, const RegAllocControl* con, UInt* r_idx_found)
 {
    Bool found = False;
    UInt distance_so_far = 0; /* running max for |live_after - current_ii| */
+   const VRegState* vreg = &vreg_state[v_idx];
 
-   for (UInt r_idx = con->univ->allocable_start[target_hregclass];
-        r_idx <= con->univ->allocable_end[target_hregclass]; r_idx++) {
+   /* Assume majority of vregs are short-lived. Start scannig from caller-save
+      registers first. */
+   for (Int r_idx = (Int) con->univ->allocable_end[target_hregclass];
+        r_idx >= (Int) con->univ->allocable_start[target_hregclass]; r_idx--) {
       const RRegState*   rreg     = &rreg_state[r_idx];
       const RRegLRState* rreg_lrs = &rreg_lr_state[r_idx];
       if (rreg->disp == Free) {
@@ -434,7 +439,12 @@ static Bool find_free_rreg(
          } else {
             const RRegLR* lr = rreg_lrs->lr_current;
             if (lr->live_after > (Short) current_ii) {
-               /* Not live, yet. */
+               /* RReg's hard live range is not live, yet. */
+               if (vreg->effective_dead_before <= lr->live_after) {
+                  found = True;
+                  *r_idx_found = r_idx;
+                  break; /* VReg is short-lived; it fits in. */
+               }
                if ((lr->live_after - (Short) current_ii) > distance_so_far) {
                   distance_so_far = lr->live_after - (Short) current_ii;
                   found = True;
@@ -548,8 +558,9 @@ HInstrArray* doRegisterAllocation_v3(
    ({                                                                          \
       UInt _r_free_idx;                                                        \
       Bool free_rreg_found = find_free_rreg(                                   \
-                vreg_state, n_vregs, rreg_state, n_rregs, rreg_lr_state,       \
-                (_ii), (_reg_class), (_reserve_phase), con, &_r_free_idx);     \
+                      vreg_state, n_vregs, rreg_state, n_rregs, rreg_lr_state, \
+                      (_v_idx), (_ii), (_reg_class), (_reserve_phase),         \
+                      con, &_r_free_idx);                                      \
       if (!free_rreg_found) {                                                  \
          HReg vreg_to_spill = find_vreg_to_spill(                              \
                                      vreg_state, n_vregs, rreg_state, n_rregs, \

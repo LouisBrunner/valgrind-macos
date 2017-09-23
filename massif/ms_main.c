@@ -507,7 +507,7 @@ void filter_IPs (Addr* ips, Int n_ips,
                  UInt* top, UInt* n_ips_sel)
 {
    Int i;
-   Bool top_has_fnname;
+   Bool top_has_fnname = False;
    const HChar *fnname;
 
    *top = 0;
@@ -519,7 +519,7 @@ void filter_IPs (Addr* ips, Int n_ips,
    //  'sliding' a bunch of functions without names by removing an
    //  alloc function 'inside' a stacktrace e.g.
    //    0x1 0x2 0x3 alloc func1 main
-   //  becomes   0x1 0x2 0x3 func1 main
+   //  became   0x1 0x2 0x3 func1 main
    for (i = *top; i < n_ips; i++) {
       top_has_fnname = VG_(get_fnname)(ips[*top], &fnname);
       if (top_has_fnname &&  VG_(strIsMemberXA)(alloc_fns, fnname)) {
@@ -532,14 +532,19 @@ void filter_IPs (Addr* ips, Int n_ips,
    }
 
    // filter the whole stacktrace if this allocation has to be ignored.
-   if (*n_ips_sel > 0 
-       && top_has_fnname 
-       && VG_(strIsMemberXA)(ignore_fns, fnname)) {
-      VERB(4, "ignored allocation from fn %s\n", fnname);
-      *top = n_ips;
-      *n_ips_sel = 0;
-   }
-       
+   if (*n_ips_sel > 0 && VG_(sizeXA)(ignore_fns) > 0) {
+      if (!top_has_fnname) {
+         // top has no fnname => search for the first entry that has a fnname
+         for (i = *top; i < n_ips && !top_has_fnname; i++) {
+            top_has_fnname = VG_(get_fnname)(ips[i], &fnname);
+         }
+      }
+      if (top_has_fnname && VG_(strIsMemberXA)(ignore_fns, fnname)) {
+         VERB(4, "ignored allocation from fn %s\n", fnname);
+         *top = n_ips;
+         *n_ips_sel = 0;
+      }
+   }       
 
    if (!VG_(clo_show_below_main) && *n_ips_sel > 0 ) {
       Int mbm = VG_(XT_offset_main_or_below_main)(ips, n_ips);

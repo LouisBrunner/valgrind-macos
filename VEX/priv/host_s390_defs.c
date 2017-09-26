@@ -397,20 +397,30 @@ getRRegUniverse_S390(void)
       fpr_index[i] = -1;
 
    /* Add the registers that are available to the register allocator.
-      GPRs:  registers 1..11 are available
-      FPRs:  registers 0..15 are available
+      GPRs:  registers 6..11 are callee saved, list them first
+             registers 1..5 are caller saved, list them after
+      FPRs:  registers 8..15 are callee saved, list them first
+             registers 0..7 are caller saved, list them after
              FPR12 - FPR15 are also used as register pairs for 128-bit
              floating point operations
    */
    ru->allocable_start[HRcInt64] = ru->size;
-   for (UInt regno = 1; regno <= 11; ++regno) {
+   for (UInt regno = 6; regno <= 11; ++regno) {
+      gpr_index[regno] = ru->size;
+      ru->regs[ru->size++] = s390_hreg_gpr(regno);
+   }
+   for (UInt regno = 1; regno <= 5; ++regno) {
       gpr_index[regno] = ru->size;
       ru->regs[ru->size++] = s390_hreg_gpr(regno);
    }
    ru->allocable_end[HRcInt64] = ru->size - 1;
 
    ru->allocable_start[HRcFlt64] = ru->size;
-   for (UInt regno = 0; regno <= 15; ++regno) {
+   for (UInt regno = 8; regno <= 15; ++regno) {
+      fpr_index[regno] = ru->size;
+      ru->regs[ru->size++] = s390_hreg_fpr(regno);
+   }
+   for (UInt regno = 0; regno <= 7; ++regno) {
       fpr_index[regno] = ru->size;
       ru->regs[ru->size++] = s390_hreg_fpr(regno);
    }

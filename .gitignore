@@ -1098,6 +1098,7 @@
 /memcheck/tests/mips32/.deps
 /memcheck/tests/mips32/Makefile
 /memcheck/tests/mips32/Makefile.in
+/memcheck/tests/mips32/bad_sioc
 /memcheck/tests/mips32/fadvise64
 
 # /memcheck/tests/mips64/
@@ -1108,6 +1109,7 @@
 /memcheck/tests/mips64/.deps
 /memcheck/tests/mips64/Makefile
 /memcheck/tests/mips64/Makefile.in
+/memcheck/tests/mips64/bad_sioc
 /memcheck/tests/mips64/fadvise64
 
 # /memcheck/tests/ppc32/

@@ -1,0 +1,12 @@
+Syscall param ioctl(SIOCSPGRP) points to uninitialised byte(s)
+   ...
+   by 0x........: main (bad_sioc.c:13)
+ Address 0x........ is on thread 1's stack
+ in frame #1, created by main (bad_sioc.c:7)
+
+Syscall param ioctl(SIOCATMARK) points to uninitialised byte(s)
+   ...
+   by 0x........: main (bad_sioc.c:14)
+ Address 0x........ is on thread 1's stack
+ in frame #1, created by main (bad_sioc.c:7)
+

@@ -5,7 +5,7 @@ dist_noinst_SCRIPTS = \
 	filter_stderr
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
-	badsioc.stderr.exp badsioc.stdout.exp badsioc.vgtest \
+	bad_sioc.stderr.exp bad_sioc.stdout.exp bad_sioc.vgtest \
 	fadvise64.stderr.exp fadvise64.stdout.exp fadvise64.vgtest
 
 

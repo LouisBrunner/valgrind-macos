@@ -389,9 +389,9 @@ struct vki_f_owner_ex {
 // From linux-2.6.35.9/include/asm-i386/sockios.h
 //----------------------------------------------------------------------
 
-#define VKI_SIOCSPGRP           0x8902
-#define VKI_SIOCGPGRP           0x8904
-#define VKI_SIOCATMARK          0x8905
+#define VKI_SIOCATMARK          _VKI_IOR('s', 7, int)
+#define VKI_SIOCSPGRP           _VKI_IOW('s', 8, vki_pid_t)
+#define VKI_SIOCGPGRP           _VKI_IOR('s', 9, vki_pid_t)
 #define VKI_SIOCGSTAMP          0x8906      /* Get stamp (timeval) */
 #define VKI_SIOCGSTAMPNS        0x8907      /* Get stamp (timespec) */
 

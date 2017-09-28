@@ -276,10 +276,12 @@ typedef enum {
    Min_Alu,        /* word add/sub/and/or/xor/nor/others? */
    Min_Shft,       /* word sll/srl/sra */
    Min_Unary,      /* clo, clz, nop, neg */
+   Min_Ext,        /* ext / dext, dextm, dextu */
 
    Min_Cmp,        /* word compare (fake insn) */
 
-   Min_Mul,        /* widening/non-widening multiply */
+   Min_Mul,        /* non-widening, 32-bit, signed multiply */
+   Min_Mult,       /* widening multiply */
    Min_Div,        /* div */
 
    Min_Call,       /* call to address in register */
@@ -415,6 +417,13 @@ typedef struct {
          HReg dst;
          HReg src;
       } Unary;
+      /* Bit extract */
+      struct {
+         HReg dst;
+         HReg src;
+         UInt pos;
+         UInt size;
+      } Ext;
       /* Word compare. Fake instruction, used for basic block ending */
       struct {
          Bool syned;
@@ -433,6 +442,11 @@ typedef struct {
          HReg srcL;
          HReg srcR;
       } Mul;
+      struct {
+         Bool syned;     /* signed/unsigned */
+         HReg srcL;
+         HReg srcR;
+      } Mult;
       struct {
          Bool syned;  /* signed/unsigned - meaningless if widenind = False */
          Bool sz32;
@@ -615,10 +629,11 @@ extern MIPSInstr *MIPSInstr_LI(HReg, ULong);
 extern MIPSInstr *MIPSInstr_Alu(MIPSAluOp, HReg, HReg, MIPSRH *);
 extern MIPSInstr *MIPSInstr_Shft(MIPSShftOp, Bool sz32, HReg, HReg, MIPSRH *);
 extern MIPSInstr *MIPSInstr_Unary(MIPSUnaryOp op, HReg dst, HReg src);
+extern MIPSInstr *MIPSInstr_Ext(HReg, HReg, UInt, UInt);
 extern MIPSInstr *MIPSInstr_Cmp(Bool, Bool, HReg, HReg, HReg, MIPSCondCode);
 
-extern MIPSInstr *MIPSInstr_Mul(Bool syned, Bool hi32, Bool sz32, HReg,
-                                HReg, HReg);
+extern MIPSInstr *MIPSInstr_Mul(HReg, HReg, HReg);
+extern MIPSInstr *MIPSInstr_Mult(Bool, HReg, HReg);
 extern MIPSInstr *MIPSInstr_Div(Bool syned, Bool sz32, HReg, HReg);
 extern MIPSInstr *MIPSInstr_Madd(Bool, HReg, HReg);
 extern MIPSInstr *MIPSInstr_Msub(Bool, HReg, HReg);

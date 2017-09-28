@@ -55,6 +55,9 @@ static Bool mode64 = False;
 /* Host CPU has FPU and 32 dbl. prec. FP registers. */
 static Bool fp_mode64 = False;
 
+/* Host hwcaps */
+static UInt hwcaps_host = 0;
+
 /* GPR register class for mips32/64 */
 #define HRcGPR(_mode64) ((_mode64) ? HRcInt64 : HRcInt32)
 
@@ -1058,50 +1061,44 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             return r_dst;
          }
 
-         if (e->Iex.Binop.op == Iop_Mul32 || e->Iex.Binop.op == Iop_Mul64) {
-            Bool sz32 = (e->Iex.Binop.op == Iop_Mul32);
+         if (e->Iex.Binop.op == Iop_Mul32) {
             HReg r_dst = newVRegI(env);
             HReg r_srcL = iselWordExpr_R(env, e->Iex.Binop.arg1);
             HReg r_srcR = iselWordExpr_R(env, e->Iex.Binop.arg2);
-            addInstr(env, MIPSInstr_Mul(False/*Unsigned or Signed */ ,
-                                       False /*widen */ ,
-                                       sz32 /*32bit or 64bit */,
-                                       r_dst, r_srcL, r_srcR));
+            addInstr(env, MIPSInstr_Mul(r_dst, r_srcL, r_srcR));
             return r_dst;
          }
 
-         if (e->Iex.Binop.op == Iop_MullU32 || e->Iex.Binop.op == Iop_MullS32) {
+         if (e->Iex.Binop.op == Iop_Mul64 ||
+             e->Iex.Binop.op == Iop_MullS32) {
+            vassert(mode64);
             HReg r_dst = newVRegI(env);
-            HReg tHi = newVRegI(env);
-            HReg tLo = newVRegI(env);
-            HReg tLo_1 = newVRegI(env);
-            HReg tHi_1 = newVRegI(env);
-            HReg mask = newVRegI(env);
-
-            Bool syned = toBool(e->Iex.Binop.op == Iop_MullS32);
-            Bool size = toBool(e->Iex.Binop.op == Iop_MullS32)
-                        || toBool(e->Iex.Binop.op == Iop_MullU32);
             HReg r_srcL = iselWordExpr_R(env, e->Iex.Binop.arg1);
             HReg r_srcR = iselWordExpr_R(env, e->Iex.Binop.arg2);
-            addInstr(env, MIPSInstr_Mul(syned /*Unsigned or Signed */ ,
-                                        True /*widen */ ,
-                                        size /*32bit or 64bit mul */ ,
-                                        r_dst, r_srcL, r_srcR));
-
-            addInstr(env, MIPSInstr_Mfhi(tHi));
-            addInstr(env, MIPSInstr_Mflo(tLo));
-
-            addInstr(env, MIPSInstr_Shft(Mshft_SLL, False, tHi_1,
-                          tHi, MIPSRH_Imm(False, 32)));
-
-            addInstr(env, MIPSInstr_LI(mask, 0xffffffff));
-            addInstr(env, MIPSInstr_Alu(Malu_AND, tLo_1, tLo,
-                          MIPSRH_Reg(mask)));
-
-            addInstr(env, MIPSInstr_Alu(Malu_OR, r_dst, tHi_1,
-                          MIPSRH_Reg(tLo_1)));
-
+            addInstr(env, MIPSInstr_Mult(True, r_srcL, r_srcR));
+            addInstr(env, MIPSInstr_Mflo(r_dst));
             return r_dst;
+         }
+
+         if (e->Iex.Binop.op == Iop_MullU32) {
+            vassert(mode64);
+            HReg r_tmpL = newVRegI(env);
+            HReg r_tmpR = newVRegI(env);
+            HReg r_srcL = iselWordExpr_R(env, e->Iex.Binop.arg1);
+            HReg r_srcR = iselWordExpr_R(env, e->Iex.Binop.arg2);
+            if (VEX_MIPS_CPU_HAS_MIPS64R2(hwcaps_host)) {
+               addInstr(env, MIPSInstr_Ext(r_tmpL, r_srcL, 0, 32));
+               addInstr(env, MIPSInstr_Ext(r_tmpR, r_srcR, 0, 32));
+            } else {
+               addInstr(env, MIPSInstr_LI(r_tmpL, 0xFFFFFFFF));
+               addInstr(env, MIPSInstr_Alu(Malu_AND, r_tmpR, r_srcR,
+                                           MIPSRH_Reg(r_tmpL)));
+               addInstr(env, MIPSInstr_Alu(Malu_AND, r_tmpL, r_srcL,
+                                           MIPSRH_Reg(r_tmpL)));
+            }
+            addInstr(env, MIPSInstr_Mult(False, r_tmpL, r_tmpR));
+            addInstr(env, MIPSInstr_Mflo(r_tmpR));
+            return r_tmpR;
          }
 
          if (e->Iex.Binop.op == Iop_CmpF64) {
@@ -2198,11 +2195,9 @@ static void iselInt128Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env,
             HReg tLo = newVRegI(env);
             HReg tHi = newVRegI(env);
             Bool syned = toBool(e->Iex.Binop.op == Iop_MullS64);
-            HReg r_dst = newVRegI(env);
             HReg r_srcL = iselWordExpr_R(env, e->Iex.Binop.arg1);
             HReg r_srcR = iselWordExpr_R(env, e->Iex.Binop.arg2);
-            addInstr(env, MIPSInstr_Mul(syned, True, False /*64bit mul */ ,
-                                        r_dst, r_srcL, r_srcR));
+            addInstr(env, MIPSInstr_Mult(syned, r_srcL, r_srcR));
             addInstr(env, MIPSInstr_Mfhi(tHi));
             addInstr(env, MIPSInstr_Mflo(tLo));
             *rHi = tHi;
@@ -2411,14 +2406,10 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
          case Iop_MullS32: {
             HReg tLo = newVRegI(env);
             HReg tHi = newVRegI(env);
-            HReg r_dst = newVRegI(env);
             Bool syned = toBool(op_binop == Iop_MullS32);
             HReg r_srcL = iselWordExpr_R(env, e->Iex.Binop.arg1);
             HReg r_srcR = iselWordExpr_R(env, e->Iex.Binop.arg2);
-
-            addInstr(env, MIPSInstr_Mul(syned /*Unsigned or Signed */,
-                                        True /*widen */ , True,
-                                        r_dst, r_srcL, r_srcR));
+            addInstr(env, MIPSInstr_Mult(syned, r_srcL, r_srcR));
             addInstr(env, MIPSInstr_Mfhi(tHi));
             addInstr(env, MIPSInstr_Mflo(tLo));
             *rHi = tHi;
@@ -4155,8 +4146,9 @@ HInstrArray *iselSB_MIPS ( const IRSB* bb,
    Int      i, j;
    HReg     hreg, hregHI;
    ISelEnv* env;
-   UInt     hwcaps_host = archinfo_host->hwcaps;
    MIPSAMode *amCounter, *amFailAddr;
+
+   hwcaps_host = archinfo_host->hwcaps;
 
    /* sanity ... */
    vassert(arch_host == VexArchMIPS32 || arch_host == VexArchMIPS64);

@@ -811,18 +811,37 @@ MIPSInstr *MIPSInstr_Cmp(Bool syned, Bool sz32, HReg dst, HReg srcL, HReg srcR,
    return i;
 }
 
-/* multiply */
-MIPSInstr *MIPSInstr_Mul(Bool syned, Bool wid, Bool sz32, HReg dst, HReg srcL,
-                         HReg srcR)
+/* mul */
+MIPSInstr *MIPSInstr_Mul(HReg dst, HReg srcL, HReg srcR)
 {
    MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
    i->tag = Min_Mul;
-   i->Min.Mul.syned = syned;
-   i->Min.Mul.widening = wid; /* widen=True else False */
-   i->Min.Mul.sz32 = sz32; /* True = 32 bits */
    i->Min.Mul.dst = dst;
    i->Min.Mul.srcL = srcL;
    i->Min.Mul.srcR = srcR;
+   return i;
+}
+
+/* mult, multu / dmult, dmultu */
+MIPSInstr *MIPSInstr_Mult(Bool syned, HReg srcL, HReg srcR)
+{
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
+   i->tag = Min_Mult;
+   i->Min.Mult.syned = syned;
+   i->Min.Mult.srcL = srcL;
+   i->Min.Mult.srcR = srcR;
+   return i;
+}
+
+/* ext / dext, dextm, dextu */
+MIPSInstr *MIPSInstr_Ext(HReg dst, HReg src, UInt pos, UInt size)
+{
+   MIPSInstr *i = LibVEX_Alloc_inline(sizeof(MIPSInstr));
+   i->tag = Min_Ext;
+   i->Min.Ext.dst  = dst;
+   i->Min.Ext.src  = src;
+   i->Min.Ext.pos  = pos;
+   i->Min.Ext.size = size;
    return i;
 }
 
@@ -1228,26 +1247,35 @@ void ppMIPSInstr(const MIPSInstr * i, Bool mode64)
          return;
       }
       case Min_Mul: {
-         switch (i->Min.Mul.widening) {
-            case False:
-               vex_printf("mul ");
-               ppHRegMIPS(i->Min.Mul.dst, mode64);
-               vex_printf(", ");
-               ppHRegMIPS(i->Min.Mul.srcL, mode64);
-               vex_printf(", ");
-               ppHRegMIPS(i->Min.Mul.srcR, mode64);
-               return;
-            case True:
-               vex_printf("%s%s ", i->Min.Mul.sz32 ? "mult" : "dmult",
-                                   i->Min.Mul.syned ? "" : "u");
-               ppHRegMIPS(i->Min.Mul.dst, mode64);
-               vex_printf(", ");
-               ppHRegMIPS(i->Min.Mul.srcL, mode64);
-               vex_printf(", ");
-               ppHRegMIPS(i->Min.Mul.srcR, mode64);
-               return;
-            }
-         break;
+         vex_printf("mul ");
+         ppHRegMIPS(i->Min.Mul.dst, mode64);
+         vex_printf(", ");
+         ppHRegMIPS(i->Min.Mul.srcL, mode64);
+         vex_printf(", ");
+         ppHRegMIPS(i->Min.Mul.srcR, mode64);
+         return;
+      }
+      case Min_Mult: {
+         vex_printf("%s%s ", mode64 ? "dmult" : "mult",
+                             i->Min.Mult.syned ? "" : "u");
+         ppHRegMIPS(i->Min.Mult.srcL, mode64);
+         vex_printf(", ");
+         ppHRegMIPS(i->Min.Mult.srcR, mode64);
+         return;
+      }
+      case Min_Ext: {
+         vassert(mode64);
+         vassert(i->Min.Ext.pos < 32);
+         vassert(i->Min.Ext.size > 0);
+         vassert(i->Min.Ext.size <= 32);
+         vassert(i->Min.Ext.size + i->Min.Ext.pos > 0);
+         vassert(i->Min.Ext.size + i->Min.Ext.pos <= 63);
+         vex_printf("dext ");
+         ppHRegMIPS(i->Min.Ext.dst, mode64);
+         vex_printf(", ");
+         ppHRegMIPS(i->Min.Ext.src, mode64);
+         vex_printf(", %u, %u", i->Min.Ext.pos, i->Min.Ext.size);
+         return;
       }
       case Min_Mthi: {
          vex_printf("mthi ");
@@ -1597,6 +1625,18 @@ void getRegUsage_MIPSInstr(HRegUsage * u, const MIPSInstr * i, Bool mode64)
          addHRegUse(u, HRmWrite, i->Min.Mul.dst);
          addHRegUse(u, HRmRead, i->Min.Mul.srcL);
          addHRegUse(u, HRmRead, i->Min.Mul.srcR);
+         addHRegUse(u, HRmWrite, hregMIPS_HI(mode64));
+         addHRegUse(u, HRmWrite, hregMIPS_LO(mode64));
+         return;
+      case Min_Mult:
+         addHRegUse(u, HRmRead, i->Min.Mult.srcL);
+         addHRegUse(u, HRmRead, i->Min.Mult.srcR);
+         addHRegUse(u, HRmWrite, hregMIPS_HI(mode64));
+         addHRegUse(u, HRmWrite, hregMIPS_LO(mode64));
+         return;
+      case Min_Ext:
+         addHRegUse(u, HRmWrite, i->Min.Ext.dst);
+         addHRegUse(u, HRmRead, i->Min.Ext.src);
          return;
       case Min_Mthi:
       case Min_Mtlo:
@@ -1816,6 +1856,14 @@ void mapRegs_MIPSInstr(HRegRemap * m, MIPSInstr * i, Bool mode64)
          mapReg(m, &i->Min.Mul.dst);
          mapReg(m, &i->Min.Mul.srcL);
          mapReg(m, &i->Min.Mul.srcR);
+         return;
+      case Min_Mult:
+         mapReg(m, &i->Min.Mult.srcL);
+         mapReg(m, &i->Min.Mult.srcR);
+         return;
+      case Min_Ext:
+         mapReg(m, &i->Min.Ext.src);
+         mapReg(m, &i->Min.Ext.dst);
          return;
       case Min_Mthi:
       case Min_Mtlo:
@@ -2808,35 +2856,49 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
       }
 
       case Min_Mul: {
-         Bool syned = i->Min.Mul.syned;
-         Bool widening = i->Min.Mul.widening;
-         Bool sz32 = i->Min.Mul.sz32;
          UInt r_srcL = iregNo(i->Min.Mul.srcL, mode64);
          UInt r_srcR = iregNo(i->Min.Mul.srcR, mode64);
          UInt r_dst = iregNo(i->Min.Mul.dst, mode64);
-         if (widening) {
-            if (sz32) {
-               if (syned)
-                  /* mult */
-                  p = mkFormR(p, 0, r_srcL, r_srcR, 0, 0, 24);
-               else
-                  /* multu */
-                  p = mkFormR(p, 0, r_srcL, r_srcR, 0, 0, 25);
-            } else {
-               if (syned)  /* DMULT  r_dst,r_srcL,r_srcR */
-                  p = mkFormR(p, 0, r_srcL, r_srcR, 0, 0, 28);
-               else  /* DMULTU r_dst,r_srcL,r_srcR */
-                  p = mkFormR(p, 0, r_srcL, r_srcR, 0, 0, 29);
-            }
-         } else {
-            if (sz32)
-               /* mul */
-               p = mkFormR(p, 28, r_srcL, r_srcR, r_dst, 0, 2);
-            else if (mode64 && !sz32)
-               p = mkFormR(p, 28, r_srcL, r_srcR, r_dst, 0, 2);
+         /* mul r_dst, r_srcL, r_srcR */
+         p = mkFormR(p, 28, r_srcL, r_srcR, r_dst, 0, 2);
+         goto done;
+      }
+
+      case Min_Mult: {
+         Bool syned = i->Min.Mult.syned;
+         UInt r_srcL = iregNo(i->Min.Mult.srcL, mode64);
+         UInt r_srcR = iregNo(i->Min.Mult.srcR, mode64);
+         if (mode64) {
+            if (syned)
+               /* dmult  r_srcL, r_srcR */
+               p = mkFormR(p, 0, r_srcL, r_srcR, 0, 0, 28);
             else
-               goto bad;
+               /* dmultu r_srcL, r_srcR */
+               p = mkFormR(p, 0, r_srcL, r_srcR, 0, 0, 29);
+         } else {
+            if (syned)
+               /* mult r_srcL, r_srcR */
+               p = mkFormR(p, 0, r_srcL, r_srcR, 0, 0, 24);
+            else
+               /* multu r_srcL, r_srcR */
+               p = mkFormR(p, 0, r_srcL, r_srcR, 0, 0, 25);
          }
+         goto done;
+      }
+
+      case Min_Ext: {
+         UInt r_src = iregNo(i->Min.Ext.src, mode64);
+         UInt r_dst = iregNo(i->Min.Ext.dst, mode64);
+         /* For now, only DEXT is implemented. */
+         vassert(mode64);
+         vassert(i->Min.Ext.pos < 32);
+         vassert(i->Min.Ext.size > 0);
+         vassert(i->Min.Ext.size <= 32);
+         vassert(i->Min.Ext.size + i->Min.Ext.pos > 0);
+         vassert(i->Min.Ext.size + i->Min.Ext.pos <= 63);
+         /* DEXT r_dst, r_src, pos, size */
+         p = mkFormR(p, 0x1F, r_src, r_dst,
+                     i->Min.Ext.size - 1, i->Min.Ext.pos, 3);
          goto done;
       }
 

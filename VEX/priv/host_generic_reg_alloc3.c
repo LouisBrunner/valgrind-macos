@@ -140,6 +140,20 @@ typedef
 #define IS_VALID_VREGNO(v) ((v) >= 0 && (v) < n_vregs)
 #define IS_VALID_RREGNO(r) ((r) >= 0 && (r) < n_rregs)
 
+#define FREE_VREG(v)             \
+   do {                          \
+      (v)->disp = Unallocated;   \
+      (v)->rreg = INVALID_HREG;  \
+   } while (0)
+
+#define FREE_RREG(r)                      \
+   do {                                   \
+      (r)->disp          = Free;          \
+      (r)->vreg          = INVALID_HREG;  \
+      (r)->eq_spill_slot = False;         \
+   } while (0)
+
+
 /* Compute the index of the highest and lowest 1 in a ULong, respectively.
    Results are undefined if the argument is zero. Don't pass it zero :) */
 static inline UInt ULong__maxIndex ( ULong w64 ) {
@@ -266,11 +280,9 @@ static inline void mark_vreg_spilled(
    HReg rreg = vreg_state[v_idx].rreg;
    UInt r_idx = hregIndex(rreg);
 
-   vreg_state[v_idx].disp          = Spilled;
-   vreg_state[v_idx].rreg          = INVALID_HREG;
-   rreg_state[r_idx].disp          = Free;
-   rreg_state[r_idx].vreg          = INVALID_HREG;
-   rreg_state[r_idx].eq_spill_slot = False;
+   vreg_state[v_idx].disp = Spilled;
+   vreg_state[v_idx].rreg = INVALID_HREG;
+   FREE_RREG(&rreg_state[r_idx]);
 }
 
 /* Spills a vreg assigned to some rreg.
@@ -891,8 +903,7 @@ HInstrArray* doRegisterAllocation_v3(
                HReg rreg = vreg_state[vs_idx].rreg;
                vreg_state[vd_idx].disp = Assigned;
                vreg_state[vd_idx].rreg = rreg;
-               vreg_state[vs_idx].disp = Unallocated;
-               vreg_state[vs_idx].rreg = INVALID_HREG;
+               FREE_VREG(&vreg_state[vs_idx]);
 
                UInt r_idx = hregIndex(rreg);
                vassert(rreg_state[r_idx].disp == Bound);
@@ -913,11 +924,8 @@ HInstrArray* doRegisterAllocation_v3(
                   contained dead code (but VEX iropt passes are pretty good
                   at eliminating it) or the VEX backend generated dead code. */
                if (vreg_state[vd_idx].dead_before <= (Short) ii + 1) {
-                  vreg_state[vd_idx].disp = Unallocated;
-                  vreg_state[vd_idx].rreg = INVALID_HREG;
-                  rreg_state[r_idx].disp          = Free;
-                  rreg_state[r_idx].vreg          = INVALID_HREG;
-                  rreg_state[r_idx].eq_spill_slot = False;
+                  FREE_VREG(&vreg_state[vd_idx]);
+                  FREE_RREG(&rreg_state[r_idx]);
                }
 
                /* Move on to the next instruction. We skip the post-instruction
@@ -1000,9 +1008,7 @@ HInstrArray* doRegisterAllocation_v3(
                      rreg_state[r_free_idx].disp          = Bound;
                      rreg_state[r_free_idx].vreg          = vreg;
                      rreg_state[r_free_idx].eq_spill_slot = rreg->eq_spill_slot;
-                     rreg->disp          = Free;
-                     rreg->vreg          = INVALID_HREG;
-                     rreg->eq_spill_slot = False;
+                     FREE_RREG(rreg);
                   }
                   break;
                }
@@ -1187,9 +1193,7 @@ HInstrArray* doRegisterAllocation_v3(
             if (rreg_lrs->lrs_used > 0) {
                /* Consider "dead before" the next instruction. */
                if (rreg_lrs->lr_current->dead_before <= (Short) ii + 1) {
-                  rreg_state[r_idx].disp          = Free;
-                  rreg_state[r_idx].vreg          = INVALID_HREG;
-                  rreg_state[r_idx].eq_spill_slot = False;
+                  FREE_RREG(&rreg_state[r_idx]);
                   if (rreg_lrs->lr_current_idx < rreg_lrs->lrs_used - 1) {
                      rreg_lrs->lr_current_idx += 1;
                      rreg_lrs->lr_current
@@ -1202,11 +1206,8 @@ HInstrArray* doRegisterAllocation_v3(
             UInt v_idx = hregIndex(rreg->vreg);
             /* Consider "dead before" the next instruction. */
             if (vreg_state[v_idx].dead_before <= (Short) ii + 1) {
-               vreg_state[v_idx].disp = Unallocated;
-               vreg_state[v_idx].rreg = INVALID_HREG;
-               rreg_state[r_idx].disp          = Free;
-               rreg_state[r_idx].vreg          = INVALID_HREG;
-               rreg_state[r_idx].eq_spill_slot = False;
+               FREE_VREG(&vreg_state[v_idx]);
+               FREE_RREG(&rreg_state[r_idx]);
             }
             break;
          }

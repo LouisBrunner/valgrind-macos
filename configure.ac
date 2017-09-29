@@ -1732,16 +1732,16 @@ CFLAGS=$safe_CFLAGS
 AC_SUBST(FLAG_MIPS32)
 
 
-# does this compiler support -march=mips64 (mips64 default) ?
-AC_MSG_CHECKING([if gcc accepts -march=mips64])
+# does this compiler support -march=mips64r2 (mips64r2 default) ?
+AC_MSG_CHECKING([if gcc accepts -march=mips64r2])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -march=mips64 -Werror"
+CFLAGS="$CFLAGS -march=mips64r2 -Werror"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
 ]])], [
-FLAG_MIPS64="-march=mips64"
+FLAG_MIPS64="-march=mips64r2"
 AC_MSG_RESULT([yes])
 ], [
 FLAG_MIPS64=""

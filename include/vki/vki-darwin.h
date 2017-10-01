@@ -847,14 +847,19 @@ struct ByteRangeLockPB2
 #define VKI_FSIOC_SYNC_VOLUME        _IOW('A', 1, uint32_t)
 
 
-// Libc/pthreads/pthread.c
+// libpthread/kern/workqueue_internal.h
 
-#define VKI_WQOPS_QUEUE_ADD          1
-#define VKI_WQOPS_QUEUE_REMOVE       2
-#define VKI_WQOPS_THREAD_RETURN      4
-#define VKI_WQOPS_THREAD_SETCONC     8
-#define VKI_WQOPS_QUEUE_NEWSPISUPP  16  /* check for newer SPI support */
-#define VKI_WQOPS_QUEUE_REQTHREADS  32  /* request number of threads of a prio */
+#define VKI_WQOPS_QUEUE_ADD                    1
+#define VKI_WQOPS_QUEUE_REMOVE                 2
+#define VKI_WQOPS_THREAD_RETURN                4  /* parks the thread back into the kernel */
+#define VKI_WQOPS_THREAD_SETCONC               8
+#define VKI_WQOPS_QUEUE_NEWSPISUPP            16  /* check for newer SPI support */
+#define VKI_WQOPS_QUEUE_REQTHREADS            32  /* request number of threads of a prio */
+#define VKI_WQOPS_QUEUE_REQTHREADS2           48  /* request a number of threads in a given priority bucket */
+#define VKI_WQOPS_THREAD_KEVENT_RETURN        64  /* parks the thread after delivering the passed kevent array */
+#define VKI_WQOPS_SET_EVENT_MANAGER_PRIORITY 128  /* max() in the provided priority in the the priority of the event manager */
+#define VKI_WQOPS_THREAD_WORKLOOP_RETURN     256  /* parks the thread after delivering the passed kevent array */
+#define VKI_WQOPS_SHOULD_NARROW              512  /* checks whether we should narrow our concurrency */
 
 
 #include <sys/ttycom.h>

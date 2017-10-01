@@ -833,6 +833,7 @@ Bool ML_(sync_mappings)(const HChar* when, const HChar* where, UWord num)
    Bool where_iuct = STREQ(where, "iokit_user_client_trap");
    Bool where_MwcN = STREQ(where, "ML_(wqthread_continue_NORETURN)");
    Bool where_woQR = STREQ(where, "workq_ops(QUEUE_REQTHREADS)");
+   Bool where_woQ2 = STREQ(where, "workq_ops(QUEUE_REQTHREADS2)");
    Bool where_woTR = STREQ(where, "workq_ops(THREAD_RETURN)");
    Bool where_ke64 = STREQ(where, "kevent64");
 #  undef STREQ
@@ -840,8 +841,8 @@ Bool ML_(sync_mappings)(const HChar* when, const HChar* where, UWord num)
    vg_assert(
       1 >= ( (where_mmr ? 1 : 0) + (where_mmrU ? 1 : 0) 
              + (where_iuct ? 1 : 0) + (where_MwcN ? 1 : 0)
-             + (where_woQR ? 1 : 0) + (where_woTR ? 1 : 0)
-             + (where_ke64 ? 1 : 0)
+             + (where_woQR ? 1 : 0) + (where_woQ2 ? 1 : 0)
+             + (where_woTR ? 1 : 0) + (where_ke64 ? 1 : 0)
    ));
    // merely to stop gcc complaining of non-use in the case where
    // there's no filter:
@@ -892,6 +893,11 @@ Bool ML_(sync_mappings)(const HChar* when, const HChar* where, UWord num)
       // upd 14434 diff 102+,0-
       check = CheckEvery20;
    }
+/* if (when_after && where_woQ2 && num == 0x00000000) {
+      // after workq_ops(QUEUE_REQTHREADS2) 0x00000000
+      // upd XXXX diff XX+,0-
+      check = CheckEvery20;
+   } */
    else
    if (when_after && where_woTR && num == 0x00000000) {
       // after workq_ops(THREAD_RETURN) 0x00000000
@@ -954,6 +960,11 @@ Bool ML_(sync_mappings)(const HChar* when, const HChar* where, UWord num)
       // upd 1099 diff 37+,0-
       check = CheckEvery20;
    }
+/* if (when_after && where_woQ2 && num == 0x00000000) {
+      // after workq_ops(QUEUE_REQTHREADS2) 0x00000000
+      // upd XXXX diff XX+,0-
+      check = CheckEvery20;
+   } */
    else
    if (when_after && where_woTR && num == 0x00000000) {
       // after workq_ops(THREAD_RETURN) 0x00000000
@@ -2089,12 +2100,17 @@ PRE(workq_open)
 static const HChar *workqop_name(int op)
 {
    switch (op) {
-   case VKI_WQOPS_QUEUE_ADD:        return "QUEUE_ADD";
-   case VKI_WQOPS_QUEUE_REMOVE:     return "QUEUE_REMOVE";
-   case VKI_WQOPS_THREAD_RETURN:    return "THREAD_RETURN";
-   case VKI_WQOPS_THREAD_SETCONC:   return "THREAD_SETCONC";
-   case VKI_WQOPS_QUEUE_NEWSPISUPP: return "QUEUE_NEWSPISUPP";
-   case VKI_WQOPS_QUEUE_REQTHREADS: return "QUEUE_REQTHREADS";
+   case VKI_WQOPS_QUEUE_ADD:                  return "QUEUE_ADD";
+   case VKI_WQOPS_QUEUE_REMOVE:               return "QUEUE_REMOVE";
+   case VKI_WQOPS_THREAD_RETURN:              return "THREAD_RETURN";
+   case VKI_WQOPS_THREAD_SETCONC:             return "THREAD_SETCONC";
+   case VKI_WQOPS_QUEUE_NEWSPISUPP:           return "QUEUE_NEWSPISUPP";
+   case VKI_WQOPS_QUEUE_REQTHREADS:           return "QUEUE_REQTHREADS";
+   case VKI_WQOPS_QUEUE_REQTHREADS2:          return "QUEUE_REQTHREADS2";
+   case VKI_WQOPS_THREAD_KEVENT_RETURN:       return "THREAD_KEVENT_RETURN";
+   case VKI_WQOPS_SET_EVENT_MANAGER_PRIORITY: return "SET_EVENT_MANAGER_PRIORITY";
+   case VKI_WQOPS_THREAD_WORKLOOP_RETURN:     return "THREAD_WORKLOOP_RETURN";
+   case VKI_WQOPS_SHOULD_NARROW:              return "SHOULD_NARROW";
    default: return "?";
    }
 }
@@ -2113,14 +2129,6 @@ PRE(workq_ops)
       // GrP fixme need anything here?
       // GrP fixme may block?
       break;
-   case VKI_WQOPS_QUEUE_NEWSPISUPP:
-      // JRS don't think we need to do anything here -- this just checks
-      // whether some newer functionality is supported
-      break;
-   case VKI_WQOPS_QUEUE_REQTHREADS:
-      // JRS uh, looks like it queues up a bunch of threads, or some such?
-      *flags |= SfMayBlock; // the kernel sources take a spinlock, so play safe
-      break;
    case VKI_WQOPS_THREAD_RETURN: {
       // The interesting case. The kernel will do one of two things:
       // 1. Return normally. We continue; libc proceeds to stop the thread.
@@ -2137,6 +2145,32 @@ PRE(workq_ops)
       *flags |= SfMayBlock;  // GrP fixme true?
       break;
    }
+   case VKI_WQOPS_THREAD_SETCONC:
+      // RK fixme need anything here?
+      // RK fixme may block?
+      break;
+   case VKI_WQOPS_QUEUE_NEWSPISUPP:
+      // JRS don't think we need to do anything here -- this just checks
+      // whether some newer functionality is supported
+      break;
+   case VKI_WQOPS_QUEUE_REQTHREADS:
+   case VKI_WQOPS_QUEUE_REQTHREADS2:
+      // JRS uh, looks like it queues up a bunch of threads, or some such?
+      *flags |= SfMayBlock; // the kernel sources take a spinlock, so play safe
+      break;
+   case VKI_WQOPS_THREAD_KEVENT_RETURN:
+      // RK fixme need anything here?
+      // perhaps similar to VKI_WQOPS_THREAD_RETURN above?
+      break;
+   case VKI_WQOPS_SET_EVENT_MANAGER_PRIORITY:
+      // RK fixme this just sets scheduling priorities - don't think we need
+      // to do anything here
+      break;
+   case VKI_WQOPS_THREAD_WORKLOOP_RETURN:
+   case VKI_WQOPS_SHOULD_NARROW:
+      // RK fixme need anything here?
+      // RK fixme may block?
+      break;
    default:
       VG_(printf)("UNKNOWN workq_ops option %ld\n", ARG1);
       break;
@@ -2152,6 +2186,9 @@ POST(workq_ops)
          break;
       case VKI_WQOPS_QUEUE_REQTHREADS:
          ML_(sync_mappings)("after", "workq_ops(QUEUE_REQTHREADS)", 0);
+         break;
+      case VKI_WQOPS_QUEUE_REQTHREADS2:
+         ML_(sync_mappings)("after", "workq_ops(QUEUE_REQTHREADS2)", 0);
          break;
       default:
          break;

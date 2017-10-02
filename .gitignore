@@ -7,7 +7,6 @@
 /autom4te-*.cache
 /autom4te.cache
 /bin
-/cachegrind
 /cachegrind.out.*
 /compile
 /config.guess
@@ -19,7 +18,6 @@
 /default.supp
 /depcomp
 /glibc-2.X.supp
-/include
 /install-sh
 /lib
 /Makefile
@@ -694,7 +692,6 @@
 /include/Makefile.in
 /include/Makefile
 /include/tool.h
-/include/valgrind.h
 /include/vgversion.h
 
 # /include/vki/

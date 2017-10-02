@@ -1720,15 +1720,15 @@ AC_SUBST(FLAG_M64)
 
 
 # does this compiler support -march=mips32 (mips32 default) ?
-AC_MSG_CHECKING([if gcc accepts -march=mips32])
+AC_MSG_CHECKING([if gcc accepts -march=mips32 -mabi=32])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -march=mips32 -Werror"
+CFLAGS="$CFLAGS -march=mips32 -mabi=32 -Werror"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
 ]])], [
-FLAG_MIPS32="-march=mips32"
+FLAG_MIPS32="-march=mips32 -mabi=32"
 AC_MSG_RESULT([yes])
 ], [
 FLAG_MIPS32=""
@@ -1740,15 +1740,15 @@ AC_SUBST(FLAG_MIPS32)
 
 
 # does this compiler support -march=mips64r2 (mips64r2 default) ?
-AC_MSG_CHECKING([if gcc accepts -march=mips64r2])
+AC_MSG_CHECKING([if gcc accepts -march=mips64r2 -mabi=64])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -march=mips64r2 -Werror"
+CFLAGS="$CFLAGS -march=mips64r2 -mabi=64 -Werror"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
 ]])], [
-FLAG_MIPS64="-march=mips64r2"
+FLAG_MIPS64="-march=mips64r2 -mabi=64"
 AC_MSG_RESULT([yes])
 ], [
 FLAG_MIPS64=""

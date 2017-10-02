@@ -97,6 +97,7 @@ EXTRA_DIST = \
 		tc18_semabuse.stderr.exp-solaris \
 	tc19_shadowmem.vgtest tc19_shadowmem.stdout.exp \
 		tc19_shadowmem.stderr.exp tc19_shadowmem.stderr.exp-mips32 \
+		tc19_shadowmem.stderr.exp-mips32-BE \
 	tc20_verifywrap.vgtest tc20_verifywrap.stdout.exp \
 		tc20_verifywrap.stderr.exp \
 		tc20_verifywrap.stderr.exp-glibc-2.18 \

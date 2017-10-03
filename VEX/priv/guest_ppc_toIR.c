@@ -24107,107 +24107,40 @@ static Bool dis_av_permute ( UInt theInstr )
    }
 
    case 0x3B: {  // vpermr (Vector Permute Right-indexed)
-      int i;
-      IRTemp new_Vt[17];
-      IRTemp tmp[16];
-      IRTemp index[16];
-      IRTemp index_gt16[16];
-      IRTemp mask[16];
+      /* limited to two args for IR, so have to play games... */
+      IRTemp a_perm  = newTemp( Ity_V128 );
+      IRTemp b_perm  = newTemp( Ity_V128 );
+      IRTemp mask    = newTemp( Ity_V128 );
+      IRTemp vC_andF = newTemp( Ity_V128 );
 
-      DIP("vpermr v%d,v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr, vC_addr);
+      DIP( "vpermr v%d,v%d,v%d,v%d\n",
+           vD_addr, vA_addr, vB_addr, vC_addr);
+      /* Limit the Perm8x16 steering values to 0 .. 31 as that is what
+         IR specifies, and also to hide irrelevant bits from
+         memcheck.
+      */
 
-      new_Vt[0] = newTemp( Ity_V128 );
-      assign( new_Vt[0], binop( Iop_64HLtoV128,
-                                mkU64( 0x0 ),
-                                mkU64( 0x0 ) ) );
-
-      for ( i = 0; i < 16; i++ ) {
-         index_gt16[i] = newTemp( Ity_V128 );
-         mask[i]  = newTemp( Ity_V128 );
-         index[i] = newTemp( Ity_I32 );
-         tmp[i]   = newTemp( Ity_V128 );
-         new_Vt[i+1] = newTemp( Ity_V128 );
-
-         assign( index[i],
-                 binop( Iop_Sub32,
-                        mkU32( 31 ),
-                        unop( Iop_64to32,
-                              unop( Iop_V128to64,
-                                    binop( Iop_ShrV128,
-                                           binop( Iop_AndV128,
-                                                  binop( Iop_ShlV128,
-                                                         binop( Iop_64HLtoV128,
-                                                                mkU64( 0x0 ),
-                                                                mkU64( 0x3F ) ),
-                                                         mkU8(  (15 - i) * 8 ) ),
-                                                  mkexpr( vC ) ),
-                                           mkU8( (15 - i) * 8 ) ) ) ) ) );
-
-         /* Determine if index < 16, src byte is vA[index], otherwise
-          * vB[31-index]. Check if msb of index is 1 or not.
-          */
-         assign( index_gt16[i],
-                 binop( Iop_64HLtoV128,
-                        unop( Iop_1Sto64,
-                              unop( Iop_32to1,
-                                    binop( Iop_Shr32,
-                                           mkexpr( index[i] ),
-                                           mkU8( 4 ) ) ) ),
-                        unop( Iop_1Sto64,
-                              unop( Iop_32to1,
-                                    binop( Iop_Shr32,
-                                           mkexpr( index[i] ),
-                                           mkU8( 4 ) ) ) ) ) );
-         assign( mask[i],
-                 binop( Iop_ShlV128,
-                        binop( Iop_64HLtoV128,
-                               mkU64( 0x0 ),
-                               mkU64( 0xFF ) ),
-                        unop( Iop_32to8,
-                              binop( Iop_Mul32,
-                                     binop( Iop_Sub32,
-                                            mkU32( 15 ),
-                                            binop( Iop_And32,
-                                                   mkexpr( index[i] ),
-                                                   mkU32( 0xF ) ) ),
-                                     mkU32( 8 ) ) ) ) );
-
-         /* Extract the indexed byte from vA and vB using the lower 4-bits
-          * of the index. Then use the index_gt16 mask to select vA if the
-          * index < 16 or vB if index > 15.  Put the selected byte in the
-          * least significant byte.
-          */
-         assign( tmp[i],
-                 binop( Iop_ShrV128,
-                        binop( Iop_OrV128,
-                               binop( Iop_AndV128,
-                                      binop( Iop_AndV128,
-                                             mkexpr( mask[i] ),
-                                             mkexpr( vA ) ),
-                                      unop( Iop_NotV128,
-                                            mkexpr( index_gt16[i] ) ) ),
-                               binop( Iop_AndV128,
-                                      binop( Iop_AndV128,
-                                             mkexpr( mask[i] ),
-                                             mkexpr( vB ) ),
-                                      mkexpr( index_gt16[i] ) ) ),
-                        unop( Iop_32to8,
-                              binop( Iop_Mul32,
-                                     binop( Iop_Sub32,
-                                            mkU32( 15 ),
-                                            binop( Iop_And32,
-                                                   mkexpr( index[i] ),
-                                                   mkU32( 0xF ) ) ),
-                                     mkU32( 8 ) ) ) ) );
-
-         /* Move the selected byte to the position to store in the result */
-         assign( new_Vt[i+1], binop( Iop_OrV128,
-                                     binop( Iop_ShlV128,
-                                            mkexpr( tmp[i] ),
-                                            mkU8(  (15 - i) * 8 ) ),
-                                     mkexpr( new_Vt[i] ) ) );
-         }
-      putVReg( vD_addr, mkexpr( new_Vt[16] ) );
+      assign( vC_andF,
+              binop( Iop_Sub16x8,
+                     binop( Iop_64HLtoV128,
+                            mkU64( 0x1F1F1F1F1F1F1F1F ),
+                            mkU64( 0x1F1F1F1F1F1F1F1F ) ),
+                     binop( Iop_AndV128, mkexpr( vC ),
+                            unop( Iop_Dup8x16, mkU8( 0x1F ) ) ) ) );
+      assign( a_perm,
+              binop( Iop_Perm8x16, mkexpr( vA ), mkexpr( vC_andF ) ) );
+      assign( b_perm,
+              binop( Iop_Perm8x16, mkexpr( vB ), mkexpr( vC_andF ) ) );
+      // mask[i8] = (vC[i8]_4 == 1) ? 0xFF : 0x0
+      assign( mask, binop(Iop_SarN8x16,
+                          binop( Iop_ShlN8x16, mkexpr( vC_andF ),
+                                 mkU8( 3 ) ), mkU8( 7 ) ) );
+      // dst = (a & ~mask) | (b & mask)
+      putVReg( vD_addr, binop( Iop_OrV128,
+                              binop( Iop_AndV128, mkexpr( a_perm ),
+                                    unop( Iop_NotV128, mkexpr( mask ) ) ),
+                              binop( Iop_AndV128, mkexpr( b_perm ),
+                                    mkexpr( mask ) ) ) );
       return True;
    }
 

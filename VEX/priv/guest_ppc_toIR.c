@@ -22319,15 +22319,17 @@ dis_vx_permute_misc( UInt theInstr, UInt opc2 )
       case 0x68: // xxperm  (VSX Permute )
       case 0xE8: // xxpermr (VSX Permute right-index )
       {
-         int i;
-         IRTemp new_Vt[17];
-         IRTemp perm_val[16];
-         IRTemp perm_val_gt16[16];
-         IRTemp tmp_val[16];
-         IRTemp perm_idx[16];
-         IRTemp perm_mask = newTemp( Ity_V128 );
-         IRTemp val_mask  = newTemp( Ity_V128 );
-         int    dest_shift_amount = 0;
+
+         /* The xxperm  instruction performs the same operation as
+            the vperm except the xxperm operates on the VSR register
+            file. while vperm operates on the VR register file.
+            Lets borrow some code here from vperm. The mapping of
+            the source registers is also a little different.
+         */
+         IRTemp a_perm  = newTemp(Ity_V128);
+         IRTemp b_perm  = newTemp(Ity_V128);
+         IRTemp mask    = newTemp(Ity_V128);
+         IRTemp perm_val = newTemp(Ity_V128);
 
          if ( opc2 == 0x68 ) {
             DIP("xxperm v%d,v%d,v%d\n", (UInt)XT, (UInt)XA, (UInt)XB);
@@ -22337,119 +22339,40 @@ dis_vx_permute_misc( UInt theInstr, UInt opc2 )
             DIP("xxpermr v%d,v%d,v%d\n", (UInt)XT, (UInt)XA, (UInt)XB);
          }
 
-         new_Vt[0] = newTemp( Ity_V128 );
-
          assign( vT, getVSReg( XT ) );
 
-         assign( new_Vt[0], binop( Iop_64HLtoV128,
-                                   mkU64( 0x0 ), mkU64( 0x0 ) ) );
-         assign( perm_mask, binop( Iop_64HLtoV128,
-                                   mkU64( 0x0 ), mkU64( 0x1F ) ) );
-         assign( val_mask, binop( Iop_64HLtoV128,
-                                  mkU64( 0x0 ), mkU64( 0xFF ) ) );
+         if ( opc2 == 0x68 ) // xxperm
+            assign( perm_val,
+                    binop( Iop_AndV128, mkexpr( vB ),
+                           unop( Iop_Dup8x16, mkU8( 0x1F ) ) ) );
 
-         /* For each permute index in XB, the permute list, select the byte
-          * from XA indexed by the permute index if the permute index is less
-          * then 16.  Copy the selected byte to the destination location in
-          * the result.
-          */
-         for ( i = 0; i < 16; i++ ) {
-            perm_val_gt16[i] = newTemp( Ity_V128 );
-            perm_val[i] = newTemp( Ity_V128 );
-            perm_idx[i] = newTemp( Ity_I8 );
-            tmp_val[i]  = newTemp( Ity_V128 );
-            new_Vt[i+1]  = newTemp( Ity_V128 );
+         else                // xxpermr
+            assign( perm_val,
+                    binop( Iop_Sub16x8,
+                           binop( Iop_64HLtoV128,
+                                  mkU64( 0x1F1F1F1F1F1F1F1F ),
+                                  mkU64( 0x1F1F1F1F1F1F1F1F ) ),
+                           binop( Iop_AndV128, mkexpr( vB ),
+                                  unop( Iop_Dup8x16, mkU8( 0x1F ) ) ) ) );
 
-            /* create mask to extract the permute index value from vB,
-             * store value in least significant bits of perm_val
-             */
-            if ( opc2 == 0x68 )
-               /* xxperm, the perm value is the index value in XB */
-               assign( perm_val[i], binop( Iop_ShrV128,
-                                           binop( Iop_AndV128,
-                                                  mkexpr(vB),
-                                                  binop( Iop_ShlV128,
-                                                         mkexpr( perm_mask ),
-                                                         mkU8( (15 - i) * 8 ) ) ),
-                                           mkU8( (15 - i) * 8 ) ) );
-
-            else
-               /* xxpermr, the perm value is 31 - index value in XB */
-               assign( perm_val[i],
-                       binop( Iop_Sub8x16,
-                              binop( Iop_64HLtoV128,
-                                     mkU64( 0 ), mkU64( 31 ) ),
-                              binop( Iop_ShrV128,
-                                     binop( Iop_AndV128,
-                                            mkexpr( vB ),
-                                            binop( Iop_ShlV128,
-                                                   mkexpr( perm_mask ),
-                                                   mkU8( ( 15 - i ) * 8 ) ) ),
-                                     mkU8( ( 15 - i ) * 8 ) ) ) );
-
-            /* Determine if the perm_val[] > 16.  If it is, then the value
-             * will come from xT otherwise it comes from xA.  Either way,
-             * create the mask to get the value from the source using the
-             * lower 3 bits of perm_val[].  Create a 128 bit mask from the
-             * upper bit of perm_val[] to be used to select from xT or xA.
-             */
-            assign( perm_val_gt16[i],
-                    binop(Iop_64HLtoV128,
-                          unop( Iop_1Sto64,
-                                unop( Iop_64to1,
-                                      unop( Iop_V128to64,
-                                            binop( Iop_ShrV128,
-                                                   mkexpr( perm_val[i] ),
-                                                   mkU8( 4 ) ) ) ) ),
-                          unop( Iop_1Sto64,
-                                unop( Iop_64to1,
-                                      unop( Iop_V128to64,
-                                            binop( Iop_ShrV128,
-                                                   mkexpr( perm_val[i] ),
-                                                   mkU8( 4 ) ) ) ) ) ) );
-
-            assign( perm_idx[i],
-                    unop(Iop_32to8,
-                         binop( Iop_Mul32,
-                                binop( Iop_Sub32,
-                                       mkU32( 15 ),
-                                       unop( Iop_64to32,
-                                             binop( Iop_And64,
-                                                  unop( Iop_V128to64,
-                                                       mkexpr( perm_val[i] ) ),
-                                                  mkU64( 0xF ) ) ) ),
-                                mkU32( 8 ) ) ) );
-
-            dest_shift_amount = ( 15 - i )*8;
-
-            /* Use perm_val_gt16 to select value from vA or vT */
-            assign( tmp_val[i],
-                    binop( Iop_ShlV128,
-                           binop( Iop_ShrV128,
-                                  binop( Iop_OrV128,
-                                         binop( Iop_AndV128,
-                                                mkexpr( vA ),
-                                                binop( Iop_AndV128,
-                                                       unop( Iop_NotV128,
-                                                             mkexpr( perm_val_gt16[i] ) ),
-                                                       binop( Iop_ShlV128,
-                                                              mkexpr( val_mask ),
-                                                              mkexpr( perm_idx[i] ) ) ) ),
-                                         binop( Iop_AndV128,
-                                                mkexpr( vT ),
-                                                binop( Iop_AndV128,
-                                                       mkexpr( perm_val_gt16[i] ),
-                                                       binop( Iop_ShlV128,
-                                                              mkexpr( val_mask ),
-                                                              mkexpr( perm_idx[i] ) ) ) ) ),
-                                  mkexpr( perm_idx[i] ) ),
-                           mkU8( dest_shift_amount ) ) );
-
-            assign( new_Vt[i+1], binop( Iop_OrV128,
-                                       mkexpr( tmp_val[i] ),
-                                       mkexpr( new_Vt[i] ) ) );
-         }
-         putVSReg( XT, mkexpr( new_Vt[16] ) );
+         /* Limit the Perm8x16 steering values to 0 .. 31 as that is what
+            IR specifies, and also to hide irrelevant bits from
+            memcheck.
+         */
+         assign( a_perm,
+                 binop( Iop_Perm8x16, mkexpr( vA ), mkexpr( perm_val ) ) );
+         assign( b_perm,
+                 binop( Iop_Perm8x16, mkexpr( vT ), mkexpr( perm_val ) ) );
+         assign( mask, binop( Iop_SarN8x16,
+                              binop( Iop_ShlN8x16, mkexpr( perm_val ),
+                                     mkU8( 3 ) ),
+                              mkU8( 7 ) ) );
+         // dst = (a & ~mask) | (b & mask)
+         putVSReg( XT, binop( Iop_OrV128,
+                              binop( Iop_AndV128, mkexpr( a_perm ),
+                                     unop( Iop_NotV128, mkexpr( mask ) ) ),
+                              binop( Iop_AndV128, mkexpr( b_perm ),
+                                     mkexpr( mask ) ) ) );
          break;
       }
 

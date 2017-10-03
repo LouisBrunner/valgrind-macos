@@ -60,6 +60,7 @@ where XXXXXX is the bug number as listed below.
 n-i-bz  Fix missing workq_ops operations (macOS)
 385182  PPC64 is missing support for the DSCR
 385207  PPC64, generate_store_FPRF() generates too many Iops
+385208  PPC64, xxperm instruction exhausts temporary memory
 
 Release 3.13.0 (15 June 2017)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -24047,12 +24047,12 @@ static Bool dis_av_permute ( UInt theInstr )
       IRTemp vC_andF = newTemp(Ity_V128);
       DIP("vperm v%d,v%d,v%d,v%d\n",
           vD_addr, vA_addr, vB_addr, vC_addr);
-      /* Limit the Perm8x16 steering values to 0 .. 15 as that is what
+      /* Limit the Perm8x16 steering values to 0 .. 31 as that is what
          IR specifies, and also to hide irrelevant bits from
          memcheck */
       assign( vC_andF,
               binop(Iop_AndV128, mkexpr(vC),
-                                 unop(Iop_Dup8x16, mkU8(0xF))) );
+                                 unop(Iop_Dup8x16, mkU8(0x1F))) );
       assign( a_perm,
               binop(Iop_Perm8x16, mkexpr(vA), mkexpr(vC_andF)) );
       assign( b_perm,

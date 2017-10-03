@@ -156,6 +156,7 @@ extern ULong convert_to_zoned_helper( ULong src_hi, ULong src_low,
 extern ULong convert_to_national_helper( ULong src, ULong return_upper );
 extern ULong convert_from_zoned_helper( ULong src_hi, ULong src_low );
 extern ULong convert_from_national_helper( ULong src_hi, ULong src_low );
+extern ULong generate_C_FPCC_helper( ULong size, ULong src_hi, ULong src );
 
 
 /* --- DIRTY HELPERS --- */

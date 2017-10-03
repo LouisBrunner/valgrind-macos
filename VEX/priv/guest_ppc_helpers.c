@@ -216,6 +216,110 @@ IRExpr* guest_ppc64_spechelper ( const HChar* function_name,
 }
 
 
+/* 16-bit floating point number is stored in the lower 16-bits of 32-bit value */
+#define I16_EXP_MASK       0x7C00
+#define I16_FRACTION_MASK  0x03FF
+#define I32_EXP_MASK       0x7F800000
+#define I32_FRACTION_MASK  0x007FFFFF
+#define I64_EXP_MASK       0x7FF0000000000000ULL
+#define I64_FRACTION_MASK  0x000FFFFFFFFFFFFFULL
+#define V128_EXP_MASK      0x7FFF000000000000ULL
+#define V128_FRACTION_MASK 0x0000FFFFFFFFFFFFULL  /* upper 64-bit fractional mask */
+
+ULong generate_C_FPCC_helper( ULong irType, ULong src_hi, ULong src )
+{
+   UInt NaN, inf, zero, norm, dnorm, pos;
+   UInt bit0, bit1, bit2, bit3;
+   UInt sign_bit = 0;
+   ULong exp_mask = 0, exp_part = 0, frac_part = 0;
+   ULong fpcc, c;
+
+   if ( irType == Ity_I16 ) {
+      frac_part = I16_FRACTION_MASK & src;
+      exp_mask = I16_EXP_MASK;
+      exp_part = exp_mask & src;
+      sign_bit = src >> 15;
+
+   } else if ( irType == Ity_I32 ) {
+      frac_part = I32_FRACTION_MASK & src;
+      exp_mask = I32_EXP_MASK;
+      exp_part = exp_mask & src;
+      sign_bit = src >> 31;
+
+   } else  if ( irType == Ity_I64 ) {
+     frac_part = I64_FRACTION_MASK & src;
+     exp_mask = I64_EXP_MASK;
+     exp_part = exp_mask & src;
+     sign_bit = src >> 63;
+
+   } else  if ( irType == Ity_F128 ) {
+     /* only care if the frac part is zero or non-zero */
+     frac_part = (V128_FRACTION_MASK & src_hi) | src;
+     exp_mask = V128_EXP_MASK;
+     exp_part = exp_mask & src_hi;
+     sign_bit = src_hi >> 63;
+   } else {
+     vassert(0);  // Unknown value of irType
+   }
+
+   /* NaN: exponene is all ones, fractional part not zero */
+   if ((exp_part == exp_mask) && (frac_part != 0))
+     NaN = 1;
+   else
+     NaN = 0;
+
+   /* inf: exponent all 1's, fraction part is zero */
+   if ((exp_part == exp_mask) && (frac_part == 0))
+     inf = 1;
+   else
+     inf = 0;
+
+   /* zero: exponent is 0, fraction part is zero */
+   if ((exp_part == 0) && (frac_part == 0))
+     zero = 1;
+   else
+     zero = 0;
+
+   /* norm: exponent is not 0, exponent is not all 1's */
+   if ((exp_part != 0) && (exp_part != exp_mask))
+     norm = 1;
+   else
+     norm = 0;
+
+   /* dnorm: exponent is all 0's, fraction is not 0 */
+   if ((exp_part == 0) && (frac_part != 0))
+     dnorm = 1;
+   else
+     dnorm = 0;
+
+   /* pos: MSB is 1 */
+   if (sign_bit == 0)
+     pos = 1;
+   else
+     pos = 0;
+
+   /* calculate FPCC */
+   /* If the result is NaN then must force bits 1, 2 and 3 to zero
+    * to get correct result.
+    */
+   bit0 = NaN | inf;
+
+   bit1 = (!NaN) & zero;
+   bit2 =  (!NaN) & ((pos & dnorm) | (pos & norm) | (pos & inf))
+      & ((!zero) & (!NaN));
+   bit3 =  (!NaN) & (((!pos) & dnorm) |((!pos) & norm) | ((!pos) & inf))
+      & ((!zero) & (!NaN));
+
+   fpcc = (bit3 << 3) | (bit2 << 2) | (bit1 << 1) | bit0;
+
+   /* calculate C */
+   c = NaN | ((!pos) & dnorm) | ((!pos) & zero) | (pos & dnorm);
+
+   /* return C in the upper 32-bits and FPCC in the lower 32 bits */
+   return (c <<32) | fpcc;
+}
+
+
 /*---------------------------------------------------------------*/
 /*--- Misc BCD clean helpers.                                 ---*/
 /*---------------------------------------------------------------*/

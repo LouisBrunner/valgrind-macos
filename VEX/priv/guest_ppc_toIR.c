@@ -3860,7 +3860,7 @@ static IRExpr * is_Denorm( IRType size, IRTemp src )
 
    setup_value_check_args( size, &exp_mask, &frac_mask, &zero );
 
-   /* check exponent is all ones, i.e. (exp AND exp_mask) = exp_mask */
+   /* check exponent is all zeros */
    zero_exp = exponent_compare( size, src, exp_mask, mkexpr( zero ) );
 
    /* check fractional part is not zero */
@@ -3871,8 +3871,11 @@ static IRExpr * is_Denorm( IRType size, IRTemp src )
    return  mkAND1( zero_exp, not_zero_frac );
 }
 
+#if 0
 /* Normalized number has exponent between 1 and max_exp -1, or in other words
    the exponent is not zero and not equal to the max exponent value. */
+ Currently not needed since generate_C_FPCC is now done with a C helper.
+ Keep it around, might be useful in the future.
 static IRExpr * is_Norm( IRType size, IRTemp src )
 {
    IRExpr *not_zero_exp, *not_max_exp;
@@ -3919,72 +3922,18 @@ static IRExpr * is_Norm( IRType size, IRTemp src )
 
    return  mkAND1( not_zero_exp, not_max_exp );
 }
+#endif
 
-
-static IRExpr * create_FPCC( IRTemp NaN,   IRTemp inf,
-                             IRTemp zero,  IRTemp norm,
-                             IRTemp dnorm, IRTemp pos,
-                             IRTemp neg ) {
-   IRExpr *bit0, *bit1, *bit2, *bit3;
-
-   /* If the result is NaN then must force bits 1, 2 and 3 to zero
-    * to get correct result.
-    */
-   bit0 = unop( Iop_1Uto32, mkOR1( mkexpr( NaN ), mkexpr( inf ) ) );
-   bit1 = unop( Iop_1Uto32, mkAND1( mkNOT1( mkexpr( NaN ) ), mkexpr( zero ) ) );
-   bit2 = unop( Iop_1Uto32,
-                mkAND1( mkNOT1( mkexpr( NaN ) ),
-                        mkAND1( mkOR1( mkOR1( mkAND1( mkexpr( pos ),
-                                                      mkexpr( dnorm ) ),
-                                              mkAND1( mkexpr( pos ),
-                                                      mkexpr( norm ) ) ),
-                                       mkAND1( mkexpr( pos ),
-                                               mkexpr( inf ) ) ),
-                                mkAND1( mkNOT1 ( mkexpr( zero ) ),
-                                        mkNOT1( mkexpr( NaN ) ) ) ) ) );
-   bit3 = unop( Iop_1Uto32,
-                mkAND1( mkNOT1( mkexpr( NaN ) ),
-                        mkAND1( mkOR1( mkOR1( mkAND1( mkexpr( neg ),
-                                                      mkexpr( dnorm ) ),
-                                              mkAND1( mkexpr( neg ),
-                                                      mkexpr( norm ) ) ),
-                                       mkAND1( mkexpr( neg ),
-                                               mkexpr( inf ) ) ),
-                                mkAND1( mkNOT1 ( mkexpr( zero ) ),
-                                        mkNOT1( mkexpr( NaN ) ) ) ) ) );
-
-   return binop( Iop_Or32,
-                 binop( Iop_Or32,
-                        bit0,
-                        binop( Iop_Shl32, bit1, mkU8( 1 ) ) ),
-                 binop( Iop_Or32,
-                        binop( Iop_Shl32, bit2, mkU8( 2 ) ),
-                        binop( Iop_Shl32, bit3, mkU8( 3 ) ) ) );
-}
-
-static IRExpr * create_C( IRTemp NaN,   IRTemp zero,
-                          IRTemp dnorm, IRTemp pos,
-                          IRTemp neg )
+static void generate_store_FPRF( IRType size, IRTemp src,
+				 const VexAbiInfo* vbi )
 {
 
-   return unop( Iop_1Uto32,
-                mkOR1( mkOR1( mkexpr( NaN ),
-                              mkAND1( mkexpr( neg ), mkexpr( dnorm ) ) ),
-                       mkOR1( mkAND1( mkexpr( neg ), mkexpr( zero ) ),
-                              mkAND1( mkexpr( pos ), mkexpr( dnorm ) ) ) ) );
-}
+  /* This function was originally written using IR code.  It has been
+   * replaced with a clean helper due to the large amount of IR code
+   * needed by this function.
+   */
 
-static void generate_store_FPRF( IRType size, IRTemp src )
-{
-   IRExpr *FPCC, *C;
-   IRTemp NaN = newTemp( Ity_I1 ), inf = newTemp( Ity_I1 );
-   IRTemp dnorm = newTemp( Ity_I1 ), norm = newTemp( Ity_I1 );
-   IRTemp pos = newTemp( Ity_I1 ),  neg = newTemp( Ity_I1 );
-   IRTemp zero = newTemp( Ity_I1 );
-
-   IRTemp sign_bit = newTemp( Ity_I1 );
-   IRTemp value;
-
+   IRTemp tmp = newTemp( Ity_I64 );
    vassert( ( size == Ity_I16 ) || ( size == Ity_I32 )
             || ( size == Ity_I64 ) || ( size == Ity_F128 ) );
 
@@ -3993,82 +3942,45 @@ static void generate_store_FPRF( IRType size, IRTemp src )
             || ( typeOfIRExpr(irsb->tyenv, mkexpr( src ) ) == Ity_F128 ) );
 
    if( size == Ity_I16 ) {
-      /* The 16-bit floating point value is in the lower 16-bits of
-         the 32-bit input value */
-      value = newTemp( Ity_I32 );
-      assign( value, mkexpr( src ) );
-      assign( sign_bit,
-              unop ( Iop_32to1,
-                     binop( Iop_And32,
-                            binop( Iop_Shr32, mkexpr( value ), mkU8( 15 ) ),
-                            mkU32( 0x1 ) ) ) );
-
+      assign( tmp,
+              mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                             "generate_store_C_FPCC_helper",
+                             fnptr_to_fnentry( vbi, &generate_C_FPCC_helper ),
+                             mkIRExprVec_3( mkU64( size ), mkU64( 0 ),
+                                            mkexpr( src ) ) ) );
    } else if( size == Ity_I32 ) {
-      value = newTemp( size );
-      assign( value, mkexpr( src ) );
-      assign( sign_bit,
-              unop ( Iop_32to1,
-                     binop( Iop_And32,
-                            binop( Iop_Shr32, mkexpr( value ), mkU8( 31 ) ),
-                            mkU32( 0x1 ) ) ) );
-
+      assign( tmp,
+              mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                             "generate_store_C_FPCC_helper",
+                             fnptr_to_fnentry( vbi, &generate_C_FPCC_helper ),
+                             mkIRExprVec_3( mkU64( size ), mkU64( 0 ),
+                                            mkexpr( src ) ) ) );
    } else if( size == Ity_I64 ) {
-      value = newTemp( size );
-      assign( value, mkexpr( src ) );
-      assign( sign_bit,
-              unop ( Iop_64to1,
-                     binop( Iop_And64,
-                            binop( Iop_Shr64, mkexpr( value ), mkU8( 63 ) ),
-                            mkU64( 0x1 ) ) ) );
-
-   } else {
-   /* Move the F128 bit pattern to an integer V128 bit pattern */
-      value = newTemp( Ity_V128 );
-      assign( value,
-              binop( Iop_64HLtoV128,
-                     unop( Iop_ReinterpF64asI64,
-                           unop( Iop_F128HItoF64, mkexpr( src ) ) ),
-                     unop( Iop_ReinterpF64asI64,
-                           unop( Iop_F128LOtoF64, mkexpr( src ) ) ) ) );
-
-      size = Ity_V128;
-      assign( sign_bit,
-              unop ( Iop_64to1,
-                     binop( Iop_And64,
-                            binop( Iop_Shr64,
-                                   unop( Iop_V128HIto64, mkexpr( value ) ),
-                                   mkU8( 63 ) ),
-                            mkU64( 0x1 ) ) ) );
+      assign( tmp,
+              mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                             "generate_store_C_FPCC_helper",
+                             fnptr_to_fnentry( vbi, &generate_C_FPCC_helper ),
+                             mkIRExprVec_3( mkU64( size ), mkU64( 0 ),
+                                            mkexpr( src ) ) ) );
+   } else if( size == Ity_F128 ) {
+      assign( tmp,
+              mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                             "generate_store_C_FPCC_helper",
+                             fnptr_to_fnentry( vbi, &generate_C_FPCC_helper ),
+                             mkIRExprVec_3( mkU64( size ),
+                                            unop( Iop_ReinterpF64asI64,
+                                                  unop( Iop_F128HItoF64,
+                                                        mkexpr( src ) ) ),
+                                            unop( Iop_ReinterpF64asI64,
+                                                  unop( Iop_F128LOtoF64,
+                                                        mkexpr( src ) ) ) ) ) );
    }
 
-   /* Calculate the floating point result field FPRF */
-   assign( NaN, is_NaN( size, value ) );
-   assign( inf, is_Inf( size, value ) );
-   assign( zero, is_Zero( size, value ) );
-   assign( norm, is_Norm( size, value ) );
-   assign( dnorm, is_Denorm( size, value ) );
-   assign( pos, mkAND1( mkNOT1( mkexpr( sign_bit ) ), mkU1( 1 ) ) );
-   assign( neg, mkAND1( mkexpr( sign_bit ), mkU1( 1 ) ) );
-
-   /* create the FPRF bit field
-    *
-    *   FPRF field[4:0]   type of value
-    *      10001           QNaN
-    *      01001           - infininity
-    *      01000           - Normalized
-    *      11000           - Denormalized
-    *      10010           - zero
-    *      00010           + zero
-    *      10100           + Denormalized
-    *      00100           + Normalized
-    *      00101           + infinity
+   /* C is in the upper 32-bits, FPCC is in the lower 32-bits of the
+    * value returned by the helper function
     */
-   FPCC = create_FPCC( NaN, inf, zero, norm, dnorm, pos, neg );
-   C = create_C( NaN, zero, dnorm, pos, neg );
-
-   /* Write the C and FPCC fields of the FPRF field */
-   putC( C );
-   putFPCC( FPCC );
+   putC( unop(  Iop_64HIto32, mkexpr( tmp) ) );
+   putFPCC( unop(  Iop_64to32, mkexpr( tmp) ) );
 }
 
 /* This function takes an Ity_I32 input argument interpreted
@@ -18538,7 +18450,8 @@ dis_vvec_cmp( UInt theInstr, UInt opc2 )
  * Miscellaneous VSX Scalar Instructions
  */
 static Bool
-dis_vxs_misc( UInt theInstr, UInt opc2, int allow_isa_3_0 )
+dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
+              int allow_isa_3_0 )
 {
 #define VG_PPC_SIGN_MASK 0x7fffffffffffffffULL
    /* XX3-Form and XX2-Form */
@@ -18783,7 +18696,7 @@ dis_vxs_misc( UInt theInstr, UInt opc2, int allow_isa_3_0 )
             putVSReg( XT, mkexpr( result ) );
 
             assign( value, unop( Iop_V128HIto64, mkexpr( result ) ) );
-            generate_store_FPRF( Ity_I64, value );
+            generate_store_FPRF( Ity_I64, value, vbi );
             return True;
 
          } else if (inst_select == 17) {   // xscvdphp
@@ -18798,7 +18711,7 @@ dis_vxs_misc( UInt theInstr, UInt opc2, int allow_isa_3_0 )
             assign( value, unop( Iop_64to32, unop( Iop_V128HIto64,
                                                    mkexpr( result ) ) ) );
             putVSReg( XT, mkexpr( result ) );
-            generate_store_FPRF( Ity_I16, value );
+            generate_store_FPRF( Ity_I16, value, vbi );
             return True;
 
          } else {
@@ -21475,7 +21388,7 @@ dis_vx_store ( UInt theInstr )
 }
 
 static Bool
-dis_vx_Scalar_Round_to_quad_integer( UInt theInstr )
+dis_vx_Scalar_Round_to_quad_integer( UInt theInstr, const VexAbiInfo* vbi )
 {
    /* The ISA 3.0 instructions supported in this function require
     * the underlying hardware platform that supports the ISA3.0
@@ -21514,7 +21427,7 @@ dis_vx_Scalar_Round_to_quad_integer( UInt theInstr )
             DIP("xsrqpix %d,v%d,v%d,%d\n", R, vT_addr, vB_addr, RMC);
             assign( vT, binop( Iop_F128toI128S, rm, mkexpr( vB ) ) );
          }
-         generate_store_FPRF( Ity_F128, vT );
+         generate_store_FPRF( Ity_F128, vT, vbi );
       }   /* case 0x005 */
       break;
    case 0x025:     // xsrqpxp  VSX Scalar Round Quad-Precision to
@@ -21530,7 +21443,7 @@ dis_vx_Scalar_Round_to_quad_integer( UInt theInstr )
 
         DIP("xsrqpxp %d,v%d,v%d,%d\n",  R, vT_addr, vB_addr, RMC);
          assign( vT, binop( Iop_RndF128, rm, mkexpr( vB ) ) );
-         generate_store_FPRF( Ity_F128, vT );
+         generate_store_FPRF( Ity_F128, vT, vbi );
       }   /* case 0x025 */
      break;
    default:
@@ -21542,7 +21455,8 @@ dis_vx_Scalar_Round_to_quad_integer( UInt theInstr )
 }
 
 static Bool
-dis_vx_Floating_Point_Arithmetic_quad_precision( UInt theInstr )
+dis_vx_Floating_Point_Arithmetic_quad_precision( UInt theInstr,
+                                                 const VexAbiInfo* vbi )
 {
    /* The ISA 3.0 instructions supported in this function require
     * the underlying hardware platform that supports the ISA 3.0
@@ -21582,7 +21496,7 @@ dis_vx_Floating_Point_Arithmetic_quad_precision( UInt theInstr )
             assign( vT, triop( Iop_AddF128, set_round_to_Oddmode(),
                                mkexpr( vA ), mkexpr( vB ) ) );
          }
-         generate_store_FPRF( Ity_F128, vT );
+         generate_store_FPRF( Ity_F128, vT, vbi );
          break;
       }
    case 0x024:     // xsmulqp (VSX Scalar Multiply Quad-Precision[using round to Odd])
@@ -21600,7 +21514,7 @@ dis_vx_Floating_Point_Arithmetic_quad_precision( UInt theInstr )
             assign( vT, triop( Iop_MulF128, set_round_to_Oddmode(), mkexpr( vA ),
                                mkexpr( vB ) ) );
          }
-         generate_store_FPRF( Ity_F128, vT );
+         generate_store_FPRF( Ity_F128, vT, vbi );
          break;
       }
    case 0x184:   // xsmaddqp (VSX Scalar Multiply add Quad-Precision[using round to Odd])
@@ -21625,7 +21539,7 @@ dis_vx_Floating_Point_Arithmetic_quad_precision( UInt theInstr )
                qop( Iop_MAddF128, set_round_to_Oddmode(), mkexpr( vA ),
                     mkexpr( vC ), mkexpr( vB ) ) );
          }
-         generate_store_FPRF( Ity_F128, vT );
+         generate_store_FPRF( Ity_F128, vT, vbi );
          break;
       }
    case 0x1A4:   // xsmsubqp (VSX Scalar Multiply Subtract Quad-Precision[using round to Odd])
@@ -21649,7 +21563,7 @@ dis_vx_Floating_Point_Arithmetic_quad_precision( UInt theInstr )
                     qop( Iop_MSubF128, set_round_to_Oddmode(),
                          mkexpr( vA ), mkexpr( vC ), mkexpr( vB ) ) );
          }
-         generate_store_FPRF( Ity_F128, vT );
+         generate_store_FPRF( Ity_F128, vT, vbi );
          break;
       }
    case 0x1C4:   // xsnmaddqp (VSX Scalar Negative Multiply Add Quad-Precision[using round to Odd])
@@ -21673,7 +21587,7 @@ dis_vx_Floating_Point_Arithmetic_quad_precision( UInt theInstr )
                     qop( Iop_NegMAddF128, set_round_to_Oddmode(),
                          mkexpr( vA ), mkexpr( vC ), mkexpr( vB ) ) );
          }
-         generate_store_FPRF( Ity_F128, vT );
+         generate_store_FPRF( Ity_F128, vT, vbi );
         break;
       }
    case 0x1E4:   // xsmsubqp (VSX Scalar Negatve Multiply Subtract Quad-Precision[using round to Odd])
@@ -21697,7 +21611,7 @@ dis_vx_Floating_Point_Arithmetic_quad_precision( UInt theInstr )
                     qop( Iop_NegMSubF128, set_round_to_Oddmode(),
                          mkexpr( vA ), mkexpr( vC ), mkexpr( vB ) ) );
          }
-         generate_store_FPRF( Ity_F128, vT );
+         generate_store_FPRF( Ity_F128, vT, vbi );
          break;
       }
    case 0x204:     // xssubqp (VSX Scalar Subtract Quad-Precision[using round to Odd])
@@ -21714,7 +21628,7 @@ dis_vx_Floating_Point_Arithmetic_quad_precision( UInt theInstr )
             assign( vT, triop( Iop_SubF128, set_round_to_Oddmode(), mkexpr( vA ),
                                mkexpr( vB ) ) );
          }
-         generate_store_FPRF( Ity_F128, vT );
+         generate_store_FPRF( Ity_F128, vT, vbi );
         break;
       }
    case 0x224:     // xsdivqp (VSX Scalar Divide Quad-Precision[using round to Odd])
@@ -21731,7 +21645,7 @@ dis_vx_Floating_Point_Arithmetic_quad_precision( UInt theInstr )
             assign( vT, triop( Iop_DivF128, set_round_to_Oddmode(), mkexpr( vA ),
                                mkexpr( vB ) ) );
          }
-         generate_store_FPRF( Ity_F128, vT );
+         generate_store_FPRF( Ity_F128, vT, vbi );
          break;
       }
    case 0x324:  // xssqrtqp (VSX Scalar Square root Quad-Precision[using round to Odd])
@@ -21752,7 +21666,7 @@ dis_vx_Floating_Point_Arithmetic_quad_precision( UInt theInstr )
                   assign( vT, binop( Iop_SqrtF128, set_round_to_Oddmode(),
                                      mkexpr( vB ) ) );
                }
-               generate_store_FPRF( Ity_F128, vT );
+               generate_store_FPRF( Ity_F128, vT, vbi );
                break;
             }   /* end case 27 */
          default:
@@ -21783,7 +21697,7 @@ dis_vx_Floating_Point_Arithmetic_quad_precision( UInt theInstr )
                assign( tmp, unop( Iop_ReinterpF64asI64,
                                   unop( Iop_F128HItoF64, mkexpr( vB ) ) ) );
                assign( vT, unop( Iop_I64UtoF128, mkexpr( tmp ) ) );
-               generate_store_FPRF( Ity_F128, vT );
+               generate_store_FPRF( Ity_F128, vT, vbi );
                break;
             }
          case 9:    // xsvqpswz  VSX Scalar Truncate & Convert Quad-Precision
@@ -21803,7 +21717,7 @@ dis_vx_Floating_Point_Arithmetic_quad_precision( UInt theInstr )
                assign( tmp, unop( Iop_ReinterpF64asI64,
                                   unop( Iop_F128HItoF64, mkexpr( vB ) ) ) );
                assign( vT, unop( Iop_I64StoF128, mkexpr( tmp ) ) );
-               generate_store_FPRF( Ity_F128, vT );
+               generate_store_FPRF( Ity_F128, vT, vbi );
                break;
             }
         case 17:    // xsvqpudz  VSX Scalar Truncate & Convert Quad-Precision
@@ -21855,7 +21769,7 @@ dis_vx_Floating_Point_Arithmetic_quad_precision( UInt theInstr )
                assign( tmp, unop( Iop_ReinterpF64asI64,
                                   unop( Iop_F128HItoF64, mkexpr( vT ) ) ) );
 
-               generate_store_FPRF( Ity_I64, tmp );
+               generate_store_FPRF( Ity_I64, tmp, vbi );
                break;
             }
          case 22:    // xscvdpqp VSX Scalar Convert from Double-Precision
@@ -21866,7 +21780,7 @@ dis_vx_Floating_Point_Arithmetic_quad_precision( UInt theInstr )
                assign( vT, unop( Iop_F64toF128,
                                  unop( Iop_F128HItoF64, mkexpr( vB ) ) ) );
 
-               generate_store_FPRF( Ity_F128, vT );
+               generate_store_FPRF( Ity_F128, vT, vbi );
                break;
             }
          case 25:    // xsvqpsdz  VSX Scalar Truncate & Convert Quad-Precision
@@ -28199,13 +28113,13 @@ DisResult disInstr_PPC_WRK (
       UInt vsxOpc2;
 
       if (( opc2hi == 13 ) && ( opc2lo == 5)) { //xvtstdcsp
-         if (dis_vxs_misc(theInstr, 0x354, allow_isa_3_0))
+         if (dis_vxs_misc(theInstr, abiinfo, 0x354, allow_isa_3_0))
             goto decode_success;
          goto decode_failure;
       }
 
       if (( opc2hi == 15 ) && ( opc2lo == 5)) { //xvtstdcdp
-         if (dis_vxs_misc(theInstr, 0x3D4, allow_isa_3_0))
+         if (dis_vxs_misc(theInstr, abiinfo, 0x3D4, allow_isa_3_0))
                goto decode_success;
             goto decode_failure;
       }
@@ -28221,7 +28135,7 @@ DisResult disInstr_PPC_WRK (
          /* This is a special case of the XX1 form where the  RA, RB
           * fields hold an immediate value.
           */
-         if (dis_vxs_misc(theInstr, opc2, allow_isa_3_0)) goto decode_success;
+      if (dis_vxs_misc(theInstr, abiinfo, opc2, allow_isa_3_0)) goto decode_success;
          goto decode_failure;
       }
 
@@ -28231,7 +28145,8 @@ DisResult disInstr_PPC_WRK (
          case 0x8: case 0x28: case 0x48: case 0xc8: // xxsldwi, xxpermdi, xxmrghw, xxmrglw
          case 0x068: case 0xE8:  // xxperm, xxpermr
          case 0x018: case 0x148: // xxsel, xxspltw
-            if (dis_vx_permute_misc(theInstr, vsxOpc2)) goto decode_success;
+            if (dis_vx_permute_misc(theInstr, vsxOpc2 ))
+	       goto decode_success;
             goto decode_failure;
          case 0x268: case 0x248: case 0x288: // xxlxor, xxlor, xxlnor,
          case 0x208: case 0x228: case 0x2A8: // xxland, xxlandc, xxlorc
@@ -28255,7 +28170,7 @@ DisResult disInstr_PPC_WRK (
          case 0x354:             // xvtstdcsp
          case 0x360:case 0x396:  // xviexpsp, xsiexpdp
          case 0x3D4: case 0x3E0: // xvtstdcdp, xviexpdp
-            if (dis_vxs_misc(theInstr, vsxOpc2, allow_isa_3_0))
+            if (dis_vxs_misc(theInstr, abiinfo, vsxOpc2, allow_isa_3_0))
                goto decode_success;
             goto decode_failure;
          case 0x08C: case 0x0AC: // xscmpudp, xscmpodp
@@ -28409,7 +28324,7 @@ DisResult disInstr_PPC_WRK (
       case 0x5: // xsrqpi, xsrqpix
       case 0x25: // xsrqpxp
          if ( !mode64 || !allow_isa_3_0 ) goto decode_failure;
-         if ( dis_vx_Scalar_Round_to_quad_integer( theInstr ) )
+         if ( dis_vx_Scalar_Round_to_quad_integer( theInstr, abiinfo ) )
             goto decode_success;
          goto decode_failure;
       default:
@@ -28531,7 +28446,8 @@ DisResult disInstr_PPC_WRK (
 
       case 0x324: // xsabsqp, xsxexpqp,xsnabsqp, xsnegqp, xsxsigqp
          if ( inst_select == 27 ) {    // xssqrtqp
-            if ( dis_vx_Floating_Point_Arithmetic_quad_precision( theInstr ) )
+            if ( dis_vx_Floating_Point_Arithmetic_quad_precision( theInstr,
+								  abiinfo ) )
                goto decode_success;
          }
 
@@ -28566,7 +28482,8 @@ DisResult disInstr_PPC_WRK (
       case 0x344: // xscvudqp, xscvsdqp, xscvqpdp, xscvqpdpo, xsvqpdp
                   // xscvqpswz, xscvqpuwz, xscvqpudz, xscvqpsdz
          if ( !mode64 || !allow_isa_3_0 ) goto decode_failure;
-         if ( dis_vx_Floating_Point_Arithmetic_quad_precision( theInstr ) )
+         if ( dis_vx_Floating_Point_Arithmetic_quad_precision( theInstr,
+							       abiinfo ) )
             goto decode_success;
          goto decode_failure;
 

@@ -252,8 +252,8 @@ typedef
       /* 1388 */ ULong guest_PPR;       // Program Priority register
       /* 1396 */ UInt  guest_TEXASRU;   // Transaction EXception And Summary Register Upper
       /* 1400 */ UInt  guest_PSPB;      // Problem State Priority Boost register
+      /* 1404 */ ULong guest_DSCR;      // Data Stream Control register
       /* Padding to make it have an 16-aligned size */
-      /* 1404 */ UInt  padding2;
       /* 1408 */ UInt  padding3;
       /* 1412 */ UInt  padding4;
    }

@@ -296,6 +296,7 @@ static Bool OV32_CA32_supported = False;
 #define OFFB_TFIAR       offsetofPPCGuestState(guest_TFIAR)
 #define OFFB_PPR         offsetofPPCGuestState(guest_PPR)
 #define OFFB_PSPB        offsetofPPCGuestState(guest_PSPB)
+#define OFFB_DSCR        offsetofPPCGuestState(guest_DSCR)
 
 
 /*------------------------------------------------------------*/
@@ -459,6 +460,7 @@ typedef enum {
                       * automatically decrement. Could be added later if
                       * needed.
                       */
+    PPC_GST_DSCR,     // Data Stream Control Register
     PPC_GST_MAX
 } PPC_GST;
 
@@ -3068,6 +3070,9 @@ static IRExpr* /* :: Ity_I32/64 */ getGST ( PPC_GST reg )
    case PPC_GST_PSPB:
       return IRExpr_Get( OFFB_PSPB, ty );
 
+   case PPC_GST_DSCR:
+      return IRExpr_Get( OFFB_DSCR, ty );
+
    default:
       vex_printf("getGST(ppc): reg = %u", reg);
       vpanic("getGST(ppc)");
@@ -3344,6 +3349,11 @@ static void putGST ( PPC_GST reg, IRExpr* src )
                                           mkU64( 0x1C000000000000) ) ) );
       break;
       }
+   case PPC_GST_DSCR:
+      vassert( ty_src == Ity_I64 );
+      stmt( IRStmt_Put( OFFB_DSCR, src ) );
+      break;
+
    default:
       vex_printf("putGST(ppc): reg = %u", reg);
       vpanic("putGST(ppc)");
@@ -9407,6 +9417,10 @@ static Bool dis_proc_ctl ( const VexAbiInfo* vbi, UInt theInstr )
          putIReg( rD_addr, mkWidenFrom32(ty, getGST( PPC_GST_XER ),
                                          /* Signed */False) );
          break;
+      case 0x3:  // 131
+         DIP("mfspr r%u (DSCR)\n", rD_addr);
+         putIReg( rD_addr, getGST( PPC_GST_DSCR) );
+         break;
       case 0x8:
          DIP("mflr r%u\n", rD_addr);
          putIReg( rD_addr, getGST( PPC_GST_LR ) ); 
@@ -9574,6 +9588,10 @@ static Bool dis_proc_ctl ( const VexAbiInfo* vbi, UInt theInstr )
       case 0x1:
          DIP("mtxer r%u\n", rS_addr);
          putGST( PPC_GST_XER, mkNarrowTo32(ty, mkexpr(rS)) );
+         break;
+      case 0x3:
+         DIP("mtspr r%u (DSCR)\n", rS_addr);
+         putGST( PPC_GST_DSCR, mkexpr(rS) );
          break;
       case 0x8:
          DIP("mtlr r%u\n", rS_addr);

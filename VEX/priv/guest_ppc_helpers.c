@@ -921,6 +921,7 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
    vex_state->guest_TEXASR = 0;
    vex_state->guest_PPR = 0x4ULL << 50;  // medium priority
    vex_state->guest_PSPB = 0x100;  // an arbitrary non-zero value to start with
+   vex_state->guest_DSCR = 0;
 }
 
 

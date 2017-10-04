@@ -1172,8 +1172,28 @@ static void test_xscmpexpdp(void) {
    };
 }
 
-static test_list_t testgroup_vector_scalar_compare_exp_double[] = {
+static void test_xscmpeqdp(void) {
+   __asm__ __volatile__ ("xscmpeqdp   %x0, %x1, %x2 " : "+wa" (vec_xt): "ww" (vec_xa), "ww" (vec_xb));
+}
+
+static void test_xscmpgtdp(void) {
+   __asm__ __volatile__ ("xscmpgtdp   %x0, %x1, %x2 " : "+wa" (vec_xt): "ww" (vec_xa), "ww" (vec_xb));
+}
+
+static void test_xscmpgedp(void) {
+   __asm__ __volatile__ ("xscmpgedp   %x0, %x1, %x2 " : "+wa" (vec_xt): "ww" (vec_xa), "ww" (vec_xb));
+}
+
+static void test_xsmincdp(void) {
+   __asm__ __volatile__ ("xsmincdp   %x0, %x1, %x2 " : "+wa" (vec_xt): "ww" (vec_xa), "ww" (vec_xb));
+}
+
+static test_list_t testgroup_vector_scalar_compare_double[] = {
    { &test_xscmpexpdp , "xscmpexpdp " },
+   { &test_xscmpeqdp , "xscmpeqdp " },
+   { &test_xscmpgtdp , "xscmpgtdp " },
+   { &test_xscmpgedp , "xscmpgedp " },
+   { &test_xsmincdp , "xsmincdp " },
    { NULL             , NULL          },
 };
 
@@ -2301,8 +2321,8 @@ static test_group_table_t all_tests[] = {
       PPC_MISC | PPC_TWO_ARGS,
    },
    {
-      testgroup_vector_scalar_compare_exp_double,
-      "ppc vector scalar compare exponents doubles",
+      testgroup_vector_scalar_compare_double,
+      "ppc vector scalar compare doubles",
       PPC_ALTIVEC_DOUBLE | PPC_COMPARE | PPC_COMPARE_ARGS,
    },
    {
@@ -3125,8 +3145,16 @@ static void testfunction_vector_scalar_two_quad (const char* instruction_name,
    }
 }
 
+/* helper macro.  Use below to limit output to only dword[0] for the inputs
+ * to the instructions listed here.  */
+#define instruction_only_uses_dword0_inputs(instruction_name) \
+	((strncmp(instruction_name, "xscmpeqdp",9) == 0) || \
+	 (strncmp(instruction_name, "xscmpgtdp",9) == 0) || \
+	 (strncmp(instruction_name, "xscmpgedp",9) == 0) || \
+	 (strncmp(instruction_name, "xsmincdp",8) == 0) )
+
 static void
-testfunction_vector_scalar_compare_exp_double (const char* instruction_name,
+testfunction_vector_scalar_compare_double (const char* instruction_name,
                                                test_func_t test_function,
                                                unsigned int ignore_test_flags){
    int i,j;
@@ -3154,17 +3182,25 @@ testfunction_vector_scalar_compare_exp_double (const char* instruction_name,
              */
             SET_CR_ZERO
             SET_FPSCR_ZERO
-
-            printf("%s %016lx %016lx %016lx %016lx",
-                   instruction_name,
-                   vec_xa[0], vec_xa[1],
-                   vec_xb[0], vec_xb[1]);
+            if (instruction_only_uses_dword0_inputs(instruction_name)) {
+               printf("%s %016lx %016lx",
+                      instruction_name, vec_xa[1], vec_xb[1]);
+            } else {
+               printf("%s %016lx %016lx %016lx %016lx",
+                      instruction_name,
+                      vec_xa[0], vec_xa[1],
+                      vec_xb[0], vec_xb[1]);
+            }
 
             if (verbose) printf(" cr#%d ", x_index);
 
             printf(" => ");
 
             (*test_function)();
+
+            if (instruction_only_uses_dword0_inputs(instruction_name)) {
+               printf("%016lx %016lx", vec_xt[0], vec_xt[1]);
+            }
 
             dissect_fpscr(local_fpscr);
             dissect_fpscr_result_value_class(local_fpscr);
@@ -4094,7 +4130,7 @@ static void do_tests ( insn_sel_flags_t seln_flags)
                break;
 
             case PPC_COMPARE_ARGS:
-               group_function = &testfunction_vector_scalar_compare_exp_double;
+               group_function = &testfunction_vector_scalar_compare_double;
                break;
 
             default:

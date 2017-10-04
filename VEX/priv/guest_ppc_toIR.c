@@ -3629,18 +3629,22 @@ static IRExpr * fp_exp_part( IRType size, IRTemp src )
 /* 16-bit floating point number is stored in the lower 16-bits of 32-bit value */
 #define I16_EXP_MASK       0x7C00
 #define I16_FRACTION_MASK  0x03FF
+#define I16_MSB_FRACTION_MASK  0x0200
 #define I32_EXP_MASK       0x7F800000
 #define I32_FRACTION_MASK  0x007FFFFF
+#define I32_MSB_FRACTION_MASK  0x00400000
 #define I64_EXP_MASK       0x7FF0000000000000ULL
 #define I64_FRACTION_MASK  0x000FFFFFFFFFFFFFULL
+#define I64_MSB_FRACTION_MASK  0x0008000000000000ULL
 #define V128_EXP_MASK      0x7FFF000000000000ULL
 #define V128_FRACTION_MASK 0x0000FFFFFFFFFFFFULL  /* upper 64-bit fractional mask */
+#define V128_MSB_FRACTION_MASK 0x0000800000000000ULL  /* upper 64-bit fractional mask */
 
 void setup_value_check_args( IRType size, IRTemp *exp_mask, IRTemp *frac_mask,
-                             IRTemp *zero );
+                             IRTemp *msb_frac_mask, IRTemp *zero );
 
 void setup_value_check_args( IRType size, IRTemp *exp_mask, IRTemp *frac_mask,
-                             IRTemp *zero ) {
+                             IRTemp *msb_frac_mask, IRTemp *zero ) {
 
    vassert( ( size == Ity_I16 ) || ( size == Ity_I32 )
             || ( size == Ity_I64 ) || ( size == Ity_V128 ) );
@@ -3649,37 +3653,45 @@ void setup_value_check_args( IRType size, IRTemp *exp_mask, IRTemp *frac_mask,
       /* The 16-bit floating point value is in the lower 16-bits of
          the 32-bit input value */
       *frac_mask = newTemp( Ity_I32 );
+      *msb_frac_mask = newTemp( Ity_I32 );
       *exp_mask  = newTemp( Ity_I32 );
       *zero  = newTemp( Ity_I32 );
       assign( *exp_mask, mkU32( I16_EXP_MASK ) );
       assign( *frac_mask, mkU32( I16_FRACTION_MASK ) );
+      assign( *msb_frac_mask, mkU32( I16_MSB_FRACTION_MASK ) );
       assign( *zero, mkU32( 0 ) );
 
    } else if( size == Ity_I32 ) {
       *frac_mask = newTemp( Ity_I32 );
+      *msb_frac_mask = newTemp( Ity_I32 );
       *exp_mask  = newTemp( Ity_I32 );
       *zero  = newTemp( Ity_I32 );
       assign( *exp_mask, mkU32( I32_EXP_MASK ) );
       assign( *frac_mask, mkU32( I32_FRACTION_MASK ) );
+      assign( *msb_frac_mask, mkU32( I32_MSB_FRACTION_MASK ) );
       assign( *zero, mkU32( 0 ) );
 
    } else if( size == Ity_I64 ) {
       *frac_mask = newTemp( Ity_I64 );
+      *msb_frac_mask = newTemp( Ity_I64 );
       *exp_mask  = newTemp( Ity_I64 );
       *zero  = newTemp( Ity_I64 );
       assign( *exp_mask, mkU64( I64_EXP_MASK ) );
       assign( *frac_mask, mkU64( I64_FRACTION_MASK ) );
+      assign( *msb_frac_mask, mkU64( I64_MSB_FRACTION_MASK ) );
       assign( *zero, mkU64( 0 ) );
 
    } else {
       /* V128 is converted to upper and lower 64 bit values, */
       /* uses 64-bit operators and temps */
       *frac_mask = newTemp( Ity_I64 );
+      *msb_frac_mask = newTemp( Ity_I64 );
       *exp_mask  = newTemp( Ity_I64 );
       *zero  = newTemp( Ity_I64 );
       assign( *exp_mask, mkU64( V128_EXP_MASK ) );
       /* upper 64-bit fractional mask */
       assign( *frac_mask, mkU64( V128_FRACTION_MASK ) );
+      assign( *msb_frac_mask, mkU64( V128_MSB_FRACTION_MASK ) );
       assign( *zero, mkU64( 0 ) );
    }
 }
@@ -3801,9 +3813,10 @@ static IRExpr *fractional_part_compare( IRType size, IRTemp src,
 static IRExpr * is_Inf( IRType size, IRTemp src )
 {
    IRExpr *max_exp, *zero_frac;
-   IRTemp exp_mask, frac_mask, zero;
+   IRTemp exp_mask, frac_mask, msb_frac_mask, zero;
 
-   setup_value_check_args( size, &exp_mask, &frac_mask, &zero );
+   setup_value_check_args( size, &exp_mask, &frac_mask, &msb_frac_mask,
+                           &zero );
 
    /* check exponent is all ones, i.e. (exp AND exp_mask) = exp_mask */
    max_exp = exponent_compare( size, src, exp_mask, mkexpr( exp_mask ) );
@@ -3818,9 +3831,10 @@ static IRExpr * is_Inf( IRType size, IRTemp src )
 static IRExpr * is_Zero( IRType size, IRTemp src )
 {
    IRExpr *zero_exp, *zero_frac;
-   IRTemp exp_mask, frac_mask, zero;
+   IRTemp exp_mask, frac_mask, msb_frac_mask, zero;
 
-   setup_value_check_args( size, &exp_mask, &frac_mask, &zero );
+   setup_value_check_args( size, &exp_mask, &frac_mask, &msb_frac_mask,
+                           &zero );
 
    /* check the exponent is all zeros, i.e. (exp AND exp_mask) = zero */
    zero_exp = exponent_compare( size, src, exp_mask, mkexpr( zero ) );
@@ -3837,9 +3851,10 @@ static IRExpr * is_Zero( IRType size, IRTemp src )
 static IRExpr * is_NaN( IRType size, IRTemp src )
 {
    IRExpr *max_exp, *not_zero_frac;
-   IRTemp exp_mask, frac_mask, zero;
+   IRTemp exp_mask, frac_mask, msb_frac_mask, zero;
 
-   setup_value_check_args( size, &exp_mask, &frac_mask, &zero );
+   setup_value_check_args( size, &exp_mask, &frac_mask, &msb_frac_mask,
+                           &zero );
 
    /* check exponent is all ones, i.e. (exp AND exp_mask) = exp_mask */
    max_exp = exponent_compare( size, src, exp_mask, mkexpr( exp_mask ) );
@@ -3852,13 +3867,37 @@ static IRExpr * is_NaN( IRType size, IRTemp src )
    return  mkAND1( max_exp, not_zero_frac );
 }
 
+static IRExpr * is_sNaN( IRType size, IRTemp src )
+{
+   IRExpr *max_exp, *not_zero_frac, *msb_zero;
+   IRTemp exp_mask, frac_mask, msb_frac_mask, zero;
+
+   setup_value_check_args( size, &exp_mask, &frac_mask, &msb_frac_mask,
+                           &zero );
+
+   /* check exponent is all ones, i.e. (exp AND exp_mask) = exp_mask */
+   max_exp = exponent_compare( size, src, exp_mask, mkexpr( exp_mask ) );
+
+   /* Most significant fractional bit is zero for sNaN */
+   msb_zero = fractional_part_compare ( size, src, msb_frac_mask,
+                                        mkexpr( zero ) );
+
+   /* check fractional part is not zero */
+   not_zero_frac = unop( Iop_Not1,
+                         fractional_part_compare( size, src, frac_mask,
+                                                  mkexpr( zero ) ) );
+
+   return  mkAND1( msb_zero, mkAND1( max_exp, not_zero_frac ) );
+}
+
 /* Denormalized number has a zero exponent and non zero fraction. */
 static IRExpr * is_Denorm( IRType size, IRTemp src )
 {
    IRExpr *zero_exp, *not_zero_frac;
-   IRTemp exp_mask, frac_mask, zero;
+   IRTemp exp_mask, frac_mask, msb_frac_mask, zero;
 
-   setup_value_check_args( size, &exp_mask, &frac_mask, &zero );
+   setup_value_check_args( size, &exp_mask, &frac_mask, &msb_frac_mask,
+                           &zero );
 
    /* check exponent is all zeros */
    zero_exp = exponent_compare( size, src, exp_mask, mkexpr( zero ) );
@@ -19712,6 +19751,216 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
 }
 
 /*
+ * VSX vector miscellaneous instructions
+ */
+
+static Bool
+dis_vx_misc ( UInt theInstr, UInt opc2 )
+{
+   /* XX3-Form */
+   UChar XT = ifieldRegXT ( theInstr );
+   UChar XA = ifieldRegXA ( theInstr );
+   UChar XB = ifieldRegXB ( theInstr );
+   IRTemp vA = newTemp( Ity_V128 );
+   IRTemp vB = newTemp( Ity_V128 );
+   IRTemp src1 = newTemp(Ity_I64);
+   IRTemp src2 = newTemp(Ity_I64);
+   IRTemp result_mask = newTemp(Ity_I64);
+   IRTemp cmp_mask = newTemp(Ity_I64);
+   IRTemp nan_mask = newTemp(Ity_I64);
+   IRTemp snan_mask = newTemp(Ity_I64);
+   IRTemp word_result = newTemp(Ity_I64);
+   IRTemp check_result = newTemp(Ity_I64);
+   IRTemp xT = newTemp( Ity_V128 );
+   IRTemp nan_cmp_value = newTemp(Ity_I64);
+   UInt trap_enabled = 0;  /* 0 - trap enabled is False */
+
+   assign( vA, getVSReg( XA ) );
+   assign( vB, getVSReg( XB ) );
+   assign( xT, getVSReg( XT ) );
+
+   assign(src1, unop( Iop_V128HIto64, mkexpr( vA ) ) );
+   assign(src2, unop( Iop_V128HIto64, mkexpr( vB ) ) );
+
+   assign( nan_mask,
+           binop( Iop_Or64,
+                  unop( Iop_1Sto64, is_NaN( Ity_I64, src1 ) ),
+                  unop( Iop_1Sto64, is_NaN( Ity_I64, src2 ) ) ) );
+
+   if ( trap_enabled == 0 )
+      /* Traps on invalid operation are assumed not enabled, assign
+         result of comparison to xT.
+      */
+      assign( snan_mask, mkU64( 0 ) );
+
+   else
+      assign( snan_mask,
+              binop( Iop_Or64,
+                     unop( Iop_1Sto64, is_sNaN( Ity_I64, src1 ) ),
+                     unop( Iop_1Sto64, is_sNaN( Ity_I64, src2 ) ) ) );
+
+   assign (result_mask, binop( Iop_Or64,
+                               mkexpr( snan_mask ),
+                               mkexpr( nan_mask ) ) );
+
+   switch (opc2) {
+   case 0xC: //xscmpeqdp
+      {
+         DIP("xscmpeqdp v%d,v%d,v%d\n", XT, XA, XB);
+         /* extract double-precision floating point source values from
+            double word 0 */
+
+         /* result of Iop_CmpF64 is 0x40 if operands are equal,
+            mask is all 1's if equal. */
+
+         assign( cmp_mask,
+                 unop( Iop_1Sto64,
+                       unop(Iop_32to1,
+                            binop(Iop_Shr32,
+                                  binop( Iop_CmpF64,
+                                         unop( Iop_ReinterpI64asF64,
+                                               mkexpr( src1 ) ),
+                                         unop( Iop_ReinterpI64asF64,
+                                               mkexpr( src2 ) ) ),
+                                  mkU8( 6 ) ) ) ) );
+
+         assign( word_result,
+                 binop( Iop_Or64,
+                        binop( Iop_And64, mkexpr( cmp_mask ),
+                               mkU64( 0xFFFFFFFFFFFFFFFF ) ),
+                        binop( Iop_And64,
+                               unop( Iop_Not64, mkexpr( cmp_mask ) ),
+                               mkU64( 0x0 ) ) ) );
+         assign( nan_cmp_value, mkU64( 0 ) );
+         break;
+      }
+
+   case 0x2C: //xscmpgtdp
+      {
+         DIP("xscmpgtdp v%d,v%d,v%d\n", XT, XA, XB);
+         /* Test for src1 > src2 */
+
+         /* Result of Iop_CmpF64 is 0x1 if op1 < op2, set mask to all 1's. */
+         assign( cmp_mask,
+                 unop( Iop_1Sto64,
+                       unop(Iop_32to1,
+                            binop(Iop_CmpF64,
+                                  unop( Iop_ReinterpI64asF64,
+                                        mkexpr( src2 ) ),
+                                  unop( Iop_ReinterpI64asF64,
+                                       mkexpr( src1 ) ) ) ) ) );
+         assign( word_result,
+                 binop( Iop_Or64,
+                        binop( Iop_And64, mkexpr( cmp_mask ),
+                               mkU64( 0xFFFFFFFFFFFFFFFF ) ),
+                        binop( Iop_And64,
+                               unop( Iop_Not64, mkexpr( cmp_mask ) ),
+                               mkU64( 0x0 ) ) ) );
+         assign( nan_cmp_value, mkU64( 0 ) );
+         break;
+      }
+
+   case 0x4C: //xscmpgedp
+      {
+         DIP("xscmpeqdp v%d,v%d,v%d\n", XT, XA, XB);
+         /* compare src 1 >= src 2 */
+         /* result of Iop_CmpF64 is 0x40 if operands are equal,
+            mask is all 1's if equal. */
+         assign( cmp_mask,
+                 unop( Iop_1Sto64,
+                       unop(Iop_32to1,
+                            binop( Iop_Or32,
+                                   binop( Iop_Shr32,
+                                          binop(Iop_CmpF64,   /* EQ test */
+                                                unop( Iop_ReinterpI64asF64,
+                                                      mkexpr( src1 ) ),
+                                                unop( Iop_ReinterpI64asF64,
+                                                      mkexpr( src2 ) ) ),
+                                          mkU8( 6 ) ),
+                                   binop(Iop_CmpF64,  /* src2 < src 1 test */
+                                         unop( Iop_ReinterpI64asF64,
+                                               mkexpr( src2 ) ),
+                                         unop( Iop_ReinterpI64asF64,
+                                               mkexpr( src1 ) ) ) ) ) ) );
+         assign( word_result,
+                 binop( Iop_Or64,
+                        binop( Iop_And64, mkexpr( cmp_mask ),
+                               mkU64( 0xFFFFFFFFFFFFFFFF ) ),
+                        binop( Iop_And64,
+                               unop( Iop_Not64, mkexpr( cmp_mask ) ),
+                               mkU64( 0x0 ) ) ) );
+         assign( nan_cmp_value, mkU64( 0 ) );
+         break;
+      }
+
+   case 0x220: //xsmincdp
+      {
+         DIP("xsmincdp v%d,v%d,v%d\n", XT, XA, XB);
+         /* extract double-precision floating point source values from
+            double word 0 */
+
+         /* result of Iop_CmpF64 is 0x1 if src1 less then src2, */
+         assign( cmp_mask,
+                 unop( Iop_1Sto64,
+                       unop( Iop_32to1,
+                             binop(Iop_CmpF64,
+                                   unop( Iop_ReinterpI64asF64,
+                                         mkexpr( src1 ) ),
+                                   unop( Iop_ReinterpI64asF64,
+                                         mkexpr( src2 ) ) ) ) ) );
+         assign( word_result,
+                 binop( Iop_Or64,
+                        binop( Iop_And64, mkexpr( cmp_mask ), mkexpr( src1 ) ),
+                        binop( Iop_And64,
+                               unop( Iop_Not64, mkexpr( cmp_mask ) ),
+                               mkexpr( src2 ) ) ) );
+         assign( nan_cmp_value, mkexpr( src2 ) );
+         break;
+      }
+
+   default:
+      vex_printf( "dis_vx_misc(ppc)(opc2)\n" );
+      return False;
+   }
+
+   /* If either argument is NaN, result is src2.  If either argument is
+      SNaN, we are supposed to generate invalid operation exception.
+      Currently don't support generating exceptions.  In case of an
+      trap enabled invalid operation (SNaN) XT is not changed. The
+      snan_mask is setup appropriately for trap enabled or not.
+   */
+   assign( check_result,
+           binop( Iop_Or64,
+                  binop( Iop_And64, mkexpr( snan_mask ),
+                         unop( Iop_V128HIto64, mkexpr( xT ) ) ),
+                  binop( Iop_And64, unop( Iop_Not64,
+                                          mkexpr( snan_mask ) ),
+                         binop( Iop_Or64,
+                                binop( Iop_And64, mkexpr( nan_mask ),
+                                       mkexpr( nan_cmp_value ) ),
+                                binop( Iop_And64,
+                                       unop( Iop_Not64,
+                                             mkexpr( nan_mask ) ),
+                                       mkU64( 0 ) ) ) ) ) );
+
+   /* If SNaN is true, then the result is unchanged if a trap-enabled
+      Invalid Operation occurs.  Result mask already setup for trap-enabled
+      case.
+   */
+   putVSReg( XT,
+             binop( Iop_64HLtoV128,
+                    binop( Iop_Or64,
+                           binop( Iop_And64,
+                                  unop( Iop_Not64, mkexpr( result_mask ) ),
+                                  mkexpr( word_result ) ),
+                           binop( Iop_And64,
+                                  mkexpr( result_mask ),
+                                  mkexpr( check_result ) ) ),
+                    mkU64( 0 ) ) );
+   return True;
+}
+
+/*
  * VSX Logical Instructions
  */
 static Bool
@@ -27319,12 +27568,15 @@ static struct vsx_insn vsx_xx3[] = {
       { 0x0,  "xsaddsp" },
       { 0x4,  "xsmaddasp" },
       { 0x9,  "xsmaddmsp" },
+      { 0xC,  "xscmpeqdp" },
       { 0x20, "xssubsp" },
       { 0x24, "xsmaddmsp" },
+      { 0x2C, "xscmpgtdp" },
       { 0x3A, "xxpermr" },
       { 0x40, "xsmulsp" },
       { 0x44, "xsmsubasp" },
       { 0x48, "xxmrghw" },
+      { 0x4C, "xscmpgedp" },
       { 0x60, "xsdivsp" },
       { 0x64, "xsmsubmsp" },
       { 0x68, "xxperm" },
@@ -27371,6 +27623,7 @@ static struct vsx_insn vsx_xx3[] = {
       { 0x1f4, "xvtdivdp" },
       { 0x204, "xsnmaddasp" },
       { 0x208, "xxland" },
+      { 0x220, "xsmincdp" },
       { 0x224, "xsnmaddmsp" },
       { 0x228, "xxlandc" },
       { 0x244, "xsnmsubasp" },
@@ -28004,9 +28257,13 @@ DisResult disInstr_PPC_WRK (
             if (dis_vx_permute_misc(theInstr, vsxOpc2 ))
 	       goto decode_success;
             goto decode_failure;
+         case 0xC: case 0x2C: case 0x4C: // xscmpeqdp, xscmpgtdp, xscmpgedp
+         case 0x220: //xsmincdp
+            if (dis_vx_misc(theInstr, vsxOpc2)) goto decode_success;
+            goto decode_failure;
          case 0x268: case 0x248: case 0x288: // xxlxor, xxlor, xxlnor,
-         case 0x208: case 0x228: case 0x2A8: // xxland, xxlandc, xxlorc
-         case 0x2C8: case 0x2E8: // xxlnand, xxleqv
+         case 0x208: case 0x228: // xxland, xxlandc
+         case 0x2A8: case 0x2C8: case 0x2E8: //  xxlorc, xxlnand, xxleqv
             if (dis_vx_logic(theInstr, vsxOpc2)) goto decode_success;
             goto decode_failure;
          case 0x0ec:             // xscmpexpdp

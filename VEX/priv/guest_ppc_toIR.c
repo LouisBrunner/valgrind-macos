@@ -22579,6 +22579,7 @@ dis_vx_permute_misc( UInt theInstr, UInt opc2 )
          IRTemp b_perm  = newTemp(Ity_V128);
          IRTemp mask    = newTemp(Ity_V128);
          IRTemp perm_val = newTemp(Ity_V128);
+         IRTemp vB_adj = newTemp( Ity_V128 );
 
          if ( opc2 == 0x68 ) {
             DIP("xxperm v%d,v%d,v%d\n", (UInt)XT, (UInt)XA, (UInt)XB);
@@ -22591,29 +22592,27 @@ dis_vx_permute_misc( UInt theInstr, UInt opc2 )
          assign( vT, getVSReg( XT ) );
 
          if ( opc2 == 0x68 ) // xxperm
-            assign( perm_val,
-                    binop( Iop_AndV128, mkexpr( vB ),
-                           unop( Iop_Dup8x16, mkU8( 0x1F ) ) ) );
+            assign( vB_adj, mkexpr( vB ) );
 
          else                // xxpermr
-            assign( perm_val,
+            assign( vB_adj,
                     binop( Iop_Sub16x8,
-                           binop( Iop_64HLtoV128,
-                                  mkU64( 0x1F1F1F1F1F1F1F1F ),
-                                  mkU64( 0x1F1F1F1F1F1F1F1F ) ),
-                           binop( Iop_AndV128, mkexpr( vB ),
-                                  unop( Iop_Dup8x16, mkU8( 0x1F ) ) ) ) );
+                           unop( Iop_Dup8x16, mkU8( 0x1F ) ),
+                           mkexpr( vB ) ) );
 
-         /* Limit the Perm8x16 steering values to 0 .. 31 as that is what
+         /* Limit the Perm8x16 steering values to 0 .. 15 as that is what
             IR specifies, and also to hide irrelevant bits from
             memcheck.
          */
+         assign( perm_val,
+                 binop( Iop_AndV128, mkexpr( vB_adj ),
+                        unop( Iop_Dup8x16, mkU8( 0xF ) ) ) );
          assign( a_perm,
                  binop( Iop_Perm8x16, mkexpr( vA ), mkexpr( perm_val ) ) );
          assign( b_perm,
                  binop( Iop_Perm8x16, mkexpr( vT ), mkexpr( perm_val ) ) );
          assign( mask, binop( Iop_SarN8x16,
-                              binop( Iop_ShlN8x16, mkexpr( perm_val ),
+                              binop( Iop_ShlN8x16, mkexpr( vB_adj ),
                                      mkU8( 3 ) ),
                               mkU8( 7 ) ) );
          // dst = (a & ~mask) | (b & mask)
@@ -24361,28 +24360,29 @@ static Bool dis_av_permute ( UInt theInstr )
       IRTemp b_perm  = newTemp( Ity_V128 );
       IRTemp mask    = newTemp( Ity_V128 );
       IRTemp vC_andF = newTemp( Ity_V128 );
+      IRTemp vC_adj = newTemp( Ity_V128 );
 
       DIP( "vpermr v%d,v%d,v%d,v%d\n",
            vD_addr, vA_addr, vB_addr, vC_addr);
-      /* Limit the Perm8x16 steering values to 0 .. 31 as that is what
+      /* Limit the Perm8x16 steering values to 0 .. 15 as that is what
          IR specifies, and also to hide irrelevant bits from
          memcheck.
       */
 
+      assign( vC_adj,
+                    binop( Iop_Sub16x8,
+			   unop( Iop_Dup8x16, mkU8( 0x1F ) ),
+			   mkexpr( vC ) ) );
       assign( vC_andF,
-              binop( Iop_Sub16x8,
-                     binop( Iop_64HLtoV128,
-                            mkU64( 0x1F1F1F1F1F1F1F1F ),
-                            mkU64( 0x1F1F1F1F1F1F1F1F ) ),
-                     binop( Iop_AndV128, mkexpr( vC ),
-                            unop( Iop_Dup8x16, mkU8( 0x1F ) ) ) ) );
+              binop( Iop_AndV128, mkexpr( vC_adj),
+                     unop( Iop_Dup8x16, mkU8( 0xF ) ) ) );
       assign( a_perm,
               binop( Iop_Perm8x16, mkexpr( vA ), mkexpr( vC_andF ) ) );
       assign( b_perm,
               binop( Iop_Perm8x16, mkexpr( vB ), mkexpr( vC_andF ) ) );
       // mask[i8] = (vC[i8]_4 == 1) ? 0xFF : 0x0
       assign( mask, binop(Iop_SarN8x16,
-                          binop( Iop_ShlN8x16, mkexpr( vC_andF ),
+                          binop( Iop_ShlN8x16, mkexpr( vC_adj ),
                                  mkU8( 3 ) ), mkU8( 7 ) ) );
       // dst = (a & ~mask) | (b & mask)
       putVReg( vD_addr, binop( Iop_OrV128,

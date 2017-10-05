@@ -63,6 +63,7 @@ n-i-bz  Fix missing workq_ops operations (macOS)
 385208  PPC64, xxperm instruction exhausts temporary memory
 385210  PPC64, vpermr instruction could exhaust temporary memory
 385183  PPC64, Add support for xscmpeqdp, xscmpgtdp, xscmpgedp, xsmincdp instructions
+385334  PPC64, fix vpermr, xxperm, xxpermr mask value.
 
 Release 3.13.0 (15 June 2017)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1351,6 +1351,13 @@ typedef
          square root of each element in the operand vector. */
       Iop_RSqrtEst32Fx4,
 
+      /* Scaling of vector with a power of 2  (wd[i] <- ws[i] * 2^wt[i]) */
+      Iop_Scale2_32Fx4,
+
+      /* Vector floating-point base 2 logarithm */
+      Iop_Log2_32Fx4,
+
+
       /* Vector Reciprocal Square Root Step computes (3.0 - arg1 * arg2) / 2.0.
          Note, that of one of the arguments is zero and another one is infiinty
          of arbitrary sign the result of the operation is 1.5. */
@@ -1375,8 +1382,15 @@ typedef
       /* FIXME: what kind of rounding in F32x4 -> F16x4 case? */
       Iop_F32toF16x4, Iop_F16toF32x4,         /* F32x4 <-> F16x4      */
 
+
+
       /* -- Double to/from half conversion -- */
       Iop_F64toF16x2, Iop_F16toF64x2,
+
+      /* Values from two registers converted in smaller type and put in one
+       IRRoundingMode(I32) x (F32x4 | F32x4) -> Q16x8 */
+      Iop_F32x4_2toQ16x8,
+
 
       /* --- 32x4 lowest-lane-only scalar FP --- */
 
@@ -1407,11 +1421,22 @@ typedef
       /* binary :: IRRoundingMode(I32) x V128 -> V128 */
       Iop_Sqrt64Fx2,
 
+      /* Scaling of vector with a power of 2  (wd[i] <- ws[i] * 2^wt[i]) */
+      Iop_Scale2_64Fx2,
+
+      /* Vector floating-point base 2 logarithm */
+      Iop_Log2_64Fx2,
+
       /* see 32Fx4 variants for description */
       Iop_RecipEst64Fx2,    // unary
       Iop_RecipStep64Fx2,   // binary
       Iop_RSqrtEst64Fx2,    // unary
       Iop_RSqrtStep64Fx2,   // binary
+
+
+      /* Values from two registers converted in smaller type and put in one
+       IRRoundingMode(I32) x (F64x2 | F64x2) -> Q32x4 */
+      Iop_F64x2_2toQ32x4,
 
       /* --- 64x2 lowest-lane-only scalar FP --- */
 
@@ -1760,6 +1785,11 @@ typedef
       Iop_InterleaveOddLanes8x16, Iop_InterleaveEvenLanes8x16,
       Iop_InterleaveOddLanes16x8, Iop_InterleaveEvenLanes16x8,
       Iop_InterleaveOddLanes32x4, Iop_InterleaveEvenLanes32x4,
+
+      /* Pack even/odd lanes. */
+      Iop_PackOddLanes8x16, Iop_PackEvenLanes8x16,
+      Iop_PackOddLanes16x8, Iop_PackEvenLanes16x8,
+      Iop_PackOddLanes32x4, Iop_PackEvenLanes32x4,
 
       /* CONCATENATION -- build a new value by concatenating either
          the even or odd lanes of both operands.  Note that

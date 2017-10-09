@@ -2996,12 +2996,14 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
       case Iop_Sub64Fx2:
       case Iop_Mul64Fx2:
       case Iop_Div64Fx2:
+      case Iop_Scale2_64Fx2:
          return binary64Fx2_w_rm(mce, vatom1, vatom2, vatom3);
 
       case Iop_Add32Fx4:
       case Iop_Sub32Fx4:
       case Iop_Mul32Fx4:
       case Iop_Div32Fx4:
+      case Iop_Scale2_32Fx4:
         return binary32Fx4_w_rm(mce, vatom1, vatom2, vatom3);
 
       case Iop_Add64Fx4:
@@ -3015,6 +3017,18 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
       case Iop_Mul32Fx8:
       case Iop_Div32Fx8:
          return binary32Fx8_w_rm(mce, vatom1, vatom2, vatom3);
+
+      case Iop_F32x4_2toQ16x8:
+         return assignNew('V', mce, Ity_V128,
+                          binop(Iop_PackEvenLanes16x8,
+                                unary32Fx4_w_rm(mce, vatom1, vatom2),
+                                unary32Fx4_w_rm(mce, vatom1, vatom3)));
+      case Iop_F64x2_2toQ32x4:
+         return assignNew('V', mce, Ity_V128,
+                          binop(Iop_PackEvenLanes32x4,
+                                unary64Fx2_w_rm(mce, vatom1, vatom2),
+                                unary64Fx2_w_rm(mce, vatom1, vatom3)));
+
 
       default:
          ppIROp(op);
@@ -3737,6 +3751,12 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_InterleaveEvenLanes8x16:
       case Iop_InterleaveEvenLanes16x8:
       case Iop_InterleaveEvenLanes32x4:
+      case Iop_PackOddLanes8x16:
+      case Iop_PackOddLanes16x8:
+      case Iop_PackOddLanes32x4:
+      case Iop_PackEvenLanes8x16:
+      case Iop_PackEvenLanes16x8:
+      case Iop_PackEvenLanes32x4:
          return assignNew('V', mce, Ity_V128, binop(op, vatom1, vatom2));
 
       case Iop_GetElem8x16:
@@ -4432,6 +4452,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_Neg64Fx2:
       case Iop_RSqrtEst64Fx2:
       case Iop_RecipEst64Fx2:
+      case Iop_Log2_64Fx2:
          return unary64Fx2(mce, vatom);
 
       case Iop_Sqrt64F0x2:
@@ -4458,6 +4479,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_Abs32Fx4:
       case Iop_Neg32Fx4:
       case Iop_RSqrtEst32Fx4:
+      case Iop_Log2_32Fx4:
          return unary32Fx4(mce, vatom);
 
       case Iop_I32UtoFx2:

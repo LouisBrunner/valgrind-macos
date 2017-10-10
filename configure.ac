@@ -479,6 +479,19 @@ case "$ARCH_MAX-$VGCONF_OS" in
         AC_MSG_RESULT([no])
         ])
         CFLAGS=$safe_CFLAGS;;
+    mips64-linux)
+        AC_MSG_CHECKING([for 32 bit build support])
+        safe_CFLAGS=$CFLAGS
+        CFLAGS="$CFLAGS -mips32 -mabi=32"
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+          #include <sys/prctl.h>
+        ]], [[]])], [
+        AC_MSG_RESULT([yes])
+        ], [
+        vg_cv_only64bit="yes"
+        AC_MSG_RESULT([no])
+        ])
+        CFLAGS=$safe_CFLAGS;;
 esac
 
 if test x$vg_cv_only64bit = xyes -a x$vg_cv_only32bit = xyes; then
@@ -715,6 +728,7 @@ case "$ARCH_MAX-$VGCONF_OS" in
         ;;
      mips32-linux) 
         VGCONF_ARCH_PRI="mips32"
+        VGCONF_ARCH_SEC=""
         VGCONF_PLATFORM_PRI_CAPS="MIPS32_LINUX"
         VGCONF_PLATFORM_SEC_CAPS=""
         valt_load_address_pri_norml="0x58000000"
@@ -724,13 +738,32 @@ case "$ARCH_MAX-$VGCONF_OS" in
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
         ;;
      mips64-linux)
-        VGCONF_ARCH_PRI="mips64"
-        VGCONF_PLATFORM_PRI_CAPS="MIPS64_LINUX"
-        VGCONF_PLATFORM_SEC_CAPS=""
-        valt_load_address_pri_norml="0x58000000"
-        valt_load_address_pri_inner="0x38000000"
         valt_load_address_sec_norml="0xUNSET"
         valt_load_address_sec_inner="0xUNSET"
+        if test x$vg_cv_only64bit = xyes; then
+            VGCONF_ARCH_PRI="mips64"
+            VGCONF_PLATFORM_SEC_CAPS=""
+            VGCONF_PLATFORM_PRI_CAPS="MIPS64_LINUX"
+            VGCONF_PLATFORM_SEC_CAPS=""
+            valt_load_address_pri_norml="0x58000000"
+            valt_load_address_pri_inner="0x38000000"
+        elif test x$vg_cv_only32bit = xyes; then
+            VGCONF_ARCH_PRI="mips32"
+            VGCONF_ARCH_SEC=""
+            VGCONF_PLATFORM_PRI_CAPS="MIPS32_LINUX"
+            VGCONF_PLATFORM_SEC_CAPS=""
+            valt_load_address_pri_norml="0x58000000"
+            valt_load_address_pri_inner="0x38000000"
+        else
+            VGCONF_ARCH_PRI="mips64"
+            VGCONF_ARCH_SEC="mips32"
+            VGCONF_PLATFORM_PRI_CAPS="MIPS64_LINUX"
+            VGCONF_PLATFORM_SEC_CAPS="MIPS32_LINUX"
+            valt_load_address_pri_norml="0x58000000"
+            valt_load_address_pri_inner="0x38000000"
+            valt_load_address_sec_norml="0x58000000"
+            valt_load_address_sec_inner="0x38000000"
+        fi
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
         ;;
      x86-solaris)
@@ -816,7 +849,8 @@ AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_ARM64,
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_S390X,
                test x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX )
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_MIPS32,
-               test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX )
+               test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
+                 -o x$VGCONF_PLATFORM_SEC_CAPS = xMIPS32_LINUX )
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_MIPS64,
                test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX ) 
 
@@ -843,7 +877,8 @@ AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_S390X_LINUX,
                test x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX \
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xS390X_LINUX)
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_MIPS32_LINUX,
-               test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX)
+               test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
+                 -o x$VGCONF_PLATFORM_SEC_CAPS = xMIPS32_LINUX)
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_MIPS64_LINUX,
                test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX)
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_X86_DARWIN,   
@@ -1679,91 +1714,94 @@ fi
 # Checking for supported compiler flags.
 #----------------------------------------------------------------------------
 
-# does this compiler support -m32 ?
-AC_MSG_CHECKING([if gcc accepts -m32])
+case "${host_cpu}" in
+    mips*)
+        # does this compiler support -march=mips32 (mips32 default) ?
+        AC_MSG_CHECKING([if gcc accepts -march=mips32 -mabi=32])
 
-safe_CFLAGS=$CFLAGS
-CFLAGS="-m32 -Werror"
+        safe_CFLAGS=$CFLAGS
+        CFLAGS="$CFLAGS -mips32 -mabi=32 -Werror"
 
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-  return 0;
-]])], [
-FLAG_M32="-m32"
-AC_MSG_RESULT([yes])
-], [
-FLAG_M32=""
-AC_MSG_RESULT([no])
-])
-CFLAGS=$safe_CFLAGS
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+          return 0;
+        ]])], [
+        FLAG_M32="-mips32 -mabi=32"
+        AC_MSG_RESULT([yes])
+        ], [
+        FLAG_M32=""
+        AC_MSG_RESULT([no])
+        ])
+        CFLAGS=$safe_CFLAGS
 
-AC_SUBST(FLAG_M32)
-
-
-# does this compiler support -m64 ?
-AC_MSG_CHECKING([if gcc accepts -m64])
-
-safe_CFLAGS=$CFLAGS
-CFLAGS="-m64 -Werror"
-
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-  return 0;
-]])], [
-FLAG_M64="-m64"
-AC_MSG_RESULT([yes])
-], [
-FLAG_M64=""
-AC_MSG_RESULT([no])
-])
-CFLAGS=$safe_CFLAGS
-
-AC_SUBST(FLAG_M64)
+        AC_SUBST(FLAG_M32)
 
 
-# does this compiler support -march=mips32 (mips32 default) ?
-AC_MSG_CHECKING([if gcc accepts -march=mips32 -mabi=32])
+        # does this compiler support -march=mips64r2 (mips64r2 default) ?
+        AC_MSG_CHECKING([if gcc accepts -march=mips64r2 -mabi=64])
 
-safe_CFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -march=mips32 -mabi=32 -Werror"
+        safe_CFLAGS=$CFLAGS
+        CFLAGS="$CFLAGS -march=mips64r2 -mabi=64 -Werror"
 
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-  return 0;
-]])], [
-FLAG_MIPS32="-march=mips32 -mabi=32"
-AC_MSG_RESULT([yes])
-], [
-FLAG_MIPS32=""
-AC_MSG_RESULT([no])
-])
-CFLAGS=$safe_CFLAGS
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+          return 0;
+        ]])], [
+        FLAG_M64="-march=mips64r2 -mabi=64"
+        AC_MSG_RESULT([yes])
+        ], [
+        FLAG_M64=""
+        AC_MSG_RESULT([no])
+        ])
+        CFLAGS=$safe_CFLAGS
 
-AC_SUBST(FLAG_MIPS32)
+        AC_SUBST(FLAG_M64)
+        ;;
+    *)
+        # does this compiler support -m32 ?
+        AC_MSG_CHECKING([if gcc accepts -m32])
+
+        safe_CFLAGS=$CFLAGS
+        CFLAGS="-m32 -Werror"
+
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+          return 0;
+        ]])], [
+        FLAG_M32="-m32"
+        AC_MSG_RESULT([yes])
+        ], [
+        FLAG_M32=""
+        AC_MSG_RESULT([no])
+        ])
+        CFLAGS=$safe_CFLAGS
+
+        AC_SUBST(FLAG_M32)
 
 
-# does this compiler support -march=mips64r2 (mips64r2 default) ?
-AC_MSG_CHECKING([if gcc accepts -march=mips64r2 -mabi=64])
+        # does this compiler support -m64 ?
+        AC_MSG_CHECKING([if gcc accepts -m64])
 
-safe_CFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -march=mips64r2 -mabi=64 -Werror"
+        safe_CFLAGS=$CFLAGS
+        CFLAGS="-m64 -Werror"
 
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-  return 0;
-]])], [
-FLAG_MIPS64="-march=mips64r2 -mabi=64"
-AC_MSG_RESULT([yes])
-], [
-FLAG_MIPS64=""
-AC_MSG_RESULT([no])
-])
-CFLAGS=$safe_CFLAGS
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+          return 0;
+        ]])], [
+        FLAG_M64="-m64"
+        AC_MSG_RESULT([yes])
+        ], [
+        FLAG_M64=""
+        AC_MSG_RESULT([no])
+        ])
+        CFLAGS=$safe_CFLAGS
 
-AC_SUBST(FLAG_MIPS64)
-
+        AC_SUBST(FLAG_M64)
+        ;;
+esac
 
 # does this compiler support -march=octeon (Cavium OCTEON I Specific) ?
 AC_MSG_CHECKING([if gcc accepts -march=octeon])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -march=octeon -Werror"
+CFLAGS="$CFLAGS $FLAG_M64 -march=octeon -Werror"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
@@ -1783,7 +1821,7 @@ AC_SUBST(FLAG_OCTEON)
 AC_MSG_CHECKING([if gcc accepts -march=octeon2])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="$CFLAGS -march=octeon2 -Werror"
+CFLAGS="$CFLAGS $FLAG_M64 -march=octeon2 -Werror"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   return 0;
@@ -3953,12 +3991,12 @@ if test x$VGCONF_PLATFORM_PRI_CAPS = xX86_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
-     -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xX86_SOLARIS ; then
   mflag_primary=$FLAG_M32
 elif test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xARM64_LINUX \
+       -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX ; then
   mflag_primary=$FLAG_M64
 elif test x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN ; then
@@ -3970,7 +4008,8 @@ fi
 mflag_secondary=
 if test x$VGCONF_PLATFORM_SEC_CAPS = xX86_LINUX \
      -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_LINUX \
-     -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_SOLARIS ; then
+     -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_SOLARIS \
+     -o x$VGCONF_PLATFORM_SEC_CAPS = xMIPS32_LINUX ; then
   mflag_secondary=$FLAG_M32
 elif test x$VGCONF_PLATFORM_SEC_CAPS = xX86_DARWIN ; then
   mflag_secondary="$FLAG_M32 -arch i386"

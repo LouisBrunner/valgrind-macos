@@ -1048,8 +1048,7 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             HReg r_dst = newVRegI(env);
             HReg argL = iselWordExpr_R(env, e->Iex.Binop.arg1);
             HReg argR = iselWordExpr_R(env, e->Iex.Binop.arg2);
-            MIPSRH *argRH = iselWordExpr_RH(env, False /*signed */ ,
-                                           e->Iex.Binop.arg2);
+            MIPSRH *argRH = MIPSRH_Reg(argR);
             /* max (v0, s0)
                ------------
                slt v1, v0, s0

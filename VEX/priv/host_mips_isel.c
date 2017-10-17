@@ -1784,13 +1784,15 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
       if ((ty == Ity_I8 || ty == Ity_I16 ||
            ty == Ity_I32 || ((ty == Ity_I64))) &&
            typeOfIRExpr(env->type_env, e->Iex.ITE.cond) == Ity_I1) {
-         HReg r_dst  = iselWordExpr_R(env, e->Iex.ITE.iffalse);
+         HReg r0     = iselWordExpr_R(env, e->Iex.ITE.iffalse);
          HReg r1     = iselWordExpr_R(env, e->Iex.ITE.iftrue);
          HReg r_cond = iselWordExpr_R(env, e->Iex.ITE.cond);
+         HReg r_dst = newVRegI(env);
          /*
           * r_dst = r0
           * movn r_dst, r1, r_cond
           */
+         addInstr(env, mk_iMOVds_RR(r_dst, r0));
          addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, r_dst, r1, r_cond));
          return r_dst;
       }

@@ -236,3 +236,15 @@
    Memcheck:Cond
    fun:_dl_relocate_object
 }
+
+# glibc ld.so has an optimization when resolving a symbol that checks
+# whether or not the upper 128 bits of the ymm registers are zero. If
+# so it uses "cheaper" instructions to save/restore them using the xmm
+# registers. If those upper 128 bits contain undefined values memcheck
+# will issue an Conditional jump or move depends on uninitialised value(s)
+# warning whenever trying to resolve a symbol.
+{
+   dl-trampoline-sse-avx
+   Memcheck:Cond
+   fun:_dl_runtime_resolve_avx_slow
+}

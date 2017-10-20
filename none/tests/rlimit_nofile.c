@@ -98,11 +98,9 @@ int main(int argc, char **argv)
       perror("open");
    }
 
-   if (setrlimit(RLIMIT_NOFILE, NULL) != -1  || errno != EFAULT)
-   {
-      fprintf(stderr, "setrlimit non addressable arg2 must set errno=EFAULT\n");
-      exit(1);
-   }
+   /* We used to test setrlimit(RLIMIT_NOFILE, NULL) -1 || errno != EFAULT,
+      but glibc doesn't give any guarantees that won't just crash, in
+      newer versions it just silently succeeds... See bug #385912. */
    
    exit(0);
 }

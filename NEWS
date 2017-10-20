@@ -66,6 +66,7 @@ n-i-bz  Fix missing workq_ops operations (macOS)
 385183  PPC64, Add support for xscmpeqdp, xscmpgtdp, xscmpgedp, xsmincdp instructions
 385334  PPC64, fix vpermr, xxperm, xxpermr mask value.
 385868  glibc ld.so _dl_runtime_resolve_avx_slow conditional jump warning.
+385912  none/tests/rlimit_nofile fails on newer glibc/kernel.
 
 Release 3.13.0 (15 June 2017)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

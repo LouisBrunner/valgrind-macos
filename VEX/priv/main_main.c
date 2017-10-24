@@ -1744,6 +1744,10 @@ static const HChar* show_hwcaps_mips32 ( UInt hwcaps )
 {
    /* MIPS baseline. */
    if (VEX_MIPS_COMP_ID(hwcaps) == VEX_PRID_COMP_MIPS) {
+      /* MIPS baseline with msa. */
+      if (VEX_MIPS_PROC_MSA(hwcaps)) {
+         return "MIPS-baseline-msa";
+      }
       /* MIPS baseline with dspr2. */
       if (VEX_MIPS_PROC_DSP2(hwcaps)) {
          return "MIPS-baseline-dspr2";
@@ -1804,7 +1808,11 @@ static const HChar* show_hwcaps_mips64 ( UInt hwcaps )
 
    /* MIPS64 baseline. */
    if (VEX_MIPS_COMP_ID(hwcaps) == VEX_PRID_COMP_MIPS) {
-      return "mips64-baseline";
+      /* MIPS baseline with msa. */
+      if (VEX_MIPS_PROC_MSA(hwcaps)) {
+         return "MIPS64-baseline-msa";
+      }
+      return "MIPS64-baseline";
    }
 
    return "Unsupported baseline";

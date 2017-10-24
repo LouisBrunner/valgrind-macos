@@ -220,6 +220,7 @@ typedef
  */
 #define VEX_PRID_IMP_34K                0x9500
 #define VEX_PRID_IMP_74K                0x9700
+#define VEX_PRID_IMP_P5600              0xa800
 
 /*
  * Instead of Company Options values, bits 31:24 will be packed with
@@ -256,6 +257,11 @@ typedef
 #define VEX_MIPS_PROC_DSP(x)  (VEX_MIPS_PROC_DSP2(x) || \
                                ((VEX_MIPS_COMP_ID(x) == VEX_PRID_COMP_MIPS) && \
                                (VEX_MIPS_PROC_ID(x) == VEX_PRID_IMP_34K)))
+
+/* Check if the processor supports MIPS MSA (SIMD)*/
+#define VEX_MIPS_PROC_MSA(x) ((VEX_MIPS_COMP_ID(x) == VEX_PRID_COMP_MIPS) && \
+                              (VEX_MIPS_PROC_ID(x) == VEX_PRID_IMP_P5600) && \
+                              (VEX_MIPS_HOST_FP_MODE(x)))
 
 /* These return statically allocated strings. */
 

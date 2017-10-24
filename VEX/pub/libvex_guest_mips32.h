@@ -154,7 +154,45 @@ typedef
       /*  492 */ UInt guest_LLaddr;
       /*  496 */ UInt guest_LLdata;
 
-      /*  500 */ UInt _padding2[3];
+      /*  500 */ UInt _padding2;
+
+      /* MIPS32 MSA 128-bit vector registers */
+      /*  504 */ V128 guest_w0;
+      /*  520 */ V128 guest_w1;
+      /*  536 */ V128 guest_w2;
+      /*  552 */ V128 guest_w3;
+      /*  568 */ V128 guest_w4;
+      /*  584 */ V128 guest_w5;
+      /*  600 */ V128 guest_w6;
+      /*  616 */ V128 guest_w7;
+      /*  632 */ V128 guest_w8;
+      /*  648 */ V128 guest_w9;
+      /*  664 */ V128 guest_w10;
+      /*  680 */ V128 guest_w11;
+      /*  696 */ V128 guest_w12;
+      /*  712 */ V128 guest_w13;
+      /*  728 */ V128 guest_w14;
+      /*  744 */ V128 guest_w15;
+      /*  760 */ V128 guest_w16;
+      /*  776 */ V128 guest_w17;
+      /*  792 */ V128 guest_w18;
+      /*  808 */ V128 guest_w19;
+      /*  824 */ V128 guest_w20;
+      /*  840 */ V128 guest_w21;
+      /*  856 */ V128 guest_w22;
+      /*  872 */ V128 guest_w23;
+      /*  888 */ V128 guest_w24;
+      /*  904 */ V128 guest_w25;
+      /*  920 */ V128 guest_w26;
+      /*  936 */ V128 guest_w27;
+      /*  952 */ V128 guest_w28;
+      /*  968 */ V128 guest_w29;
+      /*  984 */ V128 guest_w30;
+      /*  1000 */ V128 guest_w31;
+
+      /*  1016 */ UInt guest_MSACSR;
+
+      /*  1020 */ UInt _padding3;
 } VexGuestMIPS32State;
 /*---------------------------------------------------------------*/
 /*--- Utility functions for MIPS32 guest stuff.               ---*/

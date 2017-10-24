@@ -94,6 +94,20 @@ typedef enum {
    SUBS,     SUBD,    DIVS
 } flt_op;
 
+typedef enum {
+   FADDW=0, FADDD, FSUBW, FSUBD, FMULW, FMULD, FDIVW, FDIVD, FMADDW, FMADDD,
+   FCAFD, FCAFW, FSAFD, FSAFW, FCEQD, FCEQW, FSEQD, FSEQW, FCLTD, FCLTW, FSLTD,
+   FSLTW, FCLED, FCLEW, FSLED, FSLEW, FCNED, FCNEW, FSNED, FSNEW, FCUND, FCUNW,
+   FSUND, FSUNW, FCORD, FCORW, FSORD, FSORW, FCUEQD, FCUEQW, FSUEQD, FSUEQW,
+   FCUNED, FCUNEW, FSUNED, FSUNEW, FCULED, FCULEW, FSULED, FSULEW, FCULTD,
+   FCULTW, FSULTD, FSULTW, FEXP2W, FEXP2D, FMINW, FMIND, FMINAW, FMINAD, FMAXW,
+   FMAXD, FMAXAW, FMAXAD, FFINTSW, FFINTSD, FRCPW, FRCPD, FRSQRTW, FRSQRTD,
+   FSQRTW, FSQRTD, FRINTW, FRINTD, FTRUNCUW, FTRUNCUD, FTRUNCSW, FTRUNCSD,
+   FEXDOH, FEXDOW, FEXUPRD, FEXUPRW, FEXUPLD, FEXUPLW, FLOG2W, FLOG2D,
+   FTQH, FTQW, FFQRW, FFQRD,FFQLW, FFQLD, FTINT_SW, FTINT_SD,
+   FTINT_UW, FTINT_UD, FFINT_UW, FFINT_UD,
+} msa_flt_op;
+
 #if defined (_MIPSEL)
    #define MIPS_IEND Iend_LE
 #else
@@ -108,6 +122,11 @@ extern UInt mips_dirtyhelper_calculate_FCSR_fp32 ( void* guest_state, UInt fs,
 /* Calculate FCSR in fp64 mode. */
 extern UInt mips_dirtyhelper_calculate_FCSR_fp64 ( void* guest_state, UInt fs,
                                                    UInt ft, flt_op op );
+
+extern UInt mips_dirtyhelper_calculate_MSACSR ( void* gs, UInt ws, UInt wt,
+                                                msa_flt_op inst );
+extern UInt mips_dirtyhelper_get_MSAIR ( void );
+
 
 /*---------------------------------------------------------*/
 /*---               Condition code stuff                ---*/

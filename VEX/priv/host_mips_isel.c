@@ -58,6 +58,9 @@ static Bool fp_mode64 = False;
 /* Host hwcaps */
 static UInt hwcaps_host = 0;
 
+/* Host CPU has MSA ASE */
+static Bool has_msa = False;
+
 /* GPR register class for mips32/64 */
 #define HRcGPR(_mode64) ((_mode64) ? HRcInt64 : HRcInt32)
 
@@ -187,6 +190,13 @@ static HReg newVRegF(ISelEnv * env)
    return reg;
 }
 
+static HReg newVRegV ( ISelEnv* env )
+{
+   HReg reg = mkHReg(True/*virtual reg*/, HRcVec128, 0, env->vreg_ctr);
+   env->vreg_ctr++;
+   return reg;
+}
+
 static void add_to_sp(ISelEnv * env, UInt n)
 {
    HReg sp = StackPointer(mode64);
@@ -241,6 +251,11 @@ static MIPSRH *iselWordExpr_RH5u(ISelEnv * env, IRExpr * e);
 static MIPSRH *iselWordExpr_RH6u_wrk(ISelEnv * env, IRExpr * e);
 static MIPSRH *iselWordExpr_RH6u(ISelEnv * env, IRExpr * e);
 
+/* Compute an I8 into a reg-or-7-bit-unsigned-immediate, the latter being an
+   immediate in the range 1 .. 127 inclusive.  Used for doing shift amounts. */
+static MIPSRH *iselWordExpr_RH7u_wrk(ISelEnv * env, IRExpr * e);
+static MIPSRH *iselWordExpr_RH7u(ISelEnv * env, IRExpr * e);
+
 /* compute an I8/I16/I32 into a GPR*/
 static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e);
 static HReg iselWordExpr_R(ISelEnv * env, IRExpr * e);
@@ -258,6 +273,9 @@ static void iselInt64Expr(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e);
 static void iselInt128Expr_wrk(HReg * rHi, HReg * rLo,
                                ISelEnv * env, IRExpr * e);
 static void iselInt128Expr(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e);
+
+static HReg iselV128Expr( ISelEnv* env, IRExpr* e );
+static HReg iselV128Expr_wrk( ISelEnv* env, IRExpr* e );
 
 static MIPSCondCode iselCondCode_wrk(ISelEnv * env, IRExpr * e);
 static MIPSCondCode iselCondCode(ISelEnv * env, IRExpr * e);
@@ -300,6 +318,66 @@ static void set_MIPS_rounding_mode(ISelEnv * env, IRExpr * mode)
    addInstr(env, MIPSInstr_MtFCSR(tmp));
 }
 
+static void set_MIPS_rounding_mode_MSA(ISelEnv * env, IRExpr * mode) {
+   /*
+      rounding mode | MIPS | IR
+      ------------------------
+      to nearest    | 00  | 00
+      to zero       | 01  | 11
+      to +infinity  | 10  | 10
+      to -infinity  | 11  | 01
+    */
+   /* rm_MIPS32  = XOR(rm_IR , (rm_IR << 1)) & 3 */
+   HReg irrm = iselWordExpr_R(env, mode);
+   HReg tmp = newVRegI(env);
+   HReg msacsr_old = newVRegI(env);
+   MIPSAMode *am_addr;
+   addInstr(env, MIPSInstr_Shft(Mshft_SLL, True, tmp, irrm,
+                                MIPSRH_Imm(False, 1)));
+   addInstr(env, MIPSInstr_Alu(Malu_XOR, tmp, irrm, MIPSRH_Reg(tmp)));
+   addInstr(env, MIPSInstr_Alu(Malu_AND, tmp, tmp, MIPSRH_Imm(False, 3)));
+   /* save old value of MSACSR */
+   addInstr(env, MIPSInstr_MsaElm(MSA_CFCMSA, hregMIPS_GPR0(mode64), msacsr_old,
+                                  MSA_DFN_W));
+   sub_from_sp(env, 8); /*  Move SP down 8 bytes */
+   am_addr = MIPSAMode_IR(0, StackPointer(mode64));
+   /* store old MSACSR to stack */
+   addInstr(env, MIPSInstr_Store(4, am_addr, msacsr_old, mode64));
+   /* set new value of MSACSR */
+   addInstr(env, MIPSInstr_MsaElm(MSA_CTCMSA, tmp, hregMIPS_GPR0(mode64),
+                                  MSA_DFN_W));
+}
+
+
+static void set_guest_MIPS_rounding_mode_MSA(ISelEnv * env) {
+   /*
+      rounding mode | MIPS | IR
+      ------------------------
+      to nearest    | 00  | 00
+      to zero       | 01  | 11
+      to +infinity  | 10  | 10
+      to -infinity  | 11  | 01
+    */
+   /* rm_MIPS32  = XOR(rm_IR , (rm_IR << 1)) & 3 */
+   HReg irrm =  newVRegI(env);
+   HReg msacsr_old = newVRegI(env);
+   MIPSAMode *am_addr;
+   MIPSAMode *rm_addr = MIPSAMode_IR(MSACSR_OFFSET(mode64),
+                                     GuestStatePointer(mode64));
+   addInstr(env, MIPSInstr_Load(4, irrm, rm_addr, mode64));
+   /* save old value of MSACSR */
+   addInstr(env, MIPSInstr_MsaElm(MSA_CFCMSA, hregMIPS_GPR0(mode64), msacsr_old,
+                                  MSA_DFN_W));
+   sub_from_sp(env, 8); /*  Move SP down 8 bytes */
+   am_addr = MIPSAMode_IR(0, StackPointer(mode64));
+   /* store old MSACSR to stack */
+   addInstr(env, MIPSInstr_Store(4, am_addr, msacsr_old, mode64));
+   /* set new value of MSACSR */
+   addInstr(env, MIPSInstr_MsaElm(MSA_CTCMSA, irrm, hregMIPS_GPR0(mode64),
+                                  MSA_DFN_W));
+}
+
+
 static void set_MIPS_rounding_default(ISelEnv * env)
 {
    HReg fcsr = newVRegI(env);
@@ -313,6 +391,18 @@ static void set_MIPS_rounding_default(ISelEnv * env)
 
    /* set new value of FCSR*/
    addInstr(env, MIPSInstr_MtFCSR(fcsr));
+}
+
+static void set_MIPS_rounding_default_MSA(ISelEnv * env) {
+   HReg msacsr = newVRegI(env);
+   /* load as float */
+   MIPSAMode *am_addr;
+   am_addr = MIPSAMode_IR(0, StackPointer(mode64));
+   addInstr(env, MIPSInstr_Load(4, msacsr, am_addr, mode64));
+   add_to_sp(env, 8);  /* Reset SP */
+   /* set new value of FCSR*/
+   addInstr(env, MIPSInstr_MsaElm(MSA_CTCMSA, msacsr, hregMIPS_GPR0(mode64),
+                                  MSA_DFN_W));
 }
 
 /*---------------------------------------------------------*/
@@ -515,7 +605,7 @@ static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
          if (LIKELY(!is_IRExpr_VECRET_or_GSPTR(arg)))
             aTy = typeOfIRExpr(env->type_env, arg);
 
-         if (aTy == Ity_I32 || mode64) {
+         if (aTy == Ity_I32 || (mode64 && aTy != Ity_INVALID)) {
             argiregs |= (1 << (argreg + 4));
             addInstr(env, mk_iMOVds_RR(argregs[argreg],
                                        iselWordExpr_R(env, arg)));
@@ -556,7 +646,7 @@ static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
          if (LIKELY(!is_IRExpr_VECRET_or_GSPTR(arg)))
             aTy  = typeOfIRExpr(env->type_env, arg);
 
-         if (aTy == Ity_I32 || (mode64 && arg->tag != Iex_GSPTR)) {
+         if (aTy == Ity_I32 || (mode64 && aTy != Ity_INVALID)) {
             tmpregs[argreg] = iselWordExpr_R(env, arg);
             argreg++;
          } else if (aTy == Ity_I64) {  /* Ity_I64 */
@@ -575,8 +665,8 @@ static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
             argreg++;
          }
          else if (arg->tag == Iex_VECRET) {
-            // If this happens, it denotes ill-formed IR
-            vassert(0);
+            tmpregs[argreg++] = StackPointer(mode64);
+            sub_from_sp(env, 16); /*  Move SP down 16 bytes */
          }
       }
 
@@ -623,7 +713,6 @@ static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
          *retloc = mk_RetLoc_simple(RLPri_Int);
          break;
       case Ity_V128:
-         vassert(0); // ATC
          *retloc = mk_RetLoc_spRel(RLPri_V128SpRel, 0);
          *stackAdjustAfterCall = 16;
          break;
@@ -957,8 +1046,22 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             return r_dst;
          }
 
+          if (!mode64 && (e->Iex.Binop.op == Iop_CasCmpEQ64
+              || e->Iex.Binop.op == Iop_CmpEQ64)) {
+             HReg tmp1, tmp2, tmp3, tmp4;
+             HReg dst1 = newVRegI(env);
+             HReg dst2 = newVRegI(env);
+             iselInt64Expr(&tmp1, &tmp2, env, e->Iex.Binop.arg1);
+             iselInt64Expr(&tmp3, &tmp4, env, e->Iex.Binop.arg2);
+             addInstr(env, MIPSInstr_Cmp(False, True, dst1, tmp1, tmp3, MIPScc_EQ));
+             addInstr(env, MIPSInstr_Cmp(False, True, dst2, tmp2, tmp4, MIPScc_EQ));
+             addInstr(env, MIPSInstr_Alu(Malu_AND, dst1, dst1, MIPSRH_Reg(dst2)));
+             return dst1;
+          }
+
          /* Cmp*32*(x,y) ? */
          if (e->Iex.Binop.op == Iop_CmpEQ32
+             || e->Iex.Binop.op == Iop_CmpEQ8
              || e->Iex.Binop.op == Iop_CmpEQ16
              || e->Iex.Binop.op == Iop_CmpNE32
              || e->Iex.Binop.op == Iop_CmpNE64
@@ -990,6 +1093,7 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
                   cc = MIPScc_EQ;
                   size32 = True;
                   break;
+               case Iop_CmpEQ8:
                case Iop_CmpEQ16:
                   cc = MIPScc_EQ;
                   size32 = True;
@@ -1098,6 +1202,38 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             addInstr(env, MIPSInstr_Mult(False, r_tmpL, r_tmpR));
             addInstr(env, MIPSInstr_Mflo(r_tmpR));
             return r_tmpR;
+         }
+
+         if (e->Iex.Binop.op == Iop_MullU8 ||
+             e->Iex.Binop.op == Iop_MullS8 ||
+             e->Iex.Binop.op == Iop_MullU16 ||
+             e->Iex.Binop.op == Iop_MullS16) {
+            Bool syned = toBool((e->Iex.Binop.op == Iop_MullS8) ||
+                                (e->Iex.Binop.op == Iop_MullS16));
+            HReg r_dst = newVRegI(env);
+            HReg r_srcL = iselWordExpr_R(env, e->Iex.Binop.arg1);
+            HReg r_srcR = iselWordExpr_R(env, e->Iex.Binop.arg2);
+            if (syned) {
+               Int no_bits = (e->Iex.Binop.op == Iop_MullS16) ? 16 : 24;
+               addInstr(env, MIPSInstr_Shft(Mshft_SLL, True,
+                                            r_srcL, r_srcL,
+                                            MIPSRH_Imm(False, no_bits)));
+               addInstr(env, MIPSInstr_Shft(Mshft_SRA, True,
+                                            r_srcL, r_srcL,
+                                            MIPSRH_Imm(False, no_bits)));
+               addInstr(env, MIPSInstr_Shft(Mshft_SLL, True,
+                                            r_srcR, r_srcR,
+                                            MIPSRH_Imm(False, no_bits)));
+               addInstr(env, MIPSInstr_Shft(Mshft_SRA, True,
+                                            r_srcR, r_srcR,
+                                            MIPSRH_Imm(False, no_bits)));
+               addInstr(env, MIPSInstr_Mul(r_dst, r_srcL, r_srcR));
+
+            } else {
+               addInstr(env, MIPSInstr_Mult(syned, r_srcL, r_srcR));
+               addInstr(env, MIPSInstr_Mflo(r_dst));
+            }
+            return r_dst;
          }
 
          if (e->Iex.Binop.op == Iop_CmpF64) {
@@ -1214,6 +1350,22 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             return r_dst;
          }
 
+         if (e->Iex.Binop.op == Iop_DivS32 ||
+             e->Iex.Binop.op == Iop_DivU32 ||
+             (e->Iex.Binop.op == Iop_DivS64 && mode64) ||
+             (e->Iex.Binop.op == Iop_DivU64 && mode64)) {
+            HReg r_dst = newVRegI(env);
+            Bool syned = toBool(e->Iex.Binop.op == Iop_DivS32 ||
+                                e->Iex.Binop.op == Iop_DivS64);
+            Bool div32 = toBool(e->Iex.Binop.op == Iop_DivS32 ||
+                                e->Iex.Binop.op == Iop_DivU32);
+            HReg r_srcR = iselWordExpr_R(env, e->Iex.Binop.arg2);
+            HReg r_srcL = iselWordExpr_R(env, e->Iex.Binop.arg1);
+            addInstr(env, MIPSInstr_Div(syned, div32, r_srcL, r_srcR));
+            addInstr(env, MIPSInstr_Mflo(r_dst));
+            return r_dst;
+         }
+
          if (e->Iex.Binop.op == Iop_8HLto16
              || e->Iex.Binop.op == Iop_16HLto32) {
             HReg tHi   = iselWordExpr_R(env, e->Iex.Binop.arg1);
@@ -1304,6 +1456,163 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             /* Move Word From Floating Point
                mfc1 r_dst, valS */
             addInstr(env, MIPSInstr_FpGpMove(MFpGpMove_mfc1, r_dst, valS));
+
+            return r_dst;
+         }
+
+         if (e->Iex.Binop.op == Iop_F32toI32U) {
+            HReg valF = iselFltExpr(env, e->Iex.Binop.arg2);
+            HReg tmpD = newVRegD(env);
+            HReg r_dst  = newVRegI(env);
+            MIPSAMode *am_addr;
+
+            /* CVTLS tmpD, valF */
+            set_MIPS_rounding_mode(env, e->Iex.Binop.arg1);
+            addInstr(env, MIPSInstr_FpConvert(Mfp_CVTLS, tmpD, valF));
+            set_MIPS_rounding_default(env);
+
+            sub_from_sp(env, 16);  /* Move SP down 16 bytes */
+            am_addr = MIPSAMode_IR(0, StackPointer(mode64));
+
+            /* store as F64 */
+            addInstr(env, MIPSInstr_FpLdSt(False /*store */ , 8, tmpD,
+                                           am_addr));
+            /* load as 2xI32 */
+#if defined (_MIPSEL)
+            addInstr(env, MIPSInstr_Load(4, r_dst, am_addr, mode64));
+#elif defined (_MIPSEB)
+            addInstr(env, MIPSInstr_Load(4, r_dst, nextMIPSAModeFloat(am_addr),
+                                         mode64));
+#endif
+
+            /* Reset SP */
+            add_to_sp(env, 16);
+
+            return r_dst;
+         }
+
+         if (e->Iex.Binop.op == Iop_F64toI64U) {
+            HReg r_src;
+            HReg tmp = newVRegV(env);
+            vassert(has_msa);
+            r_src = iselFltExpr( env, e->Iex.Binop.arg2);
+            set_MIPS_rounding_mode_MSA(env, e->Iex.Binop.arg1);
+            addInstr(env, MIPSInstr_Msa2RF(MSA_FTINT_U, MSA_F_DW, tmp, r_src));
+            HReg r_dst = newVRegI(env);
+            addInstr(env,
+                     MIPSInstr_MsaElm(MSA_COPY_S, tmp, r_dst, MSA_DFN_D | 0));
+            set_MIPS_rounding_default_MSA(env);
+            return r_dst;
+         }
+
+         if (e->Iex.Binop.op == Iop_GetElem8x16) {
+            HReg v_src = iselV128Expr(env, e->Iex.Binop.arg1);
+            HReg r_dst = newVRegI(env);
+            MIPSRH *tmp = iselWordExpr_RH(env, False, e->Iex.Binop.arg2);
+            vassert(has_msa);
+            switch (tmp->tag) {
+               case Mrh_Imm:
+                  addInstr(env,
+                           MIPSInstr_MsaElm(MSA_COPY_U, v_src, r_dst,
+                                            MSA_DFN_B |
+                                            (tmp->Mrh.Imm.imm16 & 0x0f)));
+                  break;
+
+               case Mrh_Reg: {
+                     HReg v_tmp = newVRegV(env);
+                     addInstr(env,
+                              MIPSInstr_Msa3R(MSA_SPLAT, MSA_B, v_tmp, v_src,
+                                              tmp->Mrh.Reg.reg));
+                     addInstr(env,
+                              MIPSInstr_MsaElm(MSA_COPY_U, v_tmp, r_dst,
+                                               MSA_DFN_B));
+                     break;
+                  }
+            }
+
+            return r_dst;
+         }
+
+
+         if (e->Iex.Binop.op == Iop_GetElem16x8) {
+            HReg v_src = iselV128Expr(env, e->Iex.Binop.arg1);
+            HReg r_dst = newVRegI(env);
+            MIPSRH *tmp = iselWordExpr_RH(env, False, e->Iex.Binop.arg2);
+            vassert(has_msa);
+            switch (tmp->tag) {
+               case Mrh_Imm:
+                  addInstr(env,
+                           MIPSInstr_MsaElm(MSA_COPY_U, v_src, r_dst,
+                                            MSA_DFN_H |
+                                            (tmp->Mrh.Imm.imm16 & 0x07)));
+                  break;
+
+               case Mrh_Reg: {
+                     HReg v_tmp = newVRegV(env);
+                     addInstr(env,
+                              MIPSInstr_Msa3R(MSA_SPLAT, MSA_H, v_tmp, v_src,
+                                              tmp->Mrh.Reg.reg));
+                     addInstr(env,
+                              MIPSInstr_MsaElm(MSA_COPY_U, v_tmp, r_dst,
+                                               MSA_DFN_H));
+                     break;
+                  }
+            }
+
+            return r_dst;
+         }
+
+         if (e->Iex.Binop.op == Iop_GetElem32x4) {
+            HReg v_src = iselV128Expr(env, e->Iex.Binop.arg1);
+            HReg r_dst = newVRegI(env);
+            MIPSRH *tmp = iselWordExpr_RH(env, False, e->Iex.Binop.arg2);
+            vassert(has_msa);
+            switch (tmp->tag) {
+               case Mrh_Imm:
+                  addInstr(env, MIPSInstr_MsaElm(MSA_COPY_S, v_src, r_dst,
+                                                 MSA_DFN_W |
+                                                 (tmp->Mrh.Imm.imm16 & 0x03)));
+                  break;
+
+               case Mrh_Reg: {
+                     HReg v_tmp = newVRegV(env);
+                     addInstr(env,
+                              MIPSInstr_Msa3R(MSA_SPLAT, MSA_W, v_tmp, v_src,
+                                              tmp->Mrh.Reg.reg));
+                     addInstr(env,
+                              MIPSInstr_MsaElm(MSA_COPY_S, v_tmp, r_dst,
+                                               MSA_DFN_W));
+                     break;
+                  }
+            }
+
+            return r_dst;
+         }
+         if (e->Iex.Binop.op == Iop_GetElem64x2) {
+            vassert(mode64);
+            HReg v_src = iselV128Expr(env, e->Iex.Binop.arg1);
+            HReg r_dst = newVRegI(env);
+            MIPSRH *tmp = iselWordExpr_RH(env, False, e->Iex.Binop.arg2);
+            vassert(has_msa);
+            switch (tmp->tag) {
+               case Mrh_Imm:
+                  addInstr(env,
+                           MIPSInstr_MsaElm(MSA_COPY_S, v_src, r_dst,
+                                            MSA_DFN_D |
+                                            (tmp->Mrh.Imm.imm16 & 0x01)));
+                  break;
+
+               case Mrh_Reg: {
+                     HReg v_tmp = newVRegV(env);
+                     addInstr(env,
+                              MIPSInstr_Msa3R(MSA_SPLAT, MSA_D, v_tmp, v_src,
+                                              tmp->Mrh.Reg.reg));
+                     addInstr(env,
+                              MIPSInstr_MsaElm(MSA_COPY_S, v_tmp, r_dst,
+                                               MSA_DFN_D));
+                     break;
+                  }
+            }
 
             return r_dst;
          }
@@ -1502,11 +1811,15 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
 
          case Iop_64to1:
          case Iop_64to8: {
-            vassert(mode64);
             HReg r_src, r_dst;
             UShort mask = (op_unop == Iop_64to1) ? 0x1 : 0xFF;
             r_dst = newVRegI(env);
-            r_src = iselWordExpr_R(env, e->Iex.Unop.arg);
+            if (mode64)
+               r_src = iselWordExpr_R(env, e->Iex.Unop.arg);
+            else {
+              HReg tmp;
+              iselInt64Expr(&tmp, &r_src, env, e->Iex.Unop.arg);
+            }
             addInstr(env, MIPSInstr_Alu(Malu_AND, r_dst, r_src,
                           MIPSRH_Imm(False, mask)));
             return r_dst;
@@ -1719,6 +2032,52 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             iselInt128Expr(&rHi, &rLo, env, e->Iex.Unop.arg);
             return rLo;  /* and abandon rLo .. poor wee thing :-) */
          }
+
+         case Iop_V128to32: {
+            HReg i_dst = newVRegI(env);
+            HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+            vassert(has_msa);
+            addInstr(env,
+                     MIPSInstr_MsaElm(MSA_COPY_S, v_src, i_dst, MSA_DFN_W));
+            return i_dst;
+         }
+
+         case Iop_V128HIto64: {
+            vassert(mode64);
+            vassert(has_msa);
+            HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+            HReg reg = newVRegI(env);
+            addInstr(env,
+                     MIPSInstr_MsaElm(MSA_COPY_S, v_src, reg, MSA_DFN_D | 1));
+            return reg;
+         }
+
+         case Iop_V128to64: {
+            vassert(mode64);
+            vassert(has_msa);
+            HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+            HReg reg = newVRegI(env);
+            addInstr(env,
+                     MIPSInstr_MsaElm(MSA_COPY_S, v_src, reg, MSA_DFN_D | 0));
+            return reg;
+         }
+
+         case Iop_F32toF16x4: {
+            vassert(mode64);
+            vassert(has_msa);
+            HReg v_arg = iselV128Expr(env, e->Iex.Unop.arg);
+            HReg v_src = newVRegV(env);
+            set_guest_MIPS_rounding_mode_MSA(env);
+            addInstr(env,
+                     MIPSInstr_Msa3RF(MSA_FEXDO, MSA_F_WH,
+                                      v_src, v_arg, v_arg));
+            set_MIPS_rounding_default_MSA(env);
+            HReg reg = newVRegI(env);
+            addInstr(env,
+                     MIPSInstr_MsaElm(MSA_COPY_S, v_src, reg, MSA_DFN_D | 0));
+            return reg;
+         }
+
 
          default:
             break;
@@ -1981,7 +2340,6 @@ static MIPSRH *iselWordExpr_RH5u_wrk(ISelEnv * env, IRExpr * e)
 
 /* --------------------- RH6u --------------------- */
 
-/* Only used in 64-bit mode. */
 static MIPSRH *iselWordExpr_RH6u ( ISelEnv * env, IRExpr * e )
 {
    MIPSRH *ri;
@@ -1997,7 +2355,7 @@ static MIPSRH *iselWordExpr_RH6u ( ISelEnv * env, IRExpr * e )
       vassert(hregIsVirtual(ri->Mrh.Reg.reg));
       return ri;
    default:
-      vpanic("iselIntExpr_RH6u: unknown mips64 RI tag");
+      vpanic("iselIntExpr_RH6u: unknown RI tag");
    }
 }
 
@@ -2019,6 +2377,46 @@ static MIPSRH *iselWordExpr_RH6u_wrk ( ISelEnv * env, IRExpr * e )
    /* default case: calculate into a register and return that */
    return MIPSRH_Reg(iselWordExpr_R(env, e));
 }
+/* --------------------- RH7u --------------------- */
+
+static MIPSRH *iselWordExpr_RH7u ( ISelEnv * env, IRExpr * e )
+{
+   MIPSRH *ri;
+   ri = iselWordExpr_RH7u_wrk(env, e);
+   /* sanity checks ... */
+   switch (ri->tag) {
+   case Mrh_Imm:
+      vassert(ri->Mrh.Imm.imm16 >= 1 && ri->Mrh.Imm.imm16 <= 127);
+      vassert(!ri->Mrh.Imm.syned);
+      return ri;
+   case Mrh_Reg:
+      vassert(hregClass(ri->Mrh.Reg.reg) == HRcGPR(env->mode64));
+      vassert(hregIsVirtual(ri->Mrh.Reg.reg));
+      return ri;
+   default:
+      vpanic("iselIntExpr_RH7u: unknown RI tag");
+   }
+}
+
+/* DO NOT CALL THIS DIRECTLY ! */
+static MIPSRH *iselWordExpr_RH7u_wrk ( ISelEnv * env, IRExpr * e )
+{
+   IRType ty = typeOfIRExpr(env->type_env, e);
+   vassert(ty == Ity_I8);
+
+   /* special case: immediate */
+   if (e->tag == Iex_Const
+       && e->Iex.Const.con->tag == Ico_U8
+       && e->Iex.Const.con->Ico.U8 >= 1 && e->Iex.Const.con->Ico.U8 <= 127)
+   {
+      return MIPSRH_Imm(False /*unsigned */ ,
+              e->Iex.Const.con->Ico.U8);
+   }
+
+   /* default case: calculate into a register and return that */
+   return MIPSRH_Reg(iselWordExpr_R(env, e));
+}
+
 
 /* --------------------- CONDCODE --------------------- */
 
@@ -2152,6 +2550,2051 @@ static MIPSCondCode iselCondCode_wrk(ISelEnv * env, IRExpr * e)
    vex_printf("iselCondCode(mips): No such tag(%u)\n", e->tag);
    ppIRExpr(e);
    vpanic("iselCondCode(mips)");
+}
+
+/*---------------------------------------------------------*/
+/*--- ISEL: Vector expressions (128 bit - SIMD)         ---*/
+/*---------------------------------------------------------*/
+
+/* Compute a vector value into vector register.            */
+static HReg iselV128Expr (ISelEnv* env, IRExpr* e) {
+   vassert(has_msa);
+   HReg r = iselV128Expr_wrk(env, e);
+   vassert(hregClass(r) == HRcVec128);
+   vassert(hregIsVirtual(r));
+   return r;
+}
+
+/* DO NOT CALL THIS DIRECTLY ! */
+static HReg iselV128Expr_wrk(ISelEnv* env, IRExpr* e) {
+   IRType ty = typeOfIRExpr(env->type_env, e);
+   vassert(e);
+   vassert(ty == Ity_V128);
+
+   if (e->tag == Iex_RdTmp) {
+      return lookupIRTemp(env, e->Iex.RdTmp.tmp);
+   }
+
+   if (e->tag == Iex_Load) {
+      vassert (e->Iex.Load.ty == Ity_V128);
+      HReg v_dst = newVRegV(env);
+      addInstr(env, MIPSInstr_MsaMi10(MSA_LD, 0, iselWordExpr_R(env,
+                                      e->Iex.Load.addr), v_dst, MSA_B));
+      return v_dst;
+   }
+
+   if (e->tag == Iex_Get) {
+      HReg v_dst = newVRegV(env);
+#if defined(_MIPSEB)
+      HReg r_addr = newVRegI(env);
+      addInstr(env, MIPSInstr_Alu(mode64 ? Malu_DADD : Malu_ADD, r_addr, GuestStatePointer(mode64),
+                                  MIPSRH_Imm(False, e->Iex.Get.offset)));
+      addInstr(env, MIPSInstr_MsaMi10(MSA_LD, 0, r_addr, v_dst, MSA_B));
+#else
+      vassert(!(e->Iex.Get.offset & 7));
+      addInstr(env, MIPSInstr_MsaMi10(MSA_LD, e->Iex.Get.offset >> 3,
+                                      GuestStatePointer(mode64), v_dst, MSA_D));
+#endif
+      return v_dst;
+   }
+
+   if (e->tag == Iex_Unop) {
+      IROp op_unop = e->Iex.Unop.op;
+
+      switch (op_unop) {
+         case Iop_Abs64x2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_help = newVRegV(env);
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SUBV, MSA_D, v_help, v_src, v_src));
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ADD_A, MSA_D,
+                                        v_dst, v_src, v_help));
+               return v_dst;
+            }
+
+         case Iop_Abs32x4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_help = newVRegV(env);
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SUBV, MSA_W, v_help, v_src, v_src));
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ADD_A, MSA_W,
+                                        v_dst, v_src, v_help));
+               return v_dst;
+            }
+
+         case Iop_Abs16x8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_help = newVRegV(env);
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SUBV, MSA_H, v_help, v_src, v_src));
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ADD_A, MSA_H,
+                                        v_dst, v_src, v_help));
+               return v_dst;
+            }
+
+         case Iop_Abs8x16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_help = newVRegV(env);
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SUBV, MSA_B, v_help, v_src, v_src));
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ADD_A, MSA_B,
+                                        v_dst, v_src, v_help));
+               return v_dst;
+            }
+
+         case Iop_Cnt8x16: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg res = newVRegV(env);
+               addInstr(env, MIPSInstr_Msa2R(MSA_PCNT, MSA_B, v_src, res));
+               return res;
+            }
+
+         case Iop_NotV128: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               addInstr(env, MIPSInstr_MsaVec(MSA_NORV, v_dst, v_src, v_src));
+               return v_dst;
+            }
+
+         case Iop_Reverse8sIn16_x8: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_tmp = newVRegV(env);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVEV, MSA_B, v_tmp, v_src, v_src));
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVOD, MSA_B, v_src, v_tmp, v_src));
+               return v_src;
+            }
+
+         case Iop_Reverse8sIn32_x4: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_tmp = newVRegV(env);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVEV, MSA_H, v_tmp, v_src, v_src));
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVOD, MSA_H, v_src, v_tmp, v_src));
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVEV, MSA_B, v_tmp, v_src, v_src));
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVOD, MSA_B, v_src, v_tmp, v_src));
+               return v_src;
+            }
+
+         case Iop_Reverse8sIn64_x2: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_tmp = newVRegV(env);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVEV, MSA_W, v_tmp, v_src, v_src));
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVOD, MSA_W, v_src, v_tmp, v_src));
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVEV, MSA_H, v_tmp, v_src, v_src));
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVOD, MSA_H, v_src, v_tmp, v_src));
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVEV, MSA_B, v_tmp, v_src, v_src));
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVOD, MSA_B, v_src, v_tmp, v_src));
+               return v_src;
+            }
+
+         case Iop_Cls8x16: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_dst = newVRegV(env);
+               addInstr(env, MIPSInstr_Msa2R(MSA_NLOC, MSA_B, v_src, v_dst));
+               return v_dst;
+            }
+
+         case Iop_Cls16x8: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_dst = newVRegV(env);
+               addInstr(env, MIPSInstr_Msa2R(MSA_NLOC, MSA_H, v_src, v_dst));
+               return v_dst;
+            }
+
+         case Iop_Cls32x4: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_dst = newVRegV(env);
+               addInstr(env, MIPSInstr_Msa2R(MSA_NLOC, MSA_W, v_src, v_dst));
+               return v_dst;
+            }
+
+         case Iop_Clz8x16: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_dst = newVRegV(env);
+               addInstr(env, MIPSInstr_Msa2R(MSA_NLZC, MSA_B, v_src, v_dst));
+               return v_dst;
+            }
+
+         case Iop_Clz16x8: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_dst = newVRegV(env);
+               addInstr(env, MIPSInstr_Msa2R(MSA_NLZC, MSA_H, v_src, v_dst));
+               return v_dst;
+            }
+
+         case Iop_Clz32x4: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_dst = newVRegV(env);
+               addInstr(env, MIPSInstr_Msa2R(MSA_NLZC, MSA_W, v_src, v_dst));
+               return v_dst;
+            }
+
+         case Iop_Clz64x2: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_dst = newVRegV(env);
+               addInstr(env, MIPSInstr_Msa2R(MSA_NLZC, MSA_D, v_src, v_dst));
+               return v_dst;
+            }
+
+         case Iop_Abs32Fx4: {
+               HReg v_src  = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_dst  = newVRegV(env);
+               HReg v_help = newVRegV(env);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FMUL, MSA_F_WH,
+                                         v_help, v_src, v_src));
+               addInstr(env,
+                        MIPSInstr_Msa2RF(MSA_FSQRT, MSA_F_WH, v_dst, v_help));
+               return v_dst;
+            }
+
+         case Iop_Abs64Fx2: {
+               HReg v_src  = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_dst  = newVRegV(env);
+               HReg v_help = newVRegV(env);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FMUL, MSA_F_DW,
+                                         v_help, v_src, v_src));
+               addInstr(env,
+                        MIPSInstr_Msa2RF(MSA_FSQRT, MSA_F_DW, v_dst, v_help));
+               return v_dst;
+            }
+
+         case Iop_RecipEst32Fx4: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_dst = newVRegV(env);
+               set_guest_MIPS_rounding_mode_MSA(env);
+               addInstr(env,
+                        MIPSInstr_Msa2RF(MSA_FRCP, MSA_F_WH, v_dst, v_src));
+               set_MIPS_rounding_default_MSA(env);
+               return v_dst;
+            }
+
+         case Iop_RecipEst64Fx2: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_dst = newVRegV(env);
+               set_guest_MIPS_rounding_mode_MSA(env);
+               addInstr(env,
+                        MIPSInstr_Msa2RF(MSA_FRCP, MSA_F_DW, v_dst, v_src));
+               set_MIPS_rounding_default_MSA(env);
+               return v_dst;
+            }
+
+         case Iop_RSqrtEst32Fx4: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_dst = newVRegV(env);
+               set_guest_MIPS_rounding_mode_MSA(env);
+               addInstr(env,
+                        MIPSInstr_Msa2RF(MSA_FRSQRT, MSA_F_WH, v_dst, v_src));
+               set_MIPS_rounding_default_MSA(env);
+               return v_dst;
+            }
+
+         case Iop_RSqrtEst64Fx2: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_dst = newVRegV(env);
+               set_guest_MIPS_rounding_mode_MSA(env);
+               addInstr(env,
+                        MIPSInstr_Msa2RF(MSA_FRSQRT, MSA_F_DW, v_dst, v_src));
+               set_MIPS_rounding_default_MSA(env);
+               return v_dst;
+            }
+
+         case Iop_F16toF32x4: {
+               HReg v_dst = newVRegV(env);
+
+               if (mode64) {
+                  HReg r_src;
+                  r_src = iselWordExpr_R(env, e->Iex.Unop.arg);
+                  addInstr(env,
+                           MIPSInstr_Msa2R(MSA_FILL, MSA_D, r_src, v_dst));
+                  addInstr(env,
+                           MIPSInstr_MsaElm(MSA_INSERT, r_src, v_dst,
+                                            MSA_DFN_D | 1));
+               } else {
+                  HReg r_srch, r_srcl;
+                  iselInt64Expr(&r_srch, &r_srcl, env, e->Iex.Unop.arg);
+                  addInstr(env,
+                           MIPSInstr_Msa2R(MSA_FILL, MSA_W, r_srcl, v_dst));
+                  addInstr(env,
+                           MIPSInstr_MsaElm(MSA_INSERT, r_srch, v_dst,
+                                            MSA_DFN_W | 1));
+                  addInstr(env,
+                           MIPSInstr_MsaElm(MSA_INSERT, r_srcl, v_dst,
+                                            MSA_DFN_W | 2));
+                  addInstr(env,
+                           MIPSInstr_MsaElm(MSA_INSERT, r_srch, v_dst,
+                                            MSA_DFN_W | 3));
+               }
+
+               addInstr(env,
+                        MIPSInstr_Msa2RF(MSA_FEXUPR, MSA_F_WH, v_dst, v_dst));
+               return v_dst;
+            }
+
+         case Iop_I32UtoFx4: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_dst = newVRegV(env);
+               set_guest_MIPS_rounding_mode_MSA(env);
+               addInstr(env,
+                        MIPSInstr_Msa2RF(MSA_FFINT_U, MSA_F_WH, v_dst, v_src));
+               set_MIPS_rounding_default_MSA(env);
+               return v_dst;
+            }
+
+         case Iop_FtoI32Sx4_RZ: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_dst = newVRegV(env);
+               addInstr(env,
+                        MIPSInstr_Msa2RF(MSA_FTRUNC_S, MSA_F_WH, v_dst, v_src));
+               return v_dst;
+            }
+
+         case Iop_FtoI32Ux4_RZ: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_dst = newVRegV(env);
+               addInstr(env,
+                        MIPSInstr_Msa2RF(MSA_FTRUNC_U, MSA_F_WH, v_dst, v_src));
+               return v_dst;
+            }
+
+         case Iop_Log2_32Fx4: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_dst = newVRegV(env);
+               addInstr(env,
+                        MIPSInstr_Msa2RF(MSA_FLOG2, MSA_F_WH, v_dst, v_src));
+               return v_dst;
+            }
+
+         case Iop_Log2_64Fx2: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_dst = newVRegV(env);
+               addInstr(env,
+                        MIPSInstr_Msa2RF(MSA_FLOG2, MSA_F_DW, v_dst, v_src));
+               return v_dst;
+            }
+         case Iop_CmpNEZ8x16: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_dst = newVRegV(env);
+               HReg zero = Zero(mode64);
+               addInstr(env, MIPSInstr_Msa2R(MSA_FILL, MSA_W, zero, v_dst));
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_CEQ, MSA_B, v_dst, v_src, v_dst));
+               addInstr(env, MIPSInstr_MsaVec(MSA_NORV, v_dst, v_dst, v_dst));
+               return v_dst;
+            }
+         case Iop_CmpNEZ16x8: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_dst = newVRegV(env);
+               HReg zero = Zero(mode64);
+               addInstr(env, MIPSInstr_Msa2R(MSA_FILL, MSA_W, zero, v_dst));
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_CEQ, MSA_H, v_dst, v_src, v_dst));
+               addInstr(env, MIPSInstr_MsaVec(MSA_NORV, v_dst, v_dst, v_dst));
+               return v_dst;
+            }
+          case Iop_CmpNEZ32x4: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_dst = newVRegV(env);
+               HReg zero = Zero(mode64);
+               addInstr(env, MIPSInstr_Msa2R(MSA_FILL, MSA_W, zero, v_dst));
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_CEQ, MSA_W, v_dst, v_src, v_dst));
+               addInstr(env, MIPSInstr_MsaVec(MSA_NORV, v_dst, v_dst, v_dst));
+               return v_dst;
+            }
+          case Iop_CmpNEZ64x2: {
+               HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+               HReg v_dst = newVRegV(env);
+               HReg zero = Zero(mode64);
+               addInstr(env, MIPSInstr_Msa2R(MSA_FILL, MSA_W, zero, v_dst));
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_CEQ, MSA_D, v_dst, v_src, v_dst));
+               addInstr(env, MIPSInstr_MsaVec(MSA_NORV, v_dst, v_dst, v_dst));
+               return v_dst;
+            }
+         default:
+            vex_printf("iselV128Expr_wrk: Unsupported unop: %u\n", op_unop);
+      }
+   }
+
+   if (e->tag == Iex_Binop) {
+      IROp op_binop = e->Iex.Binop.op;
+
+      switch (op_binop) {
+         case Iop_Add8x16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ADDV, MSA_B,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Add16x8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ADDV, MSA_H,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Add32x4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ADDV, MSA_W,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Add64x2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ADDV, MSA_D,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Sub8x16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SUBV, MSA_B,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Sub16x8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SUBV, MSA_H,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Sub32x4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SUBV, MSA_W,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Sub64x2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SUBV, MSA_D,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_QAdd8Sx16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ADDS_S, MSA_B,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_QAdd16Sx8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ADDS_S, MSA_H,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_QAdd32Sx4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ADDS_S, MSA_W,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_QAdd64Sx2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ADDS_S, MSA_D,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_QAdd8Ux16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ADDS_U, MSA_B,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_QAdd16Ux8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ADDS_U, MSA_H,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_QAdd32Ux4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ADDS_U, MSA_W,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_QAdd64Ux2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ADDS_U, MSA_D,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_QSub8Sx16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SUBS_S, MSA_B,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_QSub16Sx8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SUBS_S, MSA_H,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_QSub32Sx4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SUBS_S, MSA_W,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_QSub64Sx2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SUBS_S, MSA_D,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_QSub8Ux16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SUBS_U, MSA_B,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_QSub16Ux8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SUBS_U, MSA_H,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_QSub32Ux4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SUBS_U, MSA_W,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_QSub64Ux2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SUBS_U, MSA_D,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_QDMulHi32Sx4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_MUL_Q, MSA_F_DW,
+                                         v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_QDMulHi16Sx8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_MUL_Q, MSA_F_WH,
+                                         v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_QRDMulHi32Sx4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_MULR_Q, MSA_F_DW,
+                                         v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_QRDMulHi16Sx8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_MULR_Q, MSA_F_WH,
+                                         v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Max8Sx16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_MAX_S, MSA_B,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Max16Sx8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_MAX_S, MSA_H,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Max32Sx4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_MAX_S, MSA_W,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Max64Sx2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_MAX_S, MSA_D,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Max8Ux16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_MAX_U, MSA_B,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Max16Ux8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_MAX_U, MSA_H,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Max32Ux4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_MAX_U, MSA_W,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Max64Ux2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_MAX_U, MSA_D,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Min8Sx16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_MIN_S, MSA_B,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Min16Sx8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_MIN_S, MSA_H,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Min32Sx4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_MIN_S, MSA_W,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Min64Sx2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_MIN_S, MSA_D,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Min8Ux16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_MIN_U, MSA_B,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Min16Ux8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_MIN_U, MSA_H,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Min32Ux4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_MIN_U, MSA_W,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Min64Ux2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_MIN_U, MSA_D,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Shl8x16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SLL, MSA_B, v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Shl16x8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SLL, MSA_H, v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Shl32x4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SLL, MSA_W, v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Shl64x2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SLL, MSA_D, v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Shr8x16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SRL, MSA_B, v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Shr16x8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SRL, MSA_H,  v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Shr32x4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SRL, MSA_W, v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Shr64x2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SRL, MSA_D, v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Sar8x16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SRA, MSA_B, v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Sar16x8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SRA, MSA_H, v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Sar32x4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SRA, MSA_W, v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Sar64x2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SRA, MSA_D, v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_InterleaveHI8x16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVL, MSA_B, v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_InterleaveHI16x8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVL, MSA_H,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_InterleaveHI32x4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVL, MSA_W,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_InterleaveHI64x2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVL, MSA_D,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_InterleaveLO8x16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVR, MSA_B,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_InterleaveLO16x8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVR, MSA_H,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_InterleaveLO32x4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVR, MSA_W,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_InterleaveLO64x2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVR, MSA_D,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_InterleaveEvenLanes8x16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVEV, MSA_B,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_InterleaveEvenLanes16x8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVEV, MSA_H,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_InterleaveEvenLanes32x4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVEV, MSA_W,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_InterleaveOddLanes8x16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVOD, MSA_B,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_InterleaveOddLanes16x8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVOD, MSA_H,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_InterleaveOddLanes32x4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_ILVOD, MSA_W,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+          case Iop_PackEvenLanes8x16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_PCKEV, MSA_B,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_PackEvenLanes16x8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_PCKEV, MSA_H,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_PackEvenLanes32x4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_PCKEV, MSA_W,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_PackOddLanes8x16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_PCKOD, MSA_B,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_PackOddLanes16x8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_PCKOD, MSA_H,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_PackOddLanes32x4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_PCKOD, MSA_W,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_CmpEQ8x16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_CEQ, MSA_B, v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_CmpEQ16x8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_CEQ, MSA_H, v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_CmpEQ32x4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_CEQ, MSA_W, v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_CmpEQ64x2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_CEQ, MSA_D, v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_CmpGT8Sx16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_CLT_S, MSA_B,
+                                        v_dst, v_src2, v_src1));
+               return v_dst;
+            }
+
+         case Iop_CmpGT16Sx8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_CLT_S, MSA_H,
+                                        v_dst, v_src2, v_src1));
+               return v_dst;
+            }
+
+         case Iop_CmpGT32Sx4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_CLT_S, MSA_W,
+                                        v_dst, v_src2, v_src1));
+               return v_dst;
+            }
+
+         case Iop_CmpGT64Sx2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_CLT_S, MSA_D,
+                                        v_dst, v_src2, v_src1));
+               return v_dst;
+            }
+
+         case Iop_CmpGT8Ux16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_CLT_U, MSA_B,
+                                        v_dst, v_src2, v_src1));
+               return v_dst;
+            }
+
+         case Iop_CmpGT16Ux8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_CLT_U, MSA_H,
+                                        v_dst, v_src2, v_src1));
+               return v_dst;
+            }
+
+         case Iop_CmpGT32Ux4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_CLT_U, MSA_W,
+                                        v_dst, v_src2, v_src1));
+               return v_dst;
+            }
+
+         case Iop_CmpGT64Ux2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_CLT_U, MSA_D,
+                                        v_dst, v_src2, v_src1));
+               return v_dst;
+            }
+
+         case Iop_Avg8Sx16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_AVER_S, MSA_B,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Avg16Sx8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_AVER_S, MSA_H,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Avg32Sx4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_AVER_S, MSA_W,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Avg8Ux16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_AVER_U, MSA_B,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Avg16Ux8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_AVER_U, MSA_H,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Avg32Ux4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_AVER_U, MSA_W,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Mul8x16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_MULV, MSA_B,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Mul16x8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_MULV, MSA_H,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Mul32x4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_MULV, MSA_W,
+                                        v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_AndV128: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env, MIPSInstr_MsaVec(MSA_ANDV, v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_OrV128: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env, MIPSInstr_MsaVec(MSA_ORV, v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_XorV128: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env, MIPSInstr_MsaVec(MSA_XORV, v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_ShrV128: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               MIPSRH *sm;
+               sm = iselWordExpr_RH7u(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SUBV, MSA_B,
+                                        v_dst, v_src1, v_src1));
+
+               if (sm->tag == Mrh_Imm) {
+                  int n = (sm->Mrh.Imm.imm16) >> 3;
+                  addInstr(env,
+                           MIPSInstr_MsaElm(MSA_SLDI, v_src1, v_dst,
+                                            MSA_DFN_B | n));
+               } else {
+                  HReg v_src2 = sm->Mrh.Reg.reg;
+                  MIPSRH *ri = MIPSRH_Imm(False, 3);
+                  HReg r_dst = newVRegI(env);
+                  addInstr(env, MIPSInstr_Shft(Mshft_SRL, True /*32bit shift */,
+                                               r_dst, v_src2, ri));
+                  addInstr(env,
+                           MIPSInstr_Msa3R(MSA_SLD, MSA_B,
+                                           v_dst, v_src1, r_dst));
+               }
+
+               return v_dst;
+            }
+
+         case Iop_ShlV128: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               MIPSRH *sm;
+               sm = iselWordExpr_RH7u(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3R(MSA_SUBV, MSA_B,
+                                        v_dst, v_src1, v_src1));
+
+               if (sm->tag == Mrh_Imm) {
+                  int n = 16 - ((sm->Mrh.Imm.imm16) >> 3);
+
+                  if (n == 16) n = 0;
+
+                  addInstr(env,
+                           MIPSInstr_MsaElm(MSA_SLDI, v_dst, v_src1,
+                                            MSA_DFN_B | n));
+               } else {
+                  HReg v_src2 = sm->Mrh.Reg.reg;
+                  MIPSRH *ri = MIPSRH_Imm(False, 3);
+                  HReg r_dst = newVRegI(env);
+                  HReg help = newVRegI(env);
+                  addInstr(env, MIPSInstr_Alu(Malu_XOR, help, v_src2, sm));
+                  addInstr(env, MIPSInstr_Alu(Malu_SUB, help, help, sm));
+                  addInstr(env, MIPSInstr_Shft(Mshft_SRL, True /*32bit shift */,
+                                               r_dst, help, ri));
+                  addInstr(env,
+                           MIPSInstr_Msa3R(MSA_SLD, MSA_B,
+                                           v_src1, v_dst, r_dst));
+               }
+
+               return v_src1;
+            }
+
+         case Iop_ShlN8x16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               vassert(e->Iex.Binop.arg2->tag == Iex_Const);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 <= 63);
+               addInstr(env,
+                        MIPSInstr_MsaBit(MSA_SLLI, MSA_B,
+                                         e->Iex.Binop.arg2->Iex.Const.con->Ico.U8,
+                                         v_src1, v_dst));
+               return v_dst;
+            }
+
+         case Iop_ShlN16x8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               vassert(e->Iex.Binop.arg2->tag == Iex_Const);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 <= 63);
+               addInstr(env,
+                        MIPSInstr_MsaBit(MSA_SLLI, MSA_H,
+                                         e->Iex.Binop.arg2->Iex.Const.con->Ico.U8,
+                                         v_src1, v_dst));
+               return v_dst;
+            }
+
+         case Iop_ShlN32x4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               vassert(e->Iex.Binop.arg2->tag == Iex_Const);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 <= 63);
+               addInstr(env,
+                        MIPSInstr_MsaBit(MSA_SLLI, MSA_W,
+                                         e->Iex.Binop.arg2->Iex.Const.con->Ico.U8,
+                                         v_src1, v_dst));
+               return v_dst;
+            }
+
+         case Iop_ShlN64x2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               vassert(e->Iex.Binop.arg2->tag == Iex_Const);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 <= 63);
+               addInstr(env,
+                        MIPSInstr_MsaBit(MSA_SLLI, MSA_D,
+                                         e->Iex.Binop.arg2->Iex.Const.con->Ico.U8,
+                                         v_src1, v_dst));
+               return v_dst;
+            }
+
+         case Iop_SarN8x16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               vassert(e->Iex.Binop.arg2->tag == Iex_Const);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 <= 63);
+               addInstr(env,
+                        MIPSInstr_MsaBit(MSA_SRAI, MSA_B,
+                                         e->Iex.Binop.arg2->Iex.Const.con->Ico.U8,
+                                         v_src1, v_dst));
+               return v_dst;
+            }
+
+         case Iop_SarN16x8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               vassert(e->Iex.Binop.arg2->tag == Iex_Const);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 <= 63);
+               addInstr(env,
+                        MIPSInstr_MsaBit(MSA_SRAI, MSA_H,
+                                         e->Iex.Binop.arg2->Iex.Const.con->Ico.U8,
+                                         v_src1, v_dst));
+               return v_dst;
+            }
+
+         case Iop_SarN32x4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               vassert(e->Iex.Binop.arg2->tag == Iex_Const);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 <= 63);
+               addInstr(env,
+                        MIPSInstr_MsaBit(MSA_SRAI, MSA_W,
+                                         e->Iex.Binop.arg2->Iex.Const.con->Ico.U8,
+                                         v_src1, v_dst));
+               return v_dst;
+            }
+
+         case Iop_SarN64x2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               vassert(e->Iex.Binop.arg2->tag == Iex_Const);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 <= 63);
+               addInstr(env,
+                        MIPSInstr_MsaBit(MSA_SRAI, MSA_D,
+                                         e->Iex.Binop.arg2->Iex.Const.con->Ico.U8,
+                                         v_src1, v_dst));
+               return v_dst;
+            }
+
+         case Iop_ShrN8x16: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               vassert(e->Iex.Binop.arg2->tag == Iex_Const);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 <= 63);
+               addInstr(env,
+                        MIPSInstr_MsaBit(MSA_SRLI, MSA_B,
+                                         e->Iex.Binop.arg2->Iex.Const.con->Ico.U8,
+                                         v_src1, v_dst));
+               return v_dst;
+            }
+
+         case Iop_ShrN16x8: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               vassert(e->Iex.Binop.arg2->tag == Iex_Const);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 <= 63);
+               addInstr(env,
+                        MIPSInstr_MsaBit(MSA_SRLI, MSA_H,
+                                         e->Iex.Binop.arg2->Iex.Const.con->Ico.U8,
+                                         v_src1, v_dst));
+               return v_dst;
+            }
+
+         case Iop_ShrN32x4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               vassert(e->Iex.Binop.arg2->tag == Iex_Const);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 <= 63);
+               addInstr(env,
+                        MIPSInstr_MsaBit(MSA_SRLI, MSA_W,
+                                         e->Iex.Binop.arg2->Iex.Const.con->Ico.U8,
+                                         v_src1, v_dst));
+               return v_dst;
+            }
+
+         case Iop_ShrN64x2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               vassert(e->Iex.Binop.arg2->tag == Iex_Const);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 <= 63);
+               addInstr(env,
+                        MIPSInstr_MsaBit(MSA_SRLI, MSA_D,
+                                         e->Iex.Binop.arg2->Iex.Const.con->Ico.U8,
+                                         v_src1, v_dst));
+               return v_dst;
+            }
+
+         case Iop_QandQSarNnarrow64Sto32Sx2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               vassert(e->Iex.Binop.arg2->tag == Iex_Const);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 <= 63);
+               addInstr(env,
+                        MIPSInstr_MsaBit(MSA_SRAI, MSA_D,
+                                         e->Iex.Binop.arg2->Iex.Const.con->Ico.U8,
+                                         v_src1, v_dst));
+               addInstr(env, MIPSInstr_MsaBit(MSA_SAT_S, MSA_D, 31, v_dst, v_dst));
+               return v_dst;
+            }
+
+         case Iop_QandQSarNnarrow32Sto16Sx4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               vassert(e->Iex.Binop.arg2->tag == Iex_Const);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 <= 63);
+               addInstr(env,
+                        MIPSInstr_MsaBit(MSA_SRAI, MSA_W,
+                                         e->Iex.Binop.arg2->Iex.Const.con->Ico.U8,
+                                         v_src1, v_dst));
+               addInstr(env,
+                        MIPSInstr_MsaBit(MSA_SAT_S, MSA_W, 15, v_dst, v_dst));
+               return v_dst;
+            }
+
+         case Iop_QandQRSarNnarrow64Sto32Sx2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               vassert(e->Iex.Binop.arg2->tag == Iex_Const);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 <= 63);
+               addInstr(env,
+                        MIPSInstr_MsaBit(MSA_SRARI, MSA_D,
+                                         e->Iex.Binop.arg2->Iex.Const.con->Ico.U8,
+                                         v_src1, v_dst));
+               addInstr(env,
+                        MIPSInstr_MsaBit(MSA_SAT_S, MSA_D, 31, v_dst, v_dst));
+               return v_dst;
+            }
+
+         case Iop_QandQRSarNnarrow32Sto16Sx4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               vassert(e->Iex.Binop.arg2->tag == Iex_Const);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 <= 63);
+               addInstr(env,
+                        MIPSInstr_MsaBit(MSA_SRARI, MSA_W,
+                                         e->Iex.Binop.arg2->Iex.Const.con->Ico.U8,
+                                         v_src1, v_dst));
+               addInstr(env,
+                        MIPSInstr_MsaBit(MSA_SAT_S, MSA_W, 15, v_dst, v_dst));
+               return v_dst;
+            }
+
+         case Iop_CmpEQ32Fx4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FCEQ, MSA_F_WH,
+                                         v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_CmpEQ64Fx2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FCEQ, MSA_F_DW,
+                                         v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_CmpLT32Fx4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FCLT, MSA_F_WH,
+                                         v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_CmpLT64Fx2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FCLT, MSA_F_DW,
+                                         v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_CmpLE32Fx4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FCLE, MSA_F_WH,
+                                         v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_CmpLE64Fx2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FCLE, MSA_F_DW,
+                                         v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_CmpUN32Fx4: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FCUN, MSA_F_WH,
+                                         v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_CmpUN64Fx2: {
+               HReg v_dst = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FCUN, MSA_F_DW,
+                                         v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_64HLtoV128: {
+               HReg v_dst = newVRegV(env);
+
+               if (mode64) {
+                  HReg r_src1;
+                  HReg r_src2;
+                  r_src1 = iselWordExpr_R(env, e->Iex.Binop.arg1);
+                  r_src2 = iselWordExpr_R(env, e->Iex.Binop.arg2);
+                  addInstr(env,
+                           MIPSInstr_Msa2R(MSA_FILL, MSA_D, r_src2, v_dst));
+                  addInstr(env,
+                           MIPSInstr_MsaElm(MSA_INSERT, r_src1, v_dst,
+                                            MSA_DFN_D | 1));
+               } else {
+                  HReg r_src1h, r_src1l;
+                  HReg r_src2h, r_src2l;
+                  iselInt64Expr(&r_src1h, &r_src1l, env, e->Iex.Binop.arg1);
+                  iselInt64Expr(&r_src2h, &r_src2l, env, e->Iex.Binop.arg2);
+                  addInstr(env,
+                           MIPSInstr_Msa2R(MSA_FILL, MSA_W, r_src2l, v_dst));
+                  addInstr(env,
+                           MIPSInstr_MsaElm(MSA_INSERT, r_src2h, v_dst,
+                                            MSA_DFN_W | 1));
+                  addInstr(env,
+                           MIPSInstr_MsaElm(MSA_INSERT, r_src1l, v_dst,
+                                            MSA_DFN_W | 2));
+                  addInstr(env,
+                           MIPSInstr_MsaElm(MSA_INSERT, r_src1h, v_dst,
+                                            MSA_DFN_W | 3));
+               }
+
+               return v_dst;
+            }
+
+         case Iop_Min32Fx4: {
+               HReg v_src1  = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2  = iselV128Expr(env, e->Iex.Binop.arg2);
+               HReg v_dst = newVRegV(env);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FMIN, MSA_F_WH,
+                                         v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Min64Fx2: {
+               HReg v_src1  = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2  = iselV128Expr(env, e->Iex.Binop.arg2);
+               HReg v_dst = newVRegV(env);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FMIN, MSA_F_DW,
+                                         v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Max32Fx4: {
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               HReg v_dst  = newVRegV(env);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FMAX, MSA_F_WH,
+                                         v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Max64Fx2: {
+               HReg v_src1 = iselV128Expr(env, e->Iex.Binop.arg1);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Binop.arg2);
+               HReg v_dst  = newVRegV(env);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FMAX, MSA_F_DW,
+                                         v_dst, v_src1, v_src2));
+               return v_dst;
+            }
+
+         case Iop_Sqrt32Fx4: {
+               HReg v_src = iselV128Expr(env, e->Iex.Binop.arg2);
+               HReg v_dst = newVRegV(env);
+               set_MIPS_rounding_mode_MSA(env, e->Iex.Binop.arg1);
+               addInstr(env,
+                        MIPSInstr_Msa2RF(MSA_FSQRT, MSA_F_WH, v_dst, v_src));
+               set_MIPS_rounding_default_MSA(env);
+               return v_dst;
+            }
+
+         case Iop_Sqrt64Fx2: {
+               HReg v_src = iselV128Expr(env, e->Iex.Binop.arg2);
+               HReg v_dst = newVRegV(env);
+               set_MIPS_rounding_mode_MSA(env, e->Iex.Binop.arg1);
+               addInstr(env,
+                        MIPSInstr_Msa2RF(MSA_FSQRT, MSA_F_DW, v_dst, v_src));
+               set_MIPS_rounding_default_MSA(env);
+               return v_dst;
+            }
+
+         default:
+            vex_printf("iselV128Expr_wrk: unsupported binop: %x\n", op_binop);
+      }
+   }
+
+   if (e->tag == Iex_Triop) {
+      IROp op_triop = e->Iex.Triop.details->op;
+
+      switch (op_triop) {
+         case Iop_Add32Fx4: {
+               HReg v_dst  = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Triop.details->arg2);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Triop.details->arg3);
+               set_MIPS_rounding_mode_MSA(env, e->Iex.Triop.details->arg1);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FADD, MSA_F_WH,
+                                         v_dst, v_src1, v_src2));
+               set_MIPS_rounding_default_MSA(env);
+               return v_dst;
+            }
+
+         case Iop_Add64Fx2: {
+               HReg v_dst  = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Triop.details->arg2);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Triop.details->arg3);
+               set_MIPS_rounding_mode_MSA(env, e->Iex.Triop.details->arg1);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FADD, MSA_F_DW,
+                                         v_dst, v_src1, v_src2));
+               set_MIPS_rounding_default_MSA(env);
+               return v_dst;
+            }
+
+         case Iop_Sub32Fx4: {
+               HReg v_dst  = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Triop.details->arg2);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Triop.details->arg3);
+               set_MIPS_rounding_mode_MSA(env, e->Iex.Triop.details->arg1);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FSUB, MSA_F_WH,
+                                         v_dst, v_src1, v_src2));
+               set_MIPS_rounding_default_MSA(env);
+               return v_dst;
+            }
+
+         case Iop_Sub64Fx2: {
+               HReg v_dst  = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Triop.details->arg2);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Triop.details->arg3);
+               set_MIPS_rounding_mode_MSA(env, e->Iex.Triop.details->arg1);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FSUB, MSA_F_DW,
+                                         v_dst, v_src1, v_src2));
+               set_MIPS_rounding_default_MSA(env);
+               return v_dst;
+            }
+
+         case Iop_Mul32Fx4: {
+               HReg v_dst  = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Triop.details->arg2);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Triop.details->arg3);
+               set_MIPS_rounding_mode_MSA(env, e->Iex.Triop.details->arg1);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FMUL, MSA_F_WH,
+                                         v_dst, v_src1, v_src2));
+               set_MIPS_rounding_default_MSA(env);
+               return v_dst;
+            }
+
+         case Iop_Mul64Fx2: {
+               HReg v_dst  = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Triop.details->arg2);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Triop.details->arg3);
+               set_MIPS_rounding_mode_MSA(env, e->Iex.Triop.details->arg1);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FMUL, MSA_F_DW,
+                                         v_dst, v_src1, v_src2));
+               set_MIPS_rounding_default_MSA(env);
+               return v_dst;
+            }
+
+         case Iop_Div32Fx4: {
+               HReg v_dst  = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Triop.details->arg2);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Triop.details->arg3);
+               set_MIPS_rounding_mode_MSA(env, e->Iex.Triop.details->arg1);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FDIV, MSA_F_WH,
+                                         v_dst, v_src1, v_src2));
+               set_MIPS_rounding_default_MSA(env);
+               return v_dst;
+            }
+
+         case Iop_Div64Fx2: {
+               HReg v_dst  = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Triop.details->arg2);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Triop.details->arg3);
+               set_MIPS_rounding_mode_MSA(env, e->Iex.Triop.details->arg1);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FDIV, MSA_F_DW,
+                                         v_dst, v_src1, v_src2));
+               set_MIPS_rounding_default_MSA(env);
+               return v_dst;
+            }
+
+         case Iop_F32x4_2toQ16x8: {
+               HReg v_dst  = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Triop.details->arg2);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Triop.details->arg3);
+               set_MIPS_rounding_mode_MSA(env, e->Iex.Triop.details->arg1);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FTQ, MSA_F_WH,
+                                         v_dst, v_src1, v_src2));
+               set_MIPS_rounding_default_MSA(env);
+               return v_dst;
+            }
+
+         case Iop_F64x2_2toQ32x4: {
+               HReg v_dst  = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Triop.details->arg2);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Triop.details->arg3);
+               set_MIPS_rounding_mode_MSA(env, e->Iex.Triop.details->arg1);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FTQ, MSA_F_DW,
+                                         v_dst, v_src1, v_src2));
+               set_MIPS_rounding_default_MSA(env);
+               return v_dst;
+            }
+
+          case Iop_Scale2_32Fx4: {
+               HReg v_dst  = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Triop.details->arg2);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Triop.details->arg3);
+               set_MIPS_rounding_mode_MSA(env, e->Iex.Triop.details->arg1);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FEXP2, MSA_F_WH,
+                                         v_dst, v_src1, v_src2));
+               set_MIPS_rounding_default_MSA(env);
+               return v_dst;
+            }
+
+          case Iop_Scale2_64Fx2: {
+               HReg v_dst  = newVRegV(env);
+               HReg v_src1 = iselV128Expr(env, e->Iex.Triop.details->arg2);
+               HReg v_src2 = iselV128Expr(env, e->Iex.Triop.details->arg3);
+               set_MIPS_rounding_mode_MSA(env, e->Iex.Triop.details->arg1);
+               addInstr(env,
+                        MIPSInstr_Msa3RF(MSA_FEXP2, MSA_F_DW,
+                                         v_dst, v_src1, v_src2));
+               set_MIPS_rounding_default_MSA(env);
+               return v_dst;
+            }
+
+         default:
+            vex_printf("iselV128Expr_wrk: unsupported triop: %x\n", op_triop);
+      }
+   }
+
+   if (e->tag == Iex_Const) {
+      IRConst *con = e->Iex.Const.con;
+
+      if (con->tag != Ico_V128) {
+         vpanic("iselV128Expr.const(mips)");
+      } else {
+         HReg v_dst = newVRegV(env);
+         UShort val = con->Ico.V128;
+         HReg zero = Zero(mode64);
+
+         switch (val) {
+            case 0:  /* likely */
+               addInstr(env, MIPSInstr_Msa2R(MSA_FILL, MSA_W, zero, v_dst));
+               break;
+
+            default: {
+                  HReg r_tmp = newVRegI(env);
+                  UInt i;
+                  addInstr(env, MIPSInstr_LI(r_tmp, 0xfful));
+
+                  if (val & 1) {
+                     addInstr(env,
+                              MIPSInstr_Msa2R(MSA_FILL, MSA_B, r_tmp, v_dst));
+                  } else {
+                     addInstr(env,
+                              MIPSInstr_Msa2R(MSA_FILL, MSA_B, zero, v_dst));
+                  }
+
+                  for (i = 1; i < 16; i++) {
+                     val >>= 1;
+
+                     if (val & 1) {
+                        addInstr(env,
+                                 MIPSInstr_MsaElm(MSA_INSERT, r_tmp, v_dst,
+                                                  MSA_DFN_B | i));
+                     } else {
+                        addInstr(env,
+                                 MIPSInstr_MsaElm(MSA_INSERT, zero, v_dst,
+                                                  MSA_DFN_B | i));
+                     }
+                  }
+
+                  break;
+               }
+         }
+
+         return v_dst;
+      }
+   }
+
+   if (e->tag == Iex_ITE) {
+      HReg v_dst  = newVRegV(env);
+      HReg iff    = iselV128Expr(env, e->Iex.ITE.iffalse);
+      HReg ift    = iselV128Expr(env, e->Iex.ITE.iftrue);
+      HReg r_cond = iselWordExpr_R(env, e->Iex.ITE.cond);
+      addInstr(env, MIPSInstr_Shft(Mshft_SLL, True, r_cond, r_cond,
+                                   MIPSRH_Imm(False, 1)));
+      addInstr(env, MIPSInstr_Msa2R(MSA_FILL, MSA_W, r_cond, v_dst));
+      addInstr(env,
+               MIPSInstr_Alu(Malu_ADD, r_cond, r_cond, MIPSRH_Imm(True, 1)));
+      addInstr(env, MIPSInstr_MsaElm(MSA_INSERT, r_cond, v_dst, MSA_DFN_W | 2));
+      addInstr(env, MIPSInstr_Msa3R(MSA_VSHF, MSA_D, v_dst, ift, iff));
+      return v_dst;
+   }
+
+   vex_printf("iselV128Expr_wrk: Unsupported tag: %x\n", e->tag);
+   ppIRExpr(e);
+   vpanic("iselV128Expr(mips)");
 }
 
 /*---------------------------------------------------------*/
@@ -2341,6 +4784,27 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
 
       *rHi = desHi;
       *rLo = desLo;
+      return;
+   }
+
+   if (e->tag == Iex_CCall) {
+      HReg r_dstH = newVRegI(env);
+      HReg r_dstL = newVRegI(env);
+      vassert(e->Iex.CCall.retty == Ity_I64);
+
+      /* Marshal args, do the call, clear stack. */
+      UInt   addToSp = 0;
+      RetLoc rloc    = mk_RetLoc_INVALID();
+      doHelperCall(&addToSp, &rloc, env, NULL/*guard*/, e->Iex.CCall.cee,
+                   e->Iex.CCall.retty, e->Iex.CCall.args );
+
+      vassert(is_sane_RetLoc(rloc));
+      vassert(rloc.pri == RLPri_2Int);
+      vassert(addToSp == 0);
+      addInstr(env, mk_iMOVds_RR(r_dstL, hregMIPS_GPR2(False)));
+      addInstr(env, mk_iMOVds_RR(r_dstH, hregMIPS_GPR3(False)));
+      *rHi = r_dstH;
+      *rLo = r_dstL;
       return;
    }
 
@@ -2765,6 +5229,129 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
 
             return;
          }
+         case Iop_F64toI64U: {
+            HReg r_src;
+            HReg tmp = newVRegV(env);
+            vassert(has_msa);
+            r_src = iselDblExpr( env, e->Iex.Binop.arg2);
+            set_MIPS_rounding_mode_MSA(env, e->Iex.Binop.arg1);
+            addInstr(env, MIPSInstr_Msa2RF(MSA_FTINT_U, MSA_F_DW, tmp, r_src));
+            HReg r_dsth = newVRegI(env);
+            HReg r_dstl = newVRegI(env);
+            addInstr(env,
+                     MIPSInstr_MsaElm(MSA_COPY_S, tmp, r_dstl, MSA_DFN_W | 0));
+            addInstr(env,
+                     MIPSInstr_MsaElm(MSA_COPY_S, tmp, r_dsth, MSA_DFN_W | 1));
+            *rHi = r_dsth;
+            *rLo = r_dstl;
+            set_MIPS_rounding_default_MSA(env);
+            return;
+         }
+
+         case Iop_GetElem64x2: {
+            vassert(has_msa);
+            HReg v_src = iselV128Expr(env, e->Iex.Binop.arg1);
+            HReg r_dstHI = newVRegI(env);
+            HReg r_dstLO = newVRegI(env);
+            MIPSRH *tmp = iselWordExpr_RH(env, False, e->Iex.Binop.arg2);
+
+            switch (tmp->tag) {
+               case Mrh_Imm:
+                  addInstr(env,
+                           MIPSInstr_MsaElm(MSA_COPY_S, v_src, r_dstHI,
+                                            MSA_DFN_W |
+                                            (((tmp->Mrh.Imm.imm16 & 0x01) << 1)
+                                            + 1)));
+                  addInstr(env,
+                           MIPSInstr_MsaElm(MSA_COPY_S, v_src, r_dstLO,
+                                            MSA_DFN_W |
+                                            ((tmp->Mrh.Imm.imm16 & 0x01) << 1)));
+                  break;
+
+               case Mrh_Reg: {
+                     HReg v_tmp = newVRegV(env);
+                     addInstr(env,
+                              MIPSInstr_Msa3R(MSA_SPLAT, MSA_D, v_tmp, v_src,
+                                              tmp->Mrh.Reg.reg));
+                     addInstr(env,
+                              MIPSInstr_MsaElm(MSA_COPY_S, v_tmp, r_dstHI,
+                                               MSA_DFN_W | 1));
+                     addInstr(env,
+                              MIPSInstr_MsaElm(MSA_COPY_S, v_tmp, r_dstLO,
+                                               MSA_DFN_W));
+                     break;
+                  }
+            }
+
+            *rHi = r_dstHI;
+            *rLo = r_dstLO;
+            return;
+         }
+
+         case Iop_Mul64: {
+            HReg a_L, a_H, b_L, b_H;
+            HReg dst_L = newVRegI(env);
+            HReg dst_H = newVRegI(env);
+
+            iselInt64Expr(&a_H, &a_L, env, e->Iex.Binop.arg1);
+            iselInt64Expr(&b_H, &b_L, env, e->Iex.Binop.arg2);
+            addInstr(env, MIPSInstr_Mul(dst_H, a_H, b_L));
+            addInstr(env, MIPSInstr_Mult(True, b_H, a_L));
+            addInstr(env, MIPSInstr_Mflo(dst_L));
+            addInstr(env, MIPSInstr_Alu(Malu_ADD, dst_H, dst_H,
+                                        MIPSRH_Reg(dst_L)));
+            addInstr(env, MIPSInstr_Mult(False, a_L, b_L));
+            addInstr(env, MIPSInstr_Mfhi(dst_L));
+
+            addInstr(env, MIPSInstr_Alu(Malu_ADD, dst_H, dst_H,
+                                        MIPSRH_Reg(dst_L)));
+            addInstr(env, MIPSInstr_Mflo(dst_L));
+            *rHi = dst_H;
+            *rLo = dst_L;
+            return;
+         }
+
+         case Iop_DivS64: {
+            HReg src1_L, src1_H, src2_L, src2_H;
+            HReg dst_L = newVRegI(env);
+            HReg dst_H = newVRegI(env);
+            HReg tmp1 = newVRegV(env);
+            HReg tmp2 = newVRegV(env);
+            vassert(has_msa);
+            iselInt64Expr(&src1_H, &src1_L, env, e->Iex.Binop.arg1);
+            iselInt64Expr(&src2_H, &src2_L, env, e->Iex.Binop.arg2);
+            addInstr(env, MIPSInstr_Msa2R(MSA_FILL, MSA_W, src1_L, tmp1));
+            addInstr(env, MIPSInstr_MsaElm(MSA_INSERT, src1_H, tmp1, MSA_DFN_W | 1));
+            addInstr(env, MIPSInstr_Msa2R(MSA_FILL, MSA_W, src2_L, tmp2));
+            addInstr(env, MIPSInstr_MsaElm(MSA_INSERT, src2_H, tmp2, MSA_DFN_W | 1));
+            addInstr(env, MIPSInstr_Msa3R(MSA_DIVS, MSA_D, tmp1, tmp1, tmp2));
+            addInstr(env, MIPSInstr_MsaElm(MSA_COPY_S, tmp1, dst_H, MSA_DFN_W | 1));
+            addInstr(env, MIPSInstr_MsaElm(MSA_COPY_S, tmp1, dst_L, MSA_DFN_W | 0));
+            *rHi = dst_H;
+            *rLo = dst_L;
+            return;
+         }
+
+         case Iop_DivU64: {
+            HReg src1_L, src1_H, src2_L, src2_H;
+            HReg dst_L = newVRegI(env);
+            HReg dst_H = newVRegI(env);
+            HReg tmp1 = newVRegV(env);
+            HReg tmp2 = newVRegV(env);
+            vassert(has_msa);
+            iselInt64Expr(&src1_H, &src1_L, env, e->Iex.Binop.arg1);
+            iselInt64Expr(&src2_H, &src2_L, env, e->Iex.Binop.arg2);
+            addInstr(env, MIPSInstr_Msa2R(MSA_FILL, MSA_W, src1_L, tmp1));
+            addInstr(env, MIPSInstr_MsaElm(MSA_INSERT, src1_H, tmp1, MSA_DFN_W | 1));
+            addInstr(env, MIPSInstr_Msa2R(MSA_FILL, MSA_W, src2_L, tmp2));
+            addInstr(env, MIPSInstr_MsaElm(MSA_INSERT, src2_H, tmp2, MSA_DFN_W | 1));
+            addInstr(env, MIPSInstr_Msa3R(MSA_DIVU, MSA_D, tmp1, tmp1, tmp2));
+            addInstr(env, MIPSInstr_MsaElm(MSA_COPY_S, tmp1, dst_H, MSA_DFN_W | 1));
+            addInstr(env, MIPSInstr_MsaElm(MSA_COPY_S, tmp1, dst_L, MSA_DFN_W | 0));
+            *rHi = dst_H;
+            *rLo = dst_L;
+            return;
+         }
 
          default:
             break;
@@ -2793,6 +5380,25 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
             return;
          }
 
+         case Iop_8Sto64:
+         case Iop_16Sto64: {
+            HReg tLo = newVRegI(env);
+            HReg tHi = newVRegI(env);
+            HReg src = iselWordExpr_R(env, e->Iex.Unop.arg);
+            UInt no_bits = (e->Iex.Unop.op == Iop_8Sto64) ? 24 : 16;
+            addInstr(env, mk_iMOVds_RR(tLo, src));
+            addInstr(env, MIPSInstr_Shft(Mshft_SLL, True, tLo, tLo,
+                          MIPSRH_Imm(False, no_bits)));
+            addInstr(env, MIPSInstr_Shft(Mshft_SRA, True, tHi, tLo,
+                          MIPSRH_Imm(False, 31)));
+            addInstr(env, MIPSInstr_Shft(Mshft_SRA, True, tLo, tLo,
+                          MIPSRH_Imm(False, no_bits)));
+            addInstr(env, mk_iMOVds_RR(tHi, tLo));
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
+
          /* 32Sto64(e) */
          case Iop_32Sto64: {
             HReg tLo = newVRegI(env);
@@ -2807,13 +5413,14 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
             return;
          }
 
-         /* 8Uto64(e) */
-         case Iop_8Uto64: {
+         case Iop_8Uto64:
+         case Iop_16Uto64: {
             HReg tLo = newVRegI(env);
             HReg tHi = newVRegI(env);
             HReg src = iselWordExpr_R(env, e->Iex.Unop.arg);
+            UInt mask = (e->Iex.Unop.op == Iop_8Sto64) ? 0xFF : 0xFFFF;
             addInstr(env, MIPSInstr_Alu(Malu_AND, tLo, src,
-                                        MIPSRH_Imm(False, 0xFF)));
+                                        MIPSRH_Imm(False, mask)));
             addInstr(env, MIPSInstr_Alu(Malu_ADD, tHi, hregMIPS_GPR0(mode64),
                                         MIPSRH_Reg(hregMIPS_GPR0(mode64))));
             *rHi = tHi;
@@ -2927,7 +5534,46 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
 
             *rHi = tHi;
             *rLo = tLo;
+            return;
+         }
 
+         case Iop_V128HIto64: {
+            vassert(has_msa);
+            HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+            HReg tLo = newVRegI(env);
+            HReg tHi = newVRegI(env);
+            addInstr(env, MIPSInstr_MsaElm(MSA_COPY_S, v_src, tLo, MSA_DFN_W | 2));
+            addInstr(env, MIPSInstr_MsaElm(MSA_COPY_S, v_src, tHi, MSA_DFN_W | 3));
+            *rLo = tLo;
+            *rHi = tHi;
+            return;
+         }
+
+         case Iop_V128to64: {
+            vassert(has_msa);
+            HReg v_src = iselV128Expr(env, e->Iex.Unop.arg);
+            HReg tLo = newVRegI(env);
+            HReg tHi = newVRegI(env);
+            addInstr(env, MIPSInstr_MsaElm(MSA_COPY_S, v_src, tLo, MSA_DFN_W | 0));
+            addInstr(env, MIPSInstr_MsaElm(MSA_COPY_S, v_src, tHi, MSA_DFN_W | 1));
+            *rLo = tLo;
+            *rHi = tHi;
+            return;
+         }
+
+         case Iop_F32toF16x4: {
+            vassert(has_msa);
+            HReg v_arg = iselV128Expr(env, e->Iex.Unop.arg);
+            HReg v_src = newVRegV(env);
+            set_guest_MIPS_rounding_mode_MSA(env);
+            addInstr(env, MIPSInstr_Msa3RF(MSA_FEXDO, MSA_F_WH, v_src, v_arg, v_arg));
+            set_MIPS_rounding_default_MSA(env);
+            HReg tLo = newVRegI(env);
+            HReg tHi = newVRegI(env);
+            addInstr(env, MIPSInstr_MsaElm(MSA_COPY_S, v_src, tLo, MSA_DFN_W | 0));
+            addInstr(env, MIPSInstr_MsaElm(MSA_COPY_S, v_src, tHi, MSA_DFN_W | 1));
+            *rLo = tLo;
+            *rHi = tHi;
             return;
          }
 
@@ -3148,6 +5794,19 @@ static HReg iselFltExpr_wrk(ISelEnv * env, IRExpr * e)
             set_MIPS_rounding_default(env);
             return dst;
          }
+         case Iop_ScaleF64: {
+            HReg src1   = iselFltExpr(env, e->Iex.Triop.details->arg2);
+            HReg src2   = iselFltExpr(env, e->Iex.Triop.details->arg3);
+            HReg v_help = newVRegV(env);
+            HReg dst    = newVRegF(env);
+            vassert(has_msa);
+            set_MIPS_rounding_mode_MSA(env, e->Iex.Triop.details->arg1);
+            addInstr(env, MIPSInstr_Msa2RF(MSA_FTINT_S, MSA_F_DW, v_help, src2));
+            addInstr(env, MIPSInstr_Msa3RF(MSA_FEXP2, MSA_F_DW, dst, src1, v_help));
+            set_MIPS_rounding_default_MSA(env);
+
+            return dst;
+         }
          default:
             break;
       }
@@ -3283,6 +5942,34 @@ static HReg iselFltExpr_wrk(ISelEnv * env, IRExpr * e)
             return dst;
          }
 
+         case Iop_I64UtoF64: {
+            vassert(mode64);
+            HReg r_dst = newVRegF(env);
+            HReg tmp = newVRegV(env);
+            HReg r_src;
+            vassert(has_msa);
+            r_src = iselWordExpr_R(env, e->Iex.Binop.arg2);
+            set_MIPS_rounding_mode_MSA(env, e->Iex.Binop.arg1);
+            addInstr(env, MIPSInstr_Msa2R(MSA_FILL, MSA_D, r_src, tmp));
+            HReg r_srch = newVRegI(env);
+            addInstr(env, MIPSInstr_Msa2RF(MSA_FFINT_U, MSA_F_DW, tmp, tmp));
+            addInstr(env, MIPSInstr_MsaElm(MSA_COPY_S, tmp, r_srch, MSA_DFN_D | 0));
+            sub_from_sp(env, 8);
+            MIPSAMode *am_addr = MIPSAMode_IR(0, StackPointer(mode64));
+
+            /* store as I64 */
+            addInstr(env, MIPSInstr_Store(8, am_addr, r_srch, mode64));
+
+            /* load as Ity_F64 */
+            addInstr(env, MIPSInstr_FpLdSt(True /*load */, 8, r_dst, am_addr));
+
+            /* Reset SP */
+            add_to_sp(env, 8);
+            set_MIPS_rounding_default_MSA(env);
+            return r_dst;
+          }
+
+
          default:
             break;
       }
@@ -3294,31 +5981,45 @@ static HReg iselFltExpr_wrk(ISelEnv * env, IRExpr * e)
          case Iop_MAddF64:
          case Iop_MSubF32:
          case Iop_MSubF64: {
-            MIPSFpOp op = 0;
+            Int op = 0;
+            MSADFFlx type = 0;
             switch (e->Iex.Qop.details->op) {
                case Iop_MAddF32:
-                  op = Mfp_MADDS;
+                  op = has_msa ? MSA_FMADD : Mfp_MADDS;
+                  type = MSA_F_WH;
                   break;
                case Iop_MAddF64:
-                  op = Mfp_MADDD;
+                  op = has_msa ? MSA_FMADD : Mfp_MADDD;
+                  type = MSA_F_DW;
                   break;
                case Iop_MSubF32:
-                  op = Mfp_MSUBS;
+                  op = has_msa ? MSA_FMSUB : Mfp_MSUBS;
+                  type = MSA_F_WH;
                   break;
                case Iop_MSubF64:
-                  op = Mfp_MSUBD;
+                  op = has_msa ? MSA_FMSUB : Mfp_MSUBD;
+                  type = MSA_F_DW;
                   break;
                default:
                   vassert(0);
             }
+
             HReg dst = newVRegF(env);
             HReg src1 = iselFltExpr(env, e->Iex.Qop.details->arg2);
             HReg src2 = iselFltExpr(env, e->Iex.Qop.details->arg3);
             HReg src3 = iselFltExpr(env, e->Iex.Qop.details->arg4);
-            set_MIPS_rounding_mode(env, e->Iex.Qop.details->arg1);
-            addInstr(env, MIPSInstr_FpTernary(op, dst,
-                                              src1, src2, src3));
-            set_MIPS_rounding_default(env);
+
+            if (has_msa) {
+               addInstr(env, MIPSInstr_MsaElm(MSA_MOVE, src3, dst, 0));
+               set_MIPS_rounding_mode_MSA(env, e->Iex.Qop.details->arg1);
+               addInstr(env, MIPSInstr_Msa3RF(op, type, dst, src1, src2));
+               set_MIPS_rounding_default_MSA(env);
+            } else {
+               set_MIPS_rounding_mode(env, e->Iex.Qop.details->arg1);
+               addInstr(env, MIPSInstr_FpTernary(op, dst,
+                                                 src1, src2, src3));
+               set_MIPS_rounding_default(env);
+            }
             return dst;
          }
 
@@ -3503,6 +6204,60 @@ static HReg iselDblExpr_wrk(ISelEnv * env, IRExpr * e)
             return dst;
          }
 
+         case Iop_I64StoF64: {
+            HReg r_dst = newVRegD(env);
+            MIPSAMode *am_addr;
+            HReg tmp, fr_src;
+            if (mode64) {
+               tmp = newVRegD(env);
+               fr_src = iselDblExpr(env, e->Iex.Binop.arg2);
+               /* Move SP down 8 bytes */
+               sub_from_sp(env, 8);
+               am_addr = MIPSAMode_IR(0, StackPointer(mode64));
+
+               /* store as I64 */
+               addInstr(env, MIPSInstr_Store(8, am_addr, fr_src, mode64));
+
+               /* load as Ity_F64 */
+               addInstr(env, MIPSInstr_FpLdSt(True /*load */, 8, tmp, am_addr));
+
+               /* Reset SP */
+               add_to_sp(env, 8);
+            } else {
+               HReg Hi, Lo;
+               tmp = newVRegD(env);
+               iselInt64Expr(&Hi, &Lo, env, e->Iex.Binop.arg2);
+               tmp = mk_LoadRR32toFPR(env, Hi, Lo);  /* 2*I32 -> F64 */
+            }
+
+            set_MIPS_rounding_mode(env, e->Iex.Binop.arg1);
+            addInstr(env, MIPSInstr_FpConvert(Mfp_CVTDL, r_dst, tmp));
+            set_MIPS_rounding_default(env);
+
+            return r_dst;
+         }
+
+         case Iop_I64UtoF64: {
+            HReg r_dst;
+            HReg tmp = newVRegV(env);
+            HReg r_src2h, r_src2l;
+            vassert(has_msa);
+            iselInt64Expr(&r_src2h, &r_src2l, env, e->Iex.Binop.arg2);
+            set_MIPS_rounding_mode_MSA(env, e->Iex.Binop.arg1);
+            addInstr(env, MIPSInstr_Msa2R(MSA_FILL, MSA_W, r_src2l, tmp));
+            addInstr(env, MIPSInstr_MsaElm(MSA_INSERT, r_src2h, tmp, MSA_DFN_W | 1));
+            addInstr(env, MIPSInstr_MsaElm(MSA_INSERT, r_src2l, tmp, MSA_DFN_W | 2));
+            addInstr(env, MIPSInstr_MsaElm(MSA_INSERT, r_src2h, tmp, MSA_DFN_W | 3));
+            HReg r_srchh = newVRegI(env);
+            HReg r_srchl = newVRegI(env);
+            addInstr(env, MIPSInstr_Msa2RF(MSA_FFINT_U, MSA_F_DW, tmp, tmp));
+            addInstr(env, MIPSInstr_MsaElm(MSA_COPY_S, tmp, r_srchl, MSA_DFN_W | 0));
+            addInstr(env, MIPSInstr_MsaElm(MSA_COPY_S, tmp, r_srchh, MSA_DFN_W | 1));
+            r_dst = mk_LoadRR32toFPR(env, r_srchh, r_srchl);
+            set_MIPS_rounding_default_MSA(env);
+            return r_dst;
+          }
+
          default:
             break;
 
@@ -3544,30 +6299,36 @@ static HReg iselDblExpr_wrk(ISelEnv * env, IRExpr * e)
             set_MIPS_rounding_default(env);
             return dst;
          }
+
+         case Iop_ScaleF64: {
+            HReg src1   = iselDblExpr(env, e->Iex.Triop.details->arg2);
+            HReg src2   = iselDblExpr(env, e->Iex.Triop.details->arg3);
+            HReg v_help = newVRegV(env);
+            HReg dst    = newVRegD(env);
+            vassert(has_msa);
+            set_MIPS_rounding_mode_MSA(env, e->Iex.Triop.details->arg1);
+            addInstr(env, MIPSInstr_Msa2RF(MSA_FTINT_S, MSA_F_DW, v_help, src2));
+            addInstr(env, MIPSInstr_Msa3RF(MSA_FEXP2, MSA_F_DW, dst, src1, v_help));
+            set_MIPS_rounding_default_MSA(env);
+            return dst;
+         }
          default:
             break;
       }
    }
 
    if (e->tag == Iex_Qop) {
+      vassert(has_msa);
       switch (e->Iex.Qop.details->op) {
-         case Iop_MAddF32:
          case Iop_MAddF64:
-         case Iop_MSubF32:
          case Iop_MSubF64: {
-            MIPSFpOp op = 0;
+            MSA3RFOp op = 0;
             switch (e->Iex.Qop.details->op) {
-               case Iop_MAddF32:
-                  op = Mfp_MADDS;
-                  break;
                case Iop_MAddF64:
-                  op = Mfp_MADDD;
-                  break;
-               case Iop_MSubF32:
-                  op = Mfp_MSUBS;
+                  op = MSA_FMADD;
                   break;
                case Iop_MSubF64:
-                  op = Mfp_MSUBD;
+                  op = MSA_FMSUB;
                   break;
                default:
                   vassert(0);
@@ -3576,10 +6337,10 @@ static HReg iselDblExpr_wrk(ISelEnv * env, IRExpr * e)
             HReg src1 = iselDblExpr(env, e->Iex.Qop.details->arg2);
             HReg src2 = iselDblExpr(env, e->Iex.Qop.details->arg3);
             HReg src3 = iselDblExpr(env, e->Iex.Qop.details->arg4);
-            set_MIPS_rounding_mode(env, e->Iex.Qop.details->arg1);
-            addInstr(env, MIPSInstr_FpTernary(op, dst,
-                                              src1, src2, src3));
-            set_MIPS_rounding_default(env);
+            addInstr(env, MIPSInstr_MsaElm(MSA_MOVE, src3, dst, 0));
+            set_MIPS_rounding_mode_MSA(env, e->Iex.Qop.details->arg1);
+            addInstr(env, MIPSInstr_Msa3RF(op, MSA_F_DW, dst, src1, src2));
+            set_MIPS_rounding_default_MSA(env);
             return dst;
          }
 
@@ -3627,6 +6388,14 @@ static void iselStmt(ISelEnv * env, IRStmt * stmt)
       case Ist_Store: {
          MIPSAMode *am_addr;
          IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.Store.data);
+
+         if (tyd == Ity_V128) {
+            vassert(has_msa);
+            HReg res = iselV128Expr(env, stmt->Ist.Store.data);
+            HReg addr = iselWordExpr_R(env, stmt->Ist.Store.addr);
+            addInstr(env, MIPSInstr_MsaMi10(MSA_ST, 0, addr, res, MSA_B));
+            return;
+         }
 
          /*constructs addressing mode from address provided */
          am_addr = iselWordExpr_AMode(env, stmt->Ist.Store.addr, tyd);
@@ -3718,6 +6487,21 @@ static void iselStmt(ISelEnv * env, IRStmt * stmt)
                                            am_addr));
             return;
          }
+         if (ty == Ity_V128) {
+            vassert(has_msa);
+            HReg v_src = iselV128Expr(env, stmt->Ist.Put.data);
+#if defined(_MIPSEB)
+            HReg r_addr = newVRegI(env);
+            addInstr(env, MIPSInstr_Alu(mode64 ? Malu_DADD : Malu_ADD, r_addr, GuestStatePointer(mode64),
+                                        MIPSRH_Imm(False, stmt->Ist.Put.offset)));
+            addInstr(env, MIPSInstr_MsaMi10(MSA_ST, 0, r_addr, v_src, MSA_B));
+#else
+            vassert(!(stmt->Ist.Put.offset & 7));
+            addInstr(env, MIPSInstr_MsaMi10(MSA_ST, stmt->Ist.Put.offset >> 3,
+                                            GuestStatePointer(mode64), v_src, MSA_D));
+#endif
+            return;
+         }
          break;
       }
 
@@ -3778,6 +6562,14 @@ static void iselStmt(ISelEnv * env, IRStmt * stmt)
                return;
             }
          }
+
+         if (ty == Ity_V128) {
+            vassert(has_msa);
+            HReg v_dst = lookupIRTemp(env, tmp);
+            HReg v_src = iselV128Expr(env, stmt->Ist.WrTmp.data);
+            addInstr(env, MIPSInstr_MsaElm(MSA_MOVE, v_src, v_dst, 0));
+            return;
+          }
          break;
       }
 
@@ -3854,16 +6646,12 @@ static void iselStmt(ISelEnv * env, IRStmt * stmt)
                }
             }
             case Ity_V128: {
-               /* ATC. The code that this produces really
-                  needs to be looked at, to verify correctness.
-                  I don't think this can ever happen though, since the
-                  MIPS front end never produces 128-bit loads/stores. */
-               vassert(0);
+               vassert(has_msa);
                vassert(rloc.pri == RLPri_V128SpRel);
+               vassert((rloc.spOff < 512) && (rloc.spOff > -512));
                vassert(addToSp >= 16);
                HReg       dst = lookupIRTemp(env, d->tmp);
-               MIPSAMode* am  = MIPSAMode_IR(rloc.spOff, StackPointer(mode64));
-               addInstr(env, MIPSInstr_Load(mode64 ? 8 : 4, dst, am, mode64));
+               addInstr(env, MIPSInstr_MsaMi10(MSA_LD, rloc.spOff, StackPointer(mode64), dst, MSA_B));
                add_to_sp(env, addToSp);
                return;
 
@@ -4166,6 +6954,7 @@ HInstrArray *iselSB_MIPS ( const IRSB* bb,
 
    mode64 = arch_host != VexArchMIPS32;
    fp_mode64 = VEX_MIPS_HOST_FP_MODE(hwcaps_host);
+   has_msa = VEX_MIPS_PROC_MSA(archinfo_host->hwcaps);
 
    /* Make up an initial environment to use. */
    env = LibVEX_Alloc_inline(sizeof(ISelEnv));
@@ -4232,6 +7021,9 @@ HInstrArray *iselSB_MIPS ( const IRSB* bb,
             }
          case Ity_F64:
             hreg = mkHReg(True, HRcFlt64, 0, j++);
+            break;
+         case Ity_V128:
+            hreg = mkHReg(True, HRcVec128, 0, j++);
             break;
          default:
             ppIRType(bb->tyenv->types[i]);

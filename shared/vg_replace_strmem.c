@@ -1750,7 +1750,7 @@ static inline void my_exit ( int x )
       UWord len = 0; \
       while (1) { \
          UWord i; \
-         HChar sc = *s; \
+         UChar sc = *s; \
          if (sc == 0) \
             break; \
          for (i = 0; i < nacc; i++) { \

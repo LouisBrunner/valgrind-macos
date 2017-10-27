@@ -453,7 +453,7 @@ Int VG_(machine_arm_archlevel) = 4;
 /* For hwcaps detection on ppc32/64, s390x, and arm we'll need to do SIGILL
    testing, so we need a VG_MINIMAL_JMP_BUF. */
 #if defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le) \
-    || defined(VGA_arm) || defined(VGA_s390x) || defined(VGA_mips32)
+    || defined(VGA_arm) || defined(VGA_s390x) || defined(VGA_mips32) || defined(VGA_mips64)
 #include "pub_core_libcsetjmp.h"
 static VG_MINIMAL_JMP_BUF(env_unsup_insn);
 static void handler_unsup_insn ( Int x ) {
@@ -1697,7 +1697,7 @@ Bool VG_(machine_get_hwcaps)( void )
      vki_sigaction_fromK_t saved_sigill_act;
      vki_sigaction_toK_t   tmp_sigill_act;
 
-     volatile Bool have_DSP, have_DSPr2;
+     volatile Bool have_DSP, have_DSPr2, have_MSA;
      Int r;
 
      vg_assert(sizeof(vki_sigaction_fromK_t) == sizeof(vki_sigaction_toK_t));
@@ -1722,27 +1722,39 @@ Bool VG_(machine_get_hwcaps)( void )
      VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
 
      if (VEX_PRID_COMP_MIPS == VEX_MIPS_COMP_ID(vai.hwcaps)) {
-        /* DSPr2 instructions. */
-        have_DSPr2 = True;
+
+        /* MSA instructions. */
+        have_MSA = True;
         if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
-           have_DSPr2 = False;
+           have_MSA = False;
         } else {
-           __asm__ __volatile__(".word 0x7d095351"); /* precr.qb.ph t2, t0, t1 */
+           __asm__ __volatile__(".word 0x7800088E"); /* addv.b w2, w1, w0 */
         }
-        if (have_DSPr2) {
-           /* We assume it's 74K, since it can run DSPr2. */
-           vai.hwcaps |= VEX_PRID_IMP_74K;
+        if (have_MSA) {
+           vai.hwcaps |= VEX_PRID_IMP_P5600;
         } else {
-           /* DSP instructions. */
-           have_DSP = True;
+           /* DSPr2 instructions. */
+           have_DSPr2 = True;
            if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
-              have_DSP = False;
+              have_DSPr2 = False;
            } else {
-              __asm__ __volatile__(".word 0x7c3f44b8"); /* rddsp t0, 0x3f */
+              __asm__ __volatile__(".word 0x7d095351"); /* precr.qb.ph t2, t0, t1 */
            }
-           if (have_DSP) {
-              /* We assume it's 34K, since it has support for DSP. */
-              vai.hwcaps |= VEX_PRID_IMP_34K;
+           if (have_DSPr2) {
+              /* We assume it's 74K, since it can run DSPr2. */
+              vai.hwcaps |= VEX_PRID_IMP_74K;
+           } else {
+              /* DSP instructions. */
+              have_DSP = True;
+              if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
+                 have_DSP = False;
+              } else {
+                 __asm__ __volatile__(".word 0x7c3f44b8"); /* rddsp t0, 0x3f */
+              }
+              if (have_DSP) {
+                 /* We assume it's 34K, since it has support for DSP. */
+                 vai.hwcaps |= VEX_PRID_IMP_34K;
+              }
            }
         }
      }
@@ -1805,6 +1817,55 @@ Bool VG_(machine_get_hwcaps)( void )
 #    endif
 
      vai.hwcaps |= VEX_MIPS_HOST_FR;
+
+     /* Same instruction set detection algorithm as for ppc32/arm... */
+     vki_sigset_t          saved_set, tmp_set;
+     vki_sigaction_fromK_t saved_sigill_act;
+     vki_sigaction_toK_t   tmp_sigill_act;
+
+     volatile Bool have_MSA;
+     Int r;
+
+     vg_assert(sizeof(vki_sigaction_fromK_t) == sizeof(vki_sigaction_toK_t));
+
+     VG_(sigemptyset)(&tmp_set);
+     VG_(sigaddset)(&tmp_set, VKI_SIGILL);
+
+     r = VG_(sigprocmask)(VKI_SIG_UNBLOCK, &tmp_set, &saved_set);
+     vg_assert(r == 0);
+
+     r = VG_(sigaction)(VKI_SIGILL, NULL, &saved_sigill_act);
+     vg_assert(r == 0);
+     tmp_sigill_act = saved_sigill_act;
+
+     /* NODEFER: signal handler does not return (from the kernel's point of
+        view), hence if it is to successfully catch a signal more than once,
+        we need the NODEFER flag. */
+     tmp_sigill_act.sa_flags &= ~VKI_SA_RESETHAND;
+     tmp_sigill_act.sa_flags &= ~VKI_SA_SIGINFO;
+     tmp_sigill_act.sa_flags |=  VKI_SA_NODEFER;
+     tmp_sigill_act.ksa_handler = handler_unsup_insn;
+     VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
+
+     if (VEX_PRID_COMP_MIPS == VEX_MIPS_COMP_ID(vai.hwcaps)) {
+
+        /* MSA instructions */
+        have_MSA = True;
+        if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
+           have_MSA = False;
+        } else {
+           __asm__ __volatile__(".word 0x7800088E"); /* addv.b w2, w1, w0 */
+        }
+        if (have_MSA) {
+           vai.hwcaps |= VEX_PRID_IMP_P5600;
+        }
+     }
+
+     VG_(convert_sigaction_fromK_to_toK)(&saved_sigill_act, &tmp_sigill_act);
+     VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
+     VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
+
+     VG_(debugLog)(1, "machine", "hwcaps = 0x%x\n", vai.hwcaps);
 
      VG_(machine_get_cache_info)(&vai);
 

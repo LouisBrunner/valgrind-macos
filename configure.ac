@@ -1837,6 +1837,26 @@ CFLAGS=$safe_CFLAGS
 AC_SUBST(FLAG_OCTEON2)
 
 
+# does this compiler support -mmsa (MIPS MSA ASE) ?
+AC_MSG_CHECKING([if gcc accepts -mmsa])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="$CFLAGS -mmsa -Werror"
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+    return 0;
+]])], [
+FLAG_MSA="-mmsa"
+AC_MSG_RESULT([yes])
+], [
+FLAG_MSA=""
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+AC_SUBST(FLAG_MSA)
+
+
 # does this compiler support -mmmx ?
 AC_MSG_CHECKING([if gcc accepts -mmmx])
 

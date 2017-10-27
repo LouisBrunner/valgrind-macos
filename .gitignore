@@ -1596,6 +1596,12 @@
 /none/tests/mips32/mips32_dspr2
 /none/tests/mips32/MIPS32int
 /none/tests/mips32/MoveIns
+/none/tests/mips32/msa_arithmetic
+/none/tests/mips32/msa_comparison
+/none/tests/mips32/msa_data_transfer
+/none/tests/mips32/msa_fpu
+/none/tests/mips32/msa_logical_and_shift
+/none/tests/mips32/msa_shuffle
 /none/tests/mips32/LoadStore1
 /none/tests/mips32/round
 /none/tests/mips32/round_fpu64
@@ -1630,6 +1636,12 @@
 /none/tests/mips64/load_store_unaligned
 /none/tests/mips64/logical_instructions
 /none/tests/mips64/move_instructions
+/none/tests/mips64/msa_arithmetic
+/none/tests/mips64/msa_comparison
+/none/tests/mips64/msa_data_transfer
+/none/tests/mips64/msa_fpu
+/none/tests/mips64/msa_logical_and_shift
+/none/tests/mips64/msa_shuffle
 /none/tests/mips64/rotate_swap
 /none/tests/mips64/round
 /none/tests/mips64/shift_instructions

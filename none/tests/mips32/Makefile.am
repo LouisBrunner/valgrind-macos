@@ -28,6 +28,14 @@ EXTRA_DIST = \
 	MoveIns.stdout.exp MoveIns.stdout.exp-BE \
 	MoveIns.stdout.exp-mips32r2-BE MoveIns.stdout.exp-mips32r2-LE \
 	MoveIns.stderr.exp MoveIns.vgtest \
+	msa_arithmetic.stderr.exp msa_arithmetic.stdout.exp msa_arithmetic.vgtest \
+	msa_comparison.stderr.exp msa_comparison.stdout.exp msa_comparison.vgtest \
+	msa_data_transfer.stderr.exp msa_data_transfer.stdout.exp \
+	msa_data_transfer.stdout.exp-BE msa_data_transfer.vgtest \
+	msa_fpu.stderr.exp msa_fpu.stdout.exp msa_fpu.vgtest \
+	msa_logical_and_shift.stderr.exp msa_logical_and_shift.stdout.exp \
+	msa_logical_and_shift.vgtest msa_shuffle.stderr.exp msa_shuffle.stdout.exp \
+	msa_shuffle.vgtest \
 	round_fpu64.stdout.exp round_fpu64.stdout.exp-fpu32 \
 	round_fpu64.stderr.exp round_fpu64.vgtest \
 	round.stdout.exp round.stderr.exp round.vgtest \
@@ -40,6 +48,7 @@ EXTRA_DIST = \
 	vfp.stdout.exp-mips32-LE vfp.stdout.exp-mips32r2-LE vfp.stderr.exp \
 	vfp.stdout.exp-mips32r2-fpu_64-BE vfp.stdout.exp-mips32r2-fpu_64-LE \
 	vfp.vgtest
+
 
 check_PROGRAMS = \
 	allexec \
@@ -58,6 +67,12 @@ check_PROGRAMS = \
 	bug320057-mips32 \
 	mips32_dsp \
 	mips32_dspr2 \
+	msa_arithmetic \
+	msa_comparison \
+	msa_data_transfer \
+	msa_fpu \
+	msa_logical_and_shift \
+	msa_shuffle \
 	unaligned_load_store \
 	test_fcsr \
 	test_math \
@@ -69,6 +84,13 @@ AM_CXXFLAGS  += @FLAG_M32@
 AM_CCASFLAGS += @FLAG_M32@
 
 allexec_CFLAGS          = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
+msa_arithmetic_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
+msa_comparison_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
+msa_data_transfer_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
+msa_fpu_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
+msa_logical_and_shift_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
+msa_shuffle_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
+
 bug320057_mips32_LDFLAGS = -lrt
 
 # C++ tests

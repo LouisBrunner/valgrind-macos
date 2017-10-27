@@ -46,6 +46,14 @@ EXTRA_DIST = \
 	logical_instructions.vgtest \
 	move_instructions.stdout.exp-BE move_instructions.stdout.exp-LE \
 	move_instructions.stderr.exp move_instructions.vgtest \
+	msa_data_transfer.stdout.exp msa_data_transfer.stderr.exp \
+	msa_data_transfer.vgtest msa_data_transfer.stdout.exp-BE \
+	msa_arithmetic.stderr.exp msa_arithmetic.stdout.exp msa_arithmetic.vgtest \
+	msa_comparison.stderr.exp msa_comparison.stdout.exp msa_comparison.vgtest \
+	msa_fpu.stderr.exp msa_fpu.stdout.exp msa_fpu.vgtest \
+	msa_logical_and_shift.stderr.exp msa_logical_and_shift.stdout.exp \
+	msa_logical_and_shift.vgtest msa_shuffle.stderr.exp msa_shuffle.stdout.exp \
+	msa_shuffle.vgtest\
 	rotate_swap.stdout.exp-mips64 rotate_swap.stdout.exp-mips64r2 \
 	rotate_swap.stderr.exp rotate_swap.vgtest \
 	round.stdout.exp round.stderr.exp round.vgtest \
@@ -85,6 +93,12 @@ check_PROGRAMS = \
 	load_store_unaligned \
 	logical_instructions \
 	move_instructions \
+	msa_data_transfer \
+	msa_arithmetic \
+	msa_comparison \
+	msa_fpu \
+	msa_logical_and_shift \
+	msa_shuffle \
 	rotate_swap \
 	round \
 	shift_instructions \
@@ -107,6 +121,13 @@ cvm_atomic_CFLAGS = $(AM_CFLAGS) -g -O0 @FLAG_OCTEON2@
 cvm_atomic_thread_CFLAGS = $(AM_CFLAGS) -g -O0 @FLAG_OCTEON2@
 load_indexed_instructions_CFLAGS = $(AM_CFLAGS) -g -O0 @FLAG_OCTEON2@
 fpu_arithmetic_CFLAGS = $(AM_CFLAGS) -lm
+msa_arithmetic_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
+msa_comparison_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
+msa_data_transfer_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
+msa_fpu_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
+msa_logical_and_shift_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
+msa_shuffle_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
+
 
 # C++ tests
 test_math_SOURCES          = test_math.cpp

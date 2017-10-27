@@ -17,6 +17,7 @@ support for X86/macOS 10.13, AMD64/macOS 10.13.
 * ================== PLATFORM CHANGES =================
 
 * Preliminary support for macOS 10.13 has been added.
+* mips: support for MIPS SIMD architecture (MSA) has been added.
 
 * ==================== TOOL CHANGES ====================
 
@@ -52,6 +53,7 @@ where XXXXXX is the bug number as listed below.
 382256  gz compiler flag test doesn't work for gold
 382407  vg_perf needs "--terse" command line option
 382515  "Assertion 'di->have_dinfo' failed." on wine's dlls/mscoree/tests/mscoree.c
+382563  MIPS MSA ASE support
 382998  xml-socket doesn't work
 383275  massif valgrind: m_xarray.c:162 (ensureSpaceXA): Assertion '!xa->arr' failed
 384096  Mention AddrCheck at Memcheck's command line option --undef-value-errors=no

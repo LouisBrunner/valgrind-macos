@@ -710,6 +710,15 @@ test_strspn (void)
   check(strspn("abc", "qx") == 0, 3);	/* None. */
   check(strspn("", "ab") == 0, 4);	/* Null string. */
   check(strspn("abc", "") == 0, 5);	/* Null search list. */
+  {
+     unsigned char work4[4];
+     work4[0] = 0xe2;
+     work4[1] = 0xe3;
+     work4[2] = 0xd9;
+     work4[3] = '\0';
+     /* Check for signed/unsigned mixup */
+     check(strspn((char*)work4, (char*)work4) == 3, 6);
+  }
 }
 
 static void

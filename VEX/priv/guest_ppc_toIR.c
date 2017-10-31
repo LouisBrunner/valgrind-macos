@@ -9419,26 +9419,60 @@ static Bool dis_proc_ctl ( const VexAbiInfo* vbi, UInt theInstr )
          putIReg( rD_addr, getGST( PPC_GST_SPRG3_RO ) );
          break;
 
-      /* Even a lowly PPC7400 can run the associated helper, so no
-         obvious need for feature testing at this point. */
-      case 268 /* 0x10C */:
-      case 269 /* 0x10D */: {
-         UInt     arg  = SPR==268 ? 0 : 1;
-         IRTemp   val  = newTemp(Ity_I32);
-         IRExpr** args = mkIRExprVec_1( mkU32(arg) );
+      case 268 /* 0x10C  TB  - 64 bit time base register */:
+      {
+         IRTemp   val  = newTemp(Ity_I64);
+         IRExpr** args = mkIRExprVec_0();
          IRDirty* d    = unsafeIRDirty_1_N(
-                            val,
-                            0/*regparms*/,
-                            "ppc32g_dirtyhelper_MFSPR_268_269",
-                            fnptr_to_fnentry
-                               (vbi, &ppc32g_dirtyhelper_MFSPR_268_269),
-                            args
-                         );
+                                           val,
+                                           0/*regparms*/,
+                                           "ppcg_dirtyhelper_MFTB",
+                                           fnptr_to_fnentry(vbi,
+                                                            &ppcg_dirtyhelper_MFTB),
+                                           args );
+         /* execute the dirty call, dumping the result in val. */
+         stmt( IRStmt_Dirty(d) );
+         putIReg( rD_addr, (mode64) ? mkexpr(val) :
+                                      unop(Iop_64to32, mkexpr(val)) );
+
+         break;
+      }
+      case 269 /* 0x10D  TBU - upper 32-bits of time base register */:
+      {
+         DIP("mfspr r%u,%u", rD_addr, SPR);
+         IRTemp   val  = newTemp(Ity_I64);
+         IRExpr** args = mkIRExprVec_0();
+         IRDirty* d    = unsafeIRDirty_1_N(
+                                           val,
+                                           0/*regparms*/,
+                                           "ppcg_dirtyhelper_MFTB",
+                                           fnptr_to_fnentry(vbi,
+                                                            &ppcg_dirtyhelper_MFTB),
+                                           args );
          /* execute the dirty call, dumping the result in val. */
          stmt( IRStmt_Dirty(d) );
          putIReg( rD_addr,
-                  mkWidenFrom32(ty, mkexpr(val), False/*unsigned*/) );
+                  mkWidenFrom32(ty, unop(Iop_64HIto32, mkexpr(val)),
+                                /* Signed */False) );
+         break;
+      }
+      case 284 /* 0x1  TBL - lower 32-bits of time base register */:
+      {
          DIP("mfspr r%u,%u", rD_addr, SPR);
+         IRTemp   val  = newTemp(Ity_I64);
+         IRExpr** args = mkIRExprVec_0();
+         IRDirty* d    = unsafeIRDirty_1_N(
+                                           val,
+                                           0/*regparms*/,
+                                           "ppcg_dirtyhelper_MFTB",
+                                           fnptr_to_fnentry(vbi,
+                                                            &ppcg_dirtyhelper_MFTB),
+                                           args );
+         /* execute the dirty call, dumping the result in val. */
+         stmt( IRStmt_Dirty(d) );
+         putIReg( rD_addr,
+                  mkWidenFrom32(ty, unop(Iop_64to32, mkexpr(val)),
+                                /* Signed */False) );
          break;
       }
 
@@ -9492,6 +9526,12 @@ static Bool dis_proc_ctl ( const VexAbiInfo* vbi, UInt theInstr )
          DIP("mftb r%u", rD_addr);
          putIReg( rD_addr, (mode64) ? mkexpr(val) :
                                       unop(Iop_64to32, mkexpr(val)) );
+         break;
+      case 284:
+         DIP("mftbl r%u", rD_addr);
+         putIReg( rD_addr,
+                  mkWidenFrom32(ty, unop(Iop_64to32, mkexpr(val)),
+                                /* Signed */False) );
          break;
       default:
          return False; /* illegal instruction */

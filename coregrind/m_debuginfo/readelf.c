@@ -282,6 +282,16 @@ Bool get_elf_symbol_info (
    Bool in_text, in_data, in_sdata, in_rodata, in_bss, in_sbss;
    Addr text_svma, data_svma, sdata_svma, rodata_svma, bss_svma, sbss_svma;
    PtrdiffT text_bias, data_bias, sdata_bias, rodata_bias, bss_bias, sbss_bias;
+#     if defined(VGPV_arm_linux_android) \
+         || defined(VGPV_x86_linux_android) \
+         || defined(VGPV_mips32_linux_android) \
+         || defined(VGPV_arm64_linux_android)
+   Addr available_size = 0;
+#define COMPUTE_AVAILABLE_SIZE(segsvma, segsize) \
+        available_size = segsvma + segsize - sym_svma
+#else
+#define COMPUTE_AVAILABLE_SIZE(segsvma, segsize)
+#endif
 
    /* Set defaults */
    *sym_name_out_ioff = sym_name_ioff;
@@ -360,6 +370,7 @@ Bool get_elf_symbol_info (
        && sym_svma < text_svma + di->text_size) {
       *is_text_out = True;
       (*sym_avmas_out).main += text_bias;
+      COMPUTE_AVAILABLE_SIZE(text_svma, di->text_size);
    } else
    if (di->data_present
        && di->data_size > 0
@@ -367,6 +378,7 @@ Bool get_elf_symbol_info (
        && sym_svma < data_svma + di->data_size) {
       *is_text_out = False;
       (*sym_avmas_out).main += data_bias;
+      COMPUTE_AVAILABLE_SIZE(data_svma, di->data_size);
    } else
    if (di->sdata_present
        && di->sdata_size > 0
@@ -374,6 +386,7 @@ Bool get_elf_symbol_info (
        && sym_svma < sdata_svma + di->sdata_size) {
       *is_text_out = False;
       (*sym_avmas_out).main += sdata_bias;
+      COMPUTE_AVAILABLE_SIZE(sdata_svma, di->sdata_size);
    } else
    if (di->rodata_present
        && di->rodata_size > 0
@@ -381,6 +394,7 @@ Bool get_elf_symbol_info (
        && sym_svma < rodata_svma + di->rodata_size) {
       *is_text_out = False;
       (*sym_avmas_out).main += rodata_bias;
+      COMPUTE_AVAILABLE_SIZE(rodata_svma, di->rodata_size);
    } else
    if (di->bss_present
        && di->bss_size > 0
@@ -388,6 +402,7 @@ Bool get_elf_symbol_info (
        && sym_svma < bss_svma + di->bss_size) {
       *is_text_out = False;
       (*sym_avmas_out).main += bss_bias;
+      COMPUTE_AVAILABLE_SIZE(bss_svma, di->bss_size);
    } else
    if (di->sbss_present
        && di->sbss_size > 0
@@ -395,6 +410,7 @@ Bool get_elf_symbol_info (
        && sym_svma < sbss_svma + di->sbss_size) {
       *is_text_out = False;
       (*sym_avmas_out).main += sbss_bias;
+      COMPUTE_AVAILABLE_SIZE(sbss_svma, di->sbss_size);
    } else {
       /* Assume it's in .text.  Is this a good idea? */
       *is_text_out = True;
@@ -463,7 +479,7 @@ Bool get_elf_symbol_info (
          || defined(VGPV_x86_linux_android) \
          || defined(VGPV_mips32_linux_android) \
          || defined(VGPV_arm64_linux_android)
-      *sym_size_out = 2048;
+      *sym_size_out = available_size ? available_size : 2048;
 #     else
       if (TRACE_SYMTAB_ENABLED) {
          HChar* sym_name = ML_(img_strdup)(escn_strtab->img,

@@ -92,6 +92,11 @@ typedef
       /* Place where parent was when this thread was created. */
       ExeContext* created_at;
       Bool        announced;
+      /* != 0 if SP fixup needed for unwind : it contains a delta SP value
+         to use when evh__mem_help_c(read|write)_X is called in the 
+         'middle of an instruction' (e.g. in a push)
+         after the SP was changed, but before the push has been completed. */
+      Word        first_sp_delta;
       /* Index for generating references in error messages. */
       Int         errmsg_index;
 

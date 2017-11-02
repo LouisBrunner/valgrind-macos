@@ -2729,6 +2729,12 @@ static inline CFSI_m_CacheEnt* cfsi_m_cache__find ( Addr ip )
    }
 }
 
+Bool VG_(has_CF_info)(Addr a)
+{
+   return cfsi_m_cache__find (a) != NULL;
+}
+
+
 
 inline
 static Addr compute_cfa ( const D3UnwindRegs* uregs,

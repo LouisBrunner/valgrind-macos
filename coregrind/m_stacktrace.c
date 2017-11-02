@@ -1478,11 +1478,14 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 /*--- Exported functions.                                  ---*/
 /*------------------------------------------------------------*/
 
-UInt VG_(get_StackTrace) ( ThreadId tid, 
-                           /*OUT*/StackTrace ips, UInt max_n_ips,
-                           /*OUT*/StackTrace sps,
-                           /*OUT*/StackTrace fps,
-                           Word first_ip_delta )
+UInt VG_(get_StackTrace_with_deltas)(
+         ThreadId tid, 
+         /*OUT*/StackTrace ips, UInt n_ips,
+         /*OUT*/StackTrace sps,
+         /*OUT*/StackTrace fps,
+         Word first_ip_delta,
+         Word first_sp_delta
+      )
 {
    /* Get the register values with which to start the unwind. */
    UnwindStartRegs startRegs;
@@ -1524,8 +1527,9 @@ UInt VG_(get_StackTrace) ( ThreadId tid,
    VG_(stack_limits)( (Addr)startRegs.r_sp,
                       &stack_lowest_byte, &stack_highest_byte );
 
-   /* Take into account the first_ip_delta. */
-   startRegs.r_pc += (Long)(Word)first_ip_delta;
+   /* Take into account the first_ip_delta and first_sp_delta. */
+   startRegs.r_pc += (Long)first_ip_delta;
+   startRegs.r_sp += (Long)first_sp_delta;
 
    if (0)
       VG_(printf)("tid %u: stack_highest=0x%08lx ip=0x%010llx "
@@ -1533,10 +1537,25 @@ UInt VG_(get_StackTrace) ( ThreadId tid,
                   tid, stack_highest_byte,
                   startRegs.r_pc, startRegs.r_sp);
 
-   return VG_(get_StackTrace_wrk)(tid, ips, max_n_ips, 
+   return VG_(get_StackTrace_wrk)(tid, ips, n_ips, 
                                        sps, fps,
                                        &startRegs,
                                        stack_highest_byte);
+}
+
+UInt VG_(get_StackTrace) ( ThreadId tid, 
+                           /*OUT*/StackTrace ips, UInt max_n_ips,
+                           /*OUT*/StackTrace sps,
+                           /*OUT*/StackTrace fps,
+                           Word first_ip_delta )
+{
+   return VG_(get_StackTrace_with_deltas) (tid,
+                                           ips, max_n_ips,
+                                           sps,
+                                           fps,
+                                           first_ip_delta,
+                                           0 /* first_sp_delta */
+                                           );
 }
 
 static void printIpDesc(UInt n, Addr ip, void* uu_opaque)

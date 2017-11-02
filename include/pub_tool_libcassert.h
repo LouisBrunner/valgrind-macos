@@ -61,6 +61,20 @@ extern void VG_(assert_fail) ( Bool isCore, const HChar* expr, const HChar* file
                                Int line, const HChar* fn, 
                                const HChar* format, ... );
 
+/* Show the state of various threads related information, such
+   as the guest stacktrace for each thread.
+   Mostly for debugging V.
+   The following activates optional output:
+     host_stacktrace : shows the host stacktrace.
+     stack_usage True means:
+                   shows how much of the valgrind stack was used.
+                   shows the client stack range
+     exited_thread_slots : show information for thread slots that were used
+        but the thread has now exited. */
+extern void VG_(show_sched_status) ( Bool host_stacktrace,
+                                     Bool stack_usage,
+                                     Bool exited_threads);
+
 #endif   // __PUB_TOOL_LIBCBASSERT_H
 
 /*--------------------------------------------------------------------*/

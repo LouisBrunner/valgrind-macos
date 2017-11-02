@@ -21,6 +21,11 @@ support for X86/macOS 10.13, AMD64/macOS 10.13.
 
 * ==================== TOOL CHANGES ====================
 
+* Helgrind:
+
+  - Addition of a flag --delta-stacktrace=no|yes [yes on linux amd64/x86], specifying
+    how full history stack traces are computed. Using yes can speed up Helgrind by
+    25%.
 
 * ==================== OTHER CHANGES ====================
 
@@ -39,6 +44,7 @@ To see details of a given bug, visit
 where XXXXXX is the bug number as listed below.
 
 255603  exp-sgcheck Assertion '!already_present' failed
+376257  helgrind history full speed up using a cached stack
 379373  Fix syscall param msg->desc.port.name points to uninitialised byte(s)
         on macOS 10.12
 379748  Fix missing pselect syscall (OS X 10.11)

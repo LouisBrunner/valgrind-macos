@@ -183,6 +183,7 @@ static Thread* mk_Thread ( Thr* hbthr ) {
    thread->coretid      = VG_INVALID_THREADID;
    thread->created_at   = NULL;
    thread->announced    = False;
+   thread->first_sp_delta = 0;
    thread->errmsg_index = indx++;
    thread->admin        = admin_threads;
    thread->synchr_nesting = 0;
@@ -1975,12 +1976,38 @@ void evh__mem_help_cwrite_4(Addr a) {
       LIBHB_CWRITE_4(hbthr, a);
 }
 
+/* Same as evh__mem_help_cwrite_4 but unwind will use a first_sp_delta of
+   one word. */
+static VG_REGPARM(1)
+void evh__mem_help_cwrite_4_fixupSP(Addr a) {
+   Thread*  thr = get_current_Thread_in_C_C();
+   Thr*     hbthr = thr->hbthr;
+
+   thr->first_sp_delta = sizeof(Word);
+   if (LIKELY(thr->synchr_nesting == 0))
+      LIBHB_CWRITE_4(hbthr, a);
+   thr->first_sp_delta = 0;
+}
+
 static VG_REGPARM(1)
 void evh__mem_help_cwrite_8(Addr a) {
    Thread*  thr = get_current_Thread_in_C_C();
    Thr*     hbthr = thr->hbthr;
    if (LIKELY(thr->synchr_nesting == 0))
       LIBHB_CWRITE_8(hbthr, a);
+}
+
+/* Same as evh__mem_help_cwrite_8 but unwind will use a first_sp_delta of
+   one word. */
+static VG_REGPARM(1)
+void evh__mem_help_cwrite_8_fixupSP(Addr a) {
+   Thread*  thr = get_current_Thread_in_C_C();
+   Thr*     hbthr = thr->hbthr;
+
+   thr->first_sp_delta = sizeof(Word);
+   if (LIKELY(thr->synchr_nesting == 0))
+      LIBHB_CWRITE_8(hbthr, a);
+   thr->first_sp_delta = 0;
 }
 
 static VG_REGPARM(2)
@@ -4428,8 +4455,13 @@ static void instrument_mem_access ( IRSB*   sbOut,
                                     IRExpr* addr,
                                     Int     szB,
                                     Bool    isStore,
+                                    Bool    fixupSP_needed,
                                     Int     hWordTy_szB,
                                     Int     goff_sp,
+                                    Int     goff_sp_s1,
+                                    /* goff_sp_s1 is the offset in guest
+                                       state where the cachedstack validity
+                                       is stored. */
                                     IRExpr* guard ) /* NULL => True */
 {
    IRType   tyAddr   = Ity_INVALID;
@@ -4465,13 +4497,27 @@ static void instrument_mem_access ( IRSB*   sbOut,
             argv = mkIRExprVec_1( addr );
             break;
          case 4:
-            hName = "evh__mem_help_cwrite_4";
-            hAddr = &evh__mem_help_cwrite_4;
+            if (fixupSP_needed) {
+               /* Unwind has to be done with a SP fixed up with one word.
+                  See Ist_Put heuristic in hg_instrument. */
+               hName = "evh__mem_help_cwrite_4_fixupSP";
+               hAddr = &evh__mem_help_cwrite_4_fixupSP;
+            } else {
+               hName = "evh__mem_help_cwrite_4";
+               hAddr = &evh__mem_help_cwrite_4;
+            }
             argv = mkIRExprVec_1( addr );
             break;
          case 8:
-            hName = "evh__mem_help_cwrite_8";
-            hAddr = &evh__mem_help_cwrite_8;
+            if (fixupSP_needed) {
+               /* Unwind has to be done with a SP fixed up with one word.
+                  See Ist_Put heuristic in hg_instrument. */
+               hName = "evh__mem_help_cwrite_8_fixupSP";
+               hAddr = &evh__mem_help_cwrite_8_fixupSP;
+            } else {
+               hName = "evh__mem_help_cwrite_8";
+               hAddr = &evh__mem_help_cwrite_8;
+            }
             argv = mkIRExprVec_1( addr );
             break;
          default:
@@ -4521,6 +4567,17 @@ static void instrument_mem_access ( IRSB*   sbOut,
    di = unsafeIRDirty_0_N( regparms,
                            hName, VG_(fnptr_to_fnentry)( hAddr ),
                            argv );
+
+   if (HG_(clo_delta_stacktrace)) {
+      /* memory access helper might read the shadow1 SP offset, that
+         indicates if the cached stacktrace is valid. */
+      di->fxState[0].fx = Ifx_Read;
+      di->fxState[0].offset = goff_sp_s1;
+      di->fxState[0].size = hWordTy_szB;
+      di->fxState[0].nRepeats = 0;
+      di->fxState[0].repeatLen = 0;
+      di->nFxState = 1;
+   }
 
    if (! HG_(clo_check_stack_refs)) {
       /* We're ignoring memory references which are (obviously) to the
@@ -4609,6 +4666,19 @@ static Bool is_in_dynamic_linker_shared_object( Addr ga )
 }
 
 static
+void addInvalidateCachedStack (IRSB*   bbOut,
+                               Int     goff_sp_s1,
+                               Int     hWordTy_szB)
+{
+   /* Invalidate cached stack: Write 0 in the shadow1 offset 0 */
+   addStmtToIRSB( bbOut,
+                  IRStmt_Put(goff_sp_s1,
+                             hWordTy_szB == 4 ?
+                             mkU32(0) : mkU64(0)));
+   /// ???? anything more efficient than assign a Word???
+}
+
+static
 IRSB* hg_instrument ( VgCallbackClosure* closure,
                       IRSB* bbIn,
                       const VexGuestLayout* layout,
@@ -4623,7 +4693,15 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
    Bool    inLDSO = False;
    Addr    inLDSOmask4K = 1; /* mismatches on first check */
 
-   const Int goff_sp = layout->offset_SP;
+   // Set to True when SP must be fixed up when taking a stack trace for the
+   // mem accesses in the rest of the instruction
+   Bool    fixupSP_needed = False;
+
+   const Int goff_SP = layout->offset_SP;
+   /* SP in shadow1 indicates if cached stack is valid.
+      We have to invalidate the cached stack e.g. when seeing call or ret. */
+   const Int goff_SP_s1 = layout->total_sizeB + layout->offset_SP;
+   const Int hWordTy_szB = sizeofIRType(hWordTy);
 
    if (gWordTy != hWordTy) {
       /* We don't currently support this case. */
@@ -4661,17 +4739,45 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
       tl_assert(st);
       tl_assert(isFlatIRStmt(st));
       switch (st->tag) {
+         case Ist_Exit:
+            /* No memory reference, but if we do anything else than
+               Ijk_Boring, indicate to helgrind that the previously
+               recorded stack is invalid.
+               For Ijk_Boring, also invalidate the stack if the exit
+               instruction has no CF info. This heuristic avoids cached
+               stack trace mismatch in some cases such as longjmp
+               implementation. Similar logic below for the bb exit. */
+            if (HG_(clo_delta_stacktrace)
+                && (st->Ist.Exit.jk != Ijk_Boring || ! VG_(has_CF_info)(cia)))
+               addInvalidateCachedStack(bbOut, goff_SP_s1, hWordTy_szB);
+            break;
          case Ist_NoOp:
          case Ist_AbiHint:
-         case Ist_Put:
-         case Ist_PutI:
-         case Ist_Exit:
             /* None of these can contain any memory references. */
+            break;
+         case Ist_Put:
+            /* This cannot contain any memory references. */
+            /* If we see a put to SP, from now on in this instruction, 
+               the SP needed to unwind has to be fixed up by one word.
+               This very simple heuristic ensures correct unwinding in the
+               typical case of a push instruction. If we need to cover more
+               cases, then we need to better track how the SP is modified by
+               the instruction (and calculate a precise sp delta), rather than
+               assuming that the SP is decremented by a Word size. */
+            if (HG_(clo_delta_stacktrace) && st->Ist.Put.offset == goff_SP) {
+               fixupSP_needed = True;
+            }
+            break;
+         case Ist_PutI:
+            /* This cannot contain any memory references. */
             break;
 
          case Ist_IMark:
+            fixupSP_needed = False;
+
             /* no mem refs, but note the insn address. */
             cia = st->Ist.IMark.addr;
+
             /* Don't instrument the dynamic linker.  It generates a
                lot of races which we just expensively suppress, so
                it's pointless.
@@ -4717,8 +4823,8 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                   cas->addr,
                   (isDCAS ? 2 : 1)
                      * sizeofIRType(typeOfIRExpr(bbIn->tyenv, cas->dataLo)),
-                  False/*!isStore*/,
-                  sizeofIRType(hWordTy), goff_sp,
+                  False/*!isStore*/, fixupSP_needed,
+                  hWordTy_szB, goff_SP, goff_SP_s1,
                   NULL/*no-guard*/
                );
             }
@@ -4738,8 +4844,8 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                      bbOut,
                      st->Ist.LLSC.addr,
                      sizeofIRType(dataTy),
-                     False/*!isStore*/,
-                     sizeofIRType(hWordTy), goff_sp,
+                     False/*!isStore*/, fixupSP_needed,
+                     hWordTy_szB, goff_SP, goff_SP_s1,
                      NULL/*no-guard*/
                   );
                }
@@ -4756,8 +4862,8 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                   bbOut, 
                   st->Ist.Store.addr, 
                   sizeofIRType(typeOfIRExpr(bbIn->tyenv, st->Ist.Store.data)),
-                  True/*isStore*/,
-                  sizeofIRType(hWordTy), goff_sp,
+                  True/*isStore*/, fixupSP_needed,
+                  hWordTy_szB, goff_SP, goff_SP_s1,
                   NULL/*no-guard*/
                );
             }
@@ -4770,9 +4876,9 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
             IRType    type = typeOfIRExpr(bbIn->tyenv, data);
             tl_assert(type != Ity_INVALID);
             instrument_mem_access( bbOut, addr, sizeofIRType(type),
-                                   True/*isStore*/,
-                                   sizeofIRType(hWordTy),
-                                   goff_sp, sg->guard );
+                                   True/*isStore*/, fixupSP_needed,
+                                   hWordTy_szB,
+                                   goff_SP, goff_SP_s1, sg->guard );
             break;
          }
 
@@ -4784,9 +4890,9 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
             typeOfIRLoadGOp(lg->cvt, &typeWide, &type);
             tl_assert(type != Ity_INVALID);
             instrument_mem_access( bbOut, addr, sizeofIRType(type),
-                                   False/*!isStore*/,
-                                   sizeofIRType(hWordTy),
-                                   goff_sp, lg->guard );
+                                   False/*!isStore*/, fixupSP_needed,
+                                   hWordTy_szB,
+                                   goff_SP, goff_SP_s1, lg->guard );
             break;
          }
 
@@ -4798,8 +4904,8 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                      bbOut,
                      data->Iex.Load.addr,
                      sizeofIRType(data->Iex.Load.ty),
-                     False/*!isStore*/,
-                     sizeofIRType(hWordTy), goff_sp,
+                     False/*!isStore*/, fixupSP_needed,
+                     hWordTy_szB, goff_SP, goff_SP_s1,
                      NULL/*no-guard*/
                   );
                }
@@ -4819,16 +4925,20 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
                if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify) {
                   if (!inLDSO) {
                      instrument_mem_access( 
-                        bbOut, d->mAddr, dataSize, False/*!isStore*/,
-                        sizeofIRType(hWordTy), goff_sp, NULL/*no-guard*/
+                        bbOut, d->mAddr, dataSize,
+                        False/*!isStore*/, fixupSP_needed,
+                        hWordTy_szB, goff_SP, goff_SP_s1,
+                        NULL/*no-guard*/
                      );
                   }
                }
                if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify) {
                   if (!inLDSO) {
                      instrument_mem_access( 
-                        bbOut, d->mAddr, dataSize, True/*isStore*/,
-                        sizeofIRType(hWordTy), goff_sp, NULL/*no-guard*/
+                        bbOut, d->mAddr, dataSize,
+                        True/*isStore*/, fixupSP_needed,
+                        hWordTy_szB, goff_SP, goff_SP_s1,
+                        NULL/*no-guard*/
                      );
                   }
                }
@@ -4848,6 +4958,11 @@ IRSB* hg_instrument ( VgCallbackClosure* closure,
 
       addStmtToIRSB( bbOut, st );
    } /* iterate over bbIn->stmts */
+
+   // See above the case Ist_Exit:
+   if (HG_(clo_delta_stacktrace)
+       && (bbOut->jumpkind != Ijk_Boring || ! VG_(has_CF_info)(cia)))
+      addInvalidateCachedStack(bbOut, goff_SP_s1, hWordTy_szB);
 
    return bbOut;
 }
@@ -5588,6 +5703,9 @@ static Bool hg_process_cmd_line_option ( const HChar* arg )
    else if VG_XACT_CLO(arg, "--history-level=full",
                             HG_(clo_history_level), 2);
 
+   else if VG_BOOL_CLO(arg, "--delta-stacktrace",
+                            HG_(clo_delta_stacktrace)) {}
+
    else if VG_BINT_CLO(arg, "--conflict-cache-size",
                        HG_(clo_conflict_cache_size), 10*1000, 150*1000*1000) {}
 
@@ -5642,6 +5760,10 @@ static void hg_print_usage ( void )
 "       full:   show both stack traces for a data race (can be very slow)\n"
 "       approx: full trace for one thread, approx for the other (faster)\n"
 "       none:   only show trace for one thread in a race (fastest)\n"
+"    --delta-stacktrace=no|yes [yes on linux amd64/x86]\n"
+"        no : always compute a full history stacktrace from unwind info\n"
+"        yes : derive a stacktrace from the previous stacktrace\n"
+"          if there was no call/return or similar instruction\n"
 "    --conflict-cache-size=N   size of 'full' history cache [2000000]\n"
 "    --check-stack-refs=no|yes race-check reads and writes on the\n"
 "                              main stack and thread stacks? [yes]\n"
@@ -5660,7 +5782,7 @@ static void hg_print_debug_usage ( void )
    VG_(printf)("    --hg-sanity-flags values:\n");
    VG_(printf)("       010000   after changes to "
                "lock-order-acquisition-graph\n");
-   VG_(printf)("       001000   at memory accesses (NB: not currently used)\n");
+   VG_(printf)("       001000   at memory accesses\n");
    VG_(printf)("       000100   at mem permission setting for "
                "ranges >= %d bytes\n", SCE_BIGRANGE_T);
    VG_(printf)("       000010   at lock/unlock events\n");
@@ -5775,8 +5897,10 @@ void for_libhb__get_stacktrace ( Thr* hbt, Addr* frames, UWord nRequest )
    thr = libhb_get_Thr_hgthread( hbt );
    tl_assert(thr);
    tid = map_threads_maybe_reverse_lookup_SLOW(thr);
-   nActual = (UWord)VG_(get_StackTrace)( tid, frames, (UInt)nRequest,
-                                         NULL, NULL, 0 );
+   nActual = (UWord)VG_(get_StackTrace_with_deltas)
+                           ( tid, frames, (UInt)nRequest,
+                             NULL, NULL, 0,
+                             thr->first_sp_delta);
    tl_assert(nActual <= nRequest);
    for (; nActual < nRequest; nActual++)
       frames[nActual] = 0;
@@ -5801,6 +5925,17 @@ ExeContext* for_libhb__get_EC ( Thr* hbt )
 static void hg_post_clo_init ( void )
 {
    Thr* hbthr_root;
+
+   if (HG_(clo_delta_stacktrace)
+       && VG_(clo_vex_control).guest_chase_thresh != 0) {
+      if (VG_(clo_verbosity) >= 2)
+         VG_(message)(Vg_UserMsg,
+                      "helgrind --delta-stacktrace=yes only works with "
+                      "--vex-guest-chase-thresh=0\n"
+                      "=> (re-setting it to 0\n");
+      VG_(clo_vex_control).guest_chase_thresh = 0;
+   }
+
 
    /////////////////////////////////////////////
    hbthr_root = libhb_init( for_libhb__get_stacktrace, 

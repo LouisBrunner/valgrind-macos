@@ -1149,6 +1149,58 @@ unlock(mx)                             unlock(mx)
         <option>--history-level=none</option>.</para>
     </listitem>
   </varlistentry>
+  
+  <varlistentry id="opt.delta-stacktrace"
+                xreflabel="--delta-stacktrace">
+    <term>
+      <option><![CDATA[--delta-stacktrace=no|yes
+      [default: yes on linux amd64/x86] ]]></option>
+    </term>
+    <listitem>
+      <para>This flag only has any effect
+        at <option>--history-level=full</option>.</para>
+      <para><option>--delta-stacktrace</option> configures the way Helgrind
+        captures the stacktraces for the
+        option <option>--history-level=full</option>. Such a stacktrace is
+        typically needed each time a new piece of memory is read or written in a
+        basic block of instructions. </para>
+      <para><option>--delta-stacktrace=no</option> causes
+        Helgrind to compute a full history stacktrace from the unwind info
+        each time a stacktrace is needed.</para>
+      <para><option>--delta-stacktrace=yes</option> indicates to Helgrind to
+        derive a new stacktrace from the previous stacktrace, as long as there
+        was no call instruction, no return instruction, or any other instruction
+        changing the call stack since the previous stacktrace was captured. If
+        no such instruction was executed, the new stacktrace can be derived from
+        the previous stacktrace by just changing the top frame to the current
+        program counter. This option can speed up Helgrind by 25% when
+        using <option>--history-level=full</option>. </para>
+      <para>The following aspects have to be considered when
+        using <option>--delta-stacktrace=yes</option> :
+        <itemizedlist>
+          <listitem>In some cases (for example in a function prologue), the
+            valgrind unwinder might not properly unwind the stack, due to some
+            limitations and/or due to wrong unwind info. When using
+            --delta-stacktrace=yes, the wrong stack trace captured in the
+            function prologue will be kept till the next call or return.
+          </listitem>
+          <listitem>On the other hand, --delta-stacktrace=yes sometimes helps to
+            obtain a correct stacktrace, for example when the unwind info allows
+            a correct stacktrace to be done in the beginning of the sequence,
+            but not later on in the instruction sequence.</listitem>
+          <listitem>Determining which instructions are changing the callstack is
+            partially based on platform dependent heuristics, which have to be
+            tuned/validated specifically for the platform. Also, unwinding in a
+            function prologue must be good enough to allow using
+            --delta-stacktrace=yes. Currently, the option --delta-stacktrace=yes
+            has been reasonably validated only on linux x86 32 bits and linux
+            amd64 64 bits. For more details about how to validate
+            --delta-stacktrace=yes, see debug option --hg-sanity-flags and the
+            function check_cached_rcec_ok in libhb_core.c.</listitem>
+        </itemizedlist>
+      </para>
+    </listitem>
+  </varlistentry>
 
   <varlistentry id="opt.conflict-cache-size"
                 xreflabel="--conflict-cache-size">

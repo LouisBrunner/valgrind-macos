@@ -46,6 +46,8 @@
 #define STACK_PTR(regs)    ((regs).vex.VG_STACK_PTR)
 #define FRAME_PTR(regs)    ((regs).vex.VG_FRAME_PTR)
 
+#define STACK_PTR_S1(regs)    ((regs).vex_shadow1.VG_STACK_PTR)
+
 Addr VG_(get_IP) ( ThreadId tid ) {
    return INSTR_PTR( VG_(threads)[tid].arch );
 }
@@ -54,6 +56,13 @@ Addr VG_(get_SP) ( ThreadId tid ) {
 }
 Addr VG_(get_FP) ( ThreadId tid ) {
    return FRAME_PTR( VG_(threads)[tid].arch );
+}
+
+Addr VG_(get_SP_s1) ( ThreadId tid ) {
+   return STACK_PTR_S1( VG_(threads)[tid].arch );
+}
+void VG_(set_SP_s1) ( ThreadId tid, Addr sp ) {
+   STACK_PTR_S1( VG_(threads)[tid].arch ) = sp;
 }
 
 void VG_(set_IP) ( ThreadId tid, Addr ip ) {

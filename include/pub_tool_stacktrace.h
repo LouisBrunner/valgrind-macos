@@ -64,6 +64,17 @@ extern UInt VG_(get_StackTrace) ( ThreadId tid,
                                   /*OUT*/StackTrace fps,
                                   Word first_ip_delta );
 
+// Same as VG_(get_StackTrace), but applies a delta to the first SP used for
+//  unwinding the first frame.
+extern UInt VG_(get_StackTrace_with_deltas)(
+                ThreadId tid,
+                /*OUT*/StackTrace ips, UInt n_ips,
+                /*OUT*/StackTrace sps,
+                /*OUT*/StackTrace fps,
+                Word first_ip_delta,
+                Word first_sp_delta
+             );
+
 // Apply a function to every element in the StackTrace.  The parameter
 // 'n' gives the index of the passed ip.  'opaque' is an arbitrary
 // pointer provided to each invocation of 'action' (a poor man's

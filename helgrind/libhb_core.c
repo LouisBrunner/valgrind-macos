@@ -35,6 +35,7 @@
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcprint.h"
+#include "pub_tool_machine.h"
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_wordfm.h"
 #include "pub_tool_hashtable.h"
@@ -45,6 +46,8 @@
 #include "pub_tool_stacktrace.h"
 #include "pub_tool_execontext.h"
 #include "pub_tool_errormgr.h"
+#include "pub_tool_debuginfo.h"
+#include "pub_tool_gdbserver.h"
 #include "pub_tool_options.h"        // VG_(clo_stats)
 #include "hg_basics.h"
 #include "hg_wordset.h"
@@ -92,6 +95,8 @@
 #  define CHECK_ZSM 0   /* don't sanity-check CacheLine stuff */
 #endif
 
+/* Define to 1 to activate tracing cached rcec. */
+#define DEBUG_CACHED_RCEC 0
 
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
@@ -281,6 +286,23 @@ typedef
 #define N_KWs_N_STACKs_PER_THREAD 62500
 
 
+#define N_FRAMES 8
+// (UInt) `echo "Reference Counted Execution Context" | md5sum`
+#define RCEC_MAGIC 0xab88abb2UL
+
+/* RCEC usage is commented more in details in the section 'Change-event map2'
+   later in this file */
+typedef
+   struct _RCEC {
+      UWord magic;  /* sanity check only */
+      struct _RCEC* next;
+      UWord rc;
+      UWord rcX; /* used for crosschecking */
+      UWord frames_hash;          /* hash of all the frames */
+      UWord frames[N_FRAMES];
+   }
+   RCEC;
+
 struct _Thr {
    /* Current VTSs for this thread.  They change as we go along.  viR
       is the VTS to be used for reads, viW for writes.  Usually they
@@ -316,6 +338,14 @@ struct _Thr {
       at its corresponding Thread, and vice versa.  Really, Thr and
       Thread should be merged into a single structure. */
    Thread* hgthread;
+
+   /* cached_rcec maintains the last RCEC that was retrieved for this thread. */
+   RCEC cached_rcec; // cached_rcec value, not ref-counted.
+   /* The shadow register vex_shadow1 SP register (SP_s1) is used to maintain
+      the validity of the cached rcec.
+      If SP_s1 is 0, then the cached rcec is invalid (cannot be used).
+      If SP_S1 is != 0, then the cached rcec is valid. The valid cached rcec
+      can be used to generate a new RCEC by changing just the last frame. */
 
    /* The ULongs (scalar Kws) in this accumulate in strictly
       increasing order, without duplicates.  This is important because
@@ -4018,6 +4048,19 @@ static Thr* Thr__from_ThrID ( UInt thrid ) {
    return thr;
 }
 
+/* True if the cached rcec for thr is valid and can be used to build the
+   current stack trace just by changing the last frame to the current IP. */
+static inline Bool cached_rcec_valid(Thr *thr)
+{
+   UWord cached_stackvalid = VG_(get_SP_s1) (thr->hgthread->coretid);
+   return cached_stackvalid != 0;
+}
+/* Set the validity of the cached rcec of thr. */
+static inline void set_cached_rcec_validity(Thr *thr, Bool valid)
+{
+   VG_(set_SP_s1) (thr->hgthread->coretid, valid);
+}
+
 static Thr* Thr__new ( void )
 {
    Thr* thr = HG_(zalloc)( "libhb.Thr__new.1", sizeof(Thr) );
@@ -4031,6 +4074,11 @@ static Thr* Thr__new ( void )
          = VG_(newXA)( HG_(zalloc),
                        "libhb.Thr__new.3 (local_Kws_and_stacks)",
                        HG_(free), sizeof(ULong_n_EC) );
+   /* Make an 'empty' cached rcec in thr. */
+   thr->cached_rcec.magic = RCEC_MAGIC;
+   thr->cached_rcec.rc = 0;
+   thr->cached_rcec.rcX = 0;
+   thr->cached_rcec.next = NULL;
 
    /* Add this Thr* <-> ThrID binding to the mapping, and
       cross-check */
@@ -4234,24 +4282,8 @@ static UWord stats__ctxt_tab_cmps = 0;
 //// Part (1): A hash table of RCECs
 ///
 
-#define N_FRAMES 8
-
-// (UInt) `echo "Reference Counted Execution Context" | md5sum`
-#define RCEC_MAGIC 0xab88abb2UL
-
 //#define N_RCEC_TAB 98317 /* prime */
 #define N_RCEC_TAB 196613 /* prime */
-
-typedef
-   struct _RCEC {
-      UWord magic;  /* sanity check only */
-      struct _RCEC* next;
-      UWord rc;
-      UWord rcX; /* used for crosschecking */
-      UWord frames_hash;          /* hash of all the frames */
-      UWord frames[N_FRAMES];
-   }
-   RCEC;
 
 //////////// BEGIN RCEC pool allocator
 static PoolAlloc* rcec_pool_allocator;
@@ -4270,20 +4302,17 @@ static RCEC** contextTab = NULL; /* hash table of RCEC*s */
 /* Count of allocated RCEC having ref count > 0 */
 static UWord RCEC_referenced = 0;
 
-/* Gives an arbitrary total order on RCEC .frames fields */
-static Word RCEC__cmp_by_frames ( RCEC* ec1, RCEC* ec2 ) {
+/* True if the frames of ec1 and ec2 are different. */
+static Bool RCEC__differs_by_frames ( RCEC* ec1, RCEC* ec2 ) {
    Word i;
    tl_assert(ec1 && ec1->magic == RCEC_MAGIC);
    tl_assert(ec2 && ec2->magic == RCEC_MAGIC);
-   if (ec1->frames_hash < ec2->frames_hash) return -1;
-   if (ec1->frames_hash > ec2->frames_hash) return  1;
+   if (ec1->frames_hash != ec2->frames_hash) return True;
    for (i = 0; i < N_FRAMES; i++) {
-      if (ec1->frames[i] < ec2->frames[i]) return -1;
-      if (ec1->frames[i] > ec2->frames[i]) return  1;
+      if (ec1->frames[i] != ec2->frames[i]) return True;
    }
-   return 0;
+   return False;
 }
-
 
 /* Dec the ref of this RCEC. */
 static void ctxt__rcdec ( RCEC* ec )
@@ -4371,7 +4400,7 @@ static RCEC* ctxt__find_or_add ( RCEC* example )
       if (!copy) break;
       tl_assert(copy->magic == RCEC_MAGIC);
       stats__ctxt_tab_cmps++;
-      if (0 == RCEC__cmp_by_frames(copy, example)) break;
+      if (!RCEC__differs_by_frames(copy, example)) break;
       copy = copy->next;
    }
 
@@ -4402,23 +4431,293 @@ static inline UWord ROLW ( UWord w, Int n )
    return w;
 }
 
+static UWord stats__cached_rcec_identical = 0;
+static UWord stats__cached_rcec_updated = 0;
+static UWord stats__cached_rcec_fresh = 0;
+static UWord stats__cached_rcec_diff = 0;
+static UWord stats__cached_rcec_diff_known_reason = 0;
+
+/* Check if the cached rcec in thr corresponds to the current
+   stacktrace of the thread. Returns True if ok, False otherwise.
+   This is just used for debugging the cached rcec logic, activated
+   using --hg-sanity-flags=xx1xxx i.e. SCE_ACCESS flag.
+   When this flag is activated, a call to this function will happen each time
+   a stack trace is needed for a memory access. */
+__attribute__((noinline))
+static Bool check_cached_rcec_ok (Thr* thr, Addr previous_frame0)
+{
+   Bool  ok = True;
+   UInt  i;
+   UWord frames[N_FRAMES];
+   UWord sps[N_FRAMES];
+   UWord fps[N_FRAMES];
+
+   for (i = 0; i < N_FRAMES; i++)
+      frames[i] = sps[i] = fps[i] = 0;
+   VG_(get_StackTrace)( thr->hgthread->coretid, &frames[0], N_FRAMES,
+                        &sps[0], &fps[0], 0);
+   for (i = 0; i < N_FRAMES; i++) {
+      if ( thr->cached_rcec.frames[i] != frames[i] ) {
+         /* There are a bunch of "normal" reasons for which a stack
+            derived from the cached rcec differs from frames. */
+         const HChar *reason = NULL;
+
+         /* Old linkers (e.g. RHEL5) gave no cfi unwind information in the PLT
+            section (fix was added in binutils around June 2011).
+            Without PLT unwind info, stacktrace in the PLT section are
+            missing an entry. E.g. the cached stacktrace is:
+              ==4463==    at 0x2035C0: ___tls_get_addr (dl-tls.c:753)
+              ==4463==    by 0x33B7F9: __libc_thread_freeres
+                                                (in /lib/libc-2.11.2.so)
+              ==4463==    by 0x39BA4F: start_thread (pthread_create.c:307)
+              ==4463==    by 0x2F107D: clone (clone.S:130)
+           while the 'check stacktrace' is
+              ==4463==    at 0x2035C0: ___tls_get_addr (dl-tls.c:753)
+              ==4463==    by 0x33B82D: strerror_thread_freeres
+                                                (in /lib/libc-2.11.2.so)
+              ==4463==    by 0x33B7F9: __libc_thread_freeres
+                                                (in /lib/libc-2.11.2.so)
+              ==4463==    by 0x39BA4F: start_thread (pthread_create.c:307)
+              ==4463==    by 0x2F107D: clone (clone.S:130)
+           No cheap/easy way to detect or fix that. */
+
+         /* It seems that sometimes, the CFI unwind info looks wrong
+            for a 'ret' instruction. E.g. here is the unwind info
+            for a 'retq' on gcc20 (amd64, Debian 7)
+                [0x4e3ddfe .. 0x4e3ddfe]: let cfa=oldSP+48 in RA=*(cfa+-8)
+                                                      SP=cfa+0 BP=*(cfa+-24)
+            This unwind info looks doubtful, as the RA should be at oldSP.
+            No easy way to detect this problem.
+            This gives a difference between cached rcec and
+            current stack trace: the cached rcec is correct. */
+
+         /* When returning from main, unwind info becomes erratic.
+            So, by default, only report errors for main and above,
+            unless asked to show below main. */
+         if (reason == NULL) {
+            UInt fr_main;
+            Vg_FnNameKind fr_kind;
+            for (fr_main = 0; fr_main < N_FRAMES; fr_main++) {
+               fr_kind = VG_(get_fnname_kind_from_IP)
+                                (frames[fr_main]);
+               if (fr_kind == Vg_FnNameMain || fr_kind == Vg_FnNameBelowMain)
+                  break;
+            }
+            UInt kh_main;
+            Vg_FnNameKind kh_kind;
+            for (kh_main = 0; kh_main < N_FRAMES; kh_main++) {
+               kh_kind = VG_(get_fnname_kind_from_IP)
+                                (thr->cached_rcec.frames[kh_main]);
+               if (kh_kind == Vg_FnNameMain || kh_kind == Vg_FnNameBelowMain)
+                  break;
+            }
+            if (kh_main == fr_main
+                && kh_kind == fr_kind
+                && (kh_main < i || (kh_main == i
+                                    && kh_kind == Vg_FnNameBelowMain))) {
+               // found main or below main before the difference
+               reason = "Below main";
+            }
+         }
+
+         /* We have places where the stack is missing some internal
+            pthread functions. For such stacktraces, GDB reports only
+            one function, telling:
+               #0  0xf7fa81fe in _L_unlock_669 ()
+                              from /lib/i386-linux-gnu/libpthread.so.0
+               Backtrace stopped: previous frame identical to
+                                            this frame (corrupt stack?)
+
+            This is when sps and fps are identical.
+            The cached stack trace is then
+               ==3336==    at 0x40641FE: _L_unlock_669
+                                              (pthread_mutex_unlock.c:310)
+               ==3336==    by 0x40302BE: pthread_mutex_unlock
+                                              (hg_intercepts.c:710)
+               ==3336==    by 0x80486AF: main (cond_timedwait_test.c:14)
+           while the 'check stacktrace' is
+               ==3336==    at 0x40641FE: _L_unlock_669
+                                              (pthread_mutex_unlock.c:310)
+               ==3336==    by 0x4064206: _L_unlock_669
+                                              (pthread_mutex_unlock.c:310)
+               ==3336==    by 0x4064132: __pthread_mutex_unlock_usercnt
+                                              (pthread_mutex_unlock.c:57)
+               ==3336==    by 0x40302BE: pthread_mutex_unlock
+                                               (hg_intercepts.c:710)
+               ==3336==    by 0x80486AF: main (cond_timedwait_test.c:14) */
+         if (reason == NULL) {
+            if ((i > 0
+                      && sps[i] == sps[i-1] && fps[i] == fps[i-1])
+                || (i < N_FRAMES-1
+                      && sps[i] == sps[i+1] && fps[i] == fps[i+1])) {
+               reason = "previous||next frame: identical sp and fp";
+            }
+         }
+         if (reason == NULL) {
+            if ((i > 0
+                      && fps[i] == fps[i-1])
+                || (i < N_FRAMES-1
+                      && fps[i] == fps[i+1])) {
+               reason = "previous||next frame: identical fp";
+            }
+         }
+
+         /* When we have a read or write 'in the middle of a push instruction',
+            then the normal backtrace is not very good, while the helgrind
+            stacktrace is better, as it undoes the not yet fully finished
+            push instruction before getting the stacktrace. */
+         if (reason == NULL && thr->hgthread->first_sp_delta != 0) {
+            reason = "fixupSP probably needed for check stacktrace";
+         }
+
+         /* Unwinding becomes hectic when running the exit handlers.
+            None of GDB, cached stacktrace and check stacktrace corresponds.
+            So, if we find __run_exit_handlers, ignore the difference. */
+         if (reason == NULL) {
+            const HChar *fnname;
+            for (UInt f = 0; f < N_FRAMES; f++) {
+               if (VG_(get_fnname)( frames[f], &fnname)
+                   && VG_(strcmp) ("__run_exit_handlers", fnname) == 0) {
+                  reason = "exit handlers";
+                  break;
+               }
+            }
+         }
+
+         // Show what we have found for this difference
+         if (reason == NULL) {
+            ok = False;
+            stats__cached_rcec_diff++;
+         } else {
+            ok = True;
+            stats__cached_rcec_diff_known_reason++;
+         }
+         if (!ok || VG_(clo_verbosity) > 2) {
+            Bool save_show_below_main = VG_(clo_show_below_main);
+            VG_(clo_show_below_main) = True;
+            /* The below error msg reports an unexpected diff in 'frame %d'.
+               The (maybe wrong) pc found in the cached stacktrace is
+               'cached_pc %p' while an unwind gives the (maybe wrong)
+               'check_pc %p'.
+               After, 'previous_frame0 %p' tells where the cached stacktrace
+               was taken.
+               This is then followed by the full resulting cache stack trace
+               and the full stack trace found doing unwind.
+               Such a diff can have various origins:
+                 * a bug in the unwinder, when the cached stack trace was taken
+                   at 'previous_frame0'
+                 * a bug in the unwinder, when the check stack trace was taken
+                   (i.e. at current pc).
+                 * a missing 'invalidate cache stack trace' somewhere in the
+                   instructions between 'previous_frame0' and current_pc.
+               To investigate the last case, typically, disass the range of
+               instructions where an invalidate cached stack might miss. */
+            VG_(printf)("%s diff tid %d frame %d "
+                        "cached_pc %p check_pc %p\n",
+                        reason ? reason : "unexpected",
+                        thr->hgthread->coretid,
+                        i,
+                        (void*)thr->cached_rcec.frames[i],
+                        (void*)frames[i]);
+            VG_(printf)("cached stack trace previous_frame0 %p\n",
+                        (void*)previous_frame0);
+            VG_(pp_StackTrace)(&previous_frame0, 1);
+            VG_(printf)("resulting cached stack trace:\n");
+            VG_(pp_StackTrace)(thr->cached_rcec.frames, N_FRAMES);
+            VG_(printf)("check stack trace:\n");
+            VG_(pp_StackTrace)(frames, N_FRAMES);
+
+            VG_(show_sched_status) (False,  // host_stacktrace
+                                    False,  // stack_usage
+                                    False); // exited_threads
+            if (VG_(clo_vgdb_error) == 1234567890) // HACK TO ALLOW TO DEBUG
+               VG_(gdbserver) ( thr->hgthread->coretid );
+            VG_(clo_show_below_main) = save_show_below_main;
+         }
+         break; // Stop giving more errors for this stacktrace.
+      }
+   }
+   return ok;
+}
+
 __attribute__((noinline))
 static RCEC* get_RCEC ( Thr* thr )
 {
-   UWord hash, i;
-   RCEC  example;
-   example.magic = RCEC_MAGIC;
-   example.rc = 0;
-   example.rcX = 0;
-   example.next = NULL;
-   main_get_stacktrace( thr, &example.frames[0], N_FRAMES );
+   UInt  i;
+   UWord hash;
+   Addr  previous_frame0 = 0; // Assignment needed to silence gcc
+   RCEC  *res;
+   const Bool thr_cached_rcec_valid = cached_rcec_valid(thr);
+   const Addr cur_ip = VG_(get_IP)(thr->hgthread->coretid);
+
+   if (DEBUG_CACHED_RCEC)
+      VG_(printf)("get rcec tid %d at IP %p SP %p"
+                  " first_sp_delta %ld cached valid %d\n",
+                  thr->hgthread->coretid,
+                  (void*)cur_ip,
+                  (void*)VG_(get_SP)(thr->hgthread->coretid),
+                  thr->hgthread->first_sp_delta, thr_cached_rcec_valid);
+
+   /* If we have a valid cached rcec, derive the new rcec from the cached one
+      and update the cached one.
+      Otherwise, compute a fresh rcec. */
+
+   if (thr_cached_rcec_valid) {
+      /* Update the stacktrace of the cached rcec with the current IP */
+      previous_frame0 = thr->cached_rcec.frames[0];
+      thr->cached_rcec.frames[0] = cur_ip;
+
+#     if defined(VGP_x86_linux)
+      // See m_stacktrace.c kludge
+      extern Addr VG_(client__dl_sysinfo_int80);
+      /// #include pub_core_clientstate needed for the above ????
+      /// or move the above into a pub_tool_??? tool_stacktrace.h maybe ????
+      if (VG_(client__dl_sysinfo_int80) != 0 /* we know its address */
+          && cur_ip >= VG_(client__dl_sysinfo_int80)
+          && cur_ip < VG_(client__dl_sysinfo_int80)+3
+          ) {
+         thr->cached_rcec.frames[0]
+            = (ULong) *(Addr*)(UWord)VG_(get_SP)(thr->hgthread->coretid);
+      }
+#     endif
+
+      if (previous_frame0 == thr->cached_rcec.frames[0])
+         stats__cached_rcec_identical++;
+      else
+         stats__cached_rcec_updated++;
+   } else {
+      /* Compute a fresh stacktrace. */
+      main_get_stacktrace( thr, &thr->cached_rcec.frames[0], N_FRAMES );
+      if (DEBUG_CACHED_RCEC) {
+         Bool save_show_below_main = VG_(clo_show_below_main);
+         VG_(clo_show_below_main) = True;
+         VG_(printf)("caching stack trace:\n");
+         VG_(pp_StackTrace)(&thr->cached_rcec.frames[0], N_FRAMES);
+         VG_(clo_show_below_main) = save_show_below_main;
+      }
+      stats__cached_rcec_fresh++;
+   }
+
    hash = 0;
    for (i = 0; i < N_FRAMES; i++) {
-      hash ^= example.frames[i];
+      hash ^= thr->cached_rcec.frames[i];
       hash = ROLW(hash, 19);
    }
-   example.frames_hash = hash;
-   return ctxt__find_or_add( &example );
+   thr->cached_rcec.frames_hash = hash;
+   res = ctxt__find_or_add( &thr->cached_rcec );
+
+   if (UNLIKELY(HG_(clo_sanity_flags) & SCE_ACCESS)
+       && thr_cached_rcec_valid) {
+      /* In case the cached and check differ, invalidate the cached rcec.
+         We have less duplicated diffs reported afterwards. */
+      if (!check_cached_rcec_ok (thr, previous_frame0))
+         set_cached_rcec_validity(thr, False);
+   } else {
+      if (HG_(clo_delta_stacktrace) && !thr_cached_rcec_valid)
+            set_cached_rcec_validity(thr, True);
+   }
+
+   return res;
 }
 
 ///////////////////////////////////////////////////////
@@ -6478,6 +6777,17 @@ void libhb_shutdown ( Bool show_stats )
                    (UWord)N_RCEC_TAB,
                    stats__ctxt_tab_curr, RCEC_referenced,
                    stats__ctxt_tab_max );
+      VG_(printf) ("   libhb: stats__cached_rcec "
+                   "identical %'lu updated %'lu fresh %'lu\n",
+                   stats__cached_rcec_identical, stats__cached_rcec_updated,
+                   stats__cached_rcec_fresh);
+      if (stats__cached_rcec_diff > 0)
+         VG_(printf) ("   libhb: stats__cached_rcec diff unk reason%'lu\n",
+                      stats__cached_rcec_diff);
+      if (stats__cached_rcec_diff_known_reason > 0)
+         VG_(printf) ("   libhb: stats__cached_rcec diff known reason %'lu\n",
+                      stats__cached_rcec_diff_known_reason);
+
       {
 #        define  MAXCHAIN 10
          UInt chains[MAXCHAIN+1]; // [MAXCHAIN] gets all chains >= MAXCHAIN
@@ -6551,6 +6861,9 @@ void libhb_async_exit ( Thr* thr )
    tl_assert(thr);
    tl_assert(!thr->llexit_done);
    thr->llexit_done = True;
+
+   /* Just to be sure, declare the cached stack invalid. */
+   set_cached_rcec_validity(thr, False);
 
    /* free up Filter and local_Kws_n_stacks (well, actually not the
       latter ..) */

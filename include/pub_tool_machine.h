@@ -114,6 +114,9 @@
 Addr VG_(get_IP) ( ThreadId tid );
 Addr VG_(get_SP) ( ThreadId tid );
 
+// Get and set the shadow1 SP register
+Addr VG_(get_SP_s1) ( ThreadId tid );
+void VG_(set_SP_s1) ( ThreadId tid, Addr sp );
 
 // For get/set, 'area' is where the asked-for guest state will be copied
 // into/from.  If shadowNo == 0, the real (non-shadow) guest state is

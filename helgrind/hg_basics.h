@@ -93,6 +93,16 @@ extern Bool HG_(clo_cmp_race_err_addrs);
       very useful). */
 extern UWord HG_(clo_history_level);
 
+/* For full history level, determines how the stack trace is computed.
+   no : a stacktrace is always computed from scratch, typically
+        using the unwind information.
+   yes : a stacktrace might be derived from a previous captured stacktrace,
+      by applying a delta to the inner frame. This can significantly
+      speed up --history-level=full. Typically, a delta can be applied
+      if there was no 'flow call control' instruction (call, return, ...) 
+      executed since the previous captured stacktrace. */
+extern Bool  HG_(clo_delta_stacktrace);
+
 /* When doing "full" history collection, this determines the size of
    the conflicting-access cache, measured in terms of maximum possible
    number of elements in the previous-access map.  Must be between 10k

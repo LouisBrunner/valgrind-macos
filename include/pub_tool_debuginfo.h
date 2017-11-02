@@ -150,6 +150,9 @@ Bool VG_(get_data_description)(
         Addr data_addr
      );
 
+/* True if we have some Call Frame unwindo debuginfo for Addr a */
+extern Bool VG_(has_CF_info)(Addr a);
+
 /* Succeeds if the address is within a shared object or the main executable.
    It first searches if Addr a belongs to the text segment of debug info.
    If not found, it asks the address space manager whether it

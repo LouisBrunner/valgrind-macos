@@ -23,9 +23,9 @@ support for X86/macOS 10.13, AMD64/macOS 10.13.
 
 * Helgrind:
 
-  - Addition of a flag --delta-stacktrace=no|yes [yes on linux amd64/x86], specifying
-    how full history stack traces are computed. Using yes can speed up Helgrind by
-    25%.
+  - Addition of a flag --delta-stacktrace=no|yes [yes on linux amd64/x86],
+    specifying how full history stack traces are computed. Using yes can speed
+    up Helgrind by 25% when using --history-level=full.
 
 * ==================== OTHER CHANGES ====================
 

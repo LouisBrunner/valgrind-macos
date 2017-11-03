@@ -2,6 +2,16 @@
 
 #include <stdio.h>
 
+/*
+ * Bits 18 (NAN2008) and 19 (ABS2008) are preset by hardware and may differ
+ * between platforms. Hence a macro to clear them before printing FCSR
+ * values.
+ */
+#define FCSR_NAN2008 1 << 18
+#define FCSR_ABS2008 1 << 19
+#define FLAGS_RM_MASK 0xFFFFFFFF & ~(FCSR_ABS2008 | FCSR_NAN2008)
+#define CLEAR_PRESETBITS_FCSR(fcsr) (fcsr & FLAGS_RM_MASK)
+
 int main ()
 {
    int out [] = {0, 0};
@@ -22,7 +32,8 @@ int main ()
                     : "r" (in), "r" (out)
                     : "a1", "a2", "t0", "$f0", "$f1"
                    );
-   printf("FCSR::1: 0x%x, 2: 0x%x\n", out[0], out[1]);
+   printf("FCSR::1: 0x%x, 2: 0x%x\n", CLEAR_PRESETBITS_FCSR(out[0]),
+                                      CLEAR_PRESETBITS_FCSR(out[1]));
    return 0;
 }
 #else

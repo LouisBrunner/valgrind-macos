@@ -66,8 +66,10 @@
 /*--- Stats                                                ---*/
 /*------------------------------------------------------------*/
 
-static ULong n_SP_updates_fast            = 0;
-static ULong n_SP_updates_generic_known   = 0;
+static ULong n_SP_updates_new_fast            = 0;
+static ULong n_SP_updates_new_generic_known   = 0;
+static ULong n_SP_updates_die_fast            = 0;
+static ULong n_SP_updates_die_generic_known   = 0;
 static ULong n_SP_updates_generic_unknown = 0;
 
 static ULong n_PX_VexRegUpdSpAtMemAccess         = 0;
@@ -77,19 +79,25 @@ static ULong n_PX_VexRegUpdAllregsAtEachInsn     = 0;
 
 void VG_(print_translation_stats) ( void )
 {
-   UInt n_SP_updates = n_SP_updates_fast + n_SP_updates_generic_known
-                                         + n_SP_updates_generic_unknown;
+   UInt n_SP_updates = n_SP_updates_new_fast + n_SP_updates_new_generic_known
+                     + n_SP_updates_die_fast + n_SP_updates_die_generic_known
+                     + n_SP_updates_generic_unknown;
    if (n_SP_updates == 0) {
       VG_(message)(Vg_DebugMsg, "translate: no SP updates identified\n");
    } else {
       VG_(message)(Vg_DebugMsg,
-         "translate:            fast SP updates identified: %'llu (%3.1f%%)\n",
-         n_SP_updates_fast, n_SP_updates_fast * 100.0 / n_SP_updates );
+         "translate:            fast new/die SP updates identified: "
+         "%'llu (%3.1f%%)/%'llu (%3.1f%%)\n",
+         n_SP_updates_new_fast, n_SP_updates_new_fast * 100.0 / n_SP_updates,
+         n_SP_updates_die_fast, n_SP_updates_die_fast * 100.0 / n_SP_updates );
 
       VG_(message)(Vg_DebugMsg,
-         "translate:   generic_known SP updates identified: %'llu (%3.1f%%)\n",
-         n_SP_updates_generic_known,
-         n_SP_updates_generic_known * 100.0 / n_SP_updates );
+         "translate:   generic_known new/die SP updates identified: "
+         "%'llu (%3.1f%%)/%'llu (%3.1f%%)\n",
+         n_SP_updates_new_generic_known,
+         n_SP_updates_new_generic_known * 100.0 / n_SP_updates,
+         n_SP_updates_die_generic_known,
+         n_SP_updates_die_generic_known * 100.0 / n_SP_updates );
 
       VG_(message)(Vg_DebugMsg,
          "translate: generic_unknown SP updates identified: %'llu (%3.1f%%)\n",
@@ -97,8 +105,12 @@ void VG_(print_translation_stats) ( void )
          n_SP_updates_generic_unknown * 100.0 / n_SP_updates );
    }
 
-   VG_(message)(Vg_DebugMsg,
-                "translate: PX: SPonly %'llu,  UnwRegs %'llu,  AllRegs %'llu,  AllRegsAllInsns %'llu\n", n_PX_VexRegUpdSpAtMemAccess, n_PX_VexRegUpdUnwindregsAtMemAccess, n_PX_VexRegUpdAllregsAtMemAccess, n_PX_VexRegUpdAllregsAtEachInsn);
+   VG_(message)
+      (Vg_DebugMsg,
+       "translate: PX: SPonly %'llu,  UnwRegs %'llu,"
+       "  AllRegs %'llu,  AllRegsAllInsns %'llu\n",
+       n_PX_VexRegUpdSpAtMemAccess, n_PX_VexRegUpdUnwindregsAtMemAccess,
+       n_PX_VexRegUpdAllregsAtMemAccess, n_PX_VexRegUpdAllregsAtEachInsn);
 }
 
 /*------------------------------------------------------------*/
@@ -107,26 +119,7 @@ void VG_(print_translation_stats) ( void )
 
 static Bool need_to_handle_SP_assignment(void)
 {
-   return ( VG_(tdict).track_new_mem_stack_4   ||
-            VG_(tdict).track_die_mem_stack_4   ||
-            VG_(tdict).track_new_mem_stack_8   ||
-            VG_(tdict).track_die_mem_stack_8   ||
-            VG_(tdict).track_new_mem_stack_12  ||
-            VG_(tdict).track_die_mem_stack_12  ||
-            VG_(tdict).track_new_mem_stack_16  ||
-            VG_(tdict).track_die_mem_stack_16  ||
-            VG_(tdict).track_new_mem_stack_32  ||
-            VG_(tdict).track_die_mem_stack_32  ||
-            VG_(tdict).track_new_mem_stack_112 ||
-            VG_(tdict).track_die_mem_stack_112 ||
-            VG_(tdict).track_new_mem_stack_128 ||
-            VG_(tdict).track_die_mem_stack_128 ||
-            VG_(tdict).track_new_mem_stack_144 ||
-            VG_(tdict).track_die_mem_stack_144 ||
-            VG_(tdict).track_new_mem_stack_160 ||
-            VG_(tdict).track_die_mem_stack_160 ||
-            VG_(tdict).track_new_mem_stack     ||
-            VG_(tdict).track_die_mem_stack     );
+   return VG_(tdict).any_new_mem_stack || VG_(tdict).any_die_mem_stack;
 }
 
 // - The SP aliases are held in an array which is used as a circular buffer.
@@ -321,72 +314,82 @@ IRSB* vg_SP_update_pass ( void*             closureV,
          vanilla = NULL != VG_(tdict).track_new_mem_stack_##syze;       \
          w_ecu   = NULL != VG_(tdict).track_new_mem_stack_##syze##_w_ECU; \
          vg_assert(!(vanilla && w_ecu)); /* can't have both */          \
-         if (!(vanilla || w_ecu))                                       \
+         if (VG_(tdict).any_new_mem_stack                               \
+             && !vanilla && !w_ecu) {                                   \
+            n_SP_updates_new_generic_known++;                           \
             goto generic;                                               \
-                                                                        \
-         /* I don't know if it's really necessary to say that the */    \
-         /* call reads the stack pointer.  But anyway, we do. */        \
-         if (w_ecu) {                                                   \
-            dcall = unsafeIRDirty_0_N(                                  \
-                       2/*regparms*/,                                   \
-                       "track_new_mem_stack_" #syze "_w_ECU",           \
-                       VG_(fnptr_to_fnentry)(                           \
-                          VG_(tdict).track_new_mem_stack_##syze##_w_ECU ), \
-                       mkIRExprVec_2(IRExpr_RdTmp(tmpp),                \
-                                     mk_ecu_Expr(curr_IP))              \
-                    );                                                  \
-         } else {                                                       \
-            dcall = unsafeIRDirty_0_N(                                  \
-                       1/*regparms*/,                                   \
-                       "track_new_mem_stack_" #syze ,                   \
-                       VG_(fnptr_to_fnentry)(                           \
-                          VG_(tdict).track_new_mem_stack_##syze ),      \
-                       mkIRExprVec_1(IRExpr_RdTmp(tmpp))                \
-                    );                                                  \
          }                                                              \
-         dcall->nFxState = 1;                                           \
-         dcall->fxState[0].fx     = Ifx_Read;                           \
-         dcall->fxState[0].offset = layout->offset_SP;                  \
-         dcall->fxState[0].size   = layout->sizeof_SP;                  \
-         dcall->fxState[0].nRepeats  = 0;                               \
-         dcall->fxState[0].repeatLen = 0;                               \
                                                                         \
-         addStmtToIRSB( bb, IRStmt_Dirty(dcall) );                      \
+         if (VG_(tdict).any_new_mem_stack) {                            \
+            /* I don't know if it's really necessary to say that the */ \
+            /* call reads the stack pointer.  But anyway, we do. */     \
+            if (w_ecu) {                                                \
+               dcall = unsafeIRDirty_0_N(                               \
+                          2/*regparms*/,                                \
+                          "track_new_mem_stack_" #syze "_w_ECU",        \
+                          VG_(fnptr_to_fnentry)(                        \
+                             VG_(tdict).track_new_mem_stack_##syze##_w_ECU ), \
+                          mkIRExprVec_2(IRExpr_RdTmp(tmpp),             \
+                                        mk_ecu_Expr(curr_IP))           \
+                       );                                               \
+            } else {                                                    \
+               dcall = unsafeIRDirty_0_N(                               \
+                          1/*regparms*/,                                \
+                          "track_new_mem_stack_" #syze ,                \
+                          VG_(fnptr_to_fnentry)(                        \
+                             VG_(tdict).track_new_mem_stack_##syze ),   \
+                          mkIRExprVec_1(IRExpr_RdTmp(tmpp))             \
+                       );                                               \
+            }                                                           \
+            dcall->nFxState = 1;                                        \
+            dcall->fxState[0].fx     = Ifx_Read;                        \
+            dcall->fxState[0].offset = layout->offset_SP;               \
+            dcall->fxState[0].size   = layout->sizeof_SP;               \
+            dcall->fxState[0].nRepeats  = 0;                            \
+            dcall->fxState[0].repeatLen = 0;                            \
+                                                                        \
+            addStmtToIRSB( bb, IRStmt_Dirty(dcall) );                   \
+         }                                                              \
                                                                         \
          vg_assert(syze > 0);                                           \
          update_SP_aliases(syze);                                       \
                                                                         \
-         n_SP_updates_fast++;                                           \
+         n_SP_updates_new_fast++;                                       \
                                                                         \
       } while (0)
 
 #  define DO_DIE(syze, tmpp)                                            \
       do {                                                              \
-         if (!VG_(tdict).track_die_mem_stack_##syze)                    \
+         if (VG_(tdict).any_die_mem_stack                               \
+             && !VG_(tdict).track_die_mem_stack_##syze) {               \
+            n_SP_updates_die_generic_known++;                           \
             goto generic;                                               \
+         }                                                              \
                                                                         \
-         /* I don't know if it's really necessary to say that the */    \
-         /* call reads the stack pointer.  But anyway, we do. */        \
-         dcall = unsafeIRDirty_0_N(                                     \
-                    1/*regparms*/,                                      \
-                    "track_die_mem_stack_" #syze,                       \
-                    VG_(fnptr_to_fnentry)(                              \
-                       VG_(tdict).track_die_mem_stack_##syze ),         \
-                    mkIRExprVec_1(IRExpr_RdTmp(tmpp))                   \
-                 );                                                     \
-         dcall->nFxState = 1;                                           \
-         dcall->fxState[0].fx     = Ifx_Read;                           \
-         dcall->fxState[0].offset = layout->offset_SP;                  \
-         dcall->fxState[0].size   = layout->sizeof_SP;                  \
-         dcall->fxState[0].nRepeats  = 0;                               \
-         dcall->fxState[0].repeatLen = 0;                               \
+         if (VG_(tdict).any_die_mem_stack) {                            \
+            /* I don't know if it's really necessary to say that the */ \
+            /* call reads the stack pointer.  But anyway, we do. */     \
+            dcall = unsafeIRDirty_0_N(                                  \
+                       1/*regparms*/,                                   \
+                       "track_die_mem_stack_" #syze,                    \
+                       VG_(fnptr_to_fnentry)(                           \
+                          VG_(tdict).track_die_mem_stack_##syze ),      \
+                       mkIRExprVec_1(IRExpr_RdTmp(tmpp))                \
+                    );                                                  \
+            dcall->nFxState = 1;                                        \
+            dcall->fxState[0].fx     = Ifx_Read;                        \
+            dcall->fxState[0].offset = layout->offset_SP;               \
+            dcall->fxState[0].size   = layout->sizeof_SP;               \
+            dcall->fxState[0].nRepeats  = 0;                            \
+            dcall->fxState[0].repeatLen = 0;                            \
                                                                         \
-         addStmtToIRSB( bb, IRStmt_Dirty(dcall) );                      \
+            addStmtToIRSB( bb, IRStmt_Dirty(dcall) );                   \
+         }                                                              \
                                                                         \
          vg_assert(syze > 0);                                           \
          update_SP_aliases(-(syze));                                    \
                                                                         \
-         n_SP_updates_fast++;                                           \
+         n_SP_updates_die_fast++;                                       \
                                                                         \
       } while (0)
 
@@ -497,10 +500,18 @@ IRSB* vg_SP_update_pass ( void*             closureV,
             case -144: DO_NEW( 144, tttmp); addStmtToIRSB(bb,st); continue;
             case  160: DO_DIE( 160, tttmp); addStmtToIRSB(bb,st); continue;
             case -160: DO_NEW( 160, tttmp); addStmtToIRSB(bb,st); continue;
-            default:  
-               /* common values for ppc64: 144 128 160 112 176 */
-               n_SP_updates_generic_known++;
-               goto generic;
+            default:
+               if (delta > 0) {
+                  n_SP_updates_die_generic_known++;
+                  if (VG_(tdict).any_die_mem_stack)
+                     goto generic;
+               } else {
+                  n_SP_updates_new_generic_known++;
+                  if (VG_(tdict).any_new_mem_stack)
+                     goto generic;
+               }
+               /* No tracking for delta. Just add the original statement. */
+               addStmtToIRSB(bb,st); continue;
          }
       } else {
          /* Deal with an unknown update to SP.  We're here because

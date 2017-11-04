@@ -1032,12 +1032,13 @@ static void shadow_mem_cwrite_range ( Thread* thr, Addr a, SizeT len ) {
    LIBHB_CWRITE_N(hbthr, a, len);
 }
 
-static void shadow_mem_make_New ( Thread* thr, Addr a, SizeT len )
+inline static void shadow_mem_make_New ( Thread* thr, Addr a, SizeT len )
 {
    libhb_srange_new( thr->hbthr, a, len );
 }
 
-static void shadow_mem_make_NoAccess_NoFX ( Thread* thr, Addr aIN, SizeT len )
+inline static void shadow_mem_make_NoAccess_NoFX ( Thread* thr, Addr aIN,
+                                                   SizeT len )
 {
    if (0 && len > 500)
       VG_(printf)("make NoAccess_NoFX ( %#lx, %lu )\n", aIN, len );
@@ -1045,7 +1046,8 @@ static void shadow_mem_make_NoAccess_NoFX ( Thread* thr, Addr aIN, SizeT len )
    libhb_srange_noaccess_NoFX( thr->hbthr, aIN, len );
 }
 
-static void shadow_mem_make_NoAccess_AHAE ( Thread* thr, Addr aIN, SizeT len )
+inline static void shadow_mem_make_NoAccess_AHAE ( Thread* thr, Addr aIN,
+                                                   SizeT len)
 {
    if (0 && len > 500)
       VG_(printf)("make NoAccess_AHAE ( %#lx, %lu )\n", aIN, len );
@@ -1053,7 +1055,8 @@ static void shadow_mem_make_NoAccess_AHAE ( Thread* thr, Addr aIN, SizeT len )
    libhb_srange_noaccess_AHAE( thr->hbthr, aIN, len );
 }
 
-static void shadow_mem_make_Untracked ( Thread* thr, Addr aIN, SizeT len )
+inline static void shadow_mem_make_Untracked ( Thread* thr, Addr aIN,
+                                               SizeT len )
 {
    if (0 && len > 500)
       VG_(printf)("make Untracked ( %#lx, %lu )\n", aIN, len );
@@ -1487,6 +1490,30 @@ void evh__new_mem_stack ( Addr a, SizeT len ) {
    if (UNLIKELY(thr->pthread_create_nesting_level > 0))
       shadow_mem_make_Untracked( thr, a, len );
 }
+
+#define DCL_evh__new_mem_stack(syze)                                     \
+static void VG_REGPARM(1) evh__new_mem_stack_##syze(Addr new_SP)         \
+{                                                                        \
+   Thread *thr = get_current_Thread();                                   \
+   if (SHOW_EVENTS >= 2)                                                 \
+      VG_(printf)("evh__new_mem_stack_" #syze "(%p, %lu)\n",             \
+                  (void*)new_SP, (SizeT)syze );                          \
+   shadow_mem_make_New( thr, -VG_STACK_REDZONE_SZB + new_SP, syze );     \
+   if (syze >= SCE_BIGRANGE_T && (HG_(clo_sanity_flags) & SCE_BIGRANGE)) \
+      all__sanity_check("evh__new_mem_stack_" #syze "-post");            \
+   if (UNLIKELY(thr->pthread_create_nesting_level > 0))                  \
+      shadow_mem_make_Untracked( thr, new_SP, syze );                    \
+}
+
+DCL_evh__new_mem_stack(4);
+DCL_evh__new_mem_stack(8);
+DCL_evh__new_mem_stack(12);
+DCL_evh__new_mem_stack(16);
+DCL_evh__new_mem_stack(32);
+DCL_evh__new_mem_stack(112);
+DCL_evh__new_mem_stack(128);
+DCL_evh__new_mem_stack(144);
+DCL_evh__new_mem_stack(160);
 
 static
 void evh__new_mem_w_tid ( Addr a, SizeT len, ThreadId tid ) {
@@ -6028,6 +6055,15 @@ static void hg_pre_clo_init ( void )
    VG_(track_new_mem_brk)         ( evh__new_mem_w_tid );
    VG_(track_new_mem_mmap)        ( evh__new_mem_w_perms );
    VG_(track_new_mem_stack)       ( evh__new_mem_stack );
+   VG_(track_new_mem_stack_4)     ( evh__new_mem_stack_4 );
+   VG_(track_new_mem_stack_8)     ( evh__new_mem_stack_8 );
+   VG_(track_new_mem_stack_12)    ( evh__new_mem_stack_12 );
+   VG_(track_new_mem_stack_16)    ( evh__new_mem_stack_16 );
+   VG_(track_new_mem_stack_32)    ( evh__new_mem_stack_32 );
+   VG_(track_new_mem_stack_112)   ( evh__new_mem_stack_112 );
+   VG_(track_new_mem_stack_128)   ( evh__new_mem_stack_128 );
+   VG_(track_new_mem_stack_144)   ( evh__new_mem_stack_144 );
+   VG_(track_new_mem_stack_160)   ( evh__new_mem_stack_160 );
 
    // FIXME: surely this isn't thread-aware
    VG_(track_copy_mem_remap)      ( evh__copy_mem );

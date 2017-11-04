@@ -1651,10 +1651,10 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    {
       /* The tool's "needs" will by now be finalised, since it has no
          further opportunity to specify them.  So now sanity check
-         them. */
+         and finish initialising the needs. */
       const HChar* s;
       Bool  ok;
-      ok = VG_(sanity_check_needs)( &s );
+      ok = VG_(finish_needs_init)( &s );
       if (!ok) {
          VG_(core_panic)(s);
       }

@@ -103,7 +103,7 @@ VgNeeds VG_(needs) = {
 };
 
 /* static */
-Bool VG_(sanity_check_needs)(const HChar** failmsg)
+Bool VG_(finish_needs_init)(const HChar** failmsg)
 {
    Bool any_new_mem_stack_N, any_new_mem_stack_N_w_ECU;
    Bool any_new_mem_stack_w_conflicting_otags;
@@ -124,7 +124,7 @@ Bool VG_(sanity_check_needs)(const HChar** failmsg)
 
    /* Check that new_mem_stack is defined if any new_mem_stack_N
       are. */
-   any_new_mem_stack_N 
+   any_new_mem_stack_N
       = VG_(tdict).track_new_mem_stack_4   ||
         VG_(tdict).track_new_mem_stack_8   ||
         VG_(tdict).track_new_mem_stack_12  ||
@@ -182,6 +182,9 @@ Bool VG_(sanity_check_needs)(const HChar** failmsg)
                  "   but you can only have one or the other (not both)\n";
       return False;
    }
+   VG_(tdict).any_new_mem_stack
+      = VG_(tdict).track_new_mem_stack || VG_(tdict).track_new_mem_stack_w_ECU
+      || any_new_mem_stack_N || any_new_mem_stack_N_w_ECU;
 
    /* Check that die_mem_stack is defined if any die_mem_stack_N
       are. */
@@ -202,6 +205,8 @@ Bool VG_(sanity_check_needs)(const HChar** failmsg)
                  "   'die_mem_stack' should be defined\n";
       return False;
    }
+   VG_(tdict).any_die_mem_stack
+      = VG_(tdict).track_die_mem_stack || any_die_mem_stack_N;
 
    return True;
 

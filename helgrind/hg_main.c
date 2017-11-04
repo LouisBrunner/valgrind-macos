@@ -4385,6 +4385,12 @@ Bool HG_(mm_find_containing_block)( /*OUT*/ExeContext** where,
    Int i;
    const Int n_fast_check_words = 16;
 
+   /* Before searching the list of allocated blocks in hg_mallocmeta_table,
+      first verify that data_addr is in a heap client segment. */
+   const NSegment *s = VG_(am_find_nsegment) (data_addr);
+   if (s == NULL || !s->isCH)
+     return False;
+
    /* First, do a few fast searches on the basis that data_addr might
       be exactly the start of a block or up to 15 words inside.  This
       can happen commonly via the creq

@@ -39,6 +39,7 @@ usage: valgrind [options] prog-and-args
     --demangle=no|yes         automatically demangle C++ names? [yes]
     --num-callers=<number>    show <number> callers in stack traces [12]
     --error-limit=no|yes      stop showing new errors if too many? [yes]
+    --exit-on-first-error=no|yes exit code on the first error found? [no]
     --error-exitcode=<number> exit code to return if errors found [0=disable]
     --error-markers=<begin>,<end> add lines with begin/end markers before/after
                               each error output in plain text mode [none]

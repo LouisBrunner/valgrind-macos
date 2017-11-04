@@ -1,0 +1,9 @@
+
+Invalid write of size 1
+   ...
+ Address 0x........ is 1 bytes before a block of size 8 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+
+
+Exit program on first error (--exit-on-first-error=yes)

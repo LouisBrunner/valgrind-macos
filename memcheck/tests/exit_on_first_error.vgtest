@@ -1,0 +1,2 @@
+prog: badaddrvalue
+vgopts: --exit-on-first-error=yes --error-exitcode=3

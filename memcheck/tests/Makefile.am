@@ -80,6 +80,10 @@ EXTRA_DIST = \
 	atomic_incs.stdout.exp-32bit atomic_incs.stdout.exp-64bit \
 	badaddrvalue.stderr.exp \
 	badaddrvalue.stdout.exp badaddrvalue.vgtest \
+        exit_on_first_error.stderr.exp \
+        exit_on_first_error.vgtest \
+        exit_on_first_error_with_xml.stderr.exp \
+        exit_on_first_error_with_xml.vgtest \
 	badfree-2trace.stderr.exp badfree-2trace.vgtest \
 	badfree.stderr.exp badfree.vgtest \
 	badfree3.stderr.exp badfree3.vgtest \

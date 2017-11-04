@@ -44,6 +44,8 @@ extern const HChar *VG_(clo_toolname);
 
 /* Should we stop collecting errors if too many appear?  default: YES */
 extern Bool  VG_(clo_error_limit);
+/* Should we exit if an error appears?  default: NO */
+extern Bool  VG_(clo_exit_on_first_error);
 /* Alternative exit code to hand to parent if errors were found.
    default: 0 (no, return the application's exit code in the normal
    way. */

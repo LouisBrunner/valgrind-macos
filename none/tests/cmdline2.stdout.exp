@@ -39,6 +39,7 @@ usage: valgrind [options] prog-and-args
     --demangle=no|yes         automatically demangle C++ names? [yes]
     --num-callers=<number>    show <number> callers in stack traces [12]
     --error-limit=no|yes      stop showing new errors if too many? [yes]
+    --exit-on-first-error=no|yes exit code on the first error found? [no]
     --error-exitcode=<number> exit code to return if errors found [0=disable]
     --error-markers=<begin>,<end> add lines with begin/end markers before/after
                               each error output in plain text mode [none]
@@ -164,7 +165,7 @@ usage: valgrind [options] prog-and-args
     --core-redzone-size=<number>  set minimum size of redzones added before/after
                               heap blocks allocated for Valgrind internal use (in bytes) [4]
     --wait-for-gdb=yes|no     pause on startup to wait for gdb attach
-    --sym-offsets=yes|no      show syms in form 'name+offset' ? [no]
+    --sym-offsets=yes|no      show syms in form 'name+offset'? [no]
     --command-line-only=no|yes  only use command line options [no]
 
   Vex options for all Valgrind tools:

@@ -52,6 +52,7 @@ VexRegisterUpdates VG_(clo_px_file_backed) = VexRegUpd_INVALID;
 Bool   VG_(clo_error_limit)    = True;
 Int    VG_(clo_error_exitcode) = 0;
 HChar *VG_(clo_error_markers)[2] = {NULL, NULL};
+Bool   VG_(clo_exit_on_first_error) = False;
 
 #if defined(VGPV_arm_linux_android) \
     || defined(VGPV_x86_linux_android) \

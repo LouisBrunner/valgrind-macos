@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+
+<valgrindoutput>
+
+<protocolversion>4</protocolversion>
+<protocoltool>memcheck</protocoltool>
+
+<preamble>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+</preamble>
+
+<pid>...</pid>
+<ppid>...</ppid>
+<tool>memcheck</tool>
+
+<args>
+  <vargv>...</vargv>
+  <argv>
+    <exe>./badaddrvalue</exe>
+  </argv>
+</args>
+
+<status>
+  <state>RUNNING</state>
+  <time>...</time>
+</status>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>InvalidWrite</kind>
+  <what>Invalid write of size 1</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>badaddrvalue.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  <auxwhat>Address 0x........ is 1 bytes before a block of size 8 alloc'd</auxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>malloc</fn>
+      <dir>...</dir>
+      <file>vg_replace_malloc.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>badaddrvalue.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</error>
+
+</valgrindoutput>

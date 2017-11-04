@@ -1180,6 +1180,19 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.exit-on-first-error" xreflabel="--exit-on-first-error">
+    <term>
+      <option><![CDATA[--exit-on-first-error=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>If this option is enabled, Valgrind exits on the first error.
+      A nonzero exit value must be defined using
+      <computeroutput>--error-exitcode</computeroutput> option.
+      Useful if you are running regression tests or have some other
+      automated test machinery.</para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.error-markers" xreflabel="--error-markers">
     <term>
       <option><![CDATA[--error-markers=<begin>,<end> [default: none]]]></option>

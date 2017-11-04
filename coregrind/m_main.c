@@ -125,6 +125,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --demangle=no|yes         automatically demangle C++ names? [yes]\n"
 "    --num-callers=<number>    show <number> callers in stack traces [12]\n"
 "    --error-limit=no|yes      stop showing new errors if too many? [yes]\n"
+"    --exit-on-first-error=no|yes exit code on the first error found? [no]\n"
 "    --error-exitcode=<number> exit code to return if errors found [0=disable]\n"
 "    --error-markers=<begin>,<end> add lines with begin/end markers before/after\n"
 "                              each error output in plain text mode [none]\n"
@@ -252,7 +253,7 @@ static void usage_NORETURN ( Bool debug_help )
 "    --core-redzone-size=<number>  set minimum size of redzones added before/after\n"
 "                              heap blocks allocated for Valgrind internal use (in bytes) [4]\n"
 "    --wait-for-gdb=yes|no     pause on startup to wait for gdb attach\n"
-"    --sym-offsets=yes|no      show syms in form 'name+offset' ? [no]\n"
+"    --sym-offsets=yes|no      show syms in form 'name+offset'? [no]\n"
 "    --command-line-only=no|yes  only use command line options [no]\n"
 "\n"
 "  Vex options for all Valgrind tools:\n"
@@ -601,6 +602,7 @@ void main_process_cmd_line_options( void )
       else if VG_BOOL_CLO(arg, "--demangle",       VG_(clo_demangle)) {}
       else if VG_STR_CLO (arg, "--soname-synonyms",VG_(clo_soname_synonyms)) {}
       else if VG_BOOL_CLO(arg, "--error-limit",    VG_(clo_error_limit)) {}
+      else if VG_BOOL_CLO(arg, "--exit-on-first-error", VG_(clo_exit_on_first_error)) {}
       else if VG_INT_CLO (arg, "--error-exitcode", VG_(clo_error_exitcode)) {}
       else if VG_STR_CLO (arg, "--error-markers",  tmp_str) {
          Int m;
@@ -933,6 +935,11 @@ void main_process_cmd_line_options( void )
       VG_(fmsg_bad_option)("--gen-suppressions=yes",
          "Can't use --gen-suppressions= with %s\n"
          "because it doesn't generate errors.\n", VG_(details).name);
+   }
+   if ((VG_(clo_exit_on_first_error)) &&
+       (VG_(clo_error_exitcode)==0)) {
+      VG_(fmsg_bad_option)("--exit-on-first-error=yes",
+         "You must define a non nul exit error code, with --error-exitcode=...\n");
    }
 
 #  if !defined(VGO_darwin)

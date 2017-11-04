@@ -1,0 +1,4 @@
+prog: badaddrvalue
+vgopts: --exit-on-first-error=yes --error-exitcode=3  --xml=yes --xml-fd=2 --log-file=/dev/null
+stderr_filter: filter_xml
+

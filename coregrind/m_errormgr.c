@@ -511,11 +511,10 @@ Bool VG_(is_action_requested) ( const HChar* action, Bool* clo )
 }
 
 
-/* Do text-mode actions on error, that is, immediately after an error
-   is printed.  These are:
+/* Do actions on error, that is, immediately after an error is printed.
+   These are:
    * possibly, call the GDB server
    * possibly, generate a suppression.
-   Note this should not be called in XML mode! 
 */
 static 
 void do_actions_on_error(const Error* err, Bool allow_db_attach)
@@ -540,6 +539,14 @@ void do_actions_on_error(const Error* err, Bool allow_db_attach)
    }
    if (VG_(clo_gen_suppressions) == 1 && !still_noisy)
       VG_(clo_gen_suppressions) = 0;
+
+   if (VG_(clo_exit_on_first_error)) {
+      if (VG_(clo_xml))
+         VG_(printf_xml)("</valgrindoutput>\n");
+      VG_(umsg)("\n");
+      VG_(umsg)("Exit program on first error (--exit-on-first-error=yes)\n");
+      VG_(client_exit)( VG_(clo_error_exitcode) );
+   }
 }
 
 
@@ -565,6 +572,8 @@ void do_actions_on_error(const Error* err, Bool allow_db_attach)
      preamble ahead of the message, if it wants.
 
    * prints the tool-specific parts of the message
+
+   In both modes:
 
    * calls do_actions_on_error.  This optionally does a gdbserver call
      and optionally prints a suppression; both of these may require user input.

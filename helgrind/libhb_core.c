@@ -4305,8 +4305,10 @@ static UWord RCEC_referenced = 0;
 /* True if the frames of ec1 and ec2 are different. */
 static Bool RCEC__differs_by_frames ( RCEC* ec1, RCEC* ec2 ) {
    Word i;
-   tl_assert(ec1 && ec1->magic == RCEC_MAGIC);
-   tl_assert(ec2 && ec2->magic == RCEC_MAGIC);
+   if (CHECK_CEM) {
+      tl_assert(ec1 && ec1->magic == RCEC_MAGIC);
+      tl_assert(ec2 && ec2->magic == RCEC_MAGIC);
+   }
    if (ec1->frames_hash != ec2->frames_hash) return True;
    for (i = 0; i < N_FRAMES; i++) {
       if (ec1->frames[i] != ec2->frames[i]) return True;
@@ -4318,7 +4320,8 @@ static Bool RCEC__differs_by_frames ( RCEC* ec1, RCEC* ec2 ) {
 static void ctxt__rcdec ( RCEC* ec )
 {
    stats__ctxt_rcdec_calls++;
-   tl_assert(ec && ec->magic == RCEC_MAGIC);
+   if (CHECK_CEM)
+      tl_assert(ec && ec->magic == RCEC_MAGIC);
    tl_assert(ec->rc > 0);
    ec->rc--;
    if (ec->rc == 0) 
@@ -4327,7 +4330,8 @@ static void ctxt__rcdec ( RCEC* ec )
 
 static void ctxt__rcinc ( RCEC* ec )
 {
-   tl_assert(ec && ec->magic == RCEC_MAGIC);
+   if (CHECK_CEM)
+      tl_assert(ec && ec->magic == RCEC_MAGIC);
    if (ec->rc == 0) 
       RCEC_referenced++;
    ec->rc++;
@@ -4389,8 +4393,14 @@ static RCEC* ctxt__find_or_add ( RCEC* example )
 {
    UWord hent;
    RCEC* copy;
-   tl_assert(example && example->magic == RCEC_MAGIC);
-   tl_assert(example->rc == 0);
+
+   if (CHECK_CEM) {
+      /* Note that the single caller of ctxt__find_or_add always provides
+         &thr->cached_rcec as argument. The sanity of thr->cached_rcec is always
+         checked with a thread terminates. */
+      tl_assert(example && example->magic == RCEC_MAGIC);
+      tl_assert(example->rc == 0);
+   }
 
    /* Search the hash table to see if we already have it. */
    stats__ctxt_tab_qs++;
@@ -4398,7 +4408,8 @@ static RCEC* ctxt__find_or_add ( RCEC* example )
    copy = contextTab[hent];
    while (1) {
       if (!copy) break;
-      tl_assert(copy->magic == RCEC_MAGIC);
+      if (CHECK_CEM)
+         tl_assert(copy->magic == RCEC_MAGIC);
       stats__ctxt_tab_cmps++;
       if (!RCEC__differs_by_frames(copy, example)) break;
       copy = copy->next;
@@ -4892,10 +4903,6 @@ static void event_map_bind ( Addr a, SizeT szB, Bool isW, Thr* thr )
 
    rcec = get_RCEC( thr );
 
-   tl_assert (szB == 4 || szB == 8 ||szB == 1 || szB == 2);
-   // Check for most frequent cases first
-   // Note: we could support a szB up to 1 << (32 - SCALARTS_N_THRBITS - 1)
-
    /* Look in the oldrefHT to see if we already have a record for this
       address/thr/sz/isW. */
    example.ga = a;
@@ -4927,6 +4934,11 @@ static void event_map_bind ( Addr a, SizeT szB, Bool isW, Thr* thr )
       OldRef_newest(ref);
 
    } else {
+      tl_assert (szB == 4 || szB == 8 ||szB == 1 || szB == 2);
+      // We only need to check the size the first time we insert a ref.
+      // Check for most frequent cases first
+      // Note: we could support a szB up to 1 << (32 - SCALARTS_N_THRBITS - 1)
+
       /* We don't have a record for this address+triple.  Create a new one. */
       stats__ctxt_neq_tsw_neq_rcec++;
       ref = alloc_or_reuse_OldRef();
@@ -5909,7 +5921,8 @@ void zsm_swrite64 ( Addr a, SVal svNew ) {
    tno   = get_treeno(a);
    //toff  = get_tree_offset(a); /* == 0, unused */
    cl->descrs[tno] = TREE_DESCR_64;
-   tl_assert(svNew != SVal_INVALID);
+   if (CHECK_ZSM)
+      tl_assert(svNew != SVal_INVALID); /* EXPENSIVE */
    cl->svals[cloff + 0] = svNew;
    cl->svals[cloff + 1] = SVal_INVALID;
    cl->svals[cloff + 2] = SVal_INVALID;
@@ -6861,6 +6874,12 @@ void libhb_async_exit ( Thr* thr )
    tl_assert(thr);
    tl_assert(!thr->llexit_done);
    thr->llexit_done = True;
+
+   /* Check nobody messed up with the cached_rcec */
+   tl_assert (thr->cached_rcec.magic == RCEC_MAGIC);
+   tl_assert (thr->cached_rcec.rc == 0);
+   tl_assert (thr->cached_rcec.rcX == 0);
+   tl_assert (thr->cached_rcec.next == NULL);
 
    /* Just to be sure, declare the cached stack invalid. */
    set_cached_rcec_validity(thr, False);

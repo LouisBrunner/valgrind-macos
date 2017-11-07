@@ -11078,6 +11078,7 @@ s390_irgen_EX_SS(UChar r, IRTemp addr2,
    stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMLEN), mkU64(4)));
    restart_if(mkexpr(cond));
 
+   ss.dec.op = ss.dec.l = ss.dec.b1 = ss.dec.d1 = ss.dec.b2 = ss.dec.d2 = 0;
    ss.bytes = last_execute_target;
    assign(start1, binop(Iop_Add64, mkU64(ss.dec.d1),
           ss.dec.b1 != 0 ? get_gpr_dw0(ss.dec.b1) : mkU64(0)));

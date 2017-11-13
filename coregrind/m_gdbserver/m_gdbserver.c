@@ -876,7 +876,7 @@ void VG_(invoke_gdbserver) ( int check )
       gdbserver. Otherwise, we let the valgrind scheduler invoke
       gdbserver at the next poll.  This poll will be made very soon
       thanks to a call to VG_(force_vgdb_poll). */
-   int n_tid;
+   int n_tid, vgdb_interrupted_tid_local = 0;
 
    vg_assert (check == 0x8BADF00D);
 
@@ -894,7 +894,8 @@ void VG_(invoke_gdbserver) ( int check )
       /* interruptible states. */
       case VgTs_WaitSys:
       case VgTs_Yielding:
-         if (vgdb_interrupted_tid == 0) vgdb_interrupted_tid = n_tid;
+         if (vgdb_interrupted_tid_local == 0)
+            vgdb_interrupted_tid_local = n_tid;
          break;
 
       case VgTs_Empty:     
@@ -911,6 +912,8 @@ void VG_(invoke_gdbserver) ( int check )
       default:             vg_assert(0);
       }
    }
+
+   vgdb_interrupted_tid = vgdb_interrupted_tid_local;
 
    /* .... till here.
       From here onwards, function calls are ok: it is

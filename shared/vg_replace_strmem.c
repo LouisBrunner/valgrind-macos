@@ -377,7 +377,7 @@ static inline void my_exit ( int x )
       while (m < n && *dst) { m++; dst++; } \
       if (m < n) { \
          /* Fill as far as dst_orig[n-2], then nul-terminate. */ \
-         while (m < n-1 && *src) { m++; *dst++ = *src++; } \
+         while (m+1 < n && *src) { m++; *dst++ = *src++; } \
          *dst = 0; \
       } else { \
          /* No space to copy anything to dst. m == n */ \
@@ -580,7 +580,7 @@ static inline void my_exit ( int x )
       \
       STRLCPY_CHECK_FOR_DSTSIZE_ZERO \
       \
-      while (m < n-1 && *src) { m++; *dst++ = *src++; } \
+      while (m+1 < n && *src) { m++; *dst++ = *src++; } \
       /* m non-nul bytes have now been copied, and m <= n-1. */ \
       /* Check for overlap after copying; all n bytes of dst are relevant, */ \
       /* but only m+1 bytes of src if terminator was found */ \

@@ -278,6 +278,7 @@
 /drd/splash2
 /drd/vgpreload_drd-*-linux.so
 /drd/vgpreload_drd-*-darwin.so
+/drd/vgpreload_drd-*-solaris.so
 
 # /drd/docs/
 /drd/docs/.deps
@@ -502,6 +503,7 @@
 /exp-dhat/Makefile.in
 /exp-dhat/vgpreload_exp-dhat-*-linux.so
 /exp-dhat/vgpreload_exp-dhat-*-darwin.so
+/exp-dhat/vgpreload_exp-dhat-*-solaris.so
 
 # /exp-dhat/tests/
 /exp-dhat/tests/Makefile
@@ -521,6 +523,7 @@
 /exp-sgcheck/vgpreload_exp-ptrcheck-*-darwin.so.dSYM
 /exp-sgcheck/vgpreload_exp-sgcheck-*-darwin.so
 /exp-sgcheck/vgpreload_exp-sgcheck-*-linux.so
+/exp-sgcheck/vgpreload_exp-sgcheck-*-solaris.so
 
 # /exp-sgcheck/docs/
 /exp-sgcheck/docs/Makefile
@@ -624,6 +627,7 @@
 /helgrind/Makefile.in
 /helgrind/vgpreload_helgrind-*-linux.so
 /helgrind/vgpreload_helgrind-*-darwin.so
+/helgrind/vgpreload_helgrind-*-solaris.so
 
 # /helgrind/docs/
 /helgrind/docs/Makefile
@@ -1152,11 +1156,13 @@
 /memcheck/tests/solaris/gethrusec
 /memcheck/tests/solaris/getzoneoffset
 /memcheck/tests/solaris/inlinfo
+/memcheck/tests/solaris/inlinfo_nested.so
 /memcheck/tests/solaris/ioctl
 /memcheck/tests/solaris/ldynsym
 /memcheck/tests/solaris/lsframe1
 /memcheck/tests/solaris/lsframe2
 /memcheck/tests/solaris/mmapobj_bssonly
+/memcheck/tests/solaris/mmapobj_bssonly.so
 /memcheck/tests/solaris/name_service_door
 /memcheck/tests/solaris/pkcs11
 /memcheck/tests/solaris/scalar

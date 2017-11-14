@@ -43,6 +43,7 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
+208052  strlcpy error when n = 0
 255603  exp-sgcheck Assertion '!already_present' failed
 376257  helgrind history full speed up using a cached stack
 379373  Fix syscall param msg->desc.port.name points to uninitialised byte(s)

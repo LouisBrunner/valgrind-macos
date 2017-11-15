@@ -5,7 +5,7 @@ dist_noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = \
 	brk.stderr.exp brk.vgtest \
-	capget.vgtest capget.stderr.exp capget.stderr.exp2 \
+	capget.vgtest capget.stderr.exp capget.stderr.exp2 capget.stderr.exp3 \
 	ioctl-tiocsig.vgtest ioctl-tiocsig.stderr.exp \
 	lsframe1.vgtest lsframe1.stdout.exp lsframe1.stderr.exp \
 	lsframe2.vgtest lsframe2.stdout.exp lsframe2.stderr.exp \

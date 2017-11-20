@@ -158,6 +158,11 @@ typedef
          thread-related syscalls. */
       UInt guest_TPIDRURO;
 
+      /* TPIDRURW is also apparently used as a thread register, but one
+         controlled entirely by, and writable from, user space.  We model
+         it as a completely vanilla piece of integer state. */
+      UInt guest_TPIDRURW;
+
       /* Representation of the Thumb IT state.  ITSTATE is a 32-bit
          value with 4 8-bit lanes.  [7:0] pertain to the next insn to
          execute, [15:8] for the one after that, etc.  The per-insn
@@ -192,9 +197,6 @@ typedef
          to the top 24 bits of ITSTATE being zero.
       */
       UInt guest_ITSTATE;
-
-      /* Padding to make it have an 16-aligned size */
-      UInt padding1;
    }
    VexGuestARMState;
 

@@ -1334,11 +1334,10 @@ void LibVEX_GuestARM_initialise ( /*OUT*/VexGuestARMState* vex_state )
    vex_state->guest_FPSCR = 0;
 
    vex_state->guest_TPIDRURO = 0;
+   vex_state->guest_TPIDRURW = 0;
 
    /* Not in a Thumb IT block. */
    vex_state->guest_ITSTATE = 0;
-
-   vex_state->padding1 = 0;
 }
 
 

@@ -873,6 +873,7 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
 
    if (o == GOF(FPSCR)    && sz == 4) return -1;
    if (o == GOF(TPIDRURO) && sz == 4) return -1;
+   if (o == GOF(TPIDRURW) && sz == 4) return -1;
    if (o == GOF(ITSTATE)  && sz == 4) return -1;
 
    /* Accesses to F or D registers */

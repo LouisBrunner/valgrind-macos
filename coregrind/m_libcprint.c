@@ -29,6 +29,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#include "vgversion.h"
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_vkiscnums.h"
@@ -164,7 +165,7 @@ void VG_(print_preamble)(Bool logging_to_fd)
       /* Core details */
       umsg_or_xml(
          "%sUsing Valgrind-%s and LibVEX; rerun with -h for copyright info%s\n",
-         xpre, VERSION, xpost);
+         xpre, VG_(clo_verbosity) <= 1 ? VERSION : VERSION "-" VGGIT, xpost);
 
       // Print the command line.  At one point we wrapped at 80 chars and
       // printed a '\' as a line joiner, but that makes it hard to cut and

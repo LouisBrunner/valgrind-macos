@@ -1006,11 +1006,34 @@ LibVEX_GuestAMD64_put_rflag_c ( ULong new_carry_flag,
 /* Used by the optimiser to try specialisations.  Returns an
    equivalent expression, or NULL if none. */
 
-static Bool isU64 ( IRExpr* e, ULong n )
+static inline Bool isU64 ( IRExpr* e, ULong n )
 {
-   return toBool( e->tag == Iex_Const
-                  && e->Iex.Const.con->tag == Ico_U64
-                  && e->Iex.Const.con->Ico.U64 == n );
+   return e->tag == Iex_Const
+          && e->Iex.Const.con->tag == Ico_U64
+          && e->Iex.Const.con->Ico.U64 == n;
+}
+
+/* Returns N if E is an immediate of the form 1 << N for N in 1 to 31,
+   and zero in any other case. */
+static Int isU64_1_shl_N ( IRExpr* e )
+{
+   if (e->tag != Iex_Const || e->Iex.Const.con->tag != Ico_U64)
+      return 0;
+   ULong w64 = e->Iex.Const.con->Ico.U64;
+   if (w64 < (1ULL << 1) || w64 > (1ULL << 31))
+      return 0;
+   if ((w64 & (w64 - 1)) != 0)
+      return 0;
+   /* At this point, we know w64 is a power of two in the range 2^1 .. 2^31,
+      and we only need to find out which one it is. */
+   for (Int n = 1; n <= 31; n++) {
+      if (w64 == (1ULL << n))
+         return n;
+   }
+   /* Consequently we should never get here. */
+   /*UNREACHED*/
+   vassert(0);
+   return 0;
 }
 
 IRExpr* guest_amd64_spechelper ( const HChar* function_name,
@@ -1231,6 +1254,41 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
       }
 
       /* 2, 3 */
+      {
+        /* It appears that LLVM 5.0 and later have a new way to find out
+           whether the top N bits of a word W are all zero, by computing
+
+             W  <u  0---(N-1)---0 1 0---0
+
+           In particular, the result will be defined if the top N bits of W
+           are defined, even if the trailing bits -- those corresponding to
+           the 0---0 section -- are undefined.  Rather than make Memcheck
+           more complex, we detect this case where we can and shift out the
+           irrelevant and potentially undefined bits. */
+        Int n = 0;
+        if (isU64(cc_op, AMD64G_CC_OP_SUBL)
+            && (isU64(cond, AMD64CondB) || isU64(cond, AMD64CondNB))
+            && (n = isU64_1_shl_N(cc_dep2)) > 0) {
+           /* long sub/cmp, then B (unsigned less than),
+              where dep2 is a power of 2:
+                -> CmpLT32(dep1, 1 << N)
+                -> CmpEQ32(dep1 >>u N, 0)
+              and
+              long sub/cmp, then NB (unsigned greater than or equal),
+              where dep2 is a power of 2:
+                -> CmpGE32(dep1, 1 << N)
+                -> CmpNE32(dep1 >>u N, 0)
+              This avoids CmpLT32U/CmpGE32U being applied to potentially
+              uninitialised bits in the area being shifted out. */
+           vassert(n >= 1 && n <= 31);
+           Bool isNB = isU64(cond, AMD64CondNB);
+           return unop(Iop_1Uto64,
+                       binop(isNB ? Iop_CmpNE32 : Iop_CmpEQ32,
+                             binop(Iop_Shr32, unop(Iop_64to32, cc_dep1),
+                                              mkU8(n)),
+                             mkU32(0)));
+        }
+      }
       if (isU64(cc_op, AMD64G_CC_OP_SUBL) && isU64(cond, AMD64CondB)) {
          /* long sub/cmp, then B (unsigned less than)
             --> test dst <u src */

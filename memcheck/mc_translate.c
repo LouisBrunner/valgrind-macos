@@ -131,6 +131,7 @@
    Ist_Store, IRLoadG, IRStoreG, LLSC, CAS and Dirty memory
    loads/stores) was re-checked 11 May 2013. */
 
+
 /*------------------------------------------------------------*/
 /*--- Forward decls                                        ---*/
 /*------------------------------------------------------------*/
@@ -142,6 +143,7 @@ static IRExpr* expr2vbits ( struct _MCEnv* mce, IRExpr* e );
 static IRTemp  findShadowTmpB ( struct _MCEnv* mce, IRTemp orig );
 
 static IRExpr *i128_const_zero(void);
+
 
 /*------------------------------------------------------------*/
 /*--- Memcheck running state, and tmp management.          ---*/
@@ -5131,6 +5133,7 @@ IRExpr* expr2vbits ( MCEnv* mce, IRExpr* e )
    }
 }
 
+
 /*------------------------------------------------------------*/
 /*--- Generate shadow stmts from all kinds of IRStmts.     ---*/
 /*------------------------------------------------------------*/
@@ -6294,724 +6297,6 @@ static void do_shadow_LoadG ( MCEnv* mce, IRLoadG* lg )
 
 
 /*------------------------------------------------------------*/
-/*--- Memcheck main                                        ---*/
-/*------------------------------------------------------------*/
-
-static void schemeS ( MCEnv* mce, IRStmt* st );
-
-static Bool isBogusAtom ( IRAtom* at )
-{
-   ULong n = 0;
-   IRConst* con;
-   tl_assert(isIRAtom(at));
-   if (at->tag == Iex_RdTmp)
-      return False;
-   tl_assert(at->tag == Iex_Const);
-   con = at->Iex.Const.con;
-   switch (con->tag) {
-      case Ico_U1:   return False;
-      case Ico_U8:   n = (ULong)con->Ico.U8; break;
-      case Ico_U16:  n = (ULong)con->Ico.U16; break;
-      case Ico_U32:  n = (ULong)con->Ico.U32; break;
-      case Ico_U64:  n = (ULong)con->Ico.U64; break;
-      case Ico_F32:  return False;
-      case Ico_F64:  return False;
-      case Ico_F32i: return False;
-      case Ico_F64i: return False;
-      case Ico_V128: return False;
-      case Ico_V256: return False;
-      default: ppIRExpr(at); tl_assert(0);
-   }
-   /* VG_(printf)("%llx\n", n); */
-   return (/*32*/    n == 0xFEFEFEFFULL
-           /*32*/ || n == 0x80808080ULL
-           /*32*/ || n == 0x7F7F7F7FULL
-           /*32*/ || n == 0x7EFEFEFFULL
-           /*32*/ || n == 0x81010100ULL
-           /*64*/ || n == 0xFFFFFFFFFEFEFEFFULL
-           /*64*/ || n == 0xFEFEFEFEFEFEFEFFULL
-           /*64*/ || n == 0x0000000000008080ULL
-           /*64*/ || n == 0x8080808080808080ULL
-           /*64*/ || n == 0x0101010101010101ULL
-          );
-}
-
-static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
-{
-   Int      i;
-   IRExpr*  e;
-   IRDirty* d;
-   IRCAS*   cas;
-   switch (st->tag) {
-      case Ist_WrTmp:
-         e = st->Ist.WrTmp.data;
-         switch (e->tag) {
-            case Iex_Get:
-            case Iex_RdTmp:
-               return False;
-            case Iex_Const:
-               return isBogusAtom(e);
-            case Iex_Unop: 
-               return isBogusAtom(e->Iex.Unop.arg)
-                      || e->Iex.Unop.op == Iop_GetMSBs8x16;
-            case Iex_GetI:
-               return isBogusAtom(e->Iex.GetI.ix);
-            case Iex_Binop: 
-               return isBogusAtom(e->Iex.Binop.arg1)
-                      || isBogusAtom(e->Iex.Binop.arg2);
-            case Iex_Triop: 
-               return isBogusAtom(e->Iex.Triop.details->arg1)
-                      || isBogusAtom(e->Iex.Triop.details->arg2)
-                      || isBogusAtom(e->Iex.Triop.details->arg3);
-            case Iex_Qop: 
-               return isBogusAtom(e->Iex.Qop.details->arg1)
-                      || isBogusAtom(e->Iex.Qop.details->arg2)
-                      || isBogusAtom(e->Iex.Qop.details->arg3)
-                      || isBogusAtom(e->Iex.Qop.details->arg4);
-            case Iex_ITE:
-               return isBogusAtom(e->Iex.ITE.cond)
-                      || isBogusAtom(e->Iex.ITE.iftrue)
-                      || isBogusAtom(e->Iex.ITE.iffalse);
-            case Iex_Load: 
-               return isBogusAtom(e->Iex.Load.addr);
-            case Iex_CCall:
-               for (i = 0; e->Iex.CCall.args[i]; i++)
-                  if (isBogusAtom(e->Iex.CCall.args[i]))
-                     return True;
-               return False;
-            default: 
-               goto unhandled;
-         }
-      case Ist_Dirty:
-         d = st->Ist.Dirty.details;
-         for (i = 0; d->args[i]; i++) {
-            IRAtom* atom = d->args[i];
-            if (LIKELY(!is_IRExpr_VECRET_or_GSPTR(atom))) {
-               if (isBogusAtom(atom))
-                  return True;
-            }
-         }
-         if (isBogusAtom(d->guard))
-            return True;
-         if (d->mAddr && isBogusAtom(d->mAddr))
-            return True;
-         return False;
-      case Ist_Put:
-         return isBogusAtom(st->Ist.Put.data);
-      case Ist_PutI:
-         return isBogusAtom(st->Ist.PutI.details->ix) 
-                || isBogusAtom(st->Ist.PutI.details->data);
-      case Ist_Store:
-         return isBogusAtom(st->Ist.Store.addr) 
-                || isBogusAtom(st->Ist.Store.data);
-      case Ist_StoreG: {
-         IRStoreG* sg = st->Ist.StoreG.details;
-         return isBogusAtom(sg->addr) || isBogusAtom(sg->data)
-                || isBogusAtom(sg->guard);
-      }
-      case Ist_LoadG: {
-         IRLoadG* lg = st->Ist.LoadG.details;
-         return isBogusAtom(lg->addr) || isBogusAtom(lg->alt)
-                || isBogusAtom(lg->guard);
-      }
-      case Ist_Exit:
-         return isBogusAtom(st->Ist.Exit.guard);
-      case Ist_AbiHint:
-         return isBogusAtom(st->Ist.AbiHint.base)
-                || isBogusAtom(st->Ist.AbiHint.nia);
-      case Ist_NoOp:
-      case Ist_IMark:
-      case Ist_MBE:
-         return False;
-      case Ist_CAS:
-         cas = st->Ist.CAS.details;
-         return isBogusAtom(cas->addr)
-                || (cas->expdHi ? isBogusAtom(cas->expdHi) : False)
-                || isBogusAtom(cas->expdLo)
-                || (cas->dataHi ? isBogusAtom(cas->dataHi) : False)
-                || isBogusAtom(cas->dataLo);
-      case Ist_LLSC:
-         return isBogusAtom(st->Ist.LLSC.addr)
-                || (st->Ist.LLSC.storedata
-                       ? isBogusAtom(st->Ist.LLSC.storedata)
-                       : False);
-      default: 
-      unhandled:
-         ppIRStmt(st);
-         VG_(tool_panic)("hasBogusLiterals");
-   }
-}
-
-
-IRSB* MC_(instrument) ( VgCallbackClosure* closure,
-                        IRSB* sb_in, 
-                        const VexGuestLayout* layout, 
-                        const VexGuestExtents* vge,
-                        const VexArchInfo* archinfo_host,
-                        IRType gWordTy, IRType hWordTy )
-{
-   Bool    verboze = 0||False;
-   Int     i, j, first_stmt;
-   IRStmt* st;
-   MCEnv   mce;
-   IRSB*   sb_out;
-
-   if (gWordTy != hWordTy) {
-      /* We don't currently support this case. */
-      VG_(tool_panic)("host/guest word size mismatch");
-   }
-
-   /* Check we're not completely nuts */
-   tl_assert(sizeof(UWord)  == sizeof(void*));
-   tl_assert(sizeof(Word)   == sizeof(void*));
-   tl_assert(sizeof(Addr)   == sizeof(void*));
-   tl_assert(sizeof(ULong)  == 8);
-   tl_assert(sizeof(Long)   == 8);
-   tl_assert(sizeof(UInt)   == 4);
-   tl_assert(sizeof(Int)    == 4);
-
-   tl_assert(MC_(clo_mc_level) >= 1 && MC_(clo_mc_level) <= 3);
-
-   /* Set up SB */
-   sb_out = deepCopyIRSBExceptStmts(sb_in);
-
-   /* Set up the running environment.  Both .sb and .tmpMap are
-      modified as we go along.  Note that tmps are added to both
-      .sb->tyenv and .tmpMap together, so the valid index-set for
-      those two arrays should always be identical. */
-   VG_(memset)(&mce, 0, sizeof(mce));
-   mce.sb             = sb_out;
-   mce.trace          = verboze;
-   mce.layout         = layout;
-   mce.hWordTy        = hWordTy;
-   mce.bogusLiterals  = False;
-
-   /* Do expensive interpretation for Iop_Add32 and Iop_Add64 on
-      Darwin.  10.7 is mostly built with LLVM, which uses these for
-      bitfield inserts, and we get a lot of false errors if the cheap
-      interpretation is used, alas.  Could solve this much better if
-      we knew which of such adds came from x86/amd64 LEA instructions,
-      since these are the only ones really needing the expensive
-      interpretation, but that would require some way to tag them in
-      the _toIR.c front ends, which is a lot of faffing around.  So
-      for now just use the slow and blunt-instrument solution. */
-   mce.useLLVMworkarounds = False;
-#  if defined(VGO_darwin)
-   mce.useLLVMworkarounds = True;
-#  endif
-
-   mce.tmpMap = VG_(newXA)( VG_(malloc), "mc.MC_(instrument).1", VG_(free),
-                            sizeof(TempMapEnt));
-   VG_(hintSizeXA) (mce.tmpMap, sb_in->tyenv->types_used);
-   for (i = 0; i < sb_in->tyenv->types_used; i++) {
-      TempMapEnt ent;
-      ent.kind    = Orig;
-      ent.shadowV = IRTemp_INVALID;
-      ent.shadowB = IRTemp_INVALID;
-      VG_(addToXA)( mce.tmpMap, &ent );
-   }
-   tl_assert( VG_(sizeXA)( mce.tmpMap ) == sb_in->tyenv->types_used );
-
-   if (MC_(clo_expensive_definedness_checks)) {
-      /* For expensive definedness checking skip looking for bogus
-         literals. */
-      mce.bogusLiterals = True;
-   } else {
-      /* Make a preliminary inspection of the statements, to see if there
-         are any dodgy-looking literals.  If there are, we generate
-         extra-detailed (hence extra-expensive) instrumentation in
-         places.  Scan the whole bb even if dodgyness is found earlier,
-         so that the flatness assertion is applied to all stmts. */
-      Bool bogus = False;
-
-      for (i = 0; i < sb_in->stmts_used; i++) {
-         st = sb_in->stmts[i];
-         tl_assert(st);
-         tl_assert(isFlatIRStmt(st));
-
-         if (!bogus) {
-            bogus = checkForBogusLiterals(st);
-            if (0 && bogus) {
-               VG_(printf)("bogus: ");
-               ppIRStmt(st);
-               VG_(printf)("\n");
-            }
-            if (bogus) break;
-         }
-      }
-      mce.bogusLiterals = bogus;
-   }
-
-   /* Copy verbatim any IR preamble preceding the first IMark */
-
-   tl_assert(mce.sb == sb_out);
-   tl_assert(mce.sb != sb_in);
-
-   i = 0;
-   while (i < sb_in->stmts_used && sb_in->stmts[i]->tag != Ist_IMark) {
-
-      st = sb_in->stmts[i];
-      tl_assert(st);
-      tl_assert(isFlatIRStmt(st));
-
-      stmt( 'C', &mce, sb_in->stmts[i] );
-      i++;
-   }
-
-   /* Nasty problem.  IR optimisation of the pre-instrumented IR may
-      cause the IR following the preamble to contain references to IR
-      temporaries defined in the preamble.  Because the preamble isn't
-      instrumented, these temporaries don't have any shadows.
-      Nevertheless uses of them following the preamble will cause
-      memcheck to generate references to their shadows.  End effect is
-      to cause IR sanity check failures, due to references to
-      non-existent shadows.  This is only evident for the complex
-      preambles used for function wrapping on TOC-afflicted platforms
-      (ppc64-linux).
-
-      The following loop therefore scans the preamble looking for
-      assignments to temporaries.  For each one found it creates an
-      assignment to the corresponding (V) shadow temp, marking it as
-      'defined'.  This is the same resulting IR as if the main
-      instrumentation loop before had been applied to the statement
-      'tmp = CONSTANT'.
-
-      Similarly, if origin tracking is enabled, we must generate an
-      assignment for the corresponding origin (B) shadow, claiming
-      no-origin, as appropriate for a defined value.
-   */
-   for (j = 0; j < i; j++) {
-      if (sb_in->stmts[j]->tag == Ist_WrTmp) {
-         /* findShadowTmpV checks its arg is an original tmp;
-            no need to assert that here. */
-         IRTemp tmp_o = sb_in->stmts[j]->Ist.WrTmp.tmp;
-         IRTemp tmp_v = findShadowTmpV(&mce, tmp_o);
-         IRType ty_v  = typeOfIRTemp(sb_out->tyenv, tmp_v);
-         assign( 'V', &mce, tmp_v, definedOfType( ty_v ) );
-         if (MC_(clo_mc_level) == 3) {
-            IRTemp tmp_b = findShadowTmpB(&mce, tmp_o);
-            tl_assert(typeOfIRTemp(sb_out->tyenv, tmp_b) == Ity_I32);
-            assign( 'B', &mce, tmp_b, mkU32(0)/* UNKNOWN ORIGIN */);
-         }
-         if (0) {
-            VG_(printf)("create shadow tmp(s) for preamble tmp [%d] ty ", j);
-            ppIRType( ty_v );
-            VG_(printf)("\n");
-         }
-      }
-   }
-
-   /* Iterate over the remaining stmts to generate instrumentation. */
-
-   tl_assert(sb_in->stmts_used > 0);
-   tl_assert(i >= 0);
-   tl_assert(i < sb_in->stmts_used);
-   tl_assert(sb_in->stmts[i]->tag == Ist_IMark);
-
-   for (/* use current i*/; i < sb_in->stmts_used; i++) {
-
-      st = sb_in->stmts[i];
-      first_stmt = sb_out->stmts_used;
-
-      if (verboze) {
-         VG_(printf)("\n");
-         ppIRStmt(st);
-         VG_(printf)("\n");
-      }
-
-      if (MC_(clo_mc_level) == 3) {
-         /* See comments on case Ist_CAS below. */
-         if (st->tag != Ist_CAS) 
-            schemeS( &mce, st );
-      }
-
-      /* Generate instrumentation code for each stmt ... */
-
-      switch (st->tag) {
-
-         case Ist_WrTmp:
-            assign( 'V', &mce, findShadowTmpV(&mce, st->Ist.WrTmp.tmp), 
-                               expr2vbits( &mce, st->Ist.WrTmp.data) );
-            break;
-
-         case Ist_Put:
-            do_shadow_PUT( &mce, 
-                           st->Ist.Put.offset,
-                           st->Ist.Put.data,
-                           NULL /* shadow atom */, NULL /* guard */ );
-            break;
-
-         case Ist_PutI:
-            do_shadow_PUTI( &mce, st->Ist.PutI.details);
-            break;
-
-         case Ist_Store:
-            do_shadow_Store( &mce, st->Ist.Store.end,
-                                   st->Ist.Store.addr, 0/* addr bias */,
-                                   st->Ist.Store.data,
-                                   NULL /* shadow data */,
-                                   NULL/*guard*/ );
-            break;
-
-         case Ist_StoreG:
-            do_shadow_StoreG( &mce, st->Ist.StoreG.details );
-            break;
-
-         case Ist_LoadG:
-            do_shadow_LoadG( &mce, st->Ist.LoadG.details );
-            break;
-
-         case Ist_Exit:
-            complainIfUndefined( &mce, st->Ist.Exit.guard, NULL );
-            break;
-
-         case Ist_IMark:
-            break;
-
-         case Ist_NoOp:
-         case Ist_MBE:
-            break;
-
-         case Ist_Dirty:
-            do_shadow_Dirty( &mce, st->Ist.Dirty.details );
-            break;
-
-         case Ist_AbiHint:
-            do_AbiHint( &mce, st->Ist.AbiHint.base,
-                              st->Ist.AbiHint.len,
-                              st->Ist.AbiHint.nia );
-            break;
-
-         case Ist_CAS:
-            do_shadow_CAS( &mce, st->Ist.CAS.details );
-            /* Note, do_shadow_CAS copies the CAS itself to the output
-               block, because it needs to add instrumentation both
-               before and after it.  Hence skip the copy below.  Also
-               skip the origin-tracking stuff (call to schemeS) above,
-               since that's all tangled up with it too; do_shadow_CAS
-               does it all. */
-            break;
-
-         case Ist_LLSC:
-            do_shadow_LLSC( &mce,
-                            st->Ist.LLSC.end,
-                            st->Ist.LLSC.result,
-                            st->Ist.LLSC.addr,
-                            st->Ist.LLSC.storedata );
-            break;
-
-         default:
-            VG_(printf)("\n");
-            ppIRStmt(st);
-            VG_(printf)("\n");
-            VG_(tool_panic)("memcheck: unhandled IRStmt");
-
-      } /* switch (st->tag) */
-
-      if (0 && verboze) {
-         for (j = first_stmt; j < sb_out->stmts_used; j++) {
-            VG_(printf)("   ");
-            ppIRStmt(sb_out->stmts[j]);
-            VG_(printf)("\n");
-         }
-         VG_(printf)("\n");
-      }
-
-      /* ... and finally copy the stmt itself to the output.  Except,
-         skip the copy of IRCASs; see comments on case Ist_CAS
-         above. */
-      if (st->tag != Ist_CAS)
-         stmt('C', &mce, st);
-   }
-
-   /* Now we need to complain if the jump target is undefined. */
-   first_stmt = sb_out->stmts_used;
-
-   if (verboze) {
-      VG_(printf)("sb_in->next = ");
-      ppIRExpr(sb_in->next);
-      VG_(printf)("\n\n");
-   }
-
-   complainIfUndefined( &mce, sb_in->next, NULL );
-
-   if (0 && verboze) {
-      for (j = first_stmt; j < sb_out->stmts_used; j++) {
-         VG_(printf)("   ");
-         ppIRStmt(sb_out->stmts[j]);
-         VG_(printf)("\n");
-      }
-      VG_(printf)("\n");
-   }
-
-   /* If this fails, there's been some serious snafu with tmp management,
-      that should be investigated. */
-   tl_assert( VG_(sizeXA)( mce.tmpMap ) == mce.sb->tyenv->types_used );
-   VG_(deleteXA)( mce.tmpMap );
-
-   tl_assert(mce.sb == sb_out);
-   return sb_out;
-}
-
-
-/*------------------------------------------------------------*/
-/*--- Post-tree-build final tidying                        ---*/
-/*------------------------------------------------------------*/
-
-/* This exploits the observation that Memcheck often produces
-   repeated conditional calls of the form
-
-   Dirty G MC_(helperc_value_check0/1/4/8_fail)(UInt otag)
-
-   with the same guard expression G guarding the same helper call.
-   The second and subsequent calls are redundant.  This usually
-   results from instrumentation of guest code containing multiple
-   memory references at different constant offsets from the same base
-   register.  After optimisation of the instrumentation, you get a
-   test for the definedness of the base register for each memory
-   reference, which is kinda pointless.  MC_(final_tidy) therefore
-   looks for such repeated calls and removes all but the first. */
-
-
-/* With some testing on perf/bz2.c, on amd64 and x86, compiled with
-   gcc-5.3.1 -O2, it appears that 16 entries in the array are enough to
-   get almost all the benefits of this transformation whilst causing
-   the slide-back case to just often enough to be verifiably
-   correct.  For posterity, the numbers are:
-
-   bz2-32
-
-   1   4,336 (112,212 -> 1,709,473; ratio 15.2)
-   2   4,336 (112,194 -> 1,669,895; ratio 14.9)
-   3   4,336 (112,194 -> 1,660,713; ratio 14.8)
-   4   4,336 (112,194 -> 1,658,555; ratio 14.8)
-   5   4,336 (112,194 -> 1,655,447; ratio 14.8)
-   6   4,336 (112,194 -> 1,655,101; ratio 14.8)
-   7   4,336 (112,194 -> 1,654,858; ratio 14.7)
-   8   4,336 (112,194 -> 1,654,810; ratio 14.7)
-   10  4,336 (112,194 -> 1,654,621; ratio 14.7)
-   12  4,336 (112,194 -> 1,654,678; ratio 14.7)
-   16  4,336 (112,194 -> 1,654,494; ratio 14.7)
-   32  4,336 (112,194 -> 1,654,602; ratio 14.7)
-   inf 4,336 (112,194 -> 1,654,602; ratio 14.7)
-
-   bz2-64
-
-   1   4,113 (107,329 -> 1,822,171; ratio 17.0)
-   2   4,113 (107,329 -> 1,806,443; ratio 16.8)
-   3   4,113 (107,329 -> 1,803,967; ratio 16.8)
-   4   4,113 (107,329 -> 1,802,785; ratio 16.8)
-   5   4,113 (107,329 -> 1,802,412; ratio 16.8)
-   6   4,113 (107,329 -> 1,802,062; ratio 16.8)
-   7   4,113 (107,329 -> 1,801,976; ratio 16.8)
-   8   4,113 (107,329 -> 1,801,886; ratio 16.8)
-   10  4,113 (107,329 -> 1,801,653; ratio 16.8)
-   12  4,113 (107,329 -> 1,801,526; ratio 16.8)
-   16  4,113 (107,329 -> 1,801,298; ratio 16.8)
-   32  4,113 (107,329 -> 1,800,827; ratio 16.8)
-   inf 4,113 (107,329 -> 1,800,827; ratio 16.8)
-*/
-
-/* Structs for recording which (helper, guard) pairs we have already
-   seen. */
-
-#define N_TIDYING_PAIRS 16
-
-typedef
-   struct { void* entry; IRExpr* guard; }
-   Pair;
-
-typedef
-   struct {
-      Pair pairs[N_TIDYING_PAIRS +1/*for bounds checking*/];
-      UInt pairsUsed;
-   }
-   Pairs;
-
-
-/* Return True if e1 and e2 definitely denote the same value (used to
-   compare guards).  Return False if unknown; False is the safe
-   answer.  Since guest registers and guest memory do not have the
-   SSA property we must return False if any Gets or Loads appear in
-   the expression.  This implicitly assumes that e1 and e2 have the
-   same IR type, which is always true here -- the type is Ity_I1. */
-
-static Bool sameIRValue ( IRExpr* e1, IRExpr* e2 )
-{
-   if (e1->tag != e2->tag)
-      return False;
-   switch (e1->tag) {
-      case Iex_Const:
-         return eqIRConst( e1->Iex.Const.con, e2->Iex.Const.con );
-      case Iex_Binop:
-         return e1->Iex.Binop.op == e2->Iex.Binop.op 
-                && sameIRValue(e1->Iex.Binop.arg1, e2->Iex.Binop.arg1)
-                && sameIRValue(e1->Iex.Binop.arg2, e2->Iex.Binop.arg2);
-      case Iex_Unop:
-         return e1->Iex.Unop.op == e2->Iex.Unop.op 
-                && sameIRValue(e1->Iex.Unop.arg, e2->Iex.Unop.arg);
-      case Iex_RdTmp:
-         return e1->Iex.RdTmp.tmp == e2->Iex.RdTmp.tmp;
-      case Iex_ITE:
-         return sameIRValue( e1->Iex.ITE.cond, e2->Iex.ITE.cond )
-                && sameIRValue( e1->Iex.ITE.iftrue,  e2->Iex.ITE.iftrue )
-                && sameIRValue( e1->Iex.ITE.iffalse, e2->Iex.ITE.iffalse );
-      case Iex_Qop:
-      case Iex_Triop:
-      case Iex_CCall:
-         /* be lazy.  Could define equality for these, but they never
-            appear to be used. */
-         return False;
-      case Iex_Get:
-      case Iex_GetI:
-      case Iex_Load:
-         /* be conservative - these may not give the same value each
-            time */
-         return False;
-      case Iex_Binder:
-         /* should never see this */
-         /* fallthrough */
-      default:
-         VG_(printf)("mc_translate.c: sameIRValue: unhandled: ");
-         ppIRExpr(e1); 
-         VG_(tool_panic)("memcheck:sameIRValue");
-         return False;
-   }
-}
-
-/* See if 'pairs' already has an entry for (entry, guard).  Return
-   True if so.  If not, add an entry. */
-
-static 
-Bool check_or_add ( Pairs* tidyingEnv, IRExpr* guard, void* entry )
-{
-   UInt i, n = tidyingEnv->pairsUsed;
-   tl_assert(n <= N_TIDYING_PAIRS);
-   for (i = 0; i < n; i++) {
-      if (tidyingEnv->pairs[i].entry == entry
-          && sameIRValue(tidyingEnv->pairs[i].guard, guard))
-         return True;
-   }
-   /* (guard, entry) wasn't found in the array.  Add it at the end.
-      If the array is already full, slide the entries one slot
-      backwards.  This means we will lose to ability to detect
-      duplicates from the pair in slot zero, but that happens so
-      rarely that it's unlikely to have much effect on overall code
-      quality.  Also, this strategy loses the check for the oldest
-      tracked exit (memory reference, basically) and so that is (I'd
-      guess) least likely to be re-used after this point. */
-   tl_assert(i == n);
-   if (n == N_TIDYING_PAIRS) {
-      for (i = 1; i < N_TIDYING_PAIRS; i++) {
-         tidyingEnv->pairs[i-1] = tidyingEnv->pairs[i];
-      }
-      tidyingEnv->pairs[N_TIDYING_PAIRS-1].entry = entry;
-      tidyingEnv->pairs[N_TIDYING_PAIRS-1].guard = guard;
-   } else {
-      tl_assert(n < N_TIDYING_PAIRS);
-      tidyingEnv->pairs[n].entry = entry;
-      tidyingEnv->pairs[n].guard = guard;
-      n++;
-      tidyingEnv->pairsUsed = n;
-   }
-   return False;
-}
-
-static Bool is_helperc_value_checkN_fail ( const HChar* name )
-{
-   /* This is expensive because it happens a lot.  We are checking to
-      see whether |name| is one of the following 8 strings:
-
-         MC_(helperc_value_check8_fail_no_o)
-         MC_(helperc_value_check4_fail_no_o)
-         MC_(helperc_value_check0_fail_no_o)
-         MC_(helperc_value_check1_fail_no_o)
-         MC_(helperc_value_check8_fail_w_o)
-         MC_(helperc_value_check0_fail_w_o)
-         MC_(helperc_value_check1_fail_w_o)
-         MC_(helperc_value_check4_fail_w_o)
-
-      To speed it up, check the common prefix just once, rather than
-      all 8 times.
-   */
-   const HChar* prefix = "MC_(helperc_value_check";
-
-   HChar n, p;
-   while (True) {
-      n = *name;
-      p = *prefix;
-      if (p == 0) break; /* ran off the end of the prefix */
-      /* We still have some prefix to use */
-      if (n == 0) return False; /* have prefix, but name ran out */
-      if (n != p) return False; /* have both pfx and name, but no match */
-      name++;
-      prefix++;
-   }
-
-   /* Check the part after the prefix. */
-   tl_assert(*prefix == 0 && *name != 0);
-   return    0==VG_(strcmp)(name, "8_fail_no_o)")
-          || 0==VG_(strcmp)(name, "4_fail_no_o)")
-          || 0==VG_(strcmp)(name, "0_fail_no_o)")
-          || 0==VG_(strcmp)(name, "1_fail_no_o)")
-          || 0==VG_(strcmp)(name, "8_fail_w_o)")
-          || 0==VG_(strcmp)(name, "4_fail_w_o)")
-          || 0==VG_(strcmp)(name, "0_fail_w_o)")
-          || 0==VG_(strcmp)(name, "1_fail_w_o)");
-}
-
-IRSB* MC_(final_tidy) ( IRSB* sb_in )
-{
-   Int       i;
-   IRStmt*   st;
-   IRDirty*  di;
-   IRExpr*   guard;
-   IRCallee* cee;
-   Bool      alreadyPresent;
-   Pairs     pairs;
-
-   pairs.pairsUsed = 0;
-
-   pairs.pairs[N_TIDYING_PAIRS].entry = (void*)0x123;
-   pairs.pairs[N_TIDYING_PAIRS].guard = (IRExpr*)0x456;
-
-   /* Scan forwards through the statements.  Each time a call to one
-      of the relevant helpers is seen, check if we have made a
-      previous call to the same helper using the same guard
-      expression, and if so, delete the call. */
-   for (i = 0; i < sb_in->stmts_used; i++) {
-      st = sb_in->stmts[i];
-      tl_assert(st);
-      if (st->tag != Ist_Dirty)
-         continue;
-      di = st->Ist.Dirty.details;
-      guard = di->guard;
-      tl_assert(guard);
-      if (0) { ppIRExpr(guard); VG_(printf)("\n"); }
-      cee = di->cee;
-      if (!is_helperc_value_checkN_fail( cee->name )) 
-         continue;
-       /* Ok, we have a call to helperc_value_check0/1/4/8_fail with
-          guard 'guard'.  Check if we have already seen a call to this
-          function with the same guard.  If so, delete it.  If not,
-          add it to the set of calls we do know about. */
-      alreadyPresent = check_or_add( &pairs, guard, cee->addr );
-      if (alreadyPresent) {
-         sb_in->stmts[i] = IRStmt_NoOp();
-         if (0) VG_(printf)("XX\n");
-      }
-   }
-
-   tl_assert(pairs.pairs[N_TIDYING_PAIRS].entry == (void*)0x123);
-   tl_assert(pairs.pairs[N_TIDYING_PAIRS].guard == (IRExpr*)0x456);
-
-   return sb_in;
-}
-
-#undef N_TIDYING_PAIRS
-
-
-/*------------------------------------------------------------*/
 /*--- Origin tracking stuff                                ---*/
 /*------------------------------------------------------------*/
 
@@ -7766,6 +7051,263 @@ static void schemeS ( MCEnv* mce, IRStmt* st )
 
 
 /*------------------------------------------------------------*/
+/*--- Post-tree-build final tidying                        ---*/
+/*------------------------------------------------------------*/
+
+/* This exploits the observation that Memcheck often produces
+   repeated conditional calls of the form
+
+   Dirty G MC_(helperc_value_check0/1/4/8_fail)(UInt otag)
+
+   with the same guard expression G guarding the same helper call.
+   The second and subsequent calls are redundant.  This usually
+   results from instrumentation of guest code containing multiple
+   memory references at different constant offsets from the same base
+   register.  After optimisation of the instrumentation, you get a
+   test for the definedness of the base register for each memory
+   reference, which is kinda pointless.  MC_(final_tidy) therefore
+   looks for such repeated calls and removes all but the first. */
+
+
+/* With some testing on perf/bz2.c, on amd64 and x86, compiled with
+   gcc-5.3.1 -O2, it appears that 16 entries in the array are enough to
+   get almost all the benefits of this transformation whilst causing
+   the slide-back case to just often enough to be verifiably
+   correct.  For posterity, the numbers are:
+
+   bz2-32
+
+   1   4,336 (112,212 -> 1,709,473; ratio 15.2)
+   2   4,336 (112,194 -> 1,669,895; ratio 14.9)
+   3   4,336 (112,194 -> 1,660,713; ratio 14.8)
+   4   4,336 (112,194 -> 1,658,555; ratio 14.8)
+   5   4,336 (112,194 -> 1,655,447; ratio 14.8)
+   6   4,336 (112,194 -> 1,655,101; ratio 14.8)
+   7   4,336 (112,194 -> 1,654,858; ratio 14.7)
+   8   4,336 (112,194 -> 1,654,810; ratio 14.7)
+   10  4,336 (112,194 -> 1,654,621; ratio 14.7)
+   12  4,336 (112,194 -> 1,654,678; ratio 14.7)
+   16  4,336 (112,194 -> 1,654,494; ratio 14.7)
+   32  4,336 (112,194 -> 1,654,602; ratio 14.7)
+   inf 4,336 (112,194 -> 1,654,602; ratio 14.7)
+
+   bz2-64
+
+   1   4,113 (107,329 -> 1,822,171; ratio 17.0)
+   2   4,113 (107,329 -> 1,806,443; ratio 16.8)
+   3   4,113 (107,329 -> 1,803,967; ratio 16.8)
+   4   4,113 (107,329 -> 1,802,785; ratio 16.8)
+   5   4,113 (107,329 -> 1,802,412; ratio 16.8)
+   6   4,113 (107,329 -> 1,802,062; ratio 16.8)
+   7   4,113 (107,329 -> 1,801,976; ratio 16.8)
+   8   4,113 (107,329 -> 1,801,886; ratio 16.8)
+   10  4,113 (107,329 -> 1,801,653; ratio 16.8)
+   12  4,113 (107,329 -> 1,801,526; ratio 16.8)
+   16  4,113 (107,329 -> 1,801,298; ratio 16.8)
+   32  4,113 (107,329 -> 1,800,827; ratio 16.8)
+   inf 4,113 (107,329 -> 1,800,827; ratio 16.8)
+*/
+
+/* Structs for recording which (helper, guard) pairs we have already
+   seen. */
+
+#define N_TIDYING_PAIRS 16
+
+typedef
+   struct { void* entry; IRExpr* guard; }
+   Pair;
+
+typedef
+   struct {
+      Pair pairs[N_TIDYING_PAIRS +1/*for bounds checking*/];
+      UInt pairsUsed;
+   }
+   Pairs;
+
+
+/* Return True if e1 and e2 definitely denote the same value (used to
+   compare guards).  Return False if unknown; False is the safe
+   answer.  Since guest registers and guest memory do not have the
+   SSA property we must return False if any Gets or Loads appear in
+   the expression.  This implicitly assumes that e1 and e2 have the
+   same IR type, which is always true here -- the type is Ity_I1. */
+
+static Bool sameIRValue ( IRExpr* e1, IRExpr* e2 )
+{
+   if (e1->tag != e2->tag)
+      return False;
+   switch (e1->tag) {
+      case Iex_Const:
+         return eqIRConst( e1->Iex.Const.con, e2->Iex.Const.con );
+      case Iex_Binop:
+         return e1->Iex.Binop.op == e2->Iex.Binop.op 
+                && sameIRValue(e1->Iex.Binop.arg1, e2->Iex.Binop.arg1)
+                && sameIRValue(e1->Iex.Binop.arg2, e2->Iex.Binop.arg2);
+      case Iex_Unop:
+         return e1->Iex.Unop.op == e2->Iex.Unop.op 
+                && sameIRValue(e1->Iex.Unop.arg, e2->Iex.Unop.arg);
+      case Iex_RdTmp:
+         return e1->Iex.RdTmp.tmp == e2->Iex.RdTmp.tmp;
+      case Iex_ITE:
+         return sameIRValue( e1->Iex.ITE.cond, e2->Iex.ITE.cond )
+                && sameIRValue( e1->Iex.ITE.iftrue,  e2->Iex.ITE.iftrue )
+                && sameIRValue( e1->Iex.ITE.iffalse, e2->Iex.ITE.iffalse );
+      case Iex_Qop:
+      case Iex_Triop:
+      case Iex_CCall:
+         /* be lazy.  Could define equality for these, but they never
+            appear to be used. */
+         return False;
+      case Iex_Get:
+      case Iex_GetI:
+      case Iex_Load:
+         /* be conservative - these may not give the same value each
+            time */
+         return False;
+      case Iex_Binder:
+         /* should never see this */
+         /* fallthrough */
+      default:
+         VG_(printf)("mc_translate.c: sameIRValue: unhandled: ");
+         ppIRExpr(e1); 
+         VG_(tool_panic)("memcheck:sameIRValue");
+         return False;
+   }
+}
+
+/* See if 'pairs' already has an entry for (entry, guard).  Return
+   True if so.  If not, add an entry. */
+
+static 
+Bool check_or_add ( Pairs* tidyingEnv, IRExpr* guard, void* entry )
+{
+   UInt i, n = tidyingEnv->pairsUsed;
+   tl_assert(n <= N_TIDYING_PAIRS);
+   for (i = 0; i < n; i++) {
+      if (tidyingEnv->pairs[i].entry == entry
+          && sameIRValue(tidyingEnv->pairs[i].guard, guard))
+         return True;
+   }
+   /* (guard, entry) wasn't found in the array.  Add it at the end.
+      If the array is already full, slide the entries one slot
+      backwards.  This means we will lose to ability to detect
+      duplicates from the pair in slot zero, but that happens so
+      rarely that it's unlikely to have much effect on overall code
+      quality.  Also, this strategy loses the check for the oldest
+      tracked exit (memory reference, basically) and so that is (I'd
+      guess) least likely to be re-used after this point. */
+   tl_assert(i == n);
+   if (n == N_TIDYING_PAIRS) {
+      for (i = 1; i < N_TIDYING_PAIRS; i++) {
+         tidyingEnv->pairs[i-1] = tidyingEnv->pairs[i];
+      }
+      tidyingEnv->pairs[N_TIDYING_PAIRS-1].entry = entry;
+      tidyingEnv->pairs[N_TIDYING_PAIRS-1].guard = guard;
+   } else {
+      tl_assert(n < N_TIDYING_PAIRS);
+      tidyingEnv->pairs[n].entry = entry;
+      tidyingEnv->pairs[n].guard = guard;
+      n++;
+      tidyingEnv->pairsUsed = n;
+   }
+   return False;
+}
+
+static Bool is_helperc_value_checkN_fail ( const HChar* name )
+{
+   /* This is expensive because it happens a lot.  We are checking to
+      see whether |name| is one of the following 8 strings:
+
+         MC_(helperc_value_check8_fail_no_o)
+         MC_(helperc_value_check4_fail_no_o)
+         MC_(helperc_value_check0_fail_no_o)
+         MC_(helperc_value_check1_fail_no_o)
+         MC_(helperc_value_check8_fail_w_o)
+         MC_(helperc_value_check0_fail_w_o)
+         MC_(helperc_value_check1_fail_w_o)
+         MC_(helperc_value_check4_fail_w_o)
+
+      To speed it up, check the common prefix just once, rather than
+      all 8 times.
+   */
+   const HChar* prefix = "MC_(helperc_value_check";
+
+   HChar n, p;
+   while (True) {
+      n = *name;
+      p = *prefix;
+      if (p == 0) break; /* ran off the end of the prefix */
+      /* We still have some prefix to use */
+      if (n == 0) return False; /* have prefix, but name ran out */
+      if (n != p) return False; /* have both pfx and name, but no match */
+      name++;
+      prefix++;
+   }
+
+   /* Check the part after the prefix. */
+   tl_assert(*prefix == 0 && *name != 0);
+   return    0==VG_(strcmp)(name, "8_fail_no_o)")
+          || 0==VG_(strcmp)(name, "4_fail_no_o)")
+          || 0==VG_(strcmp)(name, "0_fail_no_o)")
+          || 0==VG_(strcmp)(name, "1_fail_no_o)")
+          || 0==VG_(strcmp)(name, "8_fail_w_o)")
+          || 0==VG_(strcmp)(name, "4_fail_w_o)")
+          || 0==VG_(strcmp)(name, "0_fail_w_o)")
+          || 0==VG_(strcmp)(name, "1_fail_w_o)");
+}
+
+IRSB* MC_(final_tidy) ( IRSB* sb_in )
+{
+   Int       i;
+   IRStmt*   st;
+   IRDirty*  di;
+   IRExpr*   guard;
+   IRCallee* cee;
+   Bool      alreadyPresent;
+   Pairs     pairs;
+
+   pairs.pairsUsed = 0;
+
+   pairs.pairs[N_TIDYING_PAIRS].entry = (void*)0x123;
+   pairs.pairs[N_TIDYING_PAIRS].guard = (IRExpr*)0x456;
+
+   /* Scan forwards through the statements.  Each time a call to one
+      of the relevant helpers is seen, check if we have made a
+      previous call to the same helper using the same guard
+      expression, and if so, delete the call. */
+   for (i = 0; i < sb_in->stmts_used; i++) {
+      st = sb_in->stmts[i];
+      tl_assert(st);
+      if (st->tag != Ist_Dirty)
+         continue;
+      di = st->Ist.Dirty.details;
+      guard = di->guard;
+      tl_assert(guard);
+      if (0) { ppIRExpr(guard); VG_(printf)("\n"); }
+      cee = di->cee;
+      if (!is_helperc_value_checkN_fail( cee->name )) 
+         continue;
+       /* Ok, we have a call to helperc_value_check0/1/4/8_fail with
+          guard 'guard'.  Check if we have already seen a call to this
+          function with the same guard.  If so, delete it.  If not,
+          add it to the set of calls we do know about. */
+      alreadyPresent = check_or_add( &pairs, guard, cee->addr );
+      if (alreadyPresent) {
+         sb_in->stmts[i] = IRStmt_NoOp();
+         if (0) VG_(printf)("XX\n");
+      }
+   }
+
+   tl_assert(pairs.pairs[N_TIDYING_PAIRS].entry == (void*)0x123);
+   tl_assert(pairs.pairs[N_TIDYING_PAIRS].guard == (IRExpr*)0x456);
+
+   return sb_in;
+}
+
+#undef N_TIDYING_PAIRS
+
+
+/*------------------------------------------------------------*/
 /*--- Startup assertion checking                           ---*/
 /*------------------------------------------------------------*/
 
@@ -7818,6 +7360,465 @@ void MC_(do_instrumentation_startup_checks)( void )
    CHECK(False, "VG_(unknown_SP_update_w_ECU)");
 
 #  undef CHECK
+}
+
+
+/*------------------------------------------------------------*/
+/*--- Memcheck main                                        ---*/
+/*------------------------------------------------------------*/
+
+static Bool isBogusAtom ( IRAtom* at )
+{
+   ULong n = 0;
+   IRConst* con;
+   tl_assert(isIRAtom(at));
+   if (at->tag == Iex_RdTmp)
+      return False;
+   tl_assert(at->tag == Iex_Const);
+   con = at->Iex.Const.con;
+   switch (con->tag) {
+      case Ico_U1:   return False;
+      case Ico_U8:   n = (ULong)con->Ico.U8; break;
+      case Ico_U16:  n = (ULong)con->Ico.U16; break;
+      case Ico_U32:  n = (ULong)con->Ico.U32; break;
+      case Ico_U64:  n = (ULong)con->Ico.U64; break;
+      case Ico_F32:  return False;
+      case Ico_F64:  return False;
+      case Ico_F32i: return False;
+      case Ico_F64i: return False;
+      case Ico_V128: return False;
+      case Ico_V256: return False;
+      default: ppIRExpr(at); tl_assert(0);
+   }
+   /* VG_(printf)("%llx\n", n); */
+   return (/*32*/    n == 0xFEFEFEFFULL
+           /*32*/ || n == 0x80808080ULL
+           /*32*/ || n == 0x7F7F7F7FULL
+           /*32*/ || n == 0x7EFEFEFFULL
+           /*32*/ || n == 0x81010100ULL
+           /*64*/ || n == 0xFFFFFFFFFEFEFEFFULL
+           /*64*/ || n == 0xFEFEFEFEFEFEFEFFULL
+           /*64*/ || n == 0x0000000000008080ULL
+           /*64*/ || n == 0x8080808080808080ULL
+           /*64*/ || n == 0x0101010101010101ULL
+          );
+}
+
+static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
+{
+   Int      i;
+   IRExpr*  e;
+   IRDirty* d;
+   IRCAS*   cas;
+   switch (st->tag) {
+      case Ist_WrTmp:
+         e = st->Ist.WrTmp.data;
+         switch (e->tag) {
+            case Iex_Get:
+            case Iex_RdTmp:
+               return False;
+            case Iex_Const:
+               return isBogusAtom(e);
+            case Iex_Unop: 
+               return isBogusAtom(e->Iex.Unop.arg)
+                      || e->Iex.Unop.op == Iop_GetMSBs8x16;
+            case Iex_GetI:
+               return isBogusAtom(e->Iex.GetI.ix);
+            case Iex_Binop: 
+               return isBogusAtom(e->Iex.Binop.arg1)
+                      || isBogusAtom(e->Iex.Binop.arg2);
+            case Iex_Triop: 
+               return isBogusAtom(e->Iex.Triop.details->arg1)
+                      || isBogusAtom(e->Iex.Triop.details->arg2)
+                      || isBogusAtom(e->Iex.Triop.details->arg3);
+            case Iex_Qop: 
+               return isBogusAtom(e->Iex.Qop.details->arg1)
+                      || isBogusAtom(e->Iex.Qop.details->arg2)
+                      || isBogusAtom(e->Iex.Qop.details->arg3)
+                      || isBogusAtom(e->Iex.Qop.details->arg4);
+            case Iex_ITE:
+               return isBogusAtom(e->Iex.ITE.cond)
+                      || isBogusAtom(e->Iex.ITE.iftrue)
+                      || isBogusAtom(e->Iex.ITE.iffalse);
+            case Iex_Load: 
+               return isBogusAtom(e->Iex.Load.addr);
+            case Iex_CCall:
+               for (i = 0; e->Iex.CCall.args[i]; i++)
+                  if (isBogusAtom(e->Iex.CCall.args[i]))
+                     return True;
+               return False;
+            default: 
+               goto unhandled;
+         }
+      case Ist_Dirty:
+         d = st->Ist.Dirty.details;
+         for (i = 0; d->args[i]; i++) {
+            IRAtom* atom = d->args[i];
+            if (LIKELY(!is_IRExpr_VECRET_or_GSPTR(atom))) {
+               if (isBogusAtom(atom))
+                  return True;
+            }
+         }
+         if (isBogusAtom(d->guard))
+            return True;
+         if (d->mAddr && isBogusAtom(d->mAddr))
+            return True;
+         return False;
+      case Ist_Put:
+         return isBogusAtom(st->Ist.Put.data);
+      case Ist_PutI:
+         return isBogusAtom(st->Ist.PutI.details->ix) 
+                || isBogusAtom(st->Ist.PutI.details->data);
+      case Ist_Store:
+         return isBogusAtom(st->Ist.Store.addr) 
+                || isBogusAtom(st->Ist.Store.data);
+      case Ist_StoreG: {
+         IRStoreG* sg = st->Ist.StoreG.details;
+         return isBogusAtom(sg->addr) || isBogusAtom(sg->data)
+                || isBogusAtom(sg->guard);
+      }
+      case Ist_LoadG: {
+         IRLoadG* lg = st->Ist.LoadG.details;
+         return isBogusAtom(lg->addr) || isBogusAtom(lg->alt)
+                || isBogusAtom(lg->guard);
+      }
+      case Ist_Exit:
+         return isBogusAtom(st->Ist.Exit.guard);
+      case Ist_AbiHint:
+         return isBogusAtom(st->Ist.AbiHint.base)
+                || isBogusAtom(st->Ist.AbiHint.nia);
+      case Ist_NoOp:
+      case Ist_IMark:
+      case Ist_MBE:
+         return False;
+      case Ist_CAS:
+         cas = st->Ist.CAS.details;
+         return isBogusAtom(cas->addr)
+                || (cas->expdHi ? isBogusAtom(cas->expdHi) : False)
+                || isBogusAtom(cas->expdLo)
+                || (cas->dataHi ? isBogusAtom(cas->dataHi) : False)
+                || isBogusAtom(cas->dataLo);
+      case Ist_LLSC:
+         return isBogusAtom(st->Ist.LLSC.addr)
+                || (st->Ist.LLSC.storedata
+                       ? isBogusAtom(st->Ist.LLSC.storedata)
+                       : False);
+      default: 
+      unhandled:
+         ppIRStmt(st);
+         VG_(tool_panic)("hasBogusLiterals");
+   }
+}
+
+
+IRSB* MC_(instrument) ( VgCallbackClosure* closure,
+                        IRSB* sb_in, 
+                        const VexGuestLayout* layout, 
+                        const VexGuestExtents* vge,
+                        const VexArchInfo* archinfo_host,
+                        IRType gWordTy, IRType hWordTy )
+{
+   Bool    verboze = 0||False;
+   Int     i, j, first_stmt;
+   IRStmt* st;
+   MCEnv   mce;
+   IRSB*   sb_out;
+
+   if (gWordTy != hWordTy) {
+      /* We don't currently support this case. */
+      VG_(tool_panic)("host/guest word size mismatch");
+   }
+
+   /* Check we're not completely nuts */
+   tl_assert(sizeof(UWord)  == sizeof(void*));
+   tl_assert(sizeof(Word)   == sizeof(void*));
+   tl_assert(sizeof(Addr)   == sizeof(void*));
+   tl_assert(sizeof(ULong)  == 8);
+   tl_assert(sizeof(Long)   == 8);
+   tl_assert(sizeof(UInt)   == 4);
+   tl_assert(sizeof(Int)    == 4);
+
+   tl_assert(MC_(clo_mc_level) >= 1 && MC_(clo_mc_level) <= 3);
+
+   /* Set up SB */
+   sb_out = deepCopyIRSBExceptStmts(sb_in);
+
+   /* Set up the running environment.  Both .sb and .tmpMap are
+      modified as we go along.  Note that tmps are added to both
+      .sb->tyenv and .tmpMap together, so the valid index-set for
+      those two arrays should always be identical. */
+   VG_(memset)(&mce, 0, sizeof(mce));
+   mce.sb             = sb_out;
+   mce.trace          = verboze;
+   mce.layout         = layout;
+   mce.hWordTy        = hWordTy;
+   mce.bogusLiterals  = False;
+
+   /* Do expensive interpretation for Iop_Add32 and Iop_Add64 on
+      Darwin.  10.7 is mostly built with LLVM, which uses these for
+      bitfield inserts, and we get a lot of false errors if the cheap
+      interpretation is used, alas.  Could solve this much better if
+      we knew which of such adds came from x86/amd64 LEA instructions,
+      since these are the only ones really needing the expensive
+      interpretation, but that would require some way to tag them in
+      the _toIR.c front ends, which is a lot of faffing around.  So
+      for now just use the slow and blunt-instrument solution. */
+   mce.useLLVMworkarounds = False;
+#  if defined(VGO_darwin)
+   mce.useLLVMworkarounds = True;
+#  endif
+
+   mce.tmpMap = VG_(newXA)( VG_(malloc), "mc.MC_(instrument).1", VG_(free),
+                            sizeof(TempMapEnt));
+   VG_(hintSizeXA) (mce.tmpMap, sb_in->tyenv->types_used);
+   for (i = 0; i < sb_in->tyenv->types_used; i++) {
+      TempMapEnt ent;
+      ent.kind    = Orig;
+      ent.shadowV = IRTemp_INVALID;
+      ent.shadowB = IRTemp_INVALID;
+      VG_(addToXA)( mce.tmpMap, &ent );
+   }
+   tl_assert( VG_(sizeXA)( mce.tmpMap ) == sb_in->tyenv->types_used );
+
+   if (MC_(clo_expensive_definedness_checks)) {
+      /* For expensive definedness checking skip looking for bogus
+         literals. */
+      mce.bogusLiterals = True;
+   } else {
+      /* Make a preliminary inspection of the statements, to see if there
+         are any dodgy-looking literals.  If there are, we generate
+         extra-detailed (hence extra-expensive) instrumentation in
+         places.  Scan the whole bb even if dodgyness is found earlier,
+         so that the flatness assertion is applied to all stmts. */
+      Bool bogus = False;
+
+      for (i = 0; i < sb_in->stmts_used; i++) {
+         st = sb_in->stmts[i];
+         tl_assert(st);
+         tl_assert(isFlatIRStmt(st));
+
+         if (!bogus) {
+            bogus = checkForBogusLiterals(st);
+            if (0 && bogus) {
+               VG_(printf)("bogus: ");
+               ppIRStmt(st);
+               VG_(printf)("\n");
+            }
+            if (bogus) break;
+         }
+      }
+      mce.bogusLiterals = bogus;
+   }
+
+   /* Copy verbatim any IR preamble preceding the first IMark */
+
+   tl_assert(mce.sb == sb_out);
+   tl_assert(mce.sb != sb_in);
+
+   i = 0;
+   while (i < sb_in->stmts_used && sb_in->stmts[i]->tag != Ist_IMark) {
+
+      st = sb_in->stmts[i];
+      tl_assert(st);
+      tl_assert(isFlatIRStmt(st));
+
+      stmt( 'C', &mce, sb_in->stmts[i] );
+      i++;
+   }
+
+   /* Nasty problem.  IR optimisation of the pre-instrumented IR may
+      cause the IR following the preamble to contain references to IR
+      temporaries defined in the preamble.  Because the preamble isn't
+      instrumented, these temporaries don't have any shadows.
+      Nevertheless uses of them following the preamble will cause
+      memcheck to generate references to their shadows.  End effect is
+      to cause IR sanity check failures, due to references to
+      non-existent shadows.  This is only evident for the complex
+      preambles used for function wrapping on TOC-afflicted platforms
+      (ppc64-linux).
+
+      The following loop therefore scans the preamble looking for
+      assignments to temporaries.  For each one found it creates an
+      assignment to the corresponding (V) shadow temp, marking it as
+      'defined'.  This is the same resulting IR as if the main
+      instrumentation loop before had been applied to the statement
+      'tmp = CONSTANT'.
+
+      Similarly, if origin tracking is enabled, we must generate an
+      assignment for the corresponding origin (B) shadow, claiming
+      no-origin, as appropriate for a defined value.
+   */
+   for (j = 0; j < i; j++) {
+      if (sb_in->stmts[j]->tag == Ist_WrTmp) {
+         /* findShadowTmpV checks its arg is an original tmp;
+            no need to assert that here. */
+         IRTemp tmp_o = sb_in->stmts[j]->Ist.WrTmp.tmp;
+         IRTemp tmp_v = findShadowTmpV(&mce, tmp_o);
+         IRType ty_v  = typeOfIRTemp(sb_out->tyenv, tmp_v);
+         assign( 'V', &mce, tmp_v, definedOfType( ty_v ) );
+         if (MC_(clo_mc_level) == 3) {
+            IRTemp tmp_b = findShadowTmpB(&mce, tmp_o);
+            tl_assert(typeOfIRTemp(sb_out->tyenv, tmp_b) == Ity_I32);
+            assign( 'B', &mce, tmp_b, mkU32(0)/* UNKNOWN ORIGIN */);
+         }
+         if (0) {
+            VG_(printf)("create shadow tmp(s) for preamble tmp [%d] ty ", j);
+            ppIRType( ty_v );
+            VG_(printf)("\n");
+         }
+      }
+   }
+
+   /* Iterate over the remaining stmts to generate instrumentation. */
+
+   tl_assert(sb_in->stmts_used > 0);
+   tl_assert(i >= 0);
+   tl_assert(i < sb_in->stmts_used);
+   tl_assert(sb_in->stmts[i]->tag == Ist_IMark);
+
+   for (/* use current i*/; i < sb_in->stmts_used; i++) {
+
+      st = sb_in->stmts[i];
+      first_stmt = sb_out->stmts_used;
+
+      if (verboze) {
+         VG_(printf)("\n");
+         ppIRStmt(st);
+         VG_(printf)("\n");
+      }
+
+      if (MC_(clo_mc_level) == 3) {
+         /* See comments on case Ist_CAS below. */
+         if (st->tag != Ist_CAS) 
+            schemeS( &mce, st );
+      }
+
+      /* Generate instrumentation code for each stmt ... */
+
+      switch (st->tag) {
+
+         case Ist_WrTmp:
+            assign( 'V', &mce, findShadowTmpV(&mce, st->Ist.WrTmp.tmp), 
+                               expr2vbits( &mce, st->Ist.WrTmp.data) );
+            break;
+
+         case Ist_Put:
+            do_shadow_PUT( &mce, 
+                           st->Ist.Put.offset,
+                           st->Ist.Put.data,
+                           NULL /* shadow atom */, NULL /* guard */ );
+            break;
+
+         case Ist_PutI:
+            do_shadow_PUTI( &mce, st->Ist.PutI.details);
+            break;
+
+         case Ist_Store:
+            do_shadow_Store( &mce, st->Ist.Store.end,
+                                   st->Ist.Store.addr, 0/* addr bias */,
+                                   st->Ist.Store.data,
+                                   NULL /* shadow data */,
+                                   NULL/*guard*/ );
+            break;
+
+         case Ist_StoreG:
+            do_shadow_StoreG( &mce, st->Ist.StoreG.details );
+            break;
+
+         case Ist_LoadG:
+            do_shadow_LoadG( &mce, st->Ist.LoadG.details );
+            break;
+
+         case Ist_Exit:
+            complainIfUndefined( &mce, st->Ist.Exit.guard, NULL );
+            break;
+
+         case Ist_IMark:
+            break;
+
+         case Ist_NoOp:
+         case Ist_MBE:
+            break;
+
+         case Ist_Dirty:
+            do_shadow_Dirty( &mce, st->Ist.Dirty.details );
+            break;
+
+         case Ist_AbiHint:
+            do_AbiHint( &mce, st->Ist.AbiHint.base,
+                              st->Ist.AbiHint.len,
+                              st->Ist.AbiHint.nia );
+            break;
+
+         case Ist_CAS:
+            do_shadow_CAS( &mce, st->Ist.CAS.details );
+            /* Note, do_shadow_CAS copies the CAS itself to the output
+               block, because it needs to add instrumentation both
+               before and after it.  Hence skip the copy below.  Also
+               skip the origin-tracking stuff (call to schemeS) above,
+               since that's all tangled up with it too; do_shadow_CAS
+               does it all. */
+            break;
+
+         case Ist_LLSC:
+            do_shadow_LLSC( &mce,
+                            st->Ist.LLSC.end,
+                            st->Ist.LLSC.result,
+                            st->Ist.LLSC.addr,
+                            st->Ist.LLSC.storedata );
+            break;
+
+         default:
+            VG_(printf)("\n");
+            ppIRStmt(st);
+            VG_(printf)("\n");
+            VG_(tool_panic)("memcheck: unhandled IRStmt");
+
+      } /* switch (st->tag) */
+
+      if (0 && verboze) {
+         for (j = first_stmt; j < sb_out->stmts_used; j++) {
+            VG_(printf)("   ");
+            ppIRStmt(sb_out->stmts[j]);
+            VG_(printf)("\n");
+         }
+         VG_(printf)("\n");
+      }
+
+      /* ... and finally copy the stmt itself to the output.  Except,
+         skip the copy of IRCASs; see comments on case Ist_CAS
+         above. */
+      if (st->tag != Ist_CAS)
+         stmt('C', &mce, st);
+   }
+
+   /* Now we need to complain if the jump target is undefined. */
+   first_stmt = sb_out->stmts_used;
+
+   if (verboze) {
+      VG_(printf)("sb_in->next = ");
+      ppIRExpr(sb_in->next);
+      VG_(printf)("\n\n");
+   }
+
+   complainIfUndefined( &mce, sb_in->next, NULL );
+
+   if (0 && verboze) {
+      for (j = first_stmt; j < sb_out->stmts_used; j++) {
+         VG_(printf)("   ");
+         ppIRStmt(sb_out->stmts[j]);
+         VG_(printf)("\n");
+      }
+      VG_(printf)("\n");
+   }
+
+   /* If this fails, there's been some serious snafu with tmp management,
+      that should be investigated. */
+   tl_assert( VG_(sizeXA)( mce.tmpMap ) == mce.sb->tyenv->types_used );
+   VG_(deleteXA)( mce.tmpMap );
+
+   tl_assert(mce.sb == sb_out);
+   return sb_out;
 }
 
 

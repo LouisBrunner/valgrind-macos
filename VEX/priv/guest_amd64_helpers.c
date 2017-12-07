@@ -1744,6 +1744,26 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
                            mkU32(0)));
       }
 
+      if (isU64(cc_op, AMD64G_CC_OP_SHRL) && isU64(cond, AMD64CondS)) {
+         /* SHRL/SARL, then S --> (ULong)result[31] */
+         return binop(Iop_And64,
+                      binop(Iop_Shr64, cc_dep1, mkU8(31)),
+                      mkU64(1));
+      }
+      // The following looks correct to me, but never seems to happen because
+      // the front end converts jns to js by switching the fallthrough vs
+      // taken addresses.  See jcc_01().  But then why do other conditions
+      // considered by this function show up in both variants (xx and Nxx) ?
+      //if (isU64(cc_op, AMD64G_CC_OP_SHRL) && isU64(cond, AMD64CondNS)) {
+      //   /* SHRL/SARL, then NS --> (ULong) ~ result[31] */
+      //   vassert(0);
+      //   return binop(Iop_Xor64,
+      //                binop(Iop_And64,
+      //                      binop(Iop_Shr64, cc_dep1, mkU8(31)),
+      //                      mkU64(1)),
+      //                mkU64(1));
+      //}
+
       /*---------------- COPY ----------------*/
       /* This can happen, as a result of amd64 FP compares: "comisd ... ;
          jbe" for example. */

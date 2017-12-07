@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-
-int gcc_cant_inline_me ( int );
-
+int foo, bar;
+#define CBAR do { __asm__ __volatile__("":::"cc","memory"); } while (0)
+int* gcc_cant_inline_me ( int );
 int main ()
 {
   int *x, y;
@@ -11,18 +11,18 @@ int main ()
 
   y = *x == 173;
 
-  if (gcc_cant_inline_me(y)) { } 
+  if (gcc_cant_inline_me(y) == &foo) { CBAR; } else { CBAR; }
 
   return 0;
 }
 
 /* must be AFTER main */
-int gcc_cant_inline_me ( int n )
+__attribute__((noinline)) int* gcc_cant_inline_me ( int n )
 {
-   if (n == 42) 
-      return 1; /* forty-two, dudes! */
+   if (n == 1)
+      return &foo; /* foo! */
    else
-      return 0; /* some other number, dudes! */
+      return &bar; /* bar! */
 }
 
 

@@ -1818,6 +1818,13 @@ isC64(const IRExpr *expr)
    return expr->tag == Iex_Const && expr->Iex.Const.con->tag == Ico_U64;
 }
 
+static inline Bool
+isC64_exactly(const IRExpr *expr, ULong n)
+{
+   return expr->tag == Iex_Const && expr->Iex.Const.con->tag == Ico_U64
+          && expr->Iex.Const.con->Ico.U64 == n;
+}
+
 
 /* The returned expression is NULL if no specialization was found. In that
    case the helper function will be called. Otherwise, the expression has
@@ -1895,9 +1902,25 @@ guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
          }
          /* cc_dep1 > cc_dep2  ---->  cc_dep2 < cc_dep1 */
          if (cond == 2 || cond == 2 + 1) {
+            /* If we ever need the counterpart of the bug387712 fix just
+               below, then here is the place.  We'll need to give an
+               alternative expression for the case "cc_dep2 <s 0".  From a
+               bit of simple testing, I've yet to see any such cases,
+               however. */
             return unop(Iop_1Uto32, binop(Iop_CmpLT64S, cc_dep2, cc_dep1));
          }
          if (cond == 8 + 2 || cond == 8 + 2 + 1) {
+            if (isC64_exactly(cc_dep2, 0)) {
+               /*     0    <=signed dep1
+                  --> dep1 >=signed 0
+                  --> m.s.bit of dep1 == 0 */
+               /* See bug 387712.  This is an old trick from gcc to extract
+                  the most significant bit of a word. */
+               return unop(Iop_64to32,
+                           binop(Iop_Xor64,
+                                 binop(Iop_Shr64, cc_dep1, mkU8(63)),
+                                 mkU64(1)));
+            }
             return unop(Iop_1Uto32, binop(Iop_CmpLE64S, cc_dep2, cc_dep1));
          }
          if (cond == 8 + 4 + 2 || cond == 8 + 4 + 2 + 1) {

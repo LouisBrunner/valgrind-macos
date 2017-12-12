@@ -718,9 +718,19 @@ extern Int MC_(clo_mc_level);
 /* Should we show mismatched frees?  Default: YES */
 extern Bool MC_(clo_show_mismatched_frees);
 
-/* Should we use expensive definedness checking for add/sub and compare
-   operations? Default: NO */
-extern Bool MC_(clo_expensive_definedness_checks);
+/* Indicates the level of detail for Vbit tracking through integer add,
+   subtract, and some integer comparison operations. */
+typedef
+   enum {
+      EdcNO = 1000,  // All operations instrumented cheaply
+      EdcAUTO,       // Chosen dynamically by analysing the block
+      EdcYES         // All operations instrumented expensively
+   }
+   ExpensiveDefinednessChecks;
+
+/* Level of expense in definedness checking for add/sub and compare
+   operations.  Default: EdcAUTO */
+extern ExpensiveDefinednessChecks MC_(clo_expensive_definedness_checks);
 
 /* Do we have a range of stack offsets to ignore?  Default: NO */
 extern Bool MC_(clo_ignore_range_below_sp);

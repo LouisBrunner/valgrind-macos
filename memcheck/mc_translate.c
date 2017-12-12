@@ -138,8 +138,14 @@
 
 struct _MCEnv;
 
+// See below for comments explaining what this is for.
+typedef
+   enum __attribute__((packed)) { HuUnU=0, HuPCa=1, HuOth=2 }
+   HowUsed;
+
 static IRType  shadowTypeV ( IRType ty );
-static IRExpr* expr2vbits ( struct _MCEnv* mce, IRExpr* e );
+static IRExpr* expr2vbits ( struct _MCEnv* mce, IRExpr* e,
+                            HowUsed hu/*use HuOth if unknown*/ );
 static IRTemp  findShadowTmpB ( struct _MCEnv* mce, IRTemp orig );
 
 static IRExpr *i128_const_zero(void);
@@ -148,6 +154,89 @@ static IRExpr *i128_const_zero(void);
 /*------------------------------------------------------------*/
 /*--- Memcheck running state, and tmp management.          ---*/
 /*------------------------------------------------------------*/
+
+/* For a few (maybe 1%) IROps, we have both a cheaper, less exact vbit
+   propagation scheme, and a more expensive, more precise vbit propagation
+   scheme.  This enum describes, for such an IROp, which scheme to use. */
+typedef
+   enum {
+      // Use the cheaper, less-exact variant.
+      DLcheap=4,
+      // Choose between cheap and expensive based on analysis of the block
+      // to be instrumented.  Note that the choice may be done on a
+      // per-instance basis of the IROp that this DetailLevel describes.
+      DLauto,
+      // Use the more expensive, more-exact variant.
+      DLexpensive
+   }
+   DetailLevel;
+
+
+/* A readonly part of the running state.  For IROps that have both a
+   less-exact and more-exact interpretation, records which interpretation is
+   to be used.  */
+typedef
+   struct {
+      // For Add32/64 and Sub32/64, all 3 settings are allowed.  For the
+      // DLauto case, a per-instance decision is to be made by inspecting
+      // the associated tmp's entry in MCEnv.tmpHowUsed.
+      DetailLevel dl_Add32;
+      DetailLevel dl_Add64;
+      DetailLevel dl_Sub32;
+      DetailLevel dl_Sub64;
+      // For Cmp{EQ,NE}{64,32,16,8}, only DLcheap and DLexpensive are
+      // allowed.
+      DetailLevel dl_CmpEQ64_CmpNE64;
+      DetailLevel dl_CmpEQ32_CmpNE32;
+      DetailLevel dl_CmpEQ16_CmpNE16;
+      DetailLevel dl_CmpEQ8_CmpNE8;
+   }
+   DetailLevelByOp;
+
+static void DetailLevelByOp__set_all ( /*OUT*/DetailLevelByOp* dlbo,
+                                       DetailLevel dl )
+{
+   dlbo->dl_Add32           = dl;
+   dlbo->dl_Add64           = dl;
+   dlbo->dl_Sub32           = dl;
+   dlbo->dl_Sub64           = dl;
+   dlbo->dl_CmpEQ64_CmpNE64 = dl;
+   dlbo->dl_CmpEQ32_CmpNE32 = dl;
+   dlbo->dl_CmpEQ16_CmpNE16 = dl;
+   dlbo->dl_CmpEQ8_CmpNE8   = dl;
+}
+
+static void DetailLevelByOp__check_sanity ( const DetailLevelByOp* dlbo )
+{
+   tl_assert(dlbo->dl_Add32 >= DLcheap && dlbo->dl_Add32 <= DLexpensive);
+   tl_assert(dlbo->dl_Add64 >= DLcheap && dlbo->dl_Add64 <= DLexpensive);
+   tl_assert(dlbo->dl_Sub32 >= DLcheap && dlbo->dl_Sub32 <= DLexpensive);
+   tl_assert(dlbo->dl_Sub64 >= DLcheap && dlbo->dl_Sub64 <= DLexpensive);
+   tl_assert(dlbo->dl_CmpEQ64_CmpNE64 == DLcheap
+             || dlbo->dl_CmpEQ64_CmpNE64 == DLexpensive);
+   tl_assert(dlbo->dl_CmpEQ32_CmpNE32 == DLcheap
+             || dlbo->dl_CmpEQ32_CmpNE32 == DLexpensive);
+   tl_assert(dlbo->dl_CmpEQ16_CmpNE16 == DLcheap
+             || dlbo->dl_CmpEQ16_CmpNE16 == DLexpensive);
+   tl_assert(dlbo->dl_CmpEQ8_CmpNE8 == DLcheap
+             || dlbo->dl_CmpEQ8_CmpNE8 == DLexpensive);
+}
+
+static UInt DetailLevelByOp__count ( const DetailLevelByOp* dlbo,
+                                     DetailLevel dl )
+{
+   UInt n = 0;
+   n += (dlbo->dl_Add32 == dl            ? 1 : 0);
+   n += (dlbo->dl_Add64 == dl            ? 1 : 0);
+   n += (dlbo->dl_Sub32 == dl            ? 1 : 0);
+   n += (dlbo->dl_Sub64 == dl            ? 1 : 0);
+   n += (dlbo->dl_CmpEQ64_CmpNE64 == dl  ? 1 : 0);
+   n += (dlbo->dl_CmpEQ32_CmpNE32 == dl  ? 1 : 0);
+   n += (dlbo->dl_CmpEQ16_CmpNE16 == dl  ? 1 : 0);
+   n += (dlbo->dl_CmpEQ8_CmpNE8 == dl    ? 1 : 0);
+   return n;
+}
+
 
 /* Carries info about a particular tmp.  The tmp's number is not
    recorded, as this is implied by (equal to) its index in the tmpMap
@@ -176,6 +265,32 @@ typedef
    TempMapEnt;
 
 
+/* A |HowUsed| value carries analysis results about how values are used,
+   pertaining to whether we need to instrument integer adds expensively or
+   not.  The running state carries a (readonly) mapping from original tmp to
+   a HowUsed value for it.  A usage value can be one of three values,
+   forming a 3-point chain lattice.
+
+      HuOth   ("Other") used in some arbitrary way
+       |
+      HuPCa   ("PCast") used *only* in effectively a PCast, in which all
+       |      we care about is the all-defined vs not-all-defined distinction
+       |
+      HuUnU   ("Unused") not used at all.
+
+   The "safe" (don't-know) end of the lattice is "HuOth".  See comments
+   below in |preInstrumentationAnalysis| for further details.
+*/
+/* DECLARED ABOVE:
+typedef
+   enum __attribute__((packed)) { HuUnU=0, HuPCa=1, HuOth=2 }
+   HowUsed;
+*/
+
+// Not actually necessary, but we don't want to waste D1 space.
+STATIC_ASSERT(sizeof(HowUsed) == 1);
+
+
 /* Carries around state during memcheck instrumentation. */
 typedef
    struct _MCEnv {
@@ -200,15 +315,14 @@ typedef
          instrumentation process. */
       XArray* /* of TempMapEnt */ tmpMap;
 
-      /* MODIFIED: indicates whether "bogus" literals have so far been
-         found.  Starts off False, and may change to True. */
-      Bool bogusLiterals;
+      /* READONLY: contains details of which ops should be expensively
+         instrumented. */
+      DetailLevelByOp dlbo;
 
-      /* READONLY: indicates whether we should use expensive
-         interpretations of integer adds, since unfortunately LLVM
-         uses them to do ORs in some circumstances.  Defaulted to True
-         on MacOS and False everywhere else. */
-      Bool useLLVMworkarounds;
+      /* READONLY: for each original tmp, how the tmp is used.  This is
+         computed by |preInstrumentationAnalysis|.  Valid indices are
+         0 .. #temps_in_sb-1 (same as for tmpMap). */
+      HowUsed* tmpHowUsed;
 
       /* READONLY: the guest layout.  This indicates which parts of
          the guest state should be regarded as 'always defined'. */
@@ -220,6 +334,7 @@ typedef
       IRType hWordTy;
    }
    MCEnv;
+
 
 /* SHADOW TMP MANAGEMENT.  Shadow tmps are allocated lazily (on
    demand), as they are encountered.  This is for two reasons.
@@ -1303,7 +1418,7 @@ static void complainIfUndefined ( MCEnv* mce, IRAtom* atom, IRExpr *guard )
       don't really care about the possibility that someone else may
       also create a V-interpretion for it. */
    tl_assert(isOriginalAtom(mce, atom));
-   vatom = expr2vbits( mce, atom );
+   vatom = expr2vbits( mce, atom, HuOth );
    tl_assert(isShadowAtom(mce, vatom));
    tl_assert(sameKindedAtoms(atom, vatom));
 
@@ -1512,7 +1627,7 @@ void do_shadow_PUT ( MCEnv* mce,  Int offset,
    if (atom) {
       tl_assert(!vatom);
       tl_assert(isOriginalAtom(mce, atom));
-      vatom = expr2vbits( mce, atom );
+      vatom = expr2vbits( mce, atom, HuOth );
    } else {
       tl_assert(vatom);
       tl_assert(isShadowAtom(mce, vatom));
@@ -1562,7 +1677,7 @@ void do_shadow_PUTI ( MCEnv* mce, IRPutI *puti)
       return;
    
    tl_assert(isOriginalAtom(mce,atom));
-   vatom = expr2vbits( mce, atom );
+   vatom = expr2vbits( mce, atom, HuOth );
    tl_assert(sameKindedAtoms(atom, vatom));
    ty   = descr->elemTy;
    tyS  = shadowTypeV(ty);
@@ -1957,7 +2072,7 @@ IRAtom* mkLazyN ( MCEnv* mce,
       } else {
          /* calculate the arg's definedness, and pessimistically merge
             it in. */
-         here = mkPCastTo( mce, mergeTy, expr2vbits(mce, exprvec[i]) );
+         here = mkPCastTo( mce, mergeTy, expr2vbits(mce, exprvec[i], HuOth) );
          curr = mergeTy64 
                    ? mkUifU64(mce, here, curr)
                    : mkUifU32(mce, here, curr);
@@ -2863,10 +2978,10 @@ IRAtom* expr2vbits_Qop ( MCEnv* mce,
                          IRAtom* atom1, IRAtom* atom2, 
                          IRAtom* atom3, IRAtom* atom4 )
 {
-   IRAtom* vatom1 = expr2vbits( mce, atom1 );
-   IRAtom* vatom2 = expr2vbits( mce, atom2 );
-   IRAtom* vatom3 = expr2vbits( mce, atom3 );
-   IRAtom* vatom4 = expr2vbits( mce, atom4 );
+   IRAtom* vatom1 = expr2vbits( mce, atom1, HuOth );
+   IRAtom* vatom2 = expr2vbits( mce, atom2, HuOth );
+   IRAtom* vatom3 = expr2vbits( mce, atom3, HuOth );
+   IRAtom* vatom4 = expr2vbits( mce, atom4, HuOth );
 
    tl_assert(isOriginalAtom(mce,atom1));
    tl_assert(isOriginalAtom(mce,atom2));
@@ -2917,9 +3032,9 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
                            IROp op,
                            IRAtom* atom1, IRAtom* atom2, IRAtom* atom3 )
 {
-   IRAtom* vatom1 = expr2vbits( mce, atom1 );
-   IRAtom* vatom2 = expr2vbits( mce, atom2 );
-   IRAtom* vatom3 = expr2vbits( mce, atom3 );
+   IRAtom* vatom1 = expr2vbits( mce, atom1, HuOth );
+   IRAtom* vatom2 = expr2vbits( mce, atom2, HuOth );
+   IRAtom* vatom3 = expr2vbits( mce, atom3, HuOth );
 
    tl_assert(isOriginalAtom(mce,atom1));
    tl_assert(isOriginalAtom(mce,atom2));
@@ -3042,15 +3157,16 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
 static 
 IRAtom* expr2vbits_Binop ( MCEnv* mce,
                            IROp op,
-                           IRAtom* atom1, IRAtom* atom2 )
+                           IRAtom* atom1, IRAtom* atom2,
+                           HowUsed hu/*use HuOth if unknown*/ )
 {
    IRType  and_or_ty;
    IRAtom* (*uifu)    (MCEnv*, IRAtom*, IRAtom*);
    IRAtom* (*difd)    (MCEnv*, IRAtom*, IRAtom*);
    IRAtom* (*improve) (MCEnv*, IRAtom*, IRAtom*);
 
-   IRAtom* vatom1 = expr2vbits( mce, atom1 );
-   IRAtom* vatom2 = expr2vbits( mce, atom2 );
+   IRAtom* vatom1 = expr2vbits( mce, atom1, HuOth );
+   IRAtom* vatom2 = expr2vbits( mce, atom2, HuOth );
 
    tl_assert(isOriginalAtom(mce,atom1));
    tl_assert(isOriginalAtom(mce,atom2));
@@ -4117,17 +4233,21 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return mkLazy2(mce, Ity_I64, vatom1, vatom2);
 
       case Iop_Add32:
-         if (mce->bogusLiterals || mce->useLLVMworkarounds)
-            return expensiveAddSub(mce,True,Ity_I32, 
-                                   vatom1,vatom2, atom1,atom2);
-         else
-            goto cheap_AddSub32;
+         if (mce->dlbo.dl_Add32 == DLexpensive
+             || (mce->dlbo.dl_Add32 == DLauto && hu == HuOth)) {
+             return expensiveAddSub(mce,True,Ity_I32,
+                                    vatom1,vatom2, atom1,atom2);
+         } else {
+             goto cheap_AddSub32;
+         }
       case Iop_Sub32:
-         if (mce->bogusLiterals)
-            return expensiveAddSub(mce,False,Ity_I32, 
-                                   vatom1,vatom2, atom1,atom2);
-         else
-            goto cheap_AddSub32;
+         if (mce->dlbo.dl_Sub32 == DLexpensive
+             || (mce->dlbo.dl_Sub32 == DLauto && hu == HuOth)) {
+             return expensiveAddSub(mce,False,Ity_I32,
+                                    vatom1,vatom2, atom1,atom2);
+         } else {
+             goto cheap_AddSub32;
+         }
 
       cheap_AddSub32:
       case Iop_Mul32:
@@ -4140,17 +4260,21 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return doCmpORD(mce, op, vatom1,vatom2, atom1,atom2);
 
       case Iop_Add64:
-         if (mce->bogusLiterals || mce->useLLVMworkarounds)
-            return expensiveAddSub(mce,True,Ity_I64, 
-                                   vatom1,vatom2, atom1,atom2);
-         else
-            goto cheap_AddSub64;
+         if (mce->dlbo.dl_Add64 == DLexpensive
+             || (mce->dlbo.dl_Add64 == DLauto && hu == HuOth)) {
+             return expensiveAddSub(mce,True,Ity_I64,
+                                    vatom1,vatom2, atom1,atom2);
+         } else {
+             goto cheap_AddSub64;
+         }
       case Iop_Sub64:
-         if (mce->bogusLiterals)
-            return expensiveAddSub(mce,False,Ity_I64, 
-                                   vatom1,vatom2, atom1,atom2);
-         else
-            goto cheap_AddSub64;
+         if (mce->dlbo.dl_Sub64 == DLexpensive
+             || (mce->dlbo.dl_Sub64 == DLauto && hu == HuOth)) {
+             return expensiveAddSub(mce,False,Ity_I64,
+                                    vatom1,vatom2, atom1,atom2);
+         } else {
+             goto cheap_AddSub64;
+         }
 
       cheap_AddSub64:
       case Iop_Mul64:
@@ -4168,7 +4292,10 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       ////---- CmpXX64
       case Iop_CmpEQ64: case Iop_CmpNE64:
-         if (mce->bogusLiterals) goto expensive_cmp64; else goto cheap_cmp64;
+         if (mce->dlbo.dl_CmpEQ64_CmpNE64 == DLexpensive)
+            goto expensive_cmp64;
+         else
+            goto cheap_cmp64;
 
       expensive_cmp64:
       case Iop_ExpCmpNE64:
@@ -4181,7 +4308,10 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       ////---- CmpXX32
       case Iop_CmpEQ32: case Iop_CmpNE32:
-         if (mce->bogusLiterals) goto expensive_cmp32; else goto cheap_cmp32;
+         if (mce->dlbo.dl_CmpEQ32_CmpNE32 == DLexpensive)
+            goto expensive_cmp32;
+         else
+            goto cheap_cmp32;
 
       expensive_cmp32:
       case Iop_ExpCmpNE32:
@@ -4194,7 +4324,10 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       ////---- CmpXX16
       case Iop_CmpEQ16: case Iop_CmpNE16:
-         if (mce->bogusLiterals) goto expensive_cmp16; else goto cheap_cmp16;
+         if (mce->dlbo.dl_CmpEQ16_CmpNE16 == DLexpensive)
+            goto expensive_cmp16;
+         else
+            goto cheap_cmp16;
 
       expensive_cmp16:
       case Iop_ExpCmpNE16:
@@ -4205,7 +4338,10 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       ////---- CmpXX8
       case Iop_CmpEQ8: case Iop_CmpNE8:
-         if (mce->bogusLiterals) goto expensive_cmp8; else goto cheap_cmp8;
+         if (mce->dlbo.dl_CmpEQ8_CmpNE8 == DLexpensive)
+            goto expensive_cmp8;
+         else
+            goto cheap_cmp8;
 
       expensive_cmp8:
          return expensiveCmpEQorNE(mce,Ity_I8, vatom1,vatom2, atom1,atom2 );
@@ -4446,7 +4582,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       do_shadow_LoadG and should be kept in sync (in the very unlikely
       event that the interpretation of such widening ops changes in
       future).  See comment in do_shadow_LoadG. */
-   IRAtom* vatom = expr2vbits( mce, atom );
+   IRAtom* vatom = expr2vbits( mce, atom, HuOth );
    tl_assert(isOriginalAtom(mce,atom));
    switch (op) {
 
@@ -5053,9 +5189,9 @@ IRAtom* expr2vbits_ITE ( MCEnv* mce,
    tl_assert(isOriginalAtom(mce, iftrue));
    tl_assert(isOriginalAtom(mce, iffalse));
 
-   vbitsC = expr2vbits(mce, cond);
-   vbits1 = expr2vbits(mce, iftrue);
-   vbits0 = expr2vbits(mce, iffalse);
+   vbitsC = expr2vbits(mce, cond, HuOth); // could we use HuPCa here?
+   vbits1 = expr2vbits(mce, iftrue, HuOth);
+   vbits0 = expr2vbits(mce, iffalse, HuOth);
    ty = typeOfIRExpr(mce->sb->tyenv, vbits0);
 
    return
@@ -5067,7 +5203,8 @@ IRAtom* expr2vbits_ITE ( MCEnv* mce,
 /* --------- This is the main expression-handling function. --------- */
 
 static
-IRExpr* expr2vbits ( MCEnv* mce, IRExpr* e )
+IRExpr* expr2vbits ( MCEnv* mce, IRExpr* e,
+                     HowUsed hu/*use HuOth if unknown*/ )
 {
    switch (e->tag) {
 
@@ -5104,7 +5241,8 @@ IRExpr* expr2vbits ( MCEnv* mce, IRExpr* e )
          return expr2vbits_Binop(
                    mce,
                    e->Iex.Binop.op,
-                   e->Iex.Binop.arg1, e->Iex.Binop.arg2
+                   e->Iex.Binop.arg1, e->Iex.Binop.arg2,
+                   hu
                 );
 
       case Iex_Unop:
@@ -5218,7 +5356,7 @@ void do_shadow_Store ( MCEnv* mce,
       tl_assert(!vdata);
       tl_assert(isOriginalAtom(mce, data));
       tl_assert(bias == 0);
-      vdata = expr2vbits( mce, data );
+      vdata = expr2vbits( mce, data, HuOth );
    } else {
       tl_assert(vdata);
    }
@@ -5494,7 +5632,7 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
            || UNLIKELY(is_IRExpr_VECRET_or_GSPTR(arg)) ) {
          /* ignore this arg */
       } else {
-         here = mkPCastTo( mce, Ity_I32, expr2vbits(mce, arg) );
+         here = mkPCastTo( mce, Ity_I32, expr2vbits(mce, arg, HuOth) );
          curr = mkUifU32(mce, here, curr);
       }
    }
@@ -5954,7 +6092,7 @@ static void do_shadow_CAS_single ( MCEnv* mce, IRCAS* cas )
    /* 1. fetch data# (the proposed new value) */
    tl_assert(isOriginalAtom(mce, cas->dataLo));
    vdataLo
-      = assignNew('V', mce, elemTy, expr2vbits(mce, cas->dataLo));
+      = assignNew('V', mce, elemTy, expr2vbits(mce, cas->dataLo, HuOth));
    tl_assert(isShadowAtom(mce, vdataLo));
    if (otrak) {
       bdataLo
@@ -5965,7 +6103,7 @@ static void do_shadow_CAS_single ( MCEnv* mce, IRCAS* cas )
    /* 2. fetch expected# (what we expect to see at the address) */
    tl_assert(isOriginalAtom(mce, cas->expdLo));
    vexpdLo
-      = assignNew('V', mce, elemTy, expr2vbits(mce, cas->expdLo));
+      = assignNew('V', mce, elemTy, expr2vbits(mce, cas->expdLo, HuOth));
    tl_assert(isShadowAtom(mce, vexpdLo));
    if (otrak) {
       bexpdLo
@@ -6062,9 +6200,9 @@ static void do_shadow_CAS_double ( MCEnv* mce, IRCAS* cas )
    tl_assert(isOriginalAtom(mce, cas->dataHi));
    tl_assert(isOriginalAtom(mce, cas->dataLo));
    vdataHi
-      = assignNew('V', mce, elemTy, expr2vbits(mce, cas->dataHi));
+      = assignNew('V', mce, elemTy, expr2vbits(mce, cas->dataHi, HuOth));
    vdataLo
-      = assignNew('V', mce, elemTy, expr2vbits(mce, cas->dataLo));
+      = assignNew('V', mce, elemTy, expr2vbits(mce, cas->dataLo, HuOth));
    tl_assert(isShadowAtom(mce, vdataHi));
    tl_assert(isShadowAtom(mce, vdataLo));
    if (otrak) {
@@ -6080,9 +6218,9 @@ static void do_shadow_CAS_double ( MCEnv* mce, IRCAS* cas )
    tl_assert(isOriginalAtom(mce, cas->expdHi));
    tl_assert(isOriginalAtom(mce, cas->expdLo));
    vexpdHi
-      = assignNew('V', mce, elemTy, expr2vbits(mce, cas->expdHi));
+      = assignNew('V', mce, elemTy, expr2vbits(mce, cas->expdHi, HuOth));
    vexpdLo
-      = assignNew('V', mce, elemTy, expr2vbits(mce, cas->expdLo));
+      = assignNew('V', mce, elemTy, expr2vbits(mce, cas->expdLo, HuOth));
    tl_assert(isShadowAtom(mce, vexpdHi));
    tl_assert(isShadowAtom(mce, vexpdLo));
    if (otrak) {
@@ -6286,7 +6424,7 @@ static void do_shadow_LoadG ( MCEnv* mce, IRLoadG* lg )
    }
 
    IRAtom* vbits_alt
-      = expr2vbits( mce, lg->alt );
+      = expr2vbits( mce, lg->alt, HuOth );
    IRAtom* vbits_final
       = expr2vbits_Load_guarded_General(mce, lg->end, loadedTy,
                                         lg->addr, 0/*addr bias*/,
@@ -7369,13 +7507,12 @@ void MC_(do_instrumentation_startup_checks)( void )
 
 static Bool isBogusAtom ( IRAtom* at )
 {
-   ULong n = 0;
-   IRConst* con;
-   tl_assert(isIRAtom(at));
    if (at->tag == Iex_RdTmp)
       return False;
    tl_assert(at->tag == Iex_Const);
-   con = at->Iex.Const.con;
+
+   ULong n = 0;
+   IRConst* con = at->Iex.Const.con;
    switch (con->tag) {
       case Ico_U1:   return False;
       case Ico_U8:   n = (ULong)con->Ico.U8; break;
@@ -7391,6 +7528,10 @@ static Bool isBogusAtom ( IRAtom* at )
       default: ppIRExpr(at); tl_assert(0);
    }
    /* VG_(printf)("%llx\n", n); */
+   /* Shortcuts */
+   if (LIKELY(n <= 0x0000000000001000ULL)) return False;
+   if (LIKELY(n >= 0xFFFFFFFFFFFFF000ULL)) return False;
+   /* The list of bogus atoms is: */
    return (/*32*/    n == 0xFEFEFEFFULL
            /*32*/ || n == 0x80808080ULL
            /*32*/ || n == 0x7F7F7F7FULL
@@ -7404,7 +7545,10 @@ static Bool isBogusAtom ( IRAtom* at )
           );
 }
 
-static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
+
+/* Does 'st' mention any of the literals identified/listed in
+   isBogusAtom()? */
+static inline Bool containsBogusLiterals ( /*FLAT*/ IRStmt* st )
 {
    Int      i;
    IRExpr*  e;
@@ -7511,6 +7655,334 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
 }
 
 
+/* This is the pre-instrumentation analysis.  It does a backwards pass over
+   the stmts in |sb_in| to determine a HowUsed value for each tmp defined in
+   the block.
+
+   Unrelatedly, it also checks all literals in the block with |isBogusAtom|,
+   as a positive result from that is a strong indication that we need to
+   expensively instrument add/sub in the block.  We do both analyses in one
+   pass, even though they are independent, so as to avoid the overhead of
+   having to traverse the whole block twice.
+
+   The usage pass proceeds as follows.  Let max= be the max operation in the
+   HowUsed lattice, hence
+
+     X max= Y   means   X = max(X, Y)
+
+   then
+
+     for t in original tmps . useEnv[t] = HuUnU
+
+     for t used in the block's . next field
+        useEnv[t] max= HuPCa  // because jmp targets are PCast-tested
+
+     for st iterating *backwards* in the block
+
+        match st
+
+           case "t1 = load(t2)"          // case 1
+              useEnv[t2] max= HuPCa
+
+           case "t1 = add(t2, t3)"       // case 2
+              useEnv[t2] max= useEnv[t1]
+              useEnv[t3] max= useEnv[t1]
+
+           other
+              for t in st.usedTmps       // case 3
+                 useEnv[t] max= HuOth
+                 // same as useEnv[t] = HuOth
+
+   The general idea is that we accumulate, in useEnv[], information about
+   how each tmp is used.  That can be updated as we work further back
+   through the block and find more uses of it, but its HowUsed value can
+   only ascend the lattice, not descend.
+
+   Initially we mark all tmps as unused.  In case (1), if a tmp is seen to
+   be used as a memory address, then its use is at least HuPCa.  The point
+   is that for a memory address we will add instrumentation to check if any
+   bit of the address is undefined, which means that we won't need expensive
+   V-bit propagation through an add expression that computed the address --
+   cheap add instrumentation will be equivalent.
+
+   Note in case (1) that if we have previously seen a non-memory-address use
+   of the tmp, then its use will already be HuOth and will be unchanged by
+   the max= operation.  And if it turns out that the source of the tmp was
+   an add, then we'll have to expensively instrument the add, because we
+   can't prove that, for the previous non-memory-address use of the tmp,
+   cheap and expensive instrumentation will be equivalent.
+
+   In case 2, we propagate the usage-mode of the result of an add back
+   through to its operands.  Again, we use max= so as to take account of the
+   fact that t2 or t3 might later in the block (viz, earlier in the
+   iteration) have been used in a way that requires expensive add
+   instrumentation.
+
+   In case 3, we deal with all other tmp uses.  We assume that we'll need a
+   result that is as accurate as possible, so we max= HuOth into its use
+   mode.  Since HuOth is the top of the lattice, that's equivalent to just
+   setting its use to HuOth.
+
+   The net result of all this is that:
+
+     tmps that are used either
+       - only as a memory address, or
+       - only as part of a tree of adds that computes a memory address,
+         and has no other use
+     are marked as HuPCa, and so we can instrument their generating Add
+     nodes cheaply, which is the whole point of this analysis
+
+     tmps that are used any other way at all are marked as HuOth
+
+     tmps that are unused are marked as HuUnU.  We don't expect to see any
+     since we expect that the incoming IR has had all dead assignments
+     removed by previous optimisation passes.  Nevertheless the analysis is
+     correct even in the presence of dead tmps.
+
+   A final comment on dead tmps.  In case 1 and case 2, we could actually
+   conditionalise the updates thusly:
+
+     if (useEnv[t1] > HuUnU) { useEnv[t2] max= HuPCa }  // case 1
+
+     if (useEnv[t1] > HuUnU) { useEnv[t2] max= useEnv[t1] }  // case 2
+     if (useEnv[t1] > HuUnU) { useEnv[t3] max= useEnv[t1] }  // case 2
+
+   In other words, if the assigned-to tmp |t1| is never used, then there's
+   no point in propagating any use through to its operands.  That won't
+   change the final HuPCa-vs-HuOth results, which is what we care about.
+   Given that we expect to get dead-code-free inputs, there's no point in
+   adding this extra refinement.
+*/
+
+/* Helper for |preInstrumentationAnalysis|. */
+static inline void noteTmpUsesIn ( /*MOD*/HowUsed* useEnv,
+                                   UInt tyenvUsed,
+                                   HowUsed newUse, IRAtom* at )
+{
+   /* For the atom |at|, declare that for any tmp |t| in |at|, we will have
+      seen a use of |newUse|.  So, merge that info into |t|'s accumulated
+      use info. */
+   switch (at->tag) {
+      case Iex_GSPTR:
+      case Iex_Const:
+         return;
+      case Iex_RdTmp: {
+         IRTemp t = at->Iex.RdTmp.tmp;
+         tl_assert(t < tyenvUsed); // "is an original tmp"
+         // The "max" operation in the lattice
+         if (newUse > useEnv[t]) useEnv[t] = newUse;
+         return;
+      }
+      default:
+         // We should never get here -- it implies non-flat IR
+         ppIRExpr(at);
+         VG_(tool_panic)("noteTmpUsesIn");
+   }
+   /*NOTREACHED*/
+   tl_assert(0);
+}
+
+
+static void preInstrumentationAnalysis ( /*OUT*/HowUsed** useEnvP,
+                                         /*OUT*/Bool* hasBogusLiteralsP,
+                                         const IRSB* sb_in )
+{
+   const UInt nOrigTmps = (UInt)sb_in->tyenv->types_used;
+
+   // We've seen no bogus literals so far.
+   Bool bogus = False;
+
+   // This is calloc'd, so implicitly all entries are initialised to HuUnU.
+   HowUsed* useEnv = VG_(calloc)("mc.preInstrumentationAnalysis.1",
+                                 nOrigTmps, sizeof(HowUsed));
+
+   // Firstly, roll in contributions from the final dst address.
+   bogus = isBogusAtom(sb_in->next);
+   noteTmpUsesIn(useEnv, nOrigTmps, HuPCa, sb_in->next);
+
+   // Now work backwards through the stmts.
+   for (Int i = sb_in->stmts_used-1; i >= 0; i--) {
+      IRStmt* st = sb_in->stmts[i];
+
+      // Deal with literals.
+      if (LIKELY(!bogus)) {
+         bogus = containsBogusLiterals(st);
+      }
+
+      // Deal with tmp uses.
+      switch (st->tag) {
+         case Ist_WrTmp: {
+            IRTemp  dst = st->Ist.WrTmp.tmp;
+            IRExpr* rhs = st->Ist.WrTmp.data;
+            // This is the one place where we have to consider all possible
+            // tags for |rhs|, and can't just assume it is a tmp or a const.
+            switch (rhs->tag) {
+               case Iex_RdTmp:
+                  // just propagate demand for |dst| into this tmp use.
+                  noteTmpUsesIn(useEnv, nOrigTmps, useEnv[dst], rhs);
+                  break;
+               case Iex_Unop:
+                  noteTmpUsesIn(useEnv, nOrigTmps, HuOth, rhs->Iex.Unop.arg);
+                  break;
+               case Iex_Binop:
+                  if (rhs->Iex.Binop.op == Iop_Add64
+                      || rhs->Iex.Binop.op == Iop_Add32) {
+                     // propagate demand for |dst| through to the operands.
+                     noteTmpUsesIn(useEnv, nOrigTmps,
+                                   useEnv[dst], rhs->Iex.Binop.arg1);
+                     noteTmpUsesIn(useEnv, nOrigTmps,
+                                   useEnv[dst], rhs->Iex.Binop.arg2);
+                  } else {
+                     // just say that the operands are used in some unknown way.
+                     noteTmpUsesIn(useEnv, nOrigTmps,
+                                   HuOth, rhs->Iex.Binop.arg1);
+                     noteTmpUsesIn(useEnv, nOrigTmps,
+                                   HuOth, rhs->Iex.Binop.arg2);
+                  }
+                  break;
+               case Iex_Triop: {
+                  // All operands are used in some unknown way.
+                  IRTriop* tri = rhs->Iex.Triop.details;
+                  noteTmpUsesIn(useEnv, nOrigTmps, HuOth, tri->arg1);
+                  noteTmpUsesIn(useEnv, nOrigTmps, HuOth, tri->arg2);
+                  noteTmpUsesIn(useEnv, nOrigTmps, HuOth, tri->arg3);
+                  break;
+               }
+               case Iex_Qop: {
+                  // All operands are used in some unknown way.
+                  IRQop* qop = rhs->Iex.Qop.details;
+                  noteTmpUsesIn(useEnv, nOrigTmps, HuOth, qop->arg1);
+                  noteTmpUsesIn(useEnv, nOrigTmps, HuOth, qop->arg2);
+                  noteTmpUsesIn(useEnv, nOrigTmps, HuOth, qop->arg3);
+                  noteTmpUsesIn(useEnv, nOrigTmps, HuOth, qop->arg4);
+                  break;
+               }
+               case Iex_Load:
+                  // The address will be checked (== PCasted).
+                  noteTmpUsesIn(useEnv, nOrigTmps, HuPCa, rhs->Iex.Load.addr);
+                  break;
+               case Iex_ITE:
+                  // The condition is PCasted, the then- and else-values
+                  // aren't.
+                  noteTmpUsesIn(useEnv, nOrigTmps, HuPCa, rhs->Iex.ITE.cond);
+                  noteTmpUsesIn(useEnv, nOrigTmps, HuOth, rhs->Iex.ITE.iftrue);
+                  noteTmpUsesIn(useEnv, nOrigTmps, HuOth, rhs->Iex.ITE.iffalse);
+                  break;
+               case Iex_CCall:
+                  // The args are used in unknown ways.
+                  for (IRExpr** args = rhs->Iex.CCall.args; *args; args++) {
+                     noteTmpUsesIn(useEnv, nOrigTmps, HuOth, *args);
+                  }
+                  break;
+               case Iex_GetI: {
+                  // The index will be checked/PCasted (see do_shadow_GETI)
+                  noteTmpUsesIn(useEnv, nOrigTmps, HuPCa, rhs->Iex.GetI.ix);
+                  break;
+               }
+               case Iex_Const:
+               case Iex_Get:
+                  break;
+               default:
+                  ppIRExpr(rhs);
+                  VG_(tool_panic)("preInstrumentationAnalysis:"
+                                  " unhandled IRExpr");
+            }
+            break;
+         }
+         case Ist_Store:
+            // The address will be checked (== PCasted).  The data will be
+            // used in some unknown way.
+            noteTmpUsesIn(useEnv, nOrigTmps, HuPCa, st->Ist.Store.addr);
+            noteTmpUsesIn(useEnv, nOrigTmps, HuOth, st->Ist.Store.data);
+            break;
+         case Ist_Exit:
+            // The guard will be checked (== PCasted)
+            noteTmpUsesIn(useEnv, nOrigTmps, HuPCa, st->Ist.Exit.guard);
+            break;
+         case Ist_Put:
+            noteTmpUsesIn(useEnv, nOrigTmps, HuOth, st->Ist.Put.data);
+            break;
+         case Ist_PutI: {
+            IRPutI* putI = st->Ist.PutI.details;
+            // The index will be checked/PCasted (see do_shadow_PUTI).  The
+            // data will be used in an unknown way.
+            noteTmpUsesIn(useEnv, nOrigTmps, HuPCa, putI->ix);
+            noteTmpUsesIn(useEnv, nOrigTmps, HuOth, putI->data);
+            break;
+         }
+         case Ist_Dirty: {
+            IRDirty* d = st->Ist.Dirty.details;
+            // The guard will be checked (== PCasted)
+            noteTmpUsesIn(useEnv, nOrigTmps, HuPCa, d->guard);
+            // The args will be used in unknown ways.
+            for (IRExpr** args = d->args; *args; args++) {
+               noteTmpUsesIn(useEnv, nOrigTmps, HuOth, *args);
+            }
+            break;
+         }
+         case Ist_CAS: {
+            IRCAS* cas = st->Ist.CAS.details;
+            // Address will be pcasted, everything else used as unknown
+            noteTmpUsesIn(useEnv, nOrigTmps, HuPCa, cas->addr);
+            noteTmpUsesIn(useEnv, nOrigTmps, HuOth, cas->expdLo);
+            noteTmpUsesIn(useEnv, nOrigTmps, HuOth, cas->dataLo);
+            if (cas->expdHi)
+               noteTmpUsesIn(useEnv, nOrigTmps, HuOth, cas->expdHi);
+            if (cas->dataHi)
+               noteTmpUsesIn(useEnv, nOrigTmps, HuOth, cas->dataHi);
+            break;
+         }
+         case Ist_AbiHint:
+            // Both exprs are used in unknown ways.  TODO: can we safely
+            // just ignore AbiHints?
+            noteTmpUsesIn(useEnv, nOrigTmps, HuOth, st->Ist.AbiHint.base);
+            noteTmpUsesIn(useEnv, nOrigTmps, HuOth, st->Ist.AbiHint.nia);
+            break;
+         case Ist_StoreG: {
+            // We might be able to do better, and use HuPCa for the addr.
+            // It's not immediately obvious that we can, because the address
+            // is regarded as "used" only when the guard is true.
+            IRStoreG* sg = st->Ist.StoreG.details;
+            noteTmpUsesIn(useEnv, nOrigTmps, HuOth, sg->addr);
+            noteTmpUsesIn(useEnv, nOrigTmps, HuOth, sg->data);
+            noteTmpUsesIn(useEnv, nOrigTmps, HuOth, sg->guard);
+            break;
+         }
+         case Ist_LoadG: {
+            // Per similar comments to Ist_StoreG .. not sure whether this
+            // is really optimal.
+            IRLoadG* lg = st->Ist.LoadG.details;
+            noteTmpUsesIn(useEnv, nOrigTmps, HuOth, lg->addr);
+            noteTmpUsesIn(useEnv, nOrigTmps, HuOth, lg->alt);
+            noteTmpUsesIn(useEnv, nOrigTmps, HuOth, lg->guard);
+            break;
+         }
+         case Ist_LLSC: {
+            noteTmpUsesIn(useEnv, nOrigTmps, HuPCa, st->Ist.LLSC.addr);
+            if (st->Ist.LLSC.storedata)
+               noteTmpUsesIn(useEnv, nOrigTmps, HuOth, st->Ist.LLSC.storedata);
+            break;
+         }
+         case Ist_MBE:
+         case Ist_IMark:
+         case Ist_NoOp:
+            break;
+         default: {
+            ppIRStmt(st);
+            VG_(tool_panic)("preInstrumentationAnalysis: unhandled IRStmt");
+         }
+      }
+   } // Now work backwards through the stmts.
+
+   // Return the computed use env and the bogus-atom flag.
+   tl_assert(*useEnvP == NULL);
+   *useEnvP = useEnv;
+
+   tl_assert(*hasBogusLiteralsP == False);
+   *hasBogusLiteralsP = bogus;
+}
+
+
 IRSB* MC_(instrument) ( VgCallbackClosure* closure,
                         IRSB* sb_in, 
                         const VexGuestLayout* layout, 
@@ -7552,21 +8024,90 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
    mce.trace          = verboze;
    mce.layout         = layout;
    mce.hWordTy        = hWordTy;
-   mce.bogusLiterals  = False;
+   mce.tmpHowUsed     = NULL;
 
-   /* Do expensive interpretation for Iop_Add32 and Iop_Add64 on
-      Darwin.  10.7 is mostly built with LLVM, which uses these for
-      bitfield inserts, and we get a lot of false errors if the cheap
-      interpretation is used, alas.  Could solve this much better if
-      we knew which of such adds came from x86/amd64 LEA instructions,
-      since these are the only ones really needing the expensive
-      interpretation, but that would require some way to tag them in
-      the _toIR.c front ends, which is a lot of faffing around.  So
-      for now just use the slow and blunt-instrument solution. */
-   mce.useLLVMworkarounds = False;
-#  if defined(VGO_darwin)
-   mce.useLLVMworkarounds = True;
-#  endif
+   /* BEGIN decide on expense levels for instrumentation. */
+
+   /* Initially, select the cheap version of everything for which we have an
+      option. */
+   DetailLevelByOp__set_all( &mce.dlbo, DLcheap );
+
+   /* Take account of the --expensive-definedness-checks= flag. */
+   if (MC_(clo_expensive_definedness_checks) == EdcNO) {
+      /* We just selected 'cheap for everything', so we don't need to do
+         anything here.  mce.tmpHowUsed remains NULL. */
+   }
+   else if (MC_(clo_expensive_definedness_checks) == EdcYES) {
+      /* Select 'expensive for everything'.  mce.tmpHowUsed remains NULL. */
+      DetailLevelByOp__set_all( &mce.dlbo, DLexpensive );
+   }
+   else {
+      tl_assert(MC_(clo_expensive_definedness_checks) == EdcAUTO);
+      /* We'll make our own selection, based on known per-target constraints
+         and also on analysis of the block to be instrumented.  First, set
+         up default values for detail levels.
+
+         On x86 and amd64, we'll routinely encounter code optimised by LLVM
+         5 and above.  Enable accurate interpretation of the following.
+         LLVM uses adds for some bitfield inserts, and we get a lot of false
+         errors if the cheap interpretation is used, alas.  Could solve this
+         much better if we knew which of such adds came from x86/amd64 LEA
+         instructions, since these are the only ones really needing the
+         expensive interpretation, but that would require some way to tag
+         them in the _toIR.c front ends, which is a lot of faffing around.
+         So for now we use preInstrumentationAnalysis() to detect adds which
+         are used only to construct memory addresses, which is an
+         approximation to the above, and is self-contained.*/
+#     if defined(VGA_x86)
+      mce.dlbo.dl_CmpEQ32_CmpNE32 = DLexpensive;
+#     elif defined(VGA_amd64)
+      mce.dlbo.dl_Add64           = DLauto;
+      mce.dlbo.dl_CmpEQ32_CmpNE32 = DLexpensive;
+#     endif
+
+      /* preInstrumentationAnalysis() will allocate &mce.tmpHowUsed and then
+         fill it in. */
+      Bool hasBogusLiterals = False;
+      preInstrumentationAnalysis( &mce.tmpHowUsed, &hasBogusLiterals, sb_in );
+
+      if (hasBogusLiterals) {
+         /* This happens very rarely.  In this case just select expensive
+            for everything, and throw away the tmp-use analysis results. */
+         DetailLevelByOp__set_all( &mce.dlbo, DLexpensive );
+         VG_(free)( mce.tmpHowUsed );
+         mce.tmpHowUsed = NULL;
+      } else {
+         /* Nothing.  mce.tmpHowUsed contains tmp-use analysis results,
+            which will be used for some subset of Iop_{Add,Sub}{32,64},
+            based on which ones are set to DLauto for this target. */
+      }
+   }
+
+   DetailLevelByOp__check_sanity( &mce.dlbo );
+
+   if (0) {
+      // Debug printing: which tmps have been identified as PCast-only use
+      if (mce.tmpHowUsed) {
+         VG_(printf)("Cheapies: ");
+         for (UInt q = 0; q < sb_in->tyenv->types_used; q++) {
+            if (mce.tmpHowUsed[q] == HuPCa) {
+               VG_(printf)("t%u ", q);
+            }
+         }
+         VG_(printf)("\n");
+      }
+
+      // Debug printing: number of ops by detail level
+      UChar nCheap     = DetailLevelByOp__count( &mce.dlbo, DLcheap     );
+      UChar nAuto      = DetailLevelByOp__count( &mce.dlbo, DLauto      );
+      UChar nExpensive = DetailLevelByOp__count( &mce.dlbo, DLexpensive );
+      tl_assert(nCheap + nAuto + nExpensive == 8);
+
+      VG_(printf)("%u,%u,%u ", nCheap, nAuto, nExpensive);
+   }
+   /* END decide on expense levels for instrumentation. */
+
+   /* Initialise the running the tmp environment. */
 
    mce.tmpMap = VG_(newXA)( VG_(malloc), "mc.MC_(instrument).1", VG_(free),
                             sizeof(TempMapEnt));
@@ -7580,36 +8121,7 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
    }
    tl_assert( VG_(sizeXA)( mce.tmpMap ) == sb_in->tyenv->types_used );
 
-   if (MC_(clo_expensive_definedness_checks)) {
-      /* For expensive definedness checking skip looking for bogus
-         literals. */
-      mce.bogusLiterals = True;
-   } else {
-      /* Make a preliminary inspection of the statements, to see if there
-         are any dodgy-looking literals.  If there are, we generate
-         extra-detailed (hence extra-expensive) instrumentation in
-         places.  Scan the whole bb even if dodgyness is found earlier,
-         so that the flatness assertion is applied to all stmts. */
-      Bool bogus = False;
-
-      for (i = 0; i < sb_in->stmts_used; i++) {
-         st = sb_in->stmts[i];
-         tl_assert(st);
-         tl_assert(isFlatIRStmt(st));
-
-         if (!bogus) {
-            bogus = checkForBogusLiterals(st);
-            if (0 && bogus) {
-               VG_(printf)("bogus: ");
-               ppIRStmt(st);
-               VG_(printf)("\n");
-            }
-            if (bogus) break;
-         }
-      }
-      mce.bogusLiterals = bogus;
-   }
-
+   /* Finally, begin instrumentation. */
    /* Copy verbatim any IR preamble preceding the first IMark */
 
    tl_assert(mce.sb == sb_out);
@@ -7697,10 +8209,15 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
 
       switch (st->tag) {
 
-         case Ist_WrTmp:
+         case Ist_WrTmp: {
+            IRTemp dst = st->Ist.WrTmp.tmp;
+            tl_assert(dst < (UInt)sb_in->tyenv->types_used);
+            HowUsed hu = mce.tmpHowUsed ? mce.tmpHowUsed[dst]
+                                        : HuOth/*we don't know, so play safe*/;
             assign( 'V', &mce, findShadowTmpV(&mce, st->Ist.WrTmp.tmp), 
-                               expr2vbits( &mce, st->Ist.WrTmp.data) );
+                               expr2vbits( &mce, st->Ist.WrTmp.data, hu ));
             break;
+         }
 
          case Ist_Put:
             do_shadow_PUT( &mce, 
@@ -7816,6 +8333,10 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
       that should be investigated. */
    tl_assert( VG_(sizeXA)( mce.tmpMap ) == mce.sb->tyenv->types_used );
    VG_(deleteXA)( mce.tmpMap );
+
+   if (mce.tmpHowUsed) {
+      VG_(free)( mce.tmpHowUsed );
+   }
 
    tl_assert(mce.sb == sb_out);
    return sb_out;

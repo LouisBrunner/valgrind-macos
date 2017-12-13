@@ -41,6 +41,7 @@
 
 
 #define INVALID_INSTRNO (-2)
+#define INVALID_INDEX (-2)
 
 /* Register allocator state is kept in an array of VRegState's.
    There is an element for every virtual register (vreg).
@@ -414,14 +415,14 @@ static inline HReg find_vreg_to_spill(
    An ideal rreg candidate is a caller-save register for short-lived vregs
    and a callee-save register for long-lived vregs because it won't need to
    be spilled around helper calls. */
-static Bool find_free_rreg(
+static Int find_free_rreg(
    const VRegState* vreg_state, UInt n_vregs,
    const RRegState* rreg_state, UInt n_rregs,
    const RRegLRState* rreg_lr_state,
    UInt v_idx, UInt current_ii, HRegClass target_hregclass,
-   Bool reserve_phase, const RegAllocControl* con, UInt* r_idx_found)
+   Bool reserve_phase, const RegAllocControl* con)
 {
-   Bool found = False;
+   Int r_idx_found = INVALID_INDEX;
    UInt distance_so_far = 0; /* running max for |live_after - current_ii| */
    const VRegState* vreg = &vreg_state[v_idx];
 
@@ -433,27 +434,23 @@ static Bool find_free_rreg(
       const RRegLRState* rreg_lrs = &rreg_lr_state[r_idx];
       if (rreg->disp == Free) {
          if (rreg_lrs->lrs_used == 0) {
-            found = True;
-            *r_idx_found = r_idx;
+            r_idx_found = r_idx;
             break; /* There could be nothing better, so break now. */
          } else {
             const RRegLR* lr = rreg_lrs->lr_current;
             if (lr->live_after > (Short) current_ii) {
                /* RReg's hard live range is not live, yet. */
                if (vreg->effective_dead_before <= lr->live_after) {
-                  found = True;
-                  *r_idx_found = r_idx;
+                  r_idx_found = r_idx;
                   break; /* VReg is short-lived; it fits in. */
                }
                if ((lr->live_after - (Short) current_ii) > distance_so_far) {
                   distance_so_far = lr->live_after - (Short) current_ii;
-                  found = True;
-                  *r_idx_found = r_idx;
+                  r_idx_found = r_idx;
                }
             } else if ((Short) current_ii >= lr->dead_before) {
                /* Now dead. Effectively as if there is no LR now. */
-               found = True;
-               *r_idx_found = r_idx;
+               r_idx_found = r_idx;
                break; /* There could be nothing better, so break now. */
             } else {
                /* Going live for this instruction. This could happen only when
@@ -465,7 +462,7 @@ static Bool find_free_rreg(
       }
    }
 
-   return found;
+   return r_idx_found;
 }
 
 /* A target-independent register allocator (v3). Requires various functions
@@ -556,12 +553,10 @@ HInstrArray* doRegisterAllocation_v3(
    instruction and makes free the corresponding rreg. */
 #  define FIND_OR_MAKE_FREE_RREG(_ii, _v_idx, _reg_class, _reserve_phase)      \
    ({                                                                          \
-      UInt _r_free_idx;                                                        \
-      Bool free_rreg_found = find_free_rreg(                                   \
+      Int _r_free_idx = find_free_rreg(                                        \
                       vreg_state, n_vregs, rreg_state, n_rregs, rreg_lr_state, \
-                      (_v_idx), (_ii), (_reg_class), (_reserve_phase),         \
-                      con, &_r_free_idx);                                      \
-      if (!free_rreg_found) {                                                  \
+                      (_v_idx), (_ii), (_reg_class), (_reserve_phase), con);   \
+      if (_r_free_idx == INVALID_INDEX) {                                      \
          HReg vreg_to_spill = find_vreg_to_spill(                              \
                                      vreg_state, n_vregs, rreg_state, n_rregs, \
                                      &reg_usage[(_ii)], (_reg_class),          \

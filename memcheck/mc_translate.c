@@ -2156,7 +2156,7 @@ IRAtom* expensiveAddSub ( MCEnv*  mce,
          )
       );
    } else {
-      // result = (qaa | qbb) | ((a_min - b_max) ^ (a_max + b_min))
+      // result = (qaa | qbb) | ((a_min - b_max) ^ (a_max - b_min))
       return
       assignNew('V', mce,ty,
          binop( opOR,

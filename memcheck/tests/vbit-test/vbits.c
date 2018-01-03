@@ -45,6 +45,8 @@
 #include "vbits.h"
 #include "vtest.h"
 
+#include "memcheck.h"  // VALGRIND_MAKE_MEM_DEFINED
+
 
 /* Return the bits of V if they fit into 64-bit. If V has fewer than
    64 bits, the bit pattern is zero-extended to the left. */
@@ -1071,4 +1073,120 @@ cmpord_vbits(unsigned v1_num_bits, unsigned v2_num_bits)
    }
 
    return new;
+}
+
+
+/* Deal with precise integer EQ and NE.  Needs some helpers.  The helpers
+   compute the result for 64-bit inputs, but can also be used for the
+   32/16/8 bit cases, because we can zero extend both the vbits and values
+   out to 64 bits and still get the correct result. */
+
+
+/* Get both vbits and values for a binary operation, that has args of the
+   same size (type?), namely 8, 16, 32 or 64 bit.  Unused bits are set to
+   zero in both vbit_ and val_ cases. */
+static
+void get_binary_vbits_and_vals64 ( /*OUT*/uint64_t* varg1,
+                                   /*OUT*/uint64_t* arg1,
+                                   /*OUT*/uint64_t* varg2,
+                                   /*OUT*/uint64_t* arg2,
+                                   vbits_t vbits1, vbits_t vbits2,
+                                   value_t val1, value_t val2)
+{
+   assert(vbits1.num_bits == vbits2.num_bits);
+
+   *varg1 = *arg1 = *varg2 = *arg2 = 0;
+
+   switch (vbits1.num_bits) {
+      case 8:  *arg1 = (uint64_t)val1.u8;  *arg2 = (uint64_t)val2.u8;  break;
+      case 16: *arg1 = (uint64_t)val1.u16; *arg2 = (uint64_t)val2.u16; break;
+      case 32: *arg1 = (uint64_t)val1.u32; *arg2 = (uint64_t)val2.u32; break;
+      case 64: *arg1 = val1.u64;           *arg2 = val2.u64;           break;
+      default: panic(__func__);
+   }
+
+   *varg1 = get_bits64(vbits1);
+   *varg2 = get_bits64(vbits2);
+}
+
+static uint64_t uifu64 ( uint64_t x, uint64_t y ) { return x | y; }
+
+/* Returns 0 (defined) or 1 (undefined). */
+static uint32_t ref_CmpEQ64_with_vbits ( uint64_t arg1, uint64_t varg1,
+                                         uint64_t arg2, uint64_t varg2 )
+{
+   uint64_t naive = uifu64(varg1, varg2);
+   if (naive == 0) {
+      return 0; /* defined */
+   }
+
+   // Mark the two actual arguments as fully defined, else Memcheck will
+   // complain about undefinedness in them, which is correct but confusing
+   // (and pollutes the output of this test program.)
+   VALGRIND_MAKE_MEM_DEFINED(&arg1, sizeof(arg1));
+   VALGRIND_MAKE_MEM_DEFINED(&arg2, sizeof(arg2));
+
+   // if any bit in naive is 1, then the result is undefined.  Except,
+   // if we can find two corresponding bits in arg1 and arg2 such that they
+   // are different but both defined, then the overall result is defined
+   // (because the two bits guarantee that the bit vectors arg1 and arg2
+   // are different.)
+   UInt i;
+   for (i = 0; i < 64; i++) {
+      if ((arg1 & 1) != (arg2 & 1) && (varg1 & 1) == 0 && (varg2 & 1) == 0) {
+         return 0; /* defined */
+      }
+      arg1 >>= 1; arg2 >>= 1; varg1 >>= 1; varg2 >>= 1;
+   }
+
+   return 1; /* undefined */
+}
+
+
+vbits_t
+cmp_eq_ne_vbits(vbits_t vbits1, vbits_t vbits2, value_t val1, value_t val2)
+{
+   uint64_t varg1 = 0, arg1 = 0, varg2 = 0, arg2 = 0;
+   get_binary_vbits_and_vals64(&varg1, &arg1, &varg2, &arg2,
+                               vbits1, vbits2, val1, val2);
+
+   vbits_t res = { .num_bits = 1 };
+   res.bits.u32 = ref_CmpEQ64_with_vbits(arg1, varg1, arg2, varg2);
+
+   return res;
+}
+
+
+/* Deal with precise integer ADD and SUB. */
+vbits_t
+int_add_or_sub_vbits(int isAdd,
+                     vbits_t vbits1, vbits_t vbits2, value_t val1, value_t val2)
+{
+   uint64_t vaa = 0, aa = 0, vbb = 0, bb = 0;
+   get_binary_vbits_and_vals64(&vaa, &aa, &vbb, &bb,
+                               vbits1, vbits2, val1, val2);
+
+   // This is derived from expensiveAddSub() in mc_translate.c.
+   uint64_t a_min = aa & ~vaa;
+   uint64_t b_min = bb & ~vbb;
+   uint64_t a_max = aa | vaa;
+   uint64_t b_max = bb | vbb;
+
+   uint64_t result;
+   if (isAdd) {
+      result = (vaa | vbb) | ((a_min + b_min) ^ (a_max + b_max));
+   } else {
+      result = (vaa | vbb) | ((a_min - b_max) ^ (a_max - b_min));
+   }
+
+   vbits_t res = { .num_bits = vbits1.num_bits };
+   switch (res.num_bits) {
+      case 8:  res.bits.u8  = (uint8_t)result;  break;
+      case 16: res.bits.u16 = (uint16_t)result; break;
+      case 32: res.bits.u32 = (uint32_t)result; break;
+      case 64: res.bits.u64 = (uint64_t)result; break;
+      default: panic(__func__);
+   }
+
+   return res;
 }

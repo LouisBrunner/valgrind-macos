@@ -191,6 +191,23 @@ check_result_for_binary(const irop_t *op, const test_data_t *data)
                                     opnd2->vbits.num_bits);
       break;
 
+   case UNDEF_CMP_EQ_NE:
+      expected_vbits = cmp_eq_ne_vbits(opnd1->vbits, opnd2->vbits,
+                                       opnd1->value, opnd2->value);
+      break;
+
+   case UNDEF_INT_ADD:
+      expected_vbits = int_add_or_sub_vbits(1/*isAdd*/,
+                                            opnd1->vbits, opnd2->vbits,
+                                            opnd1->value, opnd2->value);
+      break;
+
+   case UNDEF_INT_SUB:
+      expected_vbits = int_add_or_sub_vbits(0/*!isAdd*/,
+                                            opnd1->vbits, opnd2->vbits,
+                                            opnd1->value, opnd2->value);
+      break;
+
    case UNDEF_ALL_64x2:
       assert(opnd1->vbits.num_bits == opnd2->vbits.num_bits);
       expected_vbits =

@@ -79,6 +79,13 @@ typedef enum {
 
    UNDEF_ORD,     // Iop_CmpORD compare 
 
+   // Expensive (exact) integer EQ and NE
+   UNDEF_CMP_EQ_NE,
+
+   // Expensive (exact) integer addition and subtraction
+   UNDEF_INT_ADD,
+   UNDEF_INT_SUB,
+
    /* For each of the following UNDEF_ALL_BxE, E is the number of
     * elements and B is the number of bits in the element.
     *

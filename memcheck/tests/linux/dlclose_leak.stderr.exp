@@ -1,0 +1,17 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: jmp_on_uninit (dlclose_leak_so.c:10)
+   by 0x........: main (dlclose_leak.c:26)
+
+Invalid read of size 1
+   at 0x........: main (dlclose_leak.c:29)
+ Address 0x........ is 1 bytes before a block of size 1 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: alloc_1_byte (dlclose_leak_so.c:20)
+   by 0x........: main (dlclose_leak.c:27)
+
+done!
+1 bytes in 1 blocks are definitely lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: alloc_1_byte (dlclose_leak_so.c:20)
+   by 0x........: main (dlclose_leak.c:27)
+

@@ -369,7 +369,7 @@ static void show_sched_status_wrk ( Bool host_stacktrace,
          );
       VG_(printf)("\nhost stacktrace:\n"); 
       VG_(clo_xml) = False;
-      VG_(pp_StackTrace) (ips, n_ips);
+      VG_(pp_StackTrace) (VG_(current_DiEpoch)(), ips, n_ips);
       VG_(clo_xml) = save_clo_xml;
    }
 

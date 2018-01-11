@@ -484,13 +484,15 @@ static void pp_Lock ( Int d, Lock* lk,
                       Bool show_lock_addrdescr,
                       Bool show_internal_data)
 {
+   // FIXME PW EPOCH should use the epoch of the allocated_at ec.
+   const DiEpoch cur_ep = VG_(current_DiEpoch)();
    space(d+0); 
    if (show_internal_data)
       VG_(printf)("Lock %p (ga %#lx) {\n", lk, lk->guestaddr);
    else
       VG_(printf)("Lock ga %#lx {\n", lk->guestaddr);
    if (!show_lock_addrdescr 
-       || !HG_(get_and_pp_addrdescr) ((Addr) lk->guestaddr))
+       || !HG_(get_and_pp_addrdescr) (cur_ep, (Addr) lk->guestaddr))
       VG_(printf)("\n");
       
    if (sHOW_ADMIN) {
@@ -4688,7 +4690,7 @@ static Bool is_in_dynamic_linker_shared_object( Addr ga )
    DebugInfo* dinfo;
    const HChar* soname;
 
-   dinfo = VG_(find_DebugInfo)( ga );
+   dinfo = VG_(find_DebugInfo)( VG_(current_DiEpoch)(), ga );
    if (!dinfo) return False;
 
    soname = VG_(DebugInfo_get_soname)(dinfo);
@@ -5985,9 +5987,9 @@ static void hg_post_clo_init ( void )
       VG_(XTMemory_Full_init)(VG_(XT_filter_1top_and_maybe_below_main));
 }
 
-static void hg_info_location (Addr a)
+static void hg_info_location (DiEpoch ep, Addr a)
 {
-   (void) HG_(get_and_pp_addrdescr) (a);
+   (void) HG_(get_and_pp_addrdescr) (ep, a);
 }
 
 static void hg_pre_clo_init ( void )

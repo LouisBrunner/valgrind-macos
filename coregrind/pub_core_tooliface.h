@@ -156,7 +156,7 @@ typedef struct {
    void (*tool_print_stats)(void);
 
    // VG_(needs).info_location
-   void (*tool_info_location)(Addr a);
+   void (*tool_info_location)(DiEpoch ep, Addr a);
 
    // VG_(needs).malloc_replacement
    void* (*tool_malloc)              (ThreadId, SizeT);

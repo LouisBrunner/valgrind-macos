@@ -1870,15 +1870,16 @@ static void show_active ( const HChar* left, const Active* act )
 {
    Bool ok;
    const HChar *buf;
- 
-   ok = VG_(get_fnname_w_offset)(act->from_addr, &buf);
+
+   DiEpoch ep = VG_(current_DiEpoch)();
+   ok = VG_(get_fnname_w_offset)(ep, act->from_addr, &buf);
    if (!ok) buf = "???";
    // Stash away name1
    HChar name1[VG_(strlen)(buf) + 1];
    VG_(strcpy)(name1, buf);
 
    const HChar *name2;
-   ok = VG_(get_fnname_w_offset)(act->to_addr, &name2);
+   ok = VG_(get_fnname_w_offset)(ep, act->to_addr, &name2);
    if (!ok) name2 = "???";
 
    VG_(message)(Vg_DebugMsg, "%s0x%08lx (%-20s) %s-> (%04d.%d) 0x%08lx %s\n", 

@@ -569,8 +569,8 @@ Bool MC_(record_fishy_value_error)  ( ThreadId tid, const HChar* function,
 /* Leak kinds tokens to call VG_(parse_enum_set). */
 extern const HChar* MC_(parse_leak_kinds_tokens);
 
-/* prints a description of address a */
-void MC_(pp_describe_addr) (Addr a);
+/* prints a description of address a in the specified debuginfo epoch */
+void MC_(pp_describe_addr) ( DiEpoch ep, Addr a );
 
 /* Is this address in a user-specified "ignored range" ? */
 Bool MC_(in_ignored_range) ( Addr a );

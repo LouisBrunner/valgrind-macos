@@ -43,6 +43,10 @@ usage: valgrind [options] prog-and-args
     --error-exitcode=<number> exit code to return if errors found [0=disable]
     --error-markers=<begin>,<end> add lines with begin/end markers before/after
                               each error output in plain text mode [none]
+    --keep-debuginfo=no|yes   Keep symbols etc for unloaded code [no]
+                              This allows saved stack traces (e.g. memory leaks)
+                              to include file/line info for code that has been
+                              dlclose'd (or similar)
     --show-below-main=no|yes  continue stack traces below main() [no]
     --default-suppressions=yes|no
                               load default suppressions [yes]

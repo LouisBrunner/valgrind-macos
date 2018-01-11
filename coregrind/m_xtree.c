@@ -501,7 +501,7 @@ void VG_(XT_callgrind_print)
       // the strings  called_filename/called_fnname.
 #define CALLED_FLF(n)                                                   \
       if ((n) < 0                                                       \
-          || !VG_(get_filename_linenum)(ips[(n)],                       \
+          || !VG_(get_filename_linenum)(ep, ips[(n)],                   \
                                         &filename_name,                 \
                                         &filename_dir,                  \
                                         &called_linenum)) {             \
@@ -509,7 +509,7 @@ void VG_(XT_callgrind_print)
          called_linenum = 0;                                            \
       }                                                                 \
       if ((n) < 0                                                       \
-          || !VG_(get_fnname)(ips[(n)], &called_fnname)) {              \
+          || !VG_(get_fnname)(ep, ips[(n)], &called_fnname)) {          \
          called_fnname = "UnknownFn???";                                \
       }                                                                 \
       {                                                                 \
@@ -550,6 +550,8 @@ void VG_(XT_callgrind_print)
          UInt prev_linenum;
 
          const Addr* ips = VG_(get_ExeContext_StackTrace)(xe->ec) + xe->top;
+         const DiEpoch ep = VG_(get_ExeContext_epoch)(xe->ec);
+
          Int ips_idx = xe->n_ips_sel - 1;
 
          if (0) {
@@ -762,11 +764,24 @@ static void ms_output_group (VgFile* fp, UInt depth, Ms_Group* group,
    ms_make_groups(depth+1, group->ms_ec, group->n_ec, sig_sz,
                   &n_groups, &groups);
 
+   // FIXME JRS EPOCH 28 July 2017: HACK!  Is this correct?
+   const DiEpoch cur_ep = VG_(current_DiEpoch)();
+   // // FIXME PW EPOCH : No, the above is not correct.
+   // Xtree Massif output regroups execontext in the layout of a 'tree'.
+   // So, possibly, the same IP address value can be in 2 different ec, but
+   // the epoch to symbolise this address must be retrieved from the ec it
+   // originates from.
+   // So, to fix this, it is not enough to make a group based on identical
+   // IP addr value, one must also find the di used to symbolise this address,
+   // A group will then be defined as 'same IP and same di'.
+   // Fix not trivial to do, so for the moment, --keep-debuginfo=yes will
+   // have no impact on xtree massif output.
+
    FP("%*s" "n%u: %ld %s\n", 
       depth + 1, "",
       n_groups, 
       group->total,
-      VG_(describe_IP)(group->ms_ec->ips[depth] - 1, NULL));
+      VG_(describe_IP)(cur_ep, group->ms_ec->ips[depth] - 1, NULL));
    /* XTREE??? Massif original code removes 1 to get the IP description. I am
       wondering if this is not something that predates revision r8818,
       which introduced a -1 in the stack unwind (see m_stacktrace.c)
@@ -955,7 +970,7 @@ void VG_(XT_massif_print)
    }
 }
 
-Int VG_(XT_offset_main_or_below_main)(Addr* ips, Int n_ips)
+Int VG_(XT_offset_main_or_below_main)(DiEpoch ep, Addr* ips, Int n_ips)
 {
    /* Search for main or below main function.
       To limit the nr of ips to examine, we maintain the deepest
@@ -972,7 +987,7 @@ Int VG_(XT_offset_main_or_below_main)(Addr* ips, Int n_ips)
    for (i = n_ips - 1 - deepest_main;
         i < n_ips;
         i++) {
-      mbmkind = VG_(get_fnname_kind_from_IP)(ips[i]);
+      mbmkind = VG_(get_fnname_kind_from_IP)(ep, ips[i]);
       if (mbmkind != Vg_FnNameNormal) {
          mbm = i;
          break;
@@ -983,7 +998,7 @@ Int VG_(XT_offset_main_or_below_main)(Addr* ips, Int n_ips)
    for (i = mbm - 1;
         i >= 0 && mbmkind != Vg_FnNameMain;
         i--) {
-      kind = VG_(get_fnname_kind_from_IP)(ips[i]);
+      kind = VG_(get_fnname_kind_from_IP)(ep, ips[i]);
       if (kind != Vg_FnNameNormal) {
          mbm = i;
          mbmkind = kind;
@@ -1014,8 +1029,11 @@ void VG_(XT_filter_1top_and_maybe_below_main)
 
    if (VG_(clo_show_below_main))
       mbm = n_ips - 1;
-   else
-      mbm = VG_(XT_offset_main_or_below_main)(ips, n_ips);
+   else {
+      // FIXME PW EPOCH : use the real ips epoch
+      const DiEpoch cur_ep = VG_(current_DiEpoch)();
+      mbm = VG_(XT_offset_main_or_below_main)(cur_ep, ips, n_ips);
+   }
 
    *n_ips_sel = mbm - *top + 1;
 }
@@ -1033,9 +1051,11 @@ void VG_(XT_filter_maybe_below_main)
 
    if (VG_(clo_show_below_main))
       mbm = n_ips - 1;
-   else
-      mbm = VG_(XT_offset_main_or_below_main)(ips, n_ips);
-
+   else {
+      // FIXME PW EPOCH : use the real ips epoch
+      const DiEpoch cur_ep = VG_(current_DiEpoch)();
+      mbm = VG_(XT_offset_main_or_below_main)(cur_ep, ips, n_ips);
+   }
    *n_ips_sel = mbm - *top + 1;
 }
 

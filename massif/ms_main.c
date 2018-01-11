@@ -520,8 +520,9 @@ void filter_IPs (Addr* ips, Int n_ips,
    //  alloc function 'inside' a stacktrace e.g.
    //    0x1 0x2 0x3 alloc func1 main
    //  became   0x1 0x2 0x3 func1 main
+   const DiEpoch ep = VG_(current_DiEpoch)();
    for (i = *top; i < n_ips; i++) {
-      top_has_fnname = VG_(get_fnname)(ips[*top], &fnname);
+      top_has_fnname = VG_(get_fnname)(ep, ips[*top], &fnname);
       if (top_has_fnname &&  VG_(strIsMemberXA)(alloc_fns, fnname)) {
          VERB(4, "filtering alloc fn %s\n", fnname);
          (*top)++;
@@ -536,7 +537,7 @@ void filter_IPs (Addr* ips, Int n_ips,
       if (!top_has_fnname) {
          // top has no fnname => search for the first entry that has a fnname
          for (i = *top; i < n_ips && !top_has_fnname; i++) {
-            top_has_fnname = VG_(get_fnname)(ips[i], &fnname);
+            top_has_fnname = VG_(get_fnname)(ep, ips[i], &fnname);
          }
       }
       if (top_has_fnname && VG_(strIsMemberXA)(ignore_fns, fnname)) {
@@ -544,10 +545,18 @@ void filter_IPs (Addr* ips, Int n_ips,
          *top = n_ips;
          *n_ips_sel = 0;
       }
-   }       
+   }
 
    if (!VG_(clo_show_below_main) && *n_ips_sel > 0 ) {
-      Int mbm = VG_(XT_offset_main_or_below_main)(ips, n_ips);
+      // Technically, it would be better to use the 'real' epoch that
+      // was used to capture ips/n_ips. However, this searches
+      // for a main or below_main function. It is technically possible
+      // but unlikely that main or below main fn is in a dlclose-d library,
+      // so current epoch is reasonable enough, even if not perfect.
+      // FIXME PW EPOCH: would be better to also use the real ips epoch here,
+      // once m_xtree.c massif output format properly supports epoch.
+      const DiEpoch cur_ep = VG_(current_DiEpoch)();
+      Int mbm = VG_(XT_offset_main_or_below_main)(cur_ep, ips, n_ips);
 
       if (mbm < *top) {
          // Special case: the first main (or below main) function is an
@@ -581,7 +590,8 @@ static ExeContext* make_ec(ThreadId tid, Bool exclude_first_entry)
    if (exclude_first_entry && n_ips > 0) {
       const HChar *fnname;
       VERB(4, "removing top fn %s from stacktrace\n", 
-           VG_(get_fnname)(ips[0], &fnname) ? fnname : "???");
+              VG_(get_fnname)(VG_(current_DiEpoch)(), ips[0], &fnname)
+                 ? fnname : "???");
       return VG_(make_ExeContext_from_StackTrace)(ips+1, n_ips-1);
    } else
       return VG_(make_ExeContext_from_StackTrace)(ips, n_ips);

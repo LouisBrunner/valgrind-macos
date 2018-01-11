@@ -37,12 +37,12 @@
    lock description, putting the result in ai.
    This might allocate some memory in ai, to be cleared with
    VG_(clear_addrinfo). */
-extern void HG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai );
+extern void HG_(describe_addr) ( DiEpoch ep, Addr a, /*OUT*/AddrInfo* ai );
 
 /* Get a readable description of addr, then print it using HG_(pp_addrdescr)
    using xml False and VG_(printf) to emit the characters.
    Returns True if a description was found/printed, False otherwise. */
-extern Bool HG_(get_and_pp_addrdescr) (Addr a);
+extern Bool HG_(get_and_pp_addrdescr) (DiEpoch ep, Addr a);
 
 /* For error creation/address description:
    map 'data_addr' to a malloc'd chunk, if any.

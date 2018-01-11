@@ -1232,6 +1232,28 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.keep-debuginfo" xreflabel="--keep-debuginfo">
+    <term>
+      <option><![CDATA[--keep-debuginfo=<yes|no> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>When enabled, keep ("archive") symbols and all other debuginfo
+      for unloaded code. This allows saved stack traces to include file/line
+      info for code that has been dlclose'd (or similar).  Be careful with
+      this, since it can lead to unbounded memory use for programs which
+      repeatedly load and unload shared objects.</para>
+      <para>Some tools and some functionalities have only limited support
+      for archived debug info.  Memcheck fully supports it.  Generally,
+      tools that report errors can use archived debug info to show the error
+      stack traces.  The known limitations are: Helgrind's past access stack
+      trace of a race condition is does not use archived debug info. Massif
+      (and more generally the xtree Massif output format) does not make use
+      of archived debug info. Only Memcheck has been (somewhat) tested
+      with <option>--keep-debuginfo=yes</option>, so other tools may have
+      unknown limitations. </para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.show-below-main" xreflabel="--show-below-main">
     <term>
       <option><![CDATA[--show-below-main=<yes|no> [default: no] ]]></option>

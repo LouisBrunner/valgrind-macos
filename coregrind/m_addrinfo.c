@@ -86,7 +86,7 @@ static ThreadId find_tid_with_stack_containing (Addr a)
    return VG_INVALID_THREADID;
 }
 
-void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
+void VG_(describe_addr) ( DiEpoch ep, Addr a, /*OUT*/AddrInfo* ai )
 {
    VgSectKind sect;
 
@@ -99,7 +99,7 @@ void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
                     VG_(free), sizeof(HChar) );
 
    (void) VG_(get_data_description)( ai->Addr.Variable.descr1,
-                                     ai->Addr.Variable.descr2, a );
+                                     ai->Addr.Variable.descr2, ep, a );
    /* If there's nothing in descr1/2, free them.  Why is it safe to
       VG_(indexXA) at zero here?  Because VG_(get_data_description)
       guarantees to zero terminate descr1/2 regardless of the outcome
@@ -127,7 +127,7 @@ void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
       there. -- */
    const HChar *name;
    if (VG_(get_datasym_and_offset)(
-             a, &name,
+             ep, a, &name,
              &ai->Addr.DataSym.offset )) {
       ai->Addr.DataSym.name = VG_(strdup)("mc.da.dsname", name);
       ai->tag = Addr_DataSym;
@@ -148,6 +148,7 @@ void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
             ai->tag            = Addr_Stack;
             VG_(initThreadInfo)(&ai->Addr.Stack.tinfo);
             ai->Addr.Stack.tinfo.tid = tid;
+            ai->Addr.Stack.epoch = ep;
             ai->Addr.Stack.IP = 0;
             ai->Addr.Stack.frameNo = -1;
             ai->Addr.Stack.stackPos = StackPos_stacked;
@@ -248,6 +249,7 @@ void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai )
          ai->tag  = Addr_Stack;
          VG_(initThreadInfo)(&ai->Addr.Stack.tinfo);
          ai->Addr.Stack.tinfo.tid = tid;
+         ai->Addr.Stack.epoch = ep;
          ai->Addr.Stack.IP = 0;
          ai->Addr.Stack.frameNo = -1;
          vg_assert (stackPos != StackPos_stacked);
@@ -447,20 +449,24 @@ static void pp_addrinfo_WRK ( Addr a, const AddrInfo* ai, Bool mc,
             Bool haslinenum;
             PtrdiffT offset;
 
-            if (VG_(get_inst_offset_in_function)( ai->Addr.Stack.IP,
+            if (VG_(get_inst_offset_in_function)( ai->Addr.Stack.epoch,
+                                                  ai->Addr.Stack.IP,
                                                   &offset))
-               haslinenum = VG_(get_linenum) (ai->Addr.Stack.IP - offset,
+               haslinenum = VG_(get_linenum) (ai->Addr.Stack.epoch,
+                                              ai->Addr.Stack.IP - offset,
                                               &linenum);
             else
                haslinenum = False;
 
-            hasfile = VG_(get_filename)(ai->Addr.Stack.IP, &file);
+            hasfile = VG_(get_filename)(ai->Addr.Stack.epoch,
+                                        ai->Addr.Stack.IP, &file);
 
             HChar strlinenum[16] = "";   // large enough
             if (hasfile && haslinenum)
                VG_(sprintf)(strlinenum, "%u", linenum);
 
-            hasfn = VG_(get_fnname)(ai->Addr.Stack.IP, &fn);
+            hasfn = VG_(get_fnname)(ai->Addr.Stack.epoch,
+                                    ai->Addr.Stack.IP, &fn);
 
             if (hasfn || hasfile)
                VG_(emit)( "%sin frame #%d, created by %ps (%ps:%s)%s\n",
@@ -603,7 +609,7 @@ static void pp_addrinfo_WRK ( Addr a, const AddrInfo* ai, Bool mc,
          if (ai->Addr.SectKind.kind == Vg_SectText) {
             /* To better describe the address in a text segment,
                pp a dummy stacktrace made of this single address. */
-            VG_(pp_StackTrace)( &a, 1 );
+            VG_(pp_StackTrace)( VG_(current_DiEpoch)(), &a, 1 );
          }
          break;
 

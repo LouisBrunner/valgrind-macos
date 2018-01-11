@@ -650,6 +650,8 @@ void pc_pp_Error ( const Error* err )
 UInt pc_update_Error_extra ( const Error* err )
 {
    XError *xe = (XError*)VG_(get_error_extra)(err);
+   const DiEpoch ep = VG_(get_ExeContext_epoch)(VG_(get_error_where)(err));
+
    tl_assert(xe);
    switch (xe->tag) {
       case XE_SorG:
@@ -675,7 +677,7 @@ UInt pc_update_Error_extra ( const Error* err )
          have_descr
             = VG_(get_data_description)( xe->XE.Heap.descr1,
                                          xe->XE.Heap.descr2,
-                                         xe->XE.Heap.addr );
+                                         ep, xe->XE.Heap.addr );
 
          /* If there's nothing in descr1/2, free it.  Why is it safe to
             to VG_(indexXA) at zero here?  Because
@@ -699,7 +701,7 @@ UInt pc_update_Error_extra ( const Error* err )
          if (!have_descr) {
             const HChar *name;
             if (VG_(get_datasym_and_offset)(
-                   xe->XE.Heap.addr, &name,
+                   ep, xe->XE.Heap.addr, &name,
                    &xe->XE.Heap.datasymoff )
                ) {
               xe->XE.Heap.datasym =

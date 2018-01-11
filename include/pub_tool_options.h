@@ -249,6 +249,12 @@ extern Int   VG_(clo_backtrace_size);
 /* Continue stack traces below main()?  Default: NO */
 extern Bool VG_(clo_show_below_main);
 
+/* Keep symbols (and all other debuginfo) for code that is unloaded (dlclose
+   or similar) so that stack traces can still give line/file info for
+   previously captured stack traces.  e.g. ... showing where a block was
+   allocated e.g. leaks of or accesses just outside a block. */
+extern Bool VG_(clo_keep_debuginfo);
+
 
 /* Used to expand file names.  "option_name" is the option name, eg.
    "--log-file".  'format' is what follows, eg. "cachegrind.out.%p".  In

@@ -149,8 +149,13 @@ Addr thumb_pc (Addr pc)
       // the debug info with the bit0 set
       // (why can't debug info do that for us ???)
       // (why if this is a 4 bytes thumb instruction ???)
-      if (VG_(get_fnname_raw) (pc | 1, &fnname)) {
-         if (VG_(lookup_symbol_SLOW)( "*", fnname, &avmas )) {
+
+      // Used to check if the instruction is a thumb instruction,
+      // typically for a live address, so cur_ep is a reasonable choice.
+      const DiEpoch cur_ep = VG_(current_DiEpoch)();
+
+      if (VG_(get_fnname_raw) (cur_ep, pc | 1, &fnname)) {
+         if (VG_(lookup_symbol_SLOW)( cur_ep, "*", fnname, &avmas )) {
             dlog (1, "fnname %s lookupsym %p => %p %s.\n",
                   fnname, C2v(avmas.main), C2v(pc),
                   (avmas.main & 1 ? "thumb" : "arm"));

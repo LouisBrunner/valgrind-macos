@@ -142,14 +142,17 @@ static HChar* sym (Addr addr, Bool is_code)
    PtrdiffT offset;
    if (w == 2) w = 0;
 
+   // sym is used for debugging/tracing, so cur_ep is a reasonable choice.
+   const DiEpoch cur_ep = VG_(current_DiEpoch)();
+
    if (is_code) {
       const HChar *name;
-      name = VG_(describe_IP) (addr, NULL);
+      name = VG_(describe_IP) (cur_ep, addr, NULL);
       if (buf[w]) VG_(free)(buf[w]);
       buf[w] = VG_(strdup)("gdbserver sym", name);
    } else {
       const HChar *name;
-      VG_(get_datasym_and_offset) (addr, &name, &offset);
+      VG_(get_datasym_and_offset) (cur_ep, addr, &name, &offset);
       if (buf[w]) VG_(free)(buf[w]);
       buf[w] = VG_(strdup)("gdbserver sym", name);
    }

@@ -195,6 +195,8 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
    int   kwdid;
    int int_value;
 
+   const DiEpoch cur_ep = VG_(current_DiEpoch)();
+
    vg_assert (initial_valgrind_sink_saved);
 
    strcpy (s, mon);
@@ -334,7 +336,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
          }
          if (hostvisibility) {
             const DebugInfo *tooldi 
-               = VG_(find_DebugInfo) ((Addr)handle_gdb_valgrind_command);
+               = VG_(find_DebugInfo) (cur_ep, (Addr)handle_gdb_valgrind_command);
             /* Normally, we should always find the tooldi. In case we
                do not, suggest a 'likely somewhat working' address: */
             const Addr tool_text_start
@@ -442,14 +444,14 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
                                                &dummy_sz, &ssaveptr)) {
             // If tool provides location information, use that.
             if (VG_(needs).info_location) {
-               VG_TDICT_CALL(tool_info_location, address);
+               VG_TDICT_CALL(tool_info_location, cur_ep, address);
             } 
             // If tool does not provide location info, use the common one.
             // Also use the common to compare with tool when debug log is set.
             if (!VG_(needs).info_location || VG_(debugLog_getLevel)() > 0 ) {
                AddrInfo ai;
                ai.tag = Addr_Undescribed;
-               VG_(describe_addr) (address, &ai);
+               VG_(describe_addr) (cur_ep, address, &ai);
                VG_(pp_addrinfo) (address, &ai);
                VG_(clear_addrinfo) (&ai);
             }

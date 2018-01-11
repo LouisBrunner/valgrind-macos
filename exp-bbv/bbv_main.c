@@ -346,6 +346,7 @@ static IRSB* bbv_instrument ( VgCallbackClosure* closure,
    IRDirty  *di;
    IRExpr   **argv, *arg1;
    Int      regparms,opcode_type;
+   DiEpoch  ep = VG_(current_DiEpoch)();
 
       /* We don't handle a host/guest word size mismatch */
    if (gWordTy != hWordTy) {
@@ -392,8 +393,8 @@ static IRSB* bbv_instrument ( VgCallbackClosure* closure,
       block_num++;
          /* get function name and entry point information */
       const HChar *fn_name;
-      VG_(get_fnname)(origAddr, &fn_name);
-      bbInfo->is_entry=VG_(get_fnname_if_entry)(origAddr, &fn_name);
+      VG_(get_fnname)(ep, origAddr, &fn_name);
+      bbInfo->is_entry=VG_(get_fnname_if_entry)(ep, origAddr, &fn_name);
       bbInfo->fn_name =VG_(strdup)("bbv_strings", fn_name);
          /* insert structure into table */
       VG_(OSetGen_Insert)( instr_info_table, bbInfo );

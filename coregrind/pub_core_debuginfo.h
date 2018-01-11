@@ -86,20 +86,21 @@ extern void VG_(di_discard_ALL_debuginfo)( void );
  * It should only be used in cases where the names of interest will have
  * particular (ie. non-mangled) forms, or the mangled form is acceptable. */
 extern
-Bool VG_(get_fnname_raw) ( Addr a, const HChar** buf );
+Bool VG_(get_fnname_raw) ( DiEpoch ep, Addr a, const HChar** buf );
 
 /* Like VG_(get_fnname), but without C++ demangling.  (But it does
  Z-demangling and below-main renaming.)
  iipc argument: same usage as in VG_(describe_IP) in pub_tool_debuginfo.h. */
 extern
-Bool VG_(get_fnname_no_cxx_demangle) ( Addr a, const HChar** buf,
+Bool VG_(get_fnname_no_cxx_demangle) ( DiEpoch ep, Addr a, const HChar** buf,
                                        const InlIPCursor* iipc );
 
 /* mips-linux only: find the offset of current address. This is needed for 
    stack unwinding for MIPS.
 */
 extern
-Bool VG_(get_inst_offset_in_function)( Addr a, /*OUT*/PtrdiffT* offset );
+Bool VG_(get_inst_offset_in_function)( DiEpoch ep, Addr a,
+                                       /*OUT*/PtrdiffT* offset );
 
 
 /* Use DWARF2/3 CFA information to do one step of stack unwinding.
@@ -158,6 +159,7 @@ extern Bool VG_(FPO_info_present)(void);
 extern Bool VG_(use_FPO_info) ( /*MOD*/Addr* ipP,
                                 /*MOD*/Addr* spP,
                                 /*MOD*/Addr* fpP,
+                                DiEpoch ep,
                                 Addr min_accessible,
                                 Addr max_accessible );
 
@@ -217,7 +219,7 @@ void VG_(DebugInfo_syms_getidx)  ( const DebugInfo *di,
 /* ppc64-linux only: find the TOC pointer (R2 value) that should be in
    force at the entry point address of the function containing
    guest_code_addr.  Returns 0 if not known. */
-extern Addr VG_(get_tocptr) ( Addr guest_code_addr );
+extern Addr VG_(get_tocptr) ( DiEpoch ep, Addr guest_code_addr );
 
 /* Map a function name to its SymAVMAs.  Is done by
    sequential search of all symbol tables, so is very slow.  To
@@ -227,7 +229,8 @@ extern Addr VG_(get_tocptr) ( Addr guest_code_addr );
    platforms, a symbol is deemed to be found only if it has a nonzero
    TOC pointer.  */
 extern
-Bool VG_(lookup_symbol_SLOW)(const HChar* sopatt, const HChar* name,
+Bool VG_(lookup_symbol_SLOW)(DiEpoch ep, 
+                             const HChar* sopatt, const HChar* name,
                              SymAVMAs* avmas);
 
 #endif   // __PUB_CORE_DEBUGINFO_H

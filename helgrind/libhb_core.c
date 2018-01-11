@@ -4462,6 +4462,7 @@ static Bool check_cached_rcec_ok (Thr* thr, Addr previous_frame0)
    UWord frames[N_FRAMES];
    UWord sps[N_FRAMES];
    UWord fps[N_FRAMES];
+   const DiEpoch cur_ep = VG_(current_DiEpoch)();
 
    for (i = 0; i < N_FRAMES; i++)
       frames[i] = sps[i] = fps[i] = 0;
@@ -4510,7 +4511,7 @@ static Bool check_cached_rcec_ok (Thr* thr, Addr previous_frame0)
             Vg_FnNameKind fr_kind;
             for (fr_main = 0; fr_main < N_FRAMES; fr_main++) {
                fr_kind = VG_(get_fnname_kind_from_IP)
-                                (frames[fr_main]);
+                                (cur_ep, frames[fr_main]);
                if (fr_kind == Vg_FnNameMain || fr_kind == Vg_FnNameBelowMain)
                   break;
             }
@@ -4518,7 +4519,7 @@ static Bool check_cached_rcec_ok (Thr* thr, Addr previous_frame0)
             Vg_FnNameKind kh_kind;
             for (kh_main = 0; kh_main < N_FRAMES; kh_main++) {
                kh_kind = VG_(get_fnname_kind_from_IP)
-                                (thr->cached_rcec.frames[kh_main]);
+                                (cur_ep, thr->cached_rcec.frames[kh_main]);
                if (kh_kind == Vg_FnNameMain || kh_kind == Vg_FnNameBelowMain)
                   break;
             }
@@ -4587,7 +4588,7 @@ static Bool check_cached_rcec_ok (Thr* thr, Addr previous_frame0)
          if (reason == NULL) {
             const HChar *fnname;
             for (UInt f = 0; f < N_FRAMES; f++) {
-               if (VG_(get_fnname)( frames[f], &fnname)
+               if (VG_(get_fnname)( cur_ep, frames[f], &fnname)
                    && VG_(strcmp) ("__run_exit_handlers", fnname) == 0) {
                   reason = "exit handlers";
                   break;
@@ -4632,11 +4633,11 @@ static Bool check_cached_rcec_ok (Thr* thr, Addr previous_frame0)
                         (void*)frames[i]);
             VG_(printf)("cached stack trace previous_frame0 %p\n",
                         (void*)previous_frame0);
-            VG_(pp_StackTrace)(&previous_frame0, 1);
+            VG_(pp_StackTrace)(cur_ep, &previous_frame0, 1);
             VG_(printf)("resulting cached stack trace:\n");
-            VG_(pp_StackTrace)(thr->cached_rcec.frames, N_FRAMES);
+            VG_(pp_StackTrace)(cur_ep, thr->cached_rcec.frames, N_FRAMES);
             VG_(printf)("check stack trace:\n");
-            VG_(pp_StackTrace)(frames, N_FRAMES);
+            VG_(pp_StackTrace)(cur_ep, frames, N_FRAMES);
 
             VG_(show_sched_status) (False,  // host_stacktrace
                                     False,  // stack_usage
@@ -4703,7 +4704,8 @@ static RCEC* get_RCEC ( Thr* thr )
          Bool save_show_below_main = VG_(clo_show_below_main);
          VG_(clo_show_below_main) = True;
          VG_(printf)("caching stack trace:\n");
-         VG_(pp_StackTrace)(&thr->cached_rcec.frames[0], N_FRAMES);
+         VG_(pp_StackTrace)(VG_(current_DiEpoch)(),
+                            &thr->cached_rcec.frames[0], N_FRAMES);
          VG_(clo_show_below_main) = save_show_below_main;
       }
       stats__cached_rcec_fresh++;

@@ -664,6 +664,7 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
    Addr       iaddr = 0, dst;
    UInt       ilen = 0;
    Bool       condition_inverted = False;
+   DiEpoch    ep = VG_(current_DiEpoch)();
 
    if (gWordTy != hWordTy) {
       /* We don't currently support this case. */
@@ -750,7 +751,7 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
                tl_assert(clo_fnname);
                tl_assert(clo_fnname[0]);
                const HChar *fnname;
-               if (VG_(get_fnname_if_entry)(st->Ist.IMark.addr, 
+               if (VG_(get_fnname_if_entry)(ep, st->Ist.IMark.addr,
                                             &fnname)
                    && 0 == VG_(strcmp)(fnname, clo_fnname)) {
                   di = unsafeIRDirty_0_N( 

@@ -228,7 +228,11 @@ static Addr mips_adjust_breakpoint_address (Addr pc)
    /* Make sure we don't scan back before the beginning of the current
       function, since we may fetch constant data or insns that look like
       a jump. */
-   if (VG_(get_inst_offset_in_function) (bpaddr, &offset)) {
+
+   // Placing a breakpoint, so pc should be in di of current epoch.
+   const DiEpoch cur_ep = VG_(current_DiEpoch)();
+
+   if (VG_(get_inst_offset_in_function) (cur_ep, bpaddr, &offset)) {
       func_addr = bpaddr - offset;
       if (func_addr > boundary && func_addr <= bpaddr)
          boundary = func_addr;

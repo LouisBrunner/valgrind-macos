@@ -1053,7 +1053,7 @@ static Bool mempool_block_maybe_describe( Addr a, Bool is_metapool,
 
 /* Describe an address as best you can, for error messages,
    putting the result in ai. */
-static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
+static void describe_addr ( DiEpoch ep, Addr a, /*OUT*/AddrInfo* ai )
 {
    MC_Chunk*  mc;
 
@@ -1121,15 +1121,15 @@ static void describe_addr ( Addr a, /*OUT*/AddrInfo* ai )
    }
 
    /* No block found. Search a non-heap block description. */
-   VG_(describe_addr) (a, ai);
+   VG_(describe_addr) (ep, a, ai);
 }
 
-void MC_(pp_describe_addr) ( Addr a )
+void MC_(pp_describe_addr) ( DiEpoch ep, Addr a )
 {
    AddrInfo ai;
 
    ai.tag = Addr_Undescribed;
-   describe_addr (a, &ai);
+   describe_addr (ep, a, &ai);
    VG_(pp_addrinfo_mc) (a, &ai, /* maybe_gcc */ False);
    VG_(clear_addrinfo) (&ai);
 }
@@ -1150,6 +1150,7 @@ static void update_origin ( /*OUT*/ExeContext** origin_ec,
 UInt MC_(update_Error_extra)( const Error* err )
 {
    MC_Error* extra = VG_(get_error_extra)(err);
+   DiEpoch   ep    = VG_(get_ExeContext_epoch)(VG_(get_error_where)(err));
 
    switch (VG_(get_error_kind)(err)) {
    // These ones don't have addresses associated with them, and so don't
@@ -1183,31 +1184,31 @@ UInt MC_(update_Error_extra)( const Error* err )
 
    // These ones always involve a memory address.
    case Err_Addr:
-      describe_addr ( VG_(get_error_address)(err),
+      describe_addr ( ep, VG_(get_error_address)(err),
                       &extra->Err.Addr.ai );
       return sizeof(MC_Error);
    case Err_MemParam:
-      describe_addr ( VG_(get_error_address)(err),
+      describe_addr ( ep, VG_(get_error_address)(err),
                       &extra->Err.MemParam.ai );
       update_origin( &extra->Err.MemParam.origin_ec,
                      extra->Err.MemParam.otag );
       return sizeof(MC_Error);
    case Err_Jump:
-      describe_addr ( VG_(get_error_address)(err),
+      describe_addr ( ep, VG_(get_error_address)(err),
                       &extra->Err.Jump.ai );
       return sizeof(MC_Error);
    case Err_User:
-      describe_addr ( VG_(get_error_address)(err),
+      describe_addr ( ep, VG_(get_error_address)(err),
                       &extra->Err.User.ai );
       update_origin( &extra->Err.User.origin_ec,
                      extra->Err.User.otag );
       return sizeof(MC_Error);
    case Err_Free:
-      describe_addr ( VG_(get_error_address)(err),
+      describe_addr ( ep, VG_(get_error_address)(err),
                       &extra->Err.Free.ai );
       return sizeof(MC_Error);
    case Err_IllegalMempool:
-      describe_addr ( VG_(get_error_address)(err),
+      describe_addr ( ep, VG_(get_error_address)(err),
                       &extra->Err.IllegalMempool.ai );
       return sizeof(MC_Error);
 

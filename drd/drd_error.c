@@ -161,6 +161,7 @@ void drd_report_data_race(const Error* const err,
    const HChar* const indent = xml ? "  " : "";
    AddrInfo ai;
 
+   DiEpoch cur_ep = VG_(current_DiEpoch)();
    XArray* /* of HChar */ descr1
       = VG_(newXA)( VG_(malloc), "drd.error.drdr2.1",
                     VG_(free), sizeof(HChar) );
@@ -172,7 +173,7 @@ void drd_report_data_race(const Error* const err,
    tl_assert(dri->addr);
    tl_assert(dri->size > 0);
 
-   (void) VG_(get_data_description)(descr1, descr2, dri->addr);
+   (void) VG_(get_data_description)(descr1, descr2, cur_ep, dri->addr);
    /* If there's nothing in descr1/2, free them.  Why is it safe to
       VG_(indexXA) at zero here?  Because VG_(get_data_description)
       guarantees to zero terminate descr1/2 regardless of the outcome

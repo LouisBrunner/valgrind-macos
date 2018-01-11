@@ -130,6 +130,7 @@ Bool   VG_(clo_run_libc_freeres) = True;
 Bool   VG_(clo_run_cxx_freeres) = True;
 Bool   VG_(clo_track_fds)      = False;
 Bool   VG_(clo_show_below_main)= False;
+Bool   VG_(clo_keep_debuginfo) = False;
 Bool   VG_(clo_show_emwarns)   = False;
 Word   VG_(clo_max_stackframe) = 2000000;
 UInt   VG_(clo_max_threads)    = MAX_THREADS_DEFAULT;

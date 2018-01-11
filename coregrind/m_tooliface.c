@@ -328,7 +328,7 @@ void VG_(needs_print_stats) (
 }
 
 void VG_(needs_info_location) (
-   void (*info_location)(Addr)
+   void (*info_location)(DiEpoch, Addr)
 )
 {
    VG_(needs).info_location = True;

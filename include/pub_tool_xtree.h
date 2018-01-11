@@ -121,7 +121,7 @@ extern void VG_(XT_filter_1top_and_maybe_below_main)
 /* Search in ips[0..n_ips-1] the first function which is main or below main
    and return its offset.
    If no main or below main is found, return n_ips-1 */
-extern Int VG_(XT_offset_main_or_below_main)(Addr* ips, Int n_ips);
+extern Int VG_(XT_offset_main_or_below_main)(DiEpoch ep, Addr* ips, Int n_ips);
 
 
 /* Take a (frozen) snapshot of xt.

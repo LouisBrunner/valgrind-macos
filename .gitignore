@@ -1075,6 +1075,8 @@
 /memcheck/tests/linux/.deps
 /memcheck/tests/linux/brk
 /memcheck/tests/linux/capget
+/memcheck/tests/linux/dlclose_leak
+/memcheck/tests/linux/dlclose_leak_so.so
 /memcheck/tests/linux/getregset
 /memcheck/tests/linux/ioctl-tiocsig
 /memcheck/tests/linux/lsframe1

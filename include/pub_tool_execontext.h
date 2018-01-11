@@ -30,7 +30,13 @@
 #ifndef __PUB_TOOL_EXECONTEXT_H
 #define __PUB_TOOL_EXECONTEXT_H
 
-#include "pub_tool_basics.h"   // ThreadID
+#include "pub_tool_basics.h"     // ThreadID
+#include "pub_tool_debuginfo.h"  // DiEpoch
+
+
+/*====================================================================*/
+/*=== ExeContext                                                   ===*/
+/*====================================================================*/
 
 // It's an abstract type.
 typedef
@@ -74,6 +80,9 @@ ExeContext* VG_(record_depth_1_ExeContext)(ThreadId tid, Word first_ip_delta);
 // Apply a function to every element in the ExeContext.  The parameter 'n'
 // gives the index of the passed ip.  Doesn't go below main() unless
 // --show-below-main=yes is set.
+// Currently, the below function is unused. If ever it is used one day,
+// we should add epoch args similarly to function VG_(apply_StackTrace)
+// in pub_tool_stacktrace.h.
 extern void VG_(apply_ExeContext)( void(*action)(UInt n, Addr ip),
                                    ExeContext* ec, UInt n_ips );
 
@@ -92,6 +101,9 @@ extern void VG_(pp_ExeContext) ( ExeContext* ec );
 // multiple of four (iow, the lowest two bits are guaranteed to
 // be zero, so that callers can store other information there.
 extern UInt VG_(get_ECU_from_ExeContext)( const ExeContext* e );
+
+// Returns the epoch in which the ips of e can be symbolised.
+extern DiEpoch VG_(get_ExeContext_epoch)( const ExeContext* e );
 
 // How many entries (frames) in this ExeContext?
 extern Int VG_(get_ExeContext_n_ips)( const ExeContext* e );

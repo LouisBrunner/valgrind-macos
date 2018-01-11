@@ -209,7 +209,10 @@ void gdbserver_process_exit_encountered (unsigned char status, Int code)
 static
 const HChar* sym (Addr addr)
 {
-   return VG_(describe_IP) (addr, NULL);
+   // Tracing/debugging so cur_ep is reasonable.
+   const DiEpoch cur_ep = VG_(current_DiEpoch)();
+
+   return VG_(describe_IP) (cur_ep, addr, NULL);
 }
 
 ThreadId vgdb_interrupted_tid = 0;

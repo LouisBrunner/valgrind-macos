@@ -31,7 +31,7 @@
 #ifndef __PUB_TOOL_STACKTRACE_H
 #define __PUB_TOOL_STACKTRACE_H
 
-#include "pub_tool_basics.h"   // Addr
+#include "pub_tool_basics.h"   // Addr, DiEpoch
 
 // The basic stack trace type:  just an array of code addresses.
 typedef Addr* StackTrace;
@@ -75,19 +75,19 @@ extern UInt VG_(get_StackTrace_with_deltas)(
                 Word first_sp_delta
              );
 
-// Apply a function to every element in the StackTrace.  The parameter
-// 'n' gives the index of the passed ip.  'opaque' is an arbitrary
-// pointer provided to each invocation of 'action' (a poor man's
-// closure).  Doesn't go below main() unless --show-below-main=yes is
-// set.
+// Apply a function to every element in the StackTrace.  The parameter 'n'
+// gives the index of the passed ip.  'opaque' is an arbitrary pointer
+// provided to each invocation of 'action' (a poor man's closure).  'ep' is
+// the debuginfo epoch assumed to apply to all code addresses in the stack
+// trace.  Doesn't go below main() unless --show-below-main=yes is set.
 extern void VG_(apply_StackTrace)(
-               void(*action)(UInt n, Addr ip, void* opaque),
+               void(*action)(UInt n, DiEpoch ep, Addr ip, void* opaque),
                void* opaque,
-               StackTrace ips, UInt n_ips
+               DiEpoch ep, StackTrace ips, UInt n_ips
             );
 
 // Print a StackTrace.
-extern void VG_(pp_StackTrace) ( StackTrace ips, UInt n_ips );
+extern void VG_(pp_StackTrace) ( DiEpoch ep, StackTrace ips, UInt n_ips );
 
 // Gets and immediately prints a StackTrace.  Just a bit simpler than
 // calling VG_(get_StackTrace)() then VG_(pp_StackTrace)().

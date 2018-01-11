@@ -126,7 +126,7 @@ struct _AddrInfo {
 
       // On a stack. tinfo indicates which thread's stack?
       // IP is the address of an instruction of the function where the
-      // stack address was. 0 if not found.
+      // stack address was. 0 if not found. IP can be symbolised using epoch.
       // frameNo is the frame nr of the call where the stack address was.
       // -1 if not found.
       // stackPos describes the address 'position' in the stack.
@@ -135,6 +135,7 @@ struct _AddrInfo {
       // (spoffset will be negative, as stacks are assumed growing down).
       struct {
          ThreadInfo tinfo;
+         DiEpoch  epoch;
          Addr     IP;
          Int      frameNo;
          StackPos stackPos;
@@ -151,9 +152,9 @@ struct _AddrInfo {
          const HChar* block_desc;   // "block","mempool","user-defined",arena
          SizeT       block_szB;
          PtrdiffT    rwoffset;
-         ExeContext* allocated_at;  // might be null_ExeContext.
-         ThreadInfo  alloc_tinfo;   // which thread did alloc this block.
-         ExeContext* freed_at;      // might be null_ExeContext.
+         ExeContext* allocated_at; // might contain null_ExeContext.
+         ThreadInfo  alloc_tinfo;  // which thread alloc'd this block.
+         ExeContext* freed_at;     // might contain null_ExeContext.
       } Block;
 
       // In a global .data symbol.  This holds
@@ -204,7 +205,7 @@ struct _AddrInfo {
    On entry, ai->tag must be equal to Addr_Undescribed.
    This might allocate some memory, that can be cleared with
    VG_(clear_addrinfo). */
-extern void VG_(describe_addr) ( Addr a, /*OUT*/AddrInfo* ai );
+extern void VG_(describe_addr) ( DiEpoch ep, Addr a, /*OUT*/AddrInfo* ai );
 
 extern void VG_(clear_addrinfo) ( AddrInfo* ai);
 

@@ -199,7 +199,8 @@ obj_node* obj_of_address(Addr addr)
   DebugInfo* di;
   PtrdiffT offset;
 
-  di = VG_(find_DebugInfo)(addr);
+  DiEpoch ep = VG_(current_DiEpoch)();
+  di = VG_(find_DebugInfo)(ep, addr);
   obj = CLG_(get_obj_node)( di );
 
   /* Update symbol offset in object if remapped */

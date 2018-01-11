@@ -2037,8 +2037,14 @@ void do_client_request ( ThreadId tid )
 
          VG_(memset)(buf64, 0, 64);
          UInt linenum = 0;
+
+         // Unless the guest would become epoch aware (and would need to
+         // describe IP addresses of dlclosed libs), using cur_ep is a
+         // reasonable choice.
+         const DiEpoch cur_ep = VG_(current_DiEpoch)();
+
          Bool ok = VG_(get_filename_linenum)(
-                      ip, &buf, NULL, &linenum
+                      cur_ep, ip, &buf, NULL, &linenum
                    );
          if (ok) {
             /* For backward compatibility truncate the filename to

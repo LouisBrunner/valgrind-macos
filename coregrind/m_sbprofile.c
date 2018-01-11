@@ -74,6 +74,9 @@ void show_SB_profile ( const SBProfEntry tops[], UInt n_tops,
 
    VG_(printf)("Total score = %'llu\n\n", score_total);
 
+   // FIXME JRS EPOCH 28 July 2017: this is probably not right in general
+   DiEpoch cur_ep = VG_(current_DiEpoch)();
+
    /* Print an initial per-block summary. */
    VG_(printf)("rank  ---cumulative---      -----self-----\n");
    score_cumul = 0;
@@ -84,7 +87,7 @@ void show_SB_profile ( const SBProfEntry tops[], UInt n_tops,
          continue;
 
       const HChar *name;
-      VG_(get_fnname_w_offset)(tops[r].addr, &name);
+      VG_(get_fnname_w_offset)(cur_ep, tops[r].addr, &name);
 
       score_here = tops[r].score;
       score_cumul += score_here;
@@ -123,7 +126,7 @@ void show_SB_profile ( const SBProfEntry tops[], UInt n_tops,
             continue;
 
          const HChar *name;
-         VG_(get_fnname_w_offset)(tops[r].addr, &name);
+         VG_(get_fnname_w_offset)(cur_ep, tops[r].addr, &name);
 
          score_here = tops[r].score;
          score_cumul += score_here;
@@ -159,7 +162,7 @@ void show_SB_profile ( const SBProfEntry tops[], UInt n_tops,
             continue;
 
          const HChar *name;
-         VG_(get_fnname_w_offset)(tops[r].addr, &name);
+         VG_(get_fnname_w_offset)(cur_ep, tops[r].addr, &name);
 
          score_here = tops[r].score;
 

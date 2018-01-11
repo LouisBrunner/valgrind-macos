@@ -31,11 +31,20 @@
 #ifndef __PUB_TOOL_DEBUGINFO_H
 #define __PUB_TOOL_DEBUGINFO_H
 
-#include "pub_tool_basics.h"   // VG_ macro
+#include "pub_tool_basics.h"   // VG_ macro, DiEpoch
 #include "pub_tool_xarray.h"   // XArray
 
+
 /*====================================================================*/
-/*=== Obtaining debug information                                  ===*/
+/*=== Debuginfo epochs.                                            ===*/
+/*====================================================================*/
+
+// This returns the current epoch.
+DiEpoch VG_(current_DiEpoch)(void);
+
+
+/*====================================================================*/
+/*=== Obtaining information pertaining to source artefacts.        ===*/
 /*====================================================================*/
 
 /* IMPORTANT COMMENT about memory persistence and ownership.
@@ -76,11 +85,11 @@
    demangles C++ function names.  VG_(get_fnname_w_offset) is the
    same, except it appends "+N" to symbol names to indicate offsets.
    NOTE: See IMPORTANT COMMENT above about persistence and ownership. */
-extern Bool VG_(get_filename) ( Addr a, const HChar** filename );
-extern Bool VG_(get_fnname)   ( Addr a, const HChar** fnname );
-extern Bool VG_(get_linenum)  ( Addr a, UInt* linenum );
+extern Bool VG_(get_filename) ( DiEpoch ep, Addr a, const HChar** filename );
+extern Bool VG_(get_fnname)   ( DiEpoch ep, Addr a, const HChar** fnname );
+extern Bool VG_(get_linenum)  ( DiEpoch ep, Addr a, UInt* linenum );
 extern Bool VG_(get_fnname_w_offset)
-                              ( Addr a, const HChar** fnname );
+                              ( DiEpoch ep, Addr a, const HChar** fnname );
 
 /* This one is the most general.  It gives filename, line number and
    optionally directory name.  filename and linenum may not be NULL.
@@ -95,7 +104,7 @@ extern Bool VG_(get_fnname_w_offset)
    Returned value indicates whether any filename/line info could be
    found. */
 extern Bool VG_(get_filename_linenum)
-                              ( Addr a, 
+                              ( DiEpoch ep, Addr a,
                                 /*OUT*/const HChar** filename,
                                 /*OUT*/const HChar** dirname,
                                 /*OUT*/UInt* linenum );
@@ -108,7 +117,8 @@ extern Bool VG_(get_filename_linenum)
    of its symbols, this function will not be able to recognise function
    entry points within it.
    NOTE: See IMPORTANT COMMENT above about persistence and ownership. */
-extern Bool VG_(get_fnname_if_entry) ( Addr a, const HChar** fnname );
+extern Bool VG_(get_fnname_if_entry) ( DiEpoch ep, Addr a,
+                                       const HChar** fnname );
 
 typedef
    enum {
@@ -121,13 +131,13 @@ typedef
 extern Vg_FnNameKind VG_(get_fnname_kind) ( const HChar* name );
 
 /* Like VG_(get_fnname_kind), but takes a code address. */
-extern Vg_FnNameKind VG_(get_fnname_kind_from_IP) ( Addr ip );
+extern Vg_FnNameKind VG_(get_fnname_kind_from_IP) ( DiEpoch ep, Addr ip );
 
 /* Looks up data_addr in the collection of data symbols, and if found
    puts its name (or as much as will fit) into dname[0 .. n_dname-1],
    which is guaranteed to be zero terminated.  Also data_addr's offset
    from the symbol start is put into *offset. */
-extern Bool VG_(get_datasym_and_offset)( Addr data_addr,
+extern Bool VG_(get_datasym_and_offset)( DiEpoch ep, Addr data_addr,
                                          /*OUT*/const HChar** dname,
                                          /*OUT*/PtrdiffT* offset );
 
@@ -147,7 +157,7 @@ extern Bool VG_(get_datasym_and_offset)( Addr data_addr,
 Bool VG_(get_data_description)( 
         /*MOD*/ XArray* /* of HChar */ dname1v,
         /*MOD*/ XArray* /* of HChar */ dname2v,
-        Addr data_addr
+        DiEpoch ep, Addr data_addr
      );
 
 /* True if we have some Call Frame unwindo debuginfo for Addr a */
@@ -157,7 +167,7 @@ extern Bool VG_(has_CF_info)(Addr a);
    It first searches if Addr a belongs to the text segment of debug info.
    If not found, it asks the address space manager whether it
    knows the name of the file associated with this mapping. */
-extern Bool VG_(get_objname)  ( Addr a, const HChar** objname );
+extern Bool VG_(get_objname) ( DiEpoch ep, Addr a, const HChar** objname );
 
 
 /* Cursor allowing to describe inlined function calls at an IP,
@@ -172,7 +182,7 @@ typedef  struct _InlIPCursor InlIPCursor;
    eip can possibly corresponds to inlined function call(s).
    To describe eip and the inlined function calls, the following must
    be done:
-       InlIPCursor *iipc = VG_(new_IIPC)(eip);
+       InlIPCursor *iipc = VG_(new_IIPC)(ep, eip);
        do {
           buf = VG_(describe_IP)(eip, iipc);
           ... use buf ...
@@ -185,12 +195,16 @@ typedef  struct _InlIPCursor InlIPCursor;
    Note, that the returned string is allocated in a static buffer local to
    VG_(describe_IP). That buffer will be overwritten with every invocation.
    Therefore, callers need to possibly stash away the string.
+
+   Since this maps a code location to a source artefact (function names),
+   new_IIPC requires a DiEpoch argument (ep) too.
 */
-extern const HChar* VG_(describe_IP)(Addr eip, const InlIPCursor* iipc);
+extern const HChar* VG_(describe_IP)(DiEpoch ep, Addr eip,
+                                     const InlIPCursor* iipc);
 
 /* Builds a IIPC (Inlined IP Cursor) to describe eip and all the inlined calls
    at eip. Such a cursor must be deleted after use using VG_(delete_IIPC). */
-extern InlIPCursor* VG_(new_IIPC)(Addr eip);
+extern InlIPCursor* VG_(new_IIPC)(DiEpoch ep, Addr eip);
 /* Move the cursor to the next call to describe.
    Returns True if there are still calls to describe.
    False if nothing to describe anymore. */
@@ -242,7 +256,7 @@ VG_(di_get_global_blocks_from_dihandle) ( ULong di_handle,
 
 
 /*====================================================================*/
-/*=== Obtaining debug information                                  ===*/
+/*=== Obtaining information pertaining to shared objects.          ===*/
 /*====================================================================*/
 
 /* A way to make limited debuginfo queries on a per-mapped-object
@@ -251,7 +265,7 @@ typedef  struct _DebugInfo  DebugInfo;
 
 /* Returns NULL if the DebugInfo isn't found.  It doesn't matter if
    debug info is present or not. */
-DebugInfo* VG_(find_DebugInfo) ( Addr a );
+DebugInfo* VG_(find_DebugInfo) ( DiEpoch ep, Addr a );
 
 /* Fish bits out of DebugInfos. */
 Addr          VG_(DebugInfo_get_text_avma)   ( const DebugInfo *di );

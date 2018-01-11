@@ -1,0 +1,4 @@
+prog: dlclose_leak
+stderr_filter: ../filter_stderr
+stderr_filter_args: dlclose_leak
+vgopts: -q --leak-check=yes --keep-debuginfo=no

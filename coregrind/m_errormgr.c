@@ -321,15 +321,15 @@ static Bool eq_Error ( VgRes res, const Error* e1, const Error* e2 )
 */
 #define ERRTXT_LEN   4096
 
-static void printSuppForIp_XML(UInt n, Addr ip, void* uu_opaque)
+static void printSuppForIp_XML(UInt n, DiEpoch ep, Addr ip, void* uu_opaque)
 {
    const HChar *buf;
-   InlIPCursor* iipc = VG_(new_IIPC)(ip);
+   InlIPCursor* iipc = VG_(new_IIPC)(ep, ip);
    do {
-      if ( VG_(get_fnname_no_cxx_demangle) (ip, &buf, iipc) ) {
+      if ( VG_(get_fnname_no_cxx_demangle) (ep, ip, &buf, iipc) ) {
          VG_(printf_xml)("    <sframe> <fun>%pS</fun> </sframe>\n", buf);
       } else
-      if ( VG_(get_objname)(ip, &buf) ) {
+      if ( VG_(get_objname)(ep, ip, &buf) ) {
          VG_(printf_xml)("    <sframe> <obj>%pS</obj> </sframe>\n", buf);
       } else {
          VG_(printf_xml)("    <sframe> <obj>*</obj> </sframe>\n");
@@ -338,16 +338,16 @@ static void printSuppForIp_XML(UInt n, Addr ip, void* uu_opaque)
    VG_(delete_IIPC)(iipc);
 }
 
-static void printSuppForIp_nonXML(UInt n, Addr ip, void* textV)
+static void printSuppForIp_nonXML(UInt n, DiEpoch ep, Addr ip, void* textV)
 {
    const HChar *buf;
    XArray* /* of HChar */ text = (XArray*)textV;
-   InlIPCursor* iipc = VG_(new_IIPC)(ip);
+   InlIPCursor* iipc = VG_(new_IIPC)(ep, ip);
    do {
-      if ( VG_(get_fnname_no_cxx_demangle) (ip, &buf, iipc) ) {
+      if ( VG_(get_fnname_no_cxx_demangle) (ep, ip, &buf, iipc) ) {
          VG_(xaprintf)(text, "   fun:%s\n", buf);
       } else
-      if ( VG_(get_objname)(ip, &buf) ) {
+      if ( VG_(get_objname)(ep, ip, &buf) ) {
          VG_(xaprintf)(text, "   obj:%s\n", buf);
       } else {
          VG_(xaprintf)(text, "   obj:*\n");
@@ -412,7 +412,7 @@ static void gen_suppression(const Error* err)
    vg_assert(n_ips > 0);
    vg_assert(n_ips <= VG_DEEPEST_BACKTRACE);
    VG_(apply_StackTrace)(printSuppForIp_nonXML,
-                         text,
+                         text, VG_(get_ExeContext_epoch)(ec),
                          VG_(get_ExeContext_StackTrace)(ec),
                          n_ips);
 
@@ -441,7 +441,7 @@ static void gen_suppression(const Error* err)
 
       // Print stack trace elements
       VG_(apply_StackTrace)(printSuppForIp_XML,
-                            NULL,
+                            NULL, VG_(get_ExeContext_epoch)(ec),
                             VG_(get_ExeContext_StackTrace)(ec),
                             VG_(get_ExeContext_n_ips)(ec));
 
@@ -660,7 +660,7 @@ void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
    err->count    = 1;
    err->tid      = tid;
    if (NULL == where)
-     err->where = VG_(record_ExeContext)( tid, 0 );
+      err->where = VG_(record_ExeContext)( tid, 0 );
    else
       err->where = where;
 
@@ -1509,6 +1509,7 @@ static Bool supploc_IsQuery ( const void* supplocV )
    allocations and the nr of debuginfo search. */
 typedef
    struct {
+      DiEpoch epoch;  // used to interpret .ips
       StackTrace ips; // stack trace we are lazily completing.
       UWord n_ips; // nr of elements in ips.
 
@@ -1604,9 +1605,10 @@ static void clearIPtoFunOrObjCompleter ( const Supp  *su,
                    su->sname,
                    filename,
                    su->sname_lineno);
-      } else
+      } else {
          VG_(dmsg)("errormgr matching end no suppression matched:\n");
-      VG_(pp_StackTrace) (ip2fo->ips, ip2fo->n_ips);
+      }
+      VG_(pp_StackTrace) (ip2fo->epoch, ip2fo->ips, ip2fo->n_ips);
       pp_ip2fo(ip2fo);
    }
    if (ip2fo->n_offsets_per_ip) VG_(free)(ip2fo->n_offsets_per_ip);
@@ -1669,7 +1671,8 @@ static HChar* foComplete(IPtoFunOrObjCompleter* ip2fo,
          // up comparing "malloc" in the suppression against
          // "_vgrZU_libcZdsoZa_malloc" in the backtrace, and the
          // two of them need to be made to match.
-         if (!VG_(get_fnname_no_cxx_demangle)(ip2fo->ips[ixInput],
+         if (!VG_(get_fnname_no_cxx_demangle)(ip2fo->epoch,
+                                              ip2fo->ips[ixInput],
                                               &caller,
                                               NULL))
             caller = "???";
@@ -1690,7 +1693,7 @@ static HChar* foComplete(IPtoFunOrObjCompleter* ip2fo,
             last_expand_pos_ips is the last offset in fun/obj where
             ips[pos_ips] has been expanded. */
 
-         if (!VG_(get_objname)(ip2fo->ips[pos_ips], &caller))
+         if (!VG_(get_objname)(ip2fo->epoch, ip2fo->ips[pos_ips], &caller))
             caller = "???";
 
          // Have all inlined calls pointing at this object name
@@ -1760,7 +1763,7 @@ static void expandInput (IPtoFunOrObjCompleter* ip2fo, UWord ixInput )
          const Addr IP = ip2fo->ips[ip2fo->n_ips_expanded];
          InlIPCursor *iipc;
 
-         iipc = VG_(new_IIPC)(IP);
+         iipc = VG_(new_IIPC)(ip2fo->epoch, IP);
          // The only thing we really need is the nr of inlined fn calls
          // corresponding to the IP we will expand.
          // However, computing this is mostly the same as finding
@@ -1769,7 +1772,7 @@ static void expandInput (IPtoFunOrObjCompleter* ip2fo, UWord ixInput )
             const HChar *caller;
             grow_offsets(ip2fo, ip2fo->n_expanded+1);
             ip2fo->fun_offsets[ip2fo->n_expanded] = ip2fo->names_free;
-            if (!VG_(get_fnname_no_cxx_demangle)(IP, 
+            if (!VG_(get_fnname_no_cxx_demangle)(ip2fo->epoch, IP,
                                                  &caller,
                                                  iipc))
                caller = "???";
@@ -1797,18 +1800,18 @@ static void expandInput (IPtoFunOrObjCompleter* ip2fo, UWord ixInput )
    }
 }
 
-static Bool haveInputInpC (void* inputCompleter, UWord ixInput )
+static Bool haveInputInpC (void* inputCompleterV, UWord ixInput )
 {
-   IPtoFunOrObjCompleter* ip2fo = inputCompleter;
+   IPtoFunOrObjCompleter* ip2fo = (IPtoFunOrObjCompleter*)inputCompleterV;
    expandInput(ip2fo, ixInput);
    return ixInput < ip2fo->n_expanded;
 }
 
 static Bool supp_pattEQinp ( const void* supplocV, const void* addrV,
-                             void* inputCompleter, UWord ixInput )
+                             void* inputCompleterV, UWord ixInput )
 {
-   const SuppLoc* supploc = supplocV; /* PATTERN */
-   IPtoFunOrObjCompleter* ip2fo = inputCompleter;
+   const SuppLoc* supploc = (const SuppLoc*)supplocV; /* PATTERN */
+   IPtoFunOrObjCompleter* ip2fo = (IPtoFunOrObjCompleter*)inputCompleterV;
    HChar* funobj_name; // Fun or Obj name.
    Bool ret;
 
@@ -1935,6 +1938,7 @@ static Supp* is_suppressible_error ( const Error* err )
    em_supplist_searches++;
 
    /* Prepare the lazy input completer. */
+   ip2fo.epoch = VG_(get_ExeContext_epoch)(err->where);
    ip2fo.ips = VG_(get_ExeContext_StackTrace)(err->where);
    ip2fo.n_ips = VG_(get_ExeContext_n_ips)(err->where);
    ip2fo.n_ips_expanded = 0;

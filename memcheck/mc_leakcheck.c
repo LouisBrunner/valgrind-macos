@@ -1137,16 +1137,18 @@ lc_scan_memory(Addr start, SizeT len, Bool is_prior_definite,
          // let's see if its contents point to a chunk.
          if (UNLIKELY(searched)) {
             if (addr >= searched && addr < searched + szB) {
+               const DiEpoch cur_ep = VG_(current_DiEpoch)();
+               // The found addr is 'live', so use cur_ep to describe it.
                if (addr == searched) {
                   VG_(umsg)("*%#lx points at %#lx\n", ptr, searched);
-                  MC_(pp_describe_addr) (ptr);
+                  MC_(pp_describe_addr) (cur_ep, ptr);
                } else {
                   Int ch_no;
                   MC_Chunk *ch;
                   LC_Extra *ex;
                   VG_(umsg)("*%#lx interior points at %lu bytes inside %#lx\n",
                             ptr, (long unsigned) addr - searched, searched);
-                  MC_(pp_describe_addr) (ptr);
+                  MC_(pp_describe_addr) (cur_ep, ptr);
                   if (lc_is_a_chunk_ptr(addr, &ch_no, &ch, &ex) ) {
                      Int h;
                      for (h = LchStdString; h < N_LEAK_CHECK_HEURISTICS; h++) {

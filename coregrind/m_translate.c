@@ -1363,7 +1363,8 @@ Bool mk_preamble__set_NRADDR_to_zero ( void* closureV, IRSB* bb )
            VG_WORDSIZE==8 ? mkU64(0) : mkU32(0)
         )
      );
-     gen_push_and_set_LR_R2 ( bb, VG_(get_tocptr)( closure->readdr ) );
+     gen_push_and_set_LR_R2 ( bb, VG_(get_tocptr)( VG_(current_DiEpoch)(),
+                                                   closure->readdr ) );
    }
 #  endif
 
@@ -1421,7 +1422,8 @@ Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRSB* bb )
                     VG_WORDSIZE==8 ? Ity_I64 : Ity_I32)
       )
    );
-   gen_push_and_set_LR_R2 ( bb, VG_(get_tocptr)( closure->readdr ) );
+   gen_push_and_set_LR_R2 ( bb, VG_(get_tocptr)( VG_(current_DiEpoch)(),
+                                                 closure->readdr ) );
 #  endif
 #if defined(VGP_ppc64le_linux)
    /* This saves the r2 before leaving the function.  We need to move
@@ -1538,24 +1540,25 @@ Bool VG_(translate) ( ThreadId tid,
       Bool ok;
       const HChar *buf;
       const HChar *name2;
+      const DiEpoch ep = VG_(current_DiEpoch)();
 
       /* Try also to get the soname (not the filename) of the "from"
          object.  This makes it much easier to debug redirection
          problems. */
       const HChar* nraddr_soname = "???";
-      DebugInfo*   nraddr_di     = VG_(find_DebugInfo)(nraddr);
+      DebugInfo*   nraddr_di     = VG_(find_DebugInfo)(ep, nraddr);
       if (nraddr_di) {
          const HChar* t = VG_(DebugInfo_get_soname)(nraddr_di);
          if (t)
             nraddr_soname = t;
       }
 
-      ok = VG_(get_fnname_w_offset)(nraddr, &buf);
+      ok = VG_(get_fnname_w_offset)(ep, nraddr, &buf);
       if (!ok) buf = "???";
       // Stash away name1
       HChar name1[VG_(strlen)(buf) + 1];
       VG_(strcpy)(name1, buf);
-      ok = VG_(get_fnname_w_offset)(addr, &name2);
+      ok = VG_(get_fnname_w_offset)(ep, addr, &name2);
       if (!ok) name2 = "???";
 
       VG_(message)(Vg_DebugMsg, 
@@ -1572,7 +1575,8 @@ Bool VG_(translate) ( ThreadId tid,
    if (VG_(clo_trace_flags) || debugging_translation) {
       const HChar* objname = "UNKNOWN_OBJECT";
       OffT         objoff  = 0;
-      DebugInfo*   di      = VG_(find_DebugInfo)( addr );
+      const DiEpoch ep     = VG_(current_DiEpoch)();
+      DebugInfo*   di      = VG_(find_DebugInfo)( ep, addr );
       if (di) {
          objname = VG_(DebugInfo_get_filename)(di);
          objoff  = addr - VG_(DebugInfo_get_text_bias)(di);
@@ -1580,7 +1584,7 @@ Bool VG_(translate) ( ThreadId tid,
       vg_assert(objname);
  
       const HChar *fnname;
-      Bool ok = VG_(get_fnname_w_offset)(addr, &fnname);
+      Bool ok = VG_(get_fnname_w_offset)(ep, addr, &fnname);
       if (!ok) fnname = "UNKNOWN_FUNCTION";
       VG_(printf)(
          "==== SB %u (evchecks %llu) [tid %u] 0x%lx %s %s%c0x%lx\n",

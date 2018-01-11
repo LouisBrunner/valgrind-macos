@@ -1936,7 +1936,8 @@ void shadowStack_new_frame ( ThreadId tid,
      const HChar *fnname;
      Bool ok;
      Addr ip = ip_post_call_insn;
-     ok = VG_(get_fnname_w_offset)( ip, &fnname );
+     DiEpoch ep = VG_(current_DiEpoch)();
+     ok = VG_(get_fnname_w_offset)( ep, ip, &fnname );
      while (d > 0) {
         VG_(printf)(" ");
         d--;

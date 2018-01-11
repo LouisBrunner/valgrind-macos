@@ -421,7 +421,8 @@ UInt HG_(update_extra) ( const Error* err )
          VG_(printf)("HG_(update_extra): "
                      "%d conflicting-event queries\n", xxx);
 
-      HG_(describe_addr) (xe->XE.Race.data_addr, &xe->XE.Race.data_addrinfo);
+      HG_(describe_addr) (VG_(get_ExeContext_epoch)(VG_(get_error_where)(err)),
+                          xe->XE.Race.data_addr, &xe->XE.Race.data_addrinfo);
 
       /* And poke around in the conflicting-event map, to see if we
          can rustle up a plausible-looking conflicting memory access
@@ -801,7 +802,11 @@ static void announce_LockP ( Lock* lk )
          VG_(umsg)( " Lock at %p : no stacktrace for first observation\n",
                     (void*)lk->guestaddr );
       }
-      HG_(get_and_pp_addrdescr) (lk->guestaddr);
+      HG_(get_and_pp_addrdescr)
+         (lk->appeared_at
+          ? VG_(get_ExeContext_epoch)(lk->appeared_at)
+          : VG_(current_DiEpoch)(),
+          lk->guestaddr);
       VG_(umsg)("\n");
    }
 }
@@ -1307,7 +1312,8 @@ void HG_(print_access) (StackTrace ips, UInt n_ips,
       show_LockP_summary_textmode( locksHeldW_P, "" );
       HG_(free) (locksHeldW_P);
    }
-   VG_(pp_StackTrace) (ips, n_ips);
+   // FIXME PW EPOCH : need the real ips epoch.
+   VG_(pp_StackTrace)( VG_(current_DiEpoch)(), ips, n_ips );
    VG_(printf) ("\n");
 }
 

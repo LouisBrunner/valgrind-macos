@@ -6746,7 +6746,8 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
             VG_(printf)
                ("Address %p len %lu not addressable:\nbad address %p\n",
                 (void *)address, szB, (void *) bad_addr);
-         MC_(pp_describe_addr) (address);
+         // Describe this (probably live) address with current epoch
+         MC_(pp_describe_addr) (VG_(current_DiEpoch)(), address);
          break;
       case  1: /* defined */
          res = is_mem_defined ( address, szB, &bad_addr, &otag );
@@ -6780,7 +6781,8 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
          else
             VG_(printf) ("Address %p len %lu defined\n",
                          (void *)address, szB);
-         MC_(pp_describe_addr) (address);
+         // Describe this (probably live) address with current epoch
+         MC_(pp_describe_addr) (VG_(current_DiEpoch)(), address);
          break;
       default: tl_assert(0);
       }

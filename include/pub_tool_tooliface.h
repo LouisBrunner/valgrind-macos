@@ -463,7 +463,7 @@ extern void VG_(needs_print_stats) (
    of an address ? */
 extern void VG_(needs_info_location) (
    // Get and pp information about Addr
-   void (*info_location)(Addr)
+   void (*info_location)(DiEpoch, Addr)
 );
 
 /* Do we need to see variable type and location information? */

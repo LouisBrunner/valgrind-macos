@@ -373,7 +373,8 @@ Bool get_debug_pos(BBCC* bbcc, Addr addr, AddrPos* p)
 	found_file_line = debug_cache_info[cachepos];
     }
     else {
-	found_file_line = VG_(get_filename_linenum)(addr,
+        DiEpoch ep = VG_(current_DiEpoch)();
+	found_file_line = VG_(get_filename_linenum)(ep, addr,
 						    &file,
 						    &dir,
 						    &(p->line));

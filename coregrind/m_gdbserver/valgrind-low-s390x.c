@@ -165,23 +165,23 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
    case 32: VG_(transfer) (&s390x->guest_a14, buf, dir, size, mod); break;
    case 33: VG_(transfer) (&s390x->guest_a15, buf, dir, size, mod); break;
    case 34: VG_(transfer) (&s390x->guest_fpc, buf, dir, size, mod); break;
-   case 35: VG_(transfer) (&s390x->guest_f0,  buf, dir, size, mod); break;
-   case 36: VG_(transfer) (&s390x->guest_f1,  buf, dir, size, mod); break;
-   case 37: VG_(transfer) (&s390x->guest_f2,  buf, dir, size, mod); break;
-   case 38: VG_(transfer) (&s390x->guest_f3,  buf, dir, size, mod); break;
-   case 39: VG_(transfer) (&s390x->guest_f4,  buf, dir, size, mod); break;
-   case 40: VG_(transfer) (&s390x->guest_f5,  buf, dir, size, mod); break;
-   case 41: VG_(transfer) (&s390x->guest_f6,  buf, dir, size, mod); break;
-   case 42: VG_(transfer) (&s390x->guest_f7,  buf, dir, size, mod); break;
-   case 43: VG_(transfer) (&s390x->guest_f8,  buf, dir, size, mod); break;
-   case 44: VG_(transfer) (&s390x->guest_f9,  buf, dir, size, mod); break;
-   case 45: VG_(transfer) (&s390x->guest_f10, buf, dir, size, mod); break;
-   case 46: VG_(transfer) (&s390x->guest_f11, buf, dir, size, mod); break;
-   case 47: VG_(transfer) (&s390x->guest_f12, buf, dir, size, mod); break;
-   case 48: VG_(transfer) (&s390x->guest_f13, buf, dir, size, mod); break;
-   case 49: VG_(transfer) (&s390x->guest_f14, buf, dir, size, mod); break;
-   case 50: VG_(transfer) (&s390x->guest_f15, buf, dir, size, mod); break;
-   case 51:  *mod = False; break; //GDBTD??? { "orig_r2", 0, 64 },  
+   case 35: VG_(transfer) (&s390x->guest_v0,  buf, dir, size, mod); break;
+   case 36: VG_(transfer) (&s390x->guest_v1.w64[0],  buf, dir, size, mod); break;
+   case 37: VG_(transfer) (&s390x->guest_v2.w64[0],  buf, dir, size, mod); break;
+   case 38: VG_(transfer) (&s390x->guest_v3.w64[0],  buf, dir, size, mod); break;
+   case 39: VG_(transfer) (&s390x->guest_v4.w64[0],  buf, dir, size, mod); break;
+   case 40: VG_(transfer) (&s390x->guest_v5.w64[0],  buf, dir, size, mod); break;
+   case 41: VG_(transfer) (&s390x->guest_v6.w64[0],  buf, dir, size, mod); break;
+   case 42: VG_(transfer) (&s390x->guest_v7.w64[0],  buf, dir, size, mod); break;
+   case 43: VG_(transfer) (&s390x->guest_v8.w64[0],  buf, dir, size, mod); break;
+   case 44: VG_(transfer) (&s390x->guest_v9.w64[0],  buf, dir, size, mod); break;
+   case 45: VG_(transfer) (&s390x->guest_v10.w64[0], buf, dir, size, mod); break;
+   case 46: VG_(transfer) (&s390x->guest_v11.w64[0], buf, dir, size, mod); break;
+   case 47: VG_(transfer) (&s390x->guest_v12.w64[0], buf, dir, size, mod); break;
+   case 48: VG_(transfer) (&s390x->guest_v13.w64[0], buf, dir, size, mod); break;
+   case 49: VG_(transfer) (&s390x->guest_v14.w64[0], buf, dir, size, mod); break;
+   case 50: VG_(transfer) (&s390x->guest_v15.w64[0], buf, dir, size, mod); break;
+   case 51:  *mod = False; break; //GDBTD??? { "orig_r2", 0, 64 },
    default: vg_assert(0);
    }
 }

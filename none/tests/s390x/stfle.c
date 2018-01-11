@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 /* Number of double words needed to store all facility bits. */
-#define S390_NUM_FACILITY_DW 2
+#define S390_NUM_FACILITY_DW 3
 
 
 unsigned long long stfle(unsigned long dw, unsigned bit_to_test)
@@ -20,6 +20,8 @@ unsigned long long stfle(unsigned long dw, unsigned bit_to_test)
     match = (hoststfle[0] & (1ULL << (63 - bit_to_test)));
   else if (bit_to_test < 128)
     match = (hoststfle[1] & (1ULL << (63 - bit_to_test)));
+  else if (bit_to_test < 192)
+    match = (hoststfle[2] & (1ULL << (63 - bit_to_test)));
   else
     printf("code needs to be updated\n");
 
@@ -45,7 +47,7 @@ int main()
 
   /* Test #3: Tell STFLE to only write 1 DW of facility bits. Expected condition
               code should be 3 because this test is run on those machines only
-              that need 2 do double words to store facility bits. */
+              that need 3 do double words to store facility bits. */
   dw = 1;
   if ((stfle(dw, 1)) && stfle(dw, 2))
     printf("The z/Architecture architectural mode is installed and active\n");

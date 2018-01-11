@@ -1495,12 +1495,17 @@ Bool VG_(machine_get_hwcaps)( void )
         { False, S390_FAC_FPEXT, VEX_HWCAPS_S390X_FPEXT, "FPEXT" },
         { False, S390_FAC_LSC,   VEX_HWCAPS_S390X_LSC,   "LSC"   },
         { False, S390_FAC_PFPO,  VEX_HWCAPS_S390X_PFPO,  "PFPO"  },
+        { False, S390_FAC_VX,    VEX_HWCAPS_S390X_VX,    "VX"    }
      };
 
      /* Set hwcaps according to the detected facilities */
+     UChar dw_number = 0;
+     UChar fac_bit = 0;
      for (i=0; i < sizeof fac_hwcaps / sizeof fac_hwcaps[0]; ++i) {
-        vg_assert(fac_hwcaps[i].facility_bit <= 63);  // for now
-        if (hoststfle[0] & (1ULL << (63 - fac_hwcaps[i].facility_bit))) {
+        vg_assert(fac_hwcaps[i].facility_bit <= 191);  // for now
+        dw_number = fac_hwcaps[i].facility_bit / 64;
+        fac_bit = fac_hwcaps[i].facility_bit % 64;
+        if (hoststfle[dw_number] & (1ULL << (63 - fac_bit))) {
            fac_hwcaps[i].installed = True;
            vai.hwcaps |= fac_hwcaps[i].hwcaps_bit;
         }

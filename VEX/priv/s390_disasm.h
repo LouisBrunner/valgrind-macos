@@ -66,7 +66,9 @@ enum {
    S390_ARG_UDLB = 9,
    S390_ARG_CABM = 10,
    S390_ARG_MNM = 11,
-   S390_ARG_XMNM = 12
+   S390_ARG_XMNM = 12,
+   S390_ARG_VR = 13,
+   S390_ARG_UDVB = 14,
 };
 
 /* The different kinds of extended mnemonics */

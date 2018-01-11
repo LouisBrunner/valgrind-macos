@@ -61,98 +61,122 @@ typedef struct {
    /*   60 */  UInt guest_a15;
 
 /*------------------------------------------------------------*/
-/*--- fpr registers                                        ---*/
+/*--- fpr & vr registers                                   ---*/
 /*------------------------------------------------------------*/
 
-   /*   64 */  ULong guest_f0;
-   /*   72 */  ULong guest_f1;
-   /*   80 */  ULong guest_f2;
-   /*   88 */  ULong guest_f3;
-   /*   96 */  ULong guest_f4;
-   /*  104 */  ULong guest_f5;
-   /*  112 */  ULong guest_f6;
-   /*  120 */  ULong guest_f7;
-   /*  128 */  ULong guest_f8;
-   /*  136 */  ULong guest_f9;
-   /*  144 */  ULong guest_f10;
-   /*  152 */  ULong guest_f11;
-   /*  160 */  ULong guest_f12;
-   /*  168 */  ULong guest_f13;
-   /*  176 */  ULong guest_f14;
-   /*  184 */  ULong guest_f15;
+   /*
+      FPRs[0-15] are mapped to the first double words of VR's[0-15].
+      According to documentation if we modify fpr1 with FP insn then the content of vr1's 64..128
+      bits is unpredictable. If we modify 64..128 of vr1 then fpr1's value is unpredictable too.
+      In our implementation writing to one half of vr doesn't affect another part but
+      apllications shouldn't rely on it.
+   */
+
+   /*   64 */  V128 guest_v0;
+   /*   80 */  V128 guest_v1;
+   /*   96 */  V128 guest_v2;
+   /*  112 */  V128 guest_v3;
+   /*  128 */  V128 guest_v4;
+   /*  144 */  V128 guest_v5;
+   /*  160 */  V128 guest_v6;
+   /*  176 */  V128 guest_v7;
+   /*  192 */  V128 guest_v8;
+   /*  208 */  V128 guest_v9;
+   /*  224 */  V128 guest_v10;
+   /*  240 */  V128 guest_v11;
+   /*  256 */  V128 guest_v12;
+   /*  272 */  V128 guest_v13;
+   /*  288 */  V128 guest_v14;
+   /*  304 */  V128 guest_v15;
+   /*  320 */  V128 guest_v16;
+   /*  336 */  V128 guest_v17;
+   /*  352 */  V128 guest_v18;
+   /*  368 */  V128 guest_v19;
+   /*  384 */  V128 guest_v20;
+   /*  400 */  V128 guest_v21;
+   /*  416 */  V128 guest_v22;
+   /*  432 */  V128 guest_v23;
+   /*  448 */  V128 guest_v24;
+   /*  464 */  V128 guest_v25;
+   /*  480 */  V128 guest_v26;
+   /*  496 */  V128 guest_v27;
+   /*  512 */  V128 guest_v28;
+   /*  528 */  V128 guest_v29;
+   /*  544 */  V128 guest_v30;
+   /*  560 */  V128 guest_v31;
 
 /*------------------------------------------------------------*/
 /*--- gpr registers                                        ---*/
 /*------------------------------------------------------------*/
 
-   /*  192 */  ULong guest_r0;
-   /*  200 */  ULong guest_r1;
-   /*  208 */  ULong guest_r2;
-   /*  216 */  ULong guest_r3;
-   /*  224 */  ULong guest_r4;
-   /*  232 */  ULong guest_r5;
-   /*  240 */  ULong guest_r6;
-   /*  248 */  ULong guest_r7;
-   /*  256 */  ULong guest_r8;
-   /*  264 */  ULong guest_r9;
-   /*  272 */  ULong guest_r10;
-   /*  280 */  ULong guest_r11;
-   /*  288 */  ULong guest_r12;
-   /*  296 */  ULong guest_r13;
-   /*  304 */  ULong guest_r14;
-   /*  312 */  ULong guest_r15;
+   /*  568 */  ULong guest_r0;
+   /*  576 */  ULong guest_r1;
+   /*  584 */  ULong guest_r2;
+   /*  592 */  ULong guest_r3;
+   /*  600 */  ULong guest_r4;
+   /*  608 */  ULong guest_r5;
+   /*  616 */  ULong guest_r6;
+   /*  624 */  ULong guest_r7;
+   /*  632 */  ULong guest_r8;
+   /*  640 */  ULong guest_r9;
+   /*  648 */  ULong guest_r10;
+   /*  656 */  ULong guest_r11;
+   /*  664 */  ULong guest_r12;
+   /*  672 */  ULong guest_r13;
+   /*  680 */  ULong guest_r14;
+   /*  688 */  ULong guest_r15;
 
 /*------------------------------------------------------------*/
 /*--- S390 miscellaneous registers                         ---*/
 /*------------------------------------------------------------*/
 
-   /*  320 */  ULong guest_counter;
-   /*  328 */  UInt guest_fpc;
-   /*  332 */  UChar unused[4]; /* 4-byte hole to get 8-byte alignment */
-   /*  336 */  ULong guest_IA;
+   /*  696 */  ULong guest_counter;
+   /*  704 */  UInt guest_fpc;
+   /*  708 */  UChar unused[4]; /* 4-byte hole to get 8-byte alignment */
+   /*  712 */  ULong guest_IA;
 
 /*------------------------------------------------------------*/
 /*--- S390 pseudo registers                                ---*/
 /*------------------------------------------------------------*/
 
-   /*  344 */  ULong guest_SYSNO;
+   /*  720 */  ULong guest_SYSNO;
 
 /*------------------------------------------------------------*/
 /*--- 4-word thunk used to calculate the condition code    ---*/
 /*------------------------------------------------------------*/
 
-   /*  352 */  ULong guest_CC_OP;
-   /*  360 */  ULong guest_CC_DEP1;
-   /*  368 */  ULong guest_CC_DEP2;
-   /*  376 */  ULong guest_CC_NDEP;
+   /*  728 */  ULong guest_CC_OP;
+   /*  736 */  ULong guest_CC_DEP1;
+   /*  744 */  ULong guest_CC_DEP2;
+   /*  752 */  ULong guest_CC_NDEP;
 
 /*------------------------------------------------------------*/
 /*--- Pseudo registers. Required by all architectures      ---*/
 /*------------------------------------------------------------*/
 
    /* See comments at bottom of libvex.h */
-   /*  384 */  ULong guest_NRADDR;
-   /*  392 */  ULong guest_CMSTART;
-   /*  400 */  ULong guest_CMLEN;
+   /*  760 */  ULong guest_NRADDR;
+   /*  768 */  ULong guest_CMSTART;
+   /*  776 */  ULong guest_CMLEN;
 
    /* Used when backing up to restart a syscall that has
       been interrupted by a signal. See also comment in
       libvex_ir.h */
-   /*  408 */  ULong guest_IP_AT_SYSCALL;
+   /*  784 */  ULong guest_IP_AT_SYSCALL;
 
    /* Emulation notes; see comments in libvex_emnote.h */
-   /*  416 */  UInt guest_EMNOTE;
+   /*  792 */  UInt guest_EMNOTE;
 
    /* For translation chaining */
-   /*  420 */  UInt  host_EvC_COUNTER;
-   /*  424 */  ULong host_EvC_FAILADDR;
+   /*  796 */  UInt  host_EvC_COUNTER;
+   /*  800 */  ULong host_EvC_FAILADDR;
 
 /*------------------------------------------------------------*/
 /*--- Force alignment to 16 bytes                          ---*/
 /*------------------------------------------------------------*/
-   /*  432 */  UChar padding[0];
+   /*  808 */  UChar padding[0];
 
-   /*  432 */  /* This is the size of the guest state */
+   /*  816 */  /* This is the size of the guest state */
 } VexGuestS390XState;
 
 

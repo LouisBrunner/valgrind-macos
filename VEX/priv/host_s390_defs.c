@@ -60,6 +60,7 @@ static UInt s390_tchain_load64_len(void);
 /* A mapping from register number to register index */
 static Int gpr_index[16];  // GPR regno -> register index
 static Int fpr_index[16];  // FPR regno -> register index
+static Int vr_index[32];   // VR regno -> register index
 
 HReg
 s390_hreg_gpr(UInt regno)
@@ -75,6 +76,14 @@ s390_hreg_fpr(UInt regno)
    Int ix = fpr_index[regno];
    vassert(ix >= 0);
    return mkHReg(/*virtual*/False, HRcFlt64, regno, ix);
+}
+
+HReg
+s390_hreg_vr(UInt regno)
+{
+   Int ix = vr_index[regno];
+   vassert(ix >= 0);
+   return mkHReg(/*virtual*/False, HRcVec128, regno, ix);
 }
 
 static __inline__ UInt
@@ -99,6 +108,13 @@ s390_hreg_as_string(HReg reg)
       "%f8",  "%f9",  "%f10", "%f11", "%f12", "%f13", "%f14", "%f15"
    };
 
+   static const HChar vreg_names[32][5] = {
+      "%v0",  "%v1",  "%v2",  "%v3",  "%v4",  "%v5",  "%v6",  "%v7",
+      "%v8",  "%v9",  "%v10", "%v11", "%v12", "%v13", "%v14", "%v15",
+      "%v16",  "%v17",  "%v18", "%v19", "%v20", "%v21", "%v22", "%v23",
+      "%v24",  "%v25",  "%v26", "%v27", "%v28", "%v29", "%v30", "%v31"
+   };
+
    UInt r;  /* hregNumber() returns an UInt */
 
    r = hregNumber(reg);
@@ -109,18 +125,18 @@ s390_hreg_as_string(HReg reg)
       switch (hregClass(reg)) {
       case HRcInt64: vex_sprintf(buf, "%%vR%u", r); break;
       case HRcFlt64: vex_sprintf(buf, "%%vF%u", r); break;
+      case HRcVec128: vex_sprintf(buf, "%%vV%u", r); break;
       default:       goto fail;
       }
       return buf;
    }
 
    /* But specific for real regs. */
-   vassert(r < 16);
-
    switch (hregClass(reg)) {
-   case HRcInt64: return ireg_names[r];
-   case HRcFlt64: return freg_names[r];
-   default:       goto fail;
+   case HRcInt64:  vassert(r < 16); return ireg_names[r];
+   case HRcFlt64:  vassert(r < 16); return freg_names[r];
+   case HRcVec128: vassert(r < 32); return vreg_names[r];
+   default:        goto fail;
    }
 
  fail: vpanic("s390_hreg_as_string");
@@ -132,6 +148,13 @@ HReg
 s390_hreg_guest_state_pointer(void)
 {
    return s390_hreg_gpr(S390_REGNO_GUEST_STATE_POINTER);
+}
+
+/* Return the real register that holds the stack pointer */
+HReg
+s390_hreg_stack_pointer(void)
+{
+   return s390_hreg_gpr(S390_REGNO_STACK_POINTER);
 }
 
 
@@ -245,6 +268,24 @@ s390_amode_for_guest_state(Int offset)
 }
 
 
+/* Construct an AMODE for accessing stack pointer at OFFSET.
+   OFFSET can be at most 3 * sizeof(VexGuestS390XState) + LibVEX_N_SPILL_BYTES
+   which may be too large for a B12 addressing mode.
+   Use a B20 amode as a fallback which will be safe for any offset.
+*/
+s390_amode *
+s390_amode_for_stack_pointer(Int offset)
+{
+   if (fits_unsigned_12bit(offset))
+      return s390_amode_b12(offset, s390_hreg_stack_pointer());
+
+   if (fits_signed_20bit(offset))
+      return s390_amode_b20(offset, s390_hreg_stack_pointer());
+
+   vpanic("invalid stack pointer offset");
+}
+
+
 /* Decompile the given amode into a static buffer and return it. */
 const HChar *
 s390_amode_as_string(const s390_amode *am)
@@ -284,6 +325,39 @@ is_virtual_gpr(HReg reg)
    return hregIsVirtual(reg) && hregClass(reg) == HRcInt64;
 }
 
+/* Helper function for all vector operations */
+static UChar
+s390_getM_from_size(const UChar size) {
+   switch(size) {
+   case 1:
+      return 0;
+   case 2:
+      return 1;
+   case 4:
+      return 2;
+   case 8:
+      return 3;
+   case 16:
+      return 4;
+   default:
+      vex_printf("size=%d\n", size);
+      vpanic("s390_getM_from_size: unknown size");
+   }
+}
+
+/* Helper for generating RXB field in vector instructions */
+static UChar
+s390_update_rxb(const UChar rxb, const UChar index, UChar* vr) {
+   vassert((index >= 1) && (index <= 4));
+   UChar result = rxb;
+   if(vr != NULL) {
+      if(*vr >= 16) {
+         result |= 1 << (4 - index);
+         *vr -= 16;
+      }
+   }
+   return result;
+}
 
 /* Sanity check for an amode */
 Bool
@@ -389,11 +463,14 @@ getRRegUniverse_S390(void)
 
    RRegUniverse__init(ru);
 
-   /* Assign invalid values to the gpr/fpr_index */
+   /* Assign invalid values to the gpr/fpr/vr_index */
    for (UInt i = 0; i < sizeof gpr_index / sizeof gpr_index[0]; ++i)
       gpr_index[i] = -1;
    for (UInt i = 0; i < sizeof fpr_index / sizeof fpr_index[0]; ++i)
       fpr_index[i] = -1;
+   for (UInt i = 0; i < sizeof vr_index / sizeof vr_index[0]; ++i)
+      vr_index[i] = -1;
+
 
    /* Add the registers that are available to the register allocator.
       GPRs:  registers 6..11 are callee saved, list them first
@@ -402,6 +479,7 @@ getRRegUniverse_S390(void)
              registers 0..7 are caller saved, list them after
              FPR12 - FPR15 are also used as register pairs for 128-bit
              floating point operations
+      VRs:   registers 0..31 are available
    */
    ru->allocable_start[HRcInt64] = ru->size;
    for (UInt regno = 6; regno <= 11; ++regno) {
@@ -424,6 +502,13 @@ getRRegUniverse_S390(void)
       ru->regs[ru->size++] = s390_hreg_fpr(regno);
    }
    ru->allocable_end[HRcFlt64] = ru->size - 1;
+
+   ru->allocable_start[HRcVec128] = ru->size;
+   for (UInt regno = 0; regno <= 31; ++regno) {
+      vr_index[regno] = ru->size;
+      ru->regs[ru->size++] = s390_hreg_vr(regno);
+   }
+   ru->allocable_end[HRcVec128] = ru->size - 1;
    ru->allocable = ru->size;
 
    /* Add the registers that are not available for allocation.
@@ -444,6 +529,8 @@ getRRegUniverse_S390(void)
       vassert(gpr_index[i] >= 0);
    for (UInt i = 0; i < sizeof fpr_index / sizeof fpr_index[0]; ++i)
       vassert(fpr_index[i] >= 0);
+   for (UInt i = 0; i < sizeof vr_index / sizeof vr_index[0]; ++i)
+      vassert(vr_index[i] >= 0);
                  
    initialised = True;
    return ru;
@@ -486,7 +573,9 @@ genSpill_S390(HInstr **i1, HInstr **i2, HReg rreg, Int offsetB, Bool mode64)
    case HRcFlt64:
       *i1 = s390_insn_store(8, am, rreg);
       return;
-
+   case HRcVec128:
+      *i1 = s390_insn_store(16, am, rreg);
+      return;
    default:
       ppHRegClass(hregClass(rreg));
       vpanic("genSpill_S390: unimplemented regclass");
@@ -512,7 +601,9 @@ genReload_S390(HInstr **i1, HInstr **i2, HReg rreg, Int offsetB, Bool mode64)
    case HRcFlt64:
       *i1 = s390_insn_load(8, rreg, am);
       return;
-
+   case HRcVec128:
+      *i1 = s390_insn_load(16, rreg, am);
+      return;
    default:
       ppHRegClass(hregClass(rreg));
       vpanic("genReload_S390: unimplemented regclass");
@@ -524,6 +615,8 @@ s390_insn* genMove_S390(HReg from, HReg to, Bool mode64)
    switch (hregClass(from)) {
    case HRcInt64:
       return s390_insn_move(sizeofIRType(Ity_I64), to, from);
+   case HRcVec128:
+      return s390_insn_move(sizeofIRType(Ity_V128), to, from);
    default:
       ppHRegClass(hregClass(from));
       vpanic("genMove_S390: unimplemented regclass");
@@ -857,6 +950,32 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
    case S390_INSN_XASSISTED:
       addHRegUse(u, HRmRead, insn->variant.xassisted.dst);
       s390_amode_get_reg_usage(u, insn->variant.xassisted.guest_IA);
+      break;
+
+   case S390_INSN_VEC_AMODEOP:
+      addHRegUse(u, HRmWrite, insn->variant.vec_amodeop.dst);
+      addHRegUse(u, HRmRead, insn->variant.vec_amodeop.op1);
+      s390_amode_get_reg_usage(u, insn->variant.vec_amodeop.op2);
+      break;
+
+   case S390_INSN_VEC_AMODEINTOP:
+      addHRegUse(u, HRmRead, insn->variant.vec_amodeintop.dst);
+      addHRegUse(u, HRmWrite, insn->variant.vec_amodeintop.dst);
+      s390_amode_get_reg_usage(u, insn->variant.vec_amodeintop.op2);
+      addHRegUse(u, HRmRead, insn->variant.vec_amodeintop.op3);
+      break;
+
+   case S390_INSN_VEC_BINOP:
+      addHRegUse(u, HRmWrite, insn->variant.vec_binop.dst);
+      addHRegUse(u, HRmRead, insn->variant.vec_binop.op1);
+      addHRegUse(u, HRmRead, insn->variant.vec_binop.op2);
+      break;
+
+   case S390_INSN_VEC_TRIOP:
+      addHRegUse(u, HRmWrite, insn->variant.vec_triop.dst);
+      addHRegUse(u, HRmRead, insn->variant.vec_triop.op1);
+      addHRegUse(u, HRmRead, insn->variant.vec_triop.op2);
+      addHRegUse(u, HRmRead, insn->variant.vec_triop.op3);
       break;
 
    default:
@@ -1207,6 +1326,41 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
          lookupHRegRemap(m, insn->variant.xassisted.dst);
       break;
 
+   case S390_INSN_VEC_AMODEOP:
+      insn->variant.vec_amodeop.dst =
+         lookupHRegRemap(m, insn->variant.vec_amodeop.dst);
+      insn->variant.vec_amodeop.op1 =
+         lookupHRegRemap(m, insn->variant.vec_amodeop.op1);
+      s390_amode_map_regs(m, insn->variant.vec_amodeop.op2);
+      break;
+
+   case S390_INSN_VEC_AMODEINTOP:
+      insn->variant.vec_amodeintop.dst =
+         lookupHRegRemap(m, insn->variant.vec_amodeintop.dst);
+      s390_amode_map_regs(m, insn->variant.vec_amodeintop.op2);
+      insn->variant.vec_amodeintop.op3 =
+         lookupHRegRemap(m, insn->variant.vec_amodeintop.op3);
+      break;
+
+   case S390_INSN_VEC_BINOP:
+      insn->variant.vec_binop.dst =
+         lookupHRegRemap(m, insn->variant.vec_binop.dst);
+      insn->variant.vec_binop.op1 =
+         lookupHRegRemap(m, insn->variant.vec_binop.op1);
+      insn->variant.vec_binop.op2 =
+         lookupHRegRemap(m, insn->variant.vec_binop.op2);
+      break;
+
+   case S390_INSN_VEC_TRIOP:
+      insn->variant.vec_triop.dst =
+         lookupHRegRemap(m, insn->variant.vec_triop.dst);
+      insn->variant.vec_triop.op1 =
+         lookupHRegRemap(m, insn->variant.vec_triop.op1);
+      insn->variant.vec_triop.op2 =
+         lookupHRegRemap(m, insn->variant.vec_triop.op2);
+      insn->variant.vec_triop.op3 =
+         lookupHRegRemap(m, insn->variant.vec_triop.op3);
+      break;
    default:
       vpanic("s390_insn_map_regs");
    }
@@ -1492,6 +1646,121 @@ emit_SSa(UChar *p, ULong op, UChar l, UChar b1, UShort d1, UChar b2, UShort d2)
    the_insn |= ((ULong)d1) << 16;
    the_insn |= ((ULong)b2) << 12;
    the_insn |= ((ULong)d2) << 0;
+
+   return emit_6bytes(p, the_insn);
+}
+
+
+static UChar *
+emit_VRI_VI(UChar *p, ULong op, UChar v1, UShort i2)
+{
+   ULong the_insn = op;
+   ULong rxb = s390_update_rxb(0, 1, &v1);
+
+   the_insn |= ((ULong)v1) << 36;
+   the_insn |= ((ULong)i2) << 16;
+   the_insn |= ((ULong)rxb)<< 8;
+
+   return emit_6bytes(p, the_insn);
+}
+
+
+static UChar *
+emit_VRX(UChar *p, ULong op, UChar v1, UChar x2, UChar b2, UShort d2)
+{
+   ULong the_insn = op;
+   ULong rxb = s390_update_rxb(0, 1, &v1);
+
+   the_insn |= ((ULong)v1) << 36;
+   the_insn |= ((ULong)x2) << 32;
+   the_insn |= ((ULong)b2) << 28;
+   the_insn |= ((ULong)d2) << 16;
+   the_insn |= ((ULong)rxb)<< 8;
+
+   return emit_6bytes(p, the_insn);
+}
+
+
+static UChar *
+emit_VRS(UChar *p, ULong op, UChar reg1, UChar b2, UShort d2, UChar reg3, UChar m4)
+{
+   ULong the_insn = op;
+   ULong rxb = s390_update_rxb(0, 1, &reg1);
+   rxb = s390_update_rxb(rxb, 2, &reg3);
+
+   the_insn |= ((ULong)reg1) << 36;
+   the_insn |= ((ULong)reg3) << 32;
+   the_insn |= ((ULong)b2)   << 28;
+   the_insn |= ((ULong)d2)   << 16;
+   the_insn |= ((ULong)m4)   << 12;
+   the_insn |= ((ULong)rxb)  << 8;
+
+   return emit_6bytes(p, the_insn);
+}
+
+
+static UChar *
+emit_VRR_VVM(UChar *p, ULong op, UChar v1, UChar v2, UChar m4)
+{
+   ULong the_insn = op;
+   ULong rxb = s390_update_rxb(0, 1, &v1);
+   rxb = s390_update_rxb(rxb, 2, &v2);
+
+   the_insn |= ((ULong)v1) << 36;
+   the_insn |= ((ULong)v2) << 32;
+   the_insn |= ((ULong)m4) << 12;
+   the_insn |= ((ULong)rxb)<< 8;
+
+   return emit_6bytes(p, the_insn);
+}
+
+
+static UChar *
+emit_VRR_VVVM(UChar *p, ULong op, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   ULong the_insn = op;
+   ULong rxb = s390_update_rxb(0, 1, &v1);
+   rxb = s390_update_rxb(rxb, 2, &v2);
+   rxb = s390_update_rxb(rxb, 3, &v3);
+
+   the_insn |= ((ULong)v1) << 36;
+   the_insn |= ((ULong)v2) << 32;
+   the_insn |= ((ULong)v3) << 28;
+   the_insn |= ((ULong)m4) << 12;
+   the_insn |= ((ULong)rxb)<< 8;
+
+   return emit_6bytes(p, the_insn);
+}
+
+
+static UChar *
+emit_VRR_VVV(UChar *p, ULong op, UChar v1, UChar v2, UChar v3)
+{
+   return emit_VRR_VVVM(p, op, v1, v2, v3, 0);
+}
+
+
+static UChar *
+emit_VRR_VV(UChar *p, ULong op, UChar v1, UChar v2)
+{
+   return emit_VRR_VVM(p, op, v1, v2, 0);
+}
+
+
+static UChar *
+emit_VRR_VVVV(UChar *p, ULong op, UChar v1, UChar v2, UChar v3, UChar v4)
+{
+   ULong the_insn = op;
+   ULong rxb = s390_update_rxb(0, 1, &v1);
+   rxb = s390_update_rxb(rxb, 2, &v2);
+   rxb = s390_update_rxb(rxb, 3, &v3);
+   rxb = s390_update_rxb(rxb, 4, &v4);
+
+   the_insn |= ((ULong)v1) << 36;
+   the_insn |= ((ULong)v2) << 32;
+   the_insn |= ((ULong)v3) << 28;
+   the_insn |= ((ULong)v4) << 12;
+   the_insn |= ((ULong)rxb)<< 8;
 
    return emit_6bytes(p, the_insn);
 }
@@ -5259,6 +5528,192 @@ s390_emit_LDGRw(UChar *p, UChar r1, UChar r2)
 }
 
 
+static UChar *
+s390_emit_VL(UChar *p, UChar v1, UChar x2, UChar b2, UShort d2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC3(MNM, VR, UDXB), "vl", v1, d2, x2, b2);
+
+   return emit_VRX(p, 0xE70000000006ULL, v1, x2, b2, d2);
+}
+
+static UChar *
+s390_emit_VLR(UChar *p, UChar v1, UChar v2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC3(MNM, VR, UDXB), "vlr", v1, v2);
+
+   return emit_VRR_VV(p, 0xE70000000056ULL, v1, v2);
+}
+
+
+static UChar *
+s390_emit_VST(UChar *p, UChar v1, UChar x2, UChar b2, UShort d2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC3(MNM, VR, UDXB), "vst", v1, d2, x2, b2);
+
+   return emit_VRX(p, 0xE7000000000eULL, v1, x2, b2, d2);
+}
+
+
+static UChar *
+s390_emit_VLGV(UChar *p, UChar r1, UChar b2, UShort d2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, GPR, UDXB, VR, UINT), "vlgv", r1, d2, 0, b2, v3, m4);
+
+   return emit_VRS(p, 0xE70000000021ULL, r1, b2, d2, v3, m4);
+}
+
+
+static UChar *
+s390_emit_VLVG(UChar *p, UChar v1, UChar b2, UShort d2, UChar r3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, UDXB, GPR, UINT), "vlvg", v1, d2, 0, b2, r3, m4);
+
+   return emit_VRS(p, 0xE70000000022ULL, v1, b2, d2, r3, m4);
+}
+
+
+static UChar *
+s390_emit_VPERM(UChar *p, UChar v1, UChar v2, UChar v3, UChar v4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, VR), "vperm", v1, v2, v3, v4);
+
+   return emit_VRR_VVVV(p, 0xE7000000008cULL, v1, v2, v3, v4);
+}
+
+static UChar *
+s390_emit_VO(UChar *p, UChar v1, UChar v2, UChar v3)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, VR, VR, VR), "vo", v1, v2, v3);
+
+   return emit_VRR_VVV(p, 0xE7000000006aULL, v1, v2, v3);
+}
+
+static UChar *
+s390_emit_VX(UChar *p, UChar v1, UChar v2, UChar v3)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, VR, VR, VR), "vx", v1, v2, v3);
+
+   return emit_VRR_VVV(p, 0xE7000000006dULL, v1, v2, v3);
+}
+
+static UChar *
+s390_emit_VN(UChar *p, UChar v1, UChar v2, UChar v3)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, VR, VR, VR), "vn", v1, v2, v3);
+
+   return emit_VRR_VVV(p, 0xE70000000068ULL, v1, v2, v3);
+}
+
+static UChar*
+s390_emit_VCEQ(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vceq", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE700000000f8ULL, v1, v2, v3, m4);
+}
+
+
+static UChar *
+s390_emit_VGBM(UChar *p, UChar v1, UShort i2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC3(MNM, VR, UINT), "vgbm", v1, i2);
+
+   return emit_VRI_VI(p, 0xE70000000044ULL, v1, i2);
+}
+
+
+static UChar *
+s390_emit_VPK(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vpk", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE70000000094ULL, v1, v2, v3, m4);
+}
+
+
+static UChar *
+s390_emit_VPKS(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC6(MNM, VR, VR, VR, UINT, UINT), "vpks", v1, v2, v3, m4, 0);
+
+   return emit_VRR_VVVM(p, 0xE70000000097ULL, v1, v2, v3, m4);
+}
+
+
+static UChar *
+s390_emit_VPKLS(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC6(MNM, VR, VR, VR, UINT, UINT), "vpkls", v1, v2, v3, m4, 0);
+
+   return emit_VRR_VVVM(p, 0xE70000000095ULL, v1, v2, v3, m4);
+}
+
+
+static UChar *
+s390_emit_VREP(UChar *p, UChar v1, UChar v3, UChar m3)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, UINT, UINT), "vrep", v1, v3, 0, m3);
+
+   return emit_VRR_VVM(p, 0xE7000000004DULL, v1, v3, m3);
+}
+
+
+
+static UChar *
+s390_emit_VUPH(UChar *p, UChar v1, UChar v3, UChar m3)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, VR, VR, UINT), "vuph", v1, v3, m3);
+
+   return emit_VRR_VVM(p, 0xE700000000D7ULL, v1, v3, m3);
+}
+
+
+static UChar *
+s390_emit_VUPLH(UChar *p, UChar v1, UChar v3, UChar m3)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, VR, VR, UINT), "vuplh", v1, v3, m3);
+
+   return emit_VRR_VVM(p, 0xE700000000D5ULL, v1, v3, m3);
+}
+
+
+static UChar*
+s390_emit_VMRH(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vmrh", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE70000000061ULL, v1, v2, v3, m4);
+}
+
+
+static UChar*
+s390_emit_VMRL(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vmrl", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE70000000060ULL, v1, v2, v3, m4);
+}
+
+
 /*---------------------------------------------------------------*/
 /*--- Constructors for the various s390_insn kinds            ---*/
 /*---------------------------------------------------------------*/
@@ -5273,7 +5728,7 @@ s390_insn_load(UChar size, HReg dst, s390_amode *src)
    insn->variant.load.src  = src;
    insn->variant.load.dst  = dst;
 
-   vassert(size == 1 || size == 2 || size == 4 || size == 8);
+   vassert(size == 1 || size == 2 || size == 4 || size == 8 || size == 16);
 
    return insn;
 }
@@ -5289,7 +5744,7 @@ s390_insn_store(UChar size, s390_amode *dst, HReg src)
    insn->variant.store.src  = src;
    insn->variant.store.dst  = dst;
 
-   vassert(size == 1 || size == 2 || size == 4 || size == 8);
+   vassert(size == 1 || size == 2 || size == 4 || size == 8 || size == 16);
 
    return insn;
 }
@@ -5305,7 +5760,7 @@ s390_insn_move(UChar size, HReg dst, HReg src)
    insn->variant.move.src  = src;
    insn->variant.move.dst  = dst;
 
-   vassert(size == 1 || size == 2 || size == 4 || size == 8);
+   vassert(size == 1 || size == 2 || size == 4 || size == 8 || size ==16);
 
    return insn;
 }
@@ -6346,6 +6801,76 @@ s390_insn_profinc(void)
 }
 
 
+s390_insn *
+s390_insn_vec_amodeop(UChar size, s390_vec_amodeop_t tag, HReg dst, HReg op1,
+                    s390_amode *op2)
+{
+   s390_insn *insn = LibVEX_Alloc_inline(sizeof(s390_insn));
+
+   vassert(size == 1 || size == 2 || size == 4 || size == 8);
+
+   insn->tag  = S390_INSN_VEC_AMODEOP;
+   insn->size = size;
+   insn->variant.vec_amodeop.tag = tag;
+   insn->variant.vec_amodeop.dst = dst;
+   insn->variant.vec_amodeop.op1 = op1;
+   insn->variant.vec_amodeop.op2 = op2;
+
+   return insn;
+}
+
+s390_insn *s390_insn_vec_amodeintop(UChar size, s390_vec_amodeintop_t tag, HReg dst,
+                                    s390_amode* op2, HReg op3)
+{
+   s390_insn *insn = LibVEX_Alloc_inline(sizeof(s390_insn));
+
+   vassert(size == 1 || size == 2 || size == 4 || size == 8);
+
+   insn->tag  = S390_INSN_VEC_AMODEINTOP;
+   insn->size = size;
+   insn->variant.vec_amodeintop.tag = tag;
+   insn->variant.vec_amodeintop.dst = dst;
+   insn->variant.vec_amodeintop.op2 = op2;
+   insn->variant.vec_amodeintop.op3 = op3;
+
+   return insn;
+}
+
+s390_insn *s390_insn_vec_binop(UChar size, s390_vec_binop_t tag, HReg dst,
+                               HReg op1, HReg op2)
+{
+   s390_insn *insn = LibVEX_Alloc_inline(sizeof(s390_insn));
+
+   vassert(size == 1 || size == 2 || size == 4 || size == 8 || size == 16);
+
+   insn->tag  = S390_INSN_VEC_BINOP;
+   insn->size = size;
+   insn->variant.vec_binop.tag = tag;
+   insn->variant.vec_binop.dst = dst;
+   insn->variant.vec_binop.op1 = op1;
+   insn->variant.vec_binop.op2 = op2;
+
+   return insn;
+}
+
+s390_insn *s390_insn_vec_triop(UChar size, s390_vec_triop_t tag, HReg dst,
+                               HReg op1, HReg op2, HReg op3)
+{
+   s390_insn *insn = LibVEX_Alloc_inline(sizeof(s390_insn));
+
+   vassert(size == 16);
+
+   insn->tag  = S390_INSN_VEC_TRIOP;
+   insn->size = size;
+   insn->variant.vec_triop.tag = tag;
+   insn->variant.vec_triop.dst = dst;
+   insn->variant.vec_triop.op1 = op1;
+   insn->variant.vec_triop.op2 = op2;
+   insn->variant.vec_triop.op3 = op3;
+
+   return insn;
+}
+
 /*---------------------------------------------------------------*/
 /*--- Debug print                                             ---*/
 /*---------------------------------------------------------------*/
@@ -6621,6 +7146,22 @@ s390_insn_as_string(const s390_insn *insn)
 
       case S390_NEGATE:
          op = "v-neg";
+         break;
+
+      case S390_VEC_FILL:
+         op = "v-vfill";
+         break;
+
+      case S390_VEC_DUPLICATE:
+         op = "v-vdup";
+         break;
+
+      case S390_VEC_UNPACKLOWS:
+         op = "v-vunpacks";
+         break;
+
+      case S390_VEC_UNPACKLOWU:
+         op = "v-vunpacku";
          break;
 
       default:
@@ -6931,6 +7472,53 @@ s390_insn_as_string(const s390_insn *insn)
                    insn->variant.xassisted.dst);
       return buf;   /* avoid printing "size = ..." which is meaningless */
 
+   case S390_INSN_VEC_AMODEOP:
+      switch (insn->variant.vec_amodeop.tag) {
+      case S390_VEC_GET_ELEM:  op = "v-vgetelem";  break;
+      default: goto fail;
+      }
+      s390_sprintf(buf, "%M %R, %R, %A", op, insn->variant.vec_amodeop.dst,
+                   insn->variant.vec_amodeop.op1,
+                   insn->variant.vec_amodeop.op2);
+      break;
+
+   case S390_INSN_VEC_AMODEINTOP:
+      switch (insn->variant.vec_amodeintop.tag) {
+      case S390_VEC_SET_ELEM:  op = "v-vsetelem";  break;
+      default: goto fail;
+      }
+      s390_sprintf(buf, "%M %R, %A, %R", op, insn->variant.vec_amodeintop.dst,
+                   insn->variant.vec_amodeintop.op2,
+                   insn->variant.vec_amodeintop.op3);
+      break;
+
+   case S390_INSN_VEC_BINOP:
+      switch (insn->variant.vec_binop.tag) {
+      case S390_VEC_PACK:           op = "v-vpack"; break;
+      case S390_VEC_PACK_SATURS:    op = "v-vpacksaturs"; break;
+      case S390_VEC_PACK_SATURU:    op = "v-vpacksaturu"; break;
+      case S390_VEC_COMPARE_EQUAL:  op = "v-vcmpeq"; break;
+      case S390_VEC_OR:             op = "v-vor"; break;
+      case S390_VEC_XOR:            op = "v-vxor";  break;
+      case S390_VEC_AND:            op = "v-vand"; break;
+      case S390_VEC_MERGEL:         op = "v-vmergel"; break;
+      case S390_VEC_MERGEH:         op = "v-vmergeh"; break;
+      default: goto fail;
+      }
+      s390_sprintf(buf, "%M %R, %R, %R", op, insn->variant.vec_binop.dst,
+                   insn->variant.vec_binop.op1, insn->variant.vec_binop.op2);
+      break;
+
+   case S390_INSN_VEC_TRIOP:
+      switch (insn->variant.vec_triop.tag) {
+      case S390_VEC_PERM:  op = "v-vperm";  break;
+      default: goto fail;
+      }
+      s390_sprintf(buf, "%M %R, %R, %R, %R", op, insn->variant.vec_triop.dst,
+                   insn->variant.vec_triop.op1, insn->variant.vec_triop.op2,
+                   insn->variant.vec_triop.op3);
+      break;
+
    default: goto fail;
    }
 
@@ -7082,10 +7670,11 @@ s390_emit_load_mem(UChar *p, UInt num, UChar reg, const s390_amode *am)
    case S390_AMODE_B12:
    case S390_AMODE_BX12:
       switch (num) {
-      case 1: return s390_emit_IC(p, reg, x, b, d);
-      case 2: return s390_emit_LH(p, reg, x, b, d);
-      case 4: return s390_emit_L(p, reg, x, b, d);
-      case 8: return s390_emit_LG(p, reg, x, b, DISP20(d));
+      case 1:  return s390_emit_IC(p, reg, x, b, d);
+      case 2:  return s390_emit_LH(p, reg, x, b, d);
+      case 4:  return s390_emit_L(p, reg, x, b, d);
+      case 8:  return s390_emit_LG(p, reg, x, b, DISP20(d));
+      case 16: return s390_emit_VL(p, reg, x, b, d);
       default: goto fail;
       }
       break;
@@ -7217,6 +7806,17 @@ s390_insn_store_emit(UChar *buf, const s390_insn *insn)
       vpanic("s390_insn_store_emit");
    }
 
+   if (hregClass(insn->variant.store.src) == HRcVec128) {
+      vassert(insn->size == 16);
+      switch (dst->tag) {
+      case S390_AMODE_B12:
+      case S390_AMODE_BX12:
+         return s390_emit_VST(buf, r, x, b, d);
+
+      default:
+         vpanic("s390_insn_store_emit: unknown dst->tag for HRcVec128");
+      }
+   }
    /* Integer stuff */
    switch (insn->size) {
    case 1:
@@ -7298,6 +7898,12 @@ s390_insn_move_emit(UChar *buf, const s390_insn *insn)
             return s390_emit_SRLG(buf, dst, dst, 0, DISP20(32)); /* dst >>= 32 */
          } else {
             return s390_emit_LGDRw(buf, dst, src);
+         }
+      }
+
+      if (dst_class == HRcVec128 && src_class == HRcVec128) {
+         if(insn->size == 16) {
+            return s390_emit_VLR(buf, dst, src);
          }
       }
       /* A move between floating point registers and general purpose
@@ -8001,6 +8607,32 @@ s390_insn_unop_emit(UChar *buf, const s390_insn *insn)
    case S390_SIGN_EXTEND_32: return s390_widen_emit(buf, insn, 4, 1);
 
    case S390_NEGATE:         return s390_negate_emit(buf, insn);
+   case S390_VEC_FILL: {
+      vassert(insn->variant.unop.src.tag == S390_OPND_IMMEDIATE);
+      UChar v1 = hregNumber(insn->variant.unop.dst);
+      UShort i2 = insn->variant.unop.src.variant.imm;
+      return s390_emit_VGBM(buf, v1, i2);
+      }
+   case S390_VEC_DUPLICATE: {
+      vassert(insn->variant.unop.src.tag == S390_OPND_REG);
+      UChar v1 = hregNumber(insn->variant.unop.dst);
+      UChar v2 = hregNumber(insn->variant.unop.src.variant.reg);
+      return s390_emit_VREP(buf, v1, v2, s390_getM_from_size(insn->size));
+      }
+   case S390_VEC_UNPACKLOWS: {
+      vassert(insn->variant.unop.src.tag == S390_OPND_REG);
+      vassert(insn->size < 8);
+      UChar v1 = hregNumber(insn->variant.unop.dst);
+      UChar v2 = hregNumber(insn->variant.unop.src.variant.reg);
+      return s390_emit_VUPH(buf, v1, v2, s390_getM_from_size(insn->size));
+      }
+   case S390_VEC_UNPACKLOWU: {
+      vassert(insn->variant.unop.src.tag == S390_OPND_REG);
+      vassert(insn->size < 8);
+      UChar v1 = hregNumber(insn->variant.unop.dst);
+      UChar v2 = hregNumber(insn->variant.unop.src.variant.reg);
+      return s390_emit_VUPLH(buf, v1, v2, s390_getM_from_size(insn->size));
+      }
    }
 
    vpanic("s390_insn_unop_emit");
@@ -9831,6 +10463,112 @@ s390_insn_profinc_emit(UChar *buf,
 }
 
 
+static UChar *
+s390_insn_vec_amodeop_emit(UChar *buf, const s390_insn *insn)
+{
+   UChar r1 = hregNumber(insn->variant.vec_amodeop.dst);
+   UChar v1 = hregNumber(insn->variant.vec_amodeop.op1);
+   s390_amode* op2 = insn->variant.vec_amodeop.op2;
+
+   vassert(hregNumber(op2->x) == 0);
+   UChar b = hregNumber(op2->b);
+   UShort d = op2->d;
+
+
+   switch (insn->variant.vec_amodeop.tag) {
+   case S390_VEC_GET_ELEM:
+      return s390_emit_VLGV(buf, r1, b, d, v1, s390_getM_from_size(insn->size));
+   default:  goto fail;
+   }
+
+ fail:
+   vpanic("s390_insn_vec_amodeop_emit");
+}
+
+
+static UChar *
+s390_insn_vec_amodeintop_emit(UChar *buf, const s390_insn *insn)
+{
+   UChar v1 = hregNumber(insn->variant.vec_amodeintop.dst);
+   s390_amode* op2 = insn->variant.vec_amodeintop.op2;
+   UChar r3 = hregNumber(insn->variant.vec_amodeintop.op3);
+
+   vassert(hregNumber(op2->x) == 0);
+   UChar b = hregNumber(op2->b);
+   UShort d = op2->d;
+
+   switch (insn->variant.vec_amodeintop.tag) {
+   case S390_VEC_SET_ELEM:
+      return s390_emit_VLVG(buf, v1, b, d, r3, s390_getM_from_size(insn->size));
+   default:  goto fail;
+   }
+
+ fail:
+   vpanic("s390_insn_vec_amodeop_emit");
+}
+
+
+static UChar *
+s390_insn_vec_binop_emit(UChar *buf, const s390_insn *insn)
+{
+   s390_vec_binop_t tag = insn->variant.vec_binop.tag;
+   UChar size = insn->size;
+   UChar v1 = hregNumber(insn->variant.vec_binop.dst);
+   UChar v2 = hregNumber(insn->variant.vec_binop.op1);
+   UChar v3 = hregNumber(insn->variant.vec_binop.op2);
+
+   switch (tag) {
+      case S390_VEC_PACK:
+         return s390_emit_VPK(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_PACK_SATURU:
+         return s390_emit_VPKLS(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_PACK_SATURS:
+         return s390_emit_VPKS(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_COMPARE_EQUAL:
+         return s390_emit_VCEQ(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_OR:
+         return s390_emit_VO(buf, v1, v2, v3);
+      case S390_VEC_XOR:
+         return s390_emit_VX(buf, v1, v2, v3);
+      case S390_VEC_AND:
+         return s390_emit_VN(buf, v1, v2, v3);
+      case S390_VEC_MERGEL:
+         return s390_emit_VMRH(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_MERGEH:
+         return s390_emit_VMRL(buf, v1, v2, v3, s390_getM_from_size(size));
+      default:
+         goto fail;
+   }
+
+   fail:
+      ppS390Instr(insn, True);
+      vpanic("s390_insn_vec_binop_emit");
+
+}
+
+
+static UChar *
+s390_insn_vec_triop_emit(UChar *buf, const s390_insn *insn)
+{
+   s390_vec_triop_t tag = insn->variant.vec_triop.tag;
+   UChar v1 = hregNumber(insn->variant.vec_triop.dst);
+   UChar v2 = hregNumber(insn->variant.vec_triop.op1);
+   UChar v3 = hregNumber(insn->variant.vec_triop.op2);
+   UChar v4 = hregNumber(insn->variant.vec_triop.op3);
+
+   switch (tag) {
+      case S390_VEC_PERM:
+         return s390_emit_VPERM(buf, v1, v2, v3, v4);
+      default:
+         goto fail;
+   }
+
+   fail:
+      vpanic("s390_insn_vec_triop_emit");
+
+}
+
+
 Int
 emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, const s390_insn *insn,
                Bool mode64, VexEndness endness_host,
@@ -10012,6 +10750,21 @@ emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, const s390_insn *insn,
       end = s390_insn_xassisted_emit(buf, insn, disp_cp_xassisted);
       break;
 
+   case S390_INSN_VEC_AMODEOP:
+      end = s390_insn_vec_amodeop_emit(buf, insn);
+      break;
+
+   case S390_INSN_VEC_AMODEINTOP:
+      end = s390_insn_vec_amodeintop_emit(buf, insn);
+      break;
+
+   case S390_INSN_VEC_BINOP:
+      end = s390_insn_vec_binop_emit(buf, insn);
+      break;
+
+   case S390_INSN_VEC_TRIOP:
+      end = s390_insn_vec_triop_emit(buf, insn);
+      break;
    fail:
    default:
       vpanic("emit_S390Instr");

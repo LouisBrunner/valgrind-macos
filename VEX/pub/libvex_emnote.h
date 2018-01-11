@@ -120,6 +120,9 @@ typedef
          instruction is invalid */
       EmFail_S390X_invalid_PFPO_function,
 
+      /* some insn needs vector facility which is not available on this host */
+      EmFail_S390X_vx,
+
       EmNote_NUMBER
    }
    VexEmNote;

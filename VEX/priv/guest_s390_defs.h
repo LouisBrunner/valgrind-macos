@@ -80,7 +80,8 @@ ULong s390x_dirtyhelper_STCKF(ULong *addr);
 ULong s390x_dirtyhelper_STCKE(ULong *addr);
 ULong s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, ULong *addr);
 void  s390x_dirtyhelper_CUxy(UChar *addr, ULong data, ULong num_bytes);
-
+ULong s390x_dirtyhelper_vec_binop(VexGuestS390XState *guest_state, ULong opcode,
+                                  ULong v1, ULong v2);
 ULong s390_do_cu12_cu14_helper1(UInt byte1, UInt etf3_and_m3_is_1);
 ULong s390_do_cu12_helper2(UInt byte1, UInt byte2, UInt byte3, UInt byte4,
                            ULong stuff);
@@ -253,6 +254,46 @@ UInt s390_calculate_cond(ULong mask, ULong op, ULong dep1, ULong dep2,
 
 /* Last target instruction for the EX helper */
 extern ULong last_execute_target;
+
+/*------------------------------------------------------------*/
+/*--- Vector helpers.                                      ---*/
+/*------------------------------------------------------------*/
+
+/* Vector operatons which can change condition code */
+enum {
+   S390_CC_VEC_INVALID = 0,
+   S390_CC_VEC_VPKS = 1,
+   S390_CC_VEC_VPKLS = 2,
+   S390_CC_VEC_LAST = 3 // supposed to be the last element in enum
+} s390x_cc_vec_binop;
+
+/* Create an "object" which contain information about vector operation
+   and it's element size. Used for passing data to dirtyhelper with one argument.
+*/
+#define s390x_cc_vec_opcode(op, elem_size) ( ((op) << 3) | ((elem_size) & 0x07))
+
+/* Extract operation from opcode created with "s390x_cc_vec_opcode" macro */
+#define s390x_cc_vec_get_op(opcode) ((opcode) >> 3)
+
+/* Extract operation from opcode created with "s390x_cc_vec_opcode" macro */
+#define s390x_cc_vec_get_elem_size(opcode) ((opcode) & 0x07)
+
+
+/* Macro definitions for opcodes that are not generally available.
+
+   The values to be encoded in those fields must be integer values in
+   hexadecimal notation without a leading 0x.
+   E.g. VRX_VXBD(e7, 1, 0, 3, 0000, 0, 06) is equal to "vl %%v1, 0(%%r3)\n\t"
+*/
+#define VRX_VXBD(op1, v1, x2, b2, d2, rxb, op2)  \
+            ".short 0x" #op1 #v1 #x2 "\n\t .int  0x" #b2 #d2 "0" #rxb #op2 "\n\t"
+#define VRR_VVVMM(op1, v1, v2, v3, m5, m4, rxb, op2) \
+            ".short 0x" #op1 #v1 #v2 "\n\t .int  0x" #v3 "0" #m5 "0" #m4 #rxb #op2 "\n\t"
+
+#define VL(v1, x2, b2, d2, rxb)                VRX_VXBD(e7, v1, x2, b2, d2, rxb, 06)
+#define VPKS(v1, v2, v3, m4, m5, rxb)          VRR_VVVMM(e7, v1, v2, v3, m5, m4, rxb, 97)
+#define VPKLS(v1, v2, v3, m4, m5, rxb)         VRR_VVVMM(e7, v1, v2, v3, m5, m4, rxb, 95)
+
 
 /*---------------------------------------------------------------*/
 /*--- end                                   guest_s390_defs.h ---*/

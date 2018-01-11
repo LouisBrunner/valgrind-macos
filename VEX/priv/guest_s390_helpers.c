@@ -68,26 +68,48 @@ LibVEX_GuestS390X_initialise(VexGuestS390XState *state)
    state->guest_a15 = 0;
 
 /*------------------------------------------------------------*/
-/*--- Initialise fpr registers                             ---*/
+/*--- Initialise vr registers                             ---*/
 /*------------------------------------------------------------*/
 
-   state->guest_f0 = 0;
-   state->guest_f1 = 0;
-   state->guest_f2 = 0;
-   state->guest_f3 = 0;
-   state->guest_f4 = 0;
-   state->guest_f5 = 0;
-   state->guest_f6 = 0;
-   state->guest_f7 = 0;
-   state->guest_f8 = 0;
-   state->guest_f9 = 0;
-   state->guest_f10 = 0;
-   state->guest_f11 = 0;
-   state->guest_f12 = 0;
-   state->guest_f13 = 0;
-   state->guest_f14 = 0;
-   state->guest_f15 = 0;
+#define VRZERO(vr) \
+   do { \
+      vr.w64[0] = vr.w64[1] = 0ULL; \
+   } while(0);
 
+   VRZERO(state->guest_v0)
+   VRZERO(state->guest_v1)
+   VRZERO(state->guest_v2)
+   VRZERO(state->guest_v3)
+   VRZERO(state->guest_v4)
+   VRZERO(state->guest_v5)
+   VRZERO(state->guest_v6)
+   VRZERO(state->guest_v7)
+   VRZERO(state->guest_v8)
+   VRZERO(state->guest_v9)
+   VRZERO(state->guest_v10)
+   VRZERO(state->guest_v11)
+   VRZERO(state->guest_v12)
+   VRZERO(state->guest_v13)
+   VRZERO(state->guest_v14)
+   VRZERO(state->guest_v15)
+   VRZERO(state->guest_v16)
+   VRZERO(state->guest_v17)
+   VRZERO(state->guest_v18)
+   VRZERO(state->guest_v19)
+   VRZERO(state->guest_v20)
+   VRZERO(state->guest_v21)
+   VRZERO(state->guest_v22)
+   VRZERO(state->guest_v23)
+   VRZERO(state->guest_v24)
+   VRZERO(state->guest_v25)
+   VRZERO(state->guest_v26)
+   VRZERO(state->guest_v27)
+   VRZERO(state->guest_v28)
+   VRZERO(state->guest_v29)
+   VRZERO(state->guest_v30)
+   VRZERO(state->guest_v31)
+
+#undef VRZERO
 /*------------------------------------------------------------*/
 /*--- Initialise gpr registers                             ---*/
 /*------------------------------------------------------------*/
@@ -1184,6 +1206,23 @@ decode_bfp_rounding_mode(UInt irrm)
                                    : [high] "f"(cc_dep1), [low] "f"(cc_dep2), \
                                      [class] "a"(cc_ndep)  \
                                    : "cc", "f4", "f6");\
+   psw >> 28;   /* cc */ \
+})
+
+/* This macro believes that arguments' addresses are in GPR1 and GPR2.
+   We use %%v16, %%v17 and %%v18 to avoid side effects in FPRs.
+*/
+#define S390_CC_FOR_V128_BINOP(insn) \
+({ \
+   /* VL(v1, x2, b2, d2, rxb) */ \
+   __asm__ volatile ( \
+        VL(1, 0, 1, 000, 8) \
+        VL(2, 0, 2, 000, 8) \
+        insn \
+        "ipm %[psw]\n\t" \
+           : [psw] "=d"(psw) \
+           : "d"(arg1), "d"(arg2) \
+           : "cc", "v16", "v17", "v18"); \
    psw >> 28;   /* cc */ \
 })
 
@@ -2433,6 +2472,58 @@ guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
 missed:
    return NULL;
 }
+
+/*------------------------------------------------------------*/
+/*--- Dirty helper for vector instructions                 ---*/
+/*------------------------------------------------------------*/
+
+#if defined(VGA_s390x)
+ULong
+s390x_dirtyhelper_vec_binop(VexGuestS390XState *guest_state, ULong opcode,
+                            ULong v1, ULong v2)
+{
+   UInt psw;
+   UInt elem_size = s390x_cc_vec_get_elem_size(opcode);
+   UInt op = s390x_cc_vec_get_op(opcode);
+   /* S390_CC_FOR_V128_BINOP relies on exatly this GPRs numbers and names. */
+   register ULong arg1 asm("1") = (ULong) &((&guest_state->guest_v0)[v1]);
+   register ULong arg2 asm("2") = (ULong) &((&guest_state->guest_v0)[v2]);
+
+   switch(op) {
+   case S390_CC_VEC_VPKS:
+      /* VPKS(v1, v2, v3, m4, m5, rxb) */
+      switch(elem_size) {
+      case 1: return S390_CC_FOR_V128_BINOP(VPKS(3, 1, 2, 1, 1, e));
+      case 2: return S390_CC_FOR_V128_BINOP(VPKS(3, 1, 2, 2, 1, e));
+      case 3: return S390_CC_FOR_V128_BINOP(VPKS(3, 1, 2, 3, 1, e));
+      default: vassert(0);
+      }
+
+   case S390_CC_VEC_VPKLS:
+      /* VPKLS(v1, v2, v3, m4, m5, rxb) */
+      switch(elem_size) {
+      case 1: return S390_CC_FOR_V128_BINOP(VPKLS(3, 1, 2, 1, 1, e));
+      case 2: return S390_CC_FOR_V128_BINOP(VPKLS(3, 1, 2, 2, 1, e));
+      case 3: return S390_CC_FOR_V128_BINOP(VPKLS(3, 1, 2, 3, 1, e));
+      default: vassert(0);
+      }
+
+   default:
+      vex_printf("operation = %d\n", op);
+      vpanic("s390x_dirtyhelper_vec_binop: unknown operation");
+   }
+
+   return 0;
+}
+
+#else
+
+ULong
+s390x_dirtyhelper_vec_binop(VexGuestS390XState *guest_state, ULong opcode,
+                            ULong v1, ULong v2)
+{ return 0; }
+
+#endif
 
 /*---------------------------------------------------------------*/
 /*--- end                                guest_s390_helpers.c ---*/

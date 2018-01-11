@@ -135,6 +135,26 @@ cab_operand(const HChar *base, UInt mask)
 }
 
 
+/* Return the name of a vector register for dis-assembly purposes. */
+static const HChar *
+vr_operand(UInt archreg)
+{
+   static const HChar names[32][5] = {
+      "%v0", "%v1", "%v2", "%v3",
+      "%v4", "%v5", "%v6", "%v7",
+      "%v8", "%v9", "%v10", "%v11",
+      "%v16", "%v17", "%v18", "%v19",
+      "%v20", "%v21", "%v22", "%v23",
+      "%v24", "%v25", "%v26", "%v27",
+      "%v28", "%v29", "%v30", "%v31",
+   };
+
+   vassert(archreg < 32);
+
+   return names[archreg];
+}
+
+
 /* Common function used to construct a mnemonic based on a condition code
    mask. */
 static const HChar *
@@ -279,6 +299,35 @@ udlb_operand(HChar *p, UInt d, UInt length, UInt b)
       p += vex_sprintf(p, ",%s", gpr_operand(b));
    }
    p += vex_sprintf(p, ")");
+
+   return p;
+}
+
+
+/* An operand with a base register, an vector register, and a displacement.
+   If the displacement is signed, the rightmost 20 bit of D need to be
+   sign extended */
+static HChar *
+dvb_operand(HChar *p, UInt d, UInt v, UInt b, Bool displacement_is_signed)
+{
+   if (displacement_is_signed) {
+      Int displ = (Int)(d << 12) >> 12;  /* sign extend */
+
+      p += vex_sprintf(p, "%d", displ);
+   } else {
+      p += vex_sprintf(p, "%u", d);
+   }
+   if (v != 0) {
+      p += vex_sprintf(p, "(%s", vr_operand(v));
+      if (b != 0) {
+         p += vex_sprintf(p, ",%s", gpr_operand(b));
+      }
+      p += vex_sprintf(p, ")");
+   } else {
+      if (b != 0) {
+         p += vex_sprintf(p, "(%s)", gpr_operand(b));
+      }
+   }
 
    return p;
 }
@@ -455,6 +504,21 @@ s390_disasm(UInt command, ...)
          }
          break;
       }
+
+      case S390_ARG_VR:
+         p += vex_sprintf(p, "%s", vr_operand(va_arg(args, UInt)));
+         break;
+
+      case S390_ARG_UDVB: {
+         UInt d, v, b;
+
+         d = va_arg(args, UInt);
+         v = va_arg(args, UInt);
+         b = va_arg(args, UInt);
+
+         p = dvb_operand(p, d, v, b, 0 /* signed_displacement */);
+         break;
+         }
       }
 
       separator = ',';

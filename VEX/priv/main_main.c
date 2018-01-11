@@ -1426,6 +1426,9 @@ const HChar* LibVEX_EmNote_string ( VexEmNote ew )
      case EmFail_S390X_invalid_PFPO_function:
         return "The function code in GPR 0 for the PFPO instruction"
                " is invalid";
+     case EmFail_S390X_vx:
+        return "Encountered an instruction that requires the vector facility.\n"
+               "  That facility is not available on this host";
      default: 
         vpanic("LibVEX_EmNote_string: unknown warning");
    }

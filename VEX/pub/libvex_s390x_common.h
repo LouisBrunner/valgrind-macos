@@ -101,6 +101,7 @@
 #define S390_FAC_CTREXE  50  // constrained transactional execution
 #define S390_FAC_TREXE   73  // transactional execution
 #define S390_FAC_MSA4    77  // message-security-assist 4
+#define S390_FAC_VX      128 // vector facility
 
 
 /*--------------------------------------------------------------*/
@@ -111,7 +112,7 @@
 #define S390_NUM_GPRPARMS 5
 
 /* Number of double words needed to store all facility bits. */
-#define S390_NUM_FACILITY_DW 2
+#define S390_NUM_FACILITY_DW 3
 
 #endif /* __LIBVEX_PUB_S390X_H */
 

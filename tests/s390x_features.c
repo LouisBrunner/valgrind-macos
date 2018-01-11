@@ -39,25 +39,33 @@ jmp_buf env;
 
 #if defined(VGA_s390x)
 
+/* Number of double words needed to store all facility bits. */
+#define S390_NUM_FACILITY_DW 3
+
 void handle_sigill(int signum)
 {
    longjmp(env, 1);
 }
 
-unsigned long long stfle(void)
+static void clear_facilities(unsigned long long *ret)
 {
+   unsigned int index;
+   for(index = 0; index < S390_NUM_FACILITY_DW; index++)
+   {
+      ret[index] = 0ULL;
+   }
+}
 
-   unsigned long long ret;
-
+void stfle(unsigned long long *ret)
+{
    signal(SIGILL, handle_sigill);
    if (setjmp(env)) {
       /* stfle not available: assume no facilities */
-      return 0;
+      clear_facilities(ret);
    } else {
-      asm volatile("lghi 0, 0\n"
-                   ".insn s,0xb2b00000,%0\n" /* stfle */
-      : "=Q" (ret)::"0", "cc");
-      return ret;
+      register unsigned long long r0 asm("0") = S390_NUM_FACILITY_DW - 1;
+      asm volatile(".insn s,0xb2b00000,%0\n" /* stfle */
+       : "=m" (*ret), "+d"(r0) :: "cc", "memory");
    }
 }
 
@@ -201,39 +209,42 @@ static model_info *get_host(void)
 
 static int go(char *feature, char *cpu)
 {
-   unsigned long long facilities;
+   unsigned long long facilities[S390_NUM_FACILITY_DW];
    unsigned long long match;
    model_info *host, *from, *to, *p;
    char *colon;
 
-   facilities = stfle();
+   clear_facilities(facilities);
+   stfle(facilities);
 
    if        (strcmp(feature, "s390x-zarch") == 0 ) {
-      match = (facilities & FAC_BIT(1)) && (facilities & FAC_BIT(2));
+      match = (facilities[0] & FAC_BIT(1)) && (facilities[0] & FAC_BIT(2));
    } else if (strcmp(feature, "s390x-n3") == 0 ) {
-      match = facilities & FAC_BIT(0);
+      match = facilities[0] & FAC_BIT(0);
    } else if (strcmp(feature, "s390x-stfle") == 0 ) {
-      match = facilities & FAC_BIT(7);
+      match = facilities[0] & FAC_BIT(7);
    } else if (strcmp(feature, "s390x-ldisp") == 0 ) {
-      match = (facilities & FAC_BIT(18)) && (facilities & FAC_BIT(19));
+      match = (facilities[0] & FAC_BIT(18)) && (facilities[0] & FAC_BIT(19));
    } else if (strcmp(feature, "s390x-eimm") == 0 ) {
-      match = facilities & FAC_BIT(21);
+      match = facilities[0] & FAC_BIT(21);
    } else if (strcmp(feature, "s390x-stckf") == 0 ) {
-      match = facilities & FAC_BIT(25);
+      match = facilities[0] & FAC_BIT(25);
    } else if (strcmp(feature, "s390x-genins") == 0 ) {
-      match = facilities & FAC_BIT(34);
+      match = facilities[0] & FAC_BIT(34);
    } else if (strcmp(feature, "s390x-exrl") == 0 ) {
-      match = facilities & FAC_BIT(35);
+      match = facilities[0] & FAC_BIT(35);
    } else if (strcmp(feature, "s390x-etf3") == 0 ) {
-      match = facilities & FAC_BIT(30);
+      match = facilities[0] & FAC_BIT(30);
    } else if (strcmp(feature, "s390x-fpext") == 0 ) {
-      match = facilities & FAC_BIT(37);
+      match = facilities[0] & FAC_BIT(37);
    } else if (strcmp(feature, "s390x-dfp") == 0 ) {
-      match = facilities & FAC_BIT(42);
+      match = facilities[0] & FAC_BIT(42);
    } else if (strcmp(feature, "s390x-pfpo") == 0 ) {
-      match = facilities & FAC_BIT(44);
+      match = facilities[0] & FAC_BIT(44);
    } else if (strcmp(feature, "s390x-highw") == 0 ) {
-      match = facilities & FAC_BIT(45);
+      match = facilities[0] & FAC_BIT(45);
+   } else if (strcmp(feature, "s390x-vx") == 0 ) {
+      match = facilities[2] & FAC_BIT(0);
    } else {
       return 2;          // Unrecognised feature.
    }

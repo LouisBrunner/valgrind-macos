@@ -3108,6 +3108,22 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
          complainIfUndefined(mce, atom2, NULL);
          return assignNew('V', mce, Ity_I64, triop(op, vatom1, atom2, vatom3));
 
+      case Iop_SetElem8x16:
+      case Iop_SetElem16x8:
+      case Iop_SetElem32x4:
+      case Iop_SetElem64x2:
+         complainIfUndefined(mce, atom2, NULL);
+         return assignNew('V', mce, Ity_V128, triop(op, vatom1, atom2, vatom3));
+
+      case Iop_Perm8x16x2:
+         /* (V128, V128, V128) -> V128 */
+            complainIfUndefined(mce, atom3, NULL);
+            return mkUifUV128(
+                   mce,
+                   assignNew('V', mce, Ity_V128, triop(op, vatom1, vatom2, atom3)),
+                   mkPCast8x16(mce, vatom3)
+                );
+
       /* Vector FP with rounding mode as the first arg */
       case Iop_Add64Fx2:
       case Iop_Sub64Fx2:

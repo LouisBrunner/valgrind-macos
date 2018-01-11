@@ -783,13 +783,19 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
 
 
    /* fprs are accessed 4 or 8 byte at once. Again, we track that change for
-      the full register */
-   if ((sz == 8 || sz == 4) && o >= GOF(f0) && o <= GOF(f15)+8-sz)
-      return GOF(f0) + ((o-GOF(f0)) & -8) ;
+      the full register
+      NOTE: FPRs are mapped to first double word of VRs[0-15] */
+   if ((sz == 8 || sz == 4) && o >= GOF(v0) && o <= GOF(v15)+8-sz)
+      return GOF(v0) + ((o-GOF(v0)) & -8) ;
 
    /* access registers are accessed 4 bytes at once */
    if (sz == 4 && o >= GOF(a0) && o <= GOF(a15))
       return o;
+
+   /* no matter what byte(s) we change, we have changed the full 16 byte value
+      and need to track this change for the whole register */
+   if (o >= GOF(v0) && sz <= 16 && o <= (GOF(v31) + 16 - sz))
+      return GOF(v0) + ((o-GOF(v0)) & -16) ;
 
    /* we access the guest counter either fully or one of the 4byte words */
    if (o == GOF(counter) && (sz == 8 || sz ==4))

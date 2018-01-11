@@ -28,6 +28,108 @@ my %csv_implemented = ();
 my %toir_implemented = ();
 my %toir_decoded = ();
 
+# "General" form of all theese vector mnemonics is handled.
+# e.g. "vab %%v1, %%v2, %%v3" is equal to "va %%v1, %%v2, %%v3, 0"
+# We exclude this "submnemonics" from handling and work with the "general" ones.
+my @extended_mnemonics = (
+    "bi",        # extended mnemonics for bic
+    "va[bhfgq]",
+    "vacc[bhfgq]",
+    "vacccq",
+    "vacq",
+    "vavgl*[bhfg]",
+    "vcdl*gb",
+    "vceq[bhfg]s*",
+    "vchl*[bhfg]s*",
+    "vcl*gdb",
+    "vc[lt]z[bhfg]",
+    "vecl*[bhfg]",
+    "verim[bhfg]",
+    "verllv*[bhfg]",
+    "veslv*[bhfg]",
+    "vesrav*[bhfg]",
+    "vesrlv*[bhfg]",
+    "vfaez*[bhfg]s*",
+    "vfeez*[bhfg]s*",
+    "vfenez*[bhfg]s*",
+    "vfce[sd]bs*",
+    "vfchdbs*",
+    "vfche[sd]bs*",
+    "vfchsbs*",
+    "vfd[sd]b",
+    "vfa[sd]b",
+    "vfi[sd]b",
+    "vfke[sd]bs*",
+    "vfkhe*[sd]bs*",
+    "vflc[sd]b",
+    "vfll[sd]",
+    "[vw]flr[dx]",
+    "vfl[np][sd]b",
+    "vfm[as]*[sd]b",
+    "vfmax[sd]b",
+    "vfmin[sd]b",
+    "vfnm[as][sd]b",
+    "vfpso[sd]b",
+    "vfsq*[sd]b",
+    "vftci[sd]b",
+    "vgfma*[bhfg]",
+    "vgm[bhfg]",
+    "vistr[bhfg]s*",
+    "vlc[bhfg]",
+    "[vw]ldeb",
+    "[vw]ledb",
+    "vlgv[bhfg]",
+    "vllez[bhfg]",
+    "vllezlf",
+    "vlp[bhfg]",
+    "vlrep[bhfg]",
+    "vlvg[bhfg]",
+    "vmal*[eolh][bhfg]",
+    "vml*[eolh][bhf]",
+    "vm[nx]l*[bhfg]",
+    "vmr[lh][bhfg]",
+    "vmslg",
+    "vnot",
+    "(vone|vzero)",
+    "vpkl*[bhfg]",
+    "vpkl*s*[bhfg]s*",
+    "vpopct[bhfg]",
+    "vrepi*[bhgf]",
+    "vs[bhfgq]",
+    "vsbcbiq",
+    "vsbiq",
+    "vscbi[bhfgq]",
+    "vseg[bfh]",
+    "vstrcz*[bhf]s*",
+    "vsum(b|gh|gf|h|qf|qg)",
+    "vuplh[bhf]",
+    "vuph[bhf]",
+    "vupl(b|hw|f)",
+    "vupll[bhf]",
+    "wcdl*gb",
+    "wcl*gdb",
+    "wfa[sdx]b",
+    "wfch*e*[sdx]bs*",
+    "wf[cdi][sdx]b",
+    "wfkh*e*[sdx]bs*",
+    "wfk[sdx]b",
+    "wfl[clnp][sdx]b*",
+    "wfmax[sdx]b",
+    "wfmin[sdx]b",
+    "wfm[as]*[sdx]b",
+    "wfnm[as][sdx]b",
+    "wfpso[sdx]b",
+    "wftci[sdx]b",
+    "wfsq*[sdx]b",
+    "vfl[lr]"
+    );
+
+# Compile excluded mnemonics into one regular expession to optimize speed.
+# Also it simplifies the code.
+my $extended_mnemonics_pattern = join '|', map "$_", @extended_mnemonics;
+$extended_mnemonics_pattern = "($extended_mnemonics_pattern)";
+# print "extended_mnemonics_pattern: $extended_mnemonics_pattern\n";
+
 
 #----------------------------------------------------
 # Read s390-opc.txt (binutils)
@@ -76,21 +178,22 @@ while (my $line = <OPC>) {
     next if ($mnemonic eq "ldxbra"); # indistinguishable from ldxbr
     next if ($mnemonic eq "lexbra"); # indistinguishable from lexbr
     next if ($mnemonic eq "ledbra"); # indistinguishable from ledbr
-    next if ($mnemonic eq "cdgtra"); # indistinguishable from cdgtr
+    next if ($mnemonic eq "cdgtr");  # indistinguishable from cdgtra
     next if ($mnemonic eq "cxgtra"); # indistinguishable from cxgtr
     next if ($mnemonic eq "cgdtra"); # indistinguishable from cgdtr
     next if ($mnemonic eq "cgxtra"); # indistinguishable from cgxtr
-    next if ($mnemonic eq "fidbra"); # indistinguishable from fidbr
-    next if ($mnemonic eq "fiebra"); # indistinguishable from fiebr
-    next if ($mnemonic eq "fixbra"); # indistinguishable from fixbr
-    next if ($mnemonic eq "adtr");  # indistinguishable from adtra
-    next if ($mnemonic eq "axtr");  # indistinguishable from axtra
-    next if ($mnemonic eq "sdtr");  # indistinguishable from sdtra
-    next if ($mnemonic eq "sxtr");  # indistinguishable from sxtra
-    next if ($mnemonic eq "ddtr");  # indistinguishable from ddtra
-    next if ($mnemonic eq "dxtr");  # indistinguishable from dxtra
-    next if ($mnemonic eq "mdtr");  # indistinguishable from mdtra
-    next if ($mnemonic eq "mxtr");  # indistinguishable from mxtra
+    next if ($mnemonic eq "fidbr");  # indistinguishable from fidbra
+    next if ($mnemonic eq "fiebr");  # indistinguishable from fiebra
+    next if ($mnemonic eq "fixbr");  # indistinguishable from fixbra
+    next if ($mnemonic eq "adtr");   # indistinguishable from adtra
+    next if ($mnemonic eq "axtr");   # indistinguishable from axtra
+    next if ($mnemonic eq "sdtr");   # indistinguishable from sdtra
+    next if ($mnemonic eq "sxtr");   # indistinguishable from sxtra
+    next if ($mnemonic eq "ddtr");   # indistinguishable from ddtra
+    next if ($mnemonic eq "dxtr");   # indistinguishable from dxtra
+    next if ($mnemonic eq "mdtr");   # indistinguishable from mdtra
+    next if ($mnemonic eq "mxtr");   # indistinguishable from mxtra
+    next if ($mnemonic =~ /$extended_mnemonics_pattern/);
 
     $description =~ s/^[\s]+//g;    # remove leading blanks
     $description =~ s/[\s]+$//g;    # remove trailing blanks
@@ -143,17 +246,18 @@ while (my $line = <CSV>) {
     next if ($mnemonic eq "ldxbra"); # indistinguishable from ldxbr
     next if ($mnemonic eq "lexbra"); # indistinguishable from lexbr
     next if ($mnemonic eq "ledbra"); # indistinguishable from ledbr
-    next if ($mnemonic eq "cdgtra"); # indistinguishable from cdgtr
+    next if ($mnemonic eq "cdgtr");  # indistinguishable from cdgtra
     next if ($mnemonic eq "cxgtra"); # indistinguishable from cxgtr
     next if ($mnemonic eq "cgdtra"); # indistinguishable from cgdtr
     next if ($mnemonic eq "cgxtra"); # indistinguishable from cgxtr
-    next if ($mnemonic eq "fidbra"); # indistinguishable from fidbr
-    next if ($mnemonic eq "fiebra"); # indistinguishable from fiebr
-    next if ($mnemonic eq "fixbra"); # indistinguishable from fixbr
+    next if ($mnemonic eq "fidbr");  # indistinguishable from fidbra
+    next if ($mnemonic eq "fiebr");  # indistinguishable from fiebra
+    next if ($mnemonic eq "fixbr");  # indistinguishable from fixbra
     next if ($mnemonic eq "adtr");   # indistinguishable from adtra
     next if ($mnemonic eq "sdtr");   # indistinguishable from sdtra
     next if ($mnemonic eq "ddtr");   # indistinguishable from ddtra
     next if ($mnemonic eq "mdtr");   # indistinguishable from mdtra
+    next if ($mnemonic =~ /$extended_mnemonics_pattern/);
 
 # Complain about duplicate entries. We don't want them.
     if ($csv_desc{$mnemonic}) {

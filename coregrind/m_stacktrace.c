@@ -1393,7 +1393,8 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       int seen_sp_adjust = 0;
       long frame_offset = 0;
       PtrdiffT offset;
-      if (VG_(get_inst_offset_in_function)(uregs.pc, &offset)) {
+      const DiEpoch cur_ep = VG_(current_DiEpoch)();
+      if (VG_(get_inst_offset_in_function)(cur_ep, uregs.pc, &offset)) {
          Addr start_pc = uregs.pc - offset;
          Addr limit_pc = uregs.pc;
          Addr cur_pc;

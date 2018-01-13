@@ -1582,6 +1582,24 @@ static HChar* readlink_path (const HChar *path)
       return NULL;
    }
 
+  if (buf[0] == '/')
+    return buf;
+
+  /* Relative path, add link dir.  */
+  HChar *linkdirptr;
+  SizeT linkdir_len = VG_(strlen)(path);
+  if ((linkdirptr = VG_(strrchr)(path, '/')) != NULL)
+    linkdir_len -= VG_(strlen)(linkdirptr + 1);
+
+  SizeT buflen = VG_(strlen)(buf);
+  SizeT needed = linkdir_len + buflen + 1;
+  if (bufsiz < needed)
+    buf = ML_(dinfo_realloc)("readlink_path.linkdir", buf, needed);
+
+  VG_(memmove)(buf + linkdir_len, buf, buflen);
+  VG_(memcpy)(buf, path, linkdir_len);
+  buf[needed - 1] = '\0';
+
   return buf;
 }
 

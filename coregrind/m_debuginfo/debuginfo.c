@@ -673,7 +673,7 @@ static void check_CFSI_related_invariants ( const DebugInfo* di )
 
       /* invariant (1) */
       for (di2 = debugInfo_list; di2; di2 = di2->next) {
-         if (di2 == di)
+         if (di2 == di || is_DebugInfo_archived(di2))
             continue;
          for (j = 0; j < VG_(sizeXA)(di2->fsm.maps); j++) {
             const DebugInfoMapping* map2 = VG_(indexXA)(di2->fsm.maps, j);

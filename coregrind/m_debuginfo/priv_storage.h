@@ -668,7 +668,7 @@ struct _DebugInfo {
 
       or the normal case, which is the AND of the following:
       (0) size of at least one rx mapping > 0
-      (1) no two DebugInfos with some rx mapping of size > 0 
+      (1) no two non-archived DebugInfos with some rx mapping of size > 0
           have overlapping rx mappings
       (2) [cfsi_minavma,cfsi_maxavma] does not extend beyond
           [avma,+size) of one rx mapping; that is, the former

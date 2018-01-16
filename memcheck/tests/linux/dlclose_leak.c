@@ -11,7 +11,8 @@ char* (*alloc_1_byte)(void);
 
 int main(int argc, char** argv)
 {
-    for (int i = 0; i < 2; ++i)
+    int i;
+    for (i = 0; i < 2; ++i)
     {
         char* memToLeak;
         char x __attribute__((unused));

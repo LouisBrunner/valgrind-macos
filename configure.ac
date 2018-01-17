@@ -100,6 +100,11 @@ else
 fi
 rm $tmpfile
 
+# Make sure we can compile in C99 mode.
+AC_PROG_CC_C99
+if test "$ac_cv_prog_cc_c99" == "no"; then
+    AC_MSG_ERROR([Valgrind relies on a C compiler supporting C99])
+fi
 
 # We don't want gcc < 3.0
 AC_MSG_CHECKING([for a supported version of gcc])

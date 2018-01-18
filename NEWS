@@ -86,6 +86,7 @@ where XXXXXX is the bug number as listed below.
 386397  PPC64, valgrind truncates powerpc timebase to 32-bits.
 387712  s390x cgijnl reports Conditional jump depends on uninitialised value
 387773  .gnu_debugaltlink paths resolve relative to .debug file, not symlink
+389065  valgrind meets gcc flag -Wlogical-op
 
 n-i-bz  Fix missing workq_ops operations (macOS)
 n-i-bz  fix bug in strspn replacement

@@ -1279,7 +1279,7 @@ PRE(domctl)
       switch (domctl->interface_version) {
       case 0x000000b:
           if (domctl->u.monitor_op_0000000b.op == VKI_XEN_DOMCTL_MONITOR_OP_ENABLE ||
-              domctl->u.monitor_op_0000000b.op == VKI_XEN_DOMCTL_MONITOR_OP_ENABLE) {
+              domctl->u.monitor_op_0000000b.op == VKI_XEN_DOMCTL_MONITOR_OP_DISABLE) {
              switch (domctl->u.monitor_op_0000000b.event) {
              case VKI_XEN_DOMCTL_MONITOR_EVENT_WRITE_CTRLREG:
                 __PRE_XEN_DOMCTL_READ(monitor_op, monitor_op_0000000b, u.mov_to_cr);

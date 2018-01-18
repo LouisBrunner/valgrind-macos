@@ -33,7 +33,7 @@ static void unsup_insn_handler(int signal_number)
     longjmp(unsup_insn_env, 1);
   return;
 }
-static struct sigaction unsup_insn_action = (struct sigaction) {
+static struct sigaction unsup_insn_action = {
   .sa_handler = &unsup_insn_handler,
 };
 

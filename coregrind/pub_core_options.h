@@ -201,6 +201,8 @@ extern enum FairSchedType VG_(clo_fair_sched);
 extern Bool  VG_(clo_trace_sched);
 /* DEBUG: do heap profiling?  default: NO */
 extern Bool  VG_(clo_profile_heap);
+// DEBUG: report progress every N seconds (1 .. 3600)
+extern UInt VG_(clo_progress_interval);
 #define MAX_REDZONE_SZB 128
 // Maximum for the default values for core arenas and for client
 // arena given by the tool.

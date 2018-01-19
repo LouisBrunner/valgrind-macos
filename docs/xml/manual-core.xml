@@ -2581,6 +2581,60 @@ need to use them.</para>
    </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.progress-interval" xreflabel="--progress-interval">
+    <term>
+      <option><![CDATA[--progress-interval=<number> [default: 0, meaning 'disabled'] ]]></option>
+    </term>
+    <listitem>
+      <para>This is an enhancement to Valgrind's debugging output.  It is
+        unlikely to be of interest to end users.</para>
+      <para>When <varname>number</varname> is set to a non-zero value,
+        Valgrind will print a one-line progress summary
+        every <varname>number</varname> seconds.  Valid settings
+        for <varname>number</varname> are between 0 and 3600
+        inclusive.  Here's some example output
+        with <varname>number</varname>
+        set to 10:
+        <programlisting><![CDATA[
+PROGRESS: U 110s, W 113s, 97.3% CPU, EvC 414.79M, TIn 616.7k, TOut 0.5k, #thr 67
+PROGRESS: U 120s, W 124s, 96.8% CPU, EvC 505.27M, TIn 636.6k, TOut 3.0k, #thr 64
+PROGRESS: U 130s, W 134s, 97.0% CPU, EvC 574.90M, TIn 657.5k, TOut 3.0k, #thr 63
+]]></programlisting>
+        Each line shows:
+      <itemizedlist>
+        <listitem><varname>U</varname>: total user time</listitem>
+        <listitem><varname>W</varname>: total wallclock time</listitem>
+        <listitem><varname>CPU</varname>: overall average cpu use</listitem>
+        <listitem><varname>EvC</varname>: number of event checks.  An event
+         check is a backwards branch in the simulated program, so this is a
+         measure of forward progress of the program</listitem>
+        <listitem><varname>TIn</varname>: number of code blocks instrumented
+          by the JIT</listitem>
+        <listitem><varname>TOut</varname>: number of instrumented code
+          blocks that have been thrown away</listitem>
+        <listitem><varname>#thr</varname>: number of threads in the
+        program</listitem>
+      </itemizedlist>
+      From the progress of these, it is possible to observe:
+      <itemizedlist>
+        <listitem>when the program is compute bound (<varname>TIn</varname>
+          rises slowly, <varname>EvC</varname> rises rapidly)</listitem>
+        <listitem>when the program is in a spinloop
+          (<varname>TIn</varname>/<varname>TOut</varname>
+          fixed, <varname>EvC</varname> rises rapidly)</listitem>
+        <listitem>when the program is JIT-bound (<varname>TIn</varname>
+          rises rapidly)</listitem>
+        <listitem>when the program is rapidly discarding code
+          (<varname>TOut</varname> rises rapidly)</listitem>
+        <listitem>when the program is about to achieve some expected state
+          (<varname>EvC</varname> arrives at some value you
+          expect)</listitem>
+        <listitem> when the program is idling (<varname>U</varname> rises
+          more slowly than <varname>W</varname>)</listitem>
+      </itemizedlist>
+      </para>
+   </listitem>
+  </varlistentry>
 
 </variablelist>
 <!-- end of xi:include in the manpage -->

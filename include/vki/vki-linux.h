@@ -971,6 +971,11 @@ struct vki_sctp_getaddrs {
 // From linux-2.6.8.1/include/linux/resource.h
 //----------------------------------------------------------------------
 
+#define VKI_RUSAGE_SELF     0
+#define VKI_RUSAGE_CHILDREN (-1)
+#define VKI_RUSAGE_BOTH     (-2)        /* sys_wait4() uses this */
+#define VKI_RUSAGE_THREAD   1           /* only the calling thread */
+
 struct	vki_rusage {
 	struct vki_timeval ru_utime;	/* user time used */
 	struct vki_timeval ru_stime;	/* system time used */

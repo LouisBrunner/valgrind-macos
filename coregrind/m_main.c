@@ -258,6 +258,8 @@ static void usage_NORETURN ( Bool debug_help )
 "                              heap blocks allocated for Valgrind internal use (in bytes) [4]\n"
 "    --wait-for-gdb=yes|no     pause on startup to wait for gdb attach\n"
 "    --sym-offsets=yes|no      show syms in form 'name+offset'? [no]\n"
+"    --progress-interval=<number>  report progress every <number>\n"
+"                                  CPU seconds [0, meaning disabled]\n"
 "    --command-line-only=no|yes  only use command line options [no]\n"
 "\n"
 "  Vex options for all Valgrind tools:\n"
@@ -671,6 +673,8 @@ void main_process_cmd_line_options( void )
       else if VG_BOOL_CLO(arg, "--trace-syscalls",   VG_(clo_trace_syscalls)) {}
       else if VG_BOOL_CLO(arg, "--wait-for-gdb",     VG_(clo_wait_for_gdb)) {}
       else if VG_BOOL_CLO(arg, "--sym-offsets",      VG_(clo_sym_offsets)) {}
+      else if VG_BINT_CLO(arg, "--progress-interval",
+                               VG_(clo_progress_interval), 0, 3600) {}
       else if VG_BOOL_CLO(arg, "--read-inline-info", VG_(clo_read_inline_info)) {}
       else if VG_BOOL_CLO(arg, "--read-var-info",    VG_(clo_read_var_info)) {}
 

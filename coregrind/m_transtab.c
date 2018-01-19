@@ -2565,6 +2565,11 @@ UInt VG_(get_bbs_translated) ( void )
    return n_in_count;
 }
 
+UInt VG_(get_bbs_discarded_or_dumped) ( void )
+{
+   return n_disc_count + n_dump_count;
+}
+
 void VG_(print_tt_tc_stats) ( void )
 {
    VG_(message)(Vg_DebugMsg,

@@ -98,11 +98,16 @@ extern Int VG_(getegid) ( void );
    Timing
    ------------------------------------------------------------------ */
 
-// Returns the number of milliseconds passed since the progam started
+// Returns the number of milliseconds passed since the program started
 // (roughly;  it gets initialised partway through Valgrind's initialisation
-// steps).
+// steps).  This is wallclock time.
 extern UInt VG_(read_millisecond_timer) ( void );
+
 extern Int  VG_(gettimeofday)(struct vki_timeval *tv, struct vki_timezone *tz);
+
+// Returns the number of milliseconds of user cpu time we have used,
+// as reported by 'getrusage'.
+extern UInt VG_(get_user_milliseconds)(void);
 
 /* ---------------------------------------------------------------------
    atfork

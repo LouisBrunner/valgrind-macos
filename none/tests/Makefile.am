@@ -278,7 +278,7 @@ ansi_CFLAGS		= $(AM_CFLAGS) -ansi
 execve_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 if VGCONF_OS_IS_SOLARIS
 fcntl_setown_LDADD	= -lsocket -lnsl
-fdleak_cmsg_CFLAGS	= $(AM_CFLAGS) -std=c99 -D_XOPEN_SOURCE=600
+fdleak_cmsg_CFLAGS	= $(AM_CFLAGS) -D_XOPEN_SOURCE=600
 fdleak_cmsg_LDADD	= -lsocket -lnsl
 fdleak_ipv4_LDADD	= -lsocket -lnsl
 fdleak_creat_LDADD	= -lsocket -lnsl
@@ -315,9 +315,6 @@ pth_mutexspeed_LDADD	= -lpthread
 pth_once_LDADD		= -lpthread
 pth_rwlock_LDADD	= -lpthread
 pth_rwlock_CFLAGS	= $(AM_CFLAGS)
-if VGCONF_OS_IS_SOLARIS
-pth_rwlock_CFLAGS	+= --std=c99
-endif
 pth_stackalign_LDADD	= -lpthread
 pth_2sig_LDADD		= -lpthread
 pth_term_signal_LDADD	= -lpthread
@@ -337,9 +334,6 @@ thread_exits_LDADD	= -lpthread
 threaded_fork_LDADD	= -lpthread
 threadederrno_CFLAGS	= $(AM_CFLAGS)
 threadederrno_LDADD	= -lpthread
-if VGCONF_OS_IS_SOLARIS
-threadederrno_CFLAGS	+= --std=c99
-endif
 tls_SOURCES		= tls.c tls2.c
 tls_DEPENDENCIES	= tls.so tls2.so
 tls_LDFLAGS		= -Wl,-rpath,$(abs_top_builddir)/none/tests

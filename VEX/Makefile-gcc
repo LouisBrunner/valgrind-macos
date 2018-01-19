@@ -105,7 +105,6 @@ CCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -Wshadow \
 		-Wpointer-arith -Wbad-function-cast -Wcast-qual \
 		-Wcast-align -Wmissing-declarations \
 		-Wwrite-strings -Wformat -Wformat-security \
-		-std=gnu99 \
 		$(EXTRA_CFLAGS) -g -O2 -fstrict-aliasing
 
 #CC = icc

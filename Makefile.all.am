@@ -98,7 +98,6 @@ clean-noinst_DSYMS:
 # that somehow causes VG_(memset) to get into infinite recursion.
 AM_CFLAGS_BASE = \
 	-O2 -finline-functions -g \
-	-std=gnu99 \
 	-Wall \
 	-Wmissing-prototypes \
 	-Wshadow \

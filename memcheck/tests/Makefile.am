@@ -473,7 +473,7 @@ err_disable3_LDADD 	= -lpthread
 err_disable4_LDADD 	= -lpthread
 err_disable4_CFLAGS	= $(AM_CFLAGS)
 if VGCONF_OS_IS_SOLARIS
-err_disable4_CFLAGS	+= -std=c99 -D_XOPEN_SOURCE=600
+err_disable4_CFLAGS	+= -D_XOPEN_SOURCE=600
 endif
 reach_thread_register_CFLAGS	= $(AM_CFLAGS) -O2
 reach_thread_register_LDADD	= -lpthread
@@ -501,7 +501,7 @@ manuel1_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
 memalign2_CFLAGS	= $(AM_CFLAGS)
 if VGCONF_OS_IS_SOLARIS
-memalign2_CFLAGS	+= -std=c99 -D__EXTENSIONS__
+memalign2_CFLAGS	+= -D__EXTENSIONS__
 endif
 
 memcmptest_CFLAGS	= $(AM_CFLAGS) -fno-builtin-memcmp
@@ -537,7 +537,7 @@ resvn_stack_CFLAGS      = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
 sendmsg_CFLAGS		= $(AM_CFLAGS)
 if VGCONF_OS_IS_SOLARIS
-sendmsg_CFLAGS		+= -std=c99 -D_XOPEN_SOURCE=600
+sendmsg_CFLAGS		+= -D_XOPEN_SOURCE=600
 sendmsg_LDADD		= -lsocket -lnsl
 endif
 
@@ -591,7 +591,7 @@ else
  varinfo5so_so_LDFLAGS  = -fpic $(AM_FLAG_M3264_PRI) -shared \
 				-Wl,-soname -Wl,varinfo5so.so
 endif
-varinforestrict_CFLAGS	= $(AM_CFLAGS) -O0 -g -std=c99
+varinforestrict_CFLAGS	= $(AM_CFLAGS) -O0 -g
 
 # Build shared object for wrap7
 wrap7_SOURCES           = wrap7.c

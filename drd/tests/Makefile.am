@@ -516,10 +516,6 @@ omp_matinv_CFLAGS           = $(AM_CFLAGS) -fopenmp
 omp_matinv_LDFLAGS          = -fopenmp
 omp_matinv_LDADD            = $(LDADD) -lm
 
-if VGCONF_OS_IS_SOLARIS
-omp_matinv_CFLAGS           += -std=gnu99
-endif
-
 omp_prime_CFLAGS            = $(AM_CFLAGS) -fopenmp
 omp_prime_LDFLAGS           = -fopenmp
 omp_prime_LDADD             = $(LDADD) -lm
@@ -531,7 +527,7 @@ endif
 
 matinv_CFLAGS               = $(AM_CFLAGS)
 if VGCONF_OS_IS_SOLARIS
-matinv_CFLAGS               += -std=gnu99 -D__EXTENSIONS__
+matinv_CFLAGS               += -D__EXTENSIONS__
 endif
 if HAVE_PTHREAD_BARRIER
 matinv_LDADD                = $(LDADD) -lm

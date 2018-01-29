@@ -915,10 +915,11 @@ static Bool in_same_fn ( Addr a1, Addr a2 )
    const HChar *buf_a1, *buf_a2;
    /* The following conditional looks grossly inefficient and
       surely could be majorly improved, with not much effort. */
-   if (VG_(get_fnname_raw) (a1, &buf_a1)) {
+   const DiEpoch cur_ep = VG_(current_DiEpoch)();
+   if (VG_(get_fnname_raw) (cur_ep, a1, &buf_a1)) {
       HChar buf_a1_copy[VG_(strlen)(buf_a1) + 1];
       VG_(strcpy)(buf_a1_copy, buf_a1);
-      if (VG_(get_fnname_raw) (a2, &buf_a2))
+      if (VG_(get_fnname_raw) (cur_ep, a2, &buf_a2))
          if (VG_(strcmp)(buf_a1_copy, buf_a2))
             return True;
    }

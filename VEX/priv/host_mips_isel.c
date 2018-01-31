@@ -991,10 +991,12 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             case Iop_Shl64:
                shftOp = Mshft_SLL;
                break;
+            case Iop_Shr16:
             case Iop_Shr32:
             case Iop_Shr64:
                shftOp = Mshft_SRL;
                break;
+            case Iop_Sar16:
             case Iop_Sar32:
             case Iop_Sar64:
                shftOp = Mshft_SRA;
@@ -1016,6 +1018,25 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
 
             if (ty == Ity_I8) {
                vassert(0);
+            } else if (ty == Ity_I16) {
+               if (shftOp == Mshft_SRA) {
+                  HReg tmp = newVRegI(env);
+                  HReg r_srcL_se = newVRegI(env);
+                  addInstr(env, MIPSInstr_Shft(Mshft_SLL, True, tmp,
+                                               r_srcL, MIPSRH_Imm(False, 16)));
+                  addInstr(env, MIPSInstr_Shft(Mshft_SRA, True, r_srcL_se,
+                                               tmp, MIPSRH_Imm(False, 16)));
+                  addInstr(env, MIPSInstr_Shft(shftOp, True,
+                                               r_dst, r_srcL_se, ri_srcR));
+               } else if (shftOp == Mshft_SRL) {
+                  HReg r_srcL_se = newVRegI(env);
+                  addInstr(env, MIPSInstr_Alu(Malu_AND, r_srcL_se, r_srcL,
+                                              MIPSRH_Imm(False, 0xFFFF)));
+                  addInstr(env, MIPSInstr_Shft(shftOp, True,
+                                               r_dst, r_srcL_se, ri_srcR));
+               } else {
+                  vassert(0);
+               }
             } else if (ty == Ity_I32) {
                if (mode64 && (shftOp == Mshft_SRA || shftOp == Mshft_SRL)) {
                   HReg tmp = newVRegI(env);

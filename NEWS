@@ -22,6 +22,7 @@ support for X86/macOS 10.13, AMD64/macOS 10.13.
 * ================== PLATFORM CHANGES =================
 
 * Preliminary support for macOS 10.13 has been added.
+* mips: support for MIPS32/MIPS64 Revision 6 has been added.
 * mips: support for MIPS SIMD architecture (MSA) has been added.
 
 * ==================== TOOL CHANGES ====================
@@ -84,6 +85,7 @@ where XXXXXX is the bug number as listed below.
 385912  none/tests/rlimit_nofile fails on newer glibc/kernel.
 385939  Optionally exit on the first error
 386397  PPC64, valgrind truncates powerpc timebase to 32-bits.
+387410  MIPSr6 support
 387712  s390x cgijnl reports Conditional jump depends on uninitialised value
 387773  .gnu_debugaltlink paths resolve relative to .debug file, not symlink
 389065  valgrind meets gcc flag -Wlogical-op

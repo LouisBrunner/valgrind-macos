@@ -91,7 +91,11 @@ typedef enum {
    CVTDS,    CVTDW,   CVTSD,   CVTSW,
    CVTWS,    CVTWD,   CVTDL,   CVTLS,
    CVTLD,    CVTSL,   ADDS,    ADDD,
-   SUBS,     SUBD,    DIVS
+   SUBS,     SUBD,    DIVS,
+   RINTS,    RINTD,
+   MAXS,     MAXD,    MINS,    MIND,
+   MAXAS,    MAXAD,   MINAS,   MINAD,
+   CMPAFS,   CMPAFD,  CMPSAFS, CMPSAFD,
 } flt_op;
 
 typedef enum {

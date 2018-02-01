@@ -150,11 +150,10 @@ typedef
       /*  480 */ ULong guest_ac3;
 
       /*  488 */ UInt guest_CP0_status;
+      /*  492 */ UInt guest_CP0_Config5;
 
-      /*  492 */ UInt guest_LLaddr;
-      /*  496 */ UInt guest_LLdata;
-
-      /*  500 */ UInt _padding2;
+      /*  496 */ UInt guest_LLaddr;
+      /*  500 */ UInt guest_LLdata;
 
       /* MIPS32 MSA 128-bit vector registers */
       /*  504 */ V128 guest_w0;
@@ -207,6 +206,9 @@ void LibVEX_GuestMIPS32_initialise ( /*OUT*/VexGuestMIPS32State* vex_state );
 
 /* FR bit of CP0_STATUS_FR register */
 #define MIPS_CP0_STATUS_FR (1ul << 26)
+
+/* FRE bit of CP0_Config5 register */
+#define MIPS_CONF5_FRE     (1ul << 8)
 
 #endif /* ndef __LIBVEX_PUB_GUEST_MIPS32_H */
 

@@ -75,6 +75,9 @@ static Bool mode64 = False;
 /* CPU has FPU and 32 dbl. prec. FP registers. */
 static Bool fp_mode64 = False;
 
+/* FPU works in FRE mode */
+static Bool fp_mode64_fre = False;
+
 /* CPU has MSA unit */
 static Bool has_msa = False;
 
@@ -1076,6 +1079,17 @@ static Bool branch_or_jump(const UChar * addr)
       if (fmt == 0x0b) {
          return True;
       }
+
+      /* R6 branches */
+      /* bc1eqz */
+      if (fmt == 0x09) {
+         return True;
+      }
+
+      /* bc1nez */
+      if (fmt == 0x0D) {
+         return True;
+      }
    }
 
    /* bposge32 */
@@ -1105,7 +1119,7 @@ static Bool is_Branch_or_Jump_and_Link(const UChar * addr)
       return True;
    }
 
-   /* bgezal */
+   /* bgezal or bal(r6) */
    if (opcode == 0x01 && rt == 0x11) {
       return True;
    }
@@ -1265,6 +1279,12 @@ static IRExpr *genRORV32(IRExpr * src, IRExpr * rs)
                           binop(Iop_Shr32, src, mkexpr(t0)));
 }
 
+
+static UShort extend_s_9to16(UInt x)
+{
+   return (UShort) ((((Int) x) << 23) >> 23);
+}
+
 static UShort extend_s_10to16(UInt x)
 {
    return (UShort) ((((Int) x) << 22) >> 22);
@@ -1290,6 +1310,21 @@ static UInt extend_s_18to32(UInt x)
    return (UInt) ((((Int) x) << 14) >> 14);
 }
 
+static UInt extend_s_19to32(UInt x)
+{
+   return (UInt) ((((Int) x) << 13) >> 13);
+}
+
+static UInt extend_s_23to32(UInt x)
+{
+   return (UInt) ((((Int) x) << 9) >> 9);
+}
+
+static UInt extend_s_26to32(UInt x)
+{
+   return (UInt) ((((Int) x) << 6) >> 6);
+}
+
 static ULong extend_s_16to64 ( UInt x )
 {
    return (ULong) ((((Long) x) << 48) >> 48);
@@ -1298,6 +1333,21 @@ static ULong extend_s_16to64 ( UInt x )
 static ULong extend_s_18to64 ( UInt x )
 {
    return (ULong) ((((Long) x) << 46) >> 46);
+}
+
+static ULong extend_s_19to64(UInt x)
+{
+   return (ULong) ((((Long) x) << 45) >> 45);
+}
+
+static ULong extend_s_23to64(UInt x)
+{
+   return (ULong) ((((Long) x) << 41) >> 41);
+}
+
+static ULong extend_s_26to64(UInt x)
+{
+   return (ULong) ((((Long) x) << 38) >> 38);
 }
 
 static ULong extend_s_32to64 ( UInt x )
@@ -1757,6 +1807,13 @@ static IRExpr *getLoFromF64(IRType ty, IRExpr * src)
       return src;
 }
 
+static inline IRExpr *getHiFromF64(IRExpr * src)
+{
+   vassert(typeOfIRExpr(irsb->tyenv, src) == Ity_F64);
+   return unop(Iop_ReinterpI32asF32, unop(Iop_64HIto32,
+                                          unop(Iop_ReinterpF64asI64, src)));
+}
+
 static IRExpr *mkWidenFromF32(IRType ty, IRExpr * src)
 {
    vassert(ty == Ity_F32 || ty == Ity_F64);
@@ -1848,6 +1905,51 @@ static void dis_branch(Bool link, IRExpr * guard, UInt imm, IRStmt ** set)
                                      (UInt) branch_offset), OFFB_PC);
 }
 
+static void dis_branch_compact(Bool link, IRExpr * guard, UInt imm,
+                               DisResult *dres)
+{
+   ULong branch_offset;
+   IRTemp t0;
+
+   if (link) {  /* LR (GPR31) = addr of the instr after branch instr */
+      if (mode64)
+         putIReg(31, mkU64(guest_PC_curr_instr + 4));
+      else
+         putIReg(31, mkU32(guest_PC_curr_instr + 4));
+      dres->jk_StopHere = Ijk_Call;
+   } else {
+      dres->jk_StopHere = Ijk_Boring;
+   }
+
+   dres->whatNext = Dis_StopHere;
+
+   /* PC = PC + (SignExtend(signed_immed_24) << 2)
+      An 18-bit signed offset (the 16-bit offset field shifted left 2 bits)
+      is added to the address of the instruction following
+      the branch (not the branch itself), in the branch delay slot, to form
+      a PC-relative effective target address. */
+
+   if (mode64)
+      branch_offset = extend_s_18to64(imm << 2);
+   else
+      branch_offset = extend_s_18to32(imm << 2);
+
+   t0 = newTemp(Ity_I1);
+   assign(t0, guard);
+
+   if (mode64) {
+      stmt(IRStmt_Exit(mkexpr(t0), link ? Ijk_Call : Ijk_Boring,
+                         IRConst_U64(guest_PC_curr_instr + 4 + branch_offset),
+                         OFFB_PC));
+      putPC(mkU64(guest_PC_curr_instr + 4));
+   } else {
+      stmt(IRStmt_Exit(mkexpr(t0), link ? Ijk_Call : Ijk_Boring,
+                         IRConst_U32(guest_PC_curr_instr + 4 +
+                                     (UInt) branch_offset), OFFB_PC));
+      putPC(mkU32(guest_PC_curr_instr + 4));
+   }
+}
+
 static IRExpr *getFReg(UInt fregNo)
 {
    vassert(fregNo < 32);
@@ -1887,11 +1989,28 @@ static void putFReg(UInt dregNo, IRExpr * e)
    vassert(dregNo < 32);
    IRType ty = fp_mode64 ? Ity_F64 : Ity_F32;
    vassert(typeOfIRExpr(irsb->tyenv, e) == ty);
-   stmt(IRStmt_Put(floatGuestRegOffset(dregNo), e));
+
+   if (fp_mode64_fre) {
+      IRTemp t0 = newTemp(Ity_F32);
+      assign(t0, getLoFromF64(ty, e));
+#if defined (_MIPSEL)
+      stmt(IRStmt_Put(floatGuestRegOffset(dregNo), mkexpr(t0)));
+      if (dregNo & 1)
+         stmt(IRStmt_Put(floatGuestRegOffset(dregNo) - 4, mkexpr(t0)));
+#else
+      stmt(IRStmt_Put(floatGuestRegOffset(dregNo) + 4, mkexpr(t0)));
+      if (dregNo & 1)
+         stmt(IRStmt_Put(floatGuestRegOffset(dregNo & (~1)), mkexpr(t0)));
+#endif
+   } else {
+      stmt(IRStmt_Put(floatGuestRegOffset(dregNo), e));
+   }
+
    if (has_msa && fp_mode64) {
       stmt(IRStmt_Put(msaGuestRegOffset(dregNo),
            binop(Iop_64HLtoV128,
-                    mkU64(0), unop(Iop_ReinterpF64asI64, e))));
+                    unop(Iop_ReinterpF64asI64, e),
+                    unop(Iop_ReinterpF64asI64, e))));
    }
 }
 
@@ -1902,10 +2021,29 @@ static void putDReg(UInt dregNo, IRExpr * e)
       IRType ty = Ity_F64;
       vassert(typeOfIRExpr(irsb->tyenv, e) == ty);
       stmt(IRStmt_Put(floatGuestRegOffset(dregNo), e));
+      if (fp_mode64_fre) {
+         IRTemp t0 = newTemp(Ity_F32);
+         if (dregNo & 1) {
+            assign(t0, getLoFromF64(ty, e));
+#if defined (_MIPSEL)
+            stmt(IRStmt_Put(floatGuestRegOffset(dregNo) - 4, mkexpr(t0)));
+#else
+            stmt(IRStmt_Put(floatGuestRegOffset(dregNo & (~1)), mkexpr(t0)));
+#endif
+         } else {
+            assign(t0, getHiFromF64(e));
+#if defined (_MIPSEL)
+            stmt(IRStmt_Put(floatGuestRegOffset(dregNo | 1), mkexpr(t0)));
+#else
+            stmt(IRStmt_Put(floatGuestRegOffset(dregNo | 1) + 4, mkexpr(t0)));
+#endif
+         }
+      }
       if (has_msa)
          stmt(IRStmt_Put(msaGuestRegOffset(dregNo),
               binop(Iop_64HLtoV128,
-                    mkU64(0), unop(Iop_ReinterpF64asI64, e))));
+                    unop(Iop_ReinterpF64asI64, e),
+                    unop(Iop_ReinterpF64asI64, e))));
    } else {
       vassert(dregNo < 32);
       vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_F64);
@@ -24645,19 +24783,13 @@ static Int msa_2RF(UInt cins, UChar wd, UChar ws) { /* 2RF */
                                         mkU64(0xC3E0000000000000),
                                         mkU64(0xC3E0000000000000)))));
                      assign(t1,
-                            unop(Iop_ReinterpF64asI64,
-                                 binop(Iop_RoundF64toInt,
-                                       mkU32(0x3),
-                                       unop(Iop_ReinterpI64asF64,
-                                            unop(Iop_V128to64,
-                                                 mkexpr(t3))))));
+                            binop(Iop_F64toI64S, mkU32(0x3),
+                                  unop(Iop_ReinterpI64asF64,
+                                       unop(Iop_V128to64, mkexpr(t3)))));
                      assign(t2,
-                            unop(Iop_ReinterpF64asI64,
-                                 binop(Iop_RoundF64toInt,
-                                       mkU32(0x3),
-                                       unop(Iop_ReinterpI64asF64,
-                                            unop(Iop_V128HIto64,
-                                                 mkexpr(t3))))));
+                            binop(Iop_F64toI64S, mkU32(0x3),
+                                  unop(Iop_ReinterpI64asF64,
+                                       unop(Iop_V128HIto64, mkexpr(t3)))));
                      putWReg(wd,
                              binop(Iop_64HLtoV128,
                                    mkexpr(t2), mkexpr(t1)));
@@ -24825,13 +24957,10 @@ static Int msa_2RF(UInt cins, UChar wd, UChar ws) { /* 2RF */
                         tmp[i] = newTemp(Ity_I32);
                         assign(tmp[i],
                             unop(Iop_ReinterpF32asI32,
-                              binop(Iop_I32StoF32, rm,
-                                 unop(Iop_ReinterpF32asI32,
-                                      binop(Iop_RoundF32toInt, rm,
-                                            unop(Iop_ReinterpI32asF32,
-                                                 binop(Iop_GetElem32x4,
-                                                       mkexpr(t1),
-                                                       mkU8(i))))))));
+                              binop(Iop_RoundF32toInt, rm,
+                                    unop(Iop_ReinterpI32asF32,
+                                         binop(Iop_GetElem32x4,
+                                               mkexpr(t1), mkU8(i))))));
                      }
 
                      putWReg(wd,
@@ -24909,13 +25038,10 @@ static Int msa_2RF(UInt cins, UChar wd, UChar ws) { /* 2RF */
                         tmp[i] = newTemp(Ity_I64);
                         assign(tmp[i],
                             unop(Iop_ReinterpF64asI64,
-                              binop(Iop_I64StoF64, rm,
-                                 unop(Iop_ReinterpF64asI64,
-                                      binop(Iop_RoundF64toInt, rm,
-                                            unop(Iop_ReinterpI64asF64,
-                                                 binop(Iop_GetElem64x2,
-                                                       mkexpr(t1),
-                                                       mkU8(i))))))));
+                                 binop(Iop_RoundF64toInt, rm,
+                                       unop(Iop_ReinterpI64asF64,
+                                            binop(Iop_GetElem64x2,
+                                                  mkexpr(t1), mkU8(i))))));
                      }
 
                      putWReg(wd,
@@ -25274,32 +25400,24 @@ static Int msa_2RF(UInt cins, UChar wd, UChar ws) { /* 2RF */
                      IRExpr *rm = get_IR_roundingmode_MSA();
                      assign(t1,
                          binop(Iop_32HLto64,
-                               unop(Iop_ReinterpF32asI32,
-                                    binop(Iop_RoundF32toInt, rm,
-                                          unop(Iop_ReinterpI32asF32,
-                                               binop(Iop_GetElem32x4,
-                                                     mkexpr(t3),
-                                                     mkU8(1))))),
-                               unop(Iop_ReinterpF32asI32,
-                                    binop(Iop_RoundF32toInt, rm,
-                                          unop(Iop_ReinterpI32asF32,
-                                               binop(Iop_GetElem32x4,
-                                                     mkexpr(t3),
-                                                     mkU8(0)))))));
+                               binop(Iop_F32toI32S, rm,
+                                     unop(Iop_ReinterpI32asF32,
+                                          binop(Iop_GetElem32x4,
+                                                mkexpr(t3), mkU8(1)))),
+                               binop(Iop_F32toI32S, rm,
+                                     unop(Iop_ReinterpI32asF32,
+                                          binop(Iop_GetElem32x4,
+                                                mkexpr(t3), mkU8(0))))));
                      assign(t2,
                          binop(Iop_32HLto64,
-                               unop(Iop_ReinterpF32asI32,
-                                    binop(Iop_RoundF32toInt, rm,
-                                          unop(Iop_ReinterpI32asF32,
-                                               binop(Iop_GetElem32x4,
-                                                     mkexpr(t3),
-                                                     mkU8(3))))),
-                               unop(Iop_ReinterpF32asI32,
-                                    binop(Iop_RoundF32toInt, rm,
-                                          unop(Iop_ReinterpI32asF32,
-                                               binop(Iop_GetElem32x4,
-                                                     mkexpr(t3),
-                                                     mkU8(2)))))));
+                               binop(Iop_F32toI32S, rm,
+                                     unop(Iop_ReinterpI32asF32,
+                                          binop(Iop_GetElem32x4,
+                                                mkexpr(t3), mkU8(3)))),
+                               binop(Iop_F32toI32S, rm,
+                                     unop(Iop_ReinterpI32asF32,
+                                          binop(Iop_GetElem32x4,
+                                                mkexpr(t3), mkU8(2))))));
                      putWReg(wd,
                              binop(Iop_64HLtoV128,
                                    mkexpr(t2), mkexpr(t1)));
@@ -25325,17 +25443,13 @@ static Int msa_2RF(UInt cins, UChar wd, UChar ws) { /* 2RF */
                                         mkU64(0xC3E0000000000000)))));
                      IRExpr *rm = get_IR_roundingmode_MSA();
                      assign(t1,
-                            unop(Iop_ReinterpF64asI64,
-                                 binop(Iop_RoundF64toInt, rm,
-                                       unop(Iop_ReinterpI64asF64,
-                                            unop(Iop_V128to64,
-                                                 mkexpr(t3))))));
+                            binop(Iop_F64toI64S, rm,
+                                  unop(Iop_ReinterpI64asF64,
+                                       unop(Iop_V128to64, mkexpr(t3)))));
                      assign(t2,
-                            unop(Iop_ReinterpF64asI64,
-                                 binop(Iop_RoundF64toInt, rm,
-                                       unop(Iop_ReinterpI64asF64,
-                                            unop(Iop_V128HIto64,
-                                                 mkexpr(t3))))));
+                            binop(Iop_F64toI64S, rm,
+                                  unop(Iop_ReinterpI64asF64,
+                                       unop(Iop_V128HIto64, mkexpr(t3)))));
                      putWReg(wd,
                              binop(Iop_64HLtoV128,
                                    mkexpr(t2), mkexpr(t1)));
@@ -25361,32 +25475,24 @@ static Int msa_2RF(UInt cins, UChar wd, UChar ws) { /* 2RF */
                      IRExpr *rm = get_IR_roundingmode_MSA();
                      assign(t1,
                          binop(Iop_32HLto64,
-                               unop(Iop_ReinterpF32asI32,
-                                    binop(Iop_RoundF32toInt, rm,
-                                          unop(Iop_ReinterpI32asF32,
-                                               binop(Iop_GetElem32x4,
-                                                     getWReg(ws),
-                                                     mkU8(1))))),
-                               unop(Iop_ReinterpF32asI32,
-                                    binop(Iop_RoundF32toInt, rm,
-                                          unop(Iop_ReinterpI32asF32,
-                                               binop(Iop_GetElem32x4,
-                                                     getWReg(ws),
-                                                     mkU8(0)))))));
+                               binop(Iop_F32toI32U, rm,
+                                     unop(Iop_ReinterpI32asF32,
+                                          binop(Iop_GetElem32x4,
+                                                getWReg(ws), mkU8(1)))),
+                               binop(Iop_F32toI32U, rm,
+                                     unop(Iop_ReinterpI32asF32,
+                                          binop(Iop_GetElem32x4,
+                                                getWReg(ws), mkU8(0))))));
                      assign(t2,
                          binop(Iop_32HLto64,
-                               unop(Iop_ReinterpF32asI32,
-                                    binop(Iop_RoundF32toInt, rm,
-                                          unop(Iop_ReinterpI32asF32,
-                                               binop(Iop_GetElem32x4,
-                                                     getWReg(ws),
-                                                     mkU8(3))))),
-                               unop(Iop_ReinterpF32asI32,
-                                    binop(Iop_RoundF32toInt, rm,
-                                          unop(Iop_ReinterpI32asF32,
-                                               binop(Iop_GetElem32x4,
-                                                     getWReg(ws),
-                                                     mkU8(2)))))));
+                               binop(Iop_F32toI32U, rm,
+                                     unop(Iop_ReinterpI32asF32,
+                                          binop(Iop_GetElem32x4,
+                                                getWReg(ws), mkU8(3)))),
+                               binop(Iop_F32toI32U, rm,
+                                     unop(Iop_ReinterpI32asF32,
+                                          binop(Iop_GetElem32x4,
+                                                getWReg(ws), mkU8(2))))));
                      assign(t3,
                             unop(Iop_NotV128,
                                  binop(Iop_SarN32x4,
@@ -25991,39 +26097,39 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
    case 0x11: {  /* COP1 */
       if (fmt == 0x3 && fd == 0 && function == 0) {  /* MFHC1 */
          DIP("mfhc1 r%u, f%u", rt, fs);
-         if (VEX_MIPS_CPU_HAS_MIPS32R2(archinfo->hwcaps)) {
+         if (VEX_MIPS_CPU_HAS_MIPS32R2(archinfo->hwcaps) ||
+             VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
             if (fp_mode64) {
                t0 = newTemp(Ity_I64);
                t1 = newTemp(Ity_I32);
                assign(t0, unop(Iop_ReinterpF64asI64, getDReg(fs)));
                assign(t1, unop(Iop_64HIto32, mkexpr(t0)));
                putIReg(rt, mkWidenFrom32(ty, mkexpr(t1), True));
-               break;
             } else {
                putIReg(rt, mkWidenFrom32(ty, unop(Iop_ReinterpF32asI32,
                                                   getFReg(fs | 1)), True));
-               break;
             }
+         } else {
+            ILLEGAL_INSTRUCTON;
          }
-         ILLEGAL_INSTRUCTON;
          break;
       } else if (fmt == 0x7 && fd == 0 && function == 0) {  /* MTHC1 */
          DIP("mthc1 r%u, f%u", rt, fs);
-         if (VEX_MIPS_CPU_HAS_MIPS32R2(archinfo->hwcaps)) {
+         if (VEX_MIPS_CPU_HAS_MIPS32R2(archinfo->hwcaps) ||
+             VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
             if (fp_mode64) {
                t0 = newTemp(Ity_I64);
                assign(t0, binop(Iop_32HLto64, mkNarrowTo32(ty, getIReg(rt)),
                                 unop(Iop_ReinterpF32asI32,
                                      getLoFromF64(Ity_F64, getDReg(fs)))));
                putDReg(fs, unop(Iop_ReinterpI64asF64, mkexpr(t0)));
-               break;
             } else {
                putFReg(fs | 1, unop(Iop_ReinterpI32asF32,
                                     mkNarrowTo32(ty, getIReg(rt))));
-               break;
             }
+         } else {
+            ILLEGAL_INSTRUCTON;
          }
-         ILLEGAL_INSTRUCTON;
          break;
       } else if (fmt == 0x8) {  /* BC */
          /* FcConditionalCode(bc1_cc) */
@@ -26189,7 +26295,437 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                  unop(Iop_V128HIto64, mkexpr(t1))))));
          dis_branch(False,
                     binop(Iop_CmpEQ32, mkexpr(t0), mkU32(0)), imm, &bstmt);
+      } else if (fmt == 0x09) { /* BC1EQZ */
+         if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+            DIP("bc1eqz f%u, %u", ft, imm);
+            t1 = newTemp(Ity_I1);
+            if (mode64) {
+               assign(t1, binop(Iop_CmpEQ64,
+                                binop(Iop_And64,
+                                      unop(Iop_ReinterpF64asI64, getDReg(ft)),
+                                      mkU64(1)),
+                                mkU64(0)));
+            } else {
+               assign(t1, binop(Iop_CmpEQ32,
+                                binop(Iop_And32,
+                                      unop(Iop_64to32,
+                                           unop(Iop_ReinterpF64asI64, getDReg(ft))),
+                                      mkU32(1)),
+                                mkU32(0)));
+            }
+            dis_branch(False, mkexpr(t1), imm, &bstmt);
+         } else {
+            ILLEGAL_INSTRUCTON;
+         }
+      } else if (fmt == 0x0D) { /* BC1NEZ */
+         if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+            DIP("bc1nez f%u, %u", ft, imm);
+            t1 = newTemp(Ity_I1);
+            if (mode64) {
+               assign(t1, binop(Iop_CmpNE64,
+                                binop(Iop_And64,
+                                      unop(Iop_ReinterpF64asI64, getDReg(ft)),
+                                      mkU64(1)),
+                                mkU64(0)));
+            } else {
+               assign(t1, binop(Iop_CmpNE32,
+                                binop(Iop_And32,
+                                      unop(Iop_64to32,
+                                           unop(Iop_ReinterpF64asI64, getDReg(ft))),
+                                      mkU32(1)),
+                                mkU32(0)));
+            }
+            dis_branch(False, mkexpr(t1), imm, &bstmt);
+         } else {
+            ILLEGAL_INSTRUCTON;
+         }
       } else {
+         if (fmt == 0x15) { /* CMP.cond.d */
+            Bool comparison = True;
+            UInt signaling = CMPAFD;
+            DIP("cmp.cond.d f%u, f%u, f%u, cond %u", fd, fs, ft, function);
+            t0 = newTemp(Ity_I32);
+            /* Conditions starting with S should signal exception on QNaN inputs. */
+            switch (function) {
+               case 8:  /* SAF */
+                  signaling = CMPSAFD;
+               case 0: /* AF */
+                  assign(t0, binop(Iop_CmpF64, getDReg(fs), getDReg(ft)));
+                  calculateFCSR(fs, ft, signaling, False, 2);
+                  putDReg(fd,
+                          binop(Iop_I64StoF64,
+                                get_IR_roundingmode(), mkU64(0)));
+                  break;
+               case 9: /* SUN */
+                  signaling = CMPSAFD;
+               case 1: /* UN */
+                  assign(t0, binop(Iop_CmpF64, getDReg(fs), getDReg(ft)));
+                  calculateFCSR(fs, ft, signaling, False, 2);
+                  putDReg(fd,
+                          IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t0), mkU32(0x45)),
+                                     unop(Iop_ReinterpI64asF64,
+                                          mkU64(0xFFFFFFFFFFFFFFFFULL)),
+                                     binop(Iop_I64StoF64,
+                                           get_IR_roundingmode(), mkU64(0))));
+                  break;
+               case 0x19: /* SOR */
+                  signaling = CMPSAFD;
+               case 0x11: /* OR */
+                  assign(t0, binop(Iop_CmpF64, getDReg(fs), getDReg(ft)));
+                  calculateFCSR(fs, ft, signaling, False, 2);
+                  putDReg(fd,
+                          IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t0), mkU32(0x45)),
+                                     binop(Iop_I64StoF64,
+                                           get_IR_roundingmode(), mkU64(0)),
+                                     unop(Iop_ReinterpI64asF64,
+                                          mkU64(0xFFFFFFFFFFFFFFFFULL))));
+                  break;
+               case 0xa: /* SEQ */
+                  signaling = CMPSAFD;
+               case 2: /* EQ */
+                  assign(t0, binop(Iop_CmpF64, getDReg(fs), getDReg(ft)));
+                  calculateFCSR(fs, ft, signaling, False, 2);
+                  putDReg(fd,
+                          IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t0), mkU32(0x40)),
+                                     unop(Iop_ReinterpI64asF64,
+                                          mkU64(0xFFFFFFFFFFFFFFFFULL)),
+                                     binop(Iop_I64StoF64,
+                                           get_IR_roundingmode(), mkU64(0))));
+                  break;
+               case 0x1A: /* SNEQ */
+                  signaling = CMPSAFD;
+               case 0x12: /* NEQ */
+                  assign(t0, binop(Iop_CmpF64, getDReg(fs), getDReg(ft)));
+                  calculateFCSR(fs, ft, signaling, False, 2);
+                  putDReg(fd,
+                          IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t0), mkU32(0x40)),
+                                     binop(Iop_I64StoF64,
+                                           get_IR_roundingmode(), mkU64(0)),
+                                     unop(Iop_ReinterpI64asF64,
+                                          mkU64(0xFFFFFFFFFFFFFFFFULL))));
+                  break;
+               case 0xB: /* SUEQ */
+                  signaling = CMPSAFD;
+               case 0x3: /* UEQ */
+                  assign(t0, binop(Iop_CmpF64, getDReg(fs), getDReg(ft)));
+                  calculateFCSR(fs, ft, signaling, False, 2);
+                  putDReg(fd,
+                          IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t0), mkU32(0x40)),
+                                     unop(Iop_ReinterpI64asF64,
+                                          mkU64(0xFFFFFFFFFFFFFFFFULL)),
+                                     IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                      mkexpr(t0), mkU32(0x45)),
+                                                unop(Iop_ReinterpI64asF64,
+                                                     mkU64(0xFFFFFFFFFFFFFFFFULL)),
+                                                binop(Iop_I64StoF64,
+                                                      get_IR_roundingmode(),
+                                                      mkU64(0)))));
+                  break;
+               case 0x1B:  /* SNEQ */
+                  signaling = CMPSAFD;
+               case 0x13:  /* NEQ */
+                  assign(t0, binop(Iop_CmpF64, getDReg(fs), getDReg(ft)));
+                  calculateFCSR(fs, ft, signaling, False, 2);
+                  putDReg(fd,
+                          IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t0),mkU32(0x01)),
+                                     unop(Iop_ReinterpI64asF64,
+                                          mkU64(0xFFFFFFFFFFFFFFFFULL)),
+                                     IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                      mkexpr(t0),mkU32(0x00)),
+                                                unop(Iop_ReinterpI64asF64,
+                                                     mkU64(0xFFFFFFFFFFFFFFFFULL)),
+                                                binop(Iop_I64StoF64,
+                                                      get_IR_roundingmode(),
+                                                      mkU64(0)))));
+                  break;
+               case 0xC: /* SLT */
+                  signaling = CMPSAFD;
+               case 0x4: /* LT */
+                  assign(t0, binop(Iop_CmpF64, getDReg(fs), getDReg(ft)));
+                  calculateFCSR(fs, ft, signaling, False, 2);
+                  putDReg(fd,
+                          IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t0), mkU32(0x01)),
+                                     unop(Iop_ReinterpI64asF64,
+                                          mkU64(0xFFFFFFFFFFFFFFFFULL)),
+                                     binop(Iop_I64StoF64,
+                                           get_IR_roundingmode(), mkU64(0))));
+                  break;
+               case 0xD: /* SULT */
+                  signaling = CMPSAFD;
+               case 0x5: /* ULT */
+                  assign(t0, binop(Iop_CmpF64, getDReg(fs), getDReg(ft)));
+                  calculateFCSR(fs, ft, signaling, False, 2);
+                  putDReg(fd,
+                          IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t0), mkU32(0x01)),
+                                     unop(Iop_ReinterpI64asF64,
+                                          mkU64(0xFFFFFFFFFFFFFFFFULL)),
+                                    IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                     mkexpr(t0), mkU32(0x45)),
+                                               unop(Iop_ReinterpI64asF64,
+                                                    mkU64(0xFFFFFFFFFFFFFFFFULL)),
+                                               binop(Iop_I64StoF64,
+                                                     get_IR_roundingmode(),
+                                                     mkU64(0)))));
+                  break;
+               case 0xE: /* SLE */
+                  signaling = CMPSAFD;
+               case 0x6: /* LE */
+                  assign(t0, binop(Iop_CmpF64, getDReg(fs), getDReg(ft)));
+                  calculateFCSR(fs, ft, signaling, False, 2);
+                  putDReg(fd,
+                          IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t0),mkU32(0x01)),
+                                     unop(Iop_ReinterpI64asF64,
+                                          mkU64(0xFFFFFFFFFFFFFFFFULL)),
+                                     IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                      mkexpr(t0),mkU32(0x40)),
+                                                unop(Iop_ReinterpI64asF64,
+                                                     mkU64(0xFFFFFFFFFFFFFFFFULL)),
+                                                binop(Iop_I64StoF64,
+                                                      get_IR_roundingmode(),
+                                                      mkU64(0)))));
+                  break;
+               case 0xF: /* SULE */
+                  signaling = CMPSAFD;
+               case 0x7: /* ULE */
+                  assign(t0, binop(Iop_CmpF64, getDReg(fs), getDReg(ft)));
+                  calculateFCSR(fs, ft, signaling, False, 2);
+                  putDReg(fd,
+                          IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t0), mkU32(0x0)),
+                                     binop(Iop_I64StoF64,
+                                           get_IR_roundingmode(), mkU64(0)),
+                                     unop(Iop_ReinterpI64asF64,
+                                          mkU64(0xFFFFFFFFFFFFFFFFULL))));
+                  break;
+               default:
+                  comparison = False;
+            }
+            if (comparison) {
+               if (!VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  ILLEGAL_INSTRUCTON;
+               }
+               break;
+            }
+
+         } else if (fmt == 0x14) {
+            Bool comparison = True;
+            UInt signaling = CMPAFS;
+            DIP("cmp.cond.s f%u, f%u, f%u, cond %u", fd, fs, ft, function);
+            t0 = newTemp(Ity_I32);
+            /* Conditions starting with S should signal exception on QNaN inputs. */
+            switch (function) {
+               case 8:  /* SAF */
+                  signaling = CMPSAFS;
+               case 0: /* AF */
+                  assign(t0, binop(Iop_CmpF32,
+                                   getLoFromF64(Ity_F64, getFReg(fs)),
+                                   getLoFromF64(Ity_F64, getFReg(ft))));
+                  calculateFCSR(fs, ft, signaling, True, 2);
+                  putFReg(fd,
+                          mkWidenFromF32(tyF,
+                                         binop(Iop_I32StoF32,
+                                               get_IR_roundingmode(), mkU32(0))));
+                  break;
+               case 9: /* SUN */
+                  signaling = CMPSAFS;
+               case 1: /* UN */
+                  assign(t0, binop(Iop_CmpF32,
+                                   getLoFromF64(Ity_F64, getFReg(fs)),
+                                   getLoFromF64(Ity_F64, getFReg(ft))));
+                  calculateFCSR(fs, ft, signaling, True, 2);
+                  putFReg(fd,
+                          IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t0), mkU32(0x45)),
+                                     mkWidenFromF32(tyF,
+                                                    unop(Iop_ReinterpI32asF32,
+                                                         mkU32(0xFFFFFFFFU))),
+                                     mkWidenFromF32(tyF,
+                                                    binop(Iop_I32StoF32,
+                                                          get_IR_roundingmode(),
+                                                          mkU32(0)))));
+                  break;
+               case 0x19: /* SOR */
+                  signaling = CMPSAFS;
+               case 0x11: /* OR */
+                  assign(t0, binop(Iop_CmpF32,
+                                   getLoFromF64(Ity_F64, getFReg(fs)),
+                                   getLoFromF64(Ity_F64, getFReg(ft))));
+                  calculateFCSR(fs, ft, signaling, True, 2);
+                  putFReg(fd,
+                          IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t0), mkU32(0x45)),
+                                     mkWidenFromF32(tyF,
+                                                    binop(Iop_I32StoF32,
+                                                          get_IR_roundingmode(),
+                                                          mkU32(0))),
+                                     mkWidenFromF32(tyF,
+                                                    unop(Iop_ReinterpI32asF32,
+                                                    mkU32(0xFFFFFFFFU)))));
+                  break;
+               case 0xa: /* SEQ */
+                  signaling = CMPSAFS;
+               case 2: /* EQ */
+                  assign(t0, binop(Iop_CmpF32,
+                                   getLoFromF64(Ity_F64, getFReg(fs)),
+                                   getLoFromF64(Ity_F64, getFReg(ft))));
+                  calculateFCSR(fs, ft, signaling, True, 2);
+                  putFReg(fd,
+                          IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t0), mkU32(0x40)),
+                                     mkWidenFromF32(tyF,
+                                                    unop(Iop_ReinterpI32asF32,
+                                                         mkU32(0xFFFFFFFFU))),
+                                     mkWidenFromF32(tyF,
+                                                    binop(Iop_I32StoF32,
+                                                          get_IR_roundingmode(),
+                                                          mkU32(0)))));
+                  break;
+               case 0x1A: /* SNEQ */
+                  signaling = CMPSAFS;
+               case 0x12: /* NEQ */
+                  assign(t0, binop(Iop_CmpF32,
+                                   getLoFromF64(Ity_F64, getFReg(fs)),
+                                   getLoFromF64(Ity_F64, getFReg(ft))));
+                  calculateFCSR(fs, ft, signaling, True, 2);
+                  putFReg(fd,
+                          IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t0), mkU32(0x40)),
+                                     mkWidenFromF32(tyF,
+                                                    binop(Iop_I32StoF32,
+                                                          get_IR_roundingmode(),
+                                                          mkU32(0))),
+                                     mkWidenFromF32(tyF,
+                                                    unop(Iop_ReinterpI32asF32,
+                                                         mkU32(0xFFFFFFFFU)))));
+                  break;
+               case 0xB: /* SUEQ */
+                  signaling = CMPSAFS;
+               case 0x3: /* UEQ */
+                  assign(t0, binop(Iop_CmpF32,
+                                   getLoFromF64(Ity_F64, getFReg(fs)),
+                                   getLoFromF64(Ity_F64, getFReg(ft))));
+                  calculateFCSR(fs, ft, signaling, True, 2);
+                  putFReg(fd,
+                          IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t0), mkU32(0x40)),
+                                     mkWidenFromF32(tyF,
+                                                    unop(Iop_ReinterpI32asF32,
+                                                         mkU32(0xFFFFFFFFU))),
+                                     IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                      mkexpr(t0), mkU32(0x45)),
+                                                mkWidenFromF32(tyF,
+                                                               unop(Iop_ReinterpI32asF32,
+                                                               mkU32(0xFFFFFFFFU))),
+                                                mkWidenFromF32(tyF,
+                                                               binop(Iop_I32StoF32,
+                                                                     get_IR_roundingmode(),
+                                                                     mkU32(0))))));
+                  break;
+               case 0x1B:  /* SNEQ */
+                  signaling = CMPSAFS;
+               case 0x13:  /* NEQ */
+                  assign(t0, binop(Iop_CmpF32,
+                                   getLoFromF64(Ity_F64, getFReg(fs)),
+                                   getLoFromF64(Ity_F64, getFReg(ft))));
+                  calculateFCSR(fs, ft, signaling, True, 2);
+                  putFReg(fd,
+                          IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t0),mkU32(0x01)),
+                                     mkWidenFromF32(tyF,
+                                                    unop(Iop_ReinterpI32asF32,
+                                                    mkU32(0xFFFFFFFFU))),
+                                     IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                      mkexpr(t0),mkU32(0x00)),
+                                                mkWidenFromF32(tyF,
+                                                               unop(Iop_ReinterpI32asF32,
+                                                                    mkU32(0xFFFFFFFFU))),
+                                                mkWidenFromF32(tyF,
+                                                               binop(Iop_I32StoF32,
+                                                                     get_IR_roundingmode(),
+                                                                     mkU32(0))))));
+                  break;
+               case 0xC: /* SLT */
+                  signaling = CMPSAFS;
+               case 0x4: /* LT */
+                  assign(t0, binop(Iop_CmpF32,
+                                   getLoFromF64(Ity_F64, getFReg(fs)),
+                                   getLoFromF64(Ity_F64, getFReg(ft))));
+                  calculateFCSR(fs, ft, signaling, True, 2);
+                  putFReg(fd,
+                          IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t0), mkU32(0x01)),
+                                     mkWidenFromF32(tyF,
+                                                    unop(Iop_ReinterpI32asF32,
+                                                         mkU32(0xFFFFFFFFU))),
+                                     mkWidenFromF32(tyF,
+                                                    binop(Iop_I32StoF32,
+                                                          get_IR_roundingmode(),
+                                                          mkU32(0)))));
+                  break;
+               case 0xD: /* SULT */
+                  signaling = CMPSAFS;
+               case 0x5: /* ULT */
+                  assign(t0, binop(Iop_CmpF32,
+                                   getLoFromF64(Ity_F64, getFReg(fs)),
+                                   getLoFromF64(Ity_F64, getFReg(ft))));
+                  calculateFCSR(fs, ft, signaling, True, 2);
+                  putFReg(fd,
+                          IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t0), mkU32(0x01)),
+                                     mkWidenFromF32(tyF,
+                                                    unop(Iop_ReinterpI32asF32,
+                                                    mkU32(0xFFFFFFFFU))),
+                                     IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                      mkexpr(t0), mkU32(0x45)),
+                                                mkWidenFromF32(tyF,
+                                                               unop(Iop_ReinterpI32asF32,
+                                                                    mkU32(0xFFFFFFFFU))),
+                                                mkWidenFromF32(tyF,
+                                                               binop(Iop_I32StoF32,
+                                                                     get_IR_roundingmode(),
+                                                                     mkU32(0))))));
+                  break;
+               case 0xE: /* SLE */
+                  signaling = CMPSAFS;
+               case 0x6: /* LE */
+                  assign(t0, binop(Iop_CmpF32,
+                                   getLoFromF64(Ity_F64, getFReg(fs)),
+                                   getLoFromF64(Ity_F64, getFReg(ft))));
+                  calculateFCSR(fs, ft, signaling, True, 2);
+                  putFReg(fd,
+                          IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t0),mkU32(0x01)),
+                                     mkWidenFromF32(tyF,
+                                                    unop(Iop_ReinterpI32asF32,
+                                                    mkU32(0xFFFFFFFFU))),
+                                     IRExpr_ITE(binop(Iop_CmpEQ32,
+                                                      mkexpr(t0),mkU32(0x40)),
+                                                mkWidenFromF32(tyF,
+                                                               unop(Iop_ReinterpI32asF32,
+                                                               mkU32(0xFFFFFFFFU))),
+                                                mkWidenFromF32(tyF,
+                                                               binop(Iop_I32StoF32,
+                                                                     get_IR_roundingmode(),
+                                                                     mkU32(0))))));
+                  break;
+               case 0xF: /* SULE */
+                  signaling = CMPSAFS;
+               case 0x7: /* ULE */
+                  assign(t0, binop(Iop_CmpF32,
+                                   getLoFromF64(Ity_F64, getFReg(fs)),
+                                   getLoFromF64(Ity_F64, getFReg(ft))));
+                  calculateFCSR(fs, ft, signaling, True, 2);
+                  putFReg(fd,
+                          IRExpr_ITE(binop(Iop_CmpEQ32, mkexpr(t0), mkU32(0x0)),
+                                     mkWidenFromF32(tyF,
+                                                    binop(Iop_I32StoF32,
+                                                          get_IR_roundingmode(),
+                                                          mkU32(0))),
+                                     mkWidenFromF32(tyF,
+                                                    unop(Iop_ReinterpI32asF32,
+                                                    mkU32(0xFFFFFFFFU)))));
+                  break;
+               default:
+                  comparison = False;
+            }
+            if (comparison) {
+               if (!VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  ILLEGAL_INSTRUCTON;
+               }
+               break;
+            }
+         }
+
          switch (function) {
             case 0x4: {  /* SQRT.fmt */
                switch (fmt) {
@@ -26350,8 +26886,10 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                      DIP("round.l.d f%u, f%u", fd, fs);
                      if (fp_mode64) {
                         calculateFCSR(fs, 0, ROUNDLD, False, 1);
-                        putDReg(fd, binop(Iop_RoundF64toInt, mkU32(0x0),
-                                          getDReg(fs)));
+                        putDReg(fd, unop(Iop_ReinterpI64asF64,
+                                         binop(Iop_F64toI64S,
+                                               mkU32(0x0),
+                                               getDReg(fs))));
                      } else {
                         ILLEGAL_INSTRUCTON;
                      }
@@ -26381,8 +26919,10 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                      DIP("trunc.l.d f%u, f%u", fd, fs);
                      if (fp_mode64) {
                         calculateFCSR(fs, 0, TRUNCLD, False, 1);
-                        putDReg(fd, binop(Iop_RoundF64toInt, mkU32(0x3),
-                                          getDReg(fs)));
+                        putDReg(fd, unop(Iop_ReinterpI64asF64,
+                                         binop(Iop_F64toI64S,
+                                               mkU32(0x3),
+                                               getDReg(fs))));
                      } else {
                         ILLEGAL_INSTRUCTON;
                      }
@@ -26923,10 +27463,11 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                   calculateFCSR(fs, 0, CVTWS, True, 1);
                   putFReg(fd,
                           mkWidenFromF32(tyF,
-                                         binop(Iop_RoundF32toInt,
-                                               get_IR_roundingmode(),
-                                               getLoFromF64(tyF, getFReg(fs))))
-                         );
+                                         unop(Iop_ReinterpI32asF32,
+                                              binop(Iop_F32toI32S,
+                                                    get_IR_roundingmode(),
+                                                    getLoFromF64(tyF,
+                                                                 getFReg(fs))))));
                   break;
 
                case 0x11:
@@ -26967,8 +27508,10 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                      DIP("cvt.l.d %u, %u", fd, fs);
                      if (fp_mode64) {
                         calculateFCSR(fs, 0, CVTLD, False, 1);
-                        putDReg(fd, binop(Iop_RoundF64toInt,
-                                get_IR_roundingmode(), getDReg(fs)));
+                        putDReg(fd, unop(Iop_ReinterpI64asF64,
+                                         binop(Iop_F64toI64S,
+                                               get_IR_roundingmode(),
+                                               getDReg(fs))));
                      } else {
                         ILLEGAL_INSTRUCTON;
                      }
@@ -27001,8 +27544,10 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                      DIP("floor.l.d %u, %u", fd, fs);
                      if (fp_mode64) {
                         calculateFCSR(fs, 0, FLOORLD, False, 1);
-                        putDReg(fd, binop(Iop_RoundF64toInt, mkU32(0x1),
-                                          getDReg(fs)));
+                        putDReg(fd, unop(Iop_ReinterpI64asF64,
+                                         binop(Iop_F64toI64S,
+                                               mkU32(0x01),
+                                               getDReg(fs))));
                      } else {
                         ILLEGAL_INSTRUCTON;
                      }
@@ -27017,25 +27562,13 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                   case 0x10:  /* S */
                      DIP("round.w.s f%u, f%u", fd, fs);
                      calculateFCSR(fs, 0, ROUNDWS, True, 1);
-                     if (fp_mode64) {
-                        t0 = newTemp(Ity_I64);
-                        t1 = newTemp(Ity_I32);
-                        t3 = newTemp(Ity_F32);
-                        t4 = newTemp(Ity_F32);
-                        /* get lo half of FPR */
-                        assign(t0, unop(Iop_ReinterpF64asI64, getFReg(fs)));
-
-                        assign(t1, unop(Iop_64to32, mkexpr(t0)));
-
-                        assign(t3, unop(Iop_ReinterpI32asF32, mkexpr(t1)));
-
-                        assign(t4, binop(Iop_RoundF32toInt, mkU32(0x0),
-                                         mkexpr(t3)));
-
-                        putFReg(fd, mkWidenFromF32(tyF, mkexpr(t4)));
-                     } else
-                        putFReg(fd, binop(Iop_RoundF32toInt, mkU32(0x0),
-                                          getFReg(fs)));
+                     putFReg(fd,
+                          mkWidenFromF32(tyF,
+                                         unop(Iop_ReinterpI32asF32,
+                                              binop(Iop_F32toI32S,
+                                                    mkU32(0x0),
+                                                    getLoFromF64(tyF,
+                                                                 getFReg(fs))))));
                      break;
 
                   case 0x11:  /* D */
@@ -27067,25 +27600,13 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                   case 0x10:  /* S */
                      DIP("floor.w.s f%u, f%u", fd, fs);
                      calculateFCSR(fs, 0, FLOORWS, True, 1);
-                     if (fp_mode64) {
-                        t0 = newTemp(Ity_I64);
-                        t1 = newTemp(Ity_I32);
-                        t3 = newTemp(Ity_F32);
-                        t4 = newTemp(Ity_F32);
-                        /* get lo half of FPR */
-                        assign(t0, unop(Iop_ReinterpF64asI64, getFReg(fs)));
-
-                        assign(t1, unop(Iop_64to32, mkexpr(t0)));
-
-                        assign(t3, unop(Iop_ReinterpI32asF32, mkexpr(t1)));
-
-                        assign(t4, binop(Iop_RoundF32toInt, mkU32(0x1),
-                                         mkexpr(t3)));
-
-                        putFReg(fd, mkWidenFromF32(tyF, mkexpr(t4)));
-                     } else
-                        putFReg(fd, binop(Iop_RoundF32toInt, mkU32(0x1),
-                                         getFReg(fs)));
+                     putFReg(fd,
+                          mkWidenFromF32(tyF,
+                                         unop(Iop_ReinterpI32asF32,
+                                              binop(Iop_F32toI32S,
+                                                    mkU32(0x1),
+                                                    getLoFromF64(tyF,
+                                                                 getFReg(fs))))));
                      break;
 
                   case 0x11:  /* D */
@@ -27118,25 +27639,13 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                   case 0x10:  /* S */
                      DIP("trunc.w.s %u, %u", fd, fs);
                      calculateFCSR(fs, 0, TRUNCWS, True, 1);
-                     if (fp_mode64) {
-                        t0 = newTemp(Ity_I64);
-                        t1 = newTemp(Ity_I32);
-                        t3 = newTemp(Ity_F32);
-                        t4 = newTemp(Ity_F32);
-                        /* get lo half of FPR */
-                        assign(t0, unop(Iop_ReinterpF64asI64, getFReg(fs)));
-
-                        assign(t1, unop(Iop_64to32, mkexpr(t0)));
-
-                        assign(t3, unop(Iop_ReinterpI32asF32, mkexpr(t1)));
-
-                        assign(t4, binop(Iop_RoundF32toInt, mkU32(0x3),
-                                         mkexpr(t3)));
-
-                        putFReg(fd, mkWidenFromF32(tyF, mkexpr(t4)));
-                     } else
-                        putFReg(fd, binop(Iop_RoundF32toInt, mkU32(0x3),
-                                       getFReg(fs)));
+                     putFReg(fd,
+                          mkWidenFromF32(tyF,
+                                         unop(Iop_ReinterpI32asF32,
+                                              binop(Iop_F32toI32S,
+                                                    mkU32(0x3),
+                                                    getLoFromF64(tyF,
+                                                                 getFReg(fs))))));
                      break;
                   case 0x11:  /* D */
                      DIP("trunc.w.d %u, %u", fd, fs);
@@ -27169,25 +27678,13 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                   case 0x10:  /* S */
                      DIP("ceil.w.s %u, %u", fd, fs);
                      calculateFCSR(fs, 0, CEILWS, True, 1);
-                     if (fp_mode64) {
-                        t0 = newTemp(Ity_I64);
-                        t1 = newTemp(Ity_I32);
-                        t3 = newTemp(Ity_F32);
-                        t4 = newTemp(Ity_F32);
-                        /* get lo half of FPR */
-                        assign(t0, unop(Iop_ReinterpF64asI64, getFReg(fs)));
-
-                        assign(t1, unop(Iop_64to32, mkexpr(t0)));
-
-                        assign(t3, unop(Iop_ReinterpI32asF32, mkexpr(t1)));
-
-                        assign(t4, binop(Iop_RoundF32toInt, mkU32(0x2),
-                                         mkexpr(t3)));
-
-                        putFReg(fd, mkWidenFromF32(tyF, mkexpr(t4)));
-                     } else
-                        putFReg(fd, binop(Iop_RoundF32toInt, mkU32(0x2),
-                                          getFReg(fs)));
+                     putFReg(fd,
+                          mkWidenFromF32(tyF,
+                                         unop(Iop_ReinterpI32asF32,
+                                              binop(Iop_F32toI32S,
+                                                    mkU32(0x2),
+                                                    getLoFromF64(tyF,
+                                                                 getFReg(fs))))));
                      break;
 
                   case 0x11:  /* D */
@@ -27206,6 +27703,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                     unop(Iop_ReinterpI32asF32, mkexpr(t0))));
                      }
                      break;
+
                   default:
                      goto decode_failure;
 
@@ -27233,8 +27731,10 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                      DIP("ceil.l.d %u, %u", fd, fs);
                      if (fp_mode64) {
                         calculateFCSR(fs, 0, CEILLD, False, 1);
-                        putDReg(fd, binop(Iop_RoundF64toInt, mkU32(0x2),
-                                          getDReg(fs)));
+                        putDReg(fd, unop(Iop_ReinterpI64asF64,
+                                         binop(Iop_F64toI64S,
+                                               mkU32(0x2),
+                                               getDReg(fs))));
                      } else {
                         ILLEGAL_INSTRUCTON;
                      }
@@ -27269,6 +27769,554 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                   default:
                      goto decode_failure;
 
+               }
+               break;
+
+            case 0x18: /* MADDF.fmt */
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  switch (fmt) {
+                     case 0x11: {  /* D */
+                        DIP("maddf.d f%u, f%u, f%u", fd, fs, ft);
+                        IRExpr *rm = get_IR_roundingmode();
+                        putDReg(fd, qop(Iop_MAddF64, rm, getDReg(fs), getDReg(ft),
+                                        getDReg(fd)));
+                        break;
+                     }
+
+                     case 0x10: {  /* S */
+                        DIP("maddf.s f%u, f%u, f%u", fd, fs, ft);
+                        IRExpr *rm = get_IR_roundingmode();
+                        t1 = newTemp(Ity_F32);
+                        assign(t1, qop(Iop_MAddF32, rm,
+                                       getLoFromF64(tyF, getFReg(fs)),
+                                       getLoFromF64(tyF, getFReg(ft)),
+                                       getLoFromF64(tyF, getFReg(fd))));
+                        putFReg(fd, mkWidenFromF32(tyF, mkexpr(t1)));
+                        break;
+                     }
+
+                     default:
+                        goto decode_failure;
+                  }
+               } else {
+                  ILLEGAL_INSTRUCTON;
+               }
+
+               break;
+
+            case 0x19: /* MSUBF.fmt */
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  switch (fmt) {
+                     case 0x11: {  /* D */
+                        DIP("msubf.d f%u, f%u, f%u", fd, fs, ft);
+                        IRExpr *rm = get_IR_roundingmode();
+                        putDReg(fd, qop(Iop_MSubF64, rm, getDReg(fs),
+                                        getDReg(ft), getDReg(fd)));
+                        break;
+                     }
+
+                     case 0x10: {  /* S */
+                        DIP("msubf.s f%u, f%u, f%u", fd, fs, ft);
+                        IRExpr *rm = get_IR_roundingmode();
+                        t1 = newTemp(Ity_F32);
+                        assign(t1, qop(Iop_MSubF32, rm,
+                                       getLoFromF64(tyF, getFReg(fs)),
+                                       getLoFromF64(tyF, getFReg(ft)),
+                                       getLoFromF64(tyF, getFReg(fd))));
+                        putFReg(fd, mkWidenFromF32(tyF, mkexpr(t1)));
+                        break;
+                     }
+
+                     default:
+                        goto decode_failure;
+                  }
+               } else {
+                  ILLEGAL_INSTRUCTON;
+               }
+
+               break;
+
+            case 0x1E: /* MAX.fmt */
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  switch (fmt) {
+                     case 0x11: {  /* D */
+                        DIP("max.d f%u, f%u, f%u", fd, fs, ft);
+                        calculateFCSR(fs, ft, MAXD, False, 2);
+                        putDReg(fd, binop(Iop_MaxNumF64, getDReg(fs), getDReg(ft)));
+                        break;
+                     }
+
+                     case 0x10: {  /* S */
+                        DIP("max.s f%u, f%u, f%u", fd, fs, ft);
+                        calculateFCSR(fs, ft, MAXS, True, 2);
+                        putFReg(fd, mkWidenFromF32(tyF, binop(Iop_MaxNumF32,
+                                                              getLoFromF64(Ity_F64,
+                                                                           getFReg(fs)),
+                                                              getLoFromF64(Ity_F64,
+                                                                           getFReg(ft)))));
+                        break;
+                     }
+
+                     default:
+                        goto decode_failure;
+                  }
+               } else {
+                  ILLEGAL_INSTRUCTON;
+               }
+
+               break;
+
+            case 0x1C: /* MIN.fmt */
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  switch (fmt) {
+                     case 0x11: {  /* D */
+                        DIP("min.d f%u, f%u, f%u", fd, fs, ft);
+                        calculateFCSR(fs, ft, MIND, False, 2);
+                        putDReg(fd, binop(Iop_MinNumF64, getDReg(fs), getDReg(ft)));
+                        break;
+                     }
+
+                     case 0x10: {  /* S */
+                        DIP("min.s f%u, f%u, f%u", fd, fs, ft);
+                        calculateFCSR(fs, ft, MINS, True, 2);
+                        putFReg(fd, mkWidenFromF32(tyF, binop(Iop_MinNumF32,
+                                                              getLoFromF64(Ity_F64,
+                                                                        getFReg(fs)),
+                                                              getLoFromF64(Ity_F64,
+                                                                     getFReg(ft)))));
+                        break;
+                     }
+                     default:
+                        goto decode_failure;
+                  }
+               } else {
+                  ILLEGAL_INSTRUCTON;
+               }
+
+               break;
+
+            case 0x1F: /* MAXA.fmt */
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  switch (fmt) {
+                     case 0x11: {  /* D */
+                        DIP("maxa.d f%u, f%u, f%u", fd, fs, ft);
+                        calculateFCSR(fs, ft, MAXAD, False, 2);
+                        t1 = newTemp(Ity_F64);
+                        t2 = newTemp(Ity_F64);
+                        t3 = newTemp(Ity_F64);
+                        t4 = newTemp(Ity_I1);
+                        assign(t1, unop(Iop_AbsF64, getFReg(fs)));
+                        assign(t2, unop(Iop_AbsF64, getFReg(ft)));
+                        assign(t3, binop(Iop_MaxNumF64, mkexpr(t1), mkexpr(t2)));
+                        assign(t4, binop(Iop_CmpEQ32,
+                                         binop(Iop_CmpF64, mkexpr(t3), mkexpr(t1)),
+                                         mkU32(0x40)));
+                        putFReg(fd, IRExpr_ITE(mkexpr(t4),
+                                               getFReg(fs), getFReg(ft)));
+                        break;
+                     }
+
+                     case 0x10: {  /* S */
+                        DIP("maxa.s f%u, f%u, f%u", fd, fs, ft);
+                        calculateFCSR(fs, ft, MAXAS, True, 2);
+                        t1 = newTemp(Ity_F32);
+                        t2 = newTemp(Ity_F32);
+                        t3 = newTemp(Ity_F32);
+                        t4 = newTemp(Ity_I1);
+                        assign(t1, unop(Iop_AbsF32, getLoFromF64(Ity_F64,
+                                                                 getFReg(fs))));
+                        assign(t2, unop(Iop_AbsF32, getLoFromF64(Ity_F64,
+                                                                 getFReg(ft))));
+                        assign(t3, binop(Iop_MaxNumF32, mkexpr(t1), mkexpr(t2)));
+                        assign(t4, binop(Iop_CmpEQ32,
+                                         binop(Iop_CmpF32, mkexpr(t3), mkexpr(t1)),
+                                         mkU32(0x40)));
+                        putFReg(fd, IRExpr_ITE(mkexpr(t4),
+                                               getFReg(fs), getFReg(ft)));
+                        break;
+                     }
+
+                     default:
+                        goto decode_failure;
+                  }
+                  /* missing in documentation */
+               } else {
+                  ILLEGAL_INSTRUCTON;
+               }
+               break;
+
+            case 0x1D: /* MINA.fmt */
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  switch (fmt) {
+                     case 0x11: {  /* D */
+                        DIP("mina.d f%u, f%u, f%u", fd, fs, ft);
+                        calculateFCSR(fs, ft, MINAD, False, 2);
+                        t1 = newTemp(Ity_F64);
+                        t2 = newTemp(Ity_F64);
+                        t3 = newTemp(Ity_F64);
+                        t4 = newTemp(Ity_I1);
+                        assign(t1, unop(Iop_AbsF64, getFReg(fs)));
+                        assign(t2, unop(Iop_AbsF64, getFReg(ft)));
+                        assign(t3, binop(Iop_MinNumF64, mkexpr(t1), mkexpr(t2)));
+                        assign(t4, binop(Iop_CmpEQ32,
+                                         binop(Iop_CmpF64, mkexpr(t3), mkexpr(t1)),
+                                         mkU32(0x40)));
+                        putFReg(fd, IRExpr_ITE(mkexpr(t4),
+                                               getFReg(fs), getFReg(ft)));
+                        break;
+                     }
+
+                     case 0x10: {  /* S */
+                        DIP("mina.s f%u, f%u, f%u", fd, fs, ft);
+                        calculateFCSR(fs, ft, MINAS, True, 2);
+                        t1 = newTemp(Ity_F32);
+                        t2 = newTemp(Ity_F32);
+                        t3 = newTemp(Ity_F32);
+                        t4 = newTemp(Ity_I1);
+                        assign(t1, unop(Iop_AbsF32, getLoFromF64(Ity_F64,
+                                                                 getFReg(fs))));
+                        assign(t2, unop(Iop_AbsF32, getLoFromF64(Ity_F64,
+                                                                 getFReg(ft))));
+                        assign(t3, binop(Iop_MinNumF32, mkexpr(t1), mkexpr(t2)));
+                        assign(t4, binop(Iop_CmpEQ32,
+                                         binop(Iop_CmpF32, mkexpr(t3), mkexpr(t1)),
+                                         mkU32(0x40)));
+                        putFReg(fd, IRExpr_ITE(mkexpr(t4),
+                                               getFReg(fs), getFReg(ft)));
+                        break;
+                     }
+
+                     default:
+                        goto decode_failure;
+                  }
+               } else {
+                  ILLEGAL_INSTRUCTON;
+               }
+               break;
+
+            case 0x1A: /* RINT.fmt */
+               if (ft == 0) {
+                  switch (fmt) {
+                     case 0x11: {  /* D */
+                        DIP("rint.d f%u, f%u", fd, fs);
+                        calculateFCSR(fs, 0, RINTS, True, 1);
+                        IRExpr *rm = get_IR_roundingmode();
+                        putDReg(fd, binop(Iop_RoundF64toInt, rm, getDReg(fs)));
+                        break;
+                     }
+
+                     case 0x10: {  /* S */
+                        DIP("rint.s f%u, f%u", fd, fs);
+                        calculateFCSR(fs, 0, RINTD, True, 1);
+                        IRExpr *rm = get_IR_roundingmode();
+                        putFReg(fd,
+                                mkWidenFromF32(tyF,
+                                               binop(Iop_RoundF32toInt, rm,
+                                                     getLoFromF64(tyF,
+                                                                  getFReg(fs)))));
+                        break;
+                     }
+
+                     default:
+                        goto decode_failure;
+                  }
+
+               }
+               break;
+
+            case 0x10: /* SEL.fmt */
+               switch (fmt) {
+                  case 0x11: {  /* D */
+                     if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                        DIP("sel.d f%u, f%u, f%u", fd, fs, ft);
+                        t1 = newTemp(Ity_I1);
+                        if (mode64) {
+                           assign(t1,binop(Iop_CmpNE64,
+                                          binop(Iop_And64,
+                                                unop(Iop_ReinterpF64asI64,
+                                                     getDReg(fd)),
+                                                mkU64(1)),
+                                          mkU64(0)));
+                        } else {
+                           assign(t1,binop(Iop_CmpNE32,
+                                          binop(Iop_And32,
+                                                unop(Iop_64to32,
+                                                    unop(Iop_ReinterpF64asI64,
+                                                         getDReg(fd))),
+                                                mkU32(1)),
+                                          mkU32(0)));
+                        }
+                        putDReg(fd, IRExpr_ITE(mkexpr(t1),
+                                               getDReg(ft), getDReg(fs)));
+                        break;
+                     } else {
+                        ILLEGAL_INSTRUCTON;
+                     }
+
+                  }
+
+                  case 0x10: {  /* S */
+                     DIP("sel.s f%u, f%u, f%u", fd, fs, ft);
+                     t1 = newTemp(Ity_I1);
+                     assign(t1,binop(Iop_CmpNE32,
+                                     binop(Iop_And32,
+                                           unop(Iop_ReinterpF32asI32,
+                                                getLoFromF64(tyF, getFReg(fd))),
+                                           mkU32(1)),
+                                     mkU32(0)));
+                     putFReg(fd, IRExpr_ITE( mkexpr(t1),
+                                          getFReg(ft), getFReg(fs)));
+                     break;
+                  }
+                  default:
+                     goto decode_failure;
+               }
+               break;
+
+            case 0x14: /* SELEQZ.fmt */
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  switch (fmt) { /* SELEQZ.df */
+                     case 0x11: {  /* D */
+                        DIP("seleqz.d f%u, f%u, f%u", fd, fs, ft);
+                        t1 = newTemp(Ity_I1);
+                        if (mode64) {
+                           assign(t1, binop(Iop_CmpNE64,
+                                            binop(Iop_And64,
+                                                  unop(Iop_ReinterpF64asI64,
+                                                       getDReg(ft)),
+                                                  mkU64(1)),
+                                            mkU64(0)));
+                        } else {
+                           assign(t1, binop(Iop_CmpNE32,
+                                            binop(Iop_And32,
+                                                  unop(Iop_64to32,
+                                                       unop(Iop_ReinterpF64asI64,
+                                                            getDReg(ft))),
+                                                  mkU32(1)),
+                                            mkU32(0)));
+                        }
+                        putDReg(fd, IRExpr_ITE( mkexpr(t1),
+                                               binop(Iop_I64StoF64,
+                                                     get_IR_roundingmode(),mkU64(0)),
+                                               getDReg(fs)));
+                        break;
+                     }
+
+                     case 0x10: {  /* S */
+                        DIP("seleqz.s f%u, f%u, f%u", fd, fs, ft);
+                        t1 = newTemp(Ity_I1);
+                        assign(t1, binop(Iop_CmpNE32,
+                                         binop(Iop_And32,
+                                               unop(Iop_ReinterpF32asI32,
+                                                    getLoFromF64(tyF, getFReg(ft))),
+                                               mkU32(1)),
+                                         mkU32(0)));
+                        putFReg(fd, IRExpr_ITE(mkexpr(t1),
+                                               mkWidenFromF32(tyF,
+                                                               binop(Iop_I32StoF32,
+                                                                     get_IR_roundingmode(),
+                                                                     mkU32(0))),
+                                               getFReg(fs)));
+                        break;
+                     }
+
+                     default:
+                        goto decode_failure;
+                  }
+               } else {
+                  ILLEGAL_INSTRUCTON;
+               }
+               break;
+
+            case 0x17: /* SELNEZ.fmt */
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  switch (fmt) {
+                     case 0x11: {  /* D */
+                        DIP("selnez.d f%u, f%u, f%u", fd, fs, ft);
+                        t1 = newTemp(Ity_I1);
+                        if (mode64) {
+                           assign(t1, binop(Iop_CmpNE64,
+                                            binop(Iop_And64,
+                                                  unop(Iop_ReinterpF64asI64,
+                                                       getDReg(ft)),
+                                                  mkU64(1)),
+                                            mkU64(0)));
+                        } else {
+                           assign(t1, binop(Iop_CmpNE32,
+                                            binop(Iop_And32,
+                                                  unop(Iop_64to32,
+                                                       unop(Iop_ReinterpF64asI64,
+                                                            getDReg(ft))),
+                                                  mkU32(1)),
+                                            mkU32(0)));
+                        }
+                        putDReg(fd, IRExpr_ITE( mkexpr(t1),
+                                               getDReg(fs),
+                                               binop(Iop_I64StoF64,
+                                                     get_IR_roundingmode(),
+                                                     mkU64(0))));
+                        break;
+                     }
+
+                     case 0x10: {  /* S */
+                        DIP("selnez.s f%u, f%u, f%u", fd, fs, ft);
+                        t1 = newTemp(Ity_I1);
+                        assign(t1,binop(Iop_CmpNE32,
+                                        binop(Iop_And32,
+                                              unop(Iop_ReinterpF32asI32,
+                                                   getLoFromF64(tyF, getFReg(ft))),
+                                              mkU32(1)),
+                                        mkU32(0)));
+                        putFReg(fd, IRExpr_ITE(mkexpr(t1),
+                                               getFReg(fs),
+                                               mkWidenFromF32(tyF,
+                                                              binop(Iop_I32StoF32,
+                                                                    get_IR_roundingmode(),
+                                                                    mkU32(0)))));
+                        break;
+                     }
+
+                     default:
+                        goto decode_failure;
+                  }
+               } else {
+                  ILLEGAL_INSTRUCTON;
+               }
+               break;
+
+            case 0x1B: /* CLASS.fmt */
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  t0 = newTemp(Ity_I1); // exp zero
+                  t1 = newTemp(Ity_I1); // exp max
+                  t2 = newTemp(Ity_I1); // sign
+                  t3 = newTemp(Ity_I1); // first
+                  t4 = newTemp(Ity_I1); // val not zero
+                  t5 = newTemp(Ity_I32);
+                  switch (fmt) {
+                     case 0x11: {  /* D */
+                        DIP("class.d f%u, f%u", fd, fs);
+                        assign(t0, binop(Iop_CmpEQ32,
+                                         binop(Iop_And32,
+                                               unop(Iop_64HIto32,
+                                                    unop(Iop_ReinterpF64asI64,
+                                                         getDReg(fs))),
+                                               mkU32(0x7ff00000)),
+                                         mkU32(0)));
+                        assign(t1, binop(Iop_CmpEQ32,
+                                         binop(Iop_And32,
+                                               unop(Iop_64HIto32,
+                                                    unop(Iop_ReinterpF64asI64,
+                                                         getDReg(fs))),
+                                               mkU32(0x7ff00000)),
+                                         mkU32(0x7ff00000)));
+                        assign(t2, binop(Iop_CmpEQ32,
+                                         binop(Iop_And32,
+                                               unop(Iop_64HIto32,
+                                                    unop(Iop_ReinterpF64asI64,
+                                                         getDReg(fs))),
+                                               mkU32(0x80000000)),
+                                         mkU32(0x80000000)));
+                        assign(t3, binop(Iop_CmpEQ32,
+                                         binop(Iop_And32,
+                                               unop(Iop_64HIto32,
+                                                    unop(Iop_ReinterpF64asI64,
+                                                         getDReg(fs))),
+                                               mkU32(0x00080000)),
+                                         mkU32(0x00080000)));
+                        if (mode64) assign(t4, binop(Iop_CmpNE64,
+                                                    binop(Iop_And64,
+                                                          unop(Iop_ReinterpF64asI64,
+                                                               getDReg(fs)),
+                                                          mkU64(0x000fffffffffffffULL)),
+                                                    mkU64(0)));
+                        else assign(t4, binop(Iop_CmpNE32,
+                                              binop(Iop_Or32,
+                                                    binop(Iop_And32,
+                                                          unop(Iop_64HIto32,
+                                                               unop(Iop_ReinterpF64asI64,
+                                                                    getDReg(fs))),
+                                                          mkU32(0x000fffff)),
+                                                    unop(Iop_64to32,
+                                                         unop(Iop_ReinterpF64asI64,
+                                                            getDReg(fs)))),
+                                              mkU32(0)));
+                        assign(t5, binop(Iop_Shl32,
+                                         IRExpr_ITE(mkexpr(t1),
+                                                    IRExpr_ITE(mkexpr(t4),
+                                                               mkU32(0), mkU32(1)),
+                                                    IRExpr_ITE(mkexpr(t0),
+                                                               IRExpr_ITE(mkexpr(t4),
+                                                                          mkU32(0x4),
+                                                                          mkU32(0x8)),
+                                                               mkU32(2))),
+                                         IRExpr_ITE(mkexpr(t2), mkU8(2), mkU8(6))));
+                        putDReg(fd, unop(Iop_ReinterpI64asF64,
+                                         unop(Iop_32Uto64,
+                                              IRExpr_ITE(binop(Iop_CmpNE32,
+                                                               mkexpr(t5), mkU32(0)),
+                                                         mkexpr(t5),
+                                                         IRExpr_ITE(mkexpr(t3),
+                                                                    mkU32(2),
+                                                                    mkU32(1))))));
+                        break;
+                     }
+                     case 0x10: {  /* S */
+                        DIP("class.s f%u, f%u", fd, fs);
+                        assign(t0, binop(Iop_CmpEQ32,
+                                         binop(Iop_And32,
+                                               unop(Iop_ReinterpF32asI32,
+                                                    getLoFromF64(tyF, getFReg(fs))),
+                                               mkU32(0x7f800000)),
+                                         mkU32(0)));
+                        assign(t1, binop(Iop_CmpEQ32,
+                                         binop(Iop_And32,
+                                               unop(Iop_ReinterpF32asI32,
+                                                    getLoFromF64(tyF, getFReg(fs))),
+                                               mkU32(0x7f800000)),
+                                         mkU32(0x7f800000)));
+                        assign(t2, binop(Iop_CmpEQ32,
+                                         binop(Iop_And32,
+                                               unop(Iop_ReinterpF32asI32,
+                                                    getLoFromF64(tyF, getFReg(fs))),
+                                               mkU32(0x80000000)),
+                                         mkU32(0x80000000)));
+                        assign(t3, binop(Iop_CmpEQ32,
+                                         binop(Iop_And32,
+                                               unop(Iop_ReinterpF32asI32,
+                                                    getLoFromF64(tyF, getFReg(fs))),
+                                               mkU32(0x00400000)),
+                                         mkU32(0x00400000)));
+                        assign(t4, binop(Iop_CmpNE32,
+                                         binop(Iop_And32,
+                                               unop(Iop_ReinterpF32asI32,
+                                                    getLoFromF64(tyF, getFReg(fs))),
+                                               mkU32(0x007fffff)),
+                                         mkU32(0)));
+                        assign(t5, binop(Iop_Shl32,
+                                         IRExpr_ITE(mkexpr(t1),
+                                                    IRExpr_ITE(mkexpr(t4),
+                                                               mkU32(0), mkU32(1)),
+                                                    IRExpr_ITE(mkexpr(t0),
+                                                               IRExpr_ITE(mkexpr(t4),
+                                                                          mkU32(0x4),
+                                                                          mkU32(0x8)), //zero or subnorm
+                                                               mkU32(2))),
+                                         IRExpr_ITE(mkexpr(t2), mkU8(2), mkU8(6))));
+                        putDReg(fd, unop(Iop_ReinterpI64asF64,
+                                         unop(Iop_32Uto64,
+                                              IRExpr_ITE(binop(Iop_CmpNE32,
+                                                               mkexpr(t5), mkU32(0)),
+                                                         mkexpr(t5),
+                                                         IRExpr_ITE(mkexpr(t3),
+                                                                    mkU32(2),
+                                                                    mkU32(1))))));
+                        break;
+                     }
+                     default:
+                        goto decode_failure;
+                  }
+               } else {
+                  ILLEGAL_INSTRUCTON;
                }
                break;
 
@@ -27375,12 +28423,28 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       break;
 
    case 0x0F:  /* LUI */
-      p = (imm << 16);
-      DIP("lui r%u, imm: 0x%x", rt, imm);
-      if (mode64)
-         putIReg(rt, mkU64(extend_s_32to64(p)));
-      else
-         putIReg(rt, mkU32(p));
+      if (rs == 0) {
+         p = (imm << 16);
+         DIP("lui r%u, imm: 0x%x", rt, imm);
+         if (mode64)
+            putIReg(rt, mkU64(extend_s_32to64(p)));
+         else
+            putIReg(rt, mkU32(p));
+         break;
+      } else if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) { /* AUI */
+         DIP("aui r%u, imm: 0x%x", rt, imm);
+         if (mode64) {
+            putIReg(rt, unop(Iop_32Sto64,
+                             unop(Iop_64to32,
+                                  binop(Iop_Add64,
+                                        getIReg(rs),
+                                        mkU64(extend_s_32to64(imm << 16))))));
+         } else {
+            putIReg(rt, binop(Iop_Add32, getIReg(rs), mkU32(imm << 16)));
+         }
+      } else {
+         ILLEGAL_INSTRUCTON;
+      }
       break;
 
    case 0x13:  /* COP1X */
@@ -28893,6 +29957,31 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                putIReg(rd, mkexpr(tmpRd));
                break;
             }
+               case 0x08 ... 0x0f: { /* DALIGN */
+                  if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                     DIP("daling r%u, r%u, r%u, %d", rd, rs, rt,  lsb & 0x7);
+                     UInt bp = (lsb & 0x7) << 3;
+                     if (bp) {
+                        putIReg(rd, binop(Iop_Or64,
+                                          binop(Iop_Shl64, getIReg(rt), mkU8(bp)),
+                                          binop(Iop_Shr64,
+                                                getIReg(rs), mkU8(64 - bp))));
+                     } else
+                        putIReg(rd, getIReg(rt));
+                  } else {
+                     ILLEGAL_INSTRUCTON;
+                  }
+                  break;
+               }
+
+               case 0: /* DBITSWAP */
+                  if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                     DIP("dbitswap r%u, r%u", rd, rt);
+                     putIReg(rd, qop(Iop_Rotx64, getIReg(rt), mkU8(7), mkU8(8), mkU8(1)));
+                  } else {
+                     ILLEGAL_INSTRUCTON;
+                  }
+                  break;
          default:
             vex_printf("\nop6o10 = %u", lsb);
             goto decode_failure;;
@@ -28901,6 +29990,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       case 0x3B: /* RDHWR */
          DIP("rdhwr r%u, r%u", rt, rd);
          if (VEX_MIPS_CPU_HAS_MIPS32R2(archinfo->hwcaps) ||
+             VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps) ||
              (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_BROADCOM)) {
             if (rd == 29) {
                putIReg(rt, getULR());
@@ -29018,6 +30108,21 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
       case 0x20:  /* BSHFL */
          switch (sa) {
+               case 0x0: /* BITSWAP */
+                  if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                     DIP("bitswap r%u, r%u", rd, rt);
+                     if (mode64) {
+                        putIReg(rd, unop(Iop_32Uto64, qop(Iop_Rotx32, unop(Iop_64to32, getIReg(rt)),
+                                        mkU8(7), mkU8(8), mkU8(1))));
+                     } else {
+                        putIReg(rd, qop(Iop_Rotx32, getIReg(rt), mkU8(7),
+                                        mkU8(8), mkU8(1)));
+                     }
+                  } else {
+                     ILLEGAL_INSTRUCTON;
+                  }
+               break;
+
             case 0x02:  /* WSBH */
                DIP("wsbh r%u, r%u", rd, rt);
                t0 = newTemp(Ity_I32);
@@ -29054,6 +30159,39 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                else
                   putIReg(rd, unop(Iop_16Sto32, unop(Iop_32to16, getIReg(rt))));
                break;
+
+               case 0x08 ... 0x0b: /* ALIGN */
+                  if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                     if (mode64) {
+                        UInt bp = (sa & 0x3) << 3;
+                        if (bp) {
+                           putIReg(rd, unop(Iop_32Sto64,
+                                            binop(Iop_Or32,
+                                                  binop(Iop_Shl32,
+                                                        unop(Iop_64to32,
+                                                             getIReg(rt)),
+                                                        mkU8(bp)),
+                                                  binop(Iop_Shr32,
+                                                        unop(Iop_64to32,
+                                                             getIReg(rs)),
+                                                        mkU8(32 - bp)))));
+                        } else
+                           putIReg(rd, getIReg(rt));
+                     } else {
+                        UInt bp = (sa & 0x3) << 3;
+                        if (bp) {
+                           putIReg(rd, binop(Iop_Or32,
+                                             binop(Iop_Shl32,
+                                                   getIReg(rt), mkU8(bp)),
+                                             binop(Iop_Shr32,
+                                                   getIReg(rs), mkU8(32 - bp))));
+                        } else
+                           putIReg(rd, getIReg(rt));
+                     }
+                  } else {
+                     ILLEGAL_INSTRUCTON;
+                  }
+                  break;
 
             default:
                goto decode_failure;
@@ -29258,13 +30396,188 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             goto decode_failure_dsp;
          }
       }
+         case 0x35: { /* PREF r6*/
+            DIP("pref");
+            break;
+         }
+         case 0x36: { /* LL */
+            imm = extend_s_9to16((instr_index >> 7) & 0x1ff);
+            DIP("ll r%u, %u(r%u)", rt, imm, rs);
+            LOAD_STORE_PATTERN;
+            t2 = newTemp(ty);
+            assign(t2, mkWidenFrom32(ty, load(Ity_I32, mkexpr(t1)), True));
+            putLLaddr(mkexpr(t1));
+            putLLdata(mkexpr(t2));
+            putIReg(rt, mkexpr(t2));
+            break;
+         }
+         case 0x26: { /* SC */
+            imm = extend_s_9to16((instr_index >> 7) & 0x1ff);
+            DIP("sc r%u, %u(r%u)", rt, imm, rs);
+            LOAD_STORE_PATTERN;
+
+            t2 = newTemp(Ity_I1);
+            t3 = newTemp(Ity_I32);
+            assign(t2, binop(mode64 ? Iop_CmpNE64 : Iop_CmpNE32,
+                             mkexpr(t1), getLLaddr()));
+            assign(t3, mkNarrowTo32(ty, getIReg(rt)));
+            putLLaddr(LLADDR_INVALID);
+            putIReg(rt, getIReg(0));
+
+            mips_next_insn_if(mkexpr(t2));
+
+            t4 = newTemp(Ity_I32);
+            t5 = newTemp(Ity_I32);
+
+            assign(t5, mkNarrowTo32(ty, getLLdata()));
+
+            stmt(IRStmt_CAS(mkIRCAS(IRTemp_INVALID, t4, /* old_mem */
+                 MIPS_IEND, mkexpr(t1),                 /* addr */
+                 NULL, mkexpr(t5),                      /* expected value */
+                 NULL, mkexpr(t3)                       /* new value */)));
+
+            putIReg(rt, unop(mode64 ? Iop_1Uto64 : Iop_1Uto32,
+                             binop(Iop_CmpEQ32, mkexpr(t4), mkexpr(t5))));
+            break;
+         }
+         case 0x37: { /* LLD */
+            imm = extend_s_9to16((instr_index >> 7) & 0x1ff);
+            DIP("lld r%u, %u(r%u)", rt, imm, rs);
+            LOAD_STORE_PATTERN;
+
+            t2 = newTemp(Ity_I64);
+            assign(t2, load(Ity_I64, mkexpr(t1)));
+            putLLaddr(mkexpr(t1));
+            putLLdata(mkexpr(t2));
+            putIReg(rt, mkexpr(t2));
+            break;
+         }
+         case 0x27: { /* SCD */
+            imm = extend_s_9to16((instr_index >> 7) & 0x1ff);
+            DIP("sdc r%u, %u(r%u)", rt, imm, rs);
+            LOAD_STORE_PATTERN;
+
+            t2 = newTemp(Ity_I1);
+            t3 = newTemp(Ity_I64);
+            assign(t2, binop(Iop_CmpNE64, mkexpr(t1), getLLaddr()));
+            assign(t3, getIReg(rt));
+            putLLaddr(LLADDR_INVALID);
+            putIReg(rt, getIReg(0));
+
+            mips_next_insn_if(mkexpr(t2));
+
+            t4 = newTemp(Ity_I64);
+            t5 = newTemp(Ity_I64);
+
+            assign(t5, getLLdata());
+
+            stmt(IRStmt_CAS(mkIRCAS(IRTemp_INVALID, t4, /* old_mem */
+                 MIPS_IEND, mkexpr(t1),                 /* addr */
+                 NULL, mkexpr(t5),                      /* expected value */
+                 NULL, mkexpr(t3)                       /* new value */)));
+
+            putIReg(rt, unop(Iop_1Uto64,
+                             binop(Iop_CmpEQ64, mkexpr(t4), mkexpr(t5))));
+            break;
+         }
       default:
          goto decode_failure;
 
    }
       break;  /* Special3 */
 
-   case 0x3B:
+   case 0x3B: /* PCREL */
+      if (rt == 0x1E) { /* AUIPC */
+         if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+            DIP("auipc r%u, %u", rs, imm);
+            if (mode64) {
+               putIReg(rs, mkU64(guest_PC_curr_instr + (imm << 16)));
+            } else {
+               putIReg(rs, mkU32(guest_PC_curr_instr + (imm << 16)));
+            }
+         } else {
+            ILLEGAL_INSTRUCTON;
+         }
+         break;
+      } else if (rt == 0x1F) { /* ALUIPC */
+         if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+            DIP("aluipc r%u, %u", rs, imm);
+            if (mode64) {
+               putIReg(rs, mkU64((~0x0FFFFULL) &
+                                (guest_PC_curr_instr + extend_s_32to64(imm << 16))));
+            } else {
+               putIReg(rs, mkU32((~0x0FFFFULL) &
+                                (guest_PC_curr_instr + (imm << 16))));
+            }
+         } else {
+            ILLEGAL_INSTRUCTON;
+         }
+         break;
+      } else if ((rt & 0x18) == 0) { /* ADDIUPC */
+         if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+            DIP("addiupc r%u, %u", rs, instr_index & 0x7FFFF);
+            if (mode64) {
+               putIReg(rs, mkU64(guest_PC_curr_instr +
+                                 (extend_s_19to64(instr_index & 0x7FFFF) << 2)));
+            } else {
+               putIReg(rs, mkU32(guest_PC_curr_instr +
+                                (extend_s_19to32(instr_index & 0x7FFFF) << 2)));
+            }
+         } else {
+            ILLEGAL_INSTRUCTON;
+         }
+         break;
+      } else if ((rt & 0x18) == 8) { /* LWPC */
+         if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+            DIP("lwpc r%u, %x", rs, instr_index & 0x7FFFF);
+            if (mode64) {
+               t1 = newTemp(Ity_I64);
+               assign(t1, mkU64(guest_PC_curr_instr +
+                                (extend_s_19to64(instr_index & 0x7FFFF) << 2)));
+               putIReg(rs, unop(Iop_32Sto64, load(Ity_I32, mkexpr(t1))));
+            } else {
+               t1 = newTemp(Ity_I32);
+               assign(t1, mkU32(guest_PC_curr_instr +
+                                (extend_s_19to32(instr_index & 0x7FFFF) << 2)));
+               putIReg(rs, load(Ity_I32, mkexpr(t1)));
+            }
+         } else {
+            ILLEGAL_INSTRUCTON;
+         }
+         break;
+      } else if ((rt & 0x18) == 16) { /* LWUPC */
+         if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+            DIP("lwupc r%u, %x", rs, instr_index & 0x7FFFF);
+            if (mode64) {
+               t1 = newTemp(Ity_I64);
+               assign(t1, mkU64(guest_PC_curr_instr +
+                                (extend_s_19to64(instr_index & 0x7FFFF) << 2)));
+               putIReg(rs, unop(Iop_32Uto64, load(Ity_I32, mkexpr(t1))));
+            } else {
+               t1 = newTemp(Ity_I32);
+               assign(t1, mkU32(guest_PC_curr_instr +
+                                (extend_s_19to32(instr_index & 0x7FFFF) << 2)));
+               putIReg(rs, load(Ity_I32, mkexpr(t1)));
+            }
+         } else {
+            ILLEGAL_INSTRUCTON;
+         }
+         break;
+      } else if ((rt & 0x1C) == 0x18) { /* LDPC */
+         if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+            DIP("ldpc r%u, %x", rs, instr_index & 0x3FFFF);
+            t1 = newTemp(Ity_I64);
+            assign(t1, mkU64(guest_PC_curr_instr +
+                             (extend_s_18to64(instr_index & 0x3FFFF) << 3)));
+            putIReg(rs, load(Ity_I64, mkexpr(t1)));
+         } else {
+            ILLEGAL_INSTRUCTON;
+         }
+         break;
+      } else {
+         goto decode_failure;
+      }
+
       if (0x3B == function &&
           (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_BROADCOM)) {
          /*RDHWR*/
@@ -29372,53 +30685,150 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       }
 
       case 0x18:  {  /* MULT */
-         if ( (1 <= ac) && ( 3 >= ac) ) {
-            if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
-               /* If DSP is present -> DSP ASE MULT */
-               UInt retVal = disDSPInstr_MIPS_WRK ( cins );
-               if (0 != retVal ) {
-                  goto decode_failure_dsp;
+         switch (sa & 0x3) {
+            case 0: {
+               if ((1 <= ac) && ( 3 >= ac)) {
+                  if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
+                     /* If DSP is present -> DSP ASE MULT */
+                     UInt retVal = disDSPInstr_MIPS_WRK(cins);
+                     if (0 != retVal) {
+                        goto decode_failure_dsp;
+                     }
+                     break;
+                  } else {
+                      goto decode_failure_dsp;
+                  }
+               } else {
+                  DIP("mult r%u, r%u", rs, rt);
+                  if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps) &&
+                      !VEX_MIPS_CPU_HAS_MIPS32R2(archinfo->hwcaps)) {
+                     ILLEGAL_INSTRUCTON;
+                  }
+                  t2 = newTemp(Ity_I64);
+
+                  assign(t2, binop(Iop_MullS32, mkNarrowTo32(ty, getIReg(rs)),
+                                                mkNarrowTo32(ty, getIReg(rt))));
+
+                  putHI(mkWidenFrom32(ty, unop(Iop_64HIto32, mkexpr(t2)), True));
+                  putLO(mkWidenFrom32(ty, unop(Iop_64to32, mkexpr(t2)), True));
+                  break;
+               }
+            }
+            case 2: { /* MUL R6 */
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  DIP("mul r%u, r%u, r%u", rs, rt, rd);
+                  if (mode64) {
+                     putIReg(rd, unop(Iop_32Sto64,
+                                      unop(Iop_64to32,
+                                           binop(Iop_MullS32,
+                                                 unop(Iop_64to32, getIReg(rs)),
+                                                 unop(Iop_64to32, getIReg(rt))))));
+                  } else {
+                     putIReg(rd, unop(Iop_64to32,
+                                      binop(Iop_MullS32,
+                                            getIReg(rs), getIReg(rt))));
+                  }
+               } else {
+                  ILLEGAL_INSTRUCTON;
                }
                break;
-            } else {
-               goto decode_failure_dsp;
             }
-         } else {
-            DIP("mult r%u, r%u", rs, rt);
-            t2 = newTemp(Ity_I64);
 
-            assign(t2, binop(Iop_MullS32, mkNarrowTo32(ty, getIReg(rs)),
-                                          mkNarrowTo32(ty, getIReg(rt))));
-
-            putHI(mkWidenFrom32(ty, unop(Iop_64HIto32, mkexpr(t2)), True));
-            putLO(mkWidenFrom32(ty, unop(Iop_64to32, mkexpr(t2)), True));
-            break;
+            case 3: {  /* MUH R6 */
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  DIP("muh r%u, r%u, r%u", rs, rt, rd);
+                  if (mode64) {
+                     putIReg(rd, unop(Iop_32Sto64,
+                                      unop(Iop_64HIto32,
+                                           binop(Iop_MullS32,
+                                                 unop(Iop_64to32, getIReg(rs)),
+                                                 unop(Iop_64to32, getIReg(rt))))));
+                  } else {
+                     putIReg(rd, unop(Iop_64HIto32,
+                                      binop(Iop_MullS32,
+                                            getIReg(rs), getIReg(rt))));
+                  }
+               } else {
+                  ILLEGAL_INSTRUCTON;
+               }
+               break;
+            }
          }
+         break;
       }
+
       case 0x19:  {  /* MULTU */
-         if ( (1 <= ac) && ( 3 >= ac) ) {
-            if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
-               /* If DSP is present -> DSP ASE MULTU */
-               UInt retVal = disDSPInstr_MIPS_WRK ( cins );
-               if (0 != retVal ) {
-                  goto decode_failure_dsp;
+         switch (sa & 0x3) {
+            case 0: {
+               if ((1 <= ac) && ( 3 >= ac)) {
+                  if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
+                     /* If DSP is present -> DSP ASE MULTU */
+                     UInt retVal = disDSPInstr_MIPS_WRK ( cins );
+                     if (0 != retVal) {
+                        goto decode_failure_dsp;
+                     }
+                     break;
+                  } else {
+                     goto decode_failure_dsp;
+                  }
+               } else {
+                  DIP("multu r%u, r%u", rs, rt);
+                  if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps) &&
+                      !VEX_MIPS_CPU_HAS_MIPS32R2(archinfo->hwcaps)) {
+                     ILLEGAL_INSTRUCTON;
+                  }
+                  t2 = newTemp(Ity_I64);
+
+                  assign(t2, binop(Iop_MullU32, mkNarrowTo32(ty, getIReg(rs)),
+                                                mkNarrowTo32(ty, getIReg(rt))));
+
+                  putHI(mkWidenFrom32(ty, unop(Iop_64HIto32, mkexpr(t2)), True));
+                  putLO(mkWidenFrom32(ty, unop(Iop_64to32, mkexpr(t2)), True));
+                  break;
+               }
+            }
+            case 2: {  /* MULU R6 */
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  DIP("mulu r%u, r%u, r%u", rs, rt, rd);
+                  if (mode64) {
+                     putIReg(rd, unop(Iop_32Uto64,
+                                      unop(Iop_64to32,
+                                           binop(Iop_MullU32,
+                                                 unop(Iop_64to32, getIReg(rs)),
+                                                 unop(Iop_64to32, getIReg(rt))))));
+                  } else {
+                     putIReg(rd, unop(Iop_64to32,
+                                      binop(Iop_MullU32,
+                                            getIReg(rs), getIReg(rt))));
+                  }
+               } else {
+                  ILLEGAL_INSTRUCTON;
                }
                break;
-            } else {
-               goto decode_failure_dsp;
             }
-         } else {
-            DIP("multu r%u, r%u", rs, rt);
-            t2 = newTemp(Ity_I64);
-
-            assign(t2, binop(Iop_MullU32, mkNarrowTo32(ty, getIReg(rs)),
-                                          mkNarrowTo32(ty, getIReg(rt))));
-
-            putHI(mkWidenFrom32(ty, unop(Iop_64HIto32, mkexpr(t2)), True));
-            putLO(mkWidenFrom32(ty, unop(Iop_64to32, mkexpr(t2)), True));
-            break;
+            case 3: {  /* MUHU R6 */
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  DIP("muhu r%u, r%u, r%u", rs, rt, rd);
+                  if (mode64) {
+                     putIReg(rd, unop(Iop_32Uto64,
+                                      unop(Iop_64HIto32,
+                                           binop(Iop_MullU32,
+                                                 unop(Iop_64to32, getIReg(rs)),
+                                                 unop(Iop_64to32, getIReg(rt))))));
+                  } else {
+                     putIReg(rd, unop(Iop_64HIto32,
+                                      binop(Iop_MullU32,
+                                            getIReg(rs), getIReg(rt))));
+                  }
+               } else {
+                  ILLEGAL_INSTRUCTON;
+               }
+               break;
+            }
          }
       }
+      break;
+
       case 0x20: {  /* ADD */
          DIP("add r%u, r%u, r%u", rd, rs, rt);
          IRTemp tmpRs32 = newTemp(Ity_I32);
@@ -29463,89 +30873,302 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          putIReg(rd,  mkWidenFrom32(ty, mkexpr(t0), True));
          break;
       }
+
       case 0x1A:  /* DIV */
-         DIP("div r%u, r%u", rs, rt);
-         if (mode64) {
-            t2 = newTemp(Ity_I64);
+         switch (sa & 0x3) {
+            case 0:
+               DIP("div r%u, r%u", rs, rt);
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps) &&
+                   !VEX_MIPS_CPU_HAS_MIPS32R2(archinfo->hwcaps)) {
+                  ILLEGAL_INSTRUCTON;
+               }
+               if (mode64) {
+                  t2 = newTemp(Ity_I64);
 
-            assign(t2, binop(Iop_DivModS32to32,
-                             mkNarrowTo32(ty, getIReg(rs)),
-                             mkNarrowTo32(ty, getIReg(rt))));
+                  assign(t2, binop(Iop_DivModS32to32,
+                                   mkNarrowTo32(ty, getIReg(rs)),
+                                   mkNarrowTo32(ty, getIReg(rt))));
 
-            putHI(mkWidenFrom32(ty, unop(Iop_64HIto32, mkexpr(t2)), True));
-            putLO(mkWidenFrom32(ty, unop(Iop_64to32, mkexpr(t2)), True));
-         } else {
-            t1 = newTemp(Ity_I64);
+                  putHI(mkWidenFrom32(ty, unop(Iop_64HIto32, mkexpr(t2)), True));
+                  putLO(mkWidenFrom32(ty, unop(Iop_64to32, mkexpr(t2)), True));
+               } else {
+                  t1 = newTemp(Ity_I64);
 
-            assign(t1, binop(Iop_DivModS32to32, getIReg(rs), getIReg(rt)));
+                  assign(t1, binop(Iop_DivModS32to32, getIReg(rs), getIReg(rt)));
 
-            putHI(unop(Iop_64HIto32, mkexpr(t1)));
-            putLO(unop(Iop_64to32, mkexpr(t1)));
+                  putHI(unop(Iop_64HIto32, mkexpr(t1)));
+                  putLO(unop(Iop_64to32, mkexpr(t1)));
+               }
+               break;
+            case 2:
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  DIP("div r%u, r%u, r%u", rs, rt, rd);
+                  if (mode64) {
+                     putIReg(rd, unop(Iop_32Sto64,
+                                      binop(Iop_DivS32,
+                                            unop(Iop_64to32, getIReg(rs)),
+                                            unop(Iop_64to32, getIReg(rt)))));
+                  } else
+                     putIReg(rd, binop(Iop_DivS32, getIReg(rs), getIReg(rt)));
+               } else {
+                  ILLEGAL_INSTRUCTON;
+               }
+               break;
+            case 3:
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  DIP("mod r%u, r%u, r%u", rs, rt, rd);
+                  if (mode64) {
+                     putIReg(rd, unop(Iop_32Sto64,
+                                      unop(Iop_64HIto32,
+                                           binop(Iop_DivModS32to32,
+                                                 unop(Iop_64to32, getIReg(rs)),
+                                                 unop(Iop_64to32, getIReg(rt))))));
+                  } else {
+                     t1 = newTemp(Ity_I64);
+
+                     assign(t1, binop(Iop_DivModS32to32, getIReg(rs), getIReg(rt)));
+                     putIReg(rd, unop(Iop_64HIto32, mkexpr(t1)));
+                  }
+               } else {
+                  ILLEGAL_INSTRUCTON;
+               }
+               break;
          }
          break;
 
       case 0x1B:  /* DIVU */
-         DIP("divu r%u, r%u", rs, rt);
-         if (mode64) {
-            t2 = newTemp(Ity_I64);
+         switch (sa & 0x3) {
+            case 0:
+               DIP("divu r%u, r%u", rs, rt);
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps) &&
+                   !VEX_MIPS_CPU_HAS_MIPS32R2(archinfo->hwcaps)) {
+                  ILLEGAL_INSTRUCTON;
+               }
+               if (mode64) {
+                  t1 = newTemp(Ity_I64);
 
-            assign(t2, binop(Iop_DivModU32to32,
-                             mkNarrowTo32(ty, getIReg(rs)),
-                             mkNarrowTo32(ty, getIReg(rt))));
+                  assign(t1, binop(Iop_DivModU32to32,
+                                   mkNarrowTo32(ty, getIReg(rs)),
+                                   mkNarrowTo32(ty, getIReg(rt))));
 
-            putHI(mkWidenFrom32(ty, unop(Iop_64HIto32, mkexpr(t2)), True));
-            putLO(mkWidenFrom32(ty, unop(Iop_64to32, mkexpr(t2)), True));
-         } else {
-            t1 = newTemp(Ity_I64);
+                  putHI(mkWidenFrom32(ty, unop(Iop_64HIto32, mkexpr(t1)), True));
+                  putLO(mkWidenFrom32(ty, unop(Iop_64to32, mkexpr(t1)), True));
+               } else {
+                  t1 = newTemp(Ity_I64);
 
-            assign(t1, binop(Iop_DivModU32to32, getIReg(rs), getIReg(rt)));
-            putHI(unop(Iop_64HIto32, mkexpr(t1)));
-            putLO(unop(Iop_64to32, mkexpr(t1)));
+                  assign(t1, binop(Iop_DivModU32to32, getIReg(rs), getIReg(rt)));
+                  putHI(unop(Iop_64HIto32, mkexpr(t1)));
+                  putLO(unop(Iop_64to32, mkexpr(t1)));
+               }
+               break;
+            case 2:
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  DIP("divu r%u, r%u, r%u", rs, rt, rd);
+                  if (mode64) {
+                     putIReg(rd, unop(Iop_32Sto64,
+                                      binop(Iop_DivU32,
+                                            unop(Iop_64to32, getIReg(rs)),
+                                            unop(Iop_64to32, getIReg(rt)))));
+                  } else {
+                     putIReg(rd, binop(Iop_DivU32, getIReg(rs), getIReg(rt)));
+                  }
+                  break;
+               } else {
+                  ILLEGAL_INSTRUCTON;
+               }
+               break;
+            case 3:
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  DIP("modu r%u, r%u, r%u", rs, rt, rd);
+                  if (mode64) {
+                     putIReg(rd, unop(Iop_32Uto64,
+                                      unop(Iop_64HIto32,
+                                           binop(Iop_DivModU32to32,
+                                                 unop(Iop_64to32, getIReg(rs)),
+                                                 unop(Iop_64to32, getIReg(rt))))));
+                  } else {
+                     t1 = newTemp(Ity_I64);
+
+                     assign(t1, binop(Iop_DivModU32to32, getIReg(rs), getIReg(rt)));
+                     putIReg(rd, unop(Iop_64HIto32, mkexpr(t1)));
+                  }
+               } else {
+                  ILLEGAL_INSTRUCTON;
+               }
+               break;
+        }
+        break;
+
+      case 0x1C:  /* Doubleword Multiply - DMULT; MIPS64 */
+         switch (sa) {
+            case 0:
+               DIP("dmult r%u, r%u", rs, rt);
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps) &&
+                   !VEX_MIPS_CPU_HAS_MIPS32R2(archinfo->hwcaps)) {
+                  ILLEGAL_INSTRUCTON;
+               }
+               t0 = newTemp(Ity_I128);
+
+               assign(t0, binop(Iop_MullS64, getIReg(rs), getIReg(rt)));
+
+               putHI(unop(Iop_128HIto64, mkexpr(t0)));
+               putLO(unop(Iop_128to64, mkexpr(t0)));
+               break;
+            case 2: /* DMUL */
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  DIP("dmul r%u, r%u, r%u", rd, rs, rt);
+                  putIReg(rd, unop(Iop_128to64,
+                                   binop(Iop_MullS64, getIReg(rs), getIReg(rt))));
+               } else {
+                  ILLEGAL_INSTRUCTON;
+               }
+               /* Value for function in documentation is 111000 */
+               break;
+            case 3: /* DMUH */
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  DIP("dmuh r%u, r%u, r%u", rd, rs, rt);
+                  putIReg(rd, unop(Iop_128HIto64,
+                                   binop(Iop_MullS64, getIReg(rs), getIReg(rt))));
+               } else {
+                  ILLEGAL_INSTRUCTON;
+               }
+               break;
          }
          break;
 
-      case 0x1C:  /* Doubleword Multiply - DMULT; MIPS64 */
-         DIP("dmult r%u, r%u", rs, rt);
-         t0 = newTemp(Ity_I128);
-
-         assign(t0, binop(Iop_MullS64, getIReg(rs), getIReg(rt)));
-
-         putHI(unop(Iop_128HIto64, mkexpr(t0)));
-         putLO(unop(Iop_128to64, mkexpr(t0)));
-         break;
-
       case 0x1D:  /* Doubleword Multiply Unsigned - DMULTU; MIPS64 */
-         DIP("dmultu r%u, r%u", rs, rt);
-         t0 = newTemp(Ity_I128);
+         switch (sa) {
+            case 0:
+               DIP("dmultu r%u, r%u", rs, rt);
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps) &&
+                   !VEX_MIPS_CPU_HAS_MIPS32R2(archinfo->hwcaps)) {
+                  ILLEGAL_INSTRUCTON;
+               }
+               t0 = newTemp(Ity_I128);
 
-         assign(t0, binop(Iop_MullU64, getIReg(rs), getIReg(rt)));
+               assign(t0, binop(Iop_MullU64, getIReg(rs), getIReg(rt)));
 
-         putHI(unop(Iop_128HIto64, mkexpr(t0)));
-         putLO(unop(Iop_128to64, mkexpr(t0)));
+               putHI(unop(Iop_128HIto64, mkexpr(t0)));
+               putLO(unop(Iop_128to64, mkexpr(t0)));
+               break;
+            case 2: /* DMULU */
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  DIP("dmulu r%u, r%u, r%u", rd, rs, rt);
+                  putIReg(rd, unop(Iop_128to64,
+                                   binop(Iop_MullU64, getIReg(rs), getIReg(rt))));
+               } else {
+                  ILLEGAL_INSTRUCTON;
+               }
+               break;
+            case 3: /* DMUHU */
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  DIP("dmuhu r%u, r%u, r%u", rd, rs, rt);
+                  putIReg(rd, unop(Iop_128HIto64,
+                                   binop(Iop_MullU64, getIReg(rs), getIReg(rt))));
+               } else {
+                  ILLEGAL_INSTRUCTON;
+               }
+               break;
+         }
          break;
 
       case 0x1E:  /* Doubleword Divide DDIV; MIPS64 */
-         DIP("ddiv r%u, r%u", rs, rt);
-         t1 = newTemp(Ity_I128);
+         switch (sa) {
+            case 0:
+               DIP("ddiv r%u, r%u", rs, rt);
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps) &&
+                   !VEX_MIPS_CPU_HAS_MIPS32R2(archinfo->hwcaps)) {
+                  ILLEGAL_INSTRUCTON;
+               }
+               t1 = newTemp(Ity_I128);
 
-         assign(t1, binop(Iop_DivModS64to64, getIReg(rs), getIReg(rt)));
+               assign(t1, binop(Iop_DivModS64to64, getIReg(rs), getIReg(rt)));
 
-         putHI(unop(Iop_128HIto64, mkexpr(t1)));
-         putLO(unop(Iop_128to64, mkexpr(t1)));
+               putHI(unop(Iop_128HIto64, mkexpr(t1)));
+               putLO(unop(Iop_128to64, mkexpr(t1)));
+               break;
+            case 2: /* DDIV r6 */
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  DIP("ddiv r%u, r%u, r%u", rs, rt, rd);
+                  putIReg(rd, unop(Iop_128to64,
+                                   binop(Iop_DivModS64to64,
+                                         getIReg(rs), getIReg(rt))));
+               } else {
+                  ILLEGAL_INSTRUCTON;
+               }
+               break;
+            case 3: /* DMOD r6 */
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  DIP("dmod r%u, r%u, r%u", rs, rt, rd);
+                  t2 = newTemp(Ity_I128);
+                  assign(t2, binop(Iop_DivModS64to64, getIReg(rs), getIReg(rt)));
+                  putIReg(rd, unop(Iop_128HIto64, mkexpr(t2)));
+               } else {
+                  ILLEGAL_INSTRUCTON;
+               }
+               break;
+         }
          break;
 
       case 0x1F:  /* Doubleword Divide Unsigned DDIVU; MIPS64 check this */
-         DIP("ddivu r%u, r%u", rs, rt);
-         t1 = newTemp(Ity_I128);
+         switch (sa) {
+            case 0:
+               DIP("ddivu r%u, r%u", rs, rt);
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps) &&
+                   !VEX_MIPS_CPU_HAS_MIPS32R2(archinfo->hwcaps)) {
+                  ILLEGAL_INSTRUCTON;
+               }
+               t1 = newTemp(Ity_I128);
 
-         assign(t1, binop(Iop_DivModU64to64, getIReg(rs), getIReg(rt)));
+               assign(t1, binop(Iop_DivModU64to64, getIReg(rs), getIReg(rt)));
 
-         putHI(unop(Iop_128HIto64, mkexpr(t1)));
-         putLO(unop(Iop_128to64, mkexpr(t1)));
+               putHI(unop(Iop_128HIto64, mkexpr(t1)));
+               putLO(unop(Iop_128to64, mkexpr(t1)));
+               break;
+            case 2:
+               if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  DIP("ddivu r%u, r%u, r%u", rs, rt, rd);
+                  putIReg(rd, unop(Iop_128to64, binop(Iop_DivModU64to64,
+                                                      getIReg(rs), getIReg(rt))));
+               } else {
+                  ILLEGAL_INSTRUCTON;
+               }
+               break;
+            case 3:
+              if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+                  DIP("dmodu r%u, r%u, r%u", rs, rt, rd);
+                  putIReg(rd, unop(Iop_128HIto64, binop(Iop_DivModU64to64,
+                                                        getIReg(rs), getIReg(rt))));
+               } else {
+                  ILLEGAL_INSTRUCTON;
+               }
+               break;
+         }
          break;
 
-      case 0x10: {  /* MFHI */
-         if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
+      case 0x10: {  /* MFHI, CLZ R6 */
+         if (((instr_index >> 6) & 0x1f) == 1) { /* CLZ */
+            if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+               DIP("clz r%u, r%u", rd, rs);
+               if (mode64) {
+                  IRTemp tmpClz32 = newTemp(Ity_I32);
+                  IRTemp tmpRs32 = newTemp(Ity_I32);
+
+                  assign(tmpRs32, mkNarrowTo32(ty, getIReg(rs)));
+                  assign(tmpClz32, unop(Iop_Clz32, mkexpr(tmpRs32)));
+                  putIReg(rd, mkWidenFrom32(ty, mkexpr(tmpClz32), True));
+               } else {
+                  t1 = newTemp(Ity_I1);
+                  assign(t1, binop(Iop_CmpEQ32, getIReg(rs), mkU32(0)));
+                  putIReg(rd, IRExpr_ITE(mkexpr(t1),
+                                         mkU32(0x00000020),
+                                         unop(Iop_Clz32, getIReg(rs))));
+               }
+            } else {
+               ILLEGAL_INSTRUCTON;
+            }
+            break;
+         } else if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
             /* If DSP is present -> DSP ASE MFHI */
             UInt retVal = disDSPInstr_MIPS_WRK ( cins );
             if (0 != retVal ) {
@@ -29559,8 +31182,36 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          }
       }
 
-      case 0x11:  {  /* MTHI */
-         if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
+      case 0x11:  {  /* MTHI, CLO R6 */
+         if (((instr_index >> 6) & 0x1f) == 1) { /* CLO */
+            if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+               DIP("clo r%u, r%u", rd, rs);
+               if (mode64) {
+                  IRTemp tmpClo32 = newTemp(Ity_I32);
+                  IRTemp tmpRs32 = newTemp(Ity_I32);
+                  assign(tmpRs32, mkNarrowTo32(ty, getIReg(rs)));
+
+                  t1 = newTemp(Ity_I1);
+                  assign(t1, binop(Iop_CmpEQ32, mkexpr(tmpRs32), mkU32(0xffffffff)));
+                  assign(tmpClo32, IRExpr_ITE(mkexpr(t1),
+                            mkU32(0x00000020),
+                            unop(Iop_Clz32, unop(Iop_Not32, mkexpr(tmpRs32)))));
+
+                  putIReg(rd, mkWidenFrom32(ty, mkexpr(tmpClo32), True));
+                  break;
+               } else {
+                  t1 = newTemp(Ity_I1);
+                  assign(t1, binop(Iop_CmpEQ32, getIReg(rs), mkU32(0xffffffff)));
+                  putIReg(rd, IRExpr_ITE(mkexpr(t1),
+                                         mkU32(0x00000020),
+                                         unop(Iop_Clz32,
+                                              unop(Iop_Not32, getIReg(rs)))));
+               }
+            } else {
+               ILLEGAL_INSTRUCTON;
+            }
+            break;
+         } else if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {
             /* If DSP is present -> DSP ASE MTHI */
             UInt retVal = disDSPInstr_MIPS_WRK ( cins );
             if (0 != retVal ) {
@@ -29583,8 +31234,24 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             }
             break;
          } else {
-            DIP("mflo r%u", rd);
-            putIReg(rd, getLO());
+            switch (sa) {
+               case 0:
+                  DIP("mflo r%u", rd);
+                  if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps) &&
+                      !VEX_MIPS_CPU_HAS_MIPS32R2(archinfo->hwcaps)) {
+                     ILLEGAL_INSTRUCTON;
+                  }
+                  putIReg(rd, getLO());
+                  break;
+               case 1:
+                  DIP("dclz r%u, r%u", rd, rs);
+                  t1 = newTemp(Ity_I1);
+                  assign(t1, binop(Iop_CmpEQ64, getIReg(rs), mkU64(0)));
+                  putIReg(rd, IRExpr_ITE(mkexpr(t1),
+                                         mkU64(0x00000040),
+                                         unop(Iop_Clz64, getIReg(rs))));
+                  break;
+            }
             break;
          }
       }
@@ -29598,8 +31265,26 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             }
             break;
          } else {
-            DIP("mtlo r%u", rs);
-            putLO(getIReg(rs));
+            switch (sa) {
+               case 0:
+                  DIP("mtlo r%u", rs);
+                  if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps) &&
+                      !VEX_MIPS_CPU_HAS_MIPS32R2(archinfo->hwcaps)) {
+                     ILLEGAL_INSTRUCTON;
+                  }
+                  putLO(getIReg(rs));
+                  break;
+               case 1:
+                  DIP("dclo r%u, r%u", rd, rs);
+                  t1 = newTemp(Ity_I1);
+                  assign(t1, binop(Iop_CmpEQ64, getIReg(rs),
+                                                 mkU64(0xffffffffffffffffULL)));
+                  putIReg(rd, IRExpr_ITE(mkexpr(t1),
+                                         mkU64(0x40),
+                                         unop(Iop_Clz64, unop(Iop_Not64,
+                                                              getIReg(rs)))));
+               break;
+            }
             break;
          }
       }
@@ -29875,36 +31560,41 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             break;
          }
       }
-
-      case 0x05:  /* LSA */
-         if (has_msa) {
-            UInt imm2 = (imm & 0xC0) >> 6;
+      case 0x05: { /* LSA */
+         UInt imm2 = (imm & 0xC0) >> 6;
+         if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps) || has_msa) {
             DIP("lsa r%u, r%u, r%u, imm: 0x%x", rd, rs, rt, imm2);
             if (mode64) {
-               putIReg(rd,
-                       unop(Iop_32Sto64,
-                            binop(Iop_Add32,
-                                  binop(Iop_Shl32,
-                                        unop(Iop_64to32, getIReg(rs)),
-                                        mkU8(imm2 + 1)),
-                                  unop(Iop_64to32, getIReg(rt)))));
+               DIP("lsa r%u, r%u, r%u, imm: 0x%x", rd, rs, rt, imm2);
+               putIReg(rd, unop(Iop_32Sto64,
+                                binop(Iop_Add32,
+                                      binop(Iop_Shl32,
+                                            unop(Iop_64to32, getIReg(rs)),
+                                            mkU8(imm2 + 1)),
+                                      unop(Iop_64to32, getIReg(rt)))));
+               break;
             } else {
-               putIReg(rd,
-                       binop(Iop_Add32,
-                             binop(Iop_Shl32, getIReg(rs), mkU8(imm2 + 1)),
-                             getIReg(rt)));
+               DIP("lsa r%u, r%u, r%u, imm: 0x%x", rd, rs, rt, imm2);
+               putIReg(rd, binop(Iop_Add32,
+                                 binop(Iop_Shl32,
+                                       getIReg(rs), mkU8(imm2 + 1)), getIReg(rt)));
+               break;
             }
          } else {
             ILLEGAL_INSTRUCTON;
          }
-         break;
+
+      }
       case 0x15:{ /* DLSA */
          UInt imm2 = (imm & 0xC0) >> 6;
-         DIP("dlsa r%u, r%u, r%u, imm: 0x%x", rd, rs, rt, imm2);
-         putIReg(rd,
-                 binop(Iop_Add64,
-                       binop(Iop_Shl64, getIReg(rs), mkU8(imm2 + 1)),
-                       getIReg(rt)));
+         if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps) || has_msa) {
+            DIP("dlsa r%u, r%u, r%u, imm: 0x%x", rd, rs, rt, imm2);
+            putIReg(rd, binop(Iop_Add64,
+                              binop(Iop_Shl64, getIReg(rs), mkU8(imm2 + 1)),
+                              getIReg(rt)));
+         } else {
+            ILLEGAL_INSTRUCTON;
+         }
          break;
       }
 
@@ -30138,6 +31828,26 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          }
          break;
       }
+      case 0x35: {   /* SELEQZ */
+         if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+            DIP("seleqz r%u, r%u, r%u", rd, rs, rt);
+            if (mode64) {
+               putIReg(rd, binop(Iop_And64,
+                                 unop(Iop_Not64,
+                                      unop(Iop_CmpwNEZ64, getIReg(rt))),
+                                 getIReg(rs)));
+            } else {
+               putIReg(rd, binop(Iop_And32,
+                                 unop(Iop_Not32,
+                                      unop(Iop_CmpwNEZ32, getIReg(rt))),
+                                 getIReg(rs)));
+            }
+         } else {
+            ILLEGAL_INSTRUCTON;
+         }
+         break;
+      }
+
       case 0x36: {  /* TNE */
          DIP("tne r%u, r%u %u", rs, rt, trap_code);
          if (mode64) {
@@ -30172,6 +31882,21 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                       getIReg(rt)), Ijk_SigTRAP,
                                 IRConst_U32(guest_PC_curr_instr + 4),
                                 OFFB_PC));
+         }
+         break;
+      }
+      case 0x37:  { /* SELNEZ */
+         if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+            DIP("selnez r%u, r%u, r%u", rd, rs, rt);
+            if (mode64) {
+               putIReg(rd, binop(Iop_And64,
+                                 unop(Iop_CmpwNEZ64, getIReg(rt)), getIReg(rs)));
+            } else {
+               putIReg(rd, binop(Iop_And32,
+                                 unop(Iop_CmpwNEZ32, getIReg(rt)), getIReg(rs)));
+            }
+         } else {
+            ILLEGAL_INSTRUCTON;
          }
          break;
       }
@@ -30399,18 +32124,18 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       case 0x08:  /* TGEI */
          DIP("tgei r%u, %u %u", rs, imm, trap_code);
          if (mode64) {
-            stmt (IRStmt_Exit (unop (Iop_Not1,
-                                     binop (Iop_CmpLT64S,
-                                            getIReg (rs),
-                                            mkU64 (extend_s_16to64 (imm)))),
+            stmt (IRStmt_Exit(unop(Iop_Not1,
+                                   binop(Iop_CmpLT64S,
+                                         getIReg(rs),
+                                         mkU64(extend_s_16to64 (imm)))),
                              Ijk_SigTRAP,
                              IRConst_U64(guest_PC_curr_instr + 4),
                              OFFB_PC));
          } else {
-            stmt (IRStmt_Exit (unop (Iop_Not1,
-                                     binop (Iop_CmpLT32S,
-                                     getIReg (rs),
-                                     mkU32 (extend_s_16to32 (imm)))),
+            stmt (IRStmt_Exit(unop(Iop_Not1,
+                                   binop(Iop_CmpLT32S,
+                                   getIReg(rs),
+                                   mkU32(extend_s_16to32 (imm)))),
                              Ijk_SigTRAP,
                              IRConst_U32(guest_PC_curr_instr + 4),
                              OFFB_PC));
@@ -30520,6 +32245,28 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
          /* Just ignore it */
          break;
 
+      case 0x06: { /* DAHI */
+         if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+            DIP("dahi  r%u,  %x", rs, imm);
+            putIReg(rs, binop(Iop_Add64,
+                              getIReg(rs), mkU64(extend_s_16to64 (imm) << 32)));
+         } else {
+            ILLEGAL_INSTRUCTON;
+         }
+         break;
+      }
+
+      case 0x1E: { /* DATI */
+         if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+            DIP("dati  r%u,  %x", rs, imm);
+            putIReg(rs, binop(Iop_Add64,
+                              getIReg(rs), mkU64((long long)imm << 48)));
+         } else {
+            ILLEGAL_INSTRUCTON;
+         }
+         break;
+      }
+
       default:
          goto decode_failure;
       }
@@ -30557,43 +32304,221 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                       getIReg(rs), getIReg(rt)), imm);
       break;
 
-   case 0x07:  /* BGTZ */
-      DIP("bgtz r%u, %u", rs, imm);
-      if (mode64)
-         dis_branch(False, unop(Iop_Not1, binop(Iop_CmpLE64S, getIReg(rs),
-                                mkU64(0x00))), imm, &bstmt);
-      else
-         dis_branch(False, unop(Iop_Not1, binop(Iop_CmpLE32S, getIReg(rs),
-                                mkU32(0x00))), imm, &bstmt);
+   case 0x07:  /* BGTZ, BGTZALC, BLTZALC, BLTUC */
+      if (rt == 0) { /* BGTZ */
+         DIP("bgtz r%u, %u", rs, imm);
+         if (mode64)
+            dis_branch(False, unop(Iop_Not1, binop(Iop_CmpLE64S, getIReg(rs),
+                                   mkU64(0x00))), imm, &bstmt);
+         else
+            dis_branch(False, unop(Iop_Not1, binop(Iop_CmpLE32S, getIReg(rs),
+                                   mkU32(0x00))), imm, &bstmt);
+      } else if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+         if (rs == 0) { /* BGTZALC */
+            DIP("bgtzalc r%u, %u", rt, imm);
+            if (mode64) {
+               dis_branch_compact(True,
+                                  unop(Iop_Not1,
+                                       binop(Iop_CmpLE64S,
+                                             getIReg(rt), mkU64(0x0))),
+                                  imm, &dres);
+            } else {
+               dis_branch_compact(True,
+                                  unop(Iop_Not1,
+                                       binop(Iop_CmpLE32S,
+                                             getIReg(rt), mkU32(0x0))),
+                                  imm, &dres);
+            }
+         } else if (rs == rt) { /* BLTZALC */
+            DIP("bltzalc r%u, %u", rt, imm);
+            if (mode64) {
+               dis_branch_compact(True,
+                                  unop(Iop_Not1,
+                                       binop(Iop_CmpLE64S,
+                                             mkU64(0x0), getIReg(rt))),
+                                  imm, &dres);
+            } else {
+               dis_branch_compact(True,
+                                  unop(Iop_Not1,
+                                       binop(Iop_CmpLE32S,
+                                             mkU32(0x0), getIReg(rt))),
+                                  imm, &dres);
+            }
+         } else { /* BLTUC */
+            DIP("bltuc r%u, r%u, %u", rt, rs, imm);
+            if (mode64) {
+               dis_branch_compact(False,
+                                  binop(Iop_CmpLT64U, getIReg(rs), getIReg(rt)),
+                                  imm, &dres);
+            } else {
+               dis_branch_compact(False,
+                                  binop(Iop_CmpLT32U, getIReg(rs), getIReg(rt)),
+                                  imm, &dres);
+            }
+         }
+      } else {
+         ILLEGAL_INSTRUCTON;
+      }
       break;
 
-   case 0x17:  /* BGTZL */
-      DIP("bgtzl r%u, %u", rs, imm);
-      if (mode64)
-         lastn = dis_branch_likely(binop(Iop_CmpLE64S, getIReg(rs),
-                                         mkU64(0x00)), imm);
-      else
-         lastn = dis_branch_likely(binop(Iop_CmpLE32S, getIReg(rs),
-                                         mkU32(0x00)), imm);
+   case 0x17:  /* BGTZL, BGTZC, BLTZC, BLTC */
+      if (rt == 0) { /* BGTZL */
+         DIP("bgtzl r%u, %u", rs, imm);
+         if (mode64)
+            lastn = dis_branch_likely(binop(Iop_CmpLE64S, getIReg(rs),
+                                            mkU64(0x00)), imm);
+         else
+            lastn = dis_branch_likely(binop(Iop_CmpLE32S, getIReg(rs),
+                                            mkU32(0x00)), imm);
+      } else if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+         if (rs == 0) { /* BGTZC */
+            DIP("bgtzc r%u, %u", rt, imm);
+            if (mode64) {
+               dis_branch_compact(False,
+                                  unop(Iop_Not1,
+                                       binop(Iop_CmpLE64S,
+                                             getIReg(rt), mkU64(0x0))),
+                                  imm, &dres);
+            } else {
+               dis_branch_compact(False,
+                                  unop(Iop_Not1,
+                                       binop(Iop_CmpLE32S,
+                                             getIReg(rt), mkU32(0x0))),
+                                  imm, &dres);
+            }
+         } else if (rs == rt) { /* BLTZC */
+            DIP("bltzc r%u, %u", rt, imm);
+            if (mode64) {
+               dis_branch_compact(False,
+                                  unop(Iop_Not1,
+                                       binop(Iop_CmpLE64S,
+                                             mkU64(0x0), getIReg(rt))),
+                                  imm, &dres);
+            } else {
+               dis_branch_compact(False,
+                                  unop(Iop_Not1,
+                                       binop(Iop_CmpLE32S,
+                                             mkU32(0x0), getIReg(rt))),
+                                  imm, &dres);
+            }
+         } else { /* BLTC */
+            DIP("bltc r%u, r%u, %u", rs, rt, imm);
+            if (mode64) {
+               dis_branch_compact(False,
+                                  unop(Iop_Not1,
+                                       binop(Iop_CmpLE64S,
+                                             getIReg(rt), getIReg(rs))),
+                                  imm, &dres);
+            } else {
+               dis_branch_compact(False,
+                                  unop(Iop_Not1,
+                                       binop(Iop_CmpLE32S,
+                                             getIReg(rt), getIReg(rs))),
+                                  imm, &dres);
+            }
+         }
+      } else {
+         ILLEGAL_INSTRUCTON;
+      }
       break;
 
-   case 0x06:  /* BLEZ */
-      DIP("blez r%u, %u", rs, imm);
-      if (mode64)
-         dis_branch(False, binop(Iop_CmpLE64S, getIReg(rs), mkU64(0x0)),
-                                imm, &bstmt);
-      else
-         dis_branch(False,binop(Iop_CmpLE32S, getIReg(rs), mkU32(0x0)), imm,
-                                &bstmt);
+   case 0x06:  /* BLEZ, BLEZALC, BGEZALC, BGEUC */
+      if (rt == 0) { /* BLEZ */
+         DIP("blez r%u, %u", rs, imm);
+         if (mode64)
+            dis_branch(False, binop(Iop_CmpLE64S, getIReg(rs), mkU64(0x0)),
+                                   imm, &bstmt);
+         else
+            dis_branch(False, binop(Iop_CmpLE32S, getIReg(rs), mkU32(0x0)), imm,
+                                   &bstmt);
+      } else if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+         if (rs == 0) { /* BLEZALC */
+            DIP("blezalc r%u, %u", rt, imm);
+            if (mode64)
+               dis_branch_compact(True,
+                                  binop(Iop_CmpLE64S, getIReg(rt), mkU64(0x0)),
+                                  imm, &dres);
+            else
+               dis_branch_compact(True,
+                                  binop(Iop_CmpLE32S, getIReg(rt), mkU32(0x0)),
+                                  imm, &dres);
+         } else if (rt == rs) {/* BGEZALC */
+            DIP("bgezalc r%u, %u", rt, imm);
+            if (mode64)
+               dis_branch_compact(True,
+                                  binop(Iop_CmpLE64S, mkU64(0x0), getIReg(rt)),
+                                  imm, &dres);
+            else
+               dis_branch_compact(True,
+                                  binop(Iop_CmpLE32S, mkU32(0x0), getIReg(rt)),
+                                  imm, &dres);
+         } else { /* BGEUC */
+            DIP("bgeuc r%u, r%u, %u", rt, rs, imm);
+            if (mode64)
+               dis_branch_compact(False,
+                                  unop(Iop_Not1,
+                                       binop(Iop_CmpLT64U,
+                                             getIReg(rs), getIReg(rt))),
+                                  imm, &dres);
+            else
+               dis_branch_compact(False,
+                                  unop(Iop_Not1,
+                                       binop(Iop_CmpLT32U,
+                                             getIReg(rs), getIReg(rt))),
+                                  imm, &dres);
+         }
+      } else {
+         ILLEGAL_INSTRUCTON;
+      }
       break;
 
-   case 0x16:  /* BLEZL */
-      DIP("blezl r%u, %u", rs, imm);
-      lastn = dis_branch_likely(unop(Iop_Not1, (binop(mode64 ? Iop_CmpLE64S :
-                                     Iop_CmpLE32S, getIReg(rs), mode64 ?
-                                     mkU64(0x0) : mkU32(0x0)))), imm);
+   case 0x16:  /* BLEZL, BLEZC, BGEZC, BGEC */
+      if (rt == 0) { /* BLEZL */
+         DIP("blezl r%u, %u", rs, imm);
+         lastn = dis_branch_likely(unop(Iop_Not1, (binop(mode64 ? Iop_CmpLE64S :
+                                        Iop_CmpLE32S, getIReg(rs), mode64 ?
+                                        mkU64(0x0) : mkU32(0x0)))), imm);
+      } else if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+          if (rs == 0) { /* BLEZC */
+            DIP("blezc r%u, %u", rt, imm);
+            if (mode64) {
+               dis_branch_compact(False,
+                                  binop(Iop_CmpLE64S, getIReg(rt), mkU64(0x0)),
+                                  imm, &dres);
+            } else {
+               dis_branch_compact(False,
+                                  binop(Iop_CmpLE32S, getIReg(rt), mkU32(0x0)),
+                                  imm, &dres);
+            }
+         } else if (rt == rs) { /* BGEZC */
+            DIP("bgezc r%u, %u", rt, imm);
+            if (mode64) {
+               dis_branch_compact(False,
+                                  binop(Iop_CmpLE64S, mkU64(0x0), getIReg(rt)),
+                                  imm, &dres);
+            } else {
+               dis_branch_compact(False,
+                                  binop(Iop_CmpLE32S, mkU32(0x0), getIReg(rt)),
+                                  imm, &dres);
+            }
+         } else { /* BGEC */
+            DIP("bgec r%u, r%u, %u", rs, rt, imm);
+            if (mode64) {
+               dis_branch_compact(False,
+                                  binop(Iop_CmpLE64S, getIReg(rt), getIReg(rs)),
+                                  imm, &dres);
+            } else {
+               dis_branch_compact(False,
+                                  binop(Iop_CmpLE32S, getIReg(rt), getIReg(rs)),
+                                  imm, &dres);
+            }
+         }
+      } else {
+         ILLEGAL_INSTRUCTON;
+      }
       break;
 
+#if defined(__mips__) && ((defined(__mips_isa_rev) && __mips_isa_rev < 6))
    case 0x08: {  /* ADDI */
       DIP("addi r%u, r%u, %u", rt, rs, imm);
       IRTemp tmpRs32 = newTemp(Ity_I32);
@@ -30631,6 +32556,111 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       putIReg(rt,  mkWidenFrom32(ty, mkexpr(t0), True));
       break;
    }
+#elif defined(__mips__) && ((defined(__mips_isa_rev) && __mips_isa_rev >= 6))
+   case 0x08: { /* BEQZALC, BEQC, BOVC */
+      if (rs == 0) { /* BEQZALC */
+         DIP("beqzalc r%u, %u", rt, imm);
+         if (mode64) {
+            dis_branch_compact(True,
+                               binop(Iop_CmpEQ64, getIReg(rt), mkU64(0x0)),
+                               imm, &dres);
+         } else {
+            dis_branch_compact(True,
+                               binop(Iop_CmpEQ32, getIReg(rt), mkU32(0x0)),
+                               imm, &dres);
+         }
+      } else  if (rs < rt) { /* BEQC */
+         DIP("beqc r%u, r%u, %u",rs, rt, imm);
+         if (mode64) {
+            dis_branch_compact(False,
+                               binop(Iop_CmpEQ64, getIReg(rt), getIReg(rs)),
+                               imm, &dres);
+         } else {
+            dis_branch_compact(False,
+                               binop(Iop_CmpEQ32, getIReg(rt), getIReg(rs)),
+                               imm, &dres);
+         }
+      } else { /* BOVC */
+         DIP("bovc r%u, r%u, %u",rs, rt, imm);
+         if (mode64) {
+            t0 = newTemp(Ity_I32);
+            t1 = newTemp(Ity_I32);
+            t2 = newTemp(Ity_I32);
+            t3 = newTemp(Ity_I32);
+            assign(t0, IRExpr_ITE(binop(Iop_CmpLT64S,
+                                        getIReg(rt),
+                                        mkU64(0xffffffff80000000ULL)),
+                                  mkU32(1),
+                                  IRExpr_ITE(binop(Iop_CmpLT64S,
+                                                   getIReg(rt),
+                                                   mkU64(0x7FFFFFFFULL)),
+                                             mkU32(0),mkU32(1))));
+            assign(t1, IRExpr_ITE(binop(Iop_CmpLT64S,
+                                        getIReg(rs),
+                                        mkU64(0xffffffff80000000ULL)),
+                                  mkU32(1),
+                                  IRExpr_ITE(binop(Iop_CmpLT64S,
+                                                   getIReg(rs),
+                                                   mkU64(0x7FFFFFFFULL)),
+                                             mkU32(0), mkU32(1))));
+            assign(t2, IRExpr_ITE(binop(Iop_CmpLT64S,
+                                        binop(Iop_Add64,
+                                              getIReg(rt), getIReg(rs)),
+                                        mkU64(0xffffffff80000000ULL)),
+                                  mkU32(1),
+                                  IRExpr_ITE(binop(Iop_CmpLT64S,
+                                                   binop(Iop_Add64,
+                                                         getIReg(rt),
+                                                         getIReg(rs)),
+                                                   mkU64(0x7FFFFFFFULL)),
+                                             mkU32(0), mkU32(1))));
+            assign(t3, binop(Iop_Add32,
+                             mkexpr(t0),
+                             binop(Iop_Add32, mkexpr(t1), mkexpr(t2))));
+            dis_branch_compact(False,
+                               binop(Iop_CmpNE32, mkexpr(t3), mkU32(0)),
+                               imm, &dres);
+         } else {
+            IRTemp tmpRs32 = newTemp(Ity_I32);
+            IRTemp tmpRt32 = newTemp(Ity_I32);
+            assign(tmpRs32, getIReg(rs));
+            assign(tmpRt32, getIReg(rt));
+
+            t0 = newTemp(Ity_I32);
+            t1 = newTemp(Ity_I32);
+            t2 = newTemp(Ity_I32);
+            t3 = newTemp(Ity_I32);
+            t4 = newTemp(Ity_I32);
+            /* dst = src0 + src1
+               if (sign(src0 ) != sign(src1 ))
+               goto no overflow;
+               if (sign(dst) == sign(src0 ))
+               goto no overflow;
+               we have overflow! */
+
+            assign(t0, binop(Iop_Add32, mkexpr(tmpRs32), mkexpr(tmpRt32)));
+            assign(t1, binop(Iop_Xor32, mkexpr(tmpRs32), mkexpr(tmpRt32)));
+            assign(t2, unop(Iop_1Uto32,
+                            binop(Iop_CmpEQ32,
+                                  binop(Iop_And32, mkexpr(t1), mkU32(0x80000000)),
+                                  mkU32(0x80000000))));
+
+            assign(t3, binop(Iop_Xor32, mkexpr(t0), mkexpr(tmpRs32)));
+            assign(t4, unop(Iop_1Uto32,
+                            binop(Iop_CmpNE32,
+                                  binop(Iop_And32, mkexpr(t3), mkU32(0x80000000)),
+                                  mkU32(0x80000000))));
+
+            dis_branch_compact(False, binop(Iop_CmpEQ32,
+                                   binop(Iop_Or32, mkexpr(t2), mkexpr(t4)),
+                                   mkU32(0)), imm, &dres);
+         }
+      }
+      break;
+      /* In documentation for BEQC stands rs > rt and for BOVC stands rs >= rt! */
+   }
+#endif
+
    case 0x09:  /* ADDIU */
       DIP("addiu r%u, r%u, %u", rt, rs, imm);
       if (mode64) {
@@ -30640,7 +32670,6 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       } else
          putIReg(rt, binop(Iop_Add32, getIReg(rs),mkU32(extend_s_16to32(imm))));
       break;
-
    case 0x0C:  /* ANDI */
       DIP("andi r%u, r%u, %u", rt, rs, imm);
       if (mode64) {
@@ -30688,7 +32717,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                             mkU32(extend_s_16to32(imm)))));
       break;
 
-   case 0x18: {  /* Doubleword Add Immidiate - DADD; MIPS64 */
+#if defined(__mips__) && ((defined(__mips_isa_rev) && __mips_isa_rev < 6))
+   case 0x18: {  /* Doubleword Add Immidiate - DADDI; MIPS64 */
       DIP("daddi r%u, r%u, %u", rt, rs, imm);
       IRTemp tmpRs64 = newTemp(Ity_I64);
       assign(tmpRs64, getIReg(rs));
@@ -30726,6 +32756,115 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
       putIReg(rt,  mkexpr(t0));
       break;
    }
+#elif defined(__mips__) && ((defined(__mips_isa_rev) && __mips_isa_rev >= 6))
+   case 0x18: { /* BNEZALC, BNEC, BNVC */
+      if (rs == 0) { /* BNEZALC */
+         DIP("bnezalc r%u, %u", rt, imm);
+         if (mode64) {
+            dis_branch_compact(True,
+                               unop(Iop_Not1,
+                                    binop(Iop_CmpEQ64, getIReg(rt), mkU64(0x0))),
+                               imm, &dres);
+         } else {
+            dis_branch_compact(True,
+                               unop(Iop_Not1,
+                                    binop(Iop_CmpEQ32, getIReg(rt), mkU32(0x0))),
+                               imm, &dres);
+         }
+      } else if (rs < rt) { /* BNEC */
+         DIP("bnec r%u, %u", rt, imm);
+         if (mode64) {
+            dis_branch_compact(False,
+                               unop(Iop_Not1,
+                                    binop(Iop_CmpEQ64,
+                                          getIReg(rt), getIReg(rs))),
+                               imm, &dres);
+         } else {
+            dis_branch_compact(False,
+                               unop(Iop_Not1,
+                                    binop(Iop_CmpEQ32,
+                                          getIReg(rt), getIReg(rs))),
+                               imm, &dres);
+         }
+      } else { /* BNVC */
+         DIP("bnvc r%u, r%u, %u", rs, rt, imm);
+         if (mode64) {
+            t0 = newTemp(Ity_I32);
+            t1 = newTemp(Ity_I32);
+            t2 = newTemp(Ity_I32);
+            t3 = newTemp(Ity_I32);
+            assign(t0, IRExpr_ITE(binop(Iop_CmpLT64S,
+                                        getIReg(rt),
+                                        mkU64(0xffffffff80000000ULL)),
+                                  mkU32(1),
+                                  IRExpr_ITE(binop(Iop_CmpLT64S,
+                                                   getIReg(rt),
+                                                   mkU64(0x7FFFFFFFULL)),
+                                             mkU32(0),mkU32(1))));
+            assign(t1, IRExpr_ITE(binop(Iop_CmpLT64S,
+                                        getIReg(rs),
+                                        mkU64(0xffffffff80000000ULL)),
+                                  mkU32(1),
+                                  IRExpr_ITE(binop(Iop_CmpLT64S,
+                                                   getIReg(rs),
+                                                   mkU64(0x7FFFFFFFULL)),
+                                             mkU32(0),mkU32(1))));
+            assign(t2, IRExpr_ITE(binop(Iop_CmpLT64S,
+                                        binop(Iop_Add64,
+                                              getIReg(rt), getIReg(rs)),
+                                        mkU64(0xffffffff80000000ULL)),
+                                  mkU32(1),
+                                  IRExpr_ITE(binop(Iop_CmpLT64S,
+                                                   binop(Iop_Add64,
+                                                         getIReg(rt),
+                                                         getIReg(rs)),
+                                                   mkU64(0x7FFFFFFFULL)),
+                                             mkU32(0),mkU32(1))));
+            assign(t3, binop(Iop_Add32,
+                             mkexpr(t0),
+                             binop(Iop_Add32, mkexpr(t1), mkexpr(t2))));
+            dis_branch_compact(False,
+                               binop(Iop_CmpEQ32, mkexpr(t3), mkU32(0)),
+                               imm, &dres);
+         } else {
+            IRTemp tmpRs32 = newTemp(Ity_I32);
+            IRTemp tmpRt32 = newTemp(Ity_I32);
+
+            assign(tmpRs32, getIReg(rs));
+            assign(tmpRt32, getIReg(rt));
+            t0 = newTemp(Ity_I32);
+            t1 = newTemp(Ity_I32);
+            t2 = newTemp(Ity_I32);
+            t3 = newTemp(Ity_I32);
+            t4 = newTemp(Ity_I32);
+            /* dst = src0 + src1
+               if (sign(src0 ) != sign(src1 ))
+               goto no overflow;
+               if (sign(dst) == sign(src0 ))
+               goto no overflow;
+               we have overflow! */
+
+            assign(t0, binop(Iop_Add32, mkexpr(tmpRs32), mkexpr(tmpRt32)));
+            assign(t1, binop(Iop_Xor32, mkexpr(tmpRs32), mkexpr(tmpRt32)));
+            assign(t2, unop(Iop_1Uto32,
+                            binop(Iop_CmpEQ32,
+                                  binop(Iop_And32, mkexpr(t1), mkU32(0x80000000)),
+                                  mkU32(0x80000000))));
+
+            assign(t3, binop(Iop_Xor32, mkexpr(t0), mkexpr(tmpRs32)));
+            assign(t4, unop(Iop_1Uto32,
+                            binop(Iop_CmpNE32,
+                                  binop(Iop_And32, mkexpr(t3), mkU32(0x80000000)),
+                                  mkU32(0x80000000))));
+
+            dis_branch_compact(False, binop(Iop_CmpNE32 ,
+                                   binop(Iop_Or32, mkexpr(t2), mkexpr(t4)),
+                                   mkU32(0)), imm, &dres);
+         }
+      }
+      break;
+   }
+#endif
 
    case 0x19:  /* Doubleword Add Immidiate Unsigned - DADDIU; MIPS64 */
       DIP("daddiu r%u, r%u, %u", rt, rs, imm);
@@ -30938,11 +33077,28 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                        mkNarrowTo32(ty, getIReg(rs))),
                                  mkU32(0x0)),
                     imm, &bstmt);
-         break;
+      } else if (archinfo->hwcaps & VEX_MIPS_CPU_ISA_M32R6) { /* BC */
+         if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+            DIP("bc  %x", instr_index & 0x3FFFFFF);
+            if (mode64) {
+               t0 = newTemp(Ity_I64);
+               assign(t0, mkU64(guest_PC_curr_instr +
+                      ((extend_s_26to64(instr_index & 0x3FFFFFF) + 1 ) << 2)));
+            } else {
+               t0 = newTemp(Ity_I32);
+               assign(t0, mkU32(guest_PC_curr_instr +
+                      ((extend_s_26to32(instr_index & 0x3FFFFFF) + 1) << 2)));
+            }
+            putPC(mkexpr(t0));
+            dres.whatNext = Dis_StopHere;
+            dres.jk_StopHere = Ijk_Boring;
+         } else {
+            ILLEGAL_INSTRUCTON;
+         }
       } else {
          goto decode_failure;
       }
-
+      break;
    case 0x36:  /* Branch on Bit Clear Plus 32 - BBIT032; Cavium OCTEON */
       /* Cavium Specific instructions. */
       if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM) {
@@ -30959,11 +33115,47 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                        getIReg(rs)),
                                  mkU64(0x0)),
                     imm, &bstmt);
-         break;
+      } else if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+         if (rs == 0) { /* JIC */
+            DIP("jic r%u, %u", rt, instr_index & 0xFFFF);
+            if (mode64) {
+               t0 = newTemp(Ity_I64);
+               assign(t0, binop(Iop_Add64, getIReg(rt),
+                                mkU64(extend_s_16to64((instr_index & 0xFFFF)))));
+            } else {
+               t0 = newTemp(Ity_I32);
+               assign(t0, binop(Iop_Add32, getIReg(rt),
+                                mkU32(extend_s_16to32((instr_index & 0xFFFF)))));
+            }
+            putPC(mkexpr(t0));
+            dres.whatNext = Dis_StopHere;
+            dres.jk_StopHere = Ijk_Boring;
+         } else { /* BEQZC */
+            DIP("beqzc r%u, %u", rs, imm);
+            dres.jk_StopHere = Ijk_Boring;
+            dres.whatNext = Dis_StopHere;
+            ULong branch_offset;
+            t0 = newTemp(Ity_I1);
+            if (mode64) {
+               branch_offset = extend_s_23to64((instr_index& 0x1fffff) << 2);
+               assign(t0, binop(Iop_CmpEQ64, getIReg(rs), mkU64(0x0)));
+               stmt(IRStmt_Exit(mkexpr(t0), Ijk_Boring,
+                                  IRConst_U64(guest_PC_curr_instr + 4 + branch_offset),
+                                  OFFB_PC));
+               putPC(mkU64(guest_PC_curr_instr + 4));
+            } else {
+               branch_offset = extend_s_23to32((instr_index& 0x1fffff) << 2);
+               assign(t0, binop(Iop_CmpEQ32, getIReg(rs), mkU32(0x0)));
+               stmt(IRStmt_Exit(mkexpr(t0), Ijk_Boring,
+                                  IRConst_U32(guest_PC_curr_instr + 4 +
+                                              (UInt) branch_offset), OFFB_PC));
+               putPC(mkU32(guest_PC_curr_instr + 4));
+            }
+         }
       } else {
-         goto decode_failure;
+         ILLEGAL_INSTRUCTON;
       }
-
+   break;
    case 0x3A:  /* Branch on Bit Set - BBIT1; Cavium OCTEON */
       /* Cavium Specific instructions. */
       if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM) {
@@ -30978,11 +33170,28 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                        mkNarrowTo32(ty, getIReg(rs))),
                                  mkU32(0x0)),
                     imm, &bstmt);
-         break;
+      } else if (archinfo->hwcaps & VEX_MIPS_CPU_ISA_M32R6) {/* BALC */
+         if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+            DIP("balc  %x", instr_index & 0x3FFFFFF);
+            if (mode64) {
+               t0 = newTemp(Ity_I64);
+               assign(t0, mkU64(guest_PC_curr_instr + ((extend_s_26to64(instr_index & 0x3FFFFFF)+1)<<2)));
+               putIReg(31, mkU64(guest_PC_curr_instr + 4));
+            } else {
+               t0 = newTemp(Ity_I32);
+               assign(t0, mkU32(guest_PC_curr_instr+((extend_s_26to32(instr_index & 0x3FFFFFF)+1)<<2)));
+               putIReg(31, mkU32(guest_PC_curr_instr + 4));
+            }
+            putPC(mkexpr(t0));
+            dres.whatNext = Dis_StopHere;
+            dres.jk_StopHere = Ijk_Call;
+         } else {
+            ILLEGAL_INSTRUCTON;
+         }
       } else {
          goto decode_failure;
       }
-
+      break;
    case 0x3E:  /* Branch on Bit Set Plus 32 - BBIT132; Cavium OCTEON */
       /* Cavium Specific instructions. */
       if (VEX_MIPS_COMP_ID(archinfo->hwcaps) == VEX_PRID_COMP_CAVIUM) {
@@ -30999,10 +33208,59 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                        getIReg(rs)),
                                  mkU64(0x0)),
                     imm, &bstmt);
-         break;
+      } else if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+         if (rs == 0) {/* JIALC */
+            DIP("jialc r%u, %u", rt, instr_index & 0xFFFF);
+            if (rs) goto decode_failure;
+            if (mode64) {
+               t0 = newTemp(Ity_I64);
+               assign(t0, binop(Iop_Add64, getIReg(rt),
+                                mkU64(extend_s_16to64((instr_index & 0xFFFF)))));
+               putIReg(31, mkU64(guest_PC_curr_instr + 4));
+            } else {
+               t0 = newTemp(Ity_I32);
+               assign(t0, binop(Iop_Add32, getIReg(rt),
+                                mkU32(extend_s_16to32((instr_index & 0xFFFF)))));
+               putIReg(31, mkU32(guest_PC_curr_instr + 4));
+            }
+            putPC(mkexpr(t0));
+            dres.whatNext = Dis_StopHere;
+            dres.jk_StopHere = Ijk_Call;
+         } else { /* BNEZC */
+            DIP("bnezc r%u, %u", rs, imm);
+            dres.jk_StopHere = Ijk_Boring;
+            dres.whatNext = Dis_StopHere;
+            ULong branch_offset;
+            t0 = newTemp(Ity_I1);
+            if (mode64) {
+               branch_offset = extend_s_23to64((instr_index& 0x1fffff) << 2);
+               assign(t0, unop(Iop_Not1, binop(Iop_CmpEQ64, getIReg(rs), mkU64(0x0))));
+               stmt(IRStmt_Exit(mkexpr(t0), Ijk_Boring,
+                                  IRConst_U64(guest_PC_curr_instr + 4 + branch_offset),
+                                  OFFB_PC));
+               putPC(mkU64(guest_PC_curr_instr + 4));
+            } else {
+               branch_offset = extend_s_23to32((instr_index& 0x1fffff) << 2);
+               assign(t0, unop(Iop_Not1, binop(Iop_CmpEQ32, getIReg(rs), mkU32(0x0))));
+               stmt(IRStmt_Exit(mkexpr(t0), Ijk_Boring,
+                                  IRConst_U32(guest_PC_curr_instr + 4 +
+                                              (UInt) branch_offset), OFFB_PC));
+               putPC(mkU32(guest_PC_curr_instr + 4));
+            }
+         }
       } else {
          goto decode_failure;
       }
+      break;
+
+   case 0x1D: /* DAUI */
+      if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
+         DIP("daui  r%u, r%u, %x", rt, rs, imm);
+         putIReg(rt, binop(Iop_Add64, getIReg(rs), mkU64(extend_s_32to64(imm << 16))));
+      } else {
+         ILLEGAL_INSTRUCTON;
+      }
+      break;
 
    case 0x1E: /* MIPS MSA (SIMD) */
       if (has_msa) {
@@ -31148,7 +33406,8 @@ DisResult disInstr_MIPS( IRSB*        irsb_IN,
    vassert(guest_arch == VexArchMIPS32 || guest_arch == VexArchMIPS64);
 
    mode64 = guest_arch != VexArchMIPS32;
-   fp_mode64 = abiinfo->guest_mips_fp_mode64;
+   fp_mode64 = abiinfo->guest_mips_fp_mode & 1;
+   fp_mode64_fre = abiinfo->guest_mips_fp_mode & 2;
    has_msa = VEX_MIPS_PROC_MSA(archinfo->hwcaps);
 
    vassert(VEX_MIPS_HOST_FP_MODE(archinfo->hwcaps) >= fp_mode64);

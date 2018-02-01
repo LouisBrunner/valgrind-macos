@@ -252,6 +252,10 @@ typedef
 /* Check if the processor supports MIPS64R2. */
 #define VEX_MIPS_CPU_HAS_MIPS64R2(x) (VEX_MIPS_EX_INFO(x) & \
                                       VEX_MIPS_CPU_ISA_M64R2)
+/* Check if the processor supports MIPSR6. */
+#define VEX_MIPS_CPU_HAS_MIPSR6(x) (VEX_MIPS_EX_INFO(x) & \
+                                    (VEX_MIPS_CPU_ISA_M32R6 | \
+                                    VEX_MIPS_CPU_ISA_M64R6))
 /* Check if the processor supports DSP ASE Rev 2. */
 #define VEX_MIPS_PROC_DSP2(x) ((VEX_MIPS_COMP_ID(x) == VEX_PRID_COMP_MIPS) && \
                                (VEX_MIPS_PROC_ID(x) == VEX_PRID_IMP_74K))
@@ -426,8 +430,8 @@ typedef
          itself?  True => descriptor, False => code. */
       Bool host_ppc_calls_use_fndescrs;
 
-      /* ??? Description ??? */
-      Bool guest_mips_fp_mode64;
+      /* MIPS32/MIPS64 GUESTS only: emulated FPU mode. */
+      UInt guest_mips_fp_mode;
    }
    VexAbiInfo;
 

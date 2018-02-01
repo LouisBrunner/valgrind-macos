@@ -451,12 +451,15 @@ typedef enum {
    Min_Shft,       /* word sll/srl/sra */
    Min_Unary,      /* clo, clz, nop, neg */
    Min_Ext,        /* ext / dext, dextm, dextu */
+   Min_Rotx,
 
    Min_Cmp,        /* word compare (fake insn) */
 
    Min_Mul,        /* non-widening, 32-bit, signed multiply */
    Min_Mult,       /* widening multiply */
+   Min_Mulr6,
    Min_Div,        /* div */
+   Min_Divr6,
 
    Min_Call,       /* call to address in register */
 
@@ -493,6 +496,7 @@ typedef enum {
    Min_MtFCSR,     /* set FCSR register */
    Min_MfFCSR,     /* get FCSR register */
    Min_FpCompare,  /* FP compare, generating value into int reg */
+   Min_FpMinMax,    /* FP r6 min and max*/
 
    Min_FpGpMove,   /* Move from/to fpr to/from gpr */
    Min_MoveCond,   /* Move Conditional */
@@ -528,12 +532,24 @@ typedef enum {
    Mfp_CVTWS, Mfp_CVTDL, Mfp_CVTSL, Mfp_CVTLS, Mfp_CVTLD, Mfp_TRULS, Mfp_TRULD,
    Mfp_TRUWS, Mfp_TRUWD, Mfp_FLOORWS, Mfp_FLOORWD, Mfp_ROUNDWS, Mfp_ROUNDWD,
    Mfp_CVTDW, Mfp_CEILWS, Mfp_CEILWD, Mfp_CEILLS, Mfp_CEILLD, Mfp_CVTDS,
-   Mfp_ROUNDLD, Mfp_FLOORLD,
+   Mfp_ROUNDLD, Mfp_FLOORLD, Mfp_RINTS, Mfp_RINTD,
 
    /* FP compare */
-   Mfp_CMP_UN, Mfp_CMP_EQ, Mfp_CMP_LT, Mfp_CMP_NGT
+   Mfp_CMP_UN, Mfp_CMP_EQ, Mfp_CMP_LT, Mfp_CMP_NGT,
+
+   Mfp_CMP_UN_S, Mfp_CMP_EQ_S, Mfp_CMP_LT_S, Mfp_CMP_NGT_S,
+
+   /*MAX and MIN*/
+   Mfp_MAXS, Mfp_MAXD, Mfp_MINS, Mfp_MIND
 
 } MIPSFpOp;
+
+extern const HChar *showRotxOp(MIPSRotxOp);
+
+typedef enum {
+   Rotx32,
+   Rotx64
+} MIPSRotxOp;
 
 extern const HChar *showMIPSFpOp(MIPSFpOp);
 
@@ -551,7 +567,11 @@ extern const HChar *showMIPSFpGpMoveOp ( MIPSFpGpMoveOp );
 typedef enum {
    MFpMoveCond_movns,  /* FP Move Conditional on Not Zero - MIPS32 */
    MFpMoveCond_movnd,
-   MMoveCond_movn      /* Move Conditional on Not Zero */
+   MMoveCond_movn,      /* Move Conditional on Not Zero */
+   MSeleqz, /* r6 instructions */
+   MSelnez,
+   MFpSels,
+   MFpSeld
 } MIPSMoveCondOp;
 
 extern const HChar *showMIPSMoveCondOp ( MIPSMoveCondOp );
@@ -594,6 +614,14 @@ typedef struct {
          HReg srcL;
          MIPSRH *srcR;
       } Shft;
+      struct {
+         MIPSRotxOp op;
+         HReg rd;
+         HReg rt;
+         HReg shift;
+         HReg shiftx;
+         HReg stripe;
+      } Rotx;
       /* Clz, Clo, nop */
       struct {
          MIPSUnaryOp op;
@@ -631,11 +659,27 @@ typedef struct {
          HReg srcR;
       } Mult;
       struct {
+         Bool syned;     /* signed/unsigned - meaningless if widenind = False */
+         Bool sz32;
+         Bool low;
+         HReg dst;
+         HReg srcL;
+         HReg srcR;
+      } Mulr6;
+      struct {
          Bool syned;  /* signed/unsigned - meaningless if widenind = False */
          Bool sz32;
          HReg srcL;
          HReg srcR;
       } Div;
+      struct {
+         Bool syned;     /* signed/unsigned - meaningless if widenind = False */
+         Bool sz32;
+         Bool mod;
+         HReg dst;
+         HReg srcL;
+         HReg srcR;
+      } Divr6;
       /* Pseudo-insn.  Call target (an absolute address), on given
          condition (which could be Mcc_ALWAYS).  argiregs indicates
          which of $4 .. $7 (mips32) or $4 .. $11 (mips64)
@@ -778,6 +822,12 @@ typedef struct {
          HReg srcR;
          UChar cond1;
       } FpCompare;
+      struct {
+         MIPSFpOp op;
+         HReg dst;
+         HReg srcL;
+         HReg srcR;
+      } FpMinMax;
       /* Move from GP register to FCSR register. */
       struct {
          HReg src;
@@ -870,10 +920,13 @@ extern MIPSInstr *MIPSInstr_Shft(MIPSShftOp, Bool sz32, HReg, HReg, MIPSRH *);
 extern MIPSInstr *MIPSInstr_Unary(MIPSUnaryOp op, HReg dst, HReg src);
 extern MIPSInstr *MIPSInstr_Ext(HReg, HReg, UInt, UInt);
 extern MIPSInstr *MIPSInstr_Cmp(Bool, Bool, HReg, HReg, HReg, MIPSCondCode);
-
 extern MIPSInstr *MIPSInstr_Mul(HReg, HReg, HReg);
 extern MIPSInstr *MIPSInstr_Mult(Bool, HReg, HReg);
+extern MIPSInstr *MIPSInstr_Mulr6(Bool syned, Bool sz32, Bool low,
+                                  HReg, HReg, HReg);
 extern MIPSInstr *MIPSInstr_Div(Bool syned, Bool sz32, HReg, HReg);
+extern MIPSInstr *MIPSInstr_Divr6(Bool syned, Bool sz32, Bool mod,
+                                  HReg, HReg, HReg);
 extern MIPSInstr *MIPSInstr_Madd(Bool, HReg, HReg);
 extern MIPSInstr *MIPSInstr_Msub(Bool, HReg, HReg);
 
@@ -906,6 +959,8 @@ extern MIPSInstr *MIPSInstr_FpTernary ( MIPSFpOp op, HReg dst, HReg src1,
                                         HReg src2, HReg src3 );
 extern MIPSInstr *MIPSInstr_FpConvert(MIPSFpOp op, HReg dst, HReg src);
 extern MIPSInstr *MIPSInstr_FpCompare(MIPSFpOp op, HReg dst, HReg srcL,
+                                      HReg srcR);
+extern MIPSInstr *MIPSInstr_FpMinMax(MIPSFpOp op, HReg dst, HReg srcL,
                                       HReg srcR);
 extern MIPSInstr *MIPSInstr_FpMulAcc(MIPSFpOp op, HReg dst, HReg srcML,
                                      HReg srcMR, HReg srcAcc);
@@ -942,6 +997,8 @@ extern MIPSInstr* MIPSInstr_MsaVec(MSAVECOp op, HReg wt, HReg ws, HReg wd);
 extern MIPSInstr* MIPSInstr_MsaBit(MSABITOp op, MSADF df, UChar ms, HReg ws, HReg wd);
 extern MIPSInstr* MIPSInstr_Msa3RF(MSA3RFOp op, MSADFFlx df, HReg wd, HReg ws, HReg wt);
 extern MIPSInstr* MIPSInstr_Msa2RF(MSA2RFOp op, MSADFFlx df, HReg wd, HReg ws);
+
+extern MIPSInstr* MIPSInstr_Bitswap(MIPSRotxOp, HReg, HReg, HReg, HReg, HReg);
 
 extern void ppMIPSInstr(const MIPSInstr *, Bool mode64);
 

@@ -296,7 +296,7 @@ static void set_MIPS_rounding_mode(ISelEnv * env, IRExpr * mode)
       to +infinity  | 10  | 10
       to -infinity  | 11  | 01
     */
-   /* rm_MIPS32  = XOR(rm_IR , (rm_IR << 1)) & 2 */
+   /* rm_MIPS32  = XOR(rm_IR , (rm_IR << 1)) & 3 */
    HReg irrm = iselWordExpr_R(env, mode);
    HReg tmp = newVRegI(env);
    HReg fcsr_old = newVRegI(env);
@@ -618,9 +618,9 @@ static void doHelperCall(/*OUT*/UInt*   stackAdjustAfterCall,
             HReg rHi, rLo;
             iselInt64Expr(&rHi, &rLo, env, arg);
             argiregs |= (1 << (argreg + 4));
-            addInstr(env, mk_iMOVds_RR( argregs[argreg++], rHi ));
+            addInstr(env, mk_iMOVds_RR( argregs[argreg++], rLo ));
             argiregs |= (1 << (argreg + 4));
-            addInstr(env, mk_iMOVds_RR( argregs[argreg], rLo));
+            addInstr(env, mk_iMOVds_RR( argregs[argreg], rHi));
             argreg++;
          } else if (arg->tag == Iex_GSPTR) {
             vassert(0);  // ATC
@@ -1180,8 +1180,19 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
                movn v0, s0, v1 */
 
             addInstr(env, MIPSInstr_Alu(Malu_SLT, tmp, argL, argRH));
+#if (__mips_isa_rev >= 6)
+            {
+              HReg r_temp  = newVRegI(env);
+              addInstr(env, MIPSInstr_MoveCond(MSeleqz, r_dst, argL, tmp));
+              addInstr(env, MIPSInstr_MoveCond(MSelnez, r_temp, argR, tmp));
+              addInstr(env, MIPSInstr_Alu(Malu_OR, r_dst, r_dst,
+                                MIPSRH_Reg(r_temp)));
+            }
+
+#else
             addInstr(env, mk_iMOVds_RR(r_dst, argL));
             addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, r_dst, argR, tmp));
+#endif
             return r_dst;
          }
 
@@ -1189,7 +1200,12 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             HReg r_dst = newVRegI(env);
             HReg r_srcL = iselWordExpr_R(env, e->Iex.Binop.arg1);
             HReg r_srcR = iselWordExpr_R(env, e->Iex.Binop.arg2);
+#if (__mips_isa_rev >= 6)
+            addInstr(env, MIPSInstr_Mulr6(False, True, True,
+                                          r_dst, r_srcL, r_srcR));
+#else
             addInstr(env, MIPSInstr_Mul(r_dst, r_srcL, r_srcR));
+#endif
             return r_dst;
          }
 
@@ -1199,8 +1215,13 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             HReg r_dst = newVRegI(env);
             HReg r_srcL = iselWordExpr_R(env, e->Iex.Binop.arg1);
             HReg r_srcR = iselWordExpr_R(env, e->Iex.Binop.arg2);
+#if (__mips_isa_rev >= 6)
+            addInstr(env, MIPSInstr_Mulr6(False, False, True,
+                                          r_dst, r_srcL, r_srcR));
+#else
             addInstr(env, MIPSInstr_Mult(True, r_srcL, r_srcR));
             addInstr(env, MIPSInstr_Mflo(r_dst));
+#endif
             return r_dst;
          }
 
@@ -1210,6 +1231,12 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             HReg r_tmpR = newVRegI(env);
             HReg r_srcL = iselWordExpr_R(env, e->Iex.Binop.arg1);
             HReg r_srcR = iselWordExpr_R(env, e->Iex.Binop.arg2);
+#if (__mips_isa_rev >= 6)
+            addInstr(env, MIPSInstr_Ext(r_tmpL, r_srcL, 0, 32));
+            addInstr(env, MIPSInstr_Ext(r_tmpR, r_srcR, 0, 32));
+            addInstr(env, MIPSInstr_Mulr6(True, False, True,
+                                          r_tmpR, r_tmpL, r_tmpR));
+#else
             if (VEX_MIPS_CPU_HAS_MIPS64R2(hwcaps_host)) {
                addInstr(env, MIPSInstr_Ext(r_tmpL, r_srcL, 0, 32));
                addInstr(env, MIPSInstr_Ext(r_tmpR, r_srcR, 0, 32));
@@ -1222,6 +1249,7 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             }
             addInstr(env, MIPSInstr_Mult(False, r_tmpL, r_tmpR));
             addInstr(env, MIPSInstr_Mflo(r_tmpR));
+#endif
             return r_tmpR;
          }
 
@@ -1234,6 +1262,25 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             HReg r_dst = newVRegI(env);
             HReg r_srcL = iselWordExpr_R(env, e->Iex.Binop.arg1);
             HReg r_srcR = iselWordExpr_R(env, e->Iex.Binop.arg2);
+#if (__mips_isa_rev >= 6)
+             if (syned) {
+               Int no_bits = (e->Iex.Binop.op == Iop_MullS16) ? 16 : 24;
+               addInstr(env, MIPSInstr_Shft(Mshft_SLL, True,
+                                            r_srcL, r_srcL,
+                                            MIPSRH_Imm(False, no_bits)));
+               addInstr(env, MIPSInstr_Shft(Mshft_SRA, True,
+                                            r_srcL, r_srcL,
+                                            MIPSRH_Imm(False, no_bits)));
+               addInstr(env, MIPSInstr_Shft(Mshft_SLL, True,
+                                            r_srcR, r_srcR,
+                                            MIPSRH_Imm(False, no_bits)));
+               addInstr(env, MIPSInstr_Shft(Mshft_SRA, True,
+                                            r_srcR, r_srcR,
+                                            MIPSRH_Imm(False, no_bits)));
+            }
+            addInstr(env, MIPSInstr_Mulr6(syned, True, True,
+                                          r_dst, r_srcL, r_srcR));
+#else
             if (syned) {
                Int no_bits = (e->Iex.Binop.op == Iop_MullS16) ? 16 : 24;
                addInstr(env, MIPSInstr_Shft(Mshft_SLL, True,
@@ -1254,6 +1301,7 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
                addInstr(env, MIPSInstr_Mult(syned, r_srcL, r_srcR));
                addInstr(env, MIPSInstr_Mflo(r_dst));
             }
+#endif
             return r_dst;
          }
 
@@ -1266,6 +1314,33 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
                r_srcL = iselDblExpr(env, e->Iex.Binop.arg1);
                r_srcR = iselDblExpr(env, e->Iex.Binop.arg2);
             }
+#if (__mips_isa_rev >= 6)
+            HReg tmp = newVRegI(env);
+            HReg tmpf;
+            HReg result = newVRegI(env);
+            if (mode64) tmpf = newVRegF(env);
+            else tmpf = newVRegD(env);
+            addInstr(env, MIPSInstr_FpCompare(Mfp_CMP_UN, tmpf, r_srcL, r_srcR));
+            addInstr(env, MIPSInstr_FpGpMove(MFpGpMove_mfc1, tmp, tmpf));
+            addInstr(env, MIPSInstr_Alu(Malu_AND, tmp, tmp,
+                                        MIPSRH_Imm(False, 0x45)));
+            addInstr(env, MIPSInstr_Alu(Malu_OR, result,
+                                        hregMIPS_GPR0(env->mode64),
+                                        MIPSRH_Reg(tmp)));
+            addInstr(env, MIPSInstr_FpCompare(Mfp_CMP_LT, tmpf, r_srcL, r_srcR));
+            addInstr(env, MIPSInstr_FpGpMove(MFpGpMove_mfc1, tmp, tmpf));
+            addInstr(env, MIPSInstr_Alu(Malu_AND, tmp, tmp,
+                                        MIPSRH_Imm(False, 0x1)));
+            addInstr(env, MIPSInstr_Alu(Malu_OR, result, result,
+                                        MIPSRH_Reg(tmp)));
+            addInstr(env, MIPSInstr_FpCompare(Mfp_CMP_EQ, tmpf, r_srcL, r_srcR));
+            addInstr(env, MIPSInstr_FpGpMove(MFpGpMove_mfc1, tmp, tmpf));
+            addInstr(env, MIPSInstr_Alu(Malu_AND, tmp, tmp,
+                                        MIPSRH_Imm(False, 0x40)));
+            addInstr(env, MIPSInstr_Alu(Malu_OR, result, result,
+                                        MIPSRH_Reg(tmp)));
+            return result;
+#else
             HReg tmp = newVRegI(env);
             HReg r_ccMIPS = newVRegI(env);
             HReg r_ccIR = newVRegI(env);
@@ -1339,6 +1414,39 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             addInstr(env, MIPSInstr_Alu(Malu_OR, r_ccIR, r_ccIR,
                           MIPSRH_Reg(r_ccIR_b6)));
             return r_ccIR;
+#endif
+         }
+
+         if (e->Iex.Binop.op == Iop_CmpF32) {
+#if (__mips_isa_rev >= 6)
+            HReg r_srcL = iselFltExpr(env, e->Iex.Binop.arg1);
+            HReg r_srcR = iselFltExpr(env, e->Iex.Binop.arg2);
+            HReg tmp = newVRegI(env);
+            HReg tmpf;
+            HReg result = newVRegI(env);
+            if (mode64) tmpf = newVRegF(env);
+            else tmpf = newVRegD(env);
+            addInstr(env, MIPSInstr_FpCompare(Mfp_CMP_UN_S, tmpf, r_srcL, r_srcR));
+            addInstr(env, MIPSInstr_FpGpMove(MFpGpMove_mfc1, tmp, tmpf));
+            addInstr(env, MIPSInstr_Alu(Malu_AND, tmp, tmp,
+                                        MIPSRH_Imm(False, 0x45)));
+            addInstr(env, MIPSInstr_Alu(Malu_OR, result,
+                                        hregMIPS_GPR0(env->mode64),
+                                        MIPSRH_Reg(tmp)));
+            addInstr(env, MIPSInstr_FpCompare(Mfp_CMP_LT_S, tmpf, r_srcL, r_srcR));
+            addInstr(env, MIPSInstr_FpGpMove(MFpGpMove_mfc1, tmp, tmpf));
+            addInstr(env, MIPSInstr_Alu(Malu_AND, tmp, tmp,
+                                        MIPSRH_Imm(False, 0x1)));
+            addInstr(env, MIPSInstr_Alu(Malu_OR, result, result,
+                                        MIPSRH_Reg(tmp)));
+            addInstr(env, MIPSInstr_FpCompare(Mfp_CMP_EQ_S, tmpf, r_srcL, r_srcR));
+            addInstr(env, MIPSInstr_FpGpMove(MFpGpMove_mfc1, tmp, tmpf));
+            addInstr(env, MIPSInstr_Alu(Malu_AND, tmp, tmp,
+                                        MIPSRH_Imm(False, 0x40)));
+            addInstr(env, MIPSInstr_Alu(Malu_OR, result, result,
+                                        MIPSRH_Reg(tmp)));
+            return result;
+#endif
          }
 
          if (e->Iex.Binop.op == Iop_DivModU32to32 ||
@@ -1353,11 +1461,20 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
 
             HReg r_srcR = iselWordExpr_R(env, e->Iex.Binop.arg2);
             HReg r_srcL = iselWordExpr_R(env, e->Iex.Binop.arg1);
-
+#if (__mips_isa_rev >= 6)
+            addInstr(env, MIPSInstr_Divr6(syned /* Unsigned or Signed */ ,
+                                          True  /* 32bit or 64bit div */ ,
+                                          False /* mod */,
+                                          tLo, r_srcL, r_srcR));
+            addInstr(env, MIPSInstr_Divr6(syned /* Unsigned or Signed */ ,
+                                          True /*3 2bit or 64bit div */ ,
+                                          True /* mod */,
+                                          tHi, r_srcL, r_srcR));
+#else
             addInstr(env, MIPSInstr_Div(syned, True, r_srcL, r_srcR));
             addInstr(env, MIPSInstr_Mfhi(tHi));
             addInstr(env, MIPSInstr_Mflo(tLo));
-
+#endif
             addInstr(env, MIPSInstr_Shft(Mshft_SLL, False, tHi_1, tHi,
                                          MIPSRH_Imm(False, 32)));
 
@@ -1382,8 +1499,13 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
                                 e->Iex.Binop.op == Iop_DivU32);
             HReg r_srcR = iselWordExpr_R(env, e->Iex.Binop.arg2);
             HReg r_srcL = iselWordExpr_R(env, e->Iex.Binop.arg1);
+#if (__mips_isa_rev >= 6)
+            addInstr(env, MIPSInstr_Divr6(syned, div32, False,
+                                          r_dst, r_srcL, r_srcR));
+#else
             addInstr(env, MIPSInstr_Div(syned, div32, r_srcL, r_srcR));
             addInstr(env, MIPSInstr_Mflo(r_dst));
+#endif
             return r_dst;
          }
 
@@ -1451,6 +1573,24 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             /* CVTLS tmpF, valF */
             set_MIPS_rounding_mode(env, e->Iex.Binop.arg1);
             addInstr(env, MIPSInstr_FpConvert(Mfp_CVTLS, tmpF, valF));
+            set_MIPS_rounding_default(env);
+
+            /* Doubleword Move from Floating Point
+               dmfc1 valS, tmpF */
+            addInstr(env, MIPSInstr_FpGpMove(MFpGpMove_dmfc1, valS, tmpF));
+
+            return valS;
+         }
+
+         if (e->Iex.Binop.op == Iop_F64toI64S) {
+            vassert(mode64);
+            HReg valS = newVRegI(env);
+            HReg tmpF = newVRegF(env);
+            HReg valF = iselFltExpr(env, e->Iex.Binop.arg2);
+
+            /* CVTLS tmpF, valF */
+            set_MIPS_rounding_mode(env, e->Iex.Binop.arg1);
+            addInstr(env, MIPSInstr_FpConvert(Mfp_CVTLD, tmpF, valF));
             set_MIPS_rounding_default(env);
 
             /* Doubleword Move from Floating Point
@@ -1634,6 +1774,20 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
                      break;
                   }
             }
+
+            return r_dst;
+         }
+
+         if (e->Iex.Binop.op == Iop_F32toI32S) {
+            HReg valS = newVRegF(env);
+            HReg valF = iselFltExpr(env, e->Iex.Binop.arg2);
+            HReg r_dst = newVRegI(env);
+
+            set_MIPS_rounding_mode(env, e->Iex.Binop.arg1);
+            addInstr(env, MIPSInstr_FpConvert(Mfp_CVTWS, valS, valF));
+            set_MIPS_rounding_default(env);
+
+            addInstr(env, MIPSInstr_FpGpMove(MFpGpMove_mfc1, r_dst, valS));
 
             return r_dst;
          }
@@ -2171,8 +2325,17 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
           * r_dst = r0
           * movn r_dst, r1, r_cond
           */
+#if (__mips_isa_rev >= 6)
+         HReg r_temp  = newVRegI(env);
+         addInstr(env, MIPSInstr_MoveCond(MSeleqz, r_dst, r0, r_cond));
+         addInstr(env, MIPSInstr_MoveCond(MSelnez, r_temp, r1, r_cond));
+         addInstr(env, MIPSInstr_Alu(Malu_OR, r_dst, r_dst,
+                          MIPSRH_Reg(r_temp)));
+
+#else
          addInstr(env, mk_iMOVds_RR(r_dst, r0));
          addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, r_dst, r1, r_cond));
+#endif
          return r_dst;
       }
       break;
@@ -2228,6 +2391,27 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
       vassert(addToSp == 0);
       addInstr(env, mk_iMOVds_RR(r_dst, hregMIPS_GPR2(mode64)));
       return r_dst;
+   }
+
+   case Iex_Qop: {
+      HReg dst = newVRegI(env);
+      HReg src1 = iselWordExpr_R(env, e->Iex.Qop.details->arg1);
+      HReg src2 = iselWordExpr_R(env, e->Iex.Qop.details->arg2);
+      HReg src3 = iselWordExpr_R(env, e->Iex.Qop.details->arg3);
+      HReg src4 = iselWordExpr_R(env, e->Iex.Qop.details->arg4);
+      switch (e->Iex.Qop.details->op) {
+#if (__mips_isa_rev >= 6)
+        case Iop_Rotx32:
+          addInstr(env, MIPSInstr_Bitswap(Rotx32, dst, src1, src2, src3, src4));
+          break;
+        case Iop_Rotx64:
+          addInstr(env, MIPSInstr_Bitswap(Rotx64, dst, src1, src2, src3, src4));
+          break;
+#endif
+        default:
+          break;
+      }
+      return dst;
    }
 
    default:
@@ -4662,9 +4846,16 @@ static void iselInt128Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env,
             Bool syned = toBool(e->Iex.Binop.op == Iop_MullS64);
             HReg r_srcL = iselWordExpr_R(env, e->Iex.Binop.arg1);
             HReg r_srcR = iselWordExpr_R(env, e->Iex.Binop.arg2);
+#if (__mips_isa_rev >= 6)
+            addInstr(env, MIPSInstr_Mulr6(syned, False, True,
+                                          tLo, r_srcL, r_srcR));
+            addInstr(env, MIPSInstr_Mulr6(syned, False, False,
+                                          tHi, r_srcL, r_srcR));
+#else
             addInstr(env, MIPSInstr_Mult(syned, r_srcL, r_srcR));
             addInstr(env, MIPSInstr_Mfhi(tHi));
             addInstr(env, MIPSInstr_Mflo(tLo));
+#endif
             *rHi = tHi;
             *rLo = tLo;
             return;
@@ -4683,10 +4874,20 @@ static void iselInt128Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env,
             HReg tLo = newVRegI(env);
             HReg tHi = newVRegI(env);
             Bool syned = toBool(e->Iex.Binop.op == Iop_DivModS64to64);
-
+#if (__mips_isa_rev >= 6)
+            addInstr(env, MIPSInstr_Divr6(syned/*Unsigned or Signed */ ,
+                                          False /*32bit or 64bit div */ ,
+                                          False /*mod*/,
+                                          tLo, r_srcL, r_srcR));
+            addInstr(env, MIPSInstr_Divr6(syned/*Unsigned or Signed */ ,
+                                          False /*32bit or 64bit div */ ,
+                                          True /*mod*/,
+                                          tHi, r_srcL, r_srcR));
+#else
             addInstr(env, MIPSInstr_Div(syned, False, r_srcL, r_srcR));
             addInstr(env, MIPSInstr_Mfhi(tHi));
             addInstr(env, MIPSInstr_Mflo(tLo));
+#endif
             *rHi = tHi;
             *rLo = tLo;
             return;
@@ -4798,10 +4999,23 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
        * move desHi, expr0Hi
        * movn desLo, expr1Lo, cond
        * movn desHi, expr1Hi, cond */
+#if (__mips_isa_rev >= 6)
+      {
+        HReg r_temp = newVRegI(env);
+        addInstr(env, MIPSInstr_MoveCond(MSeleqz, desLo, expr0Lo, cond));
+        addInstr(env, MIPSInstr_MoveCond(MSelnez, r_temp, expr1Lo, cond));
+        addInstr(env, MIPSInstr_Alu(Malu_OR, desLo, desLo, MIPSRH_Reg(r_temp)));
+
+        addInstr(env, MIPSInstr_MoveCond(MSeleqz, desHi, expr0Hi, cond));
+        addInstr(env, MIPSInstr_MoveCond(MSelnez, r_temp, expr1Hi, cond));
+        addInstr(env, MIPSInstr_Alu(Malu_OR, desHi, desHi, MIPSRH_Reg(r_temp)));
+      }
+#else
       addInstr(env, mk_iMOVds_RR(desLo, expr0Lo));
       addInstr(env, mk_iMOVds_RR(desHi, expr0Hi));
       addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, desLo, expr1Lo, cond));
       addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, desHi, expr1Hi, cond));
+#endif
 
       *rHi = desHi;
       *rLo = desLo;
@@ -4895,9 +5109,16 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
             Bool syned = toBool(op_binop == Iop_MullS32);
             HReg r_srcL = iselWordExpr_R(env, e->Iex.Binop.arg1);
             HReg r_srcR = iselWordExpr_R(env, e->Iex.Binop.arg2);
+#if (__mips_isa_rev >= 6)
+            addInstr(env, MIPSInstr_Mulr6(syned, True, True,
+                                          tLo, r_srcL, r_srcR));
+            addInstr(env, MIPSInstr_Mulr6(syned, True, False,
+                                          tHi, r_srcL, r_srcR));
+#else
             addInstr(env, MIPSInstr_Mult(syned, r_srcL, r_srcR));
             addInstr(env, MIPSInstr_Mfhi(tHi));
             addInstr(env, MIPSInstr_Mflo(tLo));
+#endif
             *rHi = tHi;
             *rLo = tLo;
 
@@ -4912,9 +5133,20 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
             HReg tHi = newVRegI(env);
             Bool syned = toBool(e->Iex.Binop.op == Iop_DivModS32to32);
 
+#if (__mips_isa_rev >= 6)
+            addInstr(env, MIPSInstr_Divr6(syned /*Unsigned or Signed */ ,
+                                          True /*32bit or 64bit div */ ,
+                                          False /*mod*/,
+                                          tLo, r_srcL, r_srcR));
+            addInstr(env, MIPSInstr_Divr6(syned /*Unsigned or Signed */ ,
+                                          True /*32bit or 64bit div */ ,
+                                          True /*mod*/,
+                                          tHi, r_srcL, r_srcR));
+#else
             addInstr(env, MIPSInstr_Div(syned, True, r_srcL, r_srcR));
             addInstr(env, MIPSInstr_Mfhi(tHi));
             addInstr(env, MIPSInstr_Mflo(tLo));
+#endif
             *rHi = tHi;
             *rLo = tLo;
             return;
@@ -4945,7 +5177,6 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
          }
 
          case Iop_Shr64: {
-#if defined (_MIPSEL)
             /* 64-bit logical shift right based on what gcc generates:
                <shift>:
                nor  v0, zero, a2
@@ -4959,122 +5190,59 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
                jr   ra
                movn v1, zero, a0
             */
-            HReg a0, a1;
-            HReg a0tmp = newVRegI(env);
-            HReg a2 = newVRegI(env);
+            HReg r_srcLo, r_srcHi;
+            HReg r_srcLotmp = newVRegI(env);
+            HReg shift = newVRegI(env);
             HReg a3 = newVRegI(env);
-            HReg v0 = newVRegI(env);
-            HReg v1 = newVRegI(env);
-            HReg zero = newVRegI(env);
+            HReg r_dstLo = newVRegI(env);
+            HReg r_dstHi = newVRegI(env);
+            HReg zero = hregMIPS_GPR0(env->mode64);
             MIPSRH *sa = NULL;
 
-            iselInt64Expr(&a1, &a0, env, e->Iex.Binop.arg1);
+            iselInt64Expr(&r_srcHi, &r_srcLo, env, e->Iex.Binop.arg1);
             sa = iselWordExpr_RH6u(env, e->Iex.Binop.arg2);
 
             if (sa->tag == Mrh_Imm) {
-               addInstr(env, MIPSInstr_LI(a2, sa->Mrh.Imm.imm16));
+               addInstr(env, MIPSInstr_LI(shift, sa->Mrh.Imm.imm16));
             }
             else {
-               addInstr(env, MIPSInstr_Alu(Malu_AND, a2, sa->Mrh.Reg.reg,
+               addInstr(env, MIPSInstr_Alu(Malu_AND, shift, sa->Mrh.Reg.reg,
                                            MIPSRH_Imm(False, 0x3f)));
             }
-
-            addInstr(env, MIPSInstr_LI(zero, 0x00000000));
-            /* nor  v0, zero, a2 */
-            addInstr(env, MIPSInstr_Alu(Malu_NOR, v0, zero, MIPSRH_Reg(a2)));
-            /* sll  a3, a1, 0x1 */
+            /* nor  r_dstLo, zero, shift */
+            addInstr(env, MIPSInstr_Alu(Malu_NOR, r_dstLo, zero, MIPSRH_Reg(shift)));
+            /* sll  a3, r_srcHi, 0x1 */
             addInstr(env, MIPSInstr_Shft(Mshft_SLL, True /* 32bit shift */,
-                                         a3, a1, MIPSRH_Imm(False, 0x1)));
-            /* sllv a3, a3, v0 */
+                                         a3, r_srcHi, MIPSRH_Imm(False, 0x1)));
+            /* sllv a3, a3, r_dstLo */
             addInstr(env, MIPSInstr_Shft(Mshft_SLL, True /* 32bit shift */,
-                                         a3, a3, MIPSRH_Reg(v0)));
-            /* srlv v0, a0, a2 */
+                                         a3, a3, MIPSRH_Reg(r_dstLo)));
+            /* srlv r_dstLo, r_srcLo, shift */
             addInstr(env, MIPSInstr_Shft(Mshft_SRL, True /* 32bit shift */,
-                                         v0, a0, MIPSRH_Reg(a2)));
-            /* srlv v1, a1, a2 */
+                                         r_dstLo, r_srcLo, MIPSRH_Reg(shift)));
+            /* srlv r_dstHi, r_srcHi, shift */
             addInstr(env, MIPSInstr_Shft(Mshft_SRL, True /* 32bit shift */,
-                                         v1, a1, MIPSRH_Reg(a2)));
-            /* andi a0, a2, 0x20 */
-            addInstr(env, MIPSInstr_Alu(Malu_AND, a0tmp, a2,
+                                         r_dstHi, r_srcHi, MIPSRH_Reg(shift)));
+            /* andi r_srcLo, shift, 0x20 */
+            addInstr(env, MIPSInstr_Alu(Malu_AND, r_srcLotmp, shift,
                                         MIPSRH_Imm(False, 0x20)));
-            /* or   v0, a3, v0 */
-            addInstr(env, MIPSInstr_Alu(Malu_OR, v0, a3, MIPSRH_Reg(v0)));
+            /* or   r_dstLo, a3, r_dstLo */
+            addInstr(env, MIPSInstr_Alu(Malu_OR, r_dstLo, a3, MIPSRH_Reg(r_dstLo)));
+#if (__mips_isa_rev >= 6)
+            addInstr(env, MIPSInstr_MoveCond(MSeleqz, r_dstLo, r_dstLo, r_srcLotmp));
+            addInstr(env, MIPSInstr_MoveCond(MSelnez, a3, r_dstHi, r_srcLotmp));
+            addInstr(env, MIPSInstr_Alu(Malu_OR, r_dstLo, r_dstLo, MIPSRH_Reg(a3)));
 
-            /* movn    v0, v1, a0 */
-            addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, v0, v1, a0tmp));
-            /* movn    v1, zero, a0 */
-            addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, v1, zero, a0tmp));
-
-            *rHi = v1;
-            *rLo = v0;
-            return;
-#elif defined (_MIPSEB)
-            /* 64-bit logical shift right based on what gcc generates:
-               <shift>:
-               nor  v0, zero, a2
-               sll  a3, a0, 0x1
-               sllv a3, a3, v0
-               srlv v1, a1, a2
-               andi v0, a2, 0x20
-               or   v1, a3, v1
-               srlv a2, a0, a2
-               movn v1, a2, v0
-               movn a2, zero, v0
-               jr   ra
-               move v0, a2
-            */
-            HReg a0, a1;
-            HReg a2 = newVRegI(env);
-            HReg a2tmp = newVRegI(env);
-            HReg a3 = newVRegI(env);
-            HReg v0 = newVRegI(env);
-            HReg v1 = newVRegI(env);
-            HReg zero = newVRegI(env);
-            MIPSRH *sa = NULL;
-
-            iselInt64Expr(&a0, &a1, env, e->Iex.Binop.arg1);
-            sa = iselWordExpr_RH6u(env, e->Iex.Binop.arg2);
-
-            if (sa->tag == Mrh_Imm) {
-               addInstr(env, MIPSInstr_LI(a2, sa->Mrh.Imm.imm16));
-            }
-            else {
-               addInstr(env, MIPSInstr_Alu(Malu_AND, a2, sa->Mrh.Reg.reg,
-                                           MIPSRH_Imm(False, 0x3f)));
-            }
-
-            addInstr(env, MIPSInstr_LI(zero, 0x00000000));
-            /* nor v0, zero, a2 */
-            addInstr(env, MIPSInstr_Alu(Malu_NOR, v0, zero, MIPSRH_Reg(a2)));
-            /* sll a3, a0, 0x1 */
-            addInstr(env, MIPSInstr_Shft(Mshft_SLL, True /* 32bit shift */,
-                                         a3, a0, MIPSRH_Imm(False, 0x1)));
-            /* sllv a3, a3, v0 */
-            addInstr(env, MIPSInstr_Shft(Mshft_SLL, True /* 32bit shift */,
-                                         a3, a3, MIPSRH_Reg(v0)));
-            /* srlv v1, a1, a2 */
-            addInstr(env, MIPSInstr_Shft(Mshft_SRL, True /* 32bit shift */,
-                                         v1, a1, MIPSRH_Reg(a2)));
-            /* andi v0, a2, 0x20 */
-            addInstr(env, MIPSInstr_Alu(Malu_AND, v0, a2,
-                                        MIPSRH_Imm(False, 0x20)));
-            /* or v1, a3, v1 */
-            addInstr(env, MIPSInstr_Alu(Malu_OR, v1, a3, MIPSRH_Reg(v1)));
-            /* srlv a2, a0, a2 */
-            addInstr(env, MIPSInstr_Shft(Mshft_SRL, True /* 32bit shift */,
-                             a2tmp, a0, MIPSRH_Reg(a2)));
-
-            /* movn v1, a2, v0 */
-            addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, v1, a2tmp, v0));
-            /* movn  a2, zero, v0 */
-            addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, a2tmp, zero, v0));
-            /* move v0, a2 */
-            addInstr(env, mk_iMOVds_RR(v0, a2tmp));
-
-            *rHi = v0;
-            *rLo = v1;
-            return;
+            addInstr(env, MIPSInstr_MoveCond(MSeleqz, r_dstHi, r_dstHi, r_srcLotmp));
+#else
+            /* movn    r_dstLo, r_dstHi, r_srcLo */
+            addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, r_dstLo, r_dstHi, r_srcLotmp));
+            /* movn    r_dstHi, zero, r_srcLo */
+            addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, r_dstHi, zero, r_srcLotmp));
 #endif
+            *rHi = r_dstHi;
+            *rLo = r_dstLo;
+            return;
          }
 
          case Iop_Shl64: {
@@ -5092,54 +5260,57 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
                jr   ra
                move v0,a2
             */
-            HReg a0, a1;
-            HReg a2 = newVRegI(env);
+            HReg r_srcLo, r_srcHi;
+            HReg r_shift = newVRegI(env);
             HReg a3 = newVRegI(env);
-            HReg v0 = newVRegI(env);
-            HReg v1 = newVRegI(env);
-            HReg zero = newVRegI(env);
+            HReg r_dstLo = newVRegI(env);
+            HReg r_dstHi = newVRegI(env);
+            HReg zero = hregMIPS_GPR0(env->mode64);
             MIPSRH *sa = NULL;
 
-            iselInt64Expr(&a1, &a0, env, e->Iex.Binop.arg1);
+            iselInt64Expr(&r_srcHi, &r_srcLo, env, e->Iex.Binop.arg1);
             sa = iselWordExpr_RH6u(env, e->Iex.Binop.arg2);
 
             if (sa->tag == Mrh_Imm) {
-               addInstr(env, MIPSInstr_LI(a2, sa->Mrh.Imm.imm16));
+               addInstr(env, MIPSInstr_LI(r_shift, sa->Mrh.Imm.imm16));
             }
             else {
-               addInstr(env, MIPSInstr_Alu(Malu_AND, a2, sa->Mrh.Reg.reg,
+               addInstr(env, MIPSInstr_Alu(Malu_AND, r_shift, sa->Mrh.Reg.reg,
                                            MIPSRH_Imm(False, 0x3f)));
             }
-
-            addInstr(env, MIPSInstr_LI(zero, 0x00000000));
-            /* nor v0, zero, a2 */
-            addInstr(env, MIPSInstr_Alu(Malu_NOR, v0, zero, MIPSRH_Reg(a2)));
-            /* srl a3, a0, 0x1 */
+            /* nor r_dstLo, zero, r_shift */
+            addInstr(env, MIPSInstr_Alu(Malu_NOR, r_dstLo, zero, MIPSRH_Reg(r_shift)));
+            /* srl a3, r_srcLo, 0x1 */
             addInstr(env, MIPSInstr_Shft(Mshft_SRL, True /* 32bit shift */,
-                                         a3, a0, MIPSRH_Imm(False, 0x1)));
-            /* srlv a3, a3, v0 */
+                                         a3, r_srcLo, MIPSRH_Imm(False, 0x1)));
+            /* srlv a3, a3, r_dstLo */
             addInstr(env, MIPSInstr_Shft(Mshft_SRL, True /* 32bit shift */,
-                                         a3, a3, MIPSRH_Reg(v0)));
-            /* sllv v1, a1, a2 */
+                                         a3, a3, MIPSRH_Reg(r_dstLo)));
+            /* sllv r_dstHi, r_srcHi, r_shift */
             addInstr(env, MIPSInstr_Shft(Mshft_SLL, True /* 32bit shift */,
-                                         v1, a1, MIPSRH_Reg(a2)));
-            /* andi v0, a2, 0x20 */
-            addInstr(env, MIPSInstr_Alu(Malu_AND, v0, a2,
+                                         r_dstHi, r_srcHi, MIPSRH_Reg(r_shift)));
+            /* or r_dstHi, a3, r_dstHi */
+            addInstr(env, MIPSInstr_Alu(Malu_OR, r_dstHi, a3, MIPSRH_Reg(r_dstHi)));
+            /* andi a3, r_shift, 0x20 */
+            addInstr(env, MIPSInstr_Alu(Malu_AND, a3, r_shift,
                                         MIPSRH_Imm(False, 0x20)));
-            /* or v1, a3, v1 */
-            addInstr(env, MIPSInstr_Alu(Malu_OR, v1, a3, MIPSRH_Reg(v1)));
-            /* sllv a2, a0, a2 */
+            /* sllv r_dstLo, r_srcLo, r_shift */
             addInstr(env, MIPSInstr_Shft(Mshft_SLL, True /* 32bit shift */,
-                                         a2, a0, MIPSRH_Reg(a2)));
+                                         r_dstLo, r_srcLo, MIPSRH_Reg(r_shift)));
+#if (__mips_isa_rev >= 6)
+            addInstr(env, MIPSInstr_MoveCond(MSeleqz, r_dstHi, r_dstHi, a3));
+            addInstr(env, MIPSInstr_MoveCond(MSelnez, r_shift, r_dstLo, a3));
+            addInstr(env, MIPSInstr_Alu(Malu_OR, r_dstHi, r_dstHi, MIPSRH_Reg(r_shift)));
 
-            /* movn v1, a2, v0 */
-            addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, v1, a2, v0));
-            /* movn a2, zero, v0 */
-            addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, a2, zero, v0));
-            addInstr(env, mk_iMOVds_RR(v0, a2));
-
-            *rHi = v1;
-            *rLo = v0;
+            addInstr(env, MIPSInstr_MoveCond(MSeleqz, r_dstLo, r_dstLo, a3));
+#else
+            /* movn r_dstHi, r_dstLo, a3 */
+            addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, r_dstHi, r_dstLo, a3));
+            /* movn r_dstLo, zero, a3 */
+            addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, r_dstLo, zero, a3));
+#endif
+            *rHi = r_dstHi;
+            *rLo = r_dstLo;
             return;
          }
 
@@ -5158,58 +5329,64 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
                jr   ra
                movn v1, a1, a0
             */
-            HReg a0, a1;
-            HReg a0tmp = newVRegI(env);
-            HReg a1tmp = newVRegI(env);
-            HReg a2 = newVRegI(env);
+            HReg r_srcHi, r_srcLo;
+            HReg r_srcHitmp = newVRegI(env);
+            HReg r_srcLotmp = newVRegI(env);
+            HReg r_shift = newVRegI(env);
             HReg a3 = newVRegI(env);
-            HReg v0 = newVRegI(env);
-            HReg v1 = newVRegI(env);
-            HReg zero = newVRegI(env);
+            HReg r_dstLo = newVRegI(env);
+            HReg r_dstHi = newVRegI(env);
+            HReg zero = hregMIPS_GPR0(env->mode64);
             MIPSRH *sa = NULL;
 
-            iselInt64Expr(&a1, &a0, env, e->Iex.Binop.arg1);
+            iselInt64Expr(&r_srcLo, &r_srcHi, env, e->Iex.Binop.arg1);
             sa = iselWordExpr_RH6u(env, e->Iex.Binop.arg2);
 
             if (sa->tag == Mrh_Imm) {
-               addInstr(env, MIPSInstr_LI(a2, sa->Mrh.Imm.imm16));
+               addInstr(env, MIPSInstr_LI(r_shift, sa->Mrh.Imm.imm16));
             }
             else {
-               addInstr(env, MIPSInstr_Alu(Malu_AND, a2, sa->Mrh.Reg.reg,
+               addInstr(env, MIPSInstr_Alu(Malu_AND, r_shift, sa->Mrh.Reg.reg,
                                            MIPSRH_Imm(False, 0x3f)));
             }
-
-            addInstr(env, MIPSInstr_LI(zero, 0x00000000));
-            /* nor  v0, zero, a2 */
-            addInstr(env, MIPSInstr_Alu(Malu_NOR, v0, zero, MIPSRH_Reg(a2)));
-            /* sll  a3, a1, 0x1 */
+            /* nor  r_dstLo, zero, r_shift */
+            addInstr(env, MIPSInstr_Alu(Malu_NOR, r_dstLo, zero, MIPSRH_Reg(r_shift)));
+            /* sll  a3, r_srcLo, 0x1 */
             addInstr(env, MIPSInstr_Shft(Mshft_SLL, True /* 32bit shift */,
-                                         a3, a1, MIPSRH_Imm(False, 0x1)));
-            /* sllv a3, a3, v0 */
+                                         a3, r_srcLo, MIPSRH_Imm(False, 0x1)));
+            /* sllv a3, a3, r_dstLo */
             addInstr(env, MIPSInstr_Shft(Mshft_SLL, True /* 32bit shift */,
-                                         a3, a3, MIPSRH_Reg(v0)));
-            /* srlv v0, a0, a2 */
+                                         a3, a3, MIPSRH_Reg(r_dstLo)));
+            /* srlv r_dstLo, r_srcHi, r_shift */
             addInstr(env, MIPSInstr_Shft(Mshft_SRL, True /* 32bit shift */,
-                                         v0, a0, MIPSRH_Reg(a2)));
-            /* srav v1, a1, a2 */
+                                         r_dstLo, r_srcHi, MIPSRH_Reg(r_shift)));
+            /* srav r_dstHi, r_srcLo, r_shift */
             addInstr(env, MIPSInstr_Shft(Mshft_SRA, True /* 32bit shift */,
-                                         v1, a1, MIPSRH_Reg(a2)));
-            /* andi a0, a2, 0x20 */
-            addInstr(env, MIPSInstr_Alu(Malu_AND, a0tmp, a2,
+                                         r_dstHi, r_srcLo, MIPSRH_Reg(r_shift)));
+            /* andi r_srcHi, r_shift, 0x20 */
+            addInstr(env, MIPSInstr_Alu(Malu_AND, r_srcHitmp, r_shift,
                                         MIPSRH_Imm(False, 0x20)));
-            /* sra a1, a1, 0x1f */
+            /* sra r_srcLo, r_srcLo, 0x1f */
             addInstr(env, MIPSInstr_Shft(Mshft_SRA, True /* 32bit shift */,
-                                         a1tmp, a1, MIPSRH_Imm(False, 0x1f)));
-            /* or   v0, a3, v0 */
-            addInstr(env, MIPSInstr_Alu(Malu_OR, v0, a3, MIPSRH_Reg(v0)));
+                                         r_srcLotmp, r_srcLo, MIPSRH_Imm(False, 0x1f)));
+            /* or   r_dstLo, a3, r_dstLo */
+            addInstr(env, MIPSInstr_Alu(Malu_OR, r_dstLo, a3, MIPSRH_Reg(r_dstLo)));
+#if (__mips_isa_rev >= 6)
+            addInstr(env, MIPSInstr_MoveCond(MSeleqz, r_dstLo, r_dstLo, r_srcHitmp));
+            addInstr(env, MIPSInstr_MoveCond(MSelnez, a3, r_dstHi, r_srcHitmp));
+            addInstr(env, MIPSInstr_Alu(Malu_OR, r_dstLo, r_dstLo, MIPSRH_Reg(a3)));
 
-            /* movn    v0, v1, a0 */
-            addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, v0, v1, a0tmp));
-            /* movn    v1, a1, a0 */
-            addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, v1, a1tmp, a0tmp));
-
-            *rHi = v1;
-            *rLo = v0;
+            addInstr(env, MIPSInstr_MoveCond(MSeleqz, r_dstHi, r_dstHi, r_srcHitmp));
+            addInstr(env, MIPSInstr_MoveCond(MSelnez, a3, r_srcLotmp, r_srcHitmp));
+            addInstr(env, MIPSInstr_Alu(Malu_OR, r_dstHi, r_dstHi, MIPSRH_Reg(a3)));
+#else
+            /* movn    r_dstLo, r_dstHi, r_srcHi */
+            addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, r_dstLo, r_dstHi, r_srcHitmp));
+            /* movn    r_dstHi, r_srcLo, r_srcHi */
+            addInstr(env, MIPSInstr_MoveCond(MMoveCond_movn, r_dstHi, r_srcLotmp, r_srcHitmp));
+#endif
+            *rHi = r_dstHi;
+            *rLo = r_dstLo;
             return;
          }
 
@@ -5316,6 +5493,21 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
 
             iselInt64Expr(&a_H, &a_L, env, e->Iex.Binop.arg1);
             iselInt64Expr(&b_H, &b_L, env, e->Iex.Binop.arg2);
+#if (__mips_isa_rev >= 6)
+            addInstr(env, MIPSInstr_Mulr6(True, True, True,
+                                          dst_H, a_H, b_L));
+            addInstr(env, MIPSInstr_Mulr6(True, True, True,
+                                          dst_L, b_H, a_L));
+            addInstr(env, MIPSInstr_Alu(Malu_ADD, dst_H, dst_H,
+                                        MIPSRH_Reg(dst_L)));
+            addInstr(env, MIPSInstr_Mulr6(False, True, False,
+                                          dst_L, a_L, b_L));
+
+            addInstr(env, MIPSInstr_Alu(Malu_ADD, dst_H, dst_H,
+                                        MIPSRH_Reg(dst_L)));
+            addInstr(env, MIPSInstr_Mulr6(False, True, True,
+                                          dst_L, a_L, b_L));
+#else
             addInstr(env, MIPSInstr_Mul(dst_H, a_H, b_L));
             addInstr(env, MIPSInstr_Mult(True, b_H, a_L));
             addInstr(env, MIPSInstr_Mflo(dst_L));
@@ -5327,6 +5519,7 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
             addInstr(env, MIPSInstr_Alu(Malu_ADD, dst_H, dst_H,
                                         MIPSRH_Reg(dst_L)));
             addInstr(env, MIPSInstr_Mflo(dst_L));
+#endif
             *rHi = dst_H;
             *rLo = dst_L;
             return;
@@ -5371,6 +5564,50 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
             addInstr(env, MIPSInstr_MsaElm(MSA_COPY_S, tmp1, dst_L, MSA_DFN_W | 0));
             *rHi = dst_H;
             *rLo = dst_L;
+            return;
+         }
+
+         case Iop_F64toI64S: {
+            HReg tmpD = newVRegD(env);
+            HReg valF;
+            HReg tLo  = newVRegI(env);
+            HReg tHi  = newVRegI(env);
+            MIPSAMode *am_addr;
+
+            if(mode64){
+              valF = iselFltExpr(env, e->Iex.Binop.arg2);
+            } else {
+              valF = iselDblExpr(env, e->Iex.Binop.arg2);
+            }
+
+            /* CVTLS tmpD, valF */
+            set_MIPS_rounding_mode(env, e->Iex.Binop.arg1);
+            addInstr(env, MIPSInstr_FpConvert(Mfp_CVTLD, tmpD, valF));
+            set_MIPS_rounding_default(env);
+
+            sub_from_sp(env, 16);  /* Move SP down 16 bytes */
+            am_addr = MIPSAMode_IR(0, StackPointer(mode64));
+
+            /* store as F64 */
+            addInstr(env, MIPSInstr_FpLdSt(False /*store */ , 8, tmpD,
+                                           am_addr));
+            /* load as 2xI32 */
+#if defined (_MIPSEL)
+            addInstr(env, MIPSInstr_Load(4, tLo, am_addr, mode64));
+            addInstr(env, MIPSInstr_Load(4, tHi, nextMIPSAModeFloat(am_addr),
+                                         mode64));
+#elif defined (_MIPSEB)
+            addInstr(env, MIPSInstr_Load(4, tHi, am_addr, mode64));
+            addInstr(env, MIPSInstr_Load(4, tLo, nextMIPSAModeFloat(am_addr),
+                                         mode64));
+#endif
+
+            /* Reset SP */
+            add_to_sp(env, 16);
+
+            *rHi = tHi;
+            *rLo = tLo;
+
             return;
          }
 
@@ -5619,9 +5856,15 @@ static void iselInt64Expr_wrk(HReg * rHi, HReg * rLo, ISelEnv * env, IRExpr * e)
    64-bit stuff. */
 static HReg iselFltExpr(ISelEnv * env, IRExpr * e)
 {
-   HReg r = iselFltExpr_wrk(env, e);
-   vassert(hregIsVirtual(r));
-   return r;
+    HReg r;
+    IRType ty = typeOfIRExpr(env->type_env, e);
+    if (ty == Ity_F32 || (ty == Ity_F64 && fp_mode64)) {
+      r = iselFltExpr_wrk(env, e);
+    } else {
+      r = iselDblExpr_wrk(env, e);
+      vassert(hregClass(r) == HRcFlt64);
+    }
+    return r;
 }
 
 /* DO NOT CALL THIS DIRECTLY */
@@ -5854,7 +6097,12 @@ static HReg iselFltExpr_wrk(ISelEnv * env, IRExpr * e)
                HReg valF = iselFltExpr(env, e->Iex.Binop.arg2);
 
                set_MIPS_rounding_mode(env, e->Iex.Binop.arg1);
+#if (__mips_isa_rev >= 6)
+               addInstr(env, MIPSInstr_FpConvert(Mfp_RINTS, valS, valF));
+#else
                addInstr(env, MIPSInstr_FpConvert(Mfp_CVTWS, valS, valF));
+               addInstr(env, MIPSInstr_FpConvert(Mfp_CVTSW, valS, valS));
+#endif
                set_MIPS_rounding_default(env);
                return valS;
             }
@@ -5864,7 +6112,13 @@ static HReg iselFltExpr_wrk(ISelEnv * env, IRExpr * e)
             HReg valF = iselFltExpr(env, e->Iex.Binop.arg2);
 
             set_MIPS_rounding_mode(env, e->Iex.Binop.arg1);
+#if (__mips_isa_rev >= 6)
+            addInstr(env, MIPSInstr_FpConvert(Mfp_RINTD, valS, valF));
+#else
             addInstr(env, MIPSInstr_FpConvert(Mfp_CVTLD, valS, valF));
+            addInstr(env, MIPSInstr_FpConvert(Mfp_CVTDL, valS, valS));
+
+#endif
             set_MIPS_rounding_default(env);
             return valS;
          }
@@ -5990,7 +6244,43 @@ static HReg iselFltExpr_wrk(ISelEnv * env, IRExpr * e)
             return r_dst;
           }
 
+#if (__mips_isa_rev >= 6)
+         case Iop_MaxNumF32: {
+            HReg src1 = iselFltExpr(env, e->Iex.Binop.arg1);
+            HReg src2 = iselFltExpr(env, e->Iex.Binop.arg2);
+            HReg dst = newVRegF(env);
+            addInstr(env, MIPSInstr_FpMinMax(Mfp_MAXS, dst,
+                                            src1, src2));
+            return dst;
+         }
 
+         case Iop_MaxNumF64: {
+            HReg src1 = iselFltExpr(env, e->Iex.Binop.arg1);
+            HReg src2 = iselFltExpr(env, e->Iex.Binop.arg2);
+            HReg dst = newVRegF(env);
+            addInstr(env, MIPSInstr_FpMinMax(Mfp_MAXD, dst,
+                                            src1, src2));
+            return dst;
+         }
+
+         case Iop_MinNumF32: {
+            HReg src1 = iselFltExpr(env, e->Iex.Binop.arg1);
+            HReg src2 = iselFltExpr(env, e->Iex.Binop.arg2);
+            HReg dst = newVRegF(env);
+            addInstr(env, MIPSInstr_FpMinMax(Mfp_MINS, dst,
+                                            src1, src2));
+            return dst;
+         }
+
+         case Iop_MinNumF64: {
+            HReg src1 = iselFltExpr(env, e->Iex.Binop.arg1);
+            HReg src2 = iselFltExpr(env, e->Iex.Binop.arg2);
+            HReg dst = newVRegF(env);
+            addInstr(env, MIPSInstr_FpMinMax(Mfp_MIND, dst,
+                                            src1, src2));
+            return dst;
+         }
+#endif
          default:
             break;
       }
@@ -6003,8 +6293,24 @@ static HReg iselFltExpr_wrk(ISelEnv * env, IRExpr * e)
          case Iop_MSubF32:
          case Iop_MSubF64: {
             Int op = 0;
+#if (__mips_isa_rev < 6)
             MSADFFlx type = 0;
+#endif
             switch (e->Iex.Qop.details->op) {
+#if (__mips_isa_rev >= 6)
+              case Iop_MAddF32:
+                  op = Mfp_MADDS;
+                  break;
+               case Iop_MAddF64:
+                  op = Mfp_MADDD;
+                  break;
+               case Iop_MSubF32:
+                  op = Mfp_MSUBS;
+                  break;
+               case Iop_MSubF64:
+                  op = Mfp_MSUBD;
+                  break;
+#else
                case Iop_MAddF32:
                   op = has_msa ? MSA_FMADD : Mfp_MADDS;
                   type = MSA_F_WH;
@@ -6021,6 +6327,7 @@ static HReg iselFltExpr_wrk(ISelEnv * env, IRExpr * e)
                   op = has_msa ? MSA_FMSUB : Mfp_MSUBD;
                   type = MSA_F_DW;
                   break;
+#endif
                default:
                   vassert(0);
             }
@@ -6029,7 +6336,12 @@ static HReg iselFltExpr_wrk(ISelEnv * env, IRExpr * e)
             HReg src1 = iselFltExpr(env, e->Iex.Qop.details->arg2);
             HReg src2 = iselFltExpr(env, e->Iex.Qop.details->arg3);
             HReg src3 = iselFltExpr(env, e->Iex.Qop.details->arg4);
-
+#if (__mips_isa_rev >= 6)
+            set_MIPS_rounding_mode(env, e->Iex.Qop.details->arg1);
+            addInstr(env, MIPSInstr_FpTernary(op, dst,
+                                              src3, src1, src2));
+            set_MIPS_rounding_default(env);
+#else
             if (has_msa) {
                addInstr(env, MIPSInstr_MsaElm(MSA_MOVE, src3, dst, 0));
                set_MIPS_rounding_mode_MSA(env, e->Iex.Qop.details->arg1);
@@ -6041,6 +6353,7 @@ static HReg iselFltExpr_wrk(ISelEnv * env, IRExpr * e)
                                                  src1, src2, src3));
                set_MIPS_rounding_default(env);
             }
+#endif
             return dst;
          }
 
@@ -6098,11 +6411,16 @@ static HReg iselFltExpr_wrk(ISelEnv * env, IRExpr * e)
       HReg r1 = iselFltExpr(env, e->Iex.ITE.iftrue);
       HReg r_cond = iselWordExpr_R(env, e->Iex.ITE.cond);
       HReg r_dst = newVRegF(env);
+#if (__mips_isa_rev >= 6)
+         addInstr(env, MIPSInstr_FpGpMove(MFpGpMove_mtc1, r_dst, r_cond));
+         addInstr(env, MIPSInstr_MoveCond(MFpSeld, r_dst, r0, r1));
+#else
       addInstr(env, MIPSInstr_FpUnary((ty == Ity_F64) ? Mfp_MOVD : Mfp_MOVS,
                                       r_dst, r0));
       addInstr(env, MIPSInstr_MoveCond((ty == Ity_F64) ? MFpMoveCond_movnd :
                                                          MFpMoveCond_movns,
                                        r_dst, r1, r_cond));
+#endif
       return r_dst;
    }
 
@@ -6210,7 +6528,13 @@ static HReg iselDblExpr_wrk(ISelEnv * env, IRExpr * e)
             HReg dst = newVRegD(env);
 
             set_MIPS_rounding_mode(env, e->Iex.Binop.arg1);
+#if (__mips_isa_rev >= 6)
+            addInstr(env, MIPSInstr_FpConvert(Mfp_RINTD, dst, src));
+#else
             addInstr(env, MIPSInstr_FpConvert(Mfp_CVTLD, dst, src));
+            addInstr(env, MIPSInstr_FpConvert(Mfp_CVTDL, dst, dst));
+
+#endif
             set_MIPS_rounding_default(env);
 
             return dst; 
@@ -6278,6 +6602,25 @@ static HReg iselDblExpr_wrk(ISelEnv * env, IRExpr * e)
             set_MIPS_rounding_default_MSA(env);
             return r_dst;
           }
+#if (__mips_isa_rev >= 6)
+         case Iop_MaxNumF64: {
+            HReg src1 = iselDblExpr(env, e->Iex.Binop.arg1);
+            HReg src2 = iselDblExpr(env, e->Iex.Binop.arg2);
+            HReg dst = newVRegD(env);
+            addInstr(env, MIPSInstr_FpMinMax(Mfp_MAXD, dst,
+                                            src1, src2));
+            return dst;
+         }
+
+         case Iop_MinNumF64: {
+            HReg src1 = iselDblExpr(env, e->Iex.Binop.arg1);
+            HReg src2 = iselDblExpr(env, e->Iex.Binop.arg2);
+            HReg dst = newVRegD(env);
+            addInstr(env, MIPSInstr_FpMinMax(Mfp_MIND, dst,
+                                            src1, src2));
+            return dst;
+         }
+#endif
 
          default:
             break;
@@ -6339,18 +6682,26 @@ static HReg iselDblExpr_wrk(ISelEnv * env, IRExpr * e)
    }
 
    if (e->tag == Iex_Qop) {
-      vassert(has_msa);
       switch (e->Iex.Qop.details->op) {
          case Iop_MAddF64:
          case Iop_MSubF64: {
             MSA3RFOp op = 0;
             switch (e->Iex.Qop.details->op) {
+#if (__mips_isa_rev >= 6)
+              case Iop_MAddF64:
+                  op = Mfp_MADDD;
+                  break;
+               case Iop_MSubF64:
+                  op = Mfp_MSUBD;
+                  break;
+#else
                case Iop_MAddF64:
                   op = MSA_FMADD;
                   break;
                case Iop_MSubF64:
                   op = MSA_FMSUB;
                   break;
+#endif
                default:
                   vassert(0);
             }
@@ -6358,11 +6709,51 @@ static HReg iselDblExpr_wrk(ISelEnv * env, IRExpr * e)
             HReg src1 = iselDblExpr(env, e->Iex.Qop.details->arg2);
             HReg src2 = iselDblExpr(env, e->Iex.Qop.details->arg3);
             HReg src3 = iselDblExpr(env, e->Iex.Qop.details->arg4);
+#if (__mips_isa_rev >= 6)
+            set_MIPS_rounding_mode(env, e->Iex.Qop.details->arg1);
+            addInstr(env, MIPSInstr_FpTernary(op, dst,
+                                              src3, src1, src2));
+            set_MIPS_rounding_default(env);
+#else
+            vassert(has_msa);
             addInstr(env, MIPSInstr_MsaElm(MSA_MOVE, src3, dst, 0));
             set_MIPS_rounding_mode_MSA(env, e->Iex.Qop.details->arg1);
             addInstr(env, MIPSInstr_Msa3RF(op, MSA_F_DW, dst, src1, src2));
             set_MIPS_rounding_default_MSA(env);
+#endif
             return dst;
+         }
+         case Iop_I64StoF64: {
+            HReg r_dst = newVRegD(env);
+            MIPSAMode *am_addr;
+            HReg tmp, fr_src;
+            if (mode64) {
+               tmp = newVRegF(env);
+               fr_src = iselWordExpr_R(env, e->Iex.Binop.arg2);
+               /* Move SP down 8 bytes */
+               sub_from_sp(env, 8);
+               am_addr = MIPSAMode_IR(0, StackPointer(mode64));
+
+               /* store as I64 */
+               addInstr(env, MIPSInstr_Store(8, am_addr, fr_src, mode64));
+
+               /* load as Ity_F64 */
+               addInstr(env, MIPSInstr_FpLdSt(True /*load */, 8, tmp, am_addr));
+
+               /* Reset SP */
+               add_to_sp(env, 8);
+            } else {
+               HReg Hi, Lo;
+               tmp = newVRegD(env);
+               iselInt64Expr(&Hi, &Lo, env, e->Iex.Binop.arg2);
+               tmp = mk_LoadRR32toFPR(env, Hi, Lo);  /* 2*I32 -> F64 */
+            }
+
+            set_MIPS_rounding_mode(env, e->Iex.Binop.arg1);
+            addInstr(env, MIPSInstr_FpConvert(Mfp_CVTDL, r_dst, tmp));
+            set_MIPS_rounding_default(env);
+
+            return r_dst;
          }
 
          default:
@@ -6378,10 +6769,14 @@ static HReg iselDblExpr_wrk(ISelEnv * env, IRExpr * e)
          HReg r1 = iselDblExpr(env, e->Iex.ITE.iftrue);
          HReg r_cond = iselWordExpr_R(env, e->Iex.ITE.cond);
          HReg r_dst = newVRegD(env);
-
+#if (__mips_isa_rev >= 6)
+         addInstr(env, MIPSInstr_FpGpMove(MFpGpMove_mtc1, r_dst, r_cond));
+         addInstr(env, MIPSInstr_MoveCond(MFpSeld, r_dst, r0, r1));
+#else
          addInstr(env, MIPSInstr_FpUnary(Mfp_MOVD, r_dst, r0));
          addInstr(env, MIPSInstr_MoveCond(MFpMoveCond_movnd, r_dst, r1,
                                             r_cond));
+#endif
          return r_dst;
       }
    }
@@ -6501,11 +6896,19 @@ static void iselStmt(ISelEnv * env, IRStmt * stmt)
          }
 
          if (ty == Ity_F64) {
-            HReg fr_src = iselFltExpr(env, stmt->Ist.Put.data);
-            MIPSAMode *am_addr = MIPSAMode_IR(stmt->Ist.Put.offset,
-                                              GuestStatePointer(mode64));
-            addInstr(env, MIPSInstr_FpLdSt(False /*store */ , 8, fr_src,
-                                           am_addr));
+            if (mode64) {
+              HReg fr_src = iselFltExpr(env, stmt->Ist.Put.data);
+              MIPSAMode *am_addr = MIPSAMode_IR(stmt->Ist.Put.offset,
+                                                GuestStatePointer(mode64));
+              addInstr(env, MIPSInstr_FpLdSt(False /*store */ , 8, fr_src,
+                                             am_addr));
+            } else {
+              HReg fr_src = iselDblExpr(env, stmt->Ist.Put.data);
+              MIPSAMode *am_addr = MIPSAMode_IR(stmt->Ist.Put.offset,
+                                                GuestStatePointer(mode64));
+              addInstr(env, MIPSInstr_FpLdSt(False /*store */ , 8, fr_src,
+                                             am_addr));
+            }
             return;
          }
          if (ty == Ity_V128) {

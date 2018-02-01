@@ -172,6 +172,7 @@ void LibVEX_GuestMIPS32_initialise( /*OUT*/ VexGuestMIPS32State * vex_state)
    vex_state->guest_COND = 0;
 
    vex_state->guest_CP0_status = 0;
+   vex_state->guest_CP0_Config5 = 0;
 
    vex_state->guest_LLaddr = 0xFFFFFFFF;
    vex_state->guest_LLdata = 0;
@@ -812,6 +813,50 @@ extern UInt mips_dirtyhelper_calculate_FCSR_fp64 ( void* gs, UInt fs, UInt ft,
       case DIVS:
           ASM_VOLATILE_BINARY64(div.s)
           break;
+#if defined(__mips_isa_rev) && (__mips_isa_rev >= 6)
+      case RINTS:
+         ASM_VOLATILE_UNARY64(rint.s)
+         break;
+      case RINTD:
+         ASM_VOLATILE_UNARY64(rint.d)
+         break;
+      case MAXS:
+          ASM_VOLATILE_BINARY64(max.s)
+          break;
+      case MAXD:
+          ASM_VOLATILE_BINARY64(max.d)
+          break;
+      case MINS:
+          ASM_VOLATILE_BINARY64(min.s)
+          break;
+      case MIND:
+          ASM_VOLATILE_BINARY64(min.d)
+          break;
+      case MAXAS:
+          ASM_VOLATILE_BINARY64(maxa.s)
+          break;
+      case MAXAD:
+          ASM_VOLATILE_BINARY64(maxa.d)
+          break;
+      case MINAS:
+          ASM_VOLATILE_BINARY64(mina.s)
+          break;
+      case MINAD:
+          ASM_VOLATILE_BINARY64(mina.d)
+          break;
+      case CMPAFS:
+          ASM_VOLATILE_BINARY64(cmp.af.s)
+          break;
+      case CMPAFD:
+          ASM_VOLATILE_BINARY64(cmp.af.d)
+          break;
+      case CMPSAFS:
+          ASM_VOLATILE_BINARY64(cmp.saf.s)
+          break;
+      case CMPSAFD:
+          ASM_VOLATILE_BINARY64(cmp.saf.d)
+          break;
+#endif
       default:
          vassert(0);
          break;

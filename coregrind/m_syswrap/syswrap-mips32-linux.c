@@ -656,40 +656,65 @@ PRE(sys_prctl)
       case VKI_PR_SET_FP_MODE:
       {
          VexArchInfo vai;
+         Int known_bits = VKI_PR_FP_MODE_FR | VKI_PR_FP_MODE_FRE;
          VG_(machine_get_VexArchInfo)(NULL, &vai);
          /* Reject unsupported modes */
-         if ((ARG2 & ~VKI_PR_FP_MODE_FR) ||
-             ((ARG2 & VKI_PR_FP_MODE_FR) &&
-              !VEX_MIPS_HOST_FP_MODE(vai.hwcaps))) {
+         if (ARG2 & ~known_bits) {
             SET_STATUS_Failure(VKI_EOPNOTSUPP);
-         } else {
-            if (!(VG_(threads)[tid].arch.vex.guest_CP0_status &
-                  MIPS_CP0_STATUS_FR) != !(ARG2 & VKI_PR_FP_MODE_FR)) {
-               ThreadId t;
-               for (t = 1; t < VG_N_THREADS; t++) {
-                  if (VG_(threads)[t].status != VgTs_Empty) {
-                     if (ARG2 & VKI_PR_FP_MODE_FR) {
-                        VG_(threads)[t].arch.vex.guest_CP0_status |=
+            return;
+         }
+         if ((ARG2 & VKI_PR_FP_MODE_FR) && !VEX_MIPS_HOST_FP_MODE(vai.hwcaps)) {
+            SET_STATUS_Failure(VKI_EOPNOTSUPP);
+            return;
+         }
+         if ((ARG2 & VKI_PR_FP_MODE_FRE) && !VEX_MIPS_CPU_HAS_MIPSR6(vai.hwcaps)) {
+            SET_STATUS_Failure(VKI_EOPNOTSUPP);
+            return;
+         }
+         if (!(ARG2 & VKI_PR_FP_MODE_FR) && VEX_MIPS_CPU_HAS_MIPSR6(vai.hwcaps)) {
+            SET_STATUS_Failure(VKI_EOPNOTSUPP);
+            return;
+         }
+
+         if ((!(VG_(threads)[tid].arch.vex.guest_CP0_status &
+             MIPS_CP0_STATUS_FR) != !(ARG2 & VKI_PR_FP_MODE_FR)) ||
+            (!(VG_(threads)[tid].arch.vex.guest_CP0_Config5 &
+             MIPS_CONF5_FRE) != !(ARG2 & VKI_PR_FP_MODE_FRE))) {
+            ThreadId t;
+            for (t = 1; t < VG_N_THREADS; t++) {
+               if (VG_(threads)[t].status != VgTs_Empty) {
+                  if (ARG2 & VKI_PR_FP_MODE_FRE) {
+                     VG_(threads)[t].arch.vex.guest_CP0_Config5 |=
+                        MIPS_CONF5_FRE;
+                  } else {
+                     VG_(threads)[t].arch.vex.guest_CP0_Config5 &=
+                        ~MIPS_CONF5_FRE;
+                  }
+                  if (ARG2 & VKI_PR_FP_MODE_FR) {
+                     VG_(threads)[t].arch.vex.guest_CP0_status |=
                         MIPS_CP0_STATUS_FR;
-                     } else {
-                        VG_(threads)[t].arch.vex.guest_CP0_status &=
+                  } else {
+                     VG_(threads)[t].arch.vex.guest_CP0_status &=
                         ~MIPS_CP0_STATUS_FR;
-                     }
                   }
                }
-               /* Discard all translations */
-               VG_(discard_translations)(0, 0xfffffffful, "prctl(PR_SET_FP_MODE)");
+            /* Discard all translations */
+            VG_(discard_translations)(0, 0xfffffffful, "prctl(PR_SET_FP_MODE)");
             }
-            SET_STATUS_Success(0);
+         SET_STATUS_Success(0);
          }
          break;
       }
       case VKI_PR_GET_FP_MODE:
+      {
+         UInt ret = 0;
          if (VG_(threads)[tid].arch.vex.guest_CP0_status & MIPS_CP0_STATUS_FR)
-            SET_STATUS_Success(VKI_PR_FP_MODE_FR);
-         else
-            SET_STATUS_Success(0);
+            ret |= VKI_PR_FP_MODE_FR;
+         if (VG_(threads)[tid].arch.vex.guest_CP0_Config5 & MIPS_CONF5_FRE)
+            ret |= VKI_PR_FP_MODE_FRE;
+         SET_STATUS_Success(ret);
          break;
+      }
       default:
          WRAPPER_PRE_NAME(linux, sys_prctl)(tid, layout, arrghs, status, flags);
          break;

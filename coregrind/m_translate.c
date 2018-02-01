@@ -1706,8 +1706,12 @@ Bool VG_(translate) ( ThreadId tid,
 
 #  if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
    ThreadArchState* arch = &VG_(threads)[tid].arch;
-   vex_abiinfo.guest_mips_fp_mode64 =
+   vex_abiinfo.guest_mips_fp_mode =
       !!(arch->vex.guest_CP0_status & MIPS_CP0_STATUS_FR);
+#  if defined(VGP_mips32_linux)
+   vex_abiinfo.guest_mips_fp_mode |=
+      (!!(arch->vex.guest_CP0_Config5 & MIPS_CONF5_FRE)) << 1;
+#  endif
    /* Compute guest__use_fallback_LLSC, overiding any settings of
       VG_(clo_fallback_llsc) that we know would cause the guest to
       fail (loop). */

@@ -1611,6 +1611,17 @@ void VG_(redir_initialise) ( void )
          (Addr)&VG_(mips64_linux_REDIR_FOR_index),
          complain_about_stripped_glibc_ldso
       );
+
+      add_hardwired_spec(
+         "ld-linux-mipsn8.so.1", "strlen",
+         (Addr)&VG_(mips64_linux_REDIR_FOR_strlen),
+         complain_about_stripped_glibc_ldso
+      );
+      add_hardwired_spec(
+         "ld-linux-mipsn8.so.1", "index",
+         (Addr)&VG_(mips64_linux_REDIR_FOR_index),
+         complain_about_stripped_glibc_ldso
+      );
    }
 
 #  elif defined(VGP_x86_solaris)

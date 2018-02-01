@@ -14,6 +14,7 @@ void printMem(char* s)
 
 int main ()
 {
+#if (__mips_isa_rev<6)
    printMem("PRE lwl");
    __asm__ volatile("move $a0, %0"       "\n\t"
                     "lw   $t0, 0($a0)"   "\n\t"
@@ -62,6 +63,6 @@ int main ()
                     : "a0", "t0", "t1", "t2", "t3", "cc", "memory"
                    );
    printMem("POST lwr");
-
+#endif
    return 0;
 }

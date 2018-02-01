@@ -15,6 +15,7 @@
 
 /* Determine FP mode based on sdc1 behavior
    returns 1 if FR = 1 mode is detected. */
+
 static int get_fp_mode(void) {
    unsigned long long result = 0;
    __asm__ volatile(
@@ -47,10 +48,15 @@ static void test(int* fr_prctl, int* fr_detected) {
    }
 
    printf("fr_prctl: %d, fr_detected: %d\n", *fr_prctl, *fr_detected);
-
+#if (__mips_isa_rev >= 6)
+   if ((*fr_prctl != *fr_detected) && ((*fr_prctl != 3) || (*fr_detected != 0))) {
+      fatal_error("fr_prctl != fr_detected");
+   }
+#else
    if (*fr_prctl != *fr_detected) {
       fatal_error("fr_prctl != fr_detected");
    }
+#endif
 }
 
 int main() {
@@ -61,11 +67,66 @@ int main() {
    /* FP64 */
    if (fr_prctl == 1) {
 
+#if (__mips_isa_rev >= 6)
+
+      unsigned int w;
+      unsigned long long l;
+
+      /* Change mode to FRE */
+      if (prctl(PR_SET_FP_MODE, 3) != 0) {
+         fatal_error("prctl(PR_SET_FP_MODE, 3) fails.");
+      }
+
+      printf("Write to odd, read from even... ");
+
+      w = 0x12345678;
+      l = 0xAAAAAAAABBBBBBBB;
+
+      __asm__ volatile (
+         "ldc1 $f0, 0(%1)  \n\t"
+         "mtc1 %0, $f1     \n\t"
+         "sdc1 $f0, 0(%1)  \n\t"
+         : : "r" (w), "r" (&l) : "memory", "$f0", "$f1"
+      );
+
+      if (l == 0x12345678BBBBBBBBull) printf("OK\n");
+         else printf ("Error: l = %llX\n", l);
+
+      printf("Write to even, read from odd... ");
+
+      w = 0xAAAAAAAA;
+      l = 0x12345678AAAAAAAA;
+
+      __asm__ volatile (
+         "ldc1 $f0, 0(%1)  \n\t"
+         "mfc1 %0, $f1     \n\t"
+         : "+r" (w) : "r" (&l) : "$f0", "$f1"
+      );
+
+      if (w == 0x12345678ul) printf("OK\n");
+         else printf ("Error: w = %X\n", w);
+
+      printf("Write to low part, check high part... ");
+
+      w = 0xBBBBBBBB;
+      l = 0x12345678AAAAAAAA;
+
+      __asm__ volatile (
+         "ldc1 $f0, 0(%1)  \n\t"
+         "mtc1 %0, $f0     \n\t"
+         "sdc1 $f0, 0(%1)  \n\t"
+         : : "r" (w), "r" (&l) : "memory", "$f0"
+      );
+
+      if (l == 0x12345678BBBBBBBBull) printf("OK\n");
+         else printf ("Error: l = %llX\n", l);
+
+#else
       /* Change mode to FP32 */
       if (prctl(PR_SET_FP_MODE, 0) != 0) {
          fatal_error("prctl(PR_SET_FP_MODE, 0) fails.");
       }
-
+#endif
       test(&fr_prctl, &fr_detected);
 
       /* Change back FP mode */

@@ -1,0 +1,3 @@
+prereq: (../../../tests/mips_features mipsr6)
+prog: MIPS32r6int
+vgopts: -q

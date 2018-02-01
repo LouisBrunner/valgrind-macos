@@ -5,9 +5,11 @@ typedef enum {
    DIVS,   DIVD,   MULS,   MULD,
    NEGS,   NEGD,   SQRTS,  SQRTD,
    SUBS,   SUBD,   RECIPS, RECIPD,
-   RSQRTS, RSQRTD, MSUBS,  MSUBD,
-   MADDS,  MADDD,  NMADDS, NMADDD,
-   NMSUBS, NMSUBD
+   RSQRTS, RSQRTD,
+#if (__mips_isa_rev < 6)
+   MSUBS,  MSUBD,  MADDS,  MADDD,
+   NMADDS, NMADDD, NMSUBS, NMSUBD
+#endif
 } flt_art_op_t;
 
 typedef enum {

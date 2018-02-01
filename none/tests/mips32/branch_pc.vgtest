@@ -1,0 +1,3 @@
+prereq: ../../../tests/mips_features fpu && (../../../tests/mips_features mipsr6)
+prog: branch_pc
+vgopts: -q

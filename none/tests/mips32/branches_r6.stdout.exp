@@ -1,0 +1,374 @@
+balc
+balc :: fffffffb, RSval: 0
+balc :: fffffffc, RSval: 1
+balc :: fffffffd, RSval: 2
+balc :: fffffffe, RSval: 3
+balc :: ffffffff, RSval: 4
+balc :: 5, RSval: 5
+balc :: 4, RSval: 6
+balc :: 3, RSval: 7
+balc :: 2, RSval: 8
+balc :: 1, RSval: 9
+bc
+bc :: fffffffb, RSval: a
+bc :: fffffffc, RSval: b
+bc :: fffffffd, RSval: c
+bc :: fffffffe, RSval: d
+bc :: ffffffff, RSval: e
+bc :: 5, RSval: f
+bc :: 4, RSval: 10
+bc :: 3, RSval: 11
+bc :: 2, RSval: 12
+bc :: 1, RSval: 13
+bgezalc
+bgezalc :: 6, RSval: 0
+bgezalc :: 7, RSval: 1
+bgezalc :: 7, RSval: ffffffff
+bgezalc :: 8, RSval: ffffffff
+bgezalc :: 9, RSval: fffffffe
+bgezalc :: a, RSval: ffffffff
+bgezalc :: c, RSval: 5
+bgezalc :: c, RSval: fffffffd
+bgezalc :: e, RSval: 7d
+bgezalc :: e, RSval: 80000000
+bgezalc :: f, RSval: ffffffff
+bgezalc :: 11, RSval: 256
+bgezalc :: 12, RSval: 55
+bgezalc :: 13, RSval: fff
+bgezalc :: 13, RSval: ffffffff
+bgezalc :: 14, RSval: ffffffff
+bgtzalc
+bgtzalc :: 5, RSval: 0
+bgtzalc :: 7, RSval: 1
+bgtzalc :: 7, RSval: ffffffff
+bgtzalc :: 8, RSval: ffffffff
+bgtzalc :: 9, RSval: fffffffe
+bgtzalc :: a, RSval: ffffffff
+bgtzalc :: c, RSval: 5
+bgtzalc :: c, RSval: fffffffd
+bgtzalc :: e, RSval: 7d
+bgtzalc :: e, RSval: 80000000
+bgtzalc :: f, RSval: ffffffff
+bgtzalc :: 11, RSval: 256
+bgtzalc :: 12, RSval: 55
+bgtzalc :: 13, RSval: fff
+bgtzalc :: 13, RSval: ffffffff
+bgtzalc :: 14, RSval: ffffffff
+blezalc
+blezalc :: 6, RSval: 0
+blezalc :: 6, RSval: 1
+blezalc :: 8, RSval: ffffffff
+blezalc :: 9, RSval: ffffffff
+blezalc :: a, RSval: fffffffe
+blezalc :: b, RSval: ffffffff
+blezalc :: b, RSval: 5
+blezalc :: d, RSval: fffffffd
+blezalc :: d, RSval: 7d
+blezalc :: f, RSval: 80000000
+blezalc :: 10, RSval: ffffffff
+blezalc :: 10, RSval: 256
+blezalc :: 11, RSval: 55
+blezalc :: 12, RSval: fff
+blezalc :: 14, RSval: ffffffff
+blezalc :: 15, RSval: ffffffff
+bltzalc
+bltzalc :: 5, RSval: 0
+bltzalc :: 6, RSval: 1
+bltzalc :: 8, RSval: ffffffff
+bltzalc :: 9, RSval: ffffffff
+bltzalc :: a, RSval: fffffffe
+bltzalc :: b, RSval: ffffffff
+bltzalc :: b, RSval: 5
+bltzalc :: d, RSval: fffffffd
+bltzalc :: d, RSval: 7d
+bltzalc :: f, RSval: 80000000
+bltzalc :: 10, RSval: ffffffff
+bltzalc :: 10, RSval: 256
+bltzalc :: 11, RSval: 55
+bltzalc :: 12, RSval: fff
+bltzalc :: 14, RSval: ffffffff
+bltzalc :: 15, RSval: ffffffff
+beqzalc
+beqzalc :: 6, RSval: 0
+beqzalc :: 6, RSval: 1
+beqzalc :: 7, RSval: ffffffff
+beqzalc :: 8, RSval: ffffffff
+beqzalc :: 9, RSval: fffffffe
+beqzalc :: a, RSval: ffffffff
+beqzalc :: b, RSval: 5
+beqzalc :: c, RSval: fffffffd
+beqzalc :: d, RSval: 7d
+beqzalc :: e, RSval: 80000000
+beqzalc :: f, RSval: ffffffff
+beqzalc :: 10, RSval: 256
+beqzalc :: 11, RSval: 55
+beqzalc :: 12, RSval: fff
+beqzalc :: 13, RSval: ffffffff
+beqzalc :: 14, RSval: ffffffff
+bnezalc
+bnezalc :: 5, RSval: 0
+bnezalc :: 7, RSval: 1
+bnezalc :: 8, RSval: ffffffff
+bnezalc :: 9, RSval: ffffffff
+bnezalc :: a, RSval: fffffffe
+bnezalc :: b, RSval: ffffffff
+bnezalc :: c, RSval: 5
+bnezalc :: d, RSval: fffffffd
+bnezalc :: e, RSval: 7d
+bnezalc :: f, RSval: 80000000
+bnezalc :: 10, RSval: ffffffff
+bnezalc :: 11, RSval: 256
+bnezalc :: 12, RSval: 55
+bnezalc :: 13, RSval: fff
+bnezalc :: 14, RSval: ffffffff
+bnezalc :: 15, RSval: ffffffff
+blezc
+blezc :: 1, RSval: 0
+blezc :: 7, RSval: 1
+blezc :: 3, RSval: ffffffff
+blezc :: 4, RSval: ffffffff
+blezc :: 5, RSval: fffffffe
+blezc :: 6, RSval: ffffffff
+blezc :: c, RSval: 5
+blezc :: 8, RSval: fffffffd
+blezc :: e, RSval: 7d
+blezc :: a, RSval: 80000000
+blezc :: b, RSval: ffffffff
+blezc :: 11, RSval: 256
+blezc :: 12, RSval: 55
+blezc :: 13, RSval: fff
+blezc :: f, RSval: ffffffff
+blezc :: 10, RSval: ffffffff
+bgezc
+bgezc :: 1, RSval: 0
+bgezc :: 2, RSval: 1
+bgezc :: 8, RSval: ffffffff
+bgezc :: 9, RSval: ffffffff
+bgezc :: a, RSval: fffffffe
+bgezc :: b, RSval: ffffffff
+bgezc :: 7, RSval: 5
+bgezc :: d, RSval: fffffffd
+bgezc :: 9, RSval: 7d
+bgezc :: f, RSval: 80000000
+bgezc :: 10, RSval: ffffffff
+bgezc :: c, RSval: 256
+bgezc :: d, RSval: 55
+bgezc :: e, RSval: fff
+bgezc :: 14, RSval: ffffffff
+bgezc :: 15, RSval: ffffffff
+bgtzc
+bgtzc :: 6, RSval: 0
+bgtzc :: 2, RSval: 1
+bgtzc :: 8, RSval: ffffffff
+bgtzc :: 9, RSval: ffffffff
+bgtzc :: a, RSval: fffffffe
+bgtzc :: b, RSval: ffffffff
+bgtzc :: 7, RSval: 5
+bgtzc :: d, RSval: fffffffd
+bgtzc :: 9, RSval: 7d
+bgtzc :: f, RSval: 80000000
+bgtzc :: 10, RSval: ffffffff
+bgtzc :: c, RSval: 256
+bgtzc :: d, RSval: 55
+bgtzc :: e, RSval: fff
+bgtzc :: 14, RSval: ffffffff
+bgtzc :: 15, RSval: ffffffff
+bgec
+bgec :: 6, RSval: 0, RTval: 1
+bgec :: 2, RSval: 1, RTval: 1
+bgec :: 3, RSval: ffffffff, RTval: ffffffff
+bgec :: 4, RSval: ffffffff, RTval: fffffffe
+bgec :: a, RSval: fffffffe, RTval: ffffffff
+bgec :: 6, RSval: ffffffff, RTval: ffffffff
+bgec :: 7, RSval: 5, RTval: 5
+bgec :: 8, RSval: fffffffd, RTval: fffffffc
+bgec :: 9, RSval: 7d, RTval: 7d
+bgec :: a, RSval: 80000000, RTval: 80000000
+bgec :: b, RSval: ffffffff, RTval: 80000000
+bgec :: c, RSval: 256, RTval: 256
+bgec :: d, RSval: 55, RTval: 55
+bgec :: e, RSval: fff, RTval: dd
+bgec :: 14, RSval: ffffffff, RTval: 5
+bgec :: 10, RSval: ffffffff, RTval: ffffffff
+bltc
+bltc :: 1, RSval: 0, RTval: 1
+bltc :: 7, RSval: 1, RTval: 1
+bltc :: 8, RSval: ffffffff, RTval: ffffffff
+bltc :: 9, RSval: ffffffff, RTval: fffffffe
+bltc :: 5, RSval: fffffffe, RTval: ffffffff
+bltc :: b, RSval: ffffffff, RTval: ffffffff
+bltc :: c, RSval: 5, RTval: 5
+bltc :: d, RSval: fffffffd, RTval: fffffffc
+bltc :: e, RSval: 7d, RTval: 7d
+bltc :: f, RSval: 80000000, RTval: 80000000
+bltc :: 10, RSval: ffffffff, RTval: 80000000
+bltc :: 11, RSval: 256, RTval: 256
+bltc :: 12, RSval: 55, RTval: 55
+bltc :: 13, RSval: fff, RTval: dd
+bltc :: f, RSval: ffffffff, RTval: 5
+bltc :: 15, RSval: ffffffff, RTval: ffffffff
+bltzc
+bltzc :: 6, RSval: 0
+bltzc :: 7, RSval: 1
+bltzc :: 3, RSval: ffffffff
+bltzc :: 4, RSval: ffffffff
+bltzc :: 5, RSval: fffffffe
+bltzc :: 6, RSval: ffffffff
+bltzc :: c, RSval: 5
+bltzc :: 8, RSval: fffffffd
+bltzc :: e, RSval: 7d
+bltzc :: a, RSval: 80000000
+bltzc :: b, RSval: ffffffff
+bltzc :: 11, RSval: 256
+bltzc :: 12, RSval: 55
+bltzc :: 13, RSval: fff
+bltzc :: f, RSval: ffffffff
+bltzc :: 10, RSval: ffffffff
+bgeuc
+bgeuc :: 6, RSval: 0, RTval: 1
+bgeuc :: 2, RSval: 1, RTval: 1
+bgeuc :: 3, RSval: ffffffff, RTval: ffffffff
+bgeuc :: 4, RSval: ffffffff, RTval: fffffffe
+bgeuc :: a, RSval: fffffffe, RTval: ffffffff
+bgeuc :: 6, RSval: ffffffff, RTval: ffffffff
+bgeuc :: 7, RSval: 5, RTval: 5
+bgeuc :: 8, RSval: fffffffd, RTval: fffffffc
+bgeuc :: 9, RSval: 7d, RTval: 7d
+bgeuc :: a, RSval: 80000000, RTval: 80000000
+bgeuc :: b, RSval: ffffffff, RTval: 80000000
+bgeuc :: c, RSval: 256, RTval: 256
+bgeuc :: d, RSval: 55, RTval: 55
+bgeuc :: e, RSval: fff, RTval: dd
+bgeuc :: f, RSval: ffffffff, RTval: 5
+bgeuc :: 10, RSval: ffffffff, RTval: ffffffff
+bltuc
+bltuc :: 1, RSval: 0, RTval: 1
+bltuc :: 7, RSval: 1, RTval: 1
+bltuc :: 8, RSval: ffffffff, RTval: ffffffff
+bltuc :: 9, RSval: ffffffff, RTval: fffffffe
+bltuc :: 5, RSval: fffffffe, RTval: ffffffff
+bltuc :: b, RSval: ffffffff, RTval: ffffffff
+bltuc :: c, RSval: 5, RTval: 5
+bltuc :: d, RSval: fffffffd, RTval: fffffffc
+bltuc :: e, RSval: 7d, RTval: 7d
+bltuc :: f, RSval: 80000000, RTval: 80000000
+bltuc :: 10, RSval: ffffffff, RTval: 80000000
+bltuc :: 11, RSval: 256, RTval: 256
+bltuc :: 12, RSval: 55, RTval: 55
+bltuc :: 13, RSval: fff, RTval: dd
+bltuc :: 14, RSval: ffffffff, RTval: 5
+bltuc :: 15, RSval: ffffffff, RTval: ffffffff
+beqc
+beqc :: 6, RSval: 0, RTval: 1
+beqc :: 2, RSval: 1, RTval: 1
+beqc :: 3, RSval: ffffffff, RTval: ffffffff
+beqc :: 9, RSval: ffffffff, RTval: fffffffe
+beqc :: a, RSval: fffffffe, RTval: ffffffff
+beqc :: 6, RSval: ffffffff, RTval: ffffffff
+beqc :: 7, RSval: 5, RTval: 5
+beqc :: d, RSval: fffffffd, RTval: fffffffc
+beqc :: 9, RSval: 7d, RTval: 7d
+beqc :: a, RSval: 80000000, RTval: 80000000
+beqc :: 10, RSval: ffffffff, RTval: 80000000
+beqc :: c, RSval: 256, RTval: 256
+beqc :: d, RSval: 55, RTval: 55
+beqc :: 13, RSval: fff, RTval: dd
+beqc :: 14, RSval: ffffffff, RTval: 5
+beqc :: 10, RSval: ffffffff, RTval: ffffffff
+bnec
+bnec :: 1, RSval: 0, RTval: 1
+bnec :: 7, RSval: 1, RTval: 1
+bnec :: 8, RSval: ffffffff, RTval: ffffffff
+bnec :: 4, RSval: ffffffff, RTval: fffffffe
+bnec :: 5, RSval: fffffffe, RTval: ffffffff
+bnec :: b, RSval: ffffffff, RTval: ffffffff
+bnec :: c, RSval: 5, RTval: 5
+bnec :: 8, RSval: fffffffd, RTval: fffffffc
+bnec :: e, RSval: 7d, RTval: 7d
+bnec :: f, RSval: 80000000, RTval: 80000000
+bnec :: b, RSval: ffffffff, RTval: 80000000
+bnec :: 11, RSval: 256, RTval: 256
+bnec :: 12, RSval: 55, RTval: 55
+bnec :: e, RSval: fff, RTval: dd
+bnec :: f, RSval: ffffffff, RTval: 5
+bnec :: 15, RSval: ffffffff, RTval: ffffffff
+beqzc
+beqzc :: 1, RSval: 0
+beqzc :: 7, RSval: 1
+beqzc :: 8, RSval: ffffffff
+beqzc :: 9, RSval: ffffffff
+beqzc :: a, RSval: fffffffe
+beqzc :: b, RSval: ffffffff
+beqzc :: c, RSval: 5
+beqzc :: d, RSval: fffffffd
+beqzc :: e, RSval: 7d
+beqzc :: f, RSval: 80000000
+beqzc :: 10, RSval: ffffffff
+beqzc :: 11, RSval: 256
+beqzc :: 12, RSval: 55
+beqzc :: 13, RSval: fff
+beqzc :: 14, RSval: ffffffff
+beqzc :: 15, RSval: ffffffff
+bnezc
+bnezc :: 6, RSval: 0
+bnezc :: 2, RSval: 1
+bnezc :: 3, RSval: ffffffff
+bnezc :: 4, RSval: ffffffff
+bnezc :: 5, RSval: fffffffe
+bnezc :: 6, RSval: ffffffff
+bnezc :: 7, RSval: 5
+bnezc :: 8, RSval: fffffffd
+bnezc :: 9, RSval: 7d
+bnezc :: a, RSval: 80000000
+bnezc :: b, RSval: ffffffff
+bnezc :: c, RSval: 256
+bnezc :: d, RSval: 55
+bnezc :: e, RSval: fff
+bnezc :: f, RSval: ffffffff
+bnezc :: 10, RSval: ffffffff
+bovc
+bovc :: 6, RSval: 0, RTval: 1
+bovc :: 7, RSval: 1, RTval: 1
+bovc :: 8, RSval: ffffffff, RTval: ffffffff
+bovc :: 9, RSval: ffffffff, RTval: fffffffe
+bovc :: a, RSval: fffffffe, RTval: ffffffff
+bovc :: b, RSval: ffffffff, RTval: ffffffff
+bovc :: c, RSval: 5, RTval: 5
+bovc :: d, RSval: fffffffd, RTval: fffffffc
+bovc :: e, RSval: 7d, RTval: 7d
+bovc :: a, RSval: 80000000, RTval: 80000000
+bovc :: b, RSval: ffffffff, RTval: 80000000
+bovc :: 11, RSval: 256, RTval: 256
+bovc :: 12, RSval: 55, RTval: 55
+bovc :: 13, RSval: fff, RTval: dd
+bovc :: 14, RSval: ffffffff, RTval: 5
+bovc :: 15, RSval: ffffffff, RTval: ffffffff
+bnvc
+bnvc :: 1, RSval: 0, RTval: 1
+bnvc :: 2, RSval: 1, RTval: 1
+bnvc :: 3, RSval: ffffffff, RTval: ffffffff
+bnvc :: 4, RSval: ffffffff, RTval: fffffffe
+bnvc :: 5, RSval: fffffffe, RTval: ffffffff
+bnvc :: 6, RSval: ffffffff, RTval: ffffffff
+bnvc :: 7, RSval: 5, RTval: 5
+bnvc :: 8, RSval: fffffffd, RTval: fffffffc
+bnvc :: 9, RSval: 7d, RTval: 7d
+bnvc :: f, RSval: 80000000, RTval: 80000000
+bnvc :: 10, RSval: ffffffff, RTval: 80000000
+bnvc :: c, RSval: 256, RTval: 256
+bnvc :: d, RSval: 55, RTval: 55
+bnvc :: e, RSval: fff, RTval: dd
+bnvc :: f, RSval: ffffffff, RTval: 5
+bnvc :: 10, RSval: ffffffff, RTval: ffffffff
+jialc
+jialc:: 1, RSval: 0, $t1 == $ra: 1
+jialc:: 4, RSval: 4, $t1 == $ra: 1
+jialc:: 1, RSval: 8, $t1 == $ra: 1
+jialc:: 1, RSval: 10, $t1 == $ra: 0
+jialc:: 0, RSval: 20, $t1 == $ra: 0
+jic
+jic:: 1, RSval: 0, $t1 == $ra: 0
+jic:: 4, RSval: 4, $t1 == $ra: 0
+jic:: 1, RSval: 8, $t1 == $ra: 0
+jic:: 1, RSval: 10, $t1 == $ra: 0
+jic:: 0, RSval: 20, $t1 == $ra: 0

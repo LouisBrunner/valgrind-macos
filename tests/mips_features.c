@@ -102,6 +102,12 @@ static int go(char *feature)
 #else
      return FEATURE_NOT_PRESENT;
 #endif
+   } else if (strcmp(feature, "mipsr6") == 0) {
+#if (__mips_isa_rev < 6)
+      return FEATURE_NOT_PRESENT;
+#else
+      return FEATURE_PRESENT;
+#endif
    } else {
       return UNRECOGNISED_FEATURE;
    }

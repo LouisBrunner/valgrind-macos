@@ -1,0 +1,6 @@
+fr_prctl: 1, fr_detected: 1
+Write to odd, read from even... OK
+Write to even, read from odd... OK
+Write to low part, check high part... OK
+fr_prctl: 3, fr_detected: 0
+fr_prctl: 1, fr_detected: 1

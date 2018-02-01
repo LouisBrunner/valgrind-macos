@@ -60,7 +60,8 @@ static void test1(void)
 static void test2()
 {
    __asm__ volatile("li $t0, 0x7fffffff\n\t"
-                    "addi $a0, $t0, 0x7fff\n\t"
+                    "li $a0, 0x7fff\n\t"
+                    "add $a0, $t0, $a0\n\t"
                      : : : "t0", "a0", "cc", "memory");
 }
 

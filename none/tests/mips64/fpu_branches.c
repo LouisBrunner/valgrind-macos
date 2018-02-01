@@ -3,7 +3,7 @@
 
 int main()
 {
-#if defined(__mips_hard_float)
+#if defined(__mips_hard_float) && (__mips_isa_rev < 6)
    int i = 0;
 
    printf("--- BC1F ---  if fs == ft then " \

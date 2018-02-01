@@ -18,6 +18,7 @@ int main()
 {
    int i, index;
    unsigned long long outLoad;
+#if (__mips_isa_rev < 6)
    for (i = 8; i < N * SOLL ; i++) {
       outLoad = 0;
       __asm__ __volatile__(
@@ -36,5 +37,6 @@ int main()
       printf("i: %d, memSrc[%d]: 0x%llx, outLoad: 0x%llx\n",
               i, index, memSrc[index], outLoad);
    }
+#endif
    return 0;
 }

@@ -143,6 +143,7 @@ int main(int argc, char **argv)
    TESTINST1("add $t0, $t1, $t2", 0,          0x80000000, t0, t1, t2);
    TESTINST1("add $t0, $t1, $t2", 0x7fffffff, 0x80000000, t0, t1, t2);
 
+#if (__mips_isa_rev < 6)
    printf("ADDI\n");
    TESTINST2("addi $t0, $t1, 0", 0, 0, t0, t1);
    TESTINST2("addi $t0, $t1, 1", 0, 1, t0, t1);
@@ -153,6 +154,7 @@ int main(int argc, char **argv)
    TESTINST2("addi $t0, $t1, 0", 0x80000000, 0, t0, t1);
    TESTINST2("addi $t0, $t1, 0", -1,         0,          t0, t1);
    TESTINST2("addi $t0, $t1, 0", 0x80000000, 0,          t0, t1);
+#endif
 
    printf("ADDIU\n");
    TESTINST2("addiu $t0, $t1, 0", 0, 0, t0, t1);
@@ -234,6 +236,7 @@ int main(int argc, char **argv)
    TESTINST3("clz  $t0, $t1", 0x10, t0, t1);
    TESTINST3("clz  $t0, $t1", 0xffffffff, t0, t1);
 
+#if (__mips_isa_rev < 6)
    printf("DIV\n");
    TESTINST3a("div  $t0, $t1", 0x6, 0x2, t0, t1);
    TESTINST3a("div  $t0, $t1", 0x7fffffff, 0x7fffffff, t0, t1);
@@ -248,6 +251,7 @@ int main(int argc, char **argv)
    TESTINST3a("divu  $t0, $t1", 0x1, 0xffffffff, t0, t1);
    TESTINST3a("divu  $t0, $t1", 0x2, 0x6, t0, t1);
    TESTINST3a("divu  $t0, $t1", 0x0, 0x2, t0, t1);
+#endif
 
 #if (__mips==32) && (__mips_isa_rev>=2)
    printf("EXT\n");
@@ -797,6 +801,7 @@ int main(int argc, char **argv)
    TESTINSN5LOAD("lw $t0, 34($t1)", 0, 34, t0);
    TESTINSN5LOAD("lw $t0, 38($t1)", 0, 38, t0);
 
+#if (__mips_isa_rev < 6)
    printf("LWL\n");
    TESTINSN5LOAD("lwl $t0, 3($t1)", 0, 3, t0);
    TESTINSN5LOAD("lwl $t0, 6($t1)", 0, 6, t0);
@@ -959,6 +964,7 @@ int main(int argc, char **argv)
    TESTINST3a("msubu  $t0, $t1", 0xffffffff, 0xffffffff, t0, t1);
    TESTINST3a("msubu  $t0, $t1", 0x7fffffff, 0x7fffffff, t0, t1);
    TESTINST3a("msubu  $t0, $t1", 0x0000ffff, 0x0000ffff, t0, t1);
+#endif
 
    printf("MUL\n");
    TESTINST1("mul $t0, $t1, $t2", 0x31415927, 0xffffffff, t0, t1, t2);
@@ -993,6 +999,7 @@ int main(int argc, char **argv)
    TESTINST1("mul $t0, $t1, $t2", 0x7fffffff, 0x7fffffff, t0, t1, t2);
    TESTINST1("mul $t0, $t1, $t2", 0x0000ffff, 0x0000ffff, t0, t1, t2);
 
+#if (__mips_isa_rev < 6)
    printf("MULT\n");
    TESTINST3a("mult  $t0, $t1", 0x31415927, 0xffffffff, t0, t1);
    TESTINST3a("mult  $t0, $t1", 0x31415927, 0xee00ee00, t0, t1);
@@ -1058,6 +1065,7 @@ int main(int argc, char **argv)
    TESTINST3a("multu  $t0, $t1", 0xffffffff, 0xffffffff, t0, t1);
    TESTINST3a("multu  $t0, $t1", 0x7fffffff, 0x7fffffff, t0, t1);
    TESTINST3a("multu  $t0, $t1", 0x0000ffff, 0x0000ffff, t0, t1);
+#endif
 
    printf("NOR\n");
    TESTINST1("nor $t0, $t1, $t2", 0x31415927, 0xffffffff, t0, t1, t2);
@@ -1763,6 +1771,7 @@ int main(int argc, char **argv)
    TESTINST2("xori $t0, $t1, 0x7fff", 0x7fffffff, 0x7fff, t0, t1);
    TESTINST2("xori $t0, $t1, 0x0000", 0x0000ffff, 0x0000, t0, t1);
 
+#if (__mips_isa_rev < 6)
    printf("MFHI MFLO\n");
    TESTINSN_HILO(0x31415927);
    TESTINSN_HILO(0);
@@ -1774,6 +1783,7 @@ int main(int argc, char **argv)
    TESTINSN_HILO(0x7fff);
    TESTINSN_HILO(0x0dd0);
    TESTINSN_HILO(0xff00);
+#endif
 
    return 0;
 }

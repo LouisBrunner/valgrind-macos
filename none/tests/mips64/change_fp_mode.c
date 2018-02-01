@@ -155,7 +155,7 @@ static void fatal_error(const char* msg) {
 }
 
 static void test(int* fr_prctl, int* fr_detected) {
-
+#if (__mips_isa_rev<6)
    *fr_prctl = prctl(PR_GET_FP_MODE);
    *fr_detected = get_fp_mode();
 
@@ -232,6 +232,7 @@ static void test(int* fr_prctl, int* fr_detected) {
    TEST_MOVE("movz.d $f0, $f2, $0");
    TEST_MOVE("movz.d $f0, $f1, $0");
    TEST_MOVE("movz.d $f1, $f2, $0");
+#endif
 }
 
 int main() {

@@ -8,9 +8,9 @@
       "move $"#RD", %1"         "\n\t"  \
       "b    end"#RSval          "\n\t"  \
       "nop"                     "\n\t"  \
-      "addi $"#RD", $"#RD", 5"  "\n\t"  \
+      "addiu $"#RD", $"#RD", 5"  "\n\t" \
       "end"#RSval":"            "\n\t"  \
-      "addi $"#RD", $"#RD", 1"  "\n\t"  \
+      "addiu $"#RD", $"#RD", 1"  "\n\t" \
       "move %0,     $"#RD       "\n\t"  \
       ".set reorder"            "\n\t"  \
       : "=r" (out)                      \
@@ -28,10 +28,10 @@
       ".set noreorder"          "\n\t"  \
       "move $"#RD", %1"         "\n\t"  \
       "b    end12"#RSval        "\n\t"  \
-      "addi $"#RD", $"#RD", 3"  "\n\t"  \
-      "addi $"#RD", $"#RD", 5"  "\n\t"  \
+      "addiu $"#RD", $"#RD", 3"  "\n\t" \
+      "addiu $"#RD", $"#RD", 5"  "\n\t" \
       "end12"#RSval":"          "\n\t"  \
-      "addi $"#RD", $"#RD", 3"  "\n\t"  \
+      "addiu $"#RD", $"#RD", 3"  "\n\t" \
       "move %0,     $"#RD       "\n\t"  \
       ".set reorder"            "\n\t"  \
       : "=r" (out)                      \
@@ -50,12 +50,12 @@
       "move $"#RD", %1"         "\n\t"    \
       "bal  end21"#RSval        "\n\t"    \
       "nop"                     "\n\t"    \
-      "addi $"#RD", $"#RD", 5"  "\n\t"    \
+      "addiu $"#RD", $"#RD", 5"  "\n\t"   \
       "b    r_end"#RSval        "\n\t"    \
       "nop"                     "\n\t"    \
-      "addi $"#RD", $"#RD", 1"  "\n\t"    \
+      "addiu $"#RD", $"#RD", 1"  "\n\t"   \
       "end21"#RSval":"          "\n\t"    \
-      "addi $"#RD", $"#RD", 1"  "\n\t"    \
+      "addiu $"#RD", $"#RD", 1"  "\n\t"   \
       "jr   $ra"                "\n\t"    \
       "nop"                     "\n\t"    \
       "r_end"#RSval":"          "\n\t"    \
@@ -78,12 +78,12 @@
       "dla  $t9,    end31"#RSval    "\n\t"  \
       "jal  $t9"                    "\n\t"  \
       "nop"                         "\n\t"  \
-      "addi $"#RD", $"#RD", 5"      "\n\t"  \
+      "addiu $"#RD", $"#RD", 5"      "\n\t" \
       "dla  $t9,    r_end11"#RSval  "\n\t"  \
       "j    $t9"                    "\n\t"  \
       "nop"                         "\n\t"  \
       "end31"#RSval":"              "\n\t"  \
-      "addi $"#RD", $"#RD", 1"      "\n\t"  \
+      "addiu $"#RD", $"#RD", 1"      "\n\t" \
       "jr   $ra"                    "\n\t"  \
       "nop"                         "\n\t"  \
       "r_end11"#RSval":"            "\n\t"  \
@@ -106,13 +106,13 @@
       "dla  $t9,    end41"#RSval  "\n\t"   \
       "jalr $t0,    $t9"          "\n\t"   \
       "nop"                       "\n\t"   \
-      "addi $"#RD", $"#RD", 5"    "\n\t"   \
+      "addiu $"#RD", $"#RD", 5"    "\n\t"  \
       "dla  $t9, r_end21"#RSval   "\n\t"   \
       "j    $t9"                  "\n\t"   \
       "nop"                       "\n\t"   \
-      "addi $"#RD", $"#RD", 1"    "\n\t"   \
+      "addiu $"#RD", $"#RD", 1"    "\n\t"  \
       "end41"#RSval":"            "\n\t"   \
-      "addi $"#RD", $"#RD", 1"    "\n\t"   \
+      "addiu $"#RD", $"#RD", 1"    "\n\t"  \
       "move $t9,    $t0"          "\n\t"   \
       "jr   $t9"                  "\n\t"   \
       "nop"                       "\n\t"   \
@@ -137,9 +137,9 @@
       "move        $"#RD", %3"                            "\n\t"        \
       instruction" $"#RS", $"#RT", end"instruction#RDval  "\n\t"        \
       "nop"                                               "\n\t"        \
-      "addi        $"#RD", $"#RD", 5"                     "\n\t"        \
+      "addiu        $"#RD", $"#RD", 5"                     "\n\t"       \
       "end"instruction#RDval":"                           "\n\t"        \
-      "addi        $"#RD", $"#RD", 1"                     "\n\t"        \
+      "addiu        $"#RD", $"#RD", 1"                     "\n\t"       \
       "move        %0,     $" #RD                         "\n\t"        \
       ".set reorder"                                      "\n\t"        \
       : "=r" (out)                                                      \
@@ -159,9 +159,9 @@
       "move        $"#RD", %2"                    "\n\t"      \
       instruction" $"#RS", end"instruction#RDval  "\n\t"      \
       "nop"                                       "\n\t"      \
-      "addi        $"#RD", $"#RD", 5"             "\n\t"      \
+      "addiu        $"#RD", $"#RD", 5"             "\n\t"     \
       "end"instruction#RDval":"                   "\n\t"      \
-      "addi        $"#RD", $"#RD", 1"             "\n\t"      \
+      "addiu        $"#RD", $"#RD", 1"             "\n\t"     \
       "move        %0,     $"#RD                  "\n\t"      \
       ".set        reorder"                       "\n\t"      \
       : "=r" (out)                                            \
@@ -181,11 +181,11 @@
       "move        $"#RS", %1"                      "\n\t"   \
       instruction" $"#RS", end21"instruction#RDval  "\n\t"   \
       "nop"                                         "\n\t"   \
-      "addi        $"#RD", $"#RD", 5"               "\n\t"   \
+      "addiu        $"#RD", $"#RD", 5"               "\n\t"  \
       "b           r_end"instruction#RDval          "\n\t"   \
       "nop"                                         "\n\t"   \
       "end21"instruction#RDval":"                   "\n\t"   \
-      "addi        $"#RD", $"#RD", 1"               "\n\t"   \
+      "addiu        $"#RD", $"#RD", 1"               "\n\t"  \
       "jr          $ra"                             "\n\t"   \
       "r_end"instruction#RDval":"                   "\n\t"   \
       "move        %0, $"#RD                        "\n\t"   \
@@ -207,10 +207,10 @@
       "move        $"#RT", %2"                            "\n\t"        \
       "move        $"#RD", %3"                            "\n\t"        \
       instruction" $"#RS", $"#RT", end"instruction#RDval  "\n\t"        \
-      "addi        $"#RD", $"#RD", 3"                     "\n\t"        \
-      "addi        $"#RD", $"#RD", 5"                     "\n\t"        \
+      "addiu        $"#RD", $"#RD", 3"                     "\n\t"       \
+      "addiu        $"#RD", $"#RD", 5"                     "\n\t"       \
       "end"instruction#RDval":"                           "\n\t"        \
-      "addi        $"#RD", $"#RD", 1"                     "\n\t"        \
+      "addiu        $"#RD", $"#RD", 1"                     "\n\t"       \
       "move        %0, $"#RD                              "\n\t"        \
       ".set        reorder"                               "\n\t"        \
       : "=r" (out)                                                      \
@@ -229,10 +229,10 @@
       "move        $"#RS", %1"                    "\n\t"     \
       "move        $"#RD", %2"                    "\n\t"     \
       instruction" $"#RS", end"instruction#RDval  "\n\t"     \
-      "addi        $"#RD", $"#RD", 3"             "\n\t"     \
-      "addi        $"#RD", $"#RD", 5"             "\n\t"     \
+      "addiu        $"#RD", $"#RD", 3"             "\n\t"    \
+      "addiu        $"#RD", $"#RD", 5"             "\n\t"    \
       "end"instruction#RDval":"                   "\n\t"     \
-      "addi        $"#RD", $"#RD", 1"             "\n\t"     \
+      "addiu        $"#RD", $"#RD", 1"             "\n\t"    \
       "move        %0,     $"#RD                  "\n\t"     \
       ".set        reorder"                       "\n\t"     \
       : "=r" (out)                                           \
@@ -251,12 +251,12 @@
       "move        $"#RD", %2"                      "\n\t"   \
       "move        $"#RS", %1"                      "\n\t"   \
       instruction" $"#RS", end21"instruction#RDval  "\n\t"   \
-      "addi        $"#RD", $"#RD", 3"               "\n\t"   \
-      "addi        $"#RD", $"#RD", 5"               "\n\t"   \
+      "addiu        $"#RD", $"#RD", 3"               "\n\t"  \
+      "addiu        $"#RD", $"#RD", 5"               "\n\t"  \
       "b           r_end"instruction#RDval          "\n\t"   \
       "nop"                                         "\n\t"   \
       "end21"instruction#RDval":"                   "\n\t"   \
-      "addi        $"#RD", $"#RD", 1"               "\n\t"   \
+      "addiu        $"#RD", $"#RD", 1"               "\n\t"  \
       "jr          $ra"                             "\n\t"   \
       "nop"                                         "\n\t"   \
       "r_end"instruction#RDval":"                   "\n\t"   \
@@ -273,6 +273,7 @@
 
 int main()
 {
+
    printf("b\n");
    TESTINST1(0,  2);
    TESTINST1(1,  3);
@@ -483,7 +484,7 @@ int main()
    TESTINST5("bltz", 13, 0xfff,      16, 17);
    TESTINST5("bltz", 14, -1,         2,  25);
    TESTINST5("bltz", 15, -1,         25, 24);
-
+#if (__mips_isa_rev < 6)
    printf("--- BGEZAL ---  if RSval >= 0 then " \
           "out = RDval + 6 else out = RDval + 5\n");
    TESTINST6("bgezal", 0,  0,          2,  3);
@@ -521,7 +522,7 @@ int main()
    TESTINST6("bltzal", 13, 0xfff,      16, 17);
    TESTINST6("bltzal", 14, -1,         2,  25);
    TESTINST6("bltzal", 15, -1,         25, 24);
-
+#endif
    printf("--- BNEZ ---  if RSval != 0 then " \
           "out = RDval + 1 else out = RDval + 6\n");
    TESTINST5("bnez", 0,  0,          2,  3);
@@ -540,7 +541,7 @@ int main()
    TESTINST5("bnez", 13, 0xfff,      16, 17);
    TESTINST5("bnez", 14, -1,         2,  25);
    TESTINST5("bnez", 15, -1,         25, 24);
-
+#if (__mips_isa_rev < 6)
    printf("--- BEQL ---  if RSval == RTval then " \
           "out = RDval + 4 else out = RDval + 6\n");
    TESTINST4l("beql", 0,  0,          1,          2,  3,  4);
@@ -711,7 +712,7 @@ int main()
    TESTINST4l("bnel", 13, 0xfff,      0xdd,       16, 17, 18);
    TESTINST4l("bnel", 14, -1,         0x5,        2,  25, 24);
    TESTINST4l("bnel", 15, -1,         -1,         25, 24, 7);
-
+#endif
    printf("j, jal, jr\n");
    TESTINST3j(0,  2);
    TESTINST3j(1,  3);

@@ -2,6 +2,7 @@
 #include "const.h"
 #include "macro_int.h"
 
+#if (__mips_isa_rev < 6)
 typedef enum {
    ADD=0,  ADDI,   ADDIU,  ADDU,
    CLO,    CLZ,    DADD,   DADDI,
@@ -14,6 +15,17 @@ typedef enum {
    SLTI,   SLTIU,  SLTU,   SUB,
    SUBU
 } arithmetic_op;
+#else
+typedef enum {
+   ADD=0,  ADDIU,  ADDU,
+   CLO,    CLZ,    DCLO,   DCLZ,
+   DADD,   DADDIU, DADDU,
+   DSUB,   DSUBU,  SUB,    SUBU,
+   SEB,    SEH,
+   SLT,    SLTI,   SLTIU,  SLTU
+} arithmetic_op;
+
+#endif
 
 int main()
 {
@@ -32,6 +44,7 @@ int main()
                                           t0, t1, t2);
                break;
 
+#if (__mips_isa_rev < 6)
             case ADDI:
                /* If GPR rs does not contain a sign-extended 32-bit
                   value (bits 63..31 equal), then the result of the operation
@@ -41,7 +54,7 @@ int main()
                TEST2("addi $a0, $a1, 0x0",    reg_val1[i], 0x0,    a0, a1);
                TEST2("addi $s0, $s1, 0x23",   reg_val1[i], 0x23,   s0, s1);
                break;
-
+#endif
             case ADDIU:
                /* If GPR rs does not contain a sign-extended 32-bit
                   value (bits 63..31 equal), then the result of the operation
@@ -81,7 +94,7 @@ int main()
                TEST1("dadd $t0, $t1, $t2", reg_val1[i], reg_val1[N-i-1],
                                            t0, t1, t2);
                break;
-
+#if (__mips_isa_rev < 6)
             case DADDI:
                /* If the addition results in 64-bit 2âs complement arithmetic
                   overflow, then the destination register is not modified and
@@ -95,7 +108,7 @@ int main()
                TEST2("daddi $a0, $a1, 0x0",    reg_val2[i], 0x0,    a0, a1);
                TEST2("daddi $s0, $s1, 0x23",   reg_val2[i], 0x23,   s0, s1);
                break;
-
+#endif
             case DADDIU:
                /* No Integer Overflow exception occurs under any
                   circumstances. */
@@ -129,7 +142,7 @@ int main()
                TEST3("dclz $t0, $t1", reg_val1[i], t0, t1);
                TEST3("dclz $v0, $v1", reg_val2[i], v0, v1);
                break;
-
+#if (__mips_isa_rev < 6)
             case DDIV:
                /* If the divisor in GPR rt is zero, the arithmetic result value
                   is UNPREDICTABLE. */
@@ -185,7 +198,7 @@ int main()
                TEST4("dmultu $t0, $t1", reg_val1[i], reg_val1[N-i-1], t0, t1);
                TEST4("dmultu $v0, $v1", reg_val2[i], reg_val2[N-i-1], v0, v1);
                break;
-
+#endif
             case DSUB:
                /* If the subtraction results in 64-bit 2âs complement
                   arithmetic overflow, then the destination register is not
@@ -202,7 +215,7 @@ int main()
                TEST1("dsubu $s0, $s1, $s2", reg_val2[i], reg_val2[N-i-1],
                                             s0, s1, s2);
                break;
-
+#if (__mips_isa_rev < 6)
             case MADD:
                /* If GPRs rs or rt do not contain sign-extended 32-bit
                   values (bits 63..31 equal), then the results of the operation
@@ -272,7 +285,7 @@ int main()
                TEST1("movz $s0, $s1, $s2", reg_val2[i], reg_val2[N-i-1],
                                            s0, s1, s2);
                break;
-
+#endif
             case SEB:
 #if (__mips==64) && (__mips_isa_rev>=2)
                /* If GPR rt does not contain a sign-extended 32-bit
@@ -349,7 +362,6 @@ int main()
                TEST1("subu $t0, $t1, $t2", reg_val1[i], reg_val1[N-i-1],
                                            t0, t1, t2);
                break;
-
             default:
                printf("Error!\n");
                break;

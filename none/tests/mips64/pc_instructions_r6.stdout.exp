@@ -1,0 +1,39 @@
+addiupc
+addiupc :: out - ra 0, RSval 0x00000000
+addiupc :: out - ra 4, RSval 0x00000004
+addiupc :: out - ra 10, RSval 0x00000010
+addiupc :: out - ra 40, RSval 0x00000040
+addiupc :: out - ra 100, RSval 0x00000100
+addiupc :: out - ra 400, RSval 0x00000400
+addiupc :: out - ra 1000, RSval 0x00001000
+addiupc :: out - ra 4000, RSval 0x00004000
+
+aluipc
+aluipc :: out - ra 20000000, RSval 0x00000000
+aluipc :: out - ra 20040000, RSval 0x00000004
+aluipc :: out - ra 20100000, RSval 0x00000010
+aluipc :: out - ra 20400000, RSval 0x00000040
+aluipc :: out - ra 21000000, RSval 0x00000100
+aluipc :: out - ra 24000000, RSval 0x00000400
+aluipc :: out - ra 30000000, RSval 0x00001000
+aluipc :: out - ra 60000000, RSval 0x00004000
+
+auipc
+auipc :: out - ra 0, RSval 0x00000000
+auipc :: out - ra 40000, RSval 0x00000004
+auipc :: out - ra 100000, RSval 0x00000010
+auipc :: out - ra 400000, RSval 0x00000040
+auipc :: out - ra 1000000, RSval 0x00000100
+auipc :: out - ra 4000000, RSval 0x00000400
+auipc :: out - ra 10000000, RSval 0x00001000
+auipc :: out - ra 40000000, RSval 0x00004000
+
+lwpc
+lwpc :: out: 0x25
+lwpc :: out: 0x25
+lwpc :: out: 0x25
+lwpc :: out: 0x25
+lwpc :: out: 0x25
+lwpc :: out: 0x25
+lwpc :: out: 0x25
+lwpc :: out: 0x25

@@ -1,0 +1,171 @@
+sb
+sb $t0, 3($t1) :: RTval: 0x0, out: 0x0
+sb $t0, 3($t1) :: RTval: 0x0, out: 0x0
+sb $t0, 5($t1) :: RTval: 0x31415927, out: 0x27
+sb $t0, 5($t1) :: RTval: 0x31415927, out: 0x3000027
+sb $t0, 7($t1) :: RTval: 0x7fffffff, out: 0xff
+sb $t0, 7($t1) :: RTval: 0x7fffffff, out: 0x3ff
+sb $t0, 1($t1) :: RTval: 0x80000000, out: 0x0
+sb $t0, 1($t1) :: RTval: 0x80000000, out: 0x1f00
+sb $t0, 2($t1) :: RTval: 0x80000000, out: 0x27000000
+sb $t0, 2($t1) :: RTval: 0x80000000, out: 0x27000000
+sb $t0, 6($t1) :: RTval: 0x7fffffff, out: 0xffff
+sb $t0, 6($t1) :: RTval: 0x7fffffff, out: 0x3ffff
+sb $t0, 11($t1) :: RTval: 0x7fffffff, out: 0xff
+sb $t0, 11($t1) :: RTval: 0x7fffffff, out: 0xffffffff
+sb $t0, 8($t1) :: RTval: 0xffffffff, out: 0xff0000ff
+sb $t0, 8($t1) :: RTval: 0xffffffff, out: 0xff0000ff
+sb $t0, 0($t1) :: RTval: 0x31415927, out: 0x27
+sb $t0, 0($t1) :: RTval: 0x31415927, out: 0x27
+sb $t0, 0($t1) :: RTval: 0xdd00000, out: 0x0
+sb $t0, 0($t1) :: RTval: 0xdd00000, out: 0x0
+sb $t0, 0($t1) :: RTval: 0x28f, out: 0x8f
+sb $t0, 0($t1) :: RTval: 0x28f, out: 0x8f
+sb $t0, 0($t1) :: RTval: 0xfffffd71, out: 0x71
+sb $t0, 0($t1) :: RTval: 0xfffffd71, out: 0x71
+sb $t0, 0($t1) :: RTval: 0xf, out: 0xf
+sb $t0, 0($t1) :: RTval: 0xf, out: 0xf
+sb $t0, 0($t1) :: RTval: 0x1, out: 0x1
+sb $t0, 0($t1) :: RTval: 0x1, out: 0x1
+sb $t0, 0($t1) :: RTval: 0x35, out: 0x35
+sb $t0, 0($t1) :: RTval: 0x35, out: 0x35
+sb $t0, 2($t1) :: RTval: 0xffffffff, out: 0x270000ff
+sb $t0, 2($t1) :: RTval: 0xffffffff, out: 0x270000ff
+sb $t0, 2($t1) :: RTval: 0xffffffff, out: 0x270000ff
+sb $t0, 2($t1) :: RTval: 0xffffffff, out: 0x270000ff
+sb $t0, 31($t1) :: RTval: 0xffffffff, out: 0xffffffff
+sb $t0, 31($t1) :: RTval: 0xffffffff, out: 0x343f3eff
+sb $t0, 35($t1) :: RTval: 0xffffffff, out: 0xff
+sb $t0, 35($t1) :: RTval: 0xffffffff, out: 0x353d3cff
+sb $t0, 41($t1) :: RTval: 0x31415927, out: 0x27
+sb $t0, 41($t1) :: RTval: 0x31415927, out: 0x3a363a27
+sb $t0, 42($t1) :: RTval: 0x7fffffff, out: 0xff
+sb $t0, 42($t1) :: RTval: 0x7fffffff, out: 0x3b3a36ff
+sb $t0, 45($t1) :: RTval: 0x80000000, out: 0x0
+sb $t0, 45($t1) :: RTval: 0x80000000, out: 0x453b3700
+sb $t0, 51($t1) :: RTval: 0x28f, out: 0x8f
+sb $t0, 51($t1) :: RTval: 0x28f, out: 0x464d468f
+MEM1:
+0xff0035, 0xffff2700, 0xff0000ff, 0x0
+0x0, 0x0, 0x0, 0xff000000
+0xffffffff, 0x0, 0xff2700, 0x0
+0x8f000000, 0x0, 0x0, 0x0
+MEM:
+0xff0035, 0xffff2700, 0xff0000ff, 0xffffffff
+0x232f2e2f, 0x242c2b2b, 0x252a2e2b, 0xff2d2d2a
+0xff343f3e, 0x3e353d3c, 0x36ff273b, 0x3b37003a
+0x8f4f4e45, 0x4e464d46, 0x474d474c, 0x4a484a4c
+sh
+sh $t0, 1($t1) :: RTval: 0x0, out: 0x0
+sh $t0, 1($t1) :: RTval: 0x0, out: 0x120000
+sh $t0, 3($t1) :: RTval: 0x31415927, out: 0x5927
+sh $t0, 3($t1) :: RTval: 0x31415927, out: 0x5927
+sh $t0, 5($t1) :: RTval: 0x7fffffff, out: 0xffff
+sh $t0, 5($t1) :: RTval: 0x7fffffff, out: 0x300ffff
+sh $t0, 7($t1) :: RTval: 0x80000000, out: 0x0
+sh $t0, 7($t1) :: RTval: 0x80000000, out: 0x0
+sh $t0, 9($t1) :: RTval: 0x80000000, out: 0x0
+sh $t0, 9($t1) :: RTval: 0x80000000, out: 0xff000000
+sh $t0, 6($t1) :: RTval: 0x7fffffff, out: 0xffff
+sh $t0, 6($t1) :: RTval: 0x7fffffff, out: 0xffff
+sh $t0, 11($t1) :: RTval: 0x7fffffff, out: 0xffff
+sh $t0, 11($t1) :: RTval: 0x7fffffff, out: 0xffffffff
+sh $t0, 8($t1) :: RTval: 0xffffffff, out: 0xff00ffff
+sh $t0, 8($t1) :: RTval: 0xffffffff, out: 0xff00ffff
+sh $t0, 0($t1) :: RTval: 0x31415927, out: 0x27005927
+sh $t0, 0($t1) :: RTval: 0x31415927, out: 0x27005927
+sh $t0, 0($t1) :: RTval: 0xdd00000, out: 0x27000000
+sh $t0, 0($t1) :: RTval: 0xdd00000, out: 0x27000000
+sh $t0, 0($t1) :: RTval: 0x28f, out: 0x2700028f
+sh $t0, 0($t1) :: RTval: 0x28f, out: 0x2700028f
+sh $t0, 0($t1) :: RTval: 0xfffffd71, out: 0x2700fd71
+sh $t0, 0($t1) :: RTval: 0xfffffd71, out: 0x2700fd71
+sh $t0, 0($t1) :: RTval: 0xf, out: 0x2700000f
+sh $t0, 0($t1) :: RTval: 0xf, out: 0x2700000f
+sh $t0, 0($t1) :: RTval: 0x1, out: 0x27000001
+sh $t0, 0($t1) :: RTval: 0x1, out: 0x27000001
+sh $t0, 0($t1) :: RTval: 0x35, out: 0x27000035
+sh $t0, 0($t1) :: RTval: 0x35, out: 0x27000035
+sh $t0, 2($t1) :: RTval: 0xffffffff, out: 0xff59ffff
+sh $t0, 2($t1) :: RTval: 0xffffffff, out: 0xff59ffff
+sh $t0, 2($t1) :: RTval: 0xffffffff, out: 0xff59ffff
+sh $t0, 2($t1) :: RTval: 0xffffffff, out: 0xff59ffff
+sh $t0, 31($t1) :: RTval: 0xffffffff, out: 0xffff
+sh $t0, 31($t1) :: RTval: 0xffffffff, out: 0x343fffff
+sh $t0, 35($t1) :: RTval: 0xffffffff, out: 0xffff
+sh $t0, 35($t1) :: RTval: 0xffffffff, out: 0x353dffff
+sh $t0, 41($t1) :: RTval: 0x31415927, out: 0x5927
+sh $t0, 41($t1) :: RTval: 0x31415927, out: 0x3a365927
+sh $t0, 47($t1) :: RTval: 0x7fffffff, out: 0xffff
+sh $t0, 47($t1) :: RTval: 0x7fffffff, out: 0x4f4effff
+sh $t0, 49($t1) :: RTval: 0x80000000, out: 0x0
+sh $t0, 49($t1) :: RTval: 0x80000000, out: 0x46450000
+sh $t0, 51($t1) :: RTval: 0x28f, out: 0x28f
+sh $t0, 51($t1) :: RTval: 0x28f, out: 0x464d028f
+MEM1:
+0xffff0035, 0xffffff59, 0xff00ffff, 0xff
+0x0, 0x0, 0x0, 0xff000000
+0xff0000ff, 0xff, 0x592700, 0xff000000
+0x8f0000ff, 0x2, 0x0, 0x0
+MEM:
+0xffff0035, 0xffffff59, 0xff00ffff, 0xffffffff
+0x232f2e2f, 0x242c2b2b, 0x252a2e2b, 0xff2d2d2a
+0xff343fff, 0x3e353dff, 0x3659273b, 0xff373b3a
+0x8f0000ff, 0x4e464d02, 0x474d474c, 0x4a484a4c
+sw
+sw $t0, 1($t1) :: RTval: 0x0, out: 0x0
+sw $t0, 1($t1) :: RTval: 0x0, out: 0x0
+sw $t0, 3($t1) :: RTval: 0x31415927, out: 0x31415927
+sw $t0, 3($t1) :: RTval: 0x31415927, out: 0x31415927
+sw $t0, 5($t1) :: RTval: 0x7fffffff, out: 0x7fffffff
+sw $t0, 5($t1) :: RTval: 0x7fffffff, out: 0x7fffffff
+sw $t0, 7($t1) :: RTval: 0x80000000, out: 0x80000000
+sw $t0, 7($t1) :: RTval: 0x80000000, out: 0x80000000
+sw $t0, 9($t1) :: RTval: 0x80000000, out: 0x80000000
+sw $t0, 9($t1) :: RTval: 0x80000000, out: 0x80000000
+sw $t0, 6($t1) :: RTval: 0x7fffffff, out: 0x7fffffff
+sw $t0, 6($t1) :: RTval: 0x7fffffff, out: 0x7fffffff
+sw $t0, 15($t1) :: RTval: 0x7fffffff, out: 0x8000
+sw $t0, 15($t1) :: RTval: 0x7fffffff, out: 0xffff8000
+sw $t0, 8($t1) :: RTval: 0xffffffff, out: 0xffffffff
+sw $t0, 8($t1) :: RTval: 0xffffffff, out: 0xffffffff
+sw $t0, 0($t1) :: RTval: 0x31415927, out: 0x31415927
+sw $t0, 0($t1) :: RTval: 0x31415927, out: 0x31415927
+sw $t0, 0($t1) :: RTval: 0xdd00000, out: 0xdd00000
+sw $t0, 0($t1) :: RTval: 0xdd00000, out: 0xdd00000
+sw $t0, 0($t1) :: RTval: 0x28f, out: 0x28f
+sw $t0, 0($t1) :: RTval: 0x28f, out: 0x28f
+sw $t0, 0($t1) :: RTval: 0xfffffd71, out: 0xfffffd71
+sw $t0, 0($t1) :: RTval: 0xfffffd71, out: 0xfffffd71
+sw $t0, 0($t1) :: RTval: 0xf, out: 0xf
+sw $t0, 0($t1) :: RTval: 0xf, out: 0xf
+sw $t0, 0($t1) :: RTval: 0x1, out: 0x1
+sw $t0, 0($t1) :: RTval: 0x1, out: 0x1
+sw $t0, 0($t1) :: RTval: 0x35, out: 0x35
+sw $t0, 0($t1) :: RTval: 0x35, out: 0x35
+sw $t0, 2($t1) :: RTval: 0xffffffff, out: 0xffffffff
+sw $t0, 2($t1) :: RTval: 0xffffffff, out: 0xffffffff
+sw $t0, 2($t1) :: RTval: 0xffffffff, out: 0xffffffff
+sw $t0, 2($t1) :: RTval: 0xffffffff, out: 0xffffffff
+sw $t0, 31($t1) :: RTval: 0xffffffff, out: 0xffffffff
+sw $t0, 31($t1) :: RTval: 0xffffffff, out: 0xffffffff
+sw $t0, 37($t1) :: RTval: 0xffffffff, out: 0xffffffff
+sw $t0, 37($t1) :: RTval: 0xffffffff, out: 0xffffffff
+sw $t0, 49($t1) :: RTval: 0x31415927, out: 0x31415927
+sw $t0, 49($t1) :: RTval: 0x31415927, out: 0x31415927
+sw $t0, 41($t1) :: RTval: 0x7fffffff, out: 0x7fffffff
+sw $t0, 41($t1) :: RTval: 0x7fffffff, out: 0x7fffffff
+sw $t0, 43($t1) :: RTval: 0x80000000, out: 0x80000000
+sw $t0, 43($t1) :: RTval: 0x80000000, out: 0x80000000
+sw $t0, 51($t1) :: RTval: 0x28f, out: 0x28f
+sw $t0, 51($t1) :: RTval: 0x28f, out: 0x28f
+MEM1:
+0xffff0035, 0xffffffff, 0xffffffff, 0xff000080
+0x7fffff, 0x0, 0x0, 0xff000000
+0xffffff, 0xffffff00, 0xffffff, 0x800000
+0x8f592700, 0x2, 0x0, 0x0
+MEM:
+0xffff0035, 0xffffffff, 0xffffffff, 0xffffff80
+0x237fffff, 0x242c2b2b, 0x252a2e2b, 0xff2d2d2a
+0x3fffffff, 0xffffff3c, 0xffffff, 0x3b800000
+0x8f592745, 0x4e000002, 0x474d474c, 0x4a484a4c

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "const.h"
 
+
 #define TEST1(RSval, RD)                   \
 {                                          \
    unsigned long long out = 0;             \
@@ -179,6 +180,7 @@ int main()
 {
    int i;
    init_reg_val2();
+#if (__mips_isa_rev < 6)
 
    printf("B \n");
    for (i = 0; i < N; i++)
@@ -347,6 +349,6 @@ int main()
    printf("J, JALR \n");
    for (i = 0; i < N; i++)
       TEST2b(reg_val1[i], t1);
-
+#endif
    return 0;
 }

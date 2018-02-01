@@ -1,0 +1,243 @@
+dalign
+dalign:: 3f
+dalign:: 13f
+dalign:: 200
+dalign:: 312
+dalign:: 400
+dalign:: 511
+dalign:: 6aa
+dalign:: 7aa
+dalign:: 83f
+dalign:: 93f
+dalign:: a00
+dalign:: b00
+dalign:: caa
+dalign:: d85
+
+daui
+daui:: 10000
+daui:: 10001
+daui:: 10002
+daui:: 10003
+daui:: 10004
+daui:: 10005
+daui:: 10006
+daui:: 10007
+daui:: 10008
+daui:: 10009
+daui:: 1000a
+daui:: 1000b
+daui:: 1000c
+daui:: 1000d
+
+dahi
+dahi:: 3ff0000100000001
+dahi:: 3ff0000100000000
+dahi:: 1ffffffff
+dahi:: 1234563488994400
+dahi:: 4512369801
+dahi:: 111111efeeeee220
+dahi:: aaaaabbcbbcccddd
+dahi:: aa55cc2366dd2200
+dahi:: 3ff0045798720001
+dahi:: 3ff0000100000000
+dahi:: 1ffffffff
+dahi:: 7200159762458
+dahi:: aa55c201abcdefab
+dahi:: 852369751afedbc6
+
+dati
+dati:: 3ff1000000000001
+dati:: 3ff1000000000000
+dati:: 10000ffffffff
+dati:: 1235563388994400
+dati:: 1004412369801
+dati:: 111211eeeeeee220
+dati:: aaababbbbbcccddd
+dati:: aa56cc2266dd2200
+dati:: 3ff1045698720001
+dati:: 3ff1000000000000
+dati:: 10000ffffffff
+dati:: 8200059762458
+dati:: aa56c200abcdefab
+dati:: 852469741afedbc6
+
+dbitswap
+dbitswap:: 0
+dbitswap:: 80
+dbitswap:: 40
+dbitswap:: c0
+dbitswap:: 20
+dbitswap:: a0
+dbitswap:: 60
+dbitswap:: e0
+dbitswap:: 10
+dbitswap:: 90
+dbitswap:: 50
+dbitswap:: d0
+dbitswap:: 30
+dbitswap:: b0
+
+ddiv
+ddiv:: 1
+ddiv:: 3ff00000
+ddiv:: 0
+ddiv:: 447675
+ddiv:: 0
+ddiv:: 0
+ddiv:: 0
+ddiv:: ffffffffffffffff
+ddiv:: 1
+ddiv:: 3ff00000
+ddiv:: 0
+ddiv:: 0
+ddiv:: 0
+ddiv:: ffffffffffffffff
+
+dmod
+dmod:: 1
+dmod:: 3ff00000
+dmod:: ffffffff
+dmod:: 31ab51558b
+dmod:: 4412369801
+dmod:: 111111eeeeeee220
+dmod:: aaaaabbbbbcccddd
+dmod:: ea45d078ff4f2201
+dmod:: 45698720001
+dmod:: 3ff00000
+dmod:: ffffffff
+dmod:: 7200059762458
+dmod:: aa55c200abcdefab
+dmod:: c51369741afedbc7
+
+ddivu
+ddivu:: 1
+ddivu:: 3ff00000
+ddivu:: 0
+ddivu:: 447675
+ddivu:: 0
+ddivu:: 0
+ddivu:: 1
+ddivu:: 2
+ddivu:: 1
+ddivu:: 3ff00000
+ddivu:: 0
+ddivu:: 0
+ddivu:: 1
+ddivu:: 2
+
+dmodu
+dmodu:: 1
+dmodu:: 3ff00000
+dmodu:: ffffffff
+dmodu:: 31ab51558b
+dmodu:: 4412369801
+dmodu:: 111111eeeeeee220
+dmodu:: 54df9954efabdd
+dmodu:: 2a75c37535f921fe
+dmodu:: 45698720001
+dmodu:: 3ff00000
+dmodu:: ffffffff
+dmodu:: 7200059762458
+dmodu:: 2532588c90cf13e5
+dmodu:: 54369741afedbc4
+
+dlsa
+dlsa:: 7fe0000000000002
+dlsa:: 7fe0000000000001
+dlsa:: 200000000
+dlsa:: 2468ac6711328803
+dlsa:: 88246d3006
+dlsa:: 222223ddddddc445
+dlsa:: 5555577777999bc0
+dlsa:: 54ab9844cdba4407
+dlsa:: 7fe008ad30e4000a
+dlsa:: 7fe0000000000009
+dlsa:: 200000008
+dlsa:: e4000b2ec48bb
+dlsa:: 54ab8401579bdf62
+dlsa:: a46d2e835fdb799
+
+dmul
+dmul:: 3ff0000000000000
+dmul:: c010000000000000
+dmul:: 7664edcc7766bc00
+dmul:: 3c92966ae0f94400
+dmul:: 405e3296b7f1e220
+dmul:: bcd2438320ccd5a0
+dmul:: fa541c1ef9205a00
+dmul:: e18c52cb8add2200
+dmul:: 3ff0000000000000
+dmul:: c010000000000000
+dmul:: 596f0457a689dba8
+dmul:: 906ef1a2f0506ec8
+dmul:: 9566bca536f8a742
+dmul:: 48c369741afedbc6
+
+dmuh
+dmuh:: ff8010000000000
+dmuh:: 3fefffff
+dmuh:: 12345633
+dmuh:: 4d7327599
+dmuh:: 489bf9a76
+dmuh:: fa4fa4c28f5e3d3a
+dmuh:: 1c8e10ee7d7940db
+dmuh:: ea9acc383490c340
+dmuh:: ff8021560b2f8e0
+dmuh:: 3fefffff
+dmuh:: 72000
+dmuh:: fffd9da2e8550feb
+dmuh:: 291cf23985f12705
+dmuh:: e15088266f7e0703
+
+dmulu
+dmulu:: 3ff0000000000000
+dmulu:: c010000000000000
+dmulu:: 7664edcc7766bc00
+dmulu:: 3c92966ae0f94400
+dmulu:: 405e3296b7f1e220
+dmulu:: bcd2438320ccd5a0
+dmulu:: fa541c1ef9205a00
+dmulu:: e18c52cb8add2200
+dmulu:: 3ff0000000000000
+dmulu:: c010000000000000
+dmulu:: 596f0457a689dba8
+dmulu:: 906ef1a2f0506ec8
+dmulu:: 9566bca536f8a742
+dmulu:: 48c369741afedbc6
+
+dmuhu
+dmuhu:: ff8010000000000
+dmuhu:: 3fefffff
+dmuhu:: 12345633
+dmuhu:: 4d7327599
+dmuhu:: 489bf9a76
+dmuhu:: b60b6b17e4d1f5a
+dmuhu:: 718e88cca02330b8
+dmuhu:: 2a8ad08ecd02c341
+dmuhu:: ff8021560b2f8e0
+dmuhu:: 3fefffff
+dmuhu:: 72000
+dmuhu:: 4bda341cb3443
+dmuhu:: 58961dae4cbdf276
+dmuhu:: 214088266f7e0704
+
+ldpc
+ldpc :: out: 0x2400000025
+ldpc :: out: 0x2400000025
+ldpc :: out: 0x2400000025
+ldpc :: out: 0x2400000025
+ldpc :: out: 0x2400000025
+ldpc :: out: 0x2400000025
+ldpc :: out: 0x2400000025
+ldpc :: out: 0x2400000025
+
+lwupc
+lwupc :: out: 0x25
+lwupc :: out: 0x25
+lwupc :: out: 0x25
+lwupc :: out: 0x25
+lwupc :: out: 0x25
+lwupc :: out: 0x25
+lwupc :: out: 0x25
+lwupc :: out: 0x25

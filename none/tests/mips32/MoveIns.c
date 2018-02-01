@@ -424,6 +424,7 @@ int main()
    TESTINSNMOVE1d("mov.d $f24, $f26", 56, f24, f26);
    TESTINSNMOVE1d("mov.d $f24, $f26", 64, f24, f26);
 
+#if (__mips_isa_rev < 6)
    printf("MOVF\n");
    TESTINSNMOVE2("movf $t0, $t1, $fcc0",  0, 0xffffffff, t0, t1, 1);
    TESTINSNMOVE2("movf $t0, $t1, $fcc0",  0xffffffff, 0xffffffff, t0, t1, 0);
@@ -660,6 +661,7 @@ int main()
    TESTINSNMOVEN1s("movz.d $f0, $f2, $t3", 52, 0xffffffff, f0, f2, t3);
    TESTINSNMOVEN1s("movz.d $f0, $f2, $t3", 56, 0x80000000, f0, f2, t3);
    TESTINSNMOVEN1s("movz.d $f0, $f2, $t3", 60, 0x7fffffff, f0, f2, t3);
+#endif
 
    return 0;
 }

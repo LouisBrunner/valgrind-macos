@@ -1593,9 +1593,12 @@
 /none/tests/mips32/.deps
 /none/tests/mips32/allexec
 /none/tests/mips32/block_size
+/none/tests/mips32/branch_pc
 /none/tests/mips32/branches
+/none/tests/mips32/branches_r6
 /none/tests/mips32/bug320057-mips32
 /none/tests/mips32/change_fp_mode
+/none/tests/mips32/fp_r6
 /none/tests/mips32/fpu_branches
 /none/tests/mips32/FPUarithmetic
 /none/tests/mips32/LoadStore
@@ -1603,6 +1606,7 @@
 /none/tests/mips32/mips32_dsp
 /none/tests/mips32/mips32_dspr2
 /none/tests/mips32/MIPS32int
+/none/tests/mips32/MIPS32r6int
 /none/tests/mips32/MoveIns
 /none/tests/mips32/msa_arithmetic
 /none/tests/mips32/msa_comparison
@@ -1611,6 +1615,7 @@
 /none/tests/mips32/msa_logical_and_shift
 /none/tests/mips32/msa_shuffle
 /none/tests/mips32/LoadStore1
+/none/tests/mips32/pc_instructions_r6
 /none/tests/mips32/round
 /none/tests/mips32/round_fpu64
 /none/tests/mips32/SignalException
@@ -1618,6 +1623,7 @@
 /none/tests/mips32/test_math
 /none/tests/mips32/unaligned_load_store
 /none/tests/mips32/vfp
+
 
 # /none/tests/mips64/
 /none/tests/mips64/Makefile

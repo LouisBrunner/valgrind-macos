@@ -50,6 +50,7 @@ unsigned int mem2[] = {
 
 /* swl $t0, 3($t1)
    swr $t0, 0($t1) */
+#if (__mips_isa_rev < 6)
 #define TESTINSTsw(RTval, offset, RT, RS)                                    \
 {                                                                            \
    unsigned int out;                                                         \
@@ -67,6 +68,7 @@ unsigned int mem2[] = {
    printf("swl $t0, 3($t1)\nswr $t0, 0($t1)\n :: RTval: 0x%x, out: 0x%x\n",  \
           RTval, out);                                                       \
 }
+#endif
 
 void ppMem(unsigned int* m, int len)
 {
@@ -217,6 +219,7 @@ int main()
    ppMem(mem1, 16);
    ppMem1(mem, 16);
 
+#if (__mips_isa_rev < 6)
    printf("swl\n");
    TESTINST1("swl $t0, 1($t1)",  0,          1,  t0, t1);
    TESTINST1("swl $t0, 3($t1)",  0x31415927, 3,  t0, t1);
@@ -344,6 +347,7 @@ int main()
    ppMem2(mem2, 12);
    TESTINSTsw(0x2aaee700, 32, t0, t1);
    ppMem2(mem2, 12);
+#endif
 
    return 0;
 }

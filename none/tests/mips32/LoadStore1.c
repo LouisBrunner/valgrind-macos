@@ -223,6 +223,7 @@ int main()
    ppMem(mem1, 16);
    ppMem1(mem, 16);
 
+#if (__mips_isa_rev < 6)
    printf("swl\n");
    TESTINST1("swl $t0, 1($t1)", 0, 1, t0, t1);
    TESTINST1("swl $t0, 3($t1)", 0x31415927, 3, t0, t1);
@@ -350,6 +351,7 @@ int main()
    ppMem0(mem2, 12);
    TESTINSTsw(0x2aaee700, 32, t0, t1);
    ppMem0(mem2, 12);
+#endif
    return 0;
 }
 

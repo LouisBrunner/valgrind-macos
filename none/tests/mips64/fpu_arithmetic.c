@@ -106,6 +106,7 @@ int arithmeticOperations(flt_art_op_t op)
                          flt_art_op_names[op], round(fd_d), fs_d[i]);
                }
                break;
+#if (__mips_isa_rev < 6)
             case MSUBS:
                TRIOPf("msub.s");
                printf("%s %f %f %f %f\n",flt_art_op_names[op], roundf(fd_f),
@@ -147,6 +148,7 @@ int arithmeticOperations(flt_art_op_t op)
                                                 round(fd_d), fr_d[i], fs_d[i],
                                                 ft_d[i]);
                break;
+#endif
             default:
                printf("error\n");
                break;
@@ -161,10 +163,14 @@ int main()
 {
 #if defined(__mips_hard_float)
    flt_art_op_t op;
-
+#if (__mips_isa_rev < 6)
+   int end = NMSUBD;
+#else
+   int end = RSQRTD;
+#endif
    printf("-------------------------- %s --------------------------\n",
         "test FPU Arithmetic Operations");
-   for (op = ABSS; op <= NMSUBD; op++) {
+   for (op = ABSS; op <= end; op++) {
       arithmeticOperations(op);
    }
 #endif

@@ -104,9 +104,9 @@ void ppMem(unsigned int* _mem, int _len)
       "move $" #RD ", %2 \n\t"                                       \
       instruction" end"instruction#RDval" \n\t"                      \
       "nop \n\t"                                                     \
-      "addi $" #RD ", $" #RD", 5 \n\t"                               \
+      "addiu $" #RD ", $" #RD", 5 \n\t"                              \
       "end"instruction#RDval": \n\t"                                 \
-      "addi $" #RD ", $" #RD", 1 \n\t"                               \
+      "addiu $" #RD ", $" #RD", 1 \n\t"                              \
       "move %0, $" #RD " \n\t"                                       \
       : "=&r" (out)                                                  \
       : "r" (POSval), "r" (RDval)                                    \

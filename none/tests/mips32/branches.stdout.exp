@@ -1,4 +1,4 @@
-b 
+b
 B :: 1, RSval: 0
 B :: 2, RSval: 1
 B :: 3, RSval: 2
@@ -23,7 +23,7 @@ B :: 21, RSval: 20
 B :: 22, RSval: 21
 B :: 23, RSval: 22
 B :: 24, RSval: 23
-b 
+b
 B :: 6, RSval: 0
 B :: 7, RSval: 1
 B :: 8, RSval: 2
@@ -48,7 +48,7 @@ B :: 26, RSval: 20
 B :: 27, RSval: 21
 B :: 28, RSval: 22
 B :: 29, RSval: 23
-b, bal, jr 
+b, bal, jr
 B BAL JR :: 6, RSval: 0
 B BAL JR :: 7, RSval: 1
 B BAL JR :: 8, RSval: 2
@@ -379,7 +379,7 @@ bnel :: 18, RSval: 85, RTval: 85
 bnel :: 17, RSval: 4095, RTval: 221
 bnel :: 18, RSval: -1, RTval: 5
 bnel :: 21, RSval: -1, RTval: -1
-j, jal, jr 
+j, jal, jr
 J JAL JR :: 6, RSval: 0
 J JAL JR :: 7, RSval: 1
 J JAL JR :: 8, RSval: 2
@@ -404,7 +404,7 @@ J JAL JR :: 26, RSval: 20
 J JAL JR :: 27, RSval: 21
 J JAL JR :: 28, RSval: 22
 J JAL JR :: 29, RSval: 23
-j, jalr, jr 
+j, jalr, jr
 J JALR JR :: 6, RSval: 0
 J JALR JR :: 7, RSval: 1
 J JALR JR :: 8, RSval: 2

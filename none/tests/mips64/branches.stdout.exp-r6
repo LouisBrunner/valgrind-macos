@@ -1,0 +1,260 @@
+b
+B :: 1, RSval: 0
+B :: 2, RSval: 1
+B :: 3, RSval: 2
+B :: 4, RSval: 3
+B :: 5, RSval: 4
+B :: 6, RSval: 5
+B :: 7, RSval: 6
+B :: 8, RSval: 7
+B :: 9, RSval: 8
+B :: 10, RSval: 9
+B :: 11, RSval: 10
+B :: 12, RSval: 11
+B :: 13, RSval: 12
+B :: 14, RSval: 13
+B :: 15, RSval: 14
+B :: 16, RSval: 15
+B :: 17, RSval: 16
+B :: 18, RSval: 17
+B :: 19, RSval: 18
+B :: 20, RSval: 19
+B :: 21, RSval: 20
+B :: 22, RSval: 21
+B :: 23, RSval: 22
+B :: 24, RSval: 23
+b
+B :: 6, RSval: 0
+B :: 7, RSval: 1
+B :: 8, RSval: 2
+B :: 9, RSval: 3
+B :: 10, RSval: 4
+B :: 11, RSval: 5
+B :: 12, RSval: 6
+B :: 13, RSval: 7
+B :: 14, RSval: 8
+B :: 15, RSval: 9
+B :: 16, RSval: 10
+B :: 17, RSval: 11
+B :: 18, RSval: 12
+B :: 19, RSval: 13
+B :: 20, RSval: 14
+B :: 21, RSval: 15
+B :: 22, RSval: 16
+B :: 23, RSval: 17
+B :: 24, RSval: 18
+B :: 25, RSval: 19
+B :: 26, RSval: 20
+B :: 27, RSval: 21
+B :: 28, RSval: 22
+B :: 29, RSval: 23
+b, bal, jr
+B BAL JR :: 6, RSval: 0
+B BAL JR :: 7, RSval: 1
+B BAL JR :: 8, RSval: 2
+B BAL JR :: 9, RSval: 3
+B BAL JR :: 10, RSval: 4
+B BAL JR :: 11, RSval: 5
+B BAL JR :: 12, RSval: 6
+B BAL JR :: 13, RSval: 7
+B BAL JR :: 14, RSval: 8
+B BAL JR :: 15, RSval: 9
+B BAL JR :: 16, RSval: 10
+B BAL JR :: 17, RSval: 11
+B BAL JR :: 18, RSval: 12
+B BAL JR :: 19, RSval: 13
+B BAL JR :: 20, RSval: 14
+B BAL JR :: 21, RSval: 15
+B BAL JR :: 22, RSval: 16
+B BAL JR :: 23, RSval: 17
+B BAL JR :: 24, RSval: 18
+B BAL JR :: 25, RSval: 19
+B BAL JR :: 26, RSval: 20
+B BAL JR :: 27, RSval: 21
+B BAL JR :: 28, RSval: 22
+B BAL JR :: 29, RSval: 23
+--- BEQ ---  if RSval == RTval then out = RDval + 1 else out = RDval + 6
+beq :: out: 6, RDval: 0, RSval: 0, RTval: 1
+beq :: out: 2, RDval: 1, RSval: 1, RTval: 1
+beq :: out: 3, RDval: 2, RSval: -1, RTval: -1
+beq :: out: 9, RDval: 3, RSval: -1, RTval: -2
+beq :: out: 10, RDval: 4, RSval: -2, RTval: -1
+beq :: out: 6, RDval: 5, RSval: -1, RTval: -1
+beq :: out: 7, RDval: 6, RSval: 5, RTval: 5
+beq :: out: 13, RDval: 7, RSval: -3, RTval: -4
+beq :: out: 9, RDval: 8, RSval: 125, RTval: 125
+beq :: out: 10, RDval: 9, RSval: -2147483648, RTval: -2147483648
+beq :: out: 16, RDval: 10, RSval: -1, RTval: -2147483648
+beq :: out: 12, RDval: 11, RSval: 598, RTval: 598
+beq :: out: 13, RDval: 12, RSval: 85, RTval: 85
+beq :: out: 19, RDval: 13, RSval: 4095, RTval: 221
+beq :: out: 20, RDval: 14, RSval: -1, RTval: 5
+beq :: out: 16, RDval: 15, RSval: -1, RTval: -1
+--- BNE ---  if RSval != RTval then out = RDval + 1 else out = RDval + 6
+bne :: out: 1, RDval: 0, RSval: 0, RTval: 1
+bne :: out: 7, RDval: 1, RSval: 1, RTval: 1
+bne :: out: 8, RDval: 2, RSval: -1, RTval: -1
+bne :: out: 4, RDval: 3, RSval: -1, RTval: -2
+bne :: out: 5, RDval: 4, RSval: -2, RTval: -1
+bne :: out: 11, RDval: 5, RSval: -1, RTval: -1
+bne :: out: 12, RDval: 6, RSval: 5, RTval: 5
+bne :: out: 8, RDval: 7, RSval: -3, RTval: -4
+bne :: out: 14, RDval: 8, RSval: 125, RTval: 125
+bne :: out: 15, RDval: 9, RSval: -2147483648, RTval: -2147483648
+bne :: out: 11, RDval: 10, RSval: -1, RTval: -2147483648
+bne :: out: 17, RDval: 11, RSval: 598, RTval: 598
+bne :: out: 18, RDval: 12, RSval: 85, RTval: 85
+bne :: out: 14, RDval: 13, RSval: 4095, RTval: 221
+bne :: out: 15, RDval: 14, RSval: -1, RTval: 5
+bne :: out: 21, RDval: 15, RSval: -1, RTval: -1
+--- BEQZ ---  if RSval == 0 then out = RDval + 1 else out = RDval + 6
+beqz :: out: 1, RDval: 0, RSval: 0
+beqz :: out: 7, RDval: 1, RSval: 1
+beqz :: out: 8, RDval: 2, RSval: -1
+beqz :: out: 9, RDval: 3, RSval: -1
+beqz :: out: 10, RDval: 4, RSval: -2
+beqz :: out: 11, RDval: 5, RSval: -1
+beqz :: out: 12, RDval: 6, RSval: 5
+beqz :: out: 13, RDval: 7, RSval: -3
+beqz :: out: 14, RDval: 8, RSval: 125
+beqz :: out: 15, RDval: 9, RSval: -2147483648
+beqz :: out: 16, RDval: 10, RSval: -1
+beqz :: out: 17, RDval: 11, RSval: 598
+beqz :: out: 18, RDval: 12, RSval: 85
+beqz :: out: 19, RDval: 13, RSval: 4095
+beqz :: out: 20, RDval: 14, RSval: -1
+beqz :: out: 21, RDval: 15, RSval: -1
+--- BGEZ ---  if RSval >= 0 then out = RDval + 1 else out = RDval + 6
+bgez :: out: 1, RDval: 0, RSval: 0
+bgez :: out: 2, RDval: 1, RSval: 1
+bgez :: out: 8, RDval: 2, RSval: -1
+bgez :: out: 9, RDval: 3, RSval: -1
+bgez :: out: 10, RDval: 4, RSval: -2
+bgez :: out: 11, RDval: 5, RSval: -1
+bgez :: out: 7, RDval: 6, RSval: 5
+bgez :: out: 13, RDval: 7, RSval: -3
+bgez :: out: 9, RDval: 8, RSval: 125
+bgez :: out: 15, RDval: 9, RSval: -2147483648
+bgez :: out: 16, RDval: 10, RSval: -1
+bgez :: out: 12, RDval: 11, RSval: 598
+bgez :: out: 13, RDval: 12, RSval: 85
+bgez :: out: 14, RDval: 13, RSval: 4095
+bgez :: out: 20, RDval: 14, RSval: -1
+bgez :: out: 21, RDval: 15, RSval: -1
+--- BGTZ ---  if RSval > 0 then out = RDval + 1 else out = RDval + 6
+bgtz :: out: 6, RDval: 0, RSval: 0
+bgtz :: out: 2, RDval: 1, RSval: 1
+bgtz :: out: 8, RDval: 2, RSval: -1
+bgtz :: out: 9, RDval: 3, RSval: -1
+bgtz :: out: 10, RDval: 4, RSval: -2
+bgtz :: out: 11, RDval: 5, RSval: -1
+bgtz :: out: 7, RDval: 6, RSval: 5
+bgtz :: out: 13, RDval: 7, RSval: -3
+bgtz :: out: 9, RDval: 8, RSval: 125
+bgtz :: out: 15, RDval: 9, RSval: -2147483648
+bgtz :: out: 16, RDval: 10, RSval: -1
+bgtz :: out: 12, RDval: 11, RSval: 598
+bgtz :: out: 13, RDval: 12, RSval: 85
+bgtz :: out: 14, RDval: 13, RSval: 4095
+bgtz :: out: 20, RDval: 14, RSval: -1
+bgtz :: out: 21, RDval: 15, RSval: -1
+--- BLEZ ---  if RSval <= 0 then out = RDval + 1 else out = RDval + 6
+blez :: out: 1, RDval: 0, RSval: 0
+blez :: out: 7, RDval: 1, RSval: 1
+blez :: out: 3, RDval: 2, RSval: -1
+blez :: out: 4, RDval: 3, RSval: -1
+blez :: out: 5, RDval: 4, RSval: -2
+blez :: out: 6, RDval: 5, RSval: -1
+blez :: out: 12, RDval: 6, RSval: 5
+blez :: out: 8, RDval: 7, RSval: -3
+blez :: out: 14, RDval: 8, RSval: 125
+blez :: out: 10, RDval: 9, RSval: -2147483648
+blez :: out: 11, RDval: 10, RSval: -1
+blez :: out: 17, RDval: 11, RSval: 598
+blez :: out: 18, RDval: 12, RSval: 85
+blez :: out: 19, RDval: 13, RSval: 4095
+blez :: out: 15, RDval: 14, RSval: -1
+blez :: out: 16, RDval: 15, RSval: -1
+--- BLTZ ---  if RSval < 0 then out = RDval + 1 else out = RDval + 6
+bltz :: out: 6, RDval: 0, RSval: 0
+bltz :: out: 7, RDval: 1, RSval: 1
+bltz :: out: 3, RDval: 2, RSval: -1
+bltz :: out: 4, RDval: 3, RSval: -1
+bltz :: out: 5, RDval: 4, RSval: -2
+bltz :: out: 6, RDval: 5, RSval: -1
+bltz :: out: 12, RDval: 6, RSval: 5
+bltz :: out: 8, RDval: 7, RSval: -3
+bltz :: out: 14, RDval: 8, RSval: 125
+bltz :: out: 10, RDval: 9, RSval: -2147483648
+bltz :: out: 11, RDval: 10, RSval: -1
+bltz :: out: 17, RDval: 11, RSval: 598
+bltz :: out: 18, RDval: 12, RSval: 85
+bltz :: out: 19, RDval: 13, RSval: 4095
+bltz :: out: 15, RDval: 14, RSval: -1
+bltz :: out: 16, RDval: 15, RSval: -1
+--- BNEZ ---  if RSval != 0 then out = RDval + 1 else out = RDval + 6
+bnez :: out: 6, RDval: 0, RSval: 0
+bnez :: out: 2, RDval: 1, RSval: 1
+bnez :: out: 3, RDval: 2, RSval: -1
+bnez :: out: 4, RDval: 3, RSval: -1
+bnez :: out: 5, RDval: 4, RSval: -2
+bnez :: out: 6, RDval: 5, RSval: -1
+bnez :: out: 7, RDval: 6, RSval: 5
+bnez :: out: 8, RDval: 7, RSval: -3
+bnez :: out: 9, RDval: 8, RSval: 125
+bnez :: out: 10, RDval: 9, RSval: -2147483648
+bnez :: out: 11, RDval: 10, RSval: -1
+bnez :: out: 12, RDval: 11, RSval: 598
+bnez :: out: 13, RDval: 12, RSval: 85
+bnez :: out: 14, RDval: 13, RSval: 4095
+bnez :: out: 15, RDval: 14, RSval: -1
+bnez :: out: 16, RDval: 15, RSval: -1
+j, jal, jr
+J JAL JR :: 6, RSval: 0
+J JAL JR :: 7, RSval: 1
+J JAL JR :: 8, RSval: 2
+J JAL JR :: 9, RSval: 3
+J JAL JR :: 10, RSval: 4
+J JAL JR :: 11, RSval: 5
+J JAL JR :: 12, RSval: 6
+J JAL JR :: 13, RSval: 7
+J JAL JR :: 14, RSval: 8
+J JAL JR :: 15, RSval: 9
+J JAL JR :: 16, RSval: 10
+J JAL JR :: 17, RSval: 11
+J JAL JR :: 18, RSval: 12
+J JAL JR :: 19, RSval: 13
+J JAL JR :: 20, RSval: 14
+J JAL JR :: 21, RSval: 15
+J JAL JR :: 22, RSval: 16
+J JAL JR :: 23, RSval: 17
+J JAL JR :: 24, RSval: 18
+J JAL JR :: 25, RSval: 19
+J JAL JR :: 26, RSval: 20
+J JAL JR :: 27, RSval: 21
+J JAL JR :: 28, RSval: 22
+J JAL JR :: 29, RSval: 23
+j, jalr, jr
+J JALR JR :: 6, RSval: 0
+J JALR JR :: 7, RSval: 1
+J JALR JR :: 8, RSval: 2
+J JALR JR :: 9, RSval: 3
+J JALR JR :: 10, RSval: 4
+J JALR JR :: 11, RSval: 5
+J JALR JR :: 12, RSval: 6
+J JALR JR :: 13, RSval: 7
+J JALR JR :: 14, RSval: 8
+J JALR JR :: 15, RSval: 9
+J JALR JR :: 17, RSval: 11
+J JALR JR :: 18, RSval: 12
+J JALR JR :: 19, RSval: 13
+J JALR JR :: 20, RSval: 14
+J JALR JR :: 21, RSval: 15
+J JALR JR :: 22, RSval: 16
+J JALR JR :: 23, RSval: 17
+J JALR JR :: 24, RSval: 18
+J JALR JR :: 25, RSval: 19
+J JALR JR :: 26, RSval: 20
+J JALR JR :: 27, RSval: 21
+J JALR JR :: 28, RSval: 22
+J JALR JR :: 29, RSval: 23

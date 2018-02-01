@@ -1,0 +1,146 @@
+MFC1
+mfc1 $t1, $f0 :: fs 4.676074, rt 0x4095a266
+mfc1 $t2, $f1 :: fs 272008302207532160516096.000000, rt 0x66666666
+mfc1 $t3, $f2 :: fs -1.875000, rt 0xbff00000
+mfc1 $t4, $f3 :: fs 0.000000, rt 0x0
+mfc1 $t5, $f4 :: fs 1.875000, rt 0x3ff00000
+mfc1 $t6, $f5 :: fs 0.000000, rt 0x0
+mfc1 $t7, $f6 :: fs 0.000000, rt 0x252a2e2b
+mfc1 $v0, $f7 :: fs 0.000000, rt 0x262d2d2a
+mfc1 $v1, $f8 :: fs -nan, rt 0xffffffff
+mfc1 $s0, $f9 :: fs -nan, rt 0xffffffff
+mfc1 $s1, $f10 :: fs 26.299561, rt 0x41d26580
+mfc1 $s2, $f11 :: fs -0.000000, rt 0xb487e5c9
+mfc1 $s3, $f12 :: fs 32.599121, rt 0x42026580
+mfc1 $s4, $f13 :: fs -0.000012, rt 0xb750e388
+mfc1 $s5, $f14 :: fs 0.192847, rt 0x3e45798e
+mfc1 $s6, $f15 :: fs -814182836421710053376.000000, rt 0xe2308c3a
+mfc1 $s7, $f16 :: fs 1.496914, rt 0x3fbf9add
+mfc1 $a0, $f17 :: fs 4.676074, rt 0x4095a266
+mfc1 $a1, $f18 :: fs 272008302207532160516096.000000, rt 0x66666666
+mfc1 $a2, $f19 :: fs -1.875000, rt 0xbff00000
+mfc1 $a3, $f20 :: fs 0.000000, rt 0x0
+mfc1 $v0, $f21 :: fs 1.875000, rt 0x3ff00000
+mfc1 $v1, $f22 :: fs 0.000000, rt 0x0
+mfc1 $t8, $f23 :: fs 0.000000, rt 0x252a2e2b
+mfc1 $t9, $f24 :: fs 0.000000, rt 0x262d2d2a
+mfc1 $t1, $f25 :: fs -nan, rt 0xffffffff
+mfc1 $t2, $f26 :: fs -nan, rt 0xffffffff
+MTC1
+mtc1 $t1, $f0 :: fs 4.676074, rt 0x4095a266
+mtc1 $t2, $f1 :: fs 272008302207532160516096.000000, rt 0x66666666
+mtc1 $t3, $f2 :: fs -1.875000, rt 0xbff00000
+mtc1 $t4, $f3 :: fs 0.000000, rt 0x0
+mtc1 $t5, $f4 :: fs 1.875000, rt 0x3ff00000
+mtc1 $t6, $f5 :: fs 0.000000, rt 0x0
+mtc1 $t7, $f6 :: fs 0.000000, rt 0x252a2e2b
+mtc1 $v0, $f7 :: fs 0.000000, rt 0x262d2d2a
+mtc1 $v1, $f8 :: fs -nan, rt 0xffffffff
+mtc1 $s0, $f9 :: fs -nan, rt 0xffffffff
+mtc1 $s1, $f10 :: fs 26.299561, rt 0x41d26580
+mtc1 $s2, $f11 :: fs -0.000000, rt 0xb487e5c9
+mtc1 $s3, $f12 :: fs 32.599121, rt 0x42026580
+mtc1 $s4, $f13 :: fs -0.000012, rt 0xb750e388
+mtc1 $s5, $f14 :: fs 0.192847, rt 0x3e45798e
+mtc1 $s6, $f15 :: fs -814182836421710053376.000000, rt 0xe2308c3a
+mtc1 $s7, $f16 :: fs 1.496914, rt 0x3fbf9add
+mtc1 $a0, $f17 :: fs 271833904815561865428992.000000, rt 0x66664095
+mtc1 $a1, $f18 :: fs 0.000000, rt 0x6666
+mtc1 $a2, $f19 :: fs 0.000000, rt 0xbff0
+mtc1 $a3, $f20 :: fs 0.000000, rt 0x0
+mtc1 $v0, $f21 :: fs 0.000000, rt 0x3ff0
+mtc1 $v1, $f22 :: fs 0.000000, rt 0x2e2b0000
+mtc1 $t8, $f23 :: fs 0.000000, rt 0x2d2a252a
+mtc1 $t9, $f24 :: fs -nan, rt 0xffff262d
+mtc1 $t1, $f25 :: fs -nan, rt 0xffffffff
+mtc1 $t2, $f26 :: fs 76148150529073774329856.000000, rt 0x6580ffff
+MFHC1
+mfhc1 $t1, $f0 :: rt 0x12345678
+mfhc1 $t2, $f2 :: rt 0x66785bd6
+mfhc1 $t3, $f4 :: rt 0xbff550ff
+mfhc1 $v0, $f6 :: rt 0x47892
+mfhc1 $v1, $f8 :: rt 0x3ff00012
+mfhc1 $a0, $f10 :: rt 0x123654
+mfhc1 $a1, $f12 :: rt 0x252a2e2b
+mfhc1 $a2, $f14 :: rt 0x26852147
+mfhc1 $a3, $f16 :: rt 0x12345678
+mfhc1 $s0, $f18 :: rt 0x66785bd6
+mfhc1 $s1, $f20 :: rt 0x789651ff
+mfhc1 $s2, $f22 :: rt 0xff23f4
+mfhc1 $s3, $f24 :: rt 0x3ff00012
+mfhc1 $s4, $f26 :: rt 0xaabbcdfe
+mfhc1 $s5, $f28 :: rt 0xa1b2b2a1
+mfhc1 $s6, $f30 :: rt 0x25698741
+MTHC1
+mthc1 $t2, $f0 :: out: 4095a26687654321
+mthc1 $t3, $f2 :: out: 6666666668466667
+mthc1 $v0, $f4 :: out: bff0000007788000
+mthc1 $v1, $f6 :: out: 36500000
+mthc1 $a0, $f8 :: out: 3ff0000056789600
+mthc1 $a1, $f10 :: out: 78000000
+mthc1 $a2, $f12 :: out: 252a2e2b252a2e2b
+mthc1 $a3, $f14 :: out: 262d2d2a962d2d2a
+mthc1 $s0, $f16 :: out: ffffffff87654321
+mthc1 $s1, $f18 :: out: ffffffff68466667
+mthc1 $s2, $f20 :: out: 41d2658007788055
+mthc1 $s3, $f22 :: out: b487e5c9f1f5f6f8
+mthc1 $s4, $f24 :: out: 4202658056789600
+mthc1 $s5, $f26 :: out: b750e388efcd1256
+mthc1 $s6, $f28 :: out: 3e45798ea3a5a6aa
+mthc1 $s7, $f30 :: out: e2308c3a23654786
+MOV.S
+mov.s $f0, $f0 :: fs 0.000000, rt 0x0
+mov.s $f0, $f1 :: fs 456.248962, rt 0x43e41fde
+mov.s $f1, $f2 :: fs 3.000000, rt 0x40400000
+mov.s $f2, $f3 :: fs -1.000000, rt 0xbf800000
+mov.s $f3, $f4 :: fs 1384.599976, rt 0x44ad1333
+mov.s $f4, $f5 :: fs -7.294568, rt 0xc0e96d19
+mov.s $f5, $f6 :: fs 1000000000.000000, rt 0x4e6e6b28
+mov.s $f6, $f7 :: fs -5786.470215, rt 0xc5b4d3c3
+mov.s $f7, $f8 :: fs 1752.000000, rt 0x44db0000
+mov.s $f8, $f9 :: fs 0.002457, rt 0x3b210e02
+mov.s $f9, $f10 :: fs 0.000000, rt 0x322bcc77
+mov.s $f10, $f11 :: fs -248562.765625, rt 0xc872bcb1
+mov.s $f11, $f12 :: fs -45786.476562, rt 0xc732da7a
+mov.s $f12, $f13 :: fs 456.248962, rt 0x43e41fde
+mov.s $f13, $f14 :: fs 34.000462, rt 0x42080079
+mov.s $f14, $f15 :: fs 45786.476562, rt 0x4732da7a
+mov.s $f15, $f16 :: fs 1752065.000000, rt 0x49d5e008
+mov.s $f16, $f17 :: fs 0.000000, rt 0x0
+mov.s $f17, $f18 :: fs 456.248962, rt 0x43e41fde
+mov.s $f18, $f19 :: fs 3.000000, rt 0x40400000
+mov.s $f19, $f20 :: fs -1.000000, rt 0xbf800000
+mov.s $f20, $f21 :: fs 1384.599976, rt 0x44ad1333
+mov.s $f21, $f22 :: fs -7.294568, rt 0xc0e96d19
+mov.s $f22, $f23 :: fs 1000000000.000000, rt 0x4e6e6b28
+mov.s $f23, $f24 :: fs -5786.470215, rt 0xc5b4d3c3
+mov.s $f24, $f25 :: fs 1752.000000, rt 0x44db0000
+mov.s $f25, $f26 :: fs 0.002457, rt 0x3b210e02
+MOV.D
+mov.d $f0, $f0 ::fs 11600973572943642624.000000, rt 0x0
+mov.d $f0, $f0 ::fs -0.007813, rt 0x40400000
+mov.d $f0, $f2 ::fs -52072.789633, rt 0x44ad1333
+mov.d $f2, $f4 ::fs -6445705852632282607665545216.000000, rt 0x4e6e6b28
+mov.d $f2, $f4 ::fs 0.000000, rt 0x44db0000
+mov.d $f4, $f6 ::fs -102014360350703794652958156923702465265664.000000, rt 0x322bcc77
+mov.d $f4, $f6 ::fs 11600980417357008896.000000, rt 0xc732da7a
+mov.d $f6, $f8 ::fs 97892595018733988536880335157198848.000000, rt 0x42080079
+mov.d $f6, $f8 ::fs 96757042599808.125000, rt 0x49d5e008
+mov.d $f8, $f10 ::fs 11600973572943642624.000000, rt 0x0
+mov.d $f8, $f10 ::fs -0.007813, rt 0x40400000
+mov.d $f10, $f12 ::fs -52072.789633, rt 0x44ad1333
+mov.d $f10, $f12 ::fs -6445705852632282607665545216.000000, rt 0x4e6e6b28
+mov.d $f12, $f14 ::fs 0.000000, rt 0x44db0000
+mov.d $f12, $f14 ::fs -102014360350703794652958156923702465265664.000000, rt 0x322bcc77
+mov.d $f14, $f16 ::fs 11600980417357008896.000000, rt 0xc732da7a
+mov.d $f14, $f16 ::fs 97892595018733988536880335157198848.000000, rt 0x42080079
+mov.d $f16, $f18 ::fs 96757042599808.125000, rt 0x49d5e008
+mov.d $f16, $f18 ::fs 11600973572943642624.000000, rt 0x0
+mov.d $f18, $f20 ::fs -0.007813, rt 0x40400000
+mov.d $f18, $f20 ::fs -52072.789633, rt 0x44ad1333
+mov.d $f20, $f22 ::fs -6445705852632282607665545216.000000, rt 0x4e6e6b28
+mov.d $f20, $f22 ::fs 0.000000, rt 0x44db0000
+mov.d $f22, $f24 ::fs -102014360350703794652958156923702465265664.000000, rt 0x322bcc77
+mov.d $f22, $f24 ::fs 11600980417357008896.000000, rt 0xc732da7a
+mov.d $f24, $f26 ::fs 97892595018733988536880335157198848.000000, rt 0x42080079
+mov.d $f24, $f26 ::fs 96757042599808.125000, rt 0x49d5e008

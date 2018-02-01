@@ -1297,6 +1297,8 @@ void ppIROp ( IROp op )
       case Iop_BCDSub:  vex_printf("BCDSub"); return;
       case Iop_I128StoBCD128:  vex_printf("bcdcfsq."); return;
       case Iop_BCD128toI128S:  vex_printf("bcdctsq."); return;
+      case Iop_Rotx32:  vex_printf("bitswap"); return;
+      case Iop_Rotx64:  vex_printf("dbitswap"); return;
 
       case Iop_PwBitMtxXpose64x2: vex_printf("BitMatrixTranspose64x2"); return;
 
@@ -3578,6 +3580,10 @@ void typeOfPrimop ( IROp op,
       case Iop_ShrN64x4:
       case Iop_SarN16x16: case Iop_SarN32x8:
          BINARY(Ity_V256,Ity_I8, Ity_V256);
+      case Iop_Rotx32:
+         QUATERNARY(Ity_I32, Ity_I8, Ity_I8, Ity_I8, Ity_I32);
+      case Iop_Rotx64:
+         QUATERNARY(Ity_I64, Ity_I8, Ity_I8, Ity_I8, Ity_I64);
 
       default:
          ppIROp(op);

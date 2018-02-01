@@ -2012,6 +2012,30 @@ IRAtom* mkLazy4 ( MCEnv* mce, IRType finalVty,
       return at;
    }
 
+   if (t1 == Ity_I32 && t2 == Ity_I8 && t3 == Ity_I8 && t4 == Ity_I8
+       && finalVty == Ity_I32) {
+      if (0) VG_(printf)("mkLazy4: I32 x I8 x I8 x I8 -> I32\n");
+      at = mkPCastTo(mce, Ity_I8, va1);
+      /* Now fold in 2nd, 3rd, 4th args. */
+      at = mkUifU(mce, Ity_I8, at, va2);
+      at = mkUifU(mce, Ity_I8, at, va3);
+      at = mkUifU(mce, Ity_I8, at, va4);
+      at = mkPCastTo(mce, Ity_I32, at);
+      return at;
+   }
+
+   if (t1 == Ity_I64 && t2 == Ity_I8 && t3 == Ity_I8 && t4 == Ity_I8
+       && finalVty == Ity_I64) {
+      if (0) VG_(printf)("mkLazy4: I64 x I8 x I8 x I8 -> I64\n");
+      at = mkPCastTo(mce, Ity_I8, va1);
+      /* Now fold in 2nd, 3rd, 4th args. */
+      at = mkUifU(mce, Ity_I8, at, va2);
+      at = mkUifU(mce, Ity_I8, at, va3);
+      at = mkUifU(mce, Ity_I8, at, va4);
+      at = mkPCastTo(mce, Ity_I64, at);
+      return at;
+   }
+
    if (1) {
       VG_(printf)("mkLazy4: ");
       ppIRType(t1);
@@ -3020,6 +3044,11 @@ IRAtom* expr2vbits_Qop ( MCEnv* mce,
          return assignNew('V', mce, Ity_V256,
                           IRExpr_Qop(op, vatom1, vatom2, vatom3, vatom4));
 
+      /* I32/I64 x I8 x I8 x I8 -> I32/I64 */
+      case Iop_Rotx32:
+         return mkLazy4(mce, Ity_I32, vatom1, vatom2, vatom3, vatom4);
+      case Iop_Rotx64:
+         return mkLazy4(mce, Ity_I64, vatom1, vatom2, vatom3, vatom4);
       default:
          ppIROp(op);
          VG_(tool_panic)("memcheck:expr2vbits_Qop");

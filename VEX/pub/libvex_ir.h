@@ -1936,6 +1936,7 @@ typedef
 
       Iop_Max32Fx8, Iop_Min32Fx8,
       Iop_Max64Fx4, Iop_Min64Fx4,
+      Iop_Rotx32, Iop_Rotx64,
       Iop_LAST      /* must be the last enumerator */
    }
    IROp;

@@ -1632,6 +1632,8 @@
 /none/tests/mips64/allexec
 /none/tests/mips64/arithmetic_instruction
 /none/tests/mips64/branch_and_jump_instructions
+/none/tests/mips64/branch_pc
+/none/tests/mips64/branches_r6
 /none/tests/mips64/branches
 /none/tests/mips64/change_fp_mode
 /none/tests/mips64/cvm_atomic
@@ -1644,11 +1646,13 @@
 /none/tests/mips64/fpu_control_word
 /none/tests/mips64/fpu_branches
 /none/tests/mips64/fpu_load_store
+/none/tests/mips64/fp_r6
 /none/tests/mips64/load_indexed_instructions
 /none/tests/mips64/load_store
 /none/tests/mips64/load_store_multiple
 /none/tests/mips64/load_store_unaligned
 /none/tests/mips64/logical_instructions
+/none/tests/mips64/MIPS64r6int
 /none/tests/mips64/move_instructions
 /none/tests/mips64/msa_arithmetic
 /none/tests/mips64/msa_comparison
@@ -1656,6 +1660,8 @@
 /none/tests/mips64/msa_fpu
 /none/tests/mips64/msa_logical_and_shift
 /none/tests/mips64/msa_shuffle
+/none/tests/mips64/pc_instructions_r6
+/none/tests/mips64/r6_instructions
 /none/tests/mips64/rotate_swap
 /none/tests/mips64/round
 /none/tests/mips64/shift_instructions

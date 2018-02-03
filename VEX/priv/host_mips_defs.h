@@ -544,14 +544,14 @@ typedef enum {
 
 } MIPSFpOp;
 
-extern const HChar *showRotxOp(MIPSRotxOp);
+extern const HChar *showMIPSFpOp(MIPSFpOp);
 
 typedef enum {
    Rotx32,
    Rotx64
 } MIPSRotxOp;
 
-extern const HChar *showMIPSFpOp(MIPSFpOp);
+extern const HChar *showRotxOp(MIPSRotxOp);
 
 /* Move from/to fpr to/from gpr */
 typedef enum {

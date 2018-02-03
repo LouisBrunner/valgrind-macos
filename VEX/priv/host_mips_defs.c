@@ -975,6 +975,9 @@ const HChar *showRotxOp(MIPSRotxOp op) {
       case Rotx64:
          ret = "rotx64";
          break;
+      default:
+         vpanic("showRotxOp");
+         break;
    }
 
    return ret;

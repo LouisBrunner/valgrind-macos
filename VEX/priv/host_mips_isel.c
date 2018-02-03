@@ -2393,6 +2393,7 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
       return r_dst;
    }
 
+#if (__mips_isa_rev >= 6)
    case Iex_Qop: {
       HReg dst = newVRegI(env);
       HReg src1 = iselWordExpr_R(env, e->Iex.Qop.details->arg1);
@@ -2400,19 +2401,18 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
       HReg src3 = iselWordExpr_R(env, e->Iex.Qop.details->arg3);
       HReg src4 = iselWordExpr_R(env, e->Iex.Qop.details->arg4);
       switch (e->Iex.Qop.details->op) {
-#if (__mips_isa_rev >= 6)
         case Iop_Rotx32:
           addInstr(env, MIPSInstr_Bitswap(Rotx32, dst, src1, src2, src3, src4));
           break;
         case Iop_Rotx64:
           addInstr(env, MIPSInstr_Bitswap(Rotx64, dst, src1, src2, src3, src4));
           break;
-#endif
         default:
           break;
       }
       return dst;
    }
+#endif
 
    default:
       break;

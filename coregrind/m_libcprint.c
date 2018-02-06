@@ -53,9 +53,25 @@
 /*=== Printing the preamble                                        ===*/
 /*====================================================================*/
 
-// Print the argument, escaping any chars that require it.
-static void umsg_arg(const HChar *arg)
+// Returns a strdup'd copy of |str| in which characters which are not in the
+// obviously-harmless-ASCII range are replaced with '_'.  Not doing this has
+// been observed to cause xfce4-terminal to assert.  Caller takes ownership
+// of the returned string.
+static HChar* sanitise_arg (const HChar* arg)
 {
+   HChar* clone = VG_(strdup)("m_libcprint.sanitise_arg", arg);
+   for (HChar* p = clone; *p; p++) {
+      UInt c = * ((UChar*)p);
+      if (c < 32 || c > 127) c = '_';
+      *p = (HChar)c;
+   }
+   return clone;
+}
+
+// Print the argument, escaping any chars that require it.
+static void umsg_arg(const HChar *unsanitised_arg)
+{
+   HChar* arg = sanitise_arg(unsanitised_arg);
    SizeT len = VG_(strlen)(arg);
    const HChar *special = " \\<>";
    for (UInt i = 0; i < len; i++) {
@@ -64,12 +80,15 @@ static void umsg_arg(const HChar *arg)
       }
       VG_(umsg)("%c", arg[i]);
    }
+   VG_(free)(arg);
 }
 
 // Send output to the XML-stream and escape any XML meta-characters.
-static void xml_arg(const HChar *arg)
+static void xml_arg(const HChar *unsanitised_arg)
 {
+   HChar* arg = sanitise_arg(unsanitised_arg);
    VG_(printf_xml)("%pS", arg);
+   VG_(free)(arg);
 }
 
 // Write the name and value of log file qualifiers to the xml file.

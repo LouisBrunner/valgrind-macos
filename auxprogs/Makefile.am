@@ -13,8 +13,6 @@ dist_noinst_SCRIPTS = \
 
 EXTRA_DIST = \
 	docs/valgrind-listener-manpage.xml \
-	DotToScc.hs \
-	Merge3Way.hs \
 	gsl16-badfree.patch \
 	gsl16-wavelet.patch \
 	posixtestsuite-1.5.1-diff.txt \

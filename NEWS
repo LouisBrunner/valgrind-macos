@@ -79,6 +79,7 @@ where XXXXXX is the bug number as listed below.
 385207  PPC64, generate_store_FPRF() generates too many Iops
 385208  PPC64, xxperm instruction exhausts temporary memory
 385210  PPC64, vpermr instruction could exhaust temporary memory
+385279  unhandled syscall: mach:43 (mach_generate_activity_id)
 385183  PPC64, Add support for xscmpeqdp, xscmpgtdp, xscmpgedp, xsmincdp instructions
 385334  PPC64, fix vpermr, xxperm, xxpermr mask value.
 385868  glibc ld.so _dl_runtime_resolve_avx_slow conditional jump warning.

@@ -180,7 +180,9 @@
 #define __NR_kernelrpc_mach_port_unguard_trap VG_DARWIN_SYSCALL_CONSTRUCT_MACH(42)
 #endif
 
-#if defined(VGA_x86) || DARWIN_VERS == DARWIN_10_9
+#if DARWIN_VERS >= DARWIN_10_12
+#define __NR_mach_generate_activity_id        VG_DARWIN_SYSCALL_CONSTRUCT_MACH(43)
+#elif defined(VGA_x86) || DARWIN_VERS == DARWIN_10_9
 #define __NR_map_fd                           VG_DARWIN_SYSCALL_CONSTRUCT_MACH(43)
 #endif
 

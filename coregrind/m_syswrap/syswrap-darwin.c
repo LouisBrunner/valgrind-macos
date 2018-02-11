@@ -9979,6 +9979,32 @@ POST(task_register_dyld_shared_cache_image_info)
     }
 }
 
+PRE(mach_generate_activity_id)
+{
+    // munge_www -- no need to call helper
+    PRINT("mach_generate_activity_id"
+        "(target:%s, count:%ld)",
+        name_for_port(ARG1), ARG2);
+    PRE_REG_READ3(long, "mach_generate_activity_id",
+                  mach_port_name_t, target, int, count, uint64_t *, activity_id);
+    if (ARG2 <= 0 || ARG2 > MACH_ACTIVITY_ID_COUNT_MAX) {
+       SET_STATUS_Failure( VKI_EINVAL );
+    }
+    if (ML_(safe_to_deref)( (void*)ARG3, sizeof(vki_uint64_t*) )) {
+       PRE_MEM_WRITE( "mach_generate_activity_id(activity_id)", ARG3, sizeof(vki_uint64_t) );
+    } else {
+       SET_STATUS_Failure( VKI_EFAULT );
+    }
+}
+
+POST(mach_generate_activity_id)
+{
+    if (ML_(safe_to_deref)( (void*)ARG3, sizeof(vki_uint64_t*) )) {
+       POST_MEM_WRITE( ARG3, sizeof(vki_uint64_t) );
+       PRINT("-> activity_id:%#llx", *(uint64_t*)ARG3);
+    }
+}
+
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
 
 
@@ -10689,18 +10715,14 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(42)),
 #  endif
 
-#  if DARWIN_VERS >= DARWIN_10_10
+#  if DARWIN_VERS >= DARWIN_10_12
+   MACXY(__NR_mach_generate_activity_id, mach_generate_activity_id),
+#  elif DARWIN_VERS >= DARWIN_10_10
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(43)),
-#  else
-#    if DARWIN_VERS == DARWIN_10_9
+#  elif defined(VGA_x86) || DARWIN_VERS == DARWIN_10_9
 // _____(__NR_map_fd),
-#    else
-#      if defined(VGA_x86)
-// _____(__NR_map_fd), 
-#      else
+#  else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(43)),
-#      endif
-#    endif
 #  endif
 
 // _____(__NR_task_name_for_pid), 

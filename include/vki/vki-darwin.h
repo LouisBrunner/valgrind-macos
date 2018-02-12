@@ -1128,5 +1128,17 @@ struct vki_necp_aggregate_result {
 };
 #endif /* DARWIN_VERS == DARWIN_10_10 */
 
+#if DARWIN_VERS >= DARWIN_10_12
+// ulock_wake & ulock_wait operations
+#define VKI_UL_OPCODE_MASK      0x000000FF
+#define VKI_UL_FLAGS_MASK       0xFFFFFF00
+#define VKI_UL_COMPARE_AND_WAIT 1
+#define VKI_UL_UNFAIR_LOCK      2
+// ulock_wake & ulock_wait flags
+#define ULF_NO_ERRNO            0x01000000
+
+// ulock_wait flags
+#define WKI_ULF_WAIT_WORKQ_DATA_CONTENTION	0x00010000
+#endif /* DARWIN_VERS >= DARWIN_10_12 */
 
 #endif

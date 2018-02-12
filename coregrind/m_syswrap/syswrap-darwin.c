@@ -9922,12 +9922,45 @@ PRE(getentropy)
                   void*, buffer, size_t, size);
 }
 
+static const HChar *ulop_name(int op)
+{
+   switch (op) {
+      case VKI_UL_UNFAIR_LOCK:          return "UL_UNFAIR_LOCK";
+      case VKI_UL_COMPARE_AND_WAIT:     return "UL_COMPARE_AND_WAIT";
+      default: return "??";
+   }
+}
+
 PRE(ulock_wake)
 {
     PRINT("ulock_wake(operation:%ld, addr:%#lx, wake_value:%ld) FIXME",
         ARG1, ARG2, ARG3);
     PRE_REG_READ3(int, "ulock_wake",
                   uint32_t, operation, void*, addr, uint64_t, wake_value);
+}
+
+PRE(ulock_wait)
+{
+    uint ul_opcode = ARG1 & VKI_UL_OPCODE_MASK;
+    uint ul_flags = ARG1 & VKI_UL_FLAGS_MASK;
+
+    switch (ul_opcode) {
+    case VKI_UL_UNFAIR_LOCK:
+    case VKI_UL_COMPARE_AND_WAIT: {
+      const char* name = ulop_name(ul_opcode);
+      PRINT("ulock_wait(operation:%s (flags: %#x), addr:%#lx, value:%ld, timeout:%ld)",
+            name, ul_flags, ARG2, ARG3, ARG4);
+      PRE_REG_READ4(int, "ulock_wait",
+                    uint32_t, operation, void*, addr, uint64_t, value, uint32_t, timeout);
+      PRE_MEM_READ("ulock_wait(addr)", ARG2, 4 );
+      break;
+    }
+
+    default:
+      PRINT("ulock_wait(operation:%ld (opcode: %u [??], flags: %#x), addr:%#lx, value:%ld, timeout:%ld)", ARG1, ul_opcode, ul_flags, ARG2, ARG3, ARG4);
+      log_decaying("UNKNOWN ulock_wait %ld (opcode: %u [??], flags: %#x)!", ARG1, ul_opcode, ul_flags);
+      break;
+    }
 }
 
 PRE(host_create_mach_voucher_trap)
@@ -10629,7 +10662,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(512)),        // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(513)),        // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(514)),        // ???
-// _____(__NR_ulock_wait),                              // 515
+   MACX_(__NR_ulock_wait, ulock_wait),                  // 515
    MACX_(__NR_ulock_wake, ulock_wake),                  // 516
 // _____(__NR_fclonefileat),                            // 517
 // _____(__NR_fs_snapshot),                             // 518

@@ -229,8 +229,6 @@ Should possibly take
 379373  Syscall param msg->desc.port.name points to uninitialised byte(s)
         on macOS 10.12
 
-379754  Missing syscall ulock_wait (OS X 10.12)
-
 379893  valgrind segfault os x 10.12.4
 
 380269  No multithreading in macOS Sierra (10.12)

@@ -69,6 +69,7 @@ where XXXXXX is the bug number as listed below.
 379373  Fix syscall param msg->desc.port.name points to uninitialised byte(s)
         on macOS 10.12
 379748  Fix missing pselect syscall (OS X 10.11)
+379754  Fix missing syscall ulock_wait (OS X 10.12)
 380397  s390x: __GI_strcspn() replacemenet needed
 381162  possible array overrun in VEX register allocator
 381272  ppc64 doesn't compile test_isa_2_06_partx.c without VSX support

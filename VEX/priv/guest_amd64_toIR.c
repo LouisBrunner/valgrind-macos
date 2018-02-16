@@ -3080,12 +3080,12 @@ ULong dis_op2_E_G ( const VexAbiInfo* vbi,
          putIRegG(size, pfx, rm, mkexpr(dst1));
       } else
       if (op8 == Iop_Add8 && flag == WithFlagCarryX) {
-         /* normal store */
          helper_ADCX_ADOX( True/*isADCX*/, size, dst1, dst0, src );
+         putIRegG(size, pfx, rm, mkexpr(dst1));
       } else
       if (op8 == Iop_Add8 && flag == WithFlagOverX) {
-         /* normal store */
          helper_ADCX_ADOX( False/*!isADCX*/, size, dst1, dst0, src );
+         putIRegG(size, pfx, rm, mkexpr(dst1));
       } else {
          assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
          if (isAddSub(op8))

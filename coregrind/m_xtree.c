@@ -377,7 +377,7 @@ static VgFile* xt_open (const HChar* outfilename)
    VgFile* fp;
 
    fp = VG_(fopen)(outfilename, VKI_O_CREAT|VKI_O_WRONLY|VKI_O_TRUNC,
-                   VKI_S_IRUSR|VKI_S_IWUSR);
+                   VKI_S_IRUSR|VKI_S_IWUSR|VKI_S_IRGRP|VKI_S_IROTH);
    if (fp == NULL) {
       VG_(message)(Vg_UserMsg,
                    "Error: can not open xtree output file `%s'\n",

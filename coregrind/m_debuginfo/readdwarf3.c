@@ -2585,6 +2585,23 @@ static const HChar* get_inlFnName (Int absori, const CUConst* cc, Bool td3)
    FormContents cts;
    UInt nf_i;
 
+   /* Some inlined subroutine call dwarf entries do not have the abstract
+      origin attribute, resulting in absori being 0 (see callers of
+      get_inlFnName). This is observed at least with gcc 6.3.0 when compiling
+      valgrind with lto. So, in case we have a 0 absori, do not report an
+      error, instead, rather return an unknown inlined function. */
+   if (absori == 0) {
+      static Bool absori0_reported = False;
+      if (!absori0_reported && VG_(clo_verbosity) > 1) {
+         VG_(message)(Vg_DebugMsg,
+                      "Warning: inlined fn name without absori\n"
+                      "is shown as UnknownInlinedFun\n");
+         absori0_reported = True;
+      }
+      TRACE_D3(" <get_inlFnName>: absori is not set");
+      return ML_(addStr)(cc->di, "UnknownInlinedFun", -1);
+   }
+
    posn = uncook_die( cc, absori, &type_flag, &alt_flag);
    if (type_flag)
       cc->barf("get_inlFnName: uncooked absori in type debug info");
@@ -2743,6 +2760,7 @@ static Bool parse_inl_DIE (
       UInt   caller_fndn_ix = 0;
       Int caller_lineno = 0;
       Int inlinedfn_abstract_origin = 0;
+      // 0 will be interpreted as no abstract origin by get_inlFnName
 
       nf_i = 0;
       while (True) {

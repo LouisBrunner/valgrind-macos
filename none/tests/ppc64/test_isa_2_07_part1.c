@@ -406,7 +406,7 @@ static void test_mtvsrwz (void)
 
 static void test_mtfprwa (void)
 {
-   __asm__ __volatile__ ("mtfprwa %x0,%1" : "=ws" (vec_out) : "r" (r14));
+   __asm__ __volatile__ ("mtfprwa %x0,%1" : "=d" (vec_out) : "r" (r14));
 };
 
 static test_t tests_move_ops_spe[] = {

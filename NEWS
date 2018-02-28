@@ -89,6 +89,7 @@ where XXXXXX is the bug number as listed below.
 387410  MIPSr6 support
 387712  s390x cgijnl reports Conditional jump depends on uninitialised value
 387773  .gnu_debugaltlink paths resolve relative to .debug file, not symlink
+388862  Add replacements for wmemchr and wcsnlen on Linux
 389065  valgrind meets gcc flag -Wlogical-op
 390723  make xtree dump files world wide readable, similar to log files
 

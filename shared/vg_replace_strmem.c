@@ -101,6 +101,8 @@
    20400 WCSCHR
    20410 WCSRCHR
    20420 STPNCPY
+   20430 WMEMCHR
+   20440 WCSNLEN
 */
 
 #if defined(VGO_solaris)
@@ -1843,9 +1845,9 @@ static inline void my_exit ( int x )
 
 #define WCSLEN(soname, fnname) \
    SizeT VG_REPLACE_FUNCTION_EZU(20370,soname,fnname) \
-      ( const UInt* str ); \
+      ( const Int* str ); \
    SizeT VG_REPLACE_FUNCTION_EZU(20370,soname,fnname) \
-      ( const UInt* str )  \
+      ( const Int* str )  \
    { \
       SizeT i = 0; \
       while (str[i] != 0) i++; \
@@ -1860,6 +1862,28 @@ static inline void my_exit ( int x )
 #elif defined(VGO_solaris)
  WCSLEN(VG_Z_LIBC_SONAME,          wcslen)
 
+#endif
+
+/*---------------------- wcsnlen ----------------------*/
+
+#define WCSNLEN(soname, fnname) \
+   SizeT VG_REPLACE_FUNCTION_EZU(20440,soname,fnname) \
+            ( const Int *s, SizeT n ); \
+   SizeT VG_REPLACE_FUNCTION_EZU(20440,soname,fnname) \
+            ( const Int *s, SizeT n ) \
+   {                                     \
+      SizeT i = 0;                       \
+      const Int* p = s;                  \
+      while (i < n && *p != 0) {         \
+         i++;                            \
+         p++;                            \
+      }                                  \
+      return i;                          \
+   }
+
+#if defined(VGO_linux)
+ WCSNLEN(VG_Z_LIBC_SONAME, wcsnlen)
+ WCSNLEN(VG_Z_LIBC_SONAME, __GI_wcsnlen)
 #endif
 
 /*---------------------- wcscmp ----------------------*/
@@ -1969,6 +1993,32 @@ static inline void my_exit ( int x )
 
 #if defined(VGO_linux)
  WCSRCHR(VG_Z_LIBC_SONAME, wcsrchr)
+#endif
+
+ /*---------------------- wmemchr ----------------------*/
+
+// This is a wchar_t equivalent to memchr.  We don't
+// have wchar_t available here, but in the GNU C Library
+// wchar_t is always 32 bits wide.
+
+#define WMEMCHR(soname, fnname)                        \
+   Int* VG_REPLACE_FUNCTION_EZU(20430,soname,fnname) \
+            (const Int *s, Int c, SizeT n); \
+   Int* VG_REPLACE_FUNCTION_EZU(20430,soname,fnname) \
+            (const Int *s, Int c, SizeT n) \
+   { \
+      SizeT i; \
+      const Int* p = s; \
+      for (i = 0; i < n; i++) {                   \
+         if (*p == c) return CONST_CAST(Int *,p); \
+         p++;                                     \
+      }                                           \
+      return NULL; \
+   }
+
+#if defined(VGO_linux)
+ WMEMCHR(VG_Z_LIBC_SONAME, wmemchr)
+ WMEMCHR(VG_Z_LIBC_SONAME, __GI_wmemchr)
 #endif
 
 /*------------------------------------------------------------*/

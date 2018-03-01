@@ -405,7 +405,7 @@ static void test_mtvsrwz (void)
 
 static void test_mtvsrwa (void)
 {
-   __asm__ __volatile__ ("mtvsrwa %x0,%1" : "=d" (vec_out) : "r" (r14));
+   __asm__ __volatile__ ("mtvsrwa %x0,%1" : "=ws" (vec_out) : "r" (r14));
 };
 
 static void test_mtfprwa (void)
@@ -425,7 +425,7 @@ static void test_mtvrd (void)
 
 static void test_mtfprd (void)
 {
-   __asm__ __volatile__ ("mtfprd %0,%1" : "=v" (vec_out) : "r" (r14));
+   __asm__ __volatile__ ("mtfprd %0,%1" : "=d" (vec_out) : "r" (r14));
 };
 
 static test_t tests_move_ops_spe[] = {

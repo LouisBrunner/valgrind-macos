@@ -4760,6 +4760,36 @@ struct vki_serial_struct {
 
 #endif // __VKI_LINUX_H
 
+//----------------------------------------------------------------------
+// From linux-4.10/include/uapi/linux/blkzoned.h
+//----------------------------------------------------------------------
+
+struct vki_blk_zone {
+	__vki_u64	start;
+	__vki_u64	len;
+	__vki_u64	wp;
+	__vki_u8	type;
+	__vki_u8	cond;
+	__vki_u8	non_seq;
+	__vki_u8	reset;
+	__vki_u8	reserved[36];
+};
+
+struct vki_blk_zone_report {
+	__vki_u64		sector;
+	__vki_u32		nr_zones;
+	__vki_u8		reserved[4];
+	struct vki_blk_zone	zones[0];
+};
+
+struct vki_blk_zone_range {
+	__vki_u64		sector;
+	__vki_u64		nr_sectors;
+};
+
+#define VKI_BLKREPORTZONE	_VKI_IOWR(0x12, 130, struct vki_blk_zone_report)
+#define VKI_BLKRESETZONE	_VKI_IOW(0x12, 131, struct vki_blk_zone_range)
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

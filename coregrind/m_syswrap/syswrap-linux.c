@@ -6919,6 +6919,14 @@ PRE(sys_ioctl)
    case VKI_BLKDISCARDZEROES:
       PRE_MEM_WRITE( "ioctl(BLKDISCARDZEROES)", ARG3, sizeof(vki_uint));
       break;
+   case VKI_BLKREPORTZONE:
+      PRE_MEM_READ("ioctl(BLKREPORTZONE)", ARG3,
+		   sizeof(struct vki_blk_zone_report));
+      break;
+   case VKI_BLKRESETZONE:
+      PRE_MEM_READ("ioctl(BLKRESETZONE)", ARG3,
+		   sizeof(struct vki_blk_zone_range));
+      break;
 
       /* Hard disks */
    case VKI_HDIO_GETGEO: /* 0x0301 */
@@ -9671,6 +9679,14 @@ POST(sys_ioctl)
       break;
    case VKI_BLKDISCARDZEROES:
       POST_MEM_WRITE(ARG3, sizeof(vki_uint));
+      break;
+   case VKI_BLKREPORTZONE: {
+      const struct vki_blk_zone_report *zr = (void *)ARG3;
+
+      POST_MEM_WRITE(ARG3, sizeof(*zr) + zr->nr_zones * sizeof(zr->zones[0]));
+      break;
+   }
+   case VKI_BLKRESETZONE:
       break;
 
       /* Hard disks */

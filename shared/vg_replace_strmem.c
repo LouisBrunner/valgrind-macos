@@ -964,6 +964,11 @@ static inline void my_exit ( int x )
                while ((s & WM) != 0 && n >= 1) \
                   { *(UChar*)d = *(UChar*)s; s += 1; d += 1; n -= 1; } \
                /* Copy UWords. */ \
+               while (n >= WS * 4) \
+                  { *(UWord*)d = *(UWord*)s; s += WS; d += WS; n -= WS;   \
+                    *(UWord*)d = *(UWord*)s; s += WS; d += WS; n -= WS;   \
+                    *(UWord*)d = *(UWord*)s; s += WS; d += WS; n -= WS;   \
+                    *(UWord*)d = *(UWord*)s; s += WS; d += WS; n -= WS; } \
                while (n >= WS) \
                   { *(UWord*)d = *(UWord*)s; s += WS; d += WS; n -= WS; } \
                if (n == 0) \
@@ -991,6 +996,11 @@ static inline void my_exit ( int x )
                while ((s & WM) != 0 && n >= 1) \
                   { s -= 1; d -= 1; *(UChar*)d = *(UChar*)s; n -= 1; } \
                /* Copy UWords. */ \
+               while (n >= WS * 4) \
+                  { s -= WS; d -= WS; *(UWord*)d = *(UWord*)s; n -= WS;   \
+                    s -= WS; d -= WS; *(UWord*)d = *(UWord*)s; n -= WS;   \
+                    s -= WS; d -= WS; *(UWord*)d = *(UWord*)s; n -= WS;   \
+                    s -= WS; d -= WS; *(UWord*)d = *(UWord*)s; n -= WS; } \
                while (n >= WS) \
                   { s -= WS; d -= WS; *(UWord*)d = *(UWord*)s; n -= WS; } \
                if (n == 0) \

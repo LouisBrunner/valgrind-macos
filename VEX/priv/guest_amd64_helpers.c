@@ -1768,8 +1768,8 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
       /* This can happen, as a result of amd64 FP compares: "comisd ... ;
          jbe" for example. */
 
-      if (isU64(cc_op, AMD64G_CC_OP_COPY) && 
-          (isU64(cond, AMD64CondBE) || isU64(cond, AMD64CondNBE))) {
+      if (isU64(cc_op, AMD64G_CC_OP_COPY)
+          && (isU64(cond, AMD64CondBE) || isU64(cond, AMD64CondNBE))) {
          /* COPY, then BE --> extract C and Z from dep1, and test (C
             or Z == 1). */
          /* COPY, then NBE --> extract C and Z from dep1, and test (C
@@ -1794,19 +1794,22 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
             );
       }
       
-      if (isU64(cc_op, AMD64G_CC_OP_COPY) && isU64(cond, AMD64CondB)) {
-         /* COPY, then B --> extract C dep1, and test (C == 1). */
+      if (isU64(cc_op, AMD64G_CC_OP_COPY)
+          && (isU64(cond, AMD64CondB) || isU64(cond, AMD64CondNB))) {
+         /* COPY, then B --> extract C from dep1, and test (C == 1). */
+         /* COPY, then NB --> extract C from dep1, and test (C == 0). */
+         ULong nnn = isU64(cond, AMD64CondB) ? 1 : 0;
          return
             unop(
                Iop_1Uto64,
                binop(
-                  Iop_CmpNE64,
+                  Iop_CmpEQ64,
                   binop(
                      Iop_And64,
                      binop(Iop_Shr64, cc_dep1, mkU8(AMD64G_CC_SHIFT_C)),
                      mkU64(1)
                   ),
-                  mkU64(0)
+                  mkU64(nnn)
                )
             );
       }
@@ -1815,7 +1818,7 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
           && (isU64(cond, AMD64CondZ) || isU64(cond, AMD64CondNZ))) {
          /* COPY, then Z --> extract Z from dep1, and test (Z == 1). */
          /* COPY, then NZ --> extract Z from dep1, and test (Z == 0). */
-         UInt nnn = isU64(cond, AMD64CondZ) ? 1 : 0;
+         ULong nnn = isU64(cond, AMD64CondZ) ? 1 : 0;
          return
             unop(
                Iop_1Uto64,
@@ -1831,19 +1834,22 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
             );
       }
 
-      if (isU64(cc_op, AMD64G_CC_OP_COPY) && isU64(cond, AMD64CondP)) {
+      if (isU64(cc_op, AMD64G_CC_OP_COPY)
+          && (isU64(cond, AMD64CondP) || isU64(cond, AMD64CondNP))) {
          /* COPY, then P --> extract P from dep1, and test (P == 1). */
+         /* COPY, then NP --> extract P from dep1, and test (P == 0). */
+         ULong nnn = isU64(cond, AMD64CondP) ? 1 : 0;
          return
             unop(
                Iop_1Uto64,
                binop(
-                  Iop_CmpNE64,
+                  Iop_CmpEQ64,
                   binop(
                      Iop_And64,
                      binop(Iop_Shr64, cc_dep1, mkU8(AMD64G_CC_SHIFT_P)),
                      mkU64(1)
                   ),
-                  mkU64(0)
+                  mkU64(nnn)
                )
             );
       }

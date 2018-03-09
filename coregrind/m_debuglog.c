@@ -130,7 +130,7 @@ static UInt local_sys_write_stderr ( const HChar* buf, Int n )
       "addq  $256, %%rsp\n"     /* restore stack ptr */
       : /*wr*/
       : /*rd*/    "r" (block)
-      : /*trash*/ "rax", "rdi", "rsi", "rdx", "memory", "cc"
+      : /*trash*/ "rax", "rdi", "rsi", "rdx", "memory", "cc", "rcx", "r11"
    );
    if (block[0] < 0) 
       block[0] = -1;
@@ -146,7 +146,8 @@ static UInt local_sys_getpid ( void )
       "movl %%eax, %0\n"   /* set __res = %eax */
       : "=mr" (__res)
       :
-      : "rax" );
+      : "rax", "rcx", "r11"
+   );
    return __res;
 }
 
@@ -1203,6 +1204,9 @@ void VG_(debugLog) ( Int level, const HChar* modulename,
    if (level > loglevel)
       return;
 
+   indent = 2*level - 1;
+   if (indent < 1) indent = 1;
+
    buf.n = 0;
    buf.buf[0] = 0;
    pid = local_sys_getpid();
@@ -1220,8 +1224,6 @@ void VG_(debugLog) ( Int level, const HChar* modulename,
    (void)myvprintf_int64 ( add_to_buf, &buf, 0, 10, 1, False, (ULong)level );
    (void)myvprintf_str ( add_to_buf, &buf, 0, 1, ":", False );
    (void)myvprintf_str ( add_to_buf, &buf, 0, 8, modulename, False );
-   indent = 2*level - 1;
-   if (indent < 1) indent = 1;
    (void)myvprintf_str ( add_to_buf, &buf, 0, indent, "", False );
 
    va_start(vargs,format);

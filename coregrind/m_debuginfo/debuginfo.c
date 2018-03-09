@@ -1044,7 +1044,8 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
       sources of noise before complaining, though. */
    if (sr_isError(statres)) {
       DebugInfo fake_di;
-      Bool quiet = VG_(strstr)(filename, "/var/run/nscd/") != NULL;
+      Bool quiet = VG_(strstr)(filename, "/var/run/nscd/") != NULL
+                   || VG_(strstr)(filename, "/dev/shm/") != NULL;
       if (!quiet && VG_(clo_verbosity) > 1) {
          VG_(memset)(&fake_di, 0, sizeof(fake_di));
          fake_di.fsm.filename = ML_(dinfo_strdup)("di.debuginfo.nmm", filename);

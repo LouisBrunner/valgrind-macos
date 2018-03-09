@@ -258,7 +258,7 @@ void VG_(archive_ExeContext_in_range) (DiEpoch last_epoch,
    }
    if (VG_(clo_verbosity) > 1)
       VG_(message)(Vg_DebugMsg,
-                   "Scanned %'llu ExeContexts archived %'llu ExeContexts\n",
+                   "Scanned %'llu ExeContexts, archived %'llu ExeContexts\n",
                    ec_totstored, n_archived);
 }
 

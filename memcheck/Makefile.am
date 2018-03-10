@@ -69,11 +69,6 @@ memcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_LINK = \
 	$(memcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_LDFLAGS)
 endif
 
-# mc_main.c contains the helper function for memcheck that get called
-# all the time. To maximise performance compile with -fomit-frame-pointer
-# Primary beneficiary is x86.
-mc_main.o: CFLAGS += -fomit-frame-pointer
-
 #----------------------------------------------------------------------------
 # vgpreload_memcheck-<platform>.so
 #----------------------------------------------------------------------------
@@ -87,6 +82,8 @@ if VGCONF_OS_IS_DARWIN
 noinst_DSYMS = $(noinst_PROGRAMS)
 endif
 
+# mc_replace_strmem.c runs on the simulated CPU, and is built with
+# AM_CFLAGS_PSO_* (see $(top_srcdir)/Makefile.all.am).
 VGPRELOAD_MEMCHECK_SOURCES_COMMON = mc_replace_strmem.c
 
 vgpreload_memcheck_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_SOURCES      = \
@@ -114,11 +111,4 @@ vgpreload_memcheck_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_LDFLAGS      = \
 	$(PRELOAD_LDFLAGS_@VGCONF_PLATFORM_SEC_CAPS@) \
 	$(LIBREPLACEMALLOC_LDFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
 endif
-
-# mc_replace_strmem.c runs on the simulated CPU, and it often appears
-# in stack traces shown to the user.  It is built with
-# -fno-omit-frame-pointer so as to guarantee robust backtraces on x86,
-# on which CFI based unwinding is not the "normal" case and so is
-# sometimes fragile.
-mc_replace_strmem.o: CFLAGS += -fno-omit-frame-pointer
 

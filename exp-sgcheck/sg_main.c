@@ -2329,6 +2329,20 @@ void sg_instrument_IRStmt ( /*MOD*/struct _SGEnv * env,
          break;
       }
 
+      case Ist_LoadG: {
+         IRLoadG* lg       = st->Ist.LoadG.details;
+         IRType   type     = Ity_INVALID; /* loaded type */
+         IRType   typeWide = Ity_INVALID; /* after implicit widening */
+         IRExpr*  addr     = lg->addr;
+         typeOfIRLoadGOp(lg->cvt, &typeWide, &type);
+         tl_assert(type != Ity_INVALID);
+         instrument_mem_access(
+            env, sbOut, addr, sizeofIRType(type), False/*isStore*/,
+            sizeofIRType(hWordTy), env->curr_IP, layout
+         );
+         break;
+      }
+
       default:
          tl_assert(0);
 

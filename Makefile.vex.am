@@ -68,6 +68,10 @@ else
 CFLAGS_FOR_GENOFFSETS = $(CFLAGS)
 endif
 
+# for VEX building, use the LTO versions, in case they differ from non lto versions
+AR = ${LTO_AR}
+RANLIB = ${LTO_RANLIB}
+
 # This is very uggerly.  Need to sed out both "xyzzyN" and
 # "xyzzy$N" since gcc on different targets emits the constants
 # differently -- with a leading $ on x86/amd64 but none on ppc32/64.
@@ -86,7 +90,7 @@ pub/libvex_guest_offsets.h: auxprogs/genoffsets.c \
 	rm -f auxprogs/genoffsets.s
 	$(mkdir_p) auxprogs pub
 	$(CC) $(CFLAGS_FOR_GENOFFSETS) \
-	      $(LIBVEX_CFLAGS) \
+	      $(LIBVEX_CFLAGS_NO_LTO) \
 	      $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) \
 				-O -S -o auxprogs/genoffsets.s \
 					 $(srcdir)/auxprogs/genoffsets.c
@@ -162,9 +166,12 @@ LIBVEX_SOURCES_COMMON = \
 
 LIBVEXMULTIARCH_SOURCES = priv/multiarch_main_main.c
 
-LIBVEX_CFLAGS = \
+LIBVEX_CFLAGS_NO_LTO = \
 	-Wbad-function-cast \
 	-fstrict-aliasing
+
+LIBVEX_CFLAGS = ${LTO_CFLAGS} \
+	${LIBVEX_CFLAGS_NO_LTO}
 
 libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_SOURCES  = $(LIBVEX_SOURCES_COMMON)
 libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CPPFLAGS = \

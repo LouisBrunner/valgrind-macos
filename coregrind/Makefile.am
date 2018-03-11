@@ -50,8 +50,12 @@ valgrind_SOURCES = \
 	m_debuglog.c
 endif
 
+# for valgrind coregrind building, use the LTO versions, in case they differ from non lto versions
+AR = ${LTO_AR}
+RANLIB = ${LTO_RANLIB}
+
 valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
-valgrind_CFLAGS    = $(AM_CFLAGS_PRI)
+valgrind_CFLAGS    = $(AM_CFLAGS_PRI) $(LTO_CFLAGS)
 valgrind_CCASFLAGS = $(AM_CCASFLAGS_PRI)
 valgrind_LDFLAGS   = $(AM_CFLAGS_PRI) @LIB_UBSAN@
 # If there is no secondary platform, and the platforms include x86-darwin,
@@ -90,7 +94,7 @@ vgdb_SOURCES += vgdb-invoker-solaris.c
 endif
 
 vgdb_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
-vgdb_CFLAGS    = $(AM_CFLAGS_PRI)
+vgdb_CFLAGS    = $(AM_CFLAGS_PRI) $(LTO_CFLAGS)
 vgdb_CCASFLAGS = $(AM_CCASFLAGS_PRI)
 vgdb_LDFLAGS   = $(AM_CFLAGS_PRI) @LIB_UBSAN@
 if VGCONF_PLATVARIANT_IS_ANDROID
@@ -308,10 +312,8 @@ COREGRIND_SOURCES_COMMON = \
 	m_libcfile.c \
 	m_libcprint.c \
 	m_libcproc.c \
-	m_libcsetjmp.c \
 	m_libcsignal.c \
 	m_machine.c \
-	m_main.c \
 	m_mallocfree.c \
 	m_options.c \
 	m_oset.c \
@@ -461,13 +463,43 @@ COREGRIND_SOURCES_COMMON = \
 	m_ume/main.c \
 	m_ume/script.c
 
+# The below files cannot be compiled with lto, otherwise that gives
+# undefined symbols at link time. So, define a noinst library to
+# build the needed .o with specific flags.
+# These objects are added to the libcoregrind library.
+NOLTO_COREGRIND_SOURCES_COMMON = \
+	m_libcsetjmp.c \
+	m_main.c
+noinst_LIBRARIES = libnolto_coregrind-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a
+libnolto_coregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_SOURCES = \
+    $(NOLTO_COREGRIND_SOURCES_COMMON)
+libnolto_coregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CPPFLAGS = \
+    $(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+libnolto_coregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS = \
+    $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+libnolto_coregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CCASFLAGS = \
+    $(AM_CCASFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+
+if VGCONF_HAVE_PLATFORM_SEC
+noinst_LIBRARIES += libnolto_coregrind-@VGCONF_ARCH_SEC@-@VGCONF_OS@.a
+libnolto_coregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_SOURCES = \
+    $(NOLTO_COREGRIND_SOURCES_COMMON)
+libnolto_coregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CPPFLAGS = \
+    $(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
+libnolto_coregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS = \
+    $(AM_CFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
+libnolto_coregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CCASFLAGS = \
+    $(AM_CCASFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
+endif
+
+
 libcoregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_SOURCES = \
     $(COREGRIND_SOURCES_COMMON)
 nodist_libcoregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_SOURCES = \
     $(BUILT_SOURCES)
 libcoregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CPPFLAGS = \
     $(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
-libcoregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS = \
+libcoregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS = $(LTO_CFLAGS) \
     $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 libcoregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CCASFLAGS = \
     $(AM_CCASFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
@@ -477,6 +509,8 @@ libcoregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_SOURCES += \
 libcoregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS += \
     -DENABLE_LINUX_TICKET_LOCK
 endif
+libcoregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_LIBADD = \
+    $(libnolto_coregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_OBJECTS)
 
 if VGCONF_HAVE_PLATFORM_SEC
 libcoregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_SOURCES = \
@@ -485,7 +519,7 @@ nodist_libcoregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_SOURCES = \
     $(BUILT_SOURCES)
 libcoregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CPPFLAGS = \
     $(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
-libcoregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS = \
+libcoregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS =  $(LTO_CFLAGS) \
     $(AM_CFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
 libcoregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CCASFLAGS = \
     $(AM_CCASFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
@@ -495,6 +529,8 @@ libcoregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_SOURCES += \
 libcoregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS += \
     -DENABLE_LINUX_TICKET_LOCK
 endif
+libcoregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_LIBADD = \
+    $(libnolto_coregrind_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_OBJECTS)
 endif
 
 #----------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 /*--------------------------------------------------------------------*/
 /*--- A minimal setjmp/longjmp implementation.      m_libcsetjmp.c ---*/
 /*--------------------------------------------------------------------*/
- 
+
 /*
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
@@ -29,10 +29,12 @@
 
 /* Contributed by Julian Seward <jseward@acm.org> */
 
+/* This file must be compiled without link time optimisation, as otherwise
+   the asm functions below become undefined references at link time for
+   unclear reasons. */
 
 #include "pub_core_basics.h"
 #include "pub_core_libcsetjmp.h"    /* self */
-
 
 /* See include/pub_tool_libcsetjmp.h for background and rationale. */
 
@@ -689,7 +691,6 @@ __asm__(
 ".previous                      \n\t"
 );
 #endif  /* VGP_mips64_linux */
-
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

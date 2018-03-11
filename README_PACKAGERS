@@ -5,6 +5,9 @@ building binary distributions of Valgrind.
 Thanks for taking the time and effort to make a binary distribution of
 Valgrind.  The following notes may save you some trouble.
 
+-- If your toolchain (compiler, linker) support lto, using the configure
+   option --enable-lto=yes will produce a smaller/faster valgrind
+   (up to 10%).
 
 -- Do not ship your Linux distro with a completely stripped
    /lib/ld.so.  At least leave the debugging symbol names on -- line
@@ -28,7 +31,7 @@ Valgrind.  The following notes may save you some trouble.
    not any debuginfo or extra symbols for any other libraries.
 
 
--- (Unfortunate but true) When you configure to build with the 
+-- (Unfortunate but true) When you configure to build with the
    --prefix=/foo/bar/xyzzy option, the prefix /foo/bar/xyzzy gets
    baked into valgrind.  The consequence is that you _must_ install
    valgrind at the location specified in the prefix.  If you don't,

@@ -35,6 +35,11 @@ support for X86/macOS 10.13, AMD64/macOS 10.13.
 
 * ==================== OTHER CHANGES ====================
 
+* A new configure option --enable-lto=yes allows to build Valgrind
+  with link time optimisation. If the toolchain supports it,
+  this produces a smaller/faster Valgrind (up to 10%).
+  Note that if you are doing some Valgrind development, --enable-lto=yes
+  significantly slows down the build.
 
 * ==================== FIXED BUGS ====================
 
@@ -52,6 +57,7 @@ where XXXXXX is the bug number as listed below.
 79362   Debug info is lost for .so files when they are dlclose'd
 208052  strlcpy error when n = 0
 255603  exp-sgcheck Assertion '!already_present' failed
+338252 - building valgrind with -flto (link time optimisation) fails
 376257  helgrind history full speed up using a cached stack
 379373  Fix syscall param msg->desc.port.name points to uninitialised byte(s)
         on macOS 10.12
@@ -91,7 +97,7 @@ where XXXXXX is the bug number as listed below.
 387712  s390x cgijnl reports Conditional jump depends on uninitialised value
 387773  .gnu_debugaltlink paths resolve relative to .debug file, not symlink
 388862  Add replacements for wmemchr and wcsnlen on Linux
-389373  exp-sgcheck the 'impossible' happened as st_LoadG is not instrumented
+389373  exp-sgcheck the 'impossible' happened as Ist_LoadG is not instrumented
 389065  valgrind meets gcc flag -Wlogical-op
 390723  make xtree dump files world wide readable, similar to log files
 

@@ -54,11 +54,6 @@
 #include "mc_include.h"
 #include "memcheck.h"   /* for client requests */
 
-
-/* Set to 1 to enable handwritten assembly helpers on targets for
-   which it is supported. */
-#define ENABLE_ASSEMBLY_HELPERS 1
-
 /* Set to 1 to do a little more sanity checking */
 #define VG_DEBUG_MEMORY 0
 
@@ -74,7 +69,7 @@ static void ocache_sarp_Clear_Origins ( Addr, UWord ); /* fwds */
  
 // Comment these out to disable the fast cases (don't just set them to zero).
 
-#define PERF_FAST_LOADV    1
+/* PERF_FAST_LOADV is in mc_include.h */
 #define PERF_FAST_STOREV   1
 
 #define PERF_FAST_SARP     1
@@ -374,7 +369,17 @@ static void update_SM_counts(SecMap* oldSM, SecMap* newSM)
    space, addresses 0 .. (N_PRIMARY_MAP << 16)-1.  The rest of it is
    handled using the auxiliary primary map.  
 */
-static SecMap* primary_map[N_PRIMARY_MAP];
+#if ENABLE_ASSEMBLY_HELPERS && defined(PERF_FAST_LOADV) \
+    && (defined(VGP_arm_linux) \
+        || defined(VGP_x86_linux) || defined(VGP_x86_solaris))
+/* mc_main_asm.c needs visibility on a few things declared in this file.
+   MC_MAIN_STATIC allows to define them static if ok, i.e. on
+   platforms that are not using hand-coded asm statements. */
+#define MC_MAIN_STATIC
+#else
+#define MC_MAIN_STATIC static
+#endif
+MC_MAIN_STATIC SecMap* primary_map[N_PRIMARY_MAP];
 
 
 /* An entry in the auxiliary primary map.  base must be a 64k-aligned
@@ -1364,8 +1369,13 @@ void mc_LOADV_128_or_256_slow ( /*OUT*/ULong* res,
    MC_(record_address_error)( VG_(get_running_tid)(), a, szB, False );
 }
 
+MC_MAIN_STATIC
+__attribute__((noinline))
+__attribute__((used))
+VG_REGPARM(3)
+ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian );
 
-static
+MC_MAIN_STATIC
 __attribute__((noinline))
 __attribute__((used))
 VG_REGPARM(3) /* make sure we're using a fixed calling convention, since
@@ -4861,78 +4871,11 @@ VG_REGPARM(1) ULong MC_(helperc_LOADV64be) ( Addr a )
 // Non-generic assembly for arm32-linux
 #if ENABLE_ASSEMBLY_HELPERS && defined(PERF_FAST_LOADV) \
     && defined(VGP_arm_linux)
-__asm__( /* Derived from the 32 bit assembly helper */
-".text                                  \n"
-".align 2                               \n"
-".global vgMemCheck_helperc_LOADV64le   \n"
-".type   vgMemCheck_helperc_LOADV64le, %function \n"
-"vgMemCheck_helperc_LOADV64le:          \n"
-"      tst    r0, #7                    \n"
-"      movw   r3, #:lower16:primary_map \n"
-"      bne    .LLV64LEc4                \n" // if misaligned
-"      lsr    r2, r0, #16               \n"
-"      movt   r3, #:upper16:primary_map \n"
-"      ldr    r2, [r3, r2, lsl #2]      \n"
-"      uxth   r1, r0                    \n" // r1 is 0-(16)-0 X-(13)-X 000
-"      movw   r3, #0xAAAA               \n"
-"      lsr    r1, r1, #2                \n" // r1 is 0-(16)-0 00 X-(13)-X 0
-"      ldrh   r1, [r2, r1]              \n"
-"      cmp    r1, r3                    \n" // 0xAAAA == VA_BITS16_DEFINED
-"      bne    .LLV64LEc0                \n" // if !all_defined
-"      mov    r1, #0x0                  \n" // 0x0 == V_BITS32_DEFINED
-"      mov    r0, #0x0                  \n" // 0x0 == V_BITS32_DEFINED
-"      bx     lr                        \n"
-".LLV64LEc0:                            \n"
-"      movw   r3, #0x5555               \n"
-"      cmp    r1, r3                    \n" // 0x5555 == VA_BITS16_UNDEFINED
-"      bne    .LLV64LEc4                \n" // if !all_undefined
-"      mov    r1, #0xFFFFFFFF           \n" // 0xFFFFFFFF == V_BITS32_UNDEFINED
-"      mov    r0, #0xFFFFFFFF           \n" // 0xFFFFFFFF == V_BITS32_UNDEFINED
-"      bx     lr                        \n"
-".LLV64LEc4:                            \n"
-"      push   {r4, lr}                  \n"
-"      mov    r2, #0                    \n"
-"      mov    r1, #64                   \n"
-"      bl     mc_LOADVn_slow            \n"
-"      pop    {r4, pc}                  \n"
-".size vgMemCheck_helperc_LOADV64le, .-vgMemCheck_helperc_LOADV64le \n"
-".previous\n"
-);
+/* See mc_main_asm.c */
 
 #elif ENABLE_ASSEMBLY_HELPERS && defined(PERF_FAST_LOADV) \
       && (defined(VGP_x86_linux) || defined(VGP_x86_solaris))
-__asm__(
-".text\n"
-".align 16\n"
-".global vgMemCheck_helperc_LOADV64le\n"
-".type   vgMemCheck_helperc_LOADV64le, @function\n"
-"vgMemCheck_helperc_LOADV64le:\n"
-"      test   $0x7,  %eax\n"
-"      jne    .LLV64LE2\n"          /* jump if not aligned */
-"      mov    %eax,  %ecx\n"
-"      movzwl %ax,   %edx\n"
-"      shr    $0x10, %ecx\n"
-"      mov    primary_map(,%ecx,4), %ecx\n"
-"      shr    $0x3,  %edx\n"
-"      movzwl (%ecx,%edx,2), %edx\n"
-"      cmp    $0xaaaa, %edx\n"
-"      jne    .LLV64LE1\n"          /* jump if not all defined */
-"      xor    %eax, %eax\n"         /* return 0 in edx:eax */
-"      xor    %edx, %edx\n"
-"      ret\n"
-".LLV64LE1:\n"
-"      cmp    $0x5555, %edx\n"
-"      jne    .LLV64LE2\n"         /* jump if not all undefined */
-"      or     $0xffffffff, %eax\n" /* else return all bits set in edx:eax */
-"      or     $0xffffffff, %edx\n"
-"      ret\n"
-".LLV64LE2:\n"
-"      xor    %ecx,  %ecx\n"  /* tail call to mc_LOADVn_slow(a, 64, 0) */
-"      mov    $64,   %edx\n"
-"      jmp    mc_LOADVn_slow\n"
-".size vgMemCheck_helperc_LOADV64le, .-vgMemCheck_helperc_LOADV64le\n"
-".previous\n"
-);
+/* See mc_main_asm.c */
 
 #else
 // Generic for all platforms except {arm32,x86}-linux and x86-solaris
@@ -5064,71 +5007,11 @@ VG_REGPARM(1) UWord MC_(helperc_LOADV32be) ( Addr a )
 // Non-generic assembly for arm32-linux
 #if ENABLE_ASSEMBLY_HELPERS && defined(PERF_FAST_LOADV) \
     && defined(VGP_arm_linux)
-__asm__( /* Derived from NCode template */
-".text                                  \n"
-".align 2                               \n"
-".global vgMemCheck_helperc_LOADV32le   \n"
-".type   vgMemCheck_helperc_LOADV32le, %function \n"
-"vgMemCheck_helperc_LOADV32le:          \n"
-"      tst    r0, #3                    \n" // 1
-"      movw   r3, #:lower16:primary_map \n" // 1
-"      bne    .LLV32LEc4                \n" // 2  if misaligned
-"      lsr    r2, r0, #16               \n" // 3
-"      movt   r3, #:upper16:primary_map \n" // 3
-"      ldr    r2, [r3, r2, lsl #2]      \n" // 4
-"      uxth   r1, r0                    \n" // 4
-"      ldrb   r1, [r2, r1, lsr #2]      \n" // 5
-"      cmp    r1, #0xAA                 \n" // 6  0xAA == VA_BITS8_DEFINED
-"      bne    .LLV32LEc0                \n" // 7  if !all_defined
-"      mov    r0, #0x0                  \n" // 8  0x0 == V_BITS32_DEFINED
-"      bx     lr                        \n" // 9
-".LLV32LEc0:                            \n"
-"      cmp    r1, #0x55                 \n" // 0x55 == VA_BITS8_UNDEFINED
-"      bne    .LLV32LEc4                \n" // if !all_undefined
-"      mov    r0, #0xFFFFFFFF           \n" // 0xFFFFFFFF == V_BITS32_UNDEFINED
-"      bx     lr                        \n"
-".LLV32LEc4:                            \n"
-"      push   {r4, lr}                  \n"
-"      mov    r2, #0                    \n"
-"      mov    r1, #32                   \n"
-"      bl     mc_LOADVn_slow            \n"
-"      pop    {r4, pc}                  \n"
-".size vgMemCheck_helperc_LOADV32le, .-vgMemCheck_helperc_LOADV32le \n"
-".previous\n"
-);
+/* See mc_main_asm.c */
 
 #elif ENABLE_ASSEMBLY_HELPERS && defined(PERF_FAST_LOADV) \
       && (defined(VGP_x86_linux) || defined(VGP_x86_solaris))
-__asm__(
-".text\n"
-".align 16\n"
-".global vgMemCheck_helperc_LOADV32le\n"
-".type   vgMemCheck_helperc_LOADV32le, @function\n"
-"vgMemCheck_helperc_LOADV32le:\n"
-"      test   $0x3,  %eax\n"
-"      jnz    .LLV32LE2\n"         /* jump if misaligned */
-"      mov    %eax,  %edx\n"
-"      shr    $16,   %edx\n"
-"      mov    primary_map(,%edx,4), %ecx\n"
-"      movzwl %ax,   %edx\n"
-"      shr    $2,    %edx\n"
-"      movzbl (%ecx,%edx,1), %edx\n"
-"      cmp    $0xaa, %edx\n"       /* compare to VA_BITS8_DEFINED */
-"      jne    .LLV32LE1\n"         /* jump if not completely defined */
-"      xor    %eax,  %eax\n"       /* else return V_BITS32_DEFINED */
-"      ret\n"
-".LLV32LE1:\n"
-"      cmp    $0x55, %edx\n"       /* compare to VA_BITS8_UNDEFINED */
-"      jne    .LLV32LE2\n"         /* jump if not completely undefined */
-"      or     $0xffffffff, %eax\n" /* else return V_BITS32_UNDEFINED */
-"      ret\n"
-".LLV32LE2:\n"
-"      xor    %ecx,  %ecx\n"       /* tail call mc_LOADVn_slow(a, 32, 0) */
-"      mov    $32,   %edx\n"
-"      jmp    mc_LOADVn_slow\n"
-".size vgMemCheck_helperc_LOADV32le, .-vgMemCheck_helperc_LOADV32le\n"
-".previous\n"
-);
+/* See mc_main_asm.c */
 
 #else
 // Generic for all platforms except {arm32,x86}-linux and x86-solaris

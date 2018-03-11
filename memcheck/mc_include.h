@@ -372,6 +372,12 @@ extern ULong MC_(event_ctr)[MCPE_LAST];
 #define V_BITS64_DEFINED      0ULL
 #define V_BITS64_UNDEFINED    0xFFFFFFFFFFFFFFFFULL
 
+/* Set to 1 to enable handwritten assembly helpers on targets for
+   which it is supported. */
+#define ENABLE_ASSEMBLY_HELPERS 1
+
+/* Comment the below to disable the fast case LOADV */
+#define PERF_FAST_LOADV         1
 
 /*------------------------------------------------------------*/
 /*--- Leak checking                                        ---*/

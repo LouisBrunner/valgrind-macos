@@ -6886,6 +6886,8 @@ PRE(sys_ioctl)
    case VKI_BLKGETSIZE:
       PRE_MEM_WRITE( "ioctl(BLKGETSIZE)", ARG3, sizeof(unsigned long));
       break;
+   case VKI_BLKFLSBUF:
+      break;
    case VKI_BLKRASET:
       break;
    case VKI_BLKRAGET:
@@ -9637,6 +9639,8 @@ POST(sys_ioctl)
       break;
    case VKI_BLKGETSIZE:
       POST_MEM_WRITE(ARG3, sizeof(unsigned long));
+      break;
+   case VKI_BLKFLSBUF:
       break;
    case VKI_BLKRASET:
       break;

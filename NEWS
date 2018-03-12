@@ -96,6 +96,7 @@ where XXXXXX is the bug number as listed below.
 
 n-i-bz  Fix missing workq_ops operations (macOS)
 n-i-bz  fix bug in strspn replacement
+n-i-bz  Add support for the Linux BLKFLSBUF ioctl
 
 Release 3.13.0 (15 June 2017)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

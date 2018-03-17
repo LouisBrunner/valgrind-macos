@@ -2057,6 +2057,27 @@ else
   AC_SUBST([FLAG_W_CAST_ALIGN], [-Wcast-align])
 fi
 
+# does this compiler support -faligned-new ?
+AC_MSG_CHECKING([if g++ accepts -faligned-new])
+
+safe_CXXFLAGS=$CXXFLAGS
+CXXFLAGS="-faligned-new -Werror"
+
+AC_LANG(C++)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  return 0;
+]])], [
+FLAG_FALIGNED_NEW="-faligned-new"
+AC_MSG_RESULT([yes])
+], [
+FLAG_FALIGNED_NEW=""
+AC_MSG_RESULT([no])
+])
+CXXFLAGS=$safe_CXXFLAGS
+AC_LANG(C)
+
+AC_SUBST(FLAG_FALIGNED_NEW)
+
 # does this compiler support -fno-stack-protector ?
 AC_MSG_CHECKING([if gcc accepts -fno-stack-protector])
 

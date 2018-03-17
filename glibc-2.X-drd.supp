@@ -58,6 +58,18 @@
    fun:pthread_cond_broadcast@*
    fun:__cxa_guard_release
 }
+{
+   drd-libstdc++-std::__ostream_insert()
+   drd:ConflictingAccess
+   fun:_ZSt16__ostream_insertIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_PKS3_l
+   fun:_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc
+}
+{
+   drd-libstdc++-std::ostream::_M_insert<long>()
+   drd:ConflictingAccess
+   ...
+   fun:_ZNSo9_M_insertIlEERSoT_
+}
 
 
 #

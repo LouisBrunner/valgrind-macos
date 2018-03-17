@@ -644,6 +644,7 @@
 /helgrind/tests/annotate_rwlock
 /helgrind/tests/bar_bad
 /helgrind/tests/bar_trivial
+/helgrind/tests/bug322621
 /helgrind/tests/cond_init_destroy
 /helgrind/tests/cond_timedwait_invalid
 /helgrind/tests/cond_timedwait_test

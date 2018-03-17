@@ -13,6 +13,7 @@ EXTRA_DIST = \
 		annotate_rwlock.stderr.exp \
 	annotate_smart_pointer.vgtest annotate_smart_pointer.stdout.exp \
 		annotate_smart_pointer.stderr.exp \
+	bug322621.vgtest bug322621.stderr.exp \
 	cond_init_destroy.vgtest cond_init_destroy.stderr.exp \
 	cond_timedwait_invalid.vgtest cond_timedwait_invalid.stdout.exp \
 		cond_timedwait_invalid.stderr.exp \
@@ -126,6 +127,7 @@ noinst_HEADERS = safe-pthread.h safe-semaphore.h
 # should be conditionally compiled like tc20_verifywrap is.
 check_PROGRAMS = \
 	annotate_hbefore \
+	bug322621 \
 	cond_init_destroy \
 	cond_timedwait_invalid \
 	cond_timedwait_test \
@@ -201,7 +203,7 @@ tc08_hbl2_CFLAGS        = $(AM_CFLAGS)
 endif
 
 if HAVE_PTHREAD_BARRIER
-check_PROGRAMS += bar_bad bar_trivial
+check_PROGRAMS += bar_bad bar_trivial bug322621
 endif
 
 if HAVE_PTHREAD_MUTEX_TIMEDLOCK
@@ -222,3 +224,5 @@ annotate_hbefore_CFLAGS = $(AM_CFLAGS) -mdynamic-no-pic
 else
 annotate_hbefore_CFLAGS = $(AM_CFLAGS)
 endif
+
+bug322621_SOURCES = bug322621.cpp

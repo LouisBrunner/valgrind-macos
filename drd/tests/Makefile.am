@@ -81,6 +81,8 @@ EXTRA_DIST =                                        \
 	annotate_static.vgtest		            \
 	atomic_var.stderr.exp			    \
 	atomic_var.vgtest			    \
+	bug322621.vgtest			    \
+	bug322621.stderr.exp			    \
 	bar_bad.stderr.exp			    \
 	bar_bad.stderr.exp-nohang		    \
 	bar_bad.stderr.exp-solaris		    \
@@ -438,8 +440,14 @@ check_PROGRAMS += omp_matinv omp_prime omp_printf
 endif
 
 if HAVE_PTHREAD_BARRIER
-check_PROGRAMS += matinv pth_barrier pth_barrier_race pth_barrier_reinit \
-	pth_barrier_thr_cr thread_name
+check_PROGRAMS +=		\
+	bug322621		\
+	matinv			\
+	pth_barrier		\
+	pth_barrier_race	\
+	pth_barrier_reinit	\
+	pth_barrier_thr_cr	\
+	thread_name
 endif
 
 if HAVE_PTHREAD_CREATE_GLIBC_2_0
@@ -462,6 +470,7 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI) @FLAG_W_EXTRA@ @FLAG_FALIGNED_NEW@ \
 LDADD = -lpthread
 
 
+bug322621_SOURCES	    = ../../helgrind/tests/bug322621.cpp
 concurrent_close_SOURCES    = concurrent_close.cpp
 dlopen_main_LDADD           = -ldl
 dlopen_lib_so_SOURCES       = dlopen_lib.c

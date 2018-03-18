@@ -312,6 +312,7 @@
 /drd/tests/bar_trivial
 /drd/tests/boost_thread
 /drd/tests/bug-235681
+/drd/tests/bug322621
 /drd/tests/circular_buffer
 /drd/tests/concurrent_close
 /drd/tests/custom_alloc

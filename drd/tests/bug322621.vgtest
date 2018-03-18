@@ -1,0 +1,3 @@
+prereq: test -e bug322621 && ./supported_libpthread
+vgopts: --read-var-info=yes --check-stack-var=yes
+prog: bug322621

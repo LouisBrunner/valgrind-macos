@@ -100,6 +100,7 @@ where XXXXXX is the bug number as listed below.
 389373  exp-sgcheck the 'impossible' happened as Ist_LoadG is not instrumented
 389065  valgrind meets gcc flag -Wlogical-op
 390723  make xtree dump files world wide readable, similar to log files
+391861  Massif Assertion 'n_ips >= 1 && n_ips <= VG_(clo_backtrace_size)'
 
 n-i-bz  Fix missing workq_ops operations (macOS)
 n-i-bz  fix bug in strspn replacement

@@ -587,12 +587,17 @@ static ExeContext* make_ec(ThreadId tid, Bool exclude_first_entry)
                                     NULL/*array to dump SP values in*/,
                                     NULL/*array to dump FP values in*/,
                                     0/*first_ip_delta*/ );
-   if (exclude_first_entry && n_ips > 0) {
-      const HChar *fnname;
-      VERB(4, "removing top fn %s from stacktrace\n", 
+   if (exclude_first_entry) {
+      if (n_ips > 1) {
+         const HChar *fnname;
+         VERB(4, "removing top fn %s from stacktrace\n",
               VG_(get_fnname)(VG_(current_DiEpoch)(), ips[0], &fnname)
-                 ? fnname : "???");
-      return VG_(make_ExeContext_from_StackTrace)(ips+1, n_ips-1);
+              ? fnname : "???");
+         return VG_(make_ExeContext_from_StackTrace)(ips+1, n_ips-1);
+      } else {
+         VERB(4, "null execontext as removing top fn with n_ips %d\n", n_ips);
+         return VG_(null_ExeContext) ();
+      }
    } else
       return VG_(make_ExeContext_from_StackTrace)(ips, n_ips);
 }

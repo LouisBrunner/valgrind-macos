@@ -32,7 +32,7 @@
 #ifndef __VKI_SCNUMS_ARM_LINUX_H
 #define __VKI_SCNUMS_ARM_LINUX_H
 
-// From linux-2.6/arch/arm/include/asm/unistd.h
+// From linux-2.6/arch/arm/tools/syscall.tbl
 
 #define __NR_restart_syscall		  0
 #define __NR_exit			  1
@@ -422,6 +422,18 @@
 #define __NR_seccomp                    383
 #define __NR_getrandom                  384
 #define __NR_memfd_create               385
+#define __NR_bpf                        386
+#define __NR_execveat                   387
+#define __NR_userfaultfd                388
+#define __NR_membarrier                 389
+#define __NR_mlock2                     390
+#define __NR_copy_file_range            391
+#define __NR_preadv2                    392
+#define __NR_pwritev2                   393
+#define __NR_pkey_mprotect              394
+#define __NR_pkey_alloc                 395
+#define __NR_pkey_free                  396
+#define __NR_statx                      397
 
 
 

@@ -34,7 +34,7 @@
 #define __VKI_SCNUMS_S390X_LINUX_H
 
 //----------------------------------------------------------------------
-// From linux-3.16/arch/s390/include/uapi/asm/unistd.h
+// From linux/arch/s390/kernel/syscalls/syscall.tbl
 //----------------------------------------------------------------------
 
 /*
@@ -317,25 +317,32 @@
 #define __NR_getrandom		349
 #define __NR_memfd_create	350
 
-#define __NR_recvmmsg		357
-#define __NR_sendmmsg		358
-#define __NR_socket		359
-#define __NR_socketpair		360
-#define __NR_bind		361
-#define __NR_connect		362
-#define __NR_listen		363
-#define __NR_accept4		364
-#define __NR_getsockopt		365
-#define __NR_setsockopt		366
-#define __NR_getsockname	367
-#define __NR_getpeername	368
-#define __NR_sendto		369
-#define __NR_sendmsg		370
-#define __NR_recvfrom		371
-#define __NR_recvmsg		372
-#define __NR_shutdown		373
+#define __NR_recvmmsg			357
+#define __NR_sendmmsg			358
+#define __NR_socket			359
+#define __NR_socketpair			360
+#define __NR_bind			361
+#define __NR_connect			362
+#define __NR_listen			363
+#define __NR_accept4			364
+#define __NR_getsockopt			365
+#define __NR_setsockopt			366
+#define __NR_getsockname		367
+#define __NR_getpeername		368
+#define __NR_sendto			369
+#define __NR_sendmsg			370
+#define __NR_recvfrom			371
+#define __NR_recvmsg			372
+#define __NR_shutdown			373
+#define __NR_mlock2			374
+#define __NR_copy_file_range		375
+#define __NR_preadv2			376
+#define __NR_pwritev2			377
+#define __NR_s390_guarded_storage	378
+#define __NR_statx			379
+#define __NR_s390_sthyi			380
 
-#define NR_syscalls 374
+#define NR_syscalls 381
 
 /* 
  * There are some system calls that are not present on 64 bit, some

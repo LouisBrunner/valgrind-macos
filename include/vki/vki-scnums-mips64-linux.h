@@ -32,6 +32,7 @@
 #ifndef __VKI_SCNUMS_MIPS64_LINUX_H
 #define __VKI_SCNUMS_MIPS64_LINUX_H
 
+// From linux/arch/mips/include/uapi/asm/unistd.h
 /*
  * Linux 64-bit syscalls are in the range from 5000 to 5999.
  */
@@ -351,7 +352,18 @@
 #define __NR_seccomp                (__NR_Linux + 312)
 #define __NR_getrandom              (__NR_Linux + 313)
 #define __NR_memfd_create           (__NR_Linux + 314)
-
+#define __NR_bpf                    (__NR_Linux + 315)
+#define __NR_execveat               (__NR_Linux + 316)
+#define __NR_userfaultfd            (__NR_Linux + 317)
+#define __NR_membarrier             (__NR_Linux + 318)
+#define __NR_mlock2                 (__NR_Linux + 319)
+#define __NR_copy_file_range        (__NR_Linux + 320)
+#define __NR_preadv2                (__NR_Linux + 321)
+#define __NR_pwritev2               (__NR_Linux + 322)
+#define __NR_pkey_mprotect          (__NR_Linux + 323)
+#define __NR_pkey_alloc             (__NR_Linux + 324)
+#define __NR_pkey_free              (__NR_Linux + 325)
+#define __NR_statx                  (__NR_Linux + 326)
 #endif /* __VKI_SCNUMS_MIPS64_LINUX_H */
 
 /*--------------------------------------------------------------------*/

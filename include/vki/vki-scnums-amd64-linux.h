@@ -32,7 +32,7 @@
 #ifndef __VKI_SCNUMS_AMD64_LINUX_H
 #define __VKI_SCNUMS_AMD64_LINUX_H
 
-// Derived from linux-2.6/arch/x86/syscalls/syscall_64.tbl
+// Derived from linux-2.6/arch/x86/entry/syscalls/syscall_64.tbl
 
 #define __NR_read                                0
 #define __NR_write                               1
@@ -403,6 +403,17 @@
 #define __NR_memfd_create       319
 #define __NR_kexec_file_load    320
 #define __NR_bpf                321
+#define __NR_execveat           322
+#define __NR_userfaultfd        323
+#define __NR_membarrier         324
+#define __NR_mlock2             325
+#define __NR_copy_file_range    326
+#define __NR_preadv2            327
+#define __NR_pwritev2           328
+#define __NR_pkey_mprotect      329
+#define __NR_pkey_alloc         330
+#define __NR_pkey_free          331
+#define __NR_statx              332
 
 #endif /* __VKI_SCNUMS_AMD64_LINUX_H */
 

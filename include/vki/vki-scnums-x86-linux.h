@@ -32,7 +32,7 @@
 #ifndef __VKI_SCNUMS_X86_LINUX_H
 #define __VKI_SCNUMS_X86_LINUX_H
 
-// Derived from linux-2.6/arch/x86/syscalls/syscall_32.tbl
+// Derived from linux-2.6/arch/x86/entry/syscalls/syscall_32.tbl
 
 #define __NR_restart_syscall      0
 #define __NR_exit		  1
@@ -411,6 +411,14 @@
 #define __NR_userfaultfd        374
 #define __NR_membarrier         375
 #define __NR_mlock2             376
+#define __NR_copy_file_range    377
+#define __NR_preadv2            378
+#define __NR_pwritev2           379
+#define __NR_pkey_mprotect      380
+#define __NR_pkey_alloc         381
+#define __NR_pkey_free          382
+#define __NR_statx              383
+#define __NR_arch_prctl         384
 
 #endif /* __VKI_SCNUMS_X86_LINUX_H */
 

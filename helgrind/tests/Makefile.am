@@ -127,7 +127,6 @@ noinst_HEADERS = safe-pthread.h safe-semaphore.h
 # should be conditionally compiled like tc20_verifywrap is.
 check_PROGRAMS = \
 	annotate_hbefore \
-	bug322621 \
 	cond_init_destroy \
 	cond_timedwait_invalid \
 	cond_timedwait_test \

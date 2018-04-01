@@ -1205,6 +1205,7 @@ struct vki_sembuf {
 union vki_semun {
 	int val;			/* value for SETVAL */
 	struct vki_semid_ds __user *buf;	/* buffer for IPC_STAT & IPC_SET */
+	struct vki_semid64_ds __user *buf64;	/* buffer for IPC_STAT & IPC_SET */
 	unsigned short __user *array;	/* array for GETALL & SETALL */
 	struct vki_seminfo __user *__buf;	/* buffer for IPC_INFO */
 	void __user *__pad;

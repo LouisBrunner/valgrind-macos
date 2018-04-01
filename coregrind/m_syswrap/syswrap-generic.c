@@ -1790,30 +1790,36 @@ ML_(generic_PRE_sys_semtimedop) ( ThreadId tid,
 static
 UInt get_sem_count( Int semid )
 {
-   struct vki_semid_ds buf;
    union vki_semun arg;
    SysRes res;
 
-   /* Doesn't actually seem to be necessary, but gcc-4.4.0 20081017
-      (experimental) otherwise complains that the use in the return
-      statement below is uninitialised. */
-   buf.sem_nsems = 0;
-
-   arg.buf = &buf;
-
 #  if defined(__NR_semctl)
+   struct vki_semid64_ds buf;
+   arg.buf64 = &buf;
    res = VG_(do_syscall4)(__NR_semctl, semid, 0, VKI_IPC_STAT, *(UWord *)&arg);
-#  elif defined(__NR_semsys) /* Solaris */
-   res = VG_(do_syscall5)(__NR_semsys, VKI_SEMCTL, semid, 0, VKI_IPC_STAT,
-                          *(UWord *)&arg);
-#  else
-   res = VG_(do_syscall5)(__NR_ipc, 3 /* IPCOP_semctl */, semid, 0,
-                          VKI_IPC_STAT, (UWord)&arg);
-#  endif
    if (sr_isError(res))
       return 0;
 
    return buf.sem_nsems;
+#  elif defined(__NR_semsys) /* Solaris */
+   struct vki_semid_ds buf;
+   arg.buf = &buf;
+   res = VG_(do_syscall5)(__NR_semsys, VKI_SEMCTL, semid, 0, VKI_IPC_STAT,
+                          *(UWord *)&arg);
+   if (sr_isError(res))
+      return 0;
+
+   return buf.sem_nsems;
+#  else
+   struct vki_semid_ds buf;
+   arg.buf = &buf;
+   res = VG_(do_syscall5)(__NR_ipc, 3 /* IPCOP_semctl */, semid, 0,
+                          VKI_IPC_STAT, (UWord)&arg);
+   if (sr_isError(res))
+      return 0;
+
+   return buf.sem_nsems;
+#  endif
 }
 
 void

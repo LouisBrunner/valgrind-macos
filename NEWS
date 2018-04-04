@@ -121,6 +121,7 @@ where XXXXXX is the bug number as listed below.
 387766  asm shifts cause false positive "Conditional jump or move depends
         on uninitialised value"
 387773  .gnu_debugaltlink paths resolve relative to .debug file, not symlink
+388786  Support bpf syscall in amd64 Linux
 388862  Add replacements for wmemchr and wcsnlen on Linux
 389065  valgrind meets gcc flag -Wlogical-op
 389373  exp-sgcheck the 'impossible' happened as Ist_LoadG is not instrumented

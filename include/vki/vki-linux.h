@@ -4829,6 +4829,207 @@ struct vki_blk_zone_range {
 #define VKI_BLKREPORTZONE	_VKI_IOWR(0x12, 130, struct vki_blk_zone_report)
 #define VKI_BLKRESETZONE	_VKI_IOW(0x12, 131, struct vki_blk_zone_range)
 
+//----------------------------------------------------------------------
+// From linux-4.18/include/uapi/linux/bpf.h
+//----------------------------------------------------------------------
+
+struct vki_bpf_insn {
+	__vki_u8	code;		/* opcode */
+	__vki_u8	dst_reg:4;	/* dest register */
+	__vki_u8	src_reg:4;	/* source register */
+	__vki_s16	off;		/* signed offset */
+	__vki_s32	imm;		/* signed immediate constant */
+};
+
+enum vki_bpf_cmd {
+	VKI_BPF_MAP_CREATE,
+	VKI_BPF_MAP_LOOKUP_ELEM,
+	VKI_BPF_MAP_UPDATE_ELEM,
+	VKI_BPF_MAP_DELETE_ELEM,
+	VKI_BPF_MAP_GET_NEXT_KEY,
+	VKI_BPF_PROG_LOAD,
+	VKI_BPF_OBJ_PIN,
+	VKI_BPF_OBJ_GET,
+	VKI_BPF_PROG_ATTACH,
+	VKI_BPF_PROG_DETACH,
+	VKI_BPF_PROG_TEST_RUN,
+	VKI_BPF_PROG_GET_NEXT_ID,
+	VKI_BPF_MAP_GET_NEXT_ID,
+	VKI_BPF_PROG_GET_FD_BY_ID,
+	VKI_BPF_MAP_GET_FD_BY_ID,
+	VKI_BPF_OBJ_GET_INFO_BY_FD,
+	VKI_BPF_PROG_QUERY,
+	VKI_BPF_RAW_TRACEPOINT_OPEN,
+	VKI_BPF_BTF_LOAD,
+	VKI_BPF_BTF_GET_FD_BY_ID,
+	VKI_BPF_TASK_FD_QUERY,
+};
+
+#define VKI_BPF_OBJ_NAME_LEN 16U
+
+#define __vki_aligned_u64 __vki_u64 __attribute__((aligned(8)))
+union vki_bpf_attr {
+	struct { /* anonymous struct used by BPF_MAP_CREATE command */
+		__vki_u32	map_type;	/* one of enum bpf_map_type */
+		__vki_u32	key_size;	/* size of key in bytes */
+		__vki_u32	value_size;	/* size of value in bytes */
+		__vki_u32	max_entries;	/* max number of entries in a map */
+		__vki_u32	map_flags;	/* BPF_MAP_CREATE related
+					 * flags defined above.
+					 */
+		__vki_u32	inner_map_fd;	/* fd pointing to the inner map */
+		__vki_u32	numa_node;	/* numa node (effective only if
+					 * BPF_F_NUMA_NODE is set).
+					 */
+		char	map_name[VKI_BPF_OBJ_NAME_LEN];
+		__vki_u32	map_ifindex;	/* ifindex of netdev to create on */
+		__vki_u32	btf_fd;		/* fd pointing to a BTF type data */
+		__vki_u32	btf_key_type_id;	/* BTF type_id of the key */
+		__vki_u32	btf_value_type_id;	/* BTF type_id of the value */
+	};
+
+	struct { /* anonymous struct used by BPF_MAP_*_ELEM commands */
+		__vki_u32		map_fd;
+		__vki_aligned_u64	key;
+		union {
+			__vki_aligned_u64 value;
+			__vki_aligned_u64 next_key;
+		};
+		__vki_u64		flags;
+	};
+
+	struct { /* anonymous struct used by BPF_PROG_LOAD command */
+		__vki_u32		prog_type;	/* one of enum bpf_prog_type */
+		__vki_u32		insn_cnt;
+		__vki_aligned_u64	insns;
+		__vki_aligned_u64	license;
+		__vki_u32		log_level;	/* verbosity level of verifier */
+		__vki_u32		log_size;	/* size of user buffer */
+		__vki_aligned_u64	log_buf;	/* user supplied buffer */
+		__vki_u32		kern_version;	/* checked when prog_type=kprobe */
+		__vki_u32		prog_flags;
+		char		prog_name[VKI_BPF_OBJ_NAME_LEN];
+		__vki_u32		prog_ifindex;	/* ifindex of netdev to prep for */
+		/* For some prog types expected attach type must be known at
+		 * load time to verify attach type specific parts of prog
+		 * (context accesses, allowed helpers, etc).
+		 */
+		__vki_u32		expected_attach_type;
+	};
+
+	struct { /* anonymous struct used by BPF_OBJ_* commands */
+		__vki_aligned_u64	pathname;
+		__vki_u32		bpf_fd;
+		__vki_u32		file_flags;
+	};
+
+	struct { /* anonymous struct used by BPF_PROG_ATTACH/DETACH commands */
+		__vki_u32		target_fd;	/* container object to attach to */
+		__vki_u32		attach_bpf_fd;	/* eBPF program to attach */
+		__vki_u32		attach_type;
+		__vki_u32		attach_flags;
+	};
+
+	struct { /* anonymous struct used by BPF_PROG_TEST_RUN command */
+		__vki_u32		prog_fd;
+		__vki_u32		retval;
+		__vki_u32		data_size_in;
+		__vki_u32		data_size_out;
+		__vki_aligned_u64	data_in;
+		__vki_aligned_u64	data_out;
+		__vki_u32		repeat;
+		__vki_u32		duration;
+	} test;
+
+	struct { /* anonymous struct used by BPF_*_GET_*_ID */
+		union {
+			__vki_u32		start_id;
+			__vki_u32		prog_id;
+			__vki_u32		map_id;
+			__vki_u32		btf_id;
+		};
+		__vki_u32		next_id;
+		__vki_u32		open_flags;
+	};
+
+	struct { /* anonymous struct used by BPF_OBJ_GET_INFO_BY_FD */
+		__vki_u32		bpf_fd;
+		__vki_u32		info_len;
+		__vki_aligned_u64	info;
+	} info;
+
+	struct { /* anonymous struct used by BPF_PROG_QUERY command */
+		__vki_u32		target_fd;	/* container object to query */
+		__vki_u32		attach_type;
+		__vki_u32		query_flags;
+		__vki_u32		attach_flags;
+		__vki_aligned_u64	prog_ids;
+		__vki_u32		prog_cnt;
+	} query;
+
+	struct {
+		__vki_u64 name;
+		__vki_u32 prog_fd;
+	} raw_tracepoint;
+
+	struct { /* anonymous struct for BPF_BTF_LOAD */
+		__vki_aligned_u64	btf;
+		__vki_aligned_u64	btf_log_buf;
+		__vki_u32		btf_size;
+		__vki_u32		btf_log_size;
+		__vki_u32		btf_log_level;
+	};
+
+	struct {
+		__vki_u32		pid;		/* input: pid */
+		__vki_u32		fd;		/* input: fd */
+		__vki_u32		flags;		/* input: flags */
+		__vki_u32		buf_len;	/* input/output: buf len */
+		__vki_aligned_u64	buf;		/* input/output:
+						 *   tp_name for tracepoint
+						 *   symbol for kprobe
+						 *   filename for uprobe
+						 */
+		__vki_u32		prog_id;	/* output: prod_id */
+		__vki_u32		fd_type;	/* output: BPF_FD_TYPE_* */
+		__vki_u64		probe_offset;	/* output: probe_offset */
+		__vki_u64		probe_addr;	/* output: probe_addr */
+	} task_fd_query;
+} __attribute__((aligned(8)));
+
+#define VKI_BPF_TAG_SIZE	8
+
+struct vki_bpf_prog_info {
+	__vki_u32 type;
+	__vki_u32 id;
+	__vki_u8  tag[VKI_BPF_TAG_SIZE];
+	__vki_u32 jited_prog_len;
+	__vki_u32 xlated_prog_len;
+	__vki_aligned_u64 jited_prog_insns;
+	__vki_aligned_u64 xlated_prog_insns;
+	__vki_u64 load_time;	/* ns since boottime */
+	__vki_u32 created_by_uid;
+	__vki_u32 nr_map_ids;
+	__vki_aligned_u64 map_ids;
+	char name[VKI_BPF_OBJ_NAME_LEN];
+	__vki_u32 ifindex;
+	__vki_u64 netns_dev;
+	__vki_u64 netns_ino;
+} __attribute__((aligned(8)));
+
+struct vki_bpf_map_info {
+	__vki_u32 type;
+	__vki_u32 id;
+	__vki_u32 key_size;
+	__vki_u32 value_size;
+	__vki_u32 max_entries;
+	__vki_u32 map_flags;
+	char  name[VKI_BPF_OBJ_NAME_LEN];
+	__vki_u32 ifindex;
+	__vki_u64 netns_dev;
+	__vki_u64 netns_ino;
+} __attribute__((aligned(8)));
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

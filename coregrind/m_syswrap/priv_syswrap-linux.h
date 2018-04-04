@@ -295,6 +295,9 @@ DECL_TEMPLATE(linux, sys_syncfs);
 
 DECL_TEMPLATE(linux, sys_membarrier);
 
+// Linux-specific (new in Linux 3.18)
+DECL_TEMPLATE(linux, sys_bpf);
+
 // Linux-specific (new in Linux 4.11)
 DECL_TEMPLATE(linux, sys_statx);
 

@@ -11580,6 +11580,297 @@ PRE(sys_kcmp)
    }
 }
 
+/* ---------------------------------------------------------------------
+   bpf wrappers
+   ------------------------------------------------------------------ */
+
+static Bool bpf_map_get_sizes(Int fd, UInt *key_size, UInt *value_size)
+{
+   HChar path[32], buf[1024];   /* large enough */
+   SysRes sres;
+   HChar *comp;
+   Int proc_fd;
+
+   *key_size = 0;
+   *value_size = 0;
+
+   VG_(sprintf)(path, "/proc/%d/fdinfo/%d", VG_(getpid)(), fd);
+   sres = VG_(open)(path, VKI_O_RDONLY, 0);
+   if (sr_isError(sres))
+      return False;
+   proc_fd = sr_Res(sres);
+
+   if (VG_(read)(proc_fd, buf, sizeof(buf)) <= 0)
+      return False;
+   VG_(close)(proc_fd);
+
+   comp = VG_(strstr)(buf, "key_size:");
+   if (comp)
+      *key_size = VG_(strtoull10)(comp + sizeof("key_size:"), NULL);
+
+   comp = VG_(strstr)(buf, "value_size:");
+   if (comp)
+      *value_size = VG_(strtoull10)(comp + sizeof("value_size:"), NULL);
+
+   return (*key_size && *value_size);
+}
+
+/*
+ * From a file descriptor for an eBPF object, try to determine the size of the
+ * struct that will be written, i.e. determine if object is a map or a program.
+ * There is no direct way to do this, so parse /proc/<pid>/fdinfo/<fd> and
+ * search for strings "prog_type" or "map_type".
+ */
+static UInt bpf_obj_get_info_size(Int fd)
+{
+   HChar path[32], buf[1024];   /* large enough */
+   SysRes sres;
+   Int proc_fd;
+
+   VG_(sprintf)(path, "/proc/%d/fdinfo/%d", VG_(getpid)(), fd);
+   sres = VG_(open)(path, VKI_O_RDONLY, 0);
+   if (sr_isError(sres))
+      return 0;
+   proc_fd = sr_Res(sres);
+
+   if (VG_(read)(proc_fd, buf, sizeof(buf)) <= 0)
+      return 0;
+   VG_(close)(proc_fd);
+
+   if (VG_(strstr)(buf, "prog_type:"))
+      return sizeof(struct vki_bpf_prog_info);
+
+   if (VG_(strstr)(buf, "map_type:"))
+      return sizeof(struct vki_bpf_map_info);
+
+   return 0;
+}
+
+PRE(sys_bpf)
+{
+   union vki_bpf_attr *attr = (union vki_bpf_attr *)(Addr)ARG2;
+   UInt res, key_size, value_size;
+
+   PRE_REG_READ3(long, "bpf",
+                 int, cmd, union vki_bpf_attr *, attr, unsigned int, size);
+   PRINT("bpf ( %ld, %" FMT_REGWORD "u, %" FMT_REGWORD "u )",
+         ARG1, ARG2, ARG3);
+   switch (ARG1) {
+      case VKI_BPF_MAP_CREATE:
+      case VKI_BPF_PROG_ATTACH:
+      case VKI_BPF_PROG_DETACH:
+      case VKI_BPF_PROG_GET_NEXT_ID:
+      case VKI_BPF_MAP_GET_NEXT_ID:
+      case VKI_BPF_PROG_GET_FD_BY_ID:
+      case VKI_BPF_MAP_GET_FD_BY_ID:
+      case VKI_BPF_BTF_GET_FD_BY_ID:
+         break;
+      case VKI_BPF_MAP_LOOKUP_ELEM:
+         /* Perform a lookup on an eBPF map. Read key, write value. */
+         if (ML_(safe_to_deref)(attr, ARG3) &&
+             attr->key != 0 && attr->value != 0) {
+            /* Get size of key and value for this map. */
+            if (bpf_map_get_sizes(attr->map_fd, &key_size, &value_size)) {
+               PRE_MEM_READ("bpf(attr->key)", attr->key, key_size);
+               PRE_MEM_WRITE("bpf(attr->value)", attr->value, value_size);
+            }
+         }
+         break;
+      case VKI_BPF_MAP_UPDATE_ELEM:
+         /* Add or update a map element in kernel. Read key, read value. */
+         if (ML_(safe_to_deref)(attr, ARG3) &&
+             attr->key != 0 && attr->value != 0) {
+            /* Get size of key and value for this map. */
+            if (bpf_map_get_sizes(attr->map_fd, &key_size, &value_size)) {
+               PRE_MEM_READ("bpf(attr->key)", attr->key, key_size);
+               PRE_MEM_READ("bpf(attr->value)", attr->value, value_size);
+            }
+         }
+         break;
+      case VKI_BPF_MAP_DELETE_ELEM:
+         /* Delete a map element in kernel. Read key from user space. */
+         if (ML_(safe_to_deref)(attr, ARG3) && attr->key != 0) {
+            /* Get size of key for this map. */
+            if (bpf_map_get_sizes(attr->map_fd, &key_size, &value_size))
+               PRE_MEM_READ("bpf(attr->key)", attr->key, key_size);
+         }
+         break;
+      case VKI_BPF_MAP_GET_NEXT_KEY:
+         /* From a key, get next key for the map. Read key, write next key. */
+         if (ML_(safe_to_deref)(attr, ARG3) &&
+             attr->key != 0 && attr->next_key != 0) {
+            /* Get size of key for this map. */
+            if (bpf_map_get_sizes(attr->map_fd, &key_size, &value_size)) {
+               PRE_MEM_READ("bpf(attr->key)", attr->key, key_size);
+               PRE_MEM_WRITE("bpf(attr->next_key)", attr->next_key, key_size);
+            }
+         }
+         break;
+      case VKI_BPF_PROG_LOAD:
+         /* Load a program into the kernel from an array of instructions. */
+         if (ML_(safe_to_deref)(attr, ARG3)) {
+            /* Read instructions, license, program name. */
+            PRE_MEM_READ("bpf(attr->insns)", attr->insns,
+                         attr->insn_cnt * sizeof(struct vki_bpf_insn));
+            /* License is limited to 128 characters in kernel/bpf/syscall.c. */
+            pre_asciiz_str(tid, attr->license, 128, "bpf(attr->license)");
+            pre_asciiz_str(tid, (unsigned long int)attr->prog_name,
+                           VKI_BPF_OBJ_NAME_LEN, "bpf(attr->prog_name)");
+            /* Possibly write up to log_len into user space log buffer. */
+            if (attr->log_level && attr->log_size > 128 && attr->log_buf != 0)
+               PRE_MEM_WRITE("bpf(attr->log_buf)",
+                             attr->log_buf, attr->log_size);
+         }
+         break;
+      case VKI_BPF_OBJ_PIN:
+         /* Pin eBPF program or map to given location under /sys/fs/bpf/. */
+         /* fall through */
+      case VKI_BPF_OBJ_GET:
+         /* Get pinned eBPF program or map. Read path name. */
+         if (ML_(safe_to_deref)(attr, ARG3))
+            pre_asciiz_str(tid, attr->pathname, VKI_BPF_OBJ_NAME_LEN,
+                           "bpf(attr->pathname)");
+         break;
+      case VKI_BPF_PROG_TEST_RUN:
+         /* Test prog. Read data_in, write up to data_size_out to data_out. */
+         if (ML_(safe_to_deref)(attr, ARG3) &&
+             attr->test.data_in != 0 && attr->test.data_out != 0) {
+            PRE_MEM_READ("bpf(attr->test.data_in)",
+                         attr->test.data_in, attr->test.data_size_in);
+            /*
+             * TODO: Kernel writes to data_out but we do not know the size yet.
+             * PRE_MEM_WRITE("bpf(attr->test.data_out)",
+             *               attr->test.data_out, ??);
+             */
+         }
+         break;
+      case VKI_BPF_OBJ_GET_INFO_BY_FD:
+         /* Get info for eBPF map or program. Write info. */
+         if (ML_(safe_to_deref)(attr, ARG3) && attr->info.info != 0) {
+            /* Get size of struct to write: is object a program or a map? */
+            res = bpf_obj_get_info_size(attr->info.bpf_fd);
+            if (res)
+               PRE_MEM_WRITE("bpf(attr->info.info)", attr->info.info,
+                             VG_MIN(attr->info.info_len, res));
+            else
+               PRE_MEM_WRITE("bpf(attr->info.info)", attr->info.info,
+                             VG_MIN(attr->info.info_len,
+                                    VG_MAX(sizeof(struct vki_bpf_prog_info),
+                                           sizeof(struct vki_bpf_map_info))));
+         }
+         break;
+      case VKI_BPF_PROG_QUERY:
+         /*
+          * Query list of eBPF program attached to cgroup.
+          * Write array of ids (up to attr->query.prog_cnt u32-long ids).
+          */
+         if (ML_(safe_to_deref)(attr, ARG3) && attr->query.prog_ids != 0)
+            PRE_MEM_WRITE("bpf(attr->query.prog_ids)", attr->query.prog_ids,
+                          attr->query.prog_cnt * sizeof(__vki_u32));
+         break;
+      case VKI_BPF_RAW_TRACEPOINT_OPEN:
+         /* Open raw tracepoint. Read tracepoint name. */
+         if (ML_(safe_to_deref)(attr, ARG3)) {
+            /* Name is limited to 128 characters in kernel/bpf/syscall.c. */
+            pre_asciiz_str(tid, attr->raw_tracepoint.name, 128,
+                           "bpf(attr->raw_tracepoint.name)");
+         }
+         break;
+      case VKI_BPF_BTF_LOAD:
+         /* Load BTF information about a program into the kernel. */
+         if (ML_(safe_to_deref)(attr, ARG3)) {
+            /* Read BTF data. */
+            PRE_MEM_READ("bpf(attr->btf)", attr->btf, attr->btf_size);
+            /* Possibly write up to btf_log_len into user space log buffer. */
+            if (attr->btf_log_level && attr->btf_log_size > 128 &&
+                attr->btf_log_buf != 0)
+               PRE_MEM_WRITE("bpf(attr->btf_log_buf)",
+                             attr->btf_log_buf, attr->btf_log_size);
+         }
+      case VKI_BPF_TASK_FD_QUERY:
+         /* Get info about the task. Write collected info. */
+         if (ML_(safe_to_deref)(attr, ARG3)) {
+            if (attr->task_fd_query.buf_len > 0) {
+                /* Write task or perf event name. */
+                PRE_MEM_WRITE("bpf(attr->task_fd_query.buf)",
+                              attr->task_fd_query.buf,
+                              attr->task_fd_query.buf_len);
+            }
+         }
+         break;
+      default:
+         VG_(message)(Vg_DebugMsg,
+                      "FATAL: unhandled eBPF command %lu\n", ARG1);
+         VG_(core_panic)("... bye!\n");
+         break;
+   }
+}
+
+POST(sys_bpf)
+{
+   union vki_bpf_attr *attr = (union vki_bpf_attr *)(Addr)ARG2;
+   UInt key_size, value_size;
+
+   vg_assert(SUCCESS);
+
+   switch (ARG1) {
+      case VKI_BPF_MAP_CREATE:
+      case VKI_BPF_MAP_UPDATE_ELEM:
+      case VKI_BPF_MAP_DELETE_ELEM:
+      case VKI_BPF_OBJ_PIN:
+      case VKI_BPF_OBJ_GET:
+      case VKI_BPF_PROG_ATTACH:
+      case VKI_BPF_PROG_DETACH:
+      case VKI_BPF_PROG_GET_NEXT_ID:
+      case VKI_BPF_MAP_GET_NEXT_ID:
+      case VKI_BPF_PROG_GET_FD_BY_ID:
+      case VKI_BPF_MAP_GET_FD_BY_ID:
+      case VKI_BPF_BTF_GET_FD_BY_ID:
+      case VKI_BPF_RAW_TRACEPOINT_OPEN:
+         break;
+      /*
+       * TODO: Is there a way to pass information between PRE and POST hooks?
+       * To avoid querying again for the size of keys and values.
+       */
+      case VKI_BPF_MAP_LOOKUP_ELEM:
+         if (bpf_map_get_sizes(attr->map_fd, &key_size, &value_size))
+            POST_MEM_WRITE(attr->value, value_size);
+         break;
+      case VKI_BPF_MAP_GET_NEXT_KEY:
+         if (bpf_map_get_sizes(attr->map_fd, &key_size, &value_size))
+            POST_MEM_WRITE(attr->next_key, key_size);
+         break;
+      case VKI_BPF_PROG_LOAD:
+         if (attr->log_level)
+            POST_MEM_WRITE(attr->log_buf, attr->log_size);
+         break;
+      case VKI_BPF_PROG_TEST_RUN:
+         POST_MEM_WRITE(attr->test.data_out, attr->test.data_size_out);
+         break;
+      case VKI_BPF_OBJ_GET_INFO_BY_FD:
+         POST_MEM_WRITE(attr->info.info, attr->info.info_len);
+         break;
+      case VKI_BPF_PROG_QUERY:
+         if (attr->query.prog_ids)
+            POST_MEM_WRITE(attr->query.prog_ids,
+                           attr->query.prog_cnt * sizeof(__vki_u32));
+         break;
+      case VKI_BPF_BTF_LOAD:
+         /* Return a file descriptor for BTF data, write into btf_log_buf. */
+         if (attr->btf_log_level)
+             POST_MEM_WRITE(attr->btf_log_buf, attr->btf_log_size);
+         break;
+      case VKI_BPF_TASK_FD_QUERY:
+         POST_MEM_WRITE(attr->task_fd_query.buf, attr->task_fd_query.buf_len);
+         break;
+      default:
+         VG_(message)(Vg_DebugMsg,
+                      "FATAL: unhandled eBPF command %lu\n", ARG1);
+         VG_(core_panic)("... bye!\n");
+         break;
+   }
+}
+
 #undef PRE
 #undef POST
 

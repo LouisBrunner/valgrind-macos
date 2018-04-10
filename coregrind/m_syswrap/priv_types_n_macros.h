@@ -53,14 +53,14 @@
 typedef
    struct SyscallArgs {
       Word sysno;
-      UWord arg1;
-      UWord arg2;
-      UWord arg3;
-      UWord arg4;
-      UWord arg5;
-      UWord arg6;
-      UWord arg7;
-      UWord arg8;
+      RegWord arg1;
+      RegWord arg2;
+      RegWord arg3;
+      RegWord arg4;
+      RegWord arg5;
+      RegWord arg6;
+      RegWord arg7;
+      RegWord arg8;
    }
    SyscallArgs;
 
@@ -438,7 +438,7 @@ static inline UWord getERR ( SyscallStatus* st ) {
 /* Tell the tool that the syscall number is being read. */
 #define PRRSN \
       VG_(tdict).track_pre_reg_read(Vg_CoreSysCall, tid, "(syscallno)", \
-                                    layout->o_sysno, sizeof(UWord));
+                                    layout->o_sysno, sizeof(RegWord));
 
 /* REGISTER PARAMETERS */
 
@@ -456,7 +456,7 @@ static inline UWord getERR ( SyscallStatus* st ) {
 #define PRRAn_LE(n,s,t,a)                          \
    do {                                            \
       Int here = layout->o_arg##n;                 \
-      vg_assert(sizeof(t) <= sizeof(UWord));       \
+      vg_assert(sizeof(t) <= sizeof(RegWord));     \
       vg_assert(here >= 0);                        \
       VG_(tdict).track_pre_reg_read(               \
          Vg_CoreSysCall, tid, s"("#a")",           \
@@ -470,16 +470,16 @@ static inline UWord getERR ( SyscallStatus* st ) {
    since the least significant parts of the guest register are stored
    in memory at the highest address.
 */
-#define PRRAn_BE(n,s,t,a)                          \
-   do {                                            \
-      Int here = layout->o_arg##n;                 \
-      Int next = layout->o_arg##n + sizeof(UWord); \
-      vg_assert(sizeof(t) <= sizeof(UWord));       \
-      vg_assert(here >= 0);                        \
-      VG_(tdict).track_pre_reg_read(               \
-         Vg_CoreSysCall, tid, s"("#a")",           \
-         next-sizeof(t), sizeof(t)                 \
-      );                                           \
+#define PRRAn_BE(n,s,t,a)                            \
+   do {                                              \
+      Int here = layout->o_arg##n;                   \
+      Int next = layout->o_arg##n + sizeof(RegWord); \
+      vg_assert(sizeof(t) <= sizeof(RegWord));       \
+      vg_assert(here >= 0);                          \
+      VG_(tdict).track_pre_reg_read(                 \
+         Vg_CoreSysCall, tid, s"("#a")",             \
+         next-sizeof(t), sizeof(t)                   \
+      );                                             \
    } while (0)
 
 #if defined(VG_BIGENDIAN)
@@ -507,7 +507,7 @@ static inline UWord getERR ( SyscallStatus* st ) {
 #define PSRAn_LE(n,s,t,a)                          \
    do {                                            \
       Addr here = layout->s_arg##n + VG_(get_SP)(tid); \
-      vg_assert(sizeof(t) <= sizeof(UWord));       \
+      vg_assert(sizeof(t) <= sizeof(RegWord));     \
       VG_(tdict).track_pre_mem_read(               \
          Vg_CoreSysCallArgInMem, tid, s"("#a")",   \
          here, sizeof(t)                           \
@@ -523,9 +523,9 @@ static inline UWord getERR ( SyscallStatus* st ) {
 #if (defined(VGP_mips32_linux) && defined (_MIPSEB))
  #define PSRAn_BE(n,s,t,a)                                        \
     do {                                                          \
-      Addr next = layout->s_arg##n + sizeof(UWord) +              \
+      Addr next = layout->s_arg##n + sizeof(RegWord) +            \
                   VG_(get_SP)(tid);                               \
-      vg_assert(sizeof(t) <= sizeof(UWord));                      \
+      vg_assert(sizeof(t) <= sizeof(RegWord));                    \
       VG_(tdict).track_pre_mem_read(                              \
          Vg_CoreSysCallArgInMem, tid, s"("#a")",                  \
          next-sizeof(t), sizeof(t)                                \
@@ -534,9 +534,9 @@ static inline UWord getERR ( SyscallStatus* st ) {
 #else
 #define PSRAn_BE(n,s,t,a)                                         \
    do {                                                           \
-      Addr next = layout->o_arg##n + sizeof(UWord) +              \
+      Addr next = layout->o_arg##n + sizeof(RegWord) +            \
                   VG_(threads)[tid].arch.vex.VG_STACK_PTR;        \
-      vg_assert(sizeof(t) <= sizeof(UWord));                      \
+      vg_assert(sizeof(t) <= sizeof(RegWord));                    \
       VG_(tdict).track_pre_mem_read(                              \
          Vg_CoreSysCallArgInMem, tid, s"("#a")",                  \
          next-sizeof(t), sizeof(t)                                \

@@ -87,7 +87,8 @@ load(IREndness endian, IRType type, HWord haddr)
 
    vassert(type == Ity_I1 || sizeofIRType(type) <= 16);
 
-   if (VEX_HOST_WORDSIZE == 8) {
+   if (VEX_HOST_WORDSIZE == 8 ||
+      (VEX_HOST_WORDSIZE == 4 && sizeof(RegWord) == 8)) {
       addr = mkU64(haddr);
       next_addr = binop(Iop_Add64, addr, mkU64(8));
    } else if (VEX_HOST_WORDSIZE == 4) {
@@ -148,7 +149,8 @@ store(IRSB *irsb, IREndness endian, HWord haddr, IRExpr *data)
    IROp high, low;
    IRExpr *addr, *next_addr;
 
-   if (VEX_HOST_WORDSIZE == 8) {
+   if (VEX_HOST_WORDSIZE == 8 ||
+      (VEX_HOST_WORDSIZE == 4 && sizeof(RegWord) == 8)) {
       addr = mkU64(haddr);
       next_addr = binop(Iop_Add64, addr, mkU64(8));
    } else if (VEX_HOST_WORDSIZE == 4) {

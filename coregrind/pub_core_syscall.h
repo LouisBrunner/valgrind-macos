@@ -47,9 +47,9 @@
 // happen with the 6th arg on AMD64 which is passed on the stack.
 
 extern SysRes VG_(do_syscall) ( UWord sysno, 
-                                UWord, UWord, UWord, 
-                                UWord, UWord, UWord, 
-                                UWord, UWord );
+                                RegWord, RegWord, RegWord,
+                                RegWord, RegWord, RegWord,
+                                RegWord, RegWord );
 
 /* Macros make life easier. */
 

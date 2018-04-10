@@ -2430,7 +2430,7 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
       syscall == 0C 00 00 00
    */
    {
-      UChar *p = (UChar *)(arch->vex.guest_PC);
+      UChar *p = (UChar *)(Addr)(arch->vex.guest_PC);
 #     if defined (VG_LITTLEENDIAN)
       if (p[0] != 0x0c || p[1] != 0x00 || p[2] != 0x00 || p[3] != 0x00)
          VG_(message)(Vg_DebugMsg,

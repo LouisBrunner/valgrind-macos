@@ -4818,9 +4818,9 @@ IRType integerIRTypeOfSize ( Int szB )
 IRExpr* mkIRExpr_HWord ( HWord hw )
 {
    vassert(sizeof(void*) == sizeof(HWord));
-   if (sizeof(HWord) == 4)
+   if (sizeof(RegWord) == 4)
       return IRExpr_Const(IRConst_U32((UInt)hw));
-   if (sizeof(HWord) == 8)
+   if (sizeof(RegWord) == 8)
       return IRExpr_Const(IRConst_U64((ULong)hw));
    vpanic("mkIRExpr_HWord");
 }

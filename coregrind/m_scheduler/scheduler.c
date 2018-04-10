@@ -978,7 +978,7 @@ void run_thread_for_a_while ( /*OUT*/HWord* two_words,
    /* Invalidate any in-flight LL/SC transactions, in the case that we're
       using the fallback LL/SC implementation.  See bugs 344524 and 369459. */
 #  if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
-   tst->arch.vex.guest_LLaddr = (HWord)(-1);
+   tst->arch.vex.guest_LLaddr = (RegWord)(-1);
 #  elif defined(VGP_arm64_linux)
    tst->arch.vex.guest_LLSC_SIZE = 0;
 #  endif
@@ -1648,7 +1648,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          break;
 
       case VEX_TRC_JMP_FLUSHDCACHE: {
-         void* start = (void*)VG_(threads)[tid].arch.vex.guest_CMSTART;
+         void* start = (void*)(Addr)VG_(threads)[tid].arch.vex.guest_CMSTART;
          SizeT len   = VG_(threads)[tid].arch.vex.guest_CMLEN;
          VG_(debugLog)(2, "sched", "flush_dcache(%p, %lu)\n", start, len);
          VG_(flush_dcache)(start, len);
@@ -1898,7 +1898,7 @@ Int print_client_message( ThreadId tid, const HChar *format,
 static
 void do_client_request ( ThreadId tid )
 {
-   UWord* arg = (UWord*)(CLREQ_ARGS(VG_(threads)[tid].arch));
+   UWord* arg = (UWord*)(Addr)(CLREQ_ARGS(VG_(threads)[tid].arch));
    UWord req_no = arg[0];
 
    if (0)

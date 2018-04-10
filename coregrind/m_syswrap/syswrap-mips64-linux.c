@@ -240,14 +240,16 @@ DECL_TEMPLATE (mips_linux, sys_fadvise64);
 
 PRE(sys_tee)
 {
-   PRINT("sys_tee ( %ld, %ld, %lu, %#lx )", SARG1, SARG2, ARG3, ARG4);
+   PRINT("sys_tee ( %ld, %ld, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )",
+         SARG1, SARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "sys_tee", int, fdin, int, fdout, vki_size_t, len,
                  int, flags);
 }
 
 PRE(sys_splice)
 {
-   PRINT("sys_splice ( %ld, %#lx, %ld, %#lx, %lu, %#lx )",
+   PRINT("sys_splice ( %ld, %#" FMT_REGWORD "x, %ld, %#" FMT_REGWORD
+         "x, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )",
          SARG1, ARG2, SARG3, ARG4, ARG5, ARG6);
 
    PRE_REG_READ6(long, "sys_splice", int, fdin, vki_loff_t, sizein, int,
@@ -256,20 +258,21 @@ PRE(sys_splice)
 
 PRE(sys_vmsplice)
 {
-   PRINT("sys_vmsplice ( %ld, %#lx, %lu, %ld )", SARG1, ARG2, ARG3, SARG4);
+   PRINT("sys_vmsplice ( %ld, %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %ld )",
+         SARG1, ARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "sys_vmsplice", int, fdin, struct vki_iovec *, v,
                  vki_size_t, len, int, flags);
 }
 
 PRE(sys_unshare)
 {
-   PRINT("sys_unshare ( %lu )", ARG1);
+   PRINT("sys_unshare ( %" FMT_REGWORD "u )", ARG1);
    PRE_REG_READ1(long, "sys_unshare", unsigned long, flags);
 }
 
 PRE(sys_sched_rr_get_interval)
 {
-   PRINT("sys_sched_rr_get_interval ( %ld, %#lx)", SARG1, ARG2);
+   PRINT("sys_sched_rr_get_interval ( %ld, %#" FMT_REGWORD "x)", SARG1, ARG2);
    PRE_REG_READ2(long, "sched_rr_get_interval", vki_pid_t, pid,
                  struct timespec *, timer);
    *flags |= SfMayBlock;
@@ -277,32 +280,34 @@ PRE(sys_sched_rr_get_interval)
 
 PRE(sys_ustat)
 {
-   PRINT("sys_ustat ( %#lx, %#lx)", ARG1, ARG2);
+   PRINT("sys_ustat ( %#" FMT_REGWORD "x, %#" FMT_REGWORD "x)", ARG1, ARG2);
    PRE_REG_READ2(long, "ustat", int, flags, const void *, path);
 }
 
 PRE(sys_swapon)
 {
-   PRINT("sys_swapon ( %#lx, %#lx )", ARG1, ARG2);
+   PRINT("sys_swapon ( %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )", ARG1, ARG2);
    PRE_REG_READ2(long, "swapon", const void *, path, int, flags);
 }
 
 PRE(sys_swapoff)
 {
-   PRINT("sys_swapoff ( %#lx )", ARG1);
+   PRINT("sys_swapoff ( %#" FMT_REGWORD "x )", ARG1);
    PRE_REG_READ1(long, "swapoff", const void *, path);
 }
 
 PRE(sys_sysfs)
 {
-   PRINT("sys_sysfs ( %ld, %#lx, %#lx )", SARG1, ARG2, ARG3);
+   PRINT("sys_sysfs ( %ld, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",
+         SARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "sysfs", int, flags, int, desc, const void *, path);
 }
 
 /* Very much MIPS specific */
 PRE(sys_cacheflush)
 {
-   PRINT("cacheflush (%lx, %lx, %lx)", ARG1, ARG2, ARG3);
+   PRINT("cacheflush (%" FMT_REGWORD "x, %" FMT_REGWORD "x, %" FMT_REGWORD
+         "x)", ARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "cacheflush", unsigned long, addr,
                  unsigned long, nbytes, unsigned int, cache);
    VG_ (discard_translations) ((Addr)ARG1, (ULong) ARG2,
@@ -312,7 +317,8 @@ PRE(sys_cacheflush)
 
 PRE(sys_reboot)
 {
-   PRINT("sys_reboot ( %ld, %ld, %lu, %#lx )", SARG1, ARG2, ARG3, ARG4);
+   PRINT("sys_reboot ( %ld, %" FMT_REGWORD "d, %" FMT_REGWORD "u, %#"
+         FMT_REGWORD "x )", SARG1, ARG2, ARG3, ARG4);
    // An approximation. ARG4 is only read conditionally by the kernel
    PRE_REG_READ4(int, "reboot",
                  int, magic1, int, magic2, unsigned int, cmd,
@@ -323,19 +329,20 @@ PRE(sys_reboot)
 
 PRE(sys_setdomainname)
 {
-   PRINT ("sys_setdomainname ( %#lx, %ld )", ARG1, SARG2);
+   PRINT ("sys_setdomainname ( %#" FMT_REGWORD "x, %ld )", ARG1, SARG2);
    PRE_REG_READ2 (long, "setdomainname", const void *, name, int, len);
 }
 
 PRE(sys_sethostname)
 {
-   PRINT ("sys_sethostname ( %#lx, %ld )", ARG1, SARG2);
+   PRINT ("sys_sethostname ( %#" FMT_REGWORD "x, %ld )", ARG1, SARG2);
    PRE_REG_READ2 (long, "sethostname", const void *, name, int, len);
 }
 
 PRE(sys_ptrace)
 {
-   PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", SARG1, SARG2, ARG3, ARG4);
+   PRINT("sys_ptrace ( %ld, %ld, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",
+         SARG1, SARG2, ARG3, ARG4);
    PRE_REG_READ4(int, "ptrace",
                  long, request, long, pid, unsigned long, addr,
                  unsigned long, data);
@@ -390,7 +397,8 @@ POST(sys_ptrace)
 PRE(sys_mmap)
 {
    SysRes r;
-   PRINT("sys_mmap ( %#lx, %lu, %ld, %ld, %ld, %lu )",
+   PRINT("sys_mmap ( %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %ld, %ld, %ld, %"
+         FMT_REGWORD "u )",
          ARG1, ARG2, SARG3, SARG4, SARG5, ARG6);
    PRE_REG_READ6(long, "mmap", unsigned long, start, vki_size_t, length,
                  int, prot, int, flags, int, fd, unsigned long, offset);
@@ -429,14 +437,14 @@ PRE(sys_rt_sigreturn)
 
 PRE(sys_set_thread_area)
 {
-   PRINT("set_thread_area (%lx)", ARG1);
+   PRINT("set_thread_area (%" FMT_REGWORD "x)", ARG1);
    PRE_REG_READ1(long, "set_thread_area", unsigned long, addr);
    SET_STATUS_from_SysRes(sys_set_tls(tid, ARG1));
 }
 
 PRE(sys_pipe)
 {
-   PRINT("sys_pipe ( %#lx )", ARG1);
+   PRINT("sys_pipe ( %#" FMT_REGWORD "x )", ARG1);
    PRE_REG_READ1(int, "pipe", int *, filedes);
    PRE_MEM_WRITE( "pipe(filedes)", ARG1, 2*sizeof(int) );
 }
@@ -514,7 +522,8 @@ POST(sys_prctl)
 
 PRE(sys_fadvise64)
 {
-   PRINT("sys_fadvise64 ( %ld, %ld, %lu, %ld )", SARG1, SARG2, ARG3, SARG4);
+   PRINT("sys_fadvise64 ( %ld, %ld, %" FMT_REGWORD "u, %ld )", SARG1, SARG2,
+         ARG3, SARG4);
    PRE_REG_READ4(long, "fadvise64",
                  int, fd, vki_loff_t, offset, vki_loff_t, len, int, advice);
 }

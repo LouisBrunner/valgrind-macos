@@ -142,6 +142,10 @@ typedef unsigned long Addr;
    machine. */
 typedef  unsigned long HWord;
 
+/* Size of GPRs */
+typedef HWord RegWord;
+#define FMT_REGWORD "l"
+
 /* Set up VEX_HOST_WORDSIZE and VEX_REGPARM. */
 #undef VEX_HOST_WORDSIZE
 #undef VEX_REGPARM

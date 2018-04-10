@@ -480,7 +480,7 @@ static UInt local_sys_getpid ( void )
 static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 {
    volatile Long block[2];
-   block[0] = (Long)buf;
+   block[0] = (Long)(Addr)buf;
    block[1] = n;
    __asm__ volatile (
       "li   $4, 2\n\t"      /* std output*/

@@ -1335,7 +1335,7 @@ Bool mk_preamble__set_NRADDR_to_zero ( void* closureV, IRSB* bb )
    Int nraddr_szB
       = sizeof(((VexGuestArchState*)0)->guest_NRADDR);
    vg_assert(nraddr_szB == 4 || nraddr_szB == 8);
-   vg_assert(nraddr_szB == VG_WORDSIZE);
+   vg_assert(nraddr_szB == sizeof(RegWord));
    addStmtToIRSB( 
       bb,
       IRStmt_Put( 
@@ -1394,7 +1394,7 @@ Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRSB* bb )
    Int nraddr_szB
       = sizeof(((VexGuestArchState*)0)->guest_NRADDR);
    vg_assert(nraddr_szB == 4 || nraddr_szB == 8);
-   vg_assert(nraddr_szB == VG_WORDSIZE);
+   vg_assert(nraddr_szB == sizeof(RegWord));
    addStmtToIRSB( 
       bb,
       IRStmt_Put( 

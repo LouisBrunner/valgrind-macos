@@ -292,7 +292,7 @@ Off64T VG_(lseek) ( Int fd, Off64T offset, Int whence )
    return sr_isError(res) ? (-1) : result;
 #  else
    SysRes res = VG_(do_syscall3)(__NR_lseek, fd, offset, whence);
-   vg_assert(sizeof(Off64T) == sizeof(Word));
+   vg_assert(sizeof(Off64T) == sizeof(sr_Res(res)));
    return sr_isError(res) ? (-1) : sr_Res(res);
 #  endif
 #  elif defined(VGP_x86_darwin)
@@ -412,7 +412,7 @@ Int VG_(fstat) ( Int fd, struct vg_stat* vgbuf )
    }
 #  endif /* if defined(__NR_fstat64) */
    { struct vki_stat buf;
-     res = VG_(do_syscall2)(__NR_fstat, (UWord)fd, (UWord)&buf);
+     res = VG_(do_syscall2)(__NR_fstat, (RegWord)fd, (RegWord)(Addr)&buf);
      if (!sr_isError(res))
         TRANSLATE_TO_vg_stat(vgbuf, &buf);
      return sr_isError(res) ? (-1) : 0;

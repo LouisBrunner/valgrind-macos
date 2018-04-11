@@ -11547,16 +11547,19 @@ static Bool dis_fp_pair ( UInt theInstr )
                                   mkU64( 0 ) ) );
          return True;
 
-      case 0x3:     // lxssp (Load VSX Scalar Single)
+      case 0x3:     // lxssp (Load VSX Scalar Single from memory,
+                    // store as double in register)
          DIP("lxssp v%u,%d(r%u)\n", vRT, DS, rA_addr);
 
          assign( EA, ea_rAor0_simm( rA_addr, DS<<2  ) );
 
-         putVSReg( vRT+32, binop( Iop_64HLtoV128,
-                                  binop( Iop_32HLto64,
-                                         load( Ity_I32, mkexpr( EA ) ),
-                                         mkU32( 0 ) ),
-                                  mkU64( 0 ) ) );
+         putVSReg( vRT+32,
+                   binop( Iop_64HLtoV128,
+                          unop( Iop_ReinterpF64asI64,
+                                unop( Iop_F32toF64,
+                                      unop( Iop_ReinterpI32asF32,
+                                            load( Ity_I32, mkexpr( EA ) ) ) ) ),
+				mkU64( 0 ) ) );
          return True;
 
       default:
@@ -11667,16 +11670,25 @@ static Bool dis_fp_pair ( UInt theInstr )
          return True;
 
       case 0x3:
-         // stxssp (Store VSX Scalar Single)
+      {
+         // stxssp (Store VSX Scalar Single - store double precision
+         // value from register into memory in single precision format)
+         IRTemp high64 = newTemp(Ity_F64);
+         IRTemp val32  = newTemp(Ity_I32);
+
          DIP("stxssp v%u,%d(r%u)\n", vRS, DS, rA_addr);
 
          assign( EA, ea_rAor0_simm( rA_addr, DS<<2  ) );
+         assign(high64, unop( Iop_ReinterpI64asF64,
+                              unop( Iop_V128HIto64, getVSReg( vRS+32 ) ) ) );
 
-         store( mkexpr(EA), unop( Iop_64HIto32,
-                                  unop( Iop_V128HIto64,
-                                        getVSReg( vRS+32 ) ) ) );
+         assign(val32, unop( Iop_ReinterpF32asI32,
+                             unop( Iop_TruncF64asF32,
+                                   mkexpr(high64) ) ) );
+         store( mkexpr(EA), mkexpr( val32 ) );
+
          return True;
-
+      }
       default:
          vex_printf("dis_fp_pair(ppc) : DS-form wrong opc2\n");
          return False;
@@ -19933,13 +19945,38 @@ dis_vx_misc ( UInt theInstr, UInt opc2 )
          break;
       }
 
+   case 0x200: //xsmaxcdp
+      {
+         DIP("xsmaxcdp v%d,v%d,v%d\n", XT, XA, XB);
+         /* extract double-precision floating point source values from
+            double word 0 */
+
+         /* result of Iop_CmpF64 is 0x1 if arg1 LT then arg2, */
+         assign( cmp_mask,
+                 unop( Iop_1Sto64,
+                       unop( Iop_32to1,
+                             binop(Iop_CmpF64,
+                                   unop( Iop_ReinterpI64asF64,
+                                         mkexpr( src2 ) ),
+                                   unop( Iop_ReinterpI64asF64,
+                                         mkexpr( src1 ) ) ) ) ) );
+         assign( word_result,
+                 binop( Iop_Or64,
+                        binop( Iop_And64, mkexpr( cmp_mask ), mkexpr( src1 ) ),
+                        binop( Iop_And64,
+                               unop( Iop_Not64, mkexpr( cmp_mask ) ),
+                               mkexpr( src2 ) ) ) );
+         assign( nan_cmp_value, mkexpr( src2 ) );
+         break;
+      }
+
    case 0x220: //xsmincdp
       {
          DIP("xsmincdp v%d,v%d,v%d\n", XT, XA, XB);
          /* extract double-precision floating point source values from
             double word 0 */
 
-         /* result of Iop_CmpF64 is 0x1 if src1 less then src2, */
+         /* result of Iop_CmpF64 is 0x1 if arg1 less then arg2, */
          assign( cmp_mask,
                  unop( Iop_1Sto64,
                        unop( Iop_32to1,
@@ -20971,12 +21008,12 @@ dis_vx_store ( UInt theInstr )
 
       assign( current_mem,
               binop( Iop_64HLtoV128,
-                     load( Ity_I64, mkexpr( base_addr ) ),
                      load( Ity_I64,
                            binop( mkSzOp( ty, Iop_Add8 ),
                                   mkexpr( base_addr ),
                                   ty == Ity_I64 ? mkU64( 8 ) : mkU32( 8 )
-                                  ) ) ) );
+                                  ) ),
+		     load( Ity_I64, mkexpr( base_addr ) ) ) );
 
       /* Set the nb_mask to all zeros if nb = 0 so the current contents
        * of memory get written back without modifications.
@@ -20985,56 +21022,25 @@ dis_vx_store ( UInt theInstr )
        * and the bytes you want to store.  The nb_mask selects the
        * bytes you want stored from Vs.
        */
-      if (host_endness == VexEndnessBE) {
-         assign( nb_mask,
-                 binop( Iop_OrV128,
-                        binop( Iop_AndV128,
-                               binop( Iop_ShlV128,
-                                      mkV128( 0xFFFF ),
-                                      mkexpr( shift ) ),
-                               unop( Iop_NotV128, mkexpr( nb_zero ) ) ),
-                        binop( Iop_AndV128,
-                               mkexpr( nb_zero ),
-                               mkV128( 0 ) ) ) );
+       assign( nb_mask,
+               binop( Iop_OrV128,
+                      binop( Iop_AndV128,
+                             mkexpr( nb_zero ),
+                             mkV128( 0 ) ),
+                      binop( Iop_AndV128,
+			     binop( Iop_ShrV128,
+				    mkV128( 0xFFFF ),
+				    mkexpr( shift ) ),
+                             unop( Iop_NotV128, mkexpr( nb_zero ) ) ) ) );
 
-         assign( store_val,
-                 binop( Iop_OrV128,
-                        binop( Iop_AndV128,
-                               binop( Iop_ShrV128,
-                                      mkexpr( vS ),
-                                      mkexpr( shift ) ),
-                               mkexpr( nb_mask ) ),
-                        binop( Iop_AndV128,
-                               unop( Iop_NotV128, mkexpr( nb_mask ) ),
-                               mkexpr( current_mem) ) ) );
-
-      } else {
-            assign( nb_mask,
-                 binop( Iop_OrV128,
-                        binop( Iop_AndV128,
-                               binop( Iop_ShrV128,
-                                      binop( Iop_ShlV128,
-                                             mkV128( 0xFFFF ),
-                                             mkexpr( shift ) ),
-                                      mkexpr( shift ) ),
-                               unop( Iop_NotV128, mkexpr( nb_zero ) ) ),
-                        binop( Iop_AndV128,
-                               mkexpr( nb_zero ),
-                               mkV128( 0 ) ) ) );
-
-         assign( store_val,
-                 binop( Iop_OrV128,
-                        binop( Iop_AndV128,
-                               binop( Iop_ShrV128,
-                                      binop( Iop_ShlV128,
-                                             mkexpr( vS ),
-                                             mkexpr( shift ) ),
-                                      mkexpr( shift ) ),
-                               mkexpr( nb_mask ) ),
-                        binop( Iop_AndV128,
-                               unop( Iop_NotV128, mkexpr( nb_mask ) ),
-                               mkexpr( current_mem) ) ) );
-      }
+       assign( store_val,
+               binop( Iop_OrV128,
+                      binop( Iop_AndV128,
+			     mkexpr( vS ),
+                             mkexpr( nb_mask ) ),
+                      binop( Iop_AndV128,
+                             unop( Iop_NotV128, mkexpr( nb_mask ) ),
+                             mkexpr( current_mem) ) ) );
 
       /* Store the value in 32-byte chunks */
       assign( word0,  binop( Iop_Shr64,
@@ -27661,6 +27667,7 @@ static struct vsx_insn vsx_xx3[] = {
       { 0x1e0, "xvdivdp" },
       { 0x1e4, "xvmsubmdp" },
       { 0x1f4, "xvtdivdp" },
+      { 0x200, "xsmaxcdp" },
       { 0x204, "xsnmaddasp" },
       { 0x208, "xxland" },
       { 0x220, "xsmincdp" },
@@ -28298,7 +28305,7 @@ DisResult disInstr_PPC_WRK (
 	       goto decode_success;
             goto decode_failure;
          case 0xC: case 0x2C: case 0x4C: // xscmpeqdp, xscmpgtdp, xscmpgedp
-         case 0x220: //xsmincdp
+         case 0x200: case 0x220:         //xsmaxcdp, xsmincdp
             if (dis_vx_misc(theInstr, vsxOpc2)) goto decode_success;
             goto decode_failure;
          case 0x268: case 0x248: case 0x288: // xxlxor, xxlor, xxlnor,

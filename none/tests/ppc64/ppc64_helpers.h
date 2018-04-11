@@ -156,19 +156,19 @@ static char * fpscr_strings[] = {
  * human readable format.
  */
 
-inline int cr_overflow_set(unsigned this_cr) {
+static inline int cr_overflow_set(unsigned this_cr) {
    return (this_cr & CRFIELD_BIT3);
 }
 
-inline int cr_zero_set(unsigned this_cr) {
+static inline int cr_zero_set(unsigned this_cr) {
    return (this_cr & CRFIELD_BIT2);
 }
 
-inline int cr_positive_set(unsigned this_cr) {
+static inline int cr_positive_set(unsigned this_cr) {
    return (this_cr & CRFIELD_BIT1);
 }
 
-inline int cr_negative_set(unsigned this_cr) {
+static inline int cr_negative_set(unsigned this_cr) {
    return (this_cr & CRFIELD_BIT0);
 }
 
@@ -539,7 +539,7 @@ static unsigned long dfp128_vals[] = {
 #endif
 };
 
-#define NUM_DFP128_VALS (sizeof(dfp128_vals) / 8)
+#define NUM_DFP128_VALS (sizeof(dfp128_vals) / sizeof(unsigned long))
 unsigned long nb_dfp128_vals = NUM_DFP128_VALS;
 
 /* Todo: update dfp64_vals to match dfp128_vals content. */
@@ -579,7 +579,7 @@ static unsigned long dfp64_vals[] = {
 #endif
 };
 
-#define NUM_DFP64_VALS (sizeof(dfp64_vals) / 8)
+#define NUM_DFP64_VALS (sizeof(dfp64_vals) / sizeof(unsigned long))
 unsigned long nb_dfp64_vals = NUM_DFP64_VALS;
 
 /* shift helpers */

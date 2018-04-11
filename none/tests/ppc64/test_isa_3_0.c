@@ -196,6 +196,7 @@ enum test_flags {
    PPC_LD_ARGS        = 0x00000006,
    PPC_ST_ARGS        = 0x00000007,
    PPC_ONE_IMM        = 0x00000008,
+   PPC_ONE_GPR_ONE_VEC = 0x00000009,
    PPC_NB_ARGS_MASK   = 0x0000000F,
 
    /* Type */
@@ -463,11 +464,11 @@ static void test_vrldnm(void) {
 }
 
 static void test_xviexpdp(void) {
-   __asm__ __volatile__ ("xviexpdp   %0, %1, %2 " : "+wa" (vec_xt): "wa" (vec_xa), "wa" (vec_xb));
+   __asm__ __volatile__ ("xviexpdp   %x0, %x1, %x2 " : "+wa" (vec_xt): "wa" (vec_xa), "wa" (vec_xb));
 }
 
 static void test_xviexpsp(void) {
-   __asm__ __volatile__ ("xviexpsp   %0, %1, %2 " : "+wa" (vec_xt): "wa" (vec_xa), "wa" (vec_xb));
+   __asm__ __volatile__ ("xviexpsp   %x0, %x1, %x2 " : "+wa" (vec_xt): "wa" (vec_xa), "wa" (vec_xb));
 }
 
 static test_list_t testgroup_vsx_absolute[] = {
@@ -509,7 +510,7 @@ static void test_vmsumudm(void)
 /* vector, 3->1 unique; four arguments. xt, xa, xb, xc (xc = permute) */
 static test_list_t testgroup_vector_four[] = {
    { &test_vpermr,   "vpermr" },
-   //   { &test_vmsumudm, "vmsumudm" },
+   { &test_vmsumudm, "vmsumudm" },
    { NULL        , NULL     },
 };
 
@@ -530,9 +531,9 @@ static test_list_t testgroup_vector_four[] = {
 
 #define VEXTRACTD(X)   __asm__ __volatile__ ("vextractd   %0, %1, %2" : "+v" (vec_xt) : "v" (vec_xb), "i"(X));
 
-#define XXINSERTW(X)   __asm__ __volatile__ ("xxinsertw   %0, %1, %2" : "+wa" (vec_xt) : "wa" (vec_xb), "i"(X));
+#define XXINSERTW(X)   __asm__ __volatile__ ("xxinsertw   %x0, %x1, %2" : "+wa" (vec_xt) : "wa" (vec_xb), "i"(X));
 
-#define XXEXTRACTUW(X) __asm__ __volatile__ ("xxextractuw %0, %1, %2" : "+wa" (vec_xt) : "wa" (vec_xb), "i"(X));
+#define XXEXTRACTUW(X) __asm__ __volatile__ ("xxextractuw %x0, %x1, %2" : "+wa" (vec_xt) : "wa" (vec_xb), "i"(X));
 
 static void test_vinsertb (void)
 {
@@ -830,14 +831,6 @@ static void test_xvxsigsp(void) {
    __asm__ __volatile__ ("xvxsigsp %x0, %x1 " : "=wa" (vec_xt) : "wa" (vec_xa));
 }
 
-static void test_xsxexpdp(void) {
-   __asm__ __volatile__ ("xsxexpdp %x0, %x1 " : "=wa" (vec_xt) : "wa" (vec_xa));
-}
-
-static void test_xsxsigdp(void) {
-   __asm__ __volatile__ ("xsxsigdp %x0, %x1 " : "=wa" (vec_xt) : "wa" (vec_xa));
-}
-
 static test_list_t testgroup_vector_logical_one[] = {
    { &test_xxbrh   , "xxbrh"    },
    { &test_xxbrw   , "xxbrw"    },
@@ -847,6 +840,18 @@ static test_list_t testgroup_vector_logical_one[] = {
    { &test_xvxexpsp, "xvxexpsp" },
    { &test_xvxsigdp, "xvxsigdp" },
    { &test_xvxsigsp, "xvxsigsp" },
+   { NULL          , NULL       },
+};
+
+static void test_xsxexpdp(void) {
+   __asm__ __volatile__ ("xsxexpdp %0, %x1 " : "=r" (r17) : "wa" (vec_xa));
+}
+
+static void test_xsxsigdp(void) {
+   __asm__ __volatile__ ("xsxsigdp %0, %x1 " : "=r" (r17) : "wa" (vec_xa));
+}
+
+static test_list_t testgroup_gpr_vector_logical_one[] = {
    { &test_xsxexpdp, "xsxexpdp" },
    { &test_xsxsigdp, "xsxsigdp" },
    { NULL          , NULL       },
@@ -869,15 +874,15 @@ static void test_lxvb16x(void)  {
 }
 
 static void test_stxvx(void)    {
-   __asm__ __volatile__ ("stxvx %x0, 14, 15" : "=wa" (vec_xt));
+  __asm__ __volatile__ ("stxvx %x0, 14, 15" :: "wa" (vec_xt));
 }
 
 static void test_stxvh8x(void)  {
-   __asm__ __volatile__ ("stxvh8x %x0, 14, 15" : "=wa" (vec_xt));
+  __asm__ __volatile__ ("stxvh8x %x0, 14, 15" :: "wa" (vec_xt));
 }
 
 static void test_stxvb16x(void) {
-   __asm__ __volatile__ ("stxvb16x %x0, 14, 15" : "=wa" (vec_xt));
+  __asm__ __volatile__ ("stxvb16x %x0, 14, 15" :: "wa" (vec_xt));
 }
 
 static test_list_t testgroup_vector_loadstore[] = {
@@ -892,19 +897,19 @@ static test_list_t testgroup_vector_loadstore[] = {
 };
 
 static void test_lxvl(void) {
-   __asm__ __volatile__ ("lxvl %0, 14, 15" : "=wa" (vec_xt));
+   __asm__ __volatile__ ("lxvl %x0, 14, 15" : "=wa" (vec_xt));
 }
 
 static void test_stxvl(void) {
-   __asm__ __volatile__ ("stxvl %0, 14, 15" : "=wa" (vec_xt));
+  __asm__ __volatile__ ("stxvl %x0, 14, 15" :: "wa" (vec_xt));
 }
 
 static void test_lxvll(void) {
-   __asm__ __volatile__ ("lxvll %0, 14, 15" : "=wa" (vec_xt));
+  __asm__ __volatile__ ("lxvll %x0, 14, 15" : "=wa" (vec_xt));
 }
 
 static void test_stxvll(void) {
-   __asm__ __volatile__ ("stxvll %0, 14, 15" : "=wa" (vec_xt));
+  __asm__ __volatile__ ("stxvll %x0, 14, 15" :: "wa" (vec_xt));
 }
 
 static void test_lxsibzx(void) {
@@ -916,11 +921,11 @@ static void test_lxsihzx(void) {
 }
 
 static void test_stxsibx(void) {
-   __asm__ __volatile__ ("stxsibx %x0, 14, 15" : "=wa" (vec_xt));
+  __asm__ __volatile__ ("stxsibx %x0, 14, 15" :: "wa" (vec_xt));
 }
 
 static void test_stxsihx(void) {
-   __asm__ __volatile__ ("stxsihx %x0, 14, 15" : "=wa" (vec_xt));
+  __asm__ __volatile__ ("stxsihx %x0, 14, 15" :: "wa" (vec_xt));
 }
 
 /* d-form vsx load/store */
@@ -929,7 +934,7 @@ static void test_lxsd_0(void) {
 }
 
 static void test_stxsd_0(void) {
-   __asm__ __volatile__ ("stxsd %0, 0(%1)" : "=v"(vec_xt) : "r"(r14));
+  __asm__ __volatile__ ("stxsd %0, 0(%1)" : : "v"(vec_xt), "r"(r14));
 }
 
 static void test_lxsd_16(void) {
@@ -937,39 +942,39 @@ static void test_lxsd_16(void) {
 }
 
 static void test_stxsd_16(void) {
-   __asm__ __volatile__ ("stxsd %0, 16(%1)" : "=v"(vec_xt) : "r"(r14));
+   __asm__ __volatile__ ("stxsd %0, 16(%1)" : : "v"(vec_xt), "r"(r14));
 }
 
 static void test_lxssp_0(void) {
-   __asm__ __volatile__ ("lxssp %0, 0(%1)" : "=wa"(vec_xt) : "r"(r14));
+   __asm__ __volatile__ ("lxssp %0, 0(%1)" : "=v"(vec_xt) : "r"(r14));
 }
 
 static void test_stxssp_0(void) {
-   __asm__ __volatile__ ("stxssp %0, 0(%1)" : "=wa"(vec_xt) : "r"(r14));
+  __asm__ __volatile__ ("stxssp %0, 0(%1)" : : "v"(vec_xt), "r"(r14));
 }
 
 static void test_lxssp_16(void) {
-   __asm__ __volatile__ ("lxssp %0, 16(%1)" : "=wa"(vec_xt) : "r"(r14));
+   __asm__ __volatile__ ("lxssp %0, 16(%1)" : "=v"(vec_xt) : "r"(r14));
 }
 
 static void test_stxssp_16(void) {
-   __asm__ __volatile__ ("stxssp %0, 16(%1)" : "=wa"(vec_xt) : "r"(r14));
+  __asm__ __volatile__ ("stxssp %0, 16(%1)" : : "v"(vec_xt), "r"(r14));
 }
 
 static void test_lxv_0(void) {
-   __asm__ __volatile__ ("lxv %0, 0(%1)" : "=wa"(vec_xt) : "r"(r14));
+   __asm__ __volatile__ ("lxv %x0, 0(%1)" : "=wa"(vec_xt) : "r"(r14));
 }
 
 static void test_stxv_0(void) {
-   __asm__ __volatile__ ("stxv %0, 0(%1)" : "=wa"(vec_xt) : "r"(r14));
+   __asm__ __volatile__ ("stxv %x0, 0(%1)" : : "wa"(vec_xt), "r"(r14));
 }
 
 static void test_lxv_16(void) {
-   __asm__ __volatile__ ("lxv %0, 16(%1)" : "=wa"(vec_xt) : "r"(r14));
+   __asm__ __volatile__ ("lxv %x0, 16(%1)" : "=wa"(vec_xt) : "r"(r14));
 }
 
 static void test_stxv_16(void) {
-   __asm__ __volatile__ ("stxv %0, 16(%1)" : "=wa"(vec_xt) : "r"(r14));
+   __asm__ __volatile__ ("stxv %x0, 16(%1)" : : "wa"(vec_xt), "r"(r14));
 }
 
 static test_list_t testgroup_vector_scalar_loadstore_length[] = {
@@ -1011,7 +1016,7 @@ static void test_mtvsrws (void)
 { /* To fit in better with the caller for the mfvsrdd test, use r15
    * instead of r14 as input here.
    */
-   __asm__ __volatile__ ("mtvsrws %0, 15" : "=wa" (vec_xt));
+   __asm__ __volatile__ ("mtvsrws %x0, 15" : "=wa" (vec_xt));
 };
 
 static test_list_t testgroup_vectorscalar_move_tofrom[] = {
@@ -1149,12 +1154,12 @@ static test_list_t testgroup_vector_extract[] = {
    { NULL          , NULL       },
 };
 
-#define XSCMPEXPDP(x)                                             \
-   SET_FPSCR_ZERO                                                 \
-   SET_CR_ZERO                                                    \
-   __asm__ __volatile__                                           \
-      ("xscmpexpdp %0, %1, %2"::"i"(x), "wa"(vec_xa), "wa"(vec_xb));\
-   GET_CR(local_cr);                                              \
+#define XSCMPEXPDP(x)                                                 \
+   SET_FPSCR_ZERO                                                     \
+   SET_CR_ZERO                                                        \
+   __asm__ __volatile__                                               \
+      ("xscmpexpdp %0, %x1, %x2"::"i"(x), "wa"(vec_xa), "wa"(vec_xb));\
+   GET_CR(local_cr);                                                  \
    GET_FPSCR(local_fpscr);
 
 static void test_xscmpexpdp(void) {
@@ -1188,12 +1193,17 @@ static void test_xsmincdp(void) {
    __asm__ __volatile__ ("xsmincdp   %x0, %x1, %x2 " : "+wa" (vec_xt): "ww" (vec_xa), "ww" (vec_xb));
 }
 
+static void test_xsmaxcdp(void) {
+   __asm__ __volatile__ ("xsmaxcdp   %x0, %x1, %x2 " : "+wa" (vec_xt): "ww" (vec_xa), "ww" (vec_xb));
+}
+
 static test_list_t testgroup_vector_scalar_compare_double[] = {
    { &test_xscmpexpdp , "xscmpexpdp " },
    { &test_xscmpeqdp , "xscmpeqdp " },
    { &test_xscmpgtdp , "xscmpgtdp " },
    { &test_xscmpgedp , "xscmpgedp " },
    { &test_xsmincdp , "xsmincdp " },
+   { &test_xsmaxcdp , "xsmaxcdp " },
    { NULL             , NULL          },
 };
 
@@ -1201,41 +1211,50 @@ static test_list_t testgroup_vector_scalar_compare_double[] = {
    SET_FPSCR_ZERO                                                        \
    SET_CR_ZERO                                                           \
    __asm__ __volatile__                                                  \
-      ("xststdcqp %0, %1, %2":: "i"(R), "wa"(vec_xb), "i"(DCMX));        \
+      ("xststdcqp %0, %1, %2":: "i"(R), "v"(vec_xb), "i"(DCMX));         \
    GET_CR(local_cr);                                                     \
-   GET_FPSCR(local_fpscr);
+   GET_FPSCR(local_fpscr);                                               \
+   SET_FPSCR_ZERO                                                        \
+   SET_CR_ZERO
 
 #define XSTSTDCDP(R,DCMX)                                                \
    SET_FPSCR_ZERO                                                        \
    SET_CR_ZERO                                                           \
    __asm__ __volatile__                                                  \
-      ("xststdcdp %0, %1, %2":: "i"(R), "wa"(vec_xb), "i"(DCMX));        \
+      ("xststdcdp %0, %x1, %2":: "i"(R), "wa"(vec_xb), "i"(DCMX));       \
    GET_CR(local_cr);                                                     \
-   GET_FPSCR(local_fpscr);
+   GET_FPSCR(local_fpscr);                                               \
+   SET_FPSCR_ZERO                                                        \
+   SET_CR_ZERO
 
 #define XSTSTDCSP(R,DCMX)                                                \
    SET_FPSCR_ZERO                                                        \
    SET_CR_ZERO                                                           \
    __asm__ __volatile__                                                  \
-      ("xststdcsp %0, %1, %2":: "i"(R), "wa"(vec_xb), "i"(DCMX));        \
+      ("xststdcsp %0, %x1, %2":: "i"(R), "wa"(vec_xb), "i"(DCMX));       \
    GET_CR(local_cr);                                                     \
-   GET_FPSCR(local_fpscr);
+   GET_FPSCR(local_fpscr);                                               \
+   SET_CR_ZERO
 
 #define XVTSTDCDP(R,DCMX)                                                \
    SET_FPSCR_ZERO                                                        \
    SET_CR_ZERO                                                           \
    __asm__ __volatile__                                                  \
-      ("xvtstdcdp %0, %1, %2": "=wa"(vec_xt) : "wa"(vec_xb), "i"(DCMX)); \
+      ("xvtstdcdp %x0, %x1, %2": "=wa"(vec_xt) : "wa"(vec_xb), "i"(DCMX)); \
    GET_CR(local_cr);                                                     \
-   GET_FPSCR(local_fpscr);
+   GET_FPSCR(local_fpscr);                                               \
+   SET_FPSCR_ZERO                                                        \
+   SET_CR_ZERO
 
 #define XVTSTDCSP(R,DCMX)                                                \
    SET_FPSCR_ZERO                                                        \
    SET_CR_ZERO                                                           \
    __asm__ __volatile__                                                  \
-      ("xvtstdcsp %0, %1, %2": "=wa"(vec_xt) : "wa"(vec_xb), "i"(DCMX)); \
+      ("xvtstdcsp %x0, %x1, %2": "=wa"(vec_xt) : "wa"(vec_xb), "i"(DCMX)); \
    GET_CR(local_cr);                                                     \
-   GET_FPSCR(local_fpscr);
+   GET_FPSCR(local_fpscr);                                               \
+   SET_FPSCR_ZERO                                                        \
+   SET_CR_ZERO
 
 static void test_xststdcqp(void) {
    switch(x_index) {
@@ -1366,86 +1385,128 @@ static test_list_t testgroup_set_boolean[] = {
  *  also in r15 bits (32:39 - 40:47 .
  */
 static void test_cmprb_l0() {
+   /* Clear condition code reg (CR) immediately before test
+    * instruction, read CR and clear immediately after test
+    * instruction.  Otherwise, the CR gets corrupted and depending
+    * on optimization level, strange loop control flow issues
+    * occur because CR has been messed with.
+    */
    switch(x_index) {
-   case 0: __asm__ __volatile__ ("cmprb 0, 0, %0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 0: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmprb 0, 0, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
 
-   case 1: __asm__ __volatile__ ("cmprb 1, 0, %0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 1: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmprb 1, 0, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
 
-   case 2: __asm__ __volatile__ ("cmprb 2, 0, %0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 2: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmprb 2, 0, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
 
-   case 3: __asm__ __volatile__ ("cmprb 3, 0, %0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 3: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmprb 3, 0, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
 
-   case 4: __asm__ __volatile__ ("cmprb 4, 0, %0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 4: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmprb 4, 0, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
 
-   case 5: __asm__ __volatile__ ("cmprb 5, 0, %0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 5: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmprb 5, 0, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
 
-   case 6: __asm__ __volatile__ ("cmprb 6, 0, %0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 6: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmprb 6, 0, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
 
-   case 7: __asm__ __volatile__ ("cmprb 7, 0, %0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 7: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmprb 7, 0, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
     }
 }
 
 static void test_cmprb_l1() {
+   /* Clear condition code reg (CR) immediately before test
+    * instruction, read CR and clear immediately after test
+    * instruction.  Otherwise, the CR gets corrupted and depending
+    * on optimization level, strange loop control flow issues
+    * occur because CR has been messed with.
+    */
    switch(x_index) {
-   case 0: __asm__ __volatile__ ("cmprb 0, 1 ,%0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 0: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmprb 0, 1 ,%0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
 
-   case 1: __asm__ __volatile__ ("cmprb 1, 1, %0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 1: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmprb 1, 1, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
 
-   case 2: __asm__ __volatile__ ("cmprb 2, 1, %0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 2: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmprb 2, 1, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
 
-   case 3: __asm__ __volatile__ ("cmprb 3, 1, %0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 3: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmprb 3, 1, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
 
-   case 4: __asm__ __volatile__ ("cmprb 4, 1, %0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 4: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmprb 4, 1, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
 
-   case 5: __asm__ __volatile__ ("cmprb 5, 1, %0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 5: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmprb 5, 1, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
 
-   case 6: __asm__ __volatile__ ("cmprb 6, 1, %0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 6: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmprb 6, 1, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
 
-   case 7: __asm__ __volatile__ ("cmprb 7, 1, %0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 7: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmprb 7, 1, %0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
     }
 }
 
 static void test_cmpeqb() {
+   /* Clear condition code reg (CR) immediately before test
+    * instruction, read CR and clear immediately after test
+    * instruction.  Otherwise, the CR gets corrupted and depending
+    * on optimization level, strange loop control flow issues
+    * occur because CR has been messed with.
+    */
    switch(x_index) {
-   case 0: __asm__ __volatile__ ("cmpeqb 0,%0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 0: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmpeqb 0,%0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
 
-   case 1: __asm__ __volatile__ ("cmpeqb 1,%0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 1: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmpeqb 1,%0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
 
-   case 2: __asm__ __volatile__ ("cmpeqb 2,%0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 2: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmpeqb 2,%0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
 
-   case 3: __asm__ __volatile__ ("cmpeqb 3,%0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 3: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmpeqb 3,%0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
 
-   case 4: __asm__ __volatile__ ("cmpeqb 4,%0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 4: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmpeqb 4,%0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
 
-   case 5: __asm__ __volatile__ ("cmpeqb 5,%0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 5: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmpeqb 5,%0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
 
-   case 6: __asm__ __volatile__ ("cmpeqb 6,%0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 6: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmpeqb 6,%0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
 
-   case 7: __asm__ __volatile__ ("cmpeqb 7,%0, %1" : : "r"(r14), "r"(r15));
-      GET_CR(local_cr); break;
+   case 7: SET_CR_ZERO;
+      __asm__ __volatile__ ("cmpeqb 7,%0, %1" : : "r"(r14), "r"(r15));
+      GET_CR(local_cr); SET_CR_ZERO; break;
     }
 }
 
@@ -1658,37 +1719,48 @@ static void test_dtstsfi() {
 static void test_dtstsfiq() {
    _Decimal128 df14 = dfp_value.dec_val128;
    switch(dfp_significance) {
-   case 0x00: __asm__ __volatile__ ("dtstsfiq 3, 0x00, %0" : : "f" (df14));
+   case 0x00: SET_CR_ZERO;
+      __asm__ __volatile__ ("dtstsfiq 3, 0x00, %0" : : "d" (df14));
       GET_CR(local_cr); break;
 
-   case 0x01: __asm__ __volatile__ ("dtstsfiq 3, 0x01, %0" : : "f" (df14));
+   case 0x01:  SET_CR_ZERO;
+      __asm__ __volatile__ ("dtstsfiq 3, 0x01, %0" : : "d" (df14));
       GET_CR(local_cr); break;
 
-   case 0x02: __asm__ __volatile__ ("dtstsfiq 3, 0x02, %0" : : "f" (df14));
+   case 0x02:  SET_CR_ZERO;
+      __asm__ __volatile__ ("dtstsfiq 3, 0x02, %0" : : "d" (df14));
       GET_CR(local_cr); break;
 
-   case 0x03: __asm__ __volatile__ ("dtstsfiq 3, 0x03, %0" : : "f" (df14));
+   case 0x03:  SET_CR_ZERO;
+      __asm__ __volatile__ ("dtstsfiq 3, 0x03, %0" : : "d" (df14));
       GET_CR(local_cr); break;
 
-   case 0x04: __asm__ __volatile__ ("dtstsfiq 3, 0x04, %0" : : "f" (df14));
+   case 0x04:  SET_CR_ZERO;
+      __asm__ __volatile__ ("dtstsfiq 3, 0x04, %0" : : "d" (df14));
       GET_CR(local_cr); break;
 
-   case 0x06: __asm__ __volatile__ ("dtstsfiq 3, 0x06, %0" : : "f" (df14));
+   case 0x06:  SET_CR_ZERO;
+      __asm__ __volatile__ ("dtstsfiq 3, 0x06, %0" : : "d" (df14));
       GET_CR(local_cr); break;
 
-   case 0x08: __asm__ __volatile__ ("dtstsfiq 3, 0x08, %0" : : "f" (df14));
+   case 0x08:  SET_CR_ZERO;
+      __asm__ __volatile__ ("dtstsfiq 3, 0x08, %0" : : "d" (df14));
       GET_CR(local_cr); break;
 
-   case 0x0c: __asm__ __volatile__ ("dtstsfiq 3, 0x0c, %0" : : "f" (df14));
+   case 0x0c:  SET_CR_ZERO;
+      __asm__ __volatile__ ("dtstsfiq 3, 0x0c, %0" : : "d" (df14));
       GET_CR(local_cr); break;
 
-   case 0x10: __asm__ __volatile__ ("dtstsfiq 3, 0x10, %0" : : "f" (df14));
+   case 0x10:  SET_CR_ZERO;
+      __asm__ __volatile__ ("dtstsfiq 3, 0x10, %0" : : "d" (df14));
       GET_CR(local_cr); break;
 
-   case 0x18: __asm__ __volatile__ ("dtstsfiq 3, 0x18, %0" : : "f" (df14));
+   case 0x18:  SET_CR_ZERO;
+      __asm__ __volatile__ ("dtstsfiq 3, 0x18, %0" : : "d" (df14));
       GET_CR(local_cr); break;
 
-   case 0x20: __asm__ __volatile__ ("dtstsfiq 3, 0x20, %0" : : "f" (df14));
+   case 0x20:  SET_CR_ZERO;
+      __asm__ __volatile__ ("dtstsfiq 3, 0x20, %0" : : "d" (df14));
       GET_CR(local_cr); break;
    }
 }
@@ -1748,7 +1820,7 @@ static test_list_t testgroup_pc_immediate_misc[] = {
 };
 
 static void test_xsiexpdp(void) {
-   __asm__ __volatile__ ("xsiexpdp   %0, %1, %2 " : "+wa" (vec_xt): "r" (r14), "r" (r15));
+   __asm__ __volatile__ ("xsiexpdp   %x0, %1, %2 " : "+wa" (vec_xt): "r" (r14), "r" (r15));
 }
 
 static void test_xscvhpdp(void) {
@@ -1955,28 +2027,28 @@ static test_list_t testgroup_vector_three_quad[] = {
    { NULL            , NULL          },
 };
 
-#define XSCMPEXPQP(x)                                                       \
-   SET_FPSCR_ZERO                                                           \
-   SET_CR_ZERO                                                              \
-   __asm__ __volatile__                                                     \
-      ("xscmpexpqp %0, %1, %2" :: "i"(x), "v"(vec_xa), "v"(vec_xb));        \
-   GET_CR(local_cr);                                                        \
+#define XSCMPEXPQP(x)							\
+   SET_FPSCR_ZERO                                                       \
+   SET_CR_ZERO                                                          \
+   __asm__ __volatile__                                                 \
+      ("xscmpexpqp %0, %1, %2" :: "i"(x), "v"(vec_xa), "v"(vec_xb));    \
+   GET_CR(local_cr);                                                    \
    GET_FPSCR(local_fpscr);
 
-#define XSCMPOQP(x)                                                         \
-   SET_FPSCR_ZERO                                                           \
-   SET_CR_ZERO                                                              \
-   __asm__ __volatile__                                                     \
-      ("xscmpoqp %0, %1, %2" :: "i"(x), "v"(vec_xa), "v"(vec_xb));          \
-   GET_CR(local_cr);                                                        \
+#define XSCMPOQP(x)                                                     \
+   SET_FPSCR_ZERO                                                       \
+   SET_CR_ZERO                                                          \
+   __asm__ __volatile__                                                 \
+      ("xscmpoqp %0, %1, %2" :: "i"(x), "v"(vec_xa), "v"(vec_xb));      \
+   GET_CR(local_cr);                                                    \
    GET_FPSCR(local_fpscr);
 
-#define XSCMPUQP(x)                                                         \
-   SET_FPSCR_ZERO                                                           \
-   SET_CR_ZERO                                                              \
-   __asm__ __volatile__                                                     \
-      ("xscmpuqp %0, %1, %2"::"i"(x), "v"(vec_xa), "v"(vec_xb));            \
-   GET_CR(local_cr);                                                        \
+#define XSCMPUQP(x)                                                     \
+   SET_FPSCR_ZERO                                                       \
+   SET_CR_ZERO                                                          \
+   __asm__ __volatile__                                                 \
+      ("xscmpuqp %0, %1, %2"::"i"(x), "v"(vec_xa), "v"(vec_xb));        \
+   GET_CR(local_cr);                                                    \
    GET_FPSCR(local_fpscr);
 
 static void test_xscmpexpqp(void) {
@@ -2114,20 +2186,26 @@ static test_list_t testgroup_vector_scalar_rounding_quads[] = {
  */
 /* mffs FRT # Move From FPSCR*/
 static void test_mffs (void) {
+   SET_FPSCR_ZERO
    __asm__ __volatile__ ("mffs %0"  : "=f"(f14) );
    GET_FPSCR(local_fpscr);
+   SET_FPSCR_ZERO
 }
 
 /* mffsce FRT # Move From FPSCR and Clear Enables */
 static void test_mffsce (void) {
+   SET_FPSCR_ZERO
    __asm__ __volatile__ ("mffsce %0"  : "=f"(f14) );
    GET_FPSCR(local_fpscr);
+   SET_FPSCR_ZERO
 }
 
 /* mffscdrn FRT,FRB # Move From FpScr and Control &set DRN */
 static void test_mffscdrn (void) {
+   SET_FPSCR_ZERO
    __asm__ __volatile__ ("mffscdrn %0,%1"  : "=f"(f14): "f"(f15) );
    GET_FPSCR(local_fpscr);
+   SET_FPSCR_ZERO
 }
 
 /* mffscdrni FRT,DRM # Move From FpScr & Control &set DRN Immediate*/
@@ -2135,65 +2213,81 @@ static void test_mffscdrni (void) {
    switch(x_shift) {
       default:
       case 0:
+         SET_FPSCR_ZERO
          __asm__ __volatile__ ("mffscdrni %0,0"  : "=f"(f14) );
          GET_FPSCR(local_fpscr);
+         SET_FPSCR_ZERO
          break;
       case 1:
+         SET_FPSCR_ZERO
          __asm__ __volatile__ ("mffscdrni %0,1"  : "=f"(f14) );
          GET_FPSCR(local_fpscr);
+         SET_FPSCR_ZERO
          break;
       case 2:
+         SET_FPSCR_ZERO
          __asm__ __volatile__ ("mffscdrni %0,2"  : "=f"(f14) );
          GET_FPSCR(local_fpscr);
+         SET_FPSCR_ZERO
          break;
    }
 }
 
 /* mffscrn FRT,FRB # Move From FpScr and Control &set RN*/
 static void test_mffscrn (void) {
+   SET_FPSCR_ZERO
    __asm__ __volatile__ ("mffscrn %0,%1"  : "=f"(f14):"f"(f15));
    GET_FPSCR(local_fpscr);
+   SET_FPSCR_ZERO
 }
 
 /* mffscrni FRT,RM # Move from FpScr and Control &set RN Immediate*/
 static void test_mffscrni (void) {
    switch(x_shift) {
       case 0:
+         SET_FPSCR_ZERO
          __asm__ __volatile__ ("mffscrni %0,0"  : "=f"(f14) );
          GET_FPSCR(local_fpscr);
+         SET_FPSCR_ZERO
          break;
       case 1:
+         SET_FPSCR_ZERO
          __asm__ __volatile__ ("mffscrni %0,1"  : "=f"(f14) );
          GET_FPSCR(local_fpscr);
+         SET_FPSCR_ZERO
          break;
       case 2:
+         SET_FPSCR_ZERO
          __asm__ __volatile__ ("mffscrni %0,2"  : "=f"(f14) );
          GET_FPSCR(local_fpscr);
+         SET_FPSCR_ZERO
          break;
    }
 }
 
 /* mffsl FRT  # Move From FpScr Lightweight */
 static void test_mffsl (void) {
+   SET_FPSCR_ZERO
    __asm__ __volatile__ ("mffsl %0"  : "=f"(f14) );
    GET_FPSCR(local_fpscr);
+   SET_FPSCR_ZERO
 }
 
 /* mffs* instructions using FRT only. */
 /* Note to self - Watch DRM,RM fields. */
 static test_list_t testgroup_mffs_misc[] = {
-   //   { &test_mffsce,    "mffsce" },
-   //   { &test_mffsl,     "mffsl" },
+   { &test_mffsce,    "mffsce" },
+   { &test_mffsl,     "mffsl" },
    { &test_mffs,      "mffs" },
    { NULL               , NULL      },
 };
 
 /* mffs* instructions using FRT,FRB. */
 static test_list_t testgroup_mffs_misc_one[] = {
-   //   { &test_mffscdrni, "mffscdrni" },
-   //   { &test_mffscdrn,  "mffscdrn" },
-   //   { &test_mffscrni,  "mffscrni" },
-   //   { &test_mffscrn,   "mffscrn" },
+   { &test_mffscdrni, "mffscdrni" },
+   { &test_mffscdrn,  "mffscdrn" },
+   { &test_mffscrni,  "mffscrni" },
+   { &test_mffscrn,   "mffscrn" },
    { NULL               , NULL      },
 };
 
@@ -2254,6 +2348,11 @@ static test_group_table_t all_tests[] = {
       testgroup_vector_logical_one,
       "ppc vector logical one",
       PPC_ALTIVEC | PPC_LOGICAL | PPC_ONE_ARG,
+   },
+   {
+      testgroup_gpr_vector_logical_one,
+      "ppc gpr vector logical one",
+      PPC_ALTIVEC | PPC_LOGICAL | PPC_ONE_GPR_ONE_VEC,
    },
    {
       testgroup_vector_extend_sign,
@@ -2536,7 +2635,7 @@ static void testfunction_vector_absolute (const char* instruction_name,
          printf("%s xa:%016lx %016lx xb:%016lx %016lx ",
                 instruction_name,
                 vec_xa[1],vec_xa[0],
-                vec_xb[0],vec_xb[1]
+                vec_xb[1],vec_xb[0]
                 );
          printf(" => ");
 
@@ -2546,7 +2645,7 @@ static void testfunction_vector_absolute (const char* instruction_name,
 
          GET_CR(cr);
 
-         printf(" xt:%016lx %016lx (%08x)\n", vec_xt[0], vec_xt[1], cr);
+         printf(" xt:%016lx %016lx (%08x)\n", vec_xt[1], vec_xt[0], cr);
       }
       if (verbose) printf("\n");
    }
@@ -2577,7 +2676,7 @@ static void testfunction_vector_xxpermute (const char* instruction_name,
                 instruction_name,
                 vec_xa[1], vec_xa[0],
                 vec_xt[1], vec_xt[0],
-                vec_xb[0], vec_xb[1]);
+                vec_xb[1], vec_xb[0]);
 
          SET_CR_ZERO;
 
@@ -2585,14 +2684,14 @@ static void testfunction_vector_xxpermute (const char* instruction_name,
 
          GET_CR(cr);
 
-         printf(" %016lx %016lx (%08x)\n", vec_xt[0], vec_xt[1], cr);
+         printf(" %016lx %016lx (%08x)\n", vec_xt[1], vec_xt[0], cr);
 
 #if defined (DEBUG_VECTOR_PERMUTE)
          printf("DEBUG:%s %016lx %016lx %016lx %016lx, pcv[%016lx %016lx]\n",
                 ignore_name,
-                vec_xa[0], vec_xa[1],
-                vec_xt[0], vec_xt[1],
-                vec_xb[0], vec_xb[1]);
+                vec_xa[1], vec_xa[0],
+                vec_xt[1], vec_xt[0],
+                vec_xb[1], vec_xb[0]);
 #endif
       }
       if (verbose) printf("\n");
@@ -2621,14 +2720,45 @@ static void testfunction_vector_logical_one (const char* instruction_name,
 
          printf("%s xa:%016lx %016lx xt:%016lx %016lx => ",
                 instruction_name,
-                vec_xa[0], vec_xa[1],
-                vec_xt[0], vec_xt[1]);
+                vec_xa[1], vec_xa[0],
+                vec_xt[1], vec_xt[0]);
 
          (*test_function)();
 
          printf(" xt:%016lx %016lx\n",
-                vec_xt[0], vec_xt[1]);
+                vec_xt[1], vec_xt[0]);
       }
+   }
+   if (verbose) printf("\n");
+}
+
+static void testfunction_gpr_vector_logical_one (const char* instruction_name,
+						 test_func_t test_function,
+						 unsigned int ignore_test_flags)
+{
+   /* Notes:
+    *   vector instructions with one vector input, one GPR output.
+    *   rt, xa
+    */
+   int i;
+   int t;
+   volatile HWord_t res;
+
+   VERBOSE_FUNCTION_CALLOUT
+
+   for (i = 0; i < nb_vargs; i += 2) {
+
+      vec_xa = (vector unsigned long){vsxargs[i], vsxargs[i+1]};
+      r17 = 0;
+      res = r17;
+
+      printf("%s rt xt:%016lx %016lx => ",
+	     instruction_name,
+	     vec_xa[1], vec_xa[0]);
+
+      (*test_function)();
+
+      printf(" rt: %016lx\n", (long unsigned)res);
    }
    if (verbose) printf("\n");
 }
@@ -2660,7 +2790,7 @@ static void testfunction_vector_logical_four (const char* instruction_name,
                    instruction_name,
                    vec_xa[1], vec_xa[0],
                    vec_xb[1], vec_xb[0],
-                   vec_xc[0], vec_xc[1]);
+                   vec_xc[1], vec_xc[0]);
 
             SET_CR_ZERO;
 
@@ -2668,7 +2798,7 @@ static void testfunction_vector_logical_four (const char* instruction_name,
 
             GET_CR(cr);
 
-            printf(" %016lx %016lx (%08x)\n", vec_xt[0], vec_xt[1], cr);
+            printf(" %016lx %016lx (%08x)\n", vec_xt[1], vec_xt[0], cr);
          }
       }
 
@@ -2827,6 +2957,12 @@ static void testfunction_vectorscalar_move_tofrom (const char * instruction_name
    }
 }
 
+/* Some of the load/store vector instructions load 64 bits, upper 64 bits
+ * are undefined.
+ */
+#define load_4_bytes(instruction_name) (                     \
+           (strncmp(instruction_name, "lxssp ",5) == 0) )
+
 /* Some of the load/store vector instructions use a length value that
  * is stored in bits 0:7 of RB.  */
 #define uses_bits_0to7(instruction_name) (                  \
@@ -2860,16 +2996,6 @@ static void testfunction_vector_scalar_loadstore_length (const char* instruction
 
            /* set patterns on both ends */
             vec_xt = (vector unsigned long){vsxargs[i], vsxargs[i+1]};
-            r14 = (unsigned long) & buffer;
-
-            if (uses_bits_0to7(instruction_name)) {
-               /* length is stored in bits 0:7 of gpr[r15]. */
-               r15 = (unsigned long)((0xff & l) << 56);
-
-            } else {
-               /* length is stored in gpr[r15]. */
-               r15 = l;
-            }
 
             initialize_buffer(buffer_pattern);
 
@@ -2879,15 +3005,36 @@ static void testfunction_vector_scalar_loadstore_length (const char* instruction
                printf(" 0x%2lx ", (long unsigned)r15>>56 );
 
             } else {
-               printf(" l = 0x%2lx ", (long unsigned)r15 );
+               printf(" 0x%2lx ", (long unsigned)r15 );
             }
 
             dump_small_buffer();
 
+            if (uses_bits_0to7(instruction_name)) {
+               /* length is stored in bits 0:7 of gpr[r15]. */
+               r15 = (unsigned long)((0xff & l) << 56);
+
+            } else {
+               /* length is stored in gpr[r15]. */
+               r15 = l;
+            }
+            r14 = (unsigned long) & buffer;
+
             (*test_function)();
+
+            if (load_4_bytes(instruction_name)) {
+	      /* Double word element 1 (BE numbering) is undefined, clear for
+		 consistency. Only loaded bits [0:31], mask out rest of
+		 element 0.
+	      */
+	      vec_xt[0] = 0;
+	      vec_xt[1] &= 0xFFFFFFFF00000000;
+	    }
 
             printf("=> %016lx %016lx & %16lx", vec_xt[1], vec_xt[0],
                    (long unsigned)r15 );
+            dump_small_buffer();
+
             printf("\n");
          }
       }
@@ -3065,7 +3212,7 @@ static inline void testfunction_bcd_setup_inputs(const char * instruction_name,
 
 static inline void testfunction_bcd_display_outputs(const char * instruction_name) {
 
-   printf(" xt:%016lx %016lx", vec_xt[0], vec_xt[1] );
+   printf(" xt:%016lx %016lx", vec_xt[1], vec_xt[0] );
 
    if (convert_to_zoned(instruction_name)) {
       /* convert to zoned */
@@ -3151,7 +3298,8 @@ static void testfunction_vector_scalar_two_quad (const char* instruction_name,
 	((strncmp(instruction_name, "xscmpeqdp",9) == 0) || \
 	 (strncmp(instruction_name, "xscmpgtdp",9) == 0) || \
 	 (strncmp(instruction_name, "xscmpgedp",9) == 0) || \
-	 (strncmp(instruction_name, "xsmincdp",8) == 0) )
+	 (strncmp(instruction_name, "xsmincdp",8) == 0) || \
+	 (strncmp(instruction_name, "xsmaxcdp",8) == 0) )
 
 static void
 testfunction_vector_scalar_compare_double (const char* instruction_name,
@@ -3188,8 +3336,8 @@ testfunction_vector_scalar_compare_double (const char* instruction_name,
             } else {
                printf("%s %016lx %016lx %016lx %016lx",
                       instruction_name,
-                      vec_xa[0], vec_xa[1],
-                      vec_xb[0], vec_xb[1]);
+                      vec_xa[1], vec_xa[0],
+                      vec_xb[1], vec_xb[0]);
             }
 
             if (verbose) printf(" cr#%d ", x_index);
@@ -3199,7 +3347,7 @@ testfunction_vector_scalar_compare_double (const char* instruction_name,
             (*test_function)();
 
             if (instruction_only_uses_dword0_inputs(instruction_name)) {
-               printf("%016lx %016lx", vec_xt[0], vec_xt[1]);
+               printf("%016lx %016lx", vec_xt[1], vec_xt[0]);
             }
 
             dissect_fpscr(local_fpscr);
@@ -3500,7 +3648,7 @@ static void testfunction_set_boolean (const char* instruction_name,
    VERBOSE_FUNCTION_CALLOUT
 
    for (x_index = 0; x_index <= 7; x_index++) {
-      for (cr_base_value = 0; cr_base_value <= 8; cr_base_value++) {
+      for (cr_base_value = 0; cr_base_value < 8; cr_base_value++) {
          cr_value = (0x11111111 * cr_base_value)
             & (0xf << (4 * (7 - x_index))) ;
 
@@ -3553,9 +3701,15 @@ static void testfunction_char_compare (const char* instruction_name,
 
             printf(" =>");
 
+	    /* Clear condition code reg (CR) immediately before test
+	     * instruction, read CR and clear immediately after test
+	     * instruction.  Otherwise, the CR gets corrupted and depending
+	     * on optimization level, strange loop control flow issues
+	     * occur because CR has been messed with.
+	     */
             (*test_function)();
 
-            GET_CR(local_cr);
+	    // GET_CR(local_cr);  done in test case
             local_crf = extract_cr_rn(local_cr, x_index);
 
             if (verbose)
@@ -3583,7 +3737,7 @@ static void testfunction_dfp_significance (const char* instruction_name,
    VERBOSE_FUNCTION_CALLOUT
 
    if (instruction_uses_quads(instruction_name)) {
-      num_dfp_vals = nb_dfp128_vals;
+      num_dfp_vals = nb_dfp128_vals/2;  //Next loop uses two at a time
    } else {
       num_dfp_vals = nb_dfp64_vals;
    }
@@ -3623,7 +3777,7 @@ static void testfunction_dfp_significance (const char* instruction_name,
 
          (*test_function)();
 
-         GET_CR(local_cr);
+         //  GET_CR(local_cr); done in test_function
 
          local_crf = extract_cr_rn(local_cr, /* hardcoded cr3 */ 3);
          dissect_cr_rn(local_cr, /* hardcoded cr3 */ 3);
@@ -3682,12 +3836,12 @@ static void testfunction_bcd_misc (const char* instruction_name,
          if (short_circuit) continue;
 
          printf("%s ",  instruction_name);
-         printf("xa:%016lx %016lx ", vec_xa[0], vec_xa[1]);
+         printf("xa:%016lx %016lx ", vec_xa[1], vec_xa[0]);
 
          if (!shift_or_truncate_instruction)
             dissect_packed_decimal_sign(xa_sign);
 
-         printf(" xb:%016lx %016lx ", vec_xb[0], vec_xb[1]);
+         printf(" xb:%016lx %016lx ", vec_xb[1], vec_xb[0]);
 
          if (convert_from_zoned(instruction_name)) {
             /* convert from zoned */
@@ -4019,6 +4173,10 @@ static void do_tests ( insn_sel_flags_t seln_flags)
 
             case PPC_FOUR_ARGS:
                group_function = &testfunction_vector_logical_four;
+               break;
+
+            case PPC_ONE_GPR_ONE_VEC:
+               group_function = &testfunction_gpr_vector_logical_one;
                break;
 
             default:

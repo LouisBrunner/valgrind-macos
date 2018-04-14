@@ -641,6 +641,7 @@
 /helgrind/tests/*.stdout.diff*
 /helgrind/tests/*.stdout.out
 /helgrind/tests/.deps
+/helgrind/tests/.dirstamp
 /helgrind/tests/annotate_hbefore
 /helgrind/tests/annotate_rwlock
 /helgrind/tests/bar_bad

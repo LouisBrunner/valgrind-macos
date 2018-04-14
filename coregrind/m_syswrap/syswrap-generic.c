@@ -1794,13 +1794,20 @@ UInt get_sem_count( Int semid )
    SysRes res;
 
 #  if defined(__NR_semctl)
+#  if defined(VGO_darwin)
+   /* Darwin has no specific 64 bit semid_ds, but has __NR_semctl. */
+   struct vki_semid_ds buf;
+   arg.buf = &buf;
+#  else
    struct vki_semid64_ds buf;
    arg.buf64 = &buf;
+#  endif
    res = VG_(do_syscall4)(__NR_semctl, semid, 0, VKI_IPC_STAT, *(UWord *)&arg);
    if (sr_isError(res))
       return 0;
 
    return buf.sem_nsems;
+
 #  elif defined(__NR_semsys) /* Solaris */
    struct vki_semid_ds buf;
    arg.buf = &buf;
@@ -1810,6 +1817,7 @@ UInt get_sem_count( Int semid )
       return 0;
 
    return buf.sem_nsems;
+
 #  else
    struct vki_semid_ds buf;
    arg.buf = &buf;

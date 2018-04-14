@@ -1389,6 +1389,36 @@ POST(sys_sysctl)
    }
 }
 
+static void pre_asciiz_str(ThreadId tid, Addr str, SizeT maxlen,
+                           const char *attr_name)
+{
+   const HChar *step_str = (const HChar *)str;
+   SizeT len;
+   UInt i;
+
+   /*
+    * The name can be up to maxlen bytes long, including the terminating null
+    * byte. So do not check more than maxlen bytes.
+    */
+   if (ML_(safe_to_deref)((const HChar *)str, maxlen)) {
+      len = VG_(strnlen)((const HChar *)str, maxlen);
+      if (len < maxlen)
+         PRE_MEM_RASCIIZ(attr_name, str);
+      else
+         PRE_MEM_READ(attr_name, str, maxlen);
+   } else {
+      /*
+       * Do it the slow way, one byte at a time, while checking for terminating
+       * '\0'.
+       */
+      for (i = 0; i < maxlen; i++) {
+         PRE_MEM_READ(attr_name, (Addr)&step_str[i], 1);
+         if (!ML_(safe_to_deref)(&step_str[i], 1) || step_str[i] == '\0')
+            break;
+      }
+   }
+}
+
 PRE(sys_prctl)
 {
    *flags |= SfMayBlock;
@@ -1442,27 +1472,7 @@ PRE(sys_prctl)
       break;
    case VKI_PR_SET_NAME:
       PRE_REG_READ2(int, "prctl", int, option, char *, name);
-      /* The name can be up to TASK_COMM_LEN(16) bytes long, including
-         the terminating null byte. So do not check more than 16 bytes. */
-      if (ML_(safe_to_deref)((const HChar *) (Addr)ARG2, VKI_TASK_COMM_LEN)) {
-         SizeT len = VG_(strnlen)((const HChar *) (Addr)ARG2,
-                                  VKI_TASK_COMM_LEN);
-         if (len < VKI_TASK_COMM_LEN) {
-            PRE_MEM_RASCIIZ("prctl(set-name)", ARG2);
-         } else {
-            PRE_MEM_READ("prctl(set-name)", ARG2, VKI_TASK_COMM_LEN);
-         }
-      } else {
-         /* Do it the slow way, one byte at a time, while checking for
-            terminating '\0'. */
-         const HChar *name = (const HChar *) (Addr)ARG2;
-         for (UInt i = 0; i < VKI_TASK_COMM_LEN; i++) {
-            PRE_MEM_READ("prctl(set-name)", (Addr) &name[i], 1);
-            if (!ML_(safe_to_deref)(&name[i], 1) || name[i] == '\0') {
-               break;
-            }
-         }
-      }
+      pre_asciiz_str(tid, ARG2, VKI_TASK_COMM_LEN, "prctl(set-name)");
       break;
    case VKI_PR_GET_NAME:
       PRE_REG_READ2(int, "prctl", int, option, char *, name);

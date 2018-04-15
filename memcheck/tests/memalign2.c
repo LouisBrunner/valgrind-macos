@@ -82,7 +82,7 @@ int main ( void )
 #  define PM(a,b,c) posix_memalign((void**)a, b, c)
 
    res = PM(&p, -1,100);      assert(EINVAL == res);
-   res = PM(&p, 0, 100);      assert(0 == res && 0 == (long)p % 8);
+   res = PM(&p, 0, 100);      assert(EINVAL == res);
    res = PM(&p, 1, 100);      assert(EINVAL == res);
    res = PM(&p, 2, 100);      assert(EINVAL == res);
    res = PM(&p, 3, 100);      assert(EINVAL == res);

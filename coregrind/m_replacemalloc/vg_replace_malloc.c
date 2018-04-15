@@ -1001,7 +1001,8 @@ static void init(void);
       \
       /* Test whether the alignment argument is valid.  It must be \
          a power of two multiple of sizeof (void *).  */ \
-      if (alignment % sizeof (void *) != 0 \
+      if (alignment == 0 \
+          || alignment % sizeof (void *) != 0 \
           || (alignment & (alignment - 1)) != 0) \
          return VKI_EINVAL; \
       \

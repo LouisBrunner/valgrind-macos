@@ -103,6 +103,7 @@ where XXXXXX is the bug number as listed below.
 391861  Massif Assertion 'n_ips >= 1 && n_ips <= VG_(clo_backtrace_size)'
 393017  Add missing support for xsmaxcdp instruction, bug fixes for xsmincdp,
         lxssp, stxssp and stxvl instructions.
+393023  callgrind_control risks using the wrong vgdb
 393099  posix_memalign() invalid write if alignment == 0
 
 n-i-bz  Fix missing workq_ops operations (macOS)

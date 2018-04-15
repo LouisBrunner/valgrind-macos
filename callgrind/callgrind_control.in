@@ -23,11 +23,15 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #  02111-1307, USA.
+use File::Basename;
+
+# vgdb_exe will be set to a vgdb found 'near' the callgrind_control file
+my $vgdb_exe = "";
 
 sub getCallgrindPids {
 
   @pids = ();
-  open LIST, "vgdb $vgdbPrefixOption -l|";
+  open LIST, $vgdb_exe . " $vgdbPrefixOption -l|";
   while(<LIST>) {
       if (/^use --pid=(\d+) for \S*?valgrind\s+(.*?)\s*$/) {
 	  $pid = $1;
@@ -186,6 +190,20 @@ sub print_events ($)
 #
 # Main
 #
+
+# Search the appropriate vgdb executable
+my $controldir = dirname(__FILE__);
+if (-x $controldir . "/vgdb") {
+    # classical case: callgrind_control and vgdb from the install bin dir
+    $vgdb_exe = $controldir . "/vgdb";
+} elsif (-x $controldir . "/../coregrind/vgdb") {
+    # callgrind_control called from the callgrind tool source/build dir
+    $vgdb_exe = $controldir . "/../coregrind/vgdb";
+} else {
+    # no idea. Use whatever vgdb found in PATH
+    $vgdb_exe = "vgdb"
+}
+# print "will use vgdb at [" . $vgdb_exe . "]\n";
 
 # To find the list of active pids, we need to have
 # the --vgdb-prefix option if given.
@@ -363,7 +381,7 @@ foreach $pid (@pids) {
   } else {
       print "\n";
   }
-  open RESULT, "vgdb $vgdbPrefixOption --pid=$pid $vgdbCommand|";
+  open RESULT, $vgdb_exe . " $vgdbPrefixOption --pid=$pid $vgdbCommand|";
 
   @tids = ();
   $ctid = 0;

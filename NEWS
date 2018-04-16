@@ -104,6 +104,7 @@ where XXXXXX is the bug number as listed below.
 393017  Add missing support for xsmaxcdp instruction, bug fixes for xsmincdp,
         lxssp, stxssp and stxvl instructions.
 393023  callgrind_control risks using the wrong vgdb
+393062  build-id ELF phdrs read causes "debuginfo reader: ensure_valid failed"
 393099  posix_memalign() invalid write if alignment == 0
 
 n-i-bz  Fix missing workq_ops operations (macOS)

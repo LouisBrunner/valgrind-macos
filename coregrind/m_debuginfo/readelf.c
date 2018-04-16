@@ -1137,7 +1137,11 @@ HChar* find_buildid(DiImage* img, Bool rel_ok, Bool search_shdrs)
 
       ElfXX_Ehdr ehdr;
       ML_(img_get)(&ehdr, img, 0, sizeof(ehdr));
-      for (i = 0; i < ehdr.e_phnum; i++) {
+      /* Skip the phdrs when we have to search the shdrs. In separate
+         .debug files the phdrs might not be valid (they are a copy of
+         the main ELF file) and might trigger assertions when getting
+         image notes based on them. */
+      for (i = 0; !search_shdrs && i < ehdr.e_phnum; i++) {
          ElfXX_Phdr phdr;
          ML_(img_get)(&phdr, img,
                       ehdr.e_phoff + i * ehdr.e_phentsize, sizeof(phdr));

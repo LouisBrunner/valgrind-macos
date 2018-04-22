@@ -28,7 +28,10 @@ pkginclude_HEADERS = \
 	pub/libvex_guest_mips64.h \
 	pub/libvex_s390x_common.h \
 	pub/libvex_ir.h \
-	pub/libvex_trc_values.h
+	pub/libvex_trc_values.h \
+	pub/libvex_inner.h
+# libvex_inner.h is special: it is a public header for valgrind core,
+# but should not be used by the end user
 
 noinst_HEADERS = \
 	priv/main_globals.h \

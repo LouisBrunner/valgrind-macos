@@ -232,6 +232,13 @@ void __ubsan_handle_type_mismatch ( void )
    vg_assert(0);
 }
 
+void __ubsan_handle_type_mismatch_v1 ( void );
+void __ubsan_handle_type_mismatch_v1 ( void )
+{
+   VG_(debugLog)(0, "main:ubsan", "In %s", __func__);
+   vg_assert(0);
+}
+
 void __ubsan_handle_mul_overflow ( void );
 void __ubsan_handle_mul_overflow ( void )
 {
@@ -267,6 +274,13 @@ void __ubsan_handle_negate_overflow ( void )
    vg_assert(0);
 }
 
+void __ubsan_handle_pointer_overflow ( void );
+void __ubsan_handle_pointer_overflow ( void )
+{
+   VG_(debugLog)(0, "main:ubsan", "In %s", __func__);
+   vg_assert(0);
+}
+
 void __ubsan_handle_out_of_bounds ( void );
 void __ubsan_handle_out_of_bounds ( void )
 {
@@ -290,6 +304,13 @@ void __ubsan_handle_vla_bound_not_positive ( void )
 
 void __ubsan_handle_nonnull_arg ( void );
 void __ubsan_handle_nonnull_arg ( void )
+{
+   VG_(debugLog)(0, "main:ubsan", "In %s", __func__);
+   vg_assert(0);
+}
+
+void __ubsan_handle_invalid_builtin ( void );
+void __ubsan_handle_invalid_builtin ( void )
 {
    VG_(debugLog)(0, "main:ubsan", "In %s", __func__);
    vg_assert(0);

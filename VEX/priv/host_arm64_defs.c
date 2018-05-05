@@ -3572,7 +3572,7 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
          /* Fix up the conditional jump, if there was one. */
          if (i->ARM64in.XDirect.cond != ARM64cc_AL) {
             Int delta = (UChar*)p - (UChar*)ptmp; /* must be signed */
-            vassert(delta > 0 && delta < 40);
+            vassert(delta > 0 && delta <= 40);
             vassert((delta & 3) == 0);
             UInt notCond = 1 ^ (UInt)i->ARM64in.XDirect.cond;
             vassert(notCond <= 13); /* Neither AL nor NV */
@@ -5481,7 +5481,7 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
    /*NOTREACHED*/
 
   done:
-   vassert(((UChar*)p) - &buf[0] <= 36);
+   vassert(((UChar*)p) - &buf[0] <= 40);
    return ((UChar*)p) - &buf[0];
 }
 

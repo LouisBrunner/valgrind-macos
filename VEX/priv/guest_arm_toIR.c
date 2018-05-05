@@ -9145,8 +9145,11 @@ static Bool decode_V6MEDIA_instruction (
         }
      } else {
         if (INSNA(27,20) == BITS8(0,1,1,0,1,0,0,0) &&
-            INSNA(5,4)   == BITS2(0,1)             &&
-            (INSNA(6,6)  == 0 || INSNA(6,6) == 1) ) {
+            INSNA(5,4)   == BITS2(0,1) /*          &&
+            (INSNA(6,6)  == 0 || INSNA(6,6) == 1)
+            This last bit with INSNA(6,6) is correct, but gcc 8 complains
+            (correctly) that it is always true.  So I commented it out
+            to keep gcc quiet. */ ) {
            regD = INSNA(15,12);
            regN = INSNA(19,16);
            regM = INSNA(3,0);

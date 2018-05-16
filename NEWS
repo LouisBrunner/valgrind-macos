@@ -101,6 +101,7 @@ where XXXXXX is the bug number as listed below.
 389065  valgrind meets gcc flag -Wlogical-op
 390723  make xtree dump files world wide readable, similar to log files
 391861  Massif Assertion 'n_ips >= 1 && n_ips <= VG_(clo_backtrace_size)'
+392449  callgrind not clearing the number of calls properly
 393017  Add missing support for xsmaxcdp instruction, bug fixes for xsmincdp,
         lxssp, stxssp and stxvl instructions.
 393023  callgrind_control risks using the wrong vgdb

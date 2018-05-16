@@ -21,7 +21,7 @@
 <!ENTITY vg-repo-url   "http://www.valgrind.org/downloads/repository.html">
 <!ENTITY vg-pubs-url   "http://www.valgrind.org/docs/pubs.html">
 <!ENTITY vg-docs-url   "http://www.valgrind.org/docs/manual/index.html">
-<!ENTITY cl-gui-url    "http://kcachegrind.sourceforge.net/cgi-bin/show.cgi/KcacheGrindIndex">
+<!ENTITY cl-gui-url    "https://kcachegrind.github.io/html/Home.html">
 
 <!-- Some references are used between core manual manual and manpages. -->
 <!-- Define them here so the can easily be used in both places.  -->

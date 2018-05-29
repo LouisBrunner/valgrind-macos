@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2017 Julian Seward 
+   Copyright (C) 2000-2017 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -30,8 +30,8 @@
 */
 
 /* ---------------------------------------------------------------------
-   ALL THE CODE IN THIS FILE RUNS ON THE SIMULATED CPU.  
-   
+   ALL THE CODE IN THIS FILE RUNS ON THE SIMULATED CPU.
+
    These functions are drop-in replacements for malloc() and friends.
    They have global scope, but are not intended to be called directly.
    See pub_core_redir.h for the gory details.
@@ -180,7 +180,7 @@ static UWord umulHW ( UWord u, UWord v )
 
 /* This struct is initially empty.  Before the first use of any of
    these functions, we make a client request which fills in the
-   fields. 
+   fields.
 */
 static struct vg_mallocfunc_info info;
 static int init_done;
@@ -194,7 +194,7 @@ static void init(void);
    if (info.clo_trace_malloc) {        \
       VALGRIND_INTERNAL_PRINTF(format, ## args ); }
 
-/* Below are new versions of malloc, __builtin_new, free, 
+/* Below are new versions of malloc, __builtin_new, free,
    __builtin_delete, calloc, realloc, memalign, and friends.
 
    None of these functions are called directly - they are not meant to
@@ -211,7 +211,7 @@ static void init(void);
    to a NON SIMD call.
    The definedness of such 'unused' arguments will not be verified
    by memcheck.
-   The macro 'TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED' allows 
+   The macro 'TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED' allows
    memcheck to detect such errors for the otherwise unused args.
    Apart of allowing memcheck to detect an error, the macro
    TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED has no effect and
@@ -574,6 +574,17 @@ static void init(void);
  FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete );
  FREE(VG_Z_LIBC_SONAME,       _ZdlPv,               __builtin_delete );
  FREE(SO_SYN_MALLOC,          _ZdlPv,               __builtin_delete );
+ // operator delete(void*, unsigned long), C++14, GNU mangling
+#if __SIZEOF_SIZE_T__ == 4
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPvj,               __builtin_delete );
+ FREE(VG_Z_LIBC_SONAME,       _ZdlPvj,               __builtin_delete );
+ FREE(SO_SYN_MALLOC,          _ZdlPvj,               __builtin_delete );
+#elif __SIZEOF_SIZE_T__ == 8
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPvm,               __builtin_delete );
+ FREE(VG_Z_LIBC_SONAME,       _ZdlPvm,               __builtin_delete );
+ FREE(SO_SYN_MALLOC,          _ZdlPvm,               __builtin_delete );
+#endif
+
 
 #elif defined(VGO_darwin)
  // operator delete(void*), GNU mangling
@@ -585,8 +596,17 @@ static void init(void);
  FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete );
  FREE(SO_SYN_MALLOC,          _ZdlPv,               __builtin_delete );
 
+ // operator delete(void*, unsigned long), C++14, GNU mangling
+ #if __SIZEOF_SIZE_T__ == 4
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPvj,               __builtin_delete );
+ FREE(SO_SYN_MALLOC,          _ZdlPvj,               __builtin_delete );
+ #elif __SIZEOF_SIZE_T__ == 8
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPvm,               __builtin_delete );
+ FREE(SO_SYN_MALLOC,          _ZdlPvm,               __builtin_delete );
 #endif
 
+
+#endif
 
 /*---------------------- delete nothrow ----------------------*/
 
@@ -620,6 +640,18 @@ static void init(void);
  FREE(VG_Z_LIBC_SONAME,       _ZdaPv,               __builtin_vec_delete );
  FREE(SO_SYN_MALLOC,          _ZdaPv,               __builtin_vec_delete );
 
+// operator delete[](void*, unsigned long), C++14, GNU mangling
+ #if __SIZEOF_SIZE_T__ == 4
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvj,              __builtin_vec_delete );
+ FREE(VG_Z_LIBC_SONAME,       _ZdaPvj,              __builtin_vec_delete );
+ FREE(SO_SYN_MALLOC,          _ZdaPvj,              __builtin_vec_delete );
+
+ #elif __SIZEOF_SIZE_T__ == 8
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvm,              __builtin_vec_delete );
+ FREE(VG_Z_LIBC_SONAME,       _ZdaPvm,              __builtin_vec_delete );
+ FREE(SO_SYN_MALLOC,          _ZdaPvm,              __builtin_vec_delete );
+#endif
+
 #elif defined(VGO_darwin)
  // operator delete[](void*), not mangled (for gcc 2.96)
  //FREE(VG_Z_LIBSTDCXX_SONAME,   __builtin_vec_delete, __builtin_vec_delete );
@@ -632,6 +664,15 @@ static void init(void);
  // operator delete[](void*), GNU mangling
  FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPv,               __builtin_vec_delete );
  FREE(SO_SYN_MALLOC,          _ZdaPv,               __builtin_vec_delete );
+
+ // operator delete[](void*, unsigned long), C++14, GNU mangling
+ #if __SIZEOF_SIZE_T__ == 4
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvj,              __builtin_vec_delete );
+ FREE(SO_SYN_MALLOC,          _ZdaPvj,              __builtin_vec_delete );
+ #elif __SIZEOF_SIZE_T__ == 8
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvm,               __builtin_vec_delete );
+ FREE(SO_SYN_MALLOC,          _ZdaPvm,               __builtin_vec_delete );
+#endif
 
 #endif
 
@@ -947,7 +988,7 @@ static void init(void);
 /*---------------------- malloc_trim ----------------------*/
 // Documentation says:
 //   malloc_trim(size_t pad);
-// 
+//
 //   If possible, gives memory back to the system (via negative arguments to
 //   sbrk) if there is unused memory at the `high' end of the malloc pool.
 //   You can call this after freeing large blocks of memory to potentially
@@ -955,16 +996,16 @@ static void init(void);
 //   cannot guarantee to reduce memory.  Under some allocation patterns,
 //   some large free blocks of memory will be locked between two used
 //   chunks, so they cannot be given back to the system.
-// 
+//
 //   The `pad' argument to malloc_trim represents the amount of free
 //   trailing space to leave untrimmed. If this argument is zero, only the
 //   minimum amount of memory to maintain internal data structures will be
 //   left (one page or less). Non-zero arguments can be supplied to maintain
 //   enough trailing space to service future expected allocations without
 //   having to re-obtain memory from the system.
-// 
+//
 //   Malloc_trim returns 1 if it actually released any memory, else 0. On
-//   systems that do not support "negative sbrks", it will always return 0. 
+//   systems that do not support "negative sbrks", it will always return 0.
 //
 // For simplicity, we always return 0.
 #define MALLOC_TRIM(soname, fnname) \
@@ -1108,7 +1149,7 @@ static void panic(const char *str)
    void VG_REPLACE_FUNCTION_EZU(10190,soname,fnname) ( void )  \
    { \
       /* Valgrind's malloc_stats implementation does nothing. */ \
-   } 
+   }
 
 #if defined(VGO_linux)
  MALLOC_STATS(VG_Z_LIBC_SONAME, malloc_stats);
@@ -1170,13 +1211,13 @@ static vki_malloc_zone_t vg_default_zone = {
     NULL, // reserved1
     NULL, // reserved2
     (void*)my_malloc_size, // JRS fixme: is this right?
-    (void*)VG_REPLACE_FUNCTION_EZU(10020,VG_Z_LIBC_SONAME,malloc_zone_malloc), 
-    (void*)VG_REPLACE_FUNCTION_EZU(10060,VG_Z_LIBC_SONAME,malloc_zone_calloc), 
-    (void*)VG_REPLACE_FUNCTION_EZU(10130,VG_Z_LIBC_SONAME,malloc_zone_valloc), 
-    (void*)VG_REPLACE_FUNCTION_EZU(10040,VG_Z_LIBC_SONAME,malloc_zone_free), 
-    (void*)VG_REPLACE_FUNCTION_EZU(10080,VG_Z_LIBC_SONAME,malloc_zone_realloc), 
+    (void*)VG_REPLACE_FUNCTION_EZU(10020,VG_Z_LIBC_SONAME,malloc_zone_malloc),
+    (void*)VG_REPLACE_FUNCTION_EZU(10060,VG_Z_LIBC_SONAME,malloc_zone_calloc),
+    (void*)VG_REPLACE_FUNCTION_EZU(10130,VG_Z_LIBC_SONAME,malloc_zone_valloc),
+    (void*)VG_REPLACE_FUNCTION_EZU(10040,VG_Z_LIBC_SONAME,malloc_zone_free),
+    (void*)VG_REPLACE_FUNCTION_EZU(10080,VG_Z_LIBC_SONAME,malloc_zone_realloc),
     NULL, // GrP fixme: destroy
-    "ValgrindMallocZone", 
+    "ValgrindMallocZone",
     NULL, // batch_malloc
     NULL, // batch_free
     NULL, // GrP fixme: introspect
@@ -1234,7 +1275,7 @@ ZONE_FROM_PTR(SO_SYN_MALLOC,    malloc_zone_from_ptr);
       return 1; \
    }
 
-ZONE_CHECK(VG_Z_LIBC_SONAME, malloc_zone_check);    
+ZONE_CHECK(VG_Z_LIBC_SONAME, malloc_zone_check);
 ZONE_CHECK(SO_SYN_MALLOC,    malloc_zone_check);
 
 
@@ -1297,7 +1338,7 @@ __attribute__((constructor))
 static void init(void)
 {
    // This doesn't look thread-safe, but it should be ok... Bart says:
-   //   
+   //
    //   Every program I know of calls malloc() at least once before calling
    //   pthread_create().  So init_done gets initialized before any thread is
    //   created, and is only read when multiple threads are active
@@ -1305,7 +1346,7 @@ static void init(void)
    //
    //   If the assignment to the variable init_done would be triggering a race
    //   condition, both DRD and Helgrind would report this race.
-   // 
+   //
    //   By the way, although the init() function in
    //   coregrind/m_replacemalloc/vg_replace_malloc.c has been declared
    //   __attribute__((constructor)), it is not safe to remove the variable

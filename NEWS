@@ -57,7 +57,8 @@ where XXXXXX is the bug number as listed below.
 79362   Debug info is lost for .so files when they are dlclose'd
 208052  strlcpy error when n = 0
 255603  exp-sgcheck Assertion '!already_present' failed
-338252 - building valgrind with -flto (link time optimisation) fails
+338252  building valgrind with -flto (link time optimisation) fails
+372347  Replacement problem of the additional c++14/c++17 new and delete operators
 376257  helgrind history full speed up using a cached stack
 379373  Fix syscall param msg->desc.port.name points to uninitialised byte(s)
         on macOS 10.12

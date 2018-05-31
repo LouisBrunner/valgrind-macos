@@ -49,11 +49,12 @@
 
 /* This uses the hack of dumping the vex guest state along with both
    shadows in the frame, and restoring it afterwards from there,
-   rather than pulling it out of the ucontext.  That means that signal
-   handlers which modify the ucontext and then return, expecting their
-   modifications to take effect, will have those modifications
-   ignored.  This could be fixed properly with an hour or so more
-   effort. */
+   rather than pulling it out of the ucontext.  Then, integer
+   registers, the SP and the PC are restored from the ucontext.  That
+   means that signal handlers which modify floating point registers or
+   in general any register state apart from X0-X30, XSP and PC in the
+   ucontext and then return, expecting their modifications to take
+   effect, will have those modifications ignored. */
 
 /* This also always does the 'has siginfo' behaviour whether or
    not it is requested. */
@@ -93,16 +94,16 @@ static void synth_ucontext( ThreadId tid, const vki_siginfo_t *si,
    uc->uc_sigmask = *set;
    uc->uc_stack = tst->altstack;
 
-#  define SC2(reg)  sc->regs[reg] = tst->arch.vex.guest_X##reg
-   SC2(0);   SC2(1);   SC2(2);   SC2(3);
-   SC2(4);   SC2(5);   SC2(6);   SC2(7);
-   SC2(8);   SC2(9);   SC2(10);  SC2(11);
-   SC2(12);  SC2(13);  SC2(14);  SC2(15);
-   SC2(16);  SC2(17);  SC2(18);  SC2(19);
-   SC2(20);  SC2(21);  SC2(22);  SC2(23);
-   SC2(24);  SC2(25);  SC2(26);  SC2(27);
-   SC2(28);  SC2(29);  SC2(30);
-#  undef SC2
+#  define TO_CTX(reg)  sc->regs[reg] = tst->arch.vex.guest_X##reg
+   TO_CTX(0);   TO_CTX(1);   TO_CTX(2);   TO_CTX(3);
+   TO_CTX(4);   TO_CTX(5);   TO_CTX(6);   TO_CTX(7);
+   TO_CTX(8);   TO_CTX(9);   TO_CTX(10);  TO_CTX(11);
+   TO_CTX(12);  TO_CTX(13);  TO_CTX(14);  TO_CTX(15);
+   TO_CTX(16);  TO_CTX(17);  TO_CTX(18);  TO_CTX(19);
+   TO_CTX(20);  TO_CTX(21);  TO_CTX(22);  TO_CTX(23);
+   TO_CTX(24);  TO_CTX(25);  TO_CTX(26);  TO_CTX(27);
+   TO_CTX(28);  TO_CTX(29);  TO_CTX(30);
+#  undef TO_CTX
    sc->sp = tst->arch.vex.guest_XSP;
    sc->pc = tst->arch.vex.guest_PC;
    sc->pstate = 0; /* slack .. could do better */
@@ -219,64 +220,51 @@ void VG_(sigframe_create)( ThreadId tid,
 /* EXPORTED */
 void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
 {
-   ThreadState *tst;
-   struct vg_sig_private *priv;
-   Addr sp;
-   UInt frame_size;
-//ZZ    struct vki_sigcontext *mc;
-   Int sigNo;
-   Bool has_siginfo = isRT;
-
    vg_assert(VG_(is_valid_tid)(tid));
-   tst = VG_(get_ThreadState)(tid);
-   sp = tst->arch.vex.guest_XSP;
 
-//ZZ    if (has_siginfo) {
-      struct rt_sigframe *frame = (struct rt_sigframe *)sp;
-      frame_size = sizeof(*frame);
-      //mc = &frame->sig.uc.uc_mcontext;
-      priv = &frame->sig.vp;
-      vg_assert(priv->magicPI == 0x31415927);
-      tst->sig_mask = frame->sig.uc.uc_sigmask;
-//ZZ    } else {
-//ZZ       struct sigframe *frame = (struct sigframe *)sp;
-//ZZ       frame_size = sizeof(*frame);
-//ZZ       mc = &frame->uc.uc_mcontext;
-//ZZ       priv = &frame->vp;
-//ZZ       vg_assert(priv->magicPI == 0x31415927);
-//ZZ       tst->sig_mask = frame->uc.uc_sigmask;
-//ZZ       //VG_(printf)("Setting signmask to %08x%08x\n",
-//ZZ       //            tst->sig_mask[0],tst->sig_mask[1]);
-//ZZ    }
+   Bool         has_siginfo = isRT;
+   ThreadState* tst         = VG_(get_ThreadState)(tid);
+   Addr         sp          = tst->arch.vex.guest_XSP;
+
+   struct rt_sigframe*    frame = (struct rt_sigframe *)sp;
+   struct vg_sig_private* priv  = &frame->sig.vp;
+   vg_assert(priv->magicPI == 0x31415927);
+
+   tst->sig_mask     = frame->sig.uc.uc_sigmask;
    tst->tmp_sig_mask = tst->sig_mask;
 
-   sigNo = priv->sigNo_private;
+   Int  sigNo      = priv->sigNo_private;
+   UInt frame_size = sizeof(*frame);
 
-//ZZ     //XXX: restore regs
-//ZZ #  define REST(reg,REG)  tst->arch.vex.guest_##REG = mc->arm_##reg;
-//ZZ    REST(r0,R0);
-//ZZ    REST(r1,R1);
-//ZZ    REST(r2,R2);
-//ZZ    REST(r3,R3);
-//ZZ    REST(r4,R4);
-//ZZ    REST(r5,R5);
-//ZZ    REST(r6,R6);
-//ZZ    REST(r7,R7);
-//ZZ    REST(r8,R8);
-//ZZ    REST(r9,R9);
-//ZZ    REST(r10,R10);
-//ZZ    REST(fp,R11);
-//ZZ    REST(ip,R12);
-//ZZ    REST(sp,R13);
-//ZZ    REST(lr,R14);
-//ZZ    REST(pc,R15T);
-//ZZ #  undef REST
-
-   /* Uh, the next line makes all the REST() above pointless. */
+   /* Restore the entire machine state from our private copy.  This
+      isn't really right, but we'll now move on to pick up at least
+      some changes that the signal handler may have made to the
+      sigcontext. */
    tst->arch.vex         = priv->vex;
-
    tst->arch.vex_shadow1 = priv->vex_shadow1;
    tst->arch.vex_shadow2 = priv->vex_shadow2;
+
+   if (has_siginfo) {
+      /* Pick up at least some state changes from the ucontext, just
+         in case the handler changed it.  The shadow values will be
+         wrong, but hey.  This restores the integer registers, the
+         program counter and stack pointer.  FP/Vector regs, and any
+         condition code, FP status/control bits, etc, are not
+         restored. */
+      struct vki_sigcontext *sc =&frame->sig.uc.uc_mcontext;
+#     define FROM_CTX(reg)  tst->arch.vex.guest_X##reg = sc->regs[reg]
+      FROM_CTX(0);   FROM_CTX(1);   FROM_CTX(2);   FROM_CTX(3);
+      FROM_CTX(4);   FROM_CTX(5);   FROM_CTX(6);   FROM_CTX(7);
+      FROM_CTX(8);   FROM_CTX(9);   FROM_CTX(10);  FROM_CTX(11);
+      FROM_CTX(12);  FROM_CTX(13);  FROM_CTX(14);  FROM_CTX(15);
+      FROM_CTX(16);  FROM_CTX(17);  FROM_CTX(18);  FROM_CTX(19);
+      FROM_CTX(20);  FROM_CTX(21);  FROM_CTX(22);  FROM_CTX(23);
+      FROM_CTX(24);  FROM_CTX(25);  FROM_CTX(26);  FROM_CTX(27);
+      FROM_CTX(28);  FROM_CTX(29);  FROM_CTX(30);
+#     undef FROM_CTX
+      tst->arch.vex.guest_XSP = sc->sp; // should we use SET_SP here?
+      tst->arch.vex.guest_PC  = sc->pc;
+   }
 
    VG_TRACK( die_mem_stack_signal, sp - VG_STACK_REDZONE_SZB,
              frame_size + VG_STACK_REDZONE_SZB );

@@ -9848,6 +9848,40 @@ PRE(guarded_writev_np)
 
 #if DARWIN_VERS >= DARWIN_10_11
 
+PRE(kevent_qos)
+{
+   PRINT("kevent_qos( %ld, %#lx, %ld, %#lx, %ld, %#lx, %ld, %ld )",
+         SARG1, ARG2, SARG3, ARG4, SARG5, ARG6, SARG7, ARG8);
+   PRE_REG_READ8(int,"kevent_qos",
+                 int,kq,
+                 const struct vki_kevent_qos_s *,changelist,
+                 int,nchanges,
+                 struct vki_kevent_qos_s *,eventlist,
+                 int,nevents,
+                 void*,data_out,
+                 size_t*,data_available,
+                 unsigned int,flags);
+
+   if (ARG3) PRE_MEM_READ ("kevent_qos(changelist)",
+                           ARG2, ARG3 * sizeof(struct vki_kevent_qos_s));
+   if (ARG5) PRE_MEM_WRITE("kevent_qos(eventlist)",
+                           ARG4, ARG5 * sizeof(struct vki_kevent_qos_s));
+   if (ARG7) PRE_MEM_WRITE("kevent_qos(data_out)",
+                           ARG6, ARG7 * sizeof(void*));
+
+   *flags |= SfMayBlock;
+}
+
+POST(kevent_qos)
+{
+   PRINT("kevent_qos ret %ld dst %#lx (%zu)", RES, ARG4, sizeof(struct vki_kevent_qos_s));
+   if (RES > 0) {
+      ML_(sync_mappings)("after", "kevent_qos", 0);
+      POST_MEM_WRITE(ARG4, RES * sizeof(struct vki_kevent_qos_s));
+   }
+}
+
+
 PRE(pselect)
 {
    *flags |= SfMayBlock;
@@ -10466,7 +10500,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(372)),   // ???
 #endif
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(373)),   // ???
+#if DARWIN_VERS < DARWIN_10_11
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(374)),   // ???
+#endif
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(375)),   // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(376)),   // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(377)),   // ???
@@ -10561,7 +10597,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 #endif
 #if DARWIN_VERS >= DARWIN_10_11
 // _____(__NR_kdebug_trace_string),                     // 178
-// _____(__NR_kevent_qos),                              // 374
+   MACXY(__NR_kevent_qos, kevent_qos),                  // 374
    MACX_(__NR_pselect, pselect),                        // 394
 // _____(__NR_netagent_trigger),                        // 490
 // _____(__NR_stack_snapshot_with_config),              // 491

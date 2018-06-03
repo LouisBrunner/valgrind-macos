@@ -807,6 +807,19 @@ typedef
 #define vki_kevent kevent
 #define vki_kevent64 kevent64_s
 
+// xnu_root/bsd/sys/event.h
+
+struct vki_kevent_qos_s {
+    uint64_t    ident;      /* identifier for this event */
+    int16_t     filter;     /* filter for event */
+    uint16_t    flags;      /* general flags */
+    int32_t     qos;        /* quality of service */
+    uint64_t    udata;      /* opaque user data identifier */
+    uint32_t    fflags;     /* filter-specific flags */
+    uint32_t    xflags;     /* extra filter-specific flags */
+    int64_t     data;       /* filter-specific data */
+    uint64_t    ext[4];     /* filter-specific extensions */
+};
 
 #include <sys/ev.h>
 

@@ -1174,33 +1174,66 @@ Syscall param getfsstat64(buf) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
-(369-379):       unused
+(369-373):       unused
+-----------------------------------------------------
+-----------------------------------------------------
+x2000176(374):     __NR_kevent_qos 1s 8m
+-----------------------------------------------------
+Syscall param kevent_qos(changelist) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:669)
+
+Syscall param kevent_qos(nchanges) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:669)
+
+Syscall param kevent_qos(data_available) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:669)
+
+Syscall param kevent_qos(flags) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:669)
+
+Syscall param kevent_qos(changelist) points to uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:669)
+ Address 0x........ is on thread 1's stack
+ in frame #1, created by main (scalar.c:12)
+
+Syscall param kevent_qos(eventlist) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:669)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+-----------------------------------------------------
+(375-379):       unused
 -----------------------------------------------------
 -----------------------------------------------------
 x200018a(394):        __NR_pselect 1s 6m
 -----------------------------------------------------
 Syscall param pselect(readfds) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:684)
+   by 0x........: main (scalar.c:694)
 
 Syscall param pselect(writefds) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:684)
+   by 0x........: main (scalar.c:694)
 
 Syscall param pselect(readfds) points to uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:684)
+   by 0x........: main (scalar.c:694)
  Address 0x........ is on thread 1's stack
  in frame #1, created by main (scalar.c:12)
 
 Syscall param pselect(writefds) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:684)
+   by 0x........: main (scalar.c:694)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param pselect(exceptfds) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:684)
+   by 0x........: main (scalar.c:694)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------

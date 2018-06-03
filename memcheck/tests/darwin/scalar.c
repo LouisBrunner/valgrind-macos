@@ -660,7 +660,17 @@ int main(void)
    // __NR_workq_open 367
    // __NR_workq_ops 368
 
-   GO_UNIMP(369-379, "unused");
+   GO_UNIMP(369-373, "unused");
+
+#if DARWIN_VERS >= DARWIN_10_11
+   {
+      long args[8] = { x0+8, x0+0xffffffee, x0+1, x0+1, x0+1, x0+1, x0+1, x0+1 };
+      GO(__NR_kevent_qos, 374, "1s 8m");
+      SY(__NR_kevent_qos, args+x0); FAIL;
+   }
+#endif /* DARWIN_VERS >= DARWIN_10_11 */
+
+   GO_UNIMP(375-379, "unused");
 
    // __NR___mac_execve 380
    // __NR___mac_syscall 381

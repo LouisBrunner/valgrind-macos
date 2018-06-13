@@ -115,7 +115,7 @@ typedef __vki_restorefn_t __user *__vki_sigrestore_t;
 #define VKI_SIG_ERR     ((__vki_sighandler_t)-1)  /* error return from signal */
 
 #define _VKI_NSIG       128
-#define _VKI_NSIG_BPW   64
+#define _VKI_NSIG_BPW   (__SIZEOF_LONG__ * 8)
 #define _VKI_NSIG_WORDS (_VKI_NSIG / _VKI_NSIG_BPW)
 
 typedef unsigned long vki_old_sigset_t;  /* at least 32 bits */

@@ -2570,12 +2570,13 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
    if (VG_(clo_trace_signals))
       VG_(message)( Vg_DebugMsg,
                     "interrupted_syscall: tid=%u, ip=%#lx, "
-                    "restart=%s, sres.isErr=%s, sres.val=%lu\n",
+                    "restart=%s, sres.isErr=%s, sres.val=%" FMT_REGWORD "u\n",
                     tid,
                     ip,
                     restart ? "True" : "False",
                     sr_isError(sres) ? "True" : "False",
-                    sr_isError(sres) ? sr_Err(sres) : sr_Res(sres));
+                    sr_isError(sres) ? (RegWord)sr_Err(sres) :
+                                       (RegWord)sr_Res(sres));
 
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(tid >= 1 && tid < VG_N_THREADS);

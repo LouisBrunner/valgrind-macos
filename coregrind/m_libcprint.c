@@ -1182,9 +1182,9 @@ const HChar *VG_(sr_as_string) ( SysRes sr )
    static HChar buf[7+1+2+16+1+1];   // large enough
 
    if (sr_isError(sr))
-      VG_(sprintf)(buf, "Failure(0x%lx)", sr_Err(sr));
+      VG_(sprintf)(buf, "Failure(0x%" FMT_REGWORD "x)", (RegWord)sr_Err(sr));
    else
-      VG_(sprintf)(buf, "Success(0x%lx)", sr_Res(sr));
+      VG_(sprintf)(buf, "Success(0x%" FMT_REGWORD "x)", (RegWord)sr_Res(sr));
    return buf;
 }
 

@@ -770,8 +770,8 @@ static SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
       VG_(do_atfork_parent)(tid);
 
       if (VG_(clo_trace_syscalls))
-	  VG_(printf)("   clone(fork): process %d created child %lu\n",
-                      VG_(getpid)(), sr_Res(res));
+         VG_(printf)("   clone(fork): process %d created child %" FMT_REGWORD "u\n",
+                     VG_(getpid)(), (RegWord)sr_Res(res));
 
       /* restore signal mask */
       VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);

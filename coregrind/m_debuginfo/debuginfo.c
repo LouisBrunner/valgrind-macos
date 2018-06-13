@@ -1553,7 +1553,7 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
       goto out;
    }
 
-   void* pdbimage = (void*)sr_Res(sres);
+   void* pdbimage = (void*)(Addr)sr_Res(sres);
    r = VG_(read)( fd_pdbimage, pdbimage, (Int)n_pdbimage );
    if (r < 0 || r != (Int)n_pdbimage) {
       VG_(am_munmap_valgrind)( (Addr)pdbimage, n_pdbimage );

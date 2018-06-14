@@ -801,8 +801,9 @@ asm (
 );
 
 #elif defined(VGP_mips64_linux)
-extern UWord do_syscall_WRK ( UWord a1, UWord a2, UWord a3, UWord a4, UWord a5,
-                              UWord a6, UWord syscall_no, ULong* V1_A3_val );
+extern RegWord do_syscall_WRK ( RegWord a1, RegWord a2, RegWord a3, RegWord a4,
+                                RegWord a5, RegWord a6, RegWord syscall_no,
+                                RegWord* V1_A3_val );
 asm (
    ".text                                  \n\t"
    ".globl do_syscall_WRK                  \n\t"
@@ -1031,12 +1032,12 @@ SysRes VG_(do_syscall) ( UWord sysno, RegWord a1, RegWord a2, RegWord a3,
    return VG_(mk_SysRes_mips32_linux)( valLo, valHi, (ULong)err );
 
 #elif defined(VGP_mips64_linux)
-   ULong v1_a3[2];
+   RegWord v1_a3[2];
    v1_a3[0] = 0xFF00;
    v1_a3[1] = 0xFF00;
-   ULong V0 = do_syscall_WRK(a1,a2,a3,a4,a5,a6,sysno,v1_a3);
-   ULong V1 = (ULong)v1_a3[0];
-   ULong A3 = (ULong)v1_a3[1];
+   RegWord V0 = do_syscall_WRK(a1,a2,a3,a4,a5,a6,sysno,v1_a3);
+   RegWord V1 = (RegWord)v1_a3[0];
+   RegWord A3 = (RegWord)v1_a3[1];
    return VG_(mk_SysRes_mips64_linux)( V0, V1, A3 );
 
 #  elif defined(VGP_x86_solaris)

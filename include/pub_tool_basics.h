@@ -197,7 +197,7 @@ typedef void  (*Free_Fn_t)        ( void* p );
 typedef
    struct {
       Bool  _isError;
-      UWord _val;
+      RegWord _val;
       UWord _valEx;
    }
    SysRes;
@@ -249,7 +249,7 @@ typedef
 static inline Bool sr_isError ( SysRes sr ) {
    return sr._isError;
 }
-static inline UWord sr_Res ( SysRes sr ) {
+static inline RegWord sr_Res ( SysRes sr ) {
    return sr._isError ? 0 : sr._val;
 }
 static inline UWord sr_ResEx ( SysRes sr ) {

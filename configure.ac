@@ -1727,6 +1727,20 @@ if test "$sys_user_has_user_regs" = "yes"; then
             [Define to 1 if <sys/user.h> defines struct user_regs_struct])
 fi
 
+AC_MSG_CHECKING([for __NR_membarrier])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <linux/unistd.h>
+]], [[
+return __NR_membarrier
+]])], [
+ac_have_nr_membarrier=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_nr_membarrier=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(HAVE_NR_MEMBARRIER, [test x$ac_have_nr_membarrier = xyes])
 
 #----------------------------------------------------------------------------
 # Checking for supported compiler flags.

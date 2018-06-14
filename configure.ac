@@ -1874,6 +1874,37 @@ CFLAGS=$safe_CFLAGS
 
 AC_SUBST(FLAG_MSA)
 
+# Are we compiling for the MIPS64 n32 ABI?
+AC_MSG_CHECKING([if gcc is producing mips n32 binaries])
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#if !defined(_MIPS_SIM) || (defined(_MIPS_SIM) && (_MIPS_SIM != _ABIN32))
+#error NO
+#endif
+]])], [
+VGCONF_ABI=N32
+FLAG_M64="-march=mips64r2 -mabi=n32"
+AC_MSG_RESULT([yes])
+], [
+AC_MSG_RESULT([no])
+])
+
+# Are we compiling for the MIPS64 n64 ABI?
+AC_MSG_CHECKING([if gcc is producing mips n64 binaries])
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#if !defined(_MIPS_SIM) || (defined(_MIPS_SIM) && (_MIPS_SIM != _ABI64))
+#error NO
+#endif
+]])], [
+VGCONF_ABI=64
+AC_MSG_RESULT([yes])
+], [
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL([VGCONF_HAVE_ABI],
+               [test x$VGCONF_ABI != x])
+AC_SUBST(VGCONF_ABI)
+
 
 # does this compiler support -mmmx ?
 AC_MSG_CHECKING([if gcc accepts -mmmx])

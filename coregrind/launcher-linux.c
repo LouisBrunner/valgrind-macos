@@ -65,6 +65,14 @@
 #define EM_PPC64 21  // ditto
 #endif
 
+#ifndef E_MIPS_ABI_O32
+#define E_MIPS_ABI_O32 0x00001000
+#endif
+
+#ifndef E_MIPS_ABI2
+#define E_MIPS_ABI2    0x00000020
+#endif
+
 /* Report fatal errors */
 __attribute__((noreturn))
 static void barf ( const char *format, ... )
@@ -224,8 +232,16 @@ static const char *select_platform(const char *clientname)
             else
             if (header.ehdr32.e_machine == EM_MIPS &&
                 (header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
-                 header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+                 header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_LINUX) &&
+                 (header.ehdr32.e_flags & E_MIPS_ABI_O32)) {
                platform = "mips32-linux";
+            }
+            else
+            if (header.ehdr32.e_machine == EM_MIPS &&
+                (header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_LINUX) &&
+                 (header.ehdr32.e_flags & E_MIPS_ABI2)) {
+               platform = "mips64-linux";
             }
          }
          else if (header.c[EI_DATA] == ELFDATA2MSB) {
@@ -237,8 +253,16 @@ static const char *select_platform(const char *clientname)
             else 
             if (header.ehdr32.e_machine == EM_MIPS &&
                 (header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
-                 header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+                 header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_LINUX) &&
+                 (header.ehdr32.e_flags & E_MIPS_ABI_O32)) {
                platform = "mips32-linux";
+            }
+            else
+            if (header.ehdr32.e_machine == EM_MIPS &&
+                (header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_LINUX) &&
+                 (header.ehdr32.e_flags & E_MIPS_ABI2)) {
+               platform = "mips64-linux";
             }
          }
 

@@ -111,8 +111,15 @@ postamble:
 
     /* Restore $4 from stack; holds address of two_words */
     ld $4, 160($29)
-    sd  $2, 0($4)         /* Store $2 to two_words[0] */
-    sd  $3, 8($4)         /* Store $3 to two_words[1] */
+    #if defined(VGABI_64)
+     sd  $2, 0($4)         /* Store $2 to two_words[0] */
+     sd  $3, 8($4)         /* Store $3 to two_words[1] */
+    #elif defined(VGABI_N32)
+     sw  $2, 0($4)         /* Store $2 to two_words[0] */
+     sw  $3, 4($4)         /* Store $3 to two_words[1] */
+    #else
+    #error unknown mips64 abi
+    #endif
 
     /* Restore callee-saved registers... */
 

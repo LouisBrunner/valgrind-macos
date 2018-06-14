@@ -66,6 +66,7 @@ typedef Int ArenaId;
 #if   defined(VGP_x86_linux)    || \
       defined(VGP_arm_linux)    || \
       defined(VGP_mips32_linux) || \
+      (defined(VGP_mips64_linux) && defined(VGABI_N32)) || \
       defined(VGP_x86_solaris)
 #  define VG_MIN_MALLOC_SZB        8
 // Nb: We always use 16 bytes for Darwin, even on 32-bits, so it can be used
@@ -77,7 +78,7 @@ typedef Int ArenaId;
       defined(VGP_ppc64be_linux)  || \
       defined(VGP_ppc64le_linux)  || \
       defined(VGP_s390x_linux)    || \
-      defined(VGP_mips64_linux)   || \
+      (defined(VGP_mips64_linux) && !defined(VGABI_N32)) || \
       defined(VGP_x86_darwin)     || \
       defined(VGP_amd64_darwin)   || \
       defined(VGP_arm64_linux)    || \

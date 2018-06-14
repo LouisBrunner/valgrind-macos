@@ -140,11 +140,19 @@ ML_(do_syscall_for_client_WRK):
 .globl ML_(blksys_complete)
 .globl ML_(blksys_committed)
 .globl ML_(blksys_finished)
+#if defined(VGABI_N32)
+ML_(blksys_setup):      .int 1b
+ML_(blksys_restart):    .int 2b
+ML_(blksys_complete):   .int 3b
+ML_(blksys_committed):  .int 4b
+ML_(blksys_finished):   .int 5b
+#else
 ML_(blksys_setup):      .quad 1b
 ML_(blksys_restart):    .quad 2b
 ML_(blksys_complete):   .quad 3b
 ML_(blksys_committed):  .quad 4b
 ML_(blksys_finished):   .quad 5b
+#endif
 
 #endif // defined(VGP_mips64_linux)
 

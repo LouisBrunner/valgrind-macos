@@ -1392,8 +1392,14 @@ ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
       folded out by compilers on 32-bit platforms.  These are derived
       from LOADV64 and LOADV32.
    */
+
+#if defined (VGABI_N32)
+   if (LIKELY(sizeof(void*) == 4
+                      && nBits == 64 && VG_IS_8_ALIGNED(a))) {
+#else
    if (LIKELY(sizeof(void*) == 8 
                       && nBits == 64 && VG_IS_8_ALIGNED(a))) {
+#endif
       SecMap* sm       = get_secmap_for_reading(a);
       UWord   sm_off16 = SM_OFF_16(a);
       UWord   vabits16 = sm->vabits16[sm_off16];
@@ -1403,8 +1409,13 @@ ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
          return V_BITS64_UNDEFINED;
       /* else fall into the slow case */
    }
+#if defined (VGABI_N32)
+   if (LIKELY(sizeof(void*) == 4
+                      && nBits == 32 && VG_IS_4_ALIGNED(a))) {
+#else
    if (LIKELY(sizeof(void*) == 8 
                       && nBits == 32 && VG_IS_4_ALIGNED(a))) {
+#endif
       SecMap* sm = get_secmap_for_reading(a);
       UWord sm_off = SM_OFF(a);
       UWord vabits8 = sm->vabits8[sm_off];
@@ -1485,8 +1496,13 @@ ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
    /* "at least one of the addresses is invalid" */
    tl_assert(pessim64 != V_BITS64_DEFINED);
 
+#if defined (VGABI_N32)
+   if (szB == VG_WORDSIZE * 2 && VG_IS_WORD_ALIGNED(a)
+       && n_addrs_bad < VG_WORDSIZE * 2) {
+#else
    if (szB == VG_WORDSIZE && VG_IS_WORD_ALIGNED(a)
        && n_addrs_bad < VG_WORDSIZE) {
+#endif
       /* Exemption applies.  Use the previously computed pessimising
          value for vbits64 and return the combined result, but don't
          flag an addressing error.  The pessimising value is Defined
@@ -1504,8 +1520,13 @@ ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
       for this case.  Note that the first clause of the conditional
       (VG_WORDSIZE == 8) is known at compile time, so the whole clause
       will get folded out in 32 bit builds. */
+#if defined (VGABI_N32)
+   if (VG_WORDSIZE == 4
+       && VG_IS_4_ALIGNED(a) && nBits == 32 && n_addrs_bad < 4) {
+#else
    if (VG_WORDSIZE == 8
        && VG_IS_4_ALIGNED(a) && nBits == 32 && n_addrs_bad < 4) {
+#endif
       tl_assert(V_BIT_UNDEFINED == 1 && V_BIT_DEFINED == 0);
       /* (really need "UifU" here...)
          vbits64 UifU= pessim64  (is pessimised by it, iow) */
@@ -1545,8 +1566,13 @@ void mc_STOREVn_slow ( Addr a, SizeT nBits, ULong vbytes, Bool bigendian )
       is somewhat similar to some cases extensively commented in
       MC_(helperc_STOREV8).
    */
-   if (LIKELY(sizeof(void*) == 8 
+#if defined (VGABI_N32)
+   if (LIKELY(sizeof(void*) == 4
                       && nBits == 64 && VG_IS_8_ALIGNED(a))) {
+#else
+   if (LIKELY(sizeof(void*) == 8
+                      && nBits == 64 && VG_IS_8_ALIGNED(a))) {
+#endif
       SecMap* sm       = get_secmap_for_reading(a);
       UWord   sm_off16 = SM_OFF_16(a);
       UWord   vabits16 = sm->vabits16[sm_off16];
@@ -1567,8 +1593,13 @@ void mc_STOREVn_slow ( Addr a, SizeT nBits, ULong vbytes, Bool bigendian )
       }
       /* else fall into the slow case */
    }
+#if defined (VGABI_N32)
+   if (LIKELY(sizeof(void*) == 4
+                      && nBits == 32 && VG_IS_4_ALIGNED(a))) {
+#else
    if (LIKELY(sizeof(void*) == 8
                       && nBits == 32 && VG_IS_4_ALIGNED(a))) {
+#endif
       SecMap* sm      = get_secmap_for_reading(a);
       UWord   sm_off  = SM_OFF(a);
       UWord   vabits8 = sm->vabits8[sm_off];

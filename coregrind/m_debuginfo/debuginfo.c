@@ -3219,6 +3219,12 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    /* Now we know the CFA, use it to roll back the registers we're
       interested in. */
 
+#if defined(VGA_mips64) && defined(VGABI_N32)
+#define READ_REGISTER(addr) ML_(read_ULong)((addr))
+#else
+#define READ_REGISTER(addr) ML_(read_Addr)((addr))
+#endif
+
 #  define COMPUTE(_prev, _here, _how, _off)             \
       do {                                              \
          switch (_how) {                                \
@@ -3231,7 +3237,7 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
                if (a < min_accessible                   \
                    || a > max_accessible-sizeof(Addr))  \
                   return False;                         \
-               _prev = ML_(read_Addr)((void *)a);       \
+               _prev = READ_REGISTER((void *)a);        \
                break;                                   \
             }                                           \
             case CFIR_CFAREL:                           \

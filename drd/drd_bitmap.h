@@ -137,10 +137,11 @@ Addr make_address(const UWord a1, const UWord a0)
 
 /** Log2 of BITS_PER_UWORD. */
 #if defined(VGA_x86) || defined(VGA_ppc32) || defined(VGA_arm) \
-    || defined(VGA_mips32)
+    || defined(VGA_mips32) || (defined(VGA_mips64) && defined(VGABI_N32))
 #define BITS_PER_BITS_PER_UWORD 5
 #elif defined(VGA_amd64) || defined(VGA_ppc64be) || defined(VGA_ppc64le) \
-      || defined(VGA_s390x) || defined(VGA_mips64) || defined(VGA_arm64)
+      || defined(VGA_s390x) || (defined(VGA_mips64) && !defined(VGABI_N32)) \
+      || defined(VGA_arm64) || defined(VGA_tilegx)
 #define BITS_PER_BITS_PER_UWORD 6
 #else
 #error Unknown platform.

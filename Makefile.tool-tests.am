@@ -16,6 +16,10 @@ AM_CPPFLAGS +=	-DVGA_SEC_@VGCONF_ARCH_SEC@=1  \
 		-DVGP_SEC_@VGCONF_ARCH_PRI@_@VGCONF_OS@=1
 endif
 
+if VGCONF_HAVE_ABI
+AM_CPPFLAGS += -DVGABI_@VGCONF_ABI@
+endif
+
 # Nb: Tools need to augment these flags with an arch-selection option, such
 # as $(AM_FLAG_M3264_PRI).
 AM_CFLAGS   = -Winline -Wall -Wshadow -Wno-long-long -g \

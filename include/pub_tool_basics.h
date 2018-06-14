@@ -271,6 +271,10 @@ static inline Bool sr_EQ ( UInt sysno, SysRes sr1, SysRes sr2 ) {
    const UInt __nr_Linux = 4000;
    const UInt __nr_pipe  = __nr_Linux + 42;
    const UInt __nr_pipe2 = __nr_Linux + 328;
+#  elif defined(VGP_mips64_linux) && defined(VGABI_N32)
+   const UInt __nr_Linux = 6000;
+   const UInt __nr_pipe  = __nr_Linux + 21;
+   const UInt __nr_pipe2 = __nr_Linux + 291;
 #  else
    const UInt __nr_Linux = 5000;
    const UInt __nr_pipe  = __nr_Linux + 21;

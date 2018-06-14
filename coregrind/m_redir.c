@@ -1612,6 +1612,7 @@ void VG_(redir_initialise) ( void )
          complain_about_stripped_glibc_ldso
       );
 
+#if defined(VGABI_64)
       add_hardwired_spec(
          "ld-linux-mipsn8.so.1", "strlen",
          (Addr)&VG_(mips64_linux_REDIR_FOR_strlen),
@@ -1622,6 +1623,15 @@ void VG_(redir_initialise) ( void )
          (Addr)&VG_(mips64_linux_REDIR_FOR_index),
          complain_about_stripped_glibc_ldso
       );
+#elif defined(VGABI_N32)
+      add_hardwired_spec(
+         "ld.so.1", "strchr",
+         (Addr)&VG_(mips64_linux_REDIR_FOR_index),
+         complain_about_stripped_glibc_ldso
+      );
+#else
+#error unknown mips64 ABI
+#endif
    }
 
 #  elif defined(VGP_x86_solaris)

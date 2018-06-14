@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include "tests/sys_mman.h"
+#include "pub_core_basics.h"
 
 #define NNN 3456987
 
@@ -193,8 +194,8 @@ __attribute__((noinline)) void atomic_add_8bit ( char* p, int n )
    /* We rely on the fact that p is 4-aligned. Otherwise 'll' may throw an
       exception that can cause this function to fail. */
 #if defined (_MIPSEL)
-   unsigned long block[3]
-      = { (unsigned long)p, (unsigned long)n, 0x0ULL };
+   RegWord block[3]
+      = { (RegWord)(Addr)p, (RegWord)n, 0x0ULL };
    do {
       __asm__ __volatile__(
          "move $t0, %0"           "\n\t"
@@ -216,8 +217,8 @@ __attribute__((noinline)) void atomic_add_8bit ( char* p, int n )
       );
    } while (block[2] != 1);
 #elif defined (_MIPSEB)
-   unsigned long block[3]
-      = { (unsigned long)p, (unsigned long)n << 56, 0x0 };
+   RegWord block[3]
+      = { (RegWord)(Addr)p, (RegWord)n << 56, 0x0 };
    do {
       __asm__ __volatile__(
          "move  $t0, %0"          "\n\t"
@@ -409,8 +410,8 @@ __attribute__((noinline)) void atomic_add_16bit ( short* p, int n )
    /* We rely on the fact that p is 4-aligned. Otherwise 'll' may throw an
       exception that can cause this function to fail. */
 #if defined (_MIPSEL)
-   unsigned long block[3]
-      = { (unsigned long)p, (unsigned long)n, 0x0ULL };
+   RegWord block[3]
+      = { (RegWord)(Addr)p, (RegWord)n, 0x0ULL };
    do {
       __asm__ __volatile__(
          "move $t0, %0"           "\n\t"
@@ -432,8 +433,8 @@ __attribute__((noinline)) void atomic_add_16bit ( short* p, int n )
       );
    } while (block[2] != 1);
 #elif defined (_MIPSEB)
-   unsigned long block[3]
-      = { (unsigned long)p, (unsigned long)n << 48, 0x0 };
+   RegWord block[3]
+      = { (RegWord)(Addr)p, (RegWord)n << 48, 0x0 };
    do {
       __asm__ __volatile__(
          "move  $t0, %0"          "\n\t"
@@ -588,8 +589,8 @@ __attribute__((noinline)) void atomic_add_32bit ( int* p, int n )
       );
    } while (block[2] != 1);
 #elif defined(VGA_mips64)
-   unsigned long block[3]
-      = { (unsigned long)p, (unsigned long)n, 0x0ULL };
+   RegWord block[3]
+      = { (RegWord)(Addr)p, (RegWord)n, 0x0ULL };
    do {
       __asm__ __volatile__(
          "move  $t0, %0"        "\n\t"
@@ -689,8 +690,8 @@ __attribute__((noinline)) void atomic_add_64bit ( long long int* p, int n )
       : "d" (n)
       : "cc", "memory", "0", "1");
 #elif defined(VGA_mips64)
-   unsigned long block[3]
-      = { (unsigned long)p, (unsigned long)n, 0x0ULL };
+   RegWord block[3]
+      = { (RegWord)(Addr)p, (RegWord)n, 0x0ULL };
    do {
       __asm__ __volatile__(
          "move  $t0, %0"        "\n\t"

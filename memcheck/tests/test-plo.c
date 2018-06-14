@@ -1,9 +1,7 @@
 #include "tests/malloc.h"
+#include "pub_core_basics.h"
 #include <stdio.h>
 #include <assert.h>
-
-typedef  unsigned long long int  ULong;
-typedef  unsigned long int       UWord;
 
 __attribute__((noinline))
 static int my_ffsll ( ULong x )
@@ -70,11 +68,11 @@ main(int argc, char *argv[])
        word-sized load gives an addressing error regardless of the
        start of --partial-loads-ok=.  *And* that the resulting
        value is completely defined. */
-    UWord* words = malloc(3 * sizeof(UWord));
+    RegWord* words = malloc(3 * sizeof(RegWord));
     free(words);
 
     /* Should ALWAYS give an addr error. */
-    UWord  w     = words[1];
+    RegWord  w     = words[1];
 
     /* Should NEVER give an error (you might expect a value one, but no.) */
     if (w == 0x31415927) {

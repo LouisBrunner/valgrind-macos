@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "pub_core_basics.h"
 
 /*
  * Bits 18 (NAN2008) and 19 (ABS2008) are preset by hardware and may differ
@@ -13,7 +14,7 @@
 int main ()
 {
 #if defined(__mips_hard_float)
-   long out [] = {0, 0};
+   RegWord out [] = {0, 0};
    __asm__ volatile("cfc1       $a1,   $31"                 "\n\t"
                     "dli        $t0,   0x405ee0a3d70a3d71"  "\n\t"
                     "dmtc1      $t0,   $f0"                 "\n\t"
@@ -32,8 +33,8 @@ int main ()
                     : "r" (out)
                     : "a1", "a2", "t0", "$f0"
                    );
-   printf("FCSR::1: 0x%lx, 2: 0x%lx\n", CLEAR_PRESETBITS_FCSR(out[0]),
-                                        CLEAR_PRESETBITS_FCSR(out[1]));
+   printf("FCSR::1: 0x%" FMT_REGWORD "x, 2: 0x%" FMT_REGWORD "x\n",
+          CLEAR_PRESETBITS_FCSR(out[0]), CLEAR_PRESETBITS_FCSR(out[1]));
 #endif
    return 0;
 }

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "pub_core_basics.h"
 const int reg_val[256] = {
 
    0x00000000L, 0x04c11db7L, 0x09823b6eL, 0x0d4326d9L,
@@ -69,7 +70,7 @@ const int reg_val[256] = {
 
 #define TESTINST1(instruction, RSVal, RT, RS, p, lenm1)             \
 {                                                                   \
-   unsigned long out;                                               \
+   RegWord out;                                                     \
    __asm__ volatile(                                                \
       "li   $" #RT ", 0"   "\n\t"                                   \
       "move $" #RS ", %1"  "\n\t"                                   \
@@ -79,12 +80,12 @@ const int reg_val[256] = {
       : "r" (RSVal)                                                 \
       : #RS, #RT, "cc", "memory"                                    \
         );                                                          \
-        printf("%s :: rt 0x%lx rs 0x%x, p 0x%08x, lenm1 0x%08x\n",  \
-        instruction, out, RSVal, p, lenm1);                         \
+   printf("%s :: rt 0x%" FMT_REGWORD "x rs 0x%x, p 0x%08x, "        \
+          "lenm1 0x%08x\n", instruction, out, RSVal, p, lenm1);     \
 }
 #define TESTINST2(instruction, RSVal, RTval, RD, RS, RT)  \
 {                                                         \
-   unsigned long out;                                     \
+   RegWord out;                                           \
    __asm__ volatile(                                      \
       "li   $" #RD ", 0"   "\n\t"                         \
       "move $" #RS ", %1"  "\n\t"                         \
@@ -95,12 +96,12 @@ const int reg_val[256] = {
       : "r" (RSVal), "r" (RTval)                          \
       : #RD, #RS, #RT, "cc", "memory"                     \
         );                                                \
-        printf("%s :: rd 0x%lx rs 0x%x, rt 0x%x\n",       \
-        instruction, out, RSVal, RTval);                  \
+   printf("%s :: rd 0x%" FMT_REGWORD "x rs 0x%x, "        \
+          "rt 0x%x\n", instruction, out, RSVal, RTval);   \
 }
 #define TESTINST3(instruction, RSVal, RT, RS, imm)     \
 {                                                      \
-   unsigned long out;                                  \
+   RegWord out;                                        \
    __asm__ volatile(                                   \
       "li   $" #RT ", 0"   "\n\t"                      \
       "move $" #RS ", %1"  "\n\t"                      \
@@ -110,8 +111,8 @@ const int reg_val[256] = {
       : "r" (RSVal)                                    \
       : #RS, #RT, "cc", "memory"                       \
         );                                             \
-        printf("%s :: rt 0x%lx rs 0x%x,imm 0x%08x\n",  \
-        instruction, out, RSVal, imm);                 \
+   printf("%s :: rt 0x%" FMT_REGWORD "x rs 0x%x,imm "  \
+          "0x%08x\n", instruction, out, RSVal, imm);   \
 }
 
 typedef enum {

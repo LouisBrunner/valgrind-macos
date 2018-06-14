@@ -2,7 +2,7 @@
 
 #define TEST1(instruction, offset, mem)        \
 {                                              \
-   unsigned long out = 0;                      \
+   RegWord out = 0;                            \
    __asm__ __volatile__(                       \
       "move        $t0, %1"        "\n\t"      \
       "move        $t1, %2"        "\n\t"      \
@@ -14,14 +14,15 @@
       : "r" (mem), "r" (offset)                \
       : "t0", "t1"                             \
    );                                          \
-   printf("%s :: offset: 0x%x, out: 0x%lx\n",  \
-          instruction, offset, out);           \
+   printf("%s :: offset: 0x%x, out: 0x%"       \
+          FMT_REGWORD "x\n",  instruction,     \
+          offset, out);                        \
 }
 
 #define TEST2(instruction, offset)                           \
 {                                                            \
-   unsigned long out = 0;                                    \
-   unsigned long outHI = 0;                                  \
+   RegWord out = 0;                                          \
+   RegWord outHI = 0;                                        \
    __asm__ __volatile__(                                     \
       "move        $t0, %2"          "\n\t"                  \
       "move        $t1, %4"          "\n\t"                  \
@@ -40,13 +41,14 @@
       : "r" (reg_val2) , "r" (reg_val_zero), "r" (offset)    \
       : "t0", "t1", "t2", "t3"                               \
    );                                                        \
-   printf("%s :: offset: 0x%x, out: 0x%lx, outHI: 0x%lx\n",  \
-          instruction, offset, out, outHI);                  \
+   printf("%s :: offset: 0x%x, out: 0x%" FMT_REGWORD "x, "   \
+          "outHI: 0x%" FMT_REGWORD "x\n", instruction,       \
+          offset, out, outHI);                               \
 }
 
 #define TEST3(instruction, offset, mem)         \
 {                                               \
-   unsigned long long out = 0;                  \
+   RegWord out = 0;                             \
    __asm__ __volatile__(                        \
       "move        $t0,   %1"        "\n\t"     \
       "move        $t1,   %2"        "\n\t"     \
@@ -58,8 +60,9 @@
       : "r" (mem) , "r" (offset)                \
       : "t0", "t1", "$f0"                       \
    );                                           \
-   printf("%s :: offset: 0x%x, out: 0x%llx\n",  \
-          instruction, offset, out);            \
+   printf("%s :: offset: 0x%x, out: 0x%"        \
+          FMT_REGWORD "x\n", instruction,       \
+          offset, out);                         \
 }
 
 #define TEST3w(instruction, offset, mem)      \
@@ -82,7 +85,7 @@
 
 #define TEST4(instruction, offset)                         \
 {                                                          \
-   unsigned long long out = 0;                             \
+   RegWord out = 0;                                        \
    __asm__ __volatile__(                                   \
       "move        $t0, %1"        "\n\t"                  \
       "move        $t1, %3"        "\n\t"                  \
@@ -97,13 +100,13 @@
       : "r" (reg_val1) , "r" (reg_val_zero), "r" (offset)  \
       : "t0", "t1", "t2", "$f0"                            \
    );                                                      \
-   printf("%s :: offset: 0x%x, out: 0x%llx\n",             \
+   printf("%s :: offset: 0x%x, out: 0x%" FMT_REGWORD "x\n",\
           instruction, offset, out);                       \
 }
 
 #define TEST5(instruction, offset, mem)         \
 {                                               \
-   unsigned long long out = 0;                  \
+   RegWord out = 0;                             \
    __asm__ __volatile__(                        \
       "move        $t0,   %1"        "\n\t"     \
       "move        $t1,   %2"        "\n\t"     \
@@ -114,8 +117,9 @@
       : "r" (mem) , "r" (offset)                \
       : "t0", "t1", "$f0"                       \
    );                                           \
-   printf("%s :: offset: 0x%x, out: 0x%llx\n",  \
-          instruction, offset, out);            \
+   printf("%s :: offset: 0x%x, out: 0x%"        \
+          FMT_REGWORD "x\n", instruction,       \
+          offset, out);                         \
 }
 
 #define TEST5w(instruction, offset, mem)      \
@@ -137,7 +141,7 @@
 
 #define TEST6(instruction, offset)                         \
 {                                                          \
-   unsigned long long out = 0;                             \
+   RegWord out = 0;                                        \
    __asm__ __volatile__(                                   \
       "move        $t0, %1"        "\n\t"                  \
       "move        $t1, %3"        "\n\t"                  \
@@ -154,6 +158,6 @@
       : "r" (reg_val2) , "r" (reg_val_zero), "r" (offset)  \
       : "t0", "t1", "t2", "t3"                             \
    );                                                      \
-   printf("%s :: offset: 0x%x, out: 0x%llx\n",             \
+   printf("%s :: offset: 0x%x, out: 0x%" FMT_REGWORD "x\n",\
           instruction, offset, out);                       \
 }

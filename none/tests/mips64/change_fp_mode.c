@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/prctl.h>
+#include "pub_core_basics.h"
 
 #if !defined(PR_SET_FP_MODE)
 #   define PR_SET_FP_MODE 45
@@ -51,9 +52,9 @@
 
 #define TEST_ST64(instruction)                                    \
 {                                                                 \
-   unsigned long result;                                          \
+   RegWord result;                                                \
    _TEST_ST(instruction);                                         \
-   printf(instruction" :: mem: %lx\n", result);                   \
+   printf(instruction" :: mem: %" FMT_REGWORD "x\n", result);     \
 }
 
 #define TEST_ST32(instruction)                                    \
@@ -86,7 +87,7 @@
 
 #define TEST_MF(instruction)                                      \
 {                                                                 \
-   unsigned long result;                                          \
+   RegWord result;                                                \
    __asm__ volatile(                                              \
       ".set push\n\t"                                             \
       ".set noreorder\n\t"                                        \
@@ -100,7 +101,7 @@
       : "=m" (result)                                             \
       : "m" (source64)                                            \
       : "t0", "$f0", "$f1");                                      \
-   printf(instruction" :: t0: %lx\n", result);                    \
+   printf(instruction" :: t0: %" FMT_REGWORD "x\n", result);      \
 }
 
 #define TEST_MOVE(instruction)                                    \
@@ -127,13 +128,13 @@
           result2, result1);                                      \
 }
 
-unsigned long source64 = 0x1234567890abcdefull;
+ULong source64 = 0x1234567890abcdefull;
 unsigned int  source32 = 0x12345678u;
 
 /* Determine FP mode based on sdc1 behavior
    returns 1 if FR = 1 mode is detected (assumes FRE = 0) */
 static int get_fp_mode(void) {
-   unsigned long result = 0;
+   unsigned long long result = 0;
    __asm__ volatile(
       ".set push\n\t"
       ".set noreorder\n\t"

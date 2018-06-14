@@ -33,10 +33,10 @@ int main()
    printf("TEST bbit0: %s\n", t1 == 0x08 ? "PASS" : "FAIL");
    printf("TEST bbit1: %s\n", t2 == 0xF7 ? "PASS" : "FAIL");
 
-   long int lt1 = 0;
-   long int lt2 = 0;
-   long int lt3 = 0xff00000000;
-   long int lt4 = 0x100000000;
+   long long int lt1 = 0;
+   long long int lt2 = 0;
+   long long int lt3 = 0xff00000000;
+   long long int lt4 = 0x100000000;
    /* Take 0x100000000 and loop until 35th bit is set
       by incrementing 0x100000000 at a time. */
    __asm__ volatile(

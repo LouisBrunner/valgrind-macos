@@ -179,7 +179,7 @@ const double fs2_f[] = {
 /* movf, movt */
 #define TEST5(instruction, RDval, RSval, RD, RS)                  \
 {                                                                 \
-   unsigned long out;                                             \
+   unsigned long long out;                                        \
    __asm__ __volatile__(                                          \
       "c.eq.s      %3,     %4"             "\n\t"                 \
       "move        $"#RD", %1"             "\n\t"                 \
@@ -190,7 +190,7 @@ const double fs2_f[] = {
       : "r" (RDval), "r" (RSval), "f" (fs1_f[i]), "f" (fs2_f[i])  \
       : #RD, #RS                                                  \
    );                                                             \
-   printf("%s ::  RDval: 0x%x, RSval: 0x%x, out: 0x%lx\n",        \
+   printf("%s ::  RDval: 0x%x, RSval: 0x%x, out: 0x%llx\n",       \
           instruction, RDval, RSval, out);                        \
 }
 #endif

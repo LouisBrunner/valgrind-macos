@@ -157,7 +157,7 @@ const int fs_w[] = {
    -347856,    0x80000000, 0xfffffff,  23,
 };
 
-const long fs_l[] = {
+const long long fs_l[] = {
    18,         25,         3,          -1,
    0xffffffff, 356,        1000000,    -5786,
    -1,         24575,      10,         -125458,

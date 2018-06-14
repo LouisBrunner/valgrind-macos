@@ -157,7 +157,7 @@ int FCSRRoundingMode(flt_round_op_t op1)
                  break;
             case CVTDL:
                  UNOPld("cvt.d.l");
-                 printf("%s %lf %ld\n", flt_round_op_names[op1], fd_d, fs_l[i]);
+                 printf("%s %lf %lld\n", flt_round_op_names[op1], fd_d, fs_l[i]);
                  printf("fcsr: 0x%x\n", CLEAR_PRESETBITS_FCSR(fcsr));
                  break;
             case CVTLS:
@@ -172,7 +172,7 @@ int FCSRRoundingMode(flt_round_op_t op1)
                  break;
             case CVTSL:
                  UNOPls("cvt.s.l");
-                 printf("%s %f %ld\n", flt_round_op_names[op1], fd_f, fs_l[i]);
+                 printf("%s %f %lld\n", flt_round_op_names[op1], fd_f, fs_l[i]);
                  printf("fcsr: 0x%x\n", CLEAR_PRESETBITS_FCSR(fcsr));
                  break;
             default:

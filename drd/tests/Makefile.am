@@ -470,7 +470,7 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI) @FLAG_W_EXTRA@ @FLAG_FALIGNED_NEW@ \
 LDADD = -lpthread
 
 
-bug322621_SOURCES	    = ../../helgrind/tests/bug322621.cpp
+bug322621_SOURCES           = bug322621.cpp
 concurrent_close_SOURCES    = concurrent_close.cpp
 dlopen_main_LDADD           = -ldl
 dlopen_lib_so_SOURCES       = dlopen_lib.c

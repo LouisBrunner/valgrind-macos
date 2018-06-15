@@ -2,7 +2,7 @@
 
 #include <pthread.h>
 #include <iostream>
-#include "../helgrind.h"
+#include "../../helgrind/helgrind.h"
 
 static int verbose;
 static pthread_t ls_thread;

@@ -577,7 +577,7 @@
 
 # /gdbserver_tests/
 /gdbserver_tests/*.dSYM
-/gdbserver_tests/*.diff
+/gdbserver_tests/*.diff*
 /gdbserver_tests/*.out
 /gdbserver_tests/.deps
 /gdbserver_tests/clean_after_fork

@@ -117,6 +117,7 @@ n-i-bz  fix bug in strspn replacement
 n-i-bz  Add support for the Linux BLKFLSBUF ioctl
 n-i-bz  Add support for the Linux BLKREPORTZONE and BLKRESETZONE ioctls
 n-i-bz  Fix possible stack trashing by semctl syscall wrapping
+n-i-bz  Add support for the Linux membarrier() system call
 
 Release 3.13.0 (15 June 2017)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

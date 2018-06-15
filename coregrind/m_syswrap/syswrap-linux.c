@@ -3646,6 +3646,12 @@ POST(sys_memfd_create)
    }
 }
 
+PRE(sys_membarrier)
+{
+   PRINT("sys_membarrier ( %#" FMT_REGWORD "x )", ARG1);
+   PRE_REG_READ1(int, "membarrier", int, flags);
+}
+
 PRE(sys_syncfs)
 {
    *flags |= SfMayBlock;

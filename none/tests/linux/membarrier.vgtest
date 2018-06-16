@@ -1,1 +1,2 @@
 prog: membarrier
+prereq: test -x membarrier

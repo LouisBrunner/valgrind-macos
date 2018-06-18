@@ -703,6 +703,12 @@ Addr setup_client_stack( void*  init_sp,
                   (and anything above) are not supported by Valgrind. */
                auxv->u.a_val &= VKI_HWCAP_S390_TE - 1;
             }
+#           elif defined(VGP_arm64_linux)
+            {
+               /* Linux 4.11 started pupulating this for arm64, but we
+                  currently don't support any. Bug KDE#381556. */
+               auxv->u.a_val = 0;
+            }
 #           endif
             break;
 #        if defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)

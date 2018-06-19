@@ -705,9 +705,16 @@ Addr setup_client_stack( void*  init_sp,
             }
 #           elif defined(VGP_arm64_linux)
             {
-               /* Linux 4.11 started pupulating this for arm64, but we
-                  currently don't support any. Bug KDE#381556. */
-               auxv->u.a_val = 0;
+               /* Limit the AT_HWCAP to just those features we explicitly
+		  support in VEX.  */
+#define ARM64_SUPPORTED_HWCAP (VKI_HWCAP_AES	        \
+                               | VKI_HWCAP_PMULL        \
+                               | VKI_HWCAP_SHA1         \
+                               | VKI_HWCAP_SHA2         \
+                               | VKI_HWCAP_CRC32        \
+                               | VKI_HWCAP_FP           \
+                               | VKI_HWCAP_ASIMD)
+               auxv->u.a_val &= ARM64_SUPPORTED_HWCAP;
             }
 #           endif
             break;

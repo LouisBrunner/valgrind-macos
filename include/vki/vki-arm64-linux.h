@@ -692,6 +692,39 @@ struct vki_shminfo64 {
 #define VKI_TIOCSSERIAL     0x541F
 
 //----------------------------------------------------------------------
+// From linux-4.17/include/uapi/asm-generic/ioctls.h
+//----------------------------------------------------------------------
+
+#define VKI_HWCAP_FP                (1 << 0)
+#define VKI_HWCAP_ASIMD             (1 << 1)
+#define VKI_HWCAP_EVTSTRM           (1 << 2)
+#define VKI_HWCAP_AES               (1 << 3)
+#define VKI_HWCAP_PMULL             (1 << 4)
+#define VKI_HWCAP_SHA1              (1 << 5)
+#define VKI_HWCAP_SHA2              (1 << 6)
+#define VKI_HWCAP_CRC32             (1 << 7)
+#define VKI_HWCAP_ATOMICS           (1 << 8)
+#define VKI_HWCAP_FPHP              (1 << 9)
+#define VKI_HWCAP_ASIMDHP           (1 << 10)
+#define VKI_HWCAP_CPUID             (1 << 11)
+#define VKI_HWCAP_ASIMDRDM          (1 << 12)
+#define VKI_HWCAP_JSCVT             (1 << 13)
+#define VKI_HWCAP_FCMA              (1 << 14)
+#define VKI_HWCAP_LRCPC             (1 << 15)
+#define VKI_HWCAP_DCPOP             (1 << 16)
+#define VKI_HWCAP_SHA3              (1 << 17)
+#define VKI_HWCAP_SM3               (1 << 18)
+#define VKI_HWCAP_SM4               (1 << 19)
+#define VKI_HWCAP_ASIMDDP           (1 << 20)
+#define VKI_HWCAP_SHA512            (1 << 21)
+#define VKI_HWCAP_SVE               (1 << 22)
+#define VKI_HWCAP_ASIMDFHM          (1 << 23)
+#define VKI_HWCAP_DIT               (1 << 24)
+#define VKI_HWCAP_USCAT             (1 << 25)
+#define VKI_HWCAP_ILRCPC            (1 << 26)
+#define VKI_HWCAP_FLAGM             (1 << 27)
+
+//----------------------------------------------------------------------
 // And that's it!
 //----------------------------------------------------------------------
  

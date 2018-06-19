@@ -71,6 +71,7 @@ where XXXXXX is the bug number as listed below.
 381289  epoll_pwait can have a NULL sigmask
 381274  powerpc too chatty even with --sigill-diagnostics=no
 381553  VEX register allocator v3
+381556  arm64: Handle feature registers access on 4.11 Linux kernel or later
 381769  Use ucontext_t instead of struct ucontext
 381805  arm32 needs ld.so index hardwire for new glibc security fixes
 382256  gz compiler flag test doesn't work for gold

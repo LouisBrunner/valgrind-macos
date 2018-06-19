@@ -60,6 +60,7 @@ where XXXXXX is the bug number as listed below.
 255603  exp-sgcheck Assertion '!already_present' failed
 338252  building valgrind with -flto (link time optimisation) fails
 345763  MIPS N32 ABI support
+368913  WARNING: unhandled arm64-linux syscall: 117 (ptrace)
 372347  Replacement problem of the additional c++14/c++17 new and delete operators
 376257  helgrind history full speed up using a cached stack
 379373  Fix syscall param msg->desc.port.name points to uninitialised byte(s)

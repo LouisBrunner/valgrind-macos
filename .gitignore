@@ -1580,6 +1580,7 @@
 /none/tests/linux/clonev
 /none/tests/linux/Makefile
 /none/tests/linux/Makefile.in
+/none/tests/linux/membarrier
 /none/tests/linux/mremap
 /none/tests/linux/mremap2
 /none/tests/linux/mremap3

@@ -31,7 +31,7 @@ while (<>)
     s/(at.*)operator new\[\]\(unsigned(| int| long)\)/$1...operator new[].../;
 
     s/(at.*)__builtin_delete/$1...operator delete.../;
-    s/(at.*)operator delete\(void\*\)/$1...operator delete.../;
+    s/(at.*)operator delete\(void\*(, unsigned(| int| long))?\)/$1...operator delete.../;
 
     s/(at.*)__builtin_vec_delete/$1...operator delete[].../;
     s/(at.*)operator delete\[\]\(void\*\)/$1...operator delete[].../;

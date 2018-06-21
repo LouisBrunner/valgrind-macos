@@ -113,6 +113,7 @@ where XXXXXX is the bug number as listed below.
 393023  callgrind_control risks using the wrong vgdb
 393062  build-id ELF phdrs read causes "debuginfo reader: ensure_valid failed"
 393099  posix_memalign() invalid write if alignment == 0
+395709  PPC64 is missing support for the xvnegsp instruction
 
 n-i-bz  Fix missing workq_ops operations (macOS)
 n-i-bz  fix bug in strspn replacement

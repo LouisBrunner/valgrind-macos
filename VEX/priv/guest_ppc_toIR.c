@@ -17870,6 +17870,35 @@ dis_vxv_misc ( UInt theInstr, UInt opc2 )
          }
          break;
       }
+      case 0x372: // xvnegsp (VSX Vector Negate Single-Precision)
+      {
+         IRTemp B0 = newTemp(Ity_I32);
+         IRTemp B1 = newTemp(Ity_I32);
+         IRTemp B2 = newTemp(Ity_I32);
+         IRTemp B3 = newTemp(Ity_I32);
+
+         DIP("xvnegsp v%d,v%d\n",  XT, XB);
+
+	 /* Don't support NegF32, so just XOR the sign bit in the int value */
+         assign(B0, unop( Iop_64HIto32,
+			  unop( Iop_V128HIto64, getVSReg( XB ) ) ) );
+         assign(B1, unop( Iop_64to32,
+			  unop( Iop_V128HIto64, getVSReg( XB ) ) ) );
+         assign(B2, unop( Iop_64HIto32,
+			  unop( Iop_V128to64, getVSReg( XB ) ) ) );
+         assign(B3, unop( Iop_64to32,
+			  unop( Iop_V128to64, getVSReg( XB ) ) ) );
+
+         putVSReg( XT,
+		   binop( Iop_64HLtoV128,
+			  binop( Iop_32HLto64,
+				 binop( Iop_Xor32, mkexpr( B0 ), mkU32( 0x80000000 ) ),
+				 binop( Iop_Xor32, mkexpr( B1 ), mkU32( 0x80000000 ) ) ),
+			  binop( Iop_32HLto64,
+				 binop( Iop_Xor32, mkexpr( B2 ), mkU32( 0x80000000 ) ),
+				 binop( Iop_Xor32, mkexpr( B3 ), mkU32( 0x80000000 ) ) ) ) );
+         break;
+      }
       case 0x3F2: // xvnegdp (VSX Vector Negate Double-Precision)
       {
          IRTemp frB = newTemp(Ity_F64);
@@ -28418,6 +28447,7 @@ DisResult disInstr_PPC_WRK (
          case 0x134:  // xvresp
          case 0x1B4:  // xvredp
          case 0x194: case 0x114: // xvrsqrtedp, xvrsqrtesp
+         case 0x372:             // xvnegsp
          case 0x380: case 0x3A0: // xvmaxdp, xvmindp
          case 0x300: case 0x320: // xvmaxsp, xvminsp
          case 0x3C0: case 0x340: // xvcpsgndp, xvcpsgnsp

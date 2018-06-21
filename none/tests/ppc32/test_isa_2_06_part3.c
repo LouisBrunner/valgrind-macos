@@ -765,6 +765,11 @@ static void test_xvnegdp(void)
    __asm__ __volatile__ ("xvnegdp   %x0, %x1" : "=wa" (vec_out): "wa" (vec_inB));
 }
 
+static void test_xvnegsp(void)
+{
+   __asm__ __volatile__ ("xvnegsp   %x0, %x1" : "=wa" (vec_out): "wa" (vec_inB));
+}
+
 static void test_xvabssp(void)
 {
    __asm__ __volatile__ ("xvabssp   %x0, %x1" : "=wa" (vec_out): "wa" (vec_inB));
@@ -850,6 +855,7 @@ vsx_one_fp_arg_tests[] = {
                                 { &test_xsrdpi, "xsrdpi", NULL, 20, DOUBLE_TEST, VX_CONV_TO_DOUBLE, "round"},
                                 { &test_xvabsdp, "xvabsdp", NULL, 20, DOUBLE_TEST, VX_DEFAULT, "abs"},
                                 { &test_xvnabsdp, "xvnabsdp", NULL, 20, DOUBLE_TEST, VX_DEFAULT, "nabs"},
+                                { &test_xvnegsp, "xvnegsp", NULL, 20, SINGLE_TEST, VX_DEFAULT, "neg"},
                                 { &test_xvnegdp, "xvnegdp", NULL, 20, DOUBLE_TEST, VX_DEFAULT, "neg"},
                                 { &test_xvabssp, "xvabssp", NULL, 20, SINGLE_TEST, VX_DEFAULT, "abs"},
                                 { &test_xvnabssp, "xvnabssp", NULL, 20, SINGLE_TEST, VX_DEFAULT, "nabs"},

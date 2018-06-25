@@ -1,0 +1,6 @@
+{
+   matching-san-lineno
+   Memcheck:Free
+   fun:free
+   src:suppfree.c
+}

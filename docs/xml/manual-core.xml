@@ -460,13 +460,15 @@ tool_name1,tool_name2:suppression_name]]></programlisting>
     the chain of function calls that led to it.  There can be up to 24
     of these lines.</para>
 
-    <para>Locations may be names of either shared objects or
-    functions.  They begin
-    <computeroutput>obj:</computeroutput> and
-    <computeroutput>fun:</computeroutput> respectively.  Function and
-    object names to match against may use the wildcard characters
+    <para>Locations may be names of either shared objects, functions,
+    or source lines.  They begin with
+    <computeroutput>obj:</computeroutput>,
+    <computeroutput>fun:</computeroutput>, or
+    <computeroutput>src:</computeroutput> respectively.  Function,
+    object, and file names to match against may use the wildcard characters
     <computeroutput>*</computeroutput> and
-    <computeroutput>?</computeroutput>.</para>
+    <computeroutput>?</computeroutput>.   Source lines are specified
+    using the form <filename>filename[:lineNumber]</filename>.</para>
 
     <para><command>Important note: </command> C++ function names must be
     <command>mangled</command>.  If you are writing suppressions by
@@ -543,9 +545,23 @@ locations is regrettable, but is about all you can hope for, given that
 the X11 libraries shipped on the Linux distro on which this example
 was made have had their symbol tables removed.</para>
 
+<para>An example of the src: specification, again for the Memcheck tool:</para>
+
+<programlisting><![CDATA[
+{
+  libX11.so.6.2/libX11.so.6.2/libXaw.so.7.0
+  Memcheck:Value4
+  src:valid.c:321
+}]]></programlisting>
+
+<para>This suppresses any size-4 uninitialised-value error which occurs
+at line 321 in <filename>valid.c</filename>.</para>
+
 <para>Although the above two examples do not make this clear, you can
-freely mix <computeroutput>obj:</computeroutput> and
-<computeroutput>fun:</computeroutput> lines in a suppression.</para>
+freely mix <computeroutput>obj:</computeroutput>,
+<computeroutput>fun:</computeroutput>, and
+<computeroutput>src:</computeroutput>
+lines in a suppression.</para>
 
 <para>Finally, here's an example using three frame-level wildcards:</para>
 

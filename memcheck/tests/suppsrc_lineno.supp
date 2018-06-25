@@ -1,0 +1,13 @@
+{
+   matching-lineno1
+   Memcheck:Free
+   fun:free
+   src:suppfree.c:6
+}
+
+{
+   non-matching-lineno2
+   Memcheck:Free
+   fun:free
+   src:suppfree.c:20
+}

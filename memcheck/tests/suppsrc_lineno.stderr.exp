@@ -1,0 +1,10 @@
+Invalid free() / delete / delete[] / realloc()
+   at 0x........: free (vg_replace_malloc.c:...)
+   ...
+ Address 0x........ is 0 bytes inside a block of size 10 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   ...
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+

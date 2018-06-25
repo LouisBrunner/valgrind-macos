@@ -205,7 +205,8 @@ typedef
       NoName,     /* Error case */
       ObjName,    /* Name is of an shared object file. */
       FunName,    /* Name is of a function. */
-      DotDotDot   /* Frame-level wildcard */
+      DotDotDot,  /* Frame-level wildcard */
+      SrcName     /* Name is of a src file. */
    }
    SuppLocTy;
 
@@ -215,6 +216,7 @@ typedef
       Bool      name_is_simple_str; /* True if name is a string without
                                        '?' and '*' wildcard characters. */
       HChar*    name; /* NULL for NoName and DotDotDot */
+      UInt      lineno; /* Valid for SrcName. */
    }
    SuppLoc;
 
@@ -1203,10 +1205,13 @@ static Bool is_simple_str (const HChar *s)
 /* buf contains the raw name of a caller, supposedly either
        fun:some_function_name   or
        obj:some_object_name     or
+       fun:some_file_name       or
+       fun:some_file_name:line# or
        ...
    Set p->ty and p->name accordingly.
    p->name is allocated and set to the string
-   after the descriptor (fun: or obj:) part.
+   after the descriptor (fun:, obj:, or src: san line#) part.
+   p->lineno is set to non-zero if line# specified; 0 otherwise.
    Returns False if failed.
 */
 static Bool setLocationTy ( SuppLoc* p, const HChar *buf )
@@ -1223,6 +1228,19 @@ static Bool setLocationTy ( SuppLoc* p, const HChar *buf )
       p->ty = ObjName;
       return True;
    }
+   if (VG_(strncmp)(buf, "src:", 4) == 0) {
+      p->name = VG_(strdup)("errormgr.sLTy.3", buf+4);
+      p->name_is_simple_str = is_simple_str (p->name);
+      p->ty = SrcName;
+      HChar *s = VG_(strchr)(p->name, ':');
+      if (s != NULL) {
+         *s++ = '\0'; // trim colon
+         p->lineno = (UInt) VG_(strtoll10)(s, NULL);
+      } else {
+         p->lineno = 0;
+      }
+      return True;
+   }
    if (VG_(strcmp)(buf, "...") == 0) {
       p->name = NULL;
       p->name_is_simple_str = False;
@@ -1230,7 +1248,7 @@ static Bool setLocationTy ( SuppLoc* p, const HChar *buf )
       return True;
    }
    VG_(printf)("location should be \"...\", or should start "
-               "with \"fun:\" or \"obj:\"\n");
+               "with \"fun:\", \"obj:\", or \"src:\"\n");
    return False;
 }
 
@@ -1405,7 +1423,7 @@ static void load_one_suppressions_file ( Int clo_suppressions_i )
             break;
          if (!setLocationTy(&(tmp_callers[i]), buf))
             BOMB("location should be \"...\", or should start "
-                 "with \"fun:\" or \"obj:\"");
+                 "with \"fun:\", \"obj:\", or \"src:\"");
          i++;
       }
 
@@ -1421,8 +1439,10 @@ static void load_one_suppressions_file ( Int clo_suppressions_i )
       // level wildcards.
       vg_assert(i > 0); // guaranteed by frame-descriptor reading loop
       for (j = 0; j < i; j++) {
-         if (tmp_callers[j].ty == FunName || tmp_callers[j].ty == ObjName)
+         if (tmp_callers[j].ty == FunName || tmp_callers[j].ty == ObjName ||
+             tmp_callers[j].ty == SrcName) {
             break;
+         }
          vg_assert(tmp_callers[j].ty == DotDotDot);
       }
       vg_assert(j >= 0 && j <= i);
@@ -1812,7 +1832,8 @@ static Bool supp_pattEQinp ( const void* supplocV, const void* addrV,
 {
    const SuppLoc* supploc = (const SuppLoc*)supplocV; /* PATTERN */
    IPtoFunOrObjCompleter* ip2fo = (IPtoFunOrObjCompleter*)inputCompleterV;
-   HChar* funobj_name; // Fun or Obj name.
+   const HChar* funobjsrc_name; // Fun, Obj, or src file name.
+   UInt src_lineno;
    Bool ret;
 
    expandInput(ip2fo, ixInput);
@@ -1828,27 +1849,42 @@ static Bool supp_pattEQinp ( const void* supplocV, const void* addrV,
             this can't happen. */
          vg_assert(0);
       case ObjName:
-         funobj_name = foComplete(ip2fo, ixInput, False /*needFun*/);
+         funobjsrc_name = foComplete(ip2fo, ixInput, False /*needFun*/);
          break; 
       case FunName:
-         funobj_name = foComplete(ip2fo, ixInput, True /*needFun*/);
+         funobjsrc_name = foComplete(ip2fo, ixInput, True /*needFun*/);
          break;
+      case SrcName: {
+         const HChar* src_dirname; // placeholder only
+         ret = VG_(get_filename_linenum)(VG_(current_DiEpoch)(),
+               ip2fo->ips[ixInput], &funobjsrc_name, &src_dirname, &src_lineno);
+         if (!ret) {
+            /* No file name found for location so no way this is a match. */
+            return ret;
+         }
+         break;
+      }
       default:
         vg_assert(0);
    }
 
-   /* So now we have the function or object name in funobj_name, and
+   /* So now we have the function or object name in funobjsrc_name, and
       the pattern (at the character level) to match against is in
       supploc->name.  Hence (and leading to a re-entrant call of
       VG_(generic_match) if there is a wildcard character): */
    if (supploc->name_is_simple_str)
-      ret = VG_(strcmp) (supploc->name, funobj_name) == 0;
+      ret = VG_(strcmp) (supploc->name, funobjsrc_name) == 0;
    else
-      ret = VG_(string_match)(supploc->name, funobj_name);
+      ret = VG_(string_match)(supploc->name, funobjsrc_name);
+   if (ret && supploc->ty == SrcName && supploc->lineno != 0) {
+      ret = (supploc->lineno == src_lineno);
+   }
    if (DEBUG_ERRORMGR)
-      VG_(printf) ("supp_pattEQinp %s patt %s ixUnput %lu value:%s match:%s\n",
-                   supploc->ty == FunName ? "fun" : "obj",
-                   supploc->name, ixInput, funobj_name,
+      VG_(printf) ("supp_pattEQinp %s patt %s ixInput %lu value:%s (lineno:%u vs %u) match:%s\n",
+                   supploc->ty == FunName ? "fun" : (supploc->ty == SrcName ? "src" : "obj"),
+                   supploc->name, ixInput, funobjsrc_name,
+                   supploc->ty == SrcName ? supploc->lineno : 0,
+                   supploc->ty == SrcName ? src_lineno : 0,
                    ret ? "yes" : "no");
    return ret;
 }

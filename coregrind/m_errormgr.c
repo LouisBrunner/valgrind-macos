@@ -1205,8 +1205,8 @@ static Bool is_simple_str (const HChar *s)
 /* buf contains the raw name of a caller, supposedly either
        fun:some_function_name   or
        obj:some_object_name     or
-       fun:some_file_name       or
-       fun:some_file_name:line# or
+       src:some_file_name       or
+       src:some_file_name:line# or
        ...
    Set p->ty and p->name accordingly.
    p->name is allocated and set to the string

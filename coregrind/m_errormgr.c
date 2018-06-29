@@ -1260,10 +1260,9 @@ static Bool tool_name_present(const HChar *name, const HChar *names)
    HChar *s = NULL;   /* Shut gcc up */
    Int   len = VG_(strlen)(name);
 
-   found = (NULL != (s = VG_(strstr)(names, name)) &&
-            (s        == names || *(s-1)   == ',') &&
-            (*(s+len) == ','   || *(s+len) == '\0')
-           );
+   found = (NULL != (s = VG_(strstr)(names, name))
+            && (s        == names || *(s-1)   == ',')
+            && (*(s+len) == ','   || *(s+len) == '\0'));
 
    return found;
 }
@@ -1355,8 +1354,7 @@ static void load_one_suppressions_file ( Int clo_suppressions_i )
       tool_names = & buf[0];
       supp_name  = & buf[i+1];
 
-      if (VG_(needs).core_errors && tool_name_present("core", tool_names))
-      {
+      if (VG_(needs).core_errors && tool_name_present("core", tool_names)) {
          // A core suppression
          //(example code, see comment on CoreSuppKind above)
          //if (VG_STREQ(supp_name, "Thread"))
@@ -1364,9 +1362,8 @@ static void load_one_suppressions_file ( Int clo_suppressions_i )
          //else
             BOMB("unknown core suppression type");
       }
-      else if (VG_(needs).tool_errors && 
-               tool_name_present(VG_(details).name, tool_names))
-      {
+      else if (VG_(needs).tool_errors 
+               && tool_name_present(VG_(details).name, tool_names)) {
          // A tool suppression
          if (VG_TDICT_CALL(tool_recognised_suppression, supp_name, supp)) {
             /* Do nothing, function fills in supp->skind */
@@ -1390,10 +1387,9 @@ static void load_one_suppressions_file ( Int clo_suppressions_i )
       buf[0] = 0;
       // tool_read_extra_suppression_info might read lines
       // from fd till a location line. 
-      if (VG_(needs).tool_errors && 
-          !VG_TDICT_CALL(tool_read_extra_suppression_info,
-                         fd, &buf, &nBuf, &lineno, supp))
-      {
+      if (VG_(needs).tool_errors 
+          && !VG_TDICT_CALL(tool_read_extra_suppression_info,
+                            fd, &buf, &nBuf, &lineno, supp)) {
          BOMB("bad or missing extra suppression info");
       }
 
@@ -1439,8 +1435,8 @@ static void load_one_suppressions_file ( Int clo_suppressions_i )
       // level wildcards.
       vg_assert(i > 0); // guaranteed by frame-descriptor reading loop
       for (j = 0; j < i; j++) {
-         if (tmp_callers[j].ty == FunName || tmp_callers[j].ty == ObjName ||
-             tmp_callers[j].ty == SrcName) {
+         if (tmp_callers[j].ty == FunName || tmp_callers[j].ty == ObjName
+             || tmp_callers[j].ty == SrcName) {
             break;
          }
          vg_assert(tmp_callers[j].ty == DotDotDot);

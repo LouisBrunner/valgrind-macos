@@ -1881,7 +1881,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                Bool loaded = False;
                for (j = 0; j < VG_(sizeXA)(di->fsm.maps); j++) {
                   const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, j);
-                  if (   (map->rx || map->rw)
+                  if (   (map->rx || map->rw || map->ro)
                       && map->size > 0 /* stay sane */
                       && a_phdr.p_offset >= map->foff
                       && a_phdr.p_offset <  map->foff + map->size
@@ -1909,6 +1909,16 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                         VG_(addToXA)(svma_ranges, &item);
                         TRACE_SYMTAB(
                            "PT_LOAD[%ld]:   acquired as rx, bias 0x%lx\n",
+                           i, (UWord)item.bias);
+                        loaded = True;
+                     }
+                     if (map->ro
+                         && (a_phdr.p_flags & (PF_R | PF_W | PF_X))
+                            == PF_R) {
+                        item.exec = False;
+                        VG_(addToXA)(svma_ranges, &item);
+                        TRACE_SYMTAB(
+                           "PT_LOAD[%ld]:   acquired as ro, bias 0x%lx\n",
                            i, (UWord)item.bias);
                         loaded = True;
                      }
@@ -2179,17 +2189,25 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          }
       }
 
-      /* Accept .rodata where mapped as rx (data), even if zero-sized */
+      /* Accept .rodata where mapped as rx or rw (data), even if zero-sized */
       if (0 == VG_(strcmp)(name, ".rodata")) {
-         if (inrx && !di->rodata_present) {
-            di->rodata_present = True;
+         if (!di->rodata_present) {
             di->rodata_svma = svma;
-            di->rodata_avma = svma + inrx->bias;
+            di->rodata_avma = svma;
             di->rodata_size = size;
-            di->rodata_bias = inrx->bias;
             di->rodata_debug_svma = svma;
-            di->rodata_debug_bias = inrx->bias;
-                                    /* NB was 'inrw' prior to r11794 */
+            if (inrx) {
+               di->rodata_avma += inrx->bias;
+               di->rodata_bias = inrx->bias;
+               di->rodata_debug_bias = inrx->bias;
+            } else if (inrw) {
+               di->rodata_avma += inrw->bias;
+               di->rodata_bias = inrw->bias;
+               di->rodata_debug_bias = inrw->bias;
+            } else {
+               BAD(".rodata");
+            }
+            di->rodata_present = True;
             TRACE_SYMTAB("acquiring .rodata svma = %#lx .. %#lx\n",
                          di->rodata_svma,
                          di->rodata_svma + di->rodata_size - 1);

@@ -116,6 +116,7 @@ where XXXXXX is the bug number as listed below.
 393062  build-id ELF phdrs read causes "debuginfo reader: ensure_valid failed"
 393099  posix_memalign() invalid write if alignment == 0
 395709  PPC64 is missing support for the xvnegsp instruction
+395682  Accept read-only PT_LOAD segments and .rodata by ld -z separate-code
 
 n-i-bz  Fix missing workq_ops operations (macOS)
 n-i-bz  fix bug in strspn replacement

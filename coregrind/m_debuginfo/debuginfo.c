@@ -1126,9 +1126,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
 #    error "Unknown platform"
 #  endif
 
-#  if defined(VGP_x86_darwin) && DARWIN_VERS >= DARWIN_10_7
    is_ro_map = seg->hasR && !seg->hasW && !seg->hasX;
-#  endif
 
 #  if defined(VGO_solaris)
    is_rx_map = seg->hasR && seg->hasX && !seg->hasW;

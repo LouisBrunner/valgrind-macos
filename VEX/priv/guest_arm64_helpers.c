@@ -1317,6 +1317,7 @@ IRExpr* guest_arm64_spechelper ( const HChar* function_name,
 #  define unop(_op,_a1) IRExpr_Unop((_op),(_a1))
 #  define binop(_op,_a1,_a2) IRExpr_Binop((_op),(_a1),(_a2))
 #  define mkU64(_n) IRExpr_Const(IRConst_U64(_n))
+#  define mkU32(_n) IRExpr_Const(IRConst_U32(_n))
 #  define mkU8(_n)  IRExpr_Const(IRConst_U8(_n))
 
    Int i, arity = 0;
@@ -1507,14 +1508,35 @@ IRExpr* guest_arm64_spechelper ( const HChar* function_name,
 //ZZ                unop(Iop_1Uto32, binop(Iop_CmpLT32U, cc_dep2, cc_dep1))
 //ZZ             );
 //ZZ       }
-//ZZ 
-//ZZ       /*---------------- LOGIC ----------------*/
-//ZZ 
-//ZZ       if (isU32(cond_n_op, (ARMCondEQ << 4) | ARMG_CC_OP_LOGIC)) {
-//ZZ          /* EQ after LOGIC --> test res == 0 */
-//ZZ          return unop(Iop_1Uto32,
-//ZZ                      binop(Iop_CmpEQ32, cc_dep1, mkU32(0)));
-//ZZ       }
+
+      /*---------------- LOGIC32 ----------------*/
+
+      if (isU64(cond_n_op, (ARM64CondEQ << 4) | ARM64G_CC_OP_LOGIC32)) {
+         /* EQ after LOGIC32 --> test res[31:0] == 0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ32,
+                           unop(Iop_64to32, cc_dep1), mkU32(0)));
+      }
+      if (isU64(cond_n_op, (ARM64CondNE << 4) | ARM64G_CC_OP_LOGIC32)) {
+         /* NE after LOGIC32 --> test res[31:0] != 0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpNE32,
+                           unop(Iop_64to32, cc_dep1), mkU32(0)));
+      }
+
+      /*---------------- LOGIC64 ----------------*/
+
+      if (isU64(cond_n_op, (ARM64CondEQ << 4) | ARM64G_CC_OP_LOGIC64)) {
+         /* EQ after LOGIC64 --> test res[63:0] == 0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ64, cc_dep1, mkU64(0)));
+      }
+      if (isU64(cond_n_op, (ARM64CondNE << 4) | ARM64G_CC_OP_LOGIC64)) {
+         /* NE after LOGIC64 --> test res[63:0] != 0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpNE64, cc_dep1, mkU64(0)));
+      }
+
 //ZZ       if (isU32(cond_n_op, (ARMCondNE << 4) | ARMG_CC_OP_LOGIC)) {
 //ZZ          /* NE after LOGIC --> test res != 0 */
 //ZZ          return unop(Iop_1Uto32,

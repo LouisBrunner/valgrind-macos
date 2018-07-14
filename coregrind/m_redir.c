@@ -1185,8 +1185,10 @@ void VG_(redir_notify_delete_DebugInfo)( const DebugInfo* delsi )
 Addr VG_(redir_do_lookup) ( Addr orig, Bool* isWrap )
 {
    Active* r = VG_(OSetGen_Lookup)(activeSet, &orig);
-   if (r == NULL)
+   if (r == NULL) {
+      if (isWrap) *isWrap = False;
       return orig;
+   }
 
    vg_assert(r->to_addr != 0);
    if (isWrap)

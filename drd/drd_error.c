@@ -159,7 +159,10 @@ void drd_report_data_race(const Error* const err,
    const HChar* const auxwhat_prefix = xml ? "  <auxwhat>" : "";
    const HChar* const auxwhat_suffix = xml ? "</auxwhat>" : "";
    const HChar* const indent = xml ? "  " : "";
+
    AddrInfo ai;
+   VG_(memset)(&ai, 0, sizeof(ai));
+   ai.akind = eUnknown; // A safe initial value (?)
 
    DiEpoch cur_ep = VG_(current_DiEpoch)();
    XArray* /* of HChar */ descr1

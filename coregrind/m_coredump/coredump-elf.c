@@ -542,9 +542,12 @@ void dump_one_thread(struct note **notelist, const vki_siginfo_t *si, ThreadId t
 {
    vki_elf_fpregset_t  fpu;
    struct vki_elf_prstatus prstatus;
+   VG_(memset)(&fpu, 0, sizeof(fpu));
+   VG_(memset)(&prstatus, 0, sizeof(prstatus));
 #     if defined(VGP_x86_linux) && !defined(VGPV_x86_linux_android)
       {
          vki_elf_fpxregset_t xfpu;
+         VG_(memset)(&xfpu, 0, sizeof(xfpu));
          fill_xfpu(&VG_(threads)[tid], &xfpu);
          add_note(notelist, "LINUX", NT_PRXFPREG, &xfpu, sizeof(xfpu));
       }

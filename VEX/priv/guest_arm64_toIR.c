@@ -5720,6 +5720,19 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
       assign(tRN, getIReg64orSP(nn));
       assign(tEA, binop(Iop_Add64, mkexpr(tRN), mkU64(simm9)));
       tTA = atRN ? tRN : tEA;
+
+      /* Do early writeback for the cases typified by
+            str d8, [sp, #-32]!
+            str d10, [sp, #-128]!
+         for the same reasons as described in a similar comment in the
+         "LDP,STP (immediate, simm7) (FP&VEC)" case just above.
+      */
+      Bool earlyWBack
+         = !atRN && !isLD && ty == Ity_F64 && nn == 31 && ((Long)simm9) < 0;
+
+      if (earlyWBack)
+         putIReg64orSP(nn, mkexpr(tEA));
+
       if (isLD) {
          if (szLg2 < 4) {
             putQReg128(tt, mkV128(0x0000));
@@ -5728,7 +5741,10 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
       } else {
          storeLE(mkexpr(tTA), getQRegLO(tt, ty));
       }
-      putIReg64orSP(nn, mkexpr(tEA));
+
+      if (!earlyWBack)
+         putIReg64orSP(nn, mkexpr(tEA));
+
       DIP(atRN ? "%s %s, [%s], #%lld\n" : "%s %s, [%s, #%lld]!\n",
           isLD ? "ldr" : "str",
           nameQRegLO(tt, ty), nameIReg64orSP(nn), (Long)simm9);

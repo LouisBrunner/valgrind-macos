@@ -123,6 +123,9 @@ typedef
       /* some insn needs vector facility which is not available on this host */
       EmFail_S390X_vx,
 
+      /* ppno insn is not supported on this host */
+      EmFail_S390X_ppno,
+
       EmNote_NUMBER
    }
    VexEmNote;

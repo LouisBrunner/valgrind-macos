@@ -99,6 +99,8 @@
 #define S390_FAC_DFPZC   48  // DFP zoned-conversion
 #define S390_FAC_MISC    49  // miscellaneous insn
 #define S390_FAC_CTREXE  50  // constrained transactional execution
+#define S390_FAC_LSC2    53  // load/store on condition 2 and load and zero rightmost byte
+#define S390_FAC_MSA5    57  // message-security-assist 5
 #define S390_FAC_TREXE   73  // transactional execution
 #define S390_FAC_MSA4    77  // message-security-assist 4
 #define S390_FAC_VX      128 // vector facility

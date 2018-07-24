@@ -1,0 +1,2 @@
+prog: ppno
+prereq: test -e ppno && ../../../tests/s390x_features s390x-msa5

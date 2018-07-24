@@ -251,6 +251,12 @@ cls_operand(Int kind, UInt mask)
    case S390_XMNM_LOCG:   prefix = "locg";  break;
    case S390_XMNM_STOC:   prefix = "stoc";  break;
    case S390_XMNM_STOCG:  prefix = "stocg"; break;
+   case S390_XMNM_STOCFH: prefix = "stocfh"; break;
+   case S390_XMNM_LOCFH:  prefix = "locgh"; break;
+   case S390_XMNM_LOCFHR: prefix = "locghr"; break;
+   case S390_XMNM_LOCHI:  prefix = "lochi"; break;
+   case S390_XMNM_LOCGHI: prefix = "locghi"; break;
+   case S390_XMNM_LOCHHI: prefix = "lochhi"; break;
    default:
       vpanic("cls_operand");
    }
@@ -416,6 +422,12 @@ s390_disasm(UInt command, ...)
          case S390_XMNM_LOCG:
          case S390_XMNM_STOC:
          case S390_XMNM_STOCG:
+         case S390_XMNM_STOCFH:
+         case S390_XMNM_LOCFH:
+         case S390_XMNM_LOCFHR:
+         case S390_XMNM_LOCHI:
+         case S390_XMNM_LOCGHI:
+         case S390_XMNM_LOCHHI:
             mask = va_arg(args, UInt);
             mnm = cls_operand(kind, mask);
             p  += vex_sprintf(p, "%s", mnemonic(mnm));

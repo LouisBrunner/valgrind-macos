@@ -83,7 +83,13 @@ enum {
    S390_XMNM_LOC = 7,
    S390_XMNM_LOCG = 8,
    S390_XMNM_STOC = 9,
-   S390_XMNM_STOCG = 10
+   S390_XMNM_STOCG = 10,
+   S390_XMNM_STOCFH = 11,
+   S390_XMNM_LOCFH = 12,
+   S390_XMNM_LOCFHR = 13,
+   S390_XMNM_LOCHI = 14,
+   S390_XMNM_LOCGHI = 15,
+   S390_XMNM_LOCHHI = 16
 };
 
 void s390_disasm(UInt command, ...);

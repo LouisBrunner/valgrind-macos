@@ -9289,36 +9289,37 @@ s390_insn_helper_call_emit(UChar *buf, const s390_insn *insn)
 {
    s390_cc_t cond;
    ULong target;
-   UChar *ptmp = buf;
+   Int delta;
    s390_helper_call *helper_call = insn->variant.helper_call.details;
 
    cond = helper_call->cond;
    target = helper_call->target;
 
-   if (cond != S390_CC_ALWAYS
-       && helper_call->rloc.pri != RLPri_None) {
-      /* The call might not happen (it isn't unconditional) and it
-         returns a result.  In this case we will need to generate a
-         control flow diamond to put 0x555..555 in the return
-         register(s) in the case where the call doesn't happen.  If
-         this ever becomes necessary, maybe copy code from the ARM
-         equivalent.  Until that day, just give up. */
-      return buf; /* To denote failure. */
-   }
+   const Bool not_always = (cond != S390_CC_ALWAYS);
+   const Bool not_void_return = (helper_call->rloc.pri != RLPri_None);
 
-   if (cond != S390_CC_ALWAYS) {
-      /* So we have something like this
-         if (cond) call X;
-         Y: ...
-         We convert this into
-         if (! cond) goto Y;        // BRC opcode; 4 bytes
-         call X;
-         Y:
-      */
+   /* We have this situation:
+      ( *** code in this braces is for  not_always && not_void_return*** )
+         ...
+         before:
+           brc{!cond} else
+           call_helper
+         preElse:
+         ***  j after ***
+         else:
+         *** load_64imm $0x5555555555555555, %%r2  *** // e.g. for Int RetLoc
+         after:
+         ...
+   */
+
+   // before:
+   UChar *pBefore = buf;
+   if (not_always) {
       /* 4 bytes (a BRC insn) to be filled in here */
       buf += 4;
    }
 
+   // call_helper
    /* Load the target address into a register, that
       (a) is not used for passing parameters to the helper and
       (b) can be clobbered by the callee
@@ -9336,12 +9337,45 @@ s390_insn_helper_call_emit(UChar *buf, const s390_insn *insn)
    buf = s390_emit_LFPC(buf, S390_REGNO_STACK_POINTER,          // restore FPC
                         S390_OFFSET_SAVED_FPC_C);
 
-   if (cond != S390_CC_ALWAYS) {
-      Int delta = buf - ptmp;
+   // preElse:
+   UChar* pPreElse = buf;
+   if (not_always && not_void_return) {
+      /* 4 bytes (a BRC insn) to be filled in here */
+      buf += 4;
+   }
 
+   // else:
+   UChar* pElse = buf;
+   if (not_always && not_void_return) {
+      switch (helper_call->rloc.pri) {
+      case RLPri_Int:
+         buf = s390_emit_load_64imm(buf, S390_REGNO_RETURN_VALUE, 0x5555555555555555ULL);
+         break;
+      default:
+         ppS390Instr(insn, True);
+         vpanic("s390_insn_helper_call_emit: invalid conditional RetLoc.");
+      }
+   }
+
+   // after:
+   UChar* pAfter = buf;
+
+   // fill "brc{!cond} else"
+   if(not_always)
+   {
+      delta = pElse - pBefore;
       delta >>= 1;  /* immediate constant is #half-words */
       vassert(delta > 0 && delta < (1 << 16));
-      s390_emit_BRC(ptmp, s390_cc_invert(cond), delta);
+      s390_emit_BRC(pBefore, s390_cc_invert(cond), delta);
+   }
+
+   // fill "brc{ALWAYS} after"
+   if (not_always && not_void_return)
+   {
+      delta = pAfter - pPreElse;
+      delta >>= 1;  /* immediate constant is #half-words */
+      vassert(delta > 0 && delta < (1 << 16));
+      s390_emit_BRC(pPreElse, S390_CC_ALWAYS, delta);
    }
 
    return buf;

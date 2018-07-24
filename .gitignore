@@ -1875,6 +1875,8 @@
 /none/tests/s390x/fixbr
 /none/tests/s390x/popcnt
 /none/tests/s390x/vector
+/none/tests/s390x/lsc2
+/none/tests/s390x/ppno
 
 # /none/tests/scripts/
 /none/tests/scripts/*.dSYM

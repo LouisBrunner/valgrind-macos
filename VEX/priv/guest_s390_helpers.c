@@ -365,6 +365,7 @@ s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, ULong *addr)
    s390_set_facility_bit(addr, S390_FAC_GIE,    1);
    s390_set_facility_bit(addr, S390_FAC_EXEXT,  1);
    s390_set_facility_bit(addr, S390_FAC_HIGHW,  1);
+   s390_set_facility_bit(addr, S390_FAC_LSC2,   1);
 
    s390_set_facility_bit(addr, S390_FAC_HFPMAS, 0);
    s390_set_facility_bit(addr, S390_FAC_HFPUNX, 0);
@@ -2525,6 +2526,75 @@ s390x_dirtyhelper_vec_binop(VexGuestS390XState *guest_state, ULong opcode,
 
 #endif
 
+/*-----------------------------------------------------------------*/
+/*--- Dirty helper for Perform Pseudorandom number instruction  ---*/
+/*-----------------------------------------------------------------*/
+
+/* Dummy helper that is needed to indicate load of parameter block.
+   We have to use it because dirty helper cannot have two memory side
+   effects.
+ */
+void s390x_dirtyhelper_PPNO_sha512_load_param_block( void )
+{
+}
+
+#if defined(VGA_s390x)
+
+/* IMPORTANT!
+   We return here bit mask where only supported functions are set to one.
+   If you implement new functions don't forget the supported array.
+ */
+void
+s390x_dirtyhelper_PPNO_query(VexGuestS390XState *guest_state, ULong r1, ULong r2)
+{
+   ULong supported[2] = {0x9000000000000000ULL, 0x0000000000000000ULL};
+   ULong *result = (ULong*) guest_state->guest_r1;
+
+   result[0] = supported[0];
+   result[1] = supported[1];
+}
+
+ULong
+s390x_dirtyhelper_PPNO_sha512(VexGuestS390XState *guest_state, ULong r1, ULong r2)
+{
+   ULong* op1 = (ULong*) (((ULong)(&guest_state->guest_r0)) + r1 * sizeof(ULong));
+   ULong* op2 = (ULong*) (((ULong)(&guest_state->guest_r0)) + r2 * sizeof(ULong));
+
+   register ULong reg0 asm("0") = guest_state->guest_r0;
+   register ULong reg1 asm("1") = guest_state->guest_r1;
+   register ULong reg2 asm("2") = op1[0];
+   register ULong reg3 asm("3") = op1[1];
+   register ULong reg4 asm("4") = op2[0];
+   register ULong reg5 asm("5") = op2[1];
+
+   ULong cc = 0;
+   asm volatile(".insn rre, 0xb93c0000, %%r2, %%r4\n"
+                "ipm %[cc]\n"
+                "srl %[cc], 28\n"
+                : "+d"(reg0), "+d"(reg1),
+                  "+d"(reg2), "+d"(reg3),
+                  "+d"(reg4), "+d"(reg5),
+                  [cc] "=d"(cc)
+                :
+                : "cc", "memory");
+
+   return cc;
+}
+
+#else
+
+void
+s390x_dirtyhelper_PPNO_query(VexGuestS390XState *guest_state, ULong r1, ULong r2)
+{
+}
+
+ULong
+s390x_dirtyhelper_PPNO_sha512(VexGuestS390XState *guest_state, ULong r1, ULong r2)
+{
+   return 0;
+}
+
+#endif /* VGA_s390x */
 /*---------------------------------------------------------------*/
 /*--- end                                guest_s390_helpers.c ---*/
 /*---------------------------------------------------------------*/

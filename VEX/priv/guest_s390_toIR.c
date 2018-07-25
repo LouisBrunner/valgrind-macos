@@ -1068,6 +1068,23 @@ gpr_w0_offset(UInt archreg)
    return gpr_offset(archreg) + 0;
 }
 
+/* Write an integer right-aligned into a gpr. */
+static __inline__ void
+put_gpr_int(UInt archreg, IRExpr *expr)
+{
+   UInt siz = sizeofIRType(typeOfIRExpr(irsb->tyenv, expr));
+
+   vassert(siz <= 8);
+   stmt(IRStmt_Put(gpr_offset(archreg) + 8 - siz, expr));
+}
+
+/* Read an integer of given type from a gpr. */
+static __inline__ IRExpr *
+get_gpr_int(UInt archreg, IRType ty)
+{
+   return IRExpr_Get(gpr_offset(archreg) + 8 - sizeofIRType(ty), ty);
+}
+
 /* Write word #0 of a gpr to the guest state. */
 static __inline__ void
 put_gpr_w0(UInt archreg, IRExpr *expr)
@@ -2205,6 +2222,16 @@ s390_format_RIE_RRUUU(const HChar *(*irgen)(UChar r1, UChar r2, UChar i3,
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC6(MNM, GPR, GPR, UINT, UINT, UINT), mnm, r1, r2, i3, i4,
                   i5);
+}
+
+static void
+s390_format_RIEv1(const HChar *(*irgen)(UChar r1, UShort i2, UChar m3),
+                  UChar r1, UShort i2, UChar m3)
+{
+   const HChar *mnm = irgen(r1, i2, m3);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      s390_disasm(ENC4(MNM, GPR, UINT, UINT), mnm, r1, i2, m3);
 }
 
 static void
@@ -5535,6 +5562,214 @@ s390_irgen_CLGRB(UChar r1, UChar r2, UChar m3, IRTemp op4addr)
    }
 
    return "clgrb";
+}
+
+/* Raise the appropriate signal for a compare-and-trap-instruction data
+   exception if the condition is true. */
+static void
+s390_trap_on_condition(IRExpr *cond)
+{
+   stmt(IRStmt_Exit(cond, Ijk_SigFPE, IRConst_U64(guest_IA_next_instr),
+                    S390X_GUEST_OFFSET(guest_IA)));
+}
+
+/* Handle the various flavors of compare (logical) and trap. */
+static void
+s390_irgen_CxRT(UChar m3, UChar r1, UChar r2, IRType type, UInt opc)
+{
+   IRExpr *cond;
+
+   if (m3 == 0) {
+      /* Trap never (NOP) */
+      return;
+   } else if (m3 == 14) {
+      /* Trap always */
+      cond = IRExpr_Const(IRConst_U1 (True));
+   } else {
+      IRTemp op1 = newTemp(type);
+      IRTemp op2 = newTemp(type);
+
+      assign(op1, get_gpr_int(r1, type));
+      assign(op2, get_gpr_int(r2, type));
+      cond = binop(Iop_CmpNE32,
+                   s390_call_calculate_icc(m3, opc, op1, op2), mkU32(0));
+   }
+   s390_trap_on_condition(cond);
+}
+
+static const HChar *
+s390_irgen_CGRT(UChar m3, UChar r1, UChar r2)
+{
+   s390_irgen_CxRT(m3, r1, r2, Ity_I64, S390_CC_OP_SIGNED_COMPARE);
+   return "cgrt";
+}
+
+static const HChar *
+s390_irgen_CRT(UChar m3, UChar r1, UChar r2)
+{
+   s390_irgen_CxRT(m3, r1, r2, Ity_I32, S390_CC_OP_SIGNED_COMPARE);
+   return "crt";
+}
+
+static const HChar *
+s390_irgen_CLGRT(UChar m3, UChar r1, UChar r2)
+{
+   s390_irgen_CxRT(m3, r1, r2, Ity_I64, S390_CC_OP_UNSIGNED_COMPARE);
+   return "clgrt";
+}
+
+static const HChar *
+s390_irgen_CLRT(UChar m3, UChar r1, UChar r2)
+{
+   s390_irgen_CxRT(m3, r1, r2, Ity_I32, S390_CC_OP_UNSIGNED_COMPARE);
+   return "clrt";
+}
+
+/* Handle the various flavors of compare (logical) immediate and trap. */
+static void
+s390_irgen_CxIT(UChar m3, UChar r1, UShort i2, IRType type, UInt opc)
+{
+   IRExpr *cond;
+
+   if (m3 == 0) {
+      /* Trap never (NOP) */
+      return;
+   } else if (m3 == 14) {
+      /* Trap always */
+      cond = IRExpr_Const(IRConst_U1 (True));
+   } else {
+      IRTemp op1 = newTemp(type);
+      IRTemp op2 = newTemp(type);
+
+      assign(op1, get_gpr_int(r1, type));
+      if (opc == S390_CC_OP_SIGNED_COMPARE) {
+         assign(op2, type == Ity_I64 ?
+                mkU64((ULong)(Short)i2) : mkU32((UInt)(Short)i2));
+      } else {
+         assign(op2, type == Ity_I64 ?
+                mkU64((ULong)i2) : mkU32((UInt)i2));
+      }
+      cond = binop(Iop_CmpNE32,
+                   s390_call_calculate_icc(m3, opc, op1, op2), mkU32(0));
+   }
+   s390_trap_on_condition(cond);
+}
+
+static const HChar *
+s390_irgen_CGIT(UChar r1, UShort i2, UChar m3)
+{
+   s390_irgen_CxIT(m3, r1, i2, Ity_I64, S390_CC_OP_SIGNED_COMPARE);
+   return "cgit";
+}
+
+static const HChar *
+s390_irgen_CIT(UChar r1, UShort i2, UChar m3)
+{
+   s390_irgen_CxIT(m3, r1, i2, Ity_I32, S390_CC_OP_SIGNED_COMPARE);
+   return "cit";
+}
+
+static const HChar *
+s390_irgen_CLGIT(UChar r1, UShort i2, UChar m3)
+{
+   s390_irgen_CxIT(m3, r1, i2, Ity_I64, S390_CC_OP_UNSIGNED_COMPARE);
+   return "clgit";
+}
+
+static const HChar *
+s390_irgen_CLFIT(UChar r1, UShort i2, UChar m3)
+{
+   s390_irgen_CxIT(m3, r1, i2, Ity_I32, S390_CC_OP_UNSIGNED_COMPARE);
+   return "clfit";
+}
+
+/* Handle the variants of compare logical and trap with memory operand. */
+static void
+s390_irgen_CLxT(UChar r1, UChar m3, IRTemp op2addr, IRType type, UInt opc)
+{
+   IRExpr *cond;
+
+   if (m3 == 0) {
+      /* Trap never (NOP) */
+      return;
+   } else if (m3 == 14) {
+      /* Trap always */
+      cond = IRExpr_Const(IRConst_U1 (True));
+   } else {
+      IRTemp op1 = newTemp(type);
+      IRTemp op2 = newTemp(type);
+
+      assign(op1, get_gpr_int(r1, type));
+      assign(op2, load(type, mkexpr(op2addr)));
+      cond = binop(Iop_CmpNE32,
+                   s390_call_calculate_icc(m3, opc, op1, op2), mkU32(0));
+   }
+   s390_trap_on_condition(cond);
+}
+
+static const HChar *
+s390_irgen_CLT(UChar r1, UChar m3, IRTemp op2addr)
+{
+   s390_irgen_CLxT(r1, m3, op2addr, Ity_I32, S390_CC_OP_UNSIGNED_COMPARE);
+   return "clt";
+}
+
+static const HChar *
+s390_irgen_CLGT(UChar r1, UChar m3, IRTemp op2addr)
+{
+   s390_irgen_CLxT(r1, m3, op2addr, Ity_I64, S390_CC_OP_UNSIGNED_COMPARE);
+   return "clgt";
+}
+
+static const HChar *
+s390_irgen_LAT(UChar r1, IRTemp op2addr)
+{
+   IRTemp val = newTemp(Ity_I32);
+   assign(val, load(Ity_I32, mkexpr(op2addr)));
+   put_gpr_w1(r1, mkexpr(val));
+   s390_trap_on_condition(binop(Iop_CmpEQ32, mkexpr(val), mkU32(0)));
+   return "lat";
+}
+
+static const HChar *
+s390_irgen_LGAT(UChar r1, IRTemp op2addr)
+{
+   IRTemp val = newTemp(Ity_I64);
+   assign(val, load(Ity_I64, mkexpr(op2addr)));
+   put_gpr_dw0(r1, mkexpr(val));
+   s390_trap_on_condition(binop(Iop_CmpEQ64, mkexpr(val), mkU64(0)));
+   return "lgat";
+}
+
+static const HChar *
+s390_irgen_LFHAT(UChar r1, IRTemp op2addr)
+{
+   IRTemp val = newTemp(Ity_I32);
+   assign(val, load(Ity_I32, mkexpr(op2addr)));
+   put_gpr_w0(r1, mkexpr(val));
+   s390_trap_on_condition(binop(Iop_CmpEQ32, mkexpr(val), mkU32(0)));
+   return "lfhat";
+}
+
+static const HChar *
+s390_irgen_LLGFAT(UChar r1, IRTemp op2addr)
+{
+   IRTemp val = newTemp(Ity_I64);
+   assign(val, unop(Iop_32Uto64, load(Ity_I32, mkexpr(op2addr))));
+   put_gpr_dw0(r1, mkexpr(val));
+   s390_trap_on_condition(binop(Iop_CmpEQ64, mkexpr(val), mkU64(0)));
+   return "llgfat";
+}
+
+static const HChar *
+s390_irgen_LLGTAT(UChar r1, IRTemp op2addr)
+{
+   IRTemp val = newTemp(Ity_I64);
+   assign(val, binop(Iop_And64, mkU64(0x7fffffff),
+                     unop(Iop_32Uto64, load(Ity_I32, mkexpr(op2addr)))));
+   put_gpr_dw0(r1, mkexpr(val));
+   s390_trap_on_condition(binop(Iop_CmpEQ64, mkexpr(val), mkU64(0)));
+   return "llgtat";
 }
 
 static const HChar *
@@ -16943,10 +17178,18 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb95b: s390_format_RRF_UUFR(s390_irgen_CXLFTR, ovl.fmt.RRF2.m3,
                                      ovl.fmt.RRF2.m4, ovl.fmt.RRF2.r1,
                                      ovl.fmt.RRF2.r2);  goto ok;
-   case 0xb960: /* CGRT */ goto unimplemented;
-   case 0xb961: /* CLGRT */ goto unimplemented;
-   case 0xb972: /* CRT */ goto unimplemented;
-   case 0xb973: /* CLRT */ goto unimplemented;
+   case 0xb960: s390_format_RRF_U0RR(s390_irgen_CGRT, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.r1, ovl.fmt.RRF2.r2,
+                                     S390_XMNM_CAB); goto ok;
+   case 0xb961: s390_format_RRF_U0RR(s390_irgen_CLGRT, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.r1, ovl.fmt.RRF2.r2,
+                                     S390_XMNM_CAB); goto ok;
+   case 0xb972: s390_format_RRF_U0RR(s390_irgen_CRT, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.r1, ovl.fmt.RRF2.r2,
+                                     S390_XMNM_CAB); goto ok;
+   case 0xb973: s390_format_RRF_U0RR(s390_irgen_CLRT, ovl.fmt.RRF2.m3,
+                                     ovl.fmt.RRF2.r1, ovl.fmt.RRF2.r2,
+                                     S390_XMNM_CAB); goto ok;
    case 0xb980: s390_format_RRE_RR(s390_irgen_NGR, ovl.fmt.RRE.r1,
                                    ovl.fmt.RRE.r2);  goto ok;
    case 0xb981: s390_format_RRE_RR(s390_irgen_OGR, ovl.fmt.RRE.r1,
@@ -17796,7 +18039,11 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                 ovl.fmt.RXY.dh2);  goto ok;
    case 0xe30000000083ULL: /* MSGC */ goto unimplemented;
    case 0xe30000000084ULL: /* MG */ goto unimplemented;
-   case 0xe30000000085ULL: /* LGAT */ goto unimplemented;
+   case 0xe30000000085ULL: s390_format_RXY_RRRD(s390_irgen_LGAT, ovl.fmt.RXY.r1,
+                                                ovl.fmt.RXY.x2, ovl.fmt.RXY.b2,
+                                                ovl.fmt.RXY.dl2,
+                                                ovl.fmt.RXY.dh2);  goto ok;
+
    case 0xe30000000086ULL: s390_format_RXY_RRRD(s390_irgen_MLG, ovl.fmt.RXY.r1,
                                                 ovl.fmt.RXY.x2, ovl.fmt.RXY.b2,
                                                 ovl.fmt.RXY.dl2,
@@ -17853,9 +18100,18 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                 ovl.fmt.RXY.x2, ovl.fmt.RXY.b2,
                                                 ovl.fmt.RXY.dl2,
                                                 ovl.fmt.RXY.dh2);  goto ok;
-   case 0xe3000000009cULL: /* LLGTAT */ goto unimplemented;
-   case 0xe3000000009dULL: /* LLGFAT */ goto unimplemented;
-   case 0xe3000000009fULL: /* LAT */ goto unimplemented;
+   case 0xe3000000009cULL: s390_format_RXY_RRRD(s390_irgen_LLGTAT, ovl.fmt.RXY.r1,
+                                                ovl.fmt.RXY.x2, ovl.fmt.RXY.b2,
+                                                ovl.fmt.RXY.dl2,
+                                                ovl.fmt.RXY.dh2);  goto ok;
+   case 0xe3000000009dULL: s390_format_RXY_RRRD(s390_irgen_LLGFAT, ovl.fmt.RXY.r1,
+                                                ovl.fmt.RXY.x2, ovl.fmt.RXY.b2,
+                                                ovl.fmt.RXY.dl2,
+                                                ovl.fmt.RXY.dh2);  goto ok;
+   case 0xe3000000009fULL: s390_format_RXY_RRRD(s390_irgen_LAT, ovl.fmt.RXY.r1,
+                                                ovl.fmt.RXY.x2, ovl.fmt.RXY.b2,
+                                                ovl.fmt.RXY.dl2,
+                                                ovl.fmt.RXY.dh2);  goto ok;
    case 0xe300000000c0ULL: s390_format_RXY_RRRD(s390_irgen_LBH, ovl.fmt.RXY.r1,
                                                 ovl.fmt.RXY.x2, ovl.fmt.RXY.b2,
                                                 ovl.fmt.RXY.dl2,
@@ -17880,7 +18136,10 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                 ovl.fmt.RXY.x2, ovl.fmt.RXY.b2,
                                                 ovl.fmt.RXY.dl2,
                                                 ovl.fmt.RXY.dh2);  goto ok;
-   case 0xe300000000c8ULL: /* LFHAT */ goto unimplemented;
+   case 0xe300000000c8ULL: s390_format_RXY_RRRD(s390_irgen_LFHAT, ovl.fmt.RXY.r1,
+                                                ovl.fmt.RXY.x2, ovl.fmt.RXY.b2,
+                                                ovl.fmt.RXY.dl2,
+                                                ovl.fmt.RXY.dh2);  goto ok;
    case 0xe300000000caULL: s390_format_RXY_RRRD(s390_irgen_LFH, ovl.fmt.RXY.r1,
                                                 ovl.fmt.RXY.x2, ovl.fmt.RXY.b2,
                                                 ovl.fmt.RXY.dl2,
@@ -18224,7 +18483,10 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                 ovl.fmt.RSY.r3, ovl.fmt.RSY.b2,
                                                 ovl.fmt.RSY.dl2,
                                                 ovl.fmt.RSY.dh2);  goto ok;
-   case 0xeb0000000023ULL: /* CLT */ goto unimplemented;
+   case 0xeb0000000023ULL: s390_format_RSY_RURD(s390_irgen_CLT, ovl.fmt.RSY.r1,
+                                                ovl.fmt.RSY.r3, ovl.fmt.RSY.b2,
+                                                ovl.fmt.RSY.dl2,
+                                                ovl.fmt.RSY.dh2);  goto ok;
    case 0xeb0000000024ULL: s390_format_RSY_RRRD(s390_irgen_STMG, ovl.fmt.RSY.r1,
                                                 ovl.fmt.RSY.r3, ovl.fmt.RSY.b2,
                                                 ovl.fmt.RSY.dl2,
@@ -18234,7 +18496,10 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                 ovl.fmt.RSY.r3, ovl.fmt.RSY.b2,
                                                 ovl.fmt.RSY.dl2,
                                                 ovl.fmt.RSY.dh2);  goto ok;
-   case 0xeb000000002bULL: /* CLGT */ goto unimplemented;
+   case 0xeb000000002bULL: s390_format_RSY_RURD(s390_irgen_CLGT, ovl.fmt.RSY.r1,
+                                                ovl.fmt.RSY.r3, ovl.fmt.RSY.b2,
+                                                ovl.fmt.RSY.dl2,
+                                                ovl.fmt.RSY.dh2);  goto ok;
    case 0xeb000000002cULL: s390_format_RSY_RURD(s390_irgen_STCMH,
                                                 ovl.fmt.RSY.r1, ovl.fmt.RSY.r3,
                                                 ovl.fmt.RSY.b2, ovl.fmt.RSY.dl2,
@@ -18498,10 +18763,22 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                 ovl.fmt.RIE_RRPU.r2,
                                                 ovl.fmt.RIE_RRPU.i4,
                                                 ovl.fmt.RIE_RRPU.m3);  goto ok;
-   case 0xec0000000070ULL: /* CGIT */ goto unimplemented;
-   case 0xec0000000071ULL: /* CLGIT */ goto unimplemented;
-   case 0xec0000000072ULL: /* CIT */ goto unimplemented;
-   case 0xec0000000073ULL: /* CLFIT */ goto unimplemented;
+   case 0xec0000000070ULL: s390_format_RIEv1(s390_irgen_CGIT,
+                                             ovl.fmt.RIEv1.r1,
+                                             ovl.fmt.RIEv1.i2,
+                                             ovl.fmt.RIEv1.m3); goto ok;
+   case 0xec0000000071ULL: s390_format_RIEv1(s390_irgen_CLGIT,
+                                             ovl.fmt.RIEv1.r1,
+                                             ovl.fmt.RIEv1.i2,
+                                             ovl.fmt.RIEv1.m3); goto ok;
+   case 0xec0000000072ULL: s390_format_RIEv1(s390_irgen_CIT,
+                                             ovl.fmt.RIEv1.r1,
+                                             ovl.fmt.RIEv1.i2,
+                                             ovl.fmt.RIEv1.m3); goto ok;
+   case 0xec0000000073ULL: s390_format_RIEv1(s390_irgen_CLFIT,
+                                             ovl.fmt.RIEv1.r1,
+                                             ovl.fmt.RIEv1.i2,
+                                             ovl.fmt.RIEv1.m3); goto ok;
    case 0xec0000000076ULL: s390_format_RIE_RRPU(s390_irgen_CRJ,
                                                 ovl.fmt.RIE_RRPU.r1,
                                                 ovl.fmt.RIE_RRPU.r2,

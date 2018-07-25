@@ -1591,6 +1591,10 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          VG_(synth_sigbus)(tid);
          break;
 
+      case VEX_TRC_JMP_SIGFPE:
+         VG_(synth_sigfpe)(tid, 0);
+         break;
+
       case VEX_TRC_JMP_SIGFPE_INTDIV:
          VG_(synth_sigfpe)(tid, VKI_FPE_INTDIV);
          break;

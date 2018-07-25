@@ -6917,6 +6917,7 @@ s390_jump_kind_as_string(IRJumpKind kind)
    case Ijk_InvalICache: return "Invalidate";
    case Ijk_NoRedir:     return "NoRedir";
    case Ijk_SigTRAP:     return "SigTRAP";
+   case Ijk_SigFPE:      return "SigFPE";
    case Ijk_SigSEGV:     return "SigSEGV";
    case Ijk_SigBUS:      return "SigBUS";
    case Ijk_Sys_syscall: return "Sys_syscall";
@@ -10388,6 +10389,7 @@ s390_insn_xassisted_emit(UChar *buf, const s390_insn *insn,
    case Ijk_InvalICache: trcval = VEX_TRC_JMP_INVALICACHE; break;
    case Ijk_NoRedir:     trcval = VEX_TRC_JMP_NOREDIR;     break;
    case Ijk_SigTRAP:     trcval = VEX_TRC_JMP_SIGTRAP;     break;
+   case Ijk_SigFPE:      trcval = VEX_TRC_JMP_SIGFPE;      break;
    case Ijk_SigSEGV:     trcval = VEX_TRC_JMP_SIGSEGV;     break;
    case Ijk_Boring:      trcval = VEX_TRC_JMP_BORING;      break;
       /* We don't expect to see the following being assisted. */

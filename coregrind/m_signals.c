@@ -2157,8 +2157,8 @@ void VG_(synth_sigtrap)(ThreadId tid)
 // Synthesise a SIGFPE.
 void VG_(synth_sigfpe)(ThreadId tid, UInt code)
 {
-// Only tested on mips32 and mips64
-#if !defined(VGA_mips32) && !defined(VGA_mips64)
+// Only tested on mips32, mips64, and s390x
+#if !defined(VGA_mips32) && !defined(VGA_mips64) && !defined(VGA_s390x)
    vg_assert(0);
 #else
    vki_siginfo_t info;

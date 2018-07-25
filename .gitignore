@@ -1878,6 +1878,7 @@
 /none/tests/s390x/vector
 /none/tests/s390x/lsc2
 /none/tests/s390x/ppno
+/none/tests/s390x/traps
 
 # /none/tests/scripts/
 /none/tests/scripts/*.dSYM

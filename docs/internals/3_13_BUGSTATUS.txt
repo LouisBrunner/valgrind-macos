@@ -3,103 +3,38 @@ Created Mon 21 Nov 12:58:23 CET 2016.  All bugs after the release of
 3.12.0 go in here.  Also, this contains bugs from 3_11_BUGSTATUS.txt
 that didn't get fixed in 3.12.  These are marked "(carried over)".
 
-=== VEX/amd64 ==========================================================
+=== Debuginfo reader ===================================================
 
 (carried over)
-356715  vex amd64->IR: 0xC4 0xE2 0x7D 0x13 0x4 0x4A 0xC5 0xFC
-        vcvtph2ps (%rdx,%rcx,2),%ymm0
+353192  Debug info/data section not detected on AMD64
+        [To do with rwx, combined code+data sections]
 
 (carried over)
-369409  vex amd64->IR: 0x48 0xF 0xC7 0xF0 0x72 0x2 0xE2 0xF8 (
+355197  Too strong assert in variable debug info code
+        [Still relevant?]
 
 (carried over)
-372828  vex amd64->IR: 0x66 0x4D 0xF 0x38 0xF6 0xD2 0x66 0x4D
+365750  Valgrind fails on binary with .text section not in default place
+        [Horrible hack to do with relocating .text section]
 
 (carried over)
-373166  vex amd64->IR: 0xFF 0xFF 0x48 0x85 0xC0 0x74 0x8 0x4D 0x89 0xE7
-	[not clear what's going on here]
+372182  Support more languages/demangling styles than just C++ (and Rust)
 
-(carried over, AMD XOP-prefixed insns)
-356611  vex amd64->IR: 0x8F 0xEA 0xF8 0x10 0xC9 0x3 0x1D 0x0
-        [== 328357, still open]
+=== Documentation ======================================================
 
-(carried over, AMD XOP-prefixed insns)
-339596  AMD64 xop instructions unsupported.
-        vex amd64->IR: 0x8F 0xE8 0x78 0xCD 0xC1 0x4 0xC5 0xF9
-        [has patch, could possibly take it, but needs
-         cleanup/verification with Mark]
-        == 356138
+382099  valgrind release archive is not maintained
 
-(carried over, AMD XOP-prefixed insns)
-369053  AMD64 fma4 instructions missing 256 bit support
-
-(carried over, AMD XOP-prefixed insns)
-375008  amd64->IR: 0x8F 0x6A 0x78 0x10 0xD8 0x4 0x4 0x0 0x0 0x8F
-
-381819  unhandled instruction bytes: 0x8F 0xEA 0x78 0x10 0xD0 0x8 0x4 0x0 0x0
-AMD XOP-prefixed, apparently == 322586 and 328357
-
-=== VEX/arm ============================================================
+=== GDB server =========================================================
 
 (carried over)
-352630  valgrind: Unrecognised instruction at address 0x4fc4d33.
-        [what insn is this?]
+351792  vgdb doesn't support remote file transfers
+	[wishlist]
 
 (carried over)
-355526  disInstr(arm): unhandled instruction: 0x1823E91
-        [what insn is this?]
+356174  Enhance the embedded gdbserver to allow LLDB to use it
 
-(carried over)
-n-i-bz  Remove limit on strd's negative immediates
-        [dev@, Michael Daniels, 19 Nov 2015, easy fix, should land]
-
-(carried over)
-373990  Potential shift left overflow in guest_arm_toIR.c
-
-(carried over)
-369509  ARMv8.1 LSE instructions are not supported
-
-(carried over)
-369723  __builtin_longjmp not supported in clang/llvm on Android arm64 target
-        [has patch at android-review.googlesource.com]
-
-(carried over)
-373990  Potential shift left overflow in guest_arm_toIR.c
-	[suggested fix available]
-
-(carried over)
-378249  Valgrind Crashed on raspberian armv71 instrtuction set
-
-=== VEX/arm64 ==========================================================
-
-(carried over)
-369509  ARMv8.1 LSE instructions are not supported
-
-(carried over)
-377966  disInstr(arm64): unhandled instruction 0xD50B7425
-
-381085  Use of SXTX in a memory address is treated as an illegal instruction
-        on Aarch64
-Legit, but low prio
-
-=== VEX/x86 ============================================================
-
-=== VEX/mips ===========================================================
-
-=== VEX/ppc ============================================================
-
-(carried over)
-361405  disInstr(ppc): unhandled instruction: 0xFF81010C
-
-=== VEX/s390x ==========================================================
-
-(carried over)
-366413  s390x: New z13 instructions not implemented
-        [Per cborntraeger, is not important for 3.12.0]
-
-=== VEX general ========================================================
-
-=== Syscalls/ioctls on Linux ===========================================
+=== KernelInterface ====================================================
+=== KernelInterface/Linux ==============================================
 
 (carried over)
 352742  Custom allocator using sbrk() fails after about 800MB when running
@@ -181,186 +116,7 @@ Legit, but low prio
 
 382352  WARNING: unhandled ppc32-linux syscall: 365
 
-=== Debuginfo reader ===================================================
-
-(carried over)
-353192  Debug info/data section not detected on AMD64
-        [To do with rwx, combined code+data sections]
-
-(carried over)
-355197  Too strong assert in variable debug info code
-        [Still relevant?]
-
-(carried over)
-365750  Valgrind fails on binary with .text section not in default place
-        [Horrible hack to do with relocating .text section]
-
-(carried over)
-372182  Support more languages/demangling styles than just C++ (and Rust)
-
-=== Tools/Memcheck =====================================================
-
-(carried over)
-352364  ppc64: --expensive-definedness-checks=yes is not quite working here
-
-(carried over)
-353282  False uninitialised memory after bittwiddling
-
-(carried over)
-358980  32 byte leak reported when code uses dlopen and links against pthread
-	[native program crashes as well]
-
-(carried over)
-361504  dlopen()/dlclose() and shared object usage check
-	[wishlist]
-
-(carried over)
-361810  valgrind duplicate stdin after fork
-	[supposedly a bug in glibc when __libc_freeres should not be run]
-
-(carried over)
-364279  False "Uninitialized" on atomic_compare_exchange
-
-(carried over)
-366035  valgrind misses buffer overflow, segfaults in malloc in localtime
-
-(carried over)
-366817  VALGRIND_MEMPOOL_CHANGE has a performance bug
-
-(carried over)
-371989  PCMPISTRM $0x72 validity bit propagation is imprecise
-
-(carried over)
-369854  Valgrind reports an Invalid Read in __intel_new_memcpy
-        Should be handled by --partial-loads-ok=yes
-
-(carried over)
-371966  No uninitialised values reported with PGI -Mstack_arrays
-
-(carried over)
-375415  free list of blocks, mempool blocks and describe addr
-        do not work properly together
-
-(carried over)
-371770  Memleak trace back for overwritten or freed memory pointers
-	[wishlist]
-
-(carried over)
-377463  Uninitialized parameters to VALGRIND_MAKE_MEM_NOACCESS() not warned
-        about. [wishlist]
-
-(carried over)
-378622  False positive with GCC 6.3.1 and -funswitch-loops (-O3)
-
-(carried over)
-378627  False positive with GCC 6.3.1 and -fno-ipa-cp-clone (-O3)
-
-381304  RFE: --track-origins=yes identifies system call source of
-        Uninitialized value
-Wishlist, low prio
-
-381326  recognize re-convergent fanout before complaining about Uninitialized
-Wishlist, low prio
-
-382041  False uninitialized on bit packing when the compiler chooses XOR
-        to implement masking and shifting (x86_64)
-Doesn't seem like a widespread problem
-
-=== Tools/DRD ==========================================================
-
-(carried over)
-356374  Assertion 'DRD_(g_threadinfo)[tid].pt_threadid
-        != INVALID_POSIX_THREADID' failed
-
-=== Tools/Helgrind =====================================================
-
-(carried over)
-360557  helgrind reports data race which I can't see (involves rwlocks)
-        [probably a legit bug]
-
-(carried over)
-363740  Possible data race in vgPlain_amd64_linux_REDIR_FOR_vgettimeofday
-
-(carried over)
-371396  helgrind and drd pth_cond_destroy_busy testcase hang with
-        new glibc cond var implementation (workaround committed as 16097)
-
-(carried over)
-376257  helgrind history full speed up using a cached stack
-
-380350  RFE: --trace-fork-join in helgrind mode
-Wishlist
-
-=== Tools/SGCheck ======================================================
-
-=== Tools/Massif =======================================================
-
-=== Tools/Cachegrind ===================================================
-
-381838  Unused field tag_shift of struct cache_t2
-
-=== Tools/Callgrind ====================================================
-
-(carried over)
-369456  callgrind_control failed to find an active callgrind run.
-        OSX specific
-
-380942  Experimental: add MESI protocol simulation to Callgrind
-
-=== Tools/Lackey =======================================================
-
-=== other/amd64 ========================================================
-
-(carried over)
-375171  VG_(scheduler): run_innerloop detected host state invariant failure
-        == 374482
-        == 374850
-
-=== other/x86 ==========================================================
-
-=== other/ppc ==========================================================
-
-(carried over)
-365208  valgrind stuck after redirecting "memcpy"
-
-=== other/arm ==========================================================
-
-(carried over)
-356675  callgrind test apk in android 5.0.2
-        [Unclear what this is.]
-
-(carried over)
-364533  Process terminating with default action of signal 4 (SIGILL): dumping
-        core, : at 0x4000E7C: ??? (in /lib/ld-uClibc.so.0)
-
-(carried over)
-374814  VALGRIND INTERNAL ERROR: signal 11 (SIGSEGV) - exiting
-        possibly TLS related
-
-=== other/arm64 ========================================================
-
-(carried over)
-369723  __builtin_longjmp not supported in clang/llvm on Android arm64 target
-        Has patch
-
-(carried over)
-371439  Get coredump working on arm64
-	[has an incomplete patch]
-
-=== other/mips =========================================================
-
-=== other/s390 =========================================================
-
-=== other/Android ======================================================
-
-(carried over)
-374814  VALGRIND INTERNAL ERROR: signal 11 (SIGSEGV) - exiting
-
-379764  support x86-64 android
-
-379878  most #if ... _linux_android checks wrong
-
-=== other/OS X and Syscalls+ioctls/OS X ================================
+=== KernelInterface/OSX ================================================
 
 (carried over)
 351632  UNKNOWN fcntl 97 on OS X 10.11
@@ -433,21 +189,7 @@ Has a bunch of patches; worth looking at?
 381815  Assertion 'newfd >= VG_(fd_hard_limit)' failed
 Has patch; dunno if it's any good
 
-=== other/Win32 ========================================================
-
-=== other/*BSD =========================================================
-
-(carried over)
-368873  Please add FreeBSD to supported OS list
-
-=== GDB server =========================================================
-
-(carried over)
-351792  vgdb doesn't support remote file transfers
-	[wishlist]
-
-(carried over)
-356174  Enhance the embedded gdbserver to allow LLDB to use it
+=== MPI ================================================================
 
 === Output =============================================================
 
@@ -461,25 +203,123 @@ Has patch; dunno if it's any good
 (carried over)
 374719  some spelling fixes
 
-=== MPI ================================================================
+=== Tools ==============================================================
+=== Tools/Cachegrind ===================================================
 
-=== Uncategorised/run ==================================================
+381838  Unused field tag_shift of struct cache_t2
 
-(carried over)
-359249  valgrind unable to load 64-bit linux executable
-        linked with -mcmodel=medium
-
-(carried over)
-362680  --error-exitcode not honored when file descriptor leaks are found
+=== Tools/Callgrind ====================================================
 
 (carried over)
-377006  valgrind/memcheck segfaults under certain kernel versions (amd64)
-        but not others.
+369456  callgrind_control failed to find an active callgrind run.
+        OSX specific
+
+380942  Experimental: add MESI protocol simulation to Callgrind
+
+=== Tools/DRD ==========================================================
 
 (carried over)
-379273  Phone restarts when run with valgrind
+356374  Assertion 'DRD_(g_threadinfo)[tid].pt_threadid
+        != INVALID_POSIX_THREADID' failed
 
+=== Tools/Helgrind =====================================================
+
+(carried over)
+360557  helgrind reports data race which I can't see (involves rwlocks)
+        [probably a legit bug]
+
+(carried over)
+363740  Possible data race in vgPlain_amd64_linux_REDIR_FOR_vgettimeofday
+
+(carried over)
+371396  helgrind and drd pth_cond_destroy_busy testcase hang with
+        new glibc cond var implementation (workaround committed as 16097)
+
+(carried over)
+376257  helgrind history full speed up using a cached stack
+
+380350  RFE: --trace-fork-join in helgrind mode
+Wishlist
+
+=== Tools/Lackey =======================================================
+
+=== Tools/Massif =======================================================
+
+=== Tools/Memcheck =====================================================
+
+(carried over)
+352364  ppc64: --expensive-definedness-checks=yes is not quite working here
+
+(carried over)
+353282  False uninitialised memory after bittwiddling
+
+(carried over)
+358980  32 byte leak reported when code uses dlopen and links against pthread
+	[native program crashes as well]
+
+(carried over)
+361504  dlopen()/dlclose() and shared object usage check
+	[wishlist]
+
+(carried over)
+361810  valgrind duplicate stdin after fork
+	[supposedly a bug in glibc when __libc_freeres should not be run]
+
+(carried over)
+364279  False "Uninitialized" on atomic_compare_exchange
+
+(carried over)
+366035  valgrind misses buffer overflow, segfaults in malloc in localtime
+
+(carried over)
+366817  VALGRIND_MEMPOOL_CHANGE has a performance bug
+
+(carried over)
+371989  PCMPISTRM $0x72 validity bit propagation is imprecise
+
+(carried over)
+369854  Valgrind reports an Invalid Read in __intel_new_memcpy
+        Should be handled by --partial-loads-ok=yes
+
+(carried over)
+371966  No uninitialised values reported with PGI -Mstack_arrays
+
+(carried over)
+375415  free list of blocks, mempool blocks and describe addr
+        do not work properly together
+
+(carried over)
+371770  Memleak trace back for overwritten or freed memory pointers
+	[wishlist]
+
+(carried over)
+377463  Uninitialized parameters to VALGRIND_MAKE_MEM_NOACCESS() not warned
+        about. [wishlist]
+
+(carried over)
+378622  False positive with GCC 6.3.1 and -funswitch-loops (-O3)
+
+(carried over)
+378627  False positive with GCC 6.3.1 and -fno-ipa-cp-clone (-O3)
+
+381304  RFE: --track-origins=yes identifies system call source of
+        Uninitialized value
+Wishlist, low prio
+
+381326  recognize re-convergent fanout before complaining about Uninitialized
+Wishlist, low prio
+
+382041  False uninitialized on bit packing when the compiler chooses XOR
+        to implement masking and shifting (x86_64)
+Doesn't seem like a widespread problem
+
+=== Tools/SGCheck ======================================================
+
+=== Uncategorised ======================================================
 === Uncategorised/build ================================================
+
+(carried over)
+357010  drd regression tests fail to compile with Intel compiler
 
 (carried over)
 359920  Configure fails with relative DESTDIR
@@ -501,10 +341,7 @@ Has patch; dunno if it's any good
 
 382083  Failure to detect MUSL consistently.
 
-=== Intel Compiler problems ============================================
-
-(carried over)
-357010  drd regression tests fail to compile with Intel compiler
+=== Uncategorised/run ==================================================
 
 (carried over)
 357011  Memcheck regression tests do not generate expected frame numbers
@@ -519,11 +356,177 @@ Has patch; dunno if it's any good
 357014  Helgrind regression tests do not match expected results
         if compiled with intel compiler
 
-=== Docs ===============================================================
+(carried over)
+359249  valgrind unable to load 64-bit linux executable
+        linked with -mcmodel=medium
 
-382099  valgrind release archive is not maintained
+(carried over)
+362680  --error-exitcode not honored when file descriptor leaks are found
 
-========================================================================
+(carried over)
+377006  valgrind/memcheck segfaults under certain kernel versions (amd64)
+        but not others.
+
+(carried over)
+379273  Phone restarts when run with valgrind
+
+=== VEX ================================================================
+=== VEX/amd64 ==========================================================
+
+(carried over)
+356715  vex amd64->IR: 0xC4 0xE2 0x7D 0x13 0x4 0x4A 0xC5 0xFC
+        vcvtph2ps (%rdx,%rcx,2),%ymm0
+
+(carried over)
+369409  vex amd64->IR: 0x48 0xF 0xC7 0xF0 0x72 0x2 0xE2 0xF8 (
+
+(carried over)
+372828  vex amd64->IR: 0x66 0x4D 0xF 0x38 0xF6 0xD2 0x66 0x4D
+
+(carried over)
+373166  vex amd64->IR: 0xFF 0xFF 0x48 0x85 0xC0 0x74 0x8 0x4D 0x89 0xE7
+	[not clear what's going on here]
+
+(carried over, AMD XOP-prefixed insns)
+356611  vex amd64->IR: 0x8F 0xEA 0xF8 0x10 0xC9 0x3 0x1D 0x0
+        [== 328357, still open]
+
+(carried over, AMD XOP-prefixed insns)
+339596  AMD64 xop instructions unsupported.
+        vex amd64->IR: 0x8F 0xE8 0x78 0xCD 0xC1 0x4 0xC5 0xF9
+        [has patch, could possibly take it, but needs
+         cleanup/verification with Mark]
+        == 356138
+
+(carried over, AMD XOP-prefixed insns)
+369053  AMD64 fma4 instructions missing 256 bit support
+
+(carried over, AMD XOP-prefixed insns)
+375008  amd64->IR: 0x8F 0x6A 0x78 0x10 0xD8 0x4 0x4 0x0 0x0 0x8F
+
+381819  unhandled instruction bytes: 0x8F 0xEA 0x78 0x10 0xD0 0x8 0x4 0x0 0x0
+AMD XOP-prefixed, apparently == 322586 and 328357
+
+=== VEX/arm32 ==========================================================
+
+(carried over)
+352630  valgrind: Unrecognised instruction at address 0x4fc4d33.
+        [what insn is this?]
+
+(carried over)
+355526  disInstr(arm): unhandled instruction: 0x1823E91
+        [what insn is this?]
+
+(carried over)
+n-i-bz  Remove limit on strd's negative immediates
+        [dev@, Michael Daniels, 19 Nov 2015, easy fix, should land]
+
+(carried over)
+373990  Potential shift left overflow in guest_arm_toIR.c
+
+(carried over)
+369509  ARMv8.1 LSE instructions are not supported
+
+(carried over)
+369723  __builtin_longjmp not supported in clang/llvm on Android arm64 target
+        [has patch at android-review.googlesource.com]
+
+(carried over)
+373990  Potential shift left overflow in guest_arm_toIR.c
+	[suggested fix available]
+
+(carried over)
+378249  Valgrind Crashed on raspberian armv71 instrtuction set
+
+=== VEX/arm64 ==========================================================
+
+(carried over)
+369509  ARMv8.1 LSE instructions are not supported
+
+(carried over)
+377966  disInstr(arm64): unhandled instruction 0xD50B7425
+
+381085  Use of SXTX in a memory address is treated as an illegal instruction
+        on Aarch64
+Legit, but low prio
+
+=== VEX/mips ===========================================================
+
+=== VEX/other ==========================================================
+
+=== VEX/ppc ============================================================
+
+(carried over)
+361405  disInstr(ppc): unhandled instruction: 0xFF81010C
+
+=== VEX/s390x ==========================================================
+
+(carried over)
+366413  s390x: New z13 instructions not implemented
+        [Per cborntraeger, is not important for 3.12.0]
+
+=== VEX/x86 ============================================================
+
+=== zz_other ===========================================================
+=== zz_other/Android ===================================================
+
+(carried over)
+374814  VALGRIND INTERNAL ERROR: signal 11 (SIGSEGV) - exiting
+
+379764  support x86-64 android
+
+379878  most #if ... _linux_android checks wrong
+
+=== zz_other/amd64 =====================================================
+
+(carried over)
+375171  VG_(scheduler): run_innerloop detected host state invariant failure
+        == 374482
+        == 374850
+
+=== zz_other/arm32 =====================================================
+
+(carried over)
+356675  callgrind test apk in android 5.0.2
+        [Unclear what this is.]
+
+(carried over)
+364533  Process terminating with default action of signal 4 (SIGILL): dumping
+        core, : at 0x4000E7C: ??? (in /lib/ld-uClibc.so.0)
+
+(carried over)
+374814  VALGRIND INTERNAL ERROR: signal 11 (SIGSEGV) - exiting
+        possibly TLS related
+
+=== zz_other/arm64 =====================================================
+
+(carried over)
+369723  __builtin_longjmp not supported in clang/llvm on Android arm64 target
+        Has patch
+
+(carried over)
+371439  Get coredump working on arm64
+	[has an incomplete patch]
+
+=== zz_other/*BSD ======================================================
+
+(carried over)
+368873  Please add FreeBSD to supported OS list
+
+=== zz_other/mips ======================================================
+
+=== zz_other/ppc =======================================================
+
+(carried over)
+365208  valgrind stuck after redirecting "memcpy"
+
+=== zz_other/s390 ======================================================
+
+=== zz_other/Win32 =====================================================
+
+=== zz_other/x86 =======================================================
+
+
 ========================================================================
 ========================================================================
 ========================================================================
@@ -599,8 +602,6 @@ Should be fixed.  Try again with ./mach gtest
 *
 n-i-bz  Remove limit on strd's negative immediates
         [dev@, Michael Daniels, 19 Nov 2015, easy fix, should land]
-
---------------------
 
 ========================================================================
 ========================================================================

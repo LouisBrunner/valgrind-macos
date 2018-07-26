@@ -16325,7 +16325,7 @@ static const HChar *
 s390_irgen_LOCGHI(UChar r1, UChar m3, UShort i2, UChar unused)
 {
    next_insn_if(binop(Iop_CmpEQ32, s390_call_calculate_cond(m3), mkU32(0)));
-   put_gpr_dw0(r1, mkU64((UInt)(Int)(Short)i2));
+   put_gpr_dw0(r1, mkU64((ULong)(Long)(Short)i2));
 
    return "locghi";
 }

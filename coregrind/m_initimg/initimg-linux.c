@@ -699,9 +699,9 @@ Addr setup_client_stack( void*  init_sp,
             }
 #           elif defined(VGP_s390x_linux)
             {
-               /* Advertise hardware features "below" TE only.  TE and VXRS
-                  (and anything above) are not supported by Valgrind. */
-               auxv->u.a_val &= VKI_HWCAP_S390_TE - 1;
+               /* Advertise hardware features "below" TE and VXRS.  TE itself
+                  and anything above VXRS is not supported by Valgrind. */
+               auxv->u.a_val &= (VKI_HWCAP_S390_TE - 1) | VKI_HWCAP_S390_VXRS;
             }
 #           elif defined(VGP_arm64_linux)
             {

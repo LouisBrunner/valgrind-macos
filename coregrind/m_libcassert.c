@@ -424,7 +424,7 @@ static void report_and_quit ( const HChar* report,
                               const UnwindStartRegs* startRegsIN )
 {
    show_sched_status_wrk (True,  // host_stacktrace
-                          False, // stack_usage
+                          True,  // stack_usage
                           False, // exited_threads
                           startRegsIN);
    VG_(printf)(

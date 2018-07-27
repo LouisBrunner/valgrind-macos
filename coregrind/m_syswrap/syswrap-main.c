@@ -1628,7 +1628,7 @@ SyscallInfo *syscallInfo;
 
 /* The scheduler needs to be able to zero out these records after a
    fork, hence this is exported from m_syswrap. */
-void VG_(clear_syscallInfo) ( Int tid )
+void VG_(clear_syscallInfo) ( ThreadId tid )
 {
    vg_assert(syscallInfo);
    vg_assert(tid >= 0 && tid < VG_N_THREADS);
@@ -1636,10 +1636,16 @@ void VG_(clear_syscallInfo) ( Int tid )
    syscallInfo[tid].status.what = SsIdle;
 }
 
-Bool VG_(is_in_syscall) ( Int tid )
+Bool VG_(is_in_syscall) ( ThreadId tid )
 {
    vg_assert(tid >= 0 && tid < VG_N_THREADS);
    return (syscallInfo[tid].status.what != SsIdle);
+}
+
+Word VG_(is_in_syscall_no) (ThreadId tid )
+{
+   vg_assert(tid >= 0 && tid < VG_N_THREADS);
+   return syscallInfo[tid].orig_args.sysno;
 }
 
 static void ensure_initialised ( void )

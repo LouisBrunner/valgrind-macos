@@ -49,10 +49,13 @@ extern void VG_(client_syscall) ( ThreadId tid, UInt trc );
 extern void VG_(post_syscall)   ( ThreadId tid );
 
 /* Clear this module's private state for thread 'tid' */
-extern void VG_(clear_syscallInfo) ( Int tid );
+extern void VG_(clear_syscallInfo) ( ThreadId tid );
 
 // Returns True if the given thread is currently in a system call
-extern Bool VG_(is_in_syscall) ( Int tid );
+extern Bool VG_(is_in_syscall) ( ThreadId tid );
+
+// If VG_(is_in_syscall) (tid), returns the sysno the given thread is in
+extern Word VG_(is_in_syscall_no) (ThreadId tid );
 
 // Fix up a thread's state when syscall is interrupted by a signal.
 extern void VG_(fixup_guest_state_after_syscall_interrupted)(

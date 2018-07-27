@@ -20,6 +20,9 @@ that didn't get fixed in 3.12.  These are marked "(carried over)".
 (carried over)
 372182  Support more languages/demangling styles than just C++ (and Rust)
 
+382978  valgrind: LOAD_PDB_DEBUGINFO: \032 header character not found.
+        possible invalid/unsupported pdb file format
+
 === Documentation ======================================================
 
 382099  valgrind release archive is not maintained
@@ -116,7 +119,14 @@ that didn't get fixed in 3.12.  These are marked "(carried over)".
 
 382352  WARNING: unhandled ppc32-linux syscall: 365
 
-=== KernelInterface/OSX ================================================
+383516  valgrind uses getgroups16 in ppc32_linux but should be using
+        getgroups. This causes stack smash
+Possibly easy fix; queried.  NB: pertains to V syscalls, not the client.
+
+383901  PTP_ENABLE_PPS ioctl
+Has patch, but looks rather big for what seems like a small problem
+
+=== KernelInterface/OS X ===============================================
 
 (carried over)
 351632  UNKNOWN fcntl 97 on OS X 10.11
@@ -140,6 +150,7 @@ that didn't get fixed in 3.12.  These are marked "(carried over)".
 
 (carried over)
 353470  memcheck/tests/execve2 fails on OS X 10.11
+        == 382708
 
 (carried over)
 353471  memcheck/tests/x86/xor-undef-x86 fails on OS X 10.11
@@ -189,6 +200,8 @@ Has a bunch of patches; worth looking at?
 381815  Assertion 'newfd >= VG_(fd_hard_limit)' failed
 Has patch; dunno if it's any good
 
+383199  valgrind crash on unhanded syscall called from libsqlite3.dylib
+
 === MPI ================================================================
 
 === Output =============================================================
@@ -216,6 +229,8 @@ Has patch; dunno if it's any good
 
 380942  Experimental: add MESI protocol simulation to Callgrind
 
+382498  callgrind: improve error message when unable to write callgrind.out.*
+
 === Tools/DRD ==========================================================
 
 (carried over)
@@ -240,6 +255,9 @@ Has patch; dunno if it's any good
 
 380350  RFE: --trace-fork-join in helgrind mode
 Wishlist
+
+384261  Assert failure on helgrind with the SIDT instruction
+Probably a trivial fix
 
 === Tools/Lackey =======================================================
 
@@ -341,6 +359,11 @@ Doesn't seem like a widespread problem
 
 382083  Failure to detect MUSL consistently.
 
+382490  glibc version check in configuration step doesn't use CPPFLAGS variable
+
+383811  Failure to build on macOS 10.13 High Sierra (OS X)
+        == 385910  clang level not detected on OS X Sierra for Xcode 9
+
 === Uncategorised/run ==================================================
 
 (carried over)
@@ -407,6 +430,9 @@ Doesn't seem like a widespread problem
 381819  unhandled instruction bytes: 0x8F 0xEA 0x78 0x10 0xD0 0x8 0x4 0x0 0x0
 AMD XOP-prefixed, apparently == 322586 and 328357
 
+383010  Add support for AVX-512 instructions
+We should probably merge this, if it doesn't break anything
+
 === VEX/arm32 ==========================================================
 
 (carried over)
@@ -437,6 +463,9 @@ n-i-bz  Remove limit on strd's negative immediates
 
 (carried over)
 378249  Valgrind Crashed on raspberian armv71 instrtuction set
+
+384442  ARM: bad pc in complaint if instruction changes pc
+Earlywriteback problems; low prio
 
 === VEX/arm64 ==========================================================
 
@@ -615,36 +644,12 @@ Also, this contains bugs from 3_12_BUGSTATUS.txt that didn't get fixed in
 
 Wed 10 May 10:24:16 CEST 2017
 
-382407  vg_perf needs "--terse" command line option
-382435  Incorrect English in message
-382490  glibc version check in configuration step doesn't use CPPFLAGS variable
-382498  callgrind: improve error message when unable to write callgrind.out.*
-382515  valgrind: "Assertion 'di->have_dinfo' failed." on wine's
-        dlls/mscoree/tests/mscoree.c
 382563  MIPS MSA ASE support
-382708  Got "EXEC FAILED: I can't recover from execve() failing, so I'm dying."
-        in Mac OSX
-382978  valgrind: LOAD_PDB_DEBUGINFO: \032 header character not found.
-        possible invalid/unsupported pdb file format
-382980  valgrind crash on armv7
-382998  xml-socket doesn't work
-383010  Add support for AVX-512 instructions
-383199  valgrind crash on unhanded syscall called from libsqlite3.dylib
-383275  [mipsel] valgrind: m_xarray.c:162 (ensureSpaceXA):
-        Assertion '!xa->arr' failed.
-383516  valgrind uses getgroups16 in ppc32_linux but should be using
-        getgroups. This causes stack smash
-383602  -11410-- VALGRIND INTERNAL ERROR: Valgrind received a signal 11
-383630  Number of errors detected are changing over use of num_callers
-383723  MacOS 10.12.x: UNKNOWN workq_ops option 128, and ud2 opcode
-383811  Failure to build on macOS 10.13 High Sierra
-383901  PTP_ENABLE_PPS ioctl
-384096  HTML page for AddrCheck is still present in valgrind-www repository
-384156  vex x86->IR: unhandled instruction bytes: 0x67 0xE8 0x6B 0x6A
-384230  vex x86->IR: unhandled instruction bytes: 0x67 0xE8 0xAB 0x68
-384261  Assert failure on helgrind with the SIDT instruction
+** fixed, but need to be closed
+
 384337  performance improvements to VEX register allocator v2 and v3
-384442  ARM: bad pc in complaint if instruction changes pc
+** I think this can be closed.  Queried Ivo.
+
 384526  reduce number of spill instructions in VEX register allocator v3
 384584  list first callee saved registers for AMD64, X86, and PPC architectures
 384630  The 'impossible' happened (__ubsan_handle_shift_out_of_bounds) as soon
@@ -693,7 +698,6 @@ Wed 10 May 10:24:16 CEST 2017
 366413  s390x: New z13 instructions not implemented
 385843  [PATCH] ARM: mark caller-save VFP registes as trashed by calls
 385868  glibc ld.so _dl_runtime_resolve_avx_slow conditional jump warning
-385910  clang level not detected on OS X Sierra for Xcode 9
 385912  none/tests/rlimit_nofile fails on newer glibc/kernel
 385939  Option to exit on first error
 386115  vex x86->IR: 0x67 0xE8 0xD3 0x8B any program
@@ -838,3 +842,5 @@ Wed 10 May 10:24:16 CEST 2017
 Tue 24 Jul 11:50:41 CEST 2018
 
 Also: make arm32 resume with sigcontext regs after signal return (395991)
+
+396839] New: s390x: Trap instructions not implemented

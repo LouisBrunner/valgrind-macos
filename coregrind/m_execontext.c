@@ -537,6 +537,7 @@ static ExeContext* record_ExeContext_wrk2 ( const Addr* ips, UInt n_ips )
 
    new_ec->n_ips = n_ips;
    new_ec->chain = ec_htab[hash];
+   new_ec->epoch = DiEpoch_INVALID();
    ec_htab[hash] = new_ec;
 
    /* Resize the hash table, maybe? */

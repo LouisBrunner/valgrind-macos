@@ -505,6 +505,10 @@ SizeT VG_(am_get_VgStack_unused_szB)( const VgStack* stack, SizeT limit )
    return i * sizeof(UInt);
 }
 
+Addr VG_(am_valgrind_stack_low_addr)( const VgStack* stack)
+{
+   return (Addr)&stack->bytes[VG_STACK_GUARD_SZB];
+}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

@@ -361,6 +361,9 @@ extern VgStack* VG_(am_alloc_VgStack)( /*OUT*/Addr* initial_sp );
 extern SizeT VG_(am_get_VgStack_unused_szB)( const VgStack* stack,
                                              SizeT limit ); 
 
+/* Returns the Addr of the lowest usable byte of stack. */
+extern Addr VG_(am_valgrind_stack_low_addr)( const VgStack* stack);
+
 // DDD: this is ugly
 #if defined(VGO_darwin)
 typedef 

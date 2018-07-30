@@ -329,15 +329,19 @@ static void print_thread_state (Bool stack_usage,
                      prefix,
                      (void*)VG_(get_SP)(i));
    }
-   if (stack_usage && stack != 0)
+   if (stack_usage && stack != 0) {
+      Addr stack_low_addr = VG_(am_valgrind_stack_low_addr) (stack);
+
       VG_(printf)
          ("%svalgrind stack range: [%p %p] top usage: %lu of %lu\n",
           prefix,
-          (void*)stack, (void*)((Addr)stack + VG_(clo_valgrind_stacksize) - 1),
+          (void*)stack_low_addr,
+          (void*)((Addr)stack_low_addr + VG_(clo_valgrind_stacksize) - 1),
           VG_(clo_valgrind_stacksize)
           - VG_(am_get_VgStack_unused_szB) (stack,
                                             VG_(clo_valgrind_stacksize)),
           (SizeT) VG_(clo_valgrind_stacksize));
+   }
 }
 
 // Print the scheduler status.

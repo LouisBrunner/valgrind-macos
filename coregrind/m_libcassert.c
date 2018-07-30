@@ -336,7 +336,7 @@ static void print_thread_state (Bool stack_usage,
          ("%svalgrind stack range: [%p %p] top usage: %lu of %lu\n",
           prefix,
           (void*)stack_low_addr,
-          (void*)((Addr)stack_low_addr + VG_(clo_valgrind_stacksize) - 1),
+          (void*)(stack_low_addr + VG_(clo_valgrind_stacksize) - 1),
           VG_(clo_valgrind_stacksize)
           - VG_(am_get_VgStack_unused_szB) (stack,
                                             VG_(clo_valgrind_stacksize)),

@@ -1604,7 +1604,10 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_sendmsg,           sys_sendmsg),          // 370
    LINXY(__NR_recvfrom,          sys_recvfrom),         // 371
    LINXY(__NR_recvmsg,           sys_recvmsg),          // 372
-   LINX_(__NR_shutdown,          sys_shutdown)          // 373
+   LINX_(__NR_shutdown,          sys_shutdown),         // 373
+
+   /* Explicitly not supported on i386 yet. */
+   GENX_(__NR_arch_prctl,        sys_ni_syscall)        // 384
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

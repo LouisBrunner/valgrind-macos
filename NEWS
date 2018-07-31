@@ -137,6 +137,7 @@ where XXXXXX is the bug number as listed below.
 395682  Accept read-only PT_LOAD segments and .rodata by ld -z separate-code
         == 384727
 396887  arch_prctl should return EINVAL on unknown option
+397012  glibc ld.so uses arch_prctl on i386
 
 n-i-bz  Fix missing workq_ops operations (macOS)
 n-i-bz  fix bug in strspn replacement

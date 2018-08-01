@@ -580,14 +580,14 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
    Int core_fd;
    NSegment const * seg;
    ESZ(Ehdr) ehdr;
-   ESZ(Phdr) *phdrs;
+   ESZ(Phdr) *phdrs = NULL;
    Int num_phdrs;
    Int i, idx;
    UInt off;
    struct note *notelist, *note;
    UInt notesz;
    struct vki_elf_prpsinfo prpsinfo;
-   Addr *seg_starts;
+   Addr *seg_starts = NULL;
    Int n_seg_starts;
 
    if (VG_(clo_log_fname_unexpanded) != NULL) {
@@ -598,7 +598,7 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
 
    vg_assert(coreext);
    vg_assert(basename);
-   buf = VG_(malloc)( "coredump-elf.mec.1", 
+   buf = VG_(malloc)( "coredump-elf.mec.1",
                       VG_(strlen)(coreext) + VG_(strlen)(basename)
                          + 100/*for the two %ds. */ );
 
@@ -625,7 +625,7 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
       }
 
       if (sr_isError(sres) && sr_Err(sres) != VKI_EEXIST)
-	 return;		/* can't create file */
+	 goto cleanup; /* can't create file */
    }
 
    /* Get the client segments */
@@ -700,7 +700,7 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
 
       fill_phdr(&phdrs[idx], seg, off,
                 (seg->end - seg->start + 1 + off) < max_size);
-      
+
       off += phdrs[idx].p_filesz;
 
       idx++;
@@ -712,7 +712,7 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
 
    for(note = notelist; note != NULL; note = note->next)
       write_note(core_fd, note);
-   
+
    VG_(lseek)(core_fd, phdrs[1].p_offset, VKI_SEEK_SET);
 
    for(i = 0, idx = 1; i < n_seg_starts; i++) {
@@ -731,9 +731,14 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
       idx++;
    }
 
-   VG_(free)(seg_starts);
-
    VG_(close)(core_fd);
+
+ cleanup:
+   if (VG_(clo_log_fname_unexpanded) != NULL)
+      VG_(free)(basename);
+   VG_(free)(buf);
+   VG_(free)(seg_starts);
+   VG_(free)(phdrs);
 }
 
 void VG_(make_coredump)(ThreadId tid, const vki_siginfo_t *si, ULong max_size)

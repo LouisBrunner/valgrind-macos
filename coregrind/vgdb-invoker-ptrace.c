@@ -970,14 +970,16 @@ Bool invoker_invoke_gdbserver (pid_t pid)
       // vgdb speaking with a 64 bit executable.
       const int regsize = 8;
       int rw;
-      
+
       /* give check arg in rdi */
       user_mod.regs.rdi = check;
 
       /* push return address on stack : return to breakaddr */
+      sp &= ~0xf; // keep the stack aligned on 16 bytes ...
+      sp = sp - 128; // do not touch the amd64 redzone
       sp = sp - regsize;
       DEBUG(1, "push bad_return return address ptrace_write_memory\n");
-      rw = ptrace_write_memory(pid, sp, 
+      rw = ptrace_write_memory(pid, sp,
                                &bad_return,
                                sizeof(bad_return));
       if (rw != 0) {

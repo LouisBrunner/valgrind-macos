@@ -28,6 +28,25 @@ Should look into this, but I can't see how it can have failed.
 
 386602  .build-id/*/*.debug symbols not checked for --extra-debuginfo-path
 
+388174  valgrind with Wine quits with "Assertion 'cfsi_fits' failed"
+Is this still valid?
+
+388493  exp-sgcheck fails on DW_TAG_subrange_type
+
+388526  Inconsistent severity in message text: "WARNING: Serious error"
+
+388706  Long bunches of warnings: "warning: evaluate_Dwarf3_Expr:
+        unhandled DW_OP_ 0xf2"
+
+389412  Failed assertion in readelf.c, line 697 for clang binaries with
+        coverage information
+
+390498  Valgrind reports leaks & other errors
+        in vgpreload_memcheck-arm64-linux.so
+(arm64 debuginfo reading?)
+
+390871  ELF debug info reader confused with multiple .rodata* sections
+
 === Documentation ======================================================
 
 382099  valgrind release archive is not maintained
@@ -137,6 +156,15 @@ Looks possibly serious, but also a bit old.  Is this still relevant?
 386427  Valgrind unsupported clone on Android
 Has patches which look plausible.  Should investigate.
 
+388786  Support bpf syscall in amd64 Linux
+Has patches
+
+388880  ppc32-linux Unimplemented syscall 283 (splice)
+ppc32, 3.11.0
+
+390553  update xen support to Xen 4.10
+Should possibly take
+
 === KernelInterface/OS X ===============================================
 
 (carried over)
@@ -215,6 +243,10 @@ Has patch; dunno if it's any good
 
 387690  glfwInit() causes valgrind to crash
 
+390269  WARNING: unhandled amd64-darwin syscall: unix:464
+
+390754  unhandled amd64-darwin syscall: unix:216 (open_dprotected_np)
+
 === MPI ================================================================
 
 === Output =============================================================
@@ -228,6 +260,12 @@ Has patch; dunno if it's any good
 
 (carried over)
 374719  some spelling fixes
+
+390310  Output summaries in XML files
+Wishlist, has patch
+
+390866  "at" is doubled in "Block was alloc'd at"
+Trivial to fix, but could cause breakage for consumers?
 
 === Tools ==============================================================
 === Tools/Cachegrind ===================================================
@@ -243,6 +281,13 @@ Has patch; dunno if it's any good
 380942  Experimental: add MESI protocol simulation to Callgrind
 
 382498  callgrind: improve error message when unable to write callgrind.out.*
+
+388740  Ordering by timestamp instead of core number
+
+=== Tools/DHAT =========================================================
+
+390792  'impossible' happened in dh_handle_noninsn_write()
+easy fix?
 
 === Tools/DRD ==========================================================
 
@@ -351,6 +396,13 @@ General OS X badness, probably not actionable
 
 386945  Bogus memcheck errors on ppc64(le) when using strcmp() with gcc-7
 
+388787  Support for C++17 new/delete
+This seems like it is important.  Check with mjw.
+
+391772  Memcheck reports conditional jumps if I use raw pointer,
+        but not for std::vector
+Almost certainly invalid
+
 === Tools/SGCheck ======================================================
 
 === Uncategorised ======================================================
@@ -386,6 +438,8 @@ General OS X badness, probably not actionable
 
 384729  __libc_freeres inhibits cross-platform valgrind
 Wishlist
+
+391311  [Patch] Fix arm64 valgrind tests compilation with clang
 
 === Uncategorised/run ==================================================
 
@@ -473,6 +527,18 @@ mjw filed this.  Do we need to action it?
 
 386851  Please add support for CPUID override
 
+389116  vex amd64->IR: 0xC5 0xFC 0xC2 0xC0 0xF 0xC4 0xC2 0x7D 0x18 0x49
+
+389349  vex amd64->IR: 0xF3 0xF 0x1E 0xFA 0x48 0x8B 0x5 0xBD 0xAF 0x51
+
+389700  vex amd64->IR: 0xC4 0xE3 0x7D 0x1D 0xED 0x0 0xC5 0xF9 0xC5 0xF5
+
+391148  Unhandled AVX instruction vmovq %xmm9,%xmm1
+Potentially serious
+
+391845  Unrecognised instruction: __svml_irem8_l9
+Probably invalid (3.11.0)
+
 === VEX/arm32 ==========================================================
 
 (carried over)
@@ -519,6 +585,15 @@ sub.w   r12, sp, r10, lsl #7
 
 385843  [PATCH] ARM: mark caller-save VFP registes as trashed by calls
 Is potentially serious
+
+387810  arm: unhandled instruction: 0xEBAD 0x1AC8
+On Android, may be important?
+
+388084  armv7l Unrecognised instruction "bkpt" 0xE1200070
+
+388603  ARM Advanced SIMD vfma.f32 with Q or D registers reports unsupported
+        instruction
+Potentially serious
 
 === VEX/arm64 ==========================================================
 
@@ -713,66 +788,11 @@ Created Tues 24 July 2018.  All bugs after the release of 3.13.0 go in here.
 Also, this contains bugs from 3_12_BUGSTATUS.txt that didn't get fixed in
 3.12.  These are marked "(carried over)".
 
-Wed 10 May 10:24:16 CEST 2017
-
-382563  MIPS MSA ASE support
-** fixed, but need to be closed
-
-384337  performance improvements to VEX register allocator v2 and v3
-** I think this can be closed.  Queried Ivo.
-
-Fri 27 Jul 17:22:10 CEST 2018
-
-387810  arm: unhandled instruction: 0xEBAD 0x1AC8
-387940  amd64->IR: 0xF 0xC7 0xF0 0x89 0x44  (__x86_rdrand)
-388017  Callgrind produces empty log for pulseaudio
-388084  armv7l Unrecognised instruction "bkpt" 0xE1200070
-388174  valgrind with Wine quits with "Assertion 'cfsi_fits' failed"
-388407  vex x86->IR: unhandled instruction bytes: 0x67 0xE8 0xAB 0x29
-388493  exp-sgcheck fails on DW_TAG_subrange_type
-388526  Inconsistent severity in message text: "WARNING: Serious error"
-388603  ARM Advanced SIMD vfma.f32 with Q or D registers reports unsupported
-        instruction
-388664  unhandled arm64-linux syscall: 117  (ptrace)
-388706  Long bunches of warnings: "warning: evaluate_Dwarf3_Expr:
-        unhandled DW_OP_ 0xf2"
-388740  Ordering by timestamp instead of core number
-388786  Support bpf syscall in amd64 Linux
-388787  Support for C++17 new/delete
-388847  Valgrind throwing unhandled errors
-388862  false positive of __wcsnlen_sse4_1 with glibc 2.26
-388880  ppc32-linux Unimplemented syscall 283 (splice)
-388895  LibVEX_FrontEnd assertion failure:
-        `0 == sizeof(VexGuestX86State) % LibVEX_GUEST_STATE_ALIGN'
-389065  valgrind meets gcc flag -Wlogical-op
-389116  vex amd64->IR: 0xC5 0xFC 0xC2 0xC0 0xF 0xC4 0xC2 0x7D 0x18 0x49
-389349  vex amd64->IR: 0xF3 0xF 0x1E 0xFA 0x48 0x8B 0x5 0xBD 0xAF 0x51
-389373  exp-sgcheck fails with sg_instrument_IRStmt the 'impossible' happened
-389412  Failed assertion in readelf.c, line 697 for clang binaries with
-        coverage information
-389470  Redirection of index function in ld.so.1 breaks compatibility
-        on old environments
-389700  vex amd64->IR: 0xC4 0xE3 0x7D 0x1D 0xED 0x0 0xC5 0xF9 0xC5 0xF5
-390175  Valgrind internal assertion failure on program that runs normally
-390269  WARNING: unhandled amd64-darwin syscall: unix:464
-390310  Output summaries in XML files
-390471  suppression by specification of source-file line number
-390498  Valgrind reports leaks & other errors
-        in vgpreload_memcheck-arm64-linux.so
-390524  use of 0b prefix for binary constants
-390553  update xen support to Xen 4.10
-390723  make xtree dump files world wide readable, similar to log files
-390754  unhandled amd64-darwin syscall: unix:216 (open_dprotected_np)
-390765  Stack traces given by Memcheck aren't helpful
-390792  'impossible' happened in dh_handle_noninsn_write()
-390866  "at" is doubled in "Block was alloc'd at"
-390871  ELF debug info reader confused with multiple .rodata* sections
-391148  Unhandled AVX instruction vmovq %xmm9,%xmm1
 391164  constraint bug in tests/ppc64/test_isa_2_07_part1.c for mtfprwa
-391311  [Patch] Fix arm64 valgrind tests compilation with clang
-391772  Memcheck reports conditional jumps if I use raw pointer,
-        but not for std::vector
-391845  Unrecognised instruction: __svml_irem8_l9
+** should be closed?  queried carl
+
+Mon  6 Aug 11:04:50 CEST 2018
+
 391853  Makefile.all.am:L247 and @SOLARIS_UNDEF_LARGESOURCE@ being empty
 391861  Massif assertion failed
 392118  unhandled amd64-linux syscall: 332 [KDE executables]

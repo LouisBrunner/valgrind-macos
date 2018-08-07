@@ -694,6 +694,8 @@
 #define __NR_memfd_create            (__NR_Linux + 318)
 #define __NR_bpf                     (__NR_Linux + 319)
 #define __NR_execveat                (__NR_Linux + 320)
+#define __NR_userfaultfd             (__NR_Linux + 321)
+#define __NR_membarrier              (__NR_Linux + 322)
 
 #else
 #error unknown mips64 abi

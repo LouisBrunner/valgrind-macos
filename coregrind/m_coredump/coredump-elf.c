@@ -574,7 +574,7 @@ static
 void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
 {
    HChar* buf = NULL;
-   const HChar *basename = "vgcore";
+   HChar *basename;
    const HChar *coreext = "";
    Int seq = 0;
    Int core_fd;
@@ -594,7 +594,8 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
       coreext = ".core";
       basename = VG_(expand_file_name)("--log-file",
                                        VG_(clo_log_fname_unexpanded));
-   }
+   } else
+      basename = VG_(strdup)("coredump-elf.mec.1", "vgcore");
 
    vg_assert(coreext);
    vg_assert(basename);
@@ -722,7 +723,7 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
 	 continue;
 
       if (phdrs[idx].p_filesz > 0) {
-	 vg_assert(VG_(lseek)(core_fd, phdrs[idx].p_offset, VKI_SEEK_SET) 
+	 vg_assert(VG_(lseek)(core_fd, phdrs[idx].p_offset, VKI_SEEK_SET)
                    == phdrs[idx].p_offset);
 	 vg_assert(seg->end - seg->start + 1 >= phdrs[idx].p_filesz);
 
@@ -734,8 +735,7 @@ void make_elf_coredump(ThreadId tid, const vki_siginfo_t *si, ULong max_size)
    VG_(close)(core_fd);
 
  cleanup:
-   if (VG_(clo_log_fname_unexpanded) != NULL)
-      VG_(free)(basename);
+   VG_(free)(basename);
    VG_(free)(buf);
    VG_(free)(seg_starts);
    VG_(free)(phdrs);

@@ -127,6 +127,7 @@ where XXXXXX is the bug number as listed below.
 390471  suppression by specification of source-file line number
 390723  make xtree dump files world wide readable, similar to log files
 391861  Massif Assertion 'n_ips >= 1 && n_ips <= VG_(clo_backtrace_size)'
+392118  unhandled amd64-linux syscall: 332 (statx)
 392449  callgrind not clearing the number of calls properly
 393017  Add missing support for xsmaxcdp instruction, bug fixes for xsmincdp,
         lxssp, stxssp and stxvl instructions.

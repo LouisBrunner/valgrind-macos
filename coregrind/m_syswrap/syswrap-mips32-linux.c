@@ -1065,6 +1065,8 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_memfd_create,            sys_memfd_create),            // 354
    //..
    LINX_(__NR_membarrier,              sys_membarrier),              // 358
+   //..
+   LINXY(__NR_statx,                   sys_statx)                    // 366
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) (UInt sysno)

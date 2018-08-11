@@ -846,7 +846,10 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_memfd_create,      sys_memfd_create),     // 319
 
 //   LIN__(__NR_kexec_file_load,   sys_ni_syscall),       // 320
-//   LIN__(__NR_bpf,               sys_ni_syscall)        // 321
+//   LIN__(__NR_bpf,               sys_ni_syscall),       // 321
+
+
+   LINXY(__NR_statx,             sys_statx),             // 332
 
    LINX_(__NR_membarrier,        sys_membarrier),        // 324
 };

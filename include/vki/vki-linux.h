@@ -1381,6 +1381,44 @@ struct vki_robust_list_head {
 #define VKI_S_IWOTH 00002
 #define VKI_S_IXOTH 00001
 
+struct vki_statx_timestamp {
+        __vki_s64   tv_sec;
+        __vki_u32   tv_nsec;
+        __vki_s32   __reserved;
+};
+
+struct vki_statx {
+        /* 0x00 */
+        __vki_u32   stx_mask;       /* What results were written [uncond] */
+        __vki_u32   stx_blksize;    /* Preferred general I/O size [uncond] */
+        __vki_u64   stx_attributes; /* Flags conveying information about the file [uncond] */
+        /* 0x10 */
+        __vki_u32   stx_nlink;      /* Number of hard links */
+        __vki_u32   stx_uid;        /* User ID of owner */
+        __vki_u32   stx_gid;        /* Group ID of owner */
+        __vki_u16   stx_mode;       /* File mode */
+        __vki_u16   __spare0[1];
+        /* 0x20 */
+        __vki_u64   stx_ino;        /* Inode number */
+        __vki_u64   stx_size;       /* File size */
+        __vki_u64   stx_blocks;     /* Number of 512-byte blocks allocated */
+        __vki_u64   stx_attributes_mask; /* Mask to show what's supported in stx_attributes */
+        /* 0x40 */
+        struct vki_statx_timestamp  stx_atime;      /* Last access time */
+        struct vki_statx_timestamp  stx_btime;      /* File creation time */
+        struct vki_statx_timestamp  stx_ctime;      /* Last attribute change time */
+        struct vki_statx_timestamp  stx_mtime;      /* Last data modification time */
+        /* 0x80 */
+        __vki_u32   stx_rdev_major; /* Device ID of special file [if bdev/cdev] */
+        __vki_u32   stx_rdev_minor;
+        __vki_u32   stx_dev_major;  /* ID of device containing file [uncond] */
+        __vki_u32   stx_dev_minor;
+        /* 0x90 */
+        __vki_u64   __spare2[14];   /* Spare space for future expansion */
+        /* 0x100 */
+};
+
+
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/dirent.h
 //----------------------------------------------------------------------

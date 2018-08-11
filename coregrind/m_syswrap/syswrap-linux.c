@@ -3659,6 +3659,22 @@ PRE(sys_syncfs)
    PRE_REG_READ1(long, "syncfs", unsigned int, fd);
 }
 
+PRE(sys_statx)
+{
+   FUSE_COMPATIBLE_MAY_BLOCK();
+   PRINT("sys_statx ( %ld, %#" FMT_REGWORD "x(%s), %ld, %ld, %#" FMT_REGWORD "x )",
+         ARG1,ARG2,(char*)(Addr)ARG2,ARG3,ARG4,ARG5);
+   PRE_REG_READ5(long, "statx",
+                 int, dirfd, char *, file_name, int, flags,
+                 unsigned int, mask, struct statx *, buf);
+   PRE_MEM_RASCIIZ( "statx(file_name)", ARG2 );
+   PRE_MEM_WRITE( "statx(buf)", ARG5, sizeof(struct vki_statx) );
+}
+POST(sys_statx)
+{
+   POST_MEM_WRITE( ARG5, sizeof(struct vki_statx) );
+}
+
 /* ---------------------------------------------------------------------
    utime wrapper
    ------------------------------------------------------------------ */

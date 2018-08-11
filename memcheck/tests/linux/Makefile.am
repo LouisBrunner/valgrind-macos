@@ -21,6 +21,7 @@ EXTRA_DIST = \
 	syscalls-2007.vgtest syscalls-2007.stderr.exp \
 	syslog-syscall.vgtest syslog-syscall.stderr.exp \
 	sys-openat.vgtest sys-openat.stderr.exp sys-openat.stdout.exp \
+	sys-statx.vgtest sys-statx.stderr.exp \
 	timerfd-syscall.vgtest timerfd-syscall.stderr.exp \
 	with-space.stderr.exp with-space.stdout.exp with-space.vgtest \
 	proc-auxv.vgtest proc-auxv.stderr.exp getregset.vgtest \
@@ -40,6 +41,7 @@ check_PROGRAMS = \
 	stack_switch \
 	syscalls-2007 \
 	syslog-syscall \
+	sys-statx \
 	timerfd-syscall \
 	proc-auxv
 

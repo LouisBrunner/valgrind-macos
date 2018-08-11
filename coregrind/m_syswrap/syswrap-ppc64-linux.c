@@ -937,7 +937,9 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_renameat2,         sys_renameat2),        // 357
 
    LINXY(__NR_getrandom,         sys_getrandom),        // 359
-   LINXY(__NR_memfd_create,      sys_memfd_create)      // 360
+   LINXY(__NR_memfd_create,      sys_memfd_create),     // 360
+
+   LINXY(__NR_statx,             sys_statx),            // 383
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

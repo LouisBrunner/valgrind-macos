@@ -1606,6 +1606,8 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_recvmsg,           sys_recvmsg),          // 372
    LINX_(__NR_shutdown,          sys_shutdown),         // 373
 
+   LINXY(__NR_statx,             sys_statx),            // 383
+
    /* Explicitly not supported on i386 yet. */
    GENX_(__NR_arch_prctl,        sys_ni_syscall)        // 384
 };

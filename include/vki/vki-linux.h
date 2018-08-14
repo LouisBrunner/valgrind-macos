@@ -242,6 +242,8 @@ typedef		__vki_u64	vki_uint64_t;
 
 typedef		__vki_u16	__vki_le16;
 
+#define __vki_aligned_u64 __vki_u64 __attribute__((aligned(8)))
+
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/limits.h
 //----------------------------------------------------------------------
@@ -4887,6 +4889,30 @@ enum vki_bpf_map_type {
 	VKI_BPF_MAP_TYPE_SOCKHASH,
 };
 
+enum vki_bpf_prog_type {
+	VKI_BPF_PROG_TYPE_UNSPEC,
+	VKI_BPF_PROG_TYPE_SOCKET_FILTER,
+	VKI_BPF_PROG_TYPE_KPROBE,
+	VKI_BPF_PROG_TYPE_SCHED_CLS,
+	VKI_BPF_PROG_TYPE_SCHED_ACT,
+	VKI_BPF_PROG_TYPE_TRACEPOINT,
+	VKI_BPF_PROG_TYPE_XDP,
+	VKI_BPF_PROG_TYPE_PERF_EVENT,
+	VKI_BPF_PROG_TYPE_CGROUP_SKB,
+	VKI_BPF_PROG_TYPE_CGROUP_SOCK,
+	VKI_BPF_PROG_TYPE_LWT_IN,
+	VKI_BPF_PROG_TYPE_LWT_OUT,
+	VKI_BPF_PROG_TYPE_LWT_XMIT,
+	VKI_BPF_PROG_TYPE_SOCK_OPS,
+	VKI_BPF_PROG_TYPE_SK_SKB,
+	VKI_BPF_PROG_TYPE_CGROUP_DEVICE,
+	VKI_BPF_PROG_TYPE_SK_MSG,
+	VKI_BPF_PROG_TYPE_RAW_TRACEPOINT,
+	VKI_BPF_PROG_TYPE_CGROUP_SOCK_ADDR,
+	VKI_BPF_PROG_TYPE_LWT_SEG6LOCAL,
+	VKI_BPF_PROG_TYPE_LIRC_MODE2,
+};
+
 enum vki_bpf_attach_type {
 	VKI_BPF_CGROUP_INET_INGRESS,
 	VKI_BPF_CGROUP_INET_EGRESS,
@@ -4908,9 +4934,11 @@ enum vki_bpf_attach_type {
 	__VKI_MAX_BPF_ATTACH_TYPE
 };
 
+/* Specify numa node during map creation */
+#define VKI_BPF_F_NUMA_NODE		(1U << 2)
+
 #define VKI_BPF_OBJ_NAME_LEN 16U
 
-#define __vki_aligned_u64 __vki_u64 __attribute__((aligned(8)))
 union vki_bpf_attr {
 	struct { /* anonymous struct used by BPF_MAP_CREATE command */
 		__vki_u32	map_type;	/* one of enum bpf_map_type */
@@ -5040,6 +5068,8 @@ union vki_bpf_attr {
 	} task_fd_query;
 } __attribute__((aligned(8)));
 
+#define VKI_XDP_PACKET_HEADROOM 256
+
 #define VKI_BPF_TAG_SIZE	8
 
 struct vki_bpf_prog_info {
@@ -5056,8 +5086,13 @@ struct vki_bpf_prog_info {
 	__vki_aligned_u64 map_ids;
 	char name[VKI_BPF_OBJ_NAME_LEN];
 	__vki_u32 ifindex;
+	__vki_u32 gpl_compatible:1;
 	__vki_u64 netns_dev;
 	__vki_u64 netns_ino;
+	__vki_u32 nr_jited_ksyms;
+	__vki_u32 nr_jited_func_lens;
+	__vki_aligned_u64 jited_ksyms;
+	__vki_aligned_u64 jited_func_lens;
 } __attribute__((aligned(8)));
 
 struct vki_bpf_map_info {
@@ -5069,8 +5104,18 @@ struct vki_bpf_map_info {
 	__vki_u32 map_flags;
 	char  name[VKI_BPF_OBJ_NAME_LEN];
 	__vki_u32 ifindex;
+	__vki_u32 :32;
 	__vki_u64 netns_dev;
 	__vki_u64 netns_ino;
+	__vki_u32 btf_id;
+	__vki_u32 btf_key_type_id;
+	__vki_u32 btf_value_type_id;
+} __attribute__((aligned(8)));
+
+struct vki_bpf_btf_info {
+	__vki_aligned_u64 btf;
+	__vki_u32 btf_size;
+	__vki_u32 id;
 } __attribute__((aligned(8)));
 
 /*--------------------------------------------------------------------*/

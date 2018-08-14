@@ -11649,34 +11649,59 @@ static UInt bpf_obj_get_info_size(Int fd)
 PRE(sys_bpf)
 {
    union vki_bpf_attr *attr = (union vki_bpf_attr *)(Addr)ARG2;
-   UInt res, key_size, value_size, size;
+   UInt res, key_size, value_size;
 
+   PRINT("sys_bpf ( %ld, %#" FMT_REGWORD "x, %" FMT_REGWORD "u )",
+         ARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "bpf",
                  int, cmd, union vki_bpf_attr *, attr, unsigned int, size);
-   PRINT("bpf ( %ld, %" FMT_REGWORD "u, %" FMT_REGWORD "u )",
-         ARG1, ARG2, ARG3);
-   size = *(UInt *)(Addr)ARG3;
    switch (ARG1) {
       case VKI_BPF_PROG_GET_NEXT_ID:
       case VKI_BPF_MAP_GET_NEXT_ID:
+         PRE_MEM_WRITE("bpf(attr->next_id", (Addr)&attr->next_id, sizeof(attr->next_id));
+         break;
       case VKI_BPF_PROG_GET_FD_BY_ID:
+         PRE_MEM_READ("bpf(attr->prog_id", (Addr)&attr->prog_id, sizeof(attr->prog_id));
+         break;
       case VKI_BPF_MAP_GET_FD_BY_ID:
+         PRE_MEM_READ("bpf(attr->map_id", (Addr)&attr->map_id, sizeof(attr->map_id));
+         break;
       case VKI_BPF_BTF_GET_FD_BY_ID:
+         PRE_MEM_READ("bpf(attr->btf_id", (Addr)&attr->btf_id, sizeof(attr->btf_id));
          break;
       case VKI_BPF_MAP_CREATE:
-         if (!ML_(safe_to_deref)(attr, ARG3)) {
-            SET_STATUS_Failure(VKI_EINVAL);
-            break;
-         }
+         PRE_MEM_READ("bpf(attr->map_flags", (Addr)&attr->map_flags, sizeof(attr->map_flags));
+         if (attr->map_flags & VKI_BPF_F_NUMA_NODE)
+            PRE_MEM_READ("bpf(attr->numa_node", (Addr)&attr->numa_node, sizeof(attr->numa_node));
+         PRE_MEM_READ("bpf(attr->map_type", (Addr)&attr->map_type, sizeof(attr->map_type));
+         PRE_MEM_READ("bpf(attr->map_ifindex", (Addr)&attr->map_ifindex, sizeof(attr->map_ifindex));
+         PRE_MEM_READ("bpf(attr->max_entries", (Addr)&attr->max_entries, sizeof(attr->max_entries));
+         PRE_MEM_READ("bpf(attr->key_size", (Addr)&attr->key_size, sizeof(attr->key_size));
+         PRE_MEM_READ("bpf(attr->value_size", (Addr)&attr->value_size, sizeof(attr->value_size));
+         pre_asciiz_str(tid, (unsigned long int)attr->map_name,
+                        VKI_BPF_OBJ_NAME_LEN, "bpf(attr->map_name)");
          switch (attr->map_type) {
             case VKI_BPF_MAP_TYPE_ARRAY_OF_MAPS:
             case VKI_BPF_MAP_TYPE_HASH_OF_MAPS:
+               PRE_MEM_READ("bpf(attr->inner_map_fd", (Addr)&attr->inner_map_fd, sizeof(attr->inner_map_fd));
                if (!ML_(fd_allowed)(attr->inner_map_fd, "bpf", tid, False))
                   SET_STATUS_Failure(VKI_EBADF);
                break;
+            case VKI_BPF_MAP_TYPE_ARRAY:
+               if (ARG3 >= offsetof(union vki_bpf_attr, btf_value_type_id) + sizeof(__vki_u32)) {
+                  PRE_MEM_READ("bpf(attr->btf_key_type_id", (Addr)&attr->btf_key_type_id, sizeof(attr->btf_key_type_id));
+                  PRE_MEM_READ("bpf(attr->btf_value_type_id", (Addr)&attr->btf_value_type_id, sizeof(attr->btf_value_type_id));
+                  if (attr->btf_key_type_id && attr->btf_value_type_id) {
+                     PRE_MEM_READ("bpf(attr->btf_id", (Addr)&attr->btf_id, sizeof(attr->btf_id));
+                     if (!ML_(fd_allowed)(attr->btf_fd, "bpf", tid, False)) {
+                        SET_STATUS_Failure(VKI_EBADF);
+                        break;
+                     }
+                  }
+               }
+               break;
             case VKI_BPF_MAP_TYPE_UNSPEC:
             case VKI_BPF_MAP_TYPE_HASH:
-            case VKI_BPF_MAP_TYPE_ARRAY:
             case VKI_BPF_MAP_TYPE_PROG_ARRAY:
             case VKI_BPF_MAP_TYPE_PERF_EVENT_ARRAY:
             case VKI_BPF_MAP_TYPE_PERCPU_HASH:
@@ -11694,28 +11719,13 @@ PRE(sys_bpf)
             default:
                break;
          }
-         /*
-          * For kernels recent enough (4.18+) to have BTF support, deal with
-          * BTF info. Kernel only uses the file descriptor for map types that
-          * support BTF information (see bpf_map_support_seq_show() in kernel),
-          * but we do not have a way to probe that. Let's hope that
-          * attr->btf_key_type_id and attr->btf_value_type_id will remain NULL
-          * if BTF info is not needed.
-          */
-         if (size >= offsetof(union vki_bpf_attr, btf_value_type_id) +
-             sizeof(__vki_u32)) {
-             if (attr->btf_key_type_id && attr->btf_value_type_id) {
-                 if (!ML_(fd_allowed)(attr->btf_fd, "bpf", tid, False)) {
-                     SET_STATUS_Failure(VKI_EBADF);
-                     break;
-                 }
-             }
-         }
          break;
       case VKI_BPF_MAP_LOOKUP_ELEM:
          /* Perform a lookup on an eBPF map. Read key, write value. */
-         if (ML_(safe_to_deref)(attr, ARG3) &&
-             attr->key != 0 && attr->value != 0) {
+         PRE_MEM_READ("bpf(attr->key)", (Addr)&attr->key, sizeof(attr->key));
+         PRE_MEM_READ("bpf(attr->value)", (Addr)&attr->value, sizeof(attr->value));
+         PRE_MEM_READ("bpf(attr->map_fd)", (Addr)&attr->map_fd, sizeof(attr->map_fd));
+         if (ML_(safe_to_deref)(attr, ARG3)) {
             if (!ML_(fd_allowed)(attr->map_fd, "bpf", tid, False)) {
                SET_STATUS_Failure(VKI_EBADF);
                break;
@@ -11729,8 +11739,11 @@ PRE(sys_bpf)
          break;
       case VKI_BPF_MAP_UPDATE_ELEM:
          /* Add or update a map element in kernel. Read key, read value. */
-         if (ML_(safe_to_deref)(attr, ARG3) &&
-             attr->key != 0 && attr->value != 0) {
+         PRE_MEM_READ("bpf(attr->key)", (Addr)&attr->key, sizeof(attr->key));
+         PRE_MEM_READ("bpf(attr->value)", (Addr)&attr->value, sizeof(attr->value));
+         PRE_MEM_READ("bpf(attr->map_fd)", (Addr)&attr->map_fd, sizeof(attr->map_fd));
+         PRE_MEM_READ("bpf(attr->flags)", (Addr)&attr->flags, sizeof(attr->flags));
+         if (ML_(safe_to_deref)(attr, ARG3)) {
             if (!ML_(fd_allowed)(attr->map_fd, "bpf", tid, False)) {
                SET_STATUS_Failure(VKI_EBADF);
                break;
@@ -11744,7 +11757,9 @@ PRE(sys_bpf)
          break;
       case VKI_BPF_MAP_DELETE_ELEM:
          /* Delete a map element in kernel. Read key from user space. */
-         if (ML_(safe_to_deref)(attr, ARG3) && attr->key != 0) {
+         PRE_MEM_READ("bpf(attr->key)", (Addr)&attr->key, sizeof(attr->key));
+         PRE_MEM_READ("bpf(attr->map_fd)", (Addr)&attr->map_fd, sizeof(attr->map_fd));
+         if (ML_(safe_to_deref)(attr, ARG3)) {
             if (!ML_(fd_allowed)(attr->map_fd, "bpf", tid, False)) {
                SET_STATUS_Failure(VKI_EBADF);
                break;
@@ -11756,8 +11771,11 @@ PRE(sys_bpf)
          break;
       case VKI_BPF_MAP_GET_NEXT_KEY:
          /* From a key, get next key for the map. Read key, write next key. */
-         if (ML_(safe_to_deref)(attr, ARG3) &&
-             attr->key != 0 && attr->next_key != 0) {
+         PRE_MEM_READ("bpf(attr->key)", (Addr)&attr->key, sizeof(attr->key));
+         PRE_MEM_READ("bpf(attr->next_key)", (Addr)&attr->next_key, sizeof(attr->next_key));
+         PRE_MEM_READ("bpf(attr->map_fd)", (Addr)&attr->map_fd, sizeof(attr->map_fd));
+         PRE_MEM_READ("bpf(attr->flags)", (Addr)&attr->flags, sizeof(attr->flags));
+         if (ML_(safe_to_deref)(attr, ARG3)) {
             if (!ML_(fd_allowed)(attr->map_fd, "bpf", tid, False)) {
                SET_STATUS_Failure(VKI_EBADF);
                break;
@@ -11771,18 +11789,27 @@ PRE(sys_bpf)
          break;
       case VKI_BPF_PROG_LOAD:
          /* Load a program into the kernel from an array of instructions. */
+         PRE_MEM_READ("bpf(attr->prog_type)", (Addr)&attr->prog_type, sizeof(attr->prog_type));
+         PRE_MEM_READ("bpf(attr->prog_flags)", (Addr)&attr->prog_flags, sizeof(attr->prog_flags));
+         PRE_MEM_READ("bpf(attr->license)", (Addr)&attr->license, sizeof(attr->license));
+         PRE_MEM_READ("bpf(attr->insn_cnt)", (Addr)&attr->insn_cnt, sizeof(attr->insn_cnt));
+         PRE_MEM_READ("bpf(attr->expected_attach_type)", (Addr)&attr->expected_attach_type, sizeof(attr->expected_attach_type));
+         PRE_MEM_READ("bpf(attr->prog_ifindex)", (Addr)&attr->prog_ifindex, sizeof(attr->prog_ifindex));
+         PRE_MEM_READ("bpf(attr->log_level)", (Addr)&attr->log_level, sizeof(attr->log_level));
+         PRE_MEM_READ("bpf(attr->log_buf)", (Addr)&attr->log_buf, sizeof(attr->log_buf));
+         PRE_MEM_READ("bpf(attr->log_size)", (Addr)&attr->log_size, sizeof(attr->log_size));
+         pre_asciiz_str(tid, (Addr)attr->prog_name, VKI_BPF_OBJ_NAME_LEN, "bpf(attr->prog_name)");
          if (ML_(safe_to_deref)(attr, ARG3)) {
+            if (attr->prog_type == VKI_BPF_PROG_TYPE_KPROBE)
+               PRE_MEM_READ("bpf(attr->kern_version)", (Addr)&attr->kern_version, sizeof(attr->kern_version));
             /* Read instructions, license, program name. */
             PRE_MEM_READ("bpf(attr->insns)", attr->insns,
                          attr->insn_cnt * sizeof(struct vki_bpf_insn));
             /* License is limited to 128 characters in kernel/bpf/syscall.c. */
             pre_asciiz_str(tid, attr->license, 128, "bpf(attr->license)");
-            pre_asciiz_str(tid, (unsigned long int)attr->prog_name,
-                           VKI_BPF_OBJ_NAME_LEN, "bpf(attr->prog_name)");
             /* Possibly write up to log_len into user space log buffer. */
-            if (attr->log_level && attr->log_size > 128 && attr->log_buf != 0)
-               PRE_MEM_WRITE("bpf(attr->log_buf)",
-                             attr->log_buf, attr->log_size);
+            if (attr->log_level || attr->log_size || attr->log_buf)
+               PRE_MEM_WRITE("bpf(attr->log_buf)", attr->log_buf, attr->log_size);
          }
          break;
       case VKI_BPF_OBJ_PIN:
@@ -11790,78 +11817,61 @@ PRE(sys_bpf)
          /* fall through */
       case VKI_BPF_OBJ_GET:
          /* Get pinned eBPF program or map. Read path name. */
+         PRE_MEM_READ("bpf(attr->file_flags)", (Addr)&attr->file_flags, sizeof(attr->file_flags));
+         PRE_MEM_READ("bpf(attr->pathname)", (Addr)&attr->pathname, sizeof(attr->pathname));
+         PRE_MEM_READ("bpf(attr->bpf_fd)", (Addr)&attr->bpf_fd, sizeof(attr->bpf_fd));
          if (ML_(safe_to_deref)(attr, ARG3)) {
             if (!ML_(fd_allowed)(attr->bpf_fd, "bpf", tid, False)) {
                SET_STATUS_Failure(VKI_EBADF);
                break;
             }
-            pre_asciiz_str(tid, attr->pathname, VKI_BPF_OBJ_NAME_LEN,
-                           "bpf(attr->pathname)");
+            pre_asciiz_str(tid, attr->pathname, VKI_BPF_OBJ_NAME_LEN, "bpf(attr->pathname)");
          }
          break;
+      case VKI_BPF_PROG_ATTACH:
       case VKI_BPF_PROG_DETACH:
          /* Detach eBPF program from kernel attach point. */
+         PRE_MEM_READ("bpf(attr->attach_type)", (Addr)&attr->attach_type, sizeof(attr->attach_type));
+         PRE_MEM_READ("bpf(attr->target_fd)", (Addr)&attr->target_fd, sizeof(attr->target_fd));
          if (ML_(safe_to_deref)(attr, ARG3)) {
-            switch (attr->attach_type) {
-               case VKI_BPF_SK_SKB_STREAM_PARSER:
-               case VKI_BPF_SK_SKB_STREAM_VERDICT:
-               case VKI_BPF_SK_MSG_VERDICT:
-                  /*
-                   * The above attach types do not use attr->attach_bpf_fd.
-                   * Just check attr->target_fd and exit.
-                   */
-                  if (!ML_(fd_allowed)(attr->target_fd, "bpf", tid, False))
-                     SET_STATUS_Failure(VKI_EBADF);
-                  return;
-               case VKI_BPF_CGROUP_INET_INGRESS:
-               case VKI_BPF_CGROUP_INET_EGRESS:
-               case VKI_BPF_CGROUP_INET_SOCK_CREATE:
-               case VKI_BPF_CGROUP_SOCK_OPS:
-               case VKI_BPF_CGROUP_DEVICE:
-               case VKI_BPF_CGROUP_INET4_BIND:
-               case VKI_BPF_CGROUP_INET6_BIND:
-               case VKI_BPF_CGROUP_INET4_CONNECT:
-               case VKI_BPF_CGROUP_INET6_CONNECT:
-               case VKI_BPF_CGROUP_INET4_POST_BIND:
-               case VKI_BPF_CGROUP_INET6_POST_BIND:
-               case VKI_BPF_CGROUP_UDP4_SENDMSG:
-               case VKI_BPF_CGROUP_UDP6_SENDMSG:
-               case VKI_BPF_LIRC_MODE2:
-               default:
-                  break;
-            }
-         }
-         /* fall through */
-      case VKI_BPF_PROG_ATTACH:
-         /* Attach eBPF program to kernel attach point. */
-         if (ML_(safe_to_deref)(attr, ARG3)) {
-            if (!ML_(fd_allowed)(attr->target_fd,     "bpf", tid, False) ||
-                !ML_(fd_allowed)(attr->attach_bpf_fd, "bpf", tid, False)) {
+            if (!ML_(fd_allowed)(attr->target_fd, "bpf", tid, False))
                SET_STATUS_Failure(VKI_EBADF);
-               break;
+            if (ARG1 == VKI_BPF_PROG_ATTACH ||
+                (attr->attach_type != VKI_BPF_SK_SKB_STREAM_PARSER &&
+                 attr->attach_type != VKI_BPF_SK_SKB_STREAM_VERDICT &&
+                 attr->attach_type != VKI_BPF_SK_MSG_VERDICT)) {
+               PRE_MEM_READ("bpf(attr->attach_bpf_fd)", (Addr)&attr->attach_bpf_fd, sizeof(attr->attach_bpf_fd));
+               if (!ML_(fd_allowed)(attr->attach_bpf_fd, "bpf", tid, False))
+                  SET_STATUS_Failure(VKI_EBADF);
             }
          }
          break;
       case VKI_BPF_PROG_TEST_RUN:
          /* Test prog. Read data_in, write up to data_size_out to data_out. */
-         if (ML_(safe_to_deref)(attr, ARG3) &&
-             attr->test.data_in != 0 && attr->test.data_out != 0) {
+         PRE_MEM_READ("bpf(attr->test.prog_fd)", (Addr)&attr->test.prog_fd, sizeof(attr->test.prog_fd));
+         PRE_MEM_READ("bpf(attr->test.repeat)", (Addr)&attr->test.repeat, sizeof(attr->test.repeat));
+         PRE_MEM_READ("bpf(attr->test.data_size_in)", (Addr)&attr->test.data_size_in, sizeof(attr->test.data_size_in));
+         PRE_MEM_READ("bpf(attr->test.data_in)", (Addr)&attr->test.data_in, sizeof(attr->test.data_in));
+         PRE_MEM_READ("bpf(attr->test.data_out)", (Addr)&attr->test.data_out, sizeof(attr->test.data_out));
+         PRE_MEM_WRITE("bpf(attr->test.retval)", (Addr)&attr->test.retval, sizeof(attr->test.retval));
+         PRE_MEM_WRITE("bpf(attr->test.data_size_out)", (Addr)&attr->test.data_size_out, sizeof(attr->test.data_size_out));
+         PRE_MEM_WRITE("bpf(attr->test.duration)", (Addr)&attr->test.duration, sizeof(attr->test.duration));
+         if (ML_(safe_to_deref)(attr, ARG3)) {
             if (!ML_(fd_allowed)(attr->test.prog_fd, "bpf", tid, False)) {
                SET_STATUS_Failure(VKI_EBADF);
                break;
             }
-            PRE_MEM_READ("bpf(attr->test.data_in)",
-                         attr->test.data_in, attr->test.data_size_in);
-            /*
-             * TODO: Kernel writes to data_out but we do not know the size yet.
-             * PRE_MEM_WRITE("bpf(attr->test.data_out)",
-             *               attr->test.data_out, ??);
-             */
+            PRE_MEM_READ("bpf(attr->test.data_in)", attr->test.data_in, attr->test.data_size_in);
+            /* should be data_size_in + VKI_XDP_PACKET_HEADROOM for VKI_BPF_PROG_TYPE_XDP */
+            PRE_MEM_WRITE("bpf(attr->test.data_out)", attr->test.data_out, attr->test.data_size_in);
          }
          break;
       case VKI_BPF_OBJ_GET_INFO_BY_FD:
          /* Get info for eBPF map or program. Write info. */
-         if (ML_(safe_to_deref)(attr, ARG3) && attr->info.info != 0) {
+         PRE_MEM_READ("bpf(attr->info.bpf_fd)", (Addr)&attr->info.bpf_fd, sizeof(attr->info.bpf_fd));
+         PRE_MEM_READ("bpf(attr->info.info)", (Addr)&attr->info.info, sizeof(attr->info.info));
+         PRE_MEM_READ("bpf(attr->info.info_len)", (Addr)&attr->info.info_len, sizeof(attr->info.info_len));
+         if (ML_(safe_to_deref)(attr, ARG3)) {
             if (!ML_(fd_allowed)(attr->info.bpf_fd, "bpf", tid, False)) {
                SET_STATUS_Failure(VKI_EBADF);
                break;
@@ -11874,8 +11884,9 @@ PRE(sys_bpf)
             else
                PRE_MEM_WRITE("bpf(attr->info.info)", attr->info.info,
                              VG_MIN(attr->info.info_len,
-                                    VG_MAX(sizeof(struct vki_bpf_prog_info),
-                                           sizeof(struct vki_bpf_map_info))));
+                                    VG_MAX(VG_MAX(sizeof(struct vki_bpf_prog_info),
+                                                  sizeof(struct vki_bpf_map_info)),
+                                           sizeof(struct vki_bpf_btf_info))));
          }
          break;
       case VKI_BPF_PROG_QUERY:
@@ -11883,17 +11894,29 @@ PRE(sys_bpf)
           * Query list of eBPF program attached to cgroup.
           * Write array of ids (up to attr->query.prog_cnt u32-long ids).
           */
-         if (ML_(safe_to_deref)(attr, ARG3) && attr->query.prog_ids != 0) {
+         PRE_MEM_READ("bpf(attr->query.query_flags)", (Addr)&attr->query.query_flags, sizeof(attr->query.query_flags));
+         PRE_MEM_READ("bpf(attr->query.attach_type)", (Addr)&attr->query.attach_type, sizeof(attr->query.attach_type));
+         PRE_MEM_READ("bpf(attr->query.target_fd)", (Addr)&attr->query.target_fd, sizeof(attr->query.target_fd));
+         PRE_MEM_READ("bpf(attr->query.prog_cnt)", (Addr)&attr->query.prog_cnt, sizeof(attr->query.prog_cnt));
+         PRE_MEM_WRITE("bpf(attr->query.attach_flags)", (Addr)&attr->query.attach_flags, sizeof(attr->query.attach_flags));
+         if (ML_(safe_to_deref)(attr, ARG3)) {
             if (!ML_(fd_allowed)(attr->query.target_fd, "bpf", tid, False)) {
                SET_STATUS_Failure(VKI_EBADF);
                break;
             }
-            PRE_MEM_WRITE("bpf(attr->query.prog_ids)", attr->query.prog_ids,
-                          attr->query.prog_cnt * sizeof(__vki_u32));
+            if (attr->query.prog_cnt > 0) {
+               PRE_MEM_READ("bpf(attr->query.prog_ids)", (Addr)&attr->query.prog_ids, sizeof(attr->query.prog_ids));
+               if (attr->query.prog_ids) {
+                  PRE_MEM_WRITE("bpf(attr->query.prog_ids)", attr->query.prog_ids,
+                                attr->query.prog_cnt * sizeof(__vki_u32));
+               }
+            }
          }
          break;
       case VKI_BPF_RAW_TRACEPOINT_OPEN:
          /* Open raw tracepoint. Read tracepoint name. */
+         PRE_MEM_READ("bpf(attr->raw_tracepoint.name)", (Addr)&attr->raw_tracepoint.name, sizeof(attr->raw_tracepoint.name));
+         PRE_MEM_READ("bpf(attr->raw_tracepoint.prog_fd)", (Addr)&attr->raw_tracepoint.prog_fd, sizeof(attr->raw_tracepoint.prog_fd));
          if (ML_(safe_to_deref)(attr, ARG3)) {
             if (!ML_(fd_allowed)(attr->raw_tracepoint.prog_fd,
                                  "bpf", tid, False)) {
@@ -11907,17 +11930,30 @@ PRE(sys_bpf)
          break;
       case VKI_BPF_BTF_LOAD:
          /* Load BTF information about a program into the kernel. */
+         PRE_MEM_READ("bpf(attr->btf)", (Addr)&attr->btf, sizeof(attr->btf));
+         PRE_MEM_READ("bpf(attr->btf_size)", (Addr)&attr->btf_size, sizeof(attr->btf_size));
+         PRE_MEM_READ("bpf(attr->btf_log_buf)", (Addr)&attr->btf_log_buf, sizeof(attr->btf_log_buf));
+         PRE_MEM_READ("bpf(attr->btf_log_size)", (Addr)&attr->btf_log_size, sizeof(attr->btf_log_size));
+         PRE_MEM_READ("bpf(attr->btf_log_level)", (Addr)&attr->btf_log_level, sizeof(attr->btf_log_level));
          if (ML_(safe_to_deref)(attr, ARG3)) {
             /* Read BTF data. */
             PRE_MEM_READ("bpf(attr->btf)", attr->btf, attr->btf_size);
             /* Possibly write up to btf_log_len into user space log buffer. */
-            if (attr->btf_log_level && attr->btf_log_size > 128 &&
-                attr->btf_log_buf != 0)
+            if (attr->btf_log_level || attr->btf_log_size || attr->btf_log_buf)
                PRE_MEM_WRITE("bpf(attr->btf_log_buf)",
                              attr->btf_log_buf, attr->btf_log_size);
          }
       case VKI_BPF_TASK_FD_QUERY:
          /* Get info about the task. Write collected info. */
+         PRE_MEM_READ("bpf(attr->task_fd_query.pid)", (Addr)&attr->task_fd_query.pid, sizeof(attr->task_fd_query.pid));
+         PRE_MEM_READ("bpf(attr->task_fd_query.fd)", (Addr)&attr->task_fd_query.fd, sizeof(attr->task_fd_query.fd));
+         PRE_MEM_READ("bpf(attr->task_fd_query.flags)", (Addr)&attr->task_fd_query.flags, sizeof(attr->task_fd_query.flags));
+         PRE_MEM_READ("bpf(attr->task_fd_query.buf_len)", (Addr)&attr->task_fd_query.buf_len, sizeof(attr->task_fd_query.buf_len));
+         PRE_MEM_READ("bpf(attr->task_fd_query.buf)", (Addr)&attr->task_fd_query.buf, sizeof(attr->task_fd_query.buf));
+         PRE_MEM_WRITE("bpf(attr->task_fd_query.prog_id)", (Addr)&attr->task_fd_query.prog_id, sizeof(attr->task_fd_query.prog_id));
+         PRE_MEM_WRITE("bpf(attr->task_fd_query.fd_type)", (Addr)&attr->task_fd_query.fd_type, sizeof(attr->task_fd_query.fd_type));
+         PRE_MEM_WRITE("bpf(attr->task_fd_query.probe_offset)", (Addr)&attr->task_fd_query.probe_offset, sizeof(attr->task_fd_query.probe_offset));
+         PRE_MEM_WRITE("bpf(attr->task_fd_query.probe_addr)", (Addr)&attr->task_fd_query.probe_addr, sizeof(attr->task_fd_query.probe_addr));
          if (ML_(safe_to_deref)(attr, ARG3)) {
             if (!ML_(fd_allowed)(attr->task_fd_query.fd, "bpf", tid, False)) {
                SET_STATUS_Failure(VKI_EBADF);
@@ -11947,13 +11983,15 @@ POST(sys_bpf)
    vg_assert(SUCCESS);
 
    switch (ARG1) {
+      case VKI_BPF_PROG_GET_NEXT_ID:
+      case VKI_BPF_MAP_GET_NEXT_ID:
+         POST_MEM_WRITE(attr->next_id, sizeof(attr->next_id));
+         break;
       case VKI_BPF_MAP_UPDATE_ELEM:
       case VKI_BPF_MAP_DELETE_ELEM:
       case VKI_BPF_OBJ_PIN:
       case VKI_BPF_PROG_ATTACH:
       case VKI_BPF_PROG_DETACH:
-      case VKI_BPF_PROG_GET_NEXT_ID:
-      case VKI_BPF_MAP_GET_NEXT_ID:
          break;
       /* Following commands have bpf() return a file descriptor. */
       case VKI_BPF_MAP_CREATE:
@@ -11990,17 +12028,22 @@ POST(sys_bpf)
          } else {
             if (VG_(clo_track_fds))
                ML_(record_fd_open_nameless)(tid, RES);
-            if (attr->log_level)
-               POST_MEM_WRITE(attr->log_buf, attr->log_size);
          }
+         if (attr->log_level || attr->log_size || attr->log_buf)
+            POST_MEM_WRITE(attr->log_buf, attr->log_size);
          break;
       case VKI_BPF_PROG_TEST_RUN:
+         POST_MEM_WRITE((Addr)&attr->test.retval, sizeof(attr->test.retval));
+         POST_MEM_WRITE((Addr)&attr->test.data_size_out, sizeof(attr->test.data_size_out));
+         POST_MEM_WRITE((Addr)&attr->test.duration, sizeof(attr->test.duration));
          POST_MEM_WRITE(attr->test.data_out, attr->test.data_size_out);
          break;
       case VKI_BPF_OBJ_GET_INFO_BY_FD:
          POST_MEM_WRITE(attr->info.info, attr->info.info_len);
          break;
       case VKI_BPF_PROG_QUERY:
+         POST_MEM_WRITE((Addr)&attr->query.attach_flags, sizeof(attr->query.attach_flags));
+         POST_MEM_WRITE((Addr)&attr->query.prog_cnt, sizeof(attr->query.prog_cnt));
          if (attr->query.prog_ids)
             POST_MEM_WRITE(attr->query.prog_ids,
                            attr->query.prog_cnt * sizeof(__vki_u32));
@@ -12013,12 +12056,16 @@ POST(sys_bpf)
          } else {
             if (VG_(clo_track_fds))
                ML_(record_fd_open_nameless)(tid, RES);
-            if (attr->btf_log_level)
-               POST_MEM_WRITE(attr->btf_log_buf, attr->btf_log_size);
          }
+         if (attr->btf_log_level)
+            POST_MEM_WRITE(attr->btf_log_buf, attr->btf_log_size);
          break;
       case VKI_BPF_TASK_FD_QUERY:
          POST_MEM_WRITE(attr->task_fd_query.buf, attr->task_fd_query.buf_len);
+         POST_MEM_WRITE((Addr)&attr->task_fd_query.prog_id, sizeof(attr->task_fd_query.prog_id));
+         POST_MEM_WRITE((Addr)&attr->task_fd_query.fd_type, sizeof(attr->task_fd_query.fd_type));
+         POST_MEM_WRITE((Addr)&attr->task_fd_query.probe_offset, sizeof(attr->task_fd_query.probe_offset));
+         POST_MEM_WRITE((Addr)&attr->task_fd_query.probe_addr, sizeof(attr->task_fd_query.probe_addr));
          break;
       default:
          VG_(message)(Vg_DebugMsg,

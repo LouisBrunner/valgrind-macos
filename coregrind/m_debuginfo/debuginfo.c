@@ -40,6 +40,7 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_libcfile.h"
 #include "pub_core_libcproc.h"   // VG_(getenv)
+#include "pub_core_rangemap.h"
 #include "pub_core_seqmatch.h"
 #include "pub_core_options.h"
 #include "pub_core_redir.h"      // VG_(redir_notify_{new,delete}_SegInfo)
@@ -449,7 +450,7 @@ static void discard_or_archive_DebugInfo ( DebugInfo* di )
    DebugInfo*  curr          =  debugInfo_list;
 
    /* It must be active! */
-   vg_assert( is_DebugInfo_active(di));
+   vg_assert(is_DebugInfo_active(di));
    while (curr) {
       if (curr == di) {
          /* Found it; (remove from list and free it), or archive it. */
@@ -475,6 +476,7 @@ static void discard_or_archive_DebugInfo ( DebugInfo* di )
             di->last_epoch = VG_(current_DiEpoch)();
             VG_(archive_ExeContext_in_range) (di->last_epoch,
                                               di->text_avma, di->text_size);
+            vg_assert(is_DebugInfo_archived(di));
          } else {
             free_DebugInfo(curr);
          }
@@ -586,6 +588,13 @@ static void discard_or_archive_marked_DebugInfos ( void )
       }
 
       if (!curr) break;
+
+      // If |curr| is going to remain in the debugInfo_list, and merely change
+      // state, then we need to clear its mark bit so we don't subsequently
+      // try to archive it again later.  Possibly related to #393146.
+      if (VG_(clo_keep_debuginfo))
+         curr->mark = False;
+
       discard_or_archive_DebugInfo( curr );
 
    }
@@ -603,6 +612,7 @@ static void discard_DebugInfos_which_overlap_with ( DebugInfo* diRef )
       overlap with siRef.  Since siRef itself is in this list we at
       least expect its own mark bit to be set. */
    for (di = debugInfo_list; di; di = di->next) {
+      di->mark = False;
       if (is_DebugInfo_archived(di))
          continue;
       di->mark = do_DebugInfos_overlap( di, diRef );

@@ -658,7 +658,6 @@ static void check_CFSI_related_invariants ( const DebugInfo* di )
 {
    DebugInfo* di2 = NULL;
    Bool has_nonempty_rx = False;
-   Bool cfsi_fits = False;
    Word i, j;
    vg_assert(di);
    /* This fn isn't called until after debuginfo for this object has
@@ -694,16 +693,6 @@ static void check_CFSI_related_invariants ( const DebugInfo* di )
          }
       }
       di2 = NULL;
-
-      /* invariant (2) */
-      if (di->cfsi_rd) {
-         vg_assert(di->cfsi_minavma <= di->cfsi_maxavma); /* duh! */
-         /* Assume the csfi fits completely into one individual mapping
-            for now. This might need to be improved/reworked later. */
-         if (di->cfsi_minavma >= map->avma &&
-             di->cfsi_maxavma <  map->avma + map->size)
-            cfsi_fits = True;
-      }
    }
 
    /* degenerate case: all r-x sections are empty */
@@ -712,9 +701,43 @@ static void check_CFSI_related_invariants ( const DebugInfo* di )
       return;
    }
 
-   /* invariant (2) - cont. */
-   if (di->cfsi_rd)
+   /* invariant (2) */
+   if (di->cfsi_rd) {
+      vg_assert(di->cfsi_minavma <= di->cfsi_maxavma); /* duh! */
+      /* It may be that the cfsi range doesn't fit into any one individual
+         mapping, but it is covered by the combination of all the mappings.
+         That's a bit tricky to establish.  To do so, create a RangeMap with
+         the cfsi range as the single only non-zero mapping, then zero out all
+         the parts described by di->fsm.maps, and check that there's nothing
+         left. */
+      RangeMap* rm = VG_(newRangeMap)( ML_(dinfo_zalloc),
+                        "di.debuginfo. cCri.1", ML_(dinfo_free),
+                        /*initialVal*/0 );
+      VG_(bindRangeMap)(rm, di->cfsi_minavma, di->cfsi_maxavma, 1);
+      for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
+         const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
+         /* We are interested in r-x mappings only */
+         if (!map->rx)
+            continue;
+         if (map->size > 0)
+            VG_(bindRangeMap)(rm, map->avma, map->avma + map->size - 1, 0);
+      }
+      /* If the map isn't now empty, it means the cfsi range isn't covered
+         entirely by the rx mappings. */
+      Bool cfsi_fits = VG_(sizeRangeMap)(rm) == 1;
+      if (cfsi_fits) {
+         // Sanity-check the range-map operation
+         UWord key_min = 0x55, key_max = 0x56, val = 0x57;
+         /* We can look up any address at all since we expect only one range */
+         VG_(lookupRangeMap)(&key_min, &key_max, &val, rm, 0x1234);
+         vg_assert(key_min == (UWord)0);
+         vg_assert(key_max == ~(UWord)0);
+         vg_assert(val == 0);
+      }
       vg_assert(cfsi_fits);
+
+      VG_(deleteRangeMap)(rm);
+   }
 
    /* invariants (3) and (4) */
    if (di->cfsi_rd) {

@@ -8104,6 +8104,7 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
          are used only to construct memory addresses, which is an
          approximation to the above, and is self-contained.*/
 #     if defined(VGA_x86)
+      mce.dlbo.dl_Add32           = DLauto;
       mce.dlbo.dl_CmpEQ32_CmpNE32 = DLexpensive;
 #     elif defined(VGA_amd64)
       mce.dlbo.dl_Add64           = DLauto;

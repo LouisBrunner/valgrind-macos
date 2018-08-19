@@ -1829,7 +1829,7 @@ static Bool supp_pattEQinp ( const void* supplocV, const void* addrV,
    const SuppLoc* supploc = (const SuppLoc*)supplocV; /* PATTERN */
    IPtoFunOrObjCompleter* ip2fo = (IPtoFunOrObjCompleter*)inputCompleterV;
    const HChar* funobjsrc_name; // Fun, Obj, or src file name.
-   UInt src_lineno;
+   UInt src_lineno = 0;
    Bool ret;
 
    expandInput(ip2fo, ixInput);

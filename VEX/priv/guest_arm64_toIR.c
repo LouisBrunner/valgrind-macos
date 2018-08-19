@@ -4815,19 +4815,20 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
          }
 
          /* Normally rN would be updated after the transfer.  However, in
-            the special case typifed by
+            the special cases typifed by
                str x30, [sp,#-16]!
+               str w1, [sp,#-32]!
             it is necessary to update SP before the transfer, (1)
             because Memcheck will otherwise complain about a write
             below the stack pointer, and (2) because the segfault
             stack extension mechanism will otherwise extend the stack
             only down to SP before the instruction, which might not be
-            far enough, if the -16 bit takes the actual access
+            far enough, if the -16/-32 bit takes the actual access
             address to the next page.
          */
          Bool earlyWBack
-           = wBack && simm9 < 0 && szB == 8
-             && how == BITS2(1,1) && nn == 31 && !isLoad && tt != nn;
+           = wBack && simm9 < 0 && (szB == 8 || szB == 4)
+             && how == BITS2(1,1) && nn == 31 && !isLoad;
 
          if (wBack && earlyWBack)
             putIReg64orSP(nn, mkexpr(tEA));
@@ -5724,11 +5725,13 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
       /* Do early writeback for the cases typified by
             str d8, [sp, #-32]!
             str d10, [sp, #-128]!
+            str q1, [sp, #-32]!
          for the same reasons as described in a similar comment in the
          "LDP,STP (immediate, simm7) (FP&VEC)" case just above.
       */
       Bool earlyWBack
-         = !atRN && !isLD && ty == Ity_F64 && nn == 31 && ((Long)simm9) < 0;
+         = !atRN && !isLD && (ty == Ity_F64 || ty == Ity_V128)
+           && nn == 31 && ((Long)simm9) < 0;
 
       if (earlyWBack)
          putIReg64orSP(nn, mkexpr(tEA));

@@ -138,6 +138,7 @@ where XXXXXX is the bug number as listed below.
 395709  PPC64 is missing support for the xvnegsp instruction
 395682  Accept read-only PT_LOAD segments and .rodata by ld -z separate-code
         == 384727
+396475  valgrind OS-X build: config.h not found (out-of-tree macOS builds)
 396887  arch_prctl should return EINVAL on unknown option
 397012  glibc ld.so uses arch_prctl on i386
 

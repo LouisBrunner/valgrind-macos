@@ -104,12 +104,15 @@ AM_CXXFLAGS  += @FLAG_M32@
 AM_CCASFLAGS += @FLAG_M32@
 
 allexec_CFLAGS          = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
+
+if !VGCONF_HAVE_PLATFORM_SEC
 msa_arithmetic_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
 msa_comparison_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
 msa_data_transfer_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
 msa_fpu_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
 msa_logical_and_shift_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
 msa_shuffle_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
+endif
 
 bug320057_mips32_LDFLAGS = -lrt
 

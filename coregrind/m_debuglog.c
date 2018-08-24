@@ -437,80 +437,42 @@ static UInt local_sys_getpid ( void )
    return (UInt)(__res);
 }
 
-#elif defined(VGP_mips32_linux)
+#elif defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
 
 static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 {
-   volatile Int block[2];
-   block[0] = (Int)buf;
-   block[1] = n;
+   register RegWord v0 asm("2");
+   register RegWord a0 asm("4");
+   register RegWord a1 asm("5");
+   register RegWord a2 asm("6");
+   v0 = __NR_write;
+   a2 = n;
+   a1 = (RegWord)(Addr)buf;
+   a0 = 2; // stderr
    __asm__ volatile (
-      "li   $4, 2\n\t"        /* stderr */
-      "lw   $5, 0(%0)\n\t"    /* buf */
-      "lw   $6, 4(%0)\n\t"    /* n */
-      "move $7, $0\n\t"
-      "li   $2, %1\n\t"       /* set v0 = __NR_write */
-      "syscall\n\t"           /* write() */
-      "nop\n\t"
-      :
-      : "r" (block), "n" (__NR_write)
-      : "2", "4", "5", "6", "7"
+      "syscall            \n\t"
+      "addiu   $4, $0, -1 \n\t"
+      "movn    $2, $4, $7 \n\t"
+     : "+d" (v0), "+d" (a0), "+d" (a1), "+d" (a2)
+     :
+     : "$1", "$3", "$7", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15",
+       "$24", "$25", "$31"
    );
-   if (block[0] < 0)
-      block[0] = -1;
-   return (UInt)block[0];
+   return v0;
 }
 
 static UInt local_sys_getpid ( void )
 {
-   UInt __res;
+   register RegWord v0 asm("2");
+   v0 = __NR_getpid;
    __asm__ volatile (
-      "li   $2, %1\n\t"       /* set v0 = __NR_getpid */
-      "syscall\n\t"      /* getpid() */
-      "nop\n\t"
-      "move  %0, $2\n"
-      : "=r" (__res)
-      : "n" (__NR_getpid)
-      : "$2" );
-   return __res;
-}
-
-#elif defined(VGP_mips64_linux)
-
-static UInt local_sys_write_stderr ( const HChar* buf, Int n )
-{
-   volatile Long block[2];
-   block[0] = (Long)(Addr)buf;
-   block[1] = n;
-   __asm__ volatile (
-      "li   $4, 2\n\t"      /* std output*/
-      "ld   $5, 0(%0)\n\t"  /*$5 = buf*/
-      "ld   $6, 8(%0)\n\t"  /*$6 = n */
-      "move $7, $0\n\t"
-      "li   $2, %1\n\t"     /* set v0 = __NR_write */
-      "\tsyscall\n"
-      "\tnop\n"
-      : /*wr*/
-      : /*rd*/  "r" (block), "n" (__NR_write)
-      : "2", "4", "5", "6", "7"
+      "syscall \n\t"
+     : "+d" (v0)
+     :
+     : "$1", "$3", "$4", "$5", "$6", "$7", "$8", "$9", "$10", "$11", "$12",
+       "$13", "$14", "$15", "$24", "$25", "$31"
    );
-   if (block[0] < 0)
-      block[0] = -1;
-   return (UInt)(Int)block[0];
-}
- 
-static UInt local_sys_getpid ( void )
-{
-   ULong __res;
-   __asm__ volatile (
-      "li   $2, %1\n\t"  /* set v0 = __NR_getpid */
-      "syscall\n\t"      /* getpid() */
-      "nop\n\t"
-      "move  %0, $2\n"
-      : "=r" (__res)
-      : "n" (__NR_getpid)
-      : "$2" );
-   return (UInt)(__res);
+   return v0;
 }
 
 #elif defined(VGP_x86_solaris)

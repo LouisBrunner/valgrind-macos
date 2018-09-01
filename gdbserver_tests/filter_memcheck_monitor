@@ -31,4 +31,5 @@ sed -e '/Cannot access memory at address 0x......../d'                   \
     -e '/^Missing separate debuginfo/d'                                  \
     -e '/^Try: zypper install -C/d'                                      \
     -e 's/Test 3:   FAIL: expected si_code==2, not 128/Test 3:   PASS/'  \
+    -e 's/in use at exit: [0-9][0-9]* bytes in [0-9][0-9]* blocks/in use at exit: ... bytes in ... blocks/' \
     -e '/^  total heap usage: /d'

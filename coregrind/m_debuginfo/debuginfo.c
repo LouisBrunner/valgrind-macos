@@ -34,6 +34,7 @@
 #include "pub_core_vki.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_debuginfo.h"  /* self */
+#include "pub_core_debuglog.h"
 #include "pub_core_demangle.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
@@ -67,10 +68,6 @@
 # include "priv_readpdb.h"
 #endif
 
-
-/* Set this to 1 to enable debug printing for the
-   should-we-load-debuginfo-now? finite state machine. */
-#define DEBUG_FSM 0
 
 /* Set this to 1 to enable somewhat minimal debug printing for the
    debuginfo-epoch machinery. */
@@ -443,27 +440,31 @@ static void free_DebugInfo ( DebugInfo* di )
 */
 static void discard_or_archive_DebugInfo ( DebugInfo* di )
 {
-   const HChar* reason  = "munmap";
-   const Bool   archive = VG_(clo_keep_debuginfo);
+   /*  di->have_dinfo can be False when an object is mapped "ro"
+       and then unmapped before the debug info is loaded.
+       In other words, debugInfo_list might contain many di that have
+       no OS mappings, even if their fsm.maps still contain mappings.
+       Such (left over) mappings can overlap with real mappings.
+       Search for FSMMAPSNOTCLEANEDUP: below for more details. */
+   /* If a di has no dinfo, we can discard even if VG_(clo_keep_debuginfo). */
+   const Bool   archive = VG_(clo_keep_debuginfo) && di->have_dinfo;
 
    DebugInfo** prev_next_ptr = &debugInfo_list;
    DebugInfo*  curr          =  debugInfo_list;
 
-   /* It must be active! */
-   vg_assert(is_DebugInfo_active(di));
+   /* If di->have_dinfo, then it must be active! */
+   vg_assert(!di->have_dinfo || is_DebugInfo_active(di));
    while (curr) {
       if (curr == di) {
          /* Found it; (remove from list and free it), or archive it. */
-         if (curr->have_dinfo
-             && (VG_(clo_verbosity) > 1 || VG_(clo_trace_redir)))
-            VG_(message)(Vg_DebugMsg, 
-                         "%s syms at %#lx-%#lx in %s due to %s()\n",
-                         archive ? "Archiving" : "Discarding",
-                         di->text_avma, 
-                         di->text_avma + di->text_size,
-                         curr->fsm.filename ? curr->fsm.filename
-                                            : "???",
-                         reason);
+         if (VG_(clo_verbosity) > 1 || VG_(clo_trace_redir))
+            VG_(dmsg)("%s syms at %#lx-%#lx in %s (have_dinfo %d)\n",
+                      archive ? "Archiving" : "Discarding",
+                      di->text_avma, 
+                      di->text_avma + di->text_size,
+                      curr->fsm.filename ? curr->fsm.filename
+                                           : "???",
+                      curr->have_dinfo);
          vg_assert(*prev_next_ptr == curr);
          if (!archive) {
             *prev_next_ptr = curr->next;
@@ -1021,7 +1022,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    Int        actual_fd, oflags;
    SysRes     preadres;
    HChar      buf1k[1024];
-   Bool       debug = (DEBUG_FSM != 0);
+   const Bool       debug = VG_(debugLog_getLevel)() >= 3;
    SysRes     statres;
    struct vg_stat statbuf;
 
@@ -1034,11 +1035,11 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    vg_assert(seg);
 
    if (debug) {
-      VG_(printf)("di_notify_mmap-0:\n");
-      VG_(printf)("di_notify_mmap-1: %#lx-%#lx %c%c%c\n",
-                  seg->start, seg->end, 
-                  seg->hasR ? 'r' : '-',
-                  seg->hasW ? 'w' : '-',seg->hasX ? 'x' : '-' );
+      VG_(dmsg)("di_notify_mmap-0:\n");
+      VG_(dmsg)("di_notify_mmap-1: %#lx-%#lx %c%c%c\n",
+                seg->start, seg->end, 
+                seg->hasR ? 'r' : '-',
+                seg->hasW ? 'w' : '-',seg->hasX ? 'x' : '-' );
    }
 
    /* guaranteed by aspacemgr-linux.c, sane_NSegment() */
@@ -1064,7 +1065,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
       return 0;
 
    if (debug)
-      VG_(printf)("di_notify_mmap-2: %s\n", filename);
+      VG_(dmsg)("di_notify_mmap-2: %s\n", filename);
 
    /* Only try to read debug information from regular files.  */
    statres = VG_(stat)(filename, &statbuf);
@@ -1167,9 +1168,9 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
 #  endif
 
    if (debug)
-      VG_(printf)("di_notify_mmap-3: "
-                  "is_rx_map %d, is_rw_map %d, is_ro_map %d\n",
-                  (Int)is_rx_map, (Int)is_rw_map, (Int)is_ro_map);
+      VG_(dmsg)("di_notify_mmap-3: "
+                "is_rx_map %d, is_rw_map %d, is_ro_map %d\n",
+                (Int)is_rx_map, (Int)is_rw_map, (Int)is_ro_map);
 
    /* Ignore mappings with permissions we can't possibly be interested in. */
    if (!(is_rx_map || is_rw_map || is_ro_map))
@@ -1253,15 +1254,15 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
       mjw/thh.  */
    if (di->have_dinfo) {
       if (debug)
-         VG_(printf)("di_notify_mmap-4x: "
-                     "ignoring mapping because we already read debuginfo "
-                     "for DebugInfo* %p\n", di);
+         VG_(dmsg)("di_notify_mmap-4x: "
+                   "ignoring mapping because we already read debuginfo "
+                   "for DebugInfo* %p\n", di);
       return 0;
    }
 
    if (debug)
-      VG_(printf)("di_notify_mmap-4: "
-                  "noting details in DebugInfo* at %p\n", di);
+      VG_(dmsg)("di_notify_mmap-4: "
+                "noting details in DebugInfo* at %p\n", di);
 
    /* Note the details about the mapping. */
    DebugInfoMapping map;
@@ -1285,13 +1286,14 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
          already read debuginfo for this object.  So let's do so now.
          Yee-ha! */
       if (debug)
-         VG_(printf)("di_notify_mmap-5: "
-                     "achieved accept state for %s\n", filename);
+         VG_(dmsg)("di_notify_mmap-5: "
+                   "achieved accept state for %s\n", filename);
       return di_notify_ACHIEVE_ACCEPT_STATE ( di );
    } else {
-      /* If we don't have an rx and rw mapping, or if we already have
-         debuginfo for this mapping for whatever reason, go no
-         further. */
+      /* If we don't have an rx and rw mapping, go no further. */
+      if (debug)
+         VG_(dmsg)("di_notify_mmap-6: "
+                   "no dinfo loaded %s (no rx or no rw mapping)\n", filename);
       return 0;
    }
 }
@@ -1336,16 +1338,16 @@ void VG_(di_notify_mprotect)( Addr a, SizeT len, UInt prot )
    declaration of struct _DebugInfoFSM for details. */
 void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot )
 {
-   Bool debug = (DEBUG_FSM != 0);
+   const Bool debug = VG_(debugLog_getLevel)() >= 3;
 
    Bool r_ok = toBool(prot & VKI_PROT_READ);
    Bool w_ok = toBool(prot & VKI_PROT_WRITE);
    Bool x_ok = toBool(prot & VKI_PROT_EXEC);
    if (debug) {
-      VG_(printf)("di_notify_vm_protect-0:\n");
-      VG_(printf)("di_notify_vm_protect-1: %#lx-%#lx %c%c%c\n",
-                  a, a + len - 1,
-                  r_ok ? 'r' : '-', w_ok ? 'w' : '-', x_ok ? 'x' : '-' );
+      VG_(dmsg)("di_notify_vm_protect-0:\n");
+      VG_(dmsg)("di_notify_vm_protect-1: %#lx-%#lx %c%c%c\n",
+                a, a + len - 1,
+                r_ok ? 'r' : '-', w_ok ? 'w' : '-', x_ok ? 'x' : '-' );
    }
 
    Bool do_nothing = True;
@@ -1354,8 +1356,8 @@ void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot )
 #  endif
    if (do_nothing /* wrong platform */) {
       if (debug)
-         VG_(printf)("di_notify_vm_protect-2: wrong platform, "
-                     "doing nothing.\n");
+         VG_(dmsg)("di_notify_vm_protect-2: wrong platform, "
+                   "doing nothing.\n");
       return;
    }
 
@@ -1367,7 +1369,7 @@ void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot )
       is found, conclude we're in an accept state and read debuginfo
       accordingly. */
    if (debug)
-      VG_(printf)("di_notify_vm_protect-3: looking for existing DebugInfo*\n");
+      VG_(dmsg)("di_notify_vm_protect-3: looking for existing DebugInfo*\n");
    DebugInfo* di;
    DebugInfoMapping *map = NULL;
    Word i;
@@ -1397,8 +1399,8 @@ void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot )
       return; /* didn't find anything */
 
    if (debug)
-     VG_(printf)("di_notify_vm_protect-4: found existing DebugInfo* at %p\n",
-                 di);
+     VG_(dmsg)("di_notify_vm_protect-4: found existing DebugInfo* at %p\n",
+               di);
 
    /* Do the upgrade.  Simply update the flags of the mapping
       and pretend we never saw the RO map at all. */
@@ -1419,7 +1421,7 @@ void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot )
    /* Check if we're now in an accept state and read debuginfo.  Finally. */
    if (di->fsm.have_rx_map && di->fsm.have_rw_map && !di->have_dinfo) {
       if (debug)
-         VG_(printf)("di_notify_vm_protect-5: "
+         VG_(dmsg)("di_notify_vm_protect-5: "
                      "achieved accept state for %s\n", di->fsm.filename);
       ULong di_handle __attribute__((unused))
          = di_notify_ACHIEVE_ACCEPT_STATE( di );

@@ -143,6 +143,7 @@ where XXXXXX is the bug number as listed below.
 396475  valgrind OS-X build: config.h not found (out-of-tree macOS builds)
 396887  arch_prctl should return EINVAL on unknown option
 397012  glibc ld.so uses arch_prctl on i386
+397424  glibc 2.27 and gdb_server tests
 
 n-i-bz  Fix missing workq_ops operations (macOS)
 n-i-bz  fix bug in strspn replacement

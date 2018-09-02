@@ -41,6 +41,14 @@ sed -e '/^\ \ \ \ \.\.\.$/d'                                        |
 #             (on 32 bits, we have an int_80, on 64 bits, directly select)
 #       and yet another (gdb 7.0 way) to get a system call
 #       and yet another (gdb 7.0 arm way) to get a system call
+#
+#       Additions of 4 expressions to cover glibc 2.27 way to do a select, such as
+#          * 1    Thread 5548 (tid 1 VgTs_WaitSys) 0x0000000004f6203f in __GI___select (
+#              nfds=0, readfds=0x0, writefds=0x0, exceptfds=0x0, timeout=0x30a0e0 <t>)
+#              at ../sysdeps/unix/sysv/linux/select.c:41
+#         If select.c sources are present, we can also get a line containing:
+#              return SYSCALL_CANCEL....
+#
 #       and cleanup some lines for a system call (on ubuntu 10 64 bits)
 #           (pay attention : there are tab characters there in)
 #           + yet another way to get a select system call
@@ -98,6 +106,10 @@ sed -e '/Remote debugging using/,/vgdb launched process attached/d'             
     -e '/^   from \/lib\/ld-linux.so.*$/d'                                                            \
     -e 's/\(0x........\) in ?? () from \/lib.*$/\1 in syscall .../'                                   \
     -e 's/\(0x........\) in ?? ()$/\1 in syscall .../'                                                \
+    -e 's/in __select .*/in syscall .../'                                      \
+    -e '/exceptfds/d' \
+    -e '/sysv\/linux\/select\.c/d' \
+    -e '/return SYSCALL_CANCEL /d' \
     -e 's/in \(.__\)\{0,1\}select () from \/.*$/in syscall .../'                                      \
     -e '/^   from \/lib\/libc.so.*$/d'                                                                \
     -e '/^   from \/lib64\/libc.so.*$/d'                                                              \

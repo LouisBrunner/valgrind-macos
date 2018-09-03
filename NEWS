@@ -145,6 +145,7 @@ where XXXXXX is the bug number as listed below.
 397012  glibc ld.so uses arch_prctl on i386
 397354  utimensat should ignore timespec tv_sec if tv_nsec is UTIME_NOW/OMIT
 397424  glibc 2.27 and gdb_server tests
+398066  s390x: cgijl dep1, 0 reports false unitialised values warning
 
 n-i-bz  Fix missing workq_ops operations (macOS)
 n-i-bz  fix bug in strspn replacement

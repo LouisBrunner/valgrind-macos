@@ -1935,6 +1935,14 @@ guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
             return unop(Iop_1Uto32, binop(Iop_CmpNE64, cc_dep1, cc_dep2));
          }
          if (cond == 4 || cond == 4 + 1) {
+            if (isC64_exactly(cc_dep2, 0)) {
+               /*     dep1 <signed 0
+                  --> m.s.bit of dep1 == 1 */
+               return unop(Iop_64to32,
+                           binop(Iop_And64,
+                                 binop(Iop_Shr64, cc_dep1, mkU8(63)),
+                                 mkU64(1)));
+            }
             return unop(Iop_1Uto32, binop(Iop_CmpLT64S, cc_dep1, cc_dep2));
          }
          if (cond == 8 + 4 || cond == 8 + 4 + 1) {

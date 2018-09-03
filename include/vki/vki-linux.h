@@ -285,6 +285,10 @@ struct vki_timespec {
 	long		tv_nsec;	/* nanoseconds */
 };
 
+/* Special values for vki_timespec.tv_nsec when used with utimensat.  */
+#define VKI_UTIME_NOW  ((1l << 30) - 1l)
+#define VKI_UTIME_OMIT ((1l << 30) - 2l)
+
 struct vki_timeval {
 	vki_time_t	tv_sec;		/* seconds */
 	vki_suseconds_t	tv_usec;	/* microseconds */

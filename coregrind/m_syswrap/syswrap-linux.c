@@ -5303,8 +5303,25 @@ PRE(sys_utimensat)
                  int, dfd, char *, filename, struct timespec *, utimes, int, flags);
    if (ARG2 != 0)
       PRE_MEM_RASCIIZ( "utimensat(filename)", ARG2 );
-   if (ARG3 != 0)
-      PRE_MEM_READ( "utimensat(tvp)", ARG3, 2 * sizeof(struct vki_timespec) );
+   if (ARG3 != 0) {
+      /* If timespec.tv_nsec has the special value UTIME_NOW or UTIME_OMIT
+         then the tv_sec field is ignored.  */
+      struct vki_timespec *times = (struct vki_timespec *)(Addr)ARG3;
+      PRE_MEM_READ( "utimensat(times[0].tv_nsec)",
+                    (Addr)&times[0].tv_nsec, sizeof(times[0].tv_nsec));
+      PRE_MEM_READ( "utimensat(times[1].tv_nsec)",
+                    (Addr)&times[1].tv_nsec, sizeof(times[1].tv_nsec));
+      if (ML_(safe_to_deref)(times, 2 * sizeof(struct vki_timespec))) {
+         if (times[0].tv_nsec != VKI_UTIME_NOW
+             && times[0].tv_nsec != VKI_UTIME_OMIT)
+            PRE_MEM_READ( "utimensat(times[0].tv_sec)",
+                          (Addr)&times[0].tv_sec, sizeof(times[0].tv_sec));
+         if (times[1].tv_nsec != VKI_UTIME_NOW
+             && times[1].tv_nsec != VKI_UTIME_OMIT)
+            PRE_MEM_READ( "utimensat(times[1].tv_sec)",
+                          (Addr)&times[1].tv_sec, sizeof(times[1].tv_sec));
+      }
+   }
 }
 
 PRE(sys_newfstatat)

@@ -121,12 +121,12 @@
 #elif defined(PLAT_mips32_linux) || defined(PLAT_mips64_linux)
 #  define INC(_lval,_lqual)                         \
      __asm__ __volatile__ (                         \
-      "L1xyzzy1" _lqual":\n"                        \
+      "1:\n"                                        \
       "        move  $t0, %0\n"                     \
       "        ll    $t1, 0($t0)\n"                 \
       "        addiu $t1, $t1, 1\n"                 \
       "        sc    $t1, 0($t0)\n"                 \
-      "        beqz  $t1, L1xyzzy1" _lqual          \
+      "        beqz  $t1, 1b\n"                     \
       : /*out*/ : /*in*/ "r"(&(_lval))              \
       : /*trash*/ "t0", "t1", "memory"              \
         )

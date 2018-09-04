@@ -28,9 +28,6 @@ Should look into this, but I can't see how it can have failed.
 
 386602  .build-id/*/*.debug symbols not checked for --extra-debuginfo-path
 
-388174  valgrind with Wine quits with "Assertion 'cfsi_fits' failed"
-Is this still valid?
-
 388493  exp-sgcheck fails on DW_TAG_subrange_type
 
 388526  Inconsistent severity in message text: "WARNING: Serious error"
@@ -298,6 +295,9 @@ Has patch; dunno if it's any good
 
 393415  Valgrind memory debugging for nodejs using child process failed on MacOS
 
+398086  Unrecognised instruction with X11 + OpenGL programs
+Is actually a syscall failure
+
 === MPI ================================================================
 
 === Output =============================================================
@@ -325,6 +325,9 @@ Has plausible patch
 === Tools/Cachegrind ===================================================
 
 381838  Unused field tag_shift of struct cache_t2
+
+398178  cachegrind --LL=5242880,2,64 command parameter for Opteron 6174
+        rejected
 
 === Tools/Callgrind ====================================================
 
@@ -375,6 +378,9 @@ Probably a trivial fix
 
 392331  Spurious lock not held error from inside pthread_cond_timedwait
 Some glibc internal use is mishandled
+
+397670  [Helgrind] False positive race detected with sig_atomic_t
+False positives due to atomics
 
 === Tools/Lackey =======================================================
 
@@ -474,9 +480,8 @@ Seems marginal
 
 397313  False positive on long double "uninitialised bytes"
 
-398066  cgijl dep1, 0 reports Conditional jump or move depends on
-        uninitialised value(s)
-s390.   Mjw has a fix in hand.
+398153  Apparent false positive of uninitialised values in libjpeg-turbo
+Probably sse inaccuracies
 
 === Tools/SGCheck ======================================================
 
@@ -645,6 +650,9 @@ Missing spec rule, fix this
 
 397089  [PATCH] Incorrect decoding of three-register vmovss/vmovsd opcode 11h
 FIX FOR 3.14
+
+398183  Vex errors with _mm256_shuffle_epi8/vpshufb.
+Generates too much code
 
 === VEX/arm32 ==========================================================
 
@@ -922,18 +930,5 @@ n-i-bz  Remove limit on strd's negative immediates
 Created Tues 24 July 2018.  All bugs after the release of 3.13.0 go in here.
 Also, this contains bugs from 3_12_BUGSTATUS.txt that didn't get fixed in
 3.12.  These are marked "(carried over)".
-
-Mon  6 Aug 11:04:50 CEST 2018
-
-Tue 24 Jul 11:50:41 CEST 2018
-
-397670  [Helgrind] False positive race detected with sig_atomic_t
-398086  Unrecognised instruction with X11 + OpenGL programs
-398153  Apparent false positive of uninitialised values in libjpeg-turbo
-398178  cachegrind --LL=5242880,2,64 command parameter for Opteron 6174
-        rejected
-398183  Vex errors with _mm256_shuffle_epi8/vpshufb.
-
-## 388174 is fixed but not in NEWS
 
 Mon  3 Sep 12:01:52 CEST 2018

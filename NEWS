@@ -148,6 +148,8 @@ where XXXXXX is the bug number as listed below.
         == 397286 crash before launching binary (Unsupported arch_prctl option)
         == 397393 valgrind: the 'impossible' happened: (Archlinux)
         == 397521 valgrind: the 'impossible' happened: Unsupported [..]
+396906  compile tests failure on mips32-linux: broken inline asm in tests on
+        mips32-linux
 397012  glibc ld.so uses arch_prctl on i386
 397354  utimensat should ignore timespec tv_sec if tv_nsec is UTIME_NOW/OMIT
 397424  glibc 2.27 and gdb_server tests

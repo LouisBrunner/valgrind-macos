@@ -65,6 +65,7 @@ where XXXXXX is the bug number as listed below.
 368913  WARNING: unhandled arm64-linux syscall: 117 (ptrace)
         == 388664  unhandled arm64-linux syscall: 117  (ptrace)
 372347  Replacement problem of the additional c++14/c++17 new/delete operators
+373069  memcheck/tests/leak_cpp_interior fails with GCC 5.1+
 376257  helgrind history full speed up using a cached stack
 379373  Fix syscall param msg->desc.port.name points to uninitialised byte(s)
         on macOS 10.12

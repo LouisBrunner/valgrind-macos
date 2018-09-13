@@ -293,10 +293,12 @@ collect2: ld returned 1 exit status
     symbol tables (programs should be unstripped unless you run 'strip'
     on them; some libraries ship stripped).</para>
 
-    <para>Also, for leak reports involving shared objects, if the shared
-    object is unloaded before the program terminates, Valgrind will
-    discard the debug information and the error message will be full of
-    <literal>???</literal> entries.  The workaround here is to avoid
+    <para>Also, for leak reports involving shared objects, if the shared object
+    is unloaded before the program terminates, Valgrind will discard the debug
+    information and the error message will be full of <literal>???</literal>
+    entries.  If you use the option <option>--keep-debuginfo=yes</option>, then
+    Valgrind will keep the debug information in order to show the stack traces,
+    at the price of increased memory.  An alternate workaround is to avoid
     calling <function>dlclose</function> on these shared objects.</para>
 
     <para>Also, <option>-fomit-frame-pointer</option> and

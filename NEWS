@@ -1,6 +1,5 @@
-Release 3.14.0 (?? ????????? 201?)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
-Release 3.14.0 is under development, not yet released.
+Release 3.14.0 (?? September 2018)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 3.14.0 is a feature release with many improvements and the usual collection of
 bug fixes.
@@ -8,41 +7,52 @@ bug fixes.
 This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
 PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,
 MIPS64/Linux, ARM/Android, ARM64/Android, MIPS32/Android, X86/Android,
-X86/Solaris, AMD64/Solaris and AMD64/MacOSX 10.12. There is also preliminary
+X86/Solaris, AMD64/Solaris and AMD64/MacOSX 10.12.  There is also preliminary
 support for X86/macOS 10.13, AMD64/macOS 10.13.
 
 * ==================== CORE CHANGES ===================
 
-* The new option --keep-debuginfo=no|yes (default no) can be used to
-  keep symbols etc for unloaded code. This allows saved stack traces
-  (e.g. memory leaks) to include file/line info for code that has been
-  dlclose'd (or similar). See user manual for more information and
-  known limitations.
+* The new option --keep-debuginfo=no|yes (default no) can be used to retain
+  debug info for unloaded code.  This allows saved stack traces (e.g. for
+  memory leaks) to include file/line info for code that has been dlclose'd (or
+  similar).  See the user manual for more information and known limitations.
+
 * Ability to specify suppressions based on source file name and line number.
-* Majorly overhauled register allocator (add details)
+
+* Majorly overhauled register allocator.  No end-user changes, but the JIT
+  generates code a bit more quickly now.
 
 * ================== PLATFORM CHANGES =================
 
 * Preliminary support for macOS 10.13 has been added.
+
 * mips: support for MIPS32/MIPS64 Revision 6 has been added.
+
 * mips: support for MIPS SIMD architecture (MSA) has been added.
+
 * mips: support for MIPS N32 ABI support has been added.
 
 * ==================== TOOL CHANGES ====================
 
-* Helgrind:
+* Helgrind: Addition of a flag
+  --delta-stacktrace=no|yes [yes on linux amd64/x86]
+  which specifies how full history stack traces should be computed.
+  Setting this to =yes can speed up Helgrind by 25% when using
+  --history-level=full.
 
-  - Addition of a flag --delta-stacktrace=no|yes [yes on linux amd64/x86],
-    specifying how full history stack traces are computed. Using yes can speed
-    up Helgrind by 25% when using --history-level=full.
+* Memcheck: reduced false positive rate for optimised code created by Clang 6
+  / LLVM 6 on x86, amd64 and arm64.  In particular, Memcheck analyses code
+  blocks more carefully to determine where it can avoid expensive definedness
+  checks without loss of precision.  This is controlled by the flag
+  --expensive-definedness-checks=no|auto|yes [auto].
 
 * ==================== OTHER CHANGES ====================
 
-* A new configure option --enable-lto=yes allows to build Valgrind
-  with link time optimisation. If the toolchain supports it,
-  this produces a smaller/faster Valgrind (up to 10%).
-  Note that if you are doing some Valgrind development, --enable-lto=yes
-  significantly slows down the build.
+* Valgrind is now buildable with link-time optimisation (LTO).  A new
+  configure option --enable-lto=yes allows building Valgrind with LTO.  If the
+  toolchain supports it, this produces a smaller/faster Valgrind (up to 10%).
+  Note that if you are doing Valgrind development, --enable-lto=yes massively
+  slows down the build process.
 
 * ==================== FIXED BUGS ====================
 
@@ -152,6 +162,7 @@ where XXXXXX is the bug number as listed below.
 396906  compile tests failure on mips32-linux: broken inline asm in tests on
         mips32-linux
 397012  glibc ld.so uses arch_prctl on i386
+397089  amd64: Incorrect decoding of three-register vmovss/vmovsd opcode 11h
 397354  utimensat should ignore timespec tv_sec if tv_nsec is UTIME_NOW/OMIT
 397424  glibc 2.27 and gdb_server tests
 398066  s390x: cgijl dep1, 0 reports false unitialised values warning
@@ -162,6 +173,8 @@ n-i-bz  Add support for the Linux BLKFLSBUF ioctl
 n-i-bz  Add support for the Linux BLKREPORTZONE and BLKRESETZONE ioctls
 n-i-bz  Fix possible stack trashing by semctl syscall wrapping
 n-i-bz  Add support for the Linux membarrier() system call
+
+
 
 Release 3.13.0 (15 June 2017)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

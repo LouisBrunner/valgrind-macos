@@ -1322,9 +1322,21 @@ GEN_test_RandM(VPALIGNR_128_3of3,
                "vpalignr $12, %%xmm6,  %%xmm8, %%xmm7",
                "vpalignr $15, (%%rsi), %%xmm8, %%xmm7")
 
-GEN_test_Ronly(VMOVSD_REG_XMM, "vmovsd %%xmm9, %%xmm7, %%xmm8")
+// These (3 arg) vmovss and vmovsd gave some difficulty in testing.  See
+// bug 397089.
+GEN_test_Ronly(VMOVSD_REG_XMM_1of3,
+               "vmovsd %%xmm9, %%xmm7, %%xmm8") // encoding 10
+GEN_test_Ronly(VMOVSD_REG_XMM_2of3,
+               "vmovsd %%xmm7, %%xmm8, %%xmm9") // encoding 10
+GEN_test_Ronly(VMOVSD_REG_XMM_3of3,
+               "vmovsd %%xmm8, %%xmm9, %%xmm7") // encoding 11
 
-GEN_test_Ronly(VMOVSS_REG_XMM, "vmovss %%xmm9, %%xmm7, %%xmm8")
+GEN_test_Ronly(VMOVSS_REG_XMM_1of3,
+               "vmovss %%xmm9, %%xmm7, %%xmm8") // encoding 10
+GEN_test_Ronly(VMOVSS_REG_XMM_2of3,
+               "vmovss %%xmm7, %%xmm8, %%xmm9") // encoding 10
+GEN_test_Ronly(VMOVSS_REG_XMM_3of3,
+               "vmovss %%xmm8, %%xmm9, %%xmm7") // encoding 11
 
 GEN_test_Monly(VMOVLPD_128_M64_XMM_XMM, "vmovlpd (%%rsi), %%xmm8, %%xmm7")
 
@@ -2566,8 +2578,12 @@ int main ( void )
    DO_D( VPALIGNR_128_1of3 );
    DO_D( VPALIGNR_128_2of3 );
    DO_D( VPALIGNR_128_3of3 );
-   DO_D( VMOVSD_REG_XMM );
-   DO_D( VMOVSS_REG_XMM );
+   DO_D( VMOVSD_REG_XMM_1of3 );
+   DO_D( VMOVSD_REG_XMM_2of3 );
+   DO_D( VMOVSD_REG_XMM_3of3 );
+   DO_D( VMOVSS_REG_XMM_1of3 );
+   DO_D( VMOVSS_REG_XMM_2of3 );
+   DO_D( VMOVSS_REG_XMM_3of3 );
    DO_D( VMOVLPD_128_M64_XMM_XMM );
    DO_D( VMOVLPD_128_XMM_M64 );
    DO_D( VSHUFPD_128_1of2 );

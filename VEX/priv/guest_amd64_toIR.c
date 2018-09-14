@@ -24234,12 +24234,12 @@ Long dis_ESC_0F__VEX (
          UInt  rV    = getVexNvvvv(pfx);
          delta++;
          DIP("vmovsd %s,%s,%s\n",
-             nameXMMReg(rE), nameXMMReg(rV), nameXMMReg(rG));
+             nameXMMReg(rG), nameXMMReg(rV), nameXMMReg(rE));
          IRTemp res = newTemp(Ity_V128);
          assign(res, binop(Iop_64HLtoV128,
                            getXMMRegLane64(rV, 1),
-                           getXMMRegLane64(rE, 0)));
-         putYMMRegLoAndZU(rG, mkexpr(res));
+                           getXMMRegLane64(rG, 0)));
+         putYMMRegLoAndZU(rE, mkexpr(res));
          *uses_vvvv = True;
          goto decode_success;
       }
@@ -24264,14 +24264,14 @@ Long dis_ESC_0F__VEX (
          UInt  rV    = getVexNvvvv(pfx);
          delta++;
          DIP("vmovss %s,%s,%s\n",
-             nameXMMReg(rE), nameXMMReg(rV), nameXMMReg(rG));
+             nameXMMReg(rG), nameXMMReg(rV), nameXMMReg(rE));
          IRTemp res = newTemp(Ity_V128);
          assign( res, binop( Iop_64HLtoV128,
                              getXMMRegLane64(rV, 1),
                              binop(Iop_32HLto64,
                                    getXMMRegLane32(rV, 1),
-                                   getXMMRegLane32(rE, 0)) ) );
-         putYMMRegLoAndZU(rG, mkexpr(res));
+                                   getXMMRegLane32(rG, 0)) ) );
+         putYMMRegLoAndZU(rE, mkexpr(res));
          *uses_vvvv = True;
          goto decode_success;
       }

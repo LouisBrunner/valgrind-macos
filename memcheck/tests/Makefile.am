@@ -277,7 +277,9 @@ EXTRA_DIST = \
 	suppfreecollision.stderr.exp suppfreecollision.supp suppfreecollision.vgtest \
 	supponlyobj.stderr.exp supponlyobj.supp supponlyobj.vgtest \
 	suppsrc_lineno.stderr.exp suppsrc_lineno.stdout.exp suppsrc_lineno.vgtest \
+	suppsrc_lineno.supp \
 	suppsrc_sanlineno.stderr.exp suppsrc_sanlineno.stdout.exp suppsrc_sanlineno.vgtest \
+	suppsrc_sanlineno.supp \
 	suppvarinfo5.stderr.exp suppvarinfo5.supp suppvarinfo5.vgtest \
 	test-plo-no.vgtest test-plo-no.stdout.exp \
 	    test-plo-no.stderr.exp-le64 test-plo-no.stderr.exp-le32 \

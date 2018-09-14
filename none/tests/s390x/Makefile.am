@@ -30,6 +30,8 @@ check_PROGRAMS = $(INSN_TESTS) \
 		 allexec \
 		 op00
 
+noinst_HEADERS = vector.h
+
 EXTRA_DIST = \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \

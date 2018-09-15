@@ -130,8 +130,8 @@ sed -e '/Remote debugging using/,/vgdb launched process attached/d'             
     -e 's/0x........ in \(main () at clean_after_fork.c:34\)/\1/'                                     \
     -e 's/\(^.*signal SIGFPE.*$\)/\1\nafter trap SIGFPE/'                                             \
     -e 's/p=p@entry=0x/p=0x/'									      \
-    -e 's/\(^Breakpoint 1, tls_ptr (p=0x........\) <tests[0-9+]*>\() at tls.c:55\)/\1\2/'         \
-    -e '/Id   Target Id         Frame/d'                                                              \
+    -e 's/\(^Breakpoint 1, tls_ptr (p=0x........\) <tests[0-9+]*>\() at tls.c:55\)/\1\2/'             \
+    -e '/Id   Target Id *Frame/d'                                                                     \
     -e 's/^\([ \*] [1234] \) *Thread /\1Thread /'                                                     \
     -e 's/^  [0-9] Thread .... (tid [0-9] .*$//'                                                      \
     -e 's/VgTs_WaitSys) 0x/VgTs_WaitSys)  0x/'                                                        \

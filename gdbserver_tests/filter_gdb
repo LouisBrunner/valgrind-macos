@@ -27,6 +27,7 @@ sed -e '/^\ \ \ \ \.\.\.$/d'                                        |
 #       remove missing debuginfos
 #       vgdb message
 #       pid numbers
+#       filter 'remote target killed' messages (produced by gdb >= 8.2)
 #       Thread numbers
 #       delete thread switches
 #       info threads output (e.g. which thread is running and syscall)
@@ -82,6 +83,7 @@ sed -e '/Remote debugging using/,/vgdb launched process attached/d'             
     -e '/^Try: zypper install -C/d'                                                                   \
     -e '/relaying data between gdb and process/d'                                                     \
     -e 's/pid [0-9][0-9]*/pid ..../g'                                                                 \
+    -e '/(Remote target) killed/d'                                                                    \
     -e 's/Thread [0-9][0-9]*/Thread ..../g'                                                           \
     -e '/\[Switching to Thread ....\]/d'                                                              \
     -e 's/\(\[Switching to thread [1234] (Thread ....)\]\)#0/\1\n#0/'                                 \

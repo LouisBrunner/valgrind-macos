@@ -7,7 +7,7 @@ monitor v.set vgdb-error 999999
 # insert break after the allocation of A
 break leak-tree.c:42
 # insert break after returning from function f
-break leak-tree.c:67
+break leak-tree.c:68
 #
 # continue till //1break:
 continue

@@ -1,6 +1,6 @@
 vgdb-error value changed from 0 to 999999
 Breakpoint 1 at 0x........: file leak-tree.c, line 42.
-Breakpoint 2 at 0x........: file leak-tree.c, line 67.
+Breakpoint 2 at 0x........: file leak-tree.c, line 68.
 Continuing.
 Breakpoint 1, f () at leak-tree.c:42
 42	   t->l    = mk();   // B

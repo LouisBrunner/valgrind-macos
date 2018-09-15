@@ -1581,8 +1581,7 @@ mapping.  The bypass for these false positives is to use Memcheck's client
 requests <varname>VALGRIND_MAKE_MEM_DEFINED</varname> and
 <varname>VALGRIND_MAKE_MEM_UNDEFINED</varname> to inform
 Memcheck about what your program does (or what another process does)
-to these shared memory mappings. Alternatively, you can also use
-<varname>VALGRIND_DISABLE_ADDR_ERROR_REPORTING_IN_RANGE</varname>.
+to these shared memory mappings.
 </para>
 
 </sect2>

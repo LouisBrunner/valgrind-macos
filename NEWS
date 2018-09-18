@@ -30,7 +30,7 @@ support for X86/macOS 10.13, AMD64/macOS 10.13.
 
 * mips: support for MIPS SIMD architecture (MSA) has been added.
 
-* mips: support for MIPS N32 ABI support has been added.
+* mips: support for MIPS N32 ABI has been added.
 
 * ==================== TOOL CHANGES ====================
 
@@ -155,6 +155,7 @@ where XXXXXX is the bug number as listed below.
 395682  Accept read-only PT_LOAD segments and .rodata by ld -z separate-code
         == 384727
 396475  valgrind OS-X build: config.h not found (out-of-tree macOS builds)
+395991  arm-linux: wine's unit tests enter a signal delivery loop [..]
 396887  arch_prctl should return EINVAL on unknown option
         == 397286 crash before launching binary (Unsupported arch_prctl option)
         == 397393 valgrind: the 'impossible' happened: (Archlinux)

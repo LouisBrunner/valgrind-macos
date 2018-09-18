@@ -197,10 +197,6 @@ Should possibly take
 393182  Add support for pthread_setname_np() to set thread name
 (I thought this already worked)
 
-395991  wine's unit tests enter a signal delivery loop under valgrind on
-        armv7l when SIGSEGV is used
-FIX for 3.14 (arm32 signal-resume stuff)
-
 396369  WARNING: unhandled amd64-linux syscall: 332
 
 397265  [PATCH] Add (partial) support for userfaultfd syscall and related ioctl
@@ -647,9 +643,6 @@ Probably invalid (3.11.0)
 
 396706  VEX issue with AMD64 SHR instruction?
 Missing spec rule, fix this
-
-397089  [PATCH] Incorrect decoding of three-register vmovss/vmovsd opcode 11h
-FIX FOR 3.14
 
 398183  Vex errors with _mm256_shuffle_epi8/vpshufb.
 Generates too much code

@@ -54,12 +54,12 @@
 
 /* This uses the hack of dumping the vex guest state along with both
    shadows in the frame, and restoring it afterwards from there,
-   rather than pulling it out of the ucontext.  That means that signal
-   handlers which modify the ucontext and then return, expecting their
-   modifications to take effect, will have those modifications
-   ignored.  This could be fixed properly with an hour or so more
-   effort. */
-
+   rather than pulling it out of the ucontext.  Then, integer
+   registers, the SP and the PC are restored from the ucontext.  That
+   means that signal handlers which modify floating point registers or
+   in general any register state apart from R0 to R15 in the ucontext
+   and then return, expecting their modifications to take effect, will
+   have those modifications ignored. */
 
 struct vg_sig_private {
    UInt magicPI;
@@ -95,24 +95,12 @@ static void synth_ucontext( ThreadId tid, const vki_siginfo_t *si,
    uc->uc_sigmask = *set;
    uc->uc_stack = tst->altstack;
 
-#  define SC2(reg,REG)  sc->arm_##reg = tst->arch.vex.guest_##REG
-   SC2(r0,R0);
-   SC2(r1,R1);
-   SC2(r2,R2);
-   SC2(r3,R3);
-   SC2(r4,R4);
-   SC2(r5,R5);
-   SC2(r6,R6);
-   SC2(r7,R7);
-   SC2(r8,R8);
-   SC2(r9,R9);
-   SC2(r10,R10);
-   SC2(fp,R11);
-   SC2(ip,R12);
-   SC2(sp,R13);
-   SC2(lr,R14);
-   SC2(pc,R15T);
-#  undef SC2
+#  define TO_CTX(reg,REG)  sc->arm_##reg = tst->arch.vex.guest_##REG
+   TO_CTX(r0,R0);   TO_CTX(r1,R1);   TO_CTX(r2,R2);   TO_CTX(r3,R3);
+   TO_CTX(r4,R4);   TO_CTX(r5,R5);   TO_CTX(r6,R6);   TO_CTX(r7,R7);
+   TO_CTX(r8,R8);   TO_CTX(r9,R9);   TO_CTX(r10,R10); TO_CTX(fp,R11);
+   TO_CTX(ip,R12);  TO_CTX(sp,R13);  TO_CTX(lr,R14);  TO_CTX(pc,R15T);
+#  undef TO_CTX
 
    sc->trap_no = trapno;
    sc->error_code = err;
@@ -170,11 +158,9 @@ void VG_(sigframe_create)( ThreadId tid,
                            const vki_sigset_t *mask,
                            void *restorer )
 {
-//   struct vg_sig_private *priv;
    Addr sp = sp_top_of_frame;
    ThreadState *tst;
    Int sigNo = siginfo->si_signo;
-//   Addr faultaddr;
    UInt size;
 
    tst = VG_(get_ThreadState)(tid);
@@ -200,7 +186,8 @@ void VG_(sigframe_create)( ThreadId tid,
       VG_(memcpy)(&rsf->info, siginfo, sizeof(vki_siginfo_t));
 
       if(sigNo == VKI_SIGILL && siginfo->si_code > 0) {
-         rsf->info._sifields._sigfault._addr = (Addr *) (tst)->arch.vex.guest_R12; /* IP */
+         rsf->info._sifields._sigfault._addr
+            = (Addr *) (tst)->arch.vex.guest_R12; /* IP */
       }
       VG_TRACK( post_mem_write, Vg_CoreSignal, tst->tid, /* ^^^^^ */
             (Addr)rsf, offsetof(struct rt_sigframe, sig));
@@ -230,6 +217,12 @@ void VG_(sigframe_create)( ThreadId tid,
 
    tst->arch.vex.guest_R15T = (Addr) handler; /* R15 == PC */
 
+   /* Regardless of what the state of ITSTATE was, it makes no sense
+      to enter the handler with the first 1-4 instructions possibly
+      predicated as "don't execute".  So set ITSTATE to [AL,AL,AL,AL]
+      before entering the handler. */
+   tst->arch.vex.guest_ITSTATE = 0;
+
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,
                    "VG_(sigframe_create): continuing in handler with PC=%#lx\n",
@@ -251,6 +244,8 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
    Int sigNo;
    Bool has_siginfo = isRT;
 
+   struct rt_sigframe *rt_frame = NULL;
+
    vg_assert(VG_(is_valid_tid)(tid));
    tst = VG_(get_ThreadState)(tid);
    sp = tst->arch.vex.guest_R13;
@@ -261,46 +256,56 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
       priv = &frame->sig.vp;
       vg_assert(priv->magicPI == 0x31415927);
       tst->sig_mask = frame->sig.uc.uc_sigmask;
+      rt_frame = frame;
    } else {
       struct sigframe *frame = (struct sigframe *)sp;
       frame_size = sizeof(*frame);
       priv = &frame->vp;
       vg_assert(priv->magicPI == 0x31415927);
       tst->sig_mask = frame->uc.uc_sigmask;
-      /*tst->sig_mask.sig[0] = frame->uc.uc_mcontext.oldmask;
-      tst->sig_mask.sig[1] = frame->uc.uc_mcontext._unused[3];
-      VG_(printf)("Setting signmask to %08x%08x\n",tst->sig_mask[0],tst->sig_mask[1]);
-*/
    }
    tst->tmp_sig_mask = tst->sig_mask;
 
    sigNo = priv->sigNo_private;
 
-//ZZ     //XXX: restore regs
-//ZZ #  define REST(reg,REG)  tst->arch.vex.guest_##REG = mc->arm_##reg;
-//ZZ    REST(r0,R0);
-//ZZ    REST(r1,R1);
-//ZZ    REST(r2,R2);
-//ZZ    REST(r3,R3);
-//ZZ    REST(r4,R4);
-//ZZ    REST(r5,R5);
-//ZZ    REST(r6,R6);
-//ZZ    REST(r7,R7);
-//ZZ    REST(r8,R8);
-//ZZ    REST(r9,R9);
-//ZZ    REST(r10,R10);
-//ZZ    REST(fp,R11);
-//ZZ    REST(ip,R12);
-//ZZ    REST(sp,R13);
-//ZZ    REST(lr,R14);
-//ZZ    REST(pc,R15T);
-//ZZ #  undef REST
-
-   /* Uh, the next line makes all the REST() above pointless. */
+   /* Restore the entire machine state from our private copy.  This
+      isn't really right, but we'll now move on to pick up at least
+      some changes that the signal handler may have made to the
+      sigcontext. */
    tst->arch.vex         = priv->vex;
-
    tst->arch.vex_shadow1 = priv->vex_shadow1;
    tst->arch.vex_shadow2 = priv->vex_shadow2;
+
+   if (has_siginfo) {
+      /* Pick up at least some state changes from the ucontext, just
+         in case the handler changed it.  The shadow values will be
+         wrong, but hey.  This restores the integer registers, the
+         program counter and stack pointer.  FP/Vector regs, and any
+         condition code, FP status/control bits, etc, are not
+         restored. */
+      vg_assert(rt_frame != NULL);
+      struct vki_sigcontext *sc = &rt_frame->sig.uc.uc_mcontext;
+      Bool handler_changed_pc = sc->arm_pc != tst->arch.vex.guest_R15T;
+
+#     define FROM_CTX(reg,REG)  tst->arch.vex.guest_##REG = sc->arm_##reg;
+      FROM_CTX(r0,R0);  FROM_CTX(r1,R1);  FROM_CTX(r2,R2);   FROM_CTX(r3,R3);
+      FROM_CTX(r4,R4);  FROM_CTX(r5,R5);  FROM_CTX(r6,R6);   FROM_CTX(r7,R7);
+      FROM_CTX(r8,R8);  FROM_CTX(r9,R9);  FROM_CTX(r10,R10); FROM_CTX(fp,R11);
+      FROM_CTX(ip,R12); FROM_CTX(sp,R13); FROM_CTX(lr,R14);  FROM_CTX(pc,R15T);
+#     undef FROM_CTX
+
+      /* A nasty ITSTATE hack -- apparently necessary as there doesn't
+         seem to be anywhere in the mcontext in which the ITSTATE is
+         stored.  If the handler appears to have changed the PC, set
+         ITSTATE to [AL,AL,AL,AL] on the basis that it would be nuts
+         to start executing code with an ITSTATE value that pertained
+         to some other code address.  Otherwise ITSTATE is restored
+         directly from the VEX state that we shoved on the stack when
+         creating the signal frame. */
+      if (handler_changed_pc) {
+         tst->arch.vex.guest_ITSTATE = 0;
+      }
+   }
 
    VG_TRACK( die_mem_stack_signal, sp - VG_STACK_REDZONE_SZB,
              frame_size + VG_STACK_REDZONE_SZB );

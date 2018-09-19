@@ -789,7 +789,12 @@ Syscall param clone(parent_tidptr) contains uninitialised byte(s)
    ...
    by 0x........: main (scalar.c:556)
 
-Syscall param clone(child_tls) contains uninitialised byte(s)
+Syscall param clone(parent_tidptr) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:556)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param clone(tlsinfo) contains uninitialised byte(s)
    ...
    by 0x........: main (scalar.c:556)
 
@@ -797,7 +802,7 @@ Syscall param clone(child_tidptr) contains uninitialised byte(s)
    ...
    by 0x........: main (scalar.c:556)
 
-Syscall param clone(parent_tidptr) points to unaddressable byte(s)
+Syscall param clone(child_tidptr) points to unaddressable byte(s)
    ...
    by 0x........: main (scalar.c:556)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd

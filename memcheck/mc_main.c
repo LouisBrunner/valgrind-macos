@@ -1350,7 +1350,16 @@ void mc_LOADV_128_or_256_slow ( /*OUT*/ULong* res,
       ok |= pessim[j] != V_BITS64_DEFINED;
    tl_assert(ok);
 
-   if (0 == (a & (szB - 1)) && n_addrs_bad < szB) {
+#  if defined(VGP_s390x_linux)
+   tl_assert(szB == 16); // s390 doesn't have > 128 bit SIMD
+   /* OK if all loaded bytes are from the same page. */
+   Bool alignedOK = ((a & 0xfff) <= 0x1000 - szB);
+#  else
+   /* OK if the address is aligned by the load size. */
+   Bool alignedOK = (0 == (a & (szB - 1)));
+#  endif
+
+   if (alignedOK && n_addrs_bad < szB) {
       /* Exemption applies.  Use the previously computed pessimising
          value and return the combined result, but don't flag an
          addressing error.  The pessimising value is Defined for valid

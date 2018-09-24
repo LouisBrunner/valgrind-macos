@@ -198,7 +198,11 @@ typedef enum {
    S390_VEC_FILL,
    S390_VEC_DUPLICATE,
    S390_VEC_UNPACKLOWS,
-   S390_VEC_UNPACKLOWU
+   S390_VEC_UNPACKLOWU,
+   S390_VEC_ABS,
+   S390_VEC_COUNT_LEADING_ZEROES,
+   S390_VEC_COUNT_TRAILING_ZEROES,
+   S390_VEC_COUNT_ONES
 } s390_unop_t;
 
 /* The kind of ternary BFP operations */
@@ -337,7 +341,10 @@ typedef enum {
 
 /* The vector operations with 2 operands one of them being amode */
 typedef enum {
-   S390_VEC_GET_ELEM
+   S390_VEC_GET_ELEM,
+   S390_VEC_ELEM_SHL_INT,
+   S390_VEC_ELEM_SHRA_INT,
+   S390_VEC_ELEM_SHRL_INT
 } s390_vec_amodeop_t;
 
 /* The vector operations with three (vector, amode and integer) operands */
@@ -355,7 +362,38 @@ typedef enum {
    S390_VEC_XOR,
    S390_VEC_AND,
    S390_VEC_MERGEL,
-   S390_VEC_MERGEH
+   S390_VEC_MERGEH,
+   S390_VEC_NOR,
+   S390_VEC_INT_ADD,
+   S390_VEC_INT_SUB,
+   S390_VEC_MAXU,
+   S390_VEC_MAXS,
+   S390_VEC_MINU,
+   S390_VEC_MINS,
+   S390_VEC_AVGU,
+   S390_VEC_AVGS,
+   S390_VEC_COMPARE_GREATERS,
+   S390_VEC_COMPARE_GREATERU,
+   S390_VEC_INT_MUL_HIGHS,
+   S390_VEC_INT_MUL_HIGHU,
+   S390_VEC_INT_MUL_LOW,
+   S390_VEC_INT_MUL_EVENS,
+   S390_VEC_INT_MUL_EVENU,
+   S390_VEC_ELEM_SHL_V,
+   S390_VEC_ELEM_SHRA_V,
+   S390_VEC_ELEM_SHRL_V,
+   S390_VEC_ELEM_ROLL_V,
+
+   /* host_s390_isel depends on this order. */
+   S390_VEC_SHL_BITS, S390_VEC_SHL_BYTES,
+   S390_VEC_SHRL_BITS, S390_VEC_SHRL_BYTES,
+   S390_VEC_SHRA_BITS, S390_VEC_SHRA_BYTES,
+
+   S390_VEC_PWSUM_W,
+   S390_VEC_PWSUM_DW,
+   S390_VEC_PWSUM_QW,
+
+   S390_VEC_INIT_FROM_GPRS,
 } s390_vec_binop_t;
 
 /* The vector operations with three operands */

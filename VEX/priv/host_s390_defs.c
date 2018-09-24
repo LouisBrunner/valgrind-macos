@@ -1766,6 +1766,20 @@ emit_VRR_VVVV(UChar *p, ULong op, UChar v1, UChar v2, UChar v3, UChar v4)
 }
 
 
+static UChar *
+emit_VRR_VRR(UChar *p, ULong op, UChar v1, UChar r2, UChar r3)
+{
+   ULong the_insn = op;
+   ULong rxb = s390_update_rxb(0, 1, &v1);
+
+   the_insn |= ((ULong)v1) << 36;
+   the_insn |= ((ULong)r2) << 32;
+   the_insn |= ((ULong)r3) << 28;
+   the_insn |= ((ULong)rxb)<< 8;
+
+   return emit_6bytes(p, the_insn);
+}
+
 /*------------------------------------------------------------*/
 /*--- Functions to emit particular instructions            ---*/
 /*------------------------------------------------------------*/
@@ -5713,6 +5727,338 @@ s390_emit_VMRL(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
    return emit_VRR_VVVM(p, 0xE70000000060ULL, v1, v2, v3, m4);
 }
 
+static UChar *
+s390_emit_VA(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "va", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE700000000f3ULL, v1, v2, v3, m4);
+}
+
+static UChar *
+s390_emit_VS(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vs", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE700000000f7ULL, v1, v2, v3, m4);
+}
+
+static UChar *
+s390_emit_VNO(UChar *p, UChar v1, UChar v2, UChar v3)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, VR, VR, VR), "vno", v1, v2, v3);
+
+   return emit_VRR_VVV(p, 0xE7000000006bULL, v1, v2, v3);
+}
+
+static UChar *
+s390_emit_VCH(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vch", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE700000000fbULL, v1, v2, v3, m4);
+}
+
+static UChar *
+s390_emit_VCHL(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vchl", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE700000000f9ULL, v1, v2, v3, m4);
+}
+
+static UChar *
+s390_emit_VCLZ(UChar *p, UChar v1, UChar v2, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, VR, VR, UINT), "vclz", v1, v2, m4);
+
+   return emit_VRR_VVM(p, 0xE70000000053ULL, v1, v2, m4);
+}
+
+static UChar *
+s390_emit_VCTZ(UChar *p, UChar v1, UChar v2, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, VR, VR, UINT), "vctz", v1, v2, m4);
+
+   return emit_VRR_VVM(p, 0xE70000000052ULL, v1, v2, m4);
+}
+
+static UChar *
+s390_emit_VPOPCT(UChar *p, UChar v1, UChar v2, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, VR, VR, UINT), "vpopct", v1, v2, m4);
+
+   return emit_VRR_VVM(p, 0xE70000000050ULL, v1, v2, m4);
+}
+
+static UChar *
+s390_emit_VMX(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vmx", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE700000000ffULL, v1, v2, v3, m4);
+}
+
+static UChar *
+s390_emit_VMXL(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vmxl", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE700000000fdULL, v1, v2, v3, m4);
+}
+
+static UChar *
+s390_emit_VMN(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vmn", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE700000000feULL, v1, v2, v3, m4);
+}
+
+static UChar *
+s390_emit_VMNL(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vmnl", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE700000000fcULL, v1, v2, v3, m4);
+}
+
+static UChar *
+s390_emit_VAVG(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vavg", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE700000000f2ULL, v1, v2, v3, m4);
+}
+
+static UChar *
+s390_emit_VAVGL(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vavgl", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE700000000f0ULL, v1, v2, v3, m4);
+}
+
+static UChar *
+s390_emit_VLP(UChar *p, UChar v1, UChar v2, UChar m3)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, VR, VR, UINT), "vlp", v1, v2, m3);
+
+   return emit_VRR_VVM(p, 0xE700000000DFULL, v1, v2, m3);
+}
+
+static UChar *
+s390_emit_VMH(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vmh", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE700000000a3ULL, v1, v2, v3, m4);
+}
+
+static UChar *
+s390_emit_VMLH(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vmlh", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE700000000a1ULL, v1, v2, v3, m4);
+}
+
+static UChar *
+s390_emit_VML(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vml", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE700000000a2ULL, v1, v2, v3, m4);
+}
+
+static UChar *
+s390_emit_VME(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vme", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE700000000a6ULL, v1, v2, v3, m4);
+}
+
+static UChar *
+s390_emit_VMLE(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vmle", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE700000000a4ULL, v1, v2, v3, m4);
+}
+
+static UChar *
+s390_emit_VESLV(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "veslv", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE70000000070ULL, v1, v2, v3, m4);
+}
+
+static UChar *
+s390_emit_VESRAV(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vesrav", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE7000000007aULL, v1, v2, v3, m4);
+}
+
+static UChar *
+s390_emit_VESRLV(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vesrlv", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE70000000078ULL, v1, v2, v3, m4);
+}
+
+static UChar *
+s390_emit_VESL(UChar *p, UChar v1, UChar b2, UShort d2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, UDXB, VR, UINT), "vesl", v1, d2, 0, b2, v3, m4);
+
+   return emit_VRS(p, 0xE70000000030ULL, v1, b2, d2, v3, m4);
+}
+
+static UChar *
+s390_emit_VESRA(UChar *p, UChar v1, UChar b2, UShort d2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, UDXB, VR, UINT), "vesra", v1, d2, 0, b2, v3, m4);
+
+   return emit_VRS(p, 0xE7000000003aULL, v1, b2, d2, v3, m4);
+}
+
+static UChar *
+s390_emit_VESRL(UChar *p, UChar v1, UChar b2, UShort d2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, UDXB, VR, UINT), "vesrl", v1, d2, 0, b2, v3, m4);
+
+   return emit_VRS(p, 0xE70000000038ULL, v1, b2, d2, v3, m4);
+}
+
+static UChar *
+s390_emit_VERLLV(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "verllv", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE70000000073ULL, v1, v2, v3, m4);
+}
+
+static UChar *
+s390_emit_VSL(UChar *p, UChar v1, UChar v2, UChar v3)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, VR, VR, VR), "vsl", v1, v2, v3);
+
+   return emit_VRR_VVV(p, 0xE70000000074ULL, v1, v2, v3);
+}
+
+static UChar *
+s390_emit_VSRL(UChar *p, UChar v1, UChar v2, UChar v3)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, VR, VR, VR), "vsrl", v1, v2, v3);
+
+   return emit_VRR_VVV(p, 0xE7000000007cULL, v1, v2, v3);
+}
+
+static UChar *
+s390_emit_VSRA(UChar *p, UChar v1, UChar v2, UChar v3)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, VR, VR, VR), "vsra", v1, v2, v3);
+
+   return emit_VRR_VVV(p, 0xE7000000007eULL, v1, v2, v3);
+}
+
+static UChar *
+s390_emit_VSLB(UChar *p, UChar v1, UChar v2, UChar v3)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, VR, VR, VR), "vslb", v1, v2, v3);
+
+   return emit_VRR_VVV(p, 0xE70000000075ULL, v1, v2, v3);
+}
+
+static UChar *
+s390_emit_VSRLB(UChar *p, UChar v1, UChar v2, UChar v3)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, VR, VR, VR), "vsrlb", v1, v2, v3);
+
+   return emit_VRR_VVV(p, 0xE7000000007dULL, v1, v2, v3);
+}
+
+static UChar *
+s390_emit_VSRAB(UChar *p, UChar v1, UChar v2, UChar v3)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, VR, VR, VR), "vsrab", v1, v2, v3);
+
+   return emit_VRR_VVV(p, 0xE7000000007fULL, v1, v2, v3);
+}
+
+static UChar *
+s390_emit_VSUM(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vsum", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE70000000064ULL, v1, v2, v3, m4);
+}
+
+static UChar *
+s390_emit_VSUMG(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vsumg", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE70000000065ULL, v1, v2, v3, m4);
+}
+
+static UChar *
+s390_emit_VSUMQ(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, VR, UINT), "vsumq", v1, v2, v3, m4);
+
+   return emit_VRR_VVVM(p, 0xE70000000067ULL, v1, v2, v3, m4);
+}
+
+static UChar *
+s390_emit_VLVGP(UChar *p, UChar v1, UChar r2, UChar r3)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, VR, GPR, GPR), "vlvgp", v1, r2, r3);
+
+   return emit_VRR_VRR(p, 0xE70000000062ULL, v1, r2, r3);
+}
 
 /*---------------------------------------------------------------*/
 /*--- Constructors for the various s390_insn kinds            ---*/
@@ -7476,6 +7822,9 @@ s390_insn_as_string(const s390_insn *insn)
    case S390_INSN_VEC_AMODEOP:
       switch (insn->variant.vec_amodeop.tag) {
       case S390_VEC_GET_ELEM:  op = "v-vgetelem";  break;
+      case S390_VEC_ELEM_SHL_INT: op = "v-veshl"; break;
+      case S390_VEC_ELEM_SHRA_INT: op = "v-veshra"; break;
+      case S390_VEC_ELEM_SHRL_INT: op = "v-veshrl"; break;
       default: goto fail;
       }
       s390_sprintf(buf, "%M %R, %R, %A", op, insn->variant.vec_amodeop.dst,
@@ -7504,6 +7853,36 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_VEC_AND:            op = "v-vand"; break;
       case S390_VEC_MERGEL:         op = "v-vmergel"; break;
       case S390_VEC_MERGEH:         op = "v-vmergeh"; break;
+      case S390_VEC_NOR:            op = "v-vnor"; break;
+      case S390_VEC_INT_ADD:        op = "v-vintadd"; break;
+      case S390_VEC_INT_SUB:        op = "v-vintsub"; break;
+      case S390_VEC_MAXU:           op = "v-vmaxu"; break;
+      case S390_VEC_MAXS:           op = "v-vmaxs"; break;
+      case S390_VEC_MINU:           op = "v-vminu"; break;
+      case S390_VEC_MINS:           op = "v-vmins"; break;
+      case S390_VEC_AVGU:           op = "v-vavgu"; break;
+      case S390_VEC_AVGS:           op = "v-vavgs"; break;
+      case S390_VEC_COMPARE_GREATERS: op = "v-vcmpgts"; break;
+      case S390_VEC_COMPARE_GREATERU: op = "v-vcmpgtu"; break;
+      case S390_VEC_INT_MUL_HIGHS:    op = "v-vintmulhis"; break;
+      case S390_VEC_INT_MUL_HIGHU:    op = "v-vintmulhiu"; break;
+      case S390_VEC_INT_MUL_LOW:      op = "v-vintmullo"; break;
+      case S390_VEC_INT_MUL_EVENS:    op = "v-vintmulevens"; break;
+      case S390_VEC_INT_MUL_EVENU:    op = "v-vintmulevenu"; break;
+      case S390_VEC_ELEM_SHL_V:       op = "v-velemshl"; break;
+      case S390_VEC_ELEM_SHRA_V:      op = "v-vshrav"; break;
+      case S390_VEC_ELEM_SHRL_V:      op = "v-vshrlv"; break;
+      case S390_VEC_ELEM_ROLL_V:      op = "v-vrollv"; break;
+      case S390_VEC_SHL_BITS:         op = "v-vshlbits"; break;
+      case S390_VEC_SHRL_BITS:        op = "v-vshrlbits"; break;
+      case S390_VEC_SHRA_BITS:        op = "v-vshrabits"; break;
+      case S390_VEC_SHL_BYTES:        op = "v-vshlbytes"; break;
+      case S390_VEC_SHRL_BYTES:       op = "v-vshrlbytes"; break;
+      case S390_VEC_SHRA_BYTES:       op = "v-vshrabytes"; break;
+      case S390_VEC_PWSUM_W:          op = "v-vpwsumw"; break;
+      case S390_VEC_PWSUM_DW:         op = "v-vpwsumdw"; break;
+      case S390_VEC_PWSUM_QW:         op = "v-vpwsumqw"; break;
+      case S390_VEC_INIT_FROM_GPRS:   op = "v-vinitfromgprs"; break;
       default: goto fail;
       }
       s390_sprintf(buf, "%M %R, %R, %R", op, insn->variant.vec_binop.dst,
@@ -7884,6 +8263,9 @@ s390_insn_move_emit(UChar *buf, const s390_insn *insn)
          return s390_emit_LGR(buf, dst, src);
       if (dst_class == HRcFlt64)
          return s390_emit_LDR(buf, dst, src);
+      if (dst_class == HRcVec128) {
+         return s390_emit_VLR(buf, dst, src);
+      }
    } else {
       if (dst_class == HRcFlt64 && src_class == HRcInt64) {
          if (insn->size == 4) {
@@ -7899,12 +8281,6 @@ s390_insn_move_emit(UChar *buf, const s390_insn *insn)
             return s390_emit_SRLG(buf, dst, dst, 0, DISP20(32)); /* dst >>= 32 */
          } else {
             return s390_emit_LGDRw(buf, dst, src);
-         }
-      }
-
-      if (dst_class == HRcVec128 && src_class == HRcVec128) {
-         if(insn->size == 16) {
-            return s390_emit_VLR(buf, dst, src);
          }
       }
       /* A move between floating point registers and general purpose
@@ -8634,9 +9010,38 @@ s390_insn_unop_emit(UChar *buf, const s390_insn *insn)
       UChar v2 = hregNumber(insn->variant.unop.src.variant.reg);
       return s390_emit_VUPLH(buf, v1, v2, s390_getM_from_size(insn->size));
       }
+
+   case S390_VEC_ABS:{
+      vassert(insn->variant.unop.src.tag == S390_OPND_REG);
+      UChar v1 = hregNumber(insn->variant.unop.dst);
+      UChar v2 = hregNumber(insn->variant.unop.src.variant.reg);
+      return s390_emit_VLP(buf, v1, v2, s390_getM_from_size(insn->size));
    }
 
-   vpanic("s390_insn_unop_emit");
+   case S390_VEC_COUNT_LEADING_ZEROES:{
+      vassert(insn->variant.unop.src.tag == S390_OPND_REG);
+      UChar v1 = hregNumber(insn->variant.unop.dst);
+      UChar v2 = hregNumber(insn->variant.unop.src.variant.reg);
+      return s390_emit_VCLZ(buf, v1, v2, s390_getM_from_size(insn->size));
+   }
+
+   case S390_VEC_COUNT_TRAILING_ZEROES:{
+      vassert(insn->variant.unop.src.tag == S390_OPND_REG);
+      UChar v1 = hregNumber(insn->variant.unop.dst);
+      UChar v2 = hregNumber(insn->variant.unop.src.variant.reg);
+      return s390_emit_VCTZ(buf, v1, v2, s390_getM_from_size(insn->size));
+   }
+
+   case S390_VEC_COUNT_ONES:{
+      vassert(insn->variant.unop.src.tag == S390_OPND_REG);
+      UChar v1 = hregNumber(insn->variant.unop.dst);
+      UChar v2 = hregNumber(insn->variant.unop.src.variant.reg);
+      return s390_emit_VPOPCT(buf, v1, v2, s390_getM_from_size(insn->size));
+   }
+
+   default:
+      vpanic("s390_insn_unop_emit");
+   }
 }
 
 
@@ -10502,18 +10907,30 @@ s390_insn_profinc_emit(UChar *buf,
 static UChar *
 s390_insn_vec_amodeop_emit(UChar *buf, const s390_insn *insn)
 {
-   UChar r1 = hregNumber(insn->variant.vec_amodeop.dst);
-   UChar v1 = hregNumber(insn->variant.vec_amodeop.op1);
+   UChar v1 = hregNumber(insn->variant.vec_amodeop.dst);
+   UChar v2 = hregNumber(insn->variant.vec_amodeop.op1);
    s390_amode* op2 = insn->variant.vec_amodeop.op2;
 
    vassert(hregNumber(op2->x) == 0);
+   vassert(fits_unsigned_12bit(op2->d));
+
    UChar b = hregNumber(op2->b);
    UShort d = op2->d;
 
 
    switch (insn->variant.vec_amodeop.tag) {
    case S390_VEC_GET_ELEM:
-      return s390_emit_VLGV(buf, r1, b, d, v1, s390_getM_from_size(insn->size));
+      return s390_emit_VLGV(buf, v1, b, d, v2, s390_getM_from_size(insn->size));
+
+   case S390_VEC_ELEM_SHL_INT:
+      return s390_emit_VESL(buf, v1, b, d, v2, s390_getM_from_size(insn->size));
+
+   case S390_VEC_ELEM_SHRA_INT:
+      return s390_emit_VESRA(buf, v1, b, d, v2, s390_getM_from_size(insn->size));
+
+   case S390_VEC_ELEM_SHRL_INT:
+      return s390_emit_VESRL(buf, v1, b, d, v2, s390_getM_from_size(insn->size));
+
    default:  goto fail;
    }
 
@@ -10569,9 +10986,72 @@ s390_insn_vec_binop_emit(UChar *buf, const s390_insn *insn)
       case S390_VEC_AND:
          return s390_emit_VN(buf, v1, v2, v3);
       case S390_VEC_MERGEL:
-         return s390_emit_VMRH(buf, v1, v2, v3, s390_getM_from_size(size));
-      case S390_VEC_MERGEH:
          return s390_emit_VMRL(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_MERGEH:
+         return s390_emit_VMRH(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_NOR:
+         return s390_emit_VNO(buf, v1, v2, v3);
+      case S390_VEC_INT_ADD:
+         return s390_emit_VA(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_INT_SUB:
+         return s390_emit_VS(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_MAXU:
+         return s390_emit_VMXL(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_MAXS:
+         return s390_emit_VMX(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_MINU:
+         return s390_emit_VMNL(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_MINS:
+         return s390_emit_VMN(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_AVGU:
+         return s390_emit_VAVGL(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_AVGS:
+         return s390_emit_VAVG(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_COMPARE_GREATERS:
+         return s390_emit_VCH(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_COMPARE_GREATERU:
+         return s390_emit_VCHL(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_INT_MUL_HIGHS:
+         return s390_emit_VMH(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_INT_MUL_HIGHU:
+         return s390_emit_VMLH(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_INT_MUL_LOW:
+         return s390_emit_VML(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_INT_MUL_EVENS:
+         return s390_emit_VME(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_INT_MUL_EVENU:
+         return s390_emit_VMLE(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_ELEM_SHL_V:
+         return s390_emit_VESLV(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_ELEM_SHRA_V:
+         return s390_emit_VESRAV(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_ELEM_SHRL_V:
+         return s390_emit_VESRLV(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_ELEM_ROLL_V:
+         return s390_emit_VERLLV(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_SHL_BITS:
+         return s390_emit_VSL(buf, v1, v2, v3);
+      case S390_VEC_SHRL_BITS:
+         return s390_emit_VSRL(buf, v1, v2, v3);
+      case S390_VEC_SHRA_BITS:
+         return s390_emit_VSRA(buf, v1, v2, v3);
+      case S390_VEC_SHL_BYTES:
+         return s390_emit_VSLB(buf, v1, v2, v3);
+      case S390_VEC_SHRL_BYTES:
+         return s390_emit_VSRLB(buf, v1, v2, v3);
+      case S390_VEC_SHRA_BYTES:
+         return s390_emit_VSRAB(buf, v1, v2, v3);
+      case S390_VEC_PWSUM_W:
+         vassert((size == 1) || (size == 2));
+         return s390_emit_VSUM(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_PWSUM_DW:
+         vassert((size == 2) || (size == 4));
+         return s390_emit_VSUMG(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_PWSUM_QW:
+         vassert((size == 4) || (size == 8));
+         return s390_emit_VSUMQ(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_INIT_FROM_GPRS:
+         return s390_emit_VLVGP(buf, v1, v2, v3);
       default:
          goto fail;
    }

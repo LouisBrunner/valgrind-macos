@@ -2324,6 +2324,11 @@ static IRAtom* mkPCast64x2 ( MCEnv* mce, IRAtom* at )
    return assignNew('V', mce, Ity_V128, unop(Iop_CmpNEZ64x2, at));
 }
 
+static IRAtom* mkPCast128x1 ( MCEnv* mce, IRAtom* at )
+{
+   return assignNew('V', mce, Ity_V128, unop(Iop_CmpNEZ128x1, at));
+}
+
 static IRAtom* mkPCast64x4 ( MCEnv* mce, IRAtom* at )
 {
    return assignNew('V', mce, Ity_V256, unop(Iop_CmpNEZ64x4, at));
@@ -2931,6 +2936,15 @@ IRAtom* binary64Ix2 ( MCEnv* mce, IRAtom* vatom1, IRAtom* vatom2 )
    at = mkUifUV128(mce, vatom1, vatom2);
    at = mkPCast64x2(mce, at);
    return at;   
+}
+
+static
+IRAtom* binary128Ix1 ( MCEnv* mce, IRAtom* vatom1, IRAtom* vatom2 )
+{
+   IRAtom* at;
+   at = mkUifUV128(mce, vatom1, vatom2);
+   at = mkPCast128x1(mce, at);
+   return at;
 }
 
 /* --- 64-bit versions --- */
@@ -3609,6 +3623,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_QShl8x16:
       case Iop_Add8x16:
       case Iop_Mul8x16:
+      case Iop_MulHi8Sx16:
+      case Iop_MulHi8Ux16:
       case Iop_PolynomialMul8x16:
       case Iop_PolynomialMulAdd8x16:
          return binary8Ix16(mce, vatom1, vatom2);
@@ -3660,6 +3676,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Min32Ux4:
       case Iop_Min32Sx4:
       case Iop_Mul32x4:
+      case Iop_MulHi32Sx4:
+      case Iop_MulHi32Ux4:
       case Iop_QDMulHi32Sx4:
       case Iop_QRDMulHi32Sx4:
       case Iop_PolynomialMulAdd32x4:
@@ -3667,6 +3685,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       case Iop_Sub64x2:
       case Iop_Add64x2:
+      case Iop_Avg64Ux2:
+      case Iop_Avg64Sx2:
       case Iop_Max64Sx2:
       case Iop_Max64Ux2:
       case Iop_Min64Sx2:
@@ -3690,6 +3710,11 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_MulI128by10E:
       case Iop_MulI128by10ECarry:
         return binary64Ix2(mce, vatom1, vatom2);
+
+      case Iop_Add128x1:
+      case Iop_Sub128x1:
+      case Iop_CmpNEZ128x1:
+         return binary128Ix1(mce, vatom1, vatom2);
 
       case Iop_QNarrowBin64Sto32Sx4:
       case Iop_QNarrowBin64Uto32Ux4:
@@ -3998,6 +4023,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
                                     binop(op, vatom1, vatom2));
 
       case Iop_ShrV128:
+      case Iop_SarV128:
       case Iop_ShlV128:
       case Iop_I128StoBCD128:
          /* Same scheme as with all other shifts.  Note: 10 Nov 05:
@@ -4949,6 +4975,10 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_PwAddL32Sx4:
          return mkPCast64x2(mce,
                assignNew('V', mce, Ity_V128, unop(op, mkPCast32x4(mce, vatom))));
+
+      case Iop_PwAddL64Ux2:
+         return mkPCast128x1(mce,
+               assignNew('V', mce, Ity_V128, unop(op, mkPCast64x2(mce, vatom))));
 
       case Iop_PwAddL16Ux8:
       case Iop_PwAddL16Sx8:

@@ -51,6 +51,10 @@
 #undef  ENC6
 #define ENC6(a,b,c,d,e,f) ((P(DONE) << 24) | (P(f) << 20) | (P(e) << 16) | \
                            (P(d) << 12) | (P(c) << 8) | (P(b) << 4) | P(a))
+#undef  ENC7
+#define ENC7(a,b,c,d,e,f,g) ((P(DONE) << 28) | (P(g) << 24) | (P(f) << 20) | \
+                             (P(e) << 16) | (P(d) << 12) | (P(c) << 8) | \
+                             (P(b) << 4) | P(a))
 
 /* The different kinds of operands in an asm insn */
 enum {

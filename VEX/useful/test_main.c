@@ -1416,6 +1416,10 @@ static IRAtom* mkPCast64x2 ( MCEnv* mce, IRAtom* at )
    return assignNew(mce, Ity_V128, unop(Iop_CmpNEZ64x2, at));
 }
 
+static IRAtom* mkPCast128x1 ( MCEnv* mce, IRAtom* at )
+{
+   return assignNew(mce, Ity_V128, unop(Iop_CmpNEZ128x1, at));
+}
 
 /* Here's a simple scheme capable of handling ops derived from SSE1
    code and while only generating ops that can be efficiently
@@ -1631,6 +1635,14 @@ IRAtom* binary64Ix2 ( MCEnv* mce, IRAtom* vatom1, IRAtom* vatom2 )
    return at;   
 }
 
+static
+IRAtom* binary128Ix1 ( MCEnv* mce, IRAtom* vatom1, IRAtom* vatom2 )
+{
+   IRAtom* at;
+   at = mkUifUV128(mce, vatom1, vatom2);
+   at = mkPCast128x1(mce, at);
+   return at;
+}
 
 /*------------------------------------------------------------*/
 /*--- Generate shadow values from all kinds of IRExprs.    ---*/
@@ -1674,6 +1686,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_QSub8Ux16:
       case Iop_QSub8Sx16:
       case Iop_Sub8x16:
+      case Iop_MulHi8Sx16:
+      case Iop_MulHi8Ux16:
       case Iop_Min8Ux16:
       case Iop_Max8Ux16:
       case Iop_CmpGT8Sx16:
@@ -1713,10 +1727,17 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Sub64x2:
       case Iop_QSub64Ux2:
       case Iop_QSub64Sx2:
+      case Iop_Avg64Ux2:
+      case Iop_Avg64Sx2:
       case Iop_Add64x2:
       case Iop_QAdd64Ux2:
       case Iop_QAdd64Sx2:
          return binary64Ix2(mce, vatom1, vatom2);
+
+      case Iop_Add128x1:
+      case Iop_Sub128x1:
+      case Iop_CmpNEZ128x1:
+         return binary128Ix1(mce, vatom1, vatom2);
 
       case Iop_QNarrowBin32Sto16Sx8:
       case Iop_QNarrowBin16Sto8Sx16:

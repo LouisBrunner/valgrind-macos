@@ -344,8 +344,8 @@ dvb_operand(HChar *p, UInt d, UInt v, UInt b, Bool displacement_is_signed)
    are separated by a ','. The command holds the arguments. Each argument is
    encoded using a 4-bit S390_ARG_xyz value. The first argument is placed
    in the least significant bits of the command and so on. There are at most
-   5 arguments in an insn and a sentinel (S390_ARG_DONE) is needed to identify
-   the end of the argument list. 6 * 4 = 24 bits are required for the
+   7 arguments in an insn and a sentinel (S390_ARG_DONE) is needed to identify
+   the end of the argument list. 8 * 4 = 32 bits are required for the
    command. */
 void
 s390_disasm(UInt command, ...)

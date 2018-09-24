@@ -121,6 +121,8 @@ where XXXXXX is the bug number as listed below.
         == 387045  Valgrind crashing on High Sierra when testing any newly [..]
 385334  PPC64, fix vpermr, xxperm, xxpermr mask value.
 385408  s390x: z13 vector "support" instructions not implemented
+385409  s390x: z13 vector integer instructions not implemented
+385410  s390x: z13 vector string instructions not implemented
 385412  s390x: new non-vector z13 instructions not implemented
 385868  glibc ld.so _dl_runtime_resolve_avx_slow conditional jump warning.
 385912  none/tests/rlimit_nofile fails on newer glibc/kernel.

@@ -80,8 +80,8 @@ ULong s390x_dirtyhelper_STCKF(ULong *addr);
 ULong s390x_dirtyhelper_STCKE(ULong *addr);
 ULong s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, ULong *addr);
 void  s390x_dirtyhelper_CUxy(UChar *addr, ULong data, ULong num_bytes);
-ULong s390x_dirtyhelper_vec_binop(VexGuestS390XState *guest_state, ULong opcode,
-                                  ULong v1, ULong v2);
+ULong s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
+                               ULong details);
 ULong s390_do_cu12_cu14_helper1(UInt byte1, UInt etf3_and_m3_is_1);
 ULong s390_do_cu12_helper2(UInt byte1, UInt byte2, UInt byte3, UInt byte4,
                            ULong stuff);
@@ -261,25 +261,52 @@ extern ULong last_execute_target;
 /*--- Vector helpers.                                      ---*/
 /*------------------------------------------------------------*/
 
-/* Vector operatons which can change condition code */
+/* Vector operatons passed to s390x_dirtyhelper_vec_op(...) helper.
+   Please don't change ordering of elements and append new items
+   before  S390_VEC_OP_LAST. */
 enum {
-   S390_CC_VEC_INVALID = 0,
-   S390_CC_VEC_VPKS = 1,
-   S390_CC_VEC_VPKLS = 2,
-   S390_CC_VEC_LAST = 3 // supposed to be the last element in enum
-} s390x_cc_vec_binop;
+   S390_VEC_OP_INVALID = 0,
+   S390_VEC_OP_VPKS = 1,
+   S390_VEC_OP_VPKLS = 2,
+   S390_VEC_OP_VFAE = 3,
+   S390_VEC_OP_VFEE = 4,
+   S390_VEC_OP_VFENE = 5,
+   S390_VEC_OP_VISTR = 6,
+   S390_VEC_OP_VSTRC = 7,
+   S390_VEC_OP_VCEQ = 8,
+   S390_VEC_OP_VTM = 9,
+   S390_VEC_OP_VGFM = 10,
+   S390_VEC_OP_VGFMA = 11,
+   S390_VEC_OP_VMAH = 12,
+   S390_VEC_OP_VMALH = 13,
+   S390_VEC_OP_VCH = 14,
+   S390_VEC_OP_VCHL = 15,
+   S390_VEC_OP_LAST = 16 // supposed to be the last element in enum
+} s390x_vec_op_t;
 
-/* Create an "object" which contain information about vector operation
-   and it's element size. Used for passing data to dirtyhelper with one argument.
-*/
-#define s390x_cc_vec_opcode(op, elem_size) ( ((op) << 3) | ((elem_size) & 0x07))
+/* Arguments of s390x_dirtyhelper_vec_op(...) which are packed into one
+   ULong variable.
+ */
+typedef union {
+   struct {
+      unsigned int op : 8;        // should be an element of s390x_vec_op_t
+      unsigned int v1 : 5;        // result of operation
+      unsigned int v2 : 5;        // argument one of operation
+      unsigned int v3 : 5;        // argument two of operation or
+                                  // zero for unary operations
 
-/* Extract operation from opcode created with "s390x_cc_vec_opcode" macro */
-#define s390x_cc_vec_get_op(opcode) ((opcode) >> 3)
+      unsigned int v4 : 5;        // argument two of operation or
+                                  // zero for unary and binary operations
 
-/* Extract operation from opcode created with "s390x_cc_vec_opcode" macro */
-#define s390x_cc_vec_get_elem_size(opcode) ((opcode) & 0x07)
+      unsigned int m4 : 4;        // field m4 of insn or zero if it's missing
+      unsigned int m5 : 4;        // field m5 of insn or zero if it's missing
+      unsigned int read_only: 1;  // don't write result to Guest State
+      unsigned int reserved : 27; // reserved for future
+   };
+   ULong serialized;
+} s390x_vec_op_details_t;
 
+STATIC_ASSERT(sizeof(s390x_vec_op_details_t) == sizeof(ULong));
 
 /* Macro definitions for opcodes that are not generally available.
 
@@ -293,6 +320,7 @@ enum {
             ".short 0x" #op1 #v1 #v2 "\n\t .int  0x" #v3 "0" #m5 "0" #m4 #rxb #op2 "\n\t"
 
 #define VL(v1, x2, b2, d2, rxb)                VRX_VXBD(e7, v1, x2, b2, d2, rxb, 06)
+#define VST(v1, x2, b2, d2, rxb)               VRX_VXBD(e7, v1, x2, b2, d2, rxb, 0e)
 #define VPKS(v1, v2, v3, m4, m5, rxb)          VRR_VVVMM(e7, v1, v2, v3, m5, m4, rxb, 97)
 #define VPKLS(v1, v2, v3, m4, m5, rxb)         VRR_VVVMM(e7, v1, v2, v3, m5, m4, rxb, 95)
 

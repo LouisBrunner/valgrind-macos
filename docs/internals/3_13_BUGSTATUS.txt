@@ -758,14 +758,6 @@ Should fold these to constant zero in iropt; awaiting test case
 
 === VEX/s390x ==========================================================
 
-(carried over)
-366413  s390x: New z13 instructions not implemented
-        [Per cborntraeger, is not important for 3.12.0]
-
-385409  s390x: z13 vector integer instructions not implemented
-
-385410  s390x: z13 vector string instructions not implemented
-
 385411  s390x: z13 vector floating-point instructions not implemented
 
 === VEX/x86 ============================================================

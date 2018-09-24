@@ -1479,13 +1479,14 @@ typedef
       Iop_AndV128, Iop_OrV128, Iop_XorV128, 
 
       /* VECTOR SHIFT (shift amt :: Ity_I8) */
-      Iop_ShlV128, Iop_ShrV128,
+      Iop_ShlV128, Iop_ShrV128, Iop_SarV128,
 
       /* MISC (vector integer cmp != 0) */
       Iop_CmpNEZ8x16, Iop_CmpNEZ16x8, Iop_CmpNEZ32x4, Iop_CmpNEZ64x2,
+      Iop_CmpNEZ128x1,
 
       /* ADDITION (normal / U->U sat / S->S sat) */
-      Iop_Add8x16,    Iop_Add16x8,    Iop_Add32x4,    Iop_Add64x2,
+      Iop_Add8x16,    Iop_Add16x8,    Iop_Add32x4,    Iop_Add64x2,   Iop_Add128x1,
       Iop_QAdd8Ux16,  Iop_QAdd16Ux8,  Iop_QAdd32Ux4,  Iop_QAdd64Ux2,
       Iop_QAdd8Sx16,  Iop_QAdd16Sx8,  Iop_QAdd32Sx4,  Iop_QAdd64Sx2,
 
@@ -1500,14 +1501,14 @@ typedef
       Iop_QAddExtSUsatUU32x4, Iop_QAddExtSUsatUU64x2,
 
       /* SUBTRACTION (normal / unsigned sat / signed sat) */
-      Iop_Sub8x16,   Iop_Sub16x8,   Iop_Sub32x4,   Iop_Sub64x2,
+      Iop_Sub8x16,   Iop_Sub16x8,   Iop_Sub32x4,   Iop_Sub64x2,   Iop_Sub128x1,
       Iop_QSub8Ux16, Iop_QSub16Ux8, Iop_QSub32Ux4, Iop_QSub64Ux2,
       Iop_QSub8Sx16, Iop_QSub16Sx8, Iop_QSub32Sx4, Iop_QSub64Sx2,
 
       /* MULTIPLICATION (normal / high half of signed/unsigned) */
       Iop_Mul8x16,  Iop_Mul16x8,    Iop_Mul32x4,
-                    Iop_MulHi16Ux8, Iop_MulHi32Ux4,
-                    Iop_MulHi16Sx8, Iop_MulHi32Sx4,
+      Iop_MulHi8Ux16, Iop_MulHi16Ux8, Iop_MulHi32Ux4,
+      Iop_MulHi8Sx16, Iop_MulHi16Sx8, Iop_MulHi32Sx4,
       /* (widening signed/unsigned of even lanes, with lowest lane=zero) */
       Iop_MullEven8Ux16, Iop_MullEven16Ux8, Iop_MullEven32Ux4,
       Iop_MullEven8Sx16, Iop_MullEven16Sx8, Iop_MullEven32Sx4,
@@ -1584,7 +1585,7 @@ typedef
          Example:
             Iop_PwAddL16Ux4( [a,b,c,d] ) = [a+b,c+d]
                where a+b and c+d are unsigned 32-bit values. */
-      Iop_PwAddL8Ux16, Iop_PwAddL16Ux8, Iop_PwAddL32Ux4,
+      Iop_PwAddL8Ux16, Iop_PwAddL16Ux8, Iop_PwAddL32Ux4, Iop_PwAddL64Ux2,
       Iop_PwAddL8Sx16, Iop_PwAddL16Sx8, Iop_PwAddL32Sx4,
 
       /* Other unary pairwise ops */
@@ -1598,8 +1599,8 @@ typedef
       Iop_Abs8x16, Iop_Abs16x8, Iop_Abs32x4, Iop_Abs64x2,
 
       /* AVERAGING: note: (arg1 + arg2 + 1) >>u 1 */
-      Iop_Avg8Ux16, Iop_Avg16Ux8, Iop_Avg32Ux4,
-      Iop_Avg8Sx16, Iop_Avg16Sx8, Iop_Avg32Sx4,
+      Iop_Avg8Ux16, Iop_Avg16Ux8, Iop_Avg32Ux4, Iop_Avg64Ux2,
+      Iop_Avg8Sx16, Iop_Avg16Sx8, Iop_Avg32Sx4, Iop_Avg64Sx2,
 
       /* MIN/MAX */
       Iop_Max8Sx16, Iop_Max16Sx8, Iop_Max32Sx4, Iop_Max64Sx2,

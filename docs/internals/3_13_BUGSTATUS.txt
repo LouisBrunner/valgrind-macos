@@ -768,8 +768,6 @@ Should fold these to constant zero in iropt; awaiting test case
 
 385411  s390x: z13 vector floating-point instructions not implemented
 
-396839  s390x: Trap instructions not implemented
-
 === VEX/x86 ============================================================
 
 === zz_other ===========================================================

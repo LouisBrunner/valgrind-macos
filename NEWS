@@ -156,6 +156,7 @@ where XXXXXX is the bug number as listed below.
         == 384727
 396475  valgrind OS-X build: config.h not found (out-of-tree macOS builds)
 395991  arm-linux: wine's unit tests enter a signal delivery loop [..]
+396839  s390x: Trap instructions not implemented
 396887  arch_prctl should return EINVAL on unknown option
         == 397286 crash before launching binary (Unsupported arch_prctl option)
         == 397393 valgrind: the 'impossible' happened: (Archlinux)

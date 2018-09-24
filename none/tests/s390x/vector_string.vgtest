@@ -1,0 +1,2 @@
+prog: vector_string
+prereq: test -e vector_string && ../../../tests/s390x_features s390x-vx

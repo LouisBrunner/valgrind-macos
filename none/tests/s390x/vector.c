@@ -148,6 +148,33 @@ s390_test_generate(vll_vstl, "vll  %%v5, %[r_arg1], %[v_arg1]\n" \
 
 s390_test_generate(vlbb, "vlbb  %%v5, 60(%[r_memory_pool]), 0")
 
+/* Test the correctness of work with VR's > 16.
+   VSEL is choosed just because it have four arguments.
+
+   The algorithm (the tested VR's are %%v21 - %%v24):
+      - save tested VR's to temporary location
+      - copy compile-time known values to tested VR's
+      - perform VSEL on tested VR's
+      - copy tested VR's to printed results
+      - restore saved VR's from temporary location
+ */
+s390_test_generate(test_upper16_registers, \
+                   "vstm  %%v21, %%v24, %[m_memory_pool]\n" \
+                   \
+                   "vlr %%v21, %%v1\n" \
+                   "vlr %%v22, %%v2\n" \
+                   "vlr %%v23, %%v3\n" \
+                   "vlr %%v24, %%v5\n" \
+                   \
+                   "vsel %%v24, %%v21, %%v22, %%v23\n" \
+                   \
+                   "vlr  %%v1, %%v21\n" \
+                   "vlr  %%v2, %%v22\n" \
+                   "vlr  %%v3, %%v23\n" \
+                   "vlr  %%v5, %%v24\n" \
+                   \
+                   "vlm  %%v21, %%v24, %[m_memory_pool]\n")
+
 int main() {
    size_t iteration = 0;
    randomize_memory_pool();
@@ -239,6 +266,8 @@ int main() {
    test(vgeg, (randomize_memory_pool()));
    test(vscef, (randomize_memory_pool()));
    test(vsceg, (randomize_memory_pool()));
+
+   test_once(test_upper16_registers);
 
    return 0;
 }

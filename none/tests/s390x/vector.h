@@ -7,7 +7,9 @@
 #include "string.h"
 
 /* How many times should every test be executed? */
+#ifndef S390_TEST_COUNT
 #define S390_TEST_COUNT 10
+#endif
 
 /* Test the instruction exactly one time. */
 #define test_once(insn) test_##insn()
@@ -169,5 +171,10 @@ static void test_##insn() \
    printf("  r_arg3   = "); print_uint64_t(r_arg3); \
    printf("  r_result = "); print_uint64_t(r_result); \
 }
+
+/* Stores CC to %[r_result].
+   Usefull when testing instructions which modify condition code.
+*/
+#define S390_TEST_PUT_CC_TO_RESULT "ipm %[r_result] \n srl %[r_result], 28 \n"
 
 #endif

@@ -1879,6 +1879,9 @@
 /none/tests/s390x/lsc2
 /none/tests/s390x/ppno
 /none/tests/s390x/traps
+/none/tests/s390x/vector_string
+/none/tests/s390x/vector_integer
+/none/tests/s390x/high-word
 
 # /none/tests/scripts/
 /none/tests/scripts/*.dSYM

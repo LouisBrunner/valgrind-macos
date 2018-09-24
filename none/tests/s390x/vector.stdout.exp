@@ -5353,3 +5353,12 @@ insn vsceg:
   r_arg2   = 05dd1429c4463510
   r_arg3   = 2e4c1152e7cc3db9
   r_result = 0000000000000000
+insn test_upper16_registers:
+  v_arg1   = afe87dd05d791ba9 | 92f27e2eeb6290af
+  v_arg2   = a0af1b8becffa34d | d20d9caf434fff72
+  v_arg3   = a70b4021bc3fa7ad | e574fee9c86ab2ea
+  v_result = a7ac5b8a5cf903e9 | 92797e2ecb67ddba
+  r_arg1   = 59a6ee2c2a34fa3c
+  r_arg2   = 9dee771d02ee8535
+  r_arg3   = c1ed05a482742c27
+  r_result = 0000000000000000

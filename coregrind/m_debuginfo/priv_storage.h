@@ -670,9 +670,12 @@ struct _DebugInfo {
       (0) size of at least one rx mapping > 0
       (1) no two non-archived DebugInfos with some rx mapping of size > 0
           have overlapping rx mappings
-      (2) [cfsi_minavma,cfsi_maxavma] does not extend beyond
-          [avma,+size) of one rx mapping; that is, the former
-          is a subrange or equal to the latter.
+      (2) Each address in [cfsi_minavma,cfsi_maxavma] is in an rx mapping
+          or else no cfsi can cover this address.
+          The typical case is a single rx mapping covering the full range.
+          In some cases, the union of several rx mappings covers the range,
+          with possibly some holes between the rx mappings, and no cfsi fall
+          within such an hole.
       (3) all DiCfSI in the cfsi array all have ranges that fall within
           [avma,+size) of that rx mapping.
       (4) all DiCfSI in the cfsi array are non-overlapping

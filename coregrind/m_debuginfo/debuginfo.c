@@ -660,6 +660,8 @@ static void check_CFSI_related_invariants ( const DebugInfo* di )
    DebugInfo* di2 = NULL;
    Bool has_nonempty_rx = False;
    Word i, j;
+   const Bool debug = VG_(debugLog_getLevel)() >= 3;
+
    vg_assert(di);
    /* This fn isn't called until after debuginfo for this object has
       been successfully read.  And that shouldn't happen until we have
@@ -676,7 +678,7 @@ static void check_CFSI_related_invariants ( const DebugInfo* di )
       if (map->size == 0)
          continue;
       has_nonempty_rx = True;
-        
+
       /* normal case: r-x section is nonempty */
       /* invariant (0) */
       vg_assert(map->size > 0);
@@ -689,8 +691,9 @@ static void check_CFSI_related_invariants ( const DebugInfo* di )
             const DebugInfoMapping* map2 = VG_(indexXA)(di2->fsm.maps, j);
             if (!map2->rx || map2->size == 0)
                continue;
-            vg_assert(!ranges_overlap(map->avma,  map->size,
-                                      map2->avma, map2->size));
+            vg_assert2(!ranges_overlap(map->avma,  map->size,
+                                       map2->avma, map2->size),
+                       "DiCfsi invariant (1) verification failed");
          }
       }
       di2 = NULL;
@@ -723,17 +726,44 @@ static void check_CFSI_related_invariants ( const DebugInfo* di )
          if (map->size > 0)
             VG_(bindRangeMap)(rm, map->avma, map->avma + map->size - 1, 0);
       }
-      /* If the map isn't now empty, it means the cfsi range isn't covered
-         entirely by the rx mappings. */
-      Bool cfsi_fits = VG_(sizeRangeMap)(rm) == 1;
-      if (cfsi_fits) {
-         // Sanity-check the range-map operation
+      /* Typically, the range map contains one single range with value 0,
+         meaning that the cfsi range is entirely covered by the rx mappings.
+         However, in some cases, there are holes in the rx mappings
+         (see BZ #398028).
+         In such a case, check that no cfsi refers to these holes.  */
+      Bool cfsi_fits = VG_(sizeRangeMap)(rm) >= 1;
+      // Check the ranges in the map.
+      for (Word ix = 0; ix < VG_(sizeRangeMap)(rm); ix++) {
          UWord key_min = 0x55, key_max = 0x56, val = 0x57;
-         /* We can look up any address at all since we expect only one range */
-         VG_(lookupRangeMap)(&key_min, &key_max, &val, rm, 0x1234);
-         vg_assert(key_min == (UWord)0);
-         vg_assert(key_max == ~(UWord)0);
-         vg_assert(val == 0);
+         VG_(indexRangeMap)(&key_min, &key_max, &val, rm, ix);
+         if (debug)
+            VG_(dmsg)("cfsi range rx-mappings coverage check: %s %#lx-%#lx\n",
+                      val == 1 ? "Uncovered" : "Covered",
+                      key_min, key_max);
+         {
+            // Sanity-check the range-map operation
+            UWord check_key_min = 0x55, check_key_max = 0x56, check_val = 0x57;
+            VG_(lookupRangeMap)(&check_key_min, &check_key_max, &check_val, rm,
+                                key_min + (key_max - key_min) / 2);
+            if (ix == 0)
+               vg_assert(key_min == (UWord)0);
+            if (ix == VG_(sizeRangeMap)(rm) - 1)
+               vg_assert(key_max == ~(UWord)0);
+            vg_assert(key_min == check_key_min);
+            vg_assert(key_max == check_key_max);
+            vg_assert(val == 0 || val == 1);
+            vg_assert(val == check_val);
+         }
+         if (val == 1) {
+            /* This is a part of cfsi_minavma .. cfsi_maxavma not covered.
+               Check no cfsi overlaps with this range. */
+            for (i = 0; i < di->cfsi_used; i++) {
+               DiCfSI* cfsi = &di->cfsi_rd[i];
+               vg_assert2(cfsi->base > key_max
+                          || cfsi->base + cfsi->len - 1 < key_min,
+                          "DiCfsi invariant (2) verification failed");
+            }
+         }
       }
       vg_assert(cfsi_fits);
 

@@ -167,6 +167,7 @@ where XXXXXX is the bug number as listed below.
 397089  amd64: Incorrect decoding of three-register vmovss/vmovsd opcode 11h
 397354  utimensat should ignore timespec tv_sec if tv_nsec is UTIME_NOW/OMIT
 397424  glibc 2.27 and gdb_server tests
+398028  Assertion `cfsi_fits` failing in simple C program
 398066  s390x: cgijl dep1, 0 reports false unitialised values warning
 
 n-i-bz  Fix missing workq_ops operations (macOS)

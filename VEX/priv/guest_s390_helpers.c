@@ -2619,8 +2619,8 @@ s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
 #else
 
 ULong
-s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state, ULong opcode,
-                         ULong v1, ULong v2)
+s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
+                         const ULong serialized)
 { return 0; }
 
 #endif

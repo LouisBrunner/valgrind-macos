@@ -1,5 +1,5 @@
-Release 3.14.0 (?? September 2018)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Release 3.14.0 (4 October 2018)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 3.14.0 is a feature release with many improvements and the usual collection of
 bug fixes.
@@ -31,6 +31,9 @@ support for X86/macOS 10.13, AMD64/macOS 10.13.
 * mips: support for MIPS SIMD architecture (MSA) has been added.
 
 * mips: support for MIPS N32 ABI has been added.
+
+* s390: partial support for vector instructions (integer and string) has been
+  added.
 
 * ==================== TOOL CHANGES ====================
 
@@ -178,6 +181,8 @@ n-i-bz  Add support for the Linux BLKFLSBUF ioctl
 n-i-bz  Add support for the Linux BLKREPORTZONE and BLKRESETZONE ioctls
 n-i-bz  Fix possible stack trashing by semctl syscall wrapping
 n-i-bz  Add support for the Linux membarrier() system call
+
+(3.14.0.RC1:  30 September 2018, git c2aeea2d28acb0639bcc8cc1e4ab115067db1eae)
 
 
 

@@ -1626,32 +1626,42 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
 
       if (isU64(cc_op, AMD64G_CC_OP_LOGICW) && isU64(cond, AMD64CondZ)) {
          /* word and/or/xor, then Z --> test dst==0 */
+         // Use CmpEQ32 rather than CmpEQ64 here, so that Memcheck instruments
+         // it exactly at EdcAUTO.
          return unop(Iop_1Uto64,
-                     binop(Iop_CmpEQ64,
-                           binop(Iop_And64, cc_dep1, mkU64(0xFFFF)),
-                           mkU64(0)));
+                     binop(Iop_CmpEQ32,
+                           unop(Iop_16Uto32, unop(Iop_64to16, cc_dep1)),
+                           mkU32(0)));
       }
       if (isU64(cc_op, AMD64G_CC_OP_LOGICW) && isU64(cond, AMD64CondNZ)) {
          /* word and/or/xor, then NZ --> test dst!=0 */
+         // Use CmpNE32 rather than CmpNE64 here, so that Memcheck instruments
+         // it exactly at EdcAUTO.
          return unop(Iop_1Uto64,
-                     binop(Iop_CmpNE64,
-                           binop(Iop_And64, cc_dep1, mkU64(0xFFFF)),
-                           mkU64(0)));
+                     binop(Iop_CmpNE32,
+                           unop(Iop_16Uto32, unop(Iop_64to16, cc_dep1)),
+                           mkU32(0)));
       }
 
       /*---------------- LOGICB ----------------*/
 
       if (isU64(cc_op, AMD64G_CC_OP_LOGICB) && isU64(cond, AMD64CondZ)) {
          /* byte and/or/xor, then Z --> test dst==0 */
+         // Use CmpEQ32 rather than CmpEQ64 here, so that Memcheck instruments
+         // it exactly at EdcAUTO.
          return unop(Iop_1Uto64,
-                     binop(Iop_CmpEQ64, binop(Iop_And64,cc_dep1,mkU64(255)), 
-                                        mkU64(0)));
+                     binop(Iop_CmpEQ32,
+                           unop(Iop_8Uto32, unop(Iop_64to8, cc_dep1)),
+                           mkU32(0)));
       }
       if (isU64(cc_op, AMD64G_CC_OP_LOGICB) && isU64(cond, AMD64CondNZ)) {
          /* byte and/or/xor, then NZ --> test dst!=0 */
+         // Use CmpNE32 rather than CmpNE64 here, so that Memcheck instruments
+         // it exactly at EdcAUTO.
          return unop(Iop_1Uto64,
-                     binop(Iop_CmpNE64, binop(Iop_And64,cc_dep1,mkU64(255)), 
-                                        mkU64(0)));
+                     binop(Iop_CmpNE32,
+                           unop(Iop_8Uto32, unop(Iop_64to8, cc_dep1)),
+                           mkU32(0)));
       }
 
       if (isU64(cc_op, AMD64G_CC_OP_LOGICB) && isU64(cond, AMD64CondS)) {

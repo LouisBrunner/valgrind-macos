@@ -578,6 +578,8 @@ static UInt VG_(get_machine_model)(void)
       { "2828", VEX_S390X_MODEL_ZBC12 },
       { "2964", VEX_S390X_MODEL_Z13 },
       { "2965", VEX_S390X_MODEL_Z13S },
+      { "3906", VEX_S390X_MODEL_Z14 },
+      { "3907", VEX_S390X_MODEL_Z14_ZR1 },
    };
 
    Int    model, n, fh;

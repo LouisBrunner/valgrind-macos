@@ -1,4 +1,4 @@
-Release 3.14.0 (4 October 2018)
+Release 3.14.0 (9 October 2018)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 3.14.0 is a feature release with many improvements and the usual collection of
@@ -181,8 +181,12 @@ n-i-bz  Add support for the Linux BLKFLSBUF ioctl
 n-i-bz  Add support for the Linux BLKREPORTZONE and BLKRESETZONE ioctls
 n-i-bz  Fix possible stack trashing by semctl syscall wrapping
 n-i-bz  Add support for the Linux membarrier() system call
+n-i-bz  x86 front end: recognise and handle UD2 correctly
+n-i-bz  Signal delivery for x86-linux: ensure that the stack pointer is
+        correctly aligned before entering the handler.
 
-(3.14.0.RC1:  30 September 2018, git c2aeea2d28acb0639bcc8cc1e4ab115067db1eae)
+(3.14.0.RC1: 30 September 2018, git c2aeea2d28acb0639bcc8cc1e4ab115067db1eae)
+(3.14.0.RC2: 3 October 2018, git 3e214c4858a6fdd5697e767543a0c19e30505582)
 
 
 

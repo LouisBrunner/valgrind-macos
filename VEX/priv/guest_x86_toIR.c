@@ -15408,6 +15408,15 @@ DisResult disInstr_X86_WRK (
          DIP("syscall\n");
          break;
 
+      /* =-=-=-=-=-=-=-=-=-=- UD2 =-=-=-=-=-=-=-=-=-=-=-= */
+
+      case 0x0B: /* UD2 */
+         stmt( IRStmt_Put( OFFB_EIP, mkU32(guest_EIP_curr_instr) ) );
+         jmp_lit(&dres, Ijk_NoDecode, guest_EIP_curr_instr);
+         vassert(dres.whatNext == Dis_StopHere);
+         DIP("ud2\n");
+         break;
+
       /* =-=-=-=-=-=-=-=-=- unimp2 =-=-=-=-=-=-=-=-=-=-= */
 
       default:

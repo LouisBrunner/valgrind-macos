@@ -912,11 +912,15 @@ sub print_summary_and_fn_totals ()
 	  # Print function callers
 	  my $tmp1 = $calling_funcs->{$fn_name};
 	  if (defined $tmp1) {
-	    foreach my $calling (keys %$tmp1) {
+	    # Sort calling functions into order dictated by --sort option.
+	    my @callings = sort {
+	      mycmp($call_CCs{$a,$fn_name}, $call_CCs{$b,$fn_name})
+	    } keys %$tmp1;
+	    foreach my $calling (@callings) {
 	      if (defined $call_counter{$calling,$fn_name}) {
 		print_CC($call_CCs{$calling,$fn_name}, $fn_CC_col_widths);
 		print" < $calling (";
-		print $call_counter{$calling,$fn_name} . "x)";
+		print commify($call_counter{$calling,$fn_name}) . "x)";
 		if (defined $obj_name{$calling}) {
 		  print " [$obj_name{$calling}]";
 		}
@@ -941,11 +945,15 @@ sub print_summary_and_fn_totals ()
 	  # Print called functions
 	  my $tmp2 = $called_funcs->{$fn_name};
 	  if (defined $tmp2) {
-	    foreach my $called (keys %$tmp2) {
+	    # Sort called functions into order dictated by --sort option.
+	    my @calleds = sort {
+	      mycmp($call_CCs{$fn_name,$a}, $call_CCs{$fn_name,$b})
+	    } keys %$tmp2;
+	    foreach my $called (@calleds) {
 	      if (defined $call_counter{$fn_name,$called}) {
 		print_CC($call_CCs{$fn_name,$called}, $fn_CC_col_widths);
 		print" >   $called (";
-		print $call_counter{$fn_name,$called} . "x)";
+		print commify($call_counter{$fn_name,$called}) . "x)";
 		if (defined $obj_name{$called}) {
 		  print " [$obj_name{$called}]";
 		}
@@ -1163,11 +1171,15 @@ sub annotate_ann_files($)
 		    my $tmp  = $called_from_line->{$src_file,$.};
 		    my $func = $func_of_line{$src_file,$.};
 		    if (defined $tmp) {
-		      foreach my $called (keys %$tmp) {
+		      # Sort called functions into order dictated by --sort option.
+		      my @calleds = sort {
+			mycmp($call_CCs{$func,$a}, $call_CCs{$func,$b})
+		      } keys %$tmp;
+		      foreach my $called (@calleds) {
 			if (defined $call_CCs{$func,$called,$.}) {
 			  print_CC($call_CCs{$func,$called,$.}, $CC_col_widths);
 			  print " => $called (";
-			  print $call_counter{$func,$called,$.} . "x)\n";
+			  print commify($call_counter{$func,$called,$.}) . "x)\n";
 			}
 		      }
 		    }

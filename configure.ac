@@ -4636,9 +4636,14 @@ AC_CONFIG_FILES([
    callgrind/tests/Makefile
    helgrind/Makefile
    helgrind/tests/Makefile
+   drd/Makefile
+   drd/scripts/download-and-build-splash2
+   drd/tests/Makefile
    massif/Makefile
    massif/tests/Makefile
    massif/ms_print
+   dhat/Makefile
+   dhat/tests/Makefile
    lackey/Makefile
    lackey/tests/Makefile
    none/Makefile
@@ -4664,9 +4669,6 @@ AC_CONFIG_FILES([
    none/tests/x86-solaris/Makefile
    exp-sgcheck/Makefile
    exp-sgcheck/tests/Makefile
-   drd/Makefile
-   drd/scripts/download-and-build-splash2
-   drd/tests/Makefile
    exp-bbv/Makefile
    exp-bbv/tests/Makefile
    exp-bbv/tests/x86/Makefile
@@ -4674,8 +4676,6 @@ AC_CONFIG_FILES([
    exp-bbv/tests/amd64-linux/Makefile
    exp-bbv/tests/ppc32-linux/Makefile
    exp-bbv/tests/arm-linux/Makefile
-   exp-dhat/Makefile
-   exp-dhat/tests/Makefile
    shared/Makefile
    solaris/Makefile
 ])

@@ -1454,7 +1454,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
        || 0 == VG_(strcmp)(VG_(clo_toolname), "helgrind")
        || 0 == VG_(strcmp)(VG_(clo_toolname), "drd")
        || 0 == VG_(strcmp)(VG_(clo_toolname), "massif")
-       || 0 == VG_(strcmp)(VG_(clo_toolname), "exp-dhat")) {
+       || 0 == VG_(strcmp)(VG_(clo_toolname), "dhat")) {
       /* Change the default setting.  Later on (just below)
          main_process_cmd_line_options should pick up any
          user-supplied setting for it and will override the default

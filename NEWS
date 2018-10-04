@@ -20,6 +20,20 @@ support for X86/macOS 10.13, AMD64/macOS 10.13.
 
 * ==================== TOOL CHANGES ====================
 
+* DHAT: 
+
+  - DHAT been thoroughly overhauled and improved. As a result, it has been
+    promoted from an experimental tool to a regular tool. Run it with
+    --tool=dhat instead of --tool=exp-dhat.
+
+  - DHAT now prints only minimal data when the program ends, instead writing
+    the bulk of the profiling data to a file. As a result, the --show-top-n and
+    --sort-by options have been removed.
+    
+  - Data files can be viewed with the new viewer, dh_view.html.
+    
+  - See the documentation for more details.
+
 * Cachegrind:
 
   - cg_annotate has a new option, --show-percs, which prints percentages next
@@ -93,6 +107,8 @@ n-i-bz  add syswrap for PTRACE_GET|SET_THREAD_AREA on amd64.
 n-i-bz  Fix callgrind_annotate non deterministic order for equal total
 n-i-bz  callgrind_annotate --threshold=100 does not print all functions.
 n-i-bz  callgrind_annotate Use of uninitialized value in numeric gt (>)
+
+
 
 Release 3.14.0 (9 October 2018)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

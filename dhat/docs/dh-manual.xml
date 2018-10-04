@@ -1,0 +1,654 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
+
+
+<chapter id="dh-manual" 
+         xreflabel="DHAT: a dynamic heap analysis tool">
+  <title>DHAT: a dynamic heap analysis tool</title>
+
+<para>To use this tool, you must specify
+<option>--tool=dhat</option> on the Valgrind command line.</para>
+
+
+
+<sect1 id="dh-manual.overview" xreflabel="Overview">
+<title>Overview</title>
+
+<para>DHAT is a tool for examining how programs use their heap
+allocations.</para>
+
+<para>It tracks the allocated blocks, and inspects every memory access
+to find which block, if any, it is to. It presents, on an allocation point
+basis, information about these blocks such as sizes, lifetimes, numbers of
+reads and writes, and read and write patterns.</para>
+
+<para>Using this information it is possible to identify allocation points with
+the following characteristics:</para>
+
+<itemizedlist>
+
+  <listitem><para>potential process-lifetime leaks: blocks allocated
+   by the point just accumulate, and are freed only at the end of the
+   run.</para></listitem>
+
+ <listitem><para>excessive turnover: points which chew through a lot
+  of heap, even if it is not held onto for very long</para></listitem>
+
+ <listitem><para>excessively transient: points which allocate very
+ short lived blocks</para></listitem>
+
+ <listitem><para>useless or underused allocations: blocks which are
+  allocated but not completely filled in, or are filled in but not
+  subsequently read.</para></listitem>
+
+ <listitem><para>blocks with inefficient layout -- areas never
+  accessed, or with hot fields scattered throughout the
+  block.</para></listitem>
+</itemizedlist>
+
+<para>As with the Massif heap profiler, DHAT measures program progress
+by counting instructions, and so presents all age/time related figures
+as instruction counts. This sounds a little odd at first, but it
+makes runs repeatable in a way which is not possible if CPU time is
+used.</para>
+
+</sect1>
+
+
+
+<sect1 id="dh-manual.profile" xreflabel="Using DHAT">
+<title>Using DHAT</title>
+
+<para>First off, as for normal Valgrind use, you probably want to compile with
+debugging info (the <option>-g</option> option). But by contrast with normal
+Valgrind use, you probably do want to turn optimisation on, since you should
+profile your program as it will be normally run.</para>
+
+<para>Second, you need to run your program under DHAT to gather the profiling
+information.</para>
+
+<para>Finally, you need to use DHAT's viewer (in a web browser) to get a
+detailed presentation of that information.</para>
+
+
+<sect2 id="dh-manual.running-DHAT" xreflabel="Running DHAT">
+<title>Running DHAT</title>
+
+<para>To run DHAT on a program <filename>prog</filename>, run:</para>
+<screen><![CDATA[
+valgrind --tool=dhat prog
+]]></screen>
+
+<para>The program will execute (slowly). Upon completion, summary statistics
+that look like this will be printed:</para>
+
+<programlisting><![CDATA[
+==11514== Total:     823,849,731 bytes in 3,929,133 blocks
+==11514== At t-gmax: 133,485,082 bytes in 436,521 blocks
+==11514== At t-end:  258,002 bytes in 2,129 blocks
+==11514== Reads:     2,807,182,810 bytes
+==11514== Writes:    1,149,617,086 bytes
+]]></programlisting>
+
+<para>The first line shows how many heap blocks and bytes were allocated over
+the entire execution.</para>
+
+<para>The second line shows how many heap blocks and bytes were alive at
+<computeroutput>t-gmax</computeroutput>, i.e. the time when the heap size
+reached its global maximum (as measured in bytes).</para>
+
+<para>The third line shows how many heap blocks and bytes were alive at
+<computeroutput>t-end</computeroutput>, i.e. the end of execution. In other
+words, how many blocks and bytes were not explicitly freed. </para>
+
+<para>The fourth and fifth lines show how many bytes within heap blocks were
+read and written during the entire execution. </para>
+
+<para>These lines are moderately interesting at best. More useful information
+can be seen with DHAT's viewer.</para>
+
+</sect2>
+
+
+<sect2 id="dh-manual.outputfile" xreflabel="Output File">
+<title>Output File</title>
+
+<para>As well as printing summary information, DHAT also writes more detailed
+profiling information to a file. By default this file is named
+<filename>dhat.out.&lt;pid&gt;</filename> (where
+<filename>&lt;pid&gt;</filename> is the program's process ID), but its name can
+be changed with the <option>--dhat-out-file</option> option. This file is JSON,
+and intended to be viewed by DHAT's viewer, which is described in the next
+section.</para>
+
+<para>The default <computeroutput>.&lt;pid&gt;</computeroutput> suffix on the
+output file name serves two purposes. Firstly, it means you don't have to
+rename old log files that you don't want to overwrite. Secondly, and more
+importantly, it allows correct profiling with the
+<option>--trace-children=yes</option> option of programs that spawn child
+processes.</para>
+
+<para>The output file can be big, many megabytes for large applications
+built with full debugging information.</para>
+
+</sect2>
+
+</sect1>
+
+
+
+<sect1 id="dh-manual.viewer" xreflabel="DHAT's viewer">
+<title>DHAT's Viewer</title>
+
+<para>DHAT's viewer can be run in a web browser by loading the file
+<computeroutput>dh_view.html</computeroutput>. Use the "Load" button to choose
+a DHAT output file to view.</para>
+
+
+<sect2><title>The Output Header</title>
+
+<para>The first part of the output shows the program command and process ID.
+For example:</para>
+
+<programlisting><![CDATA[
+Invocation {
+  Command: /home/njn/moz/rust0/build/x86_64-unknown-linux-gnu/stage2/bin/rustc --crate-name tuple_stress src/main.rs
+  PID:     18816
+}
+]]></programlisting>
+
+<para>The second part of the output shows the
+<computeroutput>t-gmax</computeroutput> and
+<computeroutput>t-end</computeroutput> values again. For example:</para>
+
+<programlisting><![CDATA[
+Times {
+  t-gmax: 8,138,210,673 instrs (86.92% of program duration)
+  t-end:  9,362,544,994 instrs
+}
+]]></programlisting>
+
+</sect2>
+
+
+<sect2><title>The AP Tree</title>
+
+<para>The third part of the output is the largest and most interesting part,
+showing the allocation point (AP) tree.</para>
+
+
+<sect3><title>Structure</title>
+
+The following image shows a screenshot of part of an AP tree. The font is very
+small because this screenshot is intended to demonstrate the high-level
+structure of the tree rather than the details within the text.
+
+<graphic fileref="images/dh-tree.png" scalefit="1"/>
+
+<para>Like any tree, it has a root node, leaf nodes, and non-leaf nodes. The
+structure of the tree is shown by the lines connecting nodes. Child nodes are
+beneath their parent and indented one level.</para>
+
+<para>The sub-trees beneath a non-leaf node can be collapsed or expanded by
+clicking on the node. It is useful to collapse sub-trees that you aren't
+interested in.</para>
+
+<para>Colours are meaningful, and are intended to ease tree navigation, but the
+information they represent is also present within the text. (This means that
+colour-blind users are not denied any information.)</para>
+
+<para>Each leaf node is coloured green. Each non-leaf node is coloured blue
+and has a down arrow (<computeroutput>▼</computeroutput>) next to it when
+its sub-tree is expanded. Each non-leaf node is coloured yellow and has a
+left arrow (<computeroutput>▶</computeroutput>) next to it when its sub-tree
+is collapsed.</para>
+
+<para>The shade of green, blue or yellow used for a node indicate its
+significance. Darker shades represent greater significance (in terms of bytes
+or blocks).</para>
+
+<para>Note that the entire output is text, even the arrows and lines connecting
+nodes. This means you can copy and paste any part of the output easily into an
+email, bug report, etc.</para>
+
+</sect3>
+
+
+<sect3><title>The Root Node</title>
+
+<para>The root node looks like this:</para>
+
+<programlisting><![CDATA[
+AP 1/1 (25 children) {
+  Total:     1,355,253,987 bytes (100%, 67,454.81/Minstr) in 5,943,417 blocks (100%, 295.82/Minstr), avg size 228.03 bytes, avg lifetime 3,134,692,250.67 instrs (15.6% of program duration)
+  At t-gmax: 423,930,307 bytes (100%) in 1,575,682 blocks (100%), avg size 269.05 bytes
+  At t-end:  258,002 bytes (100%) in 2,129 blocks (100%), avg size 121.18 bytes
+  Reads:     5,478,606,988 bytes (100%, 272,685.7/Minstr), 4.04/byte
+  Writes:    2,040,294,800 bytes (100%, 101,551.22/Minstr), 1.51/byte
+  Allocated at {
+    #0: [root]
+  }
+}
+]]></programlisting>
+
+<para>The root node covers the entire execution. The information is a superset
+of the information shown when DHAT ran, adding details such as allocation
+rates, average block sizes, block lifetimes, and read and write ratios. The
+next example will explain these in more detail.</para>
+
+</sect3>
+
+
+<sect3><title>Interior Nodes</title>
+
+<para>AP nodes further down the tree show information about a subset of
+allocations. For example:</para>
+
+<programlisting><![CDATA[
+AP 1.1/25 (2 children) {
+  Total:     54,533,440 bytes (4.02%, 2,714.28/Minstr) in 458,839 blocks (7.72%, 22.84/Minstr), avg size 118.85 bytes, avg lifetime 1,127,259,403.64 instrs (5.61% of program duration)
+  At t-gmax: 0 bytes (0%) in 0 blocks (0%), avg size 0 bytes
+  At t-end:  0 bytes (0%) in 0 blocks (0%), avg size 0 bytes
+  Reads:     15,993,012 bytes (0.29%, 796.02/Minstr), 0.29/byte
+  Writes:    20,974,752 bytes (1.03%, 1,043.97/Minstr), 0.38/byte
+  Allocated at {
+    #1: 0x95CACC9: alloc (alloc.rs:72)
+    #2: 0x95CACC9: alloc (alloc.rs:148)
+    #3: 0x95CACC9: reserve_internal<syntax::tokenstream::TokenStream,alloc::alloc::Global> (raw_vec.rs:669)
+    #4: 0x95CACC9: reserve<syntax::tokenstream::TokenStream,alloc::alloc::Global> (raw_vec.rs:492)
+    #5: 0x95CACC9: reserve<syntax::tokenstream::TokenStream> (vec.rs:460)
+    #6: 0x95CACC9: push<syntax::tokenstream::TokenStream> (vec.rs:989)
+    #7: 0x95CACC9: parse_token_trees_until_close_delim (tokentrees.rs:27)
+    #8: 0x95CACC9: syntax::parse::lexer::tokentrees::<impl syntax::parse::lexer::StringReader<'a>>::parse_token_tree (tokentrees.rs:81)
+  }
+}
+]]></programlisting>
+
+<para>The first line indicates the node's position in the tree. The
+<computeroutput>1.1</computeroutput> is a unique identifier for the node and
+also says that it is the first child node <computeroutput>1</computeroutput>
+(which is the root). The <computeroutput>/25</computeroutput> says that it is
+one of 25 children, i.e. it has 24 siblings. The <computeroutput>(2
+children)</computeroutput> says that this node node has two children of its
+own.</para>
+
+<para>Allocations are aggregated by their allocation stack trace. The
+<computeroutput>Allocated at</computeroutput> section shows the allocation
+stack trace that is shared by all the blocks covered by this node.</para>
+
+<para>The <computeroutput>Total</computeroutput> line shows that this node
+accounts for 4.02% of all bytes allocated during execution, and 7.72% of all
+blocks. These percentages are useful for comparing the significance of
+different nodes within a single profile; an AP that accounts for 10% of bytes
+allocated is likely to be more interesting than one that accounts for
+2%.</para>
+
+<para>The <computeroutput>Total</computeroutput> line also shows allocation
+rates, measured in bytes and blocks per million instructions. These rates are
+useful for comparing the significance of nodes across profiles made with
+different workloads.</para>
+
+<para>Finally, the <computeroutput>Total</computeroutput> line shows the
+average size and lifetimes of these blocks.</para>
+
+<para>The <computeroutput>At t-gmax</computeroutput> line says shows that no
+blocks from this AP were alive when the global heap peak occurred. In other
+words, these blocks do not contribute at all to the global heap peak.</para>
+
+<para>The <computeroutput>At t-end</computeroutput> line shows that no blocks
+were from this AP were alive at shutdown. In other words, all those blocks were
+explicitly freed before termination.</para>
+
+<para>The <computeroutput>Reads</computeroutput> and
+<computeroutput>Writes</computeroutput> lines show how many bytes were read 
+within this AP's blocks, the fraction this represents of all heap reads, and
+the read rate. Finally, it shows the read ratio, which is the number of reads
+per byte. In this case the number is 0.29, which is quite low -- if no byte was
+read twice, then only 29% of the allocated bytes, which means that at least 71%
+of the bytes were never read! This suggests that the blocks are being
+underutilized and might be worth optimizing.</para>
+
+<para>The <computeroutput>Writes</computeroutput> lines is similar to the
+<computeroutput>Reads</computeroutput> line. In this case, at most 38% of the
+bytes are ever written, and at least 62% of the bytes were never written.
+</para>
+
+<para>The <computeroutput>Reads</computeroutput> and
+<computeroutput>Writes</computeroutput> measurements suggest that the blocks
+are being under-utilised and might be worth optimizing. Having said that, this
+kind of under-utilisation is common in data structures that grow, such as
+vectors and hash tables, and isn't always fixable. </para>
+
+</sect3>
+
+
+<sect3><title>Leaf Nodes</title>
+
+<para>This is a leaf node:</para>
+
+<programlisting><![CDATA[
+AP 1.1.1.1/2 {
+  Total:     31,460,928 bytes (2.32%, 1,565.9/Minstr) in 262,171 blocks (4.41%, 13.05/Minstr), avg size 120 bytes, avg lifetime 986,406,885.05 instrs (4.91% of program duration)
+  Max:       16,779,136 bytes in 65,543 blocks, avg size 256 bytes
+  At t-gmax: 0 bytes (0%) in 0 blocks (0%), avg size 0 bytes
+  At t-end:  0 bytes (0%) in 0 blocks (0%), avg size 0 bytes
+  Reads:     5,964,704 bytes (0.11%, 296.88/Minstr), 0.19/byte
+  Writes:    10,487,200 bytes (0.51%, 521.98/Minstr), 0.33/byte
+  Allocated at {
+    ^1: 0x95CACC9: alloc (alloc.rs:72)
+    ^2: 0x95CACC9: alloc (alloc.rs:148)
+    ^3: 0x95CACC9: reserve_internal<syntax::tokenstream::TokenStream,alloc::alloc::Global> (raw_vec.rs:669)
+    ^4: 0x95CACC9: reserve<syntax::tokenstream::TokenStream,alloc::alloc::Global> (raw_vec.rs:492)
+    ^5: 0x95CACC9: reserve<syntax::tokenstream::TokenStream> (vec.rs:460)
+    ^6: 0x95CACC9: push<syntax::tokenstream::TokenStream> (vec.rs:989)
+    ^7: 0x95CACC9: parse_token_trees_until_close_delim (tokentrees.rs:27)
+    ^8: 0x95CACC9: syntax::parse::lexer::tokentrees::<impl syntax::parse::lexer::StringReader<'a>>::parse_token_tree (tokentrees.rs:81)
+    ^9: 0x95CAC39: parse_token_trees_until_close_delim (tokentrees.rs:26)
+    ^10: 0x95CAC39: syntax::parse::lexer::tokentrees::<impl syntax::parse::lexer::StringReader<'a>>::parse_token_tree (tokentrees.rs:81)
+    #11: 0x95CAC39: parse_token_trees_until_close_delim (tokentrees.rs:26)
+    #12: 0x95CAC39: syntax::parse::lexer::tokentrees::<impl syntax::parse::lexer::StringReader<'a>>::parse_token_tree (tokentrees.rs:81)
+  }
+}
+]]></programlisting>
+
+<para>The <computeroutput>1.1.1.1/2</computeroutput> indicates that this node
+is a great-grandchild of the root; is the first grandchild of the node in the
+previous example; and has no children.</para>
+
+<para>Leaf nodes contain an additional <computeroutput>Max</computeroutput>
+line, indicating the peak memory use for the blocks covered by this AP. (This
+peak may have occurred at a time other than
+<computeroutput>t-gmax</computeroutput>.) In this case, 31,460,298 bytes were
+allocated from this AP, but the maximum size alive at once was 16,779,136
+bytes.</para>
+
+<para>Stack frames that begin with a <computeroutput>^</computeroutput> rather
+than a <computeroutput>#</computeroutput> are copied from ancestor nodes.
+(In this example, the first 8 frames are identical to those from the node in
+the previous example.) These frames could be found by tracing back through
+ancestor nodes, but that can be annoying, which is why they are duplicated.
+This also means that each node makes complete sense on its own.</para>
+
+</sect3>
+
+
+<sect3><title>Access Counts</title>
+
+<para>If all blocks covered by an AP node have the same size, an additional
+<computeroutput>Accesses</computeroutput> field will be present. It indicates
+how the reads and writes within these blocks were distributed. For
+example:</para>
+
+<programlisting><![CDATA[
+Total:     8,388,672 bytes (0.62%, 417.53/Minstr) in 262,146 blocks (4.41%, 13.05/Minstr), avg size 32 bytes, avg lifetime 16,726,078,401.51 instrs (83.25% of program duration)
+At t-gmax: 8,388,672 bytes (1.98%) in 262,146 blocks (16.64%), avg size 32 bytes
+At t-end:  0 bytes (0%) in 0 blocks (0%), avg size 0 bytes
+Reads:     9,109,682 bytes (0.17%, 453.41/Minstr), 1.09/byte
+Writes:    7,340,088 bytes (0.36%, 365.34/Minstr), 0.88/byte
+Accesses: {
+  [  0]  65547 7 8 4 65529 〃 〃 〃 16 〃 〃 〃 12 〃 〃 〃 〃 〃 〃 〃 〃 〃 〃 〃 65542 〃 〃 〃 - - - - 
+}
+]]></programlisting>
+
+<para>Every block covered by this AP was 32 bytes. Within all of those blocks,
+byte 0 was accessed (read or written) 65,547 times, byte 1 was accessed 7
+times, byte 2 was accessed 8 times, and so on.</para>
+
+<para>The ditto symbol (<computeroutput>〃</computeroutput>) means "same access
+count as the previous byte".</para>
+
+<para>A dash (<computeroutput>-</computeroutput>) means "zero". (It is used
+instead of <computeroutput>0</computeroutput> because it makes unaccessed
+regions more easily identifiable.)</para>
+
+<para>The infinity symbol (<computeroutput>∞</computeroutput>, not present in
+this example) means "exceeded the maximum tracked count".</para>
+
+<para>Block layout can often be inferred from counts. For example, these blocks
+probably have four separate byte-sized fields, followed by a four-byte field,
+and so on.</para>
+
+<para>Access counts can be useful for identifying data alignment holes or other
+layout inefficiencies.</para>
+
+</sect3>
+
+
+<sect3><title>Aggregate Nodes</title>
+
+<para>The AP tree is very large and many nodes represent tiny numbers of blocks
+and bytes. Therefore, DHAT's viewer aggregates insignificant nodes like
+this:</para>
+
+<programlisting><![CDATA[
+AP 1.14.2/2 {
+  Total:     5,175 blocks (0.09%, 0.26/Minstr)
+  Allocated at {
+    [5 insignificant]
+  }
+}
+]]></programlisting>
+
+<para>Much of the detail is stripped away, leaving only basic measurements,
+along with an indication of how many nodes were aggregated together (5 in this
+case).</para>
+
+</sect3>
+
+</sect2>
+
+
+<sect2><title>The Output Footer</title>
+
+<para>Below the AP tree is a line like this:</para>
+
+<programlisting><![CDATA[
+AP significance threshold: total >= 59,434.17 blocks (1%)
+]]></programlisting>
+
+<para>It shows the function used to determine if an AP node is significant. All
+nodes that don't satisfy this function are aggregated. It is occasionally
+useful if you don't understand why an AP node has been aggregated. The exact
+threshold depends on the sort metric (see below).</para>
+
+<para>Finally, the bottom of the page shows a legend that explains some of the
+terms, abbreviations and symbols used in the output.</para>
+
+</sect2>
+
+
+<sect2><title>Sort Metrics</title>
+
+<para>The order in which sub-trees are sorted can be changed via the "Sort
+metric" drop-down menu at the top of DHAT's viewer. Different sort metrics can
+be useful for finding different things. Some sort metrics also incorporate some
+filtering, so that only nodes meeting a particular criteria are shown.</para>
+
+<!-- start of xi:include in the manpage -->
+<variablelist>
+
+  <varlistentry>
+    <term>Total (bytes)</term>
+    <listitem><para>The total number of bytes allocated during the execution.
+    Highly useful for evaluating heap churn, though not quite as useful as
+    "Total (blocks)".
+    </para></listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>Total (blocks)</term>
+    <listitem><para>The total number of blocks allocated during the execution.
+    Highly useful for evaluating heap churn; reducing the number of calls to
+    the allocator can significantly speed up a program. This is the default
+    sort metric.
+    </para></listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>Total (blocks), tiny</term>
+    <listitem><para>Like "Total (blocks)", but shows only very small blocks.
+    Moderately useful, because such blocks are often easy to avoid allocating.
+    </para></listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>Total (blocks), short-lived</term>
+    <listitem><para>Like "Total (blocks)", but shows only very short-lived
+    blocks. Moderately useful, because such blocks are often easy to avoid
+    allocating.
+    </para></listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>Total (bytes), zero reads or zero writes</term>
+    <listitem><para>Like "Total (bytes)", but shows only blocks that are 
+    never read or never written to (or both). Highly useful, because such
+    blocks indicate poor use of memory and are often easy to avoid allocating.
+    For example, sometimes a block is allocated and written to but then only
+    read if a condition C is true; in that case, it may be possible to delay
+    creating the block until condition C is true. Alternatively, sometimes
+    blocks are created and never used; such blocks are trivial to remove.
+    </para></listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>Total (blocks), zero reads or zero writes</term>
+    <listitem><para>Like "Total (bytes), zero reads or zero writes" but for
+    blocks. Highly useful.
+    </para></listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>Total (bytes), low-access</term>
+    <listitem><para>Like "Total (bytes)", but shows only blocks that have low
+    numbers of reads or low numbers of writes (or both). Moderately useful,
+    because such blocks indicate poor use of memory.
+    </para></listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>Total (blocks), low-access</term>
+    <listitem><para>Like "Total (bytes), low-access", but for blocks.
+    </para></listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>At t-gmax (bytes)</term>
+    <listitem><para>This shows the breakdown of memory at the point of peak
+    heap memory usage. Highly useful for reducing peak memory usage.
+    </para></listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>At t-end (bytes)</term>
+    <listitem><para>This shows the breakdown of memory at program termination.
+    Highly useful for identifying process-lifetime leaks.
+    </para></listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>Reads (bytes)</term>
+    <listitem><para>The number of bytes read within heap blocks. Occasionally
+    useful.
+    </para></listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>Reads (bytes), high-access</term>
+    <listitem><para>Like "Reads (bytes)", but only shows blocks with high read
+    ratios. Occasionally useful for identifying hot areas of memory.
+    </para></listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>Writes (bytes)</term>
+    <listitem><para>Like "Reads (bytes)", but for writes. Occasionally useful.
+    </para></listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>Writes (bytes), high-access</term>
+    <listitem><para>Like "Reads (bytes), high-access", but for writes.
+    Occasionally useful.
+    </para></listitem>
+  </varlistentry>
+
+</variablelist>
+
+<para>The values within a node that represent the chosen sort metric are shown
+in bold, so they stand out.</para>
+
+<para>Here is part of an AP node found with "Total (blocks), tiny", showing
+blocks with an average size of only 8.67 bytes:</para>
+
+<programlisting><![CDATA[
+Total:     3,407,848 bytes (0.25%, 169.62/Minstr) in 393,214 blocks (6.62%, 19.57/Minstr), avg size 8.67 bytes, avg lifetime 1,167,795,629.1 instrs (5.81% of program duration)
+]]></programlisting>
+
+<para>Here is part of an AP node found with "Total (blocks), short-lived",
+showing blocks with an average lifetime of only 181.75 instructions:</para>
+
+<programlisting><![CDATA[
+Total:     23,068,584 bytes (1.7%, 1,148.19/Minstr) in 262,143 blocks (4.41%, 13.05/Minstr), avg size 88 bytes, avg lifetime 181.75 instrs (0% of program duration)
+]]></programlisting>
+
+<para>Here is an example of an AP identified with "Total (blocks), zero reads
+or zero writes", showing blocks that are allocated but never touched:</para>
+
+<programlisting><![CDATA[
+Total:     7,339,920 bytes (0.54%, 365.33/Minstr) in 262,140 blocks (4.41%, 13.05/Minstr), avg size 28 bytes, avg lifetime 1,141,103,997.69 instrs (5.68% of program duration)
+Max:       3,669,960 bytes in 131,070 blocks, avg size 28 bytes
+At t-gmax: 3,336,400 bytes (0.79%) in 119,157 blocks (7.56%), avg size 28 bytes
+At t-end:  0 bytes (0%) in 0 blocks (0%), avg size 0 bytes
+Reads:     0 bytes (0%, 0/Minstr), 0/byte
+Writes:    0 bytes (0%, 0/Minstr), 0/byte
+]]></programlisting>
+
+<para>All the blocks identified by these APs are good candidates for
+optimization.</para>
+
+</sect2>
+
+</sect1>
+
+
+
+<sect1 id="dh-manual.options" xreflabel="DHAT Command-line Options">
+<title>DHAT Command-line Options</title>
+
+<para>DHAT-specific command-line options are:</para>
+
+<!-- start of xi:include in the manpage -->
+<variablelist id="dh.opts.list">
+
+  <varlistentry id="opt.dhat-out-file" xreflabel="--dhat-out-file">
+    <term>
+      <option><![CDATA[--dhat-out-file=<file> ]]></option>
+    </term>
+    <listitem>
+      <para>Write the profile data to 
+            <computeroutput>file</computeroutput> rather than to the default
+            output file,
+            <filename>dhat.out.&lt;pid&gt;</filename>. The
+            <option>%p</option> and <option>%q</option> format specifiers
+            can be used to embed the process ID and/or the contents of an
+            environment variable in the name, as is the case for the core
+            option <option><xref linkend="opt.log-file"/></option>.
+      </para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
+
+<para>Note that stacks by default have 12 frames. This may be more than
+necessary, in which case the <option>--num-callers</option> flag can be used to
+reduce the number, which may make DHAT run slightly faster.
+</para>
+
+<!-- end of xi:include in the manpage -->
+
+</sect1>
+
+</chapter>

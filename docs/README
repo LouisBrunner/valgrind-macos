@@ -76,10 +76,18 @@ could just build the docs from XML when doing 'make install', which
 would be simpler.
 
 
-Notes on building PDF / PS documents
-------------------------------------
-Below are random notes and recollections about how to build PDF / PS
-documents from the XML source at various times on various Linux distros.
+Notes on building HTML / PDF / PS documents
+-------------------------------------------
+Below are random notes and recollections about how to build documents
+from the XML source at various times on various Linux distros. They're
+mostly about the PDF/PS documents, because they are the hardest to
+build.
+
+Notes [Jan 2019]
+-----------------
+For Ubuntu 18.04, to build HTML docs I had to:
+
+  sudo apt-get install xsltproc
 
 Notes [May 2017]
 ----------------

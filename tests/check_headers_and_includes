@@ -42,18 +42,18 @@ my %coregrind_dirs = (
     );
 
 my %tool_dirs = (
-    "none" => 1,
-    "lackey" => 1,
-    "massif" => 1,
     "memcheck" => 1,
-    "drd" => 1,
-    "helgrind", => 1,
-    "callgrind" => 1,
     "cachegrind" => 1,
-    "shared" => 1,
+    "callgrind" => 1,
+    "helgrind", => 1,
+    "drd" => 1,
+    "massif" => 1,
+    "dhat" => 1,
+    "lackey" => 1,
+    "none" => 1,
     "exp-bbv" => 1,
-    "exp-dhat" => 1,
     "exp-sgcheck" => 1
+    "shared" => 1,
     );
 
 my %dirs_to_ignore = (

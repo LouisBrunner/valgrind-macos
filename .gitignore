@@ -246,6 +246,34 @@
 /coregrind/m_ume/.deps
 /coregrind/m_ume/.dirstamp
 
+# /dhat/
+/dhat/*.dSYM
+/dhat/.deps
+/dhat/dhat-*-darwin
+/dhat/dhat-*-linux
+/dhat/dhat-*-solaris
+/dhat/Makefile
+/dhat/Makefile.in
+/dhat/vgpreload_dhat-*-linux.so
+/dhat/vgpreload_dhat-*-darwin.so
+/dhat/vgpreload_dhat-*-solaris.so
+
+# /dhat/tests/
+/dhat/tests/Makefile
+/dhat/tests/Makefile.in
+/dhat/tests/*.dSYM
+/dhat/tests/*.so
+/dhat/tests/*.stderr.diff*
+/dhat/tests/*.stderr.out
+/dhat/tests/*.stdout.diff*
+/dhat/tests/*.stdout.out
+/dhat/tests/.deps
+/dhat/tests/acc
+/dhat/tests/basic
+/dhat/tests/big
+/dhat/tests/empty
+/dhat/tests/single
+
 # /docs/
 /docs/FAQ.txt
 /docs/html
@@ -495,22 +523,6 @@
 /exp-bbv/tests/x86-linux/ll
 /exp-bbv/tests/x86-linux/Makefile
 /exp-bbv/tests/x86-linux/Makefile.in
-
-# /exp-dhat/
-/exp-dhat/*.dSYM
-/exp-dhat/.deps
-/exp-dhat/exp-dhat-*-darwin
-/exp-dhat/exp-dhat-*-linux
-/exp-dhat/exp-dhat-*-solaris
-/exp-dhat/Makefile
-/exp-dhat/Makefile.in
-/exp-dhat/vgpreload_exp-dhat-*-linux.so
-/exp-dhat/vgpreload_exp-dhat-*-darwin.so
-/exp-dhat/vgpreload_exp-dhat-*-solaris.so
-
-# /exp-dhat/tests/
-/exp-dhat/tests/Makefile
-/exp-dhat/tests/Makefile.in
 
 # /exp-sgcheck/
 /exp-sgcheck/*.dSYM

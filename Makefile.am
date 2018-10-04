@@ -6,15 +6,15 @@ include $(top_srcdir)/Makefile.all.am
 TOOLS =		memcheck \
 		cachegrind \
 		callgrind \
-		massif \
-		lackey \
-		none \
 		helgrind \
-		drd
+		drd \
+		massif \
+		dhat \
+		lackey \
+		none
 
 EXP_TOOLS = 	exp-sgcheck \
-		exp-bbv \
-		exp-dhat
+		exp-bbv
 
 # Put docs last because building the HTML is slow and we want to get
 # everything else working before we try it.

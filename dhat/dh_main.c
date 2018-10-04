@@ -1,13 +1,13 @@
 
-//--------------------------------------------------------------------*/
-//--- DHAT: a Dynamic Heap Analysis Tool                 dh_main.c ---*/
-//--------------------------------------------------------------------*/
+//--------------------------------------------------------------------//
+//--- DHAT: a Dynamic Heap Analysis Tool                 dh_main.c ---//
+//--------------------------------------------------------------------//
 
 /*
    This file is part of DHAT, a Valgrind tool for profiling the
    heap usage of programs.
 
-   Copyright (C) 2010-2017 Mozilla Inc
+   Copyright (C) 2010-2018 Mozilla Foundation
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -31,9 +31,12 @@
 
 
 #include "pub_tool_basics.h"
+#include "pub_tool_clientstate.h"
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcassert.h"
+#include "pub_tool_libcfile.h"
 #include "pub_tool_libcprint.h"
+#include "pub_tool_libcproc.h"
 #include "pub_tool_machine.h"      // VG_(fnptr_to_fnentry)
 #include "pub_tool_mallocfree.h"
 #include "pub_tool_options.h"
@@ -43,25 +46,27 @@
 
 #define HISTOGRAM_SIZE_LIMIT 1024
 
-
 //------------------------------------------------------------//
 //--- Globals                                              ---//
 //------------------------------------------------------------//
 
-// Number of guest instructions executed so far.  This is 
-// incremented directly from the generated code.
-static ULong g_guest_instrs_executed = 0;
+// Values for the entire run.
+static ULong g_total_blocks = 0;
+static ULong g_total_bytes  = 0;
 
-// Summary statistics for the entire run.
-static ULong g_tot_blocks = 0;   // total blocks allocated
-static ULong g_tot_bytes  = 0;   // total bytes allocated
+// Current values.
+static ULong g_curr_blocks = 0;
+static ULong g_curr_bytes  = 0;
+static ULong g_curr_instrs = 0;  // incremented from generated code
 
-static ULong g_cur_blocks_live = 0; // curr # blocks live
-static ULong g_cur_bytes_live  = 0; // curr # bytes live
+// Values at the global max, i.e. when g_curr_bytes peaks.
+static ULong g_max_blocks = 0;
+static ULong g_max_bytes  = 0;
+static ULong g_max_instrs = 0;
 
-static ULong g_max_blocks_live = 0; // bytes and blocks at
-static ULong g_max_bytes_live  = 0; // the max residency point
-
+// Values for the entire run. Computed at the end.
+static ULong g_reads_bytes = 0;
+static ULong g_writes_bytes = 0;
 
 //------------------------------------------------------------//
 //--- an Interval Tree of live blocks                      ---//
@@ -74,8 +79,8 @@ typedef
       SizeT       req_szB;
       ExeContext* ap;  /* allocation ec */
       ULong       allocd_at; /* instruction number */
-      ULong       n_reads;
-      ULong       n_writes;
+      ULong       reads_bytes;
+      ULong       writes_bytes;
       /* Approx histogram, one byte per payload byte.  Counts latch up
          therefore at 0xFFFF.  Can be NULL if the block is resized or if
          the block is larger than HISTOGRAM_SIZE_LIMIT. */
@@ -112,14 +117,14 @@ static UWord stats__n_fBc_notfound = 0;
 static Block* find_Block_containing ( Addr a )
 {
    if (LIKELY(fbc_cache0
-              && fbc_cache0->payload <= a 
+              && fbc_cache0->payload <= a
               && a < fbc_cache0->payload + fbc_cache0->req_szB)) {
       // found at 0
       stats__n_fBc_cached++;
       return fbc_cache0;
    }
    if (LIKELY(fbc_cache1
-              && fbc_cache1->payload <= a 
+              && fbc_cache1->payload <= a
               && a < fbc_cache1->payload + fbc_cache1->req_szB)) {
       // found at 1; swap 0 and 1
       Block* tmp = fbc_cache0;
@@ -170,31 +175,37 @@ static void delete_Block_starting_at ( Addr a )
 
 typedef
    struct {
-      // the allocation point that we're summarising stats for
+      // The allocation point that we're summarising stats for.
       ExeContext* ap;
-      // used when printing results
-      Bool shown;
-      // The current number of blocks and bytes live for this AP
-      ULong cur_blocks_live;
-      ULong cur_bytes_live;
-      // The number of blocks and bytes live at the max-liveness
-      // point.  Note this is a bit subtle.  max_blocks_live is not
-      // the maximum number of live blocks, but rather the number of
-      // blocks live at the point of maximum byte liveness.  These are
-      // not necessarily the same thing.
-      ULong max_blocks_live;
-      ULong max_bytes_live;
+
       // Total number of blocks and bytes allocated by this AP.
-      ULong tot_blocks;
-      ULong tot_bytes;
-      // Sum of death ages for all blocks allocated by this AP,
-      // that have subsequently been freed.
-      ULong death_ages_sum;
-      ULong deaths;
+      ULong total_blocks;
+      ULong total_bytes;
+
+      // The current number of blocks and bytes live for this AP.
+      ULong curr_blocks;
+      ULong curr_bytes;
+
+      // Values at the AP max, i.e. when this AP's curr_bytes peaks.
+      ULong max_blocks;     // Blocks at the AP max.
+      ULong max_bytes;      // The AP max, measured in bytes.
+
+      // Values at the global max.
+      ULong at_tgmax_blocks;
+      ULong at_tgmax_bytes;
+
+      // Total lifetimes of all blocks allocated by this AP. Includes blocks
+      // explicitly freed and blocks implicitly freed at termination.
+      ULong total_lifetimes_instrs;
+
+      // Number of blocks freed by this AP. (Only used in assertions.)
+      ULong freed_blocks;
+
       // Total number of reads and writes in all blocks allocated
       // by this AP.
-      ULong n_reads;
-      ULong n_writes;
+      ULong reads_bytes;
+      ULong writes_bytes;
+
       /* Histogram information.  We maintain a histogram aggregated for
          all retiring Blocks allocated by this AP, but only if:
          - this AP has only ever allocated objects of one size
@@ -203,7 +214,7 @@ typedef
          has only ever allocated blocks of one size.
 
          3 states:
-            Unknown          because no retirement yet 
+            Unknown          because no retirement yet
             Exactly xsize    all retiring blocks are of this size
             Mixed            multiple different sizes seen
       */
@@ -217,6 +228,26 @@ typedef
    .ap field in the values. */
 static WordFM* apinfo = NULL;  /* WordFM* ExeContext* APInfo* */
 
+
+// Are we at peak memory? If so, update at_tgmax_blocks and at_tgmax_bytes in
+// all APInfos. Note that this is moderately expensive so we avoid calling it
+// on every allocation.
+static void check_for_peak(void)
+{
+   if (g_curr_bytes == g_max_bytes) {
+      // It's a peak. (If there are multiple equal peaks we record the latest
+      // one.)
+      UWord keyW, valW;
+      VG_(initIterFM)(apinfo);
+      while (VG_(nextIterFM)(apinfo, &keyW, &valW)) {
+         APInfo* api = (APInfo*)valW;
+         tl_assert(api && api->ap == (ExeContext*)keyW);
+         api->at_tgmax_blocks = api->curr_blocks;
+         api->at_tgmax_bytes = api->curr_bytes;
+      }
+      VG_(doneIterFM)(apinfo);
+   }
+}
 
 /* 'bk' is being introduced (has just been allocated).  Find the
    relevant APInfo entry for it, or create one, based on the block's
@@ -236,14 +267,14 @@ static void intro_Block ( Block* bk )
       api = (APInfo*)valW;
       tl_assert(keyW == (UWord)bk->ap);
    } else {
-      api = VG_(malloc)( "dh.main.intro_Block.1", sizeof(APInfo) );
+      api = VG_(malloc)( "dh.intro_Block.1", sizeof(APInfo) );
       VG_(memset)(api, 0, sizeof(*api));
       api->ap = bk->ap;
       Bool present = VG_(addToFM)( apinfo,
                                    (UWord)bk->ap, (UWord)api );
       tl_assert(!present);
       // histo stuff
-      tl_assert(api->deaths == 0);
+      tl_assert(api->freed_blocks == 0);
       api->xsize_tag = Unknown;
       api->xsize = 0;
       if (0) VG_(printf)("api %p   -->  Unknown\n", api);
@@ -251,34 +282,31 @@ static void intro_Block ( Block* bk )
 
    tl_assert(api->ap == bk->ap);
 
-   /* So: update stats to reflect an allocation */
+   // Update global stats first.
 
-   // # live blocks
-   api->cur_blocks_live++;
+   g_total_blocks++;
+   g_total_bytes += bk->req_szB;
 
-   // # live bytes
-   api->cur_bytes_live += bk->req_szB;
-   if (api->cur_bytes_live > api->max_bytes_live) {
-      api->max_bytes_live  = api->cur_bytes_live;
-      api->max_blocks_live = api->cur_blocks_live;
+   g_curr_blocks++;
+   g_curr_bytes += bk->req_szB;
+   if (g_curr_bytes > g_max_bytes) {
+      g_max_blocks = g_curr_blocks;
+      g_max_bytes = g_curr_bytes;
+      g_max_instrs = g_curr_instrs;
    }
 
-   // total blocks and bytes allocated here
-   api->tot_blocks++;
-   api->tot_bytes += bk->req_szB;
+   // Now update APInfo stats.
 
-   // update summary globals
-   g_tot_blocks++;
-   g_tot_bytes += bk->req_szB;
+   api->total_blocks++;
+   api->total_bytes += bk->req_szB;
 
-   g_cur_blocks_live++;
-   g_cur_bytes_live += bk->req_szB;
-   if (g_cur_bytes_live > g_max_bytes_live) {
-      g_max_bytes_live = g_cur_bytes_live;
-      g_max_blocks_live = g_cur_blocks_live;
+   api->curr_blocks++;
+   api->curr_bytes += bk->req_szB;
+   if (api->curr_bytes > api->max_bytes) {
+      api->max_blocks = api->curr_blocks;
+      api->max_bytes  = api->curr_bytes;
    }
 }
-
 
 /* 'bk' is retiring (being freed).  Find the relevant APInfo entry for
    it, which must already exist.  Then, fold info from 'bk' into that
@@ -305,52 +333,57 @@ static void retire_Block ( Block* bk, Bool because_freed )
 
    // update stats following this free.
    if (0)
-   VG_(printf)("ec %p  api->c_by_l %llu  bk->rszB %llu\n",
-               bk->ap, api->cur_bytes_live, (ULong)bk->req_szB);
+      VG_(printf)("ec %p  api->c_by_l %llu  bk->rszB %llu\n",
+                  bk->ap, api->curr_bytes, (ULong)bk->req_szB);
 
-   // update total blocks live etc for this AP
    if (because_freed) {
-      tl_assert(api->cur_blocks_live >= 1);
-      tl_assert(api->cur_bytes_live >= bk->req_szB);
-      api->cur_blocks_live--;
-      api->cur_bytes_live -= bk->req_szB;
+      // Total bytes is coming down from a possible peak.
+      check_for_peak();
 
-      api->deaths++;
+      // Then update global stats.
+      tl_assert(g_curr_blocks >= 1);
+      tl_assert(g_curr_bytes >= bk->req_szB);
+      g_curr_blocks--;
+      g_curr_bytes -= bk->req_szB;
 
-      tl_assert(bk->allocd_at <= g_guest_instrs_executed);
-      api->death_ages_sum += (g_guest_instrs_executed - bk->allocd_at);
+      // Then update APInfo stats.
+      tl_assert(api->curr_blocks >= 1);
+      tl_assert(api->curr_bytes >= bk->req_szB);
+      api->curr_blocks--;
+      api->curr_bytes -= bk->req_szB;
 
-      // update global summary stats
-      tl_assert(g_cur_blocks_live > 0);
-      g_cur_blocks_live--;
-      tl_assert(g_cur_bytes_live >= bk->req_szB);
-      g_cur_bytes_live -= bk->req_szB;
+      api->freed_blocks++;
    }
 
+   tl_assert(bk->allocd_at <= g_curr_instrs);
+   api->total_lifetimes_instrs += (g_curr_instrs - bk->allocd_at);
+
    // access counts
-   api->n_reads  += bk->n_reads;
-   api->n_writes += bk->n_writes;
+   api->reads_bytes += bk->reads_bytes;
+   api->writes_bytes += bk->writes_bytes;
+   g_reads_bytes += bk->reads_bytes;
+   g_writes_bytes += bk->writes_bytes;
 
    // histo stuff.  First, do state transitions for xsize/xsize_tag.
    switch (api->xsize_tag) {
 
       case Unknown:
          tl_assert(api->xsize == 0);
-         tl_assert(api->deaths == 1 || api->deaths == 0);
+         tl_assert(api->freed_blocks == 1 || api->freed_blocks == 0);
          tl_assert(!api->histo);
          api->xsize_tag = Exactly;
          api->xsize = bk->req_szB;
          if (0) VG_(printf)("api %p   -->  Exactly(%lu)\n", api, api->xsize);
          // and allocate the histo
          if (bk->histoW) {
-            api->histo = VG_(malloc)("dh.main.retire_Block.1",
+            api->histo = VG_(malloc)("dh.retire_Block.1",
                                      api->xsize * sizeof(UInt));
             VG_(memset)(api->histo, 0, api->xsize * sizeof(UInt));
          }
          break;
 
       case Exactly:
-         //tl_assert(api->deaths > 1);
+         //tl_assert(api->freed_blocks > 1);
          if (bk->req_szB != api->xsize) {
             if (0) VG_(printf)("api %p   -->  Mixed(%lu -> %lu)\n",
                                api, api->xsize, bk->req_szB);
@@ -365,7 +398,7 @@ static void retire_Block ( Block* bk, Bool because_freed )
          break;
 
       case Mixed:
-         //tl_assert(api->deaths > 1);
+         //tl_assert(api->freed_blocks > 1);
          break;
 
       default:
@@ -386,8 +419,6 @@ static void retire_Block ( Block* bk, Bool because_freed )
       if (0) VG_(printf)("fold in, AP = %p\n", api);
    }
 
-
-
 #if 0
    if (bk->histoB) {
       VG_(printf)("block retiring, histo %lu: ", bk->req_szB);
@@ -403,8 +434,9 @@ static void retire_Block ( Block* bk, Bool because_freed )
 
 /* This handles block resizing.  When a block with AP 'ec' has a
    size change of 'delta', call here to update the APInfo. */
-static void apinfo_change_cur_bytes_live( ExeContext* ec, Long delta )
+static void resize_Block(ExeContext* ec, SizeT old_req_szB, SizeT new_req_szB)
 {
+   Long    delta = (Long)new_req_szB - (Long)old_req_szB;
    APInfo* api   = NULL;
    UWord   keyW  = 0;
    UWord   valW  = 0;
@@ -416,30 +448,46 @@ static void apinfo_change_cur_bytes_live( ExeContext* ec, Long delta )
    tl_assert(api->ap == ec);
 
    if (delta < 0) {
-      tl_assert(api->cur_bytes_live >= -delta);
-      tl_assert(g_cur_bytes_live >= -delta);
+      tl_assert(api->curr_bytes >= -delta);
+      tl_assert(g_curr_bytes >= -delta);
    }
 
-   // adjust current live size
-   api->cur_bytes_live += delta;
-   g_cur_bytes_live += delta;
+   // Total bytes might be coming down from a possible peak.
+   if (delta < 0)
+      check_for_peak();
 
-   if (delta > 0 && api->cur_bytes_live > api->max_bytes_live) {
-      api->max_bytes_live  = api->cur_bytes_live;
-      api->max_blocks_live = api->cur_blocks_live;
+   // Note: we treat realloc() like malloc() + free() for total counts, i.e. we
+   // increment total_blocks by 1 and increment total_bytes by new_req_szB.
+   //
+   // A reasonable alternative would be to leave total_blocks unchanged and
+   // increment total_bytes by delta (but only if delta is positive). But then
+   // calls to realloc wouldn't be counted towards the total_blocks count,
+   // which is undesirable.
+
+   // Update global stats first.
+
+   g_total_blocks++;
+   g_total_bytes += new_req_szB;
+
+   g_curr_blocks += 0;  // unchanged
+   g_curr_bytes += delta;
+   if (g_curr_bytes > g_max_bytes) {
+      g_max_blocks = g_curr_blocks;
+      g_max_bytes = g_curr_bytes;
+      g_max_instrs = g_curr_instrs;
    }
 
-   // update global summary stats
-   if (delta > 0 && g_cur_bytes_live > g_max_bytes_live) {
-      g_max_bytes_live = g_cur_bytes_live;
-      g_max_blocks_live = g_cur_blocks_live;
-   }
-   if (delta > 0)
-      g_tot_bytes += delta;
+   // Now update APInfo stats.
 
-   // adjust total allocation size
-   if (delta > 0)
-      api->tot_bytes += delta;
+   api->total_blocks++;
+   api->total_bytes += new_req_szB;
+
+   api->curr_blocks += 0;  // unchanged
+   api->curr_bytes += delta;
+   if (api->curr_bytes > api->max_bytes) {
+      api->max_blocks = api->curr_blocks;
+      api->max_bytes  = api->curr_bytes;
+   }
 }
 
 
@@ -473,14 +521,14 @@ void* new_block ( ThreadId tid, void* p, SizeT req_szB, SizeT req_alignB,
       /* slop_szB = 0; */
    }
 
-   // Make new HP_Chunk node, add to malloc_list
+   // Make new Block, add to interval_tree.
    Block* bk = VG_(malloc)("dh.new_block.1", sizeof(Block));
-   bk->payload   = (Addr)p;
-   bk->req_szB   = req_szB;
-   bk->ap        = VG_(record_ExeContext)(tid, 0/*first word delta*/);
-   bk->allocd_at = g_guest_instrs_executed;
-   bk->n_reads   = 0;
-   bk->n_writes  = 0;
+   bk->payload      = (Addr)p;
+   bk->req_szB      = req_szB;
+   bk->ap           = VG_(record_ExeContext)(tid, 0/*first word delta*/);
+   bk->allocd_at    = g_curr_instrs;
+   bk->reads_bytes  = 0;
+   bk->writes_bytes = 0;
    // set up histogram array, if the block isn't too large
    bk->histoW = NULL;
    if (req_szB <= HISTOGRAM_SIZE_LIMIT) {
@@ -520,7 +568,7 @@ void die_block ( void* p, Bool custom_free )
    }
 
    if (0) VG_(printf)(" FREE %p %llu\n",
-                      p, g_guest_instrs_executed - bk->allocd_at);
+                      p, g_curr_instrs - bk->allocd_at);
 
    retire_Block(bk, True/*because_freed*/);
 
@@ -568,8 +616,7 @@ void* renew_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
    if (new_req_szB <= bk->req_szB) {
 
       // New size is smaller or same; block not moved.
-      apinfo_change_cur_bytes_live(bk->ap,
-                                   (Long)new_req_szB - (Long)bk->req_szB);
+      resize_Block(bk->ap, bk->req_szB, new_req_szB);
       bk->req_szB = new_req_szB;
       return p_old;
 
@@ -595,14 +642,13 @@ void* renew_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
       // is still alive
 
       // Update the metadata.
-      apinfo_change_cur_bytes_live(bk->ap,
-                                   (Long)new_req_szB - (Long)bk->req_szB);
+      resize_Block(bk->ap, bk->req_szB, new_req_szB);
       bk->payload = (Addr)p_new;
       bk->req_szB = new_req_szB;
 
       // and re-add
       Bool present
-         = VG_(addToFM)( interval_tree, (UWord)bk, (UWord)0/*no val*/); 
+         = VG_(addToFM)( interval_tree, (UWord)bk, (UWord)0/*no val*/);
       tl_assert(!present);
       fbc_cache0 = fbc_cache1 = NULL;
 
@@ -670,10 +716,10 @@ static void* dh_realloc ( ThreadId tid, void* p_old, SizeT new_szB )
 }
 
 static SizeT dh_malloc_usable_size ( ThreadId tid, void* p )
-{                                                            
+{
    Block* bk = find_Block_containing( (Addr)p );
    return bk ? bk->req_szB : 0;
-}                                                            
+}
 
 
 //------------------------------------------------------------//
@@ -702,7 +748,7 @@ void dh_handle_write ( Addr addr, UWord szB )
 {
    Block* bk = find_Block_containing(addr);
    if (bk) {
-      bk->n_writes += szB;
+      bk->writes_bytes += szB;
       if (bk->histoW)
          inc_histo_for_block(bk, addr, szB);
    }
@@ -713,7 +759,7 @@ void dh_handle_read ( Addr addr, UWord szB )
 {
    Block* bk = find_Block_containing(addr);
    if (bk) {
-      bk->n_reads += szB;
+      bk->reads_bytes += szB;
       if (bk->histoW)
          inc_histo_for_block(bk, addr, szB);
    }
@@ -778,13 +824,13 @@ void add_counter_update(IRSB* sbOut, Int n)
    #else
    # error "Unknown endianness"
    #endif
-   // Add code to increment 'g_guest_instrs_executed' by 'n', like this:
-   //   WrTmp(t1, Load64(&g_guest_instrs_executed))
+   // Add code to increment 'g_curr_instrs' by 'n', like this:
+   //   WrTmp(t1, Load64(&g_curr_instrs))
    //   WrTmp(t2, Add64(RdTmp(t1), Const(n)))
-   //   Store(&g_guest_instrs_executed, t2)
+   //   Store(&g_curr_instrs, t2)
    IRTemp t1 = newIRTemp(sbOut->tyenv, Ity_I64);
    IRTemp t2 = newIRTemp(sbOut->tyenv, Ity_I64);
-   IRExpr* counter_addr = mkIRExpr_HWord( (HWord)&g_guest_instrs_executed );
+   IRExpr* counter_addr = mkIRExpr_HWord( (HWord)&g_curr_instrs );
 
    IRStmt* st1 = assign(t1, IRExpr_Load(END, Ity_I64, counter_addr));
    IRStmt* st2 = assign(t2, binop(Iop_Add64, mkexpr(t1), mkU64(n)));
@@ -850,7 +896,7 @@ void addMemEvent(IRSB* sbOut, Bool isWrite, Int szB, IRExpr* addr,
    addStmtToIRSB(
       sbOut,
       assign(diff,
-             tyAddr == Ity_I32 
+             tyAddr == Ity_I32
                 ? binop(Iop_Sub32, addr, mkexpr(sp_minus_rz))
                 : binop(Iop_Sub64, addr, mkexpr(sp_minus_rz)))
    );
@@ -859,7 +905,7 @@ void addMemEvent(IRSB* sbOut, Bool isWrite, Int szB, IRExpr* addr,
    addStmtToIRSB(
       sbOut,
       assign(guard,
-             tyAddr == Ity_I32 
+             tyAddr == Ity_I32
                 ? binop(Iop_CmpLT32U, mkU32(THRESH), mkexpr(diff))
                 : binop(Iop_CmpLT64U, mkU64(THRESH), mkexpr(diff)))
    );
@@ -886,7 +932,7 @@ IRSB* dh_instrument ( VgCallbackClosure* closure,
    // - just before any Ist_Exit statements;
    // - just before the IRSB's end.
    // In the former case, we zero 'n' and then continue instrumenting.
-   
+
    sbOut = deepCopyIRSBExceptStmts(sbIn);
 
    // Copy verbatim any IR preamble preceding the first IMark
@@ -895,10 +941,10 @@ IRSB* dh_instrument ( VgCallbackClosure* closure,
       addStmtToIRSB( sbOut, sbIn->stmts[i] );
       i++;
    }
-   
+
    for (/*use current i*/; i < sbIn->stmts_used; i++) {
       IRStmt* st = sbIn->stmts[i];
-      
+
       if (!st || st->tag == Ist_NoOp) continue;
 
       switch (st->tag) {
@@ -933,7 +979,7 @@ IRSB* dh_instrument ( VgCallbackClosure* closure,
          case Ist_Store: {
             IRExpr* data  = st->Ist.Store.data;
             IRExpr* aexpr = st->Ist.Store.addr;
-            addMemEvent( sbOut, True/*isWrite*/, 
+            addMemEvent( sbOut, True/*isWrite*/,
                          sizeofIRType(typeOfIRExpr(tyenv, data)),
                          aexpr, goff_sp );
             break;
@@ -1027,28 +1073,11 @@ IRSB* dh_instrument ( VgCallbackClosure* closure,
 //--- Command line args                                    ---//
 //------------------------------------------------------------//
 
-// FORWARDS
-static Bool identify_metric ( /*OUT*/ULong(**get_metricP)(APInfo*),
-                              /*OUT*/Bool* increasingP,
-                              const HChar* metric_name );
-
-static Int    clo_show_top_n = 10;
-static const HChar *clo_sort_by = "max-bytes-live";
+static const HChar* clo_dhat_out_file = "dhat.out.%p";
 
 static Bool dh_process_cmd_line_option(const HChar* arg)
 {
-   if VG_BINT_CLO(arg, "--show-top-n", clo_show_top_n, 1, 100000) {}
-
-   else if VG_STR_CLO(arg, "--sort-by", clo_sort_by) {
-       ULong (*dummyFn)(APInfo*);
-       Bool dummyB;
-       Bool ok = identify_metric( &dummyFn, &dummyB, clo_sort_by);
-       if (!ok)
-          return False;
-       // otherwise it's OK, in which case leave it alone.
-       // show_top_n_apinfos will later convert the string by a
-       // second call to identify_metric.
-   }
+   if VG_STR_CLO(arg, "--dhat-out-file", clo_dhat_out_file) {}
 
    else
       return VG_(replacement_malloc_process_cmd_line_option)(arg);
@@ -1056,18 +1085,10 @@ static Bool dh_process_cmd_line_option(const HChar* arg)
    return True;
 }
 
-
 static void dh_print_usage(void)
 {
    VG_(printf)(
-"    --show-top-n=number       show the top <number> alloc points [10]\n"
-"    --sort-by=string\n"
-"            sort the allocation points by the metric\n"
-"            defined by <string>, thusly:\n"
-"                max-bytes-live    maximum live bytes [default]\n"
-"                tot-bytes-allocd  bytes allocated in total (turnover)\n"
-"                max-blocks-live   maximum live blocks\n"
-"                tot-blocks-allocd blocks allocated in total (turnover)\n"
+"    --dhat-out-file=<file>  output file name [dhat.out.%%p]\n"
    );
 }
 
@@ -1083,204 +1104,236 @@ static void dh_print_debug_usage(void)
 //--- Finalisation                                         ---//
 //------------------------------------------------------------//
 
-static void show_N_div_100( /*OUT*/HChar* buf, ULong n )
+// File format notes.
+//
+// - The files are JSON, because it's a widely-used format and saves us having
+//   to write a parser in dh_view.js.
+//
+// - We use a comma-first style for the generated JSON. Comma-first style
+//   moves the special case for arrays/objects from the last item to the
+//   first. This helps in cases where you can't easily tell in advance the
+//   size of arrays/objects, such as iterating over a WordFM (because
+//   VG_(sizeFM) is O(n) rather than O(1)), and iterating over stack frames
+//   using VG_(apply_ExeContext) in combination with an InlIpCursor.
+//
+// - We use short field names and minimal whitespace to minimize file sizes.
+
+static VgFile* fp;
+
+#define FP(format, args...) ({ VG_(fprintf)(fp, format, ##args); })
+
+// The frame table holds unique frames.
+static WordFM* frame_tbl = NULL;
+static UWord next_frame_n = 0;
+
+static Word frame_cmp(UWord a, UWord b)
 {
-   ULong nK = n / 100;
-   ULong nR = n % 100;
-   VG_(sprintf)(buf, "%llu.%s%llu", nK,
-                nR < 10 ? "0" : "",
-                nR);
+   return VG_(strcmp)((const HChar*)a, (const HChar*)b);
 }
 
-static void show_APInfo ( APInfo* api )
+static HChar hex_digit_to_ascii_char(UChar d)
 {
-   HChar bufA[80];   // large enough
-   VG_(memset)(bufA, 0, sizeof(bufA));
-   if (api->tot_blocks > 0) {
-      show_N_div_100( bufA, ((ULong)api->tot_bytes * 100ULL)
-                              / (ULong)api->tot_blocks );
-   } else {
-      bufA[0] = 'N'; bufA[1] = 'a'; bufA[2] = 'N';
+   d = d & 0xf;
+   return (d < 10) ? ('0' + d) : ('a' + (d - 10));
+}
+
+// For JSON, we must escape double quote, backslash, and 0x00..0x1f.
+//
+// Returns the original string if no escaping was required. Returns a pointer
+// to a static buffer if escaping was required. Therefore, the return value is
+// only valid until the next call to this function.
+static const HChar* json_escape(const HChar* s)
+{
+   static HChar* buf = NULL;
+   static SizeT bufcap = 0;
+
+   // Do we need any escaping?
+   SizeT extra = 0;
+   const HChar* p = s;
+   while (*p) {
+      UChar c = *p;
+      if (c == '"' || c == '\\') {
+         extra += 1;
+      } else if (c <= 0x1f) {
+         extra += 5;
+      }
+      p++;
+   }
+   SizeT len = p - s;
+
+   if (extra == 0) {
+      // No escaping needed.
+      return s;
    }
 
-   VG_(umsg)("max-live:    %'llu in %'llu blocks\n",
-             api->max_bytes_live, api->max_blocks_live);
-   VG_(umsg)("tot-alloc:   %'llu in %'llu blocks (avg size %s)\n",
-             api->tot_bytes, api->tot_blocks, bufA);
-
-   tl_assert(api->tot_blocks >= api->max_blocks_live);
-   tl_assert(api->tot_bytes >= api->max_bytes_live);
-
-   if (api->deaths > 0) {
-      // Average Age at Death
-      ULong aad = api->deaths == 0
-                  ? 0 : (api->death_ages_sum / api->deaths);
-      // AAD as a fraction of the total program lifetime (so far)
-      // measured in ten-thousand-ths (aad_frac_10k == 10000 means the
-      // complete lifetime of the program.
-      ULong aad_frac_10k
-         = g_guest_instrs_executed == 0
-           ? 0 : (10000ULL * aad) / g_guest_instrs_executed;
-      HChar buf[80];  // large enough
-      show_N_div_100(buf, aad_frac_10k);
-      VG_(umsg)("deaths:      %'llu, at avg age %'llu "
-                "(%s%% of prog lifetime)\n",
-                api->deaths, aad, buf );
-   } else {
-      VG_(umsg)("deaths:      none (none of these blocks were freed)\n");
+   // Escaping needed. (The +1 is for the NUL terminator.) Enlarge buf if
+   // necessary.
+   SizeT newcap = len + extra + 1;
+   if (bufcap < newcap) {
+      buf = VG_(realloc)("dh.json", buf, newcap);
+      bufcap = newcap;
    }
 
-   HChar bufR[80], bufW[80];   // large enough
-   VG_(memset)(bufR, 0, sizeof(bufR));
-   VG_(memset)(bufW, 0, sizeof(bufW));
-   if (api->tot_bytes > 0) {
-      show_N_div_100(bufR, (100ULL * api->n_reads) / api->tot_bytes);
-      show_N_div_100(bufW, (100ULL * api->n_writes) / api->tot_bytes);
-   } else {
-      VG_(strcat)(bufR, "Inf");
-      VG_(strcat)(bufW, "Inf");
+   p = s;
+   HChar* q = buf;
+   while (*p) {
+      UChar c = *p;
+      if (c == '"') {
+         *q++ = '\\';
+         *q++ = '"';
+      } else if (c == '\\') {
+         *q++ = '\\';
+         *q++ = '\\';
+      } else if (c <= 0x1f) {
+         *q++ = '\\';
+         *q++ = 'u';
+         *q++ = '0';
+         *q++ = '0';
+         *q++ = hex_digit_to_ascii_char((c & 0x00f0) >> 4);
+         *q++ = hex_digit_to_ascii_char(c & 0x000f);
+      } else {
+         *q++ = c;
+      }
+      p++;
    }
+   *q = '\0';
 
-   VG_(umsg)("acc-ratios:  %s rd, %s wr "
-             " (%'llu b-read, %'llu b-written)\n",
-             bufR, bufW,
-             api->n_reads, api->n_writes);
+   return buf;
+}
 
-   VG_(pp_ExeContext)(api->ap);
+static void write_APInfo_frame(UInt n, DiEpoch ep, Addr ip, void* opaque)
+{
+   Bool* is_first = (Bool*)opaque;
+   InlIPCursor* iipc = VG_(new_IIPC)(ep, ip);
+
+   do {
+      const HChar* buf = VG_(describe_IP)(ep, ip, iipc);
+
+      // Skip entries in vg_replace_malloc.c (e.g. `malloc`, `calloc`,
+      // `realloc`, `operator new`) because they're boring and clog up the
+      // output.
+      if (VG_(strstr)(buf, "vg_replace_malloc.c")) {
+         continue;
+      }
+
+      // If this description has been seen before, get its number. Otherwise,
+      // give it a new number and put it in the table.
+      UWord keyW = 0, valW = 0;
+      UWord frame_n = 0;
+      Bool found = VG_(lookupFM)(frame_tbl, &keyW, &valW, (UWord)buf);
+      if (found) {
+         //const HChar* str = (const HChar*)keyW;
+         //tl_assert(0 == VG_(strcmp)(buf, str));
+         frame_n = valW;
+      } else {
+         // `buf` is a static buffer, we must copy it.
+         const HChar* str = VG_(strdup)("dh.frame_tbl.3", buf);
+         frame_n = next_frame_n++;
+         Bool present = VG_(addToFM)(frame_tbl, (UWord)str, frame_n);
+         tl_assert(!present);
+      }
+
+      FP("%c%lu", *is_first ? '[' : ',', frame_n);
+      *is_first = False;
+
+   } while (VG_(next_IIPC)(iipc));
+
+   VG_(delete_IIPC)(iipc);
+};
+
+static void write_APInfo(APInfo* api, Bool is_first)
+{
+   tl_assert(api->total_blocks >= api->max_blocks);
+   tl_assert(api->total_bytes >= api->max_bytes);
+
+   FP(" %c{\"tb\":%llu,\"tbk\":%llu,\"tli\":%llu\n",
+      is_first ? '[' : ',',
+      api->total_bytes, api->total_blocks, api->total_lifetimes_instrs);
+   FP("  ,\"mb\":%llu,\"mbk\":%llu\n",
+      api->max_bytes, api->max_blocks);
+   FP("  ,\"gb\":%llu,\"gbk\":%llu\n",
+      api->at_tgmax_bytes, api->at_tgmax_blocks);
+   FP("  ,\"fb\":%llu,\"fbk\":%llu\n",
+      api->curr_bytes, api->curr_blocks);
+   FP("  ,\"rb\":%llu,\"wb\":%llu\n",
+      api->reads_bytes, api->writes_bytes);
 
    if (api->histo && api->xsize_tag == Exactly) {
-      VG_(umsg)("\nAggregated access counts by offset:\n");
-      VG_(umsg)("\n");
-      UWord i;
-      if (api->xsize > 0)
-         VG_(umsg)("[   0]  ");
-      for (i = 0; i < api->xsize; i++) {
-         if (i > 0 && (i % 16) == 0 && i != api->xsize-1) {
-            VG_(umsg)("\n");
-            VG_(umsg)("[%4lu]  ", i);
+      FP("  ,\"acc\":[");
+
+      // Simple run-length encoding: when N entries in a row have the same
+      // value M, we print "-N,M". If there is just one in a row, we just
+      // print "M". This reduces file size significantly.
+      UShort repval = 0;
+      Int reps = 0;
+      for (UWord i = 0; i < api->xsize; i++) {
+         UShort h = api->histo[i];
+         if (repval == h) {
+            // Continue current run.
+            reps++;
+         } else {
+            // End of run; print it.
+            if (reps == 1) {
+               FP("%u,", repval);
+            } else if (reps > 1) {
+               FP("-%d,%u,", reps, repval);
+            }
+            reps = 1;
+            repval = h;
          }
-         VG_(umsg)("%u ", api->histo[i]);
       }
-      VG_(umsg)("\n");
+      // Print the final run.
+      if (reps == 1) {
+         FP("%u", repval);
+      } else if (reps > 1) {
+         FP("-%d,%u", reps, repval);
+      }
+
+      FP("]\n");
    }
+
+   FP("  ,\"fs\":");
+   Bool is_first_frame = True;
+   VG_(apply_ExeContext)(write_APInfo_frame, &is_first_frame, api->ap);
+   FP("]\n");
+
+   FP("  }\n");
 }
 
-
-/* Metric-access functions for APInfos. */
-static ULong get_metric__max_bytes_live ( APInfo* api ) {
-   return api->max_bytes_live;
-}
-static ULong get_metric__tot_bytes ( APInfo* api ) {
-   return api->tot_bytes;
-}
-static ULong get_metric__max_blocks_live ( APInfo* api ) {
-   return api->max_blocks_live;
-}
-static ULong get_metric__tot_blocks ( APInfo* api ) {
-   return api->tot_blocks;
-}
-
-/* Given a string, return the metric-access function and also a Bool
-   indicating whether we want increasing or decreasing values of the
-   metric.  This is used twice, once in command line processing, and
-   then again in show_top_n_apinfos.  Returns False if the given
-   string could not be identified.*/
-static Bool identify_metric ( /*OUT*/ULong(**get_metricP)(APInfo*),
-                              /*OUT*/Bool* increasingP,
-                              const HChar* metric_name )
+static void write_APInfos(void)
 {
-   if (0 == VG_(strcmp)(metric_name, "max-bytes-live")) {
-      *get_metricP = get_metric__max_bytes_live;
-      *increasingP = False;
-      return True;
-   }
-   if (0 == VG_(strcmp)(metric_name, "tot-bytes-allocd")) {
-      *get_metricP = get_metric__tot_bytes;
-      *increasingP = False;
-      return True;
-   }
-   if (0 == VG_(strcmp)(metric_name, "max-blocks-live")) {
-      *get_metricP = get_metric__max_blocks_live;
-      *increasingP = False;
-      return True;
-   }
-   if (0 == VG_(strcmp)(metric_name, "tot-blocks-allocd")) {
-      *get_metricP = get_metric__tot_blocks;
-      *increasingP = False;
-      return True;
-   }
-   return False;
-}
-
-
-static void show_top_n_apinfos ( void )
-{
-   Int   i;
    UWord keyW, valW;
-   ULong (*get_metric)(APInfo*);
-   Bool  increasing;
 
-   const HChar* metric_name = clo_sort_by;
-   tl_assert(metric_name); // ensured by clo processing
+   FP(",\"aps\":\n");
 
-   Bool ok = identify_metric( &get_metric, &increasing, metric_name );
-   tl_assert(ok); // ensured by clo processing
-
-   VG_(umsg)("\n");
-   VG_(umsg)("======== ORDERED BY %s \"%s\": "
-             "top %d allocators ========\n", 
-             increasing ? "increasing" : "decreasing",
-             metric_name, clo_show_top_n );
-
-   // Clear all .shown bits
-   VG_(initIterFM)( apinfo );
-   while (VG_(nextIterFM)( apinfo, &keyW, &valW )) {
+   VG_(initIterFM)(apinfo);
+   Bool is_first = True;
+   while (VG_(nextIterFM)(apinfo, &keyW, &valW)) {
       APInfo* api = (APInfo*)valW;
       tl_assert(api && api->ap == (ExeContext*)keyW);
-      api->shown = False;
+      write_APInfo(api, is_first);
+      is_first = False;
    }
-   VG_(doneIterFM)( apinfo );
+   VG_(doneIterFM)(apinfo);
 
-   // Now print the top N entries.  Each one requires a 
-   // complete scan of the set.  Duh.
-   for (i = 0; i < clo_show_top_n; i++) {
-      ULong   best_metric = increasing ? ~0ULL : 0ULL;
-      APInfo* best_api    = NULL;
-
-      VG_(initIterFM)( apinfo );
-      while (VG_(nextIterFM)( apinfo, &keyW, &valW )) {
-         APInfo* api = (APInfo*)valW;
-         if (api->shown)
-            continue;
-         ULong metric = get_metric(api);
-         if (increasing ? (metric < best_metric) : (metric > best_metric)) {
-            best_metric = metric;
-            best_api = api;
-         }
-      }
-      VG_(doneIterFM)( apinfo );
-
-      if (!best_api)
-         break; // all APIs have been shown.  Stop.
-
-      VG_(umsg)("\n");
-      VG_(umsg)("-------------------- %d of %d --------------------\n",
-                i+1, clo_show_top_n );
-      show_APInfo(best_api);
-      best_api->shown = True;
+   if (is_first) {
+      // We didn't print any elements. This happens if apinfo is empty.
+      FP(" [\n");
    }
 
-   VG_(umsg)("\n");
+   FP(" ]\n");
 }
-
 
 static void dh_fini(Int exit_status)
 {
-   // Before printing statistics, we must harvest access counts for
-   // all the blocks that are still alive.  Not doing so gives
-   // access ratios which are too low (zero, in the worst case)
-   // for such blocks, since the accesses that do get made will
-   // (if we skip this step) not get folded into the AP summaries.
+   // This function does lots of allocations that it doesn't bother to free,
+   // because execution is almost over anyway.
+
+   // Total bytes might be at a possible peak.
+   check_for_peak();
+
+   // Before printing statistics, we must harvest various stats (such as
+   // lifetimes and accesses) for all the blocks that are still alive.
    UWord keyW, valW;
    VG_(initIterFM)( interval_tree );
    while (VG_(nextIterFM)( interval_tree, &keyW, &valW )) {
@@ -1291,46 +1344,7 @@ static void dh_fini(Int exit_status)
    }
    VG_(doneIterFM)( interval_tree );
 
-   // show results
-   VG_(umsg)("======== SUMMARY STATISTICS ========\n");
-   VG_(umsg)("\n");
-   VG_(umsg)("guest_insns:  %'llu\n", g_guest_instrs_executed);
-   VG_(umsg)("\n");
-   VG_(umsg)("max_live:     %'llu in %'llu blocks\n",
-             g_max_bytes_live, g_max_blocks_live);
-   VG_(umsg)("\n");
-   VG_(umsg)("tot_alloc:    %'llu in %'llu blocks\n",
-             g_tot_bytes, g_tot_blocks);
-   VG_(umsg)("\n");
-   if (g_tot_bytes > 0) {
-      VG_(umsg)("insns per allocated byte: %'llu\n",
-                g_guest_instrs_executed / g_tot_bytes);
-      VG_(umsg)("\n");
-   }
-
-   show_top_n_apinfos();
-
-   VG_(umsg)("\n");
-   VG_(umsg)("\n");
-   VG_(umsg)("==============================================================\n");
-   VG_(umsg)("\n");
-   VG_(umsg)("Some hints: (see --help for command line option details):\n");
-   VG_(umsg)("\n");
-   VG_(umsg)("* summary stats for whole program are at the top of this output\n");
-   VG_(umsg)("\n");
-   VG_(umsg)("* --show-top-n=  controls how many alloc points are shown.\n");
-   VG_(umsg)("                 You probably want to set it much higher than\n");
-   VG_(umsg)("                 the default value (10)\n");
-   VG_(umsg)("\n");
-   VG_(umsg)("* --sort-by=     specifies the sort key for output.\n");
-   VG_(umsg)("                 See --help for details.\n");
-   VG_(umsg)("\n");
-   VG_(umsg)("* Each allocation stack, by default 12 frames, counts as\n");
-   VG_(umsg)("  a separate alloc point.  This causes the data to be spread out\n");
-   VG_(umsg)("  over far too many alloc points.  I strongly suggest using\n");
-   VG_(umsg)("  --num-callers=4 or some such, to reduce the spreading.\n");
-   VG_(umsg)("\n");
-
+   // Stats.
    if (VG_(clo_stats)) {
       VG_(dmsg)(" dhat: find_Block_containing:\n");
       VG_(dmsg)("             found: %'lu (%'lu cached + %'lu uncached)\n",
@@ -1340,8 +1354,94 @@ static void dh_fini(Int exit_status)
       VG_(dmsg)("          notfound: %'lu\n", stats__n_fBc_notfound);
       VG_(dmsg)("\n");
    }
-}
 
+   // Create the frame table, and insert the special "[root]" node at index 0.
+   frame_tbl = VG_(newFM)(VG_(malloc),
+                          "dh.frame_tbl.1",
+                          VG_(free),
+                          frame_cmp);
+   const HChar* root = VG_(strdup)("dh.frame_tbl.2", "[root]");
+   Bool present = VG_(addToFM)(frame_tbl, (UWord)root, 0);
+   tl_assert(!present);
+   next_frame_n = 1;
+
+   // Setup output filename. Nb: it's important to do this now, i.e. as late
+   // as possible. If we do it at start-up and the program forks and the
+   // output file format string contains a %p (pid) specifier, both the parent
+   // and child will incorrectly write to the same file; this happened in
+   // 3.3.0.
+   HChar* dhat_out_file =
+      VG_(expand_file_name)("--dhat-out-file", clo_dhat_out_file);
+
+   fp = VG_(fopen)(dhat_out_file, VKI_O_CREAT|VKI_O_TRUNC|VKI_O_WRONLY,
+                   VKI_S_IRUSR|VKI_S_IWUSR);
+   if (!fp) {
+      VG_(umsg)("error: can't open DHAT output file '%s'\n", dhat_out_file);
+      return;
+   }
+
+   // Write to data file.
+   FP("{\"dhatFileVersion\":1\n");
+
+   // The command.
+   const HChar* exe = VG_(args_the_exename);
+   FP(",\"cmd\":\"%s", json_escape(exe));
+   for (Word i = 0; i < VG_(sizeXA)(VG_(args_for_client)); i++) {
+      const HChar* arg = *(HChar**)VG_(indexXA)(VG_(args_for_client), i);
+      FP(" %s", json_escape(arg));
+   }
+   FP("\"\n");
+
+   // The PID.
+   FP(",\"pid\":%d\n", VG_(getpid)());
+
+   // Times.
+   FP(",\"mi\":%llu,\"ei\":%llu\n", g_max_instrs, g_curr_instrs);
+
+   // APs.
+   write_APInfos();
+
+   // Frame table.
+   FP(",\"ftbl\":\n");
+
+   // The frame table maps strings to numbers. We want to print it ordered by
+   // numbers. So we create an array and fill it in from the frame table, then
+   // print that.
+   UWord n_frames = next_frame_n;
+   const HChar** frames =
+      VG_(malloc)("dh.frames", n_frames * sizeof(const HChar*));
+   VG_(initIterFM)(frame_tbl);
+   while (VG_(nextIterFM)(frame_tbl, &keyW, &valW)) {
+      const HChar* str = (const HChar*)keyW;
+      UWord n = valW;
+      frames[n] = str;
+   }
+   VG_(doneIterFM)(frame_tbl);
+
+   for (UWord i = 0; i < n_frames; i++) {
+      FP(" %c\"%s\"\n", i == 0 ? '[' : ',', json_escape(frames[i]));
+   }
+   FP(" ]\n");
+
+   FP("}\n");
+
+   VG_(fclose)(fp);
+   fp = NULL;
+
+   if (VG_(clo_verbosity) == 0) {
+      return;
+   }
+
+   // Print brief global stats.
+   VG_(umsg)("Total:     %'llu bytes in %'llu blocks\n",
+             g_total_bytes, g_total_blocks);
+   VG_(umsg)("At t-gmax: %'llu bytes in %'llu blocks\n",
+             g_max_bytes, g_max_blocks);
+   VG_(umsg)("At t-end:  %'llu bytes in %'llu blocks\n",
+             g_curr_bytes, g_curr_blocks);
+   VG_(umsg)("Reads:     %'llu bytes\n", g_reads_bytes);
+   VG_(umsg)("Writes:    %'llu bytes\n", g_writes_bytes);
+}
 
 //------------------------------------------------------------//
 //--- Initialisation                                       ---//
@@ -1357,7 +1457,7 @@ static void dh_pre_clo_init(void)
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a dynamic heap analysis tool");
    VG_(details_copyright_author)(
-      "Copyright (C) 2010-2017, and GNU GPL'd, by Mozilla Inc");
+      "Copyright (C) 2010-2018, and GNU GPL'd, by Mozilla Foundation");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
 
    // Basic functions.
@@ -1395,12 +1495,12 @@ static void dh_pre_clo_init(void)
    tl_assert(!fbc_cache1);
 
    interval_tree = VG_(newFM)( VG_(malloc),
-                               "dh.main.interval_tree.1",
+                               "dh.interval_tree.1",
                                VG_(free),
                                interval_tree_Cmp );
 
    apinfo = VG_(newFM)( VG_(malloc),
-                        "dh.main.apinfo.1",
+                        "dh.apinfo.1",
                         VG_(free),
                         NULL/*unboxedcmp*/ );
 }

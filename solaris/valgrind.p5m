@@ -50,12 +50,12 @@ file path=usr/lib/valgrind/cachegrind-x86-solaris                        owner=r
 file path=usr/lib/valgrind/callgrind-amd64-solaris                       owner=root group=bin mode=0755
 file path=usr/lib/valgrind/callgrind-x86-solaris                         owner=root group=bin mode=0755
 file path=usr/lib/valgrind/default.supp                                  owner=root group=bin mode=0644
+file path=usr/lib/valgrind/dhat-amd64-solaris                            owner=root group=bin mode=0755
+file path=usr/lib/valgrind/dhat-x86-solaris                              owner=root group=bin mode=0755
 file path=usr/lib/valgrind/drd-amd64-solaris                             owner=root group=bin mode=0755
 file path=usr/lib/valgrind/drd-x86-solaris                               owner=root group=bin mode=0755
 file path=usr/lib/valgrind/exp-bbv-amd64-solaris                         owner=root group=bin mode=0755
 file path=usr/lib/valgrind/exp-bbv-x86-solaris                           owner=root group=bin mode=0755
-file path=usr/lib/valgrind/exp-dhat-amd64-solaris                        owner=root group=bin mode=0755
-file path=usr/lib/valgrind/exp-dhat-x86-solaris                          owner=root group=bin mode=0755
 file path=usr/lib/valgrind/exp-sgcheck-amd64-solaris                     owner=root group=bin mode=0755
 file path=usr/lib/valgrind/exp-sgcheck-x86-solaris                       owner=root group=bin mode=0755
 file path=usr/lib/valgrind/getoff-amd64-solaris                          owner=root group=bin mode=0755
@@ -75,8 +75,8 @@ file path=usr/lib/valgrind/vgpreload_core-amd64-solaris.so               owner=r
 file path=usr/lib/valgrind/vgpreload_core-x86-solaris.so                 owner=root group=bin mode=0755
 file path=usr/lib/valgrind/vgpreload_drd-amd64-solaris.so                owner=root group=bin mode=0755
 file path=usr/lib/valgrind/vgpreload_drd-x86-solaris.so                  owner=root group=bin mode=0755
-file path=usr/lib/valgrind/vgpreload_exp-dhat-amd64-solaris.so           owner=root group=bin mode=0755
-file path=usr/lib/valgrind/vgpreload_exp-dhat-x86-solaris.so             owner=root group=bin mode=0755
+file path=usr/lib/valgrind/vgpreload_dhat-amd64-solaris.so               owner=root group=bin mode=0755
+file path=usr/lib/valgrind/vgpreload_dhat-x86-solaris.so                 owner=root group=bin mode=0755
 file path=usr/lib/valgrind/vgpreload_exp-sgcheck-amd64-solaris.so        owner=root group=bin mode=0755
 file path=usr/lib/valgrind/vgpreload_exp-sgcheck-x86-solaris.so          owner=root group=bin mode=0755
 file path=usr/lib/valgrind/vgpreload_massif-amd64-solaris.so             owner=root group=bin mode=0755

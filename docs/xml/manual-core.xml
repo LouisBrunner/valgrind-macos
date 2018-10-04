@@ -613,7 +613,7 @@ in most cases.  We group the available options by rough categories.</para>
     <listitem>
       <para>Run the Valgrind tool called <varname>toolname</varname>,
       e.g. memcheck, cachegrind, callgrind, helgrind, drd, massif,
-      lackey, none, exp-sgcheck, exp-bbv, exp-dhat, etc.</para>
+      dhat, lackey, none, exp-sgcheck, exp-bbv, etc.</para>
     </listitem>
   </varlistentry>
 
@@ -2562,7 +2562,7 @@ need to use them.</para>
       malloc related functions, using the
       synonym <varname>somalloc</varname>.  This synonym is usable for
       all tools doing standard replacement of malloc related functions
-      (e.g. memcheck, massif, drd, helgrind, exp-dhat, exp-sgcheck).
+      (e.g. memcheck, helgrind, drd, massif, dhat, exp-sgcheck).
       </para>
 
       <itemizedlist>

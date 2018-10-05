@@ -2,6 +2,7 @@
 
 # /
 /.in_place
+/.vs
 /acinclude.m4
 /aclocal.m4
 /autom4te-*.cache
@@ -1135,6 +1136,10 @@
 
 # /memcheck/tests/s390x/
 /memcheck/tests/s390x/.deps
+/memcheck/tests/s390x/*.stderr.diff*
+/memcheck/tests/s390x/*.stderr.out
+/memcheck/tests/s390x/*.stdout.diff*
+/memcheck/tests/s390x/*.stdout.out
 /memcheck/tests/s390x/Makefile
 /memcheck/tests/s390x/Makefile.in
 /memcheck/tests/s390x/cs
@@ -1750,6 +1755,10 @@
 
 # /none/tests/s390x/
 /none/tests/s390x/.deps
+/none/tests/s390x/*.stderr.diff*
+/none/tests/s390x/*.stderr.out
+/none/tests/s390x/*.stdout.diff*
+/none/tests/s390x/*.stdout.out
 /none/tests/s390x/add
 /none/tests/s390x/add_EI
 /none/tests/s390x/add_GE
@@ -1883,6 +1892,7 @@
 /none/tests/s390x/vector_string
 /none/tests/s390x/vector_integer
 /none/tests/s390x/high-word
+/none/tests/s390x/vector_float
 
 # /none/tests/scripts/
 /none/tests/scripts/*.dSYM

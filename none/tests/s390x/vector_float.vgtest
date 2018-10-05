@@ -1,0 +1,2 @@
+prog: vector_float
+prereq: test -e vector_float && ../../../tests/s390x_features s390x-vx

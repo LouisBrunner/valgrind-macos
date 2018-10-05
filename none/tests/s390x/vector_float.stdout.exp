@@ -1,0 +1,1808 @@
+insn vcdgb00:
+  v_arg1   = 0d6a95fac528657d | 501eefeec0d8b847
+  v_result = 0x1.ad52bf58a50cap+59 | 0x1.407bbfbb0362ep+62
+insn vcdgb00:
+  v_arg1   = e540bc6839c44b4a | 36ed3550df9899d8
+  v_result = -0x1.abf4397c63bb4p+60 | 0x1.b769aa86fcc4cp+61
+insn vcdgb00:
+  v_arg1   = 979569ee6d5cbcd8 | 966cf73d98a42d54
+  v_result = -0x1.a1aa58464a8dp+62 | -0x1.a64c23099d6f4p+62
+insn vcdgb00:
+  v_arg1   = 10985cc9e2b9c255 | b2683bbf21432695
+  v_result = 0x1.0985cc9e2b9c2p+60 | -0x1.365f11037af36p+62
+insn vcdgb01:
+  v_arg1   = 4208cb757c0f3e0a | 91fe3de1d5e7ca54
+  v_result = 0x1.08232dd5f03dp+62 | -0x1.b8070878a860dp+62
+insn vcdgb01:
+  v_arg1   = e5f1216d47c3a621 | c1582e6bf6f3b5e9
+  v_result = -0x1.a0ede92b83c5ap+60 | -0x1.f53e8ca048625p+61
+insn vcdgb01:
+  v_arg1   = 376fbfe93425c861 | 1870f7a36a759b08
+  v_result = 0x1.bb7dff49a12e4p+61 | 0x1.870f7a36a759bp+60
+insn vcdgb01:
+  v_arg1   = bc68bf9dda3685ee | 6fcaf40c7feb0484
+  v_result = -0x1.0e5d01889725fp+62 | 0x1.bf2bd031ffac1p+62
+insn vcdgb03:
+  v_arg1   = ff55ac7f3661970c | 663cba29a8010f0e
+  v_result = -0x1.54a701933cd1fp+55 | 0x1.98f2e8a6a0043p+62
+insn vcdgb03:
+  v_arg1   = 50f94b806c444cdc | 23a9d13a3e4f30f5
+  v_result = 0x1.43e52e01b1113p+62 | 0x1.1d4e89d1f2799p+61
+insn vcdgb03:
+  v_arg1   = 8526565084674a1c | 13c07bfc401df2e6
+  v_result = -0x1.eb66a6bdee62dp+62 | 0x1.3c07bfc401df3p+60
+insn vcdgb03:
+  v_arg1   = bb7d3d1d2e024aea | a9bf6c6c1422b7ac
+  v_result = -0x1.120b0b8b47f6dp+62 | -0x1.59024e4faf753p+62
+insn vcdgb04:
+  v_arg1   = 122de4537ebadd80 | 1b359083443f73f0
+  v_result = 0x1.22de4537ebadep+60 | 0x1.b359083443f74p+60
+insn vcdgb04:
+  v_arg1   = 74b2685cb1632af8 | 28bac9f9424875f9
+  v_result = 0x1.d2c9a172c58cbp+62 | 0x1.45d64fca1243bp+61
+insn vcdgb04:
+  v_arg1   = 4f96da5fe8beae08 | d5b8af0426ba1f6b
+  v_result = 0x1.3e5b697fa2facp+62 | -0x1.523a87deca2fp+61
+insn vcdgb04:
+  v_arg1   = 57330304e93afcc5 | 2c244e196b83aa0a
+  v_result = 0x1.5ccc0c13a4ebfp+62 | 0x1.612270cb5c1d5p+61
+insn vcdgb05:
+  v_arg1   = 466d1f2de1b67b62 | fc44eca9b6c0e377
+  v_result = 0x1.19b47cb786d9ep+62 | -0x1.dd89ab249f8e4p+57
+insn vcdgb05:
+  v_arg1   = 9c7aa2bc253b2bf0 | 9c69c1e38f79f1f0
+  v_result = -0x1.8e15750f6b135p+62 | -0x1.8e58f871c2183p+62
+insn vcdgb05:
+  v_arg1   = 609cf752ecc5611e | a9b4be7727660d13
+  v_result = 0x1.8273dd4bb3158p+62 | -0x1.592d06236267cp+62
+insn vcdgb05:
+  v_arg1   = dde43c0d17fa87f9 | c4d4485011ac499a
+  v_result = -0x1.10de1f97402bcp+61 | -0x1.d95dbd7f729dbp+61
+insn vcdgb06:
+  v_arg1   = 67f00848ebf0ddad | 55c5fa58099e4a1e
+  v_result = 0x1.9fc02123afc38p+62 | 0x1.5717e96026793p+62
+insn vcdgb06:
+  v_arg1   = 14ac275ed2ea3c41 | 4c916736b17f0fd7
+  v_result = 0x1.4ac275ed2ea3dp+60 | 0x1.32459cdac5fc4p+62
+insn vcdgb06:
+  v_arg1   = 841359651e19ce5c | db11d6114f3da959
+  v_result = -0x1.efb29a6b8798cp+62 | -0x1.27714f758612bp+61
+insn vcdgb06:
+  v_arg1   = 9aee16f6c65ed705 | 3dab044d91370057
+  v_result = -0x1.9447a424e684ap+62 | 0x1.ed58226c89b81p+61
+insn vcdgb07:
+  v_arg1   = 41924de22705705d | 7314e64c4af69562
+  v_result = 0x1.064937889c15cp+62 | 0x1.cc5399312bda5p+62
+insn vcdgb07:
+  v_arg1   = 28a421fcc48a4766 | 020e652d33f63ba9
+  v_result = 0x1.45210fe624523p+61 | 0x1.07329699fb1ddp+57
+insn vcdgb07:
+  v_arg1   = 87d7abd5085662be | b72a218eab5dddb9
+  v_result = -0x1.e0a150abdea68p+62 | -0x1.235779c552889p+62
+insn vcdgb07:
+  v_arg1   = d9abbb790081d963 | 63852f4c78c03c3d
+  v_result = -0x1.32a22437fbf14p+61 | 0x1.8e14bd31e300fp+62
+insn wcdgb00:
+  v_arg1   = a02f983522909f6f | a08ddc4185e4afbe
+  v_result = -0x1.7f419f2b75bd8p+62 | --
+insn wcdgb00:
+  v_arg1   = 24bfbc5409373bdb | 8bbc6803a279e263
+  v_result = 0x1.25fde2a049b9dp+61 | --
+insn wcdgb00:
+  v_arg1   = 35c59adc3617873f | 895bccaa47e097b0
+  v_result = 0x1.ae2cd6e1b0bc3p+61 | --
+insn wcdgb00:
+  v_arg1   = e5795953d180798f | 033f758952e56949
+  v_result = -0x1.a86a6ac2e7f86p+60 | --
+insn wcdgb01:
+  v_arg1   = 50a3967f672fd7de | 2a8d07f3c58484af
+  v_result = 0x1.428e59fd9cbf6p+62 | --
+insn wcdgb01:
+  v_arg1   = 55572620ab0f011d | b4781cf689a66f00
+  v_result = 0x1.555c9882ac3cp+62 | --
+insn wcdgb01:
+  v_arg1   = 5ab7d2b735faacdb | 9d0003212fe3c3b9
+  v_result = 0x1.6adf4adcd7eabp+62 | --
+insn wcdgb01:
+  v_arg1   = 0cb41a414677a106 | e7b48241aa40f176
+  v_result = 0x1.96834828cef42p+59 | --
+insn wcdgb03:
+  v_arg1   = 1dcbf3fa837c83a7 | 5c6f941e16f101b0
+  v_result = 0x1.dcbf3fa837c83p+60 | --
+insn wcdgb03:
+  v_arg1   = 05ca8a1db62c87a8 | 471d2d4175174e7c
+  v_result = 0x1.72a2876d8b21fp+58 | --
+insn wcdgb03:
+  v_arg1   = c28bffa291993a8f | 3f76f2af6e814c51
+  v_result = -0x1.eba002eb73363p+61 | --
+insn wcdgb03:
+  v_arg1   = 99b62bfd6b813f43 | ddc001ae0d6e42c1
+  v_result = -0x1.9927500a51fb1p+62 | --
+insn wcdgb04:
+  v_arg1   = d3825be401140fc5 | 818fb07e8648113d
+  v_result = -0x1.63ed20dff75f8p+61 | --
+insn wcdgb04:
+  v_arg1   = 8273130837abb8f7 | 1287461ff268ecd4
+  v_result = -0x1.f633b3df21512p+62 | --
+insn wcdgb04:
+  v_arg1   = 3a1ccdd9d5909f57 | bc17c41010d81ef3
+  v_result = 0x1.d0e66eceac85p+61 | --
+insn wcdgb04:
+  v_arg1   = d8ddb8444bbc3ec3 | b03fa00d060ac825
+  v_result = -0x1.39123ddda21e1p+61 | --
+insn wcdgb05:
+  v_arg1   = 3fa47a776e92e735 | e74a85ce1fa4a0d3
+  v_result = 0x1.fd23d3bb74973p+61 | --
+insn wcdgb05:
+  v_arg1   = 16aeee9b39a78086 | e09214ce8b37b404
+  v_result = 0x1.6aeee9b39a78p+60 | --
+insn wcdgb05:
+  v_arg1   = 8c46e7988e7d462e | 5e41a7002202251c
+  v_result = -0x1.cee4619dc60aep+62 | --
+insn wcdgb05:
+  v_arg1   = 1584ecd3f3428b01 | 2c0d099a22b2ed9f
+  v_result = 0x1.584ecd3f3428bp+60 | --
+insn wcdgb06:
+  v_arg1   = 2b0dfbf1569378f2 | d9fa40cced239bee
+  v_result = 0x1.586fdf8ab49bdp+61 | --
+insn wcdgb06:
+  v_arg1   = 0fd84793ca3eccd2 | 7d1b4488cd1e1207
+  v_result = 0x1.fb08f27947d9ap+59 | --
+insn wcdgb06:
+  v_arg1   = 86e6fb1a47fa9c10 | 7350c53bb01b4e47
+  v_result = -0x1.e4641396e0158p+62 | --
+insn wcdgb06:
+  v_arg1   = 9c07f5646f2f1179 | 1d07e991ed001f2a
+  v_result = -0x1.8fe02a6e4343bp+62 | --
+insn wcdgb07:
+  v_arg1   = 659a8c8c44b32df8 | a3fd0c33fddfed09
+  v_result = 0x1.966a323112ccbp+62 | --
+insn wcdgb07:
+  v_arg1   = b84c4aadf38a8756 | b5fd808b43ba73d9
+  v_result = -0x1.1eced54831d5fp+62 | --
+insn wcdgb07:
+  v_arg1   = f2d6b39d8ea40bfa | 459e4b7dc64184f1
+  v_result = -0x1.a5298c4e2b7e9p+59 | --
+insn wcdgb07:
+  v_arg1   = bac2fdb4caa1bca9 | 4f08ec2df290cac3
+  v_result = -0x1.14f4092cd5791p+62 | --
+insn vcdlgb00:
+  v_arg1   = b826d785c58e7345 | 91ae17bf5bf582a0
+  v_result = 0x1.704daf0b8b1cep+63 | 0x1.235c2f7eb7ebp+63
+insn vcdlgb00:
+  v_arg1   = 5c6623a3c3a79e8f | 541375117aa74277
+  v_result = 0x1.71988e8f0e9e7p+62 | 0x1.504dd445ea9dp+62
+insn vcdlgb00:
+  v_arg1   = 9ef4bc5cec1602e7 | 228965816f8eb495
+  v_result = 0x1.3de978b9d82cp+63 | 0x1.144b2c0b7c75ap+61
+insn vcdlgb00:
+  v_arg1   = b912318010b2790a | 8eecbeacbe005865
+  v_result = 0x1.722463002164fp+63 | 0x1.1dd97d597c00bp+63
+insn vcdlgb01:
+  v_arg1   = f08d891964bfb5d2 | f0698b2c12804730
+  v_result = 0x1.e11b1232c97f7p+63 | 0x1.e0d3165825009p+63
+insn vcdlgb01:
+  v_arg1   = 4982fe3244b3fcf9 | 263cce57fe80ebdd
+  v_result = 0x1.260bf8c912cffp+62 | 0x1.31e672bff4076p+61
+insn vcdlgb01:
+  v_arg1   = 551bc293efedead4 | 556b3f05b71fc8b0
+  v_result = 0x1.546f0a4fbfb7bp+62 | 0x1.55acfc16dc7f2p+62
+insn vcdlgb01:
+  v_arg1   = e751bd824f7e331a | a68f0b49dcea370d
+  v_result = 0x1.cea37b049efc6p+63 | 0x1.4d1e1693b9d47p+63
+insn vcdlgb03:
+  v_arg1   = d8ab4e82afe45f9d | 0a8b96352f9d2734
+  v_result = 0x1.b1569d055fc8bp+63 | 0x1.5172c6a5f3a4fp+59
+insn vcdlgb03:
+  v_arg1   = cafc061682c88d0e | f751399a5ae2db05
+  v_result = 0x1.95f80c2d05911p+63 | 0x1.eea27334b5c5bp+63
+insn vcdlgb03:
+  v_arg1   = e328717e23c531bd | 2aa205c4ab0fafbd
+  v_result = 0x1.c650e2fc478a7p+63 | 0x1.55102e25587d7p+61
+insn vcdlgb03:
+  v_arg1   = 8eddcd779023d755 | 63cd7e40d9ebd3b6
+  v_result = 0x1.1dbb9aef2047bp+63 | 0x1.8f35f90367af5p+62
+insn vcdlgb04:
+  v_arg1   = 3e5cd1fd2f96dea2 | 2d6e6298be680e29
+  v_result = 0x1.f2e68fe97cb6fp+61 | 0x1.6b7314c5f3407p+61
+insn vcdlgb04:
+  v_arg1   = 2c31690b8a033d4d | 943061141b697dee
+  v_result = 0x1.618b485c5019fp+61 | 0x1.2860c22836d3p+63
+insn vcdlgb04:
+  v_arg1   = 14f57558143a429c | ed8ae27a577c5238
+  v_result = 0x1.4f57558143a43p+60 | 0x1.db15c4f4aef8ap+63
+insn vcdlgb04:
+  v_arg1   = fc128d1be2bb4f36 | 9283c5cd409f975c
+  v_result = 0x1.f8251a37c576ap+63 | 0x1.25078b9a813f3p+63
+insn vcdlgb05:
+  v_arg1   = ee7dc0c772749ddc | a3701c10cafde98a
+  v_result = 0x1.dcfb818ee4e93p+63 | 0x1.46e0382195fbdp+63
+insn vcdlgb05:
+  v_arg1   = b97c51cd687ff92f | c7b3f102ccb03d91
+  v_result = 0x1.72f8a39ad0fffp+63 | 0x1.8f67e20599607p+63
+insn vcdlgb05:
+  v_arg1   = b460795f4de78a6f | ea7d04e2c6809f9e
+  v_result = 0x1.68c0f2be9bcf1p+63 | 0x1.d4fa09c58d013p+63
+insn vcdlgb05:
+  v_arg1   = 7c4a292a4f638939 | fd8c8a2c9fa1effc
+  v_result = 0x1.f128a4a93d8e2p+62 | 0x1.fb1914593f43dp+63
+insn vcdlgb06:
+  v_arg1   = b2e9c51a04180847 | baecf0585f77a3d4
+  v_result = 0x1.65d38a3408302p+63 | 0x1.75d9e0b0beef5p+63
+insn vcdlgb06:
+  v_arg1   = be39eb18285aad32 | 5eb896a0fa5488ed
+  v_result = 0x1.7c73d63050b56p+63 | 0x1.7ae25a83e9523p+62
+insn vcdlgb06:
+  v_arg1   = 8f442ace5a6a7432 | 6dd995ba0537816b
+  v_result = 0x1.1e88559cb4d4fp+63 | 0x1.b76656e814de1p+62
+insn vcdlgb06:
+  v_arg1   = 5ae3cc60e43771db | 72c47a987f8e4792
+  v_result = 0x1.6b8f318390dddp+62 | 0x1.cb11ea61fe392p+62
+insn vcdlgb07:
+  v_arg1   = 577c8e33711f8ce0 | bc3f092e8bf32882
+  v_result = 0x1.5df238cdc47e3p+62 | 0x1.787e125d17e65p+63
+insn vcdlgb07:
+  v_arg1   = 88c462a8d4ae43d2 | 231bfc2b30f1c9fb
+  v_result = 0x1.1188c551a95c8p+63 | 0x1.18dfe159878e4p+61
+insn vcdlgb07:
+  v_arg1   = 727d35e1c85c6ce0 | c2f9c2bc20bfe51a
+  v_result = 0x1.c9f4d7872171bp+62 | 0x1.85f38578417fcp+63
+insn vcdlgb07:
+  v_arg1   = e238a379ac52f197 | bb08414f6f020c19
+  v_result = 0x1.c47146f358a5ep+63 | 0x1.7610829ede041p+63
+insn wcdlgb00:
+  v_arg1   = a912c54e442593a2 | f7c3954d578d6511
+  v_result = 0x1.52258a9c884b2p+63 | --
+insn wcdlgb00:
+  v_arg1   = 6179e4397b98a98a | e4b6cfddfb236dba
+  v_result = 0x1.85e790e5ee62ap+62 | --
+insn wcdlgb00:
+  v_arg1   = 27e744d3235cdf76 | 3539b7a62232b627
+  v_result = 0x1.3f3a26991ae6fp+61 | --
+insn wcdlgb00:
+  v_arg1   = 60a5da31b4d1f8ea | a6328b8cf898a98d
+  v_result = 0x1.829768c6d347ep+62 | --
+insn wcdlgb01:
+  v_arg1   = 758817a709c58c8a | b6d6be70d26145fc
+  v_result = 0x1.d6205e9c27163p+62 | --
+insn wcdlgb01:
+  v_arg1   = 97b59c872733cad7 | 6c67baf3e785de23
+  v_result = 0x1.2f6b390e4e679p+63 | --
+insn wcdlgb01:
+  v_arg1   = 7c5f03e2f70438ef | 13f5a03218ade00f
+  v_result = 0x1.f17c0f8bdc10ep+62 | --
+insn wcdlgb01:
+  v_arg1   = 20869d4407d06f50 | fe20038aa9ed8aeb
+  v_result = 0x1.0434ea203e838p+61 | --
+insn wcdlgb03:
+  v_arg1   = 85b92f7a4d9ce094 | 45d3b155068ab4c0
+  v_result = 0x1.0b725ef49b39dp+63 | --
+insn wcdlgb03:
+  v_arg1   = 74d3b54ee59c9334 | 87096ba97fb48a34
+  v_result = 0x1.d34ed53b96725p+62 | --
+insn wcdlgb03:
+  v_arg1   = 3bc02048cff1e348 | a78aa81e0d4c504e
+  v_result = 0x1.de0102467f8f1p+61 | --
+insn wcdlgb03:
+  v_arg1   = 6e38186eb26b4443 | 8fad57870c9d1c2e
+  v_result = 0x1.b8e061bac9ad1p+62 | --
+insn wcdlgb04:
+  v_arg1   = a781bb039c46fdba | f0169ab6ff259fd8
+  v_result = 0x1.4f037607388ep+63 | --
+insn wcdlgb04:
+  v_arg1   = 462f5c4ac0efef1d | 01788c3b504cdde9
+  v_result = 0x1.18bd712b03bfcp+62 | --
+insn wcdlgb04:
+  v_arg1   = 32e6464337bf4d7c | 3c53fd240e2af05e
+  v_result = 0x1.97323219bdfa7p+61 | --
+insn wcdlgb04:
+  v_arg1   = 9615776bc1bd6242 | 25b531bdae44ca53
+  v_result = 0x1.2c2aeed7837acp+63 | --
+insn wcdlgb05:
+  v_arg1   = a6bc667e825f4ffb | 04fca550cb4ef1c0
+  v_result = 0x1.4d78ccfd04be9p+63 | --
+insn wcdlgb05:
+  v_arg1   = 5826bd37c548ca0f | a690cbe5e6e9423d
+  v_result = 0x1.609af4df15232p+62 | --
+insn wcdlgb05:
+  v_arg1   = 2cad200dbc09e187 | 20acc9022764afbe
+  v_result = 0x1.6569006de04fp+61 | --
+insn wcdlgb05:
+  v_arg1   = e57be5f73fe3b5c6 | 8c153e6a1a7d0156
+  v_result = 0x1.caf7cbee7fc76p+63 | --
+insn wcdlgb06:
+  v_arg1   = 4e46db2789824050 | cbdffee0732097f5
+  v_result = 0x1.391b6c9e26091p+62 | --
+insn wcdlgb06:
+  v_arg1   = f61204d100c21186 | 422ed2e3cc26252c
+  v_result = 0x1.ec2409a201843p+63 | --
+insn wcdlgb06:
+  v_arg1   = f5f25be4ea6d0b66 | 9ef13972631676e7
+  v_result = 0x1.ebe4b7c9d4da2p+63 | --
+insn wcdlgb06:
+  v_arg1   = a5c590ce39f92a4e | 90a72ac9dde52c31
+  v_result = 0x1.4b8b219c73f26p+63 | --
+insn wcdlgb07:
+  v_arg1   = 6afcc73a404c3eb8 | 921dd02006b87bf3
+  v_result = 0x1.abf31ce90130fp+62 | --
+insn wcdlgb07:
+  v_arg1   = 6c515dd47c7aaffd | a12d4e718fa0f2b3
+  v_result = 0x1.b1457751f1eabp+62 | --
+insn wcdlgb07:
+  v_arg1   = 598fa3024d843814 | 027f7932ce5b3358
+  v_result = 0x1.663e8c093610ep+62 | --
+insn wcdlgb07:
+  v_arg1   = 2450a2abba1aac53 | fe49a1158218b7e3
+  v_result = 0x1.2285155dd0d56p+61 | --
+insn vcgdb00:
+  v_result = 8000000000000000 | 0000000000000000
+  v_arg1   = -0x1.9d6f33159b52cp+140 | -0x1.149ce8e328c35p-414
+insn vcgdb00:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.ef4fc458c90fp-924 | -0x1.9eacbbaf216cep-761
+insn vcgdb00:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.2a4a56fedd38ep-441 | -0x1.0b5fc7650d28ap-628
+insn vcgdb00:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.7484ccf632853p-296 | -0x1.64f8b96b20e65p-498
+insn vcgdb01:
+  v_result = 0000000000000000 | 7fffffffffffffff
+  v_arg1   = 0x1.9b48ee9440faap-186 | 0x1.793a417aab337p+274
+insn vcgdb01:
+  v_result = 0000000000000000 | 8000000000000000
+  v_arg1   = 0x1.5f4046914a1dcp-748 | -0x1.e542ddabafc78p+412
+insn vcgdb01:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.70a07df4248dp-475 | -0x1.2198d65113dfcp-305
+insn vcgdb01:
+  v_result = 0000000000000000 | 7fffffffffffffff
+  v_arg1   = -0x1.5ae6c84f089cap-838 | 0x1.bdf68a54e9eb5p+67
+insn vcgdb03:
+  v_result = 7fffffffffffffff | 8000000000000000
+  v_arg1   = 0x1.80d47f3abbb2ep+908 | -0x1.cdb5faf3bde76p+537
+insn vcgdb03:
+  v_result = 8000000000000000 | 7fffffffffffffff
+  v_arg1   = -0x1.38aaaf12dcd3cp+378 | 0x1.836d37a9211adp+161
+insn vcgdb03:
+  v_result = 0000000000000001 | ffffffffffffffff
+  v_arg1   = 0x1.88165272004d5p-526 | -0x1.0d0a1a7ba6227p-856
+insn vcgdb03:
+  v_result = 0000000000000001 | ffffffffffffffff
+  v_arg1   = 0x1.8ffc7e4ddbb33p-831 | -0x1.2ffe63a89d2cfp-189
+insn vcgdb04:
+  v_result = 7fffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.28c5adc2722b3p+540 | -0x1.b4dbb5f02f86ep-483
+insn vcgdb04:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.2e2a9ecf4008dp-420 | -0x1.43ef92717c06ap-301
+insn vcgdb04:
+  v_result = 8000000000000000 | 7fffffffffffffff
+  v_arg1   = -0x1.3b4fcd4237299p+636 | 0x1.707f549662d89p+1004
+insn vcgdb04:
+  v_result = 7fffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.c6918fb45aa0bp+947 | -0x1.95943e2ff17aep-22
+insn vcgdb05:
+  v_result = 0000000000000000 | 8000000000000000
+  v_arg1   = -0x1.4de033057b236p-61 | -0x1.01575361bed9ap+468
+insn vcgdb05:
+  v_result = 8000000000000000 | 8000000000000000
+  v_arg1   = -0x1.028bc6484274bp+144 | -0x1.d16db6de475aap+271
+insn vcgdb05:
+  v_result = 7fffffffffffffff | 8000000000000000
+  v_arg1   = 0x1.2500671e7fe19p+128 | -0x1.1eb435732889ep+338
+insn vcgdb05:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.b161dd74543cdp-442 | 0x1.b9ab9294bd84fp-297
+insn vcgdb06:
+  v_result = 7fffffffffffffff | 8000000000000000
+  v_arg1   = 0x1.9b07d7ad5d6b2p+319 | -0x1.75e473ea1aa76p+514
+insn vcgdb06:
+  v_result = 0000000000000000 | 7fffffffffffffff
+  v_arg1   = -0x1.888a166fb2dfp-837 | 0x1.f6bb5d7969d6ap+996
+insn vcgdb06:
+  v_result = 0000000000000001 | 8000000000000000
+  v_arg1   = 0x1.302c08b07155p-868 | -0x1.ca648dc3a61e1p+414
+insn vcgdb06:
+  v_result = 7fffffffffffffff | 8000000000000000
+  v_arg1   = 0x1.3349182f971f5p+336 | -0x1.46e859a0a81adp+216
+insn vcgdb07:
+  v_result = 8000000000000000 | 8000000000000000
+  v_arg1   = -0x1.dac06473efa23p+846 | -0x1.c56ee83b11b7fp+926
+insn vcgdb07:
+  v_result = 0000000000000000 | ffffffffffffffff
+  v_arg1   = 0x1.72e13fd73fefbp-108 | -0x1.6e8c2f2c9a3a6p-960
+insn vcgdb07:
+  v_result = 8000000000000000 | 8000000000000000
+  v_arg1   = -0x1.27466ae20223bp+958 | -0x1.365c0e59aa4cep+392
+insn vcgdb07:
+  v_result = 7fffffffffffffff | 7fffffffffffffff
+  v_arg1   = 0x1.fed2f087c21p+341 | 0x1.180e4c1d87fc4p+682
+insn wcgdb00:
+  v_result = 7fffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.d7fd9222e8b86p+670 | 0x1.c272612672a3p+798
+insn wcgdb00:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.745cd360987e5p-496 | -0x1.f3b404919f358p-321
+insn wcgdb00:
+  v_result = 8000000000000000 | 0000000000000000
+  v_arg1   = -0x1.9523565cd92d5p+643 | 0x1.253677d6d3be2p-556
+insn wcgdb00:
+  v_result = 7fffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.b6eb576ec3e6ap+845 | -0x1.c7e102c503d91p+266
+insn wcgdb01:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.3d4319841f4d6p-1011 | -0x1.2feabf7dfc506p-680
+insn wcgdb01:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.6fb8d1cd8b32cp-843 | -0x1.50f6a6922f97ep+33
+insn wcgdb01:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.64a673daccf1ap-566 | -0x1.69ef9b1d01499p+824
+insn wcgdb01:
+  v_result = 8000000000000000 | 0000000000000000
+  v_arg1   = -0x1.3e2ddd862b4adp+1005 | -0x1.312466410271p+184
+insn wcgdb03:
+  v_result = 0000000000000001 | 0000000000000000
+  v_arg1   = 0x1.d594c3412a11p-953 | -0x1.a07393d34d77cp-224
+insn wcgdb03:
+  v_result = 8000000000000000 | 0000000000000000
+  v_arg1   = -0x1.f7a0dbcfd6e4cp+104 | -0x1.40f7cde7f2214p-702
+insn wcgdb03:
+  v_result = 8000000000000000 | 0000000000000000
+  v_arg1   = -0x1.40739c1574808p+560 | -0x1.970328ddf1b6ep-374
+insn wcgdb03:
+  v_result = 0000000000000001 | 0000000000000000
+  v_arg1   = 0x1.477653afd7048p-38 | 0x1.1eac2f8b2a93cp-384
+insn wcgdb04:
+  v_result = ffffffffe9479a7d | 0000000000000000
+  v_arg1   = -0x1.6b865833eff3p+28 | 0x1.06e8cf1834d0ep-722
+insn wcgdb04:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.eef0b2294a5cp-544 | -0x1.8e8b133ccda15p+752
+insn wcgdb04:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.f34e77e6b6698p-894 | -0x1.9f7ce1cb53bddp-896
+insn wcgdb04:
+  v_result = 7fffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.95707a6d75db5p+1018 | -0x1.3b0c072d23011p-224
+insn wcgdb05:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.a9fb71160793p-968 | 0x1.05f601fe8123ap-986
+insn wcgdb05:
+  v_result = 8000000000000000 | 0000000000000000
+  v_arg1   = -0x1.0864159b94305p+451 | -0x1.d4647f5a78b7ep-599
+insn wcgdb05:
+  v_result = 7fffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.37eadff8397c8p+432 | -0x1.15d896b6f6063p+464
+insn wcgdb05:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.eb0812b0d677p-781 | 0x1.3117c5e0e288cp-202
+insn wcgdb06:
+  v_result = 0000000000000001 | 0000000000000000
+  v_arg1   = 0x1.6b88069167c0fp-662 | -0x1.70571d27e1279p+254
+insn wcgdb06:
+  v_result = 7fffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.f6a6d6e883596p+260 | 0x1.0d578afaaa34ap+604
+insn wcgdb06:
+  v_result = 0000000000000001 | 0000000000000000
+  v_arg1   = 0x1.d91c7d13c4694p-475 | -0x1.ecf1f8529767bp+830
+insn wcgdb06:
+  v_result = 0000000000000001 | 0000000000000000
+  v_arg1   = 0x1.fac8dd3bb7af6p-101 | 0x1.fb8324a00fba8p+959
+insn wcgdb07:
+  v_result = 7fffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.4b0fa18fa73c7p+111 | -0x1.08e7b17633a49p+61
+insn wcgdb07:
+  v_result = e636b693e39a1100 | 0000000000000000
+  v_arg1   = -0x1.9c9496c1c65efp+60 | 0x1.c4182ee728d76p-572
+insn wcgdb07:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = -0x1.819718032dff7p-303 | 0x1.a784c77ff6aa2p-622
+insn wcgdb07:
+  v_result = 7fffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.978e8abfd83c2p+152 | 0x1.2531ebf451762p+315
+insn vclgdb00:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.23363aaa9ca54p+517 | 0x1.7243af9b17426p-313
+insn vclgdb00:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.9cd926092c28dp-961 | -0x1.d359f3e9bb6fdp-863
+insn vclgdb00:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.0c2e79701cfedp+113 | -0x1.386cc4d0c2753p-639
+insn vclgdb00:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.6404fbeee6e51p-833 | -0x1.88c7c4c78e8b5p-875
+insn vclgdb01:
+  v_result = 0000000000000000 | ffffffffffffffff
+  v_arg1   = -0x1.becf5aabeedb2p-279 | 0x1.8f46a8584af8bp+339
+insn vclgdb01:
+  v_result = 0000000000000000 | ffffffffffffffff
+  v_arg1   = -0x1.ba405560535ecp+419 | 0x1.f5f0d2ac089dbp+960
+insn vclgdb01:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.13765a3448273p-46 | -0x1.4245b126d990bp-32
+insn vclgdb01:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.42f7c19ab251ep+182 | -0x1.d11887b37d89ep+652
+insn vclgdb03:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.c89eea4d649dfp+1002 | -0x1.02ac7c6fad4f4p-857
+insn vclgdb03:
+  v_result = 0000000000000001 | 0000000000000000
+  v_arg1   = 0x1.c785c5992ac87p-658 | -0x1.e69063f7f720dp-81
+insn vclgdb03:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.7262730986284p+402 | -0x1.97db5d33ead45p+341
+insn vclgdb03:
+  v_result = 0000000000000000 | 0000000000000001
+  v_arg1   = -0x1.e732cc74f96a5p+338 | 0x1.e8c7ed81c5518p-50
+insn vclgdb04:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.fb488268d49d4p-603 | 0x1.af20dca2dd1dep-649
+insn vclgdb04:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.77654765512dap-986 | 0x1.700c80872de8ep-676
+insn vclgdb04:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.f3969c999dd1dp+671 | 0x1.ebe969b9a4e7ep-330
+insn vclgdb04:
+  v_result = ffffffffffffffff | ffffffffffffffff
+  v_arg1   = 0x1.1361bd5f8ad64p+859 | 0x1.6aa9af0c3cb2p+281
+insn vclgdb05:
+  v_result = ffffffffffffffff | ffffffffffffffff
+  v_arg1   = 0x1.21a00ba7f5a8fp+265 | 0x1.277f89a3992c5p+139
+insn vclgdb05:
+  v_result = ffffffffffffffff | ffffffffffffffff
+  v_arg1   = 0x1.8c9a9b86a5462p+672 | 0x1.5d08d1235385bp+372
+insn vclgdb05:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.41d67fae35e3ap-120 | 0x1.013ba779e6931p-854
+insn vclgdb05:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.7a5064fc054d4p+900 | -0x1.117184fcaa4b1p+826
+insn vclgdb06:
+  v_result = 0000000000000000 | ffffffffffffffff
+  v_arg1   = -0x1.06793ec47e70cp+690 | 0x1.4e743453c0123p+679
+insn vclgdb06:
+  v_result = 0000000000000001 | ffffffffffffffff
+  v_arg1   = 0x1.b9f182ced5c9ap-622 | 0x1.48593e965ed7p+213
+insn vclgdb06:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.27e5c501152d5p-727 | -0x1.aa8dc7366e9dbp+4
+insn vclgdb06:
+  v_result = 0000000000000001 | 0000000000000000
+  v_arg1   = 0x1.eeca740c47973p-380 | -0x1.b7f3480cb4ec7p+750
+insn vclgdb07:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.5477b49835c46p-130 | -0x1.d6cacd4500c77p+113
+insn vclgdb07:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.c235bdef919ffp+466 | -0x1.1ca14189e67c8p+29
+insn vclgdb07:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.5088657c024edp+64 | -0x1.8a9ba9a0ebaf7p-628
+insn vclgdb07:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.137bbb51f08bdp+306 | 0x1.18d2a1063356p-795
+insn wclgdb00:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.e66f55dcc2639p-1013 | -0x1.733ee56929f3bp-304
+insn wclgdb00:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.8802fd9ab740cp-986 | -0x1.64d4d2c7c145fp-1015
+insn wclgdb00:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.a67209b8c407bp-645 | -0x1.6410ff9b1c801p+487
+insn wclgdb00:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.cb2febaefeb2dp+49 | 0x1.dee368b2ec375p-502
+insn wclgdb01:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.5703db3c1b0e2p-728 | 0x1.068c4d51ea4ebp+617
+insn wclgdb01:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.ae350291e5b3ep+291 | 0x1.1b87bb09b6032p+376
+insn wclgdb01:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.c4666a710127ep+424 | -0x1.19e969b6c0076p+491
+insn wclgdb01:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.c892c5a4d103fp+105 | -0x1.d4f937cc76704p+749
+insn wclgdb03:
+  v_result = 0000000000000001 | 0000000000000000
+  v_arg1   = 0x1.81090d8fc663dp-111 | 0x1.337ec5e0f0904p+1
+insn wclgdb03:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.e787adc70b91p-593 | 0x1.db8d83196b53cp-762
+insn wclgdb03:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.6529307e907efp+389 | -0x1.3ea0d8d5b4dd2p+589
+insn wclgdb03:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.be701a158637p-385 | 0x1.c5a7f70cb8a09p+107
+insn wclgdb04:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.2f328571ab445p+21 | -0x1.dcc21fc82ba01p-930
+insn wclgdb04:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.06b69fcbb7bffp-415 | 0x1.6f9a13a0a827ap+915
+insn wclgdb04:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.738e549b38bcdp+479 | 0x1.a522edb999c9p-45
+insn wclgdb04:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.7f9399d2bcf3bp-215 | -0x1.7bc35f2d69a7fp+818
+insn wclgdb05:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.fc542bdb707f6p+880 | -0x1.8521ebc93a25fp-969
+insn wclgdb05:
+  v_result = 1ce8d9951b8c8600 | 0000000000000000
+  v_arg1   = 0x1.ce8d9951b8c86p+60 | 0x1.92712589230e7p+475
+insn wclgdb05:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.8a297f60a0811p-156 | 0x1.102b79043d82cp-204
+insn wclgdb05:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.beb9057e1401dp-196 | -0x1.820f18f830262p+15
+insn wclgdb06:
+  v_result = 0000000000000001 | 0000000000000000
+  v_arg1   = 0x1.c321a966ecb4dp-430 | -0x1.2f6a1a95ead99p-943
+insn wclgdb06:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.f1a86b4aed821p-56 | -0x1.1ee6717cc2d7fp-899
+insn wclgdb06:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.73ce49d89ecb9p-302 | 0x1.52663b975ed23p-716
+insn wclgdb06:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.3e9c2de97a292p+879 | 0x1.d34eed36f2eafp+960
+insn wclgdb07:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.4e6ec6ddc6a45p-632 | -0x1.6e564d0fec72bp+369
+insn wclgdb07:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.42e2c658e4c4dp+459 | -0x1.9f9dc0252e44p+85
+insn wclgdb07:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.fb40ac8cda3c1p-762 | 0x1.0e9ed614bc8f1p-342
+insn wclgdb07:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.c1f8b3c68e214p+118 | -0x1.1a26a49368b61p+756
+insn vfidb00:
+  v_arg1   = -0x1.38df4cf9d52dbp-545 | -0x1.049253d90dd92p+94
+  v_result = -0x0p+0 | -0x1.049253d90dd92p+94
+insn vfidb00:
+  v_arg1   = 0x1.75187b3d8d386p+793 | -0x1.0f5aea6c1c123p+547
+  v_result = 0x1.75187b3d8d386p+793 | -0x1.0f5aea6c1c123p+547
+insn vfidb00:
+  v_arg1   = 0x1.cb54303729724p-337 | -0x1.0791295e0541p+59
+  v_result = 0x0p+0 | -0x1.0791295e0541p+59
+insn vfidb00:
+  v_arg1   = -0x1.1b9a77d71eb22p+825 | -0x1.0189f7d748475p+647
+  v_result = -0x1.1b9a77d71eb22p+825 | -0x1.0189f7d748475p+647
+insn vfidb01:
+  v_arg1   = -0x1.5d26e474def0ap+1013 | -0x1.c4e9efb30da4ap-580
+  v_result = -0x1.5d26e474def0ap+1013 | -0x0p+0
+insn vfidb01:
+  v_arg1   = 0x1.4ad53aba85947p+105 | -0x1.f8f178fb43126p-350
+  v_result = 0x1.4ad53aba85947p+105 | -0x0p+0
+insn vfidb01:
+  v_arg1   = 0x1.aeacddb1336dep+106 | 0x1.0008f60517dffp-355
+  v_result = 0x1.aeacddb1336dep+106 | 0x0p+0
+insn vfidb01:
+  v_arg1   = -0x1.ee2d2afcea935p+75 | 0x1.740cbfdc486e6p-217
+  v_result = -0x1.ee2d2afcea935p+75 | 0x0p+0
+insn vfidb03:
+  v_arg1   = -0x1.662966287abcfp-856 | -0x1.7228d17f9aacep-413
+  v_result = -0x1p+0 | -0x1p+0
+insn vfidb03:
+  v_arg1   = 0x1.86f4c5919ca0cp-384 | -0x1.4715448c89f45p+675
+  v_result = 0x1p+0 | -0x1.4715448c89f45p+675
+insn vfidb03:
+  v_arg1   = -0x1.500e2dc4dececp-219 | -0x1.dab1ecfba3037p-347
+  v_result = -0x1p+0 | -0x1p+0
+insn vfidb03:
+  v_arg1   = -0x1.fc7c8db9b09ccp-892 | -0x1.1c72852c3fcb1p-605
+  v_result = -0x1p+0 | -0x1p+0
+insn vfidb04:
+  v_arg1   = 0x1.3eaa8ace8f425p-858 | 0x1.cf0ac9c083a9ap-249
+  v_result = 0x0p+0 | 0x0p+0
+insn vfidb04:
+  v_arg1   = 0x1.ec22dc8481352p+516 | 0x1.948a15e99787bp+705
+  v_result = 0x1.ec22dc8481352p+516 | 0x1.948a15e99787bp+705
+insn vfidb04:
+  v_arg1   = 0x1.aa3c092bc234ap-99 | -0x1.1a67dee375837p-741
+  v_result = 0x0p+0 | -0x0p+0
+insn vfidb04:
+  v_arg1   = -0x1.0954410f3f66p-870 | -0x1.959f40b0d52d1p+679
+  v_result = -0x0p+0 | -0x1.959f40b0d52d1p+679
+insn vfidb05:
+  v_arg1   = 0x1.714e0b00c3609p+188 | -0x1.7e3b89779752bp-897
+  v_result = 0x1.714e0b00c3609p+188 | -0x0p+0
+insn vfidb05:
+  v_arg1   = 0x1.2d4b405512095p-36 | -0x1.cbf3a5cc327c4p+987
+  v_result = 0x0p+0 | -0x1.cbf3a5cc327c4p+987
+insn vfidb05:
+  v_arg1   = -0x1.47fa188fc49f3p-399 | 0x1.a1d66c8e3e178p-350
+  v_result = -0x0p+0 | 0x0p+0
+insn vfidb05:
+  v_arg1   = 0x1.e760458f45d6fp-672 | -0x1.ea169b23ef443p+754
+  v_result = 0x0p+0 | -0x1.ea169b23ef443p+754
+insn vfidb06:
+  v_arg1   = 0x1.e8c7afa8edb76p-616 | -0x1.4286e146748fdp+864
+  v_result = 0x1p+0 | -0x1.4286e146748fdp+864
+insn vfidb06:
+  v_arg1   = 0x1.0cf9c1b4fdb5p-852 | 0x1.9845bcfe1181dp+687
+  v_result = 0x1p+0 | 0x1.9845bcfe1181dp+687
+insn vfidb06:
+  v_arg1   = -0x1.f40c24aa8cae3p+141 | -0x1.33b966adbb779p+18
+  v_result = -0x1.f40c24aa8cae3p+141 | -0x1.33b94p+18
+insn vfidb06:
+  v_arg1   = 0x1.497c3bfb72975p+895 | 0x1.94dc5d4f14f02p+866
+  v_result = 0x1.497c3bfb72975p+895 | 0x1.94dc5d4f14f02p+866
+insn vfidb07:
+  v_arg1   = 0x1.400b2180c5169p+9 | -0x1.0eb881ef09e8bp+144
+  v_result = 0x1.4p+9 | -0x1.0eb881ef09e8bp+144
+insn vfidb07:
+  v_arg1   = 0x1.5e1a1176032ffp-694 | 0x1.a413f4290b781p+986
+  v_result = 0x0p+0 | 0x1.a413f4290b781p+986
+insn vfidb07:
+  v_arg1   = 0x1.89260655d1017p+657 | -0x1.82ecae03ac7b3p-465
+  v_result = 0x1.89260655d1017p+657 | -0x1p+0
+insn vfidb07:
+  v_arg1   = -0x1.e233d525b46edp+954 | 0x1.70742fcc3ce0bp+148
+  v_result = -0x1.e233d525b46edp+954 | 0x1.70742fcc3ce0bp+148
+insn wfidb00:
+  v_arg1   = -0x1.61bc4941f04ddp-821 | 0x1.658c3c22e6351p+180
+  v_result = -0x0p+0 | --
+insn wfidb00:
+  v_arg1   = -0x1.b347e049e111fp-420 | 0x1.da424426c71edp-950
+  v_result = -0x0p+0 | --
+insn wfidb00:
+  v_arg1   = 0x1.920b565b7898ap+329 | 0x1.520bc351efda4p-592
+  v_result = 0x1.920b565b7898ap+329 | --
+insn wfidb00:
+  v_arg1   = -0x1.8482d1dfaa054p+729 | 0x1.57c1eb750de59p-154
+  v_result = -0x1.8482d1dfaa054p+729 | --
+insn wfidb01:
+  v_arg1   = -0x1.e88ebfa665fcep+172 | -0x1.29bdb0b3e83ccp+147
+  v_result = -0x1.e88ebfa665fcep+172 | --
+insn wfidb01:
+  v_arg1   = 0x1.0f5f1ef25622bp-839 | -0x1.d57455b11b25dp+173
+  v_result = 0x0p+0 | --
+insn wfidb01:
+  v_arg1   = 0x1.098fed551a139p+372 | 0x1.73f2976a143c8p+826
+  v_result = 0x1.098fed551a139p+372 | --
+insn wfidb01:
+  v_arg1   = -0x1.f30512cb12425p-608 | 0x1.e58939033eae8p-891
+  v_result = -0x0p+0 | --
+insn wfidb03:
+  v_arg1   = -0x1.af465d77bce39p+75 | -0x1.0e08c063beb77p-766
+  v_result = -0x1.af465d77bce39p+75 | --
+insn wfidb03:
+  v_arg1   = -0x1.f50b5e41314ap-764 | -0x1.607de181ae4ccp-591
+  v_result = -0x1p+0 | --
+insn wfidb03:
+  v_arg1   = 0x1.8a47842c8c31fp-50 | -0x1.8b5cdaee0879ap+947
+  v_result = 0x1p+0 | --
+insn wfidb03:
+  v_arg1   = 0x1.d08648a9cbedcp+182 | -0x1.e47de14095eb5p-832
+  v_result = 0x1.d08648a9cbedcp+182 | --
+insn wfidb04:
+  v_arg1   = 0x1.50b6db7fbbd1ap+133 | -0x1.c5293bf4286cfp+694
+  v_result = 0x1.50b6db7fbbd1ap+133 | --
+insn wfidb04:
+  v_arg1   = -0x1.57085ee8210f9p-986 | 0x1.45f2b06247536p+35
+  v_result = -0x0p+0 | --
+insn wfidb04:
+  v_arg1   = -0x1.df15d38b85b39p+278 | -0x1.6ae64eaf6b596p+961
+  v_result = -0x1.df15d38b85b39p+278 | --
+insn wfidb04:
+  v_arg1   = 0x1.0fc2143d758f6p+241 | -0x1.2f53bcf6ea7bcp-843
+  v_result = 0x1.0fc2143d758f6p+241 | --
+insn wfidb05:
+  v_arg1   = 0x1.c793f2582996cp-505 | 0x1.31faa416f414fp-393
+  v_result = 0x0p+0 | --
+insn wfidb05:
+  v_arg1   = 0x1.c831f1a8f44b3p-318 | -0x1.30d67b0cbd098p-799
+  v_result = 0x0p+0 | --
+insn wfidb05:
+  v_arg1   = -0x1.c2aea42bdd582p+522 | -0x1.d58aa3500b839p+73
+  v_result = -0x1.c2aea42bdd582p+522 | --
+insn wfidb05:
+  v_arg1   = -0x1.33846647de0efp+805 | -0x1.40ee74cfe2ff8p+336
+  v_result = -0x1.33846647de0efp+805 | --
+insn wfidb06:
+  v_arg1   = 0x1.9ea16aeaccd2bp-592 | -0x1.0718e98de0774p-791
+  v_result = 0x1p+0 | --
+insn wfidb06:
+  v_arg1   = -0x1.2b33d73559b49p+432 | 0x1.0bcd0a3aa62edp+137
+  v_result = -0x1.2b33d73559b49p+432 | --
+insn wfidb06:
+  v_arg1   = 0x1.0fd5bed729ef7p-136 | -0x1.7de5c9c1a7cffp-542
+  v_result = 0x1p+0 | --
+insn wfidb06:
+  v_arg1   = 0x1.3e88df9ab4141p+1001 | 0x1.23d1c18546565p-208
+  v_result = 0x1.3e88df9ab4141p+1001 | --
+insn wfidb07:
+  v_arg1   = 0x1.a0a30de14c554p-995 | 0x1.f75fbd2aac4b9p+721
+  v_result = 0x0p+0 | --
+insn wfidb07:
+  v_arg1   = -0x1.22d9d06f10138p+388 | 0x1.617a16b5e9631p-40
+  v_result = -0x1.22d9d06f10138p+388 | --
+insn wfidb07:
+  v_arg1   = -0x1.415ecc4742193p-484 | -0x1.26b342b60ed63p+353
+  v_result = -0x1p+0 | --
+insn wfidb07:
+  v_arg1   = 0x1.a38b40d7c686bp+18 | 0x1.72f17be0db2p+786
+  v_result = 0x1.a38b4p+18 | --
+insn vledb00:
+  v_arg1   = -0x1.a84c84057eee2p-484 | 0x1.c57adf9f0649bp-745
+  v_result = -0x0p+0 | -- | 0x0p+0 | --
+insn vledb00:
+  v_arg1   = 0x1.81df9df7f63fbp+804 | 0x1.1cb169383d862p-99
+  v_result = 0x1.fffffep+127 | -- | 0x1.1cb168p-99 | --
+insn vledb00:
+  v_arg1   = -0x1.71dd9545fca52p+677 | -0x1.92cefededf8e1p-117
+  v_result = -0x1.fffffep+127 | -- | -0x1.92cefep-117 | --
+insn vledb00:
+  v_arg1   = -0x1.65375ad0e40e7p-937 | 0x1.09014cbc484c5p+485
+  v_result = -0x0p+0 | -- | 0x1.fffffep+127 | --
+insn vledb01:
+  v_arg1   = -0x1.505196110b3d2p+107 | -0x1.3426019ccd495p+80
+  v_result = -0x1.505196p+107 | -- | -0x1.342602p+80 | --
+insn vledb01:
+  v_arg1   = -0x1.0af0f091bac0ep+839 | 0x1.e846aa8b59579p-876
+  v_result = -inf | -- | 0x0p+0 | --
+insn vledb01:
+  v_arg1   = -0x1.2c25e28cf0631p+481 | -0x1.84e49efdf88f6p-761
+  v_result = -inf | -- | -0x0p+0 | --
+insn vledb01:
+  v_arg1   = -0x1.2668ee57bb531p-627 | -0x1.70c4fcb1747afp+53
+  v_result = -0x0p+0 | -- | -0x1.70c4fcp+53 | --
+insn vledb03:
+  v_arg1   = 0x1.83961ccdd811fp-57 | -0x1.164d03f590024p+321
+  v_result = 0x1.83961ep-57 | -- | -0x1.fffffep+127 | --
+insn vledb03:
+  v_arg1   = -0x1.70f9991e0c8eep-335 | 0x1.7eedb358f3874p+893
+  v_result = -0x1p-149 | -- | 0x1.fffffep+127 | --
+insn vledb03:
+  v_arg1   = 0x1.2b0b7cd5f402cp+157 | -0x1.bfafe3c4f891dp-342
+  v_result = 0x1.fffffep+127 | -- | -0x1p-149 | --
+insn vledb03:
+  v_arg1   = -0x1.a9eb9c0dfb4c6p+89 | 0x1.a4f0449a065bap+737
+  v_result = -0x1.a9eb9ep+89 | -- | 0x1.fffffep+127 | --
+insn vledb04:
+  v_arg1   = -0x1.dccda0e58c3c6p+254 | -0x1.1e7b977b4d2c3p-832
+  v_result = -inf | -- | -0x0p+0 | --
+insn vledb04:
+  v_arg1   = -0x1.8685582eca417p+537 | 0x1.ab5a3c7ae2d4fp+276
+  v_result = -inf | -- | inf | --
+insn vledb04:
+  v_arg1   = -0x1.49320cface53ep+903 | 0x1.e5fc9e15ce8d3p+298
+  v_result = -inf | -- | inf | --
+insn vledb04:
+  v_arg1   = 0x1.b25b34a582821p+386 | 0x1.4056fd2fc4ce3p-361
+  v_result = inf | -- | 0x0p+0 | --
+insn vledb05:
+  v_arg1   = 0x1.26ac2b21ee5c2p+207 | 0x1.ff8d7ccf938eep-142
+  v_result = 0x1.fffffep+127 | -- | 0x1.fep-142 | --
+insn vledb05:
+  v_arg1   = -0x1.fe8fde9582b04p+564 | 0x1.28400eaaee105p+536
+  v_result = -0x1.fffffep+127 | -- | 0x1.fffffep+127 | --
+insn vledb05:
+  v_arg1   = -0x1.317d5b9516063p-163 | -0x1.ea868ea209093p+333
+  v_result = -0x0p+0 | -- | -0x1.fffffep+127 | --
+insn vledb05:
+  v_arg1   = -0x1.027399100fdbfp-546 | -0x1.1d9ccf1c66825p+36
+  v_result = -0x0p+0 | -- | -0x1.1d9ccep+36 | --
+insn vledb06:
+  v_arg1   = 0x1.2bf5345ca531p+982 | 0x1.7c3e64b441d22p-449
+  v_result = inf | -- | 0x1p-149 | --
+insn vledb06:
+  v_arg1   = -0x1.8b94ed2434a31p+1001 | 0x1.c092c292abf92p+853
+  v_result = -0x1.fffffep+127 | -- | inf | --
+insn vledb06:
+  v_arg1   = 0x1.ce81218ec1d98p+236 | 0x1.6009662b86edap+985
+  v_result = inf | -- | inf | --
+insn vledb06:
+  v_arg1   = -0x1.5d2059ff4201bp+513 | 0x1.d7857339c237dp-955
+  v_result = -0x1.fffffep+127 | -- | 0x1p-149 | --
+insn vledb07:
+  v_arg1   = 0x1.a76ca53f97aabp-255 | -0x1.674a200b06edbp-581
+  v_result = 0x0p+0 | -- | -0x1p-149 | --
+insn vledb07:
+  v_arg1   = 0x1.0080548c7ec1bp+989 | 0x1.2ee6511bf33f3p+395
+  v_result = 0x1.fffffep+127 | -- | 0x1.fffffep+127 | --
+insn vledb07:
+  v_arg1   = -0x1.9b113781789d9p-813 | -0x1.2950f56406c23p-653
+  v_result = -0x1p-149 | -- | -0x1p-149 | --
+insn vledb07:
+  v_arg1   = 0x1.651d480507cb1p+722 | -0x1.58f4c2418ebe6p-70
+  v_result = 0x1.fffffep+127 | -- | -0x1.58f4c4p-70 | --
+insn wledb00:
+  v_arg1   = 0x1.43d646747c59p-257 | -0x1.737c6f65a1694p+700
+  v_result = 0x0p+0 | -- | -- | --
+insn wledb00:
+  v_arg1   = -0x1.201dc5801fd3dp-331 | -0x1.2e0e52d09aa24p+358
+  v_result = -0x0p+0 | -- | -- | --
+insn wledb00:
+  v_arg1   = 0x1.81f14646f0e21p+15 | 0x1.f918fd1d379ebp+784
+  v_result = 0x1.81f146p+15 | -- | -- | --
+insn wledb00:
+  v_arg1   = -0x1.fcf63412ffdffp-746 | -0x1.4c8e74fd72c5cp-193
+  v_result = -0x0p+0 | -- | -- | --
+insn wledb01:
+  v_arg1   = 0x1.ebe5b0e50a1bap+140 | 0x1.638103a5e01c9p+504
+  v_result = inf | -- | -- | --
+insn wledb01:
+  v_arg1   = -0x1.9d0900d0d6914p+359 | -0x1.78bea0aa48f2p-76
+  v_result = -inf | -- | -- | --
+insn wledb01:
+  v_arg1   = 0x1.3de51688f1b6cp-210 | 0x1.721d2e08e7eadp+312
+  v_result = 0x0p+0 | -- | -- | --
+insn wledb01:
+  v_arg1   = -0x1.d796ceeae907ep-668 | -0x1.6cf64417450ddp-126
+  v_result = -0x0p+0 | -- | -- | --
+insn wledb03:
+  v_arg1   = 0x1.3a6edd4af7926p+104 | 0x1.fa23bd7d81cf7p+68
+  v_result = 0x1.3a6edep+104 | -- | -- | --
+insn wledb03:
+  v_arg1   = 0x1.4a0dd74061d1cp+154 | -0x1.d9bae342b4ee3p+307
+  v_result = 0x1.fffffep+127 | -- | -- | --
+insn wledb03:
+  v_arg1   = 0x1.99a06111419b7p-275 | -0x1.871938f8d69e6p-833
+  v_result = 0x1p-149 | -- | -- | --
+insn wledb03:
+  v_arg1   = -0x1.a7bac92e920acp+145 | -0x1.752ff858cc562p-671
+  v_result = -0x1.fffffep+127 | -- | -- | --
+insn wledb04:
+  v_arg1   = -0x1.fa1544402b9cfp+862 | -0x1.ea203dae35299p+583
+  v_result = -inf | -- | -- | --
+insn wledb04:
+  v_arg1   = 0x1.c9f7f990a04cfp+258 | -0x1.0bb6e363b546ap+690
+  v_result = inf | -- | -- | --
+insn wledb04:
+  v_arg1   = 0x1.3ff6eeb9a76fdp-981 | 0x1.dac90e9ec2511p+619
+  v_result = 0x0p+0 | -- | -- | --
+insn wledb04:
+  v_arg1   = 0x1.401df3afc9905p+883 | 0x1.4fcf4a8bbf7e9p-598
+  v_result = inf | -- | -- | --
+insn wledb05:
+  v_arg1   = 0x1.f5bcdeae2ceb1p-482 | -0x1.064234e9c8f2cp-825
+  v_result = 0x0p+0 | -- | -- | --
+insn wledb05:
+  v_arg1   = 0x1.ff73387320bacp-138 | -0x1.d99679d700cbp+220
+  v_result = 0x1.ff6p-138 | -- | -- | --
+insn wledb05:
+  v_arg1   = 0x1.eb9c782bd9d3bp+916 | 0x1.30084fbc69faap-269
+  v_result = 0x1.fffffep+127 | -- | -- | --
+insn wledb05:
+  v_arg1   = -0x1.737c1f102e804p+703 | 0x1.7787f359d506ep-790
+  v_result = -0x1.fffffep+127 | -- | -- | --
+insn wledb06:
+  v_arg1   = -0x1.d7f9453ee23c9p-667 | -0x1.01459401fc02bp-872
+  v_result = -0x0p+0 | -- | -- | --
+insn wledb06:
+  v_arg1   = 0x1.7d5b34b9d1d2cp+188 | 0x1.fdfd3f465e2b2p+97
+  v_result = inf | -- | -- | --
+insn wledb06:
+  v_arg1   = 0x1.7734c6119fb6cp+504 | 0x1.4972ad038c12ep-213
+  v_result = inf | -- | -- | --
+insn wledb06:
+  v_arg1   = 0x1.d480ec418f825p+795 | 0x1.e73dbbacd3fecp-1
+  v_result = inf | -- | -- | --
+insn wledb07:
+  v_arg1   = 0x1.7bbe60bc02413p-511 | 0x1.ade60bc87d013p-400
+  v_result = 0x0p+0 | -- | -- | --
+insn wledb07:
+  v_arg1   = -0x1.365bcf06526cdp+361 | 0x1.23aefc8b7436bp-449
+  v_result = -inf | -- | -- | --
+insn wledb07:
+  v_arg1   = -0x1.9db391449fb8dp-1005 | -0x1.e9f40755e7a19p-55
+  v_result = -0x1p-149 | -- | -- | --
+insn wledb07:
+  v_arg1   = 0x1.46282bf59b5e5p+334 | 0x1.59946c0e82d5fp+936
+  v_result = 0x1.fffffep+127 | -- | -- | --
+insn vldeb:
+  v_arg1   = -0x1.8b9fd9ef53d8ap-833 | -0x1.aeef3cdf1ac5fp-282
+  v_result = -0x1.d173fap-104 | -0x1.b5dde6p-35
+insn vldeb:
+  v_arg1   = 0x1.cd30a83a7130bp-430 | 0x1.256f7a4029ad8p-286
+  v_result = 0x1.39a614p-53 | 0x1.24adeep-35
+insn vldeb:
+  v_arg1   = -0x1.09bc929ea0999p-364 | 0x1.c4281f653b3e6p-652
+  v_result = -0x1.613792p-45 | 0x1.788502p-81
+insn vldeb:
+  v_arg1   = -0x1.7afd9ede30cbfp+556 | -0x1.696fbd68a88c4p-863
+  v_result = -0x1.6f5fb2p+70 | -0x1.0d2df6p-107
+insn wldeb:
+  v_arg1   = -0x1.d26169729db2ap-435 | 0x1.d6fd080793e8cp+767
+  v_result = -0x1.9a4c2cp-54 | 0x0p+0
+insn wldeb:
+  v_arg1   = -0x1.f4b59107fce61p-930 | 0x1.cdf2816e253f4p-168
+  v_result = -0x1.be96b2p-116 | 0x0p+0
+insn wldeb:
+  v_arg1   = -0x1.9603a2997928cp-441 | -0x1.aada85e355a11p-767
+  v_result = -0x1.d2c074p-55 | 0x0p+0
+insn wldeb:
+  v_arg1   = 0x1.25ccf5bd0e83p+620 | 0x1.e1635864ebb17p-88
+  v_result = 0x1.64b99ep+78 | 0x0p+0
+insn vflcdb:
+  v_arg1   = 0x1.0ae6d82f76afp-166 | -0x1.e8fb1e03a7415p-191
+  v_result = -0x1.0ae6d82f76afp-166 | 0x1.e8fb1e03a7415p-191
+insn vflcdb:
+  v_arg1   = 0x1.9f865a209464cp+19 | 0x1.a81bca7f2dbbcp-960
+  v_result = -0x1.9f865a209464cp+19 | -0x1.a81bca7f2dbbcp-960
+insn vflcdb:
+  v_arg1   = 0x1.ed6c6a3ed0163p-5 | 0x1.40b73b91e5a17p+838
+  v_result = -0x1.ed6c6a3ed0163p-5 | -0x1.40b73b91e5a17p+838
+insn vflcdb:
+  v_arg1   = 0x1.19520153d35b4p-301 | 0x1.ac5325cd23253p+396
+  v_result = -0x1.19520153d35b4p-301 | -0x1.ac5325cd23253p+396
+insn wflcdb:
+  v_arg1   = 0x1.ffd3eecfd54d7p-831 | -0x1.97854fa523a77p+146
+  v_result = -0x1.ffd3eecfd54d7p-831 | 0x0p+0
+insn wflcdb:
+  v_arg1   = -0x1.508ea45606447p-442 | 0x1.ae7f0e6cf9d2bp+583
+  v_result = 0x1.508ea45606447p-442 | 0x0p+0
+insn wflcdb:
+  v_arg1   = 0x1.da8ab2188c21ap+94 | 0x1.78a9c152aa074p-808
+  v_result = -0x1.da8ab2188c21ap+94 | 0x0p+0
+insn wflcdb:
+  v_arg1   = -0x1.086882645e0c5p-1001 | -0x1.54e2de5af5a74p-262
+  v_result = 0x1.086882645e0c5p-1001 | 0x0p+0
+insn vflndb:
+  v_arg1   = -0x1.5bec561d407dcp+819 | -0x1.a5773dadb7a2dp+935
+  v_result = -0x1.5bec561d407dcp+819 | -0x1.a5773dadb7a2dp+935
+insn vflndb:
+  v_arg1   = -0x1.fa5a407a116cep+972 | 0x1.7bf005c15063dp-437
+  v_result = -0x1.fa5a407a116cep+972 | -0x1.7bf005c15063dp-437
+insn vflndb:
+  v_arg1   = -0x1.184242f0442acp-994 | -0x1.e54e17c7617a2p-355
+  v_result = -0x1.184242f0442acp-994 | -0x1.e54e17c7617a2p-355
+insn vflndb:
+  v_arg1   = -0x1.c5bc39a06d4e2p-259 | 0x1.c5e61ad849e77p-833
+  v_result = -0x1.c5bc39a06d4e2p-259 | -0x1.c5e61ad849e77p-833
+insn wflndb:
+  v_arg1   = -0x1.e9f3e6d1beffap-117 | -0x1.d58cc8bf123b3p-714
+  v_result = -0x1.e9f3e6d1beffap-117 | 0x0p+0
+insn wflndb:
+  v_arg1   = -0x1.3fc4ef2e7485ep-691 | 0x1.eb328986081efp-775
+  v_result = -0x1.3fc4ef2e7485ep-691 | 0x0p+0
+insn wflndb:
+  v_arg1   = -0x1.7146c5afdec16p+23 | -0x1.597fcfa1fab2p-708
+  v_result = -0x1.7146c5afdec16p+23 | 0x0p+0
+insn wflndb:
+  v_arg1   = 0x1.03f8d7e9afe84p-947 | 0x1.9a10c3feb6b57p-118
+  v_result = -0x1.03f8d7e9afe84p-947 | 0x0p+0
+insn vflpdb:
+  v_arg1   = 0x1.64ae59b6c762ep-407 | -0x1.fa7191ab21e86p+533
+  v_result = 0x1.64ae59b6c762ep-407 | 0x1.fa7191ab21e86p+533
+insn vflpdb:
+  v_arg1   = -0x1.e39a61250e473p-116 | -0x1.970a4244b7a3dp+800
+  v_result = 0x1.e39a61250e473p-116 | 0x1.970a4244b7a3dp+800
+insn vflpdb:
+  v_arg1   = -0x1.905c12e0e2c53p+264 | 0x1.87daa9c3e4967p-647
+  v_result = 0x1.905c12e0e2c53p+264 | 0x1.87daa9c3e4967p-647
+insn vflpdb:
+  v_arg1   = -0x1.85fa2de1d492ap+170 | 0x1.ac36828822c11p-968
+  v_result = 0x1.85fa2de1d492ap+170 | 0x1.ac36828822c11p-968
+insn wflpdb:
+  v_arg1   = 0x1.a6cf677640a73p-871 | 0x1.b6f1792385922p-278
+  v_result = 0x1.a6cf677640a73p-871 | 0x0p+0
+insn wflpdb:
+  v_arg1   = -0x1.b886774f6d888p-191 | -0x1.6a2b08d735d22p-643
+  v_result = 0x1.b886774f6d888p-191 | 0x0p+0
+insn wflpdb:
+  v_arg1   = 0x1.5045d37d46f5fp+943 | -0x1.333a86ef2dcf6p-1013
+  v_result = 0x1.5045d37d46f5fp+943 | 0x0p+0
+insn wflpdb:
+  v_arg1   = 0x1.1e7bec6ada14dp+252 | 0x1.a70b3f3e24dap-153
+  v_result = 0x1.1e7bec6ada14dp+252 | 0x0p+0
+insn vfadb:
+  v_arg1   = 0x1.5b1ad8e9f17c6p-294 | -0x1.ddd8300a0bf02p+122
+  v_arg2   = -0x1.9b49c31ca8ac6p+926 | 0x1.fdbc992926268p+677
+  v_result = -0x1.9b49c31ca8ac5p+926 | 0x1.fdbc992926267p+677
+insn vfadb:
+  v_arg1   = -0x1.6144d24f60f19p+321 | -0x1.0f4885e73979ap+190
+  v_arg2   = 0x1.cf70ab6af95e5p-656 | -0x1.d2a10763bba9ep+317
+  v_result = -0x1.6144d24f60f18p+321 | -0x1.d2a10763bba9ep+317
+insn vfadb:
+  v_arg1   = -0x1.6ba7d00ea2037p-839 | 0x1.3e5b07b555046p-553
+  v_arg2   = -0x1.d400afb20401fp+608 | 0x1.600f85fbc2774p-86
+  v_result = -0x1.d400afb20401fp+608 | 0x1.600f85fbc2774p-86
+insn vfadb:
+  v_arg1   = -0x1.5039c4164f26bp+471 | -0x1.554272eaa3a01p-539
+  v_arg2   = 0x1.a3a594bc042dep+515 | 0x1.6d08aceb68682p+706
+  v_result = 0x1.a3a594bc0418dp+515 | 0x1.6d08aceb68681p+706
+insn wfadb:
+  v_arg1   = 0x1.3c5466cb80722p+489 | -0x1.11e1770053ca2p+924
+  v_arg2   = 0x1.d876cd721a726p-946 | 0x1.5c04ceb79c9bcp+1001
+  v_result = 0x1.3c5466cb80722p+489 | 0x0p+0
+insn wfadb:
+  v_arg1   = 0x1.b0b142d6b76a3p+577 | 0x1.3146824e993a2p+432
+  v_arg2   = -0x1.f7f3b7582925fp-684 | -0x1.9700143c2b935p-837
+  v_result = 0x1.b0b142d6b76a2p+577 | 0x0p+0
+insn wfadb:
+  v_arg1   = -0x1.8d65e15edabd6p+244 | 0x1.3be7fd08492d6p-141
+  v_arg2   = -0x1.5eef86490fb0ap+481 | 0x1.7b26c897cb6dfp+810
+  v_result = -0x1.5eef86490fb0ap+481 | 0x0p+0
+insn wfadb:
+  v_arg1   = -0x1.2dffa5b5f29p+34 | 0x1.71a026274602fp-881
+  v_arg2   = 0x1.4dad707287289p+756 | -0x1.1500d55807247p-616
+  v_result = 0x1.4dad707287288p+756 | 0x0p+0
+insn vfsdb:
+  v_arg1   = 0x1.054fd9c4d4883p+644 | 0x1.45c90ed85bd7fp-780
+  v_arg2   = 0x1.f3bc7a611dadap+494 | -0x1.7c9e1e858ba5bp-301
+  v_result = 0x1.054fd9c4d4882p+644 | 0x1.7c9e1e858ba5bp-301
+insn vfsdb:
+  v_arg1   = -0x1.697779c72f8a1p-232 | 0x1.cac8c6a6fbe36p-751
+  v_arg2   = 0x1.6c23630c5305bp-897 | 0x1.91525e7f72d26p+516
+  v_result = -0x1.697779c72f8a1p-232 | -0x1.91525e7f72d25p+516
+insn vfsdb:
+  v_arg1   = 0x1.7033a03797d39p-722 | 0x1.fecd2799b8d1fp-588
+  v_arg2   = -0x1.794d0fc274286p+204 | 0x1.25d121c810391p-344
+  v_result = 0x1.794d0fc274286p+204 | -0x1.25d121c81039p-344
+insn vfsdb:
+  v_arg1   = 0x1.3a79321b93187p+146 | 0x1.d707e1ddd2a26p-13
+  v_arg2   = -0x1.00c3f844d79b5p+354 | 0x1.dc5a03907c923p-869
+  v_result = 0x1.00c3f844d79b5p+354 | 0x1.d707e1ddd2a25p-13
+insn wfsdb:
+  v_arg1   = 0x1.9090dabf846e7p-648 | 0x1.1c4ab843a2d15p+329
+  v_arg2   = -0x1.a7ceb293690dep+316 | 0x1.22245954a20cp+42
+  v_result = 0x1.a7ceb293690dep+316 | 0x0p+0
+insn wfsdb:
+  v_arg1   = 0x1.4e5347c27819p-933 | -0x1.56a30bda28351p-64
+  v_arg2   = -0x1.dedb9f3935b56p-155 | 0x1.8c5b6ed76816cp-522
+  v_result = 0x1.dedb9f3935b56p-155 | 0x0p+0
+insn wfsdb:
+  v_arg1   = 0x1.0ec4e562a015bp-491 | 0x1.3996381b52d9fp-686
+  v_arg2   = 0x1.1dcce4e81819p+960 | -0x1.32fa425e8fc08p-263
+  v_result = -0x1.1dcce4e81818fp+960 | 0x0p+0
+insn wfsdb:
+  v_arg1   = -0x1.587229f90f77dp-19 | 0x1.100d8eb8105e4p-784
+  v_arg2   = -0x1.afb4cce4c43ddp+530 | -0x1.6da7f05e7f512p-869
+  v_result = 0x1.afb4cce4c43dcp+530 | 0x0p+0
+insn vfmdb:
+  v_arg1   = 0x1.892b425556c47p-124 | 0x1.38222404079dfp-656
+  v_arg2   = 0x1.af612ed2c342dp-267 | -0x1.1f735fd6ce768p-877
+  v_result = 0x1.4b428afda35a7p-390 | -0x0p+0
+insn vfmdb:
+  v_arg1   = -0x1.02106dba6feecp-272 | 0x1.cf890a91d4eefp-455
+  v_arg2   = -0x1.12c7fc909ffcbp+782 | -0x1.22bf2e2dd2204p-721
+  v_result = 0x1.14ff2ed0ce42bp+510 | -0x0p+0
+insn vfmdb:
+  v_arg1   = -0x1.e3fd7999ca339p+101 | 0x1.cf2eff4ef5fd2p+816
+  v_arg2   = -0x1.e722ee73a2523p-135 | 0x1.652dfb0cc8dbfp+179
+  v_result = 0x1.cc7c9e66fd70ap-33 | 0x1.431fddc319ee2p+996
+insn vfmdb:
+  v_arg1   = 0x1.2aa65e0fe665dp+729 | 0x1.1774d58fb5c62p+50
+  v_arg2   = -0x1.ed5baf340bd7ep+475 | -0x1.83de646bb6511p+564
+  v_result = -0x1.fffffffffffffp+1023 | -0x1.a76863c8aab11p+614
+insn wfmdb:
+  v_arg1   = -0x1.b992d950126a1p-683 | -0x1.9c1b22eb58c59p-497
+  v_arg2   = 0x1.b557a7d8e32c3p-25 | -0x1.f746b2ddafccep+227
+  v_result = -0x1.792f6fb13894ap-707 | 0x0p+0
+insn wfmdb:
+  v_arg1   = -0x1.677a8c20a5a2fp+876 | 0x1.c03e7b97e8c0dp-645
+  v_arg2   = 0x1.dab44be430937p-1011 | -0x1.3f51352c67be9p-916
+  v_result = -0x1.4d4b0a1827064p-134 | 0x0p+0
+insn wfmdb:
+  v_arg1   = -0x1.da60f596ad0cep+254 | 0x1.52332e0650e33p+966
+  v_arg2   = 0x1.a042c52ed993cp+215 | 0x1.8f380c84aa133p+204
+  v_result = -0x1.81aca4bbcbd24p+470 | 0x0p+0
+insn wfmdb:
+  v_arg1   = -0x1.83d17f11f6aa3p-469 | -0x1.98117efe89b9ep-361
+  v_arg2   = 0x1.8c445fd46d214p-701 | -0x1.f98118821821cp+596
+  v_result = -0x0p+0 | 0x0p+0
+insn vfddb:
+  v_arg1   = -0x1.ecbb48899e0f1p+969 | 0x1.caf175ab352p-20
+  v_arg2   = -0x1.9455d67f9f79dp+208 | 0x1.bc4a431b04a6fp+482
+  v_result = 0x1.37f78f2cbe546p+761 | 0x1.087170c12984cp-502
+insn vfddb:
+  v_arg1   = 0x1.213d83f7082d8p-330 | 0x1.237737a5fa7a6p+548
+  v_arg2   = 0x1.d96c3df5d6415p-214 | -0x1.8cd56c8cef818p+139
+  v_result = 0x1.38cf2a1e99e53p-117 | -0x1.780d86d7eff49p+408
+insn vfddb:
+  v_arg1   = 0x1.9ce332231f317p-915 | -0x1.a58e84e32263ep-1000
+  v_arg2   = 0x1.23d041c374ad6p-905 | -0x1.33e41797e24ep+986
+  v_result = 0x1.6a3702fbc252cp-10 | 0x0p+0
+insn vfddb:
+  v_arg1   = -0x1.26cf3de11efccp-342 | 0x1.3ca733ce42f94p-818
+  v_arg2   = -0x1.5f5a8f87a6e19p+319 | 0x1.8993c56b2ba2dp+426
+  v_result = 0x1.ad9a43954644bp-662 | 0x0p+0
+insn wfddb:
+  v_arg1   = 0x1.bd48489b60731p-114 | 0x1.a760dcf57b74fp-51
+  v_arg2   = -0x1.171f83409eeb6p-402 | -0x1.e159d1409bdc6p-972
+  v_result = -0x1.9864f1511f8cp+288 | 0x0p+0
+insn wfddb:
+  v_arg1   = -0x1.120505ef4606p-637 | -0x1.83f6f775c0eb7p+272
+  v_arg2   = -0x1.d18ba3872fde1p+298 | 0x1.c60f8d191068cp-454
+  v_result = 0x1.2d5cdb15a686cp-936 | 0x0p+0
+insn wfddb:
+  v_arg1   = 0x1.f637f7f8c790fp-97 | -0x1.7bdce4d74947p+189
+  v_arg2   = -0x1.1c8f2d1b3a2edp-218 | -0x1.55fdfd1840241p-350
+  v_result = -0x1.c3d0799c1420fp+121 | 0x0p+0
+insn wfddb:
+  v_arg1   = -0x1.c63b7b2eee253p+250 | 0x1.dfd9dcd8b823fp-125
+  v_arg2   = 0x1.094a1f1f87e0cp+629 | 0x1.eeaa23c0d7843p-814
+  v_result = -0x1.b653a10ebdeccp-379 | 0x0p+0
+insn vfsqdb:
+  v_arg1   = 0x1.f60db25f7066p-703 | -0x1.d43509abca8c3p+631
+  v_result = 0x1.fb009ab25ec11p-352 | nan
+insn vfsqdb:
+  v_arg1   = -0x1.ecbce2bb2e245p-872 | 0x1.cc9173d132a3bp-290
+  v_result = nan | 0x1.575fa6778042ep-145
+insn vfsqdb:
+  v_arg1   = 0x1.9102ffd19ccb3p-205 | -0x1.87e9ee7454345p-374
+  v_result = 0x1.c51ecb6cc318p-103 | nan
+insn vfsqdb:
+  v_arg1   = 0x1.24e1d7ad32eb5p+499 | -0x1.1c7d22b78039bp+918
+  v_result = 0x1.833dba0954bccp+249 | nan
+insn wfsqdb:
+  v_arg1   = 0x1.71af4e7f64978p+481 | -0x1.3429dc60011d7p-879
+  v_result = 0x1.b30fc65551133p+240 | 0x0p+0
+insn wfsqdb:
+  v_arg1   = 0x1.5410db1c5f403p+173 | 0x1.97fa6581e692fp+108
+  v_result = 0x1.a144f43a592c1p+86 | 0x0p+0
+insn wfsqdb:
+  v_arg1   = -0x1.5838027725afep+6 | 0x1.ac61529c11f38p+565
+  v_result = nan | 0x0p+0
+insn wfsqdb:
+  v_arg1   = -0x1.159e341dcc06ep-439 | 0x1.ed54ce5481ba5p-574
+  v_result = nan | 0x0p+0
+insn vfmadb:
+  v_arg1   = -0x1.eb00a5c503d75p+538 | 0x1.89fae603ddc07p+767
+  v_arg2   = -0x1.71c72712c3957p+715 | 0x1.1bd5773442feap+762
+  v_arg3   = 0x1.bd0daed56ada5p+355 | 0x1.618b7cfa37a8bp-935
+  v_result = 0x1.fffffffffffffp+1023 | 0x1.fffffffffffffp+1023
+insn vfmadb:
+  v_arg1   = 0x1.2acc8fc4a8115p-394 | -0x1.b0e5a531a368ep+599
+  v_arg2   = 0x1.7e7c008b06eb6p-26 | -0x1.a3368d351c861p+17
+  v_arg3   = 0x1.665fcd4adbb82p-991 | 0x1.b27284ea351eap+402
+  v_result = 0x1.be6dfa3f5b30dp-420 | 0x1.62720e4cb1583p+617
+insn vfmadb:
+  v_arg1   = -0x1.e66ac8a348fedp-315 | 0x1.8c2ef1e0615c5p+132
+  v_arg2   = 0x1.01397e671d7fdp+313 | -0x1.97c403198fa76p-750
+  v_arg3   = -0x1.1568273c73bf1p-843 | 0x1.8f0b6073eadccp+277
+  v_result = -0x1.e8be715f14671p-2 | 0x1.8f0b6073eadcbp+277
+insn vfmadb:
+  v_arg1   = -0x1.4afc3142483f9p+706 | 0x1.dd14885973858p+695
+  v_arg2   = 0x1.ebc6146439945p-726 | -0x1.77a97fce9117p-586
+  v_arg3   = 0x1.60a3231346326p+102 | -0x1.621f717816614p-653
+  v_result = 0x1.60a3231346325p+102 | -0x1.5e0a7a3b97e9bp+110
+insn wfmadb:
+  v_arg1   = 0x1.1cc5b10a14d54p+668 | -0x1.686407390f7d1p+616
+  v_arg2   = -0x1.bf34549e73246p+676 | -0x1.dc5a34cc470f3p+595
+  v_arg3   = -0x1.95e0fdcf13974p-811 | -0x1.79c7cc1a8ec83p-558
+  v_result = -0x1.fffffffffffffp+1023 | 0x0p+0
+insn wfmadb:
+  v_arg1   = 0x1.138bc1a5d75f8p+713 | -0x1.e226ebba2fe54p+381
+  v_arg2   = -0x1.081ebb7cc3414p-772 | 0x1.369d99e174fc3p+922
+  v_arg3   = -0x1.0671c682a5d0cp-1016 | 0x1.03c9530dd0377p+378
+  v_result = -0x1.1c4933e117d95p-59 | 0x0p+0
+insn wfmadb:
+  v_arg1   = -0x1.166f0b1fad67bp+64 | -0x1.e9ee8d32e1069p-452
+  v_arg2   = -0x1.4a235bdd109e2p-65 | 0x1.bacaa96fc7e81p-403
+  v_arg3   = -0x1.d2e19acf7c4bdp+99 | 0x1.f901130f685adp-963
+  v_result = -0x1.d2e19acf7c4bcp+99 | 0x0p+0
+insn wfmadb:
+  v_arg1   = -0x1.77d7bfec863d2p-988 | -0x1.b68029700c6b1p-206
+  v_arg2   = -0x1.aca05ad00aec1p+737 | 0x1.ac746bd7e216bp+51
+  v_arg3   = 0x1.17342292078b4p+188 | -0x1.49efaf9392301p+555
+  v_result = 0x1.17342292078b4p+188 | 0x0p+0
+insn vfmsdb:
+  v_arg1   = -0x1.a1b218e84e61p+34 | 0x1.b220f0d144daep-111
+  v_arg2   = 0x1.564fcc2527961p-265 | 0x1.ea85a4154721ep+733
+  v_arg3   = 0x1.a6c16c3dc593cp-1012 | -0x1.ba15ae51a252bp+979
+  v_result = -0x1.1743102949c9bp-230 | 0x1.ba15ae51a252bp+979
+insn vfmsdb:
+  v_arg1   = 0x1.f13a61419bc27p+603 | -0x1.f671d1b532c7fp+668
+  v_arg2   = -0x1.68f38da70d3cdp+145 | 0x1.7b7d4b8a38256p+87
+  v_arg3   = -0x1.4830d858cdf7dp-522 | -0x1.ecdfb36fb2682p+537
+  v_result = -0x1.5e89932819567p+749 | -0x1.746835a6a3d29p+756
+insn vfmsdb:
+  v_arg1   = -0x1.82f8829619ba4p+274 | -0x1.886bc5356fc9fp+4
+  v_arg2   = 0x1.ae0143a6fff31p-759 | 0x1.08e9ddebff9acp-192
+  v_arg3   = 0x1.a1c5f6283d74p+602 | 0x1.60722d2eadabcp+573
+  v_result = -0x1.a1c5f6283d74p+602 | -0x1.60722d2eadabcp+573
+insn vfmsdb:
+  v_arg1   = -0x1.6efc50de44d76p-235 | -0x1.546b6a9202facp+17
+  v_arg2   = 0x1.023eb4e92d296p-593 | 0x1.6c05c52e8d255p-408
+  v_arg3   = -0x1.54cc2efc022a8p+360 | 0x1.9ae520664c8abp+486
+  v_result = 0x1.54cc2efc022a7p+360 | -0x1.9ae520664c8abp+486
+insn wfmsdb:
+  v_arg1   = -0x1.7499a639673a6p-100 | -0x1.2a0d737e6cb1cp-207
+  v_arg2   = -0x1.01ad4670a7aa3p-911 | 0x1.f94385e1021e8p+317
+  v_arg3   = 0x1.aa42b2bb17af9p+982 | 0x1.c550e471711p+786
+  v_result = -0x1.aa42b2bb17af8p+982 | 0x0p+0
+insn wfmsdb:
+  v_arg1   = 0x1.76840f99b431ep+500 | -0x1.989a500c92c08p+594
+  v_arg2   = 0x1.33c657cb8385cp-84 | -0x1.2c795ad92ce17p+807
+  v_arg3   = -0x1.ee58a39f02d54p-351 | -0x1.18695ed9a280ap+48
+  v_result = 0x1.c242894a0068p+416 | 0x0p+0
+insn wfmsdb:
+  v_arg1   = -0x1.16db07e054a65p-469 | -0x1.3a627ab99c6e4p+689
+  v_arg2   = 0x1.17872eae826e5p-538 | 0x1.44ed513fb5873p-929
+  v_arg3   = 0x1.5ca912008e077p-217 | -0x1.982a6f7359876p-23
+  v_result = -0x1.5ca912008e077p-217 | 0x0p+0
+insn wfmsdb:
+  v_arg1   = -0x1.d315f4a932c6p+122 | 0x1.616a04493e143p+513
+  v_arg2   = -0x1.cf1cd3516f23fp+552 | 0x1.7121749c3932cp-750
+  v_arg3   = 0x1.dc26d92304d7fp-192 | -0x1.1fc3cca9ec20ep+371
+  v_result = 0x1.a67ca6ba395bcp+675 | 0x0p+0
+insn wfcdb:
+  v_arg1   = 0x1.302001b736011p-633 | -0x1.72d5300225c97p-468
+  v_arg2   = -0x1.8c007c5aba108p-17 | -0x1.bb3f9ae136acdp+569
+  r_result = 0000000000000002
+insn wfcdb:
+  v_arg1   = -0x1.56248d3fff55ap-440 | -0x1.83340f6a06bedp-612
+  v_arg2   = 0x1.5b62caabf4e3ep-302 | 0x1.0465808809e02p+199
+  r_result = 0000000000000001
+insn wfcdb:
+  v_arg1   = 0x1.7cca43b8250bap-969 | 0x1.a2ae4e71459b3p+792
+  v_arg2   = -0x1.2178959d8e9fbp-238 | -0x1.1180e41cc8654p+609
+  r_result = 0000000000000002
+insn wfcdb:
+  v_arg1   = 0x1.96f03c4f3ec0dp-774 | 0x1.a86fcf7f54875p+448
+  v_arg2   = -0x1.a61696da8f939p-732 | -0x1.969b12babcde9p+239
+  r_result = 0000000000000002
+insn wfkdb:
+  v_arg1   = -0x1.af19141b6194ep-304 | 0x1.6f34172e4ec9ap+281
+  v_arg2   = -0x1.903d268d15b8dp-496 | 0x1.132593e7a3848p+663
+  r_result = 0000000000000001
+insn wfkdb:
+  v_arg1   = -0x1.52e78ae61bf57p-979 | -0x1.8132c8874542ap+264
+  v_arg2   = -0x1.7274a70a201eep+729 | 0x1.ee05a55085e12p-508
+  r_result = 0000000000000002
+insn wfkdb:
+  v_arg1   = -0x1.6f8a0ed73189ep-27 | -0x1.93db112e3a289p-560
+  v_arg2   = -0x1.a699712dab56fp-677 | 0x1.5170475506fc8p-437
+  r_result = 0000000000000001
+insn wfkdb:
+  v_arg1   = -0x1.5d56e841d7af8p+346 | -0x1.e40064ce1ce3bp-1012
+  v_arg2   = 0x1.79e790363d4ffp+888 | 0x1.97168873bee8ap-323
+  r_result = 0000000000000001
+insn vfcedb:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.8c48762fd0b58p+38 | 0x1.c1f5c994768a1p-819
+  v_arg2   = -0x1.08f71db17132ep+914 | 0x1.a3d14196177d5p-229
+insn vfcedb:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.4f88d97dc8b9p+73 | 0x1.6d3a343e053bap+356
+  v_arg2   = -0x1.5bc7cd97d3ee9p+135 | 0x1.641d521c77b43p-114
+insn vfcedb:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.b9ce020750f0dp-494 | -0x1.c0d4939228ce1p-82
+  v_arg2   = -0x1.61ad6a28bf43bp-656 | 0x1.b7973bba1ff4dp-877
+insn vfcedb:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.d8e5c9930c19dp+623 | -0x1.cf1facff4e194p-605
+  v_arg2   = -0x1.ed6ba02646d0dp+441 | -0x1.2d677e710620bp+810
+insn wfcedb:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.a252009e1a12cp-442 | 0x1.4dc608268bb29p-513
+  v_arg2   = -0x1.81020aa1a36e6p-687 | -0x1.300e64ce414f1p-899
+insn wfcedb:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.cec439a8d4781p-175 | -0x1.d20e3b281d599p+893
+  v_arg2   = 0x1.ca17cf16cf0aap-879 | 0x1.61506f8596092p+545
+insn wfcedb:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.0659f5f24a004p+877 | 0x1.fc46867ed0338p-680
+  v_arg2   = -0x1.1d6849587155ep-1010 | -0x1.f68171edc235fp+575
+insn wfcedb:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.dc88a0d46ad79p-816 | 0x1.245140dcaed79p+851
+  v_arg2   = 0x1.b33e977c7b3ep-818 | -0x1.04319d7c69367p+787
+insn vfcedbs:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.ac196c30148c5p-498 | -0x1.a58093963d1aep+355
+  v_arg2   = 0x1.d321b63762fb1p+28 | -0x1.9a68be31efa17p-143
+  r_result = 0000000000000003
+insn vfcedbs:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.b3657c390dfa7p-452 | 0x1.8a62662f245c4p+1010
+  v_arg2   = -0x1.70208c68a03aep+974 | 0x1.a0729665a79fap+667
+  r_result = 0000000000000003
+insn vfcedbs:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.3ff1b361c377ep-846 | -0x1.f8fcaa95ff309p+948
+  v_arg2   = 0x1.749db766981d1p-510 | -0x1.d11abab1dc779p+981
+  r_result = 0000000000000003
+insn vfcedbs:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.2adb2ed7d2b08p-701 | -0x1.be89092fe5ce8p+472
+  v_arg2   = 0x1.ae2c06ea88ff4p+332 | -0x1.f668ce4f8ef9ap+821
+  r_result = 0000000000000003
+insn wfcedbs:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.645261bf86b1fp-996 | 0x1.abd13c95397aap+992
+  v_arg2   = -0x1.ba09e8fc66a8cp+113 | 0x1.75dbfe92c16c4p-786
+  r_result = 0000000000000003
+insn wfcedbs:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.d02831d003e7dp+415 | -0x1.611a9dfd10f36p-80
+  v_arg2   = -0x1.10bda62f4647p+723 | 0x1.cc47af6653378p-614
+  r_result = 0000000000000003
+insn wfcedbs:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.f168f32f84178p-321 | -0x1.79a2a0b9549d1p-136
+  v_arg2   = 0x1.41e19d1cfa692p+11 | -0x1.2a0ed6e7fd517p-453
+  r_result = 0000000000000003
+insn wfcedbs:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.76a9144ee26c5p+188 | -0x1.386aaea2d9cddp-542
+  v_arg2   = 0x1.810fcf222efc4p-999 | -0x1.ce90a9a43e2a1p+80
+  r_result = 0000000000000003
+insn vfchdb:
+  v_result = ffffffffffffffff | ffffffffffffffff
+  v_arg1   = -0x1.a5a0d9e617637p-707 | 0x1.039393f56f89cp+540
+  v_arg2   = -0x1.e08e4bda75373p+861 | -0x1.94f3e6b2a5373p+361
+insn vfchdb:
+  v_result = 0000000000000000 | ffffffffffffffff
+  v_arg1   = 0x1.c7b84b4fa508p-448 | 0x1.00ca9b4b8a0ecp+837
+  v_arg2   = 0x1.9e7afd1c5fe6dp-379 | 0x1.af9353417f907p-20
+insn vfchdb:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = -0x1.15637df5529edp-476 | -0x1.3104698aaf00bp-679
+  v_arg2   = -0x1.503783453ef9dp-282 | 0x1.94198721f3bb6p-491
+insn vfchdb:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.82be31fb88a2dp+946 | -0x1.7ca9e9ff31953p-931
+  v_arg2   = 0x1.fe75a1052beccp+490 | 0x1.179d18543d678p-255
+insn wfchdb:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.0af85d8d8d609p-464 | -0x1.9f639a686e0fep+203
+  v_arg2   = -0x1.3142b77b55761p-673 | 0x1.ca9c474339da1p+472
+insn wfchdb:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = -0x1.6cf16959a022bp+213 | 0x1.445606e4363e1p+942
+  v_arg2   = -0x1.8c343201bbd2p+939 | -0x1.e5095ad0c37a4p-434
+insn wfchdb:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.36b4fc9cf5bdap-52 | -0x1.f1fd95cbcd533p+540
+  v_arg2   = 0x1.5a2362891c9edp-175 | -0x1.e1f68c319e5d2p+58
+insn wfchdb:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.11c6489f544bbp+811 | 0x1.262a740ec3d47p+456
+  v_arg2   = -0x1.d9394d354e989p-154 | 0x1.cc21b3094391ap-972
+insn vfchdbs:
+  v_result = ffffffffffffffff | ffffffffffffffff
+  v_arg1   = 0x1.6efcb54fbf69p+929 | 0x1.021ce0bff3c4cp-827
+  v_arg2   = 0x1.571ae4a8be152p+851 | -0x1.a970c1164e0c9p+737
+  r_result = 0000000000000000
+insn vfchdbs:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.528f5ccfc3efbp-445 | -0x1.c660b9810c512p-663
+  v_arg2   = -0x1.bcc535b108e06p-294 | 0x1.675d8eddf5a4ap-641
+  r_result = 0000000000000001
+insn vfchdbs:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.300127b01433ap+86 | -0x1.8f19f65e5e3c6p+633
+  v_arg2   = -0x1.0a88d3c279f7fp-502 | -0x1.d68196f88bde5p+368
+  r_result = 0000000000000003
+insn vfchdbs:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.e68d08fc23febp+955 | -0x1.0f80357b376b4p+800
+  v_arg2   = 0x1.e426748435a76p+370 | 0x1.8702527d17783p-871
+  r_result = 0000000000000003
+insn wfchdbs:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.6c51b9f6442c8p+639 | 0x1.1e6b37adff703p+702
+  v_arg2   = 0x1.0cba9c1c75e43p+520 | -0x1.145d44ed90967p+346
+  r_result = 0000000000000000
+insn wfchdbs:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.7b3dd643bf36bp+816 | -0x1.61ce7bfb9307ap-683
+  v_arg2   = -0x1.f2c998dc15c9ap-776 | 0x1.e16397f2dcdf5p+571
+  r_result = 0000000000000000
+insn wfchdbs:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.cc3be81884e0ap-865 | -0x1.8b353bd41064p+820
+  v_arg2   = -0x1.2c1bafaafdd4ep-34 | -0x1.24666808ab16ep-435
+  r_result = 0000000000000000
+insn wfchdbs:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.c3de33d3b673ap+554 | 0x1.d39ed71e53096p-798
+  v_arg2   = -0x1.c1e8f7b3c001p-828 | 0x1.22e2cf797fabp-787
+  r_result = 0000000000000000
+insn vfchedb:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.fdeb244b026aep-169 | 0x1.870a6fe40fd9ep-132
+  v_arg2   = 0x1.0ce586903392fp-469 | 0x1.cdfd736ae03f8p+471
+insn vfchedb:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.89c8a6a740af8p-958 | 0x1.e132e6edb1316p+78
+  v_arg2   = -0x1.f10d2c3491358p+683 | 0x1.0def4f092fca2p+322
+insn vfchedb:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.a5e8e6900e845p+342 | 0x1.d92b370ee2a1cp+275
+  v_arg2   = 0x1.799f9efc6ef56p+379 | 0x1.ae60d0239ade7p+933
+insn vfchedb:
+  v_result = 0000000000000000 | ffffffffffffffff
+  v_arg1   = -0x1.6c5599e7ba923p+829 | -0x1.5d1a1191ed6eap-994
+  v_arg2   = -0x1.555c8775bc4d2p-478 | -0x1.4aa6a2c82319cp+493
+insn wfchedb:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.ae6cad07b0f3ep-232 | -0x1.2ed61a43f3b99p-74
+  v_arg2   = -0x1.226f7cddbde13p-902 | -0x1.790d1d6febbf8p+336
+insn wfchedb:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.20eb8eac3711dp-385 | 0x1.ef71d3312d7e1p+739
+  v_arg2   = 0x1.7a3ba08c5a0bdp-823 | -0x1.a7845ccaa544dp-129
+insn wfchedb:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.97ebdbc057be8p+824 | 0x1.2b7798b063cd6p+237
+  v_arg2   = 0x1.cdb87a6074294p-81 | -0x1.074c902b19bccp-416
+insn wfchedb:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.82deebf9ff023p+937 | 0x1.56c5adcf9d4abp-672
+  v_arg2   = -0x1.311ce49bc9439p+561 | 0x1.c8e1c512d8544p+103
+insn vfchedbs:
+  v_result = 0000000000000000 | ffffffffffffffff
+  v_arg1   = -0x1.489a0cf606972p-417 | 0x1.a87a278f79c72p+64
+  v_arg2   = 0x1.17ec17aedbaeap+435 | -0x1.f867d39e61ce2p-919
+  r_result = 0000000000000001
+insn vfchedbs:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.33723ef431356p-420 | -0x1.474f097f9ead8p+498
+  v_arg2   = 0x1.4130d6951ee45p+7 | 0x1.791689e1040f1p+354
+  r_result = 0000000000000003
+insn vfchedbs:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.6cf89093275eep-237 | 0x1.451631aa628ebp-186
+  v_arg2   = 0x1.c349eac0f4204p-200 | 0x1.01c558c10699ap+770
+  r_result = 0000000000000003
+insn vfchedbs:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.ea15eabc329b6p+52 | -0x1.7b556461496d6p-682
+  v_arg2   = -0x1.47f5dfc7a5bcp-569 | 0x1.5877ef33664a3p-758
+  r_result = 0000000000000003
+insn wfchedbs:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.a7370ccfd9e49p+505 | 0x1.c6b2385850ca2p-591
+  v_arg2   = 0x1.984f4fcd338b1p+675 | -0x1.feb996c821232p-39
+  r_result = 0000000000000003
+insn wfchedbs:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.641878612dd2p+207 | 0x1.b35e3292db7f6p+567
+  v_arg2   = -0x1.18a87f209e96bp+299 | -0x1.3d598f3612d8ap+1016
+  r_result = 0000000000000000
+insn wfchedbs:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.cfc2cda244153p+404 | 0x1.d8b2b28e9d8d7p+276
+  v_arg2   = 0x1.3517b8c7a59a1p-828 | 0x1.6096fab7003ccp-415
+  r_result = 0000000000000000
+insn wfchedbs:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.54d656f033e56p-603 | -0x1.95ad0e2088967p+254
+  v_arg2   = 0x1.4cb319db206e4p-614 | 0x1.b41cd9e3739b6p-862
+  r_result = 0000000000000003
+insn vftcidb0:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.7507654eb1cbdp-363 | -0x1.4c5a2d70578a7p-769
+  r_result = 0000000000000003
+insn vftcidb0:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.759a0ba4abaf7p+638 | -0x1.fe832724aaa38p+97
+  r_result = 0000000000000003
+insn vftcidb0:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.7b3e4bb774c14p-102 | -0x1.b908fc2ed3a14p+766
+  r_result = 0000000000000003
+insn vftcidb0:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.85cbf177a1d82p+208 | -0x1.705033c741858p-794
+  r_result = 0000000000000003
+insn vftcidb1:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.7cbeef2c94fcap+288 | -0x1.ec1d97b93cbfdp+702
+  r_result = 0000000000000003
+insn vftcidb1:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.2ab2a98079656p+47 | -0x1.c371901eb3099p+334
+  r_result = 0000000000000003
+insn vftcidb1:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.39eeb39c6012dp-574 | 0x1.98e49f4cc3921p+457
+  r_result = 0000000000000003
+insn vftcidb1:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.3fc28ae45b2b3p-452 | -0x1.b632de2f2b0a8p-517
+  r_result = 0000000000000003
+insn vftcidb2:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.792143331a16dp-472 | 0x1.78b867d4bf21fp+966
+  r_result = 0000000000000003
+insn vftcidb2:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.463e12b675eb9p-361 | 0x1.fcfd460adb415p+411
+  r_result = 0000000000000003
+insn vftcidb2:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.d6b7fe0aecc99p+233 | -0x1.3af17c9a3c277p+571
+  r_result = 0000000000000003
+insn vftcidb2:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.2575c4180e868p+734 | -0x1.320885d20bb51p+204
+  r_result = 0000000000000003
+insn vftcidb3:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.14f24a3c080a1p+651 | -0x1.a4e63e948d889p-821
+  r_result = 0000000000000003
+insn vftcidb3:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.8ad818084fd9dp+652 | 0x1.35c9f1c2ca3a9p-489
+  r_result = 0000000000000003
+insn vftcidb3:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.0c4da3ccb1a54p-577 | -0x1.620b34e8dc095p+265
+  r_result = 0000000000000003
+insn vftcidb3:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.19a17db46ab1ap+844 | -0x1.ae8523c97a84fp+549
+  r_result = 0000000000000003
+insn vftcidb4:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.3af5acd125862p+758 | 0x1.3382dcaa769b8p+644
+  r_result = 0000000000000003
+insn vftcidb4:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.ab5c5a37a5f7ep+180 | -0x1.48ab6c0046851p+926
+  r_result = 0000000000000003
+insn vftcidb4:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.7563ad8b9565bp+255 | 0x1.d0cda8ea71ff4p+761
+  r_result = 0000000000000003
+insn vftcidb4:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.df11489b4e747p-917 | -0x1.c66c509f6e09ep-283
+  r_result = 0000000000000003
+insn vftcidb8:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.85ef23ec393aep-969 | 0x1.e73a12c839128p+469
+  r_result = 0000000000000003
+insn vftcidb8:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.6a66b9f6771d7p-539 | -0x1.e0455d9d06f08p-322
+  r_result = 0000000000000003
+insn vftcidb8:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.1ccd94013eda9p-151 | 0x1.3a149960dcc13p-830
+  r_result = 0000000000000003
+insn vftcidb8:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.1881157e6896bp+739 | -0x1.5481e51d7d13cp+938
+  r_result = 0000000000000003
+insn vftcidb16:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.c0728816e9f7ep+780 | -0x1.82c791cf93d54p-154
+  r_result = 0000000000000003
+insn vftcidb16:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.8ad2e81651e24p-284 | 0x1.d78b8f22e24cap-938
+  r_result = 0000000000000003
+insn vftcidb16:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.7d4f40176493bp-567 | -0x1.70aba71dbb26bp+824
+  r_result = 0000000000000003
+insn vftcidb16:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.98bc950f87c01p+903 | -0x1.2389a9fd7e622p-703
+  r_result = 0000000000000003
+insn vftcidb32:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.c583723b0e8dp-973 | -0x1.b8f72a62558b8p-21
+  r_result = 0000000000000003
+insn vftcidb32:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.df6ca559152e2p+87 | -0x1.e901b98b7f494p+275
+  r_result = 0000000000000003
+insn vftcidb32:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.718c8a77ed80dp+222 | 0x1.272ea2c2cbd7ap+786
+  r_result = 0000000000000003
+insn vftcidb32:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.125f88105ad86p+783 | 0x1.ee37380928c4ep+103
+  r_result = 0000000000000003
+insn vftcidb64:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.3fb5daf24d9ap-918 | -0x1.5c849d623cfd1p+59
+  r_result = 0000000000000003
+insn vftcidb64:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.0adfa2607fa8cp-235 | -0x1.cf9ba570a4a61p+467
+  r_result = 0000000000000003
+insn vftcidb64:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.b468fbdc60619p-667 | -0x1.10695d31ddabcp+261
+  r_result = 0000000000000003
+insn vftcidb64:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.58459f52a0775p-465 | -0x1.5f6e77fa32ebcp+492
+  r_result = 0000000000000003
+insn vftcidb128:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.d9dd5b268dee9p+109 | 0x1.202b8b70f8c1ap-757
+  r_result = 0000000000000003
+insn vftcidb128:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.dfe7c00e2019fp-63 | -0x1.35fd1bac1932ep+836
+  r_result = 0000000000000003
+insn vftcidb128:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.10886d0eb3e5ep+29 | 0x1.1f27771caf4acp+471
+  r_result = 0000000000000003
+insn vftcidb128:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.2d2aab983764ap+430 | 0x1.31a3029a73867p-388
+  r_result = 0000000000000003
+insn vftcidb256:
+  v_result = 0000000000000000 | ffffffffffffffff
+  v_arg1   = 0x1.6eadbb81663a7p-756 | -0x1.c6b7c55047e1p+800
+  r_result = 0000000000000001
+insn vftcidb256:
+  v_result = 0000000000000000 | ffffffffffffffff
+  v_arg1   = 0x1.0150bf13f5396p-188 | -0x1.f6e9b4e793af6p+546
+  r_result = 0000000000000001
+insn vftcidb256:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = -0x1.50be96c89ecd5p-574 | 0x1.d624d134ff7c6p+605
+  r_result = 0000000000000001
+insn vftcidb256:
+  v_result = 0000000000000000 | ffffffffffffffff
+  v_arg1   = 0x1.33ca5d92be782p+577 | -0x1.4fe8b0a3a164bp+725
+  r_result = 0000000000000001
+insn vftcidb512:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.a8eaa4ccad5d7p-269 | -0x1.12d51bd1f8e2ep-222
+  r_result = 0000000000000003
+insn vftcidb512:
+  v_result = ffffffffffffffff | ffffffffffffffff
+  v_arg1   = 0x1.61d62033addeep+577 | 0x1.dd1569eceabb6p+829
+  r_result = 0000000000000000
+insn vftcidb512:
+  v_result = 0000000000000000 | ffffffffffffffff
+  v_arg1   = -0x1.1fbf51c3c7c7cp+803 | 0x1.182d1c5c7d087p-193
+  r_result = 0000000000000001
+insn vftcidb512:
+  v_result = ffffffffffffffff | 0000000000000000
+  v_arg1   = 0x1.4ee08603f4498p-802 | -0x1.54d34adf83565p+965
+  r_result = 0000000000000001
+insn vftcidb1024:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.63580fb229f75p+737 | -0x1.b75f3fb7baaf1p-508
+  r_result = 0000000000000003
+insn vftcidb1024:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.a443f42ef8a22p-625 | 0x1.8363d375b5369p+818
+  r_result = 0000000000000003
+insn vftcidb1024:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.383e46d9f5b4fp-771 | 0x1.a7dc0924f6a6bp-720
+  r_result = 0000000000000003
+insn vftcidb1024:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = -0x1.2148e5bdb7c09p-517 | 0x1.1b2689f7c01b1p-502
+  r_result = 0000000000000003
+insn vftcidb2048:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.48b9851b82d7cp-589 | 0x1.86f1e1a36bdd4p-930
+  r_result = 0000000000000003
+insn vftcidb2048:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.8b45cbb7947aep-572 | -0x1.c478ca5bd9d0cp-274
+  r_result = 0000000000000003
+insn vftcidb2048:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.651f3ea4ff449p-18 | 0x1.381d68603b1edp+264
+  r_result = 0000000000000003
+insn vftcidb2048:
+  v_result = 0000000000000000 | 0000000000000000
+  v_arg1   = 0x1.7d9f2d51b7851p+653 | 0x1.4da616b63e42ap-415
+  r_result = 0000000000000003

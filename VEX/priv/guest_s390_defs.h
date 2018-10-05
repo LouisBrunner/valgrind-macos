@@ -281,7 +281,11 @@ enum {
    S390_VEC_OP_VMALH = 13,
    S390_VEC_OP_VCH = 14,
    S390_VEC_OP_VCHL = 15,
-   S390_VEC_OP_LAST = 16 // supposed to be the last element in enum
+   S390_VEC_OP_VFCE = 16,
+   S390_VEC_OP_VFCH = 17,
+   S390_VEC_OP_VFCHE = 18,
+   S390_VEC_OP_VFTCI = 19,
+   S390_VEC_OP_LAST = 20 // supposed to be the last element in enum
 } s390x_vec_op_t;
 
 /* Arguments of s390x_dirtyhelper_vec_op(...) which are packed into one
@@ -300,8 +304,10 @@ typedef union {
 
       unsigned int m4 : 4;        // field m4 of insn or zero if it's missing
       unsigned int m5 : 4;        // field m5 of insn or zero if it's missing
+      unsigned int m6 : 4;        // field m6 of insn or zero if it's missing
+      unsigned int i3 : 12;       // field i3 of insn or zero if it's missing
       unsigned int read_only: 1;  // don't write result to Guest State
-      unsigned int reserved : 27; // reserved for future
+      unsigned int reserved : 11; // reserved for future
    };
    ULong serialized;
 } s390x_vec_op_details_t;

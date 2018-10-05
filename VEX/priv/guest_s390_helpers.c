@@ -2498,6 +2498,10 @@ s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
       {0xe7, 0xa9}, /* VMALH */
       {0xe7, 0xfb}, /* VCH */
       {0xe7, 0xf9}, /* VCHL */
+      {0xe7, 0xe8}, /* VFCE */
+      {0xe7, 0xeb}, /* VFCH */
+      {0xe7, 0xea}, /* VFCHE */
+      {0xe7, 0x4a}  /* VFTCI */
    };
 
    union {
@@ -2525,6 +2529,28 @@ s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
         unsigned int rxb : 4;
         unsigned int op2 : 8;
       } VRRd;
+      struct {
+         UInt op1 : 8;
+         UInt v1  : 4;
+         UInt v2  : 4;
+         UInt v3  : 4;
+         UInt     : 4;
+         UInt m6  : 4;
+         UInt m5  : 4;
+         UInt m4  : 4;
+         UInt rxb : 4;
+         UInt op2 : 8;
+      } VRRc;
+      struct {
+         UInt op1 : 8;
+         UInt v1  : 4;
+         UInt v2  : 4;
+         UInt i3  : 12;
+         UInt m5  : 4;
+         UInt m4  : 4;
+         UInt rxb : 4;
+         UInt op2 : 8;
+      } VRIe;
       UChar bytes[6];
    } the_insn;
 
@@ -2576,6 +2602,27 @@ s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
       the_insn.VRRd.rxb = 0b1111;
       the_insn.VRRd.m5 = d->m4;
       the_insn.VRRd.m6 = d->m5;
+      break;
+
+   case S390_VEC_OP_VFCE:
+   case S390_VEC_OP_VFCH:
+   case S390_VEC_OP_VFCHE:
+      the_insn.VRRc.v1 = 1;
+      the_insn.VRRc.v2 = 2;
+      the_insn.VRRc.v3 = 3;
+      the_insn.VRRc.rxb = 0b1110;
+      the_insn.VRRc.m4 = d->m4;
+      the_insn.VRRc.m5 = d->m5;
+      the_insn.VRRc.m6 = d->m6;
+      break;
+
+   case S390_VEC_OP_VFTCI:
+      the_insn.VRIe.v1 = 1;
+      the_insn.VRIe.v2 = 2;
+      the_insn.VRIe.rxb = 0b1100;
+      the_insn.VRIe.i3 = d->i3;
+      the_insn.VRIe.m4 = d->m4;
+      the_insn.VRIe.m5 = d->m5;
       break;
 
    default:

@@ -787,10 +787,12 @@ get_bfp_rounding_mode(ISelEnv *env, IRExpr *irrm)
       IRRoundingMode mode = irrm->Iex.Const.con->Ico.U32;
 
       switch (mode) {
-      case Irrm_NEAREST:  return S390_BFP_ROUND_NEAREST_EVEN;
-      case Irrm_ZERO:     return S390_BFP_ROUND_ZERO;
-      case Irrm_PosINF:   return S390_BFP_ROUND_POSINF;
-      case Irrm_NegINF:   return S390_BFP_ROUND_NEGINF;
+      case Irrm_NEAREST_TIE_AWAY_0: return S390_BFP_ROUND_NEAREST_AWAY;
+      case Irrm_PREPARE_SHORTER:    return S390_BFP_ROUND_PREPARE_SHORT;
+      case Irrm_NEAREST:            return S390_BFP_ROUND_NEAREST_EVEN;
+      case Irrm_ZERO:               return S390_BFP_ROUND_ZERO;
+      case Irrm_PosINF:             return S390_BFP_ROUND_POSINF;
+      case Irrm_NegINF:             return S390_BFP_ROUND_NEGINF;
       default:
          vpanic("get_bfp_rounding_mode");
       }
@@ -3871,6 +3873,17 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
          vec_op = S390_VEC_COUNT_ONES;
          goto Iop_V_wrk;
 
+      case Iop_Neg64Fx2:
+         size = 8;
+         vec_op = S390_VEC_FLOAT_NEG;
+         goto Iop_V_wrk;
+
+      case Iop_Abs64Fx2:
+         size = 8;
+         vec_op = S390_VEC_FLOAT_ABS;
+         goto Iop_V_wrk;
+
+
       Iop_V_wrk: {
          dst = newVRegV(env);
          reg1 = s390_isel_vec_expr(env, arg);
@@ -4388,6 +4401,28 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
          vec_op = S390_VEC_ELEM_ROLL_V;
          goto Iop_VV_wrk;
 
+      case Iop_CmpEQ64Fx2:
+         size = 8;
+         vec_op = S390_VEC_FLOAT_COMPARE_EQUAL;
+         goto Iop_VV_wrk;
+
+      case Iop_CmpLE64Fx2: {
+         size = 8;
+         vec_op = S390_VEC_FLOAT_COMPARE_LESS_OR_EQUAL;
+         goto Iop_VV_wrk;
+      }
+
+      case Iop_CmpLT64Fx2: {
+         size = 8;
+         vec_op = S390_VEC_FLOAT_COMPARE_LESS;
+         goto Iop_VV_wrk;
+      }
+
+      case Iop_Sqrt64Fx2:
+         size = 8;
+         vec_op = S390_VEC_FLOAT_SQRT;
+         goto Iop_irrm_V_wrk;
+
       case Iop_ShlN8x16:
          size = 1;
          shift_op = S390_VEC_ELEM_SHL_INT;
@@ -4493,6 +4528,14 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
          return dst;
       }
 
+      Iop_irrm_V_wrk: {
+         set_bfp_rounding_mode_in_fpc(env, arg1);
+         reg1 = s390_isel_vec_expr(env, arg2);
+
+         addInstr(env, s390_insn_unop(size, vec_op, dst, s390_opnd_reg(reg1)));
+         return dst;
+      }
+
       case Iop_64HLtoV128:
          reg1 = s390_isel_int_expr(env, arg1);
          reg2 = s390_isel_int_expr(env, arg2);
@@ -4516,6 +4559,7 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
       IRExpr* arg1 = expr->Iex.Triop.details->arg1;
       IRExpr* arg2 = expr->Iex.Triop.details->arg2;
       IRExpr* arg3 = expr->Iex.Triop.details->arg3;
+      IROp vec_op;
       switch (op) {
       case Iop_SetElem8x16:
          size = 1;
@@ -4550,6 +4594,36 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
          addInstr(env, s390_insn_vec_triop(size, S390_VEC_PERM,
                                            dst, reg1, reg2, reg3));
          return dst;
+
+      case Iop_Add64Fx2:
+         size = 8;
+         vec_op = S390_VEC_FLOAT_ADD;
+         goto Iop_irrm_VV_wrk;
+
+      case Iop_Sub64Fx2:
+         size = 8;
+         vec_op = S390_VEC_FLOAT_SUB;
+         goto Iop_irrm_VV_wrk;
+
+      case Iop_Mul64Fx2:
+         size = 8;
+         vec_op = S390_VEC_FLOAT_MUL;
+         goto Iop_irrm_VV_wrk;
+      case Iop_Div64Fx2:
+         size = 8;
+         vec_op = S390_VEC_FLOAT_DIV;
+         goto Iop_irrm_VV_wrk;
+
+      Iop_irrm_VV_wrk: {
+         set_bfp_rounding_mode_in_fpc(env, arg1);
+         reg1 = s390_isel_vec_expr(env, arg2);
+         reg2 = s390_isel_vec_expr(env, arg3);
+
+         addInstr(env, s390_insn_vec_binop(size, vec_op,
+                                           dst, reg1, reg2));
+
+         return dst;
+       }
 
       default:
          goto irreducible;

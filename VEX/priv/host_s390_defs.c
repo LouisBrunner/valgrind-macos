@@ -1711,6 +1711,23 @@ emit_VRR_VVM(UChar *p, ULong op, UChar v1, UChar v2, UChar m4)
    return emit_6bytes(p, the_insn);
 }
 
+static UChar *
+emit_VRR_VVMMM(UChar *p, ULong op, UChar v1, UChar v2, UChar m3, UChar m4,
+               UChar m5)
+{
+   ULong the_insn = op;
+   ULong rxb = s390_update_rxb(0, 1, &v1);
+   rxb = s390_update_rxb(rxb, 2, &v2);
+
+   the_insn |= ((ULong)v1) << 36;
+   the_insn |= ((ULong)v2) << 32;
+   the_insn |= ((ULong)m5) << 20;
+   the_insn |= ((ULong)m4) << 16;
+   the_insn |= ((ULong)m3) << 12;
+   the_insn |= ((ULong)rxb) << 8;
+
+   return emit_6bytes(p, the_insn);
+}
 
 static UChar *
 emit_VRR_VVVM(UChar *p, ULong op, UChar v1, UChar v2, UChar v3, UChar m4)
@@ -1762,6 +1779,26 @@ emit_VRR_VVVV(UChar *p, ULong op, UChar v1, UChar v2, UChar v3, UChar v4)
    return emit_6bytes(p, the_insn);
 }
 
+static UChar *
+emit_VRRe_VVVVMM(UChar *p, ULong op, UChar v1, UChar v2, UChar v3, UChar v4,
+                 UChar m5, UChar m6)
+{
+   ULong the_insn = op;
+   ULong rxb = s390_update_rxb(0, 1, &v1);
+   rxb = s390_update_rxb(rxb, 2, &v2);
+   rxb = s390_update_rxb(rxb, 3, &v3);
+   rxb = s390_update_rxb(rxb, 4, &v4);
+
+   the_insn |= ((ULong)v1) << 36;
+   the_insn |= ((ULong)v2) << 32;
+   the_insn |= ((ULong)v3) << 28;
+   the_insn |= ((ULong)m6) << 24;
+   the_insn |= ((ULong)m5) << 16;
+   the_insn |= ((ULong)v4) << 12;
+   the_insn |= ((ULong)rxb) << 8;
+
+   return emit_6bytes(p, the_insn);
+}
 
 static UChar *
 emit_VRR_VRR(UChar *p, ULong op, UChar v1, UChar r2, UChar r3)
@@ -1775,6 +1812,33 @@ emit_VRR_VRR(UChar *p, ULong op, UChar v1, UChar r2, UChar r3)
    the_insn |= ((ULong)rxb)<< 8;
 
    return emit_6bytes(p, the_insn);
+}
+
+static UChar *
+emit_VRR_VVVMMM(UChar *p, ULong op, UChar v1, UChar v2, UChar v3, UChar m4,
+                UChar m5, UChar m6)
+{
+   ULong the_insn = op;
+   ULong rxb = s390_update_rxb(0, 1, &v1);
+   rxb = s390_update_rxb(rxb, 2, &v2);
+   rxb = s390_update_rxb(rxb, 3, &v3);
+
+   the_insn |= ((ULong)v1) << 36;
+   the_insn |= ((ULong)v2) << 32;
+   the_insn |= ((ULong)v3) << 28;
+   the_insn |= ((ULong)m6) << 20;
+   the_insn |= ((ULong)m5) << 16;
+   the_insn |= ((ULong)m4) << 12;
+   the_insn |= ((ULong)rxb) << 8;
+
+   return emit_6bytes(p, the_insn);
+}
+
+static UChar*
+emit_VRR_VVVMM(UChar *p, ULong op, UChar v1, UChar v2, UChar v3, UChar m4,
+               UChar m5)
+{
+   return emit_VRR_VVVMMM(p, op, v1, v2, v3, m4, m5, 0);
 }
 
 /*------------------------------------------------------------*/
@@ -6057,6 +6121,116 @@ s390_emit_VLVGP(UChar *p, UChar v1, UChar r2, UChar r3)
    return emit_VRR_VRR(p, 0xE70000000062ULL, v1, r2, r3);
 }
 
+static UChar *
+s390_emit_VFPSO(UChar *p, UChar v1, UChar v2, UChar m3, UChar m4, UChar m5)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC6(MNM, VR, VR, UINT, UINT, UINT), "vfpso", v1, v2, m3, m4,
+                  m5);
+
+   return emit_VRR_VVMMM(p, 0xE700000000CCULL, v1, v2, m3, m4, m5);
+}
+
+static UChar *
+s390_emit_VFA(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4, UChar m5)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC6(MNM, VR, VR, VR, UINT, UINT), "vfa", v1, v2, v3, m4, m5);
+
+   return emit_VRR_VVVMM(p, 0xE700000000e3ULL, v1, v2, v3, m4, m5);
+}
+
+static UChar *
+s390_emit_VFS(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4, UChar m5)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC6(MNM, VR, VR, VR, UINT, UINT), "vfs", v1, v2, v3, m4, m5);
+
+   return emit_VRR_VVVMM(p, 0xE700000000e2ULL, v1, v2, v3, m4, m5);
+}
+
+static UChar *
+s390_emit_VFM(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4, UChar m5)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC6(MNM, VR, VR, VR, UINT, UINT), "vfm", v1, v2, v3, m4, m5);
+
+   return emit_VRR_VVVMM(p, 0xE700000000e7ULL, v1, v2, v3, m4, m5);
+}
+
+static UChar *
+s390_emit_VFD(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4, UChar m5)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC6(MNM, VR, VR, VR, UINT, UINT), "vfd", v1, v2, v3, m4, m5);
+
+   return emit_VRR_VVVMM(p, 0xE700000000e5ULL, v1, v2, v3, m4, m5);
+}
+
+static UChar *
+s390_emit_VFSQ(UChar *p, UChar v1, UChar v2, UChar m3, UChar m4)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC5(MNM, VR, VR, UINT, UINT), "vfsq", v1, v2, m3, m4);
+
+   return emit_VRR_VVMMM(p, 0xE700000000CEULL, v1, v2, m3, m4, 0);
+}
+
+static UChar *
+s390_emit_VFMA(UChar *p, UChar v1, UChar v2, UChar v3, UChar v4, UChar m5,
+               UChar m6)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC7(MNM, VR, VR, VR, VR, UINT, UINT), "vfma",
+                  v1, v2, v3, v4, m5, m6);
+
+   return emit_VRRe_VVVVMM(p, 0xE7000000008fULL, v1, v2, v3, v4, m5, m6);
+}
+
+static UChar *
+s390_emit_VFMS(UChar *p, UChar v1, UChar v2, UChar v3, UChar v4, UChar m5,
+               UChar m6)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC7(MNM, VR, VR, VR, VR, UINT, UINT), "vfms",
+                  v1, v2, v3, v4, m5, m6);
+
+   return emit_VRRe_VVVVMM(p, 0xE7000000008eULL, v1, v2, v3, v4, m5, m6);
+}
+
+static UChar *
+s390_emit_VFCE(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4, UChar m5,
+               UChar m6)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC7(MNM, VR, VR, VR, UINT, UINT, UINT), "vfce",
+                  v1, v2, v3, m4, m5, m6);
+
+   return emit_VRR_VVVMMM(p, 0xE700000000e8ULL, v1, v2, v3, m4, m5, m6);
+}
+
+static UChar *
+s390_emit_VFCH(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4, UChar m5,
+               UChar m6)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC7(MNM, VR, VR, VR, UINT, UINT, UINT), "vfch",
+                  v1, v2, v3, m4, m5, m6);
+
+   return emit_VRR_VVVMMM(p, 0xE700000000ebULL, v1, v2, v3, m4, m5, m6);
+}
+
+static UChar *
+s390_emit_VFCHE(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4, UChar m5,
+                UChar m6)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC7(MNM, VR, VR, VR, UINT, UINT, UINT), "vfche",
+                  v1, v2, v3, m4, m5, m6);
+
+   return emit_VRR_VVVMMM(p, 0xE700000000eaULL, v1, v2, v3, m4, m5, m6);
+}
+
 /*---------------------------------------------------------------*/
 /*--- Constructors for the various s390_insn kinds            ---*/
 /*---------------------------------------------------------------*/
@@ -7201,7 +7375,6 @@ s390_insn *s390_insn_vec_triop(UChar size, s390_vec_triop_t tag, HReg dst,
 {
    s390_insn *insn = LibVEX_Alloc_inline(sizeof(s390_insn));
 
-   vassert(size == 16);
 
    insn->tag  = S390_INSN_VEC_TRIOP;
    insn->size = size;
@@ -7506,6 +7679,18 @@ s390_insn_as_string(const s390_insn *insn)
 
       case S390_VEC_UNPACKLOWU:
          op = "v-vunpacku";
+         break;
+
+      case S390_VEC_FLOAT_NEG:
+         op = "v-vfloatneg";
+         break;
+
+      case S390_VEC_FLOAT_SQRT:
+         op = "v-vfloatsqrt";
+         break;
+
+      case S390_VEC_FLOAT_ABS:
+         op = "v-vfloatabs";
          break;
 
       default:
@@ -7880,6 +8065,13 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_VEC_PWSUM_DW:         op = "v-vpwsumdw"; break;
       case S390_VEC_PWSUM_QW:         op = "v-vpwsumqw"; break;
       case S390_VEC_INIT_FROM_GPRS:   op = "v-vinitfromgprs"; break;
+      case S390_VEC_FLOAT_ADD:        op = "v-vfloatadd"; break;
+      case S390_VEC_FLOAT_SUB:        op = "v-vfloatsub"; break;
+      case S390_VEC_FLOAT_MUL:        op = "v-vfloatmul"; break;
+      case S390_VEC_FLOAT_DIV:        op = "v-vfloatdiv"; break;
+      case S390_VEC_FLOAT_COMPARE_EQUAL: op = "v-vfloatcmpeq"; break;
+      case S390_VEC_FLOAT_COMPARE_LESS_OR_EQUAL:  op = "v-vfloatcmple"; break;
+      case S390_VEC_FLOAT_COMPARE_LESS: op = "v-vfloatcmpl"; break;
       default: goto fail;
       }
       s390_sprintf(buf, "%M %R, %R, %R", op, insn->variant.vec_binop.dst,
@@ -7889,6 +8081,8 @@ s390_insn_as_string(const s390_insn *insn)
    case S390_INSN_VEC_TRIOP:
       switch (insn->variant.vec_triop.tag) {
       case S390_VEC_PERM:  op = "v-vperm";  break;
+      case S390_VEC_FLOAT_MADD: op = "v-vfloatmadd"; break;
+      case S390_VEC_FLOAT_MSUB: op = "v-vfloatmsub"; break;
       default: goto fail;
       }
       s390_sprintf(buf, "%M %R, %R, %R, %R", op, insn->variant.vec_triop.dst,
@@ -9036,6 +9230,27 @@ s390_insn_unop_emit(UChar *buf, const s390_insn *insn)
       return s390_emit_VPOPCT(buf, v1, v2, s390_getM_from_size(insn->size));
    }
 
+   case S390_VEC_FLOAT_NEG: {
+      vassert(insn->variant.unop.src.tag == S390_OPND_REG);
+      vassert(insn->size == 8);
+      UChar v1 = hregNumber(insn->variant.unop.dst);
+      UChar v2 = hregNumber(insn->variant.unop.src.variant.reg);
+      return s390_emit_VFPSO(buf, v1, v2, s390_getM_from_size(insn->size), 0, 0);
+   }
+   case S390_VEC_FLOAT_ABS: {
+      vassert(insn->variant.unop.src.tag == S390_OPND_REG);
+      vassert(insn->size == 8);
+      UChar v1 = hregNumber(insn->variant.unop.dst);
+      UChar v2 = hregNumber(insn->variant.unop.src.variant.reg);
+      return s390_emit_VFPSO(buf, v1, v2, s390_getM_from_size(insn->size), 0, 2);
+   }
+   case S390_VEC_FLOAT_SQRT: {
+      vassert(insn->variant.unop.src.tag == S390_OPND_REG);
+      vassert(insn->size == 8);
+      UChar v1 = hregNumber(insn->variant.unop.dst);
+      UChar v2 = hregNumber(insn->variant.unop.src.variant.reg);
+      return s390_emit_VFSQ(buf, v1, v2, s390_getM_from_size(insn->size), 0);
+   }
    default:
       vpanic("s390_insn_unop_emit");
    }
@@ -11049,6 +11264,21 @@ s390_insn_vec_binop_emit(UChar *buf, const s390_insn *insn)
          return s390_emit_VSUMQ(buf, v1, v2, v3, s390_getM_from_size(size));
       case S390_VEC_INIT_FROM_GPRS:
          return s390_emit_VLVGP(buf, v1, v2, v3);
+      case S390_VEC_FLOAT_ADD:
+         return s390_emit_VFA(buf, v1, v2, v3, s390_getM_from_size(size), 0);
+      case S390_VEC_FLOAT_SUB:
+         return s390_emit_VFS(buf, v1, v2, v3, s390_getM_from_size(size), 0);
+      case S390_VEC_FLOAT_MUL:
+         return s390_emit_VFM(buf, v1, v2, v3, s390_getM_from_size(size), 0);
+      case S390_VEC_FLOAT_DIV:
+         return s390_emit_VFD(buf, v1, v2, v3, s390_getM_from_size(size), 0);
+      case S390_VEC_FLOAT_COMPARE_EQUAL:
+         return s390_emit_VFCE(buf, v1, v2, v3, s390_getM_from_size(size), 0, 0);
+      case S390_VEC_FLOAT_COMPARE_LESS_OR_EQUAL:
+         return s390_emit_VFCH(buf, v1, v3, v2, s390_getM_from_size(size), 0, 0);
+      case S390_VEC_FLOAT_COMPARE_LESS:
+         return s390_emit_VFCHE(buf, v1, v3, v2, s390_getM_from_size(size), 0, 0);
+
       default:
          goto fail;
    }
@@ -11070,8 +11300,14 @@ s390_insn_vec_triop_emit(UChar *buf, const s390_insn *insn)
    UChar v4 = hregNumber(insn->variant.vec_triop.op3);
 
    switch (tag) {
-      case S390_VEC_PERM:
+      case S390_VEC_PERM: {
+         vassert(insn->size == 16);
          return s390_emit_VPERM(buf, v1, v2, v3, v4);
+      }
+      case S390_VEC_FLOAT_MADD:
+         return s390_emit_VFMA(buf, v1, v2, v3, v4, 0, 3);
+      case S390_VEC_FLOAT_MSUB:
+         return s390_emit_VFMS(buf, v1, v2, v3, v4, 0, 3);
       default:
          goto fail;
    }

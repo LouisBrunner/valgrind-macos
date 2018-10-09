@@ -187,6 +187,7 @@ n-i-bz  Signal delivery for x86-linux: ensure that the stack pointer is
 
 (3.14.0.RC1: 30 September 2018, git c2aeea2d28acb0639bcc8cc1e4ab115067db1eae)
 (3.14.0.RC2: 3 October 2018, git 3e214c4858a6fdd5697e767543a0c19e30505582)
+(3.14.0:     9 October 2018, git 353a3587bb0e2757411f9138f5e936728ed6cc4f)
 
 
 

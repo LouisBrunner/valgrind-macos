@@ -17400,16 +17400,11 @@ s390_irgen_VSLDB(UChar v1, UChar v2, UChar v3, UChar i4)
 {
    UChar imm = i4 & 0b00001111;
 
-   if (imm == 0)
-   {
+   if (imm == 0) {
+      /* Just copy v2. */
       put_vr_qw(v1, get_vr_qw(v2));
-   }
-   else if (imm == 16)
-   {
-      put_vr_qw(v1, get_vr_qw(v3));
-   }
-   else
-   {
+   } else {
+      /* Concatenate v2's tail with v3's head. */
       put_vr_qw(v1,
                 binop(Iop_OrV128,
                       binop(Iop_ShlV128, get_vr_qw(v2), mkU8(imm * 8)),

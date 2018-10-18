@@ -685,6 +685,11 @@ GDBSERVER_XML_FILES = \
 	m_gdbserver/s390x-linux64-valgrind-s1.xml \
 	m_gdbserver/s390x-linux64-valgrind-s2.xml \
 	m_gdbserver/s390x-linux64.xml \
+	m_gdbserver/s390-vx-valgrind-s1.xml \
+	m_gdbserver/s390-vx-valgrind-s2.xml \
+	m_gdbserver/s390-vx.xml \
+	m_gdbserver/s390x-vx-linux-valgrind.xml \
+	m_gdbserver/s390x-vx-linux.xml \
 	m_gdbserver/mips-cp0-valgrind-s1.xml \
 	m_gdbserver/mips-cp0-valgrind-s2.xml \
 	m_gdbserver/mips-cp0.xml \

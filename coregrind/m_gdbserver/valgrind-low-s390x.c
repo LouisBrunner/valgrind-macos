@@ -88,9 +88,42 @@ static struct reg regs[] = {
   { "f14", 2592, 64 },
   { "f15", 2656, 64 },
   { "orig_r2", 2720, 64 },
+  { "v0l", 2784, 64 },
+  { "v1l", 2848, 64 },
+  { "v2l", 2912, 64 },
+  { "v3l", 2976, 64 },
+  { "v4l", 3040, 64 },
+  { "v5l", 3104, 64 },
+  { "v6l", 3168, 64 },
+  { "v7l", 3232, 64 },
+  { "v8l", 3296, 64 },
+  { "v9l", 3360, 64 },
+  { "v10l", 3424, 64 },
+  { "v11l", 3488, 64 },
+  { "v12l", 3552, 64 },
+  { "v13l", 3616, 64 },
+  { "v14l", 3680, 64 },
+  { "v15l", 3744, 64 },
+  { "v16", 3808, 128 },
+  { "v17", 3936, 128 },
+  { "v18", 4064, 128 },
+  { "v19", 4192, 128 },
+  { "v20", 4320, 128 },
+  { "v21", 4448, 128 },
+  { "v22", 4576, 128 },
+  { "v23", 4704, 128 },
+  { "v24", 4832, 128 },
+  { "v25", 4960, 128 },
+  { "v26", 5088, 128 },
+  { "v27", 5216, 128 },
+  { "v28", 5344, 128 },
+  { "v29", 5472, 128 },
+  { "v30", 5600, 128 },
+  { "v31", 5728, 128 },
 };
 static const char *expedite_regs[] = { "r14", "r15", "pswa", 0 };
-#define num_regs (sizeof (regs) / sizeof (regs[0]))
+#define num_regs_all (sizeof (regs) / sizeof (regs[0]))
+static int num_regs;
 
 static
 CORE_ADDR get_pc (void)
@@ -165,7 +198,7 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
    case 32: VG_(transfer) (&s390x->guest_a14, buf, dir, size, mod); break;
    case 33: VG_(transfer) (&s390x->guest_a15, buf, dir, size, mod); break;
    case 34: VG_(transfer) (&s390x->guest_fpc, buf, dir, size, mod); break;
-   case 35: VG_(transfer) (&s390x->guest_v0,  buf, dir, size, mod); break;
+   case 35: VG_(transfer) (&s390x->guest_v0.w64[0],  buf, dir, size, mod); break;
    case 36: VG_(transfer) (&s390x->guest_v1.w64[0],  buf, dir, size, mod); break;
    case 37: VG_(transfer) (&s390x->guest_v2.w64[0],  buf, dir, size, mod); break;
    case 38: VG_(transfer) (&s390x->guest_v3.w64[0],  buf, dir, size, mod); break;
@@ -182,18 +215,65 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
    case 49: VG_(transfer) (&s390x->guest_v14.w64[0], buf, dir, size, mod); break;
    case 50: VG_(transfer) (&s390x->guest_v15.w64[0], buf, dir, size, mod); break;
    case 51:  *mod = False; break; //GDBTD??? { "orig_r2", 0, 64 },
+   case 52: VG_(transfer) (&s390x->guest_v0.w64[1],  buf, dir, size, mod); break;
+   case 53: VG_(transfer) (&s390x->guest_v1.w64[1],  buf, dir, size, mod); break;
+   case 54: VG_(transfer) (&s390x->guest_v2.w64[1],  buf, dir, size, mod); break;
+   case 55: VG_(transfer) (&s390x->guest_v3.w64[1],  buf, dir, size, mod); break;
+   case 56: VG_(transfer) (&s390x->guest_v4.w64[1],  buf, dir, size, mod); break;
+   case 57: VG_(transfer) (&s390x->guest_v5.w64[1],  buf, dir, size, mod); break;
+   case 58: VG_(transfer) (&s390x->guest_v6.w64[1],  buf, dir, size, mod); break;
+   case 59: VG_(transfer) (&s390x->guest_v7.w64[1],  buf, dir, size, mod); break;
+   case 60: VG_(transfer) (&s390x->guest_v8.w64[1],  buf, dir, size, mod); break;
+   case 61: VG_(transfer) (&s390x->guest_v9.w64[1],  buf, dir, size, mod); break;
+   case 62: VG_(transfer) (&s390x->guest_v10.w64[1], buf, dir, size, mod); break;
+   case 63: VG_(transfer) (&s390x->guest_v11.w64[1], buf, dir, size, mod); break;
+   case 64: VG_(transfer) (&s390x->guest_v12.w64[1], buf, dir, size, mod); break;
+   case 65: VG_(transfer) (&s390x->guest_v13.w64[1], buf, dir, size, mod); break;
+   case 66: VG_(transfer) (&s390x->guest_v14.w64[1], buf, dir, size, mod); break;
+   case 67: VG_(transfer) (&s390x->guest_v15.w64[1], buf, dir, size, mod); break;
+   case 68: VG_(transfer) (&s390x->guest_v16, buf, dir, size, mod); break;
+   case 69: VG_(transfer) (&s390x->guest_v17, buf, dir, size, mod); break;
+   case 70: VG_(transfer) (&s390x->guest_v18, buf, dir, size, mod); break;
+   case 71: VG_(transfer) (&s390x->guest_v19, buf, dir, size, mod); break;
+   case 72: VG_(transfer) (&s390x->guest_v20, buf, dir, size, mod); break;
+   case 73: VG_(transfer) (&s390x->guest_v21, buf, dir, size, mod); break;
+   case 74: VG_(transfer) (&s390x->guest_v22, buf, dir, size, mod); break;
+   case 75: VG_(transfer) (&s390x->guest_v23, buf, dir, size, mod); break;
+   case 76: VG_(transfer) (&s390x->guest_v24, buf, dir, size, mod); break;
+   case 77: VG_(transfer) (&s390x->guest_v25, buf, dir, size, mod); break;
+   case 78: VG_(transfer) (&s390x->guest_v26, buf, dir, size, mod); break;
+   case 79: VG_(transfer) (&s390x->guest_v27, buf, dir, size, mod); break;
+   case 80: VG_(transfer) (&s390x->guest_v28, buf, dir, size, mod); break;
+   case 81: VG_(transfer) (&s390x->guest_v29, buf, dir, size, mod); break;
+   case 82: VG_(transfer) (&s390x->guest_v30, buf, dir, size, mod); break;
+   case 83: VG_(transfer) (&s390x->guest_v31, buf, dir, size, mod); break;
    default: vg_assert(0);
    }
+}
+
+static
+Bool have_vx (void)
+{
+   VexArch va;
+   VexArchInfo vai;
+   VG_(machine_get_VexArchInfo) (&va, &vai);
+   return (vai.hwcaps & VEX_HWCAPS_S390X_VX) != 0;
 }
 
 static
 const char* target_xml (Bool shadow_mode)
 {
    if (shadow_mode) {
-      return "s390x-generic-valgrind.xml";
+      if (have_vx())
+         return "s390x-vx-linux-valgrind.xml";
+      else
+         return "s390x-generic-valgrind.xml";
    } else {
-      return "s390x-generic.xml";
-   }  
+      if (have_vx())
+         return "s390x-vx-linux.xml";
+      else
+         return "s390x-generic.xml";
+   }
 }
 
 static CORE_ADDR** target_get_dtv (ThreadState *tst)
@@ -206,7 +286,7 @@ static CORE_ADDR** target_get_dtv (ThreadState *tst)
 }
 
 static struct valgrind_target_ops low_target = {
-   num_regs,
+   -1, // Override at init time.
    regs,
    17, //sp = r15, which is register offset 17 in regs
    transfer_register,
@@ -220,6 +300,11 @@ static struct valgrind_target_ops low_target = {
 void s390x_init_architecture (struct valgrind_target_ops *target)
 {
    *target = low_target;
+   if (have_vx())
+      num_regs = num_regs_all;
+   else
+      num_regs = num_regs_all - 32; // Remove all VX registers.
+   target->num_regs = num_regs;
    set_register_cache (regs, num_regs);
    gdbserver_expedite_regs = expedite_regs;
 }

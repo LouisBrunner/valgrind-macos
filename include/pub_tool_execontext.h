@@ -80,11 +80,9 @@ ExeContext* VG_(record_depth_1_ExeContext)(ThreadId tid, Word first_ip_delta);
 // Apply a function to every element in the ExeContext.  The parameter 'n'
 // gives the index of the passed ip.  Doesn't go below main() unless
 // --show-below-main=yes is set.
-// Currently, the below function is unused. If ever it is used one day,
-// we should add epoch args similarly to function VG_(apply_StackTrace)
-// in pub_tool_stacktrace.h.
-extern void VG_(apply_ExeContext)( void(*action)(UInt n, Addr ip),
-                                   ExeContext* ec, UInt n_ips );
+extern void VG_(apply_ExeContext)(
+   void(*action)(UInt n, DiEpoch ep, Addr ip, void* opaque),
+   void* opaque, ExeContext* ec);
 
 // Compare two ExeContexts.  Number of callers considered depends on `res':
 //   Vg_LowRes:  2

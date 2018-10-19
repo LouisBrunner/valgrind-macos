@@ -225,13 +225,19 @@ void VG_(print_ExeContext_stats) ( Bool with_stacktraces )
    );
 }
 
-
 /* Print an ExeContext. */
 void VG_(pp_ExeContext) ( ExeContext* ec )
 {
    VG_(pp_StackTrace)( VG_(get_ExeContext_epoch)(ec), ec->ips, ec->n_ips );
 }
 
+void VG_(apply_ExeContext)(
+   void(*action)(UInt n, DiEpoch ep, Addr ip, void* opaque),
+   void* opaque, ExeContext* ec)
+{
+   VG_(apply_StackTrace)(action, opaque, VG_(get_ExeContext_epoch)(ec),
+                         ec->ips, ec->n_ips);
+}
 
 void VG_(archive_ExeContext_in_range) (DiEpoch last_epoch,
                                        Addr text_avma, SizeT length )

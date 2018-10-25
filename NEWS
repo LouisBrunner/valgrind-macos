@@ -47,6 +47,7 @@ where XXXXXX is the bug number as listed below.
 
 399301  Use inlined frames in Massif XTree output. 
 399322  Improve callgrind_annotate output
+400490  s390x: VRs allocated as if separate from FPRs
 
 Release 3.14.0 (9 October 2018)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

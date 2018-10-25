@@ -59,7 +59,6 @@ static UInt s390_tchain_load64_len(void);
 
 /* A mapping from register number to register index */
 static Int gpr_index[16];  // GPR regno -> register index
-static Int fpr_index[16];  // FPR regno -> register index
 static Int vr_index[32];   // VR regno -> register index
 
 HReg
@@ -73,7 +72,7 @@ s390_hreg_gpr(UInt regno)
 HReg
 s390_hreg_fpr(UInt regno)
 {
-   Int ix = fpr_index[regno];
+   Int ix = vr_index[regno];
    vassert(ix >= 0);
    return mkHReg(/*virtual*/False, HRcFlt64, regno, ix);
 }
@@ -463,11 +462,9 @@ getRRegUniverse_S390(void)
 
    RRegUniverse__init(ru);
 
-   /* Assign invalid values to the gpr/fpr/vr_index */
+   /* Assign invalid values to the gpr/vr_index */
    for (UInt i = 0; i < sizeof gpr_index / sizeof gpr_index[0]; ++i)
       gpr_index[i] = -1;
-   for (UInt i = 0; i < sizeof fpr_index / sizeof fpr_index[0]; ++i)
-      fpr_index[i] = -1;
    for (UInt i = 0; i < sizeof vr_index / sizeof vr_index[0]; ++i)
       vr_index[i] = -1;
 
@@ -494,17 +491,17 @@ getRRegUniverse_S390(void)
 
    ru->allocable_start[HRcFlt64] = ru->size;
    for (UInt regno = 8; regno <= 15; ++regno) {
-      fpr_index[regno] = ru->size;
+      vr_index[regno] = ru->size;
       ru->regs[ru->size++] = s390_hreg_fpr(regno);
    }
    for (UInt regno = 0; regno <= 7; ++regno) {
-      fpr_index[regno] = ru->size;
+      vr_index[regno] = ru->size;
       ru->regs[ru->size++] = s390_hreg_fpr(regno);
    }
    ru->allocable_end[HRcFlt64] = ru->size - 1;
 
    ru->allocable_start[HRcVec128] = ru->size;
-   for (UInt regno = 0; regno <= 31; ++regno) {
+   for (UInt regno = 16; regno <= 31; ++regno) {
       vr_index[regno] = ru->size;
       ru->regs[ru->size++] = s390_hreg_vr(regno);
    }
@@ -527,12 +524,12 @@ getRRegUniverse_S390(void)
    /* Sanity checking */
    for (UInt i = 0; i < sizeof gpr_index / sizeof gpr_index[0]; ++i)
       vassert(gpr_index[i] >= 0);
-   for (UInt i = 0; i < sizeof fpr_index / sizeof fpr_index[0]; ++i)
-      vassert(fpr_index[i] >= 0);
    for (UInt i = 0; i < sizeof vr_index / sizeof vr_index[0]; ++i)
       vassert(vr_index[i] >= 0);
                  
    initialised = True;
+
+   RRegUniverse__check_is_sane(ru);
    return ru;
 }
 

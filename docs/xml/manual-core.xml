@@ -1899,10 +1899,10 @@ need to use them.</para>
       function calls from DWARF3 debug info.  This slows Valgrind
       startup and makes it use more memory (typically for each inlined
       piece of code, 6 words and space for the function name), but it
-      results in more descriptive stacktraces.  For the 3.10.0
-      release, this functionality is enabled by default only for Linux,
-      Android and Solaris targets and only for the tools Memcheck, Helgrind
-      and DRD.  Here is an example of some stacktraces with
+      results in more descriptive stacktraces.  Currently,
+      this functionality is enabled by default only for Linux,
+      Android and Solaris targets and only for the tools Memcheck, Massif,
+      Helgrind and DRD.  Here is an example of some stacktraces with
       <option>--read-inline-info=no</option>:
 </para>
 <programlisting><![CDATA[
@@ -2988,6 +2988,9 @@ the "Massif Format".</para>
       <ulink url="&cl-gui-url;">KCachegrind</ulink>, which is a KDE/Qt based
       GUI that makes it easy to navigate the large amount of data that
       an xtree can contain.</para>
+    <para>Note that xtree Callgrind Format does not make use of the inline
+      information even when specifying <option>--read-inline-info=yes</option>.
+    </para>
   </listitem>
     
   <listitem>
@@ -3005,6 +3008,9 @@ the "Massif Format".</para>
       a massif output file. See <xref linkend="ms-manual.running-massif"/> and
       <xref linkend="ms-manual.using"/> for more details
       about visualising Massif Format output files.</para>
+    <para>Note that xtree Massif Format makes use of the inline
+      information when specifying <option>--read-inline-info=yes</option>.
+    </para>
   </listitem>
 
 </itemizedlist>

@@ -176,9 +176,10 @@ static void usage_NORETURN ( Bool debug_help )
 "                              code found in stacks, for all code, or for all\n"
 "                              code except that from file-backed mappings\n"
 "    --read-inline-info=yes|no read debug info about inlined function calls\n"
-"                              and use it to do better stack traces.  [yes]\n"
-"                              on Linux/Android/Solaris for Memcheck/Helgrind/DRD\n"
-"                              only.  [no] for all other tools and platforms.\n"
+"                              and use it to do better stack traces.\n"
+"                              [yes] on Linux/Android/Solaris for the tools\n"
+"                              Memcheck/Massif/Helgrind/DRD only.\n"
+"                              [no] for all other tools and platforms.\n"
 "    --read-var-info=yes|no    read debug info on stack and global variables\n"
 "                              and use it to print better error messages in\n"
 "                              tools that make use of it (Memcheck, Helgrind,\n"
@@ -1426,12 +1427,15 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    early_process_cmd_line_options(&need_help);
 
    // BEGIN HACK
+   // When changing the logic for the VG_(clo_read_inline_info) default,
+   // the manual and --help output have to be changed accordingly.
    vg_assert(VG_(clo_toolname) != NULL);
    vg_assert(VG_(clo_read_inline_info) == False);
 #  if !defined(VGO_darwin)
    if (0 == VG_(strcmp)(VG_(clo_toolname), "memcheck")
        || 0 == VG_(strcmp)(VG_(clo_toolname), "helgrind")
        || 0 == VG_(strcmp)(VG_(clo_toolname), "drd")
+       || 0 == VG_(strcmp)(VG_(clo_toolname), "massif")
        || 0 == VG_(strcmp)(VG_(clo_toolname), "exp-dhat")) {
       /* Change the default setting.  Later on (just below)
          main_process_cmd_line_options should pick up any

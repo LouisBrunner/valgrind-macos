@@ -762,6 +762,7 @@
 /massif/tests/ignored
 /massif/tests/ignoring
 /massif/tests/insig
+/massif/tests/inlinfomalloc
 /massif/tests/long-names
 /massif/tests/long-time
 /massif/tests/malloc_usable

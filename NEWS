@@ -12,6 +12,8 @@ support for X86/macOS 10.13, AMD64/macOS 10.13.
 
 * ==================== CORE CHANGES ===================
 
+* The XTree Massif output format now makes use of the information obtained
+  when specifying --read-inline-info=yes.
 
 * ================== PLATFORM CHANGES =================
 
@@ -20,8 +22,12 @@ support for X86/macOS 10.13, AMD64/macOS 10.13.
 
 * Callgrind:
 
-  - callgrind_annotate now inserts commas in call counts, and 
+  - callgrind_annotate now inserts commas in call counts, and
     sort the caller/callee lists in the call tree.
+
+* Massif:
+  - The default value for --read-inline-info is now "yes" on
+    Linux/Android/Solaris. It is still "no" on other OS.
 
 * ==================== OTHER CHANGES ====================
 
@@ -39,6 +45,7 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
+399301  Use inlined frames in Massif XTree output. 
 399322  Improve callgrind_annotate output
 
 Release 3.14.0 (9 October 2018)

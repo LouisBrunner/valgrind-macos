@@ -1,0 +1,69 @@
+--------------------------------------------------------------------------------
+Command:            ./inlinfomalloc
+Massif arguments:   --stacks=no --heap-admin=0 --time-unit=B --threshold=0 --detailed-freq=6 --massif-out-file=massif.out --ignore-fn=__part_load_locale --ignore-fn=__time_load_locale --ignore-fn=dwarf2_unwind_dyld_add_image_hook --ignore-fn=get_or_create_key_element
+ms_print arguments: --threshold=0 massif.out
+--------------------------------------------------------------------------------
+
+
+    MB
+7.057^                                                                       @
+     |                                                                       @
+     |                                                                       @
+     |                                                                       @
+     |                                                                       @
+     |                                                                       @
+     |                                                                       @
+     |                                                                       @
+     |                                                                       @
+     |                                                                       @
+     |                                    :::::::::::::::::::::::::::::::::::@
+     |                                    :                                  @
+     |                                    :                                  @
+     |                                    :                                  @
+     |                                    :                                  @
+     |                                    :                                  @
+     |                                    :                                  @
+     |             ::::::::::::::::::::::::                                  @
+     |             :                      :                                  @
+     |    ::::::::::                      :                                  @
+   0 +----------------------------------------------------------------------->MB
+     0                                                                   7.057
+
+Number of snapshots: 6
+ Detailed snapshots: [5]
+
+--------------------------------------------------------------------------------
+  n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+--------------------------------------------------------------------------------
+  0              0                0                0             0            0
+  1        100,000          100,000          100,000             0            0
+  2        500,000          500,000          500,000             0            0
+  3      1,400,000        1,400,000        1,400,000             0            0
+  4      3,700,000        3,700,000        3,700,000             0            0
+  5      7,400,000        7,400,000        7,400,000             0            0
+100.00% (7,400,000B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->100.00% (7,400,000B) 0x........: alloc (inlinfomalloc.c:7)
+  ->50.00% (3,700,000B) 0x........: fun_noninline_o (inlinfomalloc.c:48)
+  | ->50.00% (3,700,000B) 0x........: fun_f (inlinfomalloc.c:54)
+  |   ->50.00% (3,700,000B) 0x........: fun_e (inlinfomalloc.c:60)
+  |     ->50.00% (3,700,000B) 0x........: fun_noninline_n (inlinfomalloc.c:66)
+  |       ->50.00% (3,700,000B) 0x........: main (inlinfomalloc.c:76)
+  |         
+  ->31.08% (2,300,000B) 0x........: fun_d (inlinfomalloc.c:15)
+  | ->31.08% (2,300,000B) 0x........: main (inlinfomalloc.c:75)
+  |   
+  ->12.16% (900,000B) 0x........: fun_d (inlinfomalloc.c:15)
+  | ->12.16% (900,000B) 0x........: fun_noninline_m (inlinfomalloc.c:39)
+  |   ->12.16% (900,000B) 0x........: main (inlinfomalloc.c:74)
+  |     
+  ->05.41% (400,000B) 0x........: fun_d (inlinfomalloc.c:15)
+  | ->05.41% (400,000B) 0x........: fun_c (inlinfomalloc.c:21)
+  |   ->05.41% (400,000B) 0x........: fun_b (inlinfomalloc.c:27)
+  |     ->05.41% (400,000B) 0x........: main (inlinfomalloc.c:73)
+  |       
+  ->01.35% (100,000B) 0x........: fun_d (inlinfomalloc.c:15)
+    ->01.35% (100,000B) 0x........: fun_c (inlinfomalloc.c:21)
+      ->01.35% (100,000B) 0x........: fun_b (inlinfomalloc.c:27)
+        ->01.35% (100,000B) 0x........: fun_a (inlinfomalloc.c:33)
+          ->01.35% (100,000B) 0x........: main (inlinfomalloc.c:72)
+            

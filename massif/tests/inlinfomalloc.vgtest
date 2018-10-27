@@ -1,0 +1,6 @@
+prog: inlinfomalloc
+vgopts: --stacks=no --heap-admin=0 --time-unit=B --threshold=0 --detailed-freq=6 --massif-out-file=massif.out
+vgopts: --ignore-fn=__part_load_locale --ignore-fn=__time_load_locale --ignore-fn=dwarf2_unwind_dyld_add_image_hook --ignore-fn=get_or_create_key_element
+stderr_filter: filter_verbose
+post: perl ../../massif/ms_print --threshold=0 massif.out | ../../tests/filter_addresses
+cleanup: rm massif.out

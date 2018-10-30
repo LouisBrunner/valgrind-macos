@@ -16307,7 +16307,7 @@ static const HChar *
 s390_irgen_LOCHHI(UChar r1, UChar m3, UShort i2, UChar unused)
 {
    next_insn_if(binop(Iop_CmpEQ32, s390_call_calculate_cond(m3), mkU32(0)));
-   put_gpr_w0(r1, mkU32(i2));
+   put_gpr_w0(r1, mkU32((UInt)(Int)(Short)i2));
 
    return "lochhi";
 }
@@ -16316,7 +16316,7 @@ static const HChar *
 s390_irgen_LOCHI(UChar r1, UChar m3, UShort i2, UChar unused)
 {
    next_insn_if(binop(Iop_CmpEQ32, s390_call_calculate_cond(m3), mkU32(0)));
-   put_gpr_w1(r1, mkU32(i2));
+   put_gpr_w1(r1, mkU32((UInt)(Int)(Short)i2));
 
    return "lochi";
 }
@@ -16325,7 +16325,7 @@ static const HChar *
 s390_irgen_LOCGHI(UChar r1, UChar m3, UShort i2, UChar unused)
 {
    next_insn_if(binop(Iop_CmpEQ32, s390_call_calculate_cond(m3), mkU32(0)));
-   put_gpr_dw0(r1, mkU64(i2));
+   put_gpr_dw0(r1, mkU64((UInt)(Int)(Short)i2));
 
    return "locghi";
 }

@@ -87,29 +87,29 @@ VgdbShared64 *shared64;
 
 #define VS_vgdb_pid (shared32 != NULL ? shared32->vgdb_pid : shared64->vgdb_pid)
 
-void *vmalloc (size_t size)
+void *vmalloc(size_t size)
 {
-   void * mem = malloc (size);
+   void * mem = malloc(size);
    if (mem == NULL)
-      XERROR (errno, "can't allocate memory\n");
+      XERROR(errno, "can't allocate memory\n");
    return mem;
 }
 
-void *vrealloc (void *ptr,size_t size)
+void *vrealloc(void *ptr,size_t size)
 {
-   void * mem = realloc (ptr, size);
+   void * mem = realloc(ptr, size);
    if (mem == NULL)
-      XERROR (errno, "can't reallocate memory\n");
+      XERROR(errno, "can't reallocate memory\n");
    return mem;
 }
 
 /* Return the name of a directory for temporary files. */
 static
-const char *vgdb_tmpdir (void)
+const char *vgdb_tmpdir(void)
 {
    const char *tmpdir;
 
-   tmpdir = getenv ("TMPDIR");
+   tmpdir = getenv("TMPDIR");
    if (tmpdir == NULL || *tmpdir == '\0')
      tmpdir = VG_TMPDIR;
    if (tmpdir == NULL || *tmpdir == '\0')
@@ -121,81 +121,81 @@ const char *vgdb_tmpdir (void)
 /* Return the default path prefix for the named pipes (FIFOs) used by vgdb/gdb
    to communicate with valgrind */
 static
-char *vgdb_prefix_default (void)
+char *vgdb_prefix_default(void)
 {
    static HChar *prefix;
 
    if (prefix == NULL) {
-      const char *tmpdir = vgdb_tmpdir ();
-      prefix = vmalloc (strlen (tmpdir) + strlen ("/vgdb-pipe") + 1);
-      strcpy (prefix, tmpdir);
-      strcat (prefix, "/vgdb-pipe");
+      const char *tmpdir = vgdb_tmpdir();
+      prefix = vmalloc(strlen(tmpdir) + strlen("/vgdb-pipe") + 1);
+      strcpy(prefix, tmpdir);
+      strcat(prefix, "/vgdb-pipe");
    }
    return prefix;
 }
 
 /* add nrw to the written_by_vgdb field of shared32 or shared64 */
 static
-void add_written (int nrw)
+void add_written(int nrw)
 {
    if (shared32 != NULL)
       shared32->written_by_vgdb += nrw;
    else if (shared64 != NULL)
       shared64->written_by_vgdb += nrw;
    else
-      assert (0);
+      assert(0);
 }
 
 static int shared_mem_fd = -1;
 static
-void map_vgdbshared (char* shared_mem)
+void map_vgdbshared(char* shared_mem)
 {
    struct stat fdstat;
    void **s;
-   shared_mem_fd = open (shared_mem, O_RDWR);
+   shared_mem_fd = open(shared_mem, O_RDWR);
    /* shared_mem_fd will not be closed till vgdb exits. */
 
    if (shared_mem_fd == -1)
-      XERROR (errno, "error opening %s shared memory file\n", shared_mem);
+      XERROR(errno, "error opening %s shared memory file\n", shared_mem);
 
-   if (fstat (shared_mem_fd, &fdstat) != 0)
-      XERROR (errno, "fstat");
+   if (fstat(shared_mem_fd, &fdstat) != 0)
+      XERROR(errno, "fstat");
 
-   if (fdstat.st_size == sizeof (VgdbShared64))
+   if (fdstat.st_size == sizeof(VgdbShared64))
       s = (void*) &shared64;
-   else if (fdstat.st_size == sizeof (VgdbShared32))
+   else if (fdstat.st_size == sizeof(VgdbShared32))
       s = (void*) &shared32;
    else
 #if VEX_HOST_WORDSIZE == 8
-      XERROR (0,
-              "error size shared memory file %s.\n"
-              "expecting size %d (64bits) or %d (32bits) got %ld.\n",
-              shared_mem,
-              (int) sizeof (VgdbShared64), (int) sizeof (VgdbShared32),
-              (long int)fdstat.st_size);
+      XERROR(0,
+             "error size shared memory file %s.\n"
+             "expecting size %d (64bits) or %d (32bits) got %ld.\n",
+             shared_mem,
+             (int) sizeof(VgdbShared64), (int) sizeof(VgdbShared32),
+             (long int)fdstat.st_size);
 #elif VEX_HOST_WORDSIZE == 4
-      XERROR (0,
-              "error size shared memory file %s.\n"
-              "expecting size %d (32bits) got %ld.\n",
-              shared_mem,
-              (int) sizeof (VgdbShared32),
-              fdstat.st_size);
+      XERROR(0,
+             "error size shared memory file %s.\n"
+             "expecting size %d (32bits) got %ld.\n",
+             shared_mem,
+             (int) sizeof(VgdbShared32),
+             fdstat.st_size);
 #else
 # error "unexpected wordsize"
 #endif
 
 #if VEX_HOST_WORDSIZE == 4
    if (shared64 != NULL)
-      XERROR (0, "cannot use 32 bits vgdb with a 64bits valgrind process\n");
+      XERROR(0, "cannot use 32 bits vgdb with a 64bits valgrind process\n");
    /* But we can use a 64 bits vgdb with a 32 bits valgrind */
 #endif
 
-   *s = (void*) mmap (NULL, fdstat.st_size,
-                      PROT_READ|PROT_WRITE, MAP_SHARED,
-                      shared_mem_fd, 0);
+   *s = (void*) mmap(NULL, fdstat.st_size,
+                     PROT_READ|PROT_WRITE, MAP_SHARED,
+                     shared_mem_fd, 0);
 
    if (*s == (void *) -1)
-      XERROR (errno, "error mmap shared memory file %s\n", shared_mem);
+      XERROR(errno, "error mmap shared memory file %s\n", shared_mem);
 
 }
 
@@ -208,7 +208,7 @@ static int max_invoke_ms = 100;
 #define NEVER 99999999
 static int cmd_time_out = NEVER;
 static
-void *invoke_gdbserver_in_valgrind (void *v_pid)
+void *invoke_gdbserver_in_valgrind(void *v_pid)
 {
    struct timeval cmd_max_end_time;
    Bool cmd_started = False;
@@ -221,28 +221,28 @@ void *invoke_gdbserver_in_valgrind (void *v_pid)
    int invoked_written = -1;
    unsigned int usecs;
 
-   pthread_cleanup_push (invoker_cleanup_restore_and_detach, v_pid);
+   pthread_cleanup_push(invoker_cleanup_restore_and_detach, v_pid);
 
    while (!shutting_down) {
       written_by_vgdb_before_sleep = VS_written_by_vgdb;
       seen_by_valgrind_before_sleep = VS_seen_by_valgrind;
-      DEBUG (3,
-             "written_by_vgdb_before_sleep %d "
-             "seen_by_valgrind_before_sleep %d\n",
-             written_by_vgdb_before_sleep,
-             seen_by_valgrind_before_sleep);
+      DEBUG(3,
+            "written_by_vgdb_before_sleep %d "
+            "seen_by_valgrind_before_sleep %d\n",
+            written_by_vgdb_before_sleep,
+            seen_by_valgrind_before_sleep);
       if (cmd_time_out != NEVER
           && !cmd_started
           && written_by_vgdb_before_sleep > seen_by_valgrind_before_sleep) {
          /* A command was started. Record the time at which it was started. */
-         DEBUG (1, "IO for command started\n");
-         gettimeofday (&cmd_max_end_time, NULL);
+         DEBUG(1, "IO for command started\n");
+         gettimeofday(&cmd_max_end_time, NULL);
          cmd_max_end_time.tv_sec += cmd_time_out;
          cmd_started = True;
       }
       if (max_invoke_ms > 0) {
          usecs = 1000 * max_invoke_ms;
-         gettimeofday (&invoke_time, NULL);
+         gettimeofday(&invoke_time, NULL);
          invoke_time.tv_sec += max_invoke_ms / 1000;
          invoke_time.tv_usec += 1000 * (max_invoke_ms % 1000);
          invoke_time.tv_sec += invoke_time.tv_usec / (1000 * 1000);
@@ -257,7 +257,7 @@ void *invoke_gdbserver_in_valgrind (void *v_pid)
          if (usecs == 0 || usecs > 1000 * 1000)
             usecs = 1000 * 1000;
       }
-      usleep (usecs);
+      usleep(usecs);
 
       /* If nothing happened during our sleep, let's try to wake up valgrind
          or check for cmd time out. */
@@ -265,31 +265,31 @@ void *invoke_gdbserver_in_valgrind (void *v_pid)
           && seen_by_valgrind_before_sleep == VS_seen_by_valgrind
           && VS_written_by_vgdb > VS_seen_by_valgrind) {
          struct timeval now;
-         gettimeofday (&now, NULL);
-         DEBUG (2,
-                "after sleep "
-                "written_by_vgdb %d "
-                "seen_by_valgrind %d "
-                "invoked_written %d\n",
-                VS_written_by_vgdb,
-                VS_seen_by_valgrind,
-                invoked_written);
+         gettimeofday(&now, NULL);
+         DEBUG(2,
+               "after sleep "
+               "written_by_vgdb %d "
+               "seen_by_valgrind %d "
+               "invoked_written %d\n",
+               VS_written_by_vgdb,
+               VS_seen_by_valgrind,
+               invoked_written);
          /* if the pid does not exist anymore, we better stop */
-         if (kill (pid, 0) != 0)
-           XERROR (errno,
-                   "invoke_gdbserver_in_valgrind: "
-                   "check for pid %d existence failed\n", pid);
+         if (kill(pid, 0) != 0)
+           XERROR(errno,
+                  "invoke_gdbserver_in_valgrind: "
+                  "check for pid %d existence failed\n", pid);
          if (cmd_started) {
-            if (timercmp (&now, &cmd_max_end_time, >))
-               XERROR (0,
-                       "pid %d did not handle a command in %d seconds\n",
-                       pid, cmd_time_out);
+            if (timercmp(&now, &cmd_max_end_time, >))
+               XERROR(0,
+                      "pid %d did not handle a command in %d seconds\n",
+                      pid, cmd_time_out);
          }
          if (max_invoke_ms > 0 && timercmp (&now, &invoke_time, >=)) {
             /* only need to wake up if the nr written has changed since
                last invoke. */
             if (invoked_written != written_by_vgdb_before_sleep) {
-               if (invoker_invoke_gdbserver (pid)) {
+               if (invoker_invoke_gdbserver(pid)) {
                   /* If invoke successful, no need to invoke again
                      for the same value of written_by_vgdb_before_sleep. */
                   invoked_written = written_by_vgdb_before_sleep;
@@ -299,25 +299,25 @@ void *invoke_gdbserver_in_valgrind (void *v_pid)
       } else {
          // Something happened => restart timer check.
          if (cmd_time_out != NEVER) {
-            DEBUG (2, "some IO was done => restart command\n");
+            DEBUG(2, "some IO was done => restart command\n");
             cmd_started = False;
          }
       }
    }
-   pthread_cleanup_pop (0);
+   pthread_cleanup_pop(0);
    return NULL;
 }
 
 static
-int open_fifo (const char* name, int flags, const char* desc)
+int open_fifo(const char* name, int flags, const char* desc)
 {
    int fd;
-   DEBUG (1, "opening %s %s\n", name, desc);
-   fd = open (name, flags);
+   DEBUG(1, "opening %s %s\n", name, desc);
+   fd = open(name, flags);
    if (fd == -1)
-      XERROR (errno, "error opening %s %s\n", name, desc);
+      XERROR(errno, "error opening %s %s\n", name, desc);
 
-   DEBUG (1, "opened %s %s fd %d\n", name, desc, fd);
+   DEBUG(1, "opened %s %s fd %d\n", name, desc, fd);
    return fd;
 }
 
@@ -326,33 +326,33 @@ int open_fifo (const char* name, int flags, const char* desc)
    This allows to avoid having two vgdb speaking with the same Valgrind
    gdbserver as this causes serious headaches to the protocol. */
 static
-void acquire_lock (int fd, int valgrind_pid)
+void acquire_lock(int fd, int valgrind_pid)
 {
    struct flock fl;
    fl.l_type = F_WRLCK;
    fl.l_whence = SEEK_SET;
    fl.l_start = 0;
    fl.l_len = 1;
-   if (fcntl (fd, F_SETLK, &fl) < 0) {
+   if (fcntl(fd, F_SETLK, &fl) < 0) {
       if (errno == EAGAIN || errno == EACCES) {
-         XERROR (errno,
-                 "Cannot acquire lock.\n"
-                 "Probably vgdb pid %d already speaks with Valgrind pid %d\n",
-                 VS_vgdb_pid,
-                 valgrind_pid);
+         XERROR(errno,
+                "Cannot acquire lock.\n"
+                "Probably vgdb pid %d already speaks with Valgrind pid %d\n",
+                VS_vgdb_pid,
+                valgrind_pid);
       } else {
-         XERROR (errno, "cannot acquire lock.\n");
+         XERROR(errno, "cannot acquire lock.\n");
       }
    }
 
    /* Here, we have the lock. It will be released when fd will be closed. */
    /* We indicate our pid to Valgrind gdbserver */
    if (shared32 != NULL)
-      shared32->vgdb_pid = getpid ();
+      shared32->vgdb_pid = getpid();
    else if (shared64 != NULL)
-      shared64->vgdb_pid = getpid ();
+      shared64->vgdb_pid = getpid();
    else
-      assert (0);
+      assert(0);
 }
 
 #define PBUFSIZ 16384 /* keep in sync with server.h */
@@ -361,17 +361,17 @@ void acquire_lock (int fd, int valgrind_pid)
    Returns the nr of characters read, -1 if error.
    desc is a string used in tracing */
 static
-int read_buf (int fd, char* buf, const char* desc)
+int read_buf(int fd, char* buf, const char* desc)
 {
    int nrread;
-   DEBUG (2, "reading %s\n", desc);
-   nrread = read (fd, buf, PBUFSIZ);
+   DEBUG(2, "reading %s\n", desc);
+   nrread = read(fd, buf, PBUFSIZ);
    if (nrread == -1) {
-      ERROR (errno, "error reading %s\n", desc);
+      ERROR(errno, "error reading %s\n", desc);
       return -1;
    }
    buf[nrread] = '\0';
-   DEBUG (2, "read %s %s\n", desc, buf);
+   DEBUG(2, "read %s %s\n", desc, buf);
    return nrread;
 }
 
@@ -381,22 +381,22 @@ int read_buf (int fd, char* buf, const char* desc)
    valgrind process that there is new data.
    Returns True if write is ok, False if there was a problem. */
 static
-Bool write_buf (int fd, const char* buf, int size, const char* desc, Bool notify)
+Bool write_buf(int fd, const char* buf, int size, const char* desc, Bool notify)
 {
    int nrwritten;
    int nrw;
-   DEBUG (2, "writing %s len %d %.*s notify: %d\n", desc, size,
-          size, buf, notify);
+   DEBUG(2, "writing %s len %d %.*s notify: %d\n", desc, size,
+         size, buf, notify);
    nrwritten = 0;
    while (nrwritten < size) {
-      nrw = write (fd, buf+nrwritten, size - nrwritten);
+      nrw = write(fd, buf+nrwritten, size - nrwritten);
       if (nrw == -1) {
-         ERROR (errno, "error write %s\n", desc);
+         ERROR(errno, "error write %s\n", desc);
          return False;
       }
       nrwritten = nrwritten + nrw;
       if (notify)
-         add_written (nrw);
+         add_written(nrw);
    }
    return True;
 }
@@ -408,7 +408,7 @@ typedef enum {
    TO_PID } ConnectionKind;
 static const int NumConnectionKind = TO_PID+1;
 static
-const char *ppConnectionKind (ConnectionKind con)
+const char *ppConnectionKind(ConnectionKind con)
 {
    switch (con) {
    case FROM_GDB: return "FROM_GDB";
@@ -427,22 +427,22 @@ static char *from_gdb_to_pid; /* fifo name to write gdb command to pid */
    Returns False in case of error.
    to_pid is the file descriptor to write to the process pid. */
 static
-Bool read_from_gdb_write_to_pid (int to_pid)
+Bool read_from_gdb_write_to_pid(int to_pid)
 {
    char buf[PBUFSIZ+1]; // +1 for trailing \0
    int nrread;
 
-   nrread = read_buf (from_gdb, buf, "from gdb on stdin");
+   nrread = read_buf(from_gdb, buf, "from gdb on stdin");
    if (nrread <= 0) {
       if (nrread == 0)
-         DEBUG (1, "read 0 bytes from gdb => assume exit\n");
+         DEBUG(1, "read 0 bytes from gdb => assume exit\n");
       else
-         DEBUG (1, "error reading bytes from gdb\n");
-      close (from_gdb);
+         DEBUG(1, "error reading bytes from gdb\n");
+      close(from_gdb);
       shutting_down = True;
       return False;
    }
-   return write_buf (to_pid, buf, nrread, "to_pid", /* notify */ True);
+   return write_buf(to_pid, buf, nrread, "to_pid", /* notify */ True);
 }
 
 static int to_gdb = 1; /* stdout by default, changed if --port is given. */
@@ -451,114 +451,114 @@ static char *to_gdb_from_pid; /* fifo name to read pid replies */
    Returns False in case of error.
    from_pid is the file descriptor to read data from the process pid. */
 static
-Bool read_from_pid_write_to_gdb (int from_pid)
+Bool read_from_pid_write_to_gdb(int from_pid)
 {
    char buf[PBUFSIZ+1]; // +1 for trailing \0
    int nrread;
 
-   nrread = read_buf (from_pid, buf, "from pid");
+   nrread = read_buf(from_pid, buf, "from pid");
    if (nrread <= 0) {
       if (nrread == 0)
-         DEBUG (1, "read 0 bytes from pid => assume exit\n");
+         DEBUG(1, "read 0 bytes from pid => assume exit\n");
       else
-         DEBUG (1, "error reading bytes from pid\n");
-      close (from_pid);
+         DEBUG(1, "error reading bytes from pid\n");
+      close(from_pid);
       shutting_down = True;
       return False;
    }
-   return write_buf (to_gdb, buf, nrread, "to_gdb", /* notify */ False);
+   return write_buf(to_gdb, buf, nrread, "to_gdb", /* notify */ False);
 }
 
 static
-void wait_for_gdb_connect (int in_port)
+void wait_for_gdb_connect(int in_port)
 {
    struct sockaddr_in addr;
 
-   int listen_gdb = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP);
+   int listen_gdb = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
    int gdb_connect;
 
    if (-1 == listen_gdb) {
-      XERROR (errno, "cannot create socket");
+      XERROR(errno, "cannot create socket");
    }
 
-    memset (&addr, 0, sizeof(addr));
+    memset(&addr, 0, sizeof(addr));
 
     addr.sin_family = AF_INET;
-    addr.sin_port = htons ((unsigned short int)in_port);
+    addr.sin_port = htons((unsigned short int)in_port);
     addr.sin_addr.s_addr = INADDR_ANY;
 
-    if (-1 == bind (listen_gdb, (struct sockaddr *)&addr, sizeof(addr))) {
-      XERROR (errno, "bind failed");
+    if (-1 == bind(listen_gdb, (struct sockaddr *)&addr, sizeof(addr))) {
+      XERROR(errno, "bind failed");
     }
-    fprintf (stderr, "listening on port %d ...", in_port);
-    fflush (stderr);
-    if (-1 == listen (listen_gdb, 1)) {
-      XERROR (errno, "error listen failed");
+    fprintf(stderr, "listening on port %d ...", in_port);
+    fflush(stderr);
+    if (-1 == listen(listen_gdb, 1)) {
+      XERROR(errno, "error listen failed");
     }
 
-    gdb_connect = accept (listen_gdb, NULL, NULL);
+    gdb_connect = accept(listen_gdb, NULL, NULL);
     if (gdb_connect < 0) {
-        XERROR (errno, "accept failed");
+        XERROR(errno, "accept failed");
     }
-    fprintf (stderr, "connected.\n");
-    fflush (stderr);
-    close (listen_gdb);
+    fprintf(stderr, "connected.\n");
+    fflush(stderr);
+    close(listen_gdb);
     from_gdb = gdb_connect;
     to_gdb = gdb_connect;
 }
 
 /* prepares the FIFOs filenames, map the shared memory. */
 static
-void prepare_fifos_and_shared_mem (int pid)
+void prepare_fifos_and_shared_mem(int pid)
 {
    const HChar *user, *host;
    unsigned len;
 
-   user = getenv ("LOGNAME");
-   if (user == NULL) user = getenv ("USER");
+   user = getenv("LOGNAME");
+   if (user == NULL) user = getenv("USER");
    if (user == NULL) user = "???";
-   if (strchr (user, '/')) user = "???";
+   if (strchr(user, '/')) user = "???";
 
-   host = getenv ("HOST");
-   if (host == NULL) host = getenv ("HOSTNAME");
+   host = getenv("HOST");
+   if (host == NULL) host = getenv("HOSTNAME");
    if (host == NULL) host = "???";
-   if (strchr (host, '/')) host = "???";
+   if (strchr(host, '/')) host = "???";
 
-   len = strlen (vgdb_prefix) + strlen (user) + strlen (host) + 40;
-   from_gdb_to_pid = vmalloc (len);
-   to_gdb_from_pid = vmalloc (len);
-   shared_mem      = vmalloc (len);
+   len = strlen(vgdb_prefix) + strlen(user) + strlen(host) + 40;
+   from_gdb_to_pid = vmalloc(len);
+   to_gdb_from_pid = vmalloc(len);
+   shared_mem      = vmalloc(len);
    /* below 3 lines must match the equivalent in remote-utils.c */
-   sprintf (from_gdb_to_pid, "%s-from-vgdb-to-%d-by-%s-on-%s",    vgdb_prefix,
-            pid, user, host);
-   sprintf (to_gdb_from_pid, "%s-to-vgdb-from-%d-by-%s-on-%s",    vgdb_prefix,
-            pid, user, host);
-   sprintf (shared_mem,      "%s-shared-mem-vgdb-%d-by-%s-on-%s", vgdb_prefix,
-            pid, user, host);
-   DEBUG (1, "vgdb: using %s %s %s\n",
-          from_gdb_to_pid, to_gdb_from_pid, shared_mem);
+   sprintf(from_gdb_to_pid, "%s-from-vgdb-to-%d-by-%s-on-%s",    vgdb_prefix,
+           pid, user, host);
+   sprintf(to_gdb_from_pid, "%s-to-vgdb-from-%d-by-%s-on-%s",    vgdb_prefix,
+           pid, user, host);
+   sprintf(shared_mem,      "%s-shared-mem-vgdb-%d-by-%s-on-%s", vgdb_prefix,
+           pid, user, host);
+   DEBUG(1, "vgdb: using %s %s %s\n",
+         from_gdb_to_pid, to_gdb_from_pid, shared_mem);
 
-   map_vgdbshared (shared_mem);
+   map_vgdbshared(shared_mem);
 }
 
 /* Convert hex digit A to a number.  */
 
 static int
-fromhex (int a)
+fromhex(int a)
 {
    if (a >= '0' && a <= '9')
       return a - '0';
    else if (a >= 'a' && a <= 'f')
       return a - 'a' + 10;
    else
-      XERROR (0, "Reply contains invalid hex digit %c\n", a);
+      XERROR(0, "Reply contains invalid hex digit %c\n", a);
   return 0;
 }
 
 /* Returns next char from fd.  -1 if error, -2 if EOF.
    NB: must always call it with the same fd */
 static int
-readchar (int fd)
+readchar(int fd)
 {
   static char buf[PBUFSIZ+1]; // +1 for trailing \0
   static int bufcnt = 0;
@@ -568,14 +568,14 @@ readchar (int fd)
   if (bufcnt-- > 0)
      return *bufp++;
 
-  bufcnt = read_buf (fd, buf, "static buf readchar");
+  bufcnt = read_buf(fd, buf, "static buf readchar");
 
   if (bufcnt <= 0) {
      if (bufcnt == 0) {
-        fprintf (stderr, "readchar: Got EOF\n");
+        fprintf(stderr, "readchar: Got EOF\n");
         return -2;
      } else {
-        ERROR (errno, "readchar\n");
+        ERROR(errno, "readchar\n");
         return -1;
      }
   }
@@ -590,7 +590,7 @@ readchar (int fd)
    If checksum incorrect, writes a - on ackfd.
    Returns length of packet, or -1 if error or -2 if EOF. */
 static int
-getpkt (char *buf, int fromfd, int ackfd)
+getpkt(char *buf, int fromfd, int ackfd)
 {
   char *bp;
   unsigned char csum, c1, c2;
@@ -600,17 +600,17 @@ getpkt (char *buf, int fromfd, int ackfd)
      csum = 0;
 
      while (1) {
-        c = readchar (fromfd);
+        c = readchar(fromfd);
         if (c == '$')
            break;
-        DEBUG (2, "[getpkt: discarding char '%c']\n", c);
+        DEBUG(2, "[getpkt: discarding char '%c']\n", c);
         if (c < 0)
            return c;
      }
 
      bp = buf;
      while (1) {
-        c = readchar (fromfd);
+        c = readchar(fromfd);
         if (c < 0)
            return c;
         if (c == '#')
@@ -621,7 +621,7 @@ getpkt (char *buf, int fromfd, int ackfd)
            int prev;
            prev = *(bp-1);
            csum += c;
-           repeat = readchar (fromfd);
+           repeat = readchar(fromfd);
            csum += repeat;
            for (r = 0; r < repeat - 29; r ++)
               *bp++ = prev;
@@ -632,21 +632,21 @@ getpkt (char *buf, int fromfd, int ackfd)
      }
      *bp = 0;
 
-     c1 = fromhex (readchar (fromfd));
-     c2 = fromhex (readchar (fromfd));
+     c1 = fromhex(readchar (fromfd));
+     c2 = fromhex(readchar (fromfd));
 
      if (csum == (c1 << 4) + c2)
 	break;
 
-     fprintf (stderr, "Bad checksum, sentsum=0x%x, csum=0x%x, buf=%s\n",
-              (c1 << 4) + c2, csum, buf);
-     if (write (ackfd, "-", 1) != 1)
-        ERROR (0, "error when writing - (nack)\n");
+     fprintf(stderr, "Bad checksum, sentsum=0x%x, csum=0x%x, buf=%s\n",
+             (c1 << 4) + c2, csum, buf);
+     if (write(ackfd, "-", 1) != 1)
+        ERROR(0, "error when writing - (nack)\n");
      else
-        add_written (1);
+        add_written(1);
   }
 
-  DEBUG (2, "getpkt (\"%s\");  [no ack] \n", buf);
+  DEBUG(2, "getpkt (\"%s\");  [no ack] \n", buf);
   return bp - buf;
 }
 
@@ -660,7 +660,7 @@ static int sigusr1_fd = -1;
 static pthread_t invoke_gdbserver_in_valgrind_thread;
 
 static
-void received_signal (int signum)
+void received_signal(int signum)
 {
    if (signum == SIGINT)
       sigint++;
@@ -668,8 +668,8 @@ void received_signal (int signum)
       sigusr1++;
       if (sigusr1_fd >= 0) {
          char control_c = '\003';
-         write_buf (sigusr1_fd, &control_c, 1,
-                    "write \\003 on SIGUSR1", /* notify */ True);
+         write_buf(sigusr1_fd, &control_c, 1,
+                   "write \\003 on SIGUSR1", /* notify */ True);
       }
    }
    else if (signum == SIGTERM) {
@@ -682,43 +682,43 @@ void received_signal (int signum)
       sigpipe++;
    } else if (signum == SIGALRM) {
       sigalrm++;
-#if defined (VGPV_arm_linux_android) \
-    || defined (VGPV_x86_linux_android) \
-    || defined (VGPV_mips32_linux_android) \
-    || defined (VGPV_arm64_linux_android)
+#if defined(VGPV_arm_linux_android) \
+    || defined(VGPV_x86_linux_android) \
+    || defined(VGPV_mips32_linux_android) \
+    || defined(VGPV_arm64_linux_android)
       /* Android has no pthread_cancel. As it also does not have
          an invoker implementation, there is no need for cleanup action.
          So, we just do nothing. */
-      DEBUG (1, "sigalrm received, no action on android\n");
+      DEBUG(1, "sigalrm received, no action on android\n");
 #else
       /* Note: we cannot directly invoke restore_and_detach : this must
          be done by the thread that has attached.
          We have in this thread pushed a cleanup handler that will
          cleanup what is needed. */
-      DEBUG (1, "pthread_cancel invoke_gdbserver_in_valgrind_thread\n");
-      pthread_cancel (invoke_gdbserver_in_valgrind_thread);
+      DEBUG(1, "pthread_cancel invoke_gdbserver_in_valgrind_thread\n");
+      pthread_cancel(invoke_gdbserver_in_valgrind_thread);
 #endif
    } else {
-      ERROR (0, "unexpected signal %d\n", signum);
+      ERROR(0, "unexpected signal %d\n", signum);
    }
 }
 
 /* install the signal handlers allowing e.g. vgdb to cleanup in
    case of termination. */
 static
-void install_handlers (void)
+void install_handlers(void)
 {
    struct sigaction action, oldaction;
 
    action.sa_handler = received_signal;
-   sigemptyset (&action.sa_mask);
+   sigemptyset(&action.sa_mask);
    action.sa_flags = 0;
 
    /* SIGINT: when user types C-c in gdb, this sends
       a SIGINT to vgdb + causes a character to be sent to remote gdbserver.
       The later is enough to wakeup the valgrind process. */
-   if (sigaction (SIGINT, &action, &oldaction) != 0)
-      XERROR (errno, "vgdb error sigaction SIGINT\n");
+   if (sigaction(SIGINT, &action, &oldaction) != 0)
+      XERROR(errno, "vgdb error sigaction SIGINT\n");
    /* We might do something more intelligent than just
       reporting this SIGINT E.g. behave similarly to the gdb: two
       control-C without feedback from the debugged process would
@@ -726,39 +726,39 @@ void install_handlers (void)
 
    /* SIGUSR1: this is used to facilitate automatic testing.  When
       vgdb receives this signal, it will simulate the user typing C-c. */
-   if (sigaction (SIGUSR1, &action, &oldaction) != 0)
-      XERROR (errno, "vgdb error sigaction SIGUSR1\n");
+   if (sigaction(SIGUSR1, &action, &oldaction) != 0)
+      XERROR(errno, "vgdb error sigaction SIGUSR1\n");
 
 
    /* SIGTERM: can receive this signal (e.g. from gdb) to terminate vgdb
       when detaching or similar. A clean shutdown will be done as both
       the read and write side will detect an end of file. */
-   if (sigaction (SIGTERM, &action, &oldaction) != 0)
-      XERROR (errno, "vgdb error sigaction SIGTERM\n");
+   if (sigaction(SIGTERM, &action, &oldaction) != 0)
+      XERROR(errno, "vgdb error sigaction SIGTERM\n");
 
    /* SIGPIPE: can receive this signal when gdb detaches or kill the
       process debugged: gdb will close its pipes to vgdb. vgdb
       must resist to this signal to allow a clean shutdown. */
-   if (sigaction (SIGPIPE, &action, &oldaction) != 0)
-      XERROR (errno, "vgdb error sigaction SIGPIPE\n");
+   if (sigaction(SIGPIPE, &action, &oldaction) != 0)
+      XERROR(errno, "vgdb error sigaction SIGPIPE\n");
 
    /* SIGALRM: in case invoke thread is blocked, alarm is used
       to cleanup.  */
-   if (sigaction (SIGALRM, &action, &oldaction) != 0)
-      XERROR (errno, "vgdb error sigaction SIGALRM\n");
+   if (sigaction(SIGALRM, &action, &oldaction) != 0)
+      XERROR(errno, "vgdb error sigaction SIGALRM\n");
 
    /* unmask all signals, in case the process that launched vgdb
       masked some. */
-   if (sigprocmask (SIG_SETMASK, &action.sa_mask, NULL) != 0)
-      XERROR (errno, "vgdb error sigprocmask");
+   if (sigprocmask(SIG_SETMASK, &action.sa_mask, NULL) != 0)
+      XERROR(errno, "vgdb error sigprocmask");
 }
 
 /* close the FIFOs provided connections, terminate the invoker thread.  */
 static
-void close_connection (int to_pid, int from_pid)
+void close_connection(int to_pid, int from_pid)
 {
-   DEBUG (1, "nr received signals: sigint %d sigterm %d sighup %d sigpipe %d\n",
-          sigint, sigterm, sighup, sigpipe);
+   DEBUG(1, "nr received signals: sigint %d sigterm %d sighup %d sigpipe %d\n",
+         sigint, sigterm, sighup, sigpipe);
    /* Note that we do not forward sigterm to the valgrind process:
       a sigterm signal is (probably) received from gdb if the user wants to
       kill the debugged process. The kill instruction has been given to
@@ -768,8 +768,8 @@ void close_connection (int to_pid, int from_pid)
       terminates its gdbserver work. We keep the from pid
       fifo opened till the invoker thread is finished.
       This allows the gdbserver to finish sending its last reply. */
-   if (close (to_pid) != 0)
-      ERROR (errno, "close to_pid\n");
+   if (close(to_pid) != 0)
+      ERROR(errno, "close to_pid\n");
 
    /* if there is a task that was busy trying to wake up valgrind
       process, we wait for it to be terminated otherwise threads
@@ -802,39 +802,39 @@ void close_connection (int to_pid, int from_pid)
          normal case, the gdbserver code in valgrind process must have
          returned the control in less than the alarm nr of seconds,
          otherwise, valgrind will stop abnormally with SIGSTOP. */
-      (void) alarm (3);
+      (void) alarm(3);
 
-      DEBUG (1, "joining with invoke_gdbserver_in_valgrind_thread\n");
-      join = pthread_join (invoke_gdbserver_in_valgrind_thread, NULL);
+      DEBUG(1, "joining with invoke_gdbserver_in_valgrind_thread\n");
+      join = pthread_join(invoke_gdbserver_in_valgrind_thread, NULL);
       if (join != 0)
          XERROR
             (join,
              "vgdb error pthread_join invoke_gdbserver_in_valgrind_thread\n");
    }
-   if (close (from_pid) != 0)
-      ERROR (errno, "close from_pid\n");
+   if (close(from_pid) != 0)
+      ERROR(errno, "close from_pid\n");
 }
 
 /* Relay data between gdb and Valgrind gdbserver, till EOF or an
    error is encountered. */
 static
-void gdb_relay (int pid)
+void gdb_relay(int pid)
 {
    int from_pid = -1; /* fd to read from pid */
    int to_pid = -1; /* fd to write to pid */
 
    int shutdown_loop = 0;
-   fprintf (stderr, "relaying data between gdb and process %d\n", pid);
-   fflush (stderr);
+   fprintf(stderr, "relaying data between gdb and process %d\n", pid);
+   fflush(stderr);
 
    if (max_invoke_ms > 0)
-      pthread_create (&invoke_gdbserver_in_valgrind_thread, NULL,
-                      invoke_gdbserver_in_valgrind, (void *) &pid);
-   to_pid = open_fifo (from_gdb_to_pid, O_WRONLY, "write to pid");
-   acquire_lock (shared_mem_fd, pid);
+      pthread_create(&invoke_gdbserver_in_valgrind_thread, NULL,
+                     invoke_gdbserver_in_valgrind, (void *) &pid);
+   to_pid = open_fifo(from_gdb_to_pid, O_WRONLY, "write to pid");
+   acquire_lock(shared_mem_fd, pid);
 
-   from_pid = open_fifo (to_gdb_from_pid, O_RDONLY|O_NONBLOCK,
-                         "read mode from pid");
+   from_pid = open_fifo(to_gdb_from_pid, O_RDONLY|O_NONBLOCK,
+                        "read mode from pid");
 
    sigusr1_fd = to_pid; /* allow simulating user typing control-c */
 
@@ -859,16 +859,16 @@ void gdb_relay (int pid)
       pollfds[TO_PID].events = 0;
       pollfds[TO_PID].revents = 0;
 
-      ret = poll (pollfds,
-                  NumConnectionKind,
-                  (shutting_down ?
-                   1 /* one second */
-                   : -1 /* infinite */));
-      DEBUG (2, "poll ret %d errno %d\n", ret, errno);
+      ret = poll(pollfds,
+                 NumConnectionKind,
+                 (shutting_down ?
+                  1 /* one second */
+                  : -1 /* infinite */));
+      DEBUG(2, "poll ret %d errno %d\n", ret, errno);
 
       /* check for unexpected error */
       if (ret <= 0 && errno != EINTR) {
-         ERROR (errno, "unexpected poll ret %d\n", ret);
+         ERROR(errno, "unexpected poll ret %d\n", ret);
          shutting_down = True;
          break;
       }
@@ -878,15 +878,15 @@ void gdb_relay (int pid)
          if (pollfds[ck].revents & POLLIN) {
             switch (ck) {
             case FROM_GDB:
-               if (!read_from_gdb_write_to_pid (to_pid))
+               if (!read_from_gdb_write_to_pid(to_pid))
                   shutting_down = True;
                break;
             case FROM_PID:
-               if (!read_from_pid_write_to_gdb (from_pid))
+               if (!read_from_pid_write_to_gdb(from_pid))
                   shutting_down = True;
                break;
-            default: XERROR (0, "unexpected POLLIN on %s\n",
-                             ppConnectionKind (ck));
+            default: XERROR(0, "unexpected POLLIN on %s\n",
+                               ppConnectionKind(ck));
             }
          }
       }
@@ -894,21 +894,21 @@ void gdb_relay (int pid)
       /* check for an fd being in error condition */
       for (ck = 0; ck < NumConnectionKind; ck ++) {
          if (pollfds[ck].revents & POLLERR) {
-            DEBUG (1, "connection %s fd %d POLLERR error condition\n",
-                   ppConnectionKind (ck), pollfds[ck].fd);
-            invoker_valgrind_dying ();
+            DEBUG(1, "connection %s fd %d POLLERR error condition\n",
+                     ppConnectionKind(ck), pollfds[ck].fd);
+            invoker_valgrind_dying();
             shutting_down = True;
          }
          if (pollfds[ck].revents & POLLHUP) {
-            DEBUG (1, "connection %s fd %d POLLHUP error condition\n",
-                   ppConnectionKind (ck), pollfds[ck].fd);
-            invoker_valgrind_dying ();
+            DEBUG(1, "connection %s fd %d POLLHUP error condition\n",
+                  ppConnectionKind(ck), pollfds[ck].fd);
+            invoker_valgrind_dying();
             shutting_down = True;
          }
          if (pollfds[ck].revents & POLLNVAL) {
-            DEBUG (1, "connection %s fd %d POLLNVAL error condition\n",
-                   ppConnectionKind (ck), pollfds[ck].fd);
-            invoker_valgrind_dying ();
+            DEBUG(1, "connection %s fd %d POLLNVAL error condition\n",
+                  ppConnectionKind(ck), pollfds[ck].fd);
+            invoker_valgrind_dying();
             shutting_down = True;
          }
       }
@@ -920,22 +920,22 @@ void gdb_relay (int pid)
             break;
       }
    }
-   close_connection (to_pid, from_pid);
+   close_connection(to_pid, from_pid);
 }
 
-static int packet_len_for_command (char *cmd)
+static int packet_len_for_command(char *cmd)
 {
    /* cmd will be send as a packet $qRcmd,xxxx....................xx#cc      */
-   return                          7+     2*strlen (cmd)            +3  + 1;
+   return                          7+     2*strlen(cmd)             +3  + 1;
 }
 
 /* hyper-minimal protocol implementation that
    sends the provided commands (using qRcmd packets)
    and read and display their replies. */
 static
-void standalone_send_commands (int pid,
-                               int last_command,
-                               char *commands[] )
+void standalone_send_commands(int pid,
+                              int last_command,
+                              char *commands[] )
 {
    int from_pid = -1; /* fd to read from pid */
    int to_pid = -1; /* fd to write to pid */
@@ -951,11 +951,11 @@ void standalone_send_commands (int pid,
 
 
    if (max_invoke_ms > 0 || cmd_time_out != NEVER)
-      pthread_create (&invoke_gdbserver_in_valgrind_thread, NULL,
-                      invoke_gdbserver_in_valgrind, (void *) &pid);
+      pthread_create(&invoke_gdbserver_in_valgrind_thread, NULL,
+                     invoke_gdbserver_in_valgrind, (void *) &pid);
 
-   to_pid = open_fifo (from_gdb_to_pid, O_WRONLY, "write to pid");
-   acquire_lock (shared_mem_fd, pid);
+   to_pid = open_fifo(from_gdb_to_pid, O_WRONLY, "write to pid");
+   acquire_lock(shared_mem_fd, pid);
 
    /* first send a C-c \003 to pid, so that it wakes up the process
       After that, we can open the fifo from the pid in read mode
@@ -963,108 +963,108 @@ void standalone_send_commands (int pid,
       At that point, we send our command and expect replies */
    buf[0] = '\003';
    i = 0;
-   while (!write_buf (to_pid, buf, 1,
-                      "write \\003 to wake up", /* notify */ True)) {
+   while (!write_buf(to_pid, buf, 1,
+                     "write \\003 to wake up", /* notify */ True)) {
       /* If write fails, retries up to 10 times every 0.5 seconds
          This aims at solving the race condition described in
          remote-utils.c remote_finish function. */
-      usleep (500 * 1000);
+      usleep(500*1000);
       i++;
       if (i >= 10)
-         XERROR (errno, "failed to send wake up char after 10 trials\n");
+         XERROR(errno, "failed to send wake up char after 10 trials\n");
    }
-   from_pid = open_fifo (to_gdb_from_pid, O_RDONLY,
-                         "read cmd result from pid");
+   from_pid = open_fifo(to_gdb_from_pid, O_RDONLY,
+                        "read cmd result from pid");
 
    /* Enable no ack mode. */
-   write_buf (to_pid, "$QStartNoAckMode#b0", 19, "write start no ack mode",
-              /* notify */ True);
-   buflen = getpkt (buf, from_pid, to_pid);
-   if (buflen != 2 || strcmp (buf, "OK") != 0) {
+   write_buf(to_pid, "$QStartNoAckMode#b0", 19, "write start no ack mode",
+             /* notify */ True);
+   buflen = getpkt(buf, from_pid, to_pid);
+   if (buflen != 2 || strcmp(buf, "OK") != 0) {
       if (buflen != 2)
-         ERROR (0, "no ack mode: unexpected buflen %d\n", buflen);
+         ERROR(0, "no ack mode: unexpected buflen %d\n", buflen);
       else
-         ERROR (0, "no ack mode: unexpected packet %s\n", buf);
+         ERROR(0, "no ack mode: unexpected packet %s\n", buf);
    }
 
    for (nc = 0; nc <= last_command; nc++) {
-      fprintf (stderr, "sending command %s to pid %d\n", commands[nc], pid);
-      fflush (stderr);
+      fprintf(stderr, "sending command %s to pid %d\n", commands[nc], pid);
+      fflush(stderr);
 
       /* prepare hexcommand $qRcmd,xxxx....................xx#cc      */
-      hexcommand = vmalloc (packet_len_for_command (commands[nc]));
+      hexcommand = vmalloc(packet_len_for_command(commands[nc]));
       hexcommand[0] = 0;
-      strcat (hexcommand, "$qRcmd,");
-      for (i = 0; i < strlen (commands[nc]); i++) {
-         sprintf (hex, "%02x", (unsigned char) commands[nc][i]);
+      strcat(hexcommand, "$qRcmd,");
+      for (i = 0; i < strlen(commands[nc]); i++) {
+         sprintf(hex, "%02x", (unsigned char) commands[nc][i]);
          // Need to use unsigned char, to avoid sign extension.
-         strcat (hexcommand, hex);
+         strcat(hexcommand, hex);
       }
       /* checksum (but without the $) */
       cksum = 0;
-      for (hi = 1; hi < strlen (hexcommand); hi++)
+      for (hi = 1; hi < strlen(hexcommand); hi++)
          cksum+=hexcommand[hi];
-      strcat (hexcommand, "#");
-      sprintf (hex, "%02x", cksum);
-      strcat (hexcommand, hex);
-      write_buf (to_pid, hexcommand, strlen (hexcommand),
-                 "writing hex command to pid", /* notify */ True);
+      strcat(hexcommand, "#");
+      sprintf(hex, "%02x", cksum);
+      strcat(hexcommand, hex);
+      write_buf(to_pid, hexcommand, strlen(hexcommand),
+                "writing hex command to pid", /* notify */ True);
 
       /* we exit of the below loop explicitly when the command has
          been handled or because a signal handler will set
          shutting_down. */
       while (!shutting_down) {
-         buflen = getpkt (buf, from_pid, to_pid);
+         buflen = getpkt(buf, from_pid, to_pid);
          if (buflen < 0) {
-            ERROR (0, "error reading packet\n");
+            ERROR(0, "error reading packet\n");
             if (buflen == -2)
-               invoker_valgrind_dying ();
+               invoker_valgrind_dying();
             break;
          }
-         if (strlen (buf) == 0) {
-            DEBUG (0, "empty packet rcvd (packet qRcmd not recognised?)\n");
+         if (strlen(buf) == 0) {
+            DEBUG(0, "empty packet rcvd (packet qRcmd not recognised?)\n");
             break;
          }
-         if (strcmp (buf, "OK") == 0) {
-            DEBUG (1, "OK packet rcvd\n");
+         if (strcmp(buf, "OK") == 0) {
+            DEBUG(1, "OK packet rcvd\n");
             break;
          }
          if (buf[0] == 'E') {
-            DEBUG (0,
-                   "E NN error packet rcvd: %s (unknown monitor command?)\n",
-                   buf);
+            DEBUG(0,
+                  "E NN error packet rcvd: %s (unknown monitor command?)\n",
+                  buf);
             break;
          }
          if (buf[0] == 'W') {
-            DEBUG (0, "W stopped packet rcvd: %s\n", buf);
+            DEBUG(0, "W stopped packet rcvd: %s\n", buf);
             break;
          }
          if (buf[0] == 'T') {
-            DEBUG (1, "T resume reply packet received: %s\n", buf);
+            DEBUG(1, "T resume reply packet received: %s\n", buf);
             continue;
          }
 
          /* must be here an O packet with hex encoded string reply
             => decode and print it */
          if (buf[0] != 'O') {
-            DEBUG (0, "expecting O packet, received: %s\n", buf);
+            DEBUG(0, "expecting O packet, received: %s\n", buf);
             continue;
          }
          {
             char buf_print[buflen/2 + 1];
             for (i = 1; i < buflen; i = i + 2)
-               buf_print[i/2] = (fromhex (*(buf+i)) << 4)
-                     + fromhex (*(buf+i+1));
+               buf_print[i/2] = (fromhex(*(buf+i)) << 4)
+                     + fromhex(*(buf+i+1));
             buf_print[buflen/2] = 0;
-            printf ("%s", buf_print);
-            fflush (stdout);
+            printf("%s", buf_print);
+            fflush(stdout);
          }
       }
-      free (hexcommand);
+      free(hexcommand);
    }
    shutting_down = True;
 
-   close_connection (to_pid, from_pid);
+   close_connection(to_pid, from_pid);
 }
 
 /* report to user the existence of a vgdb-able valgrind process
@@ -1073,20 +1073,20 @@ void standalone_send_commands (int pid,
    while producing the command line for pid, as this is not critical
    and at least on MacOS, reading cmdline is not available. */
 static
-void report_pid (int pid, Bool on_stdout)
+void report_pid(int pid, Bool on_stdout)
 {
    char cmdline_file[50];   // large enough
    int fd, i;
    FILE *out = on_stdout ? stdout : stderr;
 
-   fprintf (out, "use --pid=%d for ", pid);
+   fprintf(out, "use --pid=%d for ", pid);
 
-   sprintf (cmdline_file, "/proc/%d/cmdline", pid);
-   fd = open (cmdline_file, O_RDONLY);
+   sprintf(cmdline_file, "/proc/%d/cmdline", pid);
+   fd = open(cmdline_file, O_RDONLY);
    if (fd == -1) {
-      DEBUG (1, "error opening cmdline file %s %s\n",
-             cmdline_file, strerror (errno));
-      fprintf (out, "(could not open process command line)\n");
+      DEBUG(1, "error opening cmdline file %s %s\n",
+            cmdline_file, strerror(errno));
+      fprintf(out, "(could not open process command line)\n");
    } else {
       char cmdline[100];
       ssize_t sz;
@@ -1095,23 +1095,23 @@ void report_pid (int pid, Bool on_stdout)
             if (cmdline[i] == 0)
                cmdline[i] = ' ';
          cmdline[sz] = 0;
-         fprintf (out, "%s", cmdline);
+         fprintf(out, "%s", cmdline);
       }
       if (sz == -1) {
-         DEBUG (1, "error reading cmdline file %s %s\n",
-                cmdline_file, strerror (errno));
-         fprintf (out, "(error reading process command line)");
+         DEBUG(1, "error reading cmdline file %s %s\n",
+               cmdline_file, strerror(errno));
+         fprintf(out, "(error reading process command line)");
       }
-      fprintf (out, "\n");
-      close (fd);
+      fprintf(out, "\n");
+      close(fd);
    }
-   fflush (out);
+   fflush(out);
 }
 
 static
-void usage (void)
+void usage(void)
 {
-   fprintf (stderr,
+   fprintf(stderr,
 "Usage: vgdb [OPTION]... [[-c] COMMAND]...\n"
 "vgdb (valgrind gdb) has two usages\n"
 "  1. standalone to send monitor commands to a Valgrind gdbserver.\n"
@@ -1143,9 +1143,9 @@ void usage (void)
 "\n"
 "  -h --help shows this message\n"
 "  To get help from the Valgrind gdbserver, use vgdb help\n"
-"\n", vgdb_prefix_default ()
+"\n", vgdb_prefix_default()
            );
-   invoker_restrictions_msg ();
+   invoker_restrictions_msg();
 }
 
 /* If show_list, outputs on stdout the list of Valgrind processes with gdbserver activated.
@@ -1161,14 +1161,14 @@ void usage (void)
    or exits in case of error (e.g. no pid found corresponding to arg_pid */
 
 static
-int search_arg_pid (int arg_pid, int check_trials, Bool show_list)
+int search_arg_pid(int arg_pid, int check_trials, Bool show_list)
 {
    int i;
    int pid = -1;
 
    if (arg_pid == 0 || arg_pid < -1) {
-      fprintf (stderr, "vgdb error: invalid pid %d given\n", arg_pid);
-      exit (1);
+      fprintf(stderr, "vgdb error: invalid pid %d given\n", arg_pid);
+      exit(1);
    } else {
       /* search for a matching named fifo.
          If we have been given a pid, we will check that the matching FIFO is
@@ -1178,29 +1178,29 @@ int search_arg_pid (int arg_pid, int check_trials, Bool show_list)
          If we find multiple processes with valid FIFO, we report them and will
          exit with an error. */
       DIR *vgdb_dir;
-      char *vgdb_dir_name = vmalloc (strlen (vgdb_prefix) + 3);
+      char *vgdb_dir_name = vmalloc(strlen (vgdb_prefix) + 3);
       struct dirent *f;
       int is;
       int nr_valid_pid = 0;
       const char *suffix = "-from-vgdb-to-"; /* followed by pid */
-      char *vgdb_format = vmalloc (strlen (vgdb_prefix) + strlen (suffix) + 1);
+      char *vgdb_format = vmalloc(strlen(vgdb_prefix) + strlen(suffix) + 1);
 
-      strcpy (vgdb_format, vgdb_prefix);
-      strcat (vgdb_format, suffix);
+      strcpy(vgdb_format, vgdb_prefix);
+      strcat(vgdb_format, suffix);
 
-      if (strchr (vgdb_prefix, '/') != NULL) {
-         strcpy (vgdb_dir_name, vgdb_prefix);
-         for (is = strlen (vgdb_prefix) - 1; is >= 0; is--)
+      if (strchr(vgdb_prefix, '/') != NULL) {
+         strcpy(vgdb_dir_name, vgdb_prefix);
+         for (is = strlen(vgdb_prefix) - 1; is >= 0; is--)
             if (vgdb_dir_name[is] == '/') {
                vgdb_dir_name[is+1] = '\0';
                break;
             }
       } else {
-         strcpy (vgdb_dir_name, "");
+         strcpy(vgdb_dir_name, "");
       }
 
-      DEBUG (1, "searching pid in directory %s format %s\n",
-             vgdb_dir_name, vgdb_format);
+      DEBUG(1, "searching pid in directory %s format %s\n",
+            vgdb_dir_name, vgdb_format);
 
       /* try to find FIFOs with valid pid.
          On exit of the loop, pid is set to:
@@ -1210,42 +1210,42 @@ int search_arg_pid (int arg_pid, int check_trials, Bool show_list)
          otherwise it is set to the (only) pid found that can be debugged
       */
       for (i = 0; i < check_trials; i++) {
-         DEBUG (1, "check_trial %d \n", i);
+         DEBUG(1, "check_trial %d \n", i);
          if (i > 0)
            /* wait one second before checking again */
-           sleep (1);
+           sleep(1);
 
-         vgdb_dir = opendir (strlen (vgdb_dir_name) ? vgdb_dir_name : "./");
+         vgdb_dir = opendir(strlen(vgdb_dir_name) ? vgdb_dir_name : "./");
          if (vgdb_dir == NULL)
-            XERROR (errno,
-                    "vgdb error: opening directory %s searching vgdb fifo\n",
-                    vgdb_dir_name);
+            XERROR(errno,
+                   "vgdb error: opening directory %s searching vgdb fifo\n",
+                   vgdb_dir_name);
 
          errno = 0; /* avoid complain if vgdb_dir is empty */
-         while ((f = readdir (vgdb_dir))) {
+         while ((f = readdir(vgdb_dir))) {
             struct stat st;
-            char pathname[strlen (vgdb_dir_name) + strlen (f->d_name) + 1];
+            char pathname[strlen(vgdb_dir_name) + strlen(f->d_name) + 1];
             char *wrongpid;
             int newpid;
 
-            strcpy (pathname, vgdb_dir_name);
-            strcat (pathname, f->d_name);
-            DEBUG (3, "checking pathname is FIFO %s\n", pathname);
-            if (stat (pathname, &st) != 0) {
+            strcpy(pathname, vgdb_dir_name);
+            strcat(pathname, f->d_name);
+            DEBUG(3, "checking pathname is FIFO %s\n", pathname);
+            if (stat(pathname, &st) != 0) {
                if (debuglevel >= 3)
-                  ERROR (errno, "vgdb error: stat %s searching vgdb fifo\n",
-                         pathname);
-            } else if (S_ISFIFO (st.st_mode)) {
-               DEBUG (3, "trying FIFO %s\n", pathname);
-               if (strncmp (pathname, vgdb_format,
-                            strlen (vgdb_format)) == 0) {
-                  newpid = strtol (pathname + strlen (vgdb_format),
-                                   &wrongpid, 10);
+                  ERROR(errno, "vgdb error: stat %s searching vgdb fifo\n",
+                        pathname);
+            } else if (S_ISFIFO(st.st_mode)) {
+               DEBUG(3, "trying FIFO %s\n", pathname);
+               if (strncmp(pathname, vgdb_format,
+                           strlen(vgdb_format)) == 0) {
+                  newpid = strtol(pathname + strlen(vgdb_format),
+                                  &wrongpid, 10);
                   if (*wrongpid == '-' && newpid > 0
-                      && kill (newpid, 0) == 0) {
+                      && kill(newpid, 0) == 0) {
                      nr_valid_pid++;
                      if (show_list) {
-                        report_pid (newpid, /*on_stdout*/ True);
+                        report_pid(newpid, /*on_stdout*/ True);
                         pid = newpid;
                      } else if (arg_pid != -1) {
                         if (arg_pid == newpid) {
@@ -1257,10 +1257,10 @@ int search_arg_pid (int arg_pid, int check_trials, Bool show_list)
                               (stderr,
                                "no --pid= arg given"
                                " and multiple valgrind pids found:\n");
-                           report_pid (pid, /*on_stdout*/ False);
+                           report_pid(pid, /*on_stdout*/ False);
                         }
                         pid = -2;
-                        report_pid (newpid, /*on_stdout*/ False);
+                        report_pid(newpid, /*on_stdout*/ False);
                      } else {
                         pid = newpid;
                      }
@@ -1270,31 +1270,31 @@ int search_arg_pid (int arg_pid, int check_trials, Bool show_list)
             errno = 0; /* avoid complain if at the end of vgdb_dir */
          }
          if (f == NULL && errno != 0)
-            XERROR (errno, "vgdb error: reading directory %s for vgdb fifo\n",
-                    vgdb_dir_name);
+            XERROR(errno, "vgdb error: reading directory %s for vgdb fifo\n",
+                   vgdb_dir_name);
 
-         closedir (vgdb_dir);
+         closedir(vgdb_dir);
          if (pid != -1)
             break;
       }
 
-      free (vgdb_dir_name);
-      free (vgdb_format);
+      free(vgdb_dir_name);
+      free(vgdb_format);
    }
 
    if (show_list) {
-      exit (1);
+      exit(1);
    } else if (pid == -1) {
       if (arg_pid == -1)
-         fprintf (stderr, "vgdb error: no FIFO found and no pid given\n");
+         fprintf(stderr, "vgdb error: no FIFO found and no pid given\n");
       else
-         fprintf (stderr, "vgdb error: no FIFO found matching pid %d\n",
-                  arg_pid);
-      exit (1);
+         fprintf(stderr, "vgdb error: no FIFO found matching pid %d\n",
+                 arg_pid);
+      exit(1);
    }
    else if (pid == -2) {
       /* no arg_pid given, multiple FIFOs found */
-      exit (1);
+      exit(1);
    }
    else {
       return pid;
@@ -1306,16 +1306,16 @@ int search_arg_pid (int arg_pid, int check_trials, Bool show_list)
    from arg. If True is returned, *value contains the
    extracted value.*/
 static
-Bool numeric_val (char* arg, int *value)
+Bool numeric_val(char* arg, int *value)
 {
-   const char *eq_pos = strchr (arg, '=');
+   const char *eq_pos = strchr(arg, '=');
    char *wrong;
    long long int long_value;
 
    if (eq_pos == NULL)
       return False;
 
-   long_value = strtoll (eq_pos+1, &wrong, 10);
+   long_value = strtoll(eq_pos+1, &wrong, 10);
    if (long_value < 0 || long_value > INT_MAX)
       return False;
    if (*wrong)
@@ -1327,13 +1327,13 @@ Bool numeric_val (char* arg, int *value)
 
 /* true if arg matches the provided option */
 static
-Bool is_opt (char* arg, const char *option)
+Bool is_opt(char* arg, const char *option)
 {
-   int option_len = strlen (option);
+   int option_len = strlen(option);
    if (option[option_len-1] == '=')
-      return (0 == strncmp (option, arg, option_len));
+      return (0 == strncmp(option, arg, option_len));
    else
-      return (0 == strcmp (option, arg));
+      return (0 == strcmp(option, arg));
 }
 
 /* Parse command lines options. If error(s), exits.
@@ -1342,14 +1342,14 @@ Bool is_opt (char* arg, const char *option)
    On return, *p_last_command gives the position in commands where
    the last command has been allocated (using vmalloc). */
 static
-void parse_options (int argc, char** argv,
-                    Bool *p_show_shared_mem,
-                    Bool *p_show_list,
-                    int *p_arg_pid,
-                    int *p_check_trials,
-                    int *p_port,
-                    int *p_last_command,
-                    char *commands[])
+void parse_options(int argc, char** argv,
+                   Bool *p_show_shared_mem,
+                   Bool *p_show_list,
+                   int *p_arg_pid,
+                   int *p_check_trials,
+                   int *p_port,
+                   int *p_last_command,
+                   char *commands[])
 {
    Bool show_shared_mem = False;
    Bool show_list = False;
@@ -1362,71 +1362,71 @@ void parse_options (int argc, char** argv,
    int arg_errors = 0;
 
    for (i = 1; i < argc; i++) {
-      if (is_opt (argv[i], "--help") || is_opt (argv[i], "-h")) {
-         usage ();
-         exit (0);
-      } else if (is_opt (argv[i], "-d")) {
+      if (is_opt(argv[i], "--help") || is_opt(argv[i], "-h")) {
+         usage();
+         exit(0);
+      } else if (is_opt(argv[i], "-d")) {
          debuglevel++;
-      } else if (is_opt (argv[i], "-D")) {
+      } else if (is_opt(argv[i], "-D")) {
          show_shared_mem = True;
-      } else if (is_opt (argv[i], "-l")) {
+      } else if (is_opt(argv[i], "-l")) {
          show_list = True;
-      } else if (is_opt (argv[i], "--pid=")) {
+      } else if (is_opt(argv[i], "--pid=")) {
          int newpid;
-         if (!numeric_val (argv[i], &newpid)) {
-            fprintf (stderr, "invalid --pid argument %s\n", argv[i]);
+         if (!numeric_val(argv[i], &newpid)) {
+            fprintf(stderr, "invalid --pid argument %s\n", argv[i]);
             arg_errors++;
          } else if (arg_pid != -1) {
-            fprintf (stderr, "multiple --pid arguments given\n");
+            fprintf(stderr, "multiple --pid arguments given\n");
             arg_errors++;
          } else {
             arg_pid = newpid;
          }
-      } else if (is_opt (argv[i], "--wait=")) {
-         if (!numeric_val (argv[i], &check_trials)) {
-            fprintf (stderr, "invalid --wait argument %s\n", argv[i]);
+      } else if (is_opt(argv[i], "--wait=")) {
+         if (!numeric_val(argv[i], &check_trials)) {
+            fprintf(stderr, "invalid --wait argument %s\n", argv[i]);
             arg_errors++;
          }
-      } else if (is_opt (argv[i], "--max-invoke-ms=")) {
-         if (!numeric_val (argv[i], &max_invoke_ms)) {
-            fprintf (stderr, "invalid --max-invoke-ms argument %s\n", argv[i]);
+      } else if (is_opt(argv[i], "--max-invoke-ms=")) {
+         if (!numeric_val(argv[i], &max_invoke_ms)) {
+            fprintf(stderr, "invalid --max-invoke-ms argument %s\n", argv[i]);
             arg_errors++;
          }
-      } else if (is_opt (argv[i], "--cmd-time-out=")) {
-         if (!numeric_val (argv[i], &cmd_time_out)) {
-            fprintf (stderr, "invalid --cmd-time-out argument %s\n", argv[i]);
+      } else if (is_opt(argv[i], "--cmd-time-out=")) {
+         if (!numeric_val(argv[i], &cmd_time_out)) {
+            fprintf(stderr, "invalid --cmd-time-out argument %s\n", argv[i]);
             arg_errors++;
          }
-      } else if (is_opt (argv[i], "--port=")) {
-         if (!numeric_val (argv[i], &int_port)) {
-            fprintf (stderr, "invalid --port argument %s\n", argv[i]);
+      } else if (is_opt(argv[i], "--port=")) {
+         if (!numeric_val(argv[i], &int_port)) {
+            fprintf(stderr, "invalid --port argument %s\n", argv[i]);
             arg_errors++;
          }
-      } else if (is_opt (argv[i], "--vgdb-prefix=")) {
+      } else if (is_opt(argv[i], "--vgdb-prefix=")) {
          vgdb_prefix = argv[i] + 14;
-      } else if (is_opt (argv[i], "-c")) {
+      } else if (is_opt(argv[i], "-c")) {
          last_command++;
-         commands[last_command] = vmalloc (1);
+         commands[last_command] = vmalloc(1);
          commands[last_command][0] = '\0';
-      } else if (0 == strncmp (argv[i], "-", 1)) {
-         fprintf (stderr, "unknown or invalid argument %s\n", argv[i]);
+      } else if (0 == strncmp(argv[i], "-", 1)) {
+         fprintf(stderr, "unknown or invalid argument %s\n", argv[i]);
          arg_errors++;
       } else {
          int len;
          if (last_command == -1) {
             /* only one command, no -c command indicator */
             last_command++;
-            commands[last_command] = vmalloc (1);
+            commands[last_command] = vmalloc(1);
             commands[last_command][0] = '\0';
          }
-         len = strlen (commands[last_command]);
-         commands[last_command] = vrealloc (commands[last_command],
-                                            len + 1 + strlen (argv[i]) + 1);
+         len = strlen(commands[last_command]);
+         commands[last_command] = vrealloc(commands[last_command],
+                                           len + 1 + strlen(argv[i]) + 1);
          if (len > 0)
-            strcat (commands[last_command], " ");
-         strcat (commands[last_command], argv[i]);
-         if (packet_len_for_command (commands[last_command]) > PBUFSIZ) {
-            fprintf (stderr, "command %s too long\n", commands[last_command]);
+            strcat(commands[last_command], " ");
+         strcat(commands[last_command], argv[i]);
+         if (packet_len_for_command(commands[last_command]) > PBUFSIZ) {
+            fprintf(stderr, "command %s too long\n", commands[last_command]);
             arg_errors++;
          }
 
@@ -1434,47 +1434,47 @@ void parse_options (int argc, char** argv,
    }
 
    if (vgdb_prefix == NULL)
-      vgdb_prefix = vgdb_prefix_default ();
+      vgdb_prefix = vgdb_prefix_default();
 
-   if (isatty (0)
+   if (isatty(0)
        && !show_shared_mem
        && !show_list
        && int_port == 0
        && last_command == -1) {
       arg_errors++;
-      fprintf (stderr,
-               "Using vgdb standalone implies to give -D or -l or a COMMAND\n");
+      fprintf(stderr,
+              "Using vgdb standalone implies to give -D or -l or a COMMAND\n");
    }
 
    if (show_shared_mem && show_list) {
       arg_errors++;
-      fprintf (stderr,
-               "Can't use both -D and -l options\n");
+      fprintf(stderr,
+              "Can't use both -D and -l options\n");
    }
 
    if (max_invoke_ms > 0
        && cmd_time_out != NEVER
        && (cmd_time_out * 1000) <= max_invoke_ms) {
       arg_errors++;
-      fprintf (stderr,
-               "--max-invoke-ms must be < --cmd-time-out * 1000\n");
+      fprintf(stderr,
+              "--max-invoke-ms must be < --cmd-time-out * 1000\n");
    }
 
    if (show_list && arg_pid != -1) {
       arg_errors++;
-      fprintf (stderr,
-               "Can't use both --pid and -l options\n");
+      fprintf(stderr,
+              "Can't use both --pid and -l options\n");
    }
 
    if (int_port > 0 && last_command != -1) {
       arg_errors++;
-      fprintf (stderr,
-               "Can't use --port to send commands\n");
+      fprintf(stderr,
+              "Can't use --port to send commands\n");
    }
 
    if (arg_errors > 0) {
-      fprintf (stderr, "args error. Try `vgdb --help` for more information\n");
-      exit (1);
+      fprintf(stderr, "args error. Try `vgdb --help` for more information\n");
+      exit(1);
    }
 
    *p_show_shared_mem = show_shared_mem;
@@ -1485,7 +1485,7 @@ void parse_options (int argc, char** argv,
    *p_last_command = last_command;
 }
 
-int main (int argc, char** argv)
+int main(int argc, char** argv)
 {
    int i;
    int pid;
@@ -1498,54 +1498,54 @@ int main (int argc, char** argv)
    int last_command;
    char *commands[argc]; // we will never have more commands than args.
 
-   parse_options (argc, argv,
-                  &show_shared_mem,
-                  &show_list,
-                  &arg_pid,
-                  &check_trials,
-                  &in_port,
-                  &last_command,
-                  commands);
+   parse_options(argc, argv,
+                 &show_shared_mem,
+                 &show_list,
+                 &arg_pid,
+                 &check_trials,
+                 &in_port,
+                 &last_command,
+                 commands);
 
    /* when we are working as a relay for gdb, handle some signals by
       only reporting them (according to debug level). Also handle these
       when ptrace will be used: vgdb must clean up the ptrace effect before
       dying. */
    if (max_invoke_ms > 0 || last_command == -1)
-      install_handlers ();
+      install_handlers();
 
-   pid = search_arg_pid (arg_pid, check_trials, show_list);
+   pid = search_arg_pid(arg_pid, check_trials, show_list);
 
-   prepare_fifos_and_shared_mem (pid);
+   prepare_fifos_and_shared_mem(pid);
 
    if (in_port > 0)
-      wait_for_gdb_connect (in_port);
+      wait_for_gdb_connect(in_port);
 
    if (show_shared_mem) {
-      fprintf (stderr,
-               "vgdb %d "
-               "written_by_vgdb %d "
-               "seen_by_valgrind %d\n"
-               "vgdb pid %d\n",
-               VS_vgdb_pid,
-               VS_written_by_vgdb,
-               VS_seen_by_valgrind,
-               VS_vgdb_pid);
-      exit (0);
+      fprintf(stderr,
+              "vgdb %d "
+              "written_by_vgdb %d "
+              "seen_by_valgrind %d\n"
+              "vgdb pid %d\n",
+              VS_vgdb_pid,
+              VS_written_by_vgdb,
+              VS_seen_by_valgrind,
+              VS_vgdb_pid);
+      exit(0);
    }
 
    if (last_command >= 0) {
-      standalone_send_commands (pid, last_command, commands);
+      standalone_send_commands(pid, last_command, commands);
    } else {
-      gdb_relay (pid);
+      gdb_relay(pid);
    }
 
 
-   free (from_gdb_to_pid);
-   free (to_gdb_from_pid);
-   free (shared_mem);
+   free(from_gdb_to_pid);
+   free(to_gdb_from_pid);
+   free(shared_mem);
 
    for (i = 0; i <= last_command; i++)
-      free (commands[i]);
+      free(commands[i]);
    return 0;
 }

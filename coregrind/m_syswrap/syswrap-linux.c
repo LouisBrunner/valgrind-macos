@@ -7961,6 +7961,11 @@ PRE(sys_ioctl)
    case VKI_FIBMAP:
       PRE_MEM_READ( "ioctl(FIBMAP)", ARG3, sizeof(int));
       break;
+   case VKI_FICLONE:
+      /* The direction of FICLONE (W) is incorrectly specified
+       * as it expects a file descriptor and not a pointer to
+       * user data */
+      break;
 
    case VKI_FBIOGET_VSCREENINFO: /* 0x4600 */
       PRE_MEM_WRITE( "ioctl(FBIOGET_VSCREENINFO)", ARG3,
@@ -10897,6 +10902,8 @@ POST(sys_ioctl)
       break;
    case VKI_FIBMAP:
       POST_MEM_WRITE(ARG3, sizeof(int));
+      break;
+   case VKI_FICLONE:
       break;
 
    case VKI_FBIOGET_VSCREENINFO: //0x4600

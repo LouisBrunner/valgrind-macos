@@ -1888,6 +1888,7 @@ struct vki_ppdev_frob_struct {
 
 #define VKI_FIBMAP	_VKI_IO(0x00,1)	/* bmap access */
 #define VKI_FIGETBSZ    _VKI_IO(0x00,2)	/* get the block size used for bmap */
+#define VKI_FICLONE     _VKI_IOW(0x94, 9, int)
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/scsi/sg.h

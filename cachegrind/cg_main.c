@@ -1760,8 +1760,8 @@ static void cg_print_usage(void)
 {
    VG_(print_cache_clo_opts)();
    VG_(printf)(
-"    --cache-sim=yes|no  [yes]        collect cache stats?\n"
-"    --branch-sim=yes|no [no]         collect branch prediction stats?\n"
+"    --cache-sim=yes|no               collect cache stats? [yes]\n"
+"    --branch-sim=yes|no              collect branch prediction stats? [no]\n"
 "    --cachegrind-out-file=<file>     output file name [cachegrind.out.%%p]\n"
    );
 }

@@ -1595,7 +1595,8 @@ typedef enum {
 /* Generate an IR sequence to do a popcount operation on the supplied
    IRTemp, and return a new IRTemp holding the result.  'ty' may be
    Ity_I32 or Ity_I64 only. */
-static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src, _popcount_data_type data_type )
+static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src,
+                             _popcount_data_type data_type )
 {
   /* Do count across 2^data_type bits,
      byte:        data_type = 3
@@ -1610,6 +1611,22 @@ static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src, _popcount_data_type data_typ
    IRTemp nyu = IRTemp_INVALID;
 
    vassert(ty == Ity_I64 || ty == Ity_I32);
+
+   // Use a single IROp in cases where we can.
+
+   if (ty == Ity_I64 && data_type == DWORD) {
+      IRTemp res = newTemp(Ity_I64);
+      assign(res, unop(Iop_PopCount64, mkexpr(src)));
+      return res;
+   }
+
+   if (ty == Ity_I32 && data_type == WORD) {
+      IRTemp res = newTemp(Ity_I32);
+      assign(res, unop(Iop_PopCount32, mkexpr(src)));
+      return res;
+   }
+
+   // For the rest, we have to do it the slow way.
 
    if (ty == Ity_I32) {
 
@@ -1638,7 +1655,7 @@ static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src, _popcount_data_type data_typ
       return nyu;
    }
 
-// else, ty == Ity_I64
+   // else, ty == Ity_I64
    vassert(mode64);
 
    for (i = 0; i < DWORD; i++) {
@@ -1670,52 +1687,15 @@ static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src, _popcount_data_type data_typ
  */
 static IRTemp gen_vpopcntd_mode32 ( IRTemp src1, IRTemp src2 )
 {
-   Int i, shift[6];
-   IRTemp mask[6];
-   IRTemp old = IRTemp_INVALID;
-   IRTemp nyu1 = IRTemp_INVALID;
-   IRTemp nyu2 = IRTemp_INVALID;
    IRTemp retval = newTemp(Ity_I64);
 
    vassert(!mode64);
 
-   for (i = 0; i < WORD; i++) {
-      mask[i]  = newTemp(Ity_I32);
-      shift[i] = 1 << i;
-   }
-   assign(mask[0], mkU32(0x55555555));
-   assign(mask[1], mkU32(0x33333333));
-   assign(mask[2], mkU32(0x0F0F0F0F));
-   assign(mask[3], mkU32(0x00FF00FF));
-   assign(mask[4], mkU32(0x0000FFFF));
-   old = src1;
-   for (i = 0; i < WORD; i++) {
-      nyu1 = newTemp(Ity_I32);
-      assign(nyu1,
-             binop(Iop_Add32,
-                   binop(Iop_And32,
-                         mkexpr(old),
-                         mkexpr(mask[i])),
-                   binop(Iop_And32,
-                         binop(Iop_Shr32, mkexpr(old), mkU8(shift[i])),
-                         mkexpr(mask[i]))));
-      old = nyu1;
-   }
-
-   old = src2;
-   for (i = 0; i < WORD; i++) {
-      nyu2 = newTemp(Ity_I32);
-      assign(nyu2,
-             binop(Iop_Add32,
-                   binop(Iop_And32,
-                         mkexpr(old),
-                         mkexpr(mask[i])),
-                   binop(Iop_And32,
-                         binop(Iop_Shr32, mkexpr(old), mkU8(shift[i])),
-                         mkexpr(mask[i]))));
-      old = nyu2;
-   }
-   assign(retval, unop(Iop_32Uto64, binop(Iop_Add32, mkexpr(nyu1), mkexpr(nyu2))));
+   assign(retval,
+          unop(Iop_32Uto64,
+               binop(Iop_Add32,
+                     unop(Iop_PopCount32, mkexpr(src1)),
+                     unop(Iop_PopCount32, mkexpr(src2)))));
    return retval;
 }
 
@@ -5715,7 +5695,7 @@ static Bool dis_modulo_int ( UInt theInstr )
                 rA_address, rS_address);
 
             assign( rS, getIReg( rS_address ) );
-            assign( result, unop( Iop_Ctz32,
+            assign( result, unop( Iop_CtzNat32,
                                   unop( Iop_64to32, mkexpr( rS ) ) ) );
             assign( rA, binop( Iop_32HLto64, mkU32( 0 ), mkexpr( result ) ) );
 
@@ -5746,7 +5726,7 @@ static Bool dis_modulo_int ( UInt theInstr )
                 rA_address, rS_address);
 
             assign( rS, getIReg( rS_address ) );
-            assign( rA, unop( Iop_Ctz64, mkexpr( rS ) ) );
+            assign( rA, unop( Iop_CtzNat64, mkexpr( rS ) ) );
 
             if ( flag_rC == 1 )
                set_CR0( mkexpr( rA ) );
@@ -6307,7 +6287,6 @@ static Bool dis_int_logic ( UInt theInstr )
    IRTemp rS     = newTemp(ty);
    IRTemp rA     = newTemp(ty);
    IRTemp rB     = newTemp(ty);
-   IRExpr* irx;
    Bool do_rc    = False;
 
    assign( rS, getIReg(rS_addr) );
@@ -6404,26 +6383,16 @@ static Bool dis_int_logic ( UInt theInstr )
          break;
          
       case 0x01A: { // cntlzw (Count Leading Zeros Word, PPC32 p371)
-         IRExpr* lo32;
          if (rB_addr!=0) {
             vex_printf("dis_int_logic(ppc)(cntlzw,rB_addr)\n");
             return False;
          }
-         DIP("cntlzw%s r%u,r%u\n",
-             flag_rC ? ".":"", rA_addr, rS_addr);
+         DIP("cntlzw%s r%u,r%u\n", flag_rC ? ".":"", rA_addr, rS_addr);
          
          // mode64: count in low word only
-         lo32 = mode64 ? unop(Iop_64to32, mkexpr(rS)) : mkexpr(rS);
-         
-         // Iop_Clz32 undefined for arg==0, so deal with that case:
-         irx =  binop(Iop_CmpNE32, lo32, mkU32(0));
-         assign(rA, mkWidenFrom32(ty,
-                         IRExpr_ITE( irx,
-                                     unop(Iop_Clz32, lo32),
-                                     mkU32(32)),
-                         False));
-
-         // TODO: alternatively: assign(rA, verbose_Clz32(rS));
+         IRExpr* lo32 = mode64 ? unop(Iop_64to32, mkexpr(rS)) : mkexpr(rS);
+         IRExpr* res32 = unop(Iop_ClzNat32, lo32);
+         assign(rA, mode64 ? unop(Iop_32Uto64, res32) : res32);
          break;
       }
          
@@ -6521,14 +6490,8 @@ static Bool dis_int_logic ( UInt theInstr )
             vex_printf("dis_int_logic(ppc)(cntlzd,rB_addr)\n");
             return False;
          }
-         DIP("cntlzd%s r%u,r%u\n",
-             flag_rC ? ".":"", rA_addr, rS_addr);
-         // Iop_Clz64 undefined for arg==0, so deal with that case:
-         irx =  binop(Iop_CmpNE64, mkexpr(rS), mkU64(0));
-         assign(rA, IRExpr_ITE( irx,
-                                unop(Iop_Clz64, mkexpr(rS)),
-                                mkU64(64) ));
-         // TODO: alternatively: assign(rA, verbose_Clz64(rS));
+         DIP("cntlzd%s r%u,r%u\n", flag_rC ? ".":"", rA_addr, rS_addr);
+         assign(rA, unop(Iop_ClzNat64, mkexpr(rS)));
          break;
 
       case 0x1FC: // cmpb (Power6: compare bytes)
@@ -6574,8 +6537,9 @@ static Bool dis_int_logic ( UInt theInstr )
          putFReg( rS_addr, mkexpr(frA));
          return True;
       }
-      case 0x1FA: // popcntd (population count doubleword
+      case 0x1FA: // popcntd (population count doubleword)
       {
+          vassert(mode64);
     	  DIP("popcntd r%u,r%u\n", rA_addr, rS_addr);
     	  IRTemp result = gen_POPCOUNT(ty, rS, DWORD);
     	  putIReg( rA_addr, mkexpr(result) );
@@ -9154,18 +9118,7 @@ static Bool dis_int_shift ( UInt theInstr )
 static IRExpr* /* :: Ity_I32 */ gen_byterev32 ( IRTemp t )
 {
    vassert(typeOfIRTemp(irsb->tyenv, t) == Ity_I32);
-   return
-      binop(Iop_Or32,
-         binop(Iop_Shl32, mkexpr(t), mkU8(24)),
-      binop(Iop_Or32,
-         binop(Iop_And32, binop(Iop_Shl32, mkexpr(t), mkU8(8)), 
-                          mkU32(0x00FF0000)),
-      binop(Iop_Or32,
-         binop(Iop_And32, binop(Iop_Shr32, mkexpr(t), mkU8(8)),
-                          mkU32(0x0000FF00)),
-         binop(Iop_And32, binop(Iop_Shr32, mkexpr(t), mkU8(24)),
-                          mkU32(0x000000FF) )
-      )));
+   return unop(Iop_Reverse8sIn32_x1, mkexpr(t));
 }
 
 /* Generates code to swap the byte order in the lower half of an Ity_I32,
@@ -9225,6 +9178,10 @@ static Bool dis_int_ldst_rev ( UInt theInstr )
 
       case 0x214: // ldbrx (Load Doubleword Byte-Reverse Indexed)
       {
+         // JRS FIXME:
+         // * is the host_endness conditional below actually necessary?
+         // * can we just do a 64-bit load followed by by Iop_Reverse8sIn64_x1?
+         //   That would be a lot more efficient.
          IRExpr * nextAddr;
          IRTemp w3 = newTemp( Ity_I32 );
          IRTemp w4 = newTemp( Ity_I32 );
@@ -17056,8 +17013,8 @@ dis_av_count_bitTranspose ( UInt theInstr, UInt opc2 )
       case 0x7C3:    // vpopcntd
       {
          if (mode64) {
-            /* Break vector into 64-bit double words and do the population count
-             * on each double word.
+            /* Break vector into 64-bit double words and do the population
+               count on each double word.
              */
             IRType ty = Ity_I64;
             IRTemp bits0_63   = newTemp(Ity_I64);
@@ -17077,15 +17034,16 @@ dis_av_count_bitTranspose ( UInt theInstr, UInt opc2 )
                                       mkexpr( cnt_bits0_63 ) ) );
          } else {
             /* Break vector into 32-bit words and do the population count
-             * on each doubleword.
+               on each 32-bit word.
              */
             IRTemp bits0_31, bits32_63, bits64_95, bits96_127;
             bits0_31 = bits32_63 = bits64_95 = bits96_127 = IRTemp_INVALID;
-            IRTemp cnt_bits0_63   = newTemp(Ity_I64);
+            IRTemp cnt_bits0_63    = newTemp(Ity_I64);
             IRTemp cnt_bits64_127  = newTemp(Ity_I64);
 
             DIP("vpopcntd v%d,v%d\n", vRT_addr, vRB_addr);
-            breakV128to4x32(mkexpr( vB), &bits96_127, &bits64_95, &bits32_63, &bits0_31 );
+            breakV128to4x32(mkexpr( vB), &bits96_127, &bits64_95,
+                                         &bits32_63, &bits0_31 );
 
             cnt_bits0_63   = gen_vpopcntd_mode32(bits0_31, bits32_63);
             cnt_bits64_127 = gen_vpopcntd_mode32(bits64_95, bits96_127);
@@ -29103,10 +29061,12 @@ DisResult disInstr_PPC_WRK (
 
       /* Miscellaneous ISA 2.06 instructions */
       case 0x1FA: // popcntd
+         if (!mode64) goto decode_failure;
+         /* else fallthru */
       case 0x17A: // popcntw
       case 0x7A:  // popcntb
-	  if (dis_int_logic( theInstr )) goto decode_success;
-    	  goto decode_failure;
+         if (dis_int_logic( theInstr )) goto decode_success;
+         goto decode_failure;
 
       case 0x0FC: // bpermd
          if (!mode64) goto decode_failure;
@@ -29668,94 +29628,6 @@ DisResult disInstr_PPC ( IRSB*        irsb_IN,
 
    return dres;
 }
-
-
-/*------------------------------------------------------------*/
-/*--- Unused stuff                                         ---*/
-/*------------------------------------------------------------*/
-
-///* A potentially more memcheck-friendly implementation of Clz32, with
-//   the boundary case Clz32(0) = 32, which is what ppc requires. */
-//
-//static IRExpr* /* :: Ity_I32 */ verbose_Clz32 ( IRTemp arg )
-//{
-//   /* Welcome ... to SSA R Us. */
-//   IRTemp n1  = newTemp(Ity_I32);
-//   IRTemp n2  = newTemp(Ity_I32);
-//   IRTemp n3  = newTemp(Ity_I32);
-//   IRTemp n4  = newTemp(Ity_I32);
-//   IRTemp n5  = newTemp(Ity_I32);
-//   IRTemp n6  = newTemp(Ity_I32);
-//   IRTemp n7  = newTemp(Ity_I32);
-//   IRTemp n8  = newTemp(Ity_I32);
-//   IRTemp n9  = newTemp(Ity_I32);
-//   IRTemp n10 = newTemp(Ity_I32);
-//   IRTemp n11 = newTemp(Ity_I32);
-//   IRTemp n12 = newTemp(Ity_I32);
-//
-//   /* First, propagate the most significant 1-bit into all lower
-//      positions in the word. */
-//   /* unsigned int clz ( unsigned int n )
-//      {
-//         n |= (n >> 1);
-//         n |= (n >> 2);
-//         n |= (n >> 4);
-//         n |= (n >> 8);
-//         n |= (n >> 16);
-//         return bitcount(~n);
-//      }
-//   */
-//   assign(n1, mkexpr(arg));
-//   assign(n2, binop(Iop_Or32, mkexpr(n1), binop(Iop_Shr32, mkexpr(n1), mkU8(1))));
-//   assign(n3, binop(Iop_Or32, mkexpr(n2), binop(Iop_Shr32, mkexpr(n2), mkU8(2))));
-//   assign(n4, binop(Iop_Or32, mkexpr(n3), binop(Iop_Shr32, mkexpr(n3), mkU8(4))));
-//   assign(n5, binop(Iop_Or32, mkexpr(n4), binop(Iop_Shr32, mkexpr(n4), mkU8(8))));
-//   assign(n6, binop(Iop_Or32, mkexpr(n5), binop(Iop_Shr32, mkexpr(n5), mkU8(16))));
-//   /* This gives a word of the form 0---01---1.  Now invert it, giving
-//      a word of the form 1---10---0, then do a population-count idiom
-//      (to count the 1s, which is the number of leading zeroes, or 32
-//      if the original word was 0. */
-//   assign(n7, unop(Iop_Not32, mkexpr(n6)));
-//
-//   /* unsigned int bitcount ( unsigned int n )
-//      {
-//         n = n - ((n >> 1) & 0x55555555);
-//         n = (n & 0x33333333) + ((n >> 2) & 0x33333333);
-//         n = (n + (n >> 4)) & 0x0F0F0F0F;
-//         n = n + (n >> 8);
-//         n = (n + (n >> 16)) & 0x3F;
-//         return n;
-//      }
-//   */
-//   assign(n8, 
-//          binop(Iop_Sub32, 
-//                mkexpr(n7),  
-//                binop(Iop_And32, 
-//                      binop(Iop_Shr32, mkexpr(n7), mkU8(1)),
-//                      mkU32(0x55555555))));
-//   assign(n9,
-//          binop(Iop_Add32,
-//                binop(Iop_And32, mkexpr(n8), mkU32(0x33333333)),
-//                binop(Iop_And32,
-//                      binop(Iop_Shr32, mkexpr(n8), mkU8(2)),
-//                      mkU32(0x33333333))));
-//   assign(n10,
-//          binop(Iop_And32,
-//                binop(Iop_Add32, 
-//                      mkexpr(n9), 
-//                      binop(Iop_Shr32, mkexpr(n9), mkU8(4))),
-//                mkU32(0x0F0F0F0F)));
-//   assign(n11,
-//          binop(Iop_Add32,
-//                mkexpr(n10),
-//                binop(Iop_Shr32, mkexpr(n10), mkU8(8))));
-//   assign(n12,
-//          binop(Iop_Add32,
-//                mkexpr(n11),
-//                binop(Iop_Shr32, mkexpr(n11), mkU8(16))));
-//   return
-//      binop(Iop_And32, mkexpr(n12), mkU32(0x3F));
-//}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                         guest_ppc_toIR.c ---*/

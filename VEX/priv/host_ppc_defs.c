@@ -501,9 +501,9 @@ const HChar* showPPCUnaryOp ( PPCUnaryOp op ) {
    case Pun_NEG:   return "neg";
    case Pun_CLZ32: return "cntlzw";
    case Pun_CLZ64: return "cntlzd";
-   case Pun_CTZ32: return "cnttzw";
-   case Pun_CTZ64: return "cnttzd";
    case Pun_EXTSW: return "extsw";
+   case Pun_POP32: return "popcntw";
+   case Pun_POP64: return "popcntd";
    default: vpanic("showPPCUnaryOp");
    }
 }
@@ -4265,20 +4265,19 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          vassert(mode64);
          p = mkFormX(p, 31, r_src, r_dst, 0, 58, 0, endness_host);
          break;
-      case Pun_CTZ32:  // cnttzw r_dst, r_src
-         /* Note oder of src and dst is backwards from normal */
-         p = mkFormX(p, 31, r_src, r_dst, 0, 538, 0, endness_host);
-         break;
-      case Pun_CTZ64:  // cnttzd r_dst, r_src
-         /* Note oder of src and dst is backwards from normal */
-         vassert(mode64);
-         p = mkFormX(p, 31, r_src, r_dst, 0, 570, 0, endness_host);
-         break;
       case Pun_EXTSW:  // extsw r_dst, r_src
          vassert(mode64);
          p = mkFormX(p, 31, r_src, r_dst, 0, 986, 0, endness_host);
          break;
-      default: goto bad;
+      case Pun_POP32:  // popcntw r_dst, r_src
+         p = mkFormX(p, 31, r_src, r_dst, 0, 378, 0, endness_host);
+         break;
+      case Pun_POP64:  // popcntd r_dst, r_src
+         vassert(mode64);
+         p = mkFormX(p, 31, r_src, r_dst, 0, 506, 0, endness_host);
+         break;
+      default:
+         goto bad;
       }
       goto done;
    }

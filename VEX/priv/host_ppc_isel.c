@@ -2065,12 +2065,15 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, const IRExpr* e,
             return r_dst;
          }
          break;
-      case Iop_Clz32:
-      case Iop_Clz64: {
+
+      case Iop_Clz32: case Iop_ClzNat32:
+      case Iop_Clz64: case Iop_ClzNat64: {
+         // cntlz is available even in the most basic (earliest) ppc
+         // variants, so it's safe to generate it unconditionally.
          HReg r_src, r_dst;
-         PPCUnaryOp op_clz = (op_unop == Iop_Clz32) ? Pun_CLZ32 :
-                                                      Pun_CLZ64;
-         if (op_unop == Iop_Clz64 && !mode64)
+         PPCUnaryOp op_clz = (op_unop == Iop_Clz32 || op_unop == Iop_ClzNat32)
+                                ? Pun_CLZ32 : Pun_CLZ64;
+         if ((op_unop == Iop_Clz64 || op_unop == Iop_ClzNat64) && !mode64)
             goto irreducible;
          /* Count leading zeroes. */
          r_dst = newVRegI(env);
@@ -2079,18 +2082,133 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, const IRExpr* e,
          return r_dst;
       }
 
-      case Iop_Ctz32:
-      case Iop_Ctz64: {
-         HReg r_src, r_dst;
-         PPCUnaryOp op_clz = (op_unop == Iop_Ctz32) ? Pun_CTZ32 :
-                                                      Pun_CTZ64;
-         if (op_unop == Iop_Ctz64 && !mode64)
-            goto irreducible;
-         /* Count trailing zeroes. */
-         r_dst = newVRegI(env);
-         r_src = iselWordExpr_R(env, e->Iex.Unop.arg, IEndianess);
-         addInstr(env, PPCInstr_Unary(op_clz,r_dst,r_src));
-         return r_dst;
+      //case Iop_Ctz32:
+      case Iop_CtzNat32:
+      //case Iop_Ctz64:
+      case Iop_CtzNat64:
+      {
+         // Generate code using Clz, because we can't assume the host has
+         // Ctz.  In particular, part of the fix for bug 386945 involves
+         // creating a Ctz in ir_opt.c from smaller fragments.
+         PPCUnaryOp op_clz = Pun_CLZ64;
+         Int WS = 64;
+         if (op_unop == Iop_Ctz32 || op_unop == Iop_CtzNat32) {
+            op_clz = Pun_CLZ32;
+            WS = 32;
+         }
+         /* Compute ctz(arg) = wordsize - clz(~arg & (arg - 1)), thusly:
+            t1 = arg - 1
+            t2 = not arg
+            t2 = t2 & t1
+            t2 = clz t2
+            t1 = WS
+            t2 = t1 - t2
+            // result in t2
+         */
+         HReg arg = iselWordExpr_R(env, e->Iex.Unop.arg, IEndianess);
+         HReg t1 = newVRegI(env);
+         HReg t2 = newVRegI(env);
+         addInstr(env, PPCInstr_Alu(Palu_SUB, t1, arg, PPCRH_Imm(True, 1)));
+         addInstr(env, PPCInstr_Unary(Pun_NOT, t2, arg));
+         addInstr(env, PPCInstr_Alu(Palu_AND, t2, t2, PPCRH_Reg(t1)));
+         addInstr(env, PPCInstr_Unary(op_clz, t2, t2));
+         addInstr(env, PPCInstr_LI(t1, WS, False/*!64-bit imm*/));
+         addInstr(env, PPCInstr_Alu(Palu_SUB, t2, t1, PPCRH_Reg(t2)));
+         return t2;
+      }
+
+      case Iop_PopCount64: {
+         // popcnt{x,d} is only available in later arch revs (ISA 3.0,
+         // maybe) so it's not really correct to emit it here without a caps
+         // check for the host.
+         if (mode64) {
+            HReg r_dst = newVRegI(env);
+            HReg r_src = iselWordExpr_R(env, e->Iex.Unop.arg, IEndianess);
+            addInstr(env, PPCInstr_Unary(Pun_POP64, r_dst, r_src));
+            return r_dst;
+         }
+         // We don't expect to be required to handle this in 32-bit mode.
+         break;
+      }
+
+      case Iop_PopCount32: {
+         // Similar comment as for Ctz just above applies -- we really
+         // should have a caps check here.
+
+        HReg r_dst = newVRegI(env);
+        // This actually generates popcntw, which in 64 bit mode does a
+        // 32-bit count individually for both low and high halves of the
+        // word.  Per the comment at the top of iselIntExpr_R, in the 64
+        // bit mode case, the user of this result is required to ignore
+        // the upper 32 bits of the result.  In 32 bit mode this is all
+        // moot.  It is however unclear from the PowerISA 3.0 docs that
+        // the instruction exists in 32 bit mode; however our own front
+        // end (guest_ppc_toIR.c) accepts it, so I guess it does exist.
+        HReg r_src = iselWordExpr_R(env, e->Iex.Unop.arg, IEndianess);
+        addInstr(env, PPCInstr_Unary(Pun_POP32, r_dst, r_src));
+        return r_dst;
+      }
+
+      case Iop_Reverse8sIn32_x1: {
+         // A bit of a mouthful, but simply .. 32-bit byte swap.
+         // This is pretty rubbish code.  We could do vastly better if
+         // rotates, and better, rotate-inserts, were allowed.  Note that
+         // even on a 64 bit target, the right shifts must be done as 32-bit
+         // so as to introduce zero bits in the right places.  So it seems
+         // simplest to do the whole sequence in 32-bit insns.
+         /*
+            r     = <argument>  // working temporary, initial byte order ABCD
+            Mask  = 00FF00FF
+            nMask = not Mask
+            tHi   = and r, Mask
+            tHi   = shl tHi, 8
+            tLo   = and r, nMask
+            tLo   = shr tLo, 8
+            r     = or tHi, tLo  // now r has order BADC
+            and repeat for 16 bit chunks ..
+            Mask  = 0000FFFF
+            nMask = not Mask
+            tHi   = and r, Mask
+            tHi   = shl tHi, 16
+            tLo   = and r, nMask
+            tLo   = shr tLo, 16
+            r     = or tHi, tLo  // now r has order DCBA
+         */
+         HReg r_src  = iselWordExpr_R(env, e->Iex.Unop.arg, IEndianess);
+         HReg rr     = newVRegI(env);
+         HReg rMask  = newVRegI(env);
+         HReg rnMask = newVRegI(env);
+         HReg rtHi   = newVRegI(env);
+         HReg rtLo   = newVRegI(env);
+         // Copy r_src since we need to modify it
+         addInstr(env, mk_iMOVds_RR(rr, r_src));
+         // Swap within 16-bit lanes
+         addInstr(env, PPCInstr_LI(rMask, 0x00FF00FFULL,
+                                   False/* !64bit imm*/));
+         addInstr(env, PPCInstr_Unary(Pun_NOT, rnMask, rMask));
+         addInstr(env, PPCInstr_Alu(Palu_AND, rtHi, rr, PPCRH_Reg(rMask)));
+         addInstr(env, PPCInstr_Shft(Pshft_SHL, True/*32 bit shift*/,
+                                     rtHi, rtHi,
+                                     PPCRH_Imm(False/*!signed imm*/, 8)));
+         addInstr(env, PPCInstr_Alu(Palu_AND, rtLo, rr, PPCRH_Reg(rnMask)));
+         addInstr(env, PPCInstr_Shft(Pshft_SHR, True/*32 bit shift*/,
+                                     rtLo, rtLo,
+                                     PPCRH_Imm(False/*!signed imm*/, 8)));
+         addInstr(env, PPCInstr_Alu(Palu_OR, rr, rtHi, PPCRH_Reg(rtLo)));
+         // And now swap the two 16-bit chunks
+         addInstr(env, PPCInstr_LI(rMask, 0x0000FFFFULL,
+                                   False/* !64bit imm*/));
+         addInstr(env, PPCInstr_Unary(Pun_NOT, rnMask, rMask));
+         addInstr(env, PPCInstr_Alu(Palu_AND, rtHi, rr, PPCRH_Reg(rMask)));
+         addInstr(env, PPCInstr_Shft(Pshft_SHL, True/*32 bit shift*/,
+                                     rtHi, rtHi,
+                                     PPCRH_Imm(False/*!signed imm*/, 16)));
+         addInstr(env, PPCInstr_Alu(Palu_AND, rtLo, rr, PPCRH_Reg(rnMask)));
+         addInstr(env, PPCInstr_Shft(Pshft_SHR, True/*32 bit shift*/,
+                                     rtLo, rtLo,
+                                     PPCRH_Imm(False/*!signed imm*/, 16)));
+         addInstr(env, PPCInstr_Alu(Palu_OR, rr, rtHi, PPCRH_Reg(rtLo)));
+         return rr;
       }
 
       case Iop_Left8:

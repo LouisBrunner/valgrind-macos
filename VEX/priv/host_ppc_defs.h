@@ -291,9 +291,9 @@ typedef
       Pun_NOT,
       Pun_CLZ32,
       Pun_CLZ64,
-      Pun_CTZ32,
-      Pun_CTZ64,
-      Pun_EXTSW
+      Pun_EXTSW,
+      Pun_POP32, // popcntw
+      Pun_POP64  // popcntd
    }
    PPCUnaryOp;
 

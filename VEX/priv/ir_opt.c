@@ -1377,6 +1377,8 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
    case Iex_Unop:
       /* UNARY ops */
       if (e->Iex.Unop.arg->tag == Iex_Const) {
+
+         /* cases where the arg is a const */
          switch (e->Iex.Unop.op) {
          case Iop_1Uto8:
             e2 = IRExpr_Const(IRConst_U8(toUChar(
@@ -1690,8 +1692,56 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
 
          default: 
             goto unhandled;
-      }
-      }
+         } // switch (e->Iex.Unop.op)
+
+      } else {
+
+         /* other cases (identities, etc) */
+         switch (e->Iex.Unop.op) {
+         case Iop_PopCount64: {
+            // PopCount64( And64( Add64(x,-1), Not64(x) ) ) ==> CtzNat64(x)
+            // bindings:
+            //   a1:And64( a11:Add64(a111:x,a112:-1), a12:Not64(a121:x) )
+            IRExpr* a1 = chase(env, e->Iex.Unop.arg);
+            if (!a1)
+               goto nomatch;
+            if (a1->tag != Iex_Binop || a1->Iex.Binop.op != Iop_And64)
+               goto nomatch;
+            // a1 is established
+            IRExpr* a11 = chase(env, a1->Iex.Binop.arg1);
+            if (!a11)
+               goto nomatch;
+            if (a11->tag != Iex_Binop || a11->Iex.Binop.op != Iop_Add64)
+               goto nomatch;
+            // a11 is established
+            IRExpr* a12 = chase(env, a1->Iex.Binop.arg2);
+            if (!a12)
+               goto nomatch;
+            if (a12->tag != Iex_Unop || a12->Iex.Unop.op != Iop_Not64)
+               goto nomatch;
+            // a12 is established
+            IRExpr* a111 = a11->Iex.Binop.arg1;
+            IRExpr* a112 = chase(env, a11->Iex.Binop.arg2);
+            IRExpr* a121 = a12->Iex.Unop.arg;
+            if (!a111 || !a112 || !a121)
+               goto nomatch;
+            // a111 and a121 need to be the same temp.
+            if (!eqIRAtom(a111, a121))
+               goto nomatch;
+            // Finally, a112 must be a 64-bit version of -1.
+            if (!isOnesU(a112))
+               goto nomatch;
+            // Match established.  Transform.
+            e2 = IRExpr_Unop(Iop_CtzNat64, a111);
+            break;
+           nomatch:
+            break;
+         }
+         default:
+            break;
+         } // switch (e->Iex.Unop.op)
+
+      } // if (e->Iex.Unop.arg->tag == Iex_Const)
       break;
 
    case Iex_Binop:

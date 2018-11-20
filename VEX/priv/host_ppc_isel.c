@@ -1528,7 +1528,6 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, const IRExpr* e,
                                            True/*32bit shift*/,
                                            tmp, tmp,    amt));
                r_srcL = tmp;
-               vassert(0); /* AWAITING TEST CASE */
             }
          }
          /* Only 64 expressions need 64bit shifts,

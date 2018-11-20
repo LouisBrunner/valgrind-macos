@@ -111,6 +111,12 @@ static irop_t irops[] = {
   { DEFOP(Iop_Clz32,      UNDEF_ALL),  .s390x = 0, .amd64 = 0, .x86 = 1, .arm = 1, .ppc64 = 1, .ppc32 = 1, .mips32 =1, .mips64 = 1 },
   { DEFOP(Iop_Ctz64,      UNDEF_ALL),  .s390x = 0, .amd64 = 1, .x86 = 0, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 =0, .mips64 = 0 },
   { DEFOP(Iop_Ctz32,      UNDEF_ALL),  .s390x = 0, .amd64 = 0, .x86 = 1, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 =0, .mips64 = 0 },
+  { DEFOP(Iop_ClzNat64,   UNDEF_ALL),  .s390x = 0, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 1, .ppc32 = 0, .mips32 =0, .mips64 = 0 }, // ppc32 asserts
+  { DEFOP(Iop_ClzNat32,   UNDEF_ALL),  .s390x = 0, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 1, .ppc32 = 1, .mips32 =0, .mips64 = 0 },
+  { DEFOP(Iop_CtzNat64,   UNDEF_ALL),  .s390x = 0, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 1, .ppc32 = 0, .mips32 =0, .mips64 = 0 },
+  { DEFOP(Iop_CtzNat32,   UNDEF_ALL),  .s390x = 0, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 0, .ppc32 = 1, .mips32 =0, .mips64 = 0 },
+  { DEFOP(Iop_PopCount64, UNDEF_ALL),  .s390x = 0, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 1, .ppc32 = 0, .mips32 =0, .mips64 = 0 },
+  { DEFOP(Iop_PopCount32, UNDEF_ALL),  .s390x = 0, .amd64 = 0, .x86 = 0, .arm = 0, .ppc64 = 1, .ppc32 = 1, .mips32 =0, .mips64 = 0 },
   { DEFOP(Iop_CmpLT32S,   UNDEF_ALL),  .s390x = 1, .amd64 = 1, .x86 = 1, .arm = 1, .ppc64 = 1, .ppc32 = 1, .mips32 =1, .mips64 = 1 },
   { DEFOP(Iop_CmpLT64S,   UNDEF_ALL),  .s390x = 1, .amd64 = 1, .x86 = 0, .arm = 0, .ppc64 = 0, .ppc32 = 0, .mips32 =0, .mips64 = 1 }, // ppc, mips assert
   { DEFOP(Iop_CmpLE32S,   UNDEF_ALL),  .s390x = 1, .amd64 = 1, .x86 = 1, .arm = 1, .ppc64 = 1, .ppc32 = 1, .mips32 =1, .mips64 = 1 },
@@ -336,6 +342,7 @@ static irop_t irops[] = {
   { DEFOP(Iop_Sad8Ux4, UNDEF_UNKNOWN), },
   { DEFOP(Iop_CmpNEZ16x2, UNDEF_UNKNOWN), },
   { DEFOP(Iop_CmpNEZ8x4, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_Reverse8sIn32_x1, UNDEF_UNKNOWN) },
   /* ------------------ 64-bit SIMD FP ------------------------ */
   { DEFOP(Iop_I32UtoFx2, UNDEF_UNKNOWN), },
   { DEFOP(Iop_I32StoFx2, UNDEF_UNKNOWN), },

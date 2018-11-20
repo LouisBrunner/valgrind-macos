@@ -194,6 +194,14 @@ void ppIROp ( IROp op )
       case Iop_Ctz64:    vex_printf("Ctz64"); return;
       case Iop_Ctz32:    vex_printf("Ctz32"); return;
 
+      case Iop_ClzNat64: vex_printf("ClzNat64"); return;
+      case Iop_ClzNat32: vex_printf("ClzNat32"); return;
+      case Iop_CtzNat64: vex_printf("CtzNat64"); return;
+      case Iop_CtzNat32: vex_printf("CtzNat32"); return;
+
+      case Iop_PopCount64: vex_printf("PopCount64"); return;
+      case Iop_PopCount32: vex_printf("PopCount32"); return;
+
       case Iop_CmpLT32S: vex_printf("CmpLT32S"); return;
       case Iop_CmpLE32S: vex_printf("CmpLE32S"); return;
       case Iop_CmpLT32U: vex_printf("CmpLT32U"); return;
@@ -395,6 +403,7 @@ void ppIROp ( IROp op )
 
       case Iop_CmpNEZ16x2: vex_printf("CmpNEZ16x2"); return;
       case Iop_CmpNEZ8x4:  vex_printf("CmpNEZ8x4"); return;
+      case Iop_Reverse8sIn32_x1: vex_printf("Reverse8sIn32_x1"); return;
 
       case Iop_CmpF64:    vex_printf("CmpF64"); return;
 
@@ -2719,6 +2728,7 @@ void typeOfPrimop ( IROp op,
          UNARY(Ity_I16, Ity_I16);
       case Iop_Not32:
       case Iop_CmpNEZ16x2: case Iop_CmpNEZ8x4:
+      case Iop_Reverse8sIn32_x1:
          UNARY(Ity_I32, Ity_I32);
 
       case Iop_Not64:
@@ -2782,9 +2792,13 @@ void typeOfPrimop ( IROp op,
          BINARY(Ity_I64,Ity_I64, Ity_I128);
 
       case Iop_Clz32: case Iop_Ctz32:
+      case Iop_ClzNat32: case Iop_CtzNat32:
+      case Iop_PopCount32:
          UNARY(Ity_I32, Ity_I32);
 
       case Iop_Clz64: case Iop_Ctz64:
+      case Iop_ClzNat64: case Iop_CtzNat64:
+      case Iop_PopCount64:
          UNARY(Ity_I64, Ity_I64);
 
       case Iop_DivU32: case Iop_DivS32: case Iop_DivU32E: case Iop_DivS32E:

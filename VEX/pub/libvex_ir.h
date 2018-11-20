@@ -452,12 +452,21 @@ typedef
       Iop_MullS8, Iop_MullS16, Iop_MullS32, Iop_MullS64,
       Iop_MullU8, Iop_MullU16, Iop_MullU32, Iop_MullU64,
 
-      /* Wierdo integer stuff */
+      /* Counting bits */
+      /* Ctz64/Ctz32/Clz64/Clz32 are UNDEFINED when given arguments of zero.
+         You must ensure they are never given a zero argument.  As of
+         2018-Nov-14 they are deprecated.  Try to use the Nat variants
+         immediately below, if you can.
+      */
       Iop_Clz64, Iop_Clz32,   /* count leading zeroes */
       Iop_Ctz64, Iop_Ctz32,   /* count trailing zeros */
-      /* Ctz64/Ctz32/Clz64/Clz32 are UNDEFINED when given arguments of
-         zero.  You must ensure they are never given a zero argument.
-      */
+      /* Count leading/trailing zeroes, with "natural" semantics for the
+         case where the input is zero: then the result is the number of bits
+         in the word. */
+      Iop_ClzNat64, Iop_ClzNat32,
+      Iop_CtzNat64, Iop_CtzNat32,
+      /* Population count -- compute the number of 1 bits in the argument. */
+      Iop_PopCount64, Iop_PopCount32,
 
       /* Standard integer comparisons */
       Iop_CmpLT32S, Iop_CmpLT64S,
@@ -831,6 +840,9 @@ typedef
       /* MISC (vector integer cmp != 0) */
       Iop_CmpNEZ16x2, Iop_CmpNEZ8x4,
 
+      /* Byte swap in a 32-bit word */
+      Iop_Reverse8sIn32_x1,
+
       /* ------------------ 64-bit SIMD FP ------------------------ */
 
       /* Convertion to/from int */
@@ -1034,8 +1046,9 @@ typedef
       Iop_Slice64,  // (I64, I64, I8) -> I64
 
       /* REVERSE the order of chunks in vector lanes.  Chunks must be
-         smaller than the vector lanes (obviously) and so may be 8-,
-         16- and 32-bit in size. */
+         smaller than the vector lanes (obviously) and so may be 8-, 16- and
+         32-bit in size.  Note that the degenerate case,
+         Iop_Reverse8sIn64_x1, is a simply a vanilla byte-swap. */
       /* Examples:
             Reverse8sIn16_x4([a,b,c,d,e,f,g,h]) = [b,a,d,c,f,e,h,g]
             Reverse8sIn32_x2([a,b,c,d,e,f,g,h]) = [d,c,b,a,h,g,f,e]

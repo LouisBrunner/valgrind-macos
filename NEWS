@@ -20,7 +20,15 @@ support for X86/macOS 10.13, AMD64/macOS 10.13.
 
 * ==================== TOOL CHANGES ====================
 
+* Cachegrind:
+
+  - cg_annotate has a new option, --show-percs, which prints percentages next
+    to all event counts.
+
 * Callgrind:
+
+  - callgrind_annotate has a new option, --show-percs, which prints percentages
+    next to all event counts.
 
   - callgrind_annotate now inserts commas in call counts, and
     sort the caller/callee lists in the call tree.

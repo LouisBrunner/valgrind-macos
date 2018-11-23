@@ -1,0 +1,55 @@
+--------------------------------------------------------------------------------
+I1 cache:         32768 B, 64 B, 8-way associative
+D1 cache:         32768 B, 64 B, 8-way associative
+LL cache:         19922944 B, 64 B, 19-way associative
+Command:          ./a.out
+Data file:        cgout-test
+Events recorded:  Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
+Events shown:     Dw Dr Ir
+Event sort order: Dr
+Thresholds:       0.1
+Include dirs:     
+User annotated:   
+Auto-annotation:  on
+
+--------------------------------------------------------------------------------
+Dw              Dr                 Ir                 
+--------------------------------------------------------------------------------
+18,005 (100.0%) 4,057,955 (100.0%) 5,229,753 (100.0%)  PROGRAM TOTALS
+
+--------------------------------------------------------------------------------
+Dw             Dr                 Ir                  file:function
+--------------------------------------------------------------------------------
+    3 ( 0.02%) 4,000,004 (98.57%) 5,000,015 (95.61%)  /home/njn/grind/ws2/a.c:main
+4,543 (25.23%)    17,566 ( 0.43%)    47,993 ( 0.92%)  /build/glibc-OTsEL5/glibc-2.27/elf/dl-lookup.c:do_lookup_x
+3,083 (17.12%)     5,750 ( 0.14%)    28,534 ( 0.55%)  /build/glibc-OTsEL5/glibc-2.27/elf/dl-lookup.c:_dl_lookup_symbol_x
+    8 ( 0.04%)     5,521 ( 0.14%)    28,136 ( 0.54%)  /build/glibc-OTsEL5/glibc-2.27/elf/dl-tunables.c:__GI___tunables_init
+2,490 (13.83%)     5,219 ( 0.13%)    21,821 ( 0.42%)  /build/glibc-OTsEL5/glibc-2.27/elf/../sysdeps/x86_64/dl-machine.h:_dl_relocate_object
+    0              5,158 ( 0.13%)    25,408 ( 0.49%)  /build/glibc-OTsEL5/glibc-2.27/string/../sysdeps/x86_64/strcmp.S:strcmp
+
+--------------------------------------------------------------------------------
+-- Auto-annotated source: /home/njn/grind/ws2/a.c
+--------------------------------------------------------------------------------
+Dw         Dr                 Ir                 
+
+1 ( 0.01%)         0                  2 ( 0.00%)  int main(void) {
+1 ( 0.01%)         0                  1 ( 0.00%)     int z = 0;
+1 ( 0.01%) 2,000,001 (49.29%) 3,000,004 (57.36%)     for (int i = 0; i < 1000000; i++) {
+0          2,000,000 (49.29%) 2,000,000 (38.24%)        z += i;
+.                  .                  .              }
+0                  1 ( 0.00%)         6 ( 0.00%)     return z % 256;
+0                  2 ( 0.00%)         2 ( 0.00%)  }
+
+--------------------------------------------------------------------------------
+The following files chosen for auto-annotation could not be found:
+--------------------------------------------------------------------------------
+  /build/glibc-OTsEL5/glibc-2.27/elf/../sysdeps/x86_64/dl-machine.h
+  /build/glibc-OTsEL5/glibc-2.27/elf/dl-lookup.c
+  /build/glibc-OTsEL5/glibc-2.27/elf/dl-tunables.c
+  /build/glibc-OTsEL5/glibc-2.27/string/../sysdeps/x86_64/strcmp.S
+
+--------------------------------------------------------------------------------
+Dw         Dr                 Ir                 
+--------------------------------------------------------------------------------
+3 ( 0.02%) 4,000,004 (98.57%) 5,000,015 (95.61%)  events annotated
+

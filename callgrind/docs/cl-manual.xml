@@ -1274,6 +1274,17 @@ their arguments.</para>
 
   <varlistentry>
     <term>
+      <option><![CDATA[--show-percs=<no|yes> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>When enabled, a percentage is printed next to all event counts.
+      This helps gauge the relative importance of each function and line.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>
       <option><![CDATA[--auto=<yes|no> [default: no] ]]></option>
     </term>
     <listitem>

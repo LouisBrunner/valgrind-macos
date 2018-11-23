@@ -124,6 +124,9 @@ my $default_threshold = 0.1;
 
 my $single_threshold  = $default_threshold;
 
+# If on, show a percentage for each non-zero count.
+my $show_percs = 0;
+
 # If on, automatically annotates all files that are involved in getting over
 # all the threshold counts.
 my $auto_annotate = 0;
@@ -151,6 +154,7 @@ usage: cg_annotate [options] cachegrind-out-file [source-files...]
     --sort=A,B,C          sort columns by events A,B,C [event column order]
     --threshold=<0--20>   a function is shown if it accounts for more than x% of
                           the counts of the primary sort event [$default_threshold]
+    --show-percs=yes|no   show a percentage for each non-zero count
     --auto=yes|no         annotate all source files containing functions
                           that helped reach the event count threshold [no]
     --context=N           print N lines of context before and after
@@ -218,6 +222,12 @@ sub process_cmd_line()
             } elsif ($arg =~ /^--threshold=([\d\.]+)%?$/) {
                 $single_threshold = $1;
                 ($1 >= 0 && $1 <= 20) or die($usage);
+
+            # --show-percs=yes|no
+            } elsif ($arg =~ /^--show-percs=yes$/) {
+                $show_percs = 1;
+            } elsif ($arg =~ /^--show-percs=no$/) {
+                $show_percs = 0;
 
             # --auto=yes|no
             } elsif ($arg =~ /^--auto=yes$/) {
@@ -533,10 +543,14 @@ sub compute_CC_col_widths (@)
     foreach my $CC (@CCs) {
         foreach my $i (0 .. scalar(@$CC)-1) {
             if (defined $CC->[$i]) {
-                # Find length, accounting for commas that will be added
+                # Find length, accounting for commas that will be added, and
+                # possibly a percentage.
                 my $length = length $CC->[$i];
-                my $clength = $length + int(($length - 1) / 3);
-                $CC_col_widths->[$i] = max($CC_col_widths->[$i], $clength); 
+                my $width = $length + int(($length - 1) / 3);
+                if ($show_percs) {
+                    $width += 9;    # e.g. " (12.34%)" is 9 chars
+                }
+                $CC_col_widths->[$i] = max($CC_col_widths->[$i], $width); 
             }
         }
     }
@@ -550,8 +564,33 @@ sub print_CC ($$)
 
     foreach my $i (@show_order) {
         my $count = (defined $CC->[$i] ? commify($CC->[$i]) : ".");
-        my $space = ' ' x ($CC_col_widths->[$i] - length($count));
-        print("$space$count ");
+
+        my $perc = "";
+        if ($show_percs) {
+            if (defined $CC->[$i] && $CC->[$i] != 0) {
+                # Try our best to keep the number fitting into 5 chars. This
+                # requires dropping a digit after the decimal place if it's
+                # sufficiently negative (e.g. "-10.0") or positive (e.g.
+                # "100.0"). Thanks to diffs it's possible to have even more
+                # extreme values, like "-100.0" or "1000.0"; those rare case
+                # will end up with slightly wrong indenting, oh well.
+                $perc = safe_div($CC->[$i] * 100, $summary_CC->[$i]);
+                $perc = (-9.995 < $perc && $perc < 99.995)
+                      ? sprintf(" (%5.2f%%)", $perc)
+                      : sprintf(" (%5.1f%%)", $perc);
+            } else {
+                # Don't show percentages for "." and "0" entries.
+                $perc = "         ";
+            }
+        }
+
+        # $reps will be negative for the extreme values mentioned above. The
+        # use of max() avoids a possible warning about a negative repeat count.
+        my $text = $count . $perc;
+        my $len = length($text);
+        my $reps = $CC_col_widths->[$i] - length($text);
+        my $space = ' ' x max($reps, 0);
+        print("$space$text ");
     }
 }
 
@@ -564,7 +603,7 @@ sub print_events ($)
         my $event_width = length($event);
         my $col_width   = $CC_col_widths->[$i];
         my $space       = ' ' x ($col_width - $event_width);
-        print("$space$event ");
+        print("$event$space ");
     }
 }
 
@@ -828,7 +867,7 @@ sub annotate_ann_files($)
                         shift(@line_nums);
 
                     } else {
-                        print_CC( [], $CC_col_widths);
+                        print_CC([], $CC_col_widths);
                     }
 
                     print(" $src_line");
@@ -869,29 +908,22 @@ sub annotate_ann_files($)
         print("$fancy");
         print("The following files chosen for auto-annotation could not be found:\n");
         print($fancy);
-        foreach my $f (@unfound_auto_annotate_files) {
+        foreach my $f (sort @unfound_auto_annotate_files) {
             print("  $f\n");
         }
         print("\n");
     }
 
-    # If we did any annotating, print what proportion of events were covered by
-    # annotated lines above.
+    # If we did any annotating, show how many events were covered by annotated
+    # lines above.
     if ($did_annotations) {
-        my $percent_printed_CC;
-        foreach (my $i = 0; $i < @$summary_CC; $i++) {
-            $percent_printed_CC->[$i] = 
-                sprintf("%.0f", 
-                        100 * safe_div(abs($printed_totals_CC->[$i]),
-                                       abs($summary_CC->[$i])));
-        }
-        my $pp_CC_col_widths = compute_CC_col_widths($percent_printed_CC);
+        my $CC_col_widths = compute_CC_col_widths($printed_totals_CC);
         print($fancy);
-        print_events($pp_CC_col_widths);
+        print_events($CC_col_widths);
         print("\n");
         print($fancy);
-        print_CC($percent_printed_CC, $pp_CC_col_widths);
-        print(" percentage of events annotated\n\n");
+        print_CC($printed_totals_CC, $CC_col_widths);
+        print(" events annotated\n\n");
     }
 }
 

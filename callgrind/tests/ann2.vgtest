@@ -1,0 +1,6 @@
+# The 'prog' doesn't matter because we don't use its output. Instead we test
+# the post-processing of the cgout-test file.
+prog: ../../tests/true
+vgopts: --callgrind-out-file=callgrind.out
+post: perl ../../callgrind/callgrind_annotate --sort=Dr --show=Dw,Dr,Ir --auto=yes --show-percs=yes ../../cachegrind/tests/cgout-test
+cleanup: rm callgrind.out

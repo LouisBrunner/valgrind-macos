@@ -7,6 +7,8 @@ DIST_SUBDIRS = .
 dist_noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = \
+	ann1.post.exp ann1.stderr.exp ann1.vgtest \
+	ann2.post.exp ann2.stderr.exp ann2.vgtest \
 	clreq.vgtest clreq.stderr.exp \
 	simwork1.vgtest simwork1.stdout.exp simwork1.stderr.exp \
 	simwork2.vgtest simwork2.stdout.exp simwork2.stderr.exp \

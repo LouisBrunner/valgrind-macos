@@ -7997,6 +7997,7 @@ static void mc_fini ( Int exitcode )
                                              MC_(clo_xtree_leak_file));
          lcp.xt_filename = xt_filename;
          lcp.mode = LC_Full;
+         lcp.show_leak_kinds = MC_(all_Reachedness)();
       }
       else
          lcp.xt_filename = NULL;

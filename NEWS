@@ -29,6 +29,12 @@ support for X86/macOS 10.13, AMD64/macOS 10.13.
   - The default value for --read-inline-info is now "yes" on
     Linux/Android/Solaris. It is still "no" on other OS.
 
+* Memcheck:
+  - The option --xtree-leak=yes (to output leak result in xtree format)
+    automatically activates the option --show-leak-kinds=all,
+    as xtree visualisation tools such as kcachegrind can in any case
+    select what kind of leak to visualise.
+
 * ==================== OTHER CHANGES ====================
 
 

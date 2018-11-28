@@ -57,6 +57,7 @@ where XXXXXX is the bug number as listed below.
 400491  s390x: Operand of LOCH treated as unsigned integer
 397187  z13 vector register support for vgdb gdbserver
 401277  More bugs in z13 support
+401112  LLVM 5.0 generates comparison against partially initialized data
 
 Release 3.14.0 (9 October 2018)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

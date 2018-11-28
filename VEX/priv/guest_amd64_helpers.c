@@ -1013,13 +1013,10 @@ static inline Bool isU64 ( IRExpr* e, ULong n )
           && e->Iex.Const.con->Ico.U64 == n;
 }
 
-/* Returns N if E is an immediate of the form 1 << N for N in 1 to 31,
+/* Returns N if W64 is a value of the form 1 << N for N in 1 to 31,
    and zero in any other case. */
-static Int isU64_1_shl_N ( IRExpr* e )
+static Int isU64_1_shl_N_literal ( ULong w64 )
 {
-   if (e->tag != Iex_Const || e->Iex.Const.con->tag != Ico_U64)
-      return 0;
-   ULong w64 = e->Iex.Const.con->Ico.U64;
    if (w64 < (1ULL << 1) || w64 > (1ULL << 31))
       return 0;
    if ((w64 & (w64 - 1)) != 0)
@@ -1034,6 +1031,30 @@ static Int isU64_1_shl_N ( IRExpr* e )
    /*UNREACHED*/
    vassert(0);
    return 0;
+}
+
+/* Returns N if E is an immediate of the form 1 << N for N in 1 to 31,
+   and zero in any other case. */
+static Int isU64_1_shl_N ( IRExpr* e )
+{
+   if (e->tag != Iex_Const || e->Iex.Const.con->tag != Ico_U64)
+      return 0;
+   ULong w64 = e->Iex.Const.con->Ico.U64;
+   return isU64_1_shl_N_literal(w64);
+}
+
+/* Returns N if E is an immediate of the form (1 << N) - 1 for N in 1 to 31,
+   and zero in any other case. */
+static Int isU64_1_shl_N_minus_1 ( IRExpr* e )
+{
+  if (e->tag != Iex_Const || e->Iex.Const.con->tag != Ico_U64)
+    return 0;
+  ULong w64 = e->Iex.Const.con->Ico.U64;
+  // This isn't actually necessary since isU64_1_shl_N_literal will return
+  // zero given a zero argument, but still ..
+  if (w64 == 0xFFFFFFFFFFFFFFFFULL)
+     return 0;
+  return isU64_1_shl_N_literal(w64 + 1);
 }
 
 IRExpr* guest_amd64_spechelper ( const HChar* function_name,
@@ -1258,32 +1279,51 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
         /* It appears that LLVM 5.0 and later have a new way to find out
            whether the top N bits of a word W are all zero, by computing
 
-             W  <u  0---(N-1)---0 1 0---0
+             W  <u   0---(N-1)---0 1 0---0  or
+             W  <=u  0---(N-1)---0 0 1---1
 
            In particular, the result will be defined if the top N bits of W
            are defined, even if the trailing bits -- those corresponding to
-           the 0---0 section -- are undefined.  Rather than make Memcheck
-           more complex, we detect this case where we can and shift out the
-           irrelevant and potentially undefined bits. */
+           the rightmost 0---0 / 1---1 section -- are undefined.  Rather than
+           make Memcheck more complex, we detect this case where we can and
+           shift out the irrelevant and potentially undefined bits. */
         Int n = 0;
-        if (isU64(cc_op, AMD64G_CC_OP_SUBL)
-            && (isU64(cond, AMD64CondB) || isU64(cond, AMD64CondNB))
-            && (n = isU64_1_shl_N(cc_dep2)) > 0) {
-           /* long sub/cmp, then B (unsigned less than),
-              where dep2 is a power of 2:
-                -> CmpLT32(dep1, 1 << N)
-                -> CmpEQ32(dep1 >>u N, 0)
-              and
-              long sub/cmp, then NB (unsigned greater than or equal),
-              where dep2 is a power of 2:
-                -> CmpGE32(dep1, 1 << N)
-                -> CmpNE32(dep1 >>u N, 0)
-              This avoids CmpLT32U/CmpGE32U being applied to potentially
-              uninitialised bits in the area being shifted out. */
+        Bool is_NB_or_NBE = False;
+        if (isU64(cc_op, AMD64G_CC_OP_SUBL)) {
+           if (isU64(cond, AMD64CondB) || isU64(cond, AMD64CondNB)) {
+              /* long sub/cmp, then B (unsigned less than),
+                 where dep2 is a power of 2:
+                   -> CmpLT32U(dep1, 1 << N)
+                   -> CmpEQ32(dep1 >>u N, 0)
+                 and
+                 long sub/cmp, then NB (unsigned greater than or equal),
+                 where dep2 is a power of 2:
+                   -> CmpGE32U(dep1, 1 << N)
+                   -> CmpNE32(dep1 >>u N, 0)
+                 This avoids CmpLT32U/CmpGE32U being applied to potentially
+                 uninitialised bits in the area being shifted out. */
+              n = isU64_1_shl_N(cc_dep2);
+              is_NB_or_NBE = isU64(cond, AMD64CondNB);
+           } else if (isU64(cond, AMD64CondBE) || isU64(cond, AMD64CondNBE)) {
+              /* long sub/cmp, then BE (unsigned less than or equal),
+                 where dep2 is a power of 2 minus 1:
+                  -> CmpLE32U(dep1, (1 << N) - 1)
+                  -> CmpEQ32(dep1 >>u N, 0)
+                 and
+                 long sub/cmp, then NBE (unsigned greater than),
+                 where dep2 is a power of 2 minus 1:
+                   -> CmpGT32U(dep1, (1 << N) - 1)
+                   -> CmpNE32(dep1 >>u N, 0)
+                 This avoids CmpLE32U/CmpGT32U being applied to potentially
+                 uninitialised bits in the area being shifted out. */
+              n = isU64_1_shl_N_minus_1(cc_dep2);
+              is_NB_or_NBE = isU64(cond, AMD64CondNBE);
+           }
+        }
+        if (n > 0) {
            vassert(n >= 1 && n <= 31);
-           Bool isNB = isU64(cond, AMD64CondNB);
            return unop(Iop_1Uto64,
-                       binop(isNB ? Iop_CmpNE32 : Iop_CmpEQ32,
+                       binop(is_NB_or_NBE ? Iop_CmpNE32 : Iop_CmpEQ32,
                              binop(Iop_Shr32, unop(Iop_64to32, cc_dep1),
                                               mkU8(n)),
                              mkU32(0)));

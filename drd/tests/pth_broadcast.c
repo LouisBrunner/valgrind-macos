@@ -83,8 +83,9 @@ static pthread_cond_t  s_cond;
 
 // Function definitions.
 
-static void thread_func(struct cthread* thread_info)
+static void *thread_func(void *arg)
 {
+  struct cthread* thread_info = arg;
   int i;
 
   pthread_mutex_lock(&s_mutex);
@@ -106,6 +107,8 @@ static void thread_func(struct cthread* thread_info)
   }
 
   pthread_mutex_unlock(&s_mutex);
+
+  return NULL;
 }
 
 int main(int argc, char** argv)
@@ -151,8 +154,7 @@ int main(int argc, char** argv)
       cthread_ctr(p);
       p->m_threadnum = p - thread_vec;
       p->m_sema = &sema;
-      pthread_create(&p->m_thread, 0,
-                     (void*(*)(void*))thread_func, &*p);
+      pthread_create(&p->m_thread, 0, thread_func, &*p);
     }
     for (i = 0; i < s_signal_count; i++)
     {

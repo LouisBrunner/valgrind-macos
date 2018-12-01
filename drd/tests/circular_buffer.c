@@ -156,17 +156,21 @@ static void buffer_destroy(buffer_t* b)
 
 static buffer_t b;
 
-static void producer(int* id)
+static void *producer(void* arg)
 {
+  int* id = arg;
+
   buffer_send(&b, id);
-  pthread_exit(NULL);
+  return NULL;
 }
 
 #define MAXSLEEP (100 * 1000)
 
-static void consumer(int* id)
+static void *consumer(void* arg)
 {
+  int* id = arg;
   int d;
+
   usleep(rand() % MAXSLEEP);
   buffer_recv(&b, &d);
   if (! quiet)
@@ -174,7 +178,7 @@ static void consumer(int* id)
     printf("%i: %i\n", *id, d);
     fflush(stdout);
   }
-  pthread_exit(NULL);
+  return NULL;
 }
 
 #define THREADS (10)
@@ -207,13 +211,11 @@ int main(int argc, char** argv)
   for (i = 0; i < THREADS; ++i)
   {
     thread_arg[i] = i;
-    pthread_create(producers + i, NULL,
-                   (void * (*)(void *)) producer, &thread_arg[i]);
+    pthread_create(producers + i, NULL, producer, &thread_arg[i]);
   }
 
   for (i = 0; i < THREADS; ++i)
-    pthread_create(consumers + i, NULL,
-                   (void * (*)(void *)) consumer, &thread_arg[i]);
+    pthread_create(consumers + i, NULL, consumer, &thread_arg[i]);
 
   for (i = 0; i < THREADS; ++i)
   {

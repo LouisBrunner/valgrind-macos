@@ -1,0 +1,3 @@
+prereq: ./supported_libpthread
+vgopts: --check-stack-var=yes --read-var-info=yes --show-confl-seg=no
+prog: fork 1

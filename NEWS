@@ -60,6 +60,7 @@ where XXXXXX is the bug number as listed below.
 401112  LLVM 5.0 generates comparison against partially initialized data
 385411  s390x: z13 vector floating-point instructions not implemented
 401578  drd: crashes sometimes on fork()
+401627  memcheck errors with glibc avx2 optimized wcsncmp
 
 Release 3.14.0 (9 October 2018)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1,5 +1,6 @@
-// Uses various wchar_t * functions that have hand written SSE assembly
-// implementations in glibc. wcslen, wcscpy, wcscmp, wcsrchr, wcschr.
+// Uses various wchar_t * functions that have hand written SSE and/or AVX2
+// assembly implementations in glibc.
+// wcslen, wcscpy, wcscmp, wcsncmp, wcsrchr, wcschr.
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,6 +19,8 @@ int main(int argc, char **argv)
   c = wcscpy (b, a);
 
   fprintf (stderr, "wcscmp equal: %d\n", wcscmp (a, b)); // wcscmp equal: 0
+  fprintf (stderr,
+	   "wcsncmp equal: %d\n", wcsncmp (a, b, l)); // wcsncmp equal: 0
 
   d = wcsrchr (a, L'd');
   e = wcschr (a, L'd');

@@ -370,6 +370,7 @@ check_PROGRAMS =      \
   concurrent_close    \
   dlopen_main         \
   dlopen_lib.so       \
+  fork                \
   fp_race             \
   free_is_write	      \
   hold_lock           \

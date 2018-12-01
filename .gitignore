@@ -320,6 +320,7 @@
 /drd/tests/dlopen_lib.so
 /drd/tests/dlopen_main
 /drd/tests/drd_bitmap_test
+/drd/tests/fork
 /drd/tests/fp_race
 /drd/tests/free_is_write
 /drd/tests/hg01_all_ok

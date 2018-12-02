@@ -437,7 +437,7 @@ void Waiter() {
   pool.StartWorkers();
   COND = 0;
   pool.Add(NewCallback(Waker));
-  MU.LockWhen(Condition(&ArgIsOne, &COND));  // calls ANNOTATE_CONDVAR_WAIT
+  MU.LockWhen(Condition<int>(&ArgIsOne, &COND));  // calls ANNOTATE_CONDVAR_WAIT
   MU.Unlock();  // Waker is done! 
 
   GLOB = 2;
@@ -621,7 +621,7 @@ void Waiter() {
   t.Start();
   usleep(100000);  // Make sure the signaller gets there first.
   
-  MU.LockWhen(Condition(&ArgIsTrue, &COND));  // calls ANNOTATE_CONDVAR_WAIT
+  MU.LockWhen(Condition<bool>(&ArgIsTrue, &COND));// calls ANNOTATE_CONDVAR_WAIT
   MU.Unlock();  // Signaller is done! 
   
   GLOB = 2; // If LockWhen didn't catch the signal, a race may be reported here.
@@ -866,7 +866,7 @@ void Waiter() {
   GLOB++; 
   MU.Unlock();
 
-  MU.LockWhen(Condition(&ArgIsOne, &COND));
+  MU.LockWhen(Condition<int>(&ArgIsOne, &COND));
   MU.Unlock();
   GLOB++;
 }
@@ -950,7 +950,7 @@ void Waker() {
 };
 
 void Waiter() {
-  MU.LockWhen(Condition(&ArgIsOne, &COND));
+  MU.LockWhen(Condition<int>(&ArgIsOne, &COND));
   MU.Unlock();
   CHECK(GLOB != 777);
 }
@@ -1001,7 +1001,7 @@ void Worker() {
   MU2.Lock(); 
   COND--;
   ANNOTATE_CONDVAR_SIGNAL(&MU2);
-  MU2.Await(Condition(&ArgIsZero, &COND));
+  MU2.Await(Condition<int>(&ArgIsZero, &COND));
   MU2.Unlock();
 
   CHECK(GLOB == 2);
@@ -1035,7 +1035,7 @@ void Worker() {
   MU2.Lock(); 
   COND--;
   ANNOTATE_CONDVAR_SIGNAL(&MU2);
-  MU2.Await(Condition(&ArgIsZero, &COND));
+  MU2.Await(Condition<int>(&ArgIsZero, &COND));
   MU2.Unlock();
 
   CHECK(GLOB == 3);
@@ -1075,7 +1075,7 @@ void Waiter() {
   pool.Add(NewCallback(Waker));
 
   MU.Lock();
-  MU.Await(Condition(&ArgIsOne, &COND));  // calls ANNOTATE_CONDVAR_WAIT
+  MU.Await(Condition<int>(&ArgIsOne, &COND));  // calls ANNOTATE_CONDVAR_WAIT
   MU.Unlock();  // Waker is done! 
 
   GLOB = 2;
@@ -1108,7 +1108,7 @@ void Waiter() {
   pool.Add(NewCallback(Waker));
 
   MU.Lock();
-  CHECK(MU.AwaitWithTimeout(Condition(&ArgIsOne, &COND), INT_MAX));
+  CHECK(MU.AwaitWithTimeout(Condition<int>(&ArgIsOne, &COND), INT_MAX));
   MU.Unlock();
 
   GLOB = 2;
@@ -1137,7 +1137,7 @@ void Waiter() {
   pool.Add(NewCallback(Waker));
 
   MU.Lock();
-  CHECK(!MU.AwaitWithTimeout(Condition(&ArgIsOne, &COND), 100));
+  CHECK(!MU.AwaitWithTimeout(Condition<int>(&ArgIsOne, &COND), 100));
   MU.Unlock();
 
   GLOB = 2;
@@ -1167,7 +1167,7 @@ void Waiter() {
   COND = 0;
   pool.Add(NewCallback(Waker));
 
-  CHECK(!MU.LockWhenWithTimeout(Condition(&ArgIsOne, &COND), 100));
+  CHECK(!MU.LockWhenWithTimeout(Condition<int>(&ArgIsOne, &COND), 100));
   MU.Unlock();
 
   GLOB = 2;
@@ -1300,7 +1300,7 @@ void Waiter() {
   pool.StartWorkers();
   COND = 0;
   pool.Add(NewCallback(Waker));
-  MU.ReaderLockWhen(Condition(&ArgIsOne, &COND));
+  MU.ReaderLockWhen(Condition<int>(&ArgIsOne, &COND));
   MU.ReaderUnlock();
 
   GLOB = 2;
@@ -1333,7 +1333,7 @@ void Waiter() {
   pool.StartWorkers();
   COND = 0;
   pool.Add(NewCallback(Waker));
-  CHECK(MU.ReaderLockWhenWithTimeout(Condition(&ArgIsOne, &COND), INT_MAX));
+  CHECK(MU.ReaderLockWhenWithTimeout(Condition<int>(&ArgIsOne, &COND), INT_MAX));
   MU.ReaderUnlock();
 
   GLOB = 2;
@@ -1361,7 +1361,7 @@ void Waiter() {
   pool.StartWorkers();
   COND = 0;
   pool.Add(NewCallback(Waker));
-  CHECK(!MU.ReaderLockWhenWithTimeout(Condition(&ArgIsOne, &COND), 100));
+  CHECK(!MU.ReaderLockWhenWithTimeout(Condition<int>(&ArgIsOne, &COND), 100));
   MU.ReaderUnlock();
 
   GLOB = 2;
@@ -4185,7 +4185,7 @@ struct B: A {
     // The race is here.    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     printf("B::~B()\n"); 
     // wait until flag_stopped is true.
-    mu.LockWhen(Condition(&ArgIsTrue, &flag_stopped));
+    mu.LockWhen(Condition<bool>(&ArgIsTrue, &flag_stopped));
     mu.Unlock();
     printf("B::~B() done\n"); 
   }
@@ -4256,7 +4256,7 @@ struct B: A {
     // The race is here.    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     printf("B::~B()\n"); 
     // wait until flag_stopped is true.
-    mu.LockWhen(Condition(&ArgIsTrue, &flag_stopped));
+    mu.LockWhen(Condition<bool>(&ArgIsTrue, &flag_stopped));
     mu.Unlock();
     printf("B::~B() done\n"); 
   }
@@ -4825,7 +4825,7 @@ Mutex mu;
 
 static void Thread1() {
   for (int i = 0; i < 100; i++) {
-    mu.LockWhenWithTimeout(Condition(&ArgIsTrue, &GLOB), 5);
+    mu.LockWhenWithTimeout(Condition<bool>(&ArgIsTrue, &GLOB), 5);
     GLOB = false;
     mu.Unlock();
     usleep(10000);
@@ -5338,7 +5338,7 @@ static bool ArgIsTrue(bool *arg) {
 void f1() {
   char some_stack[N];
   write_to_p(some_stack, 1);
-  mu.LockWhen(Condition(&ArgIsTrue, &COND));
+  mu.LockWhen(Condition<bool>(&ArgIsTrue, &COND));
   mu.Unlock();
 }
 
@@ -6098,7 +6098,7 @@ bool WeirdCondition(int* param) {
 }
 void Waiter() {
   int param = 0;
-  MU.ReaderLockWhen(Condition(WeirdCondition, &param));
+  MU.ReaderLockWhen(Condition<int>(WeirdCondition, &param));
   MU.ReaderUnlock();
   CHECK(GLOB > 0);
   CHECK(param > 0);
@@ -7218,7 +7218,7 @@ bool NoElementsLeft(vector<int> *v) {
 }
 
 void WaitForAllThreadsToFinish_Good() {
-  mu.LockWhen(Condition(NoElementsLeft, vec));
+  mu.LockWhen(Condition<vector<int>>(NoElementsLeft, vec));
   mu.Unlock();
 
   // It is now safe to access vec w/o lock.

@@ -156,22 +156,23 @@ class SpinLock {
 #endif // NO_SPINLOCK
 
 /// Just a boolean condition. Used by Mutex::LockWhen and similar.
+template <typename T>
 class Condition {
  public:
   typedef bool (*func_t)(void*);
 
-  template <typename T>
   Condition(bool (*func)(T*), T* arg)
-  : func_(reinterpret_cast<func_t>(func)), arg_(arg) {}
+  : func1_(func), arg_(arg) {}
 
   Condition(bool (*func)())
-  : func_(reinterpret_cast<func_t>(func)), arg_(NULL) {}
+  : func0_(func), arg_(NULL) {}
 
-  bool Eval() { return func_(arg_); }
+  bool Eval() const { return func1_ ? func1_(arg_) : func0_(); }
+
  private:
-  func_t func_;
-  void *arg_;
-
+  bool (*func0_)();
+  bool (*func1_)(T*);
+  T *arg_;
 };
 
 
@@ -211,20 +212,27 @@ class Mutex {
   bool ReaderTryLock() { return TryLock();}
   void ReaderUnlock()  { Unlock(); }
 
-  void LockWhen(Condition cond)            { Lock(); WaitLoop(cond); }
-  void ReaderLockWhen(Condition cond)      { Lock(); WaitLoop(cond); }
-  void Await(Condition cond)               { WaitLoop(cond); }
+  template <typename T>
+  void LockWhen(const Condition<T>& cond)       { Lock(); WaitLoop(cond); }
+  template <typename T>
+  void ReaderLockWhen(const Condition<T>& cond) { Lock(); WaitLoop(cond); }
+  template <typename T>
+  void Await(const Condition<T>& cond)          { WaitLoop(cond); }
 
-  bool ReaderLockWhenWithTimeout(Condition cond, int millis)
+  template <typename T>
+  bool ReaderLockWhenWithTimeout(const Condition<T>& cond, int millis)
     { Lock(); return WaitLoopWithTimeout(cond, millis); }
-  bool LockWhenWithTimeout(Condition cond, int millis)
+  template <typename T>
+  bool LockWhenWithTimeout(const Condition<T>& cond, int millis)
     { Lock(); return WaitLoopWithTimeout(cond, millis); }
-  bool AwaitWithTimeout(Condition cond, int millis)
+  template <typename T>
+  bool AwaitWithTimeout(const Condition<T>& cond, int millis)
     { return WaitLoopWithTimeout(cond, millis); }
 
  private:
 
-  void WaitLoop(Condition cond) {
+  template <typename T>
+  void WaitLoop(const Condition<T>& cond) {
     signal_at_unlock_ = true;
     while(cond.Eval() == false) {
       pthread_cond_wait(&cv_, &mu_);
@@ -232,7 +240,8 @@ class Mutex {
     ANNOTATE_CONDVAR_LOCK_WAIT(&cv_, &mu_);
   }
 
-  bool WaitLoopWithTimeout(Condition cond, int millis) {
+  template <typename T>
+  bool WaitLoopWithTimeout(const Condition<T>& cond, int millis) {
     struct timeval now;
     struct timespec timeout;
     int retcode = 0;
@@ -341,28 +350,34 @@ class WriterLockScoped {  // Scoped RWLock Locker/Unlocker
 /// Wrapper for pthread_create()/pthread_join().
 class MyThread {
  public:
-  typedef void *(*worker_t)(void*);
-
-  MyThread(worker_t worker, void *arg = NULL, const char *name = NULL)
-      :w_(worker), arg_(arg), name_(name) {}
+  MyThread(void* (*worker)(void *), void *arg = NULL, const char *name = NULL)
+      :wpvpv_(worker), arg_(arg), name_(name) {}
   MyThread(void (*worker)(void), void *arg = NULL, const char *name = NULL)
-      :w_(reinterpret_cast<worker_t>(worker)), arg_(arg), name_(name) {}
+      :wvv_(worker), arg_(arg), name_(name) {}
   MyThread(void (*worker)(void *), void *arg = NULL, const char *name = NULL)
-      :w_(reinterpret_cast<worker_t>(worker)), arg_(arg), name_(name) {}
+      :wvpv_(worker), arg_(arg), name_(name) {}
 
-  ~MyThread(){ w_ = NULL; arg_ = NULL;}
-  void Start() { CHECK(0 == pthread_create(&t_, NULL, (worker_t)ThreadBody, this));}
+  void Start() { CHECK(0 == pthread_create(&t_, NULL, ThreadBody, this));}
   void Join()  { CHECK(0 == pthread_join(t_, NULL));}
   pthread_t tid() const { return t_; }
  private:
-  static void ThreadBody(MyThread *my_thread) {
+  static void *ThreadBody(void *arg) {
+    MyThread *my_thread = reinterpret_cast<MyThread*>(arg);
     if (my_thread->name_) {
       ANNOTATE_THREAD_NAME(my_thread->name_);
     }
-    my_thread->w_(my_thread->arg_);
+    if (my_thread->wpvpv_)
+      return my_thread->wpvpv_(my_thread->arg_);
+    if (my_thread->wpvpv_)
+      my_thread->wvpv_(my_thread->arg_);
+    if (my_thread->wvv_)
+      my_thread->wvv_();
+    return NULL;
   }
   pthread_t t_;
-  worker_t  w_;
+  void *(*wpvpv_)(void*);
+  void (*wvv_)(void);
+  void (*wvpv_)(void*);
   void     *arg_;
   const char *name_;
 };
@@ -391,7 +406,7 @@ class ProducerConsumerQueue {
   // Get.
   // Blocks if the queue is empty.
   void *Get() {
-    mu_.LockWhen(Condition(IsQueueNotEmpty, &q_));
+    mu_.LockWhen(Condition<typeof(q_)>(IsQueueNotEmpty, &q_));
       void * item = NULL;
       bool ok = TryGetInternal(&item);
       CHECK(ok);
@@ -578,7 +593,7 @@ class BlockingCounter {
     return count_ == 0;
   }
   void Wait() {
-    mu_.LockWhen(Condition(&IsZero, &count_));
+    mu_.LockWhen(Condition<int>(&IsZero, &count_));
     mu_.Unlock();
   }
  private:

@@ -7218,7 +7218,7 @@ bool NoElementsLeft(vector<int> *v) {
 }
 
 void WaitForAllThreadsToFinish_Good() {
-  mu.LockWhen(Condition<vector<int>>(NoElementsLeft, vec));
+  mu.LockWhen(Condition<vector<int> >(NoElementsLeft, vec));
   mu.Unlock();
 
   // It is now safe to access vec w/o lock.

@@ -61,6 +61,7 @@ where XXXXXX is the bug number as listed below.
 385411  s390x: z13 vector floating-point instructions not implemented
 401578  drd: crashes sometimes on fork()
 401627  memcheck errors with glibc avx2 optimized wcsncmp
+401822  none/tests/ppc64/jm-vmx fails and produces assembler warnings
 
 Release 3.14.0 (9 October 2018)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

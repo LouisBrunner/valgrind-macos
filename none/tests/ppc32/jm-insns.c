@@ -6269,7 +6269,7 @@ static void test_av_int_one_arg (const char* name, test_func_t func,
    for (i=0; i<nb_viargs; i++) {
       /* Save flags */
       __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
-      __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
+      __asm__ __volatile__ ("mfvscr %0" : "=v" (tmpvscr));
 
       vec_in  = (vector unsigned int)viargs[i];
       vec_out = (vector unsigned int){ 0,0,0,0 };
@@ -6287,11 +6287,11 @@ static void test_av_int_one_arg (const char* name, test_func_t func,
       (*func)();
       
       // retrieve output <- r17
-      __asm__ __volatile__ ("vor %0,17,17" : "=vr" (vec_out));
+      __asm__ __volatile__ ("vor %0,17,17" : "=v" (vec_out));
 
       // get CR,VSCR flags
       __asm__ __volatile__ ("mfcr   %0" : "=r" (flags));
-      __asm__ __volatile__ ("mfvscr %0" : "=vr" (vscr));
+      __asm__ __volatile__ ("mfvscr %0" : "=v" (vscr));
       
       /* Restore flags */
       __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
@@ -6333,7 +6333,7 @@ static void test_av_int_two_args (const char* name, test_func_t func,
          
          /* Save flags */
          __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
-         __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
+         __asm__ __volatile__ ("mfvscr %0" : "=v" (tmpvscr));
 
          // reset VSCR and CR
          vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
@@ -6349,11 +6349,11 @@ static void test_av_int_two_args (const char* name, test_func_t func,
          (*func)();
 
          // retrieve output <- r17
-         __asm__ __volatile__ ("vor %0,17,17" : "=vr" (vec_out));
+         __asm__ __volatile__ ("vor %0,17,17" : "=v" (vec_out));
          
          // get CR,VSCR flags
          __asm__ __volatile__ ("mfcr   %0" : "=r" (flags));
-         __asm__ __volatile__ ("mfvscr %0" : "=vr" (vscr));
+         __asm__ __volatile__ ("mfvscr %0" : "=v" (vscr));
          
          /* Restore flags */
          __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
@@ -6401,7 +6401,7 @@ static void test_av_int_three_args (const char* name, test_func_t func,
             
             /* Save flags */
             __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
-            __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
+            __asm__ __volatile__ ("mfvscr %0" : "=v" (tmpvscr));
 
             // reset VSCR and CR
             vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
@@ -6418,11 +6418,11 @@ static void test_av_int_three_args (const char* name, test_func_t func,
             (*func)();
             
             // retrieve output <- r17
-            __asm__ __volatile__ ("vor %0,17,17" : "=vr" (vec_out));
+            __asm__ __volatile__ ("vor %0,17,17" : "=v" (vec_out));
             
             // get CR,VSCR flags
             __asm__ __volatile__ ("mfcr   %0" : "=r" (flags));
-            __asm__ __volatile__ ("mfvscr %0" : "=vr" (vscr));
+            __asm__ __volatile__ ("mfvscr %0" : "=v" (vscr));
             
             /* Restore flags */
             __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
@@ -6475,7 +6475,7 @@ static void vs128_cb (const char* name, test_func_t func,
          
          /* Save flags */
          __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
-         __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
+         __asm__ __volatile__ ("mfvscr %0" : "=v" (tmpvscr));
 
          // reset VSCR and CR
          vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
@@ -6491,11 +6491,11 @@ static void vs128_cb (const char* name, test_func_t func,
          (*func)();
          
          // retrieve output <- r17
-         __asm__ __volatile__ ("vor %0,17,17" : "=vr" (vec_out));
+         __asm__ __volatile__ ("vor %0,17,17" : "=v" (vec_out));
          
          // get CR,VSCR flags
          __asm__ __volatile__ ("mfcr   %0" : "=r" (flags));
-         __asm__ __volatile__ ("mfvscr %0" : "=vr" (vscr));
+         __asm__ __volatile__ ("mfvscr %0" : "=v" (vscr));
          
          /* Restore flags */
          __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
@@ -6548,7 +6548,7 @@ static void vsplt_cb (const char* name, test_func_t func_IN,
 
          /* Save flags */
          __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
-         __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
+         __asm__ __volatile__ ("mfvscr %0" : "=v" (tmpvscr));
 
          // reset VSCR and CR
          vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
@@ -6563,11 +6563,11 @@ static void vsplt_cb (const char* name, test_func_t func_IN,
          (*func)();
          
          // retrieve output <- r17
-         __asm__ __volatile__ ("vor %0,17,17" : "=vr" (vec_out));
+         __asm__ __volatile__ ("vor %0,17,17" : "=v" (vec_out));
          
          // get CR,VSCR flags
          __asm__ __volatile__ ("mfcr   %0" : "=r" (flags));
-         __asm__ __volatile__ ("mfvscr %0" : "=vr" (vscr));
+         __asm__ __volatile__ ("mfvscr %0" : "=v" (vscr));
          
          /* Restore flags */
          __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
@@ -6615,7 +6615,7 @@ static void vspltis_cb (const char* name, test_func_t func_IN,
       
       /* Save flags */
       __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
-      __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
+      __asm__ __volatile__ ("mfvscr %0" : "=v" (tmpvscr));
       
       // reset VSCR and CR
       vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
@@ -6627,11 +6627,11 @@ static void vspltis_cb (const char* name, test_func_t func_IN,
       (*func)();
       
       // retrieve output <- r17
-      __asm__ __volatile__ ("vor %0,17,17" : "=vr" (vec_out));
+      __asm__ __volatile__ ("vor %0,17,17" : "=v" (vec_out));
       
       // get CR,VSCR flags
       __asm__ __volatile__ ("mfcr   %0" : "=r" (flags));
-      __asm__ __volatile__ ("mfvscr %0" : "=vr" (vscr));
+      __asm__ __volatile__ ("mfvscr %0" : "=v" (vscr));
       
       /* Restore flags */
       __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
@@ -6677,7 +6677,7 @@ static void vsldoi_cb (const char* name, test_func_t func_IN,
             
             /* Save flags */
             __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
-            __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
+            __asm__ __volatile__ ("mfvscr %0" : "=v" (tmpvscr));
             
             // reset VSCR and CR
             vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
@@ -6693,11 +6693,11 @@ static void vsldoi_cb (const char* name, test_func_t func_IN,
             (*func)();
          
             // retrieve output <- r17
-            __asm__ __volatile__ ("vor %0,17,17" : "=vr" (vec_out));
+            __asm__ __volatile__ ("vor %0,17,17" : "=v" (vec_out));
             
             // get CR,VSCR flags
             __asm__ __volatile__ ("mfcr   %0" : "=r" (flags));
-            __asm__ __volatile__ ("mfvscr %0" : "=vr" (vscr));
+            __asm__ __volatile__ ("mfvscr %0" : "=v" (vscr));
             
             /* Restore flags */
             __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
@@ -6750,7 +6750,7 @@ static void lvs_cb (const char *name, test_func_t func,
 
       /* Save flags */
       __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
-      __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
+      __asm__ __volatile__ ("mfvscr %0" : "=v" (tmpvscr));
       
       // reset VSCR and CR
       vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
@@ -6762,11 +6762,11 @@ static void lvs_cb (const char *name, test_func_t func,
       (*func)();
       
       // retrieve output <- r17
-      __asm__ __volatile__ ("vor %0,17,17" : "=vr" (vec_out));
+      __asm__ __volatile__ ("vor %0,17,17" : "=v" (vec_out));
          
       // get CR,VSCR flags
       __asm__ __volatile__ ("mfcr   %0" : "=r" (flags));
-      __asm__ __volatile__ ("mfvscr %0" : "=vr" (vscr));
+      __asm__ __volatile__ ("mfvscr %0" : "=v" (vscr));
       
       /* Restore flags */
       __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
@@ -6870,7 +6870,7 @@ static void test_av_int_ld_two_regs (const char *name,
          
          /* Save flags */
          __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
-         __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
+         __asm__ __volatile__ ("mfvscr %0" : "=v" (tmpvscr));
          
          // reset VSCR and CR
          vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
@@ -6882,11 +6882,11 @@ static void test_av_int_ld_two_regs (const char *name,
          (*func)();
          
          // retrieve output <- r17
-         __asm__ __volatile__ ("vor %0,17,17" : "=vr" (vec_out));
+         __asm__ __volatile__ ("vor %0,17,17" : "=v" (vec_out));
          
          // get CR,VSCR flags
          __asm__ __volatile__ ("mfcr   %0" : "=r" (flags));
-         __asm__ __volatile__ ("mfvscr %0" : "=vr" (vscr));
+         __asm__ __volatile__ ("mfvscr %0" : "=v" (vscr));
          
          /* Restore flags */
          __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
@@ -6956,7 +6956,7 @@ static void test_av_int_st_three_regs (const char *name,
 
          /* Save flags */
          __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
-         __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
+         __asm__ __volatile__ ("mfvscr %0" : "=v" (tmpvscr));
          
          // reset VSCR and CR
          vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
@@ -6974,7 +6974,7 @@ static void test_av_int_st_three_regs (const char *name,
          
          // get CR,VSCR flags
          __asm__ __volatile__ ("mfcr   %0" : "=r" (flags));
-         __asm__ __volatile__ ("mfvscr %0" : "=vr" (vscr));
+         __asm__ __volatile__ ("mfvscr %0" : "=v" (vscr));
          
          /* Restore flags */
          __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
@@ -7037,7 +7037,7 @@ static void test_av_float_one_arg (const char* name, test_func_t func,
       
       /* Save flags */
       __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
-      __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
+      __asm__ __volatile__ ("mfvscr %0" : "=v" (tmpvscr));
 
       // reset VSCR and CR
       vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
@@ -7052,11 +7052,11 @@ static void test_av_float_one_arg (const char* name, test_func_t func,
       (*func)();
       
       // retrieve output <- r17
-      __asm__ __volatile__ ("vor %0,17,17" : "=vr" (vec_out));
+      __asm__ __volatile__ ("vor %0,17,17" : "=v" (vec_out));
       
       // get CR,VSCR flags
       __asm__ __volatile__ ("mfcr   %0" : "=r" (flags));
-      __asm__ __volatile__ ("mfvscr %0" : "=vr" (vscr));
+      __asm__ __volatile__ ("mfvscr %0" : "=v" (vscr));
       
       /* Restore flags */
       __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
@@ -7099,7 +7099,7 @@ static void test_av_float_two_args (const char* name, test_func_t func,
 
          /* Save flags */
          __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
-         __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
+         __asm__ __volatile__ ("mfvscr %0" : "=v" (tmpvscr));
 
          // reset VSCR and CR
          vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
@@ -7115,11 +7115,11 @@ static void test_av_float_two_args (const char* name, test_func_t func,
          (*func)();
 
          // retrieve output <- r17
-         __asm__ __volatile__ ("vor %0,17,17" : "=vr" (vec_out));
+         __asm__ __volatile__ ("vor %0,17,17" : "=v" (vec_out));
 
          // get CR,VSCR flags
          __asm__ __volatile__ ("mfcr   %0" : "=r" (flags));
-         __asm__ __volatile__ ("mfvscr %0" : "=vr" (vscr));
+         __asm__ __volatile__ ("mfvscr %0" : "=v" (vscr));
 
          /* Restore flags */
          __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
@@ -7168,7 +7168,7 @@ static void test_av_float_three_args (const char* name, test_func_t func,
             
             /* Save flags */
             __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
-            __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
+            __asm__ __volatile__ ("mfvscr %0" : "=v" (tmpvscr));
 
             // reset VSCR and CR
             vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
@@ -7185,11 +7185,11 @@ static void test_av_float_three_args (const char* name, test_func_t func,
             (*func)();
 
             // retrieve output <- r17
-            __asm__ __volatile__ ("vor %0,17,17" : "=vr" (vec_out));
+            __asm__ __volatile__ ("vor %0,17,17" : "=v" (vec_out));
 
             // get CR,VSCR flags
             __asm__ __volatile__ ("mfcr   %0" : "=r" (flags));
-            __asm__ __volatile__ ("mfvscr %0" : "=vr" (vscr));
+            __asm__ __volatile__ ("mfvscr %0" : "=v" (vscr));
 
             /* Restore flags */
             __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));
@@ -7276,7 +7276,7 @@ static void vcvt_cb (const char* name, test_func_t func_IN,
          
          /* Save flags */
          __asm__ __volatile__ ("mfcr   %0" : "=r"  (tmpcr));
-         __asm__ __volatile__ ("mfvscr %0" : "=vr" (tmpvscr));
+         __asm__ __volatile__ ("mfvscr %0" : "=v" (tmpvscr));
 
          // reset VSCR and CR
          vscr = (vector unsigned int){ 0,0,0,DEFAULT_VSCR };
@@ -7291,11 +7291,11 @@ static void vcvt_cb (const char* name, test_func_t func_IN,
          (*func)();
          
          // retrieve output <- r17
-         __asm__ __volatile__ ("vor %0,17,17" : "=vr" (vec_out));
+         __asm__ __volatile__ ("vor %0,17,17" : "=v" (vec_out));
          
          // get CR,VSCR flags
          __asm__ __volatile__ ("mfcr   %0" : "=r" (flags));
-         __asm__ __volatile__ ("mfvscr %0" : "=vr" (vscr));
+         __asm__ __volatile__ ("mfvscr %0" : "=v" (vscr));
          
          /* Restore flags */
          __asm__ __volatile__ ("mtcr   %0" : : "r"  (tmpcr));

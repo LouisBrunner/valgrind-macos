@@ -9178,24 +9178,28 @@ static Bool dis_int_ldst_rev ( UInt theInstr )
 
       case 0x214: // ldbrx (Load Doubleword Byte-Reverse Indexed)
       {
-         // JRS FIXME:
-         // * is the host_endness conditional below actually necessary?
-         // * can we just do a 64-bit load followed by by Iop_Reverse8sIn64_x1?
-         //   That would be a lot more efficient.
-         IRExpr * nextAddr;
-         IRTemp w3 = newTemp( Ity_I32 );
-         IRTemp w4 = newTemp( Ity_I32 );
+         /* Caller makes sure we are only called in mode64. */
+
+         /* If we supported swapping LE/BE loads in the backend then we could
+            just load the value with the bytes reversed by doing a BE load
+            on an LE machine and a LE load on a BE machine.
+
+               IRTemp dw1 = newTemp(Ity_I64);
+               if (host_endness == VexEndnessBE)
+                  assign( dw1, IRExpr_Load(Iend_LE, Ity_I64, mkexpr(EA)));
+               else
+                  assign( dw1, IRExpr_Load(Iend_BE, Ity_I64, mkexpr(EA)));
+               putIReg( rD_addr, mkexpr(dw1) );
+
+            But since we currently don't we load the value as is and then
+            switch it around with Iop_Reverse8sIn64_x1. */
+
+         IRTemp dw1 = newTemp(Ity_I64);
+         IRTemp dw2 = newTemp(Ity_I64);
          DIP("ldbrx r%u,r%u,r%u\n", rD_addr, rA_addr, rB_addr);
-         assign( w1, load( Ity_I32, mkexpr( EA ) ) );
-         assign( w2, gen_byterev32( w1 ) );
-         nextAddr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
-                           ty == Ity_I64 ? mkU64( 4 ) : mkU32( 4 ) );
-         assign( w3, load( Ity_I32, nextAddr ) );
-         assign( w4, gen_byterev32( w3 ) );
-         if (host_endness == VexEndnessLE)
-            putIReg( rD_addr, binop( Iop_32HLto64, mkexpr( w2 ), mkexpr( w4 ) ) );
-         else
-            putIReg( rD_addr, binop( Iop_32HLto64, mkexpr( w4 ), mkexpr( w2 ) ) );
+         assign( dw1, load(Ity_I64, mkexpr(EA)) );
+         assign( dw2, unop(Iop_Reverse8sIn64_x1, mkexpr(dw1)) );
+         putIReg( rD_addr, mkexpr(dw2) );
          break;
       }
 

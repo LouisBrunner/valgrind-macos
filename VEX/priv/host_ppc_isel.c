@@ -2210,6 +2210,63 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, const IRExpr* e,
          return rr;
       }
 
+      case Iop_Reverse8sIn64_x1: {
+	 /* See Iop_Reverse8sIn32_x1, but extended to 64bit.
+            Can only be used in 64bit mode.  */
+         vassert (mode64);
+
+         HReg r_src  = iselWordExpr_R(env, e->Iex.Unop.arg, IEndianess);
+         HReg rr     = newVRegI(env);
+         HReg rMask  = newVRegI(env);
+         HReg rnMask = newVRegI(env);
+         HReg rtHi   = newVRegI(env);
+         HReg rtLo   = newVRegI(env);
+
+         // Copy r_src since we need to modify it
+         addInstr(env, mk_iMOVds_RR(rr, r_src));
+
+         // r = (r & 0x00FF00FF00FF00FF) << 8 | (r & 0xFF00FF00FF00FF00) >> 8
+         addInstr(env, PPCInstr_LI(rMask, 0x00FF00FF00FF00FFULL,
+                                   True/* 64bit imm*/));
+         addInstr(env, PPCInstr_Unary(Pun_NOT, rnMask, rMask));
+         addInstr(env, PPCInstr_Alu(Palu_AND, rtHi, rr, PPCRH_Reg(rMask)));
+         addInstr(env, PPCInstr_Shft(Pshft_SHL, False/*64 bit shift*/,
+                                     rtHi, rtHi,
+                                     PPCRH_Imm(False/*!signed imm*/, 8)));
+         addInstr(env, PPCInstr_Alu(Palu_AND, rtLo, rr, PPCRH_Reg(rnMask)));
+         addInstr(env, PPCInstr_Shft(Pshft_SHR, False/*64 bit shift*/,
+                                     rtLo, rtLo,
+                                     PPCRH_Imm(False/*!signed imm*/, 8)));
+         addInstr(env, PPCInstr_Alu(Palu_OR, rr, rtHi, PPCRH_Reg(rtLo)));
+
+         // r = (r & 0x0000FFFF0000FFFF) << 16 | (r & 0xFFFF0000FFFF0000) >> 16
+         addInstr(env, PPCInstr_LI(rMask, 0x0000FFFF0000FFFFULL,
+                                   True/* !64bit imm*/));
+         addInstr(env, PPCInstr_Unary(Pun_NOT, rnMask, rMask));
+         addInstr(env, PPCInstr_Alu(Palu_AND, rtHi, rr, PPCRH_Reg(rMask)));
+         addInstr(env, PPCInstr_Shft(Pshft_SHL, False/*64 bit shift*/,
+                                     rtHi, rtHi,
+                                     PPCRH_Imm(False/*!signed imm*/, 16)));
+         addInstr(env, PPCInstr_Alu(Palu_AND, rtLo, rr, PPCRH_Reg(rnMask)));
+         addInstr(env, PPCInstr_Shft(Pshft_SHR, False/*64 bit shift*/,
+                                     rtLo, rtLo,
+                                     PPCRH_Imm(False/*!signed imm*/, 16)));
+         addInstr(env, PPCInstr_Alu(Palu_OR, rr, rtHi, PPCRH_Reg(rtLo)));
+
+         // r = (r & 0x00000000FFFFFFFF) << 32 | (r & 0xFFFFFFFF00000000) >> 32
+         /* We don't need to mask anymore, just two more shifts and an or.  */
+         addInstr(env, mk_iMOVds_RR(rtLo, rr));
+         addInstr(env, PPCInstr_Shft(Pshft_SHL, False/*64 bit shift*/,
+                                     rtLo, rtLo,
+                                     PPCRH_Imm(False/*!signed imm*/, 32)));
+         addInstr(env, PPCInstr_Shft(Pshft_SHR, False/*64 bit shift*/,
+                                     rr, rr,
+                                     PPCRH_Imm(False/*!signed imm*/, 32)));
+         addInstr(env, PPCInstr_Alu(Palu_OR, rr, rr, PPCRH_Reg(rtLo)));
+
+         return rr;
+      }
+
       case Iop_Left8:
       case Iop_Left16:
       case Iop_Left32: 

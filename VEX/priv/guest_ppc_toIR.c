@@ -20590,16 +20590,22 @@ dis_vx_load ( UInt theInstr )
    }
    case 0x34C: // lxvd2x
    {
-      IROp addOp = ty == Ity_I64 ? Iop_Add64 : Iop_Add32;
-      IRExpr * high, *low;
-      ULong ea_off = 8;
-      IRExpr* high_addr;
+      IRExpr *t128;
       DIP("lxvd2x %d,r%u,r%u\n", XT, rA_addr, rB_addr);
-      high = load( Ity_I64, mkexpr( EA ) );
-      high_addr = binop( addOp, mkexpr( EA ), ty == Ity_I64 ? mkU64( ea_off )
-            : mkU32( ea_off ) );
-      low = load( Ity_I64, high_addr );
-      putVSReg( XT, binop( Iop_64HLtoV128, high, low ) );
+      t128 = load( Ity_V128, mkexpr( EA ) );
+
+      /* The data in the vec register should be in big endian order.
+         So if we just did a little endian load then swap around the
+         high and low double words. */
+      if (host_endness == VexEndnessLE) {
+         IRTemp high = newTemp(Ity_I64);
+         IRTemp low = newTemp(Ity_I64);
+         assign( high, unop(Iop_V128HIto64, t128) );
+         assign( low, unop(Iop_V128to64, t128) );
+         t128 = binop( Iop_64HLtoV128, mkexpr (low), mkexpr (high) );
+      }
+
+      putVSReg( XT, t128 );
       break;
    }
    case 0x14C: // lxvdsx

@@ -235,8 +235,10 @@ EXTRA_DIST = \
 	partiallydefinedeq.stdout.exp \
 	partial_load_ok.vgtest partial_load_ok.stderr.exp \
 		partial_load_ok.stderr.exp64 \
+		partial_load_ok.stderr.exp-ppc64 \
 	partial_load_dflt.vgtest partial_load_dflt.stderr.exp \
 		partial_load_dflt.stderr.exp64 \
+		partial_load_dflt.stderr.exp-ppc64 \
 	partial_load_dflt.stderr.expr-s390x-mvc \
 	pdb-realloc.stderr.exp pdb-realloc.vgtest \
 	pdb-realloc2.stderr.exp pdb-realloc2.stdout.exp pdb-realloc2.vgtest \

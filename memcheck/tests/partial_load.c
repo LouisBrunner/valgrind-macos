@@ -1,14 +1,14 @@
-
+#include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 
 int main ( void )
 {
-  long  w;
-  int   i;
-  char* p;
-
+  long  w; int   i; char* p;
   assert(sizeof(long) == sizeof(void*));
+#if defined(__powerpc64__)
+  fprintf (stderr, "powerpc64\n"); /* Used to select correct .exp file.  */
+#endif
 
   /* partial load, which --partial-loads-ok=yes should suppress */
   p = calloc( sizeof(long)-1, 1 );
@@ -16,7 +16,7 @@ int main ( void )
   w = *(long*)p;
   free(p);
 
-  /* partial but misaligned, cannot be suppressed */
+  /* partial but misaligned, ppc64[le] ok, but otherwise cannot be suppressed */
   p = calloc( sizeof(long), 1 );
   assert(p);
   p++;

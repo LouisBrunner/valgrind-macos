@@ -1508,6 +1508,9 @@ ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
 #  if defined(VGA_mips64) && defined(VGABI_N32)
    if (szB == VG_WORDSIZE * 2 && VG_IS_WORD_ALIGNED(a)
        && n_addrs_bad < VG_WORDSIZE * 2)
+#  elif defined(VGA_ppc64be) || defined(VGA_ppc64le)
+   /* On power unaligned loads of words are OK. */
+   if (szB == VG_WORDSIZE && n_addrs_bad < VG_WORDSIZE)
 #  else
    if (szB == VG_WORDSIZE && VG_IS_WORD_ALIGNED(a)
        && n_addrs_bad < VG_WORDSIZE)

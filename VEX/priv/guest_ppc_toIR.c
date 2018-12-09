@@ -20702,54 +20702,29 @@ dis_vx_load ( UInt theInstr )
    {
       DIP("lxvb16x %d,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
 
-      IRTemp byte[16];
-      int i;
-      UInt ea_off = 0;
-      IRExpr* irx_addr;
-      IRTemp tmp_low[9];
-      IRTemp tmp_hi[9];
+      /* The result of lxvb16x should be the same on big and little
+         endian systems. We do a host load, then reverse the bytes in
+         the double words. If the host load was little endian we swap
+         them around again. */
 
-      tmp_low[0] = newTemp( Ity_I64 );
-      tmp_hi[0] = newTemp( Ity_I64 );
-      assign( tmp_low[0], mkU64( 0 ) );
-      assign( tmp_hi[0], mkU64( 0 ) );
+      IRTemp high = newTemp(Ity_I64);
+      IRTemp high_rev = newTemp(Ity_I64);
+      IRTemp low = newTemp(Ity_I64);
+      IRTemp low_rev = newTemp(Ity_I64);
 
-      for ( i = 0; i < 8; i++ ) {
-         byte[i] = newTemp( Ity_I64 );
-         tmp_low[i+1] = newTemp( Ity_I64 );
+      IRExpr *t128 = load( Ity_V128, mkexpr( EA ) );
 
-         irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
-                           ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
-         ea_off += 1;
+      assign( high, unop(Iop_V128HIto64, t128) );
+      assign( high_rev, unop(Iop_Reverse8sIn64_x1, mkexpr(high)) );
+      assign( low, unop(Iop_V128to64, t128) );
+      assign( low_rev, unop(Iop_Reverse8sIn64_x1, mkexpr(low)) );
 
-         assign( byte[i], binop( Iop_Shl64,
-                                 unop( Iop_8Uto64,
-                                       load( Ity_I8, irx_addr ) ),
-                                 mkU8( 8 * ( 7 - i ) ) ) );
+      if (host_endness == VexEndnessLE)
+         t128 = binop( Iop_64HLtoV128, mkexpr (low_rev), mkexpr (high_rev) );
+      else
+         t128 = binop( Iop_64HLtoV128, mkexpr (high_rev), mkexpr (low_rev) );
 
-         assign( tmp_low[i+1],
-                 binop( Iop_Or64,
-                        mkexpr( byte[i] ), mkexpr( tmp_low[i] ) ) );
-      }
-
-      for ( i = 0; i < 8; i++ ) {
-         byte[i + 8] = newTemp( Ity_I64 );
-         tmp_hi[i+1] = newTemp( Ity_I64 );
-
-         irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
-                           ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
-         ea_off += 1;
-
-         assign( byte[i+8], binop( Iop_Shl64,
-                                   unop( Iop_8Uto64,
-                                         load( Ity_I8, irx_addr ) ),
-                                   mkU8( 8 * ( 7 - i ) ) ) );
-         assign( tmp_hi[i+1], binop( Iop_Or64,
-                                     mkexpr( byte[i+8] ),
-                                     mkexpr( tmp_hi[i] ) ) );
-      }
-      putVSReg( XT, binop( Iop_64HLtoV128,
-                           mkexpr( tmp_low[8] ), mkexpr( tmp_hi[8] ) ) );
+      putVSReg( XT, t128 );
       break;
    }
 

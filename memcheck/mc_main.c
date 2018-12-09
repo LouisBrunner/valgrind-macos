@@ -1354,6 +1354,9 @@ void mc_LOADV_128_or_256_slow ( /*OUT*/ULong* res,
    tl_assert(szB == 16); // s390 doesn't have > 128 bit SIMD
    /* OK if all loaded bytes are from the same page. */
    Bool alignedOK = ((a & 0xfff) <= 0x1000 - szB);
+#  elif defined(VGA_ppc64be) || defined(VGA_ppc64le)
+   /* lxvd2x might generate an unaligned 128 bit vector load.  */
+   Bool alignedOK = (szB == 16);
 #  else
    /* OK if the address is aligned by the load size. */
    Bool alignedOK = (0 == (a & (szB - 1)));

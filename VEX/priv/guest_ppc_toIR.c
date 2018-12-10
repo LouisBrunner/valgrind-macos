@@ -2062,45 +2062,88 @@ static void set_CR0 ( IRExpr* result )
 static void set_AV_CR6 ( IRExpr* result, Bool test_all_ones )
 {
    /* CR6[0:3] = {all_ones, 0, all_zeros, 0}
-      all_ones  = (v[0] && v[1] && v[2] && v[3])
-      all_zeros = ~(v[0] || v[1] || v[2] || v[3])
-   */
-   IRTemp v0 = newTemp(Ity_V128);
-   IRTemp v1 = newTemp(Ity_V128);
-   IRTemp v2 = newTemp(Ity_V128);
-   IRTemp v3 = newTemp(Ity_V128);
-   IRTemp rOnes  = newTemp(Ity_I8);
-   IRTemp rZeros = newTemp(Ity_I8);
+      32 bit: all_zeros =  (v[0] || v[1] || v[2] || v[3]) == 0x0000'0000
+              all_ones  = ~(v[0] && v[1] && v[2] && v[3]) == 0x0000'0000
+              where v[] denotes 32-bit lanes
+      or
+      64 bit: all_zeros =  (v[0] || v[1]) == 0x0000'0000'0000'0000
+              all_ones  = ~(v[0] && v[1]) == 0x0000'0000'0000'0000
+              where v[] denotes 64-bit lanes
 
+      The 32- and 64-bit versions compute the same thing, but the 64-bit one
+      tries to be a bit more efficient.
+   */
    vassert(typeOfIRExpr(irsb->tyenv,result) == Ity_V128);
 
-   assign( v0, result );
-   assign( v1, binop(Iop_ShrV128, result, mkU8(32)) );
-   assign( v2, binop(Iop_ShrV128, result, mkU8(64)) );
-   assign( v3, binop(Iop_ShrV128, result, mkU8(96)) );
+   IRTemp overlappedOred  = newTemp(Ity_V128);
+   IRTemp overlappedAnded = newTemp(Ity_V128);
 
-   assign( rZeros, unop(Iop_1Uto8,
-       binop(Iop_CmpEQ32, mkU32(0xFFFFFFFF),
-             unop(Iop_Not32,
-                  unop(Iop_V128to32,
-                       binop(Iop_OrV128,
-                             binop(Iop_OrV128, mkexpr(v0), mkexpr(v1)),
-                             binop(Iop_OrV128, mkexpr(v2), mkexpr(v3))))
-                  ))) );
+   if (mode64) {
+      IRTemp v0 = newTemp(Ity_V128);
+      IRTemp v1 = newTemp(Ity_V128);
+      assign( v0, result );
+      assign( v1, binop(Iop_ShrV128, result, mkU8(64)) );
+      assign(overlappedOred,
+             binop(Iop_OrV128, mkexpr(v0), mkexpr(v1)));
+      assign(overlappedAnded,
+             binop(Iop_AndV128, mkexpr(v0), mkexpr(v1)));
+   } else {
+      IRTemp v0 = newTemp(Ity_V128);
+      IRTemp v1 = newTemp(Ity_V128);
+      IRTemp v2 = newTemp(Ity_V128);
+      IRTemp v3 = newTemp(Ity_V128);
+      assign( v0, result );
+      assign( v1, binop(Iop_ShrV128, result, mkU8(32)) );
+      assign( v2, binop(Iop_ShrV128, result, mkU8(64)) );
+      assign( v3, binop(Iop_ShrV128, result, mkU8(96)) );
+      assign(overlappedOred,
+             binop(Iop_OrV128,
+                   binop(Iop_OrV128, mkexpr(v0), mkexpr(v1)),
+                   binop(Iop_OrV128, mkexpr(v2), mkexpr(v3))));
+      assign(overlappedAnded,
+             binop(Iop_AndV128,
+                   binop(Iop_AndV128, mkexpr(v0), mkexpr(v1)),
+                   binop(Iop_AndV128, mkexpr(v2), mkexpr(v3))));
+   }
+
+   IRTemp rOnes   = newTemp(Ity_I8);
+   IRTemp rZeroes = newTemp(Ity_I8);
+
+   if (mode64) {
+      assign(rZeroes,
+             unop(Iop_1Uto8,
+                  binop(Iop_CmpEQ64,
+                        mkU64(0),
+                        unop(Iop_V128to64, mkexpr(overlappedOred)))));
+      assign(rOnes,
+             unop(Iop_1Uto8,
+                  binop(Iop_CmpEQ64,
+                        mkU64(0),
+                        unop(Iop_Not64,
+                             unop(Iop_V128to64, mkexpr(overlappedAnded))))));
+   } else {
+      assign(rZeroes,
+             unop(Iop_1Uto8,
+                  binop(Iop_CmpEQ32,
+                        mkU32(0),
+                        unop(Iop_V128to32, mkexpr(overlappedOred)))));
+      assign(rOnes,
+             unop(Iop_1Uto8,
+                  binop(Iop_CmpEQ32,
+                        mkU32(0),
+                        unop(Iop_Not32,
+                             unop(Iop_V128to32, mkexpr(overlappedAnded))))));
+   }
+
+   // rOnes might not be used below.  But iropt will remove it, so there's no
+   // inefficiency as a result.
 
    if (test_all_ones) {
-      assign( rOnes, unop(Iop_1Uto8,
-         binop(Iop_CmpEQ32, mkU32(0xFFFFFFFF),
-               unop(Iop_V128to32,
-                    binop(Iop_AndV128,
-                          binop(Iop_AndV128, mkexpr(v0), mkexpr(v1)),
-                          binop(Iop_AndV128, mkexpr(v2), mkexpr(v3)))
-                    ))) );
       putCR321( 6, binop(Iop_Or8,
                          binop(Iop_Shl8, mkexpr(rOnes),  mkU8(3)),
-                         binop(Iop_Shl8, mkexpr(rZeros), mkU8(1))) );
+                         binop(Iop_Shl8, mkexpr(rZeroes), mkU8(1))) );
    } else {
-      putCR321( 6, binop(Iop_Shl8, mkexpr(rZeros), mkU8(1)) );
+      putCR321( 6, binop(Iop_Shl8, mkexpr(rZeroes), mkU8(1)) );
    }
    putCR0( 6, mkU8(0) );
 } 

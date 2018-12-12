@@ -2304,22 +2304,35 @@ static void final_tidyup(ThreadId tid)
                    "Caught __NR_exit; running %s wrapper\n", msgs[to_run - 1]);
    }
       
-   /* set thread context to point to freeres_wrapper */
-   /* ppc64be-linux note: freeres_wrapper gives us the real
+   /* Set thread context to point to freeres_wrapper.
+      ppc64be-linux note: freeres_wrapper gives us the real
       function entry point, not a fn descriptor, so can use it
       directly.  However, we need to set R2 (the toc pointer)
       appropriately. */
    VG_(set_IP)(tid, freeres_wrapper);
+
 #  if defined(VGP_ppc64be_linux)
    VG_(threads)[tid].arch.vex.guest_GPR2 = r2;
+   VG_TRACK(post_reg_write, Vg_CoreClientReq, tid,
+            offsetof(VexGuestPPC64State, guest_GPR2),
+            sizeof(VG_(threads)[tid].arch.vex.guest_GPR2));
 #  elif  defined(VGP_ppc64le_linux)
    /* setting GPR2 but not really needed, GPR12 is needed */
    VG_(threads)[tid].arch.vex.guest_GPR2  = freeres_wrapper;
+   VG_TRACK(post_reg_write, Vg_CoreClientReq, tid,
+            offsetof(VexGuestPPC64State, guest_GPR2),
+            sizeof(VG_(threads)[tid].arch.vex.guest_GPR2));
    VG_(threads)[tid].arch.vex.guest_GPR12 = freeres_wrapper;
+   VG_TRACK(post_reg_write, Vg_CoreClientReq, tid,
+            offsetof(VexGuestPPC64State, guest_GPR12),
+            sizeof(VG_(threads)[tid].arch.vex.guest_GPR12));
 #  endif
    /* mips-linux note: we need to set t9 */
 #  if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
    VG_(threads)[tid].arch.vex.guest_r25 = freeres_wrapper;
+   VG_TRACK(post_reg_write, Vg_CoreClientReq, tid,
+            offsetof(VexGuestMIPS32State, guest_r25),
+            sizeof(VG_(threads)[tid].arch.vex.guest_r25));
 #  endif
 
    /* Pass a parameter to freeres_wrapper(). */

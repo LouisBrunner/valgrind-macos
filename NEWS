@@ -70,6 +70,7 @@ where XXXXXX is the bug number as listed below.
 401578  drd: crashes sometimes on fork()
 401627  memcheck errors with glibc avx2 optimized wcsncmp
 401822  none/tests/ppc64/jm-vmx fails and produces assembler warnings
+402006  mark helper regs defined in final_tidyup before freeres_wrapper call
 
 Release 3.14.0 (9 October 2018)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -3525,7 +3525,7 @@ fn=wmemchr
 fl=/build/glibc-OTsEL5/glibc-2.27/wcsmbs/../sysdeps/x86_64/multiarch/wmemset.c
 fn=wmemset
 31 2 0 0 2 0 0 0 0 0
-fl=/home/njn/grind/ws2/a.c
+fl=a.c
 fn=main
 1 2 0 0 0 0 0 1 0 0
 2 1 1 1 0 0 0 1 0 0

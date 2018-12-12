@@ -9,7 +9,7 @@ Events recorded:  Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
 Events shown:     Dw Dr Ir
 Event sort order: Dr
 Thresholds:       99
-Include dirs:     
+Include dirs:     ../../cachegrind/tests/
 User annotated:   
 Auto-annotation:  on
 
@@ -21,11 +21,11 @@ Dw              Dr                 Ir
 --------------------------------------------------------------------------------
 Dw             Dr                 Ir                  file:function
 --------------------------------------------------------------------------------
-    3 ( 0.02%) 4,000,004 (98.57%) 5,000,015 (95.61%)  /home/njn/grind/ws2/a.c:main
+    3 ( 0.02%) 4,000,004 (98.57%) 5,000,015 (95.61%)  a.c:main
 4,543 (25.23%)    17,566 ( 0.43%)    47,993 ( 0.92%)  /build/glibc-OTsEL5/glibc-2.27/elf/dl-lookup.c:do_lookup_x
 
 --------------------------------------------------------------------------------
--- Auto-annotated source: /home/njn/grind/ws2/a.c
+-- Auto-annotated source: ../../cachegrind/tests/ + a.c
 --------------------------------------------------------------------------------
 Dw         Dr                 Ir                 
 

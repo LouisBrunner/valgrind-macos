@@ -216,9 +216,19 @@ static void init(void);
    Apart of allowing memcheck to detect an error, the macro
    TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED has no effect and
    has a minimal cost for other tools replacing malloc functions.
+
+   Creating an "artificial" use of _x that works reliably is not entirely
+   straightforward.  Simply comparing it against zero often produces no
+   warning if _x contains at least one nonzero bit is defined, because
+   Memcheck knows that the result of the comparison will be defined (cf
+   expensiveCmpEQorNE).
+
+   Really we want to PCast _x, so as to create a value which is entirely
+   undefined if any bit of _x is undefined.  But there's no portable way to do
+   that.
 */
-#define TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(x) \
-   if ((ULong)x == 0) __asm__ __volatile__( "" ::: "memory" )
+#define TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(_x) \
+   if ((UWord)(_x) == 0) __asm__ __volatile__( "" ::: "memory" )
 
 /*---------------------- malloc ----------------------*/
 
@@ -504,7 +514,7 @@ static void init(void);
    void VG_REPLACE_FUNCTION_EZU(10040,soname,fnname) (void *zone, void *p)  \
    { \
       DO_INIT; \
-      TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord) zone);	\
+      TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord)zone ^ (UWord)p); \
       MALLOC_TRACE(#fnname "(%p, %p)\n", zone, p ); \
       if (p == NULL)  \
          return; \

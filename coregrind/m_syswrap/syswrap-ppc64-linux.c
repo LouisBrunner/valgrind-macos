@@ -388,6 +388,7 @@ DECL_TEMPLATE(ppc64_linux, sys_mmap);
 //zz DECL_TEMPLATE(ppc64_linux, sys_sigreturn);
 DECL_TEMPLATE(ppc64_linux, sys_rt_sigreturn);
 DECL_TEMPLATE(ppc64_linux, sys_fadvise64);
+DECL_TEMPLATE(ppc64_linux, sys_ptrace);
 
 PRE(sys_mmap)
 {
@@ -511,6 +512,72 @@ PRE(sys_rt_sigreturn)
    *flags |= SfPollAfter;
 }
 
+// ARG3 is only used for pointers into the traced process's address
+// space and for offsets into the traced process's struct
+// user_regs_struct. It is never a pointer into this process's memory
+// space, and we should therefore not check anything it points to.
+// powerpc does have other ways to get/set registers, we only support
+// GET/SETREGSET for now.
+PRE(sys_ptrace)
+{
+   PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", ARG1,ARG2,ARG3,ARG4);
+   PRE_REG_READ4(int, "ptrace",
+                 long, request, long, pid, long, addr, long, data);
+   switch (ARG1) {
+   case VKI_PTRACE_PEEKTEXT:
+   case VKI_PTRACE_PEEKDATA:
+   case VKI_PTRACE_PEEKUSR:
+      PRE_MEM_WRITE( "ptrace(peek)", ARG4,
+                     sizeof (long));
+      break;
+   case VKI_PTRACE_GETEVENTMSG:
+      PRE_MEM_WRITE( "ptrace(geteventmsg)", ARG4, sizeof(unsigned long));
+      break;
+   case VKI_PTRACE_GETSIGINFO:
+      PRE_MEM_WRITE( "ptrace(getsiginfo)", ARG4, sizeof(vki_siginfo_t));
+      break;
+   case VKI_PTRACE_SETSIGINFO:
+      PRE_MEM_READ( "ptrace(setsiginfo)", ARG4, sizeof(vki_siginfo_t));
+      break;
+   case VKI_PTRACE_GETREGSET:
+      ML_(linux_PRE_getregset)(tid, ARG3, ARG4);
+      break;
+   case VKI_PTRACE_SETREGSET:
+      ML_(linux_PRE_setregset)(tid, ARG3, ARG4);
+      break;
+   default:
+      break;
+   }
+}
+
+POST(sys_ptrace)
+{
+   switch (ARG1) {
+   case VKI_PTRACE_TRACEME:
+      ML_(linux_POST_traceme)(tid);
+      break;
+   case VKI_PTRACE_PEEKTEXT:
+   case VKI_PTRACE_PEEKDATA:
+   case VKI_PTRACE_PEEKUSR:
+      POST_MEM_WRITE( ARG4, sizeof (long));
+      break;
+   case VKI_PTRACE_GETEVENTMSG:
+      POST_MEM_WRITE( ARG4, sizeof(unsigned long));
+      break;
+   case VKI_PTRACE_GETSIGINFO:
+      /* XXX: This is a simplification. Different parts of the
+       * siginfo_t are valid depending on the type of signal.
+       */
+      POST_MEM_WRITE( ARG4, sizeof(vki_siginfo_t));
+      break;
+   case VKI_PTRACE_GETREGSET:
+      ML_(linux_POST_getregset)(tid, ARG3, ARG4);
+      break;
+   default:
+      break;
+   }
+}
+
 #undef PRE
 #undef POST
 
@@ -562,8 +629,7 @@ static SyscallTableEntry syscall_table[] = {
    GENX_(__NR_getuid,            sys_getuid),             //  24
 
 // _____(__NR_stime,             sys_stime),              //  25
-// When ptrace is supported, memcheck/tests/linux/getregset should be enabled
-// _____(__NR_ptrace,            sys_ptrace),             //  26
+   PLAXY(__NR_ptrace,            sys_ptrace),             //  26
    GENX_(__NR_alarm,             sys_alarm),              //  27
 // _____(__NR_oldfstat,          sys_oldfstat),           //  28
    GENX_(__NR_pause,             sys_pause),              //  29

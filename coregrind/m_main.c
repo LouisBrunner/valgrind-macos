@@ -2328,10 +2328,15 @@ static void final_tidyup(ThreadId tid)
             sizeof(VG_(threads)[tid].arch.vex.guest_GPR12));
 #  endif
    /* mips-linux note: we need to set t9 */
-#  if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
+#  if defined(VGP_mips32_linux)
    VG_(threads)[tid].arch.vex.guest_r25 = freeres_wrapper;
    VG_TRACK(post_reg_write, Vg_CoreClientReq, tid,
             offsetof(VexGuestMIPS32State, guest_r25),
+            sizeof(VG_(threads)[tid].arch.vex.guest_r25));
+#  elif defined(VGP_mips64_linux)
+   VG_(threads)[tid].arch.vex.guest_r25 = freeres_wrapper;
+   VG_TRACK(post_reg_write, Vg_CoreClientReq, tid,
+            offsetof(VexGuestMIPS64State, guest_r25),
             sizeof(VG_(threads)[tid].arch.vex.guest_r25));
 #  endif
 

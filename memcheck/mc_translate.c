@@ -8022,6 +8022,7 @@ static inline void noteTmpUsesIn ( /*MOD*/HowUsed* useEnv,
       use info. */
    switch (at->tag) {
       case Iex_GSPTR:
+      case Iex_VECRET:
       case Iex_Const:
          return;
       case Iex_RdTmp: {

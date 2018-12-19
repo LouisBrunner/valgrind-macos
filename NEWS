@@ -72,6 +72,7 @@ where XXXXXX is the bug number as listed below.
 401822  none/tests/ppc64/jm-vmx fails and produces assembler warnings
 402006  mark helper regs defined in final_tidyup before freeres_wrapper call
 402048  WARNING: unhandled ppc64[be|le]-linux syscall: 26 (ptrace)
+402327  Warning: DWARF2 CFI reader: unhandled DW_OP_ opcode 0x13 (DW_OP_drop)
 
 Release 3.14.0 (9 October 2018)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -2853,6 +2853,12 @@ static Int dwarfexpr_to_dag ( const UnwindContext* ctx,
                VG_(printf)("DW_OP_deref");
             break;
 
+         case DW_OP_drop:
+            POP( ix );
+            if (ddump_frames)
+               VG_(printf)("DW_OP_drop");
+            break;
+
          default:
             if (!VG_(clo_xml))
                VG_(message)(Vg_DebugMsg, 

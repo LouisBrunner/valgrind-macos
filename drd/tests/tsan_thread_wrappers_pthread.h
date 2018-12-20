@@ -368,7 +368,7 @@ class MyThread {
     }
     if (my_thread->wpvpv_)
       return my_thread->wpvpv_(my_thread->arg_);
-    if (my_thread->wpvpv_)
+    if (my_thread->wvpv_)
       my_thread->wvpv_(my_thread->arg_);
     if (my_thread->wvv_)
       my_thread->wvv_();

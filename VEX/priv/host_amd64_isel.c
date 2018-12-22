@@ -923,10 +923,6 @@ static HReg iselIntExpr_R ( ISelEnv* env, const IRExpr* e )
 /* DO NOT CALL THIS DIRECTLY ! */
 static HReg iselIntExpr_R_wrk ( ISelEnv* env, const IRExpr* e )
 {
-   /* Used for unary/binary SIMD64 ops. */
-   HWord fn = 0;
-   Bool second_is_UInt;
-
    MatchInfo mi;
    DECLARE_PATTERN(p_1Uto8_64to1);
    DECLARE_PATTERN(p_LDle8_then_8Uto64);
@@ -1089,164 +1085,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, const IRExpr* e )
          return dst;
       }
 
-      /* Deal with 64-bit SIMD binary ops */
-      second_is_UInt = False;
-      switch (e->Iex.Binop.op) {
-         case Iop_Add8x8:
-            fn = (HWord)h_generic_calc_Add8x8; break;
-         case Iop_Add16x4:
-            fn = (HWord)h_generic_calc_Add16x4; break;
-         case Iop_Add32x2:
-            fn = (HWord)h_generic_calc_Add32x2; break;
-
-         case Iop_Avg8Ux8:
-            fn = (HWord)h_generic_calc_Avg8Ux8; break;
-         case Iop_Avg16Ux4:
-            fn = (HWord)h_generic_calc_Avg16Ux4; break;
-
-         case Iop_CmpEQ8x8:
-            fn = (HWord)h_generic_calc_CmpEQ8x8; break;
-         case Iop_CmpEQ16x4:
-            fn = (HWord)h_generic_calc_CmpEQ16x4; break;
-         case Iop_CmpEQ32x2:
-            fn = (HWord)h_generic_calc_CmpEQ32x2; break;
-
-         case Iop_CmpGT8Sx8:
-            fn = (HWord)h_generic_calc_CmpGT8Sx8; break;
-         case Iop_CmpGT16Sx4:
-            fn = (HWord)h_generic_calc_CmpGT16Sx4; break;
-         case Iop_CmpGT32Sx2:
-            fn = (HWord)h_generic_calc_CmpGT32Sx2; break;
-
-         case Iop_InterleaveHI8x8:
-            fn = (HWord)h_generic_calc_InterleaveHI8x8; break;
-         case Iop_InterleaveLO8x8:
-            fn = (HWord)h_generic_calc_InterleaveLO8x8; break;
-         case Iop_InterleaveHI16x4:
-            fn = (HWord)h_generic_calc_InterleaveHI16x4; break;
-         case Iop_InterleaveLO16x4:
-            fn = (HWord)h_generic_calc_InterleaveLO16x4; break;
-         case Iop_InterleaveHI32x2:
-            fn = (HWord)h_generic_calc_InterleaveHI32x2; break;
-         case Iop_InterleaveLO32x2:
-            fn = (HWord)h_generic_calc_InterleaveLO32x2; break;
-         case Iop_CatOddLanes16x4:
-            fn = (HWord)h_generic_calc_CatOddLanes16x4; break;
-         case Iop_CatEvenLanes16x4:
-            fn = (HWord)h_generic_calc_CatEvenLanes16x4; break;
-         case Iop_PermOrZero8x8:
-            fn = (HWord)h_generic_calc_PermOrZero8x8; break;
-
-         case Iop_Max8Ux8:
-            fn = (HWord)h_generic_calc_Max8Ux8; break;
-         case Iop_Max16Sx4:
-            fn = (HWord)h_generic_calc_Max16Sx4; break;
-         case Iop_Min8Ux8:
-            fn = (HWord)h_generic_calc_Min8Ux8; break;
-         case Iop_Min16Sx4:
-            fn = (HWord)h_generic_calc_Min16Sx4; break;
-
-         case Iop_Mul16x4:
-            fn = (HWord)h_generic_calc_Mul16x4; break;
-         case Iop_Mul32x2:
-            fn = (HWord)h_generic_calc_Mul32x2; break;
-         case Iop_MulHi16Sx4:
-            fn = (HWord)h_generic_calc_MulHi16Sx4; break;
-         case Iop_MulHi16Ux4:
-            fn = (HWord)h_generic_calc_MulHi16Ux4; break;
-
-         case Iop_QAdd8Sx8:
-            fn = (HWord)h_generic_calc_QAdd8Sx8; break;
-         case Iop_QAdd16Sx4:
-            fn = (HWord)h_generic_calc_QAdd16Sx4; break;
-         case Iop_QAdd8Ux8:
-            fn = (HWord)h_generic_calc_QAdd8Ux8; break;
-         case Iop_QAdd16Ux4:
-            fn = (HWord)h_generic_calc_QAdd16Ux4; break;
-
-         case Iop_QNarrowBin32Sto16Sx4:
-            fn = (HWord)h_generic_calc_QNarrowBin32Sto16Sx4; break;
-         case Iop_QNarrowBin16Sto8Sx8:
-            fn = (HWord)h_generic_calc_QNarrowBin16Sto8Sx8; break;
-         case Iop_QNarrowBin16Sto8Ux8:
-            fn = (HWord)h_generic_calc_QNarrowBin16Sto8Ux8; break;
-         case Iop_NarrowBin16to8x8:
-            fn = (HWord)h_generic_calc_NarrowBin16to8x8; break;
-         case Iop_NarrowBin32to16x4:
-            fn = (HWord)h_generic_calc_NarrowBin32to16x4; break;
-
-         case Iop_QSub8Sx8:
-            fn = (HWord)h_generic_calc_QSub8Sx8; break;
-         case Iop_QSub16Sx4:
-            fn = (HWord)h_generic_calc_QSub16Sx4; break;
-         case Iop_QSub8Ux8:
-            fn = (HWord)h_generic_calc_QSub8Ux8; break;
-         case Iop_QSub16Ux4:
-            fn = (HWord)h_generic_calc_QSub16Ux4; break;
-
-         case Iop_Sub8x8:
-            fn = (HWord)h_generic_calc_Sub8x8; break;
-         case Iop_Sub16x4:
-            fn = (HWord)h_generic_calc_Sub16x4; break;
-         case Iop_Sub32x2:
-            fn = (HWord)h_generic_calc_Sub32x2; break;
-
-         case Iop_ShlN32x2:
-            fn = (HWord)h_generic_calc_ShlN32x2; 
-            second_is_UInt = True;
-            break;
-         case Iop_ShlN16x4:
-            fn = (HWord)h_generic_calc_ShlN16x4;
-            second_is_UInt = True;
-            break;
-         case Iop_ShlN8x8:
-            fn = (HWord)h_generic_calc_ShlN8x8;
-            second_is_UInt = True;
-            break;
-         case Iop_ShrN32x2:
-            fn = (HWord)h_generic_calc_ShrN32x2; 
-            second_is_UInt = True; 
-            break;
-         case Iop_ShrN16x4:
-            fn = (HWord)h_generic_calc_ShrN16x4;
-            second_is_UInt = True; 
-            break;
-         case Iop_SarN32x2:
-            fn = (HWord)h_generic_calc_SarN32x2;
-            second_is_UInt = True; 
-            break;
-         case Iop_SarN16x4:
-            fn = (HWord)h_generic_calc_SarN16x4;
-            second_is_UInt = True; 
-            break;
-         case Iop_SarN8x8:
-            fn = (HWord)h_generic_calc_SarN8x8;
-            second_is_UInt = True; 
-            break;
-
-         default:
-            fn = (HWord)0; break;
-      }
-      if (fn != (HWord)0) {
-         /* Note: the following assumes all helpers are of signature 
-               ULong fn ( ULong, ULong ), and they are
-            not marked as regparm functions. 
-         */
-         HReg dst  = newVRegI(env);
-         HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
-         HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         if (second_is_UInt)
-            addInstr(env, AMD64Instr_MovxLQ(False, argR, argR));
-         addInstr(env, mk_iMOVsd_RR(argL, hregAMD64_RDI()) );
-         addInstr(env, mk_iMOVsd_RR(argR, hregAMD64_RSI()) );
-         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 2,
-                                        mk_RetLoc_simple(RLPri_Int) ));
-         addInstr(env, mk_iMOVsd_RR(hregAMD64_RAX(), dst));
-         return dst;
-      }
-
-      /* Handle misc other ops. */
-
+      /* Handle misc other scalar ops. */
       if (e->Iex.Binop.op == Iop_Max32U) {
          HReg src1 = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg dst  = newVRegI(env);
@@ -1377,6 +1216,221 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, const IRExpr* e )
          set_SSE_rounding_mode( env, e->Iex.Binop.arg1 );
          addInstr(env, AMD64Instr_SseSF2SI( 8, szD, rf, dst ));
          set_SSE_rounding_default(env);
+         return dst;
+      }
+
+      /* Deal with 64-bit SIMD binary ops.  For the most part these are doable
+         by using the equivalent 128-bit operation and ignoring the upper half
+         of the result. */
+      AMD64SseOp op = Asse_INVALID;
+      Bool arg1isEReg = False;
+      Bool preShift32R = False;
+      switch (e->Iex.Binop.op) {
+         // The following 3 could be done with 128 bit insns too, but
+         // first require the inputs to be reformatted.
+         //case Iop_QNarrowBin32Sto16Sx4:
+         //op = Asse_PACKSSD; arg1isEReg = True; break;
+         //case Iop_QNarrowBin16Sto8Sx8:
+         //op = Asse_PACKSSW; arg1isEReg = True; break;
+         //case Iop_QNarrowBin16Sto8Ux8:
+         //op = Asse_PACKUSW; arg1isEReg = True; break;
+
+         case Iop_InterleaveHI8x8:
+            op = Asse_UNPCKLB; arg1isEReg = True; preShift32R = True;
+            break;
+         case Iop_InterleaveHI16x4:
+            op = Asse_UNPCKLW; arg1isEReg = True; preShift32R = True;
+            break;
+         case Iop_InterleaveHI32x2:
+            op = Asse_UNPCKLD; arg1isEReg = True; preShift32R = True;
+            break;
+         case Iop_InterleaveLO8x8:
+            op = Asse_UNPCKLB; arg1isEReg = True;
+            break;
+         case Iop_InterleaveLO16x4:
+            op = Asse_UNPCKLW; arg1isEReg = True;
+            break;
+         case Iop_InterleaveLO32x2:
+            op = Asse_UNPCKLD; arg1isEReg = True;
+            break;
+
+         case Iop_Add8x8:     op = Asse_ADD8;     break;
+         case Iop_Add16x4:    op = Asse_ADD16;    break;
+         case Iop_Add32x2:    op = Asse_ADD32;    break;
+         case Iop_QAdd8Sx8:   op = Asse_QADD8S;   break;
+         case Iop_QAdd16Sx4:  op = Asse_QADD16S;  break;
+         case Iop_QAdd8Ux8:   op = Asse_QADD8U;   break;
+         case Iop_QAdd16Ux4:  op = Asse_QADD16U;  break;
+         case Iop_Avg8Ux8:    op = Asse_AVG8U;    break;
+         case Iop_Avg16Ux4:   op = Asse_AVG16U;   break;
+         case Iop_CmpEQ8x8:   op = Asse_CMPEQ8;   break;
+         case Iop_CmpEQ16x4:  op = Asse_CMPEQ16;  break;
+         case Iop_CmpEQ32x2:  op = Asse_CMPEQ32;  break;
+         case Iop_CmpGT8Sx8:  op = Asse_CMPGT8S;  break;
+         case Iop_CmpGT16Sx4: op = Asse_CMPGT16S; break;
+         case Iop_CmpGT32Sx2: op = Asse_CMPGT32S; break;
+         case Iop_Max16Sx4:   op = Asse_MAX16S;   break;
+         case Iop_Max8Ux8:    op = Asse_MAX8U;    break;
+         case Iop_Min16Sx4:   op = Asse_MIN16S;   break;
+         case Iop_Min8Ux8:    op = Asse_MIN8U;    break;
+         case Iop_MulHi16Ux4: op = Asse_MULHI16U; break;
+         case Iop_MulHi16Sx4: op = Asse_MULHI16S; break;
+         case Iop_Mul16x4:    op = Asse_MUL16;    break;
+         case Iop_Sub8x8:     op = Asse_SUB8;     break;
+         case Iop_Sub16x4:    op = Asse_SUB16;    break;
+         case Iop_Sub32x2:    op = Asse_SUB32;    break;
+         case Iop_QSub8Sx8:   op = Asse_QSUB8S;   break;
+         case Iop_QSub16Sx4:  op = Asse_QSUB16S;  break;
+         case Iop_QSub8Ux8:   op = Asse_QSUB8U;   break;
+         case Iop_QSub16Ux4:  op = Asse_QSUB16U;  break;
+         default: break;
+      }
+      if (op != Asse_INVALID) {
+         /* This isn't pretty, but .. move each arg to the low half of an XMM
+            register, do the operation on the whole register, and move the
+            result back to an integer register. */
+         const IRExpr* arg1 = e->Iex.Binop.arg1;
+         const IRExpr* arg2 = e->Iex.Binop.arg2;
+         vassert(typeOfIRExpr(env->type_env, arg1) == Ity_I64);
+         vassert(typeOfIRExpr(env->type_env, arg2) == Ity_I64);
+         HReg iarg1 = iselIntExpr_R(env, arg1);
+         HReg iarg2 = iselIntExpr_R(env, arg2);
+         HReg varg1 = newVRegV(env);
+         HReg varg2 = newVRegV(env);
+         HReg idst  = newVRegI(env);
+         addInstr(env, AMD64Instr_SseMOVQ(iarg1, varg1, True/*toXMM*/));
+         addInstr(env, AMD64Instr_SseMOVQ(iarg2, varg2, True/*toXMM*/));
+         if (arg1isEReg) {
+            if (preShift32R) {
+               addInstr(env, AMD64Instr_SseShiftN(Asse_SHR128, 32, varg1));
+               addInstr(env, AMD64Instr_SseShiftN(Asse_SHR128, 32, varg2));
+            }
+            addInstr(env, AMD64Instr_SseReRg(op, varg1, varg2));
+            addInstr(env, AMD64Instr_SseMOVQ(idst, varg2, False/*!toXMM*/));
+         } else {
+            vassert(!preShift32R);
+            addInstr(env, AMD64Instr_SseReRg(op, varg2, varg1));
+            addInstr(env, AMD64Instr_SseMOVQ(idst, varg1, False/*!toXMM*/));
+         }
+         return idst;
+      }
+
+      UInt laneBits = 0;
+      op = Asse_INVALID;
+      switch (e->Iex.Binop.op) {
+         case Iop_ShlN16x4: laneBits = 16; op = Asse_SHL16; break;
+         case Iop_ShlN32x2: laneBits = 32; op = Asse_SHL32; break;
+         case Iop_SarN16x4: laneBits = 16; op = Asse_SAR16; break;
+         case Iop_SarN32x2: laneBits = 32; op = Asse_SAR32; break;
+         case Iop_ShrN16x4: laneBits = 16; op = Asse_SHR16; break;
+         case Iop_ShrN32x2: laneBits = 32; op = Asse_SHR32; break;
+         default: break;
+      }
+      if (op != Asse_INVALID) {
+         const IRExpr* arg1 = e->Iex.Binop.arg1;
+         const IRExpr* arg2 = e->Iex.Binop.arg2;
+         vassert(typeOfIRExpr(env->type_env, arg1) == Ity_I64);
+         vassert(typeOfIRExpr(env->type_env, arg2) == Ity_I8);
+         HReg igreg = iselIntExpr_R(env, arg1);
+         HReg vgreg = newVRegV(env);
+         HReg idst  = newVRegI(env);
+         addInstr(env, AMD64Instr_SseMOVQ(igreg, vgreg, True/*toXMM*/));
+         /* If it's a shift by an in-range immediate, generate a single
+            instruction. */
+         if (arg2->tag == Iex_Const) {
+            IRConst* c = arg2->Iex.Const.con;
+            vassert(c->tag == Ico_U8);
+            UInt shift = c->Ico.U8;
+            if (shift < laneBits) {
+               addInstr(env, AMD64Instr_SseShiftN(op, shift, vgreg));
+               addInstr(env, AMD64Instr_SseMOVQ(idst, vgreg, False/*!toXMM*/));
+               return idst;
+            }
+         }
+         /* Otherwise we have to do it the longwinded way. */
+         HReg ishift = iselIntExpr_R(env, arg2);
+         HReg vshift = newVRegV(env);
+         addInstr(env, AMD64Instr_SseMOVQ(ishift, vshift, True/*toXMM*/));
+         addInstr(env, AMD64Instr_SseReRg(op, vshift, vgreg));
+         addInstr(env, AMD64Instr_SseMOVQ(idst, vgreg, False/*!toXMM*/));
+         return idst;
+      }
+
+      if (e->Iex.Binop.op == Iop_Mul32x2) {
+         const IRExpr* arg1 = e->Iex.Binop.arg1;
+         const IRExpr* arg2 = e->Iex.Binop.arg2;
+         vassert(typeOfIRExpr(env->type_env, arg1) == Ity_I64);
+         vassert(typeOfIRExpr(env->type_env, arg2) == Ity_I64);
+         HReg s1 = iselIntExpr_R(env, arg1);
+         HReg s2 = iselIntExpr_R(env, arg2);
+         HReg resLo = newVRegI(env);
+         // resLo = (s1 *64 s2) & 0xFFFF'FFFF
+         addInstr(env, mk_iMOVsd_RR(s1, resLo));
+         addInstr(env, AMD64Instr_Alu64R(Aalu_MUL, AMD64RMI_Reg(s2), resLo));
+         addInstr(env, AMD64Instr_MovxLQ(False, resLo, resLo));
+
+         // resHi = ((s1 >>u 32) *64 (s2 >>u 32)) << 32;
+         HReg resHi = newVRegI(env);
+         addInstr(env, mk_iMOVsd_RR(s1, resHi));
+         addInstr(env, AMD64Instr_Sh64(Ash_SHR, 32, resHi));
+         HReg tmp = newVRegI(env);
+         addInstr(env, mk_iMOVsd_RR(s2, tmp));
+         addInstr(env, AMD64Instr_Sh64(Ash_SHR, 32, tmp));
+         addInstr(env, AMD64Instr_Alu64R(Aalu_MUL, AMD64RMI_Reg(tmp), resHi));
+         addInstr(env, AMD64Instr_Sh64(Ash_SHL, 32, resHi));
+
+         // final result = resHi | resLo
+         addInstr(env, AMD64Instr_Alu64R(Aalu_OR, AMD64RMI_Reg(resHi), resLo));
+         return resLo;
+      }
+
+      // A few remaining SIMD64 ops require helper functions, at least for
+      // now.
+      Bool second_is_UInt = False;
+      HWord fn = 0;
+      switch (e->Iex.Binop.op) {
+         case Iop_CatOddLanes16x4:
+            fn = (HWord)h_generic_calc_CatOddLanes16x4; break;
+         case Iop_CatEvenLanes16x4:
+            fn = (HWord)h_generic_calc_CatEvenLanes16x4; break;
+         case Iop_PermOrZero8x8:
+            fn = (HWord)h_generic_calc_PermOrZero8x8; break;
+
+         case Iop_QNarrowBin32Sto16Sx4:
+            fn = (HWord)h_generic_calc_QNarrowBin32Sto16Sx4; break;
+         case Iop_QNarrowBin16Sto8Sx8:
+            fn = (HWord)h_generic_calc_QNarrowBin16Sto8Sx8; break;
+         case Iop_QNarrowBin16Sto8Ux8:
+            fn = (HWord)h_generic_calc_QNarrowBin16Sto8Ux8; break;
+
+         case Iop_NarrowBin16to8x8:
+            fn = (HWord)h_generic_calc_NarrowBin16to8x8; break;
+         case Iop_NarrowBin32to16x4:
+            fn = (HWord)h_generic_calc_NarrowBin32to16x4; break;
+
+         case Iop_SarN8x8:
+            fn = (HWord)h_generic_calc_SarN8x8;
+            second_is_UInt = True;
+            break;
+
+         default:
+            fn = (HWord)0; break;
+      }
+      if (fn != (HWord)0) {
+         /* Note: the following assumes all helpers are of signature
+               ULong fn ( ULong, ULong ), and they are
+            not marked as regparm functions.
+         */
+         HReg dst  = newVRegI(env);
+         HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         if (second_is_UInt)
+            addInstr(env, AMD64Instr_MovxLQ(False, argR, argR));
+         addInstr(env, mk_iMOVsd_RR(argL, hregAMD64_RDI()) );
+         addInstr(env, mk_iMOVsd_RR(argR, hregAMD64_RSI()) );
+         addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn, 2,
+                                        mk_RetLoc_simple(RLPri_Int) ));
+         addInstr(env, mk_iMOVsd_RR(hregAMD64_RAX(), dst));
          return dst;
       }
 
@@ -1710,7 +1764,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, const IRExpr* e )
             */
             HReg dst = newVRegI(env);
             HReg arg = iselIntExpr_R(env, e->Iex.Unop.arg);
-            fn = (HWord)h_generic_calc_GetMSBs8x8;
+            HWord fn = (HWord)h_generic_calc_GetMSBs8x8;
             addInstr(env, mk_iMOVsd_RR(arg, hregAMD64_RDI()) );
             addInstr(env, AMD64Instr_Call( Acc_ALWAYS, (ULong)fn,
                                            1, mk_RetLoc_simple(RLPri_Int) ));
@@ -1730,7 +1784,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, const IRExpr* e )
             HReg dst = newVRegI(env);
             HReg vec = iselVecExpr(env, e->Iex.Unop.arg);
             HReg rsp = hregAMD64_RSP();
-            fn = (HWord)h_generic_calc_GetMSBs8x16;
+            HWord fn = (HWord)h_generic_calc_GetMSBs8x16;
             AMD64AMode* m8_rsp  = AMD64AMode_IR( -8, rsp);
             AMD64AMode* m16_rsp = AMD64AMode_IR(-16, rsp);
             addInstr(env, AMD64Instr_SseLdSt(False/*store*/,
@@ -1759,6 +1813,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, const IRExpr* e )
       }
 
       /* Deal with unary 64-bit SIMD ops. */
+      HWord fn = 0;
       switch (e->Iex.Unop.op) {
          case Iop_CmpNEZ32x2:
             fn = (HWord)h_generic_calc_CmpNEZ32x2; break;

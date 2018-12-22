@@ -334,8 +334,8 @@ typedef
       Asse_MIN8U,
       Asse_CMPEQ8, Asse_CMPEQ16, Asse_CMPEQ32,
       Asse_CMPGT8S, Asse_CMPGT16S, Asse_CMPGT32S,
-      Asse_SHL16, Asse_SHL32, Asse_SHL64,
-      Asse_SHR16, Asse_SHR32, Asse_SHR64,
+      Asse_SHL16, Asse_SHL32, Asse_SHL64, Asse_SHL128,
+      Asse_SHR16, Asse_SHR32, Asse_SHR64, Asse_SHR128,
       Asse_SAR16, Asse_SAR32, 
       Asse_PACKSSD, Asse_PACKSSW, Asse_PACKUSW,
       Asse_UNPCKHB, Asse_UNPCKHW, Asse_UNPCKHD, Asse_UNPCKHQ,
@@ -400,6 +400,7 @@ typedef
       Ain_SseReRg,     /* SSE binary general reg-reg, Re, Rg */
       Ain_SseCMov,     /* SSE conditional move */
       Ain_SseShuf,     /* SSE2 shuffle (pshufd) */
+      Ain_SseShiftN,   /* SSE2 shift by immediate */
       //uu Ain_AvxLdSt,     /* AVX load/store 256 bits,
       //uu                     no alignment constraints */
       //uu Ain_AvxReRg,     /* AVX binary general reg-reg, Re, Rg */
@@ -695,6 +696,11 @@ typedef
             HReg   src;
             HReg   dst;
          } SseShuf;
+         struct {
+            AMD64SseOp op;
+            UInt       shiftBits;
+            HReg       dst;
+         } SseShiftN;
          //uu struct {
          //uu    Bool        isLoad;
          //uu    HReg        reg;
@@ -773,6 +779,8 @@ extern AMD64Instr* AMD64Instr_Sse64FLo   ( AMD64SseOp, HReg, HReg );
 extern AMD64Instr* AMD64Instr_SseReRg    ( AMD64SseOp, HReg, HReg );
 extern AMD64Instr* AMD64Instr_SseCMov    ( AMD64CondCode, HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_SseShuf    ( Int order, HReg src, HReg dst );
+extern AMD64Instr* AMD64Instr_SseShiftN  ( AMD64SseOp,
+                                           UInt shiftBits, HReg dst );
 //uu extern AMD64Instr* AMD64Instr_AvxLdSt    ( Bool isLoad, HReg, AMD64AMode* );
 //uu extern AMD64Instr* AMD64Instr_AvxReRg    ( AMD64SseOp, HReg, HReg );
 extern AMD64Instr* AMD64Instr_EvCheck    ( AMD64AMode* amCounter,

@@ -1007,6 +1007,15 @@ AMD64Instr* AMD64Instr_SseShuf ( Int order, HReg src, HReg dst ) {
    vassert(order >= 0 && order <= 0xFF);
    return i;
 }
+AMD64Instr* AMD64Instr_SseShiftN ( AMD64SseOp op,
+                                   UInt shiftBits, HReg dst ) {
+   AMD64Instr* i              = LibVEX_Alloc_inline(sizeof(AMD64Instr));
+   i->tag                     = Ain_SseShiftN;
+   i->Ain.SseShiftN.op        = op;
+   i->Ain.SseShiftN.shiftBits = shiftBits;
+   i->Ain.SseShiftN.dst       = dst;
+   return i;
+}
 //uu AMD64Instr* AMD64Instr_AvxLdSt ( Bool isLoad,
 //uu                                  HReg reg, AMD64AMode* addr ) {
 //uu    AMD64Instr* i         = LibVEX_Alloc_inline(sizeof(AMD64Instr));
@@ -1359,6 +1368,11 @@ void ppAMD64Instr ( const AMD64Instr* i, Bool mode64 )
          vex_printf(",");
          ppHRegAMD64(i->Ain.SseShuf.dst);
          return;
+      case Ain_SseShiftN:
+         vex_printf("%s $%u, ", showAMD64SseOp(i->Ain.SseShiftN.op),
+                                i->Ain.SseShiftN.shiftBits);
+         ppHRegAMD64(i->Ain.SseShiftN.dst);
+         return;
       //uu case Ain_AvxLdSt:
       //uu    vex_printf("vmovups ");
       //uu    if (i->Ain.AvxLdSt.isLoad) {
@@ -1691,6 +1705,9 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, const AMD64Instr* i, Bool mode64 )
          addHRegUse(u, HRmRead,  i->Ain.SseShuf.src);
          addHRegUse(u, HRmWrite, i->Ain.SseShuf.dst);
          return;
+      case Ain_SseShiftN:
+         addHRegUse(u, HRmModify, i->Ain.SseShiftN.dst);
+         return;
       //uu case Ain_AvxLdSt:
       //uu addRegUsage_AMD64AMode(u, i->Ain.AvxLdSt.addr);
       //uu addHRegUse(u, i->Ain.AvxLdSt.isLoad ? HRmWrite : HRmRead,
@@ -1905,6 +1922,9 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i, Bool mode64 )
       case Ain_SseShuf:
          mapReg(m, &i->Ain.SseShuf.src);
          mapReg(m, &i->Ain.SseShuf.dst);
+         return;
+      case Ain_SseShiftN:
+         mapReg(m, &i->Ain.SseShiftN.dst);
          return;
       //uu case Ain_AvxLdSt:
       //uu    mapReg(m, &i->Ain.AvxLdSt.reg);
@@ -3839,6 +3859,48 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
                                vregEnc3210(i->Ain.SseShuf.src) );
       *p++ = (UChar)(i->Ain.SseShuf.order);
       goto done;
+
+   case Ain_SseShiftN: {
+      opc         = 0; // invalid
+      subopc_imm  = 0; // invalid
+      UInt limit  = 0;
+      UInt shiftImm = i->Ain.SseShiftN.shiftBits;
+      switch (i->Ain.SseShiftN.op) {
+         case Asse_SHL16: limit = 15; opc = 0x71; subopc_imm = 6; break;
+         case Asse_SHL32: limit = 31; opc = 0x72; subopc_imm = 6; break;
+         case Asse_SHL64: limit = 63; opc = 0x73; subopc_imm = 6; break;
+         case Asse_SAR16: limit = 15; opc = 0x71; subopc_imm = 4; break;
+         case Asse_SAR32: limit = 31; opc = 0x72; subopc_imm = 4; break;
+         case Asse_SHR16: limit = 15; opc = 0x71; subopc_imm = 2; break;
+         case Asse_SHR32: limit = 31; opc = 0x72; subopc_imm = 2; break;
+         case Asse_SHR64: limit = 63; opc = 0x73; subopc_imm = 2; break;
+         case Asse_SHL128:
+            if ((shiftImm & 7) != 0) goto bad;
+            shiftImm >>= 3;
+            limit = 15; opc = 0x73; subopc_imm = 7;
+            break;
+         case Asse_SHR128:
+            if ((shiftImm & 7) != 0) goto bad;
+            shiftImm >>= 3;
+            limit = 15; opc = 0x73; subopc_imm = 3;
+            break;
+         default:
+            // This should never happen .. SSE2 only offers the above 10 insns
+            // for the "shift with immediate" case
+            goto bad;
+      }
+      vassert(limit > 0 && opc > 0 && subopc_imm > 0);
+      if (shiftImm > limit) goto bad;
+      *p++ = 0x66;
+      *p++ = clearWBit(
+             rexAMode_R_enc_enc( subopc_imm,
+                                 vregEnc3210(i->Ain.SseShiftN.dst) ));
+      *p++ = 0x0F;
+      *p++ = opc;
+      p = doAMode_R_enc_enc(p, subopc_imm, vregEnc3210(i->Ain.SseShiftN.dst));
+      *p++ = shiftImm;
+      goto done;
+   }
 
    //uu case Ain_AvxLdSt: {
    //uu    UInt vex = vexAMode_M( dvreg2ireg(i->Ain.AvxLdSt.reg),

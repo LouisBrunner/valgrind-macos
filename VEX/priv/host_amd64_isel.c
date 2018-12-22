@@ -3135,9 +3135,10 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e )
    HWord      fn = 0; /* address of helper fn, if required */
    Bool       arg1isEReg = False;
    AMD64SseOp op = Asse_INVALID;
-   IRType     ty = typeOfIRExpr(env->type_env,e);
    vassert(e);
+   IRType ty = typeOfIRExpr(env->type_env, e);
    vassert(ty == Ity_V128);
+   UInt laneBits = 0;
 
    if (e->tag == Iex_RdTmp) {
       return lookupIRTemp(env, e->Iex.RdTmp.tmp);
@@ -3521,20 +3522,33 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e )
          return dst;
       }
 
-      case Iop_ShlN16x8: op = Asse_SHL16; goto do_SseShift;
-      case Iop_ShlN32x4: op = Asse_SHL32; goto do_SseShift;
-      case Iop_ShlN64x2: op = Asse_SHL64; goto do_SseShift;
-      case Iop_SarN16x8: op = Asse_SAR16; goto do_SseShift;
-      case Iop_SarN32x4: op = Asse_SAR32; goto do_SseShift;
-      case Iop_ShrN16x8: op = Asse_SHR16; goto do_SseShift;
-      case Iop_ShrN32x4: op = Asse_SHR32; goto do_SseShift;
-      case Iop_ShrN64x2: op = Asse_SHR64; goto do_SseShift;
+      case Iop_ShlN16x8: laneBits = 16; op = Asse_SHL16; goto do_SseShift;
+      case Iop_ShlN32x4: laneBits = 32; op = Asse_SHL32; goto do_SseShift;
+      case Iop_ShlN64x2: laneBits = 64; op = Asse_SHL64; goto do_SseShift;
+      case Iop_SarN16x8: laneBits = 16; op = Asse_SAR16; goto do_SseShift;
+      case Iop_SarN32x4: laneBits = 32; op = Asse_SAR32; goto do_SseShift;
+      case Iop_ShrN16x8: laneBits = 16; op = Asse_SHR16; goto do_SseShift;
+      case Iop_ShrN32x4: laneBits = 32; op = Asse_SHR32; goto do_SseShift;
+      case Iop_ShrN64x2: laneBits = 64; op = Asse_SHR64; goto do_SseShift;
       do_SseShift: {
-         HReg        greg = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg dst  = newVRegV(env);
+         HReg greg = iselVecExpr(env, e->Iex.Binop.arg1);
+         /* If it's a shift by an in-range immediate, generate a single
+            instruction. */
+         if (e->Iex.Binop.arg2->tag == Iex_Const) {
+            IRConst* c = e->Iex.Binop.arg2->Iex.Const.con;
+            vassert(c->tag == Ico_U8);
+            UInt shift = c->Ico.U8;
+            if (shift < laneBits) {
+               addInstr(env, mk_vMOVsd_RR(greg, dst));
+               addInstr(env, AMD64Instr_SseShiftN(op, shift, dst));
+               return dst;
+            }
+         }
+         /* Otherwise we have to do it the longwinded way. */
          AMD64RMI*   rmi  = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
          AMD64AMode* rsp0 = AMD64AMode_IR(0, hregAMD64_RSP());
          HReg        ereg = newVRegV(env);
-         HReg        dst  = newVRegV(env);
          addInstr(env, AMD64Instr_Push(AMD64RMI_Imm(0)));
          addInstr(env, AMD64Instr_Push(rmi));
          addInstr(env, AMD64Instr_SseLdSt(True/*load*/, 16, ereg, rsp0));
@@ -3762,8 +3776,9 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
 {
    HWord fn = 0; /* address of helper fn, if required */
    vassert(e);
-   IRType ty = typeOfIRExpr(env->type_env,e);
+   IRType ty = typeOfIRExpr(env->type_env, e);
    vassert(ty == Ity_V256);
+   UInt laneBits = 0;
 
    AMD64SseOp op = Asse_INVALID;
 
@@ -3997,22 +4012,39 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
          return;
       }
 
-      case Iop_ShlN16x16: op = Asse_SHL16; goto do_SseShift;
-      case Iop_ShlN32x8:  op = Asse_SHL32; goto do_SseShift;
-      case Iop_ShlN64x4:  op = Asse_SHL64; goto do_SseShift;
-      case Iop_SarN16x16: op = Asse_SAR16; goto do_SseShift;
-      case Iop_SarN32x8:  op = Asse_SAR32; goto do_SseShift;
-      case Iop_ShrN16x16: op = Asse_SHR16; goto do_SseShift;
-      case Iop_ShrN32x8:  op = Asse_SHR32; goto do_SseShift;
-      case Iop_ShrN64x4:  op = Asse_SHR64; goto do_SseShift;
+      case Iop_ShlN16x16: laneBits = 16; op = Asse_SHL16; goto do_SseShift;
+      case Iop_ShlN32x8:  laneBits = 32; op = Asse_SHL32; goto do_SseShift;
+      case Iop_ShlN64x4:  laneBits = 64; op = Asse_SHL64; goto do_SseShift;
+      case Iop_SarN16x16: laneBits = 16; op = Asse_SAR16; goto do_SseShift;
+      case Iop_SarN32x8:  laneBits = 32; op = Asse_SAR32; goto do_SseShift;
+      case Iop_ShrN16x16: laneBits = 16; op = Asse_SHR16; goto do_SseShift;
+      case Iop_ShrN32x8:  laneBits = 32; op = Asse_SHR32; goto do_SseShift;
+      case Iop_ShrN64x4:  laneBits = 64; op = Asse_SHR64; goto do_SseShift;
       do_SseShift: {
+         HReg dstHi = newVRegV(env);
+         HReg dstLo = newVRegV(env);
          HReg gregHi, gregLo;
          iselDVecExpr(&gregHi, &gregLo, env, e->Iex.Binop.arg1);
+         /* If it's a shift by an in-range immediate, generate two single
+            instructions. */
+         if (e->Iex.Binop.arg2->tag == Iex_Const) {
+            IRConst* c = e->Iex.Binop.arg2->Iex.Const.con;
+            vassert(c->tag == Ico_U8);
+            UInt shift = c->Ico.U8;
+            if (shift < laneBits) {
+               addInstr(env, mk_vMOVsd_RR(gregHi, dstHi));
+               addInstr(env, AMD64Instr_SseShiftN(op, shift, dstHi));
+               addInstr(env, mk_vMOVsd_RR(gregLo, dstLo));
+               addInstr(env, AMD64Instr_SseShiftN(op, shift, dstLo));
+               *rHi = dstHi;
+               *rLo = dstLo;
+               return;
+            }
+         }
+         /* Otherwise we have to do it the longwinded way. */
          AMD64RMI*   rmi   = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
          AMD64AMode* rsp0  = AMD64AMode_IR(0, hregAMD64_RSP());
          HReg        ereg  = newVRegV(env);
-         HReg        dstHi = newVRegV(env);
-         HReg        dstLo = newVRegV(env);
          addInstr(env, AMD64Instr_Push(AMD64RMI_Imm(0)));
          addInstr(env, AMD64Instr_Push(rmi));
          addInstr(env, AMD64Instr_SseLdSt(True/*load*/, 16, ereg, rsp0));

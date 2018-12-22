@@ -404,6 +404,7 @@ typedef
       Ain_SseCMov,     /* SSE conditional move */
       Ain_SseShuf,     /* SSE2 shuffle (pshufd) */
       Ain_SseShiftN,   /* SSE2 shift by immediate */
+      Ain_SseMOVQ,     /* SSE2 moves of xmm[63:0] to/from GPR */
       //uu Ain_AvxLdSt,     /* AVX load/store 256 bits,
       //uu                     no alignment constraints */
       //uu Ain_AvxReRg,     /* AVX binary general reg-reg, Re, Rg */
@@ -704,6 +705,11 @@ typedef
             UInt       shiftBits;
             HReg       dst;
          } SseShiftN;
+         struct {
+            HReg gpr;
+            HReg xmm;
+            Bool toXMM; // when moving to xmm, xmm[127:64] is zeroed out
+         } SseMOVQ;
          //uu struct {
          //uu    Bool        isLoad;
          //uu    HReg        reg;
@@ -784,6 +790,7 @@ extern AMD64Instr* AMD64Instr_SseCMov    ( AMD64CondCode, HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_SseShuf    ( Int order, HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_SseShiftN  ( AMD64SseOp,
                                            UInt shiftBits, HReg dst );
+extern AMD64Instr* AMD64Instr_SseMOVQ    ( HReg gpr, HReg xmm, Bool toXMM );
 //uu extern AMD64Instr* AMD64Instr_AvxLdSt    ( Bool isLoad, HReg, AMD64AMode* );
 //uu extern AMD64Instr* AMD64Instr_AvxReRg    ( AMD64SseOp, HReg, HReg );
 extern AMD64Instr* AMD64Instr_EvCheck    ( AMD64AMode* amCounter,

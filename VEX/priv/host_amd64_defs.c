@@ -1020,6 +1020,16 @@ AMD64Instr* AMD64Instr_SseShiftN ( AMD64SseOp op,
    i->Ain.SseShiftN.dst       = dst;
    return i;
 }
+AMD64Instr* AMD64Instr_SseMOVQ ( HReg gpr, HReg xmm, Bool toXMM ) {
+   AMD64Instr* i        = LibVEX_Alloc_inline(sizeof(AMD64Instr));
+   i->tag               = Ain_SseMOVQ;
+   i->Ain.SseMOVQ.gpr   = gpr;
+   i->Ain.SseMOVQ.xmm   = xmm;
+   i->Ain.SseMOVQ.toXMM = toXMM;
+   vassert(hregClass(gpr) == HRcInt64);
+   vassert(hregClass(xmm) == HRcVec128);
+   return i;
+}
 //uu AMD64Instr* AMD64Instr_AvxLdSt ( Bool isLoad,
 //uu                                  HReg reg, AMD64AMode* addr ) {
 //uu    AMD64Instr* i         = LibVEX_Alloc_inline(sizeof(AMD64Instr));
@@ -1377,6 +1387,18 @@ void ppAMD64Instr ( const AMD64Instr* i, Bool mode64 )
                                 i->Ain.SseShiftN.shiftBits);
          ppHRegAMD64(i->Ain.SseShiftN.dst);
          return;
+      case Ain_SseMOVQ:
+         vex_printf("movq ");
+         if (i->Ain.SseMOVQ.toXMM) {
+            ppHRegAMD64(i->Ain.SseMOVQ.gpr);
+            vex_printf(",");
+            ppHRegAMD64(i->Ain.SseMOVQ.xmm);
+         } else {
+            ppHRegAMD64(i->Ain.SseMOVQ.xmm);
+            vex_printf(",");
+            ppHRegAMD64(i->Ain.SseMOVQ.gpr);
+         };
+         return;
       //uu case Ain_AvxLdSt:
       //uu    vex_printf("vmovups ");
       //uu    if (i->Ain.AvxLdSt.isLoad) {
@@ -1714,6 +1736,12 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, const AMD64Instr* i, Bool mode64 )
       case Ain_SseShiftN:
          addHRegUse(u, HRmModify, i->Ain.SseShiftN.dst);
          return;
+      case Ain_SseMOVQ:
+         addHRegUse(u, i->Ain.SseMOVQ.toXMM ? HRmRead : HRmWrite,
+                    i->Ain.SseMOVQ.gpr);
+         addHRegUse(u, i->Ain.SseMOVQ.toXMM ? HRmWrite : HRmRead,
+                    i->Ain.SseMOVQ.xmm);
+         return;
       //uu case Ain_AvxLdSt:
       //uu addRegUsage_AMD64AMode(u, i->Ain.AvxLdSt.addr);
       //uu addHRegUse(u, i->Ain.AvxLdSt.isLoad ? HRmWrite : HRmRead,
@@ -1931,6 +1959,10 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i, Bool mode64 )
          return;
       case Ain_SseShiftN:
          mapReg(m, &i->Ain.SseShiftN.dst);
+         return;
+      case Ain_SseMOVQ:
+         mapReg(m, &i->Ain.SseMOVQ.gpr);
+         mapReg(m, &i->Ain.SseMOVQ.xmm);
          return;
       //uu case Ain_AvxLdSt:
       //uu    mapReg(m, &i->Ain.AvxLdSt.reg);
@@ -2299,6 +2331,11 @@ static UChar* doAMode_R_enc_enc ( UChar* p, UInt gregEnc3210, UInt eregEnc3210 )
 static inline UChar clearWBit ( UChar rex )
 {
    return rex & ~(1<<3);
+}
+
+static inline UChar setWBit ( UChar rex )
+{
+   return rex | (1<<3);
 }
 
 
@@ -3911,6 +3948,18 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
       *p++ = opc;
       p = doAMode_R_enc_enc(p, subopc_imm, vregEnc3210(i->Ain.SseShiftN.dst));
       *p++ = shiftImm;
+      goto done;
+   }
+
+   case Ain_SseMOVQ: {
+      Bool toXMM = i->Ain.SseMOVQ.toXMM;
+      HReg gpr = i->Ain.SseMOVQ.gpr;
+      HReg xmm = i->Ain.SseMOVQ.xmm;
+      *p++ = 0x66;
+      *p++ = setWBit( rexAMode_R_enc_enc( vregEnc3210(xmm), iregEnc3210(gpr)) );
+      *p++ = 0x0F;
+      *p++ = toXMM ? 0x6E : 0x7E;
+      p = doAMode_R_enc_enc( p, vregEnc3210(xmm), iregEnc3210(gpr) );
       goto done;
    }
 

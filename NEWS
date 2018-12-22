@@ -75,6 +75,7 @@ where XXXXXX is the bug number as listed below.
 402134  assertion fail in mc_translate.c (noteTmpUsesIn) Iex_VECRET on arm64
 402327  Warning: DWARF2 CFI reader: unhandled DW_OP_ opcode 0x13 (DW_OP_drop)
 402395  coregrind/vgdb-invoker-solaris.c: 2 * poor error checking
+402480  Do not use %rsp in clobber list
 
 Release 3.14.0 (9 October 2018)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -20,13 +20,17 @@ static void inner(void)
       "movq $0x10d, %%r14\n"
       "movq $0x10e, %%r15\n"
       // not %rbp as mdb is then not able to reconstruct stack trace
+      // Do change %rsp (to test a bogus stack pointer),
+      // but don't add %rsp to the clobber list since gcc ignores it
+      // and since gcc >= 9.0 errors about it
+      // see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=52813
       "movq $0x10f, %%rsp\n"
       "movq $0x1234, (%%rax)\n"  // should cause SEGV here
       "ud2"                      // should never get here
       : // no output registers
       : // no input registers
       : "memory", "%rax", "%rbx", "%rcx", "%rdx", "%rsi", "%rdi",
-        "%r8", "%r9", "%r10", "%r11", "%r12", "%r13", "%r14", "%r15", "%rsp");
+        "%r8", "%r9", "%r10", "%r11", "%r12", "%r13", "%r14", "%r15");
 }
 
 __attribute__((noinline))

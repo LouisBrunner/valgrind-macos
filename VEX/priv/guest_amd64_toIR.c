@@ -15583,90 +15583,16 @@ Long dis_ESC_0F__SSE3 ( Bool* decode_OK,
 static
 IRTemp math_PSHUFB_XMM ( IRTemp dV/*data to perm*/, IRTemp sV/*perm*/ )
 {
-   IRTemp sHi        = newTemp(Ity_I64);
-   IRTemp sLo        = newTemp(Ity_I64);
-   IRTemp dHi        = newTemp(Ity_I64);
-   IRTemp dLo        = newTemp(Ity_I64);
-   IRTemp rHi        = newTemp(Ity_I64);
-   IRTemp rLo        = newTemp(Ity_I64);
-   IRTemp sevens     = newTemp(Ity_I64);
-   IRTemp mask0x80hi = newTemp(Ity_I64);
-   IRTemp mask0x80lo = newTemp(Ity_I64);
-   IRTemp maskBit3hi = newTemp(Ity_I64);
-   IRTemp maskBit3lo = newTemp(Ity_I64);
-   IRTemp sAnd7hi    = newTemp(Ity_I64);
-   IRTemp sAnd7lo    = newTemp(Ity_I64);
-   IRTemp permdHi    = newTemp(Ity_I64);
-   IRTemp permdLo    = newTemp(Ity_I64);
-   IRTemp res        = newTemp(Ity_V128);
-
-   assign( dHi, unop(Iop_V128HIto64, mkexpr(dV)) );
-   assign( dLo, unop(Iop_V128to64,   mkexpr(dV)) );
-   assign( sHi, unop(Iop_V128HIto64, mkexpr(sV)) );
-   assign( sLo, unop(Iop_V128to64,   mkexpr(sV)) );
-
-   assign( sevens, mkU64(0x0707070707070707ULL) );
-
-   /* mask0x80hi = Not(SarN8x8(sHi,7))
-      maskBit3hi = SarN8x8(ShlN8x8(sHi,4),7)
-      sAnd7hi    = And(sHi,sevens)
-      permdHi    = Or( And(Perm8x8(dHi,sAnd7hi),maskBit3hi),
-      And(Perm8x8(dLo,sAnd7hi),Not(maskBit3hi)) )
-      rHi        = And(permdHi,mask0x80hi)
-   */
-   assign(
-      mask0x80hi,
-      unop(Iop_Not64, binop(Iop_SarN8x8,mkexpr(sHi),mkU8(7))));
-
-   assign(
-      maskBit3hi,
-      binop(Iop_SarN8x8,
-            binop(Iop_ShlN8x8,mkexpr(sHi),mkU8(4)),
-            mkU8(7)));
-
-   assign(sAnd7hi, binop(Iop_And64,mkexpr(sHi),mkexpr(sevens)));
-
-   assign(
-      permdHi,
-      binop(
-         Iop_Or64,
-         binop(Iop_And64,
-               binop(Iop_Perm8x8,mkexpr(dHi),mkexpr(sAnd7hi)),
-               mkexpr(maskBit3hi)),
-         binop(Iop_And64,
-               binop(Iop_Perm8x8,mkexpr(dLo),mkexpr(sAnd7hi)),
-               unop(Iop_Not64,mkexpr(maskBit3hi))) ));
-
-   assign(rHi, binop(Iop_And64,mkexpr(permdHi),mkexpr(mask0x80hi)) );
-
-   /* And the same for the lower half of the result.  What fun. */
-
-   assign(
-      mask0x80lo,
-      unop(Iop_Not64, binop(Iop_SarN8x8,mkexpr(sLo),mkU8(7))));
-
-   assign(
-      maskBit3lo,
-      binop(Iop_SarN8x8,
-            binop(Iop_ShlN8x8,mkexpr(sLo),mkU8(4)),
-            mkU8(7)));
-
-   assign(sAnd7lo, binop(Iop_And64,mkexpr(sLo),mkexpr(sevens)));
-
-   assign(
-      permdLo,
-      binop(
-         Iop_Or64,
-         binop(Iop_And64,
-               binop(Iop_Perm8x8,mkexpr(dHi),mkexpr(sAnd7lo)),
-               mkexpr(maskBit3lo)),
-         binop(Iop_And64,
-               binop(Iop_Perm8x8,mkexpr(dLo),mkexpr(sAnd7lo)),
-               unop(Iop_Not64,mkexpr(maskBit3lo))) ));
-
-   assign(rLo, binop(Iop_And64,mkexpr(permdLo),mkexpr(mask0x80lo)) );
-
-   assign(res, binop(Iop_64HLtoV128, mkexpr(rHi), mkexpr(rLo)));
+   IRTemp halfMask = newTemp(Ity_I64);
+   assign(halfMask, mkU64(0x8F8F8F8F8F8F8F8FULL));
+   IRExpr* mask = binop(Iop_64HLtoV128, mkexpr(halfMask), mkexpr(halfMask));
+   IRTemp res = newTemp(Ity_V128);
+   assign(res,
+          binop(Iop_PermOrZero8x16,
+                mkexpr(dV),
+                // Mask off bits [6:3] of each source operand lane
+                binop(Iop_AndV128, mkexpr(sV), mask)
+   ));
    return res;
 }
 
@@ -15945,15 +15871,10 @@ Long dis_ESC_0F38__SupSSE3 ( Bool* decode_OK,
          putMMXReg(
             gregLO3ofRM(modrm),
             binop(
-               Iop_And64,
-               /* permute the lanes */
-               binop(
-                  Iop_Perm8x8,
-                  mkexpr(dV),
-                  binop(Iop_And64, mkexpr(sV), mkU64(0x0707070707070707ULL))
-               ),
-               /* mask off lanes which have (index & 0x80) == 0x80 */
-               unop(Iop_Not64, binop(Iop_SarN8x8, mkexpr(sV), mkU8(7)))
+               Iop_PermOrZero8x8,
+               mkexpr(dV),
+               // Mask off bits [6:3] of each source operand lane
+               binop(Iop_And64, mkexpr(sV), mkU64(0x8787878787878787ULL))
             )
          );
          goto decode_success;

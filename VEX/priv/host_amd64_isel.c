@@ -1122,8 +1122,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, const IRExpr* e )
             fn = (HWord)h_generic_calc_CatOddLanes16x4; break;
          case Iop_CatEvenLanes16x4:
             fn = (HWord)h_generic_calc_CatEvenLanes16x4; break;
-         case Iop_Perm8x8:
-            fn = (HWord)h_generic_calc_Perm8x8; break;
+         case Iop_PermOrZero8x8:
+            fn = (HWord)h_generic_calc_PermOrZero8x8; break;
 
          case Iop_Max8Ux8:
             fn = (HWord)h_generic_calc_Max8Ux8; break;
@@ -3436,6 +3436,17 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e )
          addInstr(env, AMD64Instr_Sse64FLo(op, argR, dst));
          return dst;
       }
+
+      case Iop_PermOrZero8x16:
+         if (env->hwcaps & VEX_HWCAPS_AMD64_SSSE3) {
+            op = Asse_PSHUFB;
+            goto do_SseReRg;
+         }
+         // Otherwise we'll have to generate a call to
+         // h_generic_calc_PermOrZero8x16 (ATK).  But that would only be for a
+         // host which doesn't have SSSE3, in which case we don't expect this
+         // IROp to enter the compilation pipeline in the first place.
+         break;
 
       case Iop_QNarrowBin32Sto16Sx8: 
          op = Asse_PACKSSD; arg1isEReg = True; goto do_SseReRg;

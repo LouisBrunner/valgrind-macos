@@ -1061,8 +1061,15 @@ typedef
          as indexed by control vector bytes:
             for i in 0 .. 7 . result[i] = argL[ argR[i] ] 
          argR[i] values may only be in the range 0 .. 7, else behaviour
-         is undefined. */
+         is undefined.  That is, argR[i][7:3] must be zero. */
       Iop_Perm8x8,
+
+      /* PERMUTING with optional zeroing:
+            for i in 0 .. 7 . result[i] = if argR[i] bit 7 is set
+                                          then zero else argL[ argR[i] ]
+         argR[i][6:3] must be zero, else behaviour is undefined.
+      */
+      Iop_PermOrZero8x8,
 
       /* MISC CONVERSION -- get high bits of each byte lane, a la
          x86/amd64 pmovmskb */
@@ -1842,9 +1849,16 @@ typedef
          as indexed by control vector bytes:
             for i in 0 .. 15 . result[i] = argL[ argR[i] ] 
          argR[i] values may only be in the range 0 .. 15, else behaviour
-         is undefined. */
+         is undefined.  That is, argR[i][7:4] must be zero. */
       Iop_Perm8x16,
       Iop_Perm32x4, /* ditto, except argR values are restricted to 0 .. 3 */
+
+      /* PERMUTING with optional zeroing:
+            for i in 0 .. 15 . result[i] = if argR[i] bit 7 is set
+                                           then zero else argL[ argR[i] ]
+         argR[i][6:4] must be zero, else behaviour is undefined.
+      */
+      Iop_PermOrZero8x16,
 
       /* same, but Triop (argL consists of two 128-bit parts) */
       /* correct range for argR values is 0..31 */

@@ -3641,10 +3641,22 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          complainIfUndefined(mce, atom2, NULL);
          return assignNew('V', mce, Ity_I32, binop(op, vatom1, atom2));
 
-      /* Perm8x8: rearrange values in left arg using steering values
-        from right arg.  So rearrange the vbits in the same way but
-        pessimise wrt steering values. */
+      /* Perm8x8: rearrange values in left arg using steering values from
+         right arg.  So rearrange the vbits in the same way but pessimise wrt
+         steering values.  We assume that unused bits in the steering value
+         are defined zeros, so we can safely PCast within each lane of the the
+         steering value without having to take precautions to avoid a
+         dependency on those unused bits.
+
+         This is also correct for PermOrZero8x8, but it is a bit subtle.  For
+         each lane, if bit 7 of the steering value is zero, then we'll steer
+         the shadow value exactly as per Perm8x8.  If that bit is one, then
+         the operation will set the resulting (concrete) value to zero.  That
+         means it is defined, and should have a shadow value of zero.  Hence
+         in both cases (bit 7 is 0 or 1) we can self-shadow (in the same way
+         as Perm8x8) and then pessimise against the steering values.  */
       case Iop_Perm8x8:
+      case Iop_PermOrZero8x8:
          return mkUifU64(
                    mce,
                    assignNew('V', mce, Ity_I64, binop(op, vatom1, atom2)),
@@ -4121,10 +4133,12 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          complainIfUndefined(mce, atom2, NULL);
          return assignNew('V', mce, Ity_I64, binop(op, vatom1, atom2));
 
-     /* Perm8x16: rearrange values in left arg using steering values
-        from right arg.  So rearrange the vbits in the same way but
-        pessimise wrt steering values.  Perm32x4 ditto. */
+      /* Perm8x16: rearrange values in left arg using steering values
+         from right arg.  So rearrange the vbits in the same way but
+         pessimise wrt steering values.  Perm32x4 ditto. */
+      /* PermOrZero8x16: see comments above for PermOrZero8x8. */
       case Iop_Perm8x16:
+      case Iop_PermOrZero8x16:
          return mkUifUV128(
                    mce,
                    assignNew('V', mce, Ity_V128, binop(op, vatom1, atom2)),

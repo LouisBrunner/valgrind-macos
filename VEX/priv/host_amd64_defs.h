@@ -339,7 +339,8 @@ typedef
       Asse_SAR16, Asse_SAR32, 
       Asse_PACKSSD, Asse_PACKSSW, Asse_PACKUSW,
       Asse_UNPCKHB, Asse_UNPCKHW, Asse_UNPCKHD, Asse_UNPCKHQ,
-      Asse_UNPCKLB, Asse_UNPCKLW, Asse_UNPCKLD, Asse_UNPCKLQ
+      Asse_UNPCKLB, Asse_UNPCKLW, Asse_UNPCKLD, Asse_UNPCKLQ,
+      Asse_PSHUFB // Only for SSSE3 capable hosts
    }
    AMD64SseOp;
 

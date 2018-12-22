@@ -102,7 +102,8 @@ extern ULong h_generic_calc_InterleaveLO32x2 ( ULong, ULong );
 
 extern ULong h_generic_calc_CatOddLanes16x4 ( ULong, ULong );
 extern ULong h_generic_calc_CatEvenLanes16x4 ( ULong, ULong );
-extern ULong h_generic_calc_Perm8x8 ( ULong, ULong );
+extern ULong h_generic_calc_Perm8x8       ( ULong, ULong );
+extern ULong h_generic_calc_PermOrZero8x8 ( ULong, ULong );
 
 extern ULong h_generic_calc_ShlN8x8  ( ULong, UInt );
 extern ULong h_generic_calc_ShlN16x4 ( ULong, UInt );

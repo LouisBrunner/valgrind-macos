@@ -368,6 +368,20 @@ void VEX_REGPARM(3)
    res->w32[3] = argL->w32[ argR->w32[3] & 3 ];
 }
 
+//void VEX_REGPARM(3)
+//     h_generic_calc_PermOrZero8x16 ( /*OUT*/V128* res,
+//                                     V128* argL, V128* argR )
+//{
+//   for (UInt i = 0; i < 16; i++) {
+//      UChar ix = argR->w8[i];
+//      Char zeroingMask = (Char)ix;
+//      zeroingMask ^= 0x80;
+//      zeroingMask >>= 7;
+//      ix &= 15;
+//      res->w8[i] = (argL->w8[ix] & zeroingMask) & 0xFF;
+//   }
+//}
+
 UInt /*not-regparm*/
      h_generic_calc_GetMSBs8x16 ( ULong w64hi, ULong w64lo )
 {

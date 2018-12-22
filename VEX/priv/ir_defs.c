@@ -622,6 +622,7 @@ void ppIROp ( IROp op )
       case Iop_Sal32x2: vex_printf("Sal32x2"); return;
       case Iop_Sal64x1: vex_printf("Sal64x1"); return;
       case Iop_Perm8x8: vex_printf("Perm8x8"); return;
+      case Iop_PermOrZero8x8: vex_printf("PermOrZero8x8"); return;
       case Iop_Reverse8sIn16_x4: vex_printf("Reverse8sIn16_x4"); return;
       case Iop_Reverse8sIn32_x2: vex_printf("Reverse8sIn32_x2"); return;
       case Iop_Reverse16sIn32_x2: vex_printf("Reverse16sIn32_x2"); return;
@@ -1125,6 +1126,7 @@ void ppIROp ( IROp op )
       case Iop_SliceV128: vex_printf("SliceV128"); return;
 
       case Iop_Perm8x16: vex_printf("Perm8x16"); return;
+      case Iop_PermOrZero8x16: vex_printf("PermOrZero8x16"); return;
       case Iop_Perm32x4: vex_printf("Perm32x4"); return;
       case Iop_Perm8x16x2: vex_printf("Perm8x16x2"); return;
       case Iop_Reverse8sIn16_x8: vex_printf("Reverse8sIn16_x8"); return;
@@ -2661,7 +2663,7 @@ void typeOfPrimop ( IROp op,
       case Iop_CatOddLanes16x4: case Iop_CatEvenLanes16x4:
       case Iop_InterleaveOddLanes8x8: case Iop_InterleaveEvenLanes8x8:
       case Iop_InterleaveOddLanes16x4: case Iop_InterleaveEvenLanes16x4:
-      case Iop_Perm8x8:
+      case Iop_Perm8x8: case Iop_PermOrZero8x8:
       case Iop_Max8Ux8: case Iop_Max16Ux4: case Iop_Max32Ux2:
       case Iop_Max8Sx8: case Iop_Max16Sx4: case Iop_Max32Sx2:
       case Iop_Max32Fx2: case Iop_Min32Fx2:
@@ -3132,7 +3134,8 @@ void typeOfPrimop ( IROp op,
       case Iop_PackOddLanes8x16: case Iop_PackEvenLanes8x16:
       case Iop_PackOddLanes16x8: case Iop_PackEvenLanes16x8:
       case Iop_PackOddLanes32x4: case Iop_PackEvenLanes32x4:
-      case Iop_Perm8x16: case Iop_Perm32x4:
+      case Iop_Perm8x16: case Iop_PermOrZero8x16:
+      case Iop_Perm32x4:
       case Iop_RecipStep32Fx4: case Iop_RecipStep64Fx2:
       case Iop_RSqrtStep32Fx4: case Iop_RSqrtStep64Fx2:
       case Iop_CipherV128:

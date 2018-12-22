@@ -86,6 +86,11 @@ extern VEX_REGPARM(3)
 extern VEX_REGPARM(3)
        void h_generic_calc_Perm32x4   ( /*OUT*/V128*, V128*, V128* );
 
+// This is correct and tested, but isn't used because we just generate
+// PSHUFB on amd64 instead.
+//extern VEX_REGPARM(3)
+//       void h_generic_calc_PermOrZero8x16 ( /*OUT*/V128*, V128*, V128* );
+
 extern /*not-regparm*/
        UInt  h_generic_calc_GetMSBs8x16 ( ULong w64hi, ULong w64lo );
 

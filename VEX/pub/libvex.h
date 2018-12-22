@@ -92,6 +92,7 @@ typedef
 /* amd64: baseline capability is SSE2, with cmpxchg8b but not
    cmpxchg16b. */
 #define VEX_HWCAPS_AMD64_SSE3   (1<<5)  /* SSE3 support */
+#define VEX_HWCAPS_AMD64_SSSE3  (1<<12) /* Supplemental SSE3 support */
 #define VEX_HWCAPS_AMD64_CX16   (1<<6)  /* cmpxchg16b support */
 #define VEX_HWCAPS_AMD64_LZCNT  (1<<7)  /* SSE4a LZCNT insn */
 #define VEX_HWCAPS_AMD64_AVX    (1<<8)  /* AVX instructions */

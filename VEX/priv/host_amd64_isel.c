@@ -4953,6 +4953,7 @@ HInstrArray* iselSB_AMD64 ( const IRSB* bb,
    vassert(arch_host == VexArchAMD64);
    vassert(0 == (hwcaps_host
                  & ~(VEX_HWCAPS_AMD64_SSE3
+                     | VEX_HWCAPS_AMD64_SSSE3
                      | VEX_HWCAPS_AMD64_CX16
                      | VEX_HWCAPS_AMD64_LZCNT
                      | VEX_HWCAPS_AMD64_AVX

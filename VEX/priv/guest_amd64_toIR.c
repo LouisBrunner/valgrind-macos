@@ -22071,21 +22071,21 @@ Long dis_ESC_0F (
 
       /* This isn't entirely correct, CPUID should depend on the VEX
          capabilities, not on the underlying CPU. See bug #324882. */
-      if ((archinfo->hwcaps & VEX_HWCAPS_AMD64_SSE3) &&
+      if ((archinfo->hwcaps & VEX_HWCAPS_AMD64_SSSE3) &&
           (archinfo->hwcaps & VEX_HWCAPS_AMD64_CX16) &&
           (archinfo->hwcaps & VEX_HWCAPS_AMD64_AVX2)) {
          fName = "amd64g_dirtyhelper_CPUID_avx2";
          fAddr = &amd64g_dirtyhelper_CPUID_avx2;
          /* This is a Core-i7-4910-like machine */
       }
-      else if ((archinfo->hwcaps & VEX_HWCAPS_AMD64_SSE3) &&
+      else if ((archinfo->hwcaps & VEX_HWCAPS_AMD64_SSSE3) &&
                (archinfo->hwcaps & VEX_HWCAPS_AMD64_CX16) &&
                (archinfo->hwcaps & VEX_HWCAPS_AMD64_AVX)) {
          fName = "amd64g_dirtyhelper_CPUID_avx_and_cx16";
          fAddr = &amd64g_dirtyhelper_CPUID_avx_and_cx16;
          /* This is a Core-i5-2300-like machine */
       }
-      else if ((archinfo->hwcaps & VEX_HWCAPS_AMD64_SSE3) &&
+      else if ((archinfo->hwcaps & VEX_HWCAPS_AMD64_SSSE3) &&
                (archinfo->hwcaps & VEX_HWCAPS_AMD64_CX16)) {
          fName = "amd64g_dirtyhelper_CPUID_sse42_and_cx16";
          fAddr = &amd64g_dirtyhelper_CPUID_sse42_and_cx16;

@@ -943,13 +943,19 @@ Bool VG_(machine_get_hwcaps)( void )
    }
 
 #elif defined(VGA_amd64)
-   { Bool have_sse3, have_cx8, have_cx16;
+   { Bool have_sse3, have_ssse3, have_cx8, have_cx16;
      Bool have_lzcnt, have_avx, have_bmi, have_avx2;
      Bool have_rdtscp;
      UInt eax, ebx, ecx, edx, max_basic, max_extended;
      ULong xgetbv_0 = 0;
      HChar vstr[13];
      vstr[0] = 0;
+
+     have_sse3 = have_ssse3 = have_cx8 = have_cx16
+               = have_lzcnt = have_avx = have_bmi = have_avx2
+               = have_rdtscp = False;
+
+     eax = ebx = ecx = edx = max_basic = max_extended = 0;
 
      if (!VG_(has_cpuid)())
         /* we can't do cpuid at all.  Give up. */
@@ -975,8 +981,8 @@ Bool VG_(machine_get_hwcaps)( void )
      VG_(cpuid)(1, 0, &eax, &ebx, &ecx, &edx);
 
      // we assume that SSE1 and SSE2 are available by default
-     have_sse3 = (ecx & (1<<0)) != 0;  /* True => have sse3 insns */
-     // ssse3   is ecx:9
+     have_sse3  = (ecx & (1<<0)) != 0;  /* True => have sse3 insns */
+     have_ssse3 = (ecx & (1<<9)) != 0;  /* True => have Sup SSE3 insns */
      // sse41   is ecx:19
      // sse42   is ecx:20
 
@@ -1054,6 +1060,7 @@ Bool VG_(machine_get_hwcaps)( void )
      va          = VexArchAMD64;
      vai.endness = VexEndnessLE;
      vai.hwcaps  = (have_sse3   ? VEX_HWCAPS_AMD64_SSE3   : 0)
+                 | (have_ssse3  ? VEX_HWCAPS_AMD64_SSSE3  : 0)
                  | (have_cx16   ? VEX_HWCAPS_AMD64_CX16   : 0)
                  | (have_lzcnt  ? VEX_HWCAPS_AMD64_LZCNT  : 0)
                  | (have_avx    ? VEX_HWCAPS_AMD64_AVX    : 0)

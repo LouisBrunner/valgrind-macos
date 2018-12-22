@@ -3688,6 +3688,18 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e )
          return dst;
       }
 
+      case Iop_I32StoF32x4:
+      case Iop_F32toI32Sx4: {
+         HReg arg = iselVecExpr(env, e->Iex.Binop.arg2);
+         HReg dst = newVRegV(env);
+         AMD64SseOp mop
+            = e->Iex.Binop.op == Iop_I32StoF32x4 ? Asse_I2F : Asse_F2I;
+         set_SSE_rounding_mode(env, e->Iex.Binop.arg1);
+         addInstr(env, AMD64Instr_Sse32Fx4(mop, arg, dst));
+         set_SSE_rounding_default(env);
+         return dst;
+      }
+
       default:
          break;
    } /* switch (e->Iex.Binop.op) */
@@ -4219,6 +4231,23 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
                                           AMD64AMode_IR(16, argp)));
          /* and finally, clear the space */
          add_to_rsp(env, 160);
+         *rHi = dstHi;
+         *rLo = dstLo;
+         return;
+      }
+
+      case Iop_I32StoF32x8:
+      case Iop_F32toI32Sx8: {
+         HReg argHi, argLo;
+         iselDVecExpr(&argHi, &argLo, env, e->Iex.Binop.arg2);
+         HReg dstHi = newVRegV(env);
+         HReg dstLo = newVRegV(env);
+         AMD64SseOp mop
+            = e->Iex.Binop.op == Iop_I32StoF32x8 ? Asse_I2F : Asse_F2I;
+         set_SSE_rounding_mode(env, e->Iex.Binop.arg1);
+         addInstr(env, AMD64Instr_Sse32Fx4(mop, argHi, dstHi));
+         addInstr(env, AMD64Instr_Sse32Fx4(mop, argLo, dstLo));
+         set_SSE_rounding_default(env);
          *rHi = dstHi;
          *rLo = dstLo;
          return;

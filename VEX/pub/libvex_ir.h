@@ -1387,7 +1387,13 @@ typedef
       /* Unlike the standard fp conversions, these irops take no
          rounding mode argument. Instead the irop trailers _R{M,P,N,Z}
          indicate the mode: {-inf, +inf, nearest, zero} respectively. */
+
+      // FIXME These carry no rounding mode
       Iop_I32UtoFx4,     Iop_I32StoFx4,       /* I32x4 -> F32x4       */
+
+      Iop_I32StoF32x4, /* IRRoundingMode(I32) x V128 -> V128 */
+      Iop_F32toI32Sx4, /* IRRoundingMode(I32) x V128 -> V128 */
+
       Iop_FtoI32Ux4_RZ,  Iop_FtoI32Sx4_RZ,    /* F32x4 -> I32x4       */
       Iop_QFtoI32Ux4_RZ, Iop_QFtoI32Sx4_RZ,   /* F32x4 -> I32x4 (saturating) */
       Iop_RoundF32x4_RM, Iop_RoundF32x4_RP,   /* round to fp integer  */
@@ -1400,12 +1406,12 @@ typedef
 
       /* --- Single to/from half conversion --- */
       /* FIXME: what kind of rounding in F32x4 -> F16x4 case? */
+      // FIXME these carry no rounding mode
       Iop_F32toF16x4, Iop_F16toF32x4,         /* F32x4 <-> F16x4      */
 
-
-
       /* -- Double to/from half conversion -- */
-      Iop_F64toF16x2, Iop_F16toF64x2,
+      Iop_F64toF16x2, // FIXME this carries no rounding mode (?)
+      Iop_F16toF64x2,
 
       /* Values from two registers converted in smaller type and put in one
        IRRoundingMode(I32) x (F32x4 | F32x4) -> Q16x8 */
@@ -1956,6 +1962,9 @@ typedef
       /* ternary :: IRRoundingMode(I32) x V256 x V256 -> V256 */
       Iop_Add64Fx4, Iop_Sub64Fx4, Iop_Mul64Fx4, Iop_Div64Fx4,
       Iop_Add32Fx8, Iop_Sub32Fx8, Iop_Mul32Fx8, Iop_Div32Fx8,
+
+      Iop_I32StoF32x8, /* IRRoundingMode(I32) x V256 -> V256 */
+      Iop_F32toI32Sx8, /* IRRoundingMode(I32) x V256 -> V256 */
 
       Iop_Sqrt32Fx8,
       Iop_Sqrt64Fx4,

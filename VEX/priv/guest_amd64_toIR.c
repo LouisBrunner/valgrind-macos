@@ -10671,7 +10671,6 @@ static Long dis_CVTxPS2DQ_128 ( const VexAbiInfo* vbi, Prefix pfx,
    IRTemp argV  = newTemp(Ity_V128);
    IRTemp rmode = newTemp(Ity_I32);
    UInt   rG    = gregOfRexRM(pfx,modrm);
-   IRTemp t0, t1, t2, t3;
 
    if (epartIsReg(modrm)) {
       UInt rE = eregOfRexRM(pfx,modrm);
@@ -10689,21 +10688,7 @@ static Long dis_CVTxPS2DQ_128 ( const VexAbiInfo* vbi, Prefix pfx,
 
    assign( rmode, r2zero ? mkU32((UInt)Irrm_ZERO)
                          : get_sse_roundingmode() );
-   t0 = t1 = t2 = t3 = IRTemp_INVALID;
-   breakupV128to32s( argV, &t3, &t2, &t1, &t0 );
-   /* This is less than ideal.  If it turns out to be a performance
-      bottleneck it can be improved. */
-#  define CVT(_t)                             \
-      binop( Iop_F64toI32S,                   \
-             mkexpr(rmode),                   \
-             unop( Iop_F32toF64,              \
-                   unop( Iop_ReinterpI32asF32, mkexpr(_t))) )
-      
-   putXMMRegLane32( rG, 3, CVT(t3) );
-   putXMMRegLane32( rG, 2, CVT(t2) );
-   putXMMRegLane32( rG, 1, CVT(t1) );
-   putXMMRegLane32( rG, 0, CVT(t0) );
-#  undef CVT
+   putXMMReg( rG, binop(Iop_F32toI32Sx4, mkexpr(rmode), mkexpr(argV)) );
    if (isAvx)
       putYMMRegLane128( rG, 1, mkV128(0) );
 
@@ -10721,7 +10706,6 @@ static Long dis_CVTxPS2DQ_256 ( const VexAbiInfo* vbi, Prefix pfx,
    IRTemp argV  = newTemp(Ity_V256);
    IRTemp rmode = newTemp(Ity_I32);
    UInt   rG    = gregOfRexRM(pfx,modrm);
-   IRTemp t0, t1, t2, t3, t4, t5, t6, t7;
 
    if (epartIsReg(modrm)) {
       UInt rE = eregOfRexRM(pfx,modrm);
@@ -10739,26 +10723,7 @@ static Long dis_CVTxPS2DQ_256 ( const VexAbiInfo* vbi, Prefix pfx,
 
    assign( rmode, r2zero ? mkU32((UInt)Irrm_ZERO)
                          : get_sse_roundingmode() );
-   t0 = t1 = t2 = t3 = t4 = t5 = t6 = t7 = IRTemp_INVALID;
-   breakupV256to32s( argV, &t7, &t6, &t5, &t4, &t3, &t2, &t1, &t0 );
-   /* This is less than ideal.  If it turns out to be a performance
-      bottleneck it can be improved. */
-#  define CVT(_t)                             \
-      binop( Iop_F64toI32S,                   \
-             mkexpr(rmode),                   \
-             unop( Iop_F32toF64,              \
-                   unop( Iop_ReinterpI32asF32, mkexpr(_t))) )
-      
-   putYMMRegLane32( rG, 7, CVT(t7) );
-   putYMMRegLane32( rG, 6, CVT(t6) );
-   putYMMRegLane32( rG, 5, CVT(t5) );
-   putYMMRegLane32( rG, 4, CVT(t4) );
-   putYMMRegLane32( rG, 3, CVT(t3) );
-   putYMMRegLane32( rG, 2, CVT(t2) );
-   putYMMRegLane32( rG, 1, CVT(t1) );
-   putYMMRegLane32( rG, 0, CVT(t0) );
-#  undef CVT
-
+   putYMMReg( rG,  binop(Iop_F32toI32Sx8, mkexpr(rmode), mkexpr(argV)) );
    return delta;
 }
 
@@ -10882,7 +10847,6 @@ static Long dis_CVTDQ2PS_128 ( const VexAbiInfo* vbi, Prefix pfx,
    IRTemp argV  = newTemp(Ity_V128);
    IRTemp rmode = newTemp(Ity_I32);
    UInt   rG    = gregOfRexRM(pfx,modrm);
-   IRTemp t0, t1, t2, t3;
 
    if (epartIsReg(modrm)) {
       UInt rE = eregOfRexRM(pfx,modrm);
@@ -10899,21 +10863,8 @@ static Long dis_CVTDQ2PS_128 ( const VexAbiInfo* vbi, Prefix pfx,
    }
 
    assign( rmode, get_sse_roundingmode() );
-   t0 = IRTemp_INVALID;
-   t1 = IRTemp_INVALID;
-   t2 = IRTemp_INVALID;
-   t3 = IRTemp_INVALID;
-   breakupV128to32s( argV, &t3, &t2, &t1, &t0 );
+   putXMMReg(rG, binop(Iop_I32StoF32x4, mkexpr(rmode), mkexpr(argV)));
 
-#  define CVT(_t)  binop( Iop_F64toF32,                    \
-                          mkexpr(rmode),                   \
-                          unop(Iop_I32StoF64,mkexpr(_t)))
-      
-   putXMMRegLane32F( rG, 3, CVT(t3) );
-   putXMMRegLane32F( rG, 2, CVT(t2) );
-   putXMMRegLane32F( rG, 1, CVT(t1) );
-   putXMMRegLane32F( rG, 0, CVT(t0) );
-#  undef CVT
    if (isAvx)
       putYMMRegLane128( rG, 1, mkV128(0) );
 
@@ -10930,7 +10881,6 @@ static Long dis_CVTDQ2PS_256 ( const VexAbiInfo* vbi, Prefix pfx,
    IRTemp argV   = newTemp(Ity_V256);
    IRTemp rmode  = newTemp(Ity_I32);
    UInt   rG     = gregOfRexRM(pfx,modrm);
-   IRTemp t0, t1, t2, t3, t4, t5, t6, t7;
 
    if (epartIsReg(modrm)) {
       UInt rE = eregOfRexRM(pfx,modrm);
@@ -10945,29 +10895,7 @@ static Long dis_CVTDQ2PS_256 ( const VexAbiInfo* vbi, Prefix pfx,
    }
 
    assign( rmode, get_sse_roundingmode() );
-   t0 = IRTemp_INVALID;
-   t1 = IRTemp_INVALID;
-   t2 = IRTemp_INVALID;
-   t3 = IRTemp_INVALID;
-   t4 = IRTemp_INVALID;
-   t5 = IRTemp_INVALID;
-   t6 = IRTemp_INVALID;
-   t7 = IRTemp_INVALID;
-   breakupV256to32s( argV, &t7, &t6, &t5, &t4, &t3, &t2, &t1, &t0 );
-
-#  define CVT(_t)  binop( Iop_F64toF32,                    \
-                          mkexpr(rmode),                   \
-                          unop(Iop_I32StoF64,mkexpr(_t)))
-      
-   putYMMRegLane32F( rG, 7, CVT(t7) );
-   putYMMRegLane32F( rG, 6, CVT(t6) );
-   putYMMRegLane32F( rG, 5, CVT(t5) );
-   putYMMRegLane32F( rG, 4, CVT(t4) );
-   putYMMRegLane32F( rG, 3, CVT(t3) );
-   putYMMRegLane32F( rG, 2, CVT(t2) );
-   putYMMRegLane32F( rG, 1, CVT(t1) );
-   putYMMRegLane32F( rG, 0, CVT(t0) );
-#  undef CVT
+   putYMMReg(rG, binop(Iop_I32StoF32x8, mkexpr(rmode), mkexpr(argV)));
 
    return delta;
 }

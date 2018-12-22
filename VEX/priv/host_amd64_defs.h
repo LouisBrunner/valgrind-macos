@@ -316,6 +316,9 @@ typedef
       Asse_CMPEQF, Asse_CMPLTF, Asse_CMPLEF, Asse_CMPUNF,
       /* Floating point unary */
       Asse_RCPF, Asse_RSQRTF, Asse_SQRTF, 
+      /* Floating point conversion */
+      Asse_I2F, // i32-signed to float conversion, aka cvtdq2ps in vec form
+      Asse_F2I, // float to i32-signed conversion, aka cvtps2dq in vec form
       /* Bitwise */
       Asse_AND, Asse_OR, Asse_XOR, Asse_ANDN,
       Asse_ADD8, Asse_ADD16, Asse_ADD32, Asse_ADD64,

@@ -2810,12 +2810,26 @@ IRAtom* unary64Fx2_w_rm ( MCEnv* mce, IRAtom* vRM, IRAtom* vatomX )
 static
 IRAtom* unary32Fx4_w_rm ( MCEnv* mce, IRAtom* vRM, IRAtom* vatomX )
 {
-   /* Same scheme as unary32Fx4_w_rm. */
+   /* Same scheme as binaryFx4_w_rm. */
    IRAtom* t1 = unary32Fx4(mce, vatomX);
    // PCast the RM, and widen it to 128 bits
    IRAtom* t2 = mkPCastTo(mce, Ity_V128, vRM);
    // Roll it into the result
    t1 = mkUifUV128(mce, t1, t2);
+   return t1;
+}
+
+/* --- ... and ... 32Fx8 versions of the same --- */
+
+static
+IRAtom* unary32Fx8_w_rm ( MCEnv* mce, IRAtom* vRM, IRAtom* vatomX )
+{
+   /* Same scheme as unary32Fx8_w_rm. */
+   IRAtom* t1 = unary32Fx8(mce, vatomX);
+   // PCast the RM, and widen it to 256 bits
+   IRAtom* t2 = mkPCastTo(mce, Ity_V256, vRM);
+   // Roll it into the result
+   t1 = mkUifUV256(mce, t1, t2);
    return t1;
 }
 
@@ -3665,6 +3679,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       /* V128-bit SIMD */
 
+      case Iop_I32StoF32x4:
+      case Iop_F32toI32Sx4:
       case Iop_Sqrt32Fx4:
          return unary32Fx4_w_rm(mce, vatom1, vatom2);
       case Iop_Sqrt64Fx2:
@@ -4743,9 +4759,13 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_CmpGT64Sx4:
          return binary64Ix4(mce, vatom1, vatom2);
 
-     /* Perm32x8: rearrange values in left arg using steering values
-        from right arg.  So rearrange the vbits in the same way but
-        pessimise wrt steering values. */
+      case Iop_I32StoF32x8:
+      case Iop_F32toI32Sx8:
+         return unary32Fx8_w_rm(mce, vatom1, vatom2);
+
+      /* Perm32x8: rearrange values in left arg using steering values
+         from right arg.  So rearrange the vbits in the same way but
+         pessimise wrt steering values. */
       case Iop_Perm32x8:
          return mkUifUV256(
                    mce,

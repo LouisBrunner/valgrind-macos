@@ -530,6 +530,8 @@ const HChar* showAMD64SseOp ( AMD64SseOp op ) {
       case Asse_RCPF:     return "rcp";
       case Asse_RSQRTF:   return "rsqrt";
       case Asse_SQRTF:    return "sqrt";
+      case Asse_I2F:      return "cvtdq2ps.";
+      case Asse_F2I:      return "cvtps2dq.";
       case Asse_AND:      return "and";
       case Asse_OR:       return "or";
       case Asse_XOR:      return "xor";
@@ -568,9 +570,11 @@ const HChar* showAMD64SseOp ( AMD64SseOp op ) {
       case Asse_SHL16:    return "psllw";
       case Asse_SHL32:    return "pslld";
       case Asse_SHL64:    return "psllq";
+      case Asse_SHL128:   return "pslldq";
       case Asse_SHR16:    return "psrlw";
       case Asse_SHR32:    return "psrld";
       case Asse_SHR64:    return "psrlq";
+      case Asse_SHR128:   return "psrldq";
       case Asse_SAR16:    return "psraw";
       case Asse_SAR32:    return "psrad";
       case Asse_PACKSSD:  return "packssdw";
@@ -1643,7 +1647,9 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, const AMD64Instr* i, Bool mode64 )
          vassert(i->Ain.Sse32Fx4.op != Asse_MOV);
          unary = toBool( i->Ain.Sse32Fx4.op == Asse_RCPF
                          || i->Ain.Sse32Fx4.op == Asse_RSQRTF
-                         || i->Ain.Sse32Fx4.op == Asse_SQRTF );
+                         || i->Ain.Sse32Fx4.op == Asse_SQRTF
+                         || i->Ain.Sse32Fx4.op == Asse_I2F
+                         || i->Ain.Sse32Fx4.op == Asse_F2I );
          addHRegUse(u, HRmRead, i->Ain.Sse32Fx4.src);
          addHRegUse(u, unary ? HRmWrite : HRmModify, 
                        i->Ain.Sse32Fx4.dst);
@@ -3648,6 +3654,10 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
 
    case Ain_Sse32Fx4:
       xtra = 0;
+      switch (i->Ain.Sse32Fx4.op) {
+         case Asse_F2I: *p++ = 0x66; break;
+         default: break;
+      }
       *p++ = clearWBit(
              rexAMode_R_enc_enc( vregEnc3210(i->Ain.Sse32Fx4.dst),
                                  vregEnc3210(i->Ain.Sse32Fx4.src) ));
@@ -3661,6 +3671,8 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
          case Asse_RCPF:   *p++ = 0x53; break;
          case Asse_RSQRTF: *p++ = 0x52; break;
          case Asse_SQRTF:  *p++ = 0x51; break;
+         case Asse_I2F:    *p++ = 0x5B; break; // cvtdq2ps; no 0x66 pfx
+         case Asse_F2I:    *p++ = 0x5B; break; // cvtps2dq; with 0x66 pfx
          case Asse_SUBF:   *p++ = 0x5C; break;
          case Asse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
          case Asse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;

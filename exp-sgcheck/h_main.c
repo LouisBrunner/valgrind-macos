@@ -708,12 +708,6 @@ IRSB* h_instrument ( VgCallbackClosure* closure,
 
 void h_fini ( Int exitcode )
 {
-   if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {
-      VG_(message)(Vg_UserMsg, 
-                   "For counts of detected and suppressed errors, "
-                   "rerun with: -v\n");
-   }
-
    if (VG_(clo_stats)) {
       VG_(message)(Vg_DebugMsg,
                    "  h_:  %'10llu client allocs, %'10llu client frees\n", 

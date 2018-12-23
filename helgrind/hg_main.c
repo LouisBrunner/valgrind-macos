@@ -5897,11 +5897,6 @@ static void hg_print_stats (void)
 static void hg_fini ( Int exitcode )
 {
    HG_(xtmemory_report) (VG_(clo_xtree_memory_file), True);
-   if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {
-      VG_(message)(Vg_UserMsg, 
-                   "For counts of detected and suppressed errors, "
-                   "rerun with: -v\n");
-   }
 
    if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)
        && HG_(clo_history_level) >= 2) {

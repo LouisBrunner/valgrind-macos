@@ -8019,11 +8019,6 @@ static void mc_fini ( Int exitcode )
       }
    }
 
-   if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {
-      VG_(message)(Vg_UserMsg, 
-                   "For counts of detected and suppressed errors, rerun with: -v\n");
-   }
-
    if (MC_(any_value_errors) && !VG_(clo_xml) && VG_(clo_verbosity) >= 1
        && MC_(clo_mc_level) == 2) {
       VG_(message)(Vg_UserMsg,

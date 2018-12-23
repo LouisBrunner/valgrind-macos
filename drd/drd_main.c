@@ -761,10 +761,6 @@ static void drd_start_client_code(const ThreadId tid, const ULong bbs_done)
 static void DRD_(fini)(Int exitcode)
 {
    // thread_print_all();
-   if (VG_(clo_verbosity) == 1 && !VG_(clo_xml)) {
-      VG_(message)(Vg_UserMsg, "For counts of detected and suppressed errors, "
-                   "rerun with: -v\n");
-   }
 
    if ((VG_(clo_stats) || s_print_stats) && !VG_(clo_xml))
    {

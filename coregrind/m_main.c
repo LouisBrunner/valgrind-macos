@@ -2152,15 +2152,19 @@ void shutdown_actions_NORETURN( ThreadId tid,
       the error management machinery. */
    VG_TDICT_CALL(tool_fini, 0/*exitcode*/);
 
-   /* Show the error counts. */
-   if (VG_(clo_xml)
-       && (VG_(needs).core_errors || VG_(needs).tool_errors)) {
-      VG_(show_error_counts_as_XML)();
-   }
+   if (VG_(needs).core_errors || VG_(needs).tool_errors) {
+      if (VG_(clo_verbosity) == 1 && !VG_(clo_xml))
+         VG_(message)(Vg_UserMsg, 
+                      "For counts of detected and suppressed errors, rerun with: -v\n");
 
-   /* In XML mode, this merely prints the used suppressions. */
-   if (VG_(needs).core_errors || VG_(needs).tool_errors)
+      /* Show the error counts. */
+      if (VG_(clo_xml)) {
+         VG_(show_error_counts_as_XML)();
+      }
+
+      /* In XML mode, this merely prints the used suppressions. */
       VG_(show_all_errors)(VG_(clo_verbosity), VG_(clo_xml));
+   }
 
    if (VG_(clo_xml)) {
       VG_(printf_xml)("\n");

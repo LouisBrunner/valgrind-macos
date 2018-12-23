@@ -45,6 +45,12 @@ support for X86/macOS 10.13, AMD64/macOS 10.13.
 
 * ==================== OTHER CHANGES ====================
 
+* The new option --show-error-list=no|yes
+  allows to show at exit the list of detected errors and the used
+  suppressions.  In the previous valgrind version, showing this
+  information could only be done using a verbosity >= 2, which is
+  producing a lot of other non necessarily useful messages.
+  The option -s is equivalent to --show-error-list=yes.
 
 * ==================== FIXED BUGS ====================
 
@@ -77,6 +83,7 @@ where XXXXXX is the bug number as listed below.
 402395  coregrind/vgdb-invoker-solaris.c: 2 * poor error checking
 402480  Do not use %rsp in clobber list
 402481  vbit-test fails on x86 for Iop_CmpEQ64 iselInt64Expr Sar64
+402515  Implement new option --show-error-list-suppression-counts=no|yes / -s
 
 Release 3.14.0 (9 October 2018)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

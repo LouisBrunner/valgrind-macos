@@ -173,8 +173,8 @@ static Bool attach(pid_t pid)
    }
 
    pstatus_t pstatus;
-   bytes = read(status_fd, &pstatus, sizeof(pstatus));
-   if ((bytes < 0) || (bytes != sizeof(pstatus))) {
+   ssize_t nread = read(status_fd, &pstatus, sizeof(pstatus));
+   if ((nread < 0) || (nread != sizeof(pstatus))) {
       ERROR(errno, "Failed to read from %s.\n", procname);
       close(status_fd);
       return False;
@@ -400,8 +400,8 @@ static Bool invoke_agent(pid_t pid, prgregset_t *regs, id_t *agent_lwpid)
    }
 
    lwpstatus_t status;
-   bytes = read(status_fd, &status, sizeof(status));
-   if ((bytes < 0) || (bytes != sizeof(status))) {
+   ssize_t nread = read(status_fd, &status, sizeof(status));
+   if ((nread < 0) || (nread != sizeof(status))) {
       ERROR(errno, "Failed to read from %s.\n", procname);
       close(status_fd);
       return False;

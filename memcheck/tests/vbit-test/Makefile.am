@@ -1,6 +1,7 @@
 include $(top_srcdir)/Makefile.all.am
 
-EXTRA_DIST = vbit-test.vgtest vbit-test.stderr.exp
+EXTRA_DIST = vbit-test.vgtest vbit-test.stderr.exp \
+             vbit-test-sec.vgtest vbit-test-sec.stderr.exp
 
 dist_noinst_SCRIPTS = filter_stderr
 

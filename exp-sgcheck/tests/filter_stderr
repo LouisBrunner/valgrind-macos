@@ -19,7 +19,7 @@ sed \
 -e "/^exp-sgcheck, a stack and global array overrun detector$/d" \
 -e "/^NOTE: This is an Experimental-Class Valgrind Tool$/d"  \
 -e "/^Copyright (C) 2003-201., and GNU GPL'd, by OpenWorks Ltd et al.$/d" \
--e "/^For counts of detected and suppressed errors, rerun with: -v$/d" |
+-e "/^For detected errors list and suppressed errors count, rerun with: -s$/d" |
 
 # Tidy up in cases where glibc (+ libdl + libpthread + ld) have
 # been built with debugging information, hence source locs are present.

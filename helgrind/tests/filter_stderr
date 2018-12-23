@@ -42,7 +42,7 @@ sed \
 # do not contain them (at least on gcc110/fedora18).
 sed \
  -e "/^Helgrind, a thread error detector/ , /./ d" \
- -e "/^For counts of detected and suppressed errors, rerun with: -v$/d" \
+ -e "/^For detected errors list and suppressed errors count, rerun with: -s$/d" \
  -e "/^Use --history-level=approx or =none to gain increased speed, at$/d" \
  -e "/^the cost of reduced accuracy of conflicting-access information$/d" \
  -e "/pthread_create_WRK (hg_intercepts.c:/d" |

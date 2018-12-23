@@ -54,6 +54,8 @@ Int    VG_(clo_error_exitcode) = 0;
 HChar *VG_(clo_error_markers)[2] = {NULL, NULL};
 Bool   VG_(clo_exit_on_first_error) = False;
 
+Bool   VG_(clo_show_error_list) = False;
+
 #if defined(VGPV_arm_linux_android) \
     || defined(VGPV_x86_linux_android) \
     || defined(VGPV_mips32_linux_android) \

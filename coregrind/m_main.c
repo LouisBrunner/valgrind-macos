@@ -129,6 +129,9 @@ static void usage_NORETURN ( Bool debug_help )
 "    --error-exitcode=<number> exit code to return if errors found [0=disable]\n"
 "    --error-markers=<begin>,<end> add lines with begin/end markers before/after\n"
 "                              each error output in plain text mode [none]\n"
+"    --show-error-list=no|yes  show detected errors list and\n"
+"                              suppression counts at exit [no]\n"
+"    -s                        same as --show-error-list=yes\n"
 "    --keep-debuginfo=no|yes   Keep symbols etc for unloaded code [no]\n"
 "                              This allows saved stack traces (e.g. memory leaks)\n"
 "                              to include file/line info for code that has been\n"
@@ -459,9 +462,11 @@ void main_process_cmd_line_options( void )
    Int   toolname_len = VG_(strlen)(VG_(clo_toolname));
    const HChar* tmp_str;         // Used in a couple of places.
 
-   /* Whether the user has explicitly provided --sigill-diagnostics.
+   /* Whether the user has explicitly provided --sigill-diagnostics
+      or --show-error-list.
       If not explicitly given depends on general verbosity setting. */
    Bool sigill_diag_set = False;
+   Bool show_error_list_set = False;
 
    /* Log to stderr by default, but usage message goes to stdout.  XML
       output is initially disabled. */
@@ -635,6 +640,12 @@ void main_process_cmd_line_options( void )
             }
             startpos = *nextpos ? nextpos + 1 : nextpos;
          }
+      }
+      else if VG_BOOL_CLO(arg, "--show-error-list", VG_(clo_show_error_list)) {
+            show_error_list_set = True; }
+      else if (VG_STREQ(arg, "-s")) {
+         VG_(clo_show_error_list) = True;
+         show_error_list_set = True;
       }
       else if VG_BOOL_CLO(arg, "--show-emwarns",   VG_(clo_show_emwarns)) {}
 
@@ -919,6 +930,13 @@ void main_process_cmd_line_options( void )
 
    if (!sigill_diag_set)
       VG_(clo_sigill_diag) = (VG_(clo_verbosity) > 0);
+
+   if (!show_error_list_set) {
+      if (VG_(clo_xml))
+         VG_(clo_show_error_list) = VG_(clo_verbosity) >= 1;
+      else
+         VG_(clo_show_error_list) = VG_(clo_verbosity) >= 2;
+   }
 
    if (VG_(clo_trace_notbelow) == -1) {
      if (VG_(clo_trace_notabove) == -1) {
@@ -2153,9 +2171,12 @@ void shutdown_actions_NORETURN( ThreadId tid,
    VG_TDICT_CALL(tool_fini, 0/*exitcode*/);
 
    if (VG_(needs).core_errors || VG_(needs).tool_errors) {
-      if (VG_(clo_verbosity) == 1 && !VG_(clo_xml))
-         VG_(message)(Vg_UserMsg, 
-                      "For counts of detected and suppressed errors, rerun with: -v\n");
+      if (VG_(clo_verbosity) == 1
+          && !VG_(clo_xml)
+          && !VG_(clo_show_error_list))
+         VG_(message)(Vg_UserMsg,
+                      "For lists of detected and suppressed errors,"
+                      " rerun with: -s\n");
 
       /* Show the error counts. */
       if (VG_(clo_xml)) {

@@ -979,29 +979,31 @@ void VG_(show_all_errors) (  Int verbosity, Bool xml )
    Int    i, n_min;
    Error *p, *p_min;
    Bool   any_supp;
+   Bool   any_error = False;
 
-   if (verbosity == 0)
+   if (verbosity == 0 && !VG_(clo_show_error_list))
       return;
 
    /* If we're printing XML, just show the suppressions and stop. */
    if (xml) {
-      (void)show_used_suppressions();
+      if (VG_(clo_show_error_list))
+         (void)show_used_suppressions();
       return;
    }
 
    /* We only get here if not printing XML. */
    VG_(umsg)("ERROR SUMMARY: "
              "%u errors from %u contexts (suppressed: %u from %u)\n",
-             n_errs_found, n_err_contexts, 
+             n_errs_found, n_err_contexts,
              n_errs_suppressed, n_supp_contexts );
 
-   if (verbosity <= 1)
+   if (!VG_(clo_show_error_list))
       return;
 
-   // We do the following only at -v or above, and only in non-XML
-   // mode
+   // We do the following if VG_(clo_show_error_list)
+   // or at -v or above, and only in non-XML mode.
 
-   /* Print the contexts in order of increasing error count. 
+   /* Print the contexts in order of increasing error count.
       Once an error is shown, we add a huge value to its count to filter it
       out.
       After having shown all errors, we reset count to the original value. */
@@ -1018,6 +1020,7 @@ void VG_(show_all_errors) (  Int verbosity, Bool xml )
       // XXX: this isn't right.  See bug 203651.
       if (p_min == NULL) continue; //VG_(core_panic)("show_all_errors()");
 
+      any_error = True;
       VG_(umsg)("\n");
       VG_(umsg)("%d errors in context %d of %u:\n",
                 p_min->count, i+1, n_err_contexts);
@@ -1035,9 +1038,9 @@ void VG_(show_all_errors) (  Int verbosity, Bool xml )
       }
 
       p_min->count = p_min->count + (1 << 30);
-   } 
+   }
 
-   /* reset the counts, otherwise a 2nd call does not show anything anymore */ 
+   /* reset the counts, otherwise a 2nd call does not show anything anymore */
    for (p = errors; p != NULL; p = p->next) {
       if (p->count >= (1 << 30))
          p->count = p->count - (1 << 30);
@@ -1046,14 +1049,15 @@ void VG_(show_all_errors) (  Int verbosity, Bool xml )
 
    any_supp = show_used_suppressions();
 
-   if (any_supp) 
+   if (any_supp)
       VG_(umsg)("\n");
-   // reprint this, so users don't have to scroll way up to find
+   // reprint summary, so users don't have to scroll way up to find
    // the first printing
-   VG_(umsg)("ERROR SUMMARY: "
-             "%u errors from %u contexts (suppressed: %u from %u)\n",
-             n_errs_found, n_err_contexts, n_errs_suppressed,
-             n_supp_contexts );
+   if (any_supp || any_error)
+      VG_(umsg)("ERROR SUMMARY: "
+                "%u errors from %u contexts (suppressed: %u from %u)\n",
+                n_errs_found, n_err_contexts, n_errs_suppressed,
+                n_supp_contexts );
 }
 
 void VG_(show_last_error) ( void )

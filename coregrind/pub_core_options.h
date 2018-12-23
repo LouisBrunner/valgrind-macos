@@ -51,6 +51,13 @@ extern Bool  VG_(clo_exit_on_first_error);
    way. */
 extern Int   VG_(clo_error_exitcode);
 
+/* For tools that report errors, list detected errors and show suppression
+   usage counts at exit. Default: No.
+   Unless set explicitly by the user, the option is automatically
+   considered as set to yes for verbosity > 1. */
+extern Bool  VG_(clo_show_error_list);
+
+
 /* Markers used to mark the begin/end of an error, when errors are
    printed in textual (non xml) format.
    [0] is the error begin marker, [1] is the error end marker.

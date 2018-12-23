@@ -30,5 +30,5 @@ HEAP SUMMARY:
 
 For a detailed leak analysis, rerun with: --leak-check=full
 
-For counts of detected and suppressed errors, rerun with: -v
+For lists of detected and suppressed errors, rerun with: -s
 ERROR SUMMARY: 4 errors from 4 contexts (suppressed: 0 from 0)

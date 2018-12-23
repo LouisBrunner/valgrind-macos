@@ -129,5 +129,5 @@ HEAP SUMMARY:
 
 All heap blocks were freed -- no leaks are possible
 
-For counts of detected and suppressed errors, rerun with: -v
+For lists of detected and suppressed errors, rerun with: -s
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

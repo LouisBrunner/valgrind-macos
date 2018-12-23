@@ -464,5 +464,5 @@ HEAP SUMMARY:
 For a detailed leak analysis, rerun with: --leak-check=full
 
 Use --track-origins=yes to see where uninitialised values come from
-For counts of detected and suppressed errors, rerun with: -v
+For lists of detected and suppressed errors, rerun with: -s
 ERROR SUMMARY: 51 errors from 51 contexts (suppressed: 0 from 0)

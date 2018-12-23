@@ -6,7 +6,7 @@ HEAP SUMMARY:
 
 For a detailed leak analysis, rerun with: --leak-check=full
 
-For counts of detected and suppressed errors, rerun with: -v
+For lists of detected and suppressed errors, rerun with: -s
 ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 Unaddressable byte(s) found during client check request
    at 0x........: test2 (addressable.c:48)
@@ -35,7 +35,7 @@ HEAP SUMMARY:
 
 For a detailed leak analysis, rerun with: --leak-check=full
 
-For counts of detected and suppressed errors, rerun with: -v
+For lists of detected and suppressed errors, rerun with: -s
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)
 
 HEAP SUMMARY:
@@ -44,7 +44,7 @@ HEAP SUMMARY:
 
 For a detailed leak analysis, rerun with: --leak-check=full
 
-For counts of detected and suppressed errors, rerun with: -v
+For lists of detected and suppressed errors, rerun with: -s
 ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 
 Process terminating with default action of signal N (SIGSEGV or SIGBUS)
@@ -58,7 +58,7 @@ HEAP SUMMARY:
 
 For a detailed leak analysis, rerun with: --leak-check=full
 
-For counts of detected and suppressed errors, rerun with: -v
+For lists of detected and suppressed errors, rerun with: -s
 ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 Uninitialised byte(s) found during client check request
    at 0x........: test5 (addressable.c:85)
@@ -78,7 +78,7 @@ HEAP SUMMARY:
 For a detailed leak analysis, rerun with: --leak-check=full
 
 Use --track-origins=yes to see where uninitialised values come from
-For counts of detected and suppressed errors, rerun with: -v
+For lists of detected and suppressed errors, rerun with: -s
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)
 
 HEAP SUMMARY:
@@ -87,5 +87,5 @@ HEAP SUMMARY:
 
 For a detailed leak analysis, rerun with: --leak-check=full
 
-For counts of detected and suppressed errors, rerun with: -v
+For lists of detected and suppressed errors, rerun with: -s
 ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

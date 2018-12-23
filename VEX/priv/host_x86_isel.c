@@ -2380,6 +2380,56 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env,
             return;
          }
 
+         case Iop_Sar64: {
+            /* gcc -O2 does the following.  I don't know how it works, but it
+               does work.  Don't mess with it.  This is hard to test because the
+               x86 front end doesn't create Iop_Sar64 for any x86 instruction,
+               so it's impossible to write a test program that feeds values
+               through Iop_Sar64 and prints their results.  The implementation
+               here was tested by using psrlq on mmx registers -- that generates
+               Iop_Shr64 -- and temporarily hacking the front end to generate
+               Iop_Sar64 for that instruction instead.
+
+               movl  %amount, %ecx
+               movl  %srcHi,  %r1
+               movl  %srcLo,  %r2
+
+               movl   %r1, %r3
+               sarl   %cl, %r3
+               movl   %r2, %r4
+               shrdl  %cl, %r1, %r4
+               movl   %r3, %r2
+               sarl   $31, %r2
+               andl   $32, %ecx
+               cmovne %r3, %r4   // = resLo
+               cmovne %r2, %r3   // = resHi
+            */
+            HReg amount = iselIntExpr_R(env, e->Iex.Binop.arg2);
+            HReg srcHi = INVALID_HREG, srcLo = INVALID_HREG;
+            iselInt64Expr(&srcHi, &srcLo, env, e->Iex.Binop.arg1);
+            HReg r1 = newVRegI(env);
+            HReg r2 = newVRegI(env);
+            HReg r3 = newVRegI(env);
+            HReg r4 = newVRegI(env);
+            addInstr(env, mk_iMOVsd_RR(amount, hregX86_ECX()));
+            addInstr(env, mk_iMOVsd_RR(srcHi, r1));
+            addInstr(env, mk_iMOVsd_RR(srcLo, r2));
+
+            addInstr(env, mk_iMOVsd_RR(r1, r3));
+            addInstr(env, X86Instr_Sh32(Xsh_SAR, 0/*%cl*/, r3));
+            addInstr(env, mk_iMOVsd_RR(r2, r4));
+            addInstr(env, X86Instr_Sh3232(Xsh_SHR, 0/*%cl*/, r1, r4));
+            addInstr(env, mk_iMOVsd_RR(r3, r2));
+            addInstr(env, X86Instr_Sh32(Xsh_SAR, 31, r2));
+            addInstr(env, X86Instr_Alu32R(Xalu_AND, X86RMI_Imm(32),
+                                                    hregX86_ECX()));
+            addInstr(env, X86Instr_CMov32(Xcc_NZ, X86RM_Reg(r3), r4));
+            addInstr(env, X86Instr_CMov32(Xcc_NZ, X86RM_Reg(r2), r3));
+            *rHi = r3;
+            *rLo = r4;
+            return;
+         }
+
          /* F64 -> I64 */
          /* Sigh, this is an almost exact copy of the F64 -> I32/I16
             case.  Unfortunately I see no easy way to avoid the

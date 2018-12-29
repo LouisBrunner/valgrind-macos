@@ -1211,6 +1211,7 @@
 /memcheck/tests/vbit-test/Makefile
 /memcheck/tests/vbit-test/Makefile.in
 /memcheck/tests/vbit-test/vbit-test
+/memcheck/tests/vbit-test/vbit-test-sec
 
 # /memcheck/tests/x86/
 /memcheck/tests/x86/*.dSYM

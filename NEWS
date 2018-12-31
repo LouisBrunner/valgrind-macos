@@ -84,6 +84,7 @@ where XXXXXX is the bug number as listed below.
 402480  Do not use %rsp in clobber list
 402481  vbit-test fails on x86 for Iop_CmpEQ64 iselInt64Expr Sar64
 402515  Implement new option --show-error-list=no|yes / -s
+402519  POWER 3.0 addex instruction incorrectly implemented
 
 Release 3.14.0 (9 October 2018)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

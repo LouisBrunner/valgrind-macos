@@ -286,7 +286,7 @@ static test_list_t testgroup_ia_ops_two[] = {
    { &test_moduw, "moduw" },
    { &test_modsd, "modsd" },
    { &test_modud, "modud" },
-   //{ &test_addex, "addex" },
+   { &test_addex, "addex" },
    { NULL       , NULL             },
 };
 
@@ -2741,7 +2741,6 @@ static void testfunction_gpr_vector_logical_one (const char* instruction_name,
     *   rt, xa
     */
    int i;
-   int t;
    volatile HWord_t res;
 
    VERBOSE_FUNCTION_CALLOUT

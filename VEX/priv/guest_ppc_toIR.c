@@ -2645,21 +2645,6 @@ static void copy_OV_to_OV32( void ) {
    putXER_OV32( getXER_OV() );
 }
 
-static void set_XER_OV_OV32 ( IRType ty, UInt op, IRExpr* res,
-                              IRExpr* argL, IRExpr* argR )
-{
-   if (ty == Ity_I32) {
-      set_XER_OV_OV32_32( op, res, argL, argR );
-   } else {
-      IRExpr* xer_ov_32;
-      set_XER_OV_64( op, res, argL, argR );
-      xer_ov_32 = calculate_XER_OV_32( op, unop(Iop_64to32, res),
-                                       unop(Iop_64to32, argL),
-                                       unop(Iop_64to32, argR));
-      putXER_OV32( unop(Iop_32to8, xer_ov_32) );
-   }
-}
-
 static void set_XER_OV_OV32_SO ( IRType ty, UInt op, IRExpr* res,
                                  IRExpr* argL, IRExpr* argR )
 {
@@ -3002,6 +2987,33 @@ static void set_XER_CA_CA32 ( IRType ty, UInt op, IRExpr* res,
       set_XER_CA_32( op, res, argL, argR, oldca );
    } else {
       set_XER_CA_64( op, res, argL, argR, oldca );
+   }
+}
+
+/* Used only by addex instruction, which uses and sets OV as carry.  */
+static void set_XER_OV_OV32_ADDEX ( IRType ty, IRExpr* res,
+                                    IRExpr* argL, IRExpr* argR,
+                                    IRExpr* old_ov )
+{
+   if (ty == Ity_I32) {
+      IRTemp xer_ov = newTemp(Ity_I32);
+      assign ( xer_ov, unop(Iop_32to8,
+                            calculate_XER_CA_32( PPCG_FLAG_OP_ADDE,
+                                                 res, argL, argR, old_ov ) ) );
+      putXER_OV( mkexpr (xer_ov) );
+      putXER_OV32( mkexpr (xer_ov) );
+   } else {
+      IRExpr *xer_ov;
+      IRExpr* xer_ov_32;
+      xer_ov = calculate_XER_CA_64( PPCG_FLAG_OP_ADDE,
+                                    res, argL, argR, old_ov );
+      putXER_OV( unop(Iop_32to8, xer_ov) );
+      xer_ov_32 = calculate_XER_CA_32( PPCG_FLAG_OP_ADDE,
+                                       unop(Iop_64to32, res),
+                                       unop(Iop_64to32, argL),
+                                       unop(Iop_64to32, argR),
+                                       unop(Iop_64to32, old_ov) );
+      putXER_OV32( unop(Iop_32to8, xer_ov_32) );
    }
 }
 
@@ -5094,16 +5106,18 @@ static Bool dis_int_arith ( UInt theInstr )
       }
 
       case 0xAA: {// addex (Add Extended alternate carry bit Z23-form)
+         IRTemp old_xer_ov = newTemp(ty);
          DIP("addex r%u,r%u,r%u,%d\n", rD_addr, rA_addr, rB_addr, (Int)flag_OE);
+         assign( old_xer_ov, mkWidenFrom32(ty, getXER_OV_32(), False) );
          assign( rD, binop( mkSzOp(ty, Iop_Add8), mkexpr(rA),
                             binop( mkSzOp(ty, Iop_Add8), mkexpr(rB),
-                                   mkWidenFrom8( ty, getXER_OV(), False ) ) ) );
+                                   mkexpr(old_xer_ov) ) ) );
 
          /* CY bit is same as OE bit */
          if (flag_OE == 0) {
-            /* Exception, do not set SO bit */
-            set_XER_OV_OV32( ty, PPCG_FLAG_OP_ADDE,
-                             mkexpr(rD), mkexpr(rA), mkexpr(rB) );
+            /* Exception, do not set SO bit and set OV from carry. */
+            set_XER_OV_OV32_ADDEX( ty, mkexpr(rD), mkexpr(rA), mkexpr(rB),
+                                   mkexpr(old_xer_ov) );
          } else {
             /* CY=1, 2 and 3 (AKA flag_OE) are reserved */
             vex_printf("addex instruction, CY = %d is reserved.\n", flag_OE);

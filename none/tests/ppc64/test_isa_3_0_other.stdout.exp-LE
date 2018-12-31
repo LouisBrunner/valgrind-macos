@@ -40,7 +40,17 @@ modud ffffffffffffffff, 0000000000000000 => 0000000000000000 (00000000)
 modud ffffffffffffffff, 0000001cbe991def => 000000043eb0c0b2 (00000000)
 modud ffffffffffffffff, ffffffffffffffff => 0000000000000000 (00000000)
 
-All done. Tested 4 different instructions
+addex 0000000000000000, 0000000000000000 => 0000000000000000 (00000000)
+addex 0000000000000000, 0000001cbe991def => 0000001cbe991def (00000000)
+addex 0000000000000000, ffffffffffffffff => ffffffffffffffff (00000000)
+addex 0000001cbe991def, 0000000000000000 => 0000001cbe991def (00000000)
+addex 0000001cbe991def, 0000001cbe991def => 000000397d323bde (00000000) OV32
+addex 0000001cbe991def, ffffffffffffffff => 0000001cbe991dee (00000000) OV OV32
+addex ffffffffffffffff, 0000000000000000 => 0000000000000000 (00000000) OV OV32
+addex ffffffffffffffff, 0000001cbe991def => 0000001cbe991def (00000000) OV OV32
+addex ffffffffffffffff, ffffffffffffffff => ffffffffffffffff (00000000) OV OV32
+
+All done. Tested 5 different instructions
 ppc one argument plus shift:
 Test instruction group [ppc one argument plus shift]
 extswsli  aaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaa 0 ffffffffffffffff => aaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaa 0 ffffffffffffffff
@@ -85,7 +95,7 @@ extswsli. aaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaa 0 ffaa5599113377cc => aaaaaaaaaaaaaa
 extswsli. 5152535455565758 5152535455565758 0 ffaa5599113377cc => 5152535455565758 5152535455565758 0 ffaa5599113377cc
 extswsli. 0000000000000000 0000000000000000 0 ffaa5599113377cc => 0000000000000000 0000000000000000 0 ffaa5599113377cc
 
-All done. Tested 6 different instructions
+All done. Tested 7 different instructions
 ppc three parameter ops:
 Test instruction group [ppc three parameter ops]
 maddhd  0000000000000000, 0000000000000000, 0000000000000000  => 0000000000000000 (00000000)
@@ -172,7 +182,7 @@ maddld  ffffffffffffffff, ffffffffffffffff, 0000000000000000  => 000000000000000
 maddld  ffffffffffffffff, ffffffffffffffff, 0000001cbe991def  => 0000001cbe991df0 (00000000)
 maddld  ffffffffffffffff, ffffffffffffffff, ffffffffffffffff  => 0000000000000000 (00000000)
 
-All done. Tested 9 different instructions
+All done. Tested 10 different instructions
 ppc count zeros:
 Test instruction group [ppc count zeros]
 cnttzw 0000000000000000 => 0000000000000020
@@ -197,7 +207,7 @@ cnttzd. 0000001cbe991def => 0000000000000000 Expected cr0 to be zero, it is (200
 cnttzd. ffffffffffffffff => 0000000000000000 Expected cr0 to be zero, it is (20000000)
 
 
-All done. Tested 13 different instructions
+All done. Tested 14 different instructions
 ppc set boolean:
 Test instruction group [ppc set boolean]
 setb cr_field:0 cr_value::00000000 =>  0000000000000000
@@ -265,7 +275,7 @@ setb cr_field:7 cr_value::00000005 =>  0000000000000001
 setb cr_field:7 cr_value::00000006 =>  0000000000000001
 setb cr_field:7 cr_value::00000007 =>  0000000000000001
 
-All done. Tested 14 different instructions
+All done. Tested 15 different instructions
 ppc char compare:
 Test instruction group [ppc char compare]
 cmprb l=0 0x61 (a) (cmpeq:0x5b427b625a417a61) (cmprb:src22(a-z) src21(A-Z)) => in range/found
@@ -1711,7 +1721,7 @@ cmpeqb 0x5d (]) (cmpeq:0x4642666245416561) (cmprb:src22(a-e) src21(A-E)) =>
 cmpeqb 0x60 (`) (cmpeq:0x4642666245416561) (cmprb:src22(a-e) src21(A-E)) =>
 cmpeqb 0x5f (_) (cmpeq:0x4642666245416561) (cmprb:src22(a-e) src21(A-E)) =>
 
-All done. Tested 17 different instructions
+All done. Tested 18 different instructions
 ppc vector scalar move to/from:
 Test instruction group [ppc vector scalar move to/from]
 mfvsrld aaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaa 0 ffffffffffffffff => aaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaa ffffffffffffffff
@@ -1777,7 +1787,7 @@ mtvsrws aaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaa 0 ffaa5599113377cc => 113377cc113377cc
 mtvsrws 5152535455565758 5152535455565758 0 ffaa5599113377cc => 113377cc113377cc 113377cc113377cc 0 ffaa5599113377cc
 mtvsrws 0000000000000000 0000000000000000 0 ffaa5599113377cc => 113377cc113377cc 113377cc113377cc 0 ffaa5599113377cc
 
-All done. Tested 20 different instructions
+All done. Tested 21 different instructions
 ppc dfp significance:
 Test instruction group [ppc dfp significance]
 dtstsfi significance(0x00) +Finite                  0 * 10 ^ -12 (GT) (4)
@@ -1862,7 +1872,7 @@ dtstsfiq significance(0x20) -inf      (GT) (4)
 dtstsfiq significance(0x30) -inf      (GT) (4)
 dtstsfiq significance(0x3f) -inf      (GT) (4)
 
-All done. Tested 22 different instructions
+All done. Tested 23 different instructions
 ppc bcd misc:
 Test instruction group [ppc bcd misc]
 bcdadd. p0 xa:0000000000000000 000000000000000c (+|0) xb:0000000000000000 000000000000000c (+|0) => (EQ) (2) xt:0000000000000000 000000000000000c(+|0)
@@ -33338,12 +33348,12 @@ bcdcfsq. p1 xa:0000000000000000 000000000000000c (+|0) xb:9999999999999999 99999
 bcdcfsq. p1 xa:0000000000000000 000000000000000c (+|0) xb:0000000000000000 000000001234567d ( - ) => (GT) (4) xt:0000000000000000 000000305419901f(+|0)
 
 
-All done. Tested 51 different instructions
+All done. Tested 52 different instructions
 ppc noop misc:
 Test instruction group [ppc noop misc]
 wait   =>
 
-All done. Tested 52 different instructions
+All done. Tested 53 different instructions
 ppc addpc_misc:
 Test instruction group [ppc addpc_misc]
 addpcis   0000000000000000  =>  0000000000000000
@@ -33380,7 +33390,7 @@ subpcis   000000000000000d  =>  0000000000000000
 subpcis   000000000000000e  =>  0000000000000000
 subpcis   000000000000000f  =>  0000000000000000
 
-All done. Tested 54 different instructions
+All done. Tested 55 different instructions
 ppc mffpscr:
 Test instruction group [ppc mffpscr]
 mffsce  =>  000000000.000000
@@ -33395,7 +33405,7 @@ mffs  =>  000000000.000000
  fpscr: f14 
  local_fpscr: 
 
-All done. Tested 57 different instructions
+All done. Tested 58 different instructions
 ppc mffpscr:
 Test instruction group [ppc mffpscr]
 mffscdrni  0  =>  0X0
@@ -33426,4 +33436,4 @@ mffscrn  f15 0X1   =>  0X200000000
 mffscrn  f15 0X2   =>  0X200000000
  fpscr: f14  local_fpscr:  30-DRN1 RN-bit62
 
-All done. Tested 61 different instructions
+All done. Tested 62 different instructions

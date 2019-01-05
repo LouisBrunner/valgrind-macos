@@ -1548,6 +1548,9 @@ static const HChar *name_for_fcntl(UWord cmd) {
       F(F_BARRIERFSYNC);
       F(F_ADDFILESIGS_RETURN);
 #     endif
+#     if DARWIN_VERS >= DARWIN_10_14
+      F(F_CHECK_LV);
+#     endif
    default:
       return "UNKNOWN";
    }
@@ -1746,6 +1749,12 @@ PRE(fcntl)
       break;
 #  endif
 
+#  if DARWIN_VERS >= DARWIN_10_14
+   case VKI_F_CHECK_LV: /* Check if Library Validation allows this Mach-O file to be
+                           mapped into the calling process */
+      // FIXME: Dejan
+      break;
+#  endif
    default:
       PRINT("fcntl ( %lu, %lu [??] )", ARG1, ARG2);
       log_decaying("UNKNOWN fcntl %lu!", ARG2);
@@ -10680,6 +10689,10 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_ntp_gettime),                             // 528
 // _____(__NR_os_fault_with_payload),                   // 529
 #endif
+#if DARWIN_VERS >= DARWIN_10_14
+// _____(__NR_kqueue_workloop_ctl),                     // 530
+// _____(__NR___mach_bridge_remote_time),               // 531
+#endif
 // _____(__NR_MAXSYSCALL)
    MACX_(__NR_DARWIN_FAKE_SIGRETURN, FAKE_SIGRETURN)
 };
@@ -10772,7 +10785,12 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    MACX_(__NR_semaphore_wait_signal_trap, semaphore_wait_signal), 
    MACX_(__NR_semaphore_timedwait_trap, semaphore_timedwait), 
    MACX_(__NR_semaphore_timedwait_signal_trap, semaphore_timedwait_signal), 
+
+#  if DARWIN_VERS >= DARWIN_10_14
+// _____(__NR_kernelrpc_mach_port_get_attributes_trap),
+#  else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(40)),    // -40
+#  endif
 
 #  if DARWIN_VERS >= DARWIN_10_9
    MACX_(__NR_kernelrpc_mach_port_guard_trap, kernelrpc_mach_port_guard_trap),

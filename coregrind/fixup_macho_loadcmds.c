@@ -123,7 +123,7 @@
     && DARWIN_VERS != DARWIN_10_7 && DARWIN_VERS != DARWIN_10_8 \
     && DARWIN_VERS != DARWIN_10_9 && DARWIN_VERS != DARWIN_10_10 \
     && DARWIN_VERS != DARWIN_10_11 && DARWIN_VERS != DARWIN_10_12 \
-    && DARWIN_VERS != DARWIN_10_13
+    && DARWIN_VERS != DARWIN_10_13 && DARWIN_VERS != DARWIN_10_14
 #  error "Unknown DARWIN_VERS value.  This file only compiles on Darwin."
 #endif
 

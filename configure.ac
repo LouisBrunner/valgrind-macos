@@ -372,6 +372,7 @@ case "${host_os}" in
         AC_DEFINE([DARWIN_10_11], 101100, [DARWIN_VERS value for Mac OS X 10.11])
         AC_DEFINE([DARWIN_10_12], 101200, [DARWIN_VERS value for macOS 10.12])
         AC_DEFINE([DARWIN_10_13], 101300, [DARWIN_VERS value for macOS 10.13])
+        AC_DEFINE([DARWIN_10_14], 101400, [DARWIN_VERS value for macOS 10.14])
 
 	AC_MSG_CHECKING([for the kernel version])
 	kernel=`uname -r`
@@ -447,9 +448,15 @@ case "${host_os}" in
 		  DEFAULT_SUPP="darwin17.supp ${DEFAULT_SUPP}"
 		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
 		  ;;
+             18.*)
+                  AC_MSG_RESULT([Darwin 18.x (${kernel}) / macOS 10.14 Mojave])
+                  AC_DEFINE([DARWIN_VERS], DARWIN_10_14, [Darwin / Mac OS X version])
+                  DEFAULT_SUPP="darwin18.supp ${DEFAULT_SUPP}"
+                  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
+                  ;;
              *) 
 		  AC_MSG_RESULT([unsupported (${kernel})])
-		  AC_MSG_ERROR([Valgrind works on Darwin 10.x, 11.x, 12.x, 13.x, 14.x, 15.x, 16.x and 17.x (Mac OS X 10.6/7/8/9/10/11 and macOS 10.12/13)])
+		  AC_MSG_ERROR([Valgrind works on Darwin 10.x-18.x (Mac OS X 10.6-11 and macOS 10.12-14)])
 		  ;;
 	esac
         ;;

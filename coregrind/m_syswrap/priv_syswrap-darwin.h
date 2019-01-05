@@ -646,6 +646,10 @@ DECL_TEMPLATE(darwin, ulock_wake);                  // 516
 // NYI ntp_gettime                                  // 528
 // NYI os_fault_with_payload                        // 529
 #endif /* DARWIN_VERS >= DARWIN_10_13 */
+#if DARWIN_VERS >= DARWIN_10_14
+// NYI kqueue_workloop_ctl                          // 530
+// NYI __mach_bridge_remote_time                    // 531
+#endif /* DARWIN_VERS >= DARWIN_10_14 */
 
 // Mach message helpers
 DECL_TEMPLATE(darwin, mach_port_set_context);
@@ -782,6 +786,10 @@ DECL_TEMPLATE(darwin, mk_timer_cancel);
 DECL_TEMPLATE(darwin, iokit_user_client_trap);
 DECL_TEMPLATE(darwin, swtch);
 DECL_TEMPLATE(darwin, swtch_pri);
+
+#if DARWIN_VERS >= DARWIN_10_14
+// NYI kernelrpc_mach_port_get_attributes_trap      // 40
+#endif /* DARWIN_VERS >= DARWIN_10_14 */
 
 // Machine-dependent traps
 DECL_TEMPLATE(darwin, thread_fast_set_cthread_self);

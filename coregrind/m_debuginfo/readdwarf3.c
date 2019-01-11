@@ -3610,6 +3610,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       Bool have_count = False;
       Long lower = 0;
       Long upper = 0;
+      Long count = 0;
 
       switch (parser->language) {
          case 'C': have_lower = True;  lower = 0; break;
@@ -3641,7 +3642,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
             have_upper = True;
          }
          if (attr == DW_AT_count && cts.szB > 0) {
-            /*count    = (Long)cts.u.val;*/
+            count    = (Long)cts.u.val;
             have_count = True;
          }
       }
@@ -3680,6 +3681,11 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          boundE.Te.Bound.knownU = False;
          boundE.Te.Bound.boundL = 0;
          boundE.Te.Bound.boundU = 0;
+      } else if (have_lower && (!have_upper) && (have_count)) {
+         boundE.Te.Bound.knownL = True;
+         boundE.Te.Bound.knownU = True;
+         boundE.Te.Bound.boundL = lower;
+         boundE.Te.Bound.boundU = lower + count;
       } else {
          /* FIXME: handle more cases */
          goto_bad_DIE;

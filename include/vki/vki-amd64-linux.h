@@ -559,16 +559,15 @@ struct vki_ucontext {
 #define VKI_ARCH_GET_GS 0x1004
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-x86_64/ldt.h
+// Originally from linux-2.6.9/include/asm-x86_64/ldt.h
 //----------------------------------------------------------------------
 
-// I think this LDT stuff will have to be reinstated for amd64, but I'm not
-// certain.  (Nb: The sys_arch_prctl seems to have replaced
-// [gs]et_thread_area syscalls.)
-//
 // Note that the type here is very slightly different to the
-// type for x86 (the final 'lm' field is added);  I'm not sure about the
-// significance of that... --njn
+// type for x86 (the final 'lm' field is added).
+/* The explanation is: the final bit is not present in 32 bit code running
+   on 64 bits kernel. The kernel has to assume this value is 0 whenever
+   user_desc arrives from a 32-bit program.
+   See /usr/include/asm/ldt.h. */
 
 /* [[Nb: This is the structure passed to the modify_ldt syscall.  Just so as
    to confuse and annoy everyone, this is _not_ the same as an
@@ -579,7 +578,7 @@ struct vki_ucontext {
    is rather for 32bit. */
 struct vki_user_desc {
 	unsigned int  entry_number;
-	unsigned long base_addr;
+	unsigned int  base_addr;
 	unsigned int  limit;
 	unsigned int  seg_32bit:1;
 	unsigned int  contents:2;
@@ -682,6 +681,11 @@ struct vki_shminfo64 {
 #define VKI_PTRACE_SETREGS            13
 #define VKI_PTRACE_GETFPREGS          14
 #define VKI_PTRACE_SETFPREGS          15
+
+// From /usr/include/asm/ptrace-abit.h
+/* only useful for access 32bit programs / kernels */
+#define VKI_PTRACE_GET_THREAD_AREA    25
+#define VKI_PTRACE_SET_THREAD_AREA    26
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/asm-generic/errno.h

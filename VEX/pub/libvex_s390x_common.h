@@ -103,7 +103,7 @@
 #define S390_FAC_MSA5    57  // message-security-assist 5
 #define S390_FAC_TREXE   73  // transactional execution
 #define S390_FAC_MSA4    77  // message-security-assist 4
-#define S390_FAC_VX      128 // vector facility
+#define S390_FAC_VX      129 // vector facility
 
 
 /*--------------------------------------------------------------*/

@@ -457,9 +457,10 @@ static Int    tc_sector_szQ = 0;
 static SECno sector_search_order[MAX_N_SECTORS];
 
 
-/* Fast helper for the TC.  A direct-mapped cache which holds a set of
-   recently used (guest address, host address) pairs.  This array is
-   referred to directly from m_dispatch/dispatch-<platform>.S.
+/* Fast helper for the TC.  A 4-way set-associative cache, with more-or-less LRU
+   replacement.  It holds a set of recently used (guest address, host address)
+   pairs.  This array is referred to directly from
+   m_dispatch/dispatch-<platform>.S.
 
    Entries in tt_fast may refer to any valid TC entry, regardless of
    which sector it's in.  Consequently we must be very careful to
@@ -474,13 +475,19 @@ static SECno sector_search_order[MAX_N_SECTORS];
 /*
 typedef
    struct { 
-      Addr guest;
-      Addr host;
+      Addr guest0;
+      Addr host0;
+      Addr guest1;
+      Addr host1;
+      Addr guest2;
+      Addr host2;
+      Addr guest3;
+      Addr host3;
    }
-   FastCacheEntry;
+   FastCacheSet;
 */
-/*global*/ __attribute__((aligned(16)))
-           FastCacheEntry VG_(tt_fast)[VG_TT_FAST_SIZE];
+/*global*/ __attribute__((aligned(64)))
+           FastCacheSet VG_(tt_fast)[VG_TT_FAST_SETS];
 
 /* Make sure we're not used before initialisation. */
 static Bool init_done = False;
@@ -1455,34 +1462,38 @@ static inline HTTno HASH_TT ( Addr key )
    return (HTTno)(k32 % N_HTTES_PER_SECTOR);
 }
 
-static void setFastCacheEntry ( Addr key, ULong* tcptr )
-{
-   UInt cno = (UInt)VG_TT_FAST_HASH(key);
-   VG_(tt_fast)[cno].guest = key;
-   VG_(tt_fast)[cno].host  = (Addr)tcptr;
-   n_fast_updates++;
-   /* This shouldn't fail.  It should be assured by m_translate
-      which should reject any attempt to make translation of code
-      starting at TRANSTAB_BOGUS_GUEST_ADDR. */
-   vg_assert(VG_(tt_fast)[cno].guest != TRANSTAB_BOGUS_GUEST_ADDR);
-}
-
 /* Invalidate the fast cache VG_(tt_fast). */
 static void invalidateFastCache ( void )
 {
-   UInt j;
-   /* This loop is popular enough to make it worth unrolling a
-      bit, at least on ppc32. */
-   vg_assert(VG_TT_FAST_SIZE > 0 && (VG_TT_FAST_SIZE % 4) == 0);
-   for (j = 0; j < VG_TT_FAST_SIZE; j += 4) {
-      VG_(tt_fast)[j+0].guest = TRANSTAB_BOGUS_GUEST_ADDR;
-      VG_(tt_fast)[j+1].guest = TRANSTAB_BOGUS_GUEST_ADDR;
-      VG_(tt_fast)[j+2].guest = TRANSTAB_BOGUS_GUEST_ADDR;
-      VG_(tt_fast)[j+3].guest = TRANSTAB_BOGUS_GUEST_ADDR;
+   for (UWord j = 0; j < VG_TT_FAST_SETS; j++) {
+      FastCacheSet* set = &VG_(tt_fast)[j];
+      set->guest0 = TRANSTAB_BOGUS_GUEST_ADDR;
+      set->guest1 = TRANSTAB_BOGUS_GUEST_ADDR;
+      set->guest2 = TRANSTAB_BOGUS_GUEST_ADDR;
+      set->guest3 = TRANSTAB_BOGUS_GUEST_ADDR;
    }
-
-   vg_assert(j == VG_TT_FAST_SIZE);
    n_fast_flushes++;
+}
+
+static void setFastCacheEntry ( Addr guest, ULong* tcptr )
+{
+   /* This shouldn't fail.  It should be assured by m_translate
+      which should reject any attempt to make translation of code
+      starting at TRANSTAB_BOGUS_GUEST_ADDR. */
+   vg_assert(guest != TRANSTAB_BOGUS_GUEST_ADDR);
+   /* Shift all entries along one, so that the LRU one disappears, and put the
+      new entry at the MRU position. */
+   UWord setNo = (UInt)VG_TT_FAST_HASH(guest);
+   FastCacheSet* set = &VG_(tt_fast)[setNo];
+   set->host3  = set->host2;
+   set->guest3 = set->guest2;
+   set->host2  = set->host1;
+   set->guest2 = set->guest1;
+   set->host1  = set->host0;
+   set->guest1 = set->guest0;
+   set->host0  = (Addr)tcptr;
+   set->guest0 = guest;
+   n_fast_updates++;
 }
 
 
@@ -2432,15 +2443,36 @@ void VG_(init_tt_tc) ( void )
    vg_assert(N_HTTES_PER_SECTOR < INV_TTE);
    vg_assert(N_HTTES_PER_SECTOR < EC2TTE_DELETED);
    vg_assert(N_HTTES_PER_SECTOR < HTT_EMPTY);
-   /* check fast cache entries really are 2 words long */
+
+   /* check fast cache entries really are 8 words long */
    vg_assert(sizeof(Addr) == sizeof(void*));
-   vg_assert(sizeof(FastCacheEntry) == 2 * sizeof(Addr));
+   vg_assert(sizeof(FastCacheSet) == 8 * sizeof(Addr));
    /* check fast cache entries are packed back-to-back with no spaces */
    vg_assert(sizeof( VG_(tt_fast) ) 
-             == VG_TT_FAST_SIZE * sizeof(FastCacheEntry));
+             == VG_TT_FAST_SETS * sizeof(FastCacheSet));
+   /* check fast cache entries have the layout that the handwritten assembly
+      fragments assume. */
+   vg_assert(sizeof(FastCacheSet) == (1 << VG_FAST_CACHE_SET_BITS));
+   vg_assert(offsetof(FastCacheSet,guest0) == FCS_g0);
+   vg_assert(offsetof(FastCacheSet,host0)  == FCS_h0);
+   vg_assert(offsetof(FastCacheSet,guest1) == FCS_g1);
+   vg_assert(offsetof(FastCacheSet,host1)  == FCS_h1);
+   vg_assert(offsetof(FastCacheSet,guest2) == FCS_g2);
+   vg_assert(offsetof(FastCacheSet,host2)  == FCS_h2);
+   vg_assert(offsetof(FastCacheSet,guest3) == FCS_g3);
+   vg_assert(offsetof(FastCacheSet,host3)  == FCS_h3);
+   vg_assert(offsetof(FastCacheSet,guest0) == 0 * sizeof(Addr));
+   vg_assert(offsetof(FastCacheSet,host0)  == 1 * sizeof(Addr));
+   vg_assert(offsetof(FastCacheSet,guest1) == 2 * sizeof(Addr));
+   vg_assert(offsetof(FastCacheSet,host1)  == 3 * sizeof(Addr));
+   vg_assert(offsetof(FastCacheSet,guest2) == 4 * sizeof(Addr));
+   vg_assert(offsetof(FastCacheSet,host2)  == 5 * sizeof(Addr));
+   vg_assert(offsetof(FastCacheSet,guest3) == 6 * sizeof(Addr));
+   vg_assert(offsetof(FastCacheSet,host3)  == 7 * sizeof(Addr));
+
    /* check fast cache is aligned as we requested.  Not fatal if it
       isn't, but we might as well make sure. */
-   vg_assert(VG_IS_16_ALIGNED( ((Addr) & VG_(tt_fast)[0]) ));
+   vg_assert(VG_IS_64_ALIGNED( ((Addr) & VG_(tt_fast)[0]) ));
 
    /* The TTEntryH size is critical for keeping the LLC miss rate down
       when doing a lot of discarding.  Hence check it here.  We also

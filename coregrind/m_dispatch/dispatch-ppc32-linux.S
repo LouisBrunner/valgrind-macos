@@ -437,44 +437,128 @@ VG_(disp_cp_chain_me_to_fastEP):
 .global VG_(disp_cp_xindir)
 VG_(disp_cp_xindir):
         /* Where are we going? */
-        lwz     3,OFFSET_ppc32_CIA(31)
+        lwz   20, OFFSET_ppc32_CIA(31)
 
         /* stats only */
-        lis     5,VG_(stats__n_xindirs_32)@ha
-        addi    5,5,VG_(stats__n_xindirs_32)@l
-        lwz     6,0(5)
-        addi    6,6,1
-        stw     6,0(5)
+        lis   24,     VG_(stats__n_xIndirs_32)@ha
+        addi  24, 24, VG_(stats__n_xIndirs_32)@l
+        lwz   25, 0(24)
+        addi  25, 25, 1
+        stw   25, 0(24)
+
+        // LIVE: r31 (guest state ptr), r20 (guest address to go to).
+        // We use 6 temporaries:
+        //   r26 (to point at the relevant FastCacheSet),
+        //   r21, r22, r23 (scratch, for swapping entries within a set)
+        //   r24, r25 (other scratch)
+
+        /* Try a fast lookup in the translation cache.  This is pretty much
+           a handcoded version of VG_(lookupInFastCache). */
+
+        // Compute r26 = VG_TT_FAST_HASH(guest)
+        srwi  26, 20, 2                       // g2 = guest >> 2
+        srwi  25, 20, (VG_TT_FAST_BITS + 2)   // (g2 >> VG_TT_FAST_BITS)
+        xor   26, 26, 25                      // (g2 >> VG_TT_FAST_BITS) ^ g2
+        andi. 26, 26, VG_TT_FAST_MASK         // setNo
         
-        /* r5 = &VG_(tt_fast) */
-        lis	5,VG_(tt_fast)@ha
-        addi    5,5,VG_(tt_fast)@l   /* & VG_(tt_fast) */
+        // Compute r6 = &VG_(tt_fast)[r6]
+        lis   25, VG_(tt_fast)@ha
+        addi  25, 25, VG_(tt_fast)@l
+        slwi  26, 26, VG_FAST_CACHE_SET_BITS
+        add   26, 26, 25
 
-        /* try a fast lookup in the translation cache */
-        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(FastCacheEntry)
-              = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 3 */
-	rlwinm	4,3,1, 29-VG_TT_FAST_BITS, 28	/* entry# * 8 */
-	add	5,5,4	/* & VG_(tt_fast)[entry#] */
-	lwz	6,0(5)   /* .guest */
-	lwz	7,4(5)   /* .host */
-        cmpw    3,6
-        bne     fast_lookup_failed
-
-        /* Found a match.  Jump to .host. */
-        mtctr   7
+        // LIVE: r31 (guest state ptr), r20 (guest addr), r26 (cache set)
+        // try way 0
+        lwz   24, FCS_g0(26)   // .guest0
+        lwz   25, FCS_h0(26)   // .host0
+        cmpw  24, 20  // cmp against .guest0
+        bne   1f
+        // hit at way 0
+        // goto .host0
+        mtctr 25
         bctr
+        /*NOTREACHED*/
 
-fast_lookup_failed:
+1:      // try way 1
+        lwz   24, FCS_g1(26)
+        cmpw  24, 20  // cmp against .guest1
+        bne   2f
+        // hit at way 1; swap upwards
+        lwz   21, FCS_g0(26)   // 21 = old .guest0
+        lwz   22, FCS_h0(26)   // 22 = old .host0
+        lwz   23, FCS_h1(26)   // 23 = old .host1
+        stw   20, FCS_g0(26)   // new .guest0 = guest
+        stw   23, FCS_h0(26)   // new .host0 = old .host1
+        stw   21, FCS_g1(26)   // new .guest1 = old .guest0
+        stw   22, FCS_h1(26)   // new .host1 = old .host0
+        // stats only
+        lis   24,     VG_(stats__n_xIndir_hits1_32)@ha
+        addi  24, 24, VG_(stats__n_xIndir_hits1_32)@l
+        lwz   25, 0(24)
+        addi  25, 25, 1
+        stw   25, 0(24)
+        // goto old .host1 a.k.a. new .host0
+        mtctr 23
+        bctr
+        /*NOTREACHED*/
+
+2:      // try way 2
+        lwz   24, FCS_g2(26)
+        cmpw  24, 20   // cmp against .guest2
+        bne   3f
+        // hit at way 2; swap upwards
+        lwz   21, FCS_g1(26)
+        lwz   22, FCS_h1(26)
+        lwz   23, FCS_h2(26)
+        stw   20, FCS_g1(26)
+        stw   23, FCS_h1(26)
+        stw   21, FCS_g2(26)
+        stw   22, FCS_h2(26)
+        // stats only
+        lis   24,     VG_(stats__n_xIndir_hits2_32)@ha
+        addi  24, 24, VG_(stats__n_xIndir_hits2_32)@l
+        lwz   25, 0(24)
+        addi  25, 25, 1
+        stw   25, 0(24)
+        // goto old .host2 a.k.a. new .host1
+        mtctr 23
+        bctr
+        /*NOTREACHED*/
+
+3:      // try way 3
+        lwz   24, FCS_g3(26)
+        cmpw  24, 20   // cmp against .guest3
+        bne   4f
+        // hit at way 3; swap upwards
+        lwz   21, FCS_g2(26)
+        lwz   22, FCS_h2(26)
+        lwz   23, FCS_h3(26)
+        stw   20, FCS_g2(26)
+        stw   23, FCS_h2(26)
+        stw   21, FCS_g3(26)
+        stw   22, FCS_h3(26)
+        // stats only
+        lis   24,     VG_(stats__n_xIndir_hits3_32)@ha
+        addi  24, 24, VG_(stats__n_xIndir_hits3_32)@l
+        lwz   25, 0(24)
+        addi  25, 25, 1
+        stw   25, 0(24)
+        // goto old .host3 a.k.a. new .host2
+        mtctr 23
+        bctr
+        /*NOTREACHED*/
+
+4:      // fast lookup failed:
         /* stats only */
-        lis     5,VG_(stats__n_xindir_misses_32)@ha
-        addi    5,5,VG_(stats__n_xindir_misses_32)@l
-        lwz     6,0(5)
-        addi    6,6,1
-        stw     6,0(5)
+        lis   24,     VG_(stats__n_xIndir_misses_32)@ha
+        addi  24, 24, VG_(stats__n_xIndir_misses_32)@l
+        lwz   25, 0(24)
+        addi  25, 25, 1
+        stw   25, 0(24)
 
-        li      6,VG_TRC_INNER_FASTMISS
-        li      7,0
-        b       postamble
+        li    6, VG_TRC_INNER_FASTMISS
+        li    7, 0
+        b     postamble
 	/*NOTREACHED*/
 
 /* ------ Assisted jump ------ */

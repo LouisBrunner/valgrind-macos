@@ -173,42 +173,118 @@ VG_(disp_cp_chain_me_to_fastEP):
 /* ------ Indirect but boring jump ------ */
 .global VG_(disp_cp_xindir)
 VG_(disp_cp_xindir):
-	/* Where are we going? */
+	// Where are we going?
         ldr  x0, [x21, #OFFSET_arm64_PC]
 
-        /* stats only */
-        adrp x1,           VG_(stats__n_xindirs_32)
-        add  x1, x1, :lo12:VG_(stats__n_xindirs_32)
-        ldr  w2, [x1, #0]
-        add  w2, w2, #1
-        str  w2, [x1, #0]
-        
-        /* try a fast lookup in the translation cache */
-        // x0 = next guest, x1,x2,x3,x4 scratch
-        mov  x1, #VG_TT_FAST_MASK       // x1 = VG_TT_FAST_MASK
-	and  x2, x1, x0, LSR #2         // x2 = entry # = (x1 & (x0 >> 2))
+        // stats only
+        adrp x4,           VG_(stats__n_xIndirs_32)
+        add  x4, x4, :lo12:VG_(stats__n_xIndirs_32)
+        ldr  w5, [x4, #0]
+        add  w5, w5, #1
+        str  w5, [x4, #0]
 
+        // LIVE: x21 (guest state ptr), x0 (guest address to go to).
+        // We use 6 temporaries:
+        //   x6 (to point at the relevant FastCacheSet),
+        //   x1, x2, x3 (scratch, for swapping entries within a set)
+        //   x4, x5 (other scratch)
+
+        /* Try a fast lookup in the translation cache.  This is pretty much
+           a handcoded version of VG_(lookupInFastCache). */
+
+        // Compute x6 = VG_TT_FAST_HASH(guest)
+        lsr  x6, x0, #2                       // g2 = guest >> 2
+        eor  x6, x6, x6, LSR #VG_TT_FAST_BITS // (g2 >> VG_TT_FAST_BITS) ^ g2
+        mov  x4, #VG_TT_FAST_MASK             // VG_TT_FAST_MASK
+        and  x6, x6, x4                       // setNo
+
+        // Compute x6 = &VG_(tt_fast)[x6]
         adrp x4,           VG_(tt_fast)
-        add  x4, x4, :lo12:VG_(tt_fast) // x4 = &VG_(tt_fast)
+        add  x4, x4, :lo12:VG_(tt_fast)              // &VG_(tt_fast)[0]
+        add  x6, x4, x6, LSL #VG_FAST_CACHE_SET_BITS // &VG_(tt_fast)[setNo]
 
-	add  x1, x4, x2, LSL #4         // r1 = &tt_fast[entry#]
-
-        ldp  x4, x5, [x1, #0]           // x4 = .guest, x5 = .host
-
-	cmp  x4, x0
-
-        // jump to host if lookup succeeded
-        bne  fast_lookup_failed
-	br   x5
+        // LIVE: x21 (guest state ptr), x0 (guest addr), x6 (cache set)
+        // try way 0
+        ldp  x4, x5, [x6, #FCS_g0]  // x4 = .guest0, x5 = .host0
+        cmp  x4, x0   // cmp against .guest0
+        bne  1f
+        // hit at way 0
+        // goto .host0
+        br   x5
         /*NOTREACHED*/
 
-fast_lookup_failed:
-        /* RM ME -- stats only */
-        adrp x1,           VG_(stats__n_xindir_misses_32)
-        add  x1, x1, :lo12:VG_(stats__n_xindir_misses_32)
-        ldr  w2, [x1, #0]
-        add  w2, w2, #1
-        str  w2, [x1, #0]
+1:      // try way 1
+        ldr  x4, [x6, #FCS_g1]
+        cmp  x4, x0   // cmp against .guest1
+        bne  2f
+        // hit at way 1; swap upwards
+        ldr  x1, [x6, #FCS_g0]   // x1 = old .guest0
+        ldr  x2, [x6, #FCS_h0]   // x2 = old .host0
+        ldr  x3, [x6, #FCS_h1]   // x3 = old .host1
+        str  x0, [x6, #FCS_g0]   // new .guest0 = guest
+        str  x3, [x6, #FCS_h0]   // new .host0 = old .host1
+        str  x1, [x6, #FCS_g1]   // new .guest1 = old .guest0
+        str  x2, [x6, #FCS_h1]   // new .host1 = old .host0
+        // stats only
+        adrp x4,           VG_(stats__n_xIndir_hits1_32)
+        add  x4, x4, :lo12:VG_(stats__n_xIndir_hits1_32)
+        ldr  w5, [x4, #0]
+        add  w5, w5, #1
+        str  w5, [x4, #0]
+        // goto old .host1 a.k.a. new .host0
+        br   x3
+        /*NOTREACHED*/
+
+2:      // try way 2
+        ldr  x4, [x6, #FCS_g2]
+        cmp  x4, x0   // cmp against .guest2
+        bne  3f
+        // hit at way 2; swap upwards
+        ldr  x1, [x6, #FCS_g1]
+        ldr  x2, [x6, #FCS_h1]
+        ldr  x3, [x6, #FCS_h2]
+        str  x0, [x6, #FCS_g1]
+        str  x3, [x6, #FCS_h1]
+        str  x1, [x6, #FCS_g2]
+        str  x2, [x6, #FCS_h2]
+        // stats only
+        adrp x4,           VG_(stats__n_xIndir_hits2_32)
+        add  x4, x4, :lo12:VG_(stats__n_xIndir_hits2_32)
+        ldr  w5, [x4, #0]
+        add  w5, w5, #1
+        str  w5, [x4, #0]
+        // goto old .host2 a.k.a. new .host1
+        br   x3
+        /*NOTREACHED*/
+
+3:      // try way 3
+        ldr  x4, [x6, #FCS_g3]
+        cmp  x4, x0   // cmp against .guest3
+        bne  4f
+        // hit at way 3; swap upwards
+        ldr  x1, [x6, #FCS_g2]
+        ldr  x2, [x6, #FCS_h2]
+        ldr  x3, [x6, #FCS_h3]
+        str  x0, [x6, #FCS_g2]
+        str  x3, [x6, #FCS_h2]
+        str  x1, [x6, #FCS_g3]
+        str  x2, [x6, #FCS_h3]
+        // stats only
+        adrp x4,           VG_(stats__n_xIndir_hits3_32)
+        add  x4, x4, :lo12:VG_(stats__n_xIndir_hits3_32)
+        ldr  w5, [x4, #0]
+        add  w5, w5, #1
+        str  w5, [x4, #0]
+        // goto old .host3 a.k.a. new .host2
+        br   x3
+        /*NOTREACHED*/
+
+4:      // fast lookup failed
+        adrp x4,           VG_(stats__n_xIndir_misses_32)
+        add  x4, x4, :lo12:VG_(stats__n_xIndir_misses_32)
+        ldr  w5, [x4, #0]
+        add  w5, w5, #1
+        str  w5, [x4, #0]
 
 	mov  x1, #VG_TRC_INNER_FASTMISS
         mov  x2, #0

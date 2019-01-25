@@ -41,19 +41,106 @@
 #include "pub_tool_transtab.h"
 #include "libvex.h"                   // VexGuestExtents
 
-/* The fast-cache for tt-lookup.  Unused entries are denoted by .guest
-   == 1, which is assumed to be a bogus address for all guest code. */
+/* The fast-cache for tt-lookup.  Unused entries are denoted by
+   .guest == TRANSTAB_BOGUS_GUEST_ADDR (viz, 1), which is assumed
+   to be a bogus address for all guest code.  See pub_core_transtab_asm.h
+   for further description. */
 typedef
    struct { 
-      Addr guest;
-      Addr host;
+      Addr guest0;
+      Addr host0;
+      Addr guest1;
+      Addr host1;
+      Addr guest2;
+      Addr host2;
+      Addr guest3;
+      Addr host3;
    }
-   FastCacheEntry;
+   FastCacheSet;
 
-extern __attribute__((aligned(16)))
-       FastCacheEntry VG_(tt_fast) [VG_TT_FAST_SIZE];
+STATIC_ASSERT(sizeof(Addr) == sizeof(UWord));
+STATIC_ASSERT(sizeof(FastCacheSet) == sizeof(Addr) * 8);
+
+extern __attribute__((aligned(64)))
+       FastCacheSet VG_(tt_fast) [VG_TT_FAST_SETS];
 
 #define TRANSTAB_BOGUS_GUEST_ADDR ((Addr)1)
+
+#if defined(VGA_x86) || defined(VGA_amd64)
+static inline UWord VG_TT_FAST_HASH ( Addr guest ) {
+   // There's no minimum insn alignment on these targets.
+   UWord merged = ((UWord)guest) >> 0;
+   merged = (merged >> VG_TT_FAST_BITS) ^ merged;
+   return merged & VG_TT_FAST_MASK;
+}
+
+#elif defined(VGA_s390x) || defined(VGA_arm)
+static inline UWord VG_TT_FAST_HASH ( Addr guest ) {
+   // Instructions are 2-byte aligned.
+   UWord merged = ((UWord)guest) >> 1;
+   merged = (merged >> VG_TT_FAST_BITS) ^ merged;
+   return merged & VG_TT_FAST_MASK;
+}
+
+#elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le) \
+      || defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_arm64)
+static inline UWord VG_TT_FAST_HASH ( Addr guest ) {
+   // Instructions are 4-byte aligned.
+   UWord merged = ((UWord)guest) >> 2;
+   merged = (merged >> VG_TT_FAST_BITS) ^ merged;
+   return merged & VG_TT_FAST_MASK;
+}
+
+#else
+#  error "VG_TT_FAST_HASH: unknown platform"
+#endif
+
+static inline Bool VG_(lookupInFastCache)( /*MB_OUT*/Addr* host, Addr guest )
+{
+   UWord setNo = (UInt)VG_TT_FAST_HASH(guest);
+   FastCacheSet* set = &VG_(tt_fast)[setNo];
+   if (LIKELY(set->guest0 == guest)) {
+      // hit at way 0
+      *host = set->host0;
+      return True;
+   }
+   if (LIKELY(set->guest1 == guest)) {
+      // hit at way 1; swap upwards
+      Addr tG = guest;
+      Addr tH = set->host1;
+      set->guest1 = set->guest0;
+      set->host1  = set->host0;
+      set->guest0 = tG;
+      set->host0  = tH;
+      *host = tH;
+      return True;
+   }
+   if (LIKELY(set->guest2 == guest)) {
+      // hit at way 2; swap upwards
+      Addr tG = guest;
+      Addr tH = set->host2;
+      set->guest2 = set->guest1;
+      set->host2  = set->host1;
+      set->guest1 = tG;
+      set->host1  = tH;
+      *host = tH;
+      return True;
+   }
+   if (LIKELY(set->guest3 == guest)) {
+      // hit at way 3; swap upwards
+      Addr tG = guest;
+      Addr tH = set->host3;
+      set->guest3 = set->guest2;
+      set->host3  = set->host2;
+      set->guest2 = tG;
+      set->host2  = tH;
+      *host = tH;
+      return True;
+   }
+   // Not found
+   *host = 0;
+   return False;
+}
 
 
 /* Initialises the TC, using VG_(clo_num_transtab_sectors)

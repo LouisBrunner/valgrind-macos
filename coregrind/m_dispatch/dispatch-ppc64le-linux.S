@@ -54,14 +54,27 @@
         .type   vgPlain_tt_fast, @object
 */
 .section ".toc","aw"
+
 .tocent__vgPlain_tt_fast:
         .tc vgPlain_tt_fast[TC],vgPlain_tt_fast
-.tocent__vgPlain_stats__n_xindirs_32:
-        .tc vgPlain_stats__n_xindirs_32[TC],vgPlain_stats__n_xindirs_32
-.tocent__vgPlain_stats__n_xindir_misses_32:
-        .tc vgPlain_stats__n_xindir_misses_32[TC],vgPlain_stats__n_xindir_misses_32
+
+.tocent__vgPlain_stats__n_xIndirs_32:
+        .tc vgPlain_stats__n_xIndirs_32[TC], vgPlain_stats__n_xIndirs_32
+
+.tocent__vgPlain_stats__n_xIndir_hits1_32:
+        .tc vgPlain_stats__n_xIndir_hits1_32[TC], vgPlain_stats__n_xIndir_hits1_32
+
+.tocent__vgPlain_stats__n_xIndir_hits2_32:
+        .tc vgPlain_stats__n_xIndir_hits2_32[TC], vgPlain_stats__n_xIndir_hits2_32
+
+.tocent__vgPlain_stats__n_xIndir_hits3_32:
+        .tc vgPlain_stats__n_xIndir_hits3_32[TC], vgPlain_stats__n_xIndir_hits3_32
+
+.tocent__vgPlain_stats__n_xIndir_misses_32:
+        .tc vgPlain_stats__n_xIndir_misses_32[TC], vgPlain_stats__n_xIndir_misses_32
+
 .tocent__vgPlain_machine_ppc64_has_VMX:
-        .tc vgPlain_machine_ppc64_has_VMX[TC],vgPlain_machine_ppc64_has_VMX
+        .tc vgPlain_machine_ppc64_has_VMX[TC], vgPlain_machine_ppc64_has_VMX
 
 /*------------------------------------------------------------*/
 /*---                                                      ---*/
@@ -518,47 +531,127 @@ VG_(disp_cp_xindir):
         addi  2,2,.TOC.-0b@l
         .localentry VG_(disp_cp_xindir), .-VG_(disp_cp_xindir)
 #endif
-	/* Where are we going? */
-        ld      3,OFFSET_ppc64_CIA(31)
+        /* Where are we going? */
+        ld    20, OFFSET_ppc64_CIA(31)
 
         /* stats only */
-	ld	5, .tocent__vgPlain_stats__n_xindirs_32@toc(2)
-        lwz     6,0(5)
-        addi    6,6,1
-        stw     6,0(5)
+        ld    24, .tocent__vgPlain_stats__n_xIndirs_32@toc(2)
+        lwz   25, 0(24)
+        addi  25, 25, 1
+        stw   25, 0(24)
 
-	/* r5 = &VG_(tt_fast) */
-	ld	5, .tocent__vgPlain_tt_fast@toc(2) /* &VG_(tt_fast) */
+        // LIVE: r31 (guest state ptr), r20 (guest address to go to).
+        // We use 6 temporaries:
+        //   r26 (to point at the relevant FastCacheSet),
+        //   r21, r22, r23 (scratch, for swapping entries within a set)
+        //   r24, r25 (other scratch)
 
-        /* try a fast lookup in the translation cache */
-        /* r4 = VG_TT_FAST_HASH(addr)           * sizeof(FastCacheEntry)
-              = ((r3 >>u 2) & VG_TT_FAST_MASK)  << 4 */
-	rldicl	4,3, 62, 64-VG_TT_FAST_BITS   /* entry# */
-	sldi	4,4,4      /* entry# * sizeof(FastCacheEntry) */
-	add	5,5,4      /* & VG_(tt_fast)[entry#] */
-	ld	6,0(5)     /* .guest */
-	ld	7,8(5)     /* .host */
-        cmpd    3,6
-        bne     .fast_lookup_failed
+        /* Try a fast lookup in the translation cache.  This is pretty much
+           a handcoded version of VG_(lookupInFastCache). */
 
-        /* Found a match.  Jump to .host. */
-        mtctr   7
+        // Compute r26 = VG_TT_FAST_HASH(guest)
+        srdi  26, 20, 2                       // g2 = guest >> 2
+        srdi  25, 20, (VG_TT_FAST_BITS + 2)   // (g2 >> VG_TT_FAST_BITS)
+        xor   26, 26, 25                      // (g2 >> VG_TT_FAST_BITS) ^ g2
+        andi. 26, 26, VG_TT_FAST_MASK         // setNo
+
+        // Compute r6 = &VG_(tt_fast)[r6]
+        ld    25, .tocent__vgPlain_tt_fast@toc(2)
+        sldi  26, 26, VG_FAST_CACHE_SET_BITS
+        add   26, 26, 25
+
+        // LIVE: r31 (guest state ptr), r20 (guest addr), r26 (cache set)
+        // try way 0
+        ld    24, FCS_g0(26)   // .guest0
+        ld    25, FCS_h0(26)   // .host0
+        cmpd  24, 20  // cmp against .guest0
+        bne   1f
+        // hit at way 0
+        // goto .host0
+        mtctr 25
         bctr
+        /*NOTREACHED*/
+
+1:      // try way 1
+        ld    24, FCS_g1(26)
+        cmpd  24, 20  // cmp against .guest1
+        bne   2f
+        // hit at way 1; swap upwards
+        ld    21, FCS_g0(26)   // 21 = old .guest0
+        ld    22, FCS_h0(26)   // 22 = old .host0
+        ld    23, FCS_h1(26)   // 23 = old .host1
+        std   20, FCS_g0(26)   // new .guest0 = guest
+        std   23, FCS_h0(26)   // new .host0 = old .host1
+        std   21, FCS_g1(26)   // new .guest1 = old .guest0
+        std   22, FCS_h1(26)   // new .host1 = old .host0
+        // stats only
+        ld    24, .tocent__vgPlain_stats__n_xIndir_hits1_32@toc(2)
+        lwz   25, 0(24)
+        addi  25, 25, 1
+        stw   25, 0(24)
+        // goto old .host1 a.k.a. new .host0
+        mtctr 23
+        bctr
+        /*NOTREACHED*/
+
+2:      // try way 2
+        ld    24, FCS_g2(26)
+        cmpd  24, 20   // cmp against .guest2
+        bne   3f
+        // hit at way 2; swap upwards
+        ld    21, FCS_g1(26)
+        ld    22, FCS_h1(26)
+        ld    23, FCS_h2(26)
+        std   20, FCS_g1(26)
+        std   23, FCS_h1(26)
+        std   21, FCS_g2(26)
+        std   22, FCS_h2(26)
+        // stats only
+        ld    24, .tocent__vgPlain_stats__n_xIndir_hits2_32@toc(2)
+        lwz   25, 0(24)
+        addi  25, 25, 1
+        stw   25, 0(24)
+        // goto old .host2 a.k.a. new .host1
+        mtctr 23
+        bctr
+        /*NOTREACHED*/
+
+3:      // try way 3
+        ld    24, FCS_g3(26)
+        cmpd  24, 20   // cmp against .guest3
+        bne   4f
+        // hit at way 3; swap upwards
+        ld    21, FCS_g2(26)
+        ld    22, FCS_h2(26)
+        ld    23, FCS_h3(26)
+        std   20, FCS_g2(26)
+        std   23, FCS_h2(26)
+        std   21, FCS_g3(26)
+        std   22, FCS_h3(26)
+        // stats only
+        ld    24, .tocent__vgPlain_stats__n_xIndir_hits3_32@toc(2)
+        lwz   25, 0(24)
+        addi  25, 25, 1
+        stw   25, 0(24)
+        // goto old .host3 a.k.a. new .host2
+        mtctr 23
+        bctr
+        /*NOTREACHED*/
+
+4:      // fast lookup failed:
+        /* stats only */
+	ld    24, .tocent__vgPlain_stats__n_xIndir_misses_32@toc(2)
+        lwz   25, 0(24)
+        addi  25 ,25, 1
+        stw   25 ,0(24)
+
+        li    6,VG_TRC_INNER_FASTMISS
+        li    7,0
+        b     .postamble
+	/*NOTREACHED*/
 #if _CALL_ELF == 2
         .size VG_(disp_cp_xindir),.-VG_(disp_cp_xindir)
 #endif
-
-.fast_lookup_failed:
-        /* stats only */
-	ld	5, .tocent__vgPlain_stats__n_xindir_misses_32@toc(2)
-        lwz     6,0(5)
-        addi    6,6,1
-        stw     6,0(5)
-
-        li      6,VG_TRC_INNER_FASTMISS
-        li      7,0
-        b       .postamble
-	/*NOTREACHED*/
 
 /* ------ Assisted jump ------ */
 .section ".text"

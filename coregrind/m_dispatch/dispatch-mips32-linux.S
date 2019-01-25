@@ -175,47 +175,116 @@ VG_(disp_cp_chain_me_to_fastEP):
 .global VG_(disp_cp_xindir)
 VG_(disp_cp_xindir):
         /* Where are we going? */
-        lw  $11, OFFSET_mips32_PC($23)
+        lw    $10, OFFSET_mips32_PC($23)
 
-        lw $13, vgPlain_stats__n_xindirs_32
-        addiu $13, $13, 0x1
-        sw $13, vgPlain_stats__n_xindirs_32
+        /* stats only */
+        lw    $15, VG_(stats__n_xIndirs_32)
+        addiu $15, $15, 1
+        sw    $15, VG_(stats__n_xIndirs_32)
 
-        /* try a fast lookup in the translation cache */
-        /* t1 = VG_TT_FAST_HASH(addr) * sizeof(ULong*)
-                = (t8 >> 2 & VG_TT_FAST_MASK)  << 3 */
+        // LIVE: r23 (guest state ptr), r10 (guest address to go to).
+        // We use 6 temporaries:
+        //   r16 (to point at the relevant FastCacheSet),
+        //   r11, r12, r13 (scratch, for swapping entries within a set)
+        //   r14, r15 (other scratch)
 
-        move $14, $11
-        li $12, VG_TT_FAST_MASK
-        srl $14, $14, 2
-        and $14, $14, $12
-        sll $14, $14, 3
+        /* Try a fast lookup in the translation cache.  This is pretty much
+           a handcoded version of VG_(lookupInFastCache). */
 
-        /* t2 = (addr of VG_(tt_fast)) + t1 */
-        la $13, VG_(tt_fast)
-        addu $13, $13, $14
+        // Compute r16 = VG_TT_FAST_HASH(guest)
+        srl   $16, $10, 2                      // g2 = guest >> 2
+        srl   $15, $10, (VG_TT_FAST_BITS + 2)  // (g2 >> VG_TT_FAST_BITS)
+        xor   $16, $16, $15                    // (g2 >> VG_TT_FAST_BITS) ^ g2
+        li    $15, VG_TT_FAST_MASK
+        and   $16, $16, $15                    // setNo
 
-        lw $12, 0($13) /* t3 = VG_(tt_fast)[hash] :: ULong* */
-        addiu $13, $13, 4
-        lw $25, 0($13) /* little-endian, so comparing 1st 32bit word */
-        nop
+        // Compute r16 = &VG_(tt_fast)[r16]
+	la    $15, VG_(tt_fast)
+        sll   $16, $16, VG_FAST_CACHE_SET_BITS
+        addu  $16, $16, $15
 
-check:
-        bne $12, $11, fast_lookup_failed
-        /* run the translation */
-        jr $25
-        .long   0x0   /* persuade insn decoders not to speculate past here */
+        // LIVE: r23 (guest state ptr), r10 (guest addr), r16 (cache set)
+        // try way 0
+        lw    $14, FCS_g0($16)   // .guest0
+        lw    $15, FCS_h0($16)   // .host0
+        bne   $14, $10, 1f  // cmp against .guest0
+        // hit at way 0
+        // goto .host0
+        jr    $15
+        /*NOTREACHED*/
+	.long 0x0
 
-fast_lookup_failed:
-        /* %PC is up to date */
-        /* back out decrement of the dispatch counter */
-        /* hold dispatch_ctr in t0 (r8) */
-        lw $13, vgPlain_stats__n_xindirs_32
-        addiu $13, $13, 0x1
-        sw $13, vgPlain_stats__n_xindirs_32
-        li $2, VG_TRC_INNER_FASTMISS
-        li $3, 0
-        b       postamble
+1:      // try way 1
+        lw    $14, FCS_g1($16)
+        bne   $14, $10, 2f  // cmp against .guest1
+        // hit at way 1; swap upwards
+        lw    $11, FCS_g0($16)   // $11 = old .guest0
+        lw    $12, FCS_h0($16)   // $12 = old .host0
+        lw    $13, FCS_h1($16)   // $13 = old .host1
+        sw    $10, FCS_g0($16)   // new .guest0 = guest
+        sw    $13, FCS_h0($16)   // new .host0 = old .host1
+        sw    $11, FCS_g1($16)   // new .guest1 = old .guest0
+        sw    $12, FCS_h1($16)   // new .host1 = old .host0
+        // stats only
+        lw    $15, VG_(stats__n_xIndir_hits1_32)
+        addiu $15, $15, 1
+        sw    $15, VG_(stats__n_xIndir_hits1_32)
+        // goto old .host1 a.k.a. new .host0
+        jr    $13
+        /*NOTREACHED*/
+	.long 0x0
+
+2:      // try way 2
+        lw    $14, FCS_g2($16)
+        bne   $14, $10, 3f   // cmp against .guest2
+        // hit at way 2; swap upwards
+        lw    $11, FCS_g1($16)
+        lw    $12, FCS_h1($16)
+        lw    $13, FCS_h2($16)
+        sw    $10, FCS_g1($16)
+        sw    $13, FCS_h1($16)
+        sw    $11, FCS_g2($16)
+        sw    $12, FCS_h2($16)
+        // stats only
+        lw    $15, VG_(stats__n_xIndir_hits2_32)
+        addiu $15, $15, 1
+        sw    $15, VG_(stats__n_xIndir_hits2_32)
+        // goto old .host2 a.k.a. new .host1
+        jr    $13
+        /*NOTREACHED*/
+	.long 0x0
+
+3:      // try way 3
+        lw    $14, FCS_g3($16)
+        bne   $14, $10, 4f   // cmp against .guest3
+        // hit at way 3; swap upwards
+        lw    $11, FCS_g2($16)
+        lw    $12, FCS_h2($16)
+        lw    $13, FCS_h3($16)
+        sw    $10, FCS_g2($16)
+        sw    $13, FCS_h2($16)
+        sw    $11, FCS_g3($16)
+        sw    $12, FCS_h3($16)
+        // stats only
+        lw    $15, VG_(stats__n_xIndir_hits3_32)
+        addiu $15, $15, 1
+        sw    $15, VG_(stats__n_xIndir_hits3_32)
+        // goto old .host3 a.k.a. new .host2
+        jr    $13
+        /*NOTREACHED*/
+	.long 0x0
+
+4:      // fast lookup failed:
+        /* stats only */
+        lw    $15, VG_(stats__n_xIndir_misses_32)
+        addiu $15, $15, 1
+        sw    $15, VG_(stats__n_xIndir_misses_32)
+
+        li    $2, VG_TRC_INNER_FASTMISS
+        li    $3, 0
+        b     postamble
+	/*NOTREACHED*/
+	.long 0x0
 
 /* ------ Assisted jump ------ */
         .global VG_(disp_cp_xassisted)

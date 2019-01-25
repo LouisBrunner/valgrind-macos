@@ -205,28 +205,89 @@ VG_(disp_cp_chain_me_to_fastEP):
 .global VG_(disp_cp_xindir)
 VG_(disp_cp_xindir):
 	/* Where are we going? */
-	movq	OFFSET_amd64_RIP(%rbp), %rax
+	movq	OFFSET_amd64_RIP(%rbp), %rax    // "guest"
 
         /* stats only */
-        addl    $1, VG_(stats__n_xindirs_32)
-        
-	/* try a fast lookup in the translation cache */
-	movabsq $VG_(tt_fast), %rcx
-	movq	%rax, %rbx		/* next guest addr */
-	andq	$VG_TT_FAST_MASK, %rbx	/* entry# */
-	shlq	$4, %rbx		/* entry# * sizeof(FastCacheEntry) */
-	movq	0(%rcx,%rbx,1), %r10	/* .guest */
-	movq	8(%rcx,%rbx,1), %r11	/* .host */
-	cmpq	%rax, %r10
-	jnz	fast_lookup_failed
+        addl    $1, VG_(stats__n_xIndirs_32)
 
-        /* Found a match.  Jump to .host. */
-	jmp 	*%r11
-	ud2	/* persuade insn decoders not to speculate past here */
+        // LIVE: %rbp (guest state ptr), %rax (guest address to go to).
+        // We use 4 temporaries:
+        //   %r9 (to point at the relevant FastCacheSet),
+        //   %r10, %r11 and %r12 (scratch).
 
-fast_lookup_failed:
+        /* Try a fast lookup in the translation cache.  This is pretty much
+           a handcoded version of VG_(lookupInFastCache). */
+
+        // Compute %r9 = VG_TT_FAST_HASH(guest)
+        movq    %rax, %r9               // guest
+        shrq    $VG_TT_FAST_BITS, %r9   // (guest >> VG_TT_FAST_BITS)
+        xorq    %rax, %r9               // (guest >> VG_TT_FAST_BITS) ^ guest
+        andq    $VG_TT_FAST_MASK, %r9   // setNo
+
+        // Compute %r9 = &VG_(tt_fast)[%r9]
+        shlq    $VG_FAST_CACHE_SET_BITS, %r9  // setNo * sizeof(FastCacheSet)
+        movabsq $VG_(tt_fast), %r10           // &VG_(tt_fast)[0]
+        leaq    (%r10, %r9), %r9              // &VG_(tt_fast)[setNo]
+
+        // LIVE: %rbp (guest state ptr), %rax (guest addr), %r9 (cache set)
+        // try way 0
+        cmpq    %rax, FCS_g0(%r9)   // cmp against .guest0
+        jnz     1f
+        // hit at way 0
+        jmp    *FCS_h0(%r9)         // goto .host0
+        ud2
+
+1:      // try way 1
+        cmpq    %rax, FCS_g1(%r9)   // cmp against .guest1
+        jnz     2f
+        // hit at way 1; swap upwards
         /* stats only */
-        addl    $1, VG_(stats__n_xindir_misses_32)
+        addl    $1, VG_(stats__n_xIndir_hits1_32)
+        movq    FCS_g0(%r9), %r10   // r10 = old .guest0
+        movq    FCS_h0(%r9), %r11   // r11 = old .host0
+        movq    FCS_h1(%r9), %r12   // r12 = old .host1
+        movq    %rax, FCS_g0(%r9)   // new .guest0 = guest
+        movq    %r12, FCS_h0(%r9)   // new .host0 = old .host1
+        movq    %r10, FCS_g1(%r9)   // new .guest1 = old .guest0
+        movq    %r11, FCS_h1(%r9)   // new .host1 = old .host0
+        jmp     *%r12               // goto old .host1 a.k.a. new .host0
+        ud2
+
+2:      // try way 2
+        cmpq    %rax, FCS_g2(%r9)   // cmp against .guest2
+        jnz     3f
+        // hit at way 2; swap upwards
+        /* stats only */
+        addl    $1, VG_(stats__n_xIndir_hits2_32)
+        movq    FCS_g1(%r9), %r10
+        movq    FCS_h1(%r9), %r11
+        movq    FCS_h2(%r9), %r12
+        movq    %rax, FCS_g1(%r9)
+        movq    %r12, FCS_h1(%r9)
+        movq    %r10, FCS_g2(%r9)
+        movq    %r11, FCS_h2(%r9)
+        jmp     *%r12
+        ud2
+
+3:      // try way 3
+        cmpq    %rax, FCS_g3(%r9)   // cmp against .guest3
+        jnz     4f
+        // hit at way 3; swap upwards
+        /* stats only */
+        addl    $1, VG_(stats__n_xIndir_hits3_32)
+        movq    FCS_g2(%r9), %r10
+        movq    FCS_h2(%r9), %r11
+        movq    FCS_h3(%r9), %r12
+        movq    %rax, FCS_g2(%r9)
+        movq    %r12, FCS_h2(%r9)
+        movq    %r10, FCS_g3(%r9)
+        movq    %r11, FCS_h3(%r9)
+        jmp     *%r12
+        ud2
+
+4:      // fast lookup failed
+        /* stats only */
+        addl    $1, VG_(stats__n_xIndir_misses_32)
 
 	movq	$VG_TRC_INNER_FASTMISS, %rax
         movq    $0, %rdx

@@ -1475,6 +1475,34 @@ static void invalidateFastCache ( void )
    n_fast_flushes++;
 }
 
+/* Invalidate a single fast cache entry. */
+static void invalidateFastCacheEntry ( Addr guest )
+{
+   /* This shouldn't fail.  It should be assured by m_translate
+      which should reject any attempt to make translation of code
+      starting at TRANSTAB_BOGUS_GUEST_ADDR. */
+   vg_assert(guest != TRANSTAB_BOGUS_GUEST_ADDR);
+   /* If any entry in the line is the right one, just set it to
+      TRANSTAB_BOGUS_GUEST_ADDR.  Doing so ensure that the entry will never
+      be used in future, so will eventually fall off the end of the line,
+      due to LRU replacement, and be replaced with something that's actually
+      useful. */
+   UWord setNo = (UInt)VG_TT_FAST_HASH(guest);
+   FastCacheSet* set = &VG_(tt_fast)[setNo];
+   if (set->guest0 == guest) {
+      set->guest0 = TRANSTAB_BOGUS_GUEST_ADDR;
+   }
+   if (set->guest1 == guest) {
+      set->guest1 = TRANSTAB_BOGUS_GUEST_ADDR;
+   }
+   if (set->guest2 == guest) {
+      set->guest2 = TRANSTAB_BOGUS_GUEST_ADDR;
+   }
+   if (set->guest3 == guest) {
+      set->guest3 = TRANSTAB_BOGUS_GUEST_ADDR;
+   }
+}
+
 static void setFastCacheEntry ( Addr guest, ULong* tcptr )
 {
    /* This shouldn't fail.  It should be assured by m_translate
@@ -1984,7 +2012,8 @@ Bool overlaps ( Addr start, ULong range, const TTEntryH* tteH )
 
 /* Delete a tt entry, and update all the eclass data accordingly. */
 
-static void delete_tte ( /*MOD*/Sector* sec, SECno secNo, TTEno tteno,
+static void delete_tte ( /*OUT*/Addr* ga_deleted,
+                         /*MOD*/Sector* sec, SECno secNo, TTEno tteno,
                          VexArch arch_host, VexEndness endness_host )
 {
    Int      i, ec_idx;
@@ -1998,6 +2027,10 @@ static void delete_tte ( /*MOD*/Sector* sec, SECno secNo, TTEno tteno,
    TTEntryH* tteH = &sec->ttH[tteno];
    vg_assert(tteH->status == InUse);
    vg_assert(tteC->n_tte2ec >= 1 && tteC->n_tte2ec <= 3);
+
+   vg_assert(tteH->vge_n_used >= 1 && tteH->vge_n_used <= 3);
+   vg_assert(tteH->vge_base[0] != TRANSTAB_BOGUS_GUEST_ADDR);
+   *ga_deleted = tteH->vge_base[0];
 
    /* Unchain .. */
    unchain_in_preparation_for_deletion(arch_host, endness_host, secNo, tteno);
@@ -2053,15 +2086,16 @@ static void delete_tte ( /*MOD*/Sector* sec, SECno secNo, TTEno tteno,
    only consider translations in the specified eclass. */
 
 static 
-Bool delete_translations_in_sector_eclass ( /*MOD*/Sector* sec, SECno secNo,
-                                            Addr guest_start, ULong range,
-                                            EClassNo ec,
-                                            VexArch arch_host,
-                                            VexEndness endness_host )
+SizeT delete_translations_in_sector_eclass ( /*OUT*/Addr* ga_deleted,
+                                             /*MOD*/Sector* sec, SECno secNo,
+                                             Addr guest_start, ULong range,
+                                             EClassNo ec,
+                                             VexArch arch_host,
+                                             VexEndness endness_host )
 {
    Int      i;
    TTEno    tteno;
-   Bool     anyDeld = False;
+   SizeT    numDeld = 0;
 
    vg_assert(ec >= 0 && ec < ECLASS_N);
 
@@ -2079,13 +2113,13 @@ Bool delete_translations_in_sector_eclass ( /*MOD*/Sector* sec, SECno secNo,
       vg_assert(tteH->status == InUse);
 
       if (overlaps( guest_start, range, tteH )) {
-         anyDeld = True;
-         delete_tte( sec, secNo, tteno, arch_host, endness_host );
+         numDeld++;
+         delete_tte( ga_deleted, sec, secNo, tteno, arch_host, endness_host );
       }
 
    }
 
-   return anyDeld;
+   return numDeld;
 }
 
 
@@ -2093,13 +2127,14 @@ Bool delete_translations_in_sector_eclass ( /*MOD*/Sector* sec, SECno secNo,
    slow way, by inspecting all translations in sec. */
 
 static 
-Bool delete_translations_in_sector ( /*MOD*/Sector* sec, SECno secNo,
-                                     Addr guest_start, ULong range,
-                                     VexArch arch_host,
-                                     VexEndness endness_host )
+SizeT delete_translations_in_sector ( /*OUT*/Addr* ga_deleted,
+                                      /*MOD*/Sector* sec, SECno secNo,
+                                      Addr guest_start, ULong range,
+                                      VexArch arch_host,
+                                      VexEndness endness_host )
 {
    TTEno i;
-   Bool  anyDeld = False;
+   SizeT numDeld = 0;
 
    for (i = 0; i < N_TTES_PER_SECTOR; i++) {
       /* The entire and only purpose of splitting TTEntry into cold
@@ -2108,12 +2143,12 @@ Bool delete_translations_in_sector ( /*MOD*/Sector* sec, SECno secNo,
          of the cold data up the memory hierarchy. */
       if (UNLIKELY(sec->ttH[i].status == InUse
                    && overlaps( guest_start, range, &sec->ttH[i] ))) {
-         anyDeld = True;
-         delete_tte( sec, secNo, i, arch_host, endness_host );
+         numDeld++;
+         delete_tte( ga_deleted, sec, secNo, i, arch_host, endness_host );
       }
    }
 
-   return anyDeld;
+   return numDeld;
 } 
 
 
@@ -2123,7 +2158,24 @@ void VG_(discard_translations) ( Addr guest_start, ULong range,
    Sector* sec;
    SECno   sno;
    EClassNo ec;
-   Bool    anyDeleted = False;
+
+  /* It is very commonly the case that a call here results in discarding of
+     exactly one superblock.  As an optimisation only, use ga_deleted and
+     numDeleted to detect this situation and to record the guest addr involved.
+     That is then used to avoid calling invalidateFastCache in this case.
+     Instead the individual entry in the fast cache is removed.  This can reduce
+     the overall VG_(fast_cache) miss rate significantly in applications that do
+     a lot of short code discards (basically jit generated code that is
+     subsequently patched).
+
+     ga_deleted is made to hold the guest address of the last superblock deleted
+     (in this call to VG_(discard_translations)).  If more than one superblock
+     is deleted (or none), then we ignore what is written to ga_deleted.  If
+     exactly one superblock is deleted then ga_deleted holds exactly what we
+     want and will be used.
+   */
+   Addr ga_deleted = TRANSTAB_BOGUS_GUEST_ADDR;
+   SizeT numDeleted = 0;
 
    vg_assert(init_done);
 
@@ -2184,13 +2236,13 @@ void VG_(discard_translations) ( Addr guest_start, ULong range,
          sec = &sectors[sno];
          if (sec->tc == NULL)
             continue;
-         anyDeleted |= delete_translations_in_sector_eclass( 
-                          sec, sno, guest_start, range, ec, 
-                          arch_host, endness_host
+         numDeleted += delete_translations_in_sector_eclass(
+                          &ga_deleted, sec, sno, guest_start, range,
+                          ec, arch_host, endness_host
                        );
-         anyDeleted |= delete_translations_in_sector_eclass( 
-                          sec, sno, guest_start, range, ECLASS_MISC,
-                          arch_host, endness_host
+         numDeleted += delete_translations_in_sector_eclass(
+                          &ga_deleted, sec, sno, guest_start, range,
+                          ECLASS_MISC, arch_host, endness_host
                        );
       }
 
@@ -2205,16 +2257,31 @@ void VG_(discard_translations) ( Addr guest_start, ULong range,
          sec = &sectors[sno];
          if (sec->tc == NULL)
             continue;
-         anyDeleted |= delete_translations_in_sector( 
-                          sec, sno, guest_start, range,
+         numDeleted += delete_translations_in_sector(
+                          &ga_deleted, sec, sno, guest_start, range,
                           arch_host, endness_host
                        );
       }
 
    }
 
-   if (anyDeleted)
+   if (numDeleted == 0) {
+      // "ga_deleted was never set"
+      vg_assert(ga_deleted == TRANSTAB_BOGUS_GUEST_ADDR);
+   } else
+   if (numDeleted == 1) {
+      // "ga_deleted was set to something valid"
+      vg_assert(ga_deleted != TRANSTAB_BOGUS_GUEST_ADDR);
+      // Just invalidate the individual VG_(tt_fast) cache entry \o/
+      invalidateFastCacheEntry(ga_deleted);
+      Addr fake_host = 0;
+      vg_assert(! VG_(lookupInFastCache)(&fake_host, ga_deleted));
+   } else {
+      // "ga_deleted was set to something valid"
+      vg_assert(ga_deleted != TRANSTAB_BOGUS_GUEST_ADDR);
+      // Nuke the entire VG_(tt_fast) cache.  Sigh.
       invalidateFastCache();
+   }
 
    /* don't forget the no-redir cache */
    unredir_discard_translations( guest_start, range );

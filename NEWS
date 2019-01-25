@@ -86,6 +86,7 @@ where XXXXXX is the bug number as listed below.
 402515  Implement new option --show-error-list=no|yes / -s
 402519  POWER 3.0 addex instruction incorrectly implemented
 403552  s390x: wrong facility bit checked for vector facility
+402781  Redo the cache used to process indirect branch targets
 
 n-i-bz  add syswrap for PTRACE_GET|SET_THREAD_AREA on amd64.
 

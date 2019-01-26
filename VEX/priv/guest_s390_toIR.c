@@ -1095,16 +1095,6 @@ gpr_w0_offset(UInt archreg)
    return gpr_offset(archreg) + 0;
 }
 
-/* Write an integer right-aligned into a gpr. */
-static __inline__ void
-put_gpr_int(UInt archreg, IRExpr *expr)
-{
-   UInt siz = sizeofIRType(typeOfIRExpr(irsb->tyenv, expr));
-
-   vassert(siz <= 8);
-   stmt(IRStmt_Put(gpr_offset(archreg) + 8 - siz, expr));
-}
-
 /* Read an integer of given type from a gpr. */
 static __inline__ IRExpr *
 get_gpr_int(UInt archreg, IRType ty)

@@ -2112,6 +2112,7 @@ AC_GCC_WARNING_SUBST([old-style-declaration], [FLAG_W_OLD_STYLE_DECLARATION])
 AC_GCC_WARNING_SUBST([ignored-qualifiers], [FLAG_W_IGNORED_QUALIFIERS])
 AC_GCC_WARNING_SUBST([missing-parameter-type], [FLAG_W_MISSING_PARAMETER_TYPE])
 AC_GCC_WARNING_SUBST([logical-op], [FLAG_W_LOGICAL_OP])
+AC_GCC_WARNING_SUBST([enum-conversion], [FLAG_W_ENUM_CONVERSION])
 
 # Does this compiler support -Wformat-security ?
 # Special handling is needed, because certain GCC versions require -Wformat

@@ -2912,7 +2912,7 @@ IROp vanillaNarrowingOpOfShape ( IROp qnarrowOp )
       case Iop_QNarrowUn32Uto16Ux4:
       case Iop_QNarrowUn32Sto16Sx4:
       case Iop_QNarrowUn32Sto16Ux4:
-      case Iop_F32toF16x4:
+      case Iop_F32toF16x4_DEP:
          return Iop_NarrowUn32to16x4;
       case Iop_QNarrowUn16Uto8Ux8:
       case Iop_QNarrowUn16Sto8Sx8:
@@ -2984,7 +2984,7 @@ IRAtom* vectorNarrowUnV128 ( MCEnv* mce, IROp narrow_op,
       case Iop_NarrowUn16to8x8:
       case Iop_NarrowUn32to16x4:
       case Iop_NarrowUn64to32x2:
-      case Iop_F32toF16x4:
+      case Iop_F32toF16x4_DEP:
          at1 = assignNew('V', mce, Ity_I64, unop(narrow_op, vatom1));
          return at1;
       default:
@@ -4871,10 +4871,10 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
          return unary64Fx4(mce, vatom);
 
       case Iop_RecipEst32Fx4:
-      case Iop_I32UtoFx4:
-      case Iop_I32StoFx4:
-      case Iop_QFtoI32Ux4_RZ:
-      case Iop_QFtoI32Sx4_RZ:
+      case Iop_I32UtoF32x4_DEP:
+      case Iop_I32StoF32x4_DEP:
+      case Iop_QF32toI32Ux4_RZ:
+      case Iop_QF32toI32Sx4_RZ:
       case Iop_RoundF32x4_RM:
       case Iop_RoundF32x4_RP:
       case Iop_RoundF32x4_RN:
@@ -4886,8 +4886,8 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_Log2_32Fx4:
          return unary32Fx4(mce, vatom);
 
-      case Iop_I32UtoFx2:
-      case Iop_I32StoFx2:
+      case Iop_I32UtoF32x2_DEP:
+      case Iop_I32StoF32x2_DEP:
       case Iop_RecipEst32Fx2:
       case Iop_RecipEst32Ux2:
       case Iop_Abs32Fx2:
@@ -4940,7 +4940,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_MulI128by10:
       case Iop_MulI128by10Carry:
       case Iop_F16toF64x2:
-      case Iop_F64toF16x2:
+      case Iop_F64toF16x2_DEP:
          // FIXME JRS 2018-Nov-15.  This is surely not correct!
          return vatom;
 
@@ -5117,16 +5117,16 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_CmpNEZ32x2:
       case Iop_Clz32x2:
       case Iop_Cls32x2:
-      case Iop_FtoI32Ux2_RZ:
-      case Iop_FtoI32Sx2_RZ:
+      case Iop_F32toI32Ux2_RZ:
+      case Iop_F32toI32Sx2_RZ:
       case Iop_Abs32x2:
          return mkPCast32x2(mce, vatom);
 
       case Iop_CmpNEZ32x4:
       case Iop_Clz32x4:
       case Iop_Cls32x4:
-      case Iop_FtoI32Ux4_RZ:
-      case Iop_FtoI32Sx4_RZ:
+      case Iop_F32toI32Ux4_RZ:
+      case Iop_F32toI32Sx4_RZ:
       case Iop_Abs32x4:
       case Iop_RSqrtEst32Ux4:
       case Iop_Ctz32x4:
@@ -5161,7 +5161,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_QNarrowUn64Sto32Sx2:
       case Iop_QNarrowUn64Sto32Ux2:
       case Iop_QNarrowUn64Uto32Ux2:
-      case Iop_F32toF16x4:
+      case Iop_F32toF16x4_DEP:
          return vectorNarrowUnV128(mce, op, vatom);
 
       case Iop_Widen8Sto16x8:

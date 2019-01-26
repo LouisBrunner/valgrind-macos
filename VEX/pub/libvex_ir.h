@@ -411,6 +411,13 @@ extern void ppIRTemp ( IRTemp );
    their functionality.  Such obscure ones are thus not directly visible
    in the IR, but their effects on guest state (memory and registers) 
    are made visible via the annotations in IRDirty structures.
+
+   2018-Dec-27: some of int<->fp conversion operations have been renamed so as
+   to have a trailing _DEP, meaning "deprecated".  This is because they don't
+   specify a rounding mode to be used for the conversion and so are
+   underspecified.  Their use should be replaced with equivalents that do
+   specify a rounding mode, either as a first argument or using a suffix on the
+   name, that indicates the rounding mode to use.
 */
 typedef
    enum { 
@@ -845,9 +852,12 @@ typedef
 
       /* ------------------ 64-bit SIMD FP ------------------------ */
 
-      /* Convertion to/from int */
-      Iop_I32UtoFx2,  Iop_I32StoFx2,    /* I32x4 -> F32x4 */
-      Iop_FtoI32Ux2_RZ,  Iop_FtoI32Sx2_RZ,    /* F32x4 -> I32x4 */
+      /* Conversion to/from int */
+      // Deprecated: these don't specify a rounding mode
+      Iop_I32UtoF32x2_DEP,  Iop_I32StoF32x2_DEP,    /* I32x2 -> F32x2 */
+
+      Iop_F32toI32Ux2_RZ,  Iop_F32toI32Sx2_RZ,    /* F32x2 -> I32x2 */
+
       /* Fixed32 format is floating-point number with fixed number of fraction
          bits. The number of fraction bits is passed as a second argument of
          type I8. */
@@ -1388,14 +1398,14 @@ typedef
          rounding mode argument. Instead the irop trailers _R{M,P,N,Z}
          indicate the mode: {-inf, +inf, nearest, zero} respectively. */
 
-      // FIXME These carry no rounding mode
-      Iop_I32UtoFx4,     Iop_I32StoFx4,       /* I32x4 -> F32x4       */
+      // These carry no rounding mode and are therefore deprecated
+      Iop_I32UtoF32x4_DEP, Iop_I32StoF32x4_DEP,  /* I32x4 -> F32x4 */
 
       Iop_I32StoF32x4, /* IRRoundingMode(I32) x V128 -> V128 */
       Iop_F32toI32Sx4, /* IRRoundingMode(I32) x V128 -> V128 */
 
-      Iop_FtoI32Ux4_RZ,  Iop_FtoI32Sx4_RZ,    /* F32x4 -> I32x4       */
-      Iop_QFtoI32Ux4_RZ, Iop_QFtoI32Sx4_RZ,   /* F32x4 -> I32x4 (saturating) */
+      Iop_F32toI32Ux4_RZ,  Iop_F32toI32Sx4_RZ,  /* F32x4 -> I32x4       */
+      Iop_QF32toI32Ux4_RZ, Iop_QF32toI32Sx4_RZ, /* F32x4 -> I32x4 (saturating) */
       Iop_RoundF32x4_RM, Iop_RoundF32x4_RP,   /* round to fp integer  */
       Iop_RoundF32x4_RN, Iop_RoundF32x4_RZ,   /* round to fp integer  */
       /* Fixed32 format is floating-point number with fixed number of fraction
@@ -1407,10 +1417,11 @@ typedef
       /* --- Single to/from half conversion --- */
       /* FIXME: what kind of rounding in F32x4 -> F16x4 case? */
       // FIXME these carry no rounding mode
-      Iop_F32toF16x4, Iop_F16toF32x4,         /* F32x4 <-> F16x4      */
+      Iop_F32toF16x4_DEP,     /* F32x4 -> F16x4, NO ROUNDING MODE */
+      Iop_F16toF32x4,         /* F16x4 -> F32x4 */
 
       /* -- Double to/from half conversion -- */
-      Iop_F64toF16x2, // FIXME this carries no rounding mode (?)
+      Iop_F64toF16x2_DEP, // F64x2 -> F16x2, NO ROUNDING MODE
       Iop_F16toF64x2,
 
       /* Values from two registers converted in smaller type and put in one
@@ -1606,6 +1617,7 @@ typedef
             [Foo16(a,b), Foo16(c,d), Foo16(e,f), Foo16(g,h)] */
       Iop_PwAdd8x16, Iop_PwAdd16x8, Iop_PwAdd32x4,
       Iop_PwAdd32Fx2,
+
       /* Longening variant is unary. The resulting vector contains two times
          less elements than operand, but they are two times wider.
          Example:

@@ -16087,7 +16087,7 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
          IRTemp hi64 = newTemp(Ity_I64);
          IRTemp lo64 = newTemp(Ity_I64);
          Bool un_signed = (opc2 == 0x110);
-         IROp op = un_signed ? Iop_QFtoI32Ux4_RZ : Iop_QFtoI32Sx4_RZ;
+         IROp op = un_signed ? Iop_QF32toI32Ux4_RZ : Iop_QF32toI32Sx4_RZ;
 
          DIP("xvcvsp%sxws v%u,v%u\n", un_signed ? "u" : "s", XT, XB);
          /* The xvcvsp{s|u}xws instruction is similar to vct{s|u}xs, except if src is a NaN,
@@ -16379,11 +16379,11 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
          break;
       case 0x170: // xvcvsxwsp (VSX Vector Convert Signed Integer Word to Single-Precision format)
          DIP("xvcvsxwsp v%u,v%u\n",  XT, XB);
-         putVSReg( XT, unop( Iop_I32StoFx4, getVSReg( XB ) ) );
+         putVSReg( XT, unop( Iop_I32StoF32x4_DEP, getVSReg( XB ) ) );
          break;
       case 0x150: // xvcvuxwsp (VSX Vector Convert Unsigned Integer Word to Single-Precision format)
          DIP("xvcvuxwsp v%u,v%u\n",  XT, XB);
-         putVSReg( XT, unop( Iop_I32UtoFx4, getVSReg( XB ) ) );
+         putVSReg( XT, unop( Iop_I32UtoF32x4_DEP, getVSReg( XB ) ) );
          break;
 
       default:
@@ -18846,7 +18846,7 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
              * V128 result.  The contents of the lower 64-bits is undefined.
              */
             DIP("xscvdphp v%d, v%d\n", (UInt)XT, (UInt)XB);
-            assign( result,  unop( Iop_F64toF16x2, mkexpr( vB ) ) );
+            assign( result,  unop( Iop_F64toF16x2_DEP, mkexpr( vB ) ) );
             assign( value, unop( Iop_64to32, unop( Iop_V128HIto64,
                                                    mkexpr( result ) ) ) );
             putVSReg( XT, mkexpr( result ) );
@@ -19629,7 +19629,7 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
             /* Iop_F32toF16x4 is V128 -> I64, scatter the 16-bit floats in the
              * I64 result to the V128 register to store.
              */
-            assign( tmp64, unop( Iop_F32toF16x4, mkexpr( vB ) ) );
+            assign( tmp64, unop( Iop_F32toF16x4_DEP, mkexpr( vB ) ) );
 
             /* Scatter 16-bit float values from returned 64-bit value
              * of V128 result.
@@ -27306,7 +27306,7 @@ static Bool dis_av_fp_convert ( UInt theInstr )
    case 0x30A: // vcfux (Convert from Unsigned Fixed-Point W, AV p156)
       DIP("vcfux v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
       putVReg( vD_addr, triop(Iop_Mul32Fx4, mkU32(Irrm_NEAREST),
-                              unop(Iop_I32UtoFx4, mkexpr(vB)),
+                              unop(Iop_I32UtoF32x4_DEP, mkexpr(vB)),
                               mkexpr(vInvScale)) );
       return True;
 
@@ -27314,14 +27314,14 @@ static Bool dis_av_fp_convert ( UInt theInstr )
       DIP("vcfsx v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
 
       putVReg( vD_addr, triop(Iop_Mul32Fx4, mkU32(Irrm_NEAREST),
-                              unop(Iop_I32StoFx4, mkexpr(vB)),
+                              unop(Iop_I32StoF32x4_DEP, mkexpr(vB)),
                               mkexpr(vInvScale)) );
       return True;
 
    case 0x38A: // vctuxs (Convert to Unsigned Fixed-Point W Saturate, AV p172)
       DIP("vctuxs v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
       putVReg( vD_addr,
-               unop(Iop_QFtoI32Ux4_RZ, 
+               unop(Iop_QF32toI32Ux4_RZ,
                     triop(Iop_Mul32Fx4, mkU32(Irrm_NEAREST),
                           mkexpr(vB), mkexpr(vScale))) );
       return True;
@@ -27329,7 +27329,7 @@ static Bool dis_av_fp_convert ( UInt theInstr )
    case 0x3CA: // vctsxs (Convert to Signed Fixed-Point W Saturate, AV p171)
       DIP("vctsxs v%d,v%d,%d\n", vD_addr, vB_addr, UIMM_5);
       putVReg( vD_addr, 
-               unop(Iop_QFtoI32Sx4_RZ, 
+               unop(Iop_QF32toI32Sx4_RZ,
                      triop(Iop_Mul32Fx4, mkU32(Irrm_NEAREST),
                            mkexpr(vB), mkexpr(vScale))) );
       return True;

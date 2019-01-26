@@ -21639,10 +21639,10 @@ static Int msa_3R_1B(UInt cins, UChar wd, UChar ws) { /* 3R (0x1B) */
                      t1 = newTemp(Ity_I64);
                      t2 = newTemp(Ity_I64);
                      assign(t1,
-                            unop(Iop_F32toF16x4,
+                            unop(Iop_F32toF16x4_DEP,
                                  getWReg(ws)));
                      assign(t2,
-                            unop(Iop_F32toF16x4,
+                            unop(Iop_F32toF16x4_DEP,
                                  getWReg(wt)));
                      putWReg(wd,
                              binop(Iop_64HLtoV128,
@@ -24761,7 +24761,7 @@ static Int msa_2RF(UInt cins, UChar wd, UChar ws) { /* 2RF */
                case 0x00: { /* FTRUNC_S.W */
                      DIP("FTRUNC_S.W w%d, w%d", wd, ws);
                      calculateMSACSR(ws, wd, FTRUNCSW, 1);
-                     putWReg(wd, unop(Iop_FtoI32Sx4_RZ, getWReg(ws)));
+                     putWReg(wd, unop(Iop_F32toI32Sx4_RZ, getWReg(ws)));
                      break;
                   }
 
@@ -24808,7 +24808,7 @@ static Int msa_2RF(UInt cins, UChar wd, UChar ws) { /* 2RF */
                case 0x00: {  /* FTRUNC_U.W */
                      DIP("FTRUNC_U.W w%d, w%d", wd, ws);
                      calculateMSACSR(ws, wd, FTRUNCUW, 1);
-                     putWReg(wd, unop(Iop_FtoI32Ux4_RZ, getWReg(ws)));
+                     putWReg(wd, unop(Iop_F32toI32Ux4_RZ, getWReg(ws)));
                      break;
                   }
 
@@ -25515,7 +25515,7 @@ static Int msa_2RF(UInt cins, UChar wd, UChar ws) { /* 2RF */
                                                mkexpr(t3))),
                                    binop(Iop_AndV128,
                                          unop(Iop_NotV128, mkexpr(t4)),
-                                         unop(Iop_FtoI32Ux4_RZ,
+                                         unop(Iop_F32toI32Ux4_RZ,
                                               getWReg(ws)))));
                      break;
                   }
@@ -25621,7 +25621,7 @@ static Int msa_2RF(UInt cins, UChar wd, UChar ws) { /* 2RF */
                case 0x00: { /* FFINT_U.W */
                      DIP("FFINT_U.W w%d, w%d", wd, ws);
                      calculateMSACSR(ws, wt, FFINT_UW, 1);
-                     putWReg(wd, unop(Iop_I32UtoFx4, getWReg(ws)));
+                     putWReg(wd, unop(Iop_I32UtoF32x4_DEP, getWReg(ws)));
                      break;
                   }
 

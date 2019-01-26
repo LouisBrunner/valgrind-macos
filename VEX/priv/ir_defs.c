@@ -437,33 +437,33 @@ void ppIROp ( IROp op )
       case Iop_ReinterpF32asI32: vex_printf("ReinterpF32asI32"); return;
       case Iop_ReinterpI32asF32: vex_printf("ReinterpI32asF32"); return;
 
-      case Iop_I32UtoFx4: vex_printf("I32UtoFx4"); return;
-      case Iop_I32StoFx4: vex_printf("I32StoFx4"); return;
+      case Iop_I32UtoF32x4_DEP: vex_printf("I32UtoF32x4_DEP"); return;
+      case Iop_I32StoF32x4_DEP: vex_printf("I32StoF32x4_DEP"); return;
 
       case Iop_I32StoF32x4: vex_printf("I32StoF32x4"); return;
       case Iop_F32toI32Sx4: vex_printf("F32toI32Sx4"); return;
 
-      case Iop_F32toF16x4: vex_printf("F32toF16x4"); return;
+      case Iop_F32toF16x4_DEP: vex_printf("F32toF16x4_DEP"); return;
       case Iop_F16toF32x4: vex_printf("F16toF32x4"); return;
       case Iop_F16toF64x2: vex_printf("F16toF64x2"); return;
-      case Iop_F64toF16x2: vex_printf("F64toF16x2"); return;
+      case Iop_F64toF16x2_DEP: vex_printf("F64toF16x2_DEP"); return;
 
       case Iop_RSqrtEst32Fx4: vex_printf("RSqrtEst32Fx4"); return;
       case Iop_RSqrtEst32Ux4: vex_printf("RSqrtEst32Ux4"); return;
       case Iop_RSqrtEst32Fx2: vex_printf("RSqrtEst32Fx2"); return;
       case Iop_RSqrtEst32Ux2: vex_printf("RSqrtEst32Ux2"); return;
 
-      case Iop_QFtoI32Ux4_RZ: vex_printf("QFtoI32Ux4_RZ"); return;
-      case Iop_QFtoI32Sx4_RZ: vex_printf("QFtoI32Sx4_RZ"); return;
+      case Iop_QF32toI32Ux4_RZ: vex_printf("QF32toI32Ux4_RZ"); return;
+      case Iop_QF32toI32Sx4_RZ: vex_printf("QF32toI32Sx4_RZ"); return;
 
-      case Iop_FtoI32Ux4_RZ: vex_printf("FtoI32Ux4_RZ"); return;
-      case Iop_FtoI32Sx4_RZ: vex_printf("FtoI32Sx4_RZ"); return;
+      case Iop_F32toI32Ux4_RZ: vex_printf("F32toI32Ux4_RZ"); return;
+      case Iop_F32toI32Sx4_RZ: vex_printf("F32toI32Sx4_RZ"); return;
 
-      case Iop_I32UtoFx2: vex_printf("I32UtoFx2"); return;
-      case Iop_I32StoFx2: vex_printf("I32StoFx2"); return;
+      case Iop_I32UtoF32x2_DEP: vex_printf("I32UtoF32x2_DEP"); return;
+      case Iop_I32StoF32x2_DEP: vex_printf("I32StoF32x2_DEP"); return;
 
-      case Iop_FtoI32Ux2_RZ: vex_printf("FtoI32Ux2_RZ"); return;
-      case Iop_FtoI32Sx2_RZ: vex_printf("FtoI32Sx2_RZ"); return;
+      case Iop_F32toI32Ux2_RZ: vex_printf("F32toI32Ux2_RZ"); return;
+      case Iop_F32toI32Sx2_RZ: vex_printf("F32toI32Sx2_RZ"); return;
 
       case Iop_RoundF32x4_RM: vex_printf("RoundF32x4_RM"); return;
       case Iop_RoundF32x4_RP: vex_printf("RoundF32x4_RP"); return;
@@ -2749,8 +2749,8 @@ void typeOfPrimop ( IROp op,
       case Iop_Reverse32sIn64_x1:
       case Iop_Reverse8sIn32_x2: case Iop_Reverse16sIn32_x2:
       case Iop_Reverse8sIn16_x4:
-      case Iop_FtoI32Sx2_RZ: case Iop_FtoI32Ux2_RZ:
-      case Iop_I32StoFx2: case Iop_I32UtoFx2:
+      case Iop_F32toI32Sx2_RZ: case Iop_F32toI32Ux2_RZ:
+      case Iop_I32StoF32x2_DEP: case Iop_I32UtoF32x2_DEP:
       case Iop_RecipEst32Ux2: case Iop_RecipEst32Fx2:
       case Iop_Abs32Fx2:
       case Iop_RSqrtEst32Fx2:
@@ -2978,12 +2978,12 @@ void typeOfPrimop ( IROp op,
       case Iop_TruncF64asF32:
          UNARY(Ity_F64, Ity_F32);
 
-      case Iop_I32UtoFx4:
-      case Iop_I32StoFx4:
-      case Iop_QFtoI32Ux4_RZ:
-      case Iop_QFtoI32Sx4_RZ:
-      case Iop_FtoI32Ux4_RZ:
-      case Iop_FtoI32Sx4_RZ:
+      case Iop_I32UtoF32x4_DEP:
+      case Iop_I32StoF32x4_DEP:
+      case Iop_QF32toI32Ux4_RZ:
+      case Iop_QF32toI32Sx4_RZ:
+      case Iop_F32toI32Ux4_RZ:
+      case Iop_F32toI32Sx4_RZ:
       case Iop_RoundF32x4_RM:
       case Iop_RoundF32x4_RP:
       case Iop_RoundF32x4_RN:
@@ -3022,7 +3022,7 @@ void typeOfPrimop ( IROp op,
       case Iop_QNarrowUn16Sto8Ux8:
       case Iop_QNarrowUn32Sto16Ux4:
       case Iop_QNarrowUn64Sto32Ux2:
-      case Iop_F32toF16x4:
+      case Iop_F32toF16x4_DEP:
          UNARY(Ity_V128, Ity_I64);
 
       case Iop_Widen8Uto16x8:
@@ -3197,7 +3197,7 @@ void typeOfPrimop ( IROp op,
       case Iop_ZeroHI64ofV128:  case Iop_ZeroHI96ofV128:
       case Iop_ZeroHI112ofV128: case Iop_ZeroHI120ofV128:
       case Iop_F16toF64x2:
-      case Iop_F64toF16x2:
+      case Iop_F64toF16x2_DEP:
       case Iop_MulI128by10:
       case Iop_MulI128by10Carry:
       case Iop_Ctz8x16: case Iop_Ctz16x8:

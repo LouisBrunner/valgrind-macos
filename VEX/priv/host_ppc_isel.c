@@ -2518,7 +2518,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, const IRExpr* e,
          addInstr(env, mk_iMOVds_RR(r_dst, argregs[0]));
          return r_dst;
       }
-      case Iop_F32toF16x4: {
+      case Iop_F32toF16x4_DEP: {
          HReg vdst = newVRegV(env);    /* V128 */
          HReg dst  = newVRegI(env);    /* I64*/
          HReg r0 = newVRegI(env);    /* I16*/
@@ -5649,7 +5649,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e,
             return dst;
          }
 
-      case Iop_F64toF16x2:
+      case Iop_F64toF16x2_DEP:
          {
             HReg dst = newVRegV(env);
             HReg arg  = iselVecExpr(env, e->Iex.Unop.arg, IEndianess);
@@ -5697,7 +5697,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e,
             return dst;
          }
 
-      case Iop_F32toF16x4:
+      case Iop_F32toF16x4_DEP:
          {
             HReg dst = newVRegI(env);
             HReg tmp = newVRegV(env);
@@ -5781,10 +5781,10 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e,
 
       case Iop_RecipEst32Fx4: fpop = Pavfp_RCPF;    goto do_32Fx4_unary;
       case Iop_RSqrtEst32Fx4: fpop = Pavfp_RSQRTF;  goto do_32Fx4_unary;
-      case Iop_I32UtoFx4:     fpop = Pavfp_CVTU2F;  goto do_32Fx4_unary;
-      case Iop_I32StoFx4:     fpop = Pavfp_CVTS2F;  goto do_32Fx4_unary;
-      case Iop_QFtoI32Ux4_RZ: fpop = Pavfp_QCVTF2U; goto do_32Fx4_unary;
-      case Iop_QFtoI32Sx4_RZ: fpop = Pavfp_QCVTF2S; goto do_32Fx4_unary;
+      case Iop_I32UtoF32x4_DEP: fpop = Pavfp_CVTU2F;  goto do_32Fx4_unary;
+      case Iop_I32StoF32x4_DEP: fpop = Pavfp_CVTS2F;  goto do_32Fx4_unary;
+      case Iop_QF32toI32Ux4_RZ: fpop = Pavfp_QCVTF2U; goto do_32Fx4_unary;
+      case Iop_QF32toI32Sx4_RZ: fpop = Pavfp_QCVTF2S; goto do_32Fx4_unary;
       case Iop_RoundF32x4_RM: fpop = Pavfp_ROUNDM;  goto do_32Fx4_unary;
       case Iop_RoundF32x4_RP: fpop = Pavfp_ROUNDP;  goto do_32Fx4_unary;
       case Iop_RoundF32x4_RN: fpop = Pavfp_ROUNDN;  goto do_32Fx4_unary;

@@ -1626,6 +1626,15 @@ typedef
       Iop_PwAddL8Ux16, Iop_PwAddL16Ux8, Iop_PwAddL32Ux4, Iop_PwAddL64Ux2,
       Iop_PwAddL8Sx16, Iop_PwAddL16Sx8, Iop_PwAddL32Sx4,
 
+      /* This is amd64 PMADDUBSW, (V128, V128) -> V128.  For each adjacent pair
+         of bytes [a,b] in the first arg and [c,d] in the second, computes:
+            signed/signed sat to 16 bits ( zxTo16(a) * sxTo16(b) 
+                                           + zxTo16(c) * sxTo16(d) )
+         This exists because it's frequently used and there's no reasonably
+         concise way to express it using other IROps.
+      */
+      Iop_PwExtUSMulQAdd8x16,
+
       /* Other unary pairwise ops */
 
       /* Vector bit matrix transpose.  (V128) -> V128 */

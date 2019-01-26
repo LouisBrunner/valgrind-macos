@@ -805,6 +805,7 @@ static irop_t irops[] = {
   { DEFOP(Iop_PwAddL8Sx16, UNDEF_UNKNOWN), },
   { DEFOP(Iop_PwAddL16Sx8, UNDEF_UNKNOWN), },
   { DEFOP(Iop_PwAddL32Sx4, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_PwExtUSMulQAdd8x16, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Abs8x16, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Abs16x8, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Abs32x4, UNDEF_UNKNOWN), },

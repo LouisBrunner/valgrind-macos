@@ -15689,26 +15689,8 @@ static Long dis_PHADD_256 ( const VexAbiInfo* vbi, Prefix pfx, Long delta,
 
 static IRTemp math_PMADDUBSW_128 ( IRTemp dV, IRTemp sV )
 {
-   IRTemp sVoddsSX  = newTemp(Ity_V128);
-   IRTemp sVevensSX = newTemp(Ity_V128);
-   IRTemp dVoddsZX  = newTemp(Ity_V128);
-   IRTemp dVevensZX = newTemp(Ity_V128);
-   /* compute dV unsigned x sV signed */
-   assign( sVoddsSX, binop(Iop_SarN16x8, mkexpr(sV), mkU8(8)) );
-   assign( sVevensSX, binop(Iop_SarN16x8, 
-                            binop(Iop_ShlN16x8, mkexpr(sV), mkU8(8)),
-                            mkU8(8)) );
-   assign( dVoddsZX, binop(Iop_ShrN16x8, mkexpr(dV), mkU8(8)) );
-   assign( dVevensZX, binop(Iop_ShrN16x8,
-                            binop(Iop_ShlN16x8, mkexpr(dV), mkU8(8)),
-                            mkU8(8)) );
-
    IRTemp res = newTemp(Ity_V128);
-   assign( res, binop(Iop_QAdd16Sx8,
-                      binop(Iop_Mul16x8, mkexpr(sVoddsSX), mkexpr(dVoddsZX)),
-                      binop(Iop_Mul16x8, mkexpr(sVevensSX), mkexpr(dVevensZX))
-                     )
-         );
+   assign(res, binop(Iop_PwExtUSMulQAdd8x16, mkexpr(dV), mkexpr(sV)));
    return res;
 }
 

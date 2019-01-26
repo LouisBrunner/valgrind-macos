@@ -589,6 +589,7 @@ const HChar* showAMD64SseOp ( AMD64SseOp op ) {
       case Asse_UNPCKLD:  return "punpckld";
       case Asse_UNPCKLQ:  return "punpcklq";
       case Asse_PSHUFB:   return "pshufb";
+      case Asse_PMADDUBSW: return "pmaddubsw";
       default: vpanic("showAMD64SseOp");
    }
 }
@@ -3871,6 +3872,8 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
          case Asse_UNPCKLQ:  XX(0x66); XX(rex); XX(0x0F); XX(0x6C); break;
          case Asse_PSHUFB:   XX(0x66); XX(rex);
                              XX(0x0F); XX(0x38); XX(0x00); break;
+         case Asse_PMADDUBSW:XX(0x66); XX(rex);
+                             XX(0x0F); XX(0x38); XX(0x04); break;
          default: goto bad;
       }
       p = doAMode_R_enc_enc(p, vregEnc3210(i->Ain.SseReRg.dst),

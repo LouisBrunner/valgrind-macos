@@ -3843,6 +3843,11 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_QDMulHi16Sx8:
       case Iop_QRDMulHi16Sx8:
       case Iop_PolynomialMulAdd16x8:
+      /* PwExtUSMulQAdd8x16 is a bit subtle.  The effect of it is that each
+         16-bit chunk of the output is formed from corresponding 16-bit chunks
+         of the input args, so we can treat it like an other binary 16x8
+         operation.  That's despite it having '8x16' in its name. */
+      case Iop_PwExtUSMulQAdd8x16:
          return binary16Ix8(mce, vatom1, vatom2);
 
       case Iop_Sub32x4:

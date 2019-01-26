@@ -3529,6 +3529,13 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e )
          // IROp to enter the compilation pipeline in the first place.
          break;
 
+      case Iop_PwExtUSMulQAdd8x16:
+         if (env->hwcaps & VEX_HWCAPS_AMD64_SSSE3) {
+            op = Asse_PMADDUBSW;
+            goto do_SseReRg;
+         }
+         break;
+
       case Iop_QNarrowBin32Sto16Sx8: 
          op = Asse_PACKSSD; arg1isEReg = True; goto do_SseReRg;
       case Iop_QNarrowBin16Sto8Sx16: 

@@ -817,6 +817,7 @@ void ppIROp ( IROp op )
       case Iop_PwAddL8Sx16: vex_printf("PwAddL8Sx16"); return;
       case Iop_PwAddL16Sx8: vex_printf("PwAddL16Sx8"); return;
       case Iop_PwAddL32Sx4: vex_printf("PwAddL32Sx4"); return;
+      case Iop_PwExtUSMulQAdd8x16: vex_printf("PwExtUSMulQAdd8x16"); return;
 
       case Iop_Sub8x16:   vex_printf("Sub8x16"); return;
       case Iop_Sub16x8:   vex_printf("Sub16x8"); return;
@@ -3159,6 +3160,7 @@ void typeOfPrimop ( IROp op,
       case Iop_Rsh32Ux4: case Iop_Rsh64Ux2:
       case Iop_MulI128by10E:
       case Iop_MulI128by10ECarry:
+      case Iop_PwExtUSMulQAdd8x16:
          BINARY(Ity_V128,Ity_V128, Ity_V128);
 
       case Iop_Perm8x16x2:

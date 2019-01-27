@@ -92,6 +92,7 @@ where XXXXXX is the bug number as listed below.
 n-i-bz  add syswrap for PTRACE_GET|SET_THREAD_AREA on amd64.
 n-i-bz  Fix callgrind_annotate non deterministic order for equal total
 n-i-bz  callgrind_annotate --threshold=100 does not print all functions.
+n-i-bz  callgrind_annotate Use of uninitialized value in numeric gt (>)
 
 Release 3.14.0 (9 October 2018)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

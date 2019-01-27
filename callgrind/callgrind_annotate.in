@@ -921,7 +921,7 @@ sub print_summary_and_fn_totals ()
 
     # Sort function names into order dictated by --sort option.
     @fn_fullnames = sort {
-        mycmp($fn_totals{$a}, $fn_totals{$b})
+        mycmp($fn_totals{$a}, $fn_totals{$b}) || $a cmp $b
     } @fn_fullnames;
 
 

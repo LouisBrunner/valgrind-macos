@@ -90,6 +90,7 @@ where XXXXXX is the bug number as listed below.
 403552  s390x: wrong facility bit checked for vector facility
 
 n-i-bz  add syswrap for PTRACE_GET|SET_THREAD_AREA on amd64.
+n-i-bz  Fix callgrind_annotate non deterministic order for equal total
 
 Release 3.14.0 (9 October 2018)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

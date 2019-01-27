@@ -207,9 +207,12 @@ usage: callgrind_annotate [options] [callgrind-out-file [source-files...]]
     -h --help             show this message
     --version             show version
     --show=A,B,C          only show figures for events A,B,C [all]
-    --sort=A,B,C          sort columns by events A,B,C [event column order]
     --threshold=<0--100>  percentage of counts (of primary sort event) we
                           are interested in [$default_threshold%]
+    --sort=A,B,C          sort columns by events A,B,C [event column order]
+                          Each event can optionally be followed by a :
+                          and a threshold percentage. If some event specific
+                          threshold are given, --threshold value is ignored.
     --show-percs=yes|no   show a percentage for each non-zero count
     --auto=yes|no         annotate all source files containing functions
                           that helped reach the event count threshold [no]
@@ -509,6 +512,10 @@ sub read_input_file()
             push(@thresholds, 0);
         }
         $thresholds[0] = $single_threshold;
+    } else {
+        # setting $single_threshold to 0 to ensure the 'per event'
+        # threshold logic is used.
+        $single_threshold = 0;
     }
 
     # Current directory, used to strip from file names if absolute
@@ -939,17 +946,21 @@ sub print_summary_and_fn_totals ()
 
     # Print functions, stopping when the threshold has been reached.
     foreach my $fn_name (@fn_fullnames) {
-
-        # Stop when we've reached all the thresholds
-        my $reached_all_thresholds = 1;
-        foreach my $i (0 .. scalar @thresholds - 1) {
-            my $prop = $curr_totals[$i] * 100;
-	    if ($summary_CC->[$sort_order[$i]] >0) {
-	      $prop = $prop / $summary_CC->[$sort_order[$i]];
-	    }
-            $reached_all_thresholds &&= ($prop >= $thresholds[$i]);
+        # if $single_threshold is 100 the user want to see everything,
+        # so do not enter the filtering logic, as truncation can cause
+        # some functions to not be shown.
+        if ($single_threshold < 100) {
+            # Stop when we've reached all the thresholds
+            my $reached_all_thresholds = 1;
+            foreach my $i (0 .. scalar @thresholds - 1) {
+                my $prop = $curr_totals[$i] * 100;
+                if ($summary_CC->[$sort_order[$i]] >0) {
+                    $prop = $prop / $summary_CC->[$sort_order[$i]];
+                }
+                $reached_all_thresholds &&= ($prop >= $thresholds[$i]);
+            }
+            last if $reached_all_thresholds;
         }
-        last if $reached_all_thresholds;
 
 	if ($tree_caller || $tree_calling) { print "\n"; }
 

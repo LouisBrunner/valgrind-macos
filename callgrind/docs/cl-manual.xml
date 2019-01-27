@@ -1253,22 +1253,30 @@ their arguments.</para>
 
   <varlistentry>
     <term>
+      <option><![CDATA[--threshold=<0--100> [default: 99%] ]]></option>
+    </term>
+    <listitem>
+      <para>Percentage of counts (of primary sort event) we are 
+        interested in.</para>
+      <para>callgrind_annotate stops printing functions when the sum
+        of the cost percentage of the printed functions is bigger or equal
+        to the given threshold percentage.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term>
       <option>--sort=A,B,C</option>
     </term>
     <listitem>
       <para>Sort columns by events A,B,C [event column order].</para>
       <para>Optionally, each event is followed by a : and a threshold,
         to specify different thresholds depending on the event.</para>
-    </listitem>
-  </varlistentry>
-
-  <varlistentry>
-    <term>
-      <option><![CDATA[--threshold=<0--100> [default: 99%] ]]></option>
-    </term>
-    <listitem>
-      <para>Percentage of counts (of primary sort event) we are 
-      interested in.</para>
+      <para>callgrind_annotate stops printing functions when the sum
+        of the cost percentage of the printed functions for all the events
+        is bigger or equal to the given event threshold percentages.</para>
+      <para>When one or more thresholds are given via this option,
+        the value of <option>--threshold</option> is ignored.</para>
     </listitem>
   </varlistentry>
 

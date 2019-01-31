@@ -11,7 +11,7 @@
 AC_INIT([Valgrind],[3.15.0.GIT],[valgrind-users@lists.sourceforge.net])
 AC_CONFIG_SRCDIR(coregrind/m_main.c)
 AC_CONFIG_HEADERS([config.h])
-AM_INIT_AUTOMAKE([foreign subdir-objects])
+AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects])
 
 AM_MAINTAINER_MODE
 

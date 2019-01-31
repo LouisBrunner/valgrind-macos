@@ -1,5 +1,5 @@
 
-AUTOMAKE_OPTIONS = foreign 1.10 dist-bzip2
+AUTOMAKE_OPTIONS = 1.10
 
 include $(top_srcdir)/Makefile.all.am 
 

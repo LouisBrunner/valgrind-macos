@@ -4,12 +4,12 @@ include $(top_srcdir)/Makefile.tool-tests.am
 dist_noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = \
-	acc.post.exp acc.stderr.exp acc.vgtest \
-	basic.post.exp basic.stderr.exp basic.vgtest \
-	big.post.exp big.stderr.exp big.vgtest \
-	empty.post.exp empty.stderr.exp empty.vgtest \
-	sig.post.exp sig.stderr.exp sig.vgtest \
-	single.post.exp single.stderr.exp single.vgtest
+	acc.stderr.exp acc.vgtest \
+	basic.stderr.exp basic.vgtest \
+	big.stderr.exp big.vgtest \
+	empty.stderr.exp empty.vgtest \
+	sig.stderr.exp sig.vgtest \
+	single.stderr.exp single.vgtest
 
 check_PROGRAMS = \
 	acc \

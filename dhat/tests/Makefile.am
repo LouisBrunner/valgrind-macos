@@ -8,6 +8,7 @@ EXTRA_DIST = \
 	basic.post.exp basic.stderr.exp basic.vgtest \
 	big.post.exp big.stderr.exp big.vgtest \
 	empty.post.exp empty.stderr.exp empty.vgtest \
+	sig.post.exp sig.stderr.exp sig.vgtest \
 	single.post.exp single.stderr.exp single.vgtest
 
 check_PROGRAMS = \

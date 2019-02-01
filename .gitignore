@@ -272,6 +272,7 @@
 /dhat/tests/basic
 /dhat/tests/big
 /dhat/tests/empty
+/dhat/tests/sig
 /dhat/tests/single
 
 # /docs/

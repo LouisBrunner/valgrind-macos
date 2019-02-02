@@ -97,7 +97,7 @@ clean-noinst_DSYMS:
 # -fno-builtin is important for defeating LLVM's idiom recognition
 # that somehow causes VG_(memset) to get into infinite recursion.
 AM_CFLAGS_BASE = \
-	-O2 -finline-functions -g \
+	-O2 -g \
 	-Wall \
 	-Wmissing-prototypes \
 	-Wshadow \
@@ -116,6 +116,7 @@ AM_CFLAGS_BASE = \
 	@FLAG_W_LOGICAL_OP@ \
 	@FLAG_W_ENUM_CONVERSION@ \
 	@FLAG_W_OLD_STYLE_DECLARATION@ \
+	@FLAG_FINLINE_FUNCTIONS@ \
 	@FLAG_FNO_STACK_PROTECTOR@ \
 	@FLAG_FSANITIZE@ \
 	-fno-strict-aliasing \

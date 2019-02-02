@@ -2200,6 +2200,27 @@ CFLAGS=$safe_CFLAGS
 
 AC_SUBST(FLAG_FNO_STACK_PROTECTOR)
 
+# does this compiler support -finline-functions ?
+AC_MSG_CHECKING([if gcc accepts -finline-functions])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-finline-functions -Werror"
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  return 0;
+]])], [
+inline_functions=yes
+FLAG_FINLINE_FUNCTIONS="-finline-functions"
+AC_MSG_RESULT([yes])
+], [
+inline_functions=no
+FLAG_FINLINE_FUNCTIONS=""
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+AC_SUBST(FLAG_FINLINE_FUNCTIONS)
+
 # Does GCC support disabling Identical Code Folding?
 # We want to disabled Identical Code Folding for the
 # tools preload shared objects to get better backraces.

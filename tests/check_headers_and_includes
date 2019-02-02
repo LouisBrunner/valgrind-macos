@@ -52,7 +52,7 @@ my %tool_dirs = (
     "lackey" => 1,
     "none" => 1,
     "exp-bbv" => 1,
-    "exp-sgcheck" => 1
+    "exp-sgcheck" => 1,
     "shared" => 1,
     );
 

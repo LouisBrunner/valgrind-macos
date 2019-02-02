@@ -6138,7 +6138,7 @@ static Bool dis_int_misc ( UInt theInstr )
 
    switch (opc2) {
    case 0x01E: // wait, (X-from)
-      DIP("wait %u\n", wc);
+      DIP("wait %d\n", wc);
 
       /* The wait instruction causes instruction fetching and execution
        * to be suspended.  Instruction fetching and execution are resumed
@@ -8577,7 +8577,7 @@ static Bool dis_memsync ( UInt theInstr )
                vex_printf("dis_memsync(ppc)(mbar,b11to20|b0)\n");
                return False;
             }
-            DIP("mbar %d\n", M0);
+            DIP("mbar %u\n", M0);
          }
          /* Insert a memory fence, just to be on the safe side. */
          stmt( IRStmt_MBE(Imbe_Fence) );
@@ -11556,7 +11556,7 @@ static Bool dis_fp_pair ( UInt theInstr )
          break;
 
       case 0x2:     // lxsd (Load VSX Scalar Doubleword)
-         DIP("lxsd v%u,%d(r%u)\n", vRT, DS, rA_addr);
+         DIP("lxsd v%u,%u(r%u)\n", vRT, DS, rA_addr);
 
          assign( EA, ea_rAor0_simm( rA_addr, DS<<2  ) );
 
@@ -11567,7 +11567,7 @@ static Bool dis_fp_pair ( UInt theInstr )
 
       case 0x3:     // lxssp (Load VSX Scalar Single from memory,
                     // store as double in register)
-         DIP("lxssp v%u,%d(r%u)\n", vRT, DS, rA_addr);
+         DIP("lxssp v%u,%u(r%u)\n", vRT, DS, rA_addr);
 
          assign( EA, ea_rAor0_simm( rA_addr, DS<<2  ) );
 
@@ -11624,7 +11624,7 @@ static Bool dis_fp_pair ( UInt theInstr )
 
          if ( IFIELD( theInstr, 0, 3) == 1) {
             // lxv (Load VSX Vector)
-            DIP("lxv v%u,%d(r%u)\n", vRS, DS, rA_addr);
+            DIP("lxv v%u,%u(r%u)\n", vRS, DS, rA_addr);
 
             assign( word[0], load( Ity_I64, mkexpr( EA ) ) );
 
@@ -11645,7 +11645,7 @@ static Bool dis_fp_pair ( UInt theInstr )
 
          } else if ( IFIELD( theInstr, 0, 3) == 5) {
             // stxv (Store VSX Vector)
-            DIP("stxv v%u,%d(r%u)\n", vRS, DS, rA_addr);
+            DIP("stxv v%u,%u(r%u)\n", vRS, DS, rA_addr);
 
             if (host_endness == VexEndnessBE) {
                store( mkexpr(EA), unop( Iop_V128HIto64,
@@ -11672,7 +11672,7 @@ static Bool dis_fp_pair ( UInt theInstr )
       }
       case 0x2:
          // stxsd (Store VSX Scalar Doubleword)
-         DIP("stxsd v%u,%d(r%u)\n", vRS, DS, rA_addr);
+         DIP("stxsd v%u,%u(r%u)\n", vRS, DS, rA_addr);
 
          assign( EA, ea_rAor0_simm( rA_addr, DS<<2  ) );
 
@@ -11694,7 +11694,7 @@ static Bool dis_fp_pair ( UInt theInstr )
          IRTemp high64 = newTemp(Ity_F64);
          IRTemp val32  = newTemp(Ity_I32);
 
-         DIP("stxssp v%u,%d(r%u)\n", vRS, DS, rA_addr);
+         DIP("stxssp v%u,%u(r%u)\n", vRS, DS, rA_addr);
 
          assign( EA, ea_rAor0_simm( rA_addr, DS<<2  ) );
          assign(high64, unop( Iop_ReinterpI64asF64,
@@ -12041,7 +12041,7 @@ static Bool dis_fp_scr ( UInt theInstr, Bool GX_level )
             putGST_masked( PPC_GST_FPSCR, mkexpr( frB_int ), MASK_FPSCR_DRN );
 
       } else if ((b11to12 == 2) && (b13to15 == 5)) {
-            DIP("mffscdrni fr%u,%d\n", frD_addr, DRN);
+            DIP("mffscdrni fr%u,%u\n", frD_addr, DRN);
 
             /* Clear all of the FPSCR bits except for the DRN field, VE,
                OE, UE, ZE and XE bits and write the result to the frD
@@ -18621,7 +18621,7 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
          UInt uim = IFIELD( theInstr, 11, 8 );
          UInt word_value = ( uim << 24 ) | ( uim << 16 ) | ( uim << 8 ) | uim;
 
-         DIP("xxspltib v%d,%d\n", (UInt)XT, uim);
+         DIP("xxspltib v%u,%u\n", (UInt)XT, uim);
          putVSReg(XT, binop( Iop_64HLtoV128,
                              binop( Iop_32HLto64,
                                     mkU32( word_value ),
@@ -18647,7 +18647,7 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
          IRTemp vB_hi = newTemp( Ity_I64 );
          IRExpr *mask = mkU64( 0x7FF0000000000000 );
 
-         DIP("xscmpexpdp %d,v%d,v%d\n", BF, XA, XB);
+         DIP("xscmpexpdp %u,v%u,v%u\n", BF, XA, XB);
 
          assign( vA_hi, unop( Iop_V128HIto64, mkexpr( vA ) ) );
          assign( vB_hi, unop( Iop_V128HIto64, mkexpr( vB ) ) );
@@ -18708,7 +18708,7 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
       {
          UInt uim = IFIELD( theInstr, 16, 4 );
 
-         DIP("xxextractuw v%d,v%d,%d\n", (UInt)XT, (UInt)XB, uim);
+         DIP("xxextractuw v%u,v%u,%u\n", (UInt)XT, (UInt)XB, uim);
 
          putVSReg( XT,
                    binop( Iop_ShlV128,
@@ -18728,7 +18728,7 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
          IRTemp vT = newTemp( Ity_V128 );
          IRTemp tmp = newTemp( Ity_V128 );
 
-         DIP("xxinsertw v%d,v%d,%d\n", (UInt)XT, (UInt)XB, uim);
+         DIP("xxinsertw v%u,v%u,%u\n", (UInt)XT, (UInt)XB, uim);
 
          assign( vT, getVSReg( XT ) );
          assign( tmp, binop( Iop_AndV128,
@@ -18773,7 +18773,7 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
                                  binop(Iop_ShlV128, mkexpr(vB),
                                        mkU8(1)), mkU8(1)));
          }
-         DIP("xsabsdp v%d,v%d\n", XT, XB);
+         DIP("xsabsdp v%u,v%u\n", XT, XB);
          putVSReg(XT, mkexpr(absVal));
          break;
       }
@@ -18789,7 +18789,7 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
          UInt inst_select = IFIELD( theInstr, 16, 5);
 
          if (inst_select == 0) {
-            DIP("xsxexpd %d,v%d\n", (UInt)XT, (UInt)XB);
+            DIP("xsxexpd %u,v%u\n", (UInt)XT, (UInt)XB);
 
             assign( rT, binop( Iop_Shr64,
                                binop( Iop_And64,
@@ -18800,7 +18800,7 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
             IRExpr *normal;
             IRTemp tmp = newTemp(Ity_I64);
 
-            DIP("xsxsigdp v%d,v%d\n",  (UInt)XT, (UInt)XB);
+            DIP("xsxsigdp v%u,v%u\n",  (UInt)XT, (UInt)XB);
 
             assign( tmp, unop( Iop_V128HIto64, mkexpr( vB ) ) );
 
@@ -18829,7 +18829,7 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
              * is undefined.
              */
 
-            DIP("xscvhpdp v%d, v%d\n", (UInt)XT, (UInt)XB);
+            DIP("xscvhpdp v%u, v%u\n", (UInt)XT, (UInt)XB);
             assign( result, unop( Iop_F16toF64x2, mkexpr( vB ) ) );
 
             putVSReg( XT, mkexpr( result ) );
@@ -18845,7 +18845,7 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
              * the V128 and stores the 16-bit result in the upper word of the
              * V128 result.  The contents of the lower 64-bits is undefined.
              */
-            DIP("xscvdphp v%d, v%d\n", (UInt)XT, (UInt)XB);
+            DIP("xscvdphp v%u, v%u\n", (UInt)XT, (UInt)XB);
             assign( result,  unop( Iop_F64toF16x2_DEP, mkexpr( vB ) ) );
             assign( value, unop( Iop_64to32, unop( Iop_V128HIto64,
                                                    mkexpr( result ) ) ) );
@@ -18855,7 +18855,7 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
 
          } else {
             vex_printf( "dis_vxv_scalar_extract_exp_sig invalid inst_select (ppc)(opc2)\n" );
-            vex_printf("inst_select = %d\n", inst_select);
+            vex_printf("inst_select = %u\n", inst_select);
             return False;
          }
       }
@@ -18896,7 +18896,7 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
          assign( zero, unop( Iop_1Uto64, is_Zero( Ity_I64, vB_hi ) ) );
 
          if (opc2 == 0x254) {
-            DIP("xststdcsp %d,v%d,%d\n", BF, (UInt)XB, DCMX_mask);
+            DIP("xststdcsp %u,v%u,%u\n", BF, (UInt)XB, DCMX_mask);
 
             /* The least significant bit of the CC is set to 1 if the double
                precision value is not representable as a single precision
@@ -18929,7 +18929,7 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
                                                        mkU64( 0x0 ) ) ) ) ) );
 
          } else {
-            DIP("xststdcdp %d,v%d,%d\n", BF, (UInt)XB, DCMX_mask);
+            DIP("xststdcdp %u,v%u,%u\n", BF, (UInt)XB, DCMX_mask);
             assign( not_sp,  mkU64( 0 ) );
             assign( dnorm, unop( Iop_1Uto64, is_Denorm( Ity_I64, vB_hi ) ) );
          }
@@ -19162,7 +19162,7 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
          IRTemp dnorm[4];
          Int i;
 
-         DIP("xvtstdcsp v%d,v%d,%d\n", (UInt)XT, (UInt)XB, DCMX_mask);
+         DIP("xvtstdcsp v%u,v%u,%u\n", (UInt)XT, (UInt)XB, DCMX_mask);
 
          for (i = 0; i < 4; i++) {
             NaN[i]   = newTemp(Ity_I32);
@@ -19297,7 +19297,7 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
          IRTemp rA = newTemp( Ity_I64 );
          IRTemp rB = newTemp( Ity_I64 );
 
-         DIP("xsiexpdp v%d,%d,%d\n", (UInt)XT, (UInt)rA_addr, (UInt)rB_addr);
+         DIP("xsiexpdp v%u,%u,%u\n", (UInt)XT, (UInt)rA_addr, (UInt)rB_addr);
          assign( rA, getIReg(rA_addr));
          assign( rB, getIReg(rB_addr));
 
@@ -19394,7 +19394,7 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
             IRTemp sub_element0 = newTemp( Ity_V128 );
             IRTemp sub_element1 = newTemp( Ity_V128 );
 
-            DIP("xxbrh v%d, v%d\n", (UInt)XT, (UInt)XB);
+            DIP("xxbrh v%u, v%u\n", (UInt)XT, (UInt)XB);
 
             assign( sub_element0,
                     binop( Iop_ShrV128,
@@ -19492,7 +19492,7 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
             IRTemp sub_element2 = newTemp( Ity_V128 );
             IRTemp sub_element3 = newTemp( Ity_V128 );
 
-            DIP("xxbrw v%d, v%d\n", (UInt)XT, (UInt)XB);
+            DIP("xxbrw v%u, v%u\n", (UInt)XT, (UInt)XB);
 
             assign( sub_element0,
                     binop( Iop_ShrV128,
@@ -19537,7 +19537,7 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
                                     mkexpr( sub_element0 ) ) ) );
 
          } else if (inst_select == 23) {
-            DIP("xxbrd v%d, v%d\n", (UInt)XT, (UInt)XB);
+            DIP("xxbrd v%u, v%u\n", (UInt)XT, (UInt)XB);
 
             int i;
             int shift = 56;
@@ -19665,7 +19665,7 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
             IRTemp sub_element[16];
             IRTemp new_xT[9];
 
-            DIP("xxbrq v%d, v%d\n", (UInt) XT, (UInt) XB);
+            DIP("xxbrq v%u, v%u\n", (UInt) XT, (UInt) XB);
 
             new_xT[0] = newTemp( Ity_V128 );
             assign( new_xT[0], binop( Iop_64HLtoV128,
@@ -19726,7 +19726,7 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
          IRTemp value[2];
          Int i;
 
-         DIP("xvtstdcdp v%d,v%d,%d\n", (UInt)XT, (UInt)XB, DCMX_mask);
+         DIP("xvtstdcdp v%u,v%u,%u\n", (UInt)XT, (UInt)XB, DCMX_mask);
 
          for (i = 0; i < 2; i++) {
             NaN[i] = newTemp(Ity_I64);
@@ -20217,7 +20217,7 @@ dis_vx_load ( UInt theInstr )
       IRTemp word[4];
       int i;
 
-      DIP("lxvx %d,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
+      DIP("lxvx %u,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
 
       if ( host_endness == VexEndnessBE ) {
          for ( i = 3; i>= 0; i-- ) {
@@ -20273,7 +20273,7 @@ dis_vx_load ( UInt theInstr )
 
    case 0x10D: // lxvl
    {
-      DIP("lxvl %d,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
+      DIP("lxvl %u,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
 
       IRTemp byte[16];
       UInt i;
@@ -20447,7 +20447,7 @@ dis_vx_load ( UInt theInstr )
       IRTemp base_addr = newTemp( ty );
       IRTemp nb_compare_zero = newTemp( Ity_I64 );
 
-      DIP("lxvll %d,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
+      DIP("lxvll %u,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
 
       tmp_low[0] = newTemp(Ity_I64);
       tmp_hi[0] = newTemp(Ity_I64);
@@ -20536,7 +20536,7 @@ dis_vx_load ( UInt theInstr )
    {
       IRTemp data = newTemp( Ity_I64 );
 
-      DIP("lxvwsx %d,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
+      DIP("lxvwsx %u,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
 
       /* The load is a 64-bit fetch that is Endian aware, just want
        * the lower 32 bits. */
@@ -20607,7 +20607,7 @@ dis_vx_load ( UInt theInstr )
       IRExpr *byte;
       IRExpr* irx_addr;
 
-      DIP("lxsibzx %d,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
+      DIP("lxsibzx %u,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
 
       if ( host_endness == VexEndnessBE )
          irx_addr = binop( Iop_Sub64, mkexpr( EA ), mkU64( 7 ) );
@@ -20629,7 +20629,7 @@ dis_vx_load ( UInt theInstr )
       IRExpr *byte;
       IRExpr* irx_addr;
 
-      DIP("lxsihzx %d,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
+      DIP("lxsihzx %u,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
 
       if ( host_endness == VexEndnessBE )
          irx_addr = binop( Iop_Sub64, mkexpr( EA ), mkU64( 6 ) );
@@ -20677,7 +20677,7 @@ dis_vx_load ( UInt theInstr )
    {
       IRExpr *t0;
 
-      DIP("lxvw4x %d,r%u,r%u\n", XT, rA_addr, rB_addr);
+      DIP("lxvw4x %u,r%u,r%u\n", XT, rA_addr, rB_addr);
 
       /* The load will result in the data being in BE order. */
       if (host_endness == VexEndnessLE) {
@@ -20701,7 +20701,7 @@ dis_vx_load ( UInt theInstr )
 
    case 0x32C: // lxvh8x
    {
-      DIP("lxvh8x %d,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
+      DIP("lxvh8x %u,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
 
       IRTemp h_word[8];
       int i;
@@ -20757,7 +20757,7 @@ dis_vx_load ( UInt theInstr )
 
    case 0x36C: // lxvb16x
    {
-      DIP("lxvb16x %d,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
+      DIP("lxvb16x %u,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
 
       /* The result of lxvb16x should be the same on big and little
          endian systems. We do a host load, then reverse the bytes in
@@ -20814,7 +20814,7 @@ dis_vx_move ( UInt theInstr )
 
    switch (opc2) {
    case 0x133: // mfvsrld RA,XS   Move From VSR Lower Doubleword
-      DIP("mfvsrld %d,r%u\n", (UInt)XS, rA_addr);
+      DIP("mfvsrld %u,r%u\n", (UInt)XS, rA_addr);
 
       assign( vS, getVSReg( XS ) );
       putIReg( rA_addr, unop(Iop_V128to64, mkexpr( vS) ) );
@@ -20825,7 +20825,7 @@ dis_vx_move ( UInt theInstr )
    {
       IRTemp tmp = newTemp( Ity_I32 );
 
-      DIP("mfvsrdd %d,r%u\n", (UInt)XS, rA_addr);
+      DIP("mfvsrdd %u,r%u\n", (UInt)XS, rA_addr);
 
       assign( tmp, unop( Iop_64to32, getIReg(rA_addr) ) );
       assign( vS, binop( Iop_64HLtoV128,
@@ -20844,7 +20844,7 @@ dis_vx_move ( UInt theInstr )
       IRTemp rA = newTemp( ty );
       IRTemp rB = newTemp( ty );
 
-      DIP("mfvsrws %d,r%u\n", (UInt)XS, rA_addr);
+      DIP("mfvsrws %u,r%u\n", (UInt)XS, rA_addr);
 
       if ( rA_addr == 0 )
          assign( rA, mkU64 ( 0 ) );
@@ -20912,7 +20912,7 @@ dis_vx_store ( UInt theInstr )
       IRTemp word1 = newTemp( Ity_I64 );
       IRTemp word2 = newTemp( Ity_I64 );
       IRTemp word3 = newTemp( Ity_I64 );
-      DIP("stxvx %d,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
+      DIP("stxvx %u,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
 
       assign( word0,  binop( Iop_Shr64,
                              unop( Iop_V128HIto64, mkexpr( vS ) ),
@@ -20991,7 +20991,7 @@ dis_vx_store ( UInt theInstr )
       IRTemp store_val = newTemp( Ity_V128 );
       IRTemp nb_mask = newTemp( Ity_V128 );
 
-      DIP("stxvl %d,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
+      DIP("stxvl %u,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
 
       assign( nb_field, binop( Iop_Shr64,
                                getIReg(rB_addr),
@@ -21139,7 +21139,7 @@ dis_vx_store ( UInt theInstr )
       IRTemp nb_field_compare_zero = newTemp( Ity_I64 );
       Int i;
 
-      DIP("stxvll %d,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
+      DIP("stxvll %u,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
 
       assign( nb_field, binop( Iop_Shr64,
                                getIReg(rB_addr),
@@ -21381,7 +21381,7 @@ dis_vx_store ( UInt theInstr )
    {
       IRTemp high64 = newTemp(Ity_F64);
       IRTemp val32  = newTemp(Ity_I32);
-      DIP("stxsspx %d,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
+      DIP("stxsspx %u,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
       assign(high64, unop( Iop_ReinterpI64asF64,
                            unop( Iop_V128HIto64, mkexpr( vS ) ) ) );
       assign(val32, unop( Iop_ReinterpF32asI32,
@@ -21393,7 +21393,7 @@ dis_vx_store ( UInt theInstr )
    case 0x2CC:
    {
       IRExpr * high64;
-      DIP("stxsdx %d,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
+      DIP("stxsdx %u,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
       high64 = unop( Iop_V128HIto64, mkexpr( vS ) );
       store( mkexpr( EA ), high64 );
       break;
@@ -21404,7 +21404,7 @@ dis_vx_store ( UInt theInstr )
       IRExpr *stored_word;
       IRTemp byte_to_store = newTemp( Ity_I64 );
 
-      DIP("stxsibx %d,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
+      DIP("stxsibx %u,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
 
       /* Can't store just a byte, need to fetch the word at EA merge data
        * and store.
@@ -21428,7 +21428,7 @@ dis_vx_store ( UInt theInstr )
       IRExpr *stored_word;
       IRTemp byte_to_store = newTemp( Ity_I64 );
 
-      DIP("stxsihx %d,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
+      DIP("stxsihx %u,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
 
       /* Can't store just a halfword, need to fetch the word at EA merge data
        * and store.
@@ -21450,7 +21450,7 @@ dis_vx_store ( UInt theInstr )
    case 0x3CC:
    {
       IRExpr * high64, *low64;
-      DIP("stxvd2x %d,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
+      DIP("stxvd2x %u,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
       high64 = unop( Iop_V128HIto64, mkexpr( vS ) );
       low64 = unop( Iop_V128to64, mkexpr( vS ) );
       store( mkexpr( EA ), high64 );
@@ -21465,7 +21465,7 @@ dis_vx_store ( UInt theInstr )
       IRTemp hi64 = newTemp( Ity_I64 );
       IRTemp lo64 = newTemp( Ity_I64 );
 
-      DIP("stxvw4x %d,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
+      DIP("stxvw4x %u,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
 
       // This instruction supports word-aligned stores, so EA may not be
       // quad-word aligned.  Therefore, do 4 individual word-size stores.
@@ -21500,7 +21500,7 @@ dis_vx_store ( UInt theInstr )
       IRTemp half_word6 = newTemp( Ity_I64 );
       IRTemp half_word7 = newTemp( Ity_I64 );
 
-      DIP("stxvb8x %d,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
+      DIP("stxvb8x %u,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
 
       assign( half_word0, binop( Iop_Shr64,
                                  unop( Iop_V128HIto64, mkexpr( vS ) ),
@@ -21633,7 +21633,7 @@ dis_vx_store ( UInt theInstr )
       IRExpr* irx_addr;
       IRTemp byte[16];
 
-      DIP("stxvb16x %d,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
+      DIP("stxvb16x %u,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
 
       for ( i = 0; i < 8; i++ ) {
          byte[i] = newTemp( Ity_I64 );
@@ -22194,9 +22194,9 @@ dis_vx_scalar_quad_precision ( UInt theInstr )
          IRTemp CC = newTemp( Ity_I32 );
 
          if (opc2 == 0x084) {
-            DIP("xscmpoqp %d,v%d,v%d\n",  BF, vA_addr, vB_addr);
+            DIP("xscmpoqp %u,v%d,v%u\n",  BF, vA_addr, vB_addr);
          } else {
-            DIP("xscmpuqp %d,v%d,v%d\n",  BF, vA_addr, vB_addr);
+            DIP("xscmpuqp %u,v%d,v%u\n",  BF, vA_addr, vB_addr);
          }
 
          assign( vA, getVSReg(vA_addr));
@@ -22295,7 +22295,7 @@ dis_vx_scalar_quad_precision ( UInt theInstr )
          IRTemp eq_lt_gt = newTemp( Ity_I32 );
          IRTemp CC = newTemp( Ity_I32 );
 
-         DIP("xscmpexpqp %d,v%d,v%d\n",  BF, vA_addr, vB_addr);
+         DIP("xscmpexpqp %u,v%d,v%u\n",  BF, vA_addr, vB_addr);
 
          assign( vA, getVSReg(vA_addr));
 
@@ -22372,7 +22372,7 @@ dis_vx_scalar_quad_precision ( UInt theInstr )
          IRTemp zero = newTemp( Ity_I64 );
          IRTemp dnorm = newTemp( Ity_I64 );
 
-         DIP("xststdcqp  %d,v%d,%d\n",  BF, vB_addr, DCMX_mask);
+         DIP("xststdcqp  %u,v%d,%u\n",  BF, vB_addr, DCMX_mask);
 
          assign( zero, unop( Iop_1Uto64, is_Zero( Ity_V128, vB ) ) );
          assign( pos, unop( Iop_1Uto64,
@@ -22657,11 +22657,11 @@ dis_vx_permute_misc( UInt theInstr, UInt opc2 )
          IRTemp vB_adj = newTemp( Ity_V128 );
 
          if ( opc2 == 0x68 ) {
-            DIP("xxperm v%d,v%d,v%d\n", (UInt)XT, (UInt)XA, (UInt)XB);
+            DIP("xxperm v%u,v%u,v%u\n", (UInt)XT, (UInt)XA, (UInt)XB);
 
          } else {
             /* Same as xperm just the index is 31 - idx */
-            DIP("xxpermr v%d,v%d,v%d\n", (UInt)XT, (UInt)XA, (UInt)XB);
+            DIP("xxpermr v%u,v%u,v%u\n", (UInt)XT, (UInt)XA, (UInt)XB);
          }
 
          assign( vT, getVSReg( XT ) );

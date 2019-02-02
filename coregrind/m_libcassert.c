@@ -309,7 +309,7 @@ static void print_thread_state (Bool stack_usage,
                    VG_SYSNUM_STRING(VG_(is_in_syscall_no)(i)));
    else
       syscallno[0] = 0;
-   VG_(printf)("\n%sThread %d: status = %s%s (lwpid %d)\n", prefix, i,
+   VG_(printf)("\n%sThread %u: status = %s%s (lwpid %d)\n", prefix, i,
                VG_(name_of_ThreadStatus)(VG_(threads)[i].status),
                syscallno,
                VG_(threads)[i].os_state.lwpid);

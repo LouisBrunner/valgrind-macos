@@ -12816,7 +12816,7 @@ static Bool decode_V8_instruction (
         stmt(IRStmt_Dirty(di));
 
         putQReg(regD >> 1, mkexpr(res), IRTemp_INVALID);
-        DIP("%s.8 q%d, q%d\n", iNames[opc], regD >> 1, regM >> 1);
+        DIP("%s.8 q%u, q%u\n", iNames[opc], regD >> 1, regM >> 1);
         return True;
      }
      /* fall through */

@@ -3673,7 +3673,7 @@ PRE(sys_statx)
 {
    FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_statx ( %ld, %#" FMT_REGWORD "x(%s), %ld, %ld, %#" FMT_REGWORD "x )",
-         ARG1,ARG2,(char*)(Addr)ARG2,ARG3,ARG4,ARG5);
+         (Word)ARG1,ARG2,(char*)(Addr)ARG2,(Word)ARG3,(Word)ARG4,ARG5);
    PRE_REG_READ5(long, "statx",
                  int, dirfd, char *, file_name, int, flags,
                  unsigned int, mask, struct statx *, buf);
@@ -11669,7 +11669,7 @@ PRE(sys_bpf)
    UInt res, key_size, value_size;
 
    PRINT("sys_bpf ( %ld, %#" FMT_REGWORD "x, %" FMT_REGWORD "u )",
-         ARG1, ARG2, ARG3);
+         (Word)ARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "bpf",
                  int, cmd, union vki_bpf_attr *, attr, unsigned int, size);
    switch (ARG1) {

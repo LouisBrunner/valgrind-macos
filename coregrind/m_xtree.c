@@ -417,9 +417,9 @@ static void FP_pos_str(VgFile* fp, const HChar* name, UInt pos,
    if (!VG_(clo_xtree_compress_strings))
       FP("%s=%s\n", name, value);
    else if (value_new)
-      FP("%s=(%d) %s\n", name, pos, value);
+      FP("%s=(%u) %s\n", name, pos, value);
    else
-      FP("%s=(%d)\n", name, pos);
+      FP("%s=(%u)\n", name, pos);
 }
 
 void VG_(XT_callgrind_print)
@@ -569,9 +569,9 @@ void VG_(XT_callgrind_print)
             FP_pos_str(fp, "fn", called_fnname_nr,
                        called_fnname, called_fnname_new);
             if (ips_idx == 0)
-               FP("%d %s\n", called_linenum, img);
+               FP("%u %s\n", called_linenum, img);
             else
-               FP("%d\n", called_linenum); //no self cost.
+               FP("%u\n", called_linenum); //no self cost.
             prev_linenum = called_linenum;
             if (ips_idx >= 1) {
                CALLED_FLF(ips_idx-1);
@@ -586,8 +586,8 @@ void VG_(XT_callgrind_print)
                   calls column the nr of stacktrace containing this arc, which
                   is very confusing. So, the less bad is to give a 0 call
                   count. */
-               FP("calls=0 %d\n", called_linenum);
-               FP("%d %s\n", prev_linenum, img);
+               FP("calls=0 %u\n", called_linenum);
+               FP("%u %s\n", prev_linenum, img);
             }
          }
          FP("\n");
@@ -761,8 +761,8 @@ static void ms_output_group (VgFile* fp, UInt depth, UInt indent,
    if (group->ms_ec == NULL) {
       const HChar* s = ( 1 ==  group->n_ec? "," : "s, all" );
       vg_assert(group->group_ip == 0);
-      FP("%*sn0: %lu in %d place%s below massif's threshold (%.2f%%)\n",
-         indent+1, "", group->total, group->n_ec, s, sig_pct_threshold);
+      FP("%*sn0: %lu in %u place%s below massif's threshold (%.2f%%)\n",
+         (Int)(indent+1), "", group->total, group->n_ec, s, sig_pct_threshold);
       return;
    }
 
@@ -791,8 +791,8 @@ static void ms_output_group (VgFile* fp, UInt depth, UInt indent,
       const HChar* buf = VG_(describe_IP)(cur_ep, cur_ip, iipc);
       Bool is_inlined = VG_(next_IIPC)(iipc);
 
-      FP("%*s" "n%u: %ld %s\n",
-         indent + 1, "",
+      FP("%*s" "n%u: %lu %s\n",
+         (Int)(indent + 1), "",
          is_inlined ? 1 : n_groups, // Inlined frames always have one child.
          group->total,
          buf);

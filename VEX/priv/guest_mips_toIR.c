@@ -26183,25 +26183,25 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
          switch (df) {
             case 0x00: { /* BNZ.B */
-                  DIP("BNZ.B w%d, %d", ft, imm);
+                  DIP("BNZ.B w%u, %u", ft, imm);
                   assign(t3, binop(Iop_CmpEQ8x16, mkexpr(t1), mkexpr(t2)));
                   break;
                }
 
             case 0x01: { /* BNZ.H */
-                  DIP("BNZ.H w%d, %d", ft, imm);
+                  DIP("BNZ.H w%u, %u", ft, imm);
                   assign(t3, binop(Iop_CmpEQ16x8, mkexpr(t1), mkexpr(t2)));
                   break;
                }
 
             case 0x02: { /* BNZ.W */
-                  DIP("BNZ.W w%d, %d", ft, imm);
+                  DIP("BNZ.W w%u, %u", ft, imm);
                   assign(t3, binop(Iop_CmpEQ32x4, mkexpr(t1), mkexpr(t2)));
                   break;
                }
 
             case 0x03: { /* BNZ.D */
-                  DIP("BNZ.D w%d, %d", ft, imm);
+                  DIP("BNZ.D w%u, %u", ft, imm);
                   assign(t3, binop(Iop_CmpEQ64x2, mkexpr(t1), mkexpr(t2)));
                   break;
                }
@@ -26245,25 +26245,25 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
          switch (df) {
             case 0x00: { /* BZ.B */
-                  DIP("BZ.B w%d, %d", ft, imm);
+                  DIP("BZ.B w%u, %u", ft, imm);
                   assign(t3, binop(Iop_CmpEQ8x16, mkexpr(t1), mkexpr(t2)));
                   break;
                }
 
             case 0x01: { /* BZ.H */
-                  DIP("BZ.H w%d, %d", ft, imm);
+                  DIP("BZ.H w%u, %u", ft, imm);
                   assign(t3, binop(Iop_CmpEQ16x8, mkexpr(t1), mkexpr(t2)));
                   break;
                }
 
             case 0x02: { /* BZ.W */
-                  DIP("BZ.W w%d, %d", ft, imm);
+                  DIP("BZ.W w%u, %u", ft, imm);
                   assign(t3, binop(Iop_CmpEQ32x4, mkexpr(t1), mkexpr(t2)));
                   break;
                }
 
             case 0x03: { /* BZ.D */
-                  DIP("BZ.D w%d, %d", ft, imm);
+                  DIP("BZ.D w%u, %u", ft, imm);
                   assign(t3, binop(Iop_CmpEQ64x2, mkexpr(t1), mkexpr(t2)));
                   break;
                }
@@ -29959,7 +29959,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             }
                case 0x08 ... 0x0f: { /* DALIGN */
                   if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
-                     DIP("daling r%u, r%u, r%u, %d", rd, rs, rt,  lsb & 0x7);
+                     DIP("daling r%u, r%u, r%u, %u", rd, rs, rt,  lsb & 0x7);
                      UInt bp = (lsb & 0x7) << 3;
                      if (bp) {
                         putIReg(rd, binop(Iop_Or64,

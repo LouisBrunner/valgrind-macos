@@ -1731,7 +1731,7 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
         || VG_(clo_xml) ) {
       if (VG_(clo_xml)) {
          VG_(printf_xml)("<fatal_signal>\n");
-         VG_(printf_xml)("  <tid>%d</tid>\n", tid);
+         VG_(printf_xml)("  <tid>%u</tid>\n", tid);
          if (tst->thread_name) {
             VG_(printf_xml)("  <threadname>%s</threadname>\n",
                             tst->thread_name);

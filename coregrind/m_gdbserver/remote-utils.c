@@ -1158,7 +1158,7 @@ void prepare_resume_reply (char *buf, char status, unsigned char sig)
          VG_(sprintf) (buf, "%s:%x;",
                        valgrind_stopped_before_syscall ()
                        ? "syscall_entry" : "syscall_return",
-                       valgrind_stopped_by_syscall ());
+                       (UInt)valgrind_stopped_by_syscall ());
          buf += strlen (buf);
       }
 

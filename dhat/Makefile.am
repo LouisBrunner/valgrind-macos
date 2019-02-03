@@ -8,7 +8,11 @@ EXTRA_DIST = docs/dh-manual.xml
 # Headers, etc
 #----------------------------------------------------------------------------
 
-#bin_SCRIPTS = dh_print
+# Ensure the viewer components get copied into the install tree.  Note that
+# vglibdir and vglib_DATA are also defined in coregrind/Makefile.am.  I don't
+# know if that's a problem.  Doesn't appear to be.
+vglibdir = $(pkglibdir)
+vglib_DATA = dh_view.html dh_view.css dh_view.js
 
 #----------------------------------------------------------------------------
 # dhat-<platform>

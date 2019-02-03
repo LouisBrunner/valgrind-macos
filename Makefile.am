@@ -3,7 +3,8 @@ AUTOMAKE_OPTIONS = 1.10
 
 include $(top_srcdir)/Makefile.all.am 
 
-TOOLS =		memcheck \
+TOOLS = \
+		memcheck \
 		cachegrind \
 		callgrind \
 		helgrind \
@@ -13,7 +14,8 @@ TOOLS =		memcheck \
 		lackey \
 		none
 
-EXP_TOOLS = 	exp-sgcheck \
+EXP_TOOLS = \
+		exp-sgcheck \
 		exp-bbv
 
 # Put docs last because building the HTML is slow and we want to get

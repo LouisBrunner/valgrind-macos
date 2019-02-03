@@ -2,7 +2,7 @@ include $(top_srcdir)/Makefile.tool.am
 
 #SUBDIRS += perf
 
-EXTRA_DIST = docs/dh-manual.xml
+EXTRA_DIST = docs/dh-manual.xml dh_view.html dh_view.css dh_view.js
 
 #----------------------------------------------------------------------------
 # Headers, etc

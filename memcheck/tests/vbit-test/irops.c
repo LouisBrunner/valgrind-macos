@@ -1331,8 +1331,8 @@ get_irop(IROp op)
          case Iop_TruncF128toI64U:
          case Iop_TruncF128toI64S:
          case Iop_F16toF32x4:
-         case Iop_F32toF16x4:
-         case Iop_F64toF16x2:
+         case Iop_F32toF16x4_DEP:
+         case Iop_F64toF16x2_DEP:
          case Iop_F16toF64x2:
          case Iop_MulI128by10:
          case Iop_MulI128by10Carry:

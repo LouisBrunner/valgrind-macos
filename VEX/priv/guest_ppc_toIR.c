@@ -5361,11 +5361,15 @@ static Bool dis_int_arith ( UInt theInstr )
              flag_OE ? "o" : "", flag_rC ? ".":"",
              rD_addr, rA_addr, rB_addr);
          // rD = (log not)rA + rB + XER[CA]
+         //    ==>
+         // rD = rB - rA - (XER[CA] ^ 1)
          assign( old_xer_ca, mkWidenFrom32(ty, getXER_CA_32(), False) );
-         assign( rD, binop( mkSzOp(ty, Iop_Add8),
-                            unop( mkSzOp(ty, Iop_Not8), mkexpr(rA)),
-                            binop( mkSzOp(ty, Iop_Add8),
-                                   mkexpr(rB), mkexpr(old_xer_ca))) );
+         assign( rD, binop( mkSzOp(ty, Iop_Sub8),
+                            binop( mkSzOp(ty, Iop_Sub8),
+                                   mkexpr(rB), mkexpr(rA)),
+                            binop(mkSzOp(ty, Iop_Xor8),
+                                  mkexpr(old_xer_ca),
+                                  mkSzImm(ty, 1))) );
          set_XER_CA_CA32( ty, PPCG_FLAG_OP_SUBFE,
                           mkexpr(rD), mkexpr(rA), mkexpr(rB),
                           mkexpr(old_xer_ca) );

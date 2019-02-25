@@ -466,7 +466,8 @@ PRE(sys_rt_sigreturn)
 // space, and we should therefore not check anything it points to.
 PRE(sys_ptrace)
 {
-   PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", ARG1,ARG2,ARG3,ARG4);
+   PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )",
+         (Word)ARG1,(Word)ARG2,ARG3,ARG4);
    PRE_REG_READ4(int, "ptrace",
                  long, request, long, pid, long, addr, long, data);
    switch (ARG1) {

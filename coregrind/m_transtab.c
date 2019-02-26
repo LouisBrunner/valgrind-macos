@@ -1835,8 +1835,14 @@ void VG_(add_to_transtab)( const VexGuestExtents* vge,
    TTEntryH__init(&sectors[y].ttH[tteix]);
    sectors[y].ttC[tteix].tcptr  = tcptr;
    sectors[y].ttC[tteix].usage.prof.count  = 0;
-   sectors[y].ttC[tteix].usage.prof.weight = 
-      n_guest_instrs == 0 ? 1 : n_guest_instrs;
+
+   sectors[y].ttC[tteix].usage.prof.weight
+      = False
+           ? // Count guest instrs (assumes all side exits are untaken)
+             (n_guest_instrs == 0 ? 1 : n_guest_instrs)
+           : // Counts some (not very good) approximation to host instructions
+             (code_len == 0 ? 1 : (code_len / 4));
+
    sectors[y].ttC[tteix].entry  = entry;
    TTEntryH__from_VexGuestExtents( &sectors[y].ttH[tteix], vge );
    sectors[y].ttH[tteix].status = InUse;

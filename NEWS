@@ -103,6 +103,7 @@ where XXXXXX is the bug number as listed below.
 402781  Redo the cache used to process indirect branch targets
 403552  s390x: wrong facility bit checked for vector facility
 404054  memcheck powerpc subfe x, x, x initializes x to 0 or -1 based on CA
+405079  unhandled ppc64le-linux syscall: 131 (quotactl)
 
 n-i-bz  add syswrap for PTRACE_GET|SET_THREAD_AREA on amd64.
 n-i-bz  Fix callgrind_annotate non deterministic order for equal total

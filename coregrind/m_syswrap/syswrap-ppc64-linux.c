@@ -755,7 +755,7 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_delete_module,     sys_delete_module),      // 129
 
 // _____(__NR_get_kernel_syms,   sys_get_kernel_syms),    // 130
-// _____(__NR_quotactl,          sys_quotactl),           // 131
+   LINX_(__NR_quotactl,          sys_quotactl),           // 131
    GENX_(__NR_getpgid,           sys_getpgid),            // 132
    GENX_(__NR_fchdir,            sys_fchdir),             // 133
 // _____(__NR_bdflush,           sys_bdflush),            // 134

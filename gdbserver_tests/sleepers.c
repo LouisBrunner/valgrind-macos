@@ -15,7 +15,7 @@ static int sleepms = 1000; // in each loop, will sleep "sleepms" milliseconds
 static int burn = 0; // after each sleep, will burn cpu in a tight 'burn' loop 
 static void setup_sigusr_handler(void); // sigusr1 and 2 sigaction setup.
 
-static pid_t gettid()
+static pid_t gettid_sys()
 {
 #ifdef __NR_gettid
    return syscall(__NR_gettid);
@@ -27,7 +27,7 @@ static pid_t gettid()
 static void whoami(char *msg) __attribute__((unused));
 static void whoami(char *msg)
 {
-   fprintf(stderr, "pid %ld Thread %ld %s\n", (long) getpid(), (long) gettid(),
+   fprintf(stderr, "pid %ld Thread %ld %s\n", (long) getpid(), (long) gettid_sys(),
            msg);
    fflush(stderr);
 }

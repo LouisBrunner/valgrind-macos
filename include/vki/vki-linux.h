@@ -426,6 +426,14 @@ typedef union vki_sigval {
 #define __VKI_ARCH_SI_BAND_T long
 #endif
 
+#ifndef __VKI_ARCH_SI_CLOCK_T
+#define __VKI_ARCH_SI_CLOCK_T vki_clock_t
+#endif
+
+#ifndef __VKI_ARCH_SI_ATTRIBUTES
+#define __VKI_ARCH_SI_ATTRIBUTES
+#endif
+
 // [[Nb: this type changed between 2.4 and 2.6, but not in a way that
 // affects Valgrind.]]
 typedef struct vki_siginfo {
@@ -463,8 +471,8 @@ typedef struct vki_siginfo {
 			vki_pid_t _pid;		/* which child */
 			__VKI_ARCH_SI_UID_T _uid;	/* sender's uid */
 			int _status;		/* exit code */
-			vki_clock_t _utime;
-			vki_clock_t _stime;
+			__VKI_ARCH_SI_CLOCK_T _utime;
+			__VKI_ARCH_SI_CLOCK_T _stime;
 		} _sigchld;
 
 		/* SIGILL, SIGFPE, SIGSEGV, SIGBUS */
@@ -481,7 +489,7 @@ typedef struct vki_siginfo {
 			int _fd;
 		} _sigpoll;
 	} _sifields;
-} vki_siginfo_t;
+} __VKI_ARCH_SI_ATTRIBUTES vki_siginfo_t;
 #endif
 
 #define __VKI_SI_FAULT	0

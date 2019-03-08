@@ -72,6 +72,7 @@ where XXXXXX is the bug number as listed below.
 408091  Missing pkey syscalls
 408414  Add support for missing for preadv2 and pwritev2 syscalls
 404406  s390x: z14 miscellaneous instructions not implemented
+405201  Incorrect size of struct vki_siginfo on 64-bit Linux architectures
 409141  Valgrind hangs when SIGKILLed
 409367  exit_group() after signal to thread waiting in futex() causes hangs
 410599  Non-deterministic behaviour of pth_self_kill_15_other test

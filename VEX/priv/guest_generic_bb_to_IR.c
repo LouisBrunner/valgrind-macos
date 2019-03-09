@@ -581,7 +581,7 @@ IRSB* bb_to_IR (
          len2check  = vge->len[i];
 
          /* stay sane */
-         vassert(len2check >= 0 && len2check < 1000/*arbitrary*/);
+         vassert(len2check >= 0 && len2check < 2000/*arbitrary*/);
 
          /* Skip the check if the translation involved zero bytes */
          if (len2check == 0)
@@ -596,7 +596,7 @@ IRSB* bb_to_IR (
          vassert(0 == (hW_diff & (host_word_szB-1)));
          HWord hWs_to_check = (hW_diff + host_word_szB) / host_word_szB;
          vassert(hWs_to_check > 0
-                 && hWs_to_check < 1004/*arbitrary*/ / host_word_szB);
+                 && hWs_to_check < 2004/*arbitrary*/ / host_word_szB);
 
          /* vex_printf("%lx %lx  %ld\n", first_hW, last_hW, hWs_to_check); */
 

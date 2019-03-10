@@ -83,6 +83,7 @@ where XXXXXX is the bug number as listed below.
 397187  z13 vector register support for vgdb gdbserver
 399301  Use inlined frames in Massif XTree output. 
 399322  Improve callgrind_annotate output
+399444  VEX/priv/guest_s390_toIR.c:17407: (style) Mismatching assignment [..]
 400490  s390x: VRs allocated as if separate from FPRs
 400491  s390x: Operand of LOCH treated as unsigned integer
 401112  LLVM 5.0 generates comparison against partially initialized data
@@ -95,6 +96,8 @@ where XXXXXX is the bug number as listed below.
 402048  WARNING: unhandled ppc64[be|le]-linux syscall: 26 (ptrace)
 402134  assertion fail in mc_translate.c (noteTmpUsesIn) Iex_VECRET on arm64
 402327  Warning: DWARF2 CFI reader: unhandled DW_OP_ opcode 0x13 (DW_OP_drop)
+402341  drd/tests/tsan_thread_wrappers_pthread.h:369: suspicious code ?
+402369  Overhaul DHAT
 402395  coregrind/vgdb-invoker-solaris.c: 2 * poor error checking
 402480  Do not use %rsp in clobber list
 402481  vbit-test fails on x86 for Iop_CmpEQ64 iselInt64Expr Sar64

@@ -199,8 +199,8 @@ MC_Chunk* create_MC_Chunk ( ThreadId tid, Addr p, SizeT szB,
    mc->szB       = szB;
    mc->allockind = kind;
    switch ( MC_(n_where_pointers)() ) {
-      case 2: mc->where[1] = 0; // fallback to 1
-      case 1: mc->where[0] = 0; // fallback to 0
+      case 2: mc->where[1] = 0; // fallthrough to 1
+      case 1: mc->where[0] = 0; // fallthrough to 0
       case 0: break;
       default: tl_assert(0);
    }

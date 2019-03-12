@@ -30914,6 +30914,7 @@ Long dis_ESC_0F3A__VEX (
 #        undef CVT
          goto decode_success;
       }
+      break;
 
    case 0x09:
       /* VROUNDPD imm8, xmm2/m128, xmm1 */
@@ -31007,6 +31008,7 @@ Long dis_ESC_0F3A__VEX (
 #        undef CVT
          goto decode_success;
       }
+      break;
 
    case 0x0A:
    case 0x0B:

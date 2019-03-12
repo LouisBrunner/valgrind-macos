@@ -14295,25 +14295,25 @@ DisResult disInstr_X86_WRK (
       switch (abyte) {
       /* According to the Intel manual, "repne movs" should never occur, but
        * in practice it has happened, so allow for it here... */
-      case 0xA4: sz = 1;   /* REPNE MOVS<sz> */
+      case 0xA4: sz = 1;   /* REPNE MOVS<sz> fallthrough */
       case 0xA5: 
          dis_REP_op ( &dres, X86CondNZ, dis_MOVS, sz, eip_orig,
                              guest_EIP_bbstart+delta, "repne movs" );
          break;
 
-      case 0xA6: sz = 1;   /* REPNE CMP<sz> */
+      case 0xA6: sz = 1;   /* REPNE CMP<sz> fallthrough */
       case 0xA7:
          dis_REP_op ( &dres, X86CondNZ, dis_CMPS, sz, eip_orig, 
                              guest_EIP_bbstart+delta, "repne cmps" );
          break;
 
-      case 0xAA: sz = 1;   /* REPNE STOS<sz> */
+      case 0xAA: sz = 1;   /* REPNE STOS<sz> fallthrough */
       case 0xAB:
          dis_REP_op ( &dres, X86CondNZ, dis_STOS, sz, eip_orig, 
                              guest_EIP_bbstart+delta, "repne stos" );
          break;
 
-      case 0xAE: sz = 1;   /* REPNE SCAS<sz> */
+      case 0xAE: sz = 1;   /* REPNE SCAS<sz> fallthrough */
       case 0xAF:
          dis_REP_op ( &dres, X86CondNZ, dis_SCAS, sz, eip_orig,
                              guest_EIP_bbstart+delta, "repne scas" );
@@ -14351,31 +14351,31 @@ DisResult disInstr_X86_WRK (
          }
          break;
 
-      case 0xA4: sz = 1;   /* REP MOVS<sz> */
+      case 0xA4: sz = 1;   /* REP MOVS<sz> fallthrough */
       case 0xA5:
          dis_REP_op ( &dres, X86CondAlways, dis_MOVS, sz, eip_orig, 
                              guest_EIP_bbstart+delta, "rep movs" );
          break;
 
-      case 0xA6: sz = 1;   /* REPE CMP<sz> */
+      case 0xA6: sz = 1;   /* REPE CMP<sz> fallthrough */
       case 0xA7:
          dis_REP_op ( &dres, X86CondZ, dis_CMPS, sz, eip_orig, 
                              guest_EIP_bbstart+delta, "repe cmps" );
          break;
 
-      case 0xAA: sz = 1;   /* REP STOS<sz> */
+      case 0xAA: sz = 1;   /* REP STOS<sz> fallthrough */
       case 0xAB:
          dis_REP_op ( &dres, X86CondAlways, dis_STOS, sz, eip_orig, 
                              guest_EIP_bbstart+delta, "rep stos" );
          break;
 
-      case 0xAC: sz = 1;   /* REP LODS<sz> */
+      case 0xAC: sz = 1;   /* REP LODS<sz> fallthrough */
       case 0xAD:
          dis_REP_op ( &dres, X86CondAlways, dis_LODS, sz, eip_orig, 
                              guest_EIP_bbstart+delta, "rep lods" );
          break;
 
-      case 0xAE: sz = 1;   /* REPE SCAS<sz> */
+      case 0xAE: sz = 1;   /* REPE SCAS<sz> fallthrough */
       case 0xAF: 
          dis_REP_op ( &dres, X86CondZ, dis_SCAS, sz, eip_orig, 
                              guest_EIP_bbstart+delta, "repe scas" );

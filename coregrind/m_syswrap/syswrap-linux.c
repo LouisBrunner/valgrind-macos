@@ -898,8 +898,8 @@ PRE(sys_clone)
       break;
 
    case VKI_CLONE_VFORK | VKI_CLONE_VM: /* vfork */
-      // FALLTHROUGH - assume vfork (somewhat) == fork, see ML_(do_fork_clone).
       cloneflags &= ~VKI_CLONE_VM;
+      // FALLTHROUGH - assume vfork (somewhat) == fork, see ML_(do_fork_clone).
 
    case 0: /* plain fork */
       SET_STATUS_from_SysRes(
@@ -11960,6 +11960,7 @@ PRE(sys_bpf)
                PRE_MEM_WRITE("bpf(attr->btf_log_buf)",
                              attr->btf_log_buf, attr->btf_log_size);
          }
+         break;
       case VKI_BPF_TASK_FD_QUERY:
          /* Get info about the task. Write collected info. */
          PRE_MEM_READ("bpf(attr->task_fd_query.pid)", (Addr)&attr->task_fd_query.pid, sizeof(attr->task_fd_query.pid));

@@ -6419,8 +6419,8 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
                } else {
                   storeLE(addr, getQRegLane((tt+3) % 32, ix, ty));
                }
-               /* fallthrough */
             }
+            /* fallthrough */
             case 3: {
                IRExpr* addr
                   = binop(Iop_Add64, mkexpr(tTA), mkU64(2 * laneSzB));
@@ -6429,8 +6429,8 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
                } else {
                   storeLE(addr, getQRegLane((tt+2) % 32, ix, ty));
                }
-               /* fallthrough */
             }
+            /* fallthrough */
             case 2: {
                IRExpr* addr
                   = binop(Iop_Add64, mkexpr(tTA), mkU64(1 * laneSzB));
@@ -6439,8 +6439,8 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
                } else {
                   storeLE(addr, getQRegLane((tt+1) % 32, ix, ty));
                }
-               /* fallthrough */
             }
+            /* fallthrough */
             case 1: {
                IRExpr* addr
                   = binop(Iop_Add64, mkexpr(tTA), mkU64(0 * laneSzB));

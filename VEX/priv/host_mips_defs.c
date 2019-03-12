@@ -3396,10 +3396,10 @@ static UChar *mkFormBIT(UChar *p, UInt op, UInt df, UInt ms, UInt ws, UInt wd) {
    switch (df) {
       case 0:
          dfm |= 0x10;
-
+         /* fallthrough */
       case 1:
          dfm |= 0x20;
-
+         /* fallthrough */
       case 2:
          dfm |= 0x40;
    }

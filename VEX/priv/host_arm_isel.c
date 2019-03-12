@@ -2001,7 +2001,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, mk_iMOVds_RR(dst, hregARM_R0()));
          return dst;
       }
-      /* else fall through; will hit the irreducible: label */
+      goto irreducible;
    }
 
    /* --------- LITERAL --------- */

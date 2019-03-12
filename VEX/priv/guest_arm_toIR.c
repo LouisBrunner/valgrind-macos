@@ -6507,9 +6507,8 @@ Bool dis_neon_data_2reg_and_shift ( UInt theInstr, IRTemp condT )
                }
                return True;
             }
-         } else {
-            /* fall through */
          }
+         /* else fall through */
       case 9:
          dreg = ((theInstr >> 18) & 0x10) | ((theInstr >> 12) & 0xF);
          mreg = ((theInstr >>  1) & 0x10) | (theInstr & 0xF);

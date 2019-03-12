@@ -26348,7 +26348,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             /* Conditions starting with S should signal exception on QNaN inputs. */
             switch (function) {
                case 8:  /* SAF */
-                  signaling = CMPSAFD;
+                  signaling = CMPSAFD; /* fallthrough */
                case 0: /* AF */
                   assign(t0, binop(Iop_CmpF64, getDReg(fs), getDReg(ft)));
                   calculateFCSR(fs, ft, signaling, False, 2);
@@ -26357,7 +26357,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                 get_IR_roundingmode(), mkU64(0)));
                   break;
                case 9: /* SUN */
-                  signaling = CMPSAFD;
+                  signaling = CMPSAFD; /* fallthrough */
                case 1: /* UN */
                   assign(t0, binop(Iop_CmpF64, getDReg(fs), getDReg(ft)));
                   calculateFCSR(fs, ft, signaling, False, 2);
@@ -26369,7 +26369,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                            get_IR_roundingmode(), mkU64(0))));
                   break;
                case 0x19: /* SOR */
-                  signaling = CMPSAFD;
+                  signaling = CMPSAFD; /* fallthrough */
                case 0x11: /* OR */
                   assign(t0, binop(Iop_CmpF64, getDReg(fs), getDReg(ft)));
                   calculateFCSR(fs, ft, signaling, False, 2);
@@ -26381,7 +26381,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                           mkU64(0xFFFFFFFFFFFFFFFFULL))));
                   break;
                case 0xa: /* SEQ */
-                  signaling = CMPSAFD;
+                  signaling = CMPSAFD; /* fallthrough */
                case 2: /* EQ */
                   assign(t0, binop(Iop_CmpF64, getDReg(fs), getDReg(ft)));
                   calculateFCSR(fs, ft, signaling, False, 2);
@@ -26393,7 +26393,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                            get_IR_roundingmode(), mkU64(0))));
                   break;
                case 0x1A: /* SNEQ */
-                  signaling = CMPSAFD;
+                  signaling = CMPSAFD; /* fallthrough */
                case 0x12: /* NEQ */
                   assign(t0, binop(Iop_CmpF64, getDReg(fs), getDReg(ft)));
                   calculateFCSR(fs, ft, signaling, False, 2);
@@ -26405,7 +26405,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                           mkU64(0xFFFFFFFFFFFFFFFFULL))));
                   break;
                case 0xB: /* SUEQ */
-                  signaling = CMPSAFD;
+                  signaling = CMPSAFD; /* fallthrough */
                case 0x3: /* UEQ */
                   assign(t0, binop(Iop_CmpF64, getDReg(fs), getDReg(ft)));
                   calculateFCSR(fs, ft, signaling, False, 2);
@@ -26422,7 +26422,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                                       mkU64(0)))));
                   break;
                case 0x1B:  /* SNEQ */
-                  signaling = CMPSAFD;
+                  signaling = CMPSAFD; /* fallthrough */
                case 0x13:  /* NEQ */
                   assign(t0, binop(Iop_CmpF64, getDReg(fs), getDReg(ft)));
                   calculateFCSR(fs, ft, signaling, False, 2);
@@ -26439,7 +26439,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                                       mkU64(0)))));
                   break;
                case 0xC: /* SLT */
-                  signaling = CMPSAFD;
+                  signaling = CMPSAFD; /* fallthrough */
                case 0x4: /* LT */
                   assign(t0, binop(Iop_CmpF64, getDReg(fs), getDReg(ft)));
                   calculateFCSR(fs, ft, signaling, False, 2);
@@ -26451,7 +26451,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                            get_IR_roundingmode(), mkU64(0))));
                   break;
                case 0xD: /* SULT */
-                  signaling = CMPSAFD;
+                  signaling = CMPSAFD; /* fallthrough */
                case 0x5: /* ULT */
                   assign(t0, binop(Iop_CmpF64, getDReg(fs), getDReg(ft)));
                   calculateFCSR(fs, ft, signaling, False, 2);
@@ -26468,7 +26468,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                                      mkU64(0)))));
                   break;
                case 0xE: /* SLE */
-                  signaling = CMPSAFD;
+                  signaling = CMPSAFD; /* fallthrough */
                case 0x6: /* LE */
                   assign(t0, binop(Iop_CmpF64, getDReg(fs), getDReg(ft)));
                   calculateFCSR(fs, ft, signaling, False, 2);
@@ -26485,7 +26485,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                                       mkU64(0)))));
                   break;
                case 0xF: /* SULE */
-                  signaling = CMPSAFD;
+                  signaling = CMPSAFD; /* fallthrough */
                case 0x7: /* ULE */
                   assign(t0, binop(Iop_CmpF64, getDReg(fs), getDReg(ft)));
                   calculateFCSR(fs, ft, signaling, False, 2);
@@ -26514,7 +26514,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             /* Conditions starting with S should signal exception on QNaN inputs. */
             switch (function) {
                case 8:  /* SAF */
-                  signaling = CMPSAFS;
+                  signaling = CMPSAFS; /* fallthrough */
                case 0: /* AF */
                   assign(t0, binop(Iop_CmpF32,
                                    getLoFromF64(Ity_F64, getFReg(fs)),
@@ -26526,7 +26526,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                                get_IR_roundingmode(), mkU32(0))));
                   break;
                case 9: /* SUN */
-                  signaling = CMPSAFS;
+                  signaling = CMPSAFS; /* fallthrough */
                case 1: /* UN */
                   assign(t0, binop(Iop_CmpF32,
                                    getLoFromF64(Ity_F64, getFReg(fs)),
@@ -26543,7 +26543,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                                           mkU32(0)))));
                   break;
                case 0x19: /* SOR */
-                  signaling = CMPSAFS;
+                  signaling = CMPSAFS; /* fallthrough */
                case 0x11: /* OR */
                   assign(t0, binop(Iop_CmpF32,
                                    getLoFromF64(Ity_F64, getFReg(fs)),
@@ -26560,7 +26560,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                                     mkU32(0xFFFFFFFFU)))));
                   break;
                case 0xa: /* SEQ */
-                  signaling = CMPSAFS;
+                  signaling = CMPSAFS; /* fallthrough */
                case 2: /* EQ */
                   assign(t0, binop(Iop_CmpF32,
                                    getLoFromF64(Ity_F64, getFReg(fs)),
@@ -26577,7 +26577,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                                           mkU32(0)))));
                   break;
                case 0x1A: /* SNEQ */
-                  signaling = CMPSAFS;
+                  signaling = CMPSAFS; /* fallthrough */
                case 0x12: /* NEQ */
                   assign(t0, binop(Iop_CmpF32,
                                    getLoFromF64(Ity_F64, getFReg(fs)),
@@ -26594,7 +26594,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                                          mkU32(0xFFFFFFFFU)))));
                   break;
                case 0xB: /* SUEQ */
-                  signaling = CMPSAFS;
+                  signaling = CMPSAFS; /* fallthrough */
                case 0x3: /* UEQ */
                   assign(t0, binop(Iop_CmpF32,
                                    getLoFromF64(Ity_F64, getFReg(fs)),
@@ -26616,7 +26616,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                                                      mkU32(0))))));
                   break;
                case 0x1B:  /* SNEQ */
-                  signaling = CMPSAFS;
+                  signaling = CMPSAFS; /* fallthrough */
                case 0x13:  /* NEQ */
                   assign(t0, binop(Iop_CmpF32,
                                    getLoFromF64(Ity_F64, getFReg(fs)),
@@ -26638,7 +26638,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                                                      mkU32(0))))));
                   break;
                case 0xC: /* SLT */
-                  signaling = CMPSAFS;
+                  signaling = CMPSAFS; /* fallthrough */
                case 0x4: /* LT */
                   assign(t0, binop(Iop_CmpF32,
                                    getLoFromF64(Ity_F64, getFReg(fs)),
@@ -26655,7 +26655,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                                           mkU32(0)))));
                   break;
                case 0xD: /* SULT */
-                  signaling = CMPSAFS;
+                  signaling = CMPSAFS; /* fallthrough */
                case 0x5: /* ULT */
                   assign(t0, binop(Iop_CmpF32,
                                    getLoFromF64(Ity_F64, getFReg(fs)),
@@ -26677,7 +26677,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                                                      mkU32(0))))));
                   break;
                case 0xE: /* SLE */
-                  signaling = CMPSAFS;
+                  signaling = CMPSAFS; /* fallthrough */
                case 0x6: /* LE */
                   assign(t0, binop(Iop_CmpF32,
                                    getLoFromF64(Ity_F64, getFReg(fs)),
@@ -26699,7 +26699,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                                                                      mkU32(0))))));
                   break;
                case 0xF: /* SULE */
-                  signaling = CMPSAFS;
+                  signaling = CMPSAFS; /* fallthrough */
                case 0x7: /* ULE */
                   assign(t0, binop(Iop_CmpF32,
                                    getLoFromF64(Ity_F64, getFReg(fs)),
@@ -28051,6 +28051,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                         break;
                      } else {
                         ILLEGAL_INSTRUCTON;
+                        break;
                      }
 
                   }
@@ -31583,6 +31584,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
             }
          } else {
             ILLEGAL_INSTRUCTON;
+            break;
          }
 
       }

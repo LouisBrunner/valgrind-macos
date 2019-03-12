@@ -7429,6 +7429,7 @@ static Bool dis_int_store ( UInt theInstr, const VexAbiInfo* vbi )
    case 0x3E: // immediate offset: 64bit: std/stdu/stq: mask off
               // lowest 2 bits of immediate before forming EA
       simm16 = simm16 & 0xFFFFFFFC;
+      /* fallthrough */
    default:   // immediate offset
       assign( EA, ea_rAor0_simm( rA_addr, simm16  ) );
       break;
@@ -28424,6 +28425,7 @@ DisResult disInstr_PPC_WRK (
             if (!allow_DFP) goto decode_noDFP;
             if (dis_dfp_arith( theInstr ))
                goto decode_success;
+            goto decode_failure;
          case 0x82:   // dcmpo, DFP comparison ordered instruction
          case 0x282:  // dcmpu, DFP comparison unordered instruction
             if (!allow_DFP) goto decode_noDFP;
@@ -28904,6 +28906,7 @@ DisResult disInstr_PPC_WRK (
 								  abiinfo ) )
                goto decode_success;
          }
+         /* fallthrough to dis_vx_scalar_quad_precision */
 
          /* Instructions implemented with Pre ISA 3.0 Iops */
          /* VSX Scalar Quad-Precision instructions */

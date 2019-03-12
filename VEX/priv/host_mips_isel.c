@@ -2022,18 +2022,21 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             switch (op_unop) {
                case Iop_1Uto64:
                   vassert(mode64);
+                  /* fallthrough */
                case Iop_1Uto8:
                case Iop_1Uto32:
                   mask = toUShort(0x1);
                   break;
                case Iop_8Uto64:
                   vassert(mode64);
+                  /* fallthrough */
                case Iop_8Uto16:
                case Iop_8Uto32:
                   mask = toUShort(0xFF);
                   break;
                case Iop_16Uto64:
                   vassert(mode64);
+                  /* fallthrough */
                case Iop_16Uto32:
                   mask = toUShort(0xFFFF);
                   break;
@@ -2155,6 +2158,7 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
 
          case Iop_Clz64:
             vassert(mode64);
+	    /* fallthrough */
          case Iop_Clz32: {
             HReg r_dst = newVRegI(env);
             HReg r_src = iselWordExpr_R(env, e->Iex.Unop.arg);

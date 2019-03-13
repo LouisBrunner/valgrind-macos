@@ -9207,21 +9207,46 @@ static ULong dis_SSEint_E_to_G(
 /* Helper for doing SSE FP comparisons.  False return ==> unhandled.
    This is all a bit of a kludge in that it ignores the subtleties of
    ordered-vs-unordered and signalling-vs-nonsignalling in the Intel
-   spec. */
-static Bool findSSECmpOp ( /*OUT*/Bool* preSwapP,
+   spec.  The meaning of the outputs is as follows:
+
+   preZeroP: the active lanes of both incoming arguments should be set to zero
+      before performing the operation.  IOW the actual args are to be ignored
+      and instead zero bits are to be used.  This is a bit strange but is needed
+      to make the constant-false/true variants (FALSE_OQ, TRUE_UQ, FALSE_OS,
+      TRUE_US) work.
+
+   preSwapP: the args should be swapped before performing the operation.  Note
+     that zeroing arg input sections (per preZeroP) and swapping them (per
+     preSwapP) are allowed to happen in either order; the result is the same.
+
+   opP: this returns the actual comparison op to perform.
+
+   postNotP: if true, the result(ing vector) of the comparison operation should
+     be bitwise-not-ed.  Note that only the lanes of the output actually
+     computed by opP should be not-ed.
+*/
+static Bool findSSECmpOp ( /*OUT*/Bool* preZeroP,
+                           /*OUT*/Bool* preSwapP,
                            /*OUT*/IROp* opP,
                            /*OUT*/Bool* postNotP,
                            UInt imm8, Bool all_lanes, Int sz )
 {
+   vassert(*preZeroP == False);
+   vassert(*preSwapP == False);
+   vassert(*opP == Iop_INVALID);
+   vassert(*postNotP == False);
+
    if (imm8 >= 32) return False;
 
-   /* First, compute a (preSwap, op, postNot) triple from
+   /* First, compute a (preZero, preSwap, op, postNot) quad from
       the supplied imm8. */
-   Bool pre = False;
-   IROp op  = Iop_INVALID;
-   Bool not = False;
+   Bool preZero = False;
+   Bool preSwap = False;
+   IROp op      = Iop_INVALID;
+   Bool postNot = False;
 
-#  define XXX(_pre, _op, _not) { pre = _pre; op = _op; not = _not; }
+#  define XXX(_preZero, _preSwap, _op, _postNot) \
+      { preZero = _preZero; preSwap = _preSwap; op = _op; postNot = _postNot; }
    // If you add a case here, add a corresponding test for both VCMPSD_128
    // and VCMPSS_128 in avx-1.c.
    // Cases 0xA and above are
@@ -9230,57 +9255,59 @@ static Bool findSSECmpOp ( /*OUT*/Bool* preSwapP,
       // "O" = ordered, "U" = unordered
       // "Q" = non-signalling (quiet), "S" = signalling
       //
-      //             swap operands?
+      //             replace active arg lanes in operands with zero
       //             |
-      //             |      cmp op          invert after?
-      //             |      |               |
-      //             v      v               v
-      case 0x0:  XXX(False, Iop_CmpEQ32Fx4, False); break; // EQ_OQ
-      case 0x8:  XXX(False, Iop_CmpEQ32Fx4, False); break; // EQ_UQ
-      case 0x10: XXX(False, Iop_CmpEQ32Fx4, False); break; // EQ_OS
-      case 0x18: XXX(False, Iop_CmpEQ32Fx4, False); break; // EQ_US
+      //             |      swap operands before applying the cmp op?
+      //             |      |
+      //             |      |      cmp op          invert active lanes after?
+      //             |      |      |               |
+      //             v      v      v               v
+      case 0x0:  XXX(False, False, Iop_CmpEQ32Fx4, False); break; // EQ_OQ
+      case 0x8:  XXX(False, False, Iop_CmpEQ32Fx4, False); break; // EQ_UQ
+      case 0x10: XXX(False, False, Iop_CmpEQ32Fx4, False); break; // EQ_OS
+      case 0x18: XXX(False, False, Iop_CmpEQ32Fx4, False); break; // EQ_US
       //
-      case 0x1:  XXX(False, Iop_CmpLT32Fx4, False); break; // LT_OS
-      case 0x11: XXX(False, Iop_CmpLT32Fx4, False); break; // LT_OQ
+      case 0x1:  XXX(False, False, Iop_CmpLT32Fx4, False); break; // LT_OS
+      case 0x11: XXX(False, False, Iop_CmpLT32Fx4, False); break; // LT_OQ
       //
-      case 0x2:  XXX(False, Iop_CmpLE32Fx4, False); break; // LE_OS
-      case 0x12: XXX(False, Iop_CmpLE32Fx4, False); break; // LE_OQ
+      case 0x2:  XXX(False, False, Iop_CmpLE32Fx4, False); break; // LE_OS
+      case 0x12: XXX(False, False, Iop_CmpLE32Fx4, False); break; // LE_OQ
       //
-      case 0x3:  XXX(False, Iop_CmpUN32Fx4, False); break; // UNORD_Q
-      case 0x13: XXX(False, Iop_CmpUN32Fx4, False); break; // UNORD_S
+      case 0x3:  XXX(False, False, Iop_CmpUN32Fx4, False); break; // UNORD_Q
+      case 0x13: XXX(False, False, Iop_CmpUN32Fx4, False); break; // UNORD_S
       //
       // 0xC: this isn't really right because it returns all-1s when
       // either operand is a NaN, and it should return all-0s.
-      case 0x4:  XXX(False, Iop_CmpEQ32Fx4, True);  break; // NEQ_UQ
-      case 0xC:  XXX(False, Iop_CmpEQ32Fx4, True);  break; // NEQ_OQ
-      case 0x14: XXX(False, Iop_CmpEQ32Fx4, True);  break; // NEQ_US
-      case 0x1C: XXX(False, Iop_CmpEQ32Fx4, True);  break; // NEQ_OS
+      case 0x4:  XXX(False, False, Iop_CmpEQ32Fx4, True);  break; // NEQ_UQ
+      case 0xC:  XXX(False, False, Iop_CmpEQ32Fx4, True);  break; // NEQ_OQ
+      case 0x14: XXX(False, False, Iop_CmpEQ32Fx4, True);  break; // NEQ_US
+      case 0x1C: XXX(False, False, Iop_CmpEQ32Fx4, True);  break; // NEQ_OS
       //
-      case 0x5:  XXX(False, Iop_CmpLT32Fx4, True);  break; // NLT_US
-      case 0x15: XXX(False, Iop_CmpLT32Fx4, True);  break; // NLT_UQ
+      case 0x5:  XXX(False, False, Iop_CmpLT32Fx4, True);  break; // NLT_US
+      case 0x15: XXX(False, False, Iop_CmpLT32Fx4, True);  break; // NLT_UQ
       //
-      case 0x6:  XXX(False, Iop_CmpLE32Fx4, True);  break; // NLE_US
-      case 0x16: XXX(False, Iop_CmpLE32Fx4, True);  break; // NLE_UQ
+      case 0x6:  XXX(False, False, Iop_CmpLE32Fx4, True);  break; // NLE_US
+      case 0x16: XXX(False, False, Iop_CmpLE32Fx4, True);  break; // NLE_UQ
       //
-      case 0x7:  XXX(False, Iop_CmpUN32Fx4, True);  break; // ORD_Q
-      case 0x17: XXX(False, Iop_CmpUN32Fx4, True);  break; // ORD_S
+      case 0x7:  XXX(False, False, Iop_CmpUN32Fx4, True);  break; // ORD_Q
+      case 0x17: XXX(False, False, Iop_CmpUN32Fx4, True);  break; // ORD_S
       //
-      case 0x9:  XXX(True,  Iop_CmpLE32Fx4, True);  break; // NGE_US
-      case 0x19: XXX(True,  Iop_CmpLE32Fx4, True);  break; // NGE_UQ
+      case 0x9:  XXX(False, True,  Iop_CmpLE32Fx4, True);  break; // NGE_US
+      case 0x19: XXX(False, True,  Iop_CmpLE32Fx4, True);  break; // NGE_UQ
       //
-      case 0xA:  XXX(True,  Iop_CmpLT32Fx4, True);  break; // NGT_US
-      case 0x1A: XXX(True,  Iop_CmpLT32Fx4, True);  break; // NGT_UQ
+      case 0xA:  XXX(False, True,  Iop_CmpLT32Fx4, True);  break; // NGT_US
+      case 0x1A: XXX(False, True,  Iop_CmpLT32Fx4, True);  break; // NGT_UQ
       //
-      case 0xD:  XXX(True,  Iop_CmpLE32Fx4, False); break; // GE_OS
-      case 0x1D: XXX(True,  Iop_CmpLE32Fx4, False); break; // GE_OQ
+      case 0xD:  XXX(False, True,  Iop_CmpLE32Fx4, False); break; // GE_OS
+      case 0x1D: XXX(False, True,  Iop_CmpLE32Fx4, False); break; // GE_OQ
       //
-      case 0xE:  XXX(True,  Iop_CmpLT32Fx4, False); break; // GT_OS
-      case 0x1E: XXX(True,  Iop_CmpLT32Fx4, False); break; // GT_OQ
-      // Unhandled:
-      // 0xB  FALSE_OQ
-      // 0xF  TRUE_UQ
-      // 0x1B  FALSE_OS
-      // 0x1F  TRUE_US
+      case 0xE:  XXX(False, True,  Iop_CmpLT32Fx4, False); break; // GT_OS
+      case 0x1E: XXX(False, True,  Iop_CmpLT32Fx4, False); break; // GT_OQ
+      // Constant-value-result ops
+      case 0xB:  XXX(True,  False, Iop_CmpEQ32Fx4, True);  break; // FALSE_OQ
+      case 0xF:  XXX(True,  False, Iop_CmpEQ32Fx4, False); break; // TRUE_UQ
+      case 0x1B: XXX(True,  False, Iop_CmpEQ32Fx4, True);  break; // FALSE_OS
+      case 0x1F: XXX(True,  False, Iop_CmpEQ32Fx4, False); break; // TRUE_US
       /* Don't forget to add test cases to VCMPSS_128_<imm8> in
          avx-1.c if new cases turn up. */
       default: break;
@@ -9331,7 +9358,11 @@ static Bool findSSECmpOp ( /*OUT*/Bool* preSwapP,
       vpanic("findSSECmpOp(amd64,guest)");
    }
 
-   *preSwapP = pre; *opP = op; *postNotP = not;
+   if (preZero) {
+      // In this case, preSwap is irrelevant, but assert anyway.
+      vassert(preSwap == False);
+   }
+   *preZeroP = preZero; *preSwapP = preSwap; *opP = op; *postNotP = postNot;
    return True;
 }
 
@@ -9348,6 +9379,7 @@ static Long dis_SSE_cmp_E_to_G ( const VexAbiInfo* vbi,
    Int     alen;
    UInt    imm8;
    IRTemp  addr;
+   Bool    preZero = False;
    Bool    preSwap = False;
    IROp    op      = Iop_INVALID;
    Bool    postNot = False;
@@ -9358,8 +9390,10 @@ static Long dis_SSE_cmp_E_to_G ( const VexAbiInfo* vbi,
    if (epartIsReg(rm)) {
       imm8 = getUChar(delta+1);
       if (imm8 >= 8) return delta0; /* FAIL */
-      Bool ok = findSSECmpOp(&preSwap, &op, &postNot, imm8, all_lanes, sz);
+      Bool ok = findSSECmpOp(&preZero, &preSwap, &op, &postNot,
+                             imm8, all_lanes, sz);
       if (!ok) return delta0; /* FAIL */
+      vassert(!preZero); /* never needed for imm8 < 8 */
       vassert(!preSwap); /* never needed for imm8 < 8 */
       assign( plain, binop(op, getXMMReg(gregOfRexRM(pfx,rm)), 
                                getXMMReg(eregOfRexRM(pfx,rm))) );
@@ -9372,8 +9406,10 @@ static Long dis_SSE_cmp_E_to_G ( const VexAbiInfo* vbi,
       addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 1 );
       imm8 = getUChar(delta+alen);
       if (imm8 >= 8) return delta0; /* FAIL */
-      Bool ok = findSSECmpOp(&preSwap, &op, &postNot, imm8, all_lanes, sz);
+      Bool ok = findSSECmpOp(&preZero, &preSwap, &op, &postNot,
+                             imm8, all_lanes, sz);
       if (!ok) return delta0; /* FAIL */
+      vassert(!preZero); /* never needed for imm8 < 8 */
       vassert(!preSwap); /* never needed for imm8 < 8 */
       assign( plain, 
               binop(
@@ -23304,6 +23340,7 @@ Long dis_AVX128_cmp_V_E_to_G ( /*OUT*/Bool* uses_vvvv,
    Int     alen;
    UInt    imm8;
    IRTemp  addr;
+   Bool    preZero = False;
    Bool    preSwap = False;
    IROp    op      = Iop_INVALID;
    Bool    postNot = False;
@@ -23311,13 +23348,14 @@ Long dis_AVX128_cmp_V_E_to_G ( /*OUT*/Bool* uses_vvvv,
    UChar   rm      = getUChar(delta);
    UInt    rG      = gregOfRexRM(pfx, rm);
    UInt    rV      = getVexNvvvv(pfx);
-   IRTemp argL     = newTemp(Ity_V128);
-   IRTemp argR     = newTemp(Ity_V128);
+   IRTemp  argL    = newTemp(Ity_V128);
+   IRTemp  argR    = newTemp(Ity_V128);
 
    assign(argL, getXMMReg(rV));
    if (epartIsReg(rm)) {
       imm8 = getUChar(delta+1);
-      Bool ok = findSSECmpOp(&preSwap, &op, &postNot, imm8, all_lanes, sz);
+      Bool ok = findSSECmpOp(&preZero, &preSwap, &op, &postNot,
+                             imm8, all_lanes, sz);
       if (!ok) return deltaIN; /* FAIL */
       UInt rE = eregOfRexRM(pfx,rm);
       assign(argR, getXMMReg(rE));
@@ -23328,7 +23366,8 @@ Long dis_AVX128_cmp_V_E_to_G ( /*OUT*/Bool* uses_vvvv,
    } else {
       addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 1 );
       imm8 = getUChar(delta+alen);
-      Bool ok = findSSECmpOp(&preSwap, &op, &postNot, imm8, all_lanes, sz);
+      Bool ok = findSSECmpOp(&preZero, &preSwap, &op, &postNot,
+                             imm8, all_lanes, sz);
       if (!ok) return deltaIN; /* FAIL */
       assign(argR, 
              all_lanes   ? loadLE(Ity_V128, mkexpr(addr))
@@ -23339,8 +23378,22 @@ Long dis_AVX128_cmp_V_E_to_G ( /*OUT*/Bool* uses_vvvv,
           opname, imm8, dis_buf, nameXMMReg(rV), nameXMMReg(rG));
    }
 
-   assign(plain, preSwap ? binop(op, mkexpr(argR), mkexpr(argL))
-                         : binop(op, mkexpr(argL), mkexpr(argR)));
+   IRTemp argMask = newTemp(Ity_V128);
+   if (preZero) {
+      // In this case, preSwap is irrelevant, but it's harmless to honour it
+      // anyway.
+      assign(argMask, mkV128(all_lanes ? 0x0000 : (sz==4 ? 0xFFF0 : 0xFF00)));
+   } else {
+      assign(argMask, mkV128(0xFFFF));
+   }
+
+   assign(
+      plain,
+      preSwap ? binop(op, binop(Iop_AndV128, mkexpr(argR), mkexpr(argMask)),
+                          binop(Iop_AndV128, mkexpr(argL), mkexpr(argMask)))
+              : binop(op, binop(Iop_AndV128, mkexpr(argL), mkexpr(argMask)),
+                          binop(Iop_AndV128, mkexpr(argR), mkexpr(argMask)))
+   );
 
    if (all_lanes) {
       /* This is simple: just invert the result, if necessary, and
@@ -23414,6 +23467,7 @@ Long dis_AVX256_cmp_V_E_to_G ( /*OUT*/Bool* uses_vvvv,
    Int     alen;
    UInt    imm8;
    IRTemp  addr;
+   Bool    preZero = False;
    Bool    preSwap = False;
    IROp    op      = Iop_INVALID;
    Bool    postNot = False;
@@ -23431,7 +23485,7 @@ Long dis_AVX256_cmp_V_E_to_G ( /*OUT*/Bool* uses_vvvv,
    assign(argL, getYMMReg(rV));
    if (epartIsReg(rm)) {
       imm8 = getUChar(delta+1);
-      Bool ok = findSSECmpOp(&preSwap, &op, &postNot, imm8,
+      Bool ok = findSSECmpOp(&preZero, &preSwap, &op, &postNot, imm8,
                              True/*all_lanes*/, sz);
       if (!ok) return deltaIN; /* FAIL */
       UInt rE = eregOfRexRM(pfx,rm);
@@ -23443,7 +23497,7 @@ Long dis_AVX256_cmp_V_E_to_G ( /*OUT*/Bool* uses_vvvv,
    } else {
       addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 1 );
       imm8 = getUChar(delta+alen);
-      Bool ok = findSSECmpOp(&preSwap, &op, &postNot, imm8,
+      Bool ok = findSSECmpOp(&preZero, &preSwap, &op, &postNot, imm8,
                              True/*all_lanes*/, sz);
       if (!ok) return deltaIN; /* FAIL */
       assign(argR, loadLE(Ity_V256, mkexpr(addr)) );
@@ -23454,9 +23508,24 @@ Long dis_AVX256_cmp_V_E_to_G ( /*OUT*/Bool* uses_vvvv,
 
    breakupV256toV128s( preSwap ? argR : argL, &argLhi, &argLlo );
    breakupV256toV128s( preSwap ? argL : argR, &argRhi, &argRlo );
-   assign(plain, binop( Iop_V128HLtoV256,
-                        binop(op, mkexpr(argLhi), mkexpr(argRhi)),
-                        binop(op, mkexpr(argLlo), mkexpr(argRlo)) ) );
+
+   IRTemp argMask = newTemp(Ity_V128);
+   if (preZero) {
+      // In this case, preSwap is irrelevant, but it's harmless to honour it
+      // anyway.
+      assign(argMask, mkV128(0x0000));
+   } else {
+      assign(argMask, mkV128(0xFFFF));
+   }
+
+   assign(
+      plain,
+      binop( Iop_V128HLtoV256,
+             binop(op, binop(Iop_AndV128, mkexpr(argLhi), mkexpr(argMask)),
+                       binop(Iop_AndV128, mkexpr(argRhi), mkexpr(argMask))),
+             binop(op, binop(Iop_AndV128, mkexpr(argLlo), mkexpr(argMask)),
+                       binop(Iop_AndV128, mkexpr(argRlo), mkexpr(argMask))))
+   );
 
    /* This is simple: just invert the result, if necessary, and
       have done. */

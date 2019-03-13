@@ -1205,6 +1205,14 @@ static Bool isZeroV128 ( IRExpr* e )
                   && e->Iex.Const.con->Ico.V128 == 0x0000);
 }
 
+/* Is this literally IRExpr_Const(IRConst_V128(1...1)) ? */
+static Bool isOnesV128 ( IRExpr* e )
+{
+   return toBool( e->tag == Iex_Const
+                  && e->Iex.Const.con->tag == Ico_V128
+                  && e->Iex.Const.con->Ico.V128 == 0xFFFF);
+}
+
 /* Is this literally IRExpr_Const(IRConst_V256(0)) ? */
 static Bool isZeroV256 ( IRExpr* e )
 {
@@ -2297,6 +2305,14 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
                               || isZeroV128(e->Iex.Binop.arg2))) {
                   e2 =  mkZeroOfPrimopResultType(e->Iex.Binop.op);
                   break;
+               }
+               /* AndV128(t,1...1) ==> t.  The amd64 front end generates these
+                  for *CMP{P,S}{S,D} etc. */
+               if (e->Iex.Binop.op == Iop_AndV128) {
+                  if (isOnesV128(e->Iex.Binop.arg2)) {
+                     e2 = e->Iex.Binop.arg1;
+                     break;
+                  }
                }
                break;
 

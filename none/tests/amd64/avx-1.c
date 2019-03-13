@@ -219,9 +219,15 @@ GEN_test_RandM(VCMPSD_128_0x7,
 GEN_test_RandM(VCMPSD_128_0x8,
                "vcmpsd $8, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpsd $8, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSD_128_0x9,
+               "vcmpsd $9, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpsd $9, (%%rsi), %%xmm8, %%xmm7")
 GEN_test_RandM(VCMPSD_128_0xA,
                "vcmpsd $0xA, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpsd $0xA, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSD_128_0xB,
+               "vcmpsd $0xB, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpsd $0xB, (%%rsi), %%xmm8, %%xmm7")
 GEN_test_RandM(VCMPSD_128_0xC,
                "vcmpsd $0xC, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpsd $0xC, (%%rsi), %%xmm8, %%xmm7")
@@ -231,6 +237,9 @@ GEN_test_RandM(VCMPSD_128_0xD,
 GEN_test_RandM(VCMPSD_128_0xE,
                "vcmpsd $0xE, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpsd $0xE, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSD_128_0xF,
+               "vcmpsd $0xF, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpsd $0xF, (%%rsi), %%xmm8, %%xmm7")
 GEN_test_RandM(VCMPSD_128_0x10,
                "vcmpsd $0x10, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpsd $0x10, (%%rsi), %%xmm8, %%xmm7")
@@ -264,6 +273,9 @@ GEN_test_RandM(VCMPSD_128_0x19,
 GEN_test_RandM(VCMPSD_128_0x1A,
                "vcmpsd $0x1A, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpsd $0x1A, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSD_128_0x1B,
+               "vcmpsd $0x1B, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpsd $0x1B, (%%rsi), %%xmm8, %%xmm7")
 GEN_test_RandM(VCMPSD_128_0x1C,
                "vcmpsd $0x1C, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpsd $0x1C, (%%rsi), %%xmm8, %%xmm7")
@@ -273,6 +285,9 @@ GEN_test_RandM(VCMPSD_128_0x1D,
 GEN_test_RandM(VCMPSD_128_0x1E,
                "vcmpsd $0x1E, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpsd $0x1E, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSD_128_0x1F,
+               "vcmpsd $0x1F, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpsd $0x1F, (%%rsi), %%xmm8, %%xmm7")
 
 GEN_test_RandM(VSQRTSD_128,
                "vsqrtsd %%xmm6,  %%xmm8, %%xmm7",
@@ -665,9 +680,15 @@ GEN_test_RandM(VCMPSS_128_0x7,
 GEN_test_RandM(VCMPSS_128_0x8,
                "vcmpss $8, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpss $8, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSS_128_0x9,
+               "vcmpss $0x9, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $0x9, (%%rsi), %%xmm8, %%xmm7")
 GEN_test_RandM(VCMPSS_128_0xA,
                "vcmpss $0xA, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpss $0xA, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSS_128_0xB,
+               "vcmpss $0xB, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $0xB, (%%rsi), %%xmm8, %%xmm7")
 GEN_test_RandM(VCMPSS_128_0xC,
                "vcmpss $0xC, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpss $0xC, (%%rsi), %%xmm8, %%xmm7")
@@ -677,6 +698,9 @@ GEN_test_RandM(VCMPSS_128_0xD,
 GEN_test_RandM(VCMPSS_128_0xE,
                "vcmpss $0xE, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpss $0xE, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSS_128_0xF,
+               "vcmpss $0xF, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $0xF, (%%rsi), %%xmm8, %%xmm7")
 GEN_test_RandM(VCMPSS_128_0x10,
                "vcmpss $0x10, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpss $0x10, (%%rsi), %%xmm8, %%xmm7")
@@ -710,6 +734,9 @@ GEN_test_RandM(VCMPSS_128_0x19,
 GEN_test_RandM(VCMPSS_128_0x1A,
                "vcmpss $0x1A, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpss $0x1A, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSS_128_0x1B,
+               "vcmpss $0x1B, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $0x1B, (%%rsi), %%xmm8, %%xmm7")
 GEN_test_RandM(VCMPSS_128_0x1C,
                "vcmpss $0x1C, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpss $0x1C, (%%rsi), %%xmm8, %%xmm7")
@@ -719,6 +746,9 @@ GEN_test_RandM(VCMPSS_128_0x1D,
 GEN_test_RandM(VCMPSS_128_0x1E,
                "vcmpss $0x1E, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpss $0x1E, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPSS_128_0x1F,
+               "vcmpss $0x1F, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpss $0x1F, (%%rsi), %%xmm8, %%xmm7")
 
 // The x suffix denotes a 128 -> 64 operation
 GEN_test_RandM(VCVTPD2PS_128,
@@ -1081,21 +1111,421 @@ GEN_test_RandM(VXORPD_256,
 GEN_test_Monly(VBROADCASTSD_256,
                "vbroadcastsd (%%rsi), %%ymm8")
 
+GEN_test_RandM(VCMPPD_128_0x0,
+               "vcmppd $0, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x0,
+               "vcmppd $0, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x0,
+               "vcmpps $0, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x0,
+               "vcmpps $0, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x1,
+               "vcmppd $1, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $1, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x1,
+               "vcmppd $1, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $1, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x1,
+               "vcmpps $1, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $1, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x1,
+               "vcmpps $1, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $1, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x2,
+               "vcmppd $2, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $2, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x2,
+               "vcmppd $2, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $2, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x2,
+               "vcmpps $2, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $2, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x2,
+               "vcmpps $2, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $2, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x3,
+               "vcmppd $3, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $3, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x3,
+               "vcmppd $3, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $3, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x3,
+               "vcmpps $3, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $3, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x3,
+               "vcmpps $3, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $3, (%%rsi), %%ymm8, %%ymm7")
+
 GEN_test_RandM(VCMPPD_128_0x4,
                "vcmppd $4, %%xmm6,  %%xmm8, %%xmm7",
                "vcmppd $4, (%%rsi), %%xmm8, %%xmm7")
-
 GEN_test_RandM(VCMPPD_256_0x4,
                "vcmppd $4, %%ymm6,  %%ymm8, %%ymm7",
                "vcmppd $4, (%%rsi), %%ymm8, %%ymm7")
-
 GEN_test_RandM(VCMPPS_128_0x4,
                "vcmpps $4, %%xmm6,  %%xmm8, %%xmm7",
                "vcmpps $4, (%%rsi), %%xmm8, %%xmm7")
-
 GEN_test_RandM(VCMPPS_256_0x4,
                "vcmpps $4, %%ymm6,  %%ymm8, %%ymm7",
                "vcmpps $4, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x5,
+               "vcmppd $5, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $5, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x5,
+               "vcmppd $5, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $5, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x5,
+               "vcmpps $5, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $5, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x5,
+               "vcmpps $5, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $5, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x6,
+               "vcmppd $6, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $6, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x6,
+               "vcmppd $6, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $6, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x6,
+               "vcmpps $6, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $6, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x6,
+               "vcmpps $6, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $6, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x7,
+               "vcmppd $7, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $7, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x7,
+               "vcmppd $7, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $7, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x7,
+               "vcmpps $7, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $7, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x7,
+               "vcmpps $7, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $7, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x8,
+               "vcmppd $8, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $8, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x8,
+               "vcmppd $8, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $8, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x8,
+               "vcmpps $8, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $8, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x8,
+               "vcmpps $8, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $8, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x9,
+               "vcmppd $9, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $9, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x9,
+               "vcmppd $9, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $9, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x9,
+               "vcmpps $9, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $9, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x9,
+               "vcmpps $9, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $9, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0xA,
+               "vcmppd $0xA, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0xA, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0xA,
+               "vcmppd $0xA, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0xA, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0xA,
+               "vcmpps $0xA, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0xA, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0xA,
+               "vcmpps $0xA, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0xA, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0xB,
+               "vcmppd $0xB, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0xB, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0xB,
+               "vcmppd $0xB, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0xB, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0xB,
+               "vcmpps $0xB, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0xB, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0xB,
+               "vcmpps $0xB, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0xB, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0xC,
+               "vcmppd $0xC, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0xC, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0xC,
+               "vcmppd $0xC, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0xC, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0xC,
+               "vcmpps $0xC, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0xC, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0xC,
+               "vcmpps $0xC, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0xC, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0xD,
+               "vcmppd $0xD, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0xD, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0xD,
+               "vcmppd $0xD, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0xD, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0xD,
+               "vcmpps $0xD, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0xD, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0xD,
+               "vcmpps $0xD, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0xD, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0xE,
+               "vcmppd $0xE, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0xE, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0xE,
+               "vcmppd $0xE, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0xE, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0xE,
+               "vcmpps $0xE, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0xE, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0xE,
+               "vcmpps $0xE, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0xE, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0xF,
+               "vcmppd $0xF, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0xF, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0xF,
+               "vcmppd $0xF, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0xF, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0xF,
+               "vcmpps $0xF, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0xF, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0xF,
+               "vcmpps $0xF, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0xF, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x10,
+               "vcmppd $0x10, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0x10, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x10,
+               "vcmppd $0x10, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0x10, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x10,
+               "vcmpps $0x10, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0x10, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x10,
+               "vcmpps $0x10, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0x10, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x11,
+               "vcmppd $0x11, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0x11, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x11,
+               "vcmppd $0x11, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0x11, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x11,
+               "vcmpps $0x11, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0x11, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x11,
+               "vcmpps $0x11, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0x11, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x12,
+               "vcmppd $0x12, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0x12, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x12,
+               "vcmppd $0x12, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0x12, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x12,
+               "vcmpps $0x12, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0x12, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x12,
+               "vcmpps $0x12, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0x12, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x13,
+               "vcmppd $0x13, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0x13, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x13,
+               "vcmppd $0x13, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0x13, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x13,
+               "vcmpps $0x13, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0x13, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x13,
+               "vcmpps $0x13, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0x13, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x14,
+               "vcmppd $0x14, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0x14, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x14,
+               "vcmppd $0x14, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0x14, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x14,
+               "vcmpps $0x14, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0x14, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x14,
+               "vcmpps $0x14, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0x14, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x15,
+               "vcmppd $0x15, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0x15, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x15,
+               "vcmppd $0x15, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0x15, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x15,
+               "vcmpps $0x15, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0x15, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x15,
+               "vcmpps $0x15, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0x15, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x16,
+               "vcmppd $0x16, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0x16, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x16,
+               "vcmppd $0x16, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0x16, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x16,
+               "vcmpps $0x16, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0x16, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x16,
+               "vcmpps $0x16, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0x16, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x17,
+               "vcmppd $0x17, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0x17, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x17,
+               "vcmppd $0x17, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0x17, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x17,
+               "vcmpps $0x17, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0x17, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x17,
+               "vcmpps $0x17, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0x17, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x18,
+               "vcmppd $0x18, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0x18, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x18,
+               "vcmppd $0x18, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0x18, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x18,
+               "vcmpps $0x18, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0x18, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x18,
+               "vcmpps $0x18, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0x18, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x19,
+               "vcmppd $0x19, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0x19, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x19,
+               "vcmppd $0x19, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0x19, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x19,
+               "vcmpps $0x19, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0x19, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x19,
+               "vcmpps $0x19, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0x19, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x1A,
+               "vcmppd $0x1A, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0x1A, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x1A,
+               "vcmppd $0x1A, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0x1A, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x1A,
+               "vcmpps $0x1A, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0x1A, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x1A,
+               "vcmpps $0x1A, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0x1A, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x1B,
+               "vcmppd $0x1B, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0x1B, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x1B,
+               "vcmppd $0x1B, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0x1B, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x1B,
+               "vcmpps $0x1B, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0x1B, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x1B,
+               "vcmpps $0x1B, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0x1B, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x1C,
+               "vcmppd $0x1C, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0x1C, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x1C,
+               "vcmppd $0x1C, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0x1C, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x1C,
+               "vcmpps $0x1C, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0x1C, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x1C,
+               "vcmpps $0x1C, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0x1C, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x1D,
+               "vcmppd $0x1D, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0x1D, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x1D,
+               "vcmppd $0x1D, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0x1D, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x1D,
+               "vcmpps $0x1D, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0x1D, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x1D,
+               "vcmpps $0x1D, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0x1D, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x1E,
+               "vcmppd $0x1E, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0x1E, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x1E,
+               "vcmppd $0x1E, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0x1E, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x1E,
+               "vcmpps $0x1E, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0x1E, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x1E,
+               "vcmpps $0x1E, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0x1E, (%%rsi), %%ymm8, %%ymm7")
+
+GEN_test_RandM(VCMPPD_128_0x1F,
+               "vcmppd $0x1F, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmppd $0x1F, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPD_256_0x1F,
+               "vcmppd $0x1F, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmppd $0x1F, (%%rsi), %%ymm8, %%ymm7")
+GEN_test_RandM(VCMPPS_128_0x1F,
+               "vcmpps $0x1F, %%xmm6,  %%xmm8, %%xmm7",
+               "vcmpps $0x1F, (%%rsi), %%xmm8, %%xmm7")
+GEN_test_RandM(VCMPPS_256_0x1F,
+               "vcmpps $0x1F, %%ymm6,  %%ymm8, %%ymm7",
+               "vcmpps $0x1F, (%%rsi), %%ymm8, %%ymm7")
 
 GEN_test_RandM(VCVTDQ2PD_128,
                "vcvtdq2pd %%xmm6,  %%xmm8",
@@ -2209,10 +2639,6 @@ GEN_test_RandM(VPCLMULQDQ_0xFF,
                "vpclmulqdq $0xFF, %%xmm6,  %%xmm8, %%xmm7",
                "vpclmulqdq $0xFF, (%%rsi), %%xmm8, %%xmm7")
 
-GEN_test_RandM(VCMPSS_128_0x9,
-               "vcmpss $0x9, %%xmm6,  %%xmm8, %%xmm7",
-               "vcmpss $0x9, (%%rsi), %%xmm8, %%xmm7")
-
 GEN_test_Monly(VMASKMOVPS_128_LoadForm,
                "vmaskmovps (%%rsi), %%xmm8, %%xmm7;"
                "vxorps %%xmm6, %%xmm6, %%xmm6;"
@@ -2828,6 +3254,173 @@ int main ( void )
    DO_D( VMASKMOVPS_256_StoreForm );
    DO_D( VMASKMOVPD_128_StoreForm );
    DO_D( VMASKMOVPD_256_StoreForm );
+   DO_D( VCMPSS_128_0xB );
+   DO_D( VCMPSS_128_0xF );
+   DO_D( VCMPSS_128_0x1B );
+   DO_D( VCMPSS_128_0x1F );
+   DO_D( VCMPSD_128_0x9 );
+   DO_D( VCMPSD_128_0xB );
+   DO_D( VCMPSD_128_0xF );
+   DO_D( VCMPSD_128_0x1B );
+   DO_D( VCMPSD_128_0x1F );
+
+   DO_D( VCMPPD_128_0x0 );
+   DO_D( VCMPPD_256_0x0 );
+   DO_D( VCMPPS_128_0x0 );
+   DO_D( VCMPPS_256_0x0 );
+
+   DO_D( VCMPPD_128_0x1 );
+   DO_D( VCMPPD_256_0x1 );
+   DO_D( VCMPPS_128_0x1 );
+   DO_D( VCMPPS_256_0x1 );
+
+   DO_D( VCMPPD_128_0x2 );
+   DO_D( VCMPPD_256_0x2 );
+   DO_D( VCMPPS_128_0x2 );
+   DO_D( VCMPPS_256_0x2 );
+
+   DO_D( VCMPPD_128_0x3 );
+   DO_D( VCMPPD_256_0x3 );
+   DO_D( VCMPPS_128_0x3 );
+   DO_D( VCMPPS_256_0x3 );
+
+   // The 0x4 group is tested above
+
+   DO_D( VCMPPD_128_0x5 );
+   DO_D( VCMPPD_256_0x5 );
+   DO_D( VCMPPS_128_0x5 );
+   DO_D( VCMPPS_256_0x5 );
+
+   DO_D( VCMPPD_128_0x6 );
+   DO_D( VCMPPD_256_0x6 );
+   DO_D( VCMPPS_128_0x6 );
+   DO_D( VCMPPS_256_0x6 );
+
+   DO_D( VCMPPD_128_0x7 );
+   DO_D( VCMPPD_256_0x7 );
+   DO_D( VCMPPS_128_0x7 );
+   DO_D( VCMPPS_256_0x7 );
+
+   DO_D( VCMPPD_128_0x8 );
+   DO_D( VCMPPD_256_0x8 );
+   DO_D( VCMPPS_128_0x8 );
+   DO_D( VCMPPS_256_0x8 );
+
+   DO_D( VCMPPD_128_0x9 );
+   DO_D( VCMPPD_256_0x9 );
+   DO_D( VCMPPS_128_0x9 );
+   DO_D( VCMPPS_256_0x9 );
+
+   DO_D( VCMPPD_128_0xA );
+   DO_D( VCMPPD_256_0xA );
+   DO_D( VCMPPS_128_0xA );
+   DO_D( VCMPPS_256_0xA );
+
+   DO_D( VCMPPD_128_0xB );
+   DO_D( VCMPPD_256_0xB );
+   DO_D( VCMPPS_128_0xB );
+   DO_D( VCMPPS_256_0xB );
+
+   DO_D( VCMPPD_128_0xC );
+   DO_D( VCMPPD_256_0xC );
+   DO_D( VCMPPS_128_0xC );
+   if (0) DO_D( VCMPPS_256_0xC ); // FIXME probably denorms etc in input
+
+   DO_D( VCMPPD_128_0xD );
+   DO_D( VCMPPD_256_0xD );
+   DO_D( VCMPPS_128_0xD );
+   DO_D( VCMPPS_256_0xD );
+
+   DO_D( VCMPPD_128_0xE );
+   DO_D( VCMPPD_256_0xE );
+   DO_D( VCMPPS_128_0xE );
+   DO_D( VCMPPS_256_0xE );
+
+   DO_D( VCMPPD_128_0xF );
+   DO_D( VCMPPD_256_0xF );
+   DO_D( VCMPPS_128_0xF );
+   DO_D( VCMPPS_256_0xF );
+
+   DO_D( VCMPPD_128_0x10 );
+   DO_D( VCMPPD_256_0x10 );
+   DO_D( VCMPPS_128_0x10 );
+   DO_D( VCMPPS_256_0x10 );
+
+   DO_D( VCMPPD_128_0x11 );
+   DO_D( VCMPPD_256_0x11 );
+   DO_D( VCMPPS_128_0x11 );
+   DO_D( VCMPPS_256_0x11 );
+
+   DO_D( VCMPPD_128_0x12 );
+   DO_D( VCMPPD_256_0x12 );
+   DO_D( VCMPPS_128_0x12 );
+   DO_D( VCMPPS_256_0x12 );
+
+   DO_D( VCMPPD_128_0x13 );
+   DO_D( VCMPPD_256_0x13 );
+   DO_D( VCMPPS_128_0x13 );
+   DO_D( VCMPPS_256_0x13 );
+
+   DO_D( VCMPPD_128_0x14 );
+   DO_D( VCMPPD_256_0x14 );
+   DO_D( VCMPPS_128_0x14 );
+   DO_D( VCMPPS_256_0x14 );
+
+   DO_D( VCMPPD_128_0x15 );
+   DO_D( VCMPPD_256_0x15 );
+   DO_D( VCMPPS_128_0x15 );
+   DO_D( VCMPPS_256_0x15 );
+
+   DO_D( VCMPPD_128_0x16 );
+   DO_D( VCMPPD_256_0x16 );
+   DO_D( VCMPPS_128_0x16 );
+   DO_D( VCMPPS_256_0x16 );
+
+   DO_D( VCMPPD_128_0x17 );
+   DO_D( VCMPPD_256_0x17 );
+   DO_D( VCMPPS_128_0x17 );
+   DO_D( VCMPPS_256_0x17 );
+
+   DO_D( VCMPPD_128_0x18 );
+   DO_D( VCMPPD_256_0x18 );
+   DO_D( VCMPPS_128_0x18 );
+   DO_D( VCMPPS_256_0x18 );
+
+   DO_D( VCMPPD_128_0x19 );
+   DO_D( VCMPPD_256_0x19 );
+   DO_D( VCMPPS_128_0x19 );
+   DO_D( VCMPPS_256_0x19 );
+
+   DO_D( VCMPPD_128_0x1A );
+   DO_D( VCMPPD_256_0x1A );
+   DO_D( VCMPPS_128_0x1A );
+   DO_D( VCMPPS_256_0x1A );
+
+   DO_D( VCMPPD_128_0x1B );
+   DO_D( VCMPPD_256_0x1B );
+   DO_D( VCMPPS_128_0x1B );
+   DO_D( VCMPPS_256_0x1B );
+
+   DO_D( VCMPPD_128_0x1C );
+   DO_D( VCMPPD_256_0x1C );
+   DO_D( VCMPPS_128_0x1C );
+   if (0) DO_D( VCMPPS_256_0x1C ); // FIXME probably denorms etc in input
+
+   DO_D( VCMPPD_128_0x1D );
+   DO_D( VCMPPD_256_0x1D );
+   DO_D( VCMPPS_128_0x1D );
+   DO_D( VCMPPS_256_0x1D );
+
+   DO_D( VCMPPD_128_0x1E );
+   DO_D( VCMPPD_256_0x1E );
+   DO_D( VCMPPS_128_0x1E );
+   DO_D( VCMPPS_256_0x1E );
+
+   DO_D( VCMPPD_128_0x1F );
+   DO_D( VCMPPD_256_0x1F );
+   DO_D( VCMPPS_128_0x1F );
+   DO_D( VCMPPS_256_0x1F );
+
    return 0;
 }
 

@@ -104,6 +104,7 @@ where XXXXXX is the bug number as listed below.
 402515  Implement new option --show-error-list=no|yes / -s
 402519  POWER 3.0 addex instruction incorrectly implemented
 402781  Redo the cache used to process indirect branch targets
+403123  vex amd64->IR: unhandled instruction bytes: 0xF3 0x48 0xF 0xAE 0xD3 (wrfsbase)
 403552  s390x: wrong facility bit checked for vector facility
 404054  memcheck powerpc subfe x, x, x initializes x to 0 or -1 based on CA
 405079  unhandled ppc64le-linux syscall: 131 (quotactl)

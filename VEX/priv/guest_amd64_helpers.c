@@ -3361,7 +3361,8 @@ void amd64g_dirtyhelper_CPUID_avx2 ( VexGuestAMD64State* st )
          break;
       case 0x00000007:
          switch (old_ecx) {
-            case 0x00000000: SET_ABCD(0x00000000, 0x000027ab,
+            /* Don't advertise FSGSBASE support, bit 0 in EBX.  */
+            case 0x00000000: SET_ABCD(0x00000000, 0x000027aa,
                                       0x00000000, 0x00000000); break;
             default:         SET_ABCD(0x00000000, 0x00000000,
                                       0x00000000, 0x00000000); break;

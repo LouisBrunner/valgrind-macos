@@ -127,11 +127,13 @@ static UInt arch_hwcaps (VexArch va) {
    case VexArchPPC64:  return 0;
    case VexArchS390X:  return VEX_HWCAPS_S390X_LDISP;
 #if (__mips_isa_rev>=6)
-   case VexArchMIPS32: return VEX_PRID_COMP_MIPS | VEX_MIPS_CPU_ISA_M32R6;
-   case VexArchMIPS64: return VEX_PRID_COMP_MIPS | VEX_MIPS_CPU_ISA_M64R6;
+   case VexArchMIPS32: return VEX_PRID_COMP_MIPS | VEX_MIPS_CPU_ISA_M32R6 |
+                              VEX_MIPS_HOST_FR;
+   case VexArchMIPS64: return VEX_PRID_COMP_MIPS | VEX_MIPS_CPU_ISA_M64R6 |
+                              VEX_MIPS_HOST_FR;
 #else
    case VexArchMIPS32: return VEX_PRID_COMP_MIPS;
-   case VexArchMIPS64: return VEX_PRID_COMP_MIPS;
+   case VexArchMIPS64: return VEX_PRID_COMP_MIPS | VEX_MIPS_HOST_FR;
 #endif
    default: failure_exit();
    }

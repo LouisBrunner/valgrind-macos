@@ -350,6 +350,17 @@ void VG_(insertIndexXA)( XArray* xa, Word n, const void* elem )
    xa->sorted = False;
 }
 
+void VG_(replaceIndexXA)( XArray* xa, Word n, const void* elem )
+{
+   vg_assert(xa);
+   vg_assert(n >= 0);
+   vg_assert(n < xa->usedsizeE);
+   vg_assert(xa->usedsizeE >= 0 && xa->usedsizeE <= xa->totsizeE);
+   VG_(memcpy)( ((UChar*)xa->arr) + n * xa->elemSzB,
+                elem, xa->elemSzB );
+   xa->sorted = False;
+}
+
 void VG_(getContentsXA_UNSAFE)( XArray* xa,
                                 /*OUT*/void** ctsP,
                                 /*OUT*/Word* usedP )

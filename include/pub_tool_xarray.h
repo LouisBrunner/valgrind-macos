@@ -142,6 +142,14 @@ extern void VG_(removeIndexXA)( XArray*, Word );
    specified element, in the array. */
 extern void VG_(insertIndexXA)( XArray*, Word, const void* elem );
 
+/* Replace the element of an XArray at the given index with a copy
+   of the new element.  This is an O(1) operation.
+   Compared to the caller doing:
+          *(T*)VG_(indexXA)(arr, index) = new_value;
+   this function will also mark the array as unsorted.  */
+extern void VG_(replaceIndexXA)( XArray*, Word, const void* elem );
+
+
 /* Make a new, completely independent copy of the given XArray, using
    the existing allocation function to allocate the new space.
    Space for the clone (and all additions to it) is billed to 'cc' unless

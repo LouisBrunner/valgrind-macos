@@ -108,6 +108,7 @@ where XXXXXX is the bug number as listed below.
 403123  vex amd64->IR: unhandled instruction bytes: 0xF3 0x48 0xF 0xAE 0xD3 (wrfsbase)
 403552  s390x: wrong facility bit checked for vector facility
 404054  memcheck powerpc subfe x, x, x initializes x to 0 or -1 based on CA
+404638  Add VG_(replaceIndexXA)
 405079  unhandled ppc64le-linux syscall: 131 (quotactl)
 405403  s390x disassembler cannot be used on x86
 

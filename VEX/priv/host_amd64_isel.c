@@ -1434,6 +1434,19 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, const IRExpr* e )
          return dst;
       }
 
+      // Half-float vector conversion
+      if (e->Iex.Binop.op == Iop_F32toF16x4
+          && (env->hwcaps & VEX_HWCAPS_AMD64_F16C)) {
+         HReg srcV = iselVecExpr(env, e->Iex.Binop.arg2);
+         HReg dstV = newVRegV(env);
+         HReg dstI = newVRegI(env);
+         set_SSE_rounding_mode( env, e->Iex.Binop.arg1 );
+         addInstr(env, AMD64Instr_Sse32Fx4(Asse_F32toF16, srcV, dstV));
+         set_SSE_rounding_default(env);
+         addInstr(env, AMD64Instr_SseMOVQ(dstI, dstV, /*toXMM=*/False));
+         return dstI;
+      }
+
       break;
    }
 
@@ -3354,6 +3367,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e )
       }
 
       case Iop_32UtoV128: {
+         // FIXME maybe just use MOVQ here?
          HReg        dst     = newVRegV(env);
          AMD64AMode* rsp_m32 = AMD64AMode_IR(-32, hregAMD64_RSP());
          AMD64RI*    ri      = iselIntExpr_RI(env, e->Iex.Unop.arg);
@@ -3363,6 +3377,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e )
       }
 
       case Iop_64UtoV128: {
+         // FIXME maybe just use MOVQ here?
          HReg        dst  = newVRegV(env);
          AMD64AMode* rsp0 = AMD64AMode_IR(0, hregAMD64_RSP());
          AMD64RMI*   rmi  = iselIntExpr_RMI(env, e->Iex.Unop.arg);
@@ -3377,6 +3392,17 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e )
          HReg vHi, vLo;
          iselDVecExpr(&vHi, &vLo, env, e->Iex.Unop.arg);
          return (e->Iex.Unop.op == Iop_V256toV128_1) ? vHi : vLo;
+      }
+
+      case Iop_F16toF32x4: {
+         if (env->hwcaps & VEX_HWCAPS_AMD64_F16C) {
+            HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+            HReg dst = newVRegV(env);
+            addInstr(env, AMD64Instr_SseMOVQ(src, dst, /*toXMM=*/True));
+            addInstr(env, AMD64Instr_Sse32Fx4(Asse_F16toF32, dst, dst));
+            return dst;
+         }
+         break;
       }
 
       default:
@@ -3787,6 +3813,31 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e )
          return dst;
       }
 
+      // Half-float vector conversion
+      case Iop_F32toF16x8: {
+         if (env->hwcaps & VEX_HWCAPS_AMD64_F16C) {
+            HReg srcHi, srcLo;
+            iselDVecExpr(&srcHi, &srcLo, env, e->Iex.Binop.arg2);
+            HReg dstHi = newVRegV(env);
+            HReg dstLo = newVRegV(env);
+            set_SSE_rounding_mode( env, e->Iex.Binop.arg1 );
+            addInstr(env, AMD64Instr_Sse32Fx4(Asse_F32toF16, srcHi, dstHi));
+            addInstr(env, AMD64Instr_Sse32Fx4(Asse_F32toF16, srcLo, dstLo));
+            set_SSE_rounding_default(env);
+            // Now we have the result in dstHi[63:0] and dstLo[63:0], but we
+            // need to compact all that into one register.  There's probably a
+            // more elegant way to do this, but ..
+            addInstr(env, AMD64Instr_SseShiftN(Asse_SHL128, 64, dstHi));
+            // dstHi is now 127:64 = useful data, 63:0 = zero
+            addInstr(env, AMD64Instr_SseShiftN(Asse_SHL128, 64, dstLo));
+            addInstr(env, AMD64Instr_SseShiftN(Asse_SHR128, 64, dstLo));
+            // dstLo is now 127:64 = zero, 63:0 = useful data
+            addInstr(env, AMD64Instr_SseReRg(Asse_OR, dstHi, dstLo));
+            return dstLo;
+         }
+         break;
+      }
+
       default:
          break;
    } /* switch (e->Iex.Binop.op) */
@@ -4015,6 +4066,24 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
          *rHi = dstHi;
          *rLo = dstLo;
          return;
+      }
+
+      case Iop_F16toF32x8: {
+         if (env->hwcaps & VEX_HWCAPS_AMD64_F16C) {
+            HReg src     = iselVecExpr(env, e->Iex.Unop.arg);
+            HReg srcCopy = newVRegV(env);
+            HReg dstHi   = newVRegV(env);
+            HReg dstLo   = newVRegV(env);
+            // Copy src, since we'll need to modify it.
+            addInstr(env, mk_vMOVsd_RR(src, srcCopy));
+            addInstr(env, AMD64Instr_Sse32Fx4(Asse_F16toF32, srcCopy, dstLo));
+            addInstr(env, AMD64Instr_SseShiftN(Asse_SHR128, 64, srcCopy));
+            addInstr(env, AMD64Instr_Sse32Fx4(Asse_F16toF32, srcCopy, dstHi));
+            *rHi = dstHi;
+            *rLo = dstLo;
+            return;
+         }
+         break;
       }
 
       default:
@@ -5138,7 +5207,9 @@ HInstrArray* iselSB_AMD64 ( const IRSB* bb,
                      | VEX_HWCAPS_AMD64_AVX
                      | VEX_HWCAPS_AMD64_RDTSCP
                      | VEX_HWCAPS_AMD64_BMI
-                     | VEX_HWCAPS_AMD64_AVX2)));
+                     | VEX_HWCAPS_AMD64_AVX2
+                     | VEX_HWCAPS_AMD64_F16C
+                     | VEX_HWCAPS_AMD64_RDRAND)));
 
    /* Check that the host's endianness is as expected. */
    vassert(archinfo_host->endness == VexEndnessLE);

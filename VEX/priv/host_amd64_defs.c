@@ -590,6 +590,8 @@ const HChar* showAMD64SseOp ( AMD64SseOp op ) {
       case Asse_UNPCKLQ:  return "punpcklq";
       case Asse_PSHUFB:   return "pshufb";
       case Asse_PMADDUBSW: return "pmaddubsw";
+      case Asse_F32toF16: return "vcvtps2ph(rm_field=$0x4).";
+      case Asse_F16toF32: return "vcvtph2ps.";
       default: vpanic("showAMD64SseOp");
    }
 }
@@ -1672,7 +1674,9 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, const AMD64Instr* i, Bool mode64 )
                          || i->Ain.Sse32Fx4.op == Asse_RSQRTF
                          || i->Ain.Sse32Fx4.op == Asse_SQRTF
                          || i->Ain.Sse32Fx4.op == Asse_I2F
-                         || i->Ain.Sse32Fx4.op == Asse_F2I );
+                         || i->Ain.Sse32Fx4.op == Asse_F2I
+                         || i->Ain.Sse32Fx4.op == Asse_F32toF16
+                         || i->Ain.Sse32Fx4.op == Asse_F16toF32 );
          addHRegUse(u, HRmRead, i->Ain.Sse32Fx4.src);
          addHRegUse(u, unary ? HRmWrite : HRmModify, 
                        i->Ain.Sse32Fx4.dst);
@@ -3690,15 +3694,52 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
                            i->Ain.SseLdzLO.addr);
       goto done;
 
-   case Ain_Sse32Fx4:
+   case Ain_Sse32Fx4: {
+      UInt srcRegNo = vregEnc3210(i->Ain.Sse32Fx4.src);
+      UInt dstRegNo = vregEnc3210(i->Ain.Sse32Fx4.dst);
+      // VEX encoded cases
+      switch (i->Ain.Sse32Fx4.op) {
+         case Asse_F16toF32: { // vcvtph2ps %xmmS, %xmmD
+            UInt s = srcRegNo;
+            UInt d = dstRegNo;
+            // VCVTPH2PS %xmmS, %xmmD (s and d are both xmm regs, range 0 .. 15)
+            // 0xC4 : ~d3 1 ~s3 0 0 0 1 0 : 0x79 : 0x13 : 1 1 d2 d1 d0 s2 s1 s0
+            UInt byte2 = ((((~d)>>3)&1)<<7) | (1<<6)
+                         | ((((~s)>>3)&1)<<5) | (1<<1);
+            UInt byte5 = (1<<7) | (1<<6) | ((d&7) << 3) | ((s&7) << 0);
+            *p++ = 0xC4;
+            *p++ = byte2;
+            *p++ = 0x79;
+            *p++ = 0x13;
+            *p++ = byte5;
+            goto done;
+         }
+         case Asse_F32toF16: { // vcvtps2ph $4, %xmmS, %xmmD
+            UInt s = srcRegNo;
+            UInt d = dstRegNo;
+            // VCVTPS2PH $4, %xmmS, %xmmD (s and d both xmm regs, range 0 .. 15)
+            // 0xC4 : ~s3 1 ~d3 0 0 0 1 1 : 0x79
+            //      : 0x1D : 11 s2 s1 s0 d2 d1 d0 : 0x4
+            UInt byte2 = ((((~s)>>3)&1)<<7) | (1<<6)
+                         | ((((~d)>>3)&1)<<5) | (1<<1) | (1 << 0);
+            UInt byte5 = (1<<7) | (1<<6) | ((s&7) << 3) | ((d&7) << 0);
+            *p++ = 0xC4;
+            *p++ = byte2;
+            *p++ = 0x79;
+            *p++ = 0x1D;
+            *p++ = byte5;
+            *p++ = 0x04;
+            goto done;
+         }
+         default: break;
+      }
+      // After this point, REX encoded cases only
       xtra = 0;
       switch (i->Ain.Sse32Fx4.op) {
          case Asse_F2I: *p++ = 0x66; break;
          default: break;
       }
-      *p++ = clearWBit(
-             rexAMode_R_enc_enc( vregEnc3210(i->Ain.Sse32Fx4.dst),
-                                 vregEnc3210(i->Ain.Sse32Fx4.src) ));
+      *p++ = clearWBit(rexAMode_R_enc_enc(dstRegNo, srcRegNo));
       *p++ = 0x0F;
       switch (i->Ain.Sse32Fx4.op) {
          case Asse_ADDF:   *p++ = 0x58; break;
@@ -3718,11 +3759,11 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
          case Asse_CMPUNF: *p++ = 0xC2; xtra = 0x103; break;
          default: goto bad;
       }
-      p = doAMode_R_enc_enc(p, vregEnc3210(i->Ain.Sse32Fx4.dst),
-                               vregEnc3210(i->Ain.Sse32Fx4.src) );
+      p = doAMode_R_enc_enc(p, dstRegNo, srcRegNo);
       if (xtra & 0x100)
          *p++ = toUChar(xtra & 0xFF);
       goto done;
+   }
 
    case Ain_Sse64Fx2:
       xtra = 0;

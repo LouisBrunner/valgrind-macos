@@ -1,0 +1,3 @@
+prog: f16c
+prereq: test -x f16c && ../../../tests/x86_amd64_features amd64-f16c
+vgopts: -q

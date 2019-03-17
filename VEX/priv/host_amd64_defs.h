@@ -345,7 +345,10 @@ typedef
       Asse_UNPCKLB, Asse_UNPCKLW, Asse_UNPCKLD, Asse_UNPCKLQ,
       // Only for SSSE3 capable hosts:
       Asse_PSHUFB,
-      Asse_PMADDUBSW
+      Asse_PMADDUBSW,
+      // Only for F16C capable hosts:
+      Asse_F32toF16, // F32 to F16 conversion, aka vcvtps2ph
+      Asse_F16toF32, // F16 to F32 conversion, aka vcvtph2ps
    }
    AMD64SseOp;
 

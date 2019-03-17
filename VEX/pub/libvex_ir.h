@@ -1417,8 +1417,9 @@ typedef
       /* --- Single to/from half conversion --- */
       /* FIXME: what kind of rounding in F32x4 -> F16x4 case? */
       // FIXME these carry no rounding mode
-      Iop_F32toF16x4_DEP,     /* F32x4 -> F16x4, NO ROUNDING MODE */
-      Iop_F16toF32x4,         /* F16x4 -> F32x4 */
+      Iop_F32toF16x4_DEP, /* F32x4(==V128) -> F16x4(==I64), NO ROUNDING MODE */
+      Iop_F32toF16x4,     /* IRRoundingMode(I32) x V128 -> I64 */
+      Iop_F16toF32x4,     /* F16x4 -> F32x4 */
 
       /* -- Double to/from half conversion -- */
       Iop_F64toF16x2_DEP, // F64x2 -> F16x2, NO ROUNDING MODE
@@ -1986,6 +1987,9 @@ typedef
 
       Iop_I32StoF32x8, /* IRRoundingMode(I32) x V256 -> V256 */
       Iop_F32toI32Sx8, /* IRRoundingMode(I32) x V256 -> V256 */
+
+      Iop_F32toF16x8,  /* IRRoundingMode(I32) x V256 -> V128 */
+      Iop_F16toF32x8,  /* F16x8(==V128) -> F32x8(==V256) */
 
       Iop_Sqrt32Fx8,
       Iop_Sqrt64Fx4,

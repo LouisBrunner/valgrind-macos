@@ -4838,6 +4838,40 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
                           binop(Iop_V128HLtoV256, qV, shV));
       }
 
+      case Iop_F32toF16x4: {
+         // First, PCast the input vector, retaining the 32x4 format.
+         IRAtom* pcasted = mkPCast32x4(mce, vatom2); // :: 32x4
+         // Now truncate each 32 bit lane to 16 bits.  Since we already PCasted
+         // the input, we're not going to lose any information.
+         IRAtom* pcHI64
+            = assignNew('V', mce, Ity_I64, unop(Iop_V128HIto64, pcasted));//32x2
+         IRAtom* pcLO64
+            = assignNew('V', mce, Ity_I64, unop(Iop_V128to64, pcasted)); // 32x2
+         IRAtom* narrowed
+            = assignNew('V', mce, Ity_I64, binop(Iop_NarrowBin32to16x4,
+                                                 pcHI64, pcLO64)); // 16x4
+         // Finally, roll in any badness from the rounding mode.
+         IRAtom* rmPCasted = mkPCastTo(mce, Ity_I64, vatom1);
+         return mkUifU64(mce, narrowed, rmPCasted);
+      }
+
+      case Iop_F32toF16x8: {
+         // Same scheme as for Iop_F32toF16x4.
+         IRAtom* pcasted = mkPCast32x8(mce, vatom2); // :: 32x8
+         IRAtom* pcHI128
+            = assignNew('V', mce, Ity_V128, unop(Iop_V256toV128_1,
+                                                 pcasted)); // 32x4
+         IRAtom* pcLO128
+            = assignNew('V', mce, Ity_V128, unop(Iop_V256toV128_0,
+                                                 pcasted)); // 32x4
+         IRAtom* narrowed
+            = assignNew('V', mce, Ity_V128, binop(Iop_NarrowBin32to16x8,
+                                                  pcHI128, pcLO128)); // 16x8
+         // Finally, roll in any badness from the rounding mode.
+         IRAtom* rmPCasted = mkPCastTo(mce, Ity_V128, vatom1);
+         return mkUifUV128(mce, narrowed, rmPCasted);
+      }
+
       default:
          ppIROp(op);
          VG_(tool_panic)("memcheck:expr2vbits_Binop");
@@ -5166,6 +5200,10 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_QNarrowUn64Sto32Sx2:
       case Iop_QNarrowUn64Sto32Ux2:
       case Iop_QNarrowUn64Uto32Ux2:
+         return vectorNarrowUnV128(mce, op, vatom);
+
+      // JRS FIXME 2019 Mar 17: per comments on F16toF32x4, this is probably not
+      // right.
       case Iop_F32toF16x4_DEP:
          return vectorNarrowUnV128(mce, op, vatom);
 
@@ -5175,8 +5213,51 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_Widen16Uto32x4:
       case Iop_Widen32Sto64x2:
       case Iop_Widen32Uto64x2:
-      case Iop_F16toF32x4:
          return vectorWidenI64(mce, op, vatom);
+
+      case Iop_F16toF32x4:
+         // JRS 2019 Mar 17: this definitely isn't right, but it probably works
+         // OK by accident if -- as seems likely -- the F16 to F32 conversion
+         // preserves will generate an output 32 bits with at least one 1 bit
+         // set if there's one or more 1 bits set in the input 16 bits.  More
+         // correct code for this is just below, but commented out, so as to
+         // avoid short-term backend failures on targets that can't do
+         // Iop_Interleave{LO,HI}16x4.
+         return vectorWidenI64(mce, op, vatom);
+
+      case Iop_F16toF32x8: {
+         // PCast the input at 16x8.  This makes each lane hold either all
+         // zeroes or all ones.
+         IRAtom* pcasted = mkPCast16x8(mce, vatom); // :: I16x8
+         // Now double the width of each lane to 32 bits.  Because the lanes are
+         // all zeroes or all ones, we can just copy the each lane twice into
+         // the result.  Here's the low half:
+         IRAtom* widenedLO // :: I32x4
+            = assignNew('V', mce, Ity_V128, binop(Iop_InterleaveLO16x8,
+                                                  pcasted, pcasted));
+         // And the high half:
+         IRAtom* widenedHI // :: I32x4
+            = assignNew('V', mce, Ity_V128, binop(Iop_InterleaveHI16x8,
+                                                  pcasted, pcasted));
+         // Glue them back together:
+         return assignNew('V', mce, Ity_V256, binop(Iop_V128HLtoV256,
+                                                    widenedHI, widenedLO));
+      }
+
+      // See comment just above, for Iop_F16toF32x4
+      //case Iop_F16toF32x4: {
+      //   // Same scheme as F16toF32x4
+      //   IRAtom* pcasted = mkPCast16x4(mce, vatom); // :: I16x4
+      //   IRAtom* widenedLO // :: I32x2
+      //      = assignNew('V', mce, Ity_I64, binop(Iop_InterleaveLO16x4,
+      //                                            pcasted, pcasted));
+      //   IRAtom* widenedHI // :: I32x4
+      //      = assignNew('V', mce, Ity_I64, binop(Iop_InterleaveHI16x4,
+      //                                            pcasted, pcasted));
+      //   // Glue them back together:
+      //   return assignNew('V', mce, Ity_V128, binop(Iop_64HLtoV128,
+      //                                              widenedHI, widenedLO));
+      //}
 
       case Iop_PwAddL32Ux2:
       case Iop_PwAddL32Sx2:

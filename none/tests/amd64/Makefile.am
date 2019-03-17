@@ -42,6 +42,7 @@ EXTRA_DIST = \
 	clc.vgtest clc.stdout.exp clc.stderr.exp \
 	crc32.vgtest crc32.stdout.exp crc32.stderr.exp \
 	cmpxchg.vgtest cmpxchg.stdout.exp cmpxchg.stderr.exp \
+	f16c.vgtest f16c.stderr.exp f16c.stdout.exp \
 	faultstatus.disabled faultstatus.stderr.exp \
 	fb_test_amd64.vgtest \
 	fb_test_amd64.stderr.exp fb_test_amd64.stdout.exp \
@@ -76,6 +77,7 @@ EXTRA_DIST = \
 	pcmpxstrx64w.stderr.exp pcmpxstrx64w.stdout.exp \
 	pcmpxstrx64w.vgtest \
 	rcl-amd64.vgtest rcl-amd64.stdout.exp rcl-amd64.stderr.exp \
+	rdrand.vgtest rdrand.stdout.exp rdrand.stderr.exp \
 	redundantRexW.vgtest redundantRexW.stdout.exp \
 	redundantRexW.stderr.exp \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
@@ -154,6 +156,12 @@ if BUILD_FMA_TESTS
 endif
 if BUILD_MPX_TESTS
  check_PROGRAMS += mpx
+endif
+if BUILD_F16C_TESTS
+ check_PROGRAMS += f16c
+endif
+if BUILD_RDRAND_TESTS
+ check_PROGRAMS += rdrand
 endif
 
 

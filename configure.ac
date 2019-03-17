@@ -2925,9 +2925,52 @@ AC_MSG_RESULT([no])
 AM_CONDITIONAL(BUILD_ADX_TESTS, test x$ac_have_as_adx = xyes)
 
 
-# Does the C compiler support the "ifunc" attribute
+# does the amd64 assembler understand the RDRAND instruction?
 # Note, this doesn't generate a C-level symbol.  It generates a
-# automake-level symbol (BUILD_IFUNC_TESTS), used in test Makefile.am's
+# automake-level symbol (BUILD_RDRAND_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if amd64 assembler knows the RDRAND instruction])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  do {
+    asm ("rdrand %r14");
+    asm ("rdrand %r14d");
+    asm ("rdrand %r14w");
+  } while (0)
+]])], [
+ac_have_as_rdrand=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_rdrand=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_RDRAND_TESTS, test x$ac_have_as_rdrand = xyes)
+
+
+# does the amd64 assembler understand the F16C instructions (VCVTPH2PS and
+# VCVTPS2PH) ?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_F16C_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if amd64 assembler knows the F16C instructions])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  do {
+    asm ("vcvtph2ps %xmm5, %ymm10");
+    // If we put the dollar sign and zero together, the shell processing
+    // this configure.ac script substitutes the command name in.  Sigh.
+    asm ("vcvtps2ph $" "0, %ymm10, %xmm5");
+  } while (0)
+]])], [
+ac_have_as_f16c=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_f16c=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_F16C_TESTS, test x$ac_have_as_f16c = xyes)
+
+
 # does the x86/amd64 assembler understand MOVBE?
 # Note, this doesn't generate a C-level symbol.  It generates a
 # automake-level symbol (BUILD_MOVBE_TESTS), used in test Makefile.am's

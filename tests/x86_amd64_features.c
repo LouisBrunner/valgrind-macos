@@ -7,8 +7,8 @@
 // This file determines x86/AMD64 features a processor supports.
 //
 // We return:
-// - 0 if the machine matches the asked-for feature.
-// - 1 if the machine does not.
+// - 0 if the machine has the asked-for feature.
+// - 1 if the machine doesn't have the asked-for feature.
 // - 2 if the asked-for feature isn't recognised (this will be the case for
 //     any feature if run on a non-x86/AMD64 machine).
 // - 3 if there was a usage error (it also prints an error message).
@@ -129,6 +129,12 @@ static Bool go(char* cpu)
      level = 0x80000001;
      cmask = 1 << 16;
      require_amd = True;
+   } else if (strcmp (cpu,  "amd64-f16c" ) == 0) {
+      level = 1;
+      cmask = 1 << 29;
+   } else if (strcmp (cpu,  "amd64-rdrand" ) == 0) {
+      level = 1;
+      cmask = 1 << 30;
 #endif
    } else {
      return UNRECOGNISED_FEATURE;

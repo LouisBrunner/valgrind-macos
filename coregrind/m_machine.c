@@ -945,7 +945,7 @@ Bool VG_(machine_get_hwcaps)( void )
 #elif defined(VGA_amd64)
    { Bool have_sse3, have_ssse3, have_cx8, have_cx16;
      Bool have_lzcnt, have_avx, have_bmi, have_avx2;
-     Bool have_rdtscp;
+     Bool have_rdtscp, have_rdrand, have_f16c;
      UInt eax, ebx, ecx, edx, max_basic, max_extended;
      ULong xgetbv_0 = 0;
      HChar vstr[13];
@@ -953,7 +953,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
      have_sse3 = have_ssse3 = have_cx8 = have_cx16
                = have_lzcnt = have_avx = have_bmi = have_avx2
-               = have_rdtscp = False;
+               = have_rdtscp = have_rdrand = have_f16c = False;
 
      eax = ebx = ecx = edx = max_basic = max_extended = 0;
 
@@ -983,13 +983,15 @@ Bool VG_(machine_get_hwcaps)( void )
      // we assume that SSE1 and SSE2 are available by default
      have_sse3  = (ecx & (1<<0)) != 0;  /* True => have sse3 insns */
      have_ssse3 = (ecx & (1<<9)) != 0;  /* True => have Sup SSE3 insns */
+     // fma     is ecx:12
      // sse41   is ecx:19
      // sse42   is ecx:20
-
      // xsave   is ecx:26
      // osxsave is ecx:27
      // avx     is ecx:28
-     // fma     is ecx:12
+     have_f16c   = (ecx & (1<<29)) != 0; /* True => have F16C insns */
+     have_rdrand = (ecx & (1<<30)) != 0; /* True => have RDRAND insns */
+
      have_avx = False;
      /* have_fma = False; */
      if ( (ecx & ((1<<28)|(1<<27)|(1<<26))) == ((1<<28)|(1<<27)|(1<<26)) ) {
@@ -1057,6 +1059,14 @@ Bool VG_(machine_get_hwcaps)( void )
         have_avx2 = (ebx & (1<<5)) != 0; /* True => have AVX2 */
      }
 
+     /* Sanity check for RDRAND and F16C.  These don't actually *need* AVX2, but
+        it's convenient to restrict them to the AVX2 case since the simulated
+        CPUID we'll offer them on has AVX2 as a base. */
+     if (!have_avx2) {
+        have_f16c   = False;
+        have_rdrand = False;
+     }
+
      va          = VexArchAMD64;
      vai.endness = VexEndnessLE;
      vai.hwcaps  = (have_sse3   ? VEX_HWCAPS_AMD64_SSE3   : 0)
@@ -1066,7 +1076,9 @@ Bool VG_(machine_get_hwcaps)( void )
                  | (have_avx    ? VEX_HWCAPS_AMD64_AVX    : 0)
                  | (have_bmi    ? VEX_HWCAPS_AMD64_BMI    : 0)
                  | (have_avx2   ? VEX_HWCAPS_AMD64_AVX2   : 0)
-                 | (have_rdtscp ? VEX_HWCAPS_AMD64_RDTSCP : 0);
+                 | (have_rdtscp ? VEX_HWCAPS_AMD64_RDTSCP : 0)
+                 | (have_f16c   ? VEX_HWCAPS_AMD64_F16C   : 0)
+                 | (have_rdrand ? VEX_HWCAPS_AMD64_RDRAND : 0);
 
      VG_(machine_get_cache_info)(&vai);
 

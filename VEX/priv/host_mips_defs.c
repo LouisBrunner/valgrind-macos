@@ -3373,7 +3373,7 @@ static UChar *mkForm3R(UChar *p, UInt op, UInt df, UInt wd, UInt ws, UInt wt) {
    return emit32(p, theInstr);
 }
 
-static UChar *mkFormVEC(UChar *p, UInt op, UInt ws, UInt wt, UInt wd) {
+static UChar *mkFormVEC(UChar *p, UInt op, UInt wt, UInt ws, UInt wd) {
    UInt theInstr;
    vassert(op  < 0x20);
    vassert(wt  < 0x20);

@@ -380,8 +380,40 @@ static void fill_prstatus(const ThreadState *tst,
    regs->ARM_cpsr = LibVEX_GuestARM_get_cpsr( &arch->vex );
 
 #elif defined(VGP_arm64_linux)
-   (void)arch;
-   I_die_here;
+   regs->regs[0]  = arch->vex.guest_X0;
+   regs->regs[1]  = arch->vex.guest_X1;
+   regs->regs[2]  = arch->vex.guest_X2;
+   regs->regs[3]  = arch->vex.guest_X3;
+   regs->regs[4]  = arch->vex.guest_X4;
+   regs->regs[5]  = arch->vex.guest_X5;
+   regs->regs[6]  = arch->vex.guest_X6;
+   regs->regs[7]  = arch->vex.guest_X7;
+   regs->regs[8]  = arch->vex.guest_X8;
+   regs->regs[9]  = arch->vex.guest_X9;
+   regs->regs[10] = arch->vex.guest_X10;
+   regs->regs[11] = arch->vex.guest_X11;
+   regs->regs[12] = arch->vex.guest_X12;
+   regs->regs[13] = arch->vex.guest_X13;
+   regs->regs[14] = arch->vex.guest_X14;
+   regs->regs[15] = arch->vex.guest_X15;
+   regs->regs[16] = arch->vex.guest_X16;
+   regs->regs[17] = arch->vex.guest_X17;
+   regs->regs[18] = arch->vex.guest_X18;
+   regs->regs[19] = arch->vex.guest_X19;
+   regs->regs[20] = arch->vex.guest_X20;
+   regs->regs[21] = arch->vex.guest_X21;
+   regs->regs[22] = arch->vex.guest_X22;
+   regs->regs[23] = arch->vex.guest_X23;
+   regs->regs[24] = arch->vex.guest_X24;
+   regs->regs[25] = arch->vex.guest_X25;
+   regs->regs[26] = arch->vex.guest_X26;
+   regs->regs[27] = arch->vex.guest_X27;
+   regs->regs[28] = arch->vex.guest_X28;
+   regs->regs[29] = arch->vex.guest_X29;
+   regs->regs[30] = arch->vex.guest_X30;
+   regs->sp       = arch->vex.guest_XSP;
+   regs->pc       = arch->vex.guest_PC;
+   regs->pstate  = LibVEX_GuestARM64_get_nzcv( &arch->vex ); /* is this correct? */
 
 #elif defined(VGP_s390x_linux)
 #  define DO(n)  regs->gprs[n] = arch->vex.guest_r##n
@@ -492,7 +524,40 @@ static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
    // umm ...
 
 #elif defined(VGP_arm64_linux)
-   I_die_here;
+    fpu->vregs[0]  = *(const __uint128_t*)arch->vex.guest_Q0;
+    fpu->vregs[1]  = *(const __uint128_t*)arch->vex.guest_Q1;
+    fpu->vregs[2]  = *(const __uint128_t*)arch->vex.guest_Q2;
+    fpu->vregs[3]  = *(const __uint128_t*)arch->vex.guest_Q3;
+    fpu->vregs[4]  = *(const __uint128_t*)arch->vex.guest_Q4;
+    fpu->vregs[5]  = *(const __uint128_t*)arch->vex.guest_Q5;
+    fpu->vregs[6]  = *(const __uint128_t*)arch->vex.guest_Q6;
+    fpu->vregs[7]  = *(const __uint128_t*)arch->vex.guest_Q7;
+    fpu->vregs[8]  = *(const __uint128_t*)arch->vex.guest_Q8;
+    fpu->vregs[9]  = *(const __uint128_t*)arch->vex.guest_Q9;
+    fpu->vregs[10] = *(const __uint128_t*)arch->vex.guest_Q10;
+    fpu->vregs[11] = *(const __uint128_t*)arch->vex.guest_Q11;
+    fpu->vregs[12] = *(const __uint128_t*)arch->vex.guest_Q12;
+    fpu->vregs[13] = *(const __uint128_t*)arch->vex.guest_Q13;
+    fpu->vregs[14] = *(const __uint128_t*)arch->vex.guest_Q14;
+    fpu->vregs[15] = *(const __uint128_t*)arch->vex.guest_Q15;
+    fpu->vregs[16] = *(const __uint128_t*)arch->vex.guest_Q16;
+    fpu->vregs[17] = *(const __uint128_t*)arch->vex.guest_Q17;
+    fpu->vregs[18] = *(const __uint128_t*)arch->vex.guest_Q18;
+    fpu->vregs[19] = *(const __uint128_t*)arch->vex.guest_Q19;
+    fpu->vregs[20] = *(const __uint128_t*)arch->vex.guest_Q20;
+    fpu->vregs[21] = *(const __uint128_t*)arch->vex.guest_Q21;
+    fpu->vregs[22] = *(const __uint128_t*)arch->vex.guest_Q22;
+    fpu->vregs[23] = *(const __uint128_t*)arch->vex.guest_Q23;
+    fpu->vregs[24] = *(const __uint128_t*)arch->vex.guest_Q24;
+    fpu->vregs[25] = *(const __uint128_t*)arch->vex.guest_Q25;
+    fpu->vregs[26] = *(const __uint128_t*)arch->vex.guest_Q26;
+    fpu->vregs[27] = *(const __uint128_t*)arch->vex.guest_Q27;
+    fpu->vregs[28] = *(const __uint128_t*)arch->vex.guest_Q28;
+    fpu->vregs[29] = *(const __uint128_t*)arch->vex.guest_Q29;
+    fpu->vregs[30] = *(const __uint128_t*)arch->vex.guest_Q30;
+    fpu->vregs[31] = *(const __uint128_t*)arch->vex.guest_Q31;
+    fpu->fpsr      = *(const __vki_u32*)arch->vex.guest_QCFLAG;
+    fpu->fpcr      = arch->vex.guest_FPCR;
 
 #elif defined(VGP_s390x_linux)
    /* NOTE: The 16 FP registers map to the first 16 VSX registers. */

@@ -112,6 +112,7 @@ where XXXXXX is the bug number as listed below.
 405079  unhandled ppc64le-linux syscall: 131 (quotactl)
 405403  s390x disassembler cannot be used on x86
 405458  MIPS mkFormVEC arguments swapped?
+405716  drd: Fix an integer overflow in the stack margin calculation
 
 n-i-bz  add syswrap for PTRACE_GET|SET_THREAD_AREA on amd64.
 n-i-bz  Fix callgrind_annotate non deterministic order for equal total

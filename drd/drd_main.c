@@ -705,12 +705,11 @@ static void drd_thread_finished(ThreadId vg_tid)
          = (DRD_(thread_get_stack_max)(drd_tid)
             - DRD_(thread_get_stack_min_min)(drd_tid));
       VG_(message)(Vg_UserMsg,
-                   "thread %u%s finished and used %lu bytes out of %lu"
-                   " on its stack. Margin: %lu bytes.\n",
+                   "thread %u%s finished and used %lu bytes out of %lu on its stack. Margin: %ld bytes.\n",
                    drd_tid,
                    DRD_(thread_get_joinable)(drd_tid)
                    ? "" : " (which is a detached thread)",
-                   used_stack, stack_size, stack_size - used_stack);
+                   used_stack, stack_size, (long)(stack_size - used_stack));
 
    }
    drd_stop_using_mem(DRD_(thread_get_stack_min)(drd_tid),

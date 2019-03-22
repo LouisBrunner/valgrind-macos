@@ -17485,7 +17485,10 @@ static IRExpr * _get_maxmin_fp_NaN(IRTemp frA_I64, IRTemp frB_I64)
     *   if frA is a SNaN
     *     result = frA converted to QNaN
     *   else if frB is a SNaN
-    *     result = frB converted to QNaN
+    *     if (frA is QNan)
+    *        result = frA
+    *     else
+    *        result = frB converted to QNaN
     *   else if frB is a QNaN
     *     result = frA
     *   // One of frA or frB was a NaN in order for this function to be called, so
@@ -17496,14 +17499,19 @@ static IRExpr * _get_maxmin_fp_NaN(IRTemp frA_I64, IRTemp frB_I64)
     */
 
 #define SNAN_MASK 0x0008000000000000ULL
+
    return
-   IRExpr_ITE(mkexpr(frA_isSNaN),
+      IRExpr_ITE(mkexpr(frA_isSNaN),
               /* then: result = frA converted to QNaN */
               binop(Iop_Or64, mkexpr(frA_I64), mkU64(SNAN_MASK)),
               /* else:  if frB is a SNaN */
               IRExpr_ITE(mkexpr(frB_isSNaN),
-                         /* then: result = frB converted to QNaN */
-                         binop(Iop_Or64, mkexpr(frB_I64), mkU64(SNAN_MASK)),
+                         IRExpr_ITE(mkexpr(frA_isQNaN),
+                                    /* then: result = frA  */
+                                    mkexpr(frA_I64),
+                                    /* else: result = frB converted to QNaN */
+                                    binop(Iop_Or64, mkexpr(frB_I64),
+                                          mkU64(SNAN_MASK))),
                          /* else:  if frB is a QNaN */
                          IRExpr_ITE(mkexpr(frB_isQNaN),
                                     /* then: result = frA */

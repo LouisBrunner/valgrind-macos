@@ -117,6 +117,8 @@ where XXXXXX is the bug number as listed below.
         the upper and lower 32-bits of the 64-bit result
 405362  PPC64, vmsummbm instruction doesn't handle overflow case correctly
 405363  PPC64, xvcvdpsxws, xvcvdpuxws, do not handle NaN arguments correctly.
+405365  PPC64, function _get_maxmin_fp_NaN() doesn't handle QNaN, SNaN case
+        correctly.
 
 n-i-bz  add syswrap for PTRACE_GET|SET_THREAD_AREA on amd64.
 n-i-bz  Fix callgrind_annotate non deterministic order for equal total

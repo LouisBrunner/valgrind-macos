@@ -16312,52 +16312,71 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
          break;
       case 0x370: // xvcvsxdsp (VSX Vector Convert and round Signed Integer Doubleword
                   //            to Single-Precision format)
-         DIP("xvcvsxddp v%u,v%u\n",  XT, XB);
+      {
+         IRTemp result32hi = newTemp(Ity_I32);
+         IRTemp result32lo = newTemp(Ity_I32);
+
+         DIP("xvcvsxdsp v%u,v%u\n",  XT, XB);
+         assign( result32hi,
+                 unop( Iop_ReinterpF32asI32,
+                       unop( Iop_TruncF64asF32,
+                             binop( Iop_RoundF64toF32,
+                                    get_IR_roundingmode(),
+                                    binop( Iop_I64StoF64,
+                                           get_IR_roundingmode(),
+                                           mkexpr( xB ) ) ) ) ) );
+         assign( result32lo,
+                 unop( Iop_ReinterpF32asI32,
+                       unop( Iop_TruncF64asF32,
+                             binop( Iop_RoundF64toF32,
+                                    get_IR_roundingmode(),
+                                    binop( Iop_I64StoF64,
+                                           get_IR_roundingmode(),
+                                           mkexpr( xB2 ) ) ) ) ) );
+
          putVSReg( XT,
                    binop( Iop_64HLtoV128,
                           binop( Iop_32HLto64,
-                                 unop( Iop_ReinterpF32asI32,
-                                       unop( Iop_TruncF64asF32,
-                                             binop( Iop_RoundF64toF32,
-                                                    get_IR_roundingmode(),
-                                                    binop( Iop_I64StoF64,
-                                                           get_IR_roundingmode(),
-                                                           mkexpr( xB ) ) ) ) ),
-                                 mkU32( 0 ) ),
+                                 mkexpr( result32hi ),
+                                 mkexpr( result32hi ) ),
                           binop( Iop_32HLto64,
-                                 unop( Iop_ReinterpF32asI32,
-                                       unop( Iop_TruncF64asF32,
-                                             binop( Iop_RoundF64toF32,
-                                                    get_IR_roundingmode(),
-                                                    binop( Iop_I64StoF64,
-                                                           get_IR_roundingmode(),
-                                                           mkexpr( xB2 ) ) ) ) ),
-                                 mkU32( 0 ) ) ) );
-         break;
+                                 mkexpr( result32lo ),
+                                 mkexpr( result32lo ) ) ) );
+      }
+      break;
       case 0x350: // xvcvuxdsp (VSX Vector Convert and round Unsigned Integer Doubleword
                   //            to Single-Precision format)
-         DIP("xvcvuxddp v%u,v%u\n", XT, XB);
+      {
+         IRTemp result32hi = newTemp(Ity_I32);
+         IRTemp result32lo = newTemp(Ity_I32);
+
+         DIP("xvcvuxdsp v%u,v%u\n", XT, XB);
+         assign( result32hi,
+                 unop( Iop_ReinterpF32asI32,
+                       unop( Iop_TruncF64asF32,
+                             binop( Iop_RoundF64toF32,
+                                    get_IR_roundingmode(),
+                                    binop( Iop_I64UtoF64,
+                                           get_IR_roundingmode(),
+                                           mkexpr( xB ) ) ) ) ) );
+         assign( result32lo,
+                 unop( Iop_ReinterpF32asI32,
+                       unop( Iop_TruncF64asF32,
+                             binop( Iop_RoundF64toF32,
+                                    get_IR_roundingmode(),
+                                    binop( Iop_I64UtoF64,
+                                           get_IR_roundingmode(),
+                                           mkexpr( xB2 ) ) ) ) ) );
          putVSReg( XT,
                    binop( Iop_64HLtoV128,
                           binop( Iop_32HLto64,
-                                 unop( Iop_ReinterpF32asI32,
-                                       unop( Iop_TruncF64asF32,
-                                             binop( Iop_RoundF64toF32,
-                                                    get_IR_roundingmode(),
-                                                    binop( Iop_I64UtoF64,
-                                                           get_IR_roundingmode(),
-                                                           mkexpr( xB ) ) ) ) ),
-                                 mkU32( 0 ) ),
+                                 mkexpr( result32hi ),
+                                 mkexpr( result32hi ) ),
                           binop( Iop_32HLto64,
-                                 unop( Iop_ReinterpF32asI32,
-                                       unop( Iop_TruncF64asF32,
-                                             binop( Iop_RoundF64toF32,
-                                                    get_IR_roundingmode(),
-                                                    binop( Iop_I64UtoF64,
-                                                           get_IR_roundingmode(),
-                                                           mkexpr( xB2 ) ) ) ) ),
-                                 mkU32( 0 ) ) ) );
-         break;
+                                 mkexpr( result32lo ),
+                                 mkexpr( result32lo ) ) ) );
+      }
+      break;
 
       case 0x1f0: // xvcvsxwdp (VSX Vector Convert Signed Integer Word to Double-Precision format)
          DIP("xvcvsxwdp v%u,v%u\n",  XT, XB);

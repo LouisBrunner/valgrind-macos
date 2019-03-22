@@ -16332,6 +16332,9 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
       case 0x312: // xvcvdpsp (VSX Vector round Double-Precision to single-precision
                   //           and Convert to Single-Precision format)
          DIP("xvcvdpsp v%u,v%u\n", XT, XB);
+
+         /* Note, the 32-bit result is put into the upper and lower bits of the
+            doubleword result.  */
          putVSReg( XT,
                    binop( Iop_64HLtoV128,
                           binop( Iop_32HLto64,
@@ -16340,14 +16343,22 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
                                              binop( Iop_RoundF64toF32,
                                                     get_IR_roundingmode(),
                                                     mkexpr( xB ) ) ) ),
-                                 mkU32( 0 ) ),
+                                 unop( Iop_ReinterpF32asI32,
+                                       unop( Iop_TruncF64asF32,
+                                             binop( Iop_RoundF64toF32,
+                                                    get_IR_roundingmode(),
+                                                    mkexpr( xB ) ) ) ) ),
                           binop( Iop_32HLto64,
                                  unop( Iop_ReinterpF32asI32,
                                        unop( Iop_TruncF64asF32,
                                              binop( Iop_RoundF64toF32,
                                                     get_IR_roundingmode(),
                                                     mkexpr( xB2 ) ) ) ),
-                                 mkU32( 0 ) ) ) );
+                                 unop( Iop_ReinterpF32asI32,
+                                       unop( Iop_TruncF64asF32,
+                                             binop( Iop_RoundF64toF32,
+                                                    get_IR_roundingmode(),
+                                                    mkexpr( xB2 ) ) ) ) ) ) );
          break;
       case 0x390: // xvcvdpuxds (VSX Vector truncate Double-Precision to integer
                   //             and Convert to Unsigned Integer Doubleword format

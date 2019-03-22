@@ -119,6 +119,7 @@ where XXXXXX is the bug number as listed below.
 405363  PPC64, xvcvdpsxws, xvcvdpuxws, do not handle NaN arguments correctly.
 405365  PPC64, function _get_maxmin_fp_NaN() doesn't handle QNaN, SNaN case
         correctly.
+405733  PPC64, xvcvdpsp should write 32-bit result to upper and lower 32-bits of the 64-bit destination field.
 
 n-i-bz  add syswrap for PTRACE_GET|SET_THREAD_AREA on amd64.
 n-i-bz  Fix callgrind_annotate non deterministic order for equal total

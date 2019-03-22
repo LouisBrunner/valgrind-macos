@@ -24029,6 +24029,12 @@ static Bool dis_av_multarith ( UInt theInstr )
       IRTemp abEO = newTemp(Ity_V128);
       IRTemp abOE = newTemp(Ity_V128);
       IRTemp abOO = newTemp(Ity_V128);
+      IRTemp prod = newTemp(Ity_V128);
+      IRTemp sum0 = newTemp(Ity_I32);
+      IRTemp sum1 = newTemp(Ity_I32);
+      IRTemp sum2 = newTemp(Ity_I32);
+      IRTemp sum3 = newTemp(Ity_I32);
+
       aEvn = aOdd = bEvn = bOdd = IRTemp_INVALID;
       DIP("vmsummbm v%d,v%d,v%d,v%d\n",
           vD_addr, vA_addr, vB_addr, vC_addr);
@@ -24045,11 +24051,53 @@ static Bool dis_av_multarith ( UInt theInstr )
       assign( abOO, binop(Iop_MullEven16Sx8, mkexpr(aOdd), mkexpr(bOdd)) );
 
       /* add results together, + vC */
+/*    Unfortunately, we need to chop the results of the adds to 32-bits.  The
+      following lane based calculations don't handle the overflow correctly.  Need
+      to explicitly do the adds and 32-bit chops.
+
       putVReg( vD_addr,
          binop(Iop_QAdd32Sx4, mkexpr(vC),
                binop(Iop_QAdd32Sx4,
                      binop(Iop_QAdd32Sx4, mkexpr(abEE), mkexpr(abEO)),
                      binop(Iop_QAdd32Sx4, mkexpr(abOE), mkexpr(abOO)))) );
+*/
+
+      assign(prod,
+             binop(Iop_QAdd32Sx4,
+                   binop(Iop_QAdd32Sx4, mkexpr(abEE), mkexpr(abEO)),
+                   binop(Iop_QAdd32Sx4, mkexpr(abOE), mkexpr(abOO))));
+      assign( sum0,
+              unop(Iop_64to32,
+              binop(Iop_Add64,
+                    unop(Iop_32Sto64,
+                         unop(Iop_64HIto32, unop(Iop_V128HIto64, mkexpr(prod)))),
+                    unop(Iop_32Sto64,
+                         unop(Iop_64HIto32, unop(Iop_V128HIto64, mkexpr(vC)))))));
+      assign( sum1,
+              unop(Iop_64to32,
+              binop(Iop_Add64,
+                    unop(Iop_32Sto64,
+                         unop(Iop_64to32, unop(Iop_V128HIto64, mkexpr(prod)))),
+                    unop(Iop_32Sto64,
+                         unop(Iop_64to32, unop(Iop_V128HIto64, mkexpr(vC)))))));
+      assign( sum2,
+              unop(Iop_64to32,
+              binop(Iop_Add64,
+                    unop(Iop_32Sto64,
+                         unop(Iop_64HIto32, unop(Iop_V128to64, mkexpr(prod)))),
+                    unop(Iop_32Sto64,
+                         unop(Iop_64HIto32, unop(Iop_V128to64, mkexpr(vC)))))));
+      assign( sum3,
+              unop(Iop_64to32,
+              binop(Iop_Add64,
+                    unop(Iop_32Sto64,
+                         unop(Iop_64to32, unop(Iop_V128to64, mkexpr(prod)))),
+                    unop(Iop_32Sto64,
+                         unop(Iop_64to32, unop(Iop_V128to64, mkexpr(vC)))))));
+      putVReg( vD_addr, binop(Iop_64HLtoV128,
+                              binop(Iop_32HLto64, mkexpr(sum0), mkexpr(sum1)),
+                              binop(Iop_32HLto64, mkexpr(sum2), mkexpr(sum3))));
+
       break;
    }
    case 0x26: { // vmsumuhm (Multiply Sum Unsigned HW Modulo, AV p205)

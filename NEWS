@@ -115,6 +115,7 @@ where XXXXXX is the bug number as listed below.
 405716  drd: Fix an integer overflow in the stack margin calculation
 405356  PPC64, xvcvsxdsp, xvcvuxdsp are supposed to write the 32-bit result to
         the upper and lower 32-bits of the 64-bit result
+405362  PPC64, vmsummbm instruction doesn't handle overflow case correctly
 
 n-i-bz  add syswrap for PTRACE_GET|SET_THREAD_AREA on amd64.
 n-i-bz  Fix callgrind_annotate non deterministic order for equal total

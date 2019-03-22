@@ -16064,18 +16064,160 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
          break;
       case 0x1b0: // xvcvdpsxws (VSX Vector truncate Double-Precision to integer and Convert
                   //             to Signed Integer Word format with Saturate)
+      case 0x190: // xvcvdpuxws (VSX Vector truncate Double-Precision to integer and
+                  //             Convert to Unsigned Integer Word format with Saturate)
       {
-         IRTemp hiResult_32 = newTemp(Ity_I32);
-         IRTemp loResult_32 = newTemp(Ity_I32);
+         IRTemp value_f64[2];
+         IRTemp Result_32[2];
+         IRTemp Result_32_tmp[2];
+         IRTemp nan_mask[2];
+         IRTemp underflow_mask[2];
+         IRTemp overflow_mask[2];
+         IRTemp error_mask[2];
+         IRTemp error_value[2];
+         IRTemp tmp_64[2];
+
+         Int i;
+         Int underflow_value;
+         Int overflow_value;
          IRExpr* rmZero = mkU32(Irrm_ZERO);
 
-         DIP("xvcvdpsxws v%u,v%u\n",  XT, XB);
-         assign(hiResult_32, binop(Iop_F64toI32S, rmZero, mkexpr(xB)));
-         assign(loResult_32, binop(Iop_F64toI32S, rmZero, mkexpr(xB2)));
+         value_f64[0] = newTemp(Ity_F64);
+         assign( value_f64[0], mkexpr( xB ) );
+
+         value_f64[1] = newTemp(Ity_F64);
+         assign( value_f64[1], mkexpr( xB2 ) );
+
+         for ( i = 0; i < 2; i++) {
+            Result_32[i] = newTemp(Ity_I32);
+            Result_32_tmp[i] = newTemp(Ity_I32);
+            nan_mask[i] = newTemp(Ity_I32);
+            underflow_mask[i] = newTemp(Ity_I32);
+            overflow_mask[i] = newTemp(Ity_I32);
+            error_mask[i] = newTemp(Ity_I32);
+            error_value[i] = newTemp(Ity_I32);
+            tmp_64[i]  = newTemp(Ity_I64);
+
+            if ( opc2 == 0x1b0 ) {    // xvcvdpsxws
+               assign(Result_32_tmp[i], binop(Iop_F64toI32S,
+                                              rmZero, mkexpr( value_f64[i] ) ) );
+
+               /* result of Iop_CmpF64 is 0x01 if A < -2^31.  */
+               assign( underflow_mask[i],
+                       unop( Iop_1Sto32,
+                             unop( Iop_32to1,
+                                   binop( Iop_CmpF64,
+                                          mkexpr( value_f64[i] ),
+                                          unop( Iop_ReinterpI64asF64,
+                                                mkU64( 0xC1E0000000000000 ))))));
+               overflow_value  = 0x7FFFFFFF;
+               underflow_value = 0x80000000;
+
+            } else {                  // xvcvdpuxws
+               assign( Result_32_tmp[i],
+                       binop( Iop_F64toI32U,
+                              mkU32( Irrm_ZERO ),
+                              mkexpr( value_f64[i] ) ) );
+
+               /* result of Iop_CmpF64 is 0x01 if A < 0.  */
+               assign( underflow_mask[i],
+                       unop( Iop_1Sto32,
+                             unop( Iop_32to1,
+                                   binop( Iop_CmpF64,
+                                          mkexpr( value_f64[i] ),
+                                          unop( Iop_ReinterpI64asF64,
+                                                mkU64( 0x0 ) ) ) ) ) );
+               overflow_value  = 0xFFFFFFFF;
+               underflow_value = 0;
+            }
+
+            /* Check if input is NaN, output is 0x80000000.
+               if input < -2^31,  output is 0x80000000.
+               if input >  2^31 - 1, output is 0x7FFFFFFF  */
+            assign( tmp_64[i], unop (Iop_ReinterpF64asI64,
+                                     mkexpr( value_f64[i] ) ) );
+
+            assign( nan_mask[i], unop( Iop_1Sto32,
+                                    is_NaN( Ity_I64, tmp_64[i] ) ) );
+
+            /* result of Iop_CmpF64 is 0x00 if A > 2^31 - 1.  */
+            assign( overflow_mask[i],
+                    unop( Iop_1Sto32,
+                          binop( Iop_CmpEQ32,
+                                 mkU32( 0 ),
+                                 binop( Iop_CmpF64,
+                                        mkexpr( value_f64[i] ),
+                                        unop( Iop_ReinterpI64asF64,
+                                              mkU64( 0x41DFFFFFFFC00000 ))))));
+
+            assign( error_mask[i], binop( Iop_Or32, mkexpr( overflow_mask[i] ),
+                                          binop( Iop_Or32,
+                                                 mkexpr( underflow_mask[i] ),
+                                                 mkexpr( nan_mask[i] ) ) ) );
+
+            if ( opc2 == 0x1b0 ) {    // xvcvdpsxws
+               /* NaN takes precedence over underflow/overflow for vxcvdpsxws */
+               assign( error_value[i],
+                       binop( Iop_Or32,
+                              binop( Iop_And32,
+                                     unop( Iop_Not32, mkexpr( nan_mask[i] ) ),
+                                     binop( Iop_Or32,
+                                            binop( Iop_And32,
+                                                   mkexpr( overflow_mask[i] ),
+                                                   mkU32( overflow_value ) ),
+                                            binop( Iop_And32,
+                                                   mkexpr( underflow_mask[i] ),
+                                                   mkU32( underflow_value ) ) ) ),
+                              binop( Iop_And32,
+                                     mkexpr( nan_mask[i] ),
+                                     mkU32( 0x80000000 ) ) ) );
+            } else {
+               /* Less then zeo takes precedence over NaN/overflow
+                  for vxcvdpuxws in the hardware. Matching the HW here
+                  but it does not appear to match ISA.  */
+               assign( error_value[i],
+                       binop( Iop_Or32,
+                              binop( Iop_And32,
+                                     unop( Iop_Not32,
+                                           mkexpr( underflow_mask[i] ) ),
+                                     binop( Iop_Or32,
+                                            binop( Iop_And32,
+                                                   mkexpr( overflow_mask[i] ),
+                                                   mkU32( overflow_value ) ),
+                                            binop( Iop_And32,
+                                                   mkexpr( nan_mask[i] ),
+                                                   mkU32( 0x80000000 ) ) ) ),
+                              binop( Iop_And32,
+                                     mkexpr( underflow_mask[i] ),
+                                     mkU32( underflow_value ) ) ) );
+            }
+
+            assign( Result_32[i], binop( Iop_Or32,
+                                         binop( Iop_And32,
+                                                mkexpr( Result_32_tmp[i] ),
+                                                unop( Iop_Not32,
+                                                      mkexpr( error_mask[i] ) ) ),
+                                         binop( Iop_And32,
+                                                mkexpr( error_value[i] ),
+                                                mkexpr( error_mask[i] ) ) ) );
+         }
+
+         if ( opc2 == 0x1b0 ) {
+            DIP("xvcvdpsxws v%u,v%u\n",  XT, XB);
+
+         } else {
+            DIP("xvcvdpuxws v%u,v%u", XT, XB);
+         }
+
+         /* Result is put in the hi and low 32-bits of the double word result.  */
          putVSReg( XT,
-                   binop( Iop_64HLtoV128,
-                          unop( Iop_32Sto64, mkexpr( hiResult_32 ) ),
-                          unop( Iop_32Sto64, mkexpr( loResult_32 ) ) ) );
+                binop( Iop_64HLtoV128,
+                       binop( Iop_32HLto64,
+                              mkexpr( Result_32[0] ),
+                              mkexpr( Result_32[0] ) ),
+                       binop( Iop_32HLto64,
+                              mkexpr( Result_32[1] ),
+                              mkexpr( Result_32[1] ) ) ) );
          break;
       }
       case 0x130: case 0x110: // xvcvspsxws, xvcvspuxws
@@ -16215,22 +16357,6 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
                    binop( Iop_64HLtoV128,
                           binop( Iop_F64toI64U, mkU32( Irrm_ZERO ), mkexpr( xB ) ),
                           binop( Iop_F64toI64U, mkU32( Irrm_ZERO ), mkexpr( xB2 ) ) ) );
-         break;
-      case 0x190: // xvcvdpuxws (VSX Vector truncate Double-Precision to integer and
-                  //             Convert to Unsigned Integer Word format with Saturate)
-         DIP("xvcvdpuxws v%u,v%u\n", XT, XB);
-         putVSReg( XT,
-                   binop( Iop_64HLtoV128,
-                          binop( Iop_32HLto64,
-                                 binop( Iop_F64toI32U,
-                                        mkU32( Irrm_ZERO ),
-                                        mkexpr( xB ) ),
-                                 mkU32( 0 ) ),
-                          binop( Iop_32HLto64,
-                                 binop( Iop_F64toI32U,
-                                        mkU32( Irrm_ZERO ),
-                                        mkexpr( xB2 ) ),
-                                 mkU32( 0 ) ) ) );
          break;
       case 0x392: // xvcvspdp (VSX Vector Convert Single-Precision to Double-Precision format)
          DIP("xvcvspdp v%u,v%u\n", XT, XB);

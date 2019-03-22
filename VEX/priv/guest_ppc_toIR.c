@@ -15619,8 +15619,12 @@ static Bool dis_av_rotate ( UInt theInstr )
    IRTemp vA_word[4];
    IRTemp left_bits[4];
    IRTemp right_bits[4];
+   IRTemp mb[4];
+   IRTemp me[4];
    IRTemp shift[4];
    IRTemp mask[4];
+   IRTemp tmp_mask[4];
+   IRTemp invert_mask[4];
    IRTemp tmp128[4];
    UInt i;
    UInt num_words;
@@ -15664,7 +15668,11 @@ static Bool dis_av_rotate ( UInt theInstr )
       left_bits[i]  = newTemp( Ity_I8 );
       right_bits[i] = newTemp( Ity_I8 );
       shift[i] = newTemp( Ity_I8 );
-      mask[i]  = newTemp( Ity_V128 );
+      mb[i] = newTemp( Ity_I64 );
+      me[i] = newTemp( Ity_I64 );
+      tmp_mask[i] = newTemp( Ity_I64 );
+      invert_mask[i] = newTemp( Ity_I64 );
+      mask[i] = newTemp( Ity_V128 );
       tmp128[i] = newTemp( Ity_V128 );
       vA_word[i] = newTemp( Ity_V128 );
 
@@ -15678,50 +15686,90 @@ static Bool dis_av_rotate ( UInt theInstr )
                                               * word_size ) ),
                                  mkexpr( field_mask ) ) ) ) );
 
+      assign( mb[i], unop( Iop_V128to64,
+                           binop( Iop_AndV128,
+                                  binop( Iop_ShrV128,
+                                         mkexpr( vB ),
+                                         mkU8( ( num_words - 1 - i )
+                                               * word_size + 16 ) ),
+                                  mkexpr( field_mask ) ) ) );
+
+      assign( me[i], unop( Iop_V128to64,
+                           binop( Iop_AndV128,
+                                  binop( Iop_ShrV128,
+                                         mkexpr( vB ),
+                                         mkU8( ( num_words - 1 - i )
+                                               * word_size + 8 ) ),
+                                  mkexpr( field_mask ) ) ) );
+
+      /* If me < mb, we have to flip things around and invert the mask */
+      assign( invert_mask[i],
+              unop( Iop_1Sto64, binop( Iop_CmpLT64U,
+                                       mkexpr( me[i] ), mkexpr( mb[i] ) ) ) );
+
       /* left_bits = 63 - mb.  Tells us how many bits to the left
        * of mb to clear. Note for a word left_bits = 32+mb, for a double
        * word left_bits = mb
        */
       assign( left_bits[i],
               unop( Iop_64to8,
-                    binop( Iop_Add64,
-                           mkU64( 64 - word_size ),
-                           unop( Iop_V128to64,
-                                 binop( Iop_AndV128,
-                                        binop( Iop_ShrV128,
-                                               mkexpr( vB ),
-                                               mkU8( ( num_words - 1 - i )
-                                                     * word_size + 16 ) ),
-                                        mkexpr( field_mask ) ) ) ) ) );
+                    binop( Iop_Or64,
+                           binop( Iop_And64,     // mb < me
+                                  unop( Iop_Not64, mkexpr( invert_mask[i] ) ),
+                                  binop( Iop_Add64,
+                                         mkU64( 64 - word_size ),
+                                         mkexpr( mb[i] ) ) ),
+                           binop( Iop_And64,     // me < mb
+                                  mkexpr( invert_mask[i] ),
+                                  binop( Iop_Add64,
+                                         mkU64( 64 + 1 - word_size ),
+                                         mkexpr( me[i] ) ) ) ) ) );
+
       /* right_bits = 63 - me.  Tells us how many bits to the right
        * of me to clear. Note for a word, left_bits = me+32, for a double
        * word left_bits = me
        */
       assign( right_bits[i],
               unop( Iop_64to8,
-                    binop( Iop_Sub64,
-                           mkU64( word_size - 1 ),
-                           unop( Iop_V128to64,
-                                 binop( Iop_AndV128,
-                                        binop( Iop_ShrV128,
-                                               mkexpr( vB ),
-                                               mkU8( ( num_words - 1 - i )
-                                                     * word_size + 8 ) ),
-                                        mkexpr( field_mask ) ) ) ) ) );
+                    binop( Iop_Or64,
+                           binop( Iop_And64,   // mb < me
+                                  unop( Iop_Not64, mkexpr( invert_mask[i] ) ),
+                                  binop( Iop_Sub64,
+                                         mkU64( word_size - 1 ),
+                                         mkexpr( me[i] ) ) ),
+                           binop( Iop_And64,   // me < mb
+                                  mkexpr( invert_mask[i] ),
+                                  binop( Iop_Sub64,
+                                         mkU64( word_size - 1 + 1),
+                                         mkexpr( mb[i] ) ) ) ) ) );
 
       /* create mask for 32-bit word or 64-bit word */
+      assign( tmp_mask[i],
+              binop( Iop_Shl64,
+                     binop( Iop_Shr64,
+                            binop( Iop_Shr64,
+                                   binop( Iop_Shl64,
+                                          mkU64( 0xFFFFFFFFFFFFFFFF ),
+                                          mkexpr( left_bits[i] ) ),
+                                   mkexpr( left_bits[i] ) ),
+                            mkexpr( right_bits[i] ) ),
+                     mkexpr( right_bits[i] ) ) );
+
       assign( mask[i],
               binop( Iop_64HLtoV128,
                      mkU64( 0 ),
-                     binop( Iop_Shl64,
-                            binop( Iop_Shr64,
-                                   binop( Iop_Shr64,
-                                          binop( Iop_Shl64,
-                                                 mkU64( 0xFFFFFFFFFFFFFFFF ),
-                                                 mkexpr( left_bits[i] ) ),
-                                          mkexpr( left_bits[i] ) ),
-                                   mkexpr( right_bits[i] ) ),
-                            mkexpr( right_bits[i] ) ) ) );
+                     binop( Iop_Or64,
+                            binop( Iop_And64,
+                                   unop( Iop_Not64, mkexpr( invert_mask[i] ) ),
+                                   mkexpr( tmp_mask[i] ) ),
+                            binop( Iop_And64,
+                                   mkexpr( invert_mask[i] ),
+                                   /* Need to make sure mask is only the size
+                                      desired word.*/
+                                   binop( Iop_And64,
+                                          mkU64( word_mask ),
+                                          unop( Iop_Not64,
+                                                mkexpr( tmp_mask[i] ) ) ) ))));
 
       /* Need to rotate vA using a left and right shift of vA OR'd together
        * then ANDed with the mask.
@@ -15750,7 +15798,7 @@ static Bool dis_av_rotate ( UInt theInstr )
                                                mkU32( word_size ),
                                                unop( Iop_8Uto32,
                                                      mkexpr( shift[i] ) ) )
-                                         ) ) ) ) );
+                                      ) ) ) ) );
    }
 
    switch (opc2) {

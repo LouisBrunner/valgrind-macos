@@ -30206,6 +30206,7 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
                break;
             goto decode_failure;
          }
+         /* fallthrough */
       case 0xC:  /* INSV */
       case 0x38: {  /* EXTR.W */
          if (VEX_MIPS_PROC_DSP(archinfo->hwcaps)) {

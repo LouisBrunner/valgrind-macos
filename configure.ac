@@ -1748,44 +1748,47 @@ AM_CONDITIONAL(HAVE_NR_MEMBARRIER, [test x$ac_have_nr_membarrier = xyes])
 
 case "${host_cpu}" in
     mips*)
-        # does this compiler support -march=mips32 (mips32 default) ?
-        AC_MSG_CHECKING([if gcc accepts -march=mips32 -mabi=32])
+        ARCH=$(echo "$CFLAGS" | grep -E -e '-march=@<:@^ @:>@+' -e '-mips@<:@^ +@:>@')
+        if test -z "$ARCH"; then
+          # does this compiler support -march=mips32 (mips32 default) ?
+          AC_MSG_CHECKING([if gcc accepts -march=mips32 -mabi=32])
 
-        safe_CFLAGS=$CFLAGS
-        CFLAGS="$CFLAGS -mips32 -mabi=32 -Werror"
+          safe_CFLAGS=$CFLAGS
+          CFLAGS="$CFLAGS -mips32 -mabi=32 -Werror"
 
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-          return 0;
-        ]])], [
-        FLAG_M32="-mips32 -mabi=32"
-        AC_MSG_RESULT([yes])
-        ], [
-        FLAG_M32=""
-        AC_MSG_RESULT([no])
-        ])
-        CFLAGS=$safe_CFLAGS
+          AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+            return 0;
+          ]])], [
+          FLAG_M32="-mips32 -mabi=32"
+          AC_MSG_RESULT([yes])
+          ], [
+          FLAG_M32=""
+          AC_MSG_RESULT([no])
+          ])
+          CFLAGS=$safe_CFLAGS
 
-        AC_SUBST(FLAG_M32)
+          AC_SUBST(FLAG_M32)
 
 
-        # does this compiler support -march=mips64r2 (mips64r2 default) ?
-        AC_MSG_CHECKING([if gcc accepts -march=mips64r2 -mabi=64])
+          # does this compiler support -march=mips64r2 (mips64r2 default) ?
+          AC_MSG_CHECKING([if gcc accepts -march=mips64r2 -mabi=64])
 
-        safe_CFLAGS=$CFLAGS
-        CFLAGS="$CFLAGS -march=mips64r2 -mabi=64 -Werror"
+          safe_CFLAGS=$CFLAGS
+          CFLAGS="$CFLAGS -march=mips64r2 -mabi=64 -Werror"
 
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-          return 0;
-        ]])], [
-        FLAG_M64="-march=mips64r2 -mabi=64"
-        AC_MSG_RESULT([yes])
-        ], [
-        FLAG_M64=""
-        AC_MSG_RESULT([no])
-        ])
-        CFLAGS=$safe_CFLAGS
+          AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+            return 0;
+          ]])], [
+          FLAG_M64="-march=mips64r2 -mabi=64"
+          AC_MSG_RESULT([yes])
+          ], [
+          FLAG_M64=""
+          AC_MSG_RESULT([no])
+          ])
+          CFLAGS=$safe_CFLAGS
 
-        AC_SUBST(FLAG_M64)
+          AC_SUBST(FLAG_M64)
+        fi
         ;;
     *)
         # does this compiler support -m32 ?
@@ -1829,44 +1832,48 @@ case "${host_cpu}" in
         ;;
 esac
 
-# does this compiler support -march=octeon (Cavium OCTEON I Specific) ?
-AC_MSG_CHECKING([if gcc accepts -march=octeon])
 
-safe_CFLAGS=$CFLAGS
-CFLAGS="$CFLAGS $FLAG_M64 -march=octeon -Werror"
+ARCH=$(echo "$CFLAGS" | grep -E -e '-march=@<:@^ @:>@+' -e '-mips@<:@^ +@:>@')
+if test -z "$ARCH"; then
+  # does this compiler support -march=octeon (Cavium OCTEON I Specific) ?
+  AC_MSG_CHECKING([if gcc accepts -march=octeon])
 
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-  return 0;
-]])], [
-FLAG_OCTEON="-march=octeon"
-AC_MSG_RESULT([yes])
-], [
-FLAG_OCTEON=""
-AC_MSG_RESULT([no])
-])
-CFLAGS=$safe_CFLAGS
+  safe_CFLAGS=$CFLAGS
+  CFLAGS="$CFLAGS $FLAG_M64 -march=octeon -Werror"
 
-AC_SUBST(FLAG_OCTEON)
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+    return 0;
+  ]])], [
+  FLAG_OCTEON="-march=octeon"
+  AC_MSG_RESULT([yes])
+  ], [
+  FLAG_OCTEON=""
+  AC_MSG_RESULT([no])
+  ])
+  CFLAGS=$safe_CFLAGS
+
+  AC_SUBST(FLAG_OCTEON)
 
 
-# does this compiler support -march=octeon2 (Cavium OCTEON II Specific) ?
-AC_MSG_CHECKING([if gcc accepts -march=octeon2])
+  # does this compiler support -march=octeon2 (Cavium OCTEON II Specific) ?
+  AC_MSG_CHECKING([if gcc accepts -march=octeon2])
 
-safe_CFLAGS=$CFLAGS
-CFLAGS="$CFLAGS $FLAG_M64 -march=octeon2 -Werror"
+  safe_CFLAGS=$CFLAGS
+  CFLAGS="$CFLAGS $FLAG_M64 -march=octeon2 -Werror"
 
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-  return 0;
-]])], [
-FLAG_OCTEON2="-march=octeon2"
-AC_MSG_RESULT([yes])
-], [
-FLAG_OCTEON2=""
-AC_MSG_RESULT([no])
-])
-CFLAGS=$safe_CFLAGS
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+    return 0;
+  ]])], [
+  FLAG_OCTEON2="-march=octeon2"
+  AC_MSG_RESULT([yes])
+  ], [
+  FLAG_OCTEON2=""
+  AC_MSG_RESULT([no])
+  ])
+  CFLAGS=$safe_CFLAGS
 
-AC_SUBST(FLAG_OCTEON2)
+  AC_SUBST(FLAG_OCTEON2)
+fi
 
 
 # does this compiler support -mmsa (MIPS MSA ASE) ?

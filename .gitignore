@@ -1479,6 +1479,7 @@
 /none/tests/amd64/clc
 /none/tests/amd64/cmpxchg
 /none/tests/amd64/crc32
+/none/tests/amd64/f16c
 /none/tests/amd64/faultstatus
 /none/tests/amd64/fb_test_amd64
 /none/tests/amd64/fcmovnu
@@ -1517,6 +1518,7 @@
 /none/tests/amd64/pcmpxstrx64
 /none/tests/amd64/pcmpxstrx64w
 /none/tests/amd64/rcl-amd64
+/none/tests/amd64/rdrand
 /none/tests/amd64/redundantRexW
 /none/tests/amd64/sbbmisc
 /none/tests/amd64/shrld

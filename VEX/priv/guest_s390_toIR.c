@@ -12745,7 +12745,7 @@ s390_irgen_EX_SS(UChar r, IRTemp addr2,
    IRTemp cond;
    IRDirty *d;
    IRTemp torun;
-   unsigned long ovl;
+   ULong ovl;
 
    IRTemp start1 = newTemp(Ity_I64);
    IRTemp start2 = newTemp(Ity_I64);

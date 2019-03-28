@@ -86,6 +86,8 @@ where XXXXXX is the bug number as listed below.
 399444  VEX/priv/guest_s390_toIR.c:17407: (style) Mismatching assignment [..]
 400490  s390x: VRs allocated as if separate from FPRs
 400491  s390x: Operand of LOCH treated as unsigned integer
+400975  Compile error: error: '-mips64r2' conflicts with the other architecture
+        options, which specify a mips64 processor
 401112  LLVM 5.0 generates comparison against partially initialized data
 401277  More bugs in z13 support
 401454  Add a --show-percs option to cg_annotate and callgrind_annotate.

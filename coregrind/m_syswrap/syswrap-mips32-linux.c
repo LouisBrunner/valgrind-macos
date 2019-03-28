@@ -419,7 +419,7 @@ PRE(sys_mmap2)
      units rather than bytes, so that it can be used for files bigger than
      2^32 bytes. */
   SysRes r;
-  PRINT("sys_mmap2 ( %#lx, %lu, %lu, %lu, %lu, %lu )",
+  PRINT("sys_mmap2 ( %#lx, %lu, %ld, %ld, %ld, %ld )",
         ARG1, ARG2, SARG3, SARG4, SARG5, SARG6);
   PRE_REG_READ6(long, "mmap2", unsigned long, start, unsigned long, length,
                 unsigned long, prot, unsigned long, flags,
@@ -564,7 +564,7 @@ POST(sys_fstatat64)
 
 PRE(sys_fstat64)
 {
-  PRINT ("sys_fstat64 ( %lu, %#lx )", SARG1, ARG2);
+  PRINT ("sys_fstat64 ( %ld, %#lx )", SARG1, ARG2);
   PRE_REG_READ2 (long, "fstat64", unsigned long, fd, struct stat64 *, buf);
   PRE_MEM_WRITE ("fstat64(buf)", ARG2, sizeof (struct vki_stat64));
 }

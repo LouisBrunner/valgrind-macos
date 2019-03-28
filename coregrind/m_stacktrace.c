@@ -1426,7 +1426,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
             }
          }
          if(debug)
-            VG_(printf)("offset: 0x%lx\n", frame_offset);
+            VG_(printf)("offset: 0x%ld\n", frame_offset);
       }
       if (seen_sp_adjust) {
          if (0 == uregs.pc || 1 == uregs.pc) break;

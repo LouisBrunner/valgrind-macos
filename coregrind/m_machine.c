@@ -757,9 +757,11 @@ static Bool VG_(parse_cpuinfo)(void)
           case VEX_PRID_COMP_CAVIUM:
           case VEX_PRID_COMP_NETLOGIC:
              vai.hwcaps |= (VEX_MIPS_CPU_ISA_M64R2 | VEX_MIPS_CPU_ISA_M64R1);
+             /* fallthrough */
           case VEX_PRID_COMP_INGENIC_E1:
           case VEX_PRID_COMP_MIPS:
              vai.hwcaps |= VEX_MIPS_CPU_ISA_M32R2;
+             /* fallthrough */
           case VEX_PRID_COMP_BROADCOM:
              vai.hwcaps |= VEX_MIPS_CPU_ISA_M32R1;
              break;

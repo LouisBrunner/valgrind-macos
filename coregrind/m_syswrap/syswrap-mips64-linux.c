@@ -317,7 +317,7 @@ PRE(sys_cacheflush)
 
 PRE(sys_reboot)
 {
-   PRINT("sys_reboot ( %ld, %" FMT_REGWORD "d, %" FMT_REGWORD "u, %#"
+   PRINT("sys_reboot ( %ld, %" FMT_REGWORD "u, %" FMT_REGWORD "u, %#"
          FMT_REGWORD "x )", SARG1, ARG2, ARG3, ARG4);
    // An approximation. ARG4 is only read conditionally by the kernel
    PRE_REG_READ4(int, "reboot",

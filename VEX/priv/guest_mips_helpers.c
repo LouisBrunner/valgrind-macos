@@ -1118,6 +1118,7 @@ extern UInt mips_dirtyhelper_calculate_MSACSR ( void* gs, UInt ws, UInt wt,
 
       case FSULTD:
          ASM_VOLATILE_MSA_BINARY(fsult.d);
+         break;
 
       case FMAXW:
          ASM_VOLATILE_MSA_BINARY(fmax.w);
@@ -1173,6 +1174,7 @@ extern UInt mips_dirtyhelper_calculate_MSACSR ( void* gs, UInt ws, UInt wt,
 
       case FRINTD:
          ASM_VOLATILE_MSA_UNARY(frint.d);
+         break;
 
       case FTRUNCUW:
          ASM_VOLATILE_MSA_UNARY(ftrunc_u.w);

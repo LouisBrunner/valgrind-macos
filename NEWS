@@ -81,9 +81,13 @@ where XXXXXX is the bug number as listed below.
 
 385411  s390x: z13 vector floating-point instructions not implemented
 397187  z13 vector register support for vgdb gdbserver
+398183  Vex errors with _mm256_shuffle_epi8/vpshufb
+398870  Please add support for instruction vcvtps2ph
+399287  amd64 front end: Illegal Instruction vcmptrueps
 399301  Use inlined frames in Massif XTree output. 
 399322  Improve callgrind_annotate output
 399444  VEX/priv/guest_s390_toIR.c:17407: (style) Mismatching assignment [..]
+400164  helgrind test encounters mips x-compiler warnings and assembler error
 400490  s390x: VRs allocated as if separate from FPRs
 400491  s390x: Operand of LOCH treated as unsigned integer
 400975  Compile error: error: '-mips64r2' conflicts with the other architecture
@@ -96,6 +100,7 @@ where XXXXXX is the bug number as listed below.
 401822  none/tests/ppc64/jm-vmx fails and produces assembler warnings
 402006  mark helper regs defined in final_tidyup before freeres_wrapper call
 402048  WARNING: unhandled ppc64[be|le]-linux syscall: 26 (ptrace)
+402123  invalid assembler opcodes for mips32r2
 402134  assertion fail in mc_translate.c (noteTmpUsesIn) Iex_VECRET on arm64
 402327  Warning: DWARF2 CFI reader: unhandled DW_OP_ opcode 0x13 (DW_OP_drop)
 402341  drd/tests/tsan_thread_wrappers_pthread.h:369: suspicious code ?
@@ -107,21 +112,23 @@ where XXXXXX is the bug number as listed below.
 402515  Implement new option --show-error-list=no|yes / -s
 402519  POWER 3.0 addex instruction incorrectly implemented
 402781  Redo the cache used to process indirect branch targets
-403123  vex amd64->IR: unhandled instruction bytes: 0xF3 0x48 0xF 0xAE 0xD3 (wrfsbase)
+403123  vex amd64->IR:0xF3 0x48 0xF 0xAE 0xD3 (wrfsbase)
 403552  s390x: wrong facility bit checked for vector facility
 404054  memcheck powerpc subfe x, x, x initializes x to 0 or -1 based on CA
 404638  Add VG_(replaceIndexXA)
+404888  autotools cleanup series
 405079  unhandled ppc64le-linux syscall: 131 (quotactl)
-405403  s390x disassembler cannot be used on x86
-405458  MIPS mkFormVEC arguments swapped?
-405716  drd: Fix an integer overflow in the stack margin calculation
+405182  Valgrind fails to build with Clang
 405356  PPC64, xvcvsxdsp, xvcvuxdsp are supposed to write the 32-bit result to
         the upper and lower 32-bits of the 64-bit result
 405362  PPC64, vmsummbm instruction doesn't handle overflow case correctly
 405363  PPC64, xvcvdpsxws, xvcvdpuxws, do not handle NaN arguments correctly.
 405365  PPC64, function _get_maxmin_fp_NaN() doesn't handle QNaN, SNaN case
         correctly.
+405403  s390x disassembler cannot be used on x86
 405430  Use gcc -Wimplicit-fallthrough=2 by default if available
+405458  MIPS mkFormVEC arguments swapped?
+405716  drd: Fix an integer overflow in the stack margin calculation
 405733  PPC64, xvcvdpsp should write 32-bit result to upper and lower 32-bits
         of the 64-bit destination field.
 405734  PPC64, vrlwnm, vrlwmi, vrldrm, vrldmi do not work properly when me < mb
@@ -131,6 +138,7 @@ n-i-bz  add syswrap for PTRACE_GET|SET_THREAD_AREA on amd64.
 n-i-bz  Fix callgrind_annotate non deterministic order for equal total
 n-i-bz  callgrind_annotate --threshold=100 does not print all functions.
 n-i-bz  callgrind_annotate Use of uninitialized value in numeric gt (>)
+n-i-bz  amd64 (x86_64): RDRAND and F16C insn set extensions are supported
 
 
 

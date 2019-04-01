@@ -6,12 +6,17 @@ Created Sat 9 Mar 2019.  This contains bugs reported only after the release of
 3.14.0.  Unlike in 3_13_BUGSTATUS.txt and perhaps earlier such files, it
 doesn't carry over bugs from earlier versions.
 
+*s show prio for 3.15.0:
+
+** high prio
+*  medium prio
+
 ========================================================================
 ========================================================================
 
 === Debuginfo reader ===================================================
 
-404843  s390x: backtrace sometimes ends prematurely
+404843*8 s390x: backtrace sometimes ends prematurely
         Should try to fix for 3.15.0
 
 405295  valgrind 3.14.0 dies due to mysterious DWARF information? (output from
@@ -41,7 +46,7 @@ doesn't carry over bugs from earlier versions.
 
 === Tools/Callgrind ====================================================
 
-399355  Add callgrind_diff
+399355* Add callgrind_diff
         Has patch
 400234  keep the parameters of the most costly path
         Wishlist
@@ -50,7 +55,7 @@ doesn't carry over bugs from earlier versions.
 === Tools/DRD ==========================================================
 === Tools/Helgrind =====================================================
 
-400793  pthread_rwlock_timedwrlock false positive
+400793* pthread_rwlock_timedwrlock false positive
         Probably would be easy to fix, but requires testing
 405205  tests/filter_libc: remove the line holding the futex syscall error
         entirely
@@ -62,7 +67,7 @@ doesn't carry over bugs from earlier versions.
 
 398569  invalid reads reported in libarmmem memcmp when using strings
         8 byte p-l-ok thing on arm32
-401284  False positive "Source and destination overlap in strncat"
+401284* False positive "Source and destination overlap in strncat"
         possibly valid; possible off-by-one error in overlap checking?
 402604  Report All Dangling pointers upon exit and monitor command
         Wishlist
@@ -71,14 +76,14 @@ doesn't carry over bugs from earlier versions.
 403802  leak_cpp_interior fails with some reachable blocks different than
         expected
         Leak-count numbers differ?
-405201  Incorrect size of struct vki_siginfo on 64-bit Linux architectures
+405201* Incorrect size of struct vki_siginfo on 64-bit Linux architectures
 
 === Tools/SGCheck ======================================================
 === Uncategorised ======================================================
 === Uncategorised/build ================================================
 
 398649  New s390x z13 support doesn't build with older gcc/binutils
-400162  Patch: Guard against __GLIBC_PREREQ for musl libc
+400162* Patch: Guard against __GLIBC_PREREQ for musl libc
         Looks like simple fix; should take
 400164  helgrind test encounters mips x-compiler warnings and assembler error
         Obscure compiler?
@@ -86,10 +91,6 @@ doesn't carry over bugs from earlier versions.
         Some LTO wierdness; doesn't seem terribly important
 402123  invalid assembler opcodes for mips32r2
 402351  mips64 libvexmultiarch_test fails on s390x
-404888  [PATCH] autotools cleanup series
-        Should try to land for 3.15.0
-405182  Valgrind fails to build with Clang
-        Should try to land for 3.15.0
 
 === Uncategorised/run ==================================================
 
@@ -100,19 +101,18 @@ doesn't carry over bugs from earlier versions.
 === VEX ================================================================
 === VEX/amd64 ==========================================================
 
-398183  Vex errors with _mm256_shuffle_epi8/vpshufb
-        Potentially serious?
 398523  unhandled instruction bytes: 0x8F 0xEA 0x78 0x10 0xD0 0x8 0x4 0x0 0x0
         == 381819
 398545  Support for SHA instruction on Ryzen
-398870  Please add support for instruction vcvtps2ph
-399287  Illegal Instruction vcmptrueps
-400538  vex amd64->IR: 0x48 0xCF 0xF 0x1F 0x0 0xFF 0xD2 0xCC 0x90 0x55
+
+398870*  Please add support for instruction vcvtps2ph
+
+400538*  vex amd64->IR: 0x48 0xCF 0xF 0x1F 0x0 0xFF 0xD2 0xCC 0x90 0x55
         Should fix (Wine/Windows)
+        This is IRETQ.  Are we expecting that to work at all in user space?
+
 400829  unhandled instruction bytes in macOS
         Seems like CMOVNS; and therefore I think this is fishy
-404272  vex amd64->IR: 0x66 0xF 0x38 0x23 0xC0 0xF3 (PMOVSXWD)
-        Should fix
 
 === VEX/arm32 ==========================================================
 
@@ -140,7 +140,7 @@ doesn't carry over bugs from earlier versions.
 
 === VEX/x86 ============================================================
 
-401719  sterrror_r on i686 causes a GPF
+401719*  sterrror_r on i686 causes a GPF
         32-bit segreg problem; maybe we should fix?
 
 === zz_other ===========================================================
@@ -171,7 +171,7 @@ doesn't carry over bugs from earlier versions.
 === zz_other/Win32 =====================================================
 === zz_other/x86 =======================================================
 
-400099  Memcheck produces truncated backtrace when len(argv + env) = 4096
+400099**  Memcheck produces truncated backtrace when len(argv + env) = 4096
         Possible stack overrun problem; should investigate
 
 ========================================================================
@@ -180,9 +180,10 @@ doesn't carry over bugs from earlier versions.
 --
 Mon  3 Sep 12:01:52 CEST 2018
 
-Support RDRAND/RDSEED ?  We really should.
-Support RDPMC ?
-Improve PDB reading ?  I thought I saw some patches for this, but where?
+Support RDPMC* ?
+Improve PDB* reading ?  I thought I saw some patches for this .. is it 253657 ?
+
+Remove FSGSBASE from CPUID
 
 Sat  9 Mar 18:48:58 CET 2019
 

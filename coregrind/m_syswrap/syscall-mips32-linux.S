@@ -112,7 +112,7 @@ ML_(do_syscall_for_client_WRK):
 
     lw $8, 48($29)    /* t0 == ThreadState */
 
-    lw $2, 52($29) /* v0 == syscallno */
+    lw $2, OFFSET_mips32_r2($8) /* v0 == guest_v0 */
     lw $4, OFFSET_mips32_r4($8)
     lw $5, OFFSET_mips32_r5($8)
     lw $6, OFFSET_mips32_r6($8)

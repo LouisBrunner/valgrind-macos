@@ -1441,6 +1441,16 @@ static void dh_fini(Int exit_status)
              g_curr_bytes, g_curr_blocks);
    VG_(umsg)("Reads:     %'llu bytes\n", g_reads_bytes);
    VG_(umsg)("Writes:    %'llu bytes\n", g_writes_bytes);
+
+   // Print a how-to-view-the-profile hint.
+   VG_(umsg)("\n");
+   VG_(umsg)("To view the resulting profile, open\n");
+   VG_(umsg)("  file://%s/%s\n", VG_(libdir), "dh_view.html");
+   VG_(umsg)("in a web browser, click on \"Load...\" "
+             "and then select the file\n");
+   VG_(umsg)("  %s\n", dhat_out_file);
+   VG_(umsg)("Scroll to the end the displayed page to see a short\n");
+   VG_(umsg)("explanation of some of the abbreviations used in the page.\n");
 }
 
 //------------------------------------------------------------//

@@ -4,6 +4,25 @@ dir=`dirname $0`
 
 $dir/../../tests/filter_stderr_basic |
 
-# Remove "Massif, ..." line and the following copyright line.
-sed "/^DHAT, a dynamic heap analysis tool/ , /./ d"
+# Remove the "DHAT, ..." line and the following copyright line.
+sed "/^DHAT, a dynamic heap analysis tool/ , /./ d" |
 
+# Remove the six hint-lines, which look like this:
+#
+#   To view the resulting profile, open
+#     file:///path/to/valgrind/installation/lib/valgrind/dh_view.html
+#   in a web browser, click on "Load..." and then select the file
+#     /path/to/dhat.out.12345
+#   Scroll to the end the displayed page to see a short
+#   explanation of some of the abbreviations used in the page.
+#
+sed "/^To view the resulting profile/ d" |
+sed "/^  file:\/\/\// d" |
+sed "/^in a web browser/ d" |
+sed "/^  \// d" |                # This is pretty feeble, but I don't see
+                                 # how to do better
+sed "/^Scroll to the end/ d" |
+sed "/^explanation of some/ d" |
+
+# and remove any blank lines in the output
+sed "/^[[:space:]]*$/d"

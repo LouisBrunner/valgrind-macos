@@ -16324,28 +16324,36 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
       }
       case 0x212: // xscvdpsp (VSX Scalar round Double-Precision to single-precision and
                   //           Convert to Single-Precision format
+                  // Apr 2019 update - write the result to both halves of the
+                  // target VSR.  (see bug 401827,401828).
          DIP("xscvdpsp v%u,v%u\n", XT, XB);
+         IRTemp ResultI32a = newTemp(Ity_I32);
+         assign(ResultI32a,  unop( Iop_ReinterpF32asI32,
+                                  unop( Iop_TruncF64asF32,
+                                        binop( Iop_RoundF64toF32,
+                                               get_IR_roundingmode(),
+                                               mkexpr( xB ) ) ) ) );
          putVSReg( XT,
                    binop( Iop_64HLtoV128,
                           binop( Iop_32HLto64,
-                                 unop( Iop_ReinterpF32asI32,
-                                       unop( Iop_TruncF64asF32,
-                                             binop( Iop_RoundF64toF32,
-                                                    get_IR_roundingmode(),
-                                                    mkexpr( xB ) ) ) ),
-                                 mkU32( 0 ) ),
+                                 mkexpr(ResultI32a ),
+                                 mkexpr(ResultI32a ) ),
                           mkU64( 0ULL ) ) );
          break;
       case 0x216: /* xscvdpspn (VSX Scalar convert scalar Single-Precision to
                               vector Single-Precision non-signalling */
+                  // Apr 2019 update - write the result to both halves of the
+                  // target VSR.  (see bug 401827,401828).
          DIP("xscvdpspn v%u,v%u\n", XT, XB);
+         IRTemp ResultI32b = newTemp(Ity_I32);
+         assign(ResultI32b, unop( Iop_ReinterpF32asI32,
+                                 unop( Iop_TruncF64asF32,
+                                       mkexpr( xB ) ) ) );
          putVSReg( XT,
                    binop( Iop_64HLtoV128,
                           binop( Iop_32HLto64,
-                                 unop( Iop_ReinterpF32asI32,
-                                       unop( Iop_TruncF64asF32,
-                                             mkexpr( xB ) ) ),
-                                 mkU32( 0 ) ),
+                                 mkexpr(ResultI32b ),
+                                 mkexpr(ResultI32b ) ),
                           mkU64( 0ULL ) ) );
          break;
       case 0x090: // xscvdpuxws (VSX Scalar truncate Double-Precision to integer

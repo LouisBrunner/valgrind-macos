@@ -1873,7 +1873,12 @@ static void test_p7_fpops ( void )
       double resd;
       unsigned long long u0;
       int i;
-      int res32 = strcmp(fp_tests[k].name, "fcfidu");
+      //  fcfids  - 64-bit fp converted to inf precise fp integer, rounded to SP. (32)
+      //  fcfidus - 64-bit fp converted to inf precise fp integer, rounded to SP. (32)
+      //  fcfidu  - 64-bit fp converted to inf precise fp integer, rounded to DP. (64)
+      int res32 = (
+                   (strcmp(fp_tests[k].name, "fcfids")==0) ||
+                   (strcmp(fp_tests[k].name, "fcfidus")==0)    );
 
       for (i = 0; i < nb_fargs; i++) {
          u0 = *(unsigned long long *) (&fargs[i]);

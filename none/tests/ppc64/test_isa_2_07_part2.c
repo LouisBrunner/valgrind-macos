@@ -781,7 +781,7 @@ logic_tests[] = {
                  { &test_xxleqv,  "xxleqv", VSX_EQV },
                  { &test_xxlorc,  "xxlorc", VSX_ORC },
                  { &test_xxlnand, "xxlnand", VSX_NAND },
-                 { NULL, NULL}
+                 { NULL, NULL, 0}
 };
 
 Bool check_reciprocal_estimate(Bool is_rsqrte, int idx, int output_vec_idx)

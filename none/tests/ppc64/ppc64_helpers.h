@@ -405,12 +405,28 @@ static void dissect_xer_raw(unsigned long local_xer) {
          printf(" %s", xer_strings[i]);
    }
 }
+/* Display only the XER contents that are relevant for our tests.
+ * this is currently the OV and OV32 bits.  */
+static void dissect_xer_valgrind(unsigned long local_xer) {
+   int i;
+   long mybit;
+      i = 33;  // OV
+      mybit = 1ULL << (63 - i);
+      if (mybit & local_xer) printf(" %s", xer_strings[i]);
+      i = 44;  // OV32
+      mybit = 1ULL << (63 - i);
+      if (mybit & local_xer) printf(" %s", xer_strings[i]);
+}
+
 
 /* */
 static void dissect_xer(unsigned long local_xer) {
    if (verbose > 1)
       printf(" [[ xer:%lx ]]", local_xer);
-   dissect_xer_raw(local_xer);
+   if (verbose > 2 )
+      dissect_xer_raw(local_xer);
+   else
+      dissect_xer_valgrind(local_xer);
 }
 
 

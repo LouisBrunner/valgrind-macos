@@ -137,6 +137,8 @@ where XXXXXX is the bug number as listed below.
 405734  PPC64, vrlwnm, vrlwmi, vrldrm, vrldmi do not work properly when me < mb
 405782  "VEX temporary storage exhausted" when attempting to debug slic3r-pe
 405722  Support arm64 core dump
+406198  none/tests/ppc64/test_isa_3_0_other test sporadically including CA
+        bit in output.
 
 n-i-bz  add syswrap for PTRACE_GET|SET_THREAD_AREA on amd64.
 n-i-bz  Fix callgrind_annotate non deterministic order for equal total

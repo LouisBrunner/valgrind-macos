@@ -1748,6 +1748,8 @@ void ML_(read_debuginfo_dwarf1) (
 # define N_CFI_REGS 320
 #elif defined(VGP_arm64_linux)
 # define N_CFI_REGS 128
+#elif defined(VGP_s390x_linux)
+# define N_CFI_REGS 66
 #else
 # define N_CFI_REGS 20
 #endif
@@ -1842,7 +1844,6 @@ enum dwarf_cfa_secondary_ops
            | RR_Reg       arg  -- is in register 'arg' 
            | RR_Expr      arg  -- is at * [[ arg ]]
            | RR_ValExpr   arg  -- is [[ arg ]]
-           | RR_Arch           -- dunno
 
    Note that RR_Expr is redundant since the same can be represented
    using RR_ValExpr with an explicit dereference (CfiExpr_Deref) at
@@ -1856,7 +1857,7 @@ enum dwarf_cfa_secondary_ops
 typedef
    struct {
       enum { RR_Undef, RR_Same, RR_CFAOff, RR_CFAValOff, 
-             RR_Reg, /*RR_Expr,*/ RR_ValExpr, RR_Arch } tag;
+             RR_Reg, /*RR_Expr,*/ RR_ValExpr } tag;
       /* meaning:  int offset for CFAoff/CFAValOff
                    reg # for Reg
                    expr index for Expr/ValExpr */
@@ -1872,12 +1873,11 @@ static void ppRegRule ( const XArray* exprs, const RegRule* rrule )
       case RR_Same:      VG_(printf)("s  "); break;
       case RR_CFAOff:    VG_(printf)("c%d ", rrule->arg); break;
       case RR_CFAValOff: VG_(printf)("v%d ", rrule->arg); break;
-      case RR_Reg:       VG_(printf)("r%d ", rrule->arg); break;
+      case RR_Reg:       VG_(printf)("dwReg%d ", rrule->arg); break;
       case RR_ValExpr:   VG_(printf)("ve{"); 
                          ML_(ppCfiExpr)( exprs, rrule->arg ); 
                          VG_(printf)("} "); 
                          break;
-      case RR_Arch:      VG_(printf)("a  "); break;
       default:           VG_(core_panic)("ppRegRule");
    }
 }
@@ -2022,6 +2022,10 @@ static Bool summarise_context(/*OUT*/Addr* base,
    *len = 0;
    VG_(bzero_inline)(si_m, sizeof(*si_m));
 
+   /*const*/ Bool is_s390x_linux = False;
+#  if defined(VGP_s390x_linux)
+   is_s390x_linux = True;
+#  endif
 
    /* Guard against obviously stupid settings of the reg-rule stack
       pointer. */
@@ -2098,6 +2102,8 @@ static Bool summarise_context(/*OUT*/Addr* base,
    }
 
 #  define SUMMARISE_HOW(_how, _off, _ctxreg)                  \
+   _how = CFIR_UNKNOWN; /* install safe initial values */     \
+   _off = 0;                                                  \
    switch (_ctxreg.tag) {                                     \
       case RR_Undef:                                          \
          _how = CFIR_UNKNOWN;   _off = 0; break;              \
@@ -2129,6 +2135,51 @@ static Bool summarise_context(/*OUT*/Addr* base,
             ML_(ppCfiExpr)(dst, conv);                        \
          break;                                               \
       }                                                       \
+      case RR_Reg:                                            \
+         if (is_s390x_linux) {                                \
+            if (_ctxreg.arg == 16/*dwarf reg 16 is %f0*/) {   \
+               _how = CFIR_S390X_F0;                          \
+               _off = 0;                                      \
+               break;                                         \
+            }                                                 \
+            else if (_ctxreg.arg == 17/*dwarf reg 17 is %f2*/) { \
+               _how = CFIR_S390X_F2;                          \
+               _off = 0;                                      \
+               break;                                         \
+            }                                                 \
+            else if (_ctxreg.arg == 18/*dwarf reg 18 is %f4*/) { \
+               _how = CFIR_S390X_F4;                          \
+               _off = 0;                                      \
+               break;                                         \
+            }                                                 \
+            else if (_ctxreg.arg == 19/*dwarf reg 19 is %f6*/) { \
+               _how = CFIR_S390X_F6;                          \
+               _off = 0;                                      \
+               break;                                         \
+            }                                                 \
+            else if (_ctxreg.arg == 20/*dwarf reg 20 is %f1*/) { \
+               _how = CFIR_S390X_F1;                          \
+               _off = 0;                                      \
+               break;                                         \
+            }                                                 \
+            else if (_ctxreg.arg == 21/*dwarf reg 21 is %f3*/) { \
+               _how = CFIR_S390X_F3;                          \
+               _off = 0;                                      \
+               break;                                         \
+            }                                                 \
+            else if (_ctxreg.arg == 22/*dwarf reg 22 is %f5*/) { \
+               _how = CFIR_S390X_F5;                          \
+               _off = 0;                                      \
+               break;                                         \
+            }                                                 \
+            else if (_ctxreg.arg == 23/*dwarf reg 23 is %f7*/) { \
+               _how = CFIR_S390X_F7;                          \
+               _off = 0;                                      \
+               break;                                         \
+            }                                                 \
+         }                                                    \
+         /* Currently we only support RR_Reg for s390. */     \
+         why = 2; goto failed;                                \
       default:                                                \
          why = 2; goto failed; /* otherwise give up */        \
    }
@@ -2276,6 +2327,22 @@ static Bool summarise_context(/*OUT*/Addr* base,
                                ctxs->reg[FP_REG] );
    SUMMARISE_HOW(si_m->sp_how, si_m->sp_off,
                                ctxs->reg[SP_REG] );
+   SUMMARISE_HOW(si_m->f0_how, si_m->f0_off,
+                               ctxs->reg[16/*%f0*/]);
+   SUMMARISE_HOW(si_m->f2_how, si_m->f2_off,
+                               ctxs->reg[17/*%f2*/]);
+   SUMMARISE_HOW(si_m->f4_how, si_m->f4_off,
+                               ctxs->reg[18/*%f4*/]);
+   SUMMARISE_HOW(si_m->f6_how, si_m->f6_off,
+                               ctxs->reg[19/*%f6*/]);
+   SUMMARISE_HOW(si_m->f1_how, si_m->f1_off,
+                               ctxs->reg[20/*%f1*/]);
+   SUMMARISE_HOW(si_m->f3_how, si_m->f3_off,
+                               ctxs->reg[21/*%f3*/]);
+   SUMMARISE_HOW(si_m->f5_how, si_m->f5_off,
+                               ctxs->reg[22/*%f5*/]);
+   SUMMARISE_HOW(si_m->f7_how, si_m->f7_off,
+                               ctxs->reg[23/*%f7*/]);
 
    /* change some defaults to consumable values */
    if (si_m->sp_how == CFIR_UNKNOWN)
@@ -2288,6 +2355,7 @@ static Bool summarise_context(/*OUT*/Addr* base,
       si_m->cfa_how = CFIC_IA_SPREL;
       si_m->cfa_off = 160;
    }
+
    if (si_m->ra_how == CFIR_UNKNOWN) {
       if (!debuginfo->cfsi_exprs)
          debuginfo->cfsi_exprs = VG_(newXA)( ML_(dinfo_zalloc),
@@ -2298,6 +2366,30 @@ static Bool summarise_context(/*OUT*/Addr* base,
       si_m->ra_off = ML_(CfiExpr_CfiReg)( debuginfo->cfsi_exprs,
                                           Creg_S390_LR);
    }
+
+   if (si_m->f0_how == CFIR_UNKNOWN)
+      si_m->f0_how = CFIR_SAME;
+
+   if (si_m->f1_how == CFIR_UNKNOWN)
+      si_m->f1_how = CFIR_SAME;
+
+   if (si_m->f2_how == CFIR_UNKNOWN)
+      si_m->f2_how = CFIR_SAME;
+
+   if (si_m->f3_how == CFIR_UNKNOWN)
+      si_m->f3_how = CFIR_SAME;
+
+   if (si_m->f4_how == CFIR_UNKNOWN)
+      si_m->f4_how = CFIR_SAME;
+
+   if (si_m->f5_how == CFIR_UNKNOWN)
+      si_m->f5_how = CFIR_SAME;
+
+   if (si_m->f6_how == CFIR_UNKNOWN)
+      si_m->f6_how = CFIR_SAME;
+
+   if (si_m->f7_how == CFIR_UNKNOWN)
+      si_m->f7_how = CFIR_SAME;
 
    /* knock out some obviously stupid cases */
    if (si_m->ra_how == CFIR_SAME)

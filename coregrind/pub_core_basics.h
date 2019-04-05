@@ -85,6 +85,14 @@ typedef
          struct {
             ULong r_fp;
             ULong r_lr;
+            ULong r_f0;
+            ULong r_f1;
+            ULong r_f2;
+            ULong r_f3;
+            ULong r_f4;
+            ULong r_f5;
+            ULong r_f6;
+            ULong r_f7;
          } S390X;
          struct {
             UInt r30;  /* Stack frame pointer or subroutine variable  */

@@ -118,6 +118,23 @@ void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
       = VG_(threads)[tid].arch.vex.guest_FP;
    regs->misc.S390X.r_lr
       = VG_(threads)[tid].arch.vex.guest_LR;
+   /* ANDREAS 3 Apr 2019 FIXME r_f0..r_f7: is this correct? */
+   regs->misc.S390X.r_f0
+      = VG_(threads)[tid].arch.vex.guest_v0.w64[0];
+   regs->misc.S390X.r_f1
+      = VG_(threads)[tid].arch.vex.guest_v1.w64[0];
+   regs->misc.S390X.r_f2
+      = VG_(threads)[tid].arch.vex.guest_v2.w64[0];
+   regs->misc.S390X.r_f3
+      = VG_(threads)[tid].arch.vex.guest_v3.w64[0];
+   regs->misc.S390X.r_f4
+      = VG_(threads)[tid].arch.vex.guest_v4.w64[0];
+   regs->misc.S390X.r_f5
+      = VG_(threads)[tid].arch.vex.guest_v5.w64[0];
+   regs->misc.S390X.r_f6
+      = VG_(threads)[tid].arch.vex.guest_v6.w64[0];
+   regs->misc.S390X.r_f7
+      = VG_(threads)[tid].arch.vex.guest_v7.w64[0];
 #  elif defined(VGA_mips32)
    regs->r_pc = VG_(threads)[tid].arch.vex.guest_PC;
    regs->r_sp = VG_(threads)[tid].arch.vex.guest_r29;

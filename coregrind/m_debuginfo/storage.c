@@ -138,6 +138,30 @@ void ML_(ppDiCfSI) ( const XArray* /* of CfiExpr */ exprs,
             VG_(printf)("{");                    \
             ML_(ppCfiExpr)(exprs, _off);         \
             VG_(printf)("}");                    \
+         } else                                  \
+         if (_how == CFIR_S390X_F0) {            \
+            VG_(printf)("oldF0");                \
+         } else                                  \
+         if (_how == CFIR_S390X_F1) {            \
+            VG_(printf)("oldF1");                \
+         } else                                  \
+         if (_how == CFIR_S390X_F2) {            \
+            VG_(printf)("oldF2");                \
+         } else                                  \
+         if (_how == CFIR_S390X_F3) {            \
+            VG_(printf)("oldF3");                \
+         } else                                  \
+         if (_how == CFIR_S390X_F4) {            \
+            VG_(printf)("oldF4");                \
+         } else                                  \
+         if (_how == CFIR_S390X_F5) {            \
+            VG_(printf)("oldF5");                \
+         } else                                  \
+         if (_how == CFIR_S390X_F6) {            \
+            VG_(printf)("oldF6");                \
+         } else                                  \
+         if (_how == CFIR_S390X_F7) {            \
+            VG_(printf)("oldF7");                \
          } else {                                \
             vg_assert(0+0);                      \
          }                                       \
@@ -204,7 +228,29 @@ void ML_(ppDiCfSI) ( const XArray* /* of CfiExpr */ exprs,
    VG_(printf)(" R7=");
    SHOW_HOW(si_m->r7_how, si_m->r7_off);
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
-#  elif defined(VGA_s390x) || defined(VGA_mips32) || defined(VGA_mips64)
+   /* nothing */
+#  elif defined(VGA_s390x)
+   VG_(printf)(" SP=");
+   SHOW_HOW(si_m->sp_how, si_m->sp_off);
+   VG_(printf)(" FP=");
+   SHOW_HOW(si_m->fp_how, si_m->fp_off);
+   VG_(printf)(" F0=");
+   SHOW_HOW(si_m->f0_how, si_m->f0_off);
+   VG_(printf)(" F1=");
+   SHOW_HOW(si_m->f1_how, si_m->f1_off);
+   VG_(printf)(" F2=");
+   SHOW_HOW(si_m->f2_how, si_m->f2_off);
+   VG_(printf)(" F3=");
+   SHOW_HOW(si_m->f3_how, si_m->f3_off);
+   VG_(printf)(" F4=");
+   SHOW_HOW(si_m->f4_how, si_m->f4_off);
+   VG_(printf)(" F5=");
+   SHOW_HOW(si_m->f5_how, si_m->f5_off);
+   VG_(printf)(" F6=");
+   SHOW_HOW(si_m->f6_how, si_m->f6_off);
+   VG_(printf)(" F7=");
+   SHOW_HOW(si_m->f7_how, si_m->f7_off);
+#  elif defined(VGA_mips32) || defined(VGA_mips64)
    VG_(printf)(" SP=");
    SHOW_HOW(si_m->sp_how, si_m->sp_off);
    VG_(printf)(" FP=");

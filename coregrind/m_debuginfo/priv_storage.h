@@ -229,6 +229,14 @@ typedef
               CFIR_CFAREL    -> cfa + sp/fp/ra_off
               CFIR_MEMCFAREL -> *( cfa + sp/fp/ra_off )
               CFIR_EXPR      -> expr whose index is in sp/fp/ra_off
+              CFIR_S390X_F0  -> old value of %f0
+              CFIR_S390X_F1  -> old value of %f1
+              CFIR_S390X_F2  -> old value of %f2
+              CFIR_S390X_F3  -> old value of %f3
+              CFIR_S390X_F4  -> old value of %f4
+              CFIR_S390X_F5  -> old value of %f5
+              CFIR_S390X_F6  -> old value of %f6
+              CFIR_S390X_F7  -> old value of %f7
 */
 
 #define CFIC_IA_SPREL     ((UChar)1)
@@ -246,6 +254,14 @@ typedef
 #define CFIR_CFAREL       ((UChar)66)
 #define CFIR_MEMCFAREL    ((UChar)67)
 #define CFIR_EXPR         ((UChar)68)
+#define CFIR_S390X_F0     ((UChar)69)
+#define CFIR_S390X_F1     ((UChar)70)
+#define CFIR_S390X_F2     ((UChar)71)
+#define CFIR_S390X_F3     ((UChar)72)
+#define CFIR_S390X_F4     ((UChar)73)
+#define CFIR_S390X_F5     ((UChar)74)
+#define CFIR_S390X_F6     ((UChar)75)
+#define CFIR_S390X_F7     ((UChar)76)
 
 /* Definition of the DiCfSI_m DiCfSI machine dependent part.
    These are highly duplicated, and are stored in a pool. */
@@ -318,10 +334,26 @@ typedef
       UChar sp_how;  /* a CFIR_ value */
       UChar ra_how;  /* a CFIR_ value */
       UChar fp_how;  /* a CFIR_ value */
+      UChar f0_how;  /* a CFIR_ value */
+      UChar f1_how;  /* a CFIR_ value */
+      UChar f2_how;  /* a CFIR_ value */
+      UChar f3_how;  /* a CFIR_ value */
+      UChar f4_how;  /* a CFIR_ value */
+      UChar f5_how;  /* a CFIR_ value */
+      UChar f6_how;  /* a CFIR_ value */
+      UChar f7_how;  /* a CFIR_ value */
       Int   cfa_off;
       Int   sp_off;
       Int   ra_off;
       Int   fp_off;
+      Int   f0_off;
+      Int   f1_off;
+      Int   f2_off;
+      Int   f3_off;
+      Int   f4_off;
+      Int   f5_off;
+      Int   f6_off;
+      Int   f7_off;
    }
    DiCfSI_m;
 #elif defined(VGA_mips32) || defined(VGA_mips64)

@@ -1256,6 +1256,14 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    Addr fp_min = uregs.sp - VG_STACK_REDZONE_SZB;
    uregs.fp = startRegs->misc.S390X.r_fp;
    uregs.lr = startRegs->misc.S390X.r_lr;
+   uregs.f0 = startRegs->misc.S390X.r_f0;
+   uregs.f1 = startRegs->misc.S390X.r_f1;
+   uregs.f2 = startRegs->misc.S390X.r_f2;
+   uregs.f3 = startRegs->misc.S390X.r_f3;
+   uregs.f4 = startRegs->misc.S390X.r_f4;
+   uregs.f5 = startRegs->misc.S390X.r_f5;
+   uregs.f6 = startRegs->misc.S390X.r_f6;
+   uregs.f7 = startRegs->misc.S390X.r_f7;
 
    fp_max = VG_PGROUNDUP(fp_max_orig);
    if (fp_max >= sizeof(Addr))

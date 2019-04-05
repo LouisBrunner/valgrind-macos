@@ -125,7 +125,9 @@ typedef
    D3UnwindRegs;
 #elif defined(VGA_s390x)
 typedef
-   struct { Addr ia; Addr sp; Addr fp; Addr lr;}
+   struct { Addr ia; Addr sp; Addr fp; Addr lr;
+            Addr f0; Addr f1; Addr f2; Addr f3;
+            Addr f4; Addr f5; Addr f6; Addr f7; }
    D3UnwindRegs;
 #elif defined(VGA_mips32) || defined(VGA_mips64)
 typedef

@@ -163,19 +163,38 @@
       }
 #elif defined(VGP_s390x_linux)
 #  define GET_STARTREGS(srP)                              \
-      { ULong ia, sp, fp, lr;                             \
+      { ULong ia;                                         \
+        ULong block[11];                                  \
         __asm__ __volatile__(                             \
-           "bras %0,0f;"                                  \
-           "0: lgr %1,15;"                                \
-           "lgr %2,11;"                                   \
-           "lgr %3,14;"                                   \
-           : "=r" (ia), "=r" (sp),"=r" (fp),"=r" (lr)     \
-           /* no read & clobber */                        \
+           "bras %0, 0f;"                                 \
+           "0: "                                          \
+           "stg %%r15, 0(%1);"                            \
+           "stg %%r11, 8(%1);"                            \
+           "stg %%r14, 16(%1);"                           \
+           "std %%f0, 24(%1);"                            \
+           "std %%f1, 32(%1);"                            \
+           "std %%f2, 40(%1);"                            \
+           "std %%f3, 48(%1);"                            \
+           "std %%f4, 56(%1);"                            \
+           "std %%f5, 64(%1);"                            \
+           "std %%f6, 72(%1);"                            \
+           "std %%f7, 80(%1);"                            \
+           : /* out */   "=r" (ia)                        \
+           : /* in */    "r" (&block[0])                  \
+           : /* trash */ "memory"                         \
         );                                                \
         (srP)->r_pc = ia;                                 \
-        (srP)->r_sp = sp;                                 \
-        (srP)->misc.S390X.r_fp = fp;                      \
-        (srP)->misc.S390X.r_lr = lr;                      \
+        (srP)->r_sp = block[0];                           \
+        (srP)->misc.S390X.r_fp = block[1];                \
+        (srP)->misc.S390X.r_lr = block[2];                \
+        (srP)->misc.S390X.r_f0 = block[3];                \
+        (srP)->misc.S390X.r_f1 = block[4];                \
+        (srP)->misc.S390X.r_f2 = block[5];                \
+        (srP)->misc.S390X.r_f3 = block[6];                \
+        (srP)->misc.S390X.r_f4 = block[7];                \
+        (srP)->misc.S390X.r_f5 = block[8];                \
+        (srP)->misc.S390X.r_f6 = block[9];                \
+        (srP)->misc.S390X.r_f7 = block[10];               \
       }
 #elif defined(VGP_mips32_linux)
 #  define GET_STARTREGS(srP)                              \

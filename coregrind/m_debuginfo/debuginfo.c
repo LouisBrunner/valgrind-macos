@@ -3199,6 +3199,15 @@ Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,
      uregs.ia = ip;
      uregs.sp = sp;
      uregs.fp = fp;
+     /* JRS FIXME 3 Apr 2019: surely we can do better for f0..f7 */
+     uregs.f0 = 0;
+     uregs.f1 = 0;
+     uregs.f2 = 0;
+     uregs.f3 = 0;
+     uregs.f4 = 0;
+     uregs.f5 = 0;
+     uregs.f6 = 0;
+     uregs.f7 = 0;
      return compute_cfa(&uregs,
                         min_accessible,  max_accessible, ce->di, ce->cfsi_m);
    }
@@ -3259,6 +3268,8 @@ void VG_(ppUnwindInfo) (Addr from, Addr to)
    For arm, the unwound registers are: R7 R11 R12 R13 R14 R15.
 
    For arm64, the unwound registers are: X29(FP) X30(LR) SP PC.
+
+   For s390, the unwound registers are: R11(FP) R14(LR) R15(SP) F0..F7 PC.
 */
 Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
                         Addr min_accessible,
@@ -3309,11 +3320,33 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    /* Now we know the CFA, use it to roll back the registers we're
       interested in. */
 
-#if defined(VGA_mips64) && defined(VGABI_N32)
-#define READ_REGISTER(addr) ML_(read_ULong)((addr))
-#else
-#define READ_REGISTER(addr) ML_(read_Addr)((addr))
-#endif
+#  if defined(VGA_mips64) && defined(VGABI_N32)
+#   define READ_REGISTER(addr) ML_(read_ULong)((addr))
+#  else
+#   define READ_REGISTER(addr) ML_(read_Addr)((addr))
+#  endif
+
+#  if defined(VGA_s390x)
+   const Bool is_s390x = True;
+   const Addr old_S390X_F0 = uregsHere->f0;
+   const Addr old_S390X_F1 = uregsHere->f1;
+   const Addr old_S390X_F2 = uregsHere->f2;
+   const Addr old_S390X_F3 = uregsHere->f3;
+   const Addr old_S390X_F4 = uregsHere->f4;
+   const Addr old_S390X_F5 = uregsHere->f5;
+   const Addr old_S390X_F6 = uregsHere->f6;
+   const Addr old_S390X_F7 = uregsHere->f7;
+#  else
+   const Bool is_s390x = False;
+   const Addr old_S390X_F0 = 0;
+   const Addr old_S390X_F1 = 0;
+   const Addr old_S390X_F2 = 0;
+   const Addr old_S390X_F3 = 0;
+   const Addr old_S390X_F4 = 0;
+   const Addr old_S390X_F5 = 0;
+   const Addr old_S390X_F6 = 0;
+   const Addr old_S390X_F7 = 0;
+#  endif
 
 #  define COMPUTE(_prev, _here, _how, _off)             \
       do {                                              \
@@ -3343,8 +3376,32 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
                _prev = evalCfiExpr(di->cfsi_exprs, _off, &eec, &ok ); \
                if (!ok) return False;                   \
                break;                                   \
+            case CFIR_S390X_F0:                               \
+               if (is_s390x) { _prev = old_S390X_F0; break; } \
+               vg_assert(0+0-0);                              \
+            case CFIR_S390X_F1:                               \
+               if (is_s390x) { _prev = old_S390X_F1; break; } \
+               vg_assert(0+1-1);                              \
+            case CFIR_S390X_F2:                               \
+               if (is_s390x) { _prev = old_S390X_F2; break; } \
+               vg_assert(0+2-2);                              \
+            case CFIR_S390X_F3:                               \
+               if (is_s390x) { _prev = old_S390X_F3; break; } \
+               vg_assert(0+3-3);                              \
+            case CFIR_S390X_F4:                               \
+               if (is_s390x) { _prev = old_S390X_F4; break; } \
+               vg_assert(0+4-4);                              \
+            case CFIR_S390X_F5:                               \
+               if (is_s390x) { _prev = old_S390X_F5; break; } \
+               vg_assert(0+5-5);                              \
+            case CFIR_S390X_F6:                               \
+               if (is_s390x) { _prev = old_S390X_F6; break; } \
+               vg_assert(0+6-6);                              \
+            case CFIR_S390X_F7:                               \
+               if (is_s390x) { _prev = old_S390X_F7; break; } \
+               vg_assert(0+7-7);                              \
             default:                                    \
-               vg_assert(0);                            \
+               vg_assert(0*0);                          \
          }                                              \
       } while (0)
 
@@ -3363,6 +3420,14 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    COMPUTE(uregsPrev.ia, uregsHere->ia, cfsi_m->ra_how, cfsi_m->ra_off);
    COMPUTE(uregsPrev.sp, uregsHere->sp, cfsi_m->sp_how, cfsi_m->sp_off);
    COMPUTE(uregsPrev.fp, uregsHere->fp, cfsi_m->fp_how, cfsi_m->fp_off);
+   COMPUTE(uregsPrev.f0, uregsHere->f0, cfsi_m->f0_how, cfsi_m->f0_off);
+   COMPUTE(uregsPrev.f1, uregsHere->f1, cfsi_m->f1_how, cfsi_m->f1_off);
+   COMPUTE(uregsPrev.f2, uregsHere->f2, cfsi_m->f2_how, cfsi_m->f2_off);
+   COMPUTE(uregsPrev.f3, uregsHere->f3, cfsi_m->f3_how, cfsi_m->f3_off);
+   COMPUTE(uregsPrev.f4, uregsHere->f4, cfsi_m->f4_how, cfsi_m->f4_off);
+   COMPUTE(uregsPrev.f5, uregsHere->f5, cfsi_m->f5_how, cfsi_m->f5_off);
+   COMPUTE(uregsPrev.f6, uregsHere->f6, cfsi_m->f6_how, cfsi_m->f6_off);
+   COMPUTE(uregsPrev.f7, uregsHere->f7, cfsi_m->f7_how, cfsi_m->f7_off);
 #  elif defined(VGA_mips32) || defined(VGA_mips64)
    COMPUTE(uregsPrev.pc, uregsHere->pc, cfsi_m->ra_how, cfsi_m->ra_off);
    COMPUTE(uregsPrev.sp, uregsHere->sp, cfsi_m->sp_how, cfsi_m->sp_off);
@@ -3377,6 +3442,7 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
 #    error "Unknown arch"
 #  endif
 
+#  undef READ_REGISTER
 #  undef COMPUTE
 
    *uregsHere = uregsPrev;

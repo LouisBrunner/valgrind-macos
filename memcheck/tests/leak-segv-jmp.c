@@ -108,6 +108,24 @@ asm(
 ".previous\n"
 );
 
+#elif defined(VGP_arm64_linux)
+extern UWord do_syscall_WRK (
+          UWord a1, UWord a2, UWord a3,
+          UWord a4, UWord a5, UWord a6,
+          UWord syscall_no
+       );
+asm(
+".text\n"
+".globl do_syscall_WRK\n"
+"do_syscall_WRK:\n"
+"        mov x8, x6\n"
+"        mov x6, 0\n"
+"        mov x7, 0\n"
+"        svc 0\n"
+"        ret\n"
+".previous\n"
+);
+
 #elif defined(VGP_s390x_linux)
 UWord do_syscall_WRK (
    UWord syscall_no,
@@ -238,6 +256,10 @@ static void non_simd_mprotect (long tid, void* addr, long len)
                                     &err);
    if (err)
       mprotect_result = -1;
+#elif defined(VGP_arm64_linux)
+   mprotect_result = do_syscall_WRK((UWord) addr, len, PROT_NONE,
+                                    0, 0, 0,
+                                    __NR_mprotect);
 #else
    mprotect_result = do_syscall_WRK(__NR_mprotect,
                                     (UWord) addr, len, PROT_NONE,

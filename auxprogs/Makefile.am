@@ -13,6 +13,7 @@ dist_noinst_SCRIPTS = \
 
 EXTRA_DIST = \
 	docs/valgrind-listener-manpage.xml \
+	docs/valgrind-di-server-manpage.xml \
 	gsl16-badfree.patch \
 	gsl16-wavelet.patch \
 	posixtestsuite-1.5.1-diff.txt \

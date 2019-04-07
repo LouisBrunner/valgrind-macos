@@ -39,6 +39,10 @@
 <xi:include href="../../auxprogs/docs/valgrind-listener-manpage.xml"
     parse="xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
+<!-- valgrind-di-server -->
+<xi:include href="../../auxprogs/docs/valgrind-di-server-manpage.xml"
+    parse="xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+
 <!-- vgdb -->
 <xi:include href="../../coregrind/docs/vgdb-manpage.xml"
     parse="xml" xmlns:xi="http://www.w3.org/2001/XInclude" />

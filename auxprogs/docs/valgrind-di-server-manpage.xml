@@ -1,0 +1,99 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
+
+
+<refentry id="di-server">
+
+<refmeta>
+  <refentrytitle>valgrind-di-server</refentrytitle>
+  <manvolnum>1</manvolnum>
+  <refmiscinfo>Release &rel-version;</refmiscinfo>
+</refmeta>
+
+<refnamediv>
+  <refname>valgrind-di-server</refname>
+  <refpurpose>Experimental debuginfo server for valgrind</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<cmdsynopsis>
+  <command>valgrind-di-server</command>
+  <arg><replaceable>options</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1 id="description">
+<title>Description</title>
+
+<para><command>valgrind-di-server</command> accepts (multiple) connections
+from <command>valgrind</command> processes that use the
+<option> --debuginfo-server</option> option on the specified port and serves
+(compressed) debuginfo files (in chunks) from the current working directory.
+</para>
+
+</refsect1>
+
+
+
+<refsect1 id="options">
+<title>Options</title>
+  <variablelist>
+     <varlistentry>
+       <term><option>-e --exit-at-zero</option></term>
+       <listitem>
+         <para>When the number of connected processes falls back to zero,
+         exit.  Without this, it will run forever, that is, until you
+         send it Control-C.</para>
+       </listitem>
+     </varlistentry>
+     <varlistentry>
+       <term><option>--max-connect=INTEGER</option></term>
+       <listitem>
+         <para>By default, the server can connect to up to 50 processes.
+           Occasionally, that number is too small. Use this option to
+           provide a different limit. E.g.
+           <computeroutput>--max-connect=100</computeroutput>.
+         </para>
+       </listitem>
+     </varlistentry>
+     <varlistentry>
+      <term><option>portnumber</option></term>
+      <listitem>
+        <para>Changes the port it listens on from the default (1500).
+        The specified port must be in the range 1024 to 65535.
+        The same restriction applies to port numbers specified by the
+        <option>--debuginfo-server</option> option to Valgrind itself.</para>
+      </listitem>
+    </varlistentry>
+  </variablelist>
+</refsect1>
+
+
+
+
+<refsect1 id="see_also">
+<title>See Also</title>
+
+<para>
+valgrind(1),
+<filename>&vg-docs-path;</filename> or
+<filename>&vg-docs-url;</filename>.
+</para>
+
+</refsect1>
+
+
+<refsect1 id="author">
+<title>Author</title>
+
+<para>Julian Seward.</para>
+
+</refsect1>
+
+
+</refentry>
+
+

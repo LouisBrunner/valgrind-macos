@@ -8,11 +8,9 @@ EXTRA_DIST = docs/dh-manual.xml dh_view.html dh_view.css dh_view.js
 # Headers, etc
 #----------------------------------------------------------------------------
 
-# Ensure the viewer components get copied into the install tree.  Note that
-# vglibdir and vglib_DATA are also defined in coregrind/Makefile.am.  I don't
-# know if that's a problem.  Doesn't appear to be.
-vglibdir = $(pkglibdir)
-vglib_DATA = dh_view.html dh_view.css dh_view.js
+# Ensure the viewer components get copied into the install tree.
+dhatdir = $(pkglibexecdir)
+dhat_DATA = dh_view.html dh_view.css dh_view.js
 
 #----------------------------------------------------------------------------
 # dhat-<platform>
@@ -30,6 +28,7 @@ dhat_@VGCONF_ARCH_PRI@_@VGCONF_OS@_SOURCES      = \
 dhat_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CPPFLAGS     = \
 	$(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 dhat_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS       = $(LTO_CFLAGS) \
+	-DDHAT_VIEW_DIR=\"$(dhatdir)\" \
 	$(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 dhat_@VGCONF_ARCH_PRI@_@VGCONF_OS@_DEPENDENCIES = \
 	$(TOOL_DEPENDENCIES_@VGCONF_PLATFORM_PRI_CAPS@)
@@ -50,6 +49,7 @@ dhat_@VGCONF_ARCH_SEC@_@VGCONF_OS@_SOURCES      = \
 dhat_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CPPFLAGS     = \
 	$(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
 dhat_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS       = $(LTO_CFLAGS) \
+	-DDHAT_VIEW_DIR=\"$(dhatdir)\" \
 	$(AM_CFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
 dhat_@VGCONF_ARCH_SEC@_@VGCONF_OS@_DEPENDENCIES = \
 	$(TOOL_DEPENDENCIES_@VGCONF_PLATFORM_SEC_CAPS@)

@@ -1445,7 +1445,7 @@ static void dh_fini(Int exit_status)
    // Print a how-to-view-the-profile hint.
    VG_(umsg)("\n");
    VG_(umsg)("To view the resulting profile, open\n");
-   VG_(umsg)("  file://%s/%s\n", VG_(libdir), "dh_view.html");
+   VG_(umsg)("  file://%s/%s\n", DHAT_VIEW_DIR, "dh_view.html");
    VG_(umsg)("in a web browser, click on \"Load...\" "
              "and then select the file\n");
    VG_(umsg)("  %s\n", dhat_out_file);

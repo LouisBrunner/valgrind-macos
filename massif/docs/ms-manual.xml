@@ -647,6 +647,19 @@ in a particular column, which makes following the allocation chains easier.
 </sect1>
 
 
+<sect1 id="ms-manual.using" xreflabel="Using massif-visualizer">
+<title>Using massif-visualizer</title>
+
+<para>
+<ulink url="https://github.com/KDE/massif-visualizer">massif-visualizer</ulink>
+is a graphical viewer for Massif data that is often easier to use than
+ms_print. massif-visualizer is not shipped within Valgrind, but is available in
+various places online.
+</para>
+
+</sect1>
+
+
 <sect1 id="ms-manual.options" xreflabel="Massif Command-line Options">
 <title>Massif Command-line Options</title>
 

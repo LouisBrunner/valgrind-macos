@@ -67,7 +67,9 @@ Valgrind use, you probably do want to turn optimisation on, since you should
 profile your program as it will be normally run.</para>
 
 <para>Second, you need to run your program under DHAT to gather the profiling
-information.</para>
+information. You might need to reduce the <option>--num-callers</option> value
+to get reasonably-sized output files, especially if you are profiling a large
+program; some trial and error might be needed to find a good value.</para>
 
 <para>Finally, you need to use DHAT's viewer (in a web browser) to get a
 detailed presentation of that information.</para>
@@ -145,6 +147,10 @@ built with full debugging information.</para>
 <para>DHAT's viewer can be run in a web browser by loading the file
 <computeroutput>dh_view.html</computeroutput>. Use the "Load" button to choose
 a DHAT output file to view.</para>
+
+<para>If loading takes a long time, it might be worth re-running DHAT with a
+smaller <option>--num-callers</option> value to reduce the stack depths,
+because this can significantly reduce the size of DHAT's output files.</para>
 
 
 <sect2><title>The Output Header</title>

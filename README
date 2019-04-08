@@ -37,6 +37,7 @@ platforms:
 - PPC32/Linux
 - PPC64/Linux
 - ARM/Linux
+- ARM64/Linux
 - x86/macOS
 - AMD64/macOS
 - S390X/Linux
@@ -67,7 +68,9 @@ Building and installing it
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 To install from the GIT repository:
 
-  0. Clone the code from GIT, following the instructions at
+  0. Clone the code from GIT:
+     git clone git://sourceware.org/git/valgrind.git
+     There are further instructions at
      http://www.valgrind.org/downloads/repository.html.
 
   1. cd into the source directory.
@@ -89,7 +92,7 @@ To install from a tar.bz2 distribution:
 
   7. See if it works.  Try "valgrind ls -l".  Either this works, or it
      bombs out with some complaint.  In that case, please let us know
-     (see www.valgrind.org).
+     (see http://valgrind.org/support/bug_reports.html).
 
 Important!  Do not move the valgrind installation into a place
 different from that specified by --prefix at build time.  This will

@@ -105,7 +105,7 @@ releases, bug-fix-only releases might not need one):
 
   * s390x: Ensure README.s390 is up-to-date and URLs therein are not stale.
 
-- Change release number in AC_INIT() in configure.in to "X.Y.Z-rcN", where
+- Change release number in AC_INIT() in configure.ac to "X.Y.Z-rcN", where
   'N' is the release candidate number.
 
 - Make the tarball ("make dist") and put it on the web somewhere (it doesn't

@@ -1,5 +1,6 @@
-Release 3.15.0 (?? ??????? 2019)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Release 3.15.0 (12 April 2019)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 3.15.0 is a feature release with many improvements and the usual collection of
 bug fixes.
@@ -8,29 +9,29 @@ This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
 PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,
 MIPS64/Linux, ARM/Android, ARM64/Android, MIPS32/Android, X86/Android,
 X86/Solaris, AMD64/Solaris and AMD64/MacOSX 10.12.  There is also preliminary
-support for X86/macOS 10.13, AMD64/macOS 10.13.
+support for X86/macOS 10.13 and AMD64/macOS 10.13.
 
 * ==================== CORE CHANGES ===================
 
 * The XTree Massif output format now makes use of the information obtained
   when specifying --read-inline-info=yes.
 
-* ================== PLATFORM CHANGES =================
-
+* amd64 (x86_64): the RDRAND and F16C insn set extensions are now supported.
 
 * ==================== TOOL CHANGES ====================
 
 * DHAT: 
 
-  - DHAT been thoroughly overhauled and improved. As a result, it has been
-    promoted from an experimental tool to a regular tool. Run it with
-    --tool=dhat instead of --tool=exp-dhat.
+  - DHAT been thoroughly overhauled, improved, and given a GUI.  As a result,
+    it has been promoted from an experimental tool to a regular tool.  Run it
+    with --tool=dhat instead of --tool=exp-dhat.
 
   - DHAT now prints only minimal data when the program ends, instead writing
-    the bulk of the profiling data to a file. As a result, the --show-top-n and
-    --sort-by options have been removed.
+    the bulk of the profiling data to a file.  As a result, the --show-top-n
+    and --sort-by options have been removed.
     
-  - Data files can be viewed with the new viewer, dh_view.html.
+  - Profile results can be viewed with the new viewer, dh_view.html.  When
+    a run ends, a short message is printed, explaining how to view the result.
     
   - See the documentation for more details.
 
@@ -48,23 +49,28 @@ support for X86/macOS 10.13, AMD64/macOS 10.13.
     sort the caller/callee lists in the call tree.
 
 * Massif:
+
   - The default value for --read-inline-info is now "yes" on
     Linux/Android/Solaris. It is still "no" on other OS.
 
 * Memcheck:
+
   - The option --xtree-leak=yes (to output leak result in xtree format)
-    automatically activates the option --show-leak-kinds=all,
-    as xtree visualisation tools such as kcachegrind can in any case
-    select what kind of leak to visualise.
+    automatically activates the option --show-leak-kinds=all, as xtree
+    visualisation tools such as kcachegrind can in any case select what kind
+    of leak to visualise.
+
+  - There has been further work to avoid false positives.  In particular,
+    integer equality on partially defined inputs (C == and !=) is now handled
+    better.
 
 * ==================== OTHER CHANGES ====================
 
-* The new option --show-error-list=no|yes
-  allows to show at exit the list of detected errors and the used
-  suppressions.  In the previous valgrind version, showing this
-  information could only be done using a verbosity >= 2, which is
-  producing a lot of other non necessarily useful messages.
-  The option -s is equivalent to --show-error-list=yes.
+* The new option --show-error-list=no|yes displays, at the end of the run, the
+  list of detected errors and the used suppressions.  Prior to this change,
+  showing this information could only be done by specifying "-v -v", which is
+  also produced a lot of other possibly-non-useful messages.  The option -s is
+  equivalent to --show-error-list=yes.
 
 * ==================== FIXED BUGS ====================
 
@@ -146,6 +152,8 @@ n-i-bz  Fix callgrind_annotate non deterministic order for equal total
 n-i-bz  callgrind_annotate --threshold=100 does not print all functions.
 n-i-bz  callgrind_annotate Use of uninitialized value in numeric gt (>)
 n-i-bz  amd64 (x86_64): RDRAND and F16C insn set extensions are supported
+
+(3.15.0.RC1: XX April 2019, git xx)
 
 
 

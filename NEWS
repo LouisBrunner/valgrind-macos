@@ -153,7 +153,7 @@ n-i-bz  callgrind_annotate --threshold=100 does not print all functions.
 n-i-bz  callgrind_annotate Use of uninitialized value in numeric gt (>)
 n-i-bz  amd64 (x86_64): RDRAND and F16C insn set extensions are supported
 
-(3.15.0.RC1: XX April 2019, git xx)
+(3.15.0.RC1: 8 April 2019, git ce94d674de5b99df173aad4c3ee48fc2a92e5d9c)
 
 
 

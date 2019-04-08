@@ -180,7 +180,7 @@
            "std %%f6, 72(%1);"                            \
            "std %%f7, 80(%1);"                            \
            : /* out */   "=r" (ia)                        \
-           : /* in */    "r" (&block[0])                  \
+           : /* in */    "a" (&block[0])                  \
            : /* trash */ "memory"                         \
         );                                                \
         (srP)->r_pc = ia;                                 \

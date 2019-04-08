@@ -29,8 +29,10 @@
 
 /*
    Parts of this file are derived from Firefox, copyright Mozilla Foundation,
-   and are subject to the terms of the Mozilla Public License, v. 2.0. A copy
-   copy of the MPL can be obtained at http://mozilla.org/MPL/2.0/.
+   and may be redistributed under the terms of the Mozilla Public License
+   Version 2.0, as well as under the license of this project.  A copy of the
+   Mozilla Public License Version 2.0 is available at at
+   https://www.mozilla.org/en-US/MPL/2.0/.
 */
 
 // Test this file by loading dh_view.html?test=1. That runs the tests in

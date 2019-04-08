@@ -16,9 +16,6 @@ doesn't carry over bugs from earlier versions.
 
 === Debuginfo reader ===================================================
 
-404843*8 s390x: backtrace sometimes ends prematurely
-        Should try to fix for 3.15.0
-
 405295  valgrind 3.14.0 dies due to mysterious DWARF information? (output from
         rust used by Mozilla TB.)
         But possibly only when --read-var-info=yes
@@ -105,8 +102,6 @@ doesn't carry over bugs from earlier versions.
         == 381819
 398545  Support for SHA instruction on Ryzen
 
-398870*  Please add support for instruction vcvtps2ph
-
 400538*  vex amd64->IR: 0x48 0xCF 0xF 0x1F 0x0 0xFF 0xD2 0xCC 0x90 0x55
         Should fix (Wine/Windows)
         This is IRETQ.  Are we expecting that to work at all in user space?
@@ -124,13 +119,6 @@ doesn't carry over bugs from earlier versions.
 === VEX/mips ===========================================================
 === VEX/other ==========================================================
 === VEX/ppc ============================================================
-
-401827  none/tests/ppc64/test_isa_2_06_part3 failure on ppc64le (xvrsqrtesp)
-        Possible testcase bug
-401828  none/tests/ppc64/test_isa_2_06_part1 failure on ppc64le (fcfids and
-        fcfidus)
-        Possible testcase bug
-
 === VEX/s390x ==========================================================
 
 404076  s390x: z14 vector instructions not implemented
@@ -171,7 +159,7 @@ doesn't carry over bugs from earlier versions.
 === zz_other/Win32 =====================================================
 === zz_other/x86 =======================================================
 
-400099**  Memcheck produces truncated backtrace when len(argv + env) = 4096
+400099*  Memcheck produces truncated backtrace when len(argv + env) = 4096
         Possible stack overrun problem; should investigate
 
 ========================================================================
@@ -183,7 +171,8 @@ Mon  3 Sep 12:01:52 CEST 2018
 Support RDPMC* ?
 Improve PDB* reading ?  I thought I saw some patches for this .. is it 253657 ?
 
-Remove FSGSBASE from CPUID
+apply included fixes for Xen 4.6/4.7/4.8/4.9/4.10/4.11/4.12  390553 ?
+
 
 Sat  9 Mar 18:48:58 CET 2019
 

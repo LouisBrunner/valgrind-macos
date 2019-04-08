@@ -119,6 +119,7 @@ where XXXXXX is the bug number as listed below.
 403552  s390x: wrong facility bit checked for vector facility
 404054  memcheck powerpc subfe x, x, x initializes x to 0 or -1 based on CA
 404638  Add VG_(replaceIndexXA)
+404843  s390x: backtrace sometimes ends prematurely
 404888  autotools cleanup series
 405079  unhandled ppc64le-linux syscall: 131 (quotactl)
 405182  Valgrind fails to build with Clang
@@ -132,11 +133,11 @@ where XXXXXX is the bug number as listed below.
 405430  Use gcc -Wimplicit-fallthrough=2 by default if available
 405458  MIPS mkFormVEC arguments swapped?
 405716  drd: Fix an integer overflow in the stack margin calculation
+405722  Support arm64 core dump
 405733  PPC64, xvcvdpsp should write 32-bit result to upper and lower 32-bits
         of the 64-bit destination field.
 405734  PPC64, vrlwnm, vrlwmi, vrldrm, vrldmi do not work properly when me < mb
 405782  "VEX temporary storage exhausted" when attempting to debug slic3r-pe
-405722  Support arm64 core dump
 406198  none/tests/ppc64/test_isa_3_0_other test sporadically including CA
         bit in output.
 

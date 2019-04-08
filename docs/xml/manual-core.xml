@@ -3033,8 +3033,8 @@ the "Massif Format".</para>
     <para>Different Massif Format file visualisers are available. Valgrind
       distribution includes the <option>ms_print</option>
       command line utility that produces an easy to read reprentation of
-      a massif output file. See <xref linkend="ms-manual.running-massif"/> and
-      <xref linkend="ms-manual.using"/> for more details
+      a massif output file. See <xref linkend="ms-manual.using-print"/> and
+      <xref linkend="ms-manual.using-visualizer"/> for more details
       about visualising Massif Format output files.</para>
     <para>Note that xtree Massif Format makes use of the inline
       information when specifying <option>--read-inline-info=yes</option>.

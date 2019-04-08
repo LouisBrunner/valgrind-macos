@@ -54,7 +54,7 @@ which parts of your program are responsible for allocating the heap memory.
 </sect1>
 
 
-<sect1 id="ms-manual.using" xreflabel="Using Massif and ms_print">
+<sect1 id="ms-manual.using-print" xreflabel="Using Massif and ms_print">
 <title>Using Massif and ms_print</title>
 
 <para>First off, as for the other Valgrind tools, you should compile with
@@ -647,7 +647,7 @@ in a particular column, which makes following the allocation chains easier.
 </sect1>
 
 
-<sect1 id="ms-manual.using" xreflabel="Using massif-visualizer">
+<sect1 id="ms-manual.using-visualizer" xreflabel="Using massif-visualizer">
 <title>Using massif-visualizer</title>
 
 <para>

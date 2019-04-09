@@ -14,7 +14,7 @@ Breakpoint 1, sleeper_or_burner (v=0x........) at sleepers.c:74
 74	   int i = 0;
 Continuing.
 Program received signal SIGTRAP, Trace/breakpoint trap.
-0x........ in do_burn () at sleepers.c:41
+do_burn () at sleepers.c:41
 41	   for (i = 0; i < burn; i++) loopnr++;
 [Switching to thread 1 (Thread ....)]
 #0  0x........ in do_burn ()

@@ -43,11 +43,11 @@ Breakpoint 3, main (argc=1, argv=0x........) at t.c:120
 Delete all breakpoints? (y or n) [answered Y; input not from terminal]
 Continuing.
 Program received signal SIGTRAP, Trace/breakpoint trap.
-0x........ in make_error (s=0x........ "called from level") at t.c:41
+make_error (s=0x........ "called from level") at t.c:41
 41	  if (int_und == 0)
 44	     printf ("%s int_und is not zero\n", s);
 old_pc has changed after step
 Continuing.
 Program received signal SIGTRAP, Trace/breakpoint trap.
-0x........ in make_error (s=0x........ "called from main") at t.c:41
+make_error (s=0x........ "called from main") at t.c:41
 41	  if (int_und == 0)

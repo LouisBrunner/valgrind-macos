@@ -49,6 +49,9 @@
 #    still reachable: 72,704 bytes in 1 blocks
 #         suppressed: 0 bytes in 0 blocks
 
+# All the following suppressions are variants of
+# _dl_init -> call_init which calls the DT_INIT_ARRAY functions
+
 {
    malloc-leaks-cxx-stl-string-classes
    Memcheck:Leak
@@ -57,6 +60,16 @@
    obj:*lib*/libstdc++.so*
    fun:call_init.part.0
    fun:call_init
+   fun:_dl_init
+   obj:*lib*/ld-2.*.so
+}
+{
+   malloc-leaks-cxx-stl-string-classes-2
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:*lib*/libstdc++.so*
+   fun:call_init.part.0
    fun:_dl_init
    obj:*lib*/ld-2.*.so
 }
@@ -72,4 +85,14 @@
   fun:call_init
   fun:_dl_init
   obj:*lib*/ld-2.*.so
+}
+{
+   malloc-leaks-cxx-stl-string-classes-debug2
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:*
+   fun:call_init
+   fun:_dl_init
+   fun:_dl_start_user
 }

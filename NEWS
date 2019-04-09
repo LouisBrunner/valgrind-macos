@@ -146,6 +146,7 @@ where XXXXXX is the bug number as listed below.
 405782  "VEX temporary storage exhausted" when attempting to debug slic3r-pe
 406198  none/tests/ppc64/test_isa_3_0_other test sporadically including CA
         bit in output.
+406352  cachegrind/callgrind fails ann tests because of missing a.c
 
 n-i-bz  add syswrap for PTRACE_GET|SET_THREAD_AREA on amd64.
 n-i-bz  Fix callgrind_annotate non deterministic order for equal total

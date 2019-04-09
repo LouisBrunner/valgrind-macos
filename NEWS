@@ -149,6 +149,7 @@ where XXXXXX is the bug number as listed below.
 406352  cachegrind/callgrind fails ann tests because of missing a.c
 406354  dhat is broken on x86 (32bit)
 406355  mcsignopass, mcsigpass, mcbreak fail due to difference in gdb output
+406357  gdbserver_tests fails because of gdb output change
 406360  memcheck/tests/libstdc++.supp needs more supression variants
 
 n-i-bz  add syswrap for PTRACE_GET|SET_THREAD_AREA on amd64.

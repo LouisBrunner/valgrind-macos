@@ -794,6 +794,7 @@ void dh_handle_noninsn_write ( CorePart part, ThreadId tid,
 {
    switch (part) {
       case Vg_CoreSysCall:
+      case Vg_CoreClientReq:
          dh_handle_write(base, size);
          break;
       case Vg_CoreSignal:

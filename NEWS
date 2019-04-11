@@ -129,6 +129,7 @@ where XXXXXX is the bug number as listed below.
 404888  autotools cleanup series
 405079  unhandled ppc64le-linux syscall: 131 (quotactl)
 405182  Valgrind fails to build with Clang
+405205  filter_libc: remove the line holding the futex syscall error entirely
 405356  PPC64, xvcvsxdsp, xvcvuxdsp are supposed to write the 32-bit result to
         the upper and lower 32-bits of the 64-bit result
 405362  PPC64, vmsummbm instruction doesn't handle overflow case correctly

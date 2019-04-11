@@ -37,6 +37,8 @@ while (<>)
     s/(at.*)operator delete\[\]\(void\*\)/$1...operator delete[].../;
 
     # Some glibc versions complain about unexpected futex syscall errors.
+    # With or without newline (see sourceware PR20271).
+    next if /^The futex facility returned an unexpected error code.$/;
     s/The futex facility returned an unexpected error code.//;
 
     print;

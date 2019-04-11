@@ -151,14 +151,14 @@ where XXXXXX is the bug number as listed below.
 406355  mcsignopass, mcsigpass, mcbreak fail due to difference in gdb output
 406357  gdbserver_tests fails because of gdb output change
 406360  memcheck/tests/libstdc++.supp needs more supression variants
-
 n-i-bz  add syswrap for PTRACE_GET|SET_THREAD_AREA on amd64.
 n-i-bz  Fix callgrind_annotate non deterministic order for equal total
 n-i-bz  callgrind_annotate --threshold=100 does not print all functions.
 n-i-bz  callgrind_annotate Use of uninitialized value in numeric gt (>)
 n-i-bz  amd64 (x86_64): RDRAND and F16C insn set extensions are supported
 
-(3.15.0.RC1: 8 April 2019, git ce94d674de5b99df173aad4c3ee48fc2a92e5d9c)
+(3.15.0.RC1:  8 April 2019, git ce94d674de5b99df173aad4c3ee48fc2a92e5d9c)
+(3.15.0.RC2: 11 April 2019, git 0c8be9bbede189ec580ec270521811766429595f)
 
 
 

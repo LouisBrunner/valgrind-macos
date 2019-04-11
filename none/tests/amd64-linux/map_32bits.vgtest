@@ -1,5 +1,5 @@
 prog: map_32bits
 # take a big aspacemgr minaddr, to quickly reach the 2GB limit
-vgopts: -q --aspace-minaddr=0x7ff60000
+vgopts: -q --aspace-minaddr=0x7f000000
 stderr_filter: filter_stderr
 

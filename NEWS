@@ -161,6 +161,7 @@ n-i-bz  amd64 (x86_64): RDRAND and F16C insn set extensions are supported
 
 (3.15.0.RC1:  8 April 2019, git ce94d674de5b99df173aad4c3ee48fc2a92e5d9c)
 (3.15.0.RC2: 11 April 2019, git 0c8be9bbede189ec580ec270521811766429595f)
+(3.15.0:     12 April 2019, git 535d2ff4f2f755faa8b1a9e467833eca455bd2d7)
 
 
 

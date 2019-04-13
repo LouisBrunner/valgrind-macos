@@ -3391,6 +3391,10 @@ static HReg iselF16Expr_wrk ( ISelEnv* env, IRExpr* e )
    vassert(e);
    vassert(ty == Ity_F16);
 
+   if (e->tag == Iex_RdTmp) {
+      return lookupIRTemp(env, e->Iex.RdTmp.tmp);
+   }
+
    if (e->tag == Iex_Get) {
       Int offs = e->Iex.Get.offset;
       if (offs >= 0 && offs < 8192 && 0 == (offs & 1)) {
@@ -3702,6 +3706,12 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       }
       if (ty == Ity_F32) {
          HReg src = iselFltExpr(env, stmt->Ist.WrTmp.data);
+         HReg dst = lookupIRTemp(env, tmp);
+         addInstr(env, ARM64Instr_VMov(8/*yes, really*/, dst, src));
+         return;
+      }
+      if (ty == Ity_F16) {
+         HReg src = iselF16Expr(env, stmt->Ist.WrTmp.data);
          HReg dst = lookupIRTemp(env, tmp);
          addInstr(env, ARM64Instr_VMov(8/*yes, really*/, dst, src));
          return;

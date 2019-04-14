@@ -351,11 +351,11 @@ class WriterLockScoped {  // Scoped RWLock Locker/Unlocker
 class MyThread {
  public:
   MyThread(void* (*worker)(void *), void *arg = NULL, const char *name = NULL)
-      :wpvpv_(worker), arg_(arg), name_(name) {}
+      :wpvpv_(worker), wvv_(), wvpv_(), arg_(arg), name_(name) {}
   MyThread(void (*worker)(void), void *arg = NULL, const char *name = NULL)
-      :wvv_(worker), arg_(arg), name_(name) {}
+      :wpvpv_(), wvv_(worker), wvpv_(), arg_(arg), name_(name) {}
   MyThread(void (*worker)(void *), void *arg = NULL, const char *name = NULL)
-      :wvpv_(worker), arg_(arg), name_(name) {}
+      :wpvpv_(), wvv_(), wvpv_(worker), arg_(arg), name_(name) {}
 
   void Start() { CHECK(0 == pthread_create(&t_, NULL, ThreadBody, this));}
   void Join()  { CHECK(0 == pthread_join(t_, NULL));}

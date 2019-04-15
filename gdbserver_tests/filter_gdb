@@ -119,6 +119,7 @@ sed -e '/Remote debugging using/,/vgdb launched process attached/d'             
     -e 's/in select ()$/in syscall .../'                                                              \
     -e 's/in \.__select ()$/in syscall .../'                                                          \
     -e 's/in select () at \.\.\/sysdeps\/unix\/syscall-template\.S.*$/in syscall .../'                \
+    -e 's/in \.__select () at \.\.\/sysdeps\/unix\/syscall-template\.S.*$/in syscall .../'            \
     -e '/^[ 	]*at \.\.\/sysdeps\/unix\/syscall-template\.S/d'                                      \
     -e '/^[ 	]*in \.\.\/sysdeps\/unix\/syscall-template\.S/d'                                      \
     -e '/^[1-9][0-9]*[ 	]*\.\.\/sysdeps\/unix\/syscall-template\.S/d'                                 \

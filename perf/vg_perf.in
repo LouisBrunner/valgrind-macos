@@ -335,7 +335,8 @@ sub do_one_test($$)
             if ((not defined $outer_args) || ($outer_args =~ /^\+/)) {
                 $run_outer_args = 
                       " -v --command-line-only=yes"
-                    . " --run-libc-freeres=no --sim-hints=enable-outer"
+                    . " --sim-hints=enable-outer"
+                    . " --run-libc-freeres=no --run-cxx-freeres=no"
                     . " --smc-check=all-non-file"
                     . " --vgdb=no --trace-children=yes --read-var-info=no"
                     . " --suppressions=../tests/outer_inner.supp"

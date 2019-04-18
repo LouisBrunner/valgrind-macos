@@ -1378,6 +1378,7 @@ static void dh_fini(Int exit_status)
                    VKI_S_IRUSR|VKI_S_IWUSR);
    if (!fp) {
       VG_(umsg)("error: can't open DHAT output file '%s'\n", dhat_out_file);
+      VG_(free)(dhat_out_file);
       return;
    }
 
@@ -1423,6 +1424,7 @@ static void dh_fini(Int exit_status)
       FP(" %c\"%s\"\n", i == 0 ? '[' : ',', json_escape(frames[i]));
    }
    FP(" ]\n");
+   VG_(free)(frames);
 
    FP("}\n");
 
@@ -1452,6 +1454,8 @@ static void dh_fini(Int exit_status)
    VG_(umsg)("  %s\n", dhat_out_file);
    VG_(umsg)("Scroll to the end the displayed page to see a short\n");
    VG_(umsg)("explanation of some of the abbreviations used in the page.\n");
+
+   VG_(free)(dhat_out_file);
 }
 
 //------------------------------------------------------------//

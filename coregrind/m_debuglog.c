@@ -452,7 +452,13 @@ static UInt local_sys_write_stderr ( const HChar* buf, Int n )
    __asm__ volatile (
       "syscall            \n\t"
       "addiu   $4, $0, -1 \n\t"
+      #if ((defined(__mips_isa_rev) && __mips_isa_rev >= 6))
+      "selnez  $4, $4, $7 \n\t"
+      "seleqz  $2, $2, $7 \n\t"
+      "or      $2, $2, $4 \n\t"
+      #else
       "movn    $2, $4, $7 \n\t"
+      #endif
      : "+d" (v0), "+d" (a0), "+d" (a1), "+d" (a2)
      :
      : "$1", "$3", "$7", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15",

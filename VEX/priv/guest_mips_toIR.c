@@ -20241,6 +20241,7 @@ static UInt disInstr_MIPS_WRK_00(UInt cins, const VexArchInfo* archinfo,
 #elif defined(__mips__) && ((defined(__mips_isa_rev) && __mips_isa_rev >= 6))
 
       case 0x08: { /* BEQZALC, BEQC, BOVC */
+         IRTemp t1, t2, t3, t4;
          if (rs == 0) { /* BEQZALC */
             DIP("beqzalc r%u, %u", rt, imm);
 

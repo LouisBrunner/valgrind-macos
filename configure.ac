@@ -4172,6 +4172,7 @@ AC_CHECK_FUNCS([     \
         utimensat    \
         process_vm_readv  \
         process_vm_writev \
+        copy_file_range \
         ])
 
 # AC_CHECK_LIB adds any library found to the variable LIBS, and links these
@@ -4187,6 +4188,8 @@ AM_CONDITIONAL([HAVE_PTHREAD_SPINLOCK],
                [test x$ac_cv_func_pthread_spin_lock = xyes])
 AM_CONDITIONAL([HAVE_PTHREAD_SETNAME_NP],
                [test x$ac_cv_func_pthread_setname_np = xyes])
+AM_CONDITIONAL([HAVE_COPY_FILE_RANGE],
+               [test x$ac_cv_func_copy_file_range = xyes])
 
 if test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX ; then

@@ -12093,6 +12093,36 @@ POST(sys_bpf)
    }
 }
 
+PRE(sys_copy_file_range)
+{
+  PRINT("sys_copy_file_range (%lu, %lu, %lu, %lu, %lu, %lu)", ARG1, ARG2, ARG3,
+        ARG4, ARG5, ARG6);
+
+  PRE_REG_READ6(vki_size_t, "copy_file_range",
+                int, "fd_in",
+                vki_loff_t *, "off_in",
+                int, "fd_out",
+                vki_loff_t *, "off_out",
+                vki_size_t, "len",
+                unsigned int, "flags");
+
+  /* File descriptors are "specially" tracked by valgrind.
+     valgrind itself uses some, so make sure someone didn't
+     put in one of our own...  */
+  if (!ML_(fd_allowed)(ARG1, "copy_file_range(fd_in)", tid, False) ||
+      !ML_(fd_allowed)(ARG3, "copy_file_range(fd_in)", tid, False)) {
+     SET_STATUS_Failure( VKI_EBADF );
+  } else {
+     /* Now see if the offsets are defined. PRE_MEM_READ will
+        double check it can dereference them. */
+     if (ARG2 != 0)
+        PRE_MEM_READ( "copy_file_range(off_in)", ARG2, sizeof(vki_loff_t));
+     if (ARG4 != 0)
+        PRE_MEM_READ( "copy_file_range(off_out)", ARG4, sizeof(vki_loff_t));
+  }
+}
+
+
 #undef PRE
 #undef POST
 

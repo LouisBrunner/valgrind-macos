@@ -20,6 +20,7 @@ EXTRA_DIST = \
 	stack_switch.stderr.exp stack_switch.vgtest \
 	syscalls-2007.vgtest syscalls-2007.stderr.exp \
 	syslog-syscall.vgtest syslog-syscall.stderr.exp \
+	sys-copy_file_range.vgtest sys-copy_file_range.stderr.exp \
 	sys-openat.vgtest sys-openat.stderr.exp sys-openat.stdout.exp \
 	sys-statx.vgtest sys-statx.stderr.exp \
 	timerfd-syscall.vgtest timerfd-syscall.stderr.exp \
@@ -47,6 +48,10 @@ check_PROGRAMS = \
 
 if HAVE_AT_FDCWD
 check_PROGRAMS += sys-openat
+endif
+
+if HAVE_COPY_FILE_RANGE
+        check_PROGRAMS += sys-copy_file_range
 endif
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)

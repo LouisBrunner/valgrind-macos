@@ -379,6 +379,7 @@ DECL_TEMPLATE(linux, sys_getsockname);
 DECL_TEMPLATE(linux, sys_getpeername);
 DECL_TEMPLATE(linux, sys_socketpair);
 DECL_TEMPLATE(linux, sys_kcmp);
+DECL_TEMPLATE(linux, sys_copy_file_range);
 
 // Some arch specific functions called from syswrap-linux.c
 extern Int do_syscall_clone_x86_linux ( Word (*fn)(void *), 

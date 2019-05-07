@@ -1160,6 +1160,7 @@ static inline void my_exit ( int x )
  STPCPY(VG_Z_LIBC_SONAME,          __stpcpy_sse2_unaligned)
  STPCPY(VG_Z_LD_LINUX_SO_2,        stpcpy)
  STPCPY(VG_Z_LD_LINUX_X86_64_SO_2, stpcpy)
+ STPCPY(VG_Z_LD_LINUX_AARCH64_SO_1,stpcpy)
 
 #elif defined(VGO_darwin)
  //STPCPY(VG_Z_LIBC_SONAME,          stpcpy)

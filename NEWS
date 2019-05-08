@@ -41,6 +41,7 @@ To see details of a given bug, visit
 where XXXXXX is the bug number as listed below.
 
 406561  mcinfcallWSRU gdbserver_test fails on ppc64
+406824  Unsupported baseline
 407218  Add support for the copy_file_range syscall
 407307  Intercept stpcpy also in ld.so for arm64
 n-i-bz  Fix minor one time leaks in dhat.

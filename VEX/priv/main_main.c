@@ -2064,6 +2064,10 @@ static void check_hwcaps ( VexArch arch, UInt hwcaps )
             case VEX_PRID_COMP_CAVIUM:
             case VEX_PRID_COMP_NETLOGIC:
                return;
+            case VEX_PRID_COMP_LEGACY:
+               if (VEX_MIPS_PROC_ID(hwcaps) == VEX_PRID_IMP_LOONGSON_64)
+                  return;
+               /* fallthrough */
             default:
                invalid_hwcaps(arch, hwcaps, "Unsupported baseline\n");
          }

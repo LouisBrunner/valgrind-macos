@@ -1066,6 +1066,8 @@ static SyscallTableEntry syscall_main_table[] = {
    //..
    LINX_(__NR_membarrier,              sys_membarrier),              // 358
    //..
+   LINX_(__NR_copy_file_range,         sys_copy_file_range),         // 360
+   //..
    LINXY(__NR_statx,                   sys_statx)                    // 366
 };
 

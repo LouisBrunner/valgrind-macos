@@ -27,12 +27,14 @@ my %csv_desc = ();
 my %csv_implemented = ();
 my %toir_implemented = ();
 my %toir_decoded = ();
+my %known_arch = map {($_ => 1)}
+    qw(g5 z900 z990 z9-109 z9-ec z10 z196 zEC12 z13 arch12);
 
-# "General" form of all theese vector mnemonics is handled.
-# e.g. "vab %%v1, %%v2, %%v3" is equal to "va %%v1, %%v2, %%v3, 0"
-# We exclude this "submnemonics" from handling and work with the "general" ones.
+# Patterns for identifying certain extended mnemonics that shall be
+# skipped in "s390-opc.txt" and "s390-opcodes.csv".
+
 my @extended_mnemonics = (
-    "bi",        # extended mnemonics for bic
+    "bi",			# extended mnemonic for bic
     "va[bhfgq]",
     "vacc[bhfgq]",
     "vacccq",
@@ -124,15 +126,15 @@ my @extended_mnemonics = (
     "wfpso[sdx]b",
     "wftci[sdx]b",
     "wfsq*[sdx]b",
-    "vfl[lr]"
+    "vfl[lr]",
+    "prno"			# alternate mnemonic for ppno
     );
 
-# Compile excluded mnemonics into one regular expession to optimize speed.
-# Also it simplifies the code.
-my $extended_mnemonics_pattern = join '|', map "$_", @extended_mnemonics;
-$extended_mnemonics_pattern = "($extended_mnemonics_pattern)";
-# print "extended_mnemonics_pattern: $extended_mnemonics_pattern\n";
+# Compile excluded mnemonics into one regular expression to optimize
+# speed.  Also it simplifies the code.
 
+my $extended_mnemonics_pattern = '^(' .
+    join('|', map "$_", @extended_mnemonics) . ')$';
 
 #----------------------------------------------------
 # Read s390-opc.txt (binutils)
@@ -142,8 +144,7 @@ while (my $line = <OPC>) {
     chomp $line;
     next if ($line =~ "^[ ]*#");   # comments
     next if ($line =~ /^\s*$/);    # blank line
-    my $description = (split /"/,$line)[1];
-    my ($encoding,$mnemonic,$format) = split /\s+/,$line;
+    my ($encoding,$mnemonic,$format) = $line =~ /^(\S+) (\S+) (\S+)/gc;
 
     # Ignore opcodes that have wildcards in them ('$', '*')
     # Those provide alternate mnemonics for specific instances of this opcode
@@ -198,25 +199,33 @@ while (my $line = <OPC>) {
     next if ($mnemonic eq "mxtr");   # indistinguishable from mxtra
     next if ($mnemonic =~ /$extended_mnemonics_pattern/);
 
-    $description =~ s/^[\s]+//g;    # remove leading blanks
-    $description =~ s/[\s]+$//g;    # remove trailing blanks
-    $description =~ s/[ ][ ]+/ /g;  # replace multiple blanks with a single one
+    my ($description) = $line =~ /\G\s+"\s*(.*?)\s*"/gc;
+    my ($arch) = $line =~ /\G\s+(\S+)/gc;
+    unless ($known_arch{$arch}) {
+	unless (exists $known_arch{$arch}) {
+	    print "warning: unsupported arch \"$arch\" in s390-opc.txt\n";
+	    $known_arch{$arch} = 0;
+	}
+	next;
+    }
 
+    $description =~ s/\s\s+/ /g; # replace multiple blanks with a single one
 
-# Certain opcodes are listed more than once. Let the first description win
-    if ($opc_desc{$mnemonic}) {
-        # already there
+    # Certain opcodes are listed more than once. Let the first description
+    # win.
+    if (exists $opc_desc{$mnemonic}) {
+	# already there
 #        if ($opc_desc{$mnemonic} ne $description) {
 #            print "multiple description for opcode $mnemonic\n";
 #            print "  old: |" . $opc_desc{$mnemonic} . "|\n";
 #            print "  new: |" . $description . "|\n";
 #        }
     } else {
-        $opc_desc{$mnemonic} = $description;
+	$opc_desc{$mnemonic} = $description;
     }
 
     if ($description =~ /,/) {
-        print "warning: description of $mnemonic contains comma\n";
+	print "warning: description of $mnemonic contains comma\n";
     }
 }
 close(OPC);
@@ -262,20 +271,20 @@ while (my $line = <CSV>) {
     next if ($mnemonic eq "mdtr");   # indistinguishable from mdtra
     next if ($mnemonic =~ /$extended_mnemonics_pattern/);
 
-# Complain about duplicate entries. We don't want them.
+    # Complain about duplicate entries. We don't want them.
     if ($csv_desc{$mnemonic}) {
-        print "$mnemonic: duplicate entry\n";
+	print "$mnemonic: duplicate entry\n";
     } else {
-        $csv_desc{$mnemonic} = $description;
+	$csv_desc{$mnemonic} = $description;
     }
-# Remember whether it is implemented or not
+    # Remember whether it is implemented or not
     next if ($line =~ /not\s+implemented/);
     next if ($line =~ /N\/A/);
     next if ($line =~ /won't do/);
     if ($line =~ /implemented/) {
-        $csv_implemented{$mnemonic} = 1;
+	$csv_implemented{$mnemonic} = 1;
     } else {
-        print "*** unknown implementation status of $mnemonic\n";
+	print "*** unknown implementation status of $mnemonic\n";
     }
 }
 close(CSV);
@@ -287,19 +296,15 @@ open(TOIR, "$toir_file") || die "cannot open $toir_file\n";
 while (my $line = <TOIR>) {
     chomp $line;
     if ($line =~ /goto\s+unimplemented/) {
-        # Assume this is in the decoder
-        if ($line =~ /\/\*\s([A-Z][A-Z0-9]+)\s\*\//) {
-            my $mnemonic = $1;
-            $mnemonic =~ tr/A-Z/a-z/;
-            $toir_decoded{$mnemonic} = 1;
-#            print "DECODED: $mnemonic\n";
-        }
+	# Assume this is in the decoder
+	if ($line =~ /\/\*\s([A-Z][A-Z0-9]*)\s\*\//) {
+	    my $mnemonic = lc $1;
+	    $toir_decoded{$mnemonic} = 1;
+	}
+    } elsif ($line =~ /^s390_irgen_([A-Z][A-Z0-9]*)\b/) {
+	my $mnemonic = lc $1;
+	$toir_implemented{$mnemonic} = 1;
     }
-    next if (! ($line =~ /^s390_irgen_[A-Z]/));
-    $line =~ /^s390_irgen_([A-Z][A-Z0-9]*)/;
-    my $op = $1;
-    $op =~ tr/A-Z/a-z/;
-    $toir_implemented{$op} = 1;
 }
 close(TOIR);
 
@@ -308,12 +313,12 @@ close(TOIR);
 #----------------------------------------------------
 foreach my $opc (keys %opc_desc) {
     if (! $csv_desc{$opc}) {
-        print "*** opcode $opc not listed in $csv_file\n";
+	print "*** opcode $opc not listed in $csv_file\n";
     }
 }
 foreach my $opc (keys %csv_desc) {
     if (! $opc_desc{$opc}) {
-        print "*** opcode $opc not listed in $opc_file\n";
+	print "*** opcode $opc not listed in $opc_file\n";
     }
 }
 
@@ -322,11 +327,11 @@ foreach my $opc (keys %csv_desc) {
 #----------------------------------------------------
 foreach my $opc (keys %opc_desc) {
     if (defined $csv_desc{$opc}) {
-        if ($opc_desc{$opc} ne $csv_desc{$opc}) {
-            print "*** opcode $opc differs:\n";
-        print "    binutils:    $opc_desc{$opc}\n";
-            print "    opcodes.csv: $csv_desc{$opc}\n";
-        }
+	if ($opc_desc{$opc} ne $csv_desc{$opc}) {
+	    print "*** opcode $opc differs:\n";
+	print "    binutils:    $opc_desc{$opc}\n";
+	    print "    opcodes.csv: $csv_desc{$opc}\n";
+	}
     }
 }
 
@@ -335,13 +340,13 @@ foreach my $opc (keys %opc_desc) {
 #----------------------------------------------------
 foreach my $opc (keys %toir_implemented) {
     if (! $csv_implemented{$opc}) {
-        print "*** opcode $opc is implemented but CSV file does not say so\n";
+	print "*** opcode $opc is implemented but CSV file does not say so\n";
     }
 }
 
 foreach my $opc (keys %csv_implemented) {
     if (! $toir_implemented{$opc}) {
-        print "*** opcode $opc is not implemented but CSV file says so\n";
+	print "*** opcode $opc is not implemented but CSV file says so\n";
     }
 }
 
@@ -353,7 +358,7 @@ foreach my $opc (keys %csv_implemented) {
 
 foreach my $opc (keys %opc_desc) {
     if (! $toir_implemented{$opc} && ! $toir_decoded{$opc}) {
-        print "*** opcode $opc is not handled by the decoder\n";
+	print "*** opcode $opc is not handled by the decoder\n";
     }
 }
 

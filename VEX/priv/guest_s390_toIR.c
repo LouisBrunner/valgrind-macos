@@ -19613,8 +19613,10 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb99d: /* ESEA */ goto unimplemented;
    case 0xb99e: /* PTI */ goto unimplemented;
    case 0xb99f: /* SSAIR */ goto unimplemented;
+   case 0xb9a1: /* TPEI */ goto unimplemented;
    case 0xb9a2: /* PTF */ goto unimplemented;
    case 0xb9aa: /* LPTEA */ goto unimplemented;
+   case 0xb9ac: /* IRBM */ goto unimplemented;
    case 0xb9ae: /* RRBM */ goto unimplemented;
    case 0xb9af: /* PFMF */ goto unimplemented;
    case 0xb9b0: s390_format_RRF_M0RERE(s390_irgen_CU14, RRF3_r3(ovl),

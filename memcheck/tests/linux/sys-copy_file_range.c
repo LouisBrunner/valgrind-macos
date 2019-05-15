@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <sys/syscall.h>
 #include <unistd.h>
+#include "../../memcheck.h"
 
 int main(int argc, char **argv)
 {
@@ -51,7 +51,7 @@ int main(int argc, char **argv)
     /* Check valgrind will produce expected warnings for the
        various wrong arguments. */
     do {
-        void *t;
+        void *t = 0; VALGRIND_MAKE_MEM_UNDEFINED (&t, sizeof (void *));
         void *z = (void *) -1;
 
         ret = copy_file_range(fd_in, t, fd_out, NULL, len, 0);

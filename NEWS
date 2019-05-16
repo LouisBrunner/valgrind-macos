@@ -27,6 +27,13 @@ support for X86/macOS 10.13 and AMD64/macOS 10.13.
 
 * ==================== OTHER CHANGES ====================
 
+* New and modified GDB server monitor features:
+
+  - The gdbserver monitor commands that require an address and an optional
+    length argument now accepts the alternate 'C like' syntax "address[length]".
+    For example, the memcheck command "monitor who_points_at 0x12345678 120"
+    can now also be given as "monitor who_points_at 0x12345678[120]".
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

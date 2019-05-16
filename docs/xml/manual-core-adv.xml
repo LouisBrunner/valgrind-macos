@@ -680,7 +680,19 @@ vgdb --pid=3145 l f r a
 execution of the program after a standalone invocation of
 vgdb.  Monitor commands sent from GDB do not cause the program to
 continue: the program execution is controlled explicitly using GDB
-commands such as "continue" or "next".</para>
+  commands such as "continue" or "next".</para>
+
+<para>Many monitor commands (e.g. v.info location, memcheck who_points_at, ...) require an address
+  argument and an optional length: <varname>&lt;addr&gt; [&lt;len&gt;]</varname>.
+  The arguments can also be provided by using a 'C array like syntax' by providing the address
+  followed by the length between square brackets.</para>
+<para>For example, the following two monitor commands provide the same information:</para>
+<programlisting><![CDATA[
+(gdb) mo xb 0x804a2f0 10
+...
+(gdb) mo xb 0x804a2f0[10]
+...
+]]></programlisting>
 
 </sect2>
 

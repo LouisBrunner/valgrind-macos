@@ -99,6 +99,7 @@
 #define S390_FAC_CTREXE  50  // constrained transactional execution
 #define S390_FAC_LSC2    53  // load/store on condition 2 and load and zero rightmost byte
 #define S390_FAC_MSA5    57  // message-security-assist 5
+#define S390_FAC_MI2     58  // miscellaneous-instruction-extensions 2
 #define S390_FAC_TREXE   73  // transactional execution
 #define S390_FAC_MSA4    77  // message-security-assist 4
 #define S390_FAC_VX      129 // vector facility

@@ -433,6 +433,16 @@ s390_disasm(UInt command, ...)
                the integer mask is appended as the final operand */
             if (mask == 0 || mask == 15) mask_suffix = mask;
             break;
+         case S390_XMNM_BIC:
+            mask = va_arg(args, UInt);
+            if (mask == 0) {
+               /* There is no special opcode when mask == 0. */
+               p  += vex_sprintf(p, "bic");
+               mask_suffix = mask;
+            } else {
+               p  += vex_sprintf(p, "%s", construct_mnemonic("bi", "", mask));
+            }
+            break;
          }
       }
       continue;

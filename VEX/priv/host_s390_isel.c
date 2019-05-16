@@ -1018,6 +1018,8 @@ s390_isel_int128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          goto do_multiply64;
 
       case Iop_MullS64:
+         if (!(env->hwcaps & VEX_HWCAPS_S390X_MI2))
+            goto irreducible;
          is_signed_multiply = True;
          goto do_multiply64;
 
@@ -1125,7 +1127,10 @@ s390_isel_int128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
       }
    }
 
-   vpanic("s390_isel_int128_expr");
+   /* We get here if no pattern matched. */
+ irreducible:
+   ppIRExpr(expr);
+   vpanic("s390_isel_int128_expr: cannot reduce tree");
 }
 
 

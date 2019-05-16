@@ -3024,6 +3024,26 @@ s390_emit_MFY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 
 
 static UChar *
+s390_emit_MG(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC3(MNM, GPR, SDXB), "mg", r1, dh2, dl2, x2, b2);
+
+    return emit_RXY(p, 0xe30000000084ULL, r1, x2, b2, dl2, dh2);
+}
+
+
+static UChar *
+s390_emit_MGRK(UChar *p, UChar r3, UChar r1, UChar r2)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, GPR, GPR, GPR), "mgrk", r1, r2, r3);
+
+   return emit_RRF3(p, 0xb9ec0000, r3, r1, r2);
+}
+
+
+static UChar *
 s390_emit_MH(UChar *p, UChar r1, UChar x2, UChar b2, UShort d2)
 {
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
@@ -9595,7 +9615,7 @@ s390_insn_mul_emit(UChar *buf, const s390_insn *insn)
 
       case 8:
          if (signed_multiply)
-            vpanic("s390_insn_mul_emit");
+            return s390_emit_MGRK(buf, r1 + 1, r1, r2);
          else
             return s390_emit_MLGR(buf, r1, r2);
 
@@ -9640,7 +9660,7 @@ s390_insn_mul_emit(UChar *buf, const s390_insn *insn)
 
       case 8:
          if (signed_multiply)
-            vpanic("s390_insn_mul_emit");
+            return s390_emit_MG(buf, r1, x, b, DISP20(d));
          else
             return s390_emit_MLG(buf, r1, x, b, DISP20(d));
 
@@ -9665,7 +9685,7 @@ s390_insn_mul_emit(UChar *buf, const s390_insn *insn)
       case 8:
          buf = s390_emit_load_64imm(buf, R0, value);
          if (signed_multiply)
-            vpanic("s390_insn_mul_emit");
+            return s390_emit_MGRK(buf, r1 + 1, r1, R0);
          else
             return s390_emit_MLGR(buf, r1, R0);
 

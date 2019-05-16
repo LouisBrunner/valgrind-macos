@@ -163,6 +163,7 @@ typedef
 #define VEX_HWCAPS_S390X_PFPO  (1<<17)  /* Perform floating point ops facility */
 #define VEX_HWCAPS_S390X_VX    (1<<18)  /* Vector facility */
 #define VEX_HWCAPS_S390X_MSA5  (1<<19)  /* message security assistance facility */
+#define VEX_HWCAPS_S390X_MI2   (1<<20)  /* miscellaneous-instruction-extensions facility 2 */
 
 
 /* Special value representing all available s390x hwcaps */
@@ -179,7 +180,8 @@ typedef
                                 VEX_HWCAPS_S390X_ETF2  | \
                                 VEX_HWCAPS_S390X_PFPO  | \
                                 VEX_HWCAPS_S390X_VX    | \
-                                VEX_HWCAPS_S390X_MSA5)
+                                VEX_HWCAPS_S390X_MSA5  | \
+                                VEX_HWCAPS_S390X_MI2)
 
 #define VEX_HWCAPS_S390X(x)  ((x) & ~VEX_S390X_MODEL_MASK)
 #define VEX_S390X_MODEL(x)   ((x) &  VEX_S390X_MODEL_MASK)

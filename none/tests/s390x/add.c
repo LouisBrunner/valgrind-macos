@@ -1,6 +1,8 @@
-#include <stdio.h>
 #include "add.h"
 #include "opcodes.h"
+
+#define ahi(x, y) "ahi " x ", " y "\n"
+#define aghi(x, y) "aghi " x ", " y "\n"
 
 static void do_imm_insns(void)
 {
@@ -14,6 +16,24 @@ static void do_imm_insns(void)
 	immsweep(aghi, 32767, 0);
 }
 
+#define a(x, y) "a " x ", " y "\n"
+#define ah(x, y) "ah " x ", " y "\n"
+#define ag(x, y) "ag " x ", " y "\n"
+#define agf(x, y) "agf " x ", " y "\n"
+#define al(x, y) "al " x ", " y "\n"
+#define alg(x, y) "alg " x ", " y "\n"
+#define agf(x, y) "agf " x ", " y "\n"
+#define algf(x, y) "algf " x ", " y "\n"
+#define ar(x, y) "ar " x ", " y "\n"
+#define agr(x, y) "agr " x ", " y "\n"
+#define agfr(x, y) "agfr " x ", " y "\n"
+#define alr(x, y) "alr " x ", " y "\n"
+#define algr(x, y) "algr " x ", " y "\n"
+#define algfr(x, y) "algfr " x ", " y "\n"
+#define alc(x, y) "alc " x ", " y "\n"
+#define alcg(x, y) "alcg " x ", " y "\n"
+#define alcr(x, y) "alcr " x ", " y "\n"
+#define alcgr(x, y) "alcgr " x ", " y "\n"
 
 static void do_regmem_insns(unsigned long s2)
 {
@@ -46,22 +66,7 @@ static void do_regmem_insns(unsigned long s2)
 
 int main()
 {
-	do_regmem_insns(0x0ul);
-	do_regmem_insns(0x7ffffffffffffffful);
-	do_regmem_insns(0x8000000000000000ul);
-	do_regmem_insns(0xfffffffffffffffful);
-	do_regmem_insns(0x7fffffff00000000ul);
-	do_regmem_insns(0x8000000000000000ul);
-	do_regmem_insns(0xffffffff00000000ul);
-	do_regmem_insns(0x000000007ffffffful);
-	do_regmem_insns(0x0000000080000000ul);
-	do_regmem_insns(0x00000000fffffffful);
-	do_regmem_insns(0x000000000000fffful);
-	do_regmem_insns(0x0000000000007ffful);
-	do_regmem_insns(0x0000000000008000ul);
-	do_regmem_insns(0x000000000000fffful);
+	for_each_m2(do_regmem_insns);
 
 	do_imm_insns();
-
-	return 0;
 }

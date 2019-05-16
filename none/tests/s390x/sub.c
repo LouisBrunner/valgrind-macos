@@ -1,6 +1,24 @@
-#include <stdio.h>
 #include "sub.h"
 #include "opcodes.h"
+
+#define s(x, y) "s " x ", " y "\n"
+#define sh(x, y) "sh " x ", " y "\n"
+#define sg(x, y) "sg " x ", " y "\n"
+#define sgf(x, y) "sgf " x ", " y "\n"
+#define sl(x, y) "sl " x ", " y "\n"
+#define slg(x, y) "slg " x ", " y "\n"
+#define sgf(x, y) "sgf " x ", " y "\n"
+#define slgf(x, y) "slgf " x ", " y "\n"
+#define sr(x, y) "sr " x ", " y "\n"
+#define sgr(x, y) "sgr " x ", " y "\n"
+#define sgfr(x, y) "sgfr " x ", " y "\n"
+#define slr(x, y) "slr " x ", " y "\n"
+#define slgr(x, y) "slgr " x ", " y "\n"
+#define slgfr(x, y) "slgfr " x ", " y "\n"
+#define slb(x, y) "slb " x ", " y "\n"
+#define slbg(x, y) "slbg " x ", " y "\n"
+#define slbr(x, y) "slbr " x ", " y "\n"
+#define slbgr(x, y) "slbgr " x ", " y "\n"
 
 static void do_regmem_insns(unsigned long s2)
 {
@@ -33,20 +51,5 @@ static void do_regmem_insns(unsigned long s2)
 
 int main()
 {
-	do_regmem_insns(0x0ul);
-	do_regmem_insns(0x7ffffffffffffffful);
-	do_regmem_insns(0x8000000000000000ul);
-	do_regmem_insns(0xfffffffffffffffful);
-	do_regmem_insns(0x7fffffff00000000ul);
-	do_regmem_insns(0x8000000000000000ul);
-	do_regmem_insns(0xffffffff00000000ul);
-	do_regmem_insns(0x000000007ffffffful);
-	do_regmem_insns(0x0000000080000000ul);
-	do_regmem_insns(0x00000000fffffffful);
-	do_regmem_insns(0x000000000000fffful);
-	do_regmem_insns(0x0000000000007ffful);
-	do_regmem_insns(0x0000000000008000ul);
-	do_regmem_insns(0x000000000000fffful);
-
-	return 0;
+	for_each_m2(do_regmem_insns);
 }

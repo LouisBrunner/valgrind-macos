@@ -9,7 +9,7 @@ volatile long v;
 	int cc;						\
 	asm volatile(	"lghi 0," #CARRY "\n"		\
 			"aghi 0, 0\n"			\
-			#insn " %0, %3\n"		\
+			insn("%0", "%3")		\
 			"ipm %1\n"			\
 			"srl %1,28\n"			\
 			: "+d" (tmp), "=d" (cc)		\
@@ -24,7 +24,7 @@ volatile long v;
 	int cc;						\
 	asm volatile(	"lghi 0," #CARRY "\n"		\
 			"aghi 0, 0\n"			\
-			#insn " %0, %3\n"		\
+			insn("%0", "%3")		\
 			"ipm %1\n"			\
 			"srl %1,28\n"			\
 			: "+d" (tmp), "=d" (cc)		\
@@ -39,7 +39,7 @@ volatile long v;
 	int cc;						\
 	asm volatile(	"lghi 0," #CARRY "\n"		\
 			"aghi 0, 0\n"			\
-			#insn " %0," #s2 "\n"		\
+			insn("%0", #s2)		\
 			"ipm %1\n"			\
 			"srl %1,28\n"			\
 			: "+d" (tmp), "=d" (cc)		\
@@ -204,3 +204,20 @@ volatile long v;
 	ADD_REG_XIMM(i, 0x7ffffffffffffffful, us2, s2, carryset);	\
 })
 
+#define for_each_m2(f)				\
+({						\
+	f(0x0ul);				\
+	f(0x7ffffffffffffffful);		\
+	f(0x8000000000000000ul);		\
+	f(0xfffffffffffffffful);		\
+	f(0x7fffffff00000000ul);		\
+	f(0x8000000000000000ul);		\
+	f(0xffffffff00000000ul);		\
+	f(0x000000007ffffffful);		\
+	f(0x0000000080000000ul);		\
+	f(0x00000000fffffffful);		\
+	f(0x000000000000fffful);		\
+	f(0x0000000000007ffful);		\
+	f(0x0000000000008000ul);		\
+	f(0x000000000000fffful);		\
+})

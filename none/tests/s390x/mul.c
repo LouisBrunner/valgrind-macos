@@ -1,6 +1,8 @@
-#include <stdio.h>
 #include "mul.h"
 #include "opcodes.h"
+
+#define mhi(x, y) "mhi " x ", " y "\n"
+#define mghi(x, y) "mghi " x ", " y "\n"
 
 static void do_imm_insns(void)
 {
@@ -14,6 +16,19 @@ static void do_imm_insns(void)
 	immsweep(mghi, 32767);
 }
 
+#define m(x, y) "m " x ", " y "\n"
+#define mr(x, y) "mr " x ", " y "\n"
+#define mh(x, y) "mh " x ", " y "\n"
+#define mlg(x, y) "mlg " x ", " y "\n"
+#define mlgr(x, y) "mlgr " x ", " y "\n"
+#define ml(x, y) "ml " x ", " y "\n"
+#define mlr(x, y) "mlr " x ", " y "\n"
+#define ms(x, y) "ms " x ", " y "\n"
+#define msr(x, y) "msr " x ", " y "\n"
+#define msg(x, y) "msg " x ", " y "\n"
+#define msgr(x, y) "msgr " x ", " y "\n"
+#define msgf(x, y) "msgf " x ", " y "\n"
+#define msgfr(x, y) "msgfr " x ", " y "\n"
 
 static void do_regmem_insns(unsigned long m2)
 {
@@ -35,20 +50,6 @@ static void do_regmem_insns(unsigned long m2)
 
 int main()
 {
-	do_regmem_insns(0x0ul);
-	do_regmem_insns(0x7ffffffffffffffful);
-	do_regmem_insns(0x8000000000000000ul);
-	do_regmem_insns(0xfffffffffffffffful);
-	do_regmem_insns(0x7fffffff00000000ul);
-	do_regmem_insns(0x8000000000000000ul);
-	do_regmem_insns(0xffffffff00000000ul);
-	do_regmem_insns(0x000000007ffffffful);
-	do_regmem_insns(0x0000000080000000ul);
-	do_regmem_insns(0x00000000fffffffful);
-	do_regmem_insns(0x000000000000fffful);
-	do_regmem_insns(0x0000000000007ffful);
-	do_regmem_insns(0x0000000000008000ul);
-	do_regmem_insns(0x000000000000fffful);
+	for_each_m2(do_regmem_insns);
 	do_imm_insns();
-	return 0;
 }

@@ -7,9 +7,9 @@ volatile long v;
 ({							\
 	unsigned long tmp = s1;				\
 	int cc;						\
-	asm volatile(	"lghi 0," #NOBORROW "\n"		\
+	asm volatile(	"lghi 0," #NOBORROW "\n"	\
 			"aghi 0, 0\n"			\
-			#insn " %0, %3\n"		\
+			insn("%0", "%3")		\
 			"ipm %1\n"			\
 			"srl %1,28\n"			\
 			: "+d" (tmp), "=d" (cc)		\
@@ -22,9 +22,9 @@ volatile long v;
 ({							\
 	unsigned long tmp = s1;				\
 	int cc;						\
-	asm volatile(	"lghi 0," #NOBORROW "\n"		\
+	asm volatile(	"lghi 0," #NOBORROW "\n"	\
 			"aghi 0, 0\n"			\
-			#insn " %0, %3\n"		\
+			insn("%0", "%3")		\
 			"ipm %1\n"			\
 			"srl %1,28\n"			\
 			: "+d" (tmp), "=d" (cc)		\
@@ -37,7 +37,7 @@ volatile long v;
 ({							\
 	register unsigned long tmp asm("2") = s1;	\
 	int cc;						\
-	asm volatile(	"lghi 0," #NOBORROW "\n"		\
+	asm volatile(	"lghi 0," #NOBORROW "\n"	\
 			"aghi 0, 0\n"			\
                         insn(2,s2)			\
 			"ipm %1\n"			\
@@ -124,4 +124,22 @@ volatile long v;
 	SUB_REG_LDISP(i, 0xfffffffffffffffful, s2, carryset);	\
 	SUB_REG_LDISP(i, 0x8000000000000000ul, s2, carryset);	\
 	SUB_REG_LDISP(i, 0x7ffffffffffffffful, s2, carryset);	\
+})
+
+#define for_each_m2(f)				\
+({						\
+	f(0x0ul);				\
+	f(0x7ffffffffffffffful);		\
+	f(0x8000000000000000ul);		\
+	f(0xfffffffffffffffful);		\
+	f(0x7fffffff00000000ul);		\
+	f(0x8000000000000000ul);		\
+	f(0xffffffff00000000ul);		\
+	f(0x000000007ffffffful);		\
+	f(0x0000000080000000ul);		\
+	f(0x00000000fffffffful);		\
+	f(0x000000000000fffful);		\
+	f(0x0000000000007ffful);		\
+	f(0x0000000000008000ul);		\
+	f(0x000000000000fffful);		\
 })

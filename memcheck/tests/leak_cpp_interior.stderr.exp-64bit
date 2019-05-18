@@ -2,8 +2,8 @@
 valgrind output will go to log
 VALGRIND_DO_LEAK_CHECK
 x bytes in 1 blocks are definitely lost in loss record ... of ...
-   by 0x........: doit() (leak_cpp_interior.cpp:116)
-   by 0x........: main (leak_cpp_interior.cpp:131)
+   by 0x........: doit() (leak_cpp_interior.cpp:119)
+   by 0x........: main (leak_cpp_interior.cpp:134)
 
 LEAK SUMMARY:
    definitely lost: x bytes in 1 blocks
@@ -103,6 +103,10 @@ LEAK SUMMARY:
                         multipleinheritance: 0 (-x) bytes in 0 (-2) blocks
 To see details of leaked memory, give 'full' arg to leak_check
 
+Searching for pointers pointing in x bytes from 0x........
+*0x........ interior points at x bytes inside 0x........
+ Address 0x........ is 0 bytes inside data symbol "ptr"
+block at 0x........ considered reachable by ptr 0x........ using newarray heuristic
 Searching for pointers pointing in x bytes from 0x........
 *0x........ interior points at x bytes inside 0x........
  Address 0x........ is 0 bytes inside data symbol "ptr"

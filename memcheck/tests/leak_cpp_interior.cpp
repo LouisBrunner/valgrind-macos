@@ -11,65 +11,65 @@
 // Derived from test provided by Timur Iskhodzhanov (bug 280271)
 
 class MyClass
-{ 
+{
    char m1;
    int  m2;
 public:
-   ~MyClass() 
-   { fprintf(stderr, "destruct MyClass\n"); 
-   } 
+   ~MyClass()
+   { fprintf(stderr, "destruct MyClass\n");
+   }
 };
 
 // Two hierarchies using MI, one with no fields,
 // the other one with some data.
-struct Ae 
-{ 
-   virtual ~Ae() 
-   { fprintf(stderr, "destruct Ae\n"); 
-   } 
-}; 
-struct Be 
-{ 
-   virtual ~Be() 
-   { fprintf(stderr, "destruct Be\n"); 
-   } 
-}; 
-struct Ce : public Ae, public Be 
-{ 
-   virtual ~Ce() 
-   { fprintf(stderr, "destruct Ce\n"); 
-   } 
+struct Ae
+{
+   virtual ~Ae()
+   { fprintf(stderr, "destruct Ae\n");
+   }
+};
+struct Be
+{
+   virtual ~Be()
+   { fprintf(stderr, "destruct Be\n");
+   }
+};
+struct Ce : public Ae, public Be
+{
+   virtual ~Ce()
+   { fprintf(stderr, "destruct Ce\n");
+   }
 };
 
-struct A 
-{ 
+struct A
+{
    char a;
-   A() 
+   A()
    { a = 'a';
-   } 
-   virtual ~A() 
-   { fprintf(stderr, "destruct A\n"); 
-   } 
-}; 
-struct B 
-{ 
+   }
+   virtual ~A()
+   { fprintf(stderr, "destruct A\n");
+   }
+};
+struct B
+{
    char b;
-   B() 
+   B()
    { b = 'b';
-   } 
-   virtual ~B() 
-   { fprintf(stderr, "destruct B\n"); 
-   } 
-}; 
-struct C : public A, public B 
-{ 
+   }
+   virtual ~B()
+   { fprintf(stderr, "destruct B\n");
+   }
+};
+struct C : public A, public B
+{
    char c;
-   C() 
+   C()
    { c = 'c';
-   } 
-   virtual ~C() 
-   { fprintf(stderr, "destruct C\n"); 
-   } 
+   }
+   virtual ~C()
+   { fprintf(stderr, "destruct C\n");
+   }
 };
 
 void* wrap64_malloc(int size)
@@ -100,6 +100,7 @@ A *ptrAC;
 void* ptr64;
 
 char who_points_at_cmd[100];
+char who_points_at_cmd_brackets[100]; /* Same but with brackets.  */
 
 void doit(void)
 {
@@ -107,10 +108,12 @@ void doit(void)
   str2 = str;
   ptr = new MyClass[3]; // interior ptr.
   ptr64 = wrap64_malloc(23);
-  
+
   // prepare the who_points_at cmd we will run.
   // Do it here to avoid having ptr or its exterior ptr kept in a register.
   sprintf(who_points_at_cmd, "who_points_at %#" PRIxPTR " 20",
+          (uintptr_t) (char*)ptr - sizeof(void*));
+  sprintf(who_points_at_cmd_brackets, "who_points_at %#" PRIxPTR "[20]",
           (uintptr_t) (char*)ptr - sizeof(void*));
 
   ptr2 = new MyClass[0]; // "interior but exterior ptr".
@@ -120,13 +123,13 @@ void doit(void)
   ptrACe = new Ce;  // not an interior pointer.
   ptrBC = new C;  // interior ptr.
   ptrAC = new C;  // not an interior pointer.
-  
-  
+
+
   str2 += " rocks (str2)\n"; // interior ptr.
 }
 
 
-int main() { 
+int main() {
 
    doit();
    (void) VALGRIND_MONITOR_COMMAND("v.set log_output");
@@ -154,6 +157,8 @@ int main() {
 
    // Test the who_points_at when the block is pointed to with an interior ptr.
    (void) VALGRIND_MONITOR_COMMAND(who_points_at_cmd);
+   // Same but with the bracket syntax.
+   (void) VALGRIND_MONITOR_COMMAND(who_points_at_cmd_brackets);
 
    delete [] ptr;
    delete [] ptr2;

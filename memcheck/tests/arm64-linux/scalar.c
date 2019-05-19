@@ -136,7 +136,7 @@ int main(void)
 
    // __NR_setuid 23
    GO(__NR_setuid, "1s 0m");
-   SY(__NR_setuid, x0); FAIL;
+   SY(__NR_setuid, x0-1); FAIL;
 
    // __NR_getuid 24
    GO(__NR_getuid, "0s 0m");
@@ -229,7 +229,7 @@ int main(void)
 
    // __NR_setgid 46
    GO(__NR_setgid, "1s 0m");
-   SY(__NR_setgid, x0); FAIL;
+   SY(__NR_setgid, x0-1); FAIL;
 
    // __NR_getgid 47
    GO(__NR_getgid, "0s 0m");
@@ -249,7 +249,7 @@ int main(void)
 
    // __NR_acct 51
    GO(__NR_acct, "1s 1m");
-   SY(__NR_acct, x0); FAIL;
+   SY(__NR_acct, x0-1); FAIL;
 
    // __NR_umount2 52
    GO(__NR_umount2, "2s 1m");
@@ -340,11 +340,11 @@ int main(void)
 
    // __NR_setreuid 70
    GO(__NR_setreuid, "2s 0m");
-   SY(__NR_setreuid, x0, x0); FAIL;
+   SY(__NR_setreuid, x0-1, x0-1); SUCC;
 
    // __NR_setregid 71
    GO(__NR_setregid, "2s 0m");
-   SY(__NR_setregid, x0, x0); FAIL;
+   SY(__NR_setregid, x0-1, x0-1); SUCC;
 
    // __NR_sigsuspend arm64 only has rt_sigsuspend
    // XXX: how do you use this function?
@@ -447,7 +447,7 @@ int main(void)
 
    // __NR_fchown 95
    GO(__NR_fchown, "3s 0m");
-   SY(__NR_fchown, x0, x0, x0); FAIL;
+   SY(__NR_fchown, x0-1, x0, x0); FAIL;
 
    // __NR_getpriority 96
    GO(__NR_getpriority, "2s 0m");
@@ -733,7 +733,7 @@ int main(void)
 
    // __NR_setresuid 164
    GO(__NR_setresuid, "3s 0m");
-   SY(__NR_setresuid, x0, x0, x0); FAIL;
+   SY(__NR_setresuid, x0-1, x0-1, x0-1); SUCC;
 
    // __NR_getresuid 165
    GO(__NR_getresuid, "3s 3m");
@@ -757,7 +757,7 @@ int main(void)
 
    // __NR_setresgid 170
    GO(__NR_setresgid, "3s 0m");
-   SY(__NR_setresgid, x0, x0, x0); FAIL;
+   SY(__NR_setresgid, x0-1, x0-1, x0-1); SUCC;
 
    // __NR_getresgid 171
    GO(__NR_getresgid, "3s 3m");

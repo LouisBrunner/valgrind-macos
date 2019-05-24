@@ -12,7 +12,7 @@ int main(int argc, char **argv)
     struct stat stat;
     loff_t len, ret;
 
-    fd_in = open("copy_file_range_source", O_CREAT | O_RDWR);
+    fd_in = open("copy_file_range_source", O_CREAT | O_RDWR, 0644);
     if (fd_in == -1) {
         perror("open copy_file_range_source");
         exit(EXIT_FAILURE);

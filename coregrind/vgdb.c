@@ -1090,7 +1090,7 @@ void report_pid(int pid, Bool on_stdout)
    } else {
       char cmdline[100];
       ssize_t sz;
-      while ((sz = read(fd, cmdline, sizeof cmdline - 1)) != 0) {
+      while ((sz = read(fd, cmdline, sizeof cmdline - 1)) > 0) {
          for (i = 0; i < sz; i++)
             if (cmdline[i] == 0)
                cmdline[i] = ' ';

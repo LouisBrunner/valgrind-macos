@@ -144,28 +144,34 @@ static const char *select_platform(const char *clientname)
    } header;
    ssize_t n_bytes;
    const char *platform = NULL;
+   const char *client = clientname;
 
    VG_(debugLog)(2, "launcher", "selecting platform for '%s'\n", clientname);
 
    if (strchr(clientname, '/') == NULL)
-      clientname = find_client(clientname);
+      client = find_client(clientname);
 
-   VG_(debugLog)(2, "launcher", "selecting platform for '%s'\n", clientname);
+   if (client != clientname)
+      VG_(debugLog)(2, "launcher", "selecting platform for '%s'\n", client);
 
-   if ((fd = open(clientname, O_RDONLY)) < 0)
+   if ((fd = open(clientname, O_RDONLY)) < 0) {
+     return_null:
+      if (client != clientname)
+         free (client);
       return NULL;
+   }
    //   barf("open(%s): %s", clientname, strerror(errno));
 
-   VG_(debugLog)(2, "launcher", "opened '%s'\n", clientname);
+   VG_(debugLog)(2, "launcher", "opened '%s'\n", client);
 
    n_bytes = read(fd, header.c, sizeof(header));
    close(fd);
    if (n_bytes < 2) {
-      return NULL;
+      goto return_null;
    }
 
    VG_(debugLog)(2, "launcher", "read %ld bytes from '%s'\n",
-                    (long int)n_bytes, clientname);
+                    (long int)n_bytes, client);
 
    if (header.c[0] == '#' && header.c[1] == '!') {
       int i = 2;
@@ -321,6 +327,9 @@ static const char *select_platform(const char *clientname)
 
    VG_(debugLog)(2, "launcher", "selected platform '%s'\n",
                  platform ? platform : "unknown");
+
+   if (client != clientname)
+      free (client);
 
    return platform;
 }

@@ -19373,7 +19373,7 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
             assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
             imm8 = (Int)getUChar(delta+alen);
             delta += alen+1;
-            DIP( "blendpd $%d, %s,%s\n", 
+            DIP( "blendps $%d, %s,%s\n", 
                  imm8, dis_buf, nameXMMReg( gregOfRexRM(pfx, modrm) ) );
          }
 
@@ -30989,7 +30989,7 @@ Long dis_ESC_0F3A__VEX (
             imm = getUChar(delta+alen);
             if (imm & ~15) break;
             delta += alen+1;
-            DIP( "vroundps $%d,%s,%s\n", imm, dis_buf, nameYMMReg(rG) );
+            DIP( "vroundpd $%d,%s,%s\n", imm, dis_buf, nameYMMReg(rG) );
          }
 
          /* (imm & 3) contains an Intel-encoded rounding mode.  Because
@@ -31600,7 +31600,7 @@ Long dis_ESC_0F3A__VEX (
             imm8_0 = (Int)(getUChar(delta+alen) & 1);
             assign( src_u64, loadLE( Ity_I64, mkexpr(addr) ) );
             delta += alen+1;
-            DIP( "vpinsrd $%d,%s,%s,%s\n", 
+            DIP( "vpinsrq $%d,%s,%s,%s\n", 
                  imm8_0, dis_buf, nameXMMReg(rV), nameXMMReg(rG) );
          }
 

@@ -3952,8 +3952,6 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
       goto done;
 
    case Ain_SseShiftN: {
-      opc         = 0; // invalid
-      subopc_imm  = 0; // invalid
       UInt limit  = 0;
       UInt shiftImm = i->Ain.SseShiftN.shiftBits;
       switch (i->Ain.SseShiftN.op) {

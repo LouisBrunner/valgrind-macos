@@ -22007,7 +22007,8 @@ Long dis_ESC_0F (
 
       vassert(fName); vassert(fAddr);
       IRExpr** args = NULL;
-      if (fAddr == &amd64g_dirtyhelper_CPUID_avx2) {
+      if (fAddr == &amd64g_dirtyhelper_CPUID_avx2
+          || fAddr == &amd64g_dirtyhelper_CPUID_avx_and_cx16) {
          Bool hasF16C   = (archinfo->hwcaps & VEX_HWCAPS_AMD64_F16C) != 0;
          Bool hasRDRAND = (archinfo->hwcaps & VEX_HWCAPS_AMD64_RDRAND) != 0;
          args = mkIRExprVec_3(IRExpr_GSPTR(),

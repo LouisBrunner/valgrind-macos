@@ -3141,8 +3141,11 @@ void amd64g_dirtyhelper_CPUID_sse42_and_cx16 ( VexGuestAMD64State* st )
    address sizes   : 36 bits physical, 48 bits virtual
    power management:
 */
-void amd64g_dirtyhelper_CPUID_avx_and_cx16 ( VexGuestAMD64State* st )
+void amd64g_dirtyhelper_CPUID_avx_and_cx16 ( VexGuestAMD64State* st,
+                                             ULong hasF16C, ULong hasRDRAND )
 {
+   vassert((hasF16C >> 1) == 0ULL);
+   vassert((hasRDRAND >> 1) == 0ULL);
 #  define SET_ABCD(_a,_b,_c,_d)                \
       do { st->guest_RAX = (ULong)(_a);        \
            st->guest_RBX = (ULong)(_b);        \
@@ -3157,9 +3160,14 @@ void amd64g_dirtyhelper_CPUID_avx_and_cx16 ( VexGuestAMD64State* st )
       case 0x00000000:
          SET_ABCD(0x0000000d, 0x756e6547, 0x6c65746e, 0x49656e69);
          break;
-      case 0x00000001:
-         SET_ABCD(0x000206a7, 0x00100800, 0x1f9ae3bf, 0xbfebfbff);
+      case 0x00000001: {
+         // As a baseline, advertise neither F16C (ecx:29) nor RDRAND (ecx:30),
+         // but patch in support for them as directed by the caller.
+         UInt ecx_extra
+            = (hasF16C ? (1U << 29) : 0) | (hasRDRAND ? (1U << 30) : 0);
+         SET_ABCD(0x000206a7, 0x00100800, (0x1f9ae3bf | ecx_extra), 0xbfebfbff);
          break;
+      }
       case 0x00000002:
          SET_ABCD(0x76035a01, 0x00f0b0ff, 0x00000000, 0x00ca0000);
          break;

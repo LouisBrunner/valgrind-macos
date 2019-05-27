@@ -1076,10 +1076,10 @@ Bool VG_(machine_get_hwcaps)( void )
         have_avx2 = (ebx & (1<<5)) != 0; /* True => have AVX2 */
      }
 
-     /* Sanity check for RDRAND and F16C.  These don't actually *need* AVX2, but
-        it's convenient to restrict them to the AVX2 case since the simulated
-        CPUID we'll offer them on has AVX2 as a base. */
-     if (!have_avx2) {
+     /* Sanity check for RDRAND and F16C.  These don't actually *need* AVX, but
+        it's convenient to restrict them to the AVX case since the simulated
+        CPUID we'll offer them on has AVX as a base. */
+     if (!have_avx) {
         have_f16c   = False;
         have_rdrand = False;
      }

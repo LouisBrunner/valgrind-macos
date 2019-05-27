@@ -6537,7 +6537,10 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt, IREndness IEndianess )
          return;
       }
       if (!mode64 && ty == Ity_I128) {
-         HReg r_srcHi, r_srcMedHi, r_srcMedLo, r_srcLo;
+         HReg r_srcHi    = INVALID_HREG;
+         HReg r_srcMedHi = INVALID_HREG;
+         HReg r_srcMedLo = INVALID_HREG;
+         HReg r_srcLo    = INVALID_HREG;
          HReg r_dstHi, r_dstMedHi, r_dstMedLo, r_dstLo;
 
          iselInt128Expr_to_32x4(&r_srcHi, &r_srcMedHi,

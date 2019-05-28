@@ -7,6 +7,8 @@ srcA   = 0x8000012480000124 0x8000012480000124
    vrfim(srcA) result =  0xbf800000, 0xbf800000, 0xbf800000, 0xbf800000
    vrfin(srcA) result =  0x80000000, 0x80000000, 0x80000000, 0x80000000
    vrfiz(srcA) result =  0x80000000, 0x80000000, 0x80000000, 0x80000000
+   vexptefp(srcA) result =  0x3f800000, 0x3f800000, 0x3f800000, 0x3f800000
+   vlogefp(srcA) result =  0x7fc00000, 0x7fc00000, 0x7fc00000, 0x7fc00000
    vrefp(srcA) result =  0xff800000, 0xff800000, 0xff800000, 0xff800000
    vrsqrtefp(srcA) result   = 0x7fc000007fc00000 0x7fc000007fc00000
 
@@ -941,6 +943,8 @@ srcA   = 0x8000012480000124 0x8000012480000124
    vrfim(srcA) result =  0xbf800000, 0xbf800000, 0xbf800000, 0xbf800000
    vrfin(srcA) result =  0x80000000, 0x80000000, 0x80000000, 0x80000000
    vrfiz(srcA) result =  0x80000000, 0x80000000, 0x80000000, 0x80000000
+   vexptefp(srcA) result =  0x3f800000, 0x3f800000, 0x3f800000, 0x3f800000
+   vlogefp(srcA) result =  0x7fc00000, 0x7fc00000, 0x7fc00000, 0x7fc00000
    vrefp(srcA) result =  0xff800000, 0xff800000, 0xff800000, 0xff800000
    vrsqrtefp(srcA) result   = 0x7fc000007fc00000 0x7fc000007fc00000
 
@@ -1875,6 +1879,8 @@ srcA   = 0x000000080000000a 0x000000060000000c
    vrfim(srcA) result =  0x00000000, 0x00000000, 0x00000000, 0x00000000
    vrfin(srcA) result =  0x00000000, 0x00000000, 0x00000000, 0x00000000
    vrfiz(srcA) result =  0x00000000, 0x00000000, 0x00000000, 0x00000000
+   vexptefp(srcA) result =  0x3f800000, 0x3f800000, 0x3f800000, 0x3f800000
+   vlogefp(srcA) result =  0xc3126a00, 0xc3116a00, 0xc3120000, 0xc311ae00
    vrefp(srcA) result =  0x7f800000, 0x7f800000, 0x7f800000, 0x7f800000
    vrsqrtefp(srcA) result   = 0x63ffff0063e4f8c0 0x6413cd0063d105c0
 
@@ -2809,6 +2815,8 @@ srcA   = 0xfffffefcfffffdfd 0xfffffafafffffbfb
    vrfim(srcA) result =  0xfffffafa, 0xfffffbfb, 0xfffffefc, 0xfffffdfd
    vrfin(srcA) result =  0xfffffafa, 0xfffffbfb, 0xfffffefc, 0xfffffdfd
    vrfiz(srcA) result =  0xfffffafa, 0xfffffbfb, 0xfffffefc, 0xfffffdfd
+   vexptefp(srcA) result =  0xfffffafa, 0xfffffbfb, 0xfffffefc, 0xfffffdfd
+   vlogefp(srcA) result =  0xfffffafa, 0xfffffbfb, 0xfffffefc, 0xfffffdfd
    vrefp(srcA) result =  0xfffffafa, 0xfffffbfb, 0xfffffefc, 0xfffffdfd
    vrsqrtefp(srcA) result   = 0xfffffefcfffffdfd 0xfffffafafffffbfb
 
@@ -3743,6 +3751,8 @@ srcA   = 0x0000026800000278 0x0000024800000258
    vrfim(srcA) result =  0x00000000, 0x00000000, 0x00000000, 0x00000000
    vrfin(srcA) result =  0x00000000, 0x00000000, 0x00000000, 0x00000000
    vrfiz(srcA) result =  0x00000000, 0x00000000, 0x00000000, 0x00000000
+   vexptefp(srcA) result =  0x3f800000, 0x3f800000, 0x3f800000, 0x3f800000
+   vlogefp(srcA) result =  0xc30bcf00, 0xc30bc500, 0xc30bbb80, 0xc30bb280
    vrefp(srcA) result =  0x7f800000, 0x7f800000, 0x7f800000, 0x7f800000
    vrsqrtefp(srcA) result   = 0x626963c062666a80 0x626fb2c0626c7b00
 
@@ -4677,6 +4687,8 @@ srcA   = 0x0000000400000008 0x0000000200000002
    vrfim(srcA) result =  0x00000000, 0x00000000, 0x00000000, 0x00000000
    vrfin(srcA) result =  0x00000000, 0x00000000, 0x00000000, 0x00000000
    vrfiz(srcA) result =  0x00000000, 0x00000000, 0x00000000, 0x00000000
+   vexptefp(srcA) result =  0x3f800000, 0x3f800000, 0x3f800000, 0x3f800000
+   vlogefp(srcA) result =  0xc3140000, 0xc3140000, 0xc3130000, 0xc3120000
    vrefp(srcA) result =  0x7f800000, 0x7f800000, 0x7f800000, 0x7f800000
    vrsqrtefp(srcA) result   = 0x6435040063ffff00 0x647fff00647fff00
 
@@ -5611,6 +5623,8 @@ srcA   = 0xc2fe0000c2fd0000 0xc3000000c3020000
    vrfim(srcA) result =  0xc3000000, 0xc3020000, 0xc2fe0000, 0xc2fe0000
    vrfin(srcA) result =  0xc3000000, 0xc3020000, 0xc2fe0000, 0xc2fc0000
    vrfiz(srcA) result =  0xc3000000, 0xc3020000, 0xc2fe0000, 0xc2fc0000
+   vexptefp(srcA) result =  0x00200000, 0x00080000, 0x00400000, 0x005a8000
+   vlogefp(srcA) result =  0x7fc00000, 0x7fc00000, 0x7fc00000, 0x7fc00000
    vrefp(srcA) result =  0xbbfffe00, 0xbbfc0d40, 0xbc010100, 0xbc018500
    vrsqrtefp(srcA) result   = 0x7fc000007fc00000 0x7fc000007fc00000
 
@@ -6545,6 +6559,8 @@ srcA   = 0xc2fe0000c2fd0000 0xc3000000c3020000
    vrfim(srcA) result =  0xc3000000, 0xc3020000, 0xc2fe0000, 0xc2fe0000
    vrfin(srcA) result =  0xc3000000, 0xc3020000, 0xc2fe0000, 0xc2fc0000
    vrfiz(srcA) result =  0xc3000000, 0xc3020000, 0xc2fe0000, 0xc2fc0000
+   vexptefp(srcA) result =  0x00200000, 0x00080000, 0x00400000, 0x005a8000
+   vlogefp(srcA) result =  0x7fc00000, 0x7fc00000, 0x7fc00000, 0x7fc00000
    vrefp(srcA) result =  0xbbfffe00, 0xbbfc0d40, 0xbc010100, 0xbc018500
    vrsqrtefp(srcA) result   = 0x7fc000007fc00000 0x7fc000007fc00000
 
@@ -7479,6 +7495,8 @@ srcA   = 0x0000000400000002 0xc2fe0000c2fd0000
    vrfim(srcA) result =  0xc2fe0000, 0xc2fe0000, 0x00000000, 0x00000000
    vrfin(srcA) result =  0xc2fe0000, 0xc2fc0000, 0x00000000, 0x00000000
    vrfiz(srcA) result =  0xc2fe0000, 0xc2fc0000, 0x00000000, 0x00000000
+   vexptefp(srcA) result =  0x00400000, 0x005a8000, 0x3f800000, 0x3f800000
+   vlogefp(srcA) result =  0x7fc00000, 0x7fc00000, 0xc3130000, 0xc3140000
    vrefp(srcA) result =  0xbc010100, 0xbc018500, 0x7f800000, 0x7f800000
    vrsqrtefp(srcA) result   = 0x64350400647fff00 0x7fc000007fc00000
 
@@ -8413,6 +8431,8 @@ srcA   = 0x7e9676997e700022 0xc2fe0000c2fd0000
    vrfim(srcA) result =  0xc2fe0000, 0xc2fe0000, 0x7e967699, 0x7e700022
    vrfin(srcA) result =  0xc2fe0000, 0xc2fc0000, 0x7e967699, 0x7e700022
    vrfiz(srcA) result =  0xc2fe0000, 0xc2fc0000, 0x7e967699, 0x7e700022
+   vexptefp(srcA) result =  0x00400000, 0x005a8000, 0x7f800000, 0x7f800000
+   vlogefp(srcA) result =  0x7fc00000, 0x7fc00000, 0x42fc7800, 0x42fbcfc0
    vrefp(srcA) result =  0xbc010100, 0xbc018500, 0x006ce430, 0x00888840
    vrsqrtefp(srcA) result   = 0x1fec1e6820043300 0x7fc000007fc00000
 
@@ -9347,6 +9367,8 @@ srcA   = 0x80b0000480b00006 0x80b0000180b00002
    vrfim(srcA) result =  0xbf800000, 0xbf800000, 0xbf800000, 0xbf800000
    vrfin(srcA) result =  0x80000000, 0x80000000, 0x80000000, 0x80000000
    vrfiz(srcA) result =  0x80000000, 0x80000000, 0x80000000, 0x80000000
+   vexptefp(srcA) result =  0x3f800000, 0x3f800000, 0x3f800000, 0x3f800000
+   vlogefp(srcA) result =  0x7fc00000, 0x7fc00000, 0x7fc00000, 0x7fc00000
    vrefp(srcA) result =  0xfe3a2dc0, 0xfe3a2dc0, 0xfe3a2dc0, 0xfe3a2dc0
    vrsqrtefp(srcA) result   = 0x7fc000007fc00000 0x7fc000007fc00000
 
@@ -10281,6 +10303,8 @@ srcA   = 0x80b0000280b00004 0x80b0000080b00001
    vrfim(srcA) result =  0xbf800000, 0xbf800000, 0xbf800000, 0xbf800000
    vrfin(srcA) result =  0x80000000, 0x80000000, 0x80000000, 0x80000000
    vrfiz(srcA) result =  0x80000000, 0x80000000, 0x80000000, 0x80000000
+   vexptefp(srcA) result =  0x3f800000, 0x3f800000, 0x3f800000, 0x3f800000
+   vlogefp(srcA) result =  0x7fc00000, 0x7fc00000, 0x7fc00000, 0x7fc00000
    vrefp(srcA) result =  0xfe3a2dc0, 0xfe3a2dc0, 0xfe3a2dc0, 0xfe3a2dc0
    vrsqrtefp(srcA) result   = 0x7fc000007fc00000 0x7fc000007fc00000
 
@@ -11215,6 +11239,8 @@ srcA   = 0x4e8000004e800000 0x4e8000004e800000
    vrfim(srcA) result =  0x4e800000, 0x4e800000, 0x4e800000, 0x4e800000
    vrfin(srcA) result =  0x4e800000, 0x4e800000, 0x4e800000, 0x4e800000
    vrfiz(srcA) result =  0x4e800000, 0x4e800000, 0x4e800000, 0x4e800000
+   vexptefp(srcA) result =  0x7f800000, 0x7f800000, 0x7f800000, 0x7f800000
+   vlogefp(srcA) result =  0x41f00000, 0x41f00000, 0x41f00000, 0x41f00000
    vrefp(srcA) result =  0x307ffe00, 0x307ffe00, 0x307ffe00, 0x307ffe00
    vrsqrtefp(srcA) result   = 0x37ffff0037ffff00 0x37ffff0037ffff00
 
@@ -12149,6 +12175,8 @@ srcA   = 0xb0000000b0000000 0xb0000000b0000000
    vrfim(srcA) result =  0xbf800000, 0xbf800000, 0xbf800000, 0xbf800000
    vrfin(srcA) result =  0x80000000, 0x80000000, 0x80000000, 0x80000000
    vrfiz(srcA) result =  0x80000000, 0x80000000, 0x80000000, 0x80000000
+   vexptefp(srcA) result =  0x3f800000, 0x3f800000, 0x3f800000, 0x3f800000
+   vlogefp(srcA) result =  0x7fc00000, 0x7fc00000, 0x7fc00000, 0x7fc00000
    vrefp(srcA) result =  0xcefffe00, 0xcefffe00, 0xcefffe00, 0xcefffe00
    vrsqrtefp(srcA) result   = 0x7fc000007fc00000 0x7fc000007fc00000
 
@@ -13085,6 +13113,8 @@ srcA   = 0x8000012480000124 0x8000012480000124
    vrfim(srcA) result =  0x80000000, 0x80000000, 0x80000000, 0x80000000
    vrfin(srcA) result =  0x80000000, 0x80000000, 0x80000000, 0x80000000
    vrfiz(srcA) result =  0x80000000, 0x80000000, 0x80000000, 0x80000000
+   vexptefp(srcA) result =  0x3f800000, 0x3f800000, 0x3f800000, 0x3f800000
+   vlogefp(srcA) result =  0xff800000, 0xff800000, 0xff800000, 0xff800000
    vrefp(srcA) result =  0xff800000, 0xff800000, 0xff800000, 0xff800000
    vrsqrtefp(srcA) result   = 0xff800000ff800000 0xff800000ff800000
 
@@ -14019,6 +14049,8 @@ srcA   = 0x8000012480000124 0x8000012480000124
    vrfim(srcA) result =  0x80000000, 0x80000000, 0x80000000, 0x80000000
    vrfin(srcA) result =  0x80000000, 0x80000000, 0x80000000, 0x80000000
    vrfiz(srcA) result =  0x80000000, 0x80000000, 0x80000000, 0x80000000
+   vexptefp(srcA) result =  0x3f800000, 0x3f800000, 0x3f800000, 0x3f800000
+   vlogefp(srcA) result =  0xff800000, 0xff800000, 0xff800000, 0xff800000
    vrefp(srcA) result =  0xff800000, 0xff800000, 0xff800000, 0xff800000
    vrsqrtefp(srcA) result   = 0xff800000ff800000 0xff800000ff800000
 
@@ -14953,6 +14985,8 @@ srcA   = 0x000000080000000a 0x000000060000000c
    vrfim(srcA) result =  0x00000000, 0x00000000, 0x00000000, 0x00000000
    vrfin(srcA) result =  0x00000000, 0x00000000, 0x00000000, 0x00000000
    vrfiz(srcA) result =  0x00000000, 0x00000000, 0x00000000, 0x00000000
+   vexptefp(srcA) result =  0x3f800000, 0x3f800000, 0x3f800000, 0x3f800000
+   vlogefp(srcA) result =  0xff800000, 0xff800000, 0xff800000, 0xff800000
    vrefp(srcA) result =  0x7f800000, 0x7f800000, 0x7f800000, 0x7f800000
    vrsqrtefp(srcA) result   = 0x7f8000007f800000 0x7f8000007f800000
 
@@ -15887,6 +15921,8 @@ srcA   = 0xfffffefcfffffdfd 0xfffffafafffffbfb
    vrfim(srcA) result =  0xfffffafa, 0xfffffbfb, 0xfffffefc, 0xfffffdfd
    vrfin(srcA) result =  0xfffffafa, 0xfffffbfb, 0xfffffefc, 0xfffffdfd
    vrfiz(srcA) result =  0xfffffafa, 0xfffffbfb, 0xfffffefc, 0xfffffdfd
+   vexptefp(srcA) result =  0xfffffafa, 0xfffffbfb, 0xfffffefc, 0xfffffdfd
+   vlogefp(srcA) result =  0xfffffafa, 0xfffffbfb, 0xfffffefc, 0xfffffdfd
    vrefp(srcA) result =  0xfffffafa, 0xfffffbfb, 0xfffffefc, 0xfffffdfd
    vrsqrtefp(srcA) result   = 0xfffffefcfffffdfd 0xfffffafafffffbfb
 
@@ -16821,6 +16857,8 @@ srcA   = 0x0000026800000278 0x0000024800000258
    vrfim(srcA) result =  0x00000000, 0x00000000, 0x00000000, 0x00000000
    vrfin(srcA) result =  0x00000000, 0x00000000, 0x00000000, 0x00000000
    vrfiz(srcA) result =  0x00000000, 0x00000000, 0x00000000, 0x00000000
+   vexptefp(srcA) result =  0x3f800000, 0x3f800000, 0x3f800000, 0x3f800000
+   vlogefp(srcA) result =  0xff800000, 0xff800000, 0xff800000, 0xff800000
    vrefp(srcA) result =  0x7f800000, 0x7f800000, 0x7f800000, 0x7f800000
    vrsqrtefp(srcA) result   = 0x7f8000007f800000 0x7f8000007f800000
 
@@ -17755,6 +17793,8 @@ srcA   = 0x0000000400000008 0x0000000200000002
    vrfim(srcA) result =  0x00000000, 0x00000000, 0x00000000, 0x00000000
    vrfin(srcA) result =  0x00000000, 0x00000000, 0x00000000, 0x00000000
    vrfiz(srcA) result =  0x00000000, 0x00000000, 0x00000000, 0x00000000
+   vexptefp(srcA) result =  0x3f800000, 0x3f800000, 0x3f800000, 0x3f800000
+   vlogefp(srcA) result =  0xff800000, 0xff800000, 0xff800000, 0xff800000
    vrefp(srcA) result =  0x7f800000, 0x7f800000, 0x7f800000, 0x7f800000
    vrsqrtefp(srcA) result   = 0x7f8000007f800000 0x7f8000007f800000
 
@@ -18689,6 +18729,8 @@ srcA   = 0xc2fe0000c2fd0000 0xc3000000c3020000
    vrfim(srcA) result =  0xc3000000, 0xc3020000, 0xc2fe0000, 0xc2fe0000
    vrfin(srcA) result =  0xc3000000, 0xc3020000, 0xc2fe0000, 0xc2fc0000
    vrfiz(srcA) result =  0xc3000000, 0xc3020000, 0xc2fe0000, 0xc2fc0000
+   vexptefp(srcA) result =  0x00000000, 0x00000000, 0x00000000, 0x00000000
+   vlogefp(srcA) result =  0x7fc00000, 0x7fc00000, 0x7fc00000, 0x7fc00000
    vrefp(srcA) result =  0xbbfffe00, 0xbbfc0d40, 0xbc010100, 0xbc018500
    vrsqrtefp(srcA) result   = 0x7fc000007fc00000 0x7fc000007fc00000
 
@@ -19623,6 +19665,8 @@ srcA   = 0xc2fe0000c2fd0000 0xc3000000c3020000
    vrfim(srcA) result =  0xc3000000, 0xc3020000, 0xc2fe0000, 0xc2fe0000
    vrfin(srcA) result =  0xc3000000, 0xc3020000, 0xc2fe0000, 0xc2fc0000
    vrfiz(srcA) result =  0xc3000000, 0xc3020000, 0xc2fe0000, 0xc2fc0000
+   vexptefp(srcA) result =  0x00000000, 0x00000000, 0x00000000, 0x00000000
+   vlogefp(srcA) result =  0x7fc00000, 0x7fc00000, 0x7fc00000, 0x7fc00000
    vrefp(srcA) result =  0xbbfffe00, 0xbbfc0d40, 0xbc010100, 0xbc018500
    vrsqrtefp(srcA) result   = 0x7fc000007fc00000 0x7fc000007fc00000
 
@@ -20557,6 +20601,8 @@ srcA   = 0x0000000400000002 0xc2fe0000c2fd0000
    vrfim(srcA) result =  0xc2fe0000, 0xc2fe0000, 0x00000000, 0x00000000
    vrfin(srcA) result =  0xc2fe0000, 0xc2fc0000, 0x00000000, 0x00000000
    vrfiz(srcA) result =  0xc2fe0000, 0xc2fc0000, 0x00000000, 0x00000000
+   vexptefp(srcA) result =  0x00000000, 0x00000000, 0x3f800000, 0x3f800000
+   vlogefp(srcA) result =  0x7fc00000, 0x7fc00000, 0xff800000, 0xff800000
    vrefp(srcA) result =  0xbc010100, 0xbc018500, 0x7f800000, 0x7f800000
    vrsqrtefp(srcA) result   = 0x7f8000007f800000 0x7fc000007fc00000
 
@@ -21491,6 +21537,8 @@ srcA   = 0x7e9676997e700022 0xc2fe0000c2fd0000
    vrfim(srcA) result =  0xc2fe0000, 0xc2fe0000, 0x7e967699, 0x7e700022
    vrfin(srcA) result =  0xc2fe0000, 0xc2fc0000, 0x7e967699, 0x7e700022
    vrfiz(srcA) result =  0xc2fe0000, 0xc2fc0000, 0x7e967699, 0x7e700022
+   vexptefp(srcA) result =  0x00000000, 0x00000000, 0x7f800000, 0x7f800000
+   vlogefp(srcA) result =  0x7fc00000, 0x7fc00000, 0x42fc7800, 0x42fbcfc0
    vrefp(srcA) result =  0xbc010100, 0xbc018500, 0x00000000, 0x00888840
    vrsqrtefp(srcA) result   = 0x1fec1e6820043300 0x7fc000007fc00000
 
@@ -22425,6 +22473,8 @@ srcA   = 0x80b0000480b00006 0x80b0000180b00002
    vrfim(srcA) result =  0xbf800000, 0xbf800000, 0xbf800000, 0xbf800000
    vrfin(srcA) result =  0x80000000, 0x80000000, 0x80000000, 0x80000000
    vrfiz(srcA) result =  0x80000000, 0x80000000, 0x80000000, 0x80000000
+   vexptefp(srcA) result =  0x3f800000, 0x3f800000, 0x3f800000, 0x3f800000
+   vlogefp(srcA) result =  0x7fc00000, 0x7fc00000, 0x7fc00000, 0x7fc00000
    vrefp(srcA) result =  0xfe3a2dc0, 0xfe3a2dc0, 0xfe3a2dc0, 0xfe3a2dc0
    vrsqrtefp(srcA) result   = 0x7fc000007fc00000 0x7fc000007fc00000
 
@@ -23359,6 +23409,8 @@ srcA   = 0x80b0000280b00004 0x80b0000080b00001
    vrfim(srcA) result =  0xbf800000, 0xbf800000, 0xbf800000, 0xbf800000
    vrfin(srcA) result =  0x80000000, 0x80000000, 0x80000000, 0x80000000
    vrfiz(srcA) result =  0x80000000, 0x80000000, 0x80000000, 0x80000000
+   vexptefp(srcA) result =  0x3f800000, 0x3f800000, 0x3f800000, 0x3f800000
+   vlogefp(srcA) result =  0x7fc00000, 0x7fc00000, 0x7fc00000, 0x7fc00000
    vrefp(srcA) result =  0xfe3a2dc0, 0xfe3a2dc0, 0xfe3a2dc0, 0xfe3a2dc0
    vrsqrtefp(srcA) result   = 0x7fc000007fc00000 0x7fc000007fc00000
 
@@ -24293,6 +24345,8 @@ srcA   = 0x4e8000004e800000 0x4e8000004e800000
    vrfim(srcA) result =  0x4e800000, 0x4e800000, 0x4e800000, 0x4e800000
    vrfin(srcA) result =  0x4e800000, 0x4e800000, 0x4e800000, 0x4e800000
    vrfiz(srcA) result =  0x4e800000, 0x4e800000, 0x4e800000, 0x4e800000
+   vexptefp(srcA) result =  0x7f800000, 0x7f800000, 0x7f800000, 0x7f800000
+   vlogefp(srcA) result =  0x41f00000, 0x41f00000, 0x41f00000, 0x41f00000
    vrefp(srcA) result =  0x307ffe00, 0x307ffe00, 0x307ffe00, 0x307ffe00
    vrsqrtefp(srcA) result   = 0x37ffff0037ffff00 0x37ffff0037ffff00
 
@@ -25227,6 +25281,8 @@ srcA   = 0xb0000000b0000000 0xb0000000b0000000
    vrfim(srcA) result =  0xbf800000, 0xbf800000, 0xbf800000, 0xbf800000
    vrfin(srcA) result =  0x80000000, 0x80000000, 0x80000000, 0x80000000
    vrfiz(srcA) result =  0x80000000, 0x80000000, 0x80000000, 0x80000000
+   vexptefp(srcA) result =  0x3f800000, 0x3f800000, 0x3f800000, 0x3f800000
+   vlogefp(srcA) result =  0x7fc00000, 0x7fc00000, 0x7fc00000, 0x7fc00000
    vrefp(srcA) result =  0xcefffe00, 0xcefffe00, 0xcefffe00, 0xcefffe00
    vrsqrtefp(srcA) result   = 0x7fc000007fc00000 0x7fc000007fc00000
 

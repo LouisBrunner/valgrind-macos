@@ -2636,6 +2636,56 @@ Altivec floating point arith insns with one arg:
    vrsqrtefp: ffbfffff ffbfffff ffbfffff ffbfffff
    vrsqrtefp:  => ffffc000 ffffc000 ffffc000 ffffc000 (00000000)
 
+     vlogefp: 02bfffff 02bfffff 02bfffff 02bfffff
+     vlogefp:  => c2f2d440 c2f2d440 c2f2d440 c2f2d440 (00000000)
+     vlogefp: 513fffff 513fffff 513fffff 513fffff
+     vlogefp:  => 420e5780 420e5780 420e5780 420e5780 (00000000)
+     vlogefp: 82bfffff 82bfffff 82bfffff 82bfffff
+     vlogefp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
+     vlogefp: d13fffff d13fffff d13fffff d13fffff
+     vlogefp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
+     vlogefp: 00000000 00000000 00000000 00000000
+     vlogefp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+     vlogefp: 80000000 80000000 80000000 80000000
+     vlogefp:  => ff800000 ff800000 ff800000 ff800000 (00000000)
+     vlogefp: 7f800000 7f800000 7f800000 7f800000
+     vlogefp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+     vlogefp: ff800000 ff800000 ff800000 ff800000
+     vlogefp:  => 7fc00000 7fc00000 7fc00000 7fc00000 (00000000)
+     vlogefp: 7fffffff 7fffffff 7fffffff 7fffffff
+     vlogefp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vlogefp: ffffffff ffffffff ffffffff ffffffff
+     vlogefp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+     vlogefp: 7fbfffff 7fbfffff 7fbfffff 7fbfffff
+     vlogefp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+     vlogefp: ffbfffff ffbfffff ffbfffff ffbfffff
+     vlogefp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+
+    vexptefp: 02bfffff 02bfffff 02bfffff 02bfffff
+    vexptefp:  => 3f800000 3f800000 3f800000 3f800000 (00000000)
+    vexptefp: 513fffff 513fffff 513fffff 513fffff
+    vexptefp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+    vexptefp: 82bfffff 82bfffff 82bfffff 82bfffff
+    vexptefp:  => 3f800000 3f800000 3f800000 3f800000 (00000000)
+    vexptefp: d13fffff d13fffff d13fffff d13fffff
+    vexptefp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vexptefp: 00000000 00000000 00000000 00000000
+    vexptefp:  => 3f800000 3f800000 3f800000 3f800000 (00000000)
+    vexptefp: 80000000 80000000 80000000 80000000
+    vexptefp:  => 3f800000 3f800000 3f800000 3f800000 (00000000)
+    vexptefp: 7f800000 7f800000 7f800000 7f800000
+    vexptefp:  => 7f800000 7f800000 7f800000 7f800000 (00000000)
+    vexptefp: ff800000 ff800000 ff800000 ff800000
+    vexptefp:  => 00000000 00000000 00000000 00000000 (00000000)
+    vexptefp: 7fffffff 7fffffff 7fffffff 7fffffff
+    vexptefp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vexptefp: ffffffff ffffffff ffffffff ffffffff
+    vexptefp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+    vexptefp: 7fbfffff 7fbfffff 7fbfffff 7fbfffff
+    vexptefp:  => 7fffffff 7fffffff 7fffffff 7fffffff (00000000)
+    vexptefp: ffbfffff ffbfffff ffbfffff ffbfffff
+    vexptefp:  => ffffffff ffffffff ffffffff ffffffff (00000000)
+
 Altivec floating point compare insns:
     vcmpgtfp: 02bfffff02bfffff02bfffff02bfffff, 02bfffff02bfffff02bfffff02bfffff
     vcmpgtfp:  => 00000000 00000000 00000000 00000000 (00000000)
@@ -3611,4 +3661,4 @@ Altivec float special insns:
       vctsxs: ffbfffff (         -nan), 18 => 00000000 ( 0.000000e+00) (00000000)
       vctsxs: ffbfffff (         -nan), 27 => 00000000 ( 0.000000e+00) (00000000)
 
-All done. Tested 165 different instructions
+All done. Tested 167 different instructions

@@ -3256,7 +3256,6 @@ static void test_vrsqrtefp (void)
     __asm__ __volatile__ ("vrsqrtefp    17, 14");
 }
 
-#if 0   // TODO: Not yet supported
 static void test_vlogefp (void)
 {
     __asm__ __volatile__ ("vlogefp      17, 14");
@@ -3266,7 +3265,6 @@ static void test_vexptefp (void)
 {
     __asm__ __volatile__ ("vexptefp     17, 14");
 }
-#endif
 
 static test_t tests_afa_ops_one[] = {
     { &test_vrfin           , "       vrfin", },
@@ -3275,8 +3273,8 @@ static test_t tests_afa_ops_one[] = {
     { &test_vrfim           , "       vrfim", },
     { &test_vrefp           , "       vrefp", },
     { &test_vrsqrtefp       , "   vrsqrtefp", },
-    //    { &test_vlogefp         , "     vlogefp", },   // TODO: Not yet supported
-    //    { &test_vexptefp        , "    vexptefp", },   // TODO: Not yet supported
+    { &test_vlogefp         , "     vlogefp", },
+    { &test_vexptefp        , "    vexptefp", },
     { NULL,                   NULL,           },
 };
 #endif /* defined (HAS_ALTIVEC) */

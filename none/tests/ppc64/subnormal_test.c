@@ -146,15 +146,15 @@ void do_tests( void ) {
      print_vector_elements(dst);
 
 
-   // Valgrind not supported   __asm__ __volatile__ ("vexptefp %0,%1" : "=v" (dst): "v" (srcA));
-   //   printf ("   vexptefp(srcA) result = ");
-   //   print_vector_elements(dst);
+     __asm__ __volatile__ ("vexptefp %0,%1" : "=v" (dst): "v" (srcA));
+     printf ("   vexptefp(srcA) result = ");
+     print_vector_elements(dst);
 
-   /* Smallest representable floating point input does not generate
-      a subnormal result.  */
-   // Valgrind  not supported  __asm__ __volatile__ ("vlogefp %0,%1" : "=v" (dst): "v" (srcA));
-   //   printf ("   vlogefp(srcA) result = ");
-   //   print_vector_elements(dst);
+     /* Smallest representable floating point input does not generate
+        a subnormal result.  */
+     __asm__ __volatile__ ("vlogefp %0,%1" : "=v" (dst): "v" (srcA));
+     printf ("   vlogefp(srcA) result = ");
+     print_vector_elements(dst);
 
      __asm__ __volatile__ ("vrefp %0,%1" : "=v" (dst): "v" (srcA));
      printf ("   vrefp(srcA) result = ");
@@ -162,7 +162,7 @@ void do_tests( void ) {
      print_vector_elements(dst);
 
      /* Square root of the smallest representable number is a normal
-	number. Square root can't generate a subnormal result.  */
+        number. Square root can't generate a subnormal result.  */
      __asm__ __volatile__ ("vrsqrtefp %0,%1" : "=v" (dst): "v" (srcA));
      printf ("   vrsqrtefp(srcA) result   = 0x%016lx 0x%016lx\n\n",
              dst[1], dst[0]);

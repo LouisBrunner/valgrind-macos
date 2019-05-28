@@ -255,7 +255,8 @@ VG_(disp_run_translations):
         beq     .LafterVMX2
 
         vspltisw 3,0x0  /* generate zero */
-        mtvscr  3
+        mtvscr  3       /* sets VSCR[NJ]=0 */
+
 .LafterVMX2:
 
         /* make a stack frame for the code we are calling */
@@ -310,7 +311,8 @@ VG_(disp_run_translations):
         cmpldi  11,0    /* Do we have altivec? */
         beq     .LafterVMX8
 
-        /* Check VSCR[NJ] == 1 */
+        /* Expect VSCR[NJ] to be 0, call invariant_violation if
+           VSCR[NJ] == 1 . */
         /* first generate 4x 0x00010000 */
         vspltisw  4,0x1                   /* 4x 0x00000001 */
         vspltisw  5,0x0                   /* zero */
@@ -320,7 +322,7 @@ VG_(disp_run_translations):
         vand      7,7,6                   /* gives NJ flag */
         vspltw    7,7,0x3                 /* flags-word to all lanes */
         vcmpequw. 8,6,7                   /* CR[24] = 1 if v6 == v7 */
-        bt        24,.invariant_violation /* branch if all_equal */
+        bt        24,.invariant_violation /* branch if all_equal, i.e. NJ=1 */
 
 .LafterVMX8:
 	/* otherwise we're OK */

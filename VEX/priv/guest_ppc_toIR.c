@@ -27702,17 +27702,21 @@ static Bool dis_av_fp_arith ( UInt theInstr )
 
    case 0x18A: // vexptefp (2 Raised to the Exp Est FP, AV p173)
       DIP("vexptefp v%d,v%d\n", vD_addr, vB_addr);
-      DIP(" => not implemented\n");
       /* NOTE, need to address dnormalized value handling when this is
          implemented.  */
-      return False;
+      putVReg( vD_addr,
+               dnorm_adj_Vector( unop( Iop_Exp2_32Fx4,
+                                       dnorm_adj_Vector( mkexpr( vB ) ) ) ) );
+      return True;
 
    case 0x1CA: // vlogefp (Log2 Estimate FP, AV p175)
       DIP("vlogefp v%d,v%d\n", vD_addr, vB_addr);
-      DIP(" => not implemented\n");
       /* NOTE, need to address dnormalized value handling when this is
          implemented.  */
-      return False;
+      putVReg( vD_addr,
+               dnorm_adj_Vector( unop( Iop_Log2_32Fx4,
+                                       dnorm_adj_Vector( mkexpr( vB ) ) ) ) );
+      return True;
 
    default:
       vex_printf("dis_av_fp_arith(ppc)(opc2=0x%x)\n",opc2);

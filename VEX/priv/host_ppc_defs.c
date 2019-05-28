@@ -750,6 +750,8 @@ const HChar* showPPCAvFpOp ( PPCAvFpOp op ) {
    /* Floating Point Unary */
    case Pavfp_RCPF:      return "vrefp";
    case Pavfp_RSQRTF:    return "vrsqrtefp";
+   case Pavfp_Log2:      return "vlogefp";
+   case Pavfp_Exp2:      return "vexptefp";
    case Pavfp_CVTU2F:    return "vcfux";
    case Pavfp_CVTS2F:    return "vcfsx";
    case Pavfp_QCVTF2U:   return "vctuxs";
@@ -5733,6 +5735,8 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       switch (i->Pin.AvUn32Fx4.op) {
       case Pavfp_RCPF:    opc2 =  266; break; // vrefp
       case Pavfp_RSQRTF:  opc2 =  330; break; // vrsqrtefp
+      case Pavfp_Log2:    opc2 =  458; break; // vlogefp
+      case Pavfp_Exp2:    opc2 =  394; break; // vexptefp
       case Pavfp_CVTU2F:  opc2 =  778; break; // vcfux
       case Pavfp_CVTS2F:  opc2 =  842; break; // vcfsx
       case Pavfp_QCVTF2U: opc2 =  906; break; // vctuxs

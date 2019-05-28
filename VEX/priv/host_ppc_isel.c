@@ -5779,6 +5779,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e,
 
       case Iop_RecipEst32Fx4: fpop = Pavfp_RCPF;    goto do_32Fx4_unary;
       case Iop_RSqrtEst32Fx4: fpop = Pavfp_RSQRTF;  goto do_32Fx4_unary;
+      case Iop_Log2_32Fx4:    fpop = Pavfp_Log2;    goto do_32Fx4_unary;
+      case Iop_Exp2_32Fx4:    fpop = Pavfp_Exp2;    goto do_32Fx4_unary;
       case Iop_I32UtoF32x4_DEP: fpop = Pavfp_CVTU2F;  goto do_32Fx4_unary;
       case Iop_I32StoF32x4_DEP: fpop = Pavfp_CVTS2F;  goto do_32Fx4_unary;
       case Iop_QF32toI32Ux4_RZ: fpop = Pavfp_QCVTF2U; goto do_32Fx4_unary;

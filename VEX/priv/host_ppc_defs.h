@@ -489,7 +489,7 @@ typedef
       Pavfp_CMPEQF, Pavfp_CMPGTF, Pavfp_CMPGEF,
 
       /* Floating point unary */
-      Pavfp_RCPF, Pavfp_RSQRTF,
+      Pavfp_RCPF, Pavfp_RSQRTF, Pavfp_Log2, Pavfp_Exp2,
       Pavfp_CVTU2F, Pavfp_CVTS2F, Pavfp_QCVTF2U, Pavfp_QCVTF2S,
       Pavfp_ROUNDM, Pavfp_ROUNDP, Pavfp_ROUNDN, Pavfp_ROUNDZ,
    }

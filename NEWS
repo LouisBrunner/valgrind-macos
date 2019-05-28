@@ -212,6 +212,7 @@ where XXXXXX is the bug number as listed below.
 406360  memcheck/tests/libstdc++.supp needs more supression variants
 406422  none/tests/amd64-linux/map_32bits.vgtest fails too easily
 406465  arm64 insn selector fails on "t0 = <expr>" where <expr> has type Ity_F16
+407340  PPC64, does not support the vlogefp, vexptefp instructions.
 n-i-bz  add syswrap for PTRACE_GET|SET_THREAD_AREA on amd64.
 n-i-bz  Fix callgrind_annotate non deterministic order for equal total
 n-i-bz  callgrind_annotate --threshold=100 does not print all functions.

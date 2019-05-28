@@ -7200,7 +7200,8 @@ static void test_av_float_three_args (const char* name, test_func_t func,
 
             /* Valgrind emulation for vmaddfp and vnmsubfp generates negative 
              * NAN.  Technically, NAN is not positive or negative so mask off
-             * the sign bit to eliminate false errors.
+             * the sign bit to eliminate false errors.  The lower 22-bits of
+             * the 23-bit significand are a don't care for a NAN.  Mask them off.
              * 
              * Valgrind emulation is creating negative zero.  Mask off negative
              * from zero result.
@@ -7216,7 +7217,7 @@ static void test_av_float_three_args (const char* name, test_func_t func,
                 /* NAN result*/
                 if (((dst[n] & 0x7F800000) == 0x7F800000) &&
                    ((dst[n] & 0x7FFFFF) != 0))
-                   dst[n] &= 0x7FFFFFFF;
+                   dst[n] &= 0x7FC00000;
 
                 /* Negative zero result */
                 else if (dst[n] == 0x80000000)

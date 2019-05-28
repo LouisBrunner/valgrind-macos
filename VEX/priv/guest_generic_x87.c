@@ -453,7 +453,7 @@ ULong x86amd64g_calculate_FXTRACT ( ULong arg, HWord getExp )
 
    /* Mimic Core i5 behaviour for special cases. */
    if (arg == posInf)
-      return getExp ? posInf : posInf;
+      return posInf; /* Both significand and exponent are posInf. */
    if (arg == negInf)
       return getExp ? posInf : negInf;
    if ((arg & nanMask) == nanMask)

@@ -3842,12 +3842,28 @@ PRE(sys_mprotect)
    PRE_REG_READ3(long, "mprotect",
                  unsigned long, addr, vki_size_t, len, unsigned long, prot);
 
-   if (!ML_(valid_client_addr)(ARG1, ARG2, tid, "mprotect")) {
+   Addr addr = ARG1;
+   SizeT len = ARG2;
+   Int prot  = ARG3;
+
+   handle_sys_mprotect (tid, status, &addr, &len, &prot);
+
+   ARG1 = addr;
+   ARG2 = len;
+   ARG3 = prot;
+}
+/* This will be called from the generic mprotect, or the linux specific
+   pkey_mprotect. Pass pointers to ARG1, ARG2 and ARG3 as addr, len and prot,
+   they might be adjusted and have to assigned back to ARG1, ARG2 and ARG3.  */
+void handle_sys_mprotect(ThreadId tid, SyscallStatus* status,
+                         Addr *addr, SizeT *len, Int *prot)
+{
+   if (!ML_(valid_client_addr)(*addr, *len, tid, "mprotect")) {
       SET_STATUS_Failure( VKI_ENOMEM );
    } 
 #if defined(VKI_PROT_GROWSDOWN)
    else 
-   if (ARG3 & (VKI_PROT_GROWSDOWN|VKI_PROT_GROWSUP)) {
+   if (*prot & (VKI_PROT_GROWSDOWN|VKI_PROT_GROWSUP)) {
       /* Deal with mprotects on growable stack areas.
 
          The critical files to understand all this are mm/mprotect.c
@@ -3862,8 +3878,8 @@ PRE(sys_mprotect)
 
          The sanity check provided by the kernel is that the vma must
          have the VM_GROWSDOWN/VM_GROWSUP flag set as appropriate.  */
-      UInt grows = ARG3 & (VKI_PROT_GROWSDOWN|VKI_PROT_GROWSUP);
-      NSegment const *aseg = VG_(am_find_nsegment)(ARG1);
+      UInt grows = *prot & (VKI_PROT_GROWSDOWN|VKI_PROT_GROWSUP);
+      NSegment const *aseg = VG_(am_find_nsegment)(*addr);
       NSegment const *rseg;
 
       vg_assert(aseg);
@@ -3874,10 +3890,10 @@ PRE(sys_mprotect)
              && rseg->kind == SkResvn
              && rseg->smode == SmUpper
              && rseg->end+1 == aseg->start) {
-            Addr end = ARG1 + ARG2;
-            ARG1 = aseg->start;
-            ARG2 = end - aseg->start;
-            ARG3 &= ~VKI_PROT_GROWSDOWN;
+            Addr end = *addr + *len;
+            *addr = aseg->start;
+            *len = end - aseg->start;
+            *prot &= ~VKI_PROT_GROWSDOWN;
          } else {
             SET_STATUS_Failure( VKI_EINVAL );
          }
@@ -3887,8 +3903,8 @@ PRE(sys_mprotect)
              && rseg->kind == SkResvn
              && rseg->smode == SmLower
              && aseg->end+1 == rseg->start) {
-            ARG2 = aseg->end - ARG1 + 1;
-            ARG3 &= ~VKI_PROT_GROWSUP;
+            *len = aseg->end - *addr + 1;
+            *prot &= ~VKI_PROT_GROWSUP;
          } else {
             SET_STATUS_Failure( VKI_EINVAL );
          }

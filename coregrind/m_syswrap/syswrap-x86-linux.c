@@ -1608,6 +1608,9 @@ static SyscallTableEntry syscall_table[] = {
 
    LINX_(__NR_copy_file_range,   sys_copy_file_range),   // 377
 
+   LINXY(__NR_pkey_mprotect,     sys_pkey_mprotect),    // 380
+   LINX_(__NR_pkey_alloc,        sys_pkey_alloc),       // 381
+   LINX_(__NR_pkey_free,         sys_pkey_free),        // 382
    LINXY(__NR_statx,             sys_statx),            // 383
 
    /* Explicitly not supported on i386 yet. */

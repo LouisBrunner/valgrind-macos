@@ -12120,6 +12120,76 @@ PRE(sys_copy_file_range)
   }
 }
 
+PRE(sys_pkey_alloc)
+{
+  PRINT("pkey_alloc (%lu, %lu)", ARG1, ARG2);
+
+  PRE_REG_READ2(long, "pkey_alloc",
+                unsigned long, "flags",
+                unsigned long, "access_rights");
+
+  /* The kernel says: pkey_alloc() is always safe to call regardless of
+     whether or not the operating system supports protection keys.  It can be
+     used in lieu of any other mechanism for detecting pkey support and will
+     simply fail with the error ENOSPC if the operating system has no pkey
+     support.
+
+     So we simply always return ENOSPC to signal memory protection keys are
+     not supported under valgrind, unless there are unknown flags, then we
+     return EINVAL. */
+  unsigned long pkey_flags = ARG1;
+  if (pkey_flags != 0)
+     SET_STATUS_Failure( VKI_EINVAL );
+  else
+     SET_STATUS_Failure( VKI_ENOSPC );
+}
+
+PRE(sys_pkey_free)
+{
+  PRINT("pkey_free (%" FMT_REGWORD "u )", ARG1);
+
+  PRE_REG_READ1(long, "pkey_free",
+                unsigned long, "pkey");
+
+  /* Since pkey_alloc () can never succeed, see above, freeing any pkey is
+     always an error.  */
+  SET_STATUS_Failure( VKI_EINVAL );
+}
+
+PRE(sys_pkey_mprotect)
+{
+   PRINT("sys_pkey_mprotect ( %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %"
+         FMT_REGWORD "u %" FMT_REGWORD "u )", ARG1, ARG2, ARG3, ARG4);
+   PRE_REG_READ4(long, "pkey_mprotect",
+                 unsigned long, addr, vki_size_t, len, unsigned long, prot,
+                 unsigned long, pkey);
+
+   Addr  addr = ARG1;
+   SizeT len  = ARG2;
+   Int   prot = ARG3;
+   Int   pkey = ARG4;
+
+   /* Since pkey_alloc () can never succeed, see above, any pkey is
+      invalid. Except for -1, then pkey_mprotect acts just like mprotect.  */
+   if (pkey != -1)
+      SET_STATUS_Failure( VKI_EINVAL );
+   else
+      handle_sys_mprotect (tid, status, &addr, &len, &prot);
+
+   ARG1 = addr;
+   ARG2 = len;
+   ARG3 = prot;
+}
+
+POST(sys_pkey_mprotect)
+{
+   Addr  addr = ARG1;
+   SizeT len  = ARG2;
+   Int   prot = ARG3;
+
+   ML_(notify_core_and_tool_of_mprotect)(addr, len, prot);
+}
+
 
 #undef PRE
 #undef POST

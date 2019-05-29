@@ -299,6 +299,11 @@ DECL_TEMPLATE(linux, sys_bpf);
 // Linux-specific (new in Linux 4.11)
 DECL_TEMPLATE(linux, sys_statx);
 
+// Linux-specific memory protection key syscalls (since Linux 4.9)
+DECL_TEMPLATE(linux, sys_pkey_alloc);
+DECL_TEMPLATE(linux, sys_pkey_free);
+DECL_TEMPLATE(linux, sys_pkey_mprotect);
+
 /* ---------------------------------------------------------------------
    Wrappers for sockets and ipc-ery.  These are split into standalone
    procedures because x86-linux hides them inside multiplexors

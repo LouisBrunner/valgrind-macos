@@ -106,6 +106,10 @@ extern Bool
 ML_(handle_auxv_open)(SyscallStatus *status, const HChar *filename,
                       int flags);
 
+/* Helper function for generic mprotect and linux pkey_mprotect. */
+extern void handle_sys_mprotect (ThreadId tid, SyscallStatus *status,
+                                 Addr *addr, SizeT *len, Int *prot);
+
 DECL_TEMPLATE(generic, sys_ni_syscall);            // * P -- unimplemented
 DECL_TEMPLATE(generic, sys_exit);
 DECL_TEMPLATE(generic, sys_fork);

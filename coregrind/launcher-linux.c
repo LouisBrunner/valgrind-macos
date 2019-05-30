@@ -89,7 +89,7 @@ static void barf ( const char *format, ... )
 }
 
 /* Search the path for the client program */
-static const char *find_client(const char *clientname)
+static char *find_client(const char *clientname)
 {
    char *fullname;
    const char *path = getenv("PATH");
@@ -97,7 +97,7 @@ static const char *find_client(const char *clientname)
 
    assert(clientname != NULL);
 
-   if (path == NULL) return clientname;
+   if (path == NULL) return strdup(clientname);
 
    /* Make the size of the FULLNAME buffer large enough. */
    unsigned need = strlen(path) + strlen("/") + strlen(clientname) + 1;
@@ -128,7 +128,7 @@ static const char *find_client(const char *clientname)
    }
    free(fullname);
 
-   return clientname;
+   return strdup(clientname);
 }
 
 /* Examine the client and work out which platform it is for */
@@ -142,20 +142,21 @@ static const char *select_platform(const char *clientname)
    } header;
    ssize_t n_bytes;
    const char *platform = NULL;
-   const char *client = clientname;
+   char *client;
 
    VG_(debugLog)(2, "launcher", "selecting platform for '%s'\n", clientname);
 
    if (strchr(clientname, '/') == NULL)
       client = find_client(clientname);
+   else
+      client = strdup(clientname);
 
-   if (client != clientname)
+   if (strcmp (client, clientname) != 0)
       VG_(debugLog)(2, "launcher", "selecting platform for '%s'\n", client);
 
    if ((fd = open(clientname, O_RDONLY)) < 0) {
      return_null:
-      if (client != clientname)
-         free (client);
+      free (client);
       return NULL;
    }
    //   barf("open(%s): %s", clientname, strerror(errno));
@@ -326,8 +327,7 @@ static const char *select_platform(const char *clientname)
    VG_(debugLog)(2, "launcher", "selected platform '%s'\n",
                  platform ? platform : "unknown");
 
-   if (client != clientname)
-      free (client);
+   free (client);
 
    return platform;
 }

@@ -831,6 +831,7 @@ extern void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem
 extern Addr pthread_starter;
 extern Addr wqthread_starter;
 extern SizeT pthread_structsize;
+extern SizeT pthread_tsd_offset;
 
 
 #endif

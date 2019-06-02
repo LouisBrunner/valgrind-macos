@@ -767,7 +767,7 @@ DECL_TEMPLATE(darwin, task_for_pid);
 DECL_TEMPLATE(darwin, pid_for_task);
 
 #if DARWIN_VERS >= DARWIN_10_13
-// NYI thread_get_special_reply_port                // 50
+DECL_TEMPLATE(darwin, thread_get_special_reply_port);
 #endif /* DARWIN_VERS >= DARWIN_10_13 */
 
 #if DARWIN_VERS >= DARWIN_10_12

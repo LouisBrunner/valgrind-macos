@@ -2081,16 +2081,38 @@ POST(kevent64)
 Addr pthread_starter = 0;
 Addr wqthread_starter = 0;
 SizeT pthread_structsize = 0;
+SizeT pthread_tsd_offset = 0;
 
 PRE(bsdthread_register)
 {
+#if DARWIN_VERS >= DARWIN_10_12
+   PRINT("bsdthread_register( %#lx, %#lx, %lu, %#lx, %#lx, %#lx, %#lx )",
+         ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7);
+   PRE_REG_READ7(int,"__bsdthread_register", void *,"threadstart",
+                 void *,"wqthread", size_t,"pthsize",
+                 void *,"stack_addr_hint", void *,"targetconc_ptr",
+                 uint32_t,"dispatchqueue_offset", uint32_t,"tsd_offset");
+#else
    PRINT("bsdthread_register( %#lx, %#lx, %lu )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(int,"__bsdthread_register", void *,"threadstart",
                  void *,"wqthread", size_t,"pthsize");
+#endif
 
    pthread_starter = ARG1;
    wqthread_starter = ARG2;
    pthread_structsize = ARG3;
+   #if DARWIN_VERS >= DARWIN_10_12
+     typedef struct {
+       uint64_t version;
+       uint64_t dispatch_queue_offset;
+       uint64_t main_qos;
+       uint32_t tsd_offset;
+       uint32_t return_to_kernel_offset;
+       uint32_t mach_thread_self_offset;
+     } __attribute__ ((packed)) _pthread_registration_data;
+
+     pthread_tsd_offset = ((_pthread_registration_data*) ARG4)->tsd_offset;
+   #endif
    ARG1 = (Word)&pthread_hijack_asm;
    ARG2 = (Word)&wqthread_hijack_asm;
 }
@@ -10081,6 +10103,8 @@ PRE(ulock_wait)
       log_decaying("UNKNOWN ulock_wait %ld (opcode: %u [??], flags: %#x)!", ARG1, ul_opcode, ul_flags);
       break;
     }
+
+    *flags |= SfMayBlock;
 }
 
 PRE(host_create_mach_voucher_trap)

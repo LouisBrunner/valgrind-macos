@@ -3,3 +3,76 @@
 
 ############################################
 
+{
+   OSX1014:dyld-1
+   Memcheck:Cond
+   ...
+   fun:_ZN4dyld5_mainEPK12macho_headermiPPKcS5_S5_Pm
+   ...
+}
+
+{
+   OSX1014:dyld-2
+   Memcheck:Value8
+   ...
+   fun:_ZN4dyld5_mainEPK12macho_headermiPPKcS5_S5_Pm
+   ...
+}
+
+{
+   OSX1014:dyld-3
+   Memcheck:Cond
+   ...
+   fun:_ZN16ImageLoaderMachO18validateFirstPagesEPK21linkedit_data_commandiPKhmxRKN11ImageLoader11LinkContextE
+   ...
+}
+
+{
+   OSX1014:dyld-4
+   Memcheck:Cond
+   ...
+   fun:_ZN4dyldL18notifyBatchPartialE17dyld_image_statesbPFPKcS0_jPK15dyld_image_infoEbb
+}
+
+{
+   OSX1014:dyld-5
+   Memcheck:Cond
+   ...
+   fun:_ZN16ImageLoaderMachO18doModInitFunctionsERKN11ImageLoader11LinkContextE
+}
+
+{
+   OSX1014:dyld-6
+   Memcheck:Value8
+   ...
+   fun:_ZN4dyldL14libraryLocatorEPKcbS1_PKN11ImageLoader10RPathChainEbRj
+}
+
+{
+   OSX1014:dyld-7
+   Memcheck:Cond
+   ...
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjPKcRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+}
+
+{
+   OSX1014:dyld-8
+   Memcheck:Value8
+   ...
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjPKcRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+}
+
+{
+   OSX1014:si
+   Memcheck:Cond
+   ...
+   fun:__si_module_static_ds_block_invoke
+}
+
+{
+   OSX1014:xpc
+   Memcheck:Cond
+   ...
+   fun:bootstrap_look_up2
+   ...
+}

@@ -747,6 +747,11 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
       in detail and/or counted as an error, as specified by the options 
       <option>--show-leak-kinds</option> and 
       <option>--errors-for-leak-kinds</option>. </para>
+      <para>If <varname>--xml=yes</varname> is given, memcheck will
+      automatically use the value <varname>--leak-check=full</varname>.
+      You can use <option>--show-leak-kinds=none</option> to reduce
+      the size of the xml output if you are not interested in the leak
+      results.</para>
     </listitem>
   </varlistentry>
 

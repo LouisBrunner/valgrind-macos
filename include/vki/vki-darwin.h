@@ -274,6 +274,8 @@ typedef uint32_t vki_u32;
 #define	VKI_O_EXCL	O_EXCL
 #define	VKI_O_EVTONLY	O_EVTONLY
 
+#define VKI_AT_FDCWD AT_FDCWD
+
 #define	VKI_F_DUPFD	F_DUPFD
 #define	VKI_F_GETFD	F_GETFD
 #define	VKI_F_SETFD	F_SETFD

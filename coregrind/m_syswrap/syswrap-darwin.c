@@ -10125,6 +10125,26 @@ POST(mach_generate_activity_id)
 
 
 /* ---------------------------------------------------------------------
+ Added for macOS 10.13 (High Sierra)
+ ------------------------------------------------------------------ */
+
+#if DARWIN_VERS >= DARWIN_10_13
+
+PRE(thread_get_special_reply_port)
+{
+   PRINT("thread_get_special_reply_port()");
+}
+
+POST(thread_get_special_reply_port)
+{
+   record_named_port(tid, RES, MACH_PORT_RIGHT_RECEIVE, "special-reply-%p");
+   PRINT("special reply port %s", name_for_port(RES));
+}
+
+#endif /* DARWIN_VERS >= DARWIN_10_13 */
+
+
+/* ---------------------------------------------------------------------
    syscall tables
    ------------------------------------------------------------------ */
 
@@ -10865,7 +10885,7 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(49)),
 #endif
 #if DARWIN_VERS >= DARWIN_10_13
-// _____(__NR_thread_get_special_reply_port,            // 50
+   MACXY(__NR_thread_get_special_reply_port, thread_get_special_reply_port),
 #else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(50)), 
 #endif /* DARWIN_VERS >= DARWIN_10_13 */

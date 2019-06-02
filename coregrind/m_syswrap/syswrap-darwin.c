@@ -9767,18 +9767,35 @@ POST(getattrlistbulk)
 
 PRE(faccessat)
 {
-    PRINT("faccessat(FIXME)(fd:%ld, path:%#lx(%s), amode:%#lx, flag:%#lx)",
-        ARG1, ARG2, (HChar*)ARG2, ARG3, ARG4);
+    uint32_t fd = ARG1;
+    PRINT("faccessat(fd:%d, path:%#lx(%s), amode:%#lx, flag:%#lx)",
+          fd, ARG2, ARG2 ? (HChar*)ARG2 : "null", ARG3, ARG4);
     PRE_REG_READ4(int, "faccessat",
                   int, fd, user_addr_t, path, int, amode, int, flag);
+
+    if (fd != VKI_AT_FDCWD && !ML_(fd_allowed)(fd, "faccessat", tid, False)) {
+      SET_STATUS_Failure( VKI_EBADF );
+    }
+    PRE_MEM_RASCIIZ( "faccessat(path)", ARG2 );
 }
 
 PRE(fstatat64)
 {
-    PRINT("fstatat64(FIXME)(fd:%ld, path:%#lx(%s), ub:%#lx, flag:%#lx)",
-        ARG1, ARG2, (HChar*)ARG2, ARG3, ARG4);
+    uint32_t fd = ARG1;
+    PRINT("fstatat64(fd:%d, path:%#lx(%s), ub:%#lx, flag:%#lx)",
+          fd, ARG2, ARG2 ? (HChar*)ARG2 : "null", ARG3, ARG4);
     PRE_REG_READ4(int, "fstatat64",
                   int, fd, user_addr_t, path, user_addr_t, ub, int, flag);
+
+    if (fd != VKI_AT_FDCWD && !ML_(fd_allowed)(fd, "fstatat64", tid, False)) {
+      SET_STATUS_Failure( VKI_EBADF );
+    }
+    PRE_MEM_RASCIIZ( "fstatat64(path)", ARG2 );
+    PRE_MEM_WRITE( "fstatat64(ub)", ARG3, sizeof(struct vki_stat64) );
+}
+POST(fstatat64)
+{
+    POST_MEM_WRITE( ARG3, sizeof(struct vki_stat64) );
 }
 
 PRE(readlinkat)
@@ -9815,9 +9832,38 @@ PRE(bsdthread_ctl)
 
 PRE(csrctl)
 {
-   PRINT("csrctl(op:%ld, useraddr:%#lx, usersize:%#lx) FIXME", ARG1, ARG2, ARG3);
+   switch (ARG1) {
+   case VKI_CSR_CHECK:
+     PRINT("csrctl(op:CSR_CHECK, useraddr:%#lx, usersize:%#lx)", ARG2, ARG3);
    PRE_REG_READ3(int, "csrctl",
                  uint32_t, op, user_addr_t, useraddr, user_addr_t, usersize);
+     PRE_MEM_READ( "csrctl(useraddr)", ARG2, ARG3 );
+     break;
+
+   case VKI_CSR_GET_ACTIVE_CONFIG:
+      PRINT("csrctl(op:CSR_GET_ACTIVE_CONFIG, useraddr:%#lx, usersize:%#lx)", ARG2, ARG3);
+      PRE_REG_READ3(int, "csrctl",
+                    uint32_t, op, user_addr_t, useraddr, user_addr_t, usersize);
+      PRE_MEM_WRITE( "csrctl(useraddr)", ARG2, ARG3 );
+      break;
+
+   default:
+      PRINT("csrctl(op:%ld [??], useraddr:%#lx, usersize:%#lx)", ARG1, ARG2, ARG3);
+      log_decaying("UNKNOWN csrctl %ld!", ARG1);
+      break;
+   }
+}
+POST(csrctl)
+{
+   vg_assert(SUCCESS);
+   switch (ARG1) {
+   case VKI_CSR_GET_ACTIVE_CONFIG:
+      POST_MEM_WRITE( ARG2, ARG3 );
+      break;
+
+   default:
+      break;
+   }
 }
 
 PRE(guarded_open_dprotected_np)
@@ -9966,9 +10012,15 @@ PRE(pselect)
 
 PRE(getentropy)
 {
-    PRINT("getentropy(buffer:%#lx, size:%ld) FIXME", ARG1, ARG2);
+    PRINT("getentropy(buffer:%#lx, size:%ld)", ARG1, ARG2);
     PRE_REG_READ2(int, "getentropy",
                   void*, buffer, size_t, size);
+    PRE_MEM_WRITE( "getentropy(buffer)", ARG1, ARG2 );
+}
+POST(getentropy)
+{
+    vg_assert(SUCCESS);
+    POST_MEM_WRITE( ARG1, ARG2 );
 }
 
 static const HChar *ulop_name(int op)
@@ -9982,10 +10034,29 @@ static const HChar *ulop_name(int op)
 
 PRE(ulock_wake)
 {
-    PRINT("ulock_wake(operation:%ld, addr:%#lx, wake_value:%ld) FIXME",
-        ARG1, ARG2, ARG3);
+	 uint ul_opcode = ARG1 & VKI_UL_OPCODE_MASK;
+	 uint ul_flags = ARG1 & VKI_UL_FLAGS_MASK;
+   switch (ul_opcode) {
+   case VKI_UL_UNFAIR_LOCK:
+   case VKI_UL_COMPARE_AND_WAIT: {
+     const char* name = ulop_name(ul_opcode);
+     if (ul_flags & VKI_ULF_WAKE_THREAD) {
+       PRINT("ulock_wake(operation:%s (flags: %#x), addr:%#lx, wake_value:%s)",
+             name, ul_flags, ARG2, name_for_port(ARG3));
+     } else {
+       PRINT("ulock_wake(operation:%s (flags: %#x), addr:%#lx, wake_value:%ld /*unused*/)",
+             name, ul_flags, ARG2, ARG3);
+     }
     PRE_REG_READ3(int, "ulock_wake",
                   uint32_t, operation, void*, addr, uint64_t, wake_value);
+     break;
+}
+
+   default:
+      PRINT("ulock_wake(operation:%ld (opcode: %u [??], flags: %#x), addr:%#lx, wake_value:%ld)", ARG1, ul_opcode, ul_flags, ARG2, ARG3);
+      log_decaying("UNKNOWN ulock_wake %ld (opcode: %u [??], flags: %#x)!", ARG1, ul_opcode, ul_flags);
+      break;
+   }
 }
 
 PRE(ulock_wait)
@@ -10016,8 +10087,15 @@ PRE(host_create_mach_voucher_trap)
 {
     // munge_wwww -- no need to call helper
     PRINT("host_create_mach_voucher_trap"
-        "(host:%#lx, recipes:%#lx, recipes_size:%ld, voucher:%#lx) FIXME",
-        ARG1, ARG2, ARG3, ARG4);
+        "(host:%s, recipes:%#lx, recipes_size:%ld, voucher:%#lx)",
+        name_for_port(ARG1), ARG2, ARG3, ARG4);
+    PRE_MEM_READ( "host_create_mach_voucher_trap(recipes)", ARG2, ARG3 );
+    PRE_MEM_WRITE( "host_create_mach_voucher_trap(voucher)", ARG4, sizeof(mach_port_name_t) );
+}
+POST(host_create_mach_voucher_trap)
+{
+  vg_assert(SUCCESS);
+  POST_MEM_WRITE( ARG4, sizeof(mach_port_name_t) );
 }
 
 PRE(task_register_dyld_image_infos)
@@ -10688,10 +10766,10 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACXY(__NR_getattrlistbulk,     getattrlistbulk),    // 461
    MACXY(__NR_openat,              openat),             // 463
    MACX_(__NR_faccessat,           faccessat),          // 466
-   MACX_(__NR_fstatat64,           fstatat64),          // 470
+   MACXY(__NR_fstatat64,           fstatat64),          // 470
    MACX_(__NR_readlinkat,          readlinkat),         // 473
    MACX_(__NR_bsdthread_ctl,       bsdthread_ctl),      // 478
-   MACX_(__NR_csrctl,              csrctl),             // 483
+   MACXY(__NR_csrctl,              csrctl),             // 483
    MACX_(__NR_guarded_open_dprotected_np, guarded_open_dprotected_np),  // 484
    MACX_(__NR_guarded_write_np, guarded_write_np),      // 485
    MACX_(__NR_guarded_pwrite_np, guarded_pwrite_np),    // 486
@@ -10717,7 +10795,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_kdebug_typefilter),                       // 177
 // _____(__NR_clonefileat),                             // 462
 // _____(__NR_renameatx_np),                            // 488
-   MACX_(__NR_getentropy, getentropy),                  // 500
+   MACXY(__NR_getentropy, getentropy),                  // 500
 // _____(__NR_necp_open),                               // 501
 // _____(__NR_necp_client_action),                      // 502
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(503)),        // ???
@@ -10915,7 +10993,7 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(68)),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(69)),
 #if DARWIN_VERS >= DARWIN_10_12
-   MACX_(__NR_host_create_mach_voucher_trap, host_create_mach_voucher_trap),
+   MACXY(__NR_host_create_mach_voucher_trap, host_create_mach_voucher_trap),
 #else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(70)),
 #endif

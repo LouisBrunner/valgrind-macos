@@ -5501,12 +5501,57 @@ POST(sys_open_by_handle_at)
 /* ---------------------------------------------------------------------
    p{read,write}v wrappers
    ------------------------------------------------------------------ */
+/* This handles the common part of the PRE macro for preadv and preadv2. */
+void handle_pre_sys_preadv(ThreadId tid, SyscallStatus* status,
+                           Int fd, Addr vector, Int count, const char *str)
+{
+   struct vki_iovec * vec;
+   Int i;
+   /* safe size for the "preadv/preadv2(vector[i])" string */
+   char tmp[30];
+
+   if (!ML_(fd_allowed)(fd, str, tid, False)) {
+      SET_STATUS_Failure( VKI_EBADF );
+   } else if (count > 0) {
+      VG_(strcpy) (tmp, str);
+      VG_(strcat) (tmp, "(vector)");
+      PRE_MEM_READ( tmp, vector, count * sizeof(struct vki_iovec) );
+
+      if (ML_(safe_to_deref) ((void *)(Addr)vector,
+                              count * sizeof(struct vki_iovec))) {
+         vec = (struct vki_iovec *)(Addr)vector;
+         for (i = 0; i < count; i++) {
+            VG_(snprintf) (tmp, 30, "%s(vector[%d])", str, i);
+            PRE_MEM_WRITE( tmp, (Addr)vec[i].iov_base, vec[i].iov_len );
+         }
+      }
+   }
+}
+
+/* This handles the common part of the POST macro for preadv and preadv2. */
+void handle_post_sys_preadv(ThreadId tid, SyscallStatus* status, Addr vector, Int count)
+{
+    vg_assert(SUCCESS);
+    if (RES > 0) {
+        Int i;
+        struct vki_iovec * vec = (struct vki_iovec *)(Addr)vector;
+        Int remains = RES;
+
+        /* RES holds the number of bytes read. */
+        for (i = 0; i < count; i++) {
+            Int nReadThisBuf = vec[i].iov_len;
+            if (nReadThisBuf > remains) nReadThisBuf = remains;
+            POST_MEM_WRITE( (Addr)vec[i].iov_base, nReadThisBuf );
+            remains -= nReadThisBuf;
+            if (remains < 0) VG_(core_panic)("preadv: remains < 0");
+        }
+    }
+}
 
 PRE(sys_preadv)
 {
-   Int i;
-   struct vki_iovec * vec;
    *flags |= SfMayBlock;
+   const char *str = "preadv";
 #if VG_WORDSIZE == 4
    /* Note that the offset argument here is in lo+hi order on both
       big and little endian platforms... */
@@ -5525,45 +5570,89 @@ PRE(sys_preadv)
 #else
 #  error Unexpected word size
 #endif
-   if (!ML_(fd_allowed)(ARG1, "preadv", tid, False)) {
-      SET_STATUS_Failure( VKI_EBADF );
-   } else {
-      PRE_MEM_READ( "preadv(vector)", ARG2, ARG3 * sizeof(struct vki_iovec) );
+   Int fd = ARG1;
+   Addr vector = ARG2;
+   Int count = ARG3;
 
-      if (ARG2 != 0) {
-         /* ToDo: don't do any of the following if the vector is invalid */
-         vec = (struct vki_iovec *)(Addr)ARG2;
-         for (i = 0; i < (Int)ARG3; i++)
-            PRE_MEM_WRITE( "preadv(vector[...])",
-                           (Addr)vec[i].iov_base, vec[i].iov_len );
-      }
-   }
+   handle_pre_sys_preadv(tid, status, fd, vector, count, str);
+
 }
 
 POST(sys_preadv)
 {
-   vg_assert(SUCCESS);
-   if (RES > 0) {
-      Int i;
-      struct vki_iovec * vec = (struct vki_iovec *)(Addr)ARG2;
-      Int remains = RES;
+   Addr vector = ARG2;
+   Int count = ARG3;
 
-      /* RES holds the number of bytes read. */
-      for (i = 0; i < (Int)ARG3; i++) {
-	 Int nReadThisBuf = vec[i].iov_len;
-	 if (nReadThisBuf > remains) nReadThisBuf = remains;
-	 POST_MEM_WRITE( (Addr)vec[i].iov_base, nReadThisBuf );
-	 remains -= nReadThisBuf;
-	 if (remains < 0) VG_(core_panic)("preadv: remains < 0");
+   handle_post_sys_preadv(tid, status, vector, count);
+}
+
+PRE(sys_preadv2)
+{
+   *flags |= SfMayBlock;
+   const char *str = "preadv2";
+#if VG_WORDSIZE == 4
+   /* Note that the offset argument here is in lo+hi order on both
+      big and little endian platforms... */
+   PRINT("sys_preadv2 ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %" FMT_REGWORD
+         "u, %lld, %" FMT_REGWORD "u )",
+         ARG1, ARG2, ARG3, (Long)LOHI64(ARG4,ARG5), ARG6);
+   PRE_REG_READ6(ssize_t, "preadv2",
+                 unsigned long, fd, const struct iovec *, vector,
+                 unsigned long, count, vki_u32, offset_low,
+                 vki_u32, offset_high, unsigned long, flags);
+#elif VG_WORDSIZE == 8
+   PRINT("sys_preadv2 ( %lu, %#lx, %lu, %ld, %lu )", ARG1, ARG2, ARG3, SARG4, ARG5);
+   PRE_REG_READ5(ssize_t, "preadv2",
+                 unsigned long, fd, const struct iovec *, vector,
+                 unsigned long, count, Word, offset, unsigned long, flags);
+#else
+#  error Unexpected word size
+#endif
+   Int fd = ARG1;
+   Addr vector = ARG2;
+   Int count = ARG3;
+
+   handle_pre_sys_preadv(tid, status, fd, vector, count, str);
+}
+
+POST(sys_preadv2)
+{
+   Addr vector = ARG2;
+   Int count = ARG3;
+
+   handle_post_sys_preadv(tid, status, vector, count);
+}
+
+/* This handles the common part of the PRE macro for pwritev and pwritev2. */
+void handle_sys_pwritev(ThreadId tid, SyscallStatus* status,
+                        Int fd, Addr vector, Int count, const char *str)
+{
+   Int i;
+   struct vki_iovec * vec;
+   /* safe size for the "preadv/preadv2(vector[i])" string */
+   char tmp[30];
+
+   if (!ML_(fd_allowed)(fd, str, tid, False)) {
+      SET_STATUS_Failure( VKI_EBADF );
+   } else if (count > 0) {
+      VG_(strcpy) (tmp, str);
+      VG_(strcat) (tmp, "(vector)");
+      PRE_MEM_READ( tmp, vector, count * sizeof(struct vki_iovec) );
+      if (ML_(safe_to_deref) ((void *)(Addr)vector,
+                              count * sizeof(struct vki_iovec))) {
+         vec = (struct vki_iovec *)(Addr)vector;
+         for (i = 0; i < count; i++) {
+            VG_(snprintf) (tmp, 30, "%s(vector[%d])", str, i);
+            PRE_MEM_READ( tmp, (Addr)vec[i].iov_base, vec[i].iov_len );
+         }
       }
    }
 }
 
 PRE(sys_pwritev)
 {
-   Int i;
-   struct vki_iovec * vec;
    *flags |= SfMayBlock;
+   const char *str = "pwritev";
 #if VG_WORDSIZE == 4
    /* Note that the offset argument here is in lo+hi order on both
       big and little endian platforms... */
@@ -5581,19 +5670,41 @@ PRE(sys_pwritev)
 #else
 #  error Unexpected word size
 #endif
-   if (!ML_(fd_allowed)(ARG1, "pwritev", tid, False)) {
-      SET_STATUS_Failure( VKI_EBADF );
-   } else {
-      PRE_MEM_READ( "pwritev(vector)", 
-		     ARG2, ARG3 * sizeof(struct vki_iovec) );
-      if (ARG2 != 0) {
-         /* ToDo: don't do any of the following if the vector is invalid */
-         vec = (struct vki_iovec *)(Addr)ARG2;
-         for (i = 0; i < (Int)ARG3; i++)
-            PRE_MEM_READ( "pwritev(vector[...])",
-                           (Addr)vec[i].iov_base, vec[i].iov_len );
-      }
-   }
+   Int fd = ARG1;
+   Addr vector = ARG2;
+   Int count = ARG3;
+
+   handle_sys_pwritev(tid, status, fd, vector, count, str);
+}
+
+PRE(sys_pwritev2)
+{
+   *flags |= SfMayBlock;
+   const char *str = "pwritev2";
+#if VG_WORDSIZE == 4
+   /* Note that the offset argument here is in lo+hi order on both
+      big and little endian platforms... */
+   PRINT("sys_pwritev2 ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %" FMT_REGWORD
+         "u, %lld, %" FMT_REGWORD "u )",
+         ARG1, ARG2, ARG3, (Long)LOHI64(ARG4,ARG5), ARG6);
+   PRE_REG_READ6(ssize_t, "pwritev2",
+                 unsigned long, fd, const struct iovec *, vector,
+                 unsigned long, count, vki_u32, offset_low,
+                 vki_u32, offset_high, unsigned long, flags);
+#elif VG_WORDSIZE == 8
+   /* Note offset_high isn't actually used?  */
+   PRE_REG_READ6(ssize_t, "pwritev2",
+                 unsigned long, fd, const struct iovec *, vector,
+                 unsigned long, count, Word, offset,
+		 Word, offset_high, unsigned long, flags);
+#else
+#  error Unexpected word size
+#endif
+   Int fd = ARG1;
+   Addr vector = ARG2;
+   Int count = ARG3;
+
+   handle_sys_pwritev(tid, status, fd, vector, count, str);
 }
 
 /* ---------------------------------------------------------------------

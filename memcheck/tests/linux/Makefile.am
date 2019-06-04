@@ -26,7 +26,9 @@ EXTRA_DIST = \
 	timerfd-syscall.vgtest timerfd-syscall.stderr.exp \
 	with-space.stderr.exp with-space.stdout.exp with-space.vgtest \
 	proc-auxv.vgtest proc-auxv.stderr.exp getregset.vgtest \
-	getregset.stderr.exp getregset.stdout.exp
+	getregset.stderr.exp getregset.stdout.exp \
+	sys-preadv_pwritev.vgtest sys-preadv_pwritev.stderr.exp \
+	sys-preadv2_pwritev2.vgtest sys-preadv2_pwritev2.stderr.exp
 
 check_PROGRAMS = \
 	brk \
@@ -52,6 +54,14 @@ endif
 
 if HAVE_COPY_FILE_RANGE
         check_PROGRAMS += sys-copy_file_range
+endif
+
+if HAVE_PREADV_PWRITEV
+        check_PROGRAMS += sys-preadv_pwritev
+endif
+
+if HAVE_PREADV2_PWRITEV2
+        check_PROGRAMS += sys-preadv2_pwritev2
 endif
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)

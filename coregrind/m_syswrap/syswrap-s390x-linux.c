@@ -853,6 +853,8 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_shutdown, sys_shutdown),                                // 373
 
    LINX_(__NR_copy_file_range, sys_copy_file_range),                  // 375
+   LINXY(__NR_preadv2, sys_preadv2),                                  // 376
+   LINX_(__NR_pwritev2, sys_pwritev2),                                // 377
 
    LINXY(__NR_statx, sys_statx),                                      // 379
 };

@@ -1,0 +1,56 @@
+Syscall param pwritev2(vector) points to unaddressable byte(s)
+   ...
+   by 0x........: main (sys-preadv2_pwritev2.c:53)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param pwritev2(vector) points to unaddressable byte(s)
+   ...
+   by 0x........: main (sys-preadv2_pwritev2.c:54)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param pwritev2(vector) points to uninitialised byte(s)
+   ...
+   by 0x........: main (sys-preadv2_pwritev2.c:55)
+ Address 0x........ is 0 bytes inside a block of size 16 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (sys-preadv2_pwritev2.c:48)
+
+Syscall param pwritev2(count) contains uninitialised byte(s)
+   ...
+   by 0x........: main (sys-preadv2_pwritev2.c:57)
+
+Syscall param pwritev2(flags) contains uninitialised byte(s)
+   ...
+   by 0x........: main (sys-preadv2_pwritev2.c:60)
+
+Syscall param preadv2(vector) points to unaddressable byte(s)
+   ...
+   by 0x........: main (sys-preadv2_pwritev2.c:62)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param preadv2(vector) points to unaddressable byte(s)
+   ...
+   by 0x........: main (sys-preadv2_pwritev2.c:63)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param preadv2(vector) points to uninitialised byte(s)
+   ...
+   by 0x........: main (sys-preadv2_pwritev2.c:64)
+ Address 0x........ is 0 bytes inside a block of size 16 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (sys-preadv2_pwritev2.c:48)
+
+Syscall param preadv2(count) contains uninitialised byte(s)
+   ...
+   by 0x........: main (sys-preadv2_pwritev2.c:66)
+
+Syscall param pwritev2(vector[1]) points to unaddressable byte(s)
+   ...
+   by 0x........: main (sys-preadv2_pwritev2.c:71)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param preadv2(vector[1]) points to unaddressable byte(s)
+   ...
+   by 0x........: main (sys-preadv2_pwritev2.c:72)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+

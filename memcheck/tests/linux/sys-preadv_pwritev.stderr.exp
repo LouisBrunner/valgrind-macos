@@ -1,0 +1,52 @@
+Syscall param pwritev(vector) points to unaddressable byte(s)
+   ...
+   by 0x........: main (sys-preadv_pwritev.c:52)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param pwritev(vector) points to unaddressable byte(s)
+   ...
+   by 0x........: main (sys-preadv_pwritev.c:53)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param pwritev(vector) points to uninitialised byte(s)
+   ...
+   by 0x........: main (sys-preadv_pwritev.c:54)
+ Address 0x........ is 0 bytes inside a block of size 16 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (sys-preadv_pwritev.c:48)
+
+Syscall param pwritev(count) contains uninitialised byte(s)
+   ...
+   by 0x........: main (sys-preadv_pwritev.c:56)
+
+Syscall param preadv(vector) points to unaddressable byte(s)
+   ...
+   by 0x........: main (sys-preadv_pwritev.c:60)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param preadv(vector) points to unaddressable byte(s)
+   ...
+   by 0x........: main (sys-preadv_pwritev.c:61)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param preadv(vector) points to uninitialised byte(s)
+   ...
+   by 0x........: main (sys-preadv_pwritev.c:62)
+ Address 0x........ is 0 bytes inside a block of size 16 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (sys-preadv_pwritev.c:48)
+
+Syscall param preadv(count) contains uninitialised byte(s)
+   ...
+   by 0x........: main (sys-preadv_pwritev.c:64)
+
+Syscall param pwritev(vector[1]) points to unaddressable byte(s)
+   ...
+   by 0x........: main (sys-preadv_pwritev.c:69)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param preadv(vector[1]) points to unaddressable byte(s)
+   ...
+   by 0x........: main (sys-preadv_pwritev.c:70)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+

@@ -1,0 +1,3 @@
+prereq: test -e sys-preadv_pwritev
+prog: sys-preadv_pwritev
+vgopts: -q

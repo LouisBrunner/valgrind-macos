@@ -1607,6 +1607,8 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_membarrier,        sys_membarrier),       // 375
 
    LINX_(__NR_copy_file_range,   sys_copy_file_range),   // 377
+   LINXY(__NR_preadv2,           sys_preadv2),           // 378
+   LINX_(__NR_pwritev2,          sys_pwritev2),          // 379
 
    LINXY(__NR_pkey_mprotect,     sys_pkey_mprotect),    // 380
    LINX_(__NR_pkey_alloc,        sys_pkey_alloc),       // 381

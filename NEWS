@@ -54,6 +54,7 @@ where XXXXXX is the bug number as listed below.
 407764  drd cond_post_wait gets wrong (?) condition on s390x z13 system
 408009  Expose rdrand and f16c even on avx if host cpu supports them
 408091  Missing pkey syscalls
+408414  Add support for missing for preadv2 and pwritev2 syscalls
 404406  s390x: z14 miscellaneous instructions not implemented
 n-i-bz  Fix minor one time leaks in dhat.
 n-i-bz  Add --run-cxx-freeres=no in outer args to avoid inner crashes.

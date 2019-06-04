@@ -830,6 +830,8 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_memfd_create, sys_memfd_create),
    LINX_(__NR_membarrier, sys_membarrier),
    LINX_(__NR_copy_file_range, sys_copy_file_range),
+   LINX_(__NR_preadv2, sys_preadv2),
+   LINX_(__NR_pwritev2, sys_pwritev2),
    LINX_(__NR_syncfs, sys_syncfs),
    LINXY(__NR_statx, sys_statx),
 };

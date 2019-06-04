@@ -818,8 +818,8 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_membarrier,        sys_membarrier),        // 283
    //   (__NR_mlock2,            sys_ni_syscall),        // 284
    LINX_(__NR_copy_file_range,   sys_copy_file_range),   // 285
-   //   (__NR_preadv2,           sys_ni_syscall),        // 286
-   //   (__NR_pwritev2,          sys_ni_syscall),        // 287
+   LINX_(__NR_preadv2,           sys_ni_syscall),        // 286
+   LINX_(__NR_pwritev2,          sys_ni_syscall),        // 287
    //   (__NR_pkey_mprotect,     sys_ni_syscall),        // 288
    //   (__NR_pkey_alloc,        sys_ni_syscall),        // 289
    //   (__NR_pkey_free,         sys_ni_syscall),        // 290

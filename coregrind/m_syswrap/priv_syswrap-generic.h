@@ -109,6 +109,19 @@ ML_(handle_auxv_open)(SyscallStatus *status, const HChar *filename,
 /* Helper function for generic mprotect and linux pkey_mprotect. */
 extern void handle_sys_mprotect (ThreadId tid, SyscallStatus *status,
                                  Addr *addr, SizeT *len, Int *prot);
+/* Helper functions for preadv/preadv2. */
+extern
+void handle_pre_sys_preadv(ThreadId tid, SyscallStatus* status,
+                           Int fd, Addr vector, Int count,
+                           const char *str);
+extern
+void handle_post_sys_preadv(ThreadId tid, SyscallStatus* status, Addr vector, Int count);
+
+/* Helper function for pwritev/pwritev2. */
+extern
+void handle_sys_pwritev(ThreadId tid, SyscallStatus* status,
+                        Int fd, Addr vector, Int count,
+                        const char *str);
 
 DECL_TEMPLATE(generic, sys_ni_syscall);            // * P -- unimplemented
 DECL_TEMPLATE(generic, sys_exit);

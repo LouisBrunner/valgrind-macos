@@ -1952,7 +1952,6 @@ static UInt disDSPInstr_MIPS_WRK_Special3_EXTR_W( UInt cins )
          t5 = newTemp(Ity_I32);
          t6 = newTemp(Ity_I64);
          t7 = newTemp(Ity_I32);
-         t9 = newTemp(Ity_I32);
 
          assign(t0, getAcc(ac));
 
@@ -1961,12 +1960,12 @@ static UInt disDSPInstr_MIPS_WRK_Special3_EXTR_W( UInt cins )
          assign(t2, binop(Iop_Or32,
                           getDSPControl(), mkU32(0x00800000)));
 
-         assign(t9, binop(Iop_And32,
+         assign(t5, binop(Iop_And32,
                           unop(Iop_64to32,
                                mkexpr(t1)),
                           mkU32(0x80000000)));
          putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
-                                        mkexpr(t9),
+                                        mkexpr(t5),
                                         binop(Iop_And32,
                                               unop(Iop_64HIto32,
                                                     mkexpr(t0)),
@@ -2068,7 +2067,6 @@ static UInt disDSPInstr_MIPS_WRK_Special3_EXTR_W( UInt cins )
          t5 = newTemp(Ity_I32);
          t6 = newTemp(Ity_I64);
          t7 = newTemp(Ity_I32);
-         t9 = newTemp(Ity_I32);
 
          assign(t0, getAcc(ac));
 
@@ -2082,12 +2080,12 @@ static UInt disDSPInstr_MIPS_WRK_Special3_EXTR_W( UInt cins )
          assign(t2, binop(Iop_Or32,
                           getDSPControl(), mkU32(0x00800000)));
 
-         assign(t9, binop(Iop_And32,
+         assign(t5, binop(Iop_And32,
                           unop(Iop_64to32,
                                mkexpr(t1)),
                           mkU32(0x80000000)));
          putDSPControl(IRExpr_ITE(binop(Iop_CmpNE32,
-                                        mkexpr(t9),
+                                        mkexpr(t5),
                                         binop(Iop_And32,
                                               unop(Iop_64HIto32,
                                                     mkexpr(t0)),
@@ -2420,8 +2418,6 @@ static UInt disDSPInstr_MIPS_WRK_Special3_EXTR_W( UInt cins )
          vassert(!mode64);
          t0 = newTemp(Ity_I64);
          t1 = newTemp(Ity_I32);
-         t2 = newTemp(Ity_I32);
-         t3 = newTemp(Ity_I1);
 
          assign(t0, getAcc(ac));
          putAcc(ac, binop(Iop_32HLto64,
@@ -3830,13 +3826,12 @@ static UInt disDSPInstr_MIPS_WRK_Special3_ADDU_QB( UInt cins )
          t0 = newTemp(Ity_I64);
          t1 = newTemp(Ity_I1);
          t2 = newTemp(Ity_I32);
-         t3 = newTemp(Ity_I32);
 
          assign(t0, binop(Iop_Add64,
                           unop(Iop_32Sto64, getIReg(rs)),
                           unop(Iop_32Sto64, getIReg(rt))));
 
-         assign(t3, binop(Iop_And32,
+         assign(t2, binop(Iop_And32,
                           unop(Iop_64HIto32, mkexpr(t0)),
                           mkU32(0x1)));
          assign(t1, binop(Iop_CmpNE32,
@@ -3845,7 +3840,7 @@ static UInt disDSPInstr_MIPS_WRK_Special3_ADDU_QB( UInt cins )
                                       unop(Iop_64to32, mkexpr(t0)),
                                       mkU32(0x80000000)),
                                 mkU8(31)),
-                          mkexpr(t3)));
+                          mkexpr(t2)));
 
          putDSPControl(IRExpr_ITE(mkexpr(t1),
                                   binop(Iop_Or32,
@@ -3855,7 +3850,7 @@ static UInt disDSPInstr_MIPS_WRK_Special3_ADDU_QB( UInt cins )
 
          putIReg(rd, IRExpr_ITE(mkexpr(t1),
                                 IRExpr_ITE(binop(Iop_CmpEQ32,
-                                                 mkexpr(t3),
+                                                 mkexpr(t2),
                                                  mkU32(0x0)),
                                            mkU32(0x7fffffff),
                                            mkU32(0x80000000)),
@@ -3869,13 +3864,12 @@ static UInt disDSPInstr_MIPS_WRK_Special3_ADDU_QB( UInt cins )
          t0 = newTemp(Ity_I64);
          t1 = newTemp(Ity_I1);
          t2 = newTemp(Ity_I32);
-         t3 = newTemp(Ity_I32);
 
          assign(t0, binop(Iop_Sub64,
                           unop(Iop_32Sto64, getIReg(rs)),
                           unop(Iop_32Sto64, getIReg(rt))));
 
-         assign(t3, binop(Iop_And32,
+         assign(t2, binop(Iop_And32,
                           unop(Iop_64HIto32, mkexpr(t0)),
                           mkU32(0x1)));
          assign(t1, binop(Iop_CmpNE32,
@@ -3884,7 +3878,7 @@ static UInt disDSPInstr_MIPS_WRK_Special3_ADDU_QB( UInt cins )
                                       unop(Iop_64to32, mkexpr(t0)),
                                       mkU32(0x80000000)),
                                 mkU8(31)),
-                          mkexpr(t3)));
+                          mkexpr(t2)));
 
          putDSPControl(IRExpr_ITE(mkexpr(t1),
                                   binop(Iop_Or32,
@@ -3894,7 +3888,7 @@ static UInt disDSPInstr_MIPS_WRK_Special3_ADDU_QB( UInt cins )
 
          putIReg(rd, IRExpr_ITE(mkexpr(t1),
                                 IRExpr_ITE(binop(Iop_CmpEQ32,
-                                                 mkexpr(t3),
+                                                 mkexpr(t2),
                                                  mkU32(0x0)),
                                            mkU32(0x7fffffff),
                                            mkU32(0x80000000)),
@@ -7148,7 +7142,6 @@ static UInt disDSPInstr_MIPS_WRK_Special3_SHLL_QB( UInt cins )
          t0 = newTemp(Ity_I32);
          t1 = newTemp(Ity_I1);
          t2 = newTemp(Ity_I8);
-         t3 = newTemp(Ity_I32);
 
          assign(t0, binop(Iop_And32, getIReg(rs), mkU32(0x1f)));
          assign(t1, binop(Iop_CmpEQ32, mkexpr(t0), mkU32(0x0)));
@@ -9501,7 +9494,6 @@ static UInt disDSPInstr_MIPS_WRK_Special3_APPEND( UInt cins )
          vassert(!mode64);
          t1 = newTemp(Ity_I32);
          t2 = newTemp(Ity_I32);
-         t3 = newTemp(Ity_I32);
 
          assign(t1, binop(Iop_Shl32, getIReg(rt), mkU8(rd)));
 

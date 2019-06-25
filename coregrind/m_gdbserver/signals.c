@@ -486,8 +486,8 @@ enum target_signal target_signal_from_host (int hostsig)
    }
 #endif
 
-   error ("Valgrind GDBSERVER bug: (target_signal_from_host):"
-          " unrecognized vki signal %d\n", hostsig);
+   warning ("Valgrind GDBSERVER bug: (target_signal_from_host):"
+            " unrecognized vki signal %d\n", hostsig);
    return TARGET_SIGNAL_UNKNOWN;
 }
 
@@ -750,8 +750,8 @@ int do_target_signal_to_host (enum target_signal oursig,
             return retsig;
       }
 #endif
-      error ("Valgrind GDBSERVER bug: (do_target_signal_to_host):"
-             " unrecognized target signal %u\n", oursig);
+      warning ("Valgrind GDBSERVER bug: (do_target_signal_to_host):"
+               " unrecognized target signal %u\n", oursig);
       *oursig_ok = 0;
       return 0;
    }

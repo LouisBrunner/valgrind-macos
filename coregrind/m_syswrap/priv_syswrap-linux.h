@@ -304,6 +304,13 @@ DECL_TEMPLATE(linux, sys_pkey_alloc);
 DECL_TEMPLATE(linux, sys_pkey_free);
 DECL_TEMPLATE(linux, sys_pkey_mprotect);
 
+// Linux io_uring system calls. See also commit 2b188cc1bb85 ("Add io_uring IO
+// interface") # v5.1. See also commit edafccee56ff ("io_uring: add support
+// for pre-mapped user IO buffers") # v5.1.
+DECL_TEMPLATE(linux, sys_io_uring_setup);
+DECL_TEMPLATE(linux, sys_io_uring_enter);
+DECL_TEMPLATE(linux, sys_io_uring_register);
+
 /* ---------------------------------------------------------------------
    Wrappers for sockets and ipc-ery.  These are split into standalone
    procedures because x86-linux hides them inside multiplexors

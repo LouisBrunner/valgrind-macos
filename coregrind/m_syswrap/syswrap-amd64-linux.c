@@ -867,6 +867,10 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_pkey_mprotect,     sys_pkey_mprotect),     // 329
    LINX_(__NR_pkey_alloc,        sys_pkey_alloc),        // 330
    LINX_(__NR_pkey_free,         sys_pkey_free),         // 331
+
+   LINXY(__NR_io_uring_setup,    sys_io_uring_setup),    // 425
+   LINXY(__NR_io_uring_enter,    sys_io_uring_enter),    // 426
+   LINXY(__NR_io_uring_register, sys_io_uring_register), // 427
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

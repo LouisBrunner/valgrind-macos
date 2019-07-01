@@ -57,6 +57,7 @@ where XXXXXX is the bug number as listed below.
 404406  s390x: z14 miscellaneous instructions not implemented
 n-i-bz  Fix minor one time leaks in dhat.
 n-i-bz  Add --run-cxx-freeres=no in outer args to avoid inner crashes.
+n-i-bz  Add support for the Linux io_uring system calls
 
 Release 3.15.0 (12 April 2019)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

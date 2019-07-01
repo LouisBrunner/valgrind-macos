@@ -46,6 +46,7 @@
 #if defined(VGO_linux)
 #  include "vki/vki-linux.h"
 #  include "vki/vki-linux-drm.h"
+#  include "vki/vki-linux-io_uring.h"
 #elif defined(VGO_darwin)
 #  include "vki/vki-darwin.h"
 #elif defined(VGO_solaris)

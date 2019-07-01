@@ -12190,6 +12190,79 @@ POST(sys_pkey_mprotect)
    ML_(notify_core_and_tool_of_mprotect)(addr, len, prot);
 }
 
+PRE(sys_io_uring_setup)
+{
+   PRINT("sys_io_uring_setup ( %#" FMT_REGWORD "x, %" FMT_REGWORD "u )",
+         ARG1, ARG2);
+   PRE_REG_READ2(long, "io_uring_setup", unsigned int, entries,
+                 struct vki_io_uring_params *, p);
+   if (ARG2)
+      PRE_MEM_READ("io_uring_setup(p)", ARG2,
+                   offsetof(struct vki_io_uring_params, sq_off));
+}
+
+POST(sys_io_uring_setup)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "io_uring_setup", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)(Addr)ARG1);
+      POST_MEM_WRITE(ARG2 + offsetof(struct vki_io_uring_params, sq_off),
+                     sizeof(struct vki_io_sqring_offsets) +
+                     sizeof(struct vki_io_cqring_offsets));
+   }
+}
+
+PRE(sys_io_uring_enter)
+{
+   PRINT("sys_io_uring_enter ( %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %"
+         FMT_REGWORD "u %" FMT_REGWORD "u, %" FMT_REGWORD "u %"
+         FMT_REGWORD "u )",
+         ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
+   PRE_REG_READ6(long, "io_uring_enter",
+                 unsigned int, fd, unsigned int, to_submit,
+                 unsigned int, min_complete, unsigned int, flags,
+                 const void *, sig, unsigned long, sigsz);
+   if (ARG5)
+      PRE_MEM_READ("io_uring_enter(sig)", ARG5, ARG6);
+}
+
+POST(sys_io_uring_enter)
+{
+}
+
+PRE(sys_io_uring_register)
+{
+   PRINT("sys_io_uring_register ( %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %"
+         FMT_REGWORD "u %" FMT_REGWORD "u )", ARG1, ARG2, ARG3, ARG4);
+   PRE_REG_READ4(long, "io_uring_register",
+                 unsigned int, fd, unsigned int, opcode,
+                 void *, arg, unsigned int, nr_args);
+   switch (ARG2) {
+   case VKI_IORING_REGISTER_BUFFERS:
+      PRE_MEM_READ("", ARG3, ARG4 * sizeof(struct vki_iovec));
+      break;
+   case VKI_IORING_UNREGISTER_BUFFERS:
+      break;
+   case VKI_IORING_REGISTER_FILES:
+      PRE_MEM_READ("", ARG3, ARG4 * sizeof(__vki_s32));
+      break;
+   case VKI_IORING_UNREGISTER_FILES:
+      break;
+   case VKI_IORING_REGISTER_EVENTFD:
+      PRE_MEM_READ("", ARG3, sizeof(__vki_s32));
+      break;
+   case VKI_IORING_UNREGISTER_EVENTFD:
+      break;
+   }
+}
+
+POST(sys_io_uring_register)
+{
+}
 
 #undef PRE
 #undef POST

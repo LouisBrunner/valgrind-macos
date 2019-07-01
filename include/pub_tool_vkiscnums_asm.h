@@ -32,30 +32,43 @@
 #define __PUB_TOOL_VKISCNUMS_ASM_H
 
 #if defined(VGP_x86_linux)
+#  include "vki/vki-scnums-shared-linux.h"
+#  include "vki/vki-scnums-32bit-linux.h"
 #  include "vki/vki-scnums-x86-linux.h"
 
 #elif defined(VGP_amd64_linux)
+#  include "vki/vki-scnums-shared-linux.h"
 #  include "vki/vki-scnums-amd64-linux.h"
 
 #elif defined(VGP_ppc32_linux)
+#  include "vki/vki-scnums-shared-linux.h"
+#  include "vki/vki-scnums-32bit-linux.h"
 #  include "vki/vki-scnums-ppc32-linux.h"
 
 #elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
+#  include "vki/vki-scnums-shared-linux.h"
 #  include "vki/vki-scnums-ppc64-linux.h"
 
 #elif defined(VGP_s390x_linux)
+#  include "vki/vki-scnums-shared-linux.h"
 #  include "vki/vki-scnums-s390x-linux.h"
 
 #elif defined(VGP_arm_linux)
+#  include "vki/vki-scnums-shared-linux.h"
+#  include "vki/vki-scnums-32bit-linux.h"
 #  include "vki/vki-scnums-arm-linux.h"
 
 #elif defined(VGP_arm64_linux)
+#  include "vki/vki-scnums-shared-linux.h"
 #  include "vki/vki-scnums-arm64-linux.h"
 
 #elif defined(VGP_mips32_linux)
+#  include "vki/vki-scnums-shared-linux.h"
+#  include "vki/vki-scnums-32bit-linux.h"
 #  include "vki/vki-scnums-mips32-linux.h"
 
 #elif defined(VGP_mips64_linux)
+#  include "vki/vki-scnums-shared-linux.h"
 #  include "vki/vki-scnums-mips64-linux.h"
 
 #elif defined(VGP_x86_darwin) || defined(VGP_amd64_darwin)

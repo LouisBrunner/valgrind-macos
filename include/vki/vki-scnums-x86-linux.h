@@ -30,7 +30,7 @@
 #ifndef __VKI_SCNUMS_X86_LINUX_H
 #define __VKI_SCNUMS_X86_LINUX_H
 
-// Derived from linux-2.6/arch/x86/entry/syscalls/syscall_32.tbl
+// Derived from linux-5.2/arch/x86/entry/syscalls/syscall_32.tbl
 
 #define __NR_restart_syscall      0
 #define __NR_exit		  1
@@ -417,6 +417,18 @@
 #define __NR_pkey_free          382
 #define __NR_statx              383
 #define __NR_arch_prctl         384
+#define __NR_io_pgetevents	385
+#define __NR_rseq		386
+#define __NR_semget		393
+#define __NR_semctl		394
+#define __NR_shmget		395
+#define __NR_shmctl		396
+#define __NR_shmat		397
+#define __NR_shmdt		398
+#define __NR_msgget		399
+#define __NR_msgsnd		400
+#define __NR_msgrcv		401
+#define __NR_msgctl		402
 
 #endif /* __VKI_SCNUMS_X86_LINUX_H */
 

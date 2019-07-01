@@ -30,7 +30,7 @@
 #ifndef __VKI_SCNUMS_AMD64_LINUX_H
 #define __VKI_SCNUMS_AMD64_LINUX_H
 
-// Derived from linux-2.6/arch/x86/entry/syscalls/syscall_64.tbl
+// Derived from linux-5.2/arch/x86/entry/syscalls/syscall_64.tbl
 
 #define __NR_read                                0
 #define __NR_write                               1
@@ -412,6 +412,8 @@
 #define __NR_pkey_alloc         330
 #define __NR_pkey_free          331
 #define __NR_statx              332
+#define __NR_io_pgetevents	333
+#define __NR_rseq		334
 
 #endif /* __VKI_SCNUMS_AMD64_LINUX_H */
 

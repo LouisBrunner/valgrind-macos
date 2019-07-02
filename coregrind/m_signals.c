@@ -2426,8 +2426,8 @@ void async_signalhandler ( Int sigNo,
                 sigNo, tid, info->si_code,
                 VG_(name_of_VgSchedReturnCode)(tst->exitreason));
 
-   /* */
-   if (tst->exitreason == VgSrc_FatalSig)
+   /* See similar logic in VG_(poll_signals). */
+   if (tst->exitreason != VgSrc_None)
       resume_scheduler(tid);
 
    /* Update thread state properly.  The signal can only have been
@@ -2951,10 +2951,11 @@ void VG_(poll_signals)(ThreadId tid)
    ThreadState *tst = VG_(get_ThreadState)(tid);
    vki_sigset_t saved_mask;
 
-   if (tst->exitreason == VgSrc_FatalSig) {
-      /* This task has been requested to die due to a fatal signal
-         received by the process. So, we cannot poll new signals,
-         as we are supposed to die asap. If we would poll and deliver
+   if (tst->exitreason != VgSrc_None ) {
+      /* This task has been requested to die (e.g. due to a fatal signal
+         received by the process, or because of a call to exit syscall).
+         So, we cannot poll new signals, as we are supposed to die asap.
+         If we would poll and deliver
          a new (maybe fatal) signal, this could cause a deadlock, as
          this thread would believe it has to terminate the other threads
          and wait for them to die, while we already have a thread doing

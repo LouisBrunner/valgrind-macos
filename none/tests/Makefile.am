@@ -163,6 +163,8 @@ EXTRA_DIST = \
 	pth_mutexspeed.stdout.exp pth_mutexspeed.vgtest \
 	pth_once.stderr.exp pth_once.stdout.exp pth_once.vgtest \
 	pth_rwlock.stderr.exp pth_rwlock.vgtest \
+	pth_self_kill_9.stderr.exp pth_self_kill_9.vgtest \
+	pth_self_kill_15_other.stderr.exp pth_self_kill_15_other.vgtest \
 	pth_stackalign.stderr.exp \
 	pth_stackalign.stdout.exp pth_stackalign.vgtest \
 	pth_2sig.stderr.exp-linux pth_2sig.stderr.exp-solaris pth_2sig.vgtest \
@@ -227,7 +229,7 @@ check_PROGRAMS = \
 	pselect_sigmask_null \
 	pth_atfork1 pth_blockedsig pth_cancel1 pth_cancel2 pth_cvsimple \
 	pth_empty pth_exit pth_exit2 pth_mutexspeed pth_once pth_rwlock \
-	pth_stackalign pth_2sig pth_term_signal\
+	pth_self_kill pth_stackalign pth_2sig pth_term_signal\
 	rcrl readline1 \
 	require-text-symbol \
 	res_search resolv \
@@ -315,6 +317,7 @@ pth_mutexspeed_LDADD	= -lpthread
 pth_once_LDADD		= -lpthread
 pth_rwlock_LDADD	= -lpthread
 pth_rwlock_CFLAGS	= $(AM_CFLAGS)
+pth_self_kill_LDADD	= -lpthread
 pth_stackalign_LDADD	= -lpthread
 pth_2sig_LDADD		= -lpthread
 pth_term_signal_LDADD	= -lpthread

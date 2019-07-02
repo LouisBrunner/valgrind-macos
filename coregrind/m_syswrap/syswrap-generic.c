@@ -3755,20 +3755,26 @@ Bool ML_(do_sigkill)(Int pid, Int tgid)
    if (tgid != -1 && tst->os_state.threadgroup != tgid)
       return False;		/* not the right thread group */
 
-   /* Check to see that the target isn't already exiting. */
-   if (!VG_(is_exiting)(tid)) {
-      if (VG_(clo_trace_signals))
-	 VG_(message)(Vg_DebugMsg,
-                      "Thread %u being killed with SIGKILL\n", 
-                      tst->tid);
-      
-      tst->exitreason = VgSrc_FatalSig;
-      tst->os_state.fatalsig = VKI_SIGKILL;
-      
-      if (!VG_(is_running_thread)(tid))
-	 VG_(get_thread_out_of_syscall)(tid);
-   }
-   
+   /* Fatal SIGKILL sent to one of our threads.
+      "Handle" the signal ourselves, as trying to have tid
+      handling the signal causes termination problems (see #409367
+      and #409141).
+      Moreover, as a process cannot do anything when receiving SIGKILL,
+      it is not particularly crucial that "tid" does the work to
+      terminate the process.  */
+
+   if (VG_(clo_trace_signals))
+      VG_(message)(Vg_DebugMsg,
+                   "Thread %u %s being killed with SIGKILL, running tid: %u\n",
+                   tst->tid, VG_(name_of_ThreadStatus) (tst->status), VG_(running_tid));
+
+   if (!VG_(is_running_thread)(tid))
+      tst = VG_(get_ThreadState)(VG_(running_tid));
+   VG_(nuke_all_threads_except) (VG_(running_tid), VgSrc_FatalSig);
+   VG_(reap_threads)(VG_(running_tid));
+   tst->exitreason = VgSrc_FatalSig;
+   tst->os_state.fatalsig = VKI_SIGKILL;
+
    return True;
 }
 

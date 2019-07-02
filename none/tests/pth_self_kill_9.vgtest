@@ -1,0 +1,3 @@
+prog: pth_self_kill
+args: 9
+vgopts: -q

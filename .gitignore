@@ -1419,6 +1419,7 @@
 /none/tests/pth_simple_mutex
 /none/tests/pth_simple_threads
 /none/tests/pth_specific
+/none/tests/pth_self_kill
 /none/tests/pth_stackalign
 /none/tests/pth_term_signal
 /none/tests/pth_yield

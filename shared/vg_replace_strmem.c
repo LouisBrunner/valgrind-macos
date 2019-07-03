@@ -351,6 +351,9 @@ static inline void my_exit ( int x )
 #elif defined(VGO_darwin)
  //STRNCAT(VG_Z_LIBC_SONAME, strncat)
  //STRNCAT(VG_Z_DYLD,        strncat)
+# if DARWIN_VERS >= DARWIN_10_14
+ STRNCAT(libsystemZucZddylib, __strncat_chk)
+# endif
 
 #elif defined(VGO_solaris)
  STRNCAT(VG_Z_LIBC_SONAME, strncat)
@@ -516,6 +519,9 @@ static inline void my_exit ( int x )
 # if DARWIN_VERS == DARWIN_10_9
   STRCPY(libsystemZucZddylib, strcpy)
 # endif
+# if DARWIN_VERS >= DARWIN_10_14
+  STRCPY(libsystemZucZddylib, __strcpy_chk)
+# endif
 
 #elif defined(VGO_solaris)
  STRCPY(VG_Z_LIBC_SONAME, strcpy)
@@ -556,6 +562,9 @@ static inline void my_exit ( int x )
  STRNCPY(VG_Z_LIBC_SONAME, strncpy)
 # if DARWIN_VERS >= DARWIN_10_9
   STRNCPY(libsystemZucZddylib, strncpy)
+# endif
+# if DARWIN_VERS >= DARWIN_10_14
+STRNCPY(libsystemZucZddylib, __strncpy_chk)
 # endif
 
 #elif defined(VGO_solaris)

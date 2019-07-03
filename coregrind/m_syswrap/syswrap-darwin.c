@@ -10107,6 +10107,30 @@ PRE(ulock_wait)
     *flags |= SfMayBlock;
 }
 
+PRE(terminate_with_payload)
+{
+    PRINT("terminate_with_payload"
+          "(pid: %ld, reason_namespace:%ld, reason_code:%ld, payload:%#lx, payload_size:%ld, reason_string:%s, reason_flags:%#x)",
+          ARG1, ARG2, ARG3, ARG4, ARG5, (char*)ARG6, (uint)ARG7);
+    PRE_REG_READ7(int, "terminate_with_payload", int, pid,
+                  uint32_t, reason_namespace, uint64_t, reason_code, void*, payload,
+                  uint32_t, payload_size, const char*, reason_string, uint64_t, reason_flags);
+    PRE_MEM_READ("abort_with_payload(payload)", ARG4, ARG5);
+    PRE_MEM_RASCIIZ("abort_with_payload(reason_string)", ARG6);
+}
+
+PRE(abort_with_payload)
+{
+    PRINT("abort_with_payload"
+          "(reason_namespace:%ld, reason_code:%ld, payload:%#lx, payload_size:%ld, reason_string:%s, reason_flags:%#x)",
+          ARG1, ARG2, ARG3, ARG4, (char*)ARG5, (uint)ARG6);
+    PRE_REG_READ6(uint32_t, "abort_with_payload",
+                  uint32_t, reason_namespace, uint64_t, reason_code, void*, payload,
+                  uint32_t, payload_size, const char*, reason_string, uint64_t, reason_flags);
+    PRE_MEM_READ("abort_with_payload(payload)", ARG3, ARG4);
+    PRE_MEM_RASCIIZ("abort_with_payload(reason_string)", ARG5);
+}
+
 PRE(host_create_mach_voucher_trap)
 {
     // munge_wwww -- no need to call helper
@@ -10839,8 +10863,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_fclonefileat),                            // 517
 // _____(__NR_fs_snapshot),                             // 518
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(519)),        // ???
-// _____(__NR_terminate_with_payload),                  // 520
-// _____(__NR_abort_with_payload),                      // 521
+   MACX_(__NR_terminate_with_payload, terminate_with_payload), // 520
+   MACX_(__NR_abort_with_payload, abort_with_payload),  // 521
 #endif
 #if DARWIN_VERS >= DARWIN_10_13
 // _____(__NR_thread_selfcounts),                       // 186

@@ -633,8 +633,8 @@ DECL_TEMPLATE(darwin, ulock_wake);                  // 516
 // NYI fclonefileat                                 // 517
 // NYI fs_snapshot                                  // 518
 // 519
-// NYI terminate_with_payload                       // 520
-// NYI abort_with_payload                           // 521
+DECL_TEMPLATE(darwin, terminate_with_payload);      // 520
+DECL_TEMPLATE(darwin, abort_with_payload);          // 521
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
 #if DARWIN_VERS >= DARWIN_10_13
 // NYI necp_session_open                            // 522

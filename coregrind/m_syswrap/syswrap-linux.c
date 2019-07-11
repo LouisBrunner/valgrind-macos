@@ -6499,6 +6499,9 @@ PRE(sys_ioctl)
    /* V4L2 */
    case VKI_V4L2_LOG_STATUS:
 
+   /* Mesa */
+   case VKI_DRM_IOCTL_I915_GEM_THROTTLE:
+
    /* DVB */
    case VKI_DMX_STOP:
       PRINT("sys_ioctl ( %" FMT_REGWORD "u, 0x%" FMT_REGWORD "x )", ARG1, ARG2);

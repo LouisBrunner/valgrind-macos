@@ -112,6 +112,10 @@ following:
     This should tell you something like  __NR_mysyscallname.
     Copy this entry to include/vki/vki-scnums-$(VG_PLATFORM).h.
 
+    If you can't find the system call in /usr/include, try looking in the
+    strace source code (https://github.com/strace/strace). Some syscalls/ioctls
+    are not defined explicitly, but strace may have already figured it out.
+
 
 2.  Do 'man 2 mysyscallname' to get some idea of what the syscall
     does.  Note that the actual kernel interface can differ from this,

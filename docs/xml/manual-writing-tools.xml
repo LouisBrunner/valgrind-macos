@@ -125,7 +125,7 @@ top-level directory <computeroutput>valgrind/</computeroutput>.</para>
   </listitem>
 
   <listitem>
-   <para>Edit <filename>configure.in</filename>, adding
+   <para>Edit <filename>configure.ac</filename>, adding
    <filename>foobar/Makefile</filename> and
    <filename>foobar/tests/Makefile</filename> to the
    <computeroutput>AC_OUTPUT</computeroutput> list.</para>
@@ -562,14 +562,14 @@ Valgrind;  it's a bit fragile but can usually be made to work.</para>
 <computeroutput>foobar/</computeroutput>, you will need to add
 an appropriate <filename>Makefile.am</filename> to it, and add a
 corresponding entry to the <computeroutput>AC_OUTPUT</computeroutput>
-list in <filename>configure.in</filename>.</para>
+list in <filename>configure.ac</filename>.</para>
 
 <para>If you add any scripts to your tool (see Cachegrind for an
 example) you need to add them to the
 <computeroutput>bin_SCRIPTS</computeroutput> variable in
 <filename>foobar/Makefile.am</filename> and possible also to the
 <computeroutput>AC_OUTPUT</computeroutput> list in
-<filename>configure.in</filename>.</para>
+<filename>configure.ac</filename>.</para>
 
 </sect2>
 

@@ -741,3 +741,44 @@ macos-__pthread_rwlock_init-see-our-bug-196528
 Memcheck:Cond
 fun:pthread_rwlock_init
 }
+
+# fprintf %-16.14f leaks in various ways
+{
+   darwin fprintf_dtoa
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:__Balloc_D2A
+   ...
+   fun:__dtoa
+   fun:__vfprintf
+   fun:__v2printf
+   fun:vfprintf_l
+   fun:fprintf
+}
+{
+   darwin fprintf_dtoa
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:__Balloc_D2A
+   ...
+   fun:__dtoa
+   fun:__vfprintf
+   fun:__v2printf
+   fun:vfprintf_l
+   fun:fprintf
+}
+{
+   darwin fprintf_dtoa
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:__Balloc_D2A
+   ...
+   fun:__dtoa
+   fun:__vfprintf
+   fun:__v2printf
+   fun:vfprintf_l
+   fun:fprintf
+}

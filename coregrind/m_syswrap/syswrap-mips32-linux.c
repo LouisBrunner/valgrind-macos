@@ -1050,6 +1050,8 @@ static SyscallTableEntry syscall_main_table[] = {
    //..
    LINXY (__NR_pipe2,                  sys_pipe2),                   // 328
    LINXY (__NR_inotify_init1,          sys_inotify_init1),           // 329
+   LINXY (__NR_preadv,                 sys_preadv),                  // 330
+   LINX_ (__NR_pwritev,                sys_pwritev),                 // 331
    //..
    LINXY (__NR_prlimit64,              sys_prlimit64),               // 338
    //..
@@ -1059,12 +1061,14 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_process_vm_readv,       sys_process_vm_readv),        // 345
    LINX_ (__NR_process_vm_writev,      sys_process_vm_writev),       // 346
    //..
-   LINXY(__NR_getrandom,               sys_getrandom),               // 353
-   LINXY(__NR_memfd_create,            sys_memfd_create),            // 354
+   LINXY (__NR_getrandom,              sys_getrandom),               // 353
+   LINXY (__NR_memfd_create,           sys_memfd_create),            // 354
    //..
-   LINX_(__NR_membarrier,              sys_membarrier),              // 358
+   LINX_ (__NR_membarrier,             sys_membarrier),              // 358
    //..
-   LINX_(__NR_copy_file_range,         sys_copy_file_range),         // 360
+   LINX_ (__NR_copy_file_range,        sys_copy_file_range),         // 360
+   LINXY (__NR_preadv2,                sys_preadv2),                 // 361
+   LINX_ (__NR_pwritev2,               sys_pwritev2),                // 362
    //..
    LINXY(__NR_statx,                   sys_statx)                    // 366
 };

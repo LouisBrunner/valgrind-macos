@@ -1037,6 +1037,8 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_pselect6,               sys_pselect6),                // 301
    LINXY (__NR_ppoll,                  sys_ppoll),                   // 302
    //..
+   LINX_ (__NR_splice,                 sys_splice),                  // 304
+   //..
    LINX_ (__NR_set_robust_list,        sys_set_robust_list),         // 309
    LINXY (__NR_get_robust_list,        sys_get_robust_list),         // 310
    //..

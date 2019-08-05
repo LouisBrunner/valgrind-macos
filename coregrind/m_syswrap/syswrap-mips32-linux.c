@@ -964,7 +964,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_gettid,                 sys_gettid),                  // 222
    //..
    LINX_ (__NR_setxattr,               sys_setxattr),                // 224
-   //..
+   LINX_ (__NR_lsetxattr,              sys_lsetxattr),               // 225
    LINX_ (__NR_fsetxattr,              sys_fsetxattr),               // 226
    LINXY (__NR_getxattr,               sys_getxattr),                // 227
    LINXY (__NR_lgetxattr,              sys_lgetxattr),               // 228

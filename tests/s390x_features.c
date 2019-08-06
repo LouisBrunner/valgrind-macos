@@ -10,6 +10,7 @@
 #include <fcntl.h>     // open
 #include <unistd.h>    // lseek
 #include <sys/stat.h>  // S_IRUSR
+#include <features.h>  // __GLIBC_PREREQ
 
 // This file determines s390x features a processor supports.
 //
@@ -38,6 +39,17 @@
 jmp_buf env;
 
 #if defined(VGA_s390x)
+
+// Features that require kernel support should be checked against HWCAP instead
+// of the CPU facility list.  To read the HWCAP, use 'getauxval' if available --
+// which should be the case with glibc versions >= 2.16.  A system with an older
+// glibc is unlikely to support any of these features anyhow.
+#if __GLIBC_PREREQ(2, 16)
+#include <sys/auxv.h>
+#define GET_HWCAP() getauxval(AT_HWCAP)
+#else
+#define GET_HWCAP() 0UL
+#endif
 
 /* Number of double words needed to store all facility bits. */
 #define S390_NUM_FACILITY_DW 3
@@ -246,7 +258,8 @@ static int go(char *feature, char *cpu)
    } else if (strcmp(feature, "s390x-highw") == 0 ) {
       match = facilities[0] & FAC_BIT(45);
    } else if (strcmp(feature, "s390x-vx") == 0 ) {
-      match = facilities[2] & FAC_BIT(0);
+      /* VX needs kernel support; thus check the appropriate HWCAP bit. */
+      match = GET_HWCAP() & 0x800;
    } else if (strcmp(feature, "s390x-msa5") == 0 ) {
       match = facilities[0] & FAC_BIT(57); /* message security assist 5 facility */
    } else if (strcmp(feature, "s390x-mi2") == 0 ) {

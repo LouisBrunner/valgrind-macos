@@ -58,6 +58,7 @@ where XXXXXX is the bug number as listed below.
 404406  s390x: z14 miscellaneous instructions not implemented
 409141  Valgrind hangs when SIGKILLed
 409367  exit_group() after signal to thread waiting in futex() causes hangs
+410599  Non-deterministic behaviour of pth_self_kill_15_other test
 
 n-i-bz  Fix minor one time leaks in dhat.
 n-i-bz  Add --run-cxx-freeres=no in outer args to avoid inner crashes.

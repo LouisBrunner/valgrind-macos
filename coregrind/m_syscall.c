@@ -774,7 +774,7 @@ static UWord do_syscall_WRK (
 */
 extern int do_syscall_WRK (
           int a1, int a2, int a3,
-          int a4, int a5, int a6, int syscall_no, UWord *err,
+          int a4, int a5, int a6, int a7, int syscall_no, UWord *err,
           UWord *valHi, UWord* valLo
        );
 asm (
@@ -784,15 +784,15 @@ asm (
    ".set push                              \n\t"
    ".set noreorder                         \n\t"
    "do_syscall_WRK:                        \n\t"
-   "   lw $2, 24($29)                      \n\t"
-   "   syscall                             \n\t"
-   "   lw $8, 28($29)                      \n\t"
-   "   sw $7, ($8)                         \n\t"
-   "   lw $8, 32($29)                      \n\t"
-   "   sw $3, ($8)                         \n\t" /* store valHi */
-   "   lw $8, 36($29)                      \n\t"
-   "   jr $31                              \n\t"
-   "   sw $2, ($8)                         \n\t" /* store valLo */
+   "	lw $2, 28($29)                       \n\t"
+   "	syscall                              \n\t"
+   "	lw $8, 32($29)                       \n\t"
+   "	sw $7, ($8)                          \n\t"
+   "	lw $8, 36($29)                       \n\t"
+   "	sw $3, ($8)                          \n\t" /* store valHi */
+   "	lw $8, 40($29)                       \n\t"
+   "	jr $31                               \n\t"
+   "	sw $2, ($8)                          \n\t" /* store valLo */
    ".size do_syscall_WRK, .-do_syscall_WRK \n\t"
    ".set pop                               \n\t"
    ".previous                              \n\t"
@@ -800,7 +800,7 @@ asm (
 
 #elif defined(VGP_mips64_linux)
 extern RegWord do_syscall_WRK ( RegWord a1, RegWord a2, RegWord a3, RegWord a4,
-                                RegWord a5, RegWord a6, RegWord syscall_no,
+                                RegWord a5, RegWord a6, RegWord a7, RegWord syscall_no,
                                 RegWord* V1_A3_val );
 asm (
    ".text                                  \n\t"
@@ -809,15 +809,12 @@ asm (
    ".set push                              \n\t"
    ".set noreorder                         \n\t"
    "do_syscall_WRK:                        \n\t"
-   "   daddiu $29, $29, -8                 \n\t"
-   "   sd $11, 0($29)                      \n\t"
-   "   move $2, $10                        \n\t"
+   "   move $2, $11                        \n\t"
    "   syscall                             \n\t"
-   "   ld $11, 0($29)                      \n\t"
-   "   daddiu $29, $29, 8                  \n\t"
-   "   sd $3, 0($11)                       \n\t" /* store v1 in last param */
+   "   ld $12, 0($29)                      \n\t"
+   "   sd $3, 0($12)                       \n\t" /* store v1 in V1_A3_val */
    "   jr $31                              \n\t"
-   "   sd $7, 8($11)                       \n\t" /* store a3 in last param */
+   "   sd $7, 8($12)                       \n\t" /* store a3 in V1_A3_val */
    ".size do_syscall_WRK, .-do_syscall_WRK \n\t"
    ".set pop                               \n\t"
    ".previous                              \n\t"
@@ -1026,14 +1023,14 @@ SysRes VG_(do_syscall) ( UWord sysno, RegWord a1, RegWord a2, RegWord a3,
    UWord err   = 0;
    UWord valHi = 0;
    UWord valLo = 0;
-   (void) do_syscall_WRK(a1,a2,a3,a4,a5,a6, sysno,&err,&valHi,&valLo);
+   (void) do_syscall_WRK(a1, a2, a3, a4, a5, a6, a7, sysno, &err, &valHi, &valLo);
    return VG_(mk_SysRes_mips32_linux)( valLo, valHi, (ULong)err );
 
 #elif defined(VGP_mips64_linux)
    RegWord v1_a3[2];
    v1_a3[0] = 0xFF00;
    v1_a3[1] = 0xFF00;
-   RegWord V0 = do_syscall_WRK(a1,a2,a3,a4,a5,a6,sysno,v1_a3);
+   RegWord V0 = do_syscall_WRK(a1, a2, a3, a4, a5, a6, a7, sysno, v1_a3);
    RegWord V1 = (RegWord)v1_a3[0];
    RegWord A3 = (RegWord)v1_a3[1];
    return VG_(mk_SysRes_mips64_linux)( V0, V1, A3 );

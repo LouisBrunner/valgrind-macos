@@ -96,6 +96,8 @@ ML_(do_syscall_for_client_WRK):
    ld      $7, OFFSET_mips64_r7($5)  /* a3 */
    ld      $8, OFFSET_mips64_r8($5)  /* a4 */
    ld      $9, OFFSET_mips64_r9($5)  /* a5 */
+   ld      $10, OFFSET_mips64_r10($5)  /* a6 */
+   ld      $11, OFFSET_mips64_r11($5)  /* a7 */
 
    ld      $5, OFFSET_mips64_r5($5)  /* a1 */
    ld      $2, 0($29)                /* syscallno */

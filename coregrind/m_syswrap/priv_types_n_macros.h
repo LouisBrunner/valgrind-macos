@@ -91,7 +91,7 @@ typedef
          || defined(VGP_ppc32_linux) \
          || defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux) \
          || defined(VGP_arm_linux) || defined(VGP_s390x_linux) \
-         || defined(VGP_mips64_linux) || defined(VGP_arm64_linux)
+         || defined(VGP_arm64_linux)
       Int o_arg1;
       Int o_arg2;
       Int o_arg3;
@@ -127,6 +127,15 @@ typedef
       Int o_arg6;
       Int s_arg7;
       Int s_arg8;
+#     elif defined(VGP_mips64_linux)
+      Int o_arg1;
+      Int o_arg2;
+      Int o_arg3;
+      Int o_arg4;
+      Int o_arg5;
+      Int o_arg6;
+      Int o_arg7;
+      Int o_arg8;
 #     else
 #       error "Unknown platform"
 #     endif

@@ -560,6 +560,7 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       canonical->arg4  = *((UInt*) (gst->guest_r29 + 16));    // 16(guest_SP/sp)
       canonical->arg5  = *((UInt*) (gst->guest_r29 + 20));    // 20(guest_SP/sp)
       canonical->arg6  = *((UInt*) (gst->guest_r29 + 24));    // 24(guest_SP/sp)
+      canonical->arg7  = *((UInt*) (gst->guest_r29 + 28));    // 28(guest_SP/sp)
       canonical->arg8 = __NR_syscall;
    }
 
@@ -572,6 +573,8 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    canonical->arg4  = gst->guest_r7;    // a3
    canonical->arg5  = gst->guest_r8;    // a4
    canonical->arg6  = gst->guest_r9;    // a5
+   canonical->arg7  = gst->guest_r10;   // a6
+   canonical->arg8  = gst->guest_r11;   // a7
 
 #elif defined(VGP_x86_darwin)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
@@ -890,6 +893,7 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
       gst->guest_r7 = canonical->arg4;
       *((UInt*) (gst->guest_r29 + 16)) = canonical->arg5; // 16(guest_GPR29/sp)
       *((UInt*) (gst->guest_r29 + 20)) = canonical->arg6; // 20(sp)
+      *((UInt*) (gst->guest_r29 + 24)) = canonical->arg7; // 24(sp)
    } else {
       canonical->arg8 = 0;
       gst->guest_r2 = __NR_syscall;
@@ -900,6 +904,7 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
       *((UInt*) (gst->guest_r29 + 16)) = canonical->arg4; // 16(guest_GPR29/sp)
       *((UInt*) (gst->guest_r29 + 20)) = canonical->arg5; // 20(sp)
       *((UInt*) (gst->guest_r29 + 24)) = canonical->arg6; // 24(sp)
+      *((UInt*) (gst->guest_r29 + 28)) = canonical->arg7; // 28(sp)
    }
 
 #elif defined(VGP_mips64_linux)
@@ -911,6 +916,8 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
    gst->guest_r7 = canonical->arg4;
    gst->guest_r8 = canonical->arg5;
    gst->guest_r9 = canonical->arg6;
+   gst->guest_r10 = canonical->arg7;
+   gst->guest_r11 = canonical->arg8;
 
 #elif defined(VGP_x86_solaris)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
@@ -1461,8 +1468,8 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
    layout->o_arg4   = OFFSET_mips64_r7;
    layout->o_arg5   = OFFSET_mips64_r8;
    layout->o_arg6   = OFFSET_mips64_r9;
-   layout->uu_arg7  = -1; /* impossible value */
-   layout->uu_arg8  = -1; /* impossible value */
+   layout->o_arg7   = OFFSET_mips64_r10;
+   layout->o_arg8   = OFFSET_mips64_r11;
 
 #elif defined(VGP_x86_darwin)
    layout->o_sysno  = OFFSET_x86_EAX;

@@ -115,16 +115,18 @@ ML_(do_syscall_for_client_WRK):
     lw $5, OFFSET_mips32_r5($8)
     lw $6, OFFSET_mips32_r6($8)
     lw $7, OFFSET_mips32_r7($8)
-    subu $29, $29, 24  #set up the steck frame, 
+    subu $29, $29, 32  #set up the steck frame,
     lw $9, OFFSET_mips32_r29($8)
     lw $10, 16($9)
     sw $10, 16($29)
     lw $10, 20($9)
     sw $10, 20($29)
+    lw $10, 24($9)
+    sw $10, 24($29)
 
 2:  syscall
 
-3:  addu $29, $29, 24  #set up the steck frame,
+3:  addu $29, $29, 32  #set up the steck frame,
 
     lw $8, 48($29) /* t0 == ThreadState */
     sw $2, OFFSET_mips32_r2($8)

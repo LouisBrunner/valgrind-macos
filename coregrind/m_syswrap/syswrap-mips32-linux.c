@@ -410,6 +410,7 @@ DECL_TEMPLATE (mips_linux, sys_set_thread_area);
 DECL_TEMPLATE (mips_linux, sys_pipe);
 DECL_TEMPLATE (mips_linux, sys_prctl);
 DECL_TEMPLATE (mips_linux, sys_ptrace);
+DECL_TEMPLATE (mips_linux, sys_sync_file_range);
 
 PRE(sys_mmap2) 
 {
@@ -722,6 +723,28 @@ PRE(sys_prctl)
 POST(sys_prctl)
 {
    WRAPPER_POST_NAME(linux, sys_prctl)(tid, arrghs, status);
+}
+
+PRE(sys_sync_file_range)
+{
+   *flags |= SfMayBlock;
+
+   PRINT("sys_sync_file_range ( %ld, %llu, %llu, %ld )",
+          SARG1, MERGE64(ARG3,ARG4), MERGE64(ARG5, ARG6), SARG7);
+
+   if (VG_(tdict).track_pre_reg_read) {
+      PRRSN;
+      PRA1("sync_file_range", int, fd);
+      PRA3("sync_file_range", vki_u32, MERGE64_FIRST(offset));
+      PRA4("sync_file_range", vki_u32, MERGE64_SECOND(offset));
+      PRA5("sync_file_range", vki_u32, MERGE64_FIRST(nbytes));
+      PRA6("sync_file_range", vki_u32, MERGE64_SECOND(nbytes));
+      PRA7("sync_file_range", int, flags);
+   }
+
+   if (!ML_(fd_allowed)(ARG1, "sync_file_range", tid, False)){
+      SET_STATUS_Failure( VKI_EBADF );
+   }
 }
 
 #undef PRE
@@ -1038,6 +1061,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_ppoll,                  sys_ppoll),                   // 302
    //..
    LINX_ (__NR_splice,                 sys_splice),                  // 304
+   PLAX_ (__NR_sync_file_range,        sys_sync_file_range),         // 305
    //..
    LINX_ (__NR_set_robust_list,        sys_set_robust_list),         // 309
    LINXY (__NR_get_robust_list,        sys_get_robust_list),         // 310

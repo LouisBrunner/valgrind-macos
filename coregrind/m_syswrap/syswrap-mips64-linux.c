@@ -216,7 +216,6 @@ SysRes sys_set_tls ( ThreadId tid, Addr tlsptr )
    file, but that requires even more macro magic. */
 
 DECL_TEMPLATE (mips_linux, sys_set_thread_area);
-DECL_TEMPLATE (mips_linux, sys_tee);
 DECL_TEMPLATE (mips_linux, sys_vmsplice);
 DECL_TEMPLATE (mips_linux, sys_ustat);
 DECL_TEMPLATE (mips_linux, sys_sysfs);
@@ -234,14 +233,6 @@ DECL_TEMPLATE (mips_linux, sys_mmap);
 DECL_TEMPLATE (mips_linux, sys_rt_sigreturn);
 DECL_TEMPLATE (mips_linux, sys_pipe);
 DECL_TEMPLATE (mips_linux, sys_fadvise64);
-
-PRE(sys_tee)
-{
-   PRINT("sys_tee ( %ld, %ld, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )",
-         SARG1, SARG2, ARG3, ARG4);
-   PRE_REG_READ4(long, "sys_tee", int, fdin, int, fdout, vki_size_t, len,
-                 int, flags);
-}
 
 PRE(sys_vmsplice)
 {
@@ -796,7 +787,7 @@ static SyscallTableEntry syscall_main_table[] = {
    PLAX_ (__NR_unshare, sys_unshare),
    LINX_ (__NR_splice, sys_splice),
    LINX_ (__NR_sync_file_range, sys_sync_file_range),
-   PLAX_ (__NR_tee, sys_tee),
+   LINX_ (__NR_tee, sys_tee),
    PLAX_ (__NR_vmsplice, sys_vmsplice),
    LINX_ (__NR_set_robust_list, sys_set_robust_list),
    LINXY (__NR_get_robust_list, sys_get_robust_list),

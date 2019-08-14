@@ -1107,6 +1107,8 @@
 /memcheck/tests/linux/stack_switch
 /memcheck/tests/linux/syscalls-2007
 /memcheck/tests/linux/sys-copy_file_range
+/memcheck/tests/linux/sys-preadv2_pwritev2
+/memcheck/tests/linux/sys-preadv_pwritev
 /memcheck/tests/linux/sys-statx
 /memcheck/tests/linux/syslog-syscall
 /memcheck/tests/linux/timerfd-syscall

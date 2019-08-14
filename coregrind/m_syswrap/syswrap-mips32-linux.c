@@ -920,7 +920,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_ (__NR_munlock,                sys_munlock),                 // 155
    GENX_ (__NR_mlockall,               sys_mlockall),                // 156
    LINX_ (__NR_munlockall,             sys_munlockall),              // 157
-   //..    LINXY(__NR_sched_setparam,    sys_sched_setparam),    // 158
+   LINXY (__NR_sched_setparam,         sys_sched_setparam),          // 158
    LINXY (__NR_sched_getparam,         sys_sched_getparam),          // 159
    LINX_ (__NR_sched_setscheduler,     sys_sched_setscheduler),      // 160
    LINX_ (__NR_sched_getscheduler,     sys_sched_getscheduler),      // 161

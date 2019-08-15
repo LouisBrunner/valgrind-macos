@@ -23,7 +23,8 @@ Requirements
 
 Compilation
 -----------
-Please follow the generic instructions in the README file.
+Please follow the generic instructions in the README file,
+in the section 'Building and installing it'.
 
 The configure script detects a canonical host to determine which version of
 Valgrind should be built. If the system compiler by default produces 32-bit

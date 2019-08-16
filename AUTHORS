@@ -57,9 +57,9 @@ use in Valgrind.
 David Woodhouse has helped out with test and build machines over the course
 of many releases.
 
-Florian Krohm and Christian Borntraeger wrote and maintain the
-S390X/Linux port.  Florian improved and ruggedised the regression test
-system during 2011.
+Florian Krohm and Christian Borntraeger wrote the initial S390X/Linux
+port.  Andreas Arnez is the current maintainer and developer of it.
+Florian improved and ruggedised the regression test system during 2011.
 
 Philippe Waroquiers wrote and maintains the embedded GDB server.  He
 also made a bunch of performance and memory-reduction fixes across

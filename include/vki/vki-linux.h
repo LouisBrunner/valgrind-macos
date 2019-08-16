@@ -1385,6 +1385,8 @@ struct vki_robust_list_head {
 #define VKI_S_IWOTH 00002
 #define VKI_S_IXOTH 00001
 
+#define VKI_STATX_ALL 0x00000FFFU
+
 struct vki_statx_timestamp {
         __vki_s64   tv_sec;
         __vki_u32   tv_nsec;
@@ -1475,6 +1477,8 @@ struct vki_flock64 {
 	__vki_kernel_loff_t	l_len;
 	__vki_kernel_pid_t	l_pid;
 };
+
+#define VKI_AT_EMPTY_PATH       0x1000  /* Allow empty relative pathname */
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/sysctl.h

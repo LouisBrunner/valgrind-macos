@@ -337,14 +337,51 @@ Off64T VG_(lseek) ( Int fd, Off64T offset, Int whence )
       (_p_vgstat)->ctime_nsec = (ULong)( (_p_vkistat)->st_ctime_nsec ); \
    } while (0)
 
+#define TRANSLATE_statx_TO_vg_stat(_p_vgstat, _p_vkistat)                   \
+   do {                                                                     \
+      (_p_vgstat)->dev        = VG_MAKEDEV( (_p_vkistat)->stx_dev_major,    \
+                                            (_p_vkistat)->stx_dev_minor );  \
+      (_p_vgstat)->ino        = (ULong)( (_p_vkistat)->stx_ino );           \
+      (_p_vgstat)->nlink      = (ULong)( (_p_vkistat)->stx_nlink );         \
+      (_p_vgstat)->mode       = (UInt) ( (_p_vkistat)->stx_mode );          \
+      (_p_vgstat)->uid        = (UInt) ( (_p_vkistat)->stx_uid );           \
+      (_p_vgstat)->gid        = (UInt) ( (_p_vkistat)->stx_gid );           \
+      (_p_vgstat)->rdev       = VG_MAKEDEV( (_p_vkistat)->stx_rdev_major,   \
+                                            (_p_vkistat)->stx_rdev_minor ); \
+      (_p_vgstat)->size       = (Long) ( (_p_vkistat)->stx_size );          \
+      (_p_vgstat)->blksize    = (ULong)( (_p_vkistat)->stx_blksize );       \
+      (_p_vgstat)->blocks     = (ULong)( (_p_vkistat)->stx_blocks );        \
+      (_p_vgstat)->atime      = (ULong)( (_p_vkistat)->stx_atime.tv_sec );  \
+      (_p_vgstat)->atime_nsec = (ULong)( (_p_vkistat)->stx_atime.tv_nsec ); \
+      (_p_vgstat)->mtime      = (ULong)( (_p_vkistat)->stx_mtime.tv_sec );  \
+      (_p_vgstat)->mtime_nsec = (ULong)( (_p_vkistat)->stx_mtime.tv_nsec ); \
+      (_p_vgstat)->ctime      = (ULong)( (_p_vkistat)->stx_ctime.tv_sec );  \
+      (_p_vgstat)->ctime_nsec = (ULong)( (_p_vkistat)->stx_ctime.tv_nsec ); \
+   } while (0)
+
 SysRes VG_(stat) ( const HChar* file_name, struct vg_stat* vgbuf )
 {
    SysRes res;
    VG_(memset)(vgbuf, 0, sizeof(*vgbuf));
 
+#  if defined(VGO_linux)
+   /* On Linux, first try with statx. If that doesn't work out, fall back to
+      the stat64 or vanilla version. */
+   { struct vki_statx buf;
+     res = VG_(do_syscall5)(__NR_statx, VKI_AT_FDCWD, (UWord)file_name, 0,
+                            VKI_STATX_ALL, (UWord)&buf);
+     if (!(sr_isError(res) && sr_Err(res) == VKI_ENOSYS)) {
+        /* Success, or any failure except ENOSYS */
+        if (!sr_isError(res))
+           TRANSLATE_statx_TO_vg_stat(vgbuf, &buf);
+        return res;
+     }
+   }
+#  endif
 #  if defined(VGO_linux) || defined(VGO_darwin)
-   /* First try with stat64.  If that doesn't work out, fall back to
-      the vanilla version. */
+   /* Try with stat64. This is the second candidate on Linux, and the first
+      one on Darwin. If that doesn't work out, fall back to vanilla version.
+    */
 #  if defined(__NR_stat64)
    { struct vki_stat64 buf64;
      res = VG_(do_syscall2)(__NR_stat64, (UWord)file_name, (UWord)&buf64);
@@ -356,6 +393,7 @@ SysRes VG_(stat) ( const HChar* file_name, struct vg_stat* vgbuf )
      }
    }
 #  endif /* defined(__NR_stat64) */
+#  if defined(__NR_stat)
    /* This is the fallback ("vanilla version"). */
    { struct vki_stat buf;
 #    if defined(VGP_arm64_linux)
@@ -368,6 +406,7 @@ SysRes VG_(stat) ( const HChar* file_name, struct vg_stat* vgbuf )
         TRANSLATE_TO_vg_stat(vgbuf, &buf);
      return res;
    }
+#  endif
 #  elif defined(VGO_solaris)
    {
 #     if defined(VGP_x86_solaris)
@@ -395,9 +434,25 @@ Int VG_(fstat) ( Int fd, struct vg_stat* vgbuf )
    SysRes res;
    VG_(memset)(vgbuf, 0, sizeof(*vgbuf));
 
+#  if defined(VGO_linux)
+   /* On Linux, first try with statx. If that doesn't work out, fall back to
+      the fstat64 or vanilla version. */
+   { struct vki_statx buf;
+     const char* file_name = "";
+     res = VG_(do_syscall5)(__NR_statx, fd, (RegWord)file_name,
+                            VKI_AT_EMPTY_PATH, VKI_STATX_ALL, (RegWord)&buf);
+     if (!(sr_isError(res) && sr_Err(res) == VKI_ENOSYS)) {
+        /* Success, or any failure except ENOSYS */
+        if (!sr_isError(res))
+           TRANSLATE_statx_TO_vg_stat(vgbuf, &buf);
+        return sr_isError(res) ? (-1) : 0;
+     }
+   }
+#endif
 #  if defined(VGO_linux) || defined(VGO_darwin)
-   /* First try with fstat64.  If that doesn't work out, fall back to
-      the vanilla version. */
+   /* Try with fstat64. This is the second candidate on Linux, and the first
+      one on Darwin. If that doesn't work out, fall back to vanilla version.
+    */
 #  if defined(__NR_fstat64)
    { struct vki_stat64 buf64;
      res = VG_(do_syscall2)(__NR_fstat64, (UWord)fd, (UWord)&buf64);
@@ -408,13 +463,15 @@ Int VG_(fstat) ( Int fd, struct vg_stat* vgbuf )
         return sr_isError(res) ? (-1) : 0;
      }
    }
-#  endif /* if defined(__NR_fstat64) */
+#  endif /* defined(__NR_fstat64) */
+#  if defined(__NR_fstat)
    { struct vki_stat buf;
      res = VG_(do_syscall2)(__NR_fstat, (RegWord)fd, (RegWord)(Addr)&buf);
      if (!sr_isError(res))
         TRANSLATE_TO_vg_stat(vgbuf, &buf);
      return sr_isError(res) ? (-1) : 0;
    }
+#  endif
 #  elif defined(VGO_solaris)
    { 
 #     if defined(VGP_x86_solaris)
@@ -436,7 +493,7 @@ Int VG_(fstat) ( Int fd, struct vg_stat* vgbuf )
 }
 
 #undef TRANSLATE_TO_vg_stat
-
+#undef TRANSLATE_statx_TO_vg_stat
 
 Long VG_(fsize) ( Int fd )
 {

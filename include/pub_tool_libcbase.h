@@ -202,6 +202,18 @@ static void VG_(bzero_inline) ( void* s, SizeT sz )
 #define VG_PGROUNDDN(p)    VG_ROUNDDN(p, VKI_PAGE_SIZE)
 #define VG_PGROUNDUP(p)    VG_ROUNDUP(p, VKI_PAGE_SIZE)
 
+/* Converts `Device ID` given as pair of 32-bit values (dev_major, dev_minor)
+ * to 64-bit dev_t using MMMM Mmmm mmmM MMmm encoding. This is
+ * downward compatible with legacy systems where dev_t is 16 bits wide,
+ * encoded as MMmm. It is also downward compatible with the Linux kernel,
+ * which uses 32-bit dev_t, encoded as mmmM MMmm.
+ * Original macro can be found in bits/sysmacros.h. */
+#define VG_MAKEDEV(__major, __minor)            \
+   ((((ULong) (__major & 0x00000fffu)) <<  8) | \
+    (((ULong) (__major & 0xfffff000u)) << 32) | \
+    (((ULong) (__minor & 0x000000ffu)) <<  0) | \
+    (((ULong) (__minor & 0xffffff00u)) << 12))
+
 /* ---------------------------------------------------------------------
    Misc useful functions
    ------------------------------------------------------------------ */

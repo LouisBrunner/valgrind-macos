@@ -33,6 +33,7 @@ EXTRA_DIST = \
 check_PROGRAMS = \
 	brk \
 	capget \
+	check_preadv2_pwritev2 \
 	dlclose_leak dlclose_leak_so.so \
 	ioctl-tiocsig \
 	getregset \

@@ -1093,6 +1093,7 @@
 /memcheck/tests/linux/.deps
 /memcheck/tests/linux/brk
 /memcheck/tests/linux/capget
+/memcheck/tests/linux/check_preadv2_pwritev2
 /memcheck/tests/linux/dlclose_leak
 /memcheck/tests/linux/dlclose_leak_so.so
 /memcheck/tests/linux/getregset

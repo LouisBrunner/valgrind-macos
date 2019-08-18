@@ -99,11 +99,11 @@ without too much problem by following these steps:
 
 (2) Run gdb on the tool executable.  Eg:
 
-      gdb /usr/local/lib/valgrind/ppc32-linux/lackey
+      gdb /usr/local/lib/valgrind/lackey-ppc32-linux
 
     or
 
-      gdb $DIR/.in_place/x86-linux/memcheck
+      gdb $DIR/.in_place/memcheck-x86-linux
 
 (3) Do "handle SIGSEGV SIGILL nostop noprint" in GDB to prevent GDB from
     stopping on a SIGSEGV or SIGILL:

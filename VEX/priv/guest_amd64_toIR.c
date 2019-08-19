@@ -21050,6 +21050,87 @@ Long dis_ESC_NONE (
       }
       goto decode_failure;
 
+   case 0xCF: /* IRET */
+      /* Note, this is an extremely kludgey and limited implementation of iret
+         based on the extremely kludgey and limited implementation of iret for x86
+            popq %RIP; popl %CS; popq %RFLAGS; popq %RSP; popl %SS
+         %CS and %SS are ignored */
+      if (sz != 8 || have66orF2orF3(pfx)) goto decode_failure;
+
+      t1 = newTemp(Ity_I64); /* RSP */
+      t2 = newTemp(Ity_I64); /* new RIP */
+      /* t3 = newTemp(Ity_I32);  new CS */
+      t4 = newTemp(Ity_I64); /* new RFLAGS */
+      t5 = newTemp(Ity_I64); /* new RSP */
+      /* t6 = newTemp(Ity_I32);  new SS */
+
+      assign(t1, getIReg64(R_RSP));
+      assign(t2, loadLE(Ity_I64, binop(Iop_Add64,mkexpr(t1),mkU64(0))));
+      /* assign(t3, loadLE(Ity_I32, binop(Iop_Add64,mkexpr(t1),mkU64(8)))); */
+      assign(t4, loadLE(Ity_I64, binop(Iop_Add64,mkexpr(t1),mkU64(16))));
+      assign(t5, loadLE(Ity_I64, binop(Iop_Add64,mkexpr(t1),mkU64(24))));
+      /* assign(t6, loadLE(Ity_I32, binop(Iop_Add64,mkexpr(t1),mkU64(32)))); */
+
+      /* set %RFLAGS */
+      stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(AMD64G_CC_OP_COPY) ));
+      stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP1,
+                        binop(Iop_And64,
+                              mkexpr(t4),
+                              mkU64( AMD64G_CC_MASK_C | AMD64G_CC_MASK_P
+                                     | AMD64G_CC_MASK_A | AMD64G_CC_MASK_Z
+                                     | AMD64G_CC_MASK_S| AMD64G_CC_MASK_O )
+                             )
+                       )
+          );
+
+      /* Also need to set the D flag, which is held in bit 10 of t4.
+         If zero, put 1 in OFFB_DFLAG, else -1 in OFFB_DFLAG. */
+      stmt( IRStmt_Put(
+               OFFB_DFLAG,
+               IRExpr_ITE(
+                  unop(Iop_64to1,
+                       binop(Iop_And64,
+                             binop(Iop_Shr64, mkexpr(t4), mkU8(10)),
+                             mkU64(1))),
+                  mkU64(0xFFFFFFFFFFFFFFFFULL),
+                  mkU64(1)))
+          );
+
+      /* And set the ID flag */
+      stmt( IRStmt_Put(
+               OFFB_IDFLAG,
+               IRExpr_ITE(
+                  unop(Iop_64to1,
+                       binop(Iop_And64,
+                             binop(Iop_Shr64, mkexpr(t4), mkU8(21)),
+                             mkU64(1))),
+                  mkU64(1),
+                  mkU64(0)))
+          );
+
+      /* And set the AC flag too */
+      stmt( IRStmt_Put(
+               OFFB_ACFLAG,
+               IRExpr_ITE(
+                  unop(Iop_64to1,
+                       binop(Iop_And64,
+                             binop(Iop_Shr64, mkexpr(t4), mkU8(18)),
+                             mkU64(1))),
+                  mkU64(1),
+                  mkU64(0)))
+          );
+
+
+      /* set new stack */
+      putIReg64(R_RSP, mkexpr(t5));
+
+      /* goto new RIP value */
+      jmp_treg(dres, Ijk_Ret, t2);
+      DIP("iret (very kludgey)\n");
+      return delta;
+
    case 0xD0: { /* Grp2 1,Eb */
       Bool decode_OK = True;
       if (haveF2orF3(pfx)) goto decode_failure;

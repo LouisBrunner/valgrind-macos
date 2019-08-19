@@ -47,6 +47,7 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
+400593  In Coregrind, use statx for some internal syscalls if [f]stat[64] fail
 406561  mcinfcallWSRU gdbserver_test fails on ppc64
 406824  Unsupported baseline
 407218  Add support for the copy_file_range syscall

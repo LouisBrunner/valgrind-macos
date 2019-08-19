@@ -839,7 +839,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_ (__NR_setregid,               sys_setregid),                // 71
    //   PLAX_(__NR_sigsuspend,        sys_sigsuspend),        // 72
    LINXY (__NR_sigpending,             sys_sigpending),              // 73
-   //..    //   (__NR_sethostname,       sys_sethostname),       // 74
+   GENX_ (__NR_sethostname,            sys_sethostname),             // 74
    GENX_ (__NR_setrlimit,              sys_setrlimit),               // 75
    GENXY (__NR_getrlimit,              sys_getrlimit),               // 76
    GENXY (__NR_getrusage,              sys_getrusage),               // 77

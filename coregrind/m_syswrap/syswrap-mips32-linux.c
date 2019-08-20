@@ -973,7 +973,7 @@ static SyscallTableEntry syscall_main_table[] = {
    //..    GENXY(__NR_getpmsg,           sys_getpmsg),           // 208
    //..    GENX_(__NR_putpmsg,           sys_putpmsg),           // 209
    PLAX_ (__NR_mmap2,                  sys_mmap2),                   // 210
-   //   GENX_(__NR_truncate64,        sys_truncate64),        // 211
+   GENX_ (__NR_truncate64,             sys_truncate64),              // 211
    GENX_ (__NR_ftruncate64,            sys_ftruncate64),             // 212
    PLAXY (__NR_stat64,                 sys_stat64),                  // 213
    PLAXY (__NR_lstat64,                sys_lstat64),                 // 214

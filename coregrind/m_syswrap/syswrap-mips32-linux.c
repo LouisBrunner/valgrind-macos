@@ -876,7 +876,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENXY (__NR_fstat,                  sys_newfstat),                // 108
    //..    //   (__NR_olduname,          sys_uname),             // 109
    //..    GENX_(__NR_iopl,              sys_iopl),              // 110
-   //..    LINX_(__NR_vhangup,           sys_vhangup),           // 111
+   LINX_ (__NR_vhangup,                sys_vhangup),                 // 111
    //..    GENX_(__NR_idle,              sys_ni_syscall),        // 112
    //..    //   (__NR_vm86old,           sys_vm86old),           // 113
    GENXY (__NR_wait4,                  sys_wait4),                   // 114

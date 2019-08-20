@@ -1029,7 +1029,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_clock_getres,           sys_clock_getres),            // 264
    LINXY (__NR_clock_nanosleep,        sys_clock_nanosleep),         // 265
    LINXY (__NR_tgkill,                 sys_tgkill),                  // 266
-   //..    GENX_(__NR_utimes,            sys_utimes),            // 267
+   GENX_ (__NR_utimes,                 sys_utimes),                  // 267
    LINXY (__NR_get_mempolicy,          sys_get_mempolicy),           // 269
    LINX_ (__NR_set_mempolicy,          sys_set_mempolicy),           // 270
    LINXY (__NR_mq_open,                sys_mq_open),                 // 271

@@ -1059,7 +1059,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_faccessat,              sys_faccessat),               // 300
    LINXY (__NR_pselect6,               sys_pselect6),                // 301
    LINXY (__NR_ppoll,                  sys_ppoll),                   // 302
-   //..
+   LINX_ (__NR_unshare,                sys_unshare),                 // 303
    LINX_ (__NR_splice,                 sys_splice),                  // 304
    PLAX_ (__NR_sync_file_range,        sys_sync_file_range),         // 305
    LINX_ (__NR_tee,                    sys_tee),                     // 306

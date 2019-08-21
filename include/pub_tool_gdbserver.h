@@ -53,16 +53,6 @@
 //--------------------------------------------------------------------
 extern void VG_(gdbserver) ( ThreadId tid );
 
-/* VG_(dyn_vgdb_error) gets its initial value from
-   VG_(clo_vgdb_error).  It can be changed after initial command
-   processing in order to enable/disable the call to VG_(gdbserver) in
-   m_errormgr.c.  The main reasons to change the below is either
-   because the user updates it via a monitor command or to
-   (temporarily) avoid calling gdbserver for error reporting during
-   monitor command handling.
-*/
-extern Int VG_(dyn_vgdb_error);
-
 /* defines the various kinds of breakpoints that gdbserver
    might ask to insert/remove. Note that the below matches
    the gdbserver protocol definition. The level of support

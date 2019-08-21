@@ -1908,7 +1908,7 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
    }
 
    if (VG_(clo_vgdb) != Vg_VgdbNo
-       && VG_(dyn_vgdb_error) <= VG_(get_n_errs_shown)() + 1) {
+       && VG_(clo_vgdb_error) <= VG_(get_n_errs_shown)() + 1) {
       /* Note: we add + 1 to n_errs_shown as the fatal signal was not
          reported through error msg, and so was not counted. */
       VG_(gdbserver_report_fatal_signal) (info, tid);

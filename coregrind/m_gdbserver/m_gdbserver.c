@@ -48,8 +48,6 @@
 
 #include "server.h"
 
-Int VG_(dyn_vgdb_error);
-
 /* forward declarations */
 VG_REGPARM(1)
 void VG_(helperc_CallDebugger) ( HWord iaddr );
@@ -601,9 +599,9 @@ Bool VG_(gdbserver_stop_at) (VgdbStopAt stopat)
 
 void VG_(gdbserver_prerun_action) (ThreadId tid)
 {
-   // Using VG_(dyn_vgdb_error) allows the user to control if gdbserver
+   // Using VG_(clo_vgdb_error) allows the user to control if gdbserver
    // stops after a fork.
-   if (VG_(dyn_vgdb_error) == 0
+   if (VG_(clo_vgdb_error) == 0
        || VgdbStopAtiS(VgdbStopAt_Startup, VG_(clo_vgdb_stop_at))) {
       /* The below call allows gdb to attach at startup
          before the first guest instruction is executed. */
@@ -1570,6 +1568,6 @@ void VG_(gdbserver_status_output)(void)
 
        nr_gdbserved_addresses,
        nr_watchpoints,
-       VG_(dyn_vgdb_error),
+       VG_(clo_vgdb_error),
        hostvisibility ? "yes" : "no");
 }

@@ -40,6 +40,47 @@
 
 // See pub_{core,tool}_options.h for explanations of all these.
 
+static Clo_Mode clo_mode = cloE;
+static Bool clo_recognised = False;
+
+void VG_(set_Clo_Mode) (Clo_Mode mode)
+{
+   clo_mode = mode;
+   clo_recognised = False;
+}
+Clo_Mode VG_(Clo_Mode) (void)
+{
+   return clo_mode;
+}
+
+void VG_(set_Clo_Recognised) (void)
+{
+   clo_recognised = True;
+}
+
+Bool VG_(Clo_Recognised) (void)
+{
+   return clo_recognised;
+}
+
+Bool VG_(check_clom) (Clo_Mode modes, const HChar* arg, const HChar* option,
+                      Bool recognised)
+{
+   Bool res = recognised && (modes & VG_(Clo_Mode)());
+   Bool dynamic = cloD == VG_(Clo_Mode)();
+
+   if (recognised) {
+      VG_(set_Clo_Recognised) ();
+      if (dynamic && !res)
+         VG_(umsg)("Cannot change %s option dynamically\n", option);
+      else if (dynamic && VG_(clo_verbosity) >= 1)
+         VG_(umsg)("Handling new value %s for option %s\n", arg, option);
+   }
+   if (cloH == VG_(Clo_Mode)() && (cloD & modes))
+      VG_(list_clo)(option);
+
+   return res;
+}
 
 /* Define, and set defaults. */
 
@@ -316,7 +357,41 @@ HChar* VG_(expand_file_name)(const HChar* option_name, const HChar* format)
    HChar opt[VG_(strlen)(option_name) + VG_(strlen)(format) + 2];
    VG_(sprintf)(opt, "%s=%s", option_name, format);
    VG_(fmsg_bad_option)(opt, "%s", message);
+   VG_(exit)(1); // Cannot continue
+   /*NOTREACHED*/
   }
+}
+
+static int col = 0;
+void VG_(list_clo)(const HChar *qq_option)
+{
+   int len = VG_(strlen)(qq_option);
+   if (col + len + 1 > 80) {
+      VG_(printf)("\n");
+      col = 0;
+   }
+
+   if (col == 0) {
+      VG_(printf)("    ");
+      col += 4;
+   } else {
+      VG_(printf)(" ");
+      col += 1;
+   }
+   VG_(printf)("%s", qq_option);
+   col += len;
+}
+void VG_(list_dynamic_options) (void)
+{
+   HChar dummy[40];
+
+   VG_(sprintf)(dummy, "%s", "<dummy option to trigger help>");
+   VG_(printf)("  dynamically changeable options:\n");
+   VG_(process_dynamic_option) (cloH, dummy);
+   if (col > 0) {
+      VG_(printf)("\n");
+      col = 0;
+   }
 }
 
 /*====================================================================*/

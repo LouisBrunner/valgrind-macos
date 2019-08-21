@@ -379,6 +379,9 @@ extern UInt VG_(clo_kernel_variant);
    .dSYM directories as necessary? */
 extern Bool VG_(clo_dsymutil);
 
+/* Outputs the list of dynamically changeable options. */
+extern void VG_(list_dynamic_options) (void);
+
 /* Should we trace into this child executable (across execve etc) ?
    This involves considering --trace-children=,
    --trace-children-skip=, --trace-children-skip-by-arg=, and the name

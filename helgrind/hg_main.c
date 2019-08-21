@@ -5960,7 +5960,7 @@ static void hg_post_clo_init ( void )
          VG_(message)(Vg_UserMsg,
                       "helgrind --delta-stacktrace=yes only works with "
                       "--vex-guest-chase-thresh=0\n"
-                      "=> (re-setting it to 0\n");
+                      "=> (re-setting it to 0)\n");
       VG_(clo_vex_control).guest_chase_thresh = 0;
    }
 

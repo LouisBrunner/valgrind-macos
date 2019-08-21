@@ -5981,51 +5981,48 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
       --track-origins=.  Reject the case --undef-value-errors=no
       --track-origins=yes as meaningless.
    */
-   if (0 == VG_(strcmp)(arg, "--undef-value-errors=no")) {
-      if (MC_(clo_mc_level) == 3) {
-         goto bad_level;
+   if VG_BOOL_CLO(arg, "--undef-value-errors", tmp_show) {
+      if (tmp_show) {
+         if (MC_(clo_mc_level) == 1)
+            MC_(clo_mc_level) = 2;
       } else {
-         MC_(clo_mc_level) = 1;
-         return True;
+         if (MC_(clo_mc_level) == 3) {
+            goto bad_level;
+         } else {
+            MC_(clo_mc_level) = 1;
+         }
       }
    }
-   if (0 == VG_(strcmp)(arg, "--undef-value-errors=yes")) {
-      if (MC_(clo_mc_level) == 1)
-         MC_(clo_mc_level) = 2;
-      return True;
-   }
-   if (0 == VG_(strcmp)(arg, "--track-origins=no")) {
+   else if VG_BOOL_CLO(arg, "--track-origins", tmp_show) {
+      if (tmp_show)  {
+         if (MC_(clo_mc_level) == 1) {
+            goto bad_level;
+         } else {
+            MC_(clo_mc_level) = 3;
+         }
+      } else {
       if (MC_(clo_mc_level) == 3)
          MC_(clo_mc_level) = 2;
-      return True;
-   }
-   if (0 == VG_(strcmp)(arg, "--track-origins=yes")) {
-      if (MC_(clo_mc_level) == 1) {
-         goto bad_level;
-      } else {
-         MC_(clo_mc_level) = 3;
-         return True;
       }
    }
-
-        if VG_BOOL_CLO(arg, "--partial-loads-ok", MC_(clo_partial_loads_ok)) {}
-   else if VG_USET_CLO(arg, "--errors-for-leak-kinds",
-                       MC_(parse_leak_kinds_tokens),
-                       MC_(clo_error_for_leak_kinds)) {}
-   else if VG_USET_CLO(arg, "--show-leak-kinds",
-                       MC_(parse_leak_kinds_tokens),
-                       MC_(clo_show_leak_kinds)) {}
-   else if VG_USET_CLO(arg, "--leak-check-heuristics",
-                       MC_(parse_leak_heuristics_tokens),
-                       MC_(clo_leak_check_heuristics)) {}
-   else if (VG_BOOL_CLO(arg, "--show-reachable", tmp_show)) {
+   else if VG_BOOL_CLO(arg, "--partial-loads-ok", MC_(clo_partial_loads_ok)) {}
+   else if VG_USET_CLOM(cloPD, arg, "--errors-for-leak-kinds",
+                        MC_(parse_leak_kinds_tokens),
+                        MC_(clo_error_for_leak_kinds)) {}
+   else if VG_USET_CLOM(cloPD, arg, "--show-leak-kinds",
+                        MC_(parse_leak_kinds_tokens),
+                        MC_(clo_show_leak_kinds)) {}
+   else if VG_USET_CLOM(cloPD, arg, "--leak-check-heuristics",
+                        MC_(parse_leak_heuristics_tokens),
+                        MC_(clo_leak_check_heuristics)) {}
+   else if (VG_BOOL_CLOM(cloPD, arg, "--show-reachable", tmp_show)) {
       if (tmp_show) {
          MC_(clo_show_leak_kinds) = MC_(all_Reachedness)();
       } else {
          MC_(clo_show_leak_kinds) &= ~R2S(Reachable);
       }
    }
-   else if VG_BOOL_CLO(arg, "--show-possibly-lost", tmp_show) {
+   else if VG_BOOL_CLOM(cloPD, arg, "--show-possibly-lost", tmp_show) {
       if (tmp_show) {
          MC_(clo_show_leak_kinds) |= R2S(Possible);
       } else {
@@ -6033,35 +6030,35 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
       }
    }
    else if VG_BOOL_CLO(arg, "--workaround-gcc296-bugs",
-                                            MC_(clo_workaround_gcc296_bugs)) {}
+                       MC_(clo_workaround_gcc296_bugs)) {}
 
-   else if VG_BINT_CLO(arg, "--freelist-vol",  MC_(clo_freelist_vol), 
-                                               0, 10*1000*1000*1000LL) {}
+   else if VG_BINT_CLOM(cloPD, arg, "--freelist-vol",  MC_(clo_freelist_vol),
+                        0, 10*1000*1000*1000LL) {}
 
-   else if VG_BINT_CLO(arg, "--freelist-big-blocks",
-                       MC_(clo_freelist_big_blocks),
-                       0, 10*1000*1000*1000LL) {}
+   else if VG_BINT_CLOM(cloPD, arg, "--freelist-big-blocks",
+                        MC_(clo_freelist_big_blocks),
+                        0, 10*1000*1000*1000LL) {}
 
-   else if VG_XACT_CLO(arg, "--leak-check=no",
-                            MC_(clo_leak_check), LC_Off) {}
-   else if VG_XACT_CLO(arg, "--leak-check=summary",
-                            MC_(clo_leak_check), LC_Summary) {}
-   else if VG_XACT_CLO(arg, "--leak-check=yes",
-                            MC_(clo_leak_check), LC_Full) {}
-   else if VG_XACT_CLO(arg, "--leak-check=full",
-                            MC_(clo_leak_check), LC_Full) {}
+   else if VG_XACT_CLOM(cloPD, arg, "--leak-check=no",
+                       MC_(clo_leak_check), LC_Off) {}
+   else if VG_XACT_CLOM(cloPD, arg, "--leak-check=summary",
+                       MC_(clo_leak_check), LC_Summary) {}
+   else if VG_XACT_CLOM(cloPD, arg, "--leak-check=yes",
+                       MC_(clo_leak_check), LC_Full) {}
+   else if VG_XACT_CLOM(cloPD, arg, "--leak-check=full",
+                       MC_(clo_leak_check), LC_Full) {}
 
    else if VG_XACT_CLO(arg, "--leak-resolution=low",
-                            MC_(clo_leak_resolution), Vg_LowRes) {}
+                       MC_(clo_leak_resolution), Vg_LowRes) {}
    else if VG_XACT_CLO(arg, "--leak-resolution=med",
-                            MC_(clo_leak_resolution), Vg_MedRes) {}
+                       MC_(clo_leak_resolution), Vg_MedRes) {}
    else if VG_XACT_CLO(arg, "--leak-resolution=high",
-                            MC_(clo_leak_resolution), Vg_HighRes) {}
+                       MC_(clo_leak_resolution), Vg_HighRes) {}
 
-   else if VG_STR_CLO(arg, "--ignore-ranges", tmp_str) {
+   else if VG_STR_CLOM(cloPD, arg, "--ignore-ranges", tmp_str) {
       Bool ok = parse_ignore_ranges(tmp_str);
       if (!ok) {
-         VG_(message)(Vg_DebugMsg, 
+         VG_(message)(Vg_DebugMsg,
             "ERROR: --ignore-ranges: "
             "invalid syntax, or end <= start in range\n");
          return False;
@@ -6077,9 +6074,9 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
             tl_assert(key_min <= key_max);
             UWord limit = 0x4000000; /* 64M - entirely arbitrary limit */
             if (key_max - key_min > limit && val == IAR_CommandLine) {
-               VG_(message)(Vg_DebugMsg, 
+               VG_(message)(Vg_DebugMsg,
                   "ERROR: --ignore-ranges: suspiciously large range:\n");
-               VG_(message)(Vg_DebugMsg, 
+               VG_(message)(Vg_DebugMsg,
                    "       0x%lx-0x%lx (size %lu)\n", key_min, key_max,
                    key_max - key_min + 1);
                return False;
@@ -6088,7 +6085,7 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
       }
    }
 
-   else if VG_STR_CLO(arg, "--ignore-range-below-sp", tmp_str) {
+   else if VG_STR_CLOM(cloPD, arg, "--ignore-range-below-sp", tmp_str) {
       /* This seems at first a bit weird, but: in order to imply
          a non-wrapped-around address range, the first offset needs to be
          larger than the second one.  For example
@@ -6100,26 +6097,26 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
       // Ensure we used all the text after the '=' sign.
       if (ok && *tmp_str != 0) ok = False;
       if (!ok) {
-         VG_(message)(Vg_DebugMsg, 
+         VG_(message)(Vg_DebugMsg,
                       "ERROR: --ignore-range-below-sp: invalid syntax. "
                       " Expected \"...=decimalnumber-decimalnumber\".\n");
          return False;
-      }  
+      }
       if (offs1 > 1000*1000 /*arbitrary*/ || offs2 > 1000*1000 /*ditto*/) {
-         VG_(message)(Vg_DebugMsg, 
+         VG_(message)(Vg_DebugMsg,
                       "ERROR: --ignore-range-below-sp: suspiciously large "
                       "offset(s): %u and %u\n", offs1, offs2);
          return False;
       }
       if (offs1 <= offs2) {
-         VG_(message)(Vg_DebugMsg, 
+         VG_(message)(Vg_DebugMsg,
                       "ERROR: --ignore-range-below-sp: invalid offsets "
                       "(the first must be larger): %u and %u\n", offs1, offs2);
          return False;
       }
       tl_assert(offs1 > offs2);
       if (offs1 - offs2 > 4096 /*arbitrary*/) {
-         VG_(message)(Vg_DebugMsg, 
+         VG_(message)(Vg_DebugMsg,
                       "ERROR: --ignore-range-below-sp: suspiciously large "
                       "range: %u-%u (size %u)\n", offs1, offs2, offs1 - offs2);
          return False;
@@ -6144,8 +6141,8 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
    else if VG_XACT_CLO(arg, "--keep-stacktraces=none",
                        MC_(clo_keep_stacktraces), KS_none) {}
 
-   else if VG_BOOL_CLO(arg, "--show-mismatched-frees",
-                       MC_(clo_show_mismatched_frees)) {}
+   else if VG_BOOL_CLOM(cloPD, arg, "--show-mismatched-frees",
+                        MC_(clo_show_mismatched_frees)) {}
 
    else if VG_XACT_CLO(arg, "--expensive-definedness-checks=no",
                             MC_(clo_expensive_definedness_checks), EdcNO) {}
@@ -6168,6 +6165,7 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
   bad_level:
    VG_(fmsg_bad_option)(arg,
       "--track-origins=yes has no effect when --undef-value-errors=no.\n");
+   return False;
 }
 
 static void mc_print_usage(void)

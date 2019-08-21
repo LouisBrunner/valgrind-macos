@@ -241,6 +241,15 @@ tool-specific macros).</para>
   </varlistentry>
 
   <varlistentry>
+   <term><command><computeroutput>VALGRIND_CLO_CHANGE(option)</computeroutput>:</command></term>
+   <listitem>
+     <para>Changes the value of a dynamically changeable option (a string).
+       See <xref linkend="manual-core.dynopts"/>.
+    </para>
+   </listitem>
+  </varlistentry>
+
+  <varlistentry>
    <term><command><computeroutput>VALGRIND_STACK_REGISTER(start, end)</computeroutput>:</command></term>
    <listitem>
     <para>Registers a new stack.  Informs Valgrind that the memory range
@@ -1357,6 +1366,14 @@ client request.
     descriptors and details related to the file descriptor.
     This only works if <option>--track-fds=yes</option>
     was given at Valgrind startup.</para>
+  </listitem>
+  
+  <listitem>
+    <para><varname>v.clo &lt;clo_option&gt;...</varname> changes one or more
+        dynamic command line options. If no clo_option is given, lists the
+        dynamically changeable options. See
+        <xref linkend="manual-core.dynopts"/>.
+      </para>
   </listitem>
 
   <listitem>

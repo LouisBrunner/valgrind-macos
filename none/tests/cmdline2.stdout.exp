@@ -6,6 +6,7 @@ usage: valgrind [options] prog-and-args
   basic user options for all Valgrind tools, with defaults in [ ]:
     -h --help                 show this message
     --help-debug              show this message, plus debugging options
+    --help-dyn-options        show the dynamically changeable options
     --version                 show version
     -q --quiet                run silently; only print error msgs
     -v --verbose              be more verbose -- show misc extra info

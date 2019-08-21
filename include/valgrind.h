@@ -6154,6 +6154,10 @@ typedef
              command. */
           VG_USERREQ__GDB_MONITOR_COMMAND = 0x1202,
 
+          /* Allows the client program to change a dynamic command line
+             option.  */
+          VG_USERREQ__CLO_CHANGE = 0x1203,
+
           /* These are useful and can be interpreted by any tool that
              tracks malloc() et al, by using vg_replace_malloc.c. */
           VG_USERREQ__MALLOCLIKE_BLOCK = 0x1301,
@@ -6634,6 +6638,14 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 #define VALGRIND_MONITOR_COMMAND(command)                               \
    VALGRIND_DO_CLIENT_REQUEST_EXPR(0, VG_USERREQ__GDB_MONITOR_COMMAND, \
                                    command, 0, 0, 0, 0)
+
+
+/* Change the value of a dynamic command line option.
+   Note that unknown or not dynamically changeable options
+   will cause a warning message to be output.  */
+#define VALGRIND_CLO_CHANGE(option)                           \
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__CLO_CHANGE, \
+                                   option, 0, 0, 0, 0)
 
 
 #undef PLAT_x86_darwin

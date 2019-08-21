@@ -7,6 +7,8 @@ general valgrind monitor commands:
   v.info n_errs_found [msg] : show the nr of errors found so far and the given msg
   v.info open_fds         : show open file descriptors (only if --track-fds=yes)
   v.kill                  : kill the Valgrind process
+  v.clo <clo_option>...   : changes one or more dynamic command line options
+     with no clo_option, show the dynamically changeable options.
   v.set gdb_output        : set valgrind output to gdb
   v.set log_output        : set valgrind output to log
   v.set mixed_output      : set valgrind output to log, interactive output to gdb
@@ -64,6 +66,8 @@ general valgrind monitor commands:
   v.info n_errs_found [msg] : show the nr of errors found so far and the given msg
   v.info open_fds         : show open file descriptors (only if --track-fds=yes)
   v.kill                  : kill the Valgrind process
+  v.clo <clo_option>...   : changes one or more dynamic command line options
+     with no clo_option, show the dynamically changeable options.
   v.set gdb_output        : set valgrind output to gdb
   v.set log_output        : set valgrind output to log
   v.set mixed_output      : set valgrind output to log, interactive output to gdb

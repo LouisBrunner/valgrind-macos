@@ -85,8 +85,8 @@ __attribute__((noreturn))
 extern void VG_(err_config_error) ( const HChar* format, ... );
 
 /* Called by main_process_cmd_line_options to indicate an unrecognised
-   command line option. */
-__attribute__((noreturn))
+   command line option.
+   It shutdowns the system if Clo_Mode is cloE or cloP.*/
 extern void VG_(fmsg_unknown_option) ( const HChar *opt );
 
 #endif   // __PUB_CORE_LIBCPRINT_H

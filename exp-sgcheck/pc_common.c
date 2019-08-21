@@ -63,6 +63,9 @@ Bool sg_clo_enable_sg_checks = True;   /* user visible */
 
 Bool pc_process_cmd_line_options(const HChar* arg)
 {
+   if (VG_(Clo_Mode)() != cloP)
+      return False;
+
         if VG_BOOL_CLO(arg, "--partial-loads-ok", h_clo_partial_loads_ok) {}
    /* else if VG_BOOL_CLO(arg, "--lossage-check",    h_clo_lossage_check) {} */
    else if VG_BOOL_CLO(arg, "--enable-sg-checks", sg_clo_enable_sg_checks) {}

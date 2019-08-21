@@ -13,6 +13,18 @@ support for X86/macOS 10.13 and AMD64/macOS 10.13.
 
 * ==================== CORE CHANGES ===================
 
+* It is now possible to dynamically change the value of many command
+  line options while your program (or its children) are running under
+  Valgrind.
+  To have the list of dynamically changeable options, run
+     "valgrind --help-dyn-options".
+  You can change the options from the shell by using vgdb to launch
+  the monitor command "v.clo <clo option>...".
+  The same monitor command can be used from a gdb connected
+  to the valgrind gdbserver.
+  Your program can also change the dynamically changeable options using
+  the client request VALGRIND_CLO_CHANGE(option).
+
 * ==================== TOOL CHANGES ====================
 
 * DHAT:
@@ -24,6 +36,9 @@ support for X86/macOS 10.13 and AMD64/macOS 10.13.
 * Massif:
 
 * Memcheck:
+
+  - Several memcheck options are now dynamically changeable.
+    Use  valgrind --help-dyn-options  to list them.
 
 * ==================== OTHER CHANGES ====================
 

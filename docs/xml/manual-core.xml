@@ -2759,6 +2759,74 @@ don't understand
 
 </sect2>
 
+<sect2 id="manual-core.dynopts" xreflabel="Dynamically Change Options">
+<title>Dynamically Changing Options</title>
+
+<para>The value of some command line options can be changed dynamically
+  while your program is running under Valgrind.</para>
+
+<para>The dynamically changeable options of the valgrind core and a given
+  tool can be listed using option
+  <computeroutput>--help-dyn-options</computeroutput>, for example:</para>
+<screen><![CDATA[
+$ valgrind --tool=memcheck --help-dyn-options
+  dynamically changeable options:
+    -v -q -d --stats --vgdb=no --vgdb=yes --vgdb=full --vgdb-poll --vgdb-error
+    --vgdb-stop-at --error-markers --show-error-list -s --show-below-main
+    --time-stamp --trace-children --child-silent-after-fork --trace-sched
+    --trace-signals --trace-symtab --trace-cfi --debug-dump=syms
+    --debug-dump=line --debug-dump=frames --trace-redir --trace-syscalls
+    --sym-offsets --progress-interval --merge-recursive-frames
+    --vex-iropt-verbosity --suppressions --trace-flags --trace-notbelow
+    --trace-notabove --profile-flags --gen-suppressions=no
+    --gen-suppressions=yes --gen-suppressions=all --errors-for-leak-kinds
+    --show-leak-kinds --leak-check-heuristics --show-reachable
+    --show-possibly-lost --freelist-vol --freelist-big-blocks --leak-check=no
+    --leak-check=summary --leak-check=yes --leak-check=full --ignore-ranges
+    --ignore-range-below-sp --show-mismatched-frees
+valgrind: Use --help for more information.
+$]]></screen>
+
+<para>The dynamic options can be changed the following ways:</para>
+
+  <orderedlist>
+   <listitem>
+     <para>From the shell, using vgdb and the monitor command
+     <computeroutput>v.clo</computeroutput>:</para>
+<screen><![CDATA[
+$ vgdb "v.clo --trace-children=yes --child-silent-after-fork=no"
+sending command v.clo --trace-children=yes --child-silent-after-fork=no to pid 4404
+$]]></screen>
+
+<para>Note: you must use double quotes around the monitor command to avoid
+  vgdb interpreting the valgrind options as its own options.</para>
+   </listitem>
+
+   <listitem>
+    <para>From gdb, using the the monitor command
+     <computeroutput>v.clo</computeroutput>:</para>
+<screen><![CDATA[
+(gdb) monitor v.clo --trace-children=yes --child-silent-after-fork=no
+(gdb) ]]></screen>
+   </listitem>
+
+   <listitem>
+     <para>From your program, using the client request
+       <computeroutput>VALGRIND_CLO_CHANGE(option)</computeroutput>:</para>
+<screen><![CDATA[
+      VALGRIND_CLO_CHANGE ("--trace-children=yes");
+      VALGRIND_CLO_CHANGE ("--child-silent-after-fork=no");]]></screen>
+   </listitem>
+  </orderedlist>
+
+  <para>Dynamically changeable options can be used in various circumstances,
+    such as changing the valgrind behaviour during execution, loading
+    suppression files as part of shared library initialisation, change or
+    set valgrind options in child processes, ...
+  </para>
+
+</sect2>
+
 </sect1>
 
 

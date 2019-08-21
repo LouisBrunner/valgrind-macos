@@ -136,8 +136,8 @@ extern UInt VG_(fmsg)( const HChar* format, ... ) PRINTF_CHECK(1, 2);
 // because an option was unrecognised -- return 'False' from
 // VG_(tdict).tool_process_cmd_line_option) to indicate that -- use it if eg.
 // an option was given an inappropriate argument.  This function prints an
-// error message, then shuts down the entire system.
-__attribute__((noreturn))
+// error message. It shuts down the entire system if the current parsing mode
+// is cloE or cloP.
 extern void VG_(fmsg_bad_option) ( const HChar* opt, const HChar* format, ... )
    PRINTF_CHECK(2, 3);
 

@@ -47,6 +47,10 @@ typedef
    }
    CoreErrorKind;
 
+/* Add a new suppression file in the list of supp files.
+   If VG_(load_suppressions) was already called, also load it. */
+extern void VG_(add_suppression_file) (const HChar *filename);
+
 extern void VG_(load_suppressions)        ( void );
 
 // if verbosity == 0,           print nothing.

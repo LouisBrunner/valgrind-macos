@@ -1102,20 +1102,31 @@ void VG_(fmsg_bad_option) ( const HChar* opt, const HChar* format, ... )
 {
    va_list vargs;
    va_start(vargs,format);
-   revert_to_stderr();
-   VG_(message) (Vg_FailMsg, "Bad option: %s\n", opt);
-   VG_(vmessage)(Vg_FailMsg, format, vargs );
-   VG_(message) (Vg_FailMsg, "Use --help for more information or consult the user manual.\n");
+   Bool fatal = VG_(Clo_Mode)() & cloEP;
+   VgMsgKind mkind = fatal ? Vg_FailMsg : Vg_UserMsg;
+
+   if (fatal)
+      revert_to_stderr();
+   VG_(message) (mkind, "Bad option: %s\n", opt);
+   VG_(vmessage)(mkind, format, vargs );
+   VG_(message) (mkind, "Use --help for more information or consult the user manual.\n");
    va_end(vargs);
-   VG_(exit)(1);
+   if (fatal)
+      VG_(exit)(1);
 }
 
 void VG_(fmsg_unknown_option) ( const HChar* opt)
 {
-   revert_to_stderr();
-   VG_(message) (Vg_FailMsg, "Unknown option: %s\n", opt);
-   VG_(message) (Vg_FailMsg, "Use --help for more information or consult the user manual.\n");
-   VG_(exit)(1);
+   Bool fatal = VG_(Clo_Mode)() & cloEP;
+   VgMsgKind mkind = fatal ? Vg_FailMsg : Vg_UserMsg;
+
+   if (fatal)
+      revert_to_stderr();
+
+   VG_(message) (mkind, "Unknown option: %s\n", opt);
+   VG_(message) (mkind, "Use --help for more information or consult the user manual.\n");
+   if (fatal)
+      VG_(exit)(1);
 }
 
 UInt VG_(umsg) ( const HChar* format, ... )

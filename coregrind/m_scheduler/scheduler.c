@@ -1322,10 +1322,6 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
          else
             VG_(disable_vgdb_poll) ();
 
-         vg_assert (VG_(dyn_vgdb_error) == VG_(clo_vgdb_error));
-         /* As we are initializing, VG_(dyn_vgdb_error) can't have been
-            changed yet. */
-
          VG_(gdbserver_prerun_action) (1);
       } else {
          VG_(disable_vgdb_poll) ();
@@ -2113,6 +2109,11 @@ void do_client_request ( ThreadId tid )
 
       case VG_USERREQ__COUNT_ERRORS:  
          SET_CLREQ_RETVAL( tid, VG_(get_n_errs_found)() );
+         break;
+
+      case VG_USERREQ__CLO_CHANGE:
+         VG_(process_dynamic_option) (cloD, (HChar *)arg[1]);
+         SET_CLREQ_RETVAL( tid, 0 );     /* return value is meaningless */
          break;
 
       case VG_USERREQ__LOAD_PDB_DEBUGINFO:

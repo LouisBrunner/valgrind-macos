@@ -1063,6 +1063,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_splice,                 sys_splice),                  // 304
    PLAX_ (__NR_sync_file_range,        sys_sync_file_range),         // 305
    LINX_ (__NR_tee,                    sys_tee),                     // 306
+   LINXY (__NR_vmsplice,               sys_vmsplice),                // 307
    //..
    LINX_ (__NR_set_robust_list,        sys_set_robust_list),         // 309
    LINXY (__NR_get_robust_list,        sys_get_robust_list),         // 310

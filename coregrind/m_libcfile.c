@@ -393,7 +393,7 @@ SysRes VG_(stat) ( const HChar* file_name, struct vg_stat* vgbuf )
      }
    }
 #  endif /* defined(__NR_stat64) */
-#  if defined(__NR_stat)
+#  if defined(__NR_stat) || defined(VGP_arm64_linux)
    /* This is the fallback ("vanilla version"). */
    { struct vki_stat buf;
 #    if defined(VGP_arm64_linux)

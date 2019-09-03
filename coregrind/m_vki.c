@@ -42,7 +42,8 @@
 
 #if defined(VGP_ppc32_linux) || defined(VGP_ppc64be_linux) \
     || defined(VGP_ppc64le_linux) || defined(VGP_arm64_linux) \
-    || defined(VGP_mips32_linux)  || defined(VGP_mips64_linux)
+    || defined(VGP_mips32_linux)  || defined(VGP_mips64_linux) \
+    || defined(VGP_nanomips_linux)
 unsigned long VKI_PAGE_SHIFT = 12;
 unsigned long VKI_PAGE_SIZE  = 1UL << 12;
 #endif

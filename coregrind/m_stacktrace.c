@@ -1323,7 +1323,8 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 #endif
 
 /* ------------------------ mips 32/64 ------------------------- */
-#if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
+#if defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
+ || defined(VGP_nanomips_linux)
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                /*OUT*/Addr* ips, UInt max_n_ips,
                                /*OUT*/Addr* sps, /*OUT*/Addr* fps,
@@ -1344,7 +1345,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    uregs.sp = startRegs->r_sp;
    Addr fp_min = uregs.sp - VG_STACK_REDZONE_SZB;
 
-#if defined(VGP_mips32_linux)
+#if defined(VGP_mips32_linux) || defined(VGP_nanomips_linux)
    uregs.fp = startRegs->misc.MIPS32.r30;
    uregs.ra = startRegs->misc.MIPS32.r31;
 #elif defined(VGP_mips64_linux)

@@ -606,7 +606,20 @@ Int VG_(getrlimit) (Int resource, struct vki_rlimit *rlim)
    res = VG_(do_syscall2)(__NR_ugetrlimit, resource, (UWord)rlim);
 #  endif
    if (sr_isError(res) && sr_Err(res) == VKI_ENOSYS)
+#  if defined(VGP_nanomips_linux)
+   {
+      struct vki_rlimit64 new_rlimit;
+      res = VG_(do_syscall4)(__NR_prlimit64, 0, resource, 0, (UWord)&new_rlimit);
+      if (new_rlimit.rlim_cur > 2147483647 || new_rlimit.rlim_max > 2147483647)
+         res = VG_(mk_SysRes_Error)(VKI_ENOSYS);
+      else {
+         rlim->rlim_cur = new_rlimit.rlim_cur;
+         rlim->rlim_max = new_rlimit.rlim_max;
+      }
+   }
+#  else
       res = VG_(do_syscall2)(__NR_getrlimit, resource, (UWord)rlim);
+#  endif
    return sr_isError(res) ? -1 : sr_Res(res);
 }
 
@@ -616,7 +629,14 @@ Int VG_(setrlimit) (Int resource, const struct vki_rlimit *rlim)
 {
    SysRes res;
    /* res = setrlimit( resource, rlim ); */
+#  if defined(VGP_nanomips_linux)
+   struct vki_rlimit64 new_rlimit;
+   new_rlimit.rlim_cur = rlim->rlim_cur;
+   new_rlimit.rlim_max = rlim->rlim_max;
+   res = VG_(do_syscall4)(__NR_prlimit64, 0, resource, (UWord)&new_rlimit, 0);
+#  else
    res = VG_(do_syscall2)(__NR_setrlimit, resource, (UWord)rlim);
+#  endif
    return sr_isError(res) ? -1 : sr_Res(res);
 }
 
@@ -660,7 +680,7 @@ Int VG_(gettid)(void)
        * the /proc/self link is pointing...
        */
 
-#     if defined(VGP_arm64_linux)
+#     if defined(VGP_arm64_linux) || defined(VGP_nanomips_linux)
       res = VG_(do_syscall4)(__NR_readlinkat, VKI_AT_FDCWD,
                              (UWord)"/proc/self",
                              (UWord)pid, sizeof(pid));
@@ -706,7 +726,7 @@ Int VG_(getpid) ( void )
 Int VG_(getpgrp) ( void )
 {
    /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
-#  if defined(VGP_arm64_linux)
+#  if defined(VGP_arm64_linux) || defined(VGP_nanomips_linux)
    return sr_Res( VG_(do_syscall1)(__NR_getpgid, 0) );
 #  elif defined(VGO_linux) || defined(VGO_darwin)
    return sr_Res( VG_(do_syscall0)(__NR_getpgrp) );
@@ -802,7 +822,7 @@ Int VG_(getgroups)( Int size, UInt* list )
         || defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)  \
         || defined(VGO_darwin) || defined(VGP_s390x_linux)    \
         || defined(VGP_mips32_linux) || defined(VGP_arm64_linux) \
-        || defined(VGO_solaris)
+        || defined(VGO_solaris) || defined(VGP_nanomips_linux)
    SysRes sres;
    sres = VG_(do_syscall2)(__NR_getgroups, size, (Addr)list);
    if (sr_isError(sres))
@@ -843,7 +863,7 @@ Int VG_(ptrace) ( Int request, Int pid, void *addr, void *data )
 
 Int VG_(fork) ( void )
 {
-#  if defined(VGP_arm64_linux)
+#  if defined(VGP_arm64_linux) || defined(VGP_nanomips_linux)
    SysRes res;
    res = VG_(do_syscall5)(__NR_clone, VKI_SIGCHLD,
                           (UWord)NULL, (UWord)NULL, (UWord)NULL, (UWord)NULL);

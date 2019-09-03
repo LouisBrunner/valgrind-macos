@@ -72,7 +72,7 @@ static inline UWord VG_TT_FAST_HASH ( Addr guest ) {
    return merged & VG_TT_FAST_MASK;
 }
 
-#elif defined(VGA_s390x) || defined(VGA_arm)
+#elif defined(VGA_s390x) || defined(VGA_arm) || defined(VGA_nanomips)
 static inline UWord VG_TT_FAST_HASH ( Addr guest ) {
    // Instructions are 2-byte aligned.
    UWord merged = ((UWord)guest) >> 1;

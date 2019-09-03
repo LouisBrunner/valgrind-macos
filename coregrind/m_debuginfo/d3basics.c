@@ -416,7 +416,7 @@ static Bool get_Dwarf_Reg( /*OUT*/Addr* a, Word regno, const RegSummary* regs )
 #  elif defined(VGP_s390x_linux)
    if (regno == 15) { *a = regs->sp; return True; }
    if (regno == 11) { *a = regs->fp; return True; }
-#  elif defined(VGP_mips32_linux)
+#  elif defined(VGP_mips32_linux) || defined(VGP_nanomips_linux)
    if (regno == 29) { *a = regs->sp; return True; }
    if (regno == 30) { *a = regs->fp; return True; }
 #  elif defined(VGP_mips64_linux)

@@ -2391,7 +2391,7 @@ static void final_tidyup(ThreadId tid)
             sizeof(VG_(threads)[tid].arch.vex.guest_GPR12));
 #  endif
    /* mips-linux note: we need to set t9 */
-#  if defined(VGP_mips32_linux)
+#  if defined(VGP_mips32_linux) || defined(VGP_nanomips_linux)
    VG_(threads)[tid].arch.vex.guest_r25 = freeres_wrapper;
    VG_TRACK(post_reg_write, Vg_CoreClientReq, tid,
             offsetof(VexGuestMIPS32State, guest_r25),
@@ -2428,7 +2428,7 @@ static void final_tidyup(ThreadId tid)
    VG_TRACK(post_reg_write, Vg_CoreClientReq, tid,
             offsetof(VexGuestARM64State, guest_X0),
             sizeof(VG_(threads)[tid].arch.vex.guest_X0));
-#  elif defined(VGA_mips32)
+#  elif defined(VGA_mips32) || defined(VGA_nanomips)
    VG_(threads)[tid].arch.vex.guest_r4 = to_run;
    VG_TRACK(post_reg_write, Vg_CoreClientReq, tid,
             offsetof(VexGuestMIPS32State, guest_r4),
@@ -2957,6 +2957,29 @@ asm(
     "\tnop\n"
 ".previous\n"
 );
+#elif defined(VGP_nanomips_linux)
+   asm(
+".text                                                  \n\t"
+".globl __start                                         \n\t"
+".type __start,@function                                \n\t"
+"__start:                                               \n\t"
+    ".set push                                          \n\t"
+    ".set noreorder                                     \n\t"
+    "li $t1, vgPlain_interim_stack                      \n\t"
+    "li $t0, "VG_STRINGIFY(VG_STACK_GUARD_SZB)"         \n\t"
+    "addu $t1, $t1, $t0                                 \n\t"
+    "li $t0, "VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)"\n\t"
+    "addu $t1, $t1, $t0                                 \n\t"
+    "li $t0, 0xFFFFFF00                                 \n\t"
+    "and $t1, $t1, $t0                                  \n\t"
+    "move $a0, $sp                                      \n\t"
+    "move $sp, $t1                                      \n\t"
+    "li $t0, _start_in_C_linux                          \n\t"
+    "jrc $t0                                            \n\t"
+    "break                                              \n\t"
+    ".set pop                                           \n\t"
+".previous                                              \n\t"
+);
 #else
 #  error "Unknown linux platform"
 #endif
@@ -3001,7 +3024,8 @@ void _start_in_C_linux ( UWord* pArgc )
 
 #  if defined(VGP_ppc32_linux) || defined(VGP_ppc64be_linux) \
       || defined(VGP_ppc64le_linux) || defined(VGP_arm64_linux) \
-      || defined(VGP_mips32_linux)  || defined(VGP_mips64_linux)
+      || defined(VGP_mips32_linux)  || defined(VGP_mips64_linux) \
+      || defined(VGP_nanomips_linux)
    {
       /* ppc32/ppc64, arm64, mips32/64 can be configured with different
          page sizes. Determine this early. This is an ugly hack and really

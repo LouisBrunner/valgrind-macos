@@ -98,7 +98,8 @@ Bool   VG_(clo_show_error_list) = False;
 #if defined(VGPV_arm_linux_android) \
     || defined(VGPV_x86_linux_android) \
     || defined(VGPV_mips32_linux_android) \
-    || defined(VGPV_arm64_linux_android)
+    || defined(VGPV_arm64_linux_android) \
+    || defined(VGP_nanomips_linux)
 VgVgdb VG_(clo_vgdb)           = Vg_VgdbNo; // currently disabled on Android
 #else
 VgVgdb VG_(clo_vgdb)           = Vg_VgdbYes;
@@ -193,7 +194,7 @@ UInt   VG_(clo_unw_stack_scan_frames) = 5;
 VgSmc VG_(clo_smc_check) = Vg_SmcAllNonFile;
 #elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le) \
       || defined(VGA_arm) || defined(VGA_arm64) \
-      || defined(VGA_mips32) || defined(VGA_mips64)
+      || defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_nanomips)
 VgSmc VG_(clo_smc_check) = Vg_SmcStack;
 #else
 #  error "Unknown arch"

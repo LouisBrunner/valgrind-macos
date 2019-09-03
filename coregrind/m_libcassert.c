@@ -244,6 +244,26 @@
         (srP)->misc.MIPS64.r31 = (ULong)ra;               \
         (srP)->misc.MIPS64.r28 = (ULong)gp;               \
       }
+#elif defined(VGP_nanomips_linux)
+#  define GET_STARTREGS(srP)                              \
+      { UInt pc=0, sp=0, fp=0, ra=0, gp=0;                \
+      asm("addiupc[32] %0, -4          \n\t"              \
+          "move %1, $sp                \n\t"              \
+          "move %2, $fp                \n\t"              \
+          "move %3, $ra                \n\t"              \
+          "move %4, $gp                \n\t"              \
+          : "=r" (pc),                                    \
+            "=r" (sp),                                    \
+            "=r" (fp),                                    \
+            "=r" (ra),                                    \
+            "=r" (gp)                                     \
+          );                                              \
+        (srP)->r_pc = (UInt)pc;                           \
+        (srP)->r_sp = (UInt)sp;                           \
+        (srP)->misc.MIPS32.r30 = (UInt)fp;                \
+        (srP)->misc.MIPS32.r31 = (UInt)ra;                \
+        (srP)->misc.MIPS32.r28 = (UInt)gp;                \
+      }
 #else
 #  error Unknown platform
 #endif

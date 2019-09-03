@@ -462,6 +462,13 @@ extern UInt do_syscall_clone_mips_linux ( Word (*fn) (void *), //a0     0    32
                                           Int*  child_tid,     //stack  16   48
                                           Int*  parent_tid,    //stack  20   52
                                           void* tls_ptr);      //stack  24   56
+extern UInt do_syscall_clone_nanomips_linux ( Word (*fn) (void *),  /* a0 - 4 */
+                                              void* stack,          /* a1 - 5 */
+                                              Int   flags,          /* a2 - 6 */
+                                              void* arg,            /* a3 - 7 */
+                                              Int*  child_tid,      /* a4 - 8 */
+                                              Int*  parent_tid,     /* a5 - 9 */
+                                              void* tls_ptr);       /* a6 - 10 */
 #endif   // __PRIV_SYSWRAP_LINUX_H
 
 /*--------------------------------------------------------------------*/

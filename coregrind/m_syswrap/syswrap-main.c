@@ -576,6 +576,17 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    canonical->arg7  = gst->guest_r10;   // a6
    canonical->arg8  = gst->guest_r11;   // a7
 
+#elif defined(VGP_nanomips_linux)
+  VexGuestMIPS32State* gst = (VexGuestMIPS32State*)gst_vanilla;
+   canonical->sysno = gst->guest_r2;    // t4
+   canonical->arg1  = gst->guest_r4;    // a0
+   canonical->arg2  = gst->guest_r5;    // a1
+   canonical->arg3  = gst->guest_r6;    // a2
+   canonical->arg4  = gst->guest_r7;    // a3
+   canonical->arg5  = gst->guest_r8;    // a4
+   canonical->arg6  = gst->guest_r9;    // a5
+   canonical->arg7  = gst->guest_r10;   // a6
+   canonical->arg8  = gst->guest_r11;   // a7
 #elif defined(VGP_x86_darwin)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    UWord *stack = (UWord *)gst->guest_ESP;
@@ -907,6 +918,17 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
       *((UInt*) (gst->guest_r29 + 28)) = canonical->arg7; // 28(sp)
    }
 
+#elif defined(VGP_nanomips_linux)
+   VexGuestMIPS32State* gst = (VexGuestMIPS32State*)gst_vanilla;
+   gst->guest_r2  = canonical->sysno;
+   gst->guest_r4  = canonical->arg1;
+   gst->guest_r5  = canonical->arg2;
+   gst->guest_r6  = canonical->arg3;
+   gst->guest_r7  = canonical->arg4;
+   gst->guest_r8  = canonical->arg5;
+   gst->guest_r9  = canonical->arg6;
+   gst->guest_r10 = canonical->arg7;
+   gst->guest_r11 = canonical->arg8;
 #elif defined(VGP_mips64_linux)
    VexGuestMIPS64State* gst = (VexGuestMIPS64State*)gst_vanilla;
    gst->guest_r2 = canonical->sysno;
@@ -1012,6 +1034,13 @@ void getSyscallStatusFromGuestState ( /*OUT*/SyscallStatus*     canonical,
    ULong                v1 = gst->guest_r3;    // v1
    ULong                a3 = gst->guest_r7;    // a3
    canonical->sres = VG_(mk_SysRes_mips64_linux)(v0, v1, a3);
+   canonical->what = SsComplete;
+
+#  elif defined(VGP_nanomips_linux)
+   VexGuestMIPS32State* gst = (VexGuestMIPS32State*)gst_vanilla;
+   RegWord  a0 = gst->guest_r4;    // a0
+   RegWord  a1 = gst->guest_r5;    // a1
+   canonical->sres = VG_(mk_SysRes_nanomips_linux)(a0, a1);
    canonical->what = SsComplete;
 
 #  elif defined(VGP_x86_darwin)
@@ -1314,6 +1343,16 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
    VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
              OFFSET_mips64_r7, sizeof(UWord) );
 
+#  elif defined(VGP_nanomips_linux)
+   VexGuestMIPS32State* gst = (VexGuestMIPS32State*)gst_vanilla;
+   vg_assert(canonical->what == SsComplete);
+   gst->guest_r4 = canonical->sres._val;
+   gst->guest_r5 = canonical->sres._valEx;
+   VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
+             OFFSET_mips32_r4, sizeof(UWord) );
+   VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
+             OFFSET_mips32_r5, sizeof(UWord) );
+
 #  elif defined(VGP_x86_solaris)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    SysRes sres = canonical->sres;
@@ -1458,6 +1497,17 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
    layout->s_arg5   = sizeof(UWord) * 4;
    layout->s_arg6   = sizeof(UWord) * 5;
    layout->s_arg7   = sizeof(UWord) * 6;
+   layout->uu_arg8  = -1; /* impossible value */
+
+#elif defined(VGP_nanomips_linux)
+   layout->o_sysno  = OFFSET_mips32_r2;
+   layout->o_arg1   = OFFSET_mips32_r4;
+   layout->o_arg2   = OFFSET_mips32_r5;
+   layout->o_arg3   = OFFSET_mips32_r6;
+   layout->o_arg4   = OFFSET_mips32_r7;
+   layout->o_arg5   = OFFSET_mips32_r8;
+   layout->o_arg6   = OFFSET_mips32_r9;
+   layout->uu_arg7  = -1; /* impossible value */
    layout->uu_arg8  = -1; /* impossible value */
 
 #elif defined(VGP_mips64_linux)
@@ -2094,8 +2144,9 @@ void VG_(post_syscall) (ThreadId tid)
    sysno = sci->args.sysno;
 
    getSyscallStatusFromGuestState( &test_status, &tst->arch.vex );
-   if (!(sci->flags & SfNoWriteResult))
+   if (!(sci->flags & SfNoWriteResult)) {
       vg_assert(eq_SyscallStatus( sysno, &sci->status, &test_status ));
+   }
    /* Failure of the above assertion on Darwin can indicate a problem
       in the syscall wrappers that pre-fail or pre-succeed the
       syscall, by calling SET_STATUS_Success or SET_STATUS_Failure,
@@ -2429,7 +2480,8 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
       vg_assert(p[0] == 0x0A);
    }
 
-#elif defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
+#elif defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
+   || defined(VGP_nanomips_linux)
 
    arch->vex.guest_PC -= 4;             // sizeof(mips instr)
 

@@ -479,6 +479,45 @@ static UInt local_sys_getpid ( void )
    return v0;
 }
 
+#elif defined(VGP_nanomips_linux)
+
+__attribute__((noinline))
+static UInt local_sys_write_stderr ( const HChar* buf, Int n )
+{
+   register RegWord t4 asm("2");
+   register RegWord a0 asm("4");
+   register RegWord a1 asm("5");
+   register RegWord a2 asm("6");
+   t4 = __NR_write;
+   a2 = n;
+   a1 = (RegWord)(Addr)buf;
+   a0 = 2; // stderr
+   __asm__ volatile (
+      "syscall[32] \n\t"
+     : "+d" (t4), "+d" (a0), "+d" (a1), "+d" (a2)
+     :
+     : "$at", "$t5", "$a3", "$a4", "$a5", "$a6", "$a7", "$t0", "$t1", "$t2",
+       "$t3", "$t8", "$t9"
+   );
+   return a0;
+}
+
+__attribute__((noinline))
+static UInt local_sys_getpid ( void )
+{
+   register RegWord t4 asm("2");
+   register RegWord a0 asm("4");
+   t4 = __NR_getpid;
+   __asm__ volatile (
+      "syscall[32] \n\t"
+     : "+d" (t4), "=d" (a0)
+     :
+     : "$at", "$t5", "$a1", "$a2", "$a3", "$a4", "$a5", "$a6", "$a7", "$t0",
+       "$t1", "$t2", "$t3", "$t8", "$t9"
+   );
+   return a0;
+}
+
 #elif defined(VGP_x86_solaris)
 static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 {

@@ -84,12 +84,14 @@ extern SysRes VG_(mk_SysRes_mips32_linux)( UWord v0, UWord v1,
                                            UWord a3 );
 extern SysRes VG_(mk_SysRes_mips64_linux)( ULong v0, ULong v1,
                                            ULong a3 );
+extern SysRes VG_(mk_SysRes_nanomips_linux)( UWord a0, UWord a1 );
 extern SysRes VG_(mk_SysRes_x86_solaris) ( Bool isErr, UInt val, UInt val2 );
 extern SysRes VG_(mk_SysRes_amd64_solaris) ( Bool isErr, ULong val, ULong val2 );
 extern SysRes VG_(mk_SysRes_Error)       ( UWord val );
 extern SysRes VG_(mk_SysRes_Success)     ( UWord val );
 
-#if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
+#if defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
+    || defined(VGP_nanomips_linux)
 /* On Linux/MIPS, VG_(mk_SysRes_Success) sets the second result word
    to zero.  Here is a version that allows setting both values. */
 extern SysRes VG_(mk_SysRes_SuccessEx)   ( UWord val, UWord valEx );

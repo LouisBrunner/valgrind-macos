@@ -248,7 +248,7 @@ void ML_(ppDiCfSI) ( const XArray* /* of CfiExpr */ exprs,
    SHOW_HOW(si_m->f6_how, si_m->f6_off);
    VG_(printf)(" F7=");
    SHOW_HOW(si_m->f7_how, si_m->f7_off);
-#  elif defined(VGA_mips32) || defined(VGA_mips64)
+#  elif defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_nanomips)
    VG_(printf)(" SP=");
    SHOW_HOW(si_m->sp_how, si_m->sp_off);
    VG_(printf)(" FP=");

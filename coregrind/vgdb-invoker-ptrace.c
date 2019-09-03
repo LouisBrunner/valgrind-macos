@@ -864,7 +864,7 @@ Bool invoker_invoke_gdbserver (pid_t pid)
    sp = user_mod.regs.gpr[1];
 #elif defined(VGA_s390x)
    sp = user_mod.regs.gprs[15];
-#elif defined(VGA_mips32)
+#elif defined(VGA_mips32) || defined(VGA_nanomips)
    long long *p = (long long *)user_mod.regs;
    sp = p[29];
 #elif defined(VGA_mips64)
@@ -944,7 +944,7 @@ Bool invoker_invoke_gdbserver (pid_t pid)
 
 #elif defined(VGA_s390x)
       XERROR(0, "(fn32) s390x has no 32bits implementation");
-#elif defined(VGA_mips32)
+#elif defined(VGA_mips32) || defined(VGA_nanomips)
       /* put check arg in register 4 */
       p[4] = check;
       /* put NULL return address in ra */
@@ -1054,7 +1054,7 @@ Bool invoker_invoke_gdbserver (pid_t pid)
       user_mod.regs.gprs[15] = sp;
       /* set program counter */
       user_mod.regs.psw.addr = shared64->invoke_gdbserver;
-#elif defined(VGA_mips32)
+#elif defined(VGA_mips32)  || defined(VGA_nanomips)
       assert(0); // cannot vgdb a 64 bits executable with a 32 bits exe
 #elif defined(VGA_mips64)
       /* put check arg in register 4 */

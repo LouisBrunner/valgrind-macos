@@ -769,7 +769,7 @@ void log_bytes ( const HChar* bytes, SizeT nbytes )
 static Bool translations_allowable_from_seg ( NSegment const* seg, Addr addr )
 {
 #  if defined(VGA_x86) || defined(VGA_s390x) || defined(VGA_mips32)     \
-     || defined(VGA_mips64)
+     || defined(VGA_mips64) || defined(VGA_nanomips)
    Bool allowR = True;
 #  else
    Bool allowR = False;
@@ -1342,7 +1342,7 @@ Bool mk_preamble__set_NRADDR_to_zero ( void* closureV, IRSB* bb )
       )
    );
    // t9 needs to be set to point to the start of the redirected function.
-#  if defined(VGP_mips32_linux)
+#  if defined(VGP_mips32_linux) || defined(VGP_nanomips_linux)
    VgCallbackClosure* closure = (VgCallbackClosure*)closureV;
    Int offB_GPR25 = offsetof(VexGuestMIPS32State, guest_r25);
    addStmtToIRSB(bb, IRStmt_Put(offB_GPR25, mkU32(closure->readdr)));
@@ -1403,7 +1403,7 @@ Bool mk_preamble__set_NRADDR_to_nraddr ( void* closureV, IRSB* bb )
       )
    );
    // t9 needs to be set to point to the start of the redirected function.
-#  if defined(VGP_mips32_linux)
+#  if defined(VGP_mips32_linux) || defined(VGP_nanomips_linux)
    Int offB_GPR25 = offsetof(VexGuestMIPS32State, guest_r25);
    addStmtToIRSB(bb, IRStmt_Put(offB_GPR25, mkU32(closure->readdr)));
 #  endif
@@ -1721,6 +1721,11 @@ Bool VG_(translate) ( ThreadId tid,
          = SimHintiS(SimHint_fallback_llsc, VG_(clo_sim_hints));
    }
 #  endif
+
+#if defined(VGP_nanomips_linux)
+      vex_abiinfo.guest__use_fallback_LLSC
+         = SimHintiS(SimHint_fallback_llsc, VG_(clo_sim_hints));
+#endif
 
 #  if defined(VGP_arm64_linux)
    vex_abiinfo.guest__use_fallback_LLSC

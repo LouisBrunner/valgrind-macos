@@ -97,7 +97,7 @@
 # define FCS_h3 56
 
 #elif defined(VGA_x86) || defined(VGA_arm) || defined(VGA_ppc32) \
-      || defined(VGA_mips32)
+      || defined(VGA_mips32) || defined(VGP_nanomips_linux)
   // And all other 32-bit hosts
 # define VG_FAST_CACHE_SET_BITS 5
 # define FCS_g0 0

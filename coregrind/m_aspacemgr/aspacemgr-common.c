@@ -148,7 +148,7 @@ SysRes VG_(am_do_mmap_NO_NOTIFY)( Addr start, SizeT length, UInt prot,
    res = VG_(do_syscall6)(__NR3264_mmap, (UWord)start, length, 
                          prot, flags, fd, offset);
 #  elif defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
-        || defined(VGP_arm_linux)
+        || defined(VGP_arm_linux) || defined(VGP_nanomips_linux)
    /* mmap2 uses 4096 chunks even if actual page size is bigger. */
    aspacem_assert((offset % 4096) == 0);
    res = VG_(do_syscall6)(__NR_mmap2, (UWord)start, length,
@@ -251,7 +251,7 @@ SysRes ML_(am_do_relocate_nooverlap_mapping_NO_NOTIFY)(
 
 SysRes ML_(am_open) ( const HChar* pathname, Int flags, Int mode )
 {
-#  if defined(VGP_arm64_linux)
+#  if defined(VGP_arm64_linux) || defined(VGP_nanomips_linux)
    /* ARM64 wants to use __NR_openat rather than __NR_open. */
    SysRes res = VG_(do_syscall4)(__NR_openat,
                                  VKI_AT_FDCWD, (UWord)pathname, flags, mode);
@@ -280,7 +280,7 @@ void ML_(am_close) ( Int fd )
 Int ML_(am_readlink)(const HChar* path, HChar* buf, UInt bufsiz)
 {
    SysRes res;
-#  if defined(VGP_arm64_linux)
+#  if defined(VGP_arm64_linux) || defined(VGP_nanomips_linux)
    res = VG_(do_syscall4)(__NR_readlinkat, VKI_AT_FDCWD,
                                            (UWord)path, (UWord)buf, bufsiz);
 #  elif defined(VGO_linux) || defined(VGO_darwin)
@@ -297,7 +297,11 @@ Int ML_(am_readlink)(const HChar* path, HChar* buf, UInt bufsiz)
 Int ML_(am_fcntl) ( Int fd, Int cmd, Addr arg )
 {
 #  if defined(VGO_linux) || defined(VGO_solaris)
+#  if defined(VGP_nanomips_linux)
+   SysRes res = VG_(do_syscall3)(__NR_fcntl64, fd, cmd, arg);
+#  else
    SysRes res = VG_(do_syscall3)(__NR_fcntl, fd, cmd, arg);
+#  endif
 #  elif defined(VGO_darwin)
    SysRes res = VG_(do_syscall3)(__NR_fcntl_nocancel, fd, cmd, arg);
 #  else

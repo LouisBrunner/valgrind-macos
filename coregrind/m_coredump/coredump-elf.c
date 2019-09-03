@@ -97,7 +97,11 @@ static void fill_ehdr(ESZ(Ehdr) *ehdr, Int num_phdrs)
    ehdr->e_entry = 0;
    ehdr->e_phoff = sizeof(ESZ(Ehdr));
    ehdr->e_shoff = 0;
+#if defined(VGP_nanomips_linux)
+   ehdr->e_flags = VKI_EF_NANOMIPS_ABI_P32;
+#else
    ehdr->e_flags = 0;
+#endif
    ehdr->e_ehsize = sizeof(ESZ(Ehdr));
    ehdr->e_phentsize = sizeof(ESZ(Phdr));
    ehdr->e_phnum = num_phdrs;
@@ -224,7 +228,8 @@ static void fill_prstatus(const ThreadState *tst,
 			  /*OUT*/struct vki_elf_prstatus *prs, 
 			  const vki_siginfo_t *si)
 {
-#if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
+#if defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
+    || defined(VGP_nanomips_linux)
    vki_elf_greg_t *regs;
 #else
    struct vki_user_regs_struct *regs;
@@ -247,7 +252,8 @@ static void fill_prstatus(const ThreadState *tst,
 #if defined(VGP_s390x_linux)
    /* prs->pr_reg has struct type. Need to take address. */
    regs = (struct vki_user_regs_struct *)&(prs->pr_reg);
-#elif defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
+#elif defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
+   || defined(VGP_nanomips_linux)
    regs = (vki_elf_greg_t *)prs->pr_reg;
 #else
    regs = (struct vki_user_regs_struct *)prs->pr_reg;
@@ -446,6 +452,15 @@ static void fill_prstatus(const ThreadState *tst,
    regs[VKI_MIPS64_EF_HI]         = arch->vex.guest_HI;
    regs[VKI_MIPS64_EF_CP0_STATUS] = arch->vex.guest_CP0_status;
    regs[VKI_MIPS64_EF_CP0_EPC]    = arch->vex.guest_PC;
+#elif defined(VGP_nanomips_linux)
+#  define DO(n)  regs[VKI_MIPS32_EF_R##n] = arch->vex.guest_r##n
+   DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);  DO(8);
+   DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15); DO(16);
+   DO(17); DO(18); DO(19); DO(20); DO(21); DO(22); DO(23); DO(24);
+   DO(25); DO(28); DO(29); DO(30); DO(31);
+   regs[VKI_MIPS32_EF_CP0_STATUS] = arch->vex.guest_CP0_status;
+   regs[VKI_MIPS32_EF_CP0_EPC]    = arch->vex.guest_PC;
+#  undef DO
 #else
 #  error Unknown ELF platform
 #endif
@@ -570,6 +585,8 @@ static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
    DO(16); DO(17); DO(18); DO(19); DO(20); DO(21); DO(22); DO(23);
    DO(24); DO(25); DO(26); DO(27); DO(28); DO(29); DO(30); DO(31);
 #  undef DO
+#elif defined(VGP_nanomips_linux)
+
 #else
 #  error Unknown ELF platform
 #endif
@@ -620,7 +637,8 @@ void dump_one_thread(struct note **notelist, const vki_siginfo_t *si, ThreadId t
 #     if !defined(VGPV_arm_linux_android) \
          && !defined(VGPV_x86_linux_android) \
          && !defined(VGPV_mips32_linux_android) \
-         && !defined(VGPV_arm64_linux_android)
+         && !defined(VGPV_arm64_linux_android) \
+         && !defined(VGP_nanomips_linux)
       add_note(notelist, "CORE", NT_FPREGSET, &fpu, sizeof(fpu));
 #     endif
 

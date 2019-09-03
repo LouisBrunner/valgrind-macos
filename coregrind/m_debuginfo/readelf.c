@@ -1549,7 +1549,7 @@ static HChar* readlink_path (const HChar *path)
 
    while (tries > 0) {
       SysRes res;
-#if defined(VGP_arm64_linux)
+#if defined(VGP_arm64_linux) || defined(VGP_nanomips_linux)
       res = VG_(do_syscall4)(__NR_readlinkat, VKI_AT_FDCWD,
                                               (UWord)path, (UWord)buf, bufsiz);
 #elif defined(VGO_linux) || defined(VGO_darwin)
@@ -2390,7 +2390,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 #     if defined(VGP_x86_linux) || defined(VGP_amd64_linux) \
          || defined(VGP_arm_linux) || defined (VGP_s390x_linux) \
          || defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
-         || defined(VGP_arm64_linux) \
+         || defined(VGP_arm64_linux) || defined(VGP_nanomips_linux) \
          || defined(VGP_x86_solaris) || defined(VGP_amd64_solaris)
       /* Accept .plt where mapped as rx (code) */
       if (0 == VG_(strcmp)(name, ".plt")) {

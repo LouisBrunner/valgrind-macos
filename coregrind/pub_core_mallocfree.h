@@ -65,6 +65,7 @@ typedef Int ArenaId;
       defined(VGP_arm_linux)    || \
       defined(VGP_mips32_linux) || \
       (defined(VGP_mips64_linux) && defined(VGABI_N32)) || \
+      defined(VGP_nanomips_linux) || \
       defined(VGP_x86_solaris)
 #  define VG_MIN_MALLOC_SZB        8
 // Nb: We always use 16 bytes for Darwin, even on 32-bits, so it can be used

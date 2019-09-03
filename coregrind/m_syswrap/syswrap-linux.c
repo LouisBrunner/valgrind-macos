@@ -299,6 +299,16 @@ static void run_a_thread_NORETURN ( Word tidW )
          : "r" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode)
          : "cc", "memory" , "v0", "a0"
       );
+#elif defined(VGP_nanomips_linux)
+      asm volatile (
+         "sw   %1, %0   \n\t"    /* set tst->status = VgTs_Empty */
+         "li   $t4, %2  \n\t"    /* set t4 = __NR_exit */
+         "lw   $a0, %3  \n\t"    /* set a0 = tst->os_state.exitcode */
+         "syscall[32]   \n\t"    /* exit(tst->os_state.exitcode) */
+         : "=m" (tst->status)
+         : "r" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode)
+         : "memory" , "$t4", "$a0"
+      );
 #else
 # error Unknown platform
 #endif
@@ -516,6 +526,13 @@ static SysRes clone_new_thread ( Word (*fn)(void *),
    /* High half word64 is syscall return value.  Low half is
       the entire CR, from which we need to extract CR0.SO. */ 
    res = VG_ (mk_SysRes_mips32_linux) (/*val */ ret, 0, /*errflag */ 0);
+#elif defined(VGP_nanomips_linux)
+   UInt ret = 0;
+   ctst->arch.vex.guest_r2 = 0;
+   ret = do_syscall_clone_nanomips_linux
+      (ML_(start_thread_NORETURN), stack, flags, ctst,
+       child_tidptr, parent_tidptr, NULL);
+   res = VG_ (mk_SysRes_nanomips_linux) (ret, 0);
 #else
 # error Unknown platform
 #endif
@@ -575,7 +592,7 @@ static SysRes setup_child_tls (ThreadId ctid, Addr tlsaddr)
 #elif defined(VGP_mips64_linux)
    ctst->arch.vex.guest_ULR = tlsaddr;
    ctst->arch.vex.guest_r27 = tlsaddr;
-#elif defined(VGP_mips32_linux)
+#elif defined(VGP_mips32_linux) || defined(VGP_nanomips_linux)
    ctst->arch.vex.guest_ULR = tlsaddr;
    ctst->arch.vex.guest_r27 = tlsaddr;
 #else
@@ -735,7 +752,8 @@ static SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
     || defined(VGP_ppc32_linux) \
     || defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)	\
     || defined(VGP_arm_linux) || defined(VGP_mips32_linux) \
-    || defined(VGP_mips64_linux) || defined(VGP_arm64_linux)
+    || defined(VGP_mips64_linux) || defined(VGP_arm64_linux) \
+    || defined(VGP_nanomips_linux)
    res = VG_(do_syscall5)( __NR_clone, flags, 
                            (UWord)NULL, (UWord)parent_tidptr, 
                            (UWord)NULL, (UWord)child_tidptr );
@@ -802,7 +820,8 @@ PRE(sys_clone)
     || defined(VGP_ppc32_linux) \
     || defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)	\
     || defined(VGP_arm_linux) || defined(VGP_mips32_linux) \
-    || defined(VGP_mips64_linux) || defined(VGP_arm64_linux)
+    || defined(VGP_mips64_linux) || defined(VGP_arm64_linux) \
+    || defined(VGP_nanomips_linux)
 #define ARG_CHILD_TIDPTR ARG5
 #define PRA_CHILD_TIDPTR PRA5
 #define ARG_TLS          ARG4
@@ -3754,7 +3773,8 @@ POST(sys_sigpending)
 // (XXX: so how is it that PRE(sys_sigpending) above doesn't need
 // conditional compilation like this?)
 #if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
-    || defined(VGP_arm_linux) || defined(VGP_mips32_linux)
+    || defined(VGP_arm_linux) || defined(VGP_mips32_linux) \
+    || defined(VGP_nanomips_linux)
 PRE(sys_sigprocmask)
 {
    vki_old_sigset_t* set;
@@ -5322,6 +5342,7 @@ PRE(sys_utimensat)
    }
 }
 
+#if !defined(VGP_nanomips_linux)
 PRE(sys_newfstatat)
 {
    FUSE_COMPATIBLE_MAY_BLOCK();
@@ -5337,6 +5358,7 @@ POST(sys_newfstatat)
 {
    POST_MEM_WRITE( ARG3, sizeof(struct vki_stat) );
 }
+#endif
 
 PRE(sys_unlinkat)
 {
@@ -6153,7 +6175,7 @@ POST(sys_lookup_dcookie)
 #endif
 
 #if defined(VGP_amd64_linux) || defined(VGP_s390x_linux)        \
-      || defined(VGP_arm64_linux)
+      || defined(VGP_arm64_linux) || defined(VGP_nanomips_linux)
 PRE(sys_lookup_dcookie)
 {
    *flags |= SfMayBlock;

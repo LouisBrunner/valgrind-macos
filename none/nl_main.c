@@ -41,7 +41,7 @@ IRSB* nl_instrument ( VgCallbackClosure* closure,
                       const VexArchInfo* archinfo_host,
                       IRType gWordTy, IRType hWordTy )
 {
-    return bb;
+   return bb;
 }
 
 static void nl_fini(Int exitcode)

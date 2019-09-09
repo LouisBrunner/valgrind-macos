@@ -16,6 +16,18 @@ support for X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * DHAT:
 
+  - DHAT has been extended, with two new modes of operation. The new
+    --mode=copy flag triggers copy profiling, which records calls to memcpy,
+    strcpy, and similar functions. The new --mode=ad-hoc flag triggers ad hoc
+    profiling, which records calls to the DHAT_AD_HOC_EVENT client request in
+    the new dhat/dhat.h file. This is useful for learning more about hot code
+    paths. See the user manual for more information about the new modes.
+
+  - Because of these changes, DHAT's file format has changed. DHAT output
+    files produced with earlier versions of DHAT will not work with this
+    version of DHAT's viewer, and DHAT output files produced with this version
+    of DHAT will not work with earlier versions of DHAT's viewer.
+
 * Cachegrind:
 
 * Callgrind:

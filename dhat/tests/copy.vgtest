@@ -1,0 +1,4 @@
+prog: copy
+vgopts: --mode=copy --dhat-out-file=dhat.out
+stderr_filter: filter_copy
+cleanup: rm dhat.out

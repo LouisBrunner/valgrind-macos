@@ -273,8 +273,10 @@
 /dhat/tests/*.stdout.out
 /dhat/tests/.deps
 /dhat/tests/acc
+/dhat/tests/ad-hoc
 /dhat/tests/basic
 /dhat/tests/big
+/dhat/tests/copy
 /dhat/tests/empty
 /dhat/tests/sig
 /dhat/tests/single

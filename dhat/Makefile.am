@@ -1,12 +1,13 @@
 include $(top_srcdir)/Makefile.tool.am
 
-#SUBDIRS += perf
-
 EXTRA_DIST = docs/dh-manual.xml dh_view.html dh_view.css dh_view.js
 
 #----------------------------------------------------------------------------
 # Headers, etc
 #----------------------------------------------------------------------------
+
+pkginclude_HEADERS = \
+	dhat.h
 
 # Ensure the viewer components get copied into the install tree.
 dhatdir = $(pkglibexecdir)
@@ -21,10 +22,10 @@ if VGCONF_HAVE_PLATFORM_SEC
 noinst_PROGRAMS += dhat-@VGCONF_ARCH_SEC@-@VGCONF_OS@
 endif
 
-EXP_DHAT_SOURCES_COMMON = dh_main.c
+DHAT_SOURCES_COMMON = dh_main.c
 
 dhat_@VGCONF_ARCH_PRI@_@VGCONF_OS@_SOURCES      = \
-	$(EXP_DHAT_SOURCES_COMMON)
+	$(DHAT_SOURCES_COMMON)
 dhat_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CPPFLAGS     = \
 	$(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 dhat_@VGCONF_ARCH_PRI@_@VGCONF_OS@_CFLAGS       = $(LTO_CFLAGS) \
@@ -45,7 +46,7 @@ dhat_@VGCONF_ARCH_PRI@_@VGCONF_OS@_LINK = \
 
 if VGCONF_HAVE_PLATFORM_SEC
 dhat_@VGCONF_ARCH_SEC@_@VGCONF_OS@_SOURCES      = \
-	$(EXP_DHAT_SOURCES_COMMON)
+	$(DHAT_SOURCES_COMMON)
 dhat_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CPPFLAGS     = \
 	$(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
 dhat_@VGCONF_ARCH_SEC@_@VGCONF_OS@_CFLAGS       = $(LTO_CFLAGS) \
@@ -78,11 +79,16 @@ if VGCONF_OS_IS_DARWIN
 noinst_DSYMS = $(noinst_PROGRAMS)
 endif
 
-vgpreload_dhat_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_SOURCES      = 
+# dh_replace_strmem.c runs on the simulated CPU, and is built with
+# AM_CFLAGS_PSO_* (see $(top_srcdir)/Makefile.all.am).
+VGPRELOAD_DHAT_SOURCES_COMMON = dh_replace_strmem.c
+
+vgpreload_dhat_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_SOURCES      = \
+	$(VGPRELOAD_DHAT_SOURCES_COMMON)
 vgpreload_dhat_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_CPPFLAGS     = \
 	$(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 vgpreload_dhat_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_CFLAGS       = \
-	$(AM_CFLAGS_PSO_@VGCONF_PLATFORM_PRI_CAPS@)
+	$(AM_CFLAGS_PSO_@VGCONF_PLATFORM_PRI_CAPS@) -O2
 vgpreload_dhat_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_DEPENDENCIES = \
 	$(LIBREPLACEMALLOC_@VGCONF_PLATFORM_PRI_CAPS@)
 vgpreload_dhat_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_LDFLAGS      = \
@@ -90,11 +96,12 @@ vgpreload_dhat_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_LDFLAGS      = \
 	$(LIBREPLACEMALLOC_LDFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 
 if VGCONF_HAVE_PLATFORM_SEC
-vgpreload_dhat_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_SOURCES      = 
+vgpreload_dhat_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_SOURCES      = \
+	$(VGPRELOAD_DHAT_SOURCES_COMMON)
 vgpreload_dhat_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CPPFLAGS     = \
 	$(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
 vgpreload_dhat_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CFLAGS       = \
-	$(AM_CFLAGS_PSO_@VGCONF_PLATFORM_SEC_CAPS@)
+	$(AM_CFLAGS_PSO_@VGCONF_PLATFORM_SEC_CAPS@) -O2
 vgpreload_dhat_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_DEPENDENCIES = \
 	$(LIBREPLACEMALLOC_@VGCONF_PLATFORM_SEC_CAPS@)
 vgpreload_dhat_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_LDFLAGS      = \

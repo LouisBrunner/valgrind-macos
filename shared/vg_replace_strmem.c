@@ -35,12 +35,13 @@
 #include "pub_tool_clreq.h"
 
 /* ---------------------------------------------------------------------
-   We have our own versions of these functions for two reasons:
+   We have our own versions of these functions for multiple reasons:
    (a) it allows us to do overlap checking
-   (b) some of the normal versions are hyper-optimised, which fools
+   (b) it allows us to do copy tracking
+   (c) some of the normal versions are hyper-optimised, which fools
        Memcheck and cause spurious value warnings.  Our versions are
        simpler.
-   (c) the glibc SSE-variants can read past the end of the input data
+   (d) the glibc SSE-variants can read past the end of the input data
        ranges. This can cause false-positive Memcheck / Helgrind / DRD
        reports.
 
@@ -173,6 +174,15 @@ static inline void my_exit ( int x )
 #ifndef RECORD_OVERLAP_ERROR
 #define RECORD_OVERLAP_ERROR(s, src, dst, len) do { } while (0)
 #endif
+
+// Used for tools that record bulk copies: memcpy, strcpy, etc.
+#ifndef RECORD_COPY
+#define RECORD_COPY(len) do { } while (0)
+#define FOR_COPY(x)
+#else
+#define FOR_COPY(x) x
+#endif
+
 #ifndef VALGRIND_CHECK_VALUE_IS_DEFINED
 #define VALGRIND_CHECK_VALUE_IS_DEFINED(__lvalue) 1
 #endif
@@ -496,12 +506,14 @@ static inline void my_exit ( int x )
       while (*src) *dst++ = *src++; \
       *dst = 0; \
       \
-      /* This checks for overlap after copying, unavoidable without */ \
+      /* This happens after copying, unavoidable without */ \
       /* pre-counting length... should be ok */ \
+      SizeT srclen = (Addr)src-(Addr)src_orig+1; \
+      RECORD_COPY(srclen); \
       if (is_overlap(dst_orig,  \
                      src_orig,  \
                      (Addr)dst-(Addr)dst_orig+1, \
-                     (Addr)src-(Addr)src_orig+1)) \
+                     srclen)) \
          RECORD_OVERLAP_ERROR("strcpy", dst_orig, src_orig, 0); \
       \
       return dst_orig; \
@@ -539,7 +551,9 @@ static inline void my_exit ( int x )
       while (m   < n && *src) { m++; *dst++ = *src++; } \
       /* Check for overlap after copying; all n bytes of dst are relevant, */ \
       /* but only m+1 bytes of src if terminator was found */ \
-      if (is_overlap(dst_orig, src_orig, n, (m < n) ? m+1 : n)) \
+      SizeT srclen = (m < n) ? m+1 : n; \
+      RECORD_COPY(srclen); \
+      if (is_overlap(dst_orig, src_orig, n, srclen)) \
          RECORD_OVERLAP_ERROR("strncpy", dst, src, n); \
       while (m++ < n) *dst++ = 0;         /* must pad remainder with nulls */ \
       \
@@ -585,7 +599,9 @@ static inline void my_exit ( int x )
       /* m non-nul bytes have now been copied, and m <= n-1. */ \
       /* Check for overlap after copying; all n bytes of dst are relevant, */ \
       /* but only m+1 bytes of src if terminator was found */ \
-      if (is_overlap(dst_orig, src_orig, n, (m < n) ? m+1 : n)) \
+      SizeT srclen = (m < n) ? m+1 : n; \
+      RECORD_COPY(srclen); \
+      if (is_overlap(dst_orig, src_orig, n, srclen)) \
           RECORD_OVERLAP_ERROR("strlcpy", dst, src, n); \
       /* Nul-terminate dst. */ \
       if (n > 0) *dst = 0; \
@@ -943,6 +959,7 @@ static inline void my_exit ( int x )
    void* VG_REPLACE_FUNCTION_EZZ(becTag,soname,fnname) \
             ( void *dst, const void *src, SizeT len ) \
    { \
+      RECORD_COPY(len); \
       if (do_ol_check && is_overlap(dst, src, len, len)) \
          RECORD_OVERLAP_ERROR("memcpy", dst, src, len); \
       \
@@ -1034,6 +1051,7 @@ static inline void my_exit ( int x )
  MEMCPY(VG_Z_LIBC_SONAME,  memcpy) /* fallback case */
  MEMCPY(VG_Z_LIBC_SONAME,    __GI_memcpy)
  MEMCPY(VG_Z_LIBC_SONAME,    __memcpy_sse2)
+ MEMCPY(VG_Z_LIBC_SONAME, __memcpy_avx_unaligned_erms)
  MEMCPY(VG_Z_LD_SO_1,      memcpy) /* ld.so.1 */
  MEMCPY(VG_Z_LD64_SO_1,    memcpy) /* ld64.so.1 */
  /* icc9 blats these around all over the place.  Not only in the main
@@ -1142,10 +1160,12 @@ static inline void my_exit ( int x )
       \
       /* This checks for overlap after copying, unavoidable without */ \
       /* pre-counting length... should be ok */ \
+      SizeT srclen = (Addr)src-(Addr)src_orig+1; \
+      RECORD_COPY(srclen); \
       if (is_overlap(dst_orig,  \
                      src_orig,  \
                      (Addr)dst-(Addr)dst_orig+1,  \
-                     (Addr)src-(Addr)src_orig+1)) \
+                     srclen)) \
          RECORD_OVERLAP_ERROR("stpcpy", dst_orig, src_orig, 0); \
       \
       return dst; \
@@ -1185,7 +1205,9 @@ static inline void my_exit ( int x )
       while (m   < n && *src) { m++; *dst++ = *src++; } \
       /* Check for overlap after copying; all n bytes of dst are relevant, */ \
       /* but only m+1 bytes of src if terminator was found */ \
-      if (is_overlap(dst_str, src_orig, n, (m < n) ? m+1 : n)) \
+      SizeT srclen = (m < n) ? m+1 : n; \
+      RECORD_COPY(srclen); \
+      if (is_overlap(dst_str, src_orig, n, srclen)) \
          RECORD_OVERLAP_ERROR("stpncpy", dst, src, n); \
       dst_str = dst; \
       while (m++ < n) *dst++ = 0;         /* must pad remainder with nulls */ \
@@ -1199,9 +1221,6 @@ static inline void my_exit ( int x )
 
 
 /*---------------------- memset ----------------------*/
-
-/* Why are we bothering to intercept this?  It seems entirely
-   pointless. */
 
 #define MEMSET(soname, fnname) \
    void* VG_REPLACE_FUNCTION_EZZ(20210,soname,fnname) \
@@ -1301,6 +1320,7 @@ static inline void my_exit ( int x )
    void VG_REPLACE_FUNCTION_EZU(20230,soname,fnname) \
             (const void *srcV, void *dstV, SizeT n) \
    { \
+      RECORD_COPY(n); \
       SizeT i; \
       HChar* dst = dstV; \
       const HChar* src = srcV; \
@@ -1338,6 +1358,7 @@ static inline void my_exit ( int x )
    void* VG_REPLACE_FUNCTION_EZU(20240,soname,fnname) \
             (void *dstV, const void *srcV, SizeT n, SizeT destlen) \
    { \
+      RECORD_COPY(n); \
       SizeT i; \
       HChar* dst = dstV;        \
       const HChar* src = srcV; \
@@ -1438,12 +1459,14 @@ static inline void my_exit ( int x )
    char* VG_REPLACE_FUNCTION_EZU(20270,soname,fnname) \
             (char* dst, const char* src, SizeT len) \
    { \
+      FOR_COPY(const HChar* src_orig = src); \
       HChar* ret = dst; \
       if (! len) \
          goto badness; \
       while ((*dst++ = *src++) != '\0') \
          if (--len == 0) \
             goto badness; \
+      RECORD_COPY((Addr)src-(Addr)src_orig); \
       return ret; \
      badness: \
       VALGRIND_PRINTF_BACKTRACE( \
@@ -1474,11 +1497,13 @@ static inline void my_exit ( int x )
    char* VG_REPLACE_FUNCTION_EZU(20280,soname,fnname) \
             (char* dst, const char* src, SizeT len) \
    { \
+      FOR_COPY(const HChar* src_orig = src); \
       if (! len) \
          goto badness; \
       while ((*dst++ = *src++) != '\0') \
          if (--len == 0) \
             goto badness; \
+      RECORD_COPY((Addr)src-(Addr)src_orig); \
       return dst - 1; \
      badness: \
       VALGRIND_PRINTF_BACKTRACE( \
@@ -1508,6 +1533,7 @@ static inline void my_exit ( int x )
    void* VG_REPLACE_FUNCTION_EZU(20290,soname,fnname) \
             ( void *dst, const void *src, SizeT len ) \
    { \
+      RECORD_COPY(len); \
       SizeT len_saved = len; \
       \
       if (len == 0) \
@@ -1557,15 +1583,13 @@ static inline void my_exit ( int x )
    { \
       register HChar *d; \
       register const HChar *s; \
-      \
-      if (dstlen < len) goto badness; \
-      \
+      if (dstlen < len) \
+         goto badness; \
+      RECORD_COPY(len); \
       if (len == 0) \
          return dst; \
-      \
       if (is_overlap(dst, src, len, len)) \
          RECORD_OVERLAP_ERROR("memcpy_chk", dst, src, len); \
-      \
       if ( dst > src ) { \
          d = (HChar *)dst + len - 1; \
          s = (const HChar *)src + len - 1; \
@@ -1977,11 +2001,14 @@ static inline void my_exit ( int x )
       \
       /* This checks for overlap after copying, unavoidable without */ \
       /* pre-counting length... should be ok */ \
+      /* +4 because sizeof(wchar_t) == 4 */ \
+      SizeT srclen = (Addr)src-(Addr)src_orig+4; \
+      RECORD_COPY(srclen); \
       if (is_overlap(dst_orig,  \
                      src_orig,  \
                      /* +4 because sizeof(wchar_t) == 4 */ \
                      (Addr)dst-(Addr)dst_orig+4, \
-                     (Addr)src-(Addr)src_orig+4)) \
+                     srclen)) \
          RECORD_OVERLAP_ERROR("wcscpy", dst_orig, src_orig, 0); \
       \
       return dst_orig; \

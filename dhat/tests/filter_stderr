@@ -21,8 +21,7 @@ sed "/^  file:\/\/\// d" |
 sed "/^in a web browser/ d" |
 sed "/^  \// d" |                # This is pretty feeble, but I don't see
                                  # how to do better
-sed "/^Scroll to the end/ d" |
-sed "/^explanation of some/ d" |
+sed "/^The text at the bottom/ d" |
 
 # and remove any blank lines in the output
 sed "/^[[:space:]]*$/d"

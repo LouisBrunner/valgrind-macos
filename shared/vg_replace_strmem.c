@@ -710,6 +710,8 @@ static inline void my_exit ( int x )
  STRNCMP(VG_Z_LIBC_SONAME, __GI_strncmp)
  STRNCMP(VG_Z_LIBC_SONAME, __strncmp_sse2)
  STRNCMP(VG_Z_LIBC_SONAME, __strncmp_sse42)
+ STRNCMP(VG_Z_LD_LINUX_SO_2, strncmp)
+ STRNCMP(VG_Z_LD_LINUX_X86_64_SO_2, strncmp)
 
 #elif defined(VGO_freebsd)
  STRNCMP(VG_Z_LIBC_SONAME, strncmp)

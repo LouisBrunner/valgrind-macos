@@ -1694,7 +1694,7 @@ void VG_(clear_syscallInfo) ( ThreadId tid )
 Bool VG_(is_in_syscall) ( ThreadId tid )
 {
    vg_assert(tid >= 0 && tid < VG_N_THREADS);
-   return (syscallInfo[tid].status.what != SsIdle);
+   return (syscallInfo && syscallInfo[tid].status.what != SsIdle);
 }
 
 Word VG_(is_in_syscall_no) (ThreadId tid )

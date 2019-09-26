@@ -811,7 +811,11 @@ asm (
    "do_syscall_WRK:                        \n\t"
    "   move $2, $11                        \n\t"
    "   syscall                             \n\t"
+#  if defined(_ABI64)
    "   ld $12, 0($29)                      \n\t"
+#  elif defined(_ABIN32)
+   "   lw $12, 0($29)                      \n\t"
+#  endif
    "   sd $3, 0($12)                       \n\t" /* store v1 in V1_A3_val */
    "   jr $31                              \n\t"
    "   sd $7, 8($12)                       \n\t" /* store a3 in V1_A3_val */

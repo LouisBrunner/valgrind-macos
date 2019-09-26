@@ -694,6 +694,14 @@
 #define __NR_execveat                (__NR_Linux + 320)
 #define __NR_userfaultfd             (__NR_Linux + 321)
 #define __NR_membarrier              (__NR_Linux + 322)
+#define __NR_mlock2                  (__NR_Linux + 323)
+#define __NR_copy_file_range         (__NR_Linux + 324)
+#define __NR_preadv2                 (__NR_Linux + 325)
+#define __NR_pwritev2                (__NR_Linux + 326)
+#define __NR_pkey_mprotect           (__NR_Linux + 327)
+#define __NR_pkey_alloc              (__NR_Linux + 328)
+#define __NR_pkey_free               (__NR_Linux + 329)
+#define __NR_statx                   (__NR_Linux + 330)
 
 #else
 #error unknown mips64 abi

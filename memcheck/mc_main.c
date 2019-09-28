@@ -6803,10 +6803,6 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
          Int unaddressable = 0;
          for (i = 0; i < szB; i++) {
             Int bnr = i % 8;
-            res[bnr] = mc_get_or_set_vbits_for_client 
-               (address+i, (Addr) &vbits[bnr], 1, 
-                False, /* get them */
-                False  /* is client request */ ); 
             /* We going to print the first vabits of a new line.
                Terminate the previous line if needed: prints a line with the
                address and the data. */
@@ -6817,6 +6813,10 @@ static Bool handle_gdb_monitor_command (ThreadId tid, HChar *req)
                }
                VG_(printf) ("\t"); // To align VABITS with gdb_xb layout
             }
+            res[bnr] = mc_get_or_set_vbits_for_client
+               (address+i, (Addr) &vbits[bnr], 1,
+                False, /* get them */
+                False  /* is client request */ );
             if (res[bnr] == 1) {
                VG_(printf) ("\t  %02x", vbits[bnr]);
             } else {

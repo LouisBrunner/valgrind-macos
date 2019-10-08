@@ -995,6 +995,30 @@ AC_ARG_WITH(tmpdir,
 AC_DEFINE_UNQUOTED(VG_TMPDIR, "$tmpdir", [Temporary files directory])
 AC_SUBST(VG_TMPDIR, [$tmpdir])
 
+#----------------------------------------------------------------------------
+# Detect xcode path
+#----------------------------------------------------------------------------
+AM_COND_IF([VGCONF_OS_IS_DARWIN],
+[AC_CHECK_PROG([XCRUN], [xcrun], [yes], [no])
+AC_MSG_CHECKING([for xcode sdk include path])
+AC_ARG_WITH(xcodedir,
+   [  --with-xcode-path=PATH      Specify path for xcode sdk includes],
+   [xcodedir="$withval"],
+   [
+      if test "x$XCRUN" != "xno" -a ! -d /usr/include; then
+         xcrundir=`xcrun --sdk macosx --show-sdk-path`
+         if test -z "$xcrundir"; then
+            xcodedir="/usr/include"
+         else
+            xcodedir="$xcrundir/usr/include"
+         fi
+      else
+         xcodedir="/usr/include"
+      fi
+   ])
+AC_MSG_RESULT([$xcodedir])
+AC_DEFINE_UNQUOTED(XCODE_DIR, "$xcodedir", [xcode sdk include directory])
+AC_SUBST(XCODE_DIR, [$xcodedir])])
 
 #----------------------------------------------------------------------------
 # Libc and suppressions

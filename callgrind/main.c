@@ -1697,60 +1697,115 @@ Bool CLG_(handle_client_request)(ThreadId tid, UWord *args, UWord *ret)
 }
 
 
-/* Syscall Timing */
+/* Syscall Timing.  syscalltime[tid] is the time at which thread tid last
+   started a syscall.  */
 
-/* struct timeval syscalltime[VG_N_THREADS]; */
-#if CLG_MICROSYSTIME
-ULong *syscalltime;
-#else
-UInt *syscalltime;
-#endif
+/* struct vki_timespec syscalltime[VG_N_THREADS];
+   Whatever the syscall we use to measure the syscall time, we convert to
+   seconds and nanoseconds.  */
+struct vki_timespec *syscalltime;
+struct vki_timespec *syscallcputime;
+
+
+static
+void collect_time (struct vki_timespec *systime, struct vki_timespec *syscputime)
+{
+  switch (CLG_(clo).collect_systime) {
+    case systime_no: tl_assert (0);
+    case systime_msec: {
+      UInt ms_timer = VG_(read_millisecond_timer)();
+      systime->tv_sec = ms_timer / 1000;
+      systime->tv_nsec = (ms_timer % 1000) * 1000000L;
+      break;
+    }
+    case systime_usec: {
+      struct vki_timeval tv_now;
+      VG_(gettimeofday)(&tv_now, NULL);
+      systime->tv_sec = tv_now.tv_sec;
+      systime->tv_nsec = tv_now.tv_usec * 1000;
+      break;
+    }
+   case systime_nsec:
+#  if defined(VGO_linux) || defined(VGO_solaris)
+      VG_(clock_gettime)(systime, VKI_CLOCK_MONOTONIC);
+      VG_(clock_gettime)(syscputime, VKI_CLOCK_THREAD_CPUTIME_ID);
+
+#  elif defined(VGO_darwin)
+      tl_assert(0);
+#  else
+#     error "Unknown OS"
+#  endif
+      break;
+  }
+}
 
 static
 void CLG_(pre_syscalltime)(ThreadId tid, UInt syscallno,
                            UWord* args, UInt nArgs)
 {
-  if (CLG_(clo).collect_systime) {
-#if CLG_MICROSYSTIME
-    struct vki_timeval tv_now;
-    VG_(gettimeofday)(&tv_now, NULL);
-    syscalltime[tid] = tv_now.tv_sec * 1000000ULL + tv_now.tv_usec;
-#else
-    syscalltime[tid] = VG_(read_millisecond_timer)();
-#endif
+  collect_time(&syscalltime[tid],
+               CLG_(clo).collect_systime == systime_nsec ? &syscallcputime[tid] : NULL);
+}
+
+/* Returns "after - before" in the unit as specified by --collect-systime.
+   after is supposed to be >= before, and tv_nsec must be >= 0 and < One_Second_In_Nsec.  */
+static
+ULong vki_timespec_diff (struct vki_timespec after, struct vki_timespec before)
+{
+   vki_time_t diff_sec = after.tv_sec - before.tv_sec;
+   long diff_nsec = after.tv_nsec - before.tv_nsec;
+   ULong nsec_factor; // factor to convert the desired unit into nsec.
+
+   if (diff_nsec < 0) {
+      diff_sec--;
+      diff_nsec += 1000000000ULL;
+   }
+  switch (CLG_(clo).collect_systime) {
+    case systime_no: tl_assert (0);
+    case systime_msec: nsec_factor = 1000000ULL; break;
+    case systime_usec: nsec_factor = 1000ULL; break;
+    case systime_nsec: nsec_factor = 1ULL; break;
+    default: tl_assert(0);
   }
+  return ((ULong) diff_sec * 1000000000ULL + diff_nsec) / nsec_factor;
 }
 
 static
 void CLG_(post_syscalltime)(ThreadId tid, UInt syscallno,
                             UWord* args, UInt nArgs, SysRes res)
 {
-  if (CLG_(clo).collect_systime &&
-      CLG_(current_state).bbcc) {
-      Int o;
-#if CLG_MICROSYSTIME
-    struct vki_timeval tv_now;
+  if (CLG_(current_state).bbcc) {
+    Int o;
+    struct vki_timespec ts_now;
+    struct vki_timespec ts_cpunow;
     ULong diff;
-    
-    VG_(gettimeofday)(&tv_now, NULL);
-    diff = (tv_now.tv_sec * 1000000ULL + tv_now.tv_usec) - syscalltime[tid];
-#else
-    UInt diff = VG_(read_millisecond_timer)() - syscalltime[tid];
-#endif  
 
-    /* offset o is for "SysCount", o+1 for "SysTime" */
+    collect_time(&ts_now,
+                 CLG_(clo).collect_systime == systime_nsec ? &ts_cpunow : NULL);
+
+    diff = vki_timespec_diff (ts_now, syscalltime[tid]);
+
+    /* offset o is for "SysCount", o+1 for "SysTime",
+       o+2 is (optionally) "SysCpuTime".  */
     o = fullOffset(EG_SYS);
     CLG_ASSERT(o>=0);
     CLG_DEBUG(0,"   Time (Off %d) for Syscall %u: %llu\n", o, syscallno,
-              (ULong)diff);
-    
-    CLG_(current_state).cost[o] ++;
-    CLG_(current_state).cost[o+1] += diff;
+              diff);
+
     if (!CLG_(current_state).bbcc->skipped)
       CLG_(init_cost_lz)(CLG_(sets).full,
 			&(CLG_(current_state).bbcc->skipped));
+    CLG_(current_state).cost[o] ++;
+    CLG_(current_state).cost[o+1] += diff;
     CLG_(current_state).bbcc->skipped[o] ++;
     CLG_(current_state).bbcc->skipped[o+1] += diff;
+    if (CLG_(clo).collect_systime == systime_nsec) {
+      diff = vki_timespec_diff (ts_cpunow, syscallcputime[tid]);
+      CLG_DEBUG(0,"   SysCpuTime (Off %d) for Syscall %u: %llu\n", o+2, syscallno,
+                diff);
+      CLG_(current_state).cost[o+2] += diff;
+      CLG_(current_state).bbcc->skipped[o+2] += diff;
+    }
   }
 }
 
@@ -1973,13 +2028,22 @@ void CLG_(post_clo_init)(void)
                 "sp-at-mem-access\n");
    }
 
-   if (CLG_(clo).collect_systime) {
+   if (CLG_(clo).collect_systime != systime_no) {
       VG_(needs_syscall_wrapper)(CLG_(pre_syscalltime),
                                  CLG_(post_syscalltime));
       syscalltime = CLG_MALLOC("cl.main.pci.1",
                                VG_N_THREADS * sizeof syscalltime[0]);
       for (UInt i = 0; i < VG_N_THREADS; ++i) {
-         syscalltime[i] = 0;
+         syscalltime[i].tv_sec = 0;
+         syscalltime[i].tv_nsec = 0;
+      }
+      if (CLG_(clo).collect_systime == systime_nsec) {
+         syscallcputime = CLG_MALLOC("cl.main.pci.2",
+                                     VG_N_THREADS * sizeof syscallcputime[0]);
+         for (UInt i = 0; i < VG_N_THREADS; ++i) {
+            syscallcputime[i].tv_sec = 0;
+            syscallcputime[i].tv_nsec = 0;
+         }
       }
    }
 

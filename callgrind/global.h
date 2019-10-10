@@ -58,17 +58,25 @@
 /* Enable experimental features? */
 #define CLG_EXPERIMENTAL 0
 
-/* Syscall Timing in microseconds? 
- * (define to 0 if you get compile errors) */
-#define CLG_MICROSYSTIME 0
-
-
 
 /*------------------------------------------------------------*/
 /*--- Command line options                                 ---*/
 /*------------------------------------------------------------*/
 
 #define DEFAULT_OUTFORMAT   "callgrind.out.%p"
+
+/* If and how to collect syscall time.
+   systime_no : do not collect systime
+   systime_msec : collect syscount, systime elapsed, milli second precision.
+   systime_usec : collect syscount, systime elapsed, micro second precision.
+   systime_nsec : collect syscount, systime elapsed, systime cpu, nano second
+                  precision.  */
+typedef enum {
+   systime_no,
+   systime_msec,
+   systime_usec,
+   systime_nsec
+} Collect_Systime;
 
 typedef struct _CommandLineOptions CommandLineOptions;
 struct _CommandLineOptions {
@@ -100,7 +108,7 @@ struct _CommandLineOptions {
   Bool collect_jumps;    /* Collect (cond.) jumps in functions ? */
 
   Bool collect_alloc;    /* Collect size of allocated memory */
-  Bool collect_systime;  /* Collect time for system calls */
+  Collect_Systime collect_systime;  /* Collect time for system calls */
 
   Bool collect_bus;      /* Collect global bus events */
 

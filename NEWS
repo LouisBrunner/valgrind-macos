@@ -32,6 +32,11 @@ support for X86/macOS 10.13 and AMD64/macOS 10.13.
 * Cachegrind:
 
 * Callgrind:
+  - The command option --collect-systime has been enhanced to specify
+    the unit used to record the elapsed time spent during system calls.
+    The command option now accepts the values no|yes|msec|usec|nsec,
+    where yes is a synonym of msec.  When giving the value nsec, the
+    system cpu time of system calls is also recorded.
 
 * Massif:
 

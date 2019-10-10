@@ -523,7 +523,23 @@ Bool CLG_(process_cmd_line_option)(const HChar* arg)
    else if VG_INT_CLO( arg, "--dump-every-bb", CLG_(clo).dump_every_bb) {}
 
    else if VG_BOOL_CLO(arg, "--collect-alloc",   CLG_(clo).collect_alloc) {}
-   else if VG_BOOL_CLO(arg, "--collect-systime", CLG_(clo).collect_systime) {}
+   else if VG_XACT_CLO(arg, "--collect-systime=no",
+                       CLG_(clo).collect_systime, systime_no) {}
+   else if VG_XACT_CLO(arg, "--collect-systime=msec",
+                       CLG_(clo).collect_systime, systime_msec) {}
+   else if VG_XACT_CLO(arg, "--collect-systime=yes", /* backward compatibility.  */
+                       CLG_(clo).collect_systime, systime_msec) {}
+   else if VG_XACT_CLO(arg, "--collect-systime=usec",
+                       CLG_(clo).collect_systime, systime_usec) {}
+   else if VG_XACT_CLO(arg, "--collect-systime=nsec",
+                       CLG_(clo).collect_systime, systime_nsec) {
+#  if defined(VGO_darwin)
+      VG_(fmsg_bad_option)
+         (arg,
+          "--collect-systime=nsec not supported on darwin\n");
+#  endif
+   }
+
    else if VG_BOOL_CLO(arg, "--collect-bus",     CLG_(clo).collect_bus) {}
    /* for option compatibility with cachegrind */
    else if VG_BOOL_CLO(arg, "--cache-sim",       CLG_(clo).simulate_cache) {}
@@ -580,7 +596,11 @@ void CLG_(print_usage)(void)
 #if CLG_EXPERIMENTAL
 "    --collect-alloc=no|yes    Collect memory allocation info? [no]\n"
 #endif
-"    --collect-systime=no|yes  Collect system call time info? [no]\n"
+"    --collect-systime=no|yes|msec|usec|nsec  Collect system call time info? [no]\n"
+"        no         Do not collect system call time info.\n"
+"        msec|yes   Collect syscount, syscall elapsed time (milli-seconds).\n"
+"        usec       Collect syscount, syscall elapsed time (micro-seconds).\n"
+"        nsec       Collect syscount, syscall elapsed and syscall cpu time (nano-seconds).\n"
 
 "\n   cost entity separation options:\n"
 "    --separate-threads=no|yes Separate data per thread [no]\n"
@@ -646,7 +666,7 @@ void CLG_(set_clo_defaults)(void)
   CLG_(clo).collect_atstart  = True;
   CLG_(clo).collect_jumps    = False;
   CLG_(clo).collect_alloc    = False;
-  CLG_(clo).collect_systime  = False;
+  CLG_(clo).collect_systime  = systime_no;
   CLG_(clo).collect_bus      = False;
 
   CLG_(clo).skip_plt         = True;

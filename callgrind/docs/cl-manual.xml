@@ -800,11 +800,25 @@ Also see <xref linkend="cl-manual.limits"/>.</para>
 
   <varlistentry id="opt.collect-systime" xreflabel="--collect-systime">
     <term>
-      <option><![CDATA[--collect-systime=<no|yes> [default: no] ]]></option>
+      <option><![CDATA[--collect-systime=<no|yes|msec|usec|nsec> [default: no] ]]></option>
     </term>
     <listitem>
       <para>This specifies whether information for system call times
-      should be collected.</para>
+        should be collected.</para>
+      <para>The value <computeroutput>no</computeroutput> indicates to record
+        no system call information.</para>
+      <para>The other values indicate to record the number of system calls
+        done (sysCount event) and the elapsed time (sysTime event) spent
+        in system calls.
+        The <computeroutput>--collect-systime</computeroutput> value gives
+        the unit used for sysTime : milli seconds, micro seconds or nano
+        seconds.  With the value <computeroutput>nsec</computeroutput>,
+        callgrind also records the cpu time spent during system calls
+        (sysCpuTime).</para>
+      <para>The value <computeroutput>yes</computeroutput> is a synonym
+        of <computeroutput>msec</computeroutput>.
+        The value <computeroutput>nsec</computeroutput> is not supported
+        on Darwin.</para>
     </listitem>
   </varlistentry>
 

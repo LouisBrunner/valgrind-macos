@@ -1305,6 +1305,21 @@ static VgFile *new_dumpfile(int tid, const HChar* trigger)
    HChar *evmap = CLG_(eventmapping_as_string)(CLG_(dumpmap));
    VG_(fprintf)(fp, "events: %s\n", evmap);
    VG_(free)(evmap);
+  switch (CLG_(clo).collect_systime) {
+    case systime_no: break;
+    case systime_msec:
+       VG_(fprintf)(fp, "event: sysTime : sysTime (elapsed ms)\n");
+       break;
+    case systime_usec:
+       VG_(fprintf)(fp, "event: sysTime : sysTime (elapsed us)\n");
+       break;
+    case systime_nsec:
+       VG_(fprintf)(fp, "event: sysTime : sysTime (elapsed ns)\n");
+       VG_(fprintf)(fp, "event: sysCpuTime : sysCpuTime (system cpu ns)\n");
+       break;
+    default:
+       tl_assert(0);
+  }
 
    /* summary lines */
    sum = CLG_(get_eventset_cost)( CLG_(sets).full );

@@ -1625,8 +1625,12 @@ void CLG_(init_eventsets)()
     if (CLG_(clo).collect_alloc)
 	CLG_(register_event_group2)(EG_ALLOC, "allocCount", "allocSize");
 
-    if (CLG_(clo).collect_systime)
-	CLG_(register_event_group2)(EG_SYS, "sysCount", "sysTime");
+    if (CLG_(clo).collect_systime != systime_no) {
+       if (CLG_(clo).collect_systime == systime_nsec)
+          CLG_(register_event_group3)(EG_SYS, "sysCount", "sysTime", "sysCpuTime");
+       else
+          CLG_(register_event_group2)(EG_SYS, "sysCount", "sysTime");
+    }
 
     // event set used as base for instruction self cost
     CLG_(sets).base = CLG_(get_event_set2)(EG_USE, EG_IR);
@@ -1670,6 +1674,7 @@ void CLG_(init_eventsets)()
     CLG_(append_event)(CLG_(dumpmap), "allocSize");
     CLG_(append_event)(CLG_(dumpmap), "sysCount");
     CLG_(append_event)(CLG_(dumpmap), "sysTime");
+    CLG_(append_event)(CLG_(dumpmap), "sysCpuTime");
 }
 
 

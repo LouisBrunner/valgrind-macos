@@ -962,6 +962,20 @@ UInt VG_(read_millisecond_timer) ( void )
    return (now - base) / 1000;
 }
 
+#  if defined(VGO_linux) || defined(VGO_solaris)
+void VG_(clock_gettime) ( struct vki_timespec *ts, vki_clockid_t clk_id )
+{
+    SysRes res;
+    res = VG_(do_syscall2)(__NR_clock_gettime, clk_id,
+                           (UWord)ts);
+    vg_assert (sr_isError(res) == 0);
+}
+#  elif defined(VGO_darwin)
+  /* See pub_tool_libcproc.h */
+#  else
+#    error "Unknown OS"
+#  endif
+
 Int VG_(gettimeofday)(struct vki_timeval *tv, struct vki_timezone *tz)
 {
    SysRes res;

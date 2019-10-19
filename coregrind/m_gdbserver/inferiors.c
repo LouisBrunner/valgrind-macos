@@ -105,7 +105,7 @@ void add_thread (unsigned long thread_id, void *target_data, unsigned int gdb_id
    new_thread->entry.id = thread_id;
 
    add_inferior_to_list (&all_threads, & new_thread->entry);
-  
+
    if (current_inferior == NULL)
       current_inferior = new_thread;
 
@@ -176,7 +176,7 @@ void clear_inferiors (void)
 }
 
 struct inferior_list_entry * find_inferior (struct inferior_list *list,
-                                            int (*func) 
+                                            int (*func)
                                               (struct inferior_list_entry *,
                                                void *),
                                             void *arg)
@@ -188,7 +188,7 @@ struct inferior_list_entry * find_inferior (struct inferior_list *list,
          return inf;
       inf = inf->next;
    }
-   
+
    return NULL;
 }
 
@@ -202,7 +202,7 @@ struct inferior_list_entry * find_inferior_id (struct inferior_list *list,
          return inf;
       inf = inf->next;
    }
-   
+
    return NULL;
 }
 

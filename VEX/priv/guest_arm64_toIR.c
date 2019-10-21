@@ -6885,7 +6885,6 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       Long  simm64 = (Long)sx_to_64(uimm64, 21);
       vassert(dres->whatNext    == Dis_Continue);
       vassert(dres->len         == 4);
-      vassert(dres->continueAt  == 0);
       vassert(dres->jk_StopHere == Ijk_INVALID);
       stmt( IRStmt_Exit(unop(Iop_64to1, mk_arm64g_calculate_condition(cond)),
                         Ijk_Boring,
@@ -14797,9 +14796,6 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
 static
 Bool disInstr_ARM64_WRK (
         /*MB_OUT*/DisResult* dres,
-        Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
-        Bool         resteerCisOk,
-        void*        callback_opaque,
         const UChar* guest_instr,
         const VexArchInfo* archinfo,
         const VexAbiInfo*  abiinfo
@@ -14823,7 +14819,6 @@ Bool disInstr_ARM64_WRK (
    /* Set result defaults. */
    dres->whatNext    = Dis_Continue;
    dres->len         = 4;
-   dres->continueAt  = 0;
    dres->jk_StopHere = Ijk_INVALID;
    dres->hint        = Dis_HintNone;
 
@@ -14959,7 +14954,6 @@ Bool disInstr_ARM64_WRK (
    if (!ok) {
       vassert(dres->whatNext    == Dis_Continue);
       vassert(dres->len         == 4);
-      vassert(dres->continueAt  == 0);
       vassert(dres->jk_StopHere == Ijk_INVALID);
    }
 
@@ -14977,9 +14971,6 @@ Bool disInstr_ARM64_WRK (
    is located in host memory at &guest_code[delta]. */
 
 DisResult disInstr_ARM64 ( IRSB*        irsb_IN,
-                           Bool         (*resteerOkFn) ( void*, Addr ),
-                           Bool         resteerCisOk,
-                           void*        callback_opaque,
                            const UChar* guest_code_IN,
                            Long         delta_IN,
                            Addr         guest_IP,
@@ -15006,7 +14997,6 @@ DisResult disInstr_ARM64 ( IRSB*        irsb_IN,
 
    /* Try to decode */
    Bool ok = disInstr_ARM64_WRK( &dres,
-                                 resteerOkFn, resteerCisOk, callback_opaque,
                                  &guest_code_IN[delta_IN],
                                  archinfo, abiinfo );
    if (ok) {
@@ -15015,10 +15005,6 @@ DisResult disInstr_ARM64 ( IRSB*        irsb_IN,
       switch (dres.whatNext) {
          case Dis_Continue:
             putPC( mkU64(dres.len + guest_PC_curr_instr) );
-            break;
-         case Dis_ResteerU:
-         case Dis_ResteerC:
-            putPC(mkU64(dres.continueAt));
             break;
          case Dis_StopHere:
             break;
@@ -15054,7 +15040,6 @@ DisResult disInstr_ARM64 ( IRSB*        irsb_IN,
       dres.len         = 0;
       dres.whatNext    = Dis_StopHere;
       dres.jk_StopHere = Ijk_NoDecode;
-      dres.continueAt  = 0;
    }
    return dres;
 }

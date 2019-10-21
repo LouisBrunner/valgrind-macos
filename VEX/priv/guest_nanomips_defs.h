@@ -50,9 +50,6 @@
 /* Convert one nanoMIPS insn to IR. See the type DisOneInstrFn in
    guest_generic_bb_to_IR.h. */
 extern DisResult disInstr_nanoMIPS ( IRSB*        irbb,
-                                     Bool         (*resteerOkFn) (void *, Addr),
-                                     Bool         resteerCisOk,
-                                     void*        callback_opaque,
                                      const UChar* guest_code,
                                      Long         delta,
                                      Addr         guest_IP,

@@ -2292,9 +2292,7 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, const IRExpr* e )
    /* var */
    if (e->tag == Iex_RdTmp) {
       HReg r64 = lookupIRTemp(env, e->Iex.RdTmp.tmp);
-      HReg dst = newVRegI(env);
-      addInstr(env, mk_iMOVsd_RR(r64,dst));
-      addInstr(env, AMD64Instr_Alu64R(Aalu_AND,AMD64RMI_Imm(1),dst));
+      addInstr(env, AMD64Instr_Test64(1,r64));
       return Acc_NZ;
    }
 
@@ -2534,6 +2532,25 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, const IRExpr* e )
          case Iop_CmpLE32U: return Acc_BE;
          default: vpanic("iselCondCode(amd64): CmpXX32");
       }
+   }
+
+   /* And1(x,y), Or1(x,y) */
+   /* FIXME: We could (and probably should) do a lot better here.  If both args
+      are in temps already then we can just emit a reg-reg And/Or directly,
+      followed by the final Test. */
+   if (e->tag == Iex_Binop
+       && (e->Iex.Binop.op == Iop_And1 || e->Iex.Binop.op == Iop_Or1)) {
+      // We could probably be cleverer about this.  In the meantime ..
+      HReg x_as_64 = newVRegI(env);
+      AMD64CondCode cc_x = iselCondCode(env, e->Iex.Binop.arg1);
+      addInstr(env, AMD64Instr_Set64(cc_x, x_as_64));
+      HReg y_as_64 = newVRegI(env);
+      AMD64CondCode cc_y = iselCondCode(env, e->Iex.Binop.arg2);
+      addInstr(env, AMD64Instr_Set64(cc_y, y_as_64));
+      AMD64AluOp aop = e->Iex.Binop.op == Iop_And1 ? Aalu_AND : Aalu_OR;
+      addInstr(env, AMD64Instr_Alu64R(aop, AMD64RMI_Reg(x_as_64), y_as_64));
+      addInstr(env, AMD64Instr_Test64(1, y_as_64));
+      return Acc_NZ;
    }
 
    ppIRExpr(e);

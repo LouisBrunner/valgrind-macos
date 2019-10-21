@@ -168,6 +168,8 @@ void ppIROp ( IROp op )
       case Iop_64to8:    vex_printf("64to8");  return;
 
       case Iop_Not1:     vex_printf("Not1");    return;
+      case Iop_And1:     vex_printf("And1");    return;
+      case Iop_Or1:      vex_printf("Or1");     return;
       case Iop_32to1:    vex_printf("32to1");   return;
       case Iop_64to1:    vex_printf("64to1");   return;
       case Iop_1Uto8:    vex_printf("1Uto8");   return;
@@ -2849,7 +2851,12 @@ void typeOfPrimop ( IROp op,
       case Iop_64HLto128:
          BINARY(Ity_I64,Ity_I64, Ity_I128);
 
-      case Iop_Not1:   UNARY(Ity_I1, Ity_I1);
+      case Iop_Not1:
+         UNARY(Ity_I1, Ity_I1);
+      case Iop_And1:
+      case Iop_Or1:
+         BINARY(Ity_I1,Ity_I1, Ity_I1);
+
       case Iop_1Uto8:  UNARY(Ity_I1, Ity_I8);
       case Iop_1Sto8:  UNARY(Ity_I1, Ity_I8);
       case Iop_1Sto16: UNARY(Ity_I1, Ity_I16);

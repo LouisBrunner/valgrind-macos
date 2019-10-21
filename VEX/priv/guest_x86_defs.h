@@ -49,9 +49,6 @@
    guest_generic_bb_to_IR.h. */
 extern
 DisResult disInstr_X86 ( IRSB*        irbb,
-                         Bool         (*resteerOkFn) ( void*, Addr ),
-                         Bool         resteerCisOk,
-                         void*        callback_opaque,
                          const UChar* guest_code,
                          Long         delta,
                          Addr         guest_IP,

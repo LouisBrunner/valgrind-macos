@@ -8188,9 +8188,7 @@ static IRExpr* /* :: Ity_I32 */ branch_cond_ok( UInt BO, UInt BI )
 */
 static Bool dis_branch ( UInt theInstr, 
                          const VexAbiInfo* vbi,
-                         /*OUT*/DisResult* dres,
-                         Bool (*resteerOkFn)(void*,Addr),
-                         void* callback_opaque )
+                         /*OUT*/DisResult* dres )
 {
    UChar opc1    = ifieldOPC(theInstr);
    UChar BO      = ifieldRegDS(theInstr);
@@ -8250,13 +8248,8 @@ static Bool dis_branch ( UInt theInstr,
          }
       }
 
-      if (resteerOkFn( callback_opaque, tgt )) {
-         dres->whatNext   = Dis_ResteerU;
-         dres->continueAt = tgt;
-      } else {
-         dres->jk_StopHere = flag_LK ? Ijk_Call : Ijk_Boring; ;
-         putGST( PPC_GST_CIA, mkSzImm(ty, tgt) );
-      }
+      dres->jk_StopHere = flag_LK ? Ijk_Call : Ijk_Boring; ;
+      putGST( PPC_GST_CIA, mkSzImm(ty, tgt) );
       break;
       
    case 0x10: // bc    (Branch Conditional, PPC32 p361)
@@ -27939,9 +27932,7 @@ static Bool dis_av_fp_convert ( UInt theInstr )
 
 static Bool dis_transactional_memory ( UInt theInstr, UInt nextInstr,
                                        const VexAbiInfo* vbi,
-                                       /*OUT*/DisResult* dres,
-                                       Bool (*resteerOkFn)(void*,Addr),
-                                       void* callback_opaque )
+                                       /*OUT*/DisResult* dres )
 {
    UInt   opc2      = IFIELD( theInstr, 1, 10 );
 
@@ -28419,9 +28410,6 @@ static UInt get_VSX60_opc2(UInt opc2_full, UInt theInstr)
 
 static   
 DisResult disInstr_PPC_WRK ( 
-             Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
-             Bool         resteerCisOk,
-             void*        callback_opaque,
              Long         delta64,
              const VexArchInfo* archinfo,
              const VexAbiInfo*  abiinfo,
@@ -28474,7 +28462,6 @@ DisResult disInstr_PPC_WRK (
    /* Set result defaults. */
    dres.whatNext    = Dis_Continue;
    dres.len         = 0;
-   dres.continueAt  = 0;
    dres.jk_StopHere = Ijk_INVALID;
    dres.hint        = Dis_HintNone;
 
@@ -28662,8 +28649,7 @@ DisResult disInstr_PPC_WRK (
 
    /* Branch Instructions */
    case 0x12: case 0x10: // b, bc
-      if (dis_branch(theInstr, abiinfo, &dres, 
-                               resteerOkFn, callback_opaque)) 
+      if (dis_branch(theInstr, abiinfo, &dres)) 
          goto decode_success;
       goto decode_failure;
 
@@ -29318,8 +29304,7 @@ DisResult disInstr_PPC_WRK (
          
       /* Branch Instructions */
       case 0x210: case 0x010: // bcctr, bclr
-         if (dis_branch(theInstr, abiinfo, &dres, 
-                                  resteerOkFn, callback_opaque)) 
+         if (dis_branch(theInstr, abiinfo, &dres)) 
             goto decode_success;
          goto decode_failure;
          
@@ -29420,8 +29405,7 @@ DisResult disInstr_PPC_WRK (
       case 0x38E: case 0x3AE: case 0x3EE: // tabort., treclaim., trechkpt.
       if (dis_transactional_memory( theInstr,
                                     getUIntPPCendianly( &guest_code[delta + 4]),
-                                    abiinfo, &dres,
-                                    resteerOkFn, callback_opaque))
+                                    abiinfo, &dres))
             goto decode_success;
          goto decode_failure;
 
@@ -30137,7 +30121,6 @@ DisResult disInstr_PPC_WRK (
    dres.len         = 0;
    dres.whatNext    = Dis_StopHere;
    dres.jk_StopHere = Ijk_NoDecode;
-   dres.continueAt  = 0;
    return dres;
    } /* switch (opc) for the main (primary) opcode switch. */
 
@@ -30146,10 +30129,6 @@ DisResult disInstr_PPC_WRK (
    switch (dres.whatNext) {
       case Dis_Continue:
          putGST( PPC_GST_CIA, mkSzImm(ty, guest_CIA_curr_instr + 4));
-         break;
-      case Dis_ResteerU:
-      case Dis_ResteerC:
-         putGST( PPC_GST_CIA, mkSzImm(ty, dres.continueAt));
          break;
       case Dis_StopHere:
          break;
@@ -30178,9 +30157,6 @@ DisResult disInstr_PPC_WRK (
    is located in host memory at &guest_code[delta]. */
 
 DisResult disInstr_PPC ( IRSB*        irsb_IN,
-                         Bool         (*resteerOkFn) ( void*, Addr ),
-                         Bool         resteerCisOk,
-                         void*        callback_opaque,
                          const UChar* guest_code_IN,
                          Long         delta,
                          Addr         guest_IP,
@@ -30205,7 +30181,6 @@ DisResult disInstr_PPC ( IRSB*        irsb_IN,
       dres.len         = 0;
       dres.whatNext    = Dis_StopHere;
       dres.jk_StopHere = Ijk_NoDecode;
-      dres.continueAt   = 0;
       dres.hint        = Dis_HintNone;
       return dres;
    }
@@ -30233,8 +30208,7 @@ DisResult disInstr_PPC ( IRSB*        irsb_IN,
    guest_CIA_curr_instr = mkSzAddr(ty, guest_IP);
    guest_CIA_bbstart    = mkSzAddr(ty, guest_IP - delta);
 
-   dres = disInstr_PPC_WRK ( resteerOkFn, resteerCisOk, callback_opaque,
-                             delta, archinfo, abiinfo, sigill_diag_IN);
+   dres = disInstr_PPC_WRK ( delta, archinfo, abiinfo, sigill_diag_IN );
 
    return dres;
 }

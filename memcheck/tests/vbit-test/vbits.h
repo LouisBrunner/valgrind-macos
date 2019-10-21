@@ -36,6 +36,7 @@ typedef uint64_t uint256_t[4];
 typedef struct {
    unsigned num_bits;
    union {
+      uint8_t   u1;
       uint8_t   u8;
       uint16_t  u16;
       uint32_t  u32;
@@ -46,10 +47,11 @@ typedef struct {
 } vbits_t;
 
 
-/* A type large enough to hold any IRtype'd value. At this point
+/* A type large enough to hold any IRType'd value. At this point
    we do not expect to test with specific floating point values.
    So we don't need to represent them. */
 typedef union {
+   uint8_t   u1;
    uint8_t   u8;
    uint16_t  u16;
    uint32_t  u32;

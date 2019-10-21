@@ -70,6 +70,12 @@ Addr ado_treebuild_BB (
         VexRegisterUpdates pxControl
      );
 
+IRSB* do_minimal_initial_iropt_BB(
+         IRSB* bb0
+      );
+void concatenate_irsbs ( IRSB* dst, IRSB* src );
+void deltaIRStmt ( IRStmt* st, Int delta );
+
 #endif /* ndef __VEX_IR_OPT_H */
 
 /*---------------------------------------------------------------*/

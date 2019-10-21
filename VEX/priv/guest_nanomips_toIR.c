@@ -3037,9 +3037,6 @@ static Bool check_for_special_requests_nanoMIPS(DisResult *dres,
 /* Disassemble a single instruction into IR.  The instruction
    is located in host memory at &guest_code[delta]. */
 DisResult disInstr_nanoMIPS( IRSB*        irsb_IN,
-                             Bool         (*resteerOkFn) ( void *, Addr ),
-                             Bool         resteerCisOk,
-                             void*        callback_opaque,
                              const UChar* guest_code_IN,
                              Long         delta,
                              Addr         guest_IP,
@@ -3056,7 +3053,6 @@ DisResult disInstr_nanoMIPS( IRSB*        irsb_IN,
    /* Set result defaults. */
    dres.whatNext = Dis_Continue;
    dres.len = 0;
-   dres.continueAt = 0;
    dres.jk_StopHere = Ijk_INVALID;
    dres.hint        = Dis_HintNone;
 
@@ -3082,7 +3078,6 @@ DisResult disInstr_nanoMIPS( IRSB*        irsb_IN,
    }
 
    if ((dres.whatNext == Dis_Continue)         ||
-         (dres.whatNext == Dis_ResteerC)       ||
          (dres.jk_StopHere == Ijk_Sys_syscall) ||
          (dres.jk_StopHere == Ijk_SigTRAP)     ||
          (dres.jk_StopHere == Ijk_SigILL)      ||

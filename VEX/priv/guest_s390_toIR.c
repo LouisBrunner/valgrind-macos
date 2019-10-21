@@ -68,10 +68,6 @@ static Addr64 guest_IA_next_instr;
 /* Result of disassembly step. */
 static DisResult *dis_res;
 
-/* Resteer function and callback data */
-static Bool (*resteer_fn)(void *, Addr);
-static void *resteer_data;
-
 /* Whether to print diagnostics for illegal instructions. */
 static Bool sigill_diag;
 
@@ -427,15 +423,10 @@ call_function(IRExpr *callee_address)
 static void
 call_function_and_chase(Addr64 callee_address)
 {
-   if (resteer_fn(resteer_data, callee_address)) {
-      dis_res->whatNext   = Dis_ResteerU;
-      dis_res->continueAt = callee_address;
-   } else {
-      put_IA(mkaddr_expr(callee_address));
+   put_IA(mkaddr_expr(callee_address));
 
-      dis_res->whatNext = Dis_StopHere;
-      dis_res->jk_StopHere = Ijk_Call;
-   }
+   dis_res->whatNext = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_Call;
 }
 
 /* Function return sequence */
@@ -501,19 +492,14 @@ always_goto(IRExpr *target)
 
 
 /* An unconditional branch to a known target. */
+// QQQQ fixme this is now the same as always_goto
 static void
 always_goto_and_chase(Addr64 target)
 {
-   if (resteer_fn(resteer_data, target)) {
-      /* Follow into the target */
-      dis_res->whatNext   = Dis_ResteerU;
-      dis_res->continueAt = target;
-   } else {
-      put_IA(mkaddr_expr(target));
+   put_IA(mkaddr_expr(target));
 
-      dis_res->whatNext    = Dis_StopHere;
-      dis_res->jk_StopHere = Ijk_Boring;
-   }
+   dis_res->whatNext    = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_Boring;
 }
 
 /* A system call */
@@ -21953,7 +21939,6 @@ disInstr_S390_WRK(const UChar *insn)
    /* ---------------------------------------------------- */
    dres.whatNext   = Dis_Continue;
    dres.len        = insn_length;
-   dres.continueAt = 0;
    dres.jk_StopHere = Ijk_INVALID;
    dres.hint        = Dis_HintNone;
 
@@ -21973,16 +21958,11 @@ disInstr_S390_WRK(const UChar *insn)
       dres.len         = 0;
       dres.whatNext    = Dis_StopHere;
       dres.jk_StopHere = Ijk_NoDecode;
-      dres.continueAt  = 0;
    } else {
       /* Decode success */
       switch (dres.whatNext) {
       case Dis_Continue:
          put_IA(mkaddr_expr(guest_IA_next_instr));
-         break;
-      case Dis_ResteerU:
-      case Dis_ResteerC:
-         put_IA(mkaddr_expr(dres.continueAt));
          break;
       case Dis_StopHere:
          if (dres.jk_StopHere == Ijk_EmWarn ||
@@ -22011,9 +21991,6 @@ disInstr_S390_WRK(const UChar *insn)
 
 DisResult
 disInstr_S390(IRSB        *irsb_IN,
-              Bool       (*resteerOkFn)(void *, Addr),
-              Bool         resteerCisOk,
-              void        *callback_opaque,
               const UChar *guest_code,
               Long         delta,
               Addr         guest_IP,
@@ -22028,8 +22005,6 @@ disInstr_S390(IRSB        *irsb_IN,
    /* Set globals (see top of this file) */
    guest_IA_curr_instr = guest_IP;
    irsb = irsb_IN;
-   resteer_fn = resteerOkFn;
-   resteer_data = callback_opaque;
    sigill_diag = sigill_diag_IN;
 
    return disInstr_S390_WRK(guest_code + delta);

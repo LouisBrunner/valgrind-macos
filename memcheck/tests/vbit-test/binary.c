@@ -38,6 +38,7 @@ and_combine(vbits_t v1, vbits_t v2, value_t val2, int invert_val2)
 
    if (invert_val2) {
       switch (v2.num_bits) {
+      case 1:  val2.u1  = ~val2.u1  & 1;      break;
       case 8:  val2.u8  = ~val2.u8  & 0xff;   break;
       case 16: val2.u16 = ~val2.u16 & 0xffff; break;
       case 32: val2.u32 = ~val2.u32;          break;
@@ -48,6 +49,9 @@ and_combine(vbits_t v1, vbits_t v2, value_t val2, int invert_val2)
    }
 
    switch (v2.num_bits) {
+   case 1:
+      new.bits.u1  = (v1.bits.u1 & ~v2.bits.u1  & val2.u1)  & 1;
+      break;
    case 8:
       new.bits.u8  = (v1.bits.u8 & ~v2.bits.u8  & val2.u8)  & 0xff;
       break;
@@ -423,6 +427,7 @@ all_bits_zero_value(unsigned num_bits)
    value_t val;
 
    switch (num_bits) {
+   case 1:  val.u1  = 0; break;
    case 8:  val.u8  = 0; break;
    case 16: val.u16 = 0; break;
    case 32: val.u32 = 0; break;
@@ -440,6 +445,7 @@ all_bits_one_value(unsigned num_bits)
    value_t val;
 
    switch (num_bits) {
+   case 1:  val.u1  = 1;      break;
    case 8:  val.u8  = 0xff;   break;
    case 16: val.u16 = 0xffff; break;
    case 32: val.u32 = ~0u;    break;

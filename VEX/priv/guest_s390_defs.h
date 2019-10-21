@@ -39,9 +39,6 @@
 /* Convert one s390 insn to IR.  See the type DisOneInstrFn in
    guest_generic_bb_to_IR.h. */
 DisResult disInstr_S390 ( IRSB*        irbb,
-                          Bool         (*resteerOkFn) ( void*, Addr ),
-                          Bool         resteerCisOk,
-                          void*        callback_opaque,
                           const UChar* guest_code,
                           Long         delta,
                           Addr         guest_IP,

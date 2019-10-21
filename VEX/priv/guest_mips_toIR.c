@@ -1301,7 +1301,6 @@ static void jmp_lit32 ( /*MOD*/ DisResult* dres, IRJumpKind kind, Addr32 d32 )
 {
    vassert(dres->whatNext    == Dis_Continue);
    vassert(dres->len         == 0);
-   vassert(dres->continueAt  == 0);
    vassert(dres->jk_StopHere == Ijk_INVALID);
    dres->whatNext    = Dis_StopHere;
    dres->jk_StopHere = kind;
@@ -1312,7 +1311,6 @@ static void jmp_lit64 ( /*MOD*/ DisResult* dres, IRJumpKind kind, Addr64 d64 )
 {
    vassert(dres->whatNext    == Dis_Continue);
    vassert(dres->len         == 0);
-   vassert(dres->continueAt  == 0);
    vassert(dres->jk_StopHere == Ijk_INVALID);
    dres->whatNext    = Dis_StopHere;
    dres->jk_StopHere = kind;
@@ -2734,9 +2732,7 @@ static Bool dis_instr_CCondFmt ( UInt cins )
 /*********************************************************/
 /*---        Branch Instructions for mips64           ---*/
 /*********************************************************/
-static Bool dis_instr_branch ( UInt theInstr, DisResult * dres,
-                               Bool(*resteerOkFn) (void *, Addr),
-                               void *callback_opaque, IRStmt ** set )
+static Bool dis_instr_branch ( UInt theInstr, DisResult * dres, IRStmt ** set )
 {
    UInt jmpKind = 0;
    UChar opc1 = get_opcode(theInstr);
@@ -16742,10 +16738,7 @@ extern UInt disDSPInstr_MIPS_WRK ( UInt );
 
 static UInt disInstr_MIPS_WRK_Special(UInt cins, const VexArchInfo* archinfo,
                                       const VexAbiInfo*  abiinfo, DisResult* dres,
-                                      IRStmt** bstmt, IRExpr** lastn,
-                                      Bool(*resteerOkFn) (/*opaque */void *,
-                                            Addr),
-                                      void*        callback_opaque)
+                                      IRStmt** bstmt, IRExpr** lastn)
 {
    IRTemp t0, t1 = 0, t2, t3, t4, t5;
    UInt rs, rt, rd, sa, tf, function, trap_code, imm, instr_index, rot, sel;
@@ -18369,10 +18362,7 @@ static UInt disInstr_MIPS_WRK_Special(UInt cins, const VexArchInfo* archinfo,
 
 static UInt disInstr_MIPS_WRK_Special2(UInt cins, const VexArchInfo* archinfo,
                                        const VexAbiInfo*  abiinfo, DisResult* dres,
-                                       IRStmt** bstmt, IRExpr** lastn,
-                                       Bool(*resteerOkFn) (/*opaque */void *,
-                                             Addr),
-                                       void*        callback_opaque)
+                                       IRStmt** bstmt, IRExpr** lastn)
 {
    IRTemp t0, t1 = 0, t2, t3, t4, t5, t6;
    UInt rs, rt, rd, function;
@@ -18852,10 +18842,7 @@ static UInt disInstr_MIPS_WRK_Special2(UInt cins, const VexArchInfo* archinfo,
 
 static UInt disInstr_MIPS_WRK_Special3(UInt cins, const VexArchInfo* archinfo,
                                        const VexAbiInfo*  abiinfo, DisResult* dres,
-                                       IRStmt** bstmt, IRExpr** lastn,
-                                       Bool(*resteerOkFn) (/*opaque */void *,
-                                             Addr),
-                                       void*        callback_opaque)
+                                       IRStmt** bstmt, IRExpr** lastn)
 
 {
    IRTemp t0, t1 = 0, t2, t3, t4, t5, t6;
@@ -19726,10 +19713,7 @@ static UInt disInstr_MIPS_WRK_Special3(UInt cins, const VexArchInfo* archinfo,
 
 static UInt disInstr_MIPS_WRK_00(UInt cins, const VexArchInfo* archinfo,
                                  const VexAbiInfo*  abiinfo, DisResult* dres,
-                                 IRStmt** bstmt, IRExpr** lastn,
-                                 Bool(*resteerOkFn) (/*opaque */void *,
-                                       Addr),
-                                 void*        callback_opaque)
+                                 IRStmt** bstmt, IRExpr** lastn)
 {
    IRTemp t0;
    UInt opcode, rs, rt, trap_code, imm, instr_index, p;
@@ -19745,8 +19729,8 @@ static UInt disInstr_MIPS_WRK_00(UInt cins, const VexArchInfo* archinfo,
 
    switch (opcode & 0x0F) {
       case 0x00:  /* Special */
-         return disInstr_MIPS_WRK_Special(cins, archinfo, abiinfo, dres, bstmt, lastn,
-                                          resteerOkFn, callback_opaque);
+         return disInstr_MIPS_WRK_Special(cins, archinfo, abiinfo,
+                                          dres, bstmt, lastn);
 
       case 0x01:  /* Regimm */
          switch (rt) {
@@ -19754,8 +19738,7 @@ static UInt disInstr_MIPS_WRK_00(UInt cins, const VexArchInfo* archinfo,
                DIP("bltz r%u, %u", rs, imm);
 
                if (mode64) {
-                  if (!dis_instr_branch(cins, dres, resteerOkFn,
-                                        callback_opaque, bstmt))
+                  if (!dis_instr_branch(cins, dres, bstmt))
                      return -1;
                } else
                   dis_branch(False, binop(Iop_CmpEQ32, binop(Iop_And32, getIReg(rs),
@@ -19767,8 +19750,7 @@ static UInt disInstr_MIPS_WRK_00(UInt cins, const VexArchInfo* archinfo,
                DIP("bgez r%u, %u", rs, imm);
 
                if (mode64) {
-                  if (!dis_instr_branch(cins, dres, resteerOkFn,
-                                        callback_opaque, bstmt))
+                  if (!dis_instr_branch(cins, dres, bstmt))
                      return -1;
                } else
                   dis_branch(False, binop(Iop_CmpEQ32, binop(Iop_And32, getIReg(rs),
@@ -19936,8 +19918,7 @@ static UInt disInstr_MIPS_WRK_00(UInt cins, const VexArchInfo* archinfo,
                DIP("bltzal r%u, %u", rs, imm);
 
                if (mode64) {
-                  if (!dis_instr_branch(cins, dres, resteerOkFn,
-                                        callback_opaque, bstmt))
+                  if (!dis_instr_branch(cins, dres, bstmt))
                      return -1;
                } else
                   dis_branch(True, binop(Iop_CmpEQ32, binop(Iop_And32, getIReg(rs),
@@ -19949,8 +19930,7 @@ static UInt disInstr_MIPS_WRK_00(UInt cins, const VexArchInfo* archinfo,
                DIP("bgezal r%u, %u", rs, imm);
 
                if (mode64) {
-                  if (!dis_instr_branch(cins, dres, resteerOkFn,
-                                        callback_opaque, bstmt))
+                  if (!dis_instr_branch(cins, dres, bstmt))
                      return -1;
                } else
                   dis_branch(True, binop(Iop_CmpEQ32, binop(Iop_And32, getIReg(rs),
@@ -20456,10 +20436,7 @@ static UInt disInstr_MIPS_WRK_00(UInt cins, const VexArchInfo* archinfo,
 
 static UInt disInstr_MIPS_WRK_10(UInt cins, const VexArchInfo* archinfo,
                                  const VexAbiInfo*  abiinfo, DisResult* dres,
-                                 IRStmt** bstmt, IRExpr** lastn,
-                                 Bool(*resteerOkFn) (/*opaque */void *,
-                                       Addr),
-                                 void*        callback_opaque)
+                                 IRStmt** bstmt, IRExpr** lastn)
 {
    IRTemp t0, t1 = 0, t2, t3, t4, t5, t6, t7;
    UInt opcode, rs, rt, ft, fs, fd, fmt, tf, nd, function, imm;
@@ -23469,8 +23446,8 @@ static UInt disInstr_MIPS_WRK_10(UInt cins, const VexArchInfo* archinfo,
       }
 
       case 0x0C:  /* Special2 */
-         return disInstr_MIPS_WRK_Special2(cins, archinfo, abiinfo, dres, bstmt, lastn,
-                                           resteerOkFn, callback_opaque);
+         return disInstr_MIPS_WRK_Special2(cins, archinfo, abiinfo,
+                                           dres, bstmt, lastn);
 
       case 0x0D: /* DAUI */
          if (VEX_MIPS_CPU_HAS_MIPSR6(archinfo->hwcaps)) {
@@ -23500,8 +23477,8 @@ static UInt disInstr_MIPS_WRK_10(UInt cins, const VexArchInfo* archinfo,
          return -1;
 
       case 0x0F:  /* Special3 */
-         return disInstr_MIPS_WRK_Special3(cins, archinfo, abiinfo, dres, bstmt, lastn,
-                                           resteerOkFn, callback_opaque);
+         return disInstr_MIPS_WRK_Special3(cins, archinfo, abiinfo,
+                                           dres, bstmt, lastn);
 
       default:
          return -1;
@@ -24785,11 +24762,7 @@ static UInt disInstr_MIPS_WRK_30(UInt cins, const VexArchInfo* archinfo,
    return 0;
 }
 
-static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
-                                     Addr),
-                                     Bool         resteerCisOk,
-                                     void*        callback_opaque,
-                                     Long         delta64,
+static DisResult disInstr_MIPS_WRK ( Long         delta64,
                                      const VexArchInfo* archinfo,
                                      const VexAbiInfo*  abiinfo,
                                      Bool         sigill_diag )
@@ -24815,7 +24788,6 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
    /* Set result defaults. */
    dres.whatNext = Dis_Continue;
    dres.len = 0;
-   dres.continueAt = 0;
    dres.jk_StopHere = Ijk_INVALID;
    dres.hint        = Dis_HintNone;
 
@@ -24951,8 +24923,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
    switch (opcode & 0x30) {
       case 0x00:
-         result = disInstr_MIPS_WRK_00(cins, archinfo, abiinfo, &dres, &bstmt, &lastn,
-                                       resteerOkFn, callback_opaque);
+         result = disInstr_MIPS_WRK_00(cins, archinfo, abiinfo,
+                                       &dres, &bstmt, &lastn);
 
          if (result == -1) goto decode_failure;
 
@@ -24962,8 +24934,8 @@ static DisResult disInstr_MIPS_WRK ( Bool(*resteerOkFn) (/*opaque */void *,
 
       case 0x10:
 
-         result = disInstr_MIPS_WRK_10(cins, archinfo, abiinfo, &dres, &bstmt, &lastn,
-                                       resteerOkFn, callback_opaque);
+         result = disInstr_MIPS_WRK_10(cins, archinfo, abiinfo,
+                                       &dres, &bstmt, &lastn);
 
          if (result == -1) goto decode_failure;
 
@@ -25066,15 +25038,6 @@ decode_success:
 
          break;
 
-      case Dis_ResteerU:
-      case Dis_ResteerC:
-         if (mode64)
-            putPC(mkU64(dres.continueAt));
-         else
-            putPC(mkU32(dres.continueAt));
-
-         break;
-
       case Dis_StopHere:
          break;
 
@@ -25110,9 +25073,6 @@ decode_success:
 /* Disassemble a single instruction into IR.  The instruction
    is located in host memory at &guest_code[delta]. */
 DisResult disInstr_MIPS( IRSB*        irsb_IN,
-                         Bool         (*resteerOkFn) ( void *, Addr ),
-                         Bool         resteerCisOk,
-                         void*        callback_opaque,
                          const UChar* guest_code_IN,
                          Long         delta,
                          Addr         guest_IP,
@@ -25142,8 +25102,7 @@ DisResult disInstr_MIPS( IRSB*        irsb_IN,
    guest_PC_curr_instr = (Addr64)guest_IP;
 #endif
 
-   dres = disInstr_MIPS_WRK(resteerOkFn, resteerCisOk, callback_opaque,
-                            delta, archinfo, abiinfo, sigill_diag_IN);
+   dres = disInstr_MIPS_WRK(delta, archinfo, abiinfo, sigill_diag_IN);
 
    return dres;
 }

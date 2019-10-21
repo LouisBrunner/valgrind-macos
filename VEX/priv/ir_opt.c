@@ -891,7 +891,7 @@ static void redundant_put_removal_BB (
    IRStmt* st;
    UInt    key = 0; /* keep gcc -O happy */
 
-   vassert(pxControl < VexRegUpdAllregsAtEachInsn);
+//   vassert(pxControl < VexRegUpdAllregsAtEachInsn);
 
    HashHW* env = newHHW();
 
@@ -2819,7 +2819,7 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
 }
 
 
-IRSB* cprop_BB ( IRSB* in )
+static IRSB* cprop_BB_wrk ( IRSB* in, Bool mustRetainNoOps )
 {
    Int      i;
    IRSB*    out;
@@ -2854,7 +2854,7 @@ IRSB* cprop_BB ( IRSB* in )
       st2 = in->stmts[i];
 
       /* perhaps st2 is already a no-op? */
-      if (st2->tag == Ist_NoOp) continue;
+      if (st2->tag == Ist_NoOp && !mustRetainNoOps) continue;
 
       st2 = subst_and_fold_Stmt( env, st2 );
 
@@ -2864,7 +2864,11 @@ IRSB* cprop_BB ( IRSB* in )
          /* If the statement has been folded into a no-op, forget
             it. */
          case Ist_NoOp:
-            continue;
+            if (mustRetainNoOps) {
+               break;
+            } else {
+               continue;
+            }
 
          /* If the statement assigns to an IRTemp add it to the
             running environment. This is for the benefit of copy
@@ -2979,6 +2983,11 @@ IRSB* cprop_BB ( IRSB* in )
    }
 
    return out;
+}
+
+
+IRSB* cprop_BB ( IRSB* in ) {
+   return cprop_BB_wrk(in, /*mustRetainNoOps=*/False);
 }
 
 
@@ -4665,7 +4674,7 @@ static void deltaIRExpr ( IRExpr* e, Int delta )
 /* Adjust all tmp values (names) in st by delta.  st is destructively
    modified. */
 
-static void deltaIRStmt ( IRStmt* st, Int delta )
+/*static*/ void deltaIRStmt ( IRStmt* st, Int delta )
 {
    Int      i;
    IRDirty* d;
@@ -6632,8 +6641,6 @@ static void considerExpensives ( /*OUT*/Bool* hasGetIorPutI,
      may get shared.  So never change a field of such a tree node;
      instead construct and return a new one if needed.
 */
-
-
 IRSB* do_iropt_BB(
          IRSB* bb0,
          IRExpr* (*specHelper) (const HChar*, IRExpr**, IRStmt**, Int),
@@ -6653,7 +6660,8 @@ IRSB* do_iropt_BB(
 
    /* First flatten the block out, since all other
       phases assume flat code. */
-
+   // FIXME this is no longer necessary, since minimal_iropt should have
+   // flattened it
    bb = flatten_BB ( bb0 );
 
    if (iropt_verbose) {
@@ -6746,6 +6754,81 @@ IRSB* do_iropt_BB(
    return bb;
 }
 
+//static Bool alwaysPrecise ( Int minoff, Int maxoff,
+//                            VexRegisterUpdates pxControl )
+//{
+//   return True;
+//} 
+
+// FIXME make this as cheap as possible
+IRSB* do_minimal_initial_iropt_BB(
+         IRSB* bb0
+         //IRExpr* (*specHelper) (const HChar*, IRExpr**, IRStmt**, Int),
+         //Bool (*preciseMemExnsFn)(Int,Int,VexRegisterUpdates),
+         //VexRegisterUpdates pxControl,
+         //Addr    guest_addr,
+         //VexArch guest_arch
+      )
+{
+   /* First flatten the block out, since all other phases assume flat code. */
+   IRSB* bb = flatten_BB ( bb0 );
+
+   if (iropt_verbose) {
+      vex_printf("\n========= FLAT\n\n" );
+      ppIRSB(bb);
+   }
+
+   redundant_get_removal_BB ( bb );
+   bb = cprop_BB_wrk ( bb, /*mustRetainNoOps=*/True ); // FIXME
+   // This is overkill.  We only really want constant prop, not folding
+
+   // Minor tidying of the block end, to remove a redundant Put of the IP right
+   // at the end:
+   /*
+   ------ IMark(0x401FEC9, 2, 0) ------
+   t18 = GET:I64(168)
+   t19 = amd64g_calculate_condition[mcx=0x13]{0x58155130}(0x4:I64,0x5:I64,..
+   t14 = 64to1(t19)
+   if (t14) { PUT(184) = 0x401FED6:I64; exit-Boring } 
+   PUT(184) = 0x401FECB:I64  <--------------------------------
+   PUT(184) = 0x401FECB:I64; exit-Boring
+   */
+   if (bb->stmts_used > 0) {
+      const IRStmt* last = bb->stmts[bb->stmts_used - 1];
+      if (last->tag == Ist_Put && last->Ist.Put.offset == bb->offsIP
+          && eqIRAtom(last->Ist.Put.data, bb->next)) {
+         bb->stmts_used--;
+      }
+   }
+
+   return bb;
+}
+
+/* Copy the contents of |src| to the end of |dst|.  This entails fixing up the
+   tmp numbers in |src| accordingly.  The final destination of |dst| is thrown
+   away and replaced by the final destination of |src|.  This function doesn't
+   make any assessment of whether it's meaningful or valid to concatenate the
+   two IRSBs; it just *does* the concatenation. */
+void concatenate_irsbs ( IRSB* dst, IRSB* src )
+{
+   // FIXME this is almost identical to code at the end of maybe_unroll_loop_BB.
+   // Maybe try to common it up.
+   Int delta = dst->tyenv->types_used;
+   for (Int i = 0; i < src->tyenv->types_used; i++) {
+      (void)newIRTemp(dst->tyenv, src->tyenv->types[i]);
+   }
+
+   for (Int i = 0; i < src->stmts_used; i++) {
+      IRStmt* s = deepCopyIRStmt(src->stmts[i]);
+      deltaIRStmt(s, delta);
+      addStmtToIRSB(dst, s);
+   }
+   deltaIRExpr(src->next, delta);
+
+   dst->next = src->next;
+   dst->jumpkind = src->jumpkind;
+   vassert(dst->offsIP == src->offsIP);
+}
 
 /*---------------------------------------------------------------*/
 /*--- end                                            ir_opt.c ---*/

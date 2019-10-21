@@ -517,9 +517,11 @@ typedef
          meaning that if a block contains less than 10 guest insns so
          far, the front end(s) will attempt to chase into its
          successor. A setting of zero disables chasing.  */
+      // FIXME change this to a Bool
       Int guest_chase_thresh;
       /* EXPERIMENTAL: chase across conditional branches?  Not all
          front ends honour this.  Default: NO. */
+      // FIXME remove this completely.
       Bool guest_chase_cond;
       /* Register allocator version. Allowed values are:
          - '2': previous, good and slow implementation.

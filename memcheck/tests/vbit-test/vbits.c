@@ -656,6 +656,7 @@ or_vbits(vbits_t v1, vbits_t v2)
    vbits_t new = { .num_bits = v1.num_bits };
 
    switch (v1.num_bits) {
+   case 1:   new.bits.u1  = (v1.bits.u1 | v2.bits.u1) & 1; break;
    case 8:   new.bits.u8  = v1.bits.u8  | v2.bits.u8;  break;
    case 16:  new.bits.u16 = v1.bits.u16 | v2.bits.u16; break;
    case 32:  new.bits.u32 = v1.bits.u32 | v2.bits.u32; break;
@@ -684,6 +685,7 @@ and_vbits(vbits_t v1, vbits_t v2)
    vbits_t new = { .num_bits = v1.num_bits };
 
    switch (v1.num_bits) {
+   case 1:   new.bits.u1  = (v1.bits.u1 & v2.bits.u1) & 1; break;
    case 8:   new.bits.u8  = v1.bits.u8  & v2.bits.u8;  break;
    case 16:  new.bits.u16 = v1.bits.u16 & v2.bits.u16; break;
    case 32:  new.bits.u32 = v1.bits.u32 & v2.bits.u32; break;

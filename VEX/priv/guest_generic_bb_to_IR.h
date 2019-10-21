@@ -50,13 +50,11 @@
    Result of disassembling an instruction
    --------------------------------------------------------------- */
 
-/* The results of disassembling an instruction.  There are three
-   possible outcomes.  For Dis_Resteer, the disassembler _must_
-   continue at the specified address.  For Dis_StopHere, the
-   disassembler _must_ terminate the BB.  For Dis_Continue, we may at
-   our option either disassemble the next insn, or terminate the BB;
-   but in the latter case we must set the bb's ->next field to point
-   to the next instruction.  */
+/* The results of disassembling an instruction.  There are three possible
+   outcomes.  For Dis_StopHere, the disassembler _must_ terminate the BB.  For
+   Dis_Continue, we may at our option either disassemble the next insn, or
+   terminate the BB; but in the latter case we must set the bb's ->next field
+   to point to the next instruction.  */
 
 typedef
 
@@ -69,13 +67,8 @@ typedef
       /* What happens next?
          Dis_StopHere:  this insn terminates the BB; we must stop.
          Dis_Continue:  we can optionally continue into the next insn
-         Dis_ResteerU:  followed an unconditional branch; continue at 
-                        'continueAt'
-         Dis_ResteerC:  (speculatively, of course) followed a
-                        conditional branch; continue at 'continueAt'
       */
-      enum { Dis_StopHere=0x10, Dis_Continue, 
-             Dis_ResteerU, Dis_ResteerC } whatNext;
+      enum { Dis_StopHere=0x10, Dis_Continue } whatNext;
 
       /* Any other hints that we should feed back to the disassembler?
          Dis_HintNone:     no hint
@@ -90,9 +83,6 @@ typedef
          cases. */
       IRJumpKind jk_StopHere;
 
-      /* For Dis_Resteer, this is the guest address we should continue
-         at.  Otherwise ignored (should be zero). */
-      Addr   continueAt;
    }
 
    DisResult;
@@ -100,22 +90,15 @@ typedef
 
 /* ---------------------------------------------------------------
    The type of a function which disassembles one instruction.
-   C's function-type syntax is really astonishing bizarre.
    --------------------------------------------------------------- */
 
 /* A function of this type (DisOneInstrFn) disassembles an instruction
    located at host address &guest_code[delta], whose guest IP is
    guest_IP (this may be entirely unrelated to where the insn is
    actually located in the host's address space.).  The returned
-   DisResult.len field carries its size.  If the returned
-   DisResult.whatNext field is Dis_Resteer then DisResult.continueAt
-   should hold the guest IP of the next insn to disassemble.
+   DisResult.len field carries its size.
 
-   disInstr is not permitted to return Dis_Resteer if resteerOkFn,
-   when applied to the address which it wishes to resteer into,
-   returns False.  
-
-   The resulting IR is added to the end of irbb.
+   The resulting IR is added to the end of irsb.
 */
 
 typedef
@@ -123,21 +106,7 @@ typedef
    DisResult (*DisOneInstrFn) ( 
 
       /* This is the IRSB to which the resulting IR is to be appended. */
-      /*OUT*/ IRSB*        irbb,
-
-      /* Return True iff resteering to the given addr is allowed (for
-         branches/calls to destinations that are known at JIT-time) */
-      /*IN*/  Bool         (*resteerOkFn) ( /*opaque*/void*, Addr ),
-
-      /* Should we speculatively resteer across conditional branches?
-         (Experimental and not enabled by default).  The strategy is
-         to assume that backward branches are taken and forward
-         branches are not taken. */
-      /*IN*/  Bool         resteerCisOk,
-
-      /* Vex-opaque data passed to all caller (valgrind) supplied
-         callbacks. */
-      /*IN*/  void*        callback_opaque,
+      /*OUT*/ IRSB*        irsb,
 
       /* Where is the guest code? */
       /*IN*/  const UChar* guest_code,

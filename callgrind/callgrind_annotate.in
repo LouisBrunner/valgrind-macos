@@ -420,10 +420,8 @@ sub read_input_file()
     # Read header
     while(<INPUTFILE>) {
 
-      # remove comments
-      s/#.*$//;
-
-      if (/^$/) { ; }
+      # Skip comments and empty lines.
+      if (/^\s*$/ || /^\#/) { ; }
 
       elsif (/^version:\s*(\d+)/) {
 	# Can't read format with major version > 1
@@ -540,9 +538,11 @@ sub read_input_file()
 
     # Read body of input file.
     while (<INPUTFILE>) {
+        # Skip comments and empty lines.
+        next if /^\s*$/ || /^\#/;
+
 	$prev_line_num = $curr_line_num;
 
-        s/#.*$//;   # remove comments
         s/^\+(\d+)/$prev_line_num+$1/e;
         s/^\-(\d+)/$prev_line_num-$1/e;
         s/^\*/$prev_line_num/e;
@@ -645,9 +645,6 @@ sub read_input_file()
             $curr_file_ind_CCs = {} unless (defined $curr_file_ind_CCs);
             $curr_fn_CC = $fn_totals{$curr_name};
             $curr_fn_CC = [] unless (defined $curr_fn_CC);
-
-        } elsif (s/^\s*$//) {
-            # blank, do nothing
 
         } elsif (s/^cob=(.*)$//) {
 	  $curr_cobj = uncompressed_name("ob",$1);

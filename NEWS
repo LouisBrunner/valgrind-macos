@@ -82,6 +82,7 @@ where XXXXXX is the bug number as listed below.
 409367  exit_group() after signal to thread waiting in futex() causes hangs
 410599  Non-deterministic behaviour of pth_self_kill_15_other test
 411134  Allow the user to change a set of command line options during execution
+413603  callgrind_annotate/cg_annotate truncate function names at '#'
 
 n-i-bz  Fix minor one time leaks in dhat.
 n-i-bz  Add --run-cxx-freeres=no in outer args to avoid inner crashes.

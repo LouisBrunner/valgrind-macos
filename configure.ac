@@ -1772,7 +1772,7 @@ AM_CONDITIONAL(HAVE_NR_MEMBARRIER, [test x$ac_have_nr_membarrier = xyes])
 
 case "${host_cpu}" in
     mips*)
-        ARCH=$(echo "$CFLAGS" | grep -E -e '-march=@<:@^ @:>@+' -e '-mips@<:@^ +@:>@')
+        ARCH=$(echo "$CFLAGS" | grep -E -e '-march=@<:@^ @:>@+' -e '\B-mips@<:@^ +@:>@')
         if test -z "$ARCH"; then
           # does this compiler support -march=mips32 (mips32 default) ?
           AC_MSG_CHECKING([if gcc accepts -march=mips32 -mabi=32])
@@ -1857,7 +1857,7 @@ case "${host_cpu}" in
 esac
 
 
-ARCH=$(echo "$CFLAGS" | grep -E -e '-march=@<:@^ @:>@+' -e '-mips@<:@^ +@:>@')
+ARCH=$(echo "$CFLAGS" | grep -E -e '-march=@<:@^ @:>@+' -e '\B-mips@<:@^ +@:>@')
 if test -z "$ARCH"; then
   # does this compiler support -march=octeon (Cavium OCTEON I Specific) ?
   AC_MSG_CHECKING([if gcc accepts -march=octeon])

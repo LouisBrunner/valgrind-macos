@@ -388,29 +388,42 @@ static void create_self_checks_as_needed(
 
 
 /*--------------------------------------------------------------*/
-/*--- To do with speculation of IRStmts                      ---*/
+/*--- To do with guarding (conditionalisation) of IRStmts    ---*/
 /*--------------------------------------------------------------*/
 
-static Bool expr_is_speculatable ( const IRExpr* e )
+// Is it possible to guard |e|?  Meaning, is it safe (exception-free) to compute
+// |e| and ignore the result?  Since |e| is by definition otherwise
+// side-effect-free, we don't have to ask about any other effects caused by
+// first computing |e| and then ignoring the result.
+static Bool expr_is_guardable ( const IRExpr* e )
 {
    switch (e->tag) {
       case Iex_Load:
          return False;
-      case Iex_Unop: // FIXME BOGUS, since it might trap
-      case Iex_Binop: // FIXME ditto
-      case Iex_ITE: // this is OK
-         return True;
+      case Iex_Unop:
+         return !primopMightTrap(e->Iex.Unop.op);
+      case Iex_Binop:
+         return !primopMightTrap(e->Iex.Binop.op);
+      case Iex_ITE:
       case Iex_CCall:
-         return True; // This is probably correct
       case Iex_Get:
          return True;
       default:
-         vex_printf("\n"); ppIRExpr(e);
-         vpanic("expr_is_speculatable: unhandled expr");
+         vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
+         vpanic("expr_is_guardable: unhandled expr");
    }
 }
 
-static Bool stmt_is_speculatable ( const IRStmt* st )
+// Is it possible to guard |st|?  Meaning, is it possible to replace |st| by
+// some other sequence of IRStmts which have the same effect on the architected
+// state when the guard is true, but when it is false, have no effect on the
+// architected state and are guaranteed not to cause any exceptions?
+//
+// Note that this isn't as aggressive as it could be: it sometimes returns False
+// in cases where |st| is actually guardable.  This routine must coordinate
+// closely with add_guarded_stmt_to_end_of below, in the sense that that routine
+// must be able to handle any |st| for which this routine returns True.
+static Bool stmt_is_guardable ( const IRStmt* st )
 {
    switch (st->tag) {
       case Ist_IMark:
@@ -421,35 +434,37 @@ static Bool stmt_is_speculatable ( const IRStmt* st )
       case Ist_Exit: // We could in fact spec this, if required
          return False;
       case Ist_WrTmp:
-         return expr_is_speculatable(st->Ist.WrTmp.data);
+         return expr_is_guardable(st->Ist.WrTmp.data);
       default:
-         vex_printf("\n"); ppIRStmt(st);
-         vpanic("stmt_is_speculatable: unhandled stmt");
+         vex_printf("\n"); ppIRStmt(st); vex_printf("\n");
+         vpanic("stmt_is_guardable: unhandled stmt");
    }
 }
 
-static Bool block_is_speculatable ( const IRSB* bb )
+// Are all stmts (but not the end dst value) in |bb| guardable, per
+// stmt_is_guardable?
+static Bool block_is_guardable ( const IRSB* bb )
 {
    Int i = bb->stmts_used;
-   vassert(i >= 2); // Must have at least: IMark, final Exit
+   vassert(i >= 2); // Must have at least: IMark, side Exit (at the end)
    i--;
    vassert(bb->stmts[i]->tag == Ist_Exit);
    i--;
    for (; i >= 0; i--) {
-      if (!stmt_is_speculatable(bb->stmts[i]))
+      if (!stmt_is_guardable(bb->stmts[i]))
          return False;
    }
    return True;
 }
 
-static void speculate_stmt_to_end_of ( /*MOD*/IRSB* bb,
-                                       /*IN*/ IRStmt* st, IRTemp guard )
+// Guard |st| with |guard| and add it to |bb|.  This must be able to handle any
+// |st| for which stmt_is_guardable returns True.
+static void add_guarded_stmt_to_end_of ( /*MOD*/IRSB* bb,
+                                         /*IN*/ IRStmt* st, IRTemp guard )
 {
-   // We assume all stmts we're presented with here have previously been OK'd by
-   // stmt_is_speculatable above.
    switch (st->tag) {
       case Ist_IMark:
-      case Ist_WrTmp: // FIXME is this ok?
+      case Ist_WrTmp:
          addStmtToIRSB(bb, st);
          break;
       case Ist_Put: {
@@ -472,7 +487,7 @@ static void speculate_stmt_to_end_of ( /*MOD*/IRSB* bb,
       case Ist_Exit: {
          // Exit(xguard, dst, jk, offsIP)
          // ==> t1 = And1(xguard, guard)
-         //     Exit(And1(xguard, guard), dst, jk, offsIP)
+         //     Exit(t1, dst, jk, offsIP)
          IRExpr* xguard = st->Ist.Exit.guard;
          IRTemp t1 = newIRTemp(bb->tyenv, Ity_I1);
          addStmtToIRSB(bb, IRStmt_WrTmp(t1, IRExpr_Binop(Iop_And1, xguard,
@@ -482,8 +497,8 @@ static void speculate_stmt_to_end_of ( /*MOD*/IRSB* bb,
          break;
       }
       default:
-         vex_printf("\n"); ppIRStmt(st);
-         vpanic("speculate_stmt_to_end_of: unhandled stmt");
+         vex_printf("\n"); ppIRStmt(st); vex_printf("\n");
+         vpanic("add_guarded_stmt_to_end_of: unhandled stmt");
    }
 }
 
@@ -1435,10 +1450,10 @@ IRSB* bb_to_IR (
                ppBlockEnd(&sx_be);
                vex_printf("\n");
             }
-            // Finally, check the sx block actually is speculatable.
-            ok = block_is_speculatable(sx_bb);
+            // Finally, check the sx block actually is guardable.
+            ok = block_is_guardable(sx_bb);
             if (!ok && debug_print) {
-               vex_printf("\n-+-+ SX not speculatable, giving up. -+-+\n\n");
+               vex_printf("\n-+-+ SX not guardable, giving up. -+-+\n\n");
             }
          }
 
@@ -1450,10 +1465,10 @@ IRSB* bb_to_IR (
             // 0. remove the last Exit on irsb.
             // 1. Add irsb->tyenv->types_used to all the tmps in sx_bb,
             //    by calling deltaIRStmt on all stmts.
-            // 2. Speculate all stmts in sx_bb on irsb_be.Be.Cond.condSX,
+            // 2. Guard all stmts in sx_bb on irsb_be.Be.Cond.condSX,
             //    **including** the last stmt (which must be an Exit).  It's
             //    here that the And1 is generated.
-            // 3. Copy all speculated stmts to the end of irsb.
+            // 3. Copy all guarded stmts to the end of irsb.
             vassert(irsb->stmts_used >= 2);
             irsb->stmts_used--;
             Int delta = irsb->tyenv->types_used;
@@ -1466,7 +1481,7 @@ IRSB* bb_to_IR (
             for (Int i = 0; i < sx_bb->stmts_used; i++) {
                IRStmt* st = deepCopyIRStmt(sx_bb->stmts[i]);
                deltaIRStmt(st, delta);
-               speculate_stmt_to_end_of(irsb, st, irsb_be.Be.Cond.condSX);
+               add_guarded_stmt_to_end_of(irsb, st, irsb_be.Be.Cond.condSX);
             }
 
             if (debug_print) {

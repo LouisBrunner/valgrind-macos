@@ -2013,6 +2013,11 @@ extern void typeOfPrimop ( IROp op,
                            /*OUTs*/ IRType* t_dst, IRType* t_arg1,
                            IRType* t_arg2, IRType* t_arg3, IRType* t_arg4 );
 
+/* Might the given primop trap (eg, attempt integer division by zero)?  If in
+   doubt returns True.  However, the vast majority of primops will never
+   trap. */
+extern Bool primopMightTrap ( IROp op );
+
 /* Encoding of IEEE754-specified rounding modes.
    Note, various front and back ends rely on the actual numerical
    values of these, so do not change them. */

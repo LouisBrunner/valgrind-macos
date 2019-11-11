@@ -2815,6 +2815,19 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, const IRExpr* e )
       return dst;
    }
 
+   if (e->tag == Iex_ITE) { // VFD
+      HReg r1, r0, dst;
+      vassert(ty == Ity_F32);
+      vassert(typeOfIRExpr(env->type_env,e->Iex.ITE.cond) == Ity_I1);
+      r1  = iselFltExpr(env, e->Iex.ITE.iftrue);
+      r0  = iselFltExpr(env, e->Iex.ITE.iffalse);
+      dst = newVRegV(env);
+      addInstr(env, mk_vMOVsd_RR(r1,dst));
+      AMD64CondCode cc = iselCondCode(env, e->Iex.ITE.cond);
+      addInstr(env, AMD64Instr_SseCMov(cc ^ 1, r0, dst));
+      return dst;
+   }
+
    ppIRExpr(e);
    vpanic("iselFltExpr_wrk");
 }

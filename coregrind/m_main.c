@@ -710,6 +710,15 @@ static void process_option (Clo_Mode mode,
          VG_(clo_vex_control).iropt_register_updates_default = pxVals[ix];
       }
 
+   else if VG_STRINDEX_CLO(arg, "--px-file-backed", pxStrings, ix) {
+         // Whereas --px-file-backed isn't
+         // the same flag as --vex-iropt-register-updates.
+         vg_assert(ix < 4);
+         vg_assert(pxVals[ix] >= VexRegUpdSpAtMemAccess);
+         vg_assert(pxVals[ix] <= VexRegUpdAllregsAtEachInsn);
+         VG_(clo_px_file_backed) = pxVals[ix];
+      }
+
    else if VG_BINT_CLO(arg, "--vex-iropt-unroll-thresh",
                        VG_(clo_vex_control).iropt_unroll_thresh, 0, 400) {}
    else if VG_BINT_CLO(arg, "--vex-guest-max-insns",

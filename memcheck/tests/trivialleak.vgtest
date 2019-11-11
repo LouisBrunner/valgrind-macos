@@ -1,2 +1,4 @@
-vgopts: --leak-check=yes -q
+vgopts: --leak-check=yes -q --vex-iropt-register-updates=unwindregs-at-mem-access --px-default=unwindregs-at-mem-access --px-file-backed=unwindregs-at-mem-access
+# The options after -q are just validating these options and synonyms are
+# accepted: the values above are the default values.
 prog: trivialleak

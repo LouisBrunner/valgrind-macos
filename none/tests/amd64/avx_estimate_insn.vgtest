@@ -1,0 +1,3 @@
+prog: avx_estimate_insn
+vgopts: -q
+

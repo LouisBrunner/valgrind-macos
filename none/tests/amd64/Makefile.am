@@ -24,6 +24,7 @@ EXTRA_DIST = \
 	aes.vgtest aes.stdout.exp aes.stderr.exp \
 	amd64locked.vgtest amd64locked.stdout.exp amd64locked.stderr.exp \
 	avx-1.vgtest avx-1.stdout.exp avx-1.stderr.exp \
+	avx_estimate_insn.vgtest avx_estimate_insn.stdout.exp avx_estimate_insn.stderr.exp \
 	avx2-1.vgtest avx2-1.stdout.exp avx2-1.stderr.exp \
 	asorep.stderr.exp asorep.stdout.exp asorep.vgtest \
 	bmi.stderr.exp bmi.stdout.exp bmi.vgtest \
@@ -120,7 +121,8 @@ if BUILD_ADX_TESTS
 endif
 if BUILD_AVX_TESTS
 if BUILD_VPCLMULQDQ_TESTS
-  check_PROGRAMS += avx-1
+  check_PROGRAMS += avx-1 \
+		    avx_estimate_insn
 endif
 if BUILD_FMA4_TESTS
   check_PROGRAMS += fma4

@@ -509,9 +509,9 @@ static void add_guarded_stmt_to_end_of ( /*MOD*/IRSB* bb,
 
 typedef
    enum {
-      Be_Unknown=1, // Unknown end
-      Be_UnCond,    // Unconditional branch to known destination, unassisted
-      Be_Cond       // Conditional branch to known destinations, unassisted
+      Be_Other=1,  // Block end isn't of interest to us
+      Be_Uncond,   // Unconditional branch to known destination, unassisted
+      Be_Cond      // Conditional branch to known destinations, unassisted
    }
    BlockEndTag;
 
@@ -520,10 +520,10 @@ typedef
       BlockEndTag tag;
       union {
          struct {
-         } Unknown;
+         } Other;
          struct {
             Long delta;
-         } UnCond;
+         } Uncond;
          struct {
             IRTemp condSX;
             Long   deltaSX;
@@ -536,11 +536,11 @@ typedef
 static void ppBlockEnd ( const BlockEnd* be )
 {
    switch (be->tag) {
-      case Be_Unknown:
-         vex_printf("!!Unknown!!");
+      case Be_Other:
+         vex_printf("Other");
          break;
-      case Be_UnCond:
-         vex_printf("UnCond{delta=%lld}", be->Be.UnCond.delta);
+      case Be_Uncond:
+         vex_printf("Uncond{delta=%lld}", be->Be.Uncond.delta);
          break;
       case Be_Cond:
          vex_printf("Cond{condSX=");
@@ -558,11 +558,28 @@ static void ppBlockEnd ( const BlockEnd* be )
 static Bool definitely_does_not_jump_to_delta ( const BlockEnd* be, Long delta )
 {
    switch (be->tag) {
-      case Be_Unknown: return False;
-      case Be_UnCond:  return be->Be.UnCond.delta != delta;
-      case Be_Cond:    return be->Be.Cond.deltaSX != delta
-                              && be->Be.Cond.deltaFT != delta;
-      default: vassert(0);
+      case Be_Other:
+         return False;
+      case Be_Uncond:
+         return be->Be.Uncond.delta != delta;
+      case Be_Cond:
+         return be->Be.Cond.deltaSX != delta && be->Be.Cond.deltaFT != delta;
+      default:
+         vassert(0);
+   }
+}
+
+static Addr irconst_to_Addr ( const IRConst* con, const IRType guest_word_type )
+{
+   switch (con->tag) {
+      case Ico_U32:
+         vassert(guest_word_type == Ity_I32);
+         return con->Ico.U32;
+      case Ico_U64:
+         vassert(guest_word_type == Ity_I64);
+         return con->Ico.U64;
+      default:
+         vassert(0);
    }
 }
 
@@ -578,19 +595,7 @@ static Bool irconst_to_maybe_delta ( /*OUT*/Long* delta,
    *delta = 0;
 
    // Extract the destination guest address.
-   Addr dst_ga = 0;
-   switch (known_dst->tag) {
-      case Ico_U32:
-         vassert(guest_word_type == Ity_I32);
-         dst_ga = known_dst->Ico.U32;
-         break;
-      case Ico_U64:
-         vassert(guest_word_type == Ity_I64);
-         dst_ga = known_dst->Ico.U64;
-         break;
-      default:
-         vassert(0);
-   }
+   Addr dst_ga = irconst_to_Addr(known_dst, guest_word_type);
 
    // Check we're allowed to chase into it.
    if (!chase_into_ok(callback_opaque, dst_ga))
@@ -603,38 +608,67 @@ static Bool irconst_to_maybe_delta ( /*OUT*/Long* delta,
    return True;
 }
 
+static Bool any_overlap ( Int start1, Int len1, Int start2, Int len2 )
+{
+   vassert(len1 > 0 && len2 > 0);
+   vassert(start1 >= 0 && start2 >= 0);
+   if (start1 + len1 <= start2) return False;
+   if (start2 + len2 <= start1) return False;
+   return True;
+}
+
 /* Scan |stmts|, starting at |scan_start| and working backwards, to detect the
    case where there are no IRStmt_Exits before we find the IMark.  In other
    words, it scans backwards through some prefix of an instruction's IR to see
-   if there is an exit there. */
-static Bool insn_has_no_other_exits ( IRStmt** const stmts, Int scan_start )
+   if there is an exit there.
+
+   It also checks for explicit PUTs to the PC.
+
+   FIXME: also check PutI and dirty helper calls for such PUTs. */
+static Bool insn_has_no_other_exits_or_PUTs_to_PC (
+               IRStmt** const stmts, Int scan_start,
+               Int offB_GUEST_IP, Int szB_GUEST_IP,
+               const IRTypeEnv* tyenv
+            )
 {
    Bool found_exit = False;
+   Bool found_PUT_to_PC = False;
    Int i = scan_start;
    while (True) {
       if (i < 0)
          break;
       const IRStmt* st = stmts[i];
-      if (st->tag == Ist_IMark)
+      if (st->tag == Ist_IMark) {
+         // We're back at the start of the insn.  Stop searching.
          break;
+      }
       if (st->tag == Ist_Exit) {
          found_exit = True;
          break;
+      }
+      if (st->tag == Ist_Put) {
+         Int offB = st->Ist.Put.offset;
+         Int szB  = sizeofIRType(typeOfIRExpr(tyenv, st->Ist.Put.data));
+         if (any_overlap(offB, szB, offB_GUEST_IP, szB_GUEST_IP)) {
+            found_PUT_to_PC = True;
+            break;
+         }
       }
       i--;
    }
    // We expect IR for all instructions to start with an IMark.
    vassert(i >= 0);
-   return !found_exit;
+   return !found_exit && !found_PUT_to_PC;
 }
 
-// FIXME make this able to recognise all block ends
 static void analyse_block_end ( /*OUT*/BlockEnd* be, const IRSB* irsb,
                                 const Addr guest_IP_sbstart,
                                 const IRType guest_word_type,
                                 Bool (*chase_into_ok)(void*,Addr),
                                 void* callback_opaque,
-                                Bool debug_print )
+                                Int   offB_GUEST_IP,
+                                Int   szB_GUEST_IP,
+                                Bool  debug_print )
 {
    vex_bzero(be, sizeof(*be));
 
@@ -657,7 +691,9 @@ static void analyse_block_end ( /*OUT*/BlockEnd* be, const IRSB* irsb,
           && maybe_exit->Ist.Exit.guard->tag == Iex_RdTmp
           && maybe_exit->Ist.Exit.jk == Ijk_Boring
           && irsb->next->tag == Iex_Const
-          && insn_has_no_other_exits(irsb->stmts, irsb->stmts_used - 2)) {
+          && insn_has_no_other_exits_or_PUTs_to_PC(
+                irsb->stmts, irsb->stmts_used - 2,
+                offB_GUEST_IP, szB_GUEST_IP, irsb->tyenv)) {
          vassert(maybe_exit->Ist.Exit.offsIP == irsb->offsIP);
          IRConst* dst_SX   = maybe_exit->Ist.Exit.dst;
          IRConst* dst_FT   = irsb->next->Iex.Const.con;
@@ -692,7 +728,9 @@ static void analyse_block_end ( /*OUT*/BlockEnd* be, const IRSB* irsb,
    */
    if ((irsb->jumpkind == Ijk_Boring || irsb->jumpkind == Ijk_Call)
        && irsb->next->tag == Iex_Const) {
-      if (insn_has_no_other_exits(irsb->stmts, irsb->stmts_used - 1)) {
+      if (insn_has_no_other_exits_or_PUTs_to_PC(
+             irsb->stmts, irsb->stmts_used - 1,
+             offB_GUEST_IP, szB_GUEST_IP, irsb->tyenv)) {
          // We've got the right pattern.  Check whether we can chase into the
          // destination, and if so convert that to a delta value.
          const IRConst* known_dst = irsb->next->Iex.Const.con;
@@ -703,15 +741,15 @@ static void analyse_block_end ( /*OUT*/BlockEnd* be, const IRSB* irsb,
                                           guest_IP_sbstart, guest_word_type,
                                           chase_into_ok, callback_opaque);
          if (ok) {
-            be->tag = Be_UnCond;
-            be->Be.UnCond.delta = delta;
+            be->tag = Be_Uncond;
+            be->Be.Uncond.delta = delta;
             goto out;
          }
       }
    }
 
-   be->tag = Be_Unknown;
-   // Not identified as anything in particular.
+   // Not identified as anything of interest to us.
+   be->tag = Be_Other;
 
   out:
    if (debug_print) {
@@ -1271,16 +1309,17 @@ IRSB* bb_to_IR (
       // ends.
       BlockEnd irsb_be;
       analyse_block_end(&irsb_be, irsb, guest_IP_sbstart, guest_word_type,
-                        chase_into_ok, callback_opaque, debug_print);
+                        chase_into_ok, callback_opaque,
+                        offB_GUEST_IP, szB_GUEST_IP, debug_print);
 
       // Try for an extend based on an unconditional branch or call to a known
       // destination.
-      if (irsb_be.tag == Be_UnCond) {
+      if (irsb_be.tag == Be_Uncond) {
          if (debug_print) {
             vex_printf("\n-+-+ Unconditional follow (ext# %d) to 0x%llx "
                        "-+-+\n\n",
                        (Int)vge->n_used,
-                       (ULong)((Long)guest_IP_sbstart+ irsb_be.Be.UnCond.delta));
+                       (ULong)((Long)guest_IP_sbstart+ irsb_be.Be.Uncond.delta));
          }
          Int    bb_instrs_used  = 0;
          Bool   bb_verbose_seen = False;
@@ -1290,7 +1329,7 @@ IRSB* bb_to_IR (
             = disassemble_basic_block_till_stop(
                  /*OUT*/ &bb_instrs_used, &bb_verbose_seen, &bb_base, &bb_len,
                  /*MOD*/ emptyIRSB(),
-                 /*IN*/  irsb_be.Be.UnCond.delta,
+                 /*IN*/  irsb_be.Be.Uncond.delta,
                  instrs_avail, guest_IP_sbstart, host_endness, sigill_diag,
                  arch_guest, archinfo_guest, abiinfo_both, guest_word_type,
                  debug_print, dis_instr_fn, guest_code, offB_GUEST_IP
@@ -1305,7 +1344,7 @@ IRSB* bb_to_IR (
          add_extent(vge, bb_base, bb_len);
          update_instr_budget(&instrs_avail, &verbose_mode,
                              bb_instrs_used, bb_verbose_seen);
-      } // if (be.tag == Be_UnCond)
+      } // if (be.tag == Be_Uncond)
    
       // Try for an extend based on a conditional branch, specifically in the
       // hope of identifying and recovering, an "A && B" condition spread across
@@ -1339,7 +1378,8 @@ IRSB* bb_to_IR (
          vassert(sx_instrs_used <= instrs_avail_spec);
          BlockEnd sx_be;
          analyse_block_end(&sx_be, sx_bb, guest_IP_sbstart, guest_word_type,
-                           chase_into_ok, callback_opaque, debug_print);
+                           chase_into_ok, callback_opaque,
+                           offB_GUEST_IP, szB_GUEST_IP, debug_print);
 
          if (debug_print) {
             vex_printf("\n-+-+ SPEC fall through -+-+\n\n");
@@ -1360,7 +1400,8 @@ IRSB* bb_to_IR (
          vassert(ft_instrs_used <= instrs_avail_spec);
          BlockEnd ft_be;
          analyse_block_end(&ft_be, ft_bb, guest_IP_sbstart, guest_word_type,
-                           chase_into_ok, callback_opaque, debug_print);
+                           chase_into_ok, callback_opaque,
+                           offB_GUEST_IP, szB_GUEST_IP, debug_print);
 
          /* In order for the transformation to be remotely valid, we need:
             - At least one of the sx_bb or ft_bb to be have a Be_Cond end.

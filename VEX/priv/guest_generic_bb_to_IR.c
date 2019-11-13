@@ -622,9 +622,8 @@ static Bool any_overlap ( Int start1, Int len1, Int start2, Int len2 )
    words, it scans backwards through some prefix of an instruction's IR to see
    if there is an exit there.
 
-   It also checks for explicit PUTs to the PC.
-
-   FIXME: also check PutI and dirty helper calls for such PUTs. */
+   It also checks for explicit PUTs to the PC, via Ist_Put, Ist_PutI or
+   Ist_Dirty.  I suspect this is ridiculous overkill, but is here for safety. */
 static Bool insn_has_no_other_exits_or_PUTs_to_PC (
                IRStmt** const stmts, Int scan_start,
                Int offB_GUEST_IP, Int szB_GUEST_IP,
@@ -651,6 +650,39 @@ static Bool insn_has_no_other_exits_or_PUTs_to_PC (
          Int szB  = sizeofIRType(typeOfIRExpr(tyenv, st->Ist.Put.data));
          if (any_overlap(offB, szB, offB_GUEST_IP, szB_GUEST_IP)) {
             found_PUT_to_PC = True;
+            break;
+         }
+      }
+      if (st->tag == Ist_PutI) {
+         const IRPutI* details = st->Ist.PutI.details;
+         const IRRegArray* descr = details->descr;
+         Int offB = descr->base;
+         Int szB  = descr->nElems * sizeofIRType(descr->elemTy);
+         if (any_overlap(offB, szB, offB_GUEST_IP, szB_GUEST_IP)) {
+            found_PUT_to_PC = True;
+            break;
+         }
+      }
+      if (st->tag == Ist_Dirty) {
+         vassert(!found_PUT_to_PC);
+         const IRDirty* details = st->Ist.Dirty.details;
+         for (Int j = 0; j < details->nFxState; j++) {
+            const IREffect fx   = details->fxState[j].fx;
+            const Int offset    = details->fxState[j].offset;
+            const Int size      = details->fxState[j].size;
+            const Int nRepeats  = details->fxState[j].nRepeats;
+            const Int repeatLen = details->fxState[j].repeatLen;
+            if (fx == Ifx_Write || fx == Ifx_Modify) {
+               for (Int k = 0; k < nRepeats; k++) {
+                  Int offB = offset + k * repeatLen;
+                  Int szB  = size;
+                  if (any_overlap(offB, szB, offB_GUEST_IP, szB_GUEST_IP)) {
+                     found_PUT_to_PC = True;
+                  }
+               }
+            }
+         }
+         if (found_PUT_to_PC) {
             break;
          }
       }

@@ -81,7 +81,8 @@
 // Log2(sizeof(FastCacheSet)).  This is needed in the handwritten assembly.
 
 #if defined(VGA_amd64) || defined(VGA_arm64) \
-    || defined(VGA_ppc64be) || defined(VGA_ppc64le) || defined(VGA_mips64) \
+    || defined(VGA_ppc64be) || defined(VGA_ppc64le) \
+    || (defined(VGA_mips64) && defined(VGABI_64)) \
     || defined(VGA_s390x)
   // And all other 64-bit hosts
 # define VG_FAST_CACHE_SET_BITS 6
@@ -97,7 +98,8 @@
 # define FCS_h3 56
 
 #elif defined(VGA_x86) || defined(VGA_arm) || defined(VGA_ppc32) \
-      || defined(VGA_mips32) || defined(VGP_nanomips_linux)
+      || defined(VGA_mips32) || defined(VGP_nanomips_linux) \
+      || (defined(VGA_mips64) && defined(VGABI_N32))
   // And all other 32-bit hosts
 # define VG_FAST_CACHE_SET_BITS 5
 # define FCS_g0 0

@@ -220,6 +220,7 @@ VG_(disp_cp_xindir):
 	.long 0x0
 
 1:      // try way 1
+        #if defined(VGABI_64)
         ld    $14, FCS_g1($16)
         bne   $14, $10, 2f  // cmp against .guest1
         // hit at way 1; swap upwards
@@ -230,6 +231,17 @@ VG_(disp_cp_xindir):
         sd    $13, FCS_h0($16)   // new .host0 = old .host1
         sd    $11, FCS_g1($16)   // new .guest1 = old .guest0
         sd    $12, FCS_h1($16)   // new .host1 = old .host0
+        #elif defined(VGABI_N32)
+        lw    $14, FCS_g1($16)
+        bne   $14, $10, 2f
+        lw    $11, FCS_g0($16)
+        lw    $12, FCS_h0($16)
+        lw    $13, FCS_h1($16)
+        sw    $10, FCS_g0($16)
+        sw    $13, FCS_h0($16)
+        sw    $11, FCS_g1($16)
+        sw    $12, FCS_h1($16)
+        #endif
         // stats only
         lw    $15, VG_(stats__n_xIndir_hits1_32)
         addiu $15, $15, 1
@@ -240,6 +252,7 @@ VG_(disp_cp_xindir):
 	.long 0x0
 
 2:      // try way 2
+        #if defined(VGABI_64)
         ld    $14, FCS_g2($16)
         bne   $14, $10, 3f   // cmp against .guest2
         // hit at way 2; swap upwards
@@ -250,6 +263,17 @@ VG_(disp_cp_xindir):
         sd    $13, FCS_h1($16)
         sd    $11, FCS_g2($16)
         sd    $12, FCS_h2($16)
+        #elif defined(VGABI_N32)
+        lw    $14, FCS_g2($16)
+        bne   $14, $10, 3f
+        lw    $11, FCS_g1($16)
+        lw    $12, FCS_h1($16)
+        lw    $13, FCS_h2($16)
+        sw    $10, FCS_g1($16)
+        sw    $13, FCS_h1($16)
+        sw    $11, FCS_g2($16)
+        sw    $12, FCS_h2($16)
+        #endif
         // stats only
         lw    $15, VG_(stats__n_xIndir_hits2_32)
         addiu $15, $15, 1
@@ -260,6 +284,7 @@ VG_(disp_cp_xindir):
 	.long 0x0
 
 3:      // try way 3
+        #if defined(VGABI_64)
         ld    $14, FCS_g3($16)
         bne   $14, $10, 4f   // cmp against .guest3
         // hit at way 3; swap upwards
@@ -270,6 +295,17 @@ VG_(disp_cp_xindir):
         sd    $13, FCS_h2($16)
         sd    $11, FCS_g3($16)
         sd    $12, FCS_h3($16)
+        #elif defined(VGABI_N32)
+        lw    $14, FCS_g3($16)
+        bne   $14, $10, 4f
+        lw    $11, FCS_g2($16)
+        lw    $12, FCS_h2($16)
+        lw    $13, FCS_h3($16)
+        sw    $10, FCS_g2($16)
+        sw    $13, FCS_h2($16)
+        sw    $11, FCS_g3($16)
+        sw    $12, FCS_h3($16)
+        #endif
         // stats only
         lw    $15, VG_(stats__n_xIndir_hits3_32)
         addiu $15, $15, 1

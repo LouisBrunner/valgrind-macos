@@ -809,6 +809,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_pwritev2, sys_pwritev2),
    LINX_ (__NR_syncfs, sys_syncfs),
    LINXY (__NR_statx, sys_statx),
+   LINX_ (__NR_setns, sys_setns),
 };
 
 SyscallTableEntry * ML_(get_linux_syscall_entry) ( UInt sysno )

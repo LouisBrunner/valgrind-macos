@@ -237,6 +237,7 @@ DECL_TEMPLATE(linux, sys_sched_setaffinity);
 DECL_TEMPLATE(linux, sys_sched_getaffinity);
 
 DECL_TEMPLATE(linux, sys_unshare);
+DECL_TEMPLATE(linux, sys_setns);
 
 // These ones have different parameters and/or return values on Darwin.
 // Also, some archs on Linux do not match the generic wrapper for sys_pipe.

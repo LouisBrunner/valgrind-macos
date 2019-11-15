@@ -808,6 +808,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_getrandom,              sys_getrandom),
    LINXY (__NR_memfd_create,           sys_memfd_create),
    LINXY (__NR_statx,                  sys_statx),
+   LINX_ (__NR_setns,                  sys_setns),
    //    (__NR_bpf,                    sys_ni_syscall),
    //    (__NR_execveat,               sys_ni_syscall),
    //    (__NR_userfaultfd,            sys_ni_syscall),

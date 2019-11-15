@@ -3772,6 +3772,17 @@ PRE(sys_unshare)
    PRE_REG_READ1(int, "unshare", unsigned long, flags);
 }
 
+PRE(sys_setns)
+{
+   PRINT("sys_setns ( %ld, %ld )", SARG1, SARG2);
+   PRE_REG_READ2(int, "setns",
+                 int, fd,
+                 int, nstype);
+   if (!ML_(fd_allowed)(ARG1, "setns", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+}
+
+
 /* ---------------------------------------------------------------------
    miscellaneous wrappers
    ------------------------------------------------------------------ */

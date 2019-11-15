@@ -86,6 +86,9 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
+343099  Linux setns syscall wrapper missing, unhandled syscall: 308
+        == 368923 WARNING: unhandled arm64-linux syscall: 268 (setns)
+        == 369031 WARNING: unhandled amd64-linux syscall: 308 (setns)
 385386  Assertion failed "szB >= CACHE_ENTRY_SIZE" at m_debuginfo/image.c:517
 400162  Patch: Guard against __GLIBC_PREREQ for musl libc
 400593  In Coregrind, use statx for some internal syscalls if [f]stat[64] fail

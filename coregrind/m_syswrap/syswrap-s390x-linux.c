@@ -817,7 +817,7 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_open_by_handle_at, sys_open_by_handle_at),              // 336
    LINXY(__NR_clock_adjtime, sys_clock_adjtime),                      // 337
    LINX_(__NR_syncfs, sys_syncfs),                                    // 338
-// ?????(__NR_setns, ),                                               // 339
+   LINX_(__NR_setns, sys_setns),                                      // 339
 
    LINXY(__NR_process_vm_readv, sys_process_vm_readv),                // 340
    LINX_(__NR_process_vm_writev, sys_process_vm_writev),              // 341

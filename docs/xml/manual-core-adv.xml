@@ -1563,8 +1563,7 @@ $3 = {lwpid = 0x4688, threadgroup = 0x4688, parent = 0x0,
 (gdb) p vex_control
 $5 = {iropt_verbosity = 0, iropt_level = 2, 
   iropt_register_updates = VexRegUpdUnwindregsAtMemAccess, 
-  iropt_unroll_thresh = 120, guest_max_insns = 60, guest_chase_thresh = 10, 
-  guest_chase_cond = 0 '\000'}
+  iropt_unroll_thresh = 120, guest_max_insns = 60, guest_chase_thresh = 10}
 (gdb) 
 ]]></screen>
   </listitem>

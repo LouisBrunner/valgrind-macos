@@ -1237,8 +1237,7 @@ IRSB* bb_to_IR (
    vassert(sizeof(HWord) == sizeof(void*));
    vassert(vex_control.guest_max_insns >= 1);
    vassert(vex_control.guest_max_insns <= 100);
-   vassert(vex_control.guest_chase_thresh >= 0);
-   vassert(vex_control.guest_chase_thresh < vex_control.guest_max_insns);
+   vassert(vex_control.guest_chase == False || vex_control.guest_chase == True);
    vassert(guest_word_type == Ity_I32 || guest_word_type == Ity_I64);
 
    if (guest_word_type == Ity_I32) {
@@ -1324,7 +1323,7 @@ IRSB* bb_to_IR (
 
       // Reasons to give up immediately:
       // User or tool asked us not to chase
-      if (vex_control.guest_chase_thresh == 0)
+      if (!vex_control.guest_chase)
          break;
 
       // Out of extent slots

@@ -271,8 +271,7 @@ static void usage_NORETURN ( int need_help )
 "    --vex-iropt-level=<0..2>               [2]\n"
 "    --vex-iropt-unroll-thresh=<0..400>     [120]\n"
 "    --vex-guest-max-insns=<1..100>         [50]\n"
-"    --vex-guest-chase-thresh=<0..99>       [10]\n"
-"    --vex-guest-chase-cond=no|yes          [no]\n"
+"    --vex-guest-chase=no|yes               [yes]\n"
 "    Precise exception control.  Possible values for 'mode' are as follows\n"
 "      and specify the minimum set of registers guaranteed to be correct\n"
 "      immediately prior to memory access instructions:\n"
@@ -723,10 +722,8 @@ static void process_option (Clo_Mode mode,
                        VG_(clo_vex_control).iropt_unroll_thresh, 0, 400) {}
    else if VG_BINT_CLO(arg, "--vex-guest-max-insns",
                        VG_(clo_vex_control).guest_max_insns, 1, 100) {}
-   else if VG_BINT_CLO(arg, "--vex-guest-chase-thresh",
-                       VG_(clo_vex_control).guest_chase_thresh, 0, 99) {}
-   else if VG_BOOL_CLO(arg, "--vex-guest-chase-cond",
-                       VG_(clo_vex_control).guest_chase_cond) {}
+   else if VG_BOOL_CLO(arg, "--vex-guest-chase",
+                       VG_(clo_vex_control).guest_chase) {}
 
    else if VG_INT_CLO(arg, "--log-fd", pos->tmp_log_fd) {
       pos->log_to = VgLogTo_Fd;
@@ -974,16 +971,6 @@ void main_process_cmd_line_options( void )
    if (VG_(clo_vgdb_prefix) == NULL)
      VG_(clo_vgdb_prefix) = VG_(vgdb_prefix_default)();
 
-   /* Make VEX control parameters sane */
-
-   if (VG_(clo_vex_control).guest_chase_thresh
-       >= VG_(clo_vex_control).guest_max_insns)
-      VG_(clo_vex_control).guest_chase_thresh
-         = VG_(clo_vex_control).guest_max_insns - 1;
-
-   if (VG_(clo_vex_control).guest_chase_thresh < 0)
-      VG_(clo_vex_control).guest_chase_thresh = 0;
- 
    /* Check various option values */
 
    if (VG_(clo_verbosity) < 0)

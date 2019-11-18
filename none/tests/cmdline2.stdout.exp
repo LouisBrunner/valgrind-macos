@@ -184,8 +184,7 @@ usage: valgrind [options] prog-and-args
     --vex-iropt-level=<0..2>               [2]
     --vex-iropt-unroll-thresh=<0..400>     [120]
     --vex-guest-max-insns=<1..100>         [50]
-    --vex-guest-chase-thresh=<0..99>       [10]
-    --vex-guest-chase-cond=no|yes          [no]
+    --vex-guest-chase=no|yes               [yes]
     Precise exception control.  Possible values for 'mode' are as follows
       and specify the minimum set of registers guaranteed to be correct
       immediately prior to memory access instructions:

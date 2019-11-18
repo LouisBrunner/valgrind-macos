@@ -512,17 +512,12 @@ typedef
          BBs longer than this are split up.  Default=60 (guest
          insns). */
       Int guest_max_insns;
-      /* How aggressive should front ends be in following
-         unconditional branches to known destinations?  Default=10,
-         meaning that if a block contains less than 10 guest insns so
-         far, the front end(s) will attempt to chase into its
-         successor. A setting of zero disables chasing.  */
-      // FIXME change this to a Bool
-      Int guest_chase_thresh;
-      /* EXPERIMENTAL: chase across conditional branches?  Not all
-         front ends honour this.  Default: NO. */
-      // FIXME remove this completely.
-      Bool guest_chase_cond;
+      /* Should Vex try to construct superblocks, by chasing unconditional
+         branches/calls to known destinations, and performing AND/OR idiom
+         recognition?  It is recommended to set this to True as that possibly
+         improves performance a bit, and also is important for avoiding certain
+         kinds of false positives in Memcheck.  Default=True.  */
+      Bool guest_chase;
       /* Register allocator version. Allowed values are:
          - '2': previous, good and slow implementation.
          - '3': current, faster implementation; perhaps producing slightly worse

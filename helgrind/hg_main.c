@@ -5954,14 +5954,13 @@ static void hg_post_clo_init ( void )
 {
    Thr* hbthr_root;
 
-   if (HG_(clo_delta_stacktrace)
-       && VG_(clo_vex_control).guest_chase_thresh != 0) {
+   if (HG_(clo_delta_stacktrace) && VG_(clo_vex_control).guest_chase) {
       if (VG_(clo_verbosity) >= 2)
          VG_(message)(Vg_UserMsg,
                       "helgrind --delta-stacktrace=yes only works with "
-                      "--vex-guest-chase-thresh=0\n"
-                      "=> (re-setting it to 0)\n");
-      VG_(clo_vex_control).guest_chase_thresh = 0;
+                      "--vex-guest-chase=no\n"
+                      "=> (re-setting it to 'no')\n");
+      VG_(clo_vex_control).guest_chase = False;
    }
 
 

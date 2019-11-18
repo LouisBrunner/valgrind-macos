@@ -514,8 +514,8 @@ static void bbv_post_clo_init(void)
 
       /* Try a closer approximation of basic blocks  */
       /* This is the same as the command line option */
-      /* --vex-guest-chase-thresh=0                  */
-   VG_(clo_vex_control).guest_chase_thresh = 0;
+      /* --vex-guest-chase=no                        */
+   VG_(clo_vex_control).guest_chase = False;
 }
 
    /* Parse the command line options */

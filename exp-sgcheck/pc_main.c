@@ -147,7 +147,7 @@ static void pc_pre_clo_init(void)
    sg_pre_clo_init();
 
    VG_(clo_vex_control).iropt_unroll_thresh = 0;
-   VG_(clo_vex_control).guest_chase_thresh = 0;
+   VG_(clo_vex_control).guest_chase = False;
 }
 
 VG_DETERMINE_INTERFACE_VERSION(pc_pre_clo_init)

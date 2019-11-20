@@ -3078,6 +3078,31 @@ CFLAGS="$save_CFLAGS"
 AM_CONDITIONAL(BUILD_ARMV8_CRC_TESTS, test x$ac_have_armv8_crc_feature = xyes)
 
 
+# Does the C compiler support the armv81 flag and the assembler v8.1 instructions
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_ARMV81_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if gcc supports the armv81 feature flag and assembler supports v8.1 instructions])
+
+save_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -march=armv8.1-a -Werror"
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+int main()
+{
+    __asm__ __volatile__("ldadd x0, x1, [x2]" ::: "memory");
+    return 0;
+}
+]])], [
+ac_have_armv81_feature=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_armv81_feature=no
+AC_MSG_RESULT([no])
+])
+CFLAGS="$save_CFLAGS"
+
+AM_CONDITIONAL(BUILD_ARMV81_TESTS, test x$ac_have_armv81_feature = xyes)
+
+
 # XXX JRS 2010 Oct 13: what is this for?  For sure, we don't need this
 # when building the tool executables.  I think we should get rid of it.
 #

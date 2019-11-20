@@ -1380,13 +1380,14 @@ static ARM64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
            || e->Iex.Binop.op == Iop_CmpLT64U
            || e->Iex.Binop.op == Iop_CmpLE64S
            || e->Iex.Binop.op == Iop_CmpLE64U
-           || e->Iex.Binop.op == Iop_CasCmpEQ64)) {
+           || e->Iex.Binop.op == Iop_CasCmpEQ64
+           || e->Iex.Binop.op == Iop_CasCmpNE64)) {
       HReg      argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
       ARM64RIA* argR = iselIntExpr_RIA(env, e->Iex.Binop.arg2);
       addInstr(env, ARM64Instr_Cmp(argL, argR, True/*is64*/));
       switch (e->Iex.Binop.op) {
          case Iop_CmpEQ64: case Iop_CasCmpEQ64: return ARM64cc_EQ;
-         case Iop_CmpNE64:  return ARM64cc_NE;
+         case Iop_CmpNE64: case Iop_CasCmpNE64: return ARM64cc_NE;
          case Iop_CmpLT64S: return ARM64cc_LT;
          case Iop_CmpLT64U: return ARM64cc_CC;
          case Iop_CmpLE64S: return ARM64cc_LE;
@@ -1403,13 +1404,14 @@ static ARM64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
            || e->Iex.Binop.op == Iop_CmpLT32U
            || e->Iex.Binop.op == Iop_CmpLE32S
            || e->Iex.Binop.op == Iop_CmpLE32U
-           || e->Iex.Binop.op == Iop_CasCmpEQ32)) {
+           || e->Iex.Binop.op == Iop_CasCmpEQ32
+           || e->Iex.Binop.op == Iop_CasCmpNE32)) {
       HReg      argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
       ARM64RIA* argR = iselIntExpr_RIA(env, e->Iex.Binop.arg2);
       addInstr(env, ARM64Instr_Cmp(argL, argR, False/*!is64*/));
       switch (e->Iex.Binop.op) {
          case Iop_CmpEQ32: case Iop_CasCmpEQ32: return ARM64cc_EQ;
-         case Iop_CmpNE32:  return ARM64cc_NE;
+         case Iop_CmpNE32: case Iop_CasCmpNE32: return ARM64cc_NE;
          case Iop_CmpLT32S: return ARM64cc_LT;
          case Iop_CmpLT32U: return ARM64cc_CC;
          case Iop_CmpLE32S: return ARM64cc_LE;
@@ -1420,7 +1422,8 @@ static ARM64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 
    /* --- Cmp*16*(x,y) --- */
    if (e->tag == Iex_Binop
-       && (e->Iex.Binop.op == Iop_CasCmpEQ16)) {
+       && (e->Iex.Binop.op == Iop_CasCmpEQ16
+           || e->Iex.Binop.op == Iop_CasCmpNE16)) {
       HReg argL  = iselIntExpr_R(env, e->Iex.Binop.arg1);
       HReg argR  = iselIntExpr_R(env, e->Iex.Binop.arg2);
       HReg argL2 = widen_z_16_to_64(env, argL);
@@ -1428,13 +1431,15 @@ static ARM64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       addInstr(env, ARM64Instr_Cmp(argL2, ARM64RIA_R(argR2), True/*is64*/));
       switch (e->Iex.Binop.op) {
          case Iop_CasCmpEQ16: return ARM64cc_EQ;
+         case Iop_CasCmpNE16: return ARM64cc_NE;
          default: vpanic("iselCondCode(arm64): CmpXX16");
       }
    }
 
    /* --- Cmp*8*(x,y) --- */
    if (e->tag == Iex_Binop
-       && (e->Iex.Binop.op == Iop_CasCmpEQ8)) {
+       && (e->Iex.Binop.op == Iop_CasCmpEQ8
+           || e->Iex.Binop.op == Iop_CasCmpNE8)) {
       HReg argL  = iselIntExpr_R(env, e->Iex.Binop.arg1);
       HReg argR  = iselIntExpr_R(env, e->Iex.Binop.arg2);
       HReg argL2 = widen_z_8_to_64(env, argL);
@@ -1442,6 +1447,7 @@ static ARM64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       addInstr(env, ARM64Instr_Cmp(argL2, ARM64RIA_R(argR2), True/*is64*/));
       switch (e->Iex.Binop.op) {
          case Iop_CasCmpEQ8: return ARM64cc_EQ;
+         case Iop_CasCmpNE8: return ARM64cc_NE;
          default: vpanic("iselCondCode(arm64): CmpXX8");
       }
    }

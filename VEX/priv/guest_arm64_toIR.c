@@ -1033,6 +1033,18 @@ static IRTemp mathREPLICATE ( IRType ty, IRTemp arg, UInt imm )
    return res;
 }
 
+/* S-widen 8/16/32/64 bit int expr to 64. */
+static IRExpr* widenSto64 ( IRType srcTy, IRExpr* e )
+{
+   switch (srcTy) {
+      case Ity_I64: return e;
+      case Ity_I32: return unop(Iop_32Sto64, e);
+      case Ity_I16: return unop(Iop_16Sto64, e);
+      case Ity_I8:  return unop(Iop_8Sto64, e);
+      default: vpanic("widenSto64(arm64)");
+   }
+}
+
 /* U-widen 8/16/32/64 bit int expr to 64. */
 static IRExpr* widenUto64 ( IRType srcTy, IRExpr* e )
 {
@@ -6713,6 +6725,137 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
       assign(ea, binop(Iop_Add64, getIReg64orSP(nn), mkU64(offset)));
       /* No actual code to generate. */
       DIP("prfum prfop=%u, [%s, #0x%llx]\n", tt, nameIReg64orSP(nn), offset);
+      return True;
+   }
+
+   /* ---------------- ARMv8.1-LSE: Atomic Memory Operations ---------------- */
+   /* 31 29     23 22 21 20 15   11 9 4
+      sz 111000 A  R  1  s  0000 00 n t LDADD{,A}{,L}<sz>  <Rs>, <Rt>, [<Xn|SP>]
+      sz 111000 A  R  1  s  0001 00 n t LDCLR{,A}{,L}<sz>  <Rs>, <Rt>, [<Xn|SP>]
+      sz 111000 A  R  1  s  0010 00 n t LDEOR{,A}{,L}<sz>  <Rs>, <Rt>, [<Xn|SP>]
+      sz 111000 A  R  1  s  0011 00 n t LDSET{,A}{,L}<sz>  <Rs>, <Rt>, [<Xn|SP>]
+      sz 111000 A  R  1  s  0100 00 n t LDSMAX{,A}{,L}<sz> <Rs>, <Rt>, [<Xn|SP>]
+      sz 111000 A  R  1  s  0101 00 n t LDSMIN{,A}{,L}<sz> <Rs>, <Rt>, [<Xn|SP>]
+      sz 111000 A  R  1  s  0110 00 n t LDUMAX{,A}{,L}<sz> <Rs>, <Rt>, [<Xn|SP>]
+      sz 111000 A  R  1  s  0111 00 n t LDUMIN{,A}{,L}<sz> <Rs>, <Rt>, [<Xn|SP>]
+      sz 111000 A  R  1  s  1000 00 n t SWP{,A}{,L}<sz>    <Rs>, <Rt>, [<Xn|SP>]
+   */
+   if (INSN(29,24) == BITS6(1,1,1,0,0,0)
+       && INSN(21,21) == 1
+       && (INSN(15,12) <= BITS4(1,0,0,0))
+       && INSN(11,10) == BITS2(0,0)) {
+      UInt szBlg2 = INSN(31,30);
+      Bool isAcq = INSN(23,23) == 1;
+      Bool isRel = INSN(22,22) == 1;
+      UInt ss  = INSN(20,16);
+      UInt opc = INSN(15,12);
+      UInt nn  = INSN(9,5);
+      UInt tt  = INSN(4,0);
+
+      const HChar* nm = NULL;
+      const HChar* suffix[4] = { "b", "h", "", "" };
+
+      vassert(szBlg2 < 4);
+      UInt  szB = 1 << szBlg2; /* 1, 2, 4 or 8 bytes*/
+      IRType ty = integerIRTypeOfSize(szB);
+      Bool is64 = szB == 8;
+      Bool isSigned = (opc == 4) || (opc == 5) /*smax || smin*/;
+
+      // IR used to emulate these atomic memory ops:
+      // 1) barrier
+      // 2) load
+      // 3) widen operands and do arithmetic/logic op
+      // 4) cas to see if target memory updated
+      // 5) barrier
+      // 6) repeat from 1) if cas says target memory not updated
+      // 7) update register
+
+      IRTemp ea = newTemp(Ity_I64);
+      assign(ea, getIReg64orSP(nn));
+
+      // Insert barrier before loading for acquire and acquire-release variants:
+      // A and AL.
+      if (isAcq && (tt != 31))
+         stmt(IRStmt_MBE(Imbe_Fence));
+
+      // Load LHS from memory, RHS from register.
+      IRTemp orig = newTemp(ty);
+      assign(orig, loadLE(ty, mkexpr(ea)));
+      IRExpr *lhs = mkexpr(orig);
+      IRExpr *rhs = narrowFrom64(ty, getIReg64orZR(ss));
+      IRExpr *res = NULL;
+
+      lhs = isSigned ? widenSto64(ty, lhs) : widenUto64(ty, lhs);
+      rhs = isSigned ? widenSto64(ty, rhs) : widenUto64(ty, rhs);
+
+      // Perform the operation.
+      switch (opc) {
+         case 0:
+            nm = "ldadd";
+            res = binop(Iop_Add64, lhs, rhs);
+            break;
+         case 1:
+            nm = "ldclr";
+            res = binop(Iop_And64, lhs, unop(mkNOT(Ity_I64), rhs));
+            break;
+         case 2:
+            nm = "ldeor";
+            res = binop(Iop_Xor64, lhs, rhs);
+            break;
+         case 3:
+            nm = "ldset";
+            res = binop(Iop_Or64, lhs, rhs);
+            break;
+         case 4:
+            nm = "ldsmax";
+            res = IRExpr_ITE(binop(Iop_CmpLT64S, lhs, rhs), rhs, lhs);
+            break;
+         case 5:
+            nm = "ldsmin";
+            res = IRExpr_ITE(binop(Iop_CmpLT64S, lhs, rhs), lhs, rhs);
+            break;
+         case 6:
+            nm = "ldumax";
+            res = IRExpr_ITE(binop(Iop_CmpLT64U, lhs, rhs), rhs, rhs);
+            break;
+         case 7:
+            nm = "ldumin";
+            res = IRExpr_ITE(binop(Iop_CmpLT64U, lhs, rhs), lhs, rhs);
+            break;
+         case 8:
+            nm = "swp";
+            res = lhs;
+            break;
+         default:
+            vassert(0);
+            break;
+      }
+
+      // Store the result back if LHS remains unchanged in memory.
+      IRTemp old = newTemp(ty);
+      stmt( IRStmt_CAS(mkIRCAS(/*oldHi*/IRTemp_INVALID, old,
+                               Iend_LE, mkexpr(ea),
+                               /*expdHi*/NULL, mkexpr(orig),
+                               /*dataHi*/NULL, narrowFrom64(ty, res))) );
+
+      // Insert barrier after storing for release and acquire-release variants:
+      // L and AL.
+      if (isRel)
+         stmt(IRStmt_MBE(Imbe_Fence));
+
+      // Retry if the CAS failed (i.e. when old != orig).
+      IRConst* nia = IRConst_U64(guest_PC_curr_instr);
+      stmt( IRStmt_Exit(
+                binop(Iop_CasCmpNE64,
+                      widenUto64(ty, mkexpr(old)),
+                      widenUto64(ty, mkexpr(orig))),
+                Ijk_Boring, nia, OFFB_PC ));
+      // Otherwise we succeeded.
+      putIReg64orZR(tt, widenUto64(ty, mkexpr(old)));
+
+      DIP("%s%s%s%s %s, %s, [%s]\n", nm, isAcq ? "a" : "", isRel ? "l" : "",
+          suffix[szBlg2], nameIRegOrZR(is64, ss), nameIRegOrZR(is64, tt),
+          nameIReg64orSP(nn));
       return True;
    }
 

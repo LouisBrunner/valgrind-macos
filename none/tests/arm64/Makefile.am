@@ -16,8 +16,7 @@ check_PROGRAMS = \
         cvtf_imm \
 	fp_and_simd \
 	integer \
-	memory \
-        atomics_v81
+	memory
 
 if BUILD_ARMV8_CRC_TESTS
   check_PROGRAMS += crc32

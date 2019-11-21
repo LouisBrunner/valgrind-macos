@@ -2388,7 +2388,7 @@ IRExpr* mkIRExprCCall ( IRType retty,
 /* Convenience functions for atoms (IRExprs which are either Iex_Tmp or
  * Iex_Const). */
 static inline Bool isIRAtom ( const IRExpr* e ) {
-   return toBool(e->tag == Iex_RdTmp || e->tag == Iex_Const);
+   return e->tag == Iex_RdTmp || e->tag == Iex_Const;
 }
 
 /* Are these two IR atoms identical?  Causes an assertion
@@ -3195,6 +3195,7 @@ extern void sanityCheckIRSB ( const  IRSB*  bb,
                               Bool   require_flatness, 
                               IRType guest_word_size );
 extern Bool isFlatIRStmt ( const IRStmt* );
+extern Bool isFlatIRSB ( const IRSB* );
 
 /* Is this any value actually in the enumeration 'IRType' ? */
 extern Bool isPlausibleIRType ( IRType ty );

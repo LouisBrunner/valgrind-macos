@@ -4270,7 +4270,7 @@ static inline Bool isIRAtom_or_VECRET_or_GSPTR ( const IRExpr* e )
   return UNLIKELY(is_IRExpr_VECRET_or_GSPTR(e));
 }
 
-Bool isFlatIRStmt ( const IRStmt* st )
+inline Bool isFlatIRStmt ( const IRStmt* st )
 {
    Int      i;
    const IRExpr*  e;
@@ -4372,6 +4372,20 @@ Bool isFlatIRStmt ( const IRStmt* st )
       default: 
          vpanic("isFlatIRStmt(st)");
    }
+}
+
+Bool isFlatIRSB ( const IRSB* sb )
+{
+   for (Int i = 0; i < sb->stmts_used; i++) {
+      if (!isFlatIRStmt(sb->stmts[i]))
+          return False;
+   }
+
+   if (!isIRAtom(sb->next)) {
+      return False;
+   }
+
+   return True;
 }
 
 

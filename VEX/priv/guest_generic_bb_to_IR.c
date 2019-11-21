@@ -128,7 +128,7 @@ static void create_self_checks_as_needed(
       Addr     base2check;
       UInt     len2check;
       HWord    expectedhW;
-      IRTemp   tistart_tmp, tilen_tmp;
+      IRTemp   tistart_tmp, tilen_tmp, callresult_tmp, exitguard_tmp;
       HWord    VEX_REGPARM(2) (*fn_generic)(HWord, HWord);
       HWord    VEX_REGPARM(1) (*fn_spec)(HWord);
       const HChar* nm_generic;
@@ -161,7 +161,7 @@ static void create_self_checks_as_needed(
       const Int n_extent_slots = sizeof(vge->base) / sizeof(vge->base[0]);
       vassert(n_extent_slots == 3);
 
-      vassert(selfcheck_idx + (n_extent_slots - 1) * 5 + 4 < irsb->stmts_used);
+      vassert(selfcheck_idx + (n_extent_slots - 1) * 7 + 6 < irsb->stmts_used);
 
       for (Int i = 0; i < vge->n_used; i++) {
          /* Do we need to generate a check for this extent? */
@@ -297,16 +297,20 @@ static void create_self_checks_as_needed(
             = guest_word_type==Ity_I32 ? IRConst_U32(len2check)
                                        : IRConst_U64(len2check);
 
-         IRStmt** stmt0 = &irsb->stmts[selfcheck_idx + i * 5 + 0];
-         IRStmt** stmt1 = &irsb->stmts[selfcheck_idx + i * 5 + 1];
-         IRStmt** stmt2 = &irsb->stmts[selfcheck_idx + i * 5 + 2];
-         IRStmt** stmt3 = &irsb->stmts[selfcheck_idx + i * 5 + 3];
-         IRStmt** stmt4 = &irsb->stmts[selfcheck_idx + i * 5 + 4];
+         IRStmt** stmt0 = &irsb->stmts[selfcheck_idx + i * 7 + 0];
+         IRStmt** stmt1 = &irsb->stmts[selfcheck_idx + i * 7 + 1];
+         IRStmt** stmt2 = &irsb->stmts[selfcheck_idx + i * 7 + 2];
+         IRStmt** stmt3 = &irsb->stmts[selfcheck_idx + i * 7 + 3];
+         IRStmt** stmt4 = &irsb->stmts[selfcheck_idx + i * 7 + 4];
+         IRStmt** stmt5 = &irsb->stmts[selfcheck_idx + i * 7 + 5];
+         IRStmt** stmt6 = &irsb->stmts[selfcheck_idx + i * 7 + 6];
          vassert((*stmt0)->tag == Ist_NoOp);
          vassert((*stmt1)->tag == Ist_NoOp);
          vassert((*stmt2)->tag == Ist_NoOp);
          vassert((*stmt3)->tag == Ist_NoOp);
          vassert((*stmt4)->tag == Ist_NoOp);
+         vassert((*stmt5)->tag == Ist_NoOp);
+         vassert((*stmt6)->tag == Ist_NoOp);
 
          *stmt0 = IRStmt_WrTmp(tistart_tmp, IRExpr_Const(base2check_IRConst) );
          *stmt1 = IRStmt_WrTmp(tilen_tmp, IRExpr_Const(len2check_IRConst) );
@@ -332,6 +336,8 @@ static void create_self_checks_as_needed(
             }
          }
 
+         /* Generate the call to the relevant function, and the comparison of
+            the result against the expected value. */
          IRExpr* callexpr = NULL;
          if (fn_spec) {
             callexpr = mkIRExprCCall( 
@@ -352,36 +358,46 @@ static void create_self_checks_as_needed(
                        );
          }
 
-         *stmt4
-            = IRStmt_Exit( 
-                 IRExpr_Binop( 
-                    host_word_type==Ity_I64 ? Iop_CmpNE64 : Iop_CmpNE32,
-                    callexpr,
-                       host_word_type==Ity_I64
-                          ? IRExpr_Const(IRConst_U64(expectedhW))
-                          : IRExpr_Const(IRConst_U32(expectedhW))
-                 ),
-                 Ijk_InvalICache,
-                 /* Where we must restart if there's a failure: at the
-                    first extent, regardless of which extent the
-                    failure actually happened in. */
-                 guest_IP_sbstart_IRConst,
-                 offB_GUEST_IP
-              );
+         callresult_tmp = newIRTemp(irsb->tyenv, host_word_type);
+         *stmt4 = IRStmt_WrTmp(callresult_tmp, callexpr);
+
+         exitguard_tmp = newIRTemp(irsb->tyenv, Ity_I1);
+         *stmt5 = IRStmt_WrTmp(
+                     exitguard_tmp,
+                     IRExpr_Binop(
+                        host_word_type==Ity_I64 ? Iop_CmpNE64 : Iop_CmpNE32,
+                        IRExpr_RdTmp(callresult_tmp),
+                           host_word_type==Ity_I64
+                              ? IRExpr_Const(IRConst_U64(expectedhW))
+                              : IRExpr_Const(IRConst_U32(expectedhW))));
+
+         *stmt6 = IRStmt_Exit(
+                     IRExpr_RdTmp(exitguard_tmp),
+                     Ijk_InvalICache,
+                     /* Where we must restart if there's a failure: at the
+                        first extent, regardless of which extent the failure
+                        actually happened in. */
+                     guest_IP_sbstart_IRConst,
+                     offB_GUEST_IP
+                  );
       } /* for (i = 0; i < vge->n_used; i++) */
 
       for (Int i = vge->n_used;
            i < sizeof(vge->base) / sizeof(vge->base[0]); i++) {
-         IRStmt* stmt0 = irsb->stmts[selfcheck_idx + i * 5 + 0];
-         IRStmt* stmt1 = irsb->stmts[selfcheck_idx + i * 5 + 1];
-         IRStmt* stmt2 = irsb->stmts[selfcheck_idx + i * 5 + 2];
-         IRStmt* stmt3 = irsb->stmts[selfcheck_idx + i * 5 + 3];
-         IRStmt* stmt4 = irsb->stmts[selfcheck_idx + i * 5 + 4];
+         IRStmt* stmt0 = irsb->stmts[selfcheck_idx + i * 7 + 0];
+         IRStmt* stmt1 = irsb->stmts[selfcheck_idx + i * 7 + 1];
+         IRStmt* stmt2 = irsb->stmts[selfcheck_idx + i * 7 + 2];
+         IRStmt* stmt3 = irsb->stmts[selfcheck_idx + i * 7 + 3];
+         IRStmt* stmt4 = irsb->stmts[selfcheck_idx + i * 7 + 4];
+         IRStmt* stmt5 = irsb->stmts[selfcheck_idx + i * 7 + 5];
+         IRStmt* stmt6 = irsb->stmts[selfcheck_idx + i * 7 + 6];
          vassert(stmt0->tag == Ist_NoOp);
          vassert(stmt1->tag == Ist_NoOp);
          vassert(stmt2->tag == Ist_NoOp);
          vassert(stmt3->tag == Ist_NoOp);
          vassert(stmt4->tag == Ist_NoOp);
+         vassert(stmt5->tag == Ist_NoOp);
+         vassert(stmt6->tag == Ist_NoOp);
       }
    }
 }
@@ -1260,13 +1276,13 @@ IRSB* bb_to_IR (
    /* And a new IR superblock to dump the result into. */
    IRSB* irsb = emptyIRSB();
 
-   /* Leave 15 spaces in which to put the check statements for a self
-      checking translation (up to 3 extents, and 5 stmts required for
+   /* Leave 21 spaces in which to put the check statements for a self
+      checking translation (up to 3 extents, and 7 stmts required for
       each).  We won't know until later the extents and checksums of
       the areas, if any, that need to be checked. */
    IRStmt* nop = IRStmt_NoOp();
    Int selfcheck_idx = irsb->stmts_used;
-   for (Int i = 0; i < 3 * 5; i++)
+   for (Int i = 0; i < 3 * 7; i++)
       addStmtToIRSB( irsb, nop );
 
    /* If the caller supplied a function to add its own preamble, use
@@ -1277,7 +1293,7 @@ IRSB* bb_to_IR (
          /* The callback has completed the IR block without any guest
             insns being disassembled into it, so just return it at
             this point, even if a self-check was requested - as there
-            is nothing to self-check.  The 15 self-check no-ops will
+            is nothing to self-check.  The 21 self-check no-ops will
             still be in place, but they are harmless. */
          vge->n_used  = 1;
          vge->base[0] = guest_IP_sbstart;
@@ -1586,7 +1602,7 @@ IRSB* bb_to_IR (
 
    /* We're almost done.  The only thing that might need attending to is that
       a self-checking preamble may need to be created.  If so it gets placed
-      in the 15 slots reserved above. */
+      in the 21 slots reserved above. */
    create_self_checks_as_needed(
       irsb, n_sc_extents, pxControl, callback_opaque, needs_self_check,
       vge, abiinfo_both, guest_word_type, selfcheck_idx, offB_GUEST_CMSTART,

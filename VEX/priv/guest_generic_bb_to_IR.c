@@ -1209,6 +1209,8 @@ IRSB* bb_to_IR (
          /*OUT*/VexGuestExtents* vge,
          /*OUT*/UInt*            n_sc_extents,
          /*OUT*/UInt*            n_guest_instrs, /* stats only */
+         /*OUT*/UShort*          n_uncond_in_trace, /* stats only */
+         /*OUT*/UShort*          n_cond_in_trace, /* stats only */
          /*MOD*/VexRegisterUpdates* pxControl,
          /*IN*/ void*            callback_opaque,
          /*IN*/ DisOneInstrFn    dis_instr_fn,
@@ -1252,6 +1254,8 @@ IRSB* bb_to_IR (
    vge->n_used     = 0;
    *n_sc_extents   = 0;
    *n_guest_instrs = 0;
+   *n_uncond_in_trace = 0;
+   *n_cond_in_trace   = 0;
 
    /* And a new IR superblock to dump the result into. */
    IRSB* irsb = emptyIRSB();
@@ -1375,6 +1379,7 @@ IRSB* bb_to_IR (
          add_extent(vge, bb_base, bb_len);
          update_instr_budget(&instrs_avail, &verbose_mode,
                              bb_instrs_used, bb_verbose_seen);
+         *n_uncond_in_trace += 1;
       } // if (be.tag == Be_Uncond)
    
       // Try for an extend based on a conditional branch, specifically in the
@@ -1567,6 +1572,7 @@ IRSB* bb_to_IR (
             add_extent(vge, sx_base, sx_len);
             update_instr_budget(&instrs_avail, &verbose_mode,
                                 sx_instrs_used, sx_verbose_seen);
+            *n_cond_in_trace += 1;
          }
          break;
       } // if (be.tag == Be_Cond)

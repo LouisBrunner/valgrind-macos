@@ -554,6 +554,8 @@ IRSB* LibVEX_FrontEnd ( /*MOD*/ VexTranslateArgs* vta,
    res->n_sc_extents   = 0;
    res->offs_profInc   = -1;
    res->n_guest_instrs = 0;
+   res->n_uncond_in_trace = 0;
+   res->n_cond_in_trace = 0;
 
 #ifndef VEXMULTIARCH
    /* yet more sanity checks ... */
@@ -581,6 +583,8 @@ IRSB* LibVEX_FrontEnd ( /*MOD*/ VexTranslateArgs* vta,
    irsb = bb_to_IR ( vta->guest_extents,
                      &res->n_sc_extents,
                      &res->n_guest_instrs,
+                     &res->n_uncond_in_trace,
+                     &res->n_cond_in_trace,
                      pxControl,
                      vta->callback_opaque,
                      disInstrFn,

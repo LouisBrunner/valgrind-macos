@@ -651,6 +651,12 @@ typedef
       /* Stats only: the number of guest insns included in the
          translation.  It may be zero (!). */
       UInt n_guest_instrs;
+      /* Stats only: the number of unconditional branches incorporated into the
+         trace. */
+      UShort n_uncond_in_trace;
+      /* Stats only: the number of conditional branches incorporated into the
+         trace. */
+      UShort n_cond_in_trace;
    }
    VexTranslateResult;
 

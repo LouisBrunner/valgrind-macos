@@ -143,6 +143,8 @@ IRSB* bb_to_IR (
          /*OUT*/VexGuestExtents* vge,
          /*OUT*/UInt*            n_sc_extents,
          /*OUT*/UInt*            n_guest_instrs, /* stats only */
+         /*OUT*/UShort*          n_uncond_in_trace, /* stats only */
+         /*OUT*/UShort*          n_cond_in_trace, /* stats only */
          /*MOD*/VexRegisterUpdates* pxControl,
          /*IN*/ void*            callback_opaque,
          /*IN*/ DisOneInstrFn    dis_instr_fn,

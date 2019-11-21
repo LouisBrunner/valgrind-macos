@@ -64,6 +64,11 @@
 /*--- Stats                                                ---*/
 /*------------------------------------------------------------*/
 
+static ULong n_TRACE_total_constructed              = 0;
+static ULong n_TRACE_total_guest_insns              = 0;
+static ULong n_TRACE_total_uncond_branches_followed = 0;
+static ULong n_TRACE_total_cond_branches_followed   = 0;
+
 static ULong n_SP_updates_new_fast            = 0;
 static ULong n_SP_updates_new_generic_known   = 0;
 static ULong n_SP_updates_die_fast            = 0;
@@ -77,6 +82,13 @@ static ULong n_PX_VexRegUpdAllregsAtEachInsn     = 0;
 
 void VG_(print_translation_stats) ( void )
 {
+   VG_(message)
+      (Vg_DebugMsg,
+       "translate: %'llu guest insns, %'llu traces, "
+       "%'llu uncond chased, %llu cond chased\n",
+       n_TRACE_total_guest_insns, n_TRACE_total_constructed,
+       n_TRACE_total_uncond_branches_followed,
+       n_TRACE_total_cond_branches_followed);
    UInt n_SP_updates = n_SP_updates_new_fast + n_SP_updates_new_generic_known
                      + n_SP_updates_die_fast + n_SP_updates_die_generic_known
                      + n_SP_updates_generic_unknown;
@@ -1819,6 +1831,11 @@ Bool VG_(translate) ( ThreadId tid,
    vg_assert(tres.n_sc_extents >= 0 && tres.n_sc_extents <= 3);
    vg_assert(tmpbuf_used <= N_TMPBUF);
    vg_assert(tmpbuf_used > 0);
+
+   n_TRACE_total_constructed += 1;
+   n_TRACE_total_guest_insns += tres.n_guest_instrs;
+   n_TRACE_total_uncond_branches_followed += tres.n_uncond_in_trace;
+   n_TRACE_total_cond_branches_followed   += tres.n_cond_in_trace;
    } /* END new scope specially for 'seg' */
 
    /* Tell aspacem of all segments that have had translations taken

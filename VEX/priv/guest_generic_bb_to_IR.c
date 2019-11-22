@@ -1358,6 +1358,34 @@ IRSB* bb_to_IR (
 
       // Try for an extend.  What kind we do depends on how the current trace
       // ends.
+      /* Regarding the use of |sigill_diag| in the extension logic below.  This
+         is a Bool which controls whether or not the individual insn
+         disassemblers print an error message in the case where they don't
+         recognise an instruction.  Generally speaking this is set to True, but
+         VEX's client can set it to False if it wants.
+
+         Now that we are speculatively chasing both arms of a conditional
+         branch, this can lead to the following problem: one of those arms
+         contains an undecodable instruction.  That insn is not reached at run
+         time, because the branch itself tests some CPU hwcaps info (or
+         whatever) and execution goes down the other path.  However, it has the
+         bad side effect that the speculative disassembly will nevertheless
+         produce an error message when |sigill_diag| is True.
+
+         To avoid this, in calls to |disassemble_basic_block_till_stop| for
+         speculative code, we pass False instead of |sigill_diag|.  Note that
+         any (unconditional-chase) call to |disassemble_basic_block_till_stop|
+         that happens after a conditional chase that results in recovery of an
+         &&-idiom, is still really non-speculative, because the &&-idiom
+         translation can only happen when both paths lead to the same
+         continuation point.  The result is that we know that the initial BB,
+         and BBs recovered via chasing an unconditional branch, are sure to be
+         executed, even if that unconditional branch follows a conditional
+         branch which got folded into an &&-idiom.  So we don't need to change
+         the |sigill_diag| value used for them.  It's only for the
+         conditional-branch SX and FT disassembly that it must be set to
+         |False|.
+      */
       BlockEnd irsb_be;
       analyse_block_end(&irsb_be, irsb, guest_IP_sbstart, guest_word_type,
                         chase_into_ok, callback_opaque,
@@ -1423,7 +1451,8 @@ IRSB* bb_to_IR (
                  /*OUT*/ &sx_instrs_used, &sx_verbose_seen, &sx_base, &sx_len,
                  /*MOD*/ emptyIRSB(),
                  /*IN*/  irsb_be.Be.Cond.deltaSX,
-                 instrs_avail_spec, guest_IP_sbstart, host_endness, sigill_diag,
+                 instrs_avail_spec, guest_IP_sbstart, host_endness,
+                 /*sigill_diag=*/False, // See comment above
                  arch_guest, archinfo_guest, abiinfo_both, guest_word_type,
                  debug_print, dis_instr_fn, guest_code, offB_GUEST_IP
               );
@@ -1445,7 +1474,8 @@ IRSB* bb_to_IR (
                  /*OUT*/ &ft_instrs_used, &ft_verbose_seen, &ft_base, &ft_len,
                  /*MOD*/ emptyIRSB(),
                  /*IN*/  irsb_be.Be.Cond.deltaFT,
-                 instrs_avail_spec, guest_IP_sbstart, host_endness, sigill_diag,
+                 instrs_avail_spec, guest_IP_sbstart, host_endness,
+                 /*sigill_diag=*/False, // See comment above
                  arch_guest, archinfo_guest, abiinfo_both, guest_word_type,
                  debug_print, dis_instr_fn, guest_code, offB_GUEST_IP
               );

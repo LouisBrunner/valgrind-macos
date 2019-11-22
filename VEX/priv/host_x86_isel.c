@@ -2053,6 +2053,25 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, const IRExpr* e )
       }
    }
 
+   /* And1(x,y), Or1(x,y) */
+   /* FIXME: We could (and probably should) do a lot better here.  If both args
+      are in temps already then we can just emit a reg-reg And/Or directly,
+      followed by the final Test. */
+   if (e->tag == Iex_Binop
+       && (e->Iex.Binop.op == Iop_And1 || e->Iex.Binop.op == Iop_Or1)) {
+      // We could probably be cleverer about this.  In the meantime ..
+      HReg x_as_32 = newVRegI(env);
+      X86CondCode cc_x = iselCondCode(env, e->Iex.Binop.arg1);
+      addInstr(env, X86Instr_Set32(cc_x, x_as_32));
+      HReg y_as_32 = newVRegI(env);
+      X86CondCode cc_y = iselCondCode(env, e->Iex.Binop.arg2);
+      addInstr(env, X86Instr_Set32(cc_y, y_as_32));
+      X86AluOp aop = e->Iex.Binop.op == Iop_And1 ? Xalu_AND : Xalu_OR;
+      addInstr(env, X86Instr_Alu32R(aop, X86RMI_Reg(x_as_32), y_as_32));
+      addInstr(env, X86Instr_Test32(1, X86RM_Reg(y_as_32)));
+      return Xcc_NZ;
+   }
+
    ppIRExpr(e);
    vpanic("iselCondCode");
 }

@@ -463,6 +463,7 @@ typedef
       ARM64in_Test,
       ARM64in_Shift,
       ARM64in_Unary,
+      ARM64in_Set64,
       ARM64in_MovI,        /* int reg-reg move */
       ARM64in_Imm64,
       ARM64in_LdSt64,
@@ -566,6 +567,11 @@ typedef
             HReg         src;
             ARM64UnaryOp op;
          } Unary;
+         /* CSET -- Convert a condition code to a 64-bit value (0 or 1). */
+         struct {
+            HReg          dst;
+            ARM64CondCode cond;
+         } Set64;
          /* MOV dst, src -- reg-reg move for integer registers */
          struct {
             HReg dst;
@@ -915,6 +921,7 @@ extern ARM64Instr* ARM64Instr_Logic   ( HReg, HReg, ARM64RIL*, ARM64LogicOp );
 extern ARM64Instr* ARM64Instr_Test    ( HReg, ARM64RIL* );
 extern ARM64Instr* ARM64Instr_Shift   ( HReg, HReg, ARM64RI6*, ARM64ShiftOp );
 extern ARM64Instr* ARM64Instr_Unary   ( HReg, HReg, ARM64UnaryOp );
+extern ARM64Instr* ARM64Instr_Set64   ( HReg, ARM64CondCode );
 extern ARM64Instr* ARM64Instr_MovI    ( HReg, HReg );
 extern ARM64Instr* ARM64Instr_Imm64   ( HReg, ULong );
 extern ARM64Instr* ARM64Instr_LdSt64  ( Bool isLoad, HReg, ARM64AMode* );

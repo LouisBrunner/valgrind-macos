@@ -870,6 +870,13 @@ ARM64Instr* ARM64Instr_Unary ( HReg dst, HReg src, ARM64UnaryOp op ) {
    i->ARM64in.Unary.op  = op;
    return i;
 }
+ARM64Instr* ARM64Instr_Set64 ( HReg dst, ARM64CondCode cond ) {
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
+   i->tag                = ARM64in_Set64;
+   i->ARM64in.Set64.dst  = dst;
+   i->ARM64in.Set64.cond = cond;
+   return i;
+}
 ARM64Instr* ARM64Instr_MovI ( HReg dst, HReg src ) {
    ARM64Instr* i      = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag             = ARM64in_MovI;
@@ -1417,6 +1424,11 @@ void ppARM64Instr ( const ARM64Instr* i ) {
          vex_printf(", ");
          ppHRegARM64(i->ARM64in.Unary.src);
          return;
+      case ARM64in_Set64:
+         vex_printf("cset   ");
+         ppHRegARM64(i->ARM64in.Set64.dst);
+         vex_printf(", %s", showARM64CondCode(i->ARM64in.Set64.cond));
+         return;
       case ARM64in_MovI:
          vex_printf("mov    ");
          ppHRegARM64(i->ARM64in.MovI.dst);
@@ -1953,6 +1965,9 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, const ARM64Instr* i, Bool mode64 )
          addHRegUse(u, HRmWrite, i->ARM64in.Unary.dst);
          addHRegUse(u, HRmRead, i->ARM64in.Unary.src);
          return;
+      case ARM64in_Set64:
+         addHRegUse(u, HRmWrite, i->ARM64in.Set64.dst);
+         return;
       case ARM64in_MovI:
          addHRegUse(u, HRmWrite, i->ARM64in.MovI.dst);
          addHRegUse(u, HRmRead,  i->ARM64in.MovI.src);
@@ -2294,6 +2309,9 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
       case ARM64in_Unary:
          i->ARM64in.Unary.dst = lookupHRegRemap(m, i->ARM64in.Unary.dst);
          i->ARM64in.Unary.src = lookupHRegRemap(m, i->ARM64in.Unary.src);
+         return;
+      case ARM64in_Set64:
+         i->ARM64in.Set64.dst = lookupHRegRemap(m, i->ARM64in.Set64.dst);
          return;
       case ARM64in_MovI:
          i->ARM64in.MovI.dst = lookupHRegRemap(m, i->ARM64in.MovI.dst);
@@ -3481,6 +3499,15 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                break;
          }
          goto bad;
+      }
+      case ARM64in_Set64: {
+         /* 1 00 1101 0100 11111 invert(cond) 01 11111 Rd   CSET Rd, Cond */
+         UInt rDst = iregEnc(i->ARM64in.Set64.dst);
+         UInt cc = (UInt)i->ARM64in.Set64.cond;
+         vassert(cc < 14);
+         *p++ = X_3_8_5_6_5_5(X100, X11010100, X11111,
+                              ((cc ^ 1) << 2) | X01, X11111, rDst);
+         goto done;
       }
       case ARM64in_MovI: {
          /* We generate the "preferred form", ORR Xd, XZR, Xm

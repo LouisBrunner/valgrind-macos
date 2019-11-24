@@ -420,9 +420,12 @@ static Bool expr_is_guardable ( const IRExpr* e )
          return !primopMightTrap(e->Iex.Unop.op);
       case Iex_Binop:
          return !primopMightTrap(e->Iex.Binop.op);
+      case Iex_Triop:
+         return !primopMightTrap(e->Iex.Triop.details->op);
       case Iex_ITE:
       case Iex_CCall:
       case Iex_Get:
+      case Iex_Const:
          return True;
       default:
          vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
@@ -442,13 +445,23 @@ static Bool expr_is_guardable ( const IRExpr* e )
 static Bool stmt_is_guardable ( const IRStmt* st )
 {
    switch (st->tag) {
+      // These are easily guarded.
       case Ist_IMark:
       case Ist_Put:
          return True;
-      case Ist_Store: // definitely not
-      case Ist_CAS: // definitely not
-      case Ist_Exit: // We could in fact spec this, if required
+      // These are definitely not guardable, or at least it's way too much
+      // hassle to do so.
+      case Ist_CAS:
+      case Ist_LLSC:
+      case Ist_MBE:
          return False;
+      // These could be guarded, with some effort, if really needed, but
+      // currently aren't guardable.
+      case Ist_Store:
+      case Ist_Exit:
+         return False;
+      // This is probably guardable, but it depends on the RHS of the
+      // assignment.
       case Ist_WrTmp:
          return expr_is_guardable(st->Ist.WrTmp.data);
       default:

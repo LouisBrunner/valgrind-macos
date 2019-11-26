@@ -1069,6 +1069,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_set_robust_list,        sys_set_robust_list),         // 309
    LINXY (__NR_get_robust_list,        sys_get_robust_list),         // 310
    //..
+   LINXY (__NR_getcpu,                 sys_getcpu),                  // 312
    LINXY (__NR_epoll_pwait,            sys_epoll_pwait),             // 313
    //..
    LINX_ (__NR_utimensat,              sys_utimensat),               // 316

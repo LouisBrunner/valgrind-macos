@@ -1946,6 +1946,43 @@ AC_MSG_RESULT([yes])
 AC_MSG_RESULT([no])
 ])
 
+# We enter the code block below in the following case:
+# Target architecture is set to mips64, the desired abi
+# was not specified and the compiler's default abi setting
+# is neither n32 nor n64.
+# Probe for and set the abi to either n64 or n32, in that order,
+# which is required for a mips64 build of valgrind.
+if test "$ARCH_MAX" = "mips64" -a "x$VGCONF_ABI" = "x"; then
+  safe_CFLAGS=$CFLAGS
+  CFLAGS="$CFLAGS -mabi=64 -Werror"
+  AC_MSG_CHECKING([if gcc is n64 capable])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
+      return 0;
+  ]])], [
+  VGCONF_ABI=64
+  AC_MSG_RESULT([yes])
+  ], [
+  AC_MSG_RESULT([no])
+  ])
+  CFLAGS=$safe_CFLAGS
+
+  if test "x$VGCONF_ABI" = "x"; then
+    safe_CFLAGS=$CFLAGS
+    CFLAGS="$CFLAGS -mabi=n32 -Werror"
+    AC_MSG_CHECKING([if gcc is n32 capable])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
+        return 0;
+    ]])], [
+    VGCONF_ABI=N32
+    FLAG_M64="-march=mips64r2 -mabi=n32"
+    AC_MSG_RESULT([yes])
+    ], [
+    AC_MSG_RESULT([no])
+    ])
+    CFLAGS=$safe_CFLAGS
+  fi
+fi
+
 AM_CONDITIONAL([VGCONF_HAVE_ABI],
                [test x$VGCONF_ABI != x])
 AC_SUBST(VGCONF_ABI)

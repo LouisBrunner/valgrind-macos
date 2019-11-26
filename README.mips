@@ -47,3 +47,7 @@ Limitations
   then 4.6.1 due to a bug in the toolchain.
 - Older GCC may have issues with some inline assembly blocks. Get a toolchain
   based on newer GCC versions, if possible.
+- Systems with a mips64 cpu having only o32 libraries will misconfigure in case
+  no appropriate architecture flag is specified during configure time.
+  Be sure to set either mips32 or mips32r2 as the target architecture in that
+  case.

@@ -1041,6 +1041,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_inotify_init,           sys_inotify_init),            // 275
    LINX_ (__NR_inotify_add_watch,      sys_inotify_add_watch),       // 276
    LINX_ (__NR_inotify_rm_watch,       sys_inotify_rm_watch),        // 277
+   LINXY (__NR_waitid,                 sys_waitid),                  // 278
    //..
    PLAX_ (__NR_set_thread_area,        sys_set_thread_area),         // 283
    //..

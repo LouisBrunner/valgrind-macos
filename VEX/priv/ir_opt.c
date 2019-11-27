@@ -6780,6 +6780,8 @@ IRSB* do_minimal_initial_iropt_BB(IRSB* bb0) {
    redundant_get_removal_BB ( bb );
 
    // Do minimal constant prop: copy prop and constant prop only.  No folding.
+   // JRS FIXME 2019Nov25: this is too weak to be effective on arm32.  For that,
+   // specifying doFolding=True makes a huge difference.
    bb = cprop_BB_WRK ( bb, /*mustRetainNoOps=*/True,
                            /*doFolding=*/False );
 

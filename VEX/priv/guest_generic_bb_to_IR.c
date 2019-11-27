@@ -426,6 +426,7 @@ static Bool expr_is_guardable ( const IRExpr* e )
       case Iex_CCall:
       case Iex_Get:
       case Iex_Const:
+      case Iex_RdTmp:
          return True;
       default:
          vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
@@ -446,6 +447,7 @@ static Bool stmt_is_guardable ( const IRStmt* st )
 {
    switch (st->tag) {
       // These are easily guarded.
+      case Ist_NoOp:
       case Ist_IMark:
       case Ist_Put:
          return True;
@@ -458,6 +460,7 @@ static Bool stmt_is_guardable ( const IRStmt* st )
       // These could be guarded, with some effort, if really needed, but
       // currently aren't guardable.
       case Ist_Store:
+      case Ist_StoreG:
       case Ist_Exit:
          return False;
       // This is probably guardable, but it depends on the RHS of the
@@ -492,6 +495,7 @@ static void add_guarded_stmt_to_end_of ( /*MOD*/IRSB* bb,
                                          /*IN*/ IRStmt* st, IRTemp guard )
 {
    switch (st->tag) {
+      case Ist_NoOp:
       case Ist_IMark:
       case Ist_WrTmp:
          addStmtToIRSB(bb, st);

@@ -226,7 +226,6 @@ DECL_TEMPLATE (mips_linux, sys_sethostname);
 DECL_TEMPLATE (mips_linux, sys_reboot);
 DECL_TEMPLATE (mips_linux, sys_cacheflush);
 DECL_TEMPLATE (mips_linux, sys_sched_rr_get_interval);
-DECL_TEMPLATE (mips_linux, sys_unshare);
 DECL_TEMPLATE (mips_linux, sys_prctl);
 DECL_TEMPLATE (mips_linux, sys_ptrace);
 DECL_TEMPLATE (mips_linux, sys_mmap);
@@ -240,12 +239,6 @@ PRE(sys_vmsplice)
          SARG1, ARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "sys_vmsplice", int, fdin, struct vki_iovec *, v,
                  vki_size_t, len, int, flags);
-}
-
-PRE(sys_unshare)
-{
-   PRINT("sys_unshare ( %" FMT_REGWORD "u )", ARG1);
-   PRE_REG_READ1(long, "sys_unshare", unsigned long, flags);
 }
 
 PRE(sys_sched_rr_get_interval)
@@ -784,7 +777,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_faccessat, sys_faccessat),
    LINXY (__NR_pselect6, sys_pselect6),
    LINXY (__NR_ppoll, sys_ppoll),
-   PLAX_ (__NR_unshare, sys_unshare),
+   LINX_ (__NR_unshare, sys_unshare),
    LINX_ (__NR_splice, sys_splice),
    LINX_ (__NR_sync_file_range, sys_sync_file_range),
    LINX_ (__NR_tee, sys_tee),

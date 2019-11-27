@@ -818,7 +818,8 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
       have a sloppyXcheck mode which we enable on x86 and s390 - in this
       mode we allow the kernel to report execute permission when we weren't
       expecting it but not vice versa. */
-#  if defined(VGA_x86) || defined (VGA_s390x)
+#  if defined(VGA_x86) || defined (VGA_s390x) || \
+      defined(VGA_mips32) || defined(VGA_mips64)
    sloppyXcheck = True;
 #  else
    sloppyXcheck = False;

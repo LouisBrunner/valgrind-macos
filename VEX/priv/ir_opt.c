@@ -6679,7 +6679,16 @@ IRSB* do_iropt_BB(
       processed by do_minimal_initial_iropt_BB.  And that will have flattened
       them out. */
    // FIXME Remove this assertion once the 'grail' machinery seems stable
-   vassert(isFlatIRSB(bb0));
+   // FIXME2 The TOC-redirect-hacks generators in m_translate.c -- gen_PUSH()
+   //        and gen_PO() -- don't generate flat IR, and so cause this assertion
+   //        to fail.  For the time being, hack around this by flattening,
+   //        rather than asserting for flatness, on the afflicted platforms.
+   //        This is a kludge, yes.
+   if (guest_arch == VexArchPPC64) {
+      bb0 = flatten_BB(bb0); // Kludge!
+   } else {
+      vassert(isFlatIRSB(bb0)); // How it Really Should Be (tm).
+   }
 
    /* If at level 0, stop now. */
    if (vex_control.iropt_level <= 0) return bb0;

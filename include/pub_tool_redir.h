@@ -316,6 +316,8 @@
 
 #define  VG_U_LD_LINUX_ARMHF_SO_3   "ld-linux-armhf.so.3"
 
+#define  VG_U_LD_LINUX_MIPSN8_S0_1  "ld-linux-mipsn8.so.1"
+
 #endif
 
 /* --- Executable name for Darwin Mach-O linker. --- */

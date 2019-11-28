@@ -3170,7 +3170,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             if (!ML_(sli_is_valid)(debug_frame_escn))
                FIND(need_dwarf2,     ".zdebug_frame",     debug_frame_escn)
 
-            FIND(   need_dwarf2,     ".gnu_debugaltlink", debugaltlink_escn)
+            if (!ML_(sli_is_valid)(debugaltlink_escn))
+               FIND(   need_dwarf2,     ".gnu_debugaltlink", debugaltlink_escn)
 
             FIND(   need_dwarf1,     ".debug",            dwarf1d_escn)
             FIND(   need_dwarf1,     ".line",             dwarf1l_escn)

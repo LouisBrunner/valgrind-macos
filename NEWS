@@ -114,6 +114,7 @@ where XXXXXX is the bug number as listed below.
 384729  __libc_freeres inhibits cross-platform valgrind
 388787  Support for C++17 new/delete
 391853  Makefile.all.am:L247 and @SOLARIS_UNDEF_LARGESOURCE@ being empty
+396656  Warnings while reading debug info
 397605  ioctl FICLONE mishandled
 408663  Suppression file for musl libc
 404076  s390x: z14 vector instructions not implemented
@@ -140,6 +141,7 @@ where XXXXXX is the bug number as listed below.
 427404  PPC ISA 3.1 support is missing, part 6
 427870  lmw, lswi and related PowerPC insns aren't allowed on ppc64le
 427787  Support new faccessat2 linux syscall (439)
+427969  debuginfo section duplicates a section in the main ELF file
 428035  drd: Unbreak the musl build
 428648  s390_emit_load_mem panics due to 20-bit offset for vector load
 428716  cppcheck detects potential leak in VEX/useful/smchash.c

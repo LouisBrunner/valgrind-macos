@@ -3535,6 +3535,46 @@ s390_isel_cc(ISelEnv *env, IRExpr *cond)
       IRExpr *arg2 = cond->Iex.Binop.arg2;
       HReg reg1, reg2;
 
+      /* sewardj 2019Nov30: This will be needed when chasing through conditional
+         branches in guest_generic_bb_to_IR.c is enabled on s390x.
+         Unfortunately that is currently disabled on s390x as it causes
+         mysterious segfaults and also exposes some unhandled Iex_ITE cases in
+         this instruction selector.  The following Iop_And1/Iop_Or1 cases are
+         also needed when enabled.  The code below is *believed* to be correct,
+         and has been lightly tested, but it is #if 0'd until such time as we
+         need it. */
+#     if 0
+      /* FIXME: We could (and probably should) do a lot better here, by using
+         the iselCondCode_C/_R scheme used in the amd64 insn selector. */
+      if (cond->Iex.Binop.op == Iop_And1 || cond->Iex.Binop.op == Iop_Or1) {
+         /* In short: force both operands into registers, AND or OR them, mask
+            off all but the lowest bit, then convert the result back into a
+            condition code. */
+         const s390_opnd_RMI one = s390_opnd_imm(1);
+
+         HReg x_as_64 = newVRegI(env);
+         s390_cc_t cc_x = s390_isel_cc(env, arg1);
+         addInstr(env, s390_insn_cc2bool(x_as_64, cc_x));
+         addInstr(env, s390_insn_alu(8, S390_ALU_AND, x_as_64, one));
+
+         HReg y_as_64 = newVRegI(env);
+         s390_cc_t cc_y = s390_isel_cc(env, arg2);
+         addInstr(env, s390_insn_cc2bool(y_as_64, cc_y));
+         addInstr(env, s390_insn_alu(8, S390_ALU_AND, y_as_64, one));
+
+         s390_alu_t opkind
+            = cond->Iex.Binop.op == Iop_And1 ? S390_ALU_AND : S390_ALU_OR;
+         addInstr(env, s390_insn_alu(/*size=*/8,
+                                     opkind, x_as_64, s390_opnd_reg(y_as_64)));
+
+         addInstr(env, s390_insn_alu(/*size=*/8, S390_ALU_AND, x_as_64, one));
+         addInstr(env, s390_insn_test(/*size=*/8, s390_opnd_reg(x_as_64)));
+         return S390_CC_NE;
+      }
+#     endif /* 0 */
+
+      // |sizeofIRType| asserts on Ity_I1, so we can't do it until after we're
+      // sure that Iop_And1 and Iop_Or1 can't make it this far.
       size = sizeofIRType(typeOfIRExpr(env->type_env, arg1));
 
       switch (cond->Iex.Binop.op) {

@@ -2364,6 +2364,13 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
          case Ico_U8:
             l = (Long) (Int) (Char) con->Ico.U8;
             break;
+#if 0
+         // Not needed until chasing cond branches in bb_to_IR is enabled on
+         // MIPS.  See comment on And1/Or1 below.
+         case Ico_U1:
+            l = con->Ico.U1 ? 1 : 0;
+            break;
+#endif
          default:
             vpanic("iselIntExpr_R.const(mips)");
       }
@@ -2644,18 +2651,19 @@ static MIPSCondCode iselCondCode_wrk(ISelEnv * env, IRExpr * e)
    vassert(e);
    vassert(typeOfIRExpr(env->type_env, e) == Ity_I1);
    /* Cmp*32*(x,y) ? */
-   if (e->Iex.Binop.op == Iop_CmpEQ32
-       || e->Iex.Binop.op == Iop_CmpNE32
-       || e->Iex.Binop.op == Iop_CmpNE64
-       || e->Iex.Binop.op == Iop_CmpLT32S
-       || e->Iex.Binop.op == Iop_CmpLT32U
-       || e->Iex.Binop.op == Iop_CmpLT64U
-       || e->Iex.Binop.op == Iop_CmpLE32S
-       || e->Iex.Binop.op == Iop_CmpLE64S
-       || e->Iex.Binop.op == Iop_CmpLT64S
-       || e->Iex.Binop.op == Iop_CmpEQ64
-       || e->Iex.Binop.op == Iop_CasCmpEQ32
-       || e->Iex.Binop.op == Iop_CasCmpEQ64) {
+   if (e->tag == Iex_Binop
+       && (e->Iex.Binop.op == Iop_CmpEQ32
+           || e->Iex.Binop.op == Iop_CmpNE32
+           || e->Iex.Binop.op == Iop_CmpNE64
+           || e->Iex.Binop.op == Iop_CmpLT32S
+           || e->Iex.Binop.op == Iop_CmpLT32U
+           || e->Iex.Binop.op == Iop_CmpLT64U
+           || e->Iex.Binop.op == Iop_CmpLE32S
+           || e->Iex.Binop.op == Iop_CmpLE64S
+           || e->Iex.Binop.op == Iop_CmpLT64S
+           || e->Iex.Binop.op == Iop_CmpEQ64
+           || e->Iex.Binop.op == Iop_CasCmpEQ32
+           || e->Iex.Binop.op == Iop_CasCmpEQ64)) {
 
       Bool syned = (e->Iex.Binop.op == Iop_CmpLT32S
                    || e->Iex.Binop.op == Iop_CmpLE32S
@@ -2726,7 +2734,7 @@ static MIPSCondCode iselCondCode_wrk(ISelEnv * env, IRExpr * e)
                dst, mode64));
       return cc;
    }
-   if (e->Iex.Binop.op == Iop_Not1) {
+   if (e->tag == Iex_Unop && e->Iex.Binop.op == Iop_Not1) {
       HReg r_dst = newVRegI(env);
       HReg r_srcL = iselWordExpr_R(env, e->Iex.Unop.arg);
       MIPSRH *r_srcR = MIPSRH_Reg(r_srcL);
@@ -2742,7 +2750,33 @@ static MIPSCondCode iselCondCode_wrk(ISelEnv * env, IRExpr * e)
                r_dst, mode64));
       return MIPScc_NE;
    }
-   if (e->tag == Iex_RdTmp || e->tag == Iex_Unop) {
+#if 0
+   // sewardj 2019Dec14: this is my best attempt at And1/Or1, but I am not
+   // sure if it is correct.  In any case it is not needed until chasing cond
+   // branches is enabled on MIPS.  Currently it is disabled, in function bb_to_IR
+   // (see comments there).
+   if (e->tag == Iex_Binop
+       && (e->Iex.Binop.op == Iop_And1 || e->Iex.Binop.op == Iop_Or1)) {
+      HReg r_argL = iselWordExpr_R(env, e->Iex.Binop.arg1);
+      HReg r_argR = iselWordExpr_R(env, e->Iex.Binop.arg2);
+      HReg r_dst  = newVRegI(env);
+      addInstr(env, MIPSInstr_Alu(e->Iex.Binop.op == Iop_And1 ? Malu_AND : Malu_OR,
+                                  r_dst, r_argL, MIPSRH_Reg(r_argR)));
+      addInstr(env, MIPSInstr_Alu(Malu_AND, r_dst, r_dst, MIPSRH_Imm(False, 1)));
+      /* Store result to guest_COND */
+      /* sewardj 2019Dec13: this seems wrong to me.  The host-side instruction
+         selector shouldn't touch the guest-side state, except in response to
+         Iex_Get and Ist_Put. */
+      MIPSAMode *am_addr = MIPSAMode_IR(0, GuestStatePointer(mode64));
+
+      addInstr(env, MIPSInstr_Store(4,
+               MIPSAMode_IR(am_addr->Mam.IR.index + COND_OFFSET(mode64),
+                            am_addr->Mam.IR.base),
+               r_dst, mode64));
+      return MIPScc_EQ;
+   }
+#endif
+   if (e->tag == Iex_RdTmp) {
       HReg r_dst = iselWordExpr_R_wrk(env, e);
       /* Store result to guest_COND */
       MIPSAMode *am_addr = MIPSAMode_IR(0, GuestStatePointer(mode64));

@@ -1451,7 +1451,10 @@ IRSB* bb_to_IR (
              Memcheck to crash, for as-yet unknown reasons.  It also exposes
              some unhandled Iex_ITE cases in the s390x instruction selector.
              For now, disable. */
-          && arch_guest != VexArchS390X)
+          && arch_guest != VexArchS390X
+          /* sewardj 2019Dec14: It also causes crashing on MIPS, even for
+             --tool=none. */
+          && arch_guest != VexArchMIPS64 && arch_guest != VexArchMIPS32)
       {
          if (debug_print) {
             vex_printf("\n-+-+ (ext# %d) Considering cbranch to"

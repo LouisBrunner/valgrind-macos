@@ -203,7 +203,9 @@ EXTRA_DIST = \
 	unit_debuglog.stderr.exp unit_debuglog.vgtest \
 	vgprintf.stderr.exp vgprintf.vgtest \
 	vgprintf_nvalgrind.stderr.exp vgprintf_nvalgrind.vgtest \
-	process_vm_readv_writev.stderr.exp process_vm_readv_writev.vgtest
+	process_vm_readv_writev.stderr.exp process_vm_readv_writev.vgtest \
+	sigprocmask.stderr.exp sigprocmask.vgtest
+
 
 check_PROGRAMS = \
 	args \
@@ -251,7 +253,8 @@ check_PROGRAMS = \
 	vgprintf_nvalgrind \
 	coolo_sigaction \
 	gxx304 \
-	process_vm_readv_writev
+	process_vm_readv_writev \
+	sigprocmask
 
 if HAVE_NESTED_FUNCTIONS
    check_PROGRAMS += nestedfns

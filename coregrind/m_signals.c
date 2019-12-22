@@ -1350,18 +1350,29 @@ SysRes VG_(do_sys_sigprocmask) ( ThreadId tid,
                                  vki_sigset_t* set,
                                  vki_sigset_t* oldset )
 {
-   switch(how) {
-      case VKI_SIG_BLOCK:
-      case VKI_SIG_UNBLOCK:
-      case VKI_SIG_SETMASK:
-         vg_assert(VG_(is_valid_tid)(tid));
-         do_setmask ( tid, how, set, oldset );
-         return VG_(mk_SysRes_Success)( 0 );
+   /* Fix for case when ,,set,, is NULL.
+      In this case ,,how,, flag should be ignored
+      because we are only requesting from kernel
+      to put current mask into ,,oldset,,.
+      Taken from linux man pages (sigprocmask).
+      The same is specified for POSIX.
+   */
+   if (set != NULL) {
+      switch(how) {
+         case VKI_SIG_BLOCK:
+         case VKI_SIG_UNBLOCK:
+         case VKI_SIG_SETMASK:
+            break;
 
-      default:
-         VG_(dmsg)("sigprocmask: unknown 'how' field %d\n", how);
-         return VG_(mk_SysRes_Error)( VKI_EINVAL );
+         default:
+            VG_(dmsg)("sigprocmask: unknown 'how' field %d\n", how);
+            return VG_(mk_SysRes_Error)( VKI_EINVAL );
+      }
    }
+
+   vg_assert(VG_(is_valid_tid)(tid));
+   do_setmask(tid, how, set, oldset);
+   return VG_(mk_SysRes_Success)( 0 );
 }
 
 

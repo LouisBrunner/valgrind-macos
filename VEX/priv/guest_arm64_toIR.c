@@ -8437,6 +8437,27 @@ void math_SQDMULH ( /*OUT*/IRTemp* res,
    assign(*res, mkexpr(*sat1q));
 }
 
+/* Generate IR for SQRDMLAH and SQRDMLSH: signedly wideningly multiply,
+   double, add a rounding constant, take the high half and accumulate. */
+static
+void math_SQRDMLAH ( /*OUT*/IRTemp* res, /*OUT*/IRTemp* res_nosat, Bool isAdd,
+                     UInt size, IRTemp vD, IRTemp vN, IRTemp vM )
+{
+   vassert(size == X01 || size == X10); /* s or h only */
+
+   /* SQRDMLAH = SQADD(A, SQRDMULH(B, C)) */
+
+   IRTemp mul, mul_nosat, dummy;
+   mul = mul_nosat = dummy = IRTemp_INVALID;
+   math_SQDMULH(&mul, &dummy, &mul_nosat, True/*R*/, size, vN, vM);
+
+   IROp  op = isAdd ? mkVecADD(size)   : mkVecSUB(size);
+   IROp qop = isAdd ? mkVecQADDS(size) : mkVecQSUBS(size);
+   newTempsV128_2(res, res_nosat);
+   assign(*res, binop(qop, mkexpr(vD), mkexpr(mul)));
+   assign(*res_nosat, binop(op, mkexpr(vD), mkexpr(mul_nosat)));
+}
+
 
 /* Generate IR for SQSHL, UQSHL, SQSHLU by imm.  Put the result in
    a new temp in *res, and the Q difference pair in new temps in
@@ -10328,6 +10349,59 @@ Bool dis_AdvSIMD_scalar_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
 #  undef INSN
 }
 
+static
+Bool dis_AdvSIMD_scalar_three_same_extra(/*MB_OUT*/DisResult* dres, UInt insn)
+{
+   /* 31 29 28    23   21 20 15     10 9 4
+      01 U  11110 size 0  m  opcode 1  n d
+      Decode fields: u,size,opcode
+   */
+#  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,30) != BITS2(0,1)
+       || INSN(28,24) != BITS5(1,1,1,1,0)
+       || INSN(21,21) != 0
+       || INSN(10,10) != 1) {
+      return False;
+   }
+   UInt bitU   = INSN(29,29);
+   UInt size   = INSN(23,22);
+   UInt mm     = INSN(20,16);
+   UInt opcode = INSN(15,11);
+   UInt nn     = INSN(9,5);
+   UInt dd     = INSN(4,0);
+   vassert(size < 4);
+   vassert(mm < 32 && nn < 32 && dd < 32);
+
+   if (bitU == 1 && (opcode == BITS5(1,0,0,0,0) || opcode == BITS5(1,0,0,0,1))) {
+      /* -------- xx,10000 SQRDMLAH s and h variants only -------- */
+      /* -------- xx,10001 SQRDMLSH s and h variants only -------- */
+      if (size == X00 || size == X11) return False;
+      Bool isAdd = opcode == BITS5(1,0,0,0,0);
+
+      IRTemp res, res_nosat, vD, vN, vM;
+      res = res_nosat = vD = vN = vM = IRTemp_INVALID;
+      newTempsV128_3(&vD, &vN, &vM);
+      assign(vD, getQReg128(dd));
+      assign(vN, getQReg128(nn));
+      assign(vM, getQReg128(mm));
+
+      math_SQRDMLAH(&res, &res_nosat, isAdd, size, vD, vN, vM);
+      putQReg128(dd,
+                 mkexpr(math_ZERO_ALL_EXCEPT_LOWEST_LANE(size, mkexpr(res))));
+      updateQCFLAGwithDifference(
+         math_ZERO_ALL_EXCEPT_LOWEST_LANE(size, mkexpr(res)),
+         math_ZERO_ALL_EXCEPT_LOWEST_LANE(size, mkexpr(res_nosat)));
+
+      const HChar  arr = "hs"[size];
+      const HChar* nm  = isAdd ? "sqrdmlah" : "sqrdmlsh";
+      DIP("%s %c%u, %c%u, %c%u\n", nm, arr, dd, arr, nn, arr, mm);
+      return True;
+   }
+
+   return False;
+#  undef INSN
+}
+
 
 static
 Bool dis_AdvSIMD_scalar_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
@@ -10655,7 +10729,7 @@ Bool dis_AdvSIMD_scalar_x_indexed_element(/*MB_OUT*/DisResult* dres, UInt insn)
    */
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
    if (INSN(31,30) != BITS2(0,1)
-       || INSN(28,24) != BITS5(1,1,1,1,1) || INSN(10,10) !=0) {
+       || INSN(28,24) != BITS5(1,1,1,1,1) || INSN(10,10) != 0) {
       return False;
    }
    UInt bitU   = INSN(29,29);
@@ -10789,7 +10863,7 @@ Bool dis_AdvSIMD_scalar_x_indexed_element(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
-   if (opcode == BITS4(1,1,0,0) || opcode == BITS4(1,1,0,1)) {
+   if (bitU == 0 && (opcode == BITS4(1,1,0,0) || opcode == BITS4(1,1,0,1))) {
       /* -------- 0,xx,1100 SQDMULH s and h variants only -------- */
       /* -------- 0,xx,1101 SQRDMULH s and h variants only -------- */
       UInt mm  = 32; // invalid
@@ -10818,6 +10892,45 @@ Bool dis_AdvSIMD_scalar_x_indexed_element(/*MB_OUT*/DisResult* dres, UInt insn)
       putQReg128(dd, unop(opZHI, mkexpr(res)));
       updateQCFLAGwithDifferenceZHI(sat1q, sat1n, opZHI);
       const HChar* nm  = isR ? "sqrdmulh" : "sqdmulh";
+      HChar ch         = size == X01 ? 'h' : 's';
+      DIP("%s %c%u, %c%u, v%d.%c[%u]\n", nm, ch, dd, ch, nn, ch, (Int)dd, ix);
+      return True;
+   }
+
+   if (bitU == 1 && (opcode == BITS4(1,1,0,1) || opcode == BITS4(1,1,1,1))) {
+      /* -------- 0,xx,1101 SQRDMLAH s and h variants only -------- */
+      /* -------- 0,xx,1111 SQRDMLSH s and h variants only -------- */
+      UInt mm  = 32; // invalid
+      UInt ix  = 16; // invalid
+      switch (size) {
+         case X00:
+            return False; // b case is not allowed
+         case X01:
+            mm = mmLO4; ix = (bitH << 2) | (bitL << 1) | (bitM << 0); break;
+         case X10:
+            mm = (bitM << 4) | mmLO4; ix = (bitH << 1) | (bitL << 0); break;
+         case X11:
+            return False; // d case is not allowed
+         default:
+            vassert(0);
+      }
+      vassert(size < 4);
+      vassert(mm < 32 && ix < 16);
+      Bool isAdd = opcode == BITS4(1,1,0,1);
+
+      IRTemp res, res_nosat, vD, vN, vM;
+      res = res_nosat = vD = vN = vM = IRTemp_INVALID;
+      newTempsV128_2(&vD, &vN);
+      assign(vD, getQReg128(dd));
+      assign(vN, getQReg128(nn));
+      vM = math_DUP_VEC_ELEM(getQReg128(mm), size, ix);
+
+      math_SQRDMLAH(&res, &res_nosat, isAdd, size, vD, vN, vM);
+      IROp opZHI = mkVecZEROHIxxOFV128(size);
+      putQReg128(dd, unop(opZHI, mkexpr(res)));
+      updateQCFLAGwithDifferenceZHI(res, res_nosat, opZHI);
+
+      const HChar* nm  = isAdd ? "sqrdmlah" : "sqrdmlsh";
       HChar ch         = size == X01 ? 'h' : 's';
       DIP("%s %c%u, %c%u, v%d.%c[%u]\n", nm, ch, dd, ch, nn, ch, (Int)dd, ix);
       return True;
@@ -12328,6 +12441,61 @@ Bool dis_AdvSIMD_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
 
 
 static
+Bool dis_AdvSIMD_three_same_extra(/*MB_OUT*/DisResult* dres, UInt insn)
+{
+   /* 31 30 29 28    23   21 20 15 14     10 9 4
+      0  Q  U  01110 size 0  m  1  opcode 1  n d
+      Decode fields: u,size,opcode
+   */
+#  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,31) != 0
+       || INSN(28,24) != BITS5(0,1,1,1,0)
+       || INSN(21,21) != 0
+       || INSN(15,15) != 1
+       || INSN(10,10) != 1) {
+      return False;
+   }
+   UInt bitQ   = INSN(30,30);
+   UInt bitU   = INSN(29,29);
+   UInt size   = INSN(23,22);
+   UInt mm     = INSN(20,16);
+   UInt opcode = INSN(14,11);
+   UInt nn     = INSN(9,5);
+   UInt dd     = INSN(4,0);
+   vassert(size < 4);
+   vassert(mm < 32 && nn < 32 && dd < 32);
+
+   if (bitU == 1 && (opcode == BITS4(0,0,0,0) || opcode == BITS4(0,0,0,1))) {
+      /* -------- 0,xx,10110 SQRDMLAH s and h variants only -------- */
+      /* -------- 1,xx,10110 SQRDMLSH s and h variants only -------- */
+      if (size == X00 || size == X11) return False;
+      Bool isAdd = opcode == BITS4(0,0,0,0);
+
+      IRTemp res, res_nosat, vD, vN, vM;
+      res = res_nosat = vD = vN = vM = IRTemp_INVALID;
+      newTempsV128_3(&vD, &vN, &vM);
+      assign(vD, getQReg128(dd));
+      assign(vN, getQReg128(nn));
+      assign(vM, getQReg128(mm));
+
+      math_SQRDMLAH(&res, &res_nosat, isAdd, size, vD, vN, vM);
+      IROp opZHI = bitQ == 0 ? Iop_ZeroHI64ofV128 : Iop_INVALID;
+      updateQCFLAGwithDifferenceZHI(res, res_nosat, opZHI);
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, res));
+
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      const HChar* nm  = isAdd ? "sqrdmlah" : "sqrdmlsh";
+      DIP("%s %s.%s, %s.%s, %s.%s\n", nm,
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      return True;
+   }
+
+   return False;
+#  undef INSN
+}
+
+
+static
 Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
 {
    /* 31 30 29 28    23   21    16     11 9 4
@@ -13249,7 +13417,7 @@ Bool dis_AdvSIMD_vector_x_indexed_elem(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
 
-   if (opcode == BITS4(1,1,0,0) || opcode == BITS4(1,1,0,1)) {
+   if (bitU == 0 && (opcode == BITS4(1,1,0,0) || opcode == BITS4(1,1,0,1))) {
       /* -------- 0,xx,1100 SQDMULH s and h variants only -------- */
       /* -------- 0,xx,1101 SQRDMULH s and h variants only -------- */
       UInt mm  = 32; // invalid
@@ -13282,6 +13450,46 @@ Bool dis_AdvSIMD_vector_x_indexed_elem(/*MB_OUT*/DisResult* dres, UInt insn)
       HChar ch         = size == X01 ? 'h' : 's';
       DIP("%s %s.%s, %s.%s, %s.%c[%u]\n", nm,
           nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(dd), ch, ix);
+      return True;
+   }
+
+   if (bitU == 1 && (opcode == BITS4(1,1,0,1) || opcode == BITS4(1,1,1,1))) {
+      /* -------- 0,xx,1101 SQRDMLAH s and h variants only -------- */
+      /* -------- 0,xx,1111 SQRDMLSH s and h variants only -------- */
+      UInt mm  = 32; // invalid
+      UInt ix  = 16; // invalid
+      switch (size) {
+         case X00:
+            return False; // b case is not allowed
+         case X01:        // h
+            mm = mmLO4; ix = (bitH << 2) | (bitL << 1) | (bitM << 0); break;
+         case X10:        // s
+            mm = (bitM << 4) | mmLO4; ix = (bitH << 1) | (bitL << 0); break;
+         case X11:
+            return False; // d case is not allowed
+         default:
+            vassert(0);
+      }
+      vassert(mm < 32 && ix < 16);
+
+      IRTemp res, res_nosat, vD, vN, vM;
+      res = res_nosat = vD = vN = vM = IRTemp_INVALID;
+      newTempsV128_2(&vD, &vN);
+      assign(vD, getQReg128(dd));
+      assign(vN, getQReg128(nn));
+
+      vM = math_DUP_VEC_ELEM(getQReg128(mm), size, ix);
+      Bool isAdd = opcode == BITS4(1,1,0,1);
+      math_SQRDMLAH(&res, &res_nosat, isAdd, size, vD, vN, vM);
+      IROp opZHI = bitQ == 0 ? Iop_ZeroHI64ofV128 : Iop_INVALID;
+      updateQCFLAGwithDifferenceZHI(res, res_nosat, opZHI);
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, res));
+
+      const HChar* arr = nameArr_Q_SZ(bitQ, size);
+      const HChar* nm  = isAdd ? "sqrdmlah" : "sqrdmlsh";
+      HChar ch         = size == X01 ? 'h' : 's';
+      DIP("%s %s.%s, %s.%s, %s.%c[%u]\n", nm,
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), ch, ix);
       return True;
    }
 
@@ -14529,6 +14737,8 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_scalar_three_same(dres, insn);
    if (UNLIKELY(ok)) return True;
+   ok = dis_AdvSIMD_scalar_three_same_extra(dres, insn);
+   if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_scalar_two_reg_misc(dres, insn);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_scalar_x_indexed_element(dres, insn);
@@ -14538,6 +14748,8 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
    ok = dis_AdvSIMD_three_different(dres, insn);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_three_same(dres, insn);
+   if (UNLIKELY(ok)) return True;
+   ok = dis_AdvSIMD_three_same_extra(dres, insn);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_two_reg_misc(dres, insn);
    if (UNLIKELY(ok)) return True;

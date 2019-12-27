@@ -9,7 +9,8 @@ EXTRA_DIST = \
 	fp_and_simd.stdout.exp fp_and_simd.stderr.exp fp_and_simd.vgtest \
 	integer.stdout.exp integer.stderr.exp integer.vgtest \
 	memory.stdout.exp memory.stderr.exp memory.vgtest \
-	atomics_v81.stdout.exp atomics_v81.stderr.exp atomics_v81.vgtest
+	atomics_v81.stdout.exp atomics_v81.stderr.exp atomics_v81.vgtest \
+	simd_v81.stdout.exp simd_v81.stderr.exp simd_v81.vgtest
 
 check_PROGRAMS = \
 	allexec \
@@ -23,7 +24,7 @@ if BUILD_ARMV8_CRC_TESTS
 endif
 
 if BUILD_ARMV81_TESTS
-  check_PROGRAMS += atomics_v81
+  check_PROGRAMS += atomics_v81 simd_v81
 endif
 
 AM_CFLAGS    += @FLAG_M64@
@@ -34,7 +35,9 @@ allexec_CFLAGS     = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
 crc32_CFLAGS       = $(AM_CFLAGS) -march=armv8-a+crc
 atomics_v81_CFLAGS = $(AM_CFLAGS) -march=armv8.1-a
+simd_v81_CFLAGS    = $(AM_CFLAGS) -march=armv8.1-a+crypto
 fp_and_simd_CFLAGS = $(AM_CFLAGS) -march=armv8-a+crypto
 integer_CFLAGS     = $(AM_CFLAGS) -g -O0 -DTEST_BFM=0
 
 fp_and_simd_LDADD  = -lm
+simd_v81_LDADD     = -lm

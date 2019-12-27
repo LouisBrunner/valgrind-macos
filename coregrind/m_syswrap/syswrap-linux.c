@@ -6773,12 +6773,35 @@ PRE(sys_ioctl)
                      sizeof(((struct vki_ifreq *)(Addr)ARG3)->vki_ifr_ifindex));
       PRE_MEM_WRITE( "ioctl(SIOCGIFNAME)", ARG3, sizeof(struct vki_ifreq));
       break;
+
    case VKI_SIOCETHTOOL: {       /* ethtool(8) interface         */
       struct vki_ifreq *ir = (struct vki_ifreq *)(Addr)ARG3;
-      PRE_MEM_READ( "ioctl(SIOCETHTOOL)", (Addr)ir, sizeof(struct vki_ifreq) );
-      PRE_MEM_RASCIIZ( "ioctl(SIOCETHTOOL)", (Addr)ir->vki_ifr_name );
-      PRE_MEM_READ( "ioctl(SIOCETHTOOL)", (Addr)ir->vki_ifr_data, sizeof(vki_u32) );
+      // The kernel will have to look at ifr_data to determine which operation
+      // to perform.
+      PRE_MEM_READ( "ioctl(SIOCETHTOOL,ir->ifr_data)",
+                    (Addr)ir->vki_ifr_data, sizeof(vki_u32) );
+
       PRINT("SIOCETHTOOL( 0x%x )", *(vki_u32 *)ir->vki_ifr_data );
+
+      // Is this correct?  Is ifr_name *always* looked at?
+      PRE_MEM_RASCIIZ( "ioctl(SIOCETHTOOL,ir->ifr_name)",
+                       (Addr)ir->vki_ifr_name );
+
+      // At least for ETHTOOL_GSET, it is apparently incorrect to insist that
+      // the whole structure is defined.  So in this case, just check it's
+      // accessible.
+      switch ( *(vki_u32 *)ir->vki_ifr_data ) {
+      case VKI_ETHTOOL_GSET:
+         PRE_MEM_WRITE( "ioctl(SIOCETHTOOL,ir)",
+                        (Addr)ir, sizeof(struct vki_ifreq) );
+         break;
+      default:
+         PRE_MEM_READ( "ioctl(SIOCETHTOOL,ir)",
+                       (Addr)ir, sizeof(struct vki_ifreq) );
+         break;
+      }
+
+      // Now perform the relevant pre-action for the operation.
       switch ( *(vki_u32 *)ir->vki_ifr_data ) {
       case VKI_ETHTOOL_GSET:
          PRE_MEM_WRITE( "ioctl(SIOCETHTOOL,GSET)",
@@ -6893,7 +6916,8 @@ PRE(sys_ioctl)
          break;
       }
       break;
-   }
+   } /* case VKI_SIOCETHTOOL */
+
    case VKI_SIOCGMIIPHY:         /* get hardware entry           */
       PRE_MEM_RASCIIZ( "ioctl(SIOCGIFMIIPHY)",
                      (Addr)((struct vki_ifreq *)(Addr)ARG3)->vki_ifr_name );

@@ -1,0 +1,7 @@
+
+========================================================================
+========================================================================
+
+Created Tues 14 May 2019.  This contains bugs reported only after the release
+of 3.15.0.  It doesn't carry over bugs from earlier versions.
+

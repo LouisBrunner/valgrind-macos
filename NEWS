@@ -68,6 +68,8 @@ To see details of a given bug, visit
 where XXXXXX is the bug number as listed below.
 
 400593  In Coregrind, use statx for some internal syscalls if [f]stat[64] fail
+404406  s390x: z14 miscellaneous instructions not implemented
+405201  Incorrect size of struct vki_siginfo on 64-bit Linux architectures
 406561  mcinfcallWSRU gdbserver_test fails on ppc64
 406824  Unsupported baseline
 407218  Add support for the copy_file_range syscall
@@ -76,10 +78,9 @@ where XXXXXX is the bug number as listed below.
 408009  Expose rdrand and f16c even on avx if host cpu supports them
 408091  Missing pkey syscalls
 408414  Add support for missing for preadv2 and pwritev2 syscalls
-404406  s390x: z14 miscellaneous instructions not implemented
-405201  Incorrect size of struct vki_siginfo on 64-bit Linux architectures
 409141  Valgrind hangs when SIGKILLed
 409367  exit_group() after signal to thread waiting in futex() causes hangs
+409780  References to non-existent configure.in
 410599  Non-deterministic behaviour of pth_self_kill_15_other test
 411134  Allow the user to change a set of command line options during execution
 412344  Problem setting mips flags with specific paths

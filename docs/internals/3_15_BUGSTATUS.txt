@@ -5,71 +5,195 @@
 Created Tues 14 May 2019.  This contains bugs reported only after the release
 of 3.15.0.  It doesn't carry over bugs from earlier versions.
 
+=== Debuginfo reader ===================================================
+=== Documentation ======================================================
+=== GDB server =========================================================
+=== KernelInterface ====================================================
+=== KernelInterface/Linux ==============================================
+
 407376  Update Xen support to 4.12 and add more coverage
-407377  SIGSEGV if debugged application going to VMW_PORT() macro
-407589  Add support for C11 aligned_alloc() and GNU reallocarray()[valgrind]
-407904  Inlined member operators lose class name in logs and generated supps
-407933  VgTs_Runnable syscall mach:50 (lwpid 771)
-408140  Missing support for vmovdqu64
-408758  memcheck internal error: Signal 10 (SIGBUS)
+        ** Has patch, looks reasonable
+
 408858  Add new io_uring_register, setup, enter syscalls
-409141  Valgrind hangs when SIGKILLed
+        No patch, no test case
+
 409206  [PATCH] Support for Linux PPS and PTP ioctls
-409391  [PATCH] LSE instruction support : LDADD 32bit
-409429  False positives at unexpected location due to failure to recognize
-        cmpeq as a dependency breaking idiom (fixed in grail?  check this)
-409501  amd64->IR: unhandled instruction bytes
-409646  1Uto32 can be identified
-409678  improvement suggestion for dhat
-409934  Callgrind: Warning: L3 cache found, using its data for the LL simulation
-409999  Valgrind causes SIGILL due to unrecognized instruction in rocksdb
-        static initialization
-410102  Valgrind ir sanity check failure crash
+        ** Has patches, looks reasonable
+
 410556  [PATCH] add support for BLKIO{MIN,OPT} and BLKALIGNOFF ioctls
-410562  Unrecognised instruction 'UD2'
+        ** Has patches, looks reasonable
+
 410743  shmat() calls for 32-bit programs fail when running in 64-bit valgrind
+        Not sure if this is important.  Ask MJW.
+
 410757  glibc wrapper discrepancy for preadv2/pwritev2 system calls across
         different versions
-410764  BLENDVPD, BLENDVPS, PBLENDVB not implemented in guest_x86
+        Not sure if this is important.  Ask MJW.
+
 411100  Valgrind does not provide a solution in the error message when an
         mmap error is detected.
-411203  valgrind should have a mean to pass environment variable to target
-        program
-411303  Illegal hardware instruction when using memcheck on lepton
-411451  x86/amd64->IR of bt/btc/bts/btr with immediate clears zero flag
-412338  vex x86->IR: unhandled instruction bytes: 0xF 0x3F 0x7 0xB
-412377  SIGILL on cache flushes on arm64
+        ** Initial load failure for very large executables?
+           Has discussion links.
+
 412408  unhandled arm-linux syscall: 124 - adjtime - on arm-linux
-412711  Patch: Add a per-thread simulate flag to Callgrind
-412745  Support macOS Catalina (10.15)
+        * trivial patch, but need to check the handler is correct
+
 413119  ioctl wrapper for DRM_IOCTL_I915_GEM_MMAP
-413251  Compilation error using GCC 7.4.0 & OpenMPI 4.0.2
+        ** plausible; contains patches
+
+415621  epoll_ctl reports for uninitialized padding
+        * maybe an inaccurate wrapper; may be easy to fix?
+
+=== KernelInterface/OS X ===============================================
+
+407933  VgTs_Runnable syscall mach:50 (lwpid 771)
+
+408758  memcheck internal error: Signal 10 (SIGBUS)
+        Memcheck OSX failure
+
+410562  Unrecognised instruction 'UD2'
+        on OSX
+
+412745  Support macOS Catalina (10.15)
+
 413369  unhandled syscall getpgid
+
 413410  Mac Os 10.15 valgrind 3.15.0 (== 412745 ?)
-414053  vex amd64->IR: unhandled instruction bytes
-414268  Enable AArch64 feature detection and decoding for v8.x instructions
-        (where x>0)
-414270  Collection of bugs for new ARMv8.1 work and features
-414278  VG_(memcpy) used for overlapping moves
-414290  Release notes are corrupted on valgrind.org
-414870  std::frexp(long double) broken under valgrind.
-414944  vex amd64->IR: 0x62 0xF1 0x7D 0x48 0xEF 0xC0 0x48 0x8D 0x7D 0xD0
-        (== the mysterious 393351)
-415136  ARMv8.1 Compare-and-Swap instructions are not supported
-415141  Possible leak with calling __libc_freeres before
-        all thread's tid_addresses are cleared
+
+=== MPI ================================================================
+
+413251  Compilation error using GCC 7.4.0 & OpenMPI 4.0.2
+        May not be hard to fix, but finding the bandwidth is difficult
+
+=== Output =============================================================
+=== Tools ==============================================================
+=== Tools/Cachegrind ===================================================
+=== Tools/Callgrind ====================================================
+
+409934  Callgrind: Warning: L3 cache found, using its data for the LL simulation
+        * Misleading warning message?
+
+412711  Patch: Add a per-thread simulate flag to Callgrind
+        Uh.  Is this a good idea, even?
+
 415293  Incorrect call-graph tracking due
         to new _dl_runtime_resolve_xsave* functions
-415393  Valgrind webpages and non-printable characters (== 414290)
+        * Potentially important, and may be easy to fix?
+
+=== Tools/DHAT =========================================================
+
+409678  DHAT: make it able to distinguish reads from writes
+        Has patches, but do we want to take them?
+
+=== Tools/DRD ==========================================================
+=== Tools/Helgrind =====================================================
+=== Tools/Lackey =======================================================
+=== Tools/Massif =======================================================
+=== Tools/Memcheck =====================================================
+
+407589  Add support for C11 aligned_alloc() and GNU reallocarray()
+        Missing allocation intercepts?
+
+409429  False positives at unexpected location due to failure to recognize
+        cmpeq as a dependency breaking idiom (fixed in grail?  check this)
+        In grail: 96de5118f5332ae145912ebe91b8fa143df74b8d
+
+415141  Possible leak with calling __libc_freeres before
+        all thread's tid_addresses are cleared
+        Not really Memcheck specific.  MJW knows more.
+
+=== Tools/SGCheck ======================================================
+=== Uncategorised ======================================================
+=== Uncategorised/build ================================================
+
 415516  Can't cross compile on openwrt
-415621  epoll_ctl reports for uninitialized padding
+        MIPS build failure
+
+=== Uncategorised/run ==================================================
+
+411203  valgrind should have a mean to pass environment variable to target
+        program
+        * I think this is invalid, but maybe I misunderstand
+
+=== VEX ================================================================
+=== VEX/amd64 ==========================================================
+
+408140  Missing support for vmovdqu64
+        is an AVX512 insn
+
+409999  vex amd64->IR: 0x62 0xD1 0xFE 0x8 0x6F 0x84 0x24 0x8 0x0 0x0
+        *** 0x62 is BOUND, but that isn't valid in 64-bit mode
+        == 393351
+        == 414944
+        == 411303
+        == 414053
+        393351 has STR
+
+411451  x86/amd64->IR of bt/btc/bts/btr with immediate clears zero flag
+        * has patch and nano-test-case
+
+=== VEX/arm32 ==========================================================
+
+410102  Valgrind ir sanity check failure crash
+        But is on 3.13 at latest.  No small test case.
+
+=== VEX/arm64 ==========================================================
+
+409391  [PATCH] LSE instruction support : LDADD 32bit
+        arm64 something.  AH can maybe deal with it?
+
+409646  No case for 1Uto32 - arm64
+        For 'taintgrind'.  Should be trivial to fix.
+
+412377  SIGILL on cache flushes on arm64
+        * Needs looking at.  Not sure if this is valid or not.
+
+414270  Collection of bugs for new ARMv8.1 work and features
+414268  Enable AArch64 feature detection and decoding for v8.x instructions
+        (where x>0)
+415136  ARMv8.1 Compare-and-Swap instructions are not supported
+        All of this 8.x stuff is WIP
+
+=== VEX/mips ===========================================================
+=== VEX/other ==========================================================
+=== VEX/ppc ============================================================
+=== VEX/s390x ==========================================================
+=== VEX/x86 ============================================================
+=== zz_other ===========================================================
+
+414278  VG_(memcpy) used for overlapping moves
+        * Comment-only change
+
+414290  Release notes are corrupted on valgrind.org
+415393  Valgrind webpages and non-printable characters (== 414290)
+        **
+
+=== zz_other/Android ===================================================
+=== zz_other/amd64 =====================================================
+
+407377  SIGSEGV if debugged application going to VMW_PORT() macro
+        Happens when using VMWare trapdoor?
+
+=== zz_other/arm32 =====================================================
+=== zz_other/arm64 =====================================================
+=== zz_other/*BSD ======================================================
+=== zz_other/mips ======================================================
+=== zz_other/ppc =======================================================
+=== zz_other/s390 ======================================================
+=== zz_other/Win32 =====================================================
+=== zz_other/Win64 =====================================================
+
+253657  [Contains patches to improve PDB reading]
+        Improve PDB* reading ?
+
+
+=== zz_other/x86 =======================================================
+
 
 -- Sat 28 Dec 10:39:06 CET 2019
 
 Extras
 (not new) 319393  bad rounding in cvtsi2ss instruction
-
-Improve PDB* reading ?  I thought I saw some patches for this .. is it 253657 ?
 
 apply included fixes for Xen 4.6/4.7/4.8/4.9/4.10/4.11/4.12  390553 ?
 

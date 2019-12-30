@@ -4012,15 +4012,27 @@ ULong dis_Grp8_Imm ( const VexAbiInfo* vbi,
    }
 
    /* Copy relevant bit from t2 into the carry flag. */
-   /* Flags: C=selected bit, O,S,Z,A,P undefined, so are set to zero. */
+   /* Flags: C=selected bit, O,S,A,P undefined, Z unchanged */
+   /* so let's also keep O,S,A,P unchanged */
+   const ULong maskC     = AMD64G_CC_MASK_C;
+   const ULong maskOSZAP = AMD64G_CC_MASK_O | AMD64G_CC_MASK_S
+                           | AMD64G_CC_MASK_Z | AMD64G_CC_MASK_A
+                           | AMD64G_CC_MASK_P;
+
+   IRTemp old_rflags = newTemp(Ity_I64);
+   assign(old_rflags, mk_amd64g_calculate_rflags_all());
+
+   IRTemp new_rflags = newTemp(Ity_I64);
+   assign(new_rflags,
+          binop(Iop_Or64,
+                binop(Iop_And64, mkexpr(old_rflags), mkU64(maskOSZAP)),
+                binop(Iop_And64,
+                                binop(Iop_Shr64, mkexpr(t2), mkU8(src_val)),
+	                            mkU64(maskC)) ));
+
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(AMD64G_CC_OP_COPY) ));
    stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
-   stmt( IRStmt_Put( 
-            OFFB_CC_DEP1,
-            binop(Iop_And64,
-                  binop(Iop_Shr64, mkexpr(t2), mkU8(src_val)),
-                  mkU64(1))
-       ));
+   stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(new_rflags) ));
    /* Set NDEP even though it isn't used.  This makes redundant-PUT
       elimination of previous stores to this field work better. */
    stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));

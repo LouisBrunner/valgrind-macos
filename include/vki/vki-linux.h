@@ -5132,6 +5132,124 @@ struct vki_bpf_btf_info {
 	__vki_u32 id;
 } __attribute__((aligned(8)));
 
+//----------------------------------------------------------------------
+// From linux-5.1/include/uapi/linux/pps.h
+//----------------------------------------------------------------------
+
+struct vki_pps_ktime {
+	__vki_s64 sec;
+	__vki_s32 nsec;
+	__vki_u32 flags;
+};
+
+struct vki_pps_kinfo {
+	__vki_u32 assert_sequence;
+	__vki_u32 clear_sequence;
+	struct vki_pps_ktime assert_tu;
+	struct vki_pps_ktime clear_tu;
+	int current_mode;
+};
+
+struct vki_pps_kparams {
+	int api_version;
+	int mode;
+	struct vki_pps_ktime assert_off_tu;
+	struct vki_pps_ktime clear_off_tu;
+};
+
+struct vki_pps_fdata {
+	struct vki_pps_kinfo info;
+	struct vki_pps_ktime timeout;
+};
+
+struct vki_pps_bind_args {
+	int tsformat;
+	int edge;
+	int consumer;
+};
+
+#define VKI_PPS_GETPARAMS	_VKI_IOR('p', 0xa1, struct vki_pps_kparams *)
+#define VKI_PPS_SETPARAMS	_VKI_IOW('p', 0xa2, struct vki_pps_kparams *)
+#define VKI_PPS_GETCAP		_VKI_IOR('p', 0xa3, int *)
+#define VKI_PPS_FETCH		_VKI_IOWR('p', 0xa4, struct vki_pps_fdata *)
+#define VKI_PPS_KC_BIND		_VKI_IOW('p', 0xa5, struct vki_pps_bind_args *)
+
+//----------------------------------------------------------------------
+// From linux-5.1/include/uapi/linux/ptp_clock.h
+//----------------------------------------------------------------------
+
+struct vki_ptp_clock_time {
+	__vki_s64 sec;
+	__vki_u32 nsec;
+	__vki_u32 reserved;
+};
+
+struct vki_ptp_clock_caps {
+	int max_adj;
+	int n_alarm;
+	int n_ext_ts;
+	int n_per_out;
+	int pps;
+	int n_pins;
+	int cross_timestamping;
+	int rsv[13];
+};
+
+struct vki_ptp_extts_request {
+	unsigned int index;
+	unsigned int flags;
+	unsigned int rsv[2];
+};
+
+struct vki_ptp_perout_request {
+	struct vki_ptp_clock_time start;
+	struct vki_ptp_clock_time period;
+	unsigned int index;
+	unsigned int flags;
+	unsigned int rsv[4];
+};
+
+#define VKI_PTP_MAX_SAMPLES 25
+
+struct vki_ptp_sys_offset {
+	unsigned int n_samples;
+	unsigned int rsv[3];
+	struct vki_ptp_clock_time ts[2 * VKI_PTP_MAX_SAMPLES + 1];
+};
+
+struct vki_ptp_sys_offset_extended {
+	unsigned int n_samples;
+	unsigned int rsv[3];
+	struct vki_ptp_clock_time ts[VKI_PTP_MAX_SAMPLES][3];
+};
+
+struct vki_ptp_sys_offset_precise {
+	struct vki_ptp_clock_time device;
+	struct vki_ptp_clock_time sys_realtime;
+	struct vki_ptp_clock_time sys_monoraw;
+	unsigned int rsv[4];
+};
+
+struct vki_ptp_pin_desc {
+	char name[64];
+	unsigned int index;
+	unsigned int func;
+	unsigned int chan;
+	unsigned int rsv[5];
+};
+
+#define VKI_PTP_CLOCK_GETCAPS  _VKI_IOR('=', 1, struct vki_ptp_clock_caps)
+#define VKI_PTP_EXTTS_REQUEST  _VKI_IOW('=', 2, struct vki_ptp_extts_request)
+#define VKI_PTP_PEROUT_REQUEST _VKI_IOW('=', 3, struct vki_ptp_perout_request)
+#define VKI_PTP_ENABLE_PPS     _VKI_IOW('=', 4, int)
+#define VKI_PTP_SYS_OFFSET     _VKI_IOW('=', 5, struct vki_ptp_sys_offset)
+#define VKI_PTP_PIN_GETFUNC    _VKI_IOWR('=', 6, struct vki_ptp_pin_desc)
+#define VKI_PTP_PIN_SETFUNC    _VKI_IOW('=', 7, struct vki_ptp_pin_desc)
+#define VKI_PTP_SYS_OFFSET_PRECISE \
+	_VKI_IOWR('=', 8, struct vki_ptp_sys_offset_precise)
+#define VKI_PTP_SYS_OFFSET_EXTENDED \
+	_VKI_IOWR('=', 9, struct vki_ptp_sys_offset_extended)
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

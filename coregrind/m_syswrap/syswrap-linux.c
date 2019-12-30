@@ -9474,6 +9474,100 @@ PRE(sys_ioctl)
       PRE_MEM_WRITE("ioctl(VKI_PERF_EVENT_IOC_ID)", (Addr)ARG3, sizeof(__vki_u64));
       break;
 
+   /* Pulse Per Second (PPS) */
+   case VKI_PPS_GETPARAMS: {
+      struct vki_pps_kparams *data = (struct vki_pps_kparams *)(Addr)ARG3;
+      PRE_MEM_WRITE("ioctl(PPS_GETPARAMS)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_PPS_SETPARAMS: {
+      struct vki_pps_kparams *data = (struct vki_pps_kparams *)(Addr)ARG3;
+      PRE_FIELD_READ("ioctl(PPS_SETPARAMS).mode", data->mode);
+      PRE_FIELD_READ("ioctl(PPS_SETPARAMS).assert_off_tu.sec",
+            data->assert_off_tu.sec);
+      PRE_FIELD_READ("ioctl(PPS_SETPARAMS).assert_off_tu.nsec",
+            data->assert_off_tu.nsec);
+      PRE_FIELD_READ("ioctl(PPS_SETPARAMS).clear_off_tu.sec",
+            data->clear_off_tu.sec);
+      PRE_FIELD_READ("ioctl(PPS_SETPARAMS).clear_off_tu.nsec",
+            data->clear_off_tu.nsec);
+      break;
+   }
+   case VKI_PPS_GETCAP:
+      PRE_MEM_WRITE("ioctl(PPS_GETCAP)", (Addr)ARG3, sizeof(int));
+      break;
+   case VKI_PPS_FETCH: {
+      struct vki_pps_fdata *data = (struct vki_pps_fdata *)(Addr)ARG3;
+      PRE_FIELD_READ("ioctl(PPS_FETCH).timeout", data->timeout);
+      PRE_FIELD_WRITE("ioctl(PPS_FETCH).info", data->info);
+      break;
+   }
+   case VKI_PPS_KC_BIND: {
+      struct vki_pps_bind_args *data = (struct vki_pps_bind_args *)(Addr)ARG3;
+      PRE_MEM_READ("ioctl(PPS_KC_BIND)", (Addr)data, sizeof(*data));
+      break;
+   }
+
+   /* PTP Hardware Clock */
+   case VKI_PTP_CLOCK_GETCAPS: {
+      struct vki_ptp_clock_caps *data =
+         (struct vki_ptp_clock_caps *)(Addr)ARG3;
+      PRE_MEM_WRITE("ioctl(PTP_CLOCK_GETCAPS)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_PTP_EXTTS_REQUEST: {
+      struct vki_ptp_extts_request *data =
+         (struct vki_ptp_extts_request *)(Addr)ARG3;
+      PRE_MEM_READ("ioctl(PTP_EXTTS_REQUEST)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_PTP_PEROUT_REQUEST: {
+      struct vki_ptp_perout_request *data =
+         (struct vki_ptp_perout_request *)(Addr)ARG3;
+      PRE_MEM_READ("ioctl(PTP_PEROUT_REQUEST)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_PTP_ENABLE_PPS:
+      break;
+   case VKI_PTP_SYS_OFFSET: {
+      struct vki_ptp_sys_offset *data =
+         (struct vki_ptp_sys_offset *)(Addr)ARG3;
+      PRE_FIELD_READ("ioctl(PTP_SYS_OFFSET).n_samples", data->n_samples);
+      if (data->n_samples <= VKI_PTP_MAX_SAMPLES)
+         PRE_MEM_WRITE("ioctl(PTP_SYS_OFFSET).ts", (Addr)data->ts,
+               (2 * data->n_samples + 1) * sizeof(data->ts[0]));
+      break;
+   }
+   case VKI_PTP_PIN_GETFUNC: {
+      struct vki_ptp_pin_desc *data = (struct vki_ptp_pin_desc *)(Addr)ARG3;
+      PRE_FIELD_READ("ioctl(PTP_PIN_GETFUNC).index", data->index);
+      PRE_MEM_WRITE("ioctl(PTP_PIN_GETFUNC)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_PTP_PIN_SETFUNC: {
+      struct vki_ptp_pin_desc *data = (struct vki_ptp_pin_desc *)(Addr)ARG3;
+      PRE_FIELD_READ("ioctl(PTP_PIN_SETFUNC).index", data->index);
+      PRE_FIELD_READ("ioctl(PTP_PIN_SETFUNC).func", data->func);
+      PRE_FIELD_READ("ioctl(PTP_PIN_SETFUNC).chan", data->chan);
+      break;
+   }
+   case VKI_PTP_SYS_OFFSET_PRECISE: {
+      struct vki_ptp_sys_offset_precise *data =
+         (struct vki_ptp_sys_offset_precise *)(Addr)ARG3;
+      PRE_MEM_WRITE("ioctl(PTP_SYS_OFFSET_PRECISE)", (Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_PTP_SYS_OFFSET_EXTENDED: {
+      struct vki_ptp_sys_offset_extended *data =
+         (struct vki_ptp_sys_offset_extended *)(Addr)ARG3;
+      PRE_FIELD_READ("ioctl(PTP_SYS_OFFSET_EXTENDED).n_samples", data->n_samples);
+      PRE_FIELD_READ("ioctl(PTP_SYS_OFFSET_EXTENDED).rsv", data->rsv);
+      if (data->n_samples <= VKI_PTP_MAX_SAMPLES)
+         PRE_MEM_WRITE("ioctl(PTP_SYS_OFFSET_EXTENDED).ts", (Addr)data->ts,
+               3 * data->n_samples * sizeof(data->ts[0][0]));
+      break;
+   }
+
    default:
       /* EVIOC* are variable length and return size written on success */
       switch (ARG2 & ~(_VKI_IOC_SIZEMASK << _VKI_IOC_SIZESHIFT)) {
@@ -11469,6 +11563,62 @@ POST(sys_ioctl)
 
    case VKI_PERF_EVENT_IOC_ID:
       POST_MEM_WRITE((Addr)ARG3, sizeof(__vki_u64));
+      break;
+
+   /* Pulse Per Second (PPS) */
+   case VKI_PPS_GETPARAMS: {
+      struct vki_pps_kparams *data = (struct vki_pps_kparams *)(Addr)ARG3;
+      POST_MEM_WRITE((Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_PPS_GETCAP:
+      POST_MEM_WRITE((Addr)ARG3, sizeof(int));
+      break;
+   case VKI_PPS_FETCH: {
+      struct vki_pps_fdata *data = (struct vki_pps_fdata *)(Addr)ARG3;
+      POST_FIELD_WRITE(data->info);
+      break;
+   }
+   case VKI_PPS_SETPARAMS:
+   case VKI_PPS_KC_BIND:
+      break;
+
+   /* PTP Hardware Clock */
+   case VKI_PTP_CLOCK_GETCAPS: {
+      struct vki_ptp_clock_caps *data =
+         (struct vki_ptp_clock_caps *)(Addr)ARG3;
+      POST_MEM_WRITE((Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_PTP_SYS_OFFSET: {
+      struct vki_ptp_sys_offset *data =
+         (struct vki_ptp_sys_offset *)(Addr)ARG3;
+      POST_MEM_WRITE((Addr)data->ts,
+            (2 * data->n_samples + 1) * sizeof(data->ts[0]));
+      break;
+   }
+   case VKI_PTP_PIN_GETFUNC: {
+      struct vki_ptp_pin_desc *data = (struct vki_ptp_pin_desc *)(Addr)ARG3;
+      POST_MEM_WRITE((Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_PTP_SYS_OFFSET_PRECISE: {
+      struct vki_ptp_sys_offset_precise *data =
+         (struct vki_ptp_sys_offset_precise *)(Addr)ARG3;
+      POST_MEM_WRITE((Addr)data, sizeof(*data));
+      break;
+   }
+   case VKI_PTP_SYS_OFFSET_EXTENDED: {
+      struct vki_ptp_sys_offset_extended *data =
+         (struct vki_ptp_sys_offset_extended *)(Addr)ARG3;
+      POST_MEM_WRITE((Addr)data->ts,
+            3 * data->n_samples * sizeof(data->ts[0][0]));
+      break;
+   }
+   case VKI_PTP_EXTTS_REQUEST:
+   case VKI_PTP_PEROUT_REQUEST:
+   case VKI_PTP_ENABLE_PPS:
+   case VKI_PTP_PIN_SETFUNC:
       break;
 
    default:

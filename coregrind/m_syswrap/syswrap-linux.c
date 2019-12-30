@@ -8251,6 +8251,27 @@ PRE(sys_ioctl)
 	  * consecutive vertices) */
       }
       break;
+   case VKI_DRM_IOCTL_I915_GEM_MMAPv1:
+      if (ARG3) {
+	 struct vki_drm_i915_gem_mmap_v1 *data =
+            (struct vki_drm_i915_gem_mmap_v1 *)(Addr)ARG3;
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_MMAPv1).handle", (Addr)&data->handle, sizeof(data->handle));
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_MMAPv1).offset", (Addr)&data->offset, sizeof(data->offset));
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_MMAPv1).size", (Addr)&data->size, sizeof(data->size));
+	 PRE_MEM_WRITE("ioctl(DRM_I915_GEM_MMAPv1).addr_ptr", (Addr)&data->addr_ptr, sizeof(data->addr_ptr));
+      }
+      break;
+   case VKI_DRM_IOCTL_I915_GEM_MMAP:
+      if (ARG3) {
+	 struct vki_drm_i915_gem_mmap *data =
+            (struct vki_drm_i915_gem_mmap *)(Addr)ARG3;
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_MMAP).handle", (Addr)&data->handle, sizeof(data->handle));
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_MMAP).offset", (Addr)&data->offset, sizeof(data->offset));
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_MMAP).size", (Addr)&data->size, sizeof(data->size));
+	 PRE_MEM_READ("ioctl(DRM_I915_GEM_MMAP).flags", (Addr)&data->size, sizeof(data->flags));
+	 PRE_MEM_WRITE("ioctl(DRM_I915_GEM_MMAP).addr_ptr", (Addr)&data->addr_ptr, sizeof(data->addr_ptr));
+      }
+      break;
    case VKI_DRM_IOCTL_I915_GEM_MMAP_GTT:
       if (ARG3) {
          struct vki_drm_i915_gem_mmap_gtt *data =
@@ -10901,6 +10922,34 @@ POST(sys_ioctl)
          struct vki_drm_i915_gem_pread *data =
             (struct vki_drm_i915_gem_pread *)(Addr)ARG3;
 	 POST_MEM_WRITE((Addr)data->data_ptr, data->size);
+      }
+      break;
+   case VKI_DRM_IOCTL_I915_GEM_MMAPv1:
+      if (ARG3) {
+	 struct vki_drm_i915_gem_mmap_v1 *data =
+	    (struct vki_drm_i915_gem_mmap_v1 *)(Addr)ARG3;
+	 Addr addr = data->addr_ptr;
+	 SizeT size = data->size;
+	 vg_assert(ML_(valid_client_addr)(addr, size, tid,
+					  "ioctl(DRM_IOCTL_I915_GEM_MMAPv1)"));
+	 ML_(notify_core_and_tool_of_mmap)(addr, size,
+					   VKI_PROT_READ | VKI_PROT_WRITE,
+					   VKI_MAP_ANONYMOUS, -1, 0 );
+	 POST_MEM_WRITE((Addr)&data->addr_ptr, sizeof(data->addr_ptr));
+      }
+      break;
+   case VKI_DRM_IOCTL_I915_GEM_MMAP:
+      if (ARG3) {
+	 struct vki_drm_i915_gem_mmap *data =
+	    (struct vki_drm_i915_gem_mmap *)(Addr)ARG3;
+	 Addr addr = data->addr_ptr;
+	 SizeT size = data->size;
+	 vg_assert(ML_(valid_client_addr)(addr, size, tid,
+					  "ioctl(DRM_IOCTL_I915_GEM_MMAP)"));
+	 ML_(notify_core_and_tool_of_mmap)(addr, size,
+					   VKI_PROT_READ | VKI_PROT_WRITE,
+					   VKI_MAP_ANONYMOUS, -1, 0 );
+	 POST_MEM_WRITE((Addr)&data->addr_ptr, sizeof(data->addr_ptr));
       }
       break;
    case VKI_DRM_IOCTL_I915_GEM_MMAP_GTT:

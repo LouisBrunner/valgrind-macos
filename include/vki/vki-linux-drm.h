@@ -633,6 +633,7 @@ typedef struct _vki_drm_i915_init {
 #define VKI_DRM_IOCTL_I915_GEM_CREATE		    VKI_DRM_IOWR(VKI_DRM_COMMAND_BASE + VKI_DRM_I915_GEM_CREATE, struct vki_drm_i915_gem_create)
 #define VKI_DRM_IOCTL_I915_GEM_PREAD		    VKI_DRM_IOW (VKI_DRM_COMMAND_BASE + VKI_DRM_I915_GEM_PREAD, struct vki_drm_i915_gem_pread)
 #define VKI_DRM_IOCTL_I915_GEM_PWRITE		    VKI_DRM_IOW (VKI_DRM_COMMAND_BASE + VKI_DRM_I915_GEM_PWRITE, struct vki_drm_i915_gem_pwrite)
+#define VKI_DRM_IOCTL_I915_GEM_MMAPv1		    VKI_DRM_IOWR(VKI_DRM_COMMAND_BASE + VKI_DRM_I915_GEM_MMAP, struct vki_drm_i915_gem_mmap_v1)
 #define VKI_DRM_IOCTL_I915_GEM_MMAP		    VKI_DRM_IOWR(VKI_DRM_COMMAND_BASE + VKI_DRM_I915_GEM_MMAP, struct vki_drm_i915_gem_mmap)
 #define VKI_DRM_IOCTL_I915_GEM_MMAP_GTT		    VKI_DRM_IOWR(VKI_DRM_COMMAND_BASE + VKI_DRM_I915_GEM_MMAP_GTT, struct vki_drm_i915_gem_mmap_gtt)
 #define VKI_DRM_IOCTL_I915_GEM_SET_DOMAIN	    VKI_DRM_IOW (VKI_DRM_COMMAND_BASE + VKI_DRM_I915_GEM_SET_DOMAIN, struct vki_drm_i915_gem_set_domain)
@@ -724,12 +725,20 @@ struct vki_drm_i915_gem_pwrite {
 	__vki_u64 size;
 	__vki_u64 data_ptr;
 };
+struct vki_drm_i915_gem_mmap_v1 {
+	__vki_u32 handle;
+	__vki_u32 pad;
+	__vki_u64 offset;
+	__vki_u64 size;
+	__vki_u64 addr_ptr;
+};
 struct vki_drm_i915_gem_mmap {
 	__vki_u32 handle;
 	__vki_u32 pad;
 	__vki_u64 offset;
 	__vki_u64 size;
 	__vki_u64 addr_ptr;
+	__vki_u64 flags;
 };
 struct vki_drm_i915_gem_mmap_gtt {
 	__vki_u32 handle;

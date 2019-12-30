@@ -7282,6 +7282,15 @@ PRE(sys_ioctl)
    case VKI_BLKPBSZGET:
       PRE_MEM_WRITE( "ioctl(BLKPBSZGET)", ARG3, sizeof(int));
       break;
+   case VKI_BLKIOMIN:
+      PRE_MEM_WRITE( "ioctl(BLKIOMIN)", ARG3, sizeof(vki_uint));
+      break;
+   case VKI_BLKIOOPT:
+      PRE_MEM_WRITE( "ioctl(BLKIOOPT)", ARG3, sizeof(vki_uint));
+      break;
+   case VKI_BLKALIGNOFF:
+      PRE_MEM_WRITE( "ioctl(BLKALIGNOFF)", ARG3, sizeof(int));
+      break;
    case VKI_BLKDISCARDZEROES:
       PRE_MEM_WRITE( "ioctl(BLKDISCARDZEROES)", ARG3, sizeof(vki_uint));
       break;
@@ -10210,6 +10219,15 @@ POST(sys_ioctl)
       POST_MEM_WRITE(ARG3, sizeof(unsigned long long));
       break;
    case VKI_BLKPBSZGET:
+      POST_MEM_WRITE(ARG3, sizeof(int));
+      break;
+   case VKI_BLKIOMIN:
+      POST_MEM_WRITE(ARG3, sizeof(vki_uint));
+      break;
+   case VKI_BLKIOOPT:
+      POST_MEM_WRITE(ARG3, sizeof(vki_uint));
+      break;
+   case VKI_BLKALIGNOFF:
       POST_MEM_WRITE(ARG3, sizeof(int));
       break;
    case VKI_BLKDISCARDZEROES:

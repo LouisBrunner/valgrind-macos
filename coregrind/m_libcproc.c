@@ -1252,6 +1252,10 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
                                  (UWord) nbytes, (UWord) 3);
    vg_assert( !sr_isError(sres) );
 
+# elif defined(VGA_nanomips)
+
+   __builtin___clear_cache(ptr, (char*)ptr + nbytes);
+
 #  endif
 }
 

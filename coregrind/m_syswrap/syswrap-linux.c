@@ -532,7 +532,7 @@ static SysRes clone_new_thread ( Word (*fn)(void *),
    ret = do_syscall_clone_nanomips_linux
       (ML_(start_thread_NORETURN), stack, flags, ctst,
        child_tidptr, parent_tidptr, NULL);
-   res = VG_ (mk_SysRes_nanomips_linux) (ret, 0);
+   res = VG_ (mk_SysRes_nanomips_linux) (ret);
 #else
 # error Unknown platform
 #endif

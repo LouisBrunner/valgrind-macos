@@ -106,6 +106,13 @@ SysRes VG_(mk_SysRes_SuccessEx) ( UWord res, UWord resEx ) {
    safely test with -4095.
 */
 
+SysRes VG_(mk_SysRes_nanomips_linux) ( UWord a0 ) {
+   SysRes res;
+   res._isError = (a0 > 0xFFFFF000ul);
+   res._val = a0;
+   return res;
+}
+
 SysRes VG_(mk_SysRes_x86_linux) ( Int val ) {
    SysRes res;
    res._isError = val >= -4095 && val <= -1;
@@ -180,6 +187,21 @@ SysRes VG_(mk_SysRes_arm64_linux) ( Long val ) {
 }
 
 /* Generic constructors. */
+SysRes VG_(mk_SysRes_Success) ( UWord res ) {
+   SysRes r;
+   r._isError = False;
+   r._val     = res;
+   return r;
+}
+
+#if defined(VGP_nanomips_linux)
+SysRes VG_(mk_SysRes_Error) ( UWord err ) {
+   SysRes r;
+   r._isError = True;
+   r._val     = (UWord)(-(Word)err);
+   return r;
+}
+#else
 SysRes VG_(mk_SysRes_Error) ( UWord err ) {
    SysRes r;
    r._isError = True;
@@ -187,12 +209,7 @@ SysRes VG_(mk_SysRes_Error) ( UWord err ) {
    return r;
 }
 
-SysRes VG_(mk_SysRes_Success) ( UWord res ) {
-   SysRes r;
-   r._isError = False;
-   r._val     = res;
-   return r;
-}
+#endif
 
 
 #elif defined(VGO_darwin)
@@ -824,6 +841,29 @@ asm (
    ".previous                              \n\t"
 );
 
+#elif defined(VGP_nanomips_linux)
+extern void do_syscall_WRK (
+         RegWord a1, RegWord a2, RegWord a3,
+         RegWord a4, RegWord a5, RegWord a6,
+         RegWord syscall_no, RegWord *res_a0);
+asm (
+   ".text                                  \n\t"
+   ".globl do_syscall_WRK                  \n\t"
+   ".type  do_syscall_WRK, @function       \n\t"
+   ".set push                              \n\t"
+   ".set noreorder                         \n\t"
+   "do_syscall_WRK:                        \n\t"
+   "   save 32, $a7                        \n\t"
+   "   move $t4, $a6                       \n\t"
+   "   syscall[32]                         \n\t"
+   "   restore 32, $a7                     \n\t"
+   "   sw $a0, 0($a7)                      \n\t"
+   "   jrc $ra                             \n\t"
+   ".size do_syscall_WRK, .-do_syscall_WRK \n\t"
+   ".set pop                               \n\t"
+   ".previous                              \n\t"
+);
+
 #elif defined(VGP_x86_solaris)
 
 extern ULong
@@ -1038,6 +1078,11 @@ SysRes VG_(do_syscall) ( UWord sysno, RegWord a1, RegWord a2, RegWord a3,
    RegWord V1 = (RegWord)v1_a3[0];
    RegWord A3 = (RegWord)v1_a3[1];
    return VG_(mk_SysRes_mips64_linux)( V0, V1, A3 );
+
+#elif defined(VGP_nanomips_linux)
+   RegWord reg_a0 = 0;
+   do_syscall_WRK(a1, a2, a3, a4, a5, a6, sysno, &reg_a0);
+   return VG_(mk_SysRes_nanomips_linux)(reg_a0);
 
 #  elif defined(VGP_x86_solaris)
    UInt val, val2, err = False;

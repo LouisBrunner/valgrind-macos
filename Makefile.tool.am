@@ -75,6 +75,10 @@ TOOL_LDFLAGS_MIPS32_LINUX = \
 	-static -nodefaultlibs -nostartfiles -u __start @FLAG_NO_BUILD_ID@ \
 	@FLAG_M32@
 
+TOOL_LDFLAGS_NANOMIPS_LINUX = \
+	-static -nodefaultlibs -nostartfiles -u __start @FLAG_NO_BUILD_ID@ \
+	@FLAG_M32@ -Wl,-no-relax
+
 TOOL_LDFLAGS_MIPS64_LINUX = \
 	-static -nodefaultlibs -nostartfiles -u __start @FLAG_NO_BUILD_ID@ \
 	@FLAG_M64@

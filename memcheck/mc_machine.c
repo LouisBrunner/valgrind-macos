@@ -1058,7 +1058,7 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
 
    /* --------------------- mips32 --------------------- */
 
-#  elif defined(VGA_mips32)
+#  elif defined(VGA_mips32) || defined(VGA_nanomips)
 
 #  define GOF(_fieldname) \
       (offsetof(VexGuestMIPS32State,guest_##_fieldname))
@@ -1430,6 +1430,12 @@ IRType MC_(get_otrack_reg_array_equiv_int_type) ( IRRegArray* arr )
 /* --------------------- mips32 --------------------- */
 #  elif defined(VGA_mips32)
    VG_(printf)("get_reg_array_equiv_int_type(mips32): unhandled: ");
+   ppIRRegArray(arr);
+   VG_(printf)("\n");
+   tl_assert(0);
+/* --------------------- nanomips ------------------- */
+#  elif defined(VGA_nanomips)
+   VG_(printf)("get_reg_array_equiv_int_type(nanomips): unhandled: ");
    ppIRRegArray(arr);
    VG_(printf)("\n");
    tl_assert(0);

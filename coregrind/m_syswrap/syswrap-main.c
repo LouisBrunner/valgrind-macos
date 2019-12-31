@@ -1039,8 +1039,7 @@ void getSyscallStatusFromGuestState ( /*OUT*/SyscallStatus*     canonical,
 #  elif defined(VGP_nanomips_linux)
    VexGuestMIPS32State* gst = (VexGuestMIPS32State*)gst_vanilla;
    RegWord  a0 = gst->guest_r4;    // a0
-   RegWord  a1 = gst->guest_r5;    // a1
-   canonical->sres = VG_(mk_SysRes_nanomips_linux)(a0, a1);
+   canonical->sres = VG_(mk_SysRes_nanomips_linux)(a0);
    canonical->what = SsComplete;
 
 #  elif defined(VGP_x86_darwin)
@@ -1347,11 +1346,8 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
    VexGuestMIPS32State* gst = (VexGuestMIPS32State*)gst_vanilla;
    vg_assert(canonical->what == SsComplete);
    gst->guest_r4 = canonical->sres._val;
-   gst->guest_r5 = canonical->sres._valEx;
    VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
              OFFSET_mips32_r4, sizeof(UWord) );
-   VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
-             OFFSET_mips32_r5, sizeof(UWord) );
 
 #  elif defined(VGP_x86_solaris)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
@@ -2480,8 +2476,7 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
       vg_assert(p[0] == 0x0A);
    }
 
-#elif defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
-   || defined(VGP_nanomips_linux)
+#elif defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
 
    arch->vex.guest_PC -= 4;             // sizeof(mips instr)
 
@@ -2513,6 +2508,27 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
 #     endif
    }
 
+#elif defined(VGP_nanomips_linux)
+   {
+      /* Make sure our caller is actually sane, and we're really backing
+         back over a syscall.
+      */
+      arch->vex.guest_PC -= 2;
+      /* PC has to be 16-bit aligned. */
+      vg_assert((arch->vex.guest_PC & 1) == 0);
+
+      UShort *p = ASSUME_ALIGNED(UShort *, (Addr)(arch->vex.guest_PC));
+
+      if (((*p) & 0xFFFD) != 0x1008) {
+         if (((*(p - 1)) & 0xFFFD) != 0x0008) {
+            VG_(message)(Vg_DebugMsg,
+                         "?! restarting over syscall at %#x %08lx\n",
+                         arch->vex.guest_PC, (UWord)(*p));
+            vg_assert(0);
+         }
+         arch->vex.guest_PC -= 2;
+      }
+   }
 #elif defined(VGP_x86_solaris)
    arch->vex.guest_EIP -= 2;   // sizeof(int $0x91) or sizeof(syscall)
 

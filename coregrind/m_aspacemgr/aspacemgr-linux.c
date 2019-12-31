@@ -2680,7 +2680,7 @@ static SysRes VG_(am_mmap_file_float_valgrind_flags) ( SizeT length, UInt prot,
    req.rkind = MAny;
    req.start = 0;
    #if defined(VGA_arm) || defined(VGA_arm64) \
-      || defined(VGA_mips32) || defined(VGA_mips64)
+      || defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_nanomips)
    aspacem_assert(VKI_SHMLBA >= VKI_PAGE_SIZE);
    #else
    aspacem_assert(VKI_SHMLBA == VKI_PAGE_SIZE);

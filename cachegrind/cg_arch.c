@@ -455,7 +455,7 @@ configure_caches(cache_t *I1c, cache_t *D1c, cache_t *LLc,
    *D1c = (cache_t) {   131072,  8, 256 };
    *LLc = (cache_t) { 50331648, 24, 256 };
 
-#elif defined(VGA_mips32)
+#elif defined(VGA_mips32) || defined(VGA_nanomips)
 
    // Set caches to default (for MIPS32-r2(mips 74kc))
    *I1c = (cache_t) {  32768, 4, 32 };

@@ -286,6 +286,10 @@ case "${host_cpu}" in
         AC_MSG_RESULT([ok (${host_cpu})])
         ARCH_MAX="mips64"
         ;;
+     nanomips)
+        AC_MSG_RESULT([ok (${host_cpu})])
+        ARCH_MAX="nanomips"
+        ;;
 
      *) 
 	AC_MSG_RESULT([no (${host_cpu})])
@@ -784,6 +788,17 @@ case "$ARCH_MAX-$VGCONF_OS" in
         fi
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
         ;;
+     nanomips-linux)
+        VGCONF_ARCH_PRI="nanomips"
+        VGCONF_ARCH_SEC=""
+        VGCONF_PLATFORM_PRI_CAPS="NANOMIPS_LINUX"
+        VGCONF_PLATFORM_SEC_CAPS=""
+        valt_load_address_pri_norml="0x58000000"
+        valt_load_address_pri_inner="0x38000000"
+        valt_load_address_sec_norml="0xUNSET"
+        valt_load_address_sec_inner="0xUNSET"
+        AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
+        ;;
      x86-solaris)
         VGCONF_ARCH_PRI="x86"
         VGCONF_ARCH_SEC=""
@@ -871,6 +886,8 @@ AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_MIPS32,
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xMIPS32_LINUX )
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_MIPS64,
                test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX ) 
+AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_NANOMIPS,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xNANOMIPS_LINUX )
 
 # Set up VGCONF_PLATFORMS_INCLUDE_<platform>.  Either one or two of these
 # become defined.
@@ -899,6 +916,8 @@ AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_MIPS32_LINUX,
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xMIPS32_LINUX)
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_MIPS64_LINUX,
                test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX)
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_NANOMIPS_LINUX,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xNANOMIPS_LINUX)
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_X86_DARWIN,   
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN \
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_DARWIN)
@@ -924,7 +943,8 @@ AM_CONDITIONAL(VGCONF_OS_IS_LINUX,
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xARM64_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
-                 -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX)
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xNANOMIPS_LINUX)
 AM_CONDITIONAL(VGCONF_OS_IS_DARWIN,
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN)
@@ -1813,6 +1833,8 @@ case "${host_cpu}" in
 
           AC_SUBST(FLAG_M64)
         fi
+        ;;
+    nanomips*)
         ;;
     *)
         # does this compiler support -m32 ?
@@ -4286,9 +4308,10 @@ AM_CONDITIONAL([HAVE_PREADV2_PWRITEV2],
                [test x$ac_cv_func_preadv2 = xyes && test x$ac_cv_func_pwritev2 = xyes])
 
 if test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
-     -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX ; then
+     -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \
+     -o x$VGCONF_PLATFORM_PRI_CAPS = xNANOMIPS_LINUX; then
   AC_DEFINE([DISABLE_PTHREAD_SPINLOCK_INTERCEPT], 1,
-            [Disable intercept pthread_spin_lock() on MIPS32 and MIPS64.])
+            [Disable intercept pthread_spin_lock() on MIPS32, MIPS64 and nanoMIPS.])
 fi
 
 #----------------------------------------------------------------------------
@@ -4307,6 +4330,7 @@ if test x$VGCONF_PLATFORM_PRI_CAPS = xX86_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
+     -o x$VGCONF_PLATFORM_PRI_CAPS = xNANOMIPS_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xX86_SOLARIS ; then
   mflag_primary=$FLAG_M32
 elif test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX \

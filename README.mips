@@ -29,6 +29,12 @@ CFLAGS="-mips64 -mabi=64" will do the trick and compile Valgrind correctly.
  * --host=mipsel-linux-gnu is necessary if you compile it with cross toolchain
    compiler for little endian platform.
 
+ * --host=nanomipseb-linux-gnu is necessary if you compile it with cross toolchain
+   compiler for nanoMIPS big endian platform.
+
+ * --host=nanomips-linux-gnu is necessary if you compile it with cross toolchain
+   compiler for nanoMIPS little endian platform.
+
  * --build=mips-linux is needed if you want to build it for MIPS32 on 64-bit
    MIPS system.
 
@@ -51,3 +57,5 @@ Limitations
   no appropriate architecture flag is specified during configure time.
   Be sure to set either mips32 or mips32r2 as the target architecture in that
   case.
+- Some tests can not be compiled for nanoMIPS due to limitations in
+  preliminary GCC for nanoMIPS. You can use '-i' switch for building tests.

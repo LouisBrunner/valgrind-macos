@@ -56,7 +56,7 @@
 #elif defined(VGA_s390x)
 #  include "libvex_guest_s390x.h"
    typedef VexGuestS390XState VexGuestArchState;
-#elif defined(VGA_mips32)
+#elif defined(VGA_mips32) || defined(VGA_nanomips)
 #  include "libvex_guest_mips32.h"
    typedef VexGuestMIPS32State VexGuestArchState;
 #elif defined(VGA_mips64)

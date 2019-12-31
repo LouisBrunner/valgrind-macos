@@ -49,6 +49,7 @@
 /auxprogs/getoff-ppc64le-linux
 /auxprogs/getoff-mips32-linux
 /auxprogs/getoff-mips64-linux
+/auxprogs/getoff-nanomips-linux
 /auxprogs/getoff-amd64-solaris
 /auxprogs/getoff-x86-solaris
 /auxprogs/libmpiwrap-PPC32_LINUX.so

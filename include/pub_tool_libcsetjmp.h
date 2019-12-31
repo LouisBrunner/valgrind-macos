@@ -110,7 +110,7 @@ __attribute__((noreturn))
 __attribute__((regparm(1))) // ditto
 void  VG_MINIMAL_LONGJMP(VG_MINIMAL_JMP_BUF(_env));
 
-#elif defined(VGP_mips32_linux)
+#elif defined(VGP_mips32_linux) || defined(VGP_nanomips_linux)
 
 #define VG_MINIMAL_JMP_BUF(_name)        ULong _name [104 / sizeof(ULong)]
 __attribute__((returns_twice))

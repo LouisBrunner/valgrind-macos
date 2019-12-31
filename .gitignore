@@ -1440,6 +1440,7 @@
 /none/tests/sha1_test
 /none/tests/shortpush
 /none/tests/shorts
+/none/tests/sigprocmask
 /none/tests/sigstackgrowth
 /none/tests/sigsusp
 /none/tests/smc1

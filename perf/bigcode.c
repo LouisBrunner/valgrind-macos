@@ -85,6 +85,8 @@ int main(int argc, char* argv[])
 
 #if defined(__mips__)
    syscall(__NR_cacheflush, a, FN_SIZE * n_fns, ICACHE);
+#elif defined(__nanomips__)
+   __builtin___clear_cache(a, (char*)a + FN_SIZE * n_fns);
 #endif
 
    for (h = 0; h < n_reps; h += 1) {

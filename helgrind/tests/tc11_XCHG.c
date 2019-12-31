@@ -41,6 +41,8 @@
 #  define PLAT_s390x_linux 1
 #elif defined(__linux__) && defined(__mips__)
 #  define PLAT_mips32_linux 1
+#elif defined(__linux__) && defined(__nanomips__)
+#  define PLAT_nanomips_linux 1
 #elif defined(__sun__) && defined(__i386__)
 #  define PLAT_x86_solaris 1
 #elif defined(__sun__) && defined(__x86_64__)
@@ -94,6 +96,21 @@
         : /*out*/ "=r"(_lval)                                \
         : /*in*/  "r"(&_addr), "r"(_lval)                    \
         : "$12", "$13", "$14", "memory", "cc"                \
+     )
+
+#  define XCHG_M_R_with_redundant_LOCK(_addr,_lval) \
+      XCHG_M_R(_addr,_lval)
+#elif defined(PLAT_nanomips_linux)
+#  define XCHG_M_R(_addr,_lval)                              \
+     __asm__ __volatile__(                                   \
+        "move $t0, %2\n"                                     \
+        "move $t1, %1\n"                                     \
+        "ll $t2, 0($t1)\n"                                   \
+        "sc $t0, 0($t1)\n"                                   \
+        "move %0, $t2\n"                                     \
+        : /*out*/ "=r"(_lval)                                \
+        : /*in*/  "r"(&_addr), "r"(_lval)                    \
+        : "$t0", "$t1", "$t1", "memory"                      \
      )
 
 #  define XCHG_M_R_with_redundant_LOCK(_addr,_lval) \

@@ -60,6 +60,33 @@
    __asm__ __volatile__( "li 11, 0" : : :/*trash*/"r11" ); \
    __asm__ __volatile__( "li 12, 0" : : :/*trash*/"r12" ); \
   } while (0)
+#elif defined(__nanomips__)
+#define CLEAR_CALLER_SAVED_REGS                                             \
+   do {                                                                     \
+      __asm__ __volatile__ (".set push       \n\t"                          \
+                            ".set noat       \n\t"                          \
+                            "move $at, $zero \n\t"                          \
+                            "move $t4, $zero \n\t"                          \
+                            "move $t5, $zero \n\t"                          \
+                            "move $a0, $zero \n\t"                          \
+                            "move $a1, $zero \n\t"                          \
+                            "move $a2, $zero \n\t"                          \
+                            "move $a3, $zero \n\t"                          \
+                            "move $a4, $zero \n\t"                          \
+                            "move $a5, $zero \n\t"                          \
+                            "move $a6, $zero \n\t"                          \
+                            "move $a7, $zero \n\t"                          \
+                            "move $t0, $zero \n\t"                          \
+                            "move $t1, $zero \n\t"                          \
+                            "move $t2, $zero \n\t"                          \
+                            "move $t3, $zero \n\t"                          \
+                            "move $t8, $zero \n\t"                          \
+                            "move $t9, $zero \n\t"                          \
+                            ".set pop        \n\t"                          \
+                            : : : "$at", "$t4", "$t5", "$a0", "$a1", "$a2", \
+                                  "$a3", "$a4", "$a5", "$a6", "$a7", "$t0", \
+                                  "$t1", "$t2", "$t3", "$t8", "$t9");       \
+   } while (0)
 #elif (__mips == 32)
 #define CLEAR_CALLER_SAVED_REGS                                              \
    do {                                                                      \

@@ -15,7 +15,8 @@
 unsigned long VKI_PAGE_SIZE  = 1UL << 12;
 #elif defined(VGP_arm64_linux)
 unsigned long VKI_PAGE_SIZE  = 1UL << 16;
-#elif defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
+#elif defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
+    || defined (VGP_nanomips_linux)
 #include <unistd.h>
 unsigned long VKI_PAGE_SIZE;
 #endif

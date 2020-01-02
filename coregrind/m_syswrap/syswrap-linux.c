@@ -3692,10 +3692,19 @@ PRE(sys_statx)
    PRINT("sys_statx ( %ld, %#" FMT_REGWORD "x(%s), %ld, %ld, %#" FMT_REGWORD "x )",
          (Word)ARG1,ARG2,(char*)(Addr)ARG2,(Word)ARG3,(Word)ARG4,ARG5);
    PRE_REG_READ5(long, "statx",
-                 int, dirfd, char *, file_name, int, flags,
+                 int, dirfd, char *, filename, int, flags,
                  unsigned int, mask, struct statx *, buf);
-   PRE_MEM_RASCIIZ( "statx(file_name)", ARG2 );
-   PRE_MEM_WRITE( "statx(buf)", ARG5, sizeof(struct vki_statx) );
+   // Work around Rust's dubious use of statx, as described here:
+   // https://github.com/rust-lang/rust/blob/
+   //    ccd238309f9dce92a05a23c2959e2819668c69a4/
+   //    src/libstd/sys/unix/fs.rs#L128-L142
+   // in which it passes NULL for both filename and buf, and then looks at the
+   // return value, so as to determine whether or not this syscall is supported.
+   Bool both_filename_and_buf_are_null = ARG2 == 0 && ARG5 == 0;
+   if (!both_filename_and_buf_are_null) {
+      PRE_MEM_RASCIIZ( "statx(filename)", ARG2 );
+      PRE_MEM_WRITE( "statx(buf)", ARG5, sizeof(struct vki_statx) );
+   }
 }
 POST(sys_statx)
 {

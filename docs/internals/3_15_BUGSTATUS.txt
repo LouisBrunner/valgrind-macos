@@ -13,15 +13,10 @@ of 3.15.0.  It doesn't carry over bugs from earlier versions.
 
 407376  Update Xen support to 4.12 and add more coverage
         ** Has patch, looks reasonable
+        ** 2019Dec30: causes implicit-fallthrough warning; author queried
 
 408858  Add new io_uring_register, setup, enter syscalls
         No patch, no test case
-
-409206  [PATCH] Support for Linux PPS and PTP ioctls
-        ** Has patches, looks reasonable
-
-410556  [PATCH] add support for BLKIO{MIN,OPT} and BLKALIGNOFF ioctls
-        ** Has patches, looks reasonable
 
 410743  shmat() calls for 32-bit programs fail when running in 64-bit valgrind
         Not sure if this is important.  Ask MJW.
@@ -37,9 +32,6 @@ of 3.15.0.  It doesn't carry over bugs from earlier versions.
 
 412408  unhandled arm-linux syscall: 124 - adjtime - on arm-linux
         * trivial patch, but need to check the handler is correct
-
-413119  ioctl wrapper for DRM_IOCTL_I915_GEM_MMAP
-        ** plausible; contains patches
 
 415621  epoll_ctl reports for uninitialized padding
         * maybe an inaccurate wrapper; may be easy to fix?
@@ -92,11 +84,12 @@ of 3.15.0.  It doesn't carry over bugs from earlier versions.
 === Tools/Memcheck =====================================================
 
 407589  Add support for C11 aligned_alloc() and GNU reallocarray()
-        Missing allocation intercepts?
+        * Missing allocation intercepts?
 
 409429  False positives at unexpected location due to failure to recognize
         cmpeq as a dependency breaking idiom (fixed in grail?  check this)
-        In grail: 96de5118f5332ae145912ebe91b8fa143df74b8d
+        * In grail: 96de5118f5332ae145912ebe91b8fa143df74b8d
+        (but not merged from it; needs doing separately)
 
 415141  Possible leak with calling __libc_freeres before
         all thread's tid_addresses are cleared
@@ -107,7 +100,7 @@ of 3.15.0.  It doesn't carry over bugs from earlier versions.
 === Uncategorised/build ================================================
 
 415516  Can't cross compile on openwrt
-        MIPS build failure
+        * MIPS build failure
 
 === Uncategorised/run ==================================================
 
@@ -128,9 +121,6 @@ of 3.15.0.  It doesn't carry over bugs from earlier versions.
         == 411303
         == 414053
         393351 has STR
-
-411451  x86/amd64->IR of bt/btc/bts/btr with immediate clears zero flag
-        * has patch and nano-test-case
 
 === VEX/arm32 ==========================================================
 
@@ -198,3 +188,5 @@ Extras
 apply included fixes for Xen 4.6/4.7/4.8/4.9/4.10/4.11/4.12  390553 ?
 
 Can we get rid of exp-sgcheck now?
+
+Very large executable support -- adjust tool load address?  Status?

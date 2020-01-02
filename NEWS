@@ -83,11 +83,16 @@ where XXXXXX is the bug number as listed below.
 408091  Missing pkey syscalls
 408414  Add support for missing for preadv2 and pwritev2 syscalls
 409141  Valgrind hangs when SIGKILLed
+409206  Support for Linux PPS and PTP ioctls
 409367  exit_group() after signal to thread waiting in futex() causes hangs
 409780  References to non-existent configure.in
+410556  Add support for BLKIO{MIN,OPT} and BLKALIGNOFF ioctls
 410599  Non-deterministic behaviour of pth_self_kill_15_other test
+410757  discrepancy for preadv2/pwritev2 syscalls across different versions
 411134  Allow the user to change a set of command line options during execution
+411451  amd64->IR of bt/btc/bts/btr with immediate clears zero flag
 412344  Problem setting mips flags with specific paths
+413119  Ioctl wrapper for DRM_IOCTL_I915_GEM_MMAP
 413330  avx-1 test fails on AMD EPYC 7401P 24-Core Processor
 413603  callgrind_annotate/cg_annotate truncate function names at '#'
 414565  Specific use case bug found in SysRes VG_(do_sys_sigprocmask)

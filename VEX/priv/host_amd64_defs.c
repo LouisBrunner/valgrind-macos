@@ -626,6 +626,14 @@ AMD64Instr* AMD64Instr_Sh64 ( AMD64ShiftOp op, UInt src, HReg dst ) {
    i->Ain.Sh64.dst = dst;
    return i;
 }
+AMD64Instr* AMD64Instr_Sh32 ( AMD64ShiftOp op, UInt src, HReg dst ) {
+   AMD64Instr* i   = LibVEX_Alloc_inline(sizeof(AMD64Instr));
+   i->tag          = Ain_Sh32;
+   i->Ain.Sh32.op  = op;
+   i->Ain.Sh32.src = src;
+   i->Ain.Sh32.dst = dst;
+   return i;
+}
 AMD64Instr* AMD64Instr_Test64 ( UInt imm32, HReg dst ) {
    AMD64Instr* i       = LibVEX_Alloc_inline(sizeof(AMD64Instr));
    i->tag              = Ain_Test64;
@@ -1090,6 +1098,14 @@ void ppAMD64Instr ( const AMD64Instr* i, Bool mode64 )
             vex_printf("$%d,", (Int)i->Ain.Sh64.src);
          ppHRegAMD64(i->Ain.Sh64.dst);
          return;
+      case Ain_Sh32:
+         vex_printf("%sl ", showAMD64ShiftOp(i->Ain.Sh32.op));
+         if (i->Ain.Sh32.src == 0)
+            vex_printf("%%cl,");
+         else
+            vex_printf("$%d,", (Int)i->Ain.Sh32.src);
+         ppHRegAMD64_lo32(i->Ain.Sh32.dst);
+         return;
       case Ain_Test64:
          vex_printf("testq $%d,", (Int)i->Ain.Test64.imm32);
          ppHRegAMD64(i->Ain.Test64.dst);
@@ -1471,6 +1487,11 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, const AMD64Instr* i, Bool mode64 )
          if (i->Ain.Sh64.src == 0)
             addHRegUse(u, HRmRead, hregAMD64_RCX());
          return;
+      case Ain_Sh32:
+         addHRegUse(u, HRmModify, i->Ain.Sh32.dst);
+         if (i->Ain.Sh32.src == 0)
+            addHRegUse(u, HRmRead, hregAMD64_RCX());
+         return;
       case Ain_Test64:
          addHRegUse(u, HRmRead, i->Ain.Test64.dst);
          return;
@@ -1807,6 +1828,9 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i, Bool mode64 )
          return;
       case Ain_Sh64:
          mapReg(m, &i->Ain.Sh64.dst);
+         return;
+      case Ain_Sh32:
+         mapReg(m, &i->Ain.Sh32.dst);
          return;
       case Ain_Test64:
          mapReg(m, &i->Ain.Test64.dst);
@@ -2758,6 +2782,30 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
          *p++ = toUChar(opc_imm);
          p = doAMode_R_enc_reg(p, subopc, i->Ain.Sh64.dst);
          *p++ = (UChar)(i->Ain.Sh64.src);
+         goto done;
+      }
+      break;
+
+   case Ain_Sh32:
+      opc_cl = opc_imm = subopc = 0;
+      switch (i->Ain.Sh32.op) {
+         case Ash_SHR: opc_cl = 0xD3; opc_imm = 0xC1; subopc = 5; break;
+         case Ash_SAR: opc_cl = 0xD3; opc_imm = 0xC1; subopc = 7; break;
+         case Ash_SHL: opc_cl = 0xD3; opc_imm = 0xC1; subopc = 4; break;
+         default: goto bad;
+      }
+      if (i->Ain.Sh32.src == 0) {
+         rex = clearWBit( rexAMode_R_enc_reg(0, i->Ain.Sh32.dst) );
+         if (rex != 0x40) *p++ = rex;
+         *p++ = toUChar(opc_cl);
+         p = doAMode_R_enc_reg(p, subopc, i->Ain.Sh32.dst);
+         goto done;
+      } else {
+         rex = clearWBit( rexAMode_R_enc_reg(0, i->Ain.Sh32.dst) );
+         if (rex != 0x40) *p++ = rex;
+         *p++ = toUChar(opc_imm);
+         p = doAMode_R_enc_reg(p, subopc, i->Ain.Sh32.dst);
+         *p++ = (UChar)(i->Ain.Sh32.src);
          goto done;
       }
       break;

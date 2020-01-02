@@ -1030,9 +1030,12 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, const IRExpr* e )
          HReg regL   = iselIntExpr_R(env, e->Iex.Binop.arg1);
          addInstr(env, mk_iMOVsd_RR(regL,dst));
 
-         /* Do any necessary widening for 32/16/8 bit operands */
+         /* Do any necessary widening for 16/8 bit operands.  Also decide on the
+            final width at which the shift is to be done. */
+         Bool shift64 = False;
          switch (e->Iex.Binop.op) {
             case Iop_Shr64: case Iop_Shl64: case Iop_Sar64: 
+               shift64 = True;
                break;
             case Iop_Shl32: case Iop_Shl16: case Iop_Shl8:
                break;
@@ -1045,18 +1048,16 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, const IRExpr* e )
                                 Aalu_AND, AMD64RMI_Imm(0xFFFF), dst));
                break;
             case Iop_Shr32:
-               addInstr(env, AMD64Instr_MovxLQ(False, dst, dst));
                break;
             case Iop_Sar8:
-               addInstr(env, AMD64Instr_Sh64(Ash_SHL, 56, dst));
-               addInstr(env, AMD64Instr_Sh64(Ash_SAR, 56, dst));
+               addInstr(env, AMD64Instr_Sh32(Ash_SHL, 24, dst));
+               addInstr(env, AMD64Instr_Sh32(Ash_SAR, 24, dst));
                break;
             case Iop_Sar16:
-               addInstr(env, AMD64Instr_Sh64(Ash_SHL, 48, dst));
-               addInstr(env, AMD64Instr_Sh64(Ash_SAR, 48, dst));
+               addInstr(env, AMD64Instr_Sh32(Ash_SHL, 16, dst));
+               addInstr(env, AMD64Instr_Sh32(Ash_SAR, 16, dst));
                break;
             case Iop_Sar32:
-               addInstr(env, AMD64Instr_MovxLQ(True, dst, dst));
                break;
             default: 
                ppIROp(e->Iex.Binop.op);
@@ -1071,14 +1072,23 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, const IRExpr* e )
             vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
             nshift = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
             vassert(nshift >= 0);
-            if (nshift > 0)
+            if (nshift > 0) {
                /* Can't allow nshift==0 since that means %cl */
-               addInstr(env, AMD64Instr_Sh64(shOp, nshift, dst));
+               if (shift64) {
+                  addInstr(env, AMD64Instr_Sh64(shOp, nshift, dst));
+               } else {
+                  addInstr(env, AMD64Instr_Sh32(shOp, nshift, dst));
+               }
+            }
          } else {
             /* General case; we have to force the amount into %cl. */
             HReg regR = iselIntExpr_R(env, e->Iex.Binop.arg2);
             addInstr(env, mk_iMOVsd_RR(regR,hregAMD64_RCX()));
-            addInstr(env, AMD64Instr_Sh64(shOp, 0/* %cl */, dst));
+            if (shift64) {
+               addInstr(env, AMD64Instr_Sh64(shOp, 0/* %cl */, dst));
+            } else {
+               addInstr(env, AMD64Instr_Sh32(shOp, 0/* %cl */, dst));
+            }
          }
          return dst;
       }

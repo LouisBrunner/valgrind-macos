@@ -359,7 +359,8 @@ typedef
       Ain_Imm64,       /* Generate 64-bit literal to register */
       Ain_Alu64R,      /* 64-bit mov/arith/logical, dst=REG */
       Ain_Alu64M,      /* 64-bit mov/arith/logical, dst=MEM */
-      Ain_Sh64,        /* 64-bit shift/rotate, dst=REG or MEM */
+      Ain_Sh64,        /* 64-bit shift, dst=REG */
+      Ain_Sh32,        /* 32-bit shift, dst=REG */
       Ain_Test64,      /* 64-bit test (AND, set flags, discard result) */
       Ain_Unary64,     /* 64-bit not and neg */
       Ain_Lea64,       /* 64-bit compute EA into a reg */
@@ -441,6 +442,11 @@ typedef
             UInt         src;  /* shift amount, or 0 means %cl */
             HReg         dst;
          } Sh64;
+         struct {
+            AMD64ShiftOp op;
+            UInt         src;  /* shift amount, or 0 means %cl */
+            HReg         dst;
+         } Sh32;
          struct {
             UInt   imm32;
             HReg   dst;
@@ -744,6 +750,7 @@ extern AMD64Instr* AMD64Instr_Unary64    ( AMD64UnaryOp op, HReg dst );
 extern AMD64Instr* AMD64Instr_Lea64      ( AMD64AMode* am, HReg dst );
 extern AMD64Instr* AMD64Instr_Alu32R     ( AMD64AluOp, AMD64RMI*, HReg );
 extern AMD64Instr* AMD64Instr_Sh64       ( AMD64ShiftOp, UInt, HReg );
+extern AMD64Instr* AMD64Instr_Sh32       ( AMD64ShiftOp, UInt, HReg );
 extern AMD64Instr* AMD64Instr_Test64     ( UInt imm32, HReg dst );
 extern AMD64Instr* AMD64Instr_MulL       ( Bool syned, AMD64RM* );
 extern AMD64Instr* AMD64Instr_Div        ( Bool syned, Int sz, AMD64RM* );

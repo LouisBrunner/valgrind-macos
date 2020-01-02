@@ -4003,6 +4003,14 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
             *rLo = vLo;
             return;
          }
+         case 0xFFFFFFFF: {
+            HReg vHi = generate_ones_V128(env);
+            HReg vLo = newVRegV(env);
+            addInstr(env, mk_vMOVsd_RR(vHi, vLo));
+            *rHi = vHi;
+            *rLo = vLo;
+            return;
+         }
          default:
             break; /* give up.   Until such time as is necessary. */
       }

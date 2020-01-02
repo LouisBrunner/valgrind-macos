@@ -1298,6 +1298,8 @@ static IRExpr* mkOnesOfPrimopResultType ( IROp op )
       case Iop_CmpEQ16x8:
       case Iop_CmpEQ32x4:
          return IRExpr_Const(IRConst_V128(0xFFFF));
+      case Iop_CmpEQ32x8:
+         return IRExpr_Const(IRConst_V256(0xFFFFFFFF));
       default:
          ppIROp(op);
          vpanic("mkOnesOfPrimopResultType: bad primop");
@@ -2353,7 +2355,7 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
             case Iop_Xor64:
             case Iop_XorV128:
             case Iop_XorV256:
-               /* Xor8/16/32/64/V128(t,t) ==> 0, for some IRTemp t */
+               /* Xor8/16/32/64/V128/V256(t,t) ==> 0, for some IRTemp t */
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);
                   break;
@@ -2406,6 +2408,7 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
             case Iop_CmpEQ8x16:
             case Iop_CmpEQ16x8:
             case Iop_CmpEQ32x4:
+            case Iop_CmpEQ32x8:
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = mkOnesOfPrimopResultType(e->Iex.Binop.op);
                   break;

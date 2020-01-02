@@ -234,8 +234,11 @@ static void          iselInt128Expr_wrk ( /*OUT*/HReg* rHi, HReg* rLo,
 static void          iselInt128Expr     ( /*OUT*/HReg* rHi, HReg* rLo, 
                                           ISelEnv* env, const IRExpr* e );
 
-static AMD64CondCode iselCondCode_wrk    ( ISelEnv* env, const IRExpr* e );
-static AMD64CondCode iselCondCode        ( ISelEnv* env, const IRExpr* e );
+static AMD64CondCode iselCondCode_C_wrk  ( ISelEnv* env, const IRExpr* e );
+static AMD64CondCode iselCondCode_C      ( ISelEnv* env, const IRExpr* e );
+
+static HReg          iselCondCode_R_wrk  ( ISelEnv* env, const IRExpr* e );
+static HReg          iselCondCode_R      ( ISelEnv* env, const IRExpr* e );
 
 static HReg          iselDblExpr_wrk     ( ISelEnv* env, const IRExpr* e );
 static HReg          iselDblExpr         ( ISelEnv* env, const IRExpr* e );
@@ -649,7 +652,7 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
           && guard->Iex.Const.con->Ico.U1 == True) {
          /* unconditional -- do nothing */
       } else {
-         cc = iselCondCode( env, guard );
+         cc = iselCondCode_C( env, guard );
       }
    }
 
@@ -1611,7 +1614,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, const IRExpr* e )
          case Iop_1Uto32:
          case Iop_1Uto8: {
             HReg dst           = newVRegI(env);
-            AMD64CondCode cond = iselCondCode(env, e->Iex.Unop.arg);
+            AMD64CondCode cond = iselCondCode_C(env, e->Iex.Unop.arg);
             addInstr(env, AMD64Instr_Set64(cond,dst));
             return dst;
          }
@@ -1619,10 +1622,9 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, const IRExpr* e )
          case Iop_1Sto16:
          case Iop_1Sto32:
          case Iop_1Sto64: {
-            /* could do better than this, but for now ... */
-            HReg dst           = newVRegI(env);
-            AMD64CondCode cond = iselCondCode(env, e->Iex.Unop.arg);
-            addInstr(env, AMD64Instr_Set64(cond,dst));
+            HReg dst = newVRegI(env);
+            HReg tmp = iselCondCode_R(env, e->Iex.Unop.arg);
+            addInstr(env, mk_iMOVsd_RR(tmp, dst));
             addInstr(env, AMD64Instr_Sh64(Ash_SHL, 63, dst));
             addInstr(env, AMD64Instr_Sh64(Ash_SAR, 63, dst));
             return dst;
@@ -1955,7 +1957,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, const IRExpr* e )
          HReg     r0  = iselIntExpr_R(env, e->Iex.ITE.iffalse);
          HReg     dst = newVRegI(env);
          addInstr(env, mk_iMOVsd_RR(r1,dst));
-         AMD64CondCode cc = iselCondCode(env, e->Iex.ITE.cond);
+         AMD64CondCode cc = iselCondCode_C(env, e->Iex.ITE.cond);
          addInstr(env, AMD64Instr_CMov64(cc ^ 1, r0, dst));
          return dst;
       }
@@ -2281,20 +2283,24 @@ static AMD64RM* iselIntExpr_RM_wrk ( ISelEnv* env, const IRExpr* e )
 }
 
 
-/* --------------------- CONDCODE --------------------- */
+/* --------------------- CONDCODE as %rflag test --------------------- */
 
 /* Generate code to evaluated a bit-typed expression, returning the
    condition code which would correspond when the expression would
-   notionally have returned 1. */
+   notionally have returned 1.
 
-static AMD64CondCode iselCondCode ( ISelEnv* env, const IRExpr* e )
+   Note that iselCondCode_C and iselCondCode_R are mutually recursive.  For
+   future changes to either of them, take care not to introduce an infinite
+   loop involving the two of them.
+*/
+static AMD64CondCode iselCondCode_C ( ISelEnv* env, const IRExpr* e )
 {
    /* Uh, there's nothing we can sanity check here, unfortunately. */
-   return iselCondCode_wrk(env,e);
+   return iselCondCode_C_wrk(env,e);
 }
 
 /* DO NOT CALL THIS DIRECTLY ! */
-static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, const IRExpr* e )
+static AMD64CondCode iselCondCode_C_wrk ( ISelEnv* env, const IRExpr* e )
 {
    vassert(e);
    vassert(typeOfIRExpr(env->type_env,e) == Ity_I1);
@@ -2321,7 +2327,7 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, const IRExpr* e )
    /* Not1(...) */
    if (e->tag == Iex_Unop && e->Iex.Unop.op == Iop_Not1) {
       /* Generate code for the arg, and negate the test condition */
-      return 1 ^ iselCondCode(env, e->Iex.Unop.arg);
+      return 1 ^ iselCondCode_C(env, e->Iex.Unop.arg);
    }
 
    /* --- patterns rooted at: 64to1 --- */
@@ -2428,7 +2434,7 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, const IRExpr* e )
          switch (e->Iex.Binop.op) {
             case Iop_CmpEQ8: case Iop_CasCmpEQ8: return Acc_Z;
             case Iop_CmpNE8: case Iop_CasCmpNE8: return Acc_NZ;
-            default: vpanic("iselCondCode(amd64): CmpXX8(expr,0:I8)");
+            default: vpanic("iselCondCode_C(amd64): CmpXX8(expr,0:I8)");
          }
       } else {
          HReg      r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
@@ -2440,7 +2446,7 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, const IRExpr* e )
          switch (e->Iex.Binop.op) {
             case Iop_CmpEQ8: case Iop_CasCmpEQ8: return Acc_Z;
             case Iop_CmpNE8: case Iop_CasCmpNE8: return Acc_NZ;
-            default: vpanic("iselCondCode(amd64): CmpXX8(expr,expr)");
+            default: vpanic("iselCondCode_C(amd64): CmpXX8(expr,expr)");
          }
       }
    }
@@ -2460,7 +2466,7 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, const IRExpr* e )
       switch (e->Iex.Binop.op) {
          case Iop_CmpEQ16: case Iop_CasCmpEQ16: return Acc_Z;
          case Iop_CmpNE16: case Iop_CasCmpNE16: return Acc_NZ;
-         default: vpanic("iselCondCode(amd64): CmpXX16");
+         default: vpanic("iselCondCode_C(amd64): CmpXX16");
       }
    }
 
@@ -2514,7 +2520,7 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, const IRExpr* e )
 	 case Iop_CmpLT64U: return Acc_B;
 	 case Iop_CmpLE64S: return Acc_LE;
          case Iop_CmpLE64U: return Acc_BE;
-         default: vpanic("iselCondCode(amd64): CmpXX64");
+         default: vpanic("iselCondCode_C(amd64): CmpXX64");
       }
    }
 
@@ -2540,31 +2546,73 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, const IRExpr* e )
 	 case Iop_CmpLT32U: return Acc_B;
 	 case Iop_CmpLE32S: return Acc_LE;
          case Iop_CmpLE32U: return Acc_BE;
-         default: vpanic("iselCondCode(amd64): CmpXX32");
+         default: vpanic("iselCondCode_C(amd64): CmpXX32");
       }
    }
 
    /* And1(x,y), Or1(x,y) */
-   /* FIXME: We could (and probably should) do a lot better here.  If both args
-      are in temps already then we can just emit a reg-reg And/Or directly,
-      followed by the final Test. */
    if (e->tag == Iex_Binop
        && (e->Iex.Binop.op == Iop_And1 || e->Iex.Binop.op == Iop_Or1)) {
-      // We could probably be cleverer about this.  In the meantime ..
-      HReg x_as_64 = newVRegI(env);
-      AMD64CondCode cc_x = iselCondCode(env, e->Iex.Binop.arg1);
-      addInstr(env, AMD64Instr_Set64(cc_x, x_as_64));
-      HReg y_as_64 = newVRegI(env);
-      AMD64CondCode cc_y = iselCondCode(env, e->Iex.Binop.arg2);
-      addInstr(env, AMD64Instr_Set64(cc_y, y_as_64));
-      AMD64AluOp aop = e->Iex.Binop.op == Iop_And1 ? Aalu_AND : Aalu_OR;
-      addInstr(env, AMD64Instr_Alu64R(aop, AMD64RMI_Reg(x_as_64), y_as_64));
-      addInstr(env, AMD64Instr_Test64(1, y_as_64));
+      // Get the result in an int reg, then test the least significant bit.
+      HReg tmp = iselCondCode_R(env, e);
+      addInstr(env, AMD64Instr_Test64(1, tmp));
       return Acc_NZ;
    }
 
    ppIRExpr(e);
-   vpanic("iselCondCode(amd64)");
+   vpanic("iselCondCode_C(amd64)");
+}
+
+
+/* --------------------- CONDCODE as int reg --------------------- */
+
+/* Generate code to evaluated a bit-typed expression, returning the resulting
+   value in bit 0 of an integer register.  WARNING: all of the other bits in the
+   register can be arbitrary.  Callers must mask them off or otherwise ignore
+   them, as necessary.
+
+   Note that iselCondCode_C and iselCondCode_R are mutually recursive.  For
+   future changes to either of them, take care not to introduce an infinite
+   loop involving the two of them.
+*/
+static HReg iselCondCode_R ( ISelEnv* env, const IRExpr* e )
+{
+   /* Uh, there's nothing we can sanity check here, unfortunately. */
+   return iselCondCode_R_wrk(env,e);
+}
+
+/* DO NOT CALL THIS DIRECTLY ! */
+static HReg iselCondCode_R_wrk ( ISelEnv* env, const IRExpr* e )
+{
+   vassert(e);
+   vassert(typeOfIRExpr(env->type_env,e) == Ity_I1);
+
+   /* var */
+   if (e->tag == Iex_RdTmp) {
+      return lookupIRTemp(env, e->Iex.RdTmp.tmp);
+   }
+
+   /* And1(x,y), Or1(x,y) */
+   if (e->tag == Iex_Binop
+       && (e->Iex.Binop.op == Iop_And1 || e->Iex.Binop.op == Iop_Or1)) {
+      HReg x_as_64 = iselCondCode_R(env, e->Iex.Binop.arg1);
+      HReg y_as_64 = iselCondCode_R(env, e->Iex.Binop.arg2);
+      HReg res = newVRegI(env);
+      addInstr(env, mk_iMOVsd_RR(y_as_64, res));
+      AMD64AluOp aop = e->Iex.Binop.op == Iop_And1 ? Aalu_AND : Aalu_OR;
+      addInstr(env, AMD64Instr_Alu64R(aop, AMD64RMI_Reg(x_as_64), res));
+      return res;
+   }
+
+   /* Anything else, we hand off to iselCondCode_C and force the value into a
+      register. */
+   HReg res = newVRegI(env);
+   AMD64CondCode cc = iselCondCode_C(env, e);
+   addInstr(env, AMD64Instr_Set64(cc, res));
+   return res;
+
+   ppIRExpr(e);
+   vpanic("iselCondCode_R(amd64)");
 }
 
 
@@ -2833,7 +2881,7 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, const IRExpr* e )
       r0  = iselFltExpr(env, e->Iex.ITE.iffalse);
       dst = newVRegV(env);
       addInstr(env, mk_vMOVsd_RR(r1,dst));
-      AMD64CondCode cc = iselCondCode(env, e->Iex.ITE.cond);
+      AMD64CondCode cc = iselCondCode_C(env, e->Iex.ITE.cond);
       addInstr(env, AMD64Instr_SseCMov(cc ^ 1, r0, dst));
       return dst;
    }
@@ -3224,7 +3272,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, const IRExpr* e )
       r0  = iselDblExpr(env, e->Iex.ITE.iffalse);
       dst = newVRegV(env);
       addInstr(env, mk_vMOVsd_RR(r1,dst));
-      AMD64CondCode cc = iselCondCode(env, e->Iex.ITE.cond);
+      AMD64CondCode cc = iselCondCode_C(env, e->Iex.ITE.cond);
       addInstr(env, AMD64Instr_SseCMov(cc ^ 1, r0, dst));
       return dst;
    }
@@ -3927,7 +3975,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e )
       HReg r0  = iselVecExpr(env, e->Iex.ITE.iffalse);
       HReg dst = newVRegV(env);
       addInstr(env, mk_vMOVsd_RR(r1,dst));
-      AMD64CondCode cc = iselCondCode(env, e->Iex.ITE.cond);
+      AMD64CondCode cc = iselCondCode_C(env, e->Iex.ITE.cond);
       addInstr(env, AMD64Instr_SseCMov(cc ^ 1, r0, dst));
       return dst;
    }
@@ -4567,7 +4615,7 @@ static void iselDVecExpr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
       HReg dstLo = newVRegV(env);
       addInstr(env, mk_vMOVsd_RR(r1Hi,dstHi));
       addInstr(env, mk_vMOVsd_RR(r1Lo,dstLo));
-      AMD64CondCode cc = iselCondCode(env, e->Iex.ITE.cond);
+      AMD64CondCode cc = iselCondCode_C(env, e->Iex.ITE.cond);
       addInstr(env, AMD64Instr_SseCMov(cc ^ 1, r0Hi, dstHi));
       addInstr(env, AMD64Instr_SseCMov(cc ^ 1, r0Lo, dstLo));
       *rHi = dstHi;
@@ -4628,7 +4676,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       } else {
          addInstr(env, mk_iMOVsd_RR(rAlt, rDst));
       }
-      AMD64CondCode cc = iselCondCode(env, lg->guard);
+      AMD64CondCode cc = iselCondCode_C(env, lg->guard);
       if (szB == 16) {
          addInstr(env, AMD64Instr_SseCLoad(cc, amAddr, rDst));
       } else {
@@ -4659,7 +4707,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          = szB == 16 ? iselVecExpr(env, sg->data)
                      : iselIntExpr_R(env, sg->data);
       AMD64CondCode cc
-         = iselCondCode(env, sg->guard);
+         = iselCondCode_C(env, sg->guard);
       if (szB == 16) {
          addInstr(env, AMD64Instr_SseCStore(cc, rSrc, amAddr));
       } else {
@@ -4853,7 +4901,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          return;
       }
       if (ty == Ity_I1) {
-         AMD64CondCode cond = iselCondCode(env, stmt->Ist.WrTmp.data);
+         AMD64CondCode cond = iselCondCode_C(env, stmt->Ist.WrTmp.data);
          HReg dst = lookupIRTemp(env, tmp);
          addInstr(env, AMD64Instr_Set64(cond, dst));
          return;
@@ -5069,7 +5117,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       if (stmt->Ist.Exit.dst->tag != Ico_U64)
          vpanic("iselStmt(amd64): Ist_Exit: dst is not a 64-bit value");
 
-      AMD64CondCode cc    = iselCondCode(env, stmt->Ist.Exit.guard);
+      AMD64CondCode cc    = iselCondCode_C(env, stmt->Ist.Exit.guard);
       AMD64AMode*   amRIP = AMD64AMode_IR(stmt->Ist.Exit.offsIP,
                                           hregAMD64_RBP());
 

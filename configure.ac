@@ -4843,6 +4843,7 @@ AC_CONFIG_FILES([
    none/tests/s390x/Makefile
    none/tests/mips32/Makefile
    none/tests/mips64/Makefile
+   none/tests/nanomips/Makefile
    none/tests/linux/Makefile
    none/tests/darwin/Makefile
    none/tests/solaris/Makefile

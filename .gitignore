@@ -1706,6 +1706,17 @@
 /none/tests/mips64/unaligned_load
 /none/tests/mips64/unaligned_load_store
 
+# /none/tests/nanomips/
+/none/tests/nanomips/Makefile
+/none/tests/nanomips/Makefile.in
+/none/tests/nanomips/.deps
+/none/tests/nanomips/arithmetic
+/none/tests/nanomips/bits
+/none/tests/nanomips/branches
+/none/tests/nanomips/load_store
+/none/tests/nanomips/move
+/none/tests/nanomips/pc_instructions
+
 # /none/tests/ppc32/
 /none/tests/ppc32/*.stderr.diff
 /none/tests/ppc32/*.stderr.out

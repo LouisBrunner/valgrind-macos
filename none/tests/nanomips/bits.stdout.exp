@@ -1,0 +1,830 @@
+clo $a2 00000000 $s1 09abcdef
+clo $s0 00000002 $a6 cccccccc
+clo $t0 00000001 $s4 aaaaaaaa
+clo $t0 00000001 $a7 aaaaaaaa
+clo $s0 00000000 $a2 09abcdef
+clo $s0 00000002 $s0 cccccccc
+clo $s2 00000000 $s0 55555555
+clo $a7 00000020 $s4 ffffffff
+clo $a7 00000020 $s4 ffffffff
+clo $s2 00000000 $s1 09abcdef
+clo $s0 00000020 $a3 ffffffff
+clo $s7 00000000 $s3 09abcdef
+clo $s4 00000000 $t3 09abcdef
+clo $a3 00000000 $t0 55555555
+clo $s3 00000002 $a4 cccccccc
+clo $a2 00000020 $a4 ffffffff
+clo $s7 00000002 $a6 cccccccc
+clo $s2 00000000 $s5 55555555
+clo $s7 00000000 $a0 55555555
+clo $a5 00000000 $s2 09abcdef
+clz $a4 00000000 $s2 aaaaaaaa
+clz $s5 00000003 $a6 12345678
+clz $s0 00000001 $s2 55555555
+clz $t0 00000003 $s6 12345678
+clz $s6 00000003 $t1 12345678
+clz $s7 00000003 $s3 12345678
+clz $a5 00000020 $a6 00000000
+clz $a6 00000000 $s0 cccccccc
+clz $a0 00000000 $a4 cccccccc
+clz $a6 00000000 $a1 aaaaaaaa
+clz $s6 00000000 $a5 ffffffff
+clz $a5 00000004 $t3 09abcdef
+clz $t3 00000001 $a7 55555555
+clz $s5 00000002 $s7 33333333
+clz $s7 00000000 $s2 ffffffff
+clz $s5 00000020 $a5 00000000
+clz $s7 00000003 $a2 12345678
+clz $a3 00000004 $s1 09abcdef
+clz $a4 00000000 $s1 aaaaaaaa
+clz $t1 00000002 $t0 33333333
+not $a0 00000000 $s2 ffffffff
+not $a2 cccccccc $s3 33333333
+not $a1 cccccccc $s2 33333333
+not $a3 f6543210 $a0 09abcdef
+not $s3 00000000 $s3 ffffffff
+not $a0 f6543210 $s1 09abcdef
+not $a0 00000000 $a0 ffffffff
+not $s3 edcba987 $s0 12345678
+not $s2 ffffffff $s0 00000000
+not $a1 ffffffff $a2 00000000
+not $s1 edcba987 $a2 12345678
+not $s2 33333333 $s0 cccccccc
+not $a3 55555555 $s2 aaaaaaaa
+not $s3 55555555 $a1 aaaaaaaa
+not $s2 55555555 $a1 aaaaaaaa
+not $a0 ffffffff $a1 00000000
+not $s3 ffffffff $a2 00000000
+not $a0 cccccccc $a1 33333333
+not $s3 00000000 $s3 ffffffff
+not $s3 55555555 $a0 aaaaaaaa
+seb $t3 ffffffcc $s1 cccccccc
+seb $a5 00000055 $a3 55555555
+seb $a2 00000000 $t2 00000000
+seb $t1 ffffffff $s1 ffffffff
+seb $s1 00000055 $t0 55555555
+seb $s4 00000033 $s0 33333333
+seb $a4 00000078 $s3 12345678
+seb $t0 ffffffef $t3 09abcdef
+seb $a5 00000078 $s2 12345678
+seb $a6 00000078 $s1 12345678
+seb $t1 ffffffaa $a0 aaaaaaaa
+seb $t2 00000078 $a5 12345678
+seb $s0 ffffffcc $t3 cccccccc
+seb $s0 00000055 $t1 55555555
+seb $a2 00000078 $a6 12345678
+seb $t0 00000055 $s2 55555555
+seb $s4 ffffffcc $s6 cccccccc
+seb $s6 ffffffff $a2 ffffffff
+seb $a1 ffffffaa $t3 aaaaaaaa
+seb $a3 ffffffcc $a5 cccccccc
+seh $a1 ffffcccc $a2 cccccccc
+seh $a0 ffffaaaa $s5 aaaaaaaa
+seh $a3 00005555 $a1 55555555
+seh $a4 ffffcdef $s2 09abcdef
+seh $a6 ffffcccc $s4 cccccccc
+seh $a5 ffffcdef $a0 09abcdef
+seh $a3 ffffcccc $a5 cccccccc
+seh $a5 00000000 $t3 00000000
+seh $s6 ffffaaaa $s5 aaaaaaaa
+seh $a5 ffffffff $s0 ffffffff
+seh $t2 ffffaaaa $s2 aaaaaaaa
+seh $a0 00000000 $a2 00000000
+seh $s3 00005555 $a5 55555555
+seh $s1 00000000 $s1 00000000
+seh $t1 00003333 $s0 33333333
+seh $s2 00000000 $a5 00000000
+seh $s6 ffffffff $s0 ffffffff
+seh $a3 ffffcccc $a5 cccccccc
+seh $s7 00005555 $t3 55555555
+seh $a7 00005678 $t1 12345678
+and[32] $t0 08aa88aa $s7 aaaaaaaa $s4 09abcdef
+and[32] $s7 12301230 $t0 33333333 $t2 12345678
+and[32] $a0 12345678 $a2 ffffffff $s6 12345678
+and[32] $a6 cccccccc $a7 55555555 $a7 cccccccc
+and[32] $a7 cccccccc $a0 cccccccc $t1 ffffffff
+and[32] $s4 88888888 $a4 aaaaaaaa $a3 cccccccc
+and[32] $a5 01014545 $t3 55555555 $s1 09abcdef
+and[32] $s0 09abcdef $t1 09abcdef $t3 ffffffff
+and[32] $a5 00000000 $a7 09abcdef $a3 00000000
+and[32] $a5 00000000 $t1 00000000 $s3 aaaaaaaa
+and[32] $a5 00044448 $a0 12345678 $t3 cccccccc
+and[32] $s0 02200228 $s6 aaaaaaaa $s1 12345678
+and[32] $s3 01230123 $s1 33333333 $t1 09abcdef
+and[32] $s0 aaaaaaaa $a0 aaaaaaaa $s0 aaaaaaaa
+and[32] $t1 aaaaaaaa $s4 ffffffff $a6 aaaaaaaa
+and[32] $a2 00000000 $t2 55555555 $a0 aaaaaaaa
+and[32] $a0 0888cccc $s3 09abcdef $a3 cccccccc
+and[32] $s0 88888888 $a0 cccccccc $t3 aaaaaaaa
+and[32] $s1 01230123 $a0 09abcdef $a4 33333333
+and[32] $s7 aaaaaaaa $a7 aaaaaaaa $s5 aaaaaaaa
+and[32] $s4 01014545 $s5 09abcdef $t3 55555555
+and[32] $a3 08aa88aa $a1 09abcdef $t0 aaaaaaaa
+and[32] $a7 01014545 $a7 55555555 $s2 09abcdef
+and[32] $a3 00000000 $s2 09abcdef $t3 00000000
+and[32] $s6 aaaaaaaa $a4 aaaaaaaa $s0 aaaaaaaa
+and[32] $s5 12345678 $t2 12345678 $s3 12345678
+and[32] $t2 cccccccc $s2 cccccccc $t3 ffffffff
+and[32] $t1 00000000 $s4 cccccccc $a3 00000000
+and[32] $a2 09abcdef $s5 ffffffff $a7 09abcdef
+and[32] $a6 0888cccc $s0 cccccccc $t2 09abcdef
+and[32] $t2 00000000 $a4 55555555 $s4 aaaaaaaa
+and[32] $s7 44444444 $s3 55555555 $a5 cccccccc
+and[32] $s3 10145450 $t0 55555555 $a0 12345678
+and[32] $a1 33333333 $t3 33333333 $t2 ffffffff
+and[32] $t2 12301230 $t3 12345678 $t2 33333333
+and[32] $a5 01014545 $t0 09abcdef $a4 55555555
+and[32] $a0 00000000 $a1 00000000 $s2 33333333
+and[32] $t1 55555555 $t3 55555555 $a3 55555555
+and[32] $s5 00000000 $t2 ffffffff $s6 00000000
+and[32] $s0 09abcdef $s6 09abcdef $a0 09abcdef
+nor $a5 55555555 $t1 aaaaaaaa $a2 aaaaaaaa
+nor $a6 aaaaaaaa $a0 55555555 $a4 00000000
+nor $s2 ccc88884 $a2 33333333 $t1 12345678
+nor $s1 00000000 $a1 ffffffff $a6 aaaaaaaa
+nor $a4 00000000 $t2 55555555 $s5 aaaaaaaa
+nor $s6 a88aa882 $t3 12345678 $s1 55555555
+nor $a0 edcba987 $a3 12345678 $t3 12345678
+nor $a7 54541010 $a0 aaaaaaaa $a6 09abcdef
+nor $a2 00000000 $s5 00000000 $t1 ffffffff
+nor $a4 a88aa882 $s1 55555555 $a6 12345678
+nor $s5 c4440000 $a6 09abcdef $a4 33333333
+nor $a7 00000000 $a5 ffffffff $a7 09abcdef
+nor $t1 00000000 $s1 ffffffff $s6 33333333
+nor $s4 e4402000 $a4 12345678 $t0 09abcdef
+nor $s3 33333333 $s5 cccccccc $a0 cccccccc
+nor $t1 54541010 $a5 09abcdef $a6 aaaaaaaa
+nor $s5 00000000 $s0 ffffffff $s5 aaaaaaaa
+nor $s1 00000000 $a5 ffffffff $a4 12345678
+nor $a7 11111111 $s6 cccccccc $a3 aaaaaaaa
+nor $t3 cccccccc $a5 00000000 $a7 33333333
+nor $s6 88888888 $t3 55555555 $s5 33333333
+nor $t2 edcba987 $a3 00000000 $s5 12345678
+nor $a0 11111111 $s1 cccccccc $t3 aaaaaaaa
+nor $s2 55555555 $s7 aaaaaaaa $a4 00000000
+nor $t2 00000000 $a2 ffffffff $t2 33333333
+nor $a2 00000000 $a1 cccccccc $s5 ffffffff
+nor $a1 edcba987 $t0 12345678 $s0 12345678
+nor $s1 22222222 $a4 55555555 $a6 cccccccc
+nor $t0 f6543210 $s7 09abcdef $a2 00000000
+nor $s1 00000000 $s2 ffffffff $s7 ffffffff
+nor $t3 00000000 $a3 55555555 $t3 ffffffff
+nor $a7 33333333 $s4 cccccccc $t2 cccccccc
+nor $t3 00000000 $a6 aaaaaaaa $s1 ffffffff
+nor $s4 45410105 $t0 12345678 $s1 aaaaaaaa
+nor $a2 aaaaaaaa $t2 ffffffff $t2 55555555
+nor $t2 ccc88884 $a6 12345678 $s0 33333333
+nor $a5 f6543210 $t1 00000000 $s7 09abcdef
+nor $s4 00000000 $a4 12345678 $a3 ffffffff
+nor $t1 21032103 $a1 12345678 $s7 cccccccc
+nor $a0 88888888 $s2 55555555 $s1 33333333
+or[32] $a0 defcdefc $s4 12345678 $a3 cccccccc
+or[32] $a1 ffffffff $a1 ffffffff $t0 aaaaaaaa
+or[32] $s0 5dffddff $a6 09abcdef $t0 55555555
+or[32] $t0 5dffddff $a0 09abcdef $t2 55555555
+or[32] $t3 aaaaaaaa $s0 aaaaaaaa $s0 aaaaaaaa
+or[32] $s1 ffffffff $s7 12345678 $s1 ffffffff
+or[32] $a2 cccccccc $s3 cccccccc $s2 cccccccc
+or[32] $t3 ababefef $t2 aaaaaaaa $s6 09abcdef
+or[32] $s5 1bbfdfff $s7 12345678 $s1 09abcdef
+or[32] $a3 dddddddd $t2 55555555 $a3 cccccccc
+or[32] $t1 ffffffff $s5 ffffffff $s2 33333333
+or[32] $t1 ffffffff $a6 12345678 $t0 ffffffff
+or[32] $a5 ffffffff $a0 aaaaaaaa $a0 ffffffff
+or[32] $s5 55555555 $a7 00000000 $s7 55555555
+or[32] $a6 ababefef $a1 09abcdef $s2 aaaaaaaa
+or[32] $a5 ffffffff $t3 33333333 $s5 cccccccc
+or[32] $s7 ffffffff $t1 ffffffff $t2 aaaaaaaa
+or[32] $a7 3bbbffff $a2 09abcdef $s5 33333333
+or[32] $a2 12345678 $a0 12345678 $a1 00000000
+or[32] $t2 77777777 $t0 55555555 $s7 33333333
+or[32] $s1 aaaaaaaa $a4 aaaaaaaa $s1 00000000
+or[32] $a5 12345678 $t0 12345678 $a3 00000000
+or[32] $s0 12345678 $s5 12345678 $a6 12345678
+or[32] $s5 55555555 $a5 55555555 $s4 00000000
+or[32] $a5 5dffddff $s1 55555555 $s5 09abcdef
+or[32] $s5 3337777b $t0 33333333 $s3 12345678
+or[32] $a7 ffffffff $a1 ffffffff $s3 ffffffff
+or[32] $a3 77777777 $s6 55555555 $a1 33333333
+or[32] $s2 00000000 $s6 00000000 $t2 00000000
+or[32] $s0 cdefcdef $a1 cccccccc $a6 09abcdef
+or[32] $t2 09abcdef $t2 09abcdef $s0 00000000
+or[32] $s4 aaaaaaaa $t0 aaaaaaaa $a4 00000000
+or[32] $t3 77777777 $s7 55555555 $s2 33333333
+or[32] $s7 bbbbbbbb $a5 33333333 $s2 aaaaaaaa
+or[32] $s6 55555555 $t2 00000000 $t1 55555555
+or[32] $s1 1bbfdfff $s5 09abcdef $a7 12345678
+or[32] $a7 ffffffff $t2 09abcdef $t0 ffffffff
+or[32] $s4 aaaaaaaa $s3 00000000 $a2 aaaaaaaa
+or[32] $s2 ffffffff $a7 33333333 $a2 cccccccc
+or[32] $a6 33333333 $s7 33333333 $s6 00000000
+xor[32] $t1 00000000 $a2 12345678 $a2 aaaaaaaa
+xor[32] $s1 99999999 $t0 33333333 $a4 aaaaaaaa
+xor[32] $a2 b89efcd2 $s7 12345678 $a5 aaaaaaaa
+xor[32] $t3 99999999 $a2 cccccccc $s6 55555555
+xor[32] $a1 aaaaaaaa $a3 aaaaaaaa $t2 00000000
+xor[32] $a7 aaaaaaaa $a1 55555555 $s3 ffffffff
+xor[32] $s7 4761032d $s3 12345678 $a4 55555555
+xor[32] $a3 a3016745 $t3 aaaaaaaa $a6 09abcdef
+xor[32] $s5 a3016745 $s1 09abcdef $s7 aaaaaaaa
+xor[32] $t2 aaaaaaaa $t2 00000000 $a1 aaaaaaaa
+xor[32] $s3 00000000 $a6 cccccccc $a6 ffffffff
+xor[32] $s2 ffffffff $s1 55555555 $a3 aaaaaaaa
+xor[32] $a4 99999999 $s1 33333333 $a2 aaaaaaaa
+xor[32] $s4 00000000 $a3 12345678 $s2 12345678
+xor[32] $s2 f6543210 $s4 ffffffff $a3 09abcdef
+xor[32] $a2 a3016745 $a3 aaaaaaaa $s5 09abcdef
+xor[32] $a4 12345678 $a7 12345678 $s5 00000000
+xor[32] $s7 1b9f9b97 $s5 12345678 $t1 09abcdef
+xor[32] $a0 00000000 $a6 aaaaaaaa $s0 aaaaaaaa
+xor[32] $a0 4761032d $a7 12345678 $a2 55555555
+xor[32] $t1 cccccccc $a0 00000000 $s2 cccccccc
+xor[32] $s5 4761032d $a3 12345678 $a0 55555555
+xor[32] $s0 cccccccc $a2 ffffffff $t1 33333333
+xor[32] $t2 1b9f9b97 $a0 09abcdef $s1 12345678
+xor[32] $s0 c5670123 $t0 cccccccc $a1 09abcdef
+xor[32] $s0 b89efcd2 $t1 12345678 $s2 aaaaaaaa
+xor[32] $s0 2107654b $t3 12345678 $a0 33333333
+xor[32] $t1 00000000 $s7 55555555 $s7 cccccccc
+xor[32] $a5 a3016745 $t2 aaaaaaaa $a7 09abcdef
+xor[32] $s4 ffffffff $a5 ffffffff $t0 00000000
+xor[32] $t2 a3016745 $a2 aaaaaaaa $s0 09abcdef
+xor[32] $s3 4761032d $t3 12345678 $s0 55555555
+xor[32] $a7 f6543210 $s6 09abcdef $a5 ffffffff
+xor[32] $a5 3a98fedc $s1 33333333 $s4 09abcdef
+xor[32] $a6 33333333 $s2 ffffffff $s1 cccccccc
+xor[32] $a4 99999999 $s1 33333333 $a2 aaaaaaaa
+xor[32] $s6 b89efcd2 $s3 aaaaaaaa $t1 12345678
+xor[32] $s0 33333333 $a6 00000000 $s6 33333333
+xor[32] $s0 00000000 $a7 ffffffff $a7 09abcdef
+xor[32] $a4 09abcdef $s3 00000000 $s0 09abcdef
+and[16] $a3 00000000 old $a3 ffffffff $s2 00000000
+and[16] $a0 33333333 old $a0 33333333 $s2 ffffffff
+and[16] $s0 22222222 old $s0 33333333 $a1 aaaaaaaa
+and[16] $s0 10145450 old $s0 12345678 $a1 55555555
+and[16] $s1 00000000 old $s1 33333333 $s0 cccccccc
+and[16] $a1 00000000 old $a1 cccccccc $a0 00000000
+and[16] $a2 00000000 old $a2 00000000 $s0 cccccccc
+and[16] $a0 aaaaaaaa old $a0 33333333 $a0 aaaaaaaa
+and[16] $s3 08aa88aa old $s3 aaaaaaaa $s2 09abcdef
+and[16] $s0 00000000 old $s0 00000000 $s3 ffffffff
+and[16] $a0 33333333 old $a0 33333333 $s1 33333333
+and[16] $s2 01230123 old $s2 09abcdef $a2 33333333
+and[16] $s2 09abcdef old $s2 ffffffff $a3 09abcdef
+and[16] $s0 00204468 old $s0 09abcdef $s2 12345678
+and[16] $a2 00000000 old $a2 aaaaaaaa $s3 55555555
+and[16] $a0 0888cccc old $a0 cccccccc $s3 09abcdef
+and[16] $s1 10145450 old $s1 12345678 $a0 55555555
+and[16] $a0 00000000 old $a0 aaaaaaaa $s2 00000000
+and[16] $a3 44444444 old $a3 cccccccc $s3 55555555
+and[16] $a1 00204468 old $a1 12345678 $s0 09abcdef
+or[16] $s3 aaaaaaaa old $s3 09abcdef $s3 aaaaaaaa
+or[16] $s2 00000000 old $s2 ffffffff $s2 00000000
+or[16] $s2 babefefa old $s2 aaaaaaaa $s0 12345678
+or[16] $s0 ffffffff old $s0 cccccccc $a0 ffffffff
+or[16] $a1 ffffffff old $a1 aaaaaaaa $a3 ffffffff
+or[16] $a1 ffffffff old $a1 ffffffff $s2 cccccccc
+or[16] $s1 1bbfdfff old $s1 09abcdef $s2 12345678
+or[16] $a2 5775577d old $a2 12345678 $s1 55555555
+or[16] $s0 dddddddd old $s0 cccccccc $s1 55555555
+or[16] $a3 ffffffff old $a3 aaaaaaaa $s3 ffffffff
+or[16] $a3 09abcdef old $a3 09abcdef $s2 09abcdef
+or[16] $s2 ffffffff old $s2 ffffffff $s0 09abcdef
+or[16] $s3 ffffffff old $s3 00000000 $s0 ffffffff
+or[16] $a3 12345678 old $a3 12345678 $a2 00000000
+or[16] $a0 ababefef old $a0 09abcdef $s1 aaaaaaaa
+or[16] $a2 defcdefc old $a2 cccccccc $s1 12345678
+or[16] $a2 cccccccc old $a2 ffffffff $a2 cccccccc
+or[16] $a1 cdefcdef old $a1 09abcdef $s0 cccccccc
+or[16] $a2 33333333 old $a2 33333333 $s2 00000000
+or[16] $a3 55555555 old $a3 00000000 $s1 55555555
+xor[16] $a2 66666666 old $a2 aaaaaaaa $a0 cccccccc
+xor[16] $a2 66666666 old $a2 cccccccc $a1 aaaaaaaa
+xor[16] $s2 12345678 old $s2 12345678 $s0 00000000
+xor[16] $a1 a3016745 old $a1 09abcdef $a3 aaaaaaaa
+xor[16] $s1 f6543210 old $s1 ffffffff $a0 09abcdef
+xor[16] $s0 2107654b old $s0 33333333 $a0 12345678
+xor[16] $s2 edcba987 old $s2 12345678 $a0 ffffffff
+xor[16] $s2 00000000 old $s2 33333333 $s2 00000000
+xor[16] $s3 00000000 old $s3 cccccccc $s3 ffffffff
+xor[16] $a1 3a98fedc old $a1 33333333 $a2 09abcdef
+xor[16] $s3 00000000 old $s3 00000000 $a2 00000000
+xor[16] $s1 99999999 old $s1 33333333 $s3 aaaaaaaa
+xor[16] $s3 ffffffff old $s3 55555555 $s1 aaaaaaaa
+xor[16] $s1 55555555 old $s1 ffffffff $s2 aaaaaaaa
+xor[16] $s2 ffffffff old $s2 cccccccc $s3 33333333
+xor[16] $s2 ffffffff old $s2 33333333 $a1 cccccccc
+xor[16] $a0 edcba987 old $a0 12345678 $a1 ffffffff
+xor[16] $s0 55555555 old $s0 ffffffff $a3 aaaaaaaa
+xor[16] $s1 00000000 old $s1 aaaaaaaa $a1 aaaaaaaa
+xor[16] $a0 1b9f9b97 old $a0 12345678 $s3 09abcdef
+rotrv $a4 ffffffff $s4 ffffffff $a2 0000001f
+rotrv $s3 aaaaaaaa $s1 55555555 $a4 00000007
+rotrv $t1 66666666 $s0 cccccccc $s7 00000011
+rotrv $a7 cccccccc $s7 cccccccc $t0 00000008
+rotrv $s7 00000020 $a6 33333333 $a6 00000020
+rotrv $a5 ffffffff $a3 ffffffff $s7 00000011
+rotrv $s2 00000020 $s5 00000000 $s5 00000020
+rotrv $a7 00000000 $s7 00000000 $t0 00000011
+rotrv $t2 ffffffff $a1 ffffffff $a6 0000001f
+rotrv $s3 84d5e6f7 $a0 09abcdef $s5 00000001
+rotrv $a4 78123456 $a6 12345678 $s3 00000008
+rotrv $a2 66666666 $s0 cccccccc $t2 00000001
+rotrv $s0 cccccccc $t3 cccccccc $t2 00000008
+rotrv $t1 ffffffff $a1 ffffffff $t2 00000001
+rotrv $t0 55555555 $s3 55555555 $t2 00000000
+rotrv $a4 2b3c091a $a5 12345678 $t1 00000011
+rotrv $s2 2b3c091a $s6 12345678 $a3 00000011
+rotrv $t2 ffffffff $s0 ffffffff $a5 00000007
+rotrv $a2 0000003e $t1 33333333 $t1 0000001f
+rotrv $a1 ef09abcd $s2 09abcdef $a3 00000008
+rotrv $a0 aaaaaaaa $a7 55555555 $t3 00000011
+rotrv $a3 00000000 $s7 00000000 $a7 00000001
+rotrv $s4 55555555 $s7 aaaaaaaa $t3 00000011
+rotrv $t0 ffffffff $a6 ffffffff $s1 00000008
+rotrv $a7 ffffffff $s7 ffffffff $a0 00000010
+rotrv $a2 aaaaaaaa $s2 55555555 $t2 00000001
+rotrv $a5 99999999 $a6 33333333 $a1 00000011
+rotrv $a2 cccccccc $a0 cccccccc $s4 00000000
+rotrv $t1 00000000 $s5 00000000 $a7 00000001
+rotrv $s0 2468acf0 $t1 12345678 $t3 0000001f
+rotrv $s6 aaaaaaaa $t1 55555555 $a6 00000007
+rotrv $a6 0000003e $s0 00000000 $s0 0000001f
+rotrv $a2 0000003e $a1 aaaaaaaa $a1 0000001f
+rotrv $t2 78123456 $s1 12345678 $a6 00000008
+rotrv $s2 12345678 $t3 12345678 $a4 00000020
+rotrv $t1 33333333 $t2 33333333 $a4 00000000
+rotrv $s7 ffffffff $a2 ffffffff $t2 00000010
+rotrv $t0 ffffffff $t3 ffffffff $t1 00000008
+rotrv $a3 00000000 $t3 00000000 $s0 00000007
+rotrv $s6 00000000 $a2 00000000 $s7 00000010
+sllv $a6 00220000 $a3 aaaaaaaa $a3 00000011
+sllv $a3 13579bde $s4 09abcdef $a3 00000001
+sllv $a4 55555500 $s6 55555555 $s7 00000008
+sllv $a4 ffffffff $a2 ffffffff $t2 00000020
+sllv $a5 2468acf0 $t0 12345678 $t2 00000001
+sllv $t0 00000000 $a0 00000000 $s7 00000001
+sllv $s4 9bde0000 $t2 09abcdef $s0 00000011
+sllv $s5 99999980 $t2 33333333 $a6 00000007
+sllv $t3 00000000 $a4 12345678 $s4 0000001f
+sllv $a4 12345678 $t2 12345678 $s5 00000020
+sllv $s4 00000000 $a0 aaaaaaaa $s0 0000001f
+sllv $a1 00000000 $t3 00000000 $s6 00000008
+sllv $t3 cdef0000 $a0 09abcdef $a2 00000010
+sllv $s7 99999998 $a0 cccccccc $a6 00000001
+sllv $t0 cccccccc $s4 cccccccc $a5 00000020
+sllv $a4 00000800 $a5 ffffffff $a5 00000008
+sllv $s1 cccccccc $a1 cccccccc $t3 00000000
+sllv $a5 00000000 $a2 00000000 $a4 0000001f
+sllv $a7 00000020 $s3 cccccccc $s3 00000020
+sllv $s3 00000000 $t1 cccccccc $s3 0000001f
+sllv $s4 55555500 $a6 55555555 $s7 00000008
+sllv $a2 aaaaaaaa $s6 aaaaaaaa $a4 00000020
+sllv $a3 9bde0000 $s0 09abcdef $a4 00000011
+sllv $a1 ffffffff $a0 ffffffff $s3 00000000
+sllv $s6 80000000 $a4 cccccccc $a4 0000001f
+sllv $s7 aaaaaaaa $s0 55555555 $s7 00000001
+sllv $a5 66666666 $s3 33333333 $a3 00000001
+sllv $a2 80000000 $s6 55555555 $a7 0000001f
+sllv $a2 aaaa0000 $a2 55555555 $s6 00000011
+sllv $t0 09abcdef $t3 09abcdef $t1 00000000
+sllv $s2 00000000 $s5 12345678 $a1 0000001f
+sllv $t3 12345678 $a1 12345678 $s2 00000020
+sllv $s0 aaaaaaaa $t3 aaaaaaaa $a2 00000000
+sllv $s7 12345678 $t2 12345678 $a6 00000000
+sllv $s4 09abcdef $t0 09abcdef $s2 00000020
+sllv $t3 ffffff80 $a3 ffffffff $s6 00000007
+sllv $s3 00000000 $s3 00000000 $s0 00000011
+sllv $s2 99980000 $s3 cccccccc $s2 00000011
+sllv $a1 00000000 $a1 00000000 $t0 00000010
+sllv $a0 00000000 $s3 aaaaaaaa $s6 0000001f
+srav $s3 ffffffff $s3 ffffffff $a2 00000007
+srav $t1 00000000 $s5 00000000 $a5 0000001f
+srav $a0 33333333 $a3 33333333 $s5 00000020
+srav $a2 00000000 $s2 33333333 $s2 00000008
+srav $a7 ffffd555 $s5 aaaaaaaa $s4 00000011
+srav $s1 aaaaaaaa $t0 aaaaaaaa $a1 00000020
+srav $a7 cccccccc $s6 cccccccc $t2 00000000
+srav $a1 55555555 $s3 55555555 $s5 00000020
+srav $s7 00000000 $t2 00000000 $s2 0000001f
+srav $t1 ffffffff $a2 aaaaaaaa $a1 0000001f
+srav $s4 e6666666 $a6 cccccccc $a7 00000001
+srav $t1 091a2b3c $a6 12345678 $t1 00000001
+srav $s4 00000000 $s1 09abcdef $t0 0000001f
+srav $t0 ffffffff $a4 cccccccc $s5 0000001f
+srav $s0 55555555 $t0 55555555 $s5 00000000
+srav $a3 00666666 $s7 33333333 $s2 00000007
+srav $a4 ff555555 $s1 aaaaaaaa $s4 00000007
+srav $a2 0013579b $s4 09abcdef $a4 00000007
+srav $s5 ffffffff $t0 ffffffff $s3 00000008
+srav $a2 00000000 $t1 09abcdef $s7 0000001f
+srav $s1 00000000 $t0 12345678 $s6 0000001f
+srav $a2 00000000 $s2 00000000 $a2 00000007
+srav $s0 ffffffff $s0 ffffffff $a7 00000010
+srav $a5 ffffffff $s7 ffffffff $a4 00000007
+srav $t3 00001234 $s7 12345678 $a2 00000010
+srav $s5 00000000 $a4 00000000 $a6 00000000
+srav $a4 ffffaaaa $t2 aaaaaaaa $s0 00000010
+srav $s6 00000000 $s5 00000000 $s6 00000007
+srav $a1 00666666 $t1 33333333 $a6 00000007
+srav $s2 09abcdef $a6 09abcdef $a5 00000020
+srav $s3 12345678 $a6 12345678 $a2 00000000
+srav $s3 cccccccc $t3 cccccccc $s5 00000000
+srav $a5 ffffcccc $a1 cccccccc $t2 00000010
+srav $s6 cccccccc $s3 cccccccc $t2 00000000
+srav $s0 00000000 $a2 55555555 $t1 0000001f
+srav $a7 00000000 $a5 00000000 $a0 00000000
+srav $t0 0000091a $s7 12345678 $s2 00000011
+srav $t2 ff555555 $a1 aaaaaaaa $s5 00000007
+srav $s5 d5555555 $s0 aaaaaaaa $s4 00000001
+srav $t0 002468ac $t1 12345678 $a5 00000007
+srlv $a5 2aaaaaaa $s6 55555555 $s4 00000001
+srlv $a7 000004d5 $a1 09abcdef $a6 00000011
+srlv $s2 00666666 $s7 33333333 $a0 00000007
+srlv $s6 0013579b $s2 09abcdef $a7 00000007
+srlv $a6 12345678 $a4 12345678 $s2 00000020
+srlv $a4 00007fff $a6 ffffffff $s0 00000011
+srlv $a7 0000aaaa $t2 aaaaaaaa $a7 00000010
+srlv $s0 00000000 $t2 12345678 $s5 0000001f
+srlv $a6 00005555 $t0 55555555 $a1 00000010
+srlv $a7 00aaaaaa $s4 aaaaaaaa $t3 00000008
+srlv $s5 00aaaaaa $a5 aaaaaaaa $a7 00000008
+srlv $a6 0000aaaa $t3 aaaaaaaa $s5 00000010
+srlv $t2 00002aaa $s6 55555555 $t2 00000011
+srlv $s2 00005555 $a6 aaaaaaaa $a4 00000011
+srlv $a2 0000aaaa $s5 aaaaaaaa $a1 00000010
+srlv $a2 01999999 $a3 cccccccc $t0 00000007
+srlv $a0 00005555 $a6 aaaaaaaa $s7 00000011
+srlv $a2 00005555 $t2 aaaaaaaa $a1 00000011
+srlv $s5 00003333 $s6 33333333 $s3 00000010
+srlv $t0 00000000 $a6 00000000 $s2 00000007
+srlv $s7 00000001 $a6 cccccccc $s7 0000001f
+srlv $t3 00000000 $a3 00000000 $a5 00000010
+srlv $a7 12345678 $s0 12345678 $s6 00000020
+srlv $a7 00333333 $t0 33333333 $t1 00000008
+srlv $s6 00000001 $s6 cccccccc $t1 0000001f
+srlv $s1 00666666 $s6 33333333 $s0 00000007
+srlv $s2 55555555 $a7 55555555 $a5 00000000
+srlv $a7 00000000 $t1 00000000 $t3 00000001
+srlv $s7 00007fff $s3 ffffffff $a5 00000011
+srlv $a5 091a2b3c $s1 12345678 $a1 00000001
+srlv $a4 002468ac $a1 12345678 $s7 00000007
+srlv $a5 00123456 $a3 12345678 $s4 00000008
+srlv $s3 00000000 $t0 33333333 $a3 0000001f
+srlv $t3 09abcdef $s7 09abcdef $t0 00000020
+srlv $a1 000009ab $a6 09abcdef $a2 00000010
+srlv $t3 00000000 $t0 00000000 $s1 00000007
+srlv $s2 00000000 $t0 12345678 $s3 0000001f
+srlv $s2 0000091a $s7 12345678 $s6 00000011
+srlv $s1 00000000 $s5 00000000 $t2 00000001
+srlv $t0 00000000 $a4 00000000 $s0 00000020
+andi[32] $t3 0000002d $a6 ffffffff, 45
+andi[32] $a5 00000000 $a1 00000000, 1133
+andi[32] $a2 000009a9 $a4 09abcdef, 2489
+andi[32] $s5 0000052f $a7 09abcdef, 1327
+andi[32] $t1 0000088c $t2 cccccccc, 2223
+andi[32] $a0 000000cc $s3 cccccccc, 254
+andi[32] $s7 00000248 $t2 12345678, 591
+andi[32] $t3 00000218 $s3 12345678, 2590
+andi[32] $t1 00000112 $s0 33333333, 1498
+andi[32] $s1 00000d2c $s0 09abcdef, 3900
+andi[32] $a5 00000c0c $t2 cccccccc, 3646
+andi[32] $t1 00000884 $s4 cccccccc, 2454
+andi[32] $a2 00000438 $a3 12345678, 3134
+andi[32] $a6 00000101 $a3 33333333, 393
+andi[32] $a1 00000ef8 $a3 ffffffff, 3832
+andi[32] $s6 00000103 $a7 09abcdef, 787
+andi[32] $s7 000008cc $t3 cccccccc, 2541
+andi[32] $a7 00000024 $s4 ffffffff, 36
+andi[32] $s2 00000100 $a2 55555555, 2432
+andi[32] $a6 00000478 $a0 12345678, 1532
+andi[32] $a3 00000080 $s4 aaaaaaaa, 1413
+andi[32] $s7 00000078 $t3 12345678, 2169
+andi[32] $a2 00000104 $s7 ffffffff, 260
+andi[32] $s7 00000c6e $a4 09abcdef, 3694
+andi[32] $a3 00000a8a $t0 aaaaaaaa, 3019
+andi[32] $s0 000004cb $s4 09abcdef, 1739
+andi[32] $s6 00000000 $s6 aaaaaaaa, 1092
+andi[32] $s6 00000add $a5 ffffffff, 2781
+andi[32] $t2 00000105 $t0 55555555, 2309
+andi[32] $s7 00000410 $a4 12345678, 3094
+andi[16] $a0 00000005 $a0 55555555, 7
+andi[16] $a0 00000004 $a2 cccccccc, 4
+andi[16] $s2 0000000f $a1 09abcdef, 15
+andi[16] $s1 00000000 $s2 55555555, 8
+andi[16] $a0 00000002 $s1 33333333, 2
+andi[16] $s2 00000004 $s1 09abcdef, 4
+andi[16] $a1 00005555 $a1 55555555, 65535
+andi[16] $a2 0000000a $a0 aaaaaaaa, 10
+andi[16] $a0 00000001 $s1 ffffffff, 1
+andi[16] $s3 00000004 $s2 cccccccc, 6
+andi[16] $s3 0000cccc $s0 cccccccc, 65535
+andi[16] $a2 00000000 $s3 cccccccc, 3
+andi[16] $s0 00000008 $a1 cccccccc, 10
+andi[16] $s3 00000008 $s1 09abcdef, 8
+andi[16] $s2 00000008 $a1 cccccccc, 8
+andi[16] $a1 00000000 $a0 55555555, 10
+andi[16] $s2 00000000 $a3 aaaaaaaa, 5
+andi[16] $a2 00000000 $a0 aaaaaaaa, 1
+andi[16] $s0 00000000 $a0 12345678, 6
+andi[16] $s3 00000003 $a3 ffffffff, 3
+andi[16] $s1 00000000 $s3 12345678, 4
+andi[16] $s0 00000002 $s1 33333333, 10
+andi[16] $s2 00000002 $a2 aaaaaaaa, 7
+andi[16] $a2 00000000 $s1 ffffffff, 0
+andi[16] $a1 00000000 $s0 12345678, 3
+andi[16] $s0 00000000 $a1 33333333, 0
+andi[16] $a2 00000001 $a3 09abcdef, 1
+andi[16] $s2 00000008 $a0 cccccccc, 11
+andi[16] $s3 00000003 $a3 09abcdef, 3
+andi[16] $a0 00000000 $s0 12345678, 6
+ori $a6 cccccdec $a1 cccccccc, 1320
+ori $a2 ffffffff $s3 ffffffff, 1295
+ori $s3 55555d7d $s3 55555555, 3112
+ori $s4 00000292 $t3 00000000, 658
+ori $s2 33333733 $s7 33333333, 1024
+ori $a0 333333bf $s1 33333333, 943
+ori $a4 aaaaabbe $a7 aaaaaaaa, 3004
+ori $s3 55555df5 $a5 55555555, 2213
+ori $a6 12345ff8 $t3 12345678, 3480
+ori $a2 00000d1a $s3 00000000, 3354
+ori $s6 555555d7 $s6 55555555, 1430
+ori $s5 ffffffff $a6 ffffffff, 3179
+ori $s6 33333bfb $a1 33333333, 2250
+ori $s2 ffffffff $a0 ffffffff, 2
+ori $a7 1234577b $a0 12345678, 331
+ori $a5 0000012f $s4 00000000, 303
+ori $s3 0000084e $a2 00000000, 2126
+ori $a5 0000035b $s4 00000000, 859
+ori $a6 55555d5d $a6 55555555, 2076
+ori $a4 09abcdef $t3 09abcdef, 3182
+ori $a0 0000074e $t3 00000000, 1870
+ori $s3 0000054f $a6 00000000, 1359
+ori $a6 55555f7d $a2 55555555, 2940
+ori $s6 aaaaafaf $a2 aaaaaaaa, 3341
+ori $t1 aaaaaabe $s3 aaaaaaaa, 2238
+ori $a3 555557df $a7 55555555, 654
+ori $s5 555555f7 $t0 55555555, 1250
+ori $a7 00000c9f $t1 00000000, 3231
+ori $t1 cccccdec $s5 cccccccc, 2400
+ori $t3 09abcdef $a1 09abcdef, 2537
+xori $a3 ccccc095 $s5 cccccccc, 3161
+xori $t0 12345865 $s1 12345678, 3613
+xori $s4 aaaaa0c2 $s2 aaaaaaaa, 2664
+xori $t1 1234548b $s5 12345678, 755
+xori $a1 ccccc2e4 $s0 cccccccc, 3624
+xori $a5 09abc719 $a1 09abcdef, 2806
+xori $s6 09abca06 $a4 09abcdef, 2025
+xori $a5 aaaaa296 $s6 aaaaaaaa, 2108
+xori $s0 ccccc2e8 $a4 cccccccc, 3620
+xori $s5 fffff931 $a4 ffffffff, 1742
+xori $s6 1234503b $a0 12345678, 1603
+xori $a6 1234586b $s0 12345678, 3603
+xori $t0 33333fae $s3 33333333, 3229
+xori $a5 33333aec $a3 33333333, 2527
+xori $s0 fffff056 $s7 ffffffff, 4009
+xori $a1 12345139 $s0 12345678, 1857
+xori $s4 ccccc8d2 $s7 cccccccc, 1054
+xori $t3 33333406 $t2 33333333, 1845
+xori $s3 fffff52a $a2 ffffffff, 2773
+xori $s2 0000001a $t3 00000000, 26
+xori $s3 09abcc03 $s0 09abcdef, 492
+xori $s4 aaaaab4a $a3 aaaaaaaa, 480
+xori $t2 fffff0d7 $a4 ffffffff, 3880
+xori $s4 fffff3fa $s7 ffffffff, 3077
+xori $s3 aaaaaac8 $t3 aaaaaaaa, 98
+xori $s1 00000238 $s3 00000000, 568
+xori $s5 cccccdb3 $a1 cccccccc, 383
+xori $a0 fffffc84 $t2 ffffffff, 891
+xori $t2 09abcaad $t0 09abcdef, 1858
+xori $a0 55555787 $t3 55555555, 722
+rotr $s7 55555555 $a4 55555555, 24
+rotr $s3 33333333 $a4 cccccccc, 6
+rotr $s7 ffffffff $s4 ffffffff, 8
+rotr $s7 ffffffff $t1 ffffffff, 0
+rotr $t2 f37bc26a $t2 09abcdef, 18
+rotr $s0 2468acf0 $a0 12345678, 31
+rotr $t0 ffffffff $t1 ffffffff, 4
+rotr $s0 cdef09ab $s0 09abcdef, 16
+rotr $a4 00000000 $a1 00000000, 11
+rotr $a5 55555555 $a1 55555555, 8
+rotr $s5 ffffffff $a7 ffffffff, 20
+rotr $a4 cccccccc $a6 33333333, 14
+rotr $t0 00000000 $a7 00000000, 5
+rotr $a7 66666666 $s2 33333333, 19
+rotr $s0 00000000 $t1 00000000, 12
+rotr $t1 99999999 $a3 33333333, 25
+rotr $a4 33333333 $a4 cccccccc, 22
+rotr $a5 59e048d1 $s3 12345678, 14
+rotr $t2 55555555 $t3 55555555, 14
+rotr $a5 cccccccc $a2 33333333, 2
+rotr $s1 bcdef09a $t0 09abcdef, 20
+rotr $a7 00000000 $s7 00000000, 15
+rotr $a4 aaaaaaaa $t0 aaaaaaaa, 26
+rotr $s3 55555555 $s0 aaaaaaaa, 15
+rotr $a4 33333333 $s0 cccccccc, 6
+rotr $t3 99999999 $a0 33333333, 1
+rotr $t3 5e6f784d $a7 09abcdef, 21
+rotr $s1 579bde13 $s7 09abcdef, 23
+rotr $s4 55555555 $s2 aaaaaaaa, 19
+rotr $a5 aaaaaaaa $a3 55555555, 25
+sll $s3 aaaaaaa8 $t1 aaaaaaaa, 2
+sll $t1 55540000 $a3 55555555, 18
+sll $s3 00000000 $a7 00000000, 15
+sll $a7 00000000 $a0 00000000, 15
+sll $t3 66660000 $a0 33333333, 17
+sll $s7 00000000 $a7 00000000, 19
+sll $s1 48d159e0 $s3 12345678, 2
+sll $a7 a8000000 $a4 aaaaaaaa, 26
+sll $a2 60000000 $a3 cccccccc, 27
+sll $a6 99800000 $s3 cccccccc, 21
+sll $t2 cccccccc $a1 33333333, 2
+sll $s6 ffe00000 $t1 ffffffff, 21
+sll $t1 12345678 $t1 12345678, 0
+sll $t0 66666600 $a6 33333333, 9
+sll $s2 55555400 $t2 aaaaaaaa, 9
+sll $a3 55555400 $s2 aaaaaaaa, 9
+sll $s5 99999800 $t0 33333333, 11
+sll $t3 ffc00000 $a2 ffffffff, 22
+sll $a3 00000000 $a5 00000000, 9
+sll $a2 e6f78000 $t1 09abcdef, 15
+sll $a6 00000000 $a5 00000000, 14
+sll $a4 7bc00000 $s4 09abcdef, 22
+sll $s2 13579bde $a2 09abcdef, 1
+sll $s4 40000000 $t2 55555555, 30
+sll $a7 fffc0000 $t3 ffffffff, 18
+sll $a1 00000000 $a2 00000000, 24
+sll $a0 55555400 $a4 55555555, 10
+sll $s5 aaaaaa80 $t1 55555555, 7
+sll $s6 30000000 $a2 cccccccc, 26
+sll $a6 00000000 $s4 00000000, 12
+sra $s6 00000024 $a7 12345678, 23
+sra $t2 fffffe66 $a4 cccccccc, 21
+sra $a3 0009abcd $a6 09abcdef, 8
+sra $a1 ffffffff $a0 ffffffff, 25
+sra $t0 ffffffea $a7 aaaaaaaa, 26
+sra $t0 ffffffff $s5 ffffffff, 10
+sra $a7 fffffe66 $s7 cccccccc, 21
+sra $t3 00001555 $a5 55555555, 18
+sra $s5 ffffffff $a4 ffffffff, 23
+sra $a0 00003333 $s2 33333333, 16
+sra $s0 00000000 $a3 00000000, 5
+sra $s7 00000123 $t1 12345678, 20
+sra $t0 12345678 $a2 12345678, 0
+sra $s7 ff555555 $s7 aaaaaaaa, 7
+sra $a2 000ccccc $a4 33333333, 10
+sra $s1 000ccccc $s2 33333333, 10
+sra $a6 ffffffff $s5 ffffffff, 23
+sra $s7 00000000 $a5 09abcdef, 31
+sra $a1 fccccccc $t3 cccccccc, 4
+sra $s1 00000000 $s3 00000000, 21
+sra $s5 0091a2b3 $s6 12345678, 5
+sra $a2 00000003 $s5 33333333, 28
+sra $t1 00000048 $a4 12345678, 22
+sra $s7 ffffffff $t2 ffffffff, 21
+sra $s3 000ccccc $t2 33333333, 10
+sra $t0 00002aaa $a7 55555555, 17
+sra $a7 fffccccc $t3 cccccccc, 12
+sra $s2 ffffffff $s6 ffffffff, 24
+sra $s0 fff33333 $a3 cccccccc, 10
+sra $t0 0004d5e6 $a1 09abcdef, 9
+srl $t1 00000000 $t1 00000000, 24
+srl $t0 00000024 $a5 12345678, 23
+srl $s7 00000aaa $t2 55555555, 19
+srl $a6 19999999 $s0 33333333, 1
+srl $a7 00066666 $a6 cccccccc, 13
+srl $s4 0000000c $s6 cccccccc, 28
+srl $t2 00000000 $s6 09abcdef, 30
+srl $s7 00000000 $a2 00000000, 29
+srl $t3 00199999 $t0 cccccccc, 11
+srl $a1 000aaaaa $a3 aaaaaaaa, 12
+srl $a2 00000000 $s5 00000000, 12
+srl $a1 000ccccc $a4 cccccccc, 12
+srl $a2 03ffffff $a6 ffffffff, 6
+srl $s4 0002aaaa $t3 aaaaaaaa, 14
+srl $s5 00066666 $a2 cccccccc, 13
+srl $a4 00000aaa $a1 55555555, 19
+srl $t1 0026af37 $a3 09abcdef, 6
+srl $t3 2aaaaaaa $s2 55555555, 1
+srl $s7 000000cc $a2 cccccccc, 24
+srl $a7 00000199 $t2 33333333, 21
+srl $a4 00000003 $s1 33333333, 28
+srl $a0 00000002 $a3 aaaaaaaa, 30
+srl $t1 55555555 $s0 aaaaaaaa, 1
+srl $s1 000ccccc $a1 33333333, 10
+srl $t0 00000000 $a3 00000000, 23
+srl $a5 00000000 $t2 00000000, 28
+srl $a1 00033333 $s5 33333333, 12
+srl $a3 00001fff $t0 ffffffff, 19
+srl $t2 00000000 $s1 00000000, 18
+srl $a4 00000000 $a7 00000000, 5
+ext $a7 00005678 $t3 12345678, 0, 17
+ext $a3 00000001 $a6 cccccccc, 14, 1
+ext $t0 00000199 $a4 33333333, 21, 9
+ext $a5 00000002 $a2 cccccccc, 29, 2
+ext $s5 09999999 $s3 cccccccc, 3, 28
+ext $s5 0000007f $s6 ffffffff, 24, 7
+ext $t2 0000002a $t3 55555555, 5, 7
+ext $s2 00000001 $s0 cccccccc, 23, 2
+ext $s3 00000015 $t0 55555555, 12, 6
+ext $t3 00000aaa $s5 aaaaaaaa, 8, 12
+ext $s5 000000aa $a1 55555555, 11, 9
+ext $s6 00000357 $a4 09abcdef, 15, 10
+ext $s1 00000026 $s2 33333333, 23, 6
+ext $t0 00000005 $s2 aaaaaaaa, 13, 4
+ext $a1 00000000 $a5 cccccccc, 20, 2
+ext $a2 008d159e $a7 12345678, 2, 24
+ext $t1 00000002 $s7 33333333, 27, 2
+ext $a1 000002aa $a6 aaaaaaaa, 12, 10
+ext $s0 01abcdef $a2 09abcdef, 0, 26
+ext $s6 00000555 $s4 aaaaaaaa, 21, 11
+ext $s5 0000002a $a3 aaaaaaaa, 26, 6
+ext $s4 00000055 $t1 55555555, 18, 8
+ext $a1 02aaaaaa $s0 55555555, 5, 26
+ext $a1 000000ff $t3 ffffffff, 24, 8
+ext $t3 00000001 $s4 ffffffff, 18, 1
+ext $t3 00000003 $a5 cccccccc, 14, 3
+ext $a7 0000007f $a7 ffffffff, 14, 7
+ext $s0 00000000 $s2 09abcdef, 30, 1
+ext $a6 00000000 $s7 00000000, 28, 2
+ext $a0 00000000 $s5 00000000, 17, 13
+ins $a7 cccccccc old $a7 cccccccc $s0 ffffffff, 7, 1
+ins $t0 09d5556f old $t0 09abcdef $a4 55555555, 6, 17
+ins $t2 33300000 old $t2 00000000 $a0 33333333, 20, 11
+ins $t3 13305678 old $t3 12345678 $s7 cccccccc, 18, 8
+ins $s1 09abcdef old $s1 09abcdef $a7 aaaaaaaa, 31, 1
+ins $s4 ccd55555 old $s4 cccccccc $s3 55555555, 0, 21
+ins $t0 2a800000 old $t0 00000000 $a4 aaaaaaaa, 22, 9
+ins $s1 123c5678 old $s1 12345678 $a4 cccccccc, 16, 4
+ins $s7 12345678 old $s7 12345678 $a7 cccccccc, 8, 1
+ins $a0 00000000 old $a0 00000000 $a6 aaaaaaaa, 29, 1
+ins $t0 12345e78 old $t0 12345678 $a5 ffffffff, 11, 1
+ins $a5 71555555 old $a5 55555555 $a7 cccccccc, 26, 4
+ins $a3 cd5ccccc old $a3 cccccccc $a7 55555555, 20, 7
+ins $s5 ffffd5ff old $s5 ffffffff $t3 aaaaaaaa, 9, 6
+ins $s3 33355533 old $s3 33333333 $a5 aaaaaaaa, 9, 10
+ins $s3 57ffd555 old $s3 55555555 $a1 ffffffff, 14, 13
+ins $s0 cdcccccc old $s0 cccccccc $t3 55555555, 24, 1
+ins $t3 ffffffff old $t3 09abcdef $t3 ffffffff, 29, 1
+ins $t3 09a00def old $t3 09abcdef $s2 00000000, 13, 7
+ins $a6 23456788 old $a6 12345678 $s5 12345678, 4, 28
+ins $a7 332b3333 old $a7 33333333 $s7 55555555, 17, 5
+ins $a0 ccce64cc old $a0 cccccccc $a1 cccccccc, 11, 7
+ins $s1 4ccccccc old $s1 00000000 $a7 cccccccc, 0, 31
+ins $s1 00000000 old $s1 00000000 $a7 00000000, 23, 3
+ins $a1 09abcdef old $a1 09abcdef $s2 09abcdef, 0, 4
+ins $a6 ab56aaaa old $a6 aaaaaaaa $t0 55555555, 18, 7
+ins $a4 cccccccc old $a4 cccccccc $a6 ffffffff, 23, 1
+ins $a2 09a3cdef old $a2 09abcdef $s1 12345678, 18, 4
+ins $a4 12346678 old $a4 12345678 $a7 cccccccc, 11, 3
+ins $a7 000aaaa8 old $a7 00000000 $s4 55555555, 3, 17
+ins $a5 00000000 old $a5 00000000 $a5 00000000, 19, 8
+ins $s4 33333f33 old $s4 33333333 $t3 ffffffff, 8, 5
+ins $s6 ffffffff old $s6 ffffffff $s6 ffffffff, 21, 10
+ins $a1 123bd678 old $a1 12345678 $a5 09abcdef, 14, 8
+ins $t1 16645678 old $t1 12345678 $a1 cccccccc, 19, 8
+ins $s2 b0aaaaaa old $s2 aaaaaaaa $s5 12345678, 25, 4
+ins $s1 12345678 old $s1 12345678 $s2 cccccccc, 15, 2
+ins $t1 caaccccc old $t1 cccccccc $a1 55555555, 19, 10
+ins $t1 a95552aa old $t1 aaaaaaaa $t0 aaaaaaaa, 11, 15
+ins $a1 aaaaaaaa old $a1 aaaaaaaa $s5 aaaaaaaa, 14, 16
+extw $s4 55555504 $a4 09abcdef $s4 aaaaaaaa, 25
+extw $a6 fffe6666 $s4 33333333 $s3 ffffffff, 15
+extw $t2 813579bd $s3 09abcdef $a0 cccccccc, 3
+extw $a5 8acf0246 $a3 cccccccc $a3 12345678, 19
+extw $s3 15555555 $s7 55555555 $a4 12345678, 2
+extw $s5 7fffffff $a7 ffffffff $s7 55555555, 2
+extw $a7 66666666 $a0 55555555 $s2 33333333, 31
+extw $s1 78555555 $s7 55555555 $s6 12345678, 8
+extw $s1 66666666 $s0 cccccccc $s7 cccccccc, 25
+extw $a4 06666666 $a4 33333333 $a5 12345678, 3
+extw $t2 ffffe666 $s4 cccccccc $a6 ffffffff, 17
+extw $s3 37bf3333 $t0 cccccccc $a1 09abcdef, 14
+extw $s1 aaaaa135 $t0 09abcdef $t1 55555555, 19
+extw $s7 cc555555 $a0 55555555 $t3 cccccccc, 8
+extw $a0 ffffffff $a1 ffffffff $t0 ffffffff, 11
+extw $a4 cccaaaaa $s3 aaaaaaaa $a7 cccccccc, 12
+extw $a4 cccccccc $a0 cccccccc $s5 55555555, 0
+extw $a7 468acf00 $s7 00000000 $s0 12345678, 27
+extw $t0 000009ab $a6 09abcdef $t3 00000000, 16
+extw $a0 30cccccc $s0 33333333 $t1 cccccccc, 6
+extw $a3 33155555 $s2 55555555 $a1 cccccccc, 10
+extw $a7 2b3c0000 $s1 00000000 $a3 12345678, 17
+extw $a4 55540000 $a6 00000000 $t0 55555555, 14
+extw $a3 91a2b3c0 $s2 12345678 $s4 12345678, 29
+extw $s2 aaab5555 $s2 aaaaaaaa $s1 55555555, 15
+extw $s1 cccccccc $a2 09abcdef $a5 33333333, 30
+extw $s5 55500000 $s3 00000000 $t3 aaaaaaaa, 13
+extw $t1 ccffffff $t3 ffffffff $s7 33333333, 10
+extw $a0 59e0cccc $t3 33333333 $s0 12345678, 14
+extw $a5 00000155 $t0 aaaaaaaa $s0 00000000, 23
+extw $a2 00000005 $t1 aaaaaaaa $s1 00000000, 29
+extw $s1 55555550 $a6 00000000 $a5 55555555, 28
+extw $s1 cccccccc $a4 cccccccc $a0 cccccccc, 28
+extw $s7 84d5e6f7 $s1 09abcdef $a7 55555555, 1
+extw $s6 d159e155 $s3 55555555 $a2 12345678, 22
+extw $a1 55555555 $s4 55555555 $a7 aaaaaaaa, 0
+extw $t0 333fffff $s4 ffffffff $s6 33333333, 12
+extw $s5 af37bf33 $s6 cccccccc $a4 09abcdef, 22
+extw $s5 66666666 $t2 cccccccc $a3 cccccccc, 29
+extw $a6 f0666666 $t3 33333333 $s5 12345678, 7

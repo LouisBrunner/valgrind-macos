@@ -1,0 +1,2 @@
+prog: pc_instructions
+vgopts: -q

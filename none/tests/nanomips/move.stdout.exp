@@ -1,0 +1,360 @@
+slt $a3 00000000 $s7 7fffffff $s5 00000176
+slt $a6 00000001 $t2 fffffffa $t3 00000000
+slt $a6 00000001 $a5 ffffffff $t1 00000045
+slt $a3 00000001 $s1 fffffffa $a3 00000000
+slt $s0 00000000 $s3 00000176 $a2 ffffffff
+slt $a0 00000000 $s5 00000000 $s0 00000000
+slt $s7 00000001 $a2 ffffff65 $s6 ffffffff
+slt $a6 00000000 $a7 fffffffa $a5 ffffff65
+slt $s7 00000000 $a3 ffffff65 $s1 80000000
+slt $t0 00000001 $s0 ffffff65 $a4 fffffffa
+slt $s6 00000000 $a0 00000176 $a4 fffffffa
+slt $s0 00000001 $s0 ffffff65 $s2 ffffffff
+slt $s1 00000000 $a3 00000045 $a1 ffffffff
+slt $s0 00000001 $a1 80000000 $a2 00000000
+slt $a7 00000000 $a1 ffffff65 $a1 80000000
+slt $s7 00000001 $a5 ffffffff $s6 7fffffff
+slt $a7 00000000 $a6 ffffffff $t1 80000000
+slt $s6 00000001 $s3 fffffffa $s7 ffffffff
+slt $s6 00000000 $a6 00000045 $a6 7fffffff
+slt $s2 00000000 $s7 00000176 $s6 fffffffa
+slt $a4 00000001 $s3 fffffffa $s7 00000176
+slt $a1 00000000 $s4 00000045 $a5 ffffff65
+slt $s6 00000000 $s6 ffffffff $a2 fffffffa
+slt $s0 00000000 $a6 00000045 $a1 00000045
+slt $s4 00000000 $s1 ffffffff $a1 ffffff65
+slt $a2 00000001 $a1 ffffff65 $a4 fffffffa
+slt $t1 00000000 $s4 00000176 $s1 fffffffa
+slt $s1 00000001 $s5 00000000 $a1 00000176
+slt $a5 00000000 $a0 00000045 $a6 ffffffff
+slt $t0 00000001 $s0 fffffffa $a1 ffffffff
+slt $a4 00000000 $s5 fffffffa $s5 ffffff65
+slt $a1 00000001 $t3 fffffffa $t1 00000045
+slt $s7 00000000 $a7 00000176 $s3 00000045
+slt $a0 00000001 $a5 80000000 $t1 ffffffff
+slt $s1 00000001 $s3 ffffff65 $a3 00000045
+slt $a6 00000001 $t0 ffffff65 $t3 fffffffa
+slt $a2 00000000 $a4 00000045 $s2 80000000
+slt $a7 00000000 $a1 ffffff65 $a1 00000000
+slt $a1 00000001 $t3 ffffff65 $s1 00000045
+slt $a1 00000001 $t1 00000000 $a0 00000045
+sltu $a3 00000000 $t3 80000000 $a2 00000045
+sltu $a5 00000001 $a5 00000176 $s7 7fffffff
+sltu $s4 00000000 $t3 ffffffff $s1 80000000
+sltu $s3 00000000 $a2 fffffffa $s3 00000000
+sltu $a2 00000000 $t2 00000045 $t2 80000000
+sltu $a5 00000000 $a4 80000000 $s3 00000000
+sltu $a2 00000000 $a1 fffffffa $a6 00000176
+sltu $a5 00000000 $a2 7fffffff $a5 00000045
+sltu $a2 00000000 $a5 ffffffff $t2 ffffff65
+sltu $t0 00000001 $s7 00000176 $a2 ffffff65
+sltu $a1 00000000 $s6 ffffffff $s2 fffffffa
+sltu $a4 00000000 $t0 ffffff65 $s6 00000000
+sltu $a0 00000001 $t2 00000000 $s0 ffffffff
+sltu $s0 00000001 $t0 7fffffff $s2 fffffffa
+sltu $s1 00000000 $a7 ffffffff $s6 00000000
+sltu $s7 00000001 $s7 7fffffff $a5 ffffffff
+sltu $t1 00000000 $s2 ffffffff $a1 fffffffa
+sltu $t3 00000000 $a4 fffffffa $s2 00000176
+sltu $a4 00000000 $a5 ffffff65 $s2 ffffff65
+sltu $t2 00000001 $s4 ffffff65 $a0 fffffffa
+sltu $a1 00000000 $s1 ffffffff $a4 ffffff65
+sltu $s7 00000000 $a2 ffffff65 $s7 ffffff65
+sltu $a3 00000001 $s2 ffffff65 $s6 fffffffa
+sltu $t0 00000001 $a3 00000000 $a1 ffffff65
+sltu $s5 00000000 $a2 00000176 $s6 00000045
+sltu $t2 00000001 $s6 00000000 $t3 80000000
+sltu $t1 00000001 $s3 7fffffff $s7 80000000
+sltu $a3 00000001 $s0 00000000 $a1 7fffffff
+sltu $a5 00000001 $s5 00000045 $s3 80000000
+sltu $a0 00000001 $s7 80000000 $s5 fffffffa
+sltu $a2 00000000 $a7 00000176 $s0 00000045
+sltu $s7 00000000 $a6 80000000 $s1 00000176
+sltu $s7 00000000 $a3 80000000 $t3 7fffffff
+sltu $t1 00000001 $a5 00000000 $t1 ffffff65
+sltu $t2 00000001 $s7 7fffffff $a1 ffffffff
+sltu $s3 00000000 $s2 fffffffa $a2 00000176
+sltu $t0 00000000 $t3 00000176 $a3 00000045
+sltu $a7 00000001 $s3 ffffff65 $s5 fffffffa
+sltu $a1 00000001 $a4 00000176 $a1 80000000
+sltu $s2 00000000 $s1 ffffffff $a4 ffffff65
+slti $a0 00000001 $a6 00000045, 1793
+slti $a7 00000000 $a2 7fffffff, 2473
+slti $a5 00000000 $s2 7fffffff, 777
+slti $s1 00000000 $s1 7fffffff, 856
+slti $s0 00000000 $s4 7fffffff, 2648
+slti $s1 00000001 $a2 ffffff65, 2034
+slti $s6 00000001 $t3 ffffff65, 3335
+slti $a3 00000001 $a0 ffffffff, 1551
+slti $a6 00000001 $s7 ffffff65, 1153
+slti $t1 00000001 $a5 00000045, 646
+slti $s7 00000001 $a0 ffffffff, 2208
+slti $a1 00000001 $s0 ffffff65, 2561
+slti $a0 00000001 $a5 00000000, 1910
+slti $t3 00000001 $a2 ffffff65, 4037
+slti $a1 00000000 $t1 7fffffff, 268
+slti $t1 00000001 $s0 00000045, 2919
+slti $a3 00000001 $s4 ffffff65, 3837
+slti $s1 00000001 $a7 00000045, 949
+slti $a0 00000000 $t3 7fffffff, 3357
+slti $a7 00000001 $s2 ffffffff, 4028
+slti $a7 00000001 $s5 00000000, 3991
+slti $s7 00000001 $a6 00000176, 1349
+slti $a3 00000001 $a5 fffffffa, 420
+slti $s6 00000001 $a1 00000045, 2693
+slti $s5 00000001 $a0 00000000, 1634
+slti $t3 00000001 $s6 ffffffff, 1995
+slti $s5 00000001 $a5 fffffffa, 936
+slti $a7 00000001 $t0 00000176, 686
+slti $s1 00000000 $a6 7fffffff, 1484
+slti $s5 00000001 $a6 fffffffa, 2412
+sltiu $s3 00000000 $s7 fffffffa, 2369
+sltiu $t0 00000000 $s4 ffffffff, 105
+sltiu $a4 00000000 $s5 00000045, 24
+sltiu $t3 00000001 $a7 00000045, 2664
+sltiu $a4 00000000 $t0 fffffffa, 1547
+sltiu $s4 00000000 $a1 fffffffa, 85
+sltiu $s0 00000001 $s3 00000000, 3389
+sltiu $s1 00000000 $a7 fffffffa, 2668
+sltiu $a2 00000000 $a6 80000000, 358
+sltiu $t3 00000000 $s1 ffffffff, 3815
+sltiu $s6 00000000 $s7 ffffffff, 3342
+sltiu $s6 00000000 $s7 80000000, 206
+sltiu $s3 00000000 $a7 fffffffa, 3204
+sltiu $s1 00000000 $a6 fffffffa, 777
+sltiu $s1 00000000 $s3 80000000, 1842
+sltiu $s3 00000000 $a3 ffffffff, 1733
+sltiu $s2 00000001 $a1 00000176, 641
+sltiu $a2 00000000 $a7 ffffff65, 384
+sltiu $s6 00000000 $s0 80000000, 3092
+sltiu $a3 00000001 $a1 00000000, 2810
+sltiu $s0 00000000 $a7 80000000, 649
+sltiu $a6 00000001 $s4 00000000, 3551
+sltiu $s7 00000001 $s0 00000000, 2946
+sltiu $a4 00000000 $a5 ffffff65, 1394
+sltiu $t2 00000001 $a0 00000045, 2240
+sltiu $a7 00000000 $s7 ffffff65, 1798
+sltiu $a3 00000001 $t3 00000000, 270
+sltiu $a0 00000000 $s1 fffffffa, 2656
+sltiu $t0 00000001 $s7 00000000, 1798
+sltiu $t3 00000000 $t0 80000000, 3891
+sov $a5 00000000 $t0 7fffffff $s5 fffffffa
+sov $t1 00000000 $a7 fffffffa $s3 00000000
+sov $s3 00000000 $t1 ffffffff $a1 ffffffff
+sov $t1 00000000 $t2 ffffffff $a1 00000000
+sov $s2 00000000 $s0 ffffffff $t3 ffffff65
+sov $t1 00000000 $s5 fffffffa $s7 00000045
+sov $a2 00000000 $s2 ffffff65 $t3 00000045
+sov $s4 00000000 $t1 00000045 $s2 ffffffff
+sov $s0 00000000 $t2 00000000 $a4 00000000
+sov $s7 00000000 $t3 ffffff65 $s0 00000000
+sov $a7 00000001 $t3 80000000 $a3 80000000
+sov $s3 00000000 $s7 00000000 $s3 00000176
+sov $a7 00000000 $a1 00000000 $a3 7fffffff
+sov $a6 00000000 $a3 fffffffa $a6 00000000
+sov $s5 00000000 $t1 fffffffa $t1 ffffffff
+sov $a7 00000000 $a4 ffffffff $t2 fffffffa
+sov $a5 00000000 $s6 ffffff65 $a0 ffffff65
+sov $s2 00000000 $s3 fffffffa $t3 7fffffff
+sov $a0 00000000 $a0 00000045 $s2 00000045
+sov $s3 00000000 $a1 00000000 $a2 00000000
+sov $s4 00000000 $s7 fffffffa $a0 7fffffff
+sov $t3 00000000 $s0 00000000 $s1 ffffff65
+sov $a2 00000001 $a7 80000000 $s2 ffffffff
+sov $a3 00000001 $a4 80000000 $t2 80000000
+sov $a7 00000000 $s6 00000000 $s2 fffffffa
+sov $a1 00000000 $a1 00000045 $a3 00000045
+sov $a5 00000000 $s0 7fffffff $t3 fffffffa
+sov $t0 00000000 $t1 fffffffa $t2 ffffffff
+sov $s6 00000000 $a0 00000176 $a6 80000000
+sov $a5 00000001 $t3 ffffffff $s3 80000000
+sov $s5 00000000 $a2 ffffffff $s0 ffffff65
+sov $t2 00000000 $a5 fffffffa $a6 00000176
+sov $s1 00000000 $t2 00000176 $s0 00000176
+sov $t2 00000000 $t0 ffffff65 $a5 00000000
+sov $t0 00000001 $s6 80000000 $s6 80000000
+sov $a0 00000000 $t3 00000045 $s2 00000000
+sov $s4 00000000 $t0 ffffff65 $t0 00000176
+sov $a1 00000000 $s2 00000045 $t1 ffffffff
+sov $s1 00000000 $s0 80000000 $s6 7fffffff
+sov $a2 00000000 $s0 00000045 $a5 00000176
+movn $s3 fffffffa old fffffffa $a3 fffffffa $a2 00000176
+movn $t2 80000000 old 7fffffff $t0 80000000 $a2 80000000
+movn $s2 ffffffff old 80000000 $t2 ffffffff $t3 7fffffff
+movn $a3 00000045 old 00000176 $t2 00000045 $a5 00000045
+movn $a2 7fffffff old 80000000 $s0 7fffffff $s5 ffffff65
+movn $s2 80000000 old ffffff65 $t1 80000000 $s7 00000176
+movn $t1 80000000 old ffffffff $s4 80000000 $a0 80000000
+movn $t2 80000000 old 7fffffff $s0 80000000 $s4 00000176
+movn $s2 7fffffff old ffffffff $a5 7fffffff $s6 fffffffa
+movn $t2 80000000 old ffffffff $s4 80000000 $a1 ffffffff
+movn $s7 00000000 old 00000000 $t1 fffffffa $a4 00000000
+movn $s6 80000000 old 80000000 $s2 80000000 $s3 fffffffa
+movn $a0 fffffffa old fffffffa $s4 fffffffa $s1 ffffffff
+movn $a1 00000045 old 00000045 $a3 00000045 $s0 7fffffff
+movn $s1 7fffffff old 80000000 $s1 7fffffff $s5 00000176
+movn $s1 ffffffff old fffffffa $a0 ffffffff $s1 80000000
+movn $a4 00000176 old ffffffff $t1 00000176 $s5 00000045
+movn $t0 fffffffa old fffffffa $t0 fffffffa $s3 ffffff65
+movn $s0 00000000 old ffffff65 $s6 00000000 $t3 80000000
+movn $t1 7fffffff old 00000045 $s3 7fffffff $s4 fffffffa
+movn $a3 00000176 old 00000176 $a3 00000176 $t1 00000176
+movn $a6 ffffffff old ffffffff $a4 ffffffff $s2 80000000
+movn $s2 ffffff65 old fffffffa $a7 ffffff65 $s6 ffffff65
+movn $t1 ffffff65 old 7fffffff $a0 ffffff65 $s6 ffffff65
+movn $s3 fffffffa old ffffffff $t2 fffffffa $a7 7fffffff
+movn $s4 00000176 old 80000000 $a4 00000176 $s0 00000176
+movn $s6 80000000 old 00000176 $s6 80000000 $s5 00000176
+movn $a2 00000000 old fffffffa $t0 00000000 $s4 00000176
+movn $t1 ffffff65 old ffffffff $a7 ffffff65 $t1 7fffffff
+movn $s0 00000045 old ffffffff $a0 00000045 $s7 00000176
+movn $a0 00000000 old 00000176 $s0 00000000 $a0 ffffff65
+movn $t1 fffffffa old 80000000 $t0 fffffffa $a3 7fffffff
+movn $s6 00000176 old 80000000 $s7 00000176 $a5 ffffffff
+movn $s3 7fffffff old ffffff65 $a1 7fffffff $s7 00000045
+movn $t1 00000176 old fffffffa $s5 00000176 $s7 00000045
+movn $s1 7fffffff old 00000000 $a1 7fffffff $s3 fffffffa
+movn $s2 00000176 old fffffffa $a6 00000176 $s5 80000000
+movn $a6 7fffffff old 00000176 $a3 7fffffff $s6 80000000
+movn $s3 ffffff65 old 80000000 $s4 ffffff65 $a0 fffffffa
+movn $s6 fffffffa old fffffffa $a2 ffffffff $t2 00000000
+movz $s4 00000045 old 00000045 $t0 80000000 $s3 fffffffa
+movz $s0 00000000 old 00000000 $a1 00000000 $t3 00000176
+movz $a0 00000000 old 00000000 $a5 7fffffff $a3 ffffff65
+movz $a5 7fffffff old 7fffffff $s4 ffffffff $s1 fffffffa
+movz $a2 00000176 old 00000176 $a5 00000000 $s7 80000000
+movz $a2 00000000 old 00000000 $a7 00000000 $t3 fffffffa
+movz $a7 00000000 old 00000000 $s3 fffffffa $a2 7fffffff
+movz $t2 00000045 old fffffffa $a5 00000176 $t2 00000045
+movz $t2 00000000 old 00000045 $t1 00000000 $s3 00000000
+movz $a0 00000176 old 00000176 $s0 00000176 $a7 80000000
+movz $s2 7fffffff old 7fffffff $s6 00000176 $s5 ffffffff
+movz $s3 fffffffa old fffffffa $a7 00000000 $t2 ffffffff
+movz $t2 00000176 old 00000176 $t0 00000000 $a1 7fffffff
+movz $a7 00000045 old 00000045 $a0 ffffffff $a2 00000176
+movz $a5 fffffffa old fffffffa $a7 ffffffff $t0 ffffff65
+movz $s3 00000176 old 00000176 $a6 ffffffff $s2 ffffffff
+movz $t3 00000000 old 00000000 $s2 ffffff65 $s2 ffffff65
+movz $s5 00000000 old 00000000 $a6 00000045 $t1 00000045
+movz $t3 80000000 old fffffffa $s6 7fffffff $t3 80000000
+movz $s1 fffffffa old fffffffa $a3 00000176 $a5 fffffffa
+movz $s5 00000000 old 00000176 $s3 ffffffff $s3 00000000
+movz $t3 fffffffa old fffffffa $a6 00000176 $a1 fffffffa
+movz $s2 ffffff65 old 00000045 $t2 ffffff65 $a7 00000000
+movz $t2 fffffffa old 7fffffff $a4 fffffffa $s1 00000000
+movz $s7 ffffff65 old 00000176 $s7 ffffff65 $a1 fffffffa
+movz $a5 ffffff65 old ffffff65 $a6 80000000 $a4 00000045
+movz $t3 00000000 old 00000176 $s5 00000000 $a6 00000000
+movz $a1 00000176 old 00000176 $a4 ffffffff $s4 fffffffa
+movz $a3 00000000 old 00000176 $s5 00000000 $a1 00000000
+movz $t2 00000000 old 00000176 $s1 00000000 $a5 00000000
+movz $s5 ffffff65 old 00000000 $t3 ffffff65 $t0 00000000
+movz $s1 00000045 old 00000045 $a7 ffffffff $a3 7fffffff
+movz $s2 80000000 old 80000000 $s4 ffffff65 $a6 fffffffa
+movz $s3 ffffff65 old ffffff65 $a7 00000045 $a7 fffffffa
+movz $a3 00000176 old 00000176 $s2 80000000 $s3 fffffffa
+movz $t2 00000000 old 00000000 $a7 7fffffff $a4 ffffff65
+movz $t0 80000000 old ffffffff $s7 80000000 $a3 00000000
+movz $a1 ffffffff old ffffffff $t0 00000045 $a6 ffffffff
+movz $a0 00000045 old ffffffff $s6 00000045 $a6 00000000
+movz $s1 00000000 old ffffff65 $s6 00000000 $a0 00000000
+movep $a2 ffffffff $a3 ffffffff $a0 ffffffff $s7 ffffffff
+movep $a0 ffffff65 $a1 fffffffa $a3 ffffff65 $s1 fffffffa
+movep $a0 7fffffff $a1 00000176 $s4 7fffffff $s7 00000176
+movep $a2 80000000 $a3 ffffffff $s3 80000000 $s1 ffffffff
+movep $a2 ffffff65 $a3 7fffffff $a1 ffffff65 $s5 7fffffff
+movep $a2 00000045 $a3 80000000 $s2 00000045 $s3 80000000
+movep $a0 80000000 $a1 ffffff65 $s7 80000000 $a1 ffffff65
+movep $a1 7fffffff $a2 ffffffff $s2 7fffffff $s1 ffffffff
+movep $a1 00000176 $a2 00000000 $s4 00000176 $a0 00000000
+movep $a3 00000176 $a4 00000176 $s4 00000176 $s0 00000176
+movep $a1 00000000 $a2 00000000 $s6 00000000 $s0 00000000
+movep $a2 ffffffff $a3 00000045 $s5 ffffffff $a5 00000045
+movep $a1 00000045 $a2 00000045 $s7 00000045 $s2 00000045
+movep $a2 80000000 $a3 00000000 $a5 80000000 $a1 00000000
+movep $a1 00000000 $a2 00000000 $s6 00000000 $r0 7fffffff
+movep $a3 00000000 $a4 00000176 $s7 00000000 $a5 00000176
+movep $a1 fffffffa $a2 7fffffff $s6 fffffffa $s2 7fffffff
+movep $a0 00000176 $a1 80000000 $s0 00000176 $s6 80000000
+movep $a1 00000045 $a2 00000000 $s7 00000045 $r0 80000000
+movep $a3 00000176 $a4 00000045 $a6 00000176 $s7 00000045
+movep $a1 ffffff65 $a2 fffffffa $a5 ffffff65 $s2 fffffffa
+movep $a3 00000000 $a4 80000000 $r0 ffffffff $s3 80000000
+movep $a1 7fffffff $a2 80000000 $s7 7fffffff $a3 80000000
+movep $a3 80000000 $a4 00000000 $s3 80000000 $s2 00000000
+movep $a1 7fffffff $a2 00000045 $s5 7fffffff $s2 00000045
+movep $a3 00000000 $a4 00000176 $r0 00000000 $s6 00000176
+movep $a1 00000000 $a2 00000000 $r0 ffffff65 $s2 00000000
+movep $a3 7fffffff $a4 00000000 $a0 7fffffff $r0 00000045
+movep $a1 80000000 $a2 00000045 $s5 80000000 $s3 00000045
+movep $a1 fffffffa $a2 00000000 $s6 fffffffa $s2 00000000
+movep $a2 80000000 $a3 fffffffa $s6 80000000 $s5 fffffffa
+movep $a2 ffffffff $a3 00000045 $s3 ffffffff $s1 00000045
+movep $a0 ffffffff $a1 00000000 $s5 ffffffff $a6 00000000
+movep $a0 fffffffa $a1 00000000 $s4 fffffffa $a6 00000000
+movep $a3 00000176 $a4 00000176 $a6 00000176 $a2 00000176
+movep $a0 00000045 $a1 80000000 $a5 00000045 $s4 80000000
+movep $a1 ffffffff $a2 7fffffff $s0 ffffffff $s1 7fffffff
+movep $a0 00000000 $a1 00000176 $r0 00000176 $s2 00000176
+movep $a0 80000000 $a1 ffffff65 $s4 80000000 $s0 ffffff65
+movep $a3 00000176 $a4 80000000 $a6 00000176 $s7 80000000
+movep[rev] $s1 00000176 $s0 00000000 $a2 00000176 $a3 00000000
+movep[rev] $a0 ffffff65 $a6 ffffffff $a3 ffffff65 $a4 ffffffff
+movep[rev] $s6 7fffffff $s4 ffffff65 $a0 7fffffff $a1 ffffff65
+movep[rev] $s7 ffffffff $s1 00000045 $a0 ffffffff $a1 00000045
+movep[rev] $s2 7fffffff $s6 00000176 $a0 7fffffff $a1 00000176
+movep[rev] $s7 00000176 $a6 ffffff65 $a0 00000176 $a1 ffffff65
+movep[rev] $s7 00000045 $s2 fffffffa $a2 00000045 $a3 fffffffa
+movep[rev] $a7 80000000 $s5 00000176 $a3 80000000 $a4 00000176
+movep[rev] $a4 ffffffff $s5 ffffffff $a2 ffffffff $a3 ffffffff
+movep[rev] $s1 00000000 $s3 00000176 $a3 00000000 $a4 00000176
+movep[rev] $a7 ffffff65 $s1 7fffffff $a2 ffffff65 $a3 7fffffff
+movep[rev] $s4 ffffffff $s2 ffffff65 $a0 ffffffff $a1 ffffff65
+movep[rev] $a2 00000045 $a6 ffffffff $a0 00000045 $a1 ffffffff
+movep[rev] $a3 00000000 $a2 00000176 $a1 00000000 $a2 00000176
+movep[rev] $a6 fffffffa $s6 7fffffff $a2 fffffffa $a3 7fffffff
+movep[rev] $s1 00000000 $a0 fffffffa $a1 00000000 $a2 fffffffa
+movep[rev] $s7 ffffffff $a7 00000045 $a0 ffffffff $a1 00000045
+movep[rev] $a2 ffffff65 $a4 fffffffa $a3 ffffff65 $a4 fffffffa
+movep[rev] $a2 00000176 $a6 ffffffff $a0 00000176 $a1 ffffffff
+movep[rev] $s6 80000000 $s5 00000045 $a2 80000000 $a3 00000045
+movep[rev] $a0 7fffffff $a1 00000176 $a3 7fffffff $a4 00000176
+movep[rev] $s3 80000000 $a6 ffffffff $a0 80000000 $a1 ffffffff
+movep[rev] $a3 00000176 $s4 00000045 $a1 00000176 $a2 00000045
+movep[rev] $s6 00000000 $s3 00000000 $a1 00000000 $a2 00000000
+movep[rev] $s4 fffffffa $a6 80000000 $a1 fffffffa $a2 80000000
+movep[rev] $a4 ffffffff $s4 00000045 $a2 ffffffff $a3 00000045
+movep[rev] $a6 7fffffff $s0 ffffff65 $a0 7fffffff $a1 ffffff65
+movep[rev] $s2 ffffff65 $a6 00000000 $a2 ffffff65 $a3 00000000
+movep[rev] $a6 00000176 $s6 7fffffff $a2 00000176 $a3 7fffffff
+movep[rev] $a4 fffffffa $s2 00000045 $a2 fffffffa $a3 00000045
+movep[rev] $s1 00000000 $s6 00000176 $a2 00000000 $a3 00000176
+movep[rev] $a5 00000176 $a3 ffffff65 $a0 00000176 $a1 ffffff65
+movep[rev] $s1 ffffff65 $a0 00000045 $a2 ffffff65 $a3 00000045
+movep[rev] $a5 00000045 $a0 00000000 $a1 00000045 $a2 00000000
+movep[rev] $a7 7fffffff $s1 00000000 $a2 7fffffff $a3 00000000
+movep[rev] $s6 00000176 $s2 00000000 $a0 00000176 $a1 00000000
+movep[rev] $a6 00000045 $s7 00000000 $a2 00000045 $a3 00000000
+movep[rev] $a0 fffffffa $a7 80000000 $a2 fffffffa $a3 80000000
+movep[rev] $s5 fffffffa $s7 7fffffff $a1 fffffffa $a2 7fffffff
+movep[rev] $a5 00000176 $s5 7fffffff $a1 00000176 $a2 7fffffff
+move.balc $a1 00000176 $s2 00000176, next_instruction
+move.balc $a1 00000000 $s4 00000000, next_instruction
+move.balc $a1 fffffffa $s0 fffffffa, next_instruction
+move.balc $a0 7fffffff $s3 7fffffff, next_instruction
+move.balc $a1 00000000 $s6 00000000, next_instruction
+move.balc $a0 00000045 $a5 00000045, next_instruction
+move.balc $a1 ffffff65 $a5 ffffff65, next_instruction
+move.balc $a1 fffffffa $a3 fffffffa, next_instruction
+move.balc $a0 7fffffff $a0 7fffffff, next_instruction
+move.balc $a1 80000000 $a0 80000000, next_instruction
+move.balc $a1 00000000 $r0 00000000, next_instruction
+move.balc $a1 7fffffff $a1 7fffffff, next_instruction
+move.balc $a0 80000000 $a5 80000000, next_instruction
+move.balc $a1 00000000 $r0 00000000, next_instruction
+move.balc $a0 ffffff65 $s7 ffffff65, next_instruction
+move.balc $a0 7fffffff $s4 7fffffff, next_instruction
+move.balc $a1 00000000 $s3 00000000, next_instruction
+move.balc $a0 7fffffff $s1 7fffffff, next_instruction
+move.balc $a1 7fffffff $a4 7fffffff, next_instruction
+move.balc $a0 80000000 $a4 80000000, next_instruction

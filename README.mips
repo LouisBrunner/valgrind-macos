@@ -26,7 +26,7 @@ CFLAGS="-mips64 -mabi=64" will do the trick and compile Valgrind correctly.
  * --host=mips-linux-gnu is necessary if you compile it with cross toolchain
    compiler for big endian platform.
 
- * --host=mipsel-linux-gnu is necessary if you compile it with cross toolchain
+ * --host=mipsel-linux-musl is necessary if you compile it with cross toolchain
    compiler for little endian platform.
 
  * --host=nanomipseb-linux-gnu is necessary if you compile it with cross toolchain

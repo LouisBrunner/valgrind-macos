@@ -1,5 +1,5 @@
 
-Release 3.16.0 (?? ?????? 2019)
+Release 3.16.0 (?? ?????? 2020)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 3.16.0 is a feature release with many improvements and the usual collection of
@@ -72,6 +72,7 @@ To see details of a given bug, visit
 where XXXXXX is the bug number as listed below.
 
 400593  In Coregrind, use statx for some internal syscalls if [f]stat[64] fail
+400872  Add nanoMIPS support to Valgrind
 404406  s390x: z14 miscellaneous instructions not implemented
 405201  Incorrect size of struct vki_siginfo on 64-bit Linux architectures
 406561  mcinfcallWSRU gdbserver_test fails on ppc64

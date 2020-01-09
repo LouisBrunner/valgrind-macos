@@ -504,12 +504,14 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
                aluOp = NMalu_SUB;
                break;
 
+            case Iop_And1:
             case Iop_And8:
             case Iop_And16:
             case Iop_And32:
                aluOp = NMalu_AND;
                break;
 
+            case Iop_Or1:
             case Iop_Or8:
             case Iop_Or16:
             case Iop_Or32:

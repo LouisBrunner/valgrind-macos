@@ -925,6 +925,7 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
                aluOp = Malu_DSUB;
                break;
 
+            case Iop_And1:
             case Iop_And8:
             case Iop_And16:
             case Iop_And32:
@@ -932,6 +933,7 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
                aluOp = Malu_AND;
                break;
 
+            case Iop_Or1:
             case Iop_Or8:
             case Iop_Or16:
             case Iop_Or32:
@@ -2471,7 +2473,7 @@ static MIPSRH *iselWordExpr_RH_wrk(ISelEnv * env, Bool syned, IRExpr * e)
    ULong u;
    Long l;
    IRType ty = typeOfIRExpr(env->type_env, e);
-   vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32 ||
+   vassert(ty == Ity_I1 || ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32 ||
           ((ty == Ity_I64) && env->mode64));
 
    /* special case: immediate */
@@ -2492,6 +2494,9 @@ static MIPSRH *iselWordExpr_RH_wrk(ISelEnv * env, Bool syned, IRExpr * e)
             break;
          case Ico_U8:
             u = 0x000000FF & con->Ico.U8;
+            break;
+         case Ico_U1:
+            u = 0x00000001 & con->Ico.U1;
             break;
          default:
             vpanic("iselIntExpr_RH.Iex_Const(mips)");
@@ -2741,6 +2746,24 @@ static MIPSCondCode iselCondCode_wrk(ISelEnv * env, IRExpr * e)
 
       addInstr(env, MIPSInstr_LI(r_dst, 0x1));
       addInstr(env, MIPSInstr_Alu(Malu_SUB, r_dst, r_dst, r_srcR));
+      /* Store result to guest_COND */
+      MIPSAMode *am_addr = MIPSAMode_IR(0, GuestStatePointer(mode64));
+
+      addInstr(env, MIPSInstr_Store(4,
+               MIPSAMode_IR(am_addr->Mam.IR.index + COND_OFFSET(mode64),
+                            am_addr->Mam.IR.base),
+               r_dst, mode64));
+      return MIPScc_NE;
+   }
+
+   if (e->tag == Iex_Unop
+       && (e->Iex.Unop.op == Iop_CmpNEZ32
+           || ((e->Iex.Unop.op == Iop_CmpNEZ64) && mode64))) {
+      HReg r_dst = newVRegI(env);
+      HReg r_src = iselWordExpr_R(env, e->Iex.Unop.arg);
+
+      addInstr(env, MIPSInstr_Cmp(False, !mode64, r_dst, r_src,
+                                  hregMIPS_GPR0(mode64), MIPScc_NE));
       /* Store result to guest_COND */
       MIPSAMode *am_addr = MIPSAMode_IR(0, GuestStatePointer(mode64));
 

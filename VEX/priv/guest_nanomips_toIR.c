@@ -2201,10 +2201,12 @@ static void nano_p16br(DisResult *dres, UShort cins)
       putPC(getIReg(rt));
       dres->whatNext = Dis_StopHere;
    } else {
-      UChar rt = GPR3_list[(cins >> 7) & 0x07];
-      UChar rs = GPR3_list[(cins >> 4) & 0x07];
+      UChar rt3 = (cins >> 7) & 0x07;
+      UChar rs3 = (cins >> 4) & 0x07;
+      UChar rt = GPR3_list[rt3];
+      UChar rs = GPR3_list[rs3];
 
-      if (rs < rt) {  /* beqc[16] */
+      if (rs3 < rt3) {  /* beqc[16] */
          DIP("beqc r%u, r%u, %X", rt, rs, guest_PC_curr_instr + 2 + u);
          ir_for_branch(dres, binop(Iop_CmpEQ32, getIReg(rt), getIReg(rs)),
                        2, (Int)u);

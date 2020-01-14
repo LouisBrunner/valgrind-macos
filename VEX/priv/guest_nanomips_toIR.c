@@ -980,17 +980,21 @@ static void nano_ppsr(DisResult *dres, UInt cins)
          DIP("save %u, r%u-r%u", u, (rt & 0x1fu) | (rt & 0x10u),
              ((rt + count - 1) & 0x1fu) | (rt & 0x10u));
 
+         IRTemp t1 = newTemp(Ity_I32);
+         assign(t1, getIReg(29));
+
+         putIReg(29, binop(Iop_Sub32, mkexpr(t1), mkU32(u)));
+
          while (counter != count) {
             Bool use_gp = (cins & 0x04) && (counter + 1 == count);
             UChar this_rt = use_gp ? 28 : (UChar)((rt + counter) & 0x1f)
                                           | (rt & 0x10);
             Int offset = -((counter + 1) << 2);
-            store(binop(Iop_Add32, getIReg(29), mkU32(offset)),
+            store(binop(Iop_Add32, mkexpr(t1), mkU32(offset)),
                   getIReg(this_rt));
             counter++;
          }
 
-         putIReg(29, binop(Iop_Sub32, getIReg(29), mkU32(u)));
          break;
       }
 
@@ -2328,14 +2332,17 @@ static void nano_p16sr(DisResult *dres, UShort cins)
       DIP("save %u, r%u-r%u", u, (rt & 0x1fu) | (rt & 0x10u),
           ((rt + count - 1) & 0x1fu) | (rt & 0x10u));
 
+      IRTemp t1 = newTemp(Ity_I32);
+      assign(t1, getIReg(29));
+
+      putIReg(29, binop(Iop_Sub32, mkexpr(t1), mkU32(u)));
+
       while (counter != count) {
          UChar this_rt = ((rt + counter) & 0x1f) | (rt & 0x10);
          Int offset = -((counter + 1) << 2);
-         store(binop(Iop_Add32, getIReg(29), mkU32(offset)), getIReg(this_rt));
+         store(binop(Iop_Add32, mkexpr(t1), mkU32(offset)), getIReg(this_rt));
          counter++;
       }
-
-      putIReg(29, binop(Iop_Sub32, getIReg(29), mkU32(u)));
    }
 }
 

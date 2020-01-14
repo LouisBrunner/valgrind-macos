@@ -2547,8 +2547,10 @@ static void nano_pj(DisResult *dres, UInt cins)
             putIReg(rt, mkU32(guest_PC_curr_instr + 4));
             putPC(mkexpr(t1));
          }
+         dres->jk_StopHere = Ijk_Boring;
+         dres->whatNext = Dis_StopHere;
+         break;
       }
-      break;
    }
 }
 

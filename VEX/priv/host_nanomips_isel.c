@@ -877,8 +877,23 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
       }
 
       case Iex_CCall: {
-         /* unimplemented yet */
-         vassert(0);
+         HReg     r_dst = newVRegI(env);
+         UInt   addToSp = 0;
+         RetLoc rloc    = mk_RetLoc_INVALID();
+
+         /* Be very restrictive for now. Only 32-bit ints allowed for
+            args, and 32 bits for return type. Don't forget to change
+            the RetLoc if more return types are allowed in future. */
+         vassert(Ity_I32 == e->Iex.CCall.retty);
+
+         /* Marshal args, do the call, clear stack. */
+         doHelperCall(&rloc, env, NULL /*guard*/, e->Iex.CCall.cee,
+                      e->Iex.CCall.retty, e->Iex.CCall.args);
+         vassert(is_sane_RetLoc(rloc));
+         vassert(rloc.pri == RLPri_Int);
+         vassert(addToSp == 0);
+         addInstr(env, mk_iMOVds_RR(r_dst, hregNANOMIPS_GPR4()));
+         return r_dst;
       }
 
       default:

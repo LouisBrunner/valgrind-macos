@@ -805,7 +805,7 @@ static SyscallTableEntry syscall_main_table[] = {
    //    (__NR_bpf,                    sys_ni_syscall),
    //    (__NR_execveat,               sys_ni_syscall),
    //    (__NR_userfaultfd,            sys_ni_syscall),
-   //    (__NR_membarrier,             sys_ni_syscall),
+   LINX_ (__NR_membarrier,             sys_membarrier),
    //    (__NR_mlock2,                 sys_ni_syscall),
    //    (__NR_copy_file_range,        sys_ni_syscall),
    //    (__NR_preadv2,                sys_ni_syscall),

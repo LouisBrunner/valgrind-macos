@@ -88,24 +88,24 @@ asm (
    "   move  $ra, $a1                        \n\t" // retaddr to $ra
    "   move  $t9, $a2                        \n\t" // f to t9
    "   move  $a0, $a3                        \n\t" // arg1 to $a0
-   "   li    $t4, 0\n\t"    // zero all GP regs
-   "   li    $t5, 0\n\t"
-   "   li    $a1, 0\n\t"
-   "   li    $a2, 0\n\t"
-   "   li    $a3, 0\n\t"
-   "   li    $t0, 0\n\t"
-   "   li    $t1, 0\n\t"
-   "   li    $t2, 0\n\t"
-   "   li    $t3, 0\n\t"
-   "   li    $s0, 0\n\t"
-   "   li    $s1, 0\n\t"
-   "   li    $s2, 0\n\t"
-   "   li    $s3, 0\n\t"
-   "   li    $s4, 0\n\t"
-   "   li    $s5, 0\n\t"
-   "   li    $s6, 0\n\t"
-   "   li    $s7, 0\n\t"
-   "   li    $t8, 0\n\t"
+   "   li    $t4, 0                          \n\t" // zero all GP regs
+   "   li    $t5, 0                          \n\t"
+   "   li    $a1, 0                          \n\t"
+   "   li    $a2, 0                          \n\t"
+   "   li    $a3, 0                          \n\t"
+   "   li    $t0, 0                          \n\t"
+   "   li    $t1, 0                          \n\t"
+   "   li    $t2, 0                          \n\t"
+   "   li    $t3, 0                          \n\t"
+   "   li    $s0, 0                          \n\t"
+   "   li    $s1, 0                          \n\t"
+   "   li    $s2, 0                          \n\t"
+   "   li    $s3, 0                          \n\t"
+   "   li    $s4, 0                          \n\t"
+   "   li    $s5, 0                          \n\t"
+   "   li    $s6, 0                          \n\t"
+   "   li    $s7, 0                          \n\t"
+   "   li    $t8, 0                          \n\t"
    "   jrc   $t9                             \n\t" // jump to dst
    "   break 0x7                               \n" // should never get here
    ".previous\n"
@@ -142,48 +142,45 @@ asm (
 
 // See priv_syswrap-linux.h for arg profile.
 asm (
-"   .text\n"
-"   .set noreorder\n"
-"   .set nomacro\n"
-"   .globl   do_syscall_clone_nanomips_linux\n"
-"   do_syscall_clone_nanomips_linux:\n"
-"   addiu $sp, $sp, -32\n"
-"   sw    $ra,  0($sp)        \n\t"
-"   sw    $fp,  4($sp)        \n\t"
-"   sw    $gp,  8($sp)        \n\t"
-"   sw    $t4,  12($sp)        \n\t"
+"   .text                                              \n"
+"   .set noreorder                                     \n"
+"   .set nomacro                                       \n"
+"   .globl   do_syscall_clone_nanomips_linux           \n"
+"   do_syscall_clone_nanomips_linux:                 \n\t"
+"   addiu $sp, $sp, -16                              \n\t"
+"   sw    $ra,  0($sp)                               \n\t"
+"   sw    $fp,  4($sp)                               \n\t"
+"   sw    $gp,  8($sp)                               \n\t"
 
-"   addiu  $a1, $a1, -32\n"
-"   sw $a0, 0($a1)\n"   /* fn */
-"   sw $a3, 4($a1)\n"   /* arg */
-"   sw $a2, 8($a1)\n"  /* flags */
-
+"   addiu  $a1, $a1, -16                             \n\t"
+"   sw $a0, 0($a1)                                   \n\t" /* fn */
+"   sw $a3, 4($a1)                                   \n\t" /* arg */
 
 /* 1. arg for syscalls */
-"   move $a0, $a2\n"   /* flags */
-"   move $a2, $a5\n"   /* parent */
-"   move $a3, $a6\n"  /* tls */
+"   move $a0, $a2                                    \n\t" /* flags */
+"   move $a2, $a5                                    \n\t" /* parent */
+"   move $a3, $a6                                    \n\t" /* tls */
 
 /* 2. do a syscall to clone */
-"   li    $t4, " __NR_CLONE  "\n\t" /* __NR_clone */
-"   syscall 1\n"
+"   li $t4, " __NR_CLONE                            "\n\t" /* __NR_clone */
+"   syscall[32]                                      \n\t"
 
 /* 3. See if we are a child, call fn and after that exit */
-"   bnezc $a0, p_or_error\n"
+"   bnezc $a0, p_or_error                            \n\t"
 
-"   lw $t9,0($sp)\n"
-"   lw $a0,4($sp)\n"
-"   jalrc $t9\n"
+"   lw $t9, 0($sp)                                   \n\t"
+"   lw $a0, 4($sp)                                   \n\t"
+"   jalrc $t9                                        \n\t"
 
-"   li   $t4, " __NR_EXIT  "\n\t" /* NR_exit */
-"   syscall 1\n\t"
+"   li $t4, " __NR_EXIT                             "\n\t" /* NR_exit */
+"   syscall[32]                                        \n"
+
 /* 4. If we are parent or error, just return to caller */
-"   p_or_error:\n"
-"   lw $ra, 0($sp)\n"
-"   lw $fp, 4($sp)\n"
-"   lw $gp, 8($sp)\n"
-"   lw $t4, 12($sp)\n"
-"   addiu $sp,$sp, 32\n"
+"   p_or_error:                                      \n\t"
+"   lw $ra, 0($sp)                                   \n\t"
+"   lw $fp, 4($sp)                                   \n\t"
+"   lw $gp, 8($sp)                                   \n\t"
+"   addiu $sp, $sp, 16                               \n\t"
 
 "   jrc $ra\n"
 "   .previous\n"

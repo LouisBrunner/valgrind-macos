@@ -528,7 +528,7 @@ static SysRes clone_new_thread ( Word (*fn)(void *),
    res = VG_ (mk_SysRes_mips32_linux) (/*val */ ret, 0, /*errflag */ 0);
 #elif defined(VGP_nanomips_linux)
    UInt ret = 0;
-   ctst->arch.vex.guest_r2 = 0;
+   ctst->arch.vex.guest_r4 = 0;
    ret = do_syscall_clone_nanomips_linux
       (ML_(start_thread_NORETURN), stack, flags, ctst,
        child_tidptr, parent_tidptr, NULL);

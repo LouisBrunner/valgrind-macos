@@ -2086,19 +2086,27 @@ static void nano_plsuawm(DisResult *dres, UInt cins)
    UChar count3 = (cins >> 12) & 0x07;
    UChar count = count3 ? count3 : 8;
    UChar counter = 0;
-   UInt offset = extend_sign(s, 9);
+   UInt offset = s;
    UChar rt_tmp, offset_tmp;
 
-   if ((cins >> 11) & 0x01) {  /* swm */
-      while (counter++ != count) {
+   if ((cins >> 11) & 0x01) {  /* uaswm */
+
+      DIP("uaswm r%u, %d(r%u), %u", rt, (int)offset, rs, count);
+
+      while (counter != count) {
          rt_tmp = rt ? (rt & 0x10) | ((rt + counter) & 0x1F) : 0;
          offset_tmp = offset + (counter << 2);
          store(binop(Iop_Add32, getIReg(rs), mkU32(offset_tmp)),
                getIReg(rt_tmp));
+         counter+=1;
       }
-   } else {  /* lwm */
-      while (counter++ != count) {
-         rt_tmp = (rt & 0x10) | (rt + counter);
+
+   } else {  /* ualwm */
+
+      DIP("ualwm r%u, %d(r%u), %u", rt, (int)offset, rs, count);
+
+      while (counter != count) {
+         rt_tmp = (rt & 0x10) | ((rt + counter) & 0x1F);
          offset_tmp = offset + (counter << 2);
          putIReg(rt_tmp, load(Ity_I32, binop(Iop_Add32, getIReg(rs),
                                              mkU32(offset_tmp))));
@@ -2107,6 +2115,7 @@ static void nano_plsuawm(DisResult *dres, UInt cins)
             vassert(0);
             // raise UNPREDICTABLE()
          }
+         counter+=1;
       }
 
    }

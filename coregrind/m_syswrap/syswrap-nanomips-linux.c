@@ -471,10 +471,16 @@ POST(sys_ptrace)
 
 PRE(sys_rt_sigreturn)
 {
+   ThreadState* tst;
    PRINT ("rt_sigreturn ( )");
    vg_assert (VG_ (is_valid_tid) (tid));
    vg_assert (tid >= 1 && tid < VG_N_THREADS);
    vg_assert (VG_ (is_running_thread) (tid));
+
+   tst = VG_(get_ThreadState)(tid);
+
+   ML_(fixup_guest_state_to_restart_syscall)(&tst->arch);
+
    /* Restore register state from frame and remove it */
    VG_ (sigframe_destroy) (tid, True);
    /* Tell the driver not to update the guest state with the "result",

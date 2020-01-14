@@ -1326,8 +1326,8 @@ VG_(trampoline_stuff_start):
 
 .global VG_(nanomips_linux_SUBST_FOR_rt_sigreturn)
 VG_(nanomips_linux_SUBST_FOR_rt_sigreturn):
-   li $t4,__NR_rt_sigreturn
-   syscall 1
+   li $t4, __NR_rt_sigreturn
+   syscall[32]
    .long 0
 
 .global VG_(nanomips_linux_REDIR_FOR_index)

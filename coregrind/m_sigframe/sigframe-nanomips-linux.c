@@ -150,7 +150,7 @@ void VG_(sigframe_create)( ThreadId tid,
     * Arguments to signal handler:
     *
     *   a0 = signal number
-    *   a1 = 0 (should be cause)
+    *   a1 = pointer to siginfo_t
     *   a2 = pointer to ucontext
     *
     * $25 and c0_epc point to the signal handler, $29 points to
@@ -196,9 +196,11 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT ) {
    tst = VG_(get_ThreadState)(tid);
    frame = (struct rt_sigframe *)(Addr)tst->arch.vex.guest_r29;
    priv1 = &frame->priv;
-   ucp = &frame->rs_uc;
-   mc = &ucp->uc_mcontext;
    vg_assert(priv1->magicPI == 0x31415927);
+   ucp = &frame->rs_uc;
+   tst->sig_mask = ucp->uc_sigmask;
+   tst->tmp_sig_mask = ucp->uc_sigmask;
+   mc = &ucp->uc_mcontext;
    tst->arch.vex.guest_r1 = mc->sc_regs[1];
    tst->arch.vex.guest_r2 = mc->sc_regs[2];
    tst->arch.vex.guest_r3 = mc->sc_regs[3];

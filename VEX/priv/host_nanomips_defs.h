@@ -179,6 +179,7 @@ typedef enum {
    NMimm_ORI     = 0x06, /* Logical or */
    NMimm_XORI    = 0x07, /* Logical xor */
    NMimm_ANDI    = 0x08, /* Logical and */
+   NMimm_ROTX    = 0x09, /* Rotx */
 } NANOMIPSImmOp;
 
 typedef enum {

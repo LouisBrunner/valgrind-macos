@@ -216,11 +216,6 @@ static IRExpr *mkU32(UInt i)
    return IRExpr_Const(IRConst_U32(i));
 }
 
-static IRExpr *mkU64(ULong i)
-{
-   return IRExpr_Const(IRConst_U64(i));
-}
-
 static void putPC(IRExpr * e)
 {
    stmt(IRStmt_Put(OFFB_PC, e));
@@ -283,6 +278,11 @@ static IRExpr *unop(IROp op, IRExpr * a)
 static IRExpr *binop(IROp op, IRExpr * a1, IRExpr * a2)
 {
    return IRExpr_Binop(op, a1, a2);
+}
+
+static IRExpr *qop(IROp op, IRExpr * a1, IRExpr * a2, IRExpr * a3, IRExpr * a4)
+{
+   return IRExpr_Qop(op, a1, a2, a3, a4);
 }
 
 /* Generate a new temporary of the given type. */
@@ -466,11 +466,23 @@ static void nano_pl32a0(DisResult *dres, UInt cins)
                              IRConst_U32(guest_PC_curr_instr + 4),
                              OFFB_PC));
          } else {  /* teq */
-            DIP("teq r%u, r%u", rs, rt);
-            stmt(IRStmt_Exit(binop(Iop_CmpEQ32, getIReg(rs),
-                                   getIReg(rt)), Ijk_SigTRAP,
-                             IRConst_U32(guest_PC_curr_instr + 4),
-                             OFFB_PC));
+            UChar trap_code = (cins >> 11) & 0x1F;
+            DIP("teq r%u, r%u %u", rs, rt, trap_code);
+            if (trap_code == 7)
+               stmt(IRStmt_Exit(binop(Iop_CmpEQ32, getIReg(rs),
+                                      getIReg(rt)), Ijk_SigFPE_IntDiv,
+                                IRConst_U32(guest_PC_curr_instr + 4),
+                                OFFB_PC));
+            else if (trap_code == 6)
+               stmt(IRStmt_Exit(binop(Iop_CmpEQ32, getIReg(rs),
+                                      getIReg(rt)), Ijk_SigFPE_IntOvf,
+                                IRConst_U32(guest_PC_curr_instr + 4),
+                                OFFB_PC));
+            else
+               stmt(IRStmt_Exit(binop(Iop_CmpEQ32, getIReg(rs),
+                                      getIReg(rt)), Ijk_SigTRAP,
+                                IRConst_U32(guest_PC_curr_instr + 4),
+                                OFFB_PC));
          }
 
          break;
@@ -1232,118 +1244,9 @@ static void nano_protx(UInt cins)
 
    switch ((cins >> 5) & 0x41) {
       case 0x00: {  /* rotx */
-         int i;
-         IRTemp t0  = newTemp(Ity_I64);
-         IRTemp t1  = newTemp(Ity_I64);
-         IRTemp t2  = newTemp(Ity_I64);
-         IRTemp t3  = newTemp(Ity_I64);
-         IRTemp t4  = newTemp(Ity_I64);
-         IRTemp t5  = newTemp(Ity_I64);
-         IRTemp tmp = newTemp(Ity_I64);
-         IRTemp s   = newTemp(Ity_I32);
          DIP("rotx r%u, r%u, %u, %u, %u", rt, rs, shift, shiftx, stripe);
-         assign(t0, binop(Iop_Or64, getIReg(rs), binop(Iop_Shl64,
-                          getIReg(rs), mkU8(32))));
-         assign(t1, mkexpr(t0));
-
-         for (i = 0; i < 46; i++) {
-            assign(s, IRExpr_ITE(binop(Iop_And32, mkU32(i), mkU32(0x08)),
-                                 mkU32(shift), mkU32(shiftx)));
-            assign(s, IRExpr_ITE(binop(Iop_And32, mkU32(stripe),
-                                       binop(Iop_CmpNE32, mkU32(0x0),
-                                             binop(Iop_And32,
-                                                   mkU32(i), mkU32(0x04)))),
-                                 unop(Iop_Not32, mkU32(s)), mkexpr(s)));
-            assign(tmp, binop(Iop_Or64, binop(Iop_And64,
-                                              binop(Iop_Shr64, mkexpr(t0),
-                                                    mkU8(0x10)),
-                                              binop(Iop_Shl64, mkU64(0x01),
-                                                    mkU8(i))),
-                              binop(Iop_And64, mkexpr(t1),
-                                    unop(Iop_Not64,
-                                         binop(Iop_Shl64, mkU64(0x01),
-                                               mkU8(i))))));
-            assign(t1, IRExpr_ITE(binop(Iop_And32, mkexpr(s), mkU32(0x10)),
-                                  mkexpr(tmp),
-                                  mkexpr(t1)));
-
-         }
-
-         assign(t2, mkexpr(t1));
-
-         for (i = 0; i < 38; i++) {
-            assign(s, IRExpr_ITE(binop(Iop_And32, mkU32(i), mkU32(0x04)),
-                                 mkU32(shift), mkU32(shiftx)));
-            assign(tmp, binop(Iop_Or64,
-                              binop(Iop_And64,
-                                    binop(Iop_Shr64, mkexpr(t1), mkU8(0x08)),
-                                    binop(Iop_Shl64, mkU64(0x01), mkU8(i))),
-                              binop(Iop_And64, mkexpr(t2),
-                                    unop(Iop_Not64, binop(Iop_Shl64,
-                                                          mkU64(0x01),
-                                                          mkU8(i))))));
-            assign(t2, IRExpr_ITE(binop(Iop_And32, mkexpr(s), mkU32(0x08)),
-                                  mkexpr(tmp),
-                                  mkexpr(t2)));
-
-         }
-
-         assign(t3, mkexpr(t2));
-
-         for (i = 0; i < 34; i++) {
-            assign(s, IRExpr_ITE(binop(Iop_And32, mkU32(i), mkU32(0x02)),
-                                 mkU32(shift), mkU32(shiftx)));
-            assign(tmp, binop(Iop_Or64,
-                              binop(Iop_And64,
-                                    binop(Iop_Shr64, mkexpr(t2), mkU8(0x04)),
-                                    binop(Iop_Shl64, mkU64(0x01), mkU8(i))),
-                              binop(Iop_And64, mkexpr(t3),
-                                    unop(Iop_Not64, binop(Iop_Shl64,
-                                                          mkU64(0x01),
-                                                          mkU8(i))))));
-            assign(t3, IRExpr_ITE(binop(Iop_And32, mkexpr(s), mkU32(0x04)),
-                                  mkexpr(tmp),
-                                  mkexpr(t3)));
-
-         }
-
-         assign(t4, mkexpr(t3));
-
-         for (i = 0; i < 32; i++) {
-            assign(s, IRExpr_ITE(binop(Iop_And32, mkU32(i), mkU32(0x01)),
-                                 mkU32(shift), mkU32(shiftx)));
-            assign(tmp, binop(Iop_Or64,
-                              binop(Iop_And64,
-                                    binop(Iop_Shr64, mkexpr(t3), mkU8(0x02)),
-                                    binop(Iop_Shl64, mkU64(0x01), mkU8(i))),
-                              binop(Iop_And64, mkexpr(t4),
-                                    unop(Iop_Not64, binop(Iop_Shl64,
-                                                          mkU64(0x01),
-                                                          mkU8(i))))));
-            assign(t4, IRExpr_ITE(binop(Iop_And32, mkexpr(s), mkU32(0x02)),
-                                  mkexpr(tmp),
-                                  mkexpr(t4)));
-
-         }
-
-         assign(t5, mkexpr(t4));
-
-         for (i = 0; i < 32; i++) {
-            assign(tmp, binop(Iop_Or64,
-                              binop(Iop_And64,
-                                    binop(Iop_Shr64, mkexpr(t4), mkU8(0x01)),
-                                    binop(Iop_Shl64, mkU64(0x01), mkU8(i))),
-                              binop(Iop_And64, mkexpr(t5),
-                                    unop(Iop_Not64, binop(Iop_Shl64,
-                                                          mkU64(0x01),
-                                                          mkU8(i))))));
-            assign(t4, IRExpr_ITE(binop(Iop_And32, mkexpr(shift), mkU32(0x02)),
-                                  mkexpr(tmp),
-                                  mkexpr(t5)));
-
-         }
-
-         putIReg(rt, mkexpr(t5));
+         putIReg(rt, qop(Iop_Rotx32, getIReg(rs), mkU8(shift),
+                         mkU8(shiftx), mkU8(stripe)));
          break;
       }
 

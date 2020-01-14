@@ -304,6 +304,9 @@ void ppNANOMIPSInstr(const NANOMIPSInstr* i)
             case NMimm_ANDI:
                vex_printf("andi ");
                break;
+            case NMimm_ROTX:
+               vex_printf("rotx ");
+               break;
 
             default:
                vassert(0);
@@ -317,8 +320,11 @@ void ppNANOMIPSInstr(const NANOMIPSInstr* i)
             vex_printf(", ");
          }
 
-         vex_printf("0x%X (%d)", i->NMin.Imm.imm, (Int)i->NMin.Imm.imm);
-
+         if (i->NMin.Imm.op == NMimm_ROTX)
+            vex_printf("%u, %u, %u", (i->NMin.Imm.imm >> 7) & 0xF,
+                       (i->NMin.Imm.imm >> 6) & 1, i->NMin.Imm.imm & 0x1F);
+         else
+            vex_printf("0x%X (%d)", i->NMin.Imm.imm, (Int)i->NMin.Imm.imm);
          break;
 
       case NMin_Alu:
@@ -1202,6 +1208,7 @@ static UChar *mkFormNanoPU12(UChar * p, UInt rt, UInt rs, UInt opc2, UInt imm)
       case PU12_ORI:       /* ORI       */
       case PU12_SLTIU:     /* SLTIU     */
       case PU12_XORI:      /* XORI      */
+      case PU12_PROTX:     /* ROTX      */
          theInstr = ((PU12 << 26) | (rt << 21) | (rs << 16) | (opc2 << 12) |
                      (imm));
          return emit32(p, theInstr);
@@ -1379,6 +1386,9 @@ Int emit_NANOMIPSInstr ( /*MB_MOD*/Bool* is_profInc,
             case NMimm_XORI:
                p = mkFormNanoPU12(p, r_dst, r_src, i->NMin.Imm.op - 0x6,
                                   i->NMin.Imm.imm);
+               break;
+            case NMimm_ROTX:
+               p = mkFormNanoPU12(p, r_dst, r_src, PU12_PROTX, i->NMin.Imm.imm);
                break;
 
             default:

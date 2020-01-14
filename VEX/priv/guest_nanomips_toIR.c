@@ -2987,15 +2987,15 @@ static Bool check_for_special_requests_nanoMIPS(DisResult *dres,
        getUInt(code + 8) == word3 && getUInt(code + 12) == word4) {
       /* Got a "Special" instruction preamble. Which one is it? */
       if (getUInt(code + 16) == 0x218C6290 /* or t0, t0, t0 */ ) {
-         /* $a0 = client_request ( $a1 ) */
-         DIP("a0 = client_request(a1)");
+         /* $a7 = client_request ( $t0 ) */
+         DIP("a7 = client_request(t0)");
          dres->jk_StopHere = Ijk_ClientReq;
          dres->whatNext    = Dis_StopHere;
          dres->len = 20;
          return True;
       } else if (getUInt(code + 16) == 0x21AD6A90 /* or t1, t1, t1 */ ) {
-         /*  $a0 = guest_NRADDR */
-         DIP("a0 = guest_NRADDR");
+         /*  $a7 = guest_NRADDR */
+         DIP("a7 = guest_NRADDR");
          putIReg(11, IRExpr_Get(offsetof(VexGuestMIPS32State, guest_NRADDR),
                                 Ity_I32));
          dres->len = 20;

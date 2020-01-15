@@ -462,6 +462,7 @@ static Bool stmt_is_guardable ( const IRStmt* st )
       case Ist_Store:
       case Ist_StoreG:
       case Ist_Exit:
+      case Ist_Dirty:
          return False;
       // This is probably guardable, but it depends on the RHS of the
       // assignment.

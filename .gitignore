@@ -405,6 +405,7 @@
 /drd/tests/sigalrm
 /drd/tests/std_atomic
 /drd/tests/std_list
+/drd/tests/std_mutex
 /drd/tests/std_string
 /drd/tests/std_thread
 /drd/tests/std_thread2

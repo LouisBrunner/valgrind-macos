@@ -274,6 +274,8 @@ EXTRA_DIST =                                        \
 	std_atomic.vgtest			    \
 	std_list.stderr.exp		  	    \
 	std_list.vgtest			            \
+	std_mutex.stderr.exp		  	    \
+	std_mutex.vgtest			    \
 	std_string.stderr.exp		  	    \
 	std_string.vgtest			    \
 	std_thread.stderr.exp		  	    \
@@ -434,6 +436,7 @@ if HAVE_SHARED_POINTER_ANNOTATION
 check_PROGRAMS += \
   std_atomic      \
   std_list        \
+  std_mutex	  \
   std_string      \
   std_thread      \
   std_thread2
@@ -558,6 +561,9 @@ std_atomic_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x -Wno-sign-compare
 
 std_list_SOURCES            = std_list.cpp
 std_list_CXXFLAGS           = $(AM_CXXFLAGS) -std=c++0x -Wno-sign-compare
+
+std_mutex_SOURCES           = std_mutex.cpp
+std_mutex_CXXFLAGS          = $(AM_CXXFLAGS) -std=c++0x -Wno-sign-compare
 
 std_string_SOURCES          = std_string.cpp
 std_string_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x -Wno-sign-compare

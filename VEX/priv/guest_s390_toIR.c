@@ -1204,6 +1204,16 @@ get_dpr_dw0(UInt archreg)
    return IRExpr_Get(fpr_dw0_offset(archreg), Ity_D64);
 }
 
+/* Read a float of given type from an fpr. */
+static IRExpr *
+get_fpr_float(UInt archreg, IRType type)
+{
+   if (type == Ity_F128)
+      return get_fpr_pair(archreg);
+   else
+      return IRExpr_Get(fpr_offset(archreg), type);
+}
+
 /*------------------------------------------------------------*/
 /*--- gpr registers                                        ---*/
 /*------------------------------------------------------------*/
@@ -14055,94 +14065,103 @@ s390_irgen_AXBR(UChar r1, UChar r2)
    return "axbr";
 }
 
+/* Helper for "compare" insns CEBR, CDBR, CXBR, and their signalling
+   counterparts. */
 static const HChar *
-s390_irgen_CEBR(UChar r1, UChar r2)
+s390_irgen_CxBR(const HChar *mnem, UChar r1, UChar r2, IRType type, IROp cmp_op)
 {
-   IRTemp op1 = newTemp(Ity_F32);
-   IRTemp op2 = newTemp(Ity_F32);
+   IRTemp op1 = newTemp(type);
+   IRTemp op2 = newTemp(type);
    IRTemp cc_vex  = newTemp(Ity_I32);
    IRTemp cc_s390 = newTemp(Ity_I32);
 
-   assign(op1, get_fpr_w0(r1));
-   assign(op2, get_fpr_w0(r2));
-   assign(cc_vex, binop(Iop_CmpF32, mkexpr(op1), mkexpr(op2)));
+   assign(op1, get_fpr_float(r1, type));
+   assign(op2, get_fpr_float(r2, type));
+   assign(cc_vex, binop(cmp_op, mkexpr(op1), mkexpr(op2)));
 
    assign(cc_s390, convert_vex_bfpcc_to_s390(cc_vex));
    s390_cc_thunk_put1(S390_CC_OP_SET, cc_s390, False);
+   return mnem;
+}
 
-   return "cebr";
+static const HChar *
+s390_irgen_CEBR(UChar r1, UChar r2)
+{
+   return s390_irgen_CxBR("cebr", r1, r2, Ity_F32, Iop_CmpF32);
+}
+
+static const HChar *
+s390_irgen_KEBR(UChar r1, UChar r2)
+{
+   return s390_irgen_CxBR("kebr", r1, r2, Ity_F32, Iop_CmpF32);
 }
 
 static const HChar *
 s390_irgen_CDBR(UChar r1, UChar r2)
 {
-   IRTemp op1 = newTemp(Ity_F64);
-   IRTemp op2 = newTemp(Ity_F64);
-   IRTemp cc_vex  = newTemp(Ity_I32);
-   IRTemp cc_s390 = newTemp(Ity_I32);
+   return s390_irgen_CxBR("cdbr", r1, r2, Ity_F64, Iop_CmpF64);
+}
 
-   assign(op1, get_fpr_dw0(r1));
-   assign(op2, get_fpr_dw0(r2));
-   assign(cc_vex, binop(Iop_CmpF64, mkexpr(op1), mkexpr(op2)));
-
-   assign(cc_s390, convert_vex_bfpcc_to_s390(cc_vex));
-   s390_cc_thunk_put1(S390_CC_OP_SET, cc_s390, False);
-
-   return "cdbr";
+static const HChar *
+s390_irgen_KDBR(UChar r1, UChar r2)
+{
+   return s390_irgen_CxBR("kdbr", r1, r2, Ity_F64, Iop_CmpF64);
 }
 
 static const HChar *
 s390_irgen_CXBR(UChar r1, UChar r2)
 {
-   IRTemp op1 = newTemp(Ity_F128);
-   IRTemp op2 = newTemp(Ity_F128);
+   return s390_irgen_CxBR("cxbr", r1, r2, Ity_F128, Iop_CmpF128);
+}
+
+static const HChar *
+s390_irgen_KXBR(UChar r1, UChar r2)
+{
+   return s390_irgen_CxBR("kxbr", r1, r2, Ity_F128, Iop_CmpF128);
+}
+
+/* Helper for "compare" insns CEB, CDB, and their signalling counterparts. */
+static const HChar *
+s390_irgen_CxB(const HChar *mnem, UChar r1, IRTemp op2addr, IRType type,
+               IROp cmp_op)
+{
+   IRTemp op1 = newTemp(type);
+   IRTemp op2 = newTemp(type);
    IRTemp cc_vex  = newTemp(Ity_I32);
    IRTemp cc_s390 = newTemp(Ity_I32);
 
-   assign(op1, get_fpr_pair(r1));
-   assign(op2, get_fpr_pair(r2));
-   assign(cc_vex, binop(Iop_CmpF128, mkexpr(op1), mkexpr(op2)));
+   assign(op1, get_fpr_float(r1, type));
+   assign(op2, load(type, mkexpr(op2addr)));
+   assign(cc_vex,  binop(cmp_op, mkexpr(op1), mkexpr(op2)));
 
    assign(cc_s390, convert_vex_bfpcc_to_s390(cc_vex));
    s390_cc_thunk_put1(S390_CC_OP_SET, cc_s390, False);
-
-   return "cxbr";
+   return mnem;
 }
 
 static const HChar *
 s390_irgen_CEB(UChar r1, IRTemp op2addr)
 {
-   IRTemp op1 = newTemp(Ity_F32);
-   IRTemp op2 = newTemp(Ity_F32);
-   IRTemp cc_vex  = newTemp(Ity_I32);
-   IRTemp cc_s390 = newTemp(Ity_I32);
+   return s390_irgen_CxB("ceb", r1, op2addr, Ity_F32, Iop_CmpF32);
+}
 
-   assign(op1, get_fpr_w0(r1));
-   assign(op2, load(Ity_F32, mkexpr(op2addr)));
-   assign(cc_vex,  binop(Iop_CmpF32, mkexpr(op1), mkexpr(op2)));
-
-   assign(cc_s390, convert_vex_bfpcc_to_s390(cc_vex));
-   s390_cc_thunk_put1(S390_CC_OP_SET, cc_s390, False);
-
-   return "ceb";
+static const HChar *
+s390_irgen_KEB(UChar r1, IRTemp op2addr)
+{
+   return s390_irgen_CxB("keb", r1, op2addr, Ity_F32, Iop_CmpF32);
+   return "keb";
 }
 
 static const HChar *
 s390_irgen_CDB(UChar r1, IRTemp op2addr)
 {
-   IRTemp op1 = newTemp(Ity_F64);
-   IRTemp op2 = newTemp(Ity_F64);
-   IRTemp cc_vex  = newTemp(Ity_I32);
-   IRTemp cc_s390 = newTemp(Ity_I32);
+   return s390_irgen_CxB("cdb", r1, op2addr, Ity_F64, Iop_CmpF64);
+}
 
-   assign(op1, get_fpr_dw0(r1));
-   assign(op2, load(Ity_F64, mkexpr(op2addr)));
-   assign(cc_vex, binop(Iop_CmpF64, mkexpr(op1), mkexpr(op2)));
-
-   assign(cc_s390, convert_vex_bfpcc_to_s390(cc_vex));
-   s390_cc_thunk_put1(S390_CC_OP_SET, cc_s390, False);
-
-   return "cdb";
+static const HChar *
+s390_irgen_KDB(UChar r1, IRTemp op2addr)
+{
+   return s390_irgen_CxB("kdb", r1, op2addr, Ity_F64, Iop_CmpF64);
 }
 
 static const HChar *
@@ -19270,7 +19289,8 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb306: s390_format_RRE_FF(s390_irgen_LXEBR, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;
    case 0xb307: /* MXDBR */ goto unimplemented;
-   case 0xb308: /* KEBR */ goto unimplemented;
+   case 0xb308: s390_format_RRE_FF(s390_irgen_KEBR, RRE_r1(ovl),
+                                   RRE_r2(ovl));  goto ok;
    case 0xb309: s390_format_RRE_FF(s390_irgen_CEBR, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;
    case 0xb30a: s390_format_RRE_FF(s390_irgen_AEBR, RRE_r1(ovl),
@@ -19300,7 +19320,8 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
                                    RRE_r2(ovl));  goto ok;
    case 0xb317: s390_format_RRE_FF(s390_irgen_MEEBR, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;
-   case 0xb318: /* KDBR */ goto unimplemented;
+   case 0xb318: s390_format_RRE_FF(s390_irgen_KDBR, RRE_r1(ovl),
+                                   RRE_r2(ovl));  goto ok;
    case 0xb319: s390_format_RRE_FF(s390_irgen_CDBR, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;
    case 0xb31a: s390_format_RRE_FF(s390_irgen_ADBR, RRE_r1(ovl),
@@ -19351,7 +19372,8 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb347: s390_format_RRF_UUFF(s390_irgen_FIXBRA, RRF2_m3(ovl),
                                      RRF2_m4(ovl), RRF2_r1(ovl),
                                      RRF2_r2(ovl));  goto ok;
-   case 0xb348: /* KXBR */ goto unimplemented;
+   case 0xb348: s390_format_RRE_FF(s390_irgen_KXBR, RRE_r1(ovl),
+                                   RRE_r2(ovl));  goto ok;
    case 0xb349: s390_format_RRE_FF(s390_irgen_CXBR, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;
    case 0xb34a: s390_format_RRE_FF(s390_irgen_AXBR, RRE_r1(ovl),
@@ -21408,7 +21430,9 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                 RXE_x2(ovl), RXE_b2(ovl),
                                                 RXE_d2(ovl));  goto ok;
    case 0xed0000000007ULL: /* MXDB */ goto unimplemented;
-   case 0xed0000000008ULL: /* KEB */ goto unimplemented;
+   case 0xed0000000008ULL: s390_format_RXE_FRRD(s390_irgen_KEB, RXE_r1(ovl),
+                                                RXE_x2(ovl), RXE_b2(ovl),
+                                                RXE_d2(ovl));  goto ok;
    case 0xed0000000009ULL: s390_format_RXE_FRRD(s390_irgen_CEB, RXE_r1(ovl),
                                                 RXE_x2(ovl), RXE_b2(ovl),
                                                 RXE_d2(ovl));  goto ok;
@@ -21448,7 +21472,9 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
    case 0xed0000000017ULL: s390_format_RXE_FRRD(s390_irgen_MEEB, RXE_r1(ovl),
                                                 RXE_x2(ovl), RXE_b2(ovl),
                                                 RXE_d2(ovl));  goto ok;
-   case 0xed0000000018ULL: /* KDB */ goto unimplemented;
+   case 0xed0000000018ULL: s390_format_RXE_FRRD(s390_irgen_KDB, RXE_r1(ovl),
+                                                RXE_x2(ovl), RXE_b2(ovl),
+                                                RXE_d2(ovl));  goto ok;
    case 0xed0000000019ULL: s390_format_RXE_FRRD(s390_irgen_CDB, RXE_r1(ovl),
                                                 RXE_x2(ovl), RXE_b2(ovl),
                                                 RXE_d2(ovl));  goto ok;

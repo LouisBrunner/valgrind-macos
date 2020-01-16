@@ -105,6 +105,7 @@ where XXXXXX is the bug number as listed below.
 415757  vex x86->IR: 0x66 0xF 0xCE 0x4F (bswapw)
 416239  valgrind crashes when handling clock_adjtime
 416286  DRD reports "conflicting load" error on std::mutex::lock()
+416301  s390x: "compare and signal" not supported
 416387  finit_module and bpf syscalls are unhandled on arm64
 416464  Fix false reports for uninitialized memory for PR_CAPBSET_READ/DROP
 n-i-bz  Fix minor one time leaks in dhat.

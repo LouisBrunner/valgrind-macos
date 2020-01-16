@@ -364,30 +364,37 @@ static MutexT DRD_(thread_to_drd_mutex_type)(int type)
  */
 static __always_inline MutexT DRD_(mutex_type)(pthread_mutex_t* mutex)
 {
+   MutexT mutex_type = mutex_type_unknown;
+
+   ANNOTATE_IGNORE_READS_BEGIN();
 #if defined(HAVE_PTHREAD_MUTEX_T__M_KIND)
    /* glibc + LinuxThreads. */
    if (IS_ALIGNED(&mutex->__m_kind))
    {
       const int kind = mutex->__m_kind & 3;
-      return DRD_(pthread_to_drd_mutex_type)(kind);
+      mutex_type = DRD_(pthread_to_drd_mutex_type)(kind);
    }
 #elif defined(HAVE_PTHREAD_MUTEX_T__DATA__KIND)
    /* glibc + NPTL. */
    if (IS_ALIGNED(&mutex->__data.__kind))
    {
       const int kind = mutex->__data.__kind & 3;
-      return DRD_(pthread_to_drd_mutex_type)(kind);
+      mutex_type = DRD_(pthread_to_drd_mutex_type)(kind);
    }
 #elif defined(VGO_solaris)
+   {
       const int type = ((mutex_t *) mutex)->vki_mutex_type;
-      return DRD_(thread_to_drd_mutex_type)(type);
+      mutex_type = DRD_(thread_to_drd_mutex_type)(type);
+   }
 #else
    /*
     * Another POSIX threads implementation. The mutex type won't be printed
     * when enabling --trace-mutex=yes.
     */
 #endif
-   return mutex_type_unknown;
+   ANNOTATE_IGNORE_READS_END();
+
+   return mutex_type;
 }
 
 /**

@@ -271,7 +271,7 @@ EXTRA_DIST =                                        \
 	sigaltstack.stderr.exp                      \
 	sigaltstack.vgtest                          \
 	std_atomic.stderr.exp		  	    \
-	std_atomic.vgtest			            \
+	std_atomic.vgtest			    \
 	std_list.stderr.exp		  	    \
 	std_list.vgtest			            \
 	std_string.stderr.exp		  	    \

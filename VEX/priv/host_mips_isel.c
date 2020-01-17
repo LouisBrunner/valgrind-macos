@@ -2851,8 +2851,9 @@ static HReg iselV128Expr_wrk(ISelEnv* env, IRExpr* e) {
       HReg v_dst = newVRegV(env);
 #if defined(_MIPSEB)
       HReg r_addr = newVRegI(env);
+      vassert(!(e->Iex.Get.offset & ~0x7FFF));
       addInstr(env, MIPSInstr_Alu(mode64 ? Malu_DADD : Malu_ADD, r_addr, GuestStatePointer(mode64),
-                                  MIPSRH_Imm(False, e->Iex.Get.offset)));
+                                  MIPSRH_Imm(True, e->Iex.Get.offset)));
       addInstr(env, MIPSInstr_MsaMi10(MSA_LD, 0, r_addr, v_dst, MSA_B));
 #else
       vassert(!(e->Iex.Get.offset & 7));
@@ -6974,9 +6975,10 @@ static void iselStmt(ISelEnv * env, IRStmt * stmt)
             vassert(has_msa);
             HReg v_src = iselV128Expr(env, stmt->Ist.Put.data);
 #if defined(_MIPSEB)
+            vassert(!(stmt->Ist.Put.offset & ~0x7FFF));
             HReg r_addr = newVRegI(env);
             addInstr(env, MIPSInstr_Alu(mode64 ? Malu_DADD : Malu_ADD, r_addr, GuestStatePointer(mode64),
-                                        MIPSRH_Imm(False, stmt->Ist.Put.offset)));
+                                        MIPSRH_Imm(True, stmt->Ist.Put.offset)));
             addInstr(env, MIPSInstr_MsaMi10(MSA_ST, 0, r_addr, v_src, MSA_B));
 #else
             vassert(!(stmt->Ist.Put.offset & 7));

@@ -805,14 +805,14 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_process_vm_readv,  sys_process_vm_readv),  // 270
    LINX_(__NR_process_vm_writev, sys_process_vm_writev), // 271
    LINX_(__NR_kcmp,              sys_kcmp),              // 272
-   //   (__NR_finit_module,      sys_ni_syscall),        // 273
+   LINX_(__NR_finit_module,      sys_finit_module),      // 273
    //   (__NR_sched_setattr,     sys_ni_syscall),        // 274
    //   (__NR_sched_getattr,     sys_ni_syscall),        // 275
    LINX_(__NR_renameat2,         sys_renameat2),         // 276
    //   (__NR_seccomp,           sys_ni_syscall),        // 277
    LINXY(__NR_getrandom,         sys_getrandom),         // 278
    LINXY(__NR_memfd_create,      sys_memfd_create),      // 279
-   //   (__NR_bpf,               sys_ni_syscall)         // 280
+   LINXY(__NR_bpf,               sys_bpf),               // 280
    //   (__NR_execveat,          sys_ni_syscall),        // 281
    //   (__NR_userfaultfd,       sys_ni_syscall),        // 282
    LINX_(__NR_membarrier,        sys_membarrier),        // 283

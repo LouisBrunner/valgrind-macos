@@ -98,11 +98,15 @@ int main () {
    /* Test log. */
    printf("log(M_E): %lf\n", log(M_E));
 
+   #define EPS 0.0000001
    /* Test tgamma. */
-   printf("tgamma(5.0): %lf\n", tgamma(5.0));
+   double tgamma5 = tgamma(5.0);
+   printf(tgamma5 <= 24.0 + EPS && tgamma5 >= 24.0 - EPS ? "tgamma(5.0): PASS\n" : "tgamma(5.0): FAIL\n");
 
    /* Test cbrt. */
-   printf("cbrt(27.0): %lf\n", cbrt(cube));
+   double cbrt27 = cbrt(cube);
+   printf(cbrt27 <= 3.0 + EPS && cbrt27 >= 3.0 - EPS ? "cbrt(27.0): PASS\n" : "cbrt(27.0): FAIL\n");
+   #undef EPS
 
    /* Test dividing by zero. */
    // Clearing clears.

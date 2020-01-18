@@ -97,7 +97,9 @@ where XXXXXX is the bug number as listed below.
 413330  avx-1 test fails on AMD EPYC 7401P 24-Core Processor
 413603  callgrind_annotate/cg_annotate truncate function names at '#'
 414565  Specific use case bug found in SysRes VG_(do_sys_sigprocmask)
+416239  valgrind crashes when handling clock_adjtime
 416286  DRD reports "conflicting load" error on std::mutex::lock()
+416387  finit_module and bpf syscalls are unhandled on arm64
 
 n-i-bz  Fix minor one time leaks in dhat.
 n-i-bz  Add --run-cxx-freeres=no in outer args to avoid inner crashes.

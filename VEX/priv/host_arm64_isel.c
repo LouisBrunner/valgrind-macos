@@ -3035,10 +3035,9 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
 
    } /* if (e->tag == Iex_Triop) */
 
-   if (0 && e->tag == Iex_ITE) {
-      /* JRS 2019Nov24: I think this is right, and it is somewhat tested, but
-         not as much as I'd like.  Hence disabled till it can be tested more. */
-      // This is pretty feeble.  We'd do better to generate BSL here.
+   if (e->tag == Iex_ITE) {
+      // This code sequence is pretty feeble.  We'd do better to generate BSL
+      // here.
       HReg rX = newVRegI(env);
 
       ARM64CondCode cc = iselCondCode(env, e->Iex.ITE.cond);

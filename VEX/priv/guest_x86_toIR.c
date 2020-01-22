@@ -14676,15 +14676,21 @@ DisResult disInstr_X86_WRK (
       case 0xCD:
       case 0xCE:
       case 0xCF: /* BSWAP %edi */
-         /* AFAICS from the Intel docs, this only exists at size 4. */
-         if (sz != 4) goto decode_failure;
-         
-         t1 = newTemp(Ity_I32);
-         assign( t1, getIReg(4, opc-0xC8) );
-         t2 = math_BSWAP(t1, Ity_I32);
-
-         putIReg(4, opc-0xC8, mkexpr(t2));
-         DIP("bswapl %s\n", nameIReg(4, opc-0xC8));
+         /* According to the Intel and AMD docs, 16-bit BSWAP is undefined.
+          * However, the result of a 16-bit BSWAP is always zero in every Intel
+          * and AMD CPU, and some software depends on this behavior. */
+         if (sz == 2) {
+            putIReg(2, opc-0xC8, mkU16(0));
+            DIP("bswapw %s\n", nameIReg(2, opc-0xC8));
+         } else if (sz == 4) {
+            t1 = newTemp(Ity_I32);
+            assign( t1, getIReg(4, opc-0xC8) );
+            t2 = math_BSWAP(t1, Ity_I32);
+            putIReg(4, opc-0xC8, mkexpr(t2));
+            DIP("bswapl %s\n", nameIReg(4, opc-0xC8));
+         } else {
+            goto decode_failure;
+         }
          break;
 
       /* =-=-=-=-=-=-=-=-=- BT/BTS/BTR/BTC =-=-=-=-=-=-= */

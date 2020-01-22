@@ -86,6 +86,7 @@ where XXXXXX is the bug number as listed below.
 409141  Valgrind hangs when SIGKILLed
 409206  Support for Linux PPS and PTP ioctls
 409367  exit_group() after signal to thread waiting in futex() causes hangs
+409429  amd64: recognize 'cmpeq' variants as a dependency breaking idiom
 409780  References to non-existent configure.in
 410556  Add support for BLKIO{MIN,OPT} and BLKALIGNOFF ioctls
 410599  Non-deterministic behaviour of pth_self_kill_15_other test

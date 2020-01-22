@@ -36,6 +36,12 @@ of 3.15.0.  It doesn't carry over bugs from earlier versions.
 415621  epoll_ctl reports for uninitialized padding
         * maybe an inaccurate wrapper; may be easy to fix?
 
+416285  Use prlimit64 in VG_(getrlimit) and VG_(setrlimit)
+        * HOST-SIDE syscall; may become important
+
+416464  Fix false reports for uninitialized memory for PR_CAPBSET_READ/DROP
+        * Has patch; should land
+
 === KernelInterface/OS X ===============================================
 
 407933  VgTs_Runnable syscall mach:50 (lwpid 771)
@@ -51,6 +57,8 @@ of 3.15.0.  It doesn't carry over bugs from earlier versions.
 413369  unhandled syscall getpgid
 
 413410  Mac Os 10.15 valgrind 3.15.0 (== 412745 ?)
+
+416436  Unrecognised instruction in (__pthread_init.cold.2) macOS 10.15
 
 === MPI ================================================================
 
@@ -86,10 +94,6 @@ of 3.15.0.  It doesn't carry over bugs from earlier versions.
 407589  Add support for C11 aligned_alloc() and GNU reallocarray()
         * Missing allocation intercepts?
 
-409429  False positives at unexpected location due to failure to recognize
-        cmpeq as a dependency breaking idiom (fixed in grail?  check this)
-        * In grail: 96de5118f5332ae145912ebe91b8fa143df74b8d
-        (but not merged from it; needs doing separately)
 
 415141  Possible leak with calling __libc_freeres before
         all thread's tid_addresses are cleared
@@ -148,7 +152,14 @@ of 3.15.0.  It doesn't carry over bugs from earlier versions.
 === VEX/other ==========================================================
 === VEX/ppc ============================================================
 === VEX/s390x ==========================================================
+
+416301  s390x: "compare and signal" not supported
+        * Potentially important (??)
+
 === VEX/x86 ============================================================
+
+415757  vex x86->IR: 0x66 0xF 0xCE 0x4F (bswapw)
+
 === zz_other ===========================================================
 
 414278  VG_(memcpy) used for overlapping moves
@@ -180,7 +191,10 @@ of 3.15.0.  It doesn't carry over bugs from earlier versions.
 === zz_other/x86 =======================================================
 
 
--- Sat 28 Dec 10:39:06 CET 2019
+-- Wed 22 Jan 08:57:09 CET 2020
+
+
+==================
 
 Extras
 (not new) 319393  bad rounding in cvtsi2ss instruction
@@ -190,3 +204,11 @@ apply included fixes for Xen 4.6/4.7/4.8/4.9/4.10/4.11/4.12  390553 ?
 Can we get rid of exp-sgcheck now?
 
 Very large executable support -- adjust tool load address?  Status?
+
+statx hacks for Rust, Ryan Cummins, dev@, 21 Dec 2019 ?
+
+port the ZF-after-BTx fixes over to x86?
+
+Bug 385386 - Assertion failed "szB >= CACHE_ENTRY_SIZE" on
+m_debuginfo/image.c:517
+There is a patch which seems plausible.  Check and apply.

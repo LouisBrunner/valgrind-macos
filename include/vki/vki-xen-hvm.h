@@ -106,6 +106,84 @@ struct vki_xen_hvm_inject_trap {
 };
 typedef struct vki_xen_hvm_inject_trap vki_xen_hvm_inject_trap_t;
 
+#define VKI_XEN_HVMOP_altp2m 25
+#define VKI_XEN_HVMOP_altp2m_get_domain_state     1
+#define VKI_XEN_HVMOP_altp2m_set_domain_state     2
+#define VKI_XEN_HVMOP_altp2m_vcpu_enable_notify   3
+#define VKI_XEN_HVMOP_altp2m_create_p2m           4
+#define VKI_XEN_HVMOP_altp2m_destroy_p2m          5
+#define VKI_XEN_HVMOP_altp2m_switch_p2m           6
+#define VKI_XEN_HVMOP_altp2m_set_mem_access       7
+#define VKI_XEN_HVMOP_altp2m_change_gfn           8
+struct vki_xen_hvm_altp2m_domain_state {
+    /* IN or OUT variable on/off */
+    vki_uint8_t state;
+};
+typedef struct vki_xen_hvm_altp2m_domain_state vki_xen_hvm_altp2m_domain_state_t;
+DEFINE_VKI_XEN_GUEST_HANDLE(vki_xen_hvm_altp2m_domain_state_t);
+
+struct vki_xen_hvm_altp2m_vcpu_enable_notify {
+    vki_uint32_t vcpu_id;
+    vki_uint32_t pad;
+    /* #VE info area gfn */
+    vki_uint64_t gfn;
+};
+typedef struct vki_xen_hvm_altp2m_vcpu_enable_notify vki_xen_hvm_altp2m_vcpu_enable_notify_t;
+DEFINE_VKI_XEN_GUEST_HANDLE(vki_xen_hvm_altp2m_vcpu_enable_notify_t);
+
+struct vki_xen_hvm_altp2m_view {
+    /* IN/OUT variable */
+    vki_uint16_t view;
+    /* Create view only: default access type
+     * NOTE: currently ignored */
+    vki_uint16_t hvmmem_default_access; /* xenmem_access_t */
+};
+typedef struct vki_xen_hvm_altp2m_view vki_xen_hvm_altp2m_view_t;
+DEFINE_VKI_XEN_GUEST_HANDLE(vki_xen_hvm_altp2m_view_t);
+
+struct vki_xen_hvm_altp2m_set_mem_access {
+    /* view */
+    vki_uint16_t view;
+    /* Memory type */
+    vki_uint16_t hvmmem_access; /* xenmem_access_t */
+    vki_uint32_t pad;
+    /* gfn */
+    vki_uint64_t gfn;
+};
+typedef struct vki_xen_hvm_altp2m_set_mem_access vki_xen_hvm_altp2m_set_mem_access_t;
+DEFINE_VKI_XEN_GUEST_HANDLE(vki_xen_hvm_altp2m_set_mem_access_t);
+
+struct vki_xen_hvm_altp2m_change_gfn {
+    /* view */
+    vki_uint16_t view;
+    vki_uint16_t pad1;
+    vki_uint32_t pad2;
+    /* old gfn */
+    vki_uint64_t old_gfn;
+    /* new gfn, INVALID_GFN (~0UL) means revert */
+    vki_uint64_t new_gfn;
+};
+typedef struct vki_xen_hvm_altp2m_change_gfn vki_xen_hvm_altp2m_change_gfn_t;
+DEFINE_VKI_XEN_GUEST_HANDLE(vki_xen_hvm_altp2m_change_gfn_t);
+
+struct vki_xen_hvm_altp2m_op {
+    vki_uint32_t version;   /* HVMOP_ALTP2M_INTERFACE_VERSION */
+    vki_uint32_t cmd;
+    vki_xen_domid_t domain;
+    vki_uint16_t pad1;
+    vki_uint32_t pad2;
+    union {
+        struct vki_xen_hvm_altp2m_domain_state       domain_state;
+        struct vki_xen_hvm_altp2m_vcpu_enable_notify enable_notify;
+        struct vki_xen_hvm_altp2m_view               view;
+        struct vki_xen_hvm_altp2m_set_mem_access     set_mem_access;
+        struct vki_xen_hvm_altp2m_change_gfn         change_gfn;
+        vki_uint8_t pad[64];
+    } u;
+};
+typedef struct vki_xen_hvm_altp2m_op vki_xen_hvm_altp2m_op_t;
+DEFINE_VKI_XEN_GUEST_HANDLE(vki_xen_hvm_altp2m_op_t);
+
 #endif // __VKI_XEN_HVM_H
 
 /*--------------------------------------------------------------------*/

@@ -1524,6 +1524,12 @@ PRE(sys_prctl)
          PRE_REG_READ2(int, "prctl", int, option, int, mode);
       }
       break;
+   case VKI_PR_CAPBSET_READ:
+      PRE_REG_READ2(int, "prctl", int, option, int, capability);
+      break;
+   case VKI_PR_CAPBSET_DROP:
+      PRE_REG_READ2(int, "prctl", int, option, int, capability);
+      break;
    default:
       PRE_REG_READ5(long, "prctl",
                     int, option, unsigned long, arg2, unsigned long, arg3,

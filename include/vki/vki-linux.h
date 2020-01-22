@@ -2607,7 +2607,52 @@ struct vki_vt_consize {
 
 #define VKI_PR_SET_SECCOMP 22
 
+#define VKI_PR_CAPBSET_READ 23
+#define VKI_PR_CAPBSET_DROP 24
+
+#define VKI_PR_GET_TSC 25
+#define VKI_PR_SET_TSC 26
+
+#define VKI_PR_GET_SECUREBITS 27
+#define VKI_PR_SET_SECUREBITS 28
+
+#define VKI_PR_SET_TIMERSLACK 29
+#define VKI_PR_GET_TIMERSLACK 30
+
+#define VKI_PR_TASK_PERF_EVENTS_DISABLE		31
+#define VKI_PR_TASK_PERF_EVENTS_ENABLE		32
+
+#define VKI_PR_MCE_KILL	33
+#define VKI_PR_MCE_KILL_GET 34
+
 #define VKI_PR_SET_PTRACER 0x59616d61
+
+#define VKI_PR_SET_CHILD_SUBREAPER	36
+#define VKI_PR_GET_CHILD_SUBREAPER	37
+
+#define VKI_PR_SET_NO_NEW_PRIVS	38
+#define VKI_PR_GET_NO_NEW_PRIVS	39
+
+#define VKI_PR_GET_TID_ADDRESS	40
+
+#define VKI_PR_SET_THP_DISABLE	41
+#define VKI_PR_GET_THP_DISABLE	42
+
+#define VKI_PR_MPX_ENABLE_MANAGEMENT  43
+#define VKI_PR_MPX_DISABLE_MANAGEMENT 44
+
+#define VKI_PR_SET_FP_MODE		45
+#define VKI_PR_GET_FP_MODE		46
+
+#define VKI_PR_CAP_AMBIENT		47
+
+#define VKI_PR_SVE_SET_VL		50
+#define VKI_PR_SVE_GET_VL		51
+#define VKI_PR_GET_SPECULATION_CTRL	52
+#define VKI_PR_SET_SPECULATION_CTRL	53
+#define VKI_PR_PAC_RESET_KEYS		54
+#define VKI_PR_SET_TAGGED_ADDR_CTRL	55
+#define VKI_PR_GET_TAGGED_ADDR_CTRL	56
 
 //----------------------------------------------------------------------
 // From linux-2.6.19/include/linux/usbdevice_fs.h

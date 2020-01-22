@@ -7247,10 +7247,10 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
 
    /* ------------------ DC_CVAU ------------------ */
    /* D5 0B 7B 001 Rt  dc cvau, rT
+      D5 0B 7E 001 Rt  dc civac, rT
    */
-   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD50B7B20) {
-      /* JRS 2019Nov24: should we handle DC_CIVAC the same?
-         || (INSN(31,0) & 0xFFFFFFE0) == 0xD50B7E20 */
+   if (   (INSN(31,0) & 0xFFFFFFE0) == 0xD50B7B20
+       || (INSN(31,0) & 0xFFFFFFE0) == 0xD50B7E20) {
       /* Exactly the same scheme as for IC IVAU, except we observe the
          dMinLine size, and request an Ijk_FlushDCache instead of
          Ijk_InvalICache. */

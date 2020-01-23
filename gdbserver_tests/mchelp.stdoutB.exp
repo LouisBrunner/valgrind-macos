@@ -87,7 +87,7 @@ debugging valgrind internals monitor commands:
     Valgrind internal host status/memory
   v.translate <addr> [<traceflags>]  : debug translation of <addr> with <traceflags>
     (default traceflags 0b00100000 : show after instrumentation)
-   An additional flag  0b100000000 allows to show gdbserver instrumentation
+   An additional flag  0b100000000 allows one to show gdbserver instrumentation
 memcheck monitor commands:
   xb <addr> [<len>]
         prints validity bits for <len> (or 1) bytes at <addr>

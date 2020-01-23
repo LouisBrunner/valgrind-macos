@@ -258,7 +258,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
 "    Valgrind internal host status/memory\n"
 "  v.translate <addr> [<traceflags>]  : debug translation of <addr> with <traceflags>\n"
 "    (default traceflags 0b00100000 : show after instrumentation)\n"
-"   An additional flag  0b100000000 allows to show gdbserver instrumentation\n");
+"   An additional flag  0b100000000 allows one to show gdbserver instrumentation\n");
       }
       break;
    case  1: /* v.set */

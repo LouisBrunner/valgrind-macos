@@ -2245,7 +2245,7 @@ void do_client_request ( ThreadId tid )
       "to recompile such code, using the header files from this version of\n"
       "Valgrind, and not any previous version.\n"
       "\n"
-      "If you see this mesage in any other circumstances, it is probably\n"
+      "If you see this message in any other circumstances, it is probably\n"
       "a bug in Valgrind.  In this case, please file a bug report at\n"
       "\n"
       "   http://www.valgrind.org/support/bug_reports.html\n"

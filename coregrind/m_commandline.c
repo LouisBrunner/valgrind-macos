@@ -66,7 +66,7 @@ static HChar* read_dot_valgrindrc ( const HChar* dir )
    if ( !sr_isError(fd) ) {
       Int res = VG_(fstat)( sr_Res(fd), &stat_buf );
       /* Ignore if not owned by the current user, or is not a regular file,
-         or is world writeable (CVE-2008-4865). */
+         or is world writable (CVE-2008-4865). */
       if (res == 0
           && stat_buf.uid == VG_(geteuid)()
           && VKI_S_ISREG(stat_buf.mode)

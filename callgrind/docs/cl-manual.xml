@@ -363,7 +363,7 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
     Afterwards, instrumentation can be controlled in two ways: first,
     interactively with: <screen>callgrind_control -i on</screen> (and
     switching off again by specifying "off" instead of "on").  Second,
-    instrumentation state can be programatically changed with the
+    instrumentation state can be programmatically changed with the
     macros <computeroutput><xref linkend="cr.start-instr"/>;</computeroutput>
     and <computeroutput><xref linkend="cr.stop-instr"/>;</computeroutput>.
   </para>
@@ -371,7 +371,7 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   <para>Similarly, the collection state at program start can be
     switched off
     by <option><xref linkend="opt.instr-atstart"/>=no</option>. During
-    execution, it can be controlled programatically with the
+    execution, it can be controlled programmatically with the
     macro <computeroutput>CALLGRIND_TOGGLE_COLLECT;</computeroutput>.
     Further, you can limit event collection to a specific function by
     using <option><xref linkend="opt.toggle-collect"/>=function</option>.
@@ -723,7 +723,7 @@ Also see <xref linkend="cl-manual.limits"/>.</para>
       <para>Note that the resulting call graph will most probably not
       contain <function>main</function>, but will contain all the
       functions executed after instrumentation was enabled.
-      Instrumentation can also programatically enabled/disabled. See the
+      Instrumentation can also be programmatically enabled/disabled. See the
       Callgrind include file
       <computeroutput>callgrind.h</computeroutput> for the macro
       you have to use in your source code.</para> <para>For cache

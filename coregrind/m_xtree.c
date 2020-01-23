@@ -977,7 +977,7 @@ void VG_(XT_massif_print)
       FP("n%u: %llu %s\n", n_groups, top_total, header->top_node_desc);
 
       /* Output depth 0 groups. */
-      DMSG(1, "XT_massif_print outputing %u depth 0 groups\n", n_groups);
+      DMSG(1, "XT_massif_print outputting %u depth 0 groups\n", n_groups);
       for (i = 0; i < n_groups; i++)
          ms_output_group(fp, 0, 0, &groups[i], sig_sz, header->sig_threshold);
 

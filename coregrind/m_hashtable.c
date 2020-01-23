@@ -296,7 +296,7 @@ void VG_(HT_print_stats) ( const VgHashTable *table, HT_Cmp_t cmp )
    }
 
    VG_(message)(Vg_DebugMsg, 
-                "nr occurences of"
+                "nr occurrences of"
                 " chains of len N,"
                 " N-plicated keys,"
                 " N-plicated elts\n");

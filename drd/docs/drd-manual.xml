@@ -356,7 +356,7 @@ behavior of the DRD tool itself:</para>
         Data races that occur between a statement at the end of one thread
 	and another thread can be missed if memory access information is
 	discarded immediately after a thread has been joined. This option
-	allows to specify for how many joined threads memory access information
+	allows one to specify for how many joined threads memory access information
 	should be retained.
       </para>
     </listitem>
@@ -455,7 +455,7 @@ behavior of the DRD tool itself:</para>
       <para>
         Perform segment merging only after the specified number of new
         segments have been created. This is an advanced configuration option
-        that allows to choose whether to minimize DRD's memory usage by
+        that allows one to choose whether to minimize DRD's memory usage by
         choosing a low value or to let DRD run faster by choosing a slightly
         higher value. The optimal value for this parameter depends on the
         program being analyzed. The default value works well for most programs.
@@ -1028,7 +1028,7 @@ available macros and client requests are:
       applications contain intentional races. There exist e.g. applications
       where the same value is assigned to a shared variable from two different
       threads. It may be more convenient to suppress such races than to solve
-      these. This client request allows to suppress such races.
+      these. This client request allows one to suppress such races.
     </para>
   </listitem>
   <listitem>
@@ -1069,7 +1069,7 @@ available macros and client requests are:
   <listitem>
     <para>
       The client request <varname>VG_USERREQ__DRD_START_TRACE_ADDR</varname>,
-      which allows to trace all load and store activity for the specified
+      which allows one to trace all load and store activity for the specified
       address range.
     </para>
   </listitem>
@@ -1393,7 +1393,7 @@ More information about Boost.Thread can be found here:
 OpenMP stands for <emphasis>Open Multi-Processing</emphasis>. The OpenMP
 standard consists of a set of compiler directives for C, C++ and Fortran
 programs that allows a compiler to transform a sequential program into a
-parallel program. OpenMP is well suited for HPC applications and allows to
+parallel program. OpenMP is well suited for HPC applications and allows one to
 work at a higher level compared to direct use of the POSIX threads API. While
 OpenMP ensures that the POSIX API is used correctly, OpenMP programs can still
 contain data races. So it definitely makes sense to verify OpenMP programs

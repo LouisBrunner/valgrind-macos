@@ -5198,7 +5198,7 @@ void sanityCheckIRSB ( const IRSB* bb, const HChar* caller,
    if (bb->stmts_used < 0 || bb->stmts_size < 8
        || bb->stmts_used > bb->stmts_size)
       /* this BB is so strange we can't even print it */
-      vpanic("sanityCheckIRSB: stmts array limits wierd");
+      vpanic("sanityCheckIRSB: stmts array limits weird");
 
    /* Ensure each temp has a plausible type. */
    for (i = 0; i < n_temps; i++) {

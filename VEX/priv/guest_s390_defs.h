@@ -261,7 +261,7 @@ extern ULong last_execute_target;
 /* Vector operatons passed to s390x_dirtyhelper_vec_op(...) helper.
    Please don't change ordering of elements and append new items
    before  S390_VEC_OP_LAST. */
-enum {
+typedef enum {
    S390_VEC_OP_INVALID = 0,
    S390_VEC_OP_VPKS = 1,
    S390_VEC_OP_VPKLS = 2,

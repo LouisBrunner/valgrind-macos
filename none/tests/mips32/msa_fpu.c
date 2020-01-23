@@ -66,15 +66,22 @@ union {
    float f[4];
 } frsqrt_out, frsqrt_exp;
 
-unsigned withinEpsOfF(float* p_out, float* p_exp, unsigned long long* data, unsigned offset) {
+#if defined(__mips_msa)
+
+static unsigned withinEpsOfF(float* p_out, float* p_exp,
+                             unsigned long long* data, unsigned offset) {
    unsigned pair1_nan = isnan(p_out[2]) && isnan(p_exp[0]);
    unsigned pair2_nan = isnan(p_out[3]) && isnan(p_exp[1]);
    unsigned pair3_nan = isnan(p_out[0]) && isnan(p_exp[2]);
    unsigned pair4_nan = isnan(p_out[1]) && isnan(p_exp[3]);
-   unsigned pair1_sub = fpclassify(*(((float*)data) + offset/4    )) == FP_SUBNORMAL;
-   unsigned pair2_sub = fpclassify(*(((float*)data) + offset/4 + 1)) == FP_SUBNORMAL;
-   unsigned pair3_sub = fpclassify(*(((float*)data) + offset/4 + 2)) == FP_SUBNORMAL;
-   unsigned pair4_sub = fpclassify(*(((float*)data) + offset/4 + 3)) == FP_SUBNORMAL;
+   unsigned pair1_sub =
+      fpclassify(*(((float*)data) + offset/4    )) == FP_SUBNORMAL;
+   unsigned pair2_sub =
+      fpclassify(*(((float*)data) + offset/4 + 1)) == FP_SUBNORMAL;
+   unsigned pair3_sub =
+      fpclassify(*(((float*)data) + offset/4 + 2)) == FP_SUBNORMAL;
+   unsigned pair4_sub =
+      fpclassify(*(((float*)data) + offset/4 + 3)) == FP_SUBNORMAL;
    if (pair1_sub || pair2_sub || pair3_sub || pair4_sub) {
       unsigned p_out2_int = *(unsigned*)&p_out[2];
       unsigned p_exp0_int = *(unsigned*)&p_exp[0];
@@ -89,17 +96,25 @@ unsigned withinEpsOfF(float* p_out, float* p_exp, unsigned long long* data, unsi
       pair3_sub = abs(p_out0_int - p_exp2_int) <= 1;
       pair4_sub = abs(p_out1_int - p_exp3_int) <= 1;
    }
-   return (pair1_nan || pair1_sub || ((p_out[2] <= p_exp[0] + EPS) && (p_out[2] >= p_exp[0] - EPS))) &&
-          (pair2_nan || pair2_sub || ((p_out[3] <= p_exp[1] + EPS) && (p_out[3] >= p_exp[1] - EPS))) &&
-          (pair3_nan || pair3_sub || ((p_out[0] <= p_exp[2] + EPS) && (p_out[0] >= p_exp[2] - EPS))) &&
-          (pair4_nan || pair4_sub || ((p_out[1] <= p_exp[3] + EPS) && (p_out[1] >= p_exp[3] - EPS)));
+   return (pair1_nan || pair1_sub || ((p_out[2] <= p_exp[0] + EPS) &&
+           (p_out[2] >= p_exp[0] - EPS))) &&
+          (pair2_nan || pair2_sub || ((p_out[3] <= p_exp[1] + EPS) &&
+           (p_out[3] >= p_exp[1] - EPS))) &&
+          (pair3_nan || pair3_sub || ((p_out[0] <= p_exp[2] + EPS) &&
+           (p_out[0] >= p_exp[2] - EPS))) &&
+          (pair4_nan || pair4_sub || ((p_out[1] <= p_exp[3] + EPS) &&
+           (p_out[1] >= p_exp[3] - EPS)));
 
 }
-unsigned withinEpsOfD(double* p_out, double* p_exp, unsigned long long* data, unsigned offset) {
+
+static unsigned withinEpsOfD(double* p_out, double* p_exp,
+                             unsigned long long* data, unsigned offset) {
    unsigned pair1_nan = isnan(p_out[0]) && isnan(p_exp[1]);
    unsigned pair2_nan = isnan(p_out[1]) && isnan(p_exp[0]);
-   unsigned pair1_sub = fpclassify(*(((double*)data) + offset/8    )) == FP_SUBNORMAL;
-   unsigned pair2_sub = fpclassify(*(((double*)data) + offset/8 + 1)) == FP_SUBNORMAL;
+   unsigned pair1_sub =
+      fpclassify(*(((double*)data) + offset/8    )) == FP_SUBNORMAL;
+   unsigned pair2_sub =
+      fpclassify(*(((double*)data) + offset/8 + 1)) == FP_SUBNORMAL;
    if (pair1_sub || pair2_sub) {
       unsigned long p_out0_int = *(unsigned long*)&p_out[0];
       unsigned long p_exp1_int = *(unsigned long*)&p_exp[1];
@@ -108,9 +123,13 @@ unsigned withinEpsOfD(double* p_out, double* p_exp, unsigned long long* data, un
       pair1_sub = labs(p_out0_int - p_exp1_int) <= 1;
       pair2_sub = labs(p_out1_int - p_exp0_int) <= 1;
    }
-   return (pair1_nan || pair1_sub || ((p_out[0] <= p_exp[1] + EPS) && (p_out[0] >= p_exp[1] - EPS))) &&
-          (pair2_nan || pair2_sub || ((p_out[1] <= p_exp[0] + EPS) && (p_out[1] >= p_exp[0] - EPS)));
+   return (pair1_nan || pair1_sub || ((p_out[0] <= p_exp[1] + EPS) &&
+           (p_out[0] >= p_exp[1] - EPS))) &&
+          (pair2_nan || pair2_sub || ((p_out[1] <= p_exp[0] + EPS) &&
+           (p_out[1] >= p_exp[0] - EPS)));
 }
+
+#endif
 
 #define TEST_3RF(instruction, data, offset1, offset2, WD, WS, WT)      \
 {                                                                      \
@@ -11541,268 +11560,524 @@ int main(int argc, char **argv) {
 
    // Duplicated for each of the rounding modes
    msacsr = 0;
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w0,  w10, 0x7fc000007fc00000, 0x7fc000003fb504f3);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w1,  w20, 0x7fc000003d1abca5, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w2,  w26, 0xff8000007fc00000, 0x7fc000003d1abca5);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w3,  w12, 0x7f8000003d44c9f8, 0xff8000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w4,   w0, 0x5f21e89b7fc00000, 0x7f8000003d44c9f8);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w5,  w22, 0x3bd77f463f741620, 0x5f21e89b7fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w6,  w26, 0x000000007fc00000, 0x3bd77f463f741620);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w7,  w14, 0x7fc000007fc00000, 0x000000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w8,   w8, 0x3d2aaaab3c7349e0, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w9,  w17, 0x3d2aaaab3d2aaaab, 0x3d2aaaab3c7349e0);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w10, w28, 0x7fc000007fc00000, 0x7fc000003fb504f3);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w11,  w8, 0x7fc000003d1abca5, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w12, w16, 0xff8000007fc00000, 0x7fc000003d1abca5);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w13,  w9, 0x7f8000003d44c9f8, 0xff8000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w14,  w3, 0x5f21e89b7fc00000, 0x7f8000003d44c9f8);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w15, w21, 0x3bd77f463f741620, 0x5f21e89b7fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w16,  w9, 0x000000007fc00000, 0x3bd77f463f741620);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w17, w14, 0x7fc000007fc00000, 0x000000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w18, w10, 0x3d2aaaab3c7349e0, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w19, w17, 0x3d2aaaab3d2aaaab, 0x3d2aaaab3c7349e0);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w20, w25, 0x7fc000007fc00000, 0x7fc000003fb504f3);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w21,  w7, 0x7fc000003d1abca5, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w22, w26, 0xff8000007fc00000, 0x7fc000003d1abca5);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w23, w28, 0x7f8000003d44c9f8, 0xff8000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w24,  w4, 0x5f21e89b7fc00000, 0x7f8000003d44c9f8);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w25,  w8, 0x3bd77f463f741620, 0x5f21e89b7fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w26,  w1, 0x000000007fc00000, 0x3bd77f463f741620);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w27, w13, 0x7fc000007fc00000, 0x000000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w28, w14, 0x3d2aaaab3c7349e0, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w29, w12, 0x3d2aaaab3d2aaaab, 0x3d2aaaab3c7349e0);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w30, w30, 0x7fc000007fc00000, 0x7fc000003fb504f3);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w31, w17, 0x7fc000003d1abca5, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w0,   w2, 0x3ff6a09e667f3bcd, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w1,  w14, 0x7ff8000000000000, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w2,  w24, 0x3fa35794ad44f3ee, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w3,  w20, 0x7ff8000000000000, 0xfff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w4,  w25, 0x3fa8993eff4a591f, 0x7ff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w5,   w0, 0x7ff8000000000000, 0x604a20bd700c2c3e);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w6,  w26, 0x3fee82c3f9d89e1b, 0x3f458a24b20e5b9e);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w7,  w26, 0x7ff8000000000000, 0x0000000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w8,   w8, 0x3f733bbfdc427cac, 0x3fa5555555555555);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w9,  w19, 0x3fa5555555555555, 0x3fa5555555555555);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w10, w27, 0x3ff6a09e667f3bcd, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w11,  w8, 0x7ff8000000000000, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w12,  w2, 0x3fa35794ad44f3ee, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w13, w31, 0x7ff8000000000000, 0xfff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w14,  w0, 0x3fa8993eff4a591f, 0x7ff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w15, w30, 0x7ff8000000000000, 0x604a20bd700c2c3e);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w16,  w5, 0x3fee82c3f9d89e1b, 0x3f458a24b20e5b9e);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w17,  w3, 0x7ff8000000000000, 0x0000000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w18,  w7, 0x3f733bbfdc427cac, 0x3fa5555555555555);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w19,  w3, 0x3fa5555555555555, 0x3fa5555555555555);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w20, w30, 0x3ff6a09e667f3bcd, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w21, w27, 0x7ff8000000000000, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w22, w26, 0x3fa35794ad44f3ee, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w23, w20, 0x7ff8000000000000, 0xfff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w24,  w7, 0x3fa8993eff4a591f, 0x7ff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w25, w10, 0x7ff8000000000000, 0x604a20bd700c2c3e);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w26, w29, 0x3fee82c3f9d89e1b, 0x3f458a24b20e5b9e);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w27, w20, 0x7ff8000000000000, 0x0000000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w28,  w6, 0x3f733bbfdc427cac, 0x3fa5555555555555);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w29, w24, 0x3fa5555555555555, 0x3fa5555555555555);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w30, w30, 0x3ff6a09e667f3bcd, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w31,  w6, 0x7ff8000000000000, 0x7ff8000000000000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w0,  w10, 0x7fc000007fc00000,
+                                                        0x7fc000003fb504f3);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w1,  w20, 0x7fc000003d1abca5,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w2,  w26, 0xff8000007fc00000,
+                                                        0x7fc000003d1abca5);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w3,  w12, 0x7f8000003d44c9f8,
+                                                        0xff8000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w4,   w0, 0x5f21e89b7fc00000,
+                                                        0x7f8000003d44c9f8);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w5,  w22, 0x3bd77f463f741620,
+                                                        0x5f21e89b7fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w6,  w26, 0x000000007fc00000,
+                                                        0x3bd77f463f741620);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w7,  w14, 0x7fc000007fc00000,
+                                                        0x000000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w8,   w8, 0x3d2aaaab3c7349e0,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w9,  w17, 0x3d2aaaab3d2aaaab,
+                                                        0x3d2aaaab3c7349e0);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w10, w28, 0x7fc000007fc00000,
+                                                        0x7fc000003fb504f3);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w11,  w8, 0x7fc000003d1abca5,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w12, w16, 0xff8000007fc00000,
+                                                        0x7fc000003d1abca5);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w13,  w9, 0x7f8000003d44c9f8,
+                                                        0xff8000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w14,  w3, 0x5f21e89b7fc00000,
+                                                        0x7f8000003d44c9f8);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w15, w21, 0x3bd77f463f741620,
+                                                        0x5f21e89b7fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w16,  w9, 0x000000007fc00000,
+                                                        0x3bd77f463f741620);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w17, w14, 0x7fc000007fc00000,
+                                                        0x000000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w18, w10, 0x3d2aaaab3c7349e0,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w19, w17, 0x3d2aaaab3d2aaaab,
+                                                        0x3d2aaaab3c7349e0);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w20, w25, 0x7fc000007fc00000,
+                                                        0x7fc000003fb504f3);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w21,  w7, 0x7fc000003d1abca5,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w22, w26, 0xff8000007fc00000,
+                                                        0x7fc000003d1abca5);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w23, w28, 0x7f8000003d44c9f8,
+                                                        0xff8000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w24,  w4, 0x5f21e89b7fc00000,
+                                                        0x7f8000003d44c9f8);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w25,  w8, 0x3bd77f463f741620,
+                                                        0x5f21e89b7fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w26,  w1, 0x000000007fc00000,
+                                                        0x3bd77f463f741620);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w27, w13, 0x7fc000007fc00000,
+                                                        0x000000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w28, w14, 0x3d2aaaab3c7349e0,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w29, w12, 0x3d2aaaab3d2aaaab,
+                                                        0x3d2aaaab3c7349e0);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w30, w30, 0x7fc000007fc00000,
+                                                        0x7fc000003fb504f3);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w31, w17, 0x7fc000003d1abca5,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w0,   w2, 0x3ff6a09e667f3bcd,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w1,  w14, 0x7ff8000000000000,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w2,  w24, 0x3fa35794ad44f3ee,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w3,  w20, 0x7ff8000000000000,
+                                                        0xfff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w4,  w25, 0x3fa8993eff4a591f,
+                                                        0x7ff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w5,   w0, 0x7ff8000000000000,
+                                                        0x604a20bd700c2c3e);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w6,  w26, 0x3fee82c3f9d89e1b,
+                                                        0x3f458a24b20e5b9e);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w7,  w26, 0x7ff8000000000000,
+                                                        0x0000000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w8,   w8, 0x3f733bbfdc427cac,
+                                                        0x3fa5555555555555);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w9,  w19, 0x3fa5555555555555,
+                                                        0x3fa5555555555555);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w10, w27, 0x3ff6a09e667f3bcd,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w11,  w8, 0x7ff8000000000000,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w12,  w2, 0x3fa35794ad44f3ee,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w13, w31, 0x7ff8000000000000,
+                                                        0xfff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w14,  w0, 0x3fa8993eff4a591f,
+                                                        0x7ff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w15, w30, 0x7ff8000000000000,
+                                                        0x604a20bd700c2c3e);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w16,  w5, 0x3fee82c3f9d89e1b,
+                                                        0x3f458a24b20e5b9e);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w17,  w3, 0x7ff8000000000000,
+                                                        0x0000000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w18,  w7, 0x3f733bbfdc427cac,
+                                                        0x3fa5555555555555);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w19,  w3, 0x3fa5555555555555,
+                                                        0x3fa5555555555555);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w20, w30, 0x3ff6a09e667f3bcd,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w21, w27, 0x7ff8000000000000,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w22, w26, 0x3fa35794ad44f3ee,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w23, w20, 0x7ff8000000000000,
+                                                        0xfff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w24,  w7, 0x3fa8993eff4a591f,
+                                                        0x7ff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w25, w10, 0x7ff8000000000000,
+                                                        0x604a20bd700c2c3e);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w26, w29, 0x3fee82c3f9d89e1b,
+                                                        0x3f458a24b20e5b9e);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w27, w20, 0x7ff8000000000000,
+                                                        0x0000000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w28,  w6, 0x3f733bbfdc427cac,
+                                                        0x3fa5555555555555);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w29, w24, 0x3fa5555555555555,
+                                                        0x3fa5555555555555);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w30, w30, 0x3ff6a09e667f3bcd,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w31,  w6, 0x7ff8000000000000,
+                                                        0x7ff8000000000000);
 
    msacsr = 1;
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w0,  w10, 0x7fc000007fc00000, 0x7fc000003fb504f3);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w1,  w20, 0x7fc000003d1abca5, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w2,  w26, 0xff8000007fc00000, 0x7fc000003d1abca5);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w3,  w12, 0x7f8000003d44c9f7, 0xff8000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w4,   w0, 0x5f21e89b7fc00000, 0x7f8000003d44c9f7);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w5,  w22, 0x3bd77f463f74161f, 0x5f21e89b7fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w6,  w26, 0x000000007fc00000, 0x3bd77f463f74161f);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w7,  w14, 0x7fc000007fc00000, 0x000000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w8,   w8, 0x3d2aaaaa3c7349df, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w9,  w17, 0x3d2aaaaa3d2aaaaa, 0x3d2aaaaa3c7349df);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w10, w28, 0x7fc000007fc00000, 0x7fc000003fb504f3);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w11,  w8, 0x7fc000003d1abca5, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w12, w16, 0xff8000007fc00000, 0x7fc000003d1abca5);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w13,  w9, 0x7f8000003d44c9f7, 0xff8000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w14,  w3, 0x5f21e89b7fc00000, 0x7f8000003d44c9f7);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w15, w21, 0x3bd77f463f74161f, 0x5f21e89b7fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w16,  w9, 0x000000007fc00000, 0x3bd77f463f74161f);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w17, w14, 0x7fc000007fc00000, 0x000000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w18, w10, 0x3d2aaaaa3c7349df, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w19, w17, 0x3d2aaaaa3d2aaaaa, 0x3d2aaaaa3c7349df);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w20, w25, 0x7fc000007fc00000, 0x7fc000003fb504f3);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w21,  w7, 0x7fc000003d1abca5, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w22, w26, 0xff8000007fc00000, 0x7fc000003d1abca5);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w23, w28, 0x7f8000003d44c9f7, 0xff8000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w24,  w4, 0x5f21e89b7fc00000, 0x7f8000003d44c9f7);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w25,  w8, 0x3bd77f463f74161f, 0x5f21e89b7fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w26,  w1, 0x000000007fc00000, 0x3bd77f463f74161f);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w27, w13, 0x7fc000007fc00000, 0x000000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w28, w14, 0x3d2aaaaa3c7349df, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w29, w12, 0x3d2aaaaa3d2aaaaa, 0x3d2aaaaa3c7349df);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w30, w30, 0x7fc000007fc00000, 0x7fc000003fb504f3);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w31, w17, 0x7fc000003d1abca5, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w0,   w2, 0x3ff6a09e667f3bcc, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w1,  w14, 0x7ff8000000000000, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w2,  w24, 0x3fa35794ad44f3ee, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w3,  w20, 0x7ff8000000000000, 0xfff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w4,  w25, 0x3fa8993eff4a591e, 0x7ff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w5,   w0, 0x7ff8000000000000, 0x604a20bd700c2c3d);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w6,  w26, 0x3fee82c3f9d89e1b, 0x3f458a24b20e5b9d);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w7,  w26, 0x7ff8000000000000, 0x0000000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w8,   w8, 0x3f733bbfdc427cab, 0x3fa5555555555555);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w9,  w19, 0x3fa5555555555555, 0x3fa5555555555555);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w10, w27, 0x3ff6a09e667f3bcc, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w11,  w8, 0x7ff8000000000000, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w12,  w2, 0x3fa35794ad44f3ee, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w13, w31, 0x7ff8000000000000, 0xfff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w14,  w0, 0x3fa8993eff4a591e, 0x7ff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w15, w30, 0x7ff8000000000000, 0x604a20bd700c2c3d);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w16,  w5, 0x3fee82c3f9d89e1b, 0x3f458a24b20e5b9d);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w17,  w3, 0x7ff8000000000000, 0x0000000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w18,  w7, 0x3f733bbfdc427cab, 0x3fa5555555555555);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w19,  w3, 0x3fa5555555555555, 0x3fa5555555555555);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w20, w30, 0x3ff6a09e667f3bcc, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w21, w27, 0x7ff8000000000000, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w22, w26, 0x3fa35794ad44f3ee, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w23, w20, 0x7ff8000000000000, 0xfff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w24,  w7, 0x3fa8993eff4a591e, 0x7ff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w25, w10, 0x7ff8000000000000, 0x604a20bd700c2c3d);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w26, w29, 0x3fee82c3f9d89e1b, 0x3f458a24b20e5b9d);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w27, w20, 0x7ff8000000000000, 0x0000000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w28,  w6, 0x3f733bbfdc427cab, 0x3fa5555555555555);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w29, w24, 0x3fa5555555555555, 0x3fa5555555555555);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w30, w30, 0x3ff6a09e667f3bcc, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w31,  w6, 0x7ff8000000000000, 0x7ff8000000000000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w0,  w10, 0x7fc000007fc00000,
+                                                        0x7fc000003fb504f3);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w1,  w20, 0x7fc000003d1abca5,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w2,  w26, 0xff8000007fc00000,
+                                                        0x7fc000003d1abca5);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w3,  w12, 0x7f8000003d44c9f7,
+                                                        0xff8000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w4,   w0, 0x5f21e89b7fc00000,
+                                                        0x7f8000003d44c9f7);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w5,  w22, 0x3bd77f463f74161f,
+                                                        0x5f21e89b7fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w6,  w26, 0x000000007fc00000,
+                                                        0x3bd77f463f74161f);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w7,  w14, 0x7fc000007fc00000,
+                                                        0x000000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w8,   w8, 0x3d2aaaaa3c7349df,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w9,  w17, 0x3d2aaaaa3d2aaaaa,
+                                                        0x3d2aaaaa3c7349df);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w10, w28, 0x7fc000007fc00000,
+                                                        0x7fc000003fb504f3);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w11,  w8, 0x7fc000003d1abca5,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w12, w16, 0xff8000007fc00000,
+                                                        0x7fc000003d1abca5);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w13,  w9, 0x7f8000003d44c9f7,
+                                                        0xff8000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w14,  w3, 0x5f21e89b7fc00000,
+                                                        0x7f8000003d44c9f7);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w15, w21, 0x3bd77f463f74161f,
+                                                        0x5f21e89b7fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w16,  w9, 0x000000007fc00000,
+                                                        0x3bd77f463f74161f);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w17, w14, 0x7fc000007fc00000,
+                                                        0x000000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w18, w10, 0x3d2aaaaa3c7349df,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w19, w17, 0x3d2aaaaa3d2aaaaa,
+                                                        0x3d2aaaaa3c7349df);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w20, w25, 0x7fc000007fc00000,
+                                                        0x7fc000003fb504f3);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w21,  w7, 0x7fc000003d1abca5,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w22, w26, 0xff8000007fc00000,
+                                                        0x7fc000003d1abca5);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w23, w28, 0x7f8000003d44c9f7,
+                                                        0xff8000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w24,  w4, 0x5f21e89b7fc00000,
+                                                        0x7f8000003d44c9f7);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w25,  w8, 0x3bd77f463f74161f,
+                                                        0x5f21e89b7fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w26,  w1, 0x000000007fc00000,
+                                                        0x3bd77f463f74161f);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w27, w13, 0x7fc000007fc00000,
+                                                        0x000000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w28, w14, 0x3d2aaaaa3c7349df,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w29, w12, 0x3d2aaaaa3d2aaaaa,
+                                                        0x3d2aaaaa3c7349df);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w30, w30, 0x7fc000007fc00000,
+                                                        0x7fc000003fb504f3);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w31, w17, 0x7fc000003d1abca5,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w0,   w2, 0x3ff6a09e667f3bcc,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w1,  w14, 0x7ff8000000000000,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w2,  w24, 0x3fa35794ad44f3ee,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w3,  w20, 0x7ff8000000000000,
+                                                        0xfff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w4,  w25, 0x3fa8993eff4a591e,
+                                                        0x7ff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w5,   w0, 0x7ff8000000000000,
+                                                        0x604a20bd700c2c3d);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w6,  w26, 0x3fee82c3f9d89e1b,
+                                                        0x3f458a24b20e5b9d);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w7,  w26, 0x7ff8000000000000,
+                                                        0x0000000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w8,   w8, 0x3f733bbfdc427cab,
+                                                        0x3fa5555555555555);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w9,  w19, 0x3fa5555555555555,
+                                                        0x3fa5555555555555);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w10, w27, 0x3ff6a09e667f3bcc,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w11,  w8, 0x7ff8000000000000,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w12,  w2, 0x3fa35794ad44f3ee,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w13, w31, 0x7ff8000000000000,
+                                                        0xfff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w14,  w0, 0x3fa8993eff4a591e,
+                                                        0x7ff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w15, w30, 0x7ff8000000000000,
+                                                        0x604a20bd700c2c3d);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w16,  w5, 0x3fee82c3f9d89e1b,
+                                                        0x3f458a24b20e5b9d);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w17,  w3, 0x7ff8000000000000,
+                                                        0x0000000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w18,  w7, 0x3f733bbfdc427cab,
+                                                        0x3fa5555555555555);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w19,  w3, 0x3fa5555555555555,
+                                                        0x3fa5555555555555);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w20, w30, 0x3ff6a09e667f3bcc,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w21, w27, 0x7ff8000000000000,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w22, w26, 0x3fa35794ad44f3ee,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w23, w20, 0x7ff8000000000000,
+                                                        0xfff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w24,  w7, 0x3fa8993eff4a591e,
+                                                        0x7ff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w25, w10, 0x7ff8000000000000,
+                                                        0x604a20bd700c2c3d);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w26, w29, 0x3fee82c3f9d89e1b,
+                                                        0x3f458a24b20e5b9d);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w27, w20, 0x7ff8000000000000,
+                                                        0x0000000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w28,  w6, 0x3f733bbfdc427cab,
+                                                        0x3fa5555555555555);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w29, w24, 0x3fa5555555555555,
+                                                        0x3fa5555555555555);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w30, w30, 0x3ff6a09e667f3bcc,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w31,  w6, 0x7ff8000000000000,
+                                                        0x7ff8000000000000);
 
    msacsr = 2;
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w0,  w10, 0x7fc000007fc00000, 0x7fc000003fb504f4);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w1,  w20, 0x7fc000003d1abca6, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w2,  w26, 0xff8000007fc00000, 0x7fc000003d1abca6);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w3,  w12, 0x7f8000003d44c9f8, 0xff8000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w4,   w0, 0x5f21e89c7fc00000, 0x7f8000003d44c9f8);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w5,  w22, 0x3bd77f473f741620, 0x5f21e89c7fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w6,  w26, 0x000000007fc00000, 0x3bd77f473f741620);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w7,  w14, 0x7fc000007fc00000, 0x000000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w8,   w8, 0x3d2aaaab3c7349e0, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w9,  w17, 0x3d2aaaab3d2aaaab, 0x3d2aaaab3c7349e0);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w10, w28, 0x7fc000007fc00000, 0x7fc000003fb504f4);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w11,  w8, 0x7fc000003d1abca6, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w12, w16, 0xff8000007fc00000, 0x7fc000003d1abca6);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w13,  w9, 0x7f8000003d44c9f8, 0xff8000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w14,  w3, 0x5f21e89c7fc00000, 0x7f8000003d44c9f8);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w15, w21, 0x3bd77f473f741620, 0x5f21e89c7fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w16,  w9, 0x000000007fc00000, 0x3bd77f473f741620);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w17, w14, 0x7fc000007fc00000, 0x000000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w18, w10, 0x3d2aaaab3c7349e0, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w19, w17, 0x3d2aaaab3d2aaaab, 0x3d2aaaab3c7349e0);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w20, w25, 0x7fc000007fc00000, 0x7fc000003fb504f4);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w21,  w7, 0x7fc000003d1abca6, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w22, w26, 0xff8000007fc00000, 0x7fc000003d1abca6);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w23, w28, 0x7f8000003d44c9f8, 0xff8000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w24,  w4, 0x5f21e89c7fc00000, 0x7f8000003d44c9f8);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w25,  w8, 0x3bd77f473f741620, 0x5f21e89c7fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w26,  w1, 0x000000007fc00000, 0x3bd77f473f741620);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w27, w13, 0x7fc000007fc00000, 0x000000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w28, w14, 0x3d2aaaab3c7349e0, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w29, w12, 0x3d2aaaab3d2aaaab, 0x3d2aaaab3c7349e0);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w30, w30, 0x7fc000007fc00000, 0x7fc000003fb504f4);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w31, w17, 0x7fc000003d1abca6, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w0,   w2, 0x3ff6a09e667f3bcd, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w1,  w14, 0x7ff8000000000000, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w2,  w24, 0x3fa35794ad44f3ef, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w3,  w20, 0x7ff8000000000000, 0xfff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w4,  w25, 0x3fa8993eff4a591f, 0x7ff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w5,   w0, 0x7ff8000000000000, 0x604a20bd700c2c3e);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w6,  w26, 0x3fee82c3f9d89e1c, 0x3f458a24b20e5b9e);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w7,  w26, 0x7ff8000000000000, 0x0000000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w8,   w8, 0x3f733bbfdc427cac, 0x3fa5555555555556);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w9,  w19, 0x3fa5555555555556, 0x3fa5555555555556);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w10, w27, 0x3ff6a09e667f3bcd, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w11,  w8, 0x7ff8000000000000, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w12,  w2, 0x3fa35794ad44f3ef, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w13, w31, 0x7ff8000000000000, 0xfff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w14,  w0, 0x3fa8993eff4a591f, 0x7ff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w15, w30, 0x7ff8000000000000, 0x604a20bd700c2c3e);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w16,  w5, 0x3fee82c3f9d89e1c, 0x3f458a24b20e5b9e);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w17,  w3, 0x7ff8000000000000, 0x0000000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w18,  w7, 0x3f733bbfdc427cac, 0x3fa5555555555556);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w19,  w3, 0x3fa5555555555556, 0x3fa5555555555556);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w20, w30, 0x3ff6a09e667f3bcd, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w21, w27, 0x7ff8000000000000, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w22, w26, 0x3fa35794ad44f3ef, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w23, w20, 0x7ff8000000000000, 0xfff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w24,  w7, 0x3fa8993eff4a591f, 0x7ff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w25, w10, 0x7ff8000000000000, 0x604a20bd700c2c3e);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w26, w29, 0x3fee82c3f9d89e1c, 0x3f458a24b20e5b9e);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w27, w20, 0x7ff8000000000000, 0x0000000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w28,  w6, 0x3f733bbfdc427cac, 0x3fa5555555555556);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w29, w24, 0x3fa5555555555556, 0x3fa5555555555556);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w30, w30, 0x3ff6a09e667f3bcd, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w31,  w6, 0x7ff8000000000000, 0x7ff8000000000000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w0,  w10, 0x7fc000007fc00000,
+                                                        0x7fc000003fb504f4);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w1,  w20, 0x7fc000003d1abca6,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w2,  w26, 0xff8000007fc00000,
+                                                        0x7fc000003d1abca6);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w3,  w12, 0x7f8000003d44c9f8,
+                                                        0xff8000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w4,   w0, 0x5f21e89c7fc00000,
+                                                        0x7f8000003d44c9f8);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w5,  w22, 0x3bd77f473f741620,
+                                                        0x5f21e89c7fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w6,  w26, 0x000000007fc00000,
+                                                        0x3bd77f473f741620);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w7,  w14, 0x7fc000007fc00000,
+                                                        0x000000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w8,   w8, 0x3d2aaaab3c7349e0,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w9,  w17, 0x3d2aaaab3d2aaaab,
+                                                        0x3d2aaaab3c7349e0);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w10, w28, 0x7fc000007fc00000,
+                                                        0x7fc000003fb504f4);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w11,  w8, 0x7fc000003d1abca6,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w12, w16, 0xff8000007fc00000,
+                                                        0x7fc000003d1abca6);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w13,  w9, 0x7f8000003d44c9f8,
+                                                        0xff8000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w14,  w3, 0x5f21e89c7fc00000,
+                                                        0x7f8000003d44c9f8);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w15, w21, 0x3bd77f473f741620,
+                                                        0x5f21e89c7fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w16,  w9, 0x000000007fc00000,
+                                                        0x3bd77f473f741620);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w17, w14, 0x7fc000007fc00000,
+                                                        0x000000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w18, w10, 0x3d2aaaab3c7349e0,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w19, w17, 0x3d2aaaab3d2aaaab,
+                                                        0x3d2aaaab3c7349e0);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w20, w25, 0x7fc000007fc00000,
+                                                        0x7fc000003fb504f4);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w21,  w7, 0x7fc000003d1abca6,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w22, w26, 0xff8000007fc00000,
+                                                        0x7fc000003d1abca6);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w23, w28, 0x7f8000003d44c9f8,
+                                                        0xff8000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w24,  w4, 0x5f21e89c7fc00000,
+                                                        0x7f8000003d44c9f8);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w25,  w8, 0x3bd77f473f741620,
+                                                        0x5f21e89c7fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w26,  w1, 0x000000007fc00000,
+                                                        0x3bd77f473f741620);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w27, w13, 0x7fc000007fc00000,
+                                                        0x000000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w28, w14, 0x3d2aaaab3c7349e0,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w29, w12, 0x3d2aaaab3d2aaaab,
+                                                        0x3d2aaaab3c7349e0);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w30, w30, 0x7fc000007fc00000,
+                                                        0x7fc000003fb504f4);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w31, w17, 0x7fc000003d1abca6,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w0,   w2, 0x3ff6a09e667f3bcd,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w1,  w14, 0x7ff8000000000000,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w2,  w24, 0x3fa35794ad44f3ef,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w3,  w20, 0x7ff8000000000000,
+                                                        0xfff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w4,  w25, 0x3fa8993eff4a591f,
+                                                        0x7ff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w5,   w0, 0x7ff8000000000000,
+                                                        0x604a20bd700c2c3e);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w6,  w26, 0x3fee82c3f9d89e1c,
+                                                        0x3f458a24b20e5b9e);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w7,  w26, 0x7ff8000000000000,
+                                                        0x0000000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w8,   w8, 0x3f733bbfdc427cac,
+                                                        0x3fa5555555555556);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w9,  w19, 0x3fa5555555555556,
+                                                        0x3fa5555555555556);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w10, w27, 0x3ff6a09e667f3bcd,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w11,  w8, 0x7ff8000000000000,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w12,  w2, 0x3fa35794ad44f3ef,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w13, w31, 0x7ff8000000000000,
+                                                        0xfff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w14,  w0, 0x3fa8993eff4a591f,
+                                                        0x7ff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w15, w30, 0x7ff8000000000000,
+                                                        0x604a20bd700c2c3e);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w16,  w5, 0x3fee82c3f9d89e1c,
+                                                        0x3f458a24b20e5b9e);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w17,  w3, 0x7ff8000000000000,
+                                                        0x0000000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w18,  w7, 0x3f733bbfdc427cac,
+                                                        0x3fa5555555555556);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w19,  w3, 0x3fa5555555555556,
+                                                        0x3fa5555555555556);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w20, w30, 0x3ff6a09e667f3bcd,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w21, w27, 0x7ff8000000000000,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w22, w26, 0x3fa35794ad44f3ef,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w23, w20, 0x7ff8000000000000,
+                                                        0xfff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w24,  w7, 0x3fa8993eff4a591f,
+                                                        0x7ff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w25, w10, 0x7ff8000000000000,
+                                                        0x604a20bd700c2c3e);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w26, w29, 0x3fee82c3f9d89e1c,
+                                                        0x3f458a24b20e5b9e);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w27, w20, 0x7ff8000000000000,
+                                                        0x0000000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w28,  w6, 0x3f733bbfdc427cac,
+                                                        0x3fa5555555555556);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w29, w24, 0x3fa5555555555556,
+                                                        0x3fa5555555555556);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w30, w30, 0x3ff6a09e667f3bcd,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w31,  w6, 0x7ff8000000000000,
+                                                        0x7ff8000000000000);
 
    msacsr = 3;
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w0,  w10, 0x7fc000007fc00000, 0x7fc000003fb504f3);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w1,  w20, 0x7fc000003d1abca5, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w2,  w26, 0xff8000007fc00000, 0x7fc000003d1abca5);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w3,  w12, 0x7f8000003d44c9f7, 0xff8000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w4,   w0, 0x5f21e89b7fc00000, 0x7f8000003d44c9f7);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w5,  w22, 0x3bd77f463f74161f, 0x5f21e89b7fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w6,  w26, 0x000000007fc00000, 0x3bd77f463f74161f);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w7,  w14, 0x7fc000007fc00000, 0x000000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w8,   w8, 0x3d2aaaaa3c7349df, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w9,  w17, 0x3d2aaaaa3d2aaaaa, 0x3d2aaaaa3c7349df);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w10, w28, 0x7fc000007fc00000, 0x7fc000003fb504f3);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w11,  w8, 0x7fc000003d1abca5, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w12, w16, 0xff8000007fc00000, 0x7fc000003d1abca5);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w13,  w9, 0x7f8000003d44c9f7, 0xff8000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w14,  w3, 0x5f21e89b7fc00000, 0x7f8000003d44c9f7);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w15, w21, 0x3bd77f463f74161f, 0x5f21e89b7fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w16,  w9, 0x000000007fc00000, 0x3bd77f463f74161f);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w17, w14, 0x7fc000007fc00000, 0x000000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w18, w10, 0x3d2aaaaa3c7349df, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w19, w17, 0x3d2aaaaa3d2aaaaa, 0x3d2aaaaa3c7349df);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w20, w25, 0x7fc000007fc00000, 0x7fc000003fb504f3);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w21,  w7, 0x7fc000003d1abca5, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w22, w26, 0xff8000007fc00000, 0x7fc000003d1abca5);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w23, w28, 0x7f8000003d44c9f7, 0xff8000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w24,  w4, 0x5f21e89b7fc00000, 0x7f8000003d44c9f7);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w25,  w8, 0x3bd77f463f74161f, 0x5f21e89b7fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w26,  w1, 0x000000007fc00000, 0x3bd77f463f74161f);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w27, w13, 0x7fc000007fc00000, 0x000000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w28, w14, 0x3d2aaaaa3c7349df, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w29, w12, 0x3d2aaaaa3d2aaaaa, 0x3d2aaaaa3c7349df);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w30, w30, 0x7fc000007fc00000, 0x7fc000003fb504f3);
-   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w31, w17, 0x7fc000003d1abca5, 0x7fc000007fc00000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w0,   w2, 0x3ff6a09e667f3bcc, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w1,  w14, 0x7ff8000000000000, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w2,  w24, 0x3fa35794ad44f3ee, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w3,  w20, 0x7ff8000000000000, 0xfff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w4,  w25, 0x3fa8993eff4a591e, 0x7ff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w5,   w0, 0x7ff8000000000000, 0x604a20bd700c2c3d);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w6,  w26, 0x3fee82c3f9d89e1b, 0x3f458a24b20e5b9d);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w7,  w26, 0x7ff8000000000000, 0x0000000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w8,   w8, 0x3f733bbfdc427cab, 0x3fa5555555555555);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w9,  w19, 0x3fa5555555555555, 0x3fa5555555555555);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w10, w27, 0x3ff6a09e667f3bcc, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w11,  w8, 0x7ff8000000000000, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w12,  w2, 0x3fa35794ad44f3ee, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w13, w31, 0x7ff8000000000000, 0xfff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w14,  w0, 0x3fa8993eff4a591e, 0x7ff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w15, w30, 0x7ff8000000000000, 0x604a20bd700c2c3d);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w16,  w5, 0x3fee82c3f9d89e1b, 0x3f458a24b20e5b9d);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w17,  w3, 0x7ff8000000000000, 0x0000000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w18,  w7, 0x3f733bbfdc427cab, 0x3fa5555555555555);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w19,  w3, 0x3fa5555555555555, 0x3fa5555555555555);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w20, w30, 0x3ff6a09e667f3bcc, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w21, w27, 0x7ff8000000000000, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w22, w26, 0x3fa35794ad44f3ee, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w23, w20, 0x7ff8000000000000, 0xfff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w24,  w7, 0x3fa8993eff4a591e, 0x7ff0000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w25, w10, 0x7ff8000000000000, 0x604a20bd700c2c3d);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w26, w29, 0x3fee82c3f9d89e1b, 0x3f458a24b20e5b9d);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w27, w20, 0x7ff8000000000000, 0x0000000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w28,  w6, 0x3f733bbfdc427cab, 0x3fa5555555555555);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w29, w24, 0x3fa5555555555555, 0x3fa5555555555555);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w30, w30, 0x3ff6a09e667f3bcc, 0x7ff8000000000000);
-   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w31,  w6, 0x7ff8000000000000, 0x7ff8000000000000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w0,  w10, 0x7fc000007fc00000,
+                                                        0x7fc000003fb504f3);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w1,  w20, 0x7fc000003d1abca5,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w2,  w26, 0xff8000007fc00000,
+                                                        0x7fc000003d1abca5);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w3,  w12, 0x7f8000003d44c9f7,
+                                                        0xff8000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w4,   w0, 0x5f21e89b7fc00000,
+                                                        0x7f8000003d44c9f7);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w5,  w22, 0x3bd77f463f74161f,
+                                                        0x5f21e89b7fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w6,  w26, 0x000000007fc00000,
+                                                        0x3bd77f463f74161f);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w7,  w14, 0x7fc000007fc00000,
+                                                        0x000000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w8,   w8, 0x3d2aaaaa3c7349df,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w9,  w17, 0x3d2aaaaa3d2aaaaa,
+                                                        0x3d2aaaaa3c7349df);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w10, w28, 0x7fc000007fc00000,
+                                                        0x7fc000003fb504f3);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w11,  w8, 0x7fc000003d1abca5,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w12, w16, 0xff8000007fc00000,
+                                                        0x7fc000003d1abca5);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w13,  w9, 0x7f8000003d44c9f7,
+                                                        0xff8000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w14,  w3, 0x5f21e89b7fc00000,
+                                                        0x7f8000003d44c9f7);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w15, w21, 0x3bd77f463f74161f,
+                                                        0x5f21e89b7fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w16,  w9, 0x000000007fc00000,
+                                                        0x3bd77f463f74161f);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w17, w14, 0x7fc000007fc00000,
+                                                        0x000000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w18, w10, 0x3d2aaaaa3c7349df,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w19, w17, 0x3d2aaaaa3d2aaaaa,
+                                                        0x3d2aaaaa3c7349df);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w20, w25, 0x7fc000007fc00000,
+                                                        0x7fc000003fb504f3);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w21,  w7, 0x7fc000003d1abca5,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  16, w22, w26, 0xff8000007fc00000,
+                                                        0x7fc000003d1abca5);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  24, w23, w28, 0x7f8000003d44c9f7,
+                                                        0xff8000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  32, w24,  w4, 0x5f21e89b7fc00000,
+                                                        0x7f8000003d44c9f7);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  40, w25,  w8, 0x3bd77f463f74161f,
+                                                        0x5f21e89b7fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  48, w26,  w1, 0x000000007fc00000,
+                                                        0x3bd77f463f74161f);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  56, w27, w13, 0x7fc000007fc00000,
+                                                        0x000000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  64, w28, w14, 0x3d2aaaaa3c7349df,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,  72, w29, w12, 0x3d2aaaaa3d2aaaaa,
+                                                        0x3d2aaaaa3c7349df);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   0, w30, w30, 0x7fc000007fc00000,
+                                                        0x7fc000003fb504f3);
+   TEST_2RF_FRSQRT_W("frsqrt.w",  dataf,   8, w31, w17, 0x7fc000003d1abca5,
+                                                        0x7fc000007fc00000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w0,   w2, 0x3ff6a09e667f3bcc,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w1,  w14, 0x7ff8000000000000,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w2,  w24, 0x3fa35794ad44f3ee,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w3,  w20, 0x7ff8000000000000,
+                                                        0xfff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w4,  w25, 0x3fa8993eff4a591e,
+                                                        0x7ff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w5,   w0, 0x7ff8000000000000,
+                                                        0x604a20bd700c2c3d);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w6,  w26, 0x3fee82c3f9d89e1b,
+                                                        0x3f458a24b20e5b9d);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w7,  w26, 0x7ff8000000000000,
+                                                        0x0000000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w8,   w8, 0x3f733bbfdc427cab,
+                                                        0x3fa5555555555555);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w9,  w19, 0x3fa5555555555555,
+                                                        0x3fa5555555555555);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w10, w27, 0x3ff6a09e667f3bcc,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w11,  w8, 0x7ff8000000000000,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w12,  w2, 0x3fa35794ad44f3ee,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w13, w31, 0x7ff8000000000000,
+                                                        0xfff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w14,  w0, 0x3fa8993eff4a591e,
+                                                        0x7ff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w15, w30, 0x7ff8000000000000,
+                                                        0x604a20bd700c2c3d);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w16,  w5, 0x3fee82c3f9d89e1b,
+                                                        0x3f458a24b20e5b9d);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w17,  w3, 0x7ff8000000000000,
+                                                        0x0000000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w18,  w7, 0x3f733bbfdc427cab,
+                                                        0x3fa5555555555555);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w19,  w3, 0x3fa5555555555555,
+                                                        0x3fa5555555555555);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w20, w30, 0x3ff6a09e667f3bcc,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w21, w27, 0x7ff8000000000000,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  32, w22, w26, 0x3fa35794ad44f3ee,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  48, w23, w20, 0x7ff8000000000000,
+                                                        0xfff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  64, w24,  w7, 0x3fa8993eff4a591e,
+                                                        0x7ff0000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  80, w25, w10, 0x7ff8000000000000,
+                                                        0x604a20bd700c2c3d);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  96, w26, w29, 0x3fee82c3f9d89e1b,
+                                                        0x3f458a24b20e5b9d);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 112, w27, w20, 0x7ff8000000000000,
+                                                        0x0000000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 128, w28,  w6, 0x3f733bbfdc427cab,
+                                                        0x3fa5555555555555);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad, 144, w29, w24, 0x3fa5555555555555,
+                                                        0x3fa5555555555555);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,   0, w30, w30, 0x3ff6a09e667f3bcc,
+                                                        0x7ff8000000000000);
+   TEST_2RF_FRSQRT_D("frsqrt.d",  datad,  16, w31,  w6, 0x7ff8000000000000,
+                                                        0x7ff8000000000000);
 
 
    // Registers ovelapping tests.

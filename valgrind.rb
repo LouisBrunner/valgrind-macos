@@ -34,13 +34,12 @@ class Valgrind < Formula
       --enable-only64bit
       --build=amd64-darwin
     ]
-    system "./autogen.sh" if build.head?
-
     # Look for headers in the SDK on Xcode-only systems: https://bugs.kde.org/show_bug.cgi?id=295084
     if !MacOS::CLT.installed? || MacOS.version >= 10.14
-      inreplace "coregrind/Makefile.in", %r{(\s)(?=/usr/include/mach/)}, '\1'+MacOS.sdk_path.to_s
+      args << "--with-xcode-path=#{MacOS.sdk_path.to_s}"
     end
 
+    system "./autogen.sh" if build.head?
     system "./configure", *args
     system "make"
     system "make", "install"

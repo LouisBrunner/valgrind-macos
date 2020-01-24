@@ -1,10 +1,10 @@
-# Valgrind for macOS
+# Valgrind for macOS ![Build](https://github.com/LouisBrunner/valgrind-macos/workflows/Build/badge.svg)
 
-This repository contains a version of Valgrind including a few patches to improve support for the macOS platform.
+This repository contains a version of Valgrind including a few patches to improve support for the macOS platform. It is maintained by [Louis Brunner](https://github.com/LouisBrunner).
 
 ## Status
 
-Valgrind now builds on macOS Mojave (tested on 10.14.4).
+Valgrind now builds on macOS Mojave (tested on 10.14.6 and 10.15.1, albeit unfunctional on the latter).
 
 ## Usage
 
@@ -16,7 +16,12 @@ brew install --HEAD https://raw.githubusercontent.com/LouisBrunner/valgrind-maco
 
 In case you already have Valgrind installed, you will need to either `unlink` it first or `reinstall` it.
 
-## Tests
+## TODO
+
+ - Debug macOS 10.15 crashes (might need XNU sources)
+ - Collect CI test results into a usable format to make comparison between builds
+
+## Tests (outdated for 10.14.6 and 10.15.1)
 
 Here is the result of the test suite:
 

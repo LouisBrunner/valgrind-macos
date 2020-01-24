@@ -210,6 +210,7 @@ int main(int argc, char** argv, char** envp)
    const char *default_arch;
    cpu_type_t default_cputype;
    char *toolfile;
+   char* executable_path;
    char launcher_name[PATH_MAX+1];
    char* new_line;
    char* set_cwd;
@@ -360,13 +361,19 @@ int main(int argc, char** argv, char** envp)
    for (i = 0; envp[i]; i++) 
        ; /* executable path is after last envp item */
    /* envp[i] == NULL ; envp[i+1] == executable_path */
-   if (envp[i+1][0] != '/') {
+   executable_path = envp[i+1];
+   /* Since macOS 10.14.6, executable_path is prefixed by "executable_path=",
+      like an environment list */
+   if (strlen(executable_path) > 16 && strncmp(executable_path, "executable_path=", 16) == 0) {
+     executable_path = &executable_path[16];
+   }
+   if (executable_path[0] != '/') {
       strcpy(launcher_name, cwd);
       strcat(launcher_name, "/");
    }
-   if (strlen(launcher_name) + strlen(envp[i+1]) > PATH_MAX)
+   if (strlen(launcher_name) + strlen(executable_path) > PATH_MAX)
       barf("launcher path is too long");
-   strcat(launcher_name, envp[i+1]);
+   strcat(launcher_name, executable_path);
    VG_(debugLog)(1, "launcher", "launcher_name = %s\n", launcher_name);
 
    /* tediously augment the env: VALGRIND_LAUNCHER=launcher_name */

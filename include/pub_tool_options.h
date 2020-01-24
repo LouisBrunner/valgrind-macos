@@ -128,7 +128,10 @@ extern void VG_(list_clo)(const HChar *qq_option);
       if      VG_STREQ(val, "yes") (qq_var) = True;                     \
       else if VG_STREQ(val, "no")  (qq_var) = False;                    \
       else {VG_(fmsg_bad_option)(qq_arg, "Invalid boolean value '%s'"   \
-                                 " (should be 'yes' or 'no')\n", val);  \
+                                        " (should be 'yes' or 'no')\n", \
+       /* gcc 10 (20200119) complains that |val| could be null here. */ \
+       /* I think it is wrong, but anyway, to placate it .. */          \
+                                        (val ? val : "(null)"));        \
          res = False; }                                                 \
       res; }))
 

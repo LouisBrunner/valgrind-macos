@@ -8,6 +8,7 @@ int r1,r2,r3,r4,r5,r6,r7,r8,a1,a2;
 
 extern void foo ( void );
 asm("\n"
+".text\n"
 VG_SYM(foo) ":\n"
 "\tpushl $0\n"
 "\tpopfl\n"
@@ -49,6 +50,7 @@ VG_SYM(foo) ":\n"
 "\tpopl " VG_SYM(r8) "\n"
 
 "\tret\n"
+".previous\n"
 );
 
 int main ( void )

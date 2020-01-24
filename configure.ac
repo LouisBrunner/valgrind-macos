@@ -373,6 +373,9 @@ case "${host_os}" in
         AC_DEFINE([DARWIN_10_12], 101200, [DARWIN_VERS value for macOS 10.12])
         AC_DEFINE([DARWIN_10_13], 101300, [DARWIN_VERS value for macOS 10.13])
         AC_DEFINE([DARWIN_10_14], 101400, [DARWIN_VERS value for macOS 10.14])
+        AC_DEFINE([DARWIN_10_15], 101500, [DARWIN_VERS value for macOS 10.15])
+
+        AC_CHECK_PROG([XCRUN], [xcrun], [yes], [no])
 
 	AC_MSG_CHECKING([for the kernel version])
 	kernel=`uname -r`
@@ -453,10 +456,16 @@ case "${host_os}" in
                   AC_DEFINE([DARWIN_VERS], DARWIN_10_14, [Darwin / Mac OS X version])
                   DEFAULT_SUPP="darwin18.supp ${DEFAULT_SUPP}"
                   DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
+      ;;
+       19.*)
+      AC_MSG_RESULT([Darwin 19.x (${kernel}) / macOS 10.15 Catalina])
+      AC_DEFINE([DARWIN_VERS], DARWIN_10_15, [Darwin / Mac OS X version])
+      DEFAULT_SUPP="darwin19.supp ${DEFAULT_SUPP}"
+      DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
                   ;;
              *) 
 		  AC_MSG_RESULT([unsupported (${kernel})])
-		  AC_MSG_ERROR([Valgrind works on Darwin 10.x-18.x (Mac OS X 10.6-11 and macOS 10.12-14)])
+		  AC_MSG_ERROR([Valgrind works on Darwin 10.x-19.x (Mac OS X 10.6-11 and macOS 10.12-15)])
 		  ;;
 	esac
         ;;
@@ -521,6 +530,25 @@ case "$ARCH_MAX-$VGCONF_OS" in
         AC_MSG_RESULT([no])
         ])
         CFLAGS=$safe_CFLAGS;;
+     x86-darwin|amd64-darwin)
+        AC_MSG_CHECKING([for the Xcode SDK version])
+        xcodeversion="unknown"
+        if test "x$XCRUN" != "xno"; then
+          xcodeversion=`xcrun --sdk macosx --show-sdk-version`
+        fi
+        AC_MSG_RESULT([${xcodeversion}])
+
+        AC_MSG_CHECKING([for 32 bit build support])
+        macos_only_32bit="no"
+        case "$xcodeversion" in
+          10.14.6|10.15)
+            vg_cv_only64bit="yes"
+            AC_MSG_RESULT([no])
+          ;;
+          *)
+            AC_MSG_RESULT([yes])
+          ;;
+        esac;;
 esac
 
 if test x$vg_cv_only64bit = xyes -a x$vg_cv_only32bit = xyes; then
@@ -1026,8 +1054,7 @@ AC_SUBST(VG_TMPDIR, [$tmpdir])
 # Detect xcode path
 #----------------------------------------------------------------------------
 AM_COND_IF([VGCONF_OS_IS_DARWIN],
-[AC_CHECK_PROG([XCRUN], [xcrun], [yes], [no])
-AC_MSG_CHECKING([for xcode sdk include path])
+[AC_MSG_CHECKING([for xcode sdk include path])
 AC_ARG_WITH(xcodedir,
    [  --with-xcode-path=PATH      Specify path for xcode sdk includes],
    [xcodedir="$withval"],

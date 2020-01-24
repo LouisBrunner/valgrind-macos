@@ -1,0 +1,46 @@
+name: Build
+
+on: [push]
+
+jobs:
+  # FIXME: both build together?
+  build_linux:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: mstksg/get-package@v1
+      with:
+        apt-get: libc6-dbg
+    - uses: actions/checkout@v1
+    - name: autogen.sh
+      run: ./autogen.sh
+    - name: configure
+      run: ./configure
+    - name: make
+      run: make
+    - name: try ls -l
+      run: ./vg-in-place ls -l
+    # TODO: block on gdbserver_tests/hgtls
+    # - name: make regtest
+    #   run: make regtest
+
+  build_macos:
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: mstksg/get-package@v1
+      with:
+        brew: automake
+    - uses: actions/checkout@v1
+    - name: autogen.sh
+      run: ./autogen.sh
+    - name: configure
+      run: ./configure
+    - name: make
+      run: make
+    - name: try ls -l
+      run: ./vg-in-place ls -l
+    - name: make regtest
+      run: make regtest

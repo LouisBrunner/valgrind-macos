@@ -6,13 +6,15 @@ double arg, res1, res2;
 
 extern void do_fxtract ( void );
 asm("\n"
+".text\n"
 VG_SYM(do_fxtract) ":\n"
 "\tfinit\n"
 "\tfldl " VG_SYM(arg) "\n"
 "\tfxtract\n"
 "\tfstpl " VG_SYM(res1) "\n"
 "\tfstpl " VG_SYM(res2) "\n"
-"\tret"
+"\tret\n"
+".previous\n"
 );
 
 void try ( double x )

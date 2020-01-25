@@ -30,6 +30,7 @@ ULong flags_out;
 
 extern void shld64 ( void );
 asm("\n"
+".text\n"
 "shld64:\n"
 "\tpushq %rsi\n"
 "\tpushq %r11\n"
@@ -47,10 +48,12 @@ asm("\n"
 "\tpopq %r11\n"
 "\tpopq %rsi\n"
 "\tret\n"
+".previous\n"
 );
 
 extern void shld32 ( void );
 asm("\n"
+".text\n"
 "shld32:\n"
 "\tpushq %rsi\n"
 "\tpushq %r11\n"
@@ -68,10 +71,12 @@ asm("\n"
 "\tpopq %r11\n"
 "\tpopq %rsi\n"
 "\tret\n"
+".previous\n"
 );
 
 extern void shld16 ( void );
 asm("\n"
+".text\n"
 "shld16:\n"
 "\tpushq %rsi\n"
 "\tpushq %r11\n"
@@ -89,11 +94,13 @@ asm("\n"
 "\tpopq %r11\n"
 "\tpopq %rsi\n"
 "\tret\n"
+".previous\n"
 );
 
 
 extern void shrd64 ( void );
 asm("\n"
+".text\n"
 "shrd64:\n"
 "\tpushq %rsi\n"
 "\tpushq %r11\n"
@@ -111,10 +118,12 @@ asm("\n"
 "\tpopq %r11\n"
 "\tpopq %rsi\n"
 "\tret\n"
+".previous\n"
 );
 
 extern void shrd32 ( void );
 asm("\n"
+".text\n"
 "shrd32:\n"
 "\tpushq %rsi\n"
 "\tpushq %r11\n"
@@ -132,10 +141,12 @@ asm("\n"
 "\tpopq %r11\n"
 "\tpopq %rsi\n"
 "\tret\n"
+".previous\n"
 );
 
 extern void shrd16 ( void );
 asm("\n"
+".text\n"
 "shrd16:\n"
 "\tpushq %rsi\n"
 "\tpushq %r11\n"
@@ -153,6 +164,7 @@ asm("\n"
 "\tpopq %r11\n"
 "\tpopq %rsi\n"
 "\tret\n"
+".previous\n"
 );
 
 

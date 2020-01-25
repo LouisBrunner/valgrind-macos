@@ -8,6 +8,7 @@ ULong result;
 
 extern void shrl32_with_0x10 ( void );
 asm("\n"
+".text\n"
 "shrl32_with_0x10:\n"
 "\tpushq %rdx\n"
 "\tmovq data, %rdx\n"
@@ -20,6 +21,7 @@ asm("\n"
 "\tshrl32_with_0x10_jump:\n"
 "\tmov $0xdeaddead, %edx\n"
 "\tjmp shrl32_with_0x10_cont\n"
+".previous\n"
 );
 
 

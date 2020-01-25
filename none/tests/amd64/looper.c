@@ -22,6 +22,7 @@ asm("\n"
 "\tmovq %rax, res\n"
 "\tpopq %rcx\n"
 "\tret\n"
+".previous\n"
 );
 
 extern void loop_ne ( void );
@@ -42,6 +43,7 @@ asm("\n"
 "\tmovq %rax, res\n"
 "\tpopq %rcx\n"
 "\tret\n"
+".previous\n"
 );
 
 extern void loop_e ( void );
@@ -66,6 +68,7 @@ asm("\n"
 "\tmovq %rax, res\n"
 "\tpopq %rcx\n"
 "\tret\n"
+".previous\n"
 );
 
 int main ( void )

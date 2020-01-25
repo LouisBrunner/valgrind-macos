@@ -14,6 +14,7 @@ UInt zout;
 
 extern void foo ( void );
 asm("\n"
+    ".text\n"
     VG_SYM(foo) ":\n"
     "\tpushl %eax\n"
     "\tpushl %ebx\n"
@@ -40,6 +41,7 @@ asm("\n"
     "\tpopl %ebx\n"
     "\tpopl %eax\n"
     "\tret\n"
+    ".previous\n"
     );
 
 int main ( void )

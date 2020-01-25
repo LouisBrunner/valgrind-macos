@@ -21,6 +21,7 @@ VG_SYM(loop_plain) ":\n"
 "\tmovl %eax, " VG_SYM(res) "\n"
 "\tpopl %ecx\n"
 "\tret\n"
+".previous\n"
 );
 
 extern void loop_ne ( void );
@@ -40,6 +41,7 @@ VG_SYM(loop_ne) ":\n"
 "\tmovl %eax, " VG_SYM(res) "\n"
 "\tpopl %ecx\n"
 "\tret\n"
+".previous\n"
 );
 
 extern void loop_e ( void );
@@ -63,6 +65,7 @@ VG_SYM(loop_e) ":\n"
 "\tmovl %eax, " VG_SYM(res) "\n"
 "\tpopl %ecx\n"
 "\tret\n"
+".previous\n"
 );
 
 int main ( void )

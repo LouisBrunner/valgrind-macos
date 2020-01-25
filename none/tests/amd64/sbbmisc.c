@@ -9,6 +9,7 @@ int in_l, out_l1, out_l2;
 
 extern void sbb_ib_al ( void );
 asm("\n"
+".text\n"
 VG_SYM(sbb_ib_al) ":\n"
 
 #ifndef VGP_amd64_darwin
@@ -37,11 +38,13 @@ VG_SYM(sbb_ib_al) ":\n"
 #endif
 
 "\tretq\n"
+".previous\n"
 );
 
 
 extern void sbb_iw_ax ( void );
 asm("\n"
+".text\n"
 VG_SYM(sbb_iw_ax) ":\n"
 
 #ifndef VGP_amd64_darwin
@@ -69,11 +72,13 @@ VG_SYM(sbb_iw_ax) ":\n"
 #endif
 
 "\tretq\n"
+".previous\n"
 );
 
 
 extern void sbb_il_eax ( void );
 asm("\n"
+".text\n"
 VG_SYM(sbb_il_eax) ":\n"
 
 #ifndef VGP_amd64_darwin
@@ -101,11 +106,13 @@ VG_SYM(sbb_il_eax) ":\n"
 #endif
 
 "\tretq\n"
+".previous\n"
 );
 
 
 extern void sbb_eb_gb ( void );
 asm("\n"
+".text\n"
 VG_SYM(sbb_eb_gb) ":\n"
 
 #ifndef VGP_amd64_darwin
@@ -135,11 +142,13 @@ VG_SYM(sbb_eb_gb) ":\n"
 #endif
 
 "\tretq\n"
+".previous\n"
 );
 
 
 extern void sbb_eb_gb_2 ( void );
 asm("\n"
+".text\n"
 VG_SYM(sbb_eb_gb_2) ":\n"
 "\tpushq %rcx\n"
 
@@ -173,11 +182,13 @@ VG_SYM(sbb_eb_gb_2) ":\n"
 
 "\tpopq %rcx\n"
 "\tretq\n"
+".previous\n"
 );
 
 
 extern void adc_eb_gb ( void );
 asm("\n"
+".text\n"
 VG_SYM(adc_eb_gb) ":\n"
 
 #ifndef VGP_amd64_darwin
@@ -207,11 +218,13 @@ VG_SYM(adc_eb_gb) ":\n"
 #endif
 
 "\tretq\n"
+".previous\n"
 );
 
 
 extern void adc_eb_gb_2 ( void );
 asm("\n"
+".text\n"
 VG_SYM(adc_eb_gb_2) ":\n"
 "\tpushq %rcx\n"
 
@@ -245,10 +258,12 @@ VG_SYM(adc_eb_gb_2) ":\n"
 
 "\tpopq %rcx\n"
 "\tretq\n"
+".previous\n"
 );
 
 extern void adc_ib_al ( void );
 asm("\n"
+".text\n"
 VG_SYM(adc_ib_al) ":\n"
 
 #ifndef VGP_amd64_darwin
@@ -276,11 +291,13 @@ VG_SYM(adc_ib_al) ":\n"
 #endif
 
 "\tretq\n"
+".previous\n"
 );
 
 
 extern void adc_iw_ax ( void );
 asm("\n"
+".text\n"
 VG_SYM(adc_iw_ax) ":\n"
 
 #ifndef VGP_amd64_darwin
@@ -308,11 +325,13 @@ VG_SYM(adc_iw_ax) ":\n"
 #endif
 
 "\tretq\n"
+".previous\n"
 );
 
 
 extern void adc_il_eax ( void );
 asm("\n"
+".text\n"
 VG_SYM(adc_il_eax) ":\n"
 
 #ifndef VGP_amd64_darwin
@@ -340,6 +359,7 @@ VG_SYM(adc_il_eax) ":\n"
 #endif
 
 "\tretq\n"
+".previous\n"
 );
 
 

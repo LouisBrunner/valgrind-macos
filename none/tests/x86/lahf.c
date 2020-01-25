@@ -3,6 +3,7 @@
 
 extern int foo_1 ( void );
 asm("\n"
+".text\n"
 VG_SYM(foo_1) ":\n"
 "\tpushl $0\n"
 "\tpopfl\n"
@@ -11,10 +12,12 @@ VG_SYM(foo_1) ":\n"
 "\tsubl %eax, %edx\n"
 "\tlahf\n"
 "\tret\n"
+".previous\n"
 );
 
 extern int foo_0 ( void );
 asm("\n"
+".text\n"
 VG_SYM(foo_0) ":\n"
 "\tpushl $0\n"
 "\tpopfl\n"
@@ -23,6 +26,7 @@ VG_SYM(foo_0) ":\n"
 "\tsubl %eax, %edx\n"
 "\tlahf\n"
 "\tret\n"
+".previous\n"
 );
 
 int main ( void )

@@ -5,6 +5,7 @@ typedef unsigned long long int ULong;
 
 extern ULong lahf_1 ( void );
 asm("\n"
+".text\n"
 "lahf_1:\n"
 "\tpushq $0\n"
 "\tpopfq\n"
@@ -13,10 +14,12 @@ asm("\n"
 "\tsubq %rax, %rdx\n"
 "\t.byte 0x9F\n" /* lahf */
 "\tret\n"
+".previous\n"
 );
 
 extern ULong lahf_0 ( void );
 asm("\n"
+".text\n"
 "lahf_0:\n"
 "\tpushq $0\n"
 "\tpopfq\n"
@@ -25,16 +28,19 @@ asm("\n"
 "\tsubq %rax, %rdx\n"
 "\t.byte 0x9F\n" /* lahf */
 "\tret\n"
+".previous\n"
 );
 
 extern ULong sahf_then_lahf ( ULong );
 asm("\n"
+".text\n"
 "sahf_then_lahf:\n"
 "\tmovq %rdi, %rax\n"
 "\t.byte 0x9E\n" /* sahf */
 "\tmovabsq $0, %rax\n"
 "\t.byte 0x9F\n" /* lahf */
 "\tret\n"
+".previous\n"
 );
 
 int main ( void )

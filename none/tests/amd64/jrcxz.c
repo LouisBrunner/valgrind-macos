@@ -8,6 +8,7 @@ ULong arg64, res64;
 
 extern void foo64 ( void );
 asm("\n"
+".text\n"
 "foo64:\n"
 "\tpushq %rcx\n"
 
@@ -25,6 +26,7 @@ asm("\n"
 
 "\tpopq %rcx\n"
 "\tret\n"
+".previous\n"
 );
 
 
@@ -32,6 +34,7 @@ UInt arg32, res32;
 
 extern void foo32 ( void );
 asm("\n"
+".text\n"
 "foo32:\n"
 "\tpushq %rcx\n"
 
@@ -49,6 +52,7 @@ asm("\n"
 
 "\tpopq %rcx\n"
 "\tret\n"
+".previous\n"
 );
 
 

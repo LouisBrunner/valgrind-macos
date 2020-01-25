@@ -6,6 +6,7 @@ double arg, res1, res2;
 
 extern void do_fxtract ( void );
 asm("\n"
+".text\n"
 ".global do_fxtract\n"
 "do_fxtract:\n"
 "\tfinit\n"
@@ -13,7 +14,8 @@ asm("\n"
 "\tfxtract\n"
 "\tfstpl res1\n"
 "\tfstpl res2\n"
-"\tret"
+"\tret\n"
+".previous\n"
 );
 
 void try ( double x )

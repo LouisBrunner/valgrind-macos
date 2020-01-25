@@ -9,6 +9,7 @@ int in_l, out_l1, out_l2;
 
 extern void sbb_ib_al ( void );
 asm("\n"
+".text\n"
 VG_SYM(sbb_ib_al) ":\n"
 
 "\tmovb " VG_SYM(in_b) ", %al\n"
@@ -22,11 +23,13 @@ VG_SYM(sbb_ib_al) ":\n"
 "\tmovb %al, " VG_SYM(out_b2) "\n"
 
 "\tret\n"
+".previous\n"
 );
 
 
 extern void sbb_iw_ax ( void );
 asm("\n"
+".text\n"
 VG_SYM(sbb_iw_ax) ":\n"
 
 "\tmovw " VG_SYM(in_w) ", %ax\n"
@@ -40,11 +43,13 @@ VG_SYM(sbb_iw_ax) ":\n"
 "\tmovw %ax, " VG_SYM(out_w2) "\n"
 
 "\tret\n"
+".previous\n"
 );
 
 
 extern void sbb_il_eax ( void );
 asm("\n"
+".text\n"
 VG_SYM(sbb_il_eax) ":\n"
 
 "\tmovl " VG_SYM(in_l) ", %eax\n"
@@ -58,11 +63,13 @@ VG_SYM(sbb_il_eax) ":\n"
 "\tmovl %eax, " VG_SYM(out_l2) "\n"
 
 "\tret\n"
+".previous\n"
 );
 
 
 extern void sbb_eb_gb ( void );
 asm("\n"
+".text\n"
 VG_SYM(sbb_eb_gb) ":\n"
 
 "\tmovb " VG_SYM(in_b) ", %al\n"
@@ -76,11 +83,13 @@ VG_SYM(sbb_eb_gb) ":\n"
 "\tmovb %al, " VG_SYM(out_b2) "\n"
 
 "\tret\n"
+".previous\n"
 );
 
 
 extern void sbb_eb_gb_2 ( void );
 asm("\n"
+".text\n"
 VG_SYM(sbb_eb_gb_2) ":\n"
 "\tpushl %ecx\n"
 
@@ -98,11 +107,13 @@ VG_SYM(sbb_eb_gb_2) ":\n"
 
 "\tpopl %ecx\n"
 "\tret\n"
+".previous\n"
 );
 
 
 extern void adc_eb_gb ( void );
 asm("\n"
+".text\n"
 VG_SYM(adc_eb_gb) ":\n"
 
 "\tmovb " VG_SYM(in_b) ", %al\n"
@@ -116,11 +127,13 @@ VG_SYM(adc_eb_gb) ":\n"
 "\tmovb %al, " VG_SYM(out_b2) "\n"
 
 "\tret\n"
+".previous\n"
 );
 
 
 extern void adc_eb_gb_2 ( void );
 asm("\n"
+".text\n"
 VG_SYM(adc_eb_gb_2) ":\n"
 "\tpushl %ecx\n"
 
@@ -138,10 +151,12 @@ VG_SYM(adc_eb_gb_2) ":\n"
 
 "\tpopl %ecx\n"
 "\tret\n"
+".previous\n"
 );
 
 extern void adc_ib_al ( void );
 asm("\n"
+".text\n"
 VG_SYM(adc_ib_al) ":\n"
 
 "\tmovb " VG_SYM(in_b) ", %al\n"
@@ -155,11 +170,13 @@ VG_SYM(adc_ib_al) ":\n"
 "\tmovb %al, " VG_SYM(out_b2) "\n"
 
 "\tret\n"
+".previous\n"
 );
 
 
 extern void adc_iw_ax ( void );
 asm("\n"
+".text\n"
 VG_SYM(adc_iw_ax) ":\n"
 
 "\tmovw " VG_SYM(in_w) ", %ax\n"
@@ -173,11 +190,13 @@ VG_SYM(adc_iw_ax) ":\n"
 "\tmovw %ax, " VG_SYM(out_w2) "\n"
 
 "\tret\n"
+".previous\n"
 );
 
 
 extern void adc_il_eax ( void );
 asm("\n"
+".text\n"
 VG_SYM(adc_il_eax) ":\n"
 
 "\tmovl " VG_SYM(in_l) ", %eax\n"
@@ -191,6 +210,7 @@ VG_SYM(adc_il_eax) ":\n"
 "\tmovl %eax, " VG_SYM(out_l2) "\n"
 
 "\tret\n"
+".previous\n"
 );
 
 

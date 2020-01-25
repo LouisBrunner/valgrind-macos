@@ -459,6 +459,7 @@ static Bool stmt_is_guardable ( const IRStmt* st )
          return False;
       // These could be guarded, with some effort, if really needed, but
       // currently aren't guardable.
+      case Ist_LoadG:
       case Ist_Store:
       case Ist_StoreG:
       case Ist_Exit:

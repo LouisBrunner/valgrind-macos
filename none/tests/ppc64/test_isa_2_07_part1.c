@@ -384,27 +384,27 @@ static void test_fmrgow (void)
 // VSX move instructions
 static void test_mfvsrd (void)
 {
-   __asm__ __volatile__ ("mfvsrd %0,%x1" : "=r" (r14) : "ws" (vec_inA));
+   __asm__ __volatile__ ("mfvsrd %0,%x1" : "=r" (r14) : "wa" (vec_inA));
 };
 
 static void test_mfvsrwz (void)
 {
-   __asm__ __volatile__ ("mfvsrwz %0,%x1" : "=r" (r14) : "ws" (vec_inA));
+   __asm__ __volatile__ ("mfvsrwz %0,%x1" : "=r" (r14) : "wa" (vec_inA));
 };
 
 static void test_mtvsrd (void)
 {
-   __asm__ __volatile__ ("mtvsrd %x0,%1" : "=ws" (vec_out) : "r" (r14));
+   __asm__ __volatile__ ("mtvsrd %x0,%1" : "=wa" (vec_out) : "r" (r14));
 };
 
 static void test_mtvsrwz (void)
 {
-   __asm__ __volatile__ ("mtvsrwz %x0,%1" : "=ws" (vec_out) : "r" (r14));
+   __asm__ __volatile__ ("mtvsrwz %x0,%1" : "=wa" (vec_out) : "r" (r14));
 };
 
 static void test_mtvsrwa (void)
 {
-   __asm__ __volatile__ ("mtvsrwa %x0,%1" : "=ws" (vec_out) : "r" (r14));
+   __asm__ __volatile__ ("mtvsrwa %x0,%1" : "=wa" (vec_out) : "r" (r14));
 };
 
 static void test_mtfprwa (void)

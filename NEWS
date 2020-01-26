@@ -71,6 +71,7 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
+385386  Assertion failed "szB >= CACHE_ENTRY_SIZE" at m_debuginfo/image.c:517
 400593  In Coregrind, use statx for some internal syscalls if [f]stat[64] fail
 400872  Add nanoMIPS support to Valgrind
 404406  s390x: z14 miscellaneous instructions not implemented
@@ -79,6 +80,8 @@ where XXXXXX is the bug number as listed below.
 406824  Unsupported baseline
 407218  Add support for the copy_file_range syscall
 407307  Intercept stpcpy also in ld.so for arm64
+407376  Update Xen support to 4.12 (4.13, actually) and add more coverage
+        == 390553
 407764  drd cond_post_wait gets wrong (?) condition on s390x z13 system
 408009  Expose rdrand and f16c even on avx if host cpu supports them
 408091  Missing pkey syscalls
@@ -94,17 +97,21 @@ where XXXXXX is the bug number as listed below.
 411134  Allow the user to change a set of command line options during execution
 411451  amd64->IR of bt/btc/bts/btr with immediate clears zero flag
 412344  Problem setting mips flags with specific paths
+412408  unhandled arm-linux syscall: 124 - adjtime - on arm-linux
 413119  Ioctl wrapper for DRM_IOCTL_I915_GEM_MMAP
 413330  avx-1 test fails on AMD EPYC 7401P 24-Core Processor
 413603  callgrind_annotate/cg_annotate truncate function names at '#'
 414565  Specific use case bug found in SysRes VG_(do_sys_sigprocmask)
+415757  vex x86->IR: 0x66 0xF 0xCE 0x4F (bswapw)
 416239  valgrind crashes when handling clock_adjtime
 416286  DRD reports "conflicting load" error on std::mutex::lock()
 416387  finit_module and bpf syscalls are unhandled on arm64
-
+416464  Fix false reports for uninitialized memory for PR_CAPBSET_READ/DROP
 n-i-bz  Fix minor one time leaks in dhat.
 n-i-bz  Add --run-cxx-freeres=no in outer args to avoid inner crashes.
 n-i-bz  Add support for the Linux io_uring system calls
+n-i-bz  sys_statx: don't complain if both |filename| and |buf| are NULL.
+
 
 Release 3.15.0 (12 April 2019)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

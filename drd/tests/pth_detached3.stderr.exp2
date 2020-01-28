@@ -2,12 +2,12 @@
 pthread_detach(): invalid thread ID 0x........
    at 0x........: vgDrd_set_joinable (drd_pthread_intercepts.c:?)
    by 0x........: pthread_detach (drd_pthread_intercepts.c:?)
-   by 0x........: main (pth_detached3.c:21)
+   by 0x........: main (pth_detached3.c:22)
 
 pthread_detach(): invalid thread ID 0x........
    at 0x........: vgDrd_set_joinable (drd_pthread_intercepts.c:?)
    by 0x........: pthread_detach (drd_pthread_intercepts.c:?)
-   by 0x........: main (pth_detached3.c:24)
+   by 0x........: main (pth_detached3.c:25)
 
 Finished.
 

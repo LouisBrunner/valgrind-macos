@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <stdint.h>
 
 static void* thread_func(void* arg)
 {
@@ -21,7 +22,7 @@ int main(int argc, char** argv)
   pthread_detach(thread);
 
   /* Invoke pthread_detach() with an invalid thread ID. */
-  pthread_detach(thread + 8);
+  pthread_detach((pthread_t)((uintptr_t)thread + 8));
 
   fprintf(stderr, "Finished.\n");
 

@@ -10,7 +10,11 @@
 #include <fcntl.h>     // open
 #include <unistd.h>    // lseek
 #include <sys/stat.h>  // S_IRUSR
+
+// <features.h> is a glibc-specific extension, other libc's may not provide it
+#ifdef __GLIBC__
 #include <features.h>  // __GLIBC_PREREQ
+#endif
 
 // This file determines s390x features a processor supports.
 //

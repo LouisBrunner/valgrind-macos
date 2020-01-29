@@ -1987,6 +1987,7 @@
 /none/tests/x86/aad_aam
 /none/tests/x86/allexec
 /none/tests/x86/badseg
+/none/tests/x86/bswapw
 /none/tests/x86/bt_everything
 /none/tests/x86/bt_literal
 /none/tests/x86/bug125959-x86

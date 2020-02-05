@@ -127,6 +127,7 @@ static HReg          s390_isel_int_expr(ISelEnv *, IRExpr *);
 static s390_amode   *s390_isel_amode(ISelEnv *, IRExpr *);
 static s390_amode   *s390_isel_amode_b12_b20(ISelEnv *, IRExpr *);
 static s390_cc_t     s390_isel_cc(ISelEnv *, IRExpr *);
+static HReg          s390_isel_int1_expr(ISelEnv *env, IRExpr *expr, HReg dst);
 static s390_opnd_RMI s390_isel_int_expr_RMI(ISelEnv *, IRExpr *);
 static void          s390_isel_int128_expr(HReg *, HReg *, ISelEnv *, IRExpr *);
 static HReg          s390_isel_float_expr(ISelEnv *, IRExpr *);
@@ -1763,9 +1764,7 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
 
       /* Expressions whose argument is 1-bit wide */
       if (typeOfIRExpr(env->type_env, arg) == Ity_I1) {
-         s390_cc_t cond = s390_isel_cc(env, arg);
-         dst = newVRegI(env);     /* Result goes into a new register */
-         addInstr(env, s390_insn_cc2bool(dst, cond));
+         dst = s390_isel_int1_expr(env, arg, INVALID_HREG);
 
          switch (unop) {
          case Iop_1Uto8:
@@ -1784,16 +1783,9 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          case Iop_1Sto8:
          case Iop_1Sto16:
          case Iop_1Sto32:
-            shift.variant.imm = 31;
-            addInstr(env, s390_insn_alu(4, S390_ALU_LSH,  dst, shift));
-            addInstr(env, s390_insn_alu(4, S390_ALU_RSHA, dst, shift));
-            break;
-
          case Iop_1Sto64:
-            shift.variant.imm = 63;
-            addInstr(env, s390_insn_alu(8, S390_ALU_LSH,  dst, shift));
-            addInstr(env, s390_insn_alu(8, S390_ALU_RSHA, dst, shift));
-            break;
+            /* Int1 values are already sign-extended to 64 bits. */
+            return dst;
 
          default:
             goto irreducible;
@@ -3466,7 +3458,8 @@ s390_isel_dfp_expr(ISelEnv *env, IRExpr *expr)
 /*--- ISEL: Condition Code                              ---*/
 /*---------------------------------------------------------*/
 
-/* This function handles all operators that produce a 1-bit result */
+/* Handle all operators that produce a 1-bit result.  This function is mutually
+   recursive with s390_isel_int1_expr. */
 static s390_cc_t
 s390_isel_cc(ISelEnv *env, IRExpr *cond)
 {
@@ -3554,45 +3547,14 @@ s390_isel_cc(ISelEnv *env, IRExpr *cond)
    if (cond->tag == Iex_Binop) {
       IRExpr *arg1 = cond->Iex.Binop.arg1;
       IRExpr *arg2 = cond->Iex.Binop.arg2;
-      HReg reg1, reg2;
 
-      /* sewardj 2019Nov30: This will be needed when chasing through conditional
-         branches in guest_generic_bb_to_IR.c is enabled on s390x.
-         Unfortunately that is currently disabled on s390x as it causes
-         mysterious segfaults and also exposes some unhandled Iex_ITE cases in
-         this instruction selector.  The following Iop_And1/Iop_Or1 cases are
-         also needed when enabled.  The code below is *believed* to be correct,
-         and has been lightly tested, but it is #if 0'd until such time as we
-         need it. */
-#     if 0
-      /* FIXME: We could (and probably should) do a lot better here, by using
-         the iselCondCode_C/_R scheme used in the amd64 insn selector. */
+      /* And1 / Or1 */
       if (cond->Iex.Binop.op == Iop_And1 || cond->Iex.Binop.op == Iop_Or1) {
-         /* In short: force both operands into registers, AND or OR them, mask
-            off all but the lowest bit, then convert the result back into a
-            condition code. */
-         const s390_opnd_RMI one = s390_opnd_imm(1);
-
-         HReg x_as_64 = newVRegI(env);
-         s390_cc_t cc_x = s390_isel_cc(env, arg1);
-         addInstr(env, s390_insn_cc2bool(x_as_64, cc_x));
-         addInstr(env, s390_insn_alu(8, S390_ALU_AND, x_as_64, one));
-
-         HReg y_as_64 = newVRegI(env);
-         s390_cc_t cc_y = s390_isel_cc(env, arg2);
-         addInstr(env, s390_insn_cc2bool(y_as_64, cc_y));
-         addInstr(env, s390_insn_alu(8, S390_ALU_AND, y_as_64, one));
-
-         s390_alu_t opkind
-            = cond->Iex.Binop.op == Iop_And1 ? S390_ALU_AND : S390_ALU_OR;
-         addInstr(env, s390_insn_alu(/*size=*/8,
-                                     opkind, x_as_64, s390_opnd_reg(y_as_64)));
-
-         addInstr(env, s390_insn_alu(/*size=*/8, S390_ALU_AND, x_as_64, one));
-         addInstr(env, s390_insn_test(/*size=*/8, s390_opnd_reg(x_as_64)));
+         /* Perform the calculation in registers, but ignore the resulting
+            value.  Instead, assume that the condition code is set. */
+         (void) s390_isel_int1_expr(env, cond, INVALID_HREG);
          return S390_CC_NE;
       }
-#     endif /* 0 */
 
       // |sizeofIRType| asserts on Ity_I1, so we can't do it until after we're
       // sure that Iop_And1 and Iop_Or1 can't make it this far.
@@ -3627,14 +3589,12 @@ s390_isel_cc(ISelEnv *env, IRExpr *cond)
          goto do_compare_ze;
 
       do_compare_ze: {
-            s390_opnd_RMI op1, op2;
-
-            op1  = s390_isel_int_expr_RMI(env, arg1);
-            reg1 = newVRegI(env);
+            s390_opnd_RMI op1 = s390_isel_int_expr_RMI(env, arg1);
+            HReg reg1 = newVRegI(env);
             addInstr(env, s390_insn_unop(4, op, reg1, op1));
 
-            op2  = s390_isel_int_expr_RMI(env, arg2);
-            reg2 = newVRegI(env);
+            s390_opnd_RMI op2 = s390_isel_int_expr_RMI(env, arg2);
+            HReg reg2 = newVRegI(env);
             addInstr(env, s390_insn_unop(4, op, reg2, op2));  /* zero extend */
 
             op2 = s390_opnd_reg(reg2);
@@ -3711,6 +3671,51 @@ s390_isel_cc(ISelEnv *env, IRExpr *cond)
  fail:
    ppIRExpr(cond);
    vpanic("s390_isel_cc: unexpected operator");
+}
+
+/*---------------------------------------------------------*/
+/*--- ISEL: Bit-typed expression                        ---*/
+/*---------------------------------------------------------*/
+
+/* Handle Int1-typed expressions that are supposed to end up in a register.
+   Place the result into the given target register 'dst', or, if INVALID_HREG is
+   specified, create a new virtual integer register if necessary.  Keep Int1
+   values in registers always sign-extended to 64 bits.  This function is
+   mutually recursive with s390_isel_cc. */
+static HReg
+s390_isel_int1_expr(ISelEnv *env, IRExpr *expr, HReg dst)
+{
+   vassert(expr);
+   vassert(typeOfIRExpr(env->type_env, expr) == Ity_I1);
+
+   /* Variable. */
+   if (expr->tag == Iex_RdTmp) {
+      HReg res = lookupIRTemp(env, expr->Iex.RdTmp.tmp);
+      if (hregIsInvalid(dst)) {
+         return res;
+      }
+      addInstr(env, s390_insn_move(8, dst, res));
+      return dst;
+   }
+
+   HReg res = hregIsInvalid(dst) ? newVRegI(env) : dst;
+
+   /* And1 / Or1 */
+   if (expr->tag == Iex_Binop
+       && (expr->Iex.Binop.op == Iop_And1 || expr->Iex.Binop.op == Iop_Or1)) {
+      HReg reg1 = s390_isel_int1_expr(env, expr->Iex.Binop.arg1, res);
+      HReg reg2 = s390_isel_int1_expr(env, expr->Iex.Binop.arg2, INVALID_HREG);
+      s390_alu_t opkind
+         = expr->Iex.Binop.op == Iop_And1 ? S390_ALU_AND : S390_ALU_OR;
+
+      /* Ensure that the condition code is set; s390_isel_cc relies on it. */
+      addInstr(env, s390_insn_alu(8, opkind, reg1, s390_opnd_reg(reg2)));
+      return reg1;
+   }
+
+   /* Else, call s390_isel_cc and force the value into a register. */
+   addInstr(env, s390_insn_cc2bool(res, s390_isel_cc(env, expr)));
+   return res;
 }
 
 
@@ -4988,9 +4993,8 @@ no_memcpy_put:
          break;
 
       case Ity_I1: {
-         s390_cc_t cond = s390_isel_cc(env, stmt->Ist.WrTmp.data);
          dst = lookupIRTemp(env, tmp);
-         addInstr(env, s390_insn_cc2bool(dst, cond));
+         dst = s390_isel_int1_expr(env, stmt->Ist.WrTmp.data, dst);
          return;
       }
 

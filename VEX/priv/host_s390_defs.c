@@ -9376,25 +9376,24 @@ s390_insn_cc2bool_emit(UChar *buf, const s390_insn *insn)
    UChar r1 = hregNumber(insn->variant.cc2bool.dst);
    s390_cc_t cond = insn->variant.cc2bool.cond;
 
-   /* Make the destination register be 1 or 0, depending on whether
+   /* Make the destination register be -1 or 0, depending on whether
       the relevant condition holds. A 64-bit value is computed. */
    if (cond == S390_CC_ALWAYS)
-      return s390_emit_LGHI(buf, r1, 1);  /* r1 = 1 */
+      return s390_emit_LGHI(buf, r1, -1);  /* r1 = -1 */
 
    /* If LOCGHI is available, use it. */
    if (s390_host_has_lsc2) {
-      /* Clear r1, then load immediate 1 on condition. */
+      /* Clear r1, then load immediate -1 on condition. */
       buf = s390_emit_LGHI(buf, r1, 0);
       if (cond != S390_CC_NEVER)
-         buf = s390_emit_LOCGHI(buf, r1, 1, cond);
+         buf = s390_emit_LOCGHI(buf, r1, -1, cond);
       return buf;
    }
 
    buf = s390_emit_load_cc(buf, r1);                 /* r1 = cc */
    buf = s390_emit_LGHI(buf, R0, cond);              /* r0 = mask */
-   buf = s390_emit_SLLG(buf, r1, R0, r1, DISP20(0)); /* r1 = mask << cc */
-   buf = s390_emit_SRLG(buf, r1, r1, 0,  DISP20(3)); /* r1 = r1 >> 3 */
-   buf = s390_emit_NILL(buf, r1, 1);                 /* r1 = r1 & 0x1 */
+   buf = s390_emit_SLLG(buf, r1, R0, r1, DISP20(60)); /* r1 = mask << (cc+60) */
+   buf = s390_emit_SRAG(buf, r1, r1, 0,  DISP20(63)); /* r1 = r1 >> 63 */
 
    return buf;
 }

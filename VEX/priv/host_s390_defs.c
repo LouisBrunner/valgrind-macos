@@ -1414,6 +1414,19 @@ emit_RIL(UChar *p, ULong op, UChar r1, UInt i2)
 
 
 static UChar *
+emit_RIE(UChar *p, ULong op, UChar r1, UShort i2, UChar m3)
+{
+   ULong the_insn = op;
+
+   the_insn |= ((ULong)r1) << 36;
+   the_insn |= ((ULong)m3) << 32;
+   the_insn |= ((ULong)i2) << 16;
+
+   return emit_6bytes(p, the_insn);
+}
+
+
+static UChar *
 emit_RR(UChar *p, UInt op, UChar r1, UChar r2)
 {
    ULong the_insn = op;
@@ -5129,6 +5142,15 @@ s390_emit_LOCG(UChar *p, UChar r1, UChar m3, UChar b2, UShort dl2, UChar dh2)
       s390_disasm(ENC4(MNM, GPR, UINT, SDXB), "locg", r1, m3, dh2, dl2, 0, b2);
 
    return emit_RSY(p, 0xeb00000000e2ULL, r1, m3, b2, dl2, dh2);
+}
+
+static UChar *
+s390_emit_LOCGHI(UChar *p, UChar r1, UShort i2, UChar m3)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, GPR, INT, UINT), "locghi", r1, (Int)(Short)i2, m3);
+
+   return emit_RIE(p, 0xec0000000046ULL, r1, i2, m3);
 }
 
 
@@ -9354,6 +9376,15 @@ s390_insn_cc2bool_emit(UChar *buf, const s390_insn *insn)
    if (cond == S390_CC_ALWAYS)
       return s390_emit_LGHI(buf, r1, 1);  /* r1 = 1 */
 
+   /* If LOCGHI is available, use it. */
+   if (s390_host_has_lsc2) {
+      /* Clear r1, then load immediate 1 on condition. */
+      buf = s390_emit_LGHI(buf, r1, 0);
+      if (cond != S390_CC_NEVER)
+         buf = s390_emit_LOCGHI(buf, r1, 1, cond);
+      return buf;
+   }
+
    buf = s390_emit_load_cc(buf, r1);                 /* r1 = cc */
    buf = s390_emit_LGHI(buf, R0, cond);              /* r0 = mask */
    buf = s390_emit_SLLG(buf, r1, R0, r1, DISP20(0)); /* r1 = mask << cc */
@@ -10068,6 +10099,11 @@ s390_insn_cond_move_emit(UChar *buf, const s390_insn *insn)
 
       case S390_OPND_IMMEDIATE: {
          ULong value = src.variant.imm;
+
+         /* If LOCGHI is available, use it. */
+         if (s390_host_has_lsc2 && ulong_fits_signed_16bit(value)) {
+            return s390_emit_LOCGHI(p, hregNumber(dst), value, cond);
+         }
 
          /* Load value into R0, then use LOCGR */
          if (insn->size <= 4) {

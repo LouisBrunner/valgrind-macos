@@ -31,10 +31,10 @@
 
 void invoker_restrictions_msg(void)
 {
-   fprintf(stderr, 
-           "Note: vgdb invoker not implemented on this platform.\n"
-           "For more info: read user manual section"
-           " 'Limitations of the Valgrind gdbserver'.\n");
+   TSFPRINTF(stderr, 
+             "Note: vgdb invoker not implemented on this platform.\n"
+             "For more info: read user manual section"
+             " 'Limitations of the Valgrind gdbserver'.\n");
 }
 
 void invoker_cleanup_restore_and_detach(void *v_pid)

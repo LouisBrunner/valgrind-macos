@@ -35,14 +35,19 @@
 
 #include <sys/types.h>
 
+extern Bool timestamp;
+extern char *timestamp_str (Bool produce);
 extern int debuglevel;
-extern struct timeval dbgtv;
-/* if level <= debuglevel, print timestamp, then print provided by debug info */
+
+/* Optionally prints a timestamp, then prints the given info.  This should
+   be used only at the beginning of a new line.  */
+#define TSFPRINTF(stream, ...) (                                        \
+      fprintf(stream, "%s", timestamp_str(timestamp)),                  \
+      fprintf(stream,  __VA_ARGS__),fflush(stream))
+
+/* if level <= debuglevel, print timestamp, then prints provided debug info */
 #define DEBUG(level, ...) (level <= debuglevel ?                        \
-                           gettimeofday(&dbgtv, NULL),                  \
-                           fprintf(stderr, "%ld.%6.6ld ",               \
-                                   (long int)dbgtv.tv_sec,              \
-                                   (long int)dbgtv.tv_usec),            \
+                           fprintf(stderr, "%s", timestamp_str(True)),  \
                            fprintf(stderr, __VA_ARGS__),fflush(stderr)  \
                            : 0)
 
@@ -51,15 +56,17 @@ extern struct timeval dbgtv;
                             fprintf(stderr, __VA_ARGS__),fflush(stderr) \
                             : 0)
 
-/* if errno != 0, 
+/* if errno != 0,
    report the errno and fprintf the ... varargs on stderr. */
 #define ERROR(errno, ...) ((errno == 0 ? 0 : perror("syscall failed")), \
+                           fprintf(stderr, "%s", timestamp_str(timestamp)), \
                            fprintf(stderr, __VA_ARGS__),                \
                            fflush(stderr))
 /* same as ERROR, but also exits with status 1 */
 #define XERROR(errno, ...) ((errno == 0 ? 0 : perror("syscall failed")), \
-                            fprintf(stderr, __VA_ARGS__),                \
-                            fflush(stderr),                              \
+                            fprintf(stderr, "%s", timestamp_str(timestamp)), \
+                            fprintf(stderr, __VA_ARGS__),               \
+                            fflush(stderr),                             \
                             exit(1))
 
 /* Calls malloc (size). Exits if memory can't be allocated. */

@@ -67,8 +67,27 @@
 */
 
 int debuglevel;
-struct timeval dbgtv;
+Bool timestamp = False;
+char timestamp_out[20];
 static char *vgdb_prefix = NULL;
+
+char *timestamp_str (Bool produce)
+{
+   static char out[50];
+   char *ptr;
+   struct timeval dbgtv;
+   struct tm *ts_tm;
+
+   if (produce) {
+      gettimeofday(&dbgtv, NULL);
+      ts_tm = localtime(&dbgtv.tv_sec);
+      ptr = out + strftime(out, sizeof(out), "%H:%M:%S", ts_tm);
+      sprintf(ptr, ".%6.6ld ", dbgtv.tv_usec);
+   } else {
+      out[0] = 0;
+   }
+   return out;
+}
 
 /* Will be set to True when any condition indicating we have to shutdown
    is encountered. */
@@ -488,8 +507,7 @@ void wait_for_gdb_connect(int in_port)
     if (-1 == bind(listen_gdb, (struct sockaddr *)&addr, sizeof(addr))) {
       XERROR(errno, "bind failed");
     }
-    fprintf(stderr, "listening on port %d ...", in_port);
-    fflush(stderr);
+    TSFPRINTF(stderr, "listening on port %d ...", in_port);
     if (-1 == listen(listen_gdb, 1)) {
       XERROR(errno, "error listen failed");
     }
@@ -570,7 +588,7 @@ readchar(int fd)
 
   if (bufcnt <= 0) {
      if (bufcnt == 0) {
-        fprintf(stderr, "readchar: Got EOF\n");
+        TSFPRINTF(stderr, "readchar: Got EOF\n");
         return -2;
      } else {
         ERROR(errno, "readchar\n");
@@ -636,8 +654,8 @@ getpkt(char *buf, int fromfd, int ackfd)
      if (csum == (c1 << 4) + c2)
 	break;
 
-     fprintf(stderr, "Bad checksum, sentsum=0x%x, csum=0x%x, buf=%s\n",
-             (c1 << 4) + c2, csum, buf);
+     TSFPRINTF(stderr, "Bad checksum, sentsum=0x%x, csum=0x%x, buf=%s\n",
+               (c1 << 4) + c2, csum, buf);
      if (write(ackfd, "-", 1) != 1)
         ERROR(0, "error when writing - (nack)\n");
      else
@@ -822,8 +840,7 @@ void gdb_relay(int pid)
    int to_pid = -1; /* fd to write to pid */
 
    int shutdown_loop = 0;
-   fprintf(stderr, "relaying data between gdb and process %d\n", pid);
-   fflush(stderr);
+   TSFPRINTF(stderr, "relaying data between gdb and process %d\n", pid);
 
    if (max_invoke_ms > 0)
       pthread_create(&invoke_gdbserver_in_valgrind_thread, NULL,
@@ -986,8 +1003,7 @@ void standalone_send_commands(int pid,
    }
 
    for (nc = 0; nc <= last_command; nc++) {
-      fprintf(stderr, "sending command %s to pid %d\n", commands[nc], pid);
-      fflush(stderr);
+      TSFPRINTF(stderr, "sending command %s to pid %d\n", commands[nc], pid);
 
       /* prepare hexcommand $qRcmd,xxxx....................xx#cc      */
       hexcommand = vmalloc(packet_len_for_command(commands[nc]));
@@ -1077,7 +1093,7 @@ void report_pid(int pid, Bool on_stdout)
    int fd, i;
    FILE *out = on_stdout ? stdout : stderr;
 
-   fprintf(out, "use --pid=%d for ", pid);
+   TSFPRINTF(out, "use --pid=%d for ", pid);
 
    sprintf(cmdline_file, "/proc/%d/cmdline", pid);
    fd = open(cmdline_file, O_RDONLY);
@@ -1121,7 +1137,7 @@ void usage(void)
 " OPTIONS are [--pid=<number>] [--vgdb-prefix=<prefix>]\n"
 "             [--wait=<number>] [--max-invoke-ms=<number>]\n"
 "             [--port=<portnr>\n"
-"             [--cmd-time-out=<number>] [-l] [-D] [-d]\n"
+"             [--cmd-time-out=<number>] [-l] [-T] [-D] [-d]\n"
 "             \n"
 "  --pid arg must be given if multiple Valgrind gdbservers are found.\n"
 "  --vgdb-prefix arg must be given to both Valgrind and vgdb utility\n"
@@ -1136,6 +1152,7 @@ void usage(void)
 "  --cmd-time-out (default 99999999) tells vgdb to exit if the found Valgrind\n"
 "     gdbserver has not processed a command after number seconds\n"
 "  -l  arg tells to show the list of running Valgrind gdbserver and then exit.\n"
+"  -T  arg tells to add timestamps to vgdb information messages.\n"
 "  -D  arg tells to show shared mem status and then exit.\n"
 "  -d  arg tells to show debug info. Multiple -d args for more debug info\n"
 "\n"
@@ -1165,7 +1182,7 @@ int search_arg_pid(int arg_pid, int check_trials, Bool show_list)
    int pid = -1;
 
    if (arg_pid == 0 || arg_pid < -1) {
-      fprintf(stderr, "vgdb error: invalid pid %d given\n", arg_pid);
+      TSFPRINTF(stderr, "vgdb error: invalid pid %d given\n", arg_pid);
       exit(1);
    } else {
       /* search for a matching named fifo.
@@ -1251,7 +1268,7 @@ int search_arg_pid(int arg_pid, int check_trials, Bool show_list)
                         }
                      } else if (nr_valid_pid > 1) {
                         if (nr_valid_pid == 2) {
-                           fprintf
+                           TSFPRINTF
                               (stderr,
                                "no --pid= arg given"
                                " and multiple valgrind pids found:\n");
@@ -1284,10 +1301,10 @@ int search_arg_pid(int arg_pid, int check_trials, Bool show_list)
       exit(1);
    } else if (pid == -1) {
       if (arg_pid == -1)
-         fprintf(stderr, "vgdb error: no FIFO found and no pid given\n");
+         TSFPRINTF(stderr, "vgdb error: no FIFO found and no pid given\n");
       else
-         fprintf(stderr, "vgdb error: no FIFO found matching pid %d\n",
-                 arg_pid);
+         TSFPRINTF(stderr, "vgdb error: no FIFO found matching pid %d\n",
+                   arg_pid);
       exit(1);
    }
    else if (pid == -2) {
@@ -1369,35 +1386,37 @@ void parse_options(int argc, char** argv,
          show_shared_mem = True;
       } else if (is_opt(argv[i], "-l")) {
          show_list = True;
+      } else if (is_opt(argv[i], "-T")) {
+         timestamp = True;
       } else if (is_opt(argv[i], "--pid=")) {
          int newpid;
          if (!numeric_val(argv[i], &newpid)) {
-            fprintf(stderr, "invalid --pid argument %s\n", argv[i]);
+            TSFPRINTF(stderr, "invalid --pid argument %s\n", argv[i]);
             arg_errors++;
          } else if (arg_pid != -1) {
-            fprintf(stderr, "multiple --pid arguments given\n");
+            TSFPRINTF(stderr, "multiple --pid arguments given\n");
             arg_errors++;
          } else {
             arg_pid = newpid;
          }
       } else if (is_opt(argv[i], "--wait=")) {
          if (!numeric_val(argv[i], &check_trials)) {
-            fprintf(stderr, "invalid --wait argument %s\n", argv[i]);
+            TSFPRINTF(stderr, "invalid --wait argument %s\n", argv[i]);
             arg_errors++;
          }
       } else if (is_opt(argv[i], "--max-invoke-ms=")) {
          if (!numeric_val(argv[i], &max_invoke_ms)) {
-            fprintf(stderr, "invalid --max-invoke-ms argument %s\n", argv[i]);
+            TSFPRINTF(stderr, "invalid --max-invoke-ms argument %s\n", argv[i]);
             arg_errors++;
          }
       } else if (is_opt(argv[i], "--cmd-time-out=")) {
          if (!numeric_val(argv[i], &cmd_time_out)) {
-            fprintf(stderr, "invalid --cmd-time-out argument %s\n", argv[i]);
+            TSFPRINTF(stderr, "invalid --cmd-time-out argument %s\n", argv[i]);
             arg_errors++;
          }
       } else if (is_opt(argv[i], "--port=")) {
          if (!numeric_val(argv[i], &int_port)) {
-            fprintf(stderr, "invalid --port argument %s\n", argv[i]);
+            TSFPRINTF(stderr, "invalid --port argument %s\n", argv[i]);
             arg_errors++;
          }
       } else if (is_opt(argv[i], "--vgdb-prefix=")) {
@@ -1407,7 +1426,7 @@ void parse_options(int argc, char** argv,
          commands[last_command] = vmalloc(1);
          commands[last_command][0] = '\0';
       } else if (0 == strncmp(argv[i], "-", 1)) {
-         fprintf(stderr, "unknown or invalid argument %s\n", argv[i]);
+         TSFPRINTF(stderr, "unknown or invalid argument %s\n", argv[i]);
          arg_errors++;
       } else {
          int len;
@@ -1424,7 +1443,7 @@ void parse_options(int argc, char** argv,
             strcat(commands[last_command], " ");
          strcat(commands[last_command], argv[i]);
          if (packet_len_for_command(commands[last_command]) > PBUFSIZ) {
-            fprintf(stderr, "command %s too long\n", commands[last_command]);
+            TSFPRINTF(stderr, "command %s too long\n", commands[last_command]);
             arg_errors++;
          }
 
@@ -1440,38 +1459,38 @@ void parse_options(int argc, char** argv,
        && int_port == 0
        && last_command == -1) {
       arg_errors++;
-      fprintf(stderr,
-              "Using vgdb standalone implies to give -D or -l or a COMMAND\n");
+      TSFPRINTF(stderr,
+                "Using vgdb standalone implies to give -D or -l or a COMMAND\n");
    }
 
    if (show_shared_mem && show_list) {
       arg_errors++;
-      fprintf(stderr,
-              "Can't use both -D and -l options\n");
+      TSFPRINTF(stderr,
+                "Can't use both -D and -l options\n");
    }
 
    if (max_invoke_ms > 0
        && cmd_time_out != NEVER
        && (cmd_time_out * 1000) <= max_invoke_ms) {
       arg_errors++;
-      fprintf(stderr,
-              "--max-invoke-ms must be < --cmd-time-out * 1000\n");
+      TSFPRINTF(stderr,
+                "--max-invoke-ms must be < --cmd-time-out * 1000\n");
    }
 
    if (show_list && arg_pid != -1) {
       arg_errors++;
-      fprintf(stderr,
-              "Can't use both --pid and -l options\n");
+      TSFPRINTF(stderr,
+                "Can't use both --pid and -l options\n");
    }
 
    if (int_port > 0 && last_command != -1) {
       arg_errors++;
-      fprintf(stderr,
-              "Can't use --port to send commands\n");
+      TSFPRINTF(stderr,
+                "Can't use --port to send commands\n");
    }
 
    if (arg_errors > 0) {
-      fprintf(stderr, "args error. Try `vgdb --help` for more information\n");
+      TSFPRINTF(stderr, "args error. Try `vgdb --help` for more information\n");
       exit(1);
    }
 
@@ -1520,15 +1539,14 @@ int main(int argc, char** argv)
       wait_for_gdb_connect(in_port);
 
    if (show_shared_mem) {
-      fprintf(stderr,
-              "vgdb %d "
-              "written_by_vgdb %d "
-              "seen_by_valgrind %d\n"
-              "vgdb pid %d\n",
-              VS_vgdb_pid,
-              VS_written_by_vgdb,
-              VS_seen_by_valgrind,
-              VS_vgdb_pid);
+      TSFPRINTF(stderr,
+                "vgdb %d "
+                "written_by_vgdb %d "
+                "seen_by_valgrind %d\n",
+                VS_vgdb_pid,
+                VS_written_by_vgdb,
+                VS_seen_by_valgrind);
+      TSFPRINTF(stderr, "vgdb pid %d\n", VS_vgdb_pid);
       exit(0);
    }
 

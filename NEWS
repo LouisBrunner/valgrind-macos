@@ -53,6 +53,8 @@ support for X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * New and modified GDB server monitor features:
 
+  - Option -T tells vgdb to output a timestamp in the vgdb information messages.
+
   - The gdbserver monitor commands that require an address and an optional
     length argument now accepts the alternate 'C like' syntax "address[length]".
     For example, the memcheck command "monitor who_points_at 0x12345678 120"

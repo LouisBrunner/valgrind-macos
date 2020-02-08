@@ -1264,6 +1264,13 @@ vgdb v.set log_output -c leak_check any
   </varlistentry>
 
   <varlistentry>
+    <term><option>-T</option></term>
+    <listitem><para>Instructs vgdb to add timestamps to vgdb
+    information messages.
+    </para></listitem>
+  </varlistentry>
+
+  <varlistentry>
     <term><option>-D</option></term>
     <listitem><para>Instructs a standalone vgdb to show the
     state of the shared memory used by the Valgrind gdbserver.  vgdb

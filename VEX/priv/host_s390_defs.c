@@ -112,12 +112,9 @@ s390_hreg_as_string(HReg reg)
       "%v24",  "%v25",  "%v26", "%v27", "%v28", "%v29", "%v30", "%v31"
    };
 
-   UInt r;  /* hregNumber() returns an UInt */
-
-   r = hregNumber(reg);
-
    /* Be generic for all virtual regs. */
    if (hregIsVirtual(reg)) {
+      UInt r = hregIndex(reg);
       buf[0] = '\0';
       switch (hregClass(reg)) {
       case HRcInt64: vex_sprintf(buf, "%%vR%u", r); break;
@@ -129,6 +126,7 @@ s390_hreg_as_string(HReg reg)
    }
 
    /* But specific for real regs. */
+   UInt r = hregNumber(reg);
    switch (hregClass(reg)) {
    case HRcInt64:  vassert(r < 16); return ireg_names[r];
    case HRcFlt64:  vassert(r < 16); return freg_names[r];

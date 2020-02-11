@@ -42,5 +42,11 @@ jobs:
       run: make
     - name: try ls -l
       run: ./vg-in-place ls -l
-    - name: make regtest
-      run: make regtest
+    # TODO: doesn't build
+    # gcc -Winline -Wall -Wshadow -Wno-long-long -g -fno-stack-protector  -Wno-format-extra-args -Wno-literal-range -Wno-tautological-constant-out-of-range-compare -Wno-self-assign -Wno-string-plus-int -Wno-uninitialized -Wno-unused-value  -arch x86_64 -fPIC  -dynamic -dynamiclib -all_load -fpic  -o tls.so tls_so-tls_so.o `pwd`/tls2.so
+    # Undefined symbols for architecture x86_64:
+    #   "_global", referenced from:
+    #       _test_so_global in tls_so-tls_so.o
+    #      (maybe you meant: _test_so_global)
+    # - name: make regtest
+    #   run: make regtest

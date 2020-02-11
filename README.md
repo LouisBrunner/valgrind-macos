@@ -18,7 +18,7 @@ In case you already have Valgrind installed, you will need to either `unlink` it
 
 ## TODO
 
- - Debug macOS 10.15 crashes (might need XNU sources)
+ - Run regtest in Github Action
  - Collect CI test results into a usable format to make comparison between builds
 
 ## Tests (outdated for 10.14.6 and 10.15.1)

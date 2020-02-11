@@ -2,3 +2,11 @@
 # Suppressions for Darwin 19.x / macOS 10.15 Catalina
 
 ############################################
+
+{
+   OSX1014:dyld-3
+   Memcheck:Cond
+   ...
+   fun:_ZN16ImageLoaderMachO18validateFirstPagesEPK21linkedit_data_commandiPKhmxRKN11ImageLoader11LinkContextE
+   ...
+}

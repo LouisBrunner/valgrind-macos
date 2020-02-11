@@ -1449,11 +1449,6 @@ IRSB* bb_to_IR (
       // hope of identifying and recovering, an "A && B" condition spread across
       // two basic blocks.
       if (irsb_be.tag == Be_Cond
-          /* sewardj 2019Nov30: Alas, chasing cond branches on s390 causes
-             Memcheck to crash, for as-yet unknown reasons.  It also exposes
-             some unhandled Iex_ITE cases in the s390x instruction selector.
-             For now, disable. */
-          && arch_guest != VexArchS390X
           /* sewardj 2019Dec14: It also causes crashing on MIPS, even for
              --tool=none. */
           && arch_guest != VexArchMIPS64 && arch_guest != VexArchMIPS32)

@@ -6314,7 +6314,7 @@ s390_insn_memcpy(UChar size, s390_amode *dst, s390_amode *src)
    insn->variant.memcpy.src = src;
    insn->variant.memcpy.dst = dst;
 
-   vassert(size == 1 || size == 2 || size == 4 || size == 8);
+   vassert(size == 1 || size == 2 || size == 4 || size == 8 || size == 16);
 
    return insn;
 }

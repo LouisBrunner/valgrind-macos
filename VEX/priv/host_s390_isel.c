@@ -302,12 +302,14 @@ ulong_fits_signed_8bit(ULong val)
    return val == v;
 }
 
-/* EXPR is an expression that is used as an address. Return an s390_amode
-   for it. If select_b12_b20_only is true the returned amode must be either
-   S390_AMODE_B12 or S390_AMODE_B20. */
+/* EXPR is an expression that is used as an address. Return an s390_amode for
+   it. If no_index is true the returned amode must be either S390_AMODE_B12 or
+   S390_AMODE_B20. If short_displacement is true it must be either
+   S390_AMODE_B12 or S390_AMODE_BX12. */
 static s390_amode *
 s390_isel_amode_wrk(ISelEnv *env, IRExpr *expr,
-                    Bool select_b12_b20_only __attribute__((unused)))
+                    Bool no_index __attribute__((unused)),
+                    Bool short_displacement)
 {
    if (expr->tag == Iex_Binop && expr->Iex.Binop.op == Iop_Add64) {
       IRExpr *arg1 = expr->Iex.Binop.arg1;
@@ -328,7 +330,7 @@ s390_isel_amode_wrk(ISelEnv *env, IRExpr *expr,
          if (ulong_fits_unsigned_12bit(value)) {
             return s390_amode_b12((Int)value, s390_isel_int_expr(env, arg1));
          }
-         if (ulong_fits_signed_20bit(value)) {
+         if (!short_displacement && ulong_fits_signed_20bit(value)) {
             return s390_amode_b20((Int)value, s390_isel_int_expr(env, arg1));
          }
       }
@@ -348,7 +350,25 @@ s390_isel_amode(ISelEnv *env, IRExpr *expr)
    /* Address computation should yield a 64-bit value */
    vassert(typeOfIRExpr(env->type_env, expr) == Ity_I64);
 
-   am = s390_isel_amode_wrk(env, expr, /* B12, B20 only */ False);
+   am = s390_isel_amode_wrk(env, expr, False, False);
+
+   /* Check post-condition */
+   vassert(s390_amode_is_sane(am));
+
+   return am;
+}
+
+/* Sometimes we need an amode with short (12-bit) displacement. An example is
+   the vector-store opcode. */
+static s390_amode *
+s390_isel_amode_short(ISelEnv *env, IRExpr *expr)
+{
+   s390_amode *am;
+
+   /* Address computation should yield a 64-bit value */
+   vassert(typeOfIRExpr(env->type_env, expr) == Ity_I64);
+
+   am = s390_isel_amode_wrk(env, expr, False, True);
 
    /* Check post-condition */
    vassert(s390_amode_is_sane(am));
@@ -379,7 +399,7 @@ s390_isel_amode_b12_b20(ISelEnv *env, IRExpr *expr)
    /* Address computation should yield a 64-bit value */
    vassert(typeOfIRExpr(env->type_env, expr) == Ity_I64);
 
-   am = s390_isel_amode_wrk(env, expr, /* B12, B20 only */ True);
+   am = s390_isel_amode_wrk(env, expr, True, False);
 
    /* Check post-condition */
    vassert(s390_amode_is_sane(am) &&
@@ -4727,7 +4747,26 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
 
       if (stmt->Ist.Store.end != Iend_BE) goto stmt_fail;
 
-      am = s390_isel_amode(env, stmt->Ist.Store.addr);
+      if (tyd == Ity_V128) {
+         am = s390_isel_amode_short(env, stmt->Ist.Store.addr);
+      } else {
+         am = s390_isel_amode(env, stmt->Ist.Store.addr);
+      }
+
+      /* Check whether we can use a memcpy. Currently, the restriction
+         is that both amodes need to be B12, so MVC can be emitted.
+         We do not consider a store whose data expression is a load because
+         we don't want to deal with overlapping locations. */
+      /* store(get) never overlaps*/
+      if (am->tag == S390_AMODE_B12 &&
+          stmt->Ist.Store.data->tag == Iex_Get) {
+         UInt offset = stmt->Ist.Store.data->Iex.Get.offset;
+         s390_amode *from = s390_amode_for_guest_state(offset);
+         if (from->tag == S390_AMODE_B12) {
+            addInstr(env, s390_insn_memcpy(sizeofIRType(tyd), am, from));
+            return;
+         }
+      }
 
       switch (tyd) {
       case Ity_I8:
@@ -4740,18 +4779,6 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
             ULong value =
                get_const_value_as_ulong(stmt->Ist.Store.data->Iex.Const.con);
             addInstr(env, s390_insn_mimm(sizeofIRType(tyd), am, value));
-            return;
-         }
-         /* Check whether we can use a memcpy here. Currently, the restriction
-            is that both amodes need to be B12, so MVC can be emitted.
-            We do not consider a store whose data expression is a load because
-            we don't want to deal with overlapping locations. */
-         /* store(get) never overlaps*/
-         if (am->tag == S390_AMODE_B12 &&
-             stmt->Ist.Store.data->tag == Iex_Get) {
-            UInt offset = stmt->Ist.Store.data->Iex.Get.offset;
-            s390_amode *from = s390_amode_for_guest_state(offset);
-            addInstr(env, s390_insn_memcpy(sizeofIRType(tyd), am, from));
             return;
          }
          /* General case: compile data into a register */

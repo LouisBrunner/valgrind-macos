@@ -368,16 +368,16 @@ and from libraries (e.g. <filename>getc.c</filename>)</para>
 <sect2 id="cg-manual.line-by-line" xreflabel="Line-by-line Counts">
 <title>Line-by-line Counts</title>
 
-<para>There are two ways to annotate source files -- by specifying them
-manually as arguments to cg_annotate, or with the
-<option>--auto=yes</option> option.  For example, the output from running
-<filename>cg_annotate &lt;filename&gt; concord.c</filename> for our example
-produces the same output as above followed by an annotated version of
-<filename>concord.c</filename>, a section of which looks like:</para>
+<para>By default, all source code annotation is also shown. (Filenames to be
+annotated can also by specified manually as arguments to cg_annotate, but this
+is rarely needed.) For example, the output from running <filename>cg_annotate
+&lt;filename&gt; </filename> for our example produces the same output as above
+followed by an annotated version of <filename>concord.c</filename>, a section
+of which looks like:</para>
 
 <programlisting><![CDATA[
 --------------------------------------------------------------------------------
--- User-annotated source: concord.c
+-- Auto-annotated source: concord.c
 --------------------------------------------------------------------------------
 Ir        I1mr ILmr Dr      D1mr  DLmr  Dw      D1mw   DLmw
 
@@ -437,7 +437,7 @@ part of a file the shown code comes from, eg:</para>
 controlled by the <option>--context</option>
 option.</para>
 
-<para>To get automatic annotation, use the <option>--auto=yes</option> option.
+<para>Automatic annotation is enabled by default.
 cg_annotate will automatically annotate every source file it can
 find that is mentioned in the function-by-function summary.
 Therefore, the files chosen for auto-annotation are affected by
@@ -946,7 +946,7 @@ small differences like these;  it works in the same way as
 
   <varlistentry>
     <term>
-      <option><![CDATA[--show-percs=<no|yes> [default: no] ]]></option>
+      <option><![CDATA[--show-percs=<no|yes> [default: yes] ]]></option>
     </term>
     <listitem>
       <para>When enabled, a percentage is printed next to all event counts.
@@ -957,7 +957,7 @@ small differences like these;  it works in the same way as
 
   <varlistentry>
     <term>
-      <option><![CDATA[--auto=<no|yes> [default: no] ]]></option>
+      <option><![CDATA[--auto=<no|yes> [default: yes] ]]></option>
     </term>
     <listitem>
       <para>When enabled, automatically annotates every file that

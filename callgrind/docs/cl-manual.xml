@@ -156,7 +156,7 @@ has to rely on heuristics to detect calls and returns.</para>
      </listitem>
   </itemizedlist>
 
-  <para>Use <option>--auto=yes</option> to get annotated source code
+  <para>By default, you will also get annotated source code
   for all relevant functions for which the source can be found. In
   addition to source annotation as produced by
   <computeroutput>cg_annotate</computeroutput>, you will see the
@@ -1307,7 +1307,7 @@ their arguments.</para>
 
   <varlistentry>
     <term>
-      <option><![CDATA[--auto=<yes|no> [default: no] ]]></option>
+      <option><![CDATA[--auto=<yes|no> [default: yes] ]]></option>
     </term>
     <listitem>
       <para>Annotate all source files containing functions that helped 

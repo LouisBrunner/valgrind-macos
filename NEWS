@@ -35,7 +35,14 @@ support for X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * Cachegrind:
 
+  - cg_annotate's --auto and --show-percs options now default to 'yes', because
+    they are usually wanted.
+
 * Callgrind:
+
+  - callgrind_annotate's --auto and --show-percs options now default to 'yes',
+    because they are usually wanted.
+
   - The command option --collect-systime has been enhanced to specify
     the unit used to record the elapsed time spent during system calls.
     The command option now accepts the values no|yes|msec|usec|nsec,

@@ -139,11 +139,11 @@ my $default_threshold = 99;
 my $single_threshold  = $default_threshold;
 
 # If on, show a percentage for each non-zero count.
-my $show_percs = 0;
+my $show_percs = 1;
 
 # If on, automatically annotates all files that are involved in getting over
 # all the threshold counts.
-my $auto_annotate = 0;
+my $auto_annotate = 1;
 
 # Number of lines to show around each annotated line.
 my $context = 8;
@@ -211,9 +211,9 @@ usage: callgrind_annotate [options] [callgrind-out-file [source-files...]]
                           Each event can optionally be followed by a :
                           and a threshold percentage. If some event specific
                           threshold are given, --threshold value is ignored.
-    --show-percs=yes|no   show a percentage for each non-zero count
+    --show-percs=yes|no   show a percentage for each non-zero count [yes]
     --auto=yes|no         annotate all source files containing functions
-                          that helped reach the event count threshold [no]
+                          that helped reach the event count threshold [yes]
     --context=N           print N lines of context before and after
                           annotated lines [8]
     --inclusive=yes|no    add subroutine costs to functions calls [no]

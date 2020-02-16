@@ -123,11 +123,11 @@ my $default_threshold = 0.1;
 my $single_threshold  = $default_threshold;
 
 # If on, show a percentage for each non-zero count.
-my $show_percs = 0;
+my $show_percs = 1;
 
 # If on, automatically annotates all files that are involved in getting over
 # all the threshold counts.
-my $auto_annotate = 0;
+my $auto_annotate = 1;
 
 # Number of lines to show around each annotated line.
 my $context = 8;
@@ -152,9 +152,9 @@ usage: cg_annotate [options] cachegrind-out-file [source-files...]
     --sort=A,B,C          sort columns by events A,B,C [event column order]
     --threshold=<0--20>   a function is shown if it accounts for more than x% of
                           the counts of the primary sort event [$default_threshold]
-    --show-percs=yes|no   show a percentage for each non-zero count
+    --show-percs=yes|no   show a percentage for each non-zero count [yes]
     --auto=yes|no         annotate all source files containing functions
-                          that helped reach the event count threshold [no]
+                          that helped reach the event count threshold [yes]
     --context=N           print N lines of context before and after
                           annotated lines [8]
     -I<d> --include=<d>   add <d> to list of directories to search for 

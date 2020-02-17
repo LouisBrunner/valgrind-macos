@@ -48,7 +48,7 @@ jmp_buf env;
 // of the CPU facility list.  To read the HWCAP, use 'getauxval' if available --
 // which should be the case with glibc versions >= 2.16.  A system with an older
 // glibc is unlikely to support any of these features anyhow.
-#if __GLIBC_PREREQ(2, 16)
+#if defined(__APPLE__) || __GLIBC_PREREQ(2, 16)
 #include <sys/auxv.h>
 #define GET_HWCAP() getauxval(AT_HWCAP)
 #else

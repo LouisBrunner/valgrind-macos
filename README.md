@@ -18,12 +18,46 @@ In case you already have Valgrind installed, you will need to either `unlink` it
 
 ## TODO
 
- - Run regtest in Github Action
- - Collect CI test results into a usable format to make comparison between builds
+ - Display CI tests status through Github Status API
+ - Get historical build data from sourceforge for macOS 10.13
 
-## Tests (outdated for 10.14.6 and 10.15.1)
+## Tests
 
-Here is the result of the test suite:
+### Linux (Ubuntu 18.04)
+
+```
+== 719 tests, 18 stderr failures, 1 stdout failure, 0 stderrB failures, 0 stdoutB failures, 2 post failures ==
+memcheck/tests/leak_cpp_interior         (stderr)
+memcheck/tests/linux/sys-preadv2_pwritev2 (stderr)
+memcheck/tests/overlap                   (stderr)
+helgrind/tests/tc18_semabuse             (stderr)
+helgrind/tests/tc20_verifywrap           (stderr)
+drd/tests/tc18_semabuse                  (stderr)
+massif/tests/new-cpp                     (post)
+massif/tests/overloaded-new              (post)
+none/tests/fdleak_cmsg                   (stderr)
+none/tests/fdleak_creat                  (stderr)
+none/tests/fdleak_dup                    (stderr)
+none/tests/fdleak_dup2                   (stderr)
+none/tests/fdleak_fcntl                  (stderr)
+none/tests/fdleak_ipv4                   (stderr)
+none/tests/fdleak_open                   (stderr)
+none/tests/fdleak_pipe                   (stderr)
+none/tests/fdleak_socketpair             (stderr)
+none/tests/rlimit64_nofile               (stderr)
+none/tests/rlimit_nofile                 (stderr)
+none/tests/tls                           (stdout)
+exp-sgcheck/tests/stackerr               (stderr)
+```
+
+should be
+
+```
+== 789 tests, 1 stderr failure, 0 stdout failures, 0 stderrB failures, 0 stdoutB failures, 0 post failures ==
+memcheck/tests/linux/sys-preadv2_pwritev2 (stderr)
+```
+
+### macOS (10.14.4)
 
 ```
 == 660 tests, 319 stderr failures, 66 stdout failures, 0 stderrB failures, 0 stdoutB failures, 32 post failures ==

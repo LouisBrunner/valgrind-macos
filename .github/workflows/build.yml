@@ -2,51 +2,89 @@ name: Build
 
 on: [push]
 
+env:
+  TEST_FOLDER: .github/test
+
+# TODO: steps are exactly the same...
+# TODO: add GitHub Checks API integration
+
 jobs:
-  # FIXME: both build together?
   build_linux:
-
     runs-on: ubuntu-latest
+    env:
+      PLATFORM: linux
 
     steps:
-    - uses: mstksg/get-package@v1
-      with:
-        apt-get: libc6-dbg
-    - uses: actions/checkout@v1
-    - name: autogen.sh
-      run: ./autogen.sh
-    - name: configure
-      run: ./configure
-    - name: make
-      run: make
-    - name: try ls -l
-      run: ./vg-in-place ls -l
-    # TODO: block on gdbserver_tests/hgtls
-    # - name: make regtest
-    #   run: make regtest
-
-  build_macos:
-
-    runs-on: macos-latest
-
-    steps:
-    - uses: mstksg/get-package@v1
+    - name: install dependencies
+      uses: mstksg/get-package@v1
       with:
         brew: automake
-    - uses: actions/checkout@v1
+        apt-get: libc6-dbg gdb
+    - name: checkout project
+      uses: actions/checkout@v1
     - name: autogen.sh
       run: ./autogen.sh
     - name: configure
       run: ./configure
-    - name: make
+    - name: build
       run: make
     - name: try ls -l
       run: ./vg-in-place ls -l
-    # TODO: doesn't build
-    # gcc -Winline -Wall -Wshadow -Wno-long-long -g -fno-stack-protector  -Wno-format-extra-args -Wno-literal-range -Wno-tautological-constant-out-of-range-compare -Wno-self-assign -Wno-string-plus-int -Wno-uninitialized -Wno-unused-value  -arch x86_64 -fPIC  -dynamic -dynamiclib -all_load -fpic  -o tls.so tls_so-tls_so.o `pwd`/tls2.so
-    # Undefined symbols for architecture x86_64:
-    #   "_global", referenced from:
-    #       _test_so_global in tls_so-tls_so.o
-    #      (maybe you meant: _test_so_global)
-    # - name: make regtest
-    #   run: make regtest
+    - name: build regression tests
+      run: make check
+    - name: create artifacts folder
+      run: mkdir -p ${{ env.TEST_FOLDER }}/outputs
+    - name: regression tests
+      run: make regtest || true
+      env:
+        REGTEST_ARGS: --results-to=${{ env.TEST_FOLDER }}/results.txt
+    - name: copy failing test outputs
+      run: cat ${{ env.TEST_FOLDER }}/results.txt | sed 1,2d | cut -f 1 -d' ' | xargs -L1 -I % sh -c 'cp %.*.diff* ${{ env.TEST_FOLDER}}/outputs/'
+    - name: calculate difference between tests
+      run: diff .github/${{ env.PLATFORM }}-expected.txt ${{ env.TEST_FOLDER }}/results.txt > ${{ env.TEST_FOLDER }}/results.diff
+    - name: upload artifacts
+      if: failure()
+      uses: actions/upload-artifact@v1
+      with:
+        name: test-results-${{ env.PLATFORM }}
+        path: ${{ env.TEST_FOLDER }}/
+
+  build_macos:
+    runs-on: macos-latest
+    env:
+      PLATFORM: macos
+
+    steps:
+    - name: install dependencies
+      uses: mstksg/get-package@v1
+      with:
+        brew: automake
+        apt-get: libc6-dbg gdb
+    - name: checkout project
+      uses: actions/checkout@v1
+    - name: autogen.sh
+      run: ./autogen.sh
+    - name: configure
+      run: ./configure
+    - name: build
+      run: make
+    - name: try ls -l
+      run: ./vg-in-place ls -l
+    - name: build regression tests
+      run: make check
+    - name: create artifacts folder
+      run: mkdir -p ${{ env.TEST_FOLDER }}/outputs
+    - name: regression tests
+      run: make regtest || true
+      env:
+        REGTEST_ARGS: --results-to=${{ env.TEST_FOLDER }}/results.txt
+    - name: copy failing test outputs
+      run: cat ${{ env.TEST_FOLDER }}/results.txt | sed 1,2d | cut -f 1 -d' ' | xargs -L1 -I % sh -c 'cp %.*.diff* ${{ env.TEST_FOLDER}}/outputs/'
+    - name: calculate difference between tests
+      run: diff .github/${{ env.PLATFORM }}-expected.txt ${{ env.TEST_FOLDER }}/results.txt > ${{ env.TEST_FOLDER }}/results.diff
+    - name: upload artifacts
+      if: failure()
+      uses: actions/upload-artifact@v1
+      with:
+        name: test-results-${{ env.PLATFORM }}
+        path: ${{ env.TEST_FOLDER }}/

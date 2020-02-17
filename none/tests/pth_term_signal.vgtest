@@ -1,2 +1,3 @@
+prereq: [ $(uname) = Linux ]
 prog: pth_term_signal
 vgopts: -q

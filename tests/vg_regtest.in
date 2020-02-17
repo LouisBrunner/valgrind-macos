@@ -48,6 +48,8 @@
 #              This is useful to obtain detailed trace or --keep-unfiltered
 #              output of a non deterministic test failure
 #
+#   --results-to: writes the results of the test to the given file
+#
 # The easiest way is to run all tests in valgrind/ with (assuming you installed
 # in $PREFIX):
 #
@@ -139,7 +141,7 @@ my $usage="\n"
      . "Usage:\n"
      . "   vg_regtest [--all, --valgrind, --valgrind-lib, --keep-unfiltered\n"
      . "                 --outer-valgrind, --outer-tool, --outer-args\n"
-     . "                 --loop-till-fail]\n"
+     . "                 --loop-till-fail --results-to]\n"
      . "   Use EXTRA_REGTEST_OPTS to supply extra args for all tests\n"
      . "\n";
 
@@ -187,6 +189,7 @@ my $run_outer_args = "";
 my $valgrind_lib = "$tests_dir/.in_place";
 my $keepunfiltered = 0;
 my $looptillfail = 0;
+my $resultsto = "";
 
 # default filter is the one named "filter_stderr" in the test's directory
 my $default_stderr_filter = "filter_stderr";
@@ -245,6 +248,8 @@ sub process_command_line()
                 $keepunfiltered = 1;
             } elsif ($arg =~ /^--loop-till-fail$/) {
                 $looptillfail = 1;
+            } elsif ($arg =~ /^--results-to=(.*)$/) {
+                $resultsto = $1;
             } else {
                 die $usage;
             }
@@ -666,11 +671,12 @@ sub plural($)
    return ( $_[0] == 1 ? "" : "s" );
 }
 
-sub summarise_results 
+sub summarise_results($)
 {
+    my ($out) = @_;
     my $x = ( $num_tests_done == 1 ? "test" : "tests" );
     
-    printf("\n== %d test%s, %d stderr failure%s, %d stdout failure%s, "
+    printf($out "\n== %d test%s, %d stderr failure%s, %d stdout failure%s, "
                          . "%d stderrB failure%s, %d stdoutB failure%s, "
                          . "%d post failure%s ==\n", 
            $num_tests_done, plural($num_tests_done),
@@ -681,9 +687,9 @@ sub summarise_results
            $num_failures{"post"},     plural($num_failures{"post"}));
 
     foreach my $failure (@failures) {
-        print "$failure\n";
+        print $out "$failure\n";
     }
-    print "\n";
+    print $out "\n";
 }
 
 #----------------------------------------------------------------------------
@@ -730,7 +736,12 @@ while (1) { # we will exit after one loop, unless looptillfail
         last;
     }
 }
-summarise_results();
+summarise_results(*STDOUT);
+if ($resultsto ne "") {
+  open(my $resultsfile, '>', $resultsto) || die "File $resultsto not writable\n";
+  summarise_results($resultsfile);
+  close($resultsfile);
+}
 
 if ($ENV{"EXTRA_REGTEST_OPTS"}) {
     warn_about_EXTRA_REGTEST_OPTS();

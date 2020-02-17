@@ -516,7 +516,7 @@ void modify_macho_loadcmds ( HChar* filename,
          fail("has __UNIXSTACK, but wrong ::vmaddr");
       if (seg->vmsize != expected_stack_size)
          fail("has __UNIXSTACK, but wrong ::vmsize");
-#if DARWIN_VERS >= DARWIN_10_15
+#if XCODE_VERS >= XCODE_10_15
       if (seg->maxprot != 3)
          fail("has __UNIXSTACK, but wrong ::maxprot (should be 3)");
 #else

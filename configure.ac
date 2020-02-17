@@ -380,6 +380,9 @@ case "${host_os}" in
         AC_DEFINE([DARWIN_10_14], 101400, [DARWIN_VERS value for macOS 10.14])
         AC_DEFINE([DARWIN_10_15], 101500, [DARWIN_VERS value for macOS 10.15])
 
+        AC_DEFINE([XCODE_10_XX], 101400, [XCODE_VERS value for Xcode earlier than 10.15])
+        AC_DEFINE([XCODE_10_15], 101500, [XCODE_VERS value for Xcode 10.15])
+
         AC_CHECK_PROG([XCRUN], [xcrun], [yes], [no])
 
 	AC_MSG_CHECKING([for the kernel version])
@@ -473,6 +476,26 @@ case "${host_os}" in
 		  AC_MSG_ERROR([Valgrind works on Darwin 10.x-19.x (Mac OS X 10.6-11 and macOS 10.12-15)])
 		  ;;
 	esac
+
+        AC_MSG_CHECKING([for the Xcode SDK version])
+        xcodeversion="unknown"
+        if test "x$XCRUN" != "xno"; then
+          xcodeversion=`xcrun --sdk macosx --show-sdk-version`
+        fi
+        case "${xcodeversion}" in
+	        10.5*|10.6*|10.7*|10.8*|10.9*|10.10*|10.11*|10.12*|10.13*|10.14*)
+            AC_DEFINE([XCODE_VERS], XCODE_10_XX, [Xcode version])
+            ;;
+	        10.15*)
+            AC_DEFINE([XCODE_VERS], XCODE_10_15, [Xcode version])
+            ;;
+	        *)
+            AC_MSG_RESULT([unsupported (${xcodeversion})])
+            AC_MSG_ERROR([Valgrind works on Darwin 10.x-19.x (Mac OS X 10.6-11 and macOS 10.12-15)])
+            ;;
+	      esac
+        AC_MSG_RESULT([${xcodeversion}])
+
         ;;
 
      solaris2.11*)
@@ -536,13 +559,6 @@ case "$ARCH_MAX-$VGCONF_OS" in
         ])
         CFLAGS=$safe_CFLAGS;;
      x86-darwin|amd64-darwin)
-        AC_MSG_CHECKING([for the Xcode SDK version])
-        xcodeversion="unknown"
-        if test "x$XCRUN" != "xno"; then
-          xcodeversion=`xcrun --sdk macosx --show-sdk-version`
-        fi
-        AC_MSG_RESULT([${xcodeversion}])
-
         AC_MSG_CHECKING([for 32 bit build support])
         macos_only_32bit="no"
         case "$xcodeversion" in

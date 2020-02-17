@@ -143,12 +143,17 @@ AC_MSG_CHECKING([for a supported version of gcc])
 # ######## Apple LLVM variants ########
 # Apple LLVM version 5.1 (clang-503.0.40) (based on LLVM 3.4svn)
 # Apple LLVM version 6.0 (clang-600.0.51) (based on LLVM 3.5svn)
+# Apple clang version 11.0.0 (clang-1100.0.33.17) (since macOS 10.15)
 #
 [
 if test "x`${CC} --version | $SED -n -e 's/.*\Apple \(LLVM\) version.*clang.*/\1/p'`" = "xLLVM" ;
 then
     is_clang="applellvm"
     gcc_version=`${CC} --version | $SED -n -e 's/.*LLVM version \([0-9.]*\).*$/\1/p'`
+elif test "x`${CC} --version | $SED -n -e 's/.*\Apple \(clang\) version.*clang.*/\1/p'`" = "xclang" ;
+then
+    is_clang="applellvm"
+    gcc_version=`${CC} --version | $SED -n -e 's/.*clang version \([0-9.]*\).*$/\1/p'`
 elif test "x`${CC} --version | $SED -n -e 's/.*\(clang\) version.*/\1/p'`" = "xclang" ;
 then
     is_clang="clang"

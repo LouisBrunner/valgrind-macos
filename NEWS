@@ -117,6 +117,7 @@ n-i-bz  sys_statx: don't complain if both |filename| and |buf| are NULL.
 n-i-bz  Fix non-glibc build of test suite with s390x_features
 416667  gcc10 ppc64le impossible constraint in 'asm' in test_isa.
 417452  s390_insn_store_emit: dst->tag for HRcVec128
+417906  clone with CLONE_VFORK and no CLONE_VM fails
 
 
 Release 3.15.0 (12 April 2019)

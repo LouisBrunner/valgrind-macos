@@ -915,6 +915,7 @@ PRE(sys_clone)
       break;
 
    case VKI_CLONE_VFORK | VKI_CLONE_VM: /* vfork */
+   case VKI_CLONE_VFORK: /* vfork without memory sharing */
       cloneflags &= ~VKI_CLONE_VM;
       // FALLTHROUGH - assume vfork (somewhat) == fork, see ML_(do_fork_clone).
 

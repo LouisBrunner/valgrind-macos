@@ -10256,6 +10256,38 @@ POST(mach_generate_activity_id)
 
 #if DARWIN_VERS >= DARWIN_10_13
 
+PRE(kevent_id)
+{
+  PRINT("kevent_id(id:%ld, changelist:%#lx, nchanges:%ld, eventlist:%#lx, nevents:%ld, data_out:%#lx, data_available:%ld, flags:%lx)",
+        ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8);
+  PRE_REG_READ8(int,"kevent_id",
+                uint64_t,id,
+                const struct vki_kevent_qos_s *,changelist,
+                int,nchanges,
+                struct vki_kevent_qos_s *,eventlist,
+                int,nevents,
+                void*,data_out,
+                size_t*,data_available,
+                unsigned int,flags);
+
+  if (ARG3) PRE_MEM_READ ("kevent_id(changelist)",
+                          ARG2, ARG3 * sizeof(struct vki_kevent_qos_s));
+  if (ARG5) PRE_MEM_WRITE("kevent_id(eventlist)",
+                          ARG4, ARG5 * sizeof(struct vki_kevent_qos_s));
+  if (ARG7) PRE_MEM_WRITE ("kevent_id(data_out)",
+                          ARG6, ARG7 * sizeof(void*));
+
+  *flags |= SfMayBlock;
+}
+
+POST(kevent_id)
+{
+   PRINT("kevent_id ret %ld dst %#lx (%zu)", RES, ARG4, sizeof(struct vki_kevent_qos_s));
+   if (RES > 0) {
+      POST_MEM_WRITE(ARG4, RES * sizeof(struct vki_kevent_qos_s));
+   }
+}
+
 PRE(thread_get_special_reply_port)
 {
    PRINT("thread_get_special_reply_port()");
@@ -10731,7 +10763,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 #if DARWIN_VERS < DARWIN_10_11
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(374)),   // ???
 #endif
+#if DARWIN_VERS < DARWIN_10_13
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(375)),   // ???
+#endif
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(376)),   // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(377)),   // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(378)),   // ???
@@ -10868,7 +10902,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 #endif
 #if DARWIN_VERS >= DARWIN_10_13
 // _____(__NR_thread_selfcounts),                       // 186
-// _____(__NR_kevent_id,                                // 375
+  MACXY(__NR_kevent_id, kevent_id),                     // 375
 // _____(__NR_necp_session_open),                       // 522
 // _____(__NR_necp_session_action),                     // 523
 // _____(__NR_setattrlistat),                           // 524

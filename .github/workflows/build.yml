@@ -1,0 +1,71 @@
+name: Build
+
+on: [push]
+
+env:
+  TEST_FOLDER: .github/test
+
+jobs:
+  build_various_platforms:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04]
+
+    runs-on: ${{ matrix.os }}
+
+    name: Build and Test on ${{matrix.os}}
+
+    steps:
+      - name: install dependencies (MacOS)
+        run: brew update && brew install automake
+        if: ${{ matrix.os != 'ubuntu-20.04' }}
+      - name: install dependencies (Linux)
+        run: sudo apt-get update && sudo apt-get install libc6-dbg gdb
+        if: ${{ matrix.os == 'ubuntu-20.04' }}
+      - name: checkout project
+        uses: actions/checkout@v1
+      - name: calculate short SHA
+        id: sha
+        run: echo "short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      - name: autogen.sh
+        run: ./autogen.sh
+      - name: configure
+        run: ./configure
+      - name: build
+        run: make
+      - name: try ls -l
+        run: ./vg-in-place ls -l
+      - name: build regression tests
+        run: make check
+      - name: create artifacts folder
+        run: mkdir -p ${{ env.TEST_FOLDER }}/outputs
+      - name: build tests
+        run: make check
+      - name: run regression tests
+        run: make regtest | tee raw-results.txt
+      - name: process results
+        if: always()
+        run: awk '/^== [0-9]+ tests, .* ==$/{flag=1;next}/^$/{flag=0}flag' < raw-results.txt > ${{ env.TEST_FOLDER }}/results.txt
+      - name: copy failing test outputs
+        if: always()
+        run: cat ${{ env.TEST_FOLDER }}/results.txt | cut -f 1 -d' ' | xargs -L1 -I % sh -c 'cp %.*.diff* ${{ env.TEST_FOLDER }}/outputs/'
+      - name: calculate difference between tests
+        if: always()
+        uses: LouisBrunner/diff-action@v0.2.0
+        with:
+          old: .github/${{ matrix.os }}-expected.txt
+          new: ${{ env.TEST_FOLDER }}/results.txt
+          mode: deletion
+          tolerance: same
+          output: ${{ env.TEST_FOLDER }}/results.diff
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: ${{ matrix.os }}
+          notify_check: true
+          notify_issue: true
+      - name: upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v1
+        with:
+          name: test-results-${{ steps.sha.outputs.short }}-${{ matrix.os }}
+          path: ${{ env.TEST_FOLDER }}/

@@ -112,7 +112,7 @@ struct rt_sigframe {
    vki_siginfo_t         info;
    struct vg_sig_private priv;
    UChar                 abigap[288];   // unused
-};
+} __attribute__ ((aligned (16)));
 
 #define SET_SIGNAL_LR(zztst, zzval)                          \
    do { tst->arch.vex.guest_LR = (zzval);                    \

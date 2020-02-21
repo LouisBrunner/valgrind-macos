@@ -58,6 +58,7 @@ my %tool_dirs = (
 my %dirs_to_ignore = (
     ".deps" => 1,
     ".git" => 1,
+    ".github" => 1, # Only for valgrind-macos
     ".in_place" => 1,
     "Inst" => 1,            # the nightly scripts creates this
     "VEX" => 1,

@@ -38,12 +38,17 @@ jobs:
       run: make regtest || true
       env:
         REGTEST_ARGS: --results-to=${{ env.TEST_FOLDER }}/results.txt
+    - name: trim results
+      run: sed '1,2d;$d' ${{ env.TEST_FOLDER }}/results.txt > results-tests.txt
     - name: copy failing test outputs
-      run: cat ${{ env.TEST_FOLDER }}/results.txt | sed 1,2d | cut -f 1 -d' ' | xargs -L1 -I % sh -c 'cp %.*.diff* ${{ env.TEST_FOLDER}}/outputs/'
+      run: cat ${{ env.TEST_FOLDER }}/results.txt | sed 1,2d | cut -f 1 -d' ' | xargs -L1 -I % sh -c 'cp %.*.diff* ${{ env.TEST_FOLDER }}/outputs/'
     - name: calculate difference between tests
-      run: diff .github/${{ env.PLATFORM }}-expected.txt ${{ env.TEST_FOLDER }}/results.txt > ${{ env.TEST_FOLDER }}/results.diff
+      run: diff .github/${{ env.PLATFORM }}-expected.txt results-tests.txt > ${{ env.TEST_FOLDER }}/results.diff
+    - name: show difference between tests
+      if: always()
+      run: cat ${{ env.TEST_FOLDER }}/results.diff
     - name: upload artifacts
-      if: failure()
+      if: always()
       uses: actions/upload-artifact@v1
       with:
         name: test-results-${{ env.PLATFORM }}
@@ -78,12 +83,17 @@ jobs:
       run: make regtest || true
       env:
         REGTEST_ARGS: --results-to=${{ env.TEST_FOLDER }}/results.txt
+    - name: trim results
+      run: sed '1,2d;$d' ${{ env.TEST_FOLDER }}/results.txt > results-tests.txt
     - name: copy failing test outputs
-      run: cat ${{ env.TEST_FOLDER }}/results.txt | sed 1,2d | cut -f 1 -d' ' | xargs -L1 -I % sh -c 'cp %.*.diff* ${{ env.TEST_FOLDER}}/outputs/'
+      run: cat ${{ env.TEST_FOLDER }}/results.txt | sed 1,2d | cut -f 1 -d' ' | xargs -L1 -I % sh -c 'cp %.*.diff* ${{ env.TEST_FOLDER }}/outputs/'
     - name: calculate difference between tests
-      run: diff .github/${{ env.PLATFORM }}-expected.txt ${{ env.TEST_FOLDER }}/results.txt > ${{ env.TEST_FOLDER }}/results.diff
+      run: diff .github/${{ env.PLATFORM }}-expected.txt results-tests.txt > ${{ env.TEST_FOLDER }}/results.diff
+    - name: show difference between tests
+      if: always()
+      run: cat ${{ env.TEST_FOLDER }}/results.diff
     - name: upload artifacts
-      if: failure()
+      if: always()
       uses: actions/upload-artifact@v1
       with:
         name: test-results-${{ env.PLATFORM }}

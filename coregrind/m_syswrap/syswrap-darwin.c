@@ -1551,6 +1551,9 @@ static const HChar *name_for_fcntl(UWord cmd) {
 #     if DARWIN_VERS >= DARWIN_10_14
       F(F_CHECK_LV);
 #     endif
+#     if DARWIN_VERS >= DARWIN_10_15
+      F(F_SPECULATIVE_READ);
+#     endif
    default:
       return "UNKNOWN";
    }
@@ -1755,6 +1758,30 @@ PRE(fcntl)
       // FIXME: Dejan
       break;
 #  endif
+
+#  if DARWIN_VERS >= DARWIN_10_15
+   case VKI_F_SPECULATIVE_READ: /* Synchronous advisory read fcntl for regular and compressed file */
+      PRINT("fcntl ( %lu, %s, %#lx )", ARG1, name_for_fcntl(ARG2), ARG3);
+      PRE_REG_READ3(long, "fcntl",
+                    unsigned int, fd, unsigned int, cmd,
+                    fspecread_t *, args);
+
+      {
+        fspecread_t *fspecread = (fspecread_t *)ARG3;
+        PRE_FIELD_READ( "fcntl(VKI_F_SPECULATIVE_READ, fspecread->fsr_flags)",
+                         fspecread->fsr_flags);
+        PRE_FIELD_READ( "fcntl(VKI_F_SPECULATIVE_READ, fspecread->fsr_offset)",
+                        fspecread->fsr_offset);
+        PRE_FIELD_READ( "fcntl(VKI_F_SPECULATIVE_READ, fspecread->fsr_length)",
+                        fspecread->fsr_length);
+
+        if (fspecread->fsr_offset < 0 || fspecread->fsr_length < 0) {
+          SET_STATUS_Failure( VKI_EINVAL );
+        }
+      }
+      break;
+#  endif
+
    default:
       PRINT("fcntl ( %lu, %lu [??] )", ARG1, ARG2);
       log_decaying("UNKNOWN fcntl %lu!", ARG2);

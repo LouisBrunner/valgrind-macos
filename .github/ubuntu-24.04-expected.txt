@@ -1,0 +1,3 @@
+none/tests/log-track-fds                 (stderr)
+none/tests/track-fds-exec-children       (stderr)
+none/tests/xml-track-fds                 (stderr)

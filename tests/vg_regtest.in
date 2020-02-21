@@ -700,7 +700,10 @@ sub test_one_dir($$)
     # Nb: Don't prepend a '/' to the base directory
     my $full_dir = $prev_dirs . ($prev_dirs eq "" ? "" : "/") . $dir;
     print TSLOG scalar localtime, " entering $full_dir\n";
-    my $dashes = "-" x (50 - length $full_dir);
+    my $dashes = "";
+    if (length $full_dir <= 50) {
+      $dashes = "-" x (50 - length $full_dir);
+    }
 
     my @fs = glob "*";
     my $found_tests = (0 != (grep { $_ =~ /\.vgtest$/ } @fs));

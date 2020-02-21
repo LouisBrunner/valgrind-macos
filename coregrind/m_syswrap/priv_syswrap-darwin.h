@@ -471,7 +471,7 @@ DECL_TEMPLATE(darwin, __thread_selfid);         // 372
 DECL_TEMPLATE(darwin, kevent_qos);              // 374
 #endif /* DARWIN_VERS >= DARWIN_10_11 */
 #if DARWIN_VERS >= DARWIN_10_13
-// NYI kevent_id                                // 375
+DECL_TEMPLATE(darwin, kevent_id);               // 375
 #endif /* DARWIN_VERS >= DARWIN_10_13 */
 // 376
 // 377

@@ -8462,11 +8462,14 @@ PRE(mach_msg)
 {
    mach_msg_header_t *mh = (mach_msg_header_t *)ARG1;
    mach_msg_option_t option = (mach_msg_option_t)ARG2;
-   // mach_msg_size_t send_size = (mach_msg_size_t)ARG3;
+   mach_msg_size_t send_size = (mach_msg_size_t)ARG3;
    mach_msg_size_t rcv_size = (mach_msg_size_t)ARG4;
    // mach_port_t rcv_name = (mach_port_t)ARG5;
    size_t complex_header_size = 0;
 
+  //  PRINT("mach_msg"
+  //    "(msg: %#lx, option:%#lx, send_size:%ld, rcv_size:%ld, rcv_name:%s, timeout:%ld, notify:%s)",
+  //    ARG1, ARG2, ARG3, ARG4, name_for_port(ARG5), ARG6, name_for_port(ARG7));
    PRE_REG_READ7(long, "mach_msg",
                  mach_msg_header_t*,"msg", mach_msg_option_t,"option",
                  mach_msg_size_t,"send_size", mach_msg_size_t,"rcv_size",
@@ -8502,7 +8505,109 @@ PRE(mach_msg)
       // JRS 11 Nov 2014: this assertion is OK for <= 10.9 but fails on 10.10
 #     if DARWIN_VERS >= DARWIN_10_10
       if (mh->msgh_bits & MACH_SEND_TRAILER) {
-         log_decaying("UNKNOWN mach_msg unhandled MACH_SEND_TRAILER option");
+        mach_msg_trailer_t* trailer = (mach_msg_trailer_t*)(ARG1 + send_size);
+
+        PRE_FIELD_READ("mach_msg(trailer->msgh_trailer_type)", trailer->msgh_trailer_type);
+        PRE_FIELD_READ("mach_msg(trailer->msgh_trailer_size)", trailer->msgh_trailer_size);
+        PRE_MEM_READ("mach_msg(trailer)", (Addr)trailer, trailer->msgh_trailer_size);
+
+        if (trailer->msgh_trailer_size > 0) {
+          // Only one format is supported at the moment
+          vg_assert(trailer->msgh_trailer_type == MACH_MSG_TRAILER_FORMAT_0);
+        }
+
+#if 0
+        int trailer_type = GET_RCV_ELEMENTS(option);
+        if (trailer->msgh_trailer_size == 0) {
+          PRINT("mach_msg(EMPTY %d trailer)", trailer_type);
+        } else {
+          switch (trailer_type) {
+            case MACH_RCV_TRAILER_NULL: {
+              // vg_assert(trailer->msgh_trailer_size == sizeof(mach_msg_trailer_t));
+              // Nothing more to check
+              PRINT("mach_msg(trailer)");
+              break;
+            }
+
+            case MACH_RCV_TRAILER_SEQNO: {
+              // vg_assert(trailer->msgh_trailer_size == sizeof(mach_msg_seqno_trailer_t));
+              mach_msg_seqno_trailer_t* real_trailer = (mach_msg_seqno_trailer_t*)trailer;
+              PRINT("mach_msg(seqno_trailer) [seqno %d]", real_trailer->msgh_seqno);
+              break;
+            }
+
+            case MACH_RCV_TRAILER_SENDER: {
+              // vg_assert(trailer->msgh_trailer_size == sizeof(mach_msg_security_trailer_t));
+              mach_msg_security_trailer_t* real_trailer = (mach_msg_security_trailer_t*)trailer;
+              PRINT("mach_msg(security_trailer) [seqno %d, sender %#xd%xd]",
+                real_trailer->msgh_seqno,
+                real_trailer->msgh_sender.val[0], real_trailer->msgh_sender.val[1]);
+              break;
+            }
+
+            case MACH_RCV_TRAILER_AUDIT: {
+              // vg_assert(trailer->msgh_trailer_size == sizeof(mach_msg_audit_trailer_t));
+              mach_msg_audit_trailer_t* real_trailer = (mach_msg_audit_trailer_t*)trailer;
+              PRINT("mach_msg(audit_trailer) [seqno %d, sender %#x%x, audit %#x%x%x%x%x%x%x%x]",
+                real_trailer->msgh_seqno,
+                real_trailer->msgh_sender.val[0], real_trailer->msgh_sender.val[1],
+                real_trailer->msgh_audit.val[0], real_trailer->msgh_audit.val[1],
+                real_trailer->msgh_audit.val[2], real_trailer->msgh_audit.val[3],
+                real_trailer->msgh_audit.val[4], real_trailer->msgh_audit.val[5],
+                real_trailer->msgh_audit.val[6], real_trailer->msgh_audit.val[7]);
+              break;
+            }
+
+            case MACH_RCV_TRAILER_CTX: {
+              // vg_assert(trailer->msgh_trailer_size == sizeof(mach_msg_context_trailer_t));
+              mach_msg_context_trailer_t* real_trailer = (mach_msg_context_trailer_t*)trailer;
+              PRINT("mach_msg(context_trailer) [seqno %d, sender %#x%x, audit %#x%x%x%x%x%x%x%x, context: %llx]",
+                real_trailer->msgh_seqno,
+                real_trailer->msgh_sender.val[0], real_trailer->msgh_sender.val[1],
+                real_trailer->msgh_audit.val[0], real_trailer->msgh_audit.val[1],
+                real_trailer->msgh_audit.val[2], real_trailer->msgh_audit.val[3],
+                real_trailer->msgh_audit.val[4], real_trailer->msgh_audit.val[5],
+                real_trailer->msgh_audit.val[6], real_trailer->msgh_audit.val[7],
+                real_trailer->msgh_context);
+              break;
+            }
+
+            case MACH_RCV_TRAILER_AV: {
+              // vg_assert(trailer->msgh_trailer_size == sizeof(mach_msg_mac_trailer_t));
+              mach_msg_mac_trailer_t* real_trailer = (mach_msg_mac_trailer_t*)trailer;
+              PRINT("mach_msg(av_trailer) [seqno %d, sender %#x%x, audit %#x%x%x%x%x%x%x%x, context: %llx, ad: %d, sender: %s]",
+                real_trailer->msgh_seqno,
+                real_trailer->msgh_sender.val[0], real_trailer->msgh_sender.val[1],
+                real_trailer->msgh_audit.val[0], real_trailer->msgh_audit.val[1],
+                real_trailer->msgh_audit.val[2], real_trailer->msgh_audit.val[3],
+                real_trailer->msgh_audit.val[4], real_trailer->msgh_audit.val[5],
+                real_trailer->msgh_audit.val[6], real_trailer->msgh_audit.val[7],
+                real_trailer->msgh_context, real_trailer->msgh_ad,
+                name_for_port(real_trailer->msgh_labels.sender));
+              break;
+            }
+
+            case MACH_RCV_TRAILER_LABELS: {
+              // vg_assert(trailer->msgh_trailer_size == sizeof(mach_msg_mac_trailer_t));
+              mach_msg_mac_trailer_t* real_trailer = (mach_msg_mac_trailer_t*)trailer;
+              PRINT("mach_msg(labels_trailer) [seqno %d, sender %#x%x, audit %#x%x%x%x%x%x%x%x, context: %llx, ad: %d, sender: %s]",
+                real_trailer->msgh_seqno,
+                real_trailer->msgh_sender.val[0], real_trailer->msgh_sender.val[1],
+                real_trailer->msgh_audit.val[0], real_trailer->msgh_audit.val[1],
+                real_trailer->msgh_audit.val[2], real_trailer->msgh_audit.val[3],
+                real_trailer->msgh_audit.val[4], real_trailer->msgh_audit.val[5],
+                real_trailer->msgh_audit.val[6], real_trailer->msgh_audit.val[7],
+                real_trailer->msgh_context, real_trailer->msgh_ad,
+                name_for_port(real_trailer->msgh_labels.sender));
+              break;
+            }
+
+            default:
+              log_decaying("UNKNOWN mach_msg_trailer_t [type %d]", trailer_type);
+            }
+          }
+        }
+#endif
       }
 #     else
       vg_assert(! (mh->msgh_bits & MACH_SEND_TRAILER));

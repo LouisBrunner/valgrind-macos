@@ -76,3 +76,11 @@
    fun:bootstrap_look_up2
    ...
 }
+
+{
+   OSX1014:CFPrefsPlistSource
+   Memcheck:Cond
+   ...
+   fun:*CFGetCachedUnsandboxedHomeDirectoryForUser_block_invoke*
+   ...
+}

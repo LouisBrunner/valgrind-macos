@@ -791,6 +791,10 @@ DECL_TEMPLATE(darwin, swtch_pri);
 // NYI kernelrpc_mach_port_get_attributes_trap      // 40
 #endif /* DARWIN_VERS >= DARWIN_10_14 */
 
+#if DARWIN_VERS >= DARWIN_10_15
+DECL_TEMPLATE(darwin, task_restartable_ranges_register);
+#endif /* DARWIN_VERS >= DARWIN_10_15 */
+
 // Machine-dependent traps
 DECL_TEMPLATE(darwin, thread_fast_set_cthread_self);
 

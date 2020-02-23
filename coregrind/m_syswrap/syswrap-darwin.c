@@ -8382,6 +8382,12 @@ PRE(mach_msg_task)
       CALL_PRE(mach_vm_purgable_control);
       return;
 
+#if DARWIN_VERS >= DARWIN_10_15
+   case 8000:
+      CALL_PRE(task_restartable_ranges_register);
+      return;
+#endif
+
    default:
       // unknown message to task self
       log_decaying("UNKNOWN task message [id %d, to %s, reply 0x%x]",
@@ -10327,6 +10333,38 @@ POST(thread_get_special_reply_port)
 }
 
 #endif /* DARWIN_VERS >= DARWIN_10_13 */
+
+
+/* ---------------------------------------------------------------------
+ Added for macOS 10.15 (Catalina)
+ ------------------------------------------------------------------ */
+
+#if DARWIN_VERS >= DARWIN_10_15
+
+PRE(task_restartable_ranges_register)
+{
+   PRINT("task_restartable_ranges_register(%s, %#lx, %ld)", name_for_port(ARG1), ARG2, ARG3);
+}
+
+POST(task_restartable_ranges_register)
+{
+#pragma pack(4)
+   typedef struct {
+      mach_msg_header_t Head;
+      NDR_record_t NDR;
+      kern_return_t RetCode;
+   } Reply;
+#pragma pack()
+
+   Reply *reply = (Reply *)ARG1;
+
+   if (!reply->RetCode) {
+   } else {
+      PRINT("mig return %d", reply->RetCode);
+   }
+}
+
+#endif /* DARWIN_VERS >= DARWIN_10_15 */
 
 
 /* ---------------------------------------------------------------------

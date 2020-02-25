@@ -1943,7 +1943,7 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          return dst;
       }
 
-      case Iop_Clz64: {
+      case Iop_ClzNat64: {
          HReg r10, r11;
 
          /* This will be implemented using FLOGR, if possible. So we need to

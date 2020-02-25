@@ -14883,27 +14883,15 @@ static const HChar *
 s390_irgen_FLOGR(UChar r1, UChar r2)
 {
    IRTemp input    = newTemp(Ity_I64);
-   IRTemp not_zero = newTemp(Ity_I64);
-   IRTemp tmpnum   = newTemp(Ity_I64);
    IRTemp num      = newTemp(Ity_I64);
    IRTemp shift_amount = newTemp(Ity_I8);
 
-   /* We use the "count leading zeroes" operator because the number of
-      leading zeroes is identical with the bit position of the first '1' bit.
-      However, that operator does not work when the input value is zero.
-      Therefore, we set the LSB of the input value to 1 and use Clz64 on
-      the modified value. If input == 0, then the result is 64. Otherwise,
-      the result of Clz64 is what we want. */
+   /* Use the "count leading zeroes" operator with "natural" semantics.  The
+      results of FLOGR and Iop_ClzNat64 are the same for all inputs, including
+      input == 0, in which case both operators yield 64. */
 
    assign(input, get_gpr_dw0(r2));
-   assign(not_zero, binop(Iop_Or64, mkexpr(input), mkU64(1)));
-   assign(tmpnum, unop(Iop_Clz64, mkexpr(not_zero)));
-
-   /* num = (input == 0) ? 64 : tmpnum */
-   assign(num, mkite(binop(Iop_CmpEQ64, mkexpr(input), mkU64(0)),
-                     /* == 0 */ mkU64(64),
-                     /* != 0 */ mkexpr(tmpnum)));
-
+   assign(num, unop(Iop_ClzNat64, mkexpr(input)));
    put_gpr_dw0(r1, mkexpr(num));
 
    /* Set the leftmost '1' bit of the input value to zero. The general scheme

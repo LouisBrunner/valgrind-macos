@@ -48,6 +48,8 @@
 	unsigned long tmp2 = m1;			\
 	int cc;						\
 	asm volatile(	"xr %[cc],%[cc]\n"		\
+			"lghi 2,0\n"                   \
+			"lghi 3,0\n"                   \
 			insn("2", "%[tmp1]", "%[m2]")	\
 			"ipm %[cc]\n"			\
 			"srl %[cc],28\n"		\

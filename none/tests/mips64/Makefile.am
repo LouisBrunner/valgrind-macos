@@ -142,7 +142,7 @@ fpu_arithmetic_CFLAGS = $(AM_CFLAGS) -lm
 msa_arithmetic_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
 msa_comparison_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
 msa_data_transfer_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
-msa_fpu_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
+msa_fpu_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@ -lm
 msa_logical_and_shift_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
 msa_shuffle_CFLAGS = $(AM_CFLAGS) @FLAG_MSA@
 

@@ -39,7 +39,7 @@ EXTRA_DIST = \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
 	ecag.stdout.exp-z10ec ecag.stdout.exp-z196 ecag.stdout.exp-zec12 \
-	ecag.stdout.exp-z13 ecag.stdout.exp-z14 \
+	ecag.stdout.exp-z13 ecag.stdout.exp-z14 ecag.stdout.exp-z15 \
 	op00.stderr.exp1 op00.stderr.exp2 op00.vgtest \
 	fixbr.vgtest fixbr.stderr.exp fixbr.stdout.exp \
 	fpext.vgtest fpext.stderr.exp fpext.stdout.exp \

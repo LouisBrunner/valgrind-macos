@@ -377,6 +377,9 @@ s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, ULong *addr)
    s390_set_facility_bit(addr, S390_FAC_CTREXE, 0);
    s390_set_facility_bit(addr, S390_FAC_TREXE,  0);
    s390_set_facility_bit(addr, S390_FAC_MSA4,   0);
+   s390_set_facility_bit(addr, S390_FAC_VXE,    0);
+   s390_set_facility_bit(addr, S390_FAC_VXE2,   0);
+   s390_set_facility_bit(addr, S390_FAC_DFLT,   0);
 
    return cc;
 }

@@ -103,6 +103,9 @@
 #define S390_FAC_TREXE   73  // transactional execution
 #define S390_FAC_MSA4    77  // message-security-assist 4
 #define S390_FAC_VX      129 // vector facility
+#define S390_FAC_VXE     135 // vector enhancements facility 1
+#define S390_FAC_VXE2    148 // vector enhancements facility 2
+#define S390_FAC_DFLT    151 // deflate-conversion facility
 
 
 /*--------------------------------------------------------------*/

@@ -28,7 +28,7 @@ my %csv_implemented = ();
 my %toir_implemented = ();
 my %toir_decoded = ();
 my %known_arch = map {($_ => 1)}
-    qw(g5 z900 z990 z9-109 z9-ec z10 z196 zEC12 z13 arch12);
+    qw(g5 z900 z990 z9-109 z9-ec z10 z196 zEC12 z13 arch12 arch13);
 
 # Patterns for identifying certain extended mnemonics that shall be
 # skipped in "s390-opc.txt" and "s390-opcodes.csv".

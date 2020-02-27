@@ -49,7 +49,7 @@ nearbyint(1234.01): 1234.000000
 nearbyintf(1234.01f): 1234.000000
 nearbyintl(1234.01): 1234.000000
 log(M_E): 1.000000
-tgamma(5.0): 24.000000
-cbrt(27.0): 3.000000
+tgamma(5.0): PASS
+cbrt(27.0): PASS
 feclearexcept(FE_ALL_EXCEPT): 0
 raised: 32

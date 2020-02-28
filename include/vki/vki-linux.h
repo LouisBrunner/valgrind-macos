@@ -5313,6 +5313,32 @@ struct vki_ptp_pin_desc {
 #define VKI_PTP_SYS_OFFSET_EXTENDED \
 	_VKI_IOWR('=', 9, struct vki_ptp_sys_offset_extended)
 
+/* Needed for 64bit time_t on 32bit arches.  */
+
+typedef vki_int64_t vki_time64_t;
+
+/* Note that this is the padding used by glibc, the kernel uses
+   a 64-bit signed int, but is ignoring the upper 32 bits of the
+   tv_nsec field.  It does always write the full struct though.
+   So this is only needed for PRE_MEM_READ. See pre_read_timespec64. */
+struct vki_timespec64 {
+   vki_time64_t tv_sec;
+#if defined(VKI_BIG_ENDIAN)
+   vki_int32_t tv_pad;
+   vki_int32_t tv_nsec;
+#elif defined(VKI_LITTLE_ENDIAN)
+   vki_int32_t tv_nsec;
+   vki_int32_t tv_pad;
+#else
+#error edit for your odd byteorder.
+#endif
+};
+
+struct vki_itimerspec64 {
+   struct vki_timespec it_interval;
+   struct vki_timespec it_value;
+};
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

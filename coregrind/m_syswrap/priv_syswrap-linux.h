@@ -393,6 +393,28 @@ DECL_TEMPLATE(linux, sys_socketpair);
 DECL_TEMPLATE(linux, sys_kcmp);
 DECL_TEMPLATE(linux, sys_copy_file_range);
 
+/* 64bit time_t syscalls for 32bit arches.  */
+DECL_TEMPLATE(linux, sys_clock_gettime64)
+DECL_TEMPLATE(linux, sys_clock_settime64)
+// clock_adjtime64
+DECL_TEMPLATE(linux, sys_clock_getres_time64)
+DECL_TEMPLATE(linux, sys_clock_nanosleep_time64);
+DECL_TEMPLATE(linux, sys_timer_gettime64);
+DECL_TEMPLATE(linux, sys_timer_settime64);
+DECL_TEMPLATE(linux, sys_timerfd_gettime64);
+DECL_TEMPLATE(linux, sys_timerfd_settime64);
+DECL_TEMPLATE(linux, sys_utimensat_time64);
+DECL_TEMPLATE(linux, sys_pselect6_time64);
+DECL_TEMPLATE(linux, sys_ppoll_time64);
+// io_pgetevents_time64
+DECL_TEMPLATE(linux, sys_recvmmsg_time64);
+DECL_TEMPLATE(linux, sys_mq_timedsend_time64);
+DECL_TEMPLATE(linux, sys_mq_timedreceive_time64);
+DECL_TEMPLATE(linux, sys_semtimedop_time64);
+DECL_TEMPLATE(linux, sys_rt_sigtimedwait_time64);
+DECL_TEMPLATE(linux, sys_futex_time64);
+DECL_TEMPLATE(linux, sys_sched_rr_get_interval_time64);
+
 // Some arch specific functions called from syswrap-linux.c
 extern Int do_syscall_clone_x86_linux ( Word (*fn)(void *), 
                                         void* stack, 

@@ -123,6 +123,7 @@ n-i-bz  Add support for the Linux io_uring system calls
 n-i-bz  sys_statx: don't complain if both |filename| and |buf| are NULL.
 n-i-bz  Fix non-glibc build of test suite with s390x_features
 416667  gcc10 ppc64le impossible constraint in 'asm' in test_isa.
+416753  new 32bit time syscalls for 2038+
 417427  commit to fix vki_siginfo_t definition created numerous regression
         errors on ppc64
 417452  s390_insn_store_emit: dst->tag for HRcVec128

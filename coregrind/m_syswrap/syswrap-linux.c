@@ -1622,7 +1622,23 @@ POST(sys_sendfile64)
    }
 }
 
-PRE(sys_futex)
+static void pre_read_timespec64 (ThreadId tid, const char *msg, UWord arg)
+{
+   struct vki_timespec64 *ts64 = (void *)(Addr)arg;
+   PRE_MEM_READ (msg, (Addr) &ts64->tv_sec, sizeof(vki_time64_t));
+   PRE_MEM_READ (msg, (Addr) &ts64->tv_nsec, sizeof(vki_int32_t));
+}
+
+static void pre_read_itimerspec64 (ThreadId tid, const char *msg, UWord arg)
+{
+   struct vki_itimerspec64 *its64 = (void *)(Addr)arg;
+   pre_read_timespec64 (tid, msg, (UWord) &its64->it_interval);
+   pre_read_timespec64 (tid, msg, (UWord) &its64->it_value);
+}
+
+static void futex_pre_helper ( ThreadId tid, SyscallArgLayout* layout,
+                               SyscallArgs* arrghs, SyscallStatus* status,
+                               UWord* flags, Bool is_time64 )
 {
    /* 
       arg    param                              used by ops
@@ -1634,21 +1650,32 @@ PRE(sys_futex)
       ARG5 - u32 *uaddr2			REQUEUE,CMP_REQUEUE
       ARG6 - int val3				CMP_REQUEUE
     */
-   PRINT("sys_futex ( %#" FMT_REGWORD "x, %ld, %ld, %#" FMT_REGWORD
-         "x, %#" FMT_REGWORD "x )", ARG1, SARG2, SARG3, ARG4, ARG5);
+
    switch(ARG2 & ~(VKI_FUTEX_PRIVATE_FLAG|VKI_FUTEX_CLOCK_REALTIME)) {
    case VKI_FUTEX_CMP_REQUEUE:
    case VKI_FUTEX_WAKE_OP:
    case VKI_FUTEX_CMP_REQUEUE_PI:
-      PRE_REG_READ6(long, "futex", 
-                    vki_u32 *, futex, int, op, int, val,
-                    struct timespec *, utime, vki_u32 *, uaddr2, int, val3);
+      if (is_time64) {
+         PRE_REG_READ6(long, "futex_time64", 
+                       vki_u32 *, futex, int, op, int, val,
+                       struct timespec64 *, utime, vki_u32 *, uaddr2, int, val3);
+      } else {
+         PRE_REG_READ6(long, "futex", 
+                       vki_u32 *, futex, int, op, int, val,
+                       struct timespec *, utime, vki_u32 *, uaddr2, int, val3);
+      }
       break;
    case VKI_FUTEX_REQUEUE:
    case VKI_FUTEX_WAIT_REQUEUE_PI:
-      PRE_REG_READ5(long, "futex", 
-                    vki_u32 *, futex, int, op, int, val,
-                    struct timespec *, utime, vki_u32 *, uaddr2);
+      if (is_time64) {
+         PRE_REG_READ5(long, "futex_time64", 
+                       vki_u32 *, futex, int, op, int, val,
+                       struct timespec64 *, utime, vki_u32 *, uaddr2);
+      } else {
+         PRE_REG_READ5(long, "futex", 
+                       vki_u32 *, futex, int, op, int, val,
+                       struct timespec *, utime, vki_u32 *, uaddr2);
+      }
       break;
    case VKI_FUTEX_WAIT_BITSET:
       /* Check that the address at least begins in client-accessible area. */
@@ -1657,15 +1684,27 @@ PRE(sys_futex)
             return;
       }
       if (*(vki_u32 *)(Addr)ARG1 != ARG3) {
-         PRE_REG_READ4(long, "futex",
-                       vki_u32 *, futex, int, op, int, val,
-                       struct timespec *, utime);
+         if (is_time64) {
+            PRE_REG_READ4(long, "futex_time64",
+                          vki_u32 *, futex, int, op, int, val,
+                          struct timespec64 *, utime);
+         } else {
+            PRE_REG_READ4(long, "futex",
+                          vki_u32 *, futex, int, op, int, val,
+                          struct timespec64 *, utime);
+         }
       } else {
         /* Note argument 5 is unused, but argument 6 is used.
            So we cannot just PRE_REG_READ6. Read argument 6 separately.  */
-         PRE_REG_READ4(long, "futex",
-                       vki_u32 *, futex, int, op, int, val,
-                       struct timespec *, utime);
+         if (is_time64) {
+            PRE_REG_READ4(long, "futex_time64",
+                          vki_u32 *, futex, int, op, int, val,
+                          struct timespec64 *, utime);
+         } else {
+            PRE_REG_READ4(long, "futex",
+                          vki_u32 *, futex, int, op, int, val,
+                          struct timespec *, utime);
+         }
          if (VG_(tdict).track_pre_reg_read)
             PRA6("futex",int,val3);
       }
@@ -1679,9 +1718,15 @@ PRE(sys_futex)
       break;
    case VKI_FUTEX_WAIT:
    case VKI_FUTEX_LOCK_PI:
-      PRE_REG_READ4(long, "futex", 
-                    vki_u32 *, futex, int, op, int, val,
-                    struct timespec *, utime);
+      if (is_time64) {
+         PRE_REG_READ4(long, "futex_time64", 
+                       vki_u32 *, futex, int, op, int, val,
+                       struct timespec64 *, utime);
+      } else {
+         PRE_REG_READ4(long, "futex", 
+                       vki_u32 *, futex, int, op, int, val,
+                       struct timespec *, utime);
+      }
       break;
    case VKI_FUTEX_WAKE:
    case VKI_FUTEX_FD:
@@ -1703,8 +1748,14 @@ PRE(sys_futex)
    case VKI_FUTEX_WAIT_BITSET:
    case VKI_FUTEX_WAIT_REQUEUE_PI:
       PRE_MEM_READ( "futex(futex)", ARG1, sizeof(Int) );
-      if (ARG4 != 0)
-	 PRE_MEM_READ( "futex(timeout)", ARG4, sizeof(struct vki_timespec) );
+      if (ARG4 != 0) {
+         if (is_time64) {
+            pre_read_timespec64 (tid, "futex_time64(timeout)", ARG4);
+         } else {
+	    PRE_MEM_READ( "futex(timeout)", ARG4,
+                          sizeof(struct vki_timespec) );
+         }
+      }
       break;
 
    case VKI_FUTEX_REQUEUE:
@@ -1728,7 +1779,9 @@ PRE(sys_futex)
       break;
    }
 }
-POST(sys_futex)
+
+static void futex_post_helper ( ThreadId tid, SyscallArgs* arrghs,
+                                SyscallStatus* status )
 {
    vg_assert(SUCCESS);
    POST_MEM_WRITE( ARG1, sizeof(int) );
@@ -1741,6 +1794,30 @@ POST(sys_futex)
             ML_(record_fd_open_nameless)(tid, RES);
       }
    }
+}
+
+PRE(sys_futex)
+{
+   PRINT("sys_futex ( %#" FMT_REGWORD "x, %ld, %ld, %#" FMT_REGWORD
+         "x, %#" FMT_REGWORD "x )", ARG1, SARG2, SARG3, ARG4, ARG5);
+   futex_pre_helper (tid, layout, arrghs, status, flags, False);
+}
+
+POST(sys_futex)
+{
+  futex_post_helper (tid, arrghs, status);
+}
+
+PRE(sys_futex_time64)
+{
+   PRINT("sys_futex_time64 ( %#" FMT_REGWORD "x, %ld, %ld, %#" FMT_REGWORD
+         "x, %#" FMT_REGWORD "x )", ARG1, SARG2, SARG3, ARG4, ARG5);
+   futex_pre_helper (tid, layout, arrghs, status, flags, True);
+}
+
+POST(sys_futex_time64)
+{
+  futex_post_helper (tid, arrghs, status);
 }
 
 PRE(sys_set_robust_list)
@@ -1785,16 +1862,22 @@ struct pselect_adjusted_sigset {
     vki_sigset_t adjusted_ss;
 };
 
-PRE(sys_pselect6)
+static void pselect6_pre_helper ( ThreadId tid, SyscallArgLayout* layout,
+                                  SyscallArgs* arrghs, SyscallStatus* status,
+                                  UWord* flags, Bool is_time64 )
 {
    *flags |= SfMayBlock | SfPostOnFail;
-   PRINT("sys_pselect6 ( %ld, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x, %#"
-         FMT_REGWORD "x, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",
-         SARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
-   PRE_REG_READ6(long, "pselect6",
-                 int, n, vki_fd_set *, readfds, vki_fd_set *, writefds,
-                 vki_fd_set *, exceptfds, struct vki_timeval *, timeout,
-                 void *, sig);
+   if (is_time64) {
+      PRE_REG_READ6(long, "pselect6_time64",
+                    int, n, vki_fd_set *, readfds, vki_fd_set *, writefds,
+                    vki_fd_set *, exceptfds, struct vki_timespec64 *, timeout,
+                    void *, sig);
+   } else {
+      PRE_REG_READ6(long, "pselect6",
+                    int, n, vki_fd_set *, readfds, vki_fd_set *, writefds,
+                    vki_fd_set *, exceptfds, struct vki_timespec *, timeout,
+                    void *, sig);
+   }
    // XXX: this possibly understates how much memory is read.
    if (ARG2 != 0)
       PRE_MEM_READ( "pselect6(readfds)",   
@@ -1805,8 +1888,14 @@ PRE(sys_pselect6)
    if (ARG4 != 0)
       PRE_MEM_READ( "pselect6(exceptfds)", 
 		     ARG4, ARG1/8 /* __FD_SETSIZE/8 */ );
-   if (ARG5 != 0)
-      PRE_MEM_READ( "pselect6(timeout)", ARG5, sizeof(struct vki_timeval) );
+   if (ARG5 != 0) {
+      if (is_time64) {
+         pre_read_timespec64(tid, "pselect6_time64(timeout)", ARG5);
+      } else {
+         PRE_MEM_READ( "pselect6(timeout)", ARG5,
+                       sizeof(struct vki_timespec) );
+      }
+   }
    if (ARG6 != 0) {
       const struct pselect_sized_sigset *pss =
           (struct pselect_sized_sigset *)(Addr)ARG6;
@@ -1834,6 +1923,15 @@ PRE(sys_pselect6)
       }
    }
 }
+
+PRE(sys_pselect6)
+{
+   PRINT("sys_pselect6 ( %ld, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x, %#"
+         FMT_REGWORD "x, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",
+         SARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
+   pselect6_pre_helper (tid, layout, arrghs, status, flags, False);
+}
+
 POST(sys_pselect6)
 {
    if (ARG6 != 0 && ARG6 != 1) {
@@ -1841,7 +1939,24 @@ POST(sys_pselect6)
    }
 }
 
-PRE(sys_ppoll)
+PRE(sys_pselect6_time64)
+{
+   PRINT("sys_pselect6_time64 ( %ld, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x, %#"
+         FMT_REGWORD "x, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",
+         SARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
+   pselect6_pre_helper (tid, layout, arrghs, status, flags, True);
+}
+
+POST(sys_pselect6_time64)
+{
+   if (ARG6 != 0 && ARG6 != 1) {
+       VG_(free)((struct pselect_adjusted_sigset *)(Addr)ARG6);
+   }
+}
+
+static void ppoll_pre_helper ( ThreadId tid, SyscallArgLayout* layout,
+                               SyscallArgs* arrghs, SyscallStatus* status,
+                               UWord* flags, Bool is_time64 )
 {
    UInt i;
    struct vki_pollfd* ufds = (struct vki_pollfd *)(Addr)ARG1;
@@ -1849,10 +1964,17 @@ PRE(sys_ppoll)
    PRINT("sys_ppoll ( %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %#" FMT_REGWORD
          "x, %#" FMT_REGWORD "x, %" FMT_REGWORD "u )\n",
          ARG1, ARG2, ARG3, ARG4, ARG5);
-   PRE_REG_READ5(long, "ppoll",
-                 struct vki_pollfd *, ufds, unsigned int, nfds,
-                 struct vki_timespec *, tsp, vki_sigset_t *, sigmask,
-                 vki_size_t, sigsetsize);
+   if (is_time64) {
+      PRE_REG_READ5(long, "ppoll_time64",
+                    struct vki_pollfd *, ufds, unsigned int, nfds,
+                    struct vki_timespec64 *, tsp, vki_sigset_t *, sigmask,
+                    vki_size_t, sigsetsize);
+   } else {
+      PRE_REG_READ5(long, "ppoll",
+                    struct vki_pollfd *, ufds, unsigned int, nfds,
+                    struct vki_timespec *, tsp, vki_sigset_t *, sigmask,
+                    vki_size_t, sigsetsize);
+   }
 
    for (i = 0; i < ARG2; i++) {
       PRE_MEM_READ( "ppoll(ufds.fd)",
@@ -1863,8 +1985,14 @@ PRE(sys_ppoll)
                      (Addr)(&ufds[i].revents), sizeof(ufds[i].revents) );
    }
 
-   if (ARG3)
-      PRE_MEM_READ( "ppoll(tsp)", ARG3, sizeof(struct vki_timespec) );
+   if (ARG3) {
+      if (is_time64) {
+         pre_read_timespec64(tid, "ppoll_time64(tsp)", ARG3);
+      } else {
+         PRE_MEM_READ( "ppoll(tsp)", ARG3,
+                       sizeof(struct vki_timespec) );
+      }
+   }
    if (ARG4 != 0 && sizeof(vki_sigset_t) == ARG5) {
       const vki_sigset_t *guest_sigmask = (vki_sigset_t *)(Addr)ARG4;
       PRE_MEM_READ( "ppoll(sigmask)", ARG4, ARG5);
@@ -1880,7 +2008,8 @@ PRE(sys_ppoll)
    }
 }
 
-POST(sys_ppoll)
+static void ppoll_post_helper ( ThreadId tid, SyscallArgs* arrghs,
+                                SyscallStatus* status )
 {
    vg_assert(SUCCESS || FAILURE);
    if (SUCCESS && (RES >= 0)) {
@@ -1892,6 +2021,32 @@ POST(sys_ppoll)
    if (ARG4 != 0 && ARG5 == sizeof(vki_sigset_t) && ARG4 != 1) {
       VG_(free)((vki_sigset_t *) (Addr)ARG4);
    }
+}
+
+PRE(sys_ppoll)
+{
+   PRINT("sys_ppoll ( %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %#" FMT_REGWORD
+         "x, %#" FMT_REGWORD "x, %" FMT_REGWORD "u )\n",
+         ARG1, ARG2, ARG3, ARG4, ARG5);
+   ppoll_pre_helper (tid, layout, arrghs, status, flags, False);
+}
+
+POST(sys_ppoll)
+{
+   ppoll_post_helper (tid, arrghs, status);
+}
+
+PRE(sys_ppoll_time64)
+{
+   PRINT("sys_ppoll_time64 ( %#" FMT_REGWORD "x, %" FMT_REGWORD
+         "u, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x, %" FMT_REGWORD "u )\n",
+         ARG1, ARG2, ARG3, ARG4, ARG5);
+   ppoll_pre_helper (tid, layout, arrghs, status, flags, False);
+}
+
+POST(sys_ppoll_time64)
+{
+   ppoll_post_helper (tid, arrghs, status);
 }
 
 
@@ -2682,6 +2837,25 @@ PRE(sys_mq_timedsend)
    }
 }
 
+PRE(sys_mq_timedsend_time64)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_mq_timedsend_time64 ( %ld, %#" FMT_REGWORD "x, %" FMT_REGWORD
+         "u, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )",
+         SARG1,ARG2,ARG3,ARG4,ARG5);
+   PRE_REG_READ5(long, "mq_timedsend_time64",
+                 vki_mqd_t, mqdes, const char *, msg_ptr, vki_size_t, msg_len,
+                 unsigned int, msg_prio,
+                 const struct vki_timespec64 *, abs_timeout);
+   if (!ML_(fd_allowed)(ARG1, "mq_timedsend_time64", tid, False)) {
+      SET_STATUS_Failure( VKI_EBADF );
+   } else {
+      PRE_MEM_READ( "mq_timedsend_time64(msg_ptr)", ARG2, ARG3 );
+      if (ARG5 != 0)
+         pre_read_timespec64(tid, "mq_timedsend_time64(abs_timeout)", ARG5);
+   }
+}
+
 PRE(sys_mq_timedreceive)
 {
    *flags |= SfMayBlock;
@@ -2705,6 +2879,35 @@ PRE(sys_mq_timedreceive)
    }
 }
 POST(sys_mq_timedreceive)
+{
+   POST_MEM_WRITE( ARG2, RES );
+   if (ARG4 != 0)
+      POST_MEM_WRITE( ARG4, sizeof(unsigned int) );
+}
+
+PRE(sys_mq_timedreceive_time64)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_mq_timedreceive_time64( %ld, %#" FMT_REGWORD "x, %"
+         FMT_REGWORD "u, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",
+         SARG1,ARG2,ARG3,ARG4,ARG5);
+   PRE_REG_READ5(ssize_t, "mq_timedreceive_time64",
+                 vki_mqd_t, mqdes, char *, msg_ptr, vki_size_t, msg_len,
+                 unsigned int *, msg_prio,
+                 const struct vki_timespec64 *, abs_timeout);
+   if (!ML_(fd_allowed)(ARG1, "mq_timedreceive_time64", tid, False)) {
+      SET_STATUS_Failure( VKI_EBADF );
+   } else {
+      PRE_MEM_WRITE( "mq_timedreceive_time64(msg_ptr)", ARG2, ARG3 );
+      if (ARG4 != 0)
+         PRE_MEM_WRITE( "mq_timedreceive_time64(msg_prio)",
+                        ARG4, sizeof(unsigned int) );
+      if (ARG5 != 0)
+         pre_read_timespec64(tid, "mq_timedreceive_time64(abs_timeout)", ARG5);
+   }
+}
+
+POST(sys_mq_timedreceive_time64)
 {
    POST_MEM_WRITE( ARG2, RES );
    if (ARG4 != 0)
@@ -2761,6 +2964,14 @@ PRE(sys_clock_settime)
    PRE_MEM_READ( "clock_settime(tp)", ARG2, sizeof(struct vki_timespec) );
 }
 
+PRE(sys_clock_settime64)
+{
+   PRINT("sys_clock_settime64( %ld, %#" FMT_REGWORD "x )", SARG1, ARG2);
+   PRE_REG_READ2(long, "clock_settime64",
+                 vki_clockid_t, clk_id, const struct timespec64 *, tp);
+   pre_read_timespec64(tid, "clock_settime64(tp)", ARG2);
+}
+
 PRE(sys_clock_gettime)
 {
    PRINT("sys_clock_gettime( %ld, %#" FMT_REGWORD "x )" , SARG1, ARG2);
@@ -2771,6 +2982,19 @@ PRE(sys_clock_gettime)
 POST(sys_clock_gettime)
 {
    POST_MEM_WRITE( ARG2, sizeof(struct vki_timespec) );
+}
+
+PRE(sys_clock_gettime64)
+{
+   PRINT("sys_clock_gettime64( %ld, %#" FMT_REGWORD "x )" , SARG1, ARG2);
+   PRE_REG_READ2(long, "clock_gettime64",
+                 vki_clockid_t, clk_id, struct vki_timespec64 *, tp);
+   PRE_MEM_WRITE ( "clock_gettime64(tp)", ARG2,
+                   sizeof(struct vki_timespec64) );
+}
+POST(sys_clock_gettime64)
+{
+   POST_MEM_WRITE( ARG2, sizeof(struct vki_timespec64) );
 }
 
 PRE(sys_clock_getres)
@@ -2787,6 +3011,23 @@ POST(sys_clock_getres)
 {
    if (ARG2 != 0)
       POST_MEM_WRITE( ARG2, sizeof(struct vki_timespec) );
+}
+
+PRE(sys_clock_getres_time64)
+{
+   PRINT("sys_clock_getres_time64( %ld, %#" FMT_REGWORD "x )" , SARG1, ARG2);
+   // Nb: we can't use "RES" as the param name because that's a macro
+   // defined above!
+   PRE_REG_READ2(long, "clock_getres_time64",
+                 vki_clockid_t, clk_id, struct vki_timespec64 *, res);
+   if (ARG2 != 0)
+      PRE_MEM_WRITE( "clock_getres_time64(res)", ARG2,
+                     sizeof(struct vki_timespec64) );
+}
+POST(sys_clock_getres_time64)
+{
+   if (ARG2 != 0)
+      POST_MEM_WRITE( ARG2, sizeof(struct vki_timespec64) );
 }
 
 PRE(sys_clock_nanosleep)
@@ -2806,6 +3047,27 @@ POST(sys_clock_nanosleep)
 {
    if (ARG4 != 0 && FAILURE && ERR == VKI_EINTR)
       POST_MEM_WRITE( ARG4, sizeof(struct vki_timespec) );
+}
+
+PRE(sys_clock_nanosleep_time64)
+{
+   *flags |= SfMayBlock|SfPostOnFail;
+   PRINT("sys_clock_nanosleep_time64( %ld, %ld, %#" FMT_REGWORD "x, %#"
+         FMT_REGWORD "x )",
+         SARG1, SARG2, ARG3, ARG4);
+   PRE_REG_READ4(int32_t, "clock_nanosleep_time64",
+                 vki_clockid_t, clkid, int, flags,
+                 const struct vki_timespec64 *, rqtp,
+		 struct vki_timespec64 *, rmtp);
+   pre_read_timespec64(tid, "clock_nanosleep_time64(rqtp)", ARG3);
+   if (ARG4 != 0)
+      PRE_MEM_WRITE( "clock_nanosleep_time64(rmtp)", ARG4,
+		     sizeof(struct vki_timespec64) );
+}
+POST(sys_clock_nanosleep_time64)
+{
+   if (ARG4 != 0 && FAILURE && ERR == VKI_EINTR)
+      POST_MEM_WRITE( ARG4, sizeof(struct vki_timespec64) );
 }
 
 /* ---------------------------------------------------------------------
@@ -2859,6 +3121,26 @@ POST(sys_timer_settime)
       POST_MEM_WRITE( ARG4, sizeof(struct vki_itimerspec) );
 }
 
+PRE(sys_timer_settime64)
+{
+   PRINT("sys_timer_settime64( %ld, %ld, %#" FMT_REGWORD "x, %#"
+          FMT_REGWORD "x )", SARG1,SARG2,ARG3,ARG4);
+   PRE_REG_READ4(long, "timer_settime64", 
+                 vki_timer_t, timerid, int, flags,
+                 const struct vki_itimerspec64 *, value,
+                 struct vki_itimerspec64 *, ovalue);
+   PRE_MEM_READ( "timer_settime64(value)", ARG3,
+                  sizeof(struct vki_itimerspec64) );
+   if (ARG4 != 0)
+       PRE_MEM_WRITE( "timer_settime64(ovalue)", ARG4,
+                      sizeof(struct vki_itimerspec64) );
+}
+POST(sys_timer_settime64)
+{
+   if (ARG4 != 0)
+      POST_MEM_WRITE( ARG4, sizeof(struct vki_itimerspec64) );
+}
+
 PRE(sys_timer_gettime)
 {
    PRINT("sys_timer_gettime( %ld, %#" FMT_REGWORD "x )", SARG1, ARG2);
@@ -2870,6 +3152,19 @@ PRE(sys_timer_gettime)
 POST(sys_timer_gettime)
 {
    POST_MEM_WRITE( ARG2, sizeof(struct vki_itimerspec) );
+}
+
+PRE(sys_timer_gettime64)
+{
+   PRINT("sys_timer_gettime64( %ld, %#" FMT_REGWORD "x )", SARG1, ARG2);
+   PRE_REG_READ2(long, "timer_gettime64", 
+                 vki_timer_t, timerid, struct vki_itimerspec64 *, value);
+   PRE_MEM_WRITE( "timer_gettime64(value)", ARG2,
+                  sizeof(struct vki_itimerspec64));
+}
+POST(sys_timer_gettime64)
+{
+   POST_MEM_WRITE( ARG2, sizeof(struct vki_itimerspec64) );
 }
 
 PRE(sys_timer_getoverrun)
@@ -2978,6 +3273,24 @@ POST(sys_timerfd_gettime)
       POST_MEM_WRITE(ARG2, sizeof(struct vki_itimerspec));
 }
 
+PRE(sys_timerfd_gettime64)
+{
+   PRINT("sys_timerfd_gettime64 ( %ld, %#" FMT_REGWORD "x )", SARG1, ARG2);
+   PRE_REG_READ2(long, "timerfd_gettime64",
+                 int, ufd,
+                 struct vki_itimerspec64*, otmr);
+   if (!ML_(fd_allowed)(ARG1, "timerfd_gettime64", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
+   else
+      PRE_MEM_WRITE("timerfd_gettime64(result)",
+                    ARG2, sizeof(struct vki_itimerspec64));
+}
+POST(sys_timerfd_gettime64)
+{
+   if (RES == 0)
+      POST_MEM_WRITE(ARG2, sizeof(struct vki_itimerspec64));
+}
+
 PRE(sys_timerfd_settime)
 {
    PRINT("sys_timerfd_settime ( %ld, %ld, %#" FMT_REGWORD "x, %#"
@@ -3004,6 +3317,33 @@ POST(sys_timerfd_settime)
 {
    if (RES == 0 && ARG4 != 0)
       POST_MEM_WRITE(ARG4, sizeof(struct vki_itimerspec));
+}
+
+PRE(sys_timerfd_settime64)
+{
+   PRINT("sys_timerfd_settime64 ( %ld, %ld, %#" FMT_REGWORD "x, %#"
+         FMT_REGWORD "x )", SARG1, SARG2, ARG3, ARG4);
+   PRE_REG_READ4(long, "timerfd_settime64",
+                 int, ufd,
+                 int, flags,
+                 const struct vki_itimerspec64*, utmr,
+                 struct vki_itimerspec64*, otmr);
+   if (!ML_(fd_allowed)(ARG1, "timerfd_settime64", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
+   else
+   {
+      pre_read_itimerspec64 (tid, "timerfd_settime64(result)", ARG3);
+      if (ARG4)
+      {
+         PRE_MEM_WRITE("timerfd_settime64(result)",
+                       ARG4, sizeof(struct vki_itimerspec64));
+      }
+   }
+}
+POST(sys_timerfd_settime64)
+{
+   if (RES == 0 && ARG4 != 0)
+      POST_MEM_WRITE(ARG4, sizeof(struct vki_itimerspec64));
 }
 
 /* ---------------------------------------------------------------------
@@ -3386,6 +3726,22 @@ PRE(sys_sched_rr_get_interval)
 POST(sys_sched_rr_get_interval)
 {
    POST_MEM_WRITE(ARG2, sizeof(struct vki_timespec));
+}
+
+PRE(sys_sched_rr_get_interval_time64)
+{
+   PRINT("sys_sched_rr_get_interval_time64 ( %ld, %#" FMT_REGWORD "x )",
+         SARG1, ARG2);
+   PRE_REG_READ2(int, "sched_rr_get_interval_time64",
+                 vki_pid_t, pid,
+                 struct vki_timespec *, tp);
+   PRE_MEM_WRITE("sched_rr_get_interval_time64(timespec)",
+                 ARG2, sizeof(struct vki_timespec64));
+}
+
+POST(sys_sched_rr_get_interval_time64)
+{
+   POST_MEM_WRITE(ARG2, sizeof(struct vki_timespec64));
 }
 
 PRE(sys_sched_setaffinity)
@@ -4115,6 +4471,30 @@ POST(sys_rt_sigtimedwait)
       POST_MEM_WRITE( ARG2, sizeof(vki_siginfo_t) );
 }
 
+PRE(sys_rt_sigtimedwait_time64)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_rt_sigtimedwait_time64 ( %#" FMT_REGWORD "x, %#"
+         FMT_REGWORD "x, %#" FMT_REGWORD "x, %" FMT_REGWORD "u )",
+         ARG1, ARG2, ARG3, ARG4);
+   PRE_REG_READ4(long, "rt_sigtimedwait_time64", 
+                 const vki_sigset_t *, set, vki_siginfo_t *, info,
+                 const struct vki_timespec64 *, timeout,
+                 vki_size_t, sigsetsize);
+   if (ARG1 != 0) 
+      PRE_MEM_READ( "rt_sigtimedwait_time64(set)", ARG1, sizeof(vki_sigset_t) );
+   if (ARG2 != 0)
+      PRE_MEM_WRITE( "rt_sigtimedwait_time64(info)", ARG2,
+                     sizeof(vki_siginfo_t) );
+   if (ARG3 != 0)
+      pre_read_timespec64(tid, "rt_sigtimedwait_time64(timeout)", ARG3);
+}
+POST(sys_rt_sigtimedwait_time64)
+{
+   if (ARG2 != 0)
+      POST_MEM_WRITE( ARG2, sizeof(vki_siginfo_t) );
+}
+
 PRE(sys_rt_sigqueueinfo)
 {
    PRINT("sys_rt_sigqueueinfo(%ld, %ld, %#" FMT_REGWORD "x)",
@@ -4561,6 +4941,20 @@ PRE(sys_semtimedop)
                  int, semid, struct sembuf *, sops, unsigned, nsoops,
                  struct timespec *, timeout);
    ML_(generic_PRE_sys_semtimedop)(tid, ARG1,ARG2,ARG3,ARG4);
+}
+
+PRE(sys_semtimedop_time64)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_semtimedop_time64 ( %ld, %#" FMT_REGWORD "x, %"
+         FMT_REGWORD "u, %#" FMT_REGWORD "x )", SARG1, ARG2, ARG3, ARG4);
+   PRE_REG_READ4(long, "semtimedop_time64",
+                 int, semid, struct sembuf *, sops, unsigned, nsoops,
+                 struct vki_timespec64 *, timeout);
+   PRE_MEM_READ( "semtimedop_time64(sops)", ARG1,
+                 ARG2 * sizeof(struct vki_sembuf) );
+   if (ARG3 != 0)
+      pre_read_timespec64(tid, "semtimedop_time64(timeout)", ARG3);
 }
 
 PRE(sys_msgget)
@@ -5372,6 +5766,36 @@ PRE(sys_utimensat)
    }
 }
 
+PRE(sys_utimensat_time64)
+{
+   PRINT("sys_utimensat_time64 ( %ld, %#" FMT_REGWORD "x(%s), %#"
+         FMT_REGWORD "x, 0x%" FMT_REGWORD "x )",
+         SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, ARG4);
+   PRE_REG_READ4(long, "utimensat_time64",
+                 int, dfd, char *, filename, struct timespec *, utimes, int, flags);
+   if (ARG2 != 0)
+      PRE_MEM_RASCIIZ( "utimensat_time64(filename)", ARG2 );
+   if (ARG3 != 0) {
+      /* If timespec.tv_nsec has the special value UTIME_NOW or UTIME_OMIT
+         then the tv_sec field is ignored.  */
+      struct vki_timespec64 *times = (struct vki_timespec64 *)(Addr)ARG3;
+      PRE_MEM_READ( "utimensat_time64(times[0].tv_nsec)",
+                    (Addr)&times[0].tv_nsec, sizeof(times[0].tv_nsec));
+      PRE_MEM_READ( "utimensat_time64(times[1].tv_nsec)",
+                    (Addr)&times[1].tv_nsec, sizeof(times[1].tv_nsec));
+      if (ML_(safe_to_deref)(times, 2 * sizeof(struct vki_timespec64))) {
+         if (times[0].tv_nsec != VKI_UTIME_NOW
+             && times[0].tv_nsec != VKI_UTIME_OMIT)
+            PRE_MEM_READ( "utimensat_time64(times[0].tv_sec)",
+                          (Addr)&times[0].tv_sec, sizeof(times[0].tv_sec));
+         if (times[1].tv_nsec != VKI_UTIME_NOW
+             && times[1].tv_nsec != VKI_UTIME_OMIT)
+            PRE_MEM_READ( "utimensat_time64(times[1].tv_sec)",
+                          (Addr)&times[1].tv_sec, sizeof(times[1].tv_sec));
+      }
+   }
+}
+
 #if !defined(VGP_nanomips_linux)
 PRE(sys_newfstatat)
 {
@@ -5863,6 +6287,34 @@ PRE(sys_recvmmsg)
 
 POST(sys_recvmmsg)
 {
+   ML_(linux_POST_sys_recvmmsg) (tid, RES, ARG1,ARG2,ARG3,ARG4,ARG5);
+}
+
+PRE(sys_recvmmsg_time64)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_recvmmsg_time64 ( %ld, %#" FMT_REGWORD "x, %ld, %ld, %#"
+         FMT_REGWORD "x )",
+         SARG1, ARG2, SARG3, SARG4, ARG5);
+   PRE_REG_READ5(long, "recvmmsg_time64",
+                 int, s, struct mmsghdr *, mmsg, int, vlen,
+                 int, flags, struct vki_timespec64 *, timeout);
+   struct vki_mmsghdr *mmsg = (struct vki_mmsghdr *)ARG2;
+   HChar name[40];     // large enough
+   UInt i;
+   for (i = 0; i < ARG3; i++) {
+      VG_(sprintf)(name, "mmsg[%u].msg_hdr", i);
+      ML_(generic_PRE_sys_recvmsg)(tid, name, &mmsg[i].msg_hdr);
+      VG_(sprintf)(name, "recvmmsg(mmsg[%u].msg_len)", i);
+      PRE_MEM_WRITE( name, (Addr)&mmsg[i].msg_len, sizeof(mmsg[i].msg_len) );
+   }
+   if (ARG5)
+      pre_read_timespec64(tid, "recvmmsg(timeout)", ARG5);
+}
+
+POST(sys_recvmmsg_time64)
+{
+   /* ARG5 isn't actually used, so just use the generic POST. */
    ML_(linux_POST_sys_recvmmsg) (tid, RES, ARG1,ARG2,ARG3,ARG4,ARG5);
 }
 
@@ -12679,3 +13131,4 @@ POST(sys_io_uring_register)
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
+

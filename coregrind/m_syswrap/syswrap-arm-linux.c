@@ -742,7 +742,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_sched_get_priority_max, sys_sched_get_priority_max),// 159
 
    LINX_(__NR_sched_get_priority_min, sys_sched_get_priority_min),// 160
-//zz    //LINX?(__NR_sched_rr_get_interval,  sys_sched_rr_get_interval), // 161 */*
+   LINXY(__NR_sched_rr_get_interval,  sys_sched_rr_get_interval), // 161
    GENXY(__NR_nanosleep,         sys_nanosleep),      // 162
    GENX_(__NR_mremap,            sys_mremap),         // 163
    LINX_(__NR_setresuid,         sys_setresuid16),    // 164
@@ -1020,6 +1020,28 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_pwritev2,          sys_pwritev2),         // 393
 
    LINXY(__NR_statx,             sys_statx),            // 397
+
+   LINXY(__NR_clock_gettime64,   sys_clock_gettime64),  // 403
+   LINX_(__NR_clock_settime64,   sys_clock_settime64),  // 404
+
+   LINXY(__NR_clock_getres_time64, sys_clock_getres_time64), // 406
+   LINXY(__NR_clock_nanosleep_time64, sys_clock_nanosleep_time64), // 407
+   LINXY(__NR_timer_gettime64,   sys_timer_gettime64),  // 408
+   LINXY(__NR_timer_settime64,   sys_timer_settime64),  // 409
+   LINXY(__NR_timerfd_gettime64, sys_timerfd_gettime64),// 410
+   LINXY(__NR_timerfd_settime64, sys_timerfd_settime64),// 411
+   LINX_(__NR_utimensat_time64,  sys_utimensat_time64), // 412
+   LINXY(__NR_pselect6_time64,   sys_pselect6_time64),  // 413
+   LINXY(__NR_ppoll_time64,      sys_ppoll_time64),     // 414
+
+   LINXY(__NR_recvmmsg_time64,   sys_recvmmsg_time64),  // 417
+   LINX_(__NR_mq_timedsend_time64, sys_mq_timedsend_time64), // 418
+   LINXY(__NR_mq_timedreceive_time64, sys_mq_timedreceive_time64), // 419
+   LINX_(__NR_semtimedop_time64, sys_semtimedop_time64),// 420
+   LINXY(__NR_rt_sigtimedwait_time64, sys_rt_sigtimedwait_time64), // 421
+   LINXY(__NR_futex_time64,      sys_futex_time64),     // 422
+   LINXY(__NR_sched_rr_get_interval_time64,
+         sys_sched_rr_get_interval_time64),             // 423
 };
 
 

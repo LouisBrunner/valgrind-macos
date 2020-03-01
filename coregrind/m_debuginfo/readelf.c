@@ -1316,10 +1316,16 @@ DiImage* find_debug_file( struct _DebugInfo* di,
 
    if (dimg == NULL && debugname != NULL) {
       HChar *objdir = ML_(dinfo_strdup)("di.fdf.2", objpath);
+      HChar *usrmerge_objdir;
       HChar *objdirptr;
 
       if ((objdirptr = VG_(strrchr)(objdir, '/')) != NULL)
          *objdirptr = '\0';
+
+      if ((objdirptr = VG_(strstr)(objdir, "usr")) != NULL)
+         usrmerge_objdir = objdirptr + VG_(strlen)("usr");
+      else
+         usrmerge_objdir = NULL;
 
       debugpath = ML_(dinfo_zalloc)(
                      "di.fdf.3",
@@ -1327,30 +1333,36 @@ DiImage* find_debug_file( struct _DebugInfo* di,
                      + (extrapath ? VG_(strlen)(extrapath) : 0)
                      + (serverpath ? VG_(strlen)(serverpath) : 0));
 
+#     define TRY_OBJDIR(format, ...)                                    \
+      do {                                                              \
+         VG_(sprintf)(debugpath, format, __VA_ARGS__);                  \
+         dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL); \
+         if (dimg != NULL) goto dimg_ok;                                \
+      } while (0);
+
+#     define TRY_OBJDIR_USRMERGE_OBJDIR(format)                         \
+      do {                                                              \
+         TRY_OBJDIR(format, objdir, debugname);                         \
+         if (usrmerge_objdir != NULL) {                                 \
+            TRY_OBJDIR(format, usrmerge_objdir, debugname);             \
+         }                                                              \
+      } while (0)
+
       if (debugname[0] == '/') {
-         VG_(sprintf)(debugpath, "%s", debugname);
-         dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
-         if (dimg != NULL) goto dimg_ok;
+         TRY_OBJDIR("%s", debugname);
       }
 
-      VG_(sprintf)(debugpath, "%s/%s", objdir, debugname);
-      dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
-      if (dimg != NULL) goto dimg_ok;
-
-      VG_(sprintf)(debugpath, "%s/.debug/%s", objdir, debugname);
-      dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
-      if (dimg != NULL) goto dimg_ok;
-      
-      VG_(sprintf)(debugpath, "/usr/lib/debug%s/%s", objdir, debugname);
-      dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
-      if (dimg != NULL) goto dimg_ok;
+      TRY_OBJDIR_USRMERGE_OBJDIR("%s/%s");
+      TRY_OBJDIR_USRMERGE_OBJDIR("%s/.debug/%s");
+      TRY_OBJDIR_USRMERGE_OBJDIR("/usr/lib/debug%s/%s");
 
       if (extrapath) {
-         VG_(sprintf)(debugpath, "%s%s/%s", extrapath,
-                                            objdir, debugname);
-         dimg = open_debug_file(debugpath, buildid, crc, rel_ok, NULL);
-         if (dimg != NULL) goto dimg_ok;
+         TRY_OBJDIR("%s%s/%s", extrapath, objdir, debugname);
+         if (usrmerge_objdir != NULL)
+            TRY_OBJDIR("%s%s/%s", extrapath, usrmerge_objdir, debugname);
       }
+#     undef TRY_OBJDIR
+#     undef TRY_OBJDIRS
 
       if (serverpath) {
          /* When looking on the debuginfo server, always just pass the

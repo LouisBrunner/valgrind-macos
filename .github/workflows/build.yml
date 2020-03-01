@@ -6,7 +6,6 @@ env:
   TEST_FOLDER: .github/test
 
 # TODO: steps are exactly the same...
-# TODO: add GitHub Checks API integration
 
 jobs:
   build_linux:
@@ -43,10 +42,17 @@ jobs:
     - name: copy failing test outputs
       run: cat ${{ env.TEST_FOLDER }}/results.txt | sed 1,2d | cut -f 1 -d' ' | xargs -L1 -I % sh -c 'cp %.*.diff* ${{ env.TEST_FOLDER }}/outputs/'
     - name: calculate difference between tests
-      run: diff .github/${{ env.PLATFORM }}-expected.txt results-tests.txt > ${{ env.TEST_FOLDER }}/results.diff
-    - name: show difference between tests
-      if: always()
-      run: cat ${{ env.TEST_FOLDER }}/results.diff
+      uses: LouisBrunner/diff-action@v0.1.1
+      with:
+        old: .github/${{ env.PLATFORM }}-expected.txt
+        new: results-tests.txt
+        mode: deletion
+        tolerance: same
+        output: ${{ env.TEST_FOLDER }}/results.diff
+        token: ${{ secrets.GITHUB_TOKEN }}
+        title: ${{ env.PLATFORM }}
+        notify_check: true
+        notify_issue: true
     - name: upload artifacts
       if: always()
       uses: actions/upload-artifact@v1
@@ -88,10 +94,17 @@ jobs:
     - name: copy failing test outputs
       run: cat ${{ env.TEST_FOLDER }}/results.txt | sed 1,2d | cut -f 1 -d' ' | xargs -L1 -I % sh -c 'cp %.*.diff* ${{ env.TEST_FOLDER }}/outputs/'
     - name: calculate difference between tests
-      run: diff .github/${{ env.PLATFORM }}-expected.txt results-tests.txt > ${{ env.TEST_FOLDER }}/results.diff
-    - name: show difference between tests
-      if: always()
-      run: cat ${{ env.TEST_FOLDER }}/results.diff
+      uses: LouisBrunner/diff-action@v0.1.1
+      with:
+        old: .github/${{ env.PLATFORM }}-expected.txt
+        new: results-tests.txt
+        mode: deletion
+        tolerance: same
+        output: ${{ env.TEST_FOLDER }}/results.diff
+        token: ${{ secrets.GITHUB_TOKEN }}
+        title: ${{ env.PLATFORM }}
+        notify_check: true
+        notify_issue: true
     - name: upload artifacts
       if: always()
       uses: actions/upload-artifact@v1

@@ -129,6 +129,7 @@ n-i-bz  Fix non-glibc build of test suite with s390x_features
 417452  s390_insn_store_emit: dst->tag for HRcVec128
 417578  Add suppressions for glibc DTV leaks
 417906  clone with CLONE_VFORK and no CLONE_VM fails
+418435  s390x: memcmp test yields extra "Conditional jump or move depends on uninitialised value(s)"
 
 
 Release 3.15.0 (12 April 2019)

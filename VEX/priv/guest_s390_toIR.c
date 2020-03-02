@@ -12840,6 +12840,9 @@ s390_irgen_CLC_EX(IRTemp length, IRTemp start1, IRTemp start2)
    put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(1)));
    iterate_if(binop(Iop_CmpNE64, mkexpr(counter), mkexpr(length)));
    put_counter_dw0(mkU64(0));
+
+   /* Equal.  Clear CC, to avoid duplicate dependency on the comparison. */
+   s390_cc_set_val(0);
 }
 
 static void

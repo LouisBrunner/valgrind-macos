@@ -603,6 +603,82 @@ genReload_S390(HInstr **i1, HInstr **i2, HReg rreg, Int offsetB, Bool mode64)
    }
 }
 
+/* Direct reload function.  For the given vreg (currently located at the given
+   spill offset) and a given instruction that reads vreg exactly once, return a
+   variant of the instruction that references the spill slot directly.  Return
+   NULL if no such instruction is found. */
+HInstr *
+directReload_S390(HInstr* i, HReg vreg, Short spill_off)
+{
+   s390_insn* insn = (s390_insn *) i;
+
+   /* For simplicity, reject spill offsets that may cause trouble with 12-bit
+      addressing.  They probably shouldn't occur anyway. */
+   if (!fits_unsigned_12bit(spill_off + 15))
+      return NULL;
+
+   /* In case of a spilled GPR, adjust the offset to be right-aligned within the
+      spill slot. */
+   Int delta = hregClass(vreg) == HRcInt64 ? 8 - insn->size : 0;
+   s390_amode* vreg_am = s390_amode_for_guest_state(spill_off + delta);
+   s390_opnd_RMI vreg_opnd;
+   vreg_opnd.tag = S390_OPND_AMODE;
+   vreg_opnd.variant.am = vreg_am;
+
+   /* v-move <reg>,<vreg> */
+   if (insn->tag == S390_INSN_MOVE
+       && sameHReg(insn->variant.move.src, vreg)) {
+      return s390_insn_load(insn->size, insn->variant.move.dst, vreg_am);
+   }
+
+   /* v-store <vreg>,<addr> */
+   if (insn->tag == S390_INSN_STORE
+       && sameHReg(insn->variant.store.src, vreg)
+       && insn->variant.store.dst->tag == S390_AMODE_B12) {
+      return s390_insn_memcpy(insn->size, insn->variant.store.dst, vreg_am);
+   }
+
+   /* v-test <vreg> */
+   if (insn->tag == S390_INSN_TEST
+       && insn->variant.test.src.tag == S390_OPND_REG
+       && sameHReg(insn->variant.test.src.variant.reg, vreg)) {
+      return s390_insn_test(insn->size, vreg_opnd);
+   }
+
+   /* v-<alu> <reg>,<vreg> */
+   if (insn->tag == S390_INSN_ALU
+       && insn->variant.alu.op2.tag == S390_OPND_REG
+       && sameHReg(insn->variant.alu.op2.variant.reg, vreg)) {
+      return s390_insn_alu(insn->size, insn->variant.alu.tag,
+                           insn->variant.alu.dst, vreg_opnd);
+   }
+
+   /* v-<unop> <reg>,<vreg> */
+   if (insn->tag == S390_INSN_UNOP
+       && insn->variant.unop.src.tag == S390_OPND_REG
+       && sameHReg(insn->variant.unop.src.variant.reg, vreg)
+       && hregClass(vreg) == HRcInt64) {
+      /* Some operations define the input size to be different from the insn's
+         `size' field.  Adjust the address accordingly. */
+      switch (insn->variant.unop.tag) {
+      case S390_ZERO_EXTEND_8:
+      case S390_SIGN_EXTEND_8:  vreg_am->d = spill_off + 7; break;
+      case S390_ZERO_EXTEND_16:
+      case S390_SIGN_EXTEND_16: vreg_am->d = spill_off + 6; break;
+      case S390_ZERO_EXTEND_32:
+      case S390_SIGN_EXTEND_32: vreg_am->d = spill_off + 4; break;
+      case S390_NEGATE:         /* Nothing to adjust. */    break;
+      default:
+         goto no_match;
+      }
+      return s390_insn_unop(insn->size, insn->variant.unop.tag,
+                            insn->variant.unop.dst, vreg_opnd);
+   }
+
+no_match:
+   return NULL;
+}
+
 s390_insn* genMove_S390(HReg from, HReg to, Bool mode64)
 {
    switch (hregClass(from)) {

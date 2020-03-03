@@ -1181,8 +1181,8 @@ HInstrArray* doRegisterAllocation_v3(
       /* If the instruction reads exactly one vreg which is currently spilled,
          and this is the last use of that vreg, see if we can convert
          the instruction into one that reads directly from the spill slot.
-         This is clearly only possible for x86 and amd64 targets, since ppc and
-         arm are load-store architectures. If successful, replace
+         This is clearly only possible for x86, amd64, and s390x targets,
+         since ppc and arm are load-store architectures. If successful, replace
          instrs_in->arr[ii] with this new instruction, and recompute
          its reg_usage, so that the change is invisible to the standard-case
          handling that follows. */

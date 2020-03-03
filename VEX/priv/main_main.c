@@ -961,7 +961,7 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
          genSpill     = CAST_TO_TYPEOF(genSpill) S390FN(genSpill_S390);
          genReload    = CAST_TO_TYPEOF(genReload) S390FN(genReload_S390);
          genMove      = CAST_TO_TYPEOF(genMove) S390FN(genMove_S390);
-         // fixs390: consider implementing directReload_S390
+         directReload = CAST_TO_TYPEOF(directReload) S390FN(directReload_S390);
          ppInstr      = CAST_TO_TYPEOF(ppInstr) S390FN(ppS390Instr);
          ppReg        = CAST_TO_TYPEOF(ppReg) S390FN(ppHRegS390);
          iselSB       = S390FN(iselSB_S390);

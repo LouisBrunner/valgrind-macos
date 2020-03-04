@@ -126,6 +126,7 @@ n-i-bz  Fix non-glibc build of test suite with s390x_features
 417427  commit to fix vki_siginfo_t definition created numerous regression
         errors on ppc64
 417452  s390_insn_store_emit: dst->tag for HRcVec128
+417578  Add suppressions for glibc DTV leaks
 417906  clone with CLONE_VFORK and no CLONE_VM fails
 
 

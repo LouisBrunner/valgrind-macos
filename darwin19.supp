@@ -4,8 +4,26 @@
 ############################################
 
 {
-   OSX1014:dyld-3
+   OSX1015:dyld-1
    Memcheck:Cond
+   ...
+   fun:_ZN16ImageLoaderMachO18validateFirstPagesEPK21linkedit_data_commandiPKhmxRKN11ImageLoader11LinkContextE
+   ...
+}
+
+{
+   OSX1015:dyld-2
+   Memcheck:Cond
+   fun:bcmp
+   ...
+   fun:_ZN16ImageLoaderMachO18validateFirstPagesEPK21linkedit_data_commandiPKhmxRKN11ImageLoader11LinkContextE
+   ...
+}
+
+{
+   OSX1015:dyld-3
+   Memcheck:Value8
+   fun:bcmp
    ...
    fun:_ZN16ImageLoaderMachO18validateFirstPagesEPK21linkedit_data_commandiPKhmxRKN11ImageLoader11LinkContextE
    ...

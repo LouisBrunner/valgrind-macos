@@ -10446,6 +10446,16 @@ POST(thread_get_special_reply_port)
 
 #if DARWIN_VERS >= DARWIN_10_15
 
+PRE(mkdirat)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_mkdirat ( %ld, %#" FMT_REGWORD "x(%s), %ld )",
+         SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3);
+   PRE_REG_READ3(long, "mkdirat",
+                 int, dfd, const char *, pathname, int, mode);
+   PRE_MEM_RASCIIZ( "mkdirat(pathname)", ARG2 );
+}
+
 PRE(task_restartable_ranges_register)
 {
    PRINT("task_restartable_ranges_register(%s, %#lx, %ld)", name_for_port(ARG1), ARG2, ARG3);

@@ -584,7 +584,9 @@ DECL_TEMPLATE(darwin, fstatat64);                // 470
 // NYI unlinkat        // 472
 DECL_TEMPLATE(darwin, readlinkat);               // 473
 // NYI symlinkat       // 474
-// NYI mkdirat         // 475
+#if DARWIN_VERS >= DARWIN_10_15
+DECL_TEMPLATE(darwin, mkdirat);                  // 475
+#endif /* DARWIN_VERS >= DARWIN_10_15 */
 // NYI getattrlistat   // 476
 // NYI proc_trace_log  // 477
 DECL_TEMPLATE(darwin, bsdthread_ctl);            // 478

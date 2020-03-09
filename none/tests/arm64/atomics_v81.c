@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <stdint.h>
+#include <string.h>
 
 typedef  unsigned char           UChar;
 typedef  unsigned int            UInt;
@@ -59,22 +60,68 @@ CHECK(eor, ^, 64);
    printf("\n\n"); \
 }
 
-// Test patterns
-#define ALL5s_64 0x5555555555555555ULL
-#define ALLas_64 0xAAAAAAAAAAAAAAAAULL
-#define ALLfs_64 0xFFFFFFFFFFFFFFFFULL
-#define UP_64    0x0123456789ABCDEFULL
-#define DOWN_64  0xFEDCBA9876543210ULL
-#define PI_64    0x3141592653589793ULL
-#define E_64     0x2718281828459045ULL
+#define ATOMIC_TEST_CAS(instruction, rsz, base_addr, mem_val_, rs_, rt_, dsz) \
+{ \
+   ULong rs = (ULong)rs_; \
+   ULong rt = (ULong)rt_; \
+   ULong mem_val = (ULong)mem_val_; \
+   \
+   ULong mem_val_after; \
+   mem_val_after = 0ULL; \
+   \
+   int pad = (strcmp(#rsz, "w") == 0) ? 8 : 16; \
+   printf("%s :: rs %0*llx rt %0*llx rn mem %0*llx\n", \
+          instruction, pad, rs, pad, rt, pad, mem_val); \
+   \
+   Int swap = (rs == mem_val) ? 1 : 0; \
+   __asm__ __volatile__( \
+      "mov " #rsz "5, %" #rsz "1;" \
+      "mov " #rsz "13, %" #rsz "2;" \
+      "str " #rsz "13, [x5, #0];" \
+      "mov " #rsz "11, %" #rsz "3;" \
+      "mov " #rsz "12, %" #rsz "4;" \
+      instruction ";" \
+      "ldr %" #rsz "0, [x5, #0];" \
+      : "=&r" (mem_val_after) \
+      : "r" (base_addr), "r" (mem_val), "r" (rs), "r" (rt) \
+      : #rsz "5", #rsz "11", #rsz "12", #rsz "13", "memory" \
+   ); \
+   printf("%s :: rs %0*llx rt %0*llx rn mem %0*llx  ", \
+          instruction, pad, rs, pad, rt, pad, mem_val_after); \
+   if (swap == 1) { \
+      if ((mem_val_after & dsz) != (rt & dsz)) \
+         printf("FAIL: swapped but mem after != rt"); \
+   } \
+   else { \
+      if ((mem_val_after & dsz) != (mem_val & dsz)) \
+         printf("FAIL: no swap but mem after != mem before"); \
+   } \
+   printf("\n\n"); \
+}
 
-#define ALL5s_32 0x55555555ULL
-#define ALLas_32 0xAAAAAAAAULL
-#define ALLfs_32 0xFFFFFFFFULL
-#define UP_32    0x01234567ULL
-#define DOWN_32  0xFEDCBA98ULL
-#define PI_32    0x31415926ULL
-#define E_32     0x27182818ULL
+
+// Test patterns
+#define ALL5s_64  0x5555555555555555ULL
+#define MOST5s_64 0x5555555555555554ULL
+#define ALLas_64  0xAAAAAAAAAAAAAAAAULL
+#define MOSTas_64 0xAAAAAAAAAAAAAAA8ULL
+#define ALLfs_64  0xFFFFFFFFFFFFFFFFULL
+#define MOSTfs_64 0xFFFFFFFFFFFFFFFEULL
+#define UP_64     0x0123456789ABCDEFULL
+#define DOWN_64   0xFEDCBA9876543210ULL
+#define PI_64     0x3141592653589793ULL
+#define E_64      0x2718281828459045ULL
+
+#define ALL5s_32  0x55555555ULL
+#define MOST5s_32 0x55555554ULL
+#define ALLas_32  0xAAAAAAAAULL
+#define MOSTas_32 0xAAAAAAA8ULL
+#define ALLfs_32  0xFFFFFFFFULL
+#define MOSTfs_32 0xFFFFFFFEULL
+#define UP_32     0x01234567ULL
+#define DOWN_32   0xFEDCBA98ULL
+#define PI_32     0x31415926ULL
+#define E_32      0x27182818ULL
 
 #define ALL5s_16 0x5555ULL
 #define ALLas_16 0xAAAAULL
@@ -451,6 +498,5046 @@ static __attribute((noinline)) void test_atomics ( void )
    // TODO: LDEORA, LDEORAL, LDEORL
    // LDEORB, LDEORAB, LDEORALB, LDEORLB
    // LDEORH, LDEORAH, LDEORALH, LDEORLH
+
+   printf("CAS <Ws>, <Wt>, [<Xn|SP>]\n");
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, 0, 1, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, 1, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, 1, 1, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 1, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 1, 0, 1, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 1, 1, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 1, 1, 1, 0xFFFFFFFF);
+
+   printf("Combinations of ALL5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALL5s_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALL5s_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALL5s_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALL5s_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALL5s_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALL5s_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALL5s_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALL5s_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALL5s_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALL5s_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of MOST5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOST5s_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOST5s_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOST5s_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOST5s_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOST5s_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOST5s_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOST5s_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOST5s_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOST5s_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOST5s_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of ALLas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALLas_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLas_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALLas_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLas_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALLas_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLas_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALLas_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLas_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALLas_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLas_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALLas_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLas_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALLas_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLas_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of MOSTas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOSTas_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTas_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOSTas_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTas_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOSTas_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTas_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOSTas_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTas_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOSTas_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTas_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of ALLfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALLfs_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLfs_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALLfs_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLfs_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALLfs_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLfs_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALLfs_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLfs_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, ALLfs_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLfs_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of MOSTfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOSTfs_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTfs_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOSTfs_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTfs_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, MOSTfs_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTfs_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of UP_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, UP_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, UP_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, UP_32, UP_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, UP_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, UP_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, UP_32, UP_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, UP_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, UP_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, UP_32, UP_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, UP_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, UP_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, UP_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, UP_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, UP_32, UP_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, UP_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, UP_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, UP_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, UP_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, UP_32, UP_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, UP_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, UP_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, UP_32, UP_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, UP_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, UP_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, UP_32, UP_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of DOWN_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, DOWN_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, DOWN_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, DOWN_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, DOWN_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, DOWN_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, DOWN_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, DOWN_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, DOWN_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, DOWN_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, DOWN_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, DOWN_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, DOWN_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, 0, DOWN_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, DOWN_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("cas w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, 0, 0xFFFFFFFF);
+
+   printf("CASA <Ws>, <Wt>, [<Xn|SP>]\n\n");
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, 0, 1, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, 1, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, 1, 1, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 1, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 1, 0, 1, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 1, 1, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 1, 1, 1, 0xFFFFFFFF);
+
+   printf("Combinations of ALL5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALL5s_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALL5s_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALL5s_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALL5s_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALL5s_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALL5s_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALL5s_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALL5s_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALL5s_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALL5s_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of MOST5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOST5s_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOST5s_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOST5s_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOST5s_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOST5s_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOST5s_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOST5s_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOST5s_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOST5s_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOST5s_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of ALLas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALLas_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLas_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALLas_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLas_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALLas_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLas_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALLas_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLas_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALLas_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLas_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALLas_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLas_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALLas_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLas_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of MOSTas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOSTas_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTas_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOSTas_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTas_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOSTas_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTas_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOSTas_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTas_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOSTas_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTas_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of ALLfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALLfs_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLfs_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALLfs_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLfs_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALLfs_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLfs_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALLfs_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLfs_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, ALLfs_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLfs_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of MOSTfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOSTfs_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTfs_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOSTfs_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTfs_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, MOSTfs_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTfs_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of UP_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, UP_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, UP_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, UP_32, UP_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, UP_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, UP_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, UP_32, UP_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, UP_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, UP_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, UP_32, UP_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, UP_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, UP_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, UP_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, UP_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, UP_32, UP_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, UP_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, UP_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, UP_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, UP_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, UP_32, UP_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, UP_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, UP_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, UP_32, UP_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, UP_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, UP_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, UP_32, UP_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of DOWN_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, DOWN_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, DOWN_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, DOWN_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, DOWN_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, DOWN_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, DOWN_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, DOWN_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, DOWN_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, DOWN_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, DOWN_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, DOWN_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, DOWN_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, 0, DOWN_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, DOWN_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casa w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, 0, 0xFFFFFFFF);
+
+   printf("CASAL <Ws>, <Wt>, [<Xn|SP>]\n\n");
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, 0, 1, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, 1, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, 1, 1, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 1, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 1, 0, 1, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 1, 1, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 1, 1, 1, 0xFFFFFFFF);
+
+   printf("Combinations of ALL5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALL5s_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALL5s_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALL5s_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALL5s_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALL5s_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALL5s_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALL5s_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALL5s_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALL5s_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALL5s_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of MOST5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOST5s_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOST5s_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOST5s_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOST5s_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOST5s_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOST5s_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOST5s_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOST5s_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOST5s_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOST5s_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of ALLas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALLas_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLas_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALLas_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLas_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALLas_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLas_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALLas_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLas_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALLas_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLas_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALLas_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLas_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALLas_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLas_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of MOSTas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOSTas_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTas_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOSTas_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTas_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOSTas_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTas_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOSTas_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTas_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOSTas_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTas_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of ALLfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALLfs_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLfs_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALLfs_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLfs_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALLfs_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLfs_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALLfs_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLfs_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, ALLfs_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLfs_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of MOSTfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOSTfs_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTfs_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOSTfs_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTfs_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, MOSTfs_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTfs_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of UP_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, UP_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, UP_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, UP_32, UP_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, UP_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, UP_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, UP_32, UP_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, UP_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, UP_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, UP_32, UP_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, UP_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, UP_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, UP_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, UP_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, UP_32, UP_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, UP_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, UP_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, UP_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, UP_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, UP_32, UP_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, UP_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, UP_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, UP_32, UP_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, UP_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, UP_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, UP_32, UP_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of DOWN_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, DOWN_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, DOWN_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, DOWN_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, DOWN_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, DOWN_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, DOWN_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, DOWN_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, DOWN_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, DOWN_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, DOWN_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, DOWN_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, DOWN_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, 0, DOWN_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, DOWN_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casal w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, 0, 0xFFFFFFFF);
+
+   printf("CASL <Ws>, <Wt>, [<Xn|SP>]\n\n");
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, 0, 1, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, 1, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, 1, 1, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 1, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 1, 0, 1, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 1, 1, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 1, 1, 1, 0xFFFFFFFF);
+
+   printf("Combinations of ALL5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALL5s_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALL5s_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALL5s_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALL5s_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALL5s_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALL5s_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALL5s_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALL5s_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALL5s_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALL5s_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of MOST5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOST5s_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOST5s_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOST5s_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOST5s_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOST5s_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOST5s_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOST5s_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOST5s_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOST5s_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOST5s_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of ALLas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALLas_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLas_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALLas_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLas_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALLas_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLas_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALLas_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLas_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALLas_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLas_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALLas_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLas_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALLas_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLas_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of MOSTas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOSTas_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTas_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOSTas_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTas_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOSTas_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTas_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOSTas_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTas_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOSTas_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTas_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of ALLfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALLfs_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLfs_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALLfs_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLfs_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALLfs_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLfs_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALLfs_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLfs_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, ALLfs_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLfs_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of MOSTfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOSTfs_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTfs_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOSTfs_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTfs_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, MOSTfs_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTfs_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of UP_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, UP_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, UP_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, UP_32, UP_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, UP_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, UP_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, UP_32, UP_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, UP_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, UP_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, UP_32, UP_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, UP_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, UP_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, UP_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, UP_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, UP_32, UP_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, UP_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, UP_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, UP_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, UP_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, UP_32, UP_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, UP_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, UP_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, UP_32, UP_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, UP_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, UP_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, UP_32, UP_32, 0, 0xFFFFFFFF);
+
+   printf("Combinations of DOWN_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, DOWN_32, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, DOWN_32, 0, ALL5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALL5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, DOWN_32, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, DOWN_32, 0, MOST5s_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOST5s_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, DOWN_32, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, DOWN_32, 0, ALLas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTas_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTas_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, DOWN_32, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, DOWN_32, 0, ALLfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTfs_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTfs_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, DOWN_32, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, DOWN_32, 0, UP_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, UP_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, DOWN_32, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, DOWN_32, 0, DOWN_32, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, DOWN_32, 0xFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, 0, DOWN_32, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, DOWN_32, 0, 0, 0xFFFFFFFF);
+   ATOMIC_TEST_CAS("casl w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, 0, 0xFFFFFFFF);
+
+   printf("CAS <Xs>, <Xt>, [<Xn|SP>]\n\n");
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, 0, 1, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, 1, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, 1, 1, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 1, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 1, 0, 1, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 1, 1, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 1, 1, 1, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of ALL5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALL5s_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALL5s_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALL5s_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALL5s_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALL5s_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALL5s_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALL5s_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALL5s_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALL5s_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALL5s_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALL5s_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALL5s_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALL5s_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALL5s_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALL5s_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALL5s_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALL5s_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALL5s_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of MOST5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOST5s_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOST5s_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOST5s_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOST5s_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOST5s_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOST5s_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOST5s_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOST5s_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOST5s_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOST5s_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOST5s_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOST5s_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOST5s_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOST5s_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOST5s_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOST5s_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOST5s_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOST5s_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of ALLas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALLas_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLas_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALLas_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLas_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALLas_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLas_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALLas_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLas_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALLas_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLas_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALLas_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLas_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALLas_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLas_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALLas_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLas_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALLas_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLas_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of MOSTas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOSTas_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTas_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOSTas_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTas_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOSTas_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTas_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOSTas_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTas_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOSTas_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTas_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOSTas_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTas_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOSTas_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTas_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOSTas_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTas_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOSTas_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTas_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of ALLfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALLfs_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLfs_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALLfs_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLfs_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALLfs_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLfs_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALLfs_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLfs_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALLfs_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLfs_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALLfs_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLfs_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALLfs_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLfs_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALLfs_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLfs_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, ALLfs_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLfs_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of MOSTfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOSTfs_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTfs_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOSTfs_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTfs_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOSTfs_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTfs_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOSTfs_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTfs_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOSTfs_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTfs_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOSTfs_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTfs_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOSTfs_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTfs_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOSTfs_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTfs_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, MOSTfs_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTfs_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of UP_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, UP_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, UP_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, UP_32, UP_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, UP_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, UP_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, UP_32, UP_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, UP_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, UP_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, UP_32, UP_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, UP_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, UP_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, UP_32, UP_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, UP_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, UP_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, UP_32, UP_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, UP_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, UP_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, UP_32, UP_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, UP_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, UP_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, UP_32, UP_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, UP_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, UP_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, UP_32, UP_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, UP_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, UP_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, UP_32, UP_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of DOWN_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, DOWN_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, DOWN_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, DOWN_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, DOWN_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, DOWN_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, DOWN_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, DOWN_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, DOWN_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, DOWN_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, DOWN_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, DOWN_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, DOWN_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, DOWN_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, DOWN_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, DOWN_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, DOWN_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, 0, DOWN_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, DOWN_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("cas x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("CASA <Xs>, <Xt>, [<Xn|SP>]\n\n");
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, 0, 1, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, 1, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, 1, 1, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 1, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 1, 0, 1, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 1, 1, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 1, 1, 1, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of ALL5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALL5s_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALL5s_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALL5s_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALL5s_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALL5s_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALL5s_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALL5s_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALL5s_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALL5s_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALL5s_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALL5s_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALL5s_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALL5s_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALL5s_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALL5s_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALL5s_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALL5s_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALL5s_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of MOST5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOST5s_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOST5s_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOST5s_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOST5s_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOST5s_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOST5s_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOST5s_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOST5s_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOST5s_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOST5s_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOST5s_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOST5s_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOST5s_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOST5s_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOST5s_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOST5s_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOST5s_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOST5s_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of ALLas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALLas_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLas_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALLas_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLas_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALLas_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLas_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALLas_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLas_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALLas_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLas_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALLas_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLas_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALLas_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLas_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALLas_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLas_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALLas_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLas_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of MOSTas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOSTas_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTas_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOSTas_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTas_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOSTas_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTas_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOSTas_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTas_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOSTas_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTas_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOSTas_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTas_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOSTas_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTas_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOSTas_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTas_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOSTas_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTas_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of ALLfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALLfs_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLfs_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALLfs_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLfs_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALLfs_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLfs_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALLfs_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLfs_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALLfs_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLfs_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALLfs_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLfs_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALLfs_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLfs_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALLfs_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLfs_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, ALLfs_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLfs_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of MOSTfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOSTfs_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTfs_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOSTfs_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTfs_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOSTfs_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTfs_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOSTfs_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTfs_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOSTfs_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTfs_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOSTfs_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTfs_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOSTfs_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTfs_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOSTfs_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTfs_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, MOSTfs_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTfs_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of UP_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, UP_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, UP_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, UP_32, UP_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, UP_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, UP_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, UP_32, UP_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, UP_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, UP_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, UP_32, UP_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, UP_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, UP_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, UP_32, UP_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, UP_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, UP_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, UP_32, UP_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, UP_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, UP_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, UP_32, UP_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, UP_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, UP_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, UP_32, UP_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, UP_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, UP_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, UP_32, UP_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, UP_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, UP_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, UP_32, UP_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of DOWN_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, DOWN_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, DOWN_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, DOWN_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, DOWN_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, DOWN_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, DOWN_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, DOWN_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, DOWN_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, DOWN_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, DOWN_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, DOWN_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, DOWN_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, DOWN_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, DOWN_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, DOWN_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, DOWN_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, 0, DOWN_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, DOWN_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casa x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("CASAL <Xs>, <Xt>, [<Xn|SP>]\n\n");
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, 0, 1, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, 1, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, 1, 1, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 1, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 1, 0, 1, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 1, 1, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 1, 1, 1, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of ALL5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALL5s_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALL5s_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALL5s_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALL5s_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALL5s_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALL5s_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALL5s_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALL5s_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALL5s_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALL5s_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALL5s_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALL5s_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALL5s_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALL5s_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALL5s_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALL5s_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALL5s_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALL5s_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of MOST5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOST5s_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOST5s_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOST5s_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOST5s_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOST5s_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOST5s_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOST5s_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOST5s_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOST5s_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOST5s_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOST5s_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOST5s_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOST5s_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOST5s_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOST5s_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOST5s_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOST5s_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOST5s_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of ALLas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALLas_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLas_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALLas_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLas_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALLas_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLas_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALLas_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLas_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALLas_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLas_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALLas_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLas_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALLas_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLas_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALLas_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLas_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALLas_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLas_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of MOSTas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOSTas_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTas_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOSTas_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTas_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOSTas_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTas_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOSTas_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTas_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOSTas_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTas_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOSTas_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTas_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOSTas_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTas_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOSTas_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTas_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOSTas_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTas_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of ALLfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALLfs_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLfs_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALLfs_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLfs_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALLfs_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLfs_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALLfs_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLfs_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALLfs_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLfs_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALLfs_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLfs_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALLfs_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLfs_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALLfs_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLfs_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, ALLfs_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLfs_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of MOSTfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOSTfs_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTfs_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOSTfs_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTfs_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOSTfs_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTfs_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOSTfs_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTfs_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOSTfs_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTfs_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOSTfs_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTfs_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOSTfs_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTfs_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOSTfs_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTfs_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, MOSTfs_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTfs_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of UP_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, UP_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, UP_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, UP_32, UP_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, UP_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, UP_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, UP_32, UP_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, UP_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, UP_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, UP_32, UP_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, UP_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, UP_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, UP_32, UP_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, UP_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, UP_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, UP_32, UP_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, UP_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, UP_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, UP_32, UP_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, UP_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, UP_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, UP_32, UP_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, UP_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, UP_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, UP_32, UP_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, UP_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, UP_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, UP_32, UP_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of DOWN_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, DOWN_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, DOWN_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, DOWN_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, DOWN_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, DOWN_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, DOWN_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, DOWN_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, DOWN_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, DOWN_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, DOWN_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, DOWN_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, DOWN_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, DOWN_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, DOWN_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, DOWN_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, DOWN_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, 0, DOWN_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, DOWN_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casal x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("CASL <Xs>, <Xt>, [<Xn|SP>]\n\n");
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, 0, 1, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, 1, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, 1, 1, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 1, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 1, 0, 1, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 1, 1, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 1, 1, 1, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of ALL5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALL5s_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALL5s_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALL5s_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALL5s_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALL5s_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALL5s_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALL5s_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALL5s_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALL5s_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALL5s_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALL5s_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALL5s_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALL5s_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALL5s_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALL5s_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALL5s_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALL5s_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALL5s_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALL5s_32, ALL5s_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of MOST5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOST5s_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOST5s_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOST5s_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOST5s_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOST5s_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOST5s_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOST5s_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOST5s_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOST5s_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOST5s_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOST5s_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOST5s_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOST5s_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOST5s_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOST5s_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOST5s_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOST5s_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOST5s_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOST5s_32, MOST5s_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of ALLas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALLas_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLas_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALLas_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLas_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALLas_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLas_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALLas_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLas_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALLas_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLas_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALLas_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLas_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALLas_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLas_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALLas_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLas_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALLas_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLas_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLas_32, ALLas_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of MOSTas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOSTas_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTas_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOSTas_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTas_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOSTas_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTas_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOSTas_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTas_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOSTas_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTas_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOSTas_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTas_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOSTas_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTas_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOSTas_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTas_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOSTas_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTas_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTas_32, MOSTas_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of ALLfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALLfs_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLfs_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALLfs_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLfs_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALLfs_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLfs_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALLfs_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLfs_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALLfs_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLfs_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALLfs_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLfs_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALLfs_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLfs_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALLfs_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLfs_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, ALLfs_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLfs_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, ALLfs_32, ALLfs_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of MOSTfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOSTfs_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTfs_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOSTfs_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTfs_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOSTfs_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTfs_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOSTfs_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTfs_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOSTfs_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTfs_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOSTfs_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTfs_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOSTfs_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTfs_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOSTfs_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTfs_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, MOSTfs_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTfs_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, MOSTfs_32, MOSTfs_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of UP_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, UP_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, UP_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, UP_32, UP_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, UP_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, UP_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, UP_32, UP_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, UP_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, UP_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, UP_32, UP_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, UP_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, UP_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, UP_32, UP_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, UP_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, UP_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, UP_32, UP_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, UP_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, UP_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, UP_32, UP_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, UP_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, UP_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, UP_32, UP_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, UP_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, UP_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, UP_32, UP_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, UP_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, UP_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, UP_32, UP_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("Combinations of DOWN_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, DOWN_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, DOWN_32, 0, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, ALL5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, DOWN_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, DOWN_32, 0, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, MOST5s_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, DOWN_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, DOWN_32, 0, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, ALLas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, DOWN_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, DOWN_32, 0, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, MOSTas_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, DOWN_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, DOWN_32, 0, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, ALLfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, DOWN_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, DOWN_32, 0, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, MOSTfs_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, DOWN_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, DOWN_32, 0, UP_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, UP_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, DOWN_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, DOWN_32, 0, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, DOWN_32, 0xFFFFFFFFFFFFFFFF);
+
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, 0, DOWN_32, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, DOWN_32, 0, 0, 0xFFFFFFFFFFFFFFFF);
+   ATOMIC_TEST_CAS("casl x11, x12, [x5]", x, mem, DOWN_32, DOWN_32, 0, 0xFFFFFFFFFFFFFFFF);
+
+   printf("CASB <Ws>, <Wt>, [<Xn|SP>]\n\n");
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, 0, 1, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, 1, 0, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, 1, 1, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 1, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 1, 0, 1, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 1, 1, 0, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 1, 1, 1, 0xFF);
+
+   printf("Combinations of ALL5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALL5s_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALL5s_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALL5s_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALL5s_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALL5s_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALL5s_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALL5s_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALL5s_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALL5s_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALL5s_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, 0, 0xFF);
+
+   printf("Combinations of MOST5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOST5s_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOST5s_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOST5s_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOST5s_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOST5s_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOST5s_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOST5s_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOST5s_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOST5s_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOST5s_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, 0, 0xFF);
+
+   printf("Combinations of ALLas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALLas_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLas_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALLas_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLas_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALLas_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLas_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALLas_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLas_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALLas_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLas_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALLas_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLas_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALLas_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLas_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, 0, 0xFF);
+
+   printf("Combinations of MOSTas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOSTas_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTas_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOSTas_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTas_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOSTas_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTas_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOSTas_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTas_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOSTas_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTas_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, 0, 0xFF);
+
+   printf("Combinations of ALLfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALLfs_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLfs_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALLfs_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLfs_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALLfs_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLfs_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALLfs_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLfs_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, ALLfs_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLfs_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, 0, 0xFF);
+
+   printf("Combinations of MOSTfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOSTfs_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTfs_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOSTfs_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTfs_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, MOSTfs_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTfs_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, 0, 0xFF);
+
+   printf("Combinations of UP_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, UP_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, UP_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, UP_32, UP_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, UP_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, UP_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, UP_32, UP_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, UP_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, UP_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, UP_32, UP_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, UP_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, UP_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, UP_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, UP_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, UP_32, UP_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, UP_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, UP_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, UP_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, UP_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, UP_32, UP_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, UP_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, UP_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, UP_32, UP_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, UP_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, UP_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, UP_32, UP_32, 0, 0xFF);
+
+   printf("Combinations of DOWN_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, DOWN_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, DOWN_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, DOWN_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, DOWN_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, DOWN_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, DOWN_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, DOWN_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, DOWN_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, DOWN_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, DOWN_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, DOWN_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, DOWN_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, 0, DOWN_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, DOWN_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, 0, 0xFF);
+
+   printf("CASAB <Ws>, <Wt>, [<Xn|SP>]\n\n");
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, 0, 1, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, 1, 0, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, 1, 1, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 1, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 1, 0, 1, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 1, 1, 0, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 1, 1, 1, 0xFF);
+
+   printf("Combinations of ALL5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALL5s_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALL5s_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALL5s_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALL5s_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALL5s_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALL5s_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALL5s_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALL5s_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALL5s_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALL5s_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, 0, 0xFF);
+
+   printf("Combinations of MOST5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOST5s_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOST5s_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOST5s_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOST5s_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOST5s_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOST5s_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOST5s_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOST5s_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOST5s_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOST5s_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, 0, 0xFF);
+
+   printf("Combinations of ALLas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALLas_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLas_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALLas_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLas_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALLas_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLas_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALLas_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLas_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALLas_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLas_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALLas_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLas_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALLas_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLas_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, 0, 0xFF);
+
+   printf("Combinations of MOSTas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOSTas_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTas_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOSTas_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTas_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOSTas_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTas_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOSTas_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTas_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOSTas_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTas_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, 0, 0xFF);
+
+   printf("Combinations of ALLfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALLfs_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLfs_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALLfs_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLfs_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALLfs_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLfs_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALLfs_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLfs_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, ALLfs_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLfs_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, 0, 0xFF);
+
+   printf("Combinations of MOSTfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOSTfs_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTfs_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOSTfs_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTfs_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, MOSTfs_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTfs_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, 0, 0xFF);
+
+   printf("Combinations of UP_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, UP_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, UP_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, UP_32, UP_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, UP_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, UP_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, UP_32, UP_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, UP_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, UP_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, UP_32, UP_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, UP_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, UP_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, UP_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, UP_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, UP_32, UP_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, UP_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, UP_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, UP_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, UP_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, UP_32, UP_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, UP_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, UP_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, UP_32, UP_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, UP_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, UP_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, UP_32, UP_32, 0, 0xFF);
+
+   printf("Combinations of DOWN_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, DOWN_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, DOWN_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, DOWN_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, DOWN_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, DOWN_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, DOWN_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, DOWN_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, DOWN_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, DOWN_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, DOWN_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, DOWN_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, DOWN_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, 0, DOWN_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, DOWN_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casab w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, 0, 0xFF);
+
+   printf("CASALB <Ws>, <Wt>, [<Xn|SP>]\n\n");
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, 0, 1, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, 1, 0, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, 1, 1, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 1, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 1, 0, 1, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 1, 1, 0, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 1, 1, 1, 0xFF);
+
+   printf("Combinations of ALL5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALL5s_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALL5s_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALL5s_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALL5s_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALL5s_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALL5s_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALL5s_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALL5s_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALL5s_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALL5s_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, 0, 0xFF);
+
+   printf("Combinations of MOST5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOST5s_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOST5s_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOST5s_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOST5s_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOST5s_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOST5s_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOST5s_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOST5s_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOST5s_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOST5s_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, 0, 0xFF);
+
+   printf("Combinations of ALLas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALLas_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLas_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALLas_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLas_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALLas_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLas_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALLas_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLas_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALLas_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLas_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALLas_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLas_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALLas_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLas_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, 0, 0xFF);
+
+   printf("Combinations of MOSTas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOSTas_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTas_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOSTas_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTas_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOSTas_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTas_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOSTas_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTas_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOSTas_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTas_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, 0, 0xFF);
+
+   printf("Combinations of ALLfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALLfs_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLfs_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALLfs_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLfs_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALLfs_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLfs_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALLfs_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLfs_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, ALLfs_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLfs_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, 0, 0xFF);
+
+   printf("Combinations of MOSTfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOSTfs_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTfs_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOSTfs_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTfs_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, MOSTfs_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTfs_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, 0, 0xFF);
+
+   printf("Combinations of UP_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, UP_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, UP_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, UP_32, UP_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, UP_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, UP_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, UP_32, UP_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, UP_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, UP_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, UP_32, UP_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, UP_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, UP_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, UP_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, UP_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, UP_32, UP_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, UP_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, UP_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, UP_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, UP_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, UP_32, UP_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, UP_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, UP_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, UP_32, UP_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, UP_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, UP_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, UP_32, UP_32, 0, 0xFF);
+
+   printf("Combinations of DOWN_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, DOWN_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, DOWN_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, DOWN_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, DOWN_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, DOWN_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, DOWN_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, DOWN_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, DOWN_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, DOWN_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, DOWN_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, DOWN_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, DOWN_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, 0, DOWN_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, DOWN_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("casalb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, 0, 0xFF);
+
+   printf("CASLB <Ws>, <Wt>, [<Xn|SP>]\n\n");
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, 0, 1, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, 1, 0, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, 1, 1, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 1, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 1, 0, 1, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 1, 1, 0, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 1, 1, 1, 0xFF);
+
+   printf("Combinations of ALL5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALL5s_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALL5s_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALL5s_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALL5s_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALL5s_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALL5s_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALL5s_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALL5s_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALL5s_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALL5s_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, 0, 0xFF);
+
+   printf("Combinations of MOST5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOST5s_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOST5s_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOST5s_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOST5s_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOST5s_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOST5s_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOST5s_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOST5s_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOST5s_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOST5s_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, 0, 0xFF);
+
+   printf("Combinations of ALLas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALLas_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLas_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALLas_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLas_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALLas_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLas_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALLas_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLas_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALLas_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLas_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALLas_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLas_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALLas_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLas_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, 0, 0xFF);
+
+   printf("Combinations of MOSTas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOSTas_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTas_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOSTas_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTas_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOSTas_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTas_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOSTas_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTas_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOSTas_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTas_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, 0, 0xFF);
+
+   printf("Combinations of ALLfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALLfs_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLfs_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALLfs_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLfs_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALLfs_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLfs_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALLfs_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLfs_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, ALLfs_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLfs_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, 0, 0xFF);
+
+   printf("Combinations of MOSTfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOSTfs_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTfs_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOSTfs_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTfs_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, MOSTfs_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTfs_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, 0, 0xFF);
+
+   printf("Combinations of UP_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, UP_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, UP_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, UP_32, UP_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, UP_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, UP_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, UP_32, UP_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, UP_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, UP_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, UP_32, UP_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, UP_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, UP_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, UP_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, UP_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, UP_32, UP_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, UP_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, UP_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, UP_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, UP_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, UP_32, UP_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, UP_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, UP_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, UP_32, UP_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, UP_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, UP_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, UP_32, UP_32, 0, 0xFF);
+
+   printf("Combinations of DOWN_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, DOWN_32, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, DOWN_32, 0, ALL5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALL5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, DOWN_32, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, DOWN_32, 0, MOST5s_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOST5s_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, DOWN_32, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, DOWN_32, 0, ALLas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTas_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTas_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, DOWN_32, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, DOWN_32, 0, ALLfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTfs_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTfs_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, DOWN_32, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, DOWN_32, 0, UP_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, UP_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, DOWN_32, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, DOWN_32, 0, DOWN_32, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, DOWN_32, 0xFF);
+
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, 0, DOWN_32, 0, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, DOWN_32, 0, 0, 0xFF);
+   ATOMIC_TEST_CAS("caslb w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, 0, 0xFF);
+
+   printf("CASH <Ws>, <Wt>, [<Xn|SP>]\n\n");
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, 0, 1, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, 1, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, 1, 1, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 1, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 1, 0, 1, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 1, 1, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 1, 1, 1, 0xFFFF);
+
+   printf("Combinations of ALL5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALL5s_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALL5s_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALL5s_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALL5s_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALL5s_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALL5s_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALL5s_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALL5s_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALL5s_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALL5s_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, 0, 0xFFFF);
+
+   printf("Combinations of MOST5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOST5s_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOST5s_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOST5s_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOST5s_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOST5s_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOST5s_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOST5s_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOST5s_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOST5s_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOST5s_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, 0, 0xFFFF);
+
+   printf("Combinations of ALLas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALLas_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLas_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALLas_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLas_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALLas_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLas_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALLas_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLas_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALLas_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLas_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALLas_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLas_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALLas_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLas_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, 0, 0xFFFF);
+
+   printf("Combinations of MOSTas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOSTas_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTas_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOSTas_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTas_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOSTas_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTas_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOSTas_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTas_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOSTas_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTas_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, 0, 0xFFFF);
+
+   printf("Combinations of ALLfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALLfs_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLfs_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALLfs_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLfs_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALLfs_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLfs_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALLfs_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLfs_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, ALLfs_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLfs_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, 0, 0xFFFF);
+
+   printf("Combinations of MOSTfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOSTfs_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTfs_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOSTfs_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTfs_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, MOSTfs_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTfs_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, 0, 0xFFFF);
+
+   printf("Combinations of UP_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, UP_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, UP_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, UP_32, UP_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, UP_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, UP_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, UP_32, UP_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, UP_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, UP_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, UP_32, UP_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, UP_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, UP_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, UP_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, UP_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, UP_32, UP_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, UP_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, UP_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, UP_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, UP_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, UP_32, UP_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, UP_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, UP_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, UP_32, UP_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, UP_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, UP_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, UP_32, UP_32, 0, 0xFFFF);
+
+   printf("Combinations of DOWN_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, DOWN_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, DOWN_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, DOWN_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, DOWN_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, DOWN_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, DOWN_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, DOWN_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, DOWN_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, DOWN_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, DOWN_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, DOWN_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, DOWN_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, 0, DOWN_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, DOWN_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("cash w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, 0, 0xFFFF);
+
+   printf("CASAH <Ws>, <Wt>, [<Xn|SP>]\n\n");
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, 0, 1, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, 1, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, 1, 1, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 1, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 1, 0, 1, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 1, 1, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 1, 1, 1, 0xFFFF);
+
+   printf("Combinations of ALL5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALL5s_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALL5s_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALL5s_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALL5s_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALL5s_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALL5s_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALL5s_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALL5s_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALL5s_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALL5s_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, 0, 0xFFFF);
+
+   printf("Combinations of MOST5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOST5s_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOST5s_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOST5s_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOST5s_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOST5s_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOST5s_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOST5s_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOST5s_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOST5s_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOST5s_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, 0, 0xFFFF);
+
+   printf("Combinations of ALLas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALLas_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLas_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALLas_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLas_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALLas_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLas_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALLas_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLas_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALLas_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLas_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALLas_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLas_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALLas_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLas_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, 0, 0xFFFF);
+
+   printf("Combinations of MOSTas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOSTas_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTas_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOSTas_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTas_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOSTas_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTas_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOSTas_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTas_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOSTas_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTas_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, 0, 0xFFFF);
+
+   printf("Combinations of ALLfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALLfs_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLfs_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALLfs_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLfs_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALLfs_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLfs_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALLfs_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLfs_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, ALLfs_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLfs_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, 0, 0xFFFF);
+
+   printf("Combinations of MOSTfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOSTfs_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTfs_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOSTfs_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTfs_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, MOSTfs_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTfs_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, 0, 0xFFFF);
+
+   printf("Combinations of UP_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, UP_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, UP_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, UP_32, UP_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, UP_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, UP_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, UP_32, UP_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, UP_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, UP_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, UP_32, UP_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, UP_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, UP_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, UP_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, UP_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, UP_32, UP_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, UP_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, UP_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, UP_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, UP_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, UP_32, UP_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, UP_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, UP_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, UP_32, UP_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, UP_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, UP_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, UP_32, UP_32, 0, 0xFFFF);
+
+   printf("Combinations of DOWN_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, DOWN_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, DOWN_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, DOWN_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, DOWN_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, DOWN_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, DOWN_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, DOWN_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, DOWN_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, DOWN_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, DOWN_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, DOWN_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, DOWN_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, 0, DOWN_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, DOWN_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casah w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, 0, 0xFFFF);
+
+   printf("CASALH <Ws>, <Wt>, [<Xn|SP>]\n\n");
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, 0, 1, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, 1, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, 1, 1, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 1, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 1, 0, 1, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 1, 1, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 1, 1, 1, 0xFFFF);
+
+   printf("Combinations of ALL5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALL5s_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALL5s_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALL5s_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALL5s_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALL5s_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALL5s_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALL5s_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALL5s_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALL5s_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALL5s_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, 0, 0xFFFF);
+
+   printf("Combinations of MOST5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOST5s_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOST5s_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOST5s_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOST5s_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOST5s_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOST5s_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOST5s_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOST5s_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOST5s_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOST5s_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, 0, 0xFFFF);
+
+   printf("Combinations of ALLas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALLas_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLas_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALLas_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLas_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALLas_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLas_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALLas_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLas_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALLas_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLas_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALLas_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLas_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALLas_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLas_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, 0, 0xFFFF);
+
+   printf("Combinations of MOSTas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOSTas_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTas_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOSTas_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTas_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOSTas_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTas_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOSTas_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTas_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOSTas_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTas_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, 0, 0xFFFF);
+
+   printf("Combinations of ALLfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALLfs_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLfs_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALLfs_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLfs_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALLfs_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLfs_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALLfs_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLfs_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, ALLfs_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLfs_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, 0, 0xFFFF);
+
+   printf("Combinations of MOSTfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOSTfs_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTfs_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOSTfs_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTfs_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, MOSTfs_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTfs_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, 0, 0xFFFF);
+
+   printf("Combinations of UP_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, UP_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, UP_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, UP_32, UP_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, UP_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, UP_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, UP_32, UP_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, UP_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, UP_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, UP_32, UP_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, UP_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, UP_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, UP_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, UP_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, UP_32, UP_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, UP_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, UP_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, UP_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, UP_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, UP_32, UP_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, UP_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, UP_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, UP_32, UP_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, UP_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, UP_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, UP_32, UP_32, 0, 0xFFFF);
+
+   printf("Combinations of DOWN_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, DOWN_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, DOWN_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, DOWN_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, DOWN_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, DOWN_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, DOWN_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, DOWN_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, DOWN_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, DOWN_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, DOWN_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, DOWN_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, DOWN_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, 0, DOWN_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, DOWN_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("casalh w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, 0, 0xFFFF);
+
+   printf("CASLH <Ws>, <Wt>, [<Xn|SP>]\n\n");
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, 0, 1, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, 1, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, 1, 1, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 1, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 1, 0, 1, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 1, 1, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 1, 1, 1, 0xFFFF);
+
+   printf("Combinations of ALL5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALL5s_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALL5s_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALL5s_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALL5s_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALL5s_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALL5s_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALL5s_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALL5s_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALL5s_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALL5s_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALL5s_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALL5s_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALL5s_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALL5s_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALL5s_32, ALL5s_32, 0, 0xFFFF);
+
+   printf("Combinations of MOST5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOST5s_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOST5s_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOST5s_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOST5s_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOST5s_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOST5s_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOST5s_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOST5s_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOST5s_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOST5s_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOST5s_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOST5s_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOST5s_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOST5s_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOST5s_32, MOST5s_32, 0, 0xFFFF);
+
+   printf("Combinations of ALLas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALLas_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLas_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALLas_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLas_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALLas_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLas_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALLas_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLas_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALLas_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLas_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALLas_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLas_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALLas_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLas_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALLas_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLas_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLas_32, ALLas_32, 0, 0xFFFF);
+
+   printf("Combinations of MOSTas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOSTas_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTas_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOSTas_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTas_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOSTas_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTas_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOSTas_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTas_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOSTas_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTas_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOSTas_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTas_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOSTas_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTas_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTas_32, MOSTas_32, 0, 0xFFFF);
+
+   printf("Combinations of ALLfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALLfs_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLfs_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALLfs_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLfs_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALLfs_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLfs_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALLfs_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLfs_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALLfs_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLfs_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALLfs_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLfs_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, ALLfs_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLfs_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, ALLfs_32, ALLfs_32, 0, 0xFFFF);
+
+   printf("Combinations of MOSTfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOSTfs_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTfs_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOSTfs_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTfs_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOSTfs_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTfs_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOSTfs_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTfs_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, MOSTfs_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTfs_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, MOSTfs_32, MOSTfs_32, 0, 0xFFFF);
+
+   printf("Combinations of UP_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, UP_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, UP_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, UP_32, UP_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, UP_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, UP_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, UP_32, UP_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, UP_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, UP_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, UP_32, UP_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, UP_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, UP_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, UP_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, UP_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, UP_32, UP_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, UP_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, UP_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, UP_32, UP_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, UP_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, UP_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, UP_32, UP_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, UP_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, UP_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, UP_32, UP_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, UP_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, UP_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, UP_32, UP_32, 0, 0xFFFF);
+
+   printf("Combinations of DOWN_32 and all other patterns\n");
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, DOWN_32, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, DOWN_32, 0, ALL5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALL5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, DOWN_32, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, DOWN_32, 0, MOST5s_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOST5s_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, DOWN_32, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, DOWN_32, 0, ALLas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTas_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTas_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, DOWN_32, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, DOWN_32, 0, ALLfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, ALLfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, DOWN_32, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, DOWN_32, 0, MOSTfs_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, MOSTfs_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, DOWN_32, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, DOWN_32, 0, UP_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, UP_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, DOWN_32, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, DOWN_32, 0, DOWN_32, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, DOWN_32, 0xFFFF);
+
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, 0, DOWN_32, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, DOWN_32, 0, 0, 0xFFFF);
+   ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, 0, 0xFFFF);
 
    free(mem);
 }

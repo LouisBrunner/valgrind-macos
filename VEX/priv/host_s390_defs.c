@@ -681,31 +681,26 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
       break;
 
    case S390_INSN_ALU:
-      addHRegUse(u, HRmWrite, insn->variant.alu.dst);
-      addHRegUse(u, HRmRead,  insn->variant.alu.dst);  /* op1 */
+      addHRegUse(u, HRmModify, insn->variant.alu.dst); /* op1 */
       s390_opnd_RMI_get_reg_usage(u, insn->variant.alu.op2);
       break;
 
    case S390_INSN_SMUL:
    case S390_INSN_UMUL:
-      addHRegUse(u, HRmRead,  insn->variant.mul.dst_lo);  /* op1 */
-      addHRegUse(u, HRmWrite, insn->variant.mul.dst_lo);
+      addHRegUse(u, HRmModify, insn->variant.mul.dst_lo); /* op1 */
       addHRegUse(u, HRmWrite, insn->variant.mul.dst_hi);
       s390_opnd_RMI_get_reg_usage(u, insn->variant.mul.op2);
       break;
 
    case S390_INSN_SDIV:
    case S390_INSN_UDIV:
-      addHRegUse(u, HRmRead,  insn->variant.div.op1_lo);
-      addHRegUse(u, HRmRead,  insn->variant.div.op1_hi);
-      addHRegUse(u, HRmWrite, insn->variant.div.op1_lo);
-      addHRegUse(u, HRmWrite, insn->variant.div.op1_hi);
+      addHRegUse(u, HRmModify, insn->variant.div.op1_lo);
+      addHRegUse(u, HRmModify, insn->variant.div.op1_hi);
       s390_opnd_RMI_get_reg_usage(u, insn->variant.div.op2);
       break;
 
    case S390_INSN_DIVS:
-      addHRegUse(u, HRmRead,  insn->variant.divs.op1);
-      addHRegUse(u, HRmWrite, insn->variant.divs.op1); /* quotient */
+      addHRegUse(u, HRmModify, insn->variant.divs.op1); /* quotient */
       addHRegUse(u, HRmWrite, insn->variant.divs.rem); /* remainder */
       s390_opnd_RMI_get_reg_usage(u, insn->variant.divs.op2);
       break;
@@ -788,19 +783,16 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
    }
 
    case S390_INSN_BFP_TRIOP:
-      addHRegUse(u, HRmWrite, insn->variant.bfp_triop.dst);
-      addHRegUse(u, HRmRead,  insn->variant.bfp_triop.dst);  /* first */
+      addHRegUse(u, HRmModify, insn->variant.bfp_triop.dst); /* first */
       addHRegUse(u, HRmRead,  insn->variant.bfp_triop.op2);  /* second */
       addHRegUse(u, HRmRead,  insn->variant.bfp_triop.op3);  /* third */
       break;
 
    case S390_INSN_BFP_BINOP:
-      addHRegUse(u, HRmWrite, insn->variant.bfp_binop.dst_hi);
-      addHRegUse(u, HRmRead,  insn->variant.bfp_binop.dst_hi);  /* left */
+      addHRegUse(u, HRmModify, insn->variant.bfp_binop.dst_hi); /* left */
       addHRegUse(u, HRmRead,  insn->variant.bfp_binop.op2_hi);  /* right */
       if (insn->size == 16) {
-         addHRegUse(u, HRmWrite, insn->variant.bfp_binop.dst_lo);
-         addHRegUse(u, HRmRead,  insn->variant.bfp_binop.dst_lo);  /* left */
+         addHRegUse(u, HRmModify, insn->variant.bfp_binop.dst_lo); /* left */
          addHRegUse(u, HRmRead,  insn->variant.bfp_binop.op2_lo);  /* right */
       }
       break;
@@ -957,8 +949,7 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
       break;
 
    case S390_INSN_VEC_AMODEINTOP:
-      addHRegUse(u, HRmRead, insn->variant.vec_amodeintop.dst);
-      addHRegUse(u, HRmWrite, insn->variant.vec_amodeintop.dst);
+      addHRegUse(u, HRmModify, insn->variant.vec_amodeintop.dst);
       s390_amode_get_reg_usage(u, insn->variant.vec_amodeintop.op2);
       addHRegUse(u, HRmRead, insn->variant.vec_amodeintop.op3);
       break;

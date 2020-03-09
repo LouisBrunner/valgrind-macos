@@ -172,9 +172,56 @@ of 3.15.0.  It doesn't carry over bugs from earlier versions.
 
 === zz_other/x86 =======================================================
 
+-- Wed  4 Mar 10:48:31 CET 2020
 
--- Wed 22 Jan 08:57:09 CET 2020
+.416682  [MIPS-Linux] mmap failed under valgrind
 
+.416753  new 32bit time syscalls for 2038+
+In progress
+
+. 416760  ppc64le Assertion 'VG_IS_16_ALIGNED(sizeof(struct rt_sigframe))'
+Seems important.  Status unclear.
+
+.416779  valgrind: m_debuginfo/debuginfo.c:454
+(discard_or_archive_DebugInfo): Assertion '!di->have_dinfo ||
+is_DebugInfo_active(di)' failed.
+WINE wierdness
+
+.417075  pwritev(vector[...]) suppression ignored
+
+.394227  [x86] False negative "uninitialised value" report due to not
+recognizing simd registers clear by pcmp* (still alive)
+
+.417175  Valgrind is not working on Android pie.
+
+.417187  [MIPS] Conditional branch problem since 'grail' changes
+It sounds like the MIPS folks have basically solved the problem
+
+.417238  Test memcheck/tests/vbit-test fails on mips64 BE
+Has discussion
+
+.417264  Musl issues: Fix none/tests/pth_atfork1.c
+Uhmm, MUSL
+
+.417266  Make memcheck/tests/linux/sigqueue usable with musl
+Uhmm, MUSL
+
+.417281  s390x: /bin/true segfaults with "grail" enabled
+Ongoing
+
+.417377  False-positive "uninitialised value(s)" reports from memcheck
+
+.417572  unhandled instruction bytes: 0xC5 0x79 0xD6 0xED 0xC5 0xF9 0x51
+Ech, some avx thing
+
+.417578  Add suppressions for glibc DTV leaks
+Has patch, should land
+
+.417993  vbit-test fail on s390x with Iop_Add32: spurious dependency
+    on uninitialised value
+Needs investigation
+
+.418004  Grail code additions break ppc64
 
 ==================
 

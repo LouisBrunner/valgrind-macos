@@ -3514,20 +3514,7 @@ s390_isel_cc(ISelEnv *env, IRExpr *cond)
       }
 
       case Iop_CmpNEZ8:
-      case Iop_CmpNEZ16: {
-         s390_opnd_RMI src;
-         s390_unop_t   op;
-         HReg dst;
-
-         op  = (cond->Iex.Unop.op == Iop_CmpNEZ8) ? S390_ZERO_EXTEND_8
-            : S390_ZERO_EXTEND_16;
-         dst = newVRegI(env);
-         src = s390_isel_int_expr_RMI(env, arg);
-         addInstr(env, s390_insn_unop(4, op, dst, src));
-         addInstr(env, s390_insn_test(4, s390_opnd_reg(dst)));
-         return S390_CC_NE;
-      }
-
+      case Iop_CmpNEZ16:
       case Iop_CmpNEZ32:
       case Iop_CmpNEZ64: {
          s390_opnd_RMI src;

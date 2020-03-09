@@ -679,6 +679,7 @@ typedef
             Uses x8 as scratch (but that's not allocatable).
             Hence: RD x3, x5, x7; WR x1
 
+           loop:
             (szB=8)  mov  x8, x5
             (szB=4)  and  x8, x5, #0xFFFFFFFF
             (szB=2)  and  x8, x5, #0xFFFF
@@ -690,10 +691,10 @@ typedef
             bne     after
             -- if branch taken, failure; x1[[8*szB-1 : 0] holds old value
             -- attempt to store
-            stxr    w1, x7, [x3]
+            stxr    w8, x7, [x3]
             -- if store successful, x1==0, so the eor is "x1 := x5"
-            -- if store failed,     x1==1, so the eor makes x1 != x5
-            eor     x1, x5, x1
+            -- if store failed,     branch back and try again.
+            cbne    w8, loop
            after:
          */
          struct {

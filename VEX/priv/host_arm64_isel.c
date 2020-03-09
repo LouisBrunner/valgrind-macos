@@ -3988,14 +3988,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          addInstr(env, ARM64Instr_CAS(sz));
          /* Now we have the lowest szB bytes of x1 are either equal to
             the lowest szB bytes of x5, indicating success, or they
-            aren't, indicating failure.  The IR semantics actually
-            require us to return the old value at the location,
-            regardless of success or failure, but in the case of
-            failure it's not clear how to do this, since
-            ARM64Instr_CAS can't provide that.  Instead we'll just
-            return the relevant bit of x1, since that's at least
-            guaranteed to be different from the lowest bits of x5 on
-            failure. */
+            aren't, indicating failure. */
          HReg rResult = hregARM64_X1();
          switch (sz) {
             case 8:  break;

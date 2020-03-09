@@ -3852,9 +3852,14 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
       }
       case ARM64in_CAS: {
          /* This isn't simple.  For an explanation see the comment in
-            host_arm64_defs.h on the the definition of ARM64Instr case
-            CAS. */
+            host_arm64_defs.h on the definition of ARM64Instr case CAS.
+
+            NOTE: We could place "loop:" after mov/and but then we need
+                  an additional scratch register.
+         */
          /* Generate:
+
+            loop:
               -- one of:
               mov     x8, x5                 // AA0503E8
               and     x8, x5, #0xFFFFFFFF    // 92407CA8
@@ -3872,13 +3877,13 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
               bne     out                    // 54000061
 
               -- one of:
-              stxr    w1, x7, [x3]           // C8017C67
-              stxr    w1, w7, [x3]           // 88017C67
-              stxrh   w1, w7, [x3]           // 48017C67
-              stxrb   w1, w7, [x3]           // 08017C67
+              stxr    w8, x7, [x3]           // C8087C67
+              stxr    w8, w7, [x3]           // 88087C67
+              stxrh   w8, w7, [x3]           // 48087C67
+              stxrb   w8, w7, [x3]           // 08087C67
 
               -- always:
-              eor     x1, x5, x1             // CA0100A1
+              cbne    w8, loop               // 35FFFF68
             out:
          */
          switch (i->ARM64in.CAS.szB) {
@@ -3897,12 +3902,12 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
          *p++ = 0xEB08003F;
          *p++ = 0x54000061;
          switch (i->ARM64in.CAS.szB) {
-            case 8:  *p++ = 0xC8017C67; break;
-            case 4:  *p++ = 0x88017C67; break;
-            case 2:  *p++ = 0x48017C67; break;
-            case 1:  *p++ = 0x08017C67; break;
+            case 8:  *p++ = 0xC8087C67; break;
+            case 4:  *p++ = 0x88087C67; break;
+            case 2:  *p++ = 0x48087C67; break;
+            case 1:  *p++ = 0x08087C67; break;
          }
-         *p++ = 0xCA0100A1;
+         *p++ = 0x35FFFF68;
          goto done;
       }
       case ARM64in_MFence: {

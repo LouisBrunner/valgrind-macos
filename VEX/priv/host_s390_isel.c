@@ -1893,7 +1893,8 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          /* Down-casts are no-ops. Upstream operations will only look at
             the bytes that make up the result of the down-cast. So there
             is no point setting the other bytes to 0. */
-         insn = s390_opnd_copy(8, dst, opnd);
+         size = sizeofIRType(typeOfIRExpr(env->type_env, arg));
+         insn = s390_opnd_copy(size, dst, opnd);
          break;
 
       case Iop_64HIto32:

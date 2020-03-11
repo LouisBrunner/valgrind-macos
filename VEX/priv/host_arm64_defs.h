@@ -481,6 +481,7 @@ typedef
       ARM64in_LdrEX,
       ARM64in_StrEX,
       ARM64in_CAS,
+      ARM64in_CASP,
       ARM64in_MFence,
       ARM64in_ClrEX,
       /* ARM64in_V*: scalar ops involving vector registers */
@@ -700,6 +701,9 @@ typedef
          struct {
             Int szB; /* 1, 2, 4 or 8 */
          } CAS;
+         struct {
+            Int szB; /* 4 or 8 */
+         } CASP;
          /* Mem fence.  An insn which fences all loads and stores as
             much as possible before continuing.  On ARM64 we emit the
             sequence "dsb sy ; dmb sy ; isb sy", which is probably
@@ -946,6 +950,7 @@ extern ARM64Instr* ARM64Instr_Mul     ( HReg dst, HReg argL, HReg argR,
 extern ARM64Instr* ARM64Instr_LdrEX   ( Int szB );
 extern ARM64Instr* ARM64Instr_StrEX   ( Int szB );
 extern ARM64Instr* ARM64Instr_CAS     ( Int szB );
+extern ARM64Instr* ARM64Instr_CASP    ( Int szB );
 extern ARM64Instr* ARM64Instr_MFence  ( void );
 extern ARM64Instr* ARM64Instr_ClrEX   ( void );
 extern ARM64Instr* ARM64Instr_VLdStH  ( Bool isLoad, HReg sD, HReg rN,

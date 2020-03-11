@@ -99,6 +99,51 @@ CHECK(eor, ^, 64);
    printf("\n\n"); \
 }
 
+#define ATOMIC_TEST_CASP(instruction, rsz, base_addr, mem_val0_, mem_val1_, rs0_, rs1_, rt0_, rt1_) \
+{ \
+   ULong rs0 = (ULong)rs0_; \
+   ULong rs1 = (ULong)rs1_; \
+   ULong rt0 = (ULong)rt0_; \
+   ULong rt1 = (ULong)rt1_; \
+   ULong mem_val0 = (ULong)mem_val0_; \
+   ULong mem_val1 = (ULong)mem_val1_; \
+   \
+   ULong mem_val_after0, mem_val_after1; \
+   mem_val_after0 = mem_val_after1 = 0ULL; \
+   \
+   int pad = (strcmp(#rsz, "w") == 0) ? 8 : 16; \
+   printf("%s :: rs %0*llx %0*llx rt %0*llx %0*llx rn mem %0*llx %0*llx\n", \
+          instruction, pad, rs0, pad, rs1, pad, rt0, pad, rt1, pad, mem_val0, pad, mem_val1); \
+   \
+   Int swap = (rs0 == mem_val0 && rs1 == mem_val1) ? 1 : 0; \
+   __asm__ __volatile__( \
+      "mov " #rsz "5, %" #rsz "2;" \
+      "mov " #rsz "13, %" #rsz "3;" \
+      "mov " #rsz "14, %" #rsz "4;" \
+      "stp " #rsz "13, " #rsz "14, [x5, #0];" \
+      "mov " #rsz "8, %" #rsz "5;" \
+      "mov " #rsz "9, %" #rsz "6;" \
+      "mov " #rsz "10, %" #rsz "7;" \
+      "mov " #rsz "11, %" #rsz "8;" \
+      instruction ";" \
+      "ldp %" #rsz "0, %" #rsz "1, [x5, #0];" \
+      : "=&r" (mem_val_after0), "=&r" (mem_val_after1) \
+      : "r" (base_addr), "r" (mem_val0), "r" (mem_val1), "r" (rs0), "r" (rs1), "r" (rt0), "r" (rt1) \
+      : #rsz "5", #rsz "8", #rsz "9", #rsz "10", #rsz "11", #rsz "13", #rsz "14", "memory" \
+   ); \
+   printf("%s :: rs %0*llx %0*llx rt %0*llx %0*llx rn mem %0*llx %0*llx", \
+          instruction, pad, rs0, pad, rs1, pad, rt0, pad, rt1, pad, mem_val_after0, pad, mem_val_after1); \
+   if (swap == 1) { \
+      if (mem_val_after0 != rt0 || mem_val_after1 != rt1 ) \
+         printf("FAIL: swapped but mem after != rt"); \
+   } \
+   else { \
+      if (mem_val_after0 != mem_val0 || mem_val_after1 != mem_val1) \
+         printf("FAIL: no swap but mem after != mem before"); \
+   } \
+   printf("\n\n"); \
+}
+
 
 // Test patterns
 #define ALL5s_64  0x5555555555555555ULL
@@ -5540,6 +5585,2002 @@ static __attribute((noinline)) void test_atomics ( void )
    ATOMIC_TEST_CAS("caslh w11, w12, [x5]", w, mem, DOWN_32, DOWN_32, 0, 0xFFFF);
 
    free(mem);
+
+   ULong *memp = (ULong *)malloc(sizeof(ULong) * 2);
+
+   printf("CASP <Ws>, <W(s+1)>, <Wt>, <W(t+1)>, [<Xn|SP>{,#0}]\n\n");
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, 0, 0, 1, 1);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, 1, 1, 0, 0);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, 1, 1, 1, 1);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 1, 1, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 1, 1, 0, 0, 1, 1);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 1, 1, 1, 1, 0, 0);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 1, 1, 1, 1, 1, 1);
+
+   printf("Combinations of ALL5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, E_32, E_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, 0, 0);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, 0, 0);
+
+   printf("Combinations of ALLas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, E_32, E_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, 0, 0);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, 0, 0);
+
+   printf("Combinations of ALLfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, E_32, E_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, 0, 0);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, 0, 0);
+
+   printf("Combinations of UP_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, E_32, E_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, 0, 0);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, 0, 0);
+
+   printf("Combinations of DOWN_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, E_32, E_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, 0, 0);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, 0, 0);
+
+   printf("Combinations of PI_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, E_32, E_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, 0, 0);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, 0, 0);
+
+   printf("Combinations of E_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, E_32, E_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, 0, 0);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("casp w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, 0, 0);
+
+   printf("CASPA <Ws>, <W(s+1)>, <Wt>, <W(t+1)>, [<Xn|SP>{,#0}]\n\n");
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, 0, 0, 1, 1);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, 1, 1, 0, 0);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, 1, 1, 1, 1);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 1, 1, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 1, 1, 0, 0, 1, 1);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 1, 1, 1, 1, 0, 0);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 1, 1, 1, 1, 1, 1);
+
+   printf("Combinations of ALL5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, E_32, E_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, 0, 0);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, 0, 0);
+
+   printf("Combinations of ALLas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, E_32, E_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, 0, 0);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, 0, 0);
+
+   printf("Combinations of ALLfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, E_32, E_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, 0, 0);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, 0, 0);
+
+   printf("Combinations of UP_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, E_32, E_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, 0, 0);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, 0, 0);
+
+   printf("Combinations of DOWN_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, E_32, E_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, 0, 0);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, 0, 0);
+
+   printf("Combinations of PI_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, E_32, E_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, 0, 0);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, 0, 0);
+
+   printf("Combinations of E_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, E_32, E_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, 0, 0);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspa w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, 0, 0);
+
+   printf("CASPAL <Ws>, <W(s+1)>, <Wt>, <W(t+1)>, [<Xn|SP>{,#0}]\n\n");
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, 0, 0, 1, 1);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, 1, 1, 0, 0);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, 1, 1, 1, 1);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 1, 1, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 1, 1, 0, 0, 1, 1);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 1, 1, 1, 1, 0, 0);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 1, 1, 1, 1, 1, 1);
+
+   printf("Combinations of ALL5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, E_32, E_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, 0, 0);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, 0, 0);
+
+   printf("Combinations of ALLas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, E_32, E_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, 0, 0);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, 0, 0);
+
+   printf("Combinations of ALLfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, E_32, E_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, 0, 0);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, 0, 0);
+
+   printf("Combinations of UP_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, E_32, E_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, 0, 0);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, 0, 0);
+
+   printf("Combinations of DOWN_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, E_32, E_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, 0, 0);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, 0, 0);
+
+   printf("Combinations of PI_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, E_32, E_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, 0, 0);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, 0, 0);
+
+   printf("Combinations of E_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, E_32, E_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, 0, 0);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspal w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, 0, 0);
+
+   printf("CASPL <Ws>, <W(s+1)>, <Wt>, <W(t+1)>, [<Xn|SP>{,#0}]\n\n");
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, 0, 0, 1, 1);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, 1, 1, 0, 0);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, 1, 1, 1, 1);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 1, 1, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 1, 1, 0, 0, 1, 1);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 1, 1, 1, 1, 0, 0);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 1, 1, 1, 1, 1, 1);
+
+   printf("Combinations of ALL5s_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, E_32, E_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALL5s_32, ALL5s_32, 0, 0);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALL5s_32, ALL5s_32, ALL5s_32, ALL5s_32, 0, 0);
+
+   printf("Combinations of ALLas_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, E_32, E_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLas_32, ALLas_32, 0, 0);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLas_32, ALLas_32, ALLas_32, ALLas_32, 0, 0);
+
+   printf("Combinations of ALLfs_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, E_32, E_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, ALLfs_32, ALLfs_32, 0, 0);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, ALLfs_32, ALLfs_32, ALLfs_32, ALLfs_32, 0, 0);
+
+   printf("Combinations of UP_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, E_32, E_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, UP_32, UP_32, 0, 0);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, UP_32, UP_32, UP_32, UP_32, 0, 0);
+
+   printf("Combinations of DOWN_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, E_32, E_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, DOWN_32, DOWN_32, 0, 0);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, DOWN_32, DOWN_32, DOWN_32, DOWN_32, 0, 0);
+
+   printf("Combinations of PI_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, E_32, E_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, PI_32, PI_32, 0, 0);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, PI_32, PI_32, PI_32, PI_32, 0, 0);
+
+   printf("Combinations of E_32 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, ALL5s_32, ALL5s_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, ALL5s_32, ALL5s_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, ALLas_32, ALLas_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, ALLas_32, ALLas_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, ALLfs_32, ALLfs_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, ALLfs_32, ALLfs_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, UP_32, UP_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, UP_32, UP_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, DOWN_32, DOWN_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, DOWN_32, DOWN_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, PI_32, PI_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, PI_32, PI_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, E_32, E_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, E_32, E_32);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, E_32, E_32);
+
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, 0, 0, E_32, E_32, 0, 0);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspl w8, w9, w10, w11, [x5]", w, memp, E_32, E_32, E_32, E_32, 0, 0);
+
+   printf("CASP <Xs>, <X(s+1)>, <Xt>, <X(t+1)>, [<Xn|SP>{,#0}]\n\n");
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, 0, 0, 1, 1);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, 1, 1, 0, 0);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, 1, 1, 1, 1);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 1, 1, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 1, 1, 0, 0, 1, 1);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 1, 1, 1, 1, 0, 0);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 1, 1, 1, 1, 1, 1);
+
+   printf("Combinations of ALL5s_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, E_64, E_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, 0, 0);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, 0, 0);
+
+   printf("Combinations of ALLas_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, E_64, E_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, 0, 0);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, 0, 0);
+
+   printf("Combinations of ALLfs_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, E_64, E_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, 0, 0);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, 0, 0);
+
+   printf("Combinations of UP_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, E_64, E_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, 0, 0);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, 0, 0);
+
+   printf("Combinations of DOWN_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, E_64, E_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, 0, 0);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, 0, 0);
+
+   printf("Combinations of PI_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, E_64, E_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, 0, 0);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, 0, 0);
+
+   printf("Combinations of E_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, E_64, E_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, 0, 0);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("casp x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, 0, 0);
+
+   printf("CASPA <Xs>, <X(s+1)>, <Xt>, <X(t+1)>, [<Xn|SP>{,#0}]\n\n");
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, 0, 0, 1, 1);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, 1, 1, 0, 0);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, 1, 1, 1, 1);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 1, 1, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 1, 1, 0, 0, 1, 1);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 1, 1, 1, 1, 0, 0);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 1, 1, 1, 1, 1, 1);
+
+   printf("Combinations of ALL5s_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, E_64, E_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, 0, 0);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, 0, 0);
+
+   printf("Combinations of ALLas_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, E_64, E_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, 0, 0);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, 0, 0);
+
+   printf("Combinations of ALLfs_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, E_64, E_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, 0, 0);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, 0, 0);
+
+   printf("Combinations of UP_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, E_64, E_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, 0, 0);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, 0, 0);
+
+   printf("Combinations of DOWN_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, E_64, E_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, 0, 0);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, 0, 0);
+
+   printf("Combinations of PI_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, E_64, E_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, 0, 0);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, 0, 0);
+
+   printf("Combinations of E_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, E_64, E_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, 0, 0);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspa x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, 0, 0);
+
+   printf("CASPAL <Xs>, <X(s+1)>, <Xt>, <X(t+1)>, [<Xn|SP>{,#0}]\n\n");
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, 0, 0, 1, 1);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, 1, 1, 0, 0);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, 1, 1, 1, 1);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 1, 1, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 1, 1, 0, 0, 1, 1);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 1, 1, 1, 1, 0, 0);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 1, 1, 1, 1, 1, 1);
+
+   printf("Combinations of ALL5s_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, E_64, E_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, 0, 0);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, 0, 0);
+
+   printf("Combinations of ALLas_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, E_64, E_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, 0, 0);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, 0, 0);
+
+   printf("Combinations of ALLfs_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, E_64, E_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, 0, 0);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, 0, 0);
+
+   printf("Combinations of UP_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, E_64, E_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, 0, 0);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, 0, 0);
+
+   printf("Combinations of DOWN_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, E_64, E_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, 0, 0);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, 0, 0);
+
+   printf("Combinations of PI_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, E_64, E_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, 0, 0);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, 0, 0);
+
+   printf("Combinations of E_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, E_64, E_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, 0, 0);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspal x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, 0, 0);
+
+   printf("CASPL <Xs>, <X(s+1)>, <Xt>, <X(t+1)>, [<Xn|SP>{,#0}]\n\n");
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, 0, 0, 1, 1);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, 1, 1, 0, 0);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, 1, 1, 1, 1);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 1, 1, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 1, 1, 0, 0, 1, 1);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 1, 1, 1, 1, 0, 0);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 1, 1, 1, 1, 1, 1);
+
+   printf("Combinations of ALL5s_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, E_64, E_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALL5s_64, ALL5s_64, 0, 0);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALL5s_64, ALL5s_64, ALL5s_64, ALL5s_64, 0, 0);
+
+   printf("Combinations of ALLas_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, E_64, E_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLas_64, ALLas_64, 0, 0);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLas_64, ALLas_64, ALLas_64, ALLas_64, 0, 0);
+
+   printf("Combinations of ALLfs_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, E_64, E_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, ALLfs_64, ALLfs_64, 0, 0);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, ALLfs_64, ALLfs_64, ALLfs_64, ALLfs_64, 0, 0);
+
+   printf("Combinations of UP_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, E_64, E_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, UP_64, UP_64, 0, 0);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, UP_64, UP_64, UP_64, UP_64, 0, 0);
+
+   printf("Combinations of DOWN_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, E_64, E_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, DOWN_64, DOWN_64, 0, 0);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, DOWN_64, DOWN_64, DOWN_64, DOWN_64, 0, 0);
+
+   printf("Combinations of PI_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, E_64, E_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, PI_64, PI_64, 0, 0);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, PI_64, PI_64, PI_64, PI_64, 0, 0);
+
+   printf("Combinations of E_64 and all other patterns\n");
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, ALL5s_64, ALL5s_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, ALL5s_64, ALL5s_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, ALLas_64, ALLas_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, ALLas_64, ALLas_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, ALLfs_64, ALLfs_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, ALLfs_64, ALLfs_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, UP_64, UP_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, UP_64, UP_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, DOWN_64, DOWN_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, DOWN_64, DOWN_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, PI_64, PI_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, PI_64, PI_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, E_64, E_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, E_64, E_64);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, E_64, E_64);
+
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, 0, 0, E_64, E_64, 0, 0);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, 0, 0, 0, 0);
+   ATOMIC_TEST_CASP("caspl x8, x9, x10, x11, [x5]", x, memp, E_64, E_64, E_64, E_64, 0, 0);
+
+   free(memp);
 }
 
 int main ( void )

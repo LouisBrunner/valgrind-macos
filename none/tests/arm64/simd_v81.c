@@ -39,14 +39,14 @@ static void setV128( V128* v, int elements, LaneTy ty, ULong val )
    switch (ty) {
       /* 4H or 8H */
       case TyH:
-         assert( val < (1 << 16) );
+         assert( val < (1ULL << 16) );
          assert( elements == 4 || elements == 8 );
          for ( int i = 0; i < elements; i++ )
             v->u16[i] = val;
          break;
       /* 2S or 4S */
       case TyS:
-         assert( val < (1 << 32) );
+         assert( val < (1ULL << 32) );
          assert( elements == 2 || elements == 4 );
          for ( int i = 0; i < elements; i++ )
             v->u32[i] = val;
@@ -64,14 +64,14 @@ static void setV128_idx( V128* v, int elements, LaneTy ty, ULong val, int idx )
    switch (ty) {
       /* 4H or 8H */
       case TyH:
-         assert( val < (1 << 16) );
+         assert( val < (1ULL << 16) );
          assert( elements == 4 || elements == 8 );
          assert( idx < elements );
          v->u16[idx] = val;
          break;
       /* 2S or 4S */
       case TyS:
-         assert( val < (1 << 32) );
+         assert( val < (1ULL << 32) );
          assert( elements == 2 || elements == 4 );
          assert( idx < elements );
          v->u32[idx] = val;

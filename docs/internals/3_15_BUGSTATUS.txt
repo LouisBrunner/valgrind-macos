@@ -130,8 +130,6 @@ of 3.15.0.  It doesn't carry over bugs from earlier versions.
 414270  Collection of bugs for new ARMv8.1 work and features
 414268  Enable AArch64 feature detection and decoding for v8.x instructions
         (where x>0)
-415136  ARMv8.1 Compare-and-Swap instructions are not supported
-        All of this 8.x stuff is WIP
 
 === VEX/mips ===========================================================
 === VEX/other ==========================================================

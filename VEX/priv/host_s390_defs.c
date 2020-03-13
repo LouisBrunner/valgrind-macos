@@ -10105,7 +10105,7 @@ s390_insn_cond_move_emit(UChar *buf, const s390_insn *insn)
 
    if (s390_host_has_lsc) {
       /* LOCx is not the preferred way to implement an unconditional load. */
-      if (cond != S390_CC_ALWAYS) goto use_branch_insn;
+      if (cond == S390_CC_ALWAYS) goto use_branch_insn;
 
       switch (src.tag) {
       case S390_OPND_REG:

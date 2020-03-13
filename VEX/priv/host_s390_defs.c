@@ -770,6 +770,11 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
          addHRegUse(u, HRmWrite, s390_hreg_fpr(i));
       }
 
+      /* Ditto for all allocatable vector registers. */
+      for (i = 16; i <= 31; ++i) {
+         addHRegUse(u, HRmWrite, s390_hreg_vr(i));
+      }
+
       /* The registers that are used for passing arguments will be read.
          Not all of them may, but in general we need to assume that. */
       for (i = 0; i < insn->variant.helper_call.details->num_args; ++i) {

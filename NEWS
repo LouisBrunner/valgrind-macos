@@ -127,6 +127,7 @@ where XXXXXX is the bug number as listed below.
 417906  clone with CLONE_VFORK and no CLONE_VM fails
 418435  s390x: memcmp test yields extra "Conditional jump or move depends on
         uninitialised value(s)"
+417281  s390x: /bin/true segfaults with "grail" enabled
 n-i-bz  Fix minor one time leaks in dhat.
 n-i-bz  Add --run-cxx-freeres=no in outer args to avoid inner crashes.
 n-i-bz  Add support for the Linux io_uring system calls

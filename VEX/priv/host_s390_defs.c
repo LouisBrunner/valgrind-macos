@@ -676,8 +676,18 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
       break;
 
    case S390_INSN_COND_MOVE:
-      s390_opnd_RMI_get_reg_usage(u, insn->variant.cond_move.src);
-      addHRegUse(u, HRmWrite, insn->variant.cond_move.dst);
+      switch (insn->variant.cond_move.cond) {
+      case S390_CC_NEVER:
+         break;
+      case S390_CC_ALWAYS:
+         s390_opnd_RMI_get_reg_usage(u, insn->variant.cond_move.src);
+         addHRegUse(u, HRmWrite, insn->variant.cond_move.dst);
+         break;
+      default:
+         s390_opnd_RMI_get_reg_usage(u, insn->variant.cond_move.src);
+         addHRegUse(u, HRmModify, insn->variant.cond_move.dst);
+         break;
+      }
       break;
 
    case S390_INSN_ALU:

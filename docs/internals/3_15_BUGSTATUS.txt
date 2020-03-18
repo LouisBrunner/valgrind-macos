@@ -204,9 +204,6 @@ Uhmm, MUSL
 .417266  Make memcheck/tests/linux/sigqueue usable with musl
 Uhmm, MUSL
 
-.417281  s390x: /bin/true segfaults with "grail" enabled
-Ongoing
-
 .417377  False-positive "uninitialised value(s)" reports from memcheck
 
 .417572  unhandled instruction bytes: 0xC5 0x79 0xD6 0xED 0xC5 0xF9 0x51

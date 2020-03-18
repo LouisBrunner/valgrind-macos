@@ -127,7 +127,7 @@ static HReg          s390_isel_int_expr(ISelEnv *, IRExpr *);
 static s390_amode   *s390_isel_amode(ISelEnv *, IRExpr *);
 static s390_amode   *s390_isel_amode_b12_b20(ISelEnv *, IRExpr *);
 static s390_cc_t     s390_isel_cc(ISelEnv *, IRExpr *);
-static HReg          s390_isel_int1_expr(ISelEnv *env, IRExpr *expr, HReg dst);
+static HReg          s390_isel_int1_expr(ISelEnv *env, IRExpr *expr);
 static s390_opnd_RMI s390_isel_int_expr_RMI(ISelEnv *, IRExpr *);
 static void          s390_isel_int128_expr(HReg *, HReg *, ISelEnv *, IRExpr *);
 static HReg          s390_isel_float_expr(ISelEnv *, IRExpr *);
@@ -1764,7 +1764,9 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
 
       /* Expressions whose argument is 1-bit wide */
       if (typeOfIRExpr(env->type_env, arg) == Ity_I1) {
-         dst = s390_isel_int1_expr(env, arg, INVALID_HREG);
+         h1 = s390_isel_int1_expr(env, arg);
+         dst = newVRegI(env);
+         addInstr(env, s390_insn_move(8, dst, h1));
 
          switch (unop) {
          case Iop_1Uto8:
@@ -3558,7 +3560,7 @@ s390_isel_cc(ISelEnv *env, IRExpr *cond)
       if (cond->Iex.Binop.op == Iop_And1 || cond->Iex.Binop.op == Iop_Or1) {
          /* Perform the calculation in registers, but ignore the resulting
             value.  Instead, assume that the condition code is set. */
-         (void) s390_isel_int1_expr(env, cond, INVALID_HREG);
+         (void) s390_isel_int1_expr(env, cond);
          return S390_CC_NE;
       }
 
@@ -3689,34 +3691,30 @@ s390_isel_cc(ISelEnv *env, IRExpr *cond)
    values in registers always sign-extended to 64 bits.  This function is
    mutually recursive with s390_isel_cc. */
 static HReg
-s390_isel_int1_expr(ISelEnv *env, IRExpr *expr, HReg dst)
+s390_isel_int1_expr(ISelEnv *env, IRExpr *expr)
 {
    vassert(expr);
    vassert(typeOfIRExpr(env->type_env, expr) == Ity_I1);
 
    /* Variable. */
-   if (expr->tag == Iex_RdTmp) {
-      HReg res = lookupIRTemp(env, expr->Iex.RdTmp.tmp);
-      if (hregIsInvalid(dst)) {
-         return res;
-      }
-      addInstr(env, s390_insn_move(8, dst, res));
-      return dst;
-   }
+   if (expr->tag == Iex_RdTmp)
+      return lookupIRTemp(env, expr->Iex.RdTmp.tmp);
 
-   HReg res = hregIsInvalid(dst) ? newVRegI(env) : dst;
+   HReg res = newVRegI(env);
 
    /* And1 / Or1 */
    if (expr->tag == Iex_Binop
        && (expr->Iex.Binop.op == Iop_And1 || expr->Iex.Binop.op == Iop_Or1)) {
-      HReg reg1 = s390_isel_int1_expr(env, expr->Iex.Binop.arg1, res);
-      HReg reg2 = s390_isel_int1_expr(env, expr->Iex.Binop.arg2, INVALID_HREG);
+      HReg reg1 = s390_isel_int1_expr(env, expr->Iex.Binop.arg1);
+      HReg reg2 = s390_isel_int1_expr(env, expr->Iex.Binop.arg2);
       s390_alu_t opkind
          = expr->Iex.Binop.op == Iop_And1 ? S390_ALU_AND : S390_ALU_OR;
 
+      addInstr(env, s390_insn_move(8, res, reg1));
+
       /* Ensure that the condition code is set; s390_isel_cc relies on it. */
-      addInstr(env, s390_insn_alu(8, opkind, reg1, s390_opnd_reg(reg2)));
-      return reg1;
+      addInstr(env, s390_insn_alu(8, opkind, res, s390_opnd_reg(reg2)));
+      return res;
    }
 
    /* Else, call s390_isel_cc and force the value into a register. */
@@ -5018,8 +5016,9 @@ no_memcpy_put:
          break;
 
       case Ity_I1: {
+         src = s390_isel_int1_expr(env, stmt->Ist.WrTmp.data);
          dst = lookupIRTemp(env, tmp);
-         dst = s390_isel_int1_expr(env, stmt->Ist.WrTmp.data, dst);
+         addInstr(env, s390_insn_move(8, dst, src));
          return;
       }
 

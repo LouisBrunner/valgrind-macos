@@ -5587,6 +5587,18 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e,
    vassert(e);
    vassert(ty == Ity_V128);
 
+   if (e->tag == Iex_ITE) {
+      HReg r1 = iselVecExpr( env, e->Iex.ITE.iftrue, IEndianess );
+      HReg r0 = iselVecExpr( env, e->Iex.ITE.iffalse, IEndianess );
+      HReg r_dst = newVRegV(env);
+
+      // Use OR operator to do move r1 to r_dst
+      addInstr(env, PPCInstr_AvBinary( Pav_OR, r_dst, r0, r0));
+      PPCCondCode cc = iselCondCode(env, e->Iex.ITE.cond, IEndianess);
+      addInstr(env, PPCInstr_AvCMov(cc, r_dst, r1));
+      return r_dst;
+   }
+
    if (e->tag == Iex_RdTmp) {
       return lookupIRTemp(env, e->Iex.RdTmp.tmp);
    }

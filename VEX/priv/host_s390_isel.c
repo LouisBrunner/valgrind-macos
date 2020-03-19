@@ -2770,6 +2770,25 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       return dst;
    }
 
+      /* --------- MULTIPLEX --------- */
+   case Iex_ITE: {
+      IRExpr *cond_expr = expr->Iex.ITE.cond;
+      HReg dst, r0, r1;
+
+      vassert(typeOfIRExpr(env->type_env, cond_expr) == Ity_I1);
+
+      dst  = newVRegF(env);
+      r0   = s390_isel_float_expr(env, expr->Iex.ITE.iffalse);
+      r1   = s390_isel_float_expr(env, expr->Iex.ITE.iftrue);
+      size = sizeofIRType(typeOfIRExpr(env->type_env, expr->Iex.ITE.iftrue));
+
+      s390_cc_t cc = s390_isel_cc(env, cond_expr);
+
+      addInstr(env, s390_insn_move(size, dst, r0));
+      addInstr(env, s390_insn_cond_move(size, cc, dst, s390_opnd_reg(r1)));
+      return dst;
+   }
+
    default:
       goto irreducible;
    }
@@ -4692,6 +4711,25 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
       default:
          goto irreducible;
       }
+   }
+
+   /* --------- MULTIPLEX --------- */
+   case Iex_ITE: {
+      IRExpr *cond_expr = expr->Iex.ITE.cond;
+      HReg dst, r0, r1;
+
+      vassert(typeOfIRExpr(env->type_env, cond_expr) == Ity_I1);
+
+      dst  = newVRegV(env);
+      r0   = s390_isel_vec_expr(env, expr->Iex.ITE.iffalse);
+      r1   = s390_isel_vec_expr(env, expr->Iex.ITE.iftrue);
+      size = sizeofIRType(typeOfIRExpr(env->type_env, expr->Iex.ITE.iftrue));
+
+      s390_cc_t cc = s390_isel_cc(env, cond_expr);
+
+      addInstr(env, s390_insn_move(size, dst, r0));
+      addInstr(env, s390_insn_cond_move(size, cc, dst, s390_opnd_reg(r1)));
+      return dst;
    }
 
    default:

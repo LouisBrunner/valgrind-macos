@@ -6465,7 +6465,7 @@ s390_insn_cond_move(UChar size, s390_cc_t cond, HReg dst, s390_opnd_RMI src)
    insn->variant.cond_move.src  = src;
    insn->variant.cond_move.dst  = dst;
 
-   vassert(size == 1 || size == 2 || size == 4 || size == 8);
+   vassert(size == 1 || size == 2 || size == 4 || size == 8 || size == 16);
 
    return insn;
 }
@@ -10189,7 +10189,7 @@ s390_insn_cond_move_emit(UChar *buf, const s390_insn *insn)
 
    p = buf;
 
-   if (s390_host_has_lsc) {
+   if (s390_host_has_lsc && hregClass(dst) == HRcInt64) {
       /* LOCx is not the preferred way to implement an unconditional load. */
       if (cond == S390_CC_ALWAYS) goto use_branch_insn;
 
@@ -10257,14 +10257,32 @@ use_branch_insn:
 
    switch (src.tag) {
    case S390_OPND_REG:
-      p = s390_emit_LGR(p, hregNumber(dst), hregNumber(src.variant.reg));
+      switch (hregClass(dst)) {
+      case HRcInt64:
+         p = s390_emit_LGR(p, hregNumber(dst), hregNumber(src.variant.reg));
+         break;
+      case HRcFlt64:
+         p = s390_emit_LDR(p, hregNumber(dst), hregNumber(src.variant.reg));
+         break;
+      case HRcVec128:
+         p = s390_emit_VLR(p, hregNumber(dst), hregNumber(src.variant.reg));
+         break;
+      default:
+         goto fail;
+      }
       break;
 
    case S390_OPND_AMODE:
+      if (hregClass(dst) != HRcInt64)
+         goto fail;
+
       p = s390_emit_load_mem(p, insn->size, hregNumber(dst), src.variant.am);
       break;
 
    case S390_OPND_IMMEDIATE: {
+      if (hregClass(dst) != HRcInt64)
+         goto fail;
+
       ULong value = src.variant.imm;
       UInt  r = hregNumber(dst);
 

@@ -127,6 +127,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 374596  inconsistent RDTSCP support on x86_64
 392331  Spurious lock not held error from inside pthread_cond_timedwait
 400793  pthread_rwlock_timedwrlock false positive
+419054  Unhandled syscall getcpu on arm32
 433873  openat2 syscall unimplemented on Linux
 434057  Add stdio mode to valgrind's gdbserver
 435441  valgrind fails to interpose malloc on musl 1.2.2 due to weak symbol name and no libc soname

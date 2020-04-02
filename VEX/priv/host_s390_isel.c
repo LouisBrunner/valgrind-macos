@@ -2137,7 +2137,7 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
       *dst_hi = newVRegF(env);
       *dst_lo = newVRegF(env);
       addInstr(env, s390_insn_load(8, *dst_hi, am_hi));
-      addInstr(env, s390_insn_load(8, *dst_hi, am_lo));
+      addInstr(env, s390_insn_load(8, *dst_lo, am_lo));
       return;
    }
 
@@ -2845,7 +2845,7 @@ s390_isel_dfp128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
       *dst_hi = newVRegF(env);
       *dst_lo = newVRegF(env);
       addInstr(env, s390_insn_load(8, *dst_hi, am_hi));
-      addInstr(env, s390_insn_load(8, *dst_hi, am_lo));
+      addInstr(env, s390_insn_load(8, *dst_lo, am_lo));
       return;
    }
 

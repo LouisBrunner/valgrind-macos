@@ -1423,13 +1423,9 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          h1   = s390_isel_int_expr(env, arg1);   /* Process 1st operand */
          h2   = s390_isel_int_expr(env, arg2);   /* Process 2nd operand */
 
-         addInstr(env, s390_insn_move(arg_size, res, h1));
-         value = s390_opnd_imm(arg_size * 8);
-         addInstr(env, s390_insn_alu(size, S390_ALU_LSH, res, value));
-         value = s390_opnd_imm((((ULong)1) << arg_size * 8) - 1);
-         addInstr(env, s390_insn_alu(size, S390_ALU_AND, h2, value));
-         opnd = s390_opnd_reg(h2);
-         addInstr(env, s390_insn_alu(size, S390_ALU_OR,  res, opnd));
+         addInstr(env, s390_insn_move(arg_size, res, h2));
+         opnd = s390_opnd_reg(h1);
+         addInstr(env, s390_insn_alu(size, S390_ALU_ILIH, res, opnd));
          return res;
       }
 

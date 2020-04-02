@@ -1509,6 +1509,22 @@ emit_RIE(UChar *p, ULong op, UChar r1, UShort i2, UChar m3)
 
 
 static UChar *
+emit_RIEf(UChar *p, ULong op, UChar r1, UChar r2,
+          UChar i3, Char i4, UChar i5)
+{
+   ULong the_insn = op;
+
+   the_insn |= ((ULong)r1) << 36;
+   the_insn |= ((ULong)r2) << 32;
+   the_insn |= ((ULong)i3) << 24;
+   the_insn |= ((ULong)i4) << 16;
+   the_insn |= ((ULong)i5) << 8;
+
+   return emit_6bytes(p, the_insn);
+}
+
+
+static UChar *
 emit_RR(UChar *p, UInt op, UChar r1, UChar r2)
 {
    ULong the_insn = op;
@@ -5265,6 +5281,16 @@ s390_emit_LOCGHI(UChar *p, UChar r1, UShort i2, UChar m3)
    return emit_RIE(p, 0xec0000000046ULL, r1, i2, m3);
 }
 
+static UChar *
+s390_emit_RISBG(UChar *p, UChar r1, UChar r2, UChar i3, Char i4, UChar i5)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC6(MNM, GPR, GPR, UINT, UINT, UINT),
+                  "risbg", r1, r2, i3, i4, i5);
+
+   return emit_RIEf(p, 0xec0000000055ULL, r1, r2, i3, i4, i5);
+}
+
 
 /* Provide a symbolic name for register "R0" */
 #define R0 0
@@ -7759,6 +7785,7 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_ALU_LSH:  op = "v-lsh";  break;
       case S390_ALU_RSH:  op = "v-rsh";  break;
       case S390_ALU_RSHA: op = "v-rsha"; break;
+      case S390_ALU_ILIH: op = "v-ilih"; break;
       default: goto fail;
       }
       s390_sprintf(buf, "%M %R,%O", op, insn->variant.alu.dst, /* also op1 */
@@ -8677,6 +8704,24 @@ s390_insn_load_immediate_emit(UChar *buf, const s390_insn *insn)
 }
 
 
+/* Insert low half of r2 into high half of dst. */
+static UChar *
+s390_emit_ilih(UChar *buf, UChar size, UChar dst, UChar r2)
+{
+   if (s390_host_has_gie)
+      return s390_emit_RISBG(buf, dst, r2, 64 - 8 * size, 63 - 4 * size,
+                             4 * size);
+
+   /* Clear dst's upper half. */
+   buf = s390_emit_SLLG(buf, dst, dst, 0, DISP20(64 - 4 * size));
+   buf = s390_emit_SRLG(buf, dst, dst, 0, DISP20(64 - 4 * size));
+
+   /* Shift r2 by appropriate amount and OR it into dst. */
+   buf = s390_emit_SLLG(buf, R0, r2, 0, DISP20(4 * size));
+   return s390_emit_OGR(buf, dst, R0);
+}
+
+
 /* There is no easy way to do ALU operations on 1-byte or 2-byte operands.
    So we simply perform a 4-byte operation. Doing so uses possibly undefined
    bits and produces an undefined result in those extra bit positions. But
@@ -8708,6 +8753,7 @@ s390_insn_alu_emit(UChar *buf, const s390_insn *insn)
          case S390_ALU_LSH:  return s390_emit_SLL(buf, dst, r2, 0);
          case S390_ALU_RSH:  return s390_emit_SRL(buf, dst, r2, 0);
          case S390_ALU_RSHA: return s390_emit_SRA(buf, dst, r2, 0);
+         case S390_ALU_ILIH: return s390_emit_ilih(buf, insn->size, dst, r2);
          }
          goto fail;
 
@@ -8722,6 +8768,7 @@ s390_insn_alu_emit(UChar *buf, const s390_insn *insn)
          case S390_ALU_LSH:  return s390_emit_SLLG(buf, dst, dst, r2, DISP20(0));
          case S390_ALU_RSH:  return s390_emit_SRLG(buf, dst, dst, r2, DISP20(0));
          case S390_ALU_RSHA: return s390_emit_SRAG(buf, dst, dst, r2, DISP20(0));
+         case S390_ALU_ILIH: return s390_emit_ilih(buf, 8, dst, r2);
          }
          goto fail;
       }
@@ -8802,6 +8849,7 @@ s390_insn_alu_emit(UChar *buf, const s390_insn *insn)
          case S390_ALU_AND: return s390_emit_NR(buf, dst, R0);
          case S390_ALU_OR:  return s390_emit_OR(buf, dst, R0);
          case S390_ALU_XOR: return s390_emit_XR(buf, dst, R0);
+         case S390_ALU_ILIH:
          case S390_ALU_LSH:
          case S390_ALU_RSH:
          case S390_ALU_RSHA: ; /* avoid GCC warning */
@@ -8836,6 +8884,7 @@ s390_insn_alu_emit(UChar *buf, const s390_insn *insn)
                buf = s390_emit_LH(buf, R0, x, b, d);
                return s390_emit_XR(buf, dst, R0);
 
+            case S390_ALU_ILIH:
             case S390_ALU_LSH:
             case S390_ALU_RSH:
             case S390_ALU_RSHA: ; /* avoid GCC warning */
@@ -8868,6 +8917,7 @@ s390_insn_alu_emit(UChar *buf, const s390_insn *insn)
                buf = s390_emit_LHY(buf, R0, x, b, DISP20(d));
                return s390_emit_XR(buf, dst, R0);
 
+            case S390_ALU_ILIH:
             case S390_ALU_LSH:
             case S390_ALU_RSH:
             case S390_ALU_RSHA: ; /* avoid GCC warning */
@@ -8887,6 +8937,7 @@ s390_insn_alu_emit(UChar *buf, const s390_insn *insn)
             case S390_ALU_AND: return s390_emit_N(buf, dst, x, b, d);
             case S390_ALU_OR:  return s390_emit_O(buf, dst, x, b, d);
             case S390_ALU_XOR: return s390_emit_X(buf, dst, x, b, d);
+            case S390_ALU_ILIH:
             case S390_ALU_LSH:
             case S390_ALU_RSH:
             case S390_ALU_RSHA: ; /* avoid GCC warning */
@@ -8902,6 +8953,7 @@ s390_insn_alu_emit(UChar *buf, const s390_insn *insn)
             case S390_ALU_AND: return s390_emit_NY(buf, dst, x, b, DISP20(d));
             case S390_ALU_OR:  return s390_emit_OY(buf, dst, x, b, DISP20(d));
             case S390_ALU_XOR: return s390_emit_XY(buf, dst, x, b, DISP20(d));
+            case S390_ALU_ILIH:
             case S390_ALU_LSH:
             case S390_ALU_RSH:
             case S390_ALU_RSHA: ; /* avoid GCC warning */
@@ -8918,6 +8970,7 @@ s390_insn_alu_emit(UChar *buf, const s390_insn *insn)
          case S390_ALU_AND: return s390_emit_NG(buf, dst, x, b, DISP20(d));
          case S390_ALU_OR:  return s390_emit_OG(buf, dst, x, b, DISP20(d));
          case S390_ALU_XOR: return s390_emit_XG(buf, dst, x, b, DISP20(d));
+         case S390_ALU_ILIH:
          case S390_ALU_LSH:
          case S390_ALU_RSH:
          case S390_ALU_RSHA: ; /* avoid GCC warning */
@@ -8965,6 +9018,8 @@ s390_insn_alu_emit(UChar *buf, const s390_insn *insn)
 
          case S390_ALU_RSHA:
             return s390_emit_SRA(buf, dst, 0, value);
+
+         case S390_ALU_ILIH: ; /* avoid GCC warning */
          }
          goto fail;
 
@@ -8984,6 +9039,7 @@ s390_insn_alu_emit(UChar *buf, const s390_insn *insn)
          case S390_ALU_LSH:  return s390_emit_SLL(buf, dst, 0, value);
          case S390_ALU_RSH:  return s390_emit_SRL(buf, dst, 0, value);
          case S390_ALU_RSHA: return s390_emit_SRA(buf, dst, 0, value);
+         case S390_ALU_ILIH: ; /* avoid GCC warning */
          }
          goto fail;
 
@@ -9052,6 +9108,7 @@ s390_insn_alu_emit(UChar *buf, const s390_insn *insn)
          case S390_ALU_LSH:  return s390_emit_SLLG(buf, dst, dst, 0, DISP20(value));
          case S390_ALU_RSH:  return s390_emit_SRLG(buf, dst, dst, 0, DISP20(value));
          case S390_ALU_RSHA: return s390_emit_SRAG(buf, dst, dst, 0, DISP20(value));
+         case S390_ALU_ILIH: ; /* avoid GCC warning */
          }
          goto fail;
       }

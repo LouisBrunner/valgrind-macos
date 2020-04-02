@@ -178,6 +178,8 @@ typedef enum {
    S390_ALU_AND,
    S390_ALU_OR,
    S390_ALU_XOR,
+   S390_ALU_ILIH,  /* insert low half of 2nd operand into high half of 1st
+                      operand */
    S390_ALU_LSH,
    S390_ALU_RSH,
    S390_ALU_RSHA   /* arithmetic */

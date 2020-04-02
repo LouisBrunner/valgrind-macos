@@ -514,7 +514,7 @@ get_const_value_as_ulong(const IRConst *con)
 }
 
 
-/*  Substract n from stack pointer. Assumes 0 <= n <= 256 && n % 8 == 0. */
+/*  Subtract n from stack pointer. Assumes 0 <= n <= 256 && n % 8 == 0. */
 static void
 sub_from_SP ( ISelEnv* env, UInt n )
 {
@@ -525,7 +525,7 @@ sub_from_SP ( ISelEnv* env, UInt n )
 }
 
 
-/*  Substract n from stack pointer. Assumes 0 <= n <= 256 && n % 8 == 0. */
+/*  Add n to stack pointer. Assumes 0 <= n <= 256 && n % 8 == 0. */
 static void
 add_to_SP ( ISelEnv* env, UInt n )
 {

@@ -5185,10 +5185,6 @@ no_memcpy_put:
             addInstr(env, s390_insn_cdas(8, r8, r9, op2, r10, r11,
                                          old_high, old_low, r1));
          }
-         addInstr(env, s390_insn_move(8, op1_high, r8));
-         addInstr(env, s390_insn_move(8, op1_low,  r9));
-         addInstr(env, s390_insn_move(8, op3_high, r10));
-         addInstr(env, s390_insn_move(8, op3_low,  r11));
          return;
       }
       break;

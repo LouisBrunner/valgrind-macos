@@ -123,6 +123,11 @@ void handle_sys_pwritev(ThreadId tid, SyscallStatus* status,
                         Int fd, Addr vector, Int count,
                         const char *str);
 
+extern
+void handle_pre_sys_execve(ThreadId tid, SyscallStatus *status, Addr pathname,
+                           Addr arg_2, Addr arg_3, Bool is_execveat,
+                           Bool check_pathptr);
+
 DECL_TEMPLATE(generic, sys_ni_syscall);            // * P -- unimplemented
 DECL_TEMPLATE(generic, sys_exit);
 DECL_TEMPLATE(generic, sys_fork);

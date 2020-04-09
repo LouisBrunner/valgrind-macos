@@ -299,6 +299,9 @@ DECL_TEMPLATE(linux, sys_membarrier);
 // Linux-specific (new in Linux 3.18)
 DECL_TEMPLATE(linux, sys_bpf);
 
+// Linux-specific (new in Linux 3.19)
+DECL_TEMPLATE(linux, sys_execveat);
+
 // Linux-specific (new in Linux 4.11)
 DECL_TEMPLATE(linux, sys_statx);
 

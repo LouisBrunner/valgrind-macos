@@ -1052,6 +1052,8 @@
 /memcheck/tests/linux/timerfd-syscall
 /memcheck/tests/linux/proc-auxv
 /memcheck/tests/linux/sys-openat
+/memcheck/tests/linux/sys-execveat
+/memcheck/tests/linux/check_execveat
 
 # /memcheck/tests/mips32/
 /memcheck/tests/mips32/*.stderr.diff

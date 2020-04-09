@@ -856,6 +856,7 @@ static SyscallTableEntry syscall_table[] = {
 
 //   LIN__(__NR_kexec_file_load,   sys_ni_syscall),       // 320
    LINXY(__NR_bpf,               sys_bpf),              // 321
+   LINX_(__NR_execveat,          sys_execveat),         // 322
 
    LINXY(__NR_preadv2,           sys_preadv2),           // 327
    LINX_(__NR_pwritev2,          sys_pwritev2),          // 328

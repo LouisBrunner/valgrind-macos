@@ -1328,6 +1328,7 @@ typedef struct sigaction vki_sigaction_fromK_t;
 
 #include <sys/time.h>
 #define VKI_CLOCK_MONOTONIC CLOCK_MONOTONIC
+#define VKI_CLOCK_THREAD_CPUTIME_ID CLOCK_THREAD_CPUTIME_ID
 
 #define vki_clockid_t clockid_t
 #define vki_timespec timespec

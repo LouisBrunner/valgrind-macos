@@ -83,6 +83,7 @@ where XXXXXX is the bug number as listed below.
 385386  Assertion failed "szB >= CACHE_ENTRY_SIZE" at m_debuginfo/image.c:517
 400593  In Coregrind, use statx for some internal syscalls if [f]stat[64] fail
 400872  Add nanoMIPS support to Valgrind
+403212  drd/tests/trylock hangs on FreeBSD
 404406  s390x: z14 miscellaneous instructions not implemented
 405201  Incorrect size of struct vki_siginfo on 64-bit Linux architectures
 406561  mcinfcallWSRU gdbserver_test fails on ppc64

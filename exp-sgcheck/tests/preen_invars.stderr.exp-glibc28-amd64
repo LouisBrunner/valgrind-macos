@@ -1,9 +1,0 @@
-
-Invalid read of size 1
-   at 0x........: main (preen_invars.c:22)
- Address 0x........ expected vs actual:
- Expected: unknown
- Actual:   global array "im_a_global_arr" of size 10 in object with soname "preen_invars_so"
-
-
-ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

@@ -202,15 +202,6 @@ system: <filename>&vg-docs-path;</filename>, or online:
 
 
 
-<refsect1 id="sgcheck-options">
-<title>SGcheck Options</title>
-
-<xi:include href="../../exp-sgcheck/docs/sg-manual.xml" 
-            xpointer="sg.opts.list"
-            xmlns:xi="http://www.w3.org/2001/XInclude" />
-
-</refsect1>
-
 <refsect1 id="bbv-options">
 <title>BBV Options</title>
 

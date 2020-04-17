@@ -1,2 +1,0 @@
-prereq: ./is_arch_supported && (../../tests/os_test linux || ../../tests/os_test solaris)
-prog: bad_percentify

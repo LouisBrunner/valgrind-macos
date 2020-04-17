@@ -15,7 +15,6 @@ TOOLS = \
 		none
 
 EXP_TOOLS = \
-		exp-sgcheck \
 		exp-bbv
 
 # Put docs last because building the HTML is slow and we want to get
@@ -45,7 +44,6 @@ SUPP_FILES = \
 	glibc-2.34567-NPTL-helgrind.supp \
 	glibc-2.2-LinuxThreads-helgrind.supp \
 	glibc-2.X-drd.supp \
-	exp-sgcheck.supp \
 	darwin9.supp darwin9-drd.supp \
 	darwin10.supp darwin10-drd.supp \
 	darwin11.supp darwin12.supp darwin13.supp darwin14.supp darwin15.supp \

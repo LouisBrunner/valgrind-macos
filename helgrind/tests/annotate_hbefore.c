@@ -340,8 +340,7 @@ void delayXms ( int i )
    // We do the sleep in small pieces to have scheduling
    // events ensuring a fair switch between threads, even
    // without --fair-sched=yes. This is a.o. needed for
-   // running this test under an outer helgrind or an outer
-   // sgcheck.
+   // running this test under an outer helgrind.
    while (i > 0) {
       nanosleep(&ts, NULL);
       i--;

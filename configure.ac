@@ -1166,9 +1166,6 @@ if test "$VGCONF_OS" != "solaris"; then
     # add the suppressions antidisirregardless.
     DEFAULT_SUPP="xfree-4.supp ${DEFAULT_SUPP}"
     DEFAULT_SUPP="xfree-3.supp ${DEFAULT_SUPP}"
-
-    # Add glibc and X11 suppressions for exp-sgcheck
-    DEFAULT_SUPP="exp-sgcheck.supp ${DEFAULT_SUPP}"
 fi
 
 
@@ -4853,8 +4850,6 @@ AC_CONFIG_FILES([
    none/tests/x86-darwin/Makefile
    none/tests/amd64-solaris/Makefile
    none/tests/x86-solaris/Makefile
-   exp-sgcheck/Makefile
-   exp-sgcheck/tests/Makefile
    exp-bbv/Makefile
    exp-bbv/tests/Makefile
    exp-bbv/tests/x86/Makefile

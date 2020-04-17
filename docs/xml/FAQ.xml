@@ -483,10 +483,6 @@ int main(void)
     <para>Unfortunately, Memcheck doesn't do bounds checking on global
     or stack arrays.  We'd like to, but it's just not possible to do in
     a reasonable way that fits with how Memcheck works.  Sorry.</para>
-    
-    <para>However, the experimental tool SGcheck can detect errors like
-    this.  Run Valgrind with the <option>--tool=exp-sgcheck</option> option
-    to try it, but be aware that it is not as robust as Memcheck.</para>
   </answer>
 </qandaentry>
 

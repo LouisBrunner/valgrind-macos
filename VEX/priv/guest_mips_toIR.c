@@ -20034,16 +20034,31 @@ static UInt disInstr_MIPS_WRK_00(UInt cins, const VexArchInfo* archinfo,
          *lastn = mkexpr(t0);
          break;
 
-      case 0x04:  /* BEQ */
-         DIP("beq r%u, r%u, %u", rs, rt, imm);
+      case 0x04:  /* BEQ, B */
+         if (rs == 0 && rt == 0) {
+            ULong branch_offset;
+            t0 = newTemp(ty);
+            DIP("b %u", imm);
 
-         if (mode64)
-            dis_branch(False, binop(Iop_CmpEQ64, getIReg(rs), getIReg(rt)),
-                       imm, bstmt);
-         else
-            dis_branch(False, binop(Iop_CmpEQ32, getIReg(rs), getIReg(rt)),
-                       imm, bstmt);
+            if (mode64) {
+               branch_offset = extend_s_18to64(imm << 2);
+               assign(t0, mkU64(guest_PC_curr_instr + 4 + branch_offset));
+            } else {
+               branch_offset = extend_s_18to32(imm << 2);
+               assign(t0, mkU32(guest_PC_curr_instr + 4 + branch_offset));
+            }
 
+            *lastn = mkexpr(t0);
+         } else {
+            DIP("beq r%u, r%u, %u", rs, rt, imm);
+
+            if (mode64)
+               dis_branch(False, binop(Iop_CmpEQ64, getIReg(rs), getIReg(rt)),
+                          imm, bstmt);
+            else
+               dis_branch(False, binop(Iop_CmpEQ32, getIReg(rs), getIReg(rt)),
+                          imm, bstmt);
+         }
          break;
 
       case 0x05:  /* BNE */

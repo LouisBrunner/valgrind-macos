@@ -122,6 +122,7 @@ where XXXXXX is the bug number as listed below.
 416667  gcc10 ppc64le impossible constraint in 'asm' in test_isa.
 416753  new 32bit time syscalls for 2038+
 417187  [MIPS] Conditional branch problem since 'grail' changes
+417238  Test memcheck/tests/vbit-test fails on mips64 BE
 417281  s390x: /bin/true segfaults with "grail" enabled
 417427  commit to fix vki_siginfo_t definition created numerous regression
         errors on ppc64

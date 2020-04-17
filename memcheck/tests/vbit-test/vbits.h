@@ -36,7 +36,6 @@ typedef uint64_t uint256_t[4];
 typedef struct {
    unsigned num_bits;
    union {
-      uint8_t   u1;
       uint8_t   u8;
       uint16_t  u16;
       uint32_t  u32;
@@ -51,7 +50,6 @@ typedef struct {
    we do not expect to test with specific floating point values.
    So we don't need to represent them. */
 typedef union {
-   uint8_t   u1;
    uint8_t   u8;
    uint16_t  u16;
    uint32_t  u32;

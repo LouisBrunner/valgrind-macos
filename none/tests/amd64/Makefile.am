@@ -3,6 +3,9 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_cpuid filter_inf_nan filter_stderr gen_insn_test.pl
 
+# Used by avx-1.c and avx_estimate_insn.c
+noinst_HEADERS = avx_tests.h
+
 CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
 
 INSN_TESTS = insn_basic insn_mmx insn_sse insn_sse2 insn_fpu

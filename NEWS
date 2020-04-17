@@ -121,6 +121,7 @@ where XXXXXX is the bug number as listed below.
 416464  Fix false reports for uninitialized memory for PR_CAPBSET_READ/DROP
 416667  gcc10 ppc64le impossible constraint in 'asm' in test_isa.
 416753  new 32bit time syscalls for 2038+
+417281  s390x: /bin/true segfaults with "grail" enabled
 417427  commit to fix vki_siginfo_t definition created numerous regression
         errors on ppc64
 417452  s390_insn_store_emit: dst->tag for HRcVec128
@@ -135,7 +136,10 @@ n-i-bz  Add support for the Linux io_uring system calls
 n-i-bz  sys_statx: don't complain if both |filename| and |buf| are NULL.
 n-i-bz  Fix non-glibc build of test suite with s390x_features
 418004  Grail code additions break ppc64.
+418435  s390x: spurious "Conditional jump or move depends on uninitialised [..]"
 418997  s390x: Support Iex_ITE for float and vector types
+419503  s390x: Avoid modifying registers returned from isel functions
+
 
 Release 3.15.0 (12 April 2019)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

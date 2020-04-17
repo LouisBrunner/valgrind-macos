@@ -170,8 +170,6 @@ of 3.15.0.  It doesn't carry over bugs from earlier versions.
 
 === zz_other/x86 =======================================================
 
--- Wed  4 Mar 10:48:31 CET 2020
-
 .416682  [MIPS-Linux] mmap failed under valgrind
 
 .416753  new 32bit time syscalls for 2038+
@@ -218,6 +216,23 @@ Needs investigation
 
 .418004  Grail code additions break ppc64
 
+.418106  configure error: Valgrind not working with Darwin version 18.14.2
+
+.418756  MAP_FIXED_NOREPLACE mmap flag unsupported
+
+.418840  SIG_IGN doesn't clear pending signal if SIG_IGN is already the handler
+
+.418961  Character encoding issue on website
+
+.419054  Unhandled syscall getcpu on arm32
+
+.419562  PR_SET_PTRACER error with Ubuntu on WSL
+
+.419864  arm32 fe: valgrind: Unrecognised instruction at address 0x5bf24a3
+
+-- as of Fri 17 Apr 16:15:11 CEST 2020
+
+Bug 416760 - ppc64le Assertion 'VG_IS_16_ALIGNED(sizeof(struct rt_sigframe))' failed (edit) -
 ==================
 
 Extras

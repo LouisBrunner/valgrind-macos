@@ -24799,23 +24799,33 @@ static DisResult disInstr_MIPS_WRK ( Long         delta64,
    DIP("\t0x%llx:\t0x%08x\t", (Addr64)guest_PC_curr_instr, cins);
 
    if (delta != 0) {
-      if (branch_or_jump(guest_code + delta - 4)) {
-         if (lastn == NULL && bstmt == NULL) {
-            vassert(0);
-         } else {
-            dres.whatNext = Dis_StopHere;
-
-            if (lastn != NULL) {
-               delay_slot_jump = True;
-            } else if (bstmt != NULL) {
-               delay_slot_branch = True;
-            }
-         }
+      if (branch_or_jump(guest_code + delta - 4)
+          && (lastn != NULL || bstmt != NULL)) {
+         dres.whatNext = Dis_StopHere;
+         delay_slot_jump = (lastn != NULL);
+         delay_slot_branch = (bstmt != NULL);
       }
 
-      if (branch_or_link_likely(guest_code + delta - 4)) {
-         likely_delay_slot = True;
-      }
+      likely_delay_slot = (lastn != NULL)
+                          && branch_or_link_likely(guest_code + delta - 4);
+   }
+
+   // Emit an Illegal instruction in case a branch/jump
+   // instruction is encountered in the delay slot
+   // of an another branch/jump
+   if ((delay_slot_branch || likely_delay_slot || delay_slot_jump) &&
+       (branch_or_jump(guest_code + delta) ||
+        branch_or_link_likely(guest_code + delta))) {
+      if (mode64)
+         putPC(mkU64(guest_PC_curr_instr + 4));
+      else
+         putPC(mkU32(guest_PC_curr_instr + 4));
+
+      dres.jk_StopHere = Ijk_SigILL;
+      dres.whatNext    = Dis_StopHere;
+      lastn = NULL;
+      bstmt = NULL;
+      return dres;
    }
 
    /* Spot "Special" instructions (see comment at top of file). */
@@ -25028,14 +25038,23 @@ decode_failure:
 
 decode_success:
 
+   dres.len = 4;
+   DIP("\n");
+
    /* All decode successes end up here. */
    switch (dres.whatNext) {
       case Dis_Continue:
-         if (mode64)
-            putPC(mkU64(guest_PC_curr_instr + 4));
-         else
-            putPC(mkU32(guest_PC_curr_instr + 4));
-
+         if (branch_or_jump(guest_code + delta) ||
+             branch_or_link_likely(guest_code + delta)) {
+            guest_PC_curr_instr += 4;
+            dres = disInstr_MIPS_WRK(delta64 + 4, archinfo, abiinfo, sigill_diag);
+            dres.len = 8;
+         } else {
+            if (mode64)
+               putPC(mkU64(guest_PC_curr_instr + 4));
+            else
+               putPC(mkU32(guest_PC_curr_instr + 4));
+         }
          break;
 
       case Dis_StopHere:
@@ -25058,9 +25077,6 @@ decode_success:
          else
             putPC(mkU32(guest_PC_curr_instr + 4));
       }
-   dres.len = 4;
-
-   DIP("\n");
 
    return dres;
 

@@ -2366,13 +2366,9 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
          case Ico_U8:
             l = (Long) (Int) (Char) con->Ico.U8;
             break;
-#if 0
-         // Not needed until chasing cond branches in bb_to_IR is enabled on
-         // MIPS.  See comment on And1/Or1 below.
          case Ico_U1:
             l = con->Ico.U1 ? 1 : 0;
             break;
-#endif
          default:
             vpanic("iselIntExpr_R.const(mips)");
       }
@@ -2773,11 +2769,7 @@ static MIPSCondCode iselCondCode_wrk(ISelEnv * env, IRExpr * e)
                r_dst, mode64));
       return MIPScc_NE;
    }
-#if 0
-   // sewardj 2019Dec14: this is my best attempt at And1/Or1, but I am not
-   // sure if it is correct.  In any case it is not needed until chasing cond
-   // branches is enabled on MIPS.  Currently it is disabled, in function bb_to_IR
-   // (see comments there).
+
    if (e->tag == Iex_Binop
        && (e->Iex.Binop.op == Iop_And1 || e->Iex.Binop.op == Iop_Or1)) {
       HReg r_argL = iselWordExpr_R(env, e->Iex.Binop.arg1);
@@ -2798,7 +2790,7 @@ static MIPSCondCode iselCondCode_wrk(ISelEnv * env, IRExpr * e)
                r_dst, mode64));
       return MIPScc_EQ;
    }
-#endif
+
    if (e->tag == Iex_RdTmp) {
       HReg r_dst = iselWordExpr_R_wrk(env, e);
       /* Store result to guest_COND */

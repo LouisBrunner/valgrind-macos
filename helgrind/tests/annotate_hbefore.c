@@ -252,6 +252,35 @@ UWord do_acasW ( UWord* addr, UWord expected, UWord nyu )
    return success;
 }
 
+#elif defined(VGA_nanomips)
+
+/* return 1 if success, 0 if failure */
+UWord do_acasW ( UWord* addr, UWord expected, UWord nyu )
+{
+  UWord success;
+  UWord block[3] = { (UWord)addr, nyu, expected};
+
+   __asm__ __volatile__(
+      "lw     $t0, 0(%1)"        "\n\t"
+      "lw     $t2, 8(%1)"        "\n\t"
+      "lw     $t3, 4(%1)"        "\n\t"
+      "ll     $t1, 0($t0)"       "\n\t"
+      "bnec   $t1, $t2, 1f"      "\n\t"
+      "sc     $t3, 0($t0)"       "\n\t"
+      "move   %0, $t3"           "\n\t"
+      "bc 2f"                    "\n\t"
+      "1:"                       "\n\t"
+      "move   %0, $zero"         "\n\t"
+      "2:"                       "\n\t"
+      : /*out*/ "=r"(success)
+      : /*in*/ "r"(&block[0])
+      : /*trash*/ "t0", "t1", "t2", "t3", "memory"
+   );
+
+   assert(success == 0 || success == 1);
+   return success;
+}
+
 #elif defined(VGA_mips64) && !defined(VGABI_N32)
 
 // mips64

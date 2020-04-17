@@ -5387,7 +5387,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
          else {
             vassert(0);
          }
-         DIP("ldurs%c %s, [%s, #%lld]",
+         DIP("ldurs%c %s, [%s, #%lld]\n",
              ch, nameIRegOrZR(is64, tt), nameIReg64orSP(nn), (Long)simm9);
          return True;
       }

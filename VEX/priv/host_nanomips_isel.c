@@ -194,6 +194,9 @@ static inline Int extractConst(IRConst *c)
       case Ico_U8:
          return (Int)(Char)c->Ico.U8;
 
+      case Ico_U1:
+         return !!c->Ico.U1;
+
       default:
          vpanic("NANOMIPSisel_extractConst() fails");
    }

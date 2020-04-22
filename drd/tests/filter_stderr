@@ -23,7 +23,6 @@ sed \
 -e "/^warning: evaluate_Dwarf3_Expr: unhandled DW_OP_.*/d" \
 -e '/^warning: addVar:.*/d' \
 -e 's/^Allocation context: Data section of .\//Allocation context: BSS section of /' \
--e '/^run: \/usr\/bin\/dsymutil.*/d' \
 -e "s/, in frame #[0-9]* of thread /, in frame #? of thread /" \
 -e "s/(\(functional\|thread\):[0-9]*)/(\1:...)/" \
 -e "s/(tc20_verifywrap.c:261)/(tc20_verifywrap.c:262)/" \
@@ -59,4 +58,3 @@ awk '/^    <frame>$/ { in_frame = 1; line = 0; drd_pthread_intercepts = 0; fn = 
 
 # Anonymise addresses
 $dir/../../tests/filter_addresses
-

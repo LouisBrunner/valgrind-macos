@@ -67,6 +67,10 @@ sed "s/[0-9][0-9]* bytes below stack pointer/.... bytes below stack pointer/" |
 
 # Suppress warnings from incompatible debug info
 sed '/warning: the debug information found in "[^"]*" does not match/d' |
+sed '/warning: no debug symbols in executable/d' | # macOS
 
 # Suppress warnings from Dwarf reader
-sed '/warning: evaluate_Dwarf3_Expr: unhandled DW_OP_/d'
+sed '/warning: evaluate_Dwarf3_Expr: unhandled DW_OP_/d' |
+
+# Remove macOS dsymutil
+sed '/^run: \/usr\/bin\/dsymutil.*/d'

@@ -9,4 +9,3 @@ sed "/^Nulgrind, the minimal Valgrind tool/ , /./ d" |
 
 # Anonymise addresses
 $dir/../../tests/filter_addresses
-

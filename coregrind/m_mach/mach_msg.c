@@ -42,7 +42,6 @@
 #include "pub_core_basics.h"
 #include "pub_core_mach.h"
 
-#include <mach/mach.h>
 #include <mach/port.h>
 #include <mach/message.h>
 
@@ -102,12 +101,6 @@ mach_msg(msg, option, send_size, rcv_size, rcv_name, timeout, notify)
                                timeout, notify);
 
     return mr;
-}
-
-void
-mach_msg_destroy(mach_msg_header_t *msg)
-{
-  // TODO: copy from XNU?
 }
 
 #endif // defined(VGO_darwin) 

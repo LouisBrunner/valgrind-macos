@@ -401,7 +401,7 @@
 #define ARCH_HAS_SOCKET_TYPES 1
 #define HAVE_ARCH_SIGINFO_T   1
 
-#define VKI_RLIM64_INFINITY 0x7fffffffUL
+#define VKI_RLIM_INFINITY 0x7fffffffUL
 
 typedef __signed__ char __vki_s8;
 typedef unsigned   char __vki_u8;

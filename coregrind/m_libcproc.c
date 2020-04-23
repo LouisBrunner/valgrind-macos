@@ -600,44 +600,60 @@ Int VG_(sysctl)(Int *name, UInt namelen, void *oldp, SizeT *oldlenp, void *newp,
 /* Support for getrlimit. */
 Int VG_(getrlimit) (Int resource, struct vki_rlimit *rlim)
 {
-   SysRes res = VG_(mk_SysRes_Error)(VKI_ENOSYS);
+   SysRes res;
    /* res = getrlimit( resource, rlim ); */
+
+#  if defined(__NR_prlimit64) && defined(VKI_RLIM_INFINITY) && defined(VKI_RLIM64_INFINITY)
+   struct vki_rlimit64 new_rlimit;
+   res = VG_(do_syscall4)(__NR_prlimit64, 0, resource, 0, (UWord)&new_rlimit);
+   if (!sr_isError(res)) {
+      if (new_rlimit.rlim_cur == VKI_RLIM_INFINITY)
+         new_rlimit.rlim_cur = VKI_RLIM64_INFINITY;
+      if (new_rlimit.rlim_max == VKI_RLIM_INFINITY)
+         new_rlimit.rlim_max = VKI_RLIM64_INFINITY;
+      rlim->rlim_cur = new_rlimit.rlim_cur;
+      rlim->rlim_max = new_rlimit.rlim_max;
+      return sr_Res(res);
+   }
+   if (sr_Err(res) != VKI_ENOSYS) return -1;
+#  endif
+
 #  ifdef __NR_ugetrlimit
    res = VG_(do_syscall2)(__NR_ugetrlimit, resource, (UWord)rlim);
+   if (!sr_isError(res)) return sr_Res(res);
+   if (sr_Err(res) != VKI_ENOSYS) return -1;
 #  endif
-   if (sr_isError(res) && sr_Err(res) == VKI_ENOSYS)
-#  if defined(VGP_nanomips_linux)
-   {
-      struct vki_rlimit64 new_rlimit;
-      res = VG_(do_syscall4)(__NR_prlimit64, 0, resource, 0, (UWord)&new_rlimit);
-      if (new_rlimit.rlim_cur > 2147483647 || new_rlimit.rlim_max > 2147483647)
-         res = VG_(mk_SysRes_Error)(VKI_ENOSYS);
-      else {
-         rlim->rlim_cur = new_rlimit.rlim_cur;
-         rlim->rlim_max = new_rlimit.rlim_max;
-      }
-   }
-#  else
-      res = VG_(do_syscall2)(__NR_getrlimit, resource, (UWord)rlim);
-#  endif
-   return sr_isError(res) ? -1 : sr_Res(res);
-}
 
+#  ifdef __NR_getrlimit
+   res = VG_(do_syscall2)(__NR_getrlimit, resource, (UWord)rlim);
+   if (!sr_isError(res)) return sr_Res(res);
+#  endif
+
+   return -1;
+}
 
 /* Support for setrlimit. */
 Int VG_(setrlimit) (Int resource, const struct vki_rlimit *rlim)
 {
    SysRes res;
    /* res = setrlimit( resource, rlim ); */
-#  if defined(VGP_nanomips_linux)
+
+#  ifdef __NR_prlimit64
    struct vki_rlimit64 new_rlimit;
    new_rlimit.rlim_cur = rlim->rlim_cur;
    new_rlimit.rlim_max = rlim->rlim_max;
    res = VG_(do_syscall4)(__NR_prlimit64, 0, resource, (UWord)&new_rlimit, 0);
-#  else
-   res = VG_(do_syscall2)(__NR_setrlimit, resource, (UWord)rlim);
+   if (!sr_isError(res)) return sr_Res(res);
+   if (sr_Err(res) != VKI_ENOSYS) return -1;
 #  endif
-   return sr_isError(res) ? -1 : sr_Res(res);
+
+#  ifdef __NR_setrlimit
+   res = VG_(do_syscall2)(__NR_setrlimit, resource, (UWord)rlim);
+   if (!sr_isError(res)) return sr_Res(res);
+   if (sr_Err(res) != VKI_ENOSYS) return -1;
+#  endif
+
+   return -1;
 }
 
 /* Support for prctl. */

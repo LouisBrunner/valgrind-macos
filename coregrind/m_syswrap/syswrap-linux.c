@@ -5997,6 +5997,8 @@ void handle_pre_sys_preadv(ThreadId tid, SyscallStatus* status,
                               count * sizeof(struct vki_iovec))) {
          vec = (struct vki_iovec *)(Addr)vector;
          for (i = 0; i < count; i++) {
+            /* Note: building such a dynamic error string is *not*
+               a pattern to follow.  See bug 417075.  */
             VG_(snprintf) (tmp, 30, "%s(vector[%d])", str, i);
             PRE_MEM_WRITE( tmp, (Addr)vec[i].iov_base, vec[i].iov_len );
          }
@@ -6118,6 +6120,8 @@ void handle_sys_pwritev(ThreadId tid, SyscallStatus* status,
                               count * sizeof(struct vki_iovec))) {
          vec = (struct vki_iovec *)(Addr)vector;
          for (i = 0; i < count; i++) {
+            /* Note: building such a dynamic error string is *not*
+               a pattern to follow.  See bug 417075.  */
             VG_(snprintf) (tmp, 30, "%s(vector[%d])", str, i);
             PRE_MEM_READ( tmp, (Addr)vec[i].iov_base, vec[i].iov_len );
          }

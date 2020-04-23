@@ -75,7 +75,18 @@ void*        VG_(get_error_extra)   ( const Error* err );
    (see pub_tool_tooliface.h print_extra_suppression_info).
 
    If no 'a', 's' or 'extra' of interest needs to be recorded, just use
-   NULL for them.  */
+   NULL for them.
+
+   ATTENTION: 's' should not contain information that is (too) specific
+   to an instance of an error.  For example, 's' can clearly not contain
+   an address, as otherwise no way the user can build a suppression entry
+   matching such a variable error extra string.  It should preferrably not
+   contain offset or array indexes, for similar reason.
+   In other words, 's' should be NULL or should be a static string.
+   Finally, if you change the string 's' from one release to another
+   for the same error, you will introduce backward incompatible changes
+   with the suppression files produced for previous releases.
+   So, don't do that ! */
 extern void VG_(maybe_record_error) ( ThreadId tid, ErrorKind ekind,
                                       Addr a, const HChar* s, void* extra );
 
@@ -85,7 +96,9 @@ extern void VG_(maybe_record_error) ( ThreadId tid, ErrorKind ekind,
    'print_error' dictates whether to print the error, which is a bit of a
    hack that's useful sometimes if you just want to know if the error would
    be suppressed without possibly printing it.  'count_error' dictates
-   whether to add the error in the error total count (another mild hack). */
+   whether to add the error in the error total count (another mild hack).
+
+   ATTENTION: read the 'ATTENTION' above for VG_(maybe_record_error) ! */
 extern Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind,
                                 Addr a, const HChar* s, void* extra,
                                 ExeContext* where, Bool print_error,

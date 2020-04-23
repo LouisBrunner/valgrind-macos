@@ -21,8 +21,6 @@ int main(int argc, char **argv)
             offsetof(siginfo_t, si_errno));
     fprintf(stdout, "offsetof(siginfo_t, si_code)   = %zd\n",
             offsetof(siginfo_t, si_code));
-    fprintf(stdout, "offsetof(siginfo_t, _sifields) = %zd\n",
-            offsetof(siginfo_t, _sifields));
   }
   si = calloc(1, sz);
   si->si_signo = SIGWINCH;

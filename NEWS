@@ -81,6 +81,7 @@ To see details of a given bug, visit
 where XXXXXX is the bug number as listed below.
 
 385386  Assertion failed "szB >= CACHE_ENTRY_SIZE" at m_debuginfo/image.c:517
+400162  Patch: Guard against __GLIBC_PREREQ for musl libc
 400593  In Coregrind, use statx for some internal syscalls if [f]stat[64] fail
 400872  Add nanoMIPS support to Valgrind
 403212  drd/tests/trylock hangs on FreeBSD

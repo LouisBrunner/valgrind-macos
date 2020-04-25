@@ -21,6 +21,9 @@ jobs:
         apt-get: libc6-dbg gdb
     - name: checkout project
       uses: actions/checkout@v1
+    - name: calculate short SHA
+      id: sha
+      run: echo "::set-output name=short::$(git rev-parse --short HEAD)"
     - name: autogen.sh
       run: ./autogen.sh
     - name: configure
@@ -57,7 +60,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v1
       with:
-        name: test-results-${{ env.PLATFORM }}
+        name: test-results-${{ steps.sha.outputs.short }}-${{ env.PLATFORM }}
         path: ${{ env.TEST_FOLDER }}/
 
   build_macos:
@@ -73,6 +76,9 @@ jobs:
         apt-get: libc6-dbg gdb
     - name: checkout project
       uses: actions/checkout@v1
+    - name: calculate short SHA
+      id: sha
+      run: echo "::set-output name=short::$(git rev-parse --short HEAD)"
     - name: autogen.sh
       run: ./autogen.sh
     - name: configure
@@ -109,5 +115,5 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v1
       with:
-        name: test-results-${{ env.PLATFORM }}
+        name: test-results-${{ steps.sha.outputs.short }}-${{ env.PLATFORM }}
         path: ${{ env.TEST_FOLDER }}/

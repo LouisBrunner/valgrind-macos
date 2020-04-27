@@ -153,6 +153,7 @@ n-i-bz  Fix non-glibc build of test suite with s390x_features
 418435  s390x: spurious "Conditional jump or move depends on uninitialised [..]"
 418997  s390x: Support Iex_ITE for float and vector types
 419503  s390x: Avoid modifying registers returned from isel functions
+n-i-bz  MinGW, include/valgrind.h: Fix detection of 64-bit mode
 
 
 Release 3.15.0 (12 April 2019)

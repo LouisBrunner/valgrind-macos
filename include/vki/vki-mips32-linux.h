@@ -367,6 +367,7 @@ struct vki_f_owner_ex {
 #define VKI_RLIMIT_STACK	3   /* max stack size */
 #define VKI_RLIMIT_CORE		4   /* max core file size */
 #define VKI_RLIMIT_NOFILE	5   /* max number of open files */
+#define VKI_RLIM_INFINITY 0x7fffffffUL
 
 //----------------------------------------------------------------------
 // From linux-2.6.35.5/include/asm-mips/socket.h

@@ -56,6 +56,12 @@ support for X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
   - Several memcheck options are now dynamically changeable.
     Use  valgrind --help-dyn-options  to list them.
 
+  - The release 3.15 introduced a backward incompatible change for
+    some suppression entries related to preadv and pwritev syscalls.
+    When reading a suppression entry using the unsupported 3.14 format,
+    valgrind will now produce a warning to say the suppression entry will not
+    work, and suggest the needed change.
+
 * ==================== OTHER CHANGES ====================
 
 * New and modified GDB server monitor features:
@@ -81,6 +87,7 @@ To see details of a given bug, visit
 where XXXXXX is the bug number as listed below.
 
 385386  Assertion failed "szB >= CACHE_ENTRY_SIZE" at m_debuginfo/image.c:517
+400162  Patch: Guard against __GLIBC_PREREQ for musl libc
 400593  In Coregrind, use statx for some internal syscalls if [f]stat[64] fail
 400872  Add nanoMIPS support to Valgrind
 403212  drd/tests/trylock hangs on FreeBSD
@@ -115,14 +122,19 @@ where XXXXXX is the bug number as listed below.
 415136  ARMv8.1 Compare-and-Swap instructions are not supported
 415757  vex x86->IR: 0x66 0xF 0xCE 0x4F (bswapw)
 416239  valgrind crashes when handling clock_adjtime
+416285  Use prlimit64 in VG_(getrlimit) and VG_(setrlimit)
 416286  DRD reports "conflicting load" error on std::mutex::lock()
 416301  s390x: "compare and signal" not supported
 416387  finit_module and bpf syscalls are unhandled on arm64
 416464  Fix false reports for uninitialized memory for PR_CAPBSET_READ/DROP
 416667  gcc10 ppc64le impossible constraint in 'asm' in test_isa.
 416753  new 32bit time syscalls for 2038+
+417075  pwritev(vector[...]) suppression ignored
+        417075 is not fixed, but incompatible supp entries are detected
+        and a warning is produced for these.
 417187  [MIPS] Conditional branch problem since 'grail' changes
 417238  Test memcheck/tests/vbit-test fails on mips64 BE
+417266  Make memcheck/tests/linux/sigqueue usable with musl
 417281  s390x: /bin/true segfaults with "grail" enabled
 417427  commit to fix vki_siginfo_t definition created numerous regression
         errors on ppc64

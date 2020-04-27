@@ -5339,6 +5339,12 @@ struct vki_itimerspec64 {
    struct vki_timespec it_value;
 };
 
+#ifndef VKI_RLIM_INFINITY
+#define VKI_RLIM_INFINITY (~0UL)
+#endif
+
+#define VKI_RLIM64_INFINITY (~0ULL)
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

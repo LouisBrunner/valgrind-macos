@@ -34,10 +34,8 @@ class Valgrind < Formula
       --enable-only64bit
       --build=amd64-darwin
     ]
-    # Look for headers in the SDK on Xcode-only systems: https://bugs.kde.org/show_bug.cgi?id=295084
-    if !MacOS::CLT.installed? || MacOS.version >= 10.14
-      args << "--with-xcode-path=#{MacOS.sdk_path.to_s}"
-    end
+    # System will autodetect where headers are located, so no need for --with-xcode-path anymore
+    # Previously: https://bugs.kde.org/show_bug.cgi?id=295084
 
     system "./autogen.sh" if build.head?
     system "./configure", *args

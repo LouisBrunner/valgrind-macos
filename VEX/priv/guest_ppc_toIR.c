@@ -32955,6 +32955,67 @@ static Bool dis_string_isolate ( UInt prefix, UInt theInstr )
    return True;
 }
 
+static Bool dis_test_LSB_by_bit ( UInt prefix, UInt theInstr )
+{
+#define MAX_FIELDS 16
+   UChar vB_addr  = ifieldRegXB(theInstr);
+   IRTemp vB = newTemp( Ity_V128 );
+   UChar opc1 = ifieldOPC(theInstr);
+   UInt opc2 = IFIELD(theInstr, (31-29), 9);    // bits[21:29]
+   UInt inst_select = IFIELD( theInstr, (31-15), 5);  // bits[11:15]
+   UInt BF = IFIELD( theInstr, (31-8), 3);       // bits[6:8]
+   UInt i;
+   IRTemp all_true[MAX_FIELDS+1];
+   IRTemp all_false[MAX_FIELDS+1];
+   IRTemp tmp128[MAX_FIELDS];
+   IRTemp cc = newTemp(Ity_I32);
+
+   if (!((opc1 == 0x3C) && (opc2 == 0x1DB) && (inst_select == 2)))
+      return False;
+
+   DIP("xvtlsbb %u,v%u\n", BF, vB_addr);
+
+   assign( vB, getVSReg( vB_addr ) );
+   all_true[0] = newTemp( Ity_I1 );
+   all_false[0] = newTemp( Ity_I1 );
+   assign( all_true[0], mkU1( 1 ) );
+   assign( all_false[0], mkU1( 1 ) );
+
+   for (i = 0; i< MAX_FIELDS; i++) {
+      tmp128[i] = newTemp( Ity_I64 );
+      all_true[i+1] = newTemp( Ity_I1 );
+      all_false[i+1] = newTemp( Ity_I1 );
+
+      assign( tmp128[i], binop( Iop_And64,
+                                mkU64( 0x1 ),
+                                unop( Iop_V128to64,
+                                      binop( Iop_ShrV128,
+                                             mkexpr( vB ), mkU8( i*8 ) ) ) ) );
+      assign( all_true[i+1], mkAND1 ( mkexpr( all_true[i] ),
+                                     binop( Iop_CmpEQ64,
+                                            mkU64( 1 ),
+                                            mkexpr( tmp128[i] ) ) ) );
+      assign( all_false[i+1], mkAND1 ( mkexpr( all_false[i] ),
+                                     binop( Iop_CmpEQ64,
+                                            mkU64( 0 ),
+                                            mkexpr( tmp128[i] ) ) ) );
+  }
+
+   assign( cc, binop( Iop_Or32,
+                      binop( Iop_Shl32,
+                            unop( Iop_1Uto32,
+                                   mkexpr( all_true[MAX_FIELDS] ) ),
+                             mkU8( 3 ) ),
+                      binop( Iop_Shl32,
+                             unop( Iop_1Uto32,
+                                   mkexpr( all_false[MAX_FIELDS] ) ),
+                             mkU8( 1 ) ) ) );
+
+   putGST_field( PPC_GST_CR, mkexpr( cc ), BF );
+   return True;
+#undef MAX_FIELDS
+}
+
 static Int dis_nop_prefix ( UInt prefix, UInt theInstr )
 {
    Bool is_prefix   = prefix_instruction( prefix );
@@ -33804,19 +33865,37 @@ DisResult disInstr_PPC_WRK (
          case 0x0B4: case 0x094: // xsredp, xsrsqrtedp
          case 0x0D6: case 0x0B2: // xsrdpic, xsrdpiz
          case 0x092: case 0x232: // xsrdpi, xsrsp
-         case 0x3B6:             // xxbrh, xvxexpdp, xvxexpsp, xvxsigdp
-                                 // xvxsigsp, xvcvhpsp
          case 0x2b6:             // xsxexpdp, xsxsigdp
          case 0x254: case 0x2d4: // xststdcsp, xststdcdp
          case 0x354:             // xvtstdcsp
          case 0x360:case 0x396:  // xviexpsp, xsiexpdp
          case 0x3D4: case 0x3E0: // xvtstdcdp, xviexpdp
-            if (dis_vxs_misc( prefix, theInstr, abiinfo, vsxOpc2, allow_isa_3_0 ))
+            if (dis_vxs_misc( prefix, theInstr, abiinfo, vsxOpc2,
+                              allow_isa_3_0 ))
                goto decode_success;
             goto decode_failure;
-         case 0x08C: case 0x0AC: // xscmpudp, xscmpodp
-            if (dis_vx_cmp( prefix, theInstr, vsxOpc2 )) goto decode_success;
+
+         case 0x3B6: {
+            UInt inst_select = IFIELD( theInstr, 16, 5);
+
+            if (inst_select == 2) {  //xvtlsbb
+               if (dis_test_LSB_by_bit( prefix, theInstr))
+                  goto decode_success;
+               goto decode_failure;
+            }
+
+            // xxbrh, xvxexpdp, xvxexpsp, xvxsigdp
+            // xvxsigsp, xvcvhpsp
+            if (dis_vxs_misc( prefix, theInstr, abiinfo, vsxOpc2,
+                              allow_isa_3_0 ))
+               goto decode_success;
             goto decode_failure;
+         }
+
+         case 0x08C: case 0x0AC: // xscmpudp, xscmpodp
+         if (dis_vx_cmp( prefix, theInstr, vsxOpc2 )) goto decode_success;
+            goto decode_failure;
+
          case 0x0:   case 0x020: // xsaddsp, xssubsp
          case 0x080:             // xsadddp
          case 0x060: case 0x0E0: // xsdivsp, xsdivdp

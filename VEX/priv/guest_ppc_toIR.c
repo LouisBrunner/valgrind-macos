@@ -23571,6 +23571,226 @@ dis_vx_load ( UInt prefix, UInt theInstr )
                            mkU64(0) ) );
       break;
    }
+
+   case 0x00D: // lxvrbx
+   {
+      IRExpr * exp;
+      DIP("lxvrbx v%u,r%u,r%u\n", XT, rA_addr, rB_addr);
+      exp = load( Ity_I64, mkexpr( EA ) );
+
+      if (host_endness == VexEndnessLE)
+         putVSReg( XT, binop( Iop_64HLtoV128,
+                              mkU64( 0x0 ),
+                              binop( Iop_And64, mkU64( 0xFF ), exp ) ) );
+      else
+         putVSReg( XT,
+                   binop( Iop_ShrV128,
+                          binop( Iop_64HLtoV128,
+                                 mkU64( 0x0 ),
+                                 binop( Iop_And64, mkU64( 0xFF ), exp ) ),
+                          mkU8( 15*8 ) ) );   // data is left most byte
+      break;
+   }
+
+   case 0x02D: // lxvrhx
+   {
+      IRExpr * exp;
+
+      DIP("lxvrhx v%u,r%u,r%u\n", XT, rA_addr, rB_addr);
+
+      exp = load( Ity_I64, mkexpr( EA ) );
+
+      if (host_endness == VexEndnessLE)
+         putVSReg( XT, binop( Iop_64HLtoV128,
+                              mkU64( 0x0 ),
+                              binop( Iop_And64, mkU64( 0xFFFF ), exp ) ) );
+      else
+         putVSReg( XT,
+                   binop( Iop_ShrV128,
+                          binop( Iop_64HLtoV128,
+                                 mkU64( 0x0 ),
+                                 binop( Iop_And64, mkU64( 0xFFFF ), exp ) ),
+                          mkU8( 7*16 ) ) );   // data is left most half-word
+      break;
+   }
+
+   case 0x04D: // lxvrwx
+   {
+      IRExpr * exp;
+
+      DIP("lxvrwx v%u,r%u,r%u\n", XT, rA_addr, rB_addr);
+
+      exp = load( Ity_I64, mkexpr( EA ) );
+
+      if (host_endness == VexEndnessLE)
+         putVSReg( XT, binop( Iop_64HLtoV128,
+                              mkU64( 0x0 ),
+                              binop( Iop_And64, mkU64( 0xFFFFFFFF ), exp ) ) );
+      else
+         putVSReg( XT,
+                   binop( Iop_ShrV128,
+                          binop( Iop_64HLtoV128,
+                                 mkU64( 0x0 ),
+                                 binop( Iop_And64,
+                                        mkU64( 0xFFFFFFFF ), exp ) ),
+                          mkU8( 3*32 ) ) );   // data is left most word
+      break;
+   }
+
+   case 0x06D: // lxvrdx
+   {
+      IRExpr * exp;
+
+      DIP("lxvrdx v%u,r%u,r%u\n", XT, rA_addr, rB_addr);
+
+      exp = load( Ity_I64, mkexpr( EA ) );
+
+      if (host_endness == VexEndnessLE)
+         putVSReg( XT, binop( Iop_64HLtoV128,
+                              mkU64( 0x0 ),
+                              binop( Iop_And64,
+                                     mkU64( 0xFFFFFFFFFFFFFFFFULL), exp ) ) );
+      else
+         putVSReg( XT,
+                   binop( Iop_ShrV128,
+                          binop( Iop_64HLtoV128,
+                                 mkU64( 0x0 ),
+                                 binop( Iop_And64,
+                                        mkU64( 0xFFFFFFFFFFFFFFFFULL), exp ) ),
+                          mkU8( 1*64 ) ) );   // data is left most double word
+      break;
+   }
+
+   case 0x08D: // stxvrbx
+   {
+      IRExpr * fetched_exp;
+      IRExpr * store_exp;
+      IRTemp vS = newTemp( Ity_V128 );
+
+      DIP("stxvrbx v%u,r%u,r%u\n", XT, rA_addr, rB_addr);
+
+      fetched_exp = load( Ity_I64, mkexpr( EA ) );
+      assign( vS, getVSReg( XT ) );
+
+      /* Fetch 64 bits, merge byte element 15 into the fetched value and
+       * store.  */
+      if (host_endness == VexEndnessLE) {
+         store_exp = binop( Iop_Or64,
+                            binop( Iop_And64,
+                                   mkU64( 0x00000000000000FF ),
+                                   unop( Iop_V128to64, mkexpr( vS ) ) ),
+                            binop( Iop_And64,
+                                   mkU64( 0xFFFFFFFFFFFFFF00 ),
+                                   fetched_exp ) );
+         store(  mkexpr( EA ),  store_exp );
+      } else {
+         store_exp = binop( Iop_Or64,
+                            binop( Iop_And64,
+                                   mkU64( 0xFF00000000000000 ),
+                                   unop( Iop_V128HIto64, mkexpr( vS ) ) ),
+                            binop( Iop_And64,
+                                   mkU64( 0x00FFFFFFFFFFFFFF ),
+                                   fetched_exp ) );
+         store(  mkexpr( EA ),  store_exp );
+      }
+      break;
+   }
+
+   case 0x0AD: // stxvrhx
+   {
+      IRExpr * fetched_exp;
+      IRExpr * store_exp;
+      IRTemp vS = newTemp( Ity_V128 );
+
+      DIP("stxvrhx v%u,r%u,r%u\n", XT, rA_addr, rB_addr);
+
+      fetched_exp = load( Ity_I64, mkexpr( EA ) );
+      assign( vS, getVSReg( XT ) );
+
+      /* Fetch 64 bits, merge half-word element 7 into the fetched value and
+       * store.  */
+      if (host_endness == VexEndnessLE) {
+         store_exp = binop( Iop_Or64,
+                            binop( Iop_And64,
+                                   mkU64( 0x000000000000FFFF ),
+                                   unop( Iop_V128to64, mkexpr( vS ) ) ),
+                            binop( Iop_And64,
+                                   mkU64( 0xFFFFFFFFFFFF0000 ),
+                                   fetched_exp ) );
+         store(  mkexpr( EA ),  store_exp );
+      } else {
+         store_exp = binop( Iop_Or64,
+                            binop( Iop_And64,
+                                   mkU64( 0xFFFF000000000000 ),
+                                   unop( Iop_V128HIto64, mkexpr( vS ) ) ),
+                            binop( Iop_And64,
+                                   mkU64( 0x0000FFFFFFFFFFFF ),
+                                   fetched_exp ) );
+         store(  mkexpr( EA ),  store_exp );
+      }
+      break;
+   }
+
+   case 0x0CD: // stxvrwx
+   {
+      IRExpr * fetched_exp;
+      IRExpr * store_exp;
+      IRTemp vS = newTemp( Ity_V128 );
+
+      DIP("stxvrwx v%u,r%u,r%u\n", XT, rA_addr, rB_addr);
+
+      fetched_exp = load( Ity_I64, mkexpr( EA ) );
+      assign( vS, getVSReg( XT ) );
+
+      /* Fetch 64 bits, merge word element 3 into the fetched value and
+       * store.  */
+      if (host_endness == VexEndnessLE) {
+         store_exp = binop( Iop_Or64,
+                            binop( Iop_And64,
+                                   mkU64( 0x00000000FFFFFFFF ),
+                                   unop( Iop_V128to64, mkexpr( vS ) ) ),
+                            binop( Iop_And64,
+                                   mkU64( 0xFFFFFFFF00000000 ),
+                                   fetched_exp ) );
+         store(  mkexpr( EA ),  store_exp );
+      } else {
+         store_exp = binop( Iop_Or64,
+                            binop( Iop_And64,
+                                   mkU64( 0xFFFFFFFF00000000 ),
+                                   unop( Iop_V128HIto64, mkexpr( vS ) ) ),
+                            binop( Iop_And64,
+                                   mkU64( 0x00000000FFFFFFFF ),
+                                   fetched_exp ) );
+         store(  mkexpr( EA ),  store_exp );
+      }
+      break;
+   }
+
+   case 0x0ED: // stxvrdx
+   {
+      IRExpr * store_exp;
+      IRTemp vS = newTemp( Ity_V128 );
+
+      DIP("stxvrdx v%u,r%u,r%u\n", XT, rA_addr, rB_addr);
+
+      assign( vS, getVSReg( XT ) );
+
+      /* Fetch 64 bits, merge double word element 1 into the fetched value and
+       * store.  Well, this is just store vS bits[63:0] at EA. */
+      if (host_endness == VexEndnessLE) {
+         store_exp = binop( Iop_And64,
+                            mkU64( 0xFFFFFFFFFFFFFFFF ),
+                            unop( Iop_V128to64, mkexpr( vS ) ) );
+         store(  mkexpr( EA ),  store_exp );
+      } else {
+         store_exp = binop( Iop_And64,
+                            mkU64( 0xFFFFFFFFFFFFFFFF ),
+                            unop( Iop_V128HIto64, mkexpr( vS ) ) );
+         store(  mkexpr( EA ),  store_exp );
+      }
+      break;
+   }
+
    case 0x04C: // lxsiwax (Load VSX Scalar as Integer Word Algebraic Indexed)
    {
       IRExpr * exp;
@@ -34663,6 +34883,21 @@ DisResult disInstr_PPC_WRK (
         // if allow_V is not set, we'll skip trying to decode.
         if (!allow_V) goto decode_noV;
 
+	if (dis_vx_load( prefix, theInstr )) goto decode_success;
+          goto decode_failure;
+
+      case 0x00D: // lxvrbx
+      case 0x02D: // lxvrhx
+      case 0x04D: // lxvrwx
+      case 0x06D: // lxvrdx
+      case 0x08D: // stxvrbx
+      case 0x0AD: // stxvrhx
+      case 0x0CD: // stxvrwx
+      case 0x0ED: // stxvrdx
+        // All of these VSX load instructions use some VMX facilities, so
+        // if allow_V is not set, we'll skip trying to decode.
+        if (!allow_V) goto decode_noV;
+        if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
 	if (dis_vx_load( prefix, theInstr )) goto decode_success;
           goto decode_failure;
 

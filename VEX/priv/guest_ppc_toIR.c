@@ -22500,7 +22500,7 @@ dis_vx_misc ( UInt prefix, UInt theInstr, UInt opc2 )
 
    case 0x4C: //xscmpgedp
       {
-         DIP("xscmpeqdp v%d,v%d,v%d\n", XT, XA, XB);
+         DIP("xscmpgedp v%u,v%u,v%u\n", XT, XA, XB);
          /* compare src 1 >= src 2 */
          /* result of Iop_CmpF64 is 0x40 if operands are equal,
             mask is all 1's if equal. */
@@ -24759,9 +24759,12 @@ dis_vx_scalar_quad_precision ( UInt prefix, UInt theInstr )
    /* XX1-Form */
    UChar opc1 = ifieldOPC( theInstr );
    UInt opc2 = ifieldOPClo10( theInstr );
-   UChar vT_addr = ifieldRegDS( theInstr ) + 32;
-   UChar vA_addr = ifieldRegA( theInstr ) + 32;
-   UChar vB_addr = ifieldRegB( theInstr ) + 32;
+   UChar VRT = ifieldRegDS( theInstr );
+   UChar VRA = ifieldRegA( theInstr );
+   UChar VRB = ifieldRegB( theInstr );
+   UChar vT_addr = VRT + 32;
+   UChar vA_addr = VRA + 32;
+   UChar vB_addr = VRB + 32;
    IRTemp vA = newTemp( Ity_V128 );
    IRTemp vB = newTemp( Ity_V128 );
    IRTemp vT = newTemp( Ity_V128 );
@@ -24778,12 +24781,55 @@ dis_vx_scalar_quad_precision ( UInt prefix, UInt theInstr )
 
    switch (opc2) {
 
+   case 0x044:     // xscmpeqqp (VSX Scalar Compare Equal Quad-Precision X-form)
+      {
+         IRTemp vA_hi = newTemp( Ity_I64 );
+         IRTemp vA_lo = newTemp( Ity_I64 );
+         IRTemp vB_hi = newTemp( Ity_I64 );
+         IRTemp vB_lo = newTemp( Ity_I64 );
+         IRTemp tmp   = newTemp( Ity_I64 );
+         IRTemp src_not_NaN = newTemp( Ity_I64 );
+
+         /* NOTE: exceptions are not implemented, will not set VXSNAN, VXVC or
+            FX registers.  */
+         DIP("xscmpeqqp v%u,v%u,v%u\n", VRT, VRA, VRB);
+
+         assign( vA, getVSReg( vA_addr ) );
+
+         /* neither vA or vB is NaN */
+         assign( src_not_NaN,
+                 unop(Iop_Not64,
+                      unop(Iop_1Sto64,
+                           mkOR1( is_NaN( Ity_V128, vA ),
+                                  is_NaN( Ity_V128, vB ) ) ) ) );
+
+         assign( vA_hi, unop( Iop_V128HIto64, mkexpr( vA ) ) );
+         assign( vA_lo, unop( Iop_V128to64, mkexpr( vA ) ) );
+         assign( vB_hi, unop( Iop_V128HIto64, mkexpr( vB ) ) );
+         assign( vB_lo, unop( Iop_V128to64, mkexpr( vB ) ) );
+
+         assign( tmp,
+                 binop( Iop_And64,
+                        mkexpr( src_not_NaN ),
+                        binop( Iop_And64,
+                               unop( Iop_1Sto64,
+                                     binop( Iop_CmpEQ64,
+                                            mkexpr( vA_hi ),
+                                            mkexpr( vB_hi ) ) ),
+                               unop( Iop_1Sto64,
+                                     binop( Iop_CmpEQ64,
+                                            mkexpr( vA_lo ),
+                                            mkexpr( vB_lo ) ) ) ) ) );
+         assign( vT, binop( Iop_64HLtoV128, mkexpr( tmp ), mkexpr( tmp ) ) );
+      }
+      break;
+
    case 0x064:     // xscpsgnqp (VSX Scalar Copy Sign Quad-Precision)
       {
          IRTemp sign_vA = newTemp( Ity_I64 );
          IRTemp vB_hi = newTemp( Ity_I64 );
 
-         DIP("xscpsgnqp v%d,v%d,v%d\n",  vT_addr, vA_addr, vB_addr);
+         DIP("xscpsgnqp v%u,v%u,v%u\n", VRT, VRA, VRB);
 
          assign( vA, getVSReg(vA_addr) );
 
@@ -24803,6 +24849,64 @@ dis_vx_scalar_quad_precision ( UInt prefix, UInt theInstr )
          break;
       }
 
+   case 0x0C4:     // xscmpgeqp (VSX Scalar Compare Greater Than or
+                   // Equal Quad-Precision X-form)
+      {
+         IRTemp tmp = newTemp( Ity_I64 );
+         IRTemp src_not_NaN = newTemp( Ity_I64 );
+
+         /* NOTE: exceptions are not implemented, will not set VXSNAN, VXVC or
+            FX registers.  */
+         DIP("xscmpgeqp v%u,v%u,v%u\n", VRT, VRA, VRB);
+
+         assign( vA, getVSReg( vA_addr ) );
+
+         /* neither vA or vB is NaN */
+         assign( src_not_NaN,
+                 unop(Iop_Not64,
+                      unop(Iop_1Sto64,
+                           mkOR1( is_NaN( Ity_V128, vA ),
+                                  is_NaN( Ity_V128, vB ) ) ) ) );
+
+         /* vA >= vB is Not( vB > vA) */
+         assign( tmp,
+                 binop( Iop_And64,
+                        mkexpr( src_not_NaN ),
+                        unop( Iop_Not64,
+                              unop( Iop_1Sto64,
+                                    Quad_precision_gt( vB, vA ) ) ) ) ) ;
+         assign( vT, binop( Iop_64HLtoV128, mkexpr( tmp ), mkexpr( tmp ) ) );
+      }
+      break;
+
+   case 0x0E4:     // xscmpgtqp (VSX Scalar Compare Greater Than
+                   // Quad-Precision X-form)
+      {
+         IRTemp tmp = newTemp( Ity_I64 );
+         IRTemp src_not_NaN = newTemp( Ity_I64 );
+
+         /* NOTE: exceptions are not implemented, will not set VXSNAN, VXVC or
+            FX registers.  */
+         DIP("xscmpgtqp v%u,v%u,v%u\n", VRT, VRA, VRB);
+
+         assign( vA, getVSReg( vA_addr ) );
+
+         /* neither vA or vB is NaN */
+         assign( src_not_NaN,
+                 unop(Iop_Not64,
+                      unop(Iop_1Sto64,
+                           mkOR1( is_NaN( Ity_V128, vA ),
+                                  is_NaN( Ity_V128, vB ) ) ) ) );
+
+         assign( tmp,
+                 binop( Iop_And64,
+                        mkexpr( src_not_NaN ),
+                        unop( Iop_1Sto64, Quad_precision_gt( vA, vB ) ) ) );
+
+         assign( vT, binop( Iop_64HLtoV128, mkexpr( tmp ), mkexpr( tmp ) ) );
+      }
+      break;
+
    case 0x084:     // xscmpoqp (VSX Scalar Compare Ordered Quad-Precision)
    case 0x284:     // xscmpuqp (VSX Scalar Compare Unrdered Quad-Precision)
       {
@@ -24815,9 +24919,9 @@ dis_vx_scalar_quad_precision ( UInt prefix, UInt theInstr )
          IRTemp CC = newTemp( Ity_I32 );
 
          if (opc2 == 0x084) {
-            DIP("xscmpoqp %u,v%d,v%u\n",  BF, vA_addr, vB_addr);
+            DIP("xscmpoqp %u,v%d,v%u\n",  BF, VRA, VRB);
          } else {
-            DIP("xscmpuqp %u,v%d,v%u\n",  BF, vA_addr, vB_addr);
+            DIP("xscmpuqp %u,v%d,v%u\n",  BF, VRA, VRB);
          }
 
          assign( vA, getVSReg(vA_addr));
@@ -24916,7 +25020,7 @@ dis_vx_scalar_quad_precision ( UInt prefix, UInt theInstr )
          IRTemp eq_lt_gt = newTemp( Ity_I32 );
          IRTemp CC = newTemp( Ity_I32 );
 
-         DIP("xscmpexpqp %u,v%d,v%u\n",  BF, vA_addr, vB_addr);
+         DIP("xscmpexpqp %u,v%u,v%u\n",  BF, VRA, VRB);
 
          assign( vA, getVSReg(vA_addr));
 
@@ -24981,6 +25085,62 @@ dis_vx_scalar_quad_precision ( UInt prefix, UInt theInstr )
       }
       break;
 
+   case 0x2A4:    // xsmaxcqp (VSX Scalar Maximum Type-C Quad Precision)
+   case 0x2E4:    // xsmincqp (VSX Scalar Minimum Type-C Quad Precision)
+      {
+         IRTemp tmp_cmp = newTemp( Ity_I64 );
+         IRTemp cmp_mask = newTemp( Ity_V128 );
+         IRTemp result = newTemp( Ity_V128 );
+         IRTemp src_not_NaN = newTemp( Ity_V128 );
+         IRTemp tmp_src_not_NaN = newTemp( Ity_I64 );
+
+         /* NOTE: exceptions are not implemented, will not set VXSNAN, VXVC or
+            FX registers.  */
+         assign( vA, getVSReg( vA_addr ) );
+
+         if (opc2 == 0x2A4) {
+            DIP("xsmaxcqp v%u,v%u,v%u\n", VRT, VRA, VRB);
+            assign( tmp_cmp, unop( Iop_1Sto64, Quad_precision_gt( vA, vB ) ) );
+
+         } else {
+            DIP("xsmincqp v%u,v%u,v%u\n", VRT, VRA, VRB);
+            assign( tmp_cmp, unop( Iop_1Sto64, Quad_precision_gt( vB, vA ) ) );
+         }
+
+         /* if either vA or vB is NaN, result is vB */
+         assign( tmp_src_not_NaN,
+                 unop( Iop_Not64,
+                      unop( Iop_1Sto64,
+                            mkOR1( is_NaN( Ity_V128, vA ),
+                                   is_NaN( Ity_V128, vB ) ) ) ) );
+
+         assign( src_not_NaN, binop( Iop_64HLtoV128,
+                                     mkexpr( tmp_src_not_NaN ),
+                                     mkexpr( tmp_src_not_NaN ) ) );
+
+         assign( cmp_mask, binop( Iop_64HLtoV128,
+                                  mkexpr( tmp_cmp ), mkexpr( tmp_cmp ) ) );
+
+         /* comparison is True, then result = vA, otherwise result = vB */
+         assign( result, binop( Iop_OrV128,
+                                binop( Iop_AndV128,
+                                       mkexpr( cmp_mask ),
+                                       mkexpr( vA ) ),
+                                binop( Iop_AndV128,
+                                       unop( Iop_NotV128, mkexpr( cmp_mask ) ),
+                                       mkexpr( vB ) ) ) );
+
+         assign( vT,
+                 binop( Iop_OrV128,
+                        binop( Iop_AndV128,
+                               mkexpr( src_not_NaN ),
+                               mkexpr( result ) ),
+                        binop( Iop_AndV128,
+                               unop( Iop_NotV128, mkexpr( src_not_NaN ) ),
+                               mkexpr( vB ) ) ) );
+      }
+      break;
+
    case 0x2C4:    // xststdcqp (VSX Scalar Quad-Precision Test Data Class)
       {
          UInt BF = IFIELD( theInstr, 23, 3 );
@@ -24993,7 +25153,7 @@ dis_vx_scalar_quad_precision ( UInt prefix, UInt theInstr )
          IRTemp zero = newTemp( Ity_I64 );
          IRTemp dnorm = newTemp( Ity_I64 );
 
-         DIP("xststdcqp  %u,v%d,%u\n",  BF, vB_addr, DCMX_mask);
+         DIP("xststdcqp  %u,v%u,%u\n",  BF, VRB, DCMX_mask);
 
          assign( zero, unop( Iop_1Uto64, is_Zero( Ity_V128, vB ) ) );
          assign( pos, unop( Iop_1Uto64,
@@ -25040,7 +25200,7 @@ dis_vx_scalar_quad_precision ( UInt prefix, UInt theInstr )
 
          switch (inst_select) {
          case 0:
-            DIP("xsabsqp  v%d,v%d\n",  vT_addr, vB_addr);
+            DIP("xsabsqp  v%u,v%u\n",  VRT, VRB);
             assign( vT, binop( Iop_AndV128, mkexpr( vB ),
                                binop( Iop_64HLtoV128,
                                       mkU64( 0x7FFFFFFFFFFFFFFF ),
@@ -25048,7 +25208,7 @@ dis_vx_scalar_quad_precision ( UInt prefix, UInt theInstr )
             break;
 
          case 2:
-            DIP("xsxexpqp  v%d,v%d\n",  vT_addr, vB_addr);
+            DIP("xsxexpqp  v%u,v%u\n",  VRT, VRB);
             assign( vT, binop( Iop_ShrV128,
                                binop( Iop_AndV128, mkexpr( vB ),
                                       binop( Iop_64HLtoV128,
@@ -25058,7 +25218,7 @@ dis_vx_scalar_quad_precision ( UInt prefix, UInt theInstr )
             break;
 
          case 8:
-            DIP("xsnabsqp  v%d,v%d\n",  vT_addr, vB_addr);
+            DIP("xsnabsqp  v%u,v%u\n",  VRT, VRB);
             assign( vT, binop( Iop_OrV128, mkexpr( vB ),
                             binop( Iop_64HLtoV128,
                                    mkU64( 0x8000000000000000 ),
@@ -25066,7 +25226,7 @@ dis_vx_scalar_quad_precision ( UInt prefix, UInt theInstr )
             break;
 
          case 16:
-            DIP("xsnegqp  v%d,v%d\n",  vT_addr, vB_addr);
+            DIP("xsnegqp  v%u,v%u\n",  VRT, VRB);
             assign( vT, binop( Iop_XorV128, mkexpr( vB ),
                             binop( Iop_64HLtoV128,
                                    mkU64( 0x8000000000000000 ),
@@ -25078,7 +25238,7 @@ dis_vx_scalar_quad_precision ( UInt prefix, UInt theInstr )
             IRTemp expZero = newTemp( Ity_I64 );
             IRTemp expInfinity = newTemp( Ity_I64 );
 
-            DIP("xsxsigqp  v%d,v%d\n",  vT_addr, vB_addr);
+            DIP("xsxsigqp  v%u,v%u\n",  VRT, VRB);
 
             assign( expZero, unop( Iop_1Uto64,
                                    binop( Iop_CmpNE64,
@@ -25127,7 +25287,7 @@ dis_vx_scalar_quad_precision ( UInt prefix, UInt theInstr )
       {
          IRTemp exp = newTemp( Ity_I64 );
 
-         DIP("xsiexpqp  v%d,v%d,v%d\n",  vT_addr, vA_addr, vB_addr);
+         DIP("xsiexpqp  v%d,v%d,v%d\n", VRT, VRA, VRB);
 
          assign( vA, getVSReg( vA_addr ) );
          assign( exp, binop( Iop_And64,
@@ -32480,6 +32640,16 @@ DisResult disInstr_PPC_WRK (
       case 0x284: // xscmpuqp
       case 0x2C4: // xststdcqp
       case 0x364: // xsiexpqp
+         if (dis_vx_scalar_quad_precision( prefix, theInstr ))
+	   goto decode_success;
+         goto decode_failure;
+
+      case 0x044: // xscmpeqqp
+      case 0x0C4: // xscmpgeqp
+      case 0x0E4: // xscmpgtqp
+      case 0x2A4: // xsmaxcqp
+      case 0x2E4: // xsmincqp
+         if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
          if (dis_vx_scalar_quad_precision( prefix, theInstr ))
 	   goto decode_success;
          goto decode_failure;

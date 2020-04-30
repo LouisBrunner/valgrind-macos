@@ -144,18 +144,15 @@ where XXXXXX is the bug number as listed below.
 417452  s390_insn_store_emit: dst->tag for HRcVec128
 417578  Add suppressions for glibc DTV leaks
 417906  clone with CLONE_VFORK and no CLONE_VM fails
-418435  s390x: memcmp test yields extra "Conditional jump or move depends on
-        uninitialised value(s)"
-417281  s390x: /bin/true segfaults with "grail" enabled
+418004  Grail code additions break ppc64.
+418435  s390x: spurious "Conditional jump or move depends on uninitialised [..]"
+418997  s390x: Support Iex_ITE for float and vector types
+419503  s390x: Avoid modifying registers returned from isel functions
 n-i-bz  Fix minor one time leaks in dhat.
 n-i-bz  Add --run-cxx-freeres=no in outer args to avoid inner crashes.
 n-i-bz  Add support for the Linux io_uring system calls
 n-i-bz  sys_statx: don't complain if both |filename| and |buf| are NULL.
 n-i-bz  Fix non-glibc build of test suite with s390x_features
-418004  Grail code additions break ppc64.
-418435  s390x: spurious "Conditional jump or move depends on uninitialised [..]"
-418997  s390x: Support Iex_ITE for float and vector types
-419503  s390x: Avoid modifying registers returned from isel functions
 n-i-bz  MinGW, include/valgrind.h: Fix detection of 64-bit mode
 
 

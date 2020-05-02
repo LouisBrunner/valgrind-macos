@@ -62,6 +62,15 @@ support for X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
     valgrind will now produce a warning to say the suppression entry will not
     work, and suggest the needed change.
 
+* exp-sgcheck:
+
+  - The exprimental Stack and Global Array Checking tool has been removed.
+    It only ever worked on x86 and amd64, and even on those it had a
+    high false positive rate and was slow. An alternative for detecting
+    stack and global array overruns is using the AddressSanitizer (ASAN)
+    facility of the GCC and llvm compilers which require you to rebuild
+    your code with -fsanitize=address.
+
 * ==================== OTHER CHANGES ====================
 
 * New and modified GDB server monitor features:

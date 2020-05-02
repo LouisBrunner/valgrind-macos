@@ -60,13 +60,6 @@ and without disturbing the existing structure.</para>
   </listitem>
 
   <listitem>
-    <para><command>SGcheck</command> is an experimental tool that can
-    detect overruns of stack and global arrays.  Its functionality is
-    complementary to that of Memcheck: SGcheck finds problems that
-    Memcheck can't, and vice versa..</para>
-  </listitem>
-
-  <listitem>
     <para><command>BBV</command> is an experimental SimPoint basic block
     vector generator.  It is useful to people doing computer architecture
     research and development.</para>

@@ -2,21 +2,23 @@
 # errors to suppress when an outer runs an inner.
 # The below suppressions are assuming --read-inline-info=yes is used.
 
-#==4649== 16 bytes in 1 blocks are definitely lost in loss record 6 of 131
-#==4649==    at 0x2804262C: vgPlain_arena_malloc (m_mallocfree.c:1771)
-#==4649==    by 0x28042CB2: vgPlain_arena_strdup (m_mallocfree.c:2325)
-#==4649==    by 0x28042CB2: vgPlain_strdup (m_mallocfree.c:2391)
-#==4649==    by 0x280391D9: main_process_cmd_line_options (m_main.c:484)
-#==4649==    by 0x280391D9: valgrind_main (m_main.c:1965)
-#==4649==    by 0x2803DB32: _start_in_C_linux (m_main.c:3107)
-#==4649==    by 0x2803794B: ??? (in /home/philippe/valgrind/inner_trunk_untouched/memcheck/memcheck-x86-linux)
+#==3240== 16 bytes in 1 blocks are definitely lost in loss record 1,723 of 5,952
+#==3240==    at 0x38035B1B: vgPlain_arena_malloc (m_mallocfree.c:1918)
+#==3240==    by 0x38037A96: vgPlain_arena_strdup (m_mallocfree.c:2591)
+#==3240==    by 0x38037A96: vgPlain_strdup (m_mallocfree.c:2663)
+#==3240==    by 0x3808C880: process_option (m_main.c:456)
+#==3240==    by 0x380918AE: early_process_cmd_line_options (m_main.c:909)
+#==3240==    by 0x380918AE: valgrind_main (m_main.c:1492)
+#==3240==    by 0x380918AE: _start_in_C_linux (m_main.c:3043)
+#==3240==    by 0x3808C730: ??? (in /home/philippe/valgrind/git/inner_untouched/callgrind/callgrind-amd64-linux)
 {
    "keep duplicated args forever as tools can make copies"
    Memcheck:Leak
    fun:vgPlain_arena_malloc
    fun:vgPlain_arena_strdup
    fun:vgPlain_strdup
-   fun:main_process_cmd_line_options
+   fun:process_option
+   fun:early_process_cmd_line_options
    fun:valgrind_main
 }
 

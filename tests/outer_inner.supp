@@ -7,10 +7,9 @@
 #==3240==    by 0x38037A96: vgPlain_arena_strdup (m_mallocfree.c:2591)
 #==3240==    by 0x38037A96: vgPlain_strdup (m_mallocfree.c:2663)
 #==3240==    by 0x3808C880: process_option (m_main.c:456)
-#==3240==    by 0x380918AE: early_process_cmd_line_options (m_main.c:909)
-#==3240==    by 0x380918AE: valgrind_main (m_main.c:1492)
-#==3240==    by 0x380918AE: _start_in_C_linux (m_main.c:3043)
-#==3240==    by 0x3808C730: ??? (in /home/philippe/valgrind/git/inner_untouched/callgrind/callgrind-amd64-linux)
+#            ....
+# Note: at startup, we leak twice every option prefixed by the tool name
+# and we leak such option if changed dynamically.
 {
    "keep duplicated args forever as tools can make copies"
    Memcheck:Leak
@@ -18,8 +17,7 @@
    fun:vgPlain_arena_strdup
    fun:vgPlain_strdup
    fun:process_option
-   fun:early_process_cmd_line_options
-   fun:valgrind_main
+
 }
 
 #==4649== 344 bytes in 1 blocks are definitely lost in loss record 75 of 131

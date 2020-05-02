@@ -31208,6 +31208,596 @@ static IRTemp _get_quad_modulo_or_carry(IRExpr * vecA, IRExpr * vecB,
       return carry;
 }
 
+static IRExpr * copy_MSB_bit_fields (  IRExpr *src, UInt size,
+                                       const VexAbiInfo* vbi )
+{
+   IRTemp src_hi = newTemp( Ity_I64 );
+   IRTemp src_lo = newTemp( Ity_I64 );
+   IRTemp ones_hi, ones_lo;
+   ULong extract_mask_hi, extract_mask_lo;
+   UInt num_bits;
+
+   ones_hi = newTemp( Ity_I64 );
+   ones_lo = newTemp( Ity_I64 );
+
+   /* Create 64-bit extract mask, with a 1 in the MSB for each vector element
+      size.  */
+
+   switch (size) {
+   case 8:
+      extract_mask_hi = 0x8080808080808080ULL;
+      extract_mask_lo = 0x8080808080808080ULL;
+      num_bits = 8;
+      break;
+
+   case 16:
+      extract_mask_hi = 0x8000800080008000ULL;
+      extract_mask_lo = 0x8000800080008000ULL;
+      num_bits = 4;
+      break;
+
+   case 32:
+      extract_mask_hi = 0x8000000080000000ULL;
+      extract_mask_lo = 0x8000000080000000ULL;
+      num_bits = 2;
+      break;
+
+   case 64:
+      extract_mask_hi = 0x8000000000000000ULL;
+      extract_mask_lo = 0x8000000000000000ULL;
+      num_bits = 1;
+      break;
+
+   default:
+      /* unsupported element size */
+      vassert(0);
+   }
+
+   assign( src_hi, unop( Iop_V128HIto64, src ) );
+   assign( src_lo, unop( Iop_V128to64, src ) );
+
+   assign( ones_hi, extract_bits_under_mask ( vbi, mkexpr( src_hi ),
+                                              mkU64( extract_mask_hi ),
+                                              mkU64( 1 ) ) );
+   assign( ones_lo, extract_bits_under_mask ( vbi, mkexpr( src_lo ),
+                                              mkU64( extract_mask_lo ),
+                                              mkU64( 1 ) ) );
+
+   /* Concatenate the extracted bits from ones_hi and ones_lo and
+      store in GPR.  Make sure the hi and low bits are left aligned per
+      IBM numbering */
+   return binop( Iop_Or64,
+                 binop( Iop_Shl64,
+                        mkexpr( ones_hi ),
+                        mkU8( num_bits ) ),
+                 mkexpr( ones_lo ) );
+}
+
+static Bool dis_VSR_byte_mask ( UInt prefix, UInt theInstr,
+                                const VexAbiInfo* vbi )
+{
+   UChar RT_addr = ifieldRegDS(theInstr);
+   UChar B_addr = ifieldRegB(theInstr);
+   IRTemp src = newTemp(Ity_I64);
+
+   UInt inst_select = IFIELD( theInstr, 16, 5);
+   IRTemp vRT = newTemp( Ity_V128 );
+   UInt size;
+   ULong extract_mask, shift_by;
+
+
+   /* The various instructions handled by this function use bits[11:15] to
+      specify the instruction in addition to the opc1 (bits[0:5]) and opc2
+      (bits21:31]).  The exception is the mtvsrbmi which uses bits[11:15]
+      for part of the immediate value.  Assign mtvsrbmi a unique inst_select
+      so it can be handled similarly to the other instructions.  This helps
+      simplify the code control flow.  */
+   if (IFIELD(theInstr, 1, 5) == 0xA)    //mtvsrbmi
+      inst_select = 0x9999;
+
+   switch(inst_select) {
+   case 0x0:   // vexpandbm
+      DIP("vexpandbm v%u,r%u\n", RT_addr, B_addr);
+
+      extract_mask = 0x8080808080808080ULL;
+      shift_by = 0x0707070707070707ULL;
+
+      /* Use extract mask to select the MSB from each byte field.  Then
+         use the arithmetic right shift to replicate the MSB into each
+         bit of the element field.  */
+      assign( vRT,
+              binop( Iop_Sar8x16,
+                     binop( Iop_AndV128,
+                            getVReg(B_addr),
+                            binop( Iop_64HLtoV128, mkU64( extract_mask ),
+                                   mkU64( extract_mask ) ) ),
+                     binop( Iop_64HLtoV128, mkU64( shift_by ),
+                            mkU64( shift_by ) ) ) );
+      putVReg( RT_addr, mkexpr( vRT ) );
+      return True;
+
+   case 0x1:   // vexpandhm
+      DIP("vexpandhm v%u,r%u\n", RT_addr, B_addr);
+
+      extract_mask = 0x8000800080008000ULL;
+      shift_by = 0x000F000F000F000FULL;
+
+      /* Use extract mask to select the MSB from each byte field.  Then
+         use the arithmetic right shift to replicate the MSB into each
+         bit of the element field.  */
+      assign( vRT,
+              binop( Iop_Sar16x8,
+                     binop( Iop_AndV128,
+                            getVReg(B_addr),
+                            binop( Iop_64HLtoV128, mkU64( extract_mask ),
+                                   mkU64( extract_mask ) ) ),
+                     binop( Iop_64HLtoV128, mkU64( shift_by ),
+                            mkU64( shift_by ) ) ) );
+      putVReg( RT_addr, mkexpr( vRT ) );
+      return True;
+
+   case 0x2:   // vexpandwm
+      DIP("vexpandwm v%u,r%u\n", RT_addr, B_addr);
+
+      extract_mask = 0x8000000080000000ULL;
+      shift_by = 0x0000001F0000001FULL;
+
+      /* Use extract mask to select the MSB from each byte field.  Then
+         use the arithmetic right shift to replicate the MSB into each
+         bit of the element field.  */
+      assign( vRT,
+              binop( Iop_Sar32x4,
+                     binop( Iop_AndV128,
+                            getVReg(B_addr),
+                            binop( Iop_64HLtoV128, mkU64( extract_mask ),
+                                   mkU64( extract_mask ) ) ),
+                     binop( Iop_64HLtoV128, mkU64( shift_by ),
+                            mkU64( shift_by ) ) ) );
+      putVReg( RT_addr, mkexpr( vRT ) );
+      return True;
+
+   case 0x3:   // vexpanddm
+      DIP("vexpanddm v%u,r%u\n", RT_addr, B_addr);
+      extract_mask = 0x8000000080000000ULL;
+      shift_by = 0x000003F000003FULL;
+
+      /* Use extract mask to select the MSB from each byte field.  Then
+         use the arithmetic right shift to replicate the MSB into each
+         bit of the element field.  */
+      assign( vRT,
+              binop( Iop_Sar64x2,
+                     binop( Iop_AndV128,
+                            getVReg(B_addr),
+                            binop( Iop_64HLtoV128, mkU64( extract_mask ),
+                                   mkU64( extract_mask ) ) ),
+                     binop( Iop_64HLtoV128, mkU64( shift_by ),
+                            mkU64( shift_by ) ) ) );
+      putVReg( RT_addr, mkexpr( vRT ) );
+      return True;
+
+   case 0x4:   // vexpandqm
+      {
+         IRTemp ones = newTemp( Ity_I64 );
+         DIP("vexpandqm v%u,r%u\n", RT_addr, B_addr);
+
+         assign( src, binop( Iop_Shr64,
+                             unop( Iop_V128HIto64, getVReg( B_addr) ),
+                             mkU8( 63 ) ) );
+         assign( ones,
+                 unop( Iop_1Sto64,
+                       binop( Iop_CmpEQ64,
+                              mkU64( 1 ),
+                                 binop( Iop_And64,
+                                        mkU64( 0x1 ),
+                                        mkexpr( src ) ) ) ) );
+         putVReg( RT_addr, binop( Iop_64HLtoV128,
+                                   mkexpr( ones ), mkexpr( ones ) ) );
+      }
+      return True;
+
+   case 0x8:   // vextractbm
+      DIP("vextractbm v%u,r%u\n", RT_addr, B_addr);
+      size = 8;
+      putIReg( RT_addr, copy_MSB_bit_fields( getVReg( B_addr ), size, vbi ) );
+      return True;
+
+   case 0x9:   // vextracthm
+      DIP("vextracthm v%u,r%u\n", RT_addr, B_addr);
+      size = 16;
+      putIReg( RT_addr, copy_MSB_bit_fields( getVReg( B_addr ), size, vbi ) );
+      return True;
+
+   case 0xA:   // vextractwm
+      DIP("vextractwm v%u,r%u\n", RT_addr, B_addr );
+      size = 32;
+      putIReg( RT_addr, copy_MSB_bit_fields( getVReg( B_addr ), size, vbi ) );
+      return True;
+
+   case 0xB:   // vextractdm
+      DIP("vextractdm v%u,r%u\n", RT_addr, B_addr);
+      size = 64;
+      putIReg( RT_addr, copy_MSB_bit_fields( getVReg( B_addr ), size, vbi ) );
+      return True;
+
+   case 0xC:   // vextractqm
+      DIP("vextractqm v%u,r%u\n", RT_addr, B_addr);
+      putIReg( RT_addr, binop( Iop_Shr64,
+                               unop( Iop_V128HIto64, getVReg( B_addr ) ),
+                               mkU8 (63) ) );
+      return True;
+
+   case 0x10:   // mtvsrbm
+      {
+         IRTemp src_upper  = newTemp(Ity_I32);
+         IRTemp src_upper2 = newTemp(Ity_I32);
+         IRTemp src_upper4 = newTemp(Ity_I32);
+         IRTemp src_lower  = newTemp(Ity_I32);
+         IRTemp src_lower2 = newTemp(Ity_I32);
+         IRTemp src_lower4 = newTemp(Ity_I32);
+         IRTemp tmp128 = newTemp(Ity_V128);
+
+         DIP("mtvsrbm v%u,r%u\n", RT_addr, B_addr);
+
+         /* Copy the lower 8-bits of the 16 bit mask to lower 8 byte elements
+            and copy the upper 8-bits of the 16 bit mask to the upper 8 byte
+            elements.  */
+         assign( src_upper, binop( Iop_Shr32,
+                                   binop( Iop_And32, mkU32( 0xFF00 ),
+                                          unop ( Iop_64to32,
+                                                 getIReg( B_addr ) ) ),
+                                   mkU8( 0x8 ) ) );
+         assign( src_lower, binop( Iop_And32, mkU32( 0xFF ),
+                                          unop ( Iop_64to32,
+                                                 getIReg( B_addr ) ) ) );
+
+         assign( src_upper2,
+                 binop( Iop_Or32, mkexpr( src_upper ),
+                        binop( Iop_Shl32, mkexpr( src_upper ), mkU8( 8 ) ) ) );
+
+         assign( src_upper4,
+                 binop( Iop_Or32, mkexpr( src_upper2 ),
+                        binop( Iop_Shl32, mkexpr( src_upper2 ),
+                               mkU8( 16 ) ) ) );
+
+         assign( src_lower2,
+                 binop( Iop_Or32, mkexpr( src_lower ),
+                        binop( Iop_Shl32, mkexpr( src_lower ), mkU8( 8 ) ) ) );
+
+         assign( src_lower4,
+                 binop( Iop_Or32, mkexpr( src_lower2 ),
+                        binop( Iop_Shl32, mkexpr( src_lower2 ),
+                               mkU8( 16 ) ) ) );
+
+         /* Shift the bits in each element so the bit corresponding to the
+            element position is in the MSB.  */
+         assign( tmp128, binop( Iop_Shl8x16,
+                                binop( Iop_64HLtoV128,
+                                       binop( Iop_32HLto64,
+                                              mkexpr( src_upper4 ),
+                                              mkexpr( src_upper4 ) ),
+                                       binop( Iop_32HLto64,
+                                              mkexpr( src_lower4 ),
+                                              mkexpr( src_lower4 ) ) ),
+                                binop( Iop_64HLtoV128,
+                                       mkU64( 0x0001020304050607ULL ),
+                                       mkU64( 0x0001020304050607ULL ) ) ) );
+         /* Do an arithmetic shift to replicate MSB to all bit positions.  */
+         assign( vRT, binop( Iop_Sar8x16, mkexpr( tmp128 ),
+                                binop( Iop_64HLtoV128,
+                                       mkU64( 0x0707070707070707ULL ),
+                                       mkU64( 0x0707070707070707ULL ) ) ) );
+         putVReg( RT_addr, mkexpr( vRT ) );
+         return True;
+      }
+
+   case 0x9999:   // mtvsrbmi
+      {
+         ULong immediate16, immediate16_hi, immediate16_lo;
+         ULong immediate64_hi, immediate64_lo;
+         IRTemp tmp128 = newTemp(Ity_V128);
+
+         DIP("mtvsrbmi v%u,r%u\n", RT_addr, B_addr);
+
+         /* Replicate the immediate fields b0|b1|b2 to all 16 vector
+            elements */
+         immediate16 = (IFIELD(theInstr, 0,  1) )   | //b2  bits[31]
+            (IFIELD(theInstr, 16, 5) << 1)  |         //b1  bits[11:15]
+            (IFIELD(theInstr, 6, 10) << 6 );          //b0  bits[16:25]
+
+         immediate16_hi = (immediate16 >> 8) & 0xFF;
+         immediate16_lo = immediate16 & 0xFF;
+
+         immediate64_hi = ((immediate16_hi << 32) | (immediate16_hi << 56) |
+                           (immediate16_hi << 48) | (immediate16_hi << 40) |
+                           (immediate16_hi << 32) | (immediate16_hi << 16) |
+                           (immediate16_hi << 8) | immediate16_hi);
+
+         immediate64_lo = ((immediate16_lo << 32) | (immediate16_lo << 56) |
+                           (immediate16_lo << 48) | (immediate16_lo << 40) |
+                           (immediate16_lo << 32) | (immediate16_lo << 16) |
+                           (immediate16_lo << 8) | immediate16_lo);
+
+         /* Shift the bits in each element so the bit corresponding to the
+            element position is in the MSB.  */
+         assign( tmp128, binop( Iop_Shl8x16,
+                                binop( Iop_64HLtoV128,
+                                       mkU64( immediate64_hi ),
+                                       mkU64( immediate64_lo ) ),
+                                binop( Iop_64HLtoV128,
+                                       mkU64( 0x0001020304050607ULL ),
+                                       mkU64( 0x0001020304050607ULL ) ) ) );
+         /* Do an arithmetic shift to replicate MSB to all bit positions.  */
+         assign( vRT, binop( Iop_Sar8x16, mkexpr( tmp128 ),
+                                binop( Iop_64HLtoV128,
+                                       mkU64( 0x0707070707070707ULL ),
+                                       mkU64( 0x0707070707070707ULL ) ) ) );
+         putVReg( RT_addr, mkexpr( vRT ) );
+         return True;
+      }
+
+   case 0x11:   // mtvsrhm
+      {
+         DIP("mtvsrhm v%u,r%u\n", RT_addr, B_addr);
+
+         IRTemp src2 = newTemp(Ity_I32);
+         IRTemp tmp128 = newTemp(Ity_V128);
+
+         /* Copy the 16 bit mask to all eight of the 16-bit elements.  */
+         assign( src, binop( Iop_And32, mkU32( 0xFFFF ),
+                             unop ( Iop_64to32,
+                                    getIReg( B_addr ) ) ) );
+
+         assign( src2,
+                 binop( Iop_Or32, mkexpr( src ),
+                        binop( Iop_Shl32, mkexpr( src ), mkU8( 16 ) ) ) );
+
+         /* Shift the bits in each element so the bit corresponding to the
+            element position is in the MSB.  */
+         assign( tmp128, binop( Iop_Shl16x8,
+                                binop( Iop_64HLtoV128,
+                                       binop( Iop_32HLto64,
+                                              mkexpr( src2 ),
+                                              mkexpr( src2 ) ),
+                                       binop( Iop_32HLto64,
+                                              mkexpr( src2 ),
+                                              mkexpr( src2 ) ) ),
+                                binop( Iop_64HLtoV128,
+                                       mkU64( 0x0000000100020003ULL ),
+                                       mkU64( 0x0004000500060007ULL ) ) ) );
+         /* Do an arithmetic shift to replicate MSB to all bit positions.  */
+         assign( vRT, binop( Iop_Sar16x8, mkexpr( tmp128 ),
+                                binop( Iop_64HLtoV128,
+                                       mkU64( 0x000F000F000F000FULL ),
+                                       mkU64( 0x000F000F000F000FULL ) ) ) );
+         putVReg( RT_addr, mkexpr( vRT ) );
+         return True;
+      }
+
+   case 0x12:   // mtvsrwm
+      {
+         IRTemp tmp128 = newTemp(Ity_V128);
+         IRTemp src32 = newTemp(Ity_I32);
+
+         DIP("mtvsrwm v%u,r%u\n", RT_addr, B_addr);
+
+         /* Copy the 32 bit mask to all four of the 32-bit elements.  */
+         assign( src32, binop( Iop_Shl32,
+                               unop ( Iop_64to32, getIReg( B_addr ) ),
+                               mkU8( 28 ) ) );
+
+         /* Shift the bits in each element so the bit corresponding to the
+            element position is in the MSB.  */
+         assign( tmp128, binop( Iop_Shl32x4,
+                                binop( Iop_64HLtoV128,
+                                       binop( Iop_32HLto64,
+                                              mkexpr( src32 ),
+                                              mkexpr( src32 ) ),
+                                       binop( Iop_32HLto64,
+                                              mkexpr( src32 ),
+                                              mkexpr( src32 ) ) ),
+                                binop( Iop_64HLtoV128,
+                                       mkU64( 0x0000000000000001ULL ),
+                                       mkU64( 0x0000000200000003ULL ) ) ) );
+
+         /* Do an arithmetic shift to replicate MSB to all bit positions.  */
+         assign( vRT, binop( Iop_Sar32x4, mkexpr( tmp128 ),
+                                binop( Iop_64HLtoV128,
+                                       mkU64( 0x0000001F0000001FULL ),
+                                       mkU64( 0x0000001F0000001FULL ) ) ) );
+         putVReg( RT_addr, mkexpr( vRT ) );
+         return True;
+      }
+
+   case 0x13:   // mtvsrdm
+      {
+         IRTemp tmp128 = newTemp(Ity_V128);
+
+         DIP("mtvsrdm v%u,r%u\n", RT_addr, B_addr);
+
+         /* Copy the 64 bit mask to both of the 64-bit elements.  */
+         assign( src, binop( Iop_Shl64,
+                             getIReg( B_addr ),
+                             mkU8( 62 ) ) );
+
+         /* Shift the bits in each element so the bit corresponding to the
+            element position is in the MSB.  */
+         assign( tmp128, binop( Iop_Shl64x2,
+                                binop( Iop_64HLtoV128,
+                                       mkexpr( src ),
+                                       mkexpr( src ) ),
+                                binop( Iop_64HLtoV128,
+                                       mkU64( 0x0000000000000000ULL ),
+                                       mkU64( 0x0000000000000001ULL ) ) ) );
+
+         /* Do an arithmetic shift to replicate MSB to all bit positions.  */
+         assign( vRT, binop( Iop_Sar64x2, mkexpr( tmp128 ),
+                                binop( Iop_64HLtoV128,
+                                       mkU64( 0x000000000000003FULL ),
+                                       mkU64( 0x000000000000003FULL ) ) ) );
+         putVReg( RT_addr, mkexpr( vRT ) );
+         return True;
+      }
+
+   case 0x14:   // mtvsrqm
+      {
+         IRTemp ones = newTemp( Ity_I64 );
+         DIP("mtvsrqm v%u,r%u\n", RT_addr, B_addr);
+
+         assign( src, getIReg( B_addr ) );
+         assign( ones,
+                 unop( Iop_1Sto64,
+                       binop( Iop_CmpEQ64,
+                              mkU64( 1 ),
+                                 binop( Iop_And64,
+                                        mkU64( 0x1 ),
+                                        mkexpr( src ) ) ) ) );
+         putVReg( RT_addr, binop( Iop_64HLtoV128,
+                                   mkexpr( ones ), mkexpr( ones ) ) );
+         return True;
+      }
+
+   case 0x18:   // vcntmbb MP=0
+   case 0x19:   // vcntmbb MP=1
+      {
+         UInt MP = IFIELD(theInstr, 16, 1);    // bits[15] IBM numbering
+         IRTemp bit_mask = newTemp(Ity_I64);
+         IRTemp bit_cnt = newTemp(Ity_I64);
+
+         DIP("vcntmbb r%u,v%u,%u\n", RT_addr, B_addr, MP);
+
+         size = 8;
+         assign( bit_mask, copy_MSB_bit_fields( getVReg( B_addr ), size,
+                                                vbi ) );
+
+         if ( MP == 1) {
+            assign( bit_cnt, binop( Iop_Shl64,
+                                    popcnt64( vbi, mkexpr( bit_mask ) ),
+                                    mkU8( 56 ) ) );
+
+         } else {
+            /* Need to complement the bit mask then count the ones.  */
+            assign( bit_cnt,
+                    binop( Iop_Shl64,
+                           popcnt64( vbi,
+                                     binop( Iop_And64,
+                                            mkU64( 0xFFFF ),
+                                            unop( Iop_Not64,
+                                                  mkexpr( bit_mask ) ) ) ),
+                           mkU8( 56 ) ) );
+         }
+         putIReg( RT_addr, mkexpr( bit_cnt ) );
+         return True;
+      }
+
+   case 0x1A:   // vcntmbh MP=0
+   case 0x1B:   // vcntmbh MP=1
+      {
+         UInt MP = IFIELD(theInstr, 16, 1);    // bits[15] IBM numbering
+         IRTemp bit_mask = newTemp(Ity_I64);
+         IRTemp bit_cnt = newTemp(Ity_I64);
+
+         DIP("vcntmbh r%u,v%u,%u\n", RT_addr, B_addr, MP);
+
+         size = 16;
+         assign( bit_mask, copy_MSB_bit_fields( getVReg( B_addr ), size,
+                                                vbi ) );
+
+         /* Result is in IBM bits [0:6] */
+         if ( MP == 1) {
+            assign( bit_cnt,
+                    binop( Iop_Shl64,
+                           popcnt64( vbi, mkexpr( bit_mask ) ),
+                           mkU8( 57 ) ) );
+
+         } else {
+            /* Need to complement the bit mask then count the ones.  */
+            assign( bit_cnt,
+                    binop( Iop_Shl64,
+                           popcnt64( vbi,
+                                     binop( Iop_And64,
+                                            mkU64( 0xFF ),
+                                            unop( Iop_Not64,
+                                                  mkexpr( bit_mask ) ) ) ),
+                           mkU8( 57 ) ) );
+         }
+         putIReg( RT_addr, mkexpr( bit_cnt ) );
+         return True;
+      }
+
+   case 0x1C:   // vcntmbw MP=0
+   case 0x1D:   // vcntmbw MP=1
+      {
+         UInt MP = IFIELD(theInstr, 16, 1);    // bits[15] IBM numbering
+         IRTemp bit_mask = newTemp(Ity_I64);
+         IRTemp bit_cnt = newTemp(Ity_I64);
+
+         DIP("vcntmbw r%u,v%u,%u\n", RT_addr, B_addr, MP);
+
+         size = 32;
+         assign( bit_mask, copy_MSB_bit_fields( getVReg( B_addr ), size,
+                                                vbi) );
+
+         if ( MP == 1) {
+            assign( bit_cnt,
+                    binop( Iop_Shl64,
+                           popcnt64( vbi, mkexpr( bit_mask ) ),
+                           mkU8( 58 ) ) );
+
+         } else {
+            /* Need to complement the bit mask then count the ones.  */
+            assign( bit_cnt,
+                    binop( Iop_Shl64,
+                           popcnt64( vbi,
+                                     binop( Iop_And64,
+                                            mkU64( 0xF ),
+                                            unop( Iop_Not64,
+                                                  mkexpr( bit_mask ) ) ) ),
+                           mkU8( 58 ) ) );
+         }
+         putIReg( RT_addr, mkexpr( bit_cnt ) );
+         return True;
+      }
+
+   case 0x1E:   // vcntmbd MP=0
+   case 0x1F:   // vcntmbd MP=1
+      {
+         UInt MP = IFIELD(theInstr, 16, 1);    // bits[15] IBM numbering
+         IRTemp bit_mask = newTemp(Ity_I64);
+         IRTemp bit_cnt = newTemp(Ity_I64);
+
+         DIP("vcntmbd r%u,v%u,%u\n", RT_addr, B_addr, MP);
+
+         size = 64;
+         assign( bit_mask, copy_MSB_bit_fields( getVReg( B_addr ), size,
+                                                vbi ) );
+
+         /* Result is in IBM bits [0:4] */
+         if ( MP == 1) {
+            assign( bit_cnt,
+                    binop( Iop_Shl64,
+                           popcnt64( vbi, mkexpr( bit_mask ) ),
+                           mkU8( 59 ) ) );
+
+         } else {
+            /* Need to complement the bit mask then count the ones.  */
+            assign( bit_cnt,
+                    binop( Iop_Shl64,
+                           popcnt64( vbi,
+                                     binop( Iop_And64,
+                                            mkU64( 0x3 ),
+                                            unop( Iop_Not64,
+                                                  mkexpr( bit_mask ) ) ) ),
+                           mkU8( 59 ) ) );
+         }
+         putIReg( RT_addr, mkexpr( bit_cnt ) );
+         return True;
+      }
+
+   default:
+      /* Unkown opc2 value for the dis_VSR_byte_mask function.  */
+      return False;
+   }
+}
 
 static Bool dis_av_quad ( UInt prefix, UInt theInstr )
 {
@@ -36541,6 +37131,20 @@ DisResult disInstr_PPC_WRK (
    case 0x04:
       /* AltiVec instructions */
 
+      opc2 = IFIELD(theInstr, 1, 5);
+      switch (opc2) {
+      case 0xA:            // mtvsrbmi
+         if (!allow_V) goto decode_noV;
+         if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
+         if (dis_VSR_byte_mask( prefix, theInstr, abiinfo ))
+            goto decode_success;
+         goto decode_failure;
+         break;
+
+      default:
+         break;  // Fall through...
+      }
+
       opc2 = IFIELD(theInstr, 0, 6);
       switch (opc2) {
       /* AV Mult-Add, Mult-Sum */
@@ -36896,6 +37500,16 @@ DisResult disInstr_PPC_WRK (
          if (dis_av_extend_sign_count_zero( prefix, theInstr,
                                             allow_isa_3_0 ))
 
+            goto decode_success;
+         goto decode_failure;
+
+      case 0x642: // mtvsrbm, mtvsrhm, mtvswm, mtvsdm, mtvsqm, mtvsrbmi
+                  // vcntmbb, vcntmbh, vcntmbw, vcntmbd
+                  // vexpandbm, vexpandhm, vexpandwm, vexpanddm, vexpandqm
+                  // vextractbm, vextracthm, vextractwm, vextractdm, vextractqm
+         if (!allow_V) goto decode_noV;
+         if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
+         if (dis_VSR_byte_mask( prefix, theInstr, abiinfo))
             goto decode_success;
          goto decode_failure;
 

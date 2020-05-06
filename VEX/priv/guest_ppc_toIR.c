@@ -274,10 +274,29 @@ static Bool OV32_CA32_supported = False;
 #define SIGN_BIT32  0x80000000
 #define SIGN_MASK32 0x7fffffff
 
+/* The instruction size can be either 4 byte (word instruction) or 8 bytes
+   (prefix instruction) starting with ISA 3.1 */
+#define WORD_INST_SIZE    4
+#define PREFIX_INST_SIZE  8
 
 /*------------------------------------------------------------*/
 /*--- Debugging output                                     ---*/
 /*------------------------------------------------------------*/
+
+/* Pre DIP macro for prefix instruction printing.  */
+#define pDIP(flag,format, args...)     \
+   if (vex_traceflags & VEX_TRACE_FE){				\
+     if (flag) {vex_printf("p"); vex_printf(format, ## args);}	\
+     else {vex_printf(format, ## args); vex_printf("\n");}}
+
+/* Post DIP macro to print additional args for prefix instruction printing.  */
+#define DIPp(flag,format, args...)     	\
+   if (vex_traceflags & VEX_TRACE_FE) {				\
+     if (flag) {vex_printf(format, ## args); vex_printf("\n");}}
+
+/* Post DIP macro with no additional args for prefix instruction printing.  */
+#define DIPn(flag)                     \
+   if (vex_traceflags & VEX_TRACE_FE) {if (flag) vex_printf("\n");}
 
 #define DIP(format, args...)           \
    if (vex_traceflags & VEX_TRACE_FE)  \
@@ -532,7 +551,11 @@ static ULong MASK64( UInt begin, UInt end )
 
 static Addr64 nextInsnAddr( void )
 {
-   return guest_CIA_curr_instr + 4;
+   /* Note in the case of a prefix instruction, delta has already been
+      incremented by WORD_INST_SIZE to move past the prefix part of the
+      instruction.  So only need to increment by WORD_INST_SIZE to get to
+      the start of the next instruction.  */
+   return guest_CIA_curr_instr + WORD_INST_SIZE;
 }
 
 
@@ -1602,6 +1625,9 @@ typedef enum {
    DWORD
 } _popcount_data_type;
 
+/*-----------------------------------------------------------*/
+/*---  IR popcount helpers                                ---*/
+/*-----------------------------------------------------------*/
 /* Generate an IR sequence to do a popcount operation on the supplied
    IRTemp, and return a new IRTemp holding the result.  'ty' may be
    Ity_I32 or Ity_I64 only. */
@@ -3027,7 +3053,44 @@ static void set_XER_OV_OV32_ADDEX ( IRType ty, IRExpr* res,
    }
 }
 
+/*-----------------------------------------------------------*/
+/*---  Prefix instruction helpers                         ---*/
+/*-----------------------------------------------------------*/
+/* ENABLE_PREFIX_CHECK is for development purposes.  Turn off for production
+   releases to improve performance.  */
+#define ENABLE_PREFIX_CHECK  0
 
+#if ENABLE_PREFIX_CHECK
+#define PREFIX_CHECK { vassert( !prefix_instruction( prefix ) ); }
+#else
+#define PREFIX_CHECK { }
+#endif
+
+/* Bits 0:5 of all prefix instructions are assigned the primary opcode
+   value 0b000001. 0b000001 is not available for use as a primary opcode for
+   either word instructions or suffixes of prefixed instructions.  */
+
+#define PREFIX_INST 0x1
+#define PREFIX_NOP_INVALID  -1
+
+#define CONCAT(_aa,_bb,_cc) ((_aa) << (_cc) | (_bb))
+
+/* The codes for the prefix types */
+#define pType0  0  /* Eight-Byte Load/Store Instructions */
+#define pType1  1  /* Eight-Byte Register-to-Register Instructions */
+#define pType2  2  /* Modified Load/Store Instructions */
+#define pType3  3  /* Modified Register-to-Register Instructions */
+
+static int prefix_instruction ( UInt instr )
+{
+  /* Format of first 4 bytes of prefix instruction
+     bits [0:5]  -  must be 0x1 identifying this as a prefix inst
+     bits [6:7]  -  prefix instruction type.  */
+  UChar opcode = IFIELD( instr, 26, 6);
+
+  if (opcode == PREFIX_INST) return True;
+  return False;
+}
 
 /*------------------------------------------------------------*/
 /*--- Read/write to guest-state                           --- */
@@ -5107,7 +5170,7 @@ static void storeTMfailure( Addr64 err_address, ULong tm_reason,
 /*
   Integer Arithmetic Instructions
 */
-static Bool dis_int_mult_add ( UInt theInstr )
+static Bool dis_int_mult_add ( UInt prefix, UInt theInstr )
 {
    /* VA-Form */
    UChar rD_addr = ifieldRegDS( theInstr );
@@ -5130,6 +5193,9 @@ static Bool dis_int_mult_add ( UInt theInstr )
    assign( rA, getIReg( rA_addr ) );
    assign( rB, getIReg( rB_addr ) );
    assign( rC, getIReg( rC_addr ) );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    switch (opc2) {
    case 0x30:  // maddhd  multiply-add High doubleword signed
@@ -5207,7 +5273,7 @@ static Bool dis_int_mult_add ( UInt theInstr )
    return True;
 }
 
-static Bool dis_int_arith ( UInt theInstr )
+static Bool dis_int_arith ( UInt prefix, UInt theInstr )
 {
    /* D-Form, XO-Form */
    UChar opc1    = ifieldOPC(theInstr);
@@ -5226,6 +5292,9 @@ static Bool dis_int_arith ( UInt theInstr )
    IRTemp rD     = newTemp(ty);
 
    Bool do_rc = False;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( rA, getIReg(rA_addr) );
    assign( rB, getIReg(rB_addr) );         // XO-Form: rD, rA, rB
@@ -5876,7 +5945,7 @@ static Bool dis_int_arith ( UInt theInstr )
    return True;
 }
 
-static Bool dis_modulo_int ( UInt theInstr )
+static Bool dis_modulo_int ( UInt prefix, UInt theInstr )
 {
    /* X-Form */
    UChar opc1    = ifieldOPC( theInstr );
@@ -5886,6 +5955,9 @@ static Bool dis_modulo_int ( UInt theInstr )
    UChar rD_addr = ifieldRegDS( theInstr );
    IRType ty     = mode64 ? Ity_I64 : Ity_I32;
    IRTemp rD     = newTemp( ty );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    switch (opc1) {
    /* X-Form */
@@ -6258,7 +6330,7 @@ static Bool dis_modulo_int ( UInt theInstr )
 /*
   Byte Compare Instructions
 */
-static Bool dis_byte_cmp ( UInt theInstr )
+static Bool dis_byte_cmp ( UInt prefix, UInt theInstr )
 {
    /* X-Form */
    UChar opc1 = ifieldOPC(theInstr);
@@ -6269,6 +6341,9 @@ static Bool dis_byte_cmp ( UInt theInstr )
    IRTemp rB     = newTemp(Ity_I64);
    UChar L    = toUChar( IFIELD( theInstr, 21, 1 ) );
    UChar BF   = toUChar( IFIELD( theInstr, 23, 3 ) );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( rA, getIReg(rA_addr) );
    assign( rB, getIReg(rB_addr) );
@@ -6376,11 +6451,14 @@ static Bool dis_byte_cmp ( UInt theInstr )
 /*
  * Integer Miscellaneous instructions
  */
-static Bool dis_int_misc ( UInt theInstr )
+static Bool dis_int_misc ( UInt prefix, UInt theInstr )
 {
    Int wc = IFIELD(theInstr, 21, 2);
    UChar opc1 = ifieldOPC(theInstr);
    UInt  opc2 = ifieldOPClo10(theInstr);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if ( opc1 != 0x1F ) {
       vex_printf("dis_modulo_int(ppc)(opc1)\n");
@@ -6416,7 +6494,7 @@ static Bool dis_int_misc ( UInt theInstr )
 /*
   Integer Compare Instructions
 */
-static Bool dis_int_cmp ( UInt theInstr )
+static Bool dis_int_cmp ( UInt prefix, UInt theInstr )
 {
    /* D-Form, X-Form */
    UChar opc1    = ifieldOPC(theInstr);
@@ -6432,6 +6510,9 @@ static Bool dis_int_cmp ( UInt theInstr )
    IRType ty = mode64 ? Ity_I64 : Ity_I32;
    IRExpr *a = getIReg(rA_addr);
    IRExpr *b;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (!mode64 && flag_L==1) {  // L==1 invalid for 32 bit.
       vex_printf("dis_int_cmp(ppc)(flag_L)\n");
@@ -6580,7 +6661,7 @@ static Bool dis_int_cmp ( UInt theInstr )
 /*
   Integer Logical Instructions
 */
-static Bool dis_int_logic ( UInt theInstr )
+static Bool dis_int_logic ( UInt prefix, UInt theInstr )
 {
    /* D-Form, X-Form */
    UChar opc1    = ifieldOPC(theInstr);
@@ -6596,6 +6677,9 @@ static Bool dis_int_logic ( UInt theInstr )
    IRTemp rA     = newTemp(ty);
    IRTemp rB     = newTemp(ty);
    Bool do_rc    = False;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( rS, getIReg(rS_addr) );
    assign( rB, getIReg(rB_addr) );
@@ -6971,7 +7055,7 @@ static Bool dis_int_logic ( UInt theInstr )
 /*
   Integer Parity Instructions
 */
-static Bool dis_int_parity ( UInt theInstr )
+static Bool dis_int_parity ( UInt prefix, UInt theInstr )
 {
    /* X-Form */
    UChar opc1    = ifieldOPC(theInstr);
@@ -7003,6 +7087,9 @@ static Bool dis_int_parity ( UInt theInstr )
    IRTemp iLo    = newTemp(Ity_I32);
    IROp to_bit   = (mode64 ? Iop_64to1 : Iop_32to1);
    IROp shr_op   = (mode64 ? Iop_Shr64 : Iop_Shr32);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc1 != 0x1f || rB_addr || b0) {
       vex_printf("dis_int_parity(ppc)(0x1F,opc1:rB|b0)\n");
@@ -7100,7 +7187,7 @@ static Bool dis_int_parity ( UInt theInstr )
 /*
   Integer Rotate Instructions
 */
-static Bool dis_int_rot ( UInt theInstr )
+static Bool dis_int_rot ( UInt prefix, UInt theInstr )
 {
    /* M-Form, MDS-Form */
    UChar opc1    = ifieldOPC(theInstr);
@@ -7123,6 +7210,9 @@ static Bool dis_int_rot ( UInt theInstr )
    IRExpr *r;
    UInt   mask32;
    ULong  mask64;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( rS, getIReg(rS_addr) );
    assign( rB, getIReg(rB_addr) );
@@ -7350,7 +7440,7 @@ static Bool dis_int_rot ( UInt theInstr )
 /*
   Integer Load Instructions
 */
-static Bool dis_int_load ( UInt theInstr )
+static Bool dis_int_load ( UInt prefix, UInt theInstr )
 {
    /* D-Form, X-Form, DS-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -7366,6 +7456,9 @@ static Bool dis_int_load ( UInt theInstr )
    IRType  ty     = mode64 ? Ity_I64 : Ity_I32;
    IRTemp  EA     = newTemp(ty);
    IRExpr* val;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    switch (opc1) {
    case 0x1F: // register offset
@@ -7648,7 +7741,7 @@ static Bool dis_int_load ( UInt theInstr )
 /*
   Integer Store Instructions
 */
-static Bool dis_int_store ( UInt theInstr, const VexAbiInfo* vbi )
+static Bool dis_int_store ( UInt prefix, UInt theInstr, const VexAbiInfo* vbi )
 {
    /* D-Form, X-Form, DS-Form */
    UChar opc1    = ifieldOPC(theInstr);
@@ -7666,6 +7759,9 @@ static Bool dis_int_store ( UInt theInstr, const VexAbiInfo* vbi )
    IRTemp rB     = newTemp(ty);
    IRTemp EA     = newTemp(ty);
    
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
+
    assign( rB, getIReg(rB_addr) );
    assign( rS, getIReg(rS_addr) );
    
@@ -7874,7 +7970,7 @@ static Bool dis_int_store ( UInt theInstr, const VexAbiInfo* vbi )
 /*
   Integer Load/Store Multiple Instructions
 */
-static Bool dis_int_ldst_mult ( UInt theInstr )
+static Bool dis_int_ldst_mult ( UInt prefix, UInt theInstr )
 {
    /* D-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -7890,6 +7986,9 @@ static Bool dis_int_ldst_mult ( UInt theInstr )
    UInt    r      = 0;
    UInt    ea_off = 0;
    IRExpr* irx_addr;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( EA, ea_rAor0_simm( rA_addr, simm16 ) );
 
@@ -8018,7 +8117,7 @@ void generate_stsw_sequence ( IRTemp tNBytes,   // # bytes, :: Ity_I32
    }
 }
 
-static Bool dis_int_ldst_str ( UInt theInstr, /*OUT*/Bool* stopHere )
+static Bool dis_int_ldst_str ( UInt prefix, UInt theInstr, /*OUT*/Bool* stopHere )
 {
    /* X-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -8033,6 +8132,9 @@ static Bool dis_int_ldst_str ( UInt theInstr, /*OUT*/Bool* stopHere )
    IRType ty      = mode64 ? Ity_I64 : Ity_I32;
    IRTemp t_EA    = newTemp(ty);
    IRTemp t_nbytes = IRTemp_INVALID;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    *stopHere = False;
 
@@ -8186,7 +8288,7 @@ static IRExpr* /* :: Ity_I32 */ branch_cond_ok( UInt BO, UInt BI )
 /*
   Integer Branch Instructions
 */
-static Bool dis_branch ( UInt theInstr, 
+static Bool dis_branch ( UInt prefix, UInt theInstr,
                          const VexAbiInfo* vbi,
                          /*OUT*/DisResult* dres )
 {
@@ -8209,6 +8311,9 @@ static Bool dis_branch ( UInt theInstr,
    IRExpr*  e_nia     = mkSzImm(ty, nextInsnAddr());
    IRConst* c_nia     = mkSzConst(ty, nextInsnAddr());
    IRTemp   lr_old    = newTemp(ty);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    /* Hack to pass through code that just wants to read the PC */
    if (theInstr == 0x429F0005) {
@@ -8390,7 +8495,7 @@ static Bool dis_branch ( UInt theInstr,
 /*
  *  PC relative instruction
  */
-static Bool dis_pc_relative ( UInt theInstr )
+static Bool dis_pc_relative ( UInt prefix, UInt theInstr )
 {
    /* DX-Form */
    UChar opc1 = ifieldOPC(theInstr);
@@ -8401,6 +8506,9 @@ static Bool dis_pc_relative ( UInt theInstr )
    UChar rT_addr = ifieldRegDS(theInstr);
    UInt  opc2    = ifieldOPClo5(theInstr);
    IRType ty     = mode64 ? Ity_I64 : Ity_I32;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if ( opc1 != 0x13) {
       vex_printf("dis_pc_relative(ppc)(opc1)\n");
@@ -8441,7 +8549,7 @@ static Bool dis_pc_relative ( UInt theInstr )
 /*
   Condition Register Logical Instructions
  */
-static Bool dis_cond_logic ( UInt theInstr )
+static Bool dis_cond_logic ( UInt prefix, UInt theInstr )
 {
    /* XL-Form */
    UChar opc1      = ifieldOPC(theInstr);
@@ -8456,6 +8564,9 @@ static Bool dis_cond_logic ( UInt theInstr )
    IRTemp crbD     = newTemp(Ity_I32);
    IRTemp crbA     = newTemp(Ity_I32);
    IRTemp crbB     = newTemp(Ity_I32);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc1 != 19 || b0 != 0) {
       vex_printf("dis_cond_logic(ppc)(opc1)\n");
@@ -8625,7 +8736,7 @@ static Bool do_trap ( UChar TO,
    return False; /* not an unconditional trap */
 }
 
-static Bool dis_trapi ( UInt theInstr,
+static Bool dis_trapi ( UInt prefix, UInt theInstr,
                         /*OUT*/DisResult* dres )
 {
    /* D-Form */
@@ -8637,6 +8748,9 @@ static Bool dis_trapi ( UInt theInstr,
    Addr64 cia     = guest_CIA_curr_instr;
    IRType ty      = mode64 ? Ity_I64 : Ity_I32;
    Bool   uncond  = False;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    switch (opc1) {
    case 0x03: // twi  (Trap Word Immediate, PPC32 p548)
@@ -8676,7 +8790,7 @@ static Bool dis_trapi ( UInt theInstr,
    return True;
 }
 
-static Bool dis_trap ( UInt theInstr,
+static Bool dis_trap ( UInt prefix, UInt theInstr,
                         /*OUT*/DisResult* dres )
 {
    /* X-Form */
@@ -8687,6 +8801,9 @@ static Bool dis_trap ( UInt theInstr,
    Addr64 cia     = guest_CIA_curr_instr;
    IRType ty      = mode64 ? Ity_I64 : Ity_I32;
    Bool   uncond  = False;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (ifieldBIT0(theInstr) != 0)
       return False;
@@ -8734,10 +8851,13 @@ static Bool dis_trap ( UInt theInstr,
 /*
   System Linkage Instructions
 */
-static Bool dis_syslink ( UInt theInstr, 
+static Bool dis_syslink ( UInt prefix, UInt theInstr,
                           const VexAbiInfo* abiinfo, DisResult* dres )
 {
    IRType ty = mode64 ? Ity_I64 : Ity_I32;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (theInstr != 0x44000002) {
       vex_printf("dis_syslink(ppc)(theInstr)\n");
@@ -8772,7 +8892,7 @@ static Bool dis_syslink ( UInt theInstr,
   check any stores it does.  Instead, the reservation is cancelled when
   the scheduler switches to another thread (run_thread_for_a_while()).
 */
-static Bool dis_memsync ( UInt theInstr )
+static Bool dis_memsync ( UInt prefix, UInt theInstr )
 {
    /* X-Form, XL-Form */
    UChar opc1    = ifieldOPC(theInstr);
@@ -8789,6 +8909,9 @@ static Bool dis_memsync ( UInt theInstr )
 
    IRType ty     = mode64 ? Ity_I64 : Ity_I32;
    IRTemp EA     = newTemp(ty);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( EA, ea_rAor0_idxd( rA_addr, rB_addr ) );
 
@@ -9182,7 +9305,7 @@ static Bool dis_memsync ( UInt theInstr )
 /*
   Integer Shift Instructions
 */
-static Bool dis_int_shift ( UInt theInstr )
+static Bool dis_int_shift ( UInt prefix, UInt theInstr )
 {
    /* X-Form, XS-Form */
    UChar opc1    = ifieldOPC(theInstr);
@@ -9202,6 +9325,9 @@ static Bool dis_int_shift ( UInt theInstr )
    IRTemp  rS_lo32    = newTemp(Ity_I32);
    IRTemp  rB_lo32    = newTemp(Ity_I32);
    IRExpr* e_tmp;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( rS, getIReg(rS_addr) );
    assign( rB, getIReg(rB_addr) );
@@ -9437,7 +9563,7 @@ static IRExpr* /* :: Ity_I32 */ gen_byterev16 ( IRTemp t )
       );
 }
 
-static Bool dis_int_ldst_rev ( UInt theInstr )
+static Bool dis_int_ldst_rev ( UInt prefix, UInt theInstr )
 {
    /* X-Form */
    UChar opc1    = ifieldOPC(theInstr);
@@ -9452,6 +9578,9 @@ static Bool dis_int_ldst_rev ( UInt theInstr )
    IRTemp EA = newTemp(ty);
    IRTemp w1 = newTemp(Ity_I32);
    IRTemp w2 = newTemp(Ity_I32);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc1 != 0x1F || b0 != 0) {
       vex_printf("dis_int_ldst_rev(ppc)(opc1|b0)\n");
@@ -9544,7 +9673,7 @@ static Bool dis_int_ldst_rev ( UInt theInstr )
 /*
   Processor Control Instructions
 */
-static Bool dis_proc_ctl ( const VexAbiInfo* vbi, UInt theInstr )
+static Bool dis_proc_ctl ( const VexAbiInfo* vbi, UInt prefix, UInt theInstr )
 {
    UChar opc1     = ifieldOPC(theInstr);
    
@@ -9567,6 +9696,10 @@ static Bool dis_proc_ctl ( const VexAbiInfo* vbi, UInt theInstr )
 
    IRType ty = mode64 ? Ity_I64 : Ity_I32;
    IRTemp rS = newTemp(ty);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
+
    assign( rS, getIReg(rS_addr) );
 
    /* Reorder SPR field as per PPC32 p470 */
@@ -10021,7 +10154,7 @@ static Bool dis_proc_ctl ( const VexAbiInfo* vbi, UInt theInstr )
 /*
   Cache Management Instructions
 */
-static Bool dis_cache_manage ( UInt         theInstr, 
+static Bool dis_cache_manage ( UInt prefix, UInt theInstr,
                                DisResult*   dres,
                                const VexArchInfo* guest_archinfo )
 {
@@ -10036,6 +10169,9 @@ static Bool dis_cache_manage ( UInt         theInstr,
    Bool  is_dcbzl = False;
 
    IRType ty     = mode64 ? Ity_I64 : Ity_I32;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    // Check for valid hint values for dcbt and dcbtst as currently described in
    // ISA 2.07.  If valid, then we simply set b21to25 to zero since we have no
@@ -10346,7 +10482,7 @@ static IRExpr * Complement_non_NaN( IRExpr * value, IRExpr * nan_mask )
 /*
   Floating Point Load Instructions
 */
-static Bool dis_fp_load ( UInt theInstr )
+static Bool dis_fp_load ( UInt prefix, UInt theInstr )
 {
    /* X-Form, D-Form */
    UChar opc1      = ifieldOPC(theInstr);
@@ -10364,6 +10500,9 @@ static Bool dis_fp_load ( UInt theInstr )
    IRTemp rB     = newTemp(ty);
    IRTemp iHi    = newTemp(Ity_I32);
    IRTemp iLo    = newTemp(Ity_I32);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( rA, getIReg(rA_addr) );
    assign( rB, getIReg(rB_addr) );
@@ -10484,7 +10623,7 @@ static Bool dis_fp_load ( UInt theInstr )
 /*
   Floating Point Store Instructions
 */
-static Bool dis_fp_store ( UInt theInstr )
+static Bool dis_fp_store ( UInt prefix, UInt theInstr )
 {
    /* X-Form, D-Form */
    UChar opc1      = ifieldOPC(theInstr);
@@ -10501,6 +10640,9 @@ static Bool dis_fp_store ( UInt theInstr )
    IRTemp EA     = newTemp(ty);
    IRTemp rA     = newTemp(ty);
    IRTemp rB     = newTemp(ty);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( frS, getFReg(frS_addr) );
    assign( rA,  getIReg(rA_addr) );
@@ -10612,7 +10754,7 @@ static Bool dis_fp_store ( UInt theInstr )
 /*
   Floating Point Arith Instructions
 */
-static Bool dis_fp_arith ( UInt theInstr )
+static Bool dis_fp_arith ( UInt prefix, UInt theInstr )
 {
    /* A-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -10639,6 +10781,9 @@ static Bool dis_fp_arith ( UInt theInstr )
       simulating exceptions, the exception status will appear to be
       zero.  Hence cr1 should be cleared if this is a . form insn. */
    Bool clear_CR1 = True;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( frA, getFReg(frA_addr));
    assign( frB, getFReg(frB_addr));
@@ -10850,7 +10995,7 @@ static Bool dis_fp_arith ( UInt theInstr )
 /*
   Floating Point Mult-Add Instructions
 */
-static Bool dis_fp_multadd ( UInt theInstr )
+static Bool dis_fp_multadd ( UInt prefix, UInt theInstr )
 {
    /* A-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -10881,6 +11026,9 @@ static Bool dis_fp_multadd ( UInt theInstr )
       simulating exceptions, the exception status will appear to be
       zero.  Hence cr1 should be cleared if this is a . form insn. */
    Bool clear_CR1 = True;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    /* Bind the rounding mode expression to a temp; there's no
       point in creating gratuitous CSEs, as we know we'll need 
@@ -11352,7 +11500,7 @@ static IRExpr * do_fp_tdiv(IRTemp frA_int, IRTemp frB_int)
                  binop( Iop_Shl32, mkexpr(fe_flag), mkU8( 1 ) ) );
 }
 
-static Bool dis_fp_tests ( UInt theInstr )
+static Bool dis_fp_tests ( UInt prefix, UInt theInstr )
 {
    UChar opc1     = ifieldOPC(theInstr);
    UChar crfD     = toUChar( IFIELD( theInstr, 23, 3 ) );
@@ -11360,6 +11508,9 @@ static Bool dis_fp_tests ( UInt theInstr )
    UChar b0       = ifieldBIT0(theInstr);
    UInt  opc2     = ifieldOPClo10(theInstr);
    IRTemp frB_I64     = newTemp(Ity_I64);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc1 != 0x3F || b0 != 0 ){
       vex_printf("dis_fp_tests(ppc)(ftdiv)\n");
@@ -11419,7 +11570,7 @@ static Bool dis_fp_tests ( UInt theInstr )
 /*
   Floating Point Compare Instructions
 */
-static Bool dis_fp_cmp ( UInt theInstr )
+static Bool dis_fp_cmp ( UInt prefix, UInt theInstr )
 {   
    /* X-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -11435,6 +11586,9 @@ static Bool dis_fp_cmp ( UInt theInstr )
 
    IRTemp frA     = newTemp(Ity_F64);
    IRTemp frB     = newTemp(Ity_F64);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc1 != 0x3F || b21to22 != 0 || b0 != 0) {
       vex_printf("dis_fp_cmp(ppc)(instr)\n");
@@ -11516,7 +11670,7 @@ static Bool dis_fp_cmp ( UInt theInstr )
 /*
   Floating Point Rounding/Conversion Instructions
 */
-static Bool dis_fp_round ( UInt theInstr )
+static Bool dis_fp_round ( UInt prefix, UInt theInstr )
 {
    /* X-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -11542,6 +11696,10 @@ static Bool dis_fp_round ( UInt theInstr )
       simulating exceptions, the exception status will appear to be
       zero.  Hence cr1 should be cleared if this is a . form insn. */
    Bool clear_CR1 = True;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
+
    if ((!(opc1 == 0x3F || opc1 == 0x3B)) || b16to20 != 0) {
       vex_printf("dis_fp_round(ppc)(instr)\n");
       return False;
@@ -11729,7 +11887,7 @@ putFR:
 /*
   Floating Point Pair Instructions
 */
-static Bool dis_fp_pair ( UInt theInstr )
+static Bool dis_fp_pair ( UInt prefix, UInt theInstr )
 {
    /* X-Form/DS-Form */
    UChar  opc1         = ifieldOPC(theInstr);
@@ -11747,6 +11905,9 @@ static Bool dis_fp_pair ( UInt theInstr )
    IRTemp frT_lo       = newTemp(Ity_F64);
    UChar b0            = ifieldBIT0(theInstr);
    Bool is_load        = 0;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    switch (opc1) {
    case 0x1F: // register offset
@@ -11986,7 +12147,7 @@ static Bool dis_fp_pair ( UInt theInstr )
 /*
   Floating Point Merge Instructions
 */
-static Bool dis_fp_merge ( UInt theInstr )
+static Bool dis_fp_merge ( UInt prefix, UInt theInstr )
 {
    /* X-Form */
    UInt  opc2     = ifieldOPClo10(theInstr);
@@ -11997,6 +12158,9 @@ static Bool dis_fp_merge ( UInt theInstr )
    IRTemp frD = newTemp(Ity_F64);
    IRTemp frA = newTemp(Ity_F64);
    IRTemp frB = newTemp(Ity_F64);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( frA, getFReg(frA_addr));
    assign( frB, getFReg(frB_addr));
@@ -12040,7 +12204,7 @@ static Bool dis_fp_merge ( UInt theInstr )
 /*
   Floating Point Move Instructions
 */
-static Bool dis_fp_move ( UInt theInstr )
+static Bool dis_fp_move ( UInt prefix, UInt theInstr )
 {
    /* X-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -12056,6 +12220,9 @@ static Bool dis_fp_move ( UInt theInstr )
    IRTemp frA;
    IRTemp signA;
    IRTemp hiD;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc1 != 0x3F || (frA_addr != 0 && opc2 != 0x008)) {
       vex_printf("dis_fp_move(ppc)(instr)\n");
@@ -12141,12 +12308,15 @@ static Bool dis_fp_move ( UInt theInstr )
 /*
   Floating Point Status/Control Register Instructions
 */
-static Bool dis_fp_scr ( UInt theInstr, Bool GX_level )
+static Bool dis_fp_scr ( UInt prefix, UInt theInstr, Bool GX_level )
 {
    /* Many forms - see each switch case */
    UChar opc1    = ifieldOPC(theInstr);
    UInt  opc2    = ifieldOPClo10(theInstr);
    UChar flag_rC = ifieldBIT0(theInstr);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc1 != 0x3F) {
       vex_printf("dis_fp_scr(ppc)(instr)\n");
@@ -13078,7 +13248,7 @@ static IRExpr * Check_unordered(IRExpr * val)
 /*------------------------------------------------------------*/
 
 /* DFP Arithmetic instructions */
-static Bool dis_dfp_arith(UInt theInstr)
+static Bool dis_dfp_arith( UInt prefix, UInt theInstr )
 {
    UInt opc2 = ifieldOPClo10( theInstr );
    UChar frS_addr = ifieldRegDS( theInstr );
@@ -13098,6 +13268,9 @@ static Bool dis_dfp_arith(UInt theInstr)
     * zero.  Hence cr1 should be cleared if this is a . form insn.
     */
    Bool clear_CR1 = True;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( frA, getDReg( frA_addr ) );
    assign( frB, getDReg( frB_addr ) );
@@ -13136,7 +13309,7 @@ static Bool dis_dfp_arith(UInt theInstr)
 }
 
 /* Quad DFP Arithmetic instructions */
-static Bool dis_dfp_arithq(UInt theInstr)
+static Bool dis_dfp_arithq( UInt prefix, UInt theInstr )
 {
    UInt opc2 = ifieldOPClo10( theInstr );
    UChar frS_addr = ifieldRegDS( theInstr );
@@ -13156,6 +13329,9 @@ static Bool dis_dfp_arithq(UInt theInstr)
     * zero.  Hence cr1 should be cleared if this is a . form insn.
     */
    Bool clear_CR1 = True;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( frA, getDReg_pair( frA_addr ) );
    assign( frB, getDReg_pair( frB_addr ) );
@@ -13194,7 +13370,7 @@ static Bool dis_dfp_arithq(UInt theInstr)
 }
 
 /* DFP 64-bit logical shift instructions  */
-static Bool dis_dfp_shift(UInt theInstr) {
+static Bool dis_dfp_shift( UInt prefix, UInt theInstr ) {
    UInt opc2       = ifieldOPClo9( theInstr );
    UChar frS_addr  = ifieldRegDS( theInstr );
    UChar frA_addr  = ifieldRegA( theInstr );
@@ -13204,6 +13380,9 @@ static Bool dis_dfp_shift(UInt theInstr) {
    IRTemp frA = newTemp( Ity_D64 );
    IRTemp frS = newTemp( Ity_D64 );
    Bool clear_CR1 = True;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( frA, getDReg( frA_addr ) );
 
@@ -13231,7 +13410,7 @@ static Bool dis_dfp_shift(UInt theInstr) {
 }
 
 /* Quad DFP  logical shift instructions  */
-static Bool dis_dfp_shiftq(UInt theInstr) {
+static Bool dis_dfp_shiftq( UInt prefix, UInt theInstr ) {
    UInt opc2       = ifieldOPClo9( theInstr );
    UChar frS_addr  = ifieldRegDS( theInstr );
    UChar frA_addr  = ifieldRegA( theInstr );
@@ -13241,6 +13420,9 @@ static Bool dis_dfp_shiftq(UInt theInstr) {
    IRTemp frA = newTemp( Ity_D128 );
    IRTemp frS = newTemp( Ity_D128 );
    Bool clear_CR1 = True;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( frA, getDReg_pair( frA_addr ) );
 
@@ -13268,7 +13450,7 @@ static Bool dis_dfp_shiftq(UInt theInstr) {
 }
 
 /* DFP 64-bit format conversion instructions */
-static Bool dis_dfp_fmt_conv(UInt theInstr) {
+static Bool dis_dfp_fmt_conv( UInt prefix, UInt theInstr ) {
    UInt opc2      = ifieldOPClo10( theInstr );
    UChar frS_addr = ifieldRegDS( theInstr );
    UChar frB_addr = ifieldRegB( theInstr );
@@ -13277,6 +13459,9 @@ static Bool dis_dfp_fmt_conv(UInt theInstr) {
    IRTemp frB;
    IRTemp frS;
    Bool clear_CR1 = True;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    switch (opc2) {
    case 0x102: //dctdp
@@ -13334,7 +13519,7 @@ static Bool dis_dfp_fmt_conv(UInt theInstr) {
 }
 
 /* Quad DFP format conversion instructions */
-static Bool dis_dfp_fmt_convq(UInt theInstr) {
+static Bool dis_dfp_fmt_convq( UInt prefix, UInt theInstr ) {
    UInt opc2      = ifieldOPClo10( theInstr );
    UChar frS_addr = ifieldRegDS( theInstr );
    UChar frB_addr = ifieldRegB( theInstr );
@@ -13345,6 +13530,9 @@ static Bool dis_dfp_fmt_convq(UInt theInstr) {
    IRTemp frS128  = newTemp( Ity_D128 );
    UChar flag_rC  = ifieldBIT0( theInstr );
    Bool clear_CR1 = True;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    switch (opc2) {
    case 0x102: // dctqpq
@@ -13398,7 +13586,7 @@ static Bool dis_dfp_fmt_convq(UInt theInstr) {
    return True;
 }
 
-static Bool dis_dfp_round( UInt theInstr ) {
+static Bool dis_dfp_round( UInt prefix, UInt theInstr ) {
    UChar frS_addr = ifieldRegDS(theInstr);
    UChar R        = IFIELD(theInstr, 16, 1);
    UChar RMC      = IFIELD(theInstr, 9, 2);
@@ -13408,6 +13596,9 @@ static Bool dis_dfp_round( UInt theInstr ) {
    IRTemp frS     = newTemp( Ity_D64 );
    UInt opc2      = ifieldOPClo8( theInstr );
    Bool clear_CR1 = True;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    switch (opc2) {
    /* drintn, is the same as drintx.  The only difference is this
@@ -13443,7 +13634,7 @@ static Bool dis_dfp_round( UInt theInstr ) {
    return True;
 }
 
-static Bool dis_dfp_roundq(UInt theInstr) {
+static Bool dis_dfp_roundq( UInt prefix, UInt theInstr ) {
    UChar frS_addr = ifieldRegDS( theInstr );
    UChar frB_addr = ifieldRegB( theInstr );
    UChar R = IFIELD(theInstr, 16, 1);
@@ -13453,6 +13644,9 @@ static Bool dis_dfp_roundq(UInt theInstr) {
    IRTemp frS = newTemp( Ity_D128 );
    Bool clear_CR1 = True;
    UInt opc2 = ifieldOPClo8( theInstr );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    switch (opc2) {
    /* drintnq, is the same as drintxq.  The only difference is this
@@ -13484,7 +13678,7 @@ static Bool dis_dfp_roundq(UInt theInstr) {
    return True;
 }
 
-static Bool dis_dfp_quantize_sig_rrnd(UInt theInstr) {
+static Bool dis_dfp_quantize_sig_rrnd( UInt prefix, UInt theInstr ) {
    UInt opc2 = ifieldOPClo8( theInstr );
    UChar frS_addr = ifieldRegDS( theInstr );
    UChar frA_addr = ifieldRegA( theInstr );
@@ -13497,6 +13691,9 @@ static Bool dis_dfp_quantize_sig_rrnd(UInt theInstr) {
    IRTemp frB = newTemp( Ity_D64 );
    IRTemp frS = newTemp( Ity_D64 );
    Bool clear_CR1 = True;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( frB, getDReg( frB_addr ) );
 
@@ -13578,7 +13775,7 @@ static Bool dis_dfp_quantize_sig_rrnd(UInt theInstr) {
    return True;
 }
 
-static Bool dis_dfp_quantize_sig_rrndq(UInt theInstr) {
+static Bool dis_dfp_quantize_sig_rrndq( UInt prefix, UInt theInstr ) {
    UInt opc2 = ifieldOPClo8( theInstr );
    UChar frS_addr = ifieldRegDS( theInstr );
    UChar frA_addr = ifieldRegA( theInstr );
@@ -13591,6 +13788,9 @@ static Bool dis_dfp_quantize_sig_rrndq(UInt theInstr) {
    IRTemp frB = newTemp( Ity_D128 );
    IRTemp frS = newTemp( Ity_D128 );
    Bool clear_CR1 = True;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( frB, getDReg_pair( frB_addr ) );
 
@@ -13673,7 +13873,7 @@ static Bool dis_dfp_quantize_sig_rrndq(UInt theInstr) {
    return True;
 }
 
-static Bool dis_dfp_extract_insert(UInt theInstr) {
+static Bool dis_dfp_extract_insert( UInt prefix, UInt theInstr ) {
    UInt opc2 = ifieldOPClo10( theInstr );
    UChar frS_addr = ifieldRegDS( theInstr );
    UChar frA_addr = ifieldRegA( theInstr );
@@ -13685,6 +13885,9 @@ static Bool dis_dfp_extract_insert(UInt theInstr) {
    IRTemp frB = newTemp( Ity_D64 );
    IRTemp frS = newTemp( Ity_D64 );
    IRTemp tmp = newTemp( Ity_I64 );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( frA, getDReg( frA_addr ) );
    assign( frB, getDReg( frB_addr ) );
@@ -13719,7 +13922,7 @@ static Bool dis_dfp_extract_insert(UInt theInstr) {
    return True;
 }
 
-static Bool dis_dfp_extract_insertq(UInt theInstr) {
+static Bool dis_dfp_extract_insertq( UInt prefix, UInt theInstr ) {
    UInt opc2 = ifieldOPClo10( theInstr );
    UChar frS_addr = ifieldRegDS( theInstr );
    UChar frA_addr = ifieldRegA( theInstr );
@@ -13732,6 +13935,9 @@ static Bool dis_dfp_extract_insertq(UInt theInstr) {
    IRTemp frS   = newTemp( Ity_D128 );
    IRTemp tmp   = newTemp( Ity_I64 );
    Bool clear_CR1 = True;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( frB, getDReg_pair( frB_addr ) );
 
@@ -13770,7 +13976,7 @@ static Bool dis_dfp_extract_insertq(UInt theInstr) {
 }
 
 /* DFP 64-bit comparison instructions */
-static Bool dis_dfp_compare(UInt theInstr) {
+static Bool dis_dfp_compare( UInt prefix, UInt theInstr ) {
    /* X-Form */
    UChar crfD = toUChar( IFIELD( theInstr, 23, 3 ) ); // AKA BF
    UChar frA_addr = ifieldRegA( theInstr );
@@ -13782,6 +13988,8 @@ static Bool dis_dfp_compare(UInt theInstr) {
    IRTemp ccIR = newTemp( Ity_I32 );
    IRTemp ccPPC32 = newTemp( Ity_I32 );
 
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    /* Note: Differences between dcmpu and dcmpo are only in exception
     flag settings, which aren't supported anyway. */
@@ -13845,7 +14053,7 @@ static Bool dis_dfp_compare(UInt theInstr) {
 }
 
 /* Test class/group/exponent/significance instructions. */
-static Bool dis_dfp_exponent_test ( UInt theInstr )
+static Bool dis_dfp_exponent_test ( UInt prefix, UInt theInstr )
 {
    UChar frA_addr   = ifieldRegA( theInstr );
    UChar frB_addr   = ifieldRegB( theInstr );
@@ -13871,6 +14079,9 @@ static Bool dis_dfp_exponent_test ( UInt theInstr )
    IRTemp cc2 = newTemp( Ity_I32 );
    IRTemp cc3 = newTemp( Ity_I32 );
    IRTemp cc  = newTemp( Ity_I32 );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    /* The dtstex and dtstexg instructions only differ in the size of the
     * exponent field.  The following switch statement takes care of the size
@@ -14038,7 +14249,7 @@ static Bool dis_dfp_exponent_test ( UInt theInstr )
 }
 
 /* Test class/group/exponent/significance instructions. */
-static Bool dis_dfp_class_test ( UInt theInstr )
+static Bool dis_dfp_class_test ( UInt prefix, UInt theInstr )
 {
    UChar frA_addr   = ifieldRegA( theInstr );
    IRTemp frA       = newTemp( Ity_D64 );
@@ -14083,6 +14294,9 @@ static Bool dis_dfp_class_test ( UInt theInstr )
    IRTemp dcm3 = newTemp( Ity_I32 );
    IRTemp dcm4 = newTemp( Ity_I32 );
    IRTemp dcm5 = newTemp( Ity_I32 );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    /* The only difference between the dtstdc and dtstdcq instructions is
     * size of the T and G fields.  The calculation of the 4 bit field
@@ -14482,7 +14696,7 @@ static Bool dis_dfp_class_test ( UInt theInstr )
    return True;
 }
 
-static Bool dis_dfp_bcd(UInt theInstr) {
+static Bool dis_dfp_bcd( UInt prefix, UInt theInstr ) {
    UInt opc2        = ifieldOPClo10( theInstr );
    ULong sp         = IFIELD(theInstr, 19, 2);
    ULong s          = IFIELD(theInstr, 20, 1);
@@ -14498,6 +14712,9 @@ static Bool dis_dfp_bcd(UInt theInstr) {
    IRTemp dbcd_u    = newTemp( Ity_I32 );
    IRTemp dbcd_l    = newTemp( Ity_I32 );
    IRTemp lmd       = newTemp( Ity_I32 );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( frB, getDReg( frB_addr ) );
    assign( frBI64, unop( Iop_ReinterpD64asI64, mkexpr( frB ) ) );
@@ -14742,7 +14959,7 @@ static Bool dis_dfp_bcd(UInt theInstr) {
    return True;
 }
 
-static Bool dis_dfp_bcdq( UInt theInstr )
+static Bool dis_dfp_bcdq( UInt prefix, UInt theInstr )
 {
    UInt opc2        = ifieldOPClo10( theInstr );
    ULong sp         = IFIELD(theInstr, 19, 2);
@@ -14757,6 +14974,9 @@ static Bool dis_dfp_bcdq( UInt theInstr )
    IRTemp lmd       = newTemp( Ity_I32 );
    IRTemp result_hi = newTemp( Ity_I64 );
    IRTemp result_lo = newTemp( Ity_I64 );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( frB_hi, getDReg( frB_addr ) );
    assign( frB_lo, getDReg( frB_addr + 1 ) );
@@ -15151,7 +15371,7 @@ static Bool dis_dfp_bcdq( UInt theInstr )
    return True;
 }
 
-static Bool dis_dfp_significant_digits( UInt theInstr )
+static Bool dis_dfp_significant_digits( UInt prefix, UInt theInstr )
 {
    UInt opc1      = ifieldOPC( theInstr );
    UInt opc2      = ifieldOPClo10(theInstr);
@@ -15172,6 +15392,9 @@ static Bool dis_dfp_significant_digits( UInt theInstr )
    IRTemp cc = newTemp( Ity_I32 );
    UChar  UIM     = toUChar( IFIELD( theInstr, 16, 6 ) );
    IRTemp BCD_valid  = newTemp( Ity_I32 );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc2 == 0x2A2) {        // dtstsf   DFP Test Significance
                                // dtstsfq  DFP Test Significance Quad
@@ -15403,7 +15626,7 @@ static Bool dis_dfp_significant_digits( UInt theInstr )
 /*
   Altivec Cache Control Instructions (Data Streams)
 */
-static Bool dis_av_datastream ( UInt theInstr )
+static Bool dis_av_datastream ( UInt prefix, UInt theInstr )
 {
    /* X-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -15415,6 +15638,9 @@ static Bool dis_av_datastream ( UInt theInstr )
    UChar rB_addr  = ifieldRegB(theInstr);
    UInt  opc2     = ifieldOPClo10(theInstr);
    UChar b0       = ifieldBIT0(theInstr);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc1 != 0x1F || b23to24 != 0 || b0 != 0) {
       vex_printf("dis_av_datastream(ppc)(instr)\n");
@@ -15454,7 +15680,7 @@ static Bool dis_av_datastream ( UInt theInstr )
 /*
   AltiVec Processor Control Instructions
 */
-static Bool dis_av_procctl ( UInt theInstr )
+static Bool dis_av_procctl ( UInt prefix, UInt theInstr )
 {
    /* VX-Form */
    UChar opc1    = ifieldOPC(theInstr);
@@ -15462,6 +15688,9 @@ static Bool dis_av_procctl ( UInt theInstr )
    UChar vA_addr = ifieldRegA(theInstr);
    UChar vB_addr = ifieldRegB(theInstr);
    UInt  opc2    = IFIELD( theInstr, 0, 11 );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc1 != 0x4) {
       vex_printf("dis_av_procctl(ppc)(instr)\n");
@@ -15499,7 +15728,8 @@ static Bool dis_av_procctl ( UInt theInstr )
 /*
 Vector Extend Sign Instructions
 */
-static Bool dis_av_extend_sign_count_zero ( UInt theInstr, UInt allow_isa_3_0 )
+static Bool dis_av_extend_sign_count_zero ( UInt prefix, UInt theInstr,
+					    UInt allow_isa_3_0 )
 {
    /* VX-Form, sort of, the A register field is used to select the specific
     * sign extension instruction or count leading/trailing zero LSB
@@ -15514,6 +15744,9 @@ static Bool dis_av_extend_sign_count_zero ( UInt theInstr, UInt allow_isa_3_0 )
 
    IRTemp vB    = newTemp( Ity_V128 );
    IRTemp vT    = newTemp( Ity_V128 );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( vB, getVReg ( vB_addr ) );
 
@@ -15841,7 +16074,7 @@ static Bool dis_av_extend_sign_count_zero ( UInt theInstr, UInt allow_isa_3_0 )
 /*
 Vector Rotate Instructions
 */
-static Bool dis_av_rotate ( UInt theInstr )
+static Bool dis_av_rotate ( UInt prefix, UInt theInstr )
 {
    /* VX-Form */
 
@@ -15871,6 +16104,9 @@ static Bool dis_av_rotate ( UInt theInstr )
    UInt num_words;
    UInt word_size;
    unsigned long long word_mask;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if ( opc1 != 0x4 ) {
       vex_printf("dis_av_rotate(ppc)(instr)\n");
@@ -16106,7 +16342,7 @@ static Bool dis_av_rotate ( UInt theInstr )
 /*
   AltiVec Vector Extract Element Instructions
 */
-static Bool dis_av_extract_element ( UInt theInstr )
+static Bool dis_av_extract_element ( UInt prefix, UInt theInstr )
 {
    /* VX-Form,
     * sorta destination and first source are GPR not vector registers
@@ -16121,6 +16357,9 @@ static Bool dis_av_extract_element ( UInt theInstr )
    IRTemp vB = newTemp( Ity_V128 );
    IRTemp rA = newTemp( Ity_I64 );
    IRTemp rT = newTemp( Ity_I64 );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( vB, getVReg( vB_addr ) );
    assign( rA, getIReg( rA_addr ) );
@@ -16192,7 +16431,7 @@ static Bool dis_av_extract_element ( UInt theInstr )
  * VSX scalar and vector convert instructions
  */
 static Bool
-dis_vx_conv ( UInt theInstr, UInt opc2 )
+dis_vx_conv ( UInt prefix, UInt theInstr, UInt opc2 )
 {
    /* XX2-Form */
    UChar opc1 = ifieldOPC( theInstr );
@@ -16200,6 +16439,10 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
    UChar XB = ifieldRegXB( theInstr );
    IRTemp xB, xB2;
    IRTemp b3, b2, b1, b0;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
+
    xB = xB2 = IRTemp_INVALID;
 
    if (opc1 != 0x3C) {
@@ -16854,7 +17097,7 @@ dis_vx_conv ( UInt theInstr, UInt opc2 )
  * VSX vector Double Precision Floating Point Arithmetic Instructions
  */
 static Bool
-dis_vxv_dp_arith ( UInt theInstr, UInt opc2 )
+dis_vxv_dp_arith ( UInt prefix, UInt theInstr, UInt opc2 )
 {
    /* XX3-Form */
    UChar opc1 = ifieldOPC( theInstr );
@@ -16866,6 +17109,9 @@ dis_vxv_dp_arith ( UInt theInstr, UInt opc2 )
    IRTemp frB = newTemp(Ity_F64);
    IRTemp frA2 = newTemp(Ity_F64);
    IRTemp frB2 = newTemp(Ity_F64);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc1 != 0x3C) {
       vex_printf( "dis_vxv_dp_arith(ppc)(instr)\n" );
@@ -17097,7 +17343,7 @@ dis_vxv_dp_arith ( UInt theInstr, UInt opc2 )
  * VSX vector Single Precision Floating Point Arithmetic Instructions
  */
 static Bool
-dis_vxv_sp_arith ( UInt theInstr, UInt opc2 )
+dis_vxv_sp_arith ( UInt prefix, UInt theInstr, UInt opc2 )
 {
    /* XX3-Form */
    UChar opc1 = ifieldOPC( theInstr );
@@ -17111,6 +17357,9 @@ dis_vxv_sp_arith ( UInt theInstr, UInt opc2 )
    IRTemp res1 = newTemp(Ity_I32);
    IRTemp res2 = newTemp(Ity_I32);
    IRTemp res3 = newTemp(Ity_I32);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    a3 = a2 = a1 = a0 = IRTemp_INVALID;
    b3 = b2 = b1 = b0 = IRTemp_INVALID;
@@ -17423,12 +17672,16 @@ dis_vxv_sp_arith ( UInt theInstr, UInt opc2 )
  * Vector Population Count/bit matrix transpose
  */
 static Bool
-dis_av_count_bitTranspose ( UInt theInstr, UInt opc2 )
+dis_av_count_bitTranspose ( UInt prefix, UInt theInstr, UInt opc2 )
 {
    UChar vRB_addr = ifieldRegB(theInstr);
    UChar vRT_addr = ifieldRegDS(theInstr);
    UChar opc1 = ifieldOPC( theInstr );
    IRTemp vB = newTemp(Ity_V128);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
+
    assign( vB, getVReg(vRB_addr));
 
    if (opc1 != 0x4) {
@@ -18007,12 +18260,15 @@ static IRExpr * _do_vsx_fp_roundToInt(IRTemp frB_I64, UInt opc2)
  * Miscellaneous VSX vector instructions
  */
 static Bool
-dis_vxv_misc ( UInt theInstr, UInt opc2 )
+dis_vxv_misc ( UInt prefix, UInt theInstr, UInt opc2 )
 {
    /* XX3-Form */
    UChar opc1 = ifieldOPC( theInstr );
    UChar XT = ifieldRegXT( theInstr );
    UChar XB = ifieldRegXB( theInstr );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc1 != 0x3C) {
       vex_printf( "dis_vxv_misc(ppc)(instr)\n" );
@@ -18504,7 +18760,7 @@ dis_vxv_misc ( UInt theInstr, UInt opc2 )
  * VSX Scalar Floating Point Arithmetic Instructions
  */
 static Bool
-dis_vxs_arith ( UInt theInstr, UInt opc2 )
+dis_vxs_arith ( UInt prefix, UInt theInstr, UInt opc2 )
 {
    /* XX3-Form */
    UChar opc1 = ifieldOPC( theInstr );
@@ -18514,6 +18770,9 @@ dis_vxs_arith ( UInt theInstr, UInt opc2 )
    IRExpr* rm = get_IR_roundingmode();
    IRTemp frA = newTemp(Ity_F64);
    IRTemp frB = newTemp(Ity_F64);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc1 != 0x3C) {
       vex_printf( "dis_vxs_arith(ppc)(instr)\n" );
@@ -18833,7 +19092,7 @@ dis_vxs_arith ( UInt theInstr, UInt opc2 )
  * VSX Floating Point Compare Instructions
  */
 static Bool
-dis_vx_cmp( UInt theInstr, UInt opc2 )
+dis_vx_cmp( UInt prefix, UInt theInstr, UInt opc2 )
 {
    /* XX3-Form and XX2-Form */
    UChar opc1 = ifieldOPC( theInstr );
@@ -18843,6 +19102,9 @@ dis_vx_cmp( UInt theInstr, UInt opc2 )
    UChar XB       = ifieldRegXB ( theInstr );
    IRTemp frA     = newTemp(Ity_F64);
    IRTemp frB     = newTemp(Ity_F64);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc1 != 0x3C) {
       vex_printf( "dis_vx_cmp(ppc)(instr)\n" );
@@ -18958,7 +19220,7 @@ do_vvec_fp_cmp ( IRTemp vA, IRTemp vB, UChar XT, UChar flag_rC,
  * VSX Vector Compare Instructions
  */
 static Bool
-dis_vvec_cmp( UInt theInstr, UInt opc2 )
+dis_vvec_cmp( UInt prefix, UInt theInstr, UInt opc2 )
 {
    /* XX3-Form */
    UChar opc1 = ifieldOPC( theInstr );
@@ -18968,6 +19230,9 @@ dis_vvec_cmp( UInt theInstr, UInt opc2 )
    UChar flag_rC  = ifieldBIT10(theInstr);
    IRTemp vA = newTemp( Ity_V128 );
    IRTemp vB = newTemp( Ity_V128 );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc1 != 0x3C) {
       vex_printf( "dis_vvec_cmp(ppc)(instr)\n" );
@@ -19054,7 +19319,7 @@ dis_vvec_cmp( UInt theInstr, UInt opc2 )
  * Miscellaneous VSX Scalar Instructions
  */
 static Bool
-dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
+dis_vxs_misc( UInt prefix, UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
               int allow_isa_3_0 )
 {
 #define VG_PPC_SIGN_MASK 0x7fffffffffffffffULL
@@ -19065,6 +19330,9 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
    UChar XB = ifieldRegXB ( theInstr );
    IRTemp vA = newTemp( Ity_V128 );
    IRTemp vB = newTemp( Ity_V128 );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc1 != 0x3C) {
       vex_printf( "dis_vxs_misc(ppc)(instr)\n" );
@@ -20320,7 +20588,7 @@ dis_vxs_misc( UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
  */
 
 static Bool
-dis_vx_misc ( UInt theInstr, UInt opc2 )
+dis_vx_misc ( UInt prefix, UInt theInstr, UInt opc2 )
 {
    /* XX3-Form */
    UChar XT = ifieldRegXT ( theInstr );
@@ -20339,6 +20607,9 @@ dis_vx_misc ( UInt theInstr, UInt opc2 )
    IRTemp xT = newTemp( Ity_V128 );
    IRTemp nan_cmp_value = newTemp(Ity_I64);
    UInt trap_enabled = 0;  /* 0 - trap enabled is False */
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( vA, getVSReg( XA ) );
    assign( vB, getVSReg( XB ) );
@@ -20554,7 +20825,7 @@ dis_vx_misc ( UInt theInstr, UInt opc2 )
  * VSX Logical Instructions
  */
 static Bool
-dis_vx_logic ( UInt theInstr, UInt opc2 )
+dis_vx_logic ( UInt prefix, UInt theInstr, UInt opc2 )
 {
    /* XX3-Form */
    UChar opc1 = ifieldOPC( theInstr );
@@ -20563,6 +20834,9 @@ dis_vx_logic ( UInt theInstr, UInt opc2 )
    UChar XB = ifieldRegXB ( theInstr );
    IRTemp vA = newTemp( Ity_V128 );
    IRTemp vB = newTemp( Ity_V128 );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc1 != 0x3C) {
       vex_printf( "dis_vx_logic(ppc)(instr)\n" );
@@ -20625,7 +20899,7 @@ dis_vx_logic ( UInt theInstr, UInt opc2 )
  * NOTE: VSX supports word-aligned storage access.
  */
 static Bool
-dis_vx_load ( UInt theInstr )
+dis_vx_load ( UInt prefix, UInt theInstr )
 {
    /* XX1-Form */
    UChar opc1 = ifieldOPC( theInstr );
@@ -20636,6 +20910,9 @@ dis_vx_load ( UInt theInstr )
 
    IRType ty = mode64 ? Ity_I64 : Ity_I32;
    IRTemp EA = newTemp( ty );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc1 != 0x1F) {
       vex_printf( "dis_vx_load(ppc)(instr)\n" );
@@ -21261,7 +21538,7 @@ dis_vx_load ( UInt theInstr )
  * VSX Move Instructions
  */
 static Bool
-dis_vx_move ( UInt theInstr )
+dis_vx_move ( UInt prefix, UInt theInstr )
 {
    /* XX1-Form */
    UChar opc1 = ifieldOPC( theInstr );
@@ -21271,6 +21548,9 @@ dis_vx_move ( UInt theInstr )
    IRTemp vS = newTemp( Ity_V128 );
    UInt opc2 = ifieldOPClo10( theInstr );
    IRType ty = Ity_I64;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if ( opc1 != 0x1F ) {
       vex_printf( "dis_vx_move(ppc)(instr)\n" );
@@ -21334,7 +21614,7 @@ dis_vx_move ( UInt theInstr )
  * NOTE: VSX supports word-aligned storage access.
  */
 static Bool
-dis_vx_store ( UInt theInstr )
+dis_vx_store ( UInt prefix, UInt theInstr )
 {
    /* XX1-Form */
    UChar opc1 = ifieldOPC( theInstr );
@@ -21346,6 +21626,9 @@ dis_vx_store ( UInt theInstr )
 
    IRType ty = mode64 ? Ity_I64 : Ity_I32;
    IRTemp EA = newTemp( ty );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc1 != 0x1F) {
       vex_printf( "dis_vx_store(ppc)(instr)\n" );
@@ -22177,7 +22460,8 @@ dis_vx_store ( UInt theInstr )
 }
 
 static Bool
-dis_vx_Scalar_Round_to_quad_integer( UInt theInstr, const VexAbiInfo* vbi )
+dis_vx_Scalar_Round_to_quad_integer( UInt prefix, UInt theInstr,
+				     const VexAbiInfo* vbi )
 {
    /* The ISA 3.0 instructions supported in this function require
     * the underlying hardware platform that supports the ISA3.0
@@ -22191,6 +22475,9 @@ dis_vx_Scalar_Round_to_quad_integer( UInt theInstr, const VexAbiInfo* vbi )
    IRTemp vB = newTemp( Ity_F128 );
    IRTemp vT = newTemp( Ity_F128 );
    UChar EX = IFIELD( theInstr, 0, 1 );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( vB, getF128Reg( vB_addr ) );
    if (opc1 != 0x3F) {
@@ -22244,7 +22531,7 @@ dis_vx_Scalar_Round_to_quad_integer( UInt theInstr, const VexAbiInfo* vbi )
 }
 
 static Bool
-dis_vx_Floating_Point_Arithmetic_quad_precision( UInt theInstr,
+dis_vx_Floating_Point_Arithmetic_quad_precision( UInt prefix, UInt theInstr,
                                                  const VexAbiInfo* vbi )
 {
    /* The ISA 3.0 instructions supported in this function require
@@ -22262,6 +22549,9 @@ dis_vx_Floating_Point_Arithmetic_quad_precision( UInt theInstr,
    IRTemp vT = newTemp( Ity_F128 );
    IRExpr* rm = get_IR_roundingmode();
    UChar R0 = IFIELD( theInstr, 0, 1 );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( vB, getF128Reg( vB_addr ) );
 
@@ -22596,7 +22886,7 @@ dis_vx_Floating_Point_Arithmetic_quad_precision( UInt theInstr,
 
 /* VSX Scalar Quad-Precision instructions */
 static Bool
-dis_vx_scalar_quad_precision ( UInt theInstr )
+dis_vx_scalar_quad_precision ( UInt prefix, UInt theInstr )
 {
    /* This function emulates the 128-bit floating point instructions
     * using existing 128-bit vector instructions (Iops).  The 128-bit
@@ -22612,6 +22902,9 @@ dis_vx_scalar_quad_precision ( UInt theInstr )
    IRTemp vA = newTemp( Ity_V128 );
    IRTemp vB = newTemp( Ity_V128 );
    IRTemp vT = newTemp( Ity_V128 );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( vB, getVSReg( vB_addr ) );
 
@@ -23006,7 +23299,7 @@ dis_vx_scalar_quad_precision ( UInt theInstr )
  * VSX permute and other miscealleous instructions
  */
 static Bool
-dis_vx_permute_misc( UInt theInstr, UInt opc2 )
+dis_vx_permute_misc( UInt prefix, UInt theInstr, UInt opc2 )
 {
    /* XX3-Form */
    UChar opc1 = ifieldOPC( theInstr );
@@ -23016,6 +23309,9 @@ dis_vx_permute_misc( UInt theInstr, UInt opc2 )
    IRTemp vT = newTemp( Ity_V128 );
    IRTemp vA = newTemp( Ity_V128 );
    IRTemp vB = newTemp( Ity_V128 );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc1 != 0x3C) {
       vex_printf( "dis_vx_permute_misc(ppc)(instr)\n" );
@@ -23186,7 +23482,7 @@ dis_vx_permute_misc( UInt theInstr, UInt opc2 )
 /*
   AltiVec Load Instructions
 */
-static Bool dis_av_load ( const VexAbiInfo* vbi, UInt theInstr )
+static Bool dis_av_load ( const VexAbiInfo* vbi, UInt prefix, UInt theInstr )
 {
    /* X-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -23199,6 +23495,9 @@ static Bool dis_av_load ( const VexAbiInfo* vbi, UInt theInstr )
    IRType ty         = mode64 ? Ity_I64 : Ity_I32;
    IRTemp EA         = newTemp(ty);
    IRTemp EA_align16 = newTemp(ty);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc1 != 0x1F || b0 != 0) {
       vex_printf("dis_av_load(ppc)(instr)\n");
@@ -23349,7 +23648,7 @@ static Bool dis_av_load ( const VexAbiInfo* vbi, UInt theInstr )
 /*
   AltiVec Store Instructions
 */
-static Bool dis_av_store ( UInt theInstr )
+static Bool dis_av_store ( UInt prefix, UInt theInstr )
 {
    /* X-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -23365,6 +23664,9 @@ static Bool dis_av_store ( UInt theInstr )
    IRTemp vS           = newTemp(Ity_V128);
    IRTemp eb           = newTemp(Ity_I8);
    IRTemp idx          = newTemp(Ity_I8);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc1 != 0x1F || b0 != 0) {
       vex_printf("dis_av_store(ppc)(instr)\n");
@@ -23447,7 +23749,7 @@ static Bool dis_av_store ( UInt theInstr )
 /*
   AltiVec Arithmetic Instructions
 */
-static Bool dis_av_arith ( UInt theInstr )
+static Bool dis_av_arith ( UInt prefix, UInt theInstr )
 {
    /* VX-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -23466,6 +23768,9 @@ static Bool dis_av_arith ( UInt theInstr )
    IRTemp a15, a14, a13, a12, a11, a10, a9, a8;
    IRTemp a7, a6, a5, a4, a3, a2, a1, a0;
    IRTemp b3, b2, b1, b0;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    aEvn = aOdd = IRTemp_INVALID;
    a15 = a14 = a13 = a12 = a11 = a10 = a9 = a8 = IRTemp_INVALID;
@@ -23954,7 +24259,7 @@ static Bool dis_av_arith ( UInt theInstr )
 /*
   AltiVec Logic Instructions
 */
-static Bool dis_av_logic ( UInt theInstr )
+static Bool dis_av_logic ( UInt prefix, UInt theInstr )
 {
    /* VX-Form */
    UChar opc1    = ifieldOPC(theInstr);
@@ -23967,6 +24272,9 @@ static Bool dis_av_logic ( UInt theInstr )
    IRTemp vB = newTemp(Ity_V128);
    assign( vA, getVReg(vA_addr));
    assign( vB, getVReg(vB_addr));
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    if (opc1 != 0x4) {
       vex_printf("dis_av_logic(ppc)(opc1 != 0x4)\n");
@@ -24032,7 +24340,7 @@ static Bool dis_av_logic ( UInt theInstr )
 /*
   AltiVec Compare Instructions
 */
-static Bool dis_av_cmp ( UInt theInstr )
+static Bool dis_av_cmp ( UInt prefix, UInt theInstr )
 {
    /* VXR-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -24045,6 +24353,10 @@ static Bool dis_av_cmp ( UInt theInstr )
    IRTemp vA = newTemp(Ity_V128);
    IRTemp vB = newTemp(Ity_V128);
    IRTemp vD = newTemp(Ity_V128);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
+
    assign( vA, getVReg(vA_addr));
    assign( vB, getVReg(vB_addr));
 
@@ -24234,7 +24546,7 @@ static Bool dis_av_cmp ( UInt theInstr )
 /*
   AltiVec Multiply-Sum Instructions
 */
-static Bool dis_av_multarith ( UInt theInstr )
+static Bool dis_av_multarith ( UInt prefix, UInt theInstr )
 {
    /* VA-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -24264,6 +24576,9 @@ static Bool dis_av_multarith ( UInt theInstr )
    IRTemp z0    = newTemp(Ity_I64);
    IRTemp ab7, ab6, ab5, ab4, ab3, ab2, ab1, ab0;
    IRTemp c3, c2, c1, c0;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    ab7 = ab6 = ab5 = ab4 = ab3 = ab2 = ab1 = ab0 = IRTemp_INVALID;
    c3 = c2 = c1 = c0 = IRTemp_INVALID;
@@ -24627,7 +24942,7 @@ static Bool dis_av_multarith ( UInt theInstr )
 /*
   AltiVec Polynomial Multiply-Sum Instructions
 */
-static Bool dis_av_polymultarith ( UInt theInstr )
+static Bool dis_av_polymultarith ( UInt prefix, UInt theInstr )
 {
    /* VA-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -24639,6 +24954,9 @@ static Bool dis_av_polymultarith ( UInt theInstr )
    IRTemp vA    = newTemp(Ity_V128);
    IRTemp vB    = newTemp(Ity_V128);
    IRTemp vC    = newTemp(Ity_V128);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( vA, getVReg(vA_addr));
    assign( vB, getVReg(vB_addr));
@@ -24681,7 +24999,7 @@ static Bool dis_av_polymultarith ( UInt theInstr )
 /*
   AltiVec Shift/Rotate Instructions
 */
-static Bool dis_av_shift ( UInt theInstr )
+static Bool dis_av_shift ( UInt prefix, UInt theInstr )
 {
    /* VX-Form */
    UChar opc1    = ifieldOPC(theInstr);
@@ -24692,6 +25010,10 @@ static Bool dis_av_shift ( UInt theInstr )
 
    IRTemp vA = newTemp(Ity_V128);
    IRTemp vB = newTemp(Ity_V128);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
+
    assign( vA, getVReg(vA_addr));
    assign( vB, getVReg(vB_addr));
 
@@ -24839,7 +25161,7 @@ static Bool dis_av_shift ( UInt theInstr )
 /*
   AltiVec Permute Instructions
 */
-static Bool dis_av_permute ( UInt theInstr )
+static Bool dis_av_permute ( UInt prefix, UInt theInstr )
 {
    /* VA-Form, VX-Form */
    UChar opc1      = ifieldOPC(theInstr);
@@ -24857,6 +25179,10 @@ static Bool dis_av_permute ( UInt theInstr )
    IRTemp vA = newTemp(Ity_V128);
    IRTemp vB = newTemp(Ity_V128);
    IRTemp vC = newTemp(Ity_V128);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
+
    assign( vA, getVReg(vA_addr));
    assign( vB, getVReg(vB_addr));
    assign( vC, getVReg(vC_addr));
@@ -25337,7 +25663,7 @@ static Bool dis_av_permute ( UInt theInstr )
 /*
   Vector Integer Absolute Difference
 */
-static Bool dis_abs_diff ( UInt theInstr )
+static Bool dis_abs_diff ( UInt prefix, UInt theInstr )
 {
    /* VX-Form */
    UChar opc1     = ifieldOPC( theInstr );
@@ -25353,6 +25679,9 @@ static Bool dis_abs_diff ( UInt theInstr )
    IRTemp vAminusB = newTemp( Ity_V128 );
    IRTemp vBminusA = newTemp( Ity_V128 );
    IRTemp vMask    = newTemp( Ity_V128 );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( vA, getVReg( vA_addr ) );
    assign( vB, getVReg( vB_addr ) );
@@ -25450,7 +25779,7 @@ static Bool dis_abs_diff ( UInt theInstr )
 /*
   AltiVec 128 bit integer multiply by 10 Instructions
 */
-static Bool dis_av_mult10 ( UInt theInstr )
+static Bool dis_av_mult10 ( UInt prefix, UInt theInstr )
 {
    /* VX-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -25460,6 +25789,10 @@ static Bool dis_av_mult10 ( UInt theInstr )
    UInt  opc2     = IFIELD( theInstr, 0, 11 );
 
    IRTemp vA    = newTemp(Ity_V128);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
+
    assign( vA, getVReg(vA_addr));
 
    if (opc1 != 0x4) {
@@ -25507,7 +25840,7 @@ static Bool dis_av_mult10 ( UInt theInstr )
 /*
   AltiVec Pack/Unpack Instructions
 */
-static Bool dis_av_pack ( UInt theInstr )
+static Bool dis_av_pack ( UInt prefix, UInt theInstr )
 {
    /* VX-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -25520,6 +25853,10 @@ static Bool dis_av_pack ( UInt theInstr )
    IRTemp zeros = IRTemp_INVALID;
    IRTemp vA    = newTemp(Ity_V128);
    IRTemp vB    = newTemp(Ity_V128);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
+
    assign( vA, getVReg(vA_addr));
    assign( vB, getVReg(vB_addr));
 
@@ -25827,7 +26164,7 @@ static Bool dis_av_pack ( UInt theInstr )
 /*
   AltiVec Cipher Instructions
 */
-static Bool dis_av_cipher ( UInt theInstr )
+static Bool dis_av_cipher ( UInt prefix, UInt theInstr )
 {
    /* VX-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -25838,6 +26175,10 @@ static Bool dis_av_cipher ( UInt theInstr )
 
    IRTemp vA    = newTemp(Ity_V128);
    IRTemp vB    = newTemp(Ity_V128);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
+
    assign( vA, getVReg(vA_addr));
    assign( vB, getVReg(vB_addr));
 
@@ -25888,7 +26229,7 @@ static Bool dis_av_cipher ( UInt theInstr )
 /*
   AltiVec Secure Hash Instructions
 */
-static Bool dis_av_hash ( UInt theInstr )
+static Bool dis_av_hash ( UInt prefix, UInt theInstr )
 {
    /* VX-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -25901,6 +26242,10 @@ static Bool dis_av_hash ( UInt theInstr )
 
    IRTemp vA    = newTemp(Ity_V128);
    IRTemp dst    = newTemp(Ity_V128);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
+
    assign( vA, getVReg(vRA_addr));
 
    if (opc1 != 0x4) {
@@ -26025,7 +26370,7 @@ static IRTemp _get_quad_modulo_or_carry(IRExpr * vecA, IRExpr * vecB,
 }
 
 
-static Bool dis_av_quad ( UInt theInstr )
+static Bool dis_av_quad ( UInt prefix, UInt theInstr )
 {
    /* VX-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -26039,6 +26384,10 @@ static Bool dis_av_quad ( UInt theInstr )
    IRTemp vB    = newTemp(Ity_V128);
    IRTemp vC    = IRTemp_INVALID;
    IRTemp cin    = IRTemp_INVALID;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
+
    assign( vA, getVReg(vRA_addr));
    assign( vB, getVReg(vRB_addr));
 
@@ -26269,7 +26618,7 @@ static IRExpr * bcd_sign_code_adjust( UInt ps, IRExpr * tmp)
   except when an overflow occurs.  But since we can't be 100% accurate
   in our emulation of CR6, it seems best to just not support it all.
 */
-static Bool dis_av_bcd_misc ( UInt theInstr, const VexAbiInfo* vbi )
+static Bool dis_av_bcd_misc ( UInt prefix, UInt theInstr, const VexAbiInfo* vbi )
 {
    UChar opc1     = ifieldOPC(theInstr);
    UChar vRT_addr = ifieldRegDS(theInstr);
@@ -26280,6 +26629,9 @@ static Bool dis_av_bcd_misc ( UInt theInstr, const VexAbiInfo* vbi )
    UInt  opc2     = IFIELD( theInstr, 0, 11 );
    IRExpr *pos, *neg, *valid, *zero, *sign;
    IRTemp eq_lt_gt = newTemp( Ity_I32 );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( vA, getVReg(vRA_addr));
    assign( vB, getVReg(vRB_addr));
@@ -26385,7 +26737,7 @@ static Bool dis_av_bcd_misc ( UInt theInstr, const VexAbiInfo* vbi )
    return True;
 }
 
-static Bool dis_av_bcd ( UInt theInstr, const VexAbiInfo* vbi )
+static Bool dis_av_bcd ( UInt prefix, UInt theInstr, const VexAbiInfo* vbi )
 {
    /* VX-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -26400,6 +26752,9 @@ static Bool dis_av_bcd ( UInt theInstr, const VexAbiInfo* vbi )
    IRExpr *pos, *neg, *valid, *zero, *sign_digit, *in_range;
    IRTemp eq_lt_gt = newTemp( Ity_I32 );
    IRExpr *overflow, *value;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( vA, getVReg(vRA_addr));
    assign( vB, getVReg(vRB_addr));
@@ -27575,7 +27930,7 @@ static Bool dis_av_bcd ( UInt theInstr, const VexAbiInfo* vbi )
 /*
   AltiVec Floating Point Arithmetic Instructions
 */
-static Bool dis_av_fp_arith ( UInt theInstr )
+static Bool dis_av_fp_arith ( UInt prefix, UInt theInstr )
 {
    /* VA-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -27588,6 +27943,10 @@ static Bool dis_av_fp_arith ( UInt theInstr )
    IRTemp vA = newTemp(Ity_V128);
    IRTemp vB = newTemp(Ity_V128);
    IRTemp vC = newTemp(Ity_V128);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
+
    assign( vA, getVReg(vA_addr));
    assign( vB, getVReg(vB_addr));
    assign( vC, getVReg(vC_addr));
@@ -27721,7 +28080,7 @@ static Bool dis_av_fp_arith ( UInt theInstr )
 /*
   AltiVec Floating Point Compare Instructions
 */
-static Bool dis_av_fp_cmp ( UInt theInstr )
+static Bool dis_av_fp_cmp ( UInt prefix, UInt theInstr )
 {
    /* VXR-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -27736,6 +28095,10 @@ static Bool dis_av_fp_cmp ( UInt theInstr )
    IRTemp vA = newTemp(Ity_V128);
    IRTemp vB = newTemp(Ity_V128);
    IRTemp vD = newTemp(Ity_V128);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
+
    assign( vA, getVReg(vA_addr));
    assign( vB, getVReg(vB_addr));
 
@@ -27828,7 +28191,7 @@ static Bool dis_av_fp_cmp ( UInt theInstr )
 /*
   AltiVec Floating Point Convert/Round Instructions
 */
-static Bool dis_av_fp_convert ( UInt theInstr )
+static Bool dis_av_fp_convert ( UInt prefix, UInt theInstr )
 {
    /* VX-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -27842,6 +28205,9 @@ static Bool dis_av_fp_convert ( UInt theInstr )
    IRTemp vInvScale = newTemp(Ity_V128);
 
    float scale, inv_scale;
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    assign( vB, getVReg(vB_addr));
 
@@ -27930,11 +28296,14 @@ static Bool dis_av_fp_convert ( UInt theInstr )
    return True;
 }
 
-static Bool dis_transactional_memory ( UInt theInstr, UInt nextInstr,
+static Bool dis_transactional_memory ( UInt prefix, UInt theInstr, UInt nextInstr,
                                        const VexAbiInfo* vbi,
                                        /*OUT*/DisResult* dres )
 {
    UInt   opc2      = IFIELD( theInstr, 1, 10 );
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
 
    switch (opc2) {
    case 0x28E: {        //tbegin.
@@ -28401,11 +28770,47 @@ static UInt get_VSX60_opc2(UInt opc2_full, UInt theInstr)
    return 0;
 }
 
+static Int dis_nop_prefix ( UInt prefix, UInt theInstr )
+{
+   Bool is_prefix   = prefix_instruction( prefix );
+   UInt bit6_7   = IFIELD( prefix, 24, 2);
+   UInt bit8_11  = IFIELD( prefix, 20, 4);
+   UInt bit14_31 = IFIELD( prefix, 0, 18);
+   UInt opc2     = ifieldOPClo10(theInstr);
+
+   /* pnop instruction :
+        must be a prefix instruction;
+        prefix[6:7]   = 3;
+        prefix[8:11]  = 0;
+        prefix[14:31] = 0;
+        theInstr[0:31] != Branch instruction
+      The branch instruction (b) has opc2 = 18 (0x12));   */
+
+
+   if (is_prefix && (bit6_7 == 3) && (bit8_11 == 0) && (bit14_31 == 0)) {
+      if (opc2 == 0x12) {
+         /* suffix is a branch instruction which is invalid. */
+         vex_printf("INVALID pnop instruction. Exiting\n");
+         return PREFIX_NOP_INVALID;
+      }
+
+      /* valid */
+      pDIP( is_prefix, "nop\n");
+      return True;
+   }
+   return False;
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Disassemble a single instruction                     ---*/
 /*------------------------------------------------------------*/
 
-/* Disassemble a single instruction into IR.  The instruction
+/* ISA 3.1 introduced a new 8-byte instruction format called "prefixed
+   instructions".  All instructions up to ISA 3.1 were 4-byte instructions
+   that are now called "word instructions".
+
+   Disassemble a single instruction into IR.  The instruction
    is located in host memory at &guest_code[delta]. */
 
 static   
@@ -28420,8 +28825,10 @@ DisResult disInstr_PPC_WRK (
    UInt      opc2;
    DisResult dres;
    UInt      theInstr;
+   UInt      prefix;
    IRType    ty = mode64 ? Ity_I64 : Ity_I32;
    UInt      hwcaps = archinfo->hwcaps;
+   UInt      inst_size = WORD_INST_SIZE;   //Default
    Long      delta;
    Bool      allow_F  = False;
    Bool      allow_V  = False;
@@ -28453,7 +28860,7 @@ DisResult disInstr_PPC_WRK (
       allow_DFP = (0 != (hwcaps & VEX_HWCAPS_PPC32_DFP));
       allow_isa_2_07 = (0 != (hwcaps & VEX_HWCAPS_PPC32_ISA2_07));
       allow_isa_3_0  = (0 != (hwcaps & VEX_HWCAPS_PPC32_ISA3_0));
-      allow_isa_3_1  = (0 != (hwcaps & VEX_HWCAPS_PPC32_ISA3_1));
+      /* ISA 3.1 is not supported in 32-bit mode */
    }
 
    /* Enable writting the OV32 and CA32 bits added with ISA3.0 */
@@ -28472,6 +28879,7 @@ DisResult disInstr_PPC_WRK (
       4-aligned.  So just fish the whole thing out of memory right now
       and have done. */
    theInstr = getUIntPPCendianly( &guest_code[delta] );
+   prefix = 0;  /* Reset the prefix so instruction flag */
 
    if (0) vex_printf("insn: 0x%x\n", theInstr);
 
@@ -28598,6 +29006,35 @@ DisResult disInstr_PPC_WRK (
       }
    }
 
+   /* Determine if the instruction is a word instruction (4-bytes) or a
+      prefix instruction (8-bytes).
+
+      A prefix instruction basically consists of a 4-byte pre-emble followed
+      bye the 4-byte word instruction.  The pre-emble give information on how
+      the immediate fields are extended.  The following 4-bytes are basically
+      the word instruction containing the opc1 and opc2 fields.  */
+
+   if (prefix_instruction ( theInstr )) {
+      int ret;
+      /* Save the current theInstr into the prefix.  Fetch the next
+         four bytes into theInstr and decode the instruction opc1 and opc2
+         fields the same as a pre ISA 3.1 word instruction.  */
+      inst_size = PREFIX_INST_SIZE;
+      delta += WORD_INST_SIZE;                   // Get next instruction word
+
+      prefix = theInstr;
+      theInstr = getUIntPPCendianly( &guest_code[delta] );
+
+      /* Check for pnop instruction.  Suffix field is allowed to be anything
+         but a branch instruction.  */
+      ret = dis_nop_prefix( prefix, theInstr);
+      if (ret == True)
+         goto decode_success;
+      else if (ret == PREFIX_NOP_INVALID)
+         goto decode_failure;
+      /* not a pnop instruction, try to decode */
+   }
+
    opc1 = ifieldOPC(theInstr);
    opc2 = ifieldOPClo10(theInstr);
 
@@ -28607,100 +29044,100 @@ DisResult disInstr_PPC_WRK (
    /* Integer Arithmetic Instructions */
    case 0x0C: case 0x0D: case 0x0E:  // addic, addic., addi
    case 0x0F: case 0x07: case 0x08:  // addis, mulli,  subfic
-      if (dis_int_arith( theInstr )) goto decode_success;
+      if (dis_int_arith( prefix, theInstr )) goto decode_success;
       goto decode_failure;
 
    /* Integer Compare Instructions */
    case 0x0B: case 0x0A: // cmpi, cmpli
-      if (dis_int_cmp( theInstr )) goto decode_success;
+      if (dis_int_cmp( prefix,  theInstr )) goto decode_success;
       goto decode_failure;
 
    /* Integer Logical Instructions */
    case 0x1C: case 0x1D: case 0x18: // andi., andis., ori
    case 0x19: case 0x1A: case 0x1B: // oris,  xori,   xoris
-      if (dis_int_logic( theInstr )) goto decode_success;
+      if (dis_int_logic( prefix, theInstr )) goto decode_success;
       goto decode_failure;
 
    /* Integer Rotate Instructions */
    case 0x14: case 0x15:  case 0x17: // rlwimi, rlwinm, rlwnm
-      if (dis_int_rot( theInstr )) goto decode_success;
+      if (dis_int_rot( prefix, theInstr )) goto decode_success;
       goto decode_failure;
 
    /* 64bit Integer Rotate Instructions */
    case 0x1E: // rldcl, rldcr, rldic, rldicl, rldicr, rldimi
       if (!mode64) goto decode_failure;
-      if (dis_int_rot( theInstr )) goto decode_success;
+      if (dis_int_rot( prefix,  theInstr )) goto decode_success;
       goto decode_failure;
 
    /* Integer Load Instructions */
    case 0x22: case 0x23: case 0x2A: // lbz,  lbzu, lha
    case 0x2B: case 0x28: case 0x29: // lhau, lhz,  lhzu
    case 0x20: case 0x21:            // lwz,  lwzu
-      if (dis_int_load( theInstr )) goto decode_success;
+      if (dis_int_load( prefix,  theInstr )) goto decode_success;
       goto decode_failure;
 
    /* Integer Store Instructions */
    case 0x26: case 0x27: case 0x2C: // stb,  stbu, sth
    case 0x2D: case 0x24: case 0x25: // sthu, stw,  stwu
-      if (dis_int_store( theInstr, abiinfo )) goto decode_success;
+      if (dis_int_store( prefix, theInstr, abiinfo )) goto decode_success;
       goto decode_failure;
 
    /* Integer Load and Store Multiple Instructions */
    case 0x2E: case 0x2F: // lmw, stmw
-      if (dis_int_ldst_mult( theInstr )) goto decode_success;
+      if (dis_int_ldst_mult( prefix, theInstr )) goto decode_success;
       goto decode_failure;
 
    /* Branch Instructions */
    case 0x12: case 0x10: // b, bc
-      if (dis_branch(theInstr, abiinfo, &dres)) 
+      if (dis_branch( prefix, theInstr, abiinfo, &dres))
          goto decode_success;
       goto decode_failure;
 
    /* System Linkage Instructions */
    case 0x11: // sc
-      if (dis_syslink(theInstr, abiinfo, &dres)) goto decode_success;
+      if (dis_syslink( prefix, theInstr, abiinfo, &dres)) goto decode_success;
       goto decode_failure;
 
    /* Trap Instructions */
    case 0x02:    // tdi
       if (!mode64) goto decode_failure;
-      if (dis_trapi(theInstr, &dres)) goto decode_success;
+      if (dis_trapi( prefix, theInstr, &dres)) goto decode_success;
       goto decode_failure;
 
    case 0x03:   // twi
-      if (dis_trapi(theInstr, &dres)) goto decode_success;
+      if (dis_trapi( prefix, theInstr, &dres)) goto decode_success;
       goto decode_failure;
 
    /* Floating Point Load Instructions */
    case 0x30: case 0x31: case 0x32: // lfs, lfsu, lfd
    case 0x33:                       // lfdu
       if (!allow_F) goto decode_noF;
-      if (dis_fp_load( theInstr )) goto decode_success;
+      if (dis_fp_load( prefix, theInstr )) goto decode_success;
       goto decode_failure;
 
    /* Floating Point Store Instructions */
    case 0x34: case 0x35: case 0x36: // stfsx, stfsux, stfdx
    case 0x37:                       // stfdux
       if (!allow_F) goto decode_noF;
-      if (dis_fp_store( theInstr )) goto decode_success;
+      if (dis_fp_store( prefix, theInstr )) goto decode_success;
       goto decode_failure;
 
       /* Floating Point Load Double Pair Instructions */
    case 0x39: case 0x3D:    // lfdp, lxsd, lxssp, lxv
                             // stfdp, stxsd, stxssp, stxv
       if (!allow_F) goto decode_noF;
-      if (dis_fp_pair( theInstr )) goto decode_success;
+      if (dis_fp_pair( prefix, theInstr )) goto decode_success;
       goto decode_failure;
 
    /* 128-bit Integer Load */
    case 0x38:  // lq
-      if (dis_int_load( theInstr )) goto decode_success;
+      if (dis_int_load( prefix, theInstr )) goto decode_success;
       goto decode_failure;
 
    /* 64bit Integer Loads */
    case 0x3A:  // ld, ldu, lwa
       if (!mode64) goto decode_failure;
-      if (dis_int_load( theInstr )) goto decode_success;
+      if (dis_int_load( prefix, theInstr )) goto decode_success;
       goto decode_failure;
 
    case 0x3B:
@@ -28713,55 +29150,55 @@ DisResult disInstr_PPC_WRK (
          case 0x22:   // dmul - DFP Mult
          case 0x222:  // ddiv - DFP Divide
             if (!allow_DFP) goto decode_noDFP;
-            if (dis_dfp_arith( theInstr ))
+            if (dis_dfp_arith( prefix, theInstr ) )
                goto decode_success;
             goto decode_failure;
          case 0x82:   // dcmpo, DFP comparison ordered instruction
          case 0x282:  // dcmpu, DFP comparison unordered instruction
             if (!allow_DFP) goto decode_noDFP;
-            if (dis_dfp_compare( theInstr ) )
+            if (dis_dfp_compare( prefix, theInstr ) )
                goto decode_success;
             goto decode_failure;
          case 0x102: // dctdp  - DFP convert to DFP long
          case 0x302: // drsp   - DFP round to dfp short
          case 0x122: // dctfix - DFP convert to fixed
             if (!allow_DFP) goto decode_noDFP;
-            if (dis_dfp_fmt_conv( theInstr ))
+            if (dis_dfp_fmt_conv( prefix, theInstr ) )
                goto decode_success;
             goto decode_failure;
          case 0x322: // POWER 7 inst, dcffix - DFP convert from fixed
             if (!allow_VX)
                goto decode_failure;
             if (!allow_DFP) goto decode_noDFP;
-            if (dis_dfp_fmt_conv( theInstr ))
+            if (dis_dfp_fmt_conv( prefix, theInstr ) )
                goto decode_success;
             goto decode_failure;
          case 0x2A2: // dtstsf  - DFP number of significant digits
          case 0x2A3: // dtstsfi - DFP number of significant digits Immediate
             if (!allow_DFP) goto decode_noDFP;
-            if (dis_dfp_significant_digits(theInstr))
+            if (dis_dfp_significant_digits( prefix, theInstr ) )
                goto decode_success;
             goto decode_failure;
          case 0x142: // ddedpd   DFP Decode DPD to BCD
          case 0x342: // denbcd   DFP Encode BCD to DPD
             if (!allow_DFP) goto decode_noDFP;
-            if (dis_dfp_bcd(theInstr))
+            if (dis_dfp_bcd( prefix, theInstr ) )
                goto decode_success;
             goto decode_failure;
          case 0x162:  // dxex - Extract exponent 
          case 0x362:  // diex - Insert exponent
             if (!allow_DFP) goto decode_noDFP;
-            if (dis_dfp_extract_insert( theInstr ) )
+            if (dis_dfp_extract_insert( prefix, theInstr ) )
                goto decode_success;
             goto decode_failure;
          case 0x3CE: // fcfidus (implemented as native insn)
             if (!allow_VX)
                goto decode_noVX;
-            if (dis_fp_round( theInstr ))
+            if (dis_fp_round( prefix, theInstr ) )
                goto decode_success;
             goto decode_failure;
          case 0x34E: // fcfids
-            if (dis_fp_round( theInstr ))
+            if (dis_fp_round( prefix, theInstr ) )
                goto decode_success;
             goto decode_failure;
       }
@@ -28771,13 +29208,13 @@ DisResult disInstr_PPC_WRK (
       case 0x42: // dscli, DFP shift left
       case 0x62: // dscri, DFP shift right
          if (!allow_DFP) goto decode_noDFP;
-         if (dis_dfp_shift( theInstr ))
+         if (dis_dfp_shift( prefix, theInstr ))
             goto decode_success;
          goto decode_failure;
       case 0xc2:  // dtstdc, DFP test data class
       case 0xe2:  // dtstdg, DFP test data group
          if (!allow_DFP) goto decode_noDFP;
-         if (dis_dfp_class_test( theInstr ))
+         if (dis_dfp_class_test( prefix, theInstr ))
             goto decode_success;
          goto decode_failure;
       }
@@ -28788,18 +29225,18 @@ DisResult disInstr_PPC_WRK (
       case 0x23:  // drrnd - DFP Reround
       case 0x43:  // dquai - DFP Quantize immediate
          if (!allow_DFP) goto decode_noDFP;
-         if (dis_dfp_quantize_sig_rrnd( theInstr ) )
+         if (dis_dfp_quantize_sig_rrnd( prefix, theInstr ) )
             goto decode_success;
          goto decode_failure;
       case 0xA2: // dtstex - DFP Test exponent
          if (!allow_DFP) goto decode_noDFP;
-         if (dis_dfp_exponent_test( theInstr ) )
+         if (dis_dfp_exponent_test( prefix, theInstr ) )
             goto decode_success;
          goto decode_failure;
       case 0x63: // drintx - Round to an integer value
       case 0xE3: // drintn - Round to an integer value
          if (!allow_DFP) goto decode_noDFP;
-         if (dis_dfp_round( theInstr ) ) {
+         if (dis_dfp_round( prefix, theInstr ) ) {
             goto decode_success;
          }
          goto decode_failure;
@@ -28812,26 +29249,26 @@ DisResult disInstr_PPC_WRK (
       /* Floating Point Arith Instructions */
       case 0x12: case 0x14: case 0x15: // fdivs,  fsubs, fadds
       case 0x19:                       // fmuls
-         if (dis_fp_arith(theInstr)) goto decode_success;
+         if (dis_fp_arith( prefix, theInstr )) goto decode_success;
          goto decode_failure;
       case 0x16:                       // fsqrts
          if (!allow_FX) goto decode_noFX;
-         if (dis_fp_arith(theInstr)) goto decode_success;
+         if (dis_fp_arith( prefix, theInstr )) goto decode_success;
          goto decode_failure;
       case 0x18:                       // fres
          if (!allow_GX) goto decode_noGX;
-         if (dis_fp_arith(theInstr)) goto decode_success;
+         if (dis_fp_arith( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* Floating Point Mult-Add Instructions */
       case 0x1C: case 0x1D: case 0x1E: // fmsubs, fmadds, fnmsubs
       case 0x1F:                       // fnmadds
-         if (dis_fp_multadd(theInstr)) goto decode_success;
+         if (dis_fp_multadd( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x1A:                       // frsqrtes
          if (!allow_GX) goto decode_noGX;
-         if (dis_fp_arith(theInstr)) goto decode_success;
+         if (dis_fp_arith( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       default:
@@ -28854,13 +29291,13 @@ DisResult disInstr_PPC_WRK (
       UInt vsxOpc2;
 
       if (( opc2hi == 13 ) && ( opc2lo == 5)) { //xvtstdcsp
-         if (dis_vxs_misc(theInstr, abiinfo, 0x354, allow_isa_3_0))
+         if (dis_vxs_misc( prefix, theInstr, abiinfo, 0x354, allow_isa_3_0 ))
             goto decode_success;
          goto decode_failure;
       }
 
       if (( opc2hi == 15 ) && ( opc2lo == 5)) { //xvtstdcdp
-         if (dis_vxs_misc(theInstr, abiinfo, 0x3D4, allow_isa_3_0))
+         if (dis_vxs_misc( prefix, theInstr, abiinfo, 0x3D4, allow_isa_3_0 ))
                goto decode_success;
             goto decode_failure;
       }
@@ -28876,8 +29313,10 @@ DisResult disInstr_PPC_WRK (
          /* This is a special case of the XX1 form where the  RA, RB
           * fields hold an immediate value.
           */
-      if (dis_vxs_misc(theInstr, abiinfo, opc2, allow_isa_3_0)) goto decode_success;
-         goto decode_failure;
+	 if (dis_vxs_misc( prefix, theInstr, abiinfo, opc2, allow_isa_3_0))
+	    goto decode_success;
+
+      goto decode_failure;
       }
 
       vsxOpc2 = get_VSX60_opc2(opc2, theInstr);
@@ -28886,17 +29325,17 @@ DisResult disInstr_PPC_WRK (
          case 0x8: case 0x28: case 0x48: case 0xc8: // xxsldwi, xxpermdi, xxmrghw, xxmrglw
          case 0x068: case 0xE8:  // xxperm, xxpermr
          case 0x018: case 0x148: // xxsel, xxspltw
-            if (dis_vx_permute_misc(theInstr, vsxOpc2 ))
+            if (dis_vx_permute_misc( prefix, theInstr, vsxOpc2 ))
 	       goto decode_success;
             goto decode_failure;
          case 0xC: case 0x2C: case 0x4C: // xscmpeqdp, xscmpgtdp, xscmpgedp
          case 0x200: case 0x220:         //xsmaxcdp, xsmincdp
-            if (dis_vx_misc(theInstr, vsxOpc2)) goto decode_success;
+            if (dis_vx_misc( prefix, theInstr, vsxOpc2 )) goto decode_success;
             goto decode_failure;
          case 0x268: case 0x248: case 0x288: // xxlxor, xxlor, xxlnor,
          case 0x208: case 0x228: // xxland, xxlandc
          case 0x2A8: case 0x2C8: case 0x2E8: //  xxlorc, xxlnand, xxleqv
-            if (dis_vx_logic(theInstr, vsxOpc2)) goto decode_success;
+            if (dis_vx_logic( prefix, theInstr, vsxOpc2 )) goto decode_success;
             goto decode_failure;
          case 0x0ec:             // xscmpexpdp
          case 0x14A: case 0x16A: // xxextractuw, xxinsertw
@@ -28915,11 +29354,11 @@ DisResult disInstr_PPC_WRK (
          case 0x354:             // xvtstdcsp
          case 0x360:case 0x396:  // xviexpsp, xsiexpdp
          case 0x3D4: case 0x3E0: // xvtstdcdp, xviexpdp
-            if (dis_vxs_misc(theInstr, abiinfo, vsxOpc2, allow_isa_3_0))
+            if (dis_vxs_misc( prefix, theInstr, abiinfo, vsxOpc2, allow_isa_3_0 ))
                goto decode_success;
             goto decode_failure;
          case 0x08C: case 0x0AC: // xscmpudp, xscmpodp
-            if (dis_vx_cmp(theInstr, vsxOpc2)) goto decode_success;
+            if (dis_vx_cmp( prefix, theInstr, vsxOpc2 )) goto decode_success;
             goto decode_failure;
          case 0x0:   case 0x020: // xsaddsp, xssubsp
          case 0x080:             // xsadddp
@@ -28936,7 +29375,7 @@ DisResult disInstr_PPC_WRK (
          case 0x0A0:             // xssubdp
          case 0x016: case 0x096: // xssqrtsp,xssqrtdp
          case 0x0F4: case 0x0D4: // xstdivdp, xstsqrtdp
-            if (dis_vxs_arith(theInstr, vsxOpc2)) goto decode_success;
+            if (dis_vxs_arith( prefix, theInstr, vsxOpc2 )) goto decode_success;
             goto decode_failure;
          case 0x180: // xvadddp
          case 0x1E0: // xvdivdp
@@ -28948,7 +29387,8 @@ DisResult disInstr_PPC_WRK (
          case 0x3C4: case 0x3E4: // xvnmsubadp, xvnmsubmdp
          case 0x1D4: case 0x1F4: // xvtsqrtdp, xvtdivdp
          case 0x196: // xvsqrtdp
-            if (dis_vxv_dp_arith(theInstr, vsxOpc2)) goto decode_success;
+            if (dis_vxv_dp_arith( prefix, theInstr, vsxOpc2 ))
+	      goto decode_success;
             goto decode_failure;
          case 0x100: // xvaddsp
          case 0x160: // xvdivsp
@@ -28960,7 +29400,8 @@ DisResult disInstr_PPC_WRK (
          case 0x344: case 0x364: // xvnmsubasp, xvnmsubmsp
          case 0x154: case 0x174: // xvtsqrtsp, xvtdivsp
          case 0x116: // xvsqrtsp
-            if (dis_vxv_sp_arith(theInstr, vsxOpc2)) goto decode_success;
+            if (dis_vxv_sp_arith( prefix, theInstr, vsxOpc2 ))
+	       goto decode_success;
             goto decode_failure;
 
          case 0x250:             // xscvuxdsp
@@ -28972,7 +29413,7 @@ DisResult disInstr_PPC_WRK (
             // so if allow_VX (which means "supports ISA 2.06") is not set,
             // we'll skip the decode.
             if (!allow_VX) goto decode_noVX;
-            if (dis_vx_conv(theInstr, vsxOpc2)) goto decode_success;
+            if (dis_vx_conv( prefix, theInstr, vsxOpc2 )) goto decode_success;
             goto decode_failure;
 
          case 0x2B0: // xscvdpsxds
@@ -28988,7 +29429,7 @@ DisResult disInstr_PPC_WRK (
          case 0x110: case 0x3f0: // xvcvspuxws, xvcvsxddp
          case 0x370: case 0x1f0: // xvcvsxdsp, xvcvsxwdp
          case 0x170: case 0x150: // xvcvsxwsp, xvcvuxwsp
-            if (dis_vx_conv(theInstr, vsxOpc2)) goto decode_success;
+            if (dis_vx_conv( prefix, theInstr, vsxOpc2 )) goto decode_success;
             goto decode_failure;
 
          case 0x18C:             // xvcmpeqdp[.]
@@ -28997,7 +29438,7 @@ DisResult disInstr_PPC_WRK (
          case 0x12C:             // xvcmpgtsp[.]
          case 0x1CC:             // xvcmpgedp[.]
          case 0x1AC:             // xvcmpgtdp[.]
-             if (dis_vvec_cmp(theInstr, vsxOpc2)) goto decode_success;
+             if (dis_vvec_cmp( prefix, theInstr, vsxOpc2 )) goto decode_success;
              goto decode_failure;
 
          case 0x134:  // xvresp
@@ -29015,7 +29456,7 @@ DisResult disInstr_PPC_WRK (
          case 0x112: case 0x156: // xvrspi, xvrspic
          case 0x172: case 0x152: // xvrspim, xvrspip
          case 0x132: // xvrspiz
-            if (dis_vxv_misc(theInstr, vsxOpc2)) goto decode_success;
+            if (dis_vxv_misc( prefix, theInstr, vsxOpc2 )) goto decode_success;
             goto decode_failure;
 
          default:
@@ -29026,7 +29467,7 @@ DisResult disInstr_PPC_WRK (
 
    /* 64bit Integer Stores */
    case 0x3E:  // std, stdu, stq
-      if (dis_int_store( theInstr, abiinfo )) goto decode_success;
+      if (dis_int_store( prefix, theInstr, abiinfo )) goto decode_success;
       goto decode_failure;
 
    case 0x3F:
@@ -29039,26 +29480,26 @@ DisResult disInstr_PPC_WRK (
       /* Floating Point Arith Instructions */
       case 0x12: case 0x14: case 0x15: // fdiv, fsub, fadd
       case 0x19:                       // fmul
-         if (dis_fp_arith(theInstr)) goto decode_success;
+         if (dis_fp_arith( prefix, theInstr )) goto decode_success;
          goto decode_failure;
       case 0x16:                       // fsqrt
          if (!allow_FX) goto decode_noFX;
-         if (dis_fp_arith(theInstr)) goto decode_success;
+         if (dis_fp_arith( prefix, theInstr )) goto decode_success;
          goto decode_failure;
       case 0x17: case 0x1A:            // fsel, frsqrte
          if (!allow_GX) goto decode_noGX;
-         if (dis_fp_arith(theInstr)) goto decode_success;
+         if (dis_fp_arith( prefix, theInstr )) goto decode_success;
          goto decode_failure;
          
       /* Floating Point Mult-Add Instructions */         
       case 0x1C: case 0x1D: case 0x1E: // fmsub, fmadd, fnmsub
       case 0x1F:                       // fnmadd
-         if (dis_fp_multadd(theInstr)) goto decode_success;
+         if (dis_fp_multadd( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x18:                       // fre
          if (!allow_GX) goto decode_noGX;
-         if (dis_fp_arith(theInstr)) goto decode_success;
+         if (dis_fp_arith( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       default:
@@ -29070,7 +29511,7 @@ DisResult disInstr_PPC_WRK (
       case 0x5: // xsrqpi, xsrqpix
       case 0x25: // xsrqpxp
          if ( !mode64 || !allow_isa_3_0 ) goto decode_failure;
-         if ( dis_vx_Scalar_Round_to_quad_integer( theInstr, abiinfo ) )
+         if ( dis_vx_Scalar_Round_to_quad_integer( prefix, theInstr, abiinfo ) )
             goto decode_success;
          goto decode_failure;
       default:
@@ -29087,20 +29528,20 @@ DisResult disInstr_PPC_WRK (
       case 0x22:   // dmulq - DFP Mult
       case 0x222:  // ddivq - DFP Divide
          if (!allow_DFP) goto decode_noDFP;
-         if (dis_dfp_arithq( theInstr ))
+         if (dis_dfp_arithq( prefix, theInstr ))
             goto decode_success;
          goto decode_failure;
       case 0x162:  // dxexq - DFP Extract exponent
       case 0x362:  // diexq - DFP Insert exponent
          if (!allow_DFP) goto decode_noDFP;
-         if (dis_dfp_extract_insertq( theInstr ))
+         if (dis_dfp_extract_insertq( prefix, theInstr ))
             goto decode_success;
          goto decode_failure;
 
       case 0x82:   // dcmpoq, DFP comparison ordered instruction
       case 0x282:  // dcmpuq, DFP comparison unordered instruction
          if (!allow_DFP) goto decode_noDFP;
-         if (dis_dfp_compare( theInstr ) )
+         if (dis_dfp_compare( prefix, theInstr ) )
             goto decode_success;
          goto decode_failure;
 
@@ -29109,33 +29550,33 @@ DisResult disInstr_PPC_WRK (
       case 0x122: // dctfixq - DFP convert to fixed quad
       case 0x322: // dcffixq - DFP convert from fixed quad
          if (!allow_DFP) goto decode_noDFP;
-         if (dis_dfp_fmt_convq( theInstr ))
+         if (dis_dfp_fmt_convq( prefix, theInstr ))
             goto decode_success;
          goto decode_failure;
 
       case 0x2A2: // dtstsfq  - DFP number of significant digits
       case 0x2A3: // dtstsfiq - DFP number of significant digits Immediate
          if (!allow_DFP) goto decode_noDFP;
-         if (dis_dfp_significant_digits(theInstr))
+         if (dis_dfp_significant_digits( prefix, theInstr ))
             goto decode_success;
          goto decode_failure;
 
       case 0x142: // ddedpdq   DFP Decode DPD to BCD
       case 0x342: // denbcdq   DFP Encode BCD to DPD
          if (!allow_DFP) goto decode_noDFP;
-         if (dis_dfp_bcdq(theInstr))
+         if (dis_dfp_bcdq( prefix, theInstr ))
             goto decode_success;
          goto decode_failure;
 
       /* Floating Point Compare Instructions */         
       case 0x000: // fcmpu
       case 0x020: // fcmpo
-         if (dis_fp_cmp(theInstr)) goto decode_success;
+         if (dis_fp_cmp( prefix, theInstr )) goto decode_success;
          goto decode_failure;
          
       case 0x080: // ftdiv
       case 0x0A0: // ftsqrt
-         if (dis_fp_tests(theInstr)) goto decode_success;
+         if (dis_fp_tests( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* Floating Point Rounding/Conversion Instructions */         
@@ -29145,12 +29586,12 @@ DisResult disInstr_PPC_WRK (
       case 0x32E: // fctid
       case 0x32F: // fctidz
       case 0x34E: // fcfid
-         if (dis_fp_round(theInstr)) goto decode_success;
+         if (dis_fp_round( prefix, theInstr )) goto decode_success;
          goto decode_failure;
       case 0x3CE: case 0x3AE: case 0x3AF: // fcfidu, fctidu[z] (implemented as native insns)
       case 0x08F: case 0x08E: // fctiwu[z] (implemented as native insns)
          if (!allow_VX) goto decode_noVX;
-         if (dis_fp_round(theInstr)) goto decode_success;
+         if (dis_fp_round( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* Power6 rounding stuff */
@@ -29160,7 +29601,7 @@ DisResult disInstr_PPC_WRK (
       case 0x1A8: // friz
          /* A hack to check for P6 capability . . . */
          if ((allow_F && allow_V && allow_FX && allow_GX) &&
-             (dis_fp_round(theInstr)))
+             (dis_fp_round( prefix, theInstr )))
             goto decode_success;
          goto decode_failure;
          
@@ -29170,11 +29611,11 @@ DisResult disInstr_PPC_WRK (
       case 0x048: // fmr
       case 0x088: // fnabs
       case 0x108: // fabs
-         if (dis_fp_move( theInstr )) goto decode_success;
+         if (dis_fp_move( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x3c6: case 0x346:          // fmrgew, fmrgow
-         if (dis_fp_merge( theInstr )) goto decode_success;
+         if (dis_fp_merge( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* Floating Point Status/Control Register Instructions */         
@@ -29187,12 +29628,13 @@ DisResult disInstr_PPC_WRK (
       case 0x2C7: // mtfsf
          // Some of the above instructions need to know more about the
          // ISA level supported by the host.
-         if (dis_fp_scr( theInstr, allow_GX )) goto decode_success;
+         if (dis_fp_scr( prefix, theInstr, allow_GX )) goto decode_success;
          goto decode_failure;
 
       case 0x324: // xsabsqp, xsxexpqp,xsnabsqp, xsnegqp, xsxsigqp
          if ( inst_select == 27 ) {    // xssqrtqp
-            if ( dis_vx_Floating_Point_Arithmetic_quad_precision( theInstr,
+            if ( dis_vx_Floating_Point_Arithmetic_quad_precision( prefix,
+								  theInstr,
 								  abiinfo ) )
                goto decode_success;
          }
@@ -29206,7 +29648,8 @@ DisResult disInstr_PPC_WRK (
       case 0x284: // xscmpuqp
       case 0x2C4: // xststdcqp
       case 0x364: // xsiexpqp
-         if (dis_vx_scalar_quad_precision( theInstr )) goto decode_success;
+         if (dis_vx_scalar_quad_precision( prefix, theInstr ))
+	   goto decode_success;
          goto decode_failure;
 
       /* Instructions implemented using ISA 3.0 instructions */
@@ -29229,7 +29672,7 @@ DisResult disInstr_PPC_WRK (
       case 0x344: // xscvudqp, xscvsdqp, xscvqpdp, xscvqpdpo, xsvqpdp
                   // xscvqpswz, xscvqpuwz, xscvqpudz, xscvqpsdz
          if ( !mode64 || !allow_isa_3_0 ) goto decode_failure;
-         if ( dis_vx_Floating_Point_Arithmetic_quad_precision( theInstr,
+         if ( dis_vx_Floating_Point_Arithmetic_quad_precision( prefix, theInstr,
 							       abiinfo ) )
             goto decode_success;
          goto decode_failure;
@@ -29243,13 +29686,13 @@ DisResult disInstr_PPC_WRK (
       case 0x42: // dscli, DFP shift left
       case 0x62: // dscri, DFP shift right
          if (!allow_DFP) goto decode_noDFP;
-         if (dis_dfp_shiftq( theInstr ))
+         if (dis_dfp_shiftq( prefix, theInstr ))
             goto decode_success;
          goto decode_failure;
       case 0xc2:  // dtstdc, DFP test data class
       case 0xe2:  // dtstdg, DFP test data group
          if (!allow_DFP) goto decode_noDFP;
-         if (dis_dfp_class_test( theInstr ))
+         if (dis_dfp_class_test( prefix, theInstr ))
             goto decode_success;
          goto decode_failure;
       default:
@@ -29262,18 +29705,18 @@ DisResult disInstr_PPC_WRK (
       case 0x23:  // drrndq - DFP Reround Quad
       case 0x43:  // dquaiq - DFP Quantize immediate Quad
          if (!allow_DFP) goto decode_noDFP;
-         if (dis_dfp_quantize_sig_rrndq( theInstr ))
+         if (dis_dfp_quantize_sig_rrndq( prefix, theInstr ))
             goto decode_success;
          goto decode_failure;
       case 0xA2: // dtstexq - DFP Test exponent Quad
          if (!allow_DFP) goto decode_noDFP;
-         if (dis_dfp_exponent_test( theInstr ) )
+         if (dis_dfp_exponent_test( prefix, theInstr ) )
             goto decode_success;
          goto decode_failure;
       case 0x63:  // drintxq - DFP Round to an integer value
       case 0xE3:  // drintnq - DFP Round to an integer value
          if (!allow_DFP) goto decode_noDFP;
-         if (dis_dfp_roundq( theInstr ))
+         if (dis_dfp_roundq( prefix, theInstr ))
             goto decode_success;
          goto decode_failure;
 
@@ -29289,7 +29732,7 @@ DisResult disInstr_PPC_WRK (
 
       /* PC relative load/store */
       case 0x002:       // addpcis
-         if (dis_pc_relative(theInstr)) goto decode_success;
+         if (dis_pc_relative( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* fall through to the next opc2 field size */
@@ -29302,18 +29745,18 @@ DisResult disInstr_PPC_WRK (
       case 0x101: case 0x081: case 0x121: // crand,  crandc, creqv
       case 0x0E1: case 0x021: case 0x1C1: // crnand, crnor,  cror
       case 0x1A1: case 0x0C1: case 0x000: // crorc,  crxor,  mcrf
-         if (dis_cond_logic( theInstr )) goto decode_success;
+         if (dis_cond_logic( prefix, theInstr )) goto decode_success;
          goto decode_failure;
          
       /* Branch Instructions */
       case 0x210: case 0x010: // bcctr, bclr
-         if (dis_branch(theInstr, abiinfo, &dres)) 
+         if (dis_branch( prefix, theInstr, abiinfo, &dres))
             goto decode_success;
          goto decode_failure;
          
       /* Memory Synchronization Instructions */
       case 0x096: // isync
-         if (dis_memsync( theInstr )) goto decode_success;
+         if (dis_memsync( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       default:
@@ -29336,31 +29779,31 @@ DisResult disInstr_PPC_WRK (
       case 0x0EB: case 0x068: case 0x028: // mullw, neg,   subf
       case 0x008: case 0x088: case 0x0E8: // subfc, subfe, subfme
       case 0x0C8: // subfze
-         if (dis_int_arith( theInstr )) goto decode_success;
+         if (dis_int_arith( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x18B: // divweu (implemented as native insn)
       case 0x1AB: // divwe (implemented as native insn)
          if (!allow_VX) goto decode_noVX;
-         if (dis_int_arith( theInstr )) goto decode_success;
+         if (dis_int_arith( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* 64bit Integer Arithmetic */
       case 0x009: case 0x049: case 0x0E9: // mulhdu, mulhd, mulld
       case 0x1C9: case 0x1E9: // divdu, divd
          if (!mode64) goto decode_failure;
-         if (dis_int_arith( theInstr )) goto decode_success;
+         if (dis_int_arith( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x1A9: //  divde (implemented as native insn)
       case 0x189: //  divdeuo (implemented as native insn)
          if (!allow_VX) goto decode_noVX;
          if (!mode64) goto decode_failure;
-         if (dis_int_arith( theInstr )) goto decode_success;
+         if (dis_int_arith( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x1FC:                         // cmpb
-         if (dis_int_logic( theInstr )) goto decode_success;
+         if (dis_int_logic( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       default:
@@ -29374,23 +29817,23 @@ DisResult disInstr_PPC_WRK (
 
       /* Integer miscellaneous instructions */
       case 0x01E:  // wait  RFC 2500
-         if (dis_int_misc( theInstr )) goto decode_success;
+         if (dis_int_misc( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
 
       /* Integer Compare Instructions  */
       case 0x000: case 0x020: case 0x080: // cmp, cmpl, setb
-         if (dis_int_cmp( theInstr )) goto decode_success;
+         if (dis_int_cmp( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x0C0: case 0x0E0:   // cmprb, cmpeqb
-         if (dis_byte_cmp( theInstr )) goto decode_success;
+         if (dis_byte_cmp( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x10B: case 0x30B: // moduw, modsw
       case 0x109: case 0x309: // modsd, modud
       case 0x21A: case 0x23A: // cnttzw, cnttzd
-         if (dis_modulo_int( theInstr )) goto decode_success;
+         if (dis_modulo_int( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* Integer Logical Instructions */
@@ -29399,14 +29842,14 @@ DisResult disInstr_PPC_WRK (
       case 0x1DC: case 0x07C: case 0x1BC: // nand, nor,   or
       case 0x19C: case 0x13C:             // orc,  xor
       case 0x2DF: case 0x25F:            // mftgpr, mffgpr
-         if (dis_int_logic( theInstr )) goto decode_success;
+         if (dis_int_logic( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x28E: case 0x2AE:             // tbegin., tend.
       case 0x2EE: case 0x2CE: case 0x30E: // tsr., tcheck., tabortwc.
       case 0x32E: case 0x34E: case 0x36E: // tabortdc., tabortwci., tabortdci.
       case 0x38E: case 0x3AE: case 0x3EE: // tabort., treclaim., trechkpt.
-      if (dis_transactional_memory( theInstr,
+      if (dis_transactional_memory( prefix, theInstr,
                                     getUIntPPCendianly( &guest_code[delta + 4]),
                                     abiinfo, &dres))
             goto decode_success;
@@ -29415,23 +29858,23 @@ DisResult disInstr_PPC_WRK (
       /* 64bit Integer Logical Instructions */
       case 0x3DA: case 0x03A: // extsw, cntlzd
          if (!mode64) goto decode_failure;
-         if (dis_int_logic( theInstr )) goto decode_success;
+         if (dis_int_logic( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
          /* 64bit Integer Parity Instructions */
       case 0xba: // prtyd
          if (!mode64) goto decode_failure;
-         if (dis_int_parity( theInstr )) goto decode_success;
+         if (dis_int_parity( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x9a: // prtyw
-         if (dis_int_parity( theInstr )) goto decode_success;
+         if (dis_int_parity( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* Integer Shift Instructions */
       case 0x018: case 0x318: case 0x338: // slw, sraw, srawi
       case 0x218:                         // srw
-         if (dis_int_shift( theInstr )) goto decode_success;
+         if (dis_int_shift( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* 64bit Integer Shift Instructions */
@@ -29439,51 +29882,51 @@ DisResult disInstr_PPC_WRK (
       case 0x33A: case 0x33B: // sradi
       case 0x21B:             // srd
          if (!mode64) goto decode_failure;
-         if (dis_int_shift( theInstr )) goto decode_success;
+         if (dis_int_shift( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* Integer Load Instructions */
       case 0x057: case 0x077: case 0x157: // lbzx,  lbzux, lhax
       case 0x177: case 0x117: case 0x137: // lhaux, lhzx,  lhzux
       case 0x017: case 0x037:             // lwzx,  lwzux
-         if (dis_int_load( theInstr )) goto decode_success;
+         if (dis_int_load( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* 64bit Integer Load Instructions */
       case 0x035: case 0x015:             // ldux,  ldx
       case 0x175: case 0x155:             // lwaux, lwax
          if (!mode64) goto decode_failure;
-         if (dis_int_load( theInstr )) goto decode_success;
+         if (dis_int_load( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* Integer Store Instructions */
       case 0x0F7: case 0x0D7: case 0x1B7: // stbux, stbx,  sthux
       case 0x197: case 0x0B7: case 0x097: // sthx,  stwux, stwx
-         if (dis_int_store( theInstr, abiinfo )) goto decode_success;
+         if (dis_int_store( prefix, theInstr, abiinfo )) goto decode_success;
          goto decode_failure;
 
       /* 64bit Integer Store Instructions */
       case 0x0B5: case 0x095: // stdux, stdx
          if (!mode64) goto decode_failure;
-         if (dis_int_store( theInstr, abiinfo )) goto decode_success;
+         if (dis_int_store( prefix, theInstr, abiinfo )) goto decode_success;
          goto decode_failure;
 
       /* Integer Load and Store with Byte Reverse Instructions */
       case 0x214: case 0x294: // ldbrx, stdbrx
          if (!mode64) goto decode_failure;
-         if (dis_int_ldst_rev( theInstr )) goto decode_success;
+         if (dis_int_ldst_rev( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x216: case 0x316: case 0x296:    // lwbrx, lhbrx, stwbrx
       case 0x396:                            // sthbrx
-         if (dis_int_ldst_rev( theInstr )) goto decode_success;
+         if (dis_int_ldst_rev( prefix, theInstr )) goto decode_success;
          goto decode_failure;
          
       /* Integer Load and Store String Instructions */
       case 0x255: case 0x215: case 0x2D5: // lswi, lswx, stswi
       case 0x295: {                       // stswx
          Bool stopHere = False;
-         Bool ok = dis_int_ldst_str( theInstr, &stopHere );
+         Bool ok = dis_int_ldst_str( prefix, theInstr, &stopHere );
          if (!ok) goto decode_failure;
          if (stopHere) {
             putGST( PPC_GST_CIA, mkSzImm(ty, nextInsnAddr()) );
@@ -29497,22 +29940,22 @@ DisResult disInstr_PPC_WRK (
       case 0x034: case 0x074:             // lbarx, lharx
       case 0x2B6: case 0x2D6:             // stbcx, sthcx
          if (!allow_isa_2_07) goto decode_noP8;
-         if (dis_memsync( theInstr )) goto decode_success;
+         if (dis_memsync( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x356: case 0x014: case 0x096: // eieio, lwarx, stwcx.
       case 0x256:                         // sync
-         if (dis_memsync( theInstr )) goto decode_success;
+         if (dis_memsync( prefix, theInstr )) goto decode_success;
          goto decode_failure;
          
       /* 64bit Memory Synchronization Instructions */
       case 0x054: case 0x0D6: // ldarx, stdcx.
          if (!mode64) goto decode_failure;
-         if (dis_memsync( theInstr )) goto decode_success;
+         if (dis_memsync( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x114: case 0x0B6: // lqarx, stqcx.
-         if (dis_memsync( theInstr )) goto decode_success;
+         if (dis_memsync( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* Processor Control Instructions */
@@ -29521,14 +29964,14 @@ DisResult disInstr_PPC_WRK (
       case 0x200: case 0x013: case 0x153: // mcrxr, mfcr,  mfspr
       case 0x173: case 0x090: case 0x1D3: // mftb,  mtcrf, mtspr
       case 0x220:                         // mcrxrt
-         if (dis_proc_ctl( abiinfo, theInstr )) goto decode_success;
+         if (dis_proc_ctl( abiinfo, prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* Cache Management Instructions */
       case 0x2F6: case 0x056: case 0x036: // dcba, dcbf,   dcbst
       case 0x116: case 0x0F6: case 0x3F6: // dcbt, dcbtst, dcbz
       case 0x3D6:                         // icbi
-         if (dis_cache_manage( theInstr, &dres, archinfo ))
+         if (dis_cache_manage( prefix, theInstr, &dres, archinfo ))
             goto decode_success;
          goto decode_failure;
 
@@ -29539,48 +29982,48 @@ DisResult disInstr_PPC_WRK (
 
       /* Trap Instructions */
       case 0x004:             // tw
-         if (dis_trap(theInstr, &dres)) goto decode_success;
+         if (dis_trap( prefix, theInstr, &dres )) goto decode_success;
          goto decode_failure;
 
       case 0x044:             // td
          if (!mode64) goto decode_failure;
-         if (dis_trap(theInstr, &dres)) goto decode_success;
+         if (dis_trap( prefix, theInstr, &dres )) goto decode_success;
          goto decode_failure;
 
       /* Floating Point Load Instructions */
       case 0x217: case 0x237: case 0x257: // lfsx, lfsux, lfdx
       case 0x277:                         // lfdux
          if (!allow_F) goto decode_noF;
-         if (dis_fp_load( theInstr )) goto decode_success;
+         if (dis_fp_load( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* Floating Point Store Instructions */
       case 0x297: case 0x2B7: case 0x2D7: // stfs,  stfsu, stfd
       case 0x2F7:                         // stfdu, stfiwx
          if (!allow_F) goto decode_noF;
-         if (dis_fp_store( theInstr )) goto decode_success;
+         if (dis_fp_store( prefix, theInstr )) goto decode_success;
          goto decode_failure;
       case 0x3D7:                         // stfiwx
          if (!allow_F) goto decode_noF;
          if (!allow_GX) goto decode_noGX;
-         if (dis_fp_store( theInstr )) goto decode_success;
+         if (dis_fp_store( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
          /* Floating Point Double Pair Indexed Instructions */
       case 0x317: // lfdpx (Power6)
       case 0x397: // stfdpx (Power6)
          if (!allow_F) goto decode_noF;
-         if (dis_fp_pair(theInstr)) goto decode_success;
+         if (dis_fp_pair( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x357:                         // lfiwax
          if (!allow_F) goto decode_noF;
-         if (dis_fp_load( theInstr )) goto decode_success;
+         if (dis_fp_load( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x377:                         // lfiwzx
          if (!allow_F) goto decode_noF;
-         if (dis_fp_load( theInstr )) goto decode_success;
+         if (dis_fp_load( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AltiVec instructions */
@@ -29588,7 +30031,7 @@ DisResult disInstr_PPC_WRK (
       /* AV Cache Control - Data streams */
       case 0x156: case 0x176: case 0x336: // dst, dstst, dss
          if (!allow_V) goto decode_noV;
-         if (dis_av_datastream( theInstr )) goto decode_success;
+         if (dis_av_datastream( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Load */
@@ -29596,14 +30039,14 @@ DisResult disInstr_PPC_WRK (
       case 0x007: case 0x027: case 0x047: // lvebx, lvehx, lvewx
       case 0x067: case 0x167:             // lvx, lvxl
          if (!allow_V) goto decode_noV;
-         if (dis_av_load( abiinfo, theInstr )) goto decode_success;
+         if (dis_av_load( abiinfo, prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Store */
       case 0x087: case 0x0A7: case 0x0C7: // stvebx, stvehx, stvewx
       case 0x0E7: case 0x1E7:             // stvx, stvxl
          if (!allow_V) goto decode_noV;
-         if (dis_av_store( theInstr )) goto decode_success;
+         if (dis_av_store( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* VSX Load */
@@ -29626,7 +30069,7 @@ DisResult disInstr_PPC_WRK (
         // if allow_V is not set, we'll skip trying to decode.
         if (!allow_V) goto decode_noV;
 
-	if (dis_vx_load( theInstr )) goto decode_success;
+	if (dis_vx_load( prefix, theInstr )) goto decode_success;
           goto decode_failure;
 
       /* VSX Store */
@@ -29646,14 +30089,14 @@ DisResult disInstr_PPC_WRK (
         // if allow_V is not set, we'll skip trying to decode.
         if (!allow_V) goto decode_noV;
 
-	if (dis_vx_store( theInstr )) goto decode_success;
+        if (dis_vx_store( prefix, theInstr )) goto decode_success;
     	  goto decode_failure;
 
       case 0x133: case 0x193: case 0x1B3:  // mfvsrld, mfvsrdd, mtvsrws
         // The move from/to VSX instructions use some VMX facilities, so
         // if allow_V is not set, we'll skip trying to decode.
         if (!allow_V) goto decode_noV;
-        if (dis_vx_move( theInstr )) goto decode_success;
+        if (dis_vx_move( prefix, theInstr )) goto decode_success;
         goto decode_failure;
 
       /* Miscellaneous ISA 2.06 instructions */
@@ -29662,12 +30105,12 @@ DisResult disInstr_PPC_WRK (
          /* else fallthru */
       case 0x17A: // popcntw
       case 0x7A:  // popcntb
-         if (dis_int_logic( theInstr )) goto decode_success;
+         if (dis_int_logic( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x0FC: // bpermd
          if (!mode64) goto decode_failure;
-         if (dis_int_logic( theInstr )) goto decode_success;
+         if (dis_int_logic( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       default:
@@ -29698,7 +30141,7 @@ DisResult disInstr_PPC_WRK (
       switch (opc2) {
       case 0x1BD:
          if (!mode64) goto decode_failure;
-         if (dis_int_logic( theInstr )) goto decode_success;
+         if (dis_int_logic( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       default:
@@ -29718,12 +30161,12 @@ DisResult disInstr_PPC_WRK (
       case 0x24: case 0x25: case 0x26: // vmsumubm, vmsummbm, vmsumuhm
       case 0x27: case 0x28: case 0x29: // vmsumuhs, vmsumshm, vmsumshs
          if (!allow_V) goto decode_noV;
-         if (dis_av_multarith( theInstr )) goto decode_success;
+         if (dis_av_multarith( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x30: case 0x31: case 0x33: // maddhd, madhdu, maddld
          if (!mode64) goto decode_failure;
-         if (dis_int_mult_add( theInstr )) goto decode_success;
+         if (dis_int_mult_add( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Permutations */
@@ -29731,25 +30174,25 @@ DisResult disInstr_PPC_WRK (
       case 0x2B:                       // vperm
       case 0x2C:                       // vsldoi
          if (!allow_V) goto decode_noV;
-         if (dis_av_permute( theInstr )) goto decode_success;
+         if (dis_av_permute( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x2D:                       // vpermxor
       case 0x3B:                       // vpermr
          if (!allow_isa_2_07) goto decode_noP8;
-         if (dis_av_permute( theInstr )) goto decode_success;
+         if (dis_av_permute( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Floating Point Mult-Add/Sub */
       case 0x2E: case 0x2F:            // vmaddfp, vnmsubfp
          if (!allow_V) goto decode_noV;
-         if (dis_av_fp_arith( theInstr )) goto decode_success;
+         if (dis_av_fp_arith( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x3D: case 0x3C:            // vaddecuq, vaddeuqm
       case 0x3F: case 0x3E:            // vsubecuq, vsubeuqm
          if (!allow_V) goto decode_noV;
-         if (dis_av_quad( theInstr)) goto decode_success;
+         if (dis_av_quad( prefix, theInstr)) goto decode_success;
          goto decode_failure;
 
       default:
@@ -29770,7 +30213,7 @@ DisResult disInstr_PPC_WRK (
             case 0x181:                         // bcdcfn., bcdcfz.
                                                 // bcdctz., bcdcfsq., bcdctsq.
                if (!allow_isa_2_07) goto decode_noP8;
-               if (dis_av_bcd( theInstr, abiinfo )) goto decode_success;
+               if (dis_av_bcd( prefix, theInstr, abiinfo )) goto decode_success;
               goto decode_failure;
          default:
               break;  // Fall through...
@@ -29783,7 +30226,7 @@ DisResult disInstr_PPC_WRK (
       case 0x341:                  // bcdcpsgn
 
          if (!allow_isa_2_07) goto decode_noP8;
-         if (dis_av_bcd_misc( theInstr, abiinfo )) goto decode_success;
+         if (dis_av_bcd_misc( prefix, theInstr, abiinfo )) goto decode_success;
          goto decode_failure;
 
 
@@ -29809,7 +30252,7 @@ DisResult disInstr_PPC_WRK (
       case 0x608: case 0x708: case 0x648: // vsum4ubs, vsum4sbs, vsum4shs
       case 0x688: case 0x788:             // vsum2sws, vsumsws
          if (!allow_V) goto decode_noV;
-         if (dis_av_arith( theInstr )) goto decode_success;
+         if (dis_av_arith( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x088: case 0x089:             // vmulouw, vmuluwm
@@ -29818,14 +30261,14 @@ DisResult disInstr_PPC_WRK (
       case 0x188: case 0x288: case 0x388: // vmulosw, vmuleuw, vmulesw
       case 0x4C0:                         // vsubudm
          if (!allow_isa_2_07) goto decode_noP8;
-         if (dis_av_arith( theInstr )) goto decode_success;
+         if (dis_av_arith( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Polynomial Vector Multiply Add */
       case 0x408: case 0x448:            // vpmsumb, vpmsumd
       case 0x488: case 0x4C8:            // vpmsumw, vpmsumh
          if (!allow_isa_2_07) goto decode_noP8;
-         if (dis_av_polymultarith( theInstr )) goto decode_success;
+         if (dis_av_polymultarith( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Rotate, Shift */
@@ -29836,46 +30279,46 @@ DisResult disInstr_PPC_WRK (
       case 0x1C4: case 0x2C4:             // vsl, vsr
       case 0x40C: case 0x44C:             // vslo, vsro
          if (!allow_V) goto decode_noV;
-         if (dis_av_shift( theInstr )) goto decode_success;
+         if (dis_av_shift( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x0C4:                         // vrld
       case 0x3C4: case 0x5C4: case 0x6C4: // vsrad, vsld, vsrd
           if (!allow_isa_2_07) goto decode_noP8;
-          if (dis_av_shift( theInstr )) goto decode_success;
+          if (dis_av_shift( prefix, theInstr )) goto decode_success;
           goto decode_failure;
 
       /* AV Logic */
       case 0x404: case 0x444: case 0x484: // vand, vandc, vor
       case 0x4C4: case 0x504:             // vxor, vnor
          if (!allow_V) goto decode_noV;
-         if (dis_av_logic( theInstr )) goto decode_success;
+         if (dis_av_logic( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x544:                         // vorc
       case 0x584: case 0x684:             // vnand, veqv
          if (!allow_isa_2_07) goto decode_noP8;
-         if (dis_av_logic( theInstr )) goto decode_success;
+         if (dis_av_logic( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Rotate */
       case 0x085: case 0x185:             // vrlwmi, vrlwnm
       case 0x0C5: case 0x1C5:             // vrldmi, vrldnm
          if (!allow_V) goto decode_noV;
-         if (dis_av_rotate( theInstr )) goto decode_success;
+         if (dis_av_rotate( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Processor Control */
       case 0x604: case 0x644:             // mfvscr, mtvscr
          if (!allow_V) goto decode_noV;
-         if (dis_av_procctl( theInstr )) goto decode_success;
+         if (dis_av_procctl( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Vector Extract Element instructions */
       case 0x60D: case 0x64D: case 0x68D:   // vextublx, vextuhlx, vextuwlx
       case 0x70D: case 0x74D: case 0x78D:   // vextubrx, vextuhrx, vextuwrx
          if (!allow_V) goto decode_noV;
-         if (dis_av_extract_element( theInstr )) goto decode_success;
+         if (dis_av_extract_element( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
 
@@ -29885,7 +30328,7 @@ DisResult disInstr_PPC_WRK (
       case 0x1CA:                         // vlogefp
       case 0x40A: case 0x44A:             // vmaxfp, vminfp
          if (!allow_V) goto decode_noV;
-         if (dis_av_fp_arith( theInstr )) goto decode_success;
+         if (dis_av_fp_arith( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Floating Point Round/Convert */
@@ -29894,7 +30337,7 @@ DisResult disInstr_PPC_WRK (
       case 0x30A: case 0x34A: case 0x38A: // vcfux, vcfsx, vctuxs
       case 0x3CA:                         // vctsxs
          if (!allow_V) goto decode_noV;
-         if (dis_av_fp_convert( theInstr )) goto decode_success;
+         if (dis_av_fp_convert( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       /* AV Merge, Splat, Extract, Insert */
@@ -29907,12 +30350,12 @@ DisResult disInstr_PPC_WRK (
       case 0x38D: case 0x3CD:             // vinsertw, vinsertd
       case 0x30C: case 0x34C: case 0x38C: // vspltisb, vspltish, vspltisw
          if (!allow_V) goto decode_noV;
-         if (dis_av_permute( theInstr )) goto decode_success;
+         if (dis_av_permute( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x68C: case 0x78C:             // vmrgow, vmrgew
           if (!allow_isa_2_07) goto decode_noP8;
-          if (dis_av_permute( theInstr )) goto decode_success;
+          if (dis_av_permute( prefix, theInstr )) goto decode_success;
           goto decode_failure;
 
       /* AltiVec 128 bit integer multiply by 10 Instructions */
@@ -29920,7 +30363,7 @@ DisResult disInstr_PPC_WRK (
       case 0x241: case 0x041:               //vmul10euq, vmul10ceuq
           if (!allow_V) goto decode_noV;
           if (!allow_isa_3_0) goto decode_noP9;
-          if (dis_av_mult10( theInstr )) goto decode_success;
+          if (dis_av_mult10( prefix, theInstr )) goto decode_success;
           goto decode_failure;
 
       /* AV Pack, Unpack */
@@ -29932,25 +30375,25 @@ DisResult disInstr_PPC_WRK (
       case 0x2CE:                         // vupklsh
       case 0x30E: case 0x34E: case 0x3CE: // vpkpx, vupkhpx, vupklpx
           if (!allow_V) goto decode_noV;
-          if (dis_av_pack( theInstr )) goto decode_success;
+          if (dis_av_pack( prefix, theInstr )) goto decode_success;
           goto decode_failure;
 
       case 0x403: case 0x443: case 0x483:  // vabsdub, vabsduh, vabsduw
           if (!allow_V) goto decode_noV;
-          if (dis_abs_diff( theInstr )) goto decode_success;
+          if (dis_abs_diff( prefix, theInstr )) goto decode_success;
           goto decode_failure;
 
       case 0x44E: case 0x4CE: case 0x54E: // vpkudum, vpkudus, vpksdus
       case 0x5CE: case 0x64E: case 0x6cE: // vpksdss, vupkhsw, vupklsw
          if (!allow_isa_2_07) goto decode_noP8;
-         if (dis_av_pack( theInstr )) goto decode_success;
+         if (dis_av_pack( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x508: case 0x509:             // vcipher, vcipherlast
       case 0x548: case 0x549:             // vncipher, vncipherlast
       case 0x5C8:                         // vsbox
          if (!allow_isa_2_07) goto decode_noP8;
-         if (dis_av_cipher( theInstr )) goto decode_success;
+         if (dis_av_cipher( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
      /* AV Vector Extend Sign Instructions and
@@ -29963,38 +30406,41 @@ DisResult disInstr_PPC_WRK (
                     // vprtybw, vprtybd, vprtybq
                     // vctzb, vctzh, vctzw, vctzd
          if (!allow_V) goto decode_noV;
-         if (dis_av_extend_sign_count_zero( theInstr, allow_isa_3_0 ))
+         if (dis_av_extend_sign_count_zero( prefix, theInstr, allow_isa_3_0 ))
             goto decode_success;
          goto decode_failure;
 
       case 0x6C2: case 0x682:             // vshasigmaw, vshasigmad
          if (!allow_isa_2_07) goto decode_noP8;
-         if (dis_av_hash( theInstr )) goto decode_success;
+         if (dis_av_hash( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x702: case 0x742:             // vclzb, vclzh
       case 0x782: case 0x7c2:             // vclzw, vclzd
          if (!allow_isa_2_07) goto decode_noP8;
-         if (dis_av_count_bitTranspose( theInstr, opc2 )) goto decode_success;
+         if (dis_av_count_bitTranspose( prefix, theInstr, opc2 ))
+	   goto decode_success;
          goto decode_failure;
 
       case 0x703: case 0x743:             // vpopcntb, vpopcnth
       case 0x783: case 0x7c3:             // vpopcntw, vpopcntd
          if (!allow_isa_2_07) goto decode_noP8;
-         if (dis_av_count_bitTranspose( theInstr, opc2 )) goto decode_success;
+         if (dis_av_count_bitTranspose( prefix, theInstr, opc2 ))
+	   goto decode_success;
          goto decode_failure;
 
       case 0x50c:                         // vgbbd
       case 0x5cc:                         // vbpermd
          if (!allow_isa_2_07) goto decode_noP8;
-         if (dis_av_count_bitTranspose( theInstr, opc2 )) goto decode_success;
+         if (dis_av_count_bitTranspose( prefix, theInstr, opc2 ))
+	   goto decode_success;
          goto decode_failure;
 
       case 0x140: case 0x100:             // vaddcuq, vadduqm
       case 0x540: case 0x500:             // vsubcuq, vsubuqm
       case 0x54C:                         // vbpermq
          if (!allow_V) goto decode_noV;
-         if (dis_av_quad( theInstr)) goto decode_success;
+         if (dis_av_quad( prefix, theInstr)) goto decode_success;
          goto decode_failure;
 
       default:
@@ -30011,21 +30457,21 @@ DisResult disInstr_PPC_WRK (
       case 0x206: case 0x246: case 0x286: // vcmpgtub, vcmpgtuh, vcmpgtuw
       case 0x306: case 0x346: case 0x386: // vcmpgtsb, vcmpgtsh, vcmpgtsw
          if (!allow_V) goto decode_noV;
-         if (dis_av_cmp( theInstr )) goto decode_success;
+         if (dis_av_cmp( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       case 0x0C7:                         // vcmpequd
       case 0x2C7:                         // vcmpgtud
       case 0x3C7:                         // vcmpgtsd
           if (!allow_isa_2_07) goto decode_noP8;
-          if (dis_av_cmp( theInstr )) goto decode_success;
+          if (dis_av_cmp( prefix, theInstr )) goto decode_success;
           goto decode_failure;
 
       /* AV Floating Point Compare */
       case 0x0C6: case 0x1C6: case 0x2C6: // vcmpeqfp, vcmpgefp, vcmpgtfp
       case 0x3C6:                         // vcmpbfp
          if (!allow_V) goto decode_noV;
-         if (dis_av_fp_cmp( theInstr )) goto decode_success;
+         if (dis_av_fp_cmp( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
       default:
@@ -30131,7 +30577,9 @@ DisResult disInstr_PPC_WRK (
    /* All decode successes end up here. */
    switch (dres.whatNext) {
       case Dis_Continue:
-         putGST( PPC_GST_CIA, mkSzImm(ty, guest_CIA_curr_instr + 4));
+         /* Update the guest current instruction address (CIA) by size of
+            the instruction just executed.  */
+         putGST( PPC_GST_CIA, mkSzImm(ty, guest_CIA_curr_instr + inst_size));
          break;
       case Dis_StopHere:
          break;
@@ -30141,7 +30589,7 @@ DisResult disInstr_PPC_WRK (
    DIP("\n");
 
    if (dres.len == 0) {
-      dres.len = 4;
+      dres.len = inst_size;   //Tell Valgrind the size of the instruction just excuted
    } else {
       vassert(dres.len == 20);
    }

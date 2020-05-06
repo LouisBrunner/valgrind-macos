@@ -113,6 +113,7 @@ typedef
 #define VEX_HWCAPS_PPC32_ISA2_07   (1<<19) /* ISA 2.07 -- e.g., mtvsrd */
 #define VEX_HWCAPS_PPC32_ISA3_0    (1<<21) /* ISA 3.0  -- e.g., cnttzw */
 #define VEX_HWCAPS_PPC32_ISA3_1    (1<<22) /* ISA 3.1  -- e.g., brh */
+/* ISA 3.1 not supported in 32-bit mode */
 
 /* ppc64: baseline capability is integer and basic FP insns */
 #define VEX_HWCAPS_PPC64_V     (1<<13) /* Altivec (VMX) */

@@ -1684,6 +1684,7 @@ static const HChar* show_hwcaps_ppc32 ( UInt hwcaps )
       { VEX_HWCAPS_PPC32_DFP,     "DFP"     },
       { VEX_HWCAPS_PPC32_ISA2_07, "ISA2_07" },
       { VEX_HWCAPS_PPC32_ISA3_0,  "ISA3_0"  },
+      { VEX_HWCAPS_PPC32_ISA3_1,  "ISA3_1"  },
    };
    /* Allocate a large enough buffer */
    static HChar buf[sizeof prefix + 
@@ -1715,6 +1716,7 @@ static const HChar* show_hwcaps_ppc64 ( UInt hwcaps )
       { VEX_HWCAPS_PPC64_DFP,     "DFP"     },
       { VEX_HWCAPS_PPC64_ISA2_07, "ISA2_07" },
       { VEX_HWCAPS_PPC64_ISA3_0,  "ISA3_0"  },
+      { VEX_HWCAPS_PPC64_ISA3_1,  "ISA3_1"  },
    };
    /* Allocate a large enough buffer */
    static HChar buf[sizeof prefix + 
@@ -2074,6 +2076,27 @@ static void check_hwcaps ( VexArch arch, UInt hwcaps )
             if ( !(hwcaps & VEX_HWCAPS_PPC64_DFP))
                invalid_hwcaps(arch, hwcaps,
                               "ISA3_0 requires DFP capabilities\n");
+         }
+
+         /* ISA3_1 requires everything else */
+         if ((hwcaps & VEX_HWCAPS_PPC64_ISA3_1) != 0) {
+            if ( !((hwcaps
+                    & VEX_HWCAPS_PPC64_ISA3_0) == VEX_HWCAPS_PPC64_ISA3_0))
+               invalid_hwcaps(arch, hwcaps,
+                          "ISA3_1 requires ISA3_0 capabilities\n");
+            if ( !((hwcaps
+                    & VEX_HWCAPS_PPC64_ISA2_07) == VEX_HWCAPS_PPC64_ISA2_07))
+               invalid_hwcaps(arch, hwcaps,
+                          "ISA3_1 requires ISA2_07 capabilities\n");
+            if ( !has_v_fx_gx)
+               invalid_hwcaps(arch, hwcaps,
+                        "ISA3_1 requires VMX and FX and GX capabilities\n");
+            if ( !(hwcaps & VEX_HWCAPS_PPC64_VX))
+               invalid_hwcaps(arch, hwcaps,
+                              "ISA3_1 requires VX capabilities\n");
+            if ( !(hwcaps & VEX_HWCAPS_PPC64_DFP))
+               invalid_hwcaps(arch, hwcaps,
+                              "ISA3_1 requires DFP capabilities\n");
          }
          return;
       }

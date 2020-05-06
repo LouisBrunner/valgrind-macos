@@ -721,6 +721,7 @@ Addr setup_client_stack( void*  init_sp,
          case AT_HWCAP2:  {
             Bool auxv_2_07, hw_caps_2_07;
             Bool auxv_3_0, hw_caps_3_0;
+            Bool auxv_3_1, hw_caps_3_1;
 
 	    /* The HWCAP2 field may contain an arch_2_07 entry that indicates
              * if the processor is compliant with the 2.07 ISA. (i.e. Power 8
@@ -771,9 +772,27 @@ Addr setup_client_stack( void*  init_sp,
                == VEX_HWCAPS_PPC64_ISA3_0;
 
             /* Verify the PPC_FEATURE2_ARCH_3_00 setting in HWCAP2
-	     * matches the setting in VEX HWCAPS.
-	     */
+             * matches the setting in VEX HWCAPS.
+             */
             vg_assert(auxv_3_0 == hw_caps_3_0);
+
+            /*  Power ISA version 3.1
+                https://ibm.ent.box.com/s/hhjfw0x0lrbtyzmiaffnbxh2fuo0fog0
+
+                64-bit ELF V? ABI specification for Power.  HWCAP2 bit pattern
+                for ISA 3.0, page ?.
+
+                ADD PUBLIC LINK WHEN AVAILABLE
+            */
+            /* ISA 3.1 */
+            auxv_3_1 = (auxv->u.a_val & 0x00040000ULL) == 0x00040000ULL;
+            hw_caps_3_1 = (vex_archinfo->hwcaps & VEX_HWCAPS_PPC64_ISA3_1)
+               == VEX_HWCAPS_PPC64_ISA3_1;
+
+            /* Verify the PPC_FEATURE2_ARCH_3_1 setting in HWCAP2
+             * matches the setting in VEX HWCAPS.
+             */
+            vg_assert(auxv_3_1 == hw_caps_3_1);
          }
 
             break;

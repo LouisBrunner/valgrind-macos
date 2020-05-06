@@ -28431,6 +28431,7 @@ DisResult disInstr_PPC_WRK (
    Bool      allow_DFP = False;
    Bool      allow_isa_2_07 = False;
    Bool      allow_isa_3_0  = False;
+   Bool      allow_isa_3_1  = False;
 
    /* What insn variants are we supporting today? */
    if (mode64) {
@@ -28442,6 +28443,7 @@ DisResult disInstr_PPC_WRK (
       allow_DFP = (0 != (hwcaps & VEX_HWCAPS_PPC64_DFP));
       allow_isa_2_07 = (0 != (hwcaps & VEX_HWCAPS_PPC64_ISA2_07));
       allow_isa_3_0  = (0 != (hwcaps & VEX_HWCAPS_PPC64_ISA3_0));
+      allow_isa_3_1  = (0 != (hwcaps & VEX_HWCAPS_PPC64_ISA3_1));
    } else {
       allow_F  = (0 != (hwcaps & VEX_HWCAPS_PPC32_F));
       allow_V  = (0 != (hwcaps & VEX_HWCAPS_PPC32_V));
@@ -28451,6 +28453,7 @@ DisResult disInstr_PPC_WRK (
       allow_DFP = (0 != (hwcaps & VEX_HWCAPS_PPC32_DFP));
       allow_isa_2_07 = (0 != (hwcaps & VEX_HWCAPS_PPC32_ISA2_07));
       allow_isa_3_0  = (0 != (hwcaps & VEX_HWCAPS_PPC32_ISA3_0));
+      allow_isa_3_1  = (0 != (hwcaps & VEX_HWCAPS_PPC32_ISA3_1));
    }
 
    /* Enable writting the OV32 and CA32 bits added with ISA3.0 */
@@ -30192,7 +30195,8 @@ DisResult disInstr_PPC ( IRSB*        irsb_IN,
 
    mask64 = VEX_HWCAPS_PPC64_V | VEX_HWCAPS_PPC64_FX
             | VEX_HWCAPS_PPC64_GX | VEX_HWCAPS_PPC64_VX | VEX_HWCAPS_PPC64_DFP
-            | VEX_HWCAPS_PPC64_ISA2_07 | VEX_HWCAPS_PPC64_ISA3_0;
+            | VEX_HWCAPS_PPC64_ISA2_07 | VEX_HWCAPS_PPC64_ISA3_0
+            | VEX_HWCAPS_PPC64_ISA3_1;
 
    if (mode64) {
       vassert((hwcaps_guest & mask32) == 0);

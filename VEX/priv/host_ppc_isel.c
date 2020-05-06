@@ -7053,7 +7053,7 @@ HInstrArray* iselSB_PPC ( const IRSB* bb,
    mode64 = arch_host == VexArchPPC64;
 
    /* do some sanity checks,
-    * Note: no 32-bit support for ISA 3.0
+    * Note: no 32-bit support for ISA 3.0, ISA 3.1
     */
    mask32 = VEX_HWCAPS_PPC32_F | VEX_HWCAPS_PPC32_V
             | VEX_HWCAPS_PPC32_FX | VEX_HWCAPS_PPC32_GX | VEX_HWCAPS_PPC32_VX
@@ -7061,7 +7061,8 @@ HInstrArray* iselSB_PPC ( const IRSB* bb,
 
    mask64 = VEX_HWCAPS_PPC64_V | VEX_HWCAPS_PPC64_FX
             | VEX_HWCAPS_PPC64_GX | VEX_HWCAPS_PPC64_VX | VEX_HWCAPS_PPC64_DFP
-            | VEX_HWCAPS_PPC64_ISA2_07 | VEX_HWCAPS_PPC64_ISA3_0;
+            | VEX_HWCAPS_PPC64_ISA2_07 | VEX_HWCAPS_PPC64_ISA3_0
+            | VEX_HWCAPS_PPC64_ISA3_1;
 
    if (mode64) {
       vassert((hwcaps_host & mask32) == 0);

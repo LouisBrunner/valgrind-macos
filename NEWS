@@ -33,6 +33,10 @@ support for X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * DHAT:
 
+  - The implicit memcpy done by each call to realloc now counts towards the
+    read and write counts of resized heap blocks, making those counts higher
+    and more accurate.
+
 * Cachegrind:
 
   - cg_annotate's --auto and --show-percs options now default to 'yes', because

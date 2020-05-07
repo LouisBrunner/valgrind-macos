@@ -620,6 +620,53 @@ optimization.</para>
 </sect1>
 
 
+<sect1 id="dh-manual.options" xreflabel="Treatment of realloc">
+<title>Treatment of <computeroutput>realloc</computeroutput></title>
+
+<para><computeroutput>realloc</computeroutput> is a tricky function and there
+are several different ways that DHAT could handle it.</para>
+
+<para>Imagine a <computeroutput>malloc(100)</computeroutput> call followed by
+a <computeroutput>realloc(200)</computeroutput> call. This combination is
+considered to add two to the total block count, and 300 bytes to the total
+bytes count. (An alternative would be to only add one to the total block
+count, and 200 bytes to the total bytes count, as if a single
+<computeroutput>malloc(200)</computeroutput> call had occurred. While this
+would be defensible from a semantic point of view, it is silly from an
+operational point of view, because making two calls to allocator functions is
+more expensive than one call, and DHAT is a profiler that aims to help with
+runtime costs.)</para>
+
+<para>Furthermore, the implicit copying of the 100 bytes is added to the reads
+and writes counts. Without this, the read and write counts would be
+under-measured and misleading.</para>
+
+<para>However, DHAT only increases the current heap size by 100 bytes for this
+combination, and does not change the current block count. (As opposed to
+increasing the current heap size by 200 bytes and then decreasing it by 100
+bytes.) As a result, it can only increase the global heap peak (if indeed,
+this results in a new peak) by 100 bytes.</para>
+
+<para>Finally, the allocation point assigned to the block allocated by the
+<computeroutput>malloc(100)</computeroutput> call is retained once the block
+is reallocated. Which means that all 300 bytes are attributed to that
+allocation point, and no separate allocation point is created for the
+<computeroutput>realloc(200)</computeroutput> call. This may be surprising,
+but it has one large benefit.</para>
+
+<para>Imagine some code that starts with an empty buffer, and then gradually
+adds data to that buffer from numerous different points in the code,
+reallocating the buffer each time it gets full. (E.g. code generation in a
+compiler might work this way.) With the described approach, the first heap
+block and all subsequent heap blocks are attributed to the same allocation
+point. While this is something of a lie -- the first allocation point isn't
+actually responsible for the other allocations -- it is arguably better than
+having the allocation points spread around, in a distribution
+that unpredictably depends on whenever the reallocation points were
+triggered.</para>
+
+</sect1>
+
 
 <sect1 id="dh-manual.options" xreflabel="DHAT Command-line Options">
 <title>DHAT Command-line Options</title>

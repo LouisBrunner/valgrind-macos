@@ -576,6 +576,49 @@ ULong extract_bits_under_mask_helper( ULong src, ULong mask, UInt flag ) {
       return zeros;
 }
 
+UInt count_bits_under_mask_helper( ULong src, ULong mask, UInt flag ) {
+
+   UInt i, count_extracted_1, count_extracted_0;;
+   ULong mask_bit;
+
+   count_extracted_1 = 0;
+   count_extracted_0 = 0;
+
+   for (i=0; i<64; i++){
+      mask_bit = 0x1 & (mask >> (63-i));
+
+      if (mask_bit == 1)
+         count_extracted_1++;
+
+      if ((1^mask_bit) == 1)
+         count_extracted_0++;
+   }
+
+   if (flag == 1)
+      return count_extracted_1;
+   else
+      return count_extracted_0;
+}
+
+ULong deposit_bits_under_mask_helper( ULong src, ULong mask ) {
+
+   UInt i, src_bit_pos;
+   ULong result, mask_bit, bit_src;
+
+   result = 0;
+   src_bit_pos = 0;
+
+   for (i=0; i<64; i++){
+      mask_bit = 0x1 & (mask >> i);
+
+      if (mask_bit == 1) {
+         bit_src = 0x1 & (src >> src_bit_pos);
+         result = result | (bit_src << i);
+         src_bit_pos++;
+      }
+   }
+   return result;
+}
 
 /*----------------------------------------------*/
 /*--- Vector Evaluate Inst helper --------------*/
@@ -599,6 +642,7 @@ ULong vector_evaluate64_helper( ULong srcA, ULong srcB, ULong srcC,
       bitB = 0x1 & (srcB >> i);
       bitC = 0x1 & (srcC >> i);
 
+      /* The value of select is IBM numbering based, i.e. MSB is bit 0 */
       select = (bitA << 2) | (bitB << 1) | bitC;
       bitIMM = (IMM >> (MAX_IMM_BITS - 1 - select)) & 0x1;
       result = result | (bitIMM << i);

@@ -5286,6 +5286,151 @@ static IRExpr * convert_from_national ( const VexAbiInfo* vbi, IRExpr *src ) {
    return mkexpr( result );
 }
 
+static IRExpr * popcnt64 ( const VexAbiInfo* vbi,
+                           IRExpr *src ){
+   /* The function takes a 64-bit source and counts the number of bits in the
+      source that are 1's.  */
+   IRTemp result = newTemp( Ity_I64);
+
+   assign( result,
+           mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                          "population_count64_helper",
+                          fnptr_to_fnentry( vbi,
+                                            &population_count64_helper ),
+                          mkIRExprVec_1( src ) ) );
+
+   return mkexpr( result );
+}
+
+static IRExpr * extract_bits_under_mask ( const VexAbiInfo* vbi,
+                                          IRExpr *src, IRExpr *mask,
+                                          IRExpr *flag ) {
+
+   /* The function takes a 64-bit value and a 64-bit mask.  It will extract the
+    * bits from the source that align with 1's in the mask or it will extract
+    * the bits from the source that align with 0's in the mask.
+    */
+   IRTemp result = newTemp( Ity_I64);
+
+   assign( result,
+           mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                          "extract_bits_under_mask_helper",
+                          fnptr_to_fnentry( vbi,
+                                            &extract_bits_under_mask_helper ),
+                          mkIRExprVec_3( src, mask, flag ) ) );
+
+   return mkexpr( result );
+}
+
+static IRExpr * count_bits_under_mask ( const VexAbiInfo* vbi,
+                                        IRExpr *src , IRExpr *mask,
+                                        IRExpr *flag ) {
+
+   /* The function takes a 64-bit value and a 64-bit mask.  It will count the
+    * bits from the source that align with 1's in the mask or it will count
+    * the bits from the source that align with 0's in the mask.
+    */
+   IRTemp result = newTemp( Ity_I32);
+
+   assign( result,
+           mkIRExprCCall( Ity_I32, 0 /*regparms*/,
+                          "count_bits_under_mask_helper",
+                          fnptr_to_fnentry( vbi,
+                                            &count_bits_under_mask_helper ),
+                          mkIRExprVec_3( src, mask, flag ) ) );
+
+   return mkexpr( result );
+}
+
+static IRExpr * deposit_bits_under_mask ( const VexAbiInfo* vbi,
+                                          IRExpr *src , IRExpr *mask ) {
+
+   /* The contents of the rightmost n bits of src are placed into bits_rtn
+    * under the control of the mask.  The LSB (bit 63) of src is placed into
+    * the bit of bits_rtn corresponding to the right most bit of mask that is
+    * a 1.  The LSB+1 (bit 62) of src is placed into the bit of bits_rtn
+    * corresponding to the second right most bit of mask that is a 1, etc.
+    */
+
+   IRTemp result = newTemp( Ity_I64);
+
+   assign( result,
+           mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                          "deposit_bits_under_mask_helper",
+                          fnptr_to_fnentry( vbi,
+                                            &deposit_bits_under_mask_helper ),
+                          mkIRExprVec_2( src, mask) ) );
+
+   return mkexpr( result );
+}
+
+static IRExpr * vector_evaluate_inst ( const VexAbiInfo* vbi,
+                                       IRExpr *srcA, IRExpr *srcB,
+                                       IRExpr *srcC, IRExpr *IMM ){
+   /* This function implements the ISA 3.1 instruction xxeval.  The
+      instruction is too complex to do with Iops.  An Iop implementation is
+      expected to exhaust memory and be really complex to write, debug and
+      understand.  The second option would be to just map it to a new Iop.
+      Unfortunately, I doubt any other architecture will implement it making
+      the Iop PPC specific which isn't really attractive.  It would need
+      extensive documenation for the Iop definition for anyone else to
+      understand what it does.  That leaves doing it as a clean helper.  This
+      is not the ideal option, but was chosen for now to help document what
+      the instruction does.  Discuss this with Julian before committing to
+      decide if we really want to use this approach or map the instructioin
+      to a new IOP.  */
+   /* FIX ME, CARLL 11/8/2018*/
+
+   /* The instruction description, note the IBM bit numbering is left to right:
+
+      For each integer value i, 0 to 127, do the following.
+
+      Let j be the value of the concatenation of the contents of bit i of
+      srcA, bit i of srcB, bit i of srcC. (j = srcA[i] | srcB[i] | srcC[i])
+
+      The value of bit IMM[j] is placed into bit result[i].
+
+      Basically the instruction lets you set each of the 128 bits in the result
+      by selecting one of the eight bits in the IMM value.  */
+
+   /* Calling clean helpers with 128-bit args is currently not supported.  It
+      isn't worth adding the support.  We will simply call a 64-bit helper to
+      do the upper 64-bits of the result and the lower 64-bits of the result.
+   */
+
+   IRTemp result_hi = newTemp( Ity_I64 );
+   IRTemp result_lo = newTemp( Ity_I64 );
+   IRExpr *srcA_hi;
+   IRExpr *srcB_hi;
+   IRExpr *srcC_hi;
+   IRExpr *srcA_lo;
+   IRExpr *srcB_lo;
+   IRExpr *srcC_lo;
+
+   srcA_hi = unop( Iop_V128HIto64, srcA );
+   srcA_lo = unop( Iop_V128to64, srcA );
+   srcB_hi = unop( Iop_V128HIto64, srcB );
+   srcB_lo = unop( Iop_V128to64, srcB );
+   srcC_hi = unop( Iop_V128HIto64, srcC );
+   srcC_lo = unop( Iop_V128to64, srcC );
+
+   assign( result_hi,
+           mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                          "vector_evaluate64_helper",
+                          fnptr_to_fnentry( vbi,
+                                            &vector_evaluate64_helper ),
+                          mkIRExprVec_4( srcA_hi, srcB_hi, srcC_hi, IMM ) ) );
+
+   assign( result_lo,
+           mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                          "vector_evaluate64_helper",
+                          fnptr_to_fnentry( vbi,
+                                            &vector_evaluate64_helper ),
+                          mkIRExprVec_4( srcA_lo, srcB_lo, srcC_lo, IMM ) ) );
+
+   return binop( Iop_64HLtoV128, mkexpr( result_hi ), mkexpr( result_lo ) );
+}
+
 static IRExpr * UNSIGNED_CMP_GT_V128 ( IRExpr *vA, IRExpr *vB ) {
    /* This function does an unsigned compare of two V128 values. The
     * function is for use in 32-bit mode only as it is expensive.  The
@@ -8470,7 +8615,8 @@ static Bool dis_vector_splat_imm_prefix ( UInt prefix, UInt theInstr )
  /*
   VSX Vector Permute Extended 8RR:D-form
  */
-static Bool dis_vector_permute_prefix ( UInt prefix, UInt theInstr )
+static Bool dis_vector_permute_prefix ( UInt prefix, UInt theInstr,
+                                        const VexAbiInfo* vbi )
 {
    #define MAX_ELE 16
    UChar opc1 = ifieldOPC(theInstr);
@@ -8479,7 +8625,6 @@ static Bool dis_vector_permute_prefix ( UInt prefix, UInt theInstr )
    UChar rXA_addr = ifieldRegXA_8RR_XX4( theInstr );
    UChar rXB_addr = ifieldRegXB_8RR_XX4( theInstr );
    UChar rXC_addr = ifieldRegXC_8RR_XX4( theInstr );
-   UInt  UIM      = IFIELD(prefix, 0, 3);   // bit [29:31] of the prefix
 
    Int i;
    IRTemp rXA  = newTemp(Ity_V128);
@@ -8495,77 +8640,104 @@ static Bool dis_vector_permute_prefix ( UInt prefix, UInt theInstr )
   /* These are prefix instructions, no equivalent word instruction.   */
    if ((opc1 != 0x22) && (opc2 != 0)) return False;
 
-   DIP("xxpermx v%u,v%u,v%u,v%u,%u\n",
-       rXT_addr, rXA_addr, rXB_addr, rXC_addr, UIM);
-
    assign( rXA, getVSReg( rXA_addr ) );
    assign( rXB, getVSReg( rXB_addr ) );
    assign( rXC, getVSReg( rXC_addr ) );
 
-   result[MAX_ELE] = newTemp(Ity_V128);
-   assign( eidx_mask, mkU64( 0x1F ) );
-   assign( cmp_mask, mkU64( 0x7 ) );
-   assign( result[MAX_ELE], binop( Iop_64HLtoV128, mkU64( 0 ), mkU64( 0 ) ) );
+   switch(opc2) {
+   case 0:
+   {
+      UInt  UIM = IFIELD(prefix, 0, 3);   // bit [29:31] of the prefix
 
-   for (i = MAX_ELE-1; i >= 0; i--) {
+      DIP("xxpermx v%u,v%u,v%u,v%u,%u\n",
+          rXT_addr, rXA_addr, rXB_addr, rXC_addr, UIM);
 
-      eidx[i] = newTemp( Ity_I64 );
-      byte[i] = newTemp( Ity_I64 );
-      result[i] = newTemp( Ity_V128 );
-      result_mask[i] = newTemp( Ity_I64 );
+      result[MAX_ELE] = newTemp(Ity_V128);
+      assign( eidx_mask, mkU64( 0x1F ) );
+      assign( cmp_mask, mkU64( 0x7 ) );
+      assign( result[MAX_ELE], binop( Iop_64HLtoV128, mkU64( 0 ),
+                                      mkU64( 0 ) ) );
 
-      /* the eidx is left based, make index right based for
-         extractBytefromV256().  */
-      if ( i >= 8) {
-         assign( eidx[i],
-                binop( Iop_Sub64,
-                        mkU64( 31 ),
-                        binop( Iop_And64,
-                               mkexpr( eidx_mask ),
-                               binop( Iop_Shr64,
-                                      unop( Iop_V128HIto64, mkexpr( rXC ) ),
-                                      mkU8( (i - 8)*8 ) ) ) ) );
-         assign( result_mask[i],
-                 unop( Iop_1Sto64,
-                       binop( Iop_CmpEQ64,
-                              mkU64( UIM ),
-                              binop( Iop_And64,
-                                     mkexpr ( cmp_mask ),
-                                     binop( Iop_Shr64,  // bits 0:2 of ith byte
-                                            unop( Iop_V128HIto64,
-                                                  mkexpr( rXC ) ),
-                                            mkU8( (i - 8)*8 + 5 ) ) ) ) ) );
-      } else {
-         assign( eidx[i],
-                 binop( Iop_Sub64,
-                        mkU64( 31 ),
-                        binop( Iop_And64,
-                               mkexpr( eidx_mask ),
-                               binop( Iop_Shr64,
-                                      unop( Iop_V128to64, mkexpr( rXC ) ),
-                                      mkU8( i*8 ) ) ) ) );
-         assign( result_mask[i],
-                 unop( Iop_1Sto64,
-                       binop( Iop_CmpEQ64,
-                              mkU64( UIM ),
-                              binop( Iop_And64,
-                                     mkexpr ( cmp_mask ),
-                                     binop( Iop_Shr64,  // bits 0:2 of ith byte
-                                            unop( Iop_V128to64,
-                                                  mkexpr( rXC ) ),
-                                            mkU8( i*8 + 5 ) ) ) ) ) );
+      for (i = MAX_ELE-1; i >= 0; i--) {
+         eidx[i] = newTemp( Ity_I64 );
+         byte[i] = newTemp( Ity_I64 );
+         result[i] = newTemp( Ity_V128 );
+         result_mask[i] = newTemp( Ity_I64 );
+
+         /* The eidx is left based, make index right based for
+            extractBytefromV256().  */
+         if ( i >= 8) {
+            assign( eidx[i],
+                    binop( Iop_Sub64,
+                           mkU64( 31 ),
+                           binop( Iop_And64,
+                                  mkexpr( eidx_mask ),
+                                  binop( Iop_Shr64,
+                                         unop( Iop_V128HIto64, mkexpr( rXC ) ),
+                                         mkU8( (i - 8)*8 ) ) ) ) );
+            assign( result_mask[i],
+                    unop( Iop_1Sto64,
+                          binop( Iop_CmpEQ64,
+                                 mkU64( UIM ),
+                                 binop( Iop_And64,
+                                        mkexpr ( cmp_mask ),
+                                        // bits 0:2 of ith byte
+                                        binop( Iop_Shr64,
+                                               unop( Iop_V128HIto64,
+                                                     mkexpr( rXC ) ),
+                                               mkU8( (i - 8)*8 + 5 ) ) )
+                             ) ) );
+         } else {
+            assign( eidx[i],
+                    binop( Iop_Sub64,
+                           mkU64( 31 ),
+                           binop( Iop_And64,
+                                  mkexpr( eidx_mask ),
+                                  binop( Iop_Shr64,
+                                         unop( Iop_V128to64, mkexpr( rXC ) ),
+                                         mkU8( i*8 ) ) ) ) );
+            assign( result_mask[i],
+                    unop( Iop_1Sto64,
+                          binop( Iop_CmpEQ64,
+                                 mkU64( UIM ),
+                                 binop( Iop_And64,
+                                        mkexpr ( cmp_mask ),
+                                        // bits 0:2 of ith byte
+                                        binop( Iop_Shr64,
+                                               unop( Iop_V128to64,
+                                                     mkexpr( rXC ) ),
+                                               mkU8( i*8 + 5 ) ) ) ) ) );
+         }
+
+         assign( byte[i],
+                 binop( Iop_And64,
+                        mkexpr( result_mask[i] ),
+                        extractBytefromV256( rXA, rXB, eidx[i] ) ) );
+
+         assign( result[i], insert_field_into_vector( result[i+1],
+                                                      mkU64( i ),
+                                                      mkexpr( byte[i] ),
+                                                      mkU64( 0xFF ) ) );
       }
-
-      assign( byte[i],
-              binop( Iop_And64,
-                     mkexpr( result_mask[i] ),
-                     extractBytefromV256( rXA, rXB, eidx[i] ) ) );
-
-      assign( result[i], insert_field_into_vector( result[i+1], mkU64( i ),
-                                                   mkexpr( byte[i] ),
-                                                   mkU64( 0xFF ) ) );
+      putVSReg( rXT_addr, mkexpr( result[0] ) );
    }
-   putVSReg( rXT_addr, mkexpr( result[0] ) );
+   break;
+
+   case 1:
+   {
+      UInt  IMM = IFIELD(prefix, 0, 8);  // bit [24:31] of the prefix
+      DIP("xxeval v%u,v%u,v%u,v%u,%u\n",
+          rXT_addr, rXA_addr, rXB_addr, rXC_addr, IMM);
+      putVSReg( rXT_addr,
+                vector_evaluate_inst ( vbi, mkexpr( rXA ), mkexpr( rXB ),
+                                       mkexpr( rXC ), mkU64( IMM ) ) );
+   }
+   break;
+
+   default:
+      vex_printf("dis_vector_permute_prefix(ppc)(opc2)\n");
+      return False;
+   }
 
    return True;
 #undef MAX_ELE
@@ -19738,6 +19910,508 @@ dis_av_count_bitTranspose ( UInt prefix, UInt theInstr, UInt opc2 )
          vex_printf("dis_av_count_bitTranspose(ppc)(opc2)\n");
          return False;
       break;
+   }
+   return True;
+}
+
+/*
+ * Scalar / Vector Population Count/bit matrix transpose
+ */
+static Bool dis_logical_mask_bits ( UInt prefix, UInt theInstr,
+                                    const VexAbiInfo* vbi )
+{
+   UChar opc1    = ifieldOPC(theInstr);
+   UInt  opc2    = ifieldOPClo10(theInstr);
+   UChar rS_addr = ifieldRegDS(theInstr);
+   UChar rA_addr = ifieldRegA(theInstr);
+   UChar rB_addr = ifieldRegB(theInstr);
+
+   IRTemp rS     = newTemp( Ity_I64 );
+   IRTemp rA     = newTemp( Ity_I64 );
+   IRTemp rB     = newTemp( Ity_I64 );
+
+   /* There are no prefixed version of these instructions.  */
+   vassert( !prefix_instruction( prefix ) );
+
+   assign( rS, getIReg(rS_addr) );
+   assign( rB, getIReg(rB_addr) );
+
+   if (opc1 != 0x1F) {
+      vex_printf( "dis_logical_mask_bits(ppc)(instr)\n" );
+      return False;
+   }
+
+   switch (opc2) {
+
+      /* X-form instructions */
+      case 0x03B: // cntlzdm, Count Leading Zeros Doubleword Under bitmask
+      case 0x0BC: // pextd, Parallel Bits Extract Doubleword
+      case 0x0DC: // cfuged, Centrifuge Doubleword
+      case 0x23B: // cnttzdm, Count Trailing Zeros Doubleword Under bit mask
+         {
+            UInt max_bits = mode64 ? 64 : 32;
+            IRTemp ones = newTemp( Ity_I64 );
+            IRTemp all_ones = newTemp( Ity_I64 );
+
+            /* Get the bits corresponding to 1's in the mask */
+            assign( ones, extract_bits_under_mask ( vbi,
+                                                    mkexpr( rS ),
+                                                    mkexpr( rB ),
+                                                    mkU64( 1 ) ) );
+
+            if ( opc2 == 0x03b ) {  // cntlzdm
+               IRTemp cnt = newTemp( Ity_I64 );
+
+               DIP("cntlzdm r%u,r%u,r%u\n", rA_addr, rS_addr, rB_addr);
+               assign( cnt, popcnt64( vbi, mkexpr( rB ) ) );
+
+               assign( all_ones, binop( Iop_Shr64,
+                                        mkU64( 0xFFFFFFFFFFFFFFFF ),
+                                        unop( Iop_64to8, mkexpr( cnt ) ) ) );
+
+               assign( rA,
+                       unop( Iop_ClzNat64,
+                             binop( Iop_Or64,
+                                    binop( Iop_Shl64,
+                                           mkexpr( ones ),
+                                           binop( Iop_Sub8,
+                                                  mkU8( max_bits ),
+                                                  unop( Iop_64to8,
+                                                        mkexpr( cnt ) ) ) ),
+                                    mkexpr( all_ones ) ) ) );
+
+            } else if ( opc2 == 0x0BC ) { // pextd
+               DIP("pextd r%u,r%u,r%u\n", rA_addr, rS_addr, rB_addr);
+               assign( rA, mkexpr( ones ) );
+
+            } else if ( opc2 == 0x0DC ) { // cfuged
+               IRTemp zeros = newTemp( Ity_I64 );
+               IRTemp cnt = newTemp( Ity_I64 );
+
+               DIP("cfuged r%u,r%u,r%u\n", rA_addr, rS_addr, rB_addr);
+               assign( cnt, popcnt64( vbi, mkexpr( rB ) ) );
+
+               /* Get the bits corresponding to 0's in the mask */
+               assign( zeros, extract_bits_under_mask ( vbi,
+                                                       mkexpr( rS ),
+                                                       mkexpr( rB ),
+                                                       mkU64( 0 ) ) );
+
+               assign( rA,
+                       binop( Iop_Or64,
+                              binop( Iop_Shl64,
+                                     mkexpr( zeros ),
+                                     unop( Iop_64to8,
+                                           mkexpr( cnt ) ) ),
+                              mkexpr( ones ) ) );
+
+            } else if ( opc2 == 0x23B ) {   //cnttzdm
+               DIP("cnttzdm r%u,r%u,r%u\n", rA_addr, rS_addr, rB_addr);
+               assign( all_ones, binop( Iop_Shl64,
+                                        mkU64( 0xFFFFFFFFFFFFFFFF ),
+                                        unop( Iop_64to8,
+                                              popcnt64( vbi,
+                                                        mkexpr( rB ) ) ) ) );
+
+               assign( rA,
+                       unop( Iop_CtzNat64,
+                             binop( Iop_Or64,
+                                    mkexpr( all_ones ), mkexpr( ones ) ) ) );
+
+            } else {   //pexld
+               DIP("pexld r%u,r%u,r%u\n", rA_addr, rS_addr, rB_addr);
+               assign( rA, mkexpr( ones ) );
+            }
+            break;
+         }
+
+      case 0x09C: // pdepd, Parallel Bits Deposit Doubleword X-form
+         {
+            IRTemp ones = newTemp( Ity_I64 );
+
+            DIP("pdepd r%u,r%u,r%u\n", rA_addr, rS_addr, rB_addr);
+            assign( ones, deposit_bits_under_mask ( vbi, mkexpr( rS ),
+                                                    mkexpr( rB ) ) );
+            assign( rA, mkexpr( ones ) );
+            break;
+         }
+
+      default:
+         vex_printf("dis_logical_mask_bits)(ppc)\n");
+         return False;
+      }
+
+   putIReg( rA_addr, mkexpr( rA ) );
+   return True;
+}
+
+static Bool
+dis_vector_logical_mask_bits ( UInt prefix, UInt theInstr, UInt opc2,
+                               const VexAbiInfo* vbi )
+{
+   UChar vRA_addr = ifieldRegA(theInstr);
+   UChar vRB_addr = ifieldRegB(theInstr);
+   UChar vRT_addr = ifieldRegDS(theInstr);
+   UChar opc1 = ifieldOPC( theInstr );
+   IRTemp vA = newTemp(Ity_V128);
+   IRTemp vB = newTemp(Ity_V128);
+
+   /* There are no prefixed version of these instructions.  */
+   vassert( !prefix_instruction( prefix ) );
+
+   if (opc1 != 4) {
+      vex_printf( "dis_vector_logical_mask_bits(ppc)(instr)\n" );
+      return False;
+   }
+
+   assign( vA, getVReg(vRA_addr));
+   assign( vB, getVReg(vRB_addr));
+
+   switch (opc2) {
+   case 0x4CC: // vgnb, Vector Gather every Nth Bit VX-form
+      {
+         IRTemp vB_hi = newTemp( Ity_I64 );
+         IRTemp vB_lo = newTemp( Ity_I64 );
+         IRTemp ones_hi, ones_lo;
+         UChar N = toUChar( IFIELD( theInstr, 16, 3 ) );
+         ULong extract_mask_hi, extract_mask_lo, byte_mask;
+         UInt i, num_bits_hi, num_bits_lo;
+
+         /* Note, the return register number is actually for a GPR not a
+         vector register.  */
+         DIP("vgnb %u,v%u,%u\n", vRT_addr, vRB_addr, N);
+
+         if ((N < 2) || (N>7)) {
+            /* The value of N can be any value between 2 and 7, inclusive.  */
+            vex_printf("\nERROR: vgnb RT,VRB,N; N is out of range.\n\n");
+            return False;
+         }
+
+         /* Create 32-bit extract mask, starting with bit 0 (IBM numbering),
+            every Nth bit going right will be a 1.  */
+         extract_mask_hi = 0;
+         extract_mask_lo = 0;
+
+         byte_mask = 1;
+
+         i = 0;
+         num_bits_hi = 0;
+         while( i < 64) {
+            extract_mask_hi = extract_mask_hi | (byte_mask << (63 - i));
+            i = i + N;
+            num_bits_hi++;
+         }
+
+         num_bits_lo = 0;
+         while( i < 128) {
+            extract_mask_lo = extract_mask_lo | (byte_mask << (127 - i));
+            i = i + N;
+            num_bits_lo++;
+         }
+
+         ones_hi = newTemp( Ity_I64 );
+         ones_lo = newTemp( Ity_I64 );
+
+         assign( vB_hi, unop( Iop_V128HIto64, mkexpr( vB ) ) );
+         assign( vB_lo, unop( Iop_V128to64, mkexpr( vB ) ) );
+
+         assign( ones_hi, extract_bits_under_mask ( vbi, mkexpr( vB_hi ),
+                                                    mkU64( extract_mask_hi ),
+                                                    mkU64( 1 ) ) );
+         assign( ones_lo, extract_bits_under_mask ( vbi, mkexpr( vB_lo ),
+                                                    mkU64( extract_mask_lo ),
+                                                    mkU64( 1 ) ) );
+
+         /* Concatenate the extracted bits from ones_hi and ones_lo and
+            store in GPR.  Make sure the hi and low bits are left aligned per
+            IBM numbering */
+         putIReg( vRT_addr, binop( Iop_Or64,
+                                   binop( Iop_Shl64,
+                                          mkexpr( ones_hi ),
+                                          mkU8( 64 - num_bits_hi ) ),
+                                   binop( Iop_Shl64,
+                                          mkexpr( ones_lo ),
+                                          mkU8( 64 - num_bits_hi
+                                          - num_bits_lo ) ) ) );
+      }
+      return True;
+
+   case 0x54D: // vcfuged, Centrifuge Doubleword VX-form
+      {
+         IRTemp vA_hi = newTemp( Ity_I64 );
+         IRTemp vA_lo = newTemp( Ity_I64 );
+         IRTemp vB_hi = newTemp( Ity_I64 );
+         IRTemp vB_lo = newTemp( Ity_I64 );
+         IRTemp zeros[2];
+         IRTemp ones[2];
+         IRTemp count[2];
+
+         DIP("vcfuged v%u,v%u,v%u\n", vRT_addr, vRA_addr, vRB_addr);
+
+         zeros[0] = newTemp( Ity_I64 );
+         zeros[1] = newTemp( Ity_I64 );
+         ones[0] = newTemp( Ity_I64 );
+         ones[1] = newTemp( Ity_I64 );
+         count[0] = newTemp( Ity_I64 );
+         count[1] = newTemp( Ity_I64 );
+
+         assign( vA_hi, unop( Iop_V128HIto64, mkexpr( vA ) ) );
+         assign( vB_hi, unop( Iop_V128HIto64, mkexpr( vB ) ) );
+         assign( vA_lo, unop( Iop_V128to64, mkexpr( vA ) ) );
+         assign( vB_lo, unop( Iop_V128to64, mkexpr( vB ) ) );
+
+         assign( count[0], popcnt64( vbi, mkexpr( vB_hi ) ) );
+         assign( count[1], popcnt64( vbi, mkexpr( vB_lo ) ) );
+
+         assign( ones[0], extract_bits_under_mask ( vbi, mkexpr( vA_hi ),
+                                                    mkexpr( vB_hi ),
+                                                    mkU64( 1 ) ) );
+         assign( ones[1], extract_bits_under_mask ( vbi, mkexpr( vA_lo ),
+                                                    mkexpr( vB_lo ),
+                                                    mkU64( 1 ) ) );
+         assign( zeros[0], extract_bits_under_mask ( vbi, mkexpr( vA_hi ),
+                                                     mkexpr( vB_hi ),
+                                                     mkU64( 0 ) ) );
+         assign( zeros[1], extract_bits_under_mask ( vbi, mkexpr( vA_lo ),
+                                                     mkexpr( vB_lo ),
+                                                     mkU64( 0 ) ) );
+
+         /* Put the bits corresponding to zero mask bits to the left of the
+             bits corresponding to one mask bits for the upper and lower 64-bit
+             words.  */
+         putVReg( vRT_addr, binop( Iop_64HLtoV128,
+                                   binop( Iop_Or64,
+                                          binop( Iop_Shl64,
+                                                 mkexpr( zeros[0] ),
+                                                 unop( Iop_64to8,
+                                                       mkexpr( count[0] ) ) ),
+                                          mkexpr( ones[0] ) ),
+                                   binop( Iop_Or64,
+                                          binop( Iop_Shl64,
+                                                 mkexpr( zeros[1] ),
+                                                 unop( Iop_64to8,
+                                                       mkexpr( count[1] ) ) ),
+                                          mkexpr( ones[1] ) ) ) );
+      }
+      break;
+
+   case 0x58D: // vpextd, Vector Parallel Bits Extract Doubleword VX-form
+      {
+         IRTemp vA_hi = newTemp( Ity_I64 );
+         IRTemp vA_lo = newTemp( Ity_I64 );
+         IRTemp vB_hi = newTemp( Ity_I64 );
+         IRTemp vB_lo = newTemp( Ity_I64 );
+         IRTemp ones[2];
+
+         DIP("vpextd v%u,v%u,v%u\n", vRT_addr, vRA_addr, vRB_addr);
+
+         ones[0] = newTemp( Ity_I64 );
+         ones[1] = newTemp( Ity_I64 );
+
+         assign( vA_hi, unop( Iop_V128HIto64, mkexpr( vA ) ) );
+         assign( vB_hi, unop( Iop_V128HIto64, mkexpr( vB ) ) );
+         assign( vA_lo, unop( Iop_V128to64, mkexpr( vA ) ) );
+         assign( vB_lo, unop( Iop_V128to64, mkexpr( vB ) ) );
+
+         assign( ones[0], extract_bits_under_mask ( vbi, mkexpr( vA_hi ),
+                                                    mkexpr( vB_hi ),
+                                                    mkU64( 1 ) ) );
+         assign( ones[1], extract_bits_under_mask ( vbi, mkexpr( vA_lo ),
+                                                    mkexpr( vB_lo ),
+                                                    mkU64( 1 ) ) );
+         putVReg( vRT_addr, binop( Iop_64HLtoV128,
+                                   mkexpr( ones[0] ), mkexpr( ones[1] ) ) );
+      }
+      break;
+
+   case 0x5CD: // vpdepd, Vector Parallel Bits Deposit Doubleword VX-form
+      {
+         IRTemp vA_hi = newTemp( Ity_I64 );
+         IRTemp vA_lo = newTemp( Ity_I64 );
+         IRTemp vB_hi = newTemp( Ity_I64 );
+         IRTemp vB_lo = newTemp( Ity_I64 );
+         IRTemp ones[2];
+
+         DIP("vpdepd v%u,v%u,v%u\n", vRT_addr, vRA_addr, vRB_addr);
+
+         ones[0] = newTemp( Ity_I64 );
+         ones[1] = newTemp( Ity_I64 );
+
+         assign( vA_hi, unop( Iop_V128HIto64, mkexpr( vA ) ) );
+         assign( vB_hi, unop( Iop_V128HIto64, mkexpr( vB ) ) );
+         assign( vA_lo, unop( Iop_V128to64, mkexpr( vA ) ) );
+         assign( vB_lo, unop( Iop_V128to64, mkexpr( vB ) ) );
+
+         assign( ones[0], deposit_bits_under_mask ( vbi, mkexpr( vA_hi ),
+                                                    mkexpr( vB_hi ) ) );
+         assign( ones[1], deposit_bits_under_mask ( vbi, mkexpr( vA_lo ),
+                                                    mkexpr( vB_lo ) ) );
+         putVReg( vRT_addr, binop( Iop_64HLtoV128,
+                                   mkexpr( ones[0] ), mkexpr( ones[1] ) ) );
+      }
+      break;
+
+   case 0x784:    // vclzdm,
+      {
+         /* Vector Count Leading Zeros Doubleword under bit mask */
+
+         IRTemp extracted_bits[2];
+         IRTemp clz[2];
+         IRTemp ones[2];
+         IRTemp cnt_extract_bits[2];
+         UInt max_bits = 64;
+         IRTemp vA_hi = newTemp( Ity_I64 );
+         IRTemp vA_lo = newTemp( Ity_I64 );
+         IRTemp vB_hi = newTemp( Ity_I64 );
+         IRTemp vB_lo = newTemp( Ity_I64 );
+
+         DIP("vclzdm v%u,v%u,v%u\n", vRT_addr, vRA_addr, vRB_addr);
+
+         ones[0] = newTemp( Ity_I64 );
+         ones[1] = newTemp( Ity_I64 );
+         clz[0] = newTemp( Ity_I64 );
+         clz[1] = newTemp( Ity_I64 );
+         extracted_bits[0] = newTemp( Ity_I64 );
+         extracted_bits[1] = newTemp( Ity_I64 );
+         cnt_extract_bits[0] = newTemp( Ity_I8 );
+         cnt_extract_bits[1] = newTemp( Ity_I8 );
+
+         /* Gather bits in each vector element, then count leading zeros.  */
+         assign( vA_hi, unop( Iop_V128HIto64, mkexpr( vA ) ) );
+         assign( vB_hi, unop( Iop_V128HIto64, mkexpr( vB ) ) );
+         assign( vA_lo, unop( Iop_V128to64, mkexpr( vA ) ) );
+         assign( vB_lo, unop( Iop_V128to64, mkexpr( vB ) ) );
+
+         assign( ones[0], extract_bits_under_mask ( vbi,
+                                                    mkexpr( vA_hi ),
+                                                    mkexpr( vB_hi ),
+                                                    mkU64( 1 ) ) );
+
+         assign( ones[1], extract_bits_under_mask ( vbi,
+                                                    mkexpr( vA_lo ),
+                                                    mkexpr( vB_lo ),
+                                                    mkU64( 1 ) ) );
+
+         assign( cnt_extract_bits[0],
+                 unop( Iop_16to8,
+                       unop( Iop_32to16,
+                             count_bits_under_mask ( vbi,
+                                                     mkexpr( vA_hi ),
+                                                     mkexpr( vB_hi ),
+                                                     mkU64( 1 ) ) ) ) );
+
+         assign( cnt_extract_bits[1],
+                 unop( Iop_16to8,
+                       unop( Iop_32to16,
+                             count_bits_under_mask ( vbi,
+                                                     mkexpr( vA_lo ),
+                                                     mkexpr( vB_lo ),
+                                                     mkU64( 1 ) ) ) ) );
+
+         /* Shift extracted bits to High order bits, filling lower order bits
+            with 1's so we only count zeros in extracted bits.  */
+         assign( extracted_bits[0],
+                 binop( Iop_Or64,
+                        binop( Iop_Shr64,
+                               mkU64( 0xFFFFFFFFFFFFFFFF ),
+                               mkexpr( cnt_extract_bits[0] ) ),
+                        binop( Iop_Shl64,
+                               mkexpr( ones[0] ),
+                               binop( Iop_Sub8,
+                                      mkU8( max_bits ),
+                                      mkexpr( cnt_extract_bits[0] )
+                                  ) ) ) );
+
+         assign( clz[0],
+                 unop( Iop_Clz64,
+                       mkexpr( extracted_bits[0] ) ) );
+
+         assign( extracted_bits[1],
+                 binop( Iop_Or64,
+                        binop( Iop_Shr64,
+                               mkU64( 0xFFFFFFFFFFFFFFFF ),
+                               mkexpr( cnt_extract_bits[1] ) ),
+                        binop( Iop_Shl64,
+                               mkexpr( ones[1] ),
+                               binop( Iop_Sub8,
+                                      mkU8( max_bits ),
+                                      mkexpr( cnt_extract_bits[1] )
+                                  ) ) ) );
+         assign( clz[1],
+                 unop( Iop_Clz64,
+                       mkexpr( extracted_bits[1] ) ) );
+
+         putVReg( vRT_addr, binop( Iop_64HLtoV128,
+                                   mkexpr( clz[0] ), mkexpr( clz[1] ) ) );
+         break;
+      }
+
+   case 0x7C4:    // vctzdm
+      {
+         /* Vector Count Trailing Zeros Doubleword under bit mask */
+         IRTemp ctz[2];
+         IRTemp ones[2];
+         IRTemp all_ones_hi = newTemp( Ity_I64 );
+         IRTemp all_ones_lo = newTemp( Ity_I64 );
+         IRTemp vA_hi = newTemp( Ity_I64 );
+         IRTemp vA_lo = newTemp( Ity_I64 );
+         IRTemp vB_hi = newTemp( Ity_I64 );
+         IRTemp vB_lo = newTemp( Ity_I64 );
+
+         DIP("vctzdm v%u,v%u,v%u\n", vRT_addr, vRA_addr, vRB_addr);
+
+         ones[0] = newTemp( Ity_I64 );
+         ones[1] = newTemp( Ity_I64 );
+         ctz[0] = newTemp( Ity_I64 );
+         ctz[1] = newTemp( Ity_I64 );
+
+         /* Gather bits in each vector element, then count trailing zeros.  */
+         assign( vA_hi, unop( Iop_V128HIto64, mkexpr( vA ) ) );
+         assign( vB_hi, unop( Iop_V128HIto64, mkexpr( vB ) ) );
+         assign( vA_lo, unop( Iop_V128to64, mkexpr( vA ) ) );
+         assign( vB_lo, unop( Iop_V128to64, mkexpr( vB ) ) );
+
+         /* Shift all 1's value left by the count of the number of bits in the
+            mask.  OR this with the extracted bits so the trailing zero count
+            will only count zeros in extracted field. */
+         assign( all_ones_hi,
+                 binop( Iop_Shl64,
+                        mkU64( 0xFFFFFFFFFFFFFFFF ),
+                        unop( Iop_64to8,
+                              popcnt64( vbi, mkexpr( vB_hi ) ) ) ) );
+         assign( all_ones_lo,
+                 binop( Iop_Shl64,
+                        mkU64( 0xFFFFFFFFFFFFFFFF ),
+                        unop( Iop_64to8,
+                              popcnt64( vbi, mkexpr( vB_lo ) ) ) ) );
+
+         assign( ones[0],
+                 binop( Iop_Or64,
+                        mkexpr( all_ones_hi ),
+                        extract_bits_under_mask ( vbi,
+                                                  mkexpr( vA_hi ),
+                                                  mkexpr( vB_hi ),
+                                                  mkU64( 1 ) ) ) );
+
+         assign( ones[1],
+                 binop( Iop_Or64,
+                        mkexpr( all_ones_lo ),
+                        extract_bits_under_mask ( vbi,
+                                                  mkexpr( vA_lo ),
+                                                  mkexpr( vB_lo ),
+                                                  mkU64( 1 ) ) ) );
+
+         assign( ctz[0], unop( Iop_CtzNat64, mkexpr( ones[0] ) ) );
+         assign( ctz[1], unop( Iop_CtzNat64, mkexpr( ones[1] ) ) );
+
+         putVReg( vRT_addr, binop( Iop_64HLtoV128,
+                                   mkexpr( ctz[0] ), mkexpr( ctz[1] ) ) );
+         break;
+      }
+
+   default:
+         vex_printf("dis_vector_logical_mask_bits(ppc)(opc2)\n");
+         return False;
    }
    return True;
 }
@@ -32317,7 +32991,7 @@ DisResult disInstr_PPC_WRK (
          if (prefix_instruction( prefix) && ( ptype == pType1 ) ) {
             if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
             // splat instructions: xxpermx
-            if (dis_vector_permute_prefix( prefix, theInstr ))
+            if (dis_vector_permute_prefix( prefix, theInstr, abiinfo ))
                goto decode_success;
          } else {  // lbz:  load instruction
             if (dis_int_load_prefix( prefix, theInstr ))
@@ -33342,6 +34016,17 @@ DisResult disInstr_PPC_WRK (
          if (dis_byte_reverse( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
+      /*  X-form instructions */
+      case 0x03B: // cntlzdm, Count Leading Zeros Doubleword under bit Mask
+      case 0x0BC: // pextd, Parallel Bits Extract Doubleword
+      case 0x09C: // pdepd, Parallel Bits Deposit Doubleword
+      case 0x23B: // cnttzdm, Count Trailing Zeros Doubleword under bit Mask
+      case 0x0DC: // cfuged, Centrifuge Doubleword
+         if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
+         if (dis_logical_mask_bits( prefix, theInstr, abiinfo ) )
+            goto decode_success;
+         goto decode_failure;
+
       /* Integer miscellaneous instructions */
       case 0x01E:  // wait  RFC 2500
          if (dis_int_misc( prefix, theInstr )) goto decode_success;
@@ -33359,6 +34044,9 @@ DisResult disInstr_PPC_WRK (
 
       case 0x10B: case 0x30B: // moduw, modsw
       case 0x109: case 0x309: // modsd, modud
+         if (dis_modulo_int( prefix, theInstr )) goto decode_success;
+         goto decode_failure;
+
       case 0x21A: case 0x23A: // cnttzw, cnttzd
          if (dis_modulo_int( prefix, theInstr )) goto decode_success;
          goto decode_failure;
@@ -34021,7 +34709,16 @@ DisResult disInstr_PPC_WRK (
       case 0x782: case 0x7c2:             // vclzw, vclzd
          if (!allow_isa_2_07) goto decode_noP8;
          if (dis_av_count_bitTranspose( prefix, theInstr, opc2 ))
-	   goto decode_success;
+            goto decode_success;
+         goto decode_failure;
+
+      case 0x4CC: case 0x54D:    // vgnb, vcfuged
+      case 0x58D: case 0x5CD:    // vpextd, vpdepd
+      case 0x784: case 0x7C4:    // vclzdm, vctzdm
+         if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
+         if (dis_vector_logical_mask_bits( prefix, theInstr, opc2,
+                                           abiinfo ))
+            goto decode_success;
          goto decode_failure;
 
       case 0x703: case 0x743:             // vpopcntb, vpopcnth

@@ -622,7 +622,7 @@ optimization.</para>
 
 
 <sect1 id="dh-manual.realloc" xreflabel="Treatment of realloc">
-<title>Treatment of <computeroutput>realloc</computeroutput></title>
+<title>Treatment of realloc</title>
 
 <para><computeroutput>realloc</computeroutput> is a tricky function and there
 are several different ways that DHAT could handle it.</para>

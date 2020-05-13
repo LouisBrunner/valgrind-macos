@@ -401,7 +401,7 @@ Invalid write of size 1
     nature of the way Valgrind works that it cannot exactly replicate a
     native execution environment.  In the case where your program crashes
     due to a memory error when run natively but not when run under Valgrind,
-    in most cases Memcheck should identify the bad memory operation.</para>.
+    in most cases Memcheck should identify the bad memory operation.</para>
   </answer>
 </qandaentry>
 
@@ -629,7 +629,7 @@ is built standalone as FAQ.txt.  That's why we link to, for example, the
 online copy of the manual. -->
 
 <qandaentry id="e-help">
-  <!-- <question><para/></question> -->
+  <question><para>Where can I get more help?</para></question>
   <answer id="a-help">
   <para>Read the appropriate section(s) of the 
   <ulink url="&vg-docs-url;">Valgrind Documentation</ulink>.</para>

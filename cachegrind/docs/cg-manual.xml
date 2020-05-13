@@ -492,7 +492,7 @@ assembly code source files in the same way as C/C++ source files.</para>
 
 </sect2>
 
-<sect2 id="ms-manual.forkingprograms" xreflabel="Forking Programs">
+<sect2 id="cg-manual.forkingprograms" xreflabel="Forking Programs">
 <title>Forking Programs</title>
 <para>If your program forks, the child will inherit all the profiling data that
 has been gathered for the parent.</para>

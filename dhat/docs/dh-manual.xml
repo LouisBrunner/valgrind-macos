@@ -187,9 +187,10 @@ showing the allocation point (AP) tree.</para>
 
 <sect3><title>Structure</title>
 
-The following image shows a screenshot of part of an AP tree. The font is very
-small because this screenshot is intended to demonstrate the high-level
-structure of the tree rather than the details within the text.
+<para>The following image shows a screenshot of part of an AP
+tree. The font is very small because this screenshot is intended to
+demonstrate the high-level structure of the tree rather than the
+details within the text.</para>
 
 <graphic fileref="images/dh-tree.png" scalefit="1"/>
 

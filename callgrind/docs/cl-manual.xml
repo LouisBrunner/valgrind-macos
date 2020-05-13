@@ -1082,7 +1082,7 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.I1" xreflabel="--I1">
+  <varlistentry id="cl.opt.I1" xreflabel="--I1">
     <term>
       <option><![CDATA[--I1=<size>,<associativity>,<line size> ]]></option>
     </term>
@@ -1092,7 +1092,7 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.D1" xreflabel="--D1">
+  <varlistentry id="cl.opt.D1" xreflabel="--D1">
     <term>
       <option><![CDATA[--D1=<size>,<associativity>,<line size> ]]></option>
     </term>
@@ -1102,7 +1102,7 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.LL" xreflabel="--LL">
+  <varlistentry id="cl.opt.LL" xreflabel="--LL">
     <term>
       <option><![CDATA[--LL=<size>,<associativity>,<line size> ]]></option>
     </term>

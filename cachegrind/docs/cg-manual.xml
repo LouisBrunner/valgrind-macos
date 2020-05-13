@@ -793,7 +793,7 @@ small differences like these;  it works in the same way as
 
 <variablelist id="cg.opts.list">
 
-  <varlistentry id="opt.I1" xreflabel="--I1">
+  <varlistentry id="cg.opt.I1" xreflabel="--I1">
     <term>
       <option><![CDATA[--I1=<size>,<associativity>,<line size> ]]></option>
     </term>
@@ -803,7 +803,7 @@ small differences like these;  it works in the same way as
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.D1" xreflabel="--D1">
+  <varlistentry id="cg.opt.D1" xreflabel="--D1">
     <term>
       <option><![CDATA[--D1=<size>,<associativity>,<line size> ]]></option>
     </term>
@@ -813,7 +813,7 @@ small differences like these;  it works in the same way as
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.LL" xreflabel="--LL">
+  <varlistentry id="cg.opt.LL" xreflabel="--LL">
     <term>
       <option><![CDATA[--LL=<size>,<associativity>,<line size> ]]></option>
     </term>

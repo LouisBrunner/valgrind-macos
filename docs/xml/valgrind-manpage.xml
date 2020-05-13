@@ -21,7 +21,7 @@
 <cmdsynopsis>
   <command>valgrind</command>
   <arg><replaceable>valgrind-options</replaceable></arg>
-  <arg><command>your-program</command></arg>
+  <arg><replaceable>your-program</replaceable></arg>
   <arg><replaceable>your-program-options</replaceable></arg>
 </cmdsynopsis>
 </refsynopsisdiv>

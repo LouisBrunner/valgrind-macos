@@ -620,7 +620,7 @@ optimization.</para>
 </sect1>
 
 
-<sect1 id="dh-manual.options" xreflabel="Treatment of realloc">
+<sect1 id="dh-manual.realloc" xreflabel="Treatment of realloc">
 <title>Treatment of <computeroutput>realloc</computeroutput></title>
 
 <para><computeroutput>realloc</computeroutput> is a tricky function and there

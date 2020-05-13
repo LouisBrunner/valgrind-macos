@@ -190,7 +190,7 @@ has to rely on heuristics to detect calls and returns.</para>
   <computeroutput>callgrind_control -i on</computeroutput> just before the 
   interesting code section is executed. To exactly specify
   the code position where profiling should start, use the client request
-  <computeroutput><xref linkend="cr.start-instr"/></computeroutput>.</para>
+  <computeroutput><link linkend="cr.start-instr">CALLGRIND_START_INSTRUMENTATION</link></computeroutput>.</para>
 
   <para>If you want to be able to see assembly code level annotation, specify
   <option><xref linkend="opt.dump-instr"/>=yes</option>. This will produce
@@ -286,9 +286,10 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
     <listitem>
       <para><command>Program controlled dumping.</command>
       Insert
-      <computeroutput><xref linkend="cr.dump-stats"/>;</computeroutput>
-      at the position in your code where you want a profile dump to happen. Use 
-      <computeroutput><xref linkend="cr.zero-stats"/>;</computeroutput> to only 
+      <computeroutput><link linkend="cr.dump-stats">CALLGRIND_DUMP_STATS</link>;</computeroutput>
+      at the position in your code where you want a profile dump to
+      happen. Use
+      <computeroutput><link linkend="cr.zero-stats">CALLGRIND_ZERO_STATS</link>;</computeroutput> to only 
       zero profile counters.
       See <xref linkend="cl-manual.clientrequests"/> for more information on
       Callgrind specific client requests.</para>
@@ -364,8 +365,8 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
     interactively with: <screen>callgrind_control -i on</screen> (and
     switching off again by specifying "off" instead of "on").  Second,
     instrumentation state can be programmatically changed with the
-    macros <computeroutput><xref linkend="cr.start-instr"/>;</computeroutput>
-    and <computeroutput><xref linkend="cr.stop-instr"/>;</computeroutput>.
+    macros <computeroutput><link linkend="cr.start-instr">CALLGRIND_START_INSTRUMENTATION</link>;</computeroutput>
+    and <computeroutput><link linkend="cr.stop-instr">CALLGRIND_STOP_INSTRUMENTATION</link>;</computeroutput>.
   </para>
 
   <para>Similarly, the collection state at program start can be
@@ -511,8 +512,9 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   <para>If your program forks, the child will inherit all the profiling
   data that has been gathered for the parent. To start with empty profile
   counter values in the child, the client request
-  <computeroutput><xref linkend="cr.zero-stats"/>;</computeroutput>
-  can be inserted into code to be executed by the child, directly after
+  <computeroutput><link linkend="cr.zero-stats">CALLGRIND_ZERO_STATS</link>;</computeroutput>
+  can be inserted into code to be executed by the child, directly
+  after
   <computeroutput>fork</computeroutput>.</para>
 
   <para>However, you will have to make sure that the output file format string
@@ -1224,8 +1226,8 @@ their arguments.</para>
       instrumentation afterwards: it effectivly will run at the same
       speed as Nulgrind, i.e. at minimal slowdown. Use this to
       speed up the Callgrind run for uninteresting code parts. Use
-      <computeroutput><xref linkend="cr.start-instr"/></computeroutput> to
-      enable instrumentation again.  See also option
+      <computeroutput><link linkend="cr.start-instr">CALLGRIND_START_INSTRUMENTATION</link></computeroutput>
+      to enable instrumentation again.  See also option
       <option><xref linkend="opt.instr-atstart"/></option>.</para>
     </listitem>
   </varlistentry>

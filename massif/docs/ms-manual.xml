@@ -611,7 +611,7 @@ says:
 (page allocation syscalls) mmap/mremap/brk, --alloc-fns, etc.
 ]]></screen>
 
-<para>instead of the usual</para>:
+<para>instead of the usual:</para>
 
 <screen><![CDATA[
 (heap allocation functions) malloc/new/new[], --alloc-fns, etc.

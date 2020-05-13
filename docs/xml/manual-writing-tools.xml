@@ -7,8 +7,8 @@
 <chapter id="manual-writing-tools" xreflabel="Writing a New Valgrind Tool">
 <title>Writing a New Valgrind Tool</title>
 
-So you want to write a Valgrind tool?  Here are some instructions that may
-help.
+<para>So you want to write a Valgrind tool?  Here are some instructions
+that may help.</para>
 
 <sect1 id="manual-writing-tools.intro" xreflabel="Introduction">
 <title>Introduction</title>

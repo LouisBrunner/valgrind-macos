@@ -1178,25 +1178,29 @@ unlock(mx)                             unlock(mx)
       <para>The following aspects have to be considered when
         using <option>--delta-stacktrace=yes</option> :
         <itemizedlist>
-          <listitem>In some cases (for example in a function prologue), the
-            valgrind unwinder might not properly unwind the stack, due to some
-            limitations and/or due to wrong unwind info. When using
-            --delta-stacktrace=yes, the wrong stack trace captured in the
-            function prologue will be kept till the next call or return.
-          </listitem>
-          <listitem>On the other hand, --delta-stacktrace=yes sometimes helps to
-            obtain a correct stacktrace, for example when the unwind info allows
-            a correct stacktrace to be done in the beginning of the sequence,
-            but not later on in the instruction sequence.</listitem>
-          <listitem>Determining which instructions are changing the callstack is
-            partially based on platform dependent heuristics, which have to be
-            tuned/validated specifically for the platform. Also, unwinding in a
-            function prologue must be good enough to allow using
-            --delta-stacktrace=yes. Currently, the option --delta-stacktrace=yes
-            has been reasonably validated only on linux x86 32 bits and linux
-            amd64 64 bits. For more details about how to validate
-            --delta-stacktrace=yes, see debug option --hg-sanity-flags and the
-            function check_cached_rcec_ok in libhb_core.c.</listitem>
+          <listitem><para>In some cases (for example in a function
+            prologue), the valgrind unwinder might not properly unwind
+            the stack, due to some limitations and/or due to wrong
+            unwind info. When using --delta-stacktrace=yes, the wrong
+            stack trace captured in the function prologue will be kept
+            till the next call or return.
+          </para></listitem>
+          <listitem><para>On the other hand, --delta-stacktrace=yes
+            sometimes helps to obtain a correct stacktrace, for
+            example when the unwind info allows a correct stacktrace
+            to be done in the beginning of the sequence, but not later
+            on in the instruction sequence.</para></listitem>
+          <listitem><para>Determining which instructions are changing
+            the callstack is partially based on platform dependent
+            heuristics, which have to be tuned/validated specifically
+            for the platform. Also, unwinding in a function prologue
+            must be good enough to allow using
+            --delta-stacktrace=yes. Currently, the option
+            --delta-stacktrace=yes has been reasonably validated only
+            on linux x86 32 bits and linux amd64 64 bits. For more
+            details about how to validate --delta-stacktrace=yes, see
+            debug option --hg-sanity-flags and the function
+            check_cached_rcec_ok in libhb_core.c.</para></listitem>
         </itemizedlist>
       </para>
     </listitem>

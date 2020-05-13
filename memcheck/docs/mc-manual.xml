@@ -842,14 +842,13 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
         <listitem><para><option>none</option> for the empty set.</para>
         </listitem>
       </itemizedlist>
+      <para>Note that these heuristics are dependent on the layout of
+        the objects produced by the C++ compiler. They have been
+        tested with some gcc versions (e.g. 4.4 and 4.7). They might
+        not work properly with other C++ compilers.
+      </para>
     </listitem>
-
-    <para>Note that these heuristics are dependent on the layout of the objects
-      produced by the C++ compiler. They have been tested with some gcc versions
-      (e.g. 4.4 and 4.7). They might not work properly with other C++ compilers.
-    </para>
   </varlistentry>
-
 
   <varlistentry id="opt.show-reachable" xreflabel="--show-reachable">
     <term>
@@ -881,9 +880,10 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
 	  </para>
         </listitem>
       </itemizedlist>
+      <para> Note that <option>--show-possibly-lost=no</option> has no
+	effect if <option>--show-reachable=yes</option> is
+	specified.</para>
     </listitem>
-    <para> Note that  <option>--show-possibly-lost=no</option> has no effect
-      if <option>--show-reachable=yes</option> is specified.</para>
   </varlistentry>
 
   <varlistentry id="opt.xtree-leak" xreflabel="--xtree-leak">
@@ -1399,14 +1399,15 @@ leak kinds are matched by this suppression entry.
 same way as with the option <option>--show-leak-kinds</option>, that is,
 one of the following:</para>
 <itemizedlist>
-  <listitem>a comma separated list of one or more of
-    <option>definite indirect possible reachable</option>.
+  <listitem><para>a comma separated list of one or more of
+    <option>definite indirect possible reachable</option>.</para>
   </listitem>
 
-  <listitem><option>all</option> to specify the complete set (all leak kinds).
+  <listitem><para><option>all</option> to specify the complete set
+  (all leak kinds).</para>
   </listitem>
 
-  <listitem><option>none</option> for the empty set.
+  <listitem><para><option>none</option> for the empty set.</para>
   </listitem>
 </itemizedlist>
 <para>If this optional extra line is not present, the suppression

@@ -3226,8 +3226,10 @@ static PPCCondCode iselCondCode_wrk ( ISelEnv* env, const IRExpr* e,
       switch (e->Iex.Binop.op) {
       case Iop_CmpEQ64:  return mk_PPCCondCode( Pct_TRUE,  Pcf_7EQ );
       case Iop_CmpNE64:  return mk_PPCCondCode( Pct_FALSE, Pcf_7EQ );
-      case Iop_CmpLT64U: return mk_PPCCondCode( Pct_TRUE,  Pcf_7LT );
-      case Iop_CmpLE64U: return mk_PPCCondCode( Pct_FALSE, Pcf_7GT );
+      case Iop_CmpLT64U:  case Iop_CmpLT64S:
+         return mk_PPCCondCode( Pct_TRUE,  Pcf_7LT );
+      case Iop_CmpLE64U: case Iop_CmpLE64S:
+         return mk_PPCCondCode( Pct_FALSE, Pcf_7GT );
       default: vpanic("iselCondCode(ppc): CmpXX64");
       }
    }

@@ -3067,6 +3067,22 @@ static void set_XER_OV_OV32_ADDEX ( IRType ty, IRExpr* res,
    }
 }
 
+static IRExpr * absI64( IRTemp src )
+{
+   IRTemp sign_mask;
+   IRTemp twos_comp;
+   sign_mask = newTemp( Ity_I64 );
+   twos_comp = newTemp( Ity_I64 );
+
+   assign( sign_mask, unop( Iop_1Sto64,  unop( Iop_64to1, binop( Iop_Shr64,
+                                                                 mkexpr( src ), mkU8( 63 ) ) ) ) );
+   assign( twos_comp, binop( Iop_Add64, unop( Iop_Not64, mkexpr( src ) ), mkU64( 1 ) ) );
+
+   return binop( Iop_Or64,
+                 binop( Iop_And64, mkexpr ( src ), unop( Iop_Not64, mkexpr( sign_mask ) ) ),
+                 binop( Iop_And64, mkexpr( twos_comp ),  mkexpr( sign_mask ) ) );
+}
+
 /*-----------------------------------------------------------*/
 /*---  Prefix instruction helpers                         ---*/
 /*-----------------------------------------------------------*/
@@ -4124,9 +4140,8 @@ static IRExpr * is_Denorm( IRType size, IRTemp src )
 
 static IRExpr * is_Zero_Vector( IRType element_size, IRExpr *src )
 {
-/* Check elements of a 128-bit floating point vector, with element size
-   element_size, are zero.  Return 1's in the elements of the vector
-   which are values. */
+/* Check elements of a 128-bit floating point vector, with element size are
+   zero.  Return 1's in the elements of the vector which are values. */
    IRTemp exp_maskV128 = newTemp( Ity_V128 );
    IRTemp exp_zeroV128 = newTemp( Ity_V128 );
    IRTemp frac_maskV128 = newTemp( Ity_V128 );
@@ -4157,6 +4172,23 @@ static IRExpr * is_Zero_Vector( IRType element_size, IRExpr *src )
 
    return binop( Iop_AndV128, mkexpr( exp_zeroV128 ),
                  mkexpr( frac_zeroV128 ) );
+}
+
+static IRExpr * Abs_Zero_Vector( IRType element_size, IRExpr *src )
+/* Vector of four 32-bit elements, convert any negative zeros to
+   positive zeros.  */
+{
+   IRTemp result = newTemp( Ity_V128 );
+
+   if ( element_size == Ity_I32 ) {
+      assign( result, binop( Iop_AndV128,
+                             src,
+                             unop( Iop_NotV128,
+                                   is_Zero_Vector( element_size, src) ) ) );
+   } else
+      vex_printf("ERROR, Abs_Zero_Vector:  Unknown input size\n");
+
+   return mkexpr( result );
 }
 
 static IRExpr * is_Denorm_Vector( IRType element_size, IRExpr *src )
@@ -7782,9 +7814,9 @@ static Bool dis_int_load_ds_form_prefix ( UInt prefix,
          break;
 
       case 0x1: // ldu (Load DWord, Update, PPC64 p474)
-         /* There is no prefixed version of these instructions.  */
+         /* There is no prefixed version of this instructions.  */
          if (rA_addr == 0 || rA_addr == rT_addr) {
-            vex_printf("dis_int_load(ppc)(ldu,rA_addr|rT_addr)\n");
+            vex_printf("dis_int_load_ds_form_prefix(ppc)(ldu,rA_addr|rT_addr)\n");
             return False;
          }
          DIP("ldu r%u,%u(r%u)\n", rT_addr, immediate_val, rA_addr);
@@ -24772,6 +24804,347 @@ static Bool dis_av_arith ( UInt prefix, UInt theInstr )
       // TODO: set VSCR[SAT]
       break;
 
+   case 0x08B: // vdivuw   Vector Divide Unsigned Word
+   case 0x18B: // vdivsw   Vector Divide Signed Word
+   case 0x289: // vmulhuw  Vector Multiply High Unsigned Word
+   case 0x389: // vmulhsw  Vector Multiply High Signed Word
+   case 0x28B: // vdiveuw  Vector divide Extended Unsigned Word
+   case 0x38B: // vdivesw  Vector divide Extended Signed Word
+   case 0x68B: // vmoduw  Vector Modulo Unsigned Word
+   case 0x78B: // vmodsw  Vector Modulo Signed Word
+      {
+         #define MAX_ELE 4
+         IROp expand_op   = Iop_32Uto64;
+         IROp extract_res = Iop_64to32;
+         IROp operation   = Iop_DivU64;
+         IRTemp srcA_tmp[MAX_ELE];
+         IRTemp srcB_tmp[MAX_ELE];
+         IRTemp res_tmp[MAX_ELE];
+         IRTemp res_tmp2[MAX_ELE];
+         IRTemp res_tmp3[MAX_ELE];
+         UInt shift_by = 32;
+         UInt i;
+         IRType size_op = Ity_I64, size_res = Ity_I32;
+
+         if (opc2 == 0x08B) {
+            DIP("vdivuw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+            expand_op= Iop_32Uto64;
+            operation = Iop_DivU64;
+            extract_res = Iop_64to32;
+
+         } else if (opc2 == 0x68B) {
+            DIP("vmoduw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+            expand_op= Iop_32Uto64;
+            operation = Iop_DivU64;
+            extract_res = Iop_64to32;
+
+         } else if (opc2 == 0x18B) {
+            DIP("vdivsw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+            expand_op= Iop_32Sto64;
+            operation = Iop_DivS64;
+            extract_res = Iop_64to32;
+
+         } else if (opc2 == 0x78B) {
+            DIP("vmodsw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+            expand_op= Iop_32Sto64;
+            operation = Iop_DivS64;
+            extract_res = Iop_64to32;
+
+         } else if (opc2 == 0x289) {
+            DIP("vmulhuw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+            expand_op = Iop_32Uto64;
+            operation = Iop_Mul64;
+            extract_res = Iop_64HIto32;
+
+         } else if (opc2 == 0x389) {
+            DIP("vmulhsw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+            expand_op= Iop_32Sto64;
+            operation = Iop_Mul64;
+            extract_res = Iop_64HIto32;
+
+         } else if (opc2 == 0x28B) {
+            DIP("vdiveuw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+            expand_op= Iop_32Uto64;
+            operation = Iop_DivU64;
+            extract_res = Iop_64to32;
+
+         } else if (opc2 == 0x38B) {
+            DIP("vdivesw v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+            expand_op= Iop_32Sto64;
+            operation = Iop_DivS64;
+            extract_res = Iop_64to32;
+         }
+
+         for (i=0; i<MAX_ELE; i++) {
+            srcA_tmp[i] = newTemp( size_op );
+            srcB_tmp[i] = newTemp( size_op );
+            res_tmp[i]  = newTemp( size_res );
+
+            if (( opc2 == 0x28B ) || ( opc2 == 0x38B )) {
+               // Operand A is left shifted 32 bits
+               assign( srcA_tmp[i],
+                       binop( Iop_Shl64,
+                              unop( expand_op,
+                                    unop( Iop_64to32,
+                                          unop( Iop_V128to64,
+                                                binop( Iop_ShrV128,
+                                                       mkexpr( vA ),
+                                                       mkU8( i*shift_by ) )))),
+                              mkU8( 32 ) ) );
+            } else {
+               assign( srcA_tmp[i],
+                       unop( expand_op,
+                             unop( Iop_64to32,
+                                   unop( Iop_V128to64,
+                                         binop( Iop_ShrV128,
+                                                mkexpr( vA ),
+                                                mkU8( i*shift_by ) ) ) ) ) );
+            }
+
+            assign( srcB_tmp[i],
+                    unop( expand_op,
+                           unop( Iop_64to32,
+                                 unop( Iop_V128to64,
+                                       binop( Iop_ShrV128,
+                                              mkexpr( vB ),
+                                              mkU8( i*shift_by ) ) ) ) ) );
+
+            if ( opc2 == 0x38B ) {   // vdivesw
+               /* Take absolute value of signed operands to determine if the result fits in 31 bits.
+                  Set result to zeros if it doesn't fit to match the HW functionality.   */
+               res_tmp2[i]  = newTemp( Ity_I64 );
+               res_tmp3[i]  = newTemp( Ity_I64 );
+
+               /* Calculate actual result */
+               assign( res_tmp2[i],
+                       binop( operation,
+                              mkexpr( srcA_tmp[i] ),
+                              mkexpr( srcB_tmp[i] ) ) );
+
+               /* Calculate result for ABS(srcA) and  ABS(srcB) */
+               assign( res_tmp3[i], binop( operation, absI64( srcA_tmp[i] ), absI64( srcB_tmp[i] ) ) );
+
+               assign( res_tmp[i],
+                       unop( extract_res,
+                             binop( Iop_And64,
+                                    unop( Iop_1Sto64,
+                                          binop( Iop_CmpEQ64,
+                                                 binop( Iop_Shr64, mkexpr( res_tmp3[i] ), mkU8( 31 )),
+                                                 mkU64( 0x0 ) ) ),
+                                    mkexpr( res_tmp2[i] ) ) ) );
+
+            } else if ( opc2 == 0x28B ) {   // vdiveuw
+               /* Check if result fits in 32-bits, set result to zeros if it doesn't fit to
+                  match the HW functionality.  */
+               res_tmp2[i]  = newTemp( Ity_I64 );
+               assign( res_tmp2[i],
+                       binop( operation,
+                              mkexpr( srcA_tmp[i] ),
+                              mkexpr( srcB_tmp[i] ) ) );
+               assign( res_tmp[i],
+                       unop( extract_res,
+                             binop( Iop_And64,
+                                    unop( Iop_1Sto64,
+                                          binop( Iop_CmpEQ64,
+                                                 binop( Iop_Shr64, mkexpr( res_tmp2[i] ), mkU8( 32 )),
+                                                 mkU64( 0x0 ) ) ),
+                                    mkexpr( res_tmp2[i] ) ) ) );
+            } else {
+               assign( res_tmp[i],
+                    unop( extract_res,
+                          binop( operation,
+                                 mkexpr( srcA_tmp[i] ),
+                                 mkexpr( srcB_tmp[i] ) ) ) );
+            }
+         }
+
+         if (!(( opc2 == 0x68B ) || ( opc2 == 0x78B ))) {
+            /* Doing a multiply or divide instruction */
+            putVReg( vD_addr,
+                     Abs_Zero_Vector( Ity_I32,
+                        binop( Iop_64HLtoV128,
+                               binop( Iop_32HLto64,
+                                      mkexpr( res_tmp[ 3 ] ),
+                                      mkexpr( res_tmp[ 2 ] ) ),
+                               binop( Iop_32HLto64,
+                                      mkexpr( res_tmp[ 1 ] ),
+                                      mkexpr( res_tmp[ 0 ] ) ) ) ) );
+         } else {
+            /* Doing a modulo instruction,
+               res_tmp[] contains the quotients of VRA/VRB.
+               Calculate modulo as VRA - VRB * res_tmp.  */
+            IRTemp res_Tmp = newTemp( Ity_V128 );
+
+            assign( res_Tmp,
+                    Abs_Zero_Vector( Ity_I32,
+                       binop( Iop_64HLtoV128,
+                              binop( Iop_32HLto64,
+                                     mkexpr( res_tmp[ 3 ] ),
+                                     mkexpr( res_tmp[ 2 ] ) ),
+                              binop( Iop_32HLto64,
+                                     mkexpr( res_tmp[ 1 ] ),
+                                     mkexpr( res_tmp[ 0 ] ) ) ) ) );
+
+            putVReg( vD_addr, binop( Iop_Sub32x4,
+                                     mkexpr( vA ),
+                                     binop( Iop_Mul32x4,
+                                            mkexpr( res_Tmp ),
+                                            mkexpr( vB ) ) ) );
+         }
+         #undef MAX_ELE
+      }
+      break;
+   case 0x1C9: // vmulld   Vector Multiply Low Signed Doubleword
+   case 0x2C9: // vmulhud  Vector Multiply High Unsigned Doubleword
+   case 0x3C9: // vmulhsd  Vector Multiply High Signed Doubleword
+   case 0x0CB: // vdivud   Vector Divide Unsigned Doubleword
+   case 0x1CB: // vdivsd   Vector Divide Signed Doubleword
+   case 0x6CB: // vmodud   Vector Modulo Unsigned Doubleword
+   case 0x7CB: // vmodsd   Vector Modulo Signed Doubleword
+      {
+         #define MAX_ELE 2
+         IROp extract_res = Iop_64to32;
+         IROp operation   = Iop_MullS64;
+         IRTemp srcA_tmp[MAX_ELE];
+         IRTemp srcB_tmp[MAX_ELE];
+         IRTemp res_tmp[MAX_ELE];
+         UInt shift_by = 64;
+         UInt i;
+         IRType size_op = Ity_I64, size_res = Ity_I64;
+
+
+         if (opc2 == 0x1C9) {
+            DIP("vmulld v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+            operation = Iop_MullS64;
+            extract_res = Iop_128to64;
+
+         } else if (opc2 == 0x2C9) {
+            DIP("vmulhud v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+            operation = Iop_MullU64;
+            extract_res = Iop_128HIto64;
+
+         } else if (opc2 == 0x3C9) {
+            DIP("vmulhsd v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+            operation = Iop_MullS64;
+            extract_res = Iop_128HIto64;
+
+         } else if (opc2 == 0x0CB) {
+            DIP("vdivud v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+            operation = Iop_DivU64;
+
+         } else if (opc2 == 0x1CB) {
+            DIP("vdivsd v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+            operation = Iop_DivS64;
+
+         } else if (opc2 == 0x6CB) {
+            DIP("vmodud v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+            operation = Iop_DivU64;
+
+         } else if (opc2 == 0x7CB) {
+            DIP("vmodsd v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+            operation = Iop_DivS64;
+         }
+
+         for (i=0; i<MAX_ELE; i++) {
+            srcA_tmp[i] = newTemp( size_op );
+            srcB_tmp[i] = newTemp( size_op );
+            res_tmp[i]  = newTemp( size_res );
+
+            assign( srcA_tmp[i],
+                    unop( Iop_V128to64,
+                          binop( Iop_ShrV128,
+                                 mkexpr( vA ),
+                                 mkU8( i*shift_by ) ) ) );
+
+            assign( srcB_tmp[i],
+                    unop( Iop_V128to64,
+                          binop( Iop_ShrV128,
+                                 mkexpr( vB ),
+                                 mkU8( i*shift_by ) ) ) );
+
+            if ((opc2 == 0x1C9) || (opc2 == 0x2C9) || (opc2 == 0x3C9)) {
+               /* multiply result is I128 */
+               assign( res_tmp[i],
+                       unop( extract_res,
+                             binop( operation,
+                                    mkexpr( srcA_tmp[i] ),
+                                    mkexpr( srcB_tmp[i] ) ) ) );
+            } else {
+               /* divide result is I64 */
+               assign( res_tmp[i],
+                       binop( operation,
+                              mkexpr( srcA_tmp[i] ),
+                              mkexpr( srcB_tmp[i] ) ) );
+            }
+         }
+
+         if ((opc2 == 0x6CB) || (opc2 == 0x7CB)) {
+            /* Doing a modulo instruction,
+               res_tmp[] contains the quotients of VRA/VRB.
+               Calculate modulo as VRA - VRB * res_tmp.  */
+            IRTemp res_Tmp = newTemp( Ity_V128 );
+
+            assign( res_Tmp, binop( Iop_64HLtoV128,
+                                     binop( Iop_Mul64,
+                                            mkexpr( res_tmp[ 1 ] ),
+                                            mkexpr( srcB_tmp[1] ) ),
+                                     binop( Iop_Mul64,
+                                            mkexpr( res_tmp[0] ),
+                                            mkexpr( srcB_tmp[0] ) ) ) );
+
+            putVReg( vD_addr, binop( Iop_Sub64x2,
+                                     mkexpr( vA ),
+                                     mkexpr( res_Tmp ) ) );
+
+         } else {
+            putVReg( vD_addr, binop( Iop_64HLtoV128,
+                                     mkexpr( res_tmp[ 1 ] ),
+                                     mkexpr( res_tmp[ 0 ] ) ) );
+         }
+
+         #undef MAX_ELE
+      }
+      break;
+
+   case 0x2CB:   // vdiveud   Vector Divide Extended Unsigned Doubleword
+   case 0x3CB: { // vdivesd   Vector Divide Extended Signed Doubleword
+      /* Do vector inst as two scalar operations */
+      IRTemp divisor_hi  = newTemp(Ity_I64);
+      IRTemp divisor_lo  = newTemp(Ity_I64);
+      IRTemp dividend_hi = newTemp(Ity_I64);
+      IRTemp dividend_lo = newTemp(Ity_I64);
+      IRTemp result_hi = newTemp(Ity_I64);
+      IRTemp result_lo = newTemp(Ity_I64);
+
+      assign( dividend_hi, unop( Iop_V128HIto64, mkexpr( vA ) ) );
+      assign( dividend_lo, unop( Iop_V128to64, mkexpr( vA ) ) );
+      assign( divisor_hi, unop( Iop_V128HIto64, mkexpr( vB ) ) );
+      assign( divisor_lo, unop( Iop_V128to64, mkexpr( vB ) ) );
+
+      if (opc2 == 0x2CB) {
+         DIP("vdiveud v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
+         assign( result_hi,
+                 binop( Iop_DivU64E,  mkexpr( dividend_hi ),
+                        mkexpr( divisor_hi ) ) );
+         assign( result_lo,
+                 binop( Iop_DivU64E,  mkexpr( dividend_lo ),
+                        mkexpr( divisor_lo ) ) );
+         putVReg( vD_addr, binop( Iop_64HLtoV128, mkexpr( result_hi ),
+                                  mkexpr( result_lo ) ) );
+
+      } else {
+         DIP("vdivesd v%d,v%d,v%d", vD_addr, vA_addr, vB_addr);
+         assign( result_hi,
+                 binop( Iop_DivS64E,  mkexpr( dividend_hi ),
+                        mkexpr( divisor_hi ) ) );
+         assign( result_lo,
+                 binop( Iop_DivS64E,  mkexpr( dividend_lo ),
+                        mkexpr( divisor_lo ) ) );
+         putVReg( vD_addr, binop( Iop_64HLtoV128, mkexpr( result_hi ),
+                                  mkexpr( result_lo ) ) );
+         }
+      break;
+   }
 
    /* Subtract */
    case 0x580: { // vsubcuw (Subtract Carryout Unsigned Word, AV p260)
@@ -31433,9 +31806,22 @@ DisResult disInstr_PPC_WRK (
          if (dis_av_arith( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
+      case 0x08B: case 0x18B:             // vdivuw, vdivsw
+      case 0x289: case 0x389:             // vmulhuw, vmulhsw
+      case 0x28B: case 0x38B:             // vdiveuw, vdivesw
+      case 0x68B: case 0x78B:             // vmoduw, vmodsw
+      case 0x1c9:                         // vmulld
+      case 0x2C9: case 0x3C9:             // vmulhud, vmulhsd
+      case 0x0CB: case 0x1CB:             // vdivud, vdivsd
+      case 0x2CB: case 0x3CB:             // vdiveud, vdivesd
+      case 0x6CB: case 0x7CB:             // vmodud, vmodsd
+         if (!allow_V) goto decode_noV;
+         if (dis_av_arith( prefix, theInstr )) goto decode_success;
+         goto decode_failure;
+
       case 0x088: case 0x089:             // vmulouw, vmuluwm
       case 0x0C0: case 0x0C2:             // vaddudm, vmaxud
-      case 0x1C2: case 0x2C2: case 0x3C2: // vnaxsd, vminud, vminsd
+      case 0x1C2: case 0x2C2: case 0x3C2: // vmaxsd, vminud, vminsd
       case 0x188: case 0x288: case 0x388: // vmulosw, vmuleuw, vmulesw
       case 0x4C0:                         // vsubudm
          if (!allow_isa_2_07) goto decode_noP8;

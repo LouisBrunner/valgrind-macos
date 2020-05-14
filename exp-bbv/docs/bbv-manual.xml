@@ -128,7 +128,7 @@ command line.</para>
            <option>%p</option> and <option>%q</option> format specifiers can be
            used to embed the process ID and/or the contents of an environment
            variable in the name, as is the case for the core option
-           <option><xref linkend="opt.log-file"/></option>.
+           <option><link linkend="opt.log-file">--log-file</link></option>.
         </para>
      </listitem>
   </varlistentry>
@@ -148,7 +148,7 @@ command line.</para>
            <option>%p</option> and <option>%q</option> format specifiers can be
            used to embed the process ID and/or the contents of an environment
            variable in the name, as is the case for the core option
-           <option><xref linkend="opt.log-file"/></option>.
+           <option><link linkend="opt.log-file">--log-file</link></option>.
         </para>
      </listitem>
    </varlistentry>

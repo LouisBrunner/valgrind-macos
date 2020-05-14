@@ -104,8 +104,9 @@ which has already been freed, you'll be informed of this, and also where
 the block was freed.  Likewise, if it should turn out to be just off
 the end of a heap block, a common result of off-by-one-errors in
 array subscripting, you'll be informed of this fact, and also where the
-block was allocated.  If you use the <option><xref
-linkend="opt.read-var-info"/></option> option Memcheck will run more slowly
+block was allocated.  If you use the <option><link
+linkend="opt.read-var-info">--read-var-info</link></option> option
+Memcheck will run more slowly
 but may give a more detailed description of any illegal address.</para>
 
 <para>In this example, Memcheck can't identify the address.  Actually

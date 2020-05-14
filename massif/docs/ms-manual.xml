@@ -391,7 +391,7 @@ a small amount of information is recorded for each one:</para>
   larger number, usually 8 or 16.  This is required to ensure that elements
   within the block are suitably aligned.  If N bytes are asked for, Massif
   rounds N up to the nearest multiple of the value specified by the
-  <option><xref linkend="opt.alignment"/></option> option.
+  <option><link linkend="opt.alignment">--alignment</link></option> option.
   </para></listitem>
 
   <listitem><para>The size of the stack(s).  By default, stack profiling is
@@ -866,7 +866,7 @@ various places online.
       <option>%p</option> and <option>%q</option> format specifiers can be
       used to embed the process ID and/or the contents of an environment
       variable in the name, as is the case for the core option
-      <option><xref linkend="opt.log-file"/></option>.
+      <option><link linkend="opt.log-file">--log-file</link></option>.
       </para>
     </listitem>
   </varlistentry>

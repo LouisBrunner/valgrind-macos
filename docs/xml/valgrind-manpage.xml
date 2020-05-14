@@ -9,7 +9,7 @@
 <refmeta>
   <refentrytitle>VALGRIND</refentrytitle>
   <manvolnum>1</manvolnum>
-  <refmiscinfo>Release &rel-version;</refmiscinfo>
+  <refmiscinfo class="source">Release &rel-version;</refmiscinfo>
 </refmeta>
 
 <refnamediv>

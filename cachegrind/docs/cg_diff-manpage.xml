@@ -9,7 +9,7 @@
 <refmeta>
   <refentrytitle>cg_diff</refentrytitle>
   <manvolnum>1</manvolnum>
-  <refmiscinfo>Release &rel-version;</refmiscinfo>
+  <refmiscinfo class="version">Release &rel-version;</refmiscinfo>
 </refmeta>
 
 <refnamediv>

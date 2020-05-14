@@ -83,6 +83,17 @@ from the XML source at various times on various Linux distros. They're
 mostly about the PDF/PS documents, because they are the hardest to
 build.
 
+Notes [May 2020]
+----------------
+
+The default pdf generation has switched to xmlto using fop.
+Make sure to install the packages xmlto fop (and on Fedora
+also xmlto-tex). For other package requirements, see below.
+
+If fop is giving you trouble you can edit the docs/Makefile.am file
+at the top to remove WITH_FOP. It will then fall back to pdfxmltex
+for which you will need the hack described in "Notes [Mar 2015]".
+
 Notes [Jan 2019]
 -----------------
 For Ubuntu 18.04, to build HTML docs I had to:

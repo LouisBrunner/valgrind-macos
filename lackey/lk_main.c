@@ -739,7 +739,7 @@ IRSB* lk_instrument ( VgCallbackClosure* closure,
                 * instrument, by the VEX statements that are the
                 * translation of that known destination. This feature is
                 * called 'SB chasing' and can be influenced by command
-                * line option --vex-guest-chase-thresh.
+                * line option --vex-guest-chase=[yes|no].
                 *
                 * To get an accurate count of the calls to a specific
                 * function, taking SB chasing into account, we need to

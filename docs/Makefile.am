@@ -133,8 +133,12 @@ XSL_MAN_STYLES = \
 all-docs: FAQ.txt man-pages html-docs print-docs
 
 valid:
-	$(XMLLINT) $(XMLLINT_FLAGS) $(myxmldir)/index.xml
-	$(XMLLINT) $(XMLLINT_FLAGS) $(myxmldir)/manpages-index.xml
+	if type $(XMLLINT) 2>/dev/null; then \
+	  $(XMLLINT) $(XMLLINT_FLAGS) $(myxmldir)/index.xml; \
+	  $(XMLLINT) $(XMLLINT_FLAGS) $(myxmldir)/manpages-index.xml; \
+	fi
+
+check-local: valid
 
 # The text version of the FAQ.
 FAQ.txt:

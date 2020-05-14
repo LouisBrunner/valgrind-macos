@@ -114,10 +114,7 @@ LOGFILE = print.log
 
 # validation stuff
 XMLLINT       = xmllint
-LINT_FLAGS    = --noblanks --noout --xinclude --postvalid --noent
-# validate with docbook 4.3 'cos it supports xml:base natively
-VALID_FLAGS   = --dtdvalid http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd 
-XMLLINT_FLAGS = $(LINT_FLAGS) $(VALID_FLAGS)
+XMLLINT_FLAGS = --noblanks --noout --xinclude --postvalid --noent
 
 # stylesheet processor
 XSLTPROC       = xsltproc

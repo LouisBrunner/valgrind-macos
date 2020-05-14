@@ -1783,7 +1783,7 @@ Massif, Helgrind, DRD), the following options apply.</para>
       <para> Tools replacing Valgrind's <function>malloc,
       realloc,</function> etc, can optionally produce an execution
       tree detailing which piece of code is responsible for heap
-      memory usage. See <xref linkend="manual-core.xtree"/>
+      memory usage. See <xref linkend="&vg-xtree-id;"/>
       for a detailed explanation about execution trees. </para>
       
       <para> When set to <varname>none</varname>, no memory execution
@@ -1838,7 +1838,7 @@ Massif, Helgrind, DRD), the following options apply.</para>
         If the filename contains the extension  <option>.kcg</option>
         or no extension is provided or recognised,
         then the produced file format will be a callgrind output format.</para>
-      <para>See <xref linkend="manual-core.xtree"/>
+      <para>See <xref linkend="&vg-xtree-id;"/>
       for a detailed explanation about execution trees formats. </para>
     </listitem>
   </varlistentry>
@@ -2986,7 +2986,7 @@ will create a core dump in the usual way.</para>
 </sect1>
 
 
-<sect1 id="manual-core.xtree" xreflabel="Execution Trees">
+<sect1 id="&vg-xtree-id;" xreflabel="&vg-xtree-label;">
 <title>Execution Trees</title>
 
 <para>An execution tree (xtree) is made of a set of stack traces, each

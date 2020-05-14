@@ -46,7 +46,7 @@ program is using, it also gives very detailed information that indicates
 which parts of your program are responsible for allocating the heap memory.
 </para>
 
-<para>Massif also provides <xref linkend="manual-core.xtree"/> memory
+<para>Massif also provides <xref linkend="&vg-xtree-id;"/> memory
   profiling using the command line
   option <computeroutput>--xtree-memory</computeroutput> and the monitor command
    <computeroutput>xtmemory</computeroutput>.</para>
@@ -904,7 +904,7 @@ gdbserver (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>).
   <listitem>
     <para><varname>xtmemory [&lt;filename&gt; default xtmemory.kcg.%p.%n]</varname>
       requests Massif tool to produce an xtree heap memory report.
-      See <xref linkend="manual-core.xtree"/> for
+      See <xref linkend="&vg-xtree-id;"/> for
       a detailed explanation about execution trees. </para>
   </listitem>
 </itemizedlist>

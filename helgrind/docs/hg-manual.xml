@@ -64,7 +64,7 @@ primitives, you can describe their behaviour to Helgrind using the
 <varname>ANNOTATE_*</varname> macros defined
 in <varname>helgrind.h</varname>.</para>
 
-<para>Helgrind also provides <xref linkend="manual-core.xtree"/> memory
+<para>Helgrind also provides <xref linkend="&vg-xtree-id;"/> memory
   profiling using the command line
   option <computeroutput>--xtree-memory</computeroutput> and the monitor command
    <computeroutput>xtmemory</computeroutput>.</para>
@@ -1460,7 +1460,7 @@ write of size 4 at 0x8049D88 by thread #9 tid 2
   <listitem>
     <para><varname>xtmemory [&lt;filename&gt; default xtmemory.kcg.%p.%n]</varname>
       requests Helgrind tool to produce an xtree heap memory report.
-      See <xref linkend="manual-core.xtree"/> for
+      See <xref linkend="&vg-xtree-id;"/> for
       a detailed explanation about execution trees. </para>
   </listitem>
 

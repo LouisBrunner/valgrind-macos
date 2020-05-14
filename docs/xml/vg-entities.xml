@@ -58,7 +58,12 @@
 <!ENTITY vg-pthreads-perf-sched-id "&vg-pthreads-perf-sched-manual;.&vg-pthreads-perf-sched-ref;">
 <!ENTITY vg-pthreads-perf-sched-url "&vg-manual-url;&vg-pthreads-perf-sched-manual;.html#&vg-pthreads-perf-sched-id;">
 
-
 <!ENTITY vg-cg-manual-id "cg-manual">
 <!ENTITY vg-cg-manual-label "Cachegrind: a cache and branch-prediction profiler">
 <!ENTITY vg-cg-manual-url "&vg-manual-url;&vg-cg-manual-id;.html">
+
+<!ENTITY vg-xtree-manual "manual-core">
+<!ENTITY vg-xtree-ref "xtree">
+<!ENTITY vg-xtree-label "Execution Trees">
+<!ENTITY vg-xtree-id "&vg-xtree-manual;.&vg-xtree-ref;">
+<!ENTITY vg-xtree-url "&vg-manual-url;&vg-xtree-manual;.html#&vg-xtree-id;">

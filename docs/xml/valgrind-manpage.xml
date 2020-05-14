@@ -250,6 +250,9 @@ ms_print(1),
 <ulink id="&vg-cg-manual-id;"
        xreflabel="&vg-cg-manual-label;"
        url="&vg-cg-manual-url;">&vg-cg-manual-label;</ulink>.
+<ulink id="&vg-xtree-id;"
+       xreflabel="&vg-xtree-label;"
+       url="&vg-xtree-url;">&vg-xtree-label;</ulink>
 </para>
 
 </refsect1>

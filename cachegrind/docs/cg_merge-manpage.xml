@@ -26,7 +26,7 @@
 </refsynopsisdiv>
 
 
-<refsect1 id="description">
+<refsect1 id="cg_merge-description">
 <title>Description</title>
 
 <para><command>cg_merge</command> sums together the outputs of multiple
@@ -37,7 +37,7 @@ Cachegrind runs into a single output file.
 
 
 
-<refsect1 id="options">
+<refsect1 id="cg_merge-options">
 <title>Options</title>
 
 <xi:include href="cg-manual.xml" xpointer="cg_merge.opts.list"
@@ -48,7 +48,7 @@ Cachegrind runs into a single output file.
 
 
 
-<refsect1 id="see_also">
+<refsect1 id="cg_merge-see_also">
 <title>See Also</title>
 
 <para>
@@ -60,7 +60,7 @@ cg_annotate(1), valgrind(1),
 </refsect1>
 
 
-<refsect1 id="author">
+<refsect1 id="cg_merge-author">
 <title>Author</title>
 
 <para>Nicholas Nethercote.</para>

@@ -134,6 +134,7 @@ all-docs: FAQ.txt man-pages html-docs print-docs
 
 valid:
 	$(XMLLINT) $(XMLLINT_FLAGS) $(myxmldir)/index.xml
+	$(XMLLINT) $(XMLLINT_FLAGS) $(myxmldir)/manpages-index.xml
 
 # The text version of the FAQ.
 FAQ.txt:

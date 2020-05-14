@@ -26,7 +26,7 @@
 </refsynopsisdiv>
 
 
-<refsect1 id="description">
+<refsect1 id="ms_print-description">
 <title>Description</title>
 
 <para><command>ms_print</command> takes an output file produced by the
@@ -37,7 +37,7 @@ Valgrind tool Massif and prints the information in an easy-to-read form.
 
 
 
-<refsect1 id="options">
+<refsect1 id="ms_print-options">
 <title>Options</title>
 
 <xi:include href="ms-manual.xml" xpointer="ms_print.opts.list"
@@ -48,7 +48,7 @@ Valgrind tool Massif and prints the information in an easy-to-read form.
 
 
 
-<refsect1 id="see_also">
+<refsect1 id="ms_print-see_also">
 <title>See Also</title>
 
 <para>
@@ -60,7 +60,7 @@ valgrind(1),
 </refsect1>
 
 
-<refsect1 id="author">
+<refsect1 id="ms_print-author">
 <title>Author</title>
 
 <para>Nicholas Nethercote.</para>

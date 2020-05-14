@@ -25,7 +25,7 @@
 </refsynopsisdiv>
 
 
-<refsect1 id="description">
+<refsect1 id="vgdb-description">
 <title>Description</title>
 
 <para><command>vgdb</command> ("Valgrind to GDB") is used as an
@@ -38,7 +38,7 @@ intermediary between Valgrind and GDB or a shell.  It has two usage modes:
 
 </refsect1>
 
-<refsect1 id="options">
+<refsect1 id="vgdb-options">
 <title>Options</title>
 
 <xi:include href="../../docs/xml/manual-core-adv.xml"
@@ -50,7 +50,7 @@ intermediary between Valgrind and GDB or a shell.  It has two usage modes:
 
 
 
-<refsect1 id="see_also">
+<refsect1 id="vgdb-see_also">
 <title>See Also</title>
 
 <para>
@@ -71,7 +71,7 @@ valgrind(1),
 </refsect1>
 
 
-<refsect1 id="author">
+<refsect1 id="vgdb-author">
 <title>Author</title>
 
 <para>Philippe Waroquiers.</para>

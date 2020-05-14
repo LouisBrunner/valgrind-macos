@@ -25,7 +25,7 @@
 </refsynopsisdiv>
 
 
-<refsect1 id="description">
+<refsect1 id="di-server-description">
 <title>Description</title>
 
 <para><command>valgrind-di-server</command> accepts (multiple) connections
@@ -38,7 +38,7 @@ from <command>valgrind</command> processes that use the
 
 
 
-<refsect1 id="options">
+<refsect1 id="di-server-options">
 <title>Options</title>
   <variablelist>
      <varlistentry>
@@ -74,7 +74,7 @@ from <command>valgrind</command> processes that use the
 
 
 
-<refsect1 id="see_also">
+<refsect1 id="di-server-see_also">
 <title>See Also</title>
 
 <para>
@@ -86,7 +86,7 @@ valgrind(1),
 </refsect1>
 
 
-<refsect1 id="author">
+<refsect1 id="di-server-author">
 <title>Author</title>
 
 <para>Julian Seward.</para>

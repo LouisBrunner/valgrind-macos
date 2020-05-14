@@ -57,13 +57,18 @@ intermediary between Valgrind and GDB or a shell.  It has two usage modes:
 valgrind(1),
 <filename>&vg-docs-path;</filename> or
 <filename>&vg-docs-url;</filename>,
-<ulink id="&vg-gdbserver-id;"
+<!-- Note that the ids used have vgdb- prefixed.  This is because the same
+     ids are used in the valgrind.1 man page.  That conflict even though
+     the valgrind.1 and vgdb.1 manual page are generated separately.  It
+     still works fine, since in vgdb the references are only direct in this
+     "See Also" refsect. The labels and urls still come out as intended.  -->
+<ulink id="vgdb-&vg-gdbserver-id;"
        xreflabel="&vg-gdbserver-label;"
        url="&vg-gdbserver-url;">&vg-gdbserver-label;</ulink>
-<ulink id="&vg-vgdb-id;"
+<ulink id="vgdb-&vg-vgdb-id;"
        xreflabel="&vg-vgdb-label;"
        url="&vg-vgdb-url;">&vg-vgdb-label;</ulink>,
-<ulink id="&vg-monitor-id;"
+<ulink id="vgdb-&vg-monitor-id;"
        xreflabel="&vg-monitor-label;"
        url="&vg-monitor-url;">&vg-monitor-label;</ulink>.
 </para>

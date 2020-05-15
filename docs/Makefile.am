@@ -189,6 +189,7 @@ print-docs:
 	mkdir -p $(myprintdir)/images && \
 	cp $(myimgdir)/*.png $(myprintdir)/images && \
 	xmlto -v $(WITH_FOP) --stringparam=keep.relative.image.uris="1" \
+	      -x $(XSL_FO_STYLE) \
 	      --searchpath print pdf $(myxmldir)/index.xml &> $(LOGFILE) && \
 	echo "Generating PS file: $(myprintdir)/index.ps ..." && \
 	pdftops index.pdf && \
@@ -301,6 +302,7 @@ download-docs:
 	mkdir -p $(vgdir)/print/images
 	cp $(myimgdir)/*.png $(vgdir)/print/images/
 	xmlto -v $(WITH_FOP) --stringparam=keep.relative.image.uris="1" \
+	      -x $(XSL_FO_STYLE) \
 	      --searchpath print pdf $(myxmldir)/index.xml &> $(LOGFILE)
 	mv index.pdf $(vgdir)/print/manual.pdf
 	@echo ""

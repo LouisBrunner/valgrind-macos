@@ -94,6 +94,8 @@ If fop is giving you trouble you can edit the docs/Makefile.am file
 at the top to remove WITH_FOP. It will then fall back to pdfxmltex
 for which you will need the hack described in "Notes [Mar 2015]".
 
+On Fedora the pdftops command is provided by poppler-utils.
+
 Notes [Jan 2019]
 -----------------
 For Ubuntu 18.04, to build HTML docs I had to:

@@ -3173,6 +3173,76 @@ static IRExpr * absI64( IRTemp src )
                  binop( Iop_And64, mkexpr( twos_comp ),  mkexpr( sign_mask ) ) );
 }
 
+static IRExpr * locate_vector_ele_eq ( IRTemp src, IRExpr *value,
+                                       UInt dir, IRType size )
+{
+#define MAX_ELE 16
+   /* Find the index, 0 to max-1, of the element in 128-bit vector that matches
+      value.  The returned value will be index+1. Return the index as an
+      Ity_I8.  If no match is found, the returned value is equal to the number
+      of elements in the vector plus one. The argument dir specifies match from
+      left (dir = 0) or from the right (dir != 0).  */
+   UInt i, num_bytes;
+   UInt max  = 0;          /* number of vector elements */
+   UInt mask = 0;
+   IRTemp cnt[MAX_ELE+1];
+   IRTemp flag[MAX_ELE+1];
+   IRTemp cmp_result[MAX_ELE];
+   UInt byte_index;
+
+   vassert(size == Ity_I8  || size == Ity_I16);
+
+   if (size == Ity_I8) {
+      mask = 0xFF;
+      max = 128/8;
+      num_bytes = 1;
+   } else {
+      mask = 0xFFFF;
+      max = 128/16;
+      num_bytes = 2;       // num bytes in half word
+   }
+
+   cnt[0] = newTemp(Ity_I8);
+   assign( cnt[0], mkU8( 1 ) );
+   flag[0] = newTemp(Ity_I8);
+   assign( flag[0], mkU8( 1 ) );
+
+   for (i = 0; i < max; i++) {
+      if (dir == 0) {
+         byte_index = (max - 1 - i)*num_bytes;
+      } else {
+         byte_index = i*num_bytes;
+      }
+
+      cnt[i+1] = newTemp(Ity_I8);
+      cmp_result[i] = newTemp(Ity_I8);
+      flag[i+1] = newTemp(Ity_I8);
+
+      assign( cmp_result[i],
+              unop( Iop_1Uto8,
+                    binop( Iop_CmpEQ64,
+                           binop( Iop_And64,
+                                  mkU64( mask ),
+                                  value ),
+                           extract_field_from_vector( src,
+                                                      mkU64( byte_index ),
+                                                      mask ) ) ) );
+
+      assign( flag[i+1], binop( Iop_And8,
+                                mkexpr( flag[i] ),
+                                unop( Iop_Not8,
+                                      mkexpr( cmp_result[i] ) ) ) );
+
+      // Once flag[i] becomes zero, it forces the increment to zero
+      assign( cnt[i+1],
+              binop( Iop_Add8,
+                     binop( Iop_And8, mkexpr( flag[i+1] ), mkU8( 1 ) ),
+                     mkexpr( cnt[i] ) ) );
+   }
+   return mkexpr( cnt[max] );
+#undef MAX_ELE
+}
+
 /*-----------------------------------------------------------*/
 /*---  Prefix instruction helpers                         ---*/
 /*-----------------------------------------------------------*/
@@ -32656,6 +32726,235 @@ static Bool dis_vec_extract_insert ( UInt prefix, UInt theInstr )
    return True;
 }
 
+static Bool dis_string_isolate ( UInt prefix, UInt theInstr )
+{
+   UChar vT_addr  = ifieldRegDS(theInstr);
+   UChar vA_addr  = ifieldRegA(theInstr);
+   UChar vB_addr  = ifieldRegB(theInstr);
+
+   IRTemp vT = newTemp(Ity_V128);
+   IRTemp index = newTemp(Ity_I32);
+   IRTemp sh_index = newTemp(Ity_I32);
+   IRTemp mask = newTemp(Ity_V128);
+   IRTemp cc = newTemp(Ity_I32);
+   UInt cc_field = 6;
+
+   UInt Rc = IFIELD( theInstr, (31-21), 1 );
+
+   UInt opc2 = IFIELD( theInstr, 0, 11 );
+   Int inst_sel = IFIELD(theInstr, 16, 5);
+   Int dir = 0;   // 0 - index from left, 1 - index from right
+   IROp shift_first, shift_second;
+
+   assign( mask, binop( Iop_64HLtoV128,
+                        mkU64( 0xFFFFFFFFFFFFFFFF ),
+                        mkU64( 0xFFFFFFFFFFFFFFFF ) ) );
+
+   if (opc2 == 0x18D)
+      inst_sel = opc2;
+
+   else if (opc2 == 0x1CD)
+      inst_sel = opc2;
+
+   switch(inst_sel) {
+   case 0x0:         // vstribl[.]
+   case 0x1:         // vstribr[.]
+      {
+         IRTemp vB = newTemp(Ity_V128);
+
+         if (inst_sel == 0) {
+            DIP("vstribl%s v%u,v%u\n", Rc ? ".":"", vT_addr, vB_addr);
+            shift_first = Iop_ShlV128;
+            dir = 0;
+
+         } else {
+            DIP("vstribr%s v%u,v%u\n", Rc ? ".":"", vT_addr, vB_addr);
+            shift_first = Iop_ShrV128;
+            dir = 1;
+         }
+
+         /* Get index of match of first byte from the left that matches zero.
+            Index will be equal to max elements in vector if there is no match.
+            If index is equal to the max, which is 16 in this case, set index
+            to zero so the data mask will select all of the bits.
+         */
+         assign( vB, getVReg( vB_addr ) );
+         assign( index, unop( Iop_8Uto32,
+                              locate_vector_ele_eq( vB, mkU64( 0 ), dir,
+                                                 Ity_I8 ) ) );
+         assign( sh_index,
+                 binop( Iop_And32,
+                        unop( Iop_1Sto32,
+                              binop( Iop_CmpLE32U,
+                                     mkexpr( index ),
+                                     mkU32( 16 ) ) ),
+                        binop( Iop_Sub32,
+                               mkU32( 16 ),
+                               mkexpr( index ) ) ) );
+
+         /* Shift mask to select the bytes up to the match with zero */
+         assign( vT, binop( Iop_AndV128,
+                            //                            binop( Iop_ShlV128,
+                            binop( shift_first,
+                                   mkexpr( mask ),
+                                   unop( Iop_32to8,
+                                         binop( Iop_Mul32,
+                                                mkU32( 8 ),
+                                                mkexpr( sh_index ) ) ) ),
+                            mkexpr( vB ) ) );
+
+         if (Rc)
+            /* The returned index was between 1 and 16 if a null was found. */
+            assign( cc, binop( Iop_Shl32,
+                               unop( Iop_1Uto32,
+                                     binop( Iop_CmpLE32U,
+                                            mkexpr( index ), mkU32( 16 ) ) ),
+                               mkU8( 1 ) ) );
+      }
+      break;
+
+   case 0x2:         // vstrihl[.]
+   case 0x3:         // vstrihr[.]
+      {
+         IRTemp vB = newTemp(Ity_V128);
+
+         if (inst_sel == 2) {
+            DIP("vstrihl%s v%u,v%u\n", Rc ? ".":"", vT_addr, vB_addr);
+            shift_first = Iop_ShlV128;
+            dir = 0;
+
+         } else {
+            DIP("vstrihr%s v%u,v%u\n", Rc ? ".":"", vT_addr, vB_addr);
+            shift_first = Iop_ShrV128;
+            dir = 1;
+         }
+
+         assign( vB, getVReg( vB_addr ) );
+         assign( index, unop( Iop_8Uto32,
+                              locate_vector_ele_eq( vB, mkU64( 0 ), dir,
+                                                    Ity_I16 ) ) );
+            /* Get index of match of first half word from specified direction
+               that matches zero. Index will be equal to max elements in vector
+               if there is no match. If index is equal to the max, which is 8
+               in this case, set index to zero so the data mask will select all
+               of the bits.
+            */
+         assign( sh_index,
+                 binop( Iop_And32,
+                        unop( Iop_1Sto32,
+                              binop( Iop_CmpLE32U,
+                                     mkexpr( index ),
+                                     mkU32( 8 ) ) ),
+                        binop( Iop_Sub32,
+                               mkU32( 8 ),
+                               mkexpr( index ) ) ) );
+
+         /* Shift mask left to select the bytes up to the match with zero */
+         assign( vT, binop( Iop_AndV128,
+                            //                            binop( Iop_ShlV128,
+                            binop( shift_first,
+                                   mkexpr( mask ),
+                                   unop( Iop_32to8,
+                                         binop( Iop_Mul32,
+                                                mkU32( 16 ),
+                                                mkexpr( sh_index ) ) ) ),
+                            mkexpr( vB ) ) );
+
+         if (Rc)
+            /* The returned index was between 1 and 16 if a null was found. */
+            assign( cc, binop( Iop_Shl32,
+                               unop( Iop_1Uto32,
+                                     binop( Iop_CmpLE32U,
+                                            mkexpr( index ), mkU32( 8 ) ) ),
+                               mkU8( 1 ) ) );
+      }
+      break;
+
+   case 0x18D:         // vclrlb
+   case 0x1CD:         // vclrrb
+      {
+         IRTemp rB = newTemp(Ity_I64);
+         IRTemp vA = newTemp(Ity_V128);
+         IRTemp shift = newTemp(Ity_I8);
+         IRTemp clear_result = newTemp(Ity_I64);
+
+         /* Note vB_addr actually refers to a GPR in this inst.  */
+         if (inst_sel == 0x18D) {
+            DIP("vclrlb v%u,v%u,%u\n", vT_addr, vA_addr, vB_addr);
+            shift_first = Iop_ShlV128;
+            shift_second = Iop_ShrV128;
+
+         } else {
+            DIP("vclrrb v%u,v%u,%u\n", vT_addr, vA_addr, vB_addr);
+            shift_first = Iop_ShrV128;
+            shift_second = Iop_ShlV128;
+         }
+
+         assign( vA, getVReg( vA_addr ) );
+         assign( rB, getIReg( vB_addr ) );
+
+         /* Clear left 16-rB bytes, if rb > 16, set shift to 0
+            and clear_result to all 1's.  */
+         assign( shift,
+                 unop( Iop_32to8,
+                       binop( Iop_And32,
+                              binop( Iop_Mul32,
+                                     mkU32( 8 ),
+                                     binop( Iop_Sub32,
+                                            mkU32( 16 ),
+                                            unop( Iop_64to32,
+                                                  mkexpr( rB ) ) ) ),
+                              unop( Iop_Not32,
+                                    unop( Iop_1Sto32,
+                                          binop( Iop_CmpLT32S,
+                                                 mkU32( 16 ),
+                                                 unop( Iop_64to32,
+                                                       mkexpr( rB ) ) ) ) )
+                          ) ) );
+
+         /* Clear all bits if rB > 16 */
+         assign( clear_result,
+                 binop( Iop_Or64,
+                        unop( Iop_1Sto64,
+                              binop( Iop_CmpLE32S,
+                                     unop( Iop_8Uto32, mkexpr( shift ) ),
+                                     mkU32( 127 ) ) ),
+                        unop( Iop_1Sto64,
+                              binop( Iop_CmpLT32S,
+                                     mkU32( 16 ),
+                                     unop( Iop_64to32,
+                                           mkexpr( rB ) ) ) ) ) );
+
+         /* Clear bits by shifting mask, then shifting back by index.  If
+          * shift is >= 127, need to mask out result as underlying shift only
+          * supports shifts up to 127 bits.
+          */
+         assign( vT,
+                 binop( Iop_AndV128,
+                        binop( Iop_AndV128,
+                               binop( shift_second,
+                                      binop( shift_first,
+                                             mkexpr( mask ),
+                                             mkexpr( shift ) ),
+                                      mkexpr( shift ) ),
+                               mkexpr( vA ) ),
+                        binop( Iop_64HLtoV128, mkexpr( clear_result ),
+                               mkexpr( clear_result ) ) ) );
+      }
+      break;
+
+   default:
+      vex_printf("dis_string_isolate(isnt_sel = %d)\n", inst_sel);
+      return False;
+   }
+
+   if (Rc)
+      putGST_field( PPC_GST_CR, mkexpr( cc ), cc_field );
+
+   putVReg( vT_addr, mkexpr( vT ) );
+   return True;
+}
+
 static Int dis_nop_prefix ( UInt prefix, UInt theInstr )
 {
    Bool is_prefix   = prefix_instruction( prefix );
@@ -32709,6 +33008,7 @@ DisResult disInstr_PPC_WRK (
 {
    UChar     opc1;
    UInt      opc2;
+   UInt      opc3;
    DisResult dres;
    UInt      theInstr;
    UInt      prefix;
@@ -34451,13 +34751,33 @@ DisResult disInstr_PPC_WRK (
             }
       }
 
+      opc2 = IFIELD(theInstr, 0, 10);
+      opc3 = IFIELD(theInstr, 16, 5);
+
+      if ((opc2 == 0x0D) & (opc3 < 4)) {   // vstrihr, vstrihl, vstribr vstrib
+         /* Vector String Isolate instructions */
+         if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
+         if (dis_string_isolate( prefix, theInstr ))
+            goto decode_success;
+         goto decode_failure;
+      }
+
       opc2 = IFIELD(theInstr, 0, 11);
+
       switch (opc2) {
+         /* Vector String Isolate instructions */
+      case 0x18D:     // vclrlb
+      case 0x1CD:     // vclrrb
+         if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
+         if (dis_string_isolate( prefix, theInstr ))
+            goto decode_success;
+         goto decode_failure;
+
       /* BCD manipulation */
       case 0x341:                  // bcdcpsgn
-
          if (!allow_isa_2_07) goto decode_noP8;
-         if (dis_av_bcd_misc( prefix, theInstr, abiinfo )) goto decode_success;
+         if (dis_av_bcd_misc( prefix, theInstr, abiinfo ))
+            goto decode_success;
          goto decode_failure;
 
 

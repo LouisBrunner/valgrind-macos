@@ -136,15 +136,58 @@ XSL_MAN_STYLES = \
     /usr/share/xml/docbook/stylesheet/nwalsh/current/manpages/docbook.xsl \
     /usr/share/xml/docbook/stylesheet/nwalsh/manpages/docbook.xsl
 
+# Input files for valid-manual and valid-manpages
+MANUAL_XML_FILES = $(myxmldir)/index.xml \
+		     $(myxmldir)/vg-entities.xml \
+		     $(myxmldir)/quick-start-guide.xml \
+		     $(myxmldir)/manual.xml \
+		       $(myxmldir)/manual-intro.xml \
+		       $(myxmldir)/manual-core.xml \
+		       $(myxmldir)/manual-core-adv.xml \
+		     $(top_srcdir)/*/docs/*-manual.xml \
+		     $(myxmldir)/quick-start-guide.xml \
+		     $(myxmldir)/FAQ.xml \
+		     $(myxmldir)/tech-docs.xml \
+		       $(myxmldir)/design-impl.xml \
+		       $(myxmldir)/manual-writing-tools.xml \
+		       $(top_srcdir)/callgrind/docs/cl-format.xml \
+		     $(myxmldir)/dist-docs.xml \
+		       $(top_srcdir)/AUTHORS \
+		       $(top_srcdir)/NEWS \
+		       $(top_srcdir)/NEWS.old \
+		       $(top_srcdir)/README \
+		       $(top_srcdir)/README_MISSING_SYSCALL_OR_IOCTL \
+		       $(top_srcdir)/README_DEVELOPERS \
+		       $(top_srcdir)/README_PACKAGERS \
+		       $(top_srcdir)/README.s390 \
+		       $(top_srcdir)/README.android \
+		       $(top_srcdir)/README.android_emulator \
+		       $(top_srcdir)/README.mips \
+		       $(top_srcdir)/README.solaris \
+		     $(myxmldir)/licenses.xml \
+		       $(top_srcdir)/COPYING \
+		       $(top_srcdir)/COPYING.DOCS
+
+MANPAGES_XML_FILES = $(myxmldir)/manpages-index.xml \
+		       $(myxmldir)/valgrind-manpage.xml \
+			 $(myxmldir)/manual-core.xml \
+		       $(top_srcdir)/*/docs/*-manual.xml
+
 all-docs: FAQ.txt man-pages html-docs print-docs
 
-valid:
+valid-manual: $(MANUAL_XML_FILES)
 	if type $(XMLLINT) 2>/dev/null; then \
-	  $(XMLLINT) $(XMLLINT_FLAGS) $(myxmldir)/index.xml; \
-	  $(XMLLINT) $(XMLLINT_FLAGS) $(myxmldir)/manpages-index.xml; \
+	  $(XMLLINT) $(XMLLINT_FLAGS) $(myxmldir)/index.xml && \
+	  touch $@; \
 	fi
 
-check-local: valid
+valid-manpages: $(MANPAGES_XML_FILES)
+	if type $(XMLLINT) 2>/dev/null; then \
+	  $(XMLLINT) $(XMLLINT_FLAGS) $(myxmldir)/manpages-index.xml && \
+	  touch $@; \
+	fi
+
+check-local: valid-manual valid-manpages
 
 # The text version of the FAQ.
 FAQ.txt:
@@ -252,6 +295,8 @@ distclean-local:
 	rm -f FAQ.txt
 	rm -f $(top_builddir)/FAQ.txt $(top_builddir)/docs/*.1
 
+clean-local:
+	rm -f valid-manual valid-manpages
 
 
 # -----------------------------------------------------------------------

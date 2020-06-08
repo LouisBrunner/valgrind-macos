@@ -3974,7 +3974,7 @@ static IRExpr * is_Zero_Vector( IRType element_size, IRExpr *src )
       assign( frac_maskV128, unop( Iop_Dup32x4, mkU32( I32_FRACTION_MASK ) ) );
 
    } else
-      vex_printf("ERROR, is_Zero_Vector:  Unknown input size\n");
+      vpanic("ERROR, is_Zero_Vector:  Unknown input size");
 
    /* CmpEQ32x4 returns all 1's in elements where comparison is true */
    assign( exp_zeroV128,
@@ -4011,7 +4011,7 @@ static IRExpr * is_Denorm_Vector( IRType element_size, IRExpr *src )
       assign( frac_maskV128, unop( Iop_Dup32x4, mkU32( I32_FRACTION_MASK ) ) );
 
    } else
-      vex_printf("ERROR, is_Denorm_Vector:  Unknown input size\n");
+      vpanic("ERROR, is_Denorm_Vector:  Unknown input size");
 
    /* CmpEQ32x4 returns all 1's in elements where comparison is true */
    assign( exp_zeroV128,
@@ -4048,7 +4048,7 @@ static IRExpr * is_NaN_Vector( IRType element_size, IRExpr *src )
       opCmpEQ = Iop_CmpEQ32x4;
 
    } else
-      vex_printf("ERROR, is_NaN_Vector:  Unknown input size\n");
+      vpanic("ERROR, is_NaN_Vector:  Unknown input size");
 
    /* check exponent is all ones, i.e. (exp AND exp_mask) = exp_mask */
    assign( max_expV128,
@@ -4307,7 +4307,7 @@ static IRExpr* negate_Vector ( IRType element_size, IRExpr* value )
       assign( sign_maskV128, unop( Iop_Dup32x4, mkU32( I32_SIGN_MASK ) ) );
 
    } else
-      vex_printf("ERROR, negate_Vector:  Unknown input size\n");
+      vpanic("ERROR, negate_Vector:  Unknown input size");
 
    /* Determine if vector elementes are not a NaN, negate sign bit
       for non NaN elements */

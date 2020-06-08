@@ -1,5 +1,5 @@
 
-Release 3.16.0 (22 May 2020)
+Release 3.16.0 (27 May 2020)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 3.16.0 is a feature release with many improvements and the usual collection of
@@ -177,7 +177,8 @@ n-i-bz  Fix non-glibc build of test suite with s390x_features
 n-i-bz  MinGW, include/valgrind.h: Fix detection of 64-bit mode
 
 (3.16.0.RC1:  18 May 2020, git 6052ee66a0cf5234e8e2a2b49a8760226bc13b92)
-(3.15.0.RC2:  19 May 2020, git 940ec1ca69a09f7fdae3e800b7359f85c13c4b37)
+(3.16.0.RC2:  19 May 2020, git 940ec1ca69a09f7fdae3e800b7359f85c13c4b37)
+(3.16.0:      27 May 2020, git bf5e647edb9e96cbd5c57cc944984402eeee296d)
 
 
 

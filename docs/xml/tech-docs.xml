@@ -12,7 +12,7 @@
     <year>&vg-lifespan;</year>
     <holder><ulink url="&vg-devs-url;">Valgrind Developers</ulink></holder>
   </copyright>
-  <legalnotice>
+  <legalnotice id="tech-legal">
     <para>Email: <ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink></para>
   </legalnotice>
 </bookinfo>

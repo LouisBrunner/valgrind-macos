@@ -1003,6 +1003,8 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_getrandom,         sys_getrandom),        // 359
    LINXY(__NR_memfd_create,      sys_memfd_create),     // 360
 
+   LINX_(__NR_execveat,          sys_execveat),         // 362
+
    LINX_(__NR_membarrier,        sys_membarrier),       // 365
 
    LINX_(__NR_copy_file_range,   sys_copy_file_range),  // 379

@@ -1097,6 +1097,8 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_getrandom,              sys_getrandom),               // 353
    LINXY (__NR_memfd_create,           sys_memfd_create),            // 354
    //..
+   LINX_ (__NR_execveat,               sys_execveat),                // 356
+   //..
    LINX_ (__NR_membarrier,             sys_membarrier),              // 358
    //..
    LINX_ (__NR_copy_file_range,        sys_copy_file_range),         // 360

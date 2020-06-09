@@ -809,7 +809,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_statx,                  sys_statx),
    LINX_ (__NR_setns,                  sys_setns),
    //    (__NR_bpf,                    sys_ni_syscall),
-   //    (__NR_execveat,               sys_ni_syscall),
+   LINX_ (__NR_execveat,               sys_execveat),
    //    (__NR_userfaultfd,            sys_ni_syscall),
    LINX_ (__NR_membarrier,             sys_membarrier),
    //    (__NR_mlock2,                 sys_ni_syscall),

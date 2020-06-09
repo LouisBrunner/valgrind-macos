@@ -237,6 +237,7 @@ DECL_TEMPLATE(linux, sys_sched_setaffinity);
 DECL_TEMPLATE(linux, sys_sched_getaffinity);
 
 DECL_TEMPLATE(linux, sys_unshare);
+DECL_TEMPLATE(linux, sys_setns);
 
 // These ones have different parameters and/or return values on Darwin.
 // Also, some archs on Linux do not match the generic wrapper for sys_pipe.
@@ -297,6 +298,9 @@ DECL_TEMPLATE(linux, sys_membarrier);
 
 // Linux-specific (new in Linux 3.18)
 DECL_TEMPLATE(linux, sys_bpf);
+
+// Linux-specific (new in Linux 3.19)
+DECL_TEMPLATE(linux, sys_execveat);
 
 // Linux-specific (new in Linux 4.11)
 DECL_TEMPLATE(linux, sys_statx);

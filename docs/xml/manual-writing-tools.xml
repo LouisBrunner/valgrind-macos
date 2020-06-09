@@ -1,14 +1,14 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
 [ <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities; ]>
 
 
 <chapter id="manual-writing-tools" xreflabel="Writing a New Valgrind Tool">
 <title>Writing a New Valgrind Tool</title>
 
-So you want to write a Valgrind tool?  Here are some instructions that may
-help.
+<para>So you want to write a Valgrind tool?  Here are some instructions
+that may help.</para>
 
 <sect1 id="manual-writing-tools.intro" xreflabel="Introduction">
 <title>Introduction</title>

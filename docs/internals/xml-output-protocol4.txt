@@ -4,7 +4,7 @@
 14 October 2011
 
 Protocols 1 through 3 supported Memcheck only.  Protocol 4 provides
-XML output for Memcheck, Helgrind, DRD and SGcheck.  Technically there
+XML output for Memcheck, Helgrind and DRD.  Technically there
 are four variants of Protocol 4, one for each tool, since they
 produce different errors.  The four variants differ only in the
 definition of the ERROR nonterminal and are otherwise identical.
@@ -81,7 +81,7 @@ XWHAT, and between AUXWHAT and XAUXWHAT.
 The definition of Protocol 4 now follows.  It is structured similarly
 to that of the previous protocols, except that there is a separate
 definition of a nonterminal called TOOLSPECIFIC for each of Memcheck,
-Helgrind, DRD and SGcheck.  The XWHAT and XAUXWHAT nonterminals also
+Helgrind and DRD.  The XWHAT and XAUXWHAT nonterminals also
 have tool-specific components.  Apart from that, the structure is
 common to all supported tools.
 
@@ -199,9 +199,9 @@ the following in sequence:
      </status>
 
 * Zero or more of (either ERRORCOUNTS or TOOLSPECIFIC).  In Memcheck's
-  case these will be complaints from the leak checker.  For SGcheck
-  and Helgrind we don't expect any output here (but the spec does not
-  guarantee that either).
+  case these will be complaints from the leak checker.  For Helgrind
+  we don't expect any output here (but the spec does not guarantee that
+  either).
 
 * SUPPCOUNTS, indicating how many times each suppression was used.
 
@@ -569,45 +569,6 @@ The possible values are:
 
       arguments to memory allocation function are very large,
       indicating probable integer overflow or cast from negative signed
-
-
-====================================================================
-
-TOOLSPECIFIC definition for SGcheck
------------------------------------
-
-For SGcheck, a TOOLSPECIFIC is simply an ERROR:
-
-TOOLSPECIFIC = ERROR
-
-
-ERROR details for SGcheck
--------------------------
-
-SGcheck does not produce any XWHAT records, despite the fact that
-"ERROR definition -- common structure" says that tools may do so.
-
-
-XAUXWHATs (for definition, see above) may contain the following extra
-components (along with the mandatory <text>...</text> component):
-
-* <file>TEXT</file>, as defined in FRAME
-
-* <line>INT</line>, as defined in FRAME
-
-* <dir>TEXT</dir>, as defined in FRAME
-
-
-KIND for SGcheck
-----------------
-This is a small enumeration indicating roughly the nature of an error.
-The possible values are:
-
-   SorG
-
-      Stack or global array inconsistency (roughly speaking, an
-      overrun of a stack or global array).  The <auxwhat> blocks give
-      further details.
 
 
 ====================================================================

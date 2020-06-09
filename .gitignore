@@ -527,71 +527,6 @@
 /exp-bbv/tests/x86-linux/Makefile
 /exp-bbv/tests/x86-linux/Makefile.in
 
-# /exp-sgcheck/
-/exp-sgcheck/*.dSYM
-/exp-sgcheck/.deps
-/exp-sgcheck/exp-sgcheck-*-darwin
-/exp-sgcheck/exp-sgcheck-*-linux
-/exp-sgcheck/exp-sgcheck-*-solaris
-/exp-sgcheck/Makefile
-/exp-sgcheck/Makefile.in
-/exp-sgcheck/preen_invars
-/exp-sgcheck/vgpreload_exp-ptrcheck-*-linux.so
-/exp-sgcheck/vgpreload_exp-ptrcheck-*-darwin.so
-/exp-sgcheck/vgpreload_exp-ptrcheck-*-darwin.so.dSYM
-/exp-sgcheck/vgpreload_exp-sgcheck-*-darwin.so
-/exp-sgcheck/vgpreload_exp-sgcheck-*-linux.so
-/exp-sgcheck/vgpreload_exp-sgcheck-*-solaris.so
-
-# /exp-sgcheck/docs/
-/exp-sgcheck/docs/Makefile
-/exp-sgcheck/docs/Makefile.in
-
-# /exp-sgcheck/tests/
-/exp-sgcheck/tests/*.dSYM
-/exp-sgcheck/tests/*.out
-/exp-sgcheck/tests/*.so
-/exp-sgcheck/tests/*.stderr.diff*
-/exp-sgcheck/tests/*.stdout.diff*
-/exp-sgcheck/tests/.deps
-/exp-sgcheck/tests/Makefile
-/exp-sgcheck/tests/Makefile.in
-/exp-sgcheck/tests/add
-/exp-sgcheck/tests/and
-/exp-sgcheck/tests/arith
-/exp-sgcheck/tests/bad_percentify
-/exp-sgcheck/tests/base
-/exp-sgcheck/tests/ccc
-/exp-sgcheck/tests/cmp
-/exp-sgcheck/tests/fp
-/exp-sgcheck/tests/globalerr
-/exp-sgcheck/tests/hackedbz2
-/exp-sgcheck/tests/hp_bounds
-/exp-sgcheck/tests/hp_dangle
-/exp-sgcheck/tests/hsg
-/exp-sgcheck/tests/idiv
-/exp-sgcheck/tests/imul
-/exp-sgcheck/tests/justify
-/exp-sgcheck/tests/mm
-/exp-sgcheck/tests/neg
-/exp-sgcheck/tests/not
-/exp-sgcheck/tests/or
-/exp-sgcheck/tests/partial
-/exp-sgcheck/tests/preen_invars
-/exp-sgcheck/tests/pth_create
-/exp-sgcheck/tests/pth_specific
-/exp-sgcheck/tests/realloc
-/exp-sgcheck/tests/stackerr
-/exp-sgcheck/tests/strcpy
-/exp-sgcheck/tests/strlen
-/exp-sgcheck/tests/sub
-/exp-sgcheck/tests/supp
-/exp-sgcheck/tests/syscall
-/exp-sgcheck/tests/tricky
-/exp-sgcheck/tests/unaligned
-/exp-sgcheck/tests/xor
-/exp-sgcheck/tests/zero
-
 # /gdbserver_tests/
 /gdbserver_tests/*.dSYM
 /gdbserver_tests/*.diff*
@@ -1117,6 +1052,8 @@
 /memcheck/tests/linux/timerfd-syscall
 /memcheck/tests/linux/proc-auxv
 /memcheck/tests/linux/sys-openat
+/memcheck/tests/linux/sys-execveat
+/memcheck/tests/linux/check_execveat
 
 # /memcheck/tests/mips32/
 /memcheck/tests/mips32/*.stderr.diff

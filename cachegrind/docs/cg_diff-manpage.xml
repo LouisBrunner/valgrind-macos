@@ -1,6 +1,6 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+          "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
 [ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
 
 
@@ -9,7 +9,7 @@
 <refmeta>
   <refentrytitle>cg_diff</refentrytitle>
   <manvolnum>1</manvolnum>
-  <refmiscinfo>Release &rel-version;</refmiscinfo>
+  <refmiscinfo class="version">Release &rel-version;</refmiscinfo>
 </refmeta>
 
 <refnamediv>
@@ -27,7 +27,7 @@
 </refsynopsisdiv>
 
 
-<refsect1 id="description">
+<refsect1 id="cg_diff-description">
 <title>Description</title>
 
 <para><command>cg_diff</command> takes two output files produced by the
@@ -39,7 +39,7 @@ in the same format that Cachegrinds outputs.
 
 
 
-<refsect1 id="options">
+<refsect1 id="cg_diff-options">
 <title>Options</title>
 
 <xi:include href="cg-manual.xml" xpointer="cg_diff.opts.list"
@@ -50,7 +50,7 @@ in the same format that Cachegrinds outputs.
 
 
 
-<refsect1 id="see_also">
+<refsect1 id="cg_diff-see_also">
 <title>See Also</title>
 
 <para>
@@ -62,7 +62,7 @@ cg_annotate(1), valgrind(1),
 </refsect1>
 
 
-<refsect1 id="author">
+<refsect1 id="cg_diff-author">
 <title>Author</title>
 
 <para>Nicholas Nethercote.</para>

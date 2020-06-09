@@ -1,6 +1,6 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
 [ <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities; ]>
 
 
@@ -578,13 +578,13 @@ lines in a suppression.</para>
    fun:main
 }
 ]]></programlisting>
-This suppresses Memcheck memory-leak errors, in the case where
+<para>This suppresses Memcheck memory-leak errors, in the case where
 the allocation was done by <computeroutput>main</computeroutput>
 calling (though any number of intermediaries, including zero)
 <computeroutput>ccc</computeroutput>,
 calling onwards via
 <computeroutput>ddd</computeroutput> and eventually
-to <computeroutput>malloc.</computeroutput>.
+to <computeroutput>malloc.</computeroutput>.</para>
 </sect1>
 
 
@@ -995,8 +995,8 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
 
       <para>This option is aimed at making life easier for tools that consume
       Valgrind's output as input, such as GUI front ends.  Currently this
-      option works with Memcheck, Helgrind, DRD and SGcheck.  The output
-      format is specified in the file
+      option works with Memcheck, Helgrind and DRD.  The output format is
+      specified in the file
       <computeroutput>docs/internals/xml-output-protocol4.txt</computeroutput>
       in the source tree for Valgrind 3.5.0 or later.</para>
 
@@ -1783,7 +1783,7 @@ Massif, Helgrind, DRD), the following options apply.</para>
       <para> Tools replacing Valgrind's <function>malloc,
       realloc,</function> etc, can optionally produce an execution
       tree detailing which piece of code is responsible for heap
-      memory usage. See <xref linkend="manual-core.xtree"/>
+      memory usage. See <xref linkend="&vg-xtree-id;"/>
       for a detailed explanation about execution trees. </para>
       
       <para> When set to <varname>none</varname>, no memory execution
@@ -1838,7 +1838,7 @@ Massif, Helgrind, DRD), the following options apply.</para>
         If the filename contains the extension  <option>.kcg</option>
         or no extension is provided or recognised,
         then the produced file format will be a callgrind output format.</para>
-      <para>See <xref linkend="manual-core.xtree"/>
+      <para>See <xref linkend="&vg-xtree-id;"/>
       for a detailed explanation about execution trees formats. </para>
     </listitem>
   </varlistentry>
@@ -2646,35 +2646,35 @@ PROGRESS: U 130s, W 134s, 97.0% CPU, EvC 574.90M, TIn 657.5k, TOut 3.0k, #thr 63
 ]]></programlisting>
         Each line shows:
       <itemizedlist>
-        <listitem><varname>U</varname>: total user time</listitem>
-        <listitem><varname>W</varname>: total wallclock time</listitem>
-        <listitem><varname>CPU</varname>: overall average cpu use</listitem>
-        <listitem><varname>EvC</varname>: number of event checks.  An event
+        <listitem><para><varname>U</varname>: total user time</para></listitem>
+        <listitem><para><varname>W</varname>: total wallclock time</para></listitem>
+        <listitem><para><varname>CPU</varname>: overall average cpu use</para></listitem>
+        <listitem><para><varname>EvC</varname>: number of event checks.  An event
          check is a backwards branch in the simulated program, so this is a
-         measure of forward progress of the program</listitem>
-        <listitem><varname>TIn</varname>: number of code blocks instrumented
-          by the JIT</listitem>
-        <listitem><varname>TOut</varname>: number of instrumented code
-          blocks that have been thrown away</listitem>
-        <listitem><varname>#thr</varname>: number of threads in the
-        program</listitem>
+         measure of forward progress of the program</para></listitem>
+        <listitem><para><varname>TIn</varname>: number of code blocks instrumented
+          by the JIT</para></listitem>
+        <listitem><para><varname>TOut</varname>: number of instrumented code
+          blocks that have been thrown away</para></listitem>
+        <listitem><para><varname>#thr</varname>: number of threads in the
+        program</para></listitem>
       </itemizedlist>
       From the progress of these, it is possible to observe:
       <itemizedlist>
-        <listitem>when the program is compute bound (<varname>TIn</varname>
-          rises slowly, <varname>EvC</varname> rises rapidly)</listitem>
-        <listitem>when the program is in a spinloop
+        <listitem><para>when the program is compute bound (<varname>TIn</varname>
+          rises slowly, <varname>EvC</varname> rises rapidly)</para></listitem>
+        <listitem><para>when the program is in a spinloop
           (<varname>TIn</varname>/<varname>TOut</varname>
-          fixed, <varname>EvC</varname> rises rapidly)</listitem>
-        <listitem>when the program is JIT-bound (<varname>TIn</varname>
-          rises rapidly)</listitem>
-        <listitem>when the program is rapidly discarding code
-          (<varname>TOut</varname> rises rapidly)</listitem>
-        <listitem>when the program is about to achieve some expected state
+          fixed, <varname>EvC</varname> rises rapidly)</para></listitem>
+        <listitem><para>when the program is JIT-bound (<varname>TIn</varname>
+          rises rapidly)</para></listitem>
+        <listitem><para>when the program is rapidly discarding code
+          (<varname>TOut</varname> rises rapidly)</para></listitem>
+        <listitem><para>when the program is about to achieve some expected state
           (<varname>EvC</varname> arrives at some value you
-          expect)</listitem>
-        <listitem> when the program is idling (<varname>U</varname> rises
-          more slowly than <varname>W</varname>)</listitem>
+          expect)</para></listitem>
+        <listitem><para> when the program is idling (<varname>U</varname> rises
+          more slowly than <varname>W</varname>)</para></listitem>
       </itemizedlist>
       </para>
    </listitem>
@@ -2986,7 +2986,7 @@ will create a core dump in the usual way.</para>
 </sect1>
 
 
-<sect1 id="manual-core.xtree" xreflabel="Execution Trees">
+<sect1 id="&vg-xtree-id;" xreflabel="&vg-xtree-label;">
 <title>Execution Trees</title>
 
 <para>An execution tree (xtree) is made of a set of stack traces, each

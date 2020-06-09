@@ -1,6 +1,6 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+          "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
 [ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
 
 
@@ -153,7 +153,7 @@ smaller <option>--num-callers</option> value to reduce the stack depths,
 because this can significantly reduce the size of DHAT's output files.</para>
 
 
-<sect2><title>The Output Header</title>
+<sect2 id="dh-output-header"><title>The Output Header</title>
 
 <para>The first part of the output shows the program command and process ID.
 For example:</para>
@@ -179,17 +179,18 @@ Times {
 </sect2>
 
 
-<sect2><title>The AP Tree</title>
+<sect2 id="dh-ap-tree"><title>The AP Tree</title>
 
 <para>The third part of the output is the largest and most interesting part,
 showing the allocation point (AP) tree.</para>
 
 
-<sect3><title>Structure</title>
+<sect3 id="dh-structure"><title>Structure</title>
 
-The following image shows a screenshot of part of an AP tree. The font is very
-small because this screenshot is intended to demonstrate the high-level
-structure of the tree rather than the details within the text.
+<para>The following image shows a screenshot of part of an AP
+tree. The font is very small because this screenshot is intended to
+demonstrate the high-level structure of the tree rather than the
+details within the text.</para>
 
 <graphic fileref="images/dh-tree.png" scalefit="1"/>
 
@@ -222,7 +223,7 @@ email, bug report, etc.</para>
 </sect3>
 
 
-<sect3><title>The Root Node</title>
+<sect3 id="dh-root-node"><title>The Root Node</title>
 
 <para>The root node looks like this:</para>
 
@@ -247,7 +248,7 @@ next example will explain these in more detail.</para>
 </sect3>
 
 
-<sect3><title>Interior Nodes</title>
+<sect3 id="dh-interior-nodes"><title>Interior Nodes</title>
 
 <para>AP nodes further down the tree show information about a subset of
 allocations. For example:</para>
@@ -330,7 +331,7 @@ vectors and hash tables, and isn't always fixable. </para>
 </sect3>
 
 
-<sect3><title>Leaf Nodes</title>
+<sect3 id="dh-leaf-nodes"><title>Leaf Nodes</title>
 
 <para>This is a leaf node:</para>
 
@@ -380,7 +381,7 @@ This also means that each node makes complete sense on its own.</para>
 </sect3>
 
 
-<sect3><title>Access Counts</title>
+<sect3 id="dh-access-counts"><title>Access Counts</title>
 
 <para>If all blocks covered by an AP node have the same size, an additional
 <computeroutput>Accesses</computeroutput> field will be present. It indicates
@@ -422,7 +423,7 @@ layout inefficiencies.</para>
 </sect3>
 
 
-<sect3><title>Aggregate Nodes</title>
+<sect3 id="aggregate-nodes"><title>Aggregate Nodes</title>
 
 <para>The AP tree is very large and many nodes represent tiny numbers of blocks
 and bytes. Therefore, DHAT's viewer aggregates insignificant nodes like
@@ -446,7 +447,7 @@ case).</para>
 </sect2>
 
 
-<sect2><title>The Output Footer</title>
+<sect2 id="dh-output-footer"><title>The Output Footer</title>
 
 <para>Below the AP tree is a line like this:</para>
 
@@ -465,7 +466,7 @@ terms, abbreviations and symbols used in the output.</para>
 </sect2>
 
 
-<sect2><title>Sort Metrics</title>
+<sect2 id="dh-sort-metrics"><title>Sort Metrics</title>
 
 <para>The order in which sub-trees are sorted can be changed via the "Sort
 metric" drop-down menu at the top of DHAT's viewer. Different sort metrics can
@@ -620,6 +621,53 @@ optimization.</para>
 </sect1>
 
 
+<sect1 id="dh-manual.realloc" xreflabel="Treatment of realloc">
+<title>Treatment of realloc</title>
+
+<para><computeroutput>realloc</computeroutput> is a tricky function and there
+are several different ways that DHAT could handle it.</para>
+
+<para>Imagine a <computeroutput>malloc(100)</computeroutput> call followed by
+a <computeroutput>realloc(200)</computeroutput> call. This combination is
+considered to add two to the total block count, and 300 bytes to the total
+bytes count. (An alternative would be to only add one to the total block
+count, and 200 bytes to the total bytes count, as if a single
+<computeroutput>malloc(200)</computeroutput> call had occurred. While this
+would be defensible from a semantic point of view, it is silly from an
+operational point of view, because making two calls to allocator functions is
+more expensive than one call, and DHAT is a profiler that aims to help with
+runtime costs.)</para>
+
+<para>Furthermore, the implicit copying of the 100 bytes is added to the reads
+and writes counts. Without this, the read and write counts would be
+under-measured and misleading.</para>
+
+<para>However, DHAT only increases the current heap size by 100 bytes for this
+combination, and does not change the current block count. (As opposed to
+increasing the current heap size by 200 bytes and then decreasing it by 100
+bytes.) As a result, it can only increase the global heap peak (if indeed,
+this results in a new peak) by 100 bytes.</para>
+
+<para>Finally, the allocation point assigned to the block allocated by the
+<computeroutput>malloc(100)</computeroutput> call is retained once the block
+is reallocated. Which means that all 300 bytes are attributed to that
+allocation point, and no separate allocation point is created for the
+<computeroutput>realloc(200)</computeroutput> call. This may be surprising,
+but it has one large benefit.</para>
+
+<para>Imagine some code that starts with an empty buffer, and then gradually
+adds data to that buffer from numerous different points in the code,
+reallocating the buffer each time it gets full. (E.g. code generation in a
+compiler might work this way.) With the described approach, the first heap
+block and all subsequent heap blocks are attributed to the same allocation
+point. While this is something of a lie -- the first allocation point isn't
+actually responsible for the other allocations -- it is arguably better than
+having the allocation points spread around, in a distribution
+that unpredictably depends on whenever the reallocation points were
+triggered.</para>
+
+</sect1>
+
 
 <sect1 id="dh-manual.options" xreflabel="DHAT Command-line Options">
 <title>DHAT Command-line Options</title>
@@ -641,7 +689,7 @@ optimization.</para>
             <option>%p</option> and <option>%q</option> format specifiers
             can be used to embed the process ID and/or the contents of an
             environment variable in the name, as is the case for the core
-            option <option><xref linkend="opt.log-file"/></option>.
+            option <option><link linkend="opt.log-file">--log-file</link></option>.
       </para>
     </listitem>
   </varlistentry>

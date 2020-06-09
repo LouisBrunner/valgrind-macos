@@ -1005,7 +1005,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_clock_adjtime,     sys_clock_adjtime),    // 372
    LINX_(__NR_syncfs,            sys_syncfs),           // 373
    LINXY(__NR_sendmmsg,          sys_sendmmsg),         // 374
-
+   LINX_(__NR_setns,             sys_setns),            // 375
    LINXY(__NR_process_vm_readv,  sys_process_vm_readv), // 376
    LINX_(__NR_process_vm_writev, sys_process_vm_writev),// 377
 
@@ -1013,6 +1013,8 @@ static SyscallTableEntry syscall_main_table[] = {
 
    LINXY(__NR_getrandom,         sys_getrandom),        // 384
    LINXY(__NR_memfd_create,      sys_memfd_create),     // 385
+
+   LINX_(__NR_execveat,          sys_execveat),         // 387
 
    LINX_(__NR_membarrier,        sys_membarrier),       // 389
    LINX_(__NR_copy_file_range,   sys_copy_file_range),  // 391

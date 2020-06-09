@@ -15,9 +15,8 @@
 <!-- ../current/.. in docs/Makefile.am, since the latter is a -->
 <!-- symlink to the former, at least on SuSE 10.0.            -->
 
-
-<!-- use 8859-1 encoding -->
-<xsl:output method="html" encoding="ISO-8859-1" indent="yes"/>
+<!-- use UTF-8 encoding -->
+<xsl:output method="html" encoding="UTF-8" indent="yes"/>
 
 <!-- set various parameters -->
 <xsl:param name="use.id.as.filename" select="'1'"/> 

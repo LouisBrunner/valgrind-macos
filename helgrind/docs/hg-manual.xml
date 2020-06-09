@@ -1,6 +1,6 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+          "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
 [ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
 
 
@@ -64,7 +64,7 @@ primitives, you can describe their behaviour to Helgrind using the
 <varname>ANNOTATE_*</varname> macros defined
 in <varname>helgrind.h</varname>.</para>
 
-<para>Helgrind also provides <xref linkend="manual-core.xtree"/> memory
+<para>Helgrind also provides <xref linkend="&vg-xtree-id;"/> memory
   profiling using the command line
   option <computeroutput>--xtree-memory</computeroutput> and the monitor command
    <computeroutput>xtmemory</computeroutput>.</para>
@@ -1178,25 +1178,29 @@ unlock(mx)                             unlock(mx)
       <para>The following aspects have to be considered when
         using <option>--delta-stacktrace=yes</option> :
         <itemizedlist>
-          <listitem>In some cases (for example in a function prologue), the
-            valgrind unwinder might not properly unwind the stack, due to some
-            limitations and/or due to wrong unwind info. When using
-            --delta-stacktrace=yes, the wrong stack trace captured in the
-            function prologue will be kept till the next call or return.
-          </listitem>
-          <listitem>On the other hand, --delta-stacktrace=yes sometimes helps to
-            obtain a correct stacktrace, for example when the unwind info allows
-            a correct stacktrace to be done in the beginning of the sequence,
-            but not later on in the instruction sequence.</listitem>
-          <listitem>Determining which instructions are changing the callstack is
-            partially based on platform dependent heuristics, which have to be
-            tuned/validated specifically for the platform. Also, unwinding in a
-            function prologue must be good enough to allow using
-            --delta-stacktrace=yes. Currently, the option --delta-stacktrace=yes
-            has been reasonably validated only on linux x86 32 bits and linux
-            amd64 64 bits. For more details about how to validate
-            --delta-stacktrace=yes, see debug option --hg-sanity-flags and the
-            function check_cached_rcec_ok in libhb_core.c.</listitem>
+          <listitem><para>In some cases (for example in a function
+            prologue), the valgrind unwinder might not properly unwind
+            the stack, due to some limitations and/or due to wrong
+            unwind info. When using --delta-stacktrace=yes, the wrong
+            stack trace captured in the function prologue will be kept
+            till the next call or return.
+          </para></listitem>
+          <listitem><para>On the other hand, --delta-stacktrace=yes
+            sometimes helps to obtain a correct stacktrace, for
+            example when the unwind info allows a correct stacktrace
+            to be done in the beginning of the sequence, but not later
+            on in the instruction sequence.</para></listitem>
+          <listitem><para>Determining which instructions are changing
+            the callstack is partially based on platform dependent
+            heuristics, which have to be tuned/validated specifically
+            for the platform. Also, unwinding in a function prologue
+            must be good enough to allow using
+            --delta-stacktrace=yes. Currently, the option
+            --delta-stacktrace=yes has been reasonably validated only
+            on linux x86 32 bits and linux amd64 64 bits. For more
+            details about how to validate --delta-stacktrace=yes, see
+            debug option --hg-sanity-flags and the function
+            check_cached_rcec_ok in libhb_core.c.</para></listitem>
         </itemizedlist>
       </para>
     </listitem>
@@ -1456,7 +1460,7 @@ write of size 4 at 0x8049D88 by thread #9 tid 2
   <listitem>
     <para><varname>xtmemory [&lt;filename&gt; default xtmemory.kcg.%p.%n]</varname>
       requests Helgrind tool to produce an xtree heap memory report.
-      See <xref linkend="manual-core.xtree"/> for
+      See <xref linkend="&vg-xtree-id;"/> for
       a detailed explanation about execution trees. </para>
   </listitem>
 

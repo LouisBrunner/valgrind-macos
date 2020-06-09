@@ -1,6 +1,6 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
-<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
 [ <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities; ]>
 
 
@@ -13,7 +13,7 @@
     <year>&vg-lifespan;</year>
     <holder><ulink url="&vg-devs-url;">Valgrind Developers</ulink></holder>
   </copyright>
-  <legalnotice>
+  <legalnotice id="faq-legal">
     <para>Email: <ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink></para>
   </legalnotice>
 </bookinfo>
@@ -96,14 +96,14 @@
 </qandaentry>
 
 <qandaentry id="faq.glibc_devel">
- <question>
+ <question id="q-glibc_devel">
   <para>When building Valgrind, 'make' fails with this:</para>
 <screen>
 /usr/bin/ld: cannot find -lc
 collect2: ld returned 1 exit status
 </screen>
  </question>
- <answer>
+ <answer id="a-glibc_devel">
   <para>You need to install the glibc-static-devel package.</para>
  </answer>
 </qandaentry>
@@ -401,7 +401,7 @@ Invalid write of size 1
     nature of the way Valgrind works that it cannot exactly replicate a
     native execution environment.  In the case where your program crashes
     due to a memory error when run natively but not when run under Valgrind,
-    in most cases Memcheck should identify the bad memory operation.</para>.
+    in most cases Memcheck should identify the bad memory operation.</para>
   </answer>
 </qandaentry>
 
@@ -629,7 +629,7 @@ is built standalone as FAQ.txt.  That's why we link to, for example, the
 online copy of the manual. -->
 
 <qandaentry id="e-help">
-  <!-- <question><para/></question> -->
+  <question id="q-help"><para>Where can I get more help?</para></question>
   <answer id="a-help">
   <para>Read the appropriate section(s) of the 
   <ulink url="&vg-docs-url;">Valgrind Documentation</ulink>.</para>

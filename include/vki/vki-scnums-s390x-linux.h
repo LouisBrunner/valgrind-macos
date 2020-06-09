@@ -315,6 +315,8 @@
 #define __NR_getrandom		349
 #define __NR_memfd_create	350
 
+#define __NR_execveat		354
+
 #define __NR_membarrier			356
 #define __NR_recvmmsg			357
 #define __NR_sendmmsg			358

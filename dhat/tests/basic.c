@@ -15,12 +15,14 @@ int main(void)
       c[i + 1000] = c[i];        // read and write 1000 bytes
    }
 
-   char* r = realloc(m, 3000);
+   char* r = realloc(m, 3000);   // read and write 1000 bytes (memcpy)
    for (int i = 0; i < 500; i++) {
       r[i + 2000] = 99;          // write 500 bytes
    }
-                                 // totals: 1008 read, 1516 write
-   free(c);
 
+   c = realloc(c, 1000);         // read and write 1000 bytes (memcpy)
+
+   free(c);
+                                 // totals: 3008 read, 3516 write
    return 0;
 }

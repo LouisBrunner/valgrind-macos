@@ -705,7 +705,8 @@ Addr setup_client_stack( void*  init_sp,
             {
                /* Limit the AT_HWCAP to just those features we explicitly
 		  support in VEX.  */
-#define ARM64_SUPPORTED_HWCAP (VKI_HWCAP_AES	        \
+#define ARM64_SUPPORTED_HWCAP (VKI_HWCAP_ATOMICS        \
+                               | VKI_HWCAP_AES          \
                                | VKI_HWCAP_PMULL        \
                                | VKI_HWCAP_SHA1         \
                                | VKI_HWCAP_SHA2         \

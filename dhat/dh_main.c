@@ -62,7 +62,7 @@ static ULong g_max_blocks = 0;
 static ULong g_max_bytes  = 0;
 static ULong g_max_instrs = 0;
 
-// Values for the entire run. Computed at the end.
+// Values for the entire run. Updated each time a block is retired.
 static ULong g_reads_bytes = 0;
 static ULong g_writes_bytes = 0;
 
@@ -616,6 +616,13 @@ void* renew_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
       // New size is smaller or same; block not moved.
       resize_Block(bk->ap, bk->req_szB, new_req_szB);
       bk->req_szB = new_req_szB;
+
+      // Update reads/writes for the implicit copy. Even though we didn't
+      // actually do a copy, we act like we did, to match up with the fact
+      // that we treat this as an additional allocation.
+      bk->reads_bytes += new_req_szB;
+      bk->writes_bytes += new_req_szB;
+
       return p_old;
 
    } else {
@@ -636,15 +643,19 @@ void* renew_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
       // interval tree at the new place.  Do this by removing
       // and re-adding it.
       delete_Block_starting_at( (Addr)p_old );
-      // now 'bk' is no longer in the tree, but the Block itself
-      // is still alive
+      // Now 'bk' is no longer in the tree, but the Block itself
+      // is still alive.
+
+      // Update reads/writes for the copy.
+      bk->reads_bytes += bk->req_szB;
+      bk->writes_bytes += bk->req_szB;
 
       // Update the metadata.
       resize_Block(bk->ap, bk->req_szB, new_req_szB);
       bk->payload = (Addr)p_new;
       bk->req_szB = new_req_szB;
 
-      // and re-add
+      // And re-add it to the interval tree.
       Bool present
          = VG_(addToFM)( interval_tree, (UWord)bk, (UWord)0/*no val*/);
       tl_assert(!present);

@@ -1,6 +1,6 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
 [ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
 
 <!-- Referenced from both the manual and manpage -->
@@ -492,7 +492,7 @@ assembly code source files in the same way as C/C++ source files.</para>
 
 </sect2>
 
-<sect2 id="ms-manual.forkingprograms" xreflabel="Forking Programs">
+<sect2 id="cg-manual.forkingprograms" xreflabel="Forking Programs">
 <title>Forking Programs</title>
 <para>If your program forks, the child will inherit all the profiling data that
 has been gathered for the parent.</para>
@@ -793,7 +793,7 @@ small differences like these;  it works in the same way as
 
 <variablelist id="cg.opts.list">
 
-  <varlistentry id="opt.I1" xreflabel="--I1">
+  <varlistentry id="cg.opt.I1" xreflabel="--I1">
     <term>
       <option><![CDATA[--I1=<size>,<associativity>,<line size> ]]></option>
     </term>
@@ -803,7 +803,7 @@ small differences like these;  it works in the same way as
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.D1" xreflabel="--D1">
+  <varlistentry id="cg.opt.D1" xreflabel="--D1">
     <term>
       <option><![CDATA[--D1=<size>,<associativity>,<line size> ]]></option>
     </term>
@@ -813,7 +813,7 @@ small differences like these;  it works in the same way as
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.LL" xreflabel="--LL">
+  <varlistentry id="cg.opt.LL" xreflabel="--LL">
     <term>
       <option><![CDATA[--LL=<size>,<associativity>,<line size> ]]></option>
     </term>
@@ -860,7 +860,7 @@ small differences like these;  it works in the same way as
             <option>%p</option> and <option>%q</option> format specifiers
             can be used to embed the process ID and/or the contents of an
             environment variable in the name, as is the case for the core
-            option <option><xref linkend="opt.log-file"/></option>.
+            option <option><link linkend="opt.log-file">--log-file</link></option>.
       </para>
     </listitem>
   </varlistentry>

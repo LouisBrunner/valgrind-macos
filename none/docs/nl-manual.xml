@@ -1,6 +1,6 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
 
 
 <chapter id="nl-manual" xreflabel="Nulgrind">
@@ -11,7 +11,7 @@
 <option>--tool=none</option> on the Valgrind
 command line.</para>
 
-<sect1 id="ms-manual.overview" xreflabel="Overview">
+<sect1 id="nl-manual.overview" xreflabel="Overview">
 <title>Overview</title>
 
 <para>Nulgrind is the simplest possible Valgrind tool.  It performs no

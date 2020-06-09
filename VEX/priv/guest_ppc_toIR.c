@@ -8777,7 +8777,7 @@ static Bool dis_memsync ( UInt theInstr )
    /* X-Form, XL-Form */
    UChar opc1    = ifieldOPC(theInstr);
    UInt  b11to25 = IFIELD(theInstr, 11, 15);
-   UChar flag_L  = ifieldRegDS(theInstr);
+   UChar flag_L  = IFIELD(theInstr, 21, 2);   //ISA 3.0
    UInt  b11to20 = IFIELD(theInstr, 11, 10);
    UInt  M0      = IFIELD(theInstr, 11, 5);
    UChar rD_addr = ifieldRegDS(theInstr);

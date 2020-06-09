@@ -4,9 +4,11 @@
 <!-- import the common styles -->
 <xsl:import href="vg-html-common.xsl"/>
 
-
 <!-- use our custom html stylesheet -->
 <xsl:param name="html.stylesheet" select="'vg_basic.css'"/>
+
+<!-- use UTF-8 encoding -->
+<xsl:param name="chunker.output.encoding" select="'UTF-8'"/>
 
 
 <!-- custom header for html documentation -->

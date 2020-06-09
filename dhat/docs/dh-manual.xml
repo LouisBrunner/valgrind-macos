@@ -153,7 +153,7 @@ smaller <option>--num-callers</option> value to reduce the stack depths,
 because this can significantly reduce the size of DHAT's output files.</para>
 
 
-<sect2><title>The Output Header</title>
+<sect2 id="dh-output-header"><title>The Output Header</title>
 
 <para>The first part of the output shows the program command and process ID.
 For example:</para>
@@ -179,13 +179,13 @@ Times {
 </sect2>
 
 
-<sect2><title>The AP Tree</title>
+<sect2 id="dh-ap-tree"><title>The AP Tree</title>
 
 <para>The third part of the output is the largest and most interesting part,
 showing the allocation point (AP) tree.</para>
 
 
-<sect3><title>Structure</title>
+<sect3 id="dh-structure"><title>Structure</title>
 
 <para>The following image shows a screenshot of part of an AP
 tree. The font is very small because this screenshot is intended to
@@ -223,7 +223,7 @@ email, bug report, etc.</para>
 </sect3>
 
 
-<sect3><title>The Root Node</title>
+<sect3 id="dh-root-node"><title>The Root Node</title>
 
 <para>The root node looks like this:</para>
 
@@ -248,7 +248,7 @@ next example will explain these in more detail.</para>
 </sect3>
 
 
-<sect3><title>Interior Nodes</title>
+<sect3 id="dh-interior-nodes"><title>Interior Nodes</title>
 
 <para>AP nodes further down the tree show information about a subset of
 allocations. For example:</para>
@@ -331,7 +331,7 @@ vectors and hash tables, and isn't always fixable. </para>
 </sect3>
 
 
-<sect3><title>Leaf Nodes</title>
+<sect3 id="dh-leaf-nodes"><title>Leaf Nodes</title>
 
 <para>This is a leaf node:</para>
 
@@ -381,7 +381,7 @@ This also means that each node makes complete sense on its own.</para>
 </sect3>
 
 
-<sect3><title>Access Counts</title>
+<sect3 id="dh-access-counts"><title>Access Counts</title>
 
 <para>If all blocks covered by an AP node have the same size, an additional
 <computeroutput>Accesses</computeroutput> field will be present. It indicates
@@ -423,7 +423,7 @@ layout inefficiencies.</para>
 </sect3>
 
 
-<sect3><title>Aggregate Nodes</title>
+<sect3 id="aggregate-nodes"><title>Aggregate Nodes</title>
 
 <para>The AP tree is very large and many nodes represent tiny numbers of blocks
 and bytes. Therefore, DHAT's viewer aggregates insignificant nodes like
@@ -447,7 +447,7 @@ case).</para>
 </sect2>
 
 
-<sect2><title>The Output Footer</title>
+<sect2 id="dh-output-footer"><title>The Output Footer</title>
 
 <para>Below the AP tree is a line like this:</para>
 
@@ -466,7 +466,7 @@ terms, abbreviations and symbols used in the output.</para>
 </sect2>
 
 
-<sect2><title>Sort Metrics</title>
+<sect2 id="dh-sort-metrics"><title>Sort Metrics</title>
 
 <para>The order in which sub-trees are sorted can be changed via the "Sort
 metric" drop-down menu at the top of DHAT's viewer. Different sort metrics can

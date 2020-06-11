@@ -42,6 +42,19 @@ where XXXXXX is the bug number as listed below.
 345077  linux syscall execveat support (linux 3.19)
 n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.
 
+
+
+Release 3.16.1 (?? June 2020)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+3.16.1 is identical to 3.16.0, except that it fixes the following bug that
+was discovered late in the 3.16.0 release process:
+
+422715  valgrind 3.16.0 on 32-bit x86: vex: the `impossible' happened:
+        expr_is_guardable: unhandled expr
+
+
+
 Release 3.16.0 (27 May 2020)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -42,6 +42,7 @@ where XXXXXX is the bug number as listed below.
 345077  linux syscall execveat support (linux 3.19)
 n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.
 
+423021  PPC:  Add missing ISA 3.0 documentation link and HWCAPS test.
 
 
 Release 3.16.1 (?? June 2020)

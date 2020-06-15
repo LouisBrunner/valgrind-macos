@@ -720,6 +720,8 @@ Addr setup_client_stack( void*  init_sp,
 #        if defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
          case AT_HWCAP2:  {
             Bool auxv_2_07, hw_caps_2_07;
+            Bool auxv_3_0, hw_caps_3_0;
+
 	    /* The HWCAP2 field may contain an arch_2_07 entry that indicates
              * if the processor is compliant with the 2.07 ISA. (i.e. Power 8
              * or beyond).  The Valgrind vai.hwcaps value
@@ -752,7 +754,27 @@ Addr setup_client_stack( void*  init_sp,
 	     * matches the setting in VEX HWCAPS.
 	     */
             vg_assert(auxv_2_07 == hw_caps_2_07);
-            }
+
+            /*  Power ISA version 3.0B
+                March 29, 2017
+                https://ibm.ent.box.com/s/1hzcwkwf8rbju5h9iyf44wm94amnlcrv
+
+                https://openpowerfoundation.org/technical/resource-catalog/
+                http://openpowerfoundation.org/wp-content/uploads/resources/leabi/leabi-20170510.pdf
+                64-bit ELF V2 ABI specification for Power.  HWCAP2 bit pattern
+                for ISA 3.0, page 112.
+
+            */
+            /* ISA 3.0 */
+            auxv_3_0 = (auxv->u.a_val & 0x00800000ULL) == 0x00800000ULL;
+            hw_caps_3_0 = (vex_archinfo->hwcaps & VEX_HWCAPS_PPC64_ISA3_0)
+               == VEX_HWCAPS_PPC64_ISA3_0;
+
+            /* Verify the PPC_FEATURE2_ARCH_3_00 setting in HWCAP2
+	     * matches the setting in VEX HWCAPS.
+	     */
+            vg_assert(auxv_3_0 == hw_caps_3_0);
+         }
 
             break;
 #           endif

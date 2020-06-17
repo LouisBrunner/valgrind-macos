@@ -13,6 +13,8 @@ Note that some features are still in progress:
 
 It is currently tested on 10.14.6 and 10.15.4.
 
+Checkout the [`patches`](https://github.com/LouisBrunner/valgrind-macos/commits/patches) branch for a list of patches that can be directly applied to the upstream Valgrind.
+
 ## Usage
 
 In order to use this version, use the following command:

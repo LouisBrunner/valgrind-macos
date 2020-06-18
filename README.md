@@ -17,13 +17,37 @@ Checkout the [`patches`](https://github.com/LouisBrunner/valgrind-macos/commits/
 
 ## Usage
 
-In order to use this version, use the following command:
+In case you already have Valgrind installed, you might need to `brew remove` it first.
 
+In order to use this version, first tap this repository:
+```sh
+brew tap LouisBrunner/valgrind
 ```
+
+Then, install `valgrind`:
+```sh
+brew install --HEAD LouisBrunner/valgrind/valgrind
+```
+
+You can now use `valgrind` as normal.
+
+### Update
+
+Any `brew upgrade` will now correctly rebuild the latest `LouisBrunner/valgrind` instead of the upstream one (which doesn't support latest macOS versions).
+
+```sh
+brew upgrade valgrind
+// or
+brew upgrade LouisBrunner/valgrind/valgrind
+```
+
+### Deprecated method
+
+If you don't want to use `tap`, you can also install the formula directly, but note that `brew` will reinstall the upstream valgrind (which doesn't support latest macOS versions) when using `brew upgrade`.
+
+```sh
 brew install --HEAD https://raw.githubusercontent.com/LouisBrunner/valgrind-macos/master/valgrind.rb
 ```
-
-In case you already have Valgrind installed, you will need to either `unlink` it first or `reinstall` it.
 
 ## TODO
 

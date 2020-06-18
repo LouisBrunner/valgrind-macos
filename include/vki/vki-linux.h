@@ -1296,6 +1296,8 @@ struct  vki_seminfo {
 
 #define VKI_EWOULDBLOCK		VKI_EAGAIN
 
+#define VKI_ELOOP 40
+
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/wait.h
 //----------------------------------------------------------------------
@@ -1502,6 +1504,7 @@ struct vki_flock64 {
 };
 
 #define VKI_AT_EMPTY_PATH       0x1000  /* Allow empty relative pathname */
+#define VKI_AT_SYMLINK_NOFOLLOW 0x100   /* Do not follow symbolic links.  */
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/sysctl.h

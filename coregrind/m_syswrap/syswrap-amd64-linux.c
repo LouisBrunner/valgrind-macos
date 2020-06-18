@@ -839,7 +839,7 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_clock_adjtime,     sys_clock_adjtime),    // 305
    LINX_(__NR_syncfs,            sys_syncfs),           // 306
    LINXY(__NR_sendmmsg,          sys_sendmmsg),         // 307
-//   LINX_(__NR_setns,             sys_ni_syscall),       // 308
+   LINX_(__NR_setns,             sys_setns),            // 308
    LINXY(__NR_getcpu,            sys_getcpu),           // 309
 
    LINXY(__NR_process_vm_readv,  sys_process_vm_readv), // 310
@@ -856,6 +856,7 @@ static SyscallTableEntry syscall_table[] = {
 
 //   LIN__(__NR_kexec_file_load,   sys_ni_syscall),       // 320
    LINXY(__NR_bpf,               sys_bpf),              // 321
+   LINX_(__NR_execveat,          sys_execveat),         // 322
 
    LINXY(__NR_preadv2,           sys_preadv2),           // 327
    LINX_(__NR_pwritev2,          sys_pwritev2),          // 328

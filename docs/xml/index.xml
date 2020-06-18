@@ -1,6 +1,6 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
-<!DOCTYPE set PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" 
+<!DOCTYPE set PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" 
 [ <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities; ]>
 
 
@@ -16,7 +16,7 @@
       </holder>
     </copyright>
 
-    <legalnotice>
+    <legalnotice id="legal">
       <para>Permission is granted to copy, distribute and/or modify
         this document under the terms of the GNU Free Documentation
         License, Version 1.2 or any later version published by the

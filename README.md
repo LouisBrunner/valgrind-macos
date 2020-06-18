@@ -13,6 +13,8 @@ Note that some features are still in progress:
 
 It is currently tested on 10.14.6 and 10.15.4.
 
+Checkout the [`patches`](https://github.com/LouisBrunner/valgrind-macos/commits/patches) branch for a list of patches that can be directly applied to the upstream Valgrind.
+
 ## Usage
 
 In order to use this version, use the following command:
@@ -50,6 +52,7 @@ memcheck/tests/linux/sys-preadv2_pwritev2 (stderr)
 memcheck/tests/overlap                   (stderr)
 helgrind/tests/tc18_semabuse             (stderr)
 helgrind/tests/tc20_verifywrap           (stderr)
+drd/tests/bar_bad                        (stderr) // non-deterministic
 drd/tests/tc18_semabuse                  (stderr)
 massif/tests/new-cpp                     (post)
 massif/tests/overloaded-new              (post)

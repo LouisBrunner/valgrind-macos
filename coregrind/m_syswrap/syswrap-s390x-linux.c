@@ -817,7 +817,7 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_open_by_handle_at, sys_open_by_handle_at),              // 336
    LINXY(__NR_clock_adjtime, sys_clock_adjtime),                      // 337
    LINX_(__NR_syncfs, sys_syncfs),                                    // 338
-// ?????(__NR_setns, ),                                               // 339
+   LINX_(__NR_setns, sys_setns),                                      // 339
 
    LINXY(__NR_process_vm_readv, sys_process_vm_readv),                // 340
    LINX_(__NR_process_vm_writev, sys_process_vm_writev),              // 341
@@ -832,6 +832,8 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_getrandom, sys_getrandom),                              // 349
 
    LINXY(__NR_memfd_create, sys_memfd_create),                        // 350
+
+   LINX_(__NR_execveat, sys_execveat),                                // 354
 
    LINX_(__NR_membarrier, sys_membarrier),                            // 356
    LINXY(__NR_recvmmsg, sys_recvmmsg),                                // 357

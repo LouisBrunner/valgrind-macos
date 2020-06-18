@@ -9,7 +9,6 @@
    framework.
 
    Copyright (C) 2010-2017 RT-RK
-      mips-valgrind@rt-rk.com
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -378,6 +377,7 @@
 #define __NR_open_by_handle_at          (__NR_Linux + 340)
 #define __NR_clock_adjtime              (__NR_Linux + 341)
 #define __NR_syncfs                     (__NR_Linux + 342)
+#define __NR_setns                      (__NR_Linux + 343)
 #define __NR_process_vm_readv           (__NR_Linux + 345)
 #define __NR_process_vm_writev          (__NR_Linux + 346)
 #define __NR_kcmp			(__NR_Linux + 347)

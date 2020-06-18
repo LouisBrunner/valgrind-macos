@@ -1,6 +1,7 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+          "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
+[ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
 
 
 <chapter id="mc-manual" xreflabel="Memcheck: a memory error detector">
@@ -59,7 +60,7 @@ problems that are common in C and C++ programs.</para>
 often remaining undetected for long periods, then causing occasional,
   difficult-to-diagnose crashes.</para>
 
-<para>Memcheck also provides <xref linkend="manual-core.xtree"/> memory
+<para>Memcheck also provides <xref linkend="&vg-xtree-id;"/> memory
   profiling using the command line
   option <computeroutput>--xtree-memory</computeroutput> and the monitor command
    <computeroutput>xtmemory</computeroutput>.</para>
@@ -104,8 +105,9 @@ which has already been freed, you'll be informed of this, and also where
 the block was freed.  Likewise, if it should turn out to be just off
 the end of a heap block, a common result of off-by-one-errors in
 array subscripting, you'll be informed of this fact, and also where the
-block was allocated.  If you use the <option><xref
-linkend="opt.read-var-info"/></option> option Memcheck will run more slowly
+block was allocated.  If you use the <option><link
+linkend="opt.read-var-info">--read-var-info</link></option> option
+Memcheck will run more slowly
 but may give a more detailed description of any illegal address.</para>
 
 <para>In this example, Memcheck can't identify the address.  Actually
@@ -842,14 +844,13 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
         <listitem><para><option>none</option> for the empty set.</para>
         </listitem>
       </itemizedlist>
+      <para>Note that these heuristics are dependent on the layout of
+        the objects produced by the C++ compiler. They have been
+        tested with some gcc versions (e.g. 4.4 and 4.7). They might
+        not work properly with other C++ compilers.
+      </para>
     </listitem>
-
-    <para>Note that these heuristics are dependent on the layout of the objects
-      produced by the C++ compiler. They have been tested with some gcc versions
-      (e.g. 4.4 and 4.7). They might not work properly with other C++ compilers.
-    </para>
   </varlistentry>
-
 
   <varlistentry id="opt.show-reachable" xreflabel="--show-reachable">
     <term>
@@ -881,9 +882,10 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
 	  </para>
         </listitem>
       </itemizedlist>
+      <para> Note that <option>--show-possibly-lost=no</option> has no
+	effect if <option>--show-reachable=yes</option> is
+	specified.</para>
     </listitem>
-    <para> Note that  <option>--show-possibly-lost=no</option> has no effect
-      if <option>--show-reachable=yes</option> is specified.</para>
   </varlistentry>
 
   <varlistentry id="opt.xtree-leak" xreflabel="--xtree-leak">
@@ -917,7 +919,7 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
         decrease of <option>PBk</option> event. The values for the increase and
         decrease events will be zero for the first leak search done.</para>
       
-      <para>See <xref linkend="manual-core.xtree"/> for a detailed explanation
+      <para>See <xref linkend="&vg-xtree-id;"/> for a detailed explanation
         about execution trees.</para>
     </listitem>
   </varlistentry>
@@ -935,7 +937,7 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
         in exactly the same way as they are for <option>--log-file</option>.
         See the description of <xref linkend="opt.log-file"/>
         for details. </para>
-      <para>See <xref linkend="manual-core.xtree"/>
+      <para>See <xref linkend="&vg-xtree-id;"/>
       for a detailed explanation about execution trees formats. </para>
     </listitem>
   </varlistentry>
@@ -1121,7 +1123,7 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
       
       <para>If you want to use
         <computeroutput>--xtree-memory=full</computeroutput> memory profiling
-        (see <xref linkend="manual-core.xtree"/> ), then you cannot
+        (see <xref linkend="&vg-xtree-id;"/>), then you cannot
         specify <varname>--keep-stacktraces=free</varname>
         or <varname>--keep-stacktraces=none</varname>.</para>
 
@@ -1399,14 +1401,15 @@ leak kinds are matched by this suppression entry.
 same way as with the option <option>--show-leak-kinds</option>, that is,
 one of the following:</para>
 <itemizedlist>
-  <listitem>a comma separated list of one or more of
-    <option>definite indirect possible reachable</option>.
+  <listitem><para>a comma separated list of one or more of
+    <option>definite indirect possible reachable</option>.</para>
   </listitem>
 
-  <listitem><option>all</option> to specify the complete set (all leak kinds).
+  <listitem><para><option>all</option> to specify the complete set
+  (all leak kinds).</para>
   </listitem>
 
-  <listitem><option>none</option> for the empty set.
+  <listitem><para><option>none</option> for the empty set.</para>
   </listitem>
 </itemizedlist>
 <para>If this optional extra line is not present, the suppression
@@ -1949,7 +1952,7 @@ Address 0x8049E28 len 1 defined
     </para>
     <para>The value <varname>xtleak</varname> also produces a full leak report,
       but output it as an xtree in a file xtleak.kcg.%p.%n (see <xref linkend="opt.log-file"/>).
-      See <xref linkend="manual-core.xtree"/>
+      See <xref linkend="&vg-xtree-id;"/>
       for a detailed explanation about execution trees formats.
       See <xref linkend="opt.xtree-leak"/> for the description of the events
       in a xtree leak file.
@@ -2216,7 +2219,7 @@ Address 0x8049E28 len 1 defined
   <listitem>
     <para><varname>xtmemory [&lt;filename&gt; default xtmemory.kcg.%p.%n]</varname>
       requests Memcheck tool to produce an xtree heap memory report.
-      See <xref linkend="manual-core.xtree"/> for
+      See <xref linkend="&vg-xtree-id;"/> for
       a detailed explanation about execution trees. </para>
   </listitem>
   

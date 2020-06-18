@@ -1,5 +1,5 @@
-Total:     6,000 bytes in 3 blocks
+Total:     7,000 bytes in 4 blocks
 At t-gmax: 5,000 bytes in 2 blocks
 At t-end:  3,000 bytes in 1 blocks
-Reads:     1,008 bytes
-Writes:    1,516 bytes
+Reads:     3,008 bytes
+Writes:    3,516 bytes

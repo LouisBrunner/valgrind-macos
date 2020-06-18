@@ -1,51 +1,83 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
-<!DOCTYPE set PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+<!DOCTYPE set PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
 
 <!-- This file is not part of the distributed docs, it's just here so we can
      point $(XSTLPROC) at a single file and get all the man pages. -->
 
 <set>
+<book>
 
 <!-- valgrind -->
+<chapter>
+<title>valgrind</title>
 <xi:include href="valgrind-manpage.xml" parse="xml"  
     xmlns:xi="http://www.w3.org/2001/XInclude" />
+</chapter>
 
 <!-- cg_annotate -->
+<chapter>
+<title>cg_annotate</title>
 <xi:include href="../../cachegrind/docs/cg_annotate-manpage.xml" parse="xml"  
     xmlns:xi="http://www.w3.org/2001/XInclude" />
+</chapter>
 
 <!-- cg_diff -->
+<chapter>
+<title>cg_diff</title>
 <xi:include href="../../cachegrind/docs/cg_diff-manpage.xml" parse="xml"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
+</chapter>
 
 <!-- cg_merge -->
+<chapter>
+<title>cg_merge</title>
 <xi:include href="../../cachegrind/docs/cg_merge-manpage.xml" parse="xml"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
+</chapter>
 
 <!-- callgrind_annotate -->
+<chapter>
+<title>callgrind_annotate</title>
 <xi:include href="../../callgrind/docs/callgrind_annotate-manpage.xml" parse="xml"  
     xmlns:xi="http://www.w3.org/2001/XInclude" />
+</chapter>
 
 <!-- callgrind_control -->
+<chapter>
+<title>callgrind_control</title>
 <xi:include href="../../callgrind/docs/callgrind_control-manpage.xml" parse="xml"  
     xmlns:xi="http://www.w3.org/2001/XInclude" />
+</chapter>
 
 <!-- ms_print -->
+<chapter>
+<title>ms_print</title>
 <xi:include href="../../massif/docs/ms_print-manpage.xml" parse="xml"  
     xmlns:xi="http://www.w3.org/2001/XInclude" />
+</chapter>
 
 <!-- valgrind-listener -->
+<chapter>
+<title>valgrind-listener</title>
 <xi:include href="../../auxprogs/docs/valgrind-listener-manpage.xml"
     parse="xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+</chapter>
 
 <!-- valgrind-di-server -->
+<chapter>
+<title>valgrind-di-server</title>
 <xi:include href="../../auxprogs/docs/valgrind-di-server-manpage.xml"
     parse="xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+</chapter>
 
 <!-- vgdb -->
+<chapter>
+<title>vgdb</title>
 <xi:include href="../../coregrind/docs/vgdb-manpage.xml"
     parse="xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+</chapter>
 
+</book>
 </set>
 

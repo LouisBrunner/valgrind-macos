@@ -1,0 +1,3 @@
+prereq: ./check_execveat
+prog: sys-execveat
+vgopts: -q

@@ -8,7 +8,6 @@
    framework.
 
    Copyright (C) 2017-2018 RT-RK
-      mips-valgrind@rt-rk.com
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -808,8 +807,9 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_getrandom,              sys_getrandom),
    LINXY (__NR_memfd_create,           sys_memfd_create),
    LINXY (__NR_statx,                  sys_statx),
+   LINX_ (__NR_setns,                  sys_setns),
    //    (__NR_bpf,                    sys_ni_syscall),
-   //    (__NR_execveat,               sys_ni_syscall),
+   LINX_ (__NR_execveat,               sys_execveat),
    //    (__NR_userfaultfd,            sys_ni_syscall),
    LINX_ (__NR_membarrier,             sys_membarrier),
    //    (__NR_mlock2,                 sys_ni_syscall),

@@ -6,7 +6,6 @@
 {
    OSX1015:dyld-1
    Memcheck:Cond
-   ...
    fun:_ZN16ImageLoaderMachO18validateFirstPagesEPK21linkedit_data_commandiPKhmxRKN11ImageLoader11LinkContextE
    ...
 }
@@ -27,4 +26,83 @@
    ...
    fun:_ZN16ImageLoaderMachO18validateFirstPagesEPK21linkedit_data_commandiPKhmxRKN11ImageLoader11LinkContextE
    ...
+}
+
+{
+   OSX1015:dyld-4
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_?alloc
+   ...
+   fun:_ZN4dyldL18notifyBatchPartialE17dyld_image_statesbPFPKcS0_jPK15dyld_image_infoEbb
+   ...
+}
+
+{
+   OSX1015:dyld-5
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:?alloc
+   ...
+   fun:_ZN4dyldL18notifyBatchPartialE17dyld_image_statesbPFPKcS0_jPK15dyld_image_infoEbb
+   ...
+}
+
+{
+   OSX1015:dyld-6
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc_zone_?alloc
+   ...
+   fun:_ZN4dyldL18notifyBatchPartialE17dyld_image_statesbPFPKcS0_jPK15dyld_image_infoEbb
+   ...
+}
+
+{
+   OSX1015:dyld-7
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:*alloc
+   ...
+   fun:_ZN4dyldL18notifyBatchPartialE17dyld_image_statesbPFPKcS0_jPK15dyld_image_infoEbb
+   ...
+}
+
+{
+   OSX1015:dyld-8
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:?alloc
+   ...
+   fun:_ZN16ImageLoaderMachO18doModInitFunctionsERKN11ImageLoader11LinkContextE
+   ...
+}
+
+{
+   OSX1015:Leak01-printf
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:__smakebuf
+   ...
+   fun:printf
+   ...
+}
+
+{
+   OSX1015:Leak02-objc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:class_setWeakIvarLayout
+   fun:class_setWeakIvarLayout
+   fun:_objc_atfork_parent
+   fun:property_copyAttributeList
+   fun:NXMapRemove
+   fun:_ZL16attachCategoriesP10objc_classPK21locstamped_category_tji
+   fun:_ZN10objc_class11mangledNameEv
+   fun:_ZN10objc_class11mangledNameEv
+   fun:_ZN10objc_class11mangledNameEv
+   fun:_ZN10objc_class11mangledNameEv
+   fun:_ZNK8objc_opt17objc_stringhash_t8getIndexEPKc
 }

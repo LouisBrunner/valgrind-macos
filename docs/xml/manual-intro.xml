@@ -1,6 +1,6 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
 [ <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities; ]>
 
 <chapter id="manual-intro" xreflabel="Introduction">
@@ -57,13 +57,6 @@ and without disturbing the existing structure.</para>
     <para><command>DHAT</command> is a different kind of heap
     profiler.  It helps you understand issues of block lifetimes,
     block utilisation, and layout inefficiencies.</para>
-  </listitem>
-
-  <listitem>
-    <para><command>SGcheck</command> is an experimental tool that can
-    detect overruns of stack and global arrays.  Its functionality is
-    complementary to that of Memcheck: SGcheck finds problems that
-    Memcheck can't, and vice versa..</para>
   </listitem>
 
   <listitem>

@@ -6821,7 +6821,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
             break;
          case 6:
             nm = "ldumax";
-            res = IRExpr_ITE(binop(Iop_CmpLT64U, lhs, rhs), rhs, rhs);
+            res = IRExpr_ITE(binop(Iop_CmpLT64U, lhs, rhs), rhs, lhs);
             break;
          case 7:
             nm = "ldumin";
@@ -6829,7 +6829,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
             break;
          case 8:
             nm = "swp";
-            res = lhs;
+            res = rhs;
             break;
          default:
             vassert(0);

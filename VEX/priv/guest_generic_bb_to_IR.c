@@ -425,6 +425,7 @@ static Bool expr_is_guardable ( const IRExpr* e )
       case Iex_ITE:
       case Iex_CCall:
       case Iex_Get:
+      case Iex_GetI:
       case Iex_Const:
       case Iex_RdTmp:
          return True;
@@ -450,6 +451,7 @@ static Bool stmt_is_guardable ( const IRStmt* st )
       case Ist_NoOp:
       case Ist_IMark:
       case Ist_Put:
+      case Ist_PutI:
          return True;
       // These are definitely not guardable, or at least it's way too much
       // hassle to do so.
@@ -506,7 +508,7 @@ static void add_guarded_stmt_to_end_of ( /*MOD*/IRSB* bb,
          // Put(offs, e) ==> Put(offs, ITE(guard, e, Get(offs, sizeof(e))))
          // Which when flattened out is:
          //   t1 = Get(offs, sizeof(e))
-         //   t2 = ITE(guard, e, t2)
+         //   t2 = ITE(guard, e, t1)
          //   Put(offs, t2)
          Int offset = st->Ist.Put.offset;
          IRExpr* e = st->Ist.Put.data;
@@ -517,6 +519,26 @@ static void add_guarded_stmt_to_end_of ( /*MOD*/IRSB* bb,
          addStmtToIRSB(bb, IRStmt_WrTmp(t2, IRExpr_ITE(IRExpr_RdTmp(guard),
                                                        e, IRExpr_RdTmp(t1))));
          addStmtToIRSB(bb, IRStmt_Put(offset, IRExpr_RdTmp(t2)));
+         break;
+      }
+      case Ist_PutI: {
+         // PutI(descr,ix,bias, e) ==> Put(descr,ix,bias, ITE(guard, e, GetI(descr,ix,bias)))
+         // Which when flattened out is:
+         //   t1 = GetI(descr,ix,bias)
+         //   t2 = ITE(guard, e, t1)
+         //   PutI(descr,ix,bias, t2)
+         IRPutI*     details = st->Ist.PutI.details;
+         IRRegArray* descr   = details->descr;
+         IRExpr*     ix      = details->ix;
+         Int         bias    = details->bias;
+         IRExpr*     e       = details->data;
+         IRType ty = typeOfIRExpr(bb->tyenv, e);
+         IRTemp t1 = newIRTemp(bb->tyenv, ty);
+         IRTemp t2 = newIRTemp(bb->tyenv, ty);
+         addStmtToIRSB(bb, IRStmt_WrTmp(t1, IRExpr_GetI(descr,ix,bias)));
+         addStmtToIRSB(bb, IRStmt_WrTmp(t2, IRExpr_ITE(IRExpr_RdTmp(guard),
+                                                       e, IRExpr_RdTmp(t1))));
+         addStmtToIRSB(bb, IRStmt_PutI(mkIRPutI(descr,ix,bias, IRExpr_RdTmp(t2))));
          break;
       }
       case Ist_Exit: {

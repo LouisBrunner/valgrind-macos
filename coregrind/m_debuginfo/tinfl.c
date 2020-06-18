@@ -12,7 +12,7 @@
 
    The original file has been modified in order to be a part of Valgrind
    project, a dynamic binary instrumentation framework.
-   RT-RK Institute for Computer Based Systems, 2016 (mips-valgrind@rt-rk.com)
+   RT-RK Institute for Computer Based Systems, 2016
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as

@@ -4331,6 +4331,11 @@ static void* hg_cli__realloc ( ThreadId tid, void* payloadV, SizeT new_size )
    /* else */ {
       /* new size is bigger */
       Addr p_new = (Addr)VG_(cli_malloc)(VG_(clo_alignment), new_size);
+      if (!p_new) {
+         // Nb: if realloc fails, NULL is returned but the old block is not
+         // touched.  What an awful function.
+         return NULL;
+      }
 
       /* First half kept and copied, second half new */
       // FIXME: shouldn't we use a copier which implements the

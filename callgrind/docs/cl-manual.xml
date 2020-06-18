@@ -1,6 +1,6 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
 [ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
 
 <chapter id="cl-manual" xreflabel="Callgrind Manual">
@@ -176,8 +176,9 @@ has to rely on heuristics to detect calls and returns.</para>
 
   <para>If you are additionally interested in measuring the 
   cache behavior of your program, use Callgrind with the option
-  <option><xref linkend="clopt.cache-sim"/>=yes</option>. For
-  branch prediction simulation, use <option><xref linkend="clopt.branch-sim"/>=yes</option>.
+  <option><link linkend="clopt.cache-sim">--cache-sim=yes</link></option>.
+  For branch prediction simulation, use
+  <option><link linkend="clopt.branch-sim">--branch-sim=yes</link></option>.
   Expect a further slow down approximately by a factor of 2.</para>
 
   <para>If the program section you want to profile is somewhere in the
@@ -185,21 +186,22 @@ has to rely on heuristics to detect calls and returns.</para>
   <emphasis>fast forward</emphasis> to this section without any 
   profiling, and then enable profiling.  This is achieved by using
   the command line option
-  <option><xref linkend="opt.instr-atstart"/>=no</option> 
+  <option><link linkend="opt.instr-atstart">--instr-atstart=no</link></option> 
   and running, in a shell:
   <computeroutput>callgrind_control -i on</computeroutput> just before the 
   interesting code section is executed. To exactly specify
   the code position where profiling should start, use the client request
-  <computeroutput><xref linkend="cr.start-instr"/></computeroutput>.</para>
+  <computeroutput><link linkend="cr.start-instr">CALLGRIND_START_INSTRUMENTATION</link></computeroutput>.</para>
 
   <para>If you want to be able to see assembly code level annotation, specify
-  <option><xref linkend="opt.dump-instr"/>=yes</option>. This will produce
-  profile data at instruction granularity. Note that the resulting profile
-  data
+  <option><link linkend="opt.dump-instr">--dump-instr=yes</link></option>.
+  This will produce profile data at instruction granularity.
+  Note that the resulting profile data
   can only be viewed with KCachegrind. For assembly annotation, it also is
   interesting to see more details of the control flow inside of functions,
   i.e. (conditional) jumps. This will be collected by further specifying
-  <option><xref linkend="opt.collect-jumps"/>=yes</option>.</para>
+  <option><link linkend="opt.collect-jumps">--collect-jumps=yes</link></option>.
+  </para>
 
   </sect2>
 
@@ -228,7 +230,9 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   dump (".part" is skipped for the dump at program termination), and 
   <emphasis>threadID</emphasis> is a thread identification 
   ("-threadID" is only used if you request dumps of individual 
-  threads with <option><xref linkend="opt.separate-threads"/>=yes</option>).</para>
+  threads with
+  <option><link linkend="opt.separate-threads">--separate-threads=yes</link></option>).
+  </para>
 
   <para>There are different ways to generate multiple profile dumps 
   while a program is running under Callgrind's supervision.  Nevertheless,
@@ -265,20 +269,20 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
     <listitem>
       <para><command>Periodic dumping after execution of a specified
       number of basic blocks</command>. For this, use the command line
-      option <option><xref linkend="opt.dump-every-bb"/>=count</option>.
+      option <option><link linkend="opt.dump-every-bb">--dump-every-bb=count</link></option>.
       </para>
     </listitem>
 
     <listitem>
       <para><command>Dumping at enter/leave of specified functions.</command>
       Use the
-      option <option><xref linkend="opt.dump-before"/>=function</option>
-      and <option><xref linkend="opt.dump-after"/>=function</option>.
+      option <option><link linkend="opt.dump-before">--dump-before=function</link></option>
+      and <option><link linkend="opt.dump-after">--dump-after=function</link></option>.
       To zero cost counters before entering a function, use
-      <option><xref linkend="opt.zero-before"/>=function</option>.</para>
+      <option><link linkend="opt.zero-before">--zero-before=function</link></option>.</para>
       <para>You can specify these options multiple times for different
       functions. Function specifications support wildcards: e.g. use
-      <option><xref linkend="opt.dump-before"/>='foo*'</option> to
+      <option><link linkend="opt.dump-before">--dump-before='foo*'</link></option> to
       generate dumps before entering any function starting with 
       <emphasis>foo</emphasis>.</para>
     </listitem>
@@ -286,9 +290,10 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
     <listitem>
       <para><command>Program controlled dumping.</command>
       Insert
-      <computeroutput><xref linkend="cr.dump-stats"/>;</computeroutput>
-      at the position in your code where you want a profile dump to happen. Use 
-      <computeroutput><xref linkend="cr.zero-stats"/>;</computeroutput> to only 
+      <computeroutput><link linkend="cr.dump-stats">CALLGRIND_DUMP_STATS</link>;</computeroutput>
+      at the position in your code where you want a profile dump to
+      happen. Use
+      <computeroutput><link linkend="cr.zero-stats">CALLGRIND_ZERO_STATS</link>;</computeroutput> to only 
       zero profile counters.
       See <xref linkend="cl-manual.clientrequests"/> for more information on
       Callgrind specific client requests.</para>
@@ -296,7 +301,8 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   </itemizedlist>
 
   <para>If you are running a multi-threaded application and specify the
-  command line option <option><xref linkend="opt.separate-threads"/>=yes</option>, 
+  command line option
+  <option><link linkend="opt.separate-threads">--separate-threads=yes</link></option>, 
   every thread will be profiled on its own and will create its own
   profile dump. Thus, the last two methods will only generate one dump
   of the currently running thread. With the other methods, you will get
@@ -358,23 +364,23 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   </para>
 
   <para>Callgrind can start with instrumentation mode switched off by
-    specifying
-    option <option><xref linkend="opt.instr-atstart"/>=no</option>.
+    specifying option
+    <option><link linkend="opt.instr-atstart">--instr-atstart=no</link></option>.
     Afterwards, instrumentation can be controlled in two ways: first,
     interactively with: <screen>callgrind_control -i on</screen> (and
     switching off again by specifying "off" instead of "on").  Second,
     instrumentation state can be programmatically changed with the
-    macros <computeroutput><xref linkend="cr.start-instr"/>;</computeroutput>
-    and <computeroutput><xref linkend="cr.stop-instr"/>;</computeroutput>.
+    macros <computeroutput><link linkend="cr.start-instr">CALLGRIND_START_INSTRUMENTATION</link>;</computeroutput>
+    and <computeroutput><link linkend="cr.stop-instr">CALLGRIND_STOP_INSTRUMENTATION</link>;</computeroutput>.
   </para>
 
   <para>Similarly, the collection state at program start can be
-    switched off
-    by <option><xref linkend="opt.instr-atstart"/>=no</option>. During
-    execution, it can be controlled programmatically with the
+    switched off by
+    <option><link linkend="opt.instr-atstart">--instr-atstart=no</link></option>.
+    During execution, it can be controlled programmatically with the
     macro <computeroutput>CALLGRIND_TOGGLE_COLLECT;</computeroutput>.
     Further, you can limit event collection to a specific function by
-    using <option><xref linkend="opt.toggle-collect"/>=function</option>.
+    using <option><link linkend="opt.toggle-collect">--toggle-collect=function</link></option>.
     This will toggle the collection state on entering and leaving the
     specified function.  When this option is in effect, the default
     collection state at program start is "off".  Only events happening
@@ -400,7 +406,8 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   "global bus events" is used.</para>
 
   <para>The short name of the event type used for global bus events is "Ge".
-  To count global bus events, use <option><xref linkend="clopt.collect-bus"/>=yes</option>.
+  To count global bus events, use
+  <option><link linkend="clopt.collect-bus">--collect-bus=yes</link></option>.
   </para>
   </sect2>
 
@@ -474,32 +481,34 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   also skips any call information from and to an ignored function, and thus can
   break a cycle. Candidates for this typically are dispatcher functions in event
   driven code. The option to ignore calls to a function is
-  <option><xref linkend="opt.fn-skip"/>=function</option>. Aside from
-  possibly breaking cycles, this is used in Callgrind to skip
+  <option><link linkend="opt.fn-skip">--fn-skip=function</link></option>.
+  Aside from possibly breaking cycles, this is used in Callgrind to skip
   trampoline functions in the PLT sections
   for calls to functions in shared libraries. You can see the difference
-  if you profile with <option><xref linkend="opt.skip-plt"/>=no</option>.
+  if you profile with
+  <option><link linkend="opt.skip-plt">--skip-plt=no</link></option>.
   If a call is ignored, its cost events will be propagated to the
   enclosing function.</para>
 
   <para>If you have a recursive function, you can distinguish the first
   10 recursion levels by specifying
-  <option><xref linkend="opt.separate-recs-num"/>=function</option>.  
+  <option><link linkend="opt.separate-recs-num">--separate-recs10=function</link></option>.  
   Or for all functions with 
-  <option><xref linkend="opt.separate-recs"/>=10</option>, but this will 
+  <option><link linkend="opt.separate-recs">--separate-recs=10</link></option>,
+  but this will 
   give you much bigger profile data files.  In the profile data, you will see
   the recursion levels of "func" as the different functions with names
   "func", "func'2", "func'3" and so on.</para>
 
   <para>If you have call chains "A &gt; B &gt; C" and "A &gt; C &gt; B"
   in your program, you usually get a "false" cycle "B &lt;&gt; C". Use 
-  <option><xref linkend="opt.separate-callers-num"/>=B</option> 
-  <option><xref linkend="opt.separate-callers-num"/>=C</option>,
+  <option><link linkend="opt.separate-callers-num">--separate-callers2=B</link></option> 
+  <option><link linkend="opt.separate-callers-num">--separate-callers2=C</link></option>,
   and functions "B" and "C" will be treated as different functions 
   depending on the direct caller. Using the apostrophe for appending 
   this "context" to the function name, you get "A &gt; B'A &gt; C'B" 
   and "A &gt; C'A &gt; B'C", and there will be no cycle. Use 
-  <option><xref linkend="opt.separate-callers"/>=2</option> to get a 2-caller 
+  <option><link linkend="opt.separate-callers">--separate-callers=2</link></option> to get a 2-caller 
   dependency for all functions.  Note that doing this will increase
   the size of profile data files.</para>
 
@@ -511,8 +520,9 @@ callgrind.out.<emphasis>pid</emphasis>.<emphasis>part</emphasis>-<emphasis>threa
   <para>If your program forks, the child will inherit all the profiling
   data that has been gathered for the parent. To start with empty profile
   counter values in the child, the client request
-  <computeroutput><xref linkend="cr.zero-stats"/>;</computeroutput>
-  can be inserted into code to be executed by the child, directly after
+  <computeroutput><link linkend="cr.zero-stats">CALLGRIND_ZERO_STATS</link>;</computeroutput>
+  can be inserted into code to be executed by the child, directly
+  after
   <computeroutput>fork</computeroutput>.</para>
 
   <para>However, you will have to make sure that the output file format string
@@ -537,9 +547,9 @@ In the following, options are grouped into classes.
 </para>
 <para>
 Some options allow the specification of a function/symbol name, such as
-<option><xref linkend="opt.dump-before"/>=function</option>, or
-<option><xref linkend="opt.fn-skip"/>=function</option>. All these options
-can be specified multiple times for different functions.
+<option><link linkend="opt.dump-before">--dump-before=function</link></option>, or
+<option><link linkend="opt.fn-skip">--fn-skip=function</link></option>.
+All these options can be specified multiple times for different functions.
 In addition, the function specifications actually are patterns by supporting
 the use of wildcards '*' (zero or more arbitrary characters) and '?'
 (exactly one arbitrary character), similar to file name globbing in the
@@ -570,7 +580,8 @@ These options influence the name and format of the profile data files.
             <option>%p</option> and <option>%q</option> format specifiers
             can be used to embed the process ID and/or the contents of an
             environment variable in the name, as is the case for the core
-            option <option><xref linkend="opt.log-file"/></option>.
+            option
+            <option><link linkend="opt.log-file">--log-file</link></option>.
             When multiple dumps are made, the file name
             is modified further; see below.</para> 
     </listitem>
@@ -760,7 +771,7 @@ Also see <xref linkend="cl-manual.limits"/>.</para>
       dumps is not practical here.</para> 
       <para>Collection state can be
       toggled at entry and exit of a given function with the
-      option <option><xref linkend="opt.toggle-collect"/></option>.  If you
+      option <option><link linkend="opt.toggle-collect">--toggle-collect</link></option>.  If you
       use this option, collection
       state should be disabled at the beginning.  Note that the
       specification of <option>--toggle-collect</option>
@@ -1082,7 +1093,7 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.I1" xreflabel="--I1">
+  <varlistentry id="cl.opt.I1" xreflabel="--I1">
     <term>
       <option><![CDATA[--I1=<size>,<associativity>,<line size> ]]></option>
     </term>
@@ -1092,7 +1103,7 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.D1" xreflabel="--D1">
+  <varlistentry id="cl.opt.D1" xreflabel="--D1">
     <term>
       <option><![CDATA[--D1=<size>,<associativity>,<line size> ]]></option>
     </term>
@@ -1102,7 +1113,7 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
     </listitem>
   </varlistentry>
 
-  <varlistentry id="opt.LL" xreflabel="--LL">
+  <varlistentry id="cl.opt.LL" xreflabel="--LL">
     <term>
       <option><![CDATA[--LL=<size>,<associativity>,<line size> ]]></option>
     </term>
@@ -1196,8 +1207,9 @@ their arguments.</para>
     <listitem>
       <para>Toggle the collection state. This allows to ignore events
       with regard to profile counters. See also options
-      <option><xref linkend="opt.collect-atstart"/></option> and
-      <option><xref linkend="opt.toggle-collect"/></option>.</para>
+      <option><link linkend="opt.collect-atstart">--collect-atstart</link></option>
+      and
+      <option><link linkend="opt.toggle-collect">--toggle-collect</link></option>.</para>
     </listitem>
   </varlistentry>
 
@@ -1210,7 +1222,9 @@ their arguments.</para>
       When cache simulation is done, this will flush the simulated cache
       and lead to an artificial cache warmup phase afterwards with
       cache misses which would not have happened in reality.  See also
-      option <option><xref linkend="opt.instr-atstart"/></option>.</para>
+      option
+      <option><link linkend="opt.instr-atstart">--instr-atstart</link></option>.
+      </para>
     </listitem>
   </varlistentry>
 
@@ -1224,9 +1238,10 @@ their arguments.</para>
       instrumentation afterwards: it effectivly will run at the same
       speed as Nulgrind, i.e. at minimal slowdown. Use this to
       speed up the Callgrind run for uninteresting code parts. Use
-      <computeroutput><xref linkend="cr.start-instr"/></computeroutput> to
-      enable instrumentation again.  See also option
-      <option><xref linkend="opt.instr-atstart"/></option>.</para>
+      <computeroutput><link linkend="cr.start-instr">CALLGRIND_START_INSTRUMENTATION</link></computeroutput>
+      to enable instrumentation again.  See also option
+      <option><link linkend="opt.instr-atstart">--instr-atstart</link></option>.
+      </para>
     </listitem>
   </varlistentry>
 

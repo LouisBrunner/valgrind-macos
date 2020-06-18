@@ -1,6 +1,6 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
 [ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
 
 
@@ -1285,7 +1285,7 @@ before Valgrind's header files are available.
 </sect2>
 
 
-<sect2 id="drd-manual.C++11" xreflabel="C++11">
+<sect2 id="drd-manual.CXX11" xreflabel="C++11">
 <title>Debugging C++11 Programs</title>
 
 <para>If you want to use the C++11 class std::thread you will need to do the

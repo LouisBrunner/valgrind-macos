@@ -110,6 +110,10 @@ without too much problem by following these steps:
 
     (gdb) handle SIGILL SIGSEGV nostop noprint
 
+    If you are using lldb, then the equivalent command is
+
+    (lldb) pro hand -p true -s false -n false SIGILL SIGSEGV
+
 (4) Set any breakpoints you want and proceed as normal for gdb. The
     macro VG_(FUNC) is expanded to vgPlain_FUNC, so If you want to set
     a breakpoint VG_(do_exec), you could do like this in GDB:
@@ -327,7 +331,7 @@ Printing out problematic blocks
 If you want to print out a disassembly of a particular block that
 causes a crash, do the following.
 
-Try running with "--vex-guest-chase-thresh=0 --trace-flags=10000000
+Try running with "--vex-guest-chase=no --trace-flags=10000000
 --trace-notbelow=999999".  This should print one line for each block
 translated, and that includes the address.
 

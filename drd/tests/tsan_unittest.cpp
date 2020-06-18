@@ -6619,7 +6619,7 @@ void Getter() {
   for (int i = 1; i <= N; i++) {
     int res = q.Get();
     if (res > 0) {
-      CHECK(array[res] = res * res);
+      CHECK(array[res] == res * res);
       non_zero_received++;
     }
     usleep(1000);

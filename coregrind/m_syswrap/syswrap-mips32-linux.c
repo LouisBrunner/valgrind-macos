@@ -8,7 +8,6 @@
    framework.
 
    Copyright (C) 2010-2017 RT-RK
-      mips-valgrind@rt-rk.com
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -1090,12 +1089,15 @@ static SyscallTableEntry syscall_main_table[] = {
    //..
    LINXY (__NR_clock_adjtime,          sys_clock_adjtime),           // 341
    LINX_ (__NR_syncfs,                 sys_syncfs),                  // 342
+   LINX_ (__NR_setns,                  sys_setns),                   // 343
    //..
    LINXY (__NR_process_vm_readv,       sys_process_vm_readv),        // 345
    LINX_ (__NR_process_vm_writev,      sys_process_vm_writev),       // 346
    //..
    LINXY (__NR_getrandom,              sys_getrandom),               // 353
    LINXY (__NR_memfd_create,           sys_memfd_create),            // 354
+   //..
+   LINX_ (__NR_execveat,               sys_execveat),                // 356
    //..
    LINX_ (__NR_membarrier,             sys_membarrier),              // 358
    //..

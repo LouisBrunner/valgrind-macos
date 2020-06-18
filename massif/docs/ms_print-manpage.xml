@@ -1,6 +1,6 @@
 <?xml version="1.0"?> <!-- -*- sgml -*- -->
-<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
-          "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+          "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
 [ <!ENTITY % vg-entities SYSTEM "../../docs/xml/vg-entities.xml"> %vg-entities; ]>
 
 
@@ -9,8 +9,7 @@
 <refmeta>
   <refentrytitle>ms_print</refentrytitle>
   <manvolnum>1</manvolnum>
-  <refmiscinfo>Release &rel-version;</refmiscinfo>
-  <date>rel-date</date>
+  <refmiscinfo class="version">Release &rel-version;</refmiscinfo>
 </refmeta>
 
 <refnamediv>
@@ -27,7 +26,7 @@
 </refsynopsisdiv>
 
 
-<refsect1 id="description">
+<refsect1 id="ms_print-description">
 <title>Description</title>
 
 <para><command>ms_print</command> takes an output file produced by the
@@ -38,7 +37,7 @@ Valgrind tool Massif and prints the information in an easy-to-read form.
 
 
 
-<refsect1 id="options">
+<refsect1 id="ms_print-options">
 <title>Options</title>
 
 <xi:include href="ms-manual.xml" xpointer="ms_print.opts.list"
@@ -49,7 +48,7 @@ Valgrind tool Massif and prints the information in an easy-to-read form.
 
 
 
-<refsect1 id="see_also">
+<refsect1 id="ms_print-see_also">
 <title>See Also</title>
 
 <para>
@@ -61,7 +60,7 @@ valgrind(1),
 </refsect1>
 
 
-<refsect1 id="author">
+<refsect1 id="ms_print-author">
 <title>Author</title>
 
 <para>Nicholas Nethercote.</para>

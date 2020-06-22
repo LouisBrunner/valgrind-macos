@@ -1,4 +1,17 @@
 
+Release 3.16.1 (22 June 2020)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+3.16.1 fixes two critical bugs discovered after 3.16.0 was frozen.  It also
+fixes character encoding problems in the documentation HTML.
+
+422677  PPC sync instruction L field should only be 2 bits in ISA 3.0
+422715  32-bit x86: vex: the `impossible' happened: expr_is_guardable: unhandled expr
+
+(3.16.1, 22 June 2020, 36d6727e1d768333a536f274491e5879cab2c2f7)
+
+
+
 Release 3.16.0 (27 May 2020)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

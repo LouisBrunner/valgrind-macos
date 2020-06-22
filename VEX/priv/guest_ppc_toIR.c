@@ -8172,21 +8172,20 @@ static Bool dis_int_store_ds_prefix ( UInt prefix,
       b0 = 0;
       b1 = 1;
       assign( EA, calculate_prefix_EA( prefix, theInstr, rA_addr,
-                                       ptype, DSFORM_IMMASK,
-                                       &immediate_val, &R ) );
+                                       ptype, DSFORM_IMMASK, &immediate_val,
+                                       &R ) );
    } else if (opc1 == 0x3D) {
       // force opc2 to 0 to map pstd to std inst
       b0 = 0;
       b1 = 0;
       assign( EA, calculate_prefix_EA( prefix, theInstr, rA_addr,
-                                       ptype, DSFORM_IMMASK,
-                                       &immediate_val, &R ) );
+                                       ptype, DSFORM_IMMASK, &immediate_val,
+                                       &R ) );
 
    } else if ( opc1 == 0x3 ) {
-
       assign( EA, ea_rAor0_simm( rA_addr, simm16  ) );
 
-   } else if ( opc1 == 0x3E ) {
+   } else if ( opc1 == 0x3E ) {  // std, stdu, stq
       // lowest 2 bits of immediate before forming EA
       immediate_val = simm16 & 0xFFFFFFFC;
       assign( EA, ea_rAor0_simm( rA_addr, immediate_val ) );
@@ -12564,18 +12563,11 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
       case 0:
       {
          /* Endian aware load */
-         pDIP( is_prefix, "lxvp %u,%u(%u)\n", XTp, immediate_val, rA_addr );
-         DIPp( is_prefix, ",%u", R );
-
-         if (is_prefix && (R == 1) ) {
-            vex_printf("Illegal instruction R = 1; plxvp %u,%u(%u)\n",
-                       XTp, immediate_val, rA_addr );
-            return False;
-         }
+         DIP( "lxvp %u,%u(%u)\n", XTp, immediate_val, rA_addr );
 
          // address of next 128bits
-         assign( EA_16, binop( Iop_Add64, mkU64( 16), mkexpr( EA ) ) );
-         if (host_endness == VexEndnessLE) {
+         assign( EA_16, binop( Iop_Add64, mkU64( 16 ), mkexpr( EA ) ) );
+         if (host_endness == VexEndnessBE) {
             putVSReg( XTp, load( Ity_V128, mkexpr( EA ) ) );
             putVSReg( XTp+1, load( Ity_V128, mkexpr( EA_16 ) ) );
          } else {
@@ -12590,14 +12582,7 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
          IRTemp EA_8  = newTemp(ty);
          IRTemp EA_24 = newTemp(ty);
          /* Endian aware store */
-         pDIP( is_prefix, "stxvp %u,%u(%u)\n", XTp, immediate_val, rA_addr );
-         DIPp( is_prefix, ",%u", R );
-
-         if ( is_prefix && ( R == 1 ) ) {
-            vex_printf("Illegal instruction R = 1; pstxvp %u,%u(%u)\n",
-                       XTp, immediate_val, rA_addr );
-            return False;
-         }
+         DIP("stxvp %u,%u(%u)\n", XTp, immediate_val, rA_addr );
 
          // address of next 128bits
          assign( EA_8, binop( Iop_Add64, mkU64( 8 ), mkexpr( EA ) ) );
@@ -12815,6 +12800,74 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
          return False;
       }
       break;
+   }
+
+   case 0x3A:  // plxvp
+   {
+      UChar XTp = ifieldRegXTp(theInstr);
+
+      /* Endian aware prefixed load */
+      pDIP( is_prefix, "lxvp %u,%u(%u)", XTp, immediate_val, rA_addr );
+      DIPp( is_prefix, ",%u", R );
+
+      if (R == 1 ) {
+         vex_printf("Illegal instruction R = 1; plxvp %u,%u(%u)\n",
+                    XTp, immediate_val, rA_addr );
+         return False;
+      }
+
+      assign( EA, calculate_prefix_EA( prefix, theInstr,
+                                       rA_addr, ptype, DFORM_IMMASK,
+                                       &immediate_val, &R ) );
+
+      // address of next 128bits
+      assign( EA_16, binop( Iop_Add64, mkU64( 16 ), mkexpr( EA ) ) );
+      if (host_endness == VexEndnessBE) {
+         putVSReg( XTp, load( Ity_V128, mkexpr( EA ) ) );
+         putVSReg( XTp+1, load( Ity_V128, mkexpr( EA_16 ) ) );
+      } else {
+         putVSReg( XTp+1, load( Ity_V128, mkexpr( EA ) ) );
+         putVSReg( XTp, load( Ity_V128, mkexpr( EA_16 ) ) );
+      }
+      return True;
+   }
+
+   case 0x3E:  // pstxvp
+   {
+      IRTemp EA_8  = newTemp(ty);
+      IRTemp EA_24 = newTemp(ty);
+      UChar XTp = ifieldRegXTp(theInstr);
+
+      /* Endian aware prefixed load */
+      pDIP( is_prefix, "stxvp %u,%u(%u)\n", XTp, immediate_val, rA_addr );
+      DIPp( is_prefix, ",%u", R );
+
+      if ( R == 1 ) {
+         vex_printf("Illegal instruction R = 1; pstxvp %u,%u(%u)\n",
+                    XTp, immediate_val, rA_addr );
+         return False;
+      }
+
+      assign( EA, calculate_prefix_EA( prefix, theInstr,
+                                       rA_addr, ptype, DFORM_IMMASK,
+                                       &immediate_val, &R ) );
+
+      assign( EA_8, binop( Iop_Add64, mkU64( 8 ), mkexpr( EA ) ) );
+      assign( EA_16, binop( Iop_Add64, mkU64( 16 ), mkexpr( EA ) ) );
+      assign( EA_24, binop( Iop_Add64, mkU64( 24 ), mkexpr( EA ) ) );
+
+      if (host_endness == VexEndnessBE) {
+         store( mkexpr( EA ), unop( Iop_V128to64, getVSReg( XTp ) ) );
+         store( mkexpr( EA_8 ), unop( Iop_V128HIto64, getVSReg( XTp ) ) );
+         store( mkexpr( EA_16 ), unop( Iop_V128to64, getVSReg( XTp+1 ) ) );
+         store( mkexpr( EA_24 ), unop( Iop_V128HIto64, getVSReg( XTp+1 ) ) );
+     } else {
+         store( mkexpr( EA ), unop( Iop_V128to64, getVSReg( XTp+1 ) ) );
+         store( mkexpr( EA_8 ), unop( Iop_V128HIto64, getVSReg( XTp+1 ) ) );
+         store( mkexpr( EA_16 ), unop( Iop_V128to64, getVSReg( XTp ) ) );
+         store( mkexpr( EA_24 ), unop( Iop_V128HIto64, getVSReg( XTp ) ) );
+      }
+      return True;
    }
 
    default:
@@ -22420,6 +22473,67 @@ dis_vx_move ( UInt prefix, UInt theInstr )
  * NOTE: VSX supports word-aligned storage access.
  */
 static Bool
+dis_vsx_vector_paired_load_store ( UInt prefix, UInt theInstr )
+{
+   /* X-Form/DS-Form */
+   UInt   opc2    = ifieldOPClo9(theInstr);
+   UChar  rA_addr = ifieldRegA(theInstr);
+   UChar  rB_addr = ifieldRegB(theInstr);
+   IRType ty      = mode64 ? Ity_I64 : Ity_I32;
+   IRTemp EA      = newTemp(ty);
+   IRTemp EA_16        = newTemp(ty);
+   UChar XTp      = ifieldRegXTp(theInstr);
+
+   assign( EA, ea_rAor0_idxd( rA_addr, rB_addr ) );
+
+   // address of next 128bits
+   assign( EA_16, binop( Iop_Add64, mkU64( 16), mkexpr( EA ) ) );
+
+   switch (opc2) {
+   case 0x14D:  // lxvpx
+      DIP( "lxvpx %u,%d(%u)\n", XTp, rA_addr, rB_addr );
+      if ( host_endness == VexEndnessBE ) {
+         putVSReg( XTp,   load( Ity_V128, mkexpr( EA ) ) );
+         putVSReg( XTp+1, load( Ity_V128, mkexpr( EA_16 ) ) );
+      } else {
+         putVSReg( XTp+1, load( Ity_V128, mkexpr( EA ) ) );
+         putVSReg( XTp,   load( Ity_V128, mkexpr( EA_16 ) ) );
+      }
+      break;
+
+   case 0x1CD: { // stxvpx
+      IRTemp EA_8  = newTemp(ty);
+      IRTemp EA_24 = newTemp(ty);
+
+      DIP( "stxvpx %u,%d(%u)\n", XTp, rA_addr, rB_addr );
+
+      assign( EA_8, binop( Iop_Add64, mkU64( 8 ), mkexpr( EA ) ) );
+      assign( EA_24, binop( Iop_Add64, mkU64( 24 ), mkexpr( EA ) ) );
+
+      if ( host_endness == VexEndnessBE ) {
+         store( mkexpr( EA ), unop( Iop_V128to64, getVSReg( XTp ) ) );
+         store( mkexpr( EA_8 ), unop( Iop_V128HIto64, getVSReg( XTp ) ) );
+         store( mkexpr( EA_16 ), unop( Iop_V128to64, getVSReg( XTp+1 ) ) );
+         store( mkexpr( EA_24 ), unop( Iop_V128HIto64, getVSReg( XTp+1 ) ) );
+
+      } else {
+         store( mkexpr( EA ), unop( Iop_V128to64, getVSReg( XTp+1 ) ) );
+         store( mkexpr( EA_8 ), unop( Iop_V128HIto64, getVSReg( XTp+1 ) ) );
+         store( mkexpr( EA_16 ), unop( Iop_V128to64, getVSReg( XTp ) ) );
+         store( mkexpr( EA_24 ), unop( Iop_V128HIto64, getVSReg( XTp ) ) );
+      }
+      break;
+   }
+
+   default:
+      vex_printf("dis_vsx_vector_paired_load_store\n");
+      return False;
+   }
+
+   return True;
+}
+
+static Bool
 dis_vx_store ( UInt prefix, UInt theInstr )
 {
    /* XX1-Form */
@@ -29997,6 +30111,11 @@ DisResult disInstr_PPC_WRK (
       if (dis_trapi( prefix, theInstr, &dres)) goto decode_success;
       goto decode_failure;
 
+   case 0x06:   // lxvp, stxvp
+      if (dis_fp_pair_prefix( prefix, theInstr ))
+         goto decode_success;
+      goto decode_failure;
+
    /* Floating Point Load Instructions */
    case 0x30:                      // lfs
       if (!allow_F) goto decode_noF;
@@ -30137,13 +30256,19 @@ DisResult disInstr_PPC_WRK (
       goto decode_failure;
 
    /* 64bit Integer Loads */
-   case 0x3A:  // word inst: ld, pld, ldu, lwa, plwa
+   case 0x3A:  // word inst: ld, ldu, lwa
       {
          UChar   b1_0  = IFIELD(theInstr, 0, 2);
 
          if (!mode64) goto decode_failure;
-         ISA_3_1_PREFIX_CHECK
-         if ((b1_0 >= 0) && (b1_0 <= 2)) {
+         if (prefix_instruction( prefix )) {  // plxvp
+            if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
+            if (dis_fp_pair_prefix( prefix, theInstr ))
+               goto decode_success;
+
+         } else if ((b1_0 >= 0) && (b1_0 <= 2)) {  // ld, ldu, lwa,
+            /* Note, here we only deal with the non prefix versions
+               of the instructions.  Hence do not check for ISA 3.1.  */
             if (dis_int_load_ds_form_prefix( prefix, theInstr ))
                goto decode_success;
          }
@@ -30485,9 +30610,23 @@ DisResult disInstr_PPC_WRK (
    }
 
    /* 64bit Integer Stores */
-   case 0x3E:  // std, stdu, stq
-      if (dis_int_store_ds_prefix( prefix, theInstr, abiinfo ))
-         goto decode_success;
+   case 0x3E:  // std, stdu, stq, pstxvp
+      {
+         UChar b1_0 = IFIELD(theInstr, 2, 0);
+
+         if (prefix_instruction( prefix)) {   // pstxvp
+            if (dis_fp_pair_prefix( prefix, theInstr ))
+               goto decode_success;
+
+         } else if (b1_0 != 3) {   // std, stdu, stq
+            if (dis_int_store_ds_prefix( prefix, theInstr, abiinfo ))
+               goto decode_success;
+
+         } else {
+            vex_printf("No mapping for instruction, opc1 = 0x3E, theInstr = 0x%x\n",
+               theInstr);
+         }
+      }
       goto decode_failure;
 
    case 0x3F:
@@ -30830,6 +30969,12 @@ DisResult disInstr_PPC_WRK (
       case 0x1C0: case 0x1E0: // setnbc, setnbcr
          if (!allow_isa_3_0) goto decode_noIsa3_1;
          if (dis_set_bool_condition( prefix, theInstr ))
+            goto decode_success;
+         goto decode_failure;
+
+      case 0x14D:                         // lxvpx
+      case 0x1CD:                         // stxvpx
+         if (dis_vsx_vector_paired_load_store( prefix, theInstr ))
             goto decode_success;
          goto decode_failure;
 

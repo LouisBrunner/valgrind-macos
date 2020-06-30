@@ -1,0 +1,36 @@
+diff -r -u gsl-1.6/vector/test_complex_source.c gsl-1.6-patched/vector/test_complex_source.c
+--- gsl-1.6/vector/test_complex_source.c	2004-09-13 15:23:20.000000000 +0200
++++ gsl-1.6-patched/vector/test_complex_source.c	2005-07-24 08:37:54.000000000 +0200
+@@ -75,7 +75,7 @@
+   if (stride == 1)
+     {
+       v0 = FUNCTION (gsl_vector, alloc) (N);
+-      view = FUNCTION (gsl_vector, subvector) (v, 0, N);
++      view = FUNCTION (gsl_vector, subvector) (v0, 0, N);
+       v = &view.vector;
+     }
+   else
+diff -r -u gsl-1.6/vector/test_source.c gsl-1.6-patched/vector/test_source.c
+--- gsl-1.6/vector/test_source.c	2004-09-13 15:23:20.000000000 +0200
++++ gsl-1.6-patched/vector/test_source.c	2005-07-24 08:37:54.000000000 +0200
+@@ -75,7 +75,7 @@
+   if (stride == 1)
+     {
+       v0 = FUNCTION (gsl_vector, alloc) (N);
+-      view = FUNCTION (gsl_vector, subvector) (v, 0, N);
++      view = FUNCTION (gsl_vector, subvector) (v0, 0, N);
+       v = &view.vector;
+     }
+   else
+diff -r -u gsl-1.6/wavelet/dwt.c gsl-1.6-patched/wavelet/dwt.c
+--- gsl-1.6/wavelet/dwt.c	2004-12-24 14:57:34.000000000 +0100
++++ gsl-1.6-patched/wavelet/dwt.c	2005-07-24 08:38:05.000000000 +0200
+@@ -30,7 +30,7 @@
+ 
+ static int binary_logn (const size_t n);
+ static void dwt_step (const gsl_wavelet * w, double *a, size_t stride,
+-                      size_t n, int isign, gsl_wavelet_workspace * work);
++                      size_t n, gsl_wavelet_direction dir, gsl_wavelet_workspace * work);
+ 
+ static int
+ binary_logn (const size_t n)

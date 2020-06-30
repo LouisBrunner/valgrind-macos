@@ -1,0 +1,14 @@
+{
+   gsl-writes-uninit-data
+   Memcheck:Param
+   write(buf)
+   fun:write
+}
+
+{
+   gsl-writes-uninit-data-nocancel
+   Memcheck:Param
+   write(buf)
+   fun:__write_nocancel
+}
+

@@ -94,6 +94,10 @@ exp-regtest: check
 perf: check
 	@PERL@ perf/vg_perf perf
 
+# Auxiliary test suites run under valgrind
+auxchecks: all
+	$(MAKE) -C auxprogs auxchecks
+
 # Nb: no need to include any Makefile.am files here, or files included from
 # them, as automake includes them automatically.  Also not COPYING, README
 # or NEWS.

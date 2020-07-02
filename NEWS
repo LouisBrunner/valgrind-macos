@@ -59,6 +59,8 @@ n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.
 397605  ioctl FICLONE mishandled
 408663  Suppression file for musl libc
 404076  s390x: z14 vector instructions not implemented
+410743  shmat() calls for 32-bit programs fail when running in 64-bit valgrind
+        (actually affected all x86 and nanomips regardless of host bitness)
 415293  Incorrect call-graph tracking due to new _dl_runtime_resolve_xsave*
 422174  unhandled instruction bytes: 0x48 0xE9 (REX prefixed JMP instruction)
 422623  epoll_ctl warns for uninitialized padding on non-amd64 64bit arches

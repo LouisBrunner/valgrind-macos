@@ -1960,11 +1960,27 @@ ML_(generic_POST_sys_semctl) ( ThreadId tid,
 static
 SizeT get_shm_size ( Int shmid )
 {
-#if defined(__NR_shmctl)
+   /*
+    * The excluded platforms below gained direct shmctl in Linux 5.1. Keep
+    * using ipc-multiplexed shmctl to keep compatibility with older kernel
+    * versions.
+    */
+#if defined(__NR_shmctl) && \
+    !defined(VGP_x86_linux) && !defined(VGP_mips32_linux) && \
+    !defined(VGP_ppc32_linux) && !defined(VGP_ppc64be_linux) && \
+    !defined(VGP_ppc64le_linux) && !defined(VGP_s390x_linux)
 #  ifdef VKI_IPC_64
    struct vki_shmid64_ds buf;
-#    if defined(VGP_amd64_linux) || defined(VGP_arm64_linux)
-     /* See bug 222545 comment 7 */
+     /*
+      * On Linux, the following ABIs use old shmid_ds by default with direct
+      * shmctl and require IPC_64 for shmid64_ds (i.e. the direct syscall is
+      * mapped to sys_old_shmctl):
+      *    alpha, arm, microblaze, mips n32/n64, xtensa
+      * Other Linux ABIs use shmid64_ds by default and do not recognize IPC_64
+      * with the direct shmctl syscall (but still recognize it for the
+      * ipc-multiplexed version if that exists for the ABI).
+      */
+#    if defined(VGO_linux) && !defined(VGP_arm_linux) && !defined(VGP_mips64_linux)
      SysRes __res = VG_(do_syscall3)(__NR_shmctl, shmid, 
                                      VKI_IPC_STAT, (UWord)&buf);
 #    else

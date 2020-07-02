@@ -281,6 +281,8 @@
 /docs/html
 /docs/Makefile
 /docs/Makefile.in
+/docs/valid-manpages
+/docs/valid-manual
 
 # /docs/images/
 /docs/images/Makefile

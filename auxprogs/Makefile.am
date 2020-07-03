@@ -127,7 +127,7 @@ auxclean: gsl-clean
 # You can override AUX_CHECK_DIR to use a previous download/build.
 # Must be an absolute path.
 # e.g. make auxchecks AUX_CHECK_DIR=$HOME/valgrind-auxtests
-AUX_CHECK_DIR=$(abs_builddir)auxchecks
+AUX_CHECK_DIR=$(abs_builddir)/auxchecks
 
 # GNU Scientific Library 1.6
 GSL_DIR_NAME=gsl-1.6

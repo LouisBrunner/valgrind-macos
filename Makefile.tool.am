@@ -86,6 +86,9 @@ TOOL_LDFLAGS_X86_DARWIN = \
 TOOL_LDFLAGS_AMD64_DARWIN = \
 	$(TOOL_LDFLAGS_COMMON_DARWIN) -arch x86_64
 
+TOOL_LDFLAGS_ARM64_DARWIN = \
+	$(TOOL_LDFLAGS_COMMON_DARWIN) -arch arm64
+
 # MIPS Linux default start symbol is __start, not _start like on x86 or amd
 TOOL_LDFLAGS_MIPS32_LINUX = \
 	-static -nodefaultlibs -nostartfiles -u __start @FLAG_NO_BUILD_ID@ \
@@ -158,6 +161,9 @@ LIBREPLACEMALLOC_X86_DARWIN = \
 LIBREPLACEMALLOC_AMD64_DARWIN = \
 	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-amd64-darwin.a
 
+LIBREPLACEMALLOC_ARM64_DARWIN = \
+	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-arm64-darwin.a
+
 LIBREPLACEMALLOC_S390X_LINUX = \
 	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-s390x-linux.a
 
@@ -224,6 +230,9 @@ LIBREPLACEMALLOC_LDFLAGS_X86_DARWIN = \
 LIBREPLACEMALLOC_LDFLAGS_AMD64_DARWIN = \
 	$(LIBREPLACEMALLOC_AMD64_DARWIN)
 
+LIBREPLACEMALLOC_LDFLAGS_ARM64_DARWIN = \
+	$(LIBREPLACEMALLOC_ARM64_DARWIN)
+
 LIBREPLACEMALLOC_LDFLAGS_S390X_LINUX = \
 	-Wl,--whole-archive \
 	$(LIBREPLACEMALLOC_S390X_LINUX) \
@@ -260,4 +269,3 @@ clean-local: clean-noinst_DSYMS
 install-exec-local: install-noinst_PROGRAMS install-noinst_DSYMS
 
 uninstall-local: uninstall-noinst_PROGRAMS uninstall-noinst_DSYMS
-

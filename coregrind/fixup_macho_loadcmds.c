@@ -103,11 +103,14 @@
 
 #undef PLAT_x86_darwin
 #undef PLAT_amd64_darwin
+#undef PLAT_aarch64_darwin
 
 #if defined(__APPLE__) && defined(__i386__)
 #  define PLAT_x86_darwin 1
 #elif defined(__APPLE__) && defined(__x86_64__)
 #  define PLAT_amd64_darwin 1
+#elif defined(__APPLE__) && defined(__aarch64__)
+#  define PLAT_aarch64_darwin 1
 #else
 #  error "Can't be compiled on this platform"
 #endif
@@ -304,6 +307,8 @@ static Int map_image_aboard ( /*OUT*/ImageInfo* ii, HChar* filename )
            cputype = CPU_TYPE_X86;
 #          elif defined(PLAT_amd64_darwin)
            cputype = CPU_TYPE_X86_64;
+#          elif defined(PLAT_arm64_darwin)
+           cputype = CPU_TYPE_ARM;
 #          else
 #            error "unknown architecture"
 #          endif
@@ -596,6 +601,10 @@ static Bool is_plausible_tool_exe_name ( HChar* nm )
    if (p && 0 == strcmp(p, "-amd64-darwin"))
       return True;
 
+   p = strstr(nm, "-arm64-darwin");
+   if (p && 0 == strcmp(p, "-arm64-darwin"))
+      return True;
+
    return False;
 }
 
@@ -621,7 +630,7 @@ int main ( int argc, char** argv )
            "stack_size 0x%llx\n", req_stack_addr, req_stack_size );
 
    if (!is_plausible_tool_exe_name(argv[3]))
-      fail("implausible tool exe name -- not of the form *-{x86,amd64}-darwin");
+      fail("implausible tool exe name -- not of the form *-{x86,amd64,arm64}-darwin");
 
    fprintf(stderr, "fixup_macho_loadcmds: examining tool exe: %s\n",
            argv[3] );

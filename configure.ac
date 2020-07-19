@@ -159,6 +159,35 @@ fi
 # macOS: Detect the Xcode SDK path and inject it in different tools
 AM_COND_IF([VGCONF_OS_IS_DARWIN],
 [
+  AC_ARG_WITH([darwin-platform],
+  [  --with-darwin-platform=PLAT  Specify which Darwin platform we are compiling for (macOS, iOS, etc)],
+  [
+      # TODO: some kind of case-insensitive check?
+      if test "x$withval" == "xmacOS"; then
+        darwin_platform="macosx"
+      elif test "x$withval" == "xmacos"; then
+        darwin_platform="macosx"
+      elif test "x$withval" == "xiOS"; then
+        darwin_platform="iphoneos"
+      elif test "x$withval" == "xios"; then
+        darwin_platform="iphoneos"
+      else
+        darwin_platform="$withval"
+      fi
+  ],
+  [
+      darwin_platform="macosx"
+  ])
+
+  AC_ARG_WITH([darwin-version],
+  [  --with-darwin-version=VERS Specify which version of Darwin you are targetting (useful for cross-compilation, depends on the darwin-platform)],
+  [
+      darwin_version="$withval"
+  ],
+  [
+      darwin_version=""
+  ])
+
   AC_ARG_VAR([DEVELOPER_DIR],[Overrides the active developer directory (used in gcc, xcrun, etc)])
   AC_CHECK_PROG([XCRUN], [xcrun], [yes], [no])
 
@@ -178,8 +207,15 @@ AM_COND_IF([VGCONF_OS_IS_DARWIN],
       xcodedir_inc="/usr/include"
   ])
 
+  darwin_sdk="$darwin_platform$darwin_version"
   if test "x$XCRUN" != "xno"; then
-    xcrundir=`xcrun --sdk macosx --show-sdk-path`
+    if test "x$darwin_version" != ""; then
+        if test x`xcrun --sdk $darwin_sdk --show-sdk-version` != x$darwin_version; then
+            AC_MSG_ERROR([Couldn't find SDK for $darwin_sdk (check 'xcodebuild -showsdks' for available ones)])
+        fi
+    fi
+
+    xcrundir=`xcrun --sdk $darwin_sdk --show-sdk-path`
     if test ! -z "$xcrundir"; then
         xcodedir="$xcrundir"
         xcodedir_inc="$xcodedir/usr/include"
@@ -514,32 +550,59 @@ case "${host_os}" in
         AC_MSG_RESULT([ok (${host_os})])
         VGCONF_OS="darwin"
         AC_DEFINE([DARWIN_10_5], 100500, [DARWIN_VERS value for Mac OS X 10.5])
-        AC_DEFINE([DARWIN_10_6], 100600, [DARWIN_VERS value for Mac OS X 10.6])
-        AC_DEFINE([DARWIN_10_7], 100700, [DARWIN_VERS value for Mac OS X 10.7])
-        AC_DEFINE([DARWIN_10_8], 100800, [DARWIN_VERS value for Mac OS X 10.8])
-        AC_DEFINE([DARWIN_10_9], 100900, [DARWIN_VERS value for Mac OS X 10.9])
-        AC_DEFINE([DARWIN_10_10], 101000, [DARWIN_VERS value for Mac OS X 10.10])
-        AC_DEFINE([DARWIN_10_11], 101100, [DARWIN_VERS value for Mac OS X 10.11])
-        AC_DEFINE([DARWIN_10_12], 101200, [DARWIN_VERS value for macOS 10.12])
-        AC_DEFINE([DARWIN_10_13], 101300, [DARWIN_VERS value for macOS 10.13])
-        AC_DEFINE([DARWIN_10_14], 101400, [DARWIN_VERS value for macOS 10.14])
-        AC_DEFINE([DARWIN_10_15], 101500, [DARWIN_VERS value for macOS 10.15])
-        AC_DEFINE([DARWIN_11_00], 110000, [DARWIN_VERS value for macOS 11.0])
-        AC_DEFINE([DARWIN_12_00], 120000, [DARWIN_VERS value for macOS 12.0])
-        AC_DEFINE([DARWIN_13_00], 130000, [DARWIN_VERS value for macOS 13.0])
+        AC_DEFINE([DARWIN_10_6], 100600, [DARWIN_VERS value for Mac OS X 10.6 / iOS 4])
+        AC_DEFINE([DARWIN_10_7], 100700, [DARWIN_VERS value for Mac OS X 10.7 / iOS 5])
+        AC_DEFINE([DARWIN_10_8], 100800, [DARWIN_VERS value for Mac OS X 10.8 / iOS 6])
+        AC_DEFINE([DARWIN_10_9], 100900, [DARWIN_VERS value for Mac OS X 10.9 / iOS 7])
+        AC_DEFINE([DARWIN_10_10], 101000, [DARWIN_VERS value for Mac OS X 10.10 / iOS 8])
+        AC_DEFINE([DARWIN_10_11], 101100, [DARWIN_VERS value for Mac OS X 10.11 / iOS 9])
+        AC_DEFINE([DARWIN_10_12], 101200, [DARWIN_VERS value for macOS 10.12 / iOS 10])
+        AC_DEFINE([DARWIN_10_13], 101300, [DARWIN_VERS value for macOS 10.13 / iOS 11])
+        AC_DEFINE([DARWIN_10_14], 101400, [DARWIN_VERS value for macOS 10.14 / iOS 12])
+        AC_DEFINE([DARWIN_10_15], 101500, [DARWIN_VERS value for macOS 10.15 / iOS 13])
+        AC_DEFINE([DARWIN_11_00], 110000, [DARWIN_VERS value for macOS 11.0 / iOS 14])
+        AC_DEFINE([DARWIN_12_00], 120000, [DARWIN_VERS value for macOS 12.0 / iOS 15])
+        AC_DEFINE([DARWIN_13_00], 130000, [DARWIN_VERS value for macOS 13.0 / iOS 16])
 
-        AC_DEFINE([XCODE_10_XX], 101400, [XCODE_VERS value for Xcode earlier than 10.15])
-        AC_DEFINE([XCODE_10_14_6], 101406, [XCODE_VERS value for Xcode 10.14.6])
-        AC_DEFINE([XCODE_10_15], 101500, [XCODE_VERS value for Xcode 10.15])
-        AC_DEFINE([XCODE_11_0], 110000, [XCODE_VERS value for Xcode 11.0])
-        AC_DEFINE([XCODE_12_0], 120000, [XCODE_VERS value for Xcode 12.0])
-        AC_DEFINE([XCODE_13_0], 130000, [XCODE_VERS value for Xcode 13.0])
+        AC_DEFINE([XCODE_10_XX], 101200, [XCODE_VERS value for Xcode earlier than 10.13 (iOS 11)])
+        AC_DEFINE([XCODE_10_13], 101300, [XCODE_VERS value for Xcode 10.13 (iOS 11)])
+        AC_DEFINE([XCODE_10_14], 101400, [XCODE_VERS value for Xcode 10.14 (iOS 12)])
+        AC_DEFINE([XCODE_10_14_6], 101406, [XCODE_VERS value for Xcode 10.14.6 (iOS 12)])
+        AC_DEFINE([XCODE_10_15], 101500, [XCODE_VERS value for Xcode 10.15 (iOS 13)])
+        AC_DEFINE([XCODE_11_0], 110000, [XCODE_VERS value for Xcode 11.0 (iOS 14)])
+        AC_DEFINE([XCODE_12_0], 120000, [XCODE_VERS value for Xcode 12.0 (iOS 15)])
+        AC_DEFINE([XCODE_13_0], 130000, [XCODE_VERS value for Xcode 13.0 (iOS 16)])
 
         # Substitute the Xcode include path detected earlier
         AC_SUBST(XCODE_INC_DIR, [$xcodedir_inc])
 
+
+        AC_MSG_CHECKING([for the Darwin platform])
+        case "${darwin_platform}" in
+        macosx)
+			    clang_os_min_vers_arg="-mmacosx-version-min=10.6"
+          ;;
+        iphoneos)
+			    clang_os_min_vers_arg="-miphoneos-version-min=4"
+          ;;
+        *)
+          AC_MSG_RESULT([unsupported Darwin platform (${darwin_platform})])
+          AC_MSG_ERROR([Valgrind works on macOS (macosx) and iOS (iphoneos)])
+        esac
+        AC_MSG_RESULT([ok (${darwin_platform})])
+
+        # Ensure clang receive the right minimum version argument
+        AC_SUBST(CLANG_OS_MIN_VERS_ARG, [$clang_os_min_vers_arg])
+
+
 	AC_MSG_CHECKING([for the kernel version])
+        kernel=$darwin_version
+        if test "x$kernel" = "x"; then
+            if test "${host_cpu}" != "${build_cpu}"; then
+                AC_MSG_WARN([You are cross-compiling without specifying the target's darwin-version, valgrind might not work.])
+            fi
 	kernel=`uname -r`
+        fi
 
         # Nb: for Darwin we set DEFAULT_SUPP here.  That's because Darwin
         # has only one relevant version, the OS version. The `uname` check
@@ -549,7 +612,7 @@ case "${host_os}" in
         # and we don't know of an macros similar to __GLIBC__ to get that info.
         #
         # XXX: `uname -r` won't do the right thing for cross-compiles, but
-        # that's not a problem yet.
+        # that's not a problem yet. 2020: Now it is.
         #
         # jseward 21 Sept 2011: I seriously doubt whether V 3.7.0 will work
         # on OS X 10.5.x; I haven't tested yet, and only plan to test 3.7.0
@@ -557,76 +620,77 @@ case "${host_os}" in
         # time support for 10.5 (the 9.* pattern just below), I'll leave it
         # in for now, just in case anybody wants to give it a try.  But I'm
         # assuming that 3.7.0 is a Snow Leopard and Lion-only release.
-	case "${kernel}" in
-	     9.*)
+
+        case "${darwin_platform}-${kernel}" in
+        macosx-9.*)
 		  AC_MSG_RESULT([Darwin 9.x (${kernel}) / Mac OS X 10.5 Leopard])
-		  AC_DEFINE([DARWIN_VERS], DARWIN_10_5, [Darwin / Mac OS X version])
-                  DEFAULT_SUPP="$srcdir/darwin9.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin9-drd.supp ${DEFAULT_SUPP}"
+          AC_DEFINE([DARWIN_VERS], DARWIN_10_5, [Darwin / Mac OS X / iOS version])
+		  DEFAULT_SUPP="darwin9.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="darwin9-drd.supp ${DEFAULT_SUPP}"
 		  ;;
-	     10.*)
-		  AC_MSG_RESULT([Darwin 10.x (${kernel}) / Mac OS X 10.6 Snow Leopard])
-		  AC_DEFINE([DARWIN_VERS], DARWIN_10_6, [Darwin / Mac OS X version])
-                  DEFAULT_SUPP="$srcdir/darwin10.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
+        macosx-10.*|iphoneos-4.*)
+          AC_MSG_RESULT([Darwin 10.x (${kernel}) / Mac OS X 10.6 Snow Leopard / iOS 4])
+          AC_DEFINE([DARWIN_VERS], DARWIN_10_6, [Darwin / Mac OS X / iOS version])
+		  DEFAULT_SUPP="darwin10.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
 		  ;;
-	     11.*)
-		  AC_MSG_RESULT([Darwin 11.x (${kernel}) / Mac OS X 10.7 Lion])
-		  AC_DEFINE([DARWIN_VERS], DARWIN_10_7, [Darwin / Mac OS X version])
-                  DEFAULT_SUPP="$srcdir/darwin11.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
+        macosx-11.*|iphoneos-5.*)
+          AC_MSG_RESULT([Darwin 11.x (${kernel}) / Mac OS X 10.7 Lion / iOS 5])
+          AC_DEFINE([DARWIN_VERS], DARWIN_10_7, [Darwin / Mac OS X / iOS version])
+		  DEFAULT_SUPP="darwin11.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
 		  ;;
-	     12.*)
-		  AC_MSG_RESULT([Darwin 12.x (${kernel}) / Mac OS X 10.8 Mountain Lion])
-		  AC_DEFINE([DARWIN_VERS], DARWIN_10_8, [Darwin / Mac OS X version])
-                  DEFAULT_SUPP="$srcdir/darwin12.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
+        macosx-12.*|iphoneos-6.*)
+          AC_MSG_RESULT([Darwin 12.x (${kernel}) / Mac OS X 10.8 Mountain Lion / iOS 6])
+          AC_DEFINE([DARWIN_VERS], DARWIN_10_8, [Darwin / Mac OS X / iOS version])
+		  DEFAULT_SUPP="darwin12.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
 		  ;;
-	     13.*)
-		  AC_MSG_RESULT([Darwin 13.x (${kernel}) / Mac OS X 10.9 Mavericks])
-		  AC_DEFINE([DARWIN_VERS], DARWIN_10_9, [Darwin / Mac OS X version])
-                  DEFAULT_SUPP="$srcdir/darwin13.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
+        macosx-13.*|iphoneos-7.*)
+          AC_MSG_RESULT([Darwin 13.x (${kernel}) / Mac OS X 10.9 Mavericks / iOS 7])
+          AC_DEFINE([DARWIN_VERS], DARWIN_10_9, [Darwin / Mac OS X / iOS version])
+		  DEFAULT_SUPP="darwin13.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
 		  ;;
-	     14.*)
-		  AC_MSG_RESULT([Darwin 14.x (${kernel}) / Mac OS X 10.10 Yosemite])
-		  AC_DEFINE([DARWIN_VERS], DARWIN_10_10, [Darwin / Mac OS X version])
-                  DEFAULT_SUPP="$srcdir/darwin14.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
+        macosx-14.*|iphoneos-8.*)
+          AC_MSG_RESULT([Darwin 14.x (${kernel}) / Mac OS X 10.10 Yosemite / iOS 8])
+          AC_DEFINE([DARWIN_VERS], DARWIN_10_10, [Darwin / Mac OS X / iOS version])
+		  DEFAULT_SUPP="darwin14.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
 		  ;;
-	     15.*)
-		  AC_MSG_RESULT([Darwin 15.x (${kernel}) / Mac OS X 10.11 El Capitan])
-		  AC_DEFINE([DARWIN_VERS], DARWIN_10_11, [Darwin / Mac OS X version])
-                  DEFAULT_SUPP="$srcdir/darwin15.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
+        macosx-15.*|iphoneos-9.*)
+          AC_MSG_RESULT([Darwin 15.x (${kernel}) / Mac OS X 10.11 El Capitan / iOS 9])
+          AC_DEFINE([DARWIN_VERS], DARWIN_10_11, [Darwin / Mac OS X / iOS version])
+		  DEFAULT_SUPP="darwin15.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
 		  ;;
-	     16.*)
-		  AC_MSG_RESULT([Darwin 16.x (${kernel}) / macOS 10.12 Sierra])
-		  AC_DEFINE([DARWIN_VERS], DARWIN_10_12, [Darwin / Mac OS X version])
-                  DEFAULT_SUPP="$srcdir/darwin16.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
+        macosx-16.*|iphoneos-10.*)
+          AC_MSG_RESULT([Darwin 16.x (${kernel}) / macOS 10.12 Sierra / iOS 10])
+          AC_DEFINE([DARWIN_VERS], DARWIN_10_12, [Darwin / macOS / iOS version])
+		  DEFAULT_SUPP="darwin16.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
 		  ;;
-	     17.*)
-		  AC_MSG_RESULT([Darwin 17.x (${kernel}) / macOS 10.13 High Sierra])
-		  AC_DEFINE([DARWIN_VERS], DARWIN_10_13, [Darwin / Mac OS X version])
-		  DEFAULT_SUPP="$srcdir/darwin17.supp ${DEFAULT_SUPP}"
-		  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
+        macosx-17.*|iphoneos-11.*)
+          AC_MSG_RESULT([Darwin 17.x (${kernel}) / macOS 10.13 High Sierra / iOS 11])
+          AC_DEFINE([DARWIN_VERS], DARWIN_10_13, [Darwin / macOS / iOS version])
+		  DEFAULT_SUPP="darwin17.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
 		  ;;
-             18.*)
-                  AC_MSG_RESULT([Darwin 18.x (${kernel}) / macOS 10.14 Mojave])
-                  AC_DEFINE([DARWIN_VERS], DARWIN_10_14, [Darwin / Mac OS X version])
+        macosx-18.*|iphoneos-12.*)
+          AC_MSG_RESULT([Darwin 18.x (${kernel}) / macOS 10.14 Mojave / iOS 12])
+          AC_DEFINE([DARWIN_VERS], DARWIN_10_14, [Darwin / macOS / iOS version])
                   DEFAULT_SUPP="darwin18.supp ${DEFAULT_SUPP}"
                   DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
       ;;
-       19.*)
-      AC_MSG_RESULT([Darwin 19.x (${kernel}) / macOS 10.15 Catalina])
-      AC_DEFINE([DARWIN_VERS], DARWIN_10_15, [Darwin / Mac OS X version])
+        macosx-19.*|iphoneos-13.*)
+          AC_MSG_RESULT([Darwin 19.x (${kernel}) / macOS 10.15 Catalina / iOS 13])
+          AC_DEFINE([DARWIN_VERS], DARWIN_10_15, [Darwin / macOS / iOS version])
       DEFAULT_SUPP="darwin19.supp ${DEFAULT_SUPP}"
       DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
                   ;;
-       20.*)
-      AC_MSG_RESULT([Darwin 20.x (${kernel}) / macOS 11 Big Sur])
-      AC_DEFINE([DARWIN_VERS], DARWIN_11_00, [Darwin / Mac OS X version])
+       macosx-20.*|iphoneos-14.*)
+      AC_MSG_RESULT([Darwin 20.x (${kernel}) / macOS 11 Big Sur / iOS 14])
+      AC_DEFINE([DARWIN_VERS], DARWIN_11_00, [Darwin / macOS / iOS version])
       DEFAULT_SUPP="darwin20.supp ${DEFAULT_SUPP}"
       DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
                   ;;
@@ -643,42 +707,53 @@ case "${host_os}" in
       DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
                   ;;
              *)
-		  AC_MSG_RESULT([unsupported (${kernel})])
-		  AC_MSG_ERROR([Valgrind works on Darwin 10.x-22.x (Mac OS X 10.6-10.11 and macOS 10.12-13.0)])
+          AC_MSG_RESULT([unsupported (${darwin_platform} ${kernel})])
+          AC_MSG_ERROR([Valgrind works on Darwin 10.x-22.x (Mac OS X 10.6-10.11, macOS 10.12-13.0 and iOS 4-16)])
 		  ;;
 	esac
 
         AC_MSG_CHECKING([for the Xcode SDK version])
         xcodeversion="legacy"
         if test "x$XCRUN" != "xno"; then
-          xcodeversion=`xcrun --sdk macosx --show-sdk-version`
+          xcodeversion=`xcrun --sdk $darwin_sdk --show-sdk-version`
         fi
-        case "${xcodeversion}" in
-	        10.14.6)
+        case "${darwin_platform}-${xcodeversion}" in
+          macosx-10.13*|iphoneos-11.*)
+            AC_DEFINE([XCODE_VERS], XCODE_10_13, [Xcode version])
+            ;;
+          macosx-10.14.6)
             AC_DEFINE([XCODE_VERS], XCODE_10_14_6, [Xcode version])
             ;;
-	        legacy|10.5*|10.6*|10.7*|10.8*|10.9*|10.10*|10.11*|10.12*|10.13*|10.14*)
-            AC_DEFINE([XCODE_VERS], XCODE_10_XX, [Xcode version])
+          macosx-10.14*|iphoneos-12.*)
+            AC_DEFINE([XCODE_VERS], XCODE_10_14, [Xcode version])
             ;;
-	        10.15*)
+          macosx-10.15*|iphoneos-13.*)
             AC_DEFINE([XCODE_VERS], XCODE_10_15, [Xcode version])
             ;;
-	        11.*)
+          macosx-11.*|iphoneos-14.*)
             AC_DEFINE([XCODE_VERS], XCODE_11_0, [Xcode version])
             ;;
-	        12.*)
+	        macosx-12.*|iphoneos-15.*)
             AC_DEFINE([XCODE_VERS], XCODE_12_0, [Xcode version])
             ;;
-	        13.*)
+	        macosx-13.*|iphoneos-16.*)
             AC_DEFINE([XCODE_VERS], XCODE_13_0, [Xcode version])
+            ;;
+          legacy)
+            AC_DEFINE([XCODE_VERS], XCODE_10_XX, [Xcode version])
+            ;;
+          macosx-10.5*|macosx-10.6*|macosx-10.7*|macosx-10.8*|macosx-10.9*|macosx-10.10*|macosx-10.11*|macosx-10.12*)
+            AC_DEFINE([XCODE_VERS], XCODE_10_XX, [Xcode version])
+            ;;
+          iphoneos-4.*|iphoneos-5.*|iphoneos-6.*|iphoneos-7.*|iphoneos-8.*|iphoneos-9.*|iphoneos-10.*)
+            AC_DEFINE([XCODE_VERS], XCODE_10_XX, [Xcode version])
             ;;
 	        *)
             AC_MSG_RESULT([unsupported (${xcodeversion})])
-            AC_MSG_ERROR([Valgrind works on Darwin 10.x-22.x (Mac OS X 10.6-11 and macOS 10.12-13.0)])
+            AC_MSG_ERROR([Valgrind works on Darwin 10.x-22.x (Mac OS X 10.6-11 and macOS 10.12-13.0 and iOS 4-16)])
             ;;
 	      esac
         AC_MSG_RESULT([${xcodeversion}])
-
         ;;
 
      solaris2.11*)
@@ -741,10 +816,18 @@ case "$ARCH_MAX-$VGCONF_OS" in
         AC_MSG_RESULT([no])
         ])
         CFLAGS=$safe_CFLAGS;;
-     x86-darwin|amd64-darwin)
+     x86-darwin|amd64-darwin|arm-darwin|arm64-darwin)
         AC_MSG_CHECKING([for 32 bit build support])
-        macos_only_32bit="no"
+        # Currently, we assume nothing is 32bit only as all versions which are, are unsupported
+        # Full breakdown:
+        # iOS 6 and earlier and macOS 10.3 and earlier are 32bit only
+        # iOS 7-10 and macOS 10.5-10.15 support both
+        # iOS 11+ and macOS 10.15 are 64bit only
+        vg_cv_only32bit="no"
         if test x$xcodeversion = x10.14.6 -o $XCODE_VERS -ge $XCODE_10_15 ; then
+            vg_cv_only64bit="yes"
+            AC_MSG_RESULT([no])
+        elif test $darwin_platform = iphoneos -a $XCODE_VERS -ge $XCODE_10_13; then
             vg_cv_only64bit="yes"
             AC_MSG_RESULT([no])
         else
@@ -974,6 +1057,21 @@ case "$ARCH_MAX-$VGCONF_OS" in
 	fi
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
 	;;
+     arm64-darwin)
+        ARCH_MAX="arm64"
+        valt_load_address_sec_norml="0xUNSET"
+        valt_load_address_sec_inner="0xUNSET"
+           VGCONF_ARCH_PRI="arm64"
+           VGCONF_ARCH_SEC=""
+	   VGCONF_PLATFORM_PRI_CAPS="ARM64_DARWIN"
+	   VGCONF_PLATFORM_SEC_CAPS=""
+           valt_load_address_pri_norml="0x158000000"
+           valt_load_address_pri_inner="0x138000000"
+	if test x$vg_cv_only32bit = xyes; then
+    AC_MSG_RESULT([32-bit build with Darwin arm64 (aach64) is unsupported])
+	fi
+        AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
+	;;
      arm-linux)
 	VGCONF_ARCH_PRI="arm"
 	VGCONF_PLATFORM_PRI_CAPS="ARM_LINUX"
@@ -1159,7 +1257,8 @@ AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_ARM,
                test x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX \
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xARM_LINUX )
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_ARM64,
-               test x$VGCONF_PLATFORM_PRI_CAPS = xARM64_LINUX )
+               test x$VGCONF_PLATFORM_PRI_CAPS = xARM64_LINUX \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xARM64_DARWIN )
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_S390X,
                test x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX )
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_MIPS32,
@@ -1209,6 +1308,8 @@ AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_X86_DARWIN,
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_DARWIN)
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_AMD64_DARWIN,
                test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN)
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_ARM64_DARWIN,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xARM64_DARWIN)
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_X86_SOLARIS,
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_SOLARIS \
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_SOLARIS)
@@ -1236,7 +1337,8 @@ AM_CONDITIONAL(VGCONF_OS_IS_FREEBSD,
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_FREEBSD)
 AM_CONDITIONAL(VGCONF_OS_IS_DARWIN,
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN \
-                 -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN)
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xARM64_DARWIN)
 AM_CONDITIONAL(VGCONF_OS_IS_SOLARIS,
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_SOLARIS \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_SOLARIS)
@@ -4962,6 +5064,8 @@ elif test x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN ; then
   mflag_primary="$FLAG_M32 -arch i386"
 elif test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN ; then
   mflag_primary="$FLAG_M64 -arch x86_64"
+elif test x$VGCONF_PLATFORM_PRI_CAPS = xARM64_DARWIN ; then
+  mflag_primary="$FLAG_M64 -arch arm64"
 fi
 
 mflag_secondary=

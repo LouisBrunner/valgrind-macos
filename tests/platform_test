@@ -14,7 +14,7 @@ all_platforms=
 all_platforms="$all_platforms x86-linux amd64-linux ppc32-linux ppc64-linux"
 all_platforms="$all_platforms arm-linux arm64-linux"
 all_platforms="$all_platforms s390x-linux mips32-linux mips64-linux"
-all_platforms="$all_platforms x86-darwin amd64-darwin"
+all_platforms="$all_platforms x86-darwin amd64-darwin arm64-darwin"
 all_platforms="$all_platforms x86-solaris amd64-solaris"
 all_platforms="$all_platforms x86-freebsd amd64-freebsd"
 

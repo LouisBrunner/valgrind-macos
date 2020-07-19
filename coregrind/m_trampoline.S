@@ -7,11 +7,11 @@
   This file is part of Valgrind, a dynamic binary instrumentation
   framework.
 
-  Copyright (C) 2000-2017 Julian Seward 
+  Copyright (C) 2000-2017 Julian Seward
      jseward@acm.org
   Copyright (C) 2006-2017 OpenWorks LLP
      info@open-works.co.uk
-	
+
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
   published by the Free Software Foundation; either version 2 of the
@@ -32,11 +32,11 @@
 #include "pub_core_vkiscnums_asm.h"
 
 /* ------------------ SIMULATED CPU HELPERS ------------------ */
-/* 
+/*
    Replacements for some functions to do with vsyscalls and signals.
    This code runs on the simulated CPU.
 */
-	
+
 /*---------------------- x86-linux ----------------------*/
 #if defined(VGP_x86_linux)
 
@@ -44,7 +44,7 @@
 #	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
 #	define UD2_256    UD2_64   ; UD2_64   ; UD2_64   ; UD2_64
 #	define UD2_1024   UD2_256  ; UD2_256  ; UD2_256  ; UD2_256
-#	define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024  
+#	define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024
 
 	/* a leading page of unexecutable code */
 	UD2_PAGE
@@ -74,15 +74,15 @@ VG_(x86_linux_SUBST_FOR_rt_sigreturn):
    assembly, but since that's what this file contains, here's a
    simple index implementation (written in C and compiled by gcc.)
 
-   unsigned char* REDIR_FOR_index ( const char* s, int c ) 
-   { 
-      unsigned char  ch = (unsigned char)((unsigned int)c); 
-      unsigned char* p  = (unsigned char*)s; 
-      while (1) { 
+   unsigned char* REDIR_FOR_index ( const char* s, int c )
+   {
+      unsigned char  ch = (unsigned char)((unsigned int)c);
+      unsigned char* p  = (unsigned char*)s;
+      while (1) {
          if (*p == ch) return p;
-         if (*p == 0)  return 0; 
-         p++; 
-      } 
+         if (*p == 0)  return 0;
+         p++;
+      }
    }
 */
 .global VG_(x86_linux_REDIR_FOR_index)
@@ -142,7 +142,7 @@ VG_(trampoline_stuff_end):
 #	undef UD2_256
 #	undef UD2_1024
 #	undef UD2_PAGE
-	
+
 /*---------------------- amd64-linux ----------------------*/
 #else
 #if defined(VGP_amd64_linux)
@@ -151,7 +151,7 @@ VG_(trampoline_stuff_end):
 #	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
 #	define UD2_256    UD2_64   ; UD2_64   ; UD2_64   ; UD2_64
 #	define UD2_1024   UD2_256  ; UD2_256  ; UD2_256  ; UD2_256
-#	define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024  
+#	define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024
 
 	/* a leading page of unexecutable code */
 	UD2_PAGE
@@ -176,11 +176,11 @@ VG_(amd64_linux_REDIR_FOR_vgettimeofday):
         ret
 .LfnE2:
 .size VG_(amd64_linux_REDIR_FOR_vgettimeofday), .-.LfnB2
-	
+
 .global VG_(amd64_linux_REDIR_FOR_vtime)
 .type   VG_(amd64_linux_REDIR_FOR_vtime), @function
 VG_(amd64_linux_REDIR_FOR_vtime):
-.LfnB3:	
+.LfnB3:
         movq    $__NR_time, %rax
         syscall
         ret
@@ -321,7 +321,7 @@ VG_(trampoline_stuff_end):
 #	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
 #	define UD2_256    UD2_64   ; UD2_64   ; UD2_64   ; UD2_64
 #	define UD2_1024   UD2_256  ; UD2_256  ; UD2_256  ; UD2_256
-#	define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024  
+#	define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024
 
 	/* a leading page of unexecutable code */
 	UD2_PAGE
@@ -340,7 +340,7 @@ VG_(ppc32_linux_SUBST_FOR_rt_sigreturn):
 	li 0,__NR_rt_sigreturn
         sc
         .long 0	/*illegal insn*/
-	
+
 /* There's no particular reason that this needs to be handwritten
    assembly, but since that's what this file contains, here's a
    simple strlen implementation (written in C and compiled by gcc.)
@@ -411,19 +411,19 @@ VG_(ppc32_linux_REDIR_FOR_strchr):
         cmpwi 7,0,0
         bne 7,.L308
         b .L304
-.L309:	
+.L309:
         beq 6,.L304
-.L308:	
+.L308:
         lbzu 0,1(3)
         cmpw 7,4,0
         cmpwi 6,0,0
         bne 7,.L309
         blr
-.L304:	
+.L304:
         li 3,0
         blr
 .size   VG_(ppc32_linux_REDIR_FOR_strchr),.-VG_(ppc32_linux_REDIR_FOR_strchr)
-	
+
 .global VG_(trampoline_stuff_end)
 VG_(trampoline_stuff_end):
 
@@ -444,7 +444,7 @@ VG_(trampoline_stuff_end):
 #	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
 #	define UD2_256    UD2_64   ; UD2_64   ; UD2_64   ; UD2_64
 #	define UD2_1024   UD2_256  ; UD2_256  ; UD2_256  ; UD2_256
-#	define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024  
+#	define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024
 
 	/* a leading page of unexecutable code */
 	UD2_PAGE
@@ -546,22 +546,22 @@ VG_(ppc64_linux_REDIR_FOR_strchr):
 #else
         .size VG_(ppc64_linux_REDIR_FOR_strchr),.-.L.VG_(ppc64_linux_REDIR_FOR_strchr)
 #endif
-.L19:	
+.L19:
         beq 6,.L14
-.L18:	
+.L18:
         lbzu 0,1(3)
         cmpw 7,4,0
         cmpdi 6,0,0
         bne 7,.L19
         blr
-.L14:	
+.L14:
         li 3,0
         blr
         .long 0
         .byte 0,0,0,0,0,0,0,0
 .L1end:
 
-	
+
 .global VG_(trampoline_stuff_end)
 VG_(trampoline_stuff_end):
 
@@ -583,7 +583,7 @@ VG_(trampoline_stuff_end):
 #	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
 #	define UD2_256    UD2_64   ; UD2_64   ; UD2_64   ; UD2_64
 #	define UD2_1024   UD2_256  ; UD2_256  ; UD2_256  ; UD2_256
-#	define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024  
+#	define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024
 
 	/* a leading page of unexecutable code */
 	UD2_PAGE
@@ -606,7 +606,7 @@ VG_(arm_linux_SUBST_FOR_rt_sigreturn):
         svc #0
         .long 0xFFFFFFFF /*illegal insn*/
 .size VG_(arm_linux_SUBST_FOR_rt_sigreturn), .-VG_(arm_linux_SUBST_FOR_rt_sigreturn)
-	
+
 .global VG_(arm_linux_REDIR_FOR_strlen)
 VG_(arm_linux_REDIR_FOR_strlen):
 	mov	r2, r0
@@ -750,7 +750,7 @@ VG_(trampoline_stuff_end):
 #	undef UD2_256
 #	undef UD2_1024
 #	undef UD2_PAGE
-        
+
 /*---------------- arm64-linux ----------------*/
 #else
 #if defined(VGP_arm64_linux)
@@ -760,7 +760,7 @@ VG_(trampoline_stuff_end):
 #	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
 #	define UD2_256    UD2_64   ; UD2_64   ; UD2_64   ; UD2_64
 #	define UD2_1024   UD2_256  ; UD2_256  ; UD2_256  ; UD2_256
-#	define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024  
+#	define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024
 
 	/* a leading page of unexecutable code */
 	UD2_PAGE
@@ -850,7 +850,7 @@ VG_(trampoline_stuff_end):
 #	undef UD2_256
 #	undef UD2_1024
 #	undef UD2_PAGE
-        
+
 /*---------------- x86-freebsd ----------------*/
 #else
 #if defined(VGP_x86_freebsd)
@@ -1090,8 +1090,8 @@ VG_(x86_darwin_REDIR_FOR_strlcat):
 	popl	%edi
 	leave
 	ret
-	
-	
+
+
 .globl VG_(trampoline_stuff_end)
 VG_(trampoline_stuff_end):
 
@@ -1184,7 +1184,7 @@ VG_(amd64_darwin_REDIR_FOR_strcpy):
 	leave
 	movq	%rdi, %rax
 	ret
-	
+
 .globl VG_(amd64_darwin_REDIR_FOR_strlcat)
 VG_(amd64_darwin_REDIR_FOR_strlcat):
 	pushq	%rbp
@@ -1262,13 +1262,19 @@ VG_(amd64_darwin_REDIR_FOR_strchr):
 2:
         popq    %rbp
         ret
-        
+
 .globl VG_(trampoline_stuff_end)
 VG_(trampoline_stuff_end):
 
         /* a trailing page of unexecutable code */
 .fill 2048, 2, 0x0b0f /* `ud2` */
 
+
+/*---------------- arm64-darwin ----------------*/
+#else
+#if defined(VGP_arm64_darwin)
+
+#error unimplemented
 
 /*---------------- s390x-linux ----------------*/
 #else
@@ -1333,7 +1339,7 @@ VG_(trampoline_stuff_end):
 #	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
 #	define UD2_256    UD2_64   ; UD2_64   ; UD2_64   ; UD2_64
 #	define UD2_1024   UD2_256  ; UD2_256  ; UD2_256  ; UD2_256
-#	define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024  
+#	define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024
 
 
 .global VG_(trampoline_stuff_start)
@@ -1352,7 +1358,7 @@ VG_(mips32_linux_SUBST_FOR_rt_sigreturn):
         syscall
         nop
         .long 0	/*illegal insn*/
-	
+
 /* There's no particular reason that this needs to be handwritten
    assembly, but since that's what this file contains, here's a
    simple index() and strlen() implementations.
@@ -1459,7 +1465,7 @@ VG_(trampoline_stuff_end):
 #       define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
 #       define UD2_256    UD2_64   ; UD2_64   ; UD2_64   ; UD2_64
 #       define UD2_1024   UD2_256  ; UD2_256  ; UD2_256  ; UD2_256
-#       define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024  
+#       define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024
 
 .global VG_(trampoline_stuff_start)
 VG_(trampoline_stuff_start):

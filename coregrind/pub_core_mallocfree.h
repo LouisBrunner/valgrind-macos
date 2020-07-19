@@ -82,6 +82,7 @@ typedef Int ArenaId;
       defined(VGP_amd64_freebsd)  || \
       defined(VGP_x86_darwin)     || \
       defined(VGP_amd64_darwin)   || \
+      defined(VGP_arm64_darwin)   || \
       defined(VGP_arm64_linux)    || \
       defined(VGP_amd64_solaris)
 #  define VG_MIN_MALLOC_SZB       16

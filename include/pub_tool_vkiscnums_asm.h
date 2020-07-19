@@ -77,7 +77,7 @@
 #elif defined(VGP_x86_freebsd) || defined(VGP_amd64_freebsd)
 #  include "vki/vki-scnums-freebsd.h"
 
-#elif defined(VGP_x86_darwin) || defined(VGP_amd64_darwin)
+#elif defined(VGP_x86_darwin) || defined(VGP_amd64_darwin) || defined(VGP_arm64_darwin)
 #  include "vki/vki-scnums-darwin.h"
 
 #elif defined(VGP_x86_solaris) || (VGP_amd64_solaris)

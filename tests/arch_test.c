@@ -68,7 +68,7 @@ static Bool go(char* arch)
 #elif defined(VGP_arm_linux)
    if ( 0 == strcmp( arch, "arm" ) ) return True;
 
-#elif defined(VGP_arm64_linux)
+#elif defined(VGP_arm64_linux) || defined(VGP_arm64_darwin)
    if ( 0 == strcmp( arch, "arm64" ) ) return True;
 
 #elif defined(VGP_mips32_linux)

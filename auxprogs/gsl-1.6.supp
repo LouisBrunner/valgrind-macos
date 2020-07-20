@@ -12,3 +12,11 @@
    fun:__write_nocancel
 }
 
+{
+   gsl-writes-uninit-data-syscall
+   Memcheck:Param
+   write(buf)
+   fun:__libc_do_syscall
+   fun:write
+}
+

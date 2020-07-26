@@ -21392,8 +21392,8 @@ Long dis_ESC_NONE (
 
    case 0xE9: /* Jv (jump, 16/32 offset) */
       if (haveF3(pfx)) goto decode_failure;
-      if (sz != 4) 
-         goto decode_failure; /* JRS added 2004 July 11 */
+      sz = 4; /* Prefixes that change operand size are ignored for this
+                 instruction. Operand size is forced to 32bit. */
       if (haveF2(pfx)) DIP("bnd ; "); /* MPX bnd prefix. */
       d64 = (guest_RIP_bbstart+delta+sz) + getSDisp(sz,delta); 
       delta += sz;
@@ -21404,8 +21404,7 @@ Long dis_ESC_NONE (
 
    case 0xEB: /* Jb (jump, byte offset) */
       if (haveF3(pfx)) goto decode_failure;
-      if (sz != 4) 
-         goto decode_failure; /* JRS added 2004 July 11 */
+      /* Prefixes that change operand size are ignored for this instruction. */
       if (haveF2(pfx)) DIP("bnd ; "); /* MPX bnd prefix. */
       d64 = (guest_RIP_bbstart+delta+1) + getSDisp8(delta); 
       delta++;

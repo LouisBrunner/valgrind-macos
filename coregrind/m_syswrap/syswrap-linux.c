@@ -2099,8 +2099,29 @@ PRE(sys_epoll_ctl)
          SARG1, ( ARG2<3 ? epoll_ctl_s[ARG2] : "?" ), SARG3, ARG4);
    PRE_REG_READ4(long, "epoll_ctl",
                  int, epfd, int, op, int, fd, struct vki_epoll_event *, event);
-   if (ARG2 != VKI_EPOLL_CTL_DEL)
-      PRE_MEM_READ( "epoll_ctl(event)", ARG4, sizeof(struct vki_epoll_event) );
+   if (ARG2 != VKI_EPOLL_CTL_DEL) {
+      /* Just check the events field, the data field is for user space and
+         unused by the kernel.  */
+      struct vki_epoll_event *event = (struct vki_epoll_event *) ARG4;
+      PRE_MEM_READ( "epoll_ctl(event)", (Addr) &event->events,
+                    sizeof(__vki_u32) );
+   }
+}
+
+/* RES event records have been written (exclude padding).  */
+static void epoll_post_helper ( ThreadId tid, SyscallArgs* arrghs,
+                                SyscallStatus* status )
+{
+   vg_assert(SUCCESS);
+   if (RES > 0) {
+      Int i;
+      struct vki_epoll_event **events = (struct vki_epoll_event**)(Addr)ARG2;
+      for (i = 0; i < RES; i++) {
+         /* Assume both events and data are set (data is user space only). */
+         POST_FIELD_WRITE(events[i]->events);
+         POST_FIELD_WRITE(events[i]->data);
+      }
+   }
 }
 
 PRE(sys_epoll_wait)
@@ -2111,13 +2132,12 @@ PRE(sys_epoll_wait)
    PRE_REG_READ4(long, "epoll_wait",
                  int, epfd, struct vki_epoll_event *, events,
                  int, maxevents, int, timeout);
+   /* Assume all (maxevents) events records should be (fully) writable. */
    PRE_MEM_WRITE( "epoll_wait(events)", ARG2, sizeof(struct vki_epoll_event)*ARG3);
 }
 POST(sys_epoll_wait)
 {
-   vg_assert(SUCCESS);
-   if (RES > 0)
-      POST_MEM_WRITE( ARG2, sizeof(struct vki_epoll_event)*RES ) ;
+   epoll_post_helper (tid, arrghs, status);
 }
 
 PRE(sys_epoll_pwait)
@@ -2130,15 +2150,14 @@ PRE(sys_epoll_pwait)
                  int, epfd, struct vki_epoll_event *, events,
                  int, maxevents, int, timeout, vki_sigset_t *, sigmask,
                  vki_size_t, sigsetsize);
+   /* Assume all (maxevents) events records should be (fully) writable. */
    PRE_MEM_WRITE( "epoll_pwait(events)", ARG2, sizeof(struct vki_epoll_event)*ARG3);
    if (ARG5)
       PRE_MEM_READ( "epoll_pwait(sigmask)", ARG5, sizeof(vki_sigset_t) );
 }
 POST(sys_epoll_pwait)
 {
-   vg_assert(SUCCESS);
-   if (RES > 0)
-      POST_MEM_WRITE( ARG2, sizeof(struct vki_epoll_event)*RES ) ;
+   epoll_post_helper (tid, arrghs, status);
 }
 
 PRE(sys_eventfd)

@@ -410,6 +410,23 @@ struct vki_sched_param {
 	int sched_priority;
 };
 
+struct vki_sched_attr {
+	vki_uint32_t size;
+	vki_uint32_t sched_policy;
+	vki_uint64_t sched_flags;
+
+	/* SCHED_NORMAL, SCHED_BATCH */
+	vki_int32_t sched_nice;
+
+	/* SCHED_FIFO, SCHED_RR */
+	vki_uint32_t sched_priority;
+
+	/* SCHED_DEADLINE */
+	vki_uint64_t sched_runtime;
+	vki_uint64_t sched_deadline;
+	vki_uint64_t sched_period;
+};
+
 #define VKI_TASK_COMM_LEN 16
 
 //----------------------------------------------------------------------

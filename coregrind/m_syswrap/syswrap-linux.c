@@ -3677,6 +3677,41 @@ POST(sys_sched_getparam)
    POST_MEM_WRITE( ARG2, sizeof(struct vki_sched_param) );
 }
 
+PRE(sys_sched_setattr)
+{
+   struct vki_sched_attr *attr;
+   PRINT("sched_setattr ( %ld, %#" FMT_REGWORD "x, %#"
+         FMT_REGWORD "x )", SARG1, ARG2, ARG3 );
+   PRE_REG_READ3(long, "sched_setattr",
+                 vki_pid_t, pid, struct sched_attr *, p, unsigned int, flags);
+   /* We need to be able to read at least the size field.  */
+   PRE_MEM_READ( "sched_setattr(attr->size)", ARG2, sizeof(vki_uint32_t) );
+   attr = (struct vki_sched_attr *)(Addr)ARG2;
+   if (ML_(safe_to_deref)(attr,sizeof(vki_uint32_t)))
+      PRE_MEM_READ( "sched_setattr(attr)", (Addr)attr, attr->size);
+}
+
+PRE(sys_sched_getattr)
+{
+   struct vki_sched_attr *attr;
+   PRINT("sched_getattr ( %ld, %#" FMT_REGWORD "x, %ld, %#"
+         FMT_REGWORD "x )", SARG1, ARG2, ARG3, ARG4 );
+   PRE_REG_READ4(long, "sched_getattr",
+                 vki_pid_t, pid, struct sched_attr *, p,
+                 unsigned int, size, unsigned int, flags);
+   /* We need to be able to read at least the size field.  */
+   PRE_MEM_READ( "sched_setattr(attr->size)", ARG2, sizeof(vki_uint32_t) );
+   /* And the kernel needs to be able to write to the whole struct size. */
+   attr = (struct vki_sched_attr *)(Addr)ARG2;
+   if (ML_(safe_to_deref)(attr,sizeof(vki_uint32_t)))
+      PRE_MEM_WRITE( "sched_setattr(attr)", (Addr)attr, attr->size);
+}
+POST(sys_sched_getattr)
+{
+   struct vki_sched_attr *attr = (struct vki_sched_attr *)(Addr)ARG2;
+   POST_MEM_WRITE( (Addr)attr, attr->size );
+}
+
 PRE(sys_sched_getscheduler)
 {
    PRINT("sys_sched_getscheduler ( %ld )", SARG1);

@@ -227,6 +227,8 @@ DECL_TEMPLATE(linux, sys_fremovexattr);
 // syscalls.
 DECL_TEMPLATE(linux, sys_sched_setparam);
 DECL_TEMPLATE(linux, sys_sched_getparam);
+DECL_TEMPLATE(linux, sys_sched_setattr);
+DECL_TEMPLATE(linux, sys_sched_getattr);
 DECL_TEMPLATE(linux, sys_sched_setscheduler);
 DECL_TEMPLATE(linux, sys_sched_getscheduler);
 DECL_TEMPLATE(linux, sys_sched_yield);

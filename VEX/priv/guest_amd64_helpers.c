@@ -3142,7 +3142,8 @@ void amd64g_dirtyhelper_CPUID_sse42_and_cx16 ( VexGuestAMD64State* st )
    power management:
 */
 void amd64g_dirtyhelper_CPUID_avx_and_cx16 ( VexGuestAMD64State* st,
-                                             ULong hasF16C, ULong hasRDRAND )
+                                             ULong hasF16C, ULong hasRDRAND,
+                                             ULong hasRDSEED )
 {
    vassert((hasF16C >> 1) == 0ULL);
    vassert((hasRDRAND >> 1) == 0ULL);
@@ -3194,9 +3195,14 @@ void amd64g_dirtyhelper_CPUID_avx_and_cx16 ( VexGuestAMD64State* st,
       case 0x00000006:
          SET_ABCD(0x00000077, 0x00000002, 0x00000009, 0x00000000);
          break;
-      case 0x00000007:
-         SET_ABCD(0x00000000, 0x00000800, 0x00000000, 0x00000000);
+      case 0x00000007: {
+         UInt ebx_extra = 0;
+         if (old_ecx == 0)
+             ebx_extra = hasRDSEED ? (1U << 18) : 0;
+         SET_ABCD(0x00000000, 0x00000800 | ebx_extra, 0x00000000,
+                  0x00000000);
          break;
+                       }
       case 0x00000008:
          SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000);
          break;
@@ -3320,7 +3326,8 @@ void amd64g_dirtyhelper_CPUID_avx_and_cx16 ( VexGuestAMD64State* st,
    power management:
 */
 void amd64g_dirtyhelper_CPUID_avx2 ( VexGuestAMD64State* st,
-                                     ULong hasF16C, ULong hasRDRAND )
+                                     ULong hasF16C, ULong hasRDRAND,
+                                     ULong hasRDSEED )
 {
    vassert((hasF16C >> 1) == 0ULL);
    vassert((hasRDRAND >> 1) == 0ULL);
@@ -3375,8 +3382,12 @@ void amd64g_dirtyhelper_CPUID_avx2 ( VexGuestAMD64State* st,
       case 0x00000007:
          switch (old_ecx) {
             /* Don't advertise FSGSBASE support, bit 0 in EBX.  */
-            case 0x00000000: SET_ABCD(0x00000000, 0x000027aa,
-                                      0x00000000, 0x00000000); break;
+
+            case 0x00000000: {
+               UInt ebx_extra = hasRDSEED ? (1U << 18) : 0;
+               SET_ABCD(0x00000000, 0x000027aa | ebx_extra,
+                        0x00000000, 0x00000000); break;
+                             }
             default:         SET_ABCD(0x00000000, 0x00000000,
                                       0x00000000, 0x00000000); break;
          }
@@ -3766,6 +3777,29 @@ ULong amd64g_dirtyhelper_RDRAND ( void ) {
       "movq $0, %%r11 ; "
       "movq $0, %%r12 ; "
       "rdrand %%r11d ; "
+      "setc %%r12b ; "
+      "movq %%r11, %0 ; "
+      "movq %%r12, %1"
+      : "=r"(res), "=r"(cflag) : : "r11", "r12"
+   );
+   res &= 0xFFFFFFFFULL;
+   cflag &= 1ULL;
+   return (cflag << 32) | res;
+#  else
+   /* There's nothing we can sensibly do.  Return a value denoting
+      "I succeeded, and the random bits are all zero" :-/ */
+   return 1ULL << 32;
+#  endif
+}
+
+ULong amd64g_dirtyhelper_RDSEED ( void ) {
+#  if defined(__x86_64__)
+   ULong res   = 0;
+   ULong cflag = 0;
+   __asm__ __volatile__(
+      "movq $0, %%r11 ; "
+      "movq $0, %%r12 ; "
+      "rdseed %%r11d ; "
       "setc %%r12b ; "
       "movq %%r11, %0 ; "
       "movq %%r12, %1"

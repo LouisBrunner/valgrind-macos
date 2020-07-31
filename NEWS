@@ -47,6 +47,7 @@ n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.
 422174  unhandled instruction bytes: 0x48 0xE9 (REX prefixed JMP instruction)
 422623  epoll_ctl warns for uninitialized padding on non-amd64 64bit arches
 423021  PPC:  Add missing ISA 3.0 documentation link and HWCAPS test.
+424298  amd64: Implement RDSEED
 
 
 Release 3.16.1 (?? June 2020)

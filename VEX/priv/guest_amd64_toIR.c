@@ -21989,9 +21989,11 @@ Long dis_ESC_0F (
           || fAddr == &amd64g_dirtyhelper_CPUID_avx_and_cx16) {
          Bool hasF16C   = (archinfo->hwcaps & VEX_HWCAPS_AMD64_F16C) != 0;
          Bool hasRDRAND = (archinfo->hwcaps & VEX_HWCAPS_AMD64_RDRAND) != 0;
-         args = mkIRExprVec_3(IRExpr_GSPTR(),
+         Bool hasRDSEED = (archinfo->hwcaps & VEX_HWCAPS_AMD64_RDSEED) != 0;
+         args = mkIRExprVec_4(IRExpr_GSPTR(),
                               mkIRExpr_HWord(hasF16C ? 1 : 0),
-                              mkIRExpr_HWord(hasRDRAND ? 1 : 0));
+                              mkIRExpr_HWord(hasRDRAND ? 1 : 0),
+                              mkIRExpr_HWord(hasRDSEED ? 1 : 0));
       } else {
          args = mkIRExprVec_1(IRExpr_GSPTR());
       }
@@ -22344,20 +22346,28 @@ Long dis_ESC_0F (
          return delta;
       } // if (isValidCMPXCHG)
 
-      /* 0F C7 /6 no-F2-or-F3 = RDRAND */
-      if (gregLO3ofRM(modrm) == 6/*RDRAND*/
-          && (archinfo->hwcaps & VEX_HWCAPS_AMD64_RDRAND)
+      /* 0F C7 /6 no-F2-or-F3 = RDRAND, 0F C7 /7 = RDSEED */
+      int insn = gregLO3ofRM(modrm);
+      if (((insn == 6 && (archinfo->hwcaps & VEX_HWCAPS_AMD64_RDRAND))
+           || (insn == 7 && (archinfo->hwcaps & VEX_HWCAPS_AMD64_RDSEED)))
           && epartIsReg(modrm) && haveNoF2noF3(pfx)
           && (sz == 8 || sz == 4 || sz == 2)) {
+
          delta++; // move past modrm
          IRType   ty    = szToITy(sz);
 
          // Pull a first 32 bits of randomness, plus C flag, out of the host.
          IRTemp pairLO = newTemp(Ity_I64);
-         IRDirty* dLO
-            = unsafeIRDirty_1_N(pairLO, 0/*regparms*/,
-                                "amd64g_dirtyhelper_RDRAND",
-                                &amd64g_dirtyhelper_RDRAND, mkIRExprVec_0());
+         IRDirty* dLO;
+         if (insn == 6) /* RDRAND */
+             dLO = unsafeIRDirty_1_N(pairLO, 0/*regparms*/,
+                                     "amd64g_dirtyhelper_RDRAND",
+                                     &amd64g_dirtyhelper_RDRAND, mkIRExprVec_0());
+         else /* RDSEED */
+             dLO = unsafeIRDirty_1_N(pairLO, 0/*regparms*/,
+                                     "amd64g_dirtyhelper_RDSEED",
+                                     &amd64g_dirtyhelper_RDSEED, mkIRExprVec_0());
+
          // There are no guest state or memory effects to declare for |dLO|.
          stmt( IRStmt_Dirty(dLO) );
 
@@ -22373,10 +22383,16 @@ Long dis_ESC_0F (
          if (ty == Ity_I64) {
             // Pull another 32 bits of randomness out of the host.
             IRTemp pairHI = newTemp(Ity_I64);
-            IRDirty* dHI
-               = unsafeIRDirty_1_N(pairHI, 0/*regparms*/,
-                                   "amd64g_dirtyhelper_RDRAND",
-                                   &amd64g_dirtyhelper_RDRAND, mkIRExprVec_0());
+            IRDirty* dHI;
+            if (insn == 6) /* RDRAND */
+                dHI = unsafeIRDirty_1_N(pairHI, 0/*regparms*/,
+                                        "amd64g_dirtyhelper_RDRAND",
+                                        &amd64g_dirtyhelper_RDRAND, mkIRExprVec_0());
+            else /* RDSEED */
+                dHI = unsafeIRDirty_1_N(pairHI, 0/*regparms*/,
+                                        "amd64g_dirtyhelper_RDSEED",
+                                        &amd64g_dirtyhelper_RDSEED, mkIRExprVec_0());
+
             // There are no guest state or memory effects to declare for |dHI|.
             stmt( IRStmt_Dirty(dHI) );
 
@@ -22420,7 +22436,12 @@ Long dis_ESC_0F (
          stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
          stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
 
-         DIP("rdrand %s", nameIRegE(sz, pfx, modrm));
+         if (insn == 6) {
+             DIP("rdrand %s", nameIRegE(sz, pfx, modrm));
+	 } else {
+             DIP("rdseed %s", nameIRegE(sz, pfx, modrm));
+	 }
+
          return delta;
       }
 

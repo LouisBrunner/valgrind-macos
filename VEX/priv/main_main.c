@@ -1648,6 +1648,7 @@ static const HChar* show_hwcaps_amd64 ( UInt hwcaps )
       { VEX_HWCAPS_AMD64_BMI,    "bmi"    },
       { VEX_HWCAPS_AMD64_F16C,   "f16c"   },
       { VEX_HWCAPS_AMD64_RDRAND, "rdrand" },
+      { VEX_HWCAPS_AMD64_RDSEED, "rdseed" },
    };
    /* Allocate a large enough buffer */
    static HChar buf[sizeof prefix + 

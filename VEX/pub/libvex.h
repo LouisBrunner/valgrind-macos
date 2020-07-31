@@ -100,6 +100,7 @@ typedef
 #define VEX_HWCAPS_AMD64_AVX2   (1<<11) /* AVX2 instructions */
 #define VEX_HWCAPS_AMD64_RDRAND (1<<13) /* RDRAND instructions */
 #define VEX_HWCAPS_AMD64_F16C   (1<<14) /* F16C instructions */
+#define VEX_HWCAPS_AMD64_RDSEED (1<<15) /* RDSEED instructions */
 
 /* ppc32: baseline capability is integer only */
 #define VEX_HWCAPS_PPC32_F     (1<<8)  /* basic (non-optional) FP */

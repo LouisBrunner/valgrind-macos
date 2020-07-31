@@ -3034,6 +3034,26 @@ AC_MSG_RESULT([no])
 
 AM_CONDITIONAL(BUILD_RDRAND_TESTS, test x$ac_have_as_rdrand = xyes)
 
+# does the amd64 assembler understand the RDSEED instruction?
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_RDSEED_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if amd64 assembler knows the RDSEED instruction])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  do {
+    asm ("rdseed %r14");
+    asm ("rdseed %r14d");
+    asm ("rdseed %r14w");
+  } while (0)
+]])], [
+ac_have_as_rdseed=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_rdseed=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_RDSEED_TESTS, test x$ac_have_as_rdseed = xyes)
 
 # does the amd64 assembler understand the F16C instructions (VCVTPH2PS and
 # VCVTPS2PH) ?

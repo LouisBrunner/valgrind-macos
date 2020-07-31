@@ -82,6 +82,7 @@ EXTRA_DIST = \
 	pcmpxstrx64w.vgtest \
 	rcl-amd64.vgtest rcl-amd64.stdout.exp rcl-amd64.stderr.exp \
 	rdrand.vgtest rdrand.stdout.exp rdrand.stderr.exp \
+	rdseed.vgtest rdseed.stdout.exp rdseed.stderr.exp \
 	redundantRexW.vgtest redundantRexW.stdout.exp \
 	redundantRexW.stderr.exp \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
@@ -167,6 +168,9 @@ if BUILD_F16C_TESTS
 endif
 if BUILD_RDRAND_TESTS
  check_PROGRAMS += rdrand
+endif
+if BUILD_RDSEED_TESTS
+ check_PROGRAMS += rdseed
 endif
 
 

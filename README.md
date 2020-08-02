@@ -31,6 +31,8 @@ brew install --HEAD LouisBrunner/valgrind/valgrind
 
 You can now use `valgrind` as normal.
 
+Note: in case of failures during the build, [make sure you have the latest Xcode/CLI tools installed](https://github.com/LouisBrunner/valgrind-macos/issues/6#issuecomment-667587385).
+
 ### Update
 
 Any `brew upgrade` will now correctly rebuild the latest `LouisBrunner/valgrind` instead of the upstream one (which doesn't support latest macOS versions).

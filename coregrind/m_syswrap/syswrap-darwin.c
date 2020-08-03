@@ -8505,16 +8505,17 @@ PRE(mach_msg)
       // JRS 11 Nov 2014: this assertion is OK for <= 10.9 but fails on 10.10
 #     if DARWIN_VERS >= DARWIN_10_10
       if (mh->msgh_bits & MACH_SEND_TRAILER) {
-        mach_msg_trailer_t* trailer = (mach_msg_trailer_t*)(ARG1 + send_size);
+        log_decaying("UNKNOWN mach_msg unhandled MACH_SEND_TRAILER option");
+      //   mach_msg_trailer_t* trailer = (mach_msg_trailer_t*)(ARG1 + send_size);
 
-        PRE_FIELD_READ("mach_msg(trailer->msgh_trailer_type)", trailer->msgh_trailer_type);
-        PRE_FIELD_READ("mach_msg(trailer->msgh_trailer_size)", trailer->msgh_trailer_size);
-        PRE_MEM_READ("mach_msg(trailer)", (Addr)trailer, trailer->msgh_trailer_size);
+      //   PRE_FIELD_READ("mach_msg(trailer->msgh_trailer_type)", trailer->msgh_trailer_type);
+      //   PRE_FIELD_READ("mach_msg(trailer->msgh_trailer_size)", trailer->msgh_trailer_size);
+      //   PRE_MEM_READ("mach_msg(trailer)", (Addr)trailer, trailer->msgh_trailer_size);
 
-        if (trailer->msgh_trailer_size > 0) {
-          // Only one format is supported at the moment
-          vg_assert(trailer->msgh_trailer_type == MACH_MSG_TRAILER_FORMAT_0);
-        }
+      //   if (trailer->msgh_trailer_size > 0) {
+      //     // Only one format is supported at the moment
+      //     vg_assert(trailer->msgh_trailer_type == MACH_MSG_TRAILER_FORMAT_0);
+      //   }
 
 #if 0
         int trailer_type = GET_RCV_ELEMENTS(option);

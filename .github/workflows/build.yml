@@ -15,10 +15,7 @@ jobs:
 
     steps:
     - name: install dependencies
-      uses: mstksg/get-package@v1
-      with:
-        brew: automake
-        apt-get: libc6-dbg gdb
+      run: sudo apt-get update && sudo apt-get install libc6-dbg gdb
     - name: checkout project
       uses: actions/checkout@v1
     - name: calculate short SHA
@@ -70,10 +67,7 @@ jobs:
 
     steps:
     - name: install dependencies
-      uses: mstksg/get-package@v1
-      with:
-        brew: automake
-        apt-get: libc6-dbg gdb
+      run: brew update && brew install automake
     - name: checkout project
       uses: actions/checkout@v1
     - name: calculate short SHA

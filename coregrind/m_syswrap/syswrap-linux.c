@@ -3713,7 +3713,7 @@ PRE(sys_sched_setattr)
 PRE(sys_sched_getattr)
 {
    struct vki_sched_attr *attr;
-   PRINT("sched_getattr ( %ld, %#" FMT_REGWORD "x, %ld, %#"
+   PRINT("sched_getattr ( %ld, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x, %#"
          FMT_REGWORD "x )", SARG1, ARG2, ARG3, ARG4 );
    PRE_REG_READ4(long, "sched_getattr",
                  vki_pid_t, pid, struct sched_attr *, p,

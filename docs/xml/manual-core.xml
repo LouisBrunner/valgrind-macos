@@ -419,6 +419,10 @@ existing suppressions file whilst reading the following documentation.
 The file <filename>glibc-2.3.supp</filename>, in the source
 distribution, provides some good examples.</para>
 
+<para>Blank and comment lines in a suppression file are ignored.  Comment lines
+  are made of 0 or more blanks followed by a # character followed by some
+  text.</para>
+
 <para>Each suppression has the following components:</para>
 
 <itemizedlist>

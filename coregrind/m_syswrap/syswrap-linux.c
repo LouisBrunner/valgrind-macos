@@ -2115,11 +2115,11 @@ static void epoll_post_helper ( ThreadId tid, SyscallArgs* arrghs,
    vg_assert(SUCCESS);
    if (RES > 0) {
       Int i;
-      struct vki_epoll_event **events = (struct vki_epoll_event**)(Addr)ARG2;
+      struct vki_epoll_event *events = (struct vki_epoll_event*)(Addr)ARG2;
       for (i = 0; i < RES; i++) {
          /* Assume both events and data are set (data is user space only). */
-         POST_FIELD_WRITE(events[i]->events);
-         POST_FIELD_WRITE(events[i]->data);
+         POST_FIELD_WRITE(events[i].events);
+         POST_FIELD_WRITE(events[i].data);
       }
    }
 }

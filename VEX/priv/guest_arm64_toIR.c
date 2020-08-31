@@ -568,7 +568,7 @@ static IROp mkABSF ( IRType ty ) {
    switch (ty) {
       case Ity_F32: return Iop_AbsF32;
       case Ity_F64: return Iop_AbsF64;
-      default: vpanic("mkNEGF");
+      default: vpanic("mkABSF");
    }
 }
 
@@ -576,7 +576,7 @@ static IROp mkSQRTF ( IRType ty ) {
    switch (ty) {
       case Ity_F32: return Iop_SqrtF32;
       case Ity_F64: return Iop_SqrtF64;
-      default: vpanic("mkNEGF");
+      default: vpanic("mkSQRTF");
    }
 }
 

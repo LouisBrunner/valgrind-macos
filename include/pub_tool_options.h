@@ -163,7 +163,7 @@ extern void VG_(list_clo)(const HChar *qq_option);
                                val,                                     \
                                &(qq_var))) {                            \
          VG_(fmsg_bad_option)(qq_arg, "%s is an invalid %s set\n",      \
-                              val, qq_option+2);                        \
+                              val, &qq_option[2]);                        \
          res = False; }                                                 \
       res; }))
 

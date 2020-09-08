@@ -222,7 +222,7 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    }
 #if DARWIN_VERS >= DARWIN_10_15
    // pthread really wants a non-zero value for ptr_munge
-   ret[envc++] = "PTHREAD_PTR_MUNGE_TOKEN=0x00000001";
+   ret[envc++] = VG_(strdup)("initimg-darwin.sce.6", "PTHREAD_PTR_MUNGE_TOKEN=0x00000001");
 #endif
    
 

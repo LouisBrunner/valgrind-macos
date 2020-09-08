@@ -4310,6 +4310,8 @@ AC_HEADER_TIME
 #----------------------------------------------------------------------------
 # Checks for library functions.
 #----------------------------------------------------------------------------
+save_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -Wno-error"
 AC_FUNC_MEMCMP
 AC_FUNC_MMAP
 
@@ -4354,6 +4356,7 @@ AC_CHECK_FUNCS([     \
         preadv2 \
         pwritev2 \
         ])
+CFLAGS="$save_CFLAGS"
 
 # AC_CHECK_LIB adds any library found to the variable LIBS, and links these
 # libraries with any shared object and/or executable. This is NOT what we
@@ -4606,7 +4609,7 @@ AM_CONDITIONAL([HAVE_OPENMP], [test x$ac_have_openmp = xyes])
 AC_MSG_CHECKING([for __builtin_popcount()])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
-  __builtin_popcount(2);
+  (void)__builtin_popcount(2);
   return 0;
 ]])], [
 AC_MSG_RESULT([yes])
@@ -4620,7 +4623,7 @@ AC_MSG_RESULT([no])
 AC_MSG_CHECKING([for __builtin_clz()])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
-  __builtin_clz(2);
+  (void)__builtin_clz(2);
   return 0;
 ]])], [
 AC_MSG_RESULT([yes])
@@ -4634,7 +4637,7 @@ AC_MSG_RESULT([no])
 AC_MSG_CHECKING([for __builtin_ctz()])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
-  __builtin_ctz(2);
+  (void)__builtin_ctz(2);
   return 0;
 ]])], [
 AC_MSG_RESULT([yes])

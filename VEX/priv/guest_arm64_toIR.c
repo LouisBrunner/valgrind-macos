@@ -552,7 +552,7 @@ static IROp mkDIVF ( IRType ty ) {
    switch (ty) {
       case Ity_F32: return Iop_DivF32;
       case Ity_F64: return Iop_DivF64;
-      default: vpanic("mkMULF");
+      default: vpanic("mkDIVF");
    }
 }
 

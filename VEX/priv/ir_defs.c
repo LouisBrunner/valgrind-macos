@@ -327,9 +327,8 @@ void ppIROp ( IROp op )
       case Iop_F128toI128S: vex_printf("F128toI128");  return;
       case Iop_RndF128:    vex_printf("RndF128");  return;
 
-        /* s390 specific */
-      case Iop_MAddF32:    vex_printf("s390_MAddF32"); return;
-      case Iop_MSubF32:    vex_printf("s390_MSubF32"); return;
+      case Iop_MAddF32:    vex_printf("MAddF32"); return;
+      case Iop_MSubF32:    vex_printf("MSubF32"); return;
 
       case Iop_ScaleF64:      vex_printf("ScaleF64"); return;
       case Iop_AtanF64:       vex_printf("AtanF64"); return;
@@ -3734,7 +3733,6 @@ void typeOfPrimop ( IROp op,
       case Iop_QDMull16Sx4: case Iop_QDMull32Sx2:
          BINARY(Ity_I64, Ity_I64, Ity_V128);
 
-      /* s390 specific */
       case Iop_MAddF32:
       case Iop_MSubF32:
          QUATERNARY(ity_RMode,Ity_F32,Ity_F32,Ity_F32, Ity_F32);

@@ -106,3 +106,32 @@
    fun:_ZN10objc_class11mangledNameEv
    fun:_ZNK8objc_opt17objc_stringhash_t8getIndexEPKc
 }
+
+{
+   OSX1015:Leak03-objc
+   Memcheck:Leak
+   fun:?alloc
+   ...
+   fun:bootstrap_look_up3
+   ...
+}
+
+{
+   OSX1015:Leak04-libsystem_c
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:?alloc
+   ...
+   fun:tzsetwall_basic
+   ...
+}
+
+{
+   OSX1015:Leak05-libsystem_c
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:?alloc
+   ...
+   fun:lookUpImpOrForward
+   ...
+}

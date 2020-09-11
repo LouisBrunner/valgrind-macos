@@ -3140,8 +3140,13 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
       { ATTR_CMN_OWNERID,         sizeof(uid_t) },
       { ATTR_CMN_GRPID,           sizeof(gid_t) },
       { ATTR_CMN_ACCESSMASK,      sizeof(uint32_t) },
+#if DARWIN_VERS >= DARWIN_10_15
+      { ATTR_CMN_GEN_COUNT,       sizeof(uint32_t) },
+      { ATTR_CMN_DOCUMENT_ID,     sizeof(uint32_t) },
+#else
       { ATTR_CMN_NAMEDATTRCOUNT,  sizeof(uint32_t) },
       { ATTR_CMN_NAMEDATTRLIST,   -1 },
+#endif
       { ATTR_CMN_FLAGS,           sizeof(uint32_t) },
       { ATTR_CMN_USERACCESS,      sizeof(uint32_t) },
       { ATTR_CMN_EXTENDED_SECURITY, -1 },
@@ -3154,6 +3159,10 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
 #endif
 #if DARWIN_VERS >= DARWIN_10_8
       { ATTR_CMN_ADDEDTIME,       -1 },
+#endif
+#if DARWIN_VERS >= DARWIN_10_15
+      { ATTR_CMN_ERROR,           sizeof(uint32_t) },
+      { ATTR_CMN_DATA_PROTECT_FLAGS, sizeof(uint32_t) },
 #endif
       { 0,                        0 }
    };
@@ -3181,6 +3190,10 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
 #if DARWIN_VERS >= DARWIN_10_6
       { ATTR_VOL_UUID,            sizeof(uuid_t) },
 #endif
+#if DARWIN_VERS >= DARWIN_10_15
+      { ATTR_VOL_QUOTA_SIZE,      sizeof(off_t) },
+      { ATTR_VOL_RESERVED_SIZE,   sizeof(off_t) },
+#endif
       { ATTR_VOL_ATTRIBUTES,      sizeof(vol_attributes_attr_t) },
       { 0,                        0 }
    };
@@ -3189,6 +3202,11 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
       { ATTR_DIR_LINKCOUNT,       sizeof(uint32_t) },
       { ATTR_DIR_ENTRYCOUNT,      sizeof(uint32_t) },
       { ATTR_DIR_MOUNTSTATUS,     sizeof(uint32_t) },
+#if DARWIN_VERS >= DARWIN_10_15
+      { ATTR_DIR_ALLOCSIZE,       sizeof(off_t) },
+      { ATTR_DIR_IOBLOCKSIZE,     sizeof(uint32_t) },
+      { ATTR_DIR_DATALENGTH,      sizeof(off_t) },
+#endif
       { 0,                        0 }
    };
    static const attrspec fileattr[] = {
@@ -3214,6 +3232,16 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
       // This order is important.
       { ATTR_FORK_TOTALSIZE,      sizeof(off_t) },
       { ATTR_FORK_ALLOCSIZE,      sizeof(off_t) },
+#if DARWIN_VERS >= DARWIN_10_15
+      { ATTR_CMNEXT_RELPATH,      sizeof(struct attrreference) },
+      { ATTR_CMNEXT_PRIVATESIZE,  sizeof(off_t) },
+      { ATTR_CMNEXT_LINKID,       sizeof(uint64_t) },
+      { ATTR_CMNEXT_NOFIRMLINKPATH,  sizeof(struct attrreference) },
+      { ATTR_CMNEXT_REALDEVID,    sizeof(uint32_t) },
+      { ATTR_CMNEXT_REALFSID,     sizeof(fsid_t) },
+      { ATTR_CMNEXT_CLONEID,      sizeof(uint64_t) },
+      { ATTR_CMNEXT_EXT_FLAGS,    sizeof(uint64_t) },
+#endif
       { 0,                        0 }
    };
 

@@ -1791,7 +1791,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    addr2dihandle = VG_(newXA)( VG_(malloc), "main.vm.2",
                                VG_(free), sizeof(Addr_n_ULong) );
 
-#  if defined(VGO_linux) || defined(VGO_solaris)
+#  if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_darwin)
    { Addr* seg_starts;
      Int   n_seg_starts;
      Addr_n_ULong anu;
@@ -1811,22 +1811,6 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
            anu.a = seg_starts[i];
            VG_(addToXA)( addr2dihandle, &anu );
         }
-     }
-
-     VG_(free)( seg_starts );
-   }
-#  elif defined(VGO_darwin)
-   { Addr* seg_starts;
-     Int   n_seg_starts;
-     seg_starts = VG_(get_segment_starts)( SkFileC, &n_seg_starts );
-     vg_assert(seg_starts && n_seg_starts >= 0);
-
-     /* show them all to the debug info reader.
-        Don't read from V segments (unlike Linux) */
-     // GrP fixme really?
-     for (i = 0; i < n_seg_starts; i++) {
-        VG_(di_notify_mmap)( seg_starts[i], False/*don't allow_SkFileV*/,
-                             -1/*don't use_fd*/);
      }
 
      VG_(free)( seg_starts );

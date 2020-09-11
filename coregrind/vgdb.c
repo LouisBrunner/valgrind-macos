@@ -82,7 +82,7 @@ char *timestamp_str (Bool produce)
       gettimeofday(&dbgtv, NULL);
       ts_tm = localtime(&dbgtv.tv_sec);
       ptr = out + strftime(out, sizeof(out), "%H:%M:%S", ts_tm);
-      sprintf(ptr, ".%6.6ld ", dbgtv.tv_usec);
+      sprintf(ptr, ".%6.6ld ", (long)dbgtv.tv_usec);
    } else {
       out[0] = 0;
    }

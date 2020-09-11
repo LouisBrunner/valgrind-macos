@@ -794,7 +794,7 @@ DECL_TEMPLATE(darwin, swtch);
 DECL_TEMPLATE(darwin, swtch_pri);
 
 #if DARWIN_VERS >= DARWIN_10_14
-// NYI kernelrpc_mach_port_get_attributes_trap      // 40
+DECL_TEMPLATE(darwin, kernelrpc_mach_port_get_attributes_trap);
 #endif /* DARWIN_VERS >= DARWIN_10_14 */
 
 #if DARWIN_VERS >= DARWIN_10_15

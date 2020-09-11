@@ -174,7 +174,7 @@
 #define __NR_semaphore_timedwait_signal_trap  VG_DARWIN_SYSCALL_CONSTRUCT_MACH(39)
 
 #if DARWIN_VERS >= DARWIN_10_14
-        /* 40  kernelrpc_mach_port_get_attributes_trap */
+#define __NR_kernelrpc_mach_port_get_attributes_trap VG_DARWIN_SYSCALL_CONSTRUCT_MACH(40)
 #endif
 
 #if DARWIN_VERS >= DARWIN_10_9

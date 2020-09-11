@@ -10470,6 +10470,28 @@ POST(thread_get_special_reply_port)
 
 
 /* ---------------------------------------------------------------------
+ Added for macOS 10.14 (Mojave)
+ ------------------------------------------------------------------ */
+
+#if DARWIN_VERS >= DARWIN_10_14
+PRE(kernelrpc_mach_port_get_attributes_trap)
+{
+  PRINT("kernelrpc_mach_port_get_attributes_trap( %s, %s, %ld, %#lx, %#lx )",
+        name_for_port(ARG1), name_for_port(ARG2), ARG3, ARG4, ARG5);
+  PRE_REG_READ5(kern_return_t, "kernelrpc_mach_port_get_attributes_trap",
+                mach_port_name_t, target, mach_port_name_t, name, mach_port_flavor_t, flavor,
+	              mach_port_info_t, port_info_out, mach_msg_type_number_t*, port_info_outCnt);
+  PRE_MEM_READ( "kernelrpc_mach_port_get_attributes_trap(port_info_outCnt)", ARG5, sizeof(mach_msg_type_number_t));
+  PRE_MEM_WRITE( "kernelrpc_mach_port_get_attributes_trap(port_info_outCnt)", ARG5, sizeof(mach_msg_type_number_t));
+  mach_msg_type_number_t count = *(mach_msg_type_number_t*)ARG5;
+  if (count > 0) {
+    PRE_MEM_WRITE( "kernelrpc_mach_port_get_attributes_trap(port_info_out)", ARG4, count * sizeof(integer_t));
+  }
+}
+#endif /* DARWIN_VERS >= DARWIN_10_14 */
+
+
+/* ---------------------------------------------------------------------
  Added for macOS 10.15 (Catalina)
  ------------------------------------------------------------------ */
 
@@ -11356,7 +11378,7 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    MACX_(__NR_semaphore_timedwait_signal_trap, semaphore_timedwait_signal),
 
 #  if DARWIN_VERS >= DARWIN_10_14
-// _____(__NR_kernelrpc_mach_port_get_attributes_trap),
+   MACX_(__NR_kernelrpc_mach_port_get_attributes_trap, kernelrpc_mach_port_get_attributes_trap),
 #  else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(40)),    // -40
 #  endif

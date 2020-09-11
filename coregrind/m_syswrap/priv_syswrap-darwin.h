@@ -799,6 +799,7 @@ DECL_TEMPLATE(darwin, kernelrpc_mach_port_get_attributes_trap);
 
 #if DARWIN_VERS >= DARWIN_10_15
 DECL_TEMPLATE(darwin, task_restartable_ranges_register);
+DECL_TEMPLATE(darwin, kernelrpc_mach_port_request_notification_trap);
 #endif /* DARWIN_VERS >= DARWIN_10_15 */
 
 // Machine-dependent traps

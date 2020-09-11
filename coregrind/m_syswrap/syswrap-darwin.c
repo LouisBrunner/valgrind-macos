@@ -10663,6 +10663,27 @@ PRE(necp_client_action)
    }
 }
 
+PRE(kernelrpc_mach_port_request_notification_trap)
+{
+  PRINT("kernelrpc_mach_port_request_notification_trap(%s, %s, %ld, %ld, %s, %ld, %#lx)",
+         name_for_port(ARG1), name_for_port(ARG2), ARG3, ARG4, name_for_port(ARG5), ARG6, ARG7);
+  PRE_REG_READ7(kern_return_t, "kernelrpc_mach_port_request_notification_trap",
+    ipc_space_t, task, mach_port_name_t, name, mach_msg_id_t, msgid,
+	  mach_port_mscount_t, sync, mach_port_name_t, notify, mach_msg_type_name_t, notifyPoly,
+	  mach_port_name_t*, previous);
+  if (ARG7 != 0) {
+    PRE_MEM_WRITE("kernelrpc_mach_port_request_notification_trap(previous)", ARG7, sizeof(mach_port_name_t));
+  }
+}
+
+POST(kernelrpc_mach_port_request_notification_trap)
+{
+  if (RES == 0 && ARG7 != 0) {
+    POST_MEM_WRITE(ARG7, sizeof(mach_port_name_t));
+    PRINT("-> previous:%s", name_for_port(*(mach_port_name_t*)ARG7));
+  }
+}
+
 #endif /* DARWIN_VERS >= DARWIN_10_15 */
 
 
@@ -11453,7 +11474,11 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(74)),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(75)),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(76)),
+#if DARWIN_VERS >= DARWIN_10_15
+   MACXY(_NR_kernelrpc_mach_port_request_notification_trap, kernelrpc_mach_port_request_notification_trap),
+#else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(77)),
+#endif
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(78)),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(79)),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(80)),   // -80

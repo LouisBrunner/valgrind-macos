@@ -8478,6 +8478,7 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
       mce.dlbo.dl_Add32           = DLauto;
       mce.dlbo.dl_CmpEQ32_CmpNE32 = DLexpensive;
 #     elif defined(VGA_amd64)
+      mce.dlbo.dl_Add32           = DLexpensive;
       mce.dlbo.dl_Add64           = DLauto;
       mce.dlbo.dl_CmpEQ32_CmpNE32 = DLexpensive;
       mce.dlbo.dl_CmpEQ64_CmpNE64 = DLexpensive;

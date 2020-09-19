@@ -48,6 +48,7 @@ n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.
 422623  epoll_ctl warns for uninitialized padding on non-amd64 64bit arches
 423021  PPC:  Add missing ISA 3.0 documentation link and HWCAPS test.
 424298  amd64: Implement RDSEED
+426144  Fix "condition variable has not been initialized" on Fedora 33.
 
 
 Release 3.16.1 (?? June 2020)

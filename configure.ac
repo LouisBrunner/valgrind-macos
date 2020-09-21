@@ -1455,7 +1455,9 @@ AC_HWCAP_CONTAINS_FLAG([arch_2_05],[HWCAP_HAS_ISA_2_05])
 AC_HWCAP_CONTAINS_FLAG([arch_2_06],[HWCAP_HAS_ISA_2_06])
 AC_HWCAP_CONTAINS_FLAG([arch_2_07],[HWCAP_HAS_ISA_2_07])
 AC_HWCAP_CONTAINS_FLAG([arch_3_00],[HWCAP_HAS_ISA_3_00])
+AC_HWCAP_CONTAINS_FLAG([arch_3_01],[HWCAP_HAS_ISA_3_1])
 AC_HWCAP_CONTAINS_FLAG([htm],[HWCAP_HAS_HTM])
+AC_HWCAP_CONTAINS_FLAG([mma],[HWCAP_HAS_MMA])
 
 # ISA Levels
 AM_CONDITIONAL(HAS_ISA_2_05, [test x$HWCAP_HAS_ISA_2_05 = xyes])
@@ -1624,7 +1626,7 @@ AM_CONDITIONAL(SUPPORTS_HTM, test x$ac_compiler_supports_htm = xyes \
                                -a x$ac_compiler_sees_htm_builtins = xyes \
                                -a x$HWCAP_HAS_HTM = xyes )
 
-# isa 3.0 checking
+# isa 3.0 checking. (actually 3.0 or newer)
 AC_MSG_CHECKING([that assembler knows ISA 3.00 ])
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -1638,8 +1640,26 @@ ac_asm_have_isa_3_00=no
 AC_MSG_RESULT([no])
 ])
 
+# isa 3.01 checking
+AC_MSG_CHECKING([that assembler knows ISA 3.1 ])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+]], [[
+  __asm__ __volatile__("brh 1,2 ");
+]])], [
+ac_asm_have_isa_3_1=yes
+AC_MSG_RESULT([yes])
+], [
+ac_asm_have_isa_3_1=no
+AC_MSG_RESULT([no])
+])
+
+
 AM_CONDITIONAL(HAS_ISA_3_00, [test x$ac_asm_have_isa_3_00 = xyes \
                              -a x$HWCAP_HAS_ISA_3_00 = xyes])
+
+AM_CONDITIONAL(HAS_ISA_3_1, [test x$ac_asm_have_isa_3_1 = xyes \
+                             -a x$HWCAP_HAS_ISA_3_1 = xyes])
 
 # Check for pthread_create@GLIBC2.0
 AC_MSG_CHECKING([for pthread_create@GLIBC2.0()])

@@ -1,0 +1,3 @@
+prereq: ../../../tests/check_ppc64_auxv_cap arch_3_1
+prereq: ../../../tests/check_ppc64_auxv_cap mma
+prog: test_isa_3_1_AT

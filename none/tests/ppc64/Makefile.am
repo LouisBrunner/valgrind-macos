@@ -49,10 +49,10 @@ EXTRA_DIST = \
 	test_isa_3_0_altivec.stdout.exp-LE test_isa_3_0_altivec.vgtest \
 	test_isa_3_0_other.stderr.exp  \
 	test_isa_3_0_other.stdout.exp-LE test_isa_3_0_other.vgtest \
+	test_isa_3_1_RT.vgtest test_isa_3_1_RT.stderr.exp test_isa_3_1_RT.stdout.exp \
+	test_isa_3_1_XT.vgtest test_isa_3_1_XT.stderr.exp test_isa_3_1_XT.stdout.exp \
 	subnormal_test.stderr.exp  subnormal_test.stdout.exp \
 	subnormal_test.vgtest
-#	test_isa_3_1_RT.vgtest test_isa_3_1_RT.stderr.exp test_isa_3_1_RT.stdout.exp
-#	test_isa_3_1_XT.vgtest test_isa_3_1_XT.stderr.exp test_isa_3_1_XT.stdout.exp
 #	test_isa_3_1_VRT.vgtest test_isa_3_1_VRT.stderr.exp test_isa_3_1_VRT.stdout.exp
 #	test_isa_3_1_Misc.vgtest test_isa_3_1_Misc.stderr.exp test_isa_3_1_Misc.stdout.exp
 #	test_isa_3_1_AT.vgtest test_isa_3_1_AT.stderr.exp test_isa_3_1_AT.stdout.exp
@@ -64,11 +64,11 @@ check_PROGRAMS = \
 	test_dfp1 test_dfp2 test_dfp3 test_dfp4 test_dfp5 \
 	test_isa_2_07_part1 test_isa_2_07_part2 \
 	test_isa_3_0 \
+	test_isa_3_1_RT test_isa_3_1_XT \
 	subnormal_test \
 	test_tm test_touch_tm ldst_multiple data-cache-instructions \
 	power6_mf_gpr std_reg_imm \
 	twi_tdi tw_td power6_bcmp
-#	test_isa_3_1_RT test_isa_3_1_XT
 #	test_isa_3_1_Misc test_isa_3_1_VRT test_isa_3_1_AT
 
 AM_CFLAGS    += @FLAG_M64@
@@ -77,8 +77,9 @@ AM_CCASFLAGS += @FLAG_M64@
 
 allexec_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
-#test_isa_3_1_XT_SOURCES = test_isa_3_1_XT.c test_isa_3_1_common.c
-#test_isa_3_1_RT_SOURCES = test_isa_3_1_RT.c test_isa_3_1_common.c
+test_isa_3_1_XT_SOURCES = test_isa_3_1_XT.c test_isa_3_1_common.c
+test_isa_3_1_RT_SOURCES = test_isa_3_1_RT.c test_isa_3_1_common.c
+
 #test_isa_3_1_VRT_SOURCES = test_isa_3_1_VRT.c test_isa_3_1_common.c
 #test_isa_3_1_AT_SOURCES = test_isa_3_1_AT.c test_isa_3_1_common.c
 #test_isa_3_1_Misc_SOURCES = test_isa_3_1_Misc.c test_isa_3_1_common.c

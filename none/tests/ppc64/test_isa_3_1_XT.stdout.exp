@@ -1,0 +1,119 @@
+plfd 0 (&buffer) => 5.000710e-01
+
+plfd 4 (&buffer) => 2.752739e-289
+
+plfd 8 (&buffer) => nan
+
+plfd 16 (&buffer) => nan
+
+plfd 32 (&buffer) => 4.574798e+125
+
+plfd 64 (&buffer) => -1.734010e+308
+
+plfs 0 (&buffer) => -3.702336e+19
+
+plfs 4 (&buffer) => 1.750018e+00
+
+plfs 8 (&buffer) => 1.568827e-36
+
+plfs 16 (&buffer) => 4.017803e-41
+
+plfs 32 (&buffer) => 1.509115e-35
+
+plfs 64 (&buffer) => -5.202476e-03
+
+plxsd 0 (&buffer) => 3fe00094e0007359,0000000000000000  5.00070989e-01         +Zero
+
+plxsd 4 (&buffer) =>  40576073fe00094,0000000000000000 2.75273943e-289         +Zero
+
+plxsd 8 (&buffer) => 7ff7020304057607,0000000000000000           NaN         +Zero
+
+plxsd 16 (&buffer) => 7ff0000000007000,0000000000000000           NaN         +Zero
+
+plxsd 32 (&buffer) => 5a05a05a05a07a05,0000000000000000 4.57479788e+125         +Zero
+
+plxsd 64 (&buffer) => ffeeddccbbaa7988,0000000000000000 -1.73401015e+308         +Zero
+
+plxssp 0 (&buffer) => c4000e6b20000000,0000000000000000 -5.12225e+02  1.08420e-19        +Zero        +Zero
+
+plxssp 4 (&buffer) => 3ffc001280000000,0000000000000000  1.96875e+00        -Zero        +Zero        +Zero
+
+plxssp 8 (&buffer) => 3880aec0e0000000,0000000000000000  6.13607e-05 -3.68935e+19        +Zero        +Zero
+
+plxssp 16 (&buffer) => 378c000000000000,0000000000000000  1.66893e-05        +Zero        +Zero        +Zero
+
+plxssp 32 (&buffer) => 38b40f40a0000000,0000000000000000  8.58591e-05 -1.08420e-19        +Zero        +Zero
+
+plxssp 64 (&buffer) => bf754f3100000000,0000000000000000 -9.58240e-01        +Zero        +Zero        +Zero
+
+plxv 0_0 (&buffer) => 3fe00094e0007359 7ff7020304057607
+
+plxv 4_0 (&buffer) =>  40576073fe00094     70007ff70203
+
+plxv 8_0 (&buffer) => 7ff7020304057607 7ff0000000007000
+
+plxv 16_0 (&buffer) => 7ff0000000007000 7f0000007f007000
+
+pstfd 0 (&buffer) 43dfe000003fe000 43eff000000ff000 => [ {  9.18734324e+18} 43dfe000003fe000  -   -   -   -   -   -   - ]
+pstfd 0 (&buffer) 43eff000000ff000 43efefffffcff000 => [ {  1.84107153e+19} 43eff000000ff000  -   -   -   -   -   -   - ]
+
+pstfd 4 (&buffer) 43dfe000003fe000 43eff000000ff000 => [ { 1.77310647e-307} 003fe000e0007359  {           NaN} 7ff7020343dfe000  -   -   -   -   -   - ]
+pstfd 4 (&buffer) 43eff000000ff000 43efefffffcff000 => [ {          +Den} 000ff000e0007359  {           NaN} 7ff7020343eff000  -   -   -   -   -   - ]
+
+pstfd 8 (&buffer) 43dfe000003fe000 43eff000000ff000 => [ -   {  9.18734324e+18} 43dfe000003fe000  -   -   -   -   -   - ]
+pstfd 8 (&buffer) 43eff000000ff000 43efefffffcff000 => [ -   {  1.84107153e+19} 43eff000000ff000  -   -   -   -   -   - ]
+
+pstfd 16 (&buffer) 43dfe000003fe000 43eff000000ff000 => [ -   -   {  9.18734324e+18} 43dfe000003fe000  -   -   -   -   - ]
+pstfd 16 (&buffer) 43eff000000ff000 43efefffffcff000 => [ -   -   {  1.84107153e+19} 43eff000000ff000  -   -   -   -   - ]
+
+pstfd 32 (&buffer) 43dfe000003fe000 43eff000000ff000 => [ -   -   -   -   {  9.18734324e+18} 43dfe000003fe000  -   -   - ]
+pstfd 32 (&buffer) 43eff000000ff000 43efefffffcff000 => [ -   -   -   -   {  1.84107153e+19} 43eff000000ff000  -   -   - ]
+
+pstfs 0 (&buffer) 000000005eff0000 000000005f7f8000 => [ (  1.75002e+00   9.18734e+18) 3fe000945eff0000  -   -   -   -   -   -   - ]
+pstfs 0 (&buffer) 000000005f7f8000 000000005f7f8000 => [ (  1.75002e+00   1.84107e+19) 3fe000945f7f8000  -   -   -   -   -   -   - ]
+
+pstfs 4 (&buffer) 000000005eff0000 000000005f7f8000 => [ (  9.18734e+18  -3.70234e+19) 5eff0000e0007359  -   -   -   -   -   -   - ]
+pstfs 4 (&buffer) 000000005f7f8000 000000005f7f8000 => [ (  1.84107e+19  -3.70234e+19) 5f7f8000e0007359  -   -   -   -   -   -   - ]
+
+pstfs 8 (&buffer) 000000005eff0000 000000005f7f8000 => [ -   (          NaN   9.18734e+18) 7ff702035eff0000  -   -   -   -   -   - ]
+pstfs 8 (&buffer) 000000005f7f8000 000000005f7f8000 => [ -   (          NaN   1.84107e+19) 7ff702035f7f8000  -   -   -   -   -   - ]
+
+pstfs 16 (&buffer) 000000005eff0000 000000005f7f8000 => [ -   -   (          NaN   9.18734e+18) 7ff000005eff0000  -   -   -   -   - ]
+pstfs 16 (&buffer) 000000005f7f8000 000000005f7f8000 => [ -   -   (          NaN   1.84107e+19) 7ff000005f7f8000  -   -   -   -   - ]
+
+pstfs 32 (&buffer) 000000005eff0000 000000005f7f8000 => [ -   -   -   -   (  9.40312e+15   9.18734e+18) 5a05a05a5eff0000  -   -   - ]
+pstfs 32 (&buffer) 000000005f7f8000 000000005f7f8000 => [ -   -   -   -   (  9.40312e+15   1.84107e+19) 5a05a05a5f7f8000  -   -   - ]
+
+pstxsd 0 (&buffer) => [0000000000000000  -   -   -   -   -   -   - ]
+
+pstxsd 4 (&buffer) => [00000000e0007359 7ff7020300000000  -   -   -   -   -   - ]
+
+pstxsd 8 (&buffer) => [ -  0000000000000000  -   -   -   -   -   - ]
+
+pstxsd 16 (&buffer) => [ -   -  0000000000000000  -   -   -   -   - ]
+
+pstxsd 32 (&buffer) => [ -   -   -   -  0000000000000000  -   -   - ]
+
+pstxsd 64 (&buffer) =>
+
+pstxssp 0 (&buffer) => [3fe0009400000000  -   -   -   -   -   -   - ]
+
+pstxssp 4 (&buffer) => [00000000e0007359  -   -   -   -   -   -   - ]
+
+pstxssp 8 (&buffer) => [ -  7ff7020300000000  -   -   -   -   -   - ]
+
+pstxssp 16 (&buffer) => [ -   -  7ff0000000000000  -   -   -   -   - ]
+
+pstxssp 32 (&buffer) => [ -   -   -   -  5a05a05a00000000  -   -   - ]
+
+pstxssp 64 (&buffer) =>
+
+pstxv 0 (&buffer) 7f800000ff800000,ff8000007f800000 => [7f800000ff800000 ff8000007f800000  -   -   -   -   -   - ]
+
+pstxv 4 (&buffer) 7f800000ff800000,ff8000007f800000 => [ff800000e0007359 7f8000007f800000 7ff00000ff800000  -   -   -   -   - ]
+
+pstxv 8 (&buffer) 7f800000ff800000,ff8000007f800000 => [ -  7f800000ff800000 ff8000007f800000  -   -   -   -   - ]
+
+pstxv 16 (&buffer) 7f800000ff800000,ff8000007f800000 => [ -   -  7f800000ff800000 ff8000007f800000  -   -   -   - ]
+
+All done. Tested 54 different instruction groups

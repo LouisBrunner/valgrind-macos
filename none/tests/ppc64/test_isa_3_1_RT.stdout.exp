@@ -1,0 +1,148 @@
+paddi 0 102030405060708 =>  102030405060708
+paddi 0 a5b4c3d2e1f00918 => a5b4c3d2e1f00918
+paddi 0 fff7fffafff3fff1 => fff7fffafff3fff1
+paddi 0 7ff7000100030005 => 7ff7000100030005
+paddi 0 ffe7111022203330 => ffe7111022203330
+paddi 0 0 =>                0
+
+paddi 12 102030405060708 =>  102030405060714
+paddi 12 a5b4c3d2e1f00918 => a5b4c3d2e1f00924
+paddi 12 fff7fffafff3fff1 => fff7fffafff3fffd
+paddi 12 7ff7000100030005 => 7ff7000100030011
+paddi 12 ffe7111022203330 => ffe711102220333c
+paddi 12 0 =>                c
+
+paddi 48 102030405060708 =>  102030405060738
+paddi 48 a5b4c3d2e1f00918 => a5b4c3d2e1f00948
+paddi 48 fff7fffafff3fff1 => fff7fffafff40021
+paddi 48 7ff7000100030005 => 7ff7000100030035
+paddi 48 ffe7111022203330 => ffe7111022203360
+paddi 48 0 =>               30
+
+paddi 98 102030405060708 =>  10203040506076a
+paddi 98 a5b4c3d2e1f00918 => a5b4c3d2e1f0097a
+paddi 98 fff7fffafff3fff1 => fff7fffafff40053
+paddi 98 7ff7000100030005 => 7ff7000100030067
+paddi 98 ffe7111022203330 => ffe7111022203392
+paddi 98 0 =>               62
+
+plbz off0 (&buffer) =>               59
+
+plbz off8 (&buffer) =>                7
+
+plbz off16 (&buffer) =>                0
+
+plbz off32 (&buffer) =>                5
+
+plbz off64 (&buffer) =>               88
+
+pld off0 (&buffer) => 3fe00094e0007359
+
+pld off8 (&buffer) => 7ff7020304057607
+
+pld off16 (&buffer) => 7ff0000000007000
+
+pld off32 (&buffer) => 5a05a05a05a07a05
+
+pld off64 (&buffer) => ffeeddccbbaa7988
+
+plha off0 (&buffer) =>             7359
+
+plha off8 (&buffer) =>             7607
+
+plha off16 (&buffer) =>             7000
+
+plha off32 (&buffer) =>             7a05
+
+plha off64 (&buffer) =>             7988
+
+plhz off0 (&buffer) =>             7359
+
+plhz off8 (&buffer) =>             7607
+
+plhz off16 (&buffer) =>             7000
+
+plhz off32 (&buffer) =>             7a05
+
+plhz off64 (&buffer) =>             7988
+
+plq off0 (&buffer) => 3fe00094e0007359 7ff7020304057607
+
+plq off8 (&buffer) => 7ff7020304057607 7ff0000000007000
+
+plq off16 (&buffer) => 7ff0000000007000 7f0000007f007000
+
+plq off32 (&buffer) => 5a05a05a05a07a05  102030405067708
+
+plq off48 (&buffer) => fedcba9876547210  123456789ab7def
+
+plq off64 (&buffer) => ffeeddccbbaa7988 1112111211127112
+
+plwa off0 (&buffer) => ffffffffe0007359
+
+plwa off8 (&buffer) =>          4057607
+
+plwa off16 (&buffer) =>             7000
+
+plwa off32 (&buffer) =>          5a07a05
+
+plwa off64 (&buffer) => ffffffffbbaa7988
+
+plwz off0 (&buffer) =>         e0007359
+
+plwz off8 (&buffer) =>          4057607
+
+plwz off16 (&buffer) =>             7000
+
+plwz off32 (&buffer) =>          5a07a05
+
+plwz off64 (&buffer) =>         bbaa7988
+
+pstb off0 (&buffer) 102030405060708 => [3fe00094e0007308  -   -   -   -   -   -   - ]
+
+pstb off8 (&buffer) 102030405060708 => [ -  7ff7020304057608  -   -   -   -   -   - ]
+
+pstb off16 (&buffer) 102030405060708 => [ -   -  7ff0000000007008  -   -   -   -   - ]
+
+pstb off32 (&buffer) 102030405060708 => [ -   -   -   -  5a05a05a05a07a08  -   -   - ]
+
+pstd off0 (&buffer) 102030405060708 => [0102030405060708  -   -   -   -   -   -   - ]
+
+pstd off8 (&buffer) 102030405060708 => [ -  0102030405060708  -   -   -   -   -   - ]
+
+pstd off16 (&buffer) 102030405060708 => [ -   -  0102030405060708  -   -   -   -   - ]
+
+pstd off32 (&buffer) 102030405060708 => [ -   -   -   -  0102030405060708  -   -   - ]
+
+psth off0 (&buffer) 102030405060708 => [3fe00094e0000708  -   -   -   -   -   -   - ]
+
+psth off8 (&buffer) 102030405060708 => [ -  7ff7020304050708  -   -   -   -   -   - ]
+
+psth off16 (&buffer) 102030405060708 => [ -   -  7ff0000000000708  -   -   -   -   - ]
+
+psth off32 (&buffer) 102030405060708 => [ -   -   -   -  5a05a05a05a00708  -   -   - ]
+
+pstq off0 (&buffer) 102030405060708 a5b4c3d2e1f00918 => [0102030405060708 a5b4c3d2e1f00918  -   -   -   -   -   - ]
+pstq off0 (&buffer) 102030405060708 a5b4c3d2e1f00918 => [0102030405060708 a5b4c3d2e1f00918  -   -   -   -   -   - ]
+
+pstq off8 (&buffer) 102030405060708 a5b4c3d2e1f00918 => [ -  0102030405060708 a5b4c3d2e1f00918  -   -   -   -   - ]
+pstq off8 (&buffer) 102030405060708 a5b4c3d2e1f00918 => [ -  0102030405060708 a5b4c3d2e1f00918  -   -   -   -   - ]
+
+pstq off16 (&buffer) 102030405060708 a5b4c3d2e1f00918 => [ -   -  0102030405060708 a5b4c3d2e1f00918  -   -   -   - ]
+pstq off16 (&buffer) 102030405060708 a5b4c3d2e1f00918 => [ -   -  0102030405060708 a5b4c3d2e1f00918  -   -   -   - ]
+
+pstq off32 (&buffer) 102030405060708 a5b4c3d2e1f00918 => [ -   -   -   -  0102030405060708 a5b4c3d2e1f00918  -   - ]
+pstq off32 (&buffer) 102030405060708 a5b4c3d2e1f00918 => [ -   -   -   -  0102030405060708 a5b4c3d2e1f00918  -   - ]
+
+pstq off64 (&buffer) 102030405060708 a5b4c3d2e1f00918 =>
+pstq off64 (&buffer) 102030405060708 a5b4c3d2e1f00918 =>
+
+pstw off0 (&buffer) 102030405060708 => [3fe0009405060708  -   -   -   -   -   -   - ]
+
+pstw off8 (&buffer) 102030405060708 => [ -  7ff7020305060708  -   -   -   -   -   - ]
+
+pstw off16 (&buffer) 102030405060708 => [ -   -  7ff0000005060708  -   -   -   -   - ]
+
+pstw off32 (&buffer) 102030405060708 => [ -   -   -   -  5a05a05a05060708  -   -   - ]
+
+All done. Tested 61 different instruction groups

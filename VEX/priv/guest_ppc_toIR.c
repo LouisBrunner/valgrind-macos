@@ -5271,6 +5271,114 @@ static void storeTMfailure( Addr64 err_address, ULong tm_reason,
 /*------------------------------------------------------------*/
 
 /*
+  Byte reverse instructions
+*/
+static Bool dis_byte_reverse ( UInt prefixInstr, UInt theInstr )
+{
+   UChar rS_addr = ifieldRegDS( theInstr );
+   UChar rA_addr = ifieldRegA( theInstr );
+   UInt  opc2    = IFIELD( theInstr, 1, 10 );
+   IRTemp rS = newTemp( Ity_I64 );
+   IRTemp tmp_0 = newTemp( Ity_I64 );
+   IRTemp tmp_1 = newTemp( Ity_I64 );
+   IRTemp result = newTemp( Ity_I64 );
+
+   assign( rS, getIReg( rS_addr ) );
+
+   /* NOTE: rA is the destination and rS is the source.  Reverse of the normal usage. */
+   switch (opc2) {
+   case 0xDB:  // brh  Byte-Reverse half word X-form
+      DIP("brh r%u,r%u\n", rA_addr, rS_addr);
+      assign( tmp_0,
+              binop( Iop_And64, mkexpr( rS ), mkU64( 0xFF00FF00FF00FF00 ) ) );
+      assign( tmp_1,
+              binop( Iop_And64, mkexpr( rS ), mkU64( 0x00FF00FF00FF00FF ) ) );
+      assign( result,
+              binop( Iop_Or64,
+                     binop( Iop_Shr64, mkexpr( tmp_0 ), mkU8( 8 ) ),
+                     binop( Iop_Shl64, mkexpr( tmp_1 ), mkU8( 8 ) ) ) );
+      break;
+
+   case 0x9B: {  // brw  Byte-Reverse word X-form
+      IRTemp tmp_2 = newTemp( Ity_I64 );
+      IRTemp tmp_3 = newTemp( Ity_I64 );
+
+      DIP("brw r%u,r%u\n", rA_addr, rS_addr);
+      assign( tmp_0,
+              binop( Iop_And64, mkexpr( rS ), mkU64( 0xFF000000FF000000 ) ) );
+      assign( tmp_1,
+              binop( Iop_And64, mkexpr( rS ), mkU64( 0x00FF000000FF0000 ) ) );
+      assign( tmp_2,
+              binop( Iop_And64, mkexpr( rS ), mkU64( 0x0000FF000000FF00 ) ) );
+      assign( tmp_3,
+              binop( Iop_And64, mkexpr( rS ), mkU64( 0x000000FF000000FF ) ) );
+      assign( result,
+              binop( Iop_Or64,
+                     binop( Iop_Or64,
+                            binop( Iop_Shl64, mkexpr( tmp_3 ), mkU8( 24 ) ),
+                            binop( Iop_Shl64, mkexpr( tmp_2 ), mkU8( 8 ) ) ),
+                     binop( Iop_Or64,
+                            binop( Iop_Shr64, mkexpr( tmp_1 ), mkU8( 8 ) ),
+                            binop( Iop_Shr64, mkexpr( tmp_0 ), mkU8( 24 ) ) )
+                 ) );
+      break;
+   }
+
+   case 0xBB: {      // brd  Byte-Reverse double word X-form
+      IRTemp tmp_2 = newTemp( Ity_I64 );
+      IRTemp tmp_3 = newTemp( Ity_I64 );
+      IRTemp tmp_4 = newTemp( Ity_I64 );
+      IRTemp tmp_5 = newTemp( Ity_I64 );
+      IRTemp tmp_6 = newTemp( Ity_I64 );
+      IRTemp tmp_7 = newTemp( Ity_I64 );
+
+      DIP("brd r%u,r%u\n", rA_addr, rS_addr);
+      assign( tmp_0,
+              binop( Iop_And64, mkexpr( rS ), mkU64( 0xFF00000000000000 ) ) );
+      assign( tmp_1,
+               binop( Iop_And64, mkexpr( rS ), mkU64( 0x00FF000000000000 ) ) );
+      assign( tmp_2,
+              binop( Iop_And64, mkexpr( rS ), mkU64( 0x0000FF0000000000 ) ) );
+      assign( tmp_3,
+              binop( Iop_And64, mkexpr( rS ), mkU64( 0x000000FF00000000 ) ) );
+      assign( tmp_4,
+              binop( Iop_And64, mkexpr( rS ), mkU64( 0x00000000FF000000 ) ) );
+      assign( tmp_5,
+              binop( Iop_And64, mkexpr( rS ), mkU64( 0x0000000000FF0000 ) ) );
+      assign( tmp_6,
+              binop( Iop_And64, mkexpr( rS ), mkU64( 0x000000000000FF00 ) ) );
+      assign( tmp_7,
+              binop( Iop_And64, mkexpr( rS ), mkU64( 0x00000000000000FF ) ) );
+      assign( result,
+              binop( Iop_Or64,
+                     binop( Iop_Or64,
+                            binop( Iop_Or64,
+                                   binop( Iop_Shl64, mkexpr( tmp_7 ), mkU8( 56 ) ),
+                                   binop( Iop_Shl64, mkexpr( tmp_6 ), mkU8( 40 ) ) ),
+                            binop( Iop_Or64,
+                                   binop( Iop_Shl64, mkexpr( tmp_5 ), mkU8( 24 ) ),
+                                   binop( Iop_Shl64, mkexpr( tmp_4 ), mkU8( 8 ) ) ) ),
+                     binop( Iop_Or64,
+                            binop( Iop_Or64,
+                                   binop( Iop_Shr64, mkexpr( tmp_3 ), mkU8( 8 ) ),
+                                   binop( Iop_Shr64, mkexpr( tmp_2 ), mkU8( 24 ) ) ),
+                            binop( Iop_Or64,
+                                   binop( Iop_Shr64, mkexpr( tmp_1 ), mkU8( 40 ) ),
+                                   binop( Iop_Shr64, mkexpr( tmp_0 ), mkU8( 56 ) ) ) )
+                 ) );
+      break;
+   }
+
+   default:
+      vex_printf("dis_byte_reverse(ppc): unrecognized instruction\n");
+      return False;
+   }
+
+   putIReg( rA_addr, mkexpr( result ) );
+   return True;
+}
+
+/*
   Integer Arithmetic Instructions
 */
 static Bool dis_int_mult_add ( UInt prefix, UInt theInstr )
@@ -30656,6 +30764,12 @@ DisResult disInstr_PPC_WRK (
 
       opc2 = IFIELD(theInstr, 1, 10);
       switch (opc2) {
+
+      case 0xDB: // brh
+      case 0x9B: // brw
+      case 0xBB: // brd
+         if (dis_byte_reverse( prefix, theInstr )) goto decode_success;
+         goto decode_failure;
 
       /* Integer miscellaneous instructions */
       case 0x01E:  // wait  RFC 2500

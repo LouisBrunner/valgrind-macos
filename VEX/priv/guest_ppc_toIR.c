@@ -6883,6 +6883,9 @@ static Bool dis_int_cmp ( UInt prefix, UInt theInstr )
 
       case 0x080: // setb (Set Boolean)
          {
+            /* Set Boolean Condition in result register.  The result register
+               is set to all ones if the condition is true and all zeros
+               otherwise.  */
             UChar rT_addr = ifieldRegDS(theInstr);
             Int bfa = IFIELD(theInstr, 18, 3);
             IRTemp cr = newTemp(Ity_I32);
@@ -9141,6 +9144,73 @@ static Bool dis_cond_logic ( UInt prefix, UInt theInstr )
    return True;
 }
 
+static Bool dis_set_bool_condition ( UInt prefixInstr, UInt theInstr )
+{
+   UInt  opc2    = ifieldOPClo10(theInstr);
+   UChar BI      = toUChar( IFIELD( theInstr, 16, 5 ) );
+   UInt  rT_addr = ifieldRegDS( theInstr );
+   IRType ty     = mode64 ? Ity_I64 : Ity_I32;
+   IROp  Iop_1XtoX;
+
+   /* There is no prefixed version of these instructions.  */
+   vassert( !prefix_instruction( prefixInstr ) );
+
+   switch (opc2) {
+   case 0x180: // setbc
+      /* If bit BI of the CR contains a 1, register RT is set to 1.
+         Otherwise, register RT is set to 0.  */
+      DIP(" setbc %u,%u\n", rT_addr, BI);
+      Iop_1XtoX = mode64 ? Iop_1Uto64 : Iop_1Uto32;
+      putIReg( rT_addr, unop( Iop_1XtoX,
+                              binop( Iop_CmpEQ32,
+                                     getCRbit( BI ),
+                                     mkU32( 1 ) ) ) );
+      break;
+
+   case 0x1A0: // setbcr
+      /* If bit BI of the CR contains a 1, register RT is set to 0.
+         Otherwise, register RT is set to 1.  */
+      DIP(" setbcr %u,%u\n", rT_addr, BI);
+      Iop_1XtoX = mode64 ? Iop_1Uto64 : Iop_1Uto32;
+      putIReg( rT_addr, unop( Iop_1XtoX,
+                                     binop( Iop_CmpNE32,
+                                            getCRbit( BI ),
+                                            mkU32( 1 ) ) ) );
+      break;
+
+   case 0x1C0: // setnbc
+      /* If bit BI of the CR contains a 1, register RT is set to -1.
+         Otherwise, register RT is set to 0.  */
+      DIP(" setnbc %u,%u\n", rT_addr, BI);
+      Iop_1XtoX = mode64 ? Iop_1Sto64 : Iop_1Sto32;
+      putIReg( rT_addr, binop( mkSzOp(ty, Iop_And8),
+                               mkSzImm( ty, -1 ),
+                               unop( Iop_1XtoX,
+                                     binop( Iop_CmpEQ32,
+                                            getCRbit( BI ),
+                                            mkU32( 1 ) ) ) ) );
+      break;
+
+   case 0x1E0: // setnbcr
+      /* If bit BI of the CR contains a 1, register RT is set to -1.
+         Otherwise, register RT is set to 0.  */
+      DIP(" setnbcr %u,%u\n", rT_addr, BI);
+      Iop_1XtoX = mode64 ? Iop_1Sto64 : Iop_1Sto32;
+      putIReg( rT_addr, binop( mkSzOp(ty, Iop_And8),
+                               mkSzImm( ty, -1 ),
+                               unop( Iop_1XtoX,
+                                     binop( Iop_CmpNE32,
+                                            getCRbit( BI ),
+                                            mkU32( 1 ) ) ) ) );
+      break;
+
+   default:
+      vex_printf("dis_set_bool_condition(ppc)(opc2)\n");
+      return False;
+   }
+
+   return True;
+}
 
 /* 
   Trap instructions
@@ -30067,7 +30137,7 @@ DisResult disInstr_PPC_WRK (
       goto decode_failure;
 
    /* 64bit Integer Loads */
-   case 0x3A:  // word inst: ld, ldu, lwa
+   case 0x3A:  // word inst: ld, pld, ldu, lwa, plwa
       {
          UChar   b1_0  = IFIELD(theInstr, 0, 2);
 
@@ -30754,6 +30824,13 @@ DisResult disInstr_PPC_WRK (
 
       case 0x1FC:                         // cmpb
          if (dis_int_logic( prefix, theInstr )) goto decode_success;
+         goto decode_failure;
+
+      case 0x180: case 0x1A0: // setbc, setbcr
+      case 0x1C0: case 0x1E0: // setnbc, setnbcr
+         if (!allow_isa_3_0) goto decode_noIsa3_1;
+         if (dis_set_bool_condition( prefix, theInstr ))
+            goto decode_success;
          goto decode_failure;
 
       default:

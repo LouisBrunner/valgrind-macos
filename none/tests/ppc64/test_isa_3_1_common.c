@@ -18,6 +18,8 @@
  The GNU General Public License is contained in the file COPYING.
  */
 
+#ifdef HAS_ISA_3_1
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -2186,3 +2188,4 @@ unsigned long get_vsrhd_vs28 () {
 unsigned long get_vsrhd_vs29 () {
     __asm__ __volatile__ ("mfvsrd %0, 29":"=r" (vsrd)); return vsrd; }
 
+#endif

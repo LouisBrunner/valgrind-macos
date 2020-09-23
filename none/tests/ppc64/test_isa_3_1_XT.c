@@ -29,7 +29,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <altivec.h>
 #include <malloc.h>
 
 #include <string.h>
@@ -44,12 +43,12 @@
 unsigned long current_cr;
 unsigned long current_fpscr;
 
+#ifdef HAS_ISA_3_1
 
-struct test_list_t current_test;
-
+#include <altivec.h>
 #include "isa_3_1_helpers.h"
 
-#ifdef HAS_ISA_3_1
+struct test_list_t current_test;
 
 static void test_plfd_64 (void) {
   __asm__ __volatile__ ("plfd 28, 64(%0), 0" :: "r" (ra) );

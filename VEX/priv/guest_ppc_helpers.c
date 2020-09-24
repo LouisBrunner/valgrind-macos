@@ -533,6 +533,82 @@ ULong convert_from_national_helper( ULong src_hi, ULong src_low ) {
    return tmp;
 }
 
+/*------------------------------------------------*/
+/*--- Population count ---------------------------*/
+/*------------------------------------------------*/
+ULong population_count64_helper( ULong src ) {
+   /* Fast population count based on algorithm in the "Hacker's Delight" by
+      Henery S. Warren.  */
+   src = (src & 0x5555555555555555) + ((src >> 1) & 0x5555555555555555);
+   src = (src & 0x3333333333333333) + ((src >> 2) & 0x3333333333333333);
+   src = (src & 0x0F0F0F0F0F0F0F0F) + ((src >> 4) & 0x0F0F0F0F0F0F0F0F);
+   src = (src & 0x00FF00FF00FF00FF) + ((src >> 8) & 0x00FF00FF00FF00FF);
+   src = (src & 0x0000FFFF0000FFFF) + ((src >> 16) & 0x0000FFFF0000FFFF);
+   src = (src & 0x00000000FFFFFFFF) + ((src >> 32) & 0x00000000FFFFFFFF);
+   return src & 0x3F;
+}
+
+/*------------------------------------------------*/
+/*---- Extract/Deposit bits under mask helpers ---*/
+/*------------------------------------------------*/
+ULong extract_bits_under_mask_helper( ULong src, ULong mask, UInt flag ) {
+
+   UInt i;
+   ULong ones, zeros, mask_bit, bit_src;
+
+   zeros = 0;
+   ones = 0;
+
+   for (i=0; i<64; i++){
+      mask_bit = 0x1 & (mask >> (63-i));
+      bit_src = 0x1 & (src >> (63-i));
+
+      ones = ones << mask_bit;
+      ones = ones | (mask_bit & bit_src);
+
+      zeros = zeros << (1^mask_bit);
+      zeros = zeros | ((1^mask_bit) & bit_src);
+   }
+
+   if (flag == 1)
+      return ones;
+   else
+      return zeros;
+}
+
+
+/*----------------------------------------------*/
+/*--- Vector Evaluate Inst helper --------------*/
+/*----------------------------------------------*/
+   /* This is a 64-bit version of the VXS Vector Evaluate
+      instruction xxeval.  */
+
+ULong vector_evaluate64_helper( ULong srcA, ULong srcB, ULong srcC,
+                                ULong IMM ) {
+#define MAX_BITS 64
+#define MAX_IMM_BITS 8
+
+   UInt i, select;
+   ULong bitA, bitB, bitC, result;
+   ULong bitIMM;
+
+   result = 0;
+
+   for (i=0; i<MAX_BITS; i++){
+      bitA = 0x1 & (srcA >> i);
+      bitB = 0x1 & (srcB >> i);
+      bitC = 0x1 & (srcC >> i);
+
+      select = (bitA << 2) | (bitB << 1) | bitC;
+      bitIMM = (IMM >> (MAX_IMM_BITS - 1 - select)) & 0x1;
+      result = result | (bitIMM << i);
+   }
+   return result;
+#undef MAX_BITS
+#undef MAX_IMM_BITS
+}
+
+
 /*----------------------------------------------*/
 /*--- The exported fns ..                    ---*/
 /*----------------------------------------------*/

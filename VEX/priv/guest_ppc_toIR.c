@@ -357,6 +357,11 @@ static UChar ifieldOPC( UInt instr ) {
    return toUChar( IFIELD( instr, 26, 6 ) );
 }
 
+/* Extract 11-bit secondary opcode, instr[10:0] */
+static UInt ifieldOPClo11 ( UInt instr) {
+   return IFIELD( instr, 0, 11 );
+}
+
 /* Extract 10-bit secondary opcode, instr[10:1] */
 static UInt ifieldOPClo10 ( UInt instr) {
    return IFIELD( instr, 1, 10 );
@@ -4636,6 +4641,72 @@ static IRExpr* negate_Vector ( IRType element_size, IRExpr* value )
                  binop( Iop_AndV128,
                         mkexpr( sign_maskV128 ), mkexpr( not_nan_mask ) ),
                  value );
+}
+
+/* This function takes two quad_precision unsigned/signed integers of type
+   V128 and return 1 (Ity_Bit) if src_A = src_B, 0 otherwise. */
+static IRExpr * Quad_precision_int_eq ( IRTemp src_A, IRTemp  src_B )
+{
+   return  mkAND1( binop( Iop_CmpEQ64,
+                          unop( Iop_V128HIto64, mkexpr( src_A ) ),
+                          unop( Iop_V128HIto64, mkexpr( src_B ) ) ),
+                   binop( Iop_CmpEQ64,
+                          unop( Iop_V128to64, mkexpr( src_A ) ),
+                          unop( Iop_V128to64, mkexpr( src_B ) ) ) );
+}
+
+/* This function takes two quad_precision unsigned integers of type
+   V128 and return 1 if src_A > src_B, 0 otherwise. */
+static IRExpr * Quad_precision_uint_gt ( IRTemp src_A, IRTemp  src_B )
+{
+   IRExpr * hi_eq = binop( Iop_CmpEQ64,
+                           unop( Iop_V128HIto64, mkexpr( src_A ) ),
+                           unop( Iop_V128HIto64, mkexpr( src_B ) ) );
+
+   IRExpr * hi_gt = binop( Iop_CmpLT64U,
+                           unop( Iop_V128HIto64, mkexpr( src_B ) ),
+                           unop( Iop_V128HIto64, mkexpr( src_A ) ) );
+
+   IRExpr * lo_gt = binop( Iop_CmpLT64U,
+                           unop( Iop_V128to64, mkexpr( src_B ) ),
+                           unop( Iop_V128to64, mkexpr( src_A ) ) );
+
+   return mkOR1( hi_gt, mkAND1( hi_eq, lo_gt ) );
+}
+
+/* This function takes two quad_precision signed integers of type
+   V128 and return 1 if src_A > src_B, 0 otherwise. */
+static IRExpr * Quad_precision_sint_gt ( IRTemp src_A, IRTemp  src_B )
+{
+
+   IRExpr * hi_eq = binop( Iop_CmpEQ64,
+                           unop( Iop_V128HIto64, mkexpr( src_A ) ),
+                           unop( Iop_V128HIto64, mkexpr( src_B ) ) );
+
+   IRExpr * lo_eq = binop( Iop_CmpEQ64,
+                           unop( Iop_V128to64, mkexpr( src_A ) ),
+                           unop( Iop_V128to64, mkexpr( src_B ) ) );
+
+   IRExpr * hi_gt = binop( Iop_CmpLT64S,
+                           unop( Iop_V128HIto64, mkexpr( src_B ) ),
+                           unop( Iop_V128HIto64, mkexpr( src_A ) ) );
+
+/* If srcA and srcB are positive and srcA > srcB then lo_gteq = 1.
+   If srcA and srcB are negative and srcA > srcB, then the unsigned value
+   of the lower 64-bits are 2's complemented values means lower bits of srcB
+   must be less then the lower bits of srcA.
+
+     srcA = 8000012380000123 7000000080000000 =>     (smaller/less negative)
+                           - 7FFFFEDC7FFFFEDD 8FFFFFFF7FFFFFFF
+     srcB = 8000012380000123 8000012380000123 =>
+                           - 7FFFFEDC7FFFFEDD 7FFFFEDC7FFFFEDD
+*/
+   IRExpr * lo_gteq =  binop( Iop_CmpLT64U,
+                            unop( Iop_V128to64, mkexpr( src_B ) ),
+                            unop( Iop_V128to64, mkexpr( src_A ) ) );
+
+   /* If hi is eq, then lower must be GT and not equal.  */
+   return mkOR1( hi_gt, mkAND1( hi_eq, mkAND1(  lo_gteq, mkNOT1 ( lo_eq ) ) ) );
 }
 
 /* This function takes two quad_precision floating point numbers of type
@@ -17212,14 +17283,14 @@ static Bool dis_av_extend_sign_count_zero ( UInt prefix, UInt theInstr,
    }
 
    case 6: // vnegw,  Vector Negate Word
-      DIP("vnegw  v%d,%d,v%d", rT_addr, rA_addr, vB_addr);
+      DIP("vnegw  v%u,v%u", rT_addr, vB_addr);
 
       /* multiply each word by -1 */
       assign( vT, binop( Iop_Mul32x4, mkexpr( vB ), mkV128( 0xFFFF ) ) );
       break;
 
    case 7: // vnegd,  Vector Negate Doubleword
-      DIP("vnegd  v%d,%d,v%d", rT_addr, rA_addr, vB_addr);
+      DIP("vnegd  v%u,v%u", rT_addr, vB_addr);
 
       /* multiply each word by -1 */
       assign( vT, binop( Iop_64HLtoV128,
@@ -17299,7 +17370,7 @@ static Bool dis_av_extend_sign_count_zero ( UInt prefix, UInt theInstr,
       break;
 
    case 16: // vextsb2w,  Vector Extend Sign Byte to Word
-      DIP("vextsb2w  v%d,%d,v%d", rT_addr, rA_addr, vB_addr);
+      DIP("vextsb2w  v%u,v%u", rT_addr, vB_addr);
 
       /* Iop_MullEven8Sx16 does a signed widening multiplication of byte to
        * two byte sign extended result.  Then do a two byte to four byte sign
@@ -17318,7 +17389,7 @@ static Bool dis_av_extend_sign_count_zero ( UInt prefix, UInt theInstr,
       break;
 
    case 17: // vextsh2w,  Vector Extend Sign Halfword to Word
-      DIP("vextsh2w  v%d,%d,v%d", rT_addr, rA_addr, vB_addr);
+      DIP("vextsh2w  v%u,v%u", rT_addr, vB_addr);
 
       /* Iop_MullEven16Sx8 does a signed widening multiply of four byte
        * 8 bytes.  Note contents of upper two bytes in word are
@@ -17333,7 +17404,7 @@ static Bool dis_av_extend_sign_count_zero ( UInt prefix, UInt theInstr,
       break;
 
    case 24: // vextsb2d,  Vector Extend Sign Byte to Doubleword
-      DIP("vextsb2d  v%d,%d,v%d", rT_addr, rA_addr, vB_addr);
+      DIP("vextsb2d  v%u,v%u", rT_addr, vB_addr);
 
       /* Iop_MullEven8Sx16 does a signed widening multiplication of byte to
        * two byte sign extended result.  Then do a two byte to four byte sign
@@ -17355,7 +17426,7 @@ static Bool dis_av_extend_sign_count_zero ( UInt prefix, UInt theInstr,
       break;
 
    case 25: // vextsh2d,  Vector Extend Sign Halfword to Doubleword
-      DIP("vextsh2d  v%d,%d,v%d", rT_addr, rA_addr, vB_addr);
+      DIP("vextsh2d  v%u,v%u", rT_addr, vB_addr);
 
       assign( vT, binop( Iop_MullEven32Sx4,
                          binop( Iop_64HLtoV128,
@@ -17369,7 +17440,7 @@ static Bool dis_av_extend_sign_count_zero ( UInt prefix, UInt theInstr,
       break;
 
    case 26: // vextsw2d,  Vector Extend Sign Word to Doubleword
-      DIP("vextsw2d  v%d,%d,v%d", rT_addr, rA_addr, vB_addr);
+      DIP("vextsw2d  v%u,v%u", rT_addr, vB_addr);
 
       assign( vT, binop( Iop_MullEven32Sx4,
                          binop( Iop_64HLtoV128,
@@ -17377,6 +17448,23 @@ static Bool dis_av_extend_sign_count_zero ( UInt prefix, UInt theInstr,
                                 mkU64( 0x0000000000000001 ) ),
                         mkexpr( vB ) ) );
       break;
+   case 27:  // vextsd2q  Vector Extend Sign Doubleword to Quadword
+      {
+         IRTemp sb  = newTemp(Ity_I64);   // sign bit extended
+         IRTemp tmp = newTemp(Ity_I64);
+
+         DIP("vextsd2q v%u,v%u\n", rT_addr, vB_addr);
+         assign( tmp, unop( Iop_V128to64, mkexpr( vB ) ) );
+         assign( sb,  unop( Iop_1Sto64,
+                            unop( Iop_64to1,
+                                  binop( Iop_Shr64,
+                                         mkexpr( tmp ),
+                                         mkU8( 63 ) ) ) ) );
+
+         assign( vT, binop( Iop_64HLtoV128, mkexpr( sb ), mkexpr( tmp ) ) );
+      }
+      break;
+
 
    case 28: // vctzb,  Vector Count Trailing Zeros Byte
       {
@@ -25857,6 +25945,54 @@ static Bool dis_av_arith ( UInt prefix, UInt theInstr )
       // TODO: set VSCR[SAT]
       break;
 
+   case 0x0C8: // vmuloud (Vector multiply Odd Unsigned Doubleword VX-form)
+   case 0x1C8: // vmulosd (Vector multiply Odd Signed Doubleword VX-form)
+   case 0x2C8: // vmuleud (Vector multiply Even Unsigned Doubleword VX-form)
+   case 0x3C8: // vmulesd (Vector multiply Even Signed Doubleword VX-form)
+      {
+         IRTemp hi = newTemp(Ity_I64);
+         IRTemp lo = newTemp(Ity_I64);
+         IRTemp tmp128 = newTemp(Ity_I128);
+
+         if ( opc2 == 0x0C8) {
+            DIP("vwuloud v%u,v%u,v%u\n", vD_addr, vA_addr, vB_addr);
+            /* multiply lower D-words together, upper D-words not used.  */
+            assign( tmp128, binop( Iop_MullU64,
+                                   unop( Iop_V128to64, mkexpr( vA ) ),
+                                   unop( Iop_V128to64, mkexpr( vB ) ) ) );
+
+         } else if ( opc2 == 0x1C8) {
+            DIP("vwulosd v%u,v%u,v%u\n", vD_addr, vA_addr, vB_addr);
+            /* multiply lower D-words together, upper D-words not used.  */
+            assign( tmp128, binop( Iop_MullS64,
+                                   unop( Iop_V128to64, mkexpr( vA ) ),
+                                   unop( Iop_V128to64, mkexpr( vB ) ) ) );
+
+         } else if ( opc2 == 0x2C8) {
+            DIP("vwuleud v%u,v%u,v%u\n", vD_addr, vA_addr, vB_addr);
+            /* multiply upper D-words together, lower D-words not used.  */
+            assign( tmp128, binop( Iop_MullU64,
+                                   unop( Iop_V128HIto64, mkexpr( vA ) ),
+                                   unop( Iop_V128HIto64, mkexpr( vB ) ) ) );
+
+         } else {
+            DIP("vwulesd v%u,v%u,v%u\n", vD_addr, vA_addr, vB_addr);
+            /* multiply upper D-words together, lower D-words not used.  */
+            assign( tmp128, binop( Iop_MullS64,
+                                   unop( Iop_V128HIto64, mkexpr( vA ) ),
+                                   unop( Iop_V128HIto64, mkexpr( vB ) ) ) );
+         }
+
+         /* Need to convert from I128 to V128.  Don't have a direct
+               conversion.  */
+         assign( hi, unop( Iop_128HIto64, mkexpr( tmp128 ) ) );
+         assign( lo, unop( Iop_128to64, mkexpr( tmp128 ) ) );
+
+         putVReg( vD_addr,
+                  binop( Iop_64HLtoV128, mkexpr( hi ), mkexpr( lo ) ) );
+      }
+      break;
+
    case 0x300: // vaddsbs (Add Signed Byte Saturate, AV p138)
       DIP("vaddsbs v%d,v%d,v%d\n", vD_addr, vA_addr, vB_addr);
       putVReg( vD_addr, binop(Iop_QAdd8Sx16, mkexpr(vA), mkexpr(vB)) );
@@ -26618,6 +26754,376 @@ static Bool dis_av_arith ( UInt prefix, UInt theInstr )
    }
    return True;
 }
+
+static Bool dis_vx_quadword_arith ( UInt prefix, UInt theInstr )
+{
+   /* Quad word operations, VX-Form */
+   UChar vT_addr  = ifieldRegDS(theInstr);
+   UChar vA_addr  = ifieldRegA(theInstr);
+   UChar vB_addr  = ifieldRegB(theInstr);
+   UChar opc1     = ifieldOPC(theInstr);
+   UInt  opc2     = ifieldOPClo11( theInstr );
+   IRTemp vA = newTemp(Ity_V128);
+   IRTemp vB = newTemp(Ity_V128);
+
+   if (opc1 != 0x4) {
+      vex_printf("ERROR: dis_vx_quadword_arith(ppc)\n");
+      return False;
+   }
+
+   assign( vA, getVReg( vA_addr ) );
+   assign( vB, getVReg( vB_addr ) );
+
+   switch (opc2) {
+   case 0x005: //vrlq    Vector Rotate Left Quadword
+      {
+         IRTemp sh  = newTemp(Ity_I8);  /* shift amout is vB[57:63] */
+         IRTemp shr = newTemp(Ity_I8);
+         IRTemp vA_shl = newTemp(Ity_V128);
+         IRTemp vA_shr = newTemp(Ity_V128);
+
+         DIP("vrlq v%u,v%u,v%u\n", vT_addr, vA_addr, vB_addr);
+
+         assign( sh,
+                 binop( Iop_And8,
+                        mkU8( 0x7F ),
+                        unop( Iop_16to8,
+                              unop( Iop_32to16,
+                                    unop( Iop_64to32,
+                                          unop( Iop_V128HIto64,
+                                                mkexpr( vB ) ) ) ) ) ) );
+
+         assign( shr, binop( Iop_Sub8, mkU8( 128 ), mkexpr( sh ) ) );
+         assign( vA_shl, binop( Iop_ShlV128, mkexpr( vA ), mkexpr( sh ) ) );
+         assign( vA_shr, binop( Iop_ShrV128, mkexpr( vA ), mkexpr( shr ) ) );
+         putVReg( vT_addr,
+                  binop( Iop_OrV128, mkexpr( vA_shl ), mkexpr( vA_shr ) ) );
+      }
+      break;
+
+   case 0x00B: //vdivuq Vector Divide Unsigned Quadword
+      vex_printf("WARNING: instruction vdivuq not currently supported.  dis_vx_quadword_arith(ppc)\n");
+      break;
+
+   case 0x101: //vcmpuq Vector Compare Unsigned Quadword
+      {
+         IRTemp lt = newTemp(Ity_I32);
+         IRTemp gt = newTemp(Ity_I32);
+         IRTemp eq = newTemp(Ity_I32);
+         IRTemp cc = newTemp(Ity_I32);
+         UInt BF = IFIELD( theInstr, (31-8), 3 );
+
+         DIP("vcmpuq %u,v%u,v%u\n", BF, vA_addr, vB_addr);
+
+         assign ( lt, unop( Iop_1Uto32, Quad_precision_uint_gt( vB, vA ) ) );
+         assign ( gt, unop( Iop_1Uto32, Quad_precision_uint_gt( vA, vB ) ) );
+         assign ( eq, unop( Iop_1Uto32, Quad_precision_int_eq( vA, vB ) ) );
+
+         assign( cc, binop( Iop_Or32,
+                            binop( Iop_Shl32, mkexpr( lt ), mkU8( 3 ) ),
+                            binop( Iop_Or32,
+                                   binop( Iop_Shl32,
+                                          mkexpr( gt ), mkU8( 2 ) ),
+                                   binop( Iop_Shl32,
+                                          mkexpr( eq ), mkU8( 1 ) ) ) ) );
+
+         putGST_field( PPC_GST_CR, mkexpr( cc ), BF );
+      }
+      break;
+
+   case 0x105: //vslq    Vector Shift Left Quadword
+   case 0x205: //vsrq    Vector Shift Right Quadword
+      {
+         IRTemp sh  = newTemp(Ity_I8);  /* shift amout is vB[57:63] */
+
+         assign( sh,
+                 binop( Iop_And8,
+                        mkU8( 0x7F ),
+                        unop( Iop_16to8,
+                              unop( Iop_32to16,
+                                    unop( Iop_64to32,
+                                          unop( Iop_V128HIto64,
+                                                mkexpr( vB ) ) ) ) ) ) );
+
+         if (opc2 == 0x105) {
+            DIP("vslq v%u,v%u,v%u\n", vT_addr, vA_addr, vB_addr);
+            putVReg( vT_addr,
+                     binop( Iop_ShlV128, mkexpr( vA ), mkexpr( sh ) ) );
+
+         } else {
+            DIP("vsrq v%u,v%u,v%u\n", vT_addr, vA_addr, vB_addr);
+            putVReg( vT_addr,
+                     binop( Iop_ShrV128, mkexpr( vA ), mkexpr( sh ) ) );
+         }
+      }
+      break;
+
+   case 0x10B: //vdivsq  Vector Divide Signed Quadword
+      vex_printf("WARNING: instruction vdivsq not currently supported.  dis_vx_quadword_arith(ppc)\n");
+      break;
+
+   case 0x141: //vcmpsq  Vector Compare Signed Quadword
+      {
+         IRTemp lt = newTemp(Ity_I32);
+         IRTemp gt = newTemp(Ity_I32);
+         IRTemp eq = newTemp(Ity_I32);
+         IRTemp cc = newTemp(Ity_I32);
+         UInt BF = IFIELD( theInstr, (31-8), 3 );
+
+         DIP("vcmpsq %u,v%u,v%u\n", BF, vA_addr, vB_addr);
+
+         assign ( lt, unop( Iop_1Uto32, Quad_precision_sint_gt( vB, vA ) ) );
+         assign ( gt, unop( Iop_1Uto32, Quad_precision_sint_gt( vA, vB ) ) );
+         assign ( eq, unop( Iop_1Uto32, Quad_precision_int_eq( vA, vB ) ) );
+
+         assign( cc, binop( Iop_Or32,
+                            binop( Iop_Shl32, mkexpr( lt ), mkU8( 3 ) ),
+                            binop( Iop_Or32,
+                                   binop( Iop_Shl32,
+                                          mkexpr( gt ), mkU8( 2 ) ),
+                                   binop( Iop_Shl32,
+                                          mkexpr( eq ), mkU8( 1 ) ) ) ) );
+
+         putGST_field( PPC_GST_CR, mkexpr( cc ), BF );
+      }
+      break;
+
+   case 0x045: //vrlqmi  Vector Rotate Left Quadword then Mask Insert
+   case 0x145: //vrlqnm  Vector Rotate Left Quadword then AND with Mask
+      {
+         IRTemp sh  = newTemp(Ity_I8);
+         IRTemp shr = newTemp(Ity_I8);
+         IRTemp vA_shl = newTemp(Ity_V128);
+         IRTemp vA_shr = newTemp(Ity_V128);
+         IRTemp mask   = newTemp(Ity_V128);
+         IRTemp mb  = newTemp(Ity_I8);   /* mask begin */
+         IRTemp me  = newTemp(Ity_I8);   /* mask end */
+         IRTemp tmp = newTemp(Ity_I8);   /* mask end tmp */
+
+         /* rotate value in bits vB[57:63] */
+         assign( sh,
+                 binop( Iop_And8,
+                        mkU8( 0x7F ),
+                        unop ( Iop_16to8,
+                               unop ( Iop_32to16,
+                                      unop ( Iop_64to32,
+                                             unop( Iop_V128HIto64,
+                                                   mkexpr( vB ) ) ) ) ) ) );
+
+         /* mask begin in bits vB[41:47] */
+         assign( mb,
+                 binop( Iop_And8,
+                        mkU8( 0x7F ),
+                        unop ( Iop_16to8,
+                               unop ( Iop_32to16,
+                                      binop( Iop_Shr32,
+                                             unop ( Iop_64to32,
+                                                    unop( Iop_V128HIto64,
+                                                          mkexpr( vB ) ) ),
+                                             mkU8 ( 16 ) ) ) ) ) );
+
+         /* mask end in bits vB[49:55] */
+         assign( tmp,
+                 unop ( Iop_16to8,
+                        unop ( Iop_32to16,
+                               binop( Iop_Shr32,
+                                      unop ( Iop_64to32,
+                                             unop( Iop_V128HIto64,
+                                                   mkexpr( vB ) ) ),
+                                      mkU8 ( 8 ) ) ) ) );
+
+         assign( me,
+                 binop( Iop_Sub8,
+                        mkU8( 127 ),
+                        binop( Iop_And8,
+                               mkU8( 0x7F ),
+                               mkexpr( tmp ) ) ) );
+
+         /* Create mask, Start with all 1's, shift right and then left by
+            (127-me) to clear the lower me bits.  Similarly, shift left then
+            right by mb to clear upper bits.  */
+
+         assign( mask,
+                 binop( Iop_ShrV128,
+                        binop( Iop_ShlV128,
+                               binop( Iop_ShlV128,
+                                      binop( Iop_ShrV128,
+                                             binop( Iop_64HLtoV128,
+                                                 mkU64( 0xFFFFFFFFFFFFFFFF ),
+                                                 mkU64( 0xFFFFFFFFFFFFFFFF ) ),
+                                             mkexpr( me ) ),
+                                      mkexpr( me ) ),
+                               mkexpr( mb ) ),
+                        mkexpr( mb ) ) );
+
+         assign( shr, binop( Iop_Sub8, mkU8( 128 ), mkexpr( sh ) ) );
+         assign( vA_shl, binop( Iop_ShlV128, mkexpr( vA ), mkexpr( sh ) ) );
+         assign( vA_shr, binop( Iop_ShrV128, mkexpr( vA ), mkexpr( shr ) ) );
+
+         if (opc2 == 0x045) {
+            IRTemp vT_initial = newTemp(Ity_V128);
+
+            DIP("vrlqmi v%u,v%u,v%u\n", vT_addr, vA_addr, vB_addr);
+
+            assign( vT_initial, getVReg( vT_addr ) );
+
+            /* Mask rotated value from vA and insert into vT */
+            putVReg( vT_addr,
+                     binop( Iop_OrV128,
+                            binop( Iop_AndV128,
+                                   unop( Iop_NotV128, mkexpr( mask ) ),
+                                   mkexpr( vT_initial ) ),
+                            binop( Iop_AndV128,
+                                   binop( Iop_OrV128,
+                                          mkexpr( vA_shl ),
+                                          mkexpr( vA_shr ) ),
+                                   mkexpr( mask ) ) ) );
+
+         } else {
+            DIP("vrlqnm v%u,v%u\n", vA_addr, vB_addr);
+
+            putVReg( vT_addr,
+                     binop( Iop_AndV128,
+                            binop( Iop_OrV128,
+                                   mkexpr( vA_shl ),
+                                   mkexpr( vA_shr ) ),
+                            mkexpr( mask ) ) );
+         }
+      }
+      break;
+
+   case 0x1C7: //vcmpequq  Vector Compare Equal Quadword
+   case 0x5C7: //vcmpequq.
+      {
+         IRTemp eq = newTemp(Ity_I1);
+         IRTemp cc = newTemp(Ity_I32);
+         UInt Rc = IFIELD( theInstr, (31-21), 1 );
+         UInt cc_field = 6;
+
+         DIP("vcmpequq%s v%u,v%u,v%u\n",
+             Rc ? ".":"", vT_addr, vA_addr, vB_addr);
+
+         assign ( eq, Quad_precision_int_eq( vA, vB ) );
+
+         assign( cc, binop( Iop_Shl32,
+                            unop( Iop_1Uto32, mkexpr( eq ) ),
+                            mkU8( 1 ) ) );
+
+         if (Rc) putGST_field( PPC_GST_CR, mkexpr( cc ), cc_field );
+
+         putVReg( vT_addr, binop( Iop_64HLtoV128,
+                                  unop( Iop_1Sto64, mkexpr( eq ) ),
+                                  unop( Iop_1Sto64, mkexpr( eq ) ) ) );
+      }
+      break;
+
+   case 0x287: //vcmpgtuq  Vector Compare Greater Than Unsigned Quadword
+   case 0x687: //vcmpgtuq.
+   case 0x387: //vcmpgtsq  Vector Compare Greater Than Signed Quadword
+   case 0x787: //vcmpgtsq.
+      {
+         IRTemp gt = newTemp(Ity_I1);
+         IRTemp cc = newTemp(Ity_I32);
+         UInt Rc = IFIELD( theInstr, (31-21), 1 );
+         UInt cc_field = 6;
+
+         if ((opc2 == 0x287) || (opc2 == 0x687)) {
+            DIP("vcmpgtuq%s v%u,v%u,v%u\n",
+                Rc ? ".":"", vT_addr, vA_addr, vB_addr);
+
+            assign ( gt, Quad_precision_uint_gt( vA, vB ) );
+
+         } else {
+            DIP("vcmpgtsq%s v%u,v%u,v%u\n",
+                Rc ? ".":"", vT_addr, vA_addr, vB_addr);
+
+            assign ( gt, Quad_precision_sint_gt( vA, vB ) );
+         }
+
+         assign( cc, binop( Iop_Shl32,
+                            unop( Iop_1Uto32, mkexpr( gt ) ),
+                            mkU8( 2 ) ) );
+
+         if (Rc) putGST_field( PPC_GST_CR, mkexpr( cc ), cc_field );
+
+         putVReg( vT_addr, binop( Iop_64HLtoV128,
+                                  unop( Iop_1Sto64, mkexpr( gt ) ),
+                                  unop( Iop_1Sto64, mkexpr( gt ) ) ) );
+      }
+      break;
+
+   case 0x20B: //vdiveuq  Vector Divide Extended Unsigned Quadword
+      vex_printf("WARNING: instruction vdiveuq not currently supported.  dis_vx_quadword_arith(ppc)\n");
+      break;
+
+   case 0x305: //vsraq    Vector Shift Right Algebraic Quadword
+      {
+         IRTemp sh  = newTemp(Ity_I8);  /* shift amout is vB[57:63] */
+         IRTemp shr = newTemp(Ity_I8);
+         IRTemp tmp = newTemp(Ity_I64);
+         IRTemp vA_sign  = newTemp(Ity_V128);  /* sign bit of vA replicated */
+
+         DIP("vsraq v%u,v%u,v%u\n", vT_addr, vA_addr, vB_addr);
+
+         assign( sh,
+                 binop( Iop_And8,
+                        mkU8( 0x7F ),
+                        unop( Iop_16to8,
+                              unop( Iop_32to16,
+                                    unop( Iop_64to32,
+                                          unop( Iop_V128HIto64,
+                                                mkexpr( vB ) ) ) ) ) ) );
+         assign( shr, binop( Iop_Sub8, mkU8( 128 ), mkexpr( sh ) ) );
+
+         /* Replicate the sign bit in all bit positions if sh is not zero.  Clear the lower bits
+            from [sh:127] by shifting right, then left by (127-sh).
+          */
+         assign( tmp,
+                 binop( Iop_And64,
+                        unop( Iop_1Sto64,
+                              binop( Iop_CmpNE8, mkexpr( sh ), mkU8( 0 ) ) ),
+                        unop( Iop_1Sto64,
+                              unop( Iop_64to1,
+                                    binop( Iop_Shr64,
+                                           unop( Iop_V128HIto64,
+                                                 mkexpr( vA ) ),
+                                           mkU8( 63 ) ) ) ) ) );
+         assign( vA_sign,
+                 binop( Iop_ShlV128,
+                        binop( Iop_ShrV128,
+                               binop( Iop_64HLtoV128,
+                                      mkexpr( tmp ),
+                                      mkexpr( tmp ) ),
+                               mkexpr( shr ) ),
+                        mkexpr( shr ) ) );
+
+         putVReg( vT_addr,
+                  binop( Iop_OrV128,
+                         binop( Iop_ShrV128, mkexpr( vA ), mkexpr( sh ) ),
+                         mkexpr( vA_sign ) ) );
+      }
+      break;
+
+   case 0x30B: //vdivesq  Vector Divide Extended Signed Quadword
+      vex_printf("WARNING: instruction vdivesq not currently supported.  dis_vx_quadword_arith(ppc)\n");
+      break;
+
+   case 0x60B: //vmoduq  Vector Modulo Unsigned Quadword
+      vex_printf("WARNING: instruction vmoduq not currently supported.  dis_vx_quadword_arith(ppc)\n");
+      break;
+
+   case 0x70B: //vmodsq  Vector Modulo Signed Quadword
+      vex_printf("WARNING: instruction vmodsq not currently supported.  dis_vx_quadword_arith(ppc)\n");
+      break;
+
+   default:
+      vex_printf("dis_av_arith(ppc)(opc2=0x%x)\n", opc2);
+      return False;
+   }  /* switch (opc2) */
+
+   return True;
+}
+
 
 /*
   AltiVec Logic Instructions
@@ -28994,7 +29500,7 @@ static IRExpr * bcd_sign_code_adjust( UInt ps, IRExpr * tmp)
     * because passing a constant via triop() breaks the vbit-test test.  The
     * vbit-tester assumes it can set non-zero shadow bits for the triop()
     * arguments.  Thus they have to be expressions not a constant.
-    * Use 32-bit compare instructiions as 64-bit compares are not supported
+    * Use 32-bit compare instructions as 64-bit compares are not supported
     * in 32-bit mode.
     */
    IRTemp mask  = newTemp(Ity_I64);
@@ -33292,6 +33798,13 @@ DisResult disInstr_PPC_WRK (
          if (dis_av_arith( prefix, theInstr )) goto decode_success;
          goto decode_failure;
 
+      case 0x0C8: case 0x1C8: case 0x2C8: // vmuloud, vmulosd, vmuleud
+      case 0x3C8:                         // vmulesd
+         if (!allow_V) goto decode_noV;
+         if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
+         if (dis_av_arith( prefix, theInstr )) goto decode_success;
+         goto decode_failure;
+
       case 0x08B: case 0x18B:             // vdivuw, vdivsw
       case 0x289: case 0x389:             // vmulhuw, vmulhsw
       case 0x28B: case 0x38B:             // vdiveuw, vdivesw
@@ -33303,6 +33816,24 @@ DisResult disInstr_PPC_WRK (
       case 0x6CB: case 0x7CB:             // vmodud, vmodsd
          if (!allow_V) goto decode_noV;
          if (dis_av_arith( prefix, theInstr )) goto decode_success;
+         goto decode_failure;
+
+      case 0x005:                         // vrlq
+      case 0x00B: case 0x10B:             // vdivuq, vdivsq
+      case 0x045:                         // vrlqmi
+      case 0x101: case 0x141:             // vcmpuq, vcmpsq
+      case 0x105: case 0x145:             // vslq, vrlqnm
+      case 0x1C7: case 0x5C7:             // vcmpequq, vcmpequq.
+      case 0x205:                         // vsrq
+      case 0x20B: case 0x30B:             // vdivueq, vdivesq
+      case 0x287: case 0x687:             // vcmpgtuq, vcmpgtuq.
+      case 0x305:                         // vsraq
+      case 0x387: case 0x787:             // vcmpgtsq, vcmpgtsq.
+      case 0x60B: case 0x70B:             // vmoduq, vmodsq
+         if (!allow_V) goto decode_noV;
+         if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
+         if (dis_vx_quadword_arith( prefix, theInstr ))
+            goto decode_success;
          goto decode_failure;
 
       case 0x088: case 0x089:             // vmulouw, vmuluwm
@@ -33470,8 +34001,14 @@ DisResult disInstr_PPC_WRK (
                     // vnegw, vnegd
                     // vprtybw, vprtybd, vprtybq
                     // vctzb, vctzh, vctzw, vctzd
+                    // vextsd2q
          if (!allow_V) goto decode_noV;
-         if (dis_av_extend_sign_count_zero( prefix, theInstr, allow_isa_3_0 ))
+         if ( !(allow_isa_3_1)
+              && (ifieldRegA( theInstr ) == 27) )  // vextsd2q
+            goto decode_noIsa3_1;
+         if (dis_av_extend_sign_count_zero( prefix, theInstr,
+                                            allow_isa_3_0 ))
+
             goto decode_success;
          goto decode_failure;
 

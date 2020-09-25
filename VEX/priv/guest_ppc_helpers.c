@@ -653,6 +653,814 @@ ULong vector_evaluate64_helper( ULong srcA, ULong srcB, ULong srcC,
 }
 
 
+/*------------------------------------------------*/
+/*---- VSX Matrix signed integer GER functions ---*/
+/*------------------------------------------------*/
+static UInt exts4( UInt src)
+{
+   /* Input is an 4-bit value.  Extend bit 3 to bits [31:4] */
+   if (( src >> 3 ) & 0x1)
+      return src | 0xFFFFFFF0; /* sign bit is a 1, extend */
+   else
+      return src & 0xF;        /* make sure high order bits are zero */
+}
+
+static UInt exts8( UInt src)
+{
+   /* Input is an 8-bit value.  Extend bit 7 to bits [31:8] */
+   if (( src >> 7 ) & 0x1)
+      return src | 0xFFFFFF00; /* sign bit is a 1, extend */
+   else
+      return src & 0xFF;        /* make sure high order bits are zero */
+}
+
+static UInt extz8( UInt src)
+{
+   /* Input is an 8-bit value.  Extend src on the left with zeros.  */
+   return src & 0xFF;        /* make sure high order bits are zero */
+}
+
+static ULong exts16to64( UInt src)
+{
+   /* Input is an 16-bit value.  Extend bit 15 to bits [63:16] */
+   if (( src >> 15 ) & 0x1)
+      return ((ULong) src) | 0xFFFFFFFFFFFF0000ULL; /* sign is 1, extend */
+   else
+      /* make sure high order bits are zero */
+      return ((ULong) src) & 0xFFFFULL;
+}
+
+static UInt chop64to32( Long src ) {
+   /* Take a 64-bit input, return the lower 32-bits */
+   return (UInt)(0xFFFFFFFF & src);
+}
+
+static UInt clampS64toS32( Long src ) {
+   /* Take a 64-bit signed input, clamp positive values to 2^31,
+      clamp negative values at -2^31. Return the result in an
+      unsigned 32-bit value.  */
+   Long max_val = 2147483647;  // 2^31-1
+   if ( src > max_val)
+      return (UInt)max_val;
+
+   if (src < -max_val)
+      return (UInt)-max_val;
+
+   return (UInt)src;
+}
+
+void write_ACC_entry (VexGuestPPC64State* gst, UInt offset, UInt acc, UInt reg,
+                      UInt *acc_word)
+{
+   U128* pU128_dst;
+
+   vassert( (acc >= 0) && (acc < 8) );
+   vassert( (reg >= 0) && (reg < 4) );
+
+   pU128_dst = (U128*) (((UChar*)gst) + offset + acc*4*sizeof(U128)
+                        + reg*sizeof(U128));
+
+   /* The U128 type is defined as an array of unsigned intetgers.  */
+   (*pU128_dst)[0] = acc_word[0];
+   (*pU128_dst)[1] = acc_word[1];
+   (*pU128_dst)[2] = acc_word[2];
+   (*pU128_dst)[3] = acc_word[3];
+   return;
+}
+
+void get_ACC_entry (VexGuestPPC64State* gst, UInt offset, UInt acc, UInt reg,
+                    UInt *acc_word)
+{
+   U128* pU128_src;
+
+   acc_word[3] = 0xDEAD;
+   acc_word[2] = 0xBEEF;
+   acc_word[1] = 0xBAD;
+   acc_word[0] = 0xBEEF;
+
+   vassert( (acc >= 0) && (acc < 8) );
+   vassert( (reg >= 0) && (reg < 4) );
+
+   pU128_src = (U128*) (((UChar*)gst) + offset + acc*4*sizeof(U128)
+                        + reg*sizeof(U128));
+
+   /* The U128 type is defined as an array of unsigned intetgers.  */
+   acc_word[0] = (*pU128_src)[0];
+   acc_word[1] = (*pU128_src)[1];
+   acc_word[2] = (*pU128_src)[2];
+   acc_word[3] = (*pU128_src)[3];
+   return;
+}
+
+void vsx_matrix_4bit_ger_dirty_helper ( VexGuestPPC64State* gst,
+                                        UInt offset_ACC,
+                                        ULong srcA_hi, ULong srcA_lo,
+                                        ULong srcB_hi, ULong srcB_lo,
+                                        UInt masks_inst )
+{
+   /* This helper calculates the result for one of the four ACC entires.
+      It is called twice, to get the hi and then the low 64-bit of the
+      128-bit result.  */
+   UInt i, j, mask, sum, inst, acc_entry, prefix_inst;
+
+   UInt srcA_nibbles[4][8];   /* word, nibble */
+   UInt srcB_nibbles[4][8];   /* word, nibble */
+   UInt acc_word[4];
+   UInt prod0, prod1, prod2, prod3, prod4, prod5, prod6, prod7;
+   UInt result[4];
+   UInt pmsk = 0;
+   UInt xmsk = 0;
+   UInt ymsk = 0;
+
+   mask = 0xF;
+   inst = (masks_inst >> 5) & 0xFF;
+   prefix_inst = (masks_inst >> 13) & 0x1;
+   acc_entry = masks_inst & 0xF;
+
+   /* LE word numbering */
+   if ( prefix_inst == 0 ) {
+      /* Set the masks for non-prefix instructions */
+      pmsk = 0b11111111;
+      xmsk = 0b1111;
+      ymsk = 0b1111;
+
+   } else {
+      pmsk = (masks_inst >> 22) & 0xFF;
+      xmsk = (masks_inst >> 18) & 0xF;
+      ymsk = (masks_inst >> 14) & 0xF;
+   }
+
+   /* Address nibbles using IBM numbering */
+   for( i = 0; i < 4; i++) {
+      /* Get the ACC contents directly from the PPC64 state */
+      get_ACC_entry (gst, offset_ACC, acc_entry, 3-i, acc_word);
+
+      // input is in double words
+      for( j = 0; j< 8; j++) {
+         srcA_nibbles[3][j] = (srcA_hi >> (60-4*j)) & mask;  // hi bits [63:32]
+         srcA_nibbles[2][j] = (srcA_hi >> (28-4*j)) & mask;  // hi bits [31:0]
+         srcA_nibbles[1][j] = (srcA_lo >> (60-4*j)) & mask;  // lo bits [63:32]
+         srcA_nibbles[0][j] = (srcA_lo >> (28-4*j)) & mask;  // lo bits [31:0]
+
+         srcB_nibbles[3][j] = (srcB_hi >> (60-4*j)) & mask;
+         srcB_nibbles[2][j] = (srcB_hi >> (28-4*j)) & mask;
+         srcB_nibbles[1][j] = (srcB_lo >> (60-4*j)) & mask;
+         srcB_nibbles[0][j] = (srcB_lo >> (28-4*j)) & mask;
+      }
+
+      for( j = 0; j < 4; j++) {
+         if (((xmsk >> i) & 0x1) & ((ymsk >> j) & 0x1)) {
+            if (((pmsk >> 7) & 0x1) == 0)
+               prod0 = 0;
+            else
+               prod0 = exts4( srcA_nibbles[i][0] )
+                  * exts4( srcB_nibbles[j][0] );
+
+            if (((pmsk >> 6) & 0x1) == 0)
+               prod1 = 0;
+            else
+               prod1 = exts4( srcA_nibbles[i][1] )
+                  * exts4( srcB_nibbles[j][1] );
+
+            if (((pmsk >> 5) & 0x1) == 0)
+               prod2 = 0;
+            else
+               prod2 = exts4( srcA_nibbles[i][2] )
+                  * exts4( srcB_nibbles[j][2] );
+
+            if (((pmsk >> 4) & 0x1) == 0)
+               prod3 = 0;
+            else
+               prod3 = exts4( srcA_nibbles[i][3] )
+                  * exts4(  srcB_nibbles[j][3] );
+
+            if (((pmsk >> 3) & 0x1) == 0)
+               prod4 = 0;
+            else
+               prod4 = exts4( srcA_nibbles[i][4] )
+                  * exts4( srcB_nibbles[j][4] );
+
+            if (((pmsk >> 2) & 0x1) == 0)
+               prod5 = 0;
+            else
+               prod5 = exts4( srcA_nibbles[i][5] )
+                  * exts4( srcB_nibbles[j][5] );
+
+            if (((pmsk >> 1) & 0x1) == 0)
+               prod6 = 0;
+            else
+               prod6 = exts4( srcA_nibbles[i][6] )
+                  * exts4( srcB_nibbles[j][6] );
+
+            if ((pmsk & 0x1) == 0)
+               prod7 = 0;
+            else
+               prod7 = exts4( srcA_nibbles[i][7] )
+                  * exts4( srcB_nibbles[j][7] );
+            /* sum is UInt so the result is choped to 32-bits */
+            sum = prod0 + prod1 + prod2 + prod3 + prod4
+               + prod5 + prod6 + prod7;
+
+            if ( inst == XVI4GER8 )
+               result[j] = sum;
+
+            else if ( inst == XVI4GER8PP )
+               result[j] = sum + acc_word[j];
+
+         } else {
+            result[j] = 0;
+         }
+      }
+      write_ACC_entry (gst, offset_ACC, acc_entry, 3-i, result);
+   }
+}
+
+void vsx_matrix_8bit_ger_dirty_helper( VexGuestPPC64State* gst,
+                                       UInt offset_ACC,
+                                       ULong srcA_hi, ULong srcA_lo,
+                                       ULong srcB_hi, ULong srcB_lo,
+                                       UInt masks_inst )
+{
+   UInt i, j, mask, sum, inst, acc_entry, prefix_inst;
+
+   UInt srcA_bytes[4][4];   /* word, byte */
+   UInt srcB_bytes[4][4];   /* word, byte */
+   UInt acc_word[4];
+   UInt prod0, prod1, prod2, prod3;
+   UInt result[4];
+   UInt pmsk = 0;
+   UInt xmsk = 0;
+   UInt ymsk = 0;
+
+   mask = 0xFF;
+   inst = (masks_inst >> 5) & 0xFF;
+   prefix_inst = (masks_inst >> 13) & 0x1;
+   acc_entry = masks_inst & 0xF;
+
+   /* LE word numbering */
+   if ( prefix_inst == 0 ) {
+      /* Set the masks */
+      pmsk = 0b1111;
+      xmsk = 0b1111;
+      ymsk = 0b1111;
+
+   } else {
+      pmsk = (masks_inst >> 26) & 0xF;
+      xmsk = (masks_inst >> 18) & 0xF;
+      ymsk = (masks_inst >> 14) & 0xF;
+   }
+
+   /* Address byes using IBM numbering */
+   for( i = 0; i < 4; i++) {
+      /* Get the ACC contents directly from the PPC64 state */
+      get_ACC_entry (gst, offset_ACC, acc_entry, 3-i, acc_word);
+
+      for( j = 0; j< 4; j++) {
+         srcA_bytes[3][j] = (srcA_hi >> (56-8*j)) & mask;
+         srcA_bytes[2][j] = (srcA_hi >> (24-8*j)) & mask;
+         srcA_bytes[1][j] = (srcA_lo >> (56-8*j)) & mask;
+         srcA_bytes[0][j] = (srcA_lo >> (24-8*j)) & mask;
+
+         srcB_bytes[3][j] = (srcB_hi >> (56-8*j)) & mask;
+         srcB_bytes[2][j] = (srcB_hi >> (24-8*j)) & mask;
+         srcB_bytes[1][j] = (srcB_lo >> (56-8*j)) & mask;
+         srcB_bytes[0][j] = (srcB_lo >> (24-8*j)) & mask;
+      }
+
+      for( j = 0; j < 4; j++) {
+         if (((xmsk >> i) & 0x1) & ((ymsk >> j) & 0x1)) {
+            if (((pmsk >> 3) & 0x1) == 0)
+               prod0 = 0;
+            else
+               prod0 =
+                  exts8( srcA_bytes[i][0] )
+                  * extz8( srcB_bytes[j][0] );
+
+            if (((pmsk >> 2) & 0x1) == 0)
+               prod1 = 0;
+            else
+               prod1 =
+                  exts8( srcA_bytes[i][1] )
+                  * extz8( srcB_bytes[j][1] );
+
+            if (((pmsk >> 1) & 0x1) == 0)
+               prod2 = 0;
+            else
+               prod2 =
+                  exts8( srcA_bytes[i][2] )
+                  * extz8( srcB_bytes[j][2] );
+
+            if (((pmsk >> 0) & 0x1) == 0)
+               prod3 = 0;
+            else
+               prod3 =
+                  exts8( srcA_bytes[i][3] )
+                  * extz8( srcB_bytes[j][3] );
+
+            /* sum is UInt so the result is choped to 32-bits */
+            sum = prod0 + prod1 + prod2 + prod3;
+
+            if ( inst == XVI8GER4 )
+               result[j] = sum;
+
+            else if ( inst == XVI8GER4PP )
+               result[j] = sum + acc_word[j];
+
+         } else {
+            result[j] = 0;
+         }
+      }
+      write_ACC_entry (gst, offset_ACC, acc_entry, 3-i, result);
+   }
+}
+
+void vsx_matrix_16bit_ger_dirty_helper( VexGuestPPC64State* gst,
+                                        UInt offset_ACC,
+                                        ULong srcA_hi, ULong srcA_lo,
+                                        ULong srcB_hi, ULong srcB_lo,
+                                        UInt masks_inst )
+{
+   UInt i, j, mask, inst, acc_entry, prefix_inst;
+   ULong sum;
+   UInt srcA_word[4][2];   /* word, hword */
+   UInt srcB_word[4][2];   /* word, hword */
+   UInt acc_word[4];
+   ULong prod0, prod1;
+   UInt result[4];
+   UInt pmsk = 0;
+   UInt xmsk = 0;
+   UInt ymsk = 0;
+
+   mask = 0xFFFF;
+   inst = (masks_inst >> 5) & 0xFF;
+   prefix_inst = (masks_inst >> 13) & 0x1;
+   acc_entry = masks_inst & 0xF;
+
+   /* LE word numbering */
+   if ( prefix_inst == 0 ) {
+      /* Set the masks for non prefix instructions */
+      pmsk = 0b11;
+      xmsk = 0b1111;
+      ymsk = 0b1111;
+
+   } else {
+      pmsk = (masks_inst >> 28) & 0x3;
+      xmsk = (masks_inst >> 18) & 0xF;
+      ymsk = (masks_inst >> 14) & 0xF;
+   }
+
+   /* Address half-words using IBM numbering */
+   for( i = 0; i < 4; i++) {
+      /* Get the ACC contents directly from the PPC64 state */
+      get_ACC_entry (gst, offset_ACC, acc_entry, 3-i, acc_word);
+
+      for( j = 0; j< 2; j++) {
+         srcA_word[3][j] = (srcA_hi >> (48-16*j)) & mask;
+         srcA_word[2][j] = (srcA_hi >> (16-16*j)) & mask;
+         srcA_word[1][j] = (srcA_lo >> (48-16*j)) & mask;
+         srcA_word[0][j] = (srcA_lo >> (16-16*j)) & mask;
+
+         srcB_word[3][j] = (srcB_hi >> (48-16*j)) & mask;
+         srcB_word[2][j] = (srcB_hi >> (16-16*j)) & mask;
+         srcB_word[1][j] = (srcB_lo >> (48-16*j)) & mask;
+         srcB_word[0][j] = (srcB_lo >> (16-16*j)) & mask;
+      }
+
+      for( j = 0; j < 4; j++) {
+         if (((xmsk >> i) & 0x1) & ((ymsk >> j) & 0x1)) {
+            if (((pmsk >> 1) & 0x1) == 0)
+               prod0 = 0;
+
+            else
+               prod0 = exts16to64( srcA_word[i][0] )
+                  * exts16to64( srcB_word[j][0] );
+
+            if (((pmsk >> 0) & 0x1) == 0)
+               prod1 = 0;
+            else
+               prod1 = exts16to64( srcA_word[i][1] )
+                  * exts16to64( srcB_word[j][1] );
+            /* sum is UInt so the result is choped to 32-bits */
+            sum = prod0 + prod1;
+
+            if ( inst == XVI16GER2 )
+               result[j] = chop64to32( sum );
+
+            else if ( inst == XVI16GER2S )
+               result[j] = clampS64toS32( sum );
+
+            else if ( inst == XVI16GER2PP ) {
+               result[j] = chop64to32( sum + acc_word[j] );
+            }
+
+            else if ( inst == XVI16GER2SPP ) {
+               result[j] = clampS64toS32( sum + acc_word[j] );
+            }
+
+         } else {
+            result[j] = 0;
+         }
+      }
+      write_ACC_entry (gst, offset_ACC, acc_entry, 3-i, result);
+   }
+}
+
+//matrix 16 float stuff
+union
+convert_t {
+  UInt u32;
+  ULong u64;
+  Float f;
+  Double d;
+};
+
+static Float reinterpret_int_as_float( UInt input )
+{
+  /* Reinterpret the bit pattern of an int as a float. */
+ __attribute__ ((aligned (128)))   union convert_t conv;
+
+  conv.u32 = input;
+  return conv.f;
+}
+
+static UInt reinterpret_float_as_int( Float input )
+{
+  /* Reinterpret the bit pattern of an int as a float. */
+ __attribute__ ((aligned (128)))   union convert_t conv;
+
+  conv.f = input;
+  return conv.u32;
+}
+
+static Double reinterpret_long_as_double( ULong input )
+{
+  /* Reinterpret the bit pattern of an int as a float. */
+ __attribute__ ((aligned (128)))   union convert_t conv;
+
+  conv.u64 = input;
+  return conv.d;
+}
+
+static ULong reinterpret_double_as_long( Double input )
+{
+  /* Reinterpret the bit pattern of an int as a float. */
+ __attribute__ ((aligned (128)))   union convert_t conv;
+
+  conv.d = input;
+  return conv.u64;
+}
+
+static Double conv_f16_to_double( ULong input )
+{
+  // This all seems to be very alignment sensitive??
+  __attribute__ ((aligned (64))) ULong src;
+  __attribute__ ((aligned (64))) Double result;
+  src = input;
+  __asm__ __volatile__ ("xscvhpdp %x0,%x1" : "=wa" (result) : "wa" (src));
+  return result;
+}
+
+
+static Float conv_double_to_float( Double src )
+{
+  return (float) src ;
+}
+
+
+static Double negate_double( Double input )
+{
+   /* Don't negate a NaN value. A NaN has an exponet
+      of all 1's, non zero fraction. */
+   __attribute__ ((aligned (128))) union convert_t conv;
+
+   conv.d = input;
+
+   if ( ( ( conv.u64 & I64_EXP_MASK) == I64_EXP_MASK )
+        && ( ( conv.u64 & I64_FRACTION_MASK ) != 0 ) )
+      return input;
+   else
+      return -input;
+}
+
+static Float negate_float( Float input )
+{
+   /* Don't negate a NaN value. A NaN has an exponet
+      of all 1's, non zero fraction. */
+   __attribute__ ((aligned (128))) union convert_t conv;
+
+   conv.f = input;
+
+   if ( ( ( conv.u32 & I32_EXP_MASK) == I32_EXP_MASK )
+        && ( ( conv.u32 & I32_FRACTION_MASK ) != 0 ) )
+      return input;
+  else
+      return -input;
+}
+
+void vsx_matrix_16bit_float_ger_dirty_helper( VexGuestPPC64State* gst,
+                                              UInt offset_ACC,
+                                              ULong srcA_hi, ULong srcA_lo,
+                                              ULong srcB_hi, ULong srcB_lo,
+                                              UInt masks_inst )
+{
+   UInt i, j, mask, inst, acc_entry, prefix_inst;
+
+   UInt srcA_word[4][2];   /* word, hword */
+   UInt srcB_word[4][2];   /* word, hword */
+   Double src10, src11, src20, src21;
+   UInt acc_word_input[4];
+   Float acc_word[4];
+   Double prod;
+   Double msum;
+   UInt result[4];
+   UInt pmsk = 0;
+   UInt xmsk = 0;
+   UInt ymsk = 0;
+
+   mask = 0xFFFF;
+   inst = (masks_inst >> 5) & 0xFF;
+   prefix_inst = (masks_inst >> 13) & 0x1;
+   acc_entry = masks_inst & 0xF;
+
+   if ( prefix_inst == 0 ) {
+      /* Set the masks for non-prefix instructions */
+      pmsk = 0b11;
+      xmsk = 0b1111;
+      ymsk = 0b1111;
+
+   } else {
+      /* Use mask supplied with prefix inst */
+      pmsk = (masks_inst >> 28) & 0x3;
+      xmsk = (masks_inst >> 18) & 0xF;
+      ymsk = (masks_inst >> 14) & 0xF;
+   }
+
+   /* Address half-words using IBM numbering */
+   for( i = 0; i < 4; i++) {
+      /* Get the ACC contents directly from the PPC64 state */
+      get_ACC_entry (gst, offset_ACC, acc_entry, 3-i, acc_word_input);
+
+      acc_word[3] = reinterpret_int_as_float( acc_word_input[3] );
+      acc_word[2] = reinterpret_int_as_float( acc_word_input[2] );
+      acc_word[1] = reinterpret_int_as_float( acc_word_input[1] );
+      acc_word[0] = reinterpret_int_as_float( acc_word_input[0] );
+
+      for( j = 0; j < 2; j++) {    // input is in double words
+         srcA_word[3][j] = (UInt)((srcA_hi >> (48-16*j)) & mask);
+         srcA_word[2][j] = (UInt)((srcA_hi >> (16-16*j)) & mask);
+         srcA_word[1][j] = (UInt)((srcA_lo >> (48-16*j)) & mask);
+         srcA_word[0][j] = (UInt)((srcA_lo >> (16-16*j)) & mask);
+
+         srcB_word[3][j] = (UInt)((srcB_hi >> (48-16*j)) & mask);
+         srcB_word[2][j] = (UInt)((srcB_hi >> (16-16*j)) & mask);
+         srcB_word[1][j] = (UInt)((srcB_lo >> (48-16*j)) & mask);
+         srcB_word[0][j] = (UInt)((srcB_lo >> (16-16*j)) & mask);
+      }
+
+      for( j = 0; j < 4; j++) {
+         if (((pmsk >> 1) & 0x1) == 0) {
+            src10 = 0;
+            src20 = 0;
+         } else {
+            src10 = conv_f16_to_double((ULong)srcA_word[i][0]);
+            src20 = conv_f16_to_double((ULong)srcB_word[j][0]);
+         }
+
+         if ((pmsk & 0x1) == 0) {
+            src11 = 0;
+            src21 = 0;
+         } else {
+            src11 = conv_f16_to_double((ULong)srcA_word[i][1]);
+            src21 = conv_f16_to_double((ULong)srcB_word[j][1]);
+         }
+
+
+         prod = src10 * src20;
+         msum = prod + src11 * src21;
+
+         if (((xmsk >> i) & 0x1) & ((ymsk >> j) & 0x1)) {
+            /* Note, we do not track the exception handling bits
+               ox, ux, xx, si, mz, vxsnan and vximz in the FPSCR.  */
+
+            if ( inst == XVF16GER2 )
+               result[j] = reinterpret_float_as_int(
+                  conv_double_to_float(msum) );
+
+            else if ( inst == XVF16GER2PP )
+               result[j] = reinterpret_float_as_int(
+                  conv_double_to_float(msum)
+                  + acc_word[j] );
+
+            else if ( inst == XVF16GER2PN )
+               result[j] = reinterpret_float_as_int(
+                  conv_double_to_float(msum)
+                  + negate_float( acc_word[j] ) );
+
+            else if ( inst == XVF16GER2NP )
+               result[j] = reinterpret_float_as_int(
+                  conv_double_to_float( negate_double( msum ) )
+                  + acc_word[j] );
+
+            else if ( inst == XVF16GER2NN )
+               result[j] = reinterpret_float_as_int(
+                  conv_double_to_float( negate_double( msum ) )
+                  + negate_float( acc_word[j] ) );
+         } else {
+            result[j] = 0;
+         }
+      }
+      write_ACC_entry (gst, offset_ACC, acc_entry, 3-i, result);
+   }
+}
+
+void vsx_matrix_32bit_float_ger_dirty_helper( VexGuestPPC64State* gst,
+                                              UInt offset_ACC,
+                                              ULong srcA_hi, ULong srcA_lo,
+                                              ULong srcB_hi, ULong srcB_lo,
+                                              UInt masks_inst )
+{
+   UInt i, j, mask, inst, acc_entry, prefix_inst;
+
+   Float srcA_word[4];
+   Float srcB_word[4];
+   UInt acc_word_input[4];
+   Float acc_word[4];
+   UInt result[4];
+   UInt xmsk = 0;
+   UInt ymsk = 0;
+   Float src1, src2, acc;
+
+   mask = 0xFFFFFFFF;
+   inst = (masks_inst >> 5) & 0xFF;
+   prefix_inst = (masks_inst >> 13) & 0x1;
+   acc_entry = masks_inst & 0xF;
+
+   if ( prefix_inst == 0 ) {
+      /* Set the masks for non-prefix instructions */
+      xmsk = 0b1111;
+      ymsk = 0b1111;
+
+   } else {
+      xmsk = (masks_inst >> 18) & 0xF;
+      ymsk = (masks_inst >> 14) & 0xF;
+   }
+
+   srcA_word[3] = reinterpret_int_as_float( (srcA_hi >> 32) & mask );
+   srcA_word[2] = reinterpret_int_as_float( srcA_hi & mask );
+   srcA_word[1] = reinterpret_int_as_float( (srcA_lo >> 32) & mask );
+   srcA_word[0] = reinterpret_int_as_float( srcA_lo & mask );
+
+   srcB_word[3] = reinterpret_int_as_float( (srcB_hi >> 32) & mask );
+   srcB_word[2] = reinterpret_int_as_float( srcB_hi & mask );
+   srcB_word[1] = reinterpret_int_as_float( (srcB_lo >> 32) & mask );
+   srcB_word[0] = reinterpret_int_as_float( srcB_lo & mask );
+
+   /* Address byes using IBM numbering */
+   for( i = 0; i < 4; i++) {
+      /* Get the ACC contents directly from the PPC64 state */
+      get_ACC_entry (gst, offset_ACC, acc_entry, 3-i, acc_word_input);
+
+      acc_word[3] = reinterpret_int_as_float( acc_word_input[3] );
+      acc_word[2] = reinterpret_int_as_float( acc_word_input[2] );
+      acc_word[1] = reinterpret_int_as_float( acc_word_input[1] );
+      acc_word[0] = reinterpret_int_as_float( acc_word_input[0] );
+
+      for( j = 0; j < 4; j++) {
+
+         if ((((xmsk >> i) & 0x1) & ((ymsk >> j) & 0x1)) == 0x1) {
+            /* Note, we do not track the exception handling bits
+               ox, ux, xx, si, mz, vxsnan and vximz in the FPSCR.  */
+
+            src1 = srcA_word[i];
+            src2 = srcB_word[j];
+            acc = acc_word[j];
+
+            if ( inst == XVF32GER )
+               result[j] = reinterpret_float_as_int( src1 * src2 );
+
+            else if ( inst == XVF32GERPP )
+               result[j] = reinterpret_float_as_int( ( src1 * src2 ) + acc );
+
+            else if ( inst == XVF32GERPN )
+               result[j] = reinterpret_float_as_int( ( src1 * src2 )
+                                                     + negate_float( acc ) );
+
+            else if ( inst == XVF32GERNP )
+               result[j] = reinterpret_float_as_int(
+                  negate_float( src1 * src2 ) + acc );
+
+            else if ( inst == XVF32GERNN )
+               result[j] = reinterpret_float_as_int(
+                  negate_float( src1 * src2 ) + negate_float( acc ) );
+         } else {
+            result[j] = 0;
+         }
+      }
+      write_ACC_entry (gst, offset_ACC, acc_entry, 3-i, result);
+   }
+}
+
+void vsx_matrix_64bit_float_ger_dirty_helper( VexGuestPPC64State* gst,
+                                              UInt offset_ACC,
+                                              ULong srcX_hi, ULong srcX_lo,
+                                              ULong srcY_hi, ULong srcY_lo,
+                                              UInt masks_inst )
+{
+   /* This function just computes the result for one entry in the ACC. */
+   UInt i, j, inst, acc_entry, prefix_inst;
+
+   Double srcX_dword[4];
+   Double srcY_dword[2];
+   Double result[2];
+   UInt result_uint[4];
+   ULong result_ulong[2];
+   Double acc_dword[4];
+   ULong acc_word_ulong[2];
+   UInt acc_word_input[4];
+   UInt xmsk = 0;
+   UInt ymsk = 0;
+   UInt start_i;
+   Double src1, src2, acc;
+
+   inst = (masks_inst >> 8) & 0xFF;
+   prefix_inst = (masks_inst >> 16) & 0x1;
+   start_i = (masks_inst >> 4) & 0xF;
+   acc_entry = masks_inst & 0xF;
+
+   if ( prefix_inst == 0 ) {
+      /* Set the masks for non-prefix instructions */
+      xmsk = 0b1111;
+      ymsk = 0b11;
+
+   } else {
+      xmsk = (masks_inst >> 21) & 0xF;
+      ymsk = (masks_inst >> 19) & 0x3;
+   }
+
+   /* Need to store the srcX_dword in the correct index for the following
+      for loop.  */
+   srcX_dword[1+start_i] = reinterpret_long_as_double( srcX_lo);
+   srcX_dword[0+start_i] = reinterpret_long_as_double( srcX_hi );
+   srcY_dword[1] = reinterpret_long_as_double( srcY_lo );
+   srcY_dword[0] = reinterpret_long_as_double( srcY_hi );
+
+   for( i = start_i; i < start_i+2; i++) {
+      /* Get the ACC contents directly from the PPC64 state */
+      get_ACC_entry (gst, offset_ACC, acc_entry, 3 - i,
+                     acc_word_input);
+
+      acc_word_ulong[1] = acc_word_input[3];
+      acc_word_ulong[1] = (acc_word_ulong[1] << 32) | acc_word_input[2];
+      acc_word_ulong[0] = acc_word_input[1];
+      acc_word_ulong[0] = (acc_word_ulong[0] << 32) | acc_word_input[0];
+      acc_dword[0] = reinterpret_long_as_double( acc_word_ulong[0] );
+      acc_dword[1] = reinterpret_long_as_double( acc_word_ulong[1]);
+
+      for( j = 0; j < 2; j++) {
+
+         if (((xmsk >> i) & 0x1) & ((ymsk >> j) & 0x1)) {
+            /* Note, we do not track the exception handling bits
+               ox, ux, xx, si, mz, vxsnan and vximz in the FPSCR.  */
+
+            src1 = srcX_dword[i];
+            src2 = srcY_dword[j];
+            acc = acc_dword[j];
+
+            if ( inst == XVF64GER )
+               result[j] = src1 * src2;
+
+            else if ( inst == XVF64GERPP )
+               result[j] = ( src1 * src2 ) + acc;
+
+            else if ( inst == XVF64GERPN )
+               result[j] = ( src1 * src2 ) + negate_double( acc );
+
+            else if ( inst == XVF64GERNP )
+               result[j] = negate_double( src1 * src2 ) + acc;
+
+            else if ( inst == XVF64GERNN )
+               result[j] = negate_double( src1 * src2 ) + negate_double( acc );
+
+         } else {
+            result[j] = 0;
+         }
+      }
+
+      /* Need to store the two double float values as two unsigned ints in
+         order to store them to the ACC.  */
+      result_ulong[0] = reinterpret_double_as_long ( result[0] );
+      result_ulong[1] = reinterpret_double_as_long ( result[1] );
+
+      result_uint[0] = result_ulong[0] & 0xFFFFFFFF;
+      result_uint[1] = (result_ulong[0] >> 32) & 0xFFFFFFFF;
+      result_uint[2] = result_ulong[1] & 0xFFFFFFFF;
+      result_uint[3] = (result_ulong[1] >> 32) & 0xFFFFFFFF;
+
+      write_ACC_entry (gst, offset_ACC, acc_entry, 3 - i,
+                       result_uint);
+   }
+}
+
 /*----------------------------------------------*/
 /*--- The exported fns ..                    ---*/
 /*----------------------------------------------*/
@@ -915,6 +1723,39 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
    VECZERO(vex_state->guest_VSR62);
    VECZERO(vex_state->guest_VSR63);
 
+   VECZERO( vex_state->guest_ACC_0_r0 );
+   VECZERO( vex_state->guest_ACC_0_r1 );
+   VECZERO( vex_state->guest_ACC_0_r2 );
+   VECZERO( vex_state->guest_ACC_0_r3 );
+   VECZERO( vex_state->guest_ACC_1_r0 );
+   VECZERO( vex_state->guest_ACC_1_r1 );
+   VECZERO( vex_state->guest_ACC_1_r2 );
+   VECZERO( vex_state->guest_ACC_1_r3 );
+   VECZERO( vex_state->guest_ACC_2_r0 );
+   VECZERO( vex_state->guest_ACC_2_r1 );
+   VECZERO( vex_state->guest_ACC_2_r2 );
+   VECZERO( vex_state->guest_ACC_2_r3 );
+   VECZERO( vex_state->guest_ACC_3_r0 );
+   VECZERO( vex_state->guest_ACC_3_r1 );
+   VECZERO( vex_state->guest_ACC_3_r2 );
+   VECZERO( vex_state->guest_ACC_3_r3 );
+   VECZERO( vex_state->guest_ACC_4_r0 );
+   VECZERO( vex_state->guest_ACC_4_r1 );
+   VECZERO( vex_state->guest_ACC_4_r2 );
+   VECZERO( vex_state->guest_ACC_4_r3 );
+   VECZERO( vex_state->guest_ACC_5_r0 );
+   VECZERO( vex_state->guest_ACC_5_r1 );
+   VECZERO( vex_state->guest_ACC_5_r2 );
+   VECZERO( vex_state->guest_ACC_5_r3 );
+   VECZERO( vex_state->guest_ACC_6_r0 );
+   VECZERO( vex_state->guest_ACC_6_r1 );
+   VECZERO( vex_state->guest_ACC_6_r2 );
+   VECZERO( vex_state->guest_ACC_6_r3 );
+   VECZERO( vex_state->guest_ACC_7_r0 );
+   VECZERO( vex_state->guest_ACC_7_r1 );
+   VECZERO( vex_state->guest_ACC_7_r2 );
+   VECZERO( vex_state->guest_ACC_7_r3 );
+
 #  undef VECZERO
 
    vex_state->guest_CIA  = 0;
@@ -1160,6 +2001,7 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
    vex_state->guest_PPR = 0x4ULL << 50;  // medium priority
    vex_state->guest_PSPB = 0x100;  // an arbitrary non-zero value to start with
    vex_state->guest_DSCR = 0;
+
 }
 
 

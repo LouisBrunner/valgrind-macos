@@ -251,9 +251,48 @@ typedef
       /* 1396 */ UInt  guest_TEXASRU;   // Transaction EXception And Summary Register Upper
       /* 1400 */ UInt  guest_PSPB;      // Problem State Priority Boost register
       /* 1404 */ ULong guest_DSCR;      // Data Stream Control register
-      /* Padding to make it have an 16-aligned size */
-      /* 1408 */ UInt  padding3;
-      /* 1412 */ UInt  padding4;
+
+      /* ISA 3.1 Accumulators.  There are eight accumulators each contains four
+         128-bit rows.  Declare each acculator and row explicitly, then use a
+         helper to map ACC[i][row] to the explicitly declared entry.
+         Technically not supported in 32-bit mode but needs to be defined. */
+      /* 1412 */   U128  guest_ACC_0_r0;
+      /* 1428 */   U128  guest_ACC_0_r1;
+      /* 1444 */   U128  guest_ACC_0_r2;
+      /* 1460 */   U128  guest_ACC_0_r3;
+      /* 1476 */   U128  guest_ACC_1_r0;
+      /* 1492 */   U128  guest_ACC_1_r1;
+      /* 1508 */   U128  guest_ACC_1_r2;
+      /* 1524 */   U128  guest_ACC_1_r3;
+      /* 1540 */   U128  guest_ACC_2_r0;
+      /* 1556 */   U128  guest_ACC_2_r1;
+      /* 1572 */   U128  guest_ACC_2_r2;
+      /* 1588 */   U128  guest_ACC_2_r3;
+      /* 1604 */   U128  guest_ACC_3_r0;
+      /* 1620 */   U128  guest_ACC_3_r1;
+      /* 1636 */   U128  guest_ACC_3_r2;
+      /* 1652 */   U128  guest_ACC_3_r3;
+      /* 1668 */   U128  guest_ACC_4_r0;
+      /* 1684 */   U128  guest_ACC_4_r1;
+      /* 1700 */   U128  guest_ACC_4_r2;
+      /* 1716 */   U128  guest_ACC_4_r3;
+      /* 1732 */   U128  guest_ACC_5_r0;
+      /* 1748 */   U128  guest_ACC_5_r1;
+      /* 1780 */   U128  guest_ACC_5_r2;
+      /* 1796 */   U128  guest_ACC_5_r3;
+      /* 1812 */   U128  guest_ACC_6_r0;
+      /* 1828 */   U128  guest_ACC_6_r1;
+      /* 1844 */   U128  guest_ACC_6_r2;
+      /* 1860 */   U128  guest_ACC_6_r3;
+      /* 1876 */   U128  guest_ACC_7_r0;
+      /* 1892 */   U128  guest_ACC_7_r1;
+      /* 1908 */   U128  guest_ACC_7_r2;
+      /* 1924 */   U128  guest_ACC_7_r3;
+
+   /* Padding to make it have an 16-aligned size */
+      /* 1940 */ UInt  padding2;
+//      /* 1944 */ UInt  padding3;
+//      /* 1948 */ UInt  padding4;
    }
    VexGuestPPC32State;
 

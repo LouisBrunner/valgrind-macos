@@ -1,4 +1,5 @@
 
+
 /*---------------------------------------------------------------*/
 /*--- begin                                   host_ppc_isel.c ---*/
 /*---------------------------------------------------------------*/
@@ -638,6 +639,10 @@ PPCAMode* genGuestArrayOffset ( ISelEnv* env, IRRegArray* descr,
    Int  nElems = descr->nElems;
    Int  shift  = 0;
 
+   /* MAX is somewhat arbitrarily, needs to be at least
+      3 times the size of VexGuestPPC64State */
+#define MAX 6500
+
    /* Throw out any cases we don't need.  In theory there might be a
       day where we need to handle others, but not today. */
 
@@ -652,8 +657,11 @@ PPCAMode* genGuestArrayOffset ( ISelEnv* env, IRRegArray* descr,
 
    if (bias < -100 || bias > 100) /* somewhat arbitrarily */
       vpanic("genGuestArrayOffset(ppc host)(3)");
-   if (descr->base < 0 || descr->base > 5000) /* somewhat arbitrarily */
+   if (descr->base < 0 || descr->base > MAX) { /* somewhat arbitrarily */
+      vex_printf("ERROR: descr->base = %d, is greater then maximum = %d\n",
+                 descr->base, MAX);
       vpanic("genGuestArrayOffset(ppc host)(4)");
+   }
 
    /* Compute off into a reg, %off.  Then return:
 
@@ -684,6 +692,7 @@ PPCAMode* genGuestArrayOffset ( ISelEnv* env, IRRegArray* descr,
                     PPCRH_Imm(True/*signed*/, toUShort(descr->base))));
    return
       PPCAMode_RR( GuestStatePtr(env->mode64), rtmp );
+#undef MAX
 }
 
 

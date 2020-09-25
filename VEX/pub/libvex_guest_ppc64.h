@@ -278,25 +278,58 @@ typedef
 
       /* Needed for Darwin: CIA at the last SC insn.  Used when backing up
          to restart a syscall that has been interrupted by a signal. */
-      /* 1646 */ ULong guest_IP_AT_SYSCALL;
+      /* 1648 */ ULong guest_IP_AT_SYSCALL;
 
       /* SPRG3, which AIUI is readonly in user space.  Needed for
          threading on AIX. */
-      /* 1654 */ ULong guest_SPRG3_RO;
+      /* 1656 */ ULong guest_SPRG3_RO;
 
-      /* 1662 */ ULong guest_TFHAR;     // Transaction Failure Handler Address Register
-      /* 1670 */ ULong guest_TEXASR;    // Transaction EXception And Summary Register
-      /* 1678 */ ULong guest_TFIAR;     // Transaction Failure Instruction Address Register
-      /* 1686 */ ULong guest_PPR;       // Program Priority register
-      /* 1694 */ UInt  guest_TEXASRU;   // Transaction EXception And Summary Register Upper
-      /* 1698 */ UInt  guest_PSPB;      // Problem State Priority Boost register
-      /* 1702 */ ULong guest_DSCR;      // Data Stream Control register
+      /* 1664 */ ULong guest_TFHAR;     // Transaction Failure Handler Address Register
+      /* 1672 */ ULong guest_TEXASR;    // Transaction EXception And Summary Register
+      /* 1680 */ ULong guest_TFIAR;     // Transaction Failure Instruction Address Register
+      /* 1688 */ ULong guest_PPR;       // Program Priority register
+      /* 1696 */ UInt  guest_TEXASRU;   // Transaction EXception And Summary Register Upper
+      /* 1700 */ UInt  guest_PSPB;      // Problem State Priority Boost register
+      /* 1704 */ ULong guest_DSCR;      // Data Stream Control register
+
+      /* The guest_ACC_entries must be in order and sequential.  The helper
+         routines get_ACC_entry(), write_ACC_entry() calculate the offset of
+         the ACC entry based on a address of guest_ACC_0_r0.  */
+      /* 1712 */   U128  guest_ACC_0_r0;
+      /* 1728 */   U128  guest_ACC_0_r1;
+      /* 1744 */   U128  guest_ACC_0_r2;
+      /* 1760 */   U128  guest_ACC_0_r3;
+      /* 1776 */   U128  guest_ACC_1_r0;
+      /* 1792 */   U128  guest_ACC_1_r1;
+      /* 1808 */   U128  guest_ACC_1_r2;
+      /* 1824 */   U128  guest_ACC_1_r3;
+      /* 1840 */   U128  guest_ACC_2_r0;
+      /* 1856 */   U128  guest_ACC_2_r1;
+      /* 1872 */   U128  guest_ACC_2_r2;
+      /* 1888 */   U128  guest_ACC_2_r3;
+      /* 1904 */   U128  guest_ACC_3_r0;
+      /* 1920 */   U128  guest_ACC_3_r1;
+      /* 1936 */   U128  guest_ACC_3_r2;
+      /* 1952 */   U128  guest_ACC_3_r3;
+      /* 1968 */   U128  guest_ACC_4_r0;
+      /* 1984 */   U128  guest_ACC_4_r1;
+      /* 2000 */   U128  guest_ACC_4_r2;
+      /* 2016 */   U128  guest_ACC_4_r3;
+      /* 2032 */   U128  guest_ACC_5_r0;
+      /* 2048 */   U128  guest_ACC_5_r1;
+      /* 2064 */   U128  guest_ACC_5_r2;
+      /* 2080 */   U128  guest_ACC_5_r3;
+      /* 2096 */   U128  guest_ACC_6_r0;
+      /* 2112 */   U128  guest_ACC_6_r1;
+      /* 2128 */   U128  guest_ACC_6_r2;
+      /* 2144 */   U128  guest_ACC_6_r3;
+      /* 2160 */   U128  guest_ACC_7_r0;
+      /* 2176 */   U128  guest_ACC_7_r1;
+      /* 2192 */   U128  guest_ACC_7_r2;
+      /* 2208 */   U128  guest_ACC_7_r3;
 
       /* Padding to make it have an 16-aligned size */
-      /* 1710 */   UInt  padding1;
-      /* 1714 */   UInt  padding2;
-      /* 1718 */   UInt  padding3;
-
+      /* 2222    UInt  padding0; */
    }
    VexGuestPPC64State;
 

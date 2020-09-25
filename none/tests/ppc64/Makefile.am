@@ -51,6 +51,9 @@ EXTRA_DIST = \
 	test_isa_3_0_other.stdout.exp-LE test_isa_3_0_other.vgtest \
 	test_isa_3_1_RT.vgtest test_isa_3_1_RT.stderr.exp test_isa_3_1_RT.stdout.exp \
 	test_isa_3_1_XT.vgtest test_isa_3_1_XT.stderr.exp test_isa_3_1_XT.stdout.exp \
+	test_isa_3_1_VRT.vgtest \
+	test_isa_3_1_Misc.vgtest \
+	test_isa_3_1_AT.vgtest \
 	subnormal_test.stderr.exp  subnormal_test.stdout.exp \
 	subnormal_test.vgtest
 #	test_isa_3_1_VRT.vgtest test_isa_3_1_VRT.stderr.exp test_isa_3_1_VRT.stdout.exp

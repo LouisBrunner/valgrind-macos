@@ -233,6 +233,26 @@ static void test_vsrdbi_4 (void) {
   __asm__ __volatile__ ("vsrdbi %0, %1, %2, 4"
 				: "=v" (vrt) : "v" (vra), "v" (vrb) );
 }
+static void test_xscmpeqqp (void) {
+  __asm__ __volatile__ ("xscmpeqqp %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_xscmpgeqp (void) {
+  __asm__ __volatile__ ("xscmpgeqp %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_xscmpgtqp (void) {
+  __asm__ __volatile__ ("xscmpgtqp %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_xsmaxcqp (void) {
+  __asm__ __volatile__ ("xsmaxcqp %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_xsmincqp (void) {
+  __asm__ __volatile__ ("xsmincqp %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
 
 static test_list_t testgroup_generic[] = {
   { &test_vdivesd, "vdivesd", "VRT,VRA,VRB"}, /* bcs */
@@ -282,6 +302,11 @@ static test_list_t testgroup_generic[] = {
   { &test_vsldbi_4, "vsldbi 4", "VRT,VRA,VRB,SH"}, /* bcwp */
   { &test_vsrdbi_0, "vsrdbi 0", "VRT,VRA,VRB,SH"}, /* bcwp */
   { &test_vsrdbi_4, "vsrdbi 4", "VRT,VRA,VRB,SH"}, /* bcwp */
+  { &test_xscmpeqqp, "xscmpeqqp", "VRT,VRA,VRB"}, /* bcs */
+  { &test_xscmpgeqp, "xscmpgeqp", "VRT,VRA,VRB"}, /* bcs */
+  { &test_xscmpgtqp, "xscmpgtqp", "VRT,VRA,VRB"}, /* bcs */
+  { &test_xsmaxcqp, "xsmaxcqp", "VRT,VRA,VRB"}, /* bcs */
+  { &test_xsmincqp, "xsmincqp", "VRT,VRA,VRB"}, /* bcs */
 	{ NULL, 	    NULL },
 };
 

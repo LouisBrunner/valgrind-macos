@@ -117,6 +117,122 @@ static void test_vmodud (void) {
   __asm__ __volatile__ ("vmodud %0, %1, %2"
 				: "=v" (vrt) : "v" (vra), "v" (vrb) );
 }
+static void test_vextdubvlx (void) {
+  __asm__ __volatile__ ("vextdubvlx %0, %1, %2, %3"
+			: "=v" (vrt) : "v" (vra), "v" (vrb), "r" (rc) );
+}
+static void test_vextdubvrx (void) {
+  __asm__ __volatile__ ("vextdubvrx %0, %1, %2, %3"
+			: "=v" (vrt) : "v" (vra), "v" (vrb), "r" (rc) );
+}
+static void test_vextduhvlx (void) {
+  __asm__ __volatile__ ("vextduhvlx %0, %1, %2, %3"
+			: "=v" (vrt) : "v" (vra), "v" (vrb), "r" (rc) );
+}
+static void test_vextduhvrx (void) {
+  __asm__ __volatile__ ("vextduhvrx %0, %1, %2, %3"
+			: "=v" (vrt) : "v" (vra), "v" (vrb), "r" (rc) );
+}
+static void test_vextduwvlx (void) {
+  __asm__ __volatile__ ("vextduwvlx %0, %1, %2, %3"
+			: "=v" (vrt) : "v" (vra), "v" (vrb), "r" (rc) );
+}
+static void test_vextduwvrx (void) {
+  __asm__ __volatile__ ("vextduwvrx %0, %1, %2, %3"
+			: "=v" (vrt) : "v" (vra), "v" (vrb), "r" (rc) );
+}
+static void test_vextddvlx (void) {
+  __asm__ __volatile__ ("vextddvlx %0, %1, %2, %3"
+			: "=v" (vrt) : "v" (vra), "v" (vrb), "r" (rc) );
+}
+static void test_vextddvrx (void) {
+  __asm__ __volatile__ ("vextddvrx %0, %1, %2, %3"
+			: "=v" (vrt) : "v" (vra), "v" (vrb), "r" (rc) );
+}
+static void test_vinsblx (void) {
+  __asm__ __volatile__ ("vinsblx %0, %1, %2"
+				: "+v" (vrt) : "r" (ra), "r" (rb) );
+}
+static void test_vinsbrx (void) {
+  __asm__ __volatile__ ("vinsbrx %0, %1, %2"
+				: "+v" (vrt) : "r" (ra), "r" (rb) );
+}
+static void test_vinshlx (void) {
+  __asm__ __volatile__ ("vinshlx %0, %1, %2"
+				: "+v" (vrt) : "r" (ra), "r" (rb) );
+}
+static void test_vinshrx (void) {
+  __asm__ __volatile__ ("vinshrx %0, %1, %2"
+				: "+v" (vrt) : "r" (ra), "r" (rb) );
+}
+static void test_vinswlx (void) {
+  __asm__ __volatile__ ("vinswlx %0, %1, %2"
+				: "+v" (vrt) : "r" (ra), "r" (rb) );
+}
+static void test_vinswrx (void) {
+  __asm__ __volatile__ ("vinswrx %0, %1, %2"
+				: "+v" (vrt) : "r" (ra), "r" (rb) );
+}
+static void test_vinsdlx (void) {
+  __asm__ __volatile__ ("vinsdlx %0, %1, %2"
+				: "+v" (vrt) : "r" (ra), "r" (rb) );
+}
+static void test_vinsdrx (void) {
+  __asm__ __volatile__ ("vinsdrx %0, %1, %2"
+				: "+v" (vrt) : "r" (ra), "r" (rb) );
+}
+static void test_vinsbvlx (void) {
+  __asm__ __volatile__ ("vinsbvlx %0, %1, %2"
+				: "+v" (vrt) : "r" (ra), "v" (vrb) );
+}
+static void test_vinshvlx (void) {
+  __asm__ __volatile__ ("vinshvlx %0, %1, %2"
+				: "+v" (vrt) : "r" (ra), "v" (vrb) );
+}
+static void test_vinsbvrx (void) {
+  __asm__ __volatile__ ("vinsbvrx %0, %1, %2"
+				: "+v" (vrt) : "r" (ra), "v" (vrb) );
+}
+static void test_vinshvrx (void) {
+  __asm__ __volatile__ ("vinshvrx %0, %1, %2"
+				: "+v" (vrt) : "r" (ra), "v" (vrb) );
+}
+static void test_vinswvlx (void) {
+  __asm__ __volatile__ ("vinswvlx %0, %1, %2"
+				: "+v" (vrt) : "r" (ra), "v" (vrb) );
+}
+static void test_vinswvrx (void) {
+  __asm__ __volatile__ ("vinswvrx %0, %1, %2"
+				: "+v" (vrt) : "r" (ra), "v" (vrb) );
+}
+static void test_vinsw_3 (void) {
+  __asm__ __volatile__ ("vinsw %0, %1, 3" : "+v" (vrt) : "r" (rb) );
+}
+static void test_vinsw_7 (void) {
+  __asm__ __volatile__ ("vinsw %0, %1, 7" : "+v" (vrt) : "r" (rb) );
+}
+static void test_vinsd_3 (void) {
+  __asm__ __volatile__ ("vinsd %0, %1, 3" : "+v" (vrt) : "r" (rb) );
+}
+static void test_vinsd_7 (void) {
+  __asm__ __volatile__ ("vinsd %0, %1, 7" : "+v" (vrt) : "r" (rb) );
+}
+static void test_vsldbi_0 (void) {
+  __asm__ __volatile__ ("vsldbi %0, %1, %2, 0"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_vsldbi_4 (void) {
+  __asm__ __volatile__ ("vsldbi %0, %1, %2, 4"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_vsrdbi_0 (void) {
+  __asm__ __volatile__ ("vsrdbi %0, %1, %2, 0"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_vsrdbi_4 (void) {
+  __asm__ __volatile__ ("vsrdbi %0, %1, %2, 4"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
 
 static test_list_t testgroup_generic[] = {
   { &test_vdivesd, "vdivesd", "VRT,VRA,VRB"}, /* bcs */
@@ -127,6 +243,32 @@ static test_list_t testgroup_generic[] = {
   { &test_vdivsw, "vdivsw", "VRT,VRA,VRB"}, /* bcs */
   { &test_vdivud, "vdivud", "VRT,VRA,VRB"}, /* bcs */
   { &test_vdivuw, "vdivuw", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vextddvlx, "vextddvlx", "VRT,VRA,VRB,RC"}, /* bcs */
+  { &test_vextddvrx, "vextddvrx", "VRT,VRA,VRB,RC"}, /* bcs */
+  { &test_vextdubvlx, "vextdubvlx", "VRT,VRA,VRB,RC"}, /* bcs */
+  { &test_vextdubvrx, "vextdubvrx", "VRT,VRA,VRB,RC"}, /* bcs */
+  { &test_vextduhvlx, "vextduhvlx", "VRT,VRA,VRB,RC"}, /* bcs */
+  { &test_vextduhvrx, "vextduhvrx", "VRT,VRA,VRB,RC"}, /* bcs */
+  { &test_vextduwvlx, "vextduwvlx", "VRT,VRA,VRB,RC"}, /* bcs */
+  { &test_vextduwvrx, "vextduwvrx", "VRT,VRA,VRB,RC"}, /* bcs */
+  { &test_vinsblx, "vinsblx", "VRT,RA,RB"}, /* bcs */
+  { &test_vinsbrx, "vinsbrx", "VRT,RA,RB"}, /* bcs */
+  { &test_vinsbvlx, "vinsbvlx", "VRT,RA,VRB"}, /* bcs */
+  { &test_vinsbvrx, "vinsbvrx", "VRT,RA,VRB"}, /* bcs */
+  { &test_vinsdlx, "vinsdlx", "VRT,RA,RB"}, /* bcs */
+  { &test_vinsdrx, "vinsdrx", "VRT,RA,RB"}, /* bcs */
+  { &test_vinsd_3, "vinsd 3", "VRT,RB,UIM"}, /* bcwp */
+  { &test_vinsd_7, "vinsd 7", "VRT,RB,UIM"}, /* bcwp */
+  { &test_vinshlx, "vinshlx", "VRT,RA,RB"}, /* bcs */
+  { &test_vinshrx, "vinshrx", "VRT,RA,RB"}, /* bcs */
+  { &test_vinshvlx, "vinshvlx", "VRT,RA,VRB"}, /* bcs */
+  { &test_vinshvrx, "vinshvrx", "VRT,RA,VRB"}, /* bcs */
+  { &test_vinswlx, "vinswlx", "VRT,RA,RB"}, /* bcs */
+  { &test_vinswrx, "vinswrx", "VRT,RA,RB"}, /* bcs */
+  { &test_vinswvlx, "vinswvlx", "VRT,RA,VRB"}, /* bcs */
+  { &test_vinswvrx, "vinswvrx", "VRT,RA,VRB"}, /* bcs */
+  { &test_vinsw_3, "vinsw 3", "VRT,RB,UIM"}, /* bcwp */
+  { &test_vinsw_7, "vinsw 7", "VRT,RB,UIM"}, /* bcwp */
   { &test_vmodsd, "vmodsd", "VRT,VRA,VRB"}, /* bcs */
   { &test_vmodsw, "vmodsw", "VRT,VRA,VRB"}, /* bcs */
   { &test_vmodud, "vmodud", "VRT,VRA,VRB"}, /* bcs */
@@ -136,6 +278,10 @@ static test_list_t testgroup_generic[] = {
   { &test_vmulhud, "vmulhud", "VRT,VRA,VRB"}, /* bcs */
   { &test_vmulhuw, "vmulhuw", "VRT,VRA,VRB"}, /* bcs */
   { &test_vmulld, "vmulld", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vsldbi_0, "vsldbi 0", "VRT,VRA,VRB,SH"}, /* bcwp */
+  { &test_vsldbi_4, "vsldbi 4", "VRT,VRA,VRB,SH"}, /* bcwp */
+  { &test_vsrdbi_0, "vsrdbi 0", "VRT,VRA,VRB,SH"}, /* bcwp */
+  { &test_vsrdbi_4, "vsrdbi 4", "VRT,VRA,VRB,SH"}, /* bcwp */
 	{ NULL, 	    NULL },
 };
 

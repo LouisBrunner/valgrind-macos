@@ -88,6 +88,207 @@ static void test_pstxvp_off48 (void) {
 static void test_stxvpx (void) {
   __asm__ __volatile__ ("stxvpx 20, %0, %1" :: "r" (ra), "r" (rb) );
 }
+static void test_xxspltiw_imm0 (void) {
+  __asm__ __volatile__ ("xxspltiw %x0, 0" : "=wa" (vec_xt) );
+}
+static void test_xxspltiw_imm3 (void) {
+  __asm__ __volatile__ ("xxspltiw %x0, 3" : "=wa" (vec_xt) );
+}
+static void test_xxspltiw_imm8 (void) {
+  __asm__ __volatile__ ("xxspltiw %x0, 8" : "=wa" (vec_xt) );
+}
+static void test_xxspltidp_imm0  (void) {
+  __asm__ __volatile__ ("xxspltidp %x0, 0x0  " : "=wa" (vec_xt) );
+}
+static void test_xxspltidp_imm7f800000  (void) {
+  __asm__ __volatile__ ("xxspltidp %x0, 0x7f800000  " : "=wa" (vec_xt) );
+}
+static void test_xxspltidp_imm7fffffff  (void) {
+  __asm__ __volatile__ ("xxspltidp %x0, 0x7fffffff  " : "=wa" (vec_xt) );
+}
+static void test_xxspltidp_imm7f832345  (void) {
+  __asm__ __volatile__ ("xxspltidp %x0, 0x7f832345  " : "=wa" (vec_xt) );
+}
+static void test_xxspltidp_imm7f800001  (void) {
+  __asm__ __volatile__ ("xxspltidp %x0, 0x7f800001  " : "=wa" (vec_xt) );
+}
+static void test_xxspltidp_imm800000  (void) {
+  __asm__ __volatile__ ("xxspltidp %x0, 0x800000  " : "=wa" (vec_xt) );
+}
+static void test_xxspltidp_immffffff  (void) {
+  __asm__ __volatile__ ("xxspltidp %x0, 0xffffff  " : "=wa" (vec_xt) );
+}
+static void test_xxspltidp_imm832345  (void) {
+  __asm__ __volatile__ ("xxspltidp %x0, 0x832345  " : "=wa" (vec_xt) );
+}
+static void test_xxspltidp_imm800001  (void) {
+  __asm__ __volatile__ ("xxspltidp %x0, 0x800001  " : "=wa" (vec_xt) );
+}
+static void test_xxspltidp_imm80000000  (void) {
+  __asm__ __volatile__ ("xxspltidp %x0, 0x80000000  " : "=wa" (vec_xt) );
+}
+static void test_xxspltidp_immff800000  (void) {
+  __asm__ __volatile__ ("xxspltidp %x0, 0xff800000  " : "=wa" (vec_xt) );
+}
+static void test_xxspltidp_immffffffff  (void) {
+  __asm__ __volatile__ ("xxspltidp %x0, 0xffffffff  " : "=wa" (vec_xt) );
+}
+static void test_xxspltidp_immff832345  (void) {
+  __asm__ __volatile__ ("xxspltidp %x0, 0xff832345  " : "=wa" (vec_xt) );
+}
+static void test_xxspltidp_immff800001  (void) {
+  __asm__ __volatile__ ("xxspltidp %x0, 0xff800001  " : "=wa" (vec_xt) );
+}
+static void test_xxspltidp_imm80800000  (void) {
+  __asm__ __volatile__ ("xxspltidp %x0, 0x80800000  " : "=wa" (vec_xt) );
+}
+static void test_xxspltidp_imm80ffffff  (void) {
+  __asm__ __volatile__ ("xxspltidp %x0, 0x80ffffff  " : "=wa" (vec_xt) );
+}
+static void test_xxspltidp_imm80832345  (void) {
+  __asm__ __volatile__ ("xxspltidp %x0, 0x80832345  " : "=wa" (vec_xt) );
+}
+static void test_xxspltidp_imm80800001  (void) {
+  __asm__ __volatile__ ("xxspltidp %x0, 0x80800001  " : "=wa" (vec_xt) );
+}
+static void test_xxsplti32dx_ix0_imm3 (void) {
+  __asm__ __volatile__ ("xxsplti32dx %x0, 0, 3 " : "+wa" (vec_xt) );
+}
+static void test_xxsplti32dx_ix0_imm7 (void) {
+  __asm__ __volatile__ ("xxsplti32dx %x0, 0, 7 " : "+wa" (vec_xt) );
+}
+static void test_xxsplti32dx_ix0_imm15 (void) {
+  __asm__ __volatile__ ("xxsplti32dx %x0, 0, 15 " : "+wa" (vec_xt) );
+}
+static void test_xxsplti32dx_ix0_imm31 (void) {
+  __asm__ __volatile__ ("xxsplti32dx %x0, 0, 31 " : "+wa" (vec_xt) );
+}
+static void test_xxsplti32dx_ix0_imm63 (void) {
+  __asm__ __volatile__ ("xxsplti32dx %x0, 0, 63 " : "+wa" (vec_xt) );
+}
+static void test_xxsplti32dx_ix0_imm127 (void) {
+  __asm__ __volatile__ ("xxsplti32dx %x0, 0, 127 " : "+wa" (vec_xt) );
+}
+static void test_xxsplti32dx_ix0_imm32768 (void) {
+  __asm__ __volatile__ ("xxsplti32dx %x0, 0, 32768 " : "+wa" (vec_xt) );
+}
+static void test_xxsplti32dx_ix0_imm66535 (void) {
+  __asm__ __volatile__ ("xxsplti32dx %x0, 0, 66535 " : "+wa" (vec_xt) );
+}
+static void test_xxsplti32dx_ix0_imm0xa5a5a5a5 (void) {
+  __asm__ __volatile__ ("xxsplti32dx %x0, 0, 0xa5a5a5a5 " : "+wa" (vec_xt) );
+}
+static void test_xxsplti32dx_ix0_imm0xffffffff (void) {
+  __asm__ __volatile__ ("xxsplti32dx %x0, 0, 0xffffffff " : "+wa" (vec_xt) );
+}
+static void test_xxsplti32dx_ix1_imm3 (void) {
+  __asm__ __volatile__ ("xxsplti32dx %x0, 1, 3 " : "+wa" (vec_xt) );
+}
+static void test_xxsplti32dx_ix1_imm7 (void) {
+  __asm__ __volatile__ ("xxsplti32dx %x0, 1, 7 " : "+wa" (vec_xt) );
+}
+static void test_xxsplti32dx_ix1_imm15 (void) {
+  __asm__ __volatile__ ("xxsplti32dx %x0, 1, 15 " : "+wa" (vec_xt) );
+}
+static void test_xxsplti32dx_ix1_imm31 (void) {
+  __asm__ __volatile__ ("xxsplti32dx %x0, 1, 31 " : "+wa" (vec_xt) );
+}
+static void test_xxsplti32dx_ix1_imm63 (void) {
+  __asm__ __volatile__ ("xxsplti32dx %x0, 1, 63 " : "+wa" (vec_xt) );
+}
+static void test_xxsplti32dx_ix1_imm127 (void) {
+  __asm__ __volatile__ ("xxsplti32dx %x0, 1, 127 " : "+wa" (vec_xt) );
+}
+static void test_xxsplti32dx_ix1_imm32768 (void) {
+  __asm__ __volatile__ ("xxsplti32dx %x0, 1, 32768 " : "+wa" (vec_xt) );
+}
+static void test_xxsplti32dx_ix1_imm66535 (void) {
+  __asm__ __volatile__ ("xxsplti32dx %x0, 1, 66535 " : "+wa" (vec_xt) );
+}
+static void test_xxsplti32dx_ix1_imm0xa5a5a5a5 (void) {
+  __asm__ __volatile__ ("xxsplti32dx %x0, 1, 0xa5a5a5a5 " : "+wa" (vec_xt) );
+}
+static void test_xxsplti32dx_ix1_imm0xffffffff (void) {
+  __asm__ __volatile__ ("xxsplti32dx %x0, 1, 0xffffffff " : "+wa" (vec_xt) );
+}
+static void test_lxvkq_imm1 (void) {
+  __asm__ __volatile__ ("lxvkq %x0, 1" : "=wa" (vec_xt) );
+}
+static void test_lxvkq_imm2 (void) {
+  __asm__ __volatile__ ("lxvkq %x0, 2" : "=wa" (vec_xt) );
+}
+static void test_lxvkq_imm3 (void) {
+  __asm__ __volatile__ ("lxvkq %x0, 3" : "=wa" (vec_xt) );
+}
+static void test_lxvkq_imm4 (void) {
+  __asm__ __volatile__ ("lxvkq %x0, 4" : "=wa" (vec_xt) );
+}
+static void test_lxvkq_imm5 (void) {
+  __asm__ __volatile__ ("lxvkq %x0, 5" : "=wa" (vec_xt) );
+}
+static void test_lxvkq_imm6 (void) {
+  __asm__ __volatile__ ("lxvkq %x0, 6" : "=wa" (vec_xt) );
+}
+static void test_lxvkq_imm7 (void) {
+  __asm__ __volatile__ ("lxvkq %x0, 7" : "=wa" (vec_xt) );
+}
+static void test_lxvkq_imm8 (void) {
+  __asm__ __volatile__ ("lxvkq %x0, 8" : "=wa" (vec_xt) );
+}
+static void test_lxvkq_imm9 (void) {
+  __asm__ __volatile__ ("lxvkq %x0, 9" : "=wa" (vec_xt) );
+}
+static void test_lxvkq_imm16 (void) {
+  __asm__ __volatile__ ("lxvkq %x0, 16" : "=wa" (vec_xt) );
+}
+static void test_lxvkq_imm17 (void) {
+  __asm__ __volatile__ ("lxvkq %x0, 17" : "=wa" (vec_xt) );
+}
+static void test_lxvkq_imm18 (void) {
+  __asm__ __volatile__ ("lxvkq %x0, 18" : "=wa" (vec_xt) );
+}
+static void test_lxvkq_imm19 (void) {
+  __asm__ __volatile__ ("lxvkq %x0, 19" : "=wa" (vec_xt) );
+}
+static void test_lxvkq_imm20 (void) {
+  __asm__ __volatile__ ("lxvkq %x0, 20" : "=wa" (vec_xt) );
+}
+static void test_lxvkq_imm21 (void) {
+  __asm__ __volatile__ ("lxvkq %x0, 21" : "=wa" (vec_xt) );
+}
+static void test_lxvkq_imm22 (void) {
+  __asm__ __volatile__ ("lxvkq %x0, 22" : "=wa" (vec_xt) );
+}
+static void test_lxvkq_imm23 (void) {
+  __asm__ __volatile__ ("lxvkq %x0, 23" : "=wa" (vec_xt) );
+}
+static void test_lxvkq_imm24 (void) {
+  __asm__ __volatile__ ("lxvkq %x0, 24" : "=wa" (vec_xt) );
+}
+static void test_xxblendvb (void) {
+  __asm__ __volatile__ ("xxblendvb %x0, %x1, %x2, %x3"
+			: "=wa" (vec_xt) : "wa" (vec_xa), "wa" (vec_xb), "wa" (vec_xc) );
+}
+static void test_xxblendvh (void) {
+  __asm__ __volatile__ ("xxblendvh %x0, %x1, %x2, %x3"
+			: "=wa" (vec_xt) : "wa" (vec_xa), "wa" (vec_xb), "wa" (vec_xc) );
+}
+static void test_xxblendvw (void) {
+  __asm__ __volatile__ ("xxblendvw %x0, %x1, %x2, %x3"
+			: "=wa" (vec_xt) : "wa" (vec_xa), "wa" (vec_xb), "wa" (vec_xc) );
+}
+static void test_xxblendvd (void) {
+  __asm__ __volatile__ ("xxblendvd %x0, %x1, %x2, %x3"
+			: "=wa" (vec_xt) : "wa" (vec_xa), "wa" (vec_xb), "wa" (vec_xc) );
+}
+static void test_xxpermx_imm0 (void) {
+  __asm__ __volatile__ ("xxpermx %x0, %x1, %x2, %x3, 0"
+			: "=wa" (vec_xt) : "wa" (vec_xa), "wa" (vec_xb), "wa" (vec_xc) );
+}
+static void test_xxpermx_imm3 (void) {
+  __asm__ __volatile__ ("xxpermx %x0, %x1, %x2, %x3, 3"
+			: "=wa" (vec_xt) : "wa" (vec_xa), "wa" (vec_xb), "wa" (vec_xc) );
+}
 static void test_plfd_64 (void) {
   __asm__ __volatile__ ("plfd 28, 64(%0), 0" :: "r" (ra) );
 }
@@ -252,6 +453,24 @@ static void test_pstxv_0 (void) {
 }
 
 static test_list_t testgroup_generic[] = {
+  { &test_lxvkq_imm1, "lxvkq imm1", "XT,UIM"}, /* bcwp */
+  { &test_lxvkq_imm2, "lxvkq imm2", "XT,UIM"}, /* bcwp */
+  { &test_lxvkq_imm3, "lxvkq imm3", "XT,UIM"}, /* bcwp */
+  { &test_lxvkq_imm4, "lxvkq imm4", "XT,UIM"}, /* bcwp */
+  { &test_lxvkq_imm5, "lxvkq imm5", "XT,UIM"}, /* bcwp */
+  { &test_lxvkq_imm6, "lxvkq imm6", "XT,UIM"}, /* bcwp */
+  { &test_lxvkq_imm7, "lxvkq imm7", "XT,UIM"}, /* bcwp */
+  { &test_lxvkq_imm8, "lxvkq imm8", "XT,UIM"}, /* bcwp */
+  { &test_lxvkq_imm9, "lxvkq imm9", "XT,UIM"}, /* bcwp */
+  { &test_lxvkq_imm16, "lxvkq imm16", "XT,UIM"}, /* bcwp */
+  { &test_lxvkq_imm17, "lxvkq imm17", "XT,UIM"}, /* bcwp */
+  { &test_lxvkq_imm18, "lxvkq imm18", "XT,UIM"}, /* bcwp */
+  { &test_lxvkq_imm19, "lxvkq imm19", "XT,UIM"}, /* bcwp */
+  { &test_lxvkq_imm20, "lxvkq imm20", "XT,UIM"}, /* bcwp */
+  { &test_lxvkq_imm21, "lxvkq imm21", "XT,UIM"}, /* bcwp */
+  { &test_lxvkq_imm22, "lxvkq imm22", "XT,UIM"}, /* bcwp */
+  { &test_lxvkq_imm23, "lxvkq imm23", "XT,UIM"}, /* bcwp */
+  { &test_lxvkq_imm24, "lxvkq imm24", "XT,UIM"}, /* bcwp */
   { &test_lxvpx, "lxvpx", "XTp,RA,RB"}, /* bcs */
   { &test_lxvp_0, "lxvp 0", "XTp,DQ(RA)"}, /* bcwp */
   { &test_lxvp_16, "lxvp 16", "XTp,DQ(RA)"}, /* bcwp */
@@ -319,6 +538,53 @@ static test_list_t testgroup_generic[] = {
   { &test_stxvp_off16, "stxvp off16", "XSp,DQ(RA)"}, /* bcwp */
   { &test_stxvp_off32, "stxvp off32", "XSp,DQ(RA)"}, /* bcwp */
   { &test_stxvp_off48, "stxvp off48", "XSp,DQ(RA)"}, /* bcwp */
+  { &test_xxblendvb, "xxblendvb", "XT,XA,XB,XC"}, /* bcs */
+  { &test_xxblendvd, "xxblendvd", "XT,XA,XB,XC"}, /* bcs */
+  { &test_xxblendvh, "xxblendvh", "XT,XA,XB,XC"}, /* bcs */
+  { &test_xxblendvw, "xxblendvw", "XT,XA,XB,XC"}, /* bcs */
+  { &test_xxpermx_imm0, "xxpermx imm0", "XT,XA,XB,XC,UIM"}, /* bcwp */
+  { &test_xxpermx_imm3, "xxpermx imm3", "XT,XA,XB,XC,UIM"}, /* bcwp */
+  { &test_xxsplti32dx_ix0_imm0xa5a5a5a5, "xxsplti32dx ix0_imm0xa5a5a5a5", "XT,IX,IMM32"}, /* bcwp */
+  { &test_xxsplti32dx_ix0_imm0xffffffff, "xxsplti32dx ix0_imm0xffffffff", "XT,IX,IMM32"}, /* bcwp */
+  { &test_xxsplti32dx_ix0_imm3, "xxsplti32dx ix0_imm3", "XT,IX,IMM32"}, /* bcwp */
+  { &test_xxsplti32dx_ix0_imm7, "xxsplti32dx ix0_imm7", "XT,IX,IMM32"}, /* bcwp */
+  { &test_xxsplti32dx_ix0_imm15, "xxsplti32dx ix0_imm15", "XT,IX,IMM32"}, /* bcwp */
+  { &test_xxsplti32dx_ix0_imm31, "xxsplti32dx ix0_imm31", "XT,IX,IMM32"}, /* bcwp */
+  { &test_xxsplti32dx_ix0_imm63, "xxsplti32dx ix0_imm63", "XT,IX,IMM32"}, /* bcwp */
+  { &test_xxsplti32dx_ix0_imm127, "xxsplti32dx ix0_imm127", "XT,IX,IMM32"}, /* bcwp */
+  { &test_xxsplti32dx_ix0_imm32768, "xxsplti32dx ix0_imm32768", "XT,IX,IMM32"}, /* bcwp */
+  { &test_xxsplti32dx_ix0_imm66535, "xxsplti32dx ix0_imm66535", "XT,IX,IMM32"}, /* bcwp */
+  { &test_xxsplti32dx_ix1_imm0xa5a5a5a5, "xxsplti32dx ix1_imm0xa5a5a5a5", "XT,IX,IMM32"}, /* bcwp */
+  { &test_xxsplti32dx_ix1_imm0xffffffff, "xxsplti32dx ix1_imm0xffffffff", "XT,IX,IMM32"}, /* bcwp */
+  { &test_xxsplti32dx_ix1_imm3, "xxsplti32dx ix1_imm3", "XT,IX,IMM32"}, /* bcwp */
+  { &test_xxsplti32dx_ix1_imm7, "xxsplti32dx ix1_imm7", "XT,IX,IMM32"}, /* bcwp */
+  { &test_xxsplti32dx_ix1_imm15, "xxsplti32dx ix1_imm15", "XT,IX,IMM32"}, /* bcwp */
+  { &test_xxsplti32dx_ix1_imm31, "xxsplti32dx ix1_imm31", "XT,IX,IMM32"}, /* bcwp */
+  { &test_xxsplti32dx_ix1_imm63, "xxsplti32dx ix1_imm63", "XT,IX,IMM32"}, /* bcwp */
+  { &test_xxsplti32dx_ix1_imm127, "xxsplti32dx ix1_imm127", "XT,IX,IMM32"}, /* bcwp */
+  { &test_xxsplti32dx_ix1_imm32768, "xxsplti32dx ix1_imm32768", "XT,IX,IMM32"}, /* bcwp */
+  { &test_xxsplti32dx_ix1_imm66535, "xxsplti32dx ix1_imm66535", "XT,IX,IMM32"}, /* bcwp */
+  { &test_xxspltidp_imm0 , "xxspltidp imm0 ", "XT,IMM32"}, /* bcwp */
+  { &test_xxspltidp_imm7f800000 , "xxspltidp imm7f800000 ", "XT,IMM32"}, /* bcwp */
+  { &test_xxspltidp_imm7f800001 , "xxspltidp imm7f800001 ", "XT,IMM32"}, /* bcwp */
+  { &test_xxspltidp_imm7f832345 , "xxspltidp imm7f832345 ", "XT,IMM32"}, /* bcwp */
+  { &test_xxspltidp_imm7fffffff , "xxspltidp imm7fffffff ", "XT,IMM32"}, /* bcwp */
+  { &test_xxspltidp_imm80ffffff , "xxspltidp imm80ffffff ", "XT,IMM32"}, /* bcwp */
+  { &test_xxspltidp_imm800000 , "xxspltidp imm800000 ", "XT,IMM32"}, /* bcwp */
+  { &test_xxspltidp_imm800001 , "xxspltidp imm800001 ", "XT,IMM32"}, /* bcwp */
+  { &test_xxspltidp_imm832345 , "xxspltidp imm832345 ", "XT,IMM32"}, /* bcwp */
+  { &test_xxspltidp_imm80000000 , "xxspltidp imm80000000 ", "XT,IMM32"}, /* bcwp */
+  { &test_xxspltidp_imm80800000 , "xxspltidp imm80800000 ", "XT,IMM32"}, /* bcwp */
+  { &test_xxspltidp_imm80800001 , "xxspltidp imm80800001 ", "XT,IMM32"}, /* bcwp */
+  { &test_xxspltidp_imm80832345 , "xxspltidp imm80832345 ", "XT,IMM32"}, /* bcwp */
+  { &test_xxspltidp_immff800000 , "xxspltidp immff800000 ", "XT,IMM32"}, /* bcwp */
+  { &test_xxspltidp_immff800001 , "xxspltidp immff800001 ", "XT,IMM32"}, /* bcwp */
+  { &test_xxspltidp_immff832345 , "xxspltidp immff832345 ", "XT,IMM32"}, /* bcwp */
+  { &test_xxspltidp_immffffffff , "xxspltidp immffffffff ", "XT,IMM32"}, /* bcwp */
+  { &test_xxspltidp_immffffff , "xxspltidp immffffff ", "XT,IMM32"}, /* bcwp */
+  { &test_xxspltiw_imm0, "xxspltiw imm0", "XT,IMM32"}, /* bcwp */
+  { &test_xxspltiw_imm3, "xxspltiw imm3", "XT,IMM32"}, /* bcwp */
+  { &test_xxspltiw_imm8, "xxspltiw imm8", "XT,IMM32"}, /* bcwp */
 	{ NULL, 	    NULL },
 };
 

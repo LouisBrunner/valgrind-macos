@@ -166,4 +166,164 @@ pstw off16 (&buffer) 102030405060708 => [ -   -  7ff0000005060708  -   -   -   -
 
 pstw off32 (&buffer) 102030405060708 => [ -   -   -   -  5a05a05a05060708  -   -   - ]
 
-All done. Tested 64 different instruction groups
+setbcr 0_cr0s => [00000000]                1
+
+setbcr 0_cr1s => [ffffffff]                0
+
+setbcr 0_creb => [aaaaaaaa]                0
+
+setbcr 0_crob => [55555555]                1
+
+setbcr 3_cr0s => [00000000]                1
+
+setbcr 3_cr1s => [ffffffff]                0
+
+setbcr 3_creb => [aaaaaaaa]                1
+
+setbcr 3_crob => [55555555]                0
+
+setbcr 7_cr0s => [00000000]                1
+
+setbcr 7_cr1s => [ffffffff]                0
+
+setbcr 7_creb => [aaaaaaaa]                1
+
+setbcr 7_crob => [55555555]                0
+
+setbcr 8_cr0s => [00000000]                1
+
+setbcr 8_cr1s => [ffffffff]                0
+
+setbcr 8_creb => [aaaaaaaa]                0
+
+setbcr 8_crob => [55555555]                1
+
+setbcr 31_cr0s => [00000000]                1
+
+setbcr 31_cr1s => [ffffffff]                0
+
+setbcr 31_creb => [aaaaaaaa]                1
+
+setbcr 31_crob => [55555555]                0
+
+setbc 0_cr0s => [00000000]                0
+
+setbc 0_cr1s => [ffffffff]                1
+
+setbc 0_creb => [aaaaaaaa]                1
+
+setbc 0_crob => [55555555]                0
+
+setbc 3_cr0s => [00000000]                0
+
+setbc 3_cr1s => [ffffffff]                1
+
+setbc 3_creb => [aaaaaaaa]                0
+
+setbc 3_crob => [55555555]                1
+
+setbc 7_cr0s => [00000000]                0
+
+setbc 7_cr1s => [ffffffff]                1
+
+setbc 7_creb => [aaaaaaaa]                0
+
+setbc 7_crob => [55555555]                1
+
+setbc 8_cr0s => [00000000]                0
+
+setbc 8_cr1s => [ffffffff]                1
+
+setbc 8_creb => [aaaaaaaa]                1
+
+setbc 8_crob => [55555555]                0
+
+setbc 31_cr0s => [00000000]                0
+
+setbc 31_cr1s => [ffffffff]                1
+
+setbc 31_creb => [aaaaaaaa]                0
+
+setbc 31_crob => [55555555]                1
+
+setnbcr 0_cr0s => [00000000] ffffffffffffffff
+
+setnbcr 0_cr1s => [ffffffff]                0
+
+setnbcr 0_creb => [aaaaaaaa]                0
+
+setnbcr 0_crob => [55555555] ffffffffffffffff
+
+setnbcr 3_cr0s => [00000000] ffffffffffffffff
+
+setnbcr 3_cr1s => [ffffffff]                0
+
+setnbcr 3_creb => [aaaaaaaa] ffffffffffffffff
+
+setnbcr 3_crob => [55555555]                0
+
+setnbcr 7_cr0s => [00000000] ffffffffffffffff
+
+setnbcr 7_cr1s => [ffffffff]                0
+
+setnbcr 7_creb => [aaaaaaaa] ffffffffffffffff
+
+setnbcr 7_crob => [55555555]                0
+
+setnbcr 8_cr0s => [00000000] ffffffffffffffff
+
+setnbcr 8_cr1s => [ffffffff]                0
+
+setnbcr 8_creb => [aaaaaaaa]                0
+
+setnbcr 8_crob => [55555555] ffffffffffffffff
+
+setnbcr 31_cr0s => [00000000] ffffffffffffffff
+
+setnbcr 31_cr1s => [ffffffff]                0
+
+setnbcr 31_creb => [aaaaaaaa] ffffffffffffffff
+
+setnbcr 31_crob => [55555555]                0
+
+setnbc 0_cr0s => [00000000]                0
+
+setnbc 0_cr1s => [ffffffff] ffffffffffffffff
+
+setnbc 0_creb => [aaaaaaaa] ffffffffffffffff
+
+setnbc 0_crob => [55555555]                0
+
+setnbc 3_cr0s => [00000000]                0
+
+setnbc 3_cr1s => [ffffffff] ffffffffffffffff
+
+setnbc 3_creb => [aaaaaaaa]                0
+
+setnbc 3_crob => [55555555] ffffffffffffffff
+
+setnbc 7_cr0s => [00000000]                0
+
+setnbc 7_cr1s => [ffffffff] ffffffffffffffff
+
+setnbc 7_creb => [aaaaaaaa]                0
+
+setnbc 7_crob => [55555555] ffffffffffffffff
+
+setnbc 8_cr0s => [00000000]                0
+
+setnbc 8_cr1s => [ffffffff] ffffffffffffffff
+
+setnbc 8_creb => [aaaaaaaa] ffffffffffffffff
+
+setnbc 8_crob => [55555555]                0
+
+setnbc 31_cr0s => [00000000]                0
+
+setnbc 31_cr1s => [ffffffff] ffffffffffffffff
+
+setnbc 31_creb => [aaaaaaaa]                0
+
+setnbc 31_crob => [55555555] ffffffffffffffff
+
+All done. Tested 144 different instruction groups

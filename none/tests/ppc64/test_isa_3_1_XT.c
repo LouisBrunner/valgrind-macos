@@ -297,6 +297,38 @@ static void test_xxeval_imm3 (void) {
   __asm__ __volatile__ ("xxeval %x0, %x1, %x2, %x3, 3"
 			: "=wa" (vec_xt) : "wa" (vec_xa), "wa" (vec_xb), "wa" (vec_xc) );
 }
+static void test_lxvrbx (void) {
+  __asm__ __volatile__ ("lxvrbx %x0, %1, %2"
+				: "=wa" (vec_xt) : "r" (ra), "r" (rb) );
+}
+static void test_lxvrhx (void) {
+  __asm__ __volatile__ ("lxvrhx %x0, %1, %2"
+				: "=wa" (vec_xt) : "r" (ra), "r" (rb) );
+}
+static void test_lxvrwx (void) {
+  __asm__ __volatile__ ("lxvrwx %x0, %1, %2"
+				: "=wa" (vec_xt) : "r" (ra), "r" (rb) );
+}
+static void test_lxvrdx (void) {
+  __asm__ __volatile__ ("lxvrdx %x0, %1, %2"
+				: "=wa" (vec_xt) : "r" (ra), "r" (rb) );
+}
+static void test_stxvrbx (void) {
+  __asm__ __volatile__ ("stxvrbx %x0, %1, %2"
+				:: "wa" (vec_xs), "r" (ra), "r" (rb) );
+}
+static void test_stxvrhx (void) {
+  __asm__ __volatile__ ("stxvrhx %x0, %1, %2"
+				:: "wa" (vec_xs), "r" (ra), "r" (rb) );
+}
+static void test_stxvrwx (void) {
+  __asm__ __volatile__ ("stxvrwx %x0, %1, %2"
+				:: "wa" (vec_xs), "r" (ra), "r" (rb) );
+}
+static void test_stxvrdx (void) {
+  __asm__ __volatile__ ("stxvrdx %x0, %1, %2"
+				:: "wa" (vec_xs), "r" (ra), "r" (rb) );
+}
 static void test_plfd_64 (void) {
   __asm__ __volatile__ ("plfd 28, 64(%0), 0" :: "r" (ra) );
 }
@@ -483,6 +515,10 @@ static test_list_t testgroup_generic[] = {
   { &test_lxvp_0, "lxvp 0", "XTp,DQ(RA)"}, /* bcwp */
   { &test_lxvp_16, "lxvp 16", "XTp,DQ(RA)"}, /* bcwp */
   { &test_lxvp_32, "lxvp 32", "XTp,DQ(RA)"}, /* bcwp */
+  { &test_lxvrbx, "lxvrbx", "XT,RA,RB"}, /* bcs */
+  { &test_lxvrdx, "lxvrdx", "XT,RA,RB"}, /* bcs */
+  { &test_lxvrhx, "lxvrhx", "XT,RA,RB"}, /* bcs */
+  { &test_lxvrwx, "lxvrwx", "XT,RA,RB"}, /* bcs */
   { &test_plfd_0, "plfd 0", "FRT,D(RA),R"}, /* bcwp */
   { &test_plfd_4, "plfd 4", "FRT,D(RA),R"}, /* bcwp */
   { &test_plfd_8, "plfd 8", "FRT,D(RA),R"}, /* bcwp */
@@ -546,6 +582,10 @@ static test_list_t testgroup_generic[] = {
   { &test_stxvp_off16, "stxvp off16", "XSp,DQ(RA)"}, /* bcwp */
   { &test_stxvp_off32, "stxvp off32", "XSp,DQ(RA)"}, /* bcwp */
   { &test_stxvp_off48, "stxvp off48", "XSp,DQ(RA)"}, /* bcwp */
+  { &test_stxvrbx, "stxvrbx", "XS,RA,RB"}, /* bcs */
+  { &test_stxvrdx, "stxvrdx", "XS,RA,RB"}, /* bcs */
+  { &test_stxvrhx, "stxvrhx", "XS,RA,RB"}, /* bcs */
+  { &test_stxvrwx, "stxvrwx", "XS,RA,RB"}, /* bcs */
   { &test_xxblendvb, "xxblendvb", "XT,XA,XB,XC"}, /* bcs */
   { &test_xxblendvd, "xxblendvd", "XT,XA,XB,XC"}, /* bcs */
   { &test_xxblendvh, "xxblendvh", "XT,XA,XB,XC"}, /* bcs */

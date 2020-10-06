@@ -47,6 +47,34 @@ lxvp 16 (&buffer) => 5a05a05a05a07a05 0102030405067708 7ff0000000007000 7f000000
 
 lxvp 32 (&buffer) => fedcba9876547210 0123456789ab7def 5a05a05a05a07a05 0102030405067708
 
+lxvrbx 0 (&buffer) =>               59                0
+lxvrbx 8 (&buffer) =>                7                0
+lxvrbx 10 (&buffer) =>                0                0
+lxvrbx 18 (&buffer) =>                0                0
+lxvrbx 20 (&buffer) =>                5                0
+lxvrbx 28 (&buffer) =>                8                0
+
+lxvrdx 0 (&buffer) => 3fe00094e0007359                0
+lxvrdx 8 (&buffer) => 7ff7020304057607                0
+lxvrdx 10 (&buffer) => 7ff0000000007000                0
+lxvrdx 18 (&buffer) => 7f0000007f007000                0
+lxvrdx 20 (&buffer) => 5a05a05a05a07a05                0
+lxvrdx 28 (&buffer) =>  102030405067708                0
+
+lxvrhx 0 (&buffer) =>             7359                0
+lxvrhx 8 (&buffer) =>             7607                0
+lxvrhx 10 (&buffer) =>             7000                0
+lxvrhx 18 (&buffer) =>             7000                0
+lxvrhx 20 (&buffer) =>             7a05                0
+lxvrhx 28 (&buffer) =>             7708                0
+
+lxvrwx 0 (&buffer) =>         e0007359                0
+lxvrwx 8 (&buffer) =>          4057607                0
+lxvrwx 10 (&buffer) =>             7000                0
+lxvrwx 18 (&buffer) =>         7f007000                0
+lxvrwx 20 (&buffer) =>          5a07a05                0
+lxvrwx 28 (&buffer) =>          5067708                0
+
 plfd 0 (&buffer) => 5.000710e-01
 
 plfd 4 (&buffer) => 2.752739e-289
@@ -187,6 +215,34 @@ stxvp off16 (&buffer) 0180055e0180077e 0080000e8080000e ff7ffffe7f7ffffe ff80000
 stxvp off32 (&buffer) 0180055e0180077e 0080000e8080000e ff7ffffe7f7ffffe ff8000007f800000 => [ -   -   -   -  ff7ffffe7f7ffffe ff8000007f800000 0180055e0180077e 0080000e8080000e]
 
 stxvp off48 (&buffer) 0180055e0180077e 0080000e8080000e ff7ffffe7f7ffffe ff8000007f800000 => [ -   -   -   -   -   -  ff7ffffe7f7ffffe ff8000007f800000]
+
+stxvrbx 0 (&buffer) ff7ffffe7f7ffffe,ff8000007f800000 => [3fe00094e00073fe  -   -   -   -   -   -   - ]
+stxvrbx 8 (&buffer) 0080000e8080000e,ff7ffffe7f7ffffe => [ -  7ff702030405760e  -   -   -   -   -   - ]
+stxvrbx 10 (&buffer) 0180055e0180077e,0080000e8080000e => [ -   -  7ff000000000707e  -   -   -   -   - ]
+stxvrbx 18 (&buffer) 0000111e8000222e,0180055e0180077e => [ -   -   -  7f0000007f00702e  -   -   -   - ]
+stxvrbx 20 (&buffer) 7ff0000000000000,0000111e8000222e => [ -   -   -   -  5a05a05a05a07a00  -   -   - ]
+stxvrbx 28 (&buffer) fff0000000000000,7ff0000000000000 => [ -   -   -   -   -  0102030405067700  -   - ]
+
+stxvrdx 0 (&buffer) ff7ffffe7f7ffffe,ff8000007f800000 => [ff7ffffe7f7ffffe  -   -   -   -   -   -   - ]
+stxvrdx 8 (&buffer) 0080000e8080000e,ff7ffffe7f7ffffe => [ -  0080000e8080000e  -   -   -   -   -   - ]
+stxvrdx 10 (&buffer) 0180055e0180077e,0080000e8080000e => [ -   -  0180055e0180077e  -   -   -   -   - ]
+stxvrdx 18 (&buffer) 0000111e8000222e,0180055e0180077e => [ -   -   -  0000111e8000222e  -   -   -   - ]
+stxvrdx 20 (&buffer) 7ff0000000000000,0000111e8000222e => [ -   -   -   -  7ff0000000000000  -   -   - ]
+stxvrdx 28 (&buffer) fff0000000000000,7ff0000000000000 => [ -   -   -   -   -  fff0000000000000  -   - ]
+
+stxvrhx 0 (&buffer) ff7ffffe7f7ffffe,ff8000007f800000 => [3fe00094e000fffe  -   -   -   -   -   -   - ]
+stxvrhx 8 (&buffer) 0080000e8080000e,ff7ffffe7f7ffffe => [ -  7ff702030405000e  -   -   -   -   -   - ]
+stxvrhx 10 (&buffer) 0180055e0180077e,0080000e8080000e => [ -   -  7ff000000000077e  -   -   -   -   - ]
+stxvrhx 18 (&buffer) 0000111e8000222e,0180055e0180077e => [ -   -   -  7f0000007f00222e  -   -   -   - ]
+stxvrhx 20 (&buffer) 7ff0000000000000,0000111e8000222e => [ -   -   -   -  5a05a05a05a00000  -   -   - ]
+stxvrhx 28 (&buffer) fff0000000000000,7ff0000000000000 => [ -   -   -   -   -  0102030405060000  -   - ]
+
+stxvrwx 0 (&buffer) ff7ffffe7f7ffffe,ff8000007f800000 => [3fe000947f7ffffe  -   -   -   -   -   -   - ]
+stxvrwx 8 (&buffer) 0080000e8080000e,ff7ffffe7f7ffffe => [ -  7ff702038080000e  -   -   -   -   -   - ]
+stxvrwx 10 (&buffer) 0180055e0180077e,0080000e8080000e => [ -   -  7ff000000180077e  -   -   -   -   - ]
+stxvrwx 18 (&buffer) 0000111e8000222e,0180055e0180077e => [ -   -   -  7f0000008000222e  -   -   -   - ]
+stxvrwx 20 (&buffer) 7ff0000000000000,0000111e8000222e => [ -   -   -   -  5a05a05a00000000  -   -   - ]
+stxvrwx 28 (&buffer) fff0000000000000,7ff0000000000000 => [ -   -   -   -   -  0102030400000000  -   - ]
 
 xxblendvb 7f800000ff800000,ff8000007f800000 0000000000000000,00000000ffffffff 7f800000ff800000,ff8000007f800000 => 7f800000ff800000 ff8000007f800000
 xxblendvb 7f800000ff800000,ff8000007f800000 ffffffff55555555,5555aaaaaaaa5555 7f800000ff800000,ff8000007f800000 => 7f800000ff800000 ff8000007f800000
@@ -7038,4 +7094,4 @@ xxspltiw imm3 =>        300000003        300000003
 
 xxspltiw imm8 =>        800000008        800000008
 
-All done. Tested 134 different instruction groups
+All done. Tested 142 different instruction groups

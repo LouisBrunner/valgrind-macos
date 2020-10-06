@@ -303,6 +303,26 @@ static void test_vsrdbi_4 (void) {
   __asm__ __volatile__ ("vsrdbi %0, %1, %2, 4"
 				: "=v" (vrt) : "v" (vra), "v" (vrb) );
 }
+static void test_vcfuged (void) {
+  __asm__ __volatile__ ("vcfuged %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_vclzdm (void) {
+  __asm__ __volatile__ ("vclzdm %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_vctzdm (void) {
+  __asm__ __volatile__ ("vctzdm %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_vpdepd (void) {
+  __asm__ __volatile__ ("vpdepd %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_vpextd (void) {
+  __asm__ __volatile__ ("vpextd %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
 static void test_xscmpeqqp (void) {
   __asm__ __volatile__ ("xscmpeqqp %0, %1, %2"
 				: "=v" (vrt) : "v" (vra), "v" (vrb) );
@@ -328,9 +348,12 @@ static test_list_t testgroup_generic[] = {
   { &test_dotted_vcmpequq, "vcmpequq.", "VRT,VRA,VRB"}, /* bcs */
   { &test_dotted_vcmpgtsq, "vcmpgtsq.", "VRT,VRA,VRB"}, /* bcs */
   { &test_dotted_vcmpgtuq, "vcmpgtuq.", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vcfuged, "vcfuged", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vclzdm, "vclzdm", "VRT,VRA,VRB"}, /* bcs */
   { &test_vcmpequq, "vcmpequq", "VRT,VRA,VRB"}, /* bcs */
   { &test_vcmpgtsq, "vcmpgtsq", "VRT,VRA,VRB"}, /* bcs */
   { &test_vcmpgtuq, "vcmpgtuq", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vctzdm, "vctzdm", "VRT,VRA,VRB"}, /* bcs */
   { &test_vdivesd, "vdivesd", "VRT,VRA,VRB"}, /* bcs */
   { &test_vdivesw, "vdivesw", "VRT,VRA,VRB"}, /* bcs */
   { &test_vdiveud, "vdiveud", "VRT,VRA,VRB"}, /* bcs */
@@ -379,6 +402,8 @@ static test_list_t testgroup_generic[] = {
   { &test_vmulld, "vmulld", "VRT,VRA,VRB"}, /* bcs */
   { &test_vmulosd, "vmulosd", "VRT,VRA,VRB"}, /* bcs */
   { &test_vmuloud, "vmuloud", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vpdepd, "vpdepd", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vpextd, "vpextd", "VRT,VRA,VRB"}, /* bcs */
   { &test_vrlqmi, "vrlqmi", "VRT,VRA,VRB"}, /* bcs */
   { &test_vrlqnm, "vrlqnm", "VRT,VRA,VRB"}, /* bcs */
   { &test_vrlq, "vrlq", "VRT,VRA,VRB"}, /* bcs */

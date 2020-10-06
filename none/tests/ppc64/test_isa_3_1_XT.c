@@ -289,6 +289,14 @@ static void test_xxpermx_imm3 (void) {
   __asm__ __volatile__ ("xxpermx %x0, %x1, %x2, %x3, 3"
 			: "=wa" (vec_xt) : "wa" (vec_xa), "wa" (vec_xb), "wa" (vec_xc) );
 }
+static void test_xxeval_imm0 (void) {
+  __asm__ __volatile__ ("xxeval %x0, %x1, %x2, %x3, 0"
+			: "=wa" (vec_xt) : "wa" (vec_xa), "wa" (vec_xb), "wa" (vec_xc) );
+}
+static void test_xxeval_imm3 (void) {
+  __asm__ __volatile__ ("xxeval %x0, %x1, %x2, %x3, 3"
+			: "=wa" (vec_xt) : "wa" (vec_xa), "wa" (vec_xb), "wa" (vec_xc) );
+}
 static void test_plfd_64 (void) {
   __asm__ __volatile__ ("plfd 28, 64(%0), 0" :: "r" (ra) );
 }
@@ -542,6 +550,8 @@ static test_list_t testgroup_generic[] = {
   { &test_xxblendvd, "xxblendvd", "XT,XA,XB,XC"}, /* bcs */
   { &test_xxblendvh, "xxblendvh", "XT,XA,XB,XC"}, /* bcs */
   { &test_xxblendvw, "xxblendvw", "XT,XA,XB,XC"}, /* bcs */
+  { &test_xxeval_imm0, "xxeval imm0", "XT,XA,XB,XC,IMM"}, /* bcwp */
+  { &test_xxeval_imm3, "xxeval imm3", "XT,XA,XB,XC,IMM"}, /* bcwp */
   { &test_xxpermx_imm0, "xxpermx imm0", "XT,XA,XB,XC,UIM"}, /* bcwp */
   { &test_xxpermx_imm3, "xxpermx imm3", "XT,XA,XB,XC,UIM"}, /* bcwp */
   { &test_xxsplti32dx_ix0_imm0xa5a5a5a5, "xxsplti32dx ix0_imm0xa5a5a5a5", "XT,IX,IMM32"}, /* bcwp */

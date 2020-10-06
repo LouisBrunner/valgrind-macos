@@ -73,6 +73,39 @@ static void test_plxvp_off24 (void) {
 static void test_plxvp_off32 (void) {
   __asm__ __volatile__ ("plxvp 20, 32(%0), 0" :: "r" (ra) );
 }
+static void test_cfuged (void) {
+  __asm__ __volatile__ ("cfuged %0, %1, %2" : "=r" (ra) : "r" (rs), "r" (rb) );
+}
+static void test_cntlzdm (void) {
+  __asm__ __volatile__ ("cntlzdm %0, %1, %2" : "=r" (ra) : "r" (rs), "r" (rb) );
+}
+static void test_cnttzdm (void) {
+  __asm__ __volatile__ ("cnttzdm %0, %1, %2" : "=r" (ra) : "r" (rs), "r" (rb) );
+}
+static void test_pdepd (void) {
+  __asm__ __volatile__ ("pdepd %0, %1, %2" : "=r" (ra) : "r" (rs), "r" (rb) );
+}
+static void test_pextd (void) {
+  __asm__ __volatile__ ("pextd %0, %1, %2" : "=r" (ra) : "r" (rs), "r" (rb) );
+}
+static void test_vgnb_2 (void) {
+  __asm__ __volatile__ ("vgnb %0, %1, 2" : "=r" (rt) : "v" (vrb) );
+}
+static void test_vgnb_3 (void) {
+  __asm__ __volatile__ ("vgnb %0, %1, 3" : "=r" (rt) : "v" (vrb) );
+}
+static void test_vgnb_4 (void) {
+  __asm__ __volatile__ ("vgnb %0, %1, 4" : "=r" (rt) : "v" (vrb) );
+}
+static void test_vgnb_5 (void) {
+  __asm__ __volatile__ ("vgnb %0, %1, 5" : "=r" (rt) : "v" (vrb) );
+}
+static void test_vgnb_6 (void) {
+  __asm__ __volatile__ ("vgnb %0, %1, 6" : "=r" (rt) : "v" (vrb) );
+}
+static void test_vgnb_7 (void) {
+  __asm__ __volatile__ ("vgnb %0, %1, 7" : "=r" (rt) : "v" (vrb) );
+}
 static void test_setbc_0_cr0s (void) {
   SET_CR(0x00000000);
   __asm__ __volatile__ ("setbc 26, 0");
@@ -661,10 +694,15 @@ static test_list_t testgroup_generic[] = {
   { &test_brd, "brd", "RA,RS"}, /* bcs */
   { &test_brh, "brh", "RA,RS"}, /* bcs */
   { &test_brw, "brw", "RA,RS"}, /* bcs */
+  { &test_cfuged, "cfuged", "RA,RS,RB"}, /* bcs */
+  { &test_cntlzdm, "cntlzdm", "RA,RS,RB"}, /* bcs */
+  { &test_cnttzdm, "cnttzdm", "RA,RS,RB"}, /* bcs */
   { &test_paddi_0, "paddi 0", "RT,RA,SI,R"}, /* bcwp */
   { &test_paddi_12, "paddi 12", "RT,RA,SI,R"}, /* bcwp */
   { &test_paddi_48, "paddi 48", "RT,RA,SI,R"}, /* bcwp */
   { &test_paddi_98, "paddi 98", "RT,RA,SI,R"}, /* bcwp */
+  { &test_pdepd, "pdepd", "RA,RS,RB"}, /* bcs */
+  { &test_pextd, "pextd", "RA,RS,RB"}, /* bcs */
   { &test_plbz_off0, "plbz off0", "RT,D(RA),R"}, /* bcwp */
   { &test_plbz_off8, "plbz off8", "RT,D(RA),R"}, /* bcwp */
   { &test_plbz_off16, "plbz off16", "RT,D(RA),R"}, /* bcwp */
@@ -807,6 +845,12 @@ static test_list_t testgroup_generic[] = {
   { &test_setnbc_31_cr1s, "setnbc 31_cr1s", "RT,BI"}, /* bcwp */
   { &test_setnbc_31_creb, "setnbc 31_creb", "RT,BI"}, /* bcwp */
   { &test_setnbc_31_crob, "setnbc 31_crob", "RT,BI"}, /* bcwp */
+  { &test_vgnb_2, "vgnb 2", "RT,VRB,N"}, /* bcwp */
+  { &test_vgnb_3, "vgnb 3", "RT,VRB,N"}, /* bcwp */
+  { &test_vgnb_4, "vgnb 4", "RT,VRB,N"}, /* bcwp */
+  { &test_vgnb_5, "vgnb 5", "RT,VRB,N"}, /* bcwp */
+  { &test_vgnb_6, "vgnb 6", "RT,VRB,N"}, /* bcwp */
+  { &test_vgnb_7, "vgnb 7", "RT,VRB,N"}, /* bcwp */
 	{ NULL, 	    NULL },
 };
 

@@ -55,6 +55,7 @@ n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.
 427787  Support new faccessat2 linux syscall (439)
 428035  drd: Unbreak the musl build
 428648  s390_emit_load_mem panics due to 20-bit offset for vector load
+427400  PPC ISA 3.1 support is missing, part 4
 
 Release 3.16.1 (?? June 2020)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

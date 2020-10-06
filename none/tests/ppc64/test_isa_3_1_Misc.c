@@ -59,10 +59,16 @@ static void test_vcmpuq (void) {
   __asm__ __volatile__ ("vcmpuq 3, %0, %1" :: "v" (vra), "v" (vrb) );
   GET_CR(current_cr); SET_CR_ZERO;
 }
+static void test_xvtlsbb (void) {
+  SET_CR_ZERO;
+  __asm__ __volatile__ ("xvtlsbb 3, %x0" :: "wa" (vec_xb) );
+  GET_CR(current_cr); SET_CR_ZERO;
+}
 
 static test_list_t testgroup_generic[] = {
   { &test_vcmpsq, "vcmpsq", "BF,VRA,VRB"}, /* bcs */
   { &test_vcmpuq, "vcmpuq", "BF,VRA,VRB"}, /* bcs */
+  { &test_xvtlsbb, "xvtlsbb", "BF,XB"}, /* bcs */
 	{ NULL, 	    NULL },
 };
 

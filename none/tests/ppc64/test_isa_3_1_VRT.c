@@ -117,6 +117,76 @@ static void test_vmodud (void) {
   __asm__ __volatile__ ("vmodud %0, %1, %2"
 				: "=v" (vrt) : "v" (vra), "v" (vrb) );
 }
+static void test_vmulesd (void) {
+  __asm__ __volatile__ ("vmulesd %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_vmuleud (void) {
+  __asm__ __volatile__ ("vmuleud %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_vmulosd (void) {
+  __asm__ __volatile__ ("vmulosd %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_vmuloud (void) {
+  __asm__ __volatile__ ("vmuloud %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_vextsd2q (void) {
+  __asm__ __volatile__ ("vextsd2q %0, %1 " : "=v" (vrt) : "v" (vrb) );
+}
+static void test_vcmpequq (void) {
+  __asm__ __volatile__ ("vcmpequq %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_dotted_vcmpequq (void) {
+  SET_CR_ZERO;
+  __asm__ __volatile__ ("vcmpequq %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+  GET_CR(current_cr); SET_CR_ZERO;
+}
+static void test_vcmpgtsq (void) {
+  __asm__ __volatile__ ("vcmpgtsq %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_dotted_vcmpgtsq (void) {
+  SET_CR_ZERO;
+  __asm__ __volatile__ ("vcmpgtsq %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+  GET_CR(current_cr); SET_CR_ZERO;
+}
+static void test_vcmpgtuq (void) {
+  __asm__ __volatile__ ("vcmpgtuq %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_dotted_vcmpgtuq (void) {
+  SET_CR_ZERO;
+  __asm__ __volatile__ ("vcmpgtuq %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+  GET_CR(current_cr); SET_CR_ZERO;
+}
+static void test_vrlq (void) {
+  __asm__ __volatile__ ("vrlq %0, %1, %2" : "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_vrlqmi (void) {
+  __asm__ __volatile__ ("vrlqmi %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_vrlqnm (void) {
+  __asm__ __volatile__ ("vrlqnm %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_vslq (void) {
+  __asm__ __volatile__ ("vslq %0, %1, %2" : "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_vsraq (void) {
+  __asm__ __volatile__ ("vsraq %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_vsrq (void) {
+  __asm__ __volatile__ ("vsrq %0, %1, %2" : "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
 static void test_vextdubvlx (void) {
   __asm__ __volatile__ ("vextdubvlx %0, %1, %2, %3"
 			: "=v" (vrt) : "v" (vra), "v" (vrb), "r" (rc) );
@@ -255,6 +325,12 @@ static void test_xsmincqp (void) {
 }
 
 static test_list_t testgroup_generic[] = {
+  { &test_dotted_vcmpequq, "vcmpequq.", "VRT,VRA,VRB"}, /* bcs */
+  { &test_dotted_vcmpgtsq, "vcmpgtsq.", "VRT,VRA,VRB"}, /* bcs */
+  { &test_dotted_vcmpgtuq, "vcmpgtuq.", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vcmpequq, "vcmpequq", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vcmpgtsq, "vcmpgtsq", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vcmpgtuq, "vcmpgtuq", "VRT,VRA,VRB"}, /* bcs */
   { &test_vdivesd, "vdivesd", "VRT,VRA,VRB"}, /* bcs */
   { &test_vdivesw, "vdivesw", "VRT,VRA,VRB"}, /* bcs */
   { &test_vdiveud, "vdiveud", "VRT,VRA,VRB"}, /* bcs */
@@ -271,6 +347,7 @@ static test_list_t testgroup_generic[] = {
   { &test_vextduhvrx, "vextduhvrx", "VRT,VRA,VRB,RC"}, /* bcs */
   { &test_vextduwvlx, "vextduwvlx", "VRT,VRA,VRB,RC"}, /* bcs */
   { &test_vextduwvrx, "vextduwvrx", "VRT,VRA,VRB,RC"}, /* bcs */
+  { &test_vextsd2q, "vextsd2q", "VRT,VRB"}, /* bcs */
   { &test_vinsblx, "vinsblx", "VRT,RA,RB"}, /* bcs */
   { &test_vinsbrx, "vinsbrx", "VRT,RA,RB"}, /* bcs */
   { &test_vinsbvlx, "vinsbvlx", "VRT,RA,VRB"}, /* bcs */
@@ -293,15 +370,25 @@ static test_list_t testgroup_generic[] = {
   { &test_vmodsw, "vmodsw", "VRT,VRA,VRB"}, /* bcs */
   { &test_vmodud, "vmodud", "VRT,VRA,VRB"}, /* bcs */
   { &test_vmoduw, "vmoduw", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vmulesd, "vmulesd", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vmuleud, "vmuleud", "VRT,VRA,VRB"}, /* bcs */
   { &test_vmulhsd, "vmulhsd", "VRT,VRA,VRB"}, /* bcs */
   { &test_vmulhsw, "vmulhsw", "VRT,VRA,VRB"}, /* bcs */
   { &test_vmulhud, "vmulhud", "VRT,VRA,VRB"}, /* bcs */
   { &test_vmulhuw, "vmulhuw", "VRT,VRA,VRB"}, /* bcs */
   { &test_vmulld, "vmulld", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vmulosd, "vmulosd", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vmuloud, "vmuloud", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vrlqmi, "vrlqmi", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vrlqnm, "vrlqnm", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vrlq, "vrlq", "VRT,VRA,VRB"}, /* bcs */
   { &test_vsldbi_0, "vsldbi 0", "VRT,VRA,VRB,SH"}, /* bcwp */
   { &test_vsldbi_4, "vsldbi 4", "VRT,VRA,VRB,SH"}, /* bcwp */
+  { &test_vslq, "vslq", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vsraq, "vsraq", "VRT,VRA,VRB"}, /* bcs */
   { &test_vsrdbi_0, "vsrdbi 0", "VRT,VRA,VRB,SH"}, /* bcwp */
   { &test_vsrdbi_4, "vsrdbi 4", "VRT,VRA,VRB,SH"}, /* bcwp */
+  { &test_vsrq, "vsrq", "VRT,VRA,VRB"}, /* bcs */
   { &test_xscmpeqqp, "xscmpeqqp", "VRT,VRA,VRB"}, /* bcs */
   { &test_xscmpgeqp, "xscmpgeqp", "VRT,VRA,VRB"}, /* bcs */
   { &test_xscmpgtqp, "xscmpgtqp", "VRT,VRA,VRB"}, /* bcs */

@@ -52,11 +52,10 @@ EXTRA_DIST = \
 	test_isa_3_1_RT.vgtest test_isa_3_1_RT.stderr.exp test_isa_3_1_RT.stdout.exp \
 	test_isa_3_1_XT.vgtest test_isa_3_1_XT.stderr.exp test_isa_3_1_XT.stdout.exp \
 	test_isa_3_1_VRT.vgtest test_isa_3_1_VRT.stderr.exp test_isa_3_1_VRT.stdout.exp \
-	test_isa_3_1_Misc.vgtest \
+	test_isa_3_1_Misc.vgtest test_isa_3_1_Misc.stderr.exp test_isa_3_1_Misc.stdout.exp \
 	test_isa_3_1_AT.vgtest \
 	subnormal_test.stderr.exp  subnormal_test.stdout.exp \
 	subnormal_test.vgtest
-#	test_isa_3_1_Misc.vgtest test_isa_3_1_Misc.stderr.exp test_isa_3_1_Misc.stdout.exp
 #	test_isa_3_1_AT.vgtest test_isa_3_1_AT.stderr.exp test_isa_3_1_AT.stdout.exp
 
 check_PROGRAMS = \
@@ -67,11 +66,12 @@ check_PROGRAMS = \
 	test_isa_2_07_part1 test_isa_2_07_part2 \
 	test_isa_3_0 \
 	test_isa_3_1_RT test_isa_3_1_XT test_isa_3_1_VRT \
+	test_isa_3_1_Misc \
 	subnormal_test \
 	test_tm test_touch_tm ldst_multiple data-cache-instructions \
 	power6_mf_gpr std_reg_imm \
 	twi_tdi tw_td power6_bcmp
-#	test_isa_3_1_Misc test_isa_3_1_AT
+#	test_isa_3_1_AT
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@
@@ -82,9 +82,9 @@ allexec_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 test_isa_3_1_XT_SOURCES = test_isa_3_1_XT.c test_isa_3_1_common.c
 test_isa_3_1_RT_SOURCES = test_isa_3_1_RT.c test_isa_3_1_common.c
 test_isa_3_1_VRT_SOURCES = test_isa_3_1_VRT.c test_isa_3_1_common.c
+test_isa_3_1_Misc_SOURCES = test_isa_3_1_Misc.c test_isa_3_1_common.c
 
 #test_isa_3_1_AT_SOURCES = test_isa_3_1_AT.c test_isa_3_1_common.c
-#test_isa_3_1_Misc_SOURCES = test_isa_3_1_Misc.c test_isa_3_1_common.c
 
 if HAS_ALTIVEC
 BUILD_FLAG_ALTIVEC = -maltivec
@@ -189,6 +189,7 @@ test_isa_3_1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames  $(ISA_3_1_FL
 test_isa_3_1_RT_CFLAGS = $(test_isa_3_1_CFLAGS)
 test_isa_3_1_XT_CFLAGS = $(test_isa_3_1_CFLAGS)
 test_isa_3_1_VRT_CFLAGS = $(test_isa_3_1_CFLAGS)
+test_isa_3_1_Misc_CFLAGS = $(test_isa_3_1_CFLAGS)
 
 subnormal_test_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_FLAG) $(ISA_2_06_FLAG) \
 			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_VSX) $(BUILD_FLAGS_ISA_2_06)

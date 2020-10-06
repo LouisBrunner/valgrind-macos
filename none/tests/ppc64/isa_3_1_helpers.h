@@ -5,12 +5,10 @@
 extern unsigned long a_iters,b_iters,c_iters, m_iters;
 extern unsigned long vrai,vrbi,vrci,vrmi;
 extern unsigned long a_inc, b_inc, c_inc, m_inc;
+extern unsigned long a_start, b_start, c_start, m_start;
 extern unsigned long a_limit,b_limit,c_limit;
 extern vector unsigned long long vrt, vra, vrb, vrc;
 extern vector unsigned long long vrm;
-extern vector unsigned long long vec_xa;
-extern vector unsigned long long vec_xb;
-extern vector unsigned long long vec_xc;
 extern vector unsigned long long vec_xs;
 extern vector unsigned long long vec_xt;
 extern unsigned long long dcmx;
@@ -64,9 +62,11 @@ extern int verbose;
 #define debug_printf(X) if (verbose>0) printf(X);
 #define debug_show_labels (verbose>0)
 #define debug_show_iters (verbose>1)
-#define debug_show_raw_values (verbose>2)
+#define debug_show_values (verbose>2)
 #define debug_show_all_regs (verbose>5)
 #define debug_show_tables (verbose>6)
+#define debug_show_raw_values (verbose>7)
+#define debug_enable_all_iters (verbose>8)
 
 
 #define CHECK_OVERRIDES {							\

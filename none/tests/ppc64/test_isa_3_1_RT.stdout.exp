@@ -1,3 +1,24 @@
+brd 102030405060708 => 807060504030201
+brd a5b4c3d2e1f00918 => 1809f0e1d2c3b4a5
+brd fff7fffafff3fff1 => f1fff3fffafff7ff
+brd 7ff7000100030005 => 50003000100f77f
+brd ffe7111022203330 => 303320221011e7ff
+brd 0 => 0
+
+brh 102030405060708 => 201040306050807
+brh a5b4c3d2e1f00918 => b4a5d2c3f0e11809
+brh fff7fffafff3fff1 => f7fffafff3fff1ff
+brh 7ff7000100030005 => f77f010003000500
+brh ffe7111022203330 => e7ff101120223033
+brh 0 => 0
+
+brw 102030405060708 => 403020108070605
+brw a5b4c3d2e1f00918 => d2c3b4a51809f0e1
+brw fff7fffafff3fff1 => fafff7fff1fff3ff
+brw 7ff7000100030005 => 100f77f05000300
+brw ffe7111022203330 => 1011e7ff30332022
+brw 0 => 0
+
 paddi 0 102030405060708 =>  102030405060708
 paddi 0 a5b4c3d2e1f00918 => a5b4c3d2e1f00918
 paddi 0 fff7fffafff3fff1 => fff7fffafff3fff1
@@ -145,4 +166,4 @@ pstw off16 (&buffer) 102030405060708 => [ -   -  7ff0000005060708  -   -   -   -
 
 pstw off32 (&buffer) 102030405060708 => [ -   -   -   -  5a05a05a05060708  -   -   - ]
 
-All done. Tested 61 different instruction groups
+All done. Tested 64 different instruction groups

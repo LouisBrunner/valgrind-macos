@@ -24,11 +24,13 @@
  */
 
 #include <stdio.h>
+#ifdef HAS_ISA_3_1
 #include <stdint.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <altivec.h>
 #include <malloc.h>
 
 #include <string.h>
@@ -43,13 +45,19 @@
 unsigned long current_cr;
 unsigned long current_fpscr;
 
-#ifdef HAS_ISA_3_1
-
-#include <altivec.h>
-#include "isa_3_1_helpers.h"
-
 struct test_list_t current_test;
 
+#include "isa_3_1_helpers.h"
+
+static void test_brh (void) {
+  __asm__ __volatile__ ("brh %0, %1" : "=r" (ra) : "r" (rs) );
+}
+static void test_brw (void) {
+  __asm__ __volatile__ ("brw %0, %1" : "=r" (ra) : "r" (rs) );
+}
+static void test_brd (void) {
+  __asm__ __volatile__ ("brd %0, %1" : "=r" (ra) : "r" (rs) );
+}
 static void test_plbz_off0 (void) {
   __asm__ __volatile__ ("plbz %0, 0(%1), 0" : "=r" (rt) : "r" (ra) );
 }
@@ -235,6 +243,9 @@ static void test_pstq_off64 (void) {
 }
 
 static test_list_t testgroup_generic[] = {
+  { &test_brd, "brd", "RA,RS"}, /* bcs */
+  { &test_brh, "brh", "RA,RS"}, /* bcs */
+  { &test_brw, "brw", "RA,RS"}, /* bcs */
   { &test_paddi_0, "paddi 0", "RT,RA,SI,R"}, /* bcwp */
   { &test_paddi_12, "paddi 12", "RT,RA,SI,R"}, /* bcwp */
   { &test_paddi_48, "paddi 48", "RT,RA,SI,R"}, /* bcwp */
@@ -322,10 +333,10 @@ static void testfunction_generic (const char* instruction_name,
    initialize_buffer (0);
    debug_dump_buffer ();
 
-   for (vrai = 0; vrai < a_iters ; vrai+=a_inc) {
-      for (vrbi = 0; vrbi < b_iters ; vrbi+=b_inc) {
-	 for (vrci = 0; vrci < c_iters ; vrci+=c_inc) {
-	    for (vrmi = 0; (vrmi < m_iters) ; vrmi+=m_inc) {
+   for (vrai = a_start; vrai < a_iters ; vrai+=a_inc) {
+      for (vrbi = b_start; vrbi < b_iters ; vrbi+=b_inc) {
+	 for (vrci = c_start; vrci < c_iters ; vrci+=c_inc) {
+	    for (vrmi = m_start; (vrmi < m_iters) ; vrmi+=m_inc) {
 		CHECK_OVERRIDES
 		debug_show_current_iteration ();
 		// Be sure to initialize the target registers first.

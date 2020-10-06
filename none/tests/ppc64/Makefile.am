@@ -187,6 +187,8 @@ test_isa_3_0_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $
 
 test_isa_3_1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames  $(ISA_3_1_FLAG) \
 			@FLAG_M64@ $(BUILD_FLAGS_ISA_3_1)
+test_isa_3_1_RT_CFLAGS = $(test_isa_3_1_CFLAGS)
+test_isa_3_1_XT_CFLAGS = $(test_isa_3_1_CFLAGS)
 
 subnormal_test_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_FLAG) $(ISA_2_06_FLAG) \
 			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_VSX) $(BUILD_FLAGS_ISA_2_06)

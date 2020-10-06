@@ -24,11 +24,13 @@
  */
 
 #include <stdio.h>
+#ifdef HAS_ISA_3_1
 #include <stdint.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <altivec.h>
 #include <malloc.h>
 
 #include <string.h>
@@ -43,12 +45,9 @@
 unsigned long current_cr;
 unsigned long current_fpscr;
 
-#ifdef HAS_ISA_3_1
-
-#include <altivec.h>
-#include "isa_3_1_helpers.h"
-
 struct test_list_t current_test;
+
+#include "isa_3_1_helpers.h"
 
 static void test_plfd_64 (void) {
   __asm__ __volatile__ ("plfd 28, 64(%0), 0" :: "r" (ra) );
@@ -294,10 +293,10 @@ static void testfunction_generic (const char* instruction_name,
    initialize_buffer (0);
    debug_dump_buffer ();
 
-   for (vrai = 0; vrai < a_iters ; vrai+=a_inc) {
-      for (vrbi = 0; vrbi < b_iters ; vrbi+=b_inc) {
-	 for (vrci = 0; vrci < c_iters ; vrci+=c_inc) {
-	    for (vrmi = 0; (vrmi < m_iters) ; vrmi+=m_inc) {
+   for (vrai = a_start; vrai < a_iters ; vrai+=a_inc) {
+      for (vrbi = b_start; vrbi < b_iters ; vrbi+=b_inc) {
+	 for (vrci = c_start; vrci < c_iters ; vrci+=c_inc) {
+	    for (vrmi = m_start; (vrmi < m_iters) ; vrmi+=m_inc) {
 		CHECK_OVERRIDES
 		debug_show_current_iteration ();
 		// Be sure to initialize the target registers first.

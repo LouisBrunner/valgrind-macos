@@ -15,16 +15,15 @@ register vector long long TEST_ACC2 __asm__ ("vs18");
 register vector long long TEST_ACC3 __asm__ ("vs19");
 
 /* XSp and XTp use the same register pair, defined here as 20 and 21.
-   { also XSp,XTp in scripts } */
+  This includes the XT and XS values too. */
 register vector long long XTp0 __asm__ ("vs20"); // XTp[0];XSp[0];
 register vector long long XTp1 __asm__ ("vs21"); // XTp[1];XSp[1];
 
 // xa,xb,xc references are mapped to a specific vector register.
-// out of order to allow xap mapped over xa and xc.
-register vector long long xa __asm__ ("vs22"); // also xap.
-register vector long long xc __asm__ ("vs23"); // also 2nd half of xap.
-register vector long long xb __asm__ ("vs24");
-register vector long long xt __asm__ ("vs25");
+// out of order to allow xap mapped over vec_xa and vec_xc.
+register vector long long vec_xa __asm__ ("vs22"); // also xap.
+register vector long long vec_xc __asm__ ("vs23"); // also 2nd half of xap.
+register vector long long vec_xb __asm__ ("vs24");
 
 /* frs,frb (variable named frsb) both use the same register pair.
    (top half of vs26,vs27)  */

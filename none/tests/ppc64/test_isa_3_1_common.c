@@ -38,9 +38,6 @@ unsigned long post_test;
 int verbose = 0;
 #define DEADBEEF 0x1111111111111111ULL
 
-vector unsigned long long vec_xa;
-vector unsigned long long vec_xb;
-vector unsigned long long vec_xc;
 vector unsigned long long vec_xs;
 vector unsigned long long vec_xt;
 unsigned long long dcmx;
@@ -50,6 +47,7 @@ unsigned long long dcmx;
 */
 unsigned long a_iters, b_iters, c_iters, m_iters;
 unsigned long a_inc, b_inc, c_inc, m_inc;
+unsigned long a_start, b_start, c_start, m_start;
 unsigned long vrai, vrbi, vrci, vrmi;
 unsigned long a_limit = 0xffff, b_limit = 0xffff, c_limit = 0xffff;
 
@@ -133,13 +131,14 @@ bool uses_acc;	// Accumulator related.
 bool uses_acc_src;
 bool uses_acc_dest;
 bool uses_acc_vsrs;
+bool uses_pmsk;
 bool uses_buffer;  // Buffer related.
 bool uses_load_buffer, uses_store_buffer, uses_any_buffer;
 bool uses_quad;
 unsigned long output_mask;  // Output field special handling.
-bool  instruction_is_sp, instruction_is_sp_estimate;
-bool  instruction_is_dp, instruction_is_dp_estimate;
-bool  instruction_is_b16;
+bool instruction_is_sp, instruction_is_sp_estimate;
+bool instruction_is_dp, instruction_is_dp_estimate;
+bool instruction_is_b16;
 
 unsigned long long min (unsigned long long a, unsigned long long b) {
    if ( a < b )
@@ -176,7 +175,7 @@ void identify_form_components (const char *instruction_name,
    has_frtp = strstr (cur_form, "FRTp") != NULL;
 
    has_xa = strstr (cur_form, ",XA") != NULL;
-   has_xap = strstr (cur_form, ",XAp") != NULL;
+   has_xap = strstr (cur_form, "XAp") != NULL;
    has_xb = strstr (cur_form, ",XB") != NULL;
    has_xc = strstr (cur_form, ",XC") != NULL;
    has_xs = (strncmp (cur_form, "XS", 2) == 0);
@@ -193,6 +192,7 @@ void identify_form_components (const char *instruction_name,
 	 (strstr (instruction_name, "xxmfacc") != NULL) ||
 	 (strstr (instruction_name, "xxmtacc") != NULL) );
    uses_acc = uses_acc_src || uses_acc_dest || uses_acc_vsrs;
+   uses_pmsk = strstr (cur_form, "PMSK") !=NULL;
 
    uses_dfp128_input = (
 	 (strncmp (instruction_name, "dctf", 4) == 0));
@@ -335,6 +335,8 @@ void display_form_components (char * cur_form) {
    if (uses_acc)
 	printf ("Instruction uses ACC: (src:%d, dst:%d, vsrs:%d).\n",
 		uses_acc_src, uses_acc_dest, uses_acc_vsrs);
+   if (uses_pmsk)
+	printf ("Instruction uses PMSK \n");
    if (output_mask) {
 	printf ("Instruction results are masked: ");
 	printf (" (%lx) ", output_mask);
@@ -417,18 +419,20 @@ void generic_print_double_as_hex (double d) {
    digits as seen below.  */
 
 // NAN - Maximum biased exponent and a nonzero mantissa (fraction).
-#define PRINT_SP_NAN		    printf ("          NaN");
+#define SPFMT "%16s"
+#define PRINT_SP_NAN		    printf (SPFMT,"NaN");
 // DEN - Exp == 0 and Frac != 0
-#define PRINT_SP_PLUS_DEN	    printf ("         +Den");
-#define PRINT_SP_MINUS_DEN	    printf ("         -Den");
+#define PRINT_SP_PLUS_DEN	    printf (SPFMT,"+Den");
+#define PRINT_SP_MINUS_DEN	    printf (SPFMT,"-Den");
 // INF - Maximum biased exponent and a zero mantissa.
-#define PRINT_SP_INF		    printf ("          Inf");
-#define PRINT_SP_PLUS_INF	    printf ("         +Inf");
-#define PRINT_SP_MINUS_INF	    printf ("         -Inf");
-#define PRINT_SP_FLOAT(x)	    printf ("%13.05e",    x);
-#define PRINT_SP_FLOAT_EST(x)	    printf ("%13.03e",    x);
-#define PRINT_SP_FLOAT_PLUS_ZERO    printf ("        +Zero");
-#define PRINT_SP_FLOAT_MINUS_ZERO   printf ("        -Zero");
+#define PRINT_SP_INF		    printf (SPFMT,"Inf");
+#define PRINT_SP_PLUS_INF	    printf (SPFMT,"+Inf");
+#define PRINT_SP_MINUS_INF	    printf (SPFMT,"-Inf");
+#define PRINT_SP_FLOAT(x)	    printf ("%16.05e",  x);
+#define PRINT_SP_FLOAT_EST(x)	    printf ("%16.03e",  x);
+#define PRINT_SP_FLOAT_PLUS_ZERO    printf (SPFMT,"+Zero");
+#define PRINT_SP_FLOAT_MINUS_ZERO   printf (SPFMT,"-Zero");
+#define PRINT_SP_SPLAT		    printf (SPFMT,"*");
 
 /* Print a SINGLE (16 bit) SP value out of the left part of a 32-bit field. */
 void special_print_sp_value (uint32_t value) {
@@ -486,16 +490,18 @@ void dissect_sp_value (unsigned long long foo) {
 }
 
 /* Print one DP values out of our vec_ field. */
-#define PRINT_DP_NAN		   printf ("           NaN");
-#define PRINT_DP_MINUS_DEN	   printf ("          -Den");
-#define PRINT_DP_PLUS_DEN	   printf ("          +Den");
-#define PRINT_DP_MINUS_INF	   printf ("          -Inf");
-#define PRINT_DP_PLUS_INF	   printf ("          +InF");
-#define PRINT_DP_FLOAT(x)	   printf (" %15.08e",    x);
-#define PRINT_DP_FLOAT_EST(x)	   printf (" %15.02e",    x);
-#define PRINT_DP_FLOAT_PLUS_ZERO   printf ("         +Zero");
-#define PRINT_DP_FLOAT_MINUS_ZERO  printf ("         -Zero");
-#define PRINT_DP_FLOAT_ZERO	   printf (" 0.000000e+000");
+#define DPFMT "%17s"
+#define PRINT_DP_NAN		   printf (DPFMT,"NaN");
+#define PRINT_DP_MINUS_DEN	   printf (DPFMT,"-Den");
+#define PRINT_DP_PLUS_DEN	   printf (DPFMT,"+Den");
+#define PRINT_DP_MINUS_INF	   printf (DPFMT,"-Inf");
+#define PRINT_DP_PLUS_INF	   printf (DPFMT,"+InF");
+#define PRINT_DP_FLOAT(x)	   printf ("%17.08e",  x);
+#define PRINT_DP_FLOAT_EST(x)	   printf ("%17.02e",  x);
+#define PRINT_DP_FLOAT_PLUS_ZERO   printf (DPFMT,"+Zero");
+#define PRINT_DP_FLOAT_MINUS_ZERO  printf (DPFMT,"-Zero");
+#define PRINT_DP_FLOAT_ZERO	   printf (DPFMT,"0.000000e+000");
+#define PRINT_DP_SPLAT		   printf (DPFMT,"*");
 void special_print_dp_value (unsigned long long value) {
    unsigned long long signbit;
    unsigned long long exponent;
@@ -506,7 +512,7 @@ void special_print_dp_value (unsigned long long value) {
    signbit = (value & DP_SIGNBIT_MASK) > 0;
    exponent = value & DP_EXPONENT_MASK; // >> double_exponent_shift;
    fraction = value & DP_FRACTION_MASK;
-   if (verbose>2)
+   if (debug_show_raw_values)
       printf ("\ndb_debug: %16llx s:%d %3llx %8llx %llx , ",
 	       value, signbit?1:0, exponent, fraction, stone.ull);
    if (exponent == DP_EXPONENT_MASK /* MAX */ && fraction == 0 ) {
@@ -549,17 +555,18 @@ void dissect_dp_value (unsigned long long foo) {
 }
 
 // NAN - Maximum biased exponent and a nonzero mantissa (fraction).
-#define PRINT_BF16_NAN		      printf ("     NaN");
+#define BFFMT "%6s"
+#define PRINT_BF16_NAN		      printf (BFFMT,"NaN");
 // DEN - Exp == 0 and Frac != 0
-#define PRINT_BF16_PLUS_DEN	      printf ("    +Den");
-#define PRINT_BF16_MINUS_DEN	      printf ("    -Den");
+#define PRINT_BF16_PLUS_DEN	      printf (BFFMT,"+Den");
+#define PRINT_BF16_MINUS_DEN	      printf (BFFMT,"-Den");
 // INF - Maximum biased exponent and a zero mantissa.
-#define PRINT_BF16_INF		      printf ("     Inf");
-#define PRINT_BF16_PLUS_INF	      printf ("    +Inf");
-#define PRINT_BF16_MINUS_INF	      printf ("    -Inf");
-#define PRINT_BF16_FLOAT(x)	      printf ("  0x%04x", x);
-#define PRINT_BF16_FLOAT_PLUS_ZERO    printf ("   +Zero");
-#define PRINT_BF16_FLOAT_MINUS_ZERO   printf ("   -Zero");
+#define PRINT_BF16_INF		      printf (BFFMT,"Inf");
+#define PRINT_BF16_PLUS_INF	      printf (BFFMT,"+Inf");
+#define PRINT_BF16_MINUS_INF	      printf (BFFMT,"-Inf");
+#define PRINT_BF16_FLOAT(x)	      printf ("0x%04x", x);
+#define PRINT_BF16_FLOAT_PLUS_ZERO    printf (BFFMT,"+Zero");
+#define PRINT_BF16_FLOAT_MINUS_ZERO   printf (BFFMT,"-Zero");
 /* print a single bfloat16 value.  */
 void special_print_bf16_value (uint16_t value) {
   int signbit;
@@ -573,7 +580,7 @@ void special_print_bf16_value (uint16_t value) {
    if (debug_show_raw_values) {
       printf ("\nbf16_debug: v:%08x s: %d %3x %8llx %f , ",
 	       value, signbit?1:0, exponent, fraction, stone.flt);
-   } else if (verbose > 0) {
+   } else if (debug_show_values) {
       printf (" v:%08x", value);
    }
    if (exponent == BF16_EXPONENT_MASK && fraction == 0 ) {
@@ -614,9 +621,10 @@ void push_acc_to_vsrs () {
 
 
 void __print_splat_or_sp(long long vv) {
-   if (vv == DEADBEEF)
-      printf (" * ");
-   else {
+   if (vv == DEADBEEF) {
+      PRINT_SP_SPLAT
+      PRINT_SP_SPLAT
+  } else {
       special_print_sp_value (0xffffffff & (vv>>32));
       special_print_sp_value (0xffffffff & (vv));
    }
@@ -624,7 +632,7 @@ void __print_splat_or_sp(long long vv) {
 
 void __print_splat_or_dp(long long vv) {
    if (vv == DEADBEEF)
-      printf (" * ");
+      PRINT_DP_SPLAT
    else {
       special_print_dp_value (vv);
    }
@@ -632,9 +640,9 @@ void __print_splat_or_dp(long long vv) {
 
 void __print_splat_or_raw(long long vv) {
    if (vv == DEADBEEF)
-      printf (" * ");
+      printf (" %16s", "*");
    else
-      printf ("%llx ", vv);
+      printf (" %016llx", vv);
 }
 
 void print_accumulator () {
@@ -870,7 +878,7 @@ void dissect_fpscr_raw (unsigned long local_fpscr) {
 }
 
 void dissect_fpscr (unsigned long local_fpscr) {
-   if (verbose > 2) {
+   if (debug_show_values) {
       printf (" [[ fpscr:%lx ]] ", local_fpscr);
       dissect_fpscr_raw (local_fpscr);
    } else {
@@ -925,16 +933,16 @@ void dump_changed_buffer (unsigned long range) {
       if (buffer[x] !=reference_buffer[x]) {
 	 buffer_changed = 1;
 	 changed_index[x] = 1;
-	 if (verbose>2)
+	 if (debug_show_values)
 	    printf (" {idx %d %016llx %016llx}",
 		    x, reference_buffer[x] , buffer[x] );
       }
    }
-   if (verbose>2 || buffer_changed) {
+   if (debug_show_values || buffer_changed) {
       printf (" [");
 	 for (x = 0; x < BUFFER_SIZE && (x<range); x++) {
 	    if (x) printf (" ");
-	    if (verbose > 0)
+	    if (verbose)
 	       printf ("%s%016llx", changed_index[x] == 1?"*":" ", buffer[x] );
 	    if (changed_index[x]) {
 	       if (instruction_is_sp) {
@@ -975,7 +983,7 @@ void dump_large_buffer (void) {
 }
 
 void dump_buffer () {
-if (verbose>1) printf (" buffer:");
+if (debug_show_values) printf (" buffer:");
   if (uses_quad) {
     dump_large_buffer ();
   } else {
@@ -984,7 +992,7 @@ if (verbose>1) printf (" buffer:");
 }
 
 void print_undefined () {
-   if (verbose>1)
+   if (debug_show_values)
       printf (" [Undef]");
    else
       printf ("        ");
@@ -1062,7 +1070,7 @@ int get_declet (int start, uint64_t dword1, uint64_t dword0) {
    dword1_shift = 63 - (start + 9);
    dword0_shift = 127 - (start + 9);
 
-   if (verbose>5) printf ("\n%s (%d) %016lx %016lx",
+   if (debug_show_all_regs) printf ("\n%s (%d) %016lx %016lx",
                          __FUNCTION__, start, dword1, dword0);
 
    if ( (start + 9) < 63) { /* fully within dword1 */
@@ -1352,8 +1360,10 @@ void print_frt () {
 void print_frs_or_frb () {
    unsigned long long vsrvalue1, vsrvalue3;
    if (debug_show_labels) {
-      if (has_frs) printf (" frs%s:", has_frsp?"p":"" );
-      if (has_frb) printf (" frb%s:", has_frbp?"p":"" );
+      printf (" fr" );
+      if (has_frs) printf ("s%s:", has_frsp?"p":"" );
+      else if (has_frb) printf ("b%s:", has_frbp?"p":"" );
+      else printf("?");
    }
    if (uses_dfp128_input) {
       if (verbose) print_vsr (26);
@@ -1396,6 +1406,17 @@ void print_rc () {
 }
 
 void print_rs () {
+  if (debug_show_labels) printf (" rs:");
+    printf (" %lx", rs);
+}
+
+// Second half of a rs pair.
+void print_rsp () {
+   if (debug_show_labels) printf (" rsp:");
+     printf (" %lx", rsp);
+}
+
+void print_rs_or_rsp () {
    if (debug_show_labels) printf (" rs:");
    printf (" %lx", rs);
    if (has_rsp) {
@@ -1414,35 +1435,35 @@ void print_rt () {
 
 void print_vra () {
    if (debug_show_labels) printf (" vra:");
-   printf (" %016lx,%016lx", vra[0], vra[1]);
+   printf (" %016llx,%016llx", vra[0], vra[1]);
 }
 
 void print_vrb () {
    if (debug_show_labels) printf (" vrb:");
-   printf (" %016lx,%016lx", vrb[0], vrb[1]);
+   printf (" %016llx,%016llx", vrb[0], vrb[1]);
 }
 
 void print_vrc () {
    if (debug_show_labels) printf (" vrc:");
-   printf (" %016lx,%016lx", vrc[0], vrc[1]);
+   printf (" %016llx,%016llx", vrc[0], vrc[1]);
 }
 
 /* for VRM, don't print leading zeros for better visibility of diffs */
 void print_vrm () {
    if (debug_show_labels) printf (" vrm:");
-   printf (" %16lx,%16lx", vrm[0], vrm[1]);
+   printf (" %16llx,%16llx", vrm[0], vrm[1]);
 }
 
 void print_vrt () {
    if (debug_show_labels) printf (" vrt:");
    if (debug_show_raw_values || (output_mask && uses_load_buffer )) {
-      printf (" %16lx,", vrt[1]);
-      printf ( "%016lx", vrt[0]);
+      printf (" %16llx,", vrt[1]);
+      printf ( "%016llx", vrt[0]);
    }
    if (!post_test) return;
    if (!output_mask) {
-      printf (" %16lx,", vrt[1]);
-      printf ("%016lx", vrt[0]);
+      printf (" %16llx,", vrt[1]);
+      printf ("%016llx", vrt[0]);
    } else {
       /* there is a mask requiring special handling. */
       if (instruction_is_dp) {
@@ -1464,70 +1485,69 @@ void print_vrt () {
    }
 }
 
-void print_xa_or_xc () {
-   if (has_xa) {
-      if (debug_show_labels) printf (" vec_xa:");
-      printf (" %016lx,", vec_xa[0] );
-      printf ("%016lx", vec_xa[1] );
-   }
-   if (has_xc | has_xap) { // Note that xap is shared with xc.
-      if (debug_show_labels) printf (" vec_x%s", has_xc?"c":"ap");
-	 printf (" %016lx,", vec_xc[0] );
-	 printf ("%016lx", vec_xc[1] );
-   }
+void print_xtp () {
+if (debug_show_labels) printf (" vec_x[st]p:" );
+    printf (" %016llx", XTp0[0]);
+    printf (" %016llx", XTp0[1]);
+    printf (" %016llx", XTp1[0]);
+    printf (" %016llx", XTp1[1]);
+}
+
+void print_xsp () {
+    print_xtp();
+}
+
+void print_xa() {
+	if (debug_show_labels) printf (" xa:");
+	printf (" %016llx,", vec_xa[0] );
+	printf ("%016llx", vec_xa[1] );
+}
+
+/* xc may also hold the second half of an xa pair */
+void print_xc() {
+	if (debug_show_labels) printf (" xc:");
+	 printf (" %016llx,", vec_xc[0] );
+	 printf ("%016llx", vec_xc[1] );
+}
+
+/* xap is the pair at rs22 (xa) and rs23 (xc). */
+void print_xap() {
+	if (debug_show_labels) printf (" xap:");
+	print_xa();
+	print_xc();
 }
 
 void print_xb () {
-   if (debug_show_labels) printf (" vec_xb:");
+   if (debug_show_labels) printf (" xb:");
    if (instruction_is_sp_estimate) {
       print_vec_as_sp (vec_xb[0]);
       printf (",");
       print_vec_as_sp (vec_xb[1]);
    } else {
-      printf (" %016lx,", vec_xb[0] );
-      printf ("%016lx", vec_xb[1] );
+      printf (" %016llx,", vec_xb[0] );
+      printf ("%016llx", vec_xb[1] );
    }
 }
 
 void print_xs () {
    if (debug_show_labels) printf (" vec_xs:");
-      printf (" %016lx,", vec_xs[0] );
-      printf ("%016lx", vec_xs[1] );
-}
-
-//fixme - consolidate this with print_xt variation.
-void print_xtp () {
-if (debug_show_labels) printf (" vec_xtp:" );
-    printf (" %16lx", XTp0[0]);
-    printf (" %16lx", XTp0[1]);
-    printf (" %16lx", XTp1[0]);
-    printf (" %16lx", XTp1[1]);
-}
-
-void print_xsp () {
-   // Xsp uses the same pair of regs as xtp does.
-   print_xtp ();
+      printf (" %016llx,", vec_xs[0] );
+      printf ("%016llx", vec_xs[1] );
 }
 
 void print_xt () {
 if (debug_show_labels) printf (" vec_xt:" );
     if (debug_show_raw_values) {
-	printf (" %16lx", vec_xt[0]);
-	printf (" %16lx", vec_xt[1]);
+	printf (" %16llx", vec_xt[0]);
+	printf (" %16llx", vec_xt[1]);
     }
     // Don't print the xt value unless we are post-instruction test.
     if (!post_test) return;
     if (!output_mask ) {
 	if (vec_xt[0] == (unsigned long)&buffer) printf (" (&buffer) ");
-	else printf (" %16lx", vec_xt[0]);
+	else printf (" %16llx", vec_xt[0]);
 	if (vec_xt[1] == (unsigned long)&buffer) printf (" (&buffer) ");
-	else printf (" %16lx", vec_xt[1]);
-	if (has_xtp) {
-	    printf (" %16lx", XTp0[0]);
-	    printf (" %16lx", XTp0[1]);
-	    printf (" %16lx", XTp1[0]);
-	    printf (" %16lx", XTp1[1]);
-	}
+	else printf (" %16llx", vec_xt[1]);
     } else {
 	/* there is a mask requiring special handling. */
 	if (instruction_is_dp) {
@@ -1535,8 +1555,7 @@ if (debug_show_labels) printf (" vec_xt:" );
 		special_print_dp_value (vec_xt[0]);
 	    if (output_mask&0b010000)
 		special_print_dp_value (vec_xt[1]);
-	}
-	if (instruction_is_sp) {
+	} else if (instruction_is_sp) {
 	    if (output_mask&0b1000)
 		special_print_sp_value (0xffffffff&vec_xt[0]>>32);
 	    else print_undefined ();
@@ -1549,8 +1568,7 @@ if (debug_show_labels) printf (" vec_xt:" );
 	    if (output_mask&0b0001)
 		special_print_sp_value (0xffffffff&vec_xt[1]);
 	    else print_undefined ();
-	}
-	if (instruction_is_b16) {
+	} else if (instruction_is_b16) {
 	    if (output_mask&B16_0)
 		special_print_bf16_value (0xffffff& (vec_xt[0]>>48));
 	    else
@@ -1584,35 +1602,82 @@ if (debug_show_labels) printf (" vec_xt:" );
 	    else
 		print_undefined ();
 	}
+	else 
+		printf("lost special handling on instruction (sp,dp,bf) type. \n");
     }
 }
 
+// print_register_header* ; print our testcase input values.
+// if verbosity is set, print all defined values, including
+// the output register contents, regardless
+// of whether they are used for this test.
+void print_all() {
+	printf("\nALL:\n");
+	print_ra();
+	printf("\n");
+	print_rb();
+	printf("\n");
+	print_rs();
+	printf("\n");
+	print_rsp();
+	printf("\n");
+	print_xap(); // includes print_xa, print_xc
+	printf("\n");
+	print_xb();
+	printf("\n");
+	print_xsp(); // includes print_xs, print_xt  ???
+	printf("\n");
+	print_xtp();
+	printf("\n");
+	print_vra();
+	printf("\n");
+	print_vrb();
+	printf("\n");
+	print_vrc();
+	printf("\n");
+	print_vrm();
+	printf("\n");
+	print_frs_or_frb();
+	printf("\n");
+	print_accumulator();
+	printf("\n");
+	dump_buffer();
+	printf("\nEND_ALL\n");
+}
+
+// Call print_register_header_all if we have verbosity set and 
+// want to print ALL input fields.
+// Otherwise, print the input values that are used by the
+// instructions under test.
 void print_register_header () {
-   post_test = 0;
-   if (has_ra || debug_show_all_regs)  print_ra ();
-   if (has_rb || debug_show_all_regs) 	print_rb ();
-   if (has_rc || debug_show_all_regs)  print_rc ();
-   if (has_rs || has_rsp || debug_show_all_regs) print_rs ();
-	// only print the target registers before the test if verbosity is high.
-   if (has_rt && debug_show_all_regs) print_rt ();
-   if (has_xa || has_xap || has_xc || debug_show_all_regs) print_xa_or_xc ();
-   if (has_xb || debug_show_all_regs) print_xb ();
-   if (has_xs || debug_show_all_regs )  {
-      if (debug_show_labels) printf (" vec_xs%s:", has_xsp?"p":"");
-	  if (has_xsp) print_xsp (); else print_xs ();
-   }
-   /* printing of the xtp pair is handled differently.  */
-   if (has_xt && debug_show_all_regs )  {
-      if (has_xtp) print_xtp (); else print_xt ();
-   }
-   if (has_vra || debug_show_all_regs) print_vra ();
-   if (has_vrb || debug_show_all_regs) print_vrb ();
-   if (has_vrc || debug_show_all_regs) print_vrc ();
-   if (has_vrm || debug_show_all_regs) print_vrm ();
-   if (has_vrt && debug_show_all_regs) print_vrt ();
-   if (has_frs || has_frb || debug_show_all_regs) print_frs_or_frb ();
-   if (uses_acc_src || debug_show_all_regs) print_accumulator ();
-   if (uses_load_buffer) dump_buffer ();
+  post_test = 0;
+  if (debug_show_all_regs) print_all();
+  if (has_ra) print_ra ();
+  if (has_rb) print_rb ();
+  if (has_rc) print_rc ();
+  if (has_rs) print_rs();
+  if (has_rsp) print_rsp();
+  if (has_xap) {
+	  print_xap();
+  } else {
+	  if (has_xa) print_xa();
+	  if (has_xc) print_xc();
+  }
+  if (has_xb) print_xb ();
+  if (has_xsp) {
+	  print_xsp();
+  } else {
+     if (has_xs) print_xs();
+  }
+
+  if (has_vra) print_vra ();
+  if (has_vrb) print_vrb ();
+  if (has_vrc) print_vrc ();
+  if (has_vrm) print_vrm ();
+  
+  if (has_frs || has_frb) print_frs_or_frb ();
+  if (uses_acc_src) print_accumulator ();
+  if (uses_load_buffer) dump_buffer ();
 }
 
 void print_register_footer () {
@@ -1621,9 +1686,7 @@ void print_register_footer () {
       if (debug_show_labels) printf (" CR:");
 	 printf (" [%08lx]", current_cr);
    }
-
    if (current_fpscr) dissect_fpscr (current_fpscr);
-
    if (uses_RC) dissect_cr_rn (current_cr, 6);
    if (uses_acc_dest || uses_acc_vsrs)  print_accumulator ();
    if (has_vrt || debug_show_all_regs) print_vrt ();
@@ -1648,14 +1711,14 @@ void generic_prologue () {
   Helpers to build the VSX input table.
 */
 #define MAX_VSX_ARRAY_SIZE 42
-unsigned long nb_divmod_num_vsxargs;
-unsigned long nb_divmod_den_vsxargs;
-unsigned long nb_vsxargs;
+unsigned long long nb_divmod_num_vsxargs;
+unsigned long long nb_divmod_den_vsxargs;
+unsigned long long nb_vsxargs;
 unsigned long long * vsxargs = NULL;
 void build_vsx_table (void)
 {
    long i = 0;
-   vsxargs = memalign (16, MAX_VSX_ARRAY_SIZE * sizeof (unsigned long));
+   vsxargs = memalign (16, MAX_VSX_ARRAY_SIZE * sizeof (unsigned long long));
 /*
   The following hex values map to assorted Fp values including zero, inf, nan.
   +/-INF   EXP:MAX  FRAC:0
@@ -1771,8 +1834,9 @@ unsigned long nb_dfp128args = 32;
 void debug_show_iter_ranges () {
 /* Show the iteration maxes and the increments. */
    if (debug_show_iters)
-	printf ("{ a:/%2ld (+%ld) b:/%ld (+%ld) c:/%ld (+%ld) m:/%ld (+%ld) } \n",
-		 a_iters, a_inc, b_iters, b_inc, c_iters, c_inc, m_iters, m_inc );
+	printf ("{ a:/%2ld (%ld,+%ld) b:/%ld (%ld,+%ld) c:/%ld (%ld,+%ld) m:/%ld (%ld,+%ld) } \n",
+		 a_iters, a_start, a_inc, b_iters, b_start, b_inc,
+		 c_iters, c_start, c_inc, m_iters, m_start, m_inc);
 }
 
 void set_up_iterators () {
@@ -1822,8 +1886,16 @@ void set_up_iterators () {
       a_iters = 4;
       b_iters = 6;
    }
+   if (uses_acc_dest) {
+	   a_inc+=3; b_inc+=3; c_inc+=3;
+   }
+   if (uses_pmsk) {
+	   a_start=1; b_start=3; c_start=0; m_start=0;
+   } else {
+	   a_start=0; b_start=0; c_start=0; m_start=0;
+   }
    if ((has_vra+has_vrb+has_vrc+has_vrm+has_xa+has_xb+uses_MC > 2) &&
-       (verbose < 4)) {
+       (!debug_enable_all_iters)) {
       /* Instruction tests using multiple fields will generate a lot of
 	 output. In those cases, arbitrarily increase the increment values
 	 to cut the number of iterations.  */
@@ -1844,7 +1916,7 @@ void debug_show_current_iteration () {
 }
 
 void debug_dump_buffer () {
-   if ( (verbose>4) || (verbose > 1 && uses_buffer)) {
+   if ( (debug_show_raw_values) || (verbose && uses_buffer)) {
       dump_raw_buffer ();
       printf ("\n");
    }
@@ -1857,7 +1929,7 @@ void print_result_buffer () {
 
 /* display the instruction form.  */
 void debug_show_form (const char * instruction_name, char * cur_form) {
-   if (verbose>0) {
+   if (verbose) {
       printf ("Instruction Name and form: %s ", instruction_name);
       display_form_components (cur_form);
    }
@@ -2014,6 +2086,56 @@ void build_float_vsx_tables () {
 
 /* **************************************** */
 /* Source/destination register initializers */
+
+void init_xtp() {
+     XTp0[0] = DEADBEEF; //vsxargs[vrai+4];
+     XTp0[1] = DEADBEEF; //vsxargs[vrai+3];
+     XTp1[0] = DEADBEEF; //vsxargs[vrai+2];
+     XTp1[1] = DEADBEEF; //vsxargs[vrai+1];
+}
+
+void init_xsp() {
+     XTp0[0] = vsxargs[vrai+4];
+     XTp0[1] = vsxargs[vrai+3];
+     XTp1[0] = vsxargs[vrai+2];
+     XTp1[1] = vsxargs[vrai+1];
+}
+
+void init_source_acc() {
+      /* initialize the ACC with data */
+      TEST_ACC0[0] = vsxargs[ (vrai  ) % nb_vsxargs];
+      TEST_ACC0[1] = vsxargs[ (vrai+1) % nb_vsxargs];
+      TEST_ACC1[0] = vsxargs[ (vrai+2) % nb_vsxargs];
+      TEST_ACC1[1] = vsxargs[ (vrai+3) % nb_vsxargs];
+      TEST_ACC2[0] = vsxargs[ (vrai+4) % nb_vsxargs];
+      TEST_ACC2[1] = vsxargs[ (vrai+5) % nb_vsxargs];
+      TEST_ACC3[0] = vsxargs[ (vrai+6) % nb_vsxargs];
+      TEST_ACC3[1] = vsxargs[ (vrai+7) % nb_vsxargs];
+      push_vsrs_to_acc ();
+}
+
+void init_acc_deadbeef() {
+      // Initialize the associated VSRs to 'DEADBEEF', then call
+      // xxmtacc to do the actual set.
+      TEST_ACC0[0] = DEADBEEF;  TEST_ACC0[1] = DEADBEEF;
+      TEST_ACC1[0] = DEADBEEF;  TEST_ACC1[1] = DEADBEEF;
+      TEST_ACC2[0] = DEADBEEF;  TEST_ACC2[1] = DEADBEEF;
+      TEST_ACC3[0] = DEADBEEF;  TEST_ACC3[1] = DEADBEEF;
+      push_vsrs_to_acc ();
+}
+
+   /* initialize the VSRs that will be used by the accumulator related tests. */
+void init_acc_vsrs() {
+      TEST_ACC0[0] = vsxargs[vrai]  ;
+      TEST_ACC0[1] = vsxargs[vrai+1];
+      TEST_ACC1[0] = vsxargs[vrai+2];
+      TEST_ACC1[1] = vsxargs[vrai+3];
+      TEST_ACC2[0] = vsxargs[vrai+4];
+      TEST_ACC2[1] = vsxargs[vrai+5];
+      TEST_ACC3[0] = vsxargs[vrai+6];
+      TEST_ACC3[1] = vsxargs[vrai+7];
+}
+
 void initialize_target_registers () {
    vrt[0] = DEADBEEF;
    vrt[1] = DEADBEEF;
@@ -2022,16 +2144,12 @@ void initialize_target_registers () {
    frt = 0.0;
    frtp = 0.0;
    // xs/xt register pairs.
-   XTp0[0] = vsxargs[6]  ; XTp0[1] = vsxargs[5];
-   XTp1[0] = vsxargs[4]  ; XTp1[1] = vsxargs[3];
+   if (has_xtp) {
+	   if (has_xsp) printf("Warning.  uses xsp and xtp\n");
+	   init_xtp();
+   }
    if (uses_acc_dest) {
-      // Initialize the associated VSRs to 'DEADBEEF', then call
-      // xxmtacc to do the actual set.
-      TEST_ACC0[0] = DEADBEEF;  TEST_ACC0[1] = DEADBEEF;
-      TEST_ACC1[0] = DEADBEEF;  TEST_ACC1[1] = DEADBEEF;
-      TEST_ACC2[0] = DEADBEEF;  TEST_ACC2[1] = DEADBEEF;
-      TEST_ACC3[0] = DEADBEEF;  TEST_ACC3[1] = DEADBEEF;
-      push_vsrs_to_acc ();
+	   init_acc_deadbeef();
    }
 }
 
@@ -2053,19 +2171,59 @@ void initialize_source_registers () {
    current_fpscr = 0;
    SET_FPSCR_ZERO;
    current_fpscr = 0;
-   if (is_divide_or_modulo) {
-      vra[0] = vec_xa[0] = vsxargs[ (vrai  ) % nb_divmod_num_vsxargs];
-      vra[1] = vec_xa[1] = vsxargs[ (vrai+1) % nb_divmod_num_vsxargs];
-      vrb[0] = vec_xb[0] = vsxargs[ (vrbi  ) % nb_divmod_den_vsxargs];
-      vrb[1] = vec_xb[1] = vsxargs[ (vrbi+1) % nb_divmod_den_vsxargs];
-   } else {
-      vra[0] = vec_xa[0] = vsxargs[ (vrai  ) % nb_vsxargs];
-      vra[1] = vec_xa[1] = vsxargs[ (vrai+1) % nb_vsxargs];
-      vrb[0] = vec_xb[0] = vsxargs[ (vrbi  ) % nb_vsxargs];
-      vrb[1] = vec_xb[1] = vsxargs[ (vrbi+1) % nb_vsxargs];
-      if (is_testlsb) {
-	 /* Special casing for this test to force the vec_xb low bits
-	    to zero or one. */
+   int isr_modulo;
+  /* Special handing for input values.. ensure if we are 
+     dividing or doing modulo operations that we do not
+     attempt dividing by zero.  */
+   if (is_divide_or_modulo)
+      isr_modulo = nb_divmod_num_vsxargs;
+   else
+      isr_modulo = nb_vsxargs;
+
+   if (has_xa) {
+	   vec_xa[0] = vsxargs[ (vrai  ) % isr_modulo];
+	   vec_xa[1] = vsxargs[ (vrai+1) % isr_modulo];
+   }
+   if (has_xb) {
+	   vec_xb[0] = vsxargs[ (vrbi  ) % isr_modulo];
+	   vec_xb[1] = vsxargs[ (vrbi+1) % isr_modulo];
+   }
+   if (has_vra) {
+	  vra[0] = vsxargs[ (vrai  ) % isr_modulo];
+	  vra[1] = vsxargs[ (vrai+1) % isr_modulo];
+   }
+   if (has_vrb) {
+	  vrb[0] = vsxargs[ (vrbi  ) % isr_modulo];
+	  vrb[1] = vsxargs[ (vrbi+1) % isr_modulo];
+   }
+ 
+  if (has_xa) { 
+    vec_xa[0] = vsxargs[ (vrai  ) % isr_modulo];
+    vec_xa[1] = vsxargs[ (vrai+1) % isr_modulo];
+  }
+  if (has_xb) {
+    vec_xb[0] = vsxargs[ (vrbi  ) % isr_modulo];
+    vec_xb[1] = vsxargs[ (vrbi+1) % isr_modulo];
+  }
+
+   // xap 'shares' with the second half of an xa-pair.
+  if (has_xap ) {
+    vec_xc[0] = vsxargs[ (vrci+2) % isr_modulo];
+    vec_xc[1] = vsxargs[ (vrci+3) % isr_modulo];
+  }
+  // Combine with the above has_xap clause ? May need addiitonal
+  // logic later if these ever overlap.
+  if (has_xc) {
+    vec_xc[0] = vsxargs[ (vrai  ) % isr_modulo];
+    vec_xc[1] = vsxargs[ (vrai+1) % isr_modulo];
+  }
+   if (has_vrc) {
+      vrc[0] = vsxargs[ (vrci  ) % nb_vsxargs];
+      vrc[1] = vsxargs[ (vrci+1) % nb_vsxargs];
+   }
+   if (is_testlsb) {
+     /* Special casing for this test to force the vec_xb low bits
+	 to zero or one. */
 	 if (vrbi%3 == 0) {
 	    // force bits to zero.
 	    vec_xb[0] = vec_xb[0]&0xfefefefefefefefeUL;
@@ -2075,17 +2233,8 @@ void initialize_source_registers () {
 	    // force bits to one.
 	    vec_xb[0] = vec_xb[0]|0x0101010101010101UL;
 	    vec_xb[1] = vec_xb[1]|0x0101010101010101UL;
-	 }
       }
-   }
-   if (has_xap) {
-      /* shift this back to vrai if we are an xa pair */
-      vrc[0] = vec_xc[0] = vsxargs[ (vrai+2) % nb_vsxargs];
-      vrc[1] = vec_xc[1] = vsxargs[ (vrai+3) % nb_vsxargs];
-   } else {
-      vrc[0] = vec_xc[0] = vsxargs[ (vrci  ) % nb_vsxargs];
-      vrc[1] = vec_xc[1] = vsxargs[ (vrci+1) % nb_vsxargs];
-   }
+    }
 
    if (uses_xc_as_blend_mask) {
       vec_xc[0] = mask64[ (vrci  )%MASK64SIZE];
@@ -2100,12 +2249,14 @@ void initialize_source_registers () {
       frsbp = vsxargs[ (vrbi+1)%nb_vsxargs];
    }
 
+   /* default initializations.. */
    ra = args[vrai];
    rb = args[vrbi % nb_args ];
-   rc = args[vrci];
+   rc = 2 * vrci;
    rs = args[vrai % nb_args ];
    rsp = args[ (vrai+1) % nb_args ];
 
+   /* more special cases.. */
    if (is_clear_or_insert_insns) {
       if (has_rb)  rb = 2*vrbi;
       /* note special case for is_insert_double, see set_up_iterators () */
@@ -2113,11 +2264,10 @@ void initialize_source_registers () {
       if (is_insert_double) {
 	 /* For an insert_double, the results are undefined
 	    for ra > 8, so modulo those into a valid range. */
-	 ra =ra % 9;
+	 ra = ra % 9;
       }
    }
 
-   if (has_rc) rc = 2*vrci;
    if (uses_buffer) {
       if (has_rb) {
 	 ra = 8*vrai;
@@ -2146,35 +2296,19 @@ void initialize_source_registers () {
    dcmx = 1 << vrci;
 
    if (uses_acc_src) {
-      /* initialize the ACC with data */
-      TEST_ACC0[0] = vsxargs[ (vrai  ) % nb_vsxargs];
-      TEST_ACC0[1] = vsxargs[ (vrai+1) % nb_vsxargs];
-      TEST_ACC1[0] = vsxargs[ (vrai+2) % nb_vsxargs];
-      TEST_ACC1[1] = vsxargs[ (vrai+3) % nb_vsxargs];
-      TEST_ACC2[0] = vsxargs[ (vrai+4) % nb_vsxargs];
-      TEST_ACC2[1] = vsxargs[ (vrai+5) % nb_vsxargs];
-      TEST_ACC3[0] = vsxargs[ (vrai+6) % nb_vsxargs];
-      TEST_ACC3[1] = vsxargs[ (vrai+7) % nb_vsxargs];
-      push_vsrs_to_acc ();
+	   init_source_acc();
    }
    if (uses_acc_vsrs) {
-      /* initialize the VSRs that will be used by the accumulator related tests. */
-      TEST_ACC0[0] = vsxargs[vrai]  ;
-      TEST_ACC0[1] = vsxargs[vrai+1];
-      TEST_ACC1[0] = vsxargs[vrai+2];
-      TEST_ACC1[1] = vsxargs[vrai+3];
-      TEST_ACC2[0] = vsxargs[vrai+4];
-      TEST_ACC2[1] = vsxargs[vrai+5];
-      TEST_ACC3[0] = vsxargs[vrai+6];
-      TEST_ACC3[1] = vsxargs[vrai+7];
+	   init_acc_vsrs();
    }
    if (has_xs) {
-      vec_xs[0] = vsxargs[ (vrai  ) % nb_vsxargs];
-      vec_xs[1] = vsxargs[ (vrai+1) % nb_vsxargs];
-   }
-   if (has_xsp) {
-      vec_xt[0] = vsxargs[ (vrai+2) % nb_vsxargs];
-      vec_xt[1] = vsxargs[ (vrai+3) % nb_vsxargs];
+	   init_xsp();
+// vec_xs is not directly shared with the register defined XSp/XTp, so
+// explicitly assign the values when needed.
+	   vec_xs[0] = XTp0[0];
+	   vec_xs[1] = XTp0[1];
+	   vec_xs[0] = XTp1[0];
+	   vec_xs[1] = XTp1[1];
    }
 }
 

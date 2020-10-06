@@ -49,6 +49,45 @@ struct test_list_t current_test;
 
 #include "isa_3_1_helpers.h"
 
+static void test_lxvp_32 (void) {
+  __asm__ __volatile__ ("lxvp 20, 32(%0)" :: "r" (ra) );
+}
+static void test_lxvp_16 (void) {
+  __asm__ __volatile__ ("lxvp 20, 16(%0)" :: "r" (ra) );
+}
+static void test_lxvp_0 (void) {
+  __asm__ __volatile__ ("lxvp 20, 0(%0)" :: "r" (ra) );
+}
+static void test_lxvpx (void) {
+  __asm__ __volatile__ ("lxvpx 20, %0, %1" :: "r" (ra), "r" (rb) );
+}
+static void test_stxvp_off0 (void) {
+  __asm__ __volatile__ ("stxvp 20, 0(%0)" :: "r" (ra) );
+}
+static void test_stxvp_off16 (void) {
+  __asm__ __volatile__ ("stxvp 20, 16(%0)" :: "r" (ra) );
+}
+static void test_stxvp_off32 (void) {
+  __asm__ __volatile__ ("stxvp 20, 32(%0)" :: "r" (ra) );
+}
+static void test_stxvp_off48 (void) {
+  __asm__ __volatile__ ("stxvp 20, 48(%0)" :: "r" (ra) );
+}
+static void test_pstxvp_off0 (void) {
+  __asm__ __volatile__ ("pstxvp 20, 0(%0)" :: "r" (ra) );
+}
+static void test_pstxvp_off16 (void) {
+  __asm__ __volatile__ ("pstxvp 20, 16(%0)" :: "r" (ra) );
+}
+static void test_pstxvp_off32 (void) {
+  __asm__ __volatile__ ("pstxvp 20, 32(%0)" :: "r" (ra) );
+}
+static void test_pstxvp_off48 (void) {
+  __asm__ __volatile__ ("pstxvp 20, 48(%0)" :: "r" (ra) );
+}
+static void test_stxvpx (void) {
+  __asm__ __volatile__ ("stxvpx 20, %0, %1" :: "r" (ra), "r" (rb) );
+}
 static void test_plfd_64 (void) {
   __asm__ __volatile__ ("plfd 28, 64(%0), 0" :: "r" (ra) );
 }
@@ -213,6 +252,10 @@ static void test_pstxv_0 (void) {
 }
 
 static test_list_t testgroup_generic[] = {
+  { &test_lxvpx, "lxvpx", "XTp,RA,RB"}, /* bcs */
+  { &test_lxvp_0, "lxvp 0", "XTp,DQ(RA)"}, /* bcwp */
+  { &test_lxvp_16, "lxvp 16", "XTp,DQ(RA)"}, /* bcwp */
+  { &test_lxvp_32, "lxvp 32", "XTp,DQ(RA)"}, /* bcwp */
   { &test_plfd_0, "plfd 0", "FRT,D(RA),R"}, /* bcwp */
   { &test_plfd_4, "plfd 4", "FRT,D(RA),R"}, /* bcwp */
   { &test_plfd_8, "plfd 8", "FRT,D(RA),R"}, /* bcwp */
@@ -263,10 +306,19 @@ static test_list_t testgroup_generic[] = {
   { &test_pstxssp_16, "pstxssp 16", "VRS,D(RA),R"}, /* bcwp */
   { &test_pstxssp_32, "pstxssp 32", "VRS,D(RA),R"}, /* bcwp */
   { &test_pstxssp_64, "pstxssp 64", "VRS,D(RA),R"}, /* bcwp */
+  { &test_pstxvp_off0, "pstxvp off0", "XSp,D(RA),R"}, /* bcwp */
+  { &test_pstxvp_off16, "pstxvp off16", "XSp,D(RA),R"}, /* bcwp */
+  { &test_pstxvp_off32, "pstxvp off32", "XSp,D(RA),R"}, /* bcwp */
+  { &test_pstxvp_off48, "pstxvp off48", "XSp,D(RA),R"}, /* bcwp */
   { &test_pstxv_0, "pstxv 0", "XS,D(RA),R"}, /* bcwp */
   { &test_pstxv_4, "pstxv 4", "XS,D(RA),R"}, /* bcwp */
   { &test_pstxv_8, "pstxv 8", "XS,D(RA),R"}, /* bcwp */
   { &test_pstxv_16, "pstxv 16", "XS,D(RA),R"}, /* bcwp */
+  { &test_stxvpx, "stxvpx", "XSp,RA,RB"}, /* bcs */
+  { &test_stxvp_off0, "stxvp off0", "XSp,DQ(RA)"}, /* bcwp */
+  { &test_stxvp_off16, "stxvp off16", "XSp,DQ(RA)"}, /* bcwp */
+  { &test_stxvp_off32, "stxvp off32", "XSp,DQ(RA)"}, /* bcwp */
+  { &test_stxvp_off48, "stxvp off48", "XSp,DQ(RA)"}, /* bcwp */
 	{ NULL, 	    NULL },
 };
 

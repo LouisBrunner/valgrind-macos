@@ -58,6 +58,21 @@ static void test_brw (void) {
 static void test_brd (void) {
   __asm__ __volatile__ ("brd %0, %1" : "=r" (ra) : "r" (rs) );
 }
+static void test_plxvp_off0 (void) {
+  __asm__ __volatile__ ("plxvp 20, 0(%0), 0" :: "r" (ra) );
+}
+static void test_plxvp_off8 (void) {
+  __asm__ __volatile__ ("plxvp 20, 8(%0), 0" :: "r" (ra) );
+}
+static void test_plxvp_off16 (void) {
+  __asm__ __volatile__ ("plxvp 20, 16(%0), 0" :: "r" (ra) );
+}
+static void test_plxvp_off24 (void) {
+  __asm__ __volatile__ ("plxvp 20, 24(%0), 0" :: "r" (ra) );
+}
+static void test_plxvp_off32 (void) {
+  __asm__ __volatile__ ("plxvp 20, 32(%0), 0" :: "r" (ra) );
+}
 static void test_setbc_0_cr0s (void) {
   SET_CR(0x00000000);
   __asm__ __volatile__ ("setbc 26, 0");
@@ -686,6 +701,11 @@ static test_list_t testgroup_generic[] = {
   { &test_plwz_off16, "plwz off16", "RT,D(RA),R"}, /* bcwp */
   { &test_plwz_off32, "plwz off32", "RT,D(RA),R"}, /* bcwp */
   { &test_plwz_off64, "plwz off64", "RT,D(RA),R"}, /* bcwp */
+  { &test_plxvp_off0, "plxvp off0", "XTp,D(RA),R"}, /* bcwp */
+  { &test_plxvp_off8, "plxvp off8", "XTp,D(RA),R"}, /* bcwp */
+  { &test_plxvp_off16, "plxvp off16", "XTp,D(RA),R"}, /* bcwp */
+  { &test_plxvp_off24, "plxvp off24", "XTp,D(RA),R"}, /* bcwp */
+  { &test_plxvp_off32, "plxvp off32", "XTp,D(RA),R"}, /* bcwp */
   { &test_pstb_off0, "pstb off0", "RS,D(RA),R"}, /* bcwp */
   { &test_pstb_off8, "pstb off8", "RS,D(RA),R"}, /* bcwp */
   { &test_pstb_off16, "pstb off16", "RS,D(RA),R"}, /* bcwp */

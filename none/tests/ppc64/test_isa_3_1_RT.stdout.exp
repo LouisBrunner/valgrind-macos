@@ -119,6 +119,16 @@ plwz off32 (&buffer) =>          5a07a05
 
 plwz off64 (&buffer) =>         bbaa7988
 
+plxvp off0 (&buffer) => 7ff0000000007000 7f0000007f007000 3fe00094e0007359 7ff7020304057607
+
+plxvp off8 (&buffer) => 7f0000007f007000 5a05a05a05a07a05 7ff7020304057607 7ff0000000007000
+
+plxvp off16 (&buffer) => 5a05a05a05a07a05 0102030405067708 7ff0000000007000 7f0000007f007000
+
+plxvp off24 (&buffer) => 0102030405067708 fedcba9876547210 7f0000007f007000 5a05a05a05a07a05
+
+plxvp off32 (&buffer) => fedcba9876547210 0123456789ab7def 5a05a05a05a07a05 0102030405067708
+
 pstb off0 (&buffer) 102030405060708 => [3fe00094e0007308  -   -   -   -   -   -   - ]
 
 pstb off8 (&buffer) 102030405060708 => [ -  7ff7020304057608  -   -   -   -   -   - ]
@@ -326,4 +336,4 @@ setnbc 31_creb => [aaaaaaaa]                0
 
 setnbc 31_crob => [55555555] ffffffffffffffff
 
-All done. Tested 144 different instruction groups
+All done. Tested 149 different instruction groups

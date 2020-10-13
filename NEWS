@@ -78,6 +78,7 @@ where XXXXXX is the bug number as listed below.
 140939 --track-fds reports leakage of stdout/in/err and doesn't respect -q
 217695  malloc/calloc/realloc/memalign failure doesn't set errno to ENOMEM
 345077  linux syscall execveat support (linux 3.19)
+361770  Missing F_ADD_SEALS
 369029  handle linux syscalls sched_getattr and sched_setattr
 384729  __libc_freeres inhibits cross-platform valgrind
 391853  Makefile.all.am:L247 and @SOLARIS_UNDEF_LARGESOURCE@ being empty

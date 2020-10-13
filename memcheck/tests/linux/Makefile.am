@@ -13,6 +13,7 @@ EXTRA_DIST = \
 	ioctl-tiocsig.vgtest ioctl-tiocsig.stderr.exp \
 	lsframe1.vgtest lsframe1.stdout.exp lsframe1.stderr.exp \
 	lsframe2.vgtest lsframe2.stdout.exp lsframe2.stderr.exp \
+	memfd.vgtest memfd.stderr.exp \
 	rfcomm.vgtest rfcomm.stderr.exp \
 	sigqueue.vgtest sigqueue.stderr.exp \
 	stack_changes.stderr.exp stack_changes.stdout.exp \
@@ -56,6 +57,10 @@ check_PROGRAMS = \
 
 if HAVE_AT_FDCWD
 check_PROGRAMS += sys-openat
+endif
+
+if HAVE_MEMFD_CREATE
+check_PROGRAMS += memfd
 endif
 
 if HAVE_COPY_FILE_RANGE

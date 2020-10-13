@@ -1504,6 +1504,9 @@ struct vki_dirent64 {
 #define VKI_F_SETPIPE_SZ    (VKI_F_LINUX_SPECIFIC_BASE + 7)
 #define VKI_F_GETPIPE_SZ    (VKI_F_LINUX_SPECIFIC_BASE + 8)
 
+#define VKI_F_ADD_SEALS     (VKI_F_LINUX_SPECIFIC_BASE + 9)
+#define VKI_F_GET_SEALS     (VKI_F_LINUX_SPECIFIC_BASE + 10)
+
 struct vki_flock {
 	short			l_type;
 	short			l_whence;

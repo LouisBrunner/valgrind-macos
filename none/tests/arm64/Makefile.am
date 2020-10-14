@@ -10,14 +10,16 @@ EXTRA_DIST = \
 	integer.stdout.exp integer.stderr.exp integer.vgtest \
 	memory.stdout.exp memory.stderr.exp memory.vgtest \
 	atomics_v81.stdout.exp atomics_v81.stderr.exp atomics_v81.vgtest \
-	simd_v81.stdout.exp simd_v81.stderr.exp simd_v81.vgtest
+	simd_v81.stdout.exp simd_v81.stderr.exp simd_v81.vgtest \
+        fmadd_sub.stdout.exp fmadd_sub.stderr.exp fmadd_sub.vgtest
 
 check_PROGRAMS = \
 	allexec \
         cvtf_imm \
 	fp_and_simd \
 	integer \
-	memory
+	memory \
+	fmadd_sub
 
 if BUILD_ARMV8_CRC_TESTS
   check_PROGRAMS += crc32

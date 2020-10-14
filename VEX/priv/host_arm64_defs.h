@@ -291,6 +291,14 @@ typedef
 
 typedef
    enum {
+      ARM64fpt_FMADD=105,
+      ARM64fpt_FMSUB,
+      ARM64fpt_INVALID
+   }
+   ARM64FpTriOp;
+
+typedef
+   enum {
       ARM64fpu_NEG=110,
       ARM64fpu_ABS,
       ARM64fpu_SQRT,
@@ -498,6 +506,8 @@ typedef
       ARM64in_VUnaryS,
       ARM64in_VBinD,
       ARM64in_VBinS,
+      ARM64in_VTriD,
+      ARM64in_VTriS,
       ARM64in_VCmpD,
       ARM64in_VCmpS,
       ARM64in_VFCSel,
@@ -799,6 +809,22 @@ typedef
             HReg         argL;
             HReg         argR;
          } VBinS;
+         /* 64-bit FP ternary arithmetic */
+         struct {
+            ARM64FpTriOp op;
+            HReg         dst;
+            HReg         arg1;
+            HReg         arg2;
+            HReg         arg3;
+         } VTriD;
+         /* 32-bit FP ternary arithmetic */
+         struct {
+            ARM64FpTriOp op;
+            HReg         dst;
+            HReg         arg1;
+            HReg         arg2;
+            HReg         arg3;
+         } VTriS;
          /* 64-bit FP compare */
          struct {
             HReg argL;
@@ -970,6 +996,10 @@ extern ARM64Instr* ARM64Instr_VUnaryD ( ARM64FpUnaryOp op, HReg dst, HReg src );
 extern ARM64Instr* ARM64Instr_VUnaryS ( ARM64FpUnaryOp op, HReg dst, HReg src );
 extern ARM64Instr* ARM64Instr_VBinD   ( ARM64FpBinOp op, HReg, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VBinS   ( ARM64FpBinOp op, HReg, HReg, HReg );
+extern ARM64Instr* ARM64Instr_VTriD   ( ARM64FpTriOp op, HReg dst,
+                                        HReg, HReg, HReg );
+extern ARM64Instr* ARM64Instr_VTriS   ( ARM64FpTriOp op, HReg dst,
+                                        HReg, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VCmpD   ( HReg argL, HReg argR );
 extern ARM64Instr* ARM64Instr_VCmpS   ( HReg argL, HReg argR );
 extern ARM64Instr* ARM64Instr_VFCSel  ( HReg dst, HReg argL, HReg argR,

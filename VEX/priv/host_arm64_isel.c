@@ -3255,6 +3255,25 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
    }
 
+   if (e->tag == Iex_Qop) {
+      IRQop*       qop = e->Iex.Qop.details;
+      ARM64FpTriOp triop = ARM64fpt_INVALID;
+      switch (qop->op) {
+         case Iop_MAddF64: triop = ARM64fpt_FMADD; break;
+         case Iop_MSubF64: triop = ARM64fpt_FMSUB; break;
+         default: break;
+      }
+      if (triop != ARM64fpt_INVALID) {
+         HReg N = iselDblExpr(env, qop->arg2);
+         HReg M = iselDblExpr(env, qop->arg3);
+         HReg A = iselDblExpr(env, qop->arg4);
+         HReg dst  = newVRegD(env);
+         set_FPCR_rounding_mode(env, qop->arg1);
+         addInstr(env, ARM64Instr_VTriD(triop, dst, N, M, A));
+         return dst;
+      }
+   }
+
    if (e->tag == Iex_ITE) {
       /* ITE(ccexpr, iftrue, iffalse) */
       ARM64CondCode cc;
@@ -3448,6 +3467,26 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       cc = iselCondCode(env, e->Iex.ITE.cond);
       addInstr(env, ARM64Instr_VFCSel(dst, r1, r0, cc, False/*!64-bit*/));
       return dst;
+   }
+
+   if (e->tag == Iex_Qop) {
+      IRQop*       qop = e->Iex.Qop.details;
+      ARM64FpTriOp triop = ARM64fpt_INVALID;
+      switch (qop->op) {
+         case Iop_MAddF32: triop = ARM64fpt_FMADD; break;
+         case Iop_MSubF32: triop = ARM64fpt_FMSUB; break;
+      default: break;
+      }
+
+      if (triop != ARM64fpt_INVALID) {
+         HReg N = iselFltExpr(env, qop->arg2);
+         HReg M = iselFltExpr(env, qop->arg3);
+         HReg A = iselFltExpr(env, qop->arg4);
+         HReg dst  = newVRegD(env);
+         set_FPCR_rounding_mode(env, qop->arg1);
+         addInstr(env, ARM64Instr_VTriS(triop, dst, N, M, A));
+         return dst;
+      }
    }
 
    ppIRExpr(e);

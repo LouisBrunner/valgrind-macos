@@ -1049,6 +1049,8 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_futex_time64,      sys_futex_time64),     // 422
    LINXY(__NR_sched_rr_get_interval_time64,
          sys_sched_rr_get_interval_time64),             // 423
+
+   LINX_(__NR_faccessat2,        sys_faccessat2),       // 439
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

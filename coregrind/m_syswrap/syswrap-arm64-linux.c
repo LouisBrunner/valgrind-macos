@@ -825,6 +825,8 @@ static SyscallTableEntry syscall_main_table[] = {
    //   (__NR_pkey_free,         sys_ni_syscall),        // 290
 
    LINXY(__NR_statx,             sys_statx),             // 397
+
+   LINX_(__NR_faccessat2,        sys_faccessat2),        // 439
 };
 
 

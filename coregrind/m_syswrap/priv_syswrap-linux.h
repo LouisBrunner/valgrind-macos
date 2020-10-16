@@ -180,6 +180,7 @@ DECL_TEMPLATE(linux, sys_symlinkat);
 DECL_TEMPLATE(linux, sys_readlinkat);
 DECL_TEMPLATE(linux, sys_fchmodat);
 DECL_TEMPLATE(linux, sys_faccessat);
+DECL_TEMPLATE(linux, sys_faccessat2);
 DECL_TEMPLATE(linux, sys_utimensat);
 DECL_TEMPLATE(linux, sys_name_to_handle_at);
 DECL_TEMPLATE(linux, sys_open_by_handle_at);

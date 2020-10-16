@@ -5988,6 +5988,15 @@ PRE(sys_faccessat)
    PRE_MEM_RASCIIZ( "faccessat(pathname)", ARG2 );
 }
 
+PRE(sys_faccessat2)
+{
+   PRINT("sys_faccessat2 ( %ld, %#" FMT_REGWORD "x(%s), %ld, %ld )",
+         SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3, SARG4);
+   PRE_REG_READ4(long, "faccessat2",
+                 int, dfd, const char *, pathname, int, mode, int, flags);
+   PRE_MEM_RASCIIZ( "faccessat2(pathname)", ARG2 );
+}
+
 PRE(sys_name_to_handle_at)
 {
    PRINT("sys_name_to_handle_at ( %ld, %#" FMT_REGWORD "x(%s), %#"

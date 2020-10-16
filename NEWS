@@ -52,6 +52,7 @@ n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.
 423195  PPC ISA 3.1 support is missing, part 1
 425232  PPC ISA 3.1 support is missing, part 2
 426123  PPC ISA 3.1 support is missing, part 3
+427787  Support new faccessat2 linux syscall (439)
 
 Release 3.16.1 (?? June 2020)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

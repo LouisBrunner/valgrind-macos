@@ -6040,6 +6040,9 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
              (tt+0) % 32, arr, (tt+nRegs-1) % 32, arr, nameIReg64orSP(nn),
              pxStr);
 
+         if (nRegs >= 3) {
+            dres->hint = Dis_HintVerbose;
+         }
          return True;
       }
       /* else fall through */

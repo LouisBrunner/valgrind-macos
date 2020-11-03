@@ -3741,7 +3741,7 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
    /* --------- LOAD --------- */
    case Iex_Load: {
       HReg        dst = newVRegV(env);
-      s390_amode *am  = s390_isel_amode(env, expr->Iex.Load.addr);
+      s390_amode *am  = s390_isel_amode_short(env, expr->Iex.Load.addr);
 
       if (expr->Iex.Load.end != Iend_BE)
          goto irreducible;

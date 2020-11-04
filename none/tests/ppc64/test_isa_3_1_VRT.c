@@ -187,6 +187,58 @@ static void test_vsraq (void) {
 static void test_vsrq (void) {
   __asm__ __volatile__ ("vsrq %0, %1, %2" : "=v" (vrt) : "v" (vra), "v" (vrb) );
 }
+static void test_dcffixqq (void) {
+SET_FPSCR_ZERO; 
+  __asm__ __volatile__ ("dcffixqq 28, %0" :: "v" (vrb) );
+GET_FPSCR(current_fpscr); 
+}
+static void test_dctfixqq (void) {
+  __asm__ __volatile__ ("dctfixqq %0, 26" : "=v" (vrt) );
+}
+static void test_vdivesq (void) {
+  __asm__ __volatile__ ("vdivesq %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_vdiveuq (void) {
+  __asm__ __volatile__ ("vdiveuq %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_vdivsq (void) {
+  __asm__ __volatile__ ("vdivsq %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_vdivuq (void) {
+  __asm__ __volatile__ ("vdivuq %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_vmodsq (void) {
+  __asm__ __volatile__ ("vmodsq %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_vmoduq (void) {
+  __asm__ __volatile__ ("vmoduq %0, %1, %2"
+				: "=v" (vrt) : "v" (vra), "v" (vrb) );
+}
+static void test_vmsumcud (void) {
+  __asm__ __volatile__ ("vmsumcud %0, %1, %2, %3"
+			: "=v" (vrt) : "v" (vra), "v" (vrb), "v" (vrc) );
+}
+static void test_xscvqpsqz (void) {
+  __asm__ __volatile__ ("xscvqpsqz %0, %1 " : "=v" (vrt) : "v" (vrb) );
+}
+static void test_xscvqpuqz (void) {
+  __asm__ __volatile__ ("xscvqpuqz %0, %1 " : "=v" (vrt) : "v" (vrb) );
+}
+static void test_xscvsqqp (void) {
+SET_FPSCR_ZERO; 
+  __asm__ __volatile__ ("xscvsqqp %0, %1 " : "=v" (vrt) : "v" (vrb) );
+GET_FPSCR(current_fpscr); 
+}
+static void test_xscvuqqp (void) {
+SET_FPSCR_ZERO; 
+  __asm__ __volatile__ ("xscvuqqp %0, %1 " : "=v" (vrt) : "v" (vrb) );
+GET_FPSCR(current_fpscr); 
+}
 static void test_vextdubvlx (void) {
   __asm__ __volatile__ ("vextdubvlx %0, %1, %2, %3"
 			: "=v" (vrt) : "v" (vra), "v" (vrb), "r" (rc) );
@@ -385,6 +437,8 @@ static void test_xsmincqp (void) {
 }
 
 static test_list_t testgroup_generic[] = {
+  { &test_dcffixqq, "dcffixqq", "FRTp,VRB"}, /* bcs */
+  { &test_dctfixqq, "dctfixqq", "VRT,FRBp"}, /* bcs */
   { &test_dotted_vcmpequq, "vcmpequq.", "VRT,VRA,VRB"}, /* bcs */
   { &test_dotted_vcmpgtsq, "vcmpgtsq.", "VRT,VRA,VRB"}, /* bcs */
   { &test_dotted_vcmpgtuq, "vcmpgtuq.", "VRT,VRA,VRB"}, /* bcs */
@@ -401,12 +455,16 @@ static test_list_t testgroup_generic[] = {
   { &test_vcmpgtuq, "vcmpgtuq", "VRT,VRA,VRB"}, /* bcs */
   { &test_vctzdm, "vctzdm", "VRT,VRA,VRB"}, /* bcs */
   { &test_vdivesd, "vdivesd", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vdivesq, "vdivesq", "VRT,VRA,VRB"}, /* bcs */
   { &test_vdivesw, "vdivesw", "VRT,VRA,VRB"}, /* bcs */
   { &test_vdiveud, "vdiveud", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vdiveuq, "vdiveuq", "VRT,VRA,VRB"}, /* bcs */
   { &test_vdiveuw, "vdiveuw", "VRT,VRA,VRB"}, /* bcs */
   { &test_vdivsd, "vdivsd", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vdivsq, "vdivsq", "VRT,VRA,VRB"}, /* bcs */
   { &test_vdivsw, "vdivsw", "VRT,VRA,VRB"}, /* bcs */
   { &test_vdivud, "vdivud", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vdivuq, "vdivuq", "VRT,VRA,VRB"}, /* bcs */
   { &test_vdivuw, "vdivuw", "VRT,VRA,VRB"}, /* bcs */
   { &test_vextddvlx, "vextddvlx", "VRT,VRA,VRB,RC"}, /* bcs */
   { &test_vextddvrx, "vextddvrx", "VRT,VRA,VRB,RC"}, /* bcs */
@@ -436,9 +494,12 @@ static test_list_t testgroup_generic[] = {
   { &test_vinsw_3, "vinsw 3", "VRT,RB,UIM"}, /* bcwp */
   { &test_vinsw_7, "vinsw 7", "VRT,RB,UIM"}, /* bcwp */
   { &test_vmodsd, "vmodsd", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vmodsq, "vmodsq", "VRT,VRA,VRB"}, /* bcs */
   { &test_vmodsw, "vmodsw", "VRT,VRA,VRB"}, /* bcs */
   { &test_vmodud, "vmodud", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vmoduq, "vmoduq", "VRT,VRA,VRB"}, /* bcs */
   { &test_vmoduw, "vmoduw", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vmsumcud, "vmsumcud", "VRT,VRA,VRB,VRC"}, /* bcs */
   { &test_vmulesd, "vmulesd", "VRT,VRA,VRB"}, /* bcs */
   { &test_vmuleud, "vmuleud", "VRT,VRA,VRB"}, /* bcs */
   { &test_vmulhsd, "vmulhsd", "VRT,VRA,VRB"}, /* bcs */
@@ -467,6 +528,10 @@ static test_list_t testgroup_generic[] = {
   { &test_xscmpeqqp, "xscmpeqqp", "VRT,VRA,VRB"}, /* bcs */
   { &test_xscmpgeqp, "xscmpgeqp", "VRT,VRA,VRB"}, /* bcs */
   { &test_xscmpgtqp, "xscmpgtqp", "VRT,VRA,VRB"}, /* bcs */
+  { &test_xscvqpsqz, "xscvqpsqz", "VRT,VRB"}, /* bcs */
+  { &test_xscvqpuqz, "xscvqpuqz", "VRT,VRB"}, /* bcs */
+  { &test_xscvsqqp, "xscvsqqp", "VRT,VRB"}, /* bcs */
+  { &test_xscvuqqp, "xscvuqqp", "VRT,VRB"}, /* bcs */
   { &test_xsmaxcqp, "xsmaxcqp", "VRT,VRA,VRB"}, /* bcs */
   { &test_xsmincqp, "xsmincqp", "VRT,VRA,VRB"}, /* bcs */
 	{ NULL, 	    NULL },

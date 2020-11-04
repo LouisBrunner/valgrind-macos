@@ -126,7 +126,7 @@ where XXXXXX is the bug number as listed below.
 432809  VEX should support REX.W + POPF
 432861  PPC modsw and modsd give incorrect results for 1 mod 12
 n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.
-
+429352  PPC ISA 3.1 support is missing, part 7
 
 
 Release 3.16.1 (22 June 2020)

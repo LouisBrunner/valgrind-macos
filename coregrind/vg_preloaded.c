@@ -68,13 +68,12 @@ void VG_NOTIFY_ON_LOAD(freeres)(Vg_FreeresToRun to_run)
       _ZN9__gnu_cxx9__freeresEv();
    }
 
-#  if defined(VGO_linux)
-   /* __libc_freeres() not yet available on Solaris. */
-   extern void __libc_freeres(void);
-   if ((to_run & VG_RUN__LIBC_FREERES) != 0) {
+   extern void __libc_freeres(void) __attribute__((weak));
+   if (((to_run & VG_RUN__LIBC_FREERES) != 0) &&
+       (__libc_freeres != NULL)) {
       __libc_freeres();
    }
-#  endif
+
 #  endif
 
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__FREERES_DONE, 0, 0, 0, 0, 0);

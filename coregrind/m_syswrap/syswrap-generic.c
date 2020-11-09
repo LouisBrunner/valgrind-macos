@@ -4291,8 +4291,7 @@ PRE(sys_readv)
       if ((Int)ARG3 >= 0)
          PRE_MEM_READ( "readv(vector)", ARG2, ARG3 * sizeof(struct vki_iovec) );
 
-      if (ARG2 != 0) {
-         /* ToDo: don't do any of the following if the vector is invalid */
+      if (ML_(safe_to_deref)((const void*)ARG2, ARG3*sizeof(struct vki_iovec *))) {
          vec = (struct vki_iovec *)(Addr)ARG2;
          for (i = 0; i < (Int)ARG3; i++)
             PRE_MEM_WRITE( "readv(vector[...])",
@@ -4644,8 +4643,8 @@ PRE(sys_writev)
       if ((Int)ARG3 >= 0)
          PRE_MEM_READ( "writev(vector)", 
                        ARG2, ARG3 * sizeof(struct vki_iovec) );
-      if (ARG2 != 0) {
-         /* ToDo: don't do any of the following if the vector is invalid */
+
+      if (ML_(safe_to_deref)((const void*)ARG2, ARG3*sizeof(struct vki_iovec *))) {
          vec = (struct vki_iovec *)(Addr)ARG2;
          for (i = 0; i < (Int)ARG3; i++)
             PRE_MEM_READ( "writev(vector[...])",

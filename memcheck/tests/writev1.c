@@ -82,6 +82,26 @@ int main(void)
 	else 
         	fprintf(stderr, "Error readv returned a positive value\n");
 
+        // test with totally bogus iovec pointer
+        // see bugz 424012
+        if (writev(fd, (const struct iovec *)1, 1) < 0) {
+        	if (errno == EFAULT) 
+                	fprintf(stderr, "Received EFAULT as expected\n");
+                else 
+                	fprintf(stderr, "Expected EFAULT, got %d\n", errno);
+        }
+        else
+        	fprintf(stderr, "Error writev returned a positive value\n");
+
+        if (readv(fd, (const struct iovec *)1, 1) < 0) {
+        	if (errno == EFAULT) 
+                	fprintf(stderr, "Received EFAULT as expected\n");
+                else 
+                	fprintf(stderr, "Expected EFAULT, got %d\n", errno);
+        }
+	else
+        	fprintf(stderr, "Error readv returned a positive value\n");
+
         unlink(f_name);
         
 	return 0;

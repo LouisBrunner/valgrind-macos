@@ -901,6 +901,7 @@
 /memcheck/tests/sigkill
 /memcheck/tests/signal2
 /memcheck/tests/sigprocmask
+/memcheck/tests/sized_delete
 /memcheck/tests/stack_changes
 /memcheck/tests/stack_switch
 /memcheck/tests/static_malloc

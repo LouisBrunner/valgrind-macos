@@ -69,7 +69,8 @@ dist_noinst_SCRIPTS = \
 	filter_strchr \
 	filter_varinfo3 \
 	filter_memcheck \
-	filter_overlaperror
+	filter_overlaperror \
+	filter_sized_delete
 
 noinst_HEADERS = leak.h
 
@@ -267,6 +268,7 @@ EXTRA_DIST = \
 	    sigkill.stderr.exp-glibc-2.28 sigkill.vgtest \
 	signal2.stderr.exp signal2.stdout.exp signal2.vgtest \
 	sigprocmask.stderr.exp sigprocmask.stderr.exp2 sigprocmask.vgtest \
+	sized_delete.stderr.exp sized_delete.stderr.exp-x86 sized_delete.vgtest \
 	static_malloc.stderr.exp static_malloc.vgtest \
 	stpncpy.vgtest stpncpy.stderr.exp stpncpy.stdout.exp \
 	strchr.stderr.exp strchr.stderr.exp2 strchr.stderr.exp3 strchr.vgtest \
@@ -397,6 +399,7 @@ check_PROGRAMS = \
 	sendmsg \
 	sh-mem sh-mem-random \
 	sigaltstack signal2 sigprocmask static_malloc sigkill \
+	sized_delete \
 	strchr \
 	str_tester \
 	supp_unknown supp1 supp2 suppfree \
@@ -548,6 +551,9 @@ if VGCONF_OS_IS_SOLARIS
 sendmsg_CFLAGS		+= -D_XOPEN_SOURCE=600
 sendmsg_LDADD		= -lsocket -lnsl
 endif
+
+sized_delete_SOURCES   = sized_delete.cpp
+sized_delete_CXXFLAGS  = $(AM_CXXFLAGS) -fsized-deallocation
 
 str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow \
 			  @FLAG_W_NO_MEMSET_TRANSPOSED_ARGS@

@@ -1,0 +1,4 @@
+prog: sized_delete
+prereq: test -e sized_delete
+vgopts: -q "--trace-malloc=yes" --show-mismatched-frees=yes 
+stderr_filter: filter_sized_delete

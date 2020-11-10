@@ -399,7 +399,6 @@ check_PROGRAMS = \
 	sendmsg \
 	sh-mem sh-mem-random \
 	sigaltstack signal2 sigprocmask static_malloc sigkill \
-	sized_delete \
 	strchr \
 	str_tester \
 	supp_unknown supp1 supp2 suppfree \
@@ -552,8 +551,11 @@ sendmsg_CFLAGS		+= -D_XOPEN_SOURCE=600
 sendmsg_LDADD		= -lsocket -lnsl
 endif
 
+if HAVE_FSIZED_DEALLOCATION
+check_PROGRAMS += sized_delete
 sized_delete_SOURCES   = sized_delete.cpp
-sized_delete_CXXFLAGS  = $(AM_CXXFLAGS) -fsized-deallocation
+sized_delete_CXXFLAGS  = $(AM_CXXFLAGS) @FLAG_FSIZED_DEALLOCATION@
+endif
 
 str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow \
 			  @FLAG_W_NO_MEMSET_TRANSPOSED_ARGS@

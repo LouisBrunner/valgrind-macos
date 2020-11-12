@@ -1112,7 +1112,7 @@ static ULong reinterpret_double_as_long( Double input )
 
 static Double conv_f16_to_double( ULong input )
 {
-#  if defined(__powerpc__)
+#  if defined (HAS_XSCVHPDP)
    // This all seems to be very alignment sensitive??
    __attribute__ ((aligned (64))) ULong src;
    __attribute__ ((aligned (64))) Double result;

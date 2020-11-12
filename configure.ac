@@ -1640,6 +1640,20 @@ ac_asm_have_isa_3_00=no
 AC_MSG_RESULT([no])
 ])
 
+# xscvhpdp checking
+AC_MSG_CHECKING([that assembler knows xscvhpdp ])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+]], [[
+  __asm__ __volatile__("xscvhpdp 1,2 ");
+]])], [
+ac_asm_have_xscvhpdp=yes
+AC_MSG_RESULT([yes])
+], [
+ac_asm_have_xscvhpdp=no
+AC_MSG_RESULT([no])
+])
+
 # isa 3.01 checking
 AC_MSG_CHECKING([that assembler knows ISA 3.1 ])
 
@@ -1657,6 +1671,8 @@ AC_MSG_RESULT([no])
 
 AM_CONDITIONAL(HAS_ISA_3_00, [test x$ac_asm_have_isa_3_00 = xyes \
                              -a x$HWCAP_HAS_ISA_3_00 = xyes])
+
+AM_CONDITIONAL(HAS_XSCVHPDP, [test x$ac_asm_have_xscvhpdp = xyes])
 
 AM_CONDITIONAL(HAS_ISA_3_1, [test x$ac_asm_have_isa_3_1 = xyes \
                              -a x$HWCAP_HAS_ISA_3_1 = xyes])

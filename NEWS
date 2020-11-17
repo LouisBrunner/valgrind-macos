@@ -154,6 +154,7 @@ where XXXXXX is the bug number as listed below.
 428909  helgrind: need to intercept duplicate libc definitions for Fedora 33
 429352  PPC ISA 3.1 support is missing, part 7
 429354  PPC ISA 3.1 support is missing, part 8
+429375  PPC ISA 3.1 support is missing, part 9
 429692  unhandled ppc64le-linux syscall: 147 (getsid)
 429864  s390x: C++ atomic test_and_set yields false-positive memcheck
         diagnostics

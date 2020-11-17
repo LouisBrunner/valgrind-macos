@@ -689,6 +689,45 @@ static void test_pstq_off32 (void) {
 static void test_pstq_off64 (void) {
   __asm__ __volatile__ ("pstq 24, 64(%0), 0" :: "r" (ra) );
 }
+static void test_vcntmbb_0 (void) {
+  __asm__ __volatile__ ("vcntmbb %0, %1, 0" : "=r" (rt) : "v" (vrb) );
+}
+static void test_vcntmbb_1 (void) {
+  __asm__ __volatile__ ("vcntmbb %0, %1, 1" : "=r" (rt) : "v" (vrb) );
+}
+static void test_vcntmbh_0 (void) {
+  __asm__ __volatile__ ("vcntmbh %0, %1, 0" : "=r" (rt) : "v" (vrb) );
+}
+static void test_vcntmbh_1 (void) {
+  __asm__ __volatile__ ("vcntmbh %0, %1, 1" : "=r" (rt) : "v" (vrb) );
+}
+static void test_vcntmbw_0 (void) {
+  __asm__ __volatile__ ("vcntmbw %0, %1, 0" : "=r" (rt) : "v" (vrb) );
+}
+static void test_vcntmbw_1 (void) {
+  __asm__ __volatile__ ("vcntmbw %0, %1, 1" : "=r" (rt) : "v" (vrb) );
+}
+static void test_vcntmbd_0 (void) {
+  __asm__ __volatile__ ("vcntmbd %0, %1, 0" : "=r" (rt) : "v" (vrb) );
+}
+static void test_vcntmbd_1 (void) {
+  __asm__ __volatile__ ("vcntmbd %0, %1, 1" : "=r" (rt) : "v" (vrb) );
+}
+static void test_vextractbm (void) {
+  __asm__ __volatile__ ("vextractbm %0, %1 " : "=r" (rt) : "v" (vrb) );
+}
+static void test_vextracthm (void) {
+  __asm__ __volatile__ ("vextracthm %0, %1 " : "=r" (rt) : "v" (vrb) );
+}
+static void test_vextractwm (void) {
+  __asm__ __volatile__ ("vextractwm %0, %1 " : "=r" (rt) : "v" (vrb) );
+}
+static void test_vextractdm (void) {
+  __asm__ __volatile__ ("vextractdm %0, %1 " : "=r" (rt) : "v" (vrb) );
+}
+static void test_vextractqm (void) {
+  __asm__ __volatile__ ("vextractqm %0, %1 " : "=r" (rt) : "v" (vrb) );
+}
 
 static test_list_t testgroup_generic[] = {
   { &test_brd, "brd", "RA,RS"}, /* bcs */
@@ -845,6 +884,19 @@ static test_list_t testgroup_generic[] = {
   { &test_setnbc_31_cr1s, "setnbc 31_cr1s", "RT,BI"}, /* bcwp */
   { &test_setnbc_31_creb, "setnbc 31_creb", "RT,BI"}, /* bcwp */
   { &test_setnbc_31_crob, "setnbc 31_crob", "RT,BI"}, /* bcwp */
+  { &test_vcntmbb_0, "vcntmbb 0", "RT,VRB,MP"}, /* bcwp */
+  { &test_vcntmbb_1, "vcntmbb 1", "RT,VRB,MP"}, /* bcwp */
+  { &test_vcntmbd_0, "vcntmbd 0", "RT,VRB,MP"}, /* bcwp */
+  { &test_vcntmbd_1, "vcntmbd 1", "RT,VRB,MP"}, /* bcwp */
+  { &test_vcntmbh_0, "vcntmbh 0", "RT,VRB,MP"}, /* bcwp */
+  { &test_vcntmbh_1, "vcntmbh 1", "RT,VRB,MP"}, /* bcwp */
+  { &test_vcntmbw_0, "vcntmbw 0", "RT,VRB,MP"}, /* bcwp */
+  { &test_vcntmbw_1, "vcntmbw 1", "RT,VRB,MP"}, /* bcwp */
+  { &test_vextractbm, "vextractbm", "RT,VRB"}, /* bcs */
+  { &test_vextractdm, "vextractdm", "RT,VRB"}, /* bcs */
+  { &test_vextracthm, "vextracthm", "RT,VRB"}, /* bcs */
+  { &test_vextractqm, "vextractqm", "RT,VRB"}, /* bcs */
+  { &test_vextractwm, "vextractwm", "RT,VRB"}, /* bcs */
   { &test_vgnb_2, "vgnb 2", "RT,VRB,N"}, /* bcwp */
   { &test_vgnb_3, "vgnb 3", "RT,VRB,N"}, /* bcwp */
   { &test_vgnb_4, "vgnb 4", "RT,VRB,N"}, /* bcwp */

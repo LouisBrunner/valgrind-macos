@@ -35,6 +35,16 @@ support for X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
     Valgrind.  The vector-packed-decimal facility is currently not
     exploited by the standard toolchain and libraries.
 
+* ppc64:
+
+  - Various bug fixes.  Fix for the sync field to limit setting just two
+    of the two bits in the L-field. Fix the write size for the stxsibx and
+    stxsihx instructions.  Fix the modsw and modsd instructions.
+
+  - Partial support for ISA 3.1 has been added.  Support for the VSX PCV
+    mask instructions, bfloat16 GER instructions, and bfloat16 to/from float
+    32-bit conversion instructions are still missing.
+
 * Valgrind now supports debuginfod, an HTTP server for distributing
   ELF/DWARF debugging information. When a debuginfo file cannot be
   found locally, Valgrind is able to query debuginfod servers for the
@@ -134,6 +144,7 @@ where XXXXXX is the bug number as listed below.
 428716  cppcheck detects potential leak in VEX/useful/smchash.c
 428909  helgrind: need to intercept duplicate libc definitions for Fedora 33
 429352  PPC ISA 3.1 support is missing, part 7
+429354  PPC ISA 3.1 support is missing, part 8
 429692  unhandled ppc64le-linux syscall: 147 (getsid)
 429864  s390x: C++ atomic test_and_set yields false-positive memcheck
         diagnostics

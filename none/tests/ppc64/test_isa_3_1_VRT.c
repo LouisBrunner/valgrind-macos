@@ -435,6 +435,45 @@ static void test_xsmincqp (void) {
   __asm__ __volatile__ ("xsmincqp %0, %1, %2"
 				: "=v" (vrt) : "v" (vra), "v" (vrb) );
 }
+static void test_mtvsrbm (void) {
+  __asm__ __volatile__ ("mtvsrbm %0, %1" : "=v" (vrt) : "r" (rb) );
+}
+static void test_mtvsrhm (void) {
+  __asm__ __volatile__ ("mtvsrhm %0, %1" : "=v" (vrt) : "r" (rb) );
+}
+static void test_mtvsrwm (void) {
+  __asm__ __volatile__ ("mtvsrwm %0, %1" : "=v" (vrt) : "r" (rb) );
+}
+static void test_mtvsrdm (void) {
+  __asm__ __volatile__ ("mtvsrdm %0, %1" : "=v" (vrt) : "r" (rb) );
+}
+static void test_mtvsrqm (void) {
+  __asm__ __volatile__ ("mtvsrqm %0, %1" : "=v" (vrt) : "r" (rb) );
+}
+static void test_mtvsrbmi_0 (void) {
+  __asm__ __volatile__ ("mtvsrbmi %0, 0" : "=v" (vrt) );
+}
+static void test_mtvsrbmi_3 (void) {
+  __asm__ __volatile__ ("mtvsrbmi %0, 3" : "=v" (vrt) );
+}
+static void test_mtvsrbmi_7 (void) {
+  __asm__ __volatile__ ("mtvsrbmi %0, 7" : "=v" (vrt) );
+}
+static void test_vexpandbm (void) {
+  __asm__ __volatile__ ("vexpandbm %0, %1 " : "=v" (vrt) : "v" (vrb) );
+}
+static void test_vexpandhm (void) {
+  __asm__ __volatile__ ("vexpandhm %0, %1 " : "=v" (vrt) : "v" (vrb) );
+}
+static void test_vexpandwm (void) {
+  __asm__ __volatile__ ("vexpandwm %0, %1 " : "=v" (vrt) : "v" (vrb) );
+}
+static void test_vexpanddm (void) {
+  __asm__ __volatile__ ("vexpanddm %0, %1 " : "=v" (vrt) : "v" (vrb) );
+}
+static void test_vexpandqm (void) {
+  __asm__ __volatile__ ("vexpandqm %0, %1 " : "=v" (vrt) : "v" (vrb) );
+}
 
 static test_list_t testgroup_generic[] = {
   { &test_dcffixqq, "dcffixqq", "FRTp,VRB"}, /* bcs */
@@ -446,6 +485,14 @@ static test_list_t testgroup_generic[] = {
   { &test_dotted_vstribr, "vstribr.", "VRT,VRB"}, /* bcs */
   { &test_dotted_vstrihl, "vstrihl.", "VRT,VRB"}, /* bcs */
   { &test_dotted_vstrihr, "vstrihr.", "VRT,VRB"}, /* bcs */
+  { &test_mtvsrbmi_0, "mtvsrbmi 0", "VRT,bm"}, /* bcwp */
+  { &test_mtvsrbmi_3, "mtvsrbmi 3", "VRT,bm"}, /* bcwp */
+  { &test_mtvsrbmi_7, "mtvsrbmi 7", "VRT,bm"}, /* bcwp */
+  { &test_mtvsrbm, "mtvsrbm", "VRT,RB"}, /* bcs */
+  { &test_mtvsrdm, "mtvsrdm", "VRT,RB"}, /* bcs */
+  { &test_mtvsrhm, "mtvsrhm", "VRT,RB"}, /* bcs */
+  { &test_mtvsrqm, "mtvsrqm", "VRT,RB"}, /* bcs */
+  { &test_mtvsrwm, "mtvsrwm", "VRT,RB"}, /* bcs */
   { &test_vcfuged, "vcfuged", "VRT,VRA,VRB"}, /* bcs */
   { &test_vclrlb, "vclrlb", "VRT,VRA,RB"}, /* bcs */
   { &test_vclrrb, "vclrrb", "VRT,VRA,RB"}, /* bcs */
@@ -466,6 +513,11 @@ static test_list_t testgroup_generic[] = {
   { &test_vdivud, "vdivud", "VRT,VRA,VRB"}, /* bcs */
   { &test_vdivuq, "vdivuq", "VRT,VRA,VRB"}, /* bcs */
   { &test_vdivuw, "vdivuw", "VRT,VRA,VRB"}, /* bcs */
+  { &test_vexpandbm, "vexpandbm", "VRT,VRB"}, /* bcs */
+  { &test_vexpanddm, "vexpanddm", "VRT,VRB"}, /* bcs */
+  { &test_vexpandhm, "vexpandhm", "VRT,VRB"}, /* bcs */
+  { &test_vexpandqm, "vexpandqm", "VRT,VRB"}, /* bcs */
+  { &test_vexpandwm, "vexpandwm", "VRT,VRB"}, /* bcs */
   { &test_vextddvlx, "vextddvlx", "VRT,VRA,VRB,RC"}, /* bcs */
   { &test_vextddvrx, "vextddvrx", "VRT,VRA,VRB,RC"}, /* bcs */
   { &test_vextdubvlx, "vextdubvlx", "VRT,VRA,VRB,RC"}, /* bcs */

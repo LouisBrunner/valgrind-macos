@@ -10688,6 +10688,44 @@ POST(kernelrpc_mach_port_request_notification_trap)
 
 
 /* ---------------------------------------------------------------------
+ Added for macOS 11.0 (Big Sur)
+ ------------------------------------------------------------------ */
+
+#if DARWIN_VERS >= DARWIN_11_00
+
+PRE(shared_region_check_np)
+{
+  PRINT("shared_region_check_np(%#lx)", ARG1);
+  PRE_REG_READ1(kern_return_t, "shared_region_check_np", uint64_t*, start_address);
+  PRE_MEM_WRITE("shared_region_check_np(start_address)", ARG1, sizeof(uint64_t));
+}
+
+POST(shared_region_check_np)
+{
+  if (RES == 0) {
+    POST_MEM_WRITE(ARG1, sizeof(uint64_t));
+    uint64_t shared_region = *((uint64_t*) ARG1);
+    PRINT("shared dyld cache %#llx", shared_region);
+    // TODO: invalid, take a more granular to allow better dylib mapping too
+    ML_(notify_core_and_tool_of_mmap)(
+      shared_region, VG_PGROUNDUP(0x0FFE00000ULL),
+      VKI_PROT_WRITE | VKI_PROT_EXEC, VKI_MAP_SHARED, -1, 0);
+    // TODO: arm64: 0x100000000ULL
+  }
+}
+
+PRE(shared_region_map_and_slide_np)
+{
+  PRINT("shared_region_map_and_slide_np(%ld, %lu, %#lx, %lu, %#lx, %lu)", SARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
+  PRE_REG_READ6(kern_return_t, "shared_region_map_and_slide_np",
+    int, fd, uint32_t, count, const struct shared_file_mapping_np*, mappings,
+    uint32_t, slide, uint64_t*, slide_start, uint32_t, slide_size);
+}
+
+#endif /* DARWIN_VERS >= DARWIN_11_00 */
+
+
+/* ---------------------------------------------------------------------
    syscall tables
    ------------------------------------------------------------------ */
 
@@ -11030,7 +11068,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_mkfifo_extended),
 // _____(__NR_mkdir_extended),
 // _____(__NR_identitysvc),
-// _____(__NR_shared_region_check_np),
+#if DARWIN_VERS >= DARWIN_11_00
+   MACXY(__NR_shared_region_check_np, shared_region_check_np), // 294
+#endif
 // _____(__NR_shared_region_map_np),
 #if DARWIN_VERS >= DARWIN_10_6
 // _____(__NR_vm_pressure_monitor),
@@ -11217,7 +11257,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(435)),        // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(436)),        // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(437)),        // ???
-// _____(__NR_shared_region_map_and_slide_np),          // 438
+#if DARWIN_VERS >= DARWIN_11_00
+    MACX_(__NR_shared_region_map_and_slide_np, shared_region_map_and_slide_np), // 438
+#endif
 // _____(__NR_kas_info),                                // 439
 // _____(__NR_memorystatus_control),                    // 440
     MACX_(__NR_guarded_open_np, guarded_open_np),

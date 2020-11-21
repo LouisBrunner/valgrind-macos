@@ -486,7 +486,8 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
             || DARWIN_VERS == DARWIN_10_12 \
             || DARWIN_VERS == DARWIN_10_13 \
             || DARWIN_VERS == DARWIN_10_14 \
-            || DARWIN_VERS == DARWIN_10_15
+            || DARWIN_VERS == DARWIN_10_15 \
+            || DARWIN_VERS == DARWIN_11_00
        UWord magic_delta = 0xE0;
 #      else
 #        error "magic_delta: to be computed on new OS version"

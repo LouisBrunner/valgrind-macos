@@ -870,6 +870,9 @@
 #define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(532)
 #elif DARWIN_VERS == DARWIN_10_15
 #define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(534)
+#elif DARWIN_VERS == DARWIN_11_00
+// FIXME: lb, wrong, will need to wait for AAPL to release kernel sources
+#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(534)
 #else
 #error unknown darwin version
 #endif

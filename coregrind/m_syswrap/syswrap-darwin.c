@@ -3140,8 +3140,13 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
       { ATTR_CMN_OWNERID,         sizeof(uid_t) },
       { ATTR_CMN_GRPID,           sizeof(gid_t) },
       { ATTR_CMN_ACCESSMASK,      sizeof(uint32_t) },
+#if DARWIN_VERS >= DARWIN_10_15
+      { ATTR_CMN_GEN_COUNT,       sizeof(uint32_t) },
+      { ATTR_CMN_DOCUMENT_ID,     sizeof(uint32_t) },
+#else
       { ATTR_CMN_NAMEDATTRCOUNT,  sizeof(uint32_t) },
       { ATTR_CMN_NAMEDATTRLIST,   -1 },
+#endif
       { ATTR_CMN_FLAGS,           sizeof(uint32_t) },
       { ATTR_CMN_USERACCESS,      sizeof(uint32_t) },
       { ATTR_CMN_EXTENDED_SECURITY, -1 },
@@ -3154,6 +3159,10 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
 #endif
 #if DARWIN_VERS >= DARWIN_10_8
       { ATTR_CMN_ADDEDTIME,       -1 },
+#endif
+#if DARWIN_VERS >= DARWIN_10_15
+      { ATTR_CMN_ERROR,           sizeof(uint32_t) },
+      { ATTR_CMN_DATA_PROTECT_FLAGS, sizeof(uint32_t) },
 #endif
       { 0,                        0 }
    };
@@ -3181,6 +3190,10 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
 #if DARWIN_VERS >= DARWIN_10_6
       { ATTR_VOL_UUID,            sizeof(uuid_t) },
 #endif
+#if DARWIN_VERS >= DARWIN_10_15
+      { ATTR_VOL_QUOTA_SIZE,      sizeof(off_t) },
+      { ATTR_VOL_RESERVED_SIZE,   sizeof(off_t) },
+#endif
       { ATTR_VOL_ATTRIBUTES,      sizeof(vol_attributes_attr_t) },
       { 0,                        0 }
    };
@@ -3189,6 +3202,11 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
       { ATTR_DIR_LINKCOUNT,       sizeof(uint32_t) },
       { ATTR_DIR_ENTRYCOUNT,      sizeof(uint32_t) },
       { ATTR_DIR_MOUNTSTATUS,     sizeof(uint32_t) },
+#if DARWIN_VERS >= DARWIN_10_15
+      { ATTR_DIR_ALLOCSIZE,       sizeof(off_t) },
+      { ATTR_DIR_IOBLOCKSIZE,     sizeof(uint32_t) },
+      { ATTR_DIR_DATALENGTH,      sizeof(off_t) },
+#endif
       { 0,                        0 }
    };
    static const attrspec fileattr[] = {
@@ -3214,6 +3232,16 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
       // This order is important.
       { ATTR_FORK_TOTALSIZE,      sizeof(off_t) },
       { ATTR_FORK_ALLOCSIZE,      sizeof(off_t) },
+#if DARWIN_VERS >= DARWIN_10_15
+      { ATTR_CMNEXT_RELPATH,      sizeof(struct attrreference) },
+      { ATTR_CMNEXT_PRIVATESIZE,  sizeof(off_t) },
+      { ATTR_CMNEXT_LINKID,       sizeof(uint64_t) },
+      { ATTR_CMNEXT_NOFIRMLINKPATH,  sizeof(struct attrreference) },
+      { ATTR_CMNEXT_REALDEVID,    sizeof(uint32_t) },
+      { ATTR_CMNEXT_REALFSID,     sizeof(fsid_t) },
+      { ATTR_CMNEXT_CLONEID,      sizeof(uint64_t) },
+      { ATTR_CMNEXT_EXT_FLAGS,    sizeof(uint64_t) },
+#endif
       { 0,                        0 }
    };
 
@@ -5075,11 +5103,11 @@ POST(host_get_io_master)
 
 PRE(host_get_io_master)
 {
-#pragma pack(4)
-   typedef struct {
-      mach_msg_header_t Head;
-   } Request;
-#pragma pack()
+// #pragma pack(4)
+//    typedef struct {
+//       mach_msg_header_t Head;
+//    } Request;
+// #pragma pack()
 
    // Request *req = (Request *)ARG1;
 
@@ -5343,26 +5371,26 @@ PRE(mach_port_set_context)
 
 POST(mach_port_set_context)
 {
-#pragma pack(4)
-   typedef struct {
-      mach_msg_header_t Head;
-      NDR_record_t NDR;
-      kern_return_t RetCode;
-   } Reply;
-#pragma pack()
+// #pragma pack(4)
+//    typedef struct {
+//       mach_msg_header_t Head;
+//       NDR_record_t NDR;
+//       kern_return_t RetCode;
+//    } Reply;
+// #pragma pack()
 }
 
 
 // JRS 2011-Aug-25 FIXME completely bogus
 PRE(task_get_exception_ports)
 {
-#pragma pack(4)
-   typedef struct {
-      mach_msg_header_t Head;
-      NDR_record_t NDR;
-      exception_mask_t exception_mask;
-   } Request;
-#pragma pack()
+// #pragma pack(4)
+//    typedef struct {
+//       mach_msg_header_t Head;
+//       NDR_record_t NDR;
+//       exception_mask_t exception_mask;
+//    } Request;
+// #pragma pack()
 
    PRINT("task_get_exception_ports(BOGUS)");
    AFTER = POST_FN(task_get_exception_ports);
@@ -5370,20 +5398,20 @@ PRE(task_get_exception_ports)
 
 POST(task_get_exception_ports)
 {
-#pragma pack(4)
-   typedef struct {
-      mach_msg_header_t Head;
-      /* start of the kernel processed data */
-      mach_msg_body_t msgh_body;
-      mach_msg_port_descriptor_t old_handlers[32];
-      /* end of the kernel processed data */
-      NDR_record_t NDR;
-      mach_msg_type_number_t masksCnt;
-      exception_mask_t masks[32];
-      exception_behavior_t old_behaviors[32];
-      thread_state_flavor_t old_flavors[32];
-   } Reply;
-#pragma pack()
+// #pragma pack(4)
+//    typedef struct {
+//       mach_msg_header_t Head;
+//       /* start of the kernel processed data */
+//       mach_msg_body_t msgh_body;
+//       mach_msg_port_descriptor_t old_handlers[32];
+//       /* end of the kernel processed data */
+//       NDR_record_t NDR;
+//       mach_msg_type_number_t masksCnt;
+//       exception_mask_t masks[32];
+//       exception_behavior_t old_behaviors[32];
+//       thread_state_flavor_t old_flavors[32];
+//    } Reply;
+// #pragma pack()
 }
 
 
@@ -5668,18 +5696,18 @@ PRE(mach_port_get_set_status)
 
 POST(mach_port_get_set_status)
 {
-#pragma pack(4)
-   typedef struct {
-      mach_msg_header_t Head;
-      /* start of the kernel processed data */
-      mach_msg_body_t msgh_body;
-      mach_msg_ool_descriptor_t members;
-      /* end of the kernel processed data */
-      NDR_record_t NDR;
-      mach_msg_type_number_t membersCnt;
-      mach_msg_trailer_t trailer;
-   } Reply;
-#pragma pack()
+// #pragma pack(4)
+//    typedef struct {
+//       mach_msg_header_t Head;
+//       /* start of the kernel processed data */
+//       mach_msg_body_t msgh_body;
+//       mach_msg_ool_descriptor_t members;
+//       /* end of the kernel processed data */
+//       NDR_record_t NDR;
+//       mach_msg_type_number_t membersCnt;
+//       mach_msg_trailer_t trailer;
+//    } Reply;
+// #pragma pack()
 
    // Reply *reply = (Reply *)ARG1;
 
@@ -6212,17 +6240,17 @@ POST(task_policy_set)
 
 PRE(mach_ports_register)
 {
-#pragma pack(4)
-    typedef struct {
-       mach_msg_header_t Head;
-       /* start of the kernel processed data */
-       mach_msg_body_t msgh_body;
-       mach_msg_ool_ports_descriptor_t init_port_set;
-       /* end of the kernel processed data */
-       NDR_record_t NDR;
-       mach_msg_type_number_t init_port_setCnt;
-    } Request;
-#pragma pack()
+// #pragma pack(4)
+//     typedef struct {
+//        mach_msg_header_t Head;
+//        /* start of the kernel processed data */
+//        mach_msg_body_t msgh_body;
+//        mach_msg_ool_ports_descriptor_t init_port_set;
+//        /* end of the kernel processed data */
+//        NDR_record_t NDR;
+//        mach_msg_type_number_t init_port_setCnt;
+//     } Request;
+// #pragma pack()
 
     // Request *req = (Request *)ARG1;
 
@@ -6251,11 +6279,11 @@ POST(mach_ports_register)
 
 PRE(mach_ports_lookup)
 {
-#pragma pack(4)
-   typedef struct {
-       mach_msg_header_t Head;
-   } Request;
-#pragma pack()
+// #pragma pack(4)
+//    typedef struct {
+//        mach_msg_header_t Head;
+//    } Request;
+// #pragma pack()
 
    // Request *req = (Request *)ARG1;
 
@@ -6266,17 +6294,17 @@ PRE(mach_ports_lookup)
 
 POST(mach_ports_lookup)
 {
-#pragma pack(4)
-   typedef struct {
-      mach_msg_header_t Head;
-      /* start of the kernel processed data */
-      mach_msg_body_t msgh_body;
-      mach_msg_ool_ports_descriptor_t init_port_set;
-      /* end of the kernel processed data */
-      NDR_record_t NDR;
-      mach_msg_type_number_t init_port_setCnt;
-   } Reply;
-#pragma pack()
+// #pragma pack(4)
+//    typedef struct {
+//       mach_msg_header_t Head;
+//       /* start of the kernel processed data */
+//       mach_msg_body_t msgh_body;
+//       mach_msg_ool_ports_descriptor_t init_port_set;
+//       /* end of the kernel processed data */
+//       NDR_record_t NDR;
+//       mach_msg_type_number_t init_port_setCnt;
+//    } Reply;
+// #pragma pack()
 
     // Reply *reply = (Reply *)ARG1;
 }
@@ -6358,11 +6386,11 @@ POST(task_set_info)
 
 PRE(task_threads)
 {
-#pragma pack(4)
-   typedef struct {
-      mach_msg_header_t Head;
-   } Request;
-#pragma pack()
+// #pragma pack(4)
+//    typedef struct {
+//       mach_msg_header_t Head;
+//    } Request;
+// #pragma pack()
 
    // Request *req = (Request *)ARG1;
 
@@ -6680,17 +6708,17 @@ PRE(vm_read)
 
 POST(vm_read)
 {
-#pragma pack(4)
-   typedef struct {
-      mach_msg_header_t Head;
-      /* start of the kernel processed data */
-      mach_msg_body_t msgh_body;
-      mach_msg_ool_descriptor_t data;
-      /* end of the kernel processed data */
-      NDR_record_t NDR;
-      mach_msg_type_number_t dataCnt;
-   } Reply;
-#pragma pack()
+// #pragma pack(4)
+//    typedef struct {
+//       mach_msg_header_t Head;
+//       /* start of the kernel processed data */
+//       mach_msg_body_t msgh_body;
+//       mach_msg_ool_descriptor_t data;
+//       /* end of the kernel processed data */
+//       NDR_record_t NDR;
+//       mach_msg_type_number_t dataCnt;
+//    } Reply;
+// #pragma pack()
 
    // Reply *reply = (Reply *)ARG1;
 
@@ -6726,17 +6754,17 @@ PRE(mach_vm_read)
 
 POST(mach_vm_read)
 {
-#pragma pack(4)
-   typedef struct {
-      mach_msg_header_t Head;
-      /* start of the kernel processed data */
-      mach_msg_body_t msgh_body;
-      mach_msg_ool_descriptor_t data;
-      /* end of the kernel processed data */
-      NDR_record_t NDR;
-      mach_msg_type_number_t dataCnt;
-   } Reply;
-#pragma pack()
+// #pragma pack(4)
+//    typedef struct {
+//       mach_msg_header_t Head;
+//       /* start of the kernel processed data */
+//       mach_msg_body_t msgh_body;
+//       mach_msg_ool_descriptor_t data;
+//       /* end of the kernel processed data */
+//       NDR_record_t NDR;
+//       mach_msg_type_number_t dataCnt;
+//    } Reply;
+// #pragma pack()
 
    // Reply *reply = (Reply *)ARG1;
 
@@ -8462,7 +8490,7 @@ PRE(mach_msg)
 {
    mach_msg_header_t *mh = (mach_msg_header_t *)ARG1;
    mach_msg_option_t option = (mach_msg_option_t)ARG2;
-   mach_msg_size_t send_size = (mach_msg_size_t)ARG3;
+  //  mach_msg_size_t send_size = (mach_msg_size_t)ARG3;
    mach_msg_size_t rcv_size = (mach_msg_size_t)ARG4;
    // mach_port_t rcv_name = (mach_port_t)ARG5;
    size_t complex_header_size = 0;
@@ -10287,17 +10315,17 @@ POST(host_create_mach_voucher_trap)
 
 PRE(task_register_dyld_image_infos)
 {
-#pragma pack(4)
-    typedef struct {
-       mach_msg_header_t Head;
-       /* start of the kernel processed data */
-       mach_msg_body_t msgh_body;
-       mach_msg_ool_descriptor_t dyld_images;
-       /* end of the kernel processed data */
-       NDR_record_t NDR;
-       mach_msg_type_number_t dyld_imagesCnt;
-    } Request;
-#pragma pack()
+// #pragma pack(4)
+//     typedef struct {
+//        mach_msg_header_t Head;
+//        /* start of the kernel processed data */
+//        mach_msg_body_t msgh_body;
+//        mach_msg_ool_descriptor_t dyld_images;
+//        /* end of the kernel processed data */
+//        NDR_record_t NDR;
+//        mach_msg_type_number_t dyld_imagesCnt;
+//     } Request;
+// #pragma pack()
 
     // Request *req = (Request *)ARG1;
 
@@ -10325,15 +10353,15 @@ POST(task_register_dyld_image_infos)
 
 PRE(task_register_dyld_shared_cache_image_info)
 {
-#pragma pack(4)
-    typedef struct {
-       mach_msg_header_t Head;
-       NDR_record_t NDR;
-       dyld_kernel_image_info_t dyld_cache_image;
-       boolean_t no_cache;
-       boolean_t private_cache;
-    } Request;
-#pragma pack()
+// #pragma pack(4)
+//     typedef struct {
+//        mach_msg_header_t Head;
+//        NDR_record_t NDR;
+//        dyld_kernel_image_info_t dyld_cache_image;
+//        boolean_t no_cache;
+//        boolean_t private_cache;
+//     } Request;
+// #pragma pack()
 
     // Request *req = (Request *)ARG1;
 
@@ -10439,6 +10467,28 @@ POST(thread_get_special_reply_port)
 }
 
 #endif /* DARWIN_VERS >= DARWIN_10_13 */
+
+
+/* ---------------------------------------------------------------------
+ Added for macOS 10.14 (Mojave)
+ ------------------------------------------------------------------ */
+
+#if DARWIN_VERS >= DARWIN_10_14
+PRE(kernelrpc_mach_port_get_attributes_trap)
+{
+  PRINT("kernelrpc_mach_port_get_attributes_trap( %s, %s, %ld, %#lx, %#lx )",
+        name_for_port(ARG1), name_for_port(ARG2), ARG3, ARG4, ARG5);
+  PRE_REG_READ5(kern_return_t, "kernelrpc_mach_port_get_attributes_trap",
+                mach_port_name_t, target, mach_port_name_t, name, mach_port_flavor_t, flavor,
+	              mach_port_info_t, port_info_out, mach_msg_type_number_t*, port_info_outCnt);
+  PRE_MEM_READ( "kernelrpc_mach_port_get_attributes_trap(port_info_outCnt)", ARG5, sizeof(mach_msg_type_number_t));
+  PRE_MEM_WRITE( "kernelrpc_mach_port_get_attributes_trap(port_info_outCnt)", ARG5, sizeof(mach_msg_type_number_t));
+  mach_msg_type_number_t count = *(mach_msg_type_number_t*)ARG5;
+  if (count > 0) {
+    PRE_MEM_WRITE( "kernelrpc_mach_port_get_attributes_trap(port_info_out)", ARG4, count * sizeof(integer_t));
+  }
+}
+#endif /* DARWIN_VERS >= DARWIN_10_14 */
 
 
 /* ---------------------------------------------------------------------
@@ -10613,7 +10663,66 @@ PRE(necp_client_action)
    }
 }
 
+PRE(kernelrpc_mach_port_request_notification_trap)
+{
+  PRINT("kernelrpc_mach_port_request_notification_trap(%s, %s, %ld, %ld, %s, %ld, %#lx)",
+         name_for_port(ARG1), name_for_port(ARG2), ARG3, ARG4, name_for_port(ARG5), ARG6, ARG7);
+  PRE_REG_READ7(kern_return_t, "kernelrpc_mach_port_request_notification_trap",
+    ipc_space_t, task, mach_port_name_t, name, mach_msg_id_t, msgid,
+	  mach_port_mscount_t, sync, mach_port_name_t, notify, mach_msg_type_name_t, notifyPoly,
+	  mach_port_name_t*, previous);
+  if (ARG7 != 0) {
+    PRE_MEM_WRITE("kernelrpc_mach_port_request_notification_trap(previous)", ARG7, sizeof(mach_port_name_t));
+  }
+}
+
+POST(kernelrpc_mach_port_request_notification_trap)
+{
+  if (RES == 0 && ARG7 != 0) {
+    POST_MEM_WRITE(ARG7, sizeof(mach_port_name_t));
+    PRINT("-> previous:%s", name_for_port(*(mach_port_name_t*)ARG7));
+  }
+}
+
 #endif /* DARWIN_VERS >= DARWIN_10_15 */
+
+
+/* ---------------------------------------------------------------------
+ Added for macOS 11.0 (Big Sur)
+ ------------------------------------------------------------------ */
+
+#if DARWIN_VERS >= DARWIN_11_00
+
+PRE(shared_region_check_np)
+{
+  PRINT("shared_region_check_np(%#lx)", ARG1);
+  PRE_REG_READ1(kern_return_t, "shared_region_check_np", uint64_t*, start_address);
+  PRE_MEM_WRITE("shared_region_check_np(start_address)", ARG1, sizeof(uint64_t));
+}
+
+POST(shared_region_check_np)
+{
+  if (RES == 0) {
+    POST_MEM_WRITE(ARG1, sizeof(uint64_t));
+    uint64_t shared_region = *((uint64_t*) ARG1);
+    PRINT("shared dyld cache %#llx", shared_region);
+    // TODO: invalid, take a more granular to allow better dylib mapping too
+    ML_(notify_core_and_tool_of_mmap)(
+      shared_region, VG_PGROUNDUP(0x0FFE00000ULL),
+      VKI_PROT_WRITE | VKI_PROT_EXEC, VKI_MAP_SHARED, -1, 0);
+    // TODO: arm64: 0x100000000ULL
+  }
+}
+
+PRE(shared_region_map_and_slide_np)
+{
+  PRINT("shared_region_map_and_slide_np(%ld, %lu, %#lx, %lu, %#lx, %lu)", SARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
+  PRE_REG_READ6(kern_return_t, "shared_region_map_and_slide_np",
+    int, fd, uint32_t, count, const struct shared_file_mapping_np*, mappings,
+    uint32_t, slide, uint64_t*, slide_start, uint32_t, slide_size);
+}
+
+#endif /* DARWIN_VERS >= DARWIN_11_00 */
 
 
 /* ---------------------------------------------------------------------
@@ -10959,7 +11068,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_mkfifo_extended),
 // _____(__NR_mkdir_extended),
 // _____(__NR_identitysvc),
-// _____(__NR_shared_region_check_np),
+#if DARWIN_VERS >= DARWIN_11_00
+   MACXY(__NR_shared_region_check_np, shared_region_check_np), // 294
+#endif
 // _____(__NR_shared_region_map_np),
 #if DARWIN_VERS >= DARWIN_10_6
 // _____(__NR_vm_pressure_monitor),
@@ -11146,7 +11257,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(435)),        // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(436)),        // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(437)),        // ???
-// _____(__NR_shared_region_map_and_slide_np),          // 438
+#if DARWIN_VERS >= DARWIN_11_00
+    MACX_(__NR_shared_region_map_and_slide_np, shared_region_map_and_slide_np), // 438
+#endif
 // _____(__NR_kas_info),                                // 439
 // _____(__NR_memorystatus_control),                    // 440
     MACX_(__NR_guarded_open_np, guarded_open_np),
@@ -11328,7 +11441,7 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    MACX_(__NR_semaphore_timedwait_signal_trap, semaphore_timedwait_signal),
 
 #  if DARWIN_VERS >= DARWIN_10_14
-// _____(__NR_kernelrpc_mach_port_get_attributes_trap),
+   MACX_(__NR_kernelrpc_mach_port_get_attributes_trap, kernelrpc_mach_port_get_attributes_trap),
 #  else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(40)),    // -40
 #  endif
@@ -11403,7 +11516,11 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(74)),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(75)),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(76)),
+#if DARWIN_VERS >= DARWIN_10_15
+   MACXY(_NR_kernelrpc_mach_port_request_notification_trap, kernelrpc_mach_port_request_notification_trap),
+#else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(77)),
+#endif
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(78)),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(79)),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(80)),   // -80

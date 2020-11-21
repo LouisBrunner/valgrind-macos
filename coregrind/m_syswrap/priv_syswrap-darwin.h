@@ -364,7 +364,9 @@ DECL_TEMPLATE(darwin, gettid);                  // 286
 // NYI mkfifo_extended 291
 // NYI mkdir_extended 292
 // NYI identitysvc 293
-// NYI shared_region_check_np 294
+#if DARWIN_VERS >= DARWIN_11_00
+DECL_TEMPLATE(darwin, shared_region_check_np); // 294
+#endif
 // NYI shared_region_map_np 295
 #if DARWIN_VERS >= DARWIN_10_6
 // NYI vm_pressure_monitor 296
@@ -542,7 +544,9 @@ DECL_TEMPLATE(darwin, fileport_makeport);        // 430
 // NYI pid_shutdown_sockets 436
 #endif /* DARWIN_VERS >= DARWIN_10_10 */
 // old old shared_region_slide_np 437
-// NYI shared_region_map_and_slide_np            // 438
+#if DARWIN_VERS >= DARWIN_11_00
+DECL_TEMPLATE(darwin, shared_region_map_and_slide_np); // 438
+#endif
 // NYI kas_info                                  // 439
 // NYI memorystatus_control                      // 440
 DECL_TEMPLATE(darwin, guarded_open_np);          // 441
@@ -794,11 +798,12 @@ DECL_TEMPLATE(darwin, swtch);
 DECL_TEMPLATE(darwin, swtch_pri);
 
 #if DARWIN_VERS >= DARWIN_10_14
-// NYI kernelrpc_mach_port_get_attributes_trap      // 40
+DECL_TEMPLATE(darwin, kernelrpc_mach_port_get_attributes_trap);
 #endif /* DARWIN_VERS >= DARWIN_10_14 */
 
 #if DARWIN_VERS >= DARWIN_10_15
 DECL_TEMPLATE(darwin, task_restartable_ranges_register);
+DECL_TEMPLATE(darwin, kernelrpc_mach_port_request_notification_trap);
 #endif /* DARWIN_VERS >= DARWIN_10_15 */
 
 // Machine-dependent traps

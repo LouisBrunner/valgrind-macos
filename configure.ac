@@ -8,7 +8,7 @@
 ##------------------------------------------------------------##
 
 # Process this file with autoconf to produce a configure script.
-AC_INIT([Valgrind],[3.17.0.GIT],[valgrind-users@lists.sourceforge.net])
+AC_INIT([Valgrind],[3.17.0.GIT-lbmacos],[valgrind-users@lists.sourceforge.net])
 AC_CONFIG_SRCDIR(coregrind/m_main.c)
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects])
@@ -427,6 +427,7 @@ case "${host_os}" in
         AC_DEFINE([DARWIN_10_13], 101300, [DARWIN_VERS value for macOS 10.13])
         AC_DEFINE([DARWIN_10_14], 101400, [DARWIN_VERS value for macOS 10.14])
         AC_DEFINE([DARWIN_10_15], 101500, [DARWIN_VERS value for macOS 10.15])
+        AC_DEFINE([DARWIN_11_00], 110000, [DARWIN_VERS value for macOS 11.0])
 
         AC_DEFINE([XCODE_10_XX], 101400, [XCODE_VERS value for Xcode earlier than 10.15])
         AC_DEFINE([XCODE_10_14_6], 101406, [XCODE_VERS value for Xcode 10.14.6])
@@ -522,9 +523,15 @@ case "${host_os}" in
       DEFAULT_SUPP="darwin19.supp ${DEFAULT_SUPP}"
       DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
                   ;;
+       20.*)
+      AC_MSG_RESULT([Darwin 20.x (${kernel}) / macOS 11 Big Sur])
+      AC_DEFINE([DARWIN_VERS], DARWIN_11_00, [Darwin / Mac OS X version])
+      DEFAULT_SUPP="darwin20.supp ${DEFAULT_SUPP}"
+      DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
+                  ;;
              *) 
 		  AC_MSG_RESULT([unsupported (${kernel})])
-		  AC_MSG_ERROR([Valgrind works on Darwin 10.x-19.x (Mac OS X 10.6-11 and macOS 10.12-15)])
+		  AC_MSG_ERROR([Valgrind works on Darwin 10.x-20.x (Mac OS X 10.6-10.11 and macOS 10.12-11.0)])
 		  ;;
 	esac
 
@@ -4310,6 +4317,8 @@ AC_HEADER_TIME
 #----------------------------------------------------------------------------
 # Checks for library functions.
 #----------------------------------------------------------------------------
+save_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -Wno-error"
 AC_FUNC_MEMCMP
 AC_FUNC_MMAP
 
@@ -4354,6 +4363,7 @@ AC_CHECK_FUNCS([     \
         preadv2 \
         pwritev2 \
         ])
+CFLAGS="$save_CFLAGS"
 
 # AC_CHECK_LIB adds any library found to the variable LIBS, and links these
 # libraries with any shared object and/or executable. This is NOT what we
@@ -4606,7 +4616,7 @@ AM_CONDITIONAL([HAVE_OPENMP], [test x$ac_have_openmp = xyes])
 AC_MSG_CHECKING([for __builtin_popcount()])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
-  __builtin_popcount(2);
+  (void)__builtin_popcount(2);
   return 0;
 ]])], [
 AC_MSG_RESULT([yes])
@@ -4620,7 +4630,7 @@ AC_MSG_RESULT([no])
 AC_MSG_CHECKING([for __builtin_clz()])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
-  __builtin_clz(2);
+  (void)__builtin_clz(2);
   return 0;
 ]])], [
 AC_MSG_RESULT([yes])
@@ -4634,7 +4644,7 @@ AC_MSG_RESULT([no])
 AC_MSG_CHECKING([for __builtin_ctz()])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
-  __builtin_ctz(2);
+  (void)__builtin_ctz(2);
   return 0;
 ]])], [
 AC_MSG_RESULT([yes])

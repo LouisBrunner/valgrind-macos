@@ -174,7 +174,7 @@
 #define __NR_semaphore_timedwait_signal_trap  VG_DARWIN_SYSCALL_CONSTRUCT_MACH(39)
 
 #if DARWIN_VERS >= DARWIN_10_14
-        /* 40  kernelrpc_mach_port_get_attributes_trap */
+#define __NR_kernelrpc_mach_port_get_attributes_trap VG_DARWIN_SYSCALL_CONSTRUCT_MACH(40)
 #endif
 
 #if DARWIN_VERS >= DARWIN_10_9
@@ -215,6 +215,10 @@
 
 #if DARWIN_VERS >= DARWIN_10_12
 #define __NR_host_create_mach_voucher_trap    VG_DARWIN_SYSCALL_CONSTRUCT_MACH(70)
+#endif
+
+#if DARWIN_VERS >= DARWIN_10_15
+#define _NR_kernelrpc_mach_port_request_notification_trap VG_DARWIN_SYSCALL_CONSTRUCT_MACH(77)
 #endif
 
 #define __NR_mach_timebase_info               VG_DARWIN_SYSCALL_CONSTRUCT_MACH(89)
@@ -865,6 +869,9 @@
 #elif DARWIN_VERS == DARWIN_10_14
 #define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(532)
 #elif DARWIN_VERS == DARWIN_10_15
+#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(534)
+#elif DARWIN_VERS == DARWIN_11_00
+// FIXME: lb, wrong, will need to wait for AAPL to release kernel sources
 #define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(534)
 #else
 #error unknown darwin version

@@ -772,7 +772,7 @@ static SyscallTableEntry syscall_table[] = {
 
    GENXY(__NR_readv,             sys_readv),              // 145
    GENX_(__NR_writev,            sys_writev),             // 146
-// _____(__NR_getsid,            sys_getsid),             // 147
+   GENX_(__NR_getsid,            sys_getsid),             // 147
    GENX_(__NR_fdatasync,         sys_fdatasync),          // 148
    LINXY(__NR__sysctl,           sys_sysctl),             // 149
 

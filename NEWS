@@ -58,6 +58,7 @@ n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.
 427400  PPC ISA 3.1 support is missing, part 4
 427401  PPC ISA 3.1 support is missing, part 5
 384729  __libc_freeres inhibits cross-platform valgrind
+427870  lmw, lswi and related PowerPC insns aren't allowed on ppc64le 
 427404  PPC ISA 3.1 support is missing, part 6
 429692  unhandled ppc64le-linux syscall: 147 (getsid)
 

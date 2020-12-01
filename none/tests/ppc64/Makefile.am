@@ -59,7 +59,7 @@ EXTRA_DIST = \
 
 check_PROGRAMS = \
 	allexec \
-	lsw jm-insns round \
+	jm-insns round \
 	test_isa_2_06_part1 test_isa_2_06_part2 test_isa_2_06_part3 \
 	test_dfp1 test_dfp2 test_dfp3 test_dfp4 test_dfp5 \
 	test_isa_2_07_part1 test_isa_2_07_part2 \
@@ -67,9 +67,14 @@ check_PROGRAMS = \
 	test_isa_3_1_RT test_isa_3_1_XT test_isa_3_1_VRT \
 	test_isa_3_1_Misc test_isa_3_1_AT \
 	subnormal_test \
-	test_tm test_touch_tm ldst_multiple data-cache-instructions \
+	test_tm test_touch_tm data-cache-instructions \
 	power6_mf_gpr std_reg_imm \
 	twi_tdi tw_td power6_bcmp
+
+# lmw, stmw, lswi, lswx, stswi, stswx compile (and run) only on big endian.
+if VGCONF_PLATFORMS_INCLUDE_PPC64BE_LINUX
+check_PROGRAMS += lsw ldst_multiple
+endif
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@

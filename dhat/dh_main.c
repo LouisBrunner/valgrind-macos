@@ -287,7 +287,10 @@ static void intro_Block ( Block* bk )
 
    g_curr_blocks++;
    g_curr_bytes += bk->req_szB;
-   if (g_curr_bytes > g_max_bytes) {
+
+   // The use of `>=` rather than `>` means that if there are multiple equal
+   // peaks we record the latest one, like `check_for_peak` does.
+   if (g_curr_bytes >= g_max_bytes) {
       g_max_blocks = g_curr_blocks;
       g_max_bytes = g_curr_bytes;
       g_max_instrs = g_curr_instrs;
@@ -300,7 +303,10 @@ static void intro_Block ( Block* bk )
 
    api->curr_blocks++;
    api->curr_bytes += bk->req_szB;
-   if (api->curr_bytes > api->max_bytes) {
+
+   // The use of `>=` rather than `>` means that if there are multiple equal
+   // peaks we record the latest one, like `check_for_peak` does.
+   if (api->curr_bytes >= api->max_bytes) {
       api->max_blocks = api->curr_blocks;
       api->max_bytes  = api->curr_bytes;
    }
@@ -469,7 +475,10 @@ static void resize_Block(ExeContext* ec, SizeT old_req_szB, SizeT new_req_szB)
 
    g_curr_blocks += 0;  // unchanged
    g_curr_bytes += delta;
-   if (g_curr_bytes > g_max_bytes) {
+
+   // The use of `>=` rather than `>` means that if there are multiple equal
+   // peaks we record the latest one, like `check_for_peak` does.
+   if (g_curr_bytes >= g_max_bytes) {
       g_max_blocks = g_curr_blocks;
       g_max_bytes = g_curr_bytes;
       g_max_instrs = g_curr_instrs;
@@ -482,7 +491,10 @@ static void resize_Block(ExeContext* ec, SizeT old_req_szB, SizeT new_req_szB)
 
    api->curr_blocks += 0;  // unchanged
    api->curr_bytes += delta;
-   if (api->curr_bytes > api->max_bytes) {
+
+   // The use of `>=` rather than `>` means that if there are multiple equal
+   // peaks we record the latest one, like `check_for_peak` does.
+   if (api->curr_bytes >= api->max_bytes) {
       api->max_blocks = api->curr_blocks;
       api->max_bytes  = api->curr_bytes;
    }

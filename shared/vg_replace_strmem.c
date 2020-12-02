@@ -1979,8 +1979,8 @@ static inline void my_exit ( int x )
       /* pre-counting length... should be ok */ \
       if (is_overlap(dst_orig,  \
                      src_orig,  \
-                     (Addr)dst-(Addr)dst_orig+1, \
-                     (Addr)src-(Addr)src_orig+1)) \
+                     (Addr)dst-(Addr)dst_orig+4, \
+                     (Addr)src-(Addr)src_orig+4)) \
          RECORD_OVERLAP_ERROR("wcscpy", dst_orig, src_orig, 0); \
       \
       return dst_orig; \

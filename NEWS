@@ -74,6 +74,8 @@ n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.
 427404  PPC ISA 3.1 support is missing, part 6
 429692  unhandled ppc64le-linux syscall: 147 (getsid)
 428909  helgrind: need to intercept duplicate libc definitions for Fedora 33
+429864  s390x: C++ atomic test_and_set yields false-positive memcheck
+        diagnostics
 
 Release 3.16.1 (?? June 2020)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

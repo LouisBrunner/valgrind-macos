@@ -742,6 +742,9 @@ s390_cc_widen(IRTemp v, Bool sign_extend)
    case Ity_I8:
       expr = unop(sign_extend ? Iop_8Sto64 : Iop_8Uto64, expr);
       break;
+   case Ity_I1:
+      expr = unop(sign_extend ? Iop_1Sto64 : Iop_1Uto64, expr);
+      break;
    default:
       vpanic("s390_cc_widen");
    }
@@ -7417,7 +7420,7 @@ s390_irgen_load_and_add32(UChar r1, UChar r3, IRTemp op2addr, Bool is_signed)
 
    /* If old_mem contains the expected value, then the CAS succeeded.
       Otherwise, it did not */
-   yield_if(binop(Iop_CmpNE32, mkexpr(old_mem), mkexpr(op2)));
+   yield_if(binop(Iop_CasCmpNE32, mkexpr(old_mem), mkexpr(op2)));
    put_gpr_w1(r1, mkexpr(old_mem));
 }
 
@@ -7451,7 +7454,7 @@ s390_irgen_load_and_add64(UChar r1, UChar r3, IRTemp op2addr, Bool is_signed)
 
    /* If old_mem contains the expected value, then the CAS succeeded.
       Otherwise, it did not */
-   yield_if(binop(Iop_CmpNE64, mkexpr(old_mem), mkexpr(op2)));
+   yield_if(binop(Iop_CasCmpNE64, mkexpr(old_mem), mkexpr(op2)));
    put_gpr_dw0(r1, mkexpr(old_mem));
 }
 
@@ -7481,7 +7484,7 @@ s390_irgen_load_and_bitwise32(UChar r1, UChar r3, IRTemp op2addr, IROp op)
 
    /* If old_mem contains the expected value, then the CAS succeeded.
       Otherwise, it did not */
-   yield_if(binop(Iop_CmpNE32, mkexpr(old_mem), mkexpr(op2)));
+   yield_if(binop(Iop_CasCmpNE32, mkexpr(old_mem), mkexpr(op2)));
    put_gpr_w1(r1, mkexpr(old_mem));
 }
 
@@ -13864,7 +13867,6 @@ s390_irgen_cas_32(UChar r1, UChar r3, IRTemp op2addr)
    IRTemp op1 = newTemp(Ity_I32);
    IRTemp old_mem = newTemp(Ity_I32);
    IRTemp op3 = newTemp(Ity_I32);
-   IRTemp result = newTemp(Ity_I32);
    IRTemp nequal = newTemp(Ity_I1);
 
    assign(op1, get_gpr_w1(r1));
@@ -13879,12 +13881,11 @@ s390_irgen_cas_32(UChar r1, UChar r3, IRTemp op2addr)
    stmt(IRStmt_CAS(cas));
 
    /* Set CC. Operands compared equal -> 0, else 1. */
-   assign(result, binop(Iop_Sub32, mkexpr(op1), mkexpr(old_mem)));
-   s390_cc_thunk_put1(S390_CC_OP_BITWISE, result, False);
+   assign(nequal, binop(Iop_CasCmpNE32, mkexpr(op1), mkexpr(old_mem)));
+   s390_cc_thunk_put1(S390_CC_OP_BITWISE, nequal, True);
 
    /* If operands were equal (cc == 0) just store the old value op1 in r1.
       Otherwise, store the old_value from memory in r1 and yield. */
-   assign(nequal, binop(Iop_CmpNE32, s390_call_calculate_cc(), mkU32(0)));
    put_gpr_w1(r1, mkite(mkexpr(nequal), mkexpr(old_mem), mkexpr(op1)));
    yield_if(mkexpr(nequal));
 }
@@ -13912,7 +13913,6 @@ s390_irgen_CSG(UChar r1, UChar r3, IRTemp op2addr)
    IRTemp op1 = newTemp(Ity_I64);
    IRTemp old_mem = newTemp(Ity_I64);
    IRTemp op3 = newTemp(Ity_I64);
-   IRTemp result = newTemp(Ity_I64);
    IRTemp nequal = newTemp(Ity_I1);
 
    assign(op1, get_gpr_dw0(r1));
@@ -13927,12 +13927,11 @@ s390_irgen_CSG(UChar r1, UChar r3, IRTemp op2addr)
    stmt(IRStmt_CAS(cas));
 
    /* Set CC. Operands compared equal -> 0, else 1. */
-   assign(result, binop(Iop_Sub64, mkexpr(op1), mkexpr(old_mem)));
-   s390_cc_thunk_put1(S390_CC_OP_BITWISE, result, False);
+   assign(nequal, binop(Iop_CasCmpNE64, mkexpr(op1), mkexpr(old_mem)));
+   s390_cc_thunk_put1(S390_CC_OP_BITWISE, nequal, True);
 
    /* If operands were equal (cc == 0) just store the old value op1 in r1.
       Otherwise, store the old_value from memory in r1 and yield. */
-   assign(nequal, binop(Iop_CmpNE32, s390_call_calculate_cc(), mkU32(0)));
    put_gpr_dw0(r1, mkite(mkexpr(nequal), mkexpr(old_mem), mkexpr(op1)));
    yield_if(mkexpr(nequal));
 
@@ -13950,7 +13949,6 @@ s390_irgen_cdas_32(UChar r1, UChar r3, IRTemp op2addr)
    IRTemp old_mem_low  = newTemp(Ity_I32);
    IRTemp op3_high = newTemp(Ity_I32);
    IRTemp op3_low  = newTemp(Ity_I32);
-   IRTemp result = newTemp(Ity_I32);
    IRTemp nequal = newTemp(Ity_I1);
 
    assign(op1_high, get_gpr_w1(r1));
@@ -13967,18 +13965,17 @@ s390_irgen_cdas_32(UChar r1, UChar r3, IRTemp op2addr)
    stmt(IRStmt_CAS(cas));
 
    /* Set CC. Operands compared equal -> 0, else 1. */
-   assign(result, unop(Iop_1Uto32,
-          binop(Iop_CmpNE32,
+   assign(nequal,
+          binop(Iop_CasCmpNE32,
                 binop(Iop_Or32,
                       binop(Iop_Xor32, mkexpr(op1_high), mkexpr(old_mem_high)),
                       binop(Iop_Xor32, mkexpr(op1_low), mkexpr(old_mem_low))),
-                mkU32(0))));
+                mkU32(0)));
 
-   s390_cc_thunk_put1(S390_CC_OP_BITWISE, result, False);
+   s390_cc_thunk_put1(S390_CC_OP_BITWISE, nequal, True);
 
    /* If operands were equal (cc == 0) just store the old value op1 in r1.
       Otherwise, store the old_value from memory in r1 and yield. */
-   assign(nequal, binop(Iop_CmpNE32, s390_call_calculate_cc(), mkU32(0)));
    put_gpr_w1(r1,   mkite(mkexpr(nequal), mkexpr(old_mem_high), mkexpr(op1_high)));
    put_gpr_w1(r1+1, mkite(mkexpr(nequal), mkexpr(old_mem_low),  mkexpr(op1_low)));
    yield_if(mkexpr(nequal));

@@ -78,25 +78,36 @@
 /*----------------------------------------------------------------*/
 
 #if defined(VGO_solaris)
-/* On Solaris, libpthread is just a filter library on top of libc.
- * Threading and synchronization functions in runtime linker are not
- * intercepted.
- */
-#define PTH_FUNC(ret_ty, f, args...) \
-   ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBC_SONAME,f)(args); \
-   ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBC_SONAME,f)(args)
-
 /* pthread_t is typedef'd to 'unsigned int' but in DO_CREQ_* macros
    sizeof(Word) is expected. */
 #define CREQ_PTHREAD_T Word
 #define SEM_ERROR ret
 #else
-#define PTH_FUNC(ret_ty, f, args...) \
-   ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBPTHREAD_SONAME,f)(args); \
-   ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBPTHREAD_SONAME,f)(args)
 #define CREQ_PTHREAD_T pthread_t
 #define SEM_ERROR errno
 #endif /* VGO_solaris */
+
+#define HG_EXPAND(tok) #tok
+#define HG_STR(tok) HG_EXPAND(tok)
+#define HG_WEAK_ALIAS(name, aliasname) \
+  extern __typeof (name) aliasname __attribute__ ((weak, alias(HG_STR(name))))
+
+#if defined(VG_WRAP_THREAD_FUNCTION_LIBPTHREAD_ONLY)
+#define PTH_FUNC(ret_ty, f, args...) \
+   ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBPTHREAD_SONAME,f)(args); \
+   ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBPTHREAD_SONAME,f)(args)
+#elif defined(VG_WRAP_THREAD_FUNCTION_LIBC_AND_LIBPTHREAD)
+#define PTH_FUNC(ret_ty, f, args...) \
+   ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBPTHREAD_SONAME,f)(args); \
+   HG_WEAK_ALIAS(I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBPTHREAD_SONAME,f), I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBC_SONAME,f)); \
+   ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBPTHREAD_SONAME,f)(args)
+#elif defined(VG_WRAP_THREAD_FUNCTION_LIBC_ONLY)
+#define PTH_FUNC(ret_ty, f, args...) \
+   ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBC_SONAME,f)(args); \
+   ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBC_SONAME,f)(args)
+#else
+#  error "Unknown platform/thread wrapping"
+#endif
 
 // Do a client request.  These are macros rather than a functions so
 // as to avoid having an extra frame in stack traces.

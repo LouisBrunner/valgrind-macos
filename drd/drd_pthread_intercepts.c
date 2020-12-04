@@ -151,7 +151,11 @@ static drd_rtld_guard_fn DRD_(rtld_bind_clear) = NULL;
  * @param[in] arg_decl Argument declaration list enclosed in parentheses.
  * @param[in] argl Argument list enclosed in parentheses.
  */
-#ifdef VGO_darwin
+#if defined(VGO_darwin)
+/*
+ * Note here VGO_darwin is used rather than VG_WRAP_THREAD_FUNCTION_LIBPTHREAD_ONLY
+ * because of the special-case code adding a function call
+ */
 static int never_true;
 #define PTH_FUNC(ret_ty, zf, implf, argl_decl, argl)                    \
    ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBPTHREAD_SONAME,zf) argl_decl;     \
@@ -164,29 +168,12 @@ static int never_true;
 	 fflush(stdout);						\
       return pth_func_result;						\
    }
-#elif defined(VGO_solaris)
-/* On Solaris, libpthread is just a filter library on top of libc.
- * Threading and synchronization functions in runtime linker are not
- * intercepted.
- */
+#elif defined(VG_WRAP_THREAD_FUNCTION_LIBC_ONLY)
 #define PTH_FUNC(ret_ty, zf, implf, argl_decl, argl)                    \
    ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBC_SONAME,zf) argl_decl;           \
    ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBC_SONAME,zf) argl_decl            \
    { return implf argl; }
-#else
-#ifdef MUSL_LIBC
-/* musl provides a single library that includes pthreads functions. */
-#define PTH_FUNC(ret_ty, zf, implf, argl_decl, argl)                    \
-   ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBPTHREAD_SONAME,zf) argl_decl;     \
-   ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBPTHREAD_SONAME,zf) argl_decl      \
-   { return implf argl; }
-#else
-/*
- * On Linux, intercept both the libc and the libpthread functions. At
- * least glibc 2.32.9000 (Fedora 34) has an implementation of all pthread
- * functions in both libc and libpthread. Older glibc versions only have an
- * implementation of the pthread functions in libpthread.
- */
+#elif defined(VG_WRAP_THREAD_FUNCTION_LIBC_AND_LIBPTHREAD)
 #define PTH_FUNC(ret_ty, zf, implf, argl_decl, argl)                    \
    ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBC_SONAME,zf) argl_decl;           \
    ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBC_SONAME,zf) argl_decl            \
@@ -194,7 +181,8 @@ static int never_true;
    ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBPTHREAD_SONAME,zf) argl_decl;     \
    ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBPTHREAD_SONAME,zf) argl_decl      \
    { return implf argl; }
-#endif
+#else
+#  error "Unknown platform/thread wrapping"
 #endif
 
 /**

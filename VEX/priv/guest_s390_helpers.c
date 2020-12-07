@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright IBM Corp. 2010-2017
+   Copyright IBM Corp. 2010-2020
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -314,20 +314,11 @@ ULong s390x_dirtyhelper_STCKE(ULong *addr) {return 3;}
 /*--- Dirty helper for Store Facility instruction          ---*/
 /*------------------------------------------------------------*/
 #if defined(VGA_s390x)
-static void
-s390_set_facility_bit(ULong *addr, UInt bitno, UInt value)
+
+static ULong
+s390_stfle_range(UInt lo, UInt hi)
 {
-   addr  += bitno / 64;
-   bitno  = bitno % 64;
-
-   ULong mask = 1;
-   mask <<= (63 - bitno);
-
-   if (value == 1) {
-      *addr |= mask;   // set
-   } else {
-      *addr &= ~mask;  // clear
-   }
+   return ((1UL << (hi + 1 - lo)) - 1) << (63 - (hi % 64));
 }
 
 ULong
@@ -335,6 +326,77 @@ s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, ULong *addr)
 {
    ULong hoststfle[S390_NUM_FACILITY_DW], cc, num_dw, i;
    register ULong reg0 asm("0") = guest_state->guest_r0 & 0xF;  /* r0[56:63] */
+
+   /* Restrict to facilities that we know about and that we assume to be
+      compatible with Valgrind.  Of course, in this way we may reject features
+      that Valgrind is not really involved in (and thus would be compatible
+      with), but quering for such features doesn't seem like a typical use
+      case. */
+   ULong accepted_facility[S390_NUM_FACILITY_DW] = {
+      /* ===  0 .. 63  === */
+      (s390_stfle_range(0, 16)
+       /* 17: message-security-assist, not supported */
+       | s390_stfle_range(18, 19)
+       /* 20: HFP-multiply-and-add/subtract, not supported */
+       | s390_stfle_range(21, 22)
+       /* 23: HFP-unnormalized-extension, not supported */
+       | s390_stfle_range(24, 25)
+       /* 26: parsing-enhancement, not supported */
+       | s390_stfle_range(27, 28)
+       /* 29: unassigned */
+       | s390_stfle_range(30, 30)
+       /* 31: extract-CPU-time, not supported */
+       | s390_stfle_range(32, 41)
+       /* 42-43: DFP, not fully supported */
+       /* 44: PFPO, not fully supported */
+       | s390_stfle_range(45, 47)
+       /* 48: DFP zoned-conversion, not supported */
+       /* 49: includes PPA, not supported */
+       /* 50: constrained transactional-execution, not supported */
+       | s390_stfle_range(51, 55)
+       /* 56: unassigned */
+       /* 57: MSA5, not supported */
+       | s390_stfle_range(58, 60)
+       /* 61: miscellaneous-instruction 3, not supported */
+       | s390_stfle_range(62, 63)),
+
+      /* ===  64 .. 127  === */
+      (s390_stfle_range(64, 72)
+       /* 73: transactional-execution, not supported */
+       | s390_stfle_range(74, 75)
+       /* 76: MSA3, not supported */
+       /* 77: MSA4, not supported */
+       | s390_stfle_range(78, 78)
+       /* 80: DFP packed-conversion, not supported */
+       /* 81: PPA-in-order, not supported */
+       | s390_stfle_range(82, 82)
+       /* 83-127: unassigned */ ),
+
+      /* ===  128 .. 191  === */
+      (s390_stfle_range(128, 131)
+       /* 132: unassigned */
+       /* 133: guarded-storage, not supported */
+       /* 134: vector packed decimal, not supported */
+       | s390_stfle_range(135, 135)
+       /* 136: unassigned */
+       /* 137: unassigned */
+       | s390_stfle_range(138, 142)
+       /* 143: unassigned */
+       | s390_stfle_range(144, 145)
+       /* 146: MSA8, not supported */
+       | s390_stfle_range(147, 147)
+       /* 148: vector-enhancements 2, not supported */
+       | s390_stfle_range(149, 149)
+       /* 150: unassigned */
+       /* 151: DEFLATE-conversion, not supported */
+       /* 153: unassigned */
+       /* 154: unassigned */
+       /* 155: MSA9, not supported */
+       | s390_stfle_range(156, 156)
+       /* 157-167: unassigned */
+       | s390_stfle_range(168, 168)
+       /* 168-191: unassigned */ ),
+   };
 
    /* We cannot store more than S390_NUM_FACILITY_DW
       (and it makes not much sense to do so anyhow) */
@@ -351,35 +413,9 @@ s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, ULong *addr)
    /* Update guest register 0  with what STFLE set r0 to */
    guest_state->guest_r0 = reg0;
 
-   /* Set default: VM facilities = host facilities */
+   /* VM facilities = host facilities, filtered by acceptance */
    for (i = 0; i < num_dw; ++i)
-      addr[i] = hoststfle[i];
-
-   /* Now adjust the VM facilities according to what the VM supports */
-   s390_set_facility_bit(addr, S390_FAC_LDISP,  1);
-   s390_set_facility_bit(addr, S390_FAC_EIMM,   1);
-   s390_set_facility_bit(addr, S390_FAC_ETF2,   1);
-   s390_set_facility_bit(addr, S390_FAC_ETF3,   1);
-   s390_set_facility_bit(addr, S390_FAC_GIE,    1);
-   s390_set_facility_bit(addr, S390_FAC_EXEXT,  1);
-   s390_set_facility_bit(addr, S390_FAC_HIGHW,  1);
-   s390_set_facility_bit(addr, S390_FAC_LSC2,   1);
-
-   s390_set_facility_bit(addr, S390_FAC_HFPMAS, 0);
-   s390_set_facility_bit(addr, S390_FAC_HFPUNX, 0);
-   s390_set_facility_bit(addr, S390_FAC_XCPUT,  0);
-   s390_set_facility_bit(addr, S390_FAC_MSA,    0);
-   s390_set_facility_bit(addr, S390_FAC_PENH,   0);
-   s390_set_facility_bit(addr, S390_FAC_DFP,    0);
-   s390_set_facility_bit(addr, S390_FAC_PFPO,   0);
-   s390_set_facility_bit(addr, S390_FAC_DFPZC,  0);
-   s390_set_facility_bit(addr, S390_FAC_MISC,   0);
-   s390_set_facility_bit(addr, S390_FAC_CTREXE, 0);
-   s390_set_facility_bit(addr, S390_FAC_TREXE,  0);
-   s390_set_facility_bit(addr, S390_FAC_MSA4,   0);
-   s390_set_facility_bit(addr, S390_FAC_VXE,    0);
-   s390_set_facility_bit(addr, S390_FAC_VXE2,   0);
-   s390_set_facility_bit(addr, S390_FAC_DFLT,   0);
+      addr[i] = hoststfle[i] & accepted_facility[i];
 
    return cc;
 }
@@ -2500,25 +2536,26 @@ s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
    vassert(d->op > S390_VEC_OP_INVALID && d->op < S390_VEC_OP_LAST);
    static const UChar opcodes[][2] = {
       {0x00, 0x00}, /* invalid */
-      {0xe7, 0x97}, /* VPKS */
-      {0xe7, 0x95}, /* VPKLS */
-      {0xe7, 0x82}, /* VFAE */
-      {0xe7, 0x80}, /* VFEE */
-      {0xe7, 0x81}, /* VFENE */
-      {0xe7, 0x5c}, /* VISTR */
-      {0xe7, 0x8a}, /* VSTRC */
-      {0xe7, 0xf8}, /* VCEQ */
-      {0xe7, 0xd8}, /* VTM */
-      {0xe7, 0xb4}, /* VGFM */
-      {0xe7, 0xbc}, /* VGFMA */
-      {0xe7, 0xab}, /* VMAH */
-      {0xe7, 0xa9}, /* VMALH */
-      {0xe7, 0xfb}, /* VCH */
-      {0xe7, 0xf9}, /* VCHL */
-      {0xe7, 0xe8}, /* VFCE */
-      {0xe7, 0xeb}, /* VFCH */
-      {0xe7, 0xea}, /* VFCHE */
-      {0xe7, 0x4a}  /* VFTCI */
+      [S390_VEC_OP_VPKS]  = {0xe7, 0x97},
+      [S390_VEC_OP_VPKLS] = {0xe7, 0x95},
+      [S390_VEC_OP_VFAE]  = {0xe7, 0x82},
+      [S390_VEC_OP_VFEE]  = {0xe7, 0x80},
+      [S390_VEC_OP_VFENE] = {0xe7, 0x81},
+      [S390_VEC_OP_VISTR] = {0xe7, 0x5c},
+      [S390_VEC_OP_VSTRC] = {0xe7, 0x8a},
+      [S390_VEC_OP_VCEQ]  = {0xe7, 0xf8},
+      [S390_VEC_OP_VTM]   = {0xe7, 0xd8},
+      [S390_VEC_OP_VGFM]  = {0xe7, 0xb4},
+      [S390_VEC_OP_VGFMA] = {0xe7, 0xbc},
+      [S390_VEC_OP_VMAH]  = {0xe7, 0xab},
+      [S390_VEC_OP_VMALH] = {0xe7, 0xa9},
+      [S390_VEC_OP_VCH]   = {0xe7, 0xfb},
+      [S390_VEC_OP_VCHL]  = {0xe7, 0xf9},
+      [S390_VEC_OP_VFTCI] = {0xe7, 0x4a},
+      [S390_VEC_OP_VFMIN] = {0xe7, 0xee},
+      [S390_VEC_OP_VFMAX] = {0xe7, 0xef},
+      [S390_VEC_OP_VBPERM]= {0xe7, 0x85},
+      [S390_VEC_OP_VMSL]  = {0xe7, 0xb8},
    };
 
    union {
@@ -2612,6 +2649,7 @@ s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
    case S390_VEC_OP_VGFMA:
    case S390_VEC_OP_VMAH:
    case S390_VEC_OP_VMALH:
+   case S390_VEC_OP_VMSL:
       the_insn.VRRd.v1 = 1;
       the_insn.VRRd.v2 = 2;
       the_insn.VRRd.v3 = 3;
@@ -2621,9 +2659,9 @@ s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
       the_insn.VRRd.m6 = d->m5;
       break;
 
-   case S390_VEC_OP_VFCE:
-   case S390_VEC_OP_VFCH:
-   case S390_VEC_OP_VFCHE:
+   case S390_VEC_OP_VFMIN:
+   case S390_VEC_OP_VFMAX:
+   case S390_VEC_OP_VBPERM:
       the_insn.VRRc.v1 = 1;
       the_insn.VRRc.v2 = 2;
       the_insn.VRRc.v3 = 3;

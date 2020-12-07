@@ -114,50 +114,59 @@ int main()
    test_with_selective_printing(vldeb, (V128_V_RES_AS_FLOAT64 |
                                         V128_V_ARG1_AS_FLOAT64));
    test_with_selective_printing(wldeb, (V128_V_RES_AS_FLOAT64 |
-                                        V128_V_ARG1_AS_FLOAT64));
+                                        V128_V_ARG1_AS_FLOAT64 |
+                                        V128_V_RES_ZERO_ONLY));
 
    test_with_selective_printing(vflcdb, (V128_V_RES_AS_FLOAT64 |
                                          V128_V_ARG1_AS_FLOAT64));
    test_with_selective_printing(wflcdb, (V128_V_RES_AS_FLOAT64 |
-                                         V128_V_ARG1_AS_FLOAT64));
+                                         V128_V_ARG1_AS_FLOAT64 |
+                                        V128_V_RES_ZERO_ONLY));
    test_with_selective_printing(vflndb, (V128_V_RES_AS_FLOAT64 |
                                          V128_V_ARG1_AS_FLOAT64));
    test_with_selective_printing(wflndb, (V128_V_RES_AS_FLOAT64 |
-                                         V128_V_ARG1_AS_FLOAT64));
+                                         V128_V_ARG1_AS_FLOAT64 |
+                                        V128_V_RES_ZERO_ONLY));
    test_with_selective_printing(vflpdb, (V128_V_RES_AS_FLOAT64 |
                                          V128_V_ARG1_AS_FLOAT64));
    test_with_selective_printing(wflpdb, (V128_V_RES_AS_FLOAT64 |
-                                         V128_V_ARG1_AS_FLOAT64));
+                                         V128_V_ARG1_AS_FLOAT64 |
+                                        V128_V_RES_ZERO_ONLY));
 
    test_with_selective_printing(vfadb, (V128_V_RES_AS_FLOAT64 |
                                         V128_V_ARG1_AS_FLOAT64 |
                                         V128_V_ARG2_AS_FLOAT64));
    test_with_selective_printing(wfadb, (V128_V_RES_AS_FLOAT64 |
                                         V128_V_ARG1_AS_FLOAT64 |
-                                        V128_V_ARG2_AS_FLOAT64));
+                                        V128_V_ARG2_AS_FLOAT64 |
+                                        V128_V_RES_ZERO_ONLY));
    test_with_selective_printing(vfsdb, (V128_V_RES_AS_FLOAT64 |
                                         V128_V_ARG1_AS_FLOAT64 |
                                         V128_V_ARG2_AS_FLOAT64));
    test_with_selective_printing(wfsdb, (V128_V_RES_AS_FLOAT64 |
                                         V128_V_ARG1_AS_FLOAT64 |
-                                        V128_V_ARG2_AS_FLOAT64));
+                                        V128_V_ARG2_AS_FLOAT64 |
+                                        V128_V_RES_ZERO_ONLY));
    test_with_selective_printing(vfmdb, (V128_V_RES_AS_FLOAT64 |
                                         V128_V_ARG1_AS_FLOAT64 |
                                         V128_V_ARG2_AS_FLOAT64));
    test_with_selective_printing(wfmdb, (V128_V_RES_AS_FLOAT64 |
                                         V128_V_ARG1_AS_FLOAT64 |
-                                        V128_V_ARG2_AS_FLOAT64));
+                                        V128_V_ARG2_AS_FLOAT64 |
+                                        V128_V_RES_ZERO_ONLY));
    test_with_selective_printing(vfddb, (V128_V_RES_AS_FLOAT64 |
                                         V128_V_ARG1_AS_FLOAT64 |
                                         V128_V_ARG2_AS_FLOAT64));
    test_with_selective_printing(wfddb, (V128_V_RES_AS_FLOAT64 |
                                         V128_V_ARG1_AS_FLOAT64 |
-                                        V128_V_ARG2_AS_FLOAT64));
+                                        V128_V_ARG2_AS_FLOAT64 |
+                                        V128_V_RES_ZERO_ONLY));
  
    test_with_selective_printing(vfsqdb, (V128_V_RES_AS_FLOAT64 |
                                          V128_V_ARG1_AS_FLOAT64));
    test_with_selective_printing(wfsqdb, (V128_V_RES_AS_FLOAT64 |
-                                         V128_V_ARG1_AS_FLOAT64));
+                                         V128_V_ARG1_AS_FLOAT64 |
+                                        V128_V_RES_ZERO_ONLY));
 
    test_with_selective_printing(vfmadb, (V128_V_RES_AS_FLOAT64 |
                                          V128_V_ARG1_AS_FLOAT64 |
@@ -166,7 +175,8 @@ int main()
    test_with_selective_printing(wfmadb, (V128_V_RES_AS_FLOAT64 |
                                          V128_V_ARG1_AS_FLOAT64 |
                                          V128_V_ARG2_AS_FLOAT64 |
-                                         V128_V_ARG3_AS_FLOAT64));
+                                         V128_V_ARG3_AS_FLOAT64 |
+                                        V128_V_RES_ZERO_ONLY));
    test_with_selective_printing(vfmsdb, (V128_V_RES_AS_FLOAT64 |
                                          V128_V_ARG1_AS_FLOAT64 |
                                          V128_V_ARG2_AS_FLOAT64 |
@@ -174,21 +184,25 @@ int main()
    test_with_selective_printing(wfmsdb, (V128_V_RES_AS_FLOAT64 |
                                          V128_V_ARG1_AS_FLOAT64 |
                                          V128_V_ARG2_AS_FLOAT64 |
-                                         V128_V_ARG3_AS_FLOAT64));
+                                         V128_V_ARG3_AS_FLOAT64 |
+                                        V128_V_RES_ZERO_ONLY));
 
    test_with_selective_printing(wfcdb, (V128_V_ARG1_AS_FLOAT64 |
                                         V128_V_ARG2_AS_FLOAT64 |
-                                        V128_R_RES));
+                                        V128_R_RES |
+                                        V128_V_RES_ZERO_ONLY));
    test_with_selective_printing(wfkdb, (V128_V_ARG1_AS_FLOAT64 |
                                         V128_V_ARG2_AS_FLOAT64 |
-                                        V128_R_RES));
+                                        V128_R_RES |
+                                        V128_V_RES_ZERO_ONLY));
 
    test_with_selective_printing(vfcedb,  (V128_V_RES_AS_INT |
                                           V128_V_ARG1_AS_FLOAT64 |
                                           V128_V_ARG2_AS_FLOAT64));
    test_with_selective_printing(wfcedb,  (V128_V_RES_AS_INT |
                                           V128_V_ARG1_AS_FLOAT64 |
-                                          V128_V_ARG2_AS_FLOAT64));
+                                          V128_V_ARG2_AS_FLOAT64 |
+                                          V128_V_RES_ZERO_ONLY));
    test_with_selective_printing(vfcedbs, (V128_V_RES_AS_INT |
                                           V128_V_ARG1_AS_FLOAT64 |
                                           V128_V_ARG2_AS_FLOAT64 |
@@ -196,14 +210,16 @@ int main()
    test_with_selective_printing(wfcedbs, (V128_V_RES_AS_INT |
                                           V128_V_ARG1_AS_FLOAT64 |
                                           V128_V_ARG2_AS_FLOAT64 |
-                                          V128_R_RES));
+                                          V128_R_RES |
+                                          V128_V_RES_ZERO_ONLY));
 
    test_with_selective_printing(vfchdb,  (V128_V_RES_AS_INT |
                                           V128_V_ARG1_AS_FLOAT64 |
                                           V128_V_ARG2_AS_FLOAT64));
    test_with_selective_printing(wfchdb,  (V128_V_RES_AS_INT |
                                           V128_V_ARG1_AS_FLOAT64 |
-                                          V128_V_ARG2_AS_FLOAT64));
+                                          V128_V_ARG2_AS_FLOAT64 |
+                                          V128_V_RES_ZERO_ONLY));
    test_with_selective_printing(vfchdbs, (V128_V_RES_AS_INT |
                                           V128_V_ARG1_AS_FLOAT64 |
                                           V128_V_ARG2_AS_FLOAT64 |
@@ -211,14 +227,16 @@ int main()
    test_with_selective_printing(wfchdbs, (V128_V_RES_AS_INT |
                                           V128_V_ARG1_AS_FLOAT64 |
                                           V128_V_ARG2_AS_FLOAT64 |
-                                          V128_R_RES));
+                                          V128_R_RES |
+                                          V128_V_RES_ZERO_ONLY));
 
    test_with_selective_printing(vfchedb,  (V128_V_RES_AS_INT |
                                            V128_V_ARG1_AS_FLOAT64 |
                                            V128_V_ARG2_AS_FLOAT64));
    test_with_selective_printing(wfchedb,  (V128_V_RES_AS_INT |
                                            V128_V_ARG1_AS_FLOAT64 |
-                                           V128_V_ARG2_AS_FLOAT64));
+                                           V128_V_ARG2_AS_FLOAT64 |
+                                           V128_V_RES_ZERO_ONLY));
    test_with_selective_printing(vfchedbs, (V128_V_RES_AS_INT |
                                            V128_V_ARG1_AS_FLOAT64 |
                                            V128_V_ARG2_AS_FLOAT64 |
@@ -226,7 +244,8 @@ int main()
    test_with_selective_printing(wfchedbs, (V128_V_RES_AS_INT |
                                            V128_V_ARG1_AS_FLOAT64 |
                                            V128_V_ARG2_AS_FLOAT64 |
-                                           V128_R_RES));
+                                           V128_R_RES |
+                                           V128_V_RES_ZERO_ONLY));
 
    test_with_selective_printing(vftcidb0,    (V128_V_RES_AS_INT |
                                               V128_V_ARG1_AS_FLOAT64 |

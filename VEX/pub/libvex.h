@@ -171,7 +171,7 @@ typedef
 #define VEX_HWCAPS_S390X_MSA5  (1<<19)  /* message security assistance facility */
 #define VEX_HWCAPS_S390X_MI2   (1<<20)  /* miscellaneous-instruction-extensions facility 2 */
 #define VEX_HWCAPS_S390X_LSC2  (1<<21)  /* Conditional load/store facility2 */
-
+#define VEX_HWCAPS_S390X_VXE   (1<<22)  /* Vector-enhancements facility */
 
 /* Special value representing all available s390x hwcaps */
 #define VEX_HWCAPS_S390X_ALL   (VEX_HWCAPS_S390X_LDISP | \
@@ -189,7 +189,8 @@ typedef
                                 VEX_HWCAPS_S390X_VX    | \
                                 VEX_HWCAPS_S390X_MSA5  | \
                                 VEX_HWCAPS_S390X_MI2   | \
-                                VEX_HWCAPS_S390X_LSC2)
+                                VEX_HWCAPS_S390X_LSC2  | \
+                                VEX_HWCAPS_S390X_VXE)
 
 #define VEX_HWCAPS_S390X(x)  ((x) & ~VEX_S390X_MODEL_MASK)
 #define VEX_S390X_MODEL(x)   ((x) &  VEX_S390X_MODEL_MASK)

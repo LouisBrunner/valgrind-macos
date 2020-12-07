@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright IBM Corp. 2010-2017
+   Copyright IBM Corp. 2010-2020
    Copyright (C) 2012-2017  Florian Krohm   (britzel@acm.org)
 
    This program is free software; you can redistribute it and/or
@@ -2362,9 +2362,10 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
       case Iop_NegF128:
          if (left->tag == Iex_Unop &&
              (left->Iex.Unop.op == Iop_AbsF32 ||
-              left->Iex.Unop.op == Iop_AbsF64))
+              left->Iex.Unop.op == Iop_AbsF64)) {
             bfpop = S390_BFP_NABS;
-         else
+            left = left->Iex.Unop.arg;
+         } else
             bfpop = S390_BFP_NEG;
          goto float128_opnd;
       case Iop_AbsF128:     bfpop = S390_BFP_ABS;         goto float128_opnd;
@@ -2726,9 +2727,10 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
       case Iop_NegF64:
          if (left->tag == Iex_Unop &&
              (left->Iex.Unop.op == Iop_AbsF32 ||
-              left->Iex.Unop.op == Iop_AbsF64))
+              left->Iex.Unop.op == Iop_AbsF64)) {
             bfpop = S390_BFP_NABS;
-         else
+            left = left->Iex.Unop.arg;
+         } else
             bfpop = S390_BFP_NEG;
          break;
 
@@ -3944,11 +3946,27 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
          vec_unop = S390_VEC_COUNT_ONES;
          goto Iop_V_wrk;
 
+      case Iop_Neg32Fx4:
+         size = 4;
+         vec_unop = S390_VEC_FLOAT_NEG;
+         if (arg->tag == Iex_Unop && arg->Iex.Unop.op == Iop_Abs32Fx4) {
+            vec_unop = S390_VEC_FLOAT_NABS;
+            arg = arg->Iex.Unop.arg;
+         }
+         goto Iop_V_wrk;
       case Iop_Neg64Fx2:
          size = 8;
          vec_unop = S390_VEC_FLOAT_NEG;
+         if (arg->tag == Iex_Unop && arg->Iex.Unop.op == Iop_Abs64Fx2) {
+            vec_unop = S390_VEC_FLOAT_NABS;
+            arg = arg->Iex.Unop.arg;
+         }
          goto Iop_V_wrk;
 
+      case Iop_Abs32Fx4:
+         size = 4;
+         vec_unop = S390_VEC_FLOAT_ABS;
+         goto Iop_V_wrk;
       case Iop_Abs64Fx2:
          size = 8;
          vec_unop = S390_VEC_FLOAT_ABS;
@@ -4474,17 +4492,29 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
          vec_binop = S390_VEC_ELEM_ROLL_V;
          goto Iop_VV_wrk;
 
+      case Iop_CmpEQ32Fx4:
+         size = 4;
+         vec_binop = S390_VEC_FLOAT_COMPARE_EQUAL;
+         goto Iop_VV_wrk;
       case Iop_CmpEQ64Fx2:
          size = 8;
          vec_binop = S390_VEC_FLOAT_COMPARE_EQUAL;
          goto Iop_VV_wrk;
 
+      case Iop_CmpLE32Fx4:
+         size = 4;
+         vec_binop = S390_VEC_FLOAT_COMPARE_LESS_OR_EQUAL;
+         goto Iop_VV_wrk;
       case Iop_CmpLE64Fx2: {
          size = 8;
          vec_binop = S390_VEC_FLOAT_COMPARE_LESS_OR_EQUAL;
          goto Iop_VV_wrk;
       }
 
+      case Iop_CmpLT32Fx4:
+         size = 4;
+         vec_binop = S390_VEC_FLOAT_COMPARE_LESS;
+         goto Iop_VV_wrk;
       case Iop_CmpLT64Fx2: {
          size = 8;
          vec_binop = S390_VEC_FLOAT_COMPARE_LESS;
@@ -4671,9 +4701,19 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
                                            dst, reg1, reg2, reg3));
          return dst;
 
+      case Iop_Add32Fx4:
+         size = 4;
+         vec_binop = S390_VEC_FLOAT_ADD;
+         goto Iop_irrm_VV_wrk;
+
       case Iop_Add64Fx2:
          size = 8;
          vec_binop = S390_VEC_FLOAT_ADD;
+         goto Iop_irrm_VV_wrk;
+
+      case Iop_Sub32Fx4:
+         size = 4;
+         vec_binop = S390_VEC_FLOAT_SUB;
          goto Iop_irrm_VV_wrk;
 
       case Iop_Sub64Fx2:
@@ -4681,10 +4721,21 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
          vec_binop = S390_VEC_FLOAT_SUB;
          goto Iop_irrm_VV_wrk;
 
+      case Iop_Mul32Fx4:
+         size = 4;
+         vec_binop = S390_VEC_FLOAT_MUL;
+         goto Iop_irrm_VV_wrk;
+
       case Iop_Mul64Fx2:
          size = 8;
          vec_binop = S390_VEC_FLOAT_MUL;
          goto Iop_irrm_VV_wrk;
+
+      case Iop_Div32Fx4:
+         size = 4;
+         vec_binop = S390_VEC_FLOAT_DIV;
+         goto Iop_irrm_VV_wrk;
+
       case Iop_Div64Fx2:
          size = 8;
          vec_binop = S390_VEC_FLOAT_DIV;

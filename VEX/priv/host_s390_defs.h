@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright IBM Corp. 2010-2017
+   Copyright IBM Corp. 2010-2020
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -205,6 +205,7 @@ typedef enum {
    S390_VEC_COUNT_ONES,
    S390_VEC_FLOAT_NEG,
    S390_VEC_FLOAT_ABS,
+   S390_VEC_FLOAT_NABS,
    S390_VEC_FLOAT_SQRT,
    S390_UNOP_T_INVALID
 } s390_unop_t;
@@ -931,6 +932,8 @@ extern UInt s390_host_hwcaps;
                       (s390_host_hwcaps & (VEX_HWCAPS_S390X_MSA5))
 #define s390_host_has_lsc2 \
                       (s390_host_hwcaps & (VEX_HWCAPS_S390X_LSC2))
+#define s390_host_has_vxe \
+                      (s390_host_hwcaps & (VEX_HWCAPS_S390X_VXE))
 #endif /* ndef __VEX_HOST_S390_DEFS_H */
 
 /*---------------------------------------------------------------*/

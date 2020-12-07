@@ -77,6 +77,7 @@ n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.
 429864  s390x: C++ atomic test_and_set yields false-positive memcheck
         diagnostics
 408663  Suppression file for musl libc 
+404076  s390x: z14 vector instructions not implemented
 
 Release 3.16.1 (?? June 2020)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

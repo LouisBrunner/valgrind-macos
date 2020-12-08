@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
+#include <strings.h>
+#include "../../config.h"
 
 void f(char* a, char* b, wchar_t* wa, wchar_t* wb);
 void test_malloc();
@@ -21,11 +23,11 @@ int main(void) {
    wchar_t wa[250];
    wchar_t wb[250];
    for (int i = 0; i < 250; i++) {
-      wa[i] = 'A';
-      wb[i] = 'B';
+      wa[i] = L'A';
+      wb[i] = L'B';
    }
-   wa[249] = '\0';
-   wb[249] = '\0';
+   wa[249] = L'\0';
+   wb[249] = L'\0';
 
    for (int i = 0; i < 100; i++) {
       f(a, b, wa, wb);
@@ -41,7 +43,11 @@ void f(char* a, char* b, wchar_t* wa, wchar_t* wb) {
    memcpy (a, b, 1000); // Redirects to memmove
    memcpy (a, b, 1000); // Redirects to memmove
    memmove(a, b, 1000);
+#if defined(VGO_solaris)
+   memcpy(a, b, 1000);
+#else
    mempcpy(a, b, 1000);
+#endif
    bcopy  (a, b, 1000); // Redirects to memmove
    strcpy (a, b);
    strncpy(a, b, 1000);

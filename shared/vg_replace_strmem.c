@@ -2014,7 +2014,7 @@ static inline void my_exit ( int x )
       return dst_orig; \
    }
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_solaris)
  WCSCPY(VG_Z_LIBC_SONAME, wcscpy)
 #endif
 

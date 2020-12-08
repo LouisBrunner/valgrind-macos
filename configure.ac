@@ -1147,7 +1147,7 @@ case "${GLIBC_VERSION}" in
      musl)
 	AC_MSG_RESULT(Musl)
 	AC_DEFINE([MUSL_LIBC], 1, [Define to 1 if you're using Musl libc])
-	# no DEFAULT_SUPP file yet for musl libc.
+	DEFAULT_SUPP="musl.supp ${DEFAULT_SUPP}"
 	;;
      2.0|2.1|*)
 	AC_MSG_RESULT([unsupported version ${GLIBC_VERSION}])

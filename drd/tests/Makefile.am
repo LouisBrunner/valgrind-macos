@@ -6,6 +6,7 @@ dist_noinst_SCRIPTS =		    \
 	filter_annotate_barrier_xml \
 	filter_error_count	    \
 	filter_error_summary	    \
+	filter_lambda               \
 	filter_stderr               \
 	filter_stderr_and_thread_no \
 	filter_stderr_and_thread_no_and_offset \

@@ -1,0 +1,7 @@
+#! /bin/sh
+
+./filter_stderr |
+
+sed -e 's/\$_0/LAMBDA/' |
+sed -e 's/{lambda()#1}/LAMBDA/'
+

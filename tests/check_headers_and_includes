@@ -73,6 +73,7 @@ my %dirs_to_ignore = (
     );
 
 my %tool_export_header = (
+    "dhat/dhat.h" => 1,
     "drd/drd.h" => 1,
     "helgrind/helgrind.h" => 1,
     "memcheck/memcheck.h" => 1,

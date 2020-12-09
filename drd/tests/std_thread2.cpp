@@ -26,7 +26,7 @@ int main(int argc, char** argv)
   return 0;
 }
 
-#if defined(__GNUC__) && __GNUC__ -0 < 6 && (defined(_GLIBCXX_THREAD_ABI_COMPAT) && _GLIBCXX_THREAD_ABI_COMPAT)
+#if defined(__GNUC__) && __GNUC__ -0 < 6 && !defined(__clang__)
 //
 // From libstdc++-v3/src/c++11/thread.cc
 //

@@ -1765,11 +1765,36 @@ static const HChar* show_hwcaps_arm ( UInt hwcaps )
 
 static const HChar* show_hwcaps_arm64 ( UInt hwcaps )
 {
-   /* Since there are no variants, just insist that hwcaps is zero,
-      and declare it invalid otherwise. */
-  if (hwcaps == 0)
-     return "baseline";
-  return "Unsupported";
+   static const HChar prefix[] = "v8";
+   static const struct {
+      UInt  hwcaps_bit;
+      HChar name[16];
+   } hwcaps_list[] = {
+      { VEX_HWCAPS_ARM64_FHM,         "fhm" },
+      { VEX_HWCAPS_ARM64_DPBCVAP,     "dpcvap" },
+      { VEX_HWCAPS_ARM64_DPBCVADP,    "dpbcvadp" },
+      { VEX_HWCAPS_ARM64_SM3,         "sm3" },
+      { VEX_HWCAPS_ARM64_SM4,         "sm4" },
+      { VEX_HWCAPS_ARM64_SHA3,        "sha3" },
+      { VEX_HWCAPS_ARM64_RDM,         "rdm" },
+      { VEX_HWCAPS_ARM64_I8MM,        "i8mm" },
+      { VEX_HWCAPS_ARM64_ATOMICS,     "atomics" },
+      { VEX_HWCAPS_ARM64_BF16,        "bf16" },
+      { VEX_HWCAPS_ARM64_FP16,        "fp16" },
+      { VEX_HWCAPS_ARM64_VFP16,       "vfp16" },
+   };
+
+   static HChar buf[sizeof prefix +                       // '\0'
+                    NUM_HWCAPS * (sizeof hwcaps_list[0].name + 1) + 1];
+
+   HChar *p = buf + vex_sprintf(buf, "%s", prefix);
+   UInt i;
+   for (i = 0 ; i < NUM_HWCAPS; ++i) {
+      if (hwcaps & hwcaps_list[i].hwcaps_bit)
+         p = p + vex_sprintf(p, "-%s", hwcaps_list[i].name);
+   }
+
+   return buf;
 }
 
 static const HChar* show_hwcaps_s390x ( UInt hwcaps )
@@ -2130,11 +2155,20 @@ static void check_hwcaps ( VexArch arch, UInt hwcaps )
          }
       }
 
-      case VexArchARM64:
-         if (hwcaps != 0)
+      case VexArchARM64: {
+         /* Mandatory dependencies. */
+         Bool have_fp16 = ((hwcaps & VEX_HWCAPS_ARM64_FP16) != 0);
+         Bool have_vfp16 = ((hwcaps & VEX_HWCAPS_ARM64_VFP16) != 0);
+         if (have_fp16 != have_vfp16)
             invalid_hwcaps(arch, hwcaps,
-                           "Unsupported hardware capabilities.\n");
+                    "Mismatch detected between scalar and vector FP16 features.\n");
+         Bool have_rdm = ((hwcaps & VEX_HWCAPS_ARM64_RDM) != 0);
+         Bool have_atomics = ((hwcaps & VEX_HWCAPS_ARM64_ATOMICS) != 0);
+         if (have_rdm != have_atomics)
+            invalid_hwcaps(arch, hwcaps,
+                    "Mismatch detected between RDMA and atomics features.\n");
          return;
+      }
 
       case VexArchS390X:
          if (! s390_host_has_ldisp)

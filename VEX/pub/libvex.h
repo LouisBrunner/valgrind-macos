@@ -207,7 +207,18 @@ typedef
 #define VEX_ARM_ARCHLEVEL(x) ((x) & 0x3f)
 
 /* ARM64: baseline capability is AArch64 v8. */
-/* (no definitions since no variants so far) */
+#define VEX_HWCAPS_ARM64_FHM         (1 << 4)
+#define VEX_HWCAPS_ARM64_DPBCVAP     (1 << 5)
+#define VEX_HWCAPS_ARM64_DPBCVADP    (1 << 6)
+#define VEX_HWCAPS_ARM64_SM3         (1 << 7)
+#define VEX_HWCAPS_ARM64_SM4         (1 << 8)
+#define VEX_HWCAPS_ARM64_SHA3        (1 << 9)
+#define VEX_HWCAPS_ARM64_RDM         (1 << 10)
+#define VEX_HWCAPS_ARM64_ATOMICS     (1 << 11)
+#define VEX_HWCAPS_ARM64_I8MM        (1 << 12)
+#define VEX_HWCAPS_ARM64_BF16        (1 << 13)
+#define VEX_HWCAPS_ARM64_FP16        (1 << 14)
+#define VEX_HWCAPS_ARM64_VFP16       (1 << 15)
 
 /* MIPS baseline capability */
 /* Assigned Company values for bits 23:16 of the PRId Register

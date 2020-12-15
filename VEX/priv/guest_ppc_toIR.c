@@ -25671,49 +25671,29 @@ dis_vx_store ( UInt prefix, UInt theInstr )
 
    case 0x38D: // stxsibx
    {
-      IRExpr *stored_word;
-      IRTemp byte_to_store = newTemp( Ity_I64 );
+      IRTemp byte_to_store = newTemp( Ity_I8 );
 
       DIP("stxsibx %u,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
 
-      /* Can't store just a byte, need to fetch the word at EA merge data
-       * and store.
-       */
-      stored_word = load( Ity_I64, mkexpr( EA ) );
-      assign( byte_to_store, binop( Iop_And64,
+      assign( byte_to_store, unop( Iop_64to8,
                                     unop( Iop_V128HIto64,
-                                          mkexpr( vS ) ),
-                                    mkU64( 0xFF ) ) );
+                                          mkexpr( vS ) ) ) );
 
-      store( mkexpr( EA ), binop( Iop_Or64,
-                                  binop( Iop_And64,
-                                         stored_word,
-                                         mkU64( 0xFFFFFFFFFFFFFF00 ) ),
-                                  mkexpr( byte_to_store ) ) );
+      store( mkexpr( EA ), mkexpr( byte_to_store ) );
       break;
    }
 
    case 0x3AD: // stxsihx
    {
-      IRExpr *stored_word;
-      IRTemp byte_to_store = newTemp( Ity_I64 );
+      IRTemp hword_to_store = newTemp( Ity_I16 );
 
       DIP("stxsihx %u,r%u,r%u\n", (UInt)XS, rA_addr, rB_addr);
 
-      /* Can't store just a halfword, need to fetch the word at EA merge data
-       * and store.
-       */
-      stored_word = load( Ity_I64, mkexpr( EA ) );
-      assign( byte_to_store, binop( Iop_And64,
+      assign( hword_to_store, unop( Iop_64to16,
                                     unop( Iop_V128HIto64,
-                                          mkexpr( vS ) ),
-                                    mkU64( 0xFFFF ) ) );
+                                          mkexpr( vS ) ) ) );
 
-      store( mkexpr( EA ), binop( Iop_Or64,
-                                  binop( Iop_And64,
-                                         stored_word,
-                                         mkU64( 0xFFFFFFFFFFFF0000 ) ),
-                                  mkexpr( byte_to_store ) ) );
+      store( mkexpr( EA ), mkexpr( hword_to_store ) );
       break;
    }
 

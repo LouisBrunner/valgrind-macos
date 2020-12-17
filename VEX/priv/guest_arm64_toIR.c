@@ -2694,6 +2694,65 @@ Bool dis_ARM64_data_processing_immediate(/*MB_OUT*/DisResult* dres,
       Bool   is64 = sf == 1;
       IRType ty   = is64 ? Ity_I64 : Ity_I32;
 
+      // Handle plain shifts explicitly.  These are functionally identical to
+      // the general case below, but iropt isn't clever enough to reduce those
+      // sequences to plain shifts.  So give it a hand.
+      if (is64 && immS == 63 && immR >= 1 && immR <= 63) {
+         if (opc == BITS2(0,0)) {
+            // 64-bit signed shift right
+            putIReg64orZR(dd, binop(Iop_Sar64, getIReg64orZR(nn), mkU8(immR)));
+            DIP("asr %s, %s, #%u\n",
+                nameIRegOrZR(is64, dd), nameIRegOrZR(is64, nn), immR);
+            return True;
+         }
+         if (opc == BITS2(1,0)) {
+            // 64-bit unsigned shift right
+            putIReg64orZR(dd, binop(Iop_Shr64, getIReg64orZR(nn), mkU8(immR)));
+            DIP("lsr %s, %s, #%u\n",
+                nameIRegOrZR(is64, dd), nameIRegOrZR(is64, nn), immR);
+            return True;
+         }
+      }
+
+      if (!is64 && immS == 31 && immR >= 1 && immR <= 31) {
+         if (opc == BITS2(0,0)) {
+            // 32-bit signed shift right
+            putIReg32orZR(dd, binop(Iop_Sar32, getIReg32orZR(nn), mkU8(immR)));
+            DIP("asr %s, %s, #%u\n",
+                nameIRegOrZR(is64, dd), nameIRegOrZR(is64, nn), immR);
+            return True;
+         }
+         if (opc == BITS2(1,0)) {
+            // 32-bit unsigned shift right
+            putIReg32orZR(dd, binop(Iop_Shr32, getIReg32orZR(nn), mkU8(immR)));
+            DIP("lsr %s, %s, #%u\n",
+                nameIRegOrZR(is64, dd), nameIRegOrZR(is64, nn), immR);
+            return True;
+         }
+      }
+
+      if (is64 && immS >= 0 && immS <= 62
+          && immR == immS + 1 && opc == BITS2(1,0)) {
+         // 64-bit shift left
+         UInt shift = 64 - immR;
+         vassert(shift >= 1 && shift <= 63);
+         putIReg64orZR(dd, binop(Iop_Shl64, getIReg64orZR(nn), mkU8(shift)));
+         DIP("lsl %s, %s, #%u\n",
+             nameIRegOrZR(is64, dd), nameIRegOrZR(is64, nn), shift);
+         return True;
+      }
+      if (!is64 && immS >= 0 && immS <= 30
+          && immR == immS + 1 && opc == BITS2(1,0)) {
+         // 32-bit shift left
+         UInt shift = 32 - immR;
+         vassert(shift >= 1 && shift <= 31);
+         putIReg32orZR(dd, binop(Iop_Shl32, getIReg32orZR(nn), mkU8(shift)));
+         DIP("lsl %s, %s, #%u\n",
+             nameIRegOrZR(is64, dd), nameIRegOrZR(is64, nn), shift);
+         return True;
+      }
+
+      // No luck.  We have to use the (slow) general case.
       IRTemp dst = newTemp(ty);
       IRTemp src = newTemp(ty);
       IRTemp bot = newTemp(ty);

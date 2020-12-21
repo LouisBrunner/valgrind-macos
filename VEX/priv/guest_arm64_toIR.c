@@ -2752,7 +2752,46 @@ Bool dis_ARM64_data_processing_immediate(/*MB_OUT*/DisResult* dres,
          return True;
       }
 
-      // No luck.  We have to use the (slow) general case.
+      // Also special-case sxtw.
+      if (opc == BITS2(0,0) && immR == 0) {
+         if (is64) {
+            // The destination size is 64 bits.
+            if (immS == 31) {
+               putIReg64orZR(dd, unop(Iop_32Sto64, getIReg32orZR(nn)));
+               DIP("sxtw %s, %s\n", nameIReg64orZR(dd), nameIReg32orZR(nn));
+               return True;
+            }
+            if (immS == 15) {
+               putIReg64orZR(dd, unop(Iop_16Sto64,
+                                      unop(Iop_64to16, getIReg64orZR(nn))));
+               DIP("sxth %s, %s\n", nameIReg64orZR(dd), nameIReg32orZR(nn));
+               return True;
+            }
+            if (immS == 7) {
+               putIReg64orZR(dd, unop(Iop_8Sto64,
+                                      unop(Iop_64to8, getIReg64orZR(nn))));
+               DIP("sxtb %s, %s\n", nameIReg64orZR(dd), nameIReg32orZR(nn));
+               return True;
+            }
+         } else {
+            // The destination size is 32 bits.
+            if (immS == 15) {
+               putIReg32orZR(dd, unop(Iop_16Sto32,
+                                      unop(Iop_64to16, getIReg64orZR(nn))));
+               DIP("sxth %s, %s\n", nameIReg32orZR(dd), nameIReg32orZR(nn));
+               return True;
+            }
+            if (immS == 7) {
+               putIReg32orZR(dd, unop(Iop_8Sto32,
+                                      unop(Iop_64to8, getIReg64orZR(nn))));
+               DIP("sxtb %s, %s\n", nameIReg32orZR(dd), nameIReg32orZR(nn));
+               return True;
+            }
+         }
+      }
+
+      // None of the special cases apply.  We have to use the (slow) general
+      // case.
       IRTemp dst = newTemp(ty);
       IRTemp src = newTemp(ty);
       IRTemp bot = newTemp(ty);

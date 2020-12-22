@@ -422,6 +422,8 @@ static Bool expr_is_guardable ( const IRExpr* e )
          return !primopMightTrap(e->Iex.Binop.op);
       case Iex_Triop:
          return !primopMightTrap(e->Iex.Triop.details->op);
+      case Iex_Qop:
+         return !primopMightTrap(e->Iex.Qop.details->op);
       case Iex_ITE:
       case Iex_CCall:
       case Iex_Get:

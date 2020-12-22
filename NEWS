@@ -80,6 +80,7 @@ n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.
 429864  s390x: C++ atomic test_and_set yields false-positive memcheck
         diagnostics
 430354  ppc stxsibx and stxsihx instructions write too much data
+430485  expr_is_guardable doesn't handle Iex_Qop
 
 Release 3.16.1 (?? June 2020)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

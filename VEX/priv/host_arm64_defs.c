@@ -118,9 +118,13 @@ const RRegUniverse* getRRegUniverse_ARM64 ( void )
    // x8 is used as a ProfInc temporary
    // x9 is used as a spill/reload/chaining/call temporary
    // x30 as LR
-   // x31 because dealing with the SP-vs-ZR overloading is too
-   // confusing, and we don't need to do so, so let's just avoid
-   // the problem
+   //
+   // x31 is mentionable, but not allocatable, and is dangerous to use
+   // because of SP-vs-ZR overloading.  Here, we call it `XZR_XSP`.  Whether
+   // it denotes the zero register or the stack pointer depends both on what
+   // kind of instruction it appears in and even on the position within an
+   // instruction that it appears.  So be careful.  There's absolutely
+   // nothing to prevent shooting oneself in the foot.
    //
    // Currently, we have 15 allocatable integer registers:
    // 0 1 2 3 4 5 6 7 22 23 24 25 26 27 28
@@ -137,6 +141,7 @@ const RRegUniverse* getRRegUniverse_ARM64 ( void )
    ru->regs[ru->size++] = hregARM64_X8();
    ru->regs[ru->size++] = hregARM64_X9();
    ru->regs[ru->size++] = hregARM64_X21();
+   ru->regs[ru->size++] = hregARM64_XZR_XSP();
 
    rRegUniverse_ARM64_initted = True;
 
@@ -155,8 +160,8 @@ UInt ppHRegARM64 ( HReg reg )  {
    switch (hregClass(reg)) {
       case HRcInt64:
          r = hregEncoding(reg);
-         vassert(r >= 0 && r < 31);
-         return vex_printf("x%d", r);
+         vassert(r >= 0 && r <= 31);
+         return r ==31 ? vex_printf("xzr/xsp") : vex_printf("x%d", r);
       case HRcFlt64:
          r = hregEncoding(reg);
          vassert(r >= 0 && r < 32);
@@ -2746,6 +2751,19 @@ static inline UInt iregEnc ( HReg r )
    return n;
 }
 
+static inline UInt iregEncOr31 ( HReg r )
+{
+   // This is the same as iregEnc() except that we're allowed to use the
+   // "special" encoding number 31, which means, depending on the context,
+   // either XZR/WZR or SP.
+   UInt n;
+   vassert(hregClass(r) == HRcInt64);
+   vassert(!hregIsVirtual(r));
+   n = hregEncoding(r);
+   vassert(n <= 31);
+   return n;
+}
+
 static inline UInt dregEnc ( HReg r )
 {
    UInt n;
@@ -3360,13 +3378,14 @@ static UInt* do_load_or_store32 ( UInt* p,
 }
 
 
-/* Generate a 64 bit load or store to/from xD, using the given amode
+/* Generate a 64 bit integer load or store to/from xD, using the given amode
    for the address. */
 static UInt* do_load_or_store64 ( UInt* p,
                                   Bool isLoad, UInt xD, ARM64AMode* am )
 {
-   /* In all these cases, Rn can't be 31 since that means SP. */
-   vassert(xD <= 30);
+   /* In all these cases, Rn can't be 31 since that means SP.  But Rd can be
+      31, meaning XZR/WZR. */
+   vassert(xD <= 31);
    if (am->tag == ARM64am_RI9) {
       /* STUR Xd, [Xn|SP + simm9]:  11 111000 000 simm9 00 n d
          LDUR Xd, [Xn|SP + simm9]:  11 111000 010 simm9 00 n d
@@ -3646,7 +3665,7 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
       }
       case ARM64in_LdSt64: {
          p = do_load_or_store64( p, i->ARM64in.LdSt64.isLoad,
-                                 iregEnc(i->ARM64in.LdSt64.rD),
+                                 iregEncOr31(i->ARM64in.LdSt64.rD),
                                  i->ARM64in.LdSt64.amode );
          goto done;
       }

@@ -70,6 +70,13 @@ ST_IN HReg hregARM64_D13 ( void ) { return mkHReg(False, HRcFlt64,  13, 25); }
 ST_IN HReg hregARM64_X8  ( void ) { return mkHReg(False, HRcInt64,  8,  26); }
 ST_IN HReg hregARM64_X9  ( void ) { return mkHReg(False, HRcInt64,  9,  27); }
 ST_IN HReg hregARM64_X21 ( void ) { return mkHReg(False, HRcInt64, 21,  28); }
+
+// This is the integer register with encoding 31.  Be *very* careful how you
+// use it, since its meaning is dependent on the instruction and indeed even
+// the position within an instruction, that it appears.  It denotes either the
+// zero register or the stack pointer.
+ST_IN HReg hregARM64_XZR_XSP ( void ) { return mkHReg(False,
+                                                      HRcInt64, 31, 29); }
 #undef ST_IN
 
 extern UInt ppHRegARM64 ( HReg );

@@ -3745,7 +3745,13 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       IRType tyd  = typeOfIRExpr(env->type_env, stmt->Ist.Put.data);
       UInt   offs = (UInt)stmt->Ist.Put.offset;
       if (tyd == Ity_I64 && 0 == (offs & 7) && offs < (8<<12)) {
-         HReg        rD = iselIntExpr_R(env, stmt->Ist.Put.data);
+         HReg rD = INVALID_HREG;
+         if (isZeroU64(stmt->Ist.Put.data)) {
+            // In this context, XZR_XSP denotes the zero register.
+            rD = hregARM64_XZR_XSP();
+         } else {
+            rD = iselIntExpr_R(env, stmt->Ist.Put.data);
+         }
          ARM64AMode* am = mk_baseblock_64bit_access_amode(offs);
          addInstr(env, ARM64Instr_LdSt64(False/*!isLoad*/, rD, am));
          return;

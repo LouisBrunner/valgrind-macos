@@ -791,6 +791,94 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    partial values if necessary.
 */
 
+/* ---------------- RRS matching helper ---------------- */
+
+/* This helper matches 64-bit integer expressions of the form
+      {Add,Sub,And,Or,Xor}(E1, {Shl,Shr,Sar}(E2, immediate))
+   and
+      {Add,And,Or,Xor}({Shl,Shr,Sar}(E1, immediate), E2)
+   which is a useful thing to do because AArch64 can compute those in
+   a single instruction.
+ */
+static Bool matchesRegRegShift(/*OUT*/ARM64RRSOp* mainOp,
+                               /*OUT*/ARM64ShiftOp* shiftOp,
+                               /*OUT*/UChar* amt,
+                               /*OUT*/IRExpr** argUnshifted,
+                               /*OUT*/IRExpr** argToBeShifted,
+                               IRExpr* e)
+{
+   *mainOp         = (ARM64RRSOp)0;
+   *shiftOp        = (ARM64ShiftOp)0;
+   *amt            = 0;
+   *argUnshifted   = NULL;
+   *argToBeShifted = NULL;
+   if (e->tag != Iex_Binop) {
+      return False;
+   }
+   const IROp irMainOp = e->Iex.Binop.op;
+   Bool canSwap = True;
+   switch (irMainOp) {
+      case Iop_And64: *mainOp = ARM64rrs_AND; break;
+      case Iop_Or64:  *mainOp = ARM64rrs_OR;  break;
+      case Iop_Xor64: *mainOp = ARM64rrs_XOR; break;
+      case Iop_Add64: *mainOp = ARM64rrs_ADD; break;
+      case Iop_Sub64: *mainOp = ARM64rrs_SUB; canSwap = False; break;
+      default: return False;
+   }
+   /* The root node is OK.  Now check the right (2nd) arg. */
+   IRExpr* argL = e->Iex.Binop.arg1;
+   IRExpr* argR = e->Iex.Binop.arg2;
+
+   // This loop runs either one or two iterations.  In the first iteration, we
+   // check for a shiftable right (second) arg.  If that fails, at the end of
+   // the first iteration, the args are swapped, if that is valid, and we go
+   // round again, hence checking for a shiftable left (first) arg.
+   UInt iterNo = 1;
+   while (True) {
+      vassert(iterNo == 1 || iterNo == 2);
+      if (argR->tag == Iex_Binop) {
+         const IROp irShiftOp = argR->Iex.Binop.op;
+         if (irShiftOp == Iop_Shl64
+             || irShiftOp == Iop_Shr64 || irShiftOp == Iop_Sar64) {
+            IRExpr* argRL = argR->Iex.Binop.arg1;
+            const IRExpr* argRR = argR->Iex.Binop.arg2;
+            if (argRR->tag == Iex_Const) {
+               const IRConst* argRRconst = argRR->Iex.Const.con;
+               vassert(argRRconst->tag == Ico_U8); // due to typecheck rules
+               const UChar amount = argRRconst->Ico.U8;
+               if (amount >= 1 && amount <= 63) {
+                  // We got a match \o/
+                  // *mainOp is already set
+                  switch (irShiftOp) {
+                     case Iop_Shl64: *shiftOp = ARM64sh_SHL; break;
+                     case Iop_Shr64: *shiftOp = ARM64sh_SHR; break;
+                     case Iop_Sar64: *shiftOp = ARM64sh_SAR; break;
+                     default: vassert(0); // guarded above
+                  }
+                  *amt = amount;
+                  *argUnshifted = argL;
+                  *argToBeShifted = argRL;
+                  return True;
+               }
+            }
+         }
+      }
+      // We failed to get a match in the first iteration.  So, provided the
+      // root node isn't SUB, swap the arguments and make one further
+      // iteration.  If that doesn't succeed, we must give up.
+      if (iterNo == 1 && canSwap) {
+         IRExpr* tmp = argL;
+         argL = argR;
+         argR = tmp;
+         iterNo = 2;
+         continue;
+      }
+      // Give up.
+      return False;
+   }
+   /*NOTREACHED*/
+ }
+
 /* --------------------- AMode --------------------- */
 
 /* Return an AMode which computes the value of the specified
@@ -1577,7 +1665,34 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             break;
       }
 
-      /* ADD/SUB */
+      /* AND64/OR64/XOR64/ADD64/SUB64(e1, e2 shifted by imm)
+         AND64/OR64/XOR64/ADD64(e1 shifted by imm, e2)
+      */
+      {
+         switch (e->Iex.Binop.op) {
+            case Iop_And64: case Iop_Or64: case Iop_Xor64:
+            case Iop_Add64: case Iop_Sub64:{
+               ARM64RRSOp mainOp = ARM64rrs_INVALID;
+               ARM64ShiftOp shiftOp = (ARM64ShiftOp)0; // Invalid
+               IRExpr* argUnshifted = NULL;
+               IRExpr* argToBeShifted = NULL;
+               UChar amt = 0;
+               if (matchesRegRegShift(&mainOp, &shiftOp, &amt, &argUnshifted,
+                                      &argToBeShifted, e)) {
+                  HReg rDst = newVRegI(env);
+                  HReg rUnshifted = iselIntExpr_R(env, argUnshifted);
+                  HReg rToBeShifted = iselIntExpr_R(env, argToBeShifted);
+                  addInstr(env, ARM64Instr_RRS(rDst, rUnshifted, rToBeShifted,
+                                               shiftOp, amt, mainOp));
+                  return rDst;
+               }
+            }
+            default:
+               break;
+         }
+      }
+
+      /* ADD/SUB(e1, e2) (for any e1, e2) */
       switch (e->Iex.Binop.op) {
          case Iop_Add64: case Iop_Add32:
          case Iop_Sub64: case Iop_Sub32: {
@@ -1593,7 +1708,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             break;
       }
 
-      /* AND/OR/XOR */
+      /* AND/OR/XOR(e1, e2) (for any e1, e2) */
       switch (e->Iex.Binop.op) {
          case Iop_And64: case Iop_And32: lop = ARM64lo_AND; goto log_binop;
          case Iop_Or64:  case Iop_Or32:  lop = ARM64lo_OR;  goto log_binop;

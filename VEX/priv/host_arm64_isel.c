@@ -187,8 +187,11 @@ static ARM64RIL*   iselIntExpr_RIL       ( ISelEnv* env, IRExpr* e );
 static ARM64RI6*   iselIntExpr_RI6_wrk   ( ISelEnv* env, IRExpr* e );
 static ARM64RI6*   iselIntExpr_RI6       ( ISelEnv* env, IRExpr* e );
 
-static ARM64CondCode iselCondCode_wrk    ( ISelEnv* env, IRExpr* e );
-static ARM64CondCode iselCondCode        ( ISelEnv* env, IRExpr* e );
+static ARM64CondCode iselCondCode_C_wrk  ( ISelEnv* env, IRExpr* e );
+static ARM64CondCode iselCondCode_C      ( ISelEnv* env, IRExpr* e );
+
+static HReg        iselCondCode_R_wrk    ( ISelEnv* env, IRExpr* e );
+static HReg        iselCondCode_R        ( ISelEnv* env, IRExpr* e );
 
 static HReg        iselIntExpr_R_wrk     ( ISelEnv* env, IRExpr* e );
 static HReg        iselIntExpr_R         ( ISelEnv* env, IRExpr* e );
@@ -710,7 +713,7 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
              && guard->Iex.Const.con->Ico.U1 == True) {
             /* unconditional -- do nothing */
          } else {
-            cc = iselCondCode( env, guard );
+            cc = iselCondCode_C( env, guard );
          }
       }
 
@@ -1374,16 +1377,20 @@ static ARM64RI6* iselIntExpr_RI6_wrk ( ISelEnv* env, IRExpr* e )
 
 /* Generate code to evaluated a bit-typed expression, returning the
    condition code which would correspond when the expression would
-   notionally have returned 1. */
+   notionally have returned 1.
 
-static ARM64CondCode iselCondCode ( ISelEnv* env, IRExpr* e )
+   Note that iselCondCode_C and iselCondCode_R are mutually recursive.  For
+   future changes to either of them, take care not to introduce an infinite
+   loop involving the two of them.
+*/
+static ARM64CondCode iselCondCode_C ( ISelEnv* env, IRExpr* e )
 {
-   ARM64CondCode cc = iselCondCode_wrk(env,e);
+   ARM64CondCode cc = iselCondCode_C_wrk(env,e);
    vassert(cc != ARM64cc_NV);
    return cc;
 }
 
-static ARM64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
+static ARM64CondCode iselCondCode_C_wrk ( ISelEnv* env, IRExpr* e )
 {
    vassert(e);
    vassert(typeOfIRExpr(env->type_env,e) == Ity_I1);
@@ -1416,7 +1423,7 @@ static ARM64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    /* Not1(e) */
    if (e->tag == Iex_Unop && e->Iex.Unop.op == Iop_Not1) {
       /* Generate code for the arg, and negate the test condition */
-      ARM64CondCode cc = iselCondCode(env, e->Iex.Unop.arg);
+      ARM64CondCode cc = iselCondCode_C(env, e->Iex.Unop.arg);
       if (cc == ARM64cc_AL || cc == ARM64cc_NV) {
         return ARM64cc_AL;
       } else {
@@ -1495,7 +1502,7 @@ static ARM64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_CmpLT64U: return ARM64cc_CC;
          case Iop_CmpLE64S: return ARM64cc_LE;
          case Iop_CmpLE64U: return ARM64cc_LS;
-         default: vpanic("iselCondCode(arm64): CmpXX64");
+         default: vpanic("iselCondCode_C(arm64): CmpXX64");
       }
    }
 
@@ -1519,7 +1526,7 @@ static ARM64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_CmpLT32U: return ARM64cc_CC;
          case Iop_CmpLE32S: return ARM64cc_LE;
          case Iop_CmpLE32U: return ARM64cc_LS;
-         default: vpanic("iselCondCode(arm64): CmpXX32");
+         default: vpanic("iselCondCode_C(arm64): CmpXX32");
       }
    }
 
@@ -1535,7 +1542,7 @@ static ARM64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       switch (e->Iex.Binop.op) {
          case Iop_CasCmpEQ16: return ARM64cc_EQ;
          case Iop_CasCmpNE16: return ARM64cc_NE;
-         default: vpanic("iselCondCode(arm64): CmpXX16");
+         default: vpanic("iselCondCode_C(arm64): CmpXX16");
       }
    }
 
@@ -1551,37 +1558,74 @@ static ARM64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       switch (e->Iex.Binop.op) {
          case Iop_CasCmpEQ8: return ARM64cc_EQ;
          case Iop_CasCmpNE8: return ARM64cc_NE;
-         default: vpanic("iselCondCode(arm64): CmpXX8");
+         default: vpanic("iselCondCode_C(arm64): CmpXX8");
       }
    }
 
    /* --- And1(x,y), Or1(x,y) --- */
-   /* FIXME: We could (and probably should) do a lot better here, by using the
-      iselCondCode_C/_R scheme used in the amd64 insn selector. */
-    if (e->tag == Iex_Binop
+   if (e->tag == Iex_Binop
         && (e->Iex.Binop.op == Iop_And1 || e->Iex.Binop.op == Iop_Or1)) {
-       HReg x_as_64 = newVRegI(env);
-       ARM64CondCode cc_x = iselCondCode(env, e->Iex.Binop.arg1);
-       addInstr(env, ARM64Instr_Set64(x_as_64, cc_x));
-
-       HReg y_as_64 = newVRegI(env);
-       ARM64CondCode cc_y = iselCondCode(env, e->Iex.Binop.arg2);
-       addInstr(env, ARM64Instr_Set64(y_as_64, cc_y));
-
-       HReg tmp = newVRegI(env);
-       ARM64LogicOp lop
-          = e->Iex.Binop.op == Iop_And1 ? ARM64lo_AND : ARM64lo_OR;
-       addInstr(env, ARM64Instr_Logic(tmp, x_as_64, ARM64RIL_R(y_as_64), lop));
-
-       ARM64RIL* one = mb_mkARM64RIL_I(1);
-       vassert(one);
-       addInstr(env, ARM64Instr_Test(tmp, one));
-
-       return ARM64cc_NE;
-    }
+      HReg tmp = iselCondCode_R(env, e);
+      ARM64RIL* one = mb_mkARM64RIL_I(1);
+      vassert(one);
+      addInstr(env, ARM64Instr_Test(tmp, one));
+      return ARM64cc_NE;
+   }
 
    ppIRExpr(e);
-   vpanic("iselCondCode");
+   vpanic("iselCondCode_C");
+}
+
+
+/* --------------------- CONDCODE as int reg --------------------- */
+
+/* Generate code to evaluated a bit-typed expression, returning the resulting
+   value in bit 0 of an integer register.  WARNING: all of the other bits in the
+   register can be arbitrary.  Callers must mask them off or otherwise ignore
+   them, as necessary.
+
+   Note that iselCondCode_C and iselCondCode_R are mutually recursive.  For
+   future changes to either of them, take care not to introduce an infinite
+   loop involving the two of them.
+*/
+static HReg iselCondCode_R ( ISelEnv* env, IRExpr* e )
+{
+   /* Uh, there's nothing we can sanity check here, unfortunately. */
+   return iselCondCode_R_wrk(env,e);
+}
+
+/* DO NOT CALL THIS DIRECTLY ! */
+static HReg iselCondCode_R_wrk ( ISelEnv* env, IRExpr* e )
+{
+   vassert(e);
+   vassert(typeOfIRExpr(env->type_env,e) == Ity_I1);
+
+   /* var */
+   if (e->tag == Iex_RdTmp) {
+      return lookupIRTemp(env, e->Iex.RdTmp.tmp);
+   }
+
+   /* And1(x,y), Or1(x,y) */
+   if (e->tag == Iex_Binop
+       && (e->Iex.Binop.op == Iop_And1 || e->Iex.Binop.op == Iop_Or1)) {
+      HReg res = newVRegI(env);
+      HReg x_as_64 = iselCondCode_R(env, e->Iex.Binop.arg1);
+      HReg y_as_64 = iselCondCode_R(env, e->Iex.Binop.arg2);
+      ARM64LogicOp lop
+         = e->Iex.Binop.op == Iop_And1 ? ARM64lo_AND : ARM64lo_OR;
+      addInstr(env, ARM64Instr_Logic(res, x_as_64, ARM64RIL_R(y_as_64), lop));
+      return res;
+   }
+
+   /* Anything else, we hand off to iselCondCode_C and force the value into a
+      register. */
+   HReg res = newVRegI(env);
+   ARM64CondCode cc = iselCondCode_C(env, e);
+   addInstr(env, ARM64Instr_Set64(res, cc));
+   return res;
+
+   ppIRExpr(e);
+   vpanic("iselCondCode_R(amd64)");
 }
 
 
@@ -2047,7 +2091,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             HReg dst  = newVRegI(env);
             addInstr(env, ARM64Instr_Imm64(zero, 0));
             addInstr(env, ARM64Instr_Imm64(one,  1));
-            ARM64CondCode cc = iselCondCode(env, e->Iex.Unop.arg);
+            ARM64CondCode cc = iselCondCode_C(env, e->Iex.Unop.arg);
             addInstr(env, ARM64Instr_CSel(dst, one, zero, cc));
             addInstr(env, ARM64Instr_Shift(dst, dst, ARM64RI6_I6(63),
                                            ARM64sh_SHL));
@@ -2119,7 +2163,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                HReg one  = newVRegI(env);
                addInstr(env, ARM64Instr_Imm64(zero, 0));
                addInstr(env, ARM64Instr_Imm64(one,  1));
-               ARM64CondCode cc = iselCondCode(env, e->Iex.Unop.arg);
+               ARM64CondCode cc = iselCondCode_C(env, e->Iex.Unop.arg);
                addInstr(env, ARM64Instr_CSel(dst, one, zero, cc));
             }
             return dst;
@@ -2226,7 +2270,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          HReg r1  = iselIntExpr_R(env, e->Iex.ITE.iftrue);
          HReg r0  = iselIntExpr_R(env, e->Iex.ITE.iffalse);
          HReg dst = newVRegI(env);
-         cc = iselCondCode(env, e->Iex.ITE.cond);
+         cc = iselCondCode_C(env, e->Iex.ITE.cond);
          addInstr(env, ARM64Instr_CSel(dst, r1, r0, cc));
          return dst;
       }
@@ -3155,7 +3199,7 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
       // here.
       HReg rX = newVRegI(env);
 
-      ARM64CondCode cc = iselCondCode(env, e->Iex.ITE.cond);
+      ARM64CondCode cc = iselCondCode_C(env, e->Iex.ITE.cond);
       addInstr(env, ARM64Instr_Set64(rX, cc));
       // cond: rX = 1   !cond: rX = 0
 
@@ -3395,7 +3439,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       HReg r1  = iselDblExpr(env, e->Iex.ITE.iftrue);
       HReg r0  = iselDblExpr(env, e->Iex.ITE.iffalse);
       HReg dst = newVRegD(env);
-      cc = iselCondCode(env, e->Iex.ITE.cond);
+      cc = iselCondCode_C(env, e->Iex.ITE.cond);
       addInstr(env, ARM64Instr_VFCSel(dst, r1, r0, cc, True/*64-bit*/));
       return dst;
    }
@@ -3579,7 +3623,7 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       HReg r1  = iselFltExpr(env, e->Iex.ITE.iftrue);
       HReg r0  = iselFltExpr(env, e->Iex.ITE.iffalse);
       HReg dst = newVRegD(env);
-      cc = iselCondCode(env, e->Iex.ITE.cond);
+      cc = iselCondCode_C(env, e->Iex.ITE.cond);
       addInstr(env, ARM64Instr_VFCSel(dst, r1, r0, cc, False/*!64-bit*/));
       return dst;
    }
@@ -3946,7 +3990,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          HReg dst  = lookupIRTemp(env, tmp);
          addInstr(env, ARM64Instr_Imm64(zero, 0));
          addInstr(env, ARM64Instr_Imm64(one,  1));
-         ARM64CondCode cc = iselCondCode(env, stmt->Ist.WrTmp.data);
+         ARM64CondCode cc = iselCondCode_C(env, stmt->Ist.WrTmp.data);
          addInstr(env, ARM64Instr_CSel(dst, one, zero, cc));
          return;
       }
@@ -4247,7 +4291,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          vpanic("isel_arm: Ist_Exit: dst is not a 64-bit value");
 
       ARM64CondCode cc 
-         = iselCondCode(env, stmt->Ist.Exit.guard);
+         = iselCondCode_C(env, stmt->Ist.Exit.guard);
       ARM64AMode* amPC
          = mk_baseblock_64bit_access_amode(stmt->Ist.Exit.offsIP);
 

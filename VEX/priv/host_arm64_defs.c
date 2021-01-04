@@ -3955,9 +3955,9 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
          /* 100 1101 0100 mm cond 00 nn dd = CSEL Xd, Xn, Xm, cond */
          UInt dd   = iregEnc(i->ARM64in.CSel.dst);
          UInt nn   = iregEnc(i->ARM64in.CSel.argL);
-         UInt mm   = iregEnc(i->ARM64in.CSel.argR);
+         UInt mm   = iregEncOr31(i->ARM64in.CSel.argR); // Can be XZR
          UInt cond = (UInt)i->ARM64in.CSel.cond;
-         vassert(dd < 31 && nn < 31 && mm < 31 && cond < 16);
+         vassert(dd < 31 && nn < 31 && mm <= 31 && cond < 16);
          *p++ = X_3_8_5_6_5_5(X100, X11010100, mm, cond << 2, nn, dd);
          goto done;
       }

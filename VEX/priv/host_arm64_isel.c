@@ -2085,11 +2085,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_1Sto32:
          case Iop_1Sto64: {
             /* As with the iselStmt case for 'tmp:I1 = expr', we could
-               do a lot better here if it ever became necessary. */
-            HReg zero = newVRegI(env);
+               do a lot better here if it ever became necessary.  (CSDEC?) */
+            HReg zero = hregARM64_XZR_XSP(); // XZR in this context
             HReg one  = newVRegI(env);
             HReg dst  = newVRegI(env);
-            addInstr(env, ARM64Instr_Imm64(zero, 0));
             addInstr(env, ARM64Instr_Imm64(one,  1));
             ARM64CondCode cc = iselCondCode_C(env, e->Iex.Unop.arg);
             addInstr(env, ARM64Instr_CSel(dst, one, zero, cc));
@@ -2159,9 +2158,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                addInstr(env, ARM64Instr_Logic(dst, src, one, ARM64lo_AND));
             } else {
                /* CLONE-01 */
-               HReg zero = newVRegI(env);
+               HReg zero = hregARM64_XZR_XSP(); // XZR in this context
                HReg one  = newVRegI(env);
-               addInstr(env, ARM64Instr_Imm64(zero, 0));
                addInstr(env, ARM64Instr_Imm64(one,  1));
                ARM64CondCode cc = iselCondCode_C(env, e->Iex.Unop.arg);
                addInstr(env, ARM64Instr_CSel(dst, one, zero, cc));
@@ -3985,10 +3983,9 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
             in that case.  Also, could do this just with a single CINC
             insn. */
          /* CLONE-01 */
-         HReg zero = newVRegI(env);
+         HReg zero = hregARM64_XZR_XSP(); // XZR in this context
          HReg one  = newVRegI(env);
          HReg dst  = lookupIRTemp(env, tmp);
-         addInstr(env, ARM64Instr_Imm64(zero, 0));
          addInstr(env, ARM64Instr_Imm64(one,  1));
          ARM64CondCode cc = iselCondCode_C(env, stmt->Ist.WrTmp.data);
          addInstr(env, ARM64Instr_CSel(dst, one, zero, cc));

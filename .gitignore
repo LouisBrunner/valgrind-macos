@@ -2078,6 +2078,7 @@
 /tests/true
 /tests/vg_regtest
 /tests/x86_amd64_features
+/tests/arm64_features
 
 # /VEX/
 /VEX/libvex*.a

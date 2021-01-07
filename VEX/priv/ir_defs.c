@@ -640,6 +640,7 @@ void ppIROp ( IROp op )
       case Iop_CmpNEZ16x4: vex_printf("CmpNEZ16x4"); return;
       case Iop_CmpNEZ8x8:  vex_printf("CmpNEZ8x8"); return;
 
+      case Iop_Add16Fx8:  vex_printf("Add16Fx8"); return;
       case Iop_Add32Fx4:  vex_printf("Add32Fx4"); return;
       case Iop_Add32Fx2:  vex_printf("Add32Fx2"); return;
       case Iop_Add32F0x4: vex_printf("Add32F0x4"); return;
@@ -1546,6 +1547,7 @@ Bool primopMightTrap ( IROp op )
    case Iop_DPBtoBCD: case Iop_BCDtoDPB: case Iop_BCDAdd: case Iop_BCDSub:
    case Iop_I128StoBCD128: case Iop_BCD128toI128S: case Iop_ReinterpI64asD64:
    case Iop_ReinterpD64asI64:
+   case Iop_Add16Fx8:
    case Iop_Add32Fx4: case Iop_Sub32Fx4: case Iop_Mul32Fx4: case Iop_Div32Fx4:
    case Iop_Max32Fx4: case Iop_Min32Fx4:
    case Iop_Add32Fx2: case Iop_Sub32Fx2:
@@ -3760,6 +3762,7 @@ void typeOfPrimop ( IROp op,
       case Iop_Mul64Fx2: case Iop_Div64Fx2: 
       case Iop_Add32Fx4: case Iop_Sub32Fx4:
       case Iop_Mul32Fx4: case Iop_Div32Fx4: 
+      case Iop_Add16Fx8:
       case Iop_F64x2_2toQ32x4: case Iop_F32x4_2toQ16x8:
          TERNARY(ity_RMode,Ity_V128,Ity_V128, Ity_V128);
 

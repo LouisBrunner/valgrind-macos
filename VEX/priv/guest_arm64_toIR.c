@@ -993,7 +993,7 @@ static IROp mkVecQSHLNSATSU ( UInt size ) {
 
 static IROp mkVecADDF ( UInt size ) {
    const IROp ops[4]
-      = { Iop_INVALID, Iop_INVALID, Iop_Add32Fx4, Iop_Add64Fx2 };
+      = { Iop_INVALID, Iop_Add16Fx8, Iop_Add32Fx4, Iop_Add64Fx2 };
    vassert(size < 4);
    return ops[size];
 }
@@ -9806,7 +9806,8 @@ Bool dis_AdvSIMD_scalar_copy(/*MB_OUT*/DisResult* dres, UInt insn)
 
 
 static
-Bool dis_AdvSIMD_scalar_pairwise(/*MB_OUT*/DisResult* dres, UInt insn)
+Bool dis_AdvSIMD_scalar_pairwise(/*MB_OUT*/DisResult* dres, UInt insn,
+                                 const VexArchInfo* archinfo)
 {
    /* 31   28    23 21    16     11 9 4
       01 u 11110 sz 11000 opcode 10 n d
@@ -9854,6 +9855,27 @@ Bool dis_AdvSIMD_scalar_pairwise(/*MB_OUT*/DisResult* dres, UInt insn)
                           triop(opADD, mkexpr(mk_get_IR_rounding_mode()),
                                               mkexpr(argL), mkexpr(argR))));
       DIP(isD ? "faddp d%u, v%u.2d\n" : "faddp s%u, v%u.2s\n", dd, nn);
+      return True;
+   }
+
+   /* Half-precision floating point ADDP (v8.2). */
+   if (bitU == 0 && sz <= X00 && opcode == BITS5(0,1,1,0,1)) {
+      /* -------- 0,00,01101 ADDP h_2h -------- */
+      if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_FP16) == 0)
+         return False;
+      IROp   opZHI = mkVecZEROHIxxOFV128(1);
+      IROp   opADD = mkVecADDF(1);
+      IRTemp src   = newTempV128();
+      IRTemp argL  = newTempV128();
+      IRTemp argR  = newTempV128();
+      assign(src, getQReg128(nn));
+      assign(argL, unop(opZHI, mkexpr(src)));
+      assign(argR, unop(opZHI, triop(Iop_SliceV128, mkexpr(src), mkexpr(src),
+                                                    mkU8(2))));
+      putQReg128(dd, unop(opZHI,
+                          triop(opADD, mkexpr(mk_get_IR_rounding_mode()),
+                                              mkexpr(argL), mkexpr(argR))));
+      DIP("faddp h%u, v%u.2h\n", dd, nn);
       return True;
    }
 
@@ -14946,7 +14968,8 @@ Bool dis_AdvSIMD_fp_to_from_int_conv(/*MB_OUT*/DisResult* dres, UInt insn)
 
 
 static
-Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
+Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn,
+                           const VexArchInfo* archinfo)
 {
    Bool ok;
    ok = dis_AdvSIMD_EXT(dres, insn);
@@ -14963,7 +14986,7 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn)
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_scalar_copy(dres, insn);
    if (UNLIKELY(ok)) return True;
-   ok = dis_AdvSIMD_scalar_pairwise(dres, insn);
+   ok = dis_AdvSIMD_scalar_pairwise(dres, insn, archinfo);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_scalar_shift_by_imm(dres, insn);
    if (UNLIKELY(ok)) return True;
@@ -15175,7 +15198,7 @@ Bool disInstr_ARM64_WRK (
          break;
       case BITS4(0,1,1,1): case BITS4(1,1,1,1): 
          // Data processing - SIMD and floating point
-         ok = dis_ARM64_simd_and_fp(dres, insn);
+         ok = dis_ARM64_simd_and_fp(dres, insn, archinfo);
          break;
       case BITS4(0,0,0,0): case BITS4(0,0,0,1):
       case BITS4(0,0,1,0): case BITS4(0,0,1,1):

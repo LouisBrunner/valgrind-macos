@@ -2692,6 +2692,23 @@ IRAtom* unary64F0x2 ( MCEnv* mce, IRAtom* vatomX )
    return at;
 }
 
+/* --- --- ... and ... 16Fx8 versions of the same --- --- */
+
+static
+IRAtom* binary16Fx8 ( MCEnv* mce, IRAtom* vatomX, IRAtom* vatomY )
+{
+   IRAtom* at;
+   tl_assert(isShadowAtom(mce, vatomX));
+   tl_assert(isShadowAtom(mce, vatomY));
+   at = mkUifUV128(mce, vatomX, vatomY);
+   at = assignNew('V', mce, Ity_V128, mkPCast16x8(mce, at));
+   return at;
+}
+
+/* TODO: remaining versions of 16x4 FP ops when more of the half-precision IR is
+   implemented.
+*/
+
 /* --- --- ... and ... 32Fx2 versions of the same --- --- */
 
 static
@@ -2805,6 +2822,24 @@ IRAtom* binary64Fx4_w_rm ( MCEnv* mce, IRAtom* vRM,
    t1 = mkUifUV256(mce, t1, t2);
    return t1;
 }
+
+/* --- ... and ... 16Fx8 versions of the same --- */
+
+static
+IRAtom* binary16Fx8_w_rm ( MCEnv* mce, IRAtom* vRM,
+                                       IRAtom* vatomX, IRAtom* vatomY )
+{
+   IRAtom* t1 = binary16Fx8(mce, vatomX, vatomY);
+   // PCast the RM, and widen it to 128 bits
+   IRAtom* t2 = mkPCastTo(mce, Ity_V128, vRM);
+   // Roll it into the result
+   t1 = mkUifUV128(mce, t1, t2);
+   return t1;
+}
+
+/* TODO: remaining versions of 16x4 FP ops when more of the half-precision IR is
+   implemented.
+*/
 
 /* --- ... and ... 32Fx8 versions of the same --- */
 
@@ -3392,6 +3427,12 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
       case Iop_Mul64Fx4:
       case Iop_Div64Fx4:
          return binary64Fx4_w_rm(mce, vatom1, vatom2, vatom3);
+
+      /* TODO: remaining versions of 16x4 FP ops when more of the half-precision
+         IR is implemented.
+      */
+      case Iop_Add16Fx8:
+        return binary16Fx8_w_rm(mce, vatom1, vatom2, vatom3);
 
       case Iop_Add32Fx8:
       case Iop_Sub32Fx8:

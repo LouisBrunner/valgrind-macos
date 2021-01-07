@@ -1,0 +1,3 @@
+prog: fp_and_simd_v82
+prereq: test -x fp_and_simd_v82 && ../../../tests/arm64_features fphp
+vgopts: -q

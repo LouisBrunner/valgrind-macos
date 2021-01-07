@@ -1344,6 +1344,11 @@ typedef
 
       /* ------------------ 128-bit SIMD FP. ------------------ */
 
+      /* --- 16x8 vector FP --- */
+
+      /* ternary :: IRRoundingMode(I16) x V128 x V128 -> V128 */
+      Iop_Add16Fx8,
+
       /* --- 32x4 vector FP --- */
 
       /* ternary :: IRRoundingMode(I32) x V128 x V128 -> V128 */

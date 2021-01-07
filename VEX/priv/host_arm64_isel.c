@@ -1625,7 +1625,7 @@ static HReg iselCondCode_R_wrk ( ISelEnv* env, IRExpr* e )
    return res;
 
    ppIRExpr(e);
-   vpanic("iselCondCode_R(amd64)");
+   vpanic("iselCondCode_R(arm64)");
 }
 
 

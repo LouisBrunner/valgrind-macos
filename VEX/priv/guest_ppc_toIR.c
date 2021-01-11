@@ -3353,7 +3353,7 @@ static UInt ifieldUIMM18 ( UInt instr ) {
    return instr & 0x3FFFF;
 }
 
-static ULong extend_s_34to64 ( UInt x )
+static ULong extend_s_34to64 ( ULong x )
 {
    return (ULong)((((Long)x) << 30) >> 30);
 }
@@ -3381,13 +3381,13 @@ static UChar ifieldR( UInt instr ) {
 }
 
 /* Sign extend imm34 -> IRExpr* */
-static IRExpr* mkSzExtendS34 ( UInt imm64 )
+static IRExpr* mkSzExtendS34 ( ULong imm64 )
 {
    return ( mkU64(extend_s_34to64(imm64)));
 }
 
 /* Prefix instruction effective address calc: (rA + simm) */
-static IRExpr* ea_rA_simm34 ( UInt rA, UInt simm34 )
+static IRExpr* ea_rA_simm34 ( UInt rA, ULong simm34 )
 {
    vassert(rA < 32);
    vassert(mode64);
@@ -3395,7 +3395,7 @@ static IRExpr* ea_rA_simm34 ( UInt rA, UInt simm34 )
 }
 
 /* Standard prefix instruction effective address calc: (rA|0) + simm16 */
-static IRExpr* ea_rAor0_simm34 ( UInt rA, UInt simm34 )
+static IRExpr* ea_rAor0_simm34 ( UInt rA, ULong simm34 )
 {
    vassert(rA < 32);
    vassert(mode64);
@@ -3421,13 +3421,13 @@ static int prefix_instruction ( UInt instr )
 static IRExpr* calculate_prefix_EA ( UInt prefix, UInt suffixInstr,
                                      UChar rA_addr, UInt ptype,
                                      UInt immediate_mask,
-                                     UInt *immediate_val,
+                                     ULong *immediate_val,
                                      UInt *R )
 {
    IRType  ty     = Ity_I64;
-   UInt    d0     = ifieldUIMM18(prefix);  // Will be zero for word inst
-   UInt    d1     = ifieldUIMM16(suffixInstr) & immediate_mask;
-   UInt    D      = CONCAT( d0, d1, 16 );
+   ULong   d0     = ifieldUIMM18(prefix);  // Will be zero for word inst
+   ULong   d1     = ifieldUIMM16(suffixInstr) & immediate_mask;
+   ULong   D      = CONCAT( d0, d1, 16 );  // result is 34 bits wide
    Bool    is_prefix = prefix_instruction( prefix );
    IRTemp  tmp    = newTemp(ty);
 
@@ -3440,7 +3440,7 @@ static IRExpr* calculate_prefix_EA ( UInt prefix, UInt suffixInstr,
       vassert( ty == Ity_I64 );    // prefix instructions must be 64-bit
       vassert( (ptype == pType0) || (ptype == pType2) );
       *R = ifieldR( prefix );
-      *immediate_val = extend_s_32to64( D );
+      *immediate_val = extend_s_34to64( D );  // D is 34 bits wide
       assign( tmp, ea_rAor0_simm34( rA_addr, D ) );
    }
 
@@ -6541,8 +6541,8 @@ static Bool dis_int_arith_prefix ( UInt prefix, UInt theInstr )
    IRTemp rT     = newTemp(ty);
    IRTemp tmp    = newTemp(ty);
    IRTemp value  = newTemp(ty);
-   UInt   si0    = ifieldUIMM18(prefix);
-   UInt   si1    = ifieldUIMM16(theInstr);   // AKA, SI
+   ULong  si0    = ifieldUIMM18(prefix);
+   ULong  si1    = ifieldUIMM16(theInstr);   // AKA, SI
    UInt   ptype  = PrefixType(prefix);
    Long   simm16 = extend_s_16to64(si1);
    Bool   is_prefix = prefix_instruction( prefix );
@@ -8784,14 +8784,14 @@ static Bool dis_int_load_ds_form_prefix ( UInt prefix,
    IRTemp  EA     = newTemp(ty);
    UInt    ptype  = PrefixType(prefix);
    Bool    is_prefix = prefix_instruction( prefix );
-   UInt    immediate_val = 0;
+   ULong   immediate_val = 0;
    UInt    R = 0;
 
    /* Some of these instructions have different encodings for their word
       versions and their prefix versions.  */
 
    if (opc1 == 0x29) {  //plwa
-      pDIP( is_prefix, "lwa r%u,%u(r%u)", rT_addr, immediate_val, rA_addr);
+      pDIP( is_prefix, "lwa r%u,%llu(r%u)", rT_addr, immediate_val, rA_addr);
       DIPp( is_prefix, ",%u", R );
       assign( EA, calculate_prefix_EA( prefix, theInstr, rA_addr,
                                        ptype, DSFORM_IMMASK,
@@ -8802,7 +8802,7 @@ static Bool dis_int_load_ds_form_prefix ( UInt prefix,
       return True;
 
    } else if (opc1 == 0x39) {  // pld
-      pDIP( is_prefix, "ld r%u,%u(r%u)", rT_addr, immediate_val, rA_addr);
+      pDIP( is_prefix, "ld r%u,%llu(r%u)", rT_addr, immediate_val, rA_addr);
       DIPn( is_prefix);
       assign( EA, calculate_prefix_EA( prefix, theInstr,
                                        rA_addr, ptype, DSFORM_IMMASK,
@@ -8822,7 +8822,7 @@ static Bool dis_int_load_ds_form_prefix ( UInt prefix,
 
       switch ((b1<<1) | b0) {
       case 0x0: // ld (Load DWord, PPC64 p472)
-         pDIP( is_prefix, "ld r%u,%u(r%u)", rT_addr, immediate_val, rA_addr);
+         pDIP( is_prefix, "ld r%u,%llu(r%u)", rT_addr, immediate_val, rA_addr);
          DIPp( is_prefix, ",%u", R );
          putIReg( rT_addr, load( Ity_I64, mkexpr( EA ) ) );
          break;
@@ -8833,14 +8833,14 @@ static Bool dis_int_load_ds_form_prefix ( UInt prefix,
             vex_printf("dis_int_load_ds_form_prefix(ppc)(ldu,rA_addr|rT_addr)\n");
             return False;
          }
-         DIP("ldu r%u,%u(r%u)\n", rT_addr, immediate_val, rA_addr);
+         DIP("ldu r%u,%llu(r%u)\n", rT_addr, immediate_val, rA_addr);
 
          putIReg( rT_addr, load( Ity_I64, mkexpr( EA ) ) );
          putIReg( rA_addr, mkexpr( EA ) );
          break;
 
       case 0x2: // lwa (Load Word Alg, PPC64 p499)
-         pDIP( is_prefix, "lwa r%u,%u(r%u)", rT_addr, immediate_val, rA_addr);
+         pDIP( is_prefix, "lwa r%u,%llu(r%u)", rT_addr, immediate_val, rA_addr);
          DIPp( is_prefix, ",%u", R );
 
          putIReg( rT_addr,
@@ -8868,7 +8868,7 @@ static Bool dis_int_load_prefix ( UInt prefix, UInt theInstr )
    UInt    ptype  = PrefixType(prefix);
    Bool    is_prefix = prefix_instruction( prefix );
    UInt    size   = 0;
-   UInt    immediate_val = 0;
+   ULong   immediate_val = 0;
    UInt    R = 0;
    IRExpr* val;
 
@@ -8914,28 +8914,28 @@ static Bool dis_int_load_prefix ( UInt prefix, UInt theInstr )
       details.  */
    switch (opc1) {
    case 0x20: // lwz (Load W & Zero, PPC32 p460)
-      pDIP( is_prefix, "lwz r%u,%u(r%u)", rT_addr, immediate_val, rA_addr);
+      pDIP( is_prefix, "lwz r%u,%llu(r%u)", rT_addr, immediate_val, rA_addr);
       DIPp( is_prefix, ",%u", R );
 
       putIReg( rT_addr, mkWidenFrom32(ty, val, False) );
       break;
 
    case 0x22: // lbz (Load B & Zero, PPC32 p433)
-      pDIP( is_prefix, "lbz r%u,%u(r%u)", rT_addr, immediate_val, rA_addr );
+      pDIP( is_prefix, "lbz r%u,%llu(r%u)", rT_addr, immediate_val, rA_addr );
       DIPp( is_prefix, ",%u", R );
 
       putIReg( rT_addr, mkWidenFrom8( ty, val, False ) );
       break;
 
    case 0x28: // lhz (Load HW & Zero, PPC32 p450)
-      pDIP( is_prefix, "lhz r%u,%u(r%u)", rT_addr, immediate_val, rA_addr );
+      pDIP( is_prefix, "lhz r%u,%llu(r%u)", rT_addr, immediate_val, rA_addr );
       DIPp( is_prefix, ",%u", R );
 
      putIReg( rT_addr, mkWidenFrom16( ty, val, False ) );
       break;
 
    case 0x2A: // lha (Load HW Alg, PPC32 p445)
-      pDIP( is_prefix, "lha r%u,%u(r%u)", rT_addr, immediate_val, rA_addr);
+      pDIP( is_prefix, "lha r%u,%llu(r%u)", rT_addr, immediate_val, rA_addr);
       DIPp( is_prefix, ",%u", R );
       putIReg( rT_addr, mkWidenFrom16(ty, val, True) );
       break;
@@ -8944,7 +8944,7 @@ static Bool dis_int_load_prefix ( UInt prefix, UInt theInstr )
       IRTemp  high = newTemp(ty);
       IRTemp  low  = newTemp(ty);
       /* DQ Form - 128bit Loads. Lowest bits [1:0] are the PT field. */
-      pDIP( is_prefix, "lq r%u,%u(r%u)", rT_addr, immediate_val, rA_addr);
+      pDIP( is_prefix, "lq r%u,%llu(r%u)", rT_addr, immediate_val, rA_addr);
       DIPp( is_prefix, ",%u", R );
       /* NOTE: there are some changes to XER[41:42] that have not been
        * implemented.
@@ -9592,7 +9592,7 @@ static Bool dis_int_store_ds_prefix ( UInt prefix,
    UInt   ptype  = PrefixType(prefix);
    Bool   is_prefix = prefix_instruction( prefix );
    UInt   R      = 0;                    // must be zero for word instruction
-   UInt   immediate_val = 0;
+   ULong  immediate_val = 0;
    Int    simm16 = extend_s_16to32(ifieldUIMM16(theInstr));
 
    if (opc1 == 0x3C) {
@@ -9631,7 +9631,7 @@ static Bool dis_int_store_ds_prefix ( UInt prefix,
       if (!mode64)
          return False;
 
-      pDIP( is_prefix,"std r%u,%u(r%u)", rS_addr, immediate_val, rA_addr );
+      pDIP( is_prefix,"std r%u,%llu(r%u)", rS_addr, immediate_val, rA_addr );
       DIPp( is_prefix, ",%u", R );
       store( mkexpr(EA), mkexpr(rS) );
       break;
@@ -9643,7 +9643,7 @@ static Bool dis_int_store_ds_prefix ( UInt prefix,
       if (!mode64)
          return False;
 
-      DIP("stdu r%u,%u(r%u)\n", rS_addr, immediate_val, rA_addr);
+      DIP("stdu r%u,%llu(r%u)\n", rS_addr, immediate_val, rA_addr);
       putIReg( rA_addr, mkexpr(EA) );
       store( mkexpr(EA), mkexpr(rS) );
       break;
@@ -9653,7 +9653,7 @@ static Bool dis_int_store_ds_prefix ( UInt prefix,
          IRTemp EA_hi = newTemp(ty);
          IRTemp EA_lo = newTemp(ty);
 
-         pDIP( is_prefix, "stq r%u,%u(r%u)", rS_addr, immediate_val, rA_addr);
+         pDIP( is_prefix, "stq r%u,%llu(r%u)", rS_addr, immediate_val, rA_addr);
          DIPp( is_prefix, ",%u", R );
 
          if (mode64) {
@@ -9710,7 +9710,7 @@ static Bool dis_int_store_prefix ( UInt prefix,
    IRTemp EA     = newTemp(ty);
    UInt   ptype  = PrefixType(prefix);
    Bool   is_prefix = prefix_instruction( prefix );
-   UInt   immediate_val = 0;
+   ULong  immediate_val = 0;
    UInt   R      = 0;                    // must be zero for word instruction
 
    assign( rS, getIReg(rS_addr) );
@@ -9720,19 +9720,19 @@ static Bool dis_int_store_prefix ( UInt prefix,
 
    switch (opc1) {
    case 0x24: // stw (Store W, PPC32 p530)
-      pDIP( is_prefix, "stw r%u,%u(r%u)\n", rS_addr, immediate_val, rA_addr );
+      pDIP( is_prefix, "stw r%u,%llu(r%u)\n", rS_addr, immediate_val, rA_addr );
       DIPp( is_prefix, ",%u", R );
       store( mkexpr(EA), mkNarrowTo32(ty, mkexpr(rS)) );
       break;
 
    case 0x26: // stb (Store B, PPC32 p509)
-      pDIP( is_prefix, "stb r%u,%u(r%u)", rS_addr, immediate_val, rA_addr );
+      pDIP( is_prefix, "stb r%u,%llu(r%u)", rS_addr, immediate_val, rA_addr );
       DIPp( is_prefix, ",%u", R );
       store( mkexpr(EA), mkNarrowTo8(ty, mkexpr(rS)) );
       break;
 
    case 0x2C: // sth (Store HW, PPC32 p522)
-      pDIP( is_prefix, "sth r%u,%u(r%u)", rS_addr, immediate_val, rA_addr );
+      pDIP( is_prefix, "sth r%u,%llu(r%u)", rS_addr, immediate_val, rA_addr );
       DIPp( is_prefix, ",%u", R );
       store( mkexpr(EA), mkNarrowTo16(ty, mkexpr(rS)) );
       break;
@@ -12494,7 +12494,7 @@ static Bool dis_fp_load_prefix ( UInt prefix, UInt theInstr )
    UInt    ptype  = PrefixType(prefix);
    Bool    is_prefix = prefix_instruction( prefix );
    UInt    R      = 0;                    // must be zero for word instruction
-   UInt    immediate_val = 0;
+   ULong   immediate_val = 0;
 
    assign( rA, getIReg(rA_addr) );
    assign( EA, calculate_prefix_EA( prefix, theInstr, rA_addr,
@@ -12503,15 +12503,14 @@ static Bool dis_fp_load_prefix ( UInt prefix, UInt theInstr )
 
    switch (opc1) {
    case 0x30: // lfs (Load Float Single, PPC32 p441)
-      pDIP( is_prefix, "lfs fr%u,%u(r%u)", frT_addr, immediate_val, rA_addr );
-      pDIP( is_prefix, "lfs fr%u,%u(r%u)\n", frT_addr, immediate_val, rA_addr );
+      pDIP( is_prefix, "lfs fr%u,%llu(r%u)\n", frT_addr, immediate_val, rA_addr );
       DIPp( is_prefix, ",%u", R );
       putFReg( frT_addr,
                unop(Iop_F32toF64, load(Ity_F32, mkexpr(EA))) );
       break;
 
    case 0x32: // lfd (Load Float Double, PPC32 p437)
-      pDIP( prefix, "lfd fr%u,%u(r%u)", frT_addr, immediate_val, rA_addr );
+      pDIP( prefix, "lfd fr%u,%llu(r%u)", frT_addr, immediate_val, rA_addr );
       DIPp( is_prefix, ",%u", R );
       putFReg( frT_addr, load(Ity_F64, mkexpr(EA)) );
       break;
@@ -12678,7 +12677,7 @@ static Bool dis_fp_store_prefix ( UInt prefix, UInt theInstr )
    UInt   ptype  = PrefixType(prefix);
    Bool   is_prefix = prefix_instruction( prefix );
    UInt   R      = 0;                    // must be zero for word instruction
-   UInt   immediate_val = 0;
+   ULong  immediate_val = 0;
 
    assign( frS, getFReg( frS_addr ) );
    assign( rA,  getIReg( rA_addr ) );
@@ -12694,7 +12693,7 @@ static Bool dis_fp_store_prefix ( UInt prefix, UInt theInstr )
    switch (opc1) {
 
    case 0x34: // stfs (Store Float Single, PPC32 p518)
-      pDIP( is_prefix, "stfs fr%u,%u(r%u)\n", frS_addr, immediate_val, rA_addr );
+      pDIP( is_prefix, "stfs fr%u,%llu(r%u)\n", frS_addr, immediate_val, rA_addr );
       DIPp( is_prefix, ",%u", R );
       /* Use Iop_TruncF64asF32 to truncate and possible denormalise
          the value to be stored in the correct way, without any
@@ -12703,7 +12702,7 @@ static Bool dis_fp_store_prefix ( UInt prefix, UInt theInstr )
       break;
 
    case 0x36: // stfd (Store Float Double, PPC32 p513)
-      pDIP( is_prefix, "stfd fr%u,%u(r%u)", frS_addr, immediate_val, rA_addr );
+      pDIP( is_prefix, "stfd fr%u,%llu(r%u)", frS_addr, immediate_val, rA_addr );
       DIPp( is_prefix, ",%u", R );
       store( mkexpr(EA), mkexpr(frS) );
       break;
@@ -13974,7 +13973,7 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
    UInt ptype          = PrefixType(prefix);
    Bool is_prefix      = prefix_instruction( prefix );
    UInt R              = 0;
-   UInt immediate_val  = 0;
+   ULong immediate_val  = 0;
    UInt opc2;
 
    switch (opc1) {
@@ -13992,7 +13991,7 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
       case 0:
       {
          /* Endian aware load */
-         DIP( "lxvp %u,%u(%u)\n", XTp, immediate_val, rA_addr );
+         DIP( "lxvp %u,%llu(%u)\n", XTp, immediate_val, rA_addr );
 
          // address of next 128bits
          assign( EA_16, binop( Iop_Add64, mkU64( 16 ), mkexpr( EA ) ) );
@@ -14011,7 +14010,7 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
          IRTemp EA_8  = newTemp(ty);
          IRTemp EA_24 = newTemp(ty);
          /* Endian aware store */
-         DIP("stxvp %u,%u(%u)\n", XTp, immediate_val, rA_addr );
+         DIP("stxvp %u,%llu(%u)\n", XTp, immediate_val, rA_addr );
 
          // address of next 128bits
          assign( EA_8, binop( Iop_Add64, mkU64( 8 ), mkexpr( EA ) ) );
@@ -14059,7 +14058,7 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
 
       switch(opc2) {
       case 0x2:     // lxsd (Load VSX Scalar Doubleword)
-         pDIP( is_prefix, "lxsd v%u,%u(r%u)\n", vRT, immediate_val, rA_addr );
+         pDIP( is_prefix, "lxsd v%u,%llu(r%u)\n", vRT, immediate_val, rA_addr );
          DIPp( is_prefix, ",%u", R );
 
          putVSReg( vRT+32, binop( Iop_64HLtoV128,
@@ -14069,7 +14068,7 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
 
       case 0x3:     // lxssp (Load VSX Scalar Single from memory,
                     // store as double in register)
-         pDIP( is_prefix, "lxssp v%u,%u(r%u)\n", vRT, immediate_val, rA_addr );
+         pDIP( is_prefix, "lxssp v%u,%llu(r%u)\n", vRT, immediate_val, rA_addr );
          DIPp( is_prefix, ",%u", R );
 
          putVSReg( vRT+32,
@@ -14118,7 +14117,7 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
          UInt  T  = IFIELD( theInstr, 21, 5);  // T or S depending on inst
 
          /* Effective address calculation */
-         if (opc1 == 0x3D) {
+         if (opc1 == 0x3D) {   // stxv
             UInt uimm16   = ifieldUIMM16(theInstr);
             Int  simm16 = extend_s_16to32(uimm16);
 
@@ -14136,7 +14135,7 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
 
          if ( opc2 == 1) {
             // lxv (Load VSX Vector)
-            pDIP( is_prefix, "lxv v%u,%u(r%u)\n", vRS, immediate_val, rA_addr );
+            pDIP( is_prefix, "lxv v%u,%llu(r%u)\n", vRS, immediate_val, rA_addr );
             DIPp( is_prefix, ",%u", R );
             assign( word[0], load( Ity_I64, mkexpr( EA ) ) );
 
@@ -14157,7 +14156,7 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
 
          } else if ( opc2 == 5) {
             // stxv (Store VSX Vector)
-            pDIP( is_prefix, "stxv v%u,%u(r%u)\n", vRS, immediate_val, rA_addr );
+            pDIP( is_prefix, "stxv v%u,%llu(r%u)\n", vRS, immediate_val, rA_addr );
             DIPp( is_prefix, ",%u", R );
 
             if (host_endness == VexEndnessBE) {
@@ -14185,7 +14184,7 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
 
       } else if ((opc2 & 0x3) == 0x2) {
          // stxsd (Store VSX Scalar Doubleword)
-         pDIP( is_prefix, "stxsd v%u,%u(r%u)\n", vRS, immediate_val, rA_addr);
+         pDIP( is_prefix, "stxsd v%u,%llu(r%u)\n", vRS, immediate_val, rA_addr);
          DIPp( is_prefix, ",%u", R );
 
          assign( EA, calculate_prefix_EA( prefix, theInstr,
@@ -14208,7 +14207,7 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
          IRTemp high64 = newTemp(Ity_F64);
          IRTemp val32  = newTemp(Ity_I32);
 
-         pDIP( is_prefix, "stxssp v%u,%u(r%u)\n", vRS, immediate_val, rA_addr);
+         pDIP( is_prefix, "stxssp v%u,%llu(r%u)\n", vRS, immediate_val, rA_addr);
          DIPp( is_prefix, ",%u", R );
 
          assign( EA, calculate_prefix_EA( prefix, theInstr,
@@ -14236,11 +14235,11 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
       UChar XTp = ifieldRegXTp(theInstr);
 
       /* Endian aware prefixed load */
-      pDIP( is_prefix, "lxvp %u,%u(%u)", XTp, immediate_val, rA_addr );
+      pDIP( is_prefix, "lxvp %u,%llu(%u)", XTp, immediate_val, rA_addr );
       DIPp( is_prefix, ",%u", R );
 
       if (R == 1 ) {
-         vex_printf("Illegal instruction R = 1; plxvp %u,%u(%u)\n",
+         vex_printf("Illegal instruction R = 1; plxvp %u,%llu(%u)\n",
                     XTp, immediate_val, rA_addr );
          return False;
       }
@@ -14268,11 +14267,11 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
       UChar XTp = ifieldRegXTp(theInstr);
 
       /* Endian aware prefixed load */
-      pDIP( is_prefix, "stxvp %u,%u(%u)\n", XTp, immediate_val, rA_addr );
+      pDIP( is_prefix, "stxvp %u,%llu(%u)\n", XTp, immediate_val, rA_addr );
       DIPp( is_prefix, ",%u", R );
 
       if ( R == 1 ) {
-         vex_printf("Illegal instruction R = 1; pstxvp %u,%u(%u)\n",
+         vex_printf("Illegal instruction R = 1; pstxvp %u,%llu(%u)\n",
                     XTp, immediate_val, rA_addr );
          return False;
       }

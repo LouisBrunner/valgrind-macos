@@ -3322,6 +3322,7 @@ static IRExpr * locate_vector_ele_eq ( IRTemp src, IRExpr *value,
 #define DFORM_IMMASK  0xffffffff
 #define DSFORM_IMMASK 0xfffffffc
 #define DQFORM_IMMASK 0xfffffff0
+#define DA8LSFORM_IMMASK 0x3fffffff   // Algebraic 8LS Dform
 
 #define ISA_3_1_PREFIX_CHECK if (prefix) {if (!allow_isa_3_1) goto decode_noIsa3_1;}
 
@@ -6104,6 +6105,87 @@ static void vsx_matrix_64bit_float_ger ( const VexAbiInfo* vbi,
       args2 );
 
    setup_fxstate_struct( d, AT, AT_fx );
+
+   /* execute the dirty call, side-effecting guest state */
+   stmt( IRStmt_Dirty(d) );
+}
+
+static void vector_gen_pvc_mask ( const VexAbiInfo* vbi,
+                                   IRExpr *src, UInt IMM,
+                                   UInt opc2, UInt VSX_addr ) {
+   /* The function takes a 64-bit source and an immediate value.  The function
+      calls a helper to execute the xxgenpcvbm, xxgenpcvhm, xxgenpcvwm,
+      xxgenpcvdm instruction.  The instructions are not practical to do with
+      Iops.  The instruction is implemented with a dirty helper that
+      calculates the 128-bit result and writes it directly into the guest
+      state VSX register.
+  */
+   IRTemp src_hi = newTemp( Ity_I64);
+   IRTemp src_lo = newTemp( Ity_I64);
+
+   IRDirty* d;
+
+   vassert( (VSX_addr >= 0) && (VSX_addr < 64) );
+   UInt reg_offset = offsetofPPCGuestState( guest_VSR0 )
+      + sizeof(U128) * VSX_addr;
+
+   assign( src_hi, unop( Iop_V128HIto64, src ) );
+   assign( src_lo, unop( Iop_V128to64, src ) );
+
+   IRExpr** args = mkIRExprVec_5(
+      IRExpr_GSPTR(),
+      mkexpr( src_hi ),
+      mkexpr( src_lo ),
+      mkU32( reg_offset ),
+      mkU64( IMM ) );
+
+   switch( opc2 ) {
+   case 0x394: // xxgenpcvbm
+      d = unsafeIRDirty_0_N (
+         0 /*regparms*/,
+         "vector_gen_pvc_byte_mask_dirty_helper",
+         fnptr_to_fnentry( vbi,
+                           &vector_gen_pvc_byte_mask_dirty_helper ),
+         args);
+      break;
+
+   case 0x395: // xxgenpcvhm
+      d = unsafeIRDirty_0_N (
+         0 /*regparms*/,
+         "vector_gen_pvc_hword_mask_dirty_helper",
+         fnptr_to_fnentry( vbi,
+                           &vector_gen_pvc_hword_mask_dirty_helper ),
+         args);
+      break;
+
+   case 0x3B4: // xxgenpcvwm
+      d = unsafeIRDirty_0_N (
+         0 /*regparms*/,
+         "vector_gen_pvc_word_mask_dirty_helper",
+         fnptr_to_fnentry( vbi,
+                           &vector_gen_pvc_word_mask_dirty_helper ),
+         args);
+      break;
+
+   case 0x3B5: // xxgenpcvdm
+      d = unsafeIRDirty_0_N (
+         0 /*regparms*/,
+         "vector_gen_pvc_dword_mask_dirty_helper",
+         fnptr_to_fnentry( vbi,
+                           &vector_gen_pvc_dword_mask_dirty_helper ),
+         args);
+      break;
+   default:
+      vex_printf("ERROR: Unkown instruction = %u in vector_gen_pvc_mask()\n",
+                 opc2);
+      return;
+   }
+
+   d->nFxState = 1;
+   vex_bzero(&d->fxState, sizeof(d->fxState));
+   d->fxState[0].fx     = Ifx_Modify;
+   d->fxState[0].size   = sizeof(U128);
+   d->fxState[0].offset = reg_offset;
 
    /* execute the dirty call, side-effecting guest state */
    stmt( IRStmt_Dirty(d) );
@@ -35227,6 +35309,54 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
    return True;
 }
 
+static Bool dis_vector_generate_pvc_from_mask ( UInt prefix,
+                                                UInt theInstr,
+                                                const VexAbiInfo* vbi )
+{
+   UChar XT_addr = ifieldRegXT(theInstr);
+   UChar vB_addr = ifieldRegB(theInstr);
+   IRTemp vB = newTemp( Ity_V128 );
+   UInt opc2 = ifieldOPClo10(theInstr);
+   UInt IMM = IFIELD(theInstr, (31-15), 5);    // bits[11:15]
+
+   assign( vB, getVReg( vB_addr ) );
+
+   switch( opc2 ) {
+   case 0x394:
+      DIP("xxgenpcvbm v%u,v%u,%u\n", XT_addr, vB_addr, IMM);
+      /* vector_gen_pvc_mask uses a dirty helper to calculate the result and
+         write it to the VSX result register.  */
+      vector_gen_pvc_mask( vbi, mkexpr( vB ), IMM, opc2, XT_addr );
+      break;
+
+   case 0x395:
+      DIP("xxgenpcvhm v%u,v%u,%u\n", XT_addr, vB_addr, IMM);
+      /* vector_gen_pvc_mask uses a dirty helper to calculate the result and
+         write it to the VSX result register.  */
+      vector_gen_pvc_mask( vbi, mkexpr( vB ), IMM, opc2, XT_addr );
+      break;
+
+   case 0x3B4:
+      DIP("xxgenpcvwm v%u,v%u,%u\n", XT_addr, vB_addr, IMM);
+      /* vector_gen_pvc_mask uses a dirty helper to calculate the result and
+         write it to the VSX result register.  */
+      vector_gen_pvc_mask( vbi, mkexpr( vB ), IMM, opc2, XT_addr );
+      break;
+
+   case 0x3B5:
+      DIP("xxgenpcvdm v%u,v%u,%u\n", XT_addr, vB_addr, IMM);
+      /* vector_gen_pvc_mask uses a dirty helper to calculate the result and
+         write it to the VSX result register.  */
+      vector_gen_pvc_mask( vbi, mkexpr( vB ), IMM, opc2, XT_addr );
+      break;
+
+   default:
+      return False;
+   }
+
+   return True;
+}
+
 static Int dis_nop_prefix ( UInt prefix, UInt theInstr )
 {
    Bool is_prefix   = prefix_instruction( prefix );
@@ -35748,14 +35878,9 @@ DisResult disInstr_PPC_WRK (
       }
       goto decode_failure;
 
-   case 0x31:   // lfsu, stxv
+   case 0x31:   // lfsu
       if (!allow_F) goto decode_noF;
-      if (prefix_instruction( prefix )) {  // stxv
-         if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
-         if (dis_fp_pair_prefix( prefix, theInstr )) goto decode_success;
-      } else {  // lfsu
-         if (dis_fp_load( prefix, theInstr )) goto decode_success;
-      }
+      if (dis_fp_load( prefix, theInstr )) goto decode_success;
       goto decode_failure;
 
    case 0x32:
@@ -35842,7 +35967,6 @@ DisResult disInstr_PPC_WRK (
    case 0x39:  // pld, lxsd, lxssp, lfdp
       {
          UInt opc2tmp = ifieldOPC0o2(theInstr);
-
          if (!allow_F) goto decode_noF;
          if (prefix_instruction( prefix )) {   // pld
             if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
@@ -36125,12 +36249,6 @@ DisResult disInstr_PPC_WRK (
             goto decode_failure;
       }
 
-      /* The vsxOpc2 returned is the "normalized" value, representing the
-       * instructions secondary opcode as taken from the standard secondary
-       * opcode field [21:30] (IBM notatition), even if the actual field
-       * is non-standard.  These normalized values are given in the opcode
-       * appendices of the ISA 2.06 document.
-       */
       if ( ( opc2 == 0x168 ) && ( IFIELD( theInstr, 19, 2 ) == 0 ) )// xxspltib
       {
          /* This is a special case of the XX1 form where the  RA, RB
@@ -36153,6 +36271,23 @@ DisResult disInstr_PPC_WRK (
          goto decode_failure;
       }
 
+      if ( ( opc2 == 0x394 ) ||         // xxgenpcvbm
+           ( opc2 == 0x395 ) ||         // xxgenpcvwm
+           ( opc2 == 0x3B4 ) ||         // xxgenpcvhm
+           ( opc2 == 0x3B5 ) ) {        // xxgenpcvdm
+         if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
+         if (dis_vector_generate_pvc_from_mask( prefix, theInstr,
+                                                abiinfo ))
+            goto decode_success;
+         goto decode_failure;
+      }
+
+      /* The vsxOpc2 returned is the "normalized" value, representing the
+       * instructions secondary opcode as taken from the standard secondary
+       * opcode field [21:30] (IBM notatition), even if the actual field
+       * is non-standard.  These normalized values are given in the opcode
+       * appendices of the ISA 2.06 document.
+       */
       vsxOpc2 = get_VSX60_opc2(opc2, theInstr);
 
       switch (vsxOpc2) {

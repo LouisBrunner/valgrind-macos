@@ -169,6 +169,23 @@ void write_ACC_entry (VexGuestPPC64State* gst, UInt offset, UInt acc,
 void get_ACC_entry (VexGuestPPC64State* gst, UInt offset, UInt acc,
                     UInt reg, UInt *result);
 
+extern void vector_gen_pvc_byte_mask_dirty_helper( VexGuestPPC64State* gst,
+                                                   ULong src_hi,
+                                                   ULong src_lo,
+                                                   UInt rtn_val, UInt IMM );
+extern void vector_gen_pvc_hword_mask_dirty_helper( VexGuestPPC64State* gst,
+                                                    ULong src_hi,
+                                                    ULong src_lo,
+                                                    UInt rtn_val, UInt IMM );
+extern void vector_gen_pvc_word_mask_dirty_helper( VexGuestPPC64State* gst,
+                                                   ULong src_hi,
+                                                   ULong src_lo,
+                                                   UInt rtn_val, UInt IMM );
+extern void vector_gen_pvc_dword_mask_dirty_helper( VexGuestPPC64State* gst,
+                                                    ULong src_hi,
+                                                    ULong src_lo,
+                                                    UInt rtn_val, UInt IMM );
+
 /* 8-bit XO value from instruction description */
 #define XVI4GER8       0b00100011
 #define XVI4GER8PP     0b00100010

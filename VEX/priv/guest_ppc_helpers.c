@@ -701,6 +701,738 @@ ULong vector_evaluate64_helper( ULong srcA, ULong srcB, ULong srcC,
 #undef MAX_IMM_BITS
 }
 
+/*--------------------------------------------------*/
+/*---- VSX Vector Generate PCV from Mask helpers ---*/
+/*--------------------------------------------------*/
+static void write_VSX_entry (VexGuestPPC64State* gst, UInt reg_offset,
+                             ULong *vsx_entry)
+{
+   U128* pU128_dst;
+   pU128_dst = (U128*) (((UChar*) gst) + reg_offset);
+
+   /* The U128 type is defined as an array of unsigned intetgers.  */
+   /* Writing in LE order */
+   (*pU128_dst)[0] = (UInt)(vsx_entry[1] & 0xFFFFFFFF);
+   (*pU128_dst)[1] = (UInt)(vsx_entry[1] >> 32);
+   (*pU128_dst)[2] = (UInt)(vsx_entry[0] & 0xFFFFFFFF);
+   (*pU128_dst)[3] = (UInt)(vsx_entry[0] >> 32);
+   return;
+}
+
+/* CALLED FROM GENERATED CODE */
+void vector_gen_pvc_byte_mask_dirty_helper( VexGuestPPC64State* gst,
+                                            ULong src_hi, ULong src_lo,
+                                            UInt reg_offset, UInt imm ) {
+   /* The function computes the 128-bit result then writes it directly
+      into the guest state VSX register.  */
+
+   UInt  i, shift_by, sel_shift_by, half_sel;
+   ULong index, src, result[2];
+   ULong j;
+
+   result[0] = 0;
+   result[1] = 0;
+   j = 0;
+
+   /* The algorithm in the ISA is written with IBM numbering zero on left and
+      N-1 on right. The loop index is converted to "i" to match the algorithm
+      for claritiy of matching the C code to the algorithm in the ISA.  */
+
+   if (imm == 0b00) {    // big endian expansion
+      for( index = 0; index < 16; index++) {
+         i = 15 - index;
+
+         shift_by = i*8;
+
+         if ( i >= 8) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 7;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+               result[half_sel] |= j << shift_by;
+            j++;
+         } else {
+            result[half_sel] |= (index + (unsigned long long)0x10) << shift_by;
+         }
+      }
+
+
+   } else if (imm == 0b01) {    // big endian compression
+      /* If IMM=0b00001, let pcv be the permute control vector required to
+         enable a left-indexed permute (vperm or xxperm) to implement a
+         compression of the sparse byte elements in a source vector specified
+         by the byte-element mask in VSR[VRB+32] into the leftmost byte
+         elements of a result vector.
+      */
+      for( index = 0; index < 16; index++) {
+         i = 15 - index;
+         shift_by = i*8;
+
+         if ( i >= 8) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 7;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            if (j >= 8)
+               result[1] |= (index) << (15 - j)*8;
+            else
+               result[0] |= (index) << (7 - j)*8;
+            j++;
+         }
+      }
+      /* The algorithim says set to undefined, leave as 0
+      for( index = 3 - j; index < 4; index++) {
+         result |= (0 << (index*8));
+      }
+      */
+
+   } else if (imm == 0b10) {   //little-endian expansion
+      /* If IMM=0b00010, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement an
+         expansion of the rightmost byte elements of a source vector into the
+         byte elements of a result vector specified by the byte-element mask
+         in VSR[VRB+32].  */
+      for( index = 0; index < 16; index++) {
+         i = index;
+
+         shift_by = i*8;
+
+         if ( i >= 8) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 7;
+
+         /* mod shift amount by 8 since src is either the upper or lower
+            64-bits.  */
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+               result[half_sel] |= j << shift_by;
+            j++;
+         } else {
+            result[half_sel] |= (index + (unsigned long long)0x10) << shift_by;
+         }
+      }
+
+   } else if (imm == 0b11) {   //little-endian compression
+      /* If IMM=0b00011, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement a
+         compression of the sparse byte elements in a source vector specified
+         by the byte-element mask in VSR[VRB+32] into the rightmost byte
+         elements of a result vector.  */
+
+      for( index = 0; index < 16; index++) {
+         i = index;
+
+         shift_by = i*8;
+
+         if ( i >= 8) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 7;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            if (j >= 8)
+               result[0] |= (index) << (j-8)*8;
+            else
+               result[1] |= (index) << j*8;
+            j++;
+         }
+      }
+
+      /* The algorithim says set to undefined, leave as 0
+      for( index = 3 - j; index < 4; index++) {
+         result |= (0 << (index*8));
+      }
+      */
+
+   } else {
+      vex_printf("ERROR, vector_gen_pvc_byte_mask_dirty_helper, imm value %u not supported.\n",
+                 imm);
+      vassert(0);
+   }
+   write_VSX_entry( gst, reg_offset, result);
+}
+
+/* CALLED FROM GENERATED CODE */
+void vector_gen_pvc_hword_mask_dirty_helper( VexGuestPPC64State* gst,
+                                             ULong src_hi, ULong src_lo,
+                                             UInt reg_offset,
+                                             UInt imm ) {
+   /* The function computes the 128-bit result then writes it directly
+      into the guest state VSX register.  */
+   UInt  i, shift_by, sel_shift_by, half_sel;
+   ULong index, src, result[2];
+   ULong j;
+
+   result[0] = 0;
+   result[1] = 0;
+   j = 0;
+
+   /* The algorithm in the ISA is written with IBM numbering zero on left and
+      N-1 on right. The loop index is converted to "i" to match the algorithm
+      for claritiy of matching the C code to the algorithm in the ISA.  */
+
+   if (imm == 0b00) {    // big endian expansion
+      /* If IMM=0b00000, let pcv be the permute control vector required to
+         enable a left-indexed permute (vperm or xxperm) to implement an
+         expansion of the leftmost halfword elements of a source vector into
+         the halfword elements of a result vector specified by the halfword-
+         element mask in VSR[VRB+32].
+      */
+      for( index = 0; index < 8; index++) {
+         i = 7 - index;
+
+         shift_by = i*16;
+
+         if ( i >= 4) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 15;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            // half-word i, byte 0
+            result[half_sel] |= (2*j + 0x0) << (shift_by+8);
+            // half-word i, byte 1
+            result[half_sel] |= (2*j + 0x1) << shift_by;
+            j++;
+         } else {
+            result[half_sel] |= (2*index + 0x10) << (shift_by+8);
+            result[half_sel] |= (2*index + 0x11) << shift_by;
+         }
+      }
+
+   } else if (imm == 0b01) {    // big endian expansion
+      /* If IMM=0b00001,let pcv be the permute control vector required to
+         enable a left-indexed permute (vperm or xxperm) to implement a
+         compression of the sparse halfword elements in a source vector
+         specified by the halfword-element mask in VSR[VRB+32] into the
+         leftmost halfword elements of a result vector.
+      */
+      for( index = 0; index < 8; index++) {
+         i = 7 - index;
+
+         shift_by = i*16;
+
+         if ( i >= 4) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 15;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            if (j >= 4) {
+               // half-word i, byte 0
+               result[1] |= (2*index + 0x0) << ((7 - j)*16 + 8);
+               // half-word i, byte 1
+               result[1] |= (2*index + 0x1) << ((7 - j)*16);
+            } else {
+               // half-word i, byte 0
+               result[0] |= (2*index + 0x0) << ((3 - j)*16 + 8);
+               // half-word i, byte 1
+               result[0] |= (2*index + 0x1) << ((3 - j)*16);
+            }
+            j++;
+         }
+      }
+
+   } else if (imm == 0b10) {   //little-endian expansion
+      /* If IMM=0b00010, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement an
+         expansion of the rightmost halfword elements of a source vector into
+         the halfword elements of a result vector specified by the halfword-
+         element mask in VSR[VRB+32].
+       */
+      for( index = 0; index < 8; index++) {
+         i = index;
+         shift_by = i*16;
+
+         if ( i >= 4) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 15;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            // half-word i, byte 0
+            result[half_sel] |= (2*j + 0x00) << shift_by;
+            // half-word i, byte 1
+            result[half_sel] |= (2*j + 0x01) << (shift_by+8);
+            j++;
+
+         } else {
+            // half-word i, byte 0
+            result[half_sel] |= (2*index + 0x10) << shift_by;
+            // half-word i, byte 1
+            result[half_sel] |= (2*index + 0x11) << (shift_by+8);
+         }
+      }
+
+   } else if (imm == 0b11) {   //little-endian compression
+      /* If IMM=0b00011, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement a
+         compression of the sparse halfword elements in a source vector
+         specified by the halfword-element mask in VSR[VRB+32] into the
+         rightmost halfword elements of a result vector.  */
+      for( index = 0; index < 8; index++) {
+         i = index;
+         shift_by = i*16;
+
+         if ( i >= 4) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 15;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            if (j >= 4) {
+               // half-word j, byte 0
+               result[0] |= (2*index + 0x0) << ((j-4)*16);
+               // half-word j, byte 1
+               result[0] |= (2*index + 0x1) << ((j-4)*16+8);
+            } else {
+               // half-word j, byte 0
+               result[1] |= (2*index + 0x0) << (j*16);
+               // half-word j, byte 1
+               result[1] |= (2*index + 0x1) << ((j*16)+8);
+            }
+            j++;
+         }
+      }
+
+   } else {
+      vex_printf("ERROR, vector_gen_pvc_hword_dirty_mask_helper, imm value %u not supported.\n",
+                 imm);
+      vassert(0);
+   }
+   write_VSX_entry( gst, reg_offset, result);
+}
+
+/* CALLED FROM GENERATED CODE */
+void vector_gen_pvc_word_mask_dirty_helper( VexGuestPPC64State* gst,
+                                            ULong src_hi, ULong src_lo,
+                                            UInt reg_offset, UInt imm ) {
+   /* The function computes the 128-bit result then writes it directly
+      into the guest state VSX register.  */
+   UInt  i, shift_by, sel_shift_by, half_sel;
+   ULong index, src, result[2];
+   ULong j;
+
+   result[0] = 0;
+   result[1] = 0;
+   j = 0;
+
+   /* The algorithm in the ISA is written with IBM numbering zero on left and
+      N-1 on right. The loop index is converted to "i" to match the algorithm
+      for claritiy of matching the C code to the algorithm in the ISA.  */
+
+   if (imm == 0b00) {    // big endian expansion
+      /* If IMM=0b00000, let pcv be the permute control vector required to
+         enable a left-indexed permute (vperm or xxperm) to implement an
+         expansion of the leftmost word elements of a source vector into the
+         word elements of a result vector specified by the word-element mask
+         in VSR[VRB+32].
+      */
+      for( index = 0; index < 4; index++) {
+         i = 3 - index;
+
+         shift_by = i*32;
+
+         if ( i >= 2) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 31;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            result[half_sel] |= (4*j+0) << (shift_by+24);  // word i, byte 0
+            result[half_sel] |= (4*j+1) << (shift_by+16);  // word i, byte 1
+            result[half_sel] |= (4*j+2) << (shift_by+8);   // word i, byte 2
+            result[half_sel] |= (4*j+3) << shift_by;       // word i, byte 3
+            j++;
+         } else {
+            result[half_sel] |= (4*index + 0x10) << (shift_by+24);
+            result[half_sel] |= (4*index + 0x11) << (shift_by+16);
+            result[half_sel] |= (4*index + 0x12) << (shift_by+8);
+            result[half_sel] |= (4*index + 0x13) << shift_by;
+         }
+      }
+
+   } else if (imm == 0b01) {    // big endian compression
+      /* If IMM=0b00001, let pcv be the permute control vector required to
+         enable a left-indexed permute (vperm or xxperm) to implement a
+         compression of the sparse word elements in a source vector specified
+         by the word-element mask in VSR[VRB+32] into the leftmost word
+         elements of a result vector.
+      */
+      for( index = 0; index < 4; index++) {
+         i = 3 - index;
+
+         shift_by = i*32;
+
+         if ( i >= 2) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 31;
+
+         if (((src >> sel_shift_by) & 0x1) == 1) {
+            if (j >= 2) {
+               // word j, byte 0
+               result[1] |= (4*index+0) << ((3 - j)*32 + 24);
+               // word j, byte 1
+               result[1] |= (4*index+1) << ((3 - j)*32 + 16);
+               // word j, byte 2
+               result[1] |= (4*index+2) << ((3 - j)*32 + 8);
+               // word j, byte 3
+               result[1] |= (4*index+3) << ((3 - j)*32 + 0);
+            } else {
+               result[0] |= (4*index+0) << ((1 - j)*32 + 24);
+               result[0] |= (4*index+1) << ((1 - j)*32 + 16);
+               result[0] |= (4*index+2) << ((1 - j)*32 + 8);
+               result[0] |= (4*index+3) << ((1 - j)*32 + 0);
+            }
+            j++;
+         }
+      }
+
+   } else if (imm == 0b10) {   //little-endian expansion
+      /* If IMM=0b00010, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement an
+         expansion of the rightmost word elements of a source vector into the
+         word elements of a result vector specified by the word-element mask
+         in VSR[VRB+32].
+       */
+      for( index = 0; index < 4; index++) {
+         i = index;
+
+         shift_by = i*32;
+
+         if ( i >= 2) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 31;
+
+         if (((src >> sel_shift_by) & 0x1) == 1) {
+            result[half_sel] |= (4*j+0) << (shift_by + 0);  // word j, byte 0
+            result[half_sel] |= (4*j+1) << (shift_by + 8);  // word j, byte 1
+            result[half_sel] |= (4*j+2) << (shift_by + 16); // word j, byte 2
+            result[half_sel] |= (4*j+3) << (shift_by + 24); // word j, byte 3
+            j++;
+         } else {
+            result[half_sel] |= (4*index + 0x10) << (shift_by + 0);
+            result[half_sel] |= (4*index + 0x11) << (shift_by + 8);
+            result[half_sel] |= (4*index + 0x12) << (shift_by + 16);
+            result[half_sel] |= (4*index + 0x13) << (shift_by + 24);
+         }
+      }
+
+   } else if (imm == 0b11) {   //little-endian compression
+      /* If IMM=0b00011, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement a
+         compression of the sparse word elements in a source vector specified
+         by the word-element mask in VSR[VRB+32] into the rightmost word
+         elements of a result vector.  */
+      for( index = 0; index < 4; index++) {
+         i =index;
+
+         shift_by = i*32;
+
+         if ( i >= 2) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 31;
+
+         if (((src >> sel_shift_by) & 0x1) == 1) {
+            if (j >= 2){
+               // word j, byte 0
+               result[0] |= (4*index + 0x0) << ((j-2)*32+0);
+               // word j, byte 1
+               result[0] |= (4*index + 0x1) << ((j-2)*32+8);
+               // word j, byte 2
+               result[0] |= (4*index + 0x2) << ((j-2)*32+16);
+               // word j, byte 3
+               result[0] |= (4*index + 0x3) << ((j-2)*32+24);
+            } else {
+               result[1] |= (4*index + 0x0) << (j*32+0);
+               result[1] |= (4*index + 0x1) << (j*32+8);
+               result[1] |= (4*index + 0x2) << (j*32+16);
+               result[1] |= (4*index + 0x3) << (j*32+24);
+            }
+            j++;
+         }
+      }
+   } else {
+      vex_printf("ERROR, vector_gen_pvc_word_mask_dirty_helper, imm value %u not supported.\n",
+                 imm);
+      vassert(0);
+   }
+
+   write_VSX_entry( gst, reg_offset, result);
+}
+
+/* CALLED FROM GENERATED CODE */
+void vector_gen_pvc_dword_mask_dirty_helper( VexGuestPPC64State* gst,
+                                             ULong src_hi, ULong src_lo,
+                                             UInt reg_offset, UInt imm ) {
+   /* The function computes the 128-bit result then writes it directly
+      into the guest state VSX register.  */
+   UInt  sel_shift_by, half_sel;
+   ULong index, src, result[2];
+   ULong j, i;
+
+   result[0] = 0;
+   result[1] = 0;
+   j = 0;
+
+   /* The algorithm in the ISA is written with IBM numbering zero on left and
+      N-1 on right. The loop index is converted to "i" to match the algorithm
+      for claritiy of matching the C code to the algorithm in the ISA.  */
+
+   if (imm == 0b00) {    // big endian expansion
+      /* If IMM=0b00000, let pcv be the permute control vector required to
+         enable a left-indexed permute (vperm or xxperm) to implement an
+         expansion of the leftmost doubleword elements of a source vector into
+         the doubleword elements of a result vector specified by the
+         doubleword-element mask in VSR[VRB+32].
+      */
+      for( index = 0; index < 2; index++) {
+         i = 1 - index;
+
+         if ( i == 1) {
+            src = src_hi;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = 63;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            result[half_sel] |= (8*j + 0x0) << 56; // dword i, byte 0
+            result[half_sel] |= (8*j + 0x1) << 48; // dword i, byte 1
+            result[half_sel] |= (8*j + 0x2) << 40; // dword i, byte 2
+            result[half_sel] |= (8*j + 0x3) << 32; // dword i, byte 3
+            result[half_sel] |= (8*j + 0x4) << 24; // dword i, byte 4
+            result[half_sel] |= (8*j + 0x5) << 16; // dword i, byte 5
+            result[half_sel] |= (8*j + 0x6) << 8;  // dword i, byte 6
+            result[half_sel] |= (8*j + 0x7) << 0;  // dword i, byte 7
+            j++;
+         } else {
+            result[half_sel] |= (8*index + 0x10) << 56;
+            result[half_sel] |= (8*index + 0x11) << 48;
+            result[half_sel] |= (8*index + 0x12) << 40;
+            result[half_sel] |= (8*index + 0x13) << 32;
+            result[half_sel] |= (8*index + 0x14) << 24;
+            result[half_sel] |= (8*index + 0x15) << 16;
+            result[half_sel] |= (8*index + 0x16) << 8;
+            result[half_sel] |= (8*index + 0x17) << 0;
+         }
+      }
+   } else if (imm == 0b01) {    // big endian compression
+      /* If IMM=0b00001, let pcv be the the permute control vector required to
+         enable a left-indexed permute (vperm or xxperm) to implement a
+         compression of the sparse doubleword elements in a source vector
+         specified by the doubleword-element mask in VSR[VRB+32] into the
+         leftmost doubleword elements of a result vector.
+      */
+      for( index = 0; index < 2; index++) {
+         i = 1 - index;
+
+         if ( i == 1) {
+            src = src_hi;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = 63;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            if (j == 1) {
+               result[1] |= (8*index + 0x0) << 56;   // double-word j, byte 0
+               result[1] |= (8*index + 0x1) << 48;   // double-word j, byte 1
+               result[1] |= (8*index + 0x2) << 40;   // double-word j, byte 2
+               result[1] |= (8*index + 0x3) << 32;   // double-word j, byte 3
+               result[1] |= (8*index + 0x4) << 24;   // double-word j, byte 4
+               result[1] |= (8*index + 0x5) << 16;   // double-word j, byte 5
+               result[1] |= (8*index + 0x6) << 8;    // double-word j, byte 6
+               result[1] |= (8*index + 0x7) << 0;    // double-word j, byte 7
+            } else {
+               result[0] |= (8*index + 0x0) << 56;   // double-word j, byte 0
+               result[0] |= (8*index + 0x1) << 48;   // double-word j, byte 1
+               result[0] |= (8*index + 0x2) << 40;   // double-word j, byte 2
+               result[0] |= (8*index + 0x3) << 32;   // double-word j, byte 3
+               result[0] |= (8*index + 0x4) << 24;   // double-word j, byte 4
+               result[0] |= (8*index + 0x5) << 16;   // double-word j, byte 5
+               result[0] |= (8*index + 0x6) << 8;    // double-word j, byte 6
+               result[0] |= (8*index + 0x7) << 0;    // double-word j, byte 7
+            }
+            j++;
+         }
+      }
+   } else if (imm == 0b10) {   //little-endian expansion
+      /* If IMM=0b00010, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement an
+         expansion of the rightmost doubleword elements of a source vector
+         into the doubleword elements of a result vector specified by the
+         doubleword-element mask in VSR[VRB+32].
+       */
+
+      for( index = 0; index < 2; index++) {
+         i = index;
+
+         if ( i == 1) {
+            src = src_hi;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = 63;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            result[half_sel] |= (8*j+0) << 0;  // double-word i, byte 0
+            result[half_sel] |= (8*j+1) << 8;  // double-word i, byte 1
+            result[half_sel] |= (8*j+2) << 16; // double-word i, byte 2
+            result[half_sel] |= (8*j+3) << 24; // double-word i, byte 3
+            result[half_sel] |= (8*j+4) << 32; // double-word i, byte 4
+            result[half_sel] |= (8*j+5) << 40; // double-word i, byte 5
+            result[half_sel] |= (8*j+6) << 48; // double-word i, byte 6
+            result[half_sel] |= (8*j+7) << 56; // double-word i, byte 7
+            j++;
+         } else {
+            result[half_sel] |= (8*index + 0x10) << 0;
+            result[half_sel] |= (8*index + 0x11) << 8;
+            result[half_sel] |= (8*index + 0x12) << 16;
+            result[half_sel] |= (8*index + 0x13) << 24;
+            result[half_sel] |= (8*index + 0x14) << 32;
+            result[half_sel] |= (8*index + 0x15) << 40;
+            result[half_sel] |= (8*index + 0x16) << 48;
+            result[half_sel] |= (8*index + 0x17) << 56;
+         }
+      }
+
+   } else if (imm == 0b11) {   //little-endian compression
+      /* If IMM=0b00011, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement a
+         compression of the sparse doubleword elements in a source vector
+         specified by the doubleword-element mask in VSR[VRB+32] into the
+         rightmost doubleword elements of a result vector.  */
+      for( index = 0; index < 2; index++) {
+         i = index;
+
+         if ( i == 1) {
+            src = src_hi;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = 63;
+
+         if (((src >> sel_shift_by) & 0x1) == 1) {
+            if (j == 1) {
+               result[0] |= (8*index + 0x0) << 0;    // double-word j, byte 0
+               result[0] |= (8*index + 0x1) << 8;    // double-word j, byte 1
+               result[0] |= (8*index + 0x2) << 16;   // double-word j, byte 2
+               result[0] |= (8*index + 0x3) << 24;   // double-word j, byte 3
+               result[0] |= (8*index + 0x4) << 32;   // double-word j, byte 4
+               result[0] |= (8*index + 0x5) << 40;   // double-word j, byte 5
+               result[0] |= (8*index + 0x6) << 48;   // double-word j, byte 6
+               result[0] |= (8*index + 0x7) << 56;   // double-word j, byte 7
+            } else {
+               result[1] |= (8*index + 0x0) << 0;
+               result[1] |= (8*index + 0x1) << 8;
+               result[1] |= (8*index + 0x2) << 16;
+               result[1] |= (8*index + 0x3) << 24;
+               result[1] |= (8*index + 0x4) << 32;
+               result[1] |= (8*index + 0x5) << 40;
+               result[1] |= (8*index + 0x6) << 48;
+               result[1] |= (8*index + 0x7) << 56;
+            }
+            j++;
+         }
+      }
+   } else {
+      vex_printf("ERROR, vector_gen_pvc_dword_mask_helper, imm value %u not supported.\n",
+                 imm);
+      vassert(0);
+   }
+
+   write_VSX_entry( gst, reg_offset, result);
+}
 
 /*------------------------------------------------*/
 /*---- VSX Matrix signed integer GER functions ---*/

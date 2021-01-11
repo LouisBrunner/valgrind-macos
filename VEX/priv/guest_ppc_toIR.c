@@ -8805,7 +8805,7 @@ static Bool dis_int_load_ds_form_prefix ( UInt prefix,
       pDIP( is_prefix, "ld r%u,%llu(r%u)", rT_addr, immediate_val, rA_addr);
       DIPn( is_prefix);
       assign( EA, calculate_prefix_EA( prefix, theInstr,
-                                       rA_addr, ptype, DSFORM_IMMASK,
+                                       rA_addr, ptype, DFORM_IMMASK,
                                        &immediate_val, &R ) );
 
       putIReg( rT_addr, load( Ity_I64, mkexpr( EA ) ) );
@@ -8815,15 +8815,14 @@ static Bool dis_int_load_ds_form_prefix ( UInt prefix,
       /* Word version DS Form - 64bit Loads.  In each case EA will have been
          formed with the lowest 2 bits masked off the immediate offset. */
       UInt uimm16 = ifieldUIMM16(theInstr);
-      Int  simm16 = extend_s_16to32(uimm16);
+      Int simm16 = extend_s_16to32(uimm16);
 
-      simm16 = simm16 & 0xFFFFFFFC;
+      simm16 = simm16 & DSFORM_IMMASK;
       assign( EA, ea_rAor0_simm( rA_addr, simm16  ) );
 
       switch ((b1<<1) | b0) {
       case 0x0: // ld (Load DWord, PPC64 p472)
-         pDIP( is_prefix, "ld r%u,%llu(r%u)", rT_addr, immediate_val, rA_addr);
-         DIPp( is_prefix, ",%u", R );
+         DIP("ld r%u,%llu(r%u)", rT_addr, immediate_val, rA_addr);
          putIReg( rT_addr, load( Ity_I64, mkexpr( EA ) ) );
          break;
 
@@ -8879,15 +8878,22 @@ static Bool dis_int_load_prefix ( UInt prefix, UInt theInstr )
                                        rA_addr, ptype, DFORM_IMMASK,
                                        &immediate_val, &R ) );
 
-   } else if (( opc1 == 0x28 ) || ( opc1 == 0x2A )) {
-      // half word loads lwz, plwz, lha, plha
+   } else if ( opc1 == 0x28 ) {
+      // half word loads lhz, plhz
+      size = Ity_I16;
+      assign( EA, calculate_prefix_EA( prefix, theInstr,
+                                       rA_addr, ptype, DFORM_IMMASK,
+                                       &immediate_val, &R ) );
+
+   } else if ( opc1 == 0x2A ) {
+      // half word loads lha, plha
       size = Ity_I16;
       assign( EA, calculate_prefix_EA( prefix, theInstr,
                                        rA_addr, ptype, DFORM_IMMASK,
                                        &immediate_val, &R ) );
 
    } else if (opc1 == 0x20 ) {
-      // word load
+      // word load lwz, plwz
       size = Ity_I32;
       assign( EA, calculate_prefix_EA( prefix, theInstr,
                                        rA_addr, ptype, DFORM_IMMASK,
@@ -8931,7 +8937,7 @@ static Bool dis_int_load_prefix ( UInt prefix, UInt theInstr )
       pDIP( is_prefix, "lhz r%u,%llu(r%u)", rT_addr, immediate_val, rA_addr );
       DIPp( is_prefix, ",%u", R );
 
-     putIReg( rT_addr, mkWidenFrom16( ty, val, False ) );
+      putIReg( rT_addr, mkWidenFrom16( ty, val, False ) );
       break;
 
    case 0x2A: // lha (Load HW Alg, PPC32 p445)
@@ -9607,7 +9613,7 @@ static Bool dis_int_store_ds_prefix ( UInt prefix,
       b0 = 0;
       b1 = 0;
       assign( EA, calculate_prefix_EA( prefix, theInstr, rA_addr,
-                                       ptype, DSFORM_IMMASK, &immediate_val,
+                                       ptype, DFORM_IMMASK, &immediate_val,
                                        &R ) );
 
    } else if ( opc1 == 0x3 ) {
@@ -9800,8 +9806,10 @@ static Bool dis_int_store ( UInt prefix, UInt theInstr, const VexAbiInfo* vbi )
       break;
 
    case 0x24: // stw (Store W, PPC32 p530)
+      {
       DIP("stw r%u,%d(r%u)\n", rS_addr, simm16, rA_addr);
       store( mkexpr(EA), mkNarrowTo32(ty, mkexpr(rS)) );
+      }
       break;
 
    case 0x25: // stwu (Store W, Update, PPC32 p534)
@@ -12754,6 +12762,7 @@ static Bool dis_fp_store ( UInt prefix, UInt theInstr )
       store( mkexpr(EA), unop(Iop_TruncF64asF32, mkexpr(frS)) );
       putIReg( rA_addr, mkexpr(EA) );
       break;
+
    case 0x37: // stfdu (Store Float Double, Update, PPC32 p514)
       if (rA_addr == 0)
          return False;
@@ -14040,35 +14049,125 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
    break;
 
    case 0x2A:   // plxsd
+   {
+      UChar vRT = ifieldRegDS(theInstr);
+      /* The prefixed word version uses the D-form.  */
+      assign( EA, calculate_prefix_EA( prefix, theInstr, rA_addr,
+                                       ptype, DFORM_IMMASK,
+                                       &immediate_val, &R ) );
+
+      pDIP( is_prefix, "lxsd v%u,%llu(r%u)\n", vRT, immediate_val, rA_addr );
+      DIPp( is_prefix, ",%u", R );
+
+      putVSReg( vRT+32, binop( Iop_64HLtoV128,
+                               load( Ity_I64, mkexpr( EA ) ),
+                               mkU64( 0 ) ) );
+      return True;
+   }
+
    case 0x2B:   // plxssp
-   case 0x39:   // lxsd, lxssp
+   {
+      UChar vRT = ifieldRegDS(theInstr);
+      /* The prefixed word version uses the D-form.  */
+      assign( EA, calculate_prefix_EA( prefix, theInstr, rA_addr,
+                                       ptype, DFORM_IMMASK,
+                                       &immediate_val, &R ) );
+
+
+      pDIP( is_prefix, "lxssp v%u,%llu(r%u)\n", vRT, immediate_val, rA_addr );
+      DIPp( is_prefix, ",%u", R );
+      putVSReg( vRT+32,
+                binop( Iop_64HLtoV128,
+                       unop( Iop_ReinterpF64asI64,
+                             unop( Iop_F32toF64,
+                                   unop( Iop_ReinterpI32asF32,
+                                         load( Ity_I32, mkexpr( EA ) )
+                                      ) ) ),
+                       mkU64( 0 ) ) );
+      return True;
+   }
+
+   case 0x32:   // plxv0
+   case 0x33:   // plxv1  These are both plxv, but bit 5 is used for TX
+   {
+      IRExpr* irx_addr;
+      IRTemp word[2];
+      UInt ea_off = 8;
+      UChar vRS  = ifieldRegDS(theInstr);
+      UInt  T  = IFIELD( theInstr, 21, 5);
+      UInt  TX = IFIELD( theInstr, 26, 1);
+
+      assign( EA,
+              calculate_prefix_EA( prefix, theInstr, rA_addr, ptype,
+                                   DFORM_IMMASK, &immediate_val, &R ) );
+
+      // plxv (Load VSX Vector)
+      pDIP( is_prefix, "lxv v%u,%llu(r%u)\n", vRS, immediate_val, rA_addr );
+      DIPp( is_prefix, ",%u", R );
+
+      word[0] = newTemp(Ity_I64);
+      assign( word[0], load( Ity_I64, mkexpr( EA ) ) );
+
+      irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
+                        ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
+
+      word[1] = newTemp(Ity_I64);
+      assign( word[1], load( Ity_I64, irx_addr ) );
+
+      if (host_endness == VexEndnessBE)
+         putVSReg( TX*32+T, binop( Iop_64HLtoV128,
+                                   mkexpr( word[0] ),
+                                   mkexpr( word[1] ) ) );
+      else
+         putVSReg( TX*32+T, binop( Iop_64HLtoV128,
+                                   mkexpr( word[1] ),
+                                   mkexpr( word[0] ) ) );
+      return True;
+   }
+   break;
+
+   case 0x39:   // lxsd, plxsd, lxssp, plxssp
    {
       UChar vRT = ifieldRegDS(theInstr);
       opc2 = ifieldOPC0o2(theInstr);
-      if (opc1 == 0x2A)
+
+      if (opc1 == 0x2A) {  // plxsd
          opc2 = 0x2;  // map plxsd to lxsd inst
+         /* The prefixed word version uses the D-form.  */
+         assign( EA, calculate_prefix_EA( prefix, theInstr, rA_addr,
+                                          ptype, DFORM_IMMASK,
+                                          &immediate_val, &R ) );
 
-      if (opc1 == 0x2B)
+      } else if (opc1 == 0x2B) { // plxssp
          opc2 = 0x3;  // map plxssp to lxssp inst
-
-      /* The word version uses the DS-form.  */
-      assign( EA, calculate_prefix_EA( prefix, theInstr, rA_addr,
-                                       ptype, DSFORM_IMMASK,
-                                       &immediate_val, &R ) );
+         /* The prefixed word version uses the D-form.  */
+         assign( EA, calculate_prefix_EA( prefix, theInstr, rA_addr,
+                                          ptype, DFORM_IMMASK,
+                                          &immediate_val, &R ) );
+      } else {
+         /* The word version uses the DS-form.  */
+         assign( EA, calculate_prefix_EA( prefix, theInstr, rA_addr,
+                                          ptype, DSFORM_IMMASK,
+                                          &immediate_val, &R ) );
+      }
 
       switch(opc2) {
-      case 0x2:     // lxsd (Load VSX Scalar Doubleword)
-         pDIP( is_prefix, "lxsd v%u,%llu(r%u)\n", vRT, immediate_val, rA_addr );
+      case 0x2:     // lxsd, plxsd (Load VSX Scalar Doubleword)
+      {
+         pDIP( is_prefix, "lxsd v%u,%llu(r%u)\n", vRT, immediate_val,
+               rA_addr );
          DIPp( is_prefix, ",%u", R );
-
          putVSReg( vRT+32, binop( Iop_64HLtoV128,
                                   load( Ity_I64, mkexpr( EA ) ),
                                   mkU64( 0 ) ) );
          return True;
+      }
+      break;
 
       case 0x3:     // lxssp (Load VSX Scalar Single from memory,
                     // store as double in register)
-         pDIP( is_prefix, "lxssp v%u,%llu(r%u)\n", vRT, immediate_val, rA_addr );
+         pDIP( is_prefix, "lxssp v%u,%llu(r%u)\n", vRT, immediate_val,
+               rA_addr );
          DIPp( is_prefix, ",%u", R );
 
          putVSReg( vRT+32,
@@ -14089,107 +14188,98 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
    }
 
    case 0x2E:  // pstxsd
-   case 0x2F:  // pstxssp
-   case 0x3d:  // lxv, stxv, stxsd, stxssp, pstd
-   case 0x32:  // plxv  (TX=0)
-   case 0x33:  // plxv  (TX=1)
-   case 0x36:  // pstxv
    {
+      // pstxsd (Store VSX Scalar Doubleword)
       UChar vRS  = ifieldRegDS(theInstr);
-      UInt  TX = IFIELD( theInstr,  3, 1);  // default TX or SX bit field
+
+      assign( EA, calculate_prefix_EA( prefix, theInstr,
+                                       rA_addr, ptype, DFORM_IMMASK,
+                                       &immediate_val, &R ) );
+      pDIP( is_prefix, "stxsd v%u,%llu(r%u)\n", vRS, immediate_val, rA_addr);
+      DIPp( is_prefix, ",%u", R );
+      store( mkexpr(EA), unop( Iop_V128HIto64,
+                               getVSReg( vRS+32 ) ) );
+      /* HW is clearing vector element 1.  Don't see that in the ISA but
+       * matching the HW.
+       */
+      putVSReg( vRS+32, binop( Iop_64HLtoV128,
+                               unop( Iop_V128HIto64,
+                                     getVSReg( vRS+32 ) ),
+                               mkU64( 0 ) ) );
+      return True;
+   }
+   break;
+
+   case 0x2F:
+   {
+      // pstxssp (Store VSX Scalar Single - store double precision
+      // value from register into memory in single precision format)
+      UChar vRS  = ifieldRegDS(theInstr);
+      IRTemp high64 = newTemp(Ity_F64);
+      IRTemp val32  = newTemp(Ity_I32);
+
+      assign( EA, calculate_prefix_EA( prefix, theInstr,
+                                       rA_addr, ptype, DFORM_IMMASK,
+                                       &immediate_val, &R ) );
+      pDIP( is_prefix, "stxssp v%u,%llu(r%u)\n", vRS, immediate_val, rA_addr);
+      DIPp( is_prefix, ",%u", R );
+
+      assign(high64, unop( Iop_ReinterpI64asF64,
+                           unop( Iop_V128HIto64, getVSReg( vRS+32 ) ) ) );
+
+      assign(val32, unop( Iop_ReinterpF32asI32,
+                          unop( Iop_TruncF64asF32,
+                                mkexpr(high64) ) ) );
+      store( mkexpr(EA), mkexpr( val32 ) );
+
+      return True;
+   }
+   break;
+
+   case 0x3d:  // lxv
+   {
+      IRExpr* irx_addr;
+      IRTemp word[2];
+      UInt ea_off = 8;
+      UChar vRS = ifieldRegDS(theInstr);
+      UInt T = IFIELD( theInstr, 21, 5);
+      UInt TX = IFIELD( theInstr, 3, 1);
 
       opc2 = IFIELD(theInstr, 0, 3);
 
-      if ((opc1 == 0x32) || (opc1 == 0x33)) {
-         TX = IFIELD( theInstr,  26, 1);  // TX special case
-         opc2 = 1;  // Force plxv to match lxv case
-      }
-      if (opc1 == 0x2E) opc2 = 2;  // Map pstxsd inst to stxsd
-      if (opc1 == 0x2F) opc2 = 3;  // Map pstxssp inst to stxssp
-      if (opc1 == 0x36) {
-         opc2 = 5;  // Map pstxv inst to stxv
-         TX = IFIELD( theInstr,  26, 1);  // Actually SX in the ISA
-      }
-      if ((opc2 == 0x1) || (opc2 == 0x5)) {    // lxv, stxv, stxsd
-         UInt ea_off = 8;
-         IRTemp word[2];
-         IRExpr* irx_addr;
-         UInt  T  = IFIELD( theInstr, 21, 5);  // T or S depending on inst
+      if ( IFIELD( theInstr, 0, 3) == 1) {
+         // lxv (Load VSX Vector)
+         assign( EA, calculate_prefix_EA( prefix, theInstr,
+                                          rA_addr, ptype, DQFORM_IMMASK,
+                                          &immediate_val, &R ) );
 
-         /* Effective address calculation */
-         if (opc1 == 0x3D) {   // stxv
-            UInt uimm16   = ifieldUIMM16(theInstr);
-            Int  simm16 = extend_s_16to32(uimm16);
-
-            simm16 = simm16 & DQFORM_IMMASK;
-            assign( EA, ea_rAor0_simm( rA_addr, simm16  ) );
-
-         } else {
-            assign( EA,
-                    calculate_prefix_EA( prefix, theInstr, rA_addr, ptype,
-                                         DFORM_IMMASK, &immediate_val, &R ) );
-         }
-
+         DIP("lxv v%u,%llu(r%u)\n", vRS, immediate_val, rA_addr );
          word[0] = newTemp(Ity_I64);
+         assign( word[0], load( Ity_I64, mkexpr( EA ) ) );
+
+         irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
+                           ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
          word[1] = newTemp(Ity_I64);
+         assign( word[1], load( Ity_I64, irx_addr ) );
 
-         if ( opc2 == 1) {
-            // lxv (Load VSX Vector)
-            pDIP( is_prefix, "lxv v%u,%llu(r%u)\n", vRS, immediate_val, rA_addr );
-            DIPp( is_prefix, ",%u", R );
-            assign( word[0], load( Ity_I64, mkexpr( EA ) ) );
+         if (host_endness == VexEndnessBE)
+            putVSReg( TX*32+T, binop( Iop_64HLtoV128,
+                                      mkexpr( word[0] ),
+                                      mkexpr( word[1] ) ) );
+         else
+            putVSReg( TX*32+T, binop( Iop_64HLtoV128,
+                                      mkexpr( word[1] ),
+                                      mkexpr( word[0] ) ) );
+         return True;
 
-            irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
-                           ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
-
-            assign( word[1], load( Ity_I64, irx_addr ) );
-
-            if (host_endness == VexEndnessBE)
-               putVSReg( TX*32+T, binop( Iop_64HLtoV128,
-                                         mkexpr( word[0] ),
-                                         mkexpr( word[1] ) ) );
-            else
-               putVSReg( TX*32+T, binop( Iop_64HLtoV128,
-                                         mkexpr( word[1] ),
-                                         mkexpr( word[0] ) ) );
-            return True;
-
-         } else if ( opc2 == 5) {
-            // stxv (Store VSX Vector)
-            pDIP( is_prefix, "stxv v%u,%llu(r%u)\n", vRS, immediate_val, rA_addr );
-            DIPp( is_prefix, ",%u", R );
-
-            if (host_endness == VexEndnessBE) {
-               store( mkexpr(EA), unop( Iop_V128HIto64,
-                                        getVSReg( TX*32+T ) ) );
-               irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
-                           ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
-               store( irx_addr, unop( Iop_V128to64,
-                                       getVSReg( TX*32+T ) ) );
-            } else {
-               store( mkexpr(EA), unop( Iop_V128to64,
-                                        getVSReg( TX*32+T ) ) );
-               irx_addr
-                  = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
-                           ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
-               store( irx_addr, unop( Iop_V128HIto64,
-                                      getVSReg( TX*32+T ) ) );
-            }
-            return True;
-
-         } else
-            return False;
-
-         break;
-
-      } else if ((opc2 & 0x3) == 0x2) {
+       } else if ((opc2 & 0x3) == 0x2) {
          // stxsd (Store VSX Scalar Doubleword)
-         pDIP( is_prefix, "stxsd v%u,%llu(r%u)\n", vRS, immediate_val, rA_addr);
-         DIPp( is_prefix, ",%u", R );
-
+         R = 0;  // must be zero for word instruction
          assign( EA, calculate_prefix_EA( prefix, theInstr,
                                           rA_addr, ptype, DSFORM_IMMASK,
                                           &immediate_val, &R ) );
+
+         DIP("stxsd v%u,%llu(r%u)\n", vRS, immediate_val, rA_addr);
          store( mkexpr(EA), unop( Iop_V128HIto64,
                                   getVSReg( vRS+32 ) ) );
          /* HW is clearing vector element 1.  Don't see that in the ISA but
@@ -14207,12 +14297,10 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
          IRTemp high64 = newTemp(Ity_F64);
          IRTemp val32  = newTemp(Ity_I32);
 
-         pDIP( is_prefix, "stxssp v%u,%llu(r%u)\n", vRS, immediate_val, rA_addr);
-         DIPp( is_prefix, ",%u", R );
-
-         assign( EA, calculate_prefix_EA( prefix, theInstr,
-                                          rA_addr, ptype, DSFORM_IMMASK,
-                                          &immediate_val, &R ) );
+         assign( EA,
+                 calculate_prefix_EA( prefix, theInstr, rA_addr, ptype,
+                                      DSFORM_IMMASK, &immediate_val, &R ) );
+         DIP("stxssp v%u,%llu(r%u)\n", vRS, immediate_val, rA_addr);
          assign(high64, unop( Iop_ReinterpI64asF64,
                               unop( Iop_V128HIto64, getVSReg( vRS+32 ) ) ) );
 
@@ -14223,30 +14311,50 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
 
          return True;
 
+      } else if (opc2  == 0x5) {
+         // stxv (Store VSX Vector)
+         assign( EA, calculate_prefix_EA( prefix, theInstr,
+                                          rA_addr, ptype, DQFORM_IMMASK,
+                                          &immediate_val, &R ) );
+         DIP("stxv v%u,%llu(r%u)\n", vRS, immediate_val, rA_addr );
+
+         if (host_endness == VexEndnessBE) {
+            store( mkexpr(EA), unop( Iop_V128HIto64,
+                                     getVSReg( TX*32+T ) ) );
+            irx_addr
+               = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
+                        ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
+            store( irx_addr, unop( Iop_V128to64,
+                                   getVSReg( TX*32+T ) ) );
+         } else {
+            store( mkexpr(EA), unop( Iop_V128to64,
+                                     getVSReg( TX*32+T ) ) );
+            irx_addr
+               = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
+                        ty == Ity_I64 ? mkU64( ea_off ) : mkU32( ea_off ) );
+               store( irx_addr, unop( Iop_V128HIto64,
+                                      getVSReg( TX*32+T ) ) );
+         }
+         return True;
+
       } else {
-         vex_printf("dis_fp_pair_prefix(ppc) : DS-form wrong opc2\n");
+         vex_printf("dis_fp_pair vector load/store (ppc) : DS-form wrong opc2\n");
          return False;
       }
-      break;
    }
+   break;
 
    case 0x3A:  // plxvp
    {
       UChar XTp = ifieldRegXTp(theInstr);
 
-      /* Endian aware prefixed load */
-      pDIP( is_prefix, "lxvp %u,%llu(%u)", XTp, immediate_val, rA_addr );
-      DIPp( is_prefix, ",%u", R );
-
-      if (R == 1 ) {
-         vex_printf("Illegal instruction R = 1; plxvp %u,%llu(%u)\n",
-                    XTp, immediate_val, rA_addr );
-         return False;
-      }
-
       assign( EA, calculate_prefix_EA( prefix, theInstr,
                                        rA_addr, ptype, DFORM_IMMASK,
                                        &immediate_val, &R ) );
+
+      /* Endian aware prefixed load */
+      pDIP( is_prefix, "lxvp %u,%llu(%u)", XTp, immediate_val, rA_addr );
+      DIPp( is_prefix, ",%u", R );
 
       // address of next 128bits
       assign( EA_16, binop( Iop_Add64, mkU64( 16 ), mkexpr( EA ) ) );
@@ -14266,6 +14374,10 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
       IRTemp EA_24 = newTemp(ty);
       UChar XTp = ifieldRegXTp(theInstr);
 
+      assign( EA, calculate_prefix_EA( prefix, theInstr,
+                                       rA_addr, ptype, DFORM_IMMASK,
+                                       &immediate_val, &R ) );
+
       /* Endian aware prefixed load */
       pDIP( is_prefix, "stxvp %u,%llu(%u)\n", XTp, immediate_val, rA_addr );
       DIPp( is_prefix, ",%u", R );
@@ -14275,10 +14387,6 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
                     XTp, immediate_val, rA_addr );
          return False;
       }
-
-      assign( EA, calculate_prefix_EA( prefix, theInstr,
-                                       rA_addr, ptype, DFORM_IMMASK,
-                                       &immediate_val, &R ) );
 
       assign( EA_8, binop( Iop_Add64, mkU64( 8 ), mkexpr( EA ) ) );
       assign( EA_16, binop( Iop_Add64, mkU64( 16 ), mkexpr( EA ) ) );
@@ -14294,6 +14402,50 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
          store( mkexpr( EA_8 ), unop( Iop_V128HIto64, getVSReg( XTp+1 ) ) );
          store( mkexpr( EA_16 ), unop( Iop_V128to64, getVSReg( XTp ) ) );
          store( mkexpr( EA_24 ), unop( Iop_V128HIto64, getVSReg( XTp ) ) );
+      }
+      return True;
+   }
+
+   case 0x36:  // pstxv0
+   case 0x37:  // pstxv1, pstxv inst where bit 5 is SX
+   {
+      // pstxv (Prefixed store VSX Vector 1 8LS:D-form)
+      // AKA pstxv0, pstxv1
+      UInt  S  = IFIELD( theInstr, 21, 5);
+      UInt  SX = IFIELD( theInstr, 26, 1);
+      UInt  XS = 32*SX+S;
+      UChar vRS  = ifieldRegDS(theInstr);
+      IRTemp tmpV128  = newTemp(Ity_V128);
+      IRExpr* irx_addr;
+      UInt ea_off = 8;
+
+      DIP("pstxv v%u,%llu(r%u)", vRS, immediate_val, rA_addr );
+      DIPp( is_prefix, ",%u", R );
+
+      assign( tmpV128, getVSReg( XS ) );
+
+      assign( EA,
+              calculate_prefix_EA( prefix, theInstr,
+                                   rA_addr, ptype, DFORM_IMMASK,
+                                   &immediate_val, &R ) );
+
+      if (host_endness == VexEndnessBE) {
+         store( mkexpr(EA), unop( Iop_V128HIto64,
+                                  mkexpr( tmpV128 ) ) );
+         irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
+                           ty == Ity_I64 ? mkU64( ea_off ):
+                           mkU32( ea_off ) );
+         store( irx_addr, unop( Iop_V128to64,
+                                mkexpr( tmpV128 ) ) );
+
+      } else {
+         store( mkexpr(EA), unop( Iop_V128to64,
+                                  mkexpr( tmpV128 ) ) );
+         irx_addr = binop( mkSzOp( ty, Iop_Add8 ), mkexpr( EA ),
+                           ty == Ity_I64 ? mkU64( ea_off ):
+                           mkU32( ea_off ) );
+         store( irx_addr, unop( Iop_V128HIto64,
+                                mkexpr( tmpV128 ) ) );
       }
       return True;
    }
@@ -34336,6 +34488,7 @@ DisResult disInstr_PPC_WRK (
    Bool      allow_isa_2_07 = False;
    Bool      allow_isa_3_0  = False;
    Bool      allow_isa_3_1  = False;
+   Bool      is_prefix;
 
    /* What insn variants are we supporting today? */
    if (mode64) {
@@ -34534,6 +34687,7 @@ DisResult disInstr_PPC_WRK (
 
    opc1 = ifieldOPC(theInstr);
    opc2 = ifieldOPClo10(theInstr);
+   is_prefix = prefix_instruction( prefix );
 
    // Note: all 'reserved' bits must be cleared, else invalid
    switch (opc1) {
@@ -34556,13 +34710,21 @@ DisResult disInstr_PPC_WRK (
 
    /* Integer Logical Instructions */
    case 0x1C: case 0x1D: case 0x18: // andi., andis., ori
-   case 0x1A: case 0x1B: // xori,   xoris
+   case 0x1A:  // xori
       if (dis_int_logic( prefix, theInstr )) goto decode_success;
       goto decode_failure;
 
-   case 0x19: // oris
-      if (dis_int_logic( prefix, theInstr ))  //oris
+   case 0x1B:
+      if ( !is_prefix ) {  // oris
+         if (dis_int_logic( prefix, theInstr )) goto decode_success;
+      }
+      goto decode_failure;
+
+   case 0x19:
+      if ( !is_prefix ) {  //oris
+         if (dis_int_logic( prefix, theInstr ))
          goto decode_success;
+      }
       goto decode_failure;
 
    /* Integer Rotate Instructions */
@@ -34579,13 +34741,17 @@ DisResult disInstr_PPC_WRK (
    /* Integer Load Instructions */
    case 0x20:   // lwz
       {
-         UChar tmp_opc2 = IFIELD(theInstr, (31-(46-32)), 4);  // bits[43:46]
+         UInt ptype  = PrefixType(prefix);
 
-         // splat instructions: xxspltiw, xxspltidp, xxsplti32dx
-         if (( tmp_opc2 >= 0 ) && ( tmp_opc2 <= 3 )
-             && prefix_instruction( prefix)) {
+         if (( ptype == 1) && prefix_instruction( prefix)) {
+            // splat instructions: xxspltiw, xxspltidp, xxsplti32dx
             if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
             if (dis_vector_splat_imm_prefix( prefix, theInstr ))
+               goto decode_success;
+
+         } else if ( is_prefix && (ptype == pType2) ) {  // plwz
+            if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
+            if (dis_int_load_prefix( prefix, theInstr ))
                goto decode_success;
 
          } else {  // lwz
@@ -34599,10 +34765,14 @@ DisResult disInstr_PPC_WRK (
       {
          UInt ptype  = PrefixType(prefix);
 
-         if (prefix_instruction( prefix) && ( ptype == pType1 ) ) {
+         if (is_prefix && ( ptype == pType1 ) ) {
             if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
             // splat instructions: xxpermx
             if (dis_vector_permute_prefix( prefix, theInstr, abiinfo ))
+               goto decode_success;
+         } else if (is_prefix && ( ptype == pType1 ) ) {  // plbz:  load instruction
+            if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
+            if (dis_int_load_prefix( prefix, theInstr ))
                goto decode_success;
          } else {  // lbz:  load instruction
             if (dis_int_load_prefix( prefix, theInstr ))
@@ -34625,47 +34795,77 @@ DisResult disInstr_PPC_WRK (
       goto decode_failure;
 
    /* Integer Store Instructions */
-   case 0x26: case 0x2C: case 0x24: // stb, sth, stw
-      ISA_3_1_PREFIX_CHECK
-      if (dis_int_store_prefix( prefix, theInstr, abiinfo ))
-         goto decode_success;
+   case 0x24:
+      if (is_prefix && (PrefixType(prefix) == pType2)) {  // pstw
+         ISA_3_1_PREFIX_CHECK
+         if (dis_int_store_prefix( prefix, theInstr, abiinfo ))
+            goto decode_success;
+      } else if ( !is_prefix ) {   // stw
+         if (dis_int_store_prefix( prefix, theInstr, abiinfo ))
+            goto decode_success;
+      }
+      goto decode_failure;
+
+   case 0x26:
+      if (is_prefix && (PrefixType(prefix) == pType2)) {  // pstb
+         ISA_3_1_PREFIX_CHECK
+         if (dis_int_store_prefix( prefix, theInstr, abiinfo ))
+            goto decode_success;
+      } else if ( !is_prefix ) {  // stb
+         if (dis_int_store_prefix( prefix, theInstr, abiinfo ))
+            goto decode_success;
+      }
+      goto decode_failure;
+
+   case 0x2C:
+      if (is_prefix && (PrefixType(prefix) == pType2)) {  // psth
+         ISA_3_1_PREFIX_CHECK
+        if (dis_int_store_prefix( prefix, theInstr, abiinfo ))
+           goto decode_success;
+      } else if ( !is_prefix ) {  //sth
+         if (dis_int_store_prefix( prefix, theInstr, abiinfo ))
+            goto decode_success;
+      }
       goto decode_failure;
 
    case 0x27: case 0x2D: case 0x25: // stbu, sthu, stwu
       if (dis_int_store( prefix, theInstr, abiinfo )) goto decode_success;
       goto decode_failure;
 
-   case 0x28:    // lhz
-      ISA_3_1_PREFIX_CHECK
-      if (dis_int_load_prefix( prefix, theInstr ))
-         goto decode_success;
+   case 0x28:
+      if (is_prefix && (PrefixType(prefix) == pType2)) {  // plhz
+         ISA_3_1_PREFIX_CHECK
+         if (dis_int_load_prefix( prefix, theInstr ))
+            goto decode_success;
+      } else if ( !is_prefix ) {   // lhz
+         if (dis_int_load_prefix( prefix, theInstr ))
+            goto decode_success;
+      }
       goto decode_failure;
 
-   case 0x29:                 // lhzu, plwa
-      if (prefix_instruction( prefix)) {
-         if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
+   case 0x29:
+      if (is_prefix && (PrefixType(prefix) == pType0)) {  // plwa
+         ISA_3_1_PREFIX_CHECK
          // prefix inst: plwa
          if (dis_int_load_ds_form_prefix( prefix, theInstr ))
             goto decode_success;
-      } else {
-         // lhzu
-         if (dis_int_load( prefix, theInstr )) goto decode_success;
+      } else if ( !is_prefix ) {  // lhzu
+         if (dis_int_load( prefix, theInstr ))
+            goto decode_success;
       }
       goto decode_failure;
 
    case 0x2A:   // lha, plha, plxsd
    {
-      if (prefix_instruction( prefix )) {
-         UInt ptype  = PrefixType(prefix);
-         if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
-         if (ptype == pType0) {
-           if (dis_fp_pair_prefix( prefix, theInstr )) // plxsd
-               goto decode_success;
-         } else if (ptype == pType2) {
-            if (dis_int_load_prefix( prefix, theInstr )) // plha
-               goto decode_success;
-         }
-      } else {
+      if (is_prefix && (PrefixType(prefix) == pType0)) {  // plxsd
+         ISA_3_1_PREFIX_CHECK
+         if (dis_fp_pair_prefix( prefix, theInstr ))
+            goto decode_success;
+      } else if (is_prefix && (PrefixType(prefix) == pType2)) {  // plha
+         ISA_3_1_PREFIX_CHECK
+         if (dis_int_load_prefix( prefix, theInstr ))
+            goto decode_success;
+      } else if ( !is_prefix ) {
          if (dis_int_load_prefix( prefix, theInstr )) // lha
             goto decode_success;
       }
@@ -34673,11 +34873,11 @@ DisResult disInstr_PPC_WRK (
    goto decode_failure;
 
    case 0x2B:   //  lhau, plxssp
-      if (prefix_instruction( prefix)) {
-         if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
-         if (dis_fp_pair_prefix( prefix, theInstr )) // plxssp
+      if (is_prefix && (PrefixType(prefix) == pType0)) {  // plxssp
+         ISA_3_1_PREFIX_CHECK
+         if (dis_fp_pair_prefix( prefix, theInstr ))
             goto decode_success;
-      } else {
+      } else if ( !is_prefix ) {  // lhau
          if (dis_int_load( prefix, theInstr ))
             goto decode_success;
       }
@@ -34685,22 +34885,21 @@ DisResult disInstr_PPC_WRK (
 
    /* Integer Load and Store Multiple Instructions */
    case 0x2E:
-      if (prefix_instruction( prefix )) { // pstxsd
-         if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
+      if (is_prefix && (PrefixType(prefix) == pType0)) { // pstxsd
+         ISA_3_1_PREFIX_CHECK
          if (dis_fp_pair_prefix( prefix, theInstr )) goto decode_success;
-      } else {  // lmw,
+      } else if ( !is_prefix ) {  // lmw,
          if (dis_int_ldst_mult( prefix, theInstr )) goto decode_success;
       }
       goto decode_failure;
 
    case 0x2F:
-      if (prefix_instruction( prefix )) { // pstxssp
-         if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
+      if (is_prefix && (PrefixType(prefix) == pType0)) { // pstxssp
+         ISA_3_1_PREFIX_CHECK
          if (dis_fp_pair_prefix( prefix, theInstr )) goto decode_success;
-      } else {  // stmw
+      } else if ( !is_prefix ) {  // stmw
          if (dis_int_ldst_mult( prefix, theInstr )) goto decode_success;
       }
-
       goto decode_failure;
 
    /* Branch Instructions */
@@ -34730,10 +34929,14 @@ DisResult disInstr_PPC_WRK (
       goto decode_failure;
 
    /* Floating Point Load Instructions */
-   case 0x30:                      // lfs
+   case 0x30:
       if (!allow_F) goto decode_noF;
-      ISA_3_1_PREFIX_CHECK
-      if (dis_fp_load_prefix( prefix, theInstr )) goto decode_success;
+      if (is_prefix && (PrefixType(prefix) == pType2)) { // plfs
+         ISA_3_1_PREFIX_CHECK
+         if (dis_fp_load_prefix( prefix, theInstr )) goto decode_success;
+      } else if ( !is_prefix ) {  // lfs
+         if (dis_fp_load_prefix( prefix, theInstr )) goto decode_success;
+      }
       goto decode_failure;
 
    case 0x31:   // lfsu, stxv
@@ -34746,71 +34949,87 @@ DisResult disInstr_PPC_WRK (
       }
       goto decode_failure;
 
-   case 0x32:            //  plfd, lfd, plxv
-      if (!allow_F) goto decode_noF;
-      if (prefix_instruction( prefix )) {
-         UInt ptype = PrefixType(prefix);
-
-         if (ptype == pType0)       //plxv  (TX=0)
-            if (dis_fp_pair_prefix( prefix, theInstr ))
-               goto decode_success;
-
-         if (ptype == pType2)     // plfd
-            if (dis_fp_load_prefix( prefix, theInstr ))
-               goto decode_success;
-
-      } else {  // lfd
+   case 0x32:
+      if (is_prefix && (PrefixType(prefix) == pType0)) {  // plxv, TX bit = 0
+         if (!allow_F) goto decode_noF;
+         ISA_3_1_PREFIX_CHECK
+         if (dis_fp_pair_prefix( prefix, theInstr ))
+            goto decode_success;
+      } else if (is_prefix && (PrefixType(prefix) == pType2)) {  // plfd
+         ISA_3_1_PREFIX_CHECK
+         if (dis_fp_load_prefix( prefix, theInstr ))
+            goto decode_success;
+      } else if ( !is_prefix ) { // lfd
          if (dis_fp_load_prefix( prefix, theInstr ))
             goto decode_success;
       }
       goto decode_failure;
 
-   case 0x33:            //  lfdu, plxv
-      if (prefix_instruction( prefix )) {
-         UInt ptype = PrefixType(prefix);
-         if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
-
-         if (ptype == pType0)       //plxv  (TX=1)
-            if (dis_fp_pair_prefix( prefix, theInstr ))
-               goto decode_success;
-      } else {
+   case 0x33:
+      if (is_prefix && (PrefixType(prefix) == pType0)) {  // plxv, TX bit = 1
+         if (!allow_F) goto decode_noF;
+         ISA_3_1_PREFIX_CHECK
+         if (dis_fp_pair_prefix( prefix, theInstr ))
+            goto decode_success;
+      } else {  //  lfdu
          if (!allow_F) goto decode_noF;
          if (dis_fp_load( prefix, theInstr )) goto decode_success;
       }
       goto decode_failure;
 
    /* Floating Point Store Instructions */
-   case 0x34:                       // stfs
+   case 0x34:
       if (!allow_F) goto decode_noF;
-      ISA_3_1_PREFIX_CHECK
-      if (dis_fp_store_prefix( prefix, theInstr )) goto decode_success;
-      goto decode_failure;
-
-   case 0x36:
-      if (!allow_F) goto decode_noF;
-      if (!prefix_instruction( prefix )) {  // stfd
+      if (is_prefix && (PrefixType(prefix) == pType2)) {  // pstfs
+         ISA_3_1_PREFIX_CHECK
          if (dis_fp_store_prefix( prefix, theInstr )) goto decode_success;
-      } else {
-         UInt ptype = PrefixType(prefix);
-         if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
-         if (ptype == 0) {                       // pstxv
-            if (dis_fp_pair_prefix( prefix, theInstr ))
-               goto decode_success;
-         } else if (ptype == 2) {                 // pstfd
-            if (dis_fp_store_prefix( prefix, theInstr ))
-               goto decode_success;
-         } else {
-            vex_printf("ERROR, opc1 = 0x36, Unknown prefix instruction\n");
-         }
+      } else if ( !is_prefix ) { // stfs
+         if (dis_fp_store_prefix( prefix, theInstr )) goto decode_success;
       }
       goto decode_failure;
 
-   case 0x35: case 0x37:            // stfsu, stfdu
+   case 0x35:            // stfsu
       if (!allow_F) goto decode_noF;
       if (dis_fp_store( prefix, theInstr )) goto decode_success;
       goto decode_failure;
 
-      /* Floating Point Load Double Pair Instructions */
+   case 0x36:
+      if (is_prefix && (PrefixType(prefix) == pType0)) {  // pstxv, XS bit = 0
+         ISA_3_1_PREFIX_CHECK
+         if (dis_fp_pair_prefix( prefix, theInstr ))
+            goto decode_success;
+      } else if ( is_prefix && (PrefixType(prefix) == pType2)) { // pstfd
+         ISA_3_1_PREFIX_CHECK
+         if (dis_fp_store_prefix( prefix, theInstr ))
+            goto decode_success;
+      } else if ( !is_prefix ) {  // stfd
+         if (!allow_F) goto decode_noF;
+         if (dis_fp_store_prefix( prefix, theInstr )) goto decode_success;
+      }
+      goto decode_failure;
+
+   case 0x37:
+      if (is_prefix && (PrefixType(prefix) == pType0)) {  // pstxv, XS bit = 1
+         ISA_3_1_PREFIX_CHECK
+         if (dis_fp_pair_prefix( prefix, theInstr ))
+            goto decode_success;
+      }  else if ( !is_prefix )  {  // stfdu
+         if (!allow_F) goto decode_noF;
+         if (dis_fp_store( prefix, theInstr )) goto decode_success;
+      }
+     goto decode_failure;
+
+   /* 128-bit Integer Load */
+   case 0x38:
+      if (is_prefix && (PrefixType(prefix) == pType0)) {  // plq
+         ISA_3_1_PREFIX_CHECK
+            if (dis_int_load_prefix( prefix, theInstr )) goto decode_success;
+      } else if ( !is_prefix) {  // lq
+            if (dis_int_load_prefix( prefix, theInstr )) goto decode_success;
+      }
+      goto decode_failure;
+
+   /* Floating Point Load Double Pair Instructions */
    case 0x39:  // pld, lxsd, lxssp, lfdp
       {
          UInt opc2tmp = ifieldOPC0o2(theInstr);
@@ -34836,50 +35055,49 @@ DisResult disInstr_PPC_WRK (
 
    case 0x3D:
       {
-         UInt opc2tmp = IFIELD( theInstr, 0, 3 );
+         UInt bits1_0 = IFIELD( theInstr, 0, 2 );
+         UInt bits2_0 = IFIELD( theInstr, 0, 3 );
 
-         /* Note stxssp opc2 field is just bits [30:31], the rest use
-            bits [29:31].  */
-         if ((opc2tmp == 0x1) || (opc2tmp == 0x5)
-             || ((opc2tmp & 0x3) == 0x3) || ((opc2tmp & 0x3) == 0x2)) {
-            // stxsd(2), stxssp(3) masked lower two bits
-            // lxv(1), stxv(5)
-            if (!allow_F) goto decode_noF;
-            if (dis_fp_pair_prefix( prefix, theInstr ))
-               goto decode_success;
-
-         } else if (prefix_instruction( prefix )) {
-            //pstd
-            if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
+         if (is_prefix && (PrefixType(prefix) == pType0)) { // pstd
             if (dis_int_store_ds_prefix( prefix, theInstr, abiinfo ))
                goto decode_success;
 
-         } else {
-            // stfdp lower two bits = 2
-            if (!allow_F) goto decode_noF;
-            if (dis_fp_pair( prefix, theInstr )) goto decode_success;
+         } else if ( !is_prefix ) {
+            if (bits2_0 == 0x1) {        // lxv    [29:31] = 1
+               if (dis_fp_pair_prefix( prefix, theInstr ))
+                  goto decode_success;
+            } else if (bits2_0 == 0x5) {  // stxv   [29:31] = 5
+               if (dis_fp_pair_prefix( prefix, theInstr ))
+                  goto decode_success;
+            } else if (bits1_0 == 0x0) {  // stfdp   [30:31] = 0
+               if (dis_fp_pair( prefix, theInstr ))
+                  goto decode_success;
+            } else if (bits1_0 == 0x2) {  // stxsd   [30:31] = 2
+               if (dis_fp_pair_prefix( prefix, theInstr ))
+                  goto decode_success;
+            } else if (bits1_0 == 0x3) {  // stxssp  [30:31] = 3
+               if (dis_fp_pair_prefix( prefix, theInstr ))
+                  goto decode_success;
+            }
          }
          goto decode_failure;
       }
 
-   /* 128-bit Integer Load */
-   case 0x38:  // lq
-      ISA_3_1_PREFIX_CHECK
-      if (dis_int_load_prefix( prefix, theInstr )) goto decode_success;
-      goto decode_failure;
-
    /* 64bit Integer Loads */
    case 0x3A:  // word inst: ld, ldu, lwa
-      {
+   {
          UChar   b1_0  = IFIELD(theInstr, 0, 2);
-
          if (!mode64) goto decode_failure;
-         if (prefix_instruction( prefix )) {  // plxvp
-            if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
+
+         if (is_prefix && (PrefixType(prefix) == pType0)) {  // plxvp
+            ISA_3_1_PREFIX_CHECK
             if (dis_fp_pair_prefix( prefix, theInstr ))
                goto decode_success;
 
-         } else if ((b1_0 >= 0) && (b1_0 <= 2)) {  // ld, ldu, lwa,
+         } else if ( !is_prefix && ( b1_0 != 0x3 )) {
+            // ld  [30:31] = 0
+            // ldu [30:31] = 1
+            // lwa [30:31] = 2
             /* Note, here we only deal with the non prefix versions
                of the instructions.  Hence do not check for ISA 3.1.  */
             if (dis_int_load_ds_form_prefix( prefix, theInstr ))
@@ -35066,10 +35284,9 @@ DisResult disInstr_PPC_WRK (
 
    case 0x3C: // pstq, VSX instructions (except load/store)
    {
-      if ( prefix_instruction( prefix ) ) {
+      if ( is_prefix && (PrefixType(prefix) == pType0) ) {
          // pstq instruction
-
-         if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
+         ISA_3_1_PREFIX_CHECK
          if (dis_int_store_ds_prefix( prefix, theInstr, abiinfo ))
             goto decode_success;
          goto decode_failure;
@@ -35296,11 +35513,14 @@ DisResult disInstr_PPC_WRK (
       {
          UChar b1_0 = IFIELD(theInstr, 2, 0);
 
-         if (prefix_instruction( prefix)) {   // pstxvp
+         if (is_prefix && (PrefixType(prefix) == pType0)) {   // pstxvp
             if (dis_fp_pair_prefix( prefix, theInstr ))
                goto decode_success;
 
-         } else if (b1_0 != 3) {   // std, stdu, stq
+         } else if ( !is_prefix && (b1_0 != 3)) {
+            // std  [30:31] = 0
+            // stdu [30:31] = 1
+            // stq  [30:31] = 2
             if (dis_int_store_ds_prefix( prefix, theInstr, abiinfo ))
                goto decode_success;
 
@@ -36583,12 +36803,22 @@ DisResult disInstr_PPC_WRK (
 
    decode_failure:
    /* All decode failures end up here. */
+   opc1 = ifieldOPC(theInstr);
    opc2 = (theInstr) & 0x7FF;
    if (sigill_diag) {
-      vex_printf("disInstr(ppc): unhandled instruction: "
-                 "0x%x\n", theInstr);
-      vex_printf("                 primary %d(0x%x), secondary %u(0x%x)\n", 
-                 opc1, opc1, opc2, opc2);
+
+      if (prefix_instruction( prefix )) {
+         vex_printf("disInstr(ppc): unhandled prefix instruction: "
+                    "prefix = 0x%x, theInstr 0x%x\n", prefix, theInstr);
+         vex_printf("                 primary %d(0x%x), secondary %u(0x%x)\n",
+                    opc1, opc1, opc2, opc2);
+
+      } else {
+         vex_printf("disInstr(ppc): unhandled instruction: "
+                    "0x%x\n", theInstr);
+         vex_printf("                 primary %d(0x%x), secondary %u(0x%x)\n",
+                    opc1, opc1, opc2, opc2);
+      }
    }
 
    not_supported:

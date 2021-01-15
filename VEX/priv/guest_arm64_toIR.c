@@ -8855,50 +8855,78 @@ void updateQCFLAGwithDifference ( IRTemp qres, IRTemp nres )
 
 
 /* Generate IR to rearrange two vector values in a way which is useful
-   for doing S/D add-pair etc operations.  There are 3 cases:
+   for doing S/D/H add-pair etc operations.  There are 5 cases:
 
    2d:  [m1 m0] [n1 n0]  -->  [m1 n1] [m0 n0]
 
    4s:  [m3 m2 m1 m0] [n3 n2 n1 n0]  -->  [m3 m1 n3 n1] [m2 m0 n2 n0]
 
-   2s:  [m2 m2 m1 m0] [n3 n2 n1 n0]  -->  [0 0 m1 n1] [0 0 m0 n0]
+   8h:  [m7 m6 m5 m4 m3 m2 m1 m0] [n7 n6 n5 n4 n3 n2 n1 n0] -->
+        [m7 m5 n7 n5 m3 m1 n3 n1] [m6 m4 n6 n4 m2 m0 n2 n0]
 
-   The cases are distinguished as follows:
-   isD == True,  bitQ == 1  =>  2d
-   isD == False, bitQ == 1  =>  4s
-   isD == False, bitQ == 0  =>  2s
+   2s:  [m3 m2 m1 m0] [n3 n2 n1 n0]  -->  [0 0 m1 n1] [0 0 m0 n0]
+
+   4h:  [m7 m6 m5 m4 m3 m2 m1 m0] [n7 n6 n5 n4 n3 n2 n1 n0] -->
+        [ 0  0  0  0 m3 m1 n3 n1] [ 0  0  0  0 m2 m0 n2 n0]
 */
 static
 void math_REARRANGE_FOR_FLOATING_PAIRWISE (
         /*OUT*/IRTemp* rearrL, /*OUT*/IRTemp* rearrR,
-        IRTemp vecM, IRTemp vecN, Bool isD, UInt bitQ
+        IRTemp vecM, IRTemp vecN, ARM64VecESize sz, UInt bitQ
      )
 {
    vassert(rearrL && *rearrL == IRTemp_INVALID);
    vassert(rearrR && *rearrR == IRTemp_INVALID);
    *rearrL = newTempV128();
    *rearrR = newTempV128();
-   if (isD) {
-      // 2d case
-      vassert(bitQ == 1);
-      assign(*rearrL, binop(Iop_InterleaveHI64x2, mkexpr(vecM), mkexpr(vecN)));
-      assign(*rearrR, binop(Iop_InterleaveLO64x2, mkexpr(vecM), mkexpr(vecN)));
-   }
-   else if (!isD && bitQ == 1) {
-      // 4s case
-      assign(*rearrL, binop(Iop_CatOddLanes32x4,  mkexpr(vecM), mkexpr(vecN)));
-      assign(*rearrR, binop(Iop_CatEvenLanes32x4, mkexpr(vecM), mkexpr(vecN)));
-   } else {
-      // 2s case
-      vassert(!isD && bitQ == 0);
-      IRTemp m1n1m0n0 = newTempV128();
-      IRTemp m0n0m1n1 = newTempV128();
-      assign(m1n1m0n0, binop(Iop_InterleaveLO32x4,
-                             mkexpr(vecM), mkexpr(vecN)));
-      assign(m0n0m1n1, triop(Iop_SliceV128,
-                             mkexpr(m1n1m0n0), mkexpr(m1n1m0n0), mkU8(8)));
-      assign(*rearrL, unop(Iop_ZeroHI64ofV128, mkexpr(m1n1m0n0)));
-      assign(*rearrR, unop(Iop_ZeroHI64ofV128, mkexpr(m0n0m1n1)));
+
+   switch (sz) {
+      case ARM64VSizeD:
+         // 2d case
+         vassert(bitQ == 1);
+         assign(*rearrL, binop(Iop_InterleaveHI64x2, mkexpr(vecM), mkexpr(vecN)));
+         assign(*rearrR, binop(Iop_InterleaveLO64x2, mkexpr(vecM), mkexpr(vecN)));
+         break;
+
+      case ARM64VSizeS:
+         if (bitQ == 1) {
+            // 4s case
+            assign(*rearrL, binop(Iop_CatOddLanes32x4,  mkexpr(vecM), mkexpr(vecN)));
+            assign(*rearrR, binop(Iop_CatEvenLanes32x4, mkexpr(vecM), mkexpr(vecN)));
+         } else {
+            // 2s case
+            IRTemp m1n1m0n0 = newTempV128();
+            IRTemp m0n0m1n1 = newTempV128();
+            assign(m1n1m0n0, binop(Iop_InterleaveLO32x4,
+                                   mkexpr(vecM), mkexpr(vecN)));
+            assign(m0n0m1n1, triop(Iop_SliceV128,
+                                   mkexpr(m1n1m0n0), mkexpr(m1n1m0n0), mkU8(8)));
+            assign(*rearrL, unop(Iop_ZeroHI64ofV128, mkexpr(m1n1m0n0)));
+            assign(*rearrR, unop(Iop_ZeroHI64ofV128, mkexpr(m0n0m1n1)));
+         }
+         break;
+
+      case ARM64VSizeH:
+         if (bitQ == 1) {
+            // 8h case
+            assign(*rearrL, binop(Iop_CatOddLanes16x8,  mkexpr(vecM), mkexpr(vecN)));
+            assign(*rearrR, binop(Iop_CatEvenLanes16x8, mkexpr(vecM), mkexpr(vecN)));
+         } else {
+            // 4h case
+            IRTemp m3m1n3n1 = newTempV128();
+            IRTemp m2m0n2n0 = newTempV128();
+            assign(m3m1n3n1, binop(Iop_CatOddLanes16x8, mkexpr(vecM), mkexpr(vecN)));
+            assign(m2m0n2n0, binop(Iop_CatEvenLanes16x8, mkexpr(vecM), mkexpr(vecN)));
+            assign(*rearrL, unop(Iop_ZeroHI64ofV128,
+                                 binop(Iop_CatEvenLanes32x4, mkexpr(m3m1n3n1),
+                                                             mkexpr(m3m1n3n1))));
+            assign(*rearrR, unop(Iop_ZeroHI64ofV128,
+                                 binop(Iop_CatEvenLanes32x4, mkexpr(m2m0n2n0),
+                                                             mkexpr(m2m0n2n0))));
+         }
+         break;
+
+      default: vpanic("math_REARRANGE_FOR_FLOATING_PAIRWISE");
    }
 }
 
@@ -12608,8 +12636,8 @@ Bool dis_AdvSIMD_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
       IRTemp preR  = IRTemp_INVALID;
       assign(srcN, getQReg128(nn));
       assign(srcM, getQReg128(mm));
-      math_REARRANGE_FOR_FLOATING_PAIRWISE(&preL, &preR,
-                                           srcM, srcN, isD, bitQ);
+      math_REARRANGE_FOR_FLOATING_PAIRWISE(&preL, &preR, srcM, srcN,
+                                           isD ? ARM64VSizeD : ARM64VSizeS, bitQ);
       putQReg128(
          dd, math_MAYBE_ZERO_HI64_fromE(
                 bitQ,
@@ -12631,8 +12659,8 @@ Bool dis_AdvSIMD_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
       IRTemp preR = IRTemp_INVALID;
       assign(srcN, getQReg128(nn));
       assign(srcM, getQReg128(mm));
-      math_REARRANGE_FOR_FLOATING_PAIRWISE(&preL, &preR,
-                                           srcM, srcN, isD, bitQ);
+      math_REARRANGE_FOR_FLOATING_PAIRWISE(&preL, &preR, srcM, srcN,
+                                           isD ? ARM64VSizeD : ARM64VSizeS, bitQ);
       putQReg128(
          dd, math_MAYBE_ZERO_HI64_fromE(
                 bitQ,
@@ -12732,6 +12760,56 @@ Bool dis_AdvSIMD_three_same_extra(/*MB_OUT*/DisResult* dres, UInt insn)
       const HChar* arr = nameArr_Q_SZ(bitQ, size);
       const HChar* nm  = isAdd ? "sqrdmlah" : "sqrdmlsh";
       DIP("%s %s.%s, %s.%s, %s.%s\n", nm,
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      return True;
+   }
+
+   return False;
+#  undef INSN
+}
+
+static
+Bool dis_AdvSIMD_three_same_fp16(/*MB_OUT*/DisResult* dres, UInt insn)
+{
+   /* 31 30 29 28    23   21 20 15     10 9 4
+      0  Q  U  01110 size 0  m  opcode 1  n d
+      Decode fields: u,size,opcode
+   */
+#  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,31) != 0
+       || INSN(28,24) != BITS5(0,1,1,1,0)
+       || INSN(21,21) != 0
+       || INSN(10,10) != 1) {
+      return False;
+   }
+   UInt bitQ   = INSN(30,30);
+   UInt bitU   = INSN(29,29);
+   UInt size   = INSN(23,22);
+   UInt mm     = INSN(20,16);
+   UInt opcode = INSN(15,11);
+   UInt nn     = INSN(9,5);
+   UInt dd     = INSN(4,0);
+   vassert(size < 4);
+   vassert(mm < 32 && nn < 32 && dd < 32);
+
+   if (bitU == 1 && size == X01 && opcode == BITS5(0,0,0,1,0)) {
+      /* -------- 1,01,00010 FADDP 4h_4h_4h, 8h_8h_8h -------- */
+      IROp  opADD = mkVecADDF(1); //bitQ == 0 ? 0 : 1);
+      IRTemp srcN = newTempV128();
+      IRTemp srcM = newTempV128();
+      IRTemp preL = IRTemp_INVALID;
+      IRTemp preR = IRTemp_INVALID;
+      assign(srcN, getQReg128(nn));
+      assign(srcM, getQReg128(mm));
+      math_REARRANGE_FOR_FLOATING_PAIRWISE(&preL, &preR, srcM, srcN,
+                                           ARM64VSizeH, bitQ);
+      putQReg128(
+         dd, math_MAYBE_ZERO_HI64_fromE(
+                bitQ,
+                triop(opADD, mkexpr(mk_get_IR_rounding_mode()),
+                      mkexpr(preL), mkexpr(preR))));
+      const HChar* arr = bitQ == 0 ? "4h" : "8h";
+      DIP("%s %s.%s, %s.%s, %s.%s\n", "faddp",
           nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
       return True;
    }
@@ -15007,6 +15085,8 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn,
    ok = dis_AdvSIMD_three_same(dres, insn);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_three_same_extra(dres, insn);
+   if (UNLIKELY(ok)) return True;
+   ok = dis_AdvSIMD_three_same_fp16(dres, insn);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_two_reg_misc(dres, insn);
    if (UNLIKELY(ok)) return True;

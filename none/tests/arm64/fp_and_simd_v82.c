@@ -2126,42 +2126,11 @@ void test_SMAXV ( void )
 
 /* ---------------------------------------------------------------- */
 /* -- Tests, in the same order that they appear in main()        -- */
+/* -- The full list of instructions tested appear at the end of  -- */
+/* -- this file.                                                 -- */
 /* ---------------------------------------------------------------- */
 
-// ======================== FP ========================
-
-GEN_TWOVEC_TEST(faddp_h_2h_00_00,    "faddp h0, v0.2h",    0, 0)
-GEN_TWOVEC_TEST(faddp_h_2h_01_01,    "faddp h1, v1.2h",    1, 1)
-GEN_TWOVEC_TEST(faddp_h_2h_02_02,    "faddp h2, v2.2h",    2, 2)
-GEN_TWOVEC_TEST(faddp_h_2h_03_03,    "faddp h3, v3.2h",    3, 3)
-GEN_TWOVEC_TEST(faddp_h_2h_04_04,    "faddp h4, v4.2h",    4, 4)
-GEN_TWOVEC_TEST(faddp_h_2h_05_05,    "faddp h5, v5.2h",    5, 5)
-GEN_TWOVEC_TEST(faddp_h_2h_06_06,    "faddp h6, v6.2h",    6, 6)
-GEN_TWOVEC_TEST(faddp_h_2h_07_07,    "faddp h7, v7.2h",    7, 7)
-GEN_TWOVEC_TEST(faddp_h_2h_08_08,    "faddp h8, v8.2h",    8, 8)
-GEN_TWOVEC_TEST(faddp_h_2h_09_09,    "faddp h9, v9.2h",    9, 9)
-GEN_TWOVEC_TEST(faddp_h_2h_10_10,    "faddp h10, v10.2h",    10, 10)
-GEN_TWOVEC_TEST(faddp_h_2h_11_11,    "faddp h11, v11.2h",    11, 11)
-GEN_TWOVEC_TEST(faddp_h_2h_12_12,    "faddp h12, v12.2h",    12, 12)
-GEN_TWOVEC_TEST(faddp_h_2h_13_13,    "faddp h13, v13.2h",    13, 13)
-GEN_TWOVEC_TEST(faddp_h_2h_14_14,    "faddp h14, v14.2h",    14, 14)
-GEN_TWOVEC_TEST(faddp_h_2h_15_15,    "faddp h15, v15.2h",    15, 15)
-GEN_TWOVEC_TEST(faddp_h_2h_16_16,    "faddp h16, v16.2h",    16, 16)
-GEN_TWOVEC_TEST(faddp_h_2h_17_17,    "faddp h17, v17.2h",    17, 17)
-GEN_TWOVEC_TEST(faddp_h_2h_18_18,    "faddp h18, v18.2h",    18, 18)
-GEN_TWOVEC_TEST(faddp_h_2h_19_19,    "faddp h19, v19.2h",    19, 19)
-GEN_TWOVEC_TEST(faddp_h_2h_20_20,    "faddp h20, v20.2h",    20, 20)
-GEN_TWOVEC_TEST(faddp_h_2h_21_21,    "faddp h21, v21.2h",    21, 21)
-GEN_TWOVEC_TEST(faddp_h_2h_22_22,    "faddp h22, v22.2h",    22, 22)
-GEN_TWOVEC_TEST(faddp_h_2h_23_23,    "faddp h23, v23.2h",    23, 23)
-GEN_TWOVEC_TEST(faddp_h_2h_24_24,    "faddp h24, v24.2h",    24, 24)
-GEN_TWOVEC_TEST(faddp_h_2h_25_25,    "faddp h25, v25.2h",    25, 25)
-GEN_TWOVEC_TEST(faddp_h_2h_26_26,    "faddp h26, v26.2h",    26, 26)
-GEN_TWOVEC_TEST(faddp_h_2h_27_27,    "faddp h27, v27.2h",    27, 27)
-GEN_TWOVEC_TEST(faddp_h_2h_28_28,    "faddp h28, v28.2h",    28, 28)
-GEN_TWOVEC_TEST(faddp_h_2h_29_29,    "faddp h29, v29.2h",    29, 29)
-GEN_TWOVEC_TEST(faddp_h_2h_30_30,    "faddp h30, v30.2h",    30, 30)
-GEN_TWOVEC_TEST(faddp_h_2h_31_31,    "faddp h31, v31.2h",    31, 31)
+// FADDP <V><d>, <Vn>.<T>
 
 GEN_TWOVEC_TEST(faddp_h_2h_00_01,    "faddp h0, v1.2h",    0, 1)
 GEN_TWOVEC_TEST(faddp_h_2h_01_02,    "faddp h1, v2.2h",    1, 2)
@@ -2195,6 +2164,70 @@ GEN_TWOVEC_TEST(faddp_h_2h_28_29,    "faddp h28, v29.2h",    28, 29)
 GEN_TWOVEC_TEST(faddp_h_2h_29_30,    "faddp h29, v30.2h",    29, 30)
 GEN_TWOVEC_TEST(faddp_h_2h_30_31,    "faddp h30, v31.2h",    30, 31)
 
+// FADDP <Vd>.<T>, <Vn>.<T>, <Vm>.<T>
+
+GEN_THREEVEC_TEST(faddp_8h_00_01_02, "faddp v0.8h, v1.8h, v2.8h",    0, 1, 2)
+GEN_THREEVEC_TEST(faddp_8h_01_02_03, "faddp v1.8h, v2.8h, v3.8h",    1, 2, 3)
+GEN_THREEVEC_TEST(faddp_8h_02_03_04, "faddp v2.8h, v3.8h, v4.8h",    2, 3, 4)
+GEN_THREEVEC_TEST(faddp_8h_03_04_05, "faddp v3.8h, v4.8h, v5.8h",    3, 4, 5)
+GEN_THREEVEC_TEST(faddp_8h_04_05_06, "faddp v4.8h, v5.8h, v6.8h",    4, 5, 6)
+GEN_THREEVEC_TEST(faddp_8h_05_06_07, "faddp v5.8h, v6.8h, v7.8h",    5, 6, 7)
+GEN_THREEVEC_TEST(faddp_8h_06_07_08, "faddp v6.8h, v7.8h, v8.8h",    6, 7, 8)
+GEN_THREEVEC_TEST(faddp_8h_07_08_09, "faddp v7.8h, v8.8h, v9.8h",    7, 8, 9)
+GEN_THREEVEC_TEST(faddp_8h_08_09_10, "faddp v8.8h, v9.8h, v10.8h",    8, 9, 10)
+GEN_THREEVEC_TEST(faddp_8h_09_10_11, "faddp v9.8h, v10.8h, v11.8h",    9, 10, 11)
+GEN_THREEVEC_TEST(faddp_8h_10_11_12, "faddp v10.8h, v11.8h, v12.8h",    10, 11, 12)
+GEN_THREEVEC_TEST(faddp_8h_11_12_13, "faddp v11.8h, v12.8h, v13.8h",    11, 12, 13)
+GEN_THREEVEC_TEST(faddp_8h_12_13_14, "faddp v12.8h, v13.8h, v14.8h",    12, 13, 14)
+GEN_THREEVEC_TEST(faddp_8h_13_14_15, "faddp v13.8h, v14.8h, v15.8h",    13, 14, 15)
+GEN_THREEVEC_TEST(faddp_8h_14_15_16, "faddp v14.8h, v15.8h, v16.8h",    14, 15, 16)
+GEN_THREEVEC_TEST(faddp_8h_15_16_17, "faddp v15.8h, v16.8h, v17.8h",    15, 16, 17)
+GEN_THREEVEC_TEST(faddp_8h_16_17_18, "faddp v16.8h, v17.8h, v18.8h",    16, 17, 18)
+GEN_THREEVEC_TEST(faddp_8h_17_18_19, "faddp v17.8h, v18.8h, v19.8h",    17, 18, 19)
+GEN_THREEVEC_TEST(faddp_8h_18_19_20, "faddp v18.8h, v19.8h, v20.8h",    18, 19, 20)
+GEN_THREEVEC_TEST(faddp_8h_19_20_21, "faddp v19.8h, v20.8h, v21.8h",    19, 20, 21)
+GEN_THREEVEC_TEST(faddp_8h_20_21_22, "faddp v20.8h, v21.8h, v22.8h",    20, 21, 22)
+GEN_THREEVEC_TEST(faddp_8h_21_22_23, "faddp v21.8h, v22.8h, v23.8h",    21, 22, 23)
+GEN_THREEVEC_TEST(faddp_8h_22_23_24, "faddp v22.8h, v23.8h, v24.8h",    22, 23, 24)
+GEN_THREEVEC_TEST(faddp_8h_23_24_25, "faddp v23.8h, v24.8h, v25.8h",    23, 24, 25)
+GEN_THREEVEC_TEST(faddp_8h_24_25_26, "faddp v24.8h, v25.8h, v26.8h",    24, 25, 26)
+GEN_THREEVEC_TEST(faddp_8h_25_26_27, "faddp v25.8h, v26.8h, v27.8h",    25, 26, 27)
+GEN_THREEVEC_TEST(faddp_8h_26_27_28, "faddp v26.8h, v27.8h, v28.8h",    26, 27, 28)
+GEN_THREEVEC_TEST(faddp_8h_27_28_29, "faddp v27.8h, v28.8h, v29.8h",    27, 28, 29)
+GEN_THREEVEC_TEST(faddp_8h_28_29_30, "faddp v28.8h, v29.8h, v30.8h",    28, 29, 30)
+GEN_THREEVEC_TEST(faddp_8h_29_30_31, "faddp v29.8h, v30.8h, v31.8h",    29, 30, 31)
+
+GEN_THREEVEC_TEST(faddp_4h_00_01_02, "faddp v0.4h, v1.4h, v2.4h",    0, 1, 2)
+GEN_THREEVEC_TEST(faddp_4h_01_02_03, "faddp v1.4h, v2.4h, v3.4h",    1, 2, 3)
+GEN_THREEVEC_TEST(faddp_4h_02_03_04, "faddp v2.4h, v3.4h, v4.4h",    2, 3, 4)
+GEN_THREEVEC_TEST(faddp_4h_03_04_05, "faddp v3.4h, v4.4h, v5.4h",    3, 4, 5)
+GEN_THREEVEC_TEST(faddp_4h_04_05_06, "faddp v4.4h, v5.4h, v6.4h",    4, 5, 6)
+GEN_THREEVEC_TEST(faddp_4h_05_06_07, "faddp v5.4h, v6.4h, v7.4h",    5, 6, 7)
+GEN_THREEVEC_TEST(faddp_4h_06_07_08, "faddp v6.4h, v7.4h, v8.4h",    6, 7, 8)
+GEN_THREEVEC_TEST(faddp_4h_07_08_09, "faddp v7.4h, v8.4h, v9.4h",    7, 8, 9)
+GEN_THREEVEC_TEST(faddp_4h_08_09_10, "faddp v8.4h, v9.4h, v10.4h",    8, 9, 10)
+GEN_THREEVEC_TEST(faddp_4h_09_10_11, "faddp v9.4h, v10.4h, v11.4h",    9, 10, 11)
+GEN_THREEVEC_TEST(faddp_4h_10_11_12, "faddp v10.4h, v11.4h, v12.4h",    10, 11, 12)
+GEN_THREEVEC_TEST(faddp_4h_11_12_13, "faddp v11.4h, v12.4h, v13.4h",    11, 12, 13)
+GEN_THREEVEC_TEST(faddp_4h_12_13_14, "faddp v12.4h, v13.4h, v14.4h",    12, 13, 14)
+GEN_THREEVEC_TEST(faddp_4h_13_14_15, "faddp v13.4h, v14.4h, v15.4h",    13, 14, 15)
+GEN_THREEVEC_TEST(faddp_4h_14_15_16, "faddp v14.4h, v15.4h, v16.4h",    14, 15, 16)
+GEN_THREEVEC_TEST(faddp_4h_15_16_17, "faddp v15.4h, v16.4h, v17.4h",    15, 16, 17)
+GEN_THREEVEC_TEST(faddp_4h_16_17_18, "faddp v16.4h, v17.4h, v18.4h",    16, 17, 18)
+GEN_THREEVEC_TEST(faddp_4h_17_18_19, "faddp v17.4h, v18.4h, v19.4h",    17, 18, 19)
+GEN_THREEVEC_TEST(faddp_4h_18_19_20, "faddp v18.4h, v19.4h, v20.4h",    18, 19, 20)
+GEN_THREEVEC_TEST(faddp_4h_19_20_21, "faddp v19.4h, v20.4h, v21.4h",    19, 20, 21)
+GEN_THREEVEC_TEST(faddp_4h_20_21_22, "faddp v20.4h, v21.4h, v22.4h",    20, 21, 22)
+GEN_THREEVEC_TEST(faddp_4h_21_22_23, "faddp v21.4h, v22.4h, v23.4h",    21, 22, 23)
+GEN_THREEVEC_TEST(faddp_4h_22_23_24, "faddp v22.4h, v23.4h, v24.4h",    22, 23, 24)
+GEN_THREEVEC_TEST(faddp_4h_23_24_25, "faddp v23.4h, v24.4h, v25.4h",    23, 24, 25)
+GEN_THREEVEC_TEST(faddp_4h_24_25_26, "faddp v24.4h, v25.4h, v26.4h",    24, 25, 26)
+GEN_THREEVEC_TEST(faddp_4h_25_26_27, "faddp v25.4h, v26.4h, v27.4h",    25, 26, 27)
+GEN_THREEVEC_TEST(faddp_4h_26_27_28, "faddp v26.4h, v27.4h, v28.4h",    26, 27, 28)
+GEN_THREEVEC_TEST(faddp_4h_27_28_29, "faddp v27.4h, v28.4h, v29.4h",    27, 28, 29)
+GEN_THREEVEC_TEST(faddp_4h_28_29_30, "faddp v28.4h, v29.4h, v30.4h",    28, 29, 30)
+GEN_THREEVEC_TEST(faddp_4h_29_30_31, "faddp v29.4h, v30.4h, v31.4h",    29, 30, 31)
+
 
 /* ---------------------------------------------------------------- */
 /* -- main()                                                     -- */
@@ -2204,42 +2237,7 @@ int main ( void )
 {
    assert(sizeof(V128) == 16);
 
-   // ======================== FP ========================
-
-   // faddp     h (half-precision floating add pair)
-   // faddp     2h
-   if (1) test_faddp_h_2h_00_00(TyH);
-   if (1) test_faddp_h_2h_01_01(TyH);
-   if (1) test_faddp_h_2h_02_02(TyH);
-   if (1) test_faddp_h_2h_03_03(TyH);
-   if (1) test_faddp_h_2h_04_04(TyH);
-   if (1) test_faddp_h_2h_05_05(TyH);
-   if (1) test_faddp_h_2h_06_06(TyH);
-   if (1) test_faddp_h_2h_07_07(TyH);
-   if (1) test_faddp_h_2h_08_08(TyH);
-   if (1) test_faddp_h_2h_09_09(TyH);
-   if (1) test_faddp_h_2h_10_10(TyH);
-   if (1) test_faddp_h_2h_11_11(TyH);
-   if (1) test_faddp_h_2h_12_12(TyH);
-   if (1) test_faddp_h_2h_13_13(TyH);
-   if (1) test_faddp_h_2h_14_14(TyH);
-   if (1) test_faddp_h_2h_15_15(TyH);
-   if (1) test_faddp_h_2h_16_16(TyH);
-   if (1) test_faddp_h_2h_17_17(TyH);
-   if (1) test_faddp_h_2h_18_18(TyH);
-   if (1) test_faddp_h_2h_19_19(TyH);
-   if (1) test_faddp_h_2h_20_20(TyH);
-   if (1) test_faddp_h_2h_21_21(TyH);
-   if (1) test_faddp_h_2h_22_22(TyH);
-   if (1) test_faddp_h_2h_23_23(TyH);
-   if (1) test_faddp_h_2h_24_24(TyH);
-   if (1) test_faddp_h_2h_25_25(TyH);
-   if (1) test_faddp_h_2h_26_26(TyH);
-   if (1) test_faddp_h_2h_27_27(TyH);
-   if (1) test_faddp_h_2h_28_28(TyH);
-   if (1) test_faddp_h_2h_29_29(TyH);
-   if (1) test_faddp_h_2h_30_30(TyH);
-   if (1) test_faddp_h_2h_31_31(TyH);
+   printf("\nFADDP <V><d>, <Vn>.<T>\n\n");
 
    if (1) test_faddp_h_2h_00_01(TyH);
    if (1) test_faddp_h_2h_01_02(TyH);
@@ -2273,13 +2271,77 @@ int main ( void )
    if (1) test_faddp_h_2h_29_30(TyH);
    if (1) test_faddp_h_2h_30_31(TyH);
 
+   printf("\nFADDP <Vd>.<T>, <Vn>.<T>, <Vm>.<T>\n\n");
+
+   if (1) test_faddp_8h_00_01_02(TyH);
+   if (1) test_faddp_8h_01_02_03(TyH);
+   if (1) test_faddp_8h_02_03_04(TyH);
+   if (1) test_faddp_8h_03_04_05(TyH);
+   if (1) test_faddp_8h_04_05_06(TyH);
+   if (1) test_faddp_8h_05_06_07(TyH);
+   if (1) test_faddp_8h_06_07_08(TyH);
+   if (1) test_faddp_8h_07_08_09(TyH);
+   if (1) test_faddp_8h_08_09_10(TyH);
+   if (1) test_faddp_8h_09_10_11(TyH);
+   if (1) test_faddp_8h_10_11_12(TyH);
+   if (1) test_faddp_8h_11_12_13(TyH);
+   if (1) test_faddp_8h_12_13_14(TyH);
+   if (1) test_faddp_8h_13_14_15(TyH);
+   if (1) test_faddp_8h_14_15_16(TyH);
+   if (1) test_faddp_8h_15_16_17(TyH);
+   if (1) test_faddp_8h_16_17_18(TyH);
+   if (1) test_faddp_8h_17_18_19(TyH);
+   if (1) test_faddp_8h_18_19_20(TyH);
+   if (1) test_faddp_8h_19_20_21(TyH);
+   if (1) test_faddp_8h_20_21_22(TyH);
+   if (1) test_faddp_8h_21_22_23(TyH);
+   if (1) test_faddp_8h_22_23_24(TyH);
+   if (1) test_faddp_8h_23_24_25(TyH);
+   if (1) test_faddp_8h_24_25_26(TyH);
+   if (1) test_faddp_8h_25_26_27(TyH);
+   if (1) test_faddp_8h_26_27_28(TyH);
+   if (1) test_faddp_8h_27_28_29(TyH);
+   if (1) test_faddp_8h_28_29_30(TyH);
+   if (1) test_faddp_8h_29_30_31(TyH);
+
+   if (1) test_faddp_4h_00_01_02(TyH);
+   if (1) test_faddp_4h_01_02_03(TyH);
+   if (1) test_faddp_4h_02_03_04(TyH);
+   if (1) test_faddp_4h_03_04_05(TyH);
+   if (1) test_faddp_4h_04_05_06(TyH);
+   if (1) test_faddp_4h_05_06_07(TyH);
+   if (1) test_faddp_4h_06_07_08(TyH);
+   if (1) test_faddp_4h_07_08_09(TyH);
+   if (1) test_faddp_4h_08_09_10(TyH);
+   if (1) test_faddp_4h_09_10_11(TyH);
+   if (1) test_faddp_4h_10_11_12(TyH);
+   if (1) test_faddp_4h_11_12_13(TyH);
+   if (1) test_faddp_4h_12_13_14(TyH);
+   if (1) test_faddp_4h_13_14_15(TyH);
+   if (1) test_faddp_4h_14_15_16(TyH);
+   if (1) test_faddp_4h_15_16_17(TyH);
+   if (1) test_faddp_4h_16_17_18(TyH);
+   if (1) test_faddp_4h_17_18_19(TyH);
+   if (1) test_faddp_4h_18_19_20(TyH);
+   if (1) test_faddp_4h_19_20_21(TyH);
+   if (1) test_faddp_4h_20_21_22(TyH);
+   if (1) test_faddp_4h_21_22_23(TyH);
+   if (1) test_faddp_4h_22_23_24(TyH);
+   if (1) test_faddp_4h_23_24_25(TyH);
+   if (1) test_faddp_4h_24_25_26(TyH);
+   if (1) test_faddp_4h_25_26_27(TyH);
+   if (1) test_faddp_4h_26_27_28(TyH);
+   if (1) test_faddp_4h_27_28_29(TyH);
+   if (1) test_faddp_4h_28_29_30(TyH);
+   if (1) test_faddp_4h_29_30_31(TyH);
+
    return 0;
 }
 
 /* ---------------------------------------------------------------- */
-/* -- Alphabetical list of insns                                 -- */
+/* -- List of instructions tested in order of execution.         -- */
 /* ---------------------------------------------------------------- */
 /*
-   faddp     h (half-precision floating add pair)
-   faddp     2h
+   FADDP <V><d>, <Vn>.<T> Floating-point Add Pair of elements (scalar).
+   FADDP <Vd>.<T>, <Vn>.<T>, <Vm>.<T> Floating-point Add Pairwise (vector).
 */

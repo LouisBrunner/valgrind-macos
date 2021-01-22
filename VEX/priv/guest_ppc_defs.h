@@ -154,6 +154,10 @@ extern ULong convert_from_national_helper( ULong src_hi, ULong src_low );
 extern ULong generate_C_FPCC_helper( ULong size, ULong src_hi, ULong src );
 extern ULong extract_bits_under_mask_helper( ULong src, ULong mask,
                                              UInt flag );
+extern UInt generate_DFP_FPRF_value_helper( UInt gfield, ULong exponent,
+                                            UInt exponent_bias,
+                                            Int min_norm_exp,
+                                            UInt sign, UInt T_value_is_zero );
 extern UInt count_bits_under_mask_helper( ULong src, ULong mask,
                                           UInt flag );
 extern ULong deposit_bits_under_mask_helper( ULong src, ULong mask );

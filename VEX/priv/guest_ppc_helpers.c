@@ -318,6 +318,55 @@ ULong generate_C_FPCC_helper( ULong irType, ULong src_hi, ULong src )
 }
 
 
+UInt generate_DFP_FPRF_value_helper( UInt gfield,
+                                     ULong exponent,
+                                     UInt exponent_bias,
+                                     Int min_norm_exp,
+                                     UInt sign,
+                                     UInt T_value_is_zero )
+{
+   UInt gfield_5_bit_mask = 0xF8000000;
+   UInt gfield_upper_5_bits = (gfield & gfield_5_bit_mask) >> (32 - 5);
+   UInt gfield_6_bit_mask = 0xF8000000;
+   UInt gfield_upper_6_bits = (gfield & gfield_6_bit_mask) >> (32 - 6);
+   UInt fprf_value = 0;
+   Int  unbiased_exponent = exponent - exponent_bias;
+
+   /* The assumption is the gfield bits are left justified. Mask off
+       the most significant 5-bits in the 32-bit wide field.  */
+   if ( T_value_is_zero == 1) {
+      if (sign == 0)
+         fprf_value = 0b00010;  // positive zero
+      else
+         fprf_value = 0b10010;  // negative zero
+  } else if ( unbiased_exponent < min_norm_exp ) {
+      if (sign == 0)
+         fprf_value = 0b10100;  // posative subnormal
+      else
+         fprf_value = 0b11000;  // negative subnormal
+
+  } else if ( gfield_upper_5_bits == 0b11110 ) {  // infinity
+      if (sign == 0)
+         fprf_value = 0b00101;  // positive infinity
+      else
+         fprf_value = 0b01001;  // negative infinity
+
+   } else if ( gfield_upper_6_bits == 0b111110 ) {
+      fprf_value = 0b10001;  // Quiet NaN
+
+   } else if ( gfield_upper_6_bits == 0b111111 ) {
+      fprf_value = 0b10001;  // Signaling NaN
+
+   } else {
+      if (sign == 0)
+         fprf_value = 0b00100;  // positive normal
+      else
+         fprf_value = 0b01000;  // negative normal
+   }
+
+   return fprf_value;
+}
+
 /*---------------------------------------------------------------*/
 /*--- Misc BCD clean helpers.                                 ---*/
 /*---------------------------------------------------------------*/

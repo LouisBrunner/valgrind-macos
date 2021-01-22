@@ -348,8 +348,12 @@ typedef
       Pfp_FPDTOQ,
       Pfp_IDSTOQ,
       Pfp_IDUTOQ,
+      Pfp_IQSTOQ,
+      Pfp_IQUTOQ,
+      Pfp_TRUNCFPQTOISQ,
       Pfp_TRUNCFPQTOISD,
       Pfp_TRUNCFPQTOISW,
+      Pfp_TRUNCFPQTOIUQ,
       Pfp_TRUNCFPQTOIUD,
       Pfp_TRUNCFPQTOIUW,
       Pfp_DFPADD, Pfp_DFPADDQ,
@@ -357,6 +361,7 @@ typedef
       Pfp_DFPMUL, Pfp_DFPMULQ,
       Pfp_DFPDIV, Pfp_DFPDIVQ,
       Pfp_DQUAQ,  Pfp_DRRNDQ,
+      Pfp_DFPTOIQ, Pfp_IQUTODFP,
 
       /* Binary */
       Pfp_ADDD, Pfp_SUBD, Pfp_MULD, Pfp_DIVD,
@@ -477,6 +482,39 @@ typedef
 
 extern const HChar* showPPCAvOp ( PPCAvOp );
 
+typedef
+   enum {
+      Pav_INVALIDBinary128,
+
+   /* 128-bit integer Binary Divide */
+      Pav_DivU128, Pav_DivS128, Pav_DivU128E, Pav_DivS128E,
+      Pav_ModU128, Pav_ModS128,
+   }
+   PPCAvOpBin128;
+
+extern const HChar* showPPCAvOpBin128 ( PPCAvOpBin128 );
+
+typedef
+   enum {
+      Pav_INVALIDTri128,
+
+   /* 128-bit integer */
+      Pav_2xMultU64Add128CarryOut,
+   }
+   PPCAvOpTri128;
+
+extern const HChar* showPPCAvOpTri128 ( PPCAvOpTri128 );
+
+typedef
+   enum {
+      Px_INVALID_XFormUnary994,
+
+   /* 128-bit integer */
+      Px_DFPTOIQS, Px_IQSTODFP,
+   }
+   PPCXFormUnary994;
+
+extern const HChar* showXFormUnary994 ( PPCXFormUnary994 );
 
 /* --------- */
 typedef
@@ -543,6 +581,8 @@ typedef
 
       Pin_AvBinary,   /* AV binary general reg,reg=>reg */
       Pin_AvBinaryInt,/* AV binary  reg,int=>reg */
+      Pin_AvBinaryInt128,/* AV binary 128-bit reg, 128-bitint => 128-bit reg */
+      Pin_AvTernaryInt128,/* AV ternary 128-bit reg, 128-bitint => 128-bit reg */
       Pin_AvBin8x16,  /* AV binary, 8x4 */
       Pin_AvBin16x8,  /* AV binary, 16x4 */
       Pin_AvBin32x4,  /* AV binary, 32x4 */
@@ -584,6 +624,8 @@ typedef
                            * round */
       Pin_DfpQuantize128, /* D128 quantize using register value, significance
                            * round */
+
+      Pin_XFormUnary994,  /* X-form instructions with opc1=63, opc2=994 */
       Pin_EvCheck,    /* Event check */
       Pin_ProfInc     /* 64-bit profile counter increment */
    }
@@ -861,6 +903,19 @@ typedef
             PPCRI*  val;
          } AvBinaryInt;
          struct {
+            PPCAvOpBin128 op;
+            HReg    dst;
+            HReg    src1;
+            HReg    src2;
+         } AvBinaryInt128;
+         struct {
+            PPCAvOpTri128 op;
+            HReg    dst;
+            HReg    src1;
+            HReg    src2;
+            HReg    src3;
+         } AvTernaryInt128;
+         struct {
             PPCAvOp op;
             HReg    dst;
             HReg    srcL;
@@ -1069,6 +1124,12 @@ typedef
             HReg  srcR_lo;
          } Dfp128Cmp;     
          struct {
+            PPCXFormUnary994 op;
+            HReg    reg0;
+            HReg    reg1;
+            HReg    reg2;
+         } XFormUnary994;
+         struct {
             PPCAMode* amCounter;
             PPCAMode* amFailAddr;
          } EvCheck;
@@ -1134,6 +1195,10 @@ extern PPCInstr* PPCInstr_AvLdSt     ( Bool isLoad, UChar sz, HReg, PPCAMode* );
 extern PPCInstr* PPCInstr_AvUnary    ( PPCAvOp op, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_AvBinary   ( PPCAvOp op, HReg dst, HReg srcL, HReg srcR );
 extern PPCInstr* PPCInstr_AvBinaryInt( PPCAvOp op, HReg dst, HReg src, PPCRI* val );
+extern PPCInstr* PPCInstr_AvBinaryInt128( PPCAvOpBin128 op, HReg dst,
+                                          HReg src1, HReg src2 );
+extern PPCInstr* PPCInstr_AvTernaryInt128( PPCAvOpTri128 op, HReg dst,
+                                           HReg src1, HReg src2, HReg src3 );
 extern PPCInstr* PPCInstr_AvBin8x16  ( PPCAvOp op, HReg dst, HReg srcL, HReg srcR );
 extern PPCInstr* PPCInstr_AvBin16x8  ( PPCAvOp op, HReg dst, HReg srcL, HReg srcR );
 extern PPCInstr* PPCInstr_AvBin32x4  ( PPCAvOp op, HReg dst, HReg srcL, HReg srcR );
@@ -1188,6 +1253,8 @@ extern PPCInstr* PPCInstr_InsertExpD128  ( PPCFpOp op,   HReg dst_hi,
 extern PPCInstr* PPCInstr_Dfp64Cmp       ( HReg dst, HReg srcL, HReg srcR );
 extern PPCInstr* PPCInstr_Dfp128Cmp      ( HReg dst, HReg srcL_hi, HReg srcL_lo,
                                            HReg srcR_hi, HReg srcR_lo );
+extern PPCInstr* PPCInstr_XFormUnary994  ( PPCXFormUnary994 op, HReg dst,
+                                           HReg srcHi, HReg srcLo );
 extern PPCInstr* PPCInstr_EvCheck     ( PPCAMode* amCounter,
                                         PPCAMode* amFailAddr );
 extern PPCInstr* PPCInstr_ProfInc     ( void );

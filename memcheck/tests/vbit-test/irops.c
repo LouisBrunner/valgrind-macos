@@ -1165,6 +1165,23 @@ static irop_t irops[] = {
   { DEFOP(Iop_Rotx32, UNDEF_ALL), },
   { DEFOP(Iop_Rotx64, UNDEF_ALL), },
   { DEFOP(Iop_PwBitMtxXpose64x2, UNDEF_64x2_TRANSPOSE), .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_DivU128, UNDEF_ALL_64x2), .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_DivS128, UNDEF_ALL_64x2), .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_DivU128E, UNDEF_ALL_64x2), .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_DivS128E, UNDEF_ALL_64x2), .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_ModU128, UNDEF_ALL_64x2), .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_ModS128, UNDEF_ALL_64x2), .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_2xMultU64Add128CarryOut, UNDEF_ALL_64x2), .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_TruncF128toI128U, UNDEF_ALL_64x2), .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_TruncF128toI128S, UNDEF_ALL_64x2), .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_I128UtoF128, UNDEF_ALL_64x2), .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_I128StoF128, UNDEF_ALL_64x2), .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_I128StoD128, UNDEF_ALL_64x2), .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_D128toI128S, UNDEF_ALL_64x2), .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_ReinterpF128asI128, UNDEF_ALL_64x2), .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_ReinterpI128asF128, UNDEF_ALL_64x2), .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_ReinterpV128asI128, UNDEF_ALL_64x2), .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_ReinterpI128asV128, UNDEF_ALL_64x2), .ppc64 = 1, .ppc32 = 1 },
 };
 
 /* Force compile time failure in case libvex_ir.h::IROp was updated
@@ -1362,7 +1379,37 @@ get_irop(IROp op)
             }
          }
          break;
-
+         case Iop_DivU128:
+         case Iop_DivS128:
+         case Iop_DivU128E:
+         case Iop_DivS128E:
+         case Iop_ModU128:
+         case Iop_ModS128:
+         case Iop_ReinterpV128asI128:
+         case Iop_ReinterpI128asV128:
+         case Iop_ReinterpF128asI128:
+         case Iop_ReinterpI128asF128:
+         case Iop_I128UtoF128:
+         case Iop_I128StoF128:
+         case Iop_TruncF128toI128U:
+         case Iop_TruncF128toI128S:
+         case Iop_I128StoD128:
+         case Iop_D128toI128S:
+         case Iop_2xMultU64Add128CarryOut: {
+            /* IROps require a processor that supports ISA 3.10 (Power 10)
+               or newer */
+            rc = system(MIN_POWER_ISA " 3.1 ");
+            rc /= 256;
+            /* MIN_POWER_ISA returns 0 if underlying HW supports the
+             * specified ISA or newer. Returns 1 if the HW does not support
+             * the specified ISA.  Returns 2 on error.
+             */
+            if (rc == 1) return NULL;
+            if (rc > 2) {
+               panic(" ERROR, min_power_isa() return code is invalid.\n");
+            }
+         }
+         break;
          /* Other */
          default:
          break;

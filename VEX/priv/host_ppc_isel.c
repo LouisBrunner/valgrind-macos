@@ -3383,6 +3383,39 @@ static void iselInt128Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env,
          *rHi = iselWordExpr_R(env, e->Iex.Binop.arg1, IEndianess);
          *rLo = iselWordExpr_R(env, e->Iex.Binop.arg2, IEndianess);
          return;
+
+      case Iop_D128toI128S: {
+         HReg srcHi = INVALID_HREG;
+         HReg srcLo = INVALID_HREG;
+         HReg dstLo = newVRegI(env);
+         HReg dstHi = newVRegI(env);
+         HReg tmp = newVRegV(env);
+         PPCAMode* am_addr;
+         PPCAMode* am_addr4;
+
+         /* Get the DF128 value, store in two 64-bit halves */
+         iselDfp128Expr( &srcHi, &srcLo, env, e->Iex.Binop.arg2, IEndianess );
+
+         sub_from_sp( env, 16 );     // Move SP down 16 bytes
+         am_addr = PPCAMode_IR( 0, StackFramePtr(mode64) );
+         am_addr4 = advance4(env, am_addr);
+
+         addInstr(env, PPCInstr_XFormUnary994(Px_DFPTOIQS, tmp, srcHi, srcLo));
+
+         // store the result in the VSR
+         addInstr(env, PPCInstr_AvLdSt( False/*store*/, 16, tmp, am_addr ));
+
+         // load the two Ity_64 values
+         addInstr(env, PPCInstr_Load( 8, dstHi, am_addr,  mode64 ));
+         addInstr(env, PPCInstr_Load( 8, dstLo, am_addr4, mode64 ));
+
+         *rHi = dstHi;
+         *rLo = dstLo;
+
+         add_to_sp( env, 16 );       // Reset SP
+         return;
+      }
+
       default: 
          break;
       }
@@ -3392,6 +3425,35 @@ static void iselInt128Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env,
    /* --------- UNARY ops --------- */
    if (e->tag == Iex_Unop) {
       switch (e->Iex.Unop.op) {
+      case Iop_ReinterpV128asI128:
+      case Iop_ReinterpF128asI128: {
+         HReg     src;
+         HReg     dstLo = newVRegI(env);
+         HReg     dstHi = newVRegI(env);
+         PPCAMode* am_addr;
+         PPCAMode* am_addr4;
+
+         if (e->Iex.Unop.op == Iop_ReinterpF128asI128)
+            src = iselFp128Expr(env, e->Iex.Unop.arg, IEndianess);
+         else
+            src = iselVecExpr(env, e->Iex.Unop.arg, IEndianess);
+
+         sub_from_sp( env, 16 );     // Move SP down 16 bytes
+         am_addr = PPCAMode_IR( 0, StackFramePtr(mode64) );
+         am_addr4 = advance4(env, am_addr);
+
+         // store the Ity_F128 value
+         addInstr(env, PPCInstr_AvLdSt( False/*store*/, 16, src, am_addr ));
+
+         // load the two Ity_64 values
+         addInstr(env, PPCInstr_Load( 8, dstHi, am_addr,  mode64 ));
+         addInstr(env, PPCInstr_Load( 8, dstLo, am_addr4, mode64 ));
+
+         *rHi = dstHi;
+         *rLo = dstLo;
+         add_to_sp( env, 16 );       // Reset SP
+         return;
+      }
       default:
          break;
       }
@@ -4744,6 +4806,10 @@ static HReg iselFp128Expr_wrk( ISelEnv* env, const IRExpr* e,
          fpop = Pfp_TRUNCFPQTOIUD; goto do_Un_F128;
       case Iop_TruncF128toI32U:
          fpop = Pfp_TRUNCFPQTOIUW; goto do_Un_F128;
+      case Iop_TruncF128toI128U:
+         fpop = Pfp_TRUNCFPQTOIUQ; goto do_Un_F128;
+      case Iop_TruncF128toI128S:
+         fpop = Pfp_TRUNCFPQTOISQ; goto do_Un_F128;
 
       do_Un_F128: {
          HReg r_dst = newVRegV(env);
@@ -4802,6 +4868,31 @@ static HReg iselFp128Expr_wrk( ISelEnv* env, const IRExpr* e,
 
          addInstr(env, PPCInstr_Fp128Unary(fpop, r_dst, tmp));
          return r_dst;
+      }
+
+      case Iop_ReinterpI128asF128:
+      {
+         PPCAMode* am_addr;
+         PPCAMode* am_addr4;
+         HReg rHi = INVALID_HREG;
+         HReg rLo = INVALID_HREG;
+         HReg dst  = newVRegV(env);
+
+         iselInt128Expr(&rHi,&rLo, env, e->Iex.Unop.arg, IEndianess);
+
+         sub_from_sp( env, 16 );     // Move SP down 16 bytes
+         am_addr = PPCAMode_IR( 0, StackFramePtr(mode64) );
+         am_addr4 = advance4(env, am_addr);
+
+         // store the two 64-bit pars
+         addInstr(env, PPCInstr_Store( 8, am_addr,  rHi, mode64 ));
+         addInstr(env, PPCInstr_Store( 8, am_addr4, rLo, mode64 ));
+
+         // load as Ity_F128
+         addInstr(env, PPCInstr_AvLdSt( True/*fetch*/, 16, dst, am_addr ));
+
+         add_to_sp( env, 16 );       // Reset SP
+         return dst;
       }
 
       default:
@@ -4889,6 +4980,40 @@ static HReg iselFp128Expr_wrk( ISelEnv* env, const IRExpr* e,
          HReg r_dst = newVRegV(env);
          HReg r_src = iselFp128Expr(env, e->Iex.Binop.arg2, IEndianess);
          addInstr(env, PPCInstr_Fp128Unary(fpop, r_dst, r_src));
+         return r_dst;
+      }
+
+      case Iop_I128StoF128:
+         fpop = Pfp_IQSTOQ; goto do_Un_I128_F128_DFP_conversions;
+      case Iop_I128UtoF128:
+         fpop = Pfp_IQUTOQ; goto do_Un_I128_F128_DFP_conversions;
+      do_Un_I128_F128_DFP_conversions: {
+         PPCAMode* am_addr;
+         PPCAMode* am_addr4;
+         HReg rHi, rLo;
+         HReg r_tmp = newVRegV(env);
+         HReg r_dst = newVRegV(env);
+
+         iselInt128Expr(&rHi,&rLo, env, e->Iex.Binop.arg2, IEndianess);
+
+         /* Set host rounding mode for the conversion instruction */
+         set_FPU_rounding_mode( env, e->Iex.Binop.arg1, IEndianess );
+
+         sub_from_sp( env, 16 );
+
+         am_addr = PPCAMode_IR( 0, StackFramePtr(mode64) );
+         am_addr4 = advance4(env, am_addr);
+
+         // store the two 64-bit halfs of the I128
+         addInstr(env, PPCInstr_Store( 8, am_addr,  rHi, mode64 ));
+         addInstr(env, PPCInstr_Store( 8, am_addr4, rLo, mode64 ));
+
+         /* Fetch the I128 into an V128 register */
+         addInstr(env, PPCInstr_AvLdSt( True/*fetch*/, 16, r_tmp, am_addr ));
+         addInstr(env, PPCInstr_Fp128Unary(fpop, r_dst, r_tmp));
+
+         add_to_sp( env, 16 );       // Reset SP
+
          return r_dst;
       }
 
@@ -5459,6 +5584,41 @@ static void iselDfp128Expr_wrk(HReg* rHi, HReg *rLo, ISelEnv* env,
          *rLo = r_dstLo;
          return;
       }
+
+      case Iop_I128StoD128: {
+         HReg tmpF128 = newVRegV(env);
+         HReg FdstHi = newVRegF(env);
+         HReg FdstLo = newVRegF(env);
+         HReg srcLo = newVRegI(env);
+         HReg srcHi = newVRegI(env);
+         PPCAMode* am_addr;
+         PPCAMode* am_addr4;
+
+         set_FPU_DFP_rounding_mode( env, e->Iex.Binop.arg1, IEndianess );
+
+         // Get the I128 value, store into a VSR register
+         iselInt128Expr(&srcHi, &srcLo, env, e->Iex.Binop.arg2, IEndianess);
+
+         sub_from_sp( env, 16 );     // Move SP down 16 bytes
+         am_addr = PPCAMode_IR( 0, StackFramePtr(env->mode64) );
+         am_addr4 = advance4(env, am_addr);
+
+         addInstr(env, PPCInstr_Store( 8, am_addr,  srcHi, env->mode64 ));
+         addInstr(env, PPCInstr_Store( 8, am_addr4, srcLo, env->mode64 ));
+
+         // load as Ity_F128
+         addInstr(env, PPCInstr_AvLdSt( True/*fetch*/, 16, tmpF128, am_addr ));
+
+         // do conversion
+         addInstr( env, PPCInstr_XFormUnary994( Px_IQSTODFP, FdstHi, FdstLo,
+                                                tmpF128 ) );
+
+         *rHi = FdstHi;
+         *rLo = FdstLo;
+         add_to_sp( env, 16 );       // Reset SP
+         return;
+      }
+
       default:
          vex_printf( "ERROR: iselDfp128Expr_wrk, UNKNOWN binop case %d\n",
                      (Int)e->Iex.Binop.op );
@@ -5594,6 +5754,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e,
    Bool mode64 = env->mode64;
    PPCAvOp op = Pav_INVALID;
    PPCAvFpOp fpop = Pavfp_INVALID;
+   PPCAvOpBin128 opav128 = Pav_INVALIDBinary128;
+   PPCAvOpTri128 optri128 = Pav_INVALIDTri128;
    IRType  ty = typeOfIRExpr(env->type_env,e);
    vassert(e);
    vassert(ty == Ity_V128);
@@ -5932,6 +6094,29 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e,
             addInstr(env, PPCInstr_AvUnary(op, dst, arg));
             return dst;
          }
+
+       case Iop_ReinterpI128asV128: {
+          PPCAMode* am_addr;
+          PPCAMode* am_addr4;
+          HReg rHi, rLo;
+          HReg dst  = newVRegV(env);
+
+          iselInt128Expr(&rHi,&rLo, env, e->Iex.Unop.arg, IEndianess);
+
+          sub_from_sp( env, 16 );     // Move SP down 16 bytes
+          am_addr = PPCAMode_IR( 0, StackFramePtr(mode64) );
+          am_addr4 = advance4(env, am_addr);
+
+          // store the two 64-bit pars
+          addInstr(env, PPCInstr_Store( 8, am_addr,  rHi, mode64 ));
+          addInstr(env, PPCInstr_Store( 8, am_addr4, rLo, mode64 ));
+
+          // load as Ity_V128
+          addInstr(env, PPCInstr_AvLdSt( True/*fetch*/, 16, dst, am_addr ));
+
+          add_to_sp( env, 16 );       // Reset SP
+          return dst;
+        }
 
       default:
          break;
@@ -6295,6 +6480,20 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e,
          return dst;
       }
 
+      case Iop_DivU128: opav128 = Pav_DivU128; goto do_IntArithBinaryI128;
+      case Iop_DivS128: opav128 = Pav_DivS128; goto do_IntArithBinaryI128;
+      case Iop_DivU128E: opav128 = Pav_DivU128E; goto do_IntArithBinaryI128;
+      case Iop_DivS128E: opav128 = Pav_DivS128E; goto do_IntArithBinaryI128;
+      case Iop_ModU128:  opav128 = Pav_ModU128;  goto do_IntArithBinaryI128;
+      case Iop_ModS128:  opav128 = Pav_ModS128;  goto do_IntArithBinaryI128;
+      do_IntArithBinaryI128: {
+         HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1, IEndianess);
+         HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2, IEndianess);
+         HReg dst  = newVRegV(env);
+         addInstr(env, PPCInstr_AvBinaryInt128(opav128, dst, arg1, arg2));
+         return dst;
+      }
+
       default:
          break;
       } /* switch (e->Iex.Binop.op) */
@@ -6319,6 +6518,18 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e,
             emitted insn is hardwired to round to nearest. */
          set_FPU_rounding_mode(env, triop->arg1, IEndianess);
          addInstr(env, PPCInstr_AvBin32Fx4(fpop, dst, argL, argR));
+         return dst;
+      }
+
+      case Iop_2xMultU64Add128CarryOut:
+         optri128 = Pav_2xMultU64Add128CarryOut;  goto do_IntArithTrinaryI128;
+      do_IntArithTrinaryI128: {
+         HReg arg1 = iselVecExpr(env, triop->arg1, IEndianess);
+         HReg arg2 = iselVecExpr(env, triop->arg2, IEndianess);
+         HReg arg3 = iselVecExpr(env, triop->arg3, IEndianess);
+         HReg dst  = newVRegV(env);
+         addInstr(env, PPCInstr_AvTernaryInt128(optri128, dst, arg1, arg2,
+                                                arg3));
          return dst;
       }
 

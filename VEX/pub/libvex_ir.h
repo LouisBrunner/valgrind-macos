@@ -500,12 +500,18 @@ typedef
       Iop_DivS32,   // ditto, signed
       Iop_DivU64,   // :: I64,I64 -> I64 (simple div, no mod)
       Iop_DivS64,   // ditto, signed
-      Iop_DivU64E,  // :: I64,I64 -> I64 (dividend is 64-bit arg (hi)
-                    //                    concat with 64 0's (low))
-      Iop_DivS64E,  // ditto, signed
+      Iop_DivU128,   // :: I128,I128 -> I128 (simple div, no mod)
+      Iop_DivS128,   // ditto, signed
+
       Iop_DivU32E,  // :: I32,I32 -> I32 (dividend is 32-bit arg (hi)
                     // concat with 32 0's (low))
       Iop_DivS32E,  // ditto, signed
+      Iop_DivU64E,  // :: I64,I64 -> I64 (dividend is 64-bit arg (hi)
+                    //                    concat with 64 0's (low))
+      Iop_DivS64E,  // ditto, signed
+      Iop_DivU128E, // :: I128,I128 -> I128 (dividend is 128-bit arg (hi)
+                    //                    concat with 128 0's (low))
+      Iop_DivS128E, // ditto, signed
 
       Iop_DivModU64to32, // :: I64,I32 -> I64
                          // of which lo half is div and hi half is mod
@@ -523,6 +529,9 @@ typedef
                          // of which lo half is div and hi half is mod
       Iop_DivModU32to32, // :: I32,I32 -> I64
                          // of which lo half is div and hi half is mod
+
+      Iop_ModU128,     // :: I128,I128 -> I128  normal modulo operation
+      Iop_ModS128,     // ditto, signed
 
       /* Integer conversions.  Some of these are redundant (eg
          Iop_64to8 is the same as Iop_64to32 and then Iop_32to8), but
@@ -686,8 +695,10 @@ typedef
       Iop_F32toF64,  /*                       F32 -> F64 */
       Iop_F64toF32,  /* IRRoundingMode(I32) x F64 -> F32 */
 
-      /* Reinterpretation.  Take an F64 and produce an I64 with 
-         the same bit pattern, or vice versa. */
+      /* Reinterpretation.  Take an F32/64/128 and produce an I32/64/128
+         with the same bit pattern, or vice versa. */
+      Iop_ReinterpV128asI128, Iop_ReinterpI128asV128,
+      Iop_ReinterpF128asI128, Iop_ReinterpI128asF128,
       Iop_ReinterpF64asI64, Iop_ReinterpI64asF64,
       Iop_ReinterpF32asI32, Iop_ReinterpI32asF32,
 
@@ -715,6 +726,8 @@ typedef
       Iop_I64UtoF128, /*              unsigned I64  -> F128 */
       Iop_F32toF128,  /*                       F32  -> F128 */
       Iop_F64toF128,  /*                       F64  -> F128 */
+      Iop_I128UtoF128, /*             unsigned I128 -> F128 */
+      Iop_I128StoF128, /*               signed I128 -> F128 */
 
       Iop_F128toI32S, /* IRRoundingMode(I32) x F128 -> signed I32  */
       Iop_F128toI64S, /* IRRoundingMode(I32) x F128 -> signed I64  */
@@ -732,6 +745,8 @@ typedef
       Iop_TruncF128toI32U,  /* truncate F128 -> I32         */
       Iop_TruncF128toI64U,  /* truncate F128 -> I64         */
       Iop_TruncF128toI64S,  /* truncate F128 -> I64         */
+      Iop_TruncF128toI128U, /* truncate F128 -> I128        */
+      Iop_TruncF128toI128S, /* truncate F128 -> I128        */
 
       /* --- guest x86/amd64 specifics, not mandated by 754. --- */
 
@@ -1143,6 +1158,9 @@ typedef
       /*   I64U -> D128 */
       Iop_I64UtoD128,
 
+      /*   IRRoundingMode(I32) x I128S -> D128 */
+      Iop_I128StoD128,
+
       /*   IRRoundingMode(I32) x D64 -> D32 */
       Iop_D64toD32,
 
@@ -1184,6 +1202,9 @@ typedef
 
       /*   IRRoundingMode(I32) x D128 -> I64 */
       Iop_D128toI64U,
+
+      /*   IRRoundingMode(I32) x D128 -> I128 */
+      Iop_D128toI128S,
 
       /*   IRRoundingMode(I32) x F32 -> D32 */
       Iop_F32toD32,
@@ -1933,6 +1954,9 @@ typedef
        * of the source times 10 plus the carry in
        */
       Iop_MulI128by10ECarry,
+
+     /* 128-bit carry out from ((U64 * U64 -> U128) + (U64 * U64 -> U128)) */
+      Iop_2xMultU64Add128CarryOut,
 
       /* ------------------ 256-bit SIMD Integer. ------------------ */
 

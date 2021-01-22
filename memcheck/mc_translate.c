@@ -5080,10 +5080,6 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_NegF128:
       case Iop_AbsF128:
       case Iop_RndF128:
-      case Iop_TruncF128toI64S: /* F128 -> I64S */
-      case Iop_TruncF128toI32S: /* F128 -> I32S (result stored in 64-bits) */
-      case Iop_TruncF128toI64U: /* F128 -> I64U */
-      case Iop_TruncF128toI32U: /* F128 -> I32U (result stored in 64-bits) */
          return mkPCastTo(mce, Ity_I128, vatom);
 
       case Iop_BCD128toI128S:
@@ -5093,6 +5089,16 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_F64toF16x2_DEP:
          // FIXME JRS 2018-Nov-15.  This is surely not correct!
          return vatom;
+
+      case Iop_ReinterpI32asF32:
+      case Iop_ReinterpF32asI32:
+         return assignNew('V', mce, Ity_I32, vatom);
+
+      case Iop_ReinterpF64asI64:
+      case Iop_ReinterpI64asF64:
+      case Iop_ReinterpI64asD64:
+      case Iop_ReinterpD64asI64:
+         return assignNew('V', mce, Ity_I64, vatom);
 
       case Iop_I32StoF128: /* signed I32 -> F128 */
       case Iop_I64StoF128: /* signed I64 -> F128 */
@@ -5224,12 +5230,6 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_64to1:
          return assignNew('V', mce, Ity_I1, unop(Iop_64to1, vatom));
 
-      case Iop_ReinterpF64asI64:
-      case Iop_ReinterpI64asF64:
-      case Iop_ReinterpI32asF32:
-      case Iop_ReinterpF32asI32:
-      case Iop_ReinterpI64asD64:
-      case Iop_ReinterpD64asI64:
       case Iop_NotV256:
       case Iop_NotV128:
       case Iop_Not64:
@@ -5286,9 +5286,13 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_Ctz32x4:
          return mkPCast32x4(mce, vatom);
 
+      case Iop_TruncF128toI32S: /* F128 -> I32S (result stored in 64-bits) */
+      case Iop_TruncF128toI32U: /* F128 -> I32U (result stored in 64-bits) */
       case Iop_CmpwNEZ32:
          return mkPCastTo(mce, Ity_I32, vatom);
 
+      case Iop_TruncF128toI64S: /* F128 -> I64S */
+      case Iop_TruncF128toI64U: /* F128 -> I64U */
       case Iop_CmpwNEZ64:
          return mkPCastTo(mce, Ity_I64, vatom);
 

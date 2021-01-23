@@ -33980,7 +33980,7 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
    UChar opc1 = ifieldOPC(theInstr);
    UChar opc2 = IFIELD( theInstr, 1, 10);
    UInt bit11_15 = IFIELD( theInstr, (31-15), 5);
-   char AT =  ifieldAT(theInstr);
+   UChar AT =  ifieldAT(theInstr);
    Bool is_prefix = prefix_instruction( prefix );
    UChar rA_addr = ifieldRegA( theInstr );
    UChar rB_addr = ifieldRegB( theInstr );

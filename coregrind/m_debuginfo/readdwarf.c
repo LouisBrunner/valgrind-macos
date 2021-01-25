@@ -322,6 +322,123 @@ void process_extended_line_op( struct _DebugInfo* di,
 ////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
 
+static
+HChar * get_line_str (struct _DebugInfo* di, const UnitInfo* ui,
+                      DiCursor *data, const UInt form,
+                      DiCursor debugstr_img, DiCursor debuglinestr_img)
+{
+   HChar *str = NULL;
+   switch (form) {
+   case DW_FORM_string:
+      str = ML_(cur_step_strdup)(data, "di.gls.string");
+      break;
+   case DW_FORM_strp:
+      if (!ui->dw64)
+         str = ML_(cur_read_strdup)(ML_(cur_plus)(debugstr_img,
+                                                  ML_(cur_step_UInt)(data)),
+                                    "di.gls.strp.dw32");
+      else
+         str = ML_(cur_read_strdup)(ML_(cur_plus)(debugstr_img,
+                                                  ML_(cur_step_ULong)(data)),
+                                    "di.gls.strp.dw64");
+      break;
+   case DW_FORM_line_strp:
+      if (!ui->dw64)
+         str = ML_(cur_read_strdup)(ML_(cur_plus)(debuglinestr_img,
+                                                  ML_(cur_step_UInt)(data)),
+                                    "di.gls.line_strp.dw32");
+      else
+         str = ML_(cur_read_strdup)(ML_(cur_plus)(debuglinestr_img,
+                                                  ML_(cur_step_ULong)(data)),
+                                    "di.gls.line_strp.dw64");
+      break;
+   default:
+      ML_(symerr)(di, True,
+                  "Unknown path string FORM in .debug_line");
+      break;
+   }
+   return str;
+}
+
+static
+Int get_line_ndx (struct _DebugInfo* di,
+                  DiCursor *data, const UInt form)
+{
+   Int res = 0;
+   switch (form) {
+   case DW_FORM_data1:
+      res = ML_(cur_step_UChar)(data);
+      break;
+   case DW_FORM_data2:
+      res = ML_(cur_step_UShort)(data);
+      break;
+   case DW_FORM_udata:
+      res = step_leb128U(data);
+      break;
+   default:
+      ML_(symerr)(di, True,
+                  "Unknown directory_index value FORM in .debug_line");
+      break;
+   }
+   return res;
+}
+
+static
+DiCursor skip_line_form (struct _DebugInfo* di, const UnitInfo* ui,
+                         DiCursor d, const UInt form)
+{
+   switch (form) {
+   case DW_FORM_block: {
+      ULong len = step_leb128U(&d);
+      d = ML_(cur_plus)(d, len);
+      break;
+   }
+   case DW_FORM_block1:
+      d = ML_(cur_plus)(d, ML_(cur_read_UChar)(d) + 1);
+      break;
+   case DW_FORM_block2:
+      d = ML_(cur_plus)(d, ML_(cur_read_UShort)(d) + 2);
+      break;
+   case DW_FORM_block4:
+      d = ML_(cur_plus)(d, ML_(cur_read_UInt)(d) + 4);
+      break;
+   case DW_FORM_flag:
+   case DW_FORM_data1:
+      d = ML_(cur_plus)(d, 1);
+      break;
+   case DW_FORM_data2:
+      d = ML_(cur_plus)(d, 2);
+      break;
+   case DW_FORM_data4:
+      d = ML_(cur_plus)(d, 4);
+      break;
+   case DW_FORM_data8:
+      d = ML_(cur_plus)(d, 8);
+      break;
+   case DW_FORM_data16:
+      d = ML_(cur_plus)(d, 16);
+      break;
+   case DW_FORM_string:
+      d = ML_(cur_plus)(d, ML_(cur_strlen)(d) + 1);
+      break;
+   case DW_FORM_strp:
+   case DW_FORM_line_strp:
+   case DW_FORM_sec_offset:
+      d = ML_(cur_plus)(d, ui->dw64 ? 8 : 4);
+      break;
+   case DW_FORM_udata:
+      (void)step_leb128U(&d);
+      break;
+   case DW_FORM_sdata:
+      (void)step_leb128S(&d);
+      break;
+   default:
+      ML_(symerr)(di, True, "Unknown FORM in .debug_line");
+      break;
+   }
+   return d;
+}
+
 /* read a .debug_line section block for a compilation unit
  *
  * Input:   - theBlock must point to the start of the block
@@ -335,7 +452,9 @@ static
 void read_dwarf2_lineblock ( struct _DebugInfo* di,
                              const UnitInfo* ui, 
                              DiCursor  theBlock, /* IMAGE */
-                             Int       noLargerThan )
+                             Int       noLargerThan,
+                             DiCursor  debugstr_img,
+                             DiCursor  debuglinestr_img)
 {
    Int            i;
    DebugLineInfo  info;
@@ -347,6 +466,9 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
 
    DiCursor       external = theBlock;
    DiCursor       data = theBlock;
+
+   UChar          p_ndx = 0, d_ndx = 0; /* DWARF5 path and dir index. */
+   UInt           forms[256];           /* DWARF5 forms. */
 
    /* fndn_ix_xa is an xarray of fndn_ix (indexes in di->fndnpool) which
       are build from file names harvested from the DWARF2
@@ -372,17 +494,6 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
    fndn_ix_xa = VG_(newXA) (ML_(dinfo_zalloc), "di.rd2l.2", ML_(dinfo_free),
                             sizeof(UInt) );
 
-   /* DWARF2 starts numbering filename entries at 1, so we need to
-      add a dummy zeroth entry to the table. */
-   fndn_ix = 0; // 0 is the "null" index in a fixed pool.
-   VG_(addToXA) (fndn_ix_xa, &fndn_ix);
-
-   if (ML_(cur_is_valid)(ui->compdir))
-      dirname = ML_(addStrFromCursor)(di, ui->compdir);
-   else
-      dirname = ML_(addStr)(di, ".", -1);
-   VG_(addToXA) (dirname_xa, &dirname);
-
    info.li_length = step_initial_length_field( &external, &is64 );
    if (di->ddump_line)
       VG_(printf)("  Length:                      %llu\n", 
@@ -402,11 +513,17 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
       VG_(printf)("  DWARF Version:               %d\n", 
                   (Int)info.li_version);
 
-   if (info.li_version != 2 && info.li_version != 3 && info.li_version != 4) {
+   if (info.li_version != 2 && info.li_version != 3 && info.li_version != 4
+       && info.li_version != 5) {
       ML_(symerr)(di, True,
-                  "Only DWARF version 2, 3 and 4 line info "
+                  "Only DWARF version 2, 3, 4 and 5 line info "
                   "is currently supported.");
       goto out;
+   }
+
+   if (info.li_version >= 5) {
+      /* UChar addr_size = */ ML_(cur_step_UChar)(&external);
+      /* UChar seg_size = */  ML_(cur_step_UChar)(&external);
    }
 
    info.li_header_length = is64 ? ML_(cur_step_ULong)(&external) 
@@ -485,60 +602,141 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
    /* skip over "standard_opcode_lengths" */
    data = ML_(cur_plus)(standard_opcodes, info.li_opcode_base - 1);
 
-   /* Read the contents of the Directory table.  */
-   if (di->ddump_line)
-      VG_(printf)(" The Directory Table%s\n", 
-                  ML_(cur_read_UChar)(data) == 0 ? " is empty." : ":" );
+   if (ML_(cur_is_valid)(ui->compdir))
+      dirname = ML_(addStrFromCursor)(di, ui->compdir);
+   else
+      dirname = ML_(addStr)(di, ".", -1);
 
-   while (ML_(cur_read_UChar)(data) != 0) {
-
-      HChar* data_str = ML_(cur_read_strdup)(data, "di.rd2l.1");
+   if (info.li_version < 5) {
+      /* Read the contents of the Directory table.  */
       if (di->ddump_line)
-         VG_(printf)("  %s\n", data_str);
+         VG_(printf)("The Directory Table%s\n",
+                     ML_(cur_read_UChar)(data) == 0 ? " is empty." : ":" );
 
-      /* If data[0] is '/', then 'data' is an absolute path and we
-         don't mess with it.  Otherwise, construct the
-         path 'ui->compdir' ++ "/" ++ 'data'. */
+      /* DWARF2 starts numbering filename entries at 1, so we need to
+         add a dummy zeroth entry to the table.  */
+      fndn_ix = 0; // 0 is the "null" index in a fixed pool.
+      VG_(addToXA) (fndn_ix_xa, &fndn_ix);
+      VG_(addToXA) (dirname_xa, &dirname);
 
-      if (data_str[0] != '/' 
-          /* not an absolute path */
-          && ML_(cur_is_valid)(ui->compdir)
-          /* actually got something sensible for compdir */
-          && ML_(cur_strlen)(ui->compdir))
-      {
-         HChar* compdir_str = ML_(cur_read_strdup)(ui->compdir, "di.rd2l.1b");
-         SizeT  len = VG_(strlen)(compdir_str) + 1 + VG_(strlen)(data_str);
-         HChar *buf = ML_(dinfo_zalloc)("di.rd2l.1c", len + 1);
+      while (ML_(cur_read_UChar)(data) != 0) {
 
-         VG_(strcpy)(buf, compdir_str);
-         VG_(strcat)(buf, "/");
-         VG_(strcat)(buf, data_str);
+         HChar* data_str = ML_(cur_read_strdup)(data, "di.rd2l.1");
+         if (di->ddump_line)
+            VG_(printf)("  %s\n", data_str);
 
-         dirname = ML_(addStr)(di, buf, len);
-         VG_(addToXA) (dirname_xa, &dirname);
-         if (0) VG_(printf)("rel path  %s\n", buf);
-         ML_(dinfo_free)(compdir_str);
-         ML_(dinfo_free)(buf);
-      } else {
-         /* just use 'data'. */
-         dirname = ML_(addStr)(di,data_str,-1);
-         VG_(addToXA) (dirname_xa, &dirname);
-         if (0) VG_(printf)("abs path  %s\n", data_str);
+         /* If data[0] is '/', then 'data' is an absolute path and we
+            don't mess with it.  Otherwise, construct the
+            path 'ui->compdir' ++ "/" ++ 'data'. */
+
+         if (data_str[0] != '/'
+             /* not an absolute path */
+             && ML_(cur_is_valid)(ui->compdir)
+             /* actually got something sensible for compdir */
+             && ML_(cur_strlen)(ui->compdir))
+         {
+            HChar* compdir_str = ML_(cur_read_strdup)(ui->compdir,
+                                                      "di.rd2l.1b");
+            SizeT  len = VG_(strlen)(compdir_str) + 1 + VG_(strlen)(data_str);
+            HChar *buf = ML_(dinfo_zalloc)("di.rd2l.1c", len + 1);
+
+            VG_(strcpy)(buf, compdir_str);
+            VG_(strcat)(buf, "/");
+            VG_(strcat)(buf, data_str);
+
+            dirname = ML_(addStr)(di, buf, len);
+            VG_(addToXA) (dirname_xa, &dirname);
+            if (0) VG_(printf)("rel path  %s\n", buf);
+            ML_(dinfo_free)(compdir_str);
+            ML_(dinfo_free)(buf);
+         } else {
+            /* just use 'data'. */
+            dirname = ML_(addStr)(di,data_str,-1);
+            VG_(addToXA) (dirname_xa, &dirname);
+            if (0) VG_(printf)("abs path  %s\n", data_str);
+         }
+
+         data = ML_(cur_plus)(data, VG_(strlen)(data_str) + 1);
+         ML_(dinfo_free)(data_str);
       }
 
-      data = ML_(cur_plus)(data, VG_(strlen)(data_str) + 1);
-      ML_(dinfo_free)(data_str);
-   }
+      if (di->ddump_line)
+         VG_(printf)("\n");
 
-   if (di->ddump_line)
-      VG_(printf)("\n");
+      if (ML_(cur_read_UChar)(data) != 0) {
+         ML_(symerr)(di, True,
+                     "can't find NUL at end of DWARF2 directory table");
+         goto out;
+      }
+      data = ML_(cur_plus)(data, 1);
+   } else {
+      UInt directories_count;
+      UChar directory_entry_format_count = ML_(cur_step_UChar)(&data);
+      UInt n;
+      for (n = 0; n < directory_entry_format_count; n++) {
+         UInt lnct = step_leb128U(&data);
+         UInt form = step_leb128U(&data);
+         if (lnct == DW_LNCT_path)
+            p_ndx = n;
+         forms[n] = form;
+      }
+      directories_count = step_leb128U(&data);
+      /* Read the contents of the Directory table.  */
+      if (di->ddump_line)
+         VG_(printf)(" dwarf The Directory Table%s\n",
+                     directories_count == 0 ? " is empty." : ":" );
 
-   if (ML_(cur_read_UChar)(data) != 0) {
-      ML_(symerr)(di, True,
-                  "can't find NUL at end of DWARF2 directory table");
-      goto out;
+      for (n = 0; n < directories_count; n++) {
+         UInt f;
+         for (f = 0; f < directory_entry_format_count; f++) {
+            UInt form = forms[f];
+            if (f == p_ndx) {
+               HChar *data_str = get_line_str (di, ui, &data, form,
+                                               debugstr_img,
+                                               debuglinestr_img);
+               if (di->ddump_line)
+                  VG_(printf)("  %s\n", data_str);
+
+               /* If data[0] is '/', then 'data' is an absolute path and we
+                  don't mess with it.  Otherwise, construct the
+                  path 'ui->compdir' ++ "/" ++ 'data'. */
+
+               if (data_str[0] != '/'
+                   /* not an absolute path */
+                   && ML_(cur_is_valid)(ui->compdir)
+                   /* actually got something sensible for compdir */
+                   && ML_(cur_strlen)(ui->compdir))
+               {
+                  HChar* compdir_str = ML_(cur_read_strdup)(ui->compdir,
+                                                            "di.rd2l.1b");
+                  SizeT  len = VG_(strlen)(compdir_str) + 1
+                     + VG_(strlen)(data_str);
+                  HChar *buf = ML_(dinfo_zalloc)("di.rd2l.1c", len + 1);
+
+                  VG_(strcpy)(buf, compdir_str);
+                  VG_(strcat)(buf, "/");
+                  VG_(strcat)(buf, data_str);
+
+                  dirname = ML_(addStr)(di, buf, len);
+                  VG_(addToXA) (dirname_xa, &dirname);
+                  if (0) VG_(printf)("rel path  %s\n", buf);
+                  ML_(dinfo_free)(compdir_str);
+                  ML_(dinfo_free)(buf);
+               } else {
+                  /* just use 'data'. */
+                  dirname = ML_(addStr)(di,data_str,-1);
+                  VG_(addToXA) (dirname_xa, &dirname);
+                  if (0) VG_(printf)("abs path  %s\n", data_str);
+               }
+
+               ML_(dinfo_free)(data_str);
+
+            } else {
+               data = skip_line_form (di, ui, data, form);
+            }
+         }
+      }
    }
-   data = ML_(cur_plus)(data, 1);
 
    /* Read the contents of the File Name table.  This produces a bunch
       of fndn_ix in fndn_ix_xa. */
@@ -547,33 +745,76 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
       VG_(printf)("  Entry	Dir	Time	Size	Name\n");
    }
 
-   i = 1;
-   while (ML_(cur_read_UChar)(data) != 0) {
-      HChar* name    = ML_(cur_step_strdup)(&data, "di.rd2l.2");
-      Int    diridx  = step_leb128U(&data);
-      Int    uu_time = step_leb128U(&data); /* unused */
-      Int    uu_size = step_leb128U(&data); /* unused */
+   if (info.li_version < 5) {
+      i = 1;
+      while (ML_(cur_read_UChar)(data) != 0) {
+         HChar* name    = ML_(cur_step_strdup)(&data, "di.rd2l.2");
+         Int    diridx  = step_leb128U(&data);
+         Int    uu_time = step_leb128U(&data); /* unused */
+         Int    uu_size = step_leb128U(&data); /* unused */
 
-      dirname = safe_dirname_ix( dirname_xa, diridx );
-      fndn_ix = ML_(addFnDn) (di, name, dirname);
-      VG_(addToXA) (fndn_ix_xa, &fndn_ix);
-      if (0) VG_(printf)("file %s diridx %d\n", name, diridx );
+         dirname = safe_dirname_ix( dirname_xa, diridx );
+         fndn_ix = ML_(addFnDn) (di, name, dirname);
+         VG_(addToXA) (fndn_ix_xa, &fndn_ix);
+         if (0) VG_(printf)("file %s diridx %d\n", name, diridx );
+         if (di->ddump_line)
+            VG_(printf)("  %d\t%d\t%d\t%d\t%s\n",
+                        i, diridx, uu_time, uu_size, name);
+         i++;
+         ML_(dinfo_free)(name);
+      }
+
       if (di->ddump_line)
-         VG_(printf)("  %d\t%d\t%d\t%d\t%s\n", 
-                     i, diridx, uu_time, uu_size, name);
-      i++;
-      ML_(dinfo_free)(name);
-   }
+         VG_(printf)("\n");
 
-   if (di->ddump_line)
-      VG_(printf)("\n");
+      if (ML_(cur_read_UChar)(data) != 0) {
+         ML_(symerr)(di, True,
+                     "can't find NUL at end of DWARF2 file name table");
+         goto out;
+      }
+      data = ML_(cur_plus)(data, 1);
+   } else {
+      UInt file_names_count;
+      UChar file_names_entry_format_count = ML_(cur_step_UChar)(&data);
+      UInt n;
+      for (n = 0; n < file_names_entry_format_count; n++) {
+         UInt lnct = step_leb128U(&data);
+         UInt form = step_leb128U(&data);
+         if (lnct == DW_LNCT_path)
+            p_ndx = n;
+         if (lnct == DW_LNCT_directory_index)
+            d_ndx = n;
+         forms[n] = form;
+      }
+      file_names_count = step_leb128U(&data);
+      for (n = 0; n < file_names_count; n++) {
+         UInt f;
+         HChar* name = NULL;
+         Int diridx  = 0;
+         for (f = 0; f < file_names_entry_format_count; f++) {
+            UInt form = forms[f];
+            if (f == p_ndx)
+               name = get_line_str (di, ui, &data, form,
+                                    debugstr_img, debuglinestr_img);
+            else if (n == d_ndx)
+               diridx = get_line_ndx (di, &data, form);
+            else
+               data = skip_line_form (di, ui, data, form);
+         }
 
-   if (ML_(cur_read_UChar)(data) != 0) {
-      ML_(symerr)(di, True,
-                  "can't find NUL at end of DWARF2 file name table");
-      goto out;
+         dirname = safe_dirname_ix( dirname_xa, diridx );
+         fndn_ix = ML_(addFnDn) (di, name, dirname);
+         VG_(addToXA) (fndn_ix_xa, &fndn_ix);
+         if (0) VG_(printf)("file %s diridx %d\n", name, diridx );
+         if (di->ddump_line)
+            VG_(printf)("  %u\t%d\t%d\t%d\t%s\n",
+                        n, diridx, 0, 0, name);
+         ML_(dinfo_free)(name);
+      }
+
+      if (di->ddump_line)
+         VG_(printf)("\n");
    }
-   data = ML_(cur_plus)(data, 1);
 
    if (di->ddump_line)
       VG_(printf)(" Line Number Statements:\n");
@@ -772,9 +1013,12 @@ static DiCursor lookup_abbrev( DiCursor p, ULong acode )
       (void)step_leb128U(&p);  /* skip tag */
       p = ML_(cur_plus)(p,1);  /* skip has_children flag */
       ULong name;
+      ULong form;
       do {
          name = step_leb128U(&p); /* name */
-         (void)step_leb128U(&p);  /* form */
+         form = step_leb128U(&p);  /* form */
+         if (form == 0x21) /* DW_FORM_implicit_const */
+            step_leb128S(&p);
       }
       while (name != 0); /* until name == form == 0 */
    }
@@ -804,13 +1048,14 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
                                   DiCursor  unitblock_img,
                                   DiCursor  debugabbrev_img,
                                   DiCursor  debugstr_img,
-                                  DiCursor  debugstr_alt_img )
+                                  DiCursor  debugstr_alt_img,
+                                  DiCursor  debuglinestr_img)
 {
    UInt   acode, abcode;
    ULong  atoffs, blklen;
    UShort ver;
 
-   UChar    addr_size;
+   UChar    addr_size = 0;
    DiCursor p = unitblock_img;
    DiCursor end_img;
    DiCursor abbrev_img;
@@ -823,15 +1068,24 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
    /* This block length */
    blklen = step_initial_length_field( &p, &ui->dw64 );
 
-   /* version should be 2, 3 or 4 */
+   /* version should be 2, 3, 4 or 5 */
    ver = ML_(cur_step_UShort)(&p);
 
-   /* get offset in abbrev */
-   atoffs = ui->dw64 ? ML_(cur_step_ULong)(&p)
-                     : (ULong)(ML_(cur_step_UInt)(&p));
+   if (ver >= 5)
+      /* unit_type for DWARF5 */
+      /* unit_type = */ ML_(cur_step_UChar)(&p);
+   else
+      /* get offset in abbrev */
+      atoffs = ui->dw64 ? ML_(cur_step_ULong)(&p)
+                        : (ULong)(ML_(cur_step_UInt)(&p));
 
    /* Address size */
    addr_size = ML_(cur_step_UChar)(&p);
+
+   if (ver >= 5)
+      /* get offset in abbrev */
+      atoffs = ui->dw64 ? ML_(cur_step_ULong)(&p)
+                        : (ULong)(ML_(cur_step_UInt)(&p));
 
    /* End of this block */
    end_img = ML_(cur_plus)(unitblock_img, blklen + (ui->dw64 ? 12 : 4)); 
@@ -909,6 +1163,17 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
                   sval = ML_(cur_plus)(debugstr_img, ML_(cur_read_ULong)(p));
                p = ML_(cur_plus)(p, ui->dw64 ? 8 : 4);
                break;
+            case 0x1f: /* FORM_line_strp */ /* pointer in .debug_line_str */
+               /* 2006-01-01: only generate a value if a debug_str
+                  section was found) */
+               if (ML_(cur_is_valid)(debuglinestr_img) && !ui->dw64)
+                  sval = ML_(cur_plus)(debuglinestr_img,
+                                       ML_(cur_read_UInt)(p));
+               if (ML_(cur_is_valid)(debuglinestr_img) && ui->dw64)
+                  sval = ML_(cur_plus)(debuglinestr_img,
+                                       ML_(cur_read_ULong)(p));
+               p = ML_(cur_plus)(p, ui->dw64 ? 8 : 4);
+               break;
             case 0x08: /* FORM_string */
                sval = p;
                p = ML_(cur_plus)(p, ML_(cur_strlen)(p) + 1);
@@ -928,7 +1193,13 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
                p = ML_(cur_plus)(p, 8);
                /* perhaps should assign unconditionally to cval? */
                break;
+            case 0x21: /* FORM_implicit_const */
+               cval = step_leb128S (&abbrev_img);
+               break;
             /* TODO : Following ones just skip data - implement if you need */
+            case 0x1e: /* FORM_data16 */
+               p = ML_(cur_plus)(p, 16);
+               break;
             case 0x01: /* FORM_addr */
                p = ML_(cur_plus)(p, addr_size);
                break;
@@ -1028,7 +1299,8 @@ void ML_(read_debuginfo_dwarf3)
           DiSlice escn_debug_abbv,      /* .debug_abbrev */
           DiSlice escn_debug_line,      /* .debug_line */
           DiSlice escn_debug_str,       /* .debug_str */
-          DiSlice escn_debug_str_alt )  /* .debug_str */
+          DiSlice escn_debug_str_alt,   /* .debug_str */
+          DiSlice escn_debug_line_str)  /* .debug_line_str */
 {
    UnitInfo ui;
    UShort   ver;
@@ -1067,9 +1339,9 @@ void ML_(read_debuginfo_dwarf3)
 
       /* version should be 2 */
       ver = ML_(cur_read_UShort)( ML_(cur_plus)(block_img, blklen_len) );
-      if ( ver != 2 && ver != 3 && ver != 4 ) {
+      if ( ver != 2 && ver != 3 && ver != 4 && ver != 5) {
          ML_(symerr)( di, True,
-                      "Ignoring non-Dwarf2/3/4 block in .debug_info" );
+                      "Ignoring non-Dwarf2/3/4/5 block in .debug_info" );
          continue;
       }
       
@@ -1082,7 +1354,8 @@ void ML_(read_debuginfo_dwarf3)
       read_unitinfo_dwarf2( &ui, block_img, 
                                  ML_(cur_from_sli)(escn_debug_abbv),
                                  ML_(cur_from_sli)(escn_debug_str),
-                                 ML_(cur_from_sli)(escn_debug_str_alt) );
+                                 ML_(cur_from_sli)(escn_debug_str_alt),
+                                 ML_(cur_from_sli)(escn_debug_line_str));
       if (0) {
          HChar* str_name    = ML_(cur_read_strdup)(ui.name,    "di.rdd3.1");
          HChar* str_compdir = ML_(cur_read_strdup)(ui.compdir, "di.rdd3.2");
@@ -1107,7 +1380,9 @@ void ML_(read_debuginfo_dwarf3)
       read_dwarf2_lineblock(
          di, &ui,
          ML_(cur_plus)(ML_(cur_from_sli)(escn_debug_line), ui.stmt_list),
-         escn_debug_line.szB  - ui.stmt_list
+         escn_debug_line.szB  - ui.stmt_list,
+         ML_(cur_from_sli)(escn_debug_str),
+         ML_(cur_from_sli)(escn_debug_line_str)
       );
    }
 }

@@ -384,6 +384,7 @@ typedef
    struct _name_form {
       ULong at_name;  // Dwarf Attribute name
       ULong at_form;  // Dwarf Attribute form
+      Long  at_val;   // Dwarf Attribute value (for implicit_const)
       UInt  skip_szB; // Nr of bytes skippable from here ...
       UInt  next_nf;  // ... to reach this attr/form index in the g_abbv.nf
    } name_form;
@@ -423,7 +424,7 @@ typedef
       void (*barf)( const HChar* ) __attribute__((noreturn));
       /* Is this 64-bit DWARF ? */
       Bool   is_dw64;
-      /* Which DWARF version ?  (2, 3 or 4) */
+      /* Which DWARF version ?  (2, 3, 4 or 5) */
       UShort version;
       /* Length of this Compilation Unit, as stated in the
          .unit_length :: InitialLength field of the CU Header.
@@ -452,12 +453,15 @@ typedef
       /* Image information for various sections. */
       DiSlice escn_debug_str;
       DiSlice escn_debug_ranges;
+      DiSlice escn_debug_rnglists;
+      DiSlice escn_debug_loclists;
       DiSlice escn_debug_loc;
       DiSlice escn_debug_line;
       DiSlice escn_debug_info;
       DiSlice escn_debug_types;
       DiSlice escn_debug_info_alt;
       DiSlice escn_debug_str_alt;
+      DiSlice escn_debug_line_str;
       /* How much to add to .debug_types resp. alternate .debug_info offsets
          in cook_die*.  */
       UWord  types_cuOff_bias;
@@ -651,25 +655,35 @@ static GExpr* make_singleton_GX ( DiCursor block, ULong nbytes )
 __attribute__((noinline))
 static GExpr* make_general_GX ( const CUConst* cc,
                                 Bool     td3,
-                                ULong    debug_loc_offset,
+                                ULong    offset,
                                 Addr     svma_of_referencing_CU )
 {
+   Bool      done;
    Addr      base;
    Cursor    loc;
    XArray*   xa; /* XArray of UChar */
    GExpr*    gx;
    Word      nbytes;
+   Bool      addBase = cc->version < 5;
 
    vg_assert(sizeof(UWord) == sizeof(Addr));
-   if (!ML_(sli_is_valid)(cc->escn_debug_loc) || cc->escn_debug_loc.szB == 0)
+   if (cc->version < 5 && (!ML_(sli_is_valid)(cc->escn_debug_loc)
+                           || cc->escn_debug_loc.szB == 0))
       cc->barf("make_general_GX: .debug_loc is empty/missing");
+   if (cc->version >= 5 && (!ML_(sli_is_valid)(cc->escn_debug_loclists)
+                           || cc->escn_debug_loclists.szB == 0))
+      cc->barf("make_general_GX: .debug_loclists is empty/missing");
 
-   init_Cursor( &loc, cc->escn_debug_loc, 0, cc->barf,
-                "Overrun whilst reading .debug_loc section(2)" );
-   set_position_of_Cursor( &loc, debug_loc_offset );
+   if (cc->version < 5)
+      init_Cursor( &loc, cc->escn_debug_loc, 0, cc->barf,
+                   "Overrun whilst reading .debug_loc section(2)" );
+   else
+      init_Cursor( &loc, cc->escn_debug_loclists, 0, cc->barf,
+                   "Overrun whilst reading .debug_loclists section(2)" );
+   set_position_of_Cursor( &loc, offset );
 
-   TRACE_D3("make_general_GX (.debug_loc_offset = %llu, ioff = %llu) {\n",
-            debug_loc_offset, get_DiCursor_from_Cursor(&loc).ioff );
+   TRACE_D3("make_general_GX (offset = %llu, ioff = %llu) {\n",
+            offset, get_DiCursor_from_Cursor(&loc).ioff );
 
    /* Who frees this xa?  It is freed before this fn exits. */
    xa = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.mgGX.1", 
@@ -679,40 +693,86 @@ static GExpr* make_general_GX ( const CUConst* cc,
    { UChar c = 1; /*biasMe*/ VG_(addBytesToXA)( xa, &c, sizeof(c) ); }
 
    base = 0;
-   while (True) {
+   done = False;
+   while (!done) {
       Bool  acquire;
       UWord len;
-      /* Read a (host-)word pair.  This is something of a hack since
-         the word size to read is really dictated by the ELF file;
-         however, we assume we're reading a file with the same
-         word-sizeness as the host.  Reasonably enough. */
-      UWord w1 = get_UWord( &loc );
-      UWord w2 = get_UWord( &loc );
+      UWord w1;
+      UWord w2;
+      if (cc->version < 5) {
+         /* Read a (host-)word pair.  This is something of a hack since
+            the word size to read is really dictated by the ELF file;
+            however, we assume we're reading a file with the same
+            word-sizeness as the host.  Reasonably enough. */
+         w1 = get_UWord( &loc );
+         w2 = get_UWord( &loc );
 
-      TRACE_D3("   %08lx %08lx\n", w1, w2);
-      if (w1 == 0 && w2 == 0)
-         break; /* end of list */
+         TRACE_D3("   %08lx %08lx\n", w1, w2);
+         if (w1 == 0 && w2 == 0) {
+            done = True;
+            break; /* end of list */
+         }
 
-      if (w1 == -1UL) {
-         /* new value for 'base' */
-         base = w2;
-         continue;
+         if (w1 == -1UL) {
+            /* new value for 'base' */
+            base = w2;
+            continue;
+         }
+         /* else a location expression follows */
+         len = (UWord)get_UShort( &loc );
+      } else {
+         w1 = 0;
+         w2 = 0;
+         len = 0;
+         DW_LLE r = get_UChar( &loc );
+         switch (r) {
+         case DW_LLE_end_of_list:
+            done = True;
+            break;
+         case DW_LLE_base_address:
+            base = get_UWord( &loc );
+            break;
+         case DW_LLE_start_length:
+            w1 = get_UWord( &loc );
+            w2 = w1 + get_ULEB128( &loc );
+            len = get_ULEB128( &loc );
+            break;
+         case DW_LLE_offset_pair:
+            w1 = base + get_ULEB128( &loc );
+            w2 = base + get_ULEB128( &loc );
+            len = get_ULEB128( &loc );
+            break;
+         case DW_LLE_start_end:
+            w1 = get_UWord ( &loc );
+            w2 = get_UWord ( &loc );
+            len = get_ULEB128( &loc );
+            break;
+         case DW_LLE_GNU_view_pair:
+            get_ULEB128( &loc );
+            get_ULEB128( &loc );
+            break;
+         case DW_LLE_base_addressx:
+         case DW_LLE_startx_endx:
+         case DW_LLE_startx_length:
+         case DW_LLE_default_location:
+         default:
+            cc->barf( "Unhandled or unknown loclists entry" );
+            done = True;
+         }
       }
 
-      /* else a location expression follows */
       /* else enumerate [w1+base, w2+base) */
       /* w2 is 1 past end of range, as per D3 defn for "DW_AT_high_pc"
          (sec 2.17.2) */
       if (w1 > w2) {
          TRACE_D3("negative range is for .debug_loc expr at "
                   "file offset %llu\n", 
-                  debug_loc_offset);
+                  offset);
          cc->barf( "negative range in .debug_loc section" );
       }
 
       /* ignore zero length ranges */
       acquire = w1 < w2;
-      len     = (UWord)get_UShort( &loc );
 
       if (acquire) {
          UWord  w;
@@ -720,9 +780,9 @@ static GExpr* make_general_GX ( const CUConst* cc,
          UChar  c;
          c = 0; /* !isEnd*/
          VG_(addBytesToXA)( xa, &c, sizeof(c) );
-         w = w1    + base + svma_of_referencing_CU;
+         w = w1    + (addBase ? base : 0) + svma_of_referencing_CU;
          VG_(addBytesToXA)( xa, &w, sizeof(w) );
-         w = w2 -1 + base + svma_of_referencing_CU;
+         w = w2 -1 + (addBase ? base : 0) + svma_of_referencing_CU;
          VG_(addBytesToXA)( xa, &w, sizeof(w) );
          s = (UShort)len;
          VG_(addBytesToXA)( xa, &s, sizeof(s) );
@@ -839,45 +899,96 @@ get_range_list ( const CUConst* cc,
    XArray*   xa; /* XArray of AddrRange */
    AddrRange pair;
 
-   if (!ML_(sli_is_valid)(cc->escn_debug_ranges)
-       || cc->escn_debug_ranges.szB == 0)
+   if (cc->version < 5 && (!ML_(sli_is_valid)(cc->escn_debug_ranges)
+                           || cc->escn_debug_ranges.szB == 0))
       cc->barf("get_range_list: .debug_ranges is empty/missing");
+   if (cc->version >= 5 && (!ML_(sli_is_valid)(cc->escn_debug_rnglists)
+                            || cc->escn_debug_rnglists.szB == 0))
+      cc->barf("get_range_list: .debug_rnglists is empty/missing");
 
-   init_Cursor( &ranges, cc->escn_debug_ranges, 0, cc->barf,
-                "Overrun whilst reading .debug_ranges section(2)" );
+   if (cc->version < 5)
+      init_Cursor( &ranges, cc->escn_debug_ranges, 0, cc->barf,
+                   "Overrun whilst reading .debug_ranges section(2)" );
+   else
+      init_Cursor( &ranges, cc->escn_debug_rnglists, 0, cc->barf,
+                   "Overrun whilst reading .debug_rnglists section(2)" );
+
    set_position_of_Cursor( &ranges, debug_ranges_offset );
 
    /* Who frees this xa?  varstack_preen() does. */
    xa = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.grl.1", ML_(dinfo_free),
                     sizeof(AddrRange) );
    base = 0;
-   while (True) {
-      /* Read a (host-)word pair.  This is something of a hack since
-         the word size to read is really dictated by the ELF file;
-         however, we assume we're reading a file with the same
-         word-sizeness as the host.  Reasonably enough. */
-      UWord w1 = get_UWord( &ranges );
-      UWord w2 = get_UWord( &ranges );
+   if (cc->version < 5) {
+      while (True) {
+         /* Read a (host-)word pair.  This is something of a hack since
+            the word size to read is really dictated by the ELF file;
+            however, we assume we're reading a file with the same
+            word-sizeness as the host.  Reasonably enough. */
+         UWord w1 = get_UWord( &ranges );
+         UWord w2 = get_UWord( &ranges );
 
-      if (w1 == 0 && w2 == 0)
-         break; /* end of list. */
+         if (w1 == 0 && w2 == 0)
+            break; /* end of list. */
 
-      if (w1 == -1UL) {
-         /* new value for 'base' */
-         base = w2;
-         continue;
+         if (w1 == -1UL) {
+            /* new value for 'base' */
+            base = w2;
+            continue;
+         }
+
+         /* else enumerate [w1+base, w2+base) */
+         /* w2 is 1 past end of range, as per D3 defn for "DW_AT_high_pc"
+            (sec 2.17.2) */
+         if (w1 > w2)
+            cc->barf( "negative range in .debug_ranges section" );
+         if (w1 < w2) {
+            pair.aMin = w1     + base + svma_of_referencing_CU;
+            pair.aMax = w2 - 1 + base + svma_of_referencing_CU;
+            vg_assert(pair.aMin <= pair.aMax);
+            VG_(addToXA)( xa, &pair );
+         }
       }
-
-      /* else enumerate [w1+base, w2+base) */
-      /* w2 is 1 past end of range, as per D3 defn for "DW_AT_high_pc"
-         (sec 2.17.2) */
-      if (w1 > w2)
-         cc->barf( "negative range in .debug_ranges section" );
-      if (w1 < w2) {
-         pair.aMin = w1     + base + svma_of_referencing_CU;
-         pair.aMax = w2 - 1 + base + svma_of_referencing_CU;
-         vg_assert(pair.aMin <= pair.aMax);
-         VG_(addToXA)( xa, &pair );
+   } else {
+      Bool done = False;
+      while (!done) {
+         UWord w1 = 0;
+         UWord w2 = 0;
+         DW_RLE r = get_UChar( &ranges );
+         switch (r) {
+         case DW_RLE_end_of_list:
+            done = True;
+            break;
+         case DW_RLE_base_address:
+            base = get_UWord( &ranges );
+            break;
+         case DW_RLE_start_length:
+            w1 = get_UWord( &ranges );
+            w2 = w1 + get_ULEB128( &ranges );
+            break;
+         case DW_RLE_offset_pair:
+            w1 = base + get_ULEB128( &ranges );
+            w2 = base + get_ULEB128( &ranges );
+            break;
+         case DW_RLE_start_end:
+            w1 = get_UWord ( &ranges );
+            w2 = get_UWord ( &ranges );
+            break;
+         case DW_RLE_base_addressx:
+         case DW_RLE_startx_endx:
+         case DW_RLE_startx_length:
+         default:
+            cc->barf( "Unhandled or unknown range list entry" );
+            done = True;
+         }
+         if (w1 > w2)
+            cc->barf( "negative range in .debug_rnglists section" );
+         if (w1 < w2) {
+            pair.aMin = w1     + svma_of_referencing_CU;
+            pair.aMax = w2 - 1 + svma_of_referencing_CU;
+            vg_assert(pair.aMin <= pair.aMax);
+            VG_(addToXA)( xa, &pair );
+         }
       }
    }
    return xa;
@@ -930,6 +1041,8 @@ static void init_ht_abbvs (CUConst* cc,
          }
          ta->nf[ta_nf_n].at_name = get_ULEB128( &c );
          ta->nf[ta_nf_n].at_form = get_ULEB128( &c );
+         if (ta->nf[ta_nf_n].at_form == DW_FORM_implicit_const)
+            ta->nf[ta_nf_n].at_val = get_SLEB128( &c );
          if (ta->nf[ta_nf_n].at_name == 0 && ta->nf[ta_nf_n].at_form == 0) {
             ta_nf_n++;
             break; 
@@ -1005,7 +1118,7 @@ void parse_CU_Header ( /*OUT*/CUConst* cc,
 		       Bool type_unit,
                        Bool alt_info )
 {
-   UChar  address_size;
+   UChar  address_size, unit_type;
    ULong  debug_abbrev_offset;
 
    VG_(memset)(cc, 0, sizeof(*cc));
@@ -1021,9 +1134,20 @@ void parse_CU_Header ( /*OUT*/CUConst* cc,
 
    /* version */
    cc->version = get_UShort( c );
-   if (cc->version != 2 && cc->version != 3 && cc->version != 4)
-      cc->barf( "parse_CU_Header: is neither DWARF2 nor DWARF3 nor DWARF4" );
+   if (cc->version != 2 && cc->version != 3 && cc->version != 4
+       && cc->version != 5)
+      cc->barf( "parse_CU_Header: "
+                "is neither DWARF2 nor DWARF3 nor DWARF4 nor DWARF5" );
    TRACE_D3("   Version:       %d\n", (Int)cc->version );
+
+   /* unit type */
+   if (cc->version >= 5) {
+      unit_type = get_UChar( c );
+      address_size = get_UChar( c );
+   } else {
+      unit_type = type_unit ? DW_UT_type : DW_UT_compile;
+      address_size = 0; /* Will be read later. */
+   }
 
    /* debug_abbrev_offset */
    debug_abbrev_offset = get_Dwarfish_UWord( c, cc->is_dw64 );
@@ -1035,7 +1159,9 @@ void parse_CU_Header ( /*OUT*/CUConst* cc,
       give up.  This makes it safe to assume elsewhere that
       DW_FORM_addr and DW_FORM_ref_addr can be treated as a host
       word. */
-   address_size = get_UChar( c );
+   if (cc->version < 5)
+      address_size = get_UChar( c );
+
    if (address_size != sizeof(void*))
       cc->barf( "parse_CU_Header: invalid address_size" );
    TRACE_D3("   Pointer Size:  %d\n", (Int)address_size );
@@ -1043,7 +1169,7 @@ void parse_CU_Header ( /*OUT*/CUConst* cc,
    cc->is_type_unit = type_unit;
    cc->is_alt_info = alt_info;
 
-   if (type_unit) {
+   if (type_unit || (cc->version >= 5 && unit_type == DW_UT_type)) {
       cc->type_signature = get_ULong( c );
       cc->type_offset = get_Dwarfish_UWord( c, cc->is_dw64 );
    }
@@ -1130,8 +1256,9 @@ typedef
 static
 void get_Form_contents ( /*OUT*/FormContents* cts,
                          const CUConst* cc, Cursor* c,
-                         Bool td3, DW_FORM form )
+                         Bool td3, const name_form *abbv )
 {
+   DW_FORM form = abbv->at_form;
    VG_(bzero_inline)(cts, sizeof(*cts));
    // !!! keep switch in sync with get_Form_szB. The nr of characters read below
    // must be computed similarly in get_Form_szB.
@@ -1157,6 +1284,19 @@ void get_Form_contents ( /*OUT*/FormContents* cts,
          cts->szB   = 8;
          TRACE_D3("%llu", cts->u.val);
          break;
+     case DW_FORM_data16: {
+         /* This is more like a block than an integral value.  */
+         ULong    u64b;
+         DiCursor data16 = get_DiCursor_from_Cursor(c);
+         TRACE_D3("data16: ");
+         for (u64b = 16; u64b > 0; u64b--) {
+            UChar u8 = get_UChar(c);
+            TRACE_D3("%x ", (UInt)u8);
+         }
+         cts->u.cur = data16;
+         cts->szB   = - (Long)16;
+         break;
+         }
       case DW_FORM_sec_offset:
          cts->u.val = (ULong)get_Dwarfish_UWord( c, cc->is_dw64 );
          cts->szB   = cc->is_dw64 ? 8 : 4;
@@ -1242,6 +1382,26 @@ void get_Form_contents ( /*OUT*/FormContents* cts,
          cts->szB   = - (Long)(1 + (ULong)ML_(cur_strlen)(str));
          break;
       }
+      case DW_FORM_line_strp: {
+         /* this is an offset into .debug_line_str */
+         UWord uw = (UWord)get_Dwarfish_UWord( c, cc->is_dw64 );
+         if (!ML_(sli_is_valid)(cc->escn_debug_line_str)
+             || uw >= cc->escn_debug_line_str.szB)
+            cc->barf("get_Form_contents: DW_FORM_line_strp "
+                     "points outside .debug_line_str");
+         /* FIXME: check the entire string lies inside debug_line_str,
+            not just the first byte of it. */
+         DiCursor line_str
+            = ML_(cur_plus)( ML_(cur_from_sli)(cc->escn_debug_line_str), uw );
+         if (TD3) {
+            HChar* tmp = ML_(cur_read_strdup)(line_str, "di.getFC.1.5");
+            TRACE_D3("(indirect line string, offset: 0x%lx): %s", uw, tmp);
+            ML_(dinfo_free)(tmp);
+         }
+         cts->u.cur = line_str;
+         cts->szB   = - (Long)(1 + (ULong)ML_(cur_strlen)(line_str));
+         break;
+      }
       case DW_FORM_string: {
          DiCursor str = get_AsciiZ(c);
          if (TD3) {
@@ -1306,6 +1466,11 @@ void get_Form_contents ( /*OUT*/FormContents* cts,
          TRACE_D3("1");
          cts->u.val = 1;
          cts->szB   = 1;
+         break;
+      case DW_FORM_implicit_const:
+         cts->u.val = (ULong)abbv->at_val;
+         cts->szB   = 8;
+         TRACE_D3("%llu", cts->u.val);
          break;
       case DW_FORM_block1: {
          ULong    u64b;
@@ -1396,9 +1561,14 @@ void get_Form_contents ( /*OUT*/FormContents* cts,
          cts->szB   = sizeof(UWord);
          break;
       }
-      case DW_FORM_indirect:
-         get_Form_contents (cts, cc, c, td3, (DW_FORM)get_ULEB128(c));
+      case DW_FORM_indirect: {
+         /* Urgh, this is ugly and somewhat unclear how it works
+            with DW_FORM_implicit_const. HACK.  */
+         name_form nfi = *abbv;
+         nfi.at_form = (DW_FORM)get_ULEB128(c);
+         get_Form_contents (cts, cc, c, td3, &nfi);
          return;
+      }
 
       case DW_FORM_GNU_ref_alt:
          cts->u.val = get_Dwarfish_UWord(c, cc->is_dw64);
@@ -1471,6 +1641,7 @@ UInt get_Form_szB (const CUConst* cc, DW_FORM form )
       case DW_FORM_data2: return 2;
       case DW_FORM_data4: return 4;
       case DW_FORM_data8: return 8;
+      case DW_FORM_data16: return 16;
       case DW_FORM_sec_offset:
          if (cc->is_dw64)
             return 8;
@@ -1488,6 +1659,7 @@ UInt get_Form_szB (const CUConst* cc, DW_FORM form )
          else 
             return sizeof_Dwarfish_UWord (cc->is_dw64);
       case DW_FORM_strp:
+      case DW_FORM_line_strp:
          return sizeof_Dwarfish_UWord (cc->is_dw64);
       case DW_FORM_string: 
          return VARSZ_FORM;
@@ -1522,6 +1694,8 @@ UInt get_Form_szB (const CUConst* cc, DW_FORM form )
          return sizeof_Dwarfish_UWord(cc->is_dw64);
       case DW_FORM_GNU_strp_alt:
          return sizeof_Dwarfish_UWord(cc->is_dw64);
+      case DW_FORM_implicit_const:
+	 return 0; /* Value inside abbrev. */
       default:
          VG_(printf)(
             "get_Form_szB: unhandled %u (%s)\n",
@@ -1544,13 +1718,13 @@ void skip_DIE (UWord  *sibling,
    while (True) {
       if (abbv->nf[nf_i].at_name == DW_AT_sibling) {
          get_Form_contents( &cts, cc, c_die, False /*td3*/,
-                            (DW_FORM)abbv->nf[nf_i].at_form );
+                            &abbv->nf[nf_i] );
          if ( cts.szB > 0 ) 
             *sibling = cts.u.val;
          nf_i++;
       } else if (abbv->nf[nf_i].skip_szB == VARSZ_FORM) {
          get_Form_contents( &cts, cc, c_die, False /*td3*/,
-                            (DW_FORM)abbv->nf[nf_i].at_form );
+                            &abbv->nf[nf_i] );
          nf_i++;
       } else {
          advance_position_of_Cursor (c_die, (ULong)abbv->nf[nf_i].skip_szB);
@@ -1778,6 +1952,124 @@ static GExpr* get_GX ( const CUConst* cc, Bool td3, const FormContents* cts )
    return gexpr;
 }
 
+static
+HChar * get_line_str (struct _DebugInfo* di, Bool is_dw64,
+                      Cursor *data, const UInt form,
+                      DiSlice debugstr_img, DiSlice debuglinestr_img)
+{
+   HChar *str = NULL;
+   switch (form) {
+   case DW_FORM_string: {
+      DiCursor distr = get_AsciiZ(data);
+      str = ML_(cur_step_strdup)(&distr, "di.gls.string");
+      break;
+   }
+   case DW_FORM_strp: {
+      UWord uw = (UWord)get_Dwarfish_UWord( data, is_dw64 );
+      DiCursor distr
+         = ML_(cur_plus)( ML_(cur_from_sli)(debugstr_img), uw );
+      str = ML_(cur_read_strdup)(distr, "di.gls.strp");
+      break;
+   }
+   case DW_FORM_line_strp: {
+      UWord uw = (UWord)get_Dwarfish_UWord( data, is_dw64 );
+      DiCursor distr
+         = ML_(cur_plus)( ML_(cur_from_sli)(debuglinestr_img), uw );
+      str = ML_(cur_read_strdup)(distr, "di.gls.line_strp");
+      break;
+   }
+   default:
+      ML_(symerr)(di, True,
+                  "Unknown path string FORM in .debug_line");
+      break;
+   }
+   return str;
+}
+
+static
+Int get_line_ndx (struct _DebugInfo* di,
+                  Cursor *data, const UInt form)
+{
+   Int res = 0;
+   switch (form) {
+   case DW_FORM_data1:
+      res = get_UChar(data);
+      break;
+   case DW_FORM_data2:
+      res = get_UShort(data);
+      break;
+   case DW_FORM_udata:
+      res = get_ULEB128(data);
+      break;
+   default:
+      ML_(symerr)(di, True,
+                  "Unknown directory_index value FORM in .debug_line");
+      break;
+   }
+   return res;
+}
+
+static
+void skip_line_form (struct _DebugInfo* di, Bool is_dw64,
+                         Cursor *d, const UInt form)
+{
+   switch (form) {
+   case DW_FORM_block: {
+      ULong len = get_ULEB128(d);
+      advance_position_of_Cursor (d, len);
+      break;
+   }
+   case DW_FORM_block1: {
+      UChar len = get_UChar(d);
+      advance_position_of_Cursor (d, len);
+      break;
+   }
+   case DW_FORM_block2: {
+      UShort len = get_UShort(d);
+      advance_position_of_Cursor (d, len);
+      break;
+   }
+   case DW_FORM_block4: {
+      UInt len = get_UInt(d);
+      advance_position_of_Cursor (d, len);
+      break;
+   }
+   case DW_FORM_flag:
+   case DW_FORM_data1:
+      advance_position_of_Cursor (d, 1);
+      break;
+   case DW_FORM_data2:
+      advance_position_of_Cursor (d, 2);
+      break;
+   case DW_FORM_data4:
+      advance_position_of_Cursor (d, 4);
+      break;
+   case DW_FORM_data8:
+      advance_position_of_Cursor (d, 8);
+      break;
+   case DW_FORM_data16:
+      advance_position_of_Cursor (d, 16);
+      break;
+   case DW_FORM_string:
+      (void)get_AsciiZ (d);
+      break;
+   case DW_FORM_strp:
+   case DW_FORM_line_strp:
+   case DW_FORM_sec_offset:
+      advance_position_of_Cursor (d, is_dw64 ? 8 : 4);
+      break;
+   case DW_FORM_udata:
+      (void)get_ULEB128(d);
+      break;
+   case DW_FORM_sdata:
+      (void)get_SLEB128(d);
+      break;
+   default:
+      ML_(symerr)(di, True, "Unknown FORM in .debug_line");
+      break;
+   }
+}
+
 /* Returns an xarray* of directory names (indexed by the dwarf dirname
    integer).
    If 'compdir' is NULL, entry [0] will be set to "."
@@ -1786,8 +2078,8 @@ static GExpr* get_GX ( const CUConst* cc, Bool td3, const FormContents* cts )
    whatever that means, according to the DWARF3 spec.
    FIXME??? readdwarf3.c/readdwarf.c have a lot of duplicated code */
 static
-XArray* read_dirname_xa (DebugInfo* di, const HChar *compdir,
-                         Cursor *c,
+XArray* read_dirname_xa (DebugInfo* di, UShort version, const HChar *compdir,
+                         Cursor *c, const CUConst *cc,
                          Bool td3 )
 {
    XArray*        dirname_xa;   /* xarray of HChar* dirname */
@@ -1804,51 +2096,121 @@ XArray* read_dirname_xa (DebugInfo* di, const HChar *compdir,
       dirname = compdir;
       compdir_len = VG_(strlen)(compdir);
    }
-   VG_(addToXA) (dirname_xa, &dirname);
 
-   TRACE_D3(" The Directory Table%s\n", 
-            peek_UChar(c) == 0 ? " is empty." : ":" );
+   /* For version 5, the compdir is the first (zero) entry. */
+   if (version < 5)
+      VG_(addToXA) (dirname_xa, &dirname);
 
-   while (peek_UChar(c) != 0) {
+   if (version < 5) {
+      TRACE_D3("The Directory Table%s\n",
+               peek_UChar(c) == 0 ? " is empty." : ":" );
 
-      DiCursor cur = get_AsciiZ(c);
-      HChar* data_str = ML_(cur_read_strdup)( cur, "dirname_xa.1" );
-      TRACE_D3("  %s\n", data_str);
+      while (peek_UChar(c) != 0) {
 
-      /* If data_str[0] is '/', then 'data' is an absolute path and we
-         don't mess with it.  Otherwise, construct the
-         path 'compdir' ++ "/" ++ 'data'. */
+         DiCursor cur = get_AsciiZ(c);
+         HChar* data_str = ML_(cur_read_strdup)( cur, "dirname_xa.1" );
+         TRACE_D3("  %s\n", data_str);
 
-      if (data_str[0] != '/' 
-          /* not an absolute path */
-          && compdir
-          /* actually got something sensible for compdir */
-          && compdir_len)
-      {
-         SizeT  len = compdir_len + 1 + VG_(strlen)(data_str);
-         HChar *buf = ML_(dinfo_zalloc)("dirname_xa.2", len + 1);
+         /* If data_str[0] is '/', then 'data' is an absolute path and we
+            don't mess with it.  Otherwise, construct the
+            path 'compdir' ++ "/" ++ 'data'. */
 
-         VG_(strcpy)(buf, compdir);
-         VG_(strcat)(buf, "/");
-         VG_(strcat)(buf, data_str);
+         if (data_str[0] != '/'
+             /* not an absolute path */
+             && compdir
+             /* actually got something sensible for compdir */
+             && compdir_len)
+         {
+            SizeT  len = compdir_len + 1 + VG_(strlen)(data_str);
+            HChar *buf = ML_(dinfo_zalloc)("dirname_xa.2", len + 1);
 
-         dirname = ML_(addStr)(di, buf, len);
-         VG_(addToXA) (dirname_xa, &dirname);
-         if (0) VG_(printf)("rel path  %s\n", buf);
-         ML_(dinfo_free)(buf);
-      } else {
-         /* just use 'data'. */
-         dirname = ML_(addStr)(di,data_str,-1);
-         VG_(addToXA) (dirname_xa, &dirname);
-         if (0) VG_(printf)("abs path  %s\n", data_str);
+            VG_(strcpy)(buf, compdir);
+            VG_(strcat)(buf, "/");
+            VG_(strcat)(buf, data_str);
+
+            dirname = ML_(addStr)(di, buf, len);
+            VG_(addToXA) (dirname_xa, &dirname);
+            if (0) VG_(printf)("rel path  %s\n", buf);
+            ML_(dinfo_free)(buf);
+         } else {
+            /* just use 'data'. */
+            dirname = ML_(addStr)(di,data_str,-1);
+            VG_(addToXA) (dirname_xa, &dirname);
+            if (0) VG_(printf)("abs path  %s\n", data_str);
+         }
+
+         ML_(dinfo_free)(data_str);
       }
+   } else {
+      UChar forms[256];
+      UChar p_ndx = 0;
+      UInt directories_count;
+      UChar directory_entry_format_count;
+      UInt n;
+      DiSlice debugstr_img = cc->escn_debug_str;
+      DiSlice debuglinestr_img = cc->escn_debug_line_str;
 
-      ML_(dinfo_free)(data_str);
+      directory_entry_format_count = get_UChar(c);
+      for (n = 0; n < directory_entry_format_count; n++) {
+         UInt lnct = get_ULEB128(c);
+         UInt form = get_ULEB128(c);
+         if (lnct == DW_LNCT_path)
+            p_ndx = n;
+         forms[n] = form;
+      }
+      directories_count = get_ULEB128(c);
+      TRACE_D3("The Directory Table%s\n",
+               directories_count == 0 ? " is empty." : ":" );
+
+      for (n = 0; n < directories_count; n++) {
+         UInt f;
+         for (f = 0; f < directory_entry_format_count; f++) {
+            UInt form = forms[f];
+            if (f == p_ndx) {
+               HChar *data_str = get_line_str (di, cc->is_dw64, c, form,
+                                               debugstr_img,
+                                               debuglinestr_img);
+               TRACE_D3("  %s\n", data_str);
+
+               /* If data_str[0] is '/', then 'data' is an absolute path and we
+                  don't mess with it.  Otherwise, construct the
+                  path 'compdir' ++ "/" ++ 'data'. */
+
+               if (data_str[0] != '/'
+                   /* not an absolute path */
+                   && compdir
+                   /* actually got something sensible for compdir */
+                   && compdir_len)
+               {
+                  SizeT  len = compdir_len + 1 + VG_(strlen)(data_str);
+                  HChar *buf = ML_(dinfo_zalloc)("dirname_xa.2", len + 1);
+
+                  VG_(strcpy)(buf, compdir);
+                  VG_(strcat)(buf, "/");
+                  VG_(strcat)(buf, data_str);
+
+                  dirname = ML_(addStr)(di, buf, len);
+                  VG_(addToXA) (dirname_xa, &dirname);
+                  if (0) VG_(printf)("rel path  %s\n", buf);
+                  ML_(dinfo_free)(buf);
+               } else {
+                  /* just use 'data'. */
+                  dirname = ML_(addStr)(di,data_str,-1);
+                  VG_(addToXA) (dirname_xa, &dirname);
+                  if (0) VG_(printf)("abs path  %s\n", data_str);
+               }
+
+               ML_(dinfo_free)(data_str);
+            } else {
+               skip_line_form (di, cc->is_dw64, c, form);
+            }
+         }
+      }
    }
 
    TRACE_D3 ("\n");
 
-   if (get_UChar (c) != 0) {
+   if (version < 5 && get_UChar (c) != 0) {
       ML_(symerr)(NULL, True,
                   "could not get NUL at end of DWARF directory table");
       VG_(deleteXA)(dirname_xa);
@@ -1888,9 +2250,13 @@ void read_filename_table( /*MOD*/XArray* /* of UInt* */ fndn_ix_Table,
    get_Initial_Length( &is_dw64, &c,
                        "read_filename_table: invalid initial-length field" );
    version = get_UShort( &c );
-   if (version != 2 && version != 3 && version != 4)
-     cc->barf("read_filename_table: Only DWARF version 2, 3 and 4 line info "
-              "is currently supported.");
+   if (version != 2 && version != 3 && version != 4 && version != 5)
+     cc->barf("read_filename_table: Only DWARF version 2, 3, 4 and 5 "
+              "line info is currently supported.");
+   if (version >= 5) {
+      /* addrs_size = */ get_UChar( &c );
+      /* seg_size =   */ get_UChar( &c );
+   }
    /*header_length              = (ULong)*/ get_Dwarfish_UWord( &c, is_dw64 );
    /*minimum_instruction_length = */ get_UChar( &c );
    if (version >= 4)
@@ -1903,30 +2269,77 @@ void read_filename_table( /*MOD*/XArray* /* of UInt* */ fndn_ix_Table,
    for (i = 1; i < (Word)opcode_base; i++)
      (void)get_UChar( &c );
 
-   dirname_xa = read_dirname_xa(cc->di, compdir, &c, td3);
+   dirname_xa = read_dirname_xa(cc->di, version, compdir, &c, cc, td3);
 
    /* Read and record the file names table */
    vg_assert( VG_(sizeXA)( fndn_ix_Table ) == 0 );
-   /* Add a dummy index-zero entry.  DWARF3 numbers its files
-      from 1, for some reason. */
-   fndn_ix = ML_(addFnDn) ( cc->di, "<unknown_file>", NULL );
-   VG_(addToXA)( fndn_ix_Table, &fndn_ix );
-   while (peek_UChar(&c) != 0) {
-      DiCursor cur = get_AsciiZ(&c);
-      str = ML_(addStrFromCursor)( cc->di, cur );
-      dir_xa_ix = get_ULEB128( &c );
-      if (dirname_xa != NULL 
-          && dir_xa_ix >= 0 && dir_xa_ix < VG_(sizeXA) (dirname_xa))
-         dirname = *(HChar**)VG_(indexXA) ( dirname_xa, dir_xa_ix );
-      else
-         dirname = NULL;
-      fndn_ix = ML_(addFnDn)( cc->di, str, dirname);
-      TRACE_D3("  read_filename_table: %ld fndn_ix %u %s %s\n",
-               VG_(sizeXA)(fndn_ix_Table), fndn_ix, 
-               dirname, str);
+   if (version < 5) {
+      /* Add a dummy index-zero entry.  DWARF3 numbers its files
+         from 1, for some reason. */
+      fndn_ix = ML_(addFnDn) ( cc->di, "<unknown_file>", NULL );
       VG_(addToXA)( fndn_ix_Table, &fndn_ix );
-      (void)get_ULEB128( &c ); /* skip last mod time */
-      (void)get_ULEB128( &c ); /* file size */
+      while (peek_UChar(&c) != 0) {
+         DiCursor cur = get_AsciiZ(&c);
+         str = ML_(addStrFromCursor)( cc->di, cur );
+         dir_xa_ix = get_ULEB128( &c );
+         if (dirname_xa != NULL
+             && dir_xa_ix >= 0 && dir_xa_ix < VG_(sizeXA) (dirname_xa))
+            dirname = *(HChar**)VG_(indexXA) ( dirname_xa, dir_xa_ix );
+         else
+            dirname = NULL;
+         fndn_ix = ML_(addFnDn)( cc->di, str, dirname);
+         TRACE_D3("  read_filename_table: %ld fndn_ix %u %s %s\n",
+                  VG_(sizeXA)(fndn_ix_Table), fndn_ix,
+                  dirname, str);
+         VG_(addToXA)( fndn_ix_Table, &fndn_ix );
+         (void)get_ULEB128( &c ); /* skip last mod time */
+         (void)get_ULEB128( &c ); /* file size */
+      }
+   } else {
+      UChar forms[256];
+      UChar p_ndx = 0, d_ndx = 0;
+      UInt file_names_count;
+      UChar file_names_entry_format_count;
+      UInt n;
+      DiSlice debugstr_img = cc->escn_debug_str;
+      DiSlice debuglinestr_img = cc->escn_debug_line_str;
+      file_names_entry_format_count = get_UChar( &c );
+      for (n = 0; n < file_names_entry_format_count; n++) {
+         UInt lnct = get_ULEB128( &c );
+         UInt form = get_ULEB128( &c );
+         if (lnct == DW_LNCT_path)
+            p_ndx = n;
+         if (lnct == DW_LNCT_directory_index)
+            d_ndx = n;
+         forms[n] = form;
+      }
+      file_names_count = get_ULEB128( &c );
+      for (n = 0; n < file_names_count; n++) {
+         UInt f;
+         dir_xa_ix  = 0;
+         str = NULL;
+         for (f = 0; f < file_names_entry_format_count; f++) {
+            UInt form = forms[f];
+            if (f == p_ndx)
+               str = get_line_str (cc->di, cc->is_dw64, &c, form,
+                                   debugstr_img, debuglinestr_img);
+            else if (n == d_ndx)
+               dir_xa_ix = get_line_ndx (cc->di, &c, form);
+            else
+               skip_line_form (cc->di, cc->is_dw64, &c, form);
+         }
+
+         if (dirname_xa != NULL
+             && dir_xa_ix >= 0 && dir_xa_ix < VG_(sizeXA) (dirname_xa))
+            dirname = *(HChar**)VG_(indexXA) ( dirname_xa, dir_xa_ix );
+         else
+            dirname = NULL;
+         fndn_ix = ML_(addFnDn)( cc->di, str, dirname);
+         TRACE_D3("  read_filename_table: %ld fndn_ix %u %s %s\n",
+                  VG_(sizeXA)(fndn_ix_Table), fndn_ix,
+                  dirname, str);
+         VG_(addToXA)( fndn_ix_Table, &fndn_ix );
+      }
    }
    /* We're done!  The rest of it is not interesting. */
    if (dirname_xa != NULL)
@@ -2011,11 +2424,12 @@ static void trace_DIE(
    while (True) {
       DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
       DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+      const name_form *nf = &abbv->nf[nf_i];
       nf_i++;
       if (attr == 0 && form == 0) break;
       VG_(printf)("     %-18s: ", ML_(pp_DW_AT)(attr));
       /* Get the form contents, so as to print them */
-      get_Form_contents( &cts, cc, &c, True, form );
+      get_Form_contents( &cts, cc, &c, True, nf );
       if (attr == DW_AT_sibling && cts.szB > 0) {
          sibling = cts.u.val;
       }
@@ -2094,9 +2508,10 @@ static void parse_var_DIE (
       while (True) {
          DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
          DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         const name_form *nf = &abbv->nf[nf_i];
          nf_i++;
          if (attr == 0 && form == 0) break;
-         get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
+         get_Form_contents( &cts, cc, c_die, False/*td3*/, nf );
          if (attr == DW_AT_low_pc && cts.szB > 0) {
             ip_lo   = cts.u.val;
             have_lo = True;
@@ -2196,9 +2611,10 @@ static void parse_var_DIE (
       while (True) {
          DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
          DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         const name_form *nf = &abbv->nf[nf_i];
          nf_i++;
          if (attr == 0 && form == 0) break;
-         get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
+         get_Form_contents( &cts, cc, c_die, False/*td3*/, nf );
          if (attr == DW_AT_low_pc && cts.szB > 0) {
             ip_lo   = cts.u.val;
             have_lo = True;
@@ -2282,9 +2698,10 @@ static void parse_var_DIE (
       while (True) {
          DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
          DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         const name_form *nf = &abbv->nf[nf_i];
          nf_i++;
          if (attr == 0 && form == 0) break;
-         get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
+         get_Form_contents( &cts, cc, c_die, False/*td3*/, nf );
          n_attrs++;
          if (attr == DW_AT_name && cts.szB < 0) {
             name = ML_(addStrFromCursor)( cc->di, cts.u.cur );
@@ -2646,9 +3063,10 @@ static const HChar* get_inlFnName (Int absori, const CUConst* cc, Bool td3)
    while (True) {
       DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
       DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+      const name_form *nf = &abbv->nf[nf_i];
       nf_i++;
       if (attr == 0 && form == 0) break;
-      get_Form_contents( &cts, cc, &c, False/*td3*/, form );
+      get_Form_contents( &cts, cc, &c, False/*td3*/, nf );
       if (attr == DW_AT_name) {
          HChar *fnname;
          if (cts.szB >= 0)
@@ -2720,9 +3138,10 @@ static Bool parse_inl_DIE (
       while (True) {
          DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
          DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         const name_form *nf = &abbv->nf[nf_i];
          nf_i++;
          if (attr == 0 && form == 0) break;
-         get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
+         get_Form_contents( &cts, cc, c_die, False/*td3*/, nf );
          if (attr == DW_AT_low_pc && cts.szB > 0) {
             ip_lo   = cts.u.val;
             have_lo = True;
@@ -2764,9 +3183,10 @@ static Bool parse_inl_DIE (
       while (True) {
          DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
          DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         const name_form *nf = &abbv->nf[nf_i];
          nf_i++;
          if (attr == 0 && form == 0) break;
-         get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
+         get_Form_contents( &cts, cc, c_die, False/*td3*/, nf );
          if (attr == DW_AT_call_file && cts.szB > 0) {
             Int ftabIx = (Int)cts.u.val;
             if (ftabIx >= 1
@@ -3090,9 +3510,10 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       while (True) {
          DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
          DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         const name_form *nf = &abbv->nf[nf_i];
          nf_i++;
          if (attr == 0 && form == 0) break;
-         get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
+         get_Form_contents( &cts, cc, c_die, False/*td3*/, nf );
          if (attr != DW_AT_language)
             continue;
          if (cts.szB <= 0)
@@ -3132,9 +3553,10 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       while (True) {
          DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
          DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         const name_form *nf = &abbv->nf[nf_i];
          nf_i++;
          if (attr == 0 && form == 0) break;
-         get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
+         get_Form_contents( &cts, cc, c_die, False/*td3*/, nf );
          if (attr == DW_AT_name && cts.szB < 0) {
             typeE.Te.TyBase.name
                = ML_(cur_read_strdup)( cts.u.cur,
@@ -3243,9 +3665,10 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       while (True) {
          DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
          DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         const name_form *nf = &abbv->nf[nf_i];
          nf_i++;
          if (attr == 0 && form == 0) break;
-         get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
+         get_Form_contents( &cts, cc, c_die, False/*td3*/, nf );
          if (attr == DW_AT_byte_size && cts.szB > 0) {
             typeE.Te.TyPorR.szB = cts.u.val;
          }
@@ -3275,9 +3698,10 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       while (True) {
          DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
          DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         const name_form *nf = &abbv->nf[nf_i];
          nf_i++;
          if (attr == 0 && form == 0) break;
-         get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
+         get_Form_contents( &cts, cc, c_die, False/*td3*/, nf );
          if (attr == DW_AT_name && cts.szB < 0) {
             typeE.Te.TyEnum.name
                = ML_(cur_read_strdup)( cts.u.cur,
@@ -3356,9 +3780,10 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       while (True) {
          DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
          DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         const name_form *nf = &abbv->nf[nf_i];
          nf_i++;
          if (attr == 0 && form == 0) break;
-         get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
+         get_Form_contents( &cts, cc, c_die, False/*td3*/, nf );
          if (attr == DW_AT_name && cts.szB < 0) {
             atomE.Te.Atom.name 
               = ML_(cur_read_strdup)( cts.u.cur,
@@ -3411,9 +3836,10 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       while (True) {
          DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
          DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         const name_form *nf = &abbv->nf[nf_i];
          nf_i++;
          if (attr == 0 && form == 0) break;
-         get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
+         get_Form_contents( &cts, cc, c_die, False/*td3*/, nf );
          if (attr == DW_AT_name && cts.szB < 0) {
             typeE.Te.TyStOrUn.name
                = ML_(cur_read_strdup)( cts.u.cur,
@@ -3498,9 +3924,10 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       while (True) {
          DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
          DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         const name_form *nf = &abbv->nf[nf_i];
          nf_i++;
          if (attr == 0 && form == 0) break;
-         get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
+         get_Form_contents( &cts, cc, c_die, False/*td3*/, nf );
          if (attr == DW_AT_name && cts.szB < 0) {
             fieldE.Te.Field.name
                = ML_(cur_read_strdup)( cts.u.cur,
@@ -3585,9 +4012,10 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       while (True) {
          DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
          DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         const name_form *nf = &abbv->nf[nf_i];
          nf_i++;
          if (attr == 0 && form == 0) break;
-         get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
+         get_Form_contents( &cts, cc, c_die, False/*td3*/, nf );
          if (attr == DW_AT_type && cts.szB > 0) {
             typeE.Te.TyArray.typeR
                = cook_die_using_form( cc, (UWord)cts.u.val, form );
@@ -3626,9 +4054,10 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       while (True) {
          DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
          DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         const name_form *nf = &abbv->nf[nf_i];
          nf_i++;
          if (attr == 0 && form == 0) break;
-         get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
+         get_Form_contents( &cts, cc, c_die, False/*td3*/, nf );
          if (attr == DW_AT_lower_bound && cts.szB > 0 
              && form_expected_for_bound (form)) {
             lower      = (Long)cts.u.val;
@@ -3714,9 +4143,10 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       while (True) {
          DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
          DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         const name_form *nf = &abbv->nf[nf_i];
          nf_i++;
          if (attr == 0 && form == 0) break;
-         get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
+         get_Form_contents( &cts, cc, c_die, False/*td3*/, nf );
          if (attr == DW_AT_name && cts.szB < 0) {
             typeE.Te.TyTyDef.name
                = ML_(cur_read_strdup)( cts.u.cur,
@@ -3764,9 +4194,10 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
       while (True) {
          DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
          DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         const name_form *nf = &abbv->nf[nf_i];
          nf_i++;
          if (attr == 0 && form == 0) break;
-         get_Form_contents( &cts, cc, c_die, False/*td3*/, form );
+         get_Form_contents( &cts, cc, c_die, False/*td3*/, nf );
          if (attr == DW_AT_type && cts.szB > 0) {
             typeE.Te.TyQual.typeR
                = cook_die_using_form( cc, (UWord)cts.u.val, form );
@@ -4486,6 +4917,9 @@ static void trace_debug_abbrev (const DebugInfo* di,
             while (True) {
                ULong at_name = get_ULEB128( &abbv );
                ULong at_form = get_ULEB128( &abbv );
+               if (at_form == DW_FORM_implicit_const) {
+                  /* Long at_val = */ get_SLEB128 ( &abbv );
+               }
                if (at_name == 0 && at_form == 0) break;
                TRACE_D3("    %-18s %s\n", 
                         ML_(pp_DW_AT)(at_name), ML_(pp_DW_FORM)(at_form));
@@ -4502,9 +4936,10 @@ void new_dwarf3_reader_wrk (
    DiSlice escn_debug_info,      DiSlice escn_debug_types,
    DiSlice escn_debug_abbv,      DiSlice escn_debug_line,
    DiSlice escn_debug_str,       DiSlice escn_debug_ranges,
+   DiSlice escn_debug_rnglists,  DiSlice escn_debug_loclists,
    DiSlice escn_debug_loc,       DiSlice escn_debug_info_alt,
    DiSlice escn_debug_abbv_alt,  DiSlice escn_debug_line_alt,
-   DiSlice escn_debug_str_alt
+   DiSlice escn_debug_str_alt,   DiSlice escn_debug_line_str
 )
 {
    XArray* /* of TyEnt */     tyents = NULL;
@@ -4738,6 +5173,8 @@ void new_dwarf3_reader_wrk (
          cc.escn_debug_str      = pass == 0 ? escn_debug_str_alt
                                             : escn_debug_str;
          cc.escn_debug_ranges   = escn_debug_ranges;
+         cc.escn_debug_rnglists = escn_debug_rnglists;
+         cc.escn_debug_loclists = escn_debug_loclists;
          cc.escn_debug_loc      = escn_debug_loc;
          cc.escn_debug_line     = pass == 0 ? escn_debug_line_alt
                                             : escn_debug_line;
@@ -4746,6 +5183,7 @@ void new_dwarf3_reader_wrk (
          cc.escn_debug_types    = escn_debug_types;
          cc.escn_debug_info_alt = escn_debug_info_alt;
          cc.escn_debug_str_alt  = escn_debug_str_alt;
+         cc.escn_debug_line_str = escn_debug_line_str;
          cc.types_cuOff_bias    = escn_debug_info.szB;
          cc.alt_cuOff_bias      = escn_debug_info.szB + escn_debug_types.szB;
          cc.cu_start_offset     = cu_start_offset;
@@ -5216,9 +5654,10 @@ ML_(new_dwarf3_reader) (
    DiSlice escn_debug_info,      DiSlice escn_debug_types,
    DiSlice escn_debug_abbv,      DiSlice escn_debug_line,
    DiSlice escn_debug_str,       DiSlice escn_debug_ranges,
+   DiSlice escn_debug_rnglists,  DiSlice escn_debug_loclists,
    DiSlice escn_debug_loc,       DiSlice escn_debug_info_alt,
    DiSlice escn_debug_abbv_alt,  DiSlice escn_debug_line_alt,
-   DiSlice escn_debug_str_alt
+   DiSlice escn_debug_str_alt,   DiSlice escn_debug_line_str
 )
 {
    volatile Int  jumped;
@@ -5239,9 +5678,10 @@ ML_(new_dwarf3_reader) (
                              escn_debug_info,     escn_debug_types,
                              escn_debug_abbv,     escn_debug_line,
                              escn_debug_str,      escn_debug_ranges,
+                             escn_debug_rnglists, escn_debug_loclists,
                              escn_debug_loc,      escn_debug_info_alt,
                              escn_debug_abbv_alt, escn_debug_line_alt,
-                             escn_debug_str_alt );
+                             escn_debug_str_alt,  escn_debug_line_str );
       d3rd_jmpbuf_valid = False;
       TRACE_D3("\n------ .debug_info reading was successful ------\n");
    } else {

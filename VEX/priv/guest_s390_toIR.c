@@ -5022,8 +5022,12 @@ s390_irgen_NGR(UChar r1, UChar r2)
    return "ngr";
 }
 
+/* Helper for bitwise logical instructions with two 32-bit input operands and a
+   32-bit output operand.  `inv3' and `inv' indicate whether to invert (build
+   bitwise complement of) operand 3 or the result, respectively. */
 static const HChar *
-s390_irgen_NRK(UChar r3, UChar r1, UChar r2)
+s390_irgen_logicalK32(UChar r3, UChar r1, UChar r2,
+                      const HChar *mnem, IROp op, Bool inv3, Bool inv)
 {
    IRTemp op2 = newTemp(Ity_I32);
    IRTemp op3 = newTemp(Ity_I32);
@@ -5031,15 +5035,19 @@ s390_irgen_NRK(UChar r3, UChar r1, UChar r2)
 
    assign(op2, get_gpr_w1(r2));
    assign(op3, get_gpr_w1(r3));
-   assign(result, binop(Iop_And32, mkexpr(op2), mkexpr(op3)));
+   IRExpr* tmp = binop(op, mkexpr(op2),
+                       inv3 ? unop(Iop_Not32, mkexpr(op3)) : mkexpr(op3));
+   assign(result, inv ? unop(Iop_Not32, tmp) : tmp);
    s390_cc_thunk_putZ(S390_CC_OP_BITWISE, result);
    put_gpr_w1(r1, mkexpr(result));
 
-   return "nrk";
+   return mnem;
 }
 
+/* Same as s390_irgen_logicalK32, but for 64-bit operands. */
 static const HChar *
-s390_irgen_NGRK(UChar r3, UChar r1, UChar r2)
+s390_irgen_logicalK64(UChar r3, UChar r1, UChar r2,
+                      const HChar *mnem, IROp op, Bool inv3, Bool inv)
 {
    IRTemp op2 = newTemp(Ity_I64);
    IRTemp op3 = newTemp(Ity_I64);
@@ -5047,11 +5055,49 @@ s390_irgen_NGRK(UChar r3, UChar r1, UChar r2)
 
    assign(op2, get_gpr_dw0(r2));
    assign(op3, get_gpr_dw0(r3));
-   assign(result, binop(Iop_And64, mkexpr(op2), mkexpr(op3)));
+   IRExpr* tmp = binop(op, mkexpr(op2),
+                       inv3 ? unop(Iop_Not64, mkexpr(op3)) : mkexpr(op3));
+   assign(result, inv ? unop(Iop_Not64, tmp) : tmp);
    s390_cc_thunk_putZ(S390_CC_OP_BITWISE, result);
    put_gpr_dw0(r1, mkexpr(result));
 
-   return "ngrk";
+   return mnem;
+}
+
+static const HChar *
+s390_irgen_NRK(UChar r3, UChar r1, UChar r2)
+{
+   return s390_irgen_logicalK32(r3, r1, r2, "nrk", Iop_And32, False, False);
+}
+
+static const HChar *
+s390_irgen_NGRK(UChar r3, UChar r1, UChar r2)
+{
+   return s390_irgen_logicalK64(r3, r1, r2, "ngrk", Iop_And64, False, False);
+}
+
+static const HChar *
+s390_irgen_NCRK(UChar r3, UChar r1, UChar r2)
+{
+   return s390_irgen_logicalK32(r3, r1, r2, "ncrk", Iop_And32, True, False);
+}
+
+static const HChar *
+s390_irgen_NCGRK(UChar r3, UChar r1, UChar r2)
+{
+   return s390_irgen_logicalK64(r3, r1, r2, "ncgrk", Iop_And64, True, False);
+}
+
+static const HChar *
+s390_irgen_NNRK(UChar r3, UChar r1, UChar r2)
+{
+   return s390_irgen_logicalK32(r3, r1, r2, "nnrk", Iop_And32, False, True);
+}
+
+static const HChar *
+s390_irgen_NNGRK(UChar r3, UChar r1, UChar r2)
+{
+   return s390_irgen_logicalK64(r3, r1, r2, "nngrk", Iop_And64, False, True);
 }
 
 static const HChar *
@@ -7071,33 +7117,25 @@ s390_irgen_XGR(UChar r1, UChar r2)
 static const HChar *
 s390_irgen_XRK(UChar r3, UChar r1, UChar r2)
 {
-   IRTemp op2 = newTemp(Ity_I32);
-   IRTemp op3 = newTemp(Ity_I32);
-   IRTemp result = newTemp(Ity_I32);
-
-   assign(op2, get_gpr_w1(r2));
-   assign(op3, get_gpr_w1(r3));
-   assign(result, binop(Iop_Xor32, mkexpr(op2), mkexpr(op3)));
-   s390_cc_thunk_putZ(S390_CC_OP_BITWISE, result);
-   put_gpr_w1(r1, mkexpr(result));
-
-   return "xrk";
+   return s390_irgen_logicalK32(r3, r1, r2, "xrk", Iop_Xor32, False, False);
 }
 
 static const HChar *
 s390_irgen_XGRK(UChar r3, UChar r1, UChar r2)
 {
-   IRTemp op2 = newTemp(Ity_I64);
-   IRTemp op3 = newTemp(Ity_I64);
-   IRTemp result = newTemp(Ity_I64);
+   return s390_irgen_logicalK64(r3, r1, r2, "xgrk", Iop_Xor64, False, False);
+}
 
-   assign(op2, get_gpr_dw0(r2));
-   assign(op3, get_gpr_dw0(r3));
-   assign(result, binop(Iop_Xor64, mkexpr(op2), mkexpr(op3)));
-   s390_cc_thunk_putZ(S390_CC_OP_BITWISE, result);
-   put_gpr_dw0(r1, mkexpr(result));
+static const HChar *
+s390_irgen_NXRK(UChar r3, UChar r1, UChar r2)
+{
+   return s390_irgen_logicalK32(r3, r1, r2, "nxrk", Iop_Xor32, False, True);
+}
 
-   return "xgrk";
+static const HChar *
+s390_irgen_NXGRK(UChar r3, UChar r1, UChar r2)
+{
+   return s390_irgen_logicalK64(r3, r1, r2, "nxgrk", Iop_Xor64, False, True);
 }
 
 static const HChar *
@@ -8920,33 +8958,37 @@ s390_irgen_OGR(UChar r1, UChar r2)
 static const HChar *
 s390_irgen_ORK(UChar r3, UChar r1, UChar r2)
 {
-   IRTemp op2 = newTemp(Ity_I32);
-   IRTemp op3 = newTemp(Ity_I32);
-   IRTemp result = newTemp(Ity_I32);
-
-   assign(op2, get_gpr_w1(r2));
-   assign(op3, get_gpr_w1(r3));
-   assign(result, binop(Iop_Or32, mkexpr(op2), mkexpr(op3)));
-   s390_cc_thunk_putZ(S390_CC_OP_BITWISE, result);
-   put_gpr_w1(r1, mkexpr(result));
-
-   return "ork";
+   return s390_irgen_logicalK32(r3, r1, r2, "ork", Iop_Or32, False, False);
 }
 
 static const HChar *
 s390_irgen_OGRK(UChar r3, UChar r1, UChar r2)
 {
-   IRTemp op2 = newTemp(Ity_I64);
-   IRTemp op3 = newTemp(Ity_I64);
-   IRTemp result = newTemp(Ity_I64);
+   return s390_irgen_logicalK64(r3, r1, r2, "ogrk", Iop_Or64, False, False);
+}
 
-   assign(op2, get_gpr_dw0(r2));
-   assign(op3, get_gpr_dw0(r3));
-   assign(result, binop(Iop_Or64, mkexpr(op2), mkexpr(op3)));
-   s390_cc_thunk_putZ(S390_CC_OP_BITWISE, result);
-   put_gpr_dw0(r1, mkexpr(result));
+static const HChar *
+s390_irgen_OCRK(UChar r3, UChar r1, UChar r2)
+{
+   return s390_irgen_logicalK32(r3, r1, r2, "ocrk", Iop_Or32, True, False);
+}
 
-   return "ogrk";
+static const HChar *
+s390_irgen_OCGRK(UChar r3, UChar r1, UChar r2)
+{
+   return s390_irgen_logicalK64(r3, r1, r2, "ocgrk", Iop_Or64, True, False);
+}
+
+static const HChar *
+s390_irgen_NORK(UChar r3, UChar r1, UChar r2)
+{
+   return s390_irgen_logicalK32(r3, r1, r2, "nork", Iop_Or32, False, True);
+}
+
+static const HChar *
+s390_irgen_NOGRK(UChar r3, UChar r1, UChar r2)
+{
+   return s390_irgen_logicalK64(r3, r1, r2, "nogrk", Iop_Or64, False, True);
 }
 
 static const HChar *
@@ -20031,12 +20073,28 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb961: s390_format_RRF_U0RR(s390_irgen_CLGRT, RRF2_m3(ovl),
                                      RRF2_r1(ovl), RRF2_r2(ovl),
                                      S390_XMNM_CAB); goto ok;
+   case 0xb964: s390_format_RRF_R0RR2(s390_irgen_NNGRK, RRF4_r3(ovl),
+                                      RRF4_r1(ovl), RRF4_r2(ovl)); goto ok;
+   case 0xb965: s390_format_RRF_R0RR2(s390_irgen_OCGRK, RRF4_r3(ovl),
+                                      RRF4_r1(ovl), RRF4_r2(ovl)); goto ok;
+   case 0xb966: s390_format_RRF_R0RR2(s390_irgen_NOGRK, RRF4_r3(ovl),
+                                      RRF4_r1(ovl), RRF4_r2(ovl)); goto ok;
+   case 0xb967: s390_format_RRF_R0RR2(s390_irgen_NXGRK, RRF4_r3(ovl),
+                                      RRF4_r1(ovl), RRF4_r2(ovl)); goto ok;
    case 0xb972: s390_format_RRF_U0RR(s390_irgen_CRT, RRF2_m3(ovl),
                                      RRF2_r1(ovl), RRF2_r2(ovl),
                                      S390_XMNM_CAB); goto ok;
    case 0xb973: s390_format_RRF_U0RR(s390_irgen_CLRT, RRF2_m3(ovl),
                                      RRF2_r1(ovl), RRF2_r2(ovl),
                                      S390_XMNM_CAB); goto ok;
+   case 0xb974: s390_format_RRF_R0RR2(s390_irgen_NNRK, RRF4_r3(ovl),
+                                      RRF4_r1(ovl), RRF4_r2(ovl)); goto ok;
+   case 0xb975: s390_format_RRF_R0RR2(s390_irgen_OCRK, RRF4_r3(ovl),
+                                      RRF4_r1(ovl), RRF4_r2(ovl)); goto ok;
+   case 0xb976: s390_format_RRF_R0RR2(s390_irgen_NORK, RRF4_r3(ovl),
+                                      RRF4_r1(ovl), RRF4_r2(ovl)); goto ok;
+   case 0xb977: s390_format_RRF_R0RR2(s390_irgen_NXRK, RRF4_r3(ovl),
+                                      RRF4_r1(ovl), RRF4_r2(ovl)); goto ok;
    case 0xb980: s390_format_RRE_RR(s390_irgen_NGR, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;
    case 0xb981: s390_format_RRE_RR(s390_irgen_OGR, RRE_r1(ovl),
@@ -20148,6 +20206,9 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb9e4: s390_format_RRF_R0RR2(s390_irgen_NGRK, RRF4_r3(ovl),
                                       RRF4_r1(ovl), RRF4_r2(ovl));
                                       goto ok;
+   case 0xb9e5: s390_format_RRF_R0RR2(s390_irgen_NCGRK, RRF4_r3(ovl),
+                                      RRF4_r1(ovl), RRF4_r2(ovl));
+                                      goto ok;
    case 0xb9e6: s390_format_RRF_R0RR2(s390_irgen_OGRK, RRF4_r3(ovl),
                                       RRF4_r1(ovl), RRF4_r2(ovl));
                                       goto ok;
@@ -20176,6 +20237,9 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
                                      RRF3_r1(ovl), RRF3_r2(ovl),
                                      S390_XMNM_LOCR);  goto ok;
    case 0xb9f4: s390_format_RRF_R0RR2(s390_irgen_NRK, RRF4_r3(ovl),
+                                      RRF4_r1(ovl), RRF4_r2(ovl));
+                                      goto ok;
+   case 0xb9f5: s390_format_RRF_R0RR2(s390_irgen_NCRK, RRF4_r3(ovl),
                                       RRF4_r1(ovl), RRF4_r2(ovl));
                                       goto ok;
    case 0xb9f6: s390_format_RRF_R0RR2(s390_irgen_ORK, RRF4_r3(ovl),

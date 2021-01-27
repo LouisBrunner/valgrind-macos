@@ -3114,6 +3114,16 @@ s390_format_RRF_FUFF2(const HChar *(*irgen)(UChar, UChar, UChar, UChar),
 }
 
 static void
+s390_format_RRF_RURR(const HChar *(*irgen)(UChar, UChar, UChar, UChar),
+                     UChar r3, UChar m4, UChar r1, UChar r2)
+{
+   const HChar *mnm = irgen(r3, m4, r1, r2);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      s390_disasm(ENC5(MNM, GPR, GPR, GPR, UINT), mnm, r1, r3, r2, m4);
+}
+
+static void
 s390_format_RRF_R0RR2(const HChar *(*irgen)(UChar r3, UChar r1, UChar r2),
                       UChar r3, UChar r1, UChar r2)
 {
@@ -19254,6 +19264,30 @@ s390_irgen_VBPERM(UChar v1, UChar v2, UChar v3)
    return "vbperm";
 }
 
+static const HChar *
+s390_irgen_SELR(UChar r3, UChar m4, UChar r1, UChar r2)
+{
+   IRExpr* cond = binop(Iop_CmpNE32, s390_call_calculate_cond(m4), mkU32(0));
+   put_gpr_w1(r1, mkite(cond, get_gpr_w1(r2), get_gpr_w1(r3)));
+   return "selr";
+}
+
+static const HChar *
+s390_irgen_SELGR(UChar r3, UChar m4, UChar r1, UChar r2)
+{
+   IRExpr* cond = binop(Iop_CmpNE32, s390_call_calculate_cond(m4), mkU32(0));
+   put_gpr_dw0(r1, mkite(cond, get_gpr_dw0(r2), get_gpr_dw0(r3)));
+   return "selgr";
+}
+
+static const HChar *
+s390_irgen_SELFHR(UChar r3, UChar m4, UChar r1, UChar r2)
+{
+   IRExpr* cond = binop(Iop_CmpNE32, s390_call_calculate_cond(m4), mkU32(0));
+   put_gpr_w0(r1, mkite(cond, get_gpr_w0(r2), get_gpr_w0(r3)));
+   return "selfhr";
+}
+
 /* New insns are added here.
    If an insn is contingent on a facility being installed also
    check whether the list of supported facilities in function
@@ -20163,6 +20197,9 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb9bd: /* TRTRE */ goto unimplemented;
    case 0xb9be: /* SRSTU */ goto unimplemented;
    case 0xb9bf: /* TRTE */ goto unimplemented;
+   case 0xb9c0: s390_format_RRF_RURR(s390_irgen_SELFHR, RRF4_r3(ovl),
+                                     RRF4_m4(ovl), RRF4_r1(ovl),
+                                     RRF4_r2(ovl)); goto ok;
    case 0xb9c8: s390_format_RRF_R0RR2(s390_irgen_AHHHR, RRF4_r3(ovl),
                                       RRF4_r1(ovl), RRF4_r2(ovl));
                                       goto ok;
@@ -20203,6 +20240,9 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb9e2: s390_format_RRF_U0RR(s390_irgen_LOCGR, RRF3_r3(ovl),
                                      RRF3_r1(ovl), RRF3_r2(ovl),
                                      S390_XMNM_LOCGR);  goto ok;
+   case 0xb9e3: s390_format_RRF_RURR(s390_irgen_SELGR, RRF4_r3(ovl),
+                                     RRF4_m4(ovl), RRF4_r1(ovl),
+                                     RRF4_r2(ovl)); goto ok;
    case 0xb9e4: s390_format_RRF_R0RR2(s390_irgen_NGRK, RRF4_r3(ovl),
                                       RRF4_r1(ovl), RRF4_r2(ovl));
                                       goto ok;
@@ -20233,6 +20273,9 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb9ed: s390_format_RRF_R0RR2(s390_irgen_MSGRKC, RRF4_r3(ovl),
                                       RRF4_r1(ovl), RRF4_r2(ovl));
                                       goto ok;
+   case 0xb9f0: s390_format_RRF_RURR(s390_irgen_SELR, RRF4_r3(ovl),
+                                     RRF4_m4(ovl), RRF4_r1(ovl),
+                                     RRF4_r2(ovl)); goto ok;
    case 0xb9f2: s390_format_RRF_U0RR(s390_irgen_LOCR, RRF3_r3(ovl),
                                      RRF3_r1(ovl), RRF3_r2(ovl),
                                      S390_XMNM_LOCR);  goto ok;

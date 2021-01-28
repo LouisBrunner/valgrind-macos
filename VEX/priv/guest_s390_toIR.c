@@ -3074,6 +3074,20 @@ s390_format_RRF_U0RR(const HChar *(*irgen)(UChar m3, UChar r1, UChar r2),
 }
 
 static void
+s390_format_RRFa_U0RR(const HChar *(*irgen)(UChar m3, UChar r1, UChar r2),
+                      UChar m3, UChar r1, UChar r2)
+{
+   const HChar *mnm = irgen(m3, r1, r2);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE)) {
+      if (m3 != 0)
+         s390_disasm(ENC4(MNM, GPR, GPR, UINT), mnm, r1, r2, m3);
+      else
+         s390_disasm(ENC3(MNM, GPR, GPR), mnm, r1, r2);
+   }
+}
+
+static void
 s390_format_RRF_F0FF2(const HChar *(*irgen)(UChar, UChar, UChar),
                       UChar r3, UChar r1, UChar r2)
 {
@@ -15112,30 +15126,32 @@ s390_irgen_FLOGR(UChar r1, UChar r2)
 }
 
 static const HChar *
-s390_irgen_POPCNT(UChar r1, UChar r2)
+s390_irgen_POPCNT(UChar m3, UChar r1, UChar r2)
 {
-   Int i;
+   s390_insn_assert("popcnt", (m3 & 7) == 0);
+
+   static const ULong masks[] = {
+      0x5555555555555555, 0x3333333333333333, 0x0F0F0F0F0F0F0F0F,
+      0x00FF00FF00FF00FF, 0x0000FFFF0000FFFF, 0x00000000FFFFFFFF,
+   };
+   Int i, n;
    IRTemp val = newTemp(Ity_I64);
-   IRTemp mask[3];
 
    assign(val, get_gpr_dw0(r2));
-   for (i = 0; i < 3; i++) {
-      mask[i] = newTemp(Ity_I64);
-   }
-   assign(mask[0], mkU64(0x5555555555555555ULL));
-   assign(mask[1], mkU64(0x3333333333333333ULL));
-   assign(mask[2], mkU64(0x0F0F0F0F0F0F0F0FULL));
-   for (i = 0; i < 3; i++) {
+   n = (m3 & 8) ? 6 : 3;
+   for (i = 0; i < n; i++) {
+      IRTemp mask = newTemp(Ity_I64);
       IRTemp tmp = newTemp(Ity_I64);
 
+      assign (mask, mkU64(masks[i]));
       assign(tmp,
              binop(Iop_Add64,
                    binop(Iop_And64,
                          mkexpr(val),
-                         mkexpr(mask[i])),
+                         mkexpr(mask)),
                    binop(Iop_And64,
                          binop(Iop_Shr64, mkexpr(val), mkU8(1 << i)),
-                         mkexpr(mask[i]))));
+                         mkexpr(mask))));
       val = tmp;
    }
    s390_cc_thunk_putZ(S390_CC_OP_BITWISE, val);
@@ -20235,8 +20251,8 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb9e0: s390_format_RRF_U0RR(s390_irgen_LOCFHR, RRF3_r3(ovl),
                                      RRF3_r1(ovl), RRF3_r2(ovl),
                                      S390_XMNM_LOCFHR);  goto ok;
-   case 0xb9e1: s390_format_RRE_RR(s390_irgen_POPCNT, RRE_r1(ovl),
-                                   RRE_r2(ovl));  goto ok;
+   case 0xb9e1: s390_format_RRFa_U0RR(s390_irgen_POPCNT, RRF3_r3(ovl),
+                                      RRF3_r1(ovl), RRF3_r2(ovl));  goto ok;
    case 0xb9e2: s390_format_RRF_U0RR(s390_irgen_LOCGR, RRF3_r3(ovl),
                                      RRF3_r1(ovl), RRF3_r2(ovl),
                                      S390_XMNM_LOCGR);  goto ok;

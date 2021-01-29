@@ -3563,6 +3563,25 @@ s390_format_SS_L0RDRD(const HChar *(*irgen)(UChar, IRTemp, IRTemp),
 }
 
 static void
+s390_format_SSE_RDRD(const HChar *(*irgen)(IRTemp, IRTemp),
+                     UChar b1, UShort d1, UChar b2, UShort d2)
+{
+   const HChar *mnm;
+   IRTemp op1addr = newTemp(Ity_I64);
+   IRTemp op2addr = newTemp(Ity_I64);
+
+   assign(op1addr, binop(Iop_Add64, mkU64(d1), b1 != 0 ? get_gpr_dw0(b1) :
+          mkU64(0)));
+   assign(op2addr, binop(Iop_Add64, mkU64(d2), b2 != 0 ? get_gpr_dw0(b2) :
+          mkU64(0)));
+
+   mnm = irgen(op1addr, op2addr);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      s390_disasm(ENC2(UDXB, UDXB), mnm, d1, 0, b1, d2, 0, b2);
+}
+
+static void
 s390_format_SIL_RDI(const HChar *(*irgen)(UShort i2, IRTemp op1addr),
                     UChar b1, UShort d1, UShort i2)
 {
@@ -13668,6 +13687,31 @@ s390_irgen_MVCIN(UChar length, IRTemp start1, IRTemp start2)
 }
 
 static const HChar *
+s390_irgen_MVCRL(IRTemp op1addr, IRTemp op2addr)
+{
+   IRTemp counter = newTemp(Ity_I64);
+   IRTemp offset = newTemp(Ity_I64);
+
+   assign(counter, get_counter_dw0());
+   /* offset = length - 1 - counter, where length-1 is specified in r0 */
+   assign(offset,
+          binop(Iop_Sub64,
+                unop(Iop_16Uto64,
+                     binop(Iop_And16, get_gpr_hw3(0), mkU16(0xfff))),
+                mkexpr(counter)));
+
+   store(binop(Iop_Add64, mkexpr(op1addr), mkexpr(offset)),
+         load(Ity_I8, binop(Iop_Add64, mkexpr(op2addr), mkexpr(offset))));
+
+   /* Check for end of field */
+   put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(1)));
+   iterate_if(binop(Iop_CmpNE64, mkexpr(offset), mkU64(0)));
+   put_counter_dw0(mkU64(0));
+
+   return "mvcrl";
+}
+
+static const HChar *
 s390_irgen_MVCL(UChar r1, UChar r2)
 {
    IRTemp addr1 = newTemp(Ity_I64);
@@ -22217,6 +22261,9 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
    case 0xe500ULL: /* LASP */ goto unimplemented;
    case 0xe501ULL: /* TPROT */ goto unimplemented;
    case 0xe502ULL: /* STRAG */ goto unimplemented;
+   case 0xe50aULL: s390_format_SSE_RDRD(s390_irgen_MVCRL,
+                                        SS_b1(ovl), SS_d1(ovl),
+                                        SS_b2(ovl), SS_d2(ovl));  goto ok;
    case 0xe50eULL: /* MVCSK */ goto unimplemented;
    case 0xe50fULL: /* MVCDK */ goto unimplemented;
    case 0xe544ULL: s390_format_SIL_RDI(s390_irgen_MVHHI, SIL_b1(ovl),

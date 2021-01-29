@@ -342,8 +342,11 @@ void ppIROp ( IROp op )
       case Iop_AbsF64:        vex_printf("AbsF64"); return;
       case Iop_NegF32:        vex_printf("NegF32"); return;
       case Iop_AbsF32:        vex_printf("AbsF32"); return;
+      case Iop_NegF16:        vex_printf("NegF16"); return;
+      case Iop_AbsF16:        vex_printf("AbsF16"); return;
       case Iop_SqrtF64:       vex_printf("SqrtF64"); return;
       case Iop_SqrtF32:       vex_printf("SqrtF32"); return;
+      case Iop_SqrtF16:       vex_printf("SqrtF16"); return;
       case Iop_SinF64:    vex_printf("SinF64"); return;
       case Iop_CosF64:    vex_printf("CosF64"); return;
       case Iop_TanF64:    vex_printf("TanF64"); return;
@@ -688,6 +691,7 @@ void ppIROp ( IROp op )
       case Iop_RecipEst64Fx2: vex_printf("RecipEst64Fx2"); return;
       case Iop_RecipStep64Fx2: vex_printf("RecipStep64Fx2"); return;
 
+      case Iop_Abs16Fx8:  vex_printf("Abs16Fx8"); return;
       case Iop_Abs32Fx4:  vex_printf("Abs32Fx4"); return;
       case Iop_Abs64Fx2:  vex_printf("Abs64Fx2"); return;
       case Iop_RSqrtStep32Fx4:  vex_printf("RSqrtStep32Fx4"); return;
@@ -698,6 +702,7 @@ void ppIROp ( IROp op )
       case Iop_RSqrtEst32F0x4: vex_printf("RSqrtEst32F0x4"); return;
       case Iop_RSqrtEst32Fx8: vex_printf("RSqrtEst32Fx8"); return;
 
+      case Iop_Sqrt16Fx8:  vex_printf("Sqrt16Fx8"); return;
       case Iop_Sqrt32Fx4:  vex_printf("Sqrt32Fx4"); return;
       case Iop_Sqrt32F0x4: vex_printf("Sqrt32F0x4"); return;
       case Iop_Sqrt64Fx2:  vex_printf("Sqrt64Fx2"); return;
@@ -743,6 +748,7 @@ void ppIROp ( IROp op )
       case Iop_Neg64Fx2: vex_printf("Neg64Fx2"); return;
       case Iop_Neg32Fx4: vex_printf("Neg32Fx4"); return;
       case Iop_Neg32Fx2: vex_printf("Neg32Fx2"); return;
+      case Iop_Neg16Fx8: vex_printf("Neg16Fx8"); return;
 
       case Iop_F32x4_2toQ16x8: vex_printf("F32x4_2toQ16x8"); return;
       case Iop_F64x2_2toQ32x4: vex_printf("F64x2_2toQ32x4"); return;
@@ -1556,6 +1562,7 @@ Bool primopMightTrap ( IROp op )
    case Iop_CmpGT32Fx4: case Iop_CmpGE32Fx4:
    case Iop_PwMax32Fx4: case Iop_PwMin32Fx4:
    case Iop_Abs32Fx4: case Iop_Neg32Fx4: case Iop_Sqrt32Fx4:
+   case Iop_Abs16Fx8: case Iop_Neg16Fx8: case Iop_Sqrt16Fx8:
    case Iop_RecipEst32Fx4: case Iop_RecipStep32Fx4: case Iop_RSqrtEst32Fx4:
    case Iop_Scale2_32Fx4: case Iop_Log2_32Fx4: case Iop_Exp2_32Fx4:
    case Iop_RSqrtStep32Fx4:
@@ -3331,6 +3338,9 @@ void typeOfPrimop ( IROp op,
       case Iop_NegF32: case Iop_AbsF32:
          UNARY(Ity_F32, Ity_F32);
 
+      case Iop_NegF16: case Iop_AbsF16:
+         UNARY(Ity_F16, Ity_F16);
+
       case Iop_SqrtF64:
       case Iop_RecpExpF64:
          BINARY(ity_RMode,Ity_F64, Ity_F64);
@@ -3339,6 +3349,9 @@ void typeOfPrimop ( IROp op,
       case Iop_RoundF32toInt:
       case Iop_RecpExpF32:
          BINARY(ity_RMode,Ity_F32, Ity_F32);
+
+      case Iop_SqrtF16:
+         BINARY(ity_RMode, Ity_F16, Ity_F16);
 
       case Iop_MaxNumF64: case Iop_MinNumF64:
          BINARY(Ity_F64,Ity_F64, Ity_F64);
@@ -3425,13 +3438,14 @@ void typeOfPrimop ( IROp op,
       case Iop_RoundF32x4_RP:
       case Iop_RoundF32x4_RN:
       case Iop_RoundF32x4_RZ:
-      case Iop_Abs64Fx2: case Iop_Abs32Fx4:
+      case Iop_Abs64Fx2: case Iop_Abs32Fx4: case Iop_Abs16Fx8:
       case Iop_RSqrtEst32Fx4:
       case Iop_RSqrtEst32Ux4:
          UNARY(Ity_V128, Ity_V128);
 
       case Iop_Sqrt64Fx2:
       case Iop_Sqrt32Fx4:
+      case Iop_Sqrt16Fx8:
       case Iop_I32StoF32x4:
       case Iop_F32toI32Sx4:
          BINARY(ity_RMode,Ity_V128, Ity_V128);
@@ -3632,7 +3646,7 @@ void typeOfPrimop ( IROp op,
       case Iop_Reverse8sIn32_x4: case Iop_Reverse16sIn32_x4:
       case Iop_Reverse8sIn16_x8:
       case Iop_Reverse1sIn8_x16:
-      case Iop_Neg64Fx2: case Iop_Neg32Fx4:
+      case Iop_Neg64Fx2: case Iop_Neg32Fx4: case Iop_Neg16Fx8:
       case Iop_Abs8x16: case Iop_Abs16x8: case Iop_Abs32x4: case Iop_Abs64x2:
       case Iop_CipherSV128:
       case Iop_PwBitMtxXpose64x2:

@@ -580,6 +580,7 @@ static IROp mkDIVF ( IRType ty ) {
 
 static IROp mkNEGF ( IRType ty ) {
    switch (ty) {
+      case Ity_F16: return Iop_NegF16;
       case Ity_F32: return Iop_NegF32;
       case Ity_F64: return Iop_NegF64;
       default: vpanic("mkNEGF");
@@ -588,6 +589,7 @@ static IROp mkNEGF ( IRType ty ) {
 
 static IROp mkABSF ( IRType ty ) {
    switch (ty) {
+      case Ity_F16: return Iop_AbsF16;
       case Ity_F32: return Iop_AbsF32;
       case Ity_F64: return Iop_AbsF64;
       default: vpanic("mkABSF");
@@ -596,6 +598,7 @@ static IROp mkABSF ( IRType ty ) {
 
 static IROp mkSQRTF ( IRType ty ) {
    switch (ty) {
+      case Ity_F16: return Iop_SqrtF16;
       case Ity_F32: return Iop_SqrtF32;
       case Ity_F64: return Iop_SqrtF64;
       default: vpanic("mkSQRTF");
@@ -13492,6 +13495,58 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
 
 
 static
+Bool dis_AdvSIMD_two_reg_misc_fp16(/*MB_OUT*/DisResult* dres, UInt insn)
+{
+   /* 31 30 29 28    23   21    16     11 9 4
+      0  Q  U  01110 size 11100 opcode 10 n d
+      Decode fields: U,size,opcode
+   */
+#  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,31) != 0
+       || INSN(28,24) != BITS5(0,1,1,1,0)
+       || INSN(21,17) != BITS5(1,1,1,0,0)
+       || INSN(11,10) != BITS2(1,0)) {
+      return False;
+   }
+   UInt bitQ   = INSN(30,30);
+   UInt bitU   = INSN(29,29);
+   UInt size   = INSN(23,22);
+   UInt opcode = INSN(16,12);
+   UInt nn     = INSN(9,5);
+   UInt dd     = INSN(4,0);
+   vassert(size < 4);
+
+   if (size == X11 && opcode == BITS5(0,1,1,1,1)) {
+      /* -------- Q,0,11,01111: FABS 4h_4h, 8h_8h -------- */
+      /* -------- Q,1,11,01111: FNEG 4h_4h, 8h_8h -------- */
+      Bool   isFNEG = bitU == 1;
+      IROp   op     = isFNEG ? Iop_Neg16Fx8 : Iop_Abs16Fx8;
+      IRTemp res = newTempV128();
+      assign(res, unop(op, getQReg128(nn)));
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, res));
+      const HChar* arr = bitQ == 0 ? "4h" : "8h";
+      DIP("%s %s.%s, %s.%s\n", isFNEG ? "fneg" : "fabs",
+          nameQReg128(dd), arr, nameQReg128(nn), arr);
+      return True;
+   }
+
+   if (bitU == 1 && size == X11 && opcode == BITS5(1,1,1,1,1)) {
+      /* -------- 1,11,11111: FSQRT 4h_4h, 8h_8h -------- */
+      IRTemp resV = newTempV128();
+      assign(resV, binop(Iop_Sqrt16Fx8, mkexpr(mk_get_IR_rounding_mode()),
+                             getQReg128(nn)));
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, resV));
+      const HChar* arr = bitQ == 0 ? "4h" : "8h";
+      DIP("%s %s.%s, %s.%s\n", "fsqrt",
+          nameQReg128(dd), arr, nameQReg128(nn), arr);
+      return True;
+   }
+
+   return False;
+#  undef INSN
+}
+
+static
 Bool dis_AdvSIMD_vector_x_indexed_elem(/*MB_OUT*/DisResult* dres, UInt insn)
 {
    /* 31    28    23   21 20 19 15     11   9 4
@@ -14296,12 +14351,16 @@ Bool dis_AdvSIMD_fp_data_proc_1_source(/*MB_OUT*/DisResult* dres, UInt insn)
    UInt nn     = INSN(9,5);
    UInt dd     = INSN(4,0);
 
-   if (ty <= X01 && opcode <= BITS6(0,0,0,0,1,1)) {
+   if (opcode <= BITS6(0,0,0,0,1,1)) {
       /* -------- 0x,000000: FMOV  d_d, s_s -------- */
-      /* -------- 0x,000001: FABS  d_d, s_s -------- */
-      /* -------- 0x,000010: FNEG  d_d, s_s -------- */
-      /* -------- 0x,000011: FSQRT d_d, s_s -------- */
-      IRType ity = ty == X01 ? Ity_F64 : Ity_F32;
+      /* -------- 0x,000001: FABS  d_d, s_s, h_h --- */
+      /* -------- 0x,000010: FNEG  d_d, s_s, h_h --- */
+      /* -------- 0x,000011: FSQRT d_d, s_s, h_h --- */
+      IRType ity;
+      if (ty == X01) ity = Ity_F64;
+      else if (ty == X00) ity = Ity_F32;
+      else if (ty == X11) ity = Ity_F16;
+      else vassert(0);
       IRTemp src = newTemp(ity);
       IRTemp res = newTemp(ity);
       const HChar* nm = "??";
@@ -14312,7 +14371,7 @@ Bool dis_AdvSIMD_fp_data_proc_1_source(/*MB_OUT*/DisResult* dres, UInt insn)
          case BITS6(0,0,0,0,0,1):
             nm = "fabs"; assign(res, unop(mkABSF(ity), mkexpr(src))); break;
          case BITS6(0,0,0,0,1,0):
-            nm = "fabs"; assign(res, unop(mkNEGF(ity), mkexpr(src))); break;
+            nm = "fneg"; assign(res, unop(mkNEGF(ity), mkexpr(src))); break;
          case BITS6(0,0,0,0,1,1):
             nm = "fsqrt";
             assign(res, binop(mkSQRTF(ity), 
@@ -15089,6 +15148,8 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn,
    ok = dis_AdvSIMD_three_same_fp16(dres, insn);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_two_reg_misc(dres, insn);
+   if (UNLIKELY(ok)) return True;
+   ok = dis_AdvSIMD_two_reg_misc_fp16(dres, insn);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_vector_x_indexed_elem(dres, insn);
    if (UNLIKELY(ok)) return True;

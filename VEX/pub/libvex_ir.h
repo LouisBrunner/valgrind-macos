@@ -592,12 +592,18 @@ typedef
       /* :: F32 -> F32 */
       Iop_NegF32, Iop_AbsF32,
 
+      /* :: F16 -> F16 */
+      Iop_NegF16, Iop_AbsF16,
+
       /* Unary operations, with rounding. */
       /* :: IRRoundingMode(I32) x F64 -> F64 */
       Iop_SqrtF64,
 
       /* :: IRRoundingMode(I32) x F32 -> F32 */
       Iop_SqrtF32,
+
+      /* :: IRRoundingMode(I32) x F16 -> F16 */
+      Iop_SqrtF16,
 
       /* Comparison, yielding GT/LT/EQ/UN(ordered), as per the following:
             0x45 Unordered
@@ -1366,10 +1372,13 @@ typedef
       Iop_PwMax32Fx4, Iop_PwMin32Fx4,
 
       /* unary */
+      Iop_Abs16Fx8,
       Iop_Abs32Fx4,
+      Iop_Neg16Fx8,
       Iop_Neg32Fx4,
 
       /* binary :: IRRoundingMode(I32) x V128 -> V128 */
+      Iop_Sqrt16Fx8,
       Iop_Sqrt32Fx4,
 
       /* Vector Reciprocal Estimate finds an approximate reciprocal of each

@@ -423,8 +423,8 @@ typedef
 
 typedef
    enum {
-      ARM64vecu_FNEG64x2=350, ARM64vecu_FNEG32x4,
-      ARM64vecu_FABS64x2,     ARM64vecu_FABS32x4,
+      ARM64vecu_FNEG64x2=350, ARM64vecu_FNEG32x4,     ARM64vecu_FNEG16x8,
+      ARM64vecu_FABS64x2,     ARM64vecu_FABS32x4,     ARM64vecu_FABS16x8,
       ARM64vecu_NOT,
       ARM64vecu_ABS64x2,      ARM64vecu_ABS32x4,
       ARM64vecu_ABS16x8,      ARM64vecu_ABS8x16,
@@ -439,7 +439,7 @@ typedef
       ARM64vecu_URSQRTE32x4,
       ARM64vecu_FRECPE64x2,   ARM64vecu_FRECPE32x4,
       ARM64vecu_FRSQRTE64x2,  ARM64vecu_FRSQRTE32x4,
-      ARM64vecu_FSQRT64x2,    ARM64vecu_FSQRT32x4,
+      ARM64vecu_FSQRT64x2,    ARM64vecu_FSQRT32x4,    ARM64vecu_FSQRT16x8,
       ARM64vecu_INVALID
    }
    ARM64VecUnaryOp;
@@ -524,6 +524,7 @@ typedef
       ARM64in_VCvtHD,   /* scalar 16 bit FP <--> 64 bit FP */
       ARM64in_VUnaryD,
       ARM64in_VUnaryS,
+      ARM64in_VUnaryH,
       ARM64in_VBinD,
       ARM64in_VBinS,
       ARM64in_VTriD,
@@ -824,6 +825,12 @@ typedef
             HReg           dst;
             HReg           src;
          } VUnaryS;
+         /* 16-bit FP unary */
+         struct {
+            ARM64FpUnaryOp op;
+            HReg           dst;
+            HReg           src;
+         } VUnaryH;
          /* 64-bit FP binary arithmetic */
          struct {
             ARM64FpBinOp op;
@@ -1025,6 +1032,7 @@ extern ARM64Instr* ARM64Instr_VCvtHS  ( Bool hToS, HReg dst, HReg src );
 extern ARM64Instr* ARM64Instr_VCvtHD  ( Bool hToD, HReg dst, HReg src );
 extern ARM64Instr* ARM64Instr_VUnaryD ( ARM64FpUnaryOp op, HReg dst, HReg src );
 extern ARM64Instr* ARM64Instr_VUnaryS ( ARM64FpUnaryOp op, HReg dst, HReg src );
+extern ARM64Instr* ARM64Instr_VUnaryH ( ARM64FpUnaryOp op, HReg dst, HReg src );
 extern ARM64Instr* ARM64Instr_VBinD   ( ARM64FpBinOp op, HReg, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VBinS   ( ARM64FpBinOp op, HReg, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VTriD   ( ARM64FpTriOp op, HReg dst,

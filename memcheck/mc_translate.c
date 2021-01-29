@@ -2705,6 +2705,15 @@ IRAtom* binary16Fx8 ( MCEnv* mce, IRAtom* vatomX, IRAtom* vatomY )
    return at;
 }
 
+static
+IRAtom* unary16Fx8 ( MCEnv* mce, IRAtom* vatomX )
+{
+   IRAtom* at;
+   tl_assert(isShadowAtom(mce, vatomX));
+   at = assignNew('V', mce, Ity_V128, mkPCast16x8(mce, vatomX));
+   return at;
+}
+
 /* TODO: remaining versions of 16x4 FP ops when more of the half-precision IR is
    implemented.
 */
@@ -2877,6 +2886,20 @@ IRAtom* unary32Fx4_w_rm ( MCEnv* mce, IRAtom* vRM, IRAtom* vatomX )
 {
    /* Same scheme as binaryFx4_w_rm. */
    IRAtom* t1 = unary32Fx4(mce, vatomX);
+   // PCast the RM, and widen it to 128 bits
+   IRAtom* t2 = mkPCastTo(mce, Ity_V128, vRM);
+   // Roll it into the result
+   t1 = mkUifUV128(mce, t1, t2);
+   return t1;
+}
+
+/* --- ... and ... 16Fx8 versions of the same --- */
+
+static
+IRAtom* unary16Fx8_w_rm ( MCEnv* mce, IRAtom* vRM, IRAtom* vatomX )
+{
+   /* Same scheme as binaryFx4_w_rm. */
+   IRAtom* t1 = unary16Fx8(mce, vatomX);
    // PCast the RM, and widen it to 128 bits
    IRAtom* t2 = mkPCastTo(mce, Ity_V128, vRM);
    // Roll it into the result
@@ -3752,6 +3775,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       case Iop_I32StoF32x4:
       case Iop_F32toI32Sx4:
+      case Iop_Sqrt16Fx8:
+         return unary16Fx8_w_rm(mce, vatom1, vatom2);
       case Iop_Sqrt32Fx4:
          return unary32Fx4_w_rm(mce, vatom1, vatom2);
       case Iop_Sqrt64Fx2:
@@ -4403,6 +4428,10 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          /* I32(rm) x F32/F64/F128/D32/D64/D128 -> D128/F128 */
          return mkLazy2(mce, Ity_I128, vatom1, vatom2);
 
+      case Iop_SqrtF16:
+         /* I32(rm) x F16 -> F16 */
+         return mkLazy2(mce, Ity_I16, vatom1, vatom2);
+
       case Iop_RoundF32toInt:
       case Iop_SqrtF32:
       case Iop_RecpExpF32:
@@ -5017,6 +5046,10 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_RecipEst32F0x4:
          return unary32F0x4(mce, vatom);
 
+      case Iop_Abs16Fx8:
+      case Iop_Neg16Fx8:
+         return unary16Fx8(mce, vatom);
+
       // These are self-shadowing.
       case Iop_32UtoV128:
       case Iop_64UtoV128:
@@ -5103,6 +5136,10 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_AbsF32:
       case Iop_F16toF32: 
          return mkPCastTo(mce, Ity_I32, vatom);
+
+      case Iop_AbsF16:
+      case Iop_NegF16:
+         return mkPCastTo(mce, Ity_I16, vatom);
 
       case Iop_Ctz32: case Iop_CtzNat32:
       case Iop_Ctz64: case Iop_CtzNat64:

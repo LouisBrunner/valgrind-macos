@@ -2456,8 +2456,8 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
       /* Other cases */
       switch (e->Iex.Unop.op) {
          case Iop_NotV128:
-         case Iop_Abs64Fx2: case Iop_Abs32Fx4:
-         case Iop_Neg64Fx2: case Iop_Neg32Fx4:
+         case Iop_Abs64Fx2: case Iop_Abs32Fx4: case Iop_Abs16Fx8:
+         case Iop_Neg64Fx2: case Iop_Neg32Fx4: case Iop_Neg16Fx8:
          case Iop_Abs64x2:  case Iop_Abs32x4:
          case Iop_Abs16x8:  case Iop_Abs8x16:
          case Iop_Cls32x4:  case Iop_Cls16x8:  case Iop_Cls8x16:
@@ -2481,8 +2481,10 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
                case Iop_NotV128:           op = ARM64vecu_NOT;         break;
                case Iop_Abs64Fx2:          op = ARM64vecu_FABS64x2;    break;
                case Iop_Abs32Fx4:          op = ARM64vecu_FABS32x4;    break;
+               case Iop_Abs16Fx8:          op = ARM64vecu_FABS16x8;    break;
                case Iop_Neg64Fx2:          op = ARM64vecu_FNEG64x2;    break;
                case Iop_Neg32Fx4:          op = ARM64vecu_FNEG32x4;    break;
+               case Iop_Neg16Fx8:          op = ARM64vecu_FNEG16x8;    break;
                case Iop_Abs64x2:           op = ARM64vecu_ABS64x2;     break;
                case Iop_Abs32x4:           op = ARM64vecu_ABS32x4;     break;
                case Iop_Abs16x8:           op = ARM64vecu_ABS16x8;     break;
@@ -2592,14 +2594,19 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
 
    if (e->tag == Iex_Binop) {
       switch (e->Iex.Binop.op) {
+         case Iop_Sqrt16Fx8:
          case Iop_Sqrt32Fx4:
          case Iop_Sqrt64Fx2: {
             HReg arg = iselV128Expr(env, e->Iex.Binop.arg2);
             HReg res = newVRegV(env);
             set_FPCR_rounding_mode(env, e->Iex.Binop.arg1);
-            ARM64VecUnaryOp op 
-               = e->Iex.Binop.op == Iop_Sqrt32Fx4
-                    ? ARM64vecu_FSQRT32x4 : ARM64vecu_FSQRT64x2;
+            ARM64VecUnaryOp op;
+            switch (e->Iex.Binop.op) {
+               case Iop_Sqrt16Fx8: op = ARM64vecu_FSQRT16x8; break;
+               case Iop_Sqrt32Fx4: op = ARM64vecu_FSQRT32x4; break;
+               case Iop_Sqrt64Fx2: op = ARM64vecu_FSQRT64x2; break;
+               default: vassert(0);
+            }
             addInstr(env, ARM64Instr_VUnaryV(op, res, arg));
             return res;
          }
@@ -3694,6 +3701,25 @@ static HReg iselF16Expr_wrk ( ISelEnv* env, IRExpr* e )
       }
    }
 
+   if (e->tag == Iex_Unop) {
+      switch (e->Iex.Unop.op) {
+         case Iop_NegF16: {
+            HReg srcH = iselF16Expr(env, e->Iex.Unop.arg);
+            HReg dstH = newVRegD(env);
+            addInstr(env, ARM64Instr_VUnaryH(ARM64fpu_NEG, dstH, srcH));
+            return dstH;
+         }
+         case Iop_AbsF16: {
+            HReg srcH = iselF16Expr(env, e->Iex.Unop.arg);
+            HReg dstH = newVRegD(env);
+            addInstr(env, ARM64Instr_VUnaryH(ARM64fpu_ABS, dstH, srcH));
+            return dstH;
+         }
+         default:
+            break;
+      }
+   }
+
    if (e->tag == Iex_Binop) {
       switch (e->Iex.Binop.op) {
          case Iop_F32toF16: {
@@ -3709,6 +3735,13 @@ static HReg iselF16Expr_wrk ( ISelEnv* env, IRExpr* e )
             HReg dstH = newVRegD(env);
             addInstr(env, ARM64Instr_VCvtHD(False/*!hToD*/, dstH, srcD));
             return dstH;
+         }
+         case Iop_SqrtF16: {
+            HReg src = iselF16Expr(env, e->Iex.Binop.arg2);
+            set_FPCR_rounding_mode(env, e->Iex.Binop.arg1);
+            HReg dst = newVRegD(env);
+            addInstr(env, ARM64Instr_VUnaryH(ARM64fpu_SQRT, dst, src));
+            return dst;
          }
          default:
             break;

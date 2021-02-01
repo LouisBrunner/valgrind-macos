@@ -1410,6 +1410,7 @@ Bool primopMightTrap ( IROp op )
    case Iop_AddF64r32: case Iop_SubF64r32: case Iop_MulF64r32:
    case Iop_DivF64r32: case Iop_NegF64: case Iop_AbsF64:
    case Iop_NegF32: case Iop_AbsF32: case Iop_SqrtF64: case Iop_SqrtF32:
+   case Iop_NegF16: case Iop_AbsF16: case Iop_SqrtF16:
    case Iop_CmpF64: case Iop_CmpF32: case Iop_CmpF128: case Iop_F64toI16S:
    case Iop_F64toI32S: case Iop_F64toI64S: case Iop_F64toI64U:
    case Iop_F64toI32U: case Iop_I32StoF64: case Iop_I64StoF64:
@@ -1773,10 +1774,12 @@ Bool primopMightTrap ( IROp op )
    case Iop_Rotx32: case Iop_Rotx64:
       return False;
 
-   default:
-      vpanic("primopMightTrap");
+   case Iop_INVALID: case Iop_LAST:
+      vpanic("primopMightTrap INVALID, LAST");
 
    }
+
+   vpanic("primopMightTrap");
 }
 
 void ppIRExpr ( const IRExpr* e )

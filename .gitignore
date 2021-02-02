@@ -1887,6 +1887,7 @@
 /none/tests/s390x/vector_integer
 /none/tests/s390x/high-word
 /none/tests/s390x/vector_float
+/none/tests/s390x/misc3
 
 # /none/tests/scripts/
 /none/tests/scripts/*.dSYM

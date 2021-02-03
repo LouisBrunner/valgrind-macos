@@ -5127,7 +5127,7 @@ PRE(sys_shmctl)
    PRINT("sys_shmctl ( %ld, %ld, %#" FMT_REGWORD "x )", SARG1, SARG2, ARG3);
    PRE_REG_READ3(long, "shmctl",
                  int, shmid, int, cmd, struct shmid_ds *, buf);
-#ifdef VGP_amd64_linux
+#if defined(VGP_amd64_linux) || defined(VGP_arm64_linux)
    ML_(generic_PRE_sys_shmctl)(tid, ARG1,ARG2|VKI_IPC_64,ARG3);
 #else
    ML_(generic_PRE_sys_shmctl)(tid, ARG1,ARG2,ARG3);
@@ -5136,7 +5136,7 @@ PRE(sys_shmctl)
 
 POST(sys_shmctl)
 {
-#ifdef VGP_amd64_linux
+#if defined(VGP_amd64_linux) || defined(VGP_arm64_linux)
    ML_(generic_POST_sys_shmctl)(tid, RES,ARG1,ARG2|VKI_IPC_64,ARG3);
 #else
    ML_(generic_POST_sys_shmctl)(tid, RES,ARG1,ARG2,ARG3);

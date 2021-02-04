@@ -69,6 +69,7 @@ n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.
 424298  amd64: Implement RDSEED
 426144  Fix "condition variable has not been initialized" on Fedora 33.
 423195  PPC ISA 3.1 support is missing, part 1
+423361  Adds io_uring support on arm64/aarch64 (and all other arches)
 425232  PPC ISA 3.1 support is missing, part 2
 426123  PPC ISA 3.1 support is missing, part 3
 427787  Support new faccessat2 linux syscall (439)

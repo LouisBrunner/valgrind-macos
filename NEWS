@@ -51,6 +51,7 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
+140178  open("/proc/self/exe", ...); doesn't quite work
 345077  linux syscall execveat support (linux 3.19)
 369029  handle linux syscalls sched_getattr and sched_setattr
 n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.

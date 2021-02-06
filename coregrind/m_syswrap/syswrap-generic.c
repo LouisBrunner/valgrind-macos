@@ -4078,6 +4078,38 @@ Bool ML_(handle_auxv_open)(SyscallStatus *status, const HChar *filename,
 }
 #endif // defined(VGO_linux) || defined(VGO_solaris)
 
+#if defined(VGO_linux)
+Bool ML_(handle_self_exe_open)(SyscallStatus *status, const HChar *filename,
+                               int flags)
+{
+   HChar  name[30];   // large enough for /proc/<int>/exe
+
+   if (!ML_(safe_to_deref)((const void *) filename, 1))
+      return False;
+
+   /* Opening /proc/<pid>/exe or /proc/self/exe? */
+   VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
+   if (!VG_STREQ(filename, name) && !VG_STREQ(filename, "/proc/self/exe"))
+      return False;
+
+   /* Allow to open the file only for reading. */
+   if (flags & (VKI_O_WRONLY | VKI_O_RDWR)) {
+      SET_STATUS_Failure(VKI_EACCES);
+      return True;
+   }
+
+   SysRes sres = VG_(dup)(VG_(cl_exec_fd));
+   SET_STATUS_from_SysRes(sres);
+   if (!sr_isError(sres)) {
+      OffT off = VG_(lseek)(sr_Res(sres), 0, VKI_SEEK_SET);
+      if (off < 0)
+         SET_STATUS_Failure(VKI_EMFILE);
+   }
+
+   return True;
+}
+#endif // defined(VGO_linux)
+
 PRE(sys_open)
 {
    if (ARG2 & VKI_O_CREAT) {
@@ -4119,8 +4151,10 @@ PRE(sys_open)
       }
    }
 
-   /* Handle also the case of /proc/self/auxv or /proc/<pid>/auxv. */
-   if (ML_(handle_auxv_open)(status, (const HChar *)(Addr)ARG1, ARG2))
+   /* Handle also the case of /proc/self/auxv or /proc/<pid>/auxv
+      or /proc/self/exe or /proc/<pid>/exe. */
+   if (ML_(handle_auxv_open)(status, (const HChar *)(Addr)ARG1, ARG2)
+       || ML_(handle_self_exe_open)(status, (const HChar *)(Addr)ARG1, ARG2))
       return;
 #endif // defined(VGO_linux)
 

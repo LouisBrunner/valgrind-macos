@@ -110,7 +110,8 @@ static void usage_NORETURN ( int need_help )
 "    --vgdb-stop-at=event1,event2,... invoke gdbserver for given events [none]\n"
 "         where event is one of:\n"
 "           startup exit valgrindabexit all none\n"
-"    --track-fds=no|yes        track open file descriptors? [no]\n"
+"    --track-fds=no|yes|all    track open file descriptors? [no]\n"
+"                              all includes reporting stdin, stdout and stderr\n"
 "    --time-stamp=no|yes       add timestamps to log messages? [no]\n"
 "    --log-fd=<number>         log messages to file descriptor [2=stderr]\n"
 "    --log-file=<file>         log messages to <file>\n"
@@ -600,7 +601,17 @@ static void process_option (Clo_Mode mode,
    else if VG_BOOL_CLOM(cloPD, arg, "--show-below-main",  VG_(clo_show_below_main)) {}
    else if VG_BOOL_CLO(arg, "--keep-debuginfo",   VG_(clo_keep_debuginfo)) {}
    else if VG_BOOL_CLOM(cloPD, arg, "--time-stamp",       VG_(clo_time_stamp)) {}
-   else if VG_BOOL_CLO(arg, "--track-fds",        VG_(clo_track_fds)) {}
+   else if VG_STR_CLO(arg, "--track-fds",         tmp_str) {
+      if (VG_(strcmp)(tmp_str, "yes") == 0)
+         VG_(clo_track_fds) = 1;
+      else if (VG_(strcmp)(tmp_str, "all") == 0)
+         VG_(clo_track_fds) = 2;
+      else if (VG_(strcmp)(tmp_str, "no") == 0)
+         VG_(clo_track_fds) = 0;
+      else
+         VG_(fmsg_bad_option)(arg,
+            "Bad argument, should be 'yes', 'all' or 'no'\n");
+   }
    else if VG_BOOL_CLOM(cloPD, arg, "--trace-children",   VG_(clo_trace_children)) {}
    else if VG_BOOL_CLOM(cloPD, arg, "--child-silent-after-fork",
                         VG_(clo_child_silent_after_fork)) {}

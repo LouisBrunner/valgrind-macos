@@ -283,8 +283,8 @@ extern const HChar* VG_(clo_prefix_to_strip);
    wildcards. */
 extern XArray *VG_(clo_req_tsyms);
 
-/* Track open file descriptors? */
-extern Bool  VG_(clo_track_fds);
+/* Track open file descriptors? 0 = No, 1 = Yes, 2 = All (including std)  */
+extern UInt  VG_(clo_track_fds);
 
 /* Should we run __libc_freeres at exit?  Sometimes causes crashes.
    Default: YES.  Note this is subservient to VG_(needs).libc_freeres;

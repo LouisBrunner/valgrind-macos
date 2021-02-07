@@ -823,11 +823,28 @@ getsockdetails(Int fd)
 /* Dump out a summary, and a more detailed list, of open file descriptors. */
 void VG_(show_open_fds) (const HChar* when)
 {
-   OpenFd *i = allocated_fds;
+   OpenFd *i;
+   int non_std = 0;
 
-   VG_(message)(Vg_UserMsg, "FILE DESCRIPTORS: %d open %s.\n", fd_count, when);
+   for (i = allocated_fds; i; i = i->next) {
+      if (i->fd > 2)
+         non_std++;
+   }
 
-   while (i) {
+   /* If we are running quiet and there are either no open file descriptors
+      or not tracking all fds, then don't report anything.  */
+   if ((fd_count == 0
+        || ((non_std == 0) && (VG_(clo_track_fds) < 2)))
+       && (VG_(clo_verbosity) == 0))
+      return;
+
+   VG_(message)(Vg_UserMsg, "FILE DESCRIPTORS: %d open (%d std) %s.\n",
+                fd_count, fd_count - non_std, when);
+
+   for (i = allocated_fds; i; i = i->next) {
+      if (i->fd <= 2 && VG_(clo_track_fds) < 2)
+          continue;
+
       if (i->pathname) {
          VG_(message)(Vg_UserMsg, "Open file descriptor %d: %s\n", i->fd,
                       i->pathname);
@@ -850,8 +867,6 @@ void VG_(show_open_fds) (const HChar* when)
          VG_(message)(Vg_UserMsg, "   <inherited from parent>\n");
          VG_(message)(Vg_UserMsg, "\n");
       }
-
-      i = i->next;
    }
 
    VG_(message)(Vg_UserMsg, "\n");

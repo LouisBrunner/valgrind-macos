@@ -852,7 +852,7 @@ in most cases.  We group the available options by rough categories.</para>
 
   <varlistentry id="opt.track-fds" xreflabel="--track-fds">
     <term>
-      <option><![CDATA[--track-fds=<yes|no> [default: no] ]]></option>
+      <option><![CDATA[--track-fds=<yes|no|all> [default: no] ]]></option>
     </term>
     <listitem>
       <para>When enabled, Valgrind will print out a list of open file
@@ -860,7 +860,10 @@ in most cases.  We group the available options by rough categories.</para>
       command <varname>v.info open_fds</varname>.  Along with each
       file descriptor is printed a stack backtrace of where the file
       was opened and any details relating to the file descriptor such
-      as the file name or socket details.</para>
+      as the file name or socket details. Use <option>all</option> to
+      include reporting on <computeroutput>stdin</computeroutput>,
+      <computeroutput>stdout</computeroutput> and
+      <computeroutput>stderr</computeroutput>.</para>
     </listitem>
   </varlistentry>
 

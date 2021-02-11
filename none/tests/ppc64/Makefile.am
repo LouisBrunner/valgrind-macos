@@ -49,6 +49,8 @@ EXTRA_DIST = \
 	test_isa_3_0_altivec.stdout.exp-LE test_isa_3_0_altivec.vgtest \
 	test_isa_3_0_other.stderr.exp  \
 	test_isa_3_0_other.stdout.exp-LE test_isa_3_0_other.vgtest \
+	test_mod_instructions.stderr.exp test_mod_instructions.stdout.exp \
+	test_mod_instructions.vgtest \
 	test_isa_3_1_RT.vgtest test_isa_3_1_RT.stderr.exp test_isa_3_1_RT.stdout.exp \
 	test_isa_3_1_XT.vgtest test_isa_3_1_XT.stderr.exp test_isa_3_1_XT.stdout.exp \
 	test_isa_3_1_VRT.vgtest test_isa_3_1_VRT.stderr.exp test_isa_3_1_VRT.stdout.exp \
@@ -63,7 +65,7 @@ check_PROGRAMS = \
 	test_isa_2_06_part1 test_isa_2_06_part2 test_isa_2_06_part3 \
 	test_dfp1 test_dfp2 test_dfp3 test_dfp4 test_dfp5 \
 	test_isa_2_07_part1 test_isa_2_07_part2 \
-	test_isa_3_0 \
+	test_isa_3_0 test_mod_instructions \
 	test_isa_3_1_RT test_isa_3_1_XT test_isa_3_1_VRT \
 	test_isa_3_1_Misc test_isa_3_1_AT \
 	subnormal_test \

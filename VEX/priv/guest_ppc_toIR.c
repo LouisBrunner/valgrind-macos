@@ -7453,14 +7453,13 @@ static Bool dis_modulo_int ( UInt prefix, UInt theInstr )
             IRTemp rB     = newTemp( Ity_I64 );
             IRTemp rA2_63 = newTemp( Ity_I64 );    /* all 1's if rA != -2^63 */
             IRTemp rB_0   = newTemp( Ity_I1 );     /* 1 if rB = 0 */
-            IRTemp rB_1   = newTemp( Ity_I1 );     /* 1 if rB = -1 */
-            IRTemp rA_1   = newTemp( Ity_I1 );     /* 1 if rA = -1 */
+            IRTemp rB_1   = newTemp( Ity_I1 );     /* 1 if rB = 1 */
+            IRTemp rB_m1  = newTemp( Ity_I1 );     /* 1 if rB = -1 */
+            IRTemp rA_m1  = newTemp( Ity_I1 );     /* 1 if rA = -1 */
             IRTemp resultis0   = newTemp( Ity_I64 );
-            IRTemp resultisF   = newTemp( Ity_I64 );
             IRTemp quotient = newTemp( Ity_I64 );
             IRTemp quotientTimesDivisor = newTemp( Ity_I64 );
             IRTemp remainder = newTemp( Ity_I64 );
-            IRTemp tmp  = newTemp( Ity_I64 );
 
             DIP("modsd r%u,r%u,r%u\n", rD_addr, rA_addr, rB_addr);
 
@@ -7477,30 +7476,46 @@ static Bool dis_modulo_int ( UInt prefix, UInt theInstr )
 
             assign( rB_1, binop( Iop_CmpEQ64,
                                  mkexpr( rB ),
-                                 mkU64( 0xFFFFFFFFFFFFFFFF ) ) );
+                                 mkU64( 0x1 ) ) );
 
-            assign( rA_1, binop( Iop_CmpEQ64,
+            assign( rB_m1, binop( Iop_CmpEQ64,
+                                  mkexpr( rB ),
+                                  mkU64( 0xFFFFFFFFFFFFFFFF ) ) );
+
+            assign( rA_m1, binop( Iop_CmpEQ64,
                                  mkexpr( rA ),
                                  mkU64( 0xFFFFFFFFFFFFFFFF ) ) );
 
             /* Need to match the HW for these special cases
-             * rA = -2^31 and rB = -1              result all zeros
-             * rA =  -1 and rB = -1                result all zeros
-             * rA =  -1 and (rB != -1 AND rB != 0) result all 1's
-             */
+               rA = -2^31 and rB = -1              result all zeros
+               rA =  -1 and rB = -1                result all zeros
+
+               if an attempt is made to perform any of the divisions:
+                     0x80000000 % -1
+                     <anything> % 0
+               result is undefined.  Force result to zero to match the
+               HW behaviour.  */
+
             assign( resultis0,
                     binop( Iop_Or64,
-                           mkexpr( rA2_63 ),
-                           unop ( Iop_1Sto64, mkexpr( rB_1 ) ) ) );
-            assign( resultisF,
-                    binop( Iop_And64,
-                           unop( Iop_1Sto64, mkexpr( rA_1 ) ),
-                           binop( Iop_And64,
-                                  unop( Iop_Not64,
-                                        unop( Iop_1Sto64, mkexpr( rB_0 ) ) ),
-                                  unop( Iop_Not64,
-                                        unop( Iop_1Sto64, mkexpr( rB_1 ) ) )
-                                  ) ) );
+                           binop( Iop_Or64,
+                                  /* -1 % 1 */
+                                  binop( Iop_And64,
+                                         unop( Iop_1Sto64, mkexpr( rA_m1 ) ),
+                                         unop( Iop_1Sto64, mkexpr( rB_1 ) ) ),
+                                  /* rA % 0 (division by zero) */
+                                  unop( Iop_1Sto64, mkexpr( rB_0 ) ) ),
+                           binop( Iop_Or64,
+                                  binop( Iop_And64,
+                                         unop( Iop_Not64,
+                                               mkexpr( rA2_63 ) ),
+                                         unop ( Iop_1Sto64,
+                                                mkexpr( rB_m1 ) ) ),
+                                  /* -1 % -1 */
+                                  binop( Iop_And64,
+                                         unop( Iop_1Sto64, mkexpr( rA_m1 ) ),
+                                         unop( Iop_1Sto64, mkexpr( rB_m1 ) )
+                                     ) ) ) );
 
             /* The following remainder computation works as long as
              * rA != -2^63 and rB != -1.
@@ -7518,33 +7533,25 @@ static Bool dis_modulo_int ( UInt prefix, UInt theInstr )
                            mkexpr( rA ),
                            mkexpr( quotientTimesDivisor ) ) );
 
-            assign( tmp, binop( Iop_And64,
+            assign( rD, binop( Iop_And64,
                                 mkexpr( remainder ),
                                 unop( Iop_Not64,
                                       mkexpr( resultis0 ) ) ) );
-
-            assign( rD, binop( Iop_Or64,
-                               binop( Iop_And64,
-                                      unop (Iop_Not64,
-                                            mkexpr( resultisF ) ),
-                                      mkexpr( tmp ) ),
-                               mkexpr( resultisF ) ) );
             break;
          }
       case 0x30B: // modsw  Modulo Signed Word
          {
             IRTemp rA     = newTemp( Ity_I32 );
             IRTemp rB     = newTemp( Ity_I32 );
-            IRTemp rA2_32 = newTemp( Ity_I32 );    /* all 1's if rA = -2^32 */
-            IRTemp rB_0   = newTemp( Ity_I1 );     /* 1 if rB = 0 */
-            IRTemp rB_1   = newTemp( Ity_I1 );     /* 1 if rB = -1 */
-            IRTemp rA_1   = newTemp( Ity_I1 );     /* 1 if rA = -1 */
+            IRTemp rA2_32 = newTemp( Ity_I32 );  /* all 1's if rA = -2^32 */
+            IRTemp rB_0   = newTemp( Ity_I1 );   /* 1 if rB = 0 */
+            IRTemp rB_1   = newTemp( Ity_I1 );   /* 1 if rB = 1 */
+            IRTemp rB_m1  = newTemp( Ity_I1 );   /* 1 if rB = -1, 0xFFFFFFFF */
+            IRTemp rA_m1   = newTemp( Ity_I1 );  /* 1 if rA = -1, 0xFFFFFFFF */
             IRTemp resultis0   = newTemp( Ity_I32 );
-            IRTemp resultisF   = newTemp( Ity_I64 );
             IRTemp quotient = newTemp( Ity_I32 );
             IRTemp quotientTimesDivisor = newTemp( Ity_I32 );
             IRTemp remainder = newTemp( Ity_I32 );
-            IRTemp tmp  = newTemp( Ity_I64 );
 
             DIP("modsw r%u,r%u,r%u\n", rD_addr, rA_addr, rB_addr);
 
@@ -7574,36 +7581,48 @@ static Bool dis_modulo_int ( UInt prefix, UInt theInstr )
 
             assign( rB_1, binop( Iop_CmpEQ32,
                                  mkexpr( rB ),
-                                 mkU32( 0xFFFFFFFF ) ) );
+                                 mkU32( 0x00000001 ) ) );
 
-            assign( rA_1, binop( Iop_CmpEQ32,
+            assign( rB_m1, binop( Iop_CmpEQ32,
+                                  mkexpr( rB ),
+                                  mkU32( 0xFFFFFFFF ) ) );
+
+            assign( rA_m1, binop( Iop_CmpEQ32,
                                  mkexpr( rA ),
                                  mkU32( 0xFFFFFFFF ) ) );
 
             /* Need to match the HW for these special cases
-             * rA = -2^31 and rB = -1              result all zeros
-             * rA =  -1 and rB = -1                result all zeros
-             * rA =  -1 and (rB != -1 AND rB != 0) result all 1's
-             */
+               rA = -2^31 and rB = -1              result all zeros
+               rA =  -1 and rB = -1                result all zeros
+               rA =  -1 and rB = 1                 result all zeros
+
+               if an attempt is made to perform any of the divisions:
+                     0x80000000 % -1
+                     <anything> % 0
+               result is undefined.  Force result to zero to match the
+               HW beaviour.  */
+
             assign( resultis0,
                     binop( Iop_Or32,
-                           unop( Iop_Not32,
-                                 binop( Iop_And32,
-                                        mkexpr( rA2_32 ),
-                                        unop( Iop_1Sto32,
-                                              mkexpr( rB_1 ) ) ) ),
-                           binop( Iop_And32,
-                                  unop( Iop_1Sto32, mkexpr( rA_1 ) ),
-                                  unop( Iop_1Sto32, mkexpr( rB_1 ) ) ) ) );
-            assign( resultisF,
-                    binop( Iop_And64,
-                           unop( Iop_1Sto64, mkexpr( rA_1 ) ),
-                           binop( Iop_And64,
-                                  unop( Iop_Not64,
-                                        unop( Iop_1Sto64, mkexpr( rB_0 ) ) ),
-                                  unop( Iop_Not64,
-                                        unop( Iop_1Sto64, mkexpr( rB_1 ) ) )
-                                  ) ) );
+                           binop( Iop_Or32,
+                                  /* -1 % 1 */
+                                  binop( Iop_And32,
+                                         unop( Iop_1Sto32, mkexpr( rA_m1 ) ),
+                                         unop( Iop_1Sto32, mkexpr( rB_1 ) ) ),
+                                  /* rA % 0 (division by zero) */
+                                  unop( Iop_1Sto32, mkexpr( rB_0 ) ) ),
+
+                           binop( Iop_Or32,
+                                  /* 0x8000000 % -1 */
+                                  binop( Iop_And32,
+                                         mkexpr( rA2_32 ),
+                                         unop( Iop_1Sto32,
+                                               mkexpr( rB_m1 ) ) ),
+                                  /* -1 % -1 */
+                                  binop( Iop_And32,
+                                         unop( Iop_1Sto32, mkexpr( rA_m1 ) ),
+                                         unop( Iop_1Sto32, mkexpr( rB_m1 ) )
+                                     ) ) ) );
 
             /* The following remainder computation works as long as
              * rA != -2^31 and rB != -1.
@@ -7622,19 +7641,12 @@ static Bool dis_modulo_int ( UInt prefix, UInt theInstr )
                            mkexpr( rA ),
                            mkexpr( quotientTimesDivisor ) ) );
 
-            assign( tmp, binop( Iop_32HLto64,
+            assign( rD, binop( Iop_32HLto64,
                                 mkU32( 0 ),
                                 binop( Iop_And32,
                                        mkexpr( remainder ),
                                        unop( Iop_Not32,
                                              mkexpr( resultis0 ) ) ) ) );
-
-            assign( rD, binop( Iop_Or64,
-                               binop( Iop_And64,
-                                      unop ( Iop_Not64,
-                                             mkexpr( resultisF ) ),
-                                      mkexpr( tmp ) ),
-                               mkexpr( resultisF ) ) );
             break;
          }
 

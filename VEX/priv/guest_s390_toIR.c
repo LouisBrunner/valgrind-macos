@@ -18794,44 +18794,48 @@ s390_vector_fp_convert(IROp op, IRType fromType, IRType toType, Bool rounding,
 static const HChar *
 s390_irgen_VCDG(UChar v1, UChar v2, UChar m3, UChar m4, UChar m5)
 {
-   s390_insn_assert("vcdg", m3 == 3);
+   s390_insn_assert("vcdg", m3 == 2 || m3 == 3);
 
-   s390_vector_fp_convert(Iop_I64StoF64, Ity_I64, Ity_F64, True,
-                          v1, v2, m3, m4, m5);
-
+   s390_vector_fp_convert(m3 == 2 ? Iop_I32StoF32 : Iop_I64StoF64,
+                          m3 == 2 ? Ity_I32       : Ity_I64,
+                          m3 == 2 ? Ity_F32       : Ity_F64,
+                          True, v1, v2, m3, m4, m5);
    return "vcdg";
 }
 
 static const HChar *
 s390_irgen_VCDLG(UChar v1, UChar v2, UChar m3, UChar m4, UChar m5)
 {
-   s390_insn_assert("vcdlg", m3 == 3);
+   s390_insn_assert("vcdlg", m3 == 2 || m3 == 3);
 
-   s390_vector_fp_convert(Iop_I64UtoF64, Ity_I64, Ity_F64, True,
-                          v1, v2, m3, m4, m5);
-
+   s390_vector_fp_convert(m3 == 2 ? Iop_I32UtoF32 : Iop_I64UtoF64,
+                          m3 == 2 ? Ity_I32       : Ity_I64,
+                          m3 == 2 ? Ity_F32       : Ity_F64,
+                          True, v1, v2, m3, m4, m5);
    return "vcdlg";
 }
 
 static const HChar *
 s390_irgen_VCGD(UChar v1, UChar v2, UChar m3, UChar m4, UChar m5)
 {
-   s390_insn_assert("vcgd", m3 == 3);
+   s390_insn_assert("vcgd", m3 == 2 || m3 == 3);
 
-   s390_vector_fp_convert(Iop_F64toI64S, Ity_F64, Ity_I64, True,
-                          v1, v2, m3, m4, m5);
-
+   s390_vector_fp_convert(m3 == 2 ? Iop_F32toI32S : Iop_F64toI64S,
+                          m3 == 2 ? Ity_F32       : Ity_F64,
+                          m3 == 2 ? Ity_I32       : Ity_I64,
+                          True, v1, v2, m3, m4, m5);
    return "vcgd";
 }
 
 static const HChar *
 s390_irgen_VCLGD(UChar v1, UChar v2, UChar m3, UChar m4, UChar m5)
 {
-   s390_insn_assert("vclgd", m3 == 3);
+   s390_insn_assert("vclgd", m3 == 2 || m3 == 3);
 
-   s390_vector_fp_convert(Iop_F64toI64U, Ity_F64, Ity_I64, True,
-                          v1, v2, m3, m4, m5);
-
+   s390_vector_fp_convert(m3 == 2 ? Iop_F32toI32U : Iop_F64toI64U,
+                          m3 == 2 ? Ity_F32       : Ity_F64,
+                          m3 == 2 ? Ity_I32       : Ity_I64,
+                          True, v1, v2, m3, m4, m5);
    return "vclgd";
 }
 

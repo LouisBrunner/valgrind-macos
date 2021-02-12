@@ -806,6 +806,114 @@ static void test_pmxvbf16ger2pp_XM11_YM13_PM1 (void) {
   __asm__ __volatile__ ("pmxvbf16ger2pp  4, %x0, %x1, 11, 13, 1"
 				:: "wa" (vec_xa), "wa" (vec_xb) );
 }
+static void test_xvi8ger4spp (void) {
+  __asm__ __volatile__ ("xvi8ger4spp 4, %x0, %x1"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi8ger4spp_XM0_YM0_PM0 (void) {
+  __asm__ __volatile__ ("pmxvi8ger4spp  4, %x0, %x1, 0, 0, 0"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi8ger4spp_XM0_YM0_PM5 (void) {
+  __asm__ __volatile__ ("pmxvi8ger4spp  4, %x0, %x1, 0, 0, 5"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi8ger4spp_XM0_YM13_PM0 (void) {
+  __asm__ __volatile__ ("pmxvi8ger4spp  4, %x0, %x1, 0, 13, 0"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi8ger4spp_XM0_YM13_PM5 (void) {
+  __asm__ __volatile__ ("pmxvi8ger4spp  4, %x0, %x1, 0, 13, 5"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi8ger4spp_XM11_YM0_PM0 (void) {
+  __asm__ __volatile__ ("pmxvi8ger4spp  4, %x0, %x1, 11, 0, 0"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi8ger4spp_XM11_YM0_PM5 (void) {
+  __asm__ __volatile__ ("pmxvi8ger4spp  4, %x0, %x1, 11, 0, 5"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi8ger4spp_XM11_YM13_PM0 (void) {
+  __asm__ __volatile__ ("pmxvi8ger4spp  4, %x0, %x1, 11, 13, 0"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi8ger4spp_XM11_YM13_PM5 (void) {
+  __asm__ __volatile__ ("pmxvi8ger4spp  4, %x0, %x1, 11, 13, 5"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_xvi16ger2 (void) {
+  __asm__ __volatile__ ("xvi16ger2 4, %x0, %x1"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_xvi16ger2pp (void) {
+  __asm__ __volatile__ ("xvi16ger2pp 4, %x0, %x1"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi16ger2_XM0_YM0_PM0 (void) {
+  __asm__ __volatile__ ("pmxvi16ger2  4, %x0, %x1, 0, 0, 0"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi16ger2_XM0_YM0_PM1 (void) {
+  __asm__ __volatile__ ("pmxvi16ger2  4, %x0, %x1, 0, 0, 1"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi16ger2_XM0_YM13_PM0 (void) {
+  __asm__ __volatile__ ("pmxvi16ger2  4, %x0, %x1, 0, 13, 0"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi16ger2_XM0_YM13_PM1 (void) {
+  __asm__ __volatile__ ("pmxvi16ger2  4, %x0, %x1, 0, 13, 1"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi16ger2_XM11_YM0_PM0 (void) {
+  __asm__ __volatile__ ("pmxvi16ger2  4, %x0, %x1, 11, 0, 0"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi16ger2_XM11_YM0_PM1 (void) {
+  __asm__ __volatile__ ("pmxvi16ger2  4, %x0, %x1, 11, 0, 1"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi16ger2_XM11_YM13_PM0 (void) {
+  __asm__ __volatile__ ("pmxvi16ger2  4, %x0, %x1, 11, 13, 0"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi16ger2_XM11_YM13_PM1 (void) {
+  __asm__ __volatile__ ("pmxvi16ger2  4, %x0, %x1, 11, 13, 1"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi16ger2pp_XM0_YM0_PM0 (void) {
+  __asm__ __volatile__ ("pmxvi16ger2pp  4, %x0, %x1, 0, 0, 0"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi16ger2pp_XM0_YM0_PM1 (void) {
+  __asm__ __volatile__ ("pmxvi16ger2pp  4, %x0, %x1, 0, 0, 1"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi16ger2pp_XM0_YM13_PM0 (void) {
+  __asm__ __volatile__ ("pmxvi16ger2pp  4, %x0, %x1, 0, 13, 0"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi16ger2pp_XM0_YM13_PM1 (void) {
+  __asm__ __volatile__ ("pmxvi16ger2pp  4, %x0, %x1, 0, 13, 1"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi16ger2pp_XM11_YM0_PM0 (void) {
+  __asm__ __volatile__ ("pmxvi16ger2pp  4, %x0, %x1, 11, 0, 0"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi16ger2pp_XM11_YM0_PM1 (void) {
+  __asm__ __volatile__ ("pmxvi16ger2pp  4, %x0, %x1, 11, 0, 1"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi16ger2pp_XM11_YM13_PM0 (void) {
+  __asm__ __volatile__ ("pmxvi16ger2pp  4, %x0, %x1, 11, 13, 0"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
+static void test_pmxvi16ger2pp_XM11_YM13_PM1 (void) {
+  __asm__ __volatile__ ("pmxvi16ger2pp  4, %x0, %x1, 11, 13, 1"
+				:: "wa" (vec_xa), "wa" (vec_xb) );
+}
 
 static test_list_t testgroup_generic[] = {
   { &test_pmxvbf16ger2nn_XM0_YM0_PM0, "pmxvbf16ger2nn XM0_YM0_PM0", "AT,XA,XB,XMSK,YMSK,PMSK", 0b00001111}, /* bcwp */
@@ -952,6 +1060,14 @@ static test_list_t testgroup_generic[] = {
   { &test_pmxvi8ger4pp_XM11_YM0_PM5, "pmxvi8ger4pp XM11_YM0_PM5", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
   { &test_pmxvi8ger4pp_XM11_YM13_PM0, "pmxvi8ger4pp XM11_YM13_PM0", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
   { &test_pmxvi8ger4pp_XM11_YM13_PM5, "pmxvi8ger4pp XM11_YM13_PM5", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi8ger4spp_XM0_YM0_PM0, "pmxvi8ger4spp XM0_YM0_PM0", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi8ger4spp_XM0_YM0_PM5, "pmxvi8ger4spp XM0_YM0_PM5", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi8ger4spp_XM0_YM13_PM0, "pmxvi8ger4spp XM0_YM13_PM0", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi8ger4spp_XM0_YM13_PM5, "pmxvi8ger4spp XM0_YM13_PM5", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi8ger4spp_XM11_YM0_PM0, "pmxvi8ger4spp XM11_YM0_PM0", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi8ger4spp_XM11_YM0_PM5, "pmxvi8ger4spp XM11_YM0_PM5", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi8ger4spp_XM11_YM13_PM0, "pmxvi8ger4spp XM11_YM13_PM0", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi8ger4spp_XM11_YM13_PM5, "pmxvi8ger4spp XM11_YM13_PM5", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
   { &test_pmxvi8ger4_XM0_YM0_PM0, "pmxvi8ger4 XM0_YM0_PM0", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
   { &test_pmxvi8ger4_XM0_YM0_PM5, "pmxvi8ger4 XM0_YM0_PM5", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
   { &test_pmxvi8ger4_XM0_YM13_PM0, "pmxvi8ger4 XM0_YM13_PM0", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
@@ -960,6 +1076,14 @@ static test_list_t testgroup_generic[] = {
   { &test_pmxvi8ger4_XM11_YM0_PM5, "pmxvi8ger4 XM11_YM0_PM5", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
   { &test_pmxvi8ger4_XM11_YM13_PM0, "pmxvi8ger4 XM11_YM13_PM0", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
   { &test_pmxvi8ger4_XM11_YM13_PM5, "pmxvi8ger4 XM11_YM13_PM5", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi16ger2pp_XM0_YM0_PM0, "pmxvi16ger2pp XM0_YM0_PM0", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi16ger2pp_XM0_YM0_PM1, "pmxvi16ger2pp XM0_YM0_PM1", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi16ger2pp_XM0_YM13_PM0, "pmxvi16ger2pp XM0_YM13_PM0", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi16ger2pp_XM0_YM13_PM1, "pmxvi16ger2pp XM0_YM13_PM1", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi16ger2pp_XM11_YM0_PM0, "pmxvi16ger2pp XM11_YM0_PM0", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi16ger2pp_XM11_YM0_PM1, "pmxvi16ger2pp XM11_YM0_PM1", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi16ger2pp_XM11_YM13_PM0, "pmxvi16ger2pp XM11_YM13_PM0", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi16ger2pp_XM11_YM13_PM1, "pmxvi16ger2pp XM11_YM13_PM1", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
   { &test_pmxvi16ger2spp_XM0_YM0_PM0, "pmxvi16ger2spp XM0_YM0_PM0", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
   { &test_pmxvi16ger2spp_XM0_YM0_PM1, "pmxvi16ger2spp XM0_YM0_PM1", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
   { &test_pmxvi16ger2spp_XM0_YM13_PM0, "pmxvi16ger2spp XM0_YM13_PM0", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
@@ -976,6 +1100,14 @@ static test_list_t testgroup_generic[] = {
   { &test_pmxvi16ger2s_XM11_YM0_PM1, "pmxvi16ger2s XM11_YM0_PM1", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
   { &test_pmxvi16ger2s_XM11_YM13_PM0, "pmxvi16ger2s XM11_YM13_PM0", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
   { &test_pmxvi16ger2s_XM11_YM13_PM1, "pmxvi16ger2s XM11_YM13_PM1", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi16ger2_XM0_YM0_PM0, "pmxvi16ger2 XM0_YM0_PM0", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi16ger2_XM0_YM0_PM1, "pmxvi16ger2 XM0_YM0_PM1", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi16ger2_XM0_YM13_PM0, "pmxvi16ger2 XM0_YM13_PM0", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi16ger2_XM0_YM13_PM1, "pmxvi16ger2 XM0_YM13_PM1", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi16ger2_XM11_YM0_PM0, "pmxvi16ger2 XM11_YM0_PM0", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi16ger2_XM11_YM0_PM1, "pmxvi16ger2 XM11_YM0_PM1", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi16ger2_XM11_YM13_PM0, "pmxvi16ger2 XM11_YM13_PM0", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
+  { &test_pmxvi16ger2_XM11_YM13_PM1, "pmxvi16ger2 XM11_YM13_PM1", "AT,XA,XB,XMSK,YMSK,PMSK"}, /* bcwp */
   { &test_xvbf16ger2nn, "xvbf16ger2nn", "AT,XA,XB", 0b00001111}, /* bcs */
   { &test_xvbf16ger2np, "xvbf16ger2np", "AT,XA,XB", 0b00001111}, /* bcs */
   { &test_xvbf16ger2pn, "xvbf16ger2pn", "AT,XA,XB", 0b00001111}, /* bcs */
@@ -999,9 +1131,12 @@ static test_list_t testgroup_generic[] = {
   { &test_xvi4ger8pp, "xvi4ger8pp", "AT,XA,XB"}, /* bcs */
   { &test_xvi4ger8, "xvi4ger8", "AT,XA,XB"}, /* bcs */
   { &test_xvi8ger4pp, "xvi8ger4pp", "AT,XA,XB"}, /* bcs */
+  { &test_xvi8ger4spp, "xvi8ger4spp", "AT,XA,XB"}, /* bcs */
   { &test_xvi8ger4, "xvi8ger4", "AT,XA,XB"}, /* bcs */
+  { &test_xvi16ger2pp, "xvi16ger2pp", "AT,XA,XB"}, /* bcs */
   { &test_xvi16ger2spp, "xvi16ger2spp", "AT,XA,XB"}, /* bcs */
   { &test_xvi16ger2s, "xvi16ger2s", "AT,XA,XB"}, /* bcs */
+  { &test_xvi16ger2, "xvi16ger2", "AT,XA,XB"}, /* bcs */
   { &test_xxmfacc, "xxmfacc", "AS"}, /* bcs */
   { &test_xxmtacc, "xxmtacc", "AT"}, /* bcs */
   { &test_xxsetaccz, "xxsetaccz", "AT"}, /* bcs */

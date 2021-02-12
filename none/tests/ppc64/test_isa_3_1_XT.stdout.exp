@@ -244,6 +244,34 @@ stxvrwx 18 (&buffer) 0000111e8000222e,0180055e0180077e => [ -   -   -  7f0000008
 stxvrwx 20 (&buffer) 7ff0000000000000,0000111e8000222e => [ -   -   -   -  5a05a05a00000000  -   -   - ]
 stxvrwx 28 (&buffer) fff0000000000000,7ff0000000000000 => [ -   -   -   -   -  0102030400000000  -   - ]
 
+xvcvbf16spn 7f800000ff800000,ff8000007f800000 =>                0                0
+xvcvbf16spn ff8000007f800000,ff7ffffe7f7ffffe =>                0 fffe0000fffe0000
+xvcvbf16spn ff7ffffe7f7ffffe,0080000e8080000e => fffe0000fffe0000    e0000000e0000
+xvcvbf16spn 0080000e8080000e,0180055e0180077e =>    e0000000e0000  55e0000077e0000
+xvcvbf16spn 0180055e0180077e,0000111e8000222e =>  55e0000077e0000 111e0000222e0000
+xvcvbf16spn 0000111e8000222e,7ff0000000000000 => 111e0000222e0000                0
+xvcvbf16spn 7ff0000000000000,fff0000000000000 =>                0                0
+xvcvbf16spn fff0000000000000,2208400000000000 =>                0 4000000000000000
+xvcvbf16spn 2208400000000000,0000000000000009 => 4000000000000000            90000
+xvcvbf16spn 0000000000000009,ffff000180000001 =>            90000    1000000010000
+xvcvbf16spn ffff000180000001,0000000000000000 =>    1000000010000                0
+xvcvbf16spn 0000000000000000,8000000000000000 =>                0                0
+xvcvbf16spn 8000000000000000,7f800000ff800000 =>                0                0
+
+xvcvspbf16 7f800000ff800000,ff8000007f800000 =>          +Inf          -Inf          -Inf          +Inf
+xvcvspbf16 ff8000007f800000,ff7ffffe7f7ffffe =>          -Inf          +Inf          -Inf          +Inf
+xvcvspbf16 ff7ffffe7f7ffffe,0080000e8080000e =>          -Inf          +Inf        0x0080        0x8080
+xvcvspbf16 0080000e8080000e,0180055e0180077e =>        0x0080        0x8080        0x0180        0x0180
+xvcvspbf16 0180055e0180077e,0000111e8000222e =>        0x0180        0x0180         +Zero         -Zero
+xvcvspbf16 0000111e8000222e,7ff0000000000000 =>         +Zero         -Zero           NaN         +Zero
+xvcvspbf16 7ff0000000000000,fff0000000000000 =>           NaN         +Zero           NaN         +Zero
+xvcvspbf16 fff0000000000000,2208400000000000 =>           NaN         +Zero        0x2208         +Zero
+xvcvspbf16 2208400000000000,0000000000000009 =>        0x2208         +Zero         +Zero         +Zero
+xvcvspbf16 0000000000000009,ffff000180000001 =>         +Zero         +Zero           NaN         -Zero
+xvcvspbf16 ffff000180000001,0000000000000000 =>           NaN         -Zero         +Zero         +Zero
+xvcvspbf16 0000000000000000,8000000000000000 =>         +Zero         +Zero         -Zero         +Zero
+xvcvspbf16 8000000000000000,7f800000ff800000 =>         -Zero         +Zero          +Inf          -Inf
+
 xxblendvb 7f800000ff800000,ff8000007f800000 0000000000000000,00000000ffffffff 7f800000ff800000,ff8000007f800000 => 7f800000ff800000 ff8000007f800000
 xxblendvb 7f800000ff800000,ff8000007f800000 ffffffff55555555,5555aaaaaaaa5555 7f800000ff800000,ff8000007f800000 => 7f800000ff800000 ff8000007f800000
 xxblendvb 7f800000ff800000,ff8000007f800000 aaaa00000000aaaa,0000000000000000 7f800000ff800000,ff8000007f800000 => 7f800000ff800000 ff8000007f800000
@@ -7318,4 +7346,4 @@ xxspltiw imm3 =>        300000003        300000003
 
 xxspltiw imm8 =>        800000008        800000008
 
-All done. Tested 158 different instruction groups
+All done. Tested 160 different instruction groups

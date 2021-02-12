@@ -491,6 +491,16 @@ static void test_pstxv_4 (void) {
 static void test_pstxv_0 (void) {
   __asm__ __volatile__ ("pstxv %x0, 0(%1), 0" :: "wa" (vec_xs), "r" (ra) );
 }
+static void test_xvcvspbf16 (void) {
+SET_FPSCR_ZERO; 
+  __asm__ __volatile__ ("xvcvspbf16 %x0, %x1"
+				: "=wa" (vec_xt) : "wa" (vec_xb) );
+GET_FPSCR(current_fpscr); 
+}
+static void test_xvcvbf16spn (void) {
+  __asm__ __volatile__ ("xvcvbf16spn %x0, %x1"
+				: "=wa" (vec_xt) : "wa" (vec_xb) );
+}
 static void test_xxgenpcvbm_imm0 (void) {
   __asm__ __volatile__ ("xxgenpcvbm %x0, %1, 0" : "=wa" (vec_xt) : "v" (vrb) );
 }
@@ -634,6 +644,8 @@ static test_list_t testgroup_generic[] = {
   { &test_stxvrdx, "stxvrdx", "XS,RA,RB"}, /* bcs */
   { &test_stxvrhx, "stxvrhx", "XS,RA,RB"}, /* bcs */
   { &test_stxvrwx, "stxvrwx", "XS,RA,RB"}, /* bcs */
+  { &test_xvcvbf16spn, "xvcvbf16spn", "XT,XB"}, /* bcs */
+  { &test_xvcvspbf16, "xvcvspbf16", "XT,XB", 0b0101010100000000}, /* bcs */
   { &test_xxblendvb, "xxblendvb", "XT,XA,XB,XC"}, /* bcs */
   { &test_xxblendvd, "xxblendvd", "XT,XA,XB,XC"}, /* bcs */
   { &test_xxblendvh, "xxblendvh", "XT,XA,XB,XC"}, /* bcs */

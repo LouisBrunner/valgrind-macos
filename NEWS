@@ -88,6 +88,7 @@ n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.
 430354  ppc stxsibx and stxsihx instructions write too much data
 430485  expr_is_guardable doesn't handle Iex_Qop
 432672  vg_regtest: test-specific environment variables not reset between tests
+432809  VEX should support REX.W + POPF
 432861  PPC modsw and modsd give incorrect results for 1 mod 12
 
 Release 3.16.1 (?? June 2020)

@@ -1,0 +1,2 @@
+prog: enomem
+vgopts: -q

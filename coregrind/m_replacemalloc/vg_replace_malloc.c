@@ -192,6 +192,17 @@ static void init(void);
    if (info.clo_trace_malloc) {        \
       VALGRIND_INTERNAL_PRINTF(format, ## args ); }
 
+/* Tries to set ERRNO to ENOMEM if possible.
+   Only implemented for glibc at the moment.
+*/
+#if defined(VGO_linux)
+extern int *__errno_location (void) __attribute__((weak));
+#define SET_ERRNO_ENOMEM if (__errno_location)        \
+      (*__errno_location ()) = VKI_ENOMEM;
+#else
+#define SET_ERRNO_ENOMEM {}
+#endif
+
 /* Below are new versions of malloc, __builtin_new, free,
    __builtin_delete, calloc, realloc, memalign, and friends.
 
@@ -246,6 +257,7 @@ static void init(void);
       \
       v = (void*)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, n ); \
       MALLOC_TRACE(" = %p\n", v ); \
+      if (!v) SET_ERRNO_ENOMEM; \
       return v; \
    }
 
@@ -752,6 +764,7 @@ static void init(void);
       if (umulHW(size, nmemb) != 0) return NULL; \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_calloc, nmemb, size ); \
       MALLOC_TRACE(" = %p\n", v ); \
+      if (!v) SET_ERRNO_ENOMEM; \
       return v; \
    }
 
@@ -826,6 +839,7 @@ static void init(void);
       } \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_realloc, ptrV, new_size ); \
       MALLOC_TRACE(" = %p\n", v ); \
+      if (!v) SET_ERRNO_ENOMEM; \
       return v; \
    }
 
@@ -899,6 +913,7 @@ static void init(void);
       \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_memalign, alignment, n ); \
       MALLOC_TRACE(" = %p\n", v ); \
+      if (!v) SET_ERRNO_ENOMEM; \
       return v; \
    }
 

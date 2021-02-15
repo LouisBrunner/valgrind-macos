@@ -226,6 +226,8 @@ typedef struct {
 
    void (*track_ban_mem_stack)(Addr, SizeT);
 
+   void (*track_register_stack)(Addr, Addr);
+
    void (*track_pre_mem_read)       (CorePart, ThreadId, const HChar*, Addr, SizeT);
    void (*track_pre_mem_read_asciiz)(CorePart, ThreadId, const HChar*, Addr);
    void (*track_pre_mem_write)      (CorePart, ThreadId, const HChar*, Addr, SizeT);

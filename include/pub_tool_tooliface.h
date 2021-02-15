@@ -609,6 +609,9 @@ void VG_(track_die_mem_stack)                  (void(*f)(Addr a, SizeT len));
 /* Used for redzone at end of thread stacks */
 void VG_(track_ban_mem_stack)      (void(*f)(Addr a, SizeT len));
 
+/* Used to report VG_USERREQ__STACK_REGISTER client requests */
+void VG_(track_register_stack)     (void(*f)(Addr start, Addr end));
+
 /* These ones occur around syscalls, signal handling, etc */
 void VG_(track_pre_mem_read)       (void(*f)(CorePart part, ThreadId tid,
                                              const HChar* s, Addr a, SizeT size));

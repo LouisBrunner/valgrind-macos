@@ -438,6 +438,8 @@ DEF0(track_die_mem_stack,         Addr, SizeT)
 
 DEF0(track_ban_mem_stack,         Addr, SizeT)
 
+DEF0(track_register_stack,        Addr, Addr)
+
 DEF0(track_pre_mem_read,          CorePart, ThreadId, const HChar*, Addr, SizeT)
 DEF0(track_pre_mem_read_asciiz,   CorePart, ThreadId, const HChar*, Addr)
 DEF0(track_pre_mem_write,         CorePart, ThreadId, const HChar*, Addr, SizeT)

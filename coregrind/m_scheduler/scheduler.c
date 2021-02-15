@@ -2050,6 +2050,7 @@ void do_client_request ( ThreadId tid )
       case VG_USERREQ__STACK_REGISTER: {
          UWord sid = VG_(register_stack)((Addr)arg[1], (Addr)arg[2]);
          SET_CLREQ_RETVAL( tid, sid );
+         VG_TRACK(register_stack, (Addr)arg[1], (Addr)arg[2]);
          break; }
 
       case VG_USERREQ__STACK_DEREGISTER: {

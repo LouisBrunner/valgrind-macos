@@ -1152,7 +1152,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                                       debug_line_mscn,
                                       debug_str_mscn,
                                       DiSlice_INVALID, /* ALT .debug_str */
-                                      debug_line_str );
+                                      debug_line_str_mscn );
 
          /* The new reader: read the DIEs in .debug_info to acquire
             information on variable types and locations or inline info.

@@ -356,9 +356,7 @@ s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, ULong *addr)
        | s390_stfle_range(51, 55)
        /* 56: unassigned */
        /* 57: MSA5, not supported */
-       | s390_stfle_range(58, 60)
-       /* 61: miscellaneous-instruction 3, not supported */
-       | s390_stfle_range(62, 63)),
+       | s390_stfle_range(58, 63)),
 
       /* ===  64 .. 127  === */
       (s390_stfle_range(64, 72)
@@ -384,11 +382,10 @@ s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, ULong *addr)
        /* 143: unassigned */
        | s390_stfle_range(144, 145)
        /* 146: MSA8, not supported */
-       | s390_stfle_range(147, 147)
-       /* 148: vector-enhancements 2, not supported */
-       | s390_stfle_range(149, 149)
+       | s390_stfle_range(147, 149)
        /* 150: unassigned */
        /* 151: DEFLATE-conversion, not supported */
+       /* 152: vector packed decimal enhancement, not supported */
        /* 153: unassigned */
        /* 154: unassigned */
        /* 155: MSA9, not supported */

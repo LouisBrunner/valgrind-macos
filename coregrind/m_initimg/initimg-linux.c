@@ -703,7 +703,8 @@ Addr setup_client_stack( void*  init_sp,
                   itself, is not supported by Valgrind. */
                auxv->u.a_val &= ((VKI_HWCAP_S390_TE - 1)
                                  | VKI_HWCAP_S390_VXRS
-                                 | VKI_HWCAP_S390_VXRS_EXT);
+                                 | VKI_HWCAP_S390_VXRS_EXT
+                                 | VKI_HWCAP_S390_VXRS_EXT2);
             }
 #           elif defined(VGP_arm64_linux)
             {

@@ -56,7 +56,7 @@ DEFAULT_SUPP_FILES = @DEFAULT_SUPP@
 # default.supp, as it is built from the base .supp files at compile-time.
 dist_noinst_DATA = $(SUPP_FILES)
 
-vglibdir = $(pkglibdir)
+vglibdir = $(pkglibexecdir)
 vglib_DATA = default.supp
 
 pkgconfigdir = $(libdir)/pkgconfig

@@ -50,20 +50,20 @@ inplace-noinst_DSYMS: build-noinst_DSYMS
 	done
 
 # This is used by coregrind/Makefile.am and by <tool>/Makefile.am for doing
-# "make install".  It copies $(noinst_PROGRAMS) into $prefix/lib/valgrind/.
+# "make install".  It copies $(noinst_PROGRAMS) into $prefix/libexec/valgrind/.
 # It needs to be depended on by an 'install-exec-local' rule.
 install-noinst_PROGRAMS: $(noinst_PROGRAMS)
-	$(mkinstalldirs) $(DESTDIR)$(pkglibdir); \
+	$(mkinstalldirs) $(DESTDIR)$(pkglibexecdir); \
 	for f in $(noinst_PROGRAMS); do \
-	  $(INSTALL_PROGRAM) $$f $(DESTDIR)$(pkglibdir); \
+	  $(INSTALL_PROGRAM) $$f $(DESTDIR)$(pkglibexecdir); \
 	done
 
 # This is used by coregrind/Makefile.am and by <tool>/Makefile.am for doing
-# "make uninstall".  It removes $(noinst_PROGRAMS) from $prefix/lib/valgrind/.
+# "make uninstall".  It removes $(noinst_PROGRAMS) from $prefix/libexec/valgrind/.
 # It needs to be depended on by an 'uninstall-local' rule.
 uninstall-noinst_PROGRAMS:
 	for f in $(noinst_PROGRAMS); do \
-	  rm -f $(DESTDIR)$(pkglibdir)/$$f; \
+	  rm -f $(DESTDIR)$(pkglibexecdir)/$$f; \
 	done
 
 # Similar to install-noinst_PROGRAMS.
@@ -71,15 +71,15 @@ uninstall-noinst_PROGRAMS:
 # directories.  XXX: not sure whether the resulting permissions will be
 # correct when using 'cp -R'...
 install-noinst_DSYMS: build-noinst_DSYMS
-	$(mkinstalldirs) $(DESTDIR)$(pkglibdir); \
+	$(mkinstalldirs) $(DESTDIR)$(pkglibexecdir); \
 	for f in $(noinst_DSYMS); do \
-	  cp -R $$f.dSYM $(DESTDIR)$(pkglibdir); \
+	  cp -R $$f.dSYM $(DESTDIR)$(pkglibexecdir); \
 	done
 
 # Similar to uninstall-noinst_PROGRAMS.
 uninstall-noinst_DSYMS:
 	for f in $(noinst_DSYMS); do \
-	  rm -f $(DESTDIR)$(pkglibdir)/$$f.dSYM; \
+	  rm -f $(DESTDIR)$(pkglibexecdir)/$$f.dSYM; \
 	done
 
 # This needs to be depended on by a 'clean-local' rule.

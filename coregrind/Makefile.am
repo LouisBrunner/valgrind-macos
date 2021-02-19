@@ -11,12 +11,12 @@ include $(top_srcdir)/Makefile.all.am
 
 AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@ += \
 	-I$(top_srcdir)/coregrind \
-	-DVG_LIBDIR="\"$(pkglibdir)"\" \
+	-DVG_LIBDIR="\"$(pkglibexecdir)"\" \
 	-DVG_PLATFORM="\"@VGCONF_ARCH_PRI@-@VGCONF_OS@\""
 if VGCONF_HAVE_PLATFORM_SEC
 AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@ += \
 	-I$(top_srcdir)/coregrind \
-	-DVG_LIBDIR="\"$(pkglibdir)"\" \
+	-DVG_LIBDIR="\"$(pkglibexecdir)"\" \
 	-DVG_PLATFORM="\"@VGCONF_ARCH_SEC@-@VGCONF_OS@\""
 endif
 
@@ -745,7 +745,7 @@ GDBSERVER_XML_FILES = \
 	m_gdbserver/mips64-fpu.xml
 
 # so as to make sure these get copied into the install tree
-vglibdir = $(pkglibdir)
+vglibdir = $(pkglibexecdir)
 vglib_DATA  = $(GDBSERVER_XML_FILES)
 
 # so as to make sure these get copied into the tarball

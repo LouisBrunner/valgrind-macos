@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Startup: search PATH for an executable    initimg-pathscan.c ---*/
+/*--- search PATH for an executable                   m_pathscan.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -33,9 +33,7 @@
 #include "pub_core_libcproc.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_mallocfree.h"
-#include "pub_core_initimg.h"         /* self */
-
-#include "priv_initimg_pathscan.h"
+#include "pub_core_pathscan.h"         /* self */
 
 
 /*====================================================================*/
@@ -117,7 +115,7 @@ static Bool match_executable(const HChar *entry)
 }
 
 // Returns NULL if it wasn't found.
-const HChar* ML_(find_executable) ( const HChar* exec )
+const HChar* VG_(find_executable) ( const HChar* exec )
 {
    vg_assert(NULL != exec);
 

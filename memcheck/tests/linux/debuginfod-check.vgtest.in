@@ -1,0 +1,4 @@
+prereq: ./debuginfod-check.pl
+prog: debuginfod-check
+vgopts: -q
+env: DEBUGINFOD_URLS=localhost DEBUGINFOD_CACHE_PATH=@abs_top_builddir@/memcheck/tests/linux/.debuginfod

@@ -35,6 +35,12 @@ support for X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
     Valgrind.  The vector-packed-decimal facility is currently not
     exploited by the standard toolchain and libraries.
 
+* Valgrind now supports debuginfod, an HTTP server for distributing
+  ELF/DWARF debugging information. When a debuginfo file cannot be
+  found locally, Valgrind is able to query debuginfod servers for the
+  file using its build-id. See the user manual for more information
+  about debuginfod support.
+
 * ==================== TOOL CHANGES ====================
 
 * DHAT:
@@ -125,6 +131,7 @@ where XXXXXX is the bug number as listed below.
 432672  vg_regtest: test-specific environment variables not reset between tests
 432809  VEX should support REX.W + POPF
 432861  PPC modsw and modsd give incorrect results for 1 mod 12
+432215  Add debuginfod functionality
 n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.
 429352  PPC ISA 3.1 support is missing, part 7
 

@@ -6,6 +6,7 @@ dist_noinst_SCRIPTS = filter_stderr
 EXTRA_DIST = \
 	brk.stderr.exp brk.vgtest \
 	capget.vgtest capget.stderr.exp capget.stderr.exp2 capget.stderr.exp3 \
+	debuginfod-check.stderr.exp debuginfod-check.vgtest.in \
 	dlclose_leak-no-keep.stderr.exp dlclose_leak-no-keep.stdout.exp \
 	    dlclose_leak-no-keep.vgtest \
 	dlclose_leak.stderr.exp dlclose_leak.stdout.exp \
@@ -37,6 +38,7 @@ check_PROGRAMS = \
 	brk \
 	capget \
 	check_preadv2_pwritev2 \
+	debuginfod-check \
 	dlclose_leak dlclose_leak_so.so \
 	ioctl-tiocsig \
 	getregset \

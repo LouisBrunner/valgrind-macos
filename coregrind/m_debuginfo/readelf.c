@@ -36,9 +36,12 @@
 #include "pub_core_libcbase.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_libcassert.h"
+#include "pub_core_libcfile.h"
+#include "pub_core_libcproc.h"
 #include "pub_core_machine.h"      /* VG_ELF_CLASS */
 #include "pub_core_options.h"
 #include "pub_core_oset.h"
+#include "pub_core_pathscan.h"     /* find_executable */
 #include "pub_core_syscall.h"
 #include "pub_core_tooliface.h"    /* VG_(needs) */
 #include "pub_core_xarray.h"
@@ -1281,6 +1284,135 @@ DiImage* open_debug_file( const HChar* name, const HChar* buildid, UInt crc,
    return dimg;
 }
 
+#if defined(VGO_linux)
+/* Return the path of the debuginfod-find executable. */
+static
+const HChar* debuginfod_find_path( void )
+{
+  static const HChar* path = (const HChar*) -1;
+
+  if (path == (const HChar*) -1) {
+     if (VG_(getenv)("DEBUGINFOD_URLS") == NULL
+         || VG_(strcmp)("", VG_(getenv("DEBUGINFOD_URLS"))) == 0)
+        path = NULL;
+     else
+        path = VG_(find_executable)("debuginfod-find");
+  }
+
+  return path;
+}
+
+/* Try to find a separate debug file with |buildid| via debuginfod. If found,
+   return its DiImage. Searches for a local debuginfod-find executable and
+   runs it in a child process in order to download the debug file. */
+static
+DiImage* find_debug_file_debuginfod( const HChar* objpath,
+                                     HChar** debugpath,
+                                     const HChar* buildid,
+                                     const UInt crc, Bool rel_ok )
+{
+#  define BUF_SIZE 4096
+   Int          out_fds[2], err_fds[2]; /* pipe fds */
+   DiImage*     dimg = NULL;            /* the img we found */
+   HChar        buf[BUF_SIZE];          /* executable output buffer */
+   const HChar* path;                   /* executable path */
+   SizeT        len;                    /* number of bytes read int buf */
+   Int          ret;                    /* result of read call */
+
+   if (buildid == NULL)
+      return NULL;
+
+   if ((path = debuginfod_find_path()) == NULL)
+      return NULL;
+
+   if (VG_(pipe)(out_fds) != 0
+       || VG_(pipe)(err_fds) != 0)
+      return NULL;
+
+   if (VG_(clo_verbosity) > 1)
+      VG_(umsg)("Downloading debug info for %s...\n", objpath);
+
+   /* Run debuginfod-find to query servers for the debuginfo. */
+   Int pid = VG_(fork)();
+   if (pid == 0) {
+      const HChar *argv[4] = { path, "debuginfo", buildid, (HChar*)0 };
+
+      /* Redirect stdout and stderr */
+      SysRes res = VG_(dup2)(out_fds[1], 1);
+      if (sr_Res(res) < 0)
+         VG_(exit)(1);
+
+      res = VG_(dup2)(err_fds[1], 2);
+      if (sr_Res(res) < 0)
+         VG_(exit)(1);
+
+      /* Disable extra stderr output since it does not play well with umesg */
+      VG_(env_unsetenv)(VG_(client_envp), "DEBUGINFOD_VERBOSE", NULL);
+      VG_(env_unsetenv)(VG_(client_envp), "DEBUGINFOD_PROGRESS", NULL);
+
+      VG_(close)(out_fds[0]);
+      VG_(close)(err_fds[0]);
+      VG_(execv)(argv[0], argv);
+
+      /* If we are still alive here, execv failed. */
+      VG_(exit)(1);
+   }
+
+   VG_(close)(out_fds[1]);
+   VG_(close)(err_fds[1]);
+
+   if (pid < 0) {
+      if (VG_(clo_verbosity) > 1)
+         VG_(umsg)("Server Error\n");
+      goto out;
+   }
+   VG_(waitpid)(pid, NULL, 0);
+
+   /* Set dimg if download was successful. */
+   len = 0;
+   ret = -1;
+   while (len >= 0 && len < BUF_SIZE) {
+      ret = VG_(read)(out_fds[0], buf + len, BUF_SIZE - len);
+      if (ret <= 0)
+         break;
+      len += ret;
+   }
+   if (ret >= 0 && len > 0
+       && buf[0] == '/' && buf[len-1] == '\n') {
+
+      /* Remove newline from filename before trying to open debug file */
+      buf[len-1] = '\0';
+      dimg = open_debug_file(buf, buildid, crc, rel_ok, NULL);
+      if (dimg != NULL) {
+         /* Success */
+         if (*debugpath)
+            ML_(dinfo_free)(*debugpath);
+
+         *debugpath = ML_(dinfo_strdup)("di.fdfd.1", buf);
+         if (VG_(clo_verbosity) > 1)
+            VG_(umsg)("Successfully downloaded debug file for %s\n",
+                      objpath);
+         goto out;
+      }
+   }
+
+   /* Download failed so try to print error message. */
+   HChar* nl;
+   if (VG_(read)(err_fds[0], buf, BUF_SIZE) > 0
+       && (nl = VG_(strchr)(buf, '\n'))) {
+      *nl = '\0';
+      if (VG_(clo_verbosity) > 1)
+         VG_(umsg)("%s\n", buf);
+   } else
+      if (VG_(clo_verbosity) > 1)
+         VG_(umsg)("Server Error\n");
+
+out:
+   VG_(close)(out_fds[0]);
+   VG_(close)(err_fds[0]);
+   return dimg;
+}
+#endif
 
 /* Try to find a separate debug file for a given object file.  If
    found, return its DiImage, which should be freed by the caller.  If
@@ -1380,6 +1512,11 @@ DiImage* find_debug_file( struct _DebugInfo* di,
 
       ML_(dinfo_free)(objdir);
    }
+
+#  if defined(VGO_linux)
+   if (dimg == NULL)
+      dimg = find_debug_file_debuginfod(objpath, &debugpath, buildid, crc, rel_ok);
+#  endif
 
    if (dimg != NULL) {
       vg_assert(debugpath);

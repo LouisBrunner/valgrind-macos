@@ -1065,6 +1065,9 @@
 /memcheck/tests/linux/sys-execveat
 /memcheck/tests/linux/check_execveat
 /memcheck/tests/linux/enomem
+/memcheck/tests/linux/debuginfod-check
+/memcheck/tests/linux/debuginfod-check.vgtest
+/memcheck/tests/linux/.debuginfod/
 
 # /memcheck/tests/mips32/
 /memcheck/tests/mips32/*.stderr.diff

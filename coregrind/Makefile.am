@@ -212,6 +212,7 @@ noinst_HEADERS = \
 	pub_core_mallocfree.h	\
 	pub_core_options.h	\
 	pub_core_oset.h		\
+	pub_core_pathscan.h     \
 	pub_core_poolalloc.h	\
 	pub_core_rangemap.h	\
 	pub_core_redir.h	\
@@ -267,7 +268,6 @@ noinst_HEADERS = \
 	m_gdbserver/target.h \
 	m_gdbserver/valgrind_low.h \
 	m_gdbserver/gdb/signals.h \
-	m_initimg/priv_initimg_pathscan.h \
 	m_scheduler/priv_sema.h \
 	m_scheduler/priv_sched-lock.h \
 	m_scheduler/priv_sched-lock-impl.h \
@@ -317,6 +317,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_mallocfree.c \
 	m_options.c \
 	m_oset.c \
+	m_pathscan.c \
 	m_poolalloc.c \
 	m_rangemap.c \
 	m_redir.c \
@@ -403,7 +404,6 @@ COREGRIND_SOURCES_COMMON = \
 	m_initimg/initimg-linux.c \
 	m_initimg/initimg-darwin.c \
 	m_initimg/initimg-solaris.c \
-	m_initimg/initimg-pathscan.c \
 	m_mach/mach_basics.c \
 	m_mach/mach_msg.c \
 	m_mach/mach_traps-x86-darwin.S \

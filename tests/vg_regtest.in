@@ -699,6 +699,8 @@ sub warn_about_EXTRA_REGTEST_OPTS()
 
 # nuke VALGRIND_OPTS
 $ENV{"VALGRIND_OPTS"} = "";
+# nuke DEBUGINFOD_URLS
+$ENV{"DEBUGINFOD_URLS"} = "";
 
 if ($ENV{"EXTRA_REGTEST_OPTS"}) {
     print "\n";

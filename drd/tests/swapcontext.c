@@ -11,7 +11,7 @@
 #include <sys/timerfd.h>
 #include <ucontext.h>
 #include <unistd.h>
-#include <valgrind/valgrind.h>
+#include "valgrind.h"
 
 typedef struct thread_local {
   ucontext_t uc[3];

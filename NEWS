@@ -12,6 +12,29 @@ support for X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== CORE CHANGES ===================
 
+* DWARF version 5 support
+
+  - Valgrind can now read DWARF version 5 debuginfo as produced by GCC 11
+
+* ================== PLATFORM CHANGES =================
+
+* s390:
+
+  - Implement the new instructions/features that were added to
+    z/Architecture with the vector-enhancements facility 1.  Also
+    cover the instructions from the vector-packed-decimal facility
+    that are defined outside the chapter "Vector Decimal
+    Instructions", but not the ones from that chapter itself.
+
+    For a detailed list of newly supported instructions see the
+    updates to `docs/internals/s390-opcodes.csv'.
+
+    Since the miscellaneous instruction extensions facility 2 was
+    already added in Valgrind 3.16.0, this completes the support
+    necessary to run general programs built with `--march=z14' under
+    Valgrind.  The vector-packed-decimal facility is currently not
+    exploited by the standard toolchain and libraries.
+
 * ==================== TOOL CHANGES ====================
 
 * DHAT:
@@ -56,50 +79,64 @@ where XXXXXX is the bug number as listed below.
 217695  malloc/calloc/realloc/memalign failure doesn't set errno to ENOMEM
 345077  linux syscall execveat support (linux 3.19)
 369029  handle linux syscalls sched_getattr and sched_setattr
-n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.
-
 384729  __libc_freeres inhibits cross-platform valgrind
+391853  Makefile.all.am:L247 and @SOLARIS_UNDEF_LARGESOURCE@ being empty
 397605  ioctl FICLONE mishandled
 408663  Suppression file for musl libc
 404076  s390x: z14 vector instructions not implemented
 410743  shmat() calls for 32-bit programs fail when running in 64-bit valgrind
         (actually affected all x86 and nanomips regardless of host bitness)
+413547  regression test does not check for Arm 64 features.
+414268  Enable AArch64 feature detection and decoding for v8.x instructions
 415293  Incorrect call-graph tracking due to new _dl_runtime_resolve_xsave*
 422174  unhandled instruction bytes: 0x48 0xE9 (REX prefixed JMP instruction)
 422261  platform selection fails for unqualified client name
 422623  epoll_ctl warns for uninitialized padding on non-amd64 64bit arches
 423021  PPC:  Add missing ISA 3.0 documentation link and HWCAPS test.
-424298  amd64: Implement RDSEED
-426144  Fix "condition variable has not been initialized" on Fedora 33.
 423195  PPC ISA 3.1 support is missing, part 1
 423361  Adds io_uring support on arm64/aarch64 (and all other arches)
+424012  crash with readv/writev having invalid but not NULL arg2 iovec
+424298  amd64: Implement RDSEED
 425232  PPC ISA 3.1 support is missing, part 2
+425820  Failure to recognize vpcmpeqq as a dependency breaking idiom.
+426014  arm64: implement fmadd and fmsub as Iop_MAdd/Sub
 426123  PPC ISA 3.1 support is missing, part 3
+426144  Fix "condition variable has not been initialized" on Fedora 33.
+427400  PPC ISA 3.1 support is missing, part 4
+427401  PPC ISA 3.1 support is missing, part 5
+427404  PPC ISA 3.1 support is missing, part 6
+427870  lmw, lswi and related PowerPC insns aren't allowed on ppc64le
 427787  Support new faccessat2 linux syscall (439)
 428035  drd: Unbreak the musl build
 428648  s390_emit_load_mem panics due to 20-bit offset for vector load
-427400  PPC ISA 3.1 support is missing, part 4
-427401  PPC ISA 3.1 support is missing, part 5
-427870  lmw, lswi and related PowerPC insns aren't allowed on ppc64le 
-427404  PPC ISA 3.1 support is missing, part 6
-429692  unhandled ppc64le-linux syscall: 147 (getsid)
+428716  cppcheck detects potential leak in VEX/useful/smchash.c
 428909  helgrind: need to intercept duplicate libc definitions for Fedora 33
+429692  unhandled ppc64le-linux syscall: 147 (getsid)
 429864  s390x: C++ atomic test_and_set yields false-positive memcheck
         diagnostics
+429952  Errors when building regtest with clang
 430354  ppc stxsibx and stxsihx instructions write too much data
 430485  expr_is_guardable doesn't handle Iex_Qop
+431556  Complete arm64 FADDP v8.2 instruction support
+432102  Add support for DWARF5 as produced by GCC11
+432161  Addition of arm64 v8.2 FADDP, FNEG and FSQRT
 432672  vg_regtest: test-specific environment variables not reset between tests
 432809  VEX should support REX.W + POPF
 432861  PPC modsw and modsd give incorrect results for 1 mod 12
+n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.
 
-Release 3.16.1 (?? June 2020)
+
+
+Release 3.16.1 (22 June 2020)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-3.16.1 is identical to 3.16.0, except that it fixes the following bug that
-was discovered late in the 3.16.0 release process:
+3.16.1 fixes two critical bugs discovered after 3.16.0 was frozen.  It also
+fixes character encoding problems in the documentation HTML.
 
-422715  valgrind 3.16.0 on 32-bit x86: vex: the `impossible' happened:
-        expr_is_guardable: unhandled expr
+422677  PPC sync instruction L field should only be 2 bits in ISA 3.0
+422715  32-bit x86: vex: the `impossible' happened: expr_is_guardable: unhandled expr
+
+(3.16.1, 22 June 2020, 36d6727e1d768333a536f274491e5879cab2c2f7)
 
 
 

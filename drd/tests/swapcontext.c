@@ -16,7 +16,6 @@
 typedef struct thread_local {
   ucontext_t uc[3];
   size_t nrsw;
-  int tfd;
 } thread_local_t;
 
 static void f(void *data, int n)
@@ -26,15 +25,11 @@ static void f(void *data, int n)
   thread_local_t *tlocal = data;
 
   while (1) {
-    memset(&pfd, 0, sizeof(pfd));
-    pfd.fd = tlocal->tfd;
-    pfd.events = POLLIN;
-
-    if (poll(&pfd, 1, 0) == 1) {
-      if (++tlocal->nrsw == NR_SWITCHES)
-        return;
-      swapcontext(&tlocal->uc[n], &tlocal->uc[3 - n]);
-    }
+    struct timespec delay = { .tv_nsec = 1000 };
+    nanosleep(&delay, NULL);
+    if (++tlocal->nrsw == NR_SWITCHES)
+      return;
+    swapcontext(&tlocal->uc[n], &tlocal->uc[3 - n]);
   }
 }
 
@@ -61,19 +56,6 @@ void *worker(void *data)
   struct itimerspec it;
 
   __valgrind_register_current_stack();
-
-  tlocal->tfd = timerfd_create(CLOCK_REALTIME, 0);
-  if (tlocal->tfd < 0)
-    abort();
-
-  it.it_interval.tv_sec = 0;
-  it.it_interval.tv_nsec = 1000;
-
-  it.it_value.tv_sec = time(NULL);
-  it.it_value.tv_nsec = 1000;
-
-  if (timerfd_settime(tlocal->tfd, TFD_TIMER_ABSTIME, &it, NULL) < 0)
-    abort();
 
   if (getcontext(&(tlocal->uc[1])) < 0)
     abort();

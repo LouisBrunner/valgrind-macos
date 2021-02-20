@@ -120,6 +120,7 @@ where XXXXXX is the bug number as listed below.
 431556  Complete arm64 FADDP v8.2 instruction support
 432102  Add support for DWARF5 as produced by GCC11
 432161  Addition of arm64 v8.2 FADDP, FNEG and FSQRT
+432381  drd: Process STACK_REGISTER client requests
 432672  vg_regtest: test-specific environment variables not reset between tests
 432809  VEX should support REX.W + POPF
 432861  PPC modsw and modsd give incorrect results for 1 mod 12

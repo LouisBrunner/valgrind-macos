@@ -153,6 +153,7 @@ void DRD_(thread_delete)(const DrdThreadId tid, Bool detached);
 void DRD_(thread_finished)(const DrdThreadId tid);
 void DRD_(drd_thread_atfork_child)(const DrdThreadId tid);
 void DRD_(thread_pre_cancel)(const DrdThreadId tid);
+void DRD_(thread_register_stack)(DrdThreadId tid, Addr addr1, Addr addr2);
 void DRD_(thread_set_stack_startup)(const DrdThreadId tid,
                                     const Addr stack_startup);
 Addr DRD_(thread_get_stack_min)(const DrdThreadId tid);

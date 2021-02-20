@@ -431,6 +431,17 @@ void DRD_(thread_post_join)(DrdThreadId drd_joiner, DrdThreadId drd_joinee)
    DRD_(thread_delayed_delete)(drd_joinee);
 }
 
+void DRD_(thread_register_stack)(DrdThreadId tid, Addr addr1, Addr addr2)
+{
+   tl_assert(0 <= (int)tid && tid < DRD_N_THREADS
+             && tid != DRD_INVALID_THREADID);
+   tl_assert(addr1 < addr2);
+   DRD_(g_threadinfo)[tid].stack_min     = addr2;
+   DRD_(g_threadinfo)[tid].stack_min_min = addr2;
+   DRD_(g_threadinfo)[tid].stack_startup = addr2;
+   DRD_(g_threadinfo)[tid].stack_max     = addr2;
+}
+
 /**
  * NPTL hack: NPTL allocates the 'struct pthread' on top of the stack,
  * and accesses this data structure from multiple threads without locking.

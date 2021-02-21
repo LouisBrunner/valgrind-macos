@@ -416,6 +416,7 @@
 /drd/tests/std_string
 /drd/tests/std_thread
 /drd/tests/std_thread2
+/drd/tests/swapcontext
 /drd/tests/tc01_simple_race
 /drd/tests/tc02_simple_tls
 /drd/tests/tc03_re_excl
@@ -1063,6 +1064,7 @@
 /memcheck/tests/linux/sys-openat
 /memcheck/tests/linux/sys-execveat
 /memcheck/tests/linux/check_execveat
+/memcheck/tests/linux/enomem
 
 # /memcheck/tests/mips32/
 /memcheck/tests/mips32/*.stderr.diff

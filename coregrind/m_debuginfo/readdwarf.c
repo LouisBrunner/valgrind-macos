@@ -683,7 +683,7 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
       directories_count = step_leb128U(&data);
       /* Read the contents of the Directory table.  */
       if (di->ddump_line)
-         VG_(printf)(" dwarf The Directory Table%s\n",
+         VG_(printf)(" The Directory Table%s\n",
                      directories_count == 0 ? " is empty." : ":" );
 
       for (n = 0; n < directories_count; n++) {
@@ -796,7 +796,7 @@ void read_dwarf2_lineblock ( struct _DebugInfo* di,
             if (f == p_ndx)
                name = get_line_str (di, ui, &data, form,
                                     debugstr_img, debuglinestr_img);
-            else if (n == d_ndx)
+            else if (f == d_ndx)
                diridx = get_line_ndx (di, &data, form);
             else
                data = skip_line_form (di, ui, data, form);

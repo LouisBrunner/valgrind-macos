@@ -2323,7 +2323,7 @@ void read_filename_table( /*MOD*/XArray* /* of UInt* */ fndn_ix_Table,
             if (f == p_ndx)
                str = get_line_str (cc->di, cc->is_dw64, &c, form,
                                    debugstr_img, debuglinestr_img);
-            else if (n == d_ndx)
+            else if (f == d_ndx)
                dir_xa_ix = get_line_ndx (cc->di, &c, form);
             else
                skip_line_form (cc->di, cc->is_dw64, &c, form);

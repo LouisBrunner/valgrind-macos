@@ -526,7 +526,7 @@ typedef
       Pin_FpBinary,   /* FP binary op */
       Pin_Fp128Unary,   /* FP unary op for 128-bit floating point */
       Pin_Fp128Binary,  /* FP binary op for 128-bit floating point */
-      Pin_Fp128Trinary, /* FP trinary op for 128-bit floating point */
+      Pin_Fp128Ternary, /* FP ternary op for 128-bit floating point */
       Pin_FpMulAcc,   /* FP multipy-accumulate style op */
       Pin_FpLdSt,     /* FP load/store */
       Pin_FpSTFIW,    /* stfiwx */
@@ -776,7 +776,7 @@ typedef
             HReg dst;
             HReg srcL;
             HReg srcR;
-         } Fp128Trinary;
+         } Fp128Ternary;
          struct {
             PPCFpOp op;
             HReg    dst;
@@ -1112,7 +1112,7 @@ extern PPCInstr* PPCInstr_MFence     ( void );
 
 extern PPCInstr* PPCInstr_Fp128Unary    ( PPCFpOp op, HReg dst, HReg src );
 extern PPCInstr* PPCInstr_Fp128Binary   ( PPCFpOp op, HReg dst, HReg srcL, HReg srcR );
-extern PPCInstr* PPCInstr_Fp128Trinary  ( PPCFpOp op, HReg dst, HReg srcL,
+extern PPCInstr* PPCInstr_Fp128Ternary  ( PPCFpOp op, HReg dst, HReg srcL,
                                           HReg srcR);
 
 extern PPCInstr* PPCInstr_FpUnary    ( PPCFpOp op, HReg dst, HReg src );

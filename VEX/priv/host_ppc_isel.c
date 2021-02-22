@@ -5002,7 +5002,7 @@ static HReg iselFp128Expr_wrk( ISelEnv* env, const IRExpr* e,
          HReg r_srcR = iselFp128Expr(env, qop->arg4,
                                      IEndianess);
 
-         addInstr(env, PPCInstr_Fp128Trinary(fpop, r_dst, r_srcL, r_srcR));
+         addInstr(env, PPCInstr_Fp128Ternary(fpop, r_dst, r_srcL, r_srcR));
          return r_dst;
          }
 

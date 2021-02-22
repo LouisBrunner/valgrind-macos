@@ -1007,13 +1007,13 @@ PPCInstr* PPCInstr_Fp128Binary(PPCFpOp op, HReg dst, HReg srcL, HReg srcR) {
    i->Pin.Fp128Binary.srcR = srcR;
    return i;
 }
-PPCInstr* PPCInstr_Fp128Trinary(PPCFpOp op, HReg dst, HReg srcL, HReg srcR) {
+PPCInstr* PPCInstr_Fp128Ternnary(PPCFpOp op, HReg dst, HReg srcL, HReg srcR) {
    PPCInstr* i = LibVEX_Alloc_inline( sizeof(PPCInstr) );
-   i->tag = Pin_Fp128Trinary;
-   i->Pin.Fp128Trinary.op = op;
-   i->Pin.Fp128Trinary.dst = dst;
-   i->Pin.Fp128Trinary.srcL = srcL;
-   i->Pin.Fp128Trinary.srcR = srcR;
+   i->tag = Pin_Fp128Ternnary;
+   i->Pin.Fp128Ternnary.op = op;
+   i->Pin.Fp128Ternnary.dst = dst;
+   i->Pin.Fp128Ternnary.srcL = srcL;
+   i->Pin.Fp128Ternnary.srcR = srcR;
    return i;
 }
 PPCInstr* PPCInstr_FpMulAcc ( PPCFpOp op, HReg dst, HReg srcML, 
@@ -1831,13 +1831,13 @@ void ppPPCInstr ( const PPCInstr* i, Bool mode64 )
       vex_printf(",");
       ppHRegPPC(i->Pin.Fp128Binary.srcR);
       return;
-   case Pin_Fp128Trinary:
-      vex_printf("%s ", showPPCFpOp(i->Pin.Fp128Trinary.op));
-      ppHRegPPC(i->Pin.Fp128Trinary.dst);
+   case Pin_Fp128Ternnary:
+      vex_printf("%s ", showPPCFpOp(i->Pin.Fp128Ternnary.op));
+      ppHRegPPC(i->Pin.Fp128Ternnary.dst);
       vex_printf(",");
-      ppHRegPPC(i->Pin.Fp128Trinary.srcL);
+      ppHRegPPC(i->Pin.Fp128Ternary.srcL);
       vex_printf(",");
-      ppHRegPPC(i->Pin.Fp128Trinary.srcR);
+      ppHRegPPC(i->Pin.Fp128Ternary.srcR);
       return;
    case Pin_FpMulAcc:
       vex_printf("%s ", showPPCFpOp(i->Pin.FpMulAcc.op));
@@ -2520,10 +2520,10 @@ void getRegUsage_PPCInstr ( HRegUsage* u, const PPCInstr* i, Bool mode64 )
       addHRegUse(u, HRmRead, i->Pin.Fp128Binary.srcL);
       addHRegUse(u, HRmRead, i->Pin.Fp128Binary.srcR);
       return;
-   case Pin_Fp128Trinary:
-      addHRegUse(u, HRmModify, i->Pin.Fp128Trinary.dst);
-      addHRegUse(u, HRmRead, i->Pin.Fp128Trinary.srcL);
-      addHRegUse(u, HRmRead, i->Pin.Fp128Trinary.srcR);
+   case Pin_Fp128Ternary:
+      addHRegUse(u, HRmModify, i->Pin.Fp128Ternary.dst);
+      addHRegUse(u, HRmRead, i->Pin.Fp128Ternary.srcL);
+      addHRegUse(u, HRmRead, i->Pin.Fp128Ternary.srcR);
       return;
    case Pin_FpMulAcc:
       addHRegUse(u, HRmWrite, i->Pin.FpMulAcc.dst);
@@ -2889,10 +2889,10 @@ void mapRegs_PPCInstr ( HRegRemap* m, PPCInstr* i, Bool mode64 )
       mapReg(m, &i->Pin.Fp128Binary.srcL);
       mapReg(m, &i->Pin.Fp128Binary.srcR);
       return;
-   case Pin_Fp128Trinary:
-      mapReg(m, &i->Pin.Fp128Trinary.dst);
-      mapReg(m, &i->Pin.Fp128Trinary.srcL);
-      mapReg(m, &i->Pin.Fp128Trinary.srcR);
+   case Pin_Fp128Ternary:
+      mapReg(m, &i->Pin.Fp128Ternary.dst);
+      mapReg(m, &i->Pin.Fp128Ternary.srcL);
+      mapReg(m, &i->Pin.Fp128Ternary.srcR);
       return;
    case Pin_FpMulAcc:
       mapReg(m, &i->Pin.FpMulAcc.dst);
@@ -4992,7 +4992,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       goto done;
    }
 
-   case Pin_Fp128Trinary: {
+   case Pin_Fp128Ternary: {
       /* Note Fp128 instructions use the vector registers */
       UInt fr_dst  = vregEnc(i->Pin.Fp128Binary.dst);
       UInt fr_srcL = vregEnc(i->Pin.Fp128Binary.srcL);

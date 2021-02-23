@@ -18229,6 +18229,48 @@ s390_irgen_VSLDB(UChar v1, UChar v2, UChar v3, UChar i4)
 }
 
 static const HChar *
+s390_irgen_VSLD(UChar v1, UChar v2, UChar v3, UChar i4)
+{
+   s390_insn_assert("vsld", i4 <= 7);
+
+   if (i4 == 0) {
+      /* Just copy v2. */
+      put_vr_qw(v1, get_vr_qw(v2));
+   } else {
+      /* Concatenate v2's tail with v3's head. */
+      put_vr_qw(v1,
+                binop(Iop_OrV128,
+                      binop(Iop_ShlV128, get_vr_qw(v2), mkU8(i4)),
+                      binop(Iop_ShrV128, get_vr_qw(v3), mkU8(128 - i4))
+                     )
+               );
+   }
+
+   return "vsld";
+}
+
+static const HChar *
+s390_irgen_VSRD(UChar v1, UChar v2, UChar v3, UChar i4)
+{
+   s390_insn_assert("vsrd", i4 <= 7);
+
+   if (i4 == 0) {
+      /* Just copy v3. */
+      put_vr_qw(v1, get_vr_qw(v3));
+   } else {
+      /* Concatenate v2's tail with v3's head. */
+      put_vr_qw(v1,
+                binop(Iop_OrV128,
+                      binop(Iop_ShlV128, get_vr_qw(v2), mkU8(128 - i4)),
+                      binop(Iop_ShrV128, get_vr_qw(v3), mkU8(i4))
+                     )
+               );
+   }
+
+   return "vsrd";
+}
+
+static const HChar *
 s390_irgen_VMO(UChar v1, UChar v2, UChar v3, UChar m4)
 {
    const IROp ops[] = { Iop_MullEven8Sx16, Iop_MullEven16Sx8,
@@ -21541,6 +21583,14 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
    case 0xe70000000085ULL: s390_format_VRR_VVV(s390_irgen_VBPERM, VRR_v1(ovl),
                                                VRR_v2(ovl), VRR_r3(ovl),
                                                VRR_rxb(ovl));  goto ok;
+   case 0xe70000000086ULL: s390_format_VRId_VVVI(s390_irgen_VSLD, VRId_v1(ovl),
+                                                 VRId_v2(ovl), VRId_v3(ovl),
+                                                 VRId_i4(ovl),
+                                                 VRId_rxb(ovl));  goto ok;
+   case 0xe70000000087ULL: s390_format_VRId_VVVI(s390_irgen_VSRD, VRId_v1(ovl),
+                                                 VRId_v2(ovl), VRId_v3(ovl),
+                                                 VRId_i4(ovl),
+                                                 VRId_rxb(ovl));  goto ok;
    case 0xe7000000008aULL: s390_format_VRR_VVVVMM(s390_irgen_VSTRC, VRRd_v1(ovl),
                                                   VRRd_v2(ovl), VRRd_v3(ovl),
                                                   VRRd_v4(ovl), VRRd_m5(ovl),

@@ -10878,8 +10878,9 @@ static Bool dis_syslink ( UInt prefix, UInt theInstr,
    /* There is no prefixed version of these instructions.  */
    PREFIX_CHECK
 
-   if (theInstr != 0x44000002) {
-      vex_printf("dis_syslink(ppc)(theInstr)\n");
+   if (theInstr != 0x44000002) { // sc
+      if (theInstr != 0x44000001) // scv
+         vex_printf("dis_syslink(ppc)(theInstr)\n");
       return False;
    }
 

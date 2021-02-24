@@ -590,3 +590,8 @@ endif
 sem_wait_SOURCES            = sem_wait.cpp
 
 swapcontext_SOURCES         = swapcontext.c
+swapcontext_CFLAGS          = $(AM_CFLAGS) -g
+if VGCONF_OS_IS_SOLARIS
+swapcontext_CFLAGS          += -D__EXTENSIONS__
+endif
+

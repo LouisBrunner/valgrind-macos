@@ -5885,8 +5885,14 @@ PRE(sys_newfstatat)
          SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3);
    PRE_REG_READ3(long, "fstatat",
                  int, dfd, char *, file_name, struct stat *, buf);
-   PRE_MEM_RASCIIZ( "fstatat(file_name)", ARG2 );
-   PRE_MEM_WRITE( "fstatat(buf)", ARG3, sizeof(struct vki_stat) );
+   // See the comment about Rust in PRE(sys_statx). When glibc does support
+   // statx rust uses that instead of the system call, but glibc's statx is
+   // implemented in terms of fstatat, so the filename being NULL is
+   // transferred here.
+   if (ARG2 != 0) {
+      PRE_MEM_RASCIIZ( "fstatat(file_name)", ARG2 );
+      PRE_MEM_WRITE( "fstatat(buf)", ARG3, sizeof(struct vki_stat) );
+   }
 }
 
 POST(sys_newfstatat)

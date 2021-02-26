@@ -5993,6 +5993,7 @@ static void vsx_matrix_ger ( const VexAbiInfo* vbi,
          break;
    case XVI4GER8PP:
    case XVI8GER4PP:
+   case XVI8GER4SPP:
    case XVI16GER2PP:
    case XVI16GER2SPP:
    case XVBF16GER2PP:
@@ -34983,6 +34984,12 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
                          getVSReg( rA_addr ), getVSReg( rB_addr ),
                          AT, ( ( inst_prefix << 8 ) | XO ) );
          break;
+      case XVI8GER4SPP:
+         DIP("xvi8ger4spp %u,r%u, r%u\n", AT, rA_addr, rB_addr);
+         vsx_matrix_ger( vbi, MATRIX_8BIT_INT_GER,
+                         getVSReg( rA_addr ), getVSReg( rB_addr ),
+                         AT, ( ( inst_prefix << 8 ) | XO ) );
+         break;
       case XVI16GER2S:
          DIP("xvi16ger2s %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_16BIT_INT_GER,
@@ -34995,6 +35002,19 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
                          getVSReg( rA_addr ), getVSReg( rB_addr ),
                          AT, ( ( inst_prefix << 8 ) | XO ) );
          break;
+      case XVI16GER2:
+         DIP("xvi16ger2 %u,r%u, r%u\n", AT, rA_addr, rB_addr);
+         vsx_matrix_ger( vbi, MATRIX_16BIT_INT_GER,
+                         getVSReg( rA_addr ), getVSReg( rB_addr ),
+                         AT, ( ( inst_prefix << 8 ) | XO ) );
+         break;
+      case XVI16GER2PP:
+         DIP("xvi16ger2pp %u,r%u, r%u\n", AT, rA_addr, rB_addr);
+         vsx_matrix_ger( vbi, MATRIX_16BIT_INT_GER,
+                         getVSReg( rA_addr ), getVSReg( rB_addr ),
+                         AT, ( ( inst_prefix << 8 ) | XO ) );
+         break;
+
       case XVF16GER2:
          DIP("xvf16ger2 %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_16BIT_FLOAT_GER,
@@ -35189,6 +35209,39 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
          DIP("pmxvi8ger4pp %u,r%u, r%u,%u,%u,%u\n",
              AT, rA_addr, rB_addr, XMSK, YMSK, PMSK);
          vsx_matrix_ger( vbi, MATRIX_8BIT_INT_GER,
+                         getVSReg( rA_addr ), getVSReg( rB_addr ),
+                         AT,
+                         ( (MASKS << 9 ) | ( inst_prefix << 8 ) | XO ) );
+         break;
+      case XVI8GER4SPP:
+         PMSK = IFIELD( prefix, 12, 4);
+         XMSK = IFIELD( prefix, 4, 4);
+         YMSK = IFIELD( prefix, 0, 4);
+         DIP("pmxvi8ger4spp %u,r%u, r%u,%u,%u,%u\n",
+             AT, rA_addr, rB_addr, XMSK, YMSK, PMSK);
+         vsx_matrix_ger( vbi, MATRIX_8BIT_INT_GER,
+                         getVSReg( rA_addr ), getVSReg( rB_addr ),
+                         AT,
+                         ( (MASKS << 9 ) | ( inst_prefix << 8 ) | XO ) );
+         break;
+      case XVI16GER2:
+         PMSK = IFIELD( prefix, 12, 4);
+         XMSK = IFIELD( prefix, 4, 4);
+         YMSK = IFIELD( prefix, 0, 4);
+         DIP("pmxvi16ger2 %u,r%u, r%u,%u,%u,%u\n",
+             AT, rA_addr, rB_addr, XMSK, YMSK, PMSK);
+         vsx_matrix_ger( vbi, MATRIX_16BIT_INT_GER,
+                         getVSReg( rA_addr ), getVSReg( rB_addr ),
+                         AT,
+                         ( (MASKS << 9 ) | ( inst_prefix << 8 ) | XO ) );
+         break;
+      case XVI16GER2PP:
+         PMSK = IFIELD( prefix, 12, 4);
+         XMSK = IFIELD( prefix, 4, 4);
+         YMSK = IFIELD( prefix, 0, 4);
+         DIP("pmxvi16ger2pp %u,r%u, r%u,%u,%u,%u\n",
+             AT, rA_addr, rB_addr, XMSK, YMSK, PMSK);
+         vsx_matrix_ger( vbi, MATRIX_16BIT_INT_GER,
                          getVSReg( rA_addr ), getVSReg( rB_addr ),
                          AT,
                          ( (MASKS << 9 ) | ( inst_prefix << 8 ) | XO ) );
@@ -36345,6 +36398,9 @@ DisResult disInstr_PPC_WRK (
              (opc2 == XVI4GER8PP)     ||       // xvi4ger8pp
              (opc2 == XVI8GER4)       ||       // xvi8ger4
              (opc2 == XVI8GER4PP)     ||       // xvi8ger4pp
+             (opc2 == XVI8GER4SPP)    ||       // xvi8ger4spp
+             (opc2 == XVI16GER2)      ||       // xvi16ger2
+             (opc2 == XVI16GER2PP)    ||       // xvi16ger2pp
              (opc2 == XVBF16GER2)     ||       // xvbf16ger2
              (opc2 == XVBF16GER2PP)   ||       // xvbf16ger2pp
              (opc2 == XVBF16GER2PN)   ||       // xvbf16ger2pn

@@ -1446,16 +1446,16 @@ static UInt exts4( UInt src)
       return src & 0xF;        /* make sure high order bits are zero */
 }
 
-static UInt exts8( UInt src)
+static ULong exts8( UInt src)
 {
-   /* Input is an 8-bit value.  Extend bit 7 to bits [31:8] */
+   /* Input is an 8-bit value.  Extend bit 7 to bits [63:8] */
    if (( src >> 7 ) & 0x1)
-      return src | 0xFFFFFF00; /* sign bit is a 1, extend */
+      return src | 0xFFFFFFFFFFFFFF00ULL; /* sign bit is a 1, extend */
    else
       return src & 0xFF;        /* make sure high order bits are zero */
 }
 
-static UInt extz8( UInt src)
+static ULong extz8( UInt src)
 {
    /* Input is an 8-bit value.  Extend src on the left with zeros.  */
    return src & 0xFF;        /* make sure high order bits are zero */
@@ -1662,12 +1662,12 @@ void vsx_matrix_8bit_ger_dirty_helper( VexGuestPPC64State* gst,
                                        ULong srcB_hi, ULong srcB_lo,
                                        UInt masks_inst )
 {
-   UInt i, j, mask, sum, inst, acc_entry, prefix_inst;
+   UInt i, j, mask, inst, acc_entry, prefix_inst;
 
    UInt srcA_bytes[4][4];   /* word, byte */
    UInt srcB_bytes[4][4];   /* word, byte */
    UInt acc_word[4];
-   UInt prod0, prod1, prod2, prod3;
+   ULong prod0, prod1, prod2, prod3, sum;
    UInt result[4];
    UInt pmsk = 0;
    UInt xmsk = 0;
@@ -1742,10 +1742,13 @@ void vsx_matrix_8bit_ger_dirty_helper( VexGuestPPC64State* gst,
             sum = prod0 + prod1 + prod2 + prod3;
 
             if ( inst == XVI8GER4 )
-               result[j] = sum;
+               result[j] = chop64to32( sum );
 
             else if ( inst == XVI8GER4PP )
-               result[j] = sum + acc_word[j];
+               result[j] = chop64to32( sum + acc_word[j] );
+
+            else if ( inst == XVI8GER4SPP )
+               result[j] = clampS64toS32(sum + acc_word[j]);
 
          } else {
             result[j] = 0;
@@ -1821,7 +1824,7 @@ void vsx_matrix_16bit_ger_dirty_helper( VexGuestPPC64State* gst,
             else
                prod1 = exts16to64( srcA_word[i][1] )
                   * exts16to64( srcB_word[j][1] );
-            /* sum is UInt so the result is choped to 32-bits */
+
             sum = prod0 + prod1;
 
             if ( inst == XVI16GER2 )
@@ -1830,13 +1833,11 @@ void vsx_matrix_16bit_ger_dirty_helper( VexGuestPPC64State* gst,
             else if ( inst == XVI16GER2S )
                result[j] = clampS64toS32( sum );
 
-            else if ( inst == XVI16GER2PP ) {
+            else if ( inst == XVI16GER2PP )
                result[j] = chop64to32( sum + acc_word[j] );
-            }
 
-            else if ( inst == XVI16GER2SPP ) {
+            else if ( inst == XVI16GER2SPP )
                result[j] = clampS64toS32( sum + acc_word[j] );
-            }
 
          } else {
             result[j] = 0;

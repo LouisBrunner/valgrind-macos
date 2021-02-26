@@ -118,6 +118,7 @@ where XXXXXX is the bug number as listed below.
 428648  s390_emit_load_mem panics due to 20-bit offset for vector load
 428716  cppcheck detects potential leak in VEX/useful/smchash.c
 428909  helgrind: need to intercept duplicate libc definitions for Fedora 33
+429352  PPC ISA 3.1 support is missing, part 7
 429692  unhandled ppc64le-linux syscall: 147 (getsid)
 429864  s390x: C++ atomic test_and_set yields false-positive memcheck
         diagnostics
@@ -132,8 +133,8 @@ where XXXXXX is the bug number as listed below.
 432809  VEX should support REX.W + POPF
 432861  PPC modsw and modsd give incorrect results for 1 mod 12
 432215  Add debuginfod functionality
+433500  DRD regtest faulures when libstdc++ and libgcc debuginfo are installed
 n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.
-429352  PPC ISA 3.1 support is missing, part 7
 
 
 Release 3.16.1 (22 June 2020)

@@ -3416,6 +3416,9 @@ static void typestack_push ( const CUConst* cc,
 static Bool subrange_type_denotes_array_bounds ( const D3TypeParser* parser,
                                                  DW_TAG dtag ) {
    vg_assert(dtag == DW_TAG_subrange_type);
+   /* If we don't know the language, assume false.  */
+   if (parser->language == '?')
+      return False;
    /* For most languages, a subrange_type dtag always gives the 
       bounds of an array.
       For Ada, there are additional conditions as a subrange_type
@@ -3916,6 +3919,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          members must have a DW_AT_data_member_location expression
          whereas union members must not. */
       Bool parent_is_struct;
+      Bool is_artificial = False;
       VG_(memset)( &fieldE, 0, sizeof(fieldE) );
       fieldE.cuOff = posn;
       fieldE.tag   = Te_Field;
@@ -3952,7 +3956,12 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
                                        (SizeT)fieldE.Te.Field.nLoc,
                                        "di.readdwarf3.ptD.member.2" );
          }
+	 if (attr == DW_AT_artificial && cts.u.val == 1)
+            is_artificial = True;
       }
+      /* Skip artificial members, they might not behave as expected.  */
+      if (is_artificial)
+         goto no_location;
       /* Do we have a plausible parent? */
       if (typestack_is_empty(parser)) goto_bad_DIE;
       vg_assert(ML_(TyEnt__is_type)(&parser->qparentE[parser->sp]));
@@ -3995,6 +4004,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
             const members in C++ code which are compile time constants
             that do no exist in the class. They're not of any interest
             to us so we ignore them. */
+        no_location:
          ML_(TyEnt__make_EMPTY)(&fieldE);
       }
    }
@@ -4132,7 +4142,8 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
        || (dtag == DW_TAG_subrange_type 
            && !subrange_type_denotes_array_bounds(parser, dtag))) {
       /* subrange_type other than array bound is only for Ada. */
-      vg_assert (dtag == DW_TAG_typedef || parser->language == 'A');
+      vg_assert (dtag == DW_TAG_typedef || (parser->language == 'A'
+                                            || parser->language == '?'));
       /* We can pick up a new typedef/subrange_type any time. */
       VG_(memset)(&typeE, 0, sizeof(typeE));
       typeE.cuOff = D3_INVALID_CUOFF;
@@ -4300,7 +4311,8 @@ static UWord chase_cuOff ( Bool* changed,
    ent = ML_(TyEnts__index_by_cuOff)( ents, ents_cache, cuOff );
 
    if (!ent) {
-      VG_(printf)("chase_cuOff: no entry for 0x%05lx\n", cuOff);
+      if (VG_(clo_verbosity) > 1)
+         VG_(printf)("chase_cuOff: no entry for 0x%05lx\n", cuOff);
       *changed = False;
       return cuOff;
    }

@@ -1299,7 +1299,7 @@ void ML_(addVar)( struct _DebugInfo* di,
       ML_(read_elf_debug_info). */
    vg_assert(di->fsm.have_rx_map && di->fsm.have_rw_map);
    if (level > 0 && ML_(find_rx_mapping)(di, aMin, aMax) == NULL) {
-      if (VG_(clo_verbosity) >= 0) {
+      if (VG_(clo_verbosity) > 1) {
          VG_(message)(Vg_DebugMsg, 
             "warning: addVar: in range %#lx .. %#lx outside "
             "all rx mapped areas (%s)\n",

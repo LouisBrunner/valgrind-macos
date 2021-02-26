@@ -150,6 +150,8 @@ extern ULong convert_to_zoned_helper( ULong src_hi, ULong src_low,
                                       ULong return_upper );
 extern ULong convert_to_national_helper( ULong src, ULong return_upper );
 extern ULong convert_from_zoned_helper( ULong src_hi, ULong src_low );
+extern ULong convert_from_floattobf16_helper( ULong src );
+extern ULong convert_from_bf16tofloat_helper( ULong src );
 extern ULong convert_from_national_helper( ULong src_hi, ULong src_low );
 extern ULong generate_C_FPCC_helper( ULong size, ULong src_hi, ULong src );
 extern ULong extract_bits_under_mask_helper( ULong src, ULong mask,
@@ -201,6 +203,11 @@ extern void vector_gen_pvc_dword_mask_dirty_helper( VexGuestPPC64State* gst,
 #define XVF16GER2PN    0b10010010
 #define XVF16GER2NP    0b01010010
 #define XVF16GER2NN    0b11010010
+#define XVBF16GER2     0b00110011
+#define XVBF16GER2PP   0b00110010
+#define XVBF16GER2PN   0b10110010
+#define XVBF16GER2NP   0b01110010
+#define XVBF16GER2NN   0b11110010
 #define XVF32GER       0b00011011
 #define XVF32GERPP     0b00011010
 #define XVF32GERPN     0b10011010

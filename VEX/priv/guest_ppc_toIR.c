@@ -5688,6 +5688,57 @@ static IRExpr * convert_from_national ( const VexAbiInfo* vbi, IRExpr *src ) {
    return mkexpr( result );
 }
 
+static IRExpr * vector_convert_floattobf16 ( const VexAbiInfo* vbi,
+                                             IRExpr *src ) {
+   /* The function takes 128-bit value containing four 32-bit floats and
+      returns a 128-bit value containint four 16-bit bfloats in the lower
+      halfwords. */
+
+   IRTemp resultHi = newTemp( Ity_I64);
+   IRTemp resultLo = newTemp( Ity_I64);
+
+   assign( resultHi,
+           mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                          "vector_convert_floattobf16_helper",
+                          fnptr_to_fnentry( vbi,
+                                            &convert_from_floattobf16_helper ),
+                          mkIRExprVec_1( unop( Iop_V128HIto64, src ) ) ) );
+
+   assign( resultLo,
+           mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                          "vector_convert_floattobf16_helper",
+                          fnptr_to_fnentry( vbi,
+                                            &convert_from_floattobf16_helper ),
+                          mkIRExprVec_1( unop( Iop_V128to64, src ) ) ) );
+
+   return binop( Iop_64HLtoV128, mkexpr( resultHi ), mkexpr( resultLo ) );
+}
+
+static IRExpr * vector_convert_bf16tofloat ( const VexAbiInfo* vbi,
+                                             IRExpr *src ) {
+   /* The function takes 128-bit value containing four 16-bit bfloats in
+      the lower halfwords and returns a 128-bit value containint four
+      32-bit floats. */
+   IRTemp resultHi = newTemp( Ity_I64);
+   IRTemp resultLo = newTemp( Ity_I64);
+
+   assign( resultHi,
+           mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                          "vector_convert_bf16tofloat_helper",
+                          fnptr_to_fnentry( vbi,
+                                            &convert_from_bf16tofloat_helper ),
+                          mkIRExprVec_1( unop( Iop_V128HIto64, src ) ) ) );
+
+   assign( resultLo,
+           mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                          "vector_convert_bf16tofloat_helper",
+                          fnptr_to_fnentry( vbi,
+                                            &convert_from_bf16tofloat_helper ),
+                          mkIRExprVec_1( unop( Iop_V128to64, src ) ) ) );
+
+   return binop( Iop_64HLtoV128, mkexpr( resultHi ), mkexpr( resultLo ) );
+}
+
 static IRExpr * popcnt64 ( const VexAbiInfo* vbi,
                            IRExpr *src ){
    /* The function takes a 64-bit source and counts the number of bits in the
@@ -5936,6 +5987,7 @@ static void vsx_matrix_ger ( const VexAbiInfo* vbi,
    case XVI16GER2:
    case XVI16GER2S:
    case XVF16GER2:
+   case XVBF16GER2:
    case XVF32GER:
          AT_fx = Ifx_Write;
          break;
@@ -5943,6 +5995,10 @@ static void vsx_matrix_ger ( const VexAbiInfo* vbi,
    case XVI8GER4PP:
    case XVI16GER2PP:
    case XVI16GER2SPP:
+   case XVBF16GER2PP:
+   case XVBF16GER2PN:
+   case XVBF16GER2NP:
+   case XVBF16GER2NN:
    case XVF16GER2PP:
    case XVF16GER2PN:
    case XVF16GER2NP:
@@ -23899,6 +23955,24 @@ dis_vxs_misc( UInt prefix, UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
                                     mkexpr( sub_element1 ),
                                     mkexpr( sub_element0 ) ) ) );
 
+         } else if ((inst_select == 16) && !prefix) {
+            IRTemp result = newTemp(Ity_V128);
+            UChar xT_addr = ifieldRegXT ( theInstr );
+            UChar xB_addr = ifieldRegXB ( theInstr );
+            /* Convert 16-bit bfloat to 32-bit float, not a prefix inst */
+            DIP("xvcvbf16sp v%u,v%u\n", xT_addr, xB_addr);
+            assign( result, vector_convert_bf16tofloat( vbi, mkexpr( vB ) ) );
+            putVSReg( XT, mkexpr( result) );
+
+         } else if ((inst_select == 17) && !prefix) {
+            IRTemp result = newTemp(Ity_V128);
+            UChar xT_addr = ifieldRegXT ( theInstr );
+            UChar xB_addr = ifieldRegXB ( theInstr );
+            /* Convert 32-bit float to 16-bit bfloat, not a prefix inst */
+            DIP("xvcvspbf16 v%u,v%u\n", xT_addr, xB_addr);
+            assign( result, vector_convert_floattobf16( vbi, mkexpr( vB ) ) );
+            putVSReg( XT, mkexpr( result) );
+
          } else if (inst_select == 23) {
             DIP("xxbrd v%u, v%u\n", (UInt)XT, (UInt)XB);
 
@@ -34956,6 +35030,41 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
                          getVSReg( rB_addr ), AT,
                          ( ( inst_prefix << 8 ) | XO ) );
          break;
+      case XVBF16GER2:
+         DIP("xvbf16ger2 %u,r%u, r%u\n", AT, rA_addr, rB_addr);
+         vsx_matrix_ger( vbi, MATRIX_16BIT_FLOAT_GER,
+                         getVSReg( rA_addr ),
+                         getVSReg( rB_addr ), AT,
+                         ( ( inst_prefix << 8 ) | XO ) );
+         break;
+      case XVBF16GER2PP:
+         DIP("xvbf16ger2pp %u,r%u, r%u\n", AT, rA_addr, rB_addr);
+         vsx_matrix_ger( vbi, MATRIX_16BIT_FLOAT_GER,
+                         getVSReg( rA_addr ),
+                         getVSReg( rB_addr ), AT,
+                         ( ( inst_prefix << 8 ) | XO ) );
+         break;
+      case XVBF16GER2PN:
+         DIP("xvbf16ger2pn %u,r%u, r%u\n", AT, rA_addr, rB_addr);
+         vsx_matrix_ger( vbi, MATRIX_16BIT_FLOAT_GER,
+                         getVSReg( rA_addr ),
+                         getVSReg( rB_addr ), AT,
+                         ( ( inst_prefix << 8 ) | XO ) );
+         break;
+      case XVBF16GER2NP:
+         DIP("xvbf16ger2np %u,r%u, r%u\n", AT, rA_addr, rB_addr);
+         vsx_matrix_ger( vbi, MATRIX_16BIT_FLOAT_GER,
+                         getVSReg( rA_addr ),
+                         getVSReg( rB_addr ), AT,
+                         ( ( inst_prefix << 8 ) | XO ) );
+         break;
+      case XVBF16GER2NN:
+         DIP("xvbf16ger2nn %u,r%u, r%u\n", AT, rA_addr, rB_addr);
+         vsx_matrix_ger( vbi, MATRIX_16BIT_FLOAT_GER,
+                         getVSReg( rA_addr ),
+                         getVSReg( rB_addr ), AT,
+                         ( ( inst_prefix << 8 ) | XO ) );
+         break;
       case XVF32GER:
          DIP("xvf32ger %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_32BIT_FLOAT_GER,
@@ -35105,6 +35214,61 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
                          getVSReg( rA_addr ), getVSReg( rB_addr ),
                          AT,
                          ( (MASKS << 9 ) | ( inst_prefix << 8 ) | XO ) );
+         break;
+      case XVBF16GER2:
+         PMSK = IFIELD( prefix, 14, 2);
+         XMSK = IFIELD( prefix, 4, 4);
+         YMSK = IFIELD( prefix, 0, 4);
+         DIP("pmxvbf16ger2 %u,r%u, r%u\n", AT, rA_addr, rB_addr);
+         vsx_matrix_ger( vbi, MATRIX_16BIT_FLOAT_GER,
+                         getVSReg( rA_addr ),
+                         getVSReg( rB_addr ),
+                         AT, ( (MASKS << 9 )
+                               | ( inst_prefix << 8 ) | XO ) );
+         break;
+      case XVBF16GER2PP:
+         PMSK = IFIELD( prefix, 14, 2);
+         XMSK = IFIELD( prefix, 4, 4);
+         YMSK = IFIELD( prefix, 0, 4);
+         DIP("pmxvbf16ger2pp %u,r%u, r%u\n", AT, rA_addr, rB_addr);
+         vsx_matrix_ger( vbi, MATRIX_16BIT_FLOAT_GER,
+                         getVSReg( rA_addr ),
+                         getVSReg( rB_addr ),
+                         AT, ( (MASKS << 9 )
+                               | ( inst_prefix << 8 ) | XO ) );
+         break;
+      case XVBF16GER2PN:
+         PMSK = IFIELD( prefix, 14, 2);
+         XMSK = IFIELD( prefix, 4, 4);
+         YMSK = IFIELD( prefix, 0, 4);
+         DIP("pmxvbf16ger2pn %u,r%u, r%u\n", AT, rA_addr, rB_addr);
+         vsx_matrix_ger( vbi, MATRIX_16BIT_FLOAT_GER,
+                         getVSReg( rA_addr ),
+                         getVSReg( rB_addr ),
+                         AT, ( (MASKS << 9 )
+                               | ( inst_prefix << 8 ) | XO ) );
+         break;
+      case XVBF16GER2NP:
+         PMSK = IFIELD( prefix, 14, 2);
+         XMSK = IFIELD( prefix, 4, 4);
+         YMSK = IFIELD( prefix, 0, 4);
+         DIP("pmxvbf16ger2np %u,r%u, r%u\n", AT, rA_addr, rB_addr);
+         vsx_matrix_ger( vbi, MATRIX_16BIT_FLOAT_GER,
+                         getVSReg( rA_addr ),
+                         getVSReg( rB_addr ),
+                         AT, ( (MASKS << 9 )
+                               | ( inst_prefix << 8 ) | XO ) );
+         break;
+      case XVBF16GER2NN:
+         PMSK = IFIELD( prefix, 14, 2);
+         XMSK = IFIELD( prefix, 4, 4);
+         YMSK = IFIELD( prefix, 0, 4);
+         DIP("pmxvbf16ger2nn %u,r%u, r%u\n", AT, rA_addr, rB_addr);
+         vsx_matrix_ger( vbi, MATRIX_16BIT_FLOAT_GER,
+                         getVSReg( rA_addr ),
+                         getVSReg( rB_addr ),
+                         AT, ( (MASKS << 9 )
+                               | ( inst_prefix << 8 ) | XO ) );
          break;
       case XVF16GER2:
          PMSK = IFIELD( prefix, 14, 2);
@@ -36181,6 +36345,11 @@ DisResult disInstr_PPC_WRK (
              (opc2 == XVI4GER8PP)     ||       // xvi4ger8pp
              (opc2 == XVI8GER4)       ||       // xvi8ger4
              (opc2 == XVI8GER4PP)     ||       // xvi8ger4pp
+             (opc2 == XVBF16GER2)     ||       // xvbf16ger2
+             (opc2 == XVBF16GER2PP)   ||       // xvbf16ger2pp
+             (opc2 == XVBF16GER2PN)   ||       // xvbf16ger2pn
+             (opc2 == XVBF16GER2NP)   ||       // xvbf16ger2np
+             (opc2 == XVBF16GER2NN)   ||       // xvbf16ger2nn
              (opc2 == XVF16GER2)      ||       // xvf16ger2
              (opc2 == XVF16GER2PP)    ||       // xvf16ger2pp
              (opc2 == XVF16GER2PN)    ||       // xvf16ger2pn

@@ -1905,6 +1905,125 @@ static Double conv_f16_to_double( ULong input )
 #  endif
 }
 
+#define BF16_SIGN_MASK   0x8000
+#define BF16_EXP_MASK    0x7F80
+#define BF16_FRAC_MASK   0x007F
+#define BF16_BIAS        127
+#define BF16_MAX_UNBIASED_EXP 127
+#define BF16_MIN_UNBIASED_EXP -126
+#define FLOAT_SIGN_MASK  0x80000000
+#define FLOAT_EXP_MASK   0x7F800000
+#define FLOAT_FRAC_MASK  0x007FFFFF
+#define FLOAT_FRAC_BIT8  0x00008000
+#define FLOAT_BIAS       127
+
+static Float conv_bf16_to_float( UInt input )
+{
+  /* input is 16-bit bfloat.
+     bias +127, exponent 8-bits, fraction 7-bits
+
+     output is 32-bit float.
+     bias +127, exponent 8-bits, fraction 22-bits
+  */
+
+  UInt input_exp, input_fraction, unbiased_exp;
+  UInt output_exp, output_fraction;
+  UInt sign;
+  union convert_t conv;
+
+  sign = (UInt)(input & BF16_SIGN_MASK);
+  input_exp = input & BF16_EXP_MASK;
+  unbiased_exp = (input_exp >> 7) - (UInt)BF16_BIAS;
+  input_fraction = input & BF16_FRAC_MASK;
+
+  if (((input_exp & BF16_EXP_MASK) == BF16_EXP_MASK) &&
+      (input_fraction != 0)) {
+     /* input is NaN or SNaN, exp all 1's, fraction != 0 */
+     output_exp = FLOAT_EXP_MASK;
+     output_fraction = input_fraction;
+
+  } else if(((input_exp & BF16_EXP_MASK) == BF16_EXP_MASK) &&
+      ( input_fraction == 0)) {
+     /* input is infinity,  exp all 1's, fraction = 0  */
+     output_exp = FLOAT_EXP_MASK;
+     output_fraction = 0;
+
+  } else if((input_exp == 0) && (input_fraction == 0)) {
+     /* input is zero */
+     output_exp = 0;
+     output_fraction = 0;
+
+  } else if((input_exp == 0) && (input_fraction != 0)) {
+     /* input is denormal */
+     output_fraction = input_fraction;
+     output_exp = (-(Int)BF16_BIAS + (Int)FLOAT_BIAS ) << 23;
+
+  } else {
+     /* result is normal */
+     output_exp = (unbiased_exp + FLOAT_BIAS) << 23;
+     output_fraction = input_fraction;
+  }
+
+  conv.u32 = sign << (31 - 15) | output_exp | (output_fraction << (23-7));
+  return conv.f;
+}
+
+static UInt conv_float_to_bf16( UInt input )
+{
+   /* input is 32-bit float stored as unsigned 32-bit.
+      bias +127, exponent 8-bits, fraction 23-bits
+
+      output is 16-bit bfloat.
+      bias +127, exponent 8-bits, fraction 7-bits
+
+      If the unbiased exponent of the input is greater than the max floating
+      point unbiased exponent value, the result of the floating point 16-bit
+      value is infinity.
+   */
+
+   UInt input_exp, input_fraction;
+   UInt output_exp, output_fraction;
+   UInt result, sign;
+
+   sign = input & FLOAT_SIGN_MASK;
+   input_exp = input & FLOAT_EXP_MASK;
+   input_fraction = input & FLOAT_FRAC_MASK;
+
+   if (((input_exp & FLOAT_EXP_MASK) == FLOAT_EXP_MASK) &&
+       (input_fraction != 0)) {
+      /* input is NaN or SNaN, exp all 1's, fraction != 0 */
+      output_exp = BF16_EXP_MASK;
+      output_fraction = (ULong)input_fraction >> (23 - 7);
+   } else if (((input_exp & FLOAT_EXP_MASK) == FLOAT_EXP_MASK) &&
+              ( input_fraction == 0)) {
+      /* input is infinity,  exp all 1's, fraction = 0  */
+      output_exp = BF16_EXP_MASK;
+      output_fraction = 0;
+   } else if ((input_exp == 0) && (input_fraction == 0)) {
+      /* input is zero */
+      output_exp = 0;
+      output_fraction = 0;
+   } else if ((input_exp == 0) && (input_fraction != 0)) {
+      /* input is denormal */
+      output_exp = 0;
+      output_fraction = (ULong)input_fraction >> (23 - 7);
+   } else {
+      /* result is normal */
+      output_exp = (input_exp - BF16_BIAS + FLOAT_BIAS) >> (23 - 7);
+      output_fraction = (ULong)input_fraction >> (23 - 7);
+
+      /* Round result. Look at the 8th bit position of the 32-bit floating
+         pointt fraction.  The F16 fraction is only 7 bits wide so if the 8th
+         bit of the F32 is a 1 we need to round up by adding 1 to the output
+         fraction.  */
+      if ((input_fraction & FLOAT_FRAC_BIT8) == FLOAT_FRAC_BIT8)
+         /* Round the F16 fraction up by 1 */
+         output_fraction = output_fraction + 1;
+   }
+
+   result = sign >> (31 - 15) | output_exp | output_fraction;
+   return result;
+}
 
 static Float conv_double_to_float( Double src )
 {
@@ -1941,6 +2060,36 @@ static Float negate_float( Float input )
   else
       return -input;
 }
+
+/* This C-helper takes a vector of two 32-bit floating point values
+ * and returns a vector containing two 16-bit bfloats.
+   input:    word0           word1
+   output  0x0   hword1   0x0    hword3
+   Called from generated code.
+ */
+ULong convert_from_floattobf16_helper( ULong src ) {
+   ULong resultHi, resultLo;
+
+   resultHi = (ULong)conv_float_to_bf16( (UInt)(src >> 32));
+   resultLo = (ULong)conv_float_to_bf16( (UInt)(src & 0xFFFFFFFF));
+   return (resultHi << 32) | resultLo;
+
+}
+
+/* This C-helper takes a vector of two 16-bit bfloating point values
+ * and returns a vector containing one 32-bit float.
+   input:   0x0   hword1   0x0    hword3
+   output:    word0           word1
+ */
+ULong convert_from_bf16tofloat_helper( ULong src ) {
+   ULong result;
+   union convert_t conv;
+   conv.f = conv_bf16_to_float( (UInt)(src >> 32) );
+   result = (ULong) conv.u32;
+   conv.f = conv_bf16_to_float( (UInt)(src & 0xFFFFFFFF));
+   result = (result << 32) | (ULong) conv.u32;
+   return result;
+ }
 
 void vsx_matrix_16bit_float_ger_dirty_helper( VexGuestPPC64State* gst,
                                               UInt offset_ACC,
@@ -2002,23 +2151,43 @@ void vsx_matrix_16bit_float_ger_dirty_helper( VexGuestPPC64State* gst,
          srcB_word[0][j] = (UInt)((srcB_lo >> (16-16*j)) & mask);
       }
 
+      /* Note the isa is not consistent in the src naming.  Will use the
+         naming src10, src11, src20, src21 used with xvf16ger2 instructions.
+      */
       for( j = 0; j < 4; j++) {
          if (((pmsk >> 1) & 0x1) == 0) {
             src10 = 0;
             src20 = 0;
          } else {
-            src10 = conv_f16_to_double((ULong)srcA_word[i][0]);
-            src20 = conv_f16_to_double((ULong)srcB_word[j][0]);
+            if (( inst  == XVF16GER2 ) || ( inst  == XVF16GER2PP )
+                || ( inst == XVF16GER2PN ) || ( inst  == XVF16GER2NP )
+                || ( inst == XVF16GER2NN )) {
+               src10 = conv_f16_to_double((ULong)srcA_word[i][0]);
+               src20 = conv_f16_to_double((ULong)srcB_word[j][0]);
+            } else {
+               /* Input is in bfloat format, result is stored in the
+                  "traditional" 64-bit float format. */
+               src10 = (double)conv_bf16_to_float((ULong)srcA_word[i][0]);
+               src20 = (double)conv_bf16_to_float((ULong)srcB_word[j][0]);
+            }
          }
 
          if ((pmsk & 0x1) == 0) {
             src11 = 0;
             src21 = 0;
          } else {
-            src11 = conv_f16_to_double((ULong)srcA_word[i][1]);
-            src21 = conv_f16_to_double((ULong)srcB_word[j][1]);
+            if (( inst  == XVF16GER2 ) || ( inst  == XVF16GER2PP )
+                || ( inst == XVF16GER2PN ) || ( inst  == XVF16GER2NP )
+                || ( inst == XVF16GER2NN )) {
+               src11 = conv_f16_to_double((ULong)srcA_word[i][1]);
+               src21 = conv_f16_to_double((ULong)srcB_word[j][1]);
+            } else {
+               /* Input is in bfloat format, result is stored in the
+                  "traditional" 64-bit float format. */
+               src11 = (double)conv_bf16_to_float((ULong)srcA_word[i][1]);
+               src21 = (double)conv_bf16_to_float((ULong)srcB_word[j][1]);
+            }
          }
-
 
          prod = src10 * src20;
          msum = prod + src11 * src21;
@@ -2027,26 +2196,26 @@ void vsx_matrix_16bit_float_ger_dirty_helper( VexGuestPPC64State* gst,
             /* Note, we do not track the exception handling bits
                ox, ux, xx, si, mz, vxsnan and vximz in the FPSCR.  */
 
-            if ( inst == XVF16GER2 )
+            if (( inst == XVF16GER2 ) || ( inst == XVBF16GER2 ) )
                result[j] = reinterpret_float_as_int(
                   conv_double_to_float(msum) );
 
-            else if ( inst == XVF16GER2PP )
+            else if (( inst == XVF16GER2PP ) ||  (inst == XVBF16GER2PP ))
                result[j] = reinterpret_float_as_int(
                   conv_double_to_float(msum)
                   + acc_word[j] );
 
-            else if ( inst == XVF16GER2PN )
+            else if (( inst == XVF16GER2PN ) || ( inst == XVBF16GER2PN ))
                result[j] = reinterpret_float_as_int(
                   conv_double_to_float(msum)
                   + negate_float( acc_word[j] ) );
 
-            else if ( inst == XVF16GER2NP )
+            else if (( inst == XVF16GER2NP ) || ( inst == XVBF16GER2NP ))
                result[j] = reinterpret_float_as_int(
                   conv_double_to_float( negate_double( msum ) )
                   + acc_word[j] );
 
-            else if ( inst == XVF16GER2NN )
+            else if (( inst == XVF16GER2NN ) || ( inst == XVBF16GER2NN ))
                result[j] = reinterpret_float_as_int(
                   conv_double_to_float( negate_double( msum ) )
                   + negate_float( acc_word[j] ) );

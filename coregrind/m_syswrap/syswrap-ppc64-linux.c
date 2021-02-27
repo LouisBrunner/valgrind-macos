@@ -470,7 +470,9 @@ PRE(sys_mmap)
 
 PRE(sys_fadvise64)
 {
-   PRINT("sys_fadvise64 ( %ld, %ld, %lu, %ld )",  SARG1, SARG2, SARG3, SARG4);
+   PRINT("sys_fadvise64 ( %" FMT_REGWORD "d, %" FMT_REGWORD "d, "
+                         "%" FMT_REGWORD "u, %" FMT_REGWORD "d )",
+         SARG1, SARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "fadvise64",
                  int, fd, vki_loff_t, offset, vki_size_t, len, int, advice);
 }
@@ -518,7 +520,9 @@ PRE(sys_rt_sigreturn)
 // GET/SETREGSET for now.
 PRE(sys_ptrace)
 {
-   PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", ARG1,ARG2,ARG3,ARG4);
+   PRINT("sys_ptrace ( %" FMT_REGWORD "d, %" FMT_REGWORD "d, "
+                      "%#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",
+         SARG1, SARG2, ARG3, ARG4);
    PRE_REG_READ4(int, "ptrace",
                  long, request, long, pid, long, addr, long, data);
    switch (ARG1) {

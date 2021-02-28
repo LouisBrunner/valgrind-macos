@@ -140,6 +140,7 @@ where XXXXXX is the bug number as listed below.
 432215  Add debuginfod functionality
 433323  Use pkglibexecdir as vglibdir
 433500  DRD regtest faulures when libstdc++ and libgcc debuginfo are installed
+433629  valgrind/README has type "abd" instead of "and"
 n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.
 
 

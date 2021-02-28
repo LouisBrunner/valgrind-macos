@@ -6,9 +6,9 @@ static void mytest(int d)
     printf("%d\n", d);
 }
 
-static void (*resolve_test(void))(void)
+static void (*resolve_test(void))(int)
 {
-    return (void (*)(void))&mytest;
+    return mytest;
 }
 
 void test(int d)

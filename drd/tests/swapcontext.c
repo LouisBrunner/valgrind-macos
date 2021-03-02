@@ -1,6 +1,7 @@
 /* See also https://bugs.kde.org/show_bug.cgi?id=432381. */
 
 #define _GNU_SOURCE
+#define _XOPEN_SOURCE
 
 #include <assert.h>
 #include <limits.h>

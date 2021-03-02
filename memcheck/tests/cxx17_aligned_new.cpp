@@ -39,7 +39,10 @@ int main() {
     // so new/aligned delete is not a mismatch
     operator delete(oClass, std::align_val_t(64U));
     oClass = new (std::nothrow) OrdinaryClass;
-    delete oClass;
+    //delete oClass;
+    // changed the above delete because GCC generates
+    // a sized delete (???) whilst clang generates an ordinary delete
+    operator delete(oClass);
     oClass = new OrdinaryClass[5];
     delete [] oClass;
     oClass = new (std::nothrow) OrdinaryClass[5];

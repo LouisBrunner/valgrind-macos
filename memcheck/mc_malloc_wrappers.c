@@ -417,12 +417,32 @@ void* MC_(__builtin_new) ( ThreadId tid, SizeT n )
    }
 }
 
+void* MC_(__builtin_new_aligned) ( ThreadId tid, SizeT n, SizeT alignB )
+{
+   if (MC_(record_fishy_value_error)(tid, "__builtin_new_aligned", "size", n)) {
+      return NULL;
+   } else {
+      return MC_(new_block) ( tid, 0, n, alignB,
+         /*is_zeroed*/False, MC_AllocNew, MC_(malloc_list));
+   }
+}
+
 void* MC_(__builtin_vec_new) ( ThreadId tid, SizeT n )
 {
    if (MC_(record_fishy_value_error)(tid, "__builtin_vec_new", "size", n)) {
       return NULL;
    } else {
       return MC_(new_block) ( tid, 0, n, VG_(clo_alignment), 
+         /*is_zeroed*/False, MC_AllocNewVec, MC_(malloc_list));
+   }
+}
+
+void* MC_(__builtin_vec_new_aligned) ( ThreadId tid, SizeT n, SizeT alignB )
+{
+   if (MC_(record_fishy_value_error)(tid, "__builtin_vec_new_aligned", "size", n)) {
+      return NULL;
+   } else {
+      return MC_(new_block) ( tid, 0, n, alignB, 
          /*is_zeroed*/False, MC_AllocNewVec, MC_(malloc_list));
    }
 }
@@ -523,11 +543,25 @@ void MC_(__builtin_delete) ( ThreadId tid, void* p )
       tid, (Addr)p, MC_(Malloc_Redzone_SzB), MC_AllocNew);
 }
 
+
+void MC_(__builtin_delete_aligned) ( ThreadId tid, void* p, SizeT alignB )
+{
+   MC_(handle_free)(
+      tid, (Addr)p, MC_(Malloc_Redzone_SzB), MC_AllocNew);
+}
+
 void MC_(__builtin_vec_delete) ( ThreadId tid, void* p )
 {
    MC_(handle_free)(
       tid, (Addr)p, MC_(Malloc_Redzone_SzB), MC_AllocNewVec);
 }
+
+void MC_(__builtin_vec_delete_aligned) ( ThreadId tid, void* p, SizeT alignB )
+{
+   MC_(handle_free)(
+      tid, (Addr)p, MC_(Malloc_Redzone_SzB), MC_AllocNewVec);
+}
+
 
 void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
 {

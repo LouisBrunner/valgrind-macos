@@ -92,6 +92,7 @@ where XXXXXX is the bug number as listed below.
 361770  Missing F_ADD_SEALS
 369029  handle linux syscalls sched_getattr and sched_setattr
 384729  __libc_freeres inhibits cross-platform valgrind
+388787  Support for C++17 new/delete
 391853  Makefile.all.am:L247 and @SOLARIS_UNDEF_LARGESOURCE@ being empty
 397605  ioctl FICLONE mishandled
 408663  Suppression file for musl libc

@@ -159,12 +159,16 @@ typedef struct {
    // VG_(needs).malloc_replacement
    void* (*tool_malloc)              (ThreadId, SizeT);
    void* (*tool___builtin_new)       (ThreadId, SizeT);
+   void* (*tool___builtin_new_aligned)       (ThreadId, SizeT, SizeT);
    void* (*tool___builtin_vec_new)   (ThreadId, SizeT);
+   void* (*tool___builtin_vec_new_aligned)   (ThreadId, SizeT, SizeT);
    void* (*tool_memalign)            (ThreadId, SizeT, SizeT);
    void* (*tool_calloc)              (ThreadId, SizeT, SizeT);
    void  (*tool_free)                (ThreadId, void*);
    void  (*tool___builtin_delete)    (ThreadId, void*);
+   void  (*tool___builtin_delete_aligned)    (ThreadId, void*, SizeT);
    void  (*tool___builtin_vec_delete)(ThreadId, void*);
+   void  (*tool___builtin_vec_delete_aligned)(ThreadId, void*, SizeT);
    void* (*tool_realloc)             (ThreadId, void*, SizeT);
    SizeT (*tool_malloc_usable_size)  (ThreadId, void*);
    SizeT tool_client_redzone_szB;

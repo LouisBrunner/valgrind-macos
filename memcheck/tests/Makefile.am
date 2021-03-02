@@ -70,7 +70,8 @@ dist_noinst_SCRIPTS = \
 	filter_varinfo3 \
 	filter_memcheck \
 	filter_overlaperror \
-	filter_sized_delete
+	filter_malloc_free \
+        filter_sized_delete
 
 noinst_HEADERS = leak.h
 
@@ -123,6 +124,9 @@ EXTRA_DIST = \
 	custom_alloc.stderr.exp custom_alloc.vgtest \
 		custom_alloc.stderr.exp-s390x-mvc \
 	custom-overlap.stderr.exp custom-overlap.vgtest \
+	cxx17_aligned_new.stderr.exp cxx17_aligned_new.vgtest \
+		cxx17_aligned_new.stderr.exp_32 \
+		cxx17_aligned_new.stdout.exp \
 	deep-backtrace.vgtest deep-backtrace.stderr.exp \
 	demangle.stderr.exp demangle.vgtest \
 	big_debuginfo_symbol.stderr.exp big_debuginfo_symbol.vgtest \
@@ -654,3 +658,9 @@ else
 endif
 
 xml1_CFLAGS             = $(AM_CFLAGS) -D_GNU_SOURCE
+
+if HAVE_ALIGNED_CXX_ALLOC
+check_PROGRAMS += cxx17_aligned_new
+cxx17_aligned_new_SOURCES  = cxx17_aligned_new.cpp
+cxx17_aligned_new_CXXFLAGS = -std=c++17
+endif

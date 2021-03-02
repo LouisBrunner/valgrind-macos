@@ -1393,9 +1393,19 @@ static void* ms___builtin_new ( ThreadId tid, SizeT szB )
    return alloc_and_record_block( tid, szB, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
+static void* ms___builtin_new_aligned ( ThreadId tid, SizeT szB, SizeT alignB )
+{
+   return alloc_and_record_block( tid, szB, alignB, /*is_zeroed*/False );
+}
+
 static void* ms___builtin_vec_new ( ThreadId tid, SizeT szB )
 {
    return alloc_and_record_block( tid, szB, VG_(clo_alignment), /*is_zeroed*/False );
+}
+
+static void* ms___builtin_vec_new_aligned ( ThreadId tid, SizeT szB, SizeT alignB )
+{
+   return alloc_and_record_block( tid, szB, alignB, /*is_zeroed*/False );
 }
 
 static void* ms_calloc ( ThreadId tid, SizeT m, SizeT szB )
@@ -1420,7 +1430,19 @@ static void ms___builtin_delete ( ThreadId tid, void* p )
    VG_(cli_free)(p);
 }
 
+static void ms___builtin_delete_aligned ( ThreadId tid, void* p, SizeT align )
+{
+   unrecord_block(p, /*maybe_snapshot*/True, /*exclude_first_entry*/True);
+   VG_(cli_free)(p);
+}
+
 static void ms___builtin_vec_delete ( ThreadId tid, void* p )
+{
+   unrecord_block(p, /*maybe_snapshot*/True, /*exclude_first_entry*/True);
+   VG_(cli_free)(p);
+}
+
+static void ms___builtin_vec_delete_aligned ( ThreadId tid, void* p, SizeT align )
 {
    unrecord_block(p, /*maybe_snapshot*/True, /*exclude_first_entry*/True);
    VG_(cli_free)(p);
@@ -2110,12 +2132,16 @@ static void ms_pre_clo_init(void)
    VG_(needs_print_stats)         (ms_print_stats);
    VG_(needs_malloc_replacement)  (ms_malloc,
                                    ms___builtin_new,
+                                   ms___builtin_new_aligned,
                                    ms___builtin_vec_new,
+                                   ms___builtin_vec_new_aligned,
                                    ms_memalign,
                                    ms_calloc,
                                    ms_free,
                                    ms___builtin_delete,
+                                   ms___builtin_delete_aligned,
                                    ms___builtin_vec_delete,
+                                   ms___builtin_vec_delete_aligned,
                                    ms_realloc,
                                    ms_malloc_usable_size,
                                    0 );

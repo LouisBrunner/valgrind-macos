@@ -8127,12 +8127,16 @@ static void mc_pre_clo_init(void)
    VG_(needs_info_location)       (MC_(pp_describe_addr));
    VG_(needs_malloc_replacement)  (MC_(malloc),
                                    MC_(__builtin_new),
+                                   MC_(__builtin_new_aligned),
                                    MC_(__builtin_vec_new),
+                                   MC_(__builtin_vec_new_aligned),
                                    MC_(memalign),
                                    MC_(calloc),
                                    MC_(free),
                                    MC_(__builtin_delete),
+                                   MC_(__builtin_delete_aligned),
                                    MC_(__builtin_vec_delete),
+                                   MC_(__builtin_vec_delete_aligned),
                                    MC_(realloc),
                                    MC_(malloc_usable_size), 
                                    MC_MALLOC_DEFAULT_REDZONE_SZB );

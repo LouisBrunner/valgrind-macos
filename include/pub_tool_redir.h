@@ -274,6 +274,11 @@
 // Valid on all platforms(?)
 #define  VG_Z_LIBSTDCXX_SONAME  libstdcZpZpZa           // libstdc++*
 
+/* --- Soname of the clang C++ library. --- */
+
+#define  VG_Z_LIBCXX_SONAME     libcZpZpZa              // libc++*
+
+
 /* --- Soname of the pthreads library. --- */
 
 #if defined(VGO_linux)

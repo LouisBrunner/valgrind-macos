@@ -747,9 +747,19 @@ static void* dh___builtin_new ( ThreadId tid, SizeT szB )
    return new_block( tid, NULL, szB, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
+static void* dh___builtin_new_aligned ( ThreadId tid, SizeT szB, SizeT alignB )
+{
+   return new_block( tid, NULL, szB, alignB, /*is_zeroed*/False );
+}
+
 static void* dh___builtin_vec_new ( ThreadId tid, SizeT szB )
 {
    return new_block( tid, NULL, szB, VG_(clo_alignment), /*is_zeroed*/False );
+}
+
+static void* dh___builtin_vec_new_aligned ( ThreadId tid, SizeT szB, SizeT alignB )
+{
+   return new_block( tid, NULL, szB, alignB, /*is_zeroed*/False );
 }
 
 static void* dh_calloc ( ThreadId tid, SizeT m, SizeT szB )
@@ -772,7 +782,17 @@ static void dh___builtin_delete ( ThreadId tid, void* p )
    die_block(p);
 }
 
+static void dh___builtin_delete_aligned ( ThreadId tid, void* p, SizeT align )
+{
+   die_block(p);
+}
+
 static void dh___builtin_vec_delete ( ThreadId tid, void* p )
+{
+   die_block(p);
+}
+
+static void dh___builtin_vec_delete_aligned ( ThreadId tid, void* p, SizeT align )
 {
    die_block(p);
 }
@@ -1774,12 +1794,16 @@ static void dh_pre_clo_init(void)
 //                                 dh_expensive_sanity_check);
    VG_(needs_malloc_replacement)(dh_malloc,
                                  dh___builtin_new,
+                                 dh___builtin_new_aligned,
                                  dh___builtin_vec_new,
+                                 dh___builtin_vec_new_aligned,
                                  dh_memalign,
                                  dh_calloc,
                                  dh_free,
                                  dh___builtin_delete,
+                                 dh___builtin_delete_aligned,
                                  dh___builtin_vec_delete,
+                                 dh___builtin_vec_delete_aligned,
                                  dh_realloc,
                                  dh_malloc_usable_size,
                                  0 );

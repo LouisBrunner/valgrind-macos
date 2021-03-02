@@ -794,6 +794,7 @@
 /memcheck/tests/cond_ld_st
 /memcheck/tests/custom-overlap
 /memcheck/tests/custom_alloc
+/memcheck/tests/cxx17_aligned_new
 /memcheck/tests/deep-backtrace
 /memcheck/tests/deep_templates
 /memcheck/tests/demangle

@@ -224,6 +224,7 @@ EXTRA_DIST = \
 	inltemplate.stderr.exp inltemplate.stdout.exp inltemplate.vgtest \
 		inltemplate.stderr.exp-old-gcc \
 	leak-0.vgtest leak-0.stderr.exp \
+	leak-cases-exit-on-definite.vgtest leak-cases-exit-on-definite.stderr.exp \
 	leak-cases-full.vgtest leak-cases-full.stderr.exp \
 	leak-cases-possible.vgtest leak-cases-possible.stderr.exp \
 	leak-cases-summary.vgtest leak-cases-summary.stderr.exp \

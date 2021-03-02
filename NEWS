@@ -41,6 +41,8 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 466884  Missing writev uninit padding suppression for _XSend
 471036  disInstr_AMD64: disInstr miscalculated next %rip on RORX imm8, m32/64, r32/6
 471222  support tracking of file descriptors being double closed
+474160  If errors-for-leak-kinds is specified, exit-on-first-error should only exit
+        on one of the listed errors.
 475498  Add reallocarray wrapper
 476320  Build failure with GCC
 476331  clean up generated/distributed filter scripts

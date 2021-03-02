@@ -518,7 +518,7 @@ Bool VG_(is_action_requested) ( const HChar* action, Bool* clo )
    * possibly, generate a suppression.
 */
 static 
-void do_actions_on_error(const Error* err, Bool allow_db_attach)
+void do_actions_on_error(const Error* err, Bool allow_db_attach, Bool count_error)
 {
    Bool still_noisy = True;
 
@@ -543,7 +543,7 @@ void do_actions_on_error(const Error* err, Bool allow_db_attach)
    if (VG_(clo_gen_suppressions) == 1 && !still_noisy)
       VG_(clo_gen_suppressions) = 0;
 
-   if (VG_(clo_exit_on_first_error)) {
+   if (count_error && VG_(clo_exit_on_first_error)) {
       if (VG_(clo_xml))
          VG_(printf_xml)("</valgrindoutput>\n");
       VG_(umsg)("\n");
@@ -581,7 +581,7 @@ void do_actions_on_error(const Error* err, Bool allow_db_attach)
    * calls do_actions_on_error.  This optionally does a gdbserver call
      and optionally prints a suppression; both of these may require user input.
 */
-static void pp_Error ( const Error* err, Bool allow_db_attach, Bool xml )
+static void pp_Error ( const Error* err, Bool allow_db_attach, Bool xml, Bool count_error )
 {
    /* If this fails, you probably specified your tool's method
       dictionary incorrectly. */
@@ -642,7 +642,7 @@ static void pp_Error ( const Error* err, Bool allow_db_attach, Bool xml )
 
    }
 
-   do_actions_on_error(err, allow_db_attach);
+   do_actions_on_error(err, allow_db_attach, count_error);
 }
 
 
@@ -849,7 +849,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
       n_errs_found++;
       n_errs_shown++;
       /* Actually show the error; more complex than you might think. */
-      pp_Error( p, /*allow_db_attach*/True, VG_(clo_xml) );
+      pp_Error( p, /*allow_db_attach*/True, VG_(clo_xml), /* count_error */ True );
    } else {
       n_supp_contexts++;
       n_errs_suppressed++;
@@ -899,7 +899,7 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, const HChar* s,
          /* update stats */
          n_errs_shown++;
          /* Actually show the error; more complex than you might think. */
-         pp_Error(&err, allow_db_attach, VG_(clo_xml));
+         pp_Error(&err, allow_db_attach, VG_(clo_xml), count_error);
       }
       return False;
 
@@ -1025,7 +1025,7 @@ void VG_(show_all_errors) (  Int verbosity, Bool xml )
       VG_(umsg)("\n");
       VG_(umsg)("%d errors in context %d of %u:\n",
                 p_min->count, i+1, n_err_contexts);
-      pp_Error( p_min, False/*allow_db_attach*/, False /* xml */ );
+      pp_Error( p_min, False/*allow_db_attach*/, False /* xml */, True /* count_error */ );
 
       // We're not printing XML -- we'd have exited above if so.
       vg_assert(! xml);
@@ -1068,7 +1068,7 @@ void VG_(show_last_error) ( void )
       return;
    }
 
-   pp_Error( errors, False/*allow_db_attach*/, False/*xml*/ );
+   pp_Error( errors, False/*allow_db_attach*/, False/*xml*/, True/*count_error*/ );
 }
 
 

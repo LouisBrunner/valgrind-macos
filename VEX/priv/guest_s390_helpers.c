@@ -2538,7 +2538,6 @@ s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
       {0x00, 0x00}, /* invalid */
       [S390_VEC_OP_VPKS]  = {0xe7, 0x97},
       [S390_VEC_OP_VPKLS] = {0xe7, 0x95},
-      [S390_VEC_OP_VFENE] = {0xe7, 0x81},
       [S390_VEC_OP_VISTR] = {0xe7, 0x5c},
       [S390_VEC_OP_VCEQ]  = {0xe7, 0xf8},
       [S390_VEC_OP_VTM]   = {0xe7, 0xd8},
@@ -2627,7 +2626,6 @@ s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
 
    case S390_VEC_OP_VPKS:
    case S390_VEC_OP_VPKLS:
-   case S390_VEC_OP_VFENE:
    case S390_VEC_OP_VCEQ:
    case S390_VEC_OP_VGFM:
    case S390_VEC_OP_VCH:

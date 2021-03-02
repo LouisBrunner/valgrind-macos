@@ -17361,120 +17361,86 @@ s390_irgen_VFEE(UChar v1, UChar v2, UChar v3, UChar m4, UChar m5)
 static const HChar *
 s390_irgen_VFENE(UChar v1, UChar v2, UChar v3, UChar m4, UChar m5)
 {
-   const Bool negateComparison = True;
-   const IRType type = s390_vr_get_type(m4);
+   s390_insn_assert("vfene", m4 < 3 && m5 == (m5 & 3));
 
-   /* Check for specification exception */
-   vassert(m4 < 3);
-   vassert((m5 & 0b1100) == 0);
-
-   static const IROp elementGetters[] = {
-      Iop_GetElem8x16, Iop_GetElem16x8, Iop_GetElem32x4
+   static const IROp compare_op[3] = {
+      Iop_CmpEQ8x16, Iop_CmpEQ16x8, Iop_CmpEQ32x4
    };
-   IROp getter = elementGetters[m4];
-
-   static const IROp elementComparators[] = {
-      Iop_CmpEQ8, Iop_CmpEQ16, Iop_CmpEQ32
+   static const IROp abs_op[3] = {
+      Iop_Abs8x16, Iop_Abs16x8, Iop_Abs32x4
    };
-   IROp comparator = elementComparators[m4];
+   IRTemp op2 = newTemp(Ity_V128);
+   IRTemp op3 = newTemp(Ity_V128);
+   IRTemp op2zero = newTemp(Ity_V128);
+   IRTemp diff = newTemp(Ity_V128);
+   IRTemp diff0 = newTemp(Ity_I64);
+   IRTemp neq0 = newTemp(Ity_I1);
+   IRTemp samebits = newTemp(Ity_I64);
+   IRExpr* tmp;
 
-   static const IROp resultConverter[] = {Iop_64to8, Iop_64to16, Iop_64to32};
-   IROp converter = resultConverter[m4];
+   assign(op2, get_vr_qw(v2));
+   assign(op3, get_vr_qw(v3));
 
-   IRTemp isZeroElem;
-
-   IRTemp counter = newTemp(Ity_I64);
-   assign(counter, get_counter_dw0());
-
-   IRTemp arg1 = newTemp(type);
-   assign(arg1, binop(getter, get_vr_qw(v2), unop(Iop_64to8, mkexpr(counter))));
-   IRTemp arg2 = newTemp(type);
-   assign(arg2, binop(getter, get_vr_qw(v3), unop(Iop_64to8, mkexpr(counter))));
-
-   IRTemp isGoodPair = newTemp(Ity_I1);
-   if(negateComparison) {
-      assign(isGoodPair, unop(Iop_Not1, binop(comparator, mkexpr(arg1),
-                                              mkexpr(arg2))));
-   } else {
-      assign(isGoodPair, binop(comparator, mkexpr(arg1), mkexpr(arg2)));
+   tmp = mkV128(0);
+   if (s390_vr_is_zs_set(m5)) {
+      tmp = binop(compare_op[m4], mkexpr(op2), tmp);
+      if (s390_vr_is_cs_set(m5) && v3 != v2) {
+         /* Count leading equal bits in the terminating element too */
+         tmp = unop(abs_op[m4], tmp);
+      }
+      assign(op2zero, tmp);
+      tmp = mkexpr(op2zero);
+   }
+   if (v3 != v2) {
+      tmp = binop(Iop_XorV128, mkexpr(op2), mkexpr(op3));
+      if (s390_vr_is_zs_set(m5))
+         tmp = binop(Iop_OrV128, tmp, mkexpr(op2zero));
    }
 
-   if(s390_vr_is_zs_set(m5)) {
-      isZeroElem = newTemp(Ity_I1);
-      assign(isZeroElem, binop(comparator, mkexpr(arg1),
-                               unop(converter, mkU64(0))));
-   }
+   assign(diff, tmp);
+   assign(diff0, unop(Iop_V128HIto64, mkexpr(diff)));
+   assign(neq0, binop(Iop_ExpCmpNE64, mkexpr(diff0), mkU64(0)));
+   assign(samebits, unop(Iop_ClzNat64,
+                         mkite(mkexpr(neq0), mkexpr(diff0),
+                               unop(Iop_V128to64, mkexpr(diff)))));
 
-   static const UChar invalidIndices[] = {16, 8, 4};
-   const UChar invalidIndex = invalidIndices[m4];
-   IRTemp endOfVectorIsReached = newTemp(Ity_I1);
-   assign(endOfVectorIsReached, binop(Iop_CmpEQ64, mkexpr(counter),
-                                      mkU64(invalidIndex)));
-
-   put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(1)));
-   IRExpr* shouldBreak = binop(Iop_Or32,
-                               unop(Iop_1Uto32, mkexpr(isGoodPair)),
-                               unop(Iop_1Uto32, mkexpr(endOfVectorIsReached))
-                              );
-   if(s390_vr_is_zs_set(m5)) {
-      shouldBreak = binop(Iop_Or32,
-                          shouldBreak,
-                          unop(Iop_1Uto32, mkexpr(isZeroElem)));
-   }
-   iterate_if(binop(Iop_CmpEQ32, shouldBreak, mkU32(0)));
-
-   IRExpr* foundIndex = binop(Iop_Sub64, get_counter_dw0(), mkU64(1));
-   if(m4 > 0) {
-      /* We should return index of byte but we found index of element in
-         general case.
-            if byte elem (m4 == 0) then indexOfByte = indexOfElement
-            if halfword elem (m4 == 1) then indexOfByte = 2 * indexOfElement
-                                                        = indexOfElement << 1
-            if word elem (m4 == 2) then indexOfByte = 4 * indexOfElement
-                                                    = indexOfElement << 2
-      */
-      foundIndex = binop(Iop_Shl64, foundIndex, mkU8(m4));
-   }
-
-   IRTemp result = newTemp(Ity_I64);
-   assign(result, mkite(mkexpr(endOfVectorIsReached),
-                        mkU64(16),
-                        foundIndex));
-   put_vr_qw(v1, binop(Iop_64HLtoV128, mkexpr(result), mkU64(0)));
-
+   /* Determine the byte size of the initial equal-elements sequence */
+   tmp = binop(Iop_Shr64, mkexpr(samebits), mkU8(m4 + 3));
+   if (m4 != 0)
+      tmp = binop(Iop_Shl64, tmp, mkU8(m4));
+   tmp = binop(Iop_Add64, tmp, mkite(mkexpr(neq0), mkU64(0), mkU64(8)));
+   put_vr_qw(v1, binop(Iop_64HLtoV128, tmp, mkU64(0)));
 
    if (s390_vr_is_cs_set(m5)) {
-      static const IROp to64Converters[] = {Iop_8Uto64, Iop_16Uto64, Iop_32Uto64};
-      IROp to64Converter = to64Converters[m4];
-
-      IRExpr* arg1IsLessThanArg2 = binop(Iop_CmpLT64U,
-                                         unop(to64Converter, mkexpr(arg1)),
-                                         unop(to64Converter, mkexpr(arg2)));
-
-      IRExpr* ccexp = mkite(binop(Iop_CmpEQ32,
-                                  unop(Iop_1Uto32, mkexpr(isGoodPair)),
-                                  mkU32(1)),
-                            mkite(arg1IsLessThanArg2, mkU64(1), mkU64(2)),
-                            mkU64(3));
-
-      if(s390_vr_is_zs_set(m5)) {
-         IRExpr* arg2IsZero = binop(comparator, mkexpr(arg2),
-                                    unop(converter, mkU64(0)));
-         IRExpr* bothArgsAreZero = binop(Iop_And32,
-                                         unop(Iop_1Uto32, mkexpr(isZeroElem)),
-                                         unop(Iop_1Uto32, arg2IsZero));
-         ccexp = mkite(binop(Iop_CmpEQ32, bothArgsAreZero, mkU32(1)),
-                       mkU64(0),
-                       ccexp);
-      }
+      /* Set condition code like follows --
+         0: operands equal up to and including zero element
+         1: op2 < op3    2: op2 > op3    3: op2 = op3 */
       IRTemp cc = newTemp(Ity_I64);
-      assign(cc, ccexp);
-
+      if (v3 == v2) {
+         tmp = mkU64(0);
+      } else {
+         IRTemp shift = newTemp(Ity_I8);
+         IRExpr* op2half = mkite(mkexpr(neq0),
+                                 unop(Iop_V128HIto64, mkexpr(op2)),
+                                 unop(Iop_V128to64, mkexpr(op2)));
+         IRExpr* op3half = mkite(mkexpr(neq0),
+                                 unop(Iop_V128HIto64, mkexpr(op3)),
+                                 unop(Iop_V128to64, mkexpr(op3)));
+         assign(shift, unop(Iop_64to8,
+                            binop(Iop_Sub64, mkU64(63), mkexpr(samebits))));
+         tmp = binop(Iop_Or64,
+                     binop(Iop_Shl64,
+                           binop(Iop_And64, mkU64(1),
+                                 binop(Iop_Shr64, op2half, mkexpr(shift))),
+                           mkU8(1)),
+                     binop(Iop_And64, mkU64(1),
+                           binop(Iop_Shr64, op3half, mkexpr(shift))));
+      }
+      assign(cc, mkite(binop(Iop_CmpEQ64, mkexpr(samebits), mkU64(64)),
+                       mkU64(3), tmp));
       s390_cc_set(cc);
    }
-
-
-   put_counter_dw0(mkU64(0));
+   dis_res->hint = Dis_HintVerbose;
    return "vfene";
 }
 

@@ -634,7 +634,6 @@ extern int *__errno_location (void) __attribute__((weak));
  // operator new[](unsigned long, std::align_val_t), GNU mangling
  #if VG_WORDSIZE == 8
   ALLOC_or_BOMB_ALIGNED(VG_Z_LIBSTDCXX_SONAME, _ZnamSt11align_val_t, __builtin_vec_new_aligned );
-  ALLOC_or_BOMB_ALIGNED(VG_Z_STDCXX_SONAME,    _ZnamSt11align_val_t, __builtin_vec_new_aligned );
   ALLOC_or_BOMB_ALIGNED(SO_SYN_MALLOC,         _ZnamSt11align_val_t, __builtin_vec_new_aligned );
  #endif
 

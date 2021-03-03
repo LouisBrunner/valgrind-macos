@@ -43,10 +43,19 @@ support for X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== TOOL CHANGES ====================
 
-All the tools and their vgpreload libraries are now installed under
-libexec because they cannot be executed directly and should be run
-through the valgrind executable. This should be an internal, not user
-visible, change, but might impact valgrind packagers.
+* General tool changes
+
+  - All the tools and their vgpreload libraries are now installed under
+    libexec because they cannot be executed directly and should be run
+    through the valgrind executable. This should be an internal, not user
+    visible, change, but might impact valgrind packagers.
+
+  - The --track-fds option now respects -q, --quiet and won't output
+    anything if no file descriptors are leaked. It also won't report
+    the standard stdin (0), stdout (1) or stderr (2) descriptors as
+    being leaked with --trace-fds=yes anymore. To track whether the
+    standard file descriptors are still open at the end of the program
+    run use --trace-fds=all.
 
 * DHAT:
 

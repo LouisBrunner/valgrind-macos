@@ -1,7 +1,11 @@
 /* See also https://bugs.kde.org/show_bug.cgi?id=432381. */
 
 #define _GNU_SOURCE
+
+#include "../../config.h"
+#if defined(VGO_darwin)
 #define _XOPEN_SOURCE
+#endif
 
 #include <assert.h>
 #include <limits.h>

@@ -1002,7 +1002,9 @@ static void ppCfiReg ( CfiReg reg )
       case Creg_ARM_R15:   VG_(printf)("R15"); break;
       case Creg_ARM_R14:   VG_(printf)("R14"); break;
       case Creg_ARM_R7:    VG_(printf)("R7");  break;
+      case Creg_ARM64_SP:  VG_(printf)("SP"); break;
       case Creg_ARM64_X30: VG_(printf)("X30"); break;
+      case Creg_ARM64_X29: VG_(printf)("X29"); break;
       case Creg_MIPS_RA:   VG_(printf)("RA"); break;
       case Creg_S390_IA:   VG_(printf)("IA"); break;
       case Creg_S390_SP:   VG_(printf)("SP"); break;

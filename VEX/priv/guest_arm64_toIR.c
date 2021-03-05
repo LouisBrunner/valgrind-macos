@@ -4965,7 +4965,8 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
             address to the next page.
          */
          Bool earlyWBack
-           = wBack && simm9 < 0 && (szB == 8 || szB == 4)
+           = wBack && simm9 < 0
+             && (szB == 8 || szB == 4 || szB == 2 || szB == 1)
              && how == BITS2(1,1) && nn == 31 && !isLoad;
 
          if (wBack && earlyWBack)

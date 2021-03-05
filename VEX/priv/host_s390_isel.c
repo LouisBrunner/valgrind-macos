@@ -1812,31 +1812,24 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          dst = newVRegI(env);
          HReg vec = s390_isel_vec_expr(env, arg);
          /* This is big-endian machine */
-         Int off;
+         Int idx;
          switch (unop) {
             case Iop_V128HIto64:
-               off = 0;
+               idx = 0;
                break;
             case Iop_V128to64:
-               off = 8;
+               idx = 1;
                break;
             case Iop_V128to32:
-               off = 12;
+               idx = 3;
                break;
             default:
                ppIROp(unop);
                vpanic("s390_isel_int_expr: unhandled V128toSMTH operation");
          }
-         s390_amode* m16_sp = s390_amode_for_stack_pointer(0);
-         s390_amode* off_sp = s390_amode_for_stack_pointer(off);
-
-         /* We could use negative displacement but vector instructions
-            require 12bit unsigned ones. So we have to allocate space on
-            stack just for one load and free it after. */
-         sub_from_SP(env, 16);
-         addInstr(env, s390_insn_store(sizeof(V128), m16_sp, vec));
-         addInstr(env, s390_insn_load(sizeof(ULong), dst, off_sp));
-         add_to_SP(env, 16);
+         s390_amode* am = s390_amode_b12(idx, s390_hreg_gpr(0));
+         addInstr(env, s390_insn_vec_amodeop(size, S390_VEC_GET_ELEM,
+                                             dst, vec, am));
          return dst;
       }
 

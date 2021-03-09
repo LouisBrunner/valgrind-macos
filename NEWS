@@ -153,6 +153,7 @@ where XXXXXX is the bug number as listed below.
         diagnostics
 429952  Errors when building regtest with clang
 430354  ppc stxsibx and stxsihx instructions write too much data
+430429  valgrind.h doesn't compile on s390x with clang
 430485  expr_is_guardable doesn't handle Iex_Qop
 431556  Complete arm64 FADDP v8.2 instruction support
 432102  Add support for DWARF5 as produced by GCC11

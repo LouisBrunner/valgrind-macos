@@ -267,7 +267,8 @@ Bool waitstopped (pid_t pid, int signal_expected, const char *msg)
          return False;
       }
 
-      if (WIFEXITED(status)) {
+      /* The process either exited or was terminated by a (fatal) signal. */
+      if (WIFEXITED(status) || WIFSIGNALED(status)) {
          shutting_down = True;
          return False;
       }

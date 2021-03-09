@@ -356,6 +356,7 @@ where XXXXXX is the bug number as listed below.
 419503  s390x: Avoid modifying registers returned from isel functions
 421321  gcc10 arm64 build needs __getauxval for linking with libgcc
 421570  std_mutex fails on Arm v8.1 h/w
+434035  vgdb might crash if valgrind is killed
 n-i-bz  Fix minor one time leaks in dhat.
 n-i-bz  Add --run-cxx-freeres=no in outer args to avoid inner crashes.
 n-i-bz  Add support for the Linux io_uring system calls

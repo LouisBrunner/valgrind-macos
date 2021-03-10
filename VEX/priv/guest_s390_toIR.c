@@ -17602,6 +17602,105 @@ s390_irgen_VSTRC(UChar v1, UChar v2, UChar v3, UChar v4, UChar m5, UChar m6)
 }
 
 static const HChar *
+s390_irgen_VSTRS(UChar v1, UChar v2, UChar v3, UChar v4, UChar m5, UChar m6)
+{
+   s390_insn_assert("vstrs", m5 <= 2 && m6 == (m6 & 2));
+
+   IRTemp op2 = newTemp(Ity_V128);
+   IRTemp op3 = newTemp(Ity_V128);
+   IRTemp op4 = newTemp(Ity_I8);
+   IRTemp op2clean = newTemp(Ity_V128);
+   IRTemp op3mask = newTemp(Ity_V128);
+   IRTemp result = newTemp(Ity_V128);
+   IRTemp ccnomatch = newTemp(Ity_I64);
+   IRExpr* tmp;
+   IRExpr* match = NULL;
+   UChar elem_bits = 8 << m5;
+   IROp cmpeq_op = S390_VEC_OP3(m5, Iop_CmpEQ8x16,
+                                Iop_CmpEQ16x8, Iop_CmpEQ32x4);
+
+   assign(op2, get_vr_qw(v2));
+   assign(op3, get_vr_qw(v3));
+   assign(op4, get_vr_b7(v4));
+
+   tmp = unop(Iop_Dup32x4,
+              unop(Iop_1Sto32, binop(Iop_CmpNE8, mkexpr(op4), mkU8(16))));
+   tmp = binop(Iop_ShrV128, tmp, binop(Iop_Shl8, mkexpr(op4), mkU8(3)));
+
+   if (s390_vr_is_zs_set(m6)) {
+      IRTemp op2eos = newTemp(Ity_V128);
+      IRExpr* t;
+      t = binop(cmpeq_op, mkexpr(op2), mkV128(0));
+      for (UChar i = m5; i < 4; i++) {
+         IRTemp s = newTemp(Ity_V128);
+         assign(s, t);
+         t = binop(Iop_OrV128, mkexpr(s), binop(Iop_ShrV128, mkexpr(s),
+                                                mkU8(8 << i)));
+      }
+      assign(op2eos, t);
+      assign(op2clean, binop(Iop_AndV128, mkexpr(op2),
+                             unop(Iop_NotV128, mkexpr(op2eos))));
+      assign(ccnomatch, binop(Iop_And64, mkU64(1),
+                              unop(Iop_V128to64, mkexpr(op2eos))));
+
+      t = binop(cmpeq_op, mkexpr(op3), mkV128(0));
+      for (UChar i = m5; i < 4; i++) {
+         IRTemp s = newTemp(Ity_V128);
+         assign(s, t);
+         t = binop(Iop_OrV128, mkexpr(s), binop(Iop_ShrV128, mkexpr(s),
+                                                mkU8(8 << i)));
+      }
+      tmp = binop(Iop_OrV128, tmp, t);
+   } else {
+      assign(op2clean, mkexpr(op2));
+   }
+   assign(op3mask, unop(Iop_NotV128, tmp));
+
+   for (UChar shift = 0; shift < 128; shift += elem_bits) {
+      IRTemp s = newTemp(Ity_V128);
+      tmp = unop(Iop_NotV128,
+                 binop(cmpeq_op, mkexpr(op2clean),
+                       binop(Iop_ShrV128, mkexpr(op3), mkU8(shift))));
+      assign(s, binop(Iop_CmpEQ64x2, mkV128(0),
+                      binop(Iop_AndV128, mkexpr(op3mask),
+                            binop(Iop_ShlV128, tmp, mkU8(shift)))));
+      tmp = mkexpr(s);
+      if (shift < 64) {
+         tmp = binop(Iop_AndV128, tmp,
+                     unop(Iop_Dup16x8, binop(Iop_GetElem16x8, tmp, mkU8(4))));
+      }
+      tmp = binop(Iop_AndV128, tmp,
+                  unop(Iop_Dup16x8, mkU16(1 << (15 - shift / 8))));
+      if (shift)
+         match = binop(Iop_OrV128, mkexpr(mktemp(Ity_V128, match)), tmp);
+      else
+         match = tmp;
+   }
+   assign(result, unop(Iop_ClzNat64,
+                       binop(Iop_Or64,
+                             unop(Iop_V128HIto64, match),
+                             mkU64((1UL << 48) - 1))));
+   put_vr_qw(v1, binop(Iop_64HLtoV128, mkexpr(result), mkU64(0)));
+
+   /* Set condition code.
+      0: no match, no string terminator in op2
+      1: no match, string terminator found
+      2: full match
+      3: partial match */
+   IRTemp cc = newTemp(Ity_I64);
+   tmp = binop(Iop_CmpLE64U,
+               binop(Iop_Add64, mkexpr(result), unop(Iop_8Uto64, mkexpr(op4))),
+               mkU64(16));
+   assign(cc, mkite(binop(Iop_CmpEQ64, mkexpr(result), mkU64(16)),
+                    s390_vr_is_zs_set(m6) ? mkexpr(ccnomatch) : mkU64(0),
+                    mkite(tmp, mkU64(2), mkU64(3))));
+   s390_cc_set(cc);
+
+   dis_res->hint = Dis_HintVerbose;
+   return "vstrs";
+}
+
+static const HChar *
 s390_irgen_VNC(UChar v1, UChar v2, UChar v3)
 {
    put_vr_qw(v1, binop(Iop_AndV128,
@@ -21592,6 +21691,11 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                  VRId_i4(ovl),
                                                  VRId_rxb(ovl));  goto ok;
    case 0xe7000000008aULL: s390_format_VRR_VVVVMM(s390_irgen_VSTRC, VRRd_v1(ovl),
+                                                  VRRd_v2(ovl), VRRd_v3(ovl),
+                                                  VRRd_v4(ovl), VRRd_m5(ovl),
+                                                  VRRd_m6(ovl),
+                                                  VRRd_rxb(ovl));  goto ok;
+   case 0xe7000000008bULL: s390_format_VRR_VVVVMM(s390_irgen_VSTRS, VRRd_v1(ovl),
                                                   VRRd_v2(ovl), VRRd_v3(ovl),
                                                   VRRd_v4(ovl), VRRd_m5(ovl),
                                                   VRRd_m6(ovl),

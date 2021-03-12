@@ -170,6 +170,7 @@ where XXXXXX is the bug number as listed below.
 433629  valgrind/README has type "abd" instead of "and"
 433641  Rust std::sys::unix::fs::try_statx Syscall param fstatat(file_name)
 433898  arm64: Handle sp, lr, fp as DwReg in CfiExpr
+434193  GCC 9+ inlined strcmp causes "Conditional jump or move [..] value" report
 n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.
 
 

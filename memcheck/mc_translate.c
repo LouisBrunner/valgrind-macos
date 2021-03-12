@@ -8586,17 +8586,22 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
          approximation to the above, and is self-contained.*/
 #     if defined(VGA_x86)
       mce.dlbo.dl_Add32           = DLauto;
+      mce.dlbo.dl_CmpEQ16_CmpNE16 = DLexpensive;
       mce.dlbo.dl_CmpEQ32_CmpNE32 = DLexpensive;
 #     elif defined(VGA_amd64)
       mce.dlbo.dl_Add32           = DLexpensive;
       mce.dlbo.dl_Add64           = DLauto;
+      mce.dlbo.dl_CmpEQ16_CmpNE16 = DLexpensive;
       mce.dlbo.dl_CmpEQ32_CmpNE32 = DLexpensive;
       mce.dlbo.dl_CmpEQ64_CmpNE64 = DLexpensive;
 #     elif defined(VGA_ppc64le)
       // Needed by (at least) set_AV_CR6() in the front end.
       mce.dlbo.dl_CmpEQ64_CmpNE64 = DLexpensive;
 #     elif defined(VGA_arm64)
+      mce.dlbo.dl_CmpEQ32_CmpNE32 = DLexpensive;
       mce.dlbo.dl_CmpEQ64_CmpNE64 = DLexpensive;
+#     elif defined(VGA_arm)
+      mce.dlbo.dl_CmpEQ32_CmpNE32 = DLexpensive;
 #     endif
 
       /* preInstrumentationAnalysis() will allocate &mce.tmpHowUsed and then

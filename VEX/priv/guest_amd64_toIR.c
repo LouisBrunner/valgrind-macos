@@ -21999,7 +21999,28 @@ Long dis_ESC_0F (
       }
       d = unsafeIRDirty_0_N ( 0/*regparms*/, fName, fAddr, args );
 
-      /* declare guest state effects */
+      /* Declare guest state effects.  EAX, EBX, ECX and EDX are written. EAX
+         is also read, hence is marked as Modified.  ECX is sometimes also
+         read, depending on the value in EAX; that much is obvious from
+         inspection of the helper function.
+
+         This is a bit of a problem: if we mark ECX as Modified -- hence, by
+         implication, Read -- then we may get false positives from Memcheck in
+         the case where ECX contains undefined bits, but the EAX value is such
+         that the instruction wouldn't read ECX anyway.  The obvious way out
+         of this is to mark it as written only, but that means Memcheck will
+         effectively ignore undefinedness in the incoming ECX value.  That
+         seems like a small loss to take to avoid false positives here,
+         though.  Fundamentally the problem exists because CPUID itself has
+         conditional dataflow -- whether ECX is read depends on the value in
+         EAX -- but the annotation mechanism for dirty helpers can't represent
+         that conditionality.
+
+         A fully-accurate solution might be to change the helpers so that the
+         EAX and ECX values are passed as parameters.  Then, for the ECX
+         value, we can pass, effectively "if EAX is some value for which ECX
+         is ignored { 0 } else { ECX }", and Memcheck will see and understand
+         this conditionality. */
       d->nFxState = 4;
       vex_bzero(&d->fxState, sizeof(d->fxState));
       d->fxState[0].fx     = Ifx_Modify;
@@ -22008,13 +22029,13 @@ Long dis_ESC_0F (
       d->fxState[1].fx     = Ifx_Write;
       d->fxState[1].offset = OFFB_RBX;
       d->fxState[1].size   = 8;
-      d->fxState[2].fx     = Ifx_Modify;
+      d->fxState[2].fx     = Ifx_Write; /* was: Ifx_Modify; */
       d->fxState[2].offset = OFFB_RCX;
       d->fxState[2].size   = 8;
       d->fxState[3].fx     = Ifx_Write;
       d->fxState[3].offset = OFFB_RDX;
       d->fxState[3].size   = 8;
-      /* execute the dirty call, side-effecting guest state */
+      /* Execute the dirty call, side-effecting guest state. */
       stmt( IRStmt_Dirty(d) );
       /* CPUID is a serialising insn.  So, just in case someone is
          using it as a memory fence ... */

@@ -1,8 +1,7 @@
-Release 3.17.0 (?? ??? 202?)
+Release 3.17.0 (18 Mar 2021)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-3.17.0 is a feature release with many improvements and the usual collection
-of bug fixes.
+3.17.0 is a primarily a bug-fix release.
 
 This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
 PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,
@@ -12,60 +11,73 @@ support for X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== CORE CHANGES ===================
 
-* DWARF version 5 support
+* DWARF version 5 support.  Valgrind can now read DWARF version 5 debuginfo as
+  produced by GCC 11.
 
-  - Valgrind can now read DWARF version 5 debuginfo as produced by GCC 11
+* Valgrind now supports debuginfod, an HTTP server for distributing ELF/DWARF
+  debugging information. When a debuginfo file cannot be found locally,
+  Valgrind is able to query debuginfod servers for the file using its
+  build-id. See the user manual for more information about debuginfod support.
 
 * ================== PLATFORM CHANGES =================
 
+* arm64:
+
+  - Inaccuracies resulting from double-rounding in the simulation of
+    floating-point multiply-add/subtract instructions have been fixed.  These
+    should now behave exactly as the hardware does.
+
+  - Partial support for the ARM v8.2 instruction set.  v8.2 support work is
+    ongoing.  Support for the half-word variants of at least the following
+    instructions has been added:
+       FABS <Hd>, <Hn>
+       FABS <Vd>.<T>, <Vn>.<T>
+       FNEG <Hd>, <Hn>
+       FNEG <Vd>.<T>, <Vn>.<T>
+       FSQRT <Hd>, <Hn>
+       FSQRT <Vd>.<T>, <Vn>.<T>
+       FADDP
+
 * s390:
 
-  - Implement the new instructions/features that were added to
-    z/Architecture with the vector-enhancements facility 1.  Also
-    cover the instructions from the vector-packed-decimal facility
-    that are defined outside the chapter "Vector Decimal
-    Instructions", but not the ones from that chapter itself.
+  - Implement the new instructions/features that were added to z/Architecture
+    with the vector-enhancements facility 1.  Also cover the instructions from
+    the vector-packed-decimal facility that are defined outside the chapter
+    "Vector Decimal Instructions", but not the ones from that chapter itself.
 
-    For a detailed list of newly supported instructions see the
-    updates to `docs/internals/s390-opcodes.csv'.
+    For a detailed list of newly supported instructions see the updates to
+    `docs/internals/s390-opcodes.csv'.
 
-    Since the miscellaneous instruction extensions facility 2 was
-    already added in Valgrind 3.16.0, this completes the support
-    necessary to run general programs built with `--march=z14' under
-    Valgrind.  The vector-packed-decimal facility is currently not
-    exploited by the standard toolchain and libraries.
+    Since the miscellaneous instruction extensions facility 2 was already
+    added in Valgrind 3.16.0, this completes the support necessary to run
+    general programs built with `--march=z14' under Valgrind.  The
+    vector-packed-decimal facility is currently not exploited by the standard
+    toolchain and libraries.
 
 * ppc64:
 
-  - Various bug fixes.  Fix for the sync field to limit setting just two
-    of the two bits in the L-field. Fix the write size for the stxsibx and
+  - Various bug fixes.  Fix for the sync field to limit setting just two of
+    the two bits in the L-field. Fix the write size for the stxsibx and
     stxsihx instructions.  Fix the modsw and modsd instructions.
 
-  - Partial support for ISA 3.1 has been added.  Support for the VSX PCV
-    mask instructions, bfloat16 GER instructions, and bfloat16 to/from float
-    32-bit conversion instructions are still missing.
-
-* Valgrind now supports debuginfod, an HTTP server for distributing
-  ELF/DWARF debugging information. When a debuginfo file cannot be
-  found locally, Valgrind is able to query debuginfod servers for the
-  file using its build-id. See the user manual for more information
-  about debuginfod support.
+  - Partial support for ISA 3.1 has been added.  Support for the VSX PCV mask
+    instructions, bfloat16 GER instructions, and bfloat16 to/from float 32-bit
+    conversion instructions are still missing.
 
 * ==================== TOOL CHANGES ====================
 
 * General tool changes
 
   - All the tools and their vgpreload libraries are now installed under
-    libexec because they cannot be executed directly and should be run
-    through the valgrind executable. This should be an internal, not user
-    visible, change, but might impact valgrind packagers.
+    libexec because they cannot be executed directly and should be run through
+    the valgrind executable. This should be an internal, not user visible,
+    change, but might impact valgrind packagers.
 
-  - The --track-fds option now respects -q, --quiet and won't output
-    anything if no file descriptors are leaked. It also won't report
-    the standard stdin (0), stdout (1) or stderr (2) descriptors as
-    being leaked with --trace-fds=yes anymore. To track whether the
-    standard file descriptors are still open at the end of the program
-    run use --trace-fds=all.
+  - The --track-fds option now respects -q, --quiet and won't output anything
+    if no file descriptors are leaked. It also won't report the standard stdin
+    (0), stdout (1) or stderr (2) descriptors as being leaked with
+    --trace-fds=yes anymore. To track whether the standard file descriptors
+    are still open at the end of the program run use --trace-fds=all.
 
 * DHAT:
 
@@ -172,6 +184,10 @@ where XXXXXX is the bug number as listed below.
 433898  arm64: Handle sp, lr, fp as DwReg in CfiExpr
 434193  GCC 9+ inlined strcmp causes "Conditional jump or move [..] value" report
 n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.
+n-i-bz  arm64 front end: avoid Memcheck false positives relating to CPUID
+
+(3.17.0.RC1:  13 Mar 2021, git a049da18b3c045fc8929bd56d404a01046e4c26c)
+
 
 
 Release 3.16.1 (22 June 2020)

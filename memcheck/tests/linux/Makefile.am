@@ -7,6 +7,7 @@ EXTRA_DIST = \
 	brk.stderr.exp brk.vgtest \
 	capget.vgtest capget.stderr.exp capget.stderr.exp2 capget.stderr.exp3 \
 	debuginfod-check.stderr.exp debuginfod-check.vgtest.in \
+	debuginfod-check.pl \
 	dlclose_leak-no-keep.stderr.exp dlclose_leak-no-keep.stdout.exp \
 	    dlclose_leak-no-keep.vgtest \
 	dlclose_leak.stderr.exp dlclose_leak.stdout.exp \

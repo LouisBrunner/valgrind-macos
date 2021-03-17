@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#if !defined(__APPLE__)
 #include <sys/auxv.h>
+#endif
 
 // This file determines arm64 features a processor supports.
 // Arm processors do not have a x86-like cpuinfo instruction. Instead the

@@ -1,9 +1,10 @@
 Release 3.17.0 (18 Mar 2021)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-3.17.0 is a primarily a bug-fix release.  There are also some architecture and
-tool updates.  Support for recent toolchains -- GCC 11 and Clang 11 -- has
-been improved.
+3.17.0 fixes a number of bugs and adds some functional changes: support for
+GCC 11, Clang 11, DWARF5 debuginfo, the 'debuginfod' debuginfo server, and
+some new instructions for Arm64, S390 and POWER.  There are also some tool
+updates.
 
 This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
 PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,

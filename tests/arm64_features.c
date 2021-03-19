@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) && defined(VGA_arm64)
 #include <sys/auxv.h>
 #endif
 

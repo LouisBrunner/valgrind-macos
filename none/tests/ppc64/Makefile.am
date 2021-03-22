@@ -57,7 +57,8 @@ EXTRA_DIST = \
 	test_isa_3_1_Misc.vgtest test_isa_3_1_Misc.stderr.exp test_isa_3_1_Misc.stdout.exp \
 	test_isa_3_1_AT.vgtest test_isa_3_1_AT.stderr.exp test_isa_3_1_AT.stdout.exp \
 	subnormal_test.stderr.exp  subnormal_test.stdout.exp \
-	subnormal_test.vgtest
+	subnormal_test.vgtest test_darn_inst.stderr.exp \
+	test_darn_inst.stdout.exp test_darn_inst.vgtest
 
 check_PROGRAMS = \
 	allexec \
@@ -68,7 +69,7 @@ check_PROGRAMS = \
 	test_isa_3_0 test_mod_instructions \
 	test_isa_3_1_RT test_isa_3_1_XT test_isa_3_1_VRT \
 	test_isa_3_1_Misc test_isa_3_1_AT \
-	subnormal_test \
+	subnormal_test test_darn_inst \
 	test_tm test_touch_tm data-cache-instructions \
 	power6_mf_gpr std_reg_imm \
 	twi_tdi tw_td power6_bcmp
@@ -186,6 +187,9 @@ test_touch_tm_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) 
 			@FLAG_M64@ $(BUILD_FLAGS_ISA_2_07)
 
 test_isa_3_0_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_3_00_FLAG) \
+			@FLAG_M64@ $(BUILD_FLAGS_ISA_3_00)
+
+test_darn_inst_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_3_00_FLAG) \
 			@FLAG_M64@ $(BUILD_FLAGS_ISA_3_00)
 
 test_isa_3_1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames  $(ISA_3_1_FLAG) \

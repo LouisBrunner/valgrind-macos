@@ -821,6 +821,7 @@ Addr setup_client_stack( void*  init_sp,
                               | 0x04000000ULL   /* VEC_CRYPTO */
                               | 0x00800000ULL   /* ARCH_3_00 */
                               | 0x00400000ULL   /* HAS_IEEE128 */
+                              | 0x00200000ULL   /* PPC_FEATURE2_DARN */
                               | 0x00040000ULL); /* ARCH_3_1 */
          }
 

@@ -272,6 +272,8 @@ extern void vsx_matrix_64bit_float_ger_dirty_helper( VexGuestPPC64State* gst,
                                                      ULong srcY_hi,
                                                      ULong srcY_lo,
                                                      UInt masks_inst );
+extern ULong darn_dirty_helper ( UInt L );
+
 #endif /* ndef __VEX_GUEST_PPC_DEFS_H */
 
 /*---------------------------------------------------------------*/

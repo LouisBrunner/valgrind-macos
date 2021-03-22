@@ -2416,6 +2416,27 @@ void vsx_matrix_64bit_float_ger_dirty_helper( VexGuestPPC64State* gst,
    }
 }
 
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER uses inline assembly to call random number instruction on
+   the host machine.  Note, the dirty helper takes the value returned from
+   the host and returns it.  The helper does not change the guest state
+   or guest memory.  */
+ULong darn_dirty_helper ( UInt L )
+{
+   ULong val = 0xFFFFFFFFFFFFFFFFULL;  /* error */
+
+#  if defined (HAS_DARN)
+   if ( L == 0)
+      __asm__ __volatile__("darn  %0,0" : "=r"(val));
+   else if (L == 1)
+      __asm__ __volatile__("darn  %0,1" : "=r"(val));
+   else if (L == 2)
+      __asm__ __volatile__("darn  %0,2" : "=r"(val));
+# endif
+
+   return val;
+}
+
 /*----------------------------------------------*/
 /*--- The exported fns ..                    ---*/
 /*----------------------------------------------*/

@@ -360,7 +360,8 @@ s390_amode_is_sane(const s390_amode *am)
 {
    switch (am->tag) {
    case S390_AMODE_B12:
-      return is_virtual_gpr(am->b) && fits_unsigned_12bit(am->d);
+      return (is_virtual_gpr(am->b) || sameHReg(am->b, s390_hreg_gpr(0))) &&
+             fits_unsigned_12bit(am->d);
 
    case S390_AMODE_B20:
       return is_virtual_gpr(am->b) && fits_signed_20bit(am->d);
@@ -378,47 +379,31 @@ s390_amode_is_sane(const s390_amode *am)
    }
 }
 
+static Bool
+s390_amode_is_constant(const s390_amode *am)
+{
+   return am->tag == S390_AMODE_B12 && sameHReg(am->b, s390_hreg_gpr(0));
+}
+
 
 /* Record the register use of an amode */
 static void
 s390_amode_get_reg_usage(HRegUsage *u, const s390_amode *am)
 {
-   switch (am->tag) {
-   case S390_AMODE_B12:
-   case S390_AMODE_B20:
+   if (!sameHReg(am->b, s390_hreg_gpr(0)))
       addHRegUse(u, HRmRead, am->b);
-      return;
-
-   case S390_AMODE_BX12:
-   case S390_AMODE_BX20:
-      addHRegUse(u, HRmRead, am->b);
+   if (!sameHReg(am->x, s390_hreg_gpr(0)))
       addHRegUse(u, HRmRead, am->x);
-      return;
-
-   default:
-      vpanic("s390_amode_get_reg_usage");
-   }
 }
 
 
 static void
 s390_amode_map_regs(HRegRemap *m, s390_amode *am)
 {
-   switch (am->tag) {
-   case S390_AMODE_B12:
-   case S390_AMODE_B20:
+   if (!sameHReg(am->b, s390_hreg_gpr(0)))
       am->b = lookupHRegRemap(m, am->b);
-      return;
-
-   case S390_AMODE_BX12:
-   case S390_AMODE_BX20:
-      am->b = lookupHRegRemap(m, am->b);
+   if (!sameHReg(am->x, s390_hreg_gpr(0)))
       am->x = lookupHRegRemap(m, am->x);
-      return;
-
-   default:
-      vpanic("s390_amode_map_regs");
-   }
 }
 
 
@@ -651,6 +636,16 @@ directReload_S390(HInstr* i, HReg vreg, Short spill_off)
        && sameHReg(insn->variant.alu.op2.variant.reg, vreg)) {
       return s390_insn_alu(insn->size, insn->variant.alu.tag,
                            insn->variant.alu.dst, vreg_opnd);
+   }
+
+   /* v-vgetelem <reg>,<vreg> */
+   if (insn->tag == S390_INSN_VEC_AMODEOP
+       && insn->variant.vec_amodeop.tag == S390_VEC_GET_ELEM
+       && insn->size == 8
+       && sameHReg(insn->variant.vec_amodeop.op1, vreg)
+       && s390_amode_is_constant(insn->variant.vec_amodeop.op2)) {
+      vreg_am->d += 8 * insn->variant.vec_amodeop.op2->d;
+      return s390_insn_load(insn->size, insn->variant.vec_amodeop.dst, vreg_am);
    }
 
    /* v-<unop> <reg>,<vreg> */

@@ -312,7 +312,18 @@ s390_isel_amode_wrk(ISelEnv *env, IRExpr *expr,
                     Bool no_index __attribute__((unused)),
                     Bool short_displacement)
 {
-   if (expr->tag == Iex_Binop && expr->Iex.Binop.op == Iop_Add64) {
+   if (expr->tag == Iex_Unop && expr->Iex.Unop.op == Iop_8Uto64 &&
+       expr->Iex.Unop.arg->tag == Iex_Const) {
+      UChar value = expr->Iex.Unop.arg->Iex.Const.con->Ico.U8;
+      return s390_amode_b12((Int)value, s390_hreg_gpr(0));
+
+   } else if (expr->tag == Iex_Const) {
+      ULong value = expr->Iex.Const.con->Ico.U64;
+      if (ulong_fits_unsigned_12bit(value)) {
+         return s390_amode_b12((Int)value, s390_hreg_gpr(0));
+      }
+
+   } else if (expr->tag == Iex_Binop && expr->Iex.Binop.op == Iop_Add64) {
       IRExpr *arg1 = expr->Iex.Binop.arg1;
       IRExpr *arg2 = expr->Iex.Binop.arg2;
 

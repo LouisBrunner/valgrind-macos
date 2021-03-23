@@ -408,7 +408,6 @@ check_PROGRAMS =      \
   sem_as_mutex        \
   sem_open            \
   sigalrm             \
-  swapcontext         \
   threaded-fork       \
   trylock             \
   unit_bitmap         \
@@ -468,6 +467,10 @@ endif
 
 if HAVE_PTHREAD_SPINLOCK
 check_PROGRAMS += pth_spinlock
+endif
+
+if HAVE_SWAPCONTEXT
+check_PROGRAMS += swapcontext
 endif
 
 if !VGCONF_OS_IS_DARWIN

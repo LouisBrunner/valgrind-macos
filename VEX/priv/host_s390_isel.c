@@ -4102,6 +4102,15 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
       case Iop_OrV128:
          size = 16;
          vec_binop = S390_VEC_OR;
+         if (arg1->tag == Iex_Unop && arg1->Iex.Unop.op == Iop_NotV128) {
+            IRExpr* orig_arg1 = arg1;
+            arg1 = arg2;
+            arg2 = orig_arg1->Iex.Unop.arg;
+            vec_binop = S390_VEC_ORC;
+         } else if (arg2->tag == Iex_Unop && arg2->Iex.Unop.op == Iop_NotV128) {
+            arg2 = arg2->Iex.Unop.arg;
+            vec_binop = S390_VEC_ORC;
+         }
          goto Iop_VV_wrk;
 
       case Iop_XorV128:

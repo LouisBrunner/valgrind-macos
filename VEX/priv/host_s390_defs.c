@@ -5908,6 +5908,15 @@ s390_emit_VO(UChar *p, UChar v1, UChar v2, UChar v3)
 }
 
 static UChar *
+s390_emit_VOC(UChar *p, UChar v1, UChar v2, UChar v3)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, VR, VR, VR), "voc", v1, v2, v3);
+
+   return emit_VRR_VVV(p, 0xE7000000006fULL, v1, v2, v3);
+}
+
+static UChar *
 s390_emit_VX(UChar *p, UChar v1, UChar v2, UChar v3)
 {
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
@@ -8312,6 +8321,7 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_VEC_PACK_SATURU:    op = "v-vpacksaturu"; break;
       case S390_VEC_COMPARE_EQUAL:  op = "v-vcmpeq"; break;
       case S390_VEC_OR:             op = "v-vor"; break;
+      case S390_VEC_ORC:            op = "v-vorc"; break;
       case S390_VEC_XOR:            op = "v-vxor";  break;
       case S390_VEC_AND:            op = "v-vand"; break;
       case S390_VEC_MERGEL:         op = "v-vmergel"; break;
@@ -11609,6 +11619,8 @@ s390_insn_vec_binop_emit(UChar *buf, const s390_insn *insn)
          return s390_emit_VCEQ(buf, v1, v2, v3, s390_getM_from_size(size));
       case S390_VEC_OR:
          return s390_emit_VO(buf, v1, v2, v3);
+      case S390_VEC_ORC:
+         return s390_emit_VOC(buf, v1, v2, v3);
       case S390_VEC_XOR:
          return s390_emit_VX(buf, v1, v2, v3);
       case S390_VEC_AND:

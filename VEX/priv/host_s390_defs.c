@@ -670,6 +670,14 @@ directReload_S390(HInstr* i, HReg vreg, Short spill_off)
                             insn->variant.unop.dst, vreg_opnd);
    }
 
+   /* v-vrep <reg>,<vreg>,<idx> */
+   if (insn->tag == S390_INSN_VEC_REPLICATE
+       && sameHReg(insn->variant.vec_replicate.op1, vreg)) {
+      vreg_am->d += insn->size * insn->variant.vec_replicate.idx;
+      return s390_insn_unop(insn->size, S390_VEC_DUPLICATE,
+                            insn->variant.vec_replicate.dst, vreg_opnd);
+   }
+
 no_match:
    return NULL;
 }
@@ -1048,6 +1056,11 @@ s390_insn_get_reg_usage(HRegUsage *u, const s390_insn *insn)
       addHRegUse(u, HRmRead, insn->variant.vec_triop.op1);
       addHRegUse(u, HRmRead, insn->variant.vec_triop.op2);
       addHRegUse(u, HRmRead, insn->variant.vec_triop.op3);
+      break;
+
+   case S390_INSN_VEC_REPLICATE:
+      addHRegUse(u, HRmWrite, insn->variant.vec_replicate.dst);
+      addHRegUse(u, HRmRead, insn->variant.vec_replicate.op1);
       break;
 
    default:
@@ -1433,6 +1446,14 @@ s390_insn_map_regs(HRegRemap *m, s390_insn *insn)
       insn->variant.vec_triop.op3 =
          lookupHRegRemap(m, insn->variant.vec_triop.op3);
       break;
+
+   case S390_INSN_VEC_REPLICATE:
+      insn->variant.vec_replicate.dst =
+         lookupHRegRemap(m, insn->variant.vec_replicate.dst);
+      insn->variant.vec_replicate.op1 =
+         lookupHRegRemap(m, insn->variant.vec_replicate.op1);
+      break;
+
    default:
       vpanic("s390_insn_map_regs");
    }
@@ -1767,7 +1788,39 @@ emit_VRI_VI(UChar *p, ULong op, UChar v1, UShort i2)
 
 
 static UChar *
-emit_VRX(UChar *p, ULong op, UChar v1, UChar x2, UChar b2, UShort d2)
+emit_VRI_VIM(UChar *p, ULong op, UChar v1, UShort i2, UChar m3)
+{
+   ULong the_insn = op;
+   ULong rxb = s390_update_rxb(0, 1, &v1);
+
+   the_insn |= ((ULong)v1) << 36;
+   the_insn |= ((ULong)i2) << 16;
+   the_insn |= ((ULong)m3) << 12;
+   the_insn |= ((ULong)rxb)<< 8;
+
+   return emit_6bytes(p, the_insn);
+}
+
+
+static UChar *
+emit_VRI_VVMM(UChar *p, ULong op, UChar v1, UChar v3, UShort i2, UChar m4)
+{
+   ULong the_insn = op;
+   ULong rxb = s390_update_rxb(0, 1, &v1);
+   rxb = s390_update_rxb(rxb, 2, &v3);
+
+   the_insn |= ((ULong)v1) << 36;
+   the_insn |= ((ULong)v3) << 32;
+   the_insn |= ((ULong)i2) << 16;
+   the_insn |= ((ULong)m4) << 12;
+   the_insn |= ((ULong)rxb) << 8;
+
+   return emit_6bytes(p, the_insn);
+}
+
+
+static UChar *
+emit_VRX(UChar *p, ULong op, UChar v1, UChar x2, UChar b2, UShort d2, UChar m3)
 {
    ULong the_insn = op;
    ULong rxb = s390_update_rxb(0, 1, &v1);
@@ -1776,6 +1829,7 @@ emit_VRX(UChar *p, ULong op, UChar v1, UChar x2, UChar b2, UShort d2)
    the_insn |= ((ULong)x2) << 32;
    the_insn |= ((ULong)b2) << 28;
    the_insn |= ((ULong)d2) << 16;
+   the_insn |= ((ULong)m3) << 12;
    the_insn |= ((ULong)rxb)<< 8;
 
    return emit_6bytes(p, the_insn);
@@ -5782,7 +5836,7 @@ s390_emit_VL(UChar *p, UChar v1, UChar x2, UChar b2, UShort d2)
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC3(MNM, VR, UDXB), "vl", v1, d2, x2, b2);
 
-   return emit_VRX(p, 0xE70000000006ULL, v1, x2, b2, d2);
+   return emit_VRX(p, 0xE70000000006ULL, v1, x2, b2, d2, 0);
 }
 
 static UChar *
@@ -5796,12 +5850,22 @@ s390_emit_VLR(UChar *p, UChar v1, UChar v2)
 
 
 static UChar *
+s390_emit_VLREP(UChar *p, UChar v1, UChar x2, UChar b2, UShort d2, UShort m3)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, VR, UDXB, UINT), "vlrep", v1, d2, x2, b2, m3);
+
+   return emit_VRX(p, 0xE70000000005ULL, v1, x2, b2, d2, m3);
+}
+
+
+static UChar *
 s390_emit_VST(UChar *p, UChar v1, UChar x2, UChar b2, UShort d2)
 {
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       s390_disasm(ENC3(MNM, VR, UDXB), "vst", v1, d2, x2, b2);
 
-   return emit_VRX(p, 0xE7000000000eULL, v1, x2, b2, d2);
+   return emit_VRX(p, 0xE7000000000eULL, v1, x2, b2, d2, 0);
 }
 
 
@@ -5912,14 +5976,23 @@ s390_emit_VPKLS(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
 
 
 static UChar *
-s390_emit_VREP(UChar *p, UChar v1, UChar v3, UChar m3)
+s390_emit_VREP(UChar *p, UChar v1, UChar v3, UShort i2, UChar m4)
 {
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
-      s390_disasm(ENC5(MNM, VR, VR, UINT, UINT), "vrep", v1, v3, 0, m3);
+      s390_disasm(ENC5(MNM, VR, VR, UINT, UINT), "vrep", v1, v3, i2, m4);
 
-   return emit_VRR_VVM(p, 0xE7000000004DULL, v1, v3, m3);
+   return emit_VRI_VVMM(p, 0xE7000000004DULL, v1, v3, i2, m4);
 }
 
+
+static UChar *
+s390_emit_VREPI(UChar *p, UChar v1, UShort i2, UChar m3)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
+      s390_disasm(ENC4(MNM, VR, UINT, UINT), "vrepi", v1, i2, m3);
+
+   return emit_VRI_VIM(p, 0xE70000000045ULL, v1, i2, m3);
+}
 
 
 static UChar *
@@ -7560,6 +7633,20 @@ s390_insn *s390_insn_vec_triop(UChar size, s390_vec_triop_t tag, HReg dst,
    return insn;
 }
 
+s390_insn *s390_insn_vec_replicate(UChar size, HReg dst, HReg op1,
+                                   UChar idx)
+{
+   s390_insn *insn = LibVEX_Alloc_inline(sizeof(s390_insn));
+
+   insn->tag  = S390_INSN_VEC_REPLICATE;
+   insn->size = size;
+   insn->variant.vec_replicate.dst = dst;
+   insn->variant.vec_replicate.op1 = op1;
+   insn->variant.vec_replicate.idx = idx;
+
+   return insn;
+}
+
 /*---------------------------------------------------------------*/
 /*--- Debug print                                             ---*/
 /*---------------------------------------------------------------*/
@@ -8282,6 +8369,13 @@ s390_insn_as_string(const s390_insn *insn)
       s390_sprintf(buf, "%M %R, %R, %R, %R", op, insn->variant.vec_triop.dst,
                    insn->variant.vec_triop.op1, insn->variant.vec_triop.op2,
                    insn->variant.vec_triop.op3);
+      break;
+
+   case S390_INSN_VEC_REPLICATE:
+      s390_sprintf(buf, "%M %R, %R, %I", "v-vrep",
+                   insn->variant.vec_replicate.dst,
+                   insn->variant.vec_replicate.op1,
+                   insn->variant.vec_replicate.idx);
       break;
 
    default: goto fail;
@@ -9387,6 +9481,56 @@ s390_negate_emit(UChar *buf, const s390_insn *insn)
 
 
 static UChar *
+s390_vec_duplicate_emit(UChar *buf, const s390_insn *insn)
+{
+   UChar v1 = hregNumber(insn->variant.unop.dst);
+   s390_opnd_RMI opnd = insn->variant.unop.src;
+   UChar r2;
+
+   switch (opnd.tag) {
+   case S390_OPND_AMODE: {
+      s390_amode* am = opnd.variant.am;
+      UInt b = hregNumber(am->b);
+      UInt x = hregNumber(am->x);
+      UInt d = am->d;
+
+      if (fits_unsigned_12bit(d)) {
+         return s390_emit_VLREP(buf, v1, x, b, d,
+                                s390_getM_from_size(insn->size));
+      }
+      buf = s390_emit_load_mem(buf, insn->size, R0, am);
+      r2 = R0;
+      goto duplicate_from_gpr;
+   }
+
+   case S390_OPND_IMMEDIATE: {
+      ULong val = opnd.variant.imm;
+
+      if (ulong_fits_signed_16bit(val)) {
+         return s390_emit_VREPI(buf, v1, val, s390_getM_from_size(insn->size));
+      }
+      buf = s390_emit_load_64imm(buf, R0, val);
+      r2 = R0;
+      goto duplicate_from_gpr;
+   }
+
+   case S390_OPND_REG:
+      r2 = hregNumber(opnd.variant.reg);
+
+   duplicate_from_gpr:
+      buf = s390_emit_VLVGP(buf, v1, r2, r2);
+      if (insn->size != 8) {
+         buf = s390_emit_VREP(buf, v1, v1, 8 / insn->size - 1,
+                              s390_getM_from_size(insn->size));
+      }
+      return buf;
+   }
+
+   vpanic("s390_vec_duplicate_emit");
+}
+
+
+static UChar *
 s390_insn_unop_emit(UChar *buf, const s390_insn *insn)
 {
    switch (insn->variant.unop.tag) {
@@ -9405,12 +9549,7 @@ s390_insn_unop_emit(UChar *buf, const s390_insn *insn)
       UShort i2 = insn->variant.unop.src.variant.imm;
       return s390_emit_VGBM(buf, v1, i2);
       }
-   case S390_VEC_DUPLICATE: {
-      vassert(insn->variant.unop.src.tag == S390_OPND_REG);
-      UChar v1 = hregNumber(insn->variant.unop.dst);
-      UChar v2 = hregNumber(insn->variant.unop.src.variant.reg);
-      return s390_emit_VREP(buf, v1, v2, s390_getM_from_size(insn->size));
-      }
+   case S390_VEC_DUPLICATE:  return s390_vec_duplicate_emit(buf, insn);
    case S390_VEC_UNPACKLOWS: {
       vassert(insn->variant.unop.src.tag == S390_OPND_REG);
       vassert(insn->size < 8);
@@ -11595,6 +11734,16 @@ s390_insn_vec_triop_emit(UChar *buf, const s390_insn *insn)
 }
 
 
+static UChar *
+s390_insn_vec_replicate_emit(UChar *buf, const s390_insn *insn)
+{
+   UChar v1 = hregNumber(insn->variant.vec_replicate.dst);
+   UChar v2 = hregNumber(insn->variant.vec_replicate.op1);
+   UShort idx = (UShort) insn->variant.vec_replicate.idx;
+   return s390_emit_VREP(buf, v1, v2, idx, s390_getM_from_size(insn->size));
+}
+
+
 Int
 emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, const s390_insn *insn,
                Bool mode64, VexEndness endness_host,
@@ -11791,6 +11940,11 @@ emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, const s390_insn *insn,
    case S390_INSN_VEC_TRIOP:
       end = s390_insn_vec_triop_emit(buf, insn);
       break;
+
+   case S390_INSN_VEC_REPLICATE:
+      end = s390_insn_vec_replicate_emit(buf, insn);
+      break;
+
    fail:
    default:
       vpanic("emit_S390Instr");

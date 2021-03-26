@@ -3778,12 +3778,12 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
    }
    /* --------- UNARY OP --------- */
    case Iex_Unop: {
-      UChar size_for_int_arg = 0;
       HReg dst = INVALID_HREG;
       HReg reg1 = INVALID_HREG;
       s390_unop_t vec_unop = S390_UNOP_T_INVALID;
       s390_vec_binop_t vec_binop = S390_VEC_BINOP_T_INVALID;
       IROp op = expr->Iex.Unop.op;
+      IROp arg_op = Iop_INVALID;
       IRExpr* arg = expr->Iex.Unop.arg;
       switch(op) {
       case Iop_NotV128:
@@ -3839,59 +3839,63 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
       }
 
       case Iop_Dup8x16:
-         size = size_for_int_arg = 1;
-         vec_unop = S390_VEC_DUPLICATE;
-         goto Iop_V_int_wrk;
+         size = 1;
+         arg_op = Iop_GetElem8x16;
+         goto Iop_V_dup_wrk;
       case Iop_Dup16x8:
-         size = size_for_int_arg = 2;
-         vec_unop = S390_VEC_DUPLICATE;
-         goto Iop_V_int_wrk;
+         size = 2;
+         arg_op = Iop_GetElem16x8;
+         goto Iop_V_dup_wrk;
       case Iop_Dup32x4:
-         size = size_for_int_arg = 4;
-         vec_unop = S390_VEC_DUPLICATE;
-         goto Iop_V_int_wrk;
+         size = 4;
+         arg_op = Iop_GetElem32x4;
+         goto Iop_V_dup_wrk;
+
+      Iop_V_dup_wrk: {
+         dst = newVRegV(env);
+         if (arg->tag == Iex_Binop && arg->Iex.Binop.op == arg_op &&
+             arg->Iex.Binop.arg2->tag == Iex_Const) {
+            ULong idx;
+            idx = get_const_value_as_ulong(arg->Iex.Binop.arg2-> Iex.Const.con);
+            reg1 = s390_isel_vec_expr(env, arg->Iex.Binop.arg1);
+            addInstr(env, s390_insn_vec_replicate(size, dst, reg1, (UChar)idx));
+         } else {
+            s390_opnd_RMI src = s390_isel_int_expr_RMI(env, arg);
+            addInstr(env, s390_insn_unop(size, S390_VEC_DUPLICATE, dst, src));
+         }
+         return dst;
+      }
 
       case Iop_Widen8Sto16x8:
          size = 1;
-         size_for_int_arg = 8;
          vec_unop = S390_VEC_UNPACKLOWS;
-         goto Iop_V_int_wrk;
+         goto Iop_V_widen_wrk;
       case Iop_Widen16Sto32x4:
          size = 2;
-         size_for_int_arg = 8;
          vec_unop = S390_VEC_UNPACKLOWS;
-         goto Iop_V_int_wrk;
+         goto Iop_V_widen_wrk;
       case Iop_Widen32Sto64x2:
          size = 4;
-         size_for_int_arg = 8;
          vec_unop = S390_VEC_UNPACKLOWS;
-         goto Iop_V_int_wrk;
+         goto Iop_V_widen_wrk;
       case Iop_Widen8Uto16x8:
          size = 1;
-         size_for_int_arg = 8;
          vec_unop = S390_VEC_UNPACKLOWU;
-         goto Iop_V_int_wrk;
+         goto Iop_V_widen_wrk;
       case Iop_Widen16Uto32x4:
          size = 2;
-         size_for_int_arg = 8;
          vec_unop = S390_VEC_UNPACKLOWU;
-         goto Iop_V_int_wrk;
+         goto Iop_V_widen_wrk;
       case Iop_Widen32Uto64x2:
          size = 4;
-         size_for_int_arg = 8;
          vec_unop = S390_VEC_UNPACKLOWU;
-         goto Iop_V_int_wrk;
+         goto Iop_V_widen_wrk;
 
-      Iop_V_int_wrk: {
-         HReg vr1 = vec_generate_zeroes(env);
-         s390_amode* amode2 = s390_isel_amode(env, IRExpr_Const(IRConst_U64(0)));
-         reg1 = s390_isel_int_expr(env, arg);
-
+      Iop_V_widen_wrk: {
          vassert(vec_unop != S390_UNOP_T_INVALID);
-         addInstr(env,
-                  s390_insn_vec_amodeintop(size_for_int_arg, S390_VEC_SET_ELEM,
-                                           vr1, amode2, reg1));
-
+         s390_opnd_RMI src = s390_isel_int_expr_RMI(env, arg);
+         HReg vr1 = newVRegV(env);
+         addInstr(env, s390_insn_unop(8, S390_VEC_DUPLICATE, vr1, src));
          dst = newVRegV(env);
          addInstr(env, s390_insn_unop(size, vec_unop, dst, s390_opnd_reg(vr1)));
          return dst;

@@ -4376,6 +4376,7 @@ AC_CHECK_LIB([rt], [clock_gettime])
 
 AC_CHECK_FUNCS([     \
         clock_gettime\
+        copy_file_range \
         epoll_create \
         epoll_pwait  \
         klogctl      \
@@ -4386,14 +4387,20 @@ AC_CHECK_FUNCS([     \
         mkdir        \
         mremap       \
         ppoll        \
+        preadv       \
+        preadv2      \
+        process_vm_readv  \
+        process_vm_writev \
         pthread_barrier_init       \
         pthread_condattr_setclock  \
         pthread_mutex_timedlock    \
         pthread_rwlock_timedrdlock \
         pthread_rwlock_timedwrlock \
+        pthread_setname_np         \
         pthread_spin_lock          \
         pthread_yield              \
-        pthread_setname_np         \
+        pwritev      \
+        pwritev2     \
         readlinkat   \
         semtimedop   \
         signalfd     \
@@ -4406,13 +4413,6 @@ AC_CHECK_FUNCS([     \
         swapcontext  \
         syscall      \
         utimensat    \
-        process_vm_readv  \
-        process_vm_writev \
-        copy_file_range \
-        preadv \
-        pwritev \
-        preadv2 \
-        pwritev2 \
         ])
 
 # AC_CHECK_LIB adds any library found to the variable LIBS, and links these

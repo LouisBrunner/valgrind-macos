@@ -47,7 +47,6 @@ check_PROGRAMS = \
 	lsframe2 \
 	rfcomm \
 	sigqueue \
-	stack_changes \
 	stack_switch \
 	syscalls-2007 \
 	syslog-syscall \
@@ -76,6 +75,10 @@ endif
 
 if HAVE_PREADV2_PWRITEV2
         check_PROGRAMS += sys-preadv2_pwritev2
+endif
+
+if HAVE_SETCONTEXT
+        check_PROGRAMS += stack_changes
 endif
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)

@@ -2299,9 +2299,12 @@ s390_vr_fill(UChar v1, IRExpr *o2)
    case Ity_I32:
       put_vr_qw(v1, unop(Iop_Dup32x4, o2));
       break;
-   case Ity_I64:
-      put_vr_qw(v1, binop(Iop_64HLtoV128, o2, o2));
+   case Ity_I64: {
+      IRTemp val = newTemp(Ity_I64);
+      assign(val, o2);
+      put_vr_qw(v1, binop(Iop_64HLtoV128, mkexpr(val), mkexpr(val)));
       break;
+   }
    default:
       ppIRType(o2type);
       vpanic("s390_vr_fill: invalid IRType");

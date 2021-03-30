@@ -4662,12 +4662,16 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
       }
 
       case Iop_64HLtoV128:
-         reg1 = s390_isel_int_expr(env, arg1);
-         reg2 = s390_isel_int_expr(env, arg2);
-
-         addInstr(env, s390_insn_vec_binop(size, S390_VEC_INIT_FROM_GPRS,
-                  dst, reg1, reg2));
-
+         if (arg1->tag == Iex_RdTmp && arg2->tag == Iex_RdTmp &&
+             arg1->Iex.RdTmp.tmp == arg2->Iex.RdTmp.tmp) {
+            s390_opnd_RMI src = s390_isel_int_expr_RMI(env, arg1);
+            addInstr(env, s390_insn_unop(8, S390_VEC_DUPLICATE, dst, src));
+         } else {
+            reg1 = s390_isel_int_expr(env, arg1);
+            reg2 = s390_isel_int_expr(env, arg2);
+            addInstr(env, s390_insn_vec_binop(size, S390_VEC_INIT_FROM_GPRS,
+                                              dst, reg1, reg2));
+         }
          return dst;
 
       default:

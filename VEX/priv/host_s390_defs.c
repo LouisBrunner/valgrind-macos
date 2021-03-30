@@ -7860,12 +7860,24 @@ s390_insn_as_string(const s390_insn *insn)
          op = "v-vunpacku";
          break;
 
-      case S390_VEC_FLOAT_NEG:
-         op = "v-vfloatneg";
+      case S390_VEC_ABS:
+         op = "v-vabs";
          break;
 
-      case S390_VEC_FLOAT_SQRT:
-         op = "v-vfloatsqrt";
+      case S390_VEC_COUNT_LEADING_ZEROES:
+         op = "v-vclz";
+         break;
+
+      case S390_VEC_COUNT_TRAILING_ZEROES:
+         op = "v-vctz";
+         break;
+
+      case S390_VEC_COUNT_ONES:
+         op = "v-vpopct";
+         break;
+
+      case S390_VEC_FLOAT_NEG:
+         op = "v-vfloatneg";
          break;
 
       case S390_VEC_FLOAT_ABS:
@@ -7874,6 +7886,10 @@ s390_insn_as_string(const s390_insn *insn)
 
       case S390_VEC_FLOAT_NABS:
          op = "v-vfloatnabs";
+         break;
+
+      case S390_VEC_FLOAT_SQRT:
+         op = "v-vfloatsqrt";
          break;
 
       default:

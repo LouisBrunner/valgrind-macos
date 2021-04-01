@@ -1,3 +1,43 @@
+Release 3.??.? (?? 2021)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
+PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,
+MIPS64/Linux, ARM/Android, ARM64/Android, MIPS32/Android, X86/Android,
+X86/Solaris, AMD64/Solaris and AMD64/MacOSX 10.12.  There is also preliminary
+support for X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
+
+* ==================== CORE CHANGES ===================
+
+* ================== PLATFORM CHANGES =================
+
+* arm64:
+
+* s390:
+
+* ppc64:
+
+  - ISA 3.1 support is now complete
+
+* ==================== TOOL CHANGES ====================
+
+* ==================== FIXED BUGS ====================
+
+The following bugs have been fixed or resolved.  Note that "n-i-bz"
+stands for "not in bugzilla" -- that is, a bug that was reported to us
+but never got a bugzilla entry.  We encourage you to file bugs in
+bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
+than mailing the developers (or mailing lists) directly -- bugs that
+are not entered into bugzilla tend to get forgotten about or ignored.
+
+429375  PPC ISA 3.1 support is missing, part 9
+433801  PPC ISA 3.1 support is missing, part 10 (ISA 3.1 support complete)
+
+To see details of a given bug, visit
+  https://bugs.kde.org/show_bug.cgi?id=XXXXXX
+where XXXXXX is the bug number as listed below.
+
+
 Release 3.17.0 (19 Mar 2021)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -154,7 +194,6 @@ where XXXXXX is the bug number as listed below.
 428909  helgrind: need to intercept duplicate libc definitions for Fedora 33
 429352  PPC ISA 3.1 support is missing, part 7
 429354  PPC ISA 3.1 support is missing, part 8
-429375  PPC ISA 3.1 support is missing, part 9
 429692  unhandled ppc64le-linux syscall: 147 (getsid)
 429864  s390x: C++ atomic test_and_set yields false-positive memcheck
         diagnostics
@@ -176,7 +215,6 @@ where XXXXXX is the bug number as listed below.
 433500  DRD regtest faulures when libstdc++ and libgcc debuginfo are installed
 433629  valgrind/README has type "abd" instead of "and"
 433641  Rust std::sys::unix::fs::try_statx Syscall param fstatat(file_name)
-433801  PPC ISA 3.1 support is missing, part 10 (ISA 3.1 support complete)
 433898  arm64: Handle sp, lr, fp as DwReg in CfiExpr
 434193  GCC 9+ inlined strcmp causes "Conditional jump or move [..] value" report
 n-i-bz  helgrind: If hg_cli__realloc fails, return NULL.

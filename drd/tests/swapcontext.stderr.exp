@@ -1,7 +1,3 @@
 
 
-Process terminating with default action of signal 14 (SIGALRM)
-   at 0x........: swapcontext (in /...libc...)
-   by 0x........: f (swapcontext.c:?)
-
 ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

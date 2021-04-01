@@ -25,6 +25,10 @@ typedef struct thread_local {
   size_t nrsw;
 } thread_local_t;
 
+static void sig_alrm_handler(int signo) {
+    _exit(1);
+}
+
 static void f(void *data, int n)
 {
   enum { NR_SWITCHES = 200000 };
@@ -76,6 +80,7 @@ int main(int argc, char *argv[])
   pthread_attr_t attr;
   int i, res;
 
+  signal(SIGALRM, sig_alrm_handler);
   memset(tlocal, 0, sizeof(tlocal));
 
   pthread_attr_init(&attr);

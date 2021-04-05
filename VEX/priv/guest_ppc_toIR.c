@@ -23743,6 +23743,8 @@ dis_vxs_misc( UInt prefix, UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
                   // xxbrw
                   // xxbrd
                   // xxbrq
+                  // xvcvbf16spn (VSX Convert 16-bit bfloat to 32-bit float)
+                  // xvcvspbf16 (VSX Convert 32-bit float to 16-bit bfloat)
                   // xvcvhpsp (VSX Vector Convert Half-Precision format to Single-Precision format)
                   // xvcvsphp (VSX Vector round and convert Single-Precision format to Half-Precision format)
       {
@@ -23961,7 +23963,7 @@ dis_vxs_misc( UInt prefix, UInt theInstr, const VexAbiInfo* vbi, UInt opc2,
             UChar xT_addr = ifieldRegXT ( theInstr );
             UChar xB_addr = ifieldRegXB ( theInstr );
             /* Convert 16-bit bfloat to 32-bit float, not a prefix inst */
-            DIP("xvcvbf16sp v%u,v%u\n", xT_addr, xB_addr);
+            DIP("xvcvbf16spn v%u,v%u\n", xT_addr, xB_addr);
             assign( result, vector_convert_bf16tofloat( vbi, mkexpr( vB ) ) );
             putVSReg( XT, mkexpr( result) );
 
@@ -34143,7 +34145,7 @@ static struct vsx_insn vsx_xx2[] = {
       { 0x392, "xvcvspdp" },
       { 0x3b0, "xvcvdpsxds" },
       { 0x3b2, "xvabsdp" },
-      { 0x3b6, "xxbr[h|w|d|q]|xvxexpdp|xvxexpsp|xvxsigdp|xvxsigsp|xvcvhpsp|xvcvsphp|xscvdphp|xscvhpdp" },
+      { 0x3b6, "xxbr[h|w|d|q]|xvxexpdp|xvxexpsp|xvxsigdp|xvxsigsp|xvcvhpsp|xvcvsphp|xscvdphp|xscvhpdp|xvcvbf16spn|xvcvspbf16" },
       { 0x3d0, "xvcvuxddp" },
       { 0x3d2, "xvnabsdp" },
       { 0x3f2, "xvnegdp" }
@@ -36560,8 +36562,8 @@ DisResult disInstr_PPC_WRK (
                goto decode_failure;
             }
 
-            // xxbrh, xvxexpdp, xvxexpsp, xvxsigdp
-            // xvxsigsp, xvcvhpsp
+            // xxbrh, xxbrw, xxbrd, xxbrq, xvxexpdp, xvxexpsp, xvxsigdp
+            // xvxsigsp, xvcvhpsp, xvcvbf16spn, xvcvspbf16
             if (dis_vxs_misc( prefix, theInstr, abiinfo, vsxOpc2,
                               allow_isa_3_0 ))
                goto decode_success;

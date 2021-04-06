@@ -30,6 +30,7 @@ bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
 than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
+423963  Error in child thread when CLONE_PIDFD is used
 429375  PPC ISA 3.1 support is missing, part 9
 433801  PPC ISA 3.1 support is missing, part 10 (ISA 3.1 support complete)
 

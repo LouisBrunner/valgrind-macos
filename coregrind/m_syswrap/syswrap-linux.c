@@ -940,7 +940,7 @@ PRE(sys_clone)
          ("Valgrind does not support general clone().");
    }
 
-   if (SUCCESS) {
+   if (SUCCESS && RES != 0) {
       if (ARG_FLAGS & (VKI_CLONE_PARENT_SETTID | VKI_CLONE_PIDFD))
          POST_MEM_WRITE(ARG3, sizeof(Int));
       if (ARG_FLAGS & (VKI_CLONE_CHILD_SETTID | VKI_CLONE_CHILD_CLEARTID))

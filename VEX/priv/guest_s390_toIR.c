@@ -17983,30 +17983,66 @@ s390_irgen_VERLL(UChar v1, IRTemp op2addr, UChar v3, UChar m4)
 static const HChar *
 s390_irgen_VSL(UChar v1, UChar v2, UChar v3)
 {
-   IRTemp shift_amount = newTemp(Ity_I8);
-   assign(shift_amount, binop(Iop_And8, get_vr_b7(v3), mkU8(0b00000111)));
+   IRTemp a = newTemp(Ity_V128);
+   IRTemp b = newTemp(Ity_V128);
 
-   put_vr_qw(v1, binop(Iop_ShlV128, get_vr_qw(v2), mkexpr(shift_amount)));
+   assign(a, get_vr_qw(v2));
+   assign(b, get_vr_qw(v3));
+
+   put_vr_qw(v1,
+             binop(Iop_OrV128,
+                   binop(Iop_Shl8x16, mkexpr(a), mkexpr(b)),
+                   binop(Iop_Shr8x16,
+                         binop(Iop_Shr8x16,
+                               binop(Iop_ShlV128, mkexpr(a), mkU8(8)),
+                               unop(Iop_NotV128, mkexpr(b))),
+                         unop(Iop_Dup8x16, mkU8(1)))));
    return "vsl";
 }
 
 static const HChar *
 s390_irgen_VSRL(UChar v1, UChar v2, UChar v3)
 {
-   IRTemp shift_amount = newTemp(Ity_I8);
-   assign(shift_amount, binop(Iop_And8, get_vr_b7(v3), mkU8(0b00000111)));
+   IRTemp a = newTemp(Ity_V128);
+   IRTemp b = newTemp(Ity_V128);
 
-   put_vr_qw(v1, binop(Iop_ShrV128, get_vr_qw(v2), mkexpr(shift_amount)));
+   assign(a, get_vr_qw(v2));
+   assign(b, get_vr_qw(v3));
+
+   put_vr_qw(v1,
+             binop(Iop_OrV128,
+                   binop(Iop_Shr8x16, mkexpr(a), mkexpr(b)),
+                   binop(Iop_Shl8x16,
+                         binop(Iop_Shl8x16,
+                               binop(Iop_ShrV128, mkexpr(a), mkU8(8)),
+                               unop(Iop_NotV128, mkexpr(b))),
+                         unop(Iop_Dup8x16, mkU8(1)))));
    return "vsrl";
 }
 
 static const HChar *
 s390_irgen_VSRA(UChar v1, UChar v2, UChar v3)
 {
-   IRTemp shift_amount = newTemp(Ity_I8);
-   assign(shift_amount, binop(Iop_And8, get_vr_b7(v3), mkU8(0b00000111)));
+   IRTemp a = newTemp(Ity_V128);
+   IRTemp b = newTemp(Ity_V128);
 
-   put_vr_qw(v1, binop(Iop_SarV128, get_vr_qw(v2), mkexpr(shift_amount)));
+   assign(a, get_vr_qw(v2));
+   assign(b, get_vr_qw(v3));
+
+   /* Shift-right: first byte arithmetically, all others logically */
+   IRExpr* elems_shifted =
+      binop(Iop_Sar8x16,
+            binop(Iop_Shr8x16, mkexpr(a),
+                  binop(Iop_AndV128, mkexpr(b), mkV128(0x7fff))),
+            binop(Iop_AndV128, mkexpr(b), mkV128(0x8000)));
+   /* Then OR the appropriate bits from the byte to the left */
+   put_vr_qw(v1,
+             binop(Iop_OrV128, elems_shifted,
+                   binop(Iop_Shl8x16,
+                         binop(Iop_Shl8x16,
+                               binop(Iop_ShrV128, mkexpr(a), mkU8(8)),
+                               unop(Iop_NotV128, mkexpr(b))),
+                         unop(Iop_Dup8x16, mkU8(1)))));
    return "vsra";
 }
 

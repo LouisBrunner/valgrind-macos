@@ -3611,6 +3611,8 @@ s390_isel_cc(ISelEnv *env, IRExpr *cond)
 
       case Iop_CmpNE32:
       case Iop_CmpNE64:
+      case Iop_ExpCmpNE32:
+      case Iop_ExpCmpNE64:
       case Iop_CasCmpNE32:
       case Iop_CasCmpNE64:
          result = S390_CC_NE;

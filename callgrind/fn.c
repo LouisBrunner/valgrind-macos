@@ -665,7 +665,7 @@ fn_node* CLG_(get_fn_node)(BB* bb)
       if (bb->sect_kind == Vg_SectPLT)	
 	fn->skip = CLG_(clo).skip_plt;
 
-      if (VG_(strcmp)(fn->name, "_dl_runtime_resolve")==0) {
+      if (VG_(strncmp)(fn->name, "_dl_runtime_resolve", 19)==0) {
 	  fn->pop_on_jump = True;
 
 	  if (VG_(clo_verbosity) > 1)

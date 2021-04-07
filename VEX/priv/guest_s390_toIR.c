@@ -376,6 +376,13 @@ mkU64(ULong value)
    return IRExpr_Const(IRConst_U64(value));
 }
 
+/* Create an expression node for a 128-bit vector constant */
+static __inline__ IRExpr *
+mkV128(UShort value)
+{
+   return IRExpr_Const(IRConst_V128(value));
+}
+
 /* Create an expression node for a 32-bit floating point constant
    whose value is given by a bit pattern. */
 static __inline__ IRExpr *
@@ -16249,7 +16256,7 @@ s390_irgen_VLGV(UChar r1, IRTemp op2addr, UChar v3, UChar m4)
 static const HChar *
 s390_irgen_VGBM(UChar v1, UShort i2, UChar m3 __attribute__((unused)))
 {
-   put_vr_qw(v1, IRExpr_Const(IRConst_V128(i2)));
+   put_vr_qw(v1, mkV128(i2));
 
    return "vgbm";
 }
@@ -18160,11 +18167,11 @@ s390_irgen_VSUM(UChar v1, UChar v2, UChar v3, UChar m4)
    switch(type) {
    case Ity_I8:
       sum = unop(Iop_PwAddL16Ux8, unop(Iop_PwAddL8Ux16, get_vr_qw(v2)));
-      mask = IRExpr_Const(IRConst_V128(0b0001000100010001));
+      mask = mkV128(0b0001000100010001);
       break;
    case Ity_I16:
       sum = unop(Iop_PwAddL16Ux8, get_vr_qw(v2));
-      mask = IRExpr_Const(IRConst_V128(0b0011001100110011));
+      mask = mkV128(0b0011001100110011);
       break;
    default:
       vpanic("s390_irgen_VSUM: invalid type ");
@@ -18185,11 +18192,11 @@ s390_irgen_VSUMG(UChar v1, UChar v2, UChar v3, UChar m4)
    switch(type) {
    case Ity_I16:
       sum = unop(Iop_PwAddL32Ux4, unop(Iop_PwAddL16Ux8, get_vr_qw(v2)));
-      mask = IRExpr_Const(IRConst_V128(0b0000001100000011));
+      mask = mkV128(0b0000001100000011);
       break;
    case Ity_I32:
       sum = unop(Iop_PwAddL32Ux4, get_vr_qw(v2));
-      mask = IRExpr_Const(IRConst_V128(0b0000111100001111));
+      mask = mkV128(0b0000111100001111);
       break;
    default:
       vpanic("s390_irgen_VSUMG: invalid type ");
@@ -18210,11 +18217,11 @@ s390_irgen_VSUMQ(UChar v1, UChar v2, UChar v3, UChar m4)
    switch(type) {
    case Ity_I32:
       sum = unop(Iop_PwAddL64Ux2, unop(Iop_PwAddL32Ux4, get_vr_qw(v2)));
-      mask = IRExpr_Const(IRConst_V128(0b0000000000001111));
+      mask = mkV128(0b0000000000001111);
       break;
    case Ity_I64:
       sum = unop(Iop_PwAddL64Ux2, get_vr_qw(v2));
-      mask = IRExpr_Const(IRConst_V128(0b0000000011111111));
+      mask = mkV128(0b0000000011111111);
       break;
    default:
       vpanic("s390_irgen_VSUMQ: invalid type ");
@@ -18943,8 +18950,8 @@ s390_irgen_VFCx(UChar v1, UChar v2, UChar v3, UChar m4, UChar m5, UChar m6,
          assign(cond, binop(Iop_CmpEQ32, mkexpr(result), mkU32(cmp)));
       }
       put_vr_qw(v1, mkite(mkexpr(cond),
-                          IRExpr_Const(IRConst_V128(0xffff)),
-                          IRExpr_Const(IRConst_V128(0))));
+                          mkV128(0xffff),
+                          mkV128(0)));
       if (s390_vr_is_cs_set(m6)) {
          IRTemp cc = newTemp(Ity_I64);
          assign(cc, mkite(mkexpr(cond), mkU64(0), mkU64(3)));

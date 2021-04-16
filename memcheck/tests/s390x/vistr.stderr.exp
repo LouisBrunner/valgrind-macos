@@ -1,0 +1,20 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: test_vistr_char (vistr.c:59)
+   by 0x........: main (vistr.c:71)
+
+Use of uninitialised value of size 8
+   at 0x........: test_vistr_char (vistr.c:63)
+   by 0x........: main (vistr.c:71)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: test_vistr_char (vistr.c:59)
+   by 0x........: main (vistr.c:72)
+
+Use of uninitialised value of size 8
+   at 0x........: test_vistr_char (vistr.c:63)
+   by 0x........: main (vistr.c:72)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: test_vistr_char (vistr.c:59)
+   by 0x........: main (vistr.c:74)
+

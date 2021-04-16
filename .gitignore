@@ -1118,6 +1118,9 @@
 /memcheck/tests/s390x/cu21
 /memcheck/tests/s390x/cu42
 /memcheck/tests/s390x/ltgjhe
+/memcheck/tests/s390x/vstrc
+/memcheck/tests/s390x/vfae
+/memcheck/tests/s390x/vistr
 
 # /memcheck/tests/solaris/
 /memcheck/tests/solaris/*.stderr.diff

@@ -38,6 +38,8 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 433801  PPC ISA 3.1 support is missing, part 10 (ISA 3.1 support complete)
 433863  s390x: memcheck/tests/s390x/{cds,cs,csg} failures
 434840  PPC64 darn instruction not supported
+434296  s390x: False-positive memcheck diagnostics from vector string
+        instructions
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

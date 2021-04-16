@@ -51,7 +51,7 @@ let gHeaderDiv, gTestingDiv, gMainDiv, gLegendDiv, gTimingsDiv;
 let gFilename;
 
 // The object extracted from the JSON input.
-let gData;
+let gData = {};
 
 // The root of the radix tree build from gData. A radix tree is a
 // space-optimized prefix tree in which each node that is the only child is
@@ -64,62 +64,68 @@ let gRoot;
 // - label: Used in the drop-down menu.
 // - bolds: Which fields to highlight in the output.
 // - cmpField: Field used to sort the radix tree.
+// - enable: Function saying whether this option is enabled.
 // - sig: Significance function used to determine aggregate nodes.
 // - sigLabel: Significance threshold description function.
 //
 const gSelectData = [
   {
-    label: "Total (bytes)",
+    label: () => `Total (${bytesUnit()})`,
     bolds: { "totalTitle": 1, "totalBytes": 1 },
     cmpField: "_totalBytes",
+    enable: (aBkLt, aBkAcc) => true,
     sig: (aT) => aT._totalBytes >= 0.01 * gRoot._totalBytes,
     sigLabel: () => `\
 total >= ${bytesAndPerc(0.01 * gRoot._totalBytes, gRoot._totalBytes)}`
   },
   {
     isDefault: true,
-    label: "Total (blocks)",
+    label: () => `Total (${blocksUnit()})`,
     bolds: { "totalTitle": 1, "totalBlocks": 1 },
     cmpField: "_totalBlocks",
+    enable: (aBkLt, aBkAcc) => true,
     sig: (aT) => aT._totalBlocks >= 0.01 * gRoot._totalBlocks,
     sigLabel: () => `\
 total >= ${blocksAndPerc(0.01 * gRoot._totalBlocks, gRoot._totalBlocks)}`
   },
-  // No "Total (bytes), tiny" because it's extremely unlikely that an AP with a
+  // No "Total (bytes), tiny" because it's extremely unlikely that a PP with a
   // tiny average size will take up a significant number of bytes.
   {
-    label: "Total (blocks), tiny",
+    label: () => `Total (${blocksUnit()}), tiny`,
     bolds: { "totalTitle": 1, "totalBlocks": 1, "totalAvgSizeBytes": 1 },
     cmpField: "_totalBlocks",
+    enable: (aBkLt, aBkAcc) => true,
     sig: (aT) => aT._totalBlocks >= 0.005 * gRoot._totalBlocks &&
                  aT._totalAvgSizeBytes() <= 16,
     sigLabel: () => `\
 (total >= ${blocksAndPerc(0.005 * gRoot._totalBlocks, gRoot._totalBlocks)}) && \
-(total avg size <= ${bytes(16)})`
+(avg size <= ${bytes(16)})`
   },
-  // No "Total (bytes), short-lived", because an AP with few large, short-lived
+  // No "Total (bytes), short-lived", because a PP with few large, short-lived
   // blocks is unlikely. (In contrast, "Total (blocks), short-lived" is useful,
-  // because an AP with many small, short-lived blocks *is* likely.) And if
-  // such an AP existed, it'll probably show up in "Total (bytes), zero reads
+  // because a PP with many small, short-lived blocks *is* likely.) And if
+  // such a PP existed, it'll probably show up in "Total (bytes), zero reads
   // or zero writes" or "Total (bytes), low-access" anyway, because there's
-  // little time for accesses in 500 instructions.
+  // little time for accesses in a small number of instructions.
   {
-    label: "Total (blocks), short-lived",
-    bolds: { "totalTitle": 1, "totalBlocks": 1, "totalAvgLifetimeInstrs": 1 },
+    label: () => "Total (blocks), short-lived",
+    bolds: { "totalTitle": 1, "totalBlocks": 1, "totalAvgLifetime": 1 },
     cmpField: "_totalBlocks",
+    enable: (aBkLt, aBkAcc) => aBkLt,
     sig: (aT) => aT._totalBlocks >= 0.005 * gRoot._totalBlocks &&
-                 aT._totalAvgLifetimeInstrs() <= 500,
+                 aT._totalAvgLifetimes() <= gData.tuth,
     sigLabel: () => `\
 (total >= ${blocksAndPerc(0.005 * gRoot._totalBlocks, gRoot._totalBlocks)}) && \
-(total avg lifetime <= ${instrs(500)})`
+(avg lifetime <= ${time(gData.tuth)})`
   },
   {
-    label: "Total (bytes), zero reads or zero writes",
+    label: () => "Total (bytes), zero reads or zero writes",
     bolds: { "totalTitle": 1, "totalBytes": 1,
              "readsTitle": 1, "readsBytes": 1,
              "writesTitle": 1, "writesBytes": 1,
            },
     cmpField: "_totalBytes",
+    enable: (aBkLt, aBkAcc) => aBkAcc,
     sig: (aT) => aT._totalBytes >= 0.005 * gRoot._totalBytes &&
                  (aT._readsBytes === 0 || aT._writesBytes === 0),
     sigLabel: () => `\
@@ -127,12 +133,13 @@ total >= ${blocksAndPerc(0.01 * gRoot._totalBlocks, gRoot._totalBlocks)}`
 ((reads == ${bytes(0)}) || (writes == ${bytes(0)}))`
   },
   {
-    label: "Total (blocks), zero reads or zero writes",
+    label: () => "Total (blocks), zero reads or zero writes",
     bolds: { "totalTitle": 1, "totalBlocks": 1,
              "readsTitle": 1, "readsBytes": 1,
              "writesTitle": 1, "writesBytes": 1,
            },
     cmpField: "_totalBlocks",
+    enable: (aBkLt, aBkAcc) => aBkAcc,
     sig: (aT) => aT._totalBlocks >= 0.005 * gRoot._totalBlocks &&
                  (aT._readsBytes === 0 || aT._writesBytes === 0),
     sigLabel: () => `\
@@ -140,12 +147,13 @@ total >= ${blocksAndPerc(0.01 * gRoot._totalBlocks, gRoot._totalBlocks)}`
 ((reads == ${bytes(0)}) || (writes == ${bytes(0)}))`
   },
   {
-    label: "Total (bytes), low-access",
+    label: () => "Total (bytes), low-access",
     bolds: { "totalTitle": 1, "totalBytes": 1,
              "readsTitle": 1, "readsAvgPerByte": 1,
              "writesTitle": 1, "writesAvgPerByte": 1,
            },
     cmpField: "_totalBytes",
+    enable: (aBkLt, aBkAcc) => aBkAcc,
     sig: (aT) => aT._totalBytes >= 0.005 * gRoot._totalBytes &&
                  aT._readsBytes !== 0 &&
                  aT._writesBytes !== 0 &&
@@ -158,12 +166,13 @@ total >= ${blocksAndPerc(0.01 * gRoot._totalBlocks, gRoot._totalBlocks)}`
 ((reads <= ${perByte(0.4)}) || (writes <= ${perByte(0.4)}))`
   },
   {
-    label: "Total (blocks), low-access",
+    label: () => "Total (blocks), low-access",
     bolds: { "totalTitle": 1, "totalBlocks": 1,
              "readsTitle": 1, "readsAvgPerByte": 1,
              "writesTitle": 1, "writesAvgPerByte": 1,
            },
     cmpField: "_totalBlocks",
+    enable: (aBkLt, aBkAcc) => aBkAcc,
     sig: (aT) => aT._totalBlocks >= 0.005 * gRoot._totalBlocks &&
                  aT._readsBytes !== 0 &&
                  aT._writesBytes !== 0 &&
@@ -176,14 +185,15 @@ total >= ${blocksAndPerc(0.01 * gRoot._totalBlocks, gRoot._totalBlocks)}`
 ((reads <= ${perByte(0.4)}) || (writes <= ${perByte(0.4)}))`
   },
   // No "Total (avg size bytes)": not interesting.
-  // No "Total (avg lifetime instrs)": covered by "Total (blocks), short-lived".
+  // No "Total (avg lifetime)": covered by "Total (blocks), short-lived".
   // No "Max (bytes)": not interesting, and unclear how to sort.
   // No "Max (blocks)": not interesting, and unclear how to sort.
   // No "Max (avg size bytes)": not interesting, and unclear how to sort.
   {
-    label: "At t-gmax (bytes)",
+    label: () => "At t-gmax (bytes)",
     bolds: { "atTGmaxTitle": 1, "atTGmaxBytes": 1 },
     cmpField: "_atTGmaxBytes",
+    enable: (aBkLt, aBkAcc) => aBkLt,
     sig: (aT) => aT._atTGmaxBytes >= 0.01 * gRoot._atTGmaxBytes,
     sigLabel: () => `\
 at-t-gmax >= ${bytesAndPerc(0.01 * gRoot._atTGmaxBytes, gRoot._atTGmaxBytes)}`
@@ -191,9 +201,10 @@ at-t-gmax >= ${bytesAndPerc(0.01 * gRoot._atTGmaxBytes, gRoot._atTGmaxBytes)}`
   // No "At t-gmax (blocks)": not interesting.
   // No "At t-gmax (avg size bytes)": not interesting.
   {
-    label: "At t-end (bytes)",
+    label: () => "At t-end (bytes)",
     bolds: { "atTEndTitle": 1, "atTEndBytes": 1 },
     cmpField: "_atTEndBytes",
+    enable: (aBkLt, aBkAcc) => aBkLt,
     sig: (aT) => aT._atTEndBytes >= 0.01 * gRoot._atTEndBytes,
     sigLabel: () => `\
 at-t-end >= ${bytesAndPerc(0.01 * gRoot._atTEndBytes, gRoot._atTEndBytes)}`
@@ -201,17 +212,19 @@ at-t-end >= ${bytesAndPerc(0.01 * gRoot._atTEndBytes, gRoot._atTEndBytes)}`
   // No "At t-end (blocks)": not interesting.
   // No "At t-end (avg size bytes)": not interesting.
   {
-    label: "Reads (bytes)",
+    label: () => "Reads (bytes)",
     bolds: { "readsTitle": 1, "readsBytes": 1 },
     cmpField: "_readsBytes",
+    enable: (aBkLt, aBkAcc) => aBkAcc,
     sig: (aT) => aT._readsBytes >= 0.01 * gRoot._readsBytes,
     sigLabel: () => `\
 reads >= ${bytesAndPerc(0.01 * gRoot._readsBytes, gRoot._readsBytes)}`
   },
   {
-    label: "Reads (bytes), high-access",
+    label: () => "Reads (bytes), high-access",
     bolds: { "readsTitle": 1, "readsBytes": 1, "readsAvgPerByte": 1 },
     cmpField: "_readsBytes",
+    enable: (aBkLt, aBkAcc) => aBkAcc,
     sig: (aT) => aT._readsBytes >= 0.005 * gRoot._readsBytes &&
                  (aT._readsAvgPerByte() >= 1000 ||
                   aT._writesAvgPerByte() >= 1000),
@@ -221,17 +234,19 @@ reads >= ${bytesAndPerc(0.01 * gRoot._readsBytes, gRoot._readsBytes)}`
   },
   // No "Reads (avg per byte)": covered by other access-related ones.
   {
-    label: "Writes (bytes)",
+    label: () => "Writes (bytes)",
     bolds: { "writesTitle": 1, "writesBytes": 1 },
     cmpField: "_writesBytes",
+    enable: (aBkLt, aBkAcc) => aBkAcc,
     sig: (aT) => aT._writesBytes >= 0.01 * gRoot._writesBytes,
     sigLabel: () => `\
 writes >= ${bytesAndPerc(0.01 * gRoot._writesBytes, gRoot._writesBytes)}`
   },
   {
-    label: "Writes (bytes), high-access",
+    label: () => "Writes (bytes), high-access",
     bolds: { "writesTitle": 1, "writesBytes": 1, "writesAvgPerByte": 1 },
     cmpField: "_writesBytes",
+    enable: (aBkLt, aBkAcc) => aBkAcc,
     sig: (aT) => aT._writesBytes >= 0.005 * gRoot._writesBytes &&
                  (aT._readsAvgPerByte() >= 1000 ||
                   aT._writesAvgPerByte() >= 1000),
@@ -304,10 +319,10 @@ function TreeNode(aKind, aFrames) {
   this._totalBytes = 0;
   this._totalBlocks = 0;
 
-  this._totalLifetimesInstrs = 0;
+  this._totalLifetimes = 0;
 
   // These numbers only make sense for leaf nodes. Unlike total stats, which
-  // can be summed, _maxBytes/_maxBlocks for two APs can't be easily combined
+  // can be summed, _maxBytes/_maxBlocks for two PPs can't be easily combined
   // because the maxes may have occurred at different times.
   if (this._kind === kLeaf) {
     this._maxBytes = 0;
@@ -341,15 +356,20 @@ function TreeNode(aKind, aFrames) {
 }
 
 TreeNode.prototype = {
-  _add(aTotalBytes, aTotalBlocks, aTotalLifetimesInstrs, aMaxBytes,
+  _add(aTotalBytes, aTotalBlocks, aTotalLifetimes, aMaxBytes,
        aMaxBlocks, aAtTGmaxBytes, aAtTGmaxBlocks, aAtTEndBytes,
        aAtTEndBlocks, aReadsBytes, aWritesBytes, aAccesses) {
 
     // We ignore this._kind, this._frames, and this._kids.
 
+    // Note: if !gData.bklt and/or !gData.bkacc, some of these fields these
+    // values come from will be missing in the input file, so the values will
+    // be `undefined`, and the fields will end up as `NaN`. But this is ok
+    // because we don't show them.
+
     this._totalBytes += aTotalBytes;
     this._totalBlocks += aTotalBlocks;
-    this._totalLifetimesInstrs += aTotalLifetimesInstrs;
+    this._totalLifetimes += aTotalLifetimes;
 
     if (this._kind === kLeaf) {
       // Leaf nodes should only be added to once, because DHAT currently
@@ -391,9 +411,9 @@ TreeNode.prototype = {
     }
   },
 
-  _addAP(aAP) {
-    this._add(aAP.tb, aAP.tbk, aAP.tli, aAP.mb, aAP.mbk, aAP.gb, aAP.gbk,
-              aAP.fb, aAP.fbk, aAP.rb, aAP.wb, aAP.acc);
+  _addPP(aPP) {
+    this._add(aPP.tb, aPP.tbk, aPP.tl, aPP.mb, aPP.mbk, aPP.gb, aPP.gbk,
+              aPP.eb, aPP.ebk, aPP.rb, aPP.wb, aPP.acc);
   },
 
   // This is called in two cases.
@@ -401,7 +421,7 @@ TreeNode.prototype = {
   //   cloning a node).
   // - Aggregating multiple nodes.
   _addNode(aT) {
-    this._add(aT._totalBytes, aT._totalBlocks, aT._totalLifetimesInstrs,
+    this._add(aT._totalBytes, aT._totalBlocks, aT._totalLifetimes,
               aT._maxBytes, aT._maxBlocks, aT._atTGmaxBytes, aT._atTGmaxBlocks,
               aT._atTEndBytes, aT._atTEndBlocks,
               aT._readsBytes, aT._writesBytes, aT._accesses);
@@ -409,7 +429,7 @@ TreeNode.prototype = {
 
   // Split the node after the aTi'th internal frame. The inheriting kid will
   // get the post-aTi frames; the new kid will get aNewFrames.
-  _split(aTi, aAP, aNewFrames) {
+  _split(aTi, aPP, aNewFrames) {
     // kid1 inherits t's kind and values.
     let inheritedFrames = this._frames.splice(aTi + 1);
     let kid1 = new TreeNode(this._kind, inheritedFrames);
@@ -420,7 +440,7 @@ TreeNode.prototype = {
 
     // Put all remaining frames into kid2.
     let kid2 = new TreeNode(kLeaf, aNewFrames);
-    kid2._addAP(aAP);
+    kid2._addPP(aPP);
 
     // Update this.
     if (this._kind === kLeaf) {
@@ -432,15 +452,15 @@ TreeNode.prototype = {
       delete this._maxBlocks;
     }
     this._kids = [kid1, kid2];
-    this._addAP(aAP);
+    this._addPP(aPP);
   },
 
   _totalAvgSizeBytes() {
     return div(this._totalBytes, this._totalBlocks);
   },
 
-  _totalAvgLifetimeInstrs() {
-    return div(this._totalLifetimesInstrs, this._totalBlocks);
+  _totalAvgLifetimes() {
+    return div(this._totalLifetimes, this._totalBlocks);
   },
 
   _maxAvgSizeBytes() {
@@ -474,15 +494,15 @@ function checkFields(aObj, aFields) {
   }
 }
 
-// Do basic checking of an AP read from file.
-function checkAP(aAP) {
-  let fields = ["tb", "tbk", "tli",
-                "mb", "mbk",
-                "gb", "gbk",
-                "fb", "fbk",
-                "rb", "wb",
-                "fs"];
-  checkFields(aAP, fields);
+// Do basic checking of a PP read from file.
+function checkPP(aPP) {
+  checkFields(aPP, ["tb", "tbk", "fs"]);
+  if (gData.bklt) {
+    checkFields(aPP, ["mb", "mbk", "gb", "gbk", "eb", "ebk"]);
+  }
+  if (gData.bkacc) {
+    checkFields(aPP, ["rb", "wb"]);
+  }
 }
 
 // Access counts latch as 0xffff. Treating 0xffff as Infinity gives us exactly
@@ -497,51 +517,78 @@ function normalizeAccess(aAcc) {
   assert(false, "too-large access value");
 }
 
-const kExpectedFileVersion = 1;
+const kExpectedFileVersion = 2;
 
 // Build gRoot from gData.
 function buildTree() {
   // Check global values.
-  let fields = ["dhatFileVersion",
+  let fields = ["dhatFileVersion", "mode", "verb",
+                "bklt", "bkacc",
+                "tu", "Mtu",
                 "cmd", "pid",
-                "mi", "ei",
-                "aps", "ftbl"];
+                "te", "pps", "ftbl"];
   checkFields(gData, fields);
   if (gData.dhatFileVersion != kExpectedFileVersion) {
-      throw Error(`data file has version number ${gData.dhatFileVersion}, ` +
-                  `expected version number ${kExpectedFileVersion}`);
+      throw new Error(
+        `data file has version number ${gData.dhatFileVersion}, ` +
+        `expected version number ${kExpectedFileVersion}`);
+  }
+
+  if (gData.bklt) {
+    checkFields(gData, ["tg", "tuth"]);
+  }
+
+  // Update sort metric labels, and disable sort metrics that aren't allowed
+  // for this data.
+  for (let [i, option] of gSelect.childNodes.entries()) {
+    let data = gSelectData[i];
+    option.label = data.label();
+    option.disabled = !data.enable(gData.bklt, gData.bkacc);
+  }
+
+  // If the selected sort metric was just disabled, switch the sort metric
+  // back to the default (which is never disabled).
+  let option = gSelect.childNodes[gSelect.selectedIndex];
+  if (option.disabled) {
+    for (let [i, data] of gSelectData.entries()) {
+      let option = gSelect.childNodes[i];
+      if (data.isDefault) {
+        option.selected = true;
+        break;
+      }
+    }
   }
 
   // Build the radix tree. Nodes are in no particular order to start with. The
   // algorithm is tricky because we need to use internal frames when possible.
   gRoot = new TreeNode(kLeaf, [0]);   // Frame 0 is always "[root]".
 
-  for (let [i, ap] of gData.aps.entries()) {
-    checkAP(ap);
+  for (let [i, pp] of gData.pps.entries()) {
+    checkPP(pp);
 
     // Decompress the run-length encoding in `acc`, if present.
-    if (ap.acc) {
+    if (pp.acc) {
       let acc = [];
-      for (let i = 0; i < ap.acc.length; i++) {
-        if (ap.acc[i] < 0) {
+      for (let i = 0; i < pp.acc.length; i++) {
+        if (pp.acc[i] < 0) {
           // A negative number encodes a repeat count. The following entry has
           // the value to be repeated.
-          let reps = -ap.acc[i++];
-          let val = ap.acc[i];
+          let reps = -pp.acc[i++];
+          let val = pp.acc[i];
           for (let j = 0; j < reps; j++) {
             acc.push(normalizeAccess(val));
           }
         } else {
-          acc.push(normalizeAccess(ap.acc[i]));
+          acc.push(normalizeAccess(pp.acc[i]));
         }
       }
-      ap.acc = acc;
+      pp.acc = acc;
     }
 
-    // The first AP is a special case, because we have to build gRoot.
+    // The first PP is a special case, because we have to build gRoot.
     if (i === 0) {
-      gRoot._frames.push(...ap.fs);
-      gRoot._addAP(ap);
+      gRoot._frames.push(...pp.fs);
+      gRoot._addPP(pp);
       continue;
     }
 
@@ -553,8 +600,7 @@ function buildTree() {
     // `abcd` is a frame sequence (and `-` is an empty sequence), `N` is a node
     // value, and `Xs` are the node's children.
 
-    for (let [j, kidFrame] of ap.fs.entries()) {
-
+    for (let [j, kidFrame] of pp.fs.entries()) {
       // Search for kidFrame among internal frames.
       if (ti + 1 < t._frames.length) {
         // t has an internal frame at the right index.
@@ -566,7 +612,7 @@ function buildTree() {
           // The internal frame doesn't match. Split the node.
           //
           // E.g. abcd:20-[] + abef:10 => ab:30-[cd:20-[], ef:10-[]]
-          t._split(ti, ap, ap.fs.slice(j));
+          t._split(ti, pp, pp.fs.slice(j));
           done = true;
           break;
         }
@@ -580,12 +626,12 @@ function buildTree() {
           // get the leftover frames.
           //
           // E.g. ab:20-[] + abcd:10 => ab:30-[-:20-[], cd:10-[]]
-          t._split(ti, ap, ap.fs.slice(j));
+          t._split(ti, pp, pp.fs.slice(j));
           done = true;
           break;
         }
 
-        t._addAP(ap);
+        t._addPP(pp);
 
         // Search for the frame among the kids.
         let kid;
@@ -604,8 +650,8 @@ function buildTree() {
           //
           // E.g. ab:20-[c:10-Xs, d:10-Ys] + abef:10 =>
           //      ab:30-[c:10-Xs, d:10-Ys, ef:10-[]]
-          kid = new TreeNode(kLeaf, ap.fs.slice(j));
-          kid._addAP(ap);
+          kid = new TreeNode(kLeaf, pp.fs.slice(j));
+          kid._addPP(pp);
           t._kids.push(kid);
           done = true;
           break;
@@ -615,9 +661,9 @@ function buildTree() {
 
     if (!done) {
       // If we reach here, either:
-      // - ap's frames match an existing frame sequence, in which case we
-      //   just need to _addAP(); or
-      // - ap's frames are a subsequence of an existing sequence, in which
+      // - pp's frames match an existing frame sequence, in which case we
+      //   just need to _addPP(); or
+      // - pp's frames are a subsequence of an existing sequence, in which
       //   case we must split.
 
       if (ti + 1 < t._frames.length) {
@@ -625,20 +671,20 @@ function buildTree() {
         // frames. Split, creating an empty node.
         //
         // E.g. abcd:20-Xs + ab:10 => ab:30-[cd:20-Xs, -:10-[]]
-        t._split(ti, ap, []);
+        t._split(ti, pp, []);
 
       } else if (!t._kids) {
         // This is impossible because DHAT currently produces records with
         // unique locations. If we remove addresses from frames in the future
         // then duplicate locations will occur, and the following code is how
         // it must be handled.
-        throw Error(`data file contains a repeated location`);
+        throw new Error(`data file contains a repeated location (1)`);
 
         // Matches an existing sequence that doesn't end in node with empty
-        // frames. Add the AP.
+        // frames. Add the PP.
         //
         // E.g. ab:20-[] + ab:10 => ab:30-[]
-        t._addAP(ap);
+        t._addPP(pp);
 
       } else {
         // Look for a kid with empty frames.
@@ -655,14 +701,14 @@ function buildTree() {
           // unique locations. If we remove addresses from frames in the future
           // then duplicate locations will occur, and the following code is how
           // it must be handled.
-          throw Error(`data file contains a repeated location`);
+          throw new Error(`data file contains a repeated location (2)`);
 
           // Matches an existing sequence that ends in a node with empty
-          // frames. Add the AP.
+          // frames. Add the PP.
           //
           // E.g. ab:20-[c:10-Xs, -:10-[]] + ab:10 => ab:30-[c:10-Xs, -:20-[]]
-          t._addAP(ap);
-          emptyKid._addAP(ap);
+          t._addPP(pp);
+          emptyKid._addPP(pp);
 
         } else {
           // A subsequence of an existing sequence that ends at the end of t's
@@ -671,14 +717,13 @@ function buildTree() {
           // E.g. ab:20-[c:10-Xs, d:10-Ys] + ab:10 =>
           //      ab:30-[c:10-Xs, d:10-Ys, -:10-[]]
           let newKid = new TreeNode(kLeaf, []);
-          newKid._addAP(ap);
+          newKid._addPP(pp);
 
           t._kids.push(newKid);
-          t._addAP(ap);
+          t._addPP(pp);
         }
       }
     }
-
   }
 }
 
@@ -697,11 +742,23 @@ function perc(aNum, aDenom) {
 }
 
 function perMinstr(aN) {
-  return `${kDFormat.format(div(1000000 * aN, gData.ei))}/Minstr`;
+  return `${kDFormat.format(div(1000000 * aN, gData.te))}/${gData.Mtu}`;
+}
+
+function byteUnit() {
+    return gData.hasOwnProperty("bu") ? gData.bsu : "byte";
+}
+
+function bytesUnit() {
+    return gData.hasOwnProperty("bsu") ? gData.bsu : "bytes";
+}
+
+function blocksUnit() {
+    return gData.hasOwnProperty("bksu") ? gData.bksu : "blocks";
 }
 
 function bytes(aN) {
-  return `${kDFormat.format(aN)} bytes`;
+  return `${kDFormat.format(aN)} ${bytesUnit()}`;
 }
 
 function bytesAndPerc(aN, aTotalN) {
@@ -713,7 +770,7 @@ function bytesAndPercAndRate(aN, aTotalN) {
 }
 
 function blocks(aN) {
-  return `${kDFormat.format(aN)} blocks`;
+  return `${kDFormat.format(aN)} ${blocksUnit()}`;
 }
 
 function blocksAndPerc(aN, aTotalN) {
@@ -729,15 +786,15 @@ function avgSizeBytes(aN) {
 }
 
 function perByte(aN) {
-  return `${kDFormat.format(aN)}/byte`;
+  return `${kDFormat.format(aN)}/${byteUnit()}`;
 }
 
-function instrs(aN) {
-  return `${kDFormat.format(aN)} instrs`;
+function time(aN) {
+  return `${kDFormat.format(aN)} ${gData.tu}`;
 }
 
-function avgLifetimeInstrs(aN) {
-  return `avg lifetime ${instrs(aN)}`;
+function avgLifetime(aN) {
+  return `avg lifetime ${time(aN)}`;
 }
 
 function accesses(aAccesses) {
@@ -817,6 +874,7 @@ function appendInvocationAndTimes(aP) {
   let v, v1, v2;
 
   v = "Invocation {\n";
+  v += `  Mode:    ${gData.mode}\n`;
   v += `  Command: ${gData.cmd}\n`;
   v += `  PID:     ${gData.pid}\n`;
   v += "}\n\n";
@@ -825,9 +883,11 @@ function appendInvocationAndTimes(aP) {
 
   v = "Times {\n";
 
-  v1 = perc(gData.mi, gData.ei);
-  v += `  t-gmax: ${instrs(gData.mi)} (${v1} of program duration)\n`;
-  v += `  t-end:  ${instrs(gData.ei)}\n`;
+  v1 = perc(gData.tg, gData.te);
+  if (gData.bklt) {
+    v += `  t-gmax: ${time(gData.tg)} (${v1} of program duration)\n`;
+  }
+  v += `  t-end:  ${time(gData.te)}\n`;
 
   v += "}\n\n";
 
@@ -1017,103 +1077,109 @@ function appendTreeInner(aT, aP, aBolds, aCmp, aPc, aSig, aNodeIdNums,
 
   let v1, v2, v3, v4, v5;
 
-  // "AP" + node ID + kid count.
+  // "PP" + node ID + kid count.
   v1 = aNodeIdNums.join('.');
   v2 = aNumSibs + 1;
   v3 = kids ? `(${kids.length} children) ` : "";
-  fr(`AP ${v1}/${v2} ${v3}{`, true, false);
+  fr(`PP ${v1}/${v2} ${v3}{`, true, false);
   nl(true);
 
   // "Total".
   v1 = bytesAndPercAndRate(aT._totalBytes, gRoot._totalBytes);
   v2 = blocksAndPercAndRate(aT._totalBlocks, gRoot._totalBlocks);
   v3 = avgSizeBytes(aT._totalAvgSizeBytes());
-  v4 = avgLifetimeInstrs(aT._totalAvgLifetimeInstrs());
-  v5 = perc(aT._totalAvgLifetimeInstrs(), gData.ei);
+  v4 = avgLifetime(aT._totalAvgLifetimes());
+  v5 = perc(aT._totalAvgLifetimes(), gData.te);
   fr("  Total:     ", aBolds.totalTitle);
   fr(v1, aBolds.totalBytes);
   fr(" in ");
   fr(v2, aBolds.totalBlocks);
   fr(", ", aBolds.totalAvgSizeBytes, false);
   fr(v3, aBolds.totalAvgSizeBytes);
-  fr(", ", aBolds.totalAvgLifetimeInstrs, false);
-  fr(`${v4} (${v5} of program duration)`, aBolds.totalAvgLifetimeInstrs);
+  if (gData.bklt) {
+    fr(", ", aBolds.totalAvgLifetime, false);
+    fr(`${v4} (${v5} of program duration)`, aBolds.totalAvgLifetime);
+  }
   nl(aBolds.totalTitle);
 
-  // "Max".
-  if (aT !== gRoot && aT._kind === kLeaf) {
-    assert(!kids, "leaf node has children");
-    // These percentages are relative to the local totals, not the root
-    // totals.
-    v1 = bytes(aT._maxBytes);
-    v2 = blocks(aT._maxBlocks);
-    v3 = avgSizeBytes(aT._maxAvgSizeBytes());
-    fr(`  Max:       ${v1} in ${v2}, ${v3}`);
-    nl();
+  if (gData.bklt) {
+    // "Max".
+    if (aT !== gRoot && aT._kind === kLeaf) {
+      assert(!kids, "leaf node has children");
+      // These percentages are relative to the local totals, not the root
+      // totals.
+      v1 = bytes(aT._maxBytes);
+      v2 = blocks(aT._maxBlocks);
+      v3 = avgSizeBytes(aT._maxAvgSizeBytes());
+      fr(`  Max:       ${v1} in ${v2}, ${v3}`);
+      nl();
+    }
+
+    // "At t-gmax".
+    v1 = bytesAndPerc(aT._atTGmaxBytes, gRoot._atTGmaxBytes);
+    v2 = blocksAndPerc(aT._atTGmaxBlocks, gRoot._atTGmaxBlocks);
+    v3 = avgSizeBytes(aT._atTGmaxAvgSizeBytes());
+    fr("  At t-gmax: ", aBolds.atTGmaxTitle);
+    fr(v1, aBolds.atTGmaxBytes);
+    fr(` in ${v2}, ${v3}`);
+    nl(aBolds.atTGmaxTitle);
+
+    // "At t-end".
+    v1 = bytesAndPerc(aT._atTEndBytes, gRoot._atTEndBytes);
+    v2 = blocksAndPerc(aT._atTEndBlocks, gRoot._atTEndBlocks);
+    v3 = avgSizeBytes(aT._atTEndAvgSizeBytes());
+    fr("  At t-end:  ", aBolds.atTEndTitle);
+    fr(v1, aBolds.atTEndBytes);
+    fr(` in ${v2}, ${v3}`);
+    nl(aBolds.atTEndTitle);
   }
 
-  // "At t-gmax".
-  v1 = bytesAndPerc(aT._atTGmaxBytes, gRoot._atTGmaxBytes);
-  v2 = blocksAndPerc(aT._atTGmaxBlocks, gRoot._atTGmaxBlocks);
-  v3 = avgSizeBytes(aT._atTGmaxAvgSizeBytes());
-  fr("  At t-gmax: ", aBolds.atTGmaxTitle);
-  fr(v1, aBolds.atTGmaxBytes);
-  fr(` in ${v2}, ${v3}`);
-  nl(aBolds.atTGmaxTitle);
+  if (gData.bkacc) {
+    // "Reads".
+    v1 = bytesAndPercAndRate(aT._readsBytes, gRoot._readsBytes);
+    v2 = perByte(aT._readsAvgPerByte());
+    fr("  Reads:     ", aBolds.readsTitle);
+    fr(v1, aBolds.readsBytes);
+    fr(", ", aBolds.readsBytes && aBolds.readsAvgPerByte, false);
+    fr(v2, aBolds.readsAvgPerByte);
+    nl(aBolds.readsTitle);
 
-  // "At t-end".
-  v1 = bytesAndPerc(aT._atTEndBytes, gRoot._atTEndBytes);
-  v2 = blocksAndPerc(aT._atTEndBlocks, gRoot._atTEndBlocks);
-  v3 = avgSizeBytes(aT._atTEndAvgSizeBytes());
-  fr("  At t-end:  ", aBolds.atTEndTitle);
-  fr(v1, aBolds.atTEndBytes);
-  fr(` in ${v2}, ${v3}`);
-  nl(aBolds.atTEndTitle);
+    // "Writes".
+    v1 = bytesAndPercAndRate(aT._writesBytes, gRoot._writesBytes);
+    v2 = perByte(aT._writesAvgPerByte());
+    fr("  Writes:    ", aBolds.writesTitle);
+    fr(v1, aBolds.writesBytes);
+    fr(", ", aBolds.writesBytes && aBolds.writesAvgPerByte, false);
+    fr(v2, aBolds.writesAvgPerByte);
+    nl(aBolds.writesTitle);
 
-  // "Reads".
-  v1 = bytesAndPercAndRate(aT._readsBytes, gRoot._readsBytes);
-  v2 = perByte(aT._readsAvgPerByte());
-  fr("  Reads:     ", aBolds.readsTitle);
-  fr(v1, aBolds.readsBytes);
-  fr(", ", aBolds.readsBytes && aBolds.readsAvgPerByte, false);
-  fr(v2, aBolds.readsAvgPerByte);
-  nl(aBolds.readsTitle);
-
-  // "Writes".
-  v1 = bytesAndPercAndRate(aT._writesBytes, gRoot._writesBytes);
-  v2 = perByte(aT._writesAvgPerByte());
-  fr("  Writes:    ", aBolds.writesTitle);
-  fr(v1, aBolds.writesBytes);
-  fr(", ", aBolds.writesBytes && aBolds.writesAvgPerByte, false);
-  fr(v2, aBolds.writesAvgPerByte);
-  nl(aBolds.writesTitle);
-
-  // "Accesses". We show 32 per line (but not on aggregate nodes).
-  if (aT._accesses && aT._accesses.length > 0) {
-    let v = "  Accesses: {";
-    let prevN;
-    for (let [i, n] of aT._accesses.entries()) {
-      if ((i % 32) === 0) {
-        fr(v);
-        nl();
-        v1 = i.toString().padStart(3, ' ');
-        v = `    [${v1}]  `;
-        v += `${accesses(n)} `;
-      } else {
-        // Use a ditto mark for repeats.
-        v += (n === prevN && n !== 0) ? "〃 " : `${accesses(n)} `;
+    // "Accesses". We show 32 per line (but not on aggregate nodes).
+    if (aT._accesses && aT._accesses.length > 0) {
+      let v = "  Accesses: {";
+      let prevN;
+      for (let [i, n] of aT._accesses.entries()) {
+        if ((i % 32) === 0) {
+          fr(v);
+          nl();
+          v1 = i.toString().padStart(3, ' ');
+          v = `    [${v1}]  `;
+          v += `${accesses(n)} `;
+        } else {
+          // Use a ditto mark for repeats.
+          v += (n === prevN && n !== 0) ? "〃 " : `${accesses(n)} `;
+        }
+        prevN = n;
       }
-      prevN = n;
-    }
-    fr(v);
-    nl();
+      fr(v);
+      nl();
 
-    fr("  }");
-    nl();
+      fr("  }");
+      nl();
+    }
   }
 
   // "Allocated at".
-  fr("  Allocated at {", true, false);
+  fr(`  ${gData.verb} at {`, true, false);
   nl(true);
   if (aT._kind === kAgg) {
     // Don't print ancestor frames; just print the "insignificant" frame.
@@ -1219,7 +1285,7 @@ function appendTree(aP, aBolds, aCmp, aPc, aSig) {
 }
 
 function appendSignificanceThreshold(aP, aSigLabel) {
-  let v = `\nAP significance threshold: ${aSigLabel()}\n`;
+  let v = `\nPP significance threshold: ${aSigLabel()}\n`;
   appendElementWithText(aP, "span", v, "threshold");
 }
 
@@ -1287,7 +1353,7 @@ function displayTree(aTRead, aTParse, aTBuild) {
   // Get details relating to the chosen sort metrics.
   let data = gSelectData[gSelect.selectedIndex];
   let bolds = data.bolds;
-  let label = data.label;
+  let label = data.label();
   let cmpField = data.cmpField;
   let sig = data.sig;
   let sigLabel = data.sigLabel;
@@ -1397,7 +1463,7 @@ function onLoad() {
   gSelect = appendElement(selectDiv, "select");
   gSelect.onchange = changeSortMetric;
   for (let [i, data] of gSelectData.entries()) {
-    let option = appendElementWithText(gSelect, "option", data.label);
+    let option = appendElementWithText(gSelect, "option", data.label());
     option.value = i;
     if (data.isDefault) {
       option.selected = true;
@@ -1421,13 +1487,15 @@ function onLoad() {
   appendElementWithText(ul, "li", "'t-gmax': time of global heap maximum " +
                                   "(as measured in bytes)");
   appendElementWithText(ul, "li", "'t-end': time of program end");
+  // The file may use different units (via the `tu` and `Mtu` fields), but
+  // these are the standard units so mention them here.
   appendElementWithText(ul, "li", "'instrs': instructions");
   appendElementWithText(ul, "li", "'Minstr': mega-instruction, i.e. one " +
                                   "million instructions");
-  appendElementWithText(ul, "li", "'AP': allocation point");
+  appendElementWithText(ul, "li", "'PP': program point");
   appendElementWithText(ul, "li", "'avg': average");
   appendElementWithText(ul, "li", "'-' (in accesses): zero");
-  appendElementWithText(ul, "li", "'∞' (in accesses): leaf AP counts max out " +
+  appendElementWithText(ul, "li", "'∞' (in accesses): leaf PP counts max out " +
                                   "at 65534; larger counts are treated as " +
                                   "infinity");
   appendElementWithText(ul, "li", "'〃' (in accesses): same as previous entry");

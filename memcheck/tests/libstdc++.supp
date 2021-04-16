@@ -96,3 +96,15 @@
    fun:_dl_init
    fun:_dl_start_user
 }
+{
+   malloc-leaks-cxx-stl-string-classes-debug3
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:pool
+   fun:UnknownInlinedFun
+   fun:_GLOBAL__sub_I_eh_alloc.cc
+   fun:call_init.part.0
+   fun:_dl_init
+   obj:*lib*/ld-2.*.so
+}

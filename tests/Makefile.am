@@ -51,7 +51,9 @@ check_PROGRAMS = \
 	mips_features \
 	power_insn_available \
 	is_ppc64_BE \
-	min_power_isa
+	min_power_isa \
+	arm64_features
+
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)

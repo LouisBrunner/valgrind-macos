@@ -27,9 +27,9 @@
 
 /* Contributed by Julian Seward <jseward@acm.org> */
 
-
 #include "pub_tool_basics.h"
 #include "pub_tool_clientstate.h"
+#include "pub_tool_clreq.h"
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcfile.h"
@@ -42,6 +42,8 @@
 #include "pub_tool_tooliface.h"
 #include "pub_tool_wordfm.h"
 
+#include "dhat.h"
+
 #define HISTOGRAM_SIZE_LIMIT 1024
 
 //------------------------------------------------------------//
@@ -52,19 +54,64 @@
 static ULong g_total_blocks = 0;
 static ULong g_total_bytes  = 0;
 
-// Current values.
+// Current values. g_curr_blocks and g_curr_bytes are only used with
+// clo_mode=Heap.
 static ULong g_curr_blocks = 0;
 static ULong g_curr_bytes  = 0;
 static ULong g_curr_instrs = 0;  // incremented from generated code
 
 // Values at the global max, i.e. when g_curr_bytes peaks.
+// Only used with clo_mode=Heap.
 static ULong g_max_blocks = 0;
 static ULong g_max_bytes  = 0;
-static ULong g_max_instrs = 0;
+
+// Time of the global max.
+static ULong g_tgmax_instrs = 0;
 
 // Values for the entire run. Updated each time a block is retired.
+// Only used with clo_mode=Heap.
 static ULong g_reads_bytes = 0;
 static ULong g_writes_bytes = 0;
+
+//------------------------------------------------------------//
+//--- Command line args                                    ---//
+//------------------------------------------------------------//
+
+typedef enum { Heap=55, Copy, AdHoc } ProfileKind;
+
+static ProfileKind clo_mode = Heap;
+
+static const HChar* clo_dhat_out_file = "dhat.out.%p";
+
+static Bool dh_process_cmd_line_option(const HChar* arg)
+{
+   if VG_STR_CLO(arg, "--dhat-out-file", clo_dhat_out_file) {
+
+   } else if (VG_XACT_CLO(arg, "--mode=heap",   clo_mode, Heap)) {
+   } else if (VG_XACT_CLO(arg, "--mode=copy",   clo_mode, Copy)) {
+   } else if (VG_XACT_CLO(arg, "--mode=ad-hoc", clo_mode, AdHoc)) {
+
+   } else {
+      return VG_(replacement_malloc_process_cmd_line_option)(arg);
+   }
+
+   return True;
+}
+
+static void dh_print_usage(void)
+{
+   VG_(printf)(
+"    --dhat-out-file=<file>    output file name [dhat.out.%%p]\n"
+"    --mode=heap|copy|ad-hoc   profiling mode\n"
+   );
+}
+
+static void dh_print_debug_usage(void)
+{
+   VG_(printf)(
+"    (none)\n"
+   );
+}
 
 //------------------------------------------------------------//
 //--- an Interval Tree of live blocks                      ---//
@@ -75,7 +122,7 @@ typedef
    struct {
       Addr        payload;
       SizeT       req_szB;
-      ExeContext* ap;  /* allocation ec */
+      ExeContext* ec;  /* allocation ec */
       ULong       allocd_at; /* instruction number */
       ULong       reads_bytes;
       ULong       writes_bytes;
@@ -114,6 +161,8 @@ static UWord stats__n_fBc_notfound = 0;
 
 static Block* find_Block_containing ( Addr a )
 {
+   tl_assert(clo_mode == Heap);
+
    if (LIKELY(fbc_cache0
               && fbc_cache0->payload <= a
               && a < fbc_cache0->payload + fbc_cache0->req_szB)) {
@@ -157,6 +206,8 @@ static Block* find_Block_containing ( Addr a )
 // known to be present.)
 static void delete_Block_starting_at ( Addr a )
 {
+   tl_assert(clo_mode == Heap);
+
    Block fake;
    fake.payload = a;
    fake.req_szB = 1;
@@ -166,173 +217,184 @@ static void delete_Block_starting_at ( Addr a )
    fbc_cache0 = fbc_cache1 = NULL;
 }
 
-
 //------------------------------------------------------------//
 //--- a FM of allocation points (APs)                      ---//
 //------------------------------------------------------------//
 
 typedef
    struct {
-      // The allocation point that we're summarising stats for.
-      ExeContext* ap;
+      // The program point that we're summarising stats for.
+      ExeContext* ec;
 
-      // Total number of blocks and bytes allocated by this AP.
+      // Total number of blocks and bytes allocated by this PP.
       ULong total_blocks;
       ULong total_bytes;
 
-      // The current number of blocks and bytes live for this AP.
+      // The current number of blocks and bytes live for this PP.
+      // Only used with clo_mode=Heap.
       ULong curr_blocks;
       ULong curr_bytes;
 
-      // Values at the AP max, i.e. when this AP's curr_bytes peaks.
-      ULong max_blocks;     // Blocks at the AP max.
-      ULong max_bytes;      // The AP max, measured in bytes.
+      // Values at the PP max, i.e. when this PP's curr_bytes peaks.
+      // Only used with clo_mode=Heap.
+      ULong max_blocks;     // Blocks at the PP max.
+      ULong max_bytes;      // The PP max, measured in bytes.
 
       // Values at the global max.
+      // Only used with clo_mode=Heap.
       ULong at_tgmax_blocks;
       ULong at_tgmax_bytes;
 
-      // Total lifetimes of all blocks allocated by this AP. Includes blocks
+      // Total lifetimes of all blocks allocated by this PP. Includes blocks
       // explicitly freed and blocks implicitly freed at termination.
+      // Only used with clo_mode=Heap.
       ULong total_lifetimes_instrs;
 
-      // Number of blocks freed by this AP. (Only used in assertions.)
+      // Number of blocks freed by this PP. (Only used in assertions.)
+      // Only used with clo_mode=Heap.
       ULong freed_blocks;
 
       // Total number of reads and writes in all blocks allocated
-      // by this AP.
+      // by this PP. Only used with clo_mode=Heap.
       ULong reads_bytes;
       ULong writes_bytes;
 
       /* Histogram information.  We maintain a histogram aggregated for
-         all retiring Blocks allocated by this AP, but only if:
-         - this AP has only ever allocated objects of one size
+         all retiring Blocks allocated by this PP, but only if:
+         - this PP has only ever allocated objects of one size
          - that size is <= HISTOGRAM_SIZE_LIMIT
-         What we need therefore is a mechanism to see if this AP
+         What we need therefore is a mechanism to see if this PP
          has only ever allocated blocks of one size.
 
          3 states:
             Unknown          because no retirement yet
             Exactly xsize    all retiring blocks are of this size
             Mixed            multiple different sizes seen
+
+         Only used with clo_mode=Heap.
       */
       enum { Unknown=999, Exactly, Mixed } xsize_tag;
       SizeT xsize;
       UInt* histo; /* [0 .. xsize-1] */
    }
-   APInfo;
+   PPInfo;
 
-/* maps ExeContext*'s to APInfo*'s.  Note that the keys must match the
-   .ap field in the values. */
-static WordFM* apinfo = NULL;  /* WordFM* ExeContext* APInfo* */
-
+/* maps ExeContext*'s to PPInfo*'s.  Note that the keys must match the
+   .ec field in the values. */
+static WordFM* ppinfo = NULL;  /* WordFM* ExeContext* PPInfo* */
 
 // Are we at peak memory? If so, update at_tgmax_blocks and at_tgmax_bytes in
-// all APInfos. Note that this is moderately expensive so we avoid calling it
+// all PPInfos. Note that this is moderately expensive so we avoid calling it
 // on every allocation.
 static void check_for_peak(void)
 {
+   tl_assert(clo_mode == Heap);
+
    if (g_curr_bytes == g_max_bytes) {
       // It's a peak. (If there are multiple equal peaks we record the latest
       // one.)
       UWord keyW, valW;
-      VG_(initIterFM)(apinfo);
-      while (VG_(nextIterFM)(apinfo, &keyW, &valW)) {
-         APInfo* api = (APInfo*)valW;
-         tl_assert(api && api->ap == (ExeContext*)keyW);
-         api->at_tgmax_blocks = api->curr_blocks;
-         api->at_tgmax_bytes = api->curr_bytes;
+      VG_(initIterFM)(ppinfo);
+      while (VG_(nextIterFM)(ppinfo, &keyW, &valW)) {
+         PPInfo* ppi = (PPInfo*)valW;
+         tl_assert(ppi && ppi->ec == (ExeContext*)keyW);
+         ppi->at_tgmax_blocks = ppi->curr_blocks;
+         ppi->at_tgmax_bytes = ppi->curr_bytes;
       }
-      VG_(doneIterFM)(apinfo);
+      VG_(doneIterFM)(ppinfo);
    }
 }
 
 /* 'bk' is being introduced (has just been allocated).  Find the
-   relevant APInfo entry for it, or create one, based on the block's
-   allocation EC.  Then, update the APInfo to the extent that we
+   relevant PPInfo entry for it, or create one, based on the block's
+   allocation EC.  Then, update the PPInfo to the extent that we
    actually can, to reflect the allocation. */
-static void intro_Block ( Block* bk )
+static void intro_Block(Block* bk)
 {
    tl_assert(bk);
-   tl_assert(bk->ap);
+   tl_assert(bk->ec);
 
-   APInfo* api   = NULL;
+   PPInfo* ppi   = NULL;
    UWord   keyW  = 0;
    UWord   valW  = 0;
-   Bool    found = VG_(lookupFM)( apinfo,
-                                  &keyW, &valW, (UWord)bk->ap );
+   Bool    found = VG_(lookupFM)( ppinfo,
+                                  &keyW, &valW, (UWord)bk->ec );
    if (found) {
-      api = (APInfo*)valW;
-      tl_assert(keyW == (UWord)bk->ap);
+      ppi = (PPInfo*)valW;
+      tl_assert(keyW == (UWord)bk->ec);
    } else {
-      api = VG_(malloc)( "dh.intro_Block.1", sizeof(APInfo) );
-      VG_(memset)(api, 0, sizeof(*api));
-      api->ap = bk->ap;
-      Bool present = VG_(addToFM)( apinfo,
-                                   (UWord)bk->ap, (UWord)api );
+      ppi = VG_(malloc)( "dh.intro_Block.1", sizeof(PPInfo) );
+      VG_(memset)(ppi, 0, sizeof(*ppi));
+      ppi->ec = bk->ec;
+      Bool present = VG_(addToFM)( ppinfo,
+                                   (UWord)bk->ec, (UWord)ppi );
       tl_assert(!present);
-      // histo stuff
-      tl_assert(api->freed_blocks == 0);
-      api->xsize_tag = Unknown;
-      api->xsize = 0;
-      if (0) VG_(printf)("api %p   -->  Unknown\n", api);
+      if (clo_mode == Heap) {
+         // histo stuff
+         tl_assert(ppi->freed_blocks == 0);
+         ppi->xsize_tag = Unknown;
+         ppi->xsize = 0;
+         if (0) VG_(printf)("ppi %p   -->  Unknown\n", ppi);
+      }
    }
 
-   tl_assert(api->ap == bk->ap);
+   tl_assert(ppi->ec == bk->ec);
 
-   // Update global stats first.
+   // Update global stats and PPInfo stats.
 
    g_total_blocks++;
    g_total_bytes += bk->req_szB;
 
-   g_curr_blocks++;
-   g_curr_bytes += bk->req_szB;
-   if (g_curr_bytes > g_max_bytes) {
-      g_max_blocks = g_curr_blocks;
-      g_max_bytes = g_curr_bytes;
-      g_max_instrs = g_curr_instrs;
-   }
+   ppi->total_blocks++;
+   ppi->total_bytes += bk->req_szB;
 
-   // Now update APInfo stats.
+   if (clo_mode == Heap) {
+      g_curr_blocks++;
+      g_curr_bytes += bk->req_szB;
 
-   api->total_blocks++;
-   api->total_bytes += bk->req_szB;
+      ppi->curr_blocks++;
+      ppi->curr_bytes += bk->req_szB;
 
-   api->curr_blocks++;
-   api->curr_bytes += bk->req_szB;
-   if (api->curr_bytes > api->max_bytes) {
-      api->max_blocks = api->curr_blocks;
-      api->max_bytes  = api->curr_bytes;
+      // The use of `>=` rather than `>` means that if there are multiple equal
+      // peaks we record the latest one, like `check_for_peak` does.
+      if (g_curr_bytes >= g_max_bytes) {
+         g_max_blocks = g_curr_blocks;
+         g_max_bytes = g_curr_bytes;
+         g_tgmax_instrs = g_curr_instrs;
+
+         ppi->max_blocks = ppi->curr_blocks;
+         ppi->max_bytes  = ppi->curr_bytes;
+      }
    }
 }
 
-/* 'bk' is retiring (being freed).  Find the relevant APInfo entry for
+/* 'bk' is retiring (being freed).  Find the relevant PPInfo entry for
    it, which must already exist.  Then, fold info from 'bk' into that
    entry.  'because_freed' is True if the block is retiring because
    the client has freed it.  If it is False then the block is retiring
    because the program has finished, in which case we want to skip the
-   updates of the total blocks live etc for this AP, but still fold in
+   updates of the total blocks live etc for this PP, but still fold in
    the access counts and histo data that have so far accumulated for
    the block. */
-static void retire_Block ( Block* bk, Bool because_freed )
+static void retire_Block(Block* bk, Bool because_freed)
 {
+   tl_assert(clo_mode == Heap);
    tl_assert(bk);
-   tl_assert(bk->ap);
+   tl_assert(bk->ec);
 
-   APInfo* api   = NULL;
+   PPInfo* ppi   = NULL;
    UWord   keyW  = 0;
    UWord   valW  = 0;
-   Bool    found = VG_(lookupFM)( apinfo,
-                                  &keyW, &valW, (UWord)bk->ap );
-
+   Bool    found = VG_(lookupFM)( ppinfo,
+                                  &keyW, &valW, (UWord)bk->ec );
    tl_assert(found);
-   api = (APInfo*)valW;
-   tl_assert(api->ap == bk->ap);
+   ppi = (PPInfo*)valW;
+   tl_assert(ppi->ec == bk->ec);
 
    // update stats following this free.
    if (0)
-      VG_(printf)("ec %p  api->c_by_l %llu  bk->rszB %llu\n",
-                  bk->ap, api->curr_bytes, (ULong)bk->req_szB);
+      VG_(printf)("ec %p  ppi->c_by_l %llu  bk->rszB %llu\n",
+                  bk->ec, ppi->curr_bytes, (ULong)bk->req_szB);
 
    if (because_freed) {
       // Total bytes is coming down from a possible peak.
@@ -344,59 +406,59 @@ static void retire_Block ( Block* bk, Bool because_freed )
       g_curr_blocks--;
       g_curr_bytes -= bk->req_szB;
 
-      // Then update APInfo stats.
-      tl_assert(api->curr_blocks >= 1);
-      tl_assert(api->curr_bytes >= bk->req_szB);
-      api->curr_blocks--;
-      api->curr_bytes -= bk->req_szB;
+      // Then update PPInfo stats.
+      tl_assert(ppi->curr_blocks >= 1);
+      tl_assert(ppi->curr_bytes >= bk->req_szB);
+      ppi->curr_blocks--;
+      ppi->curr_bytes -= bk->req_szB;
 
-      api->freed_blocks++;
+      ppi->freed_blocks++;
    }
 
    tl_assert(bk->allocd_at <= g_curr_instrs);
-   api->total_lifetimes_instrs += (g_curr_instrs - bk->allocd_at);
+   ppi->total_lifetimes_instrs += (g_curr_instrs - bk->allocd_at);
 
    // access counts
-   api->reads_bytes += bk->reads_bytes;
-   api->writes_bytes += bk->writes_bytes;
+   ppi->reads_bytes += bk->reads_bytes;
+   ppi->writes_bytes += bk->writes_bytes;
    g_reads_bytes += bk->reads_bytes;
    g_writes_bytes += bk->writes_bytes;
 
    // histo stuff.  First, do state transitions for xsize/xsize_tag.
-   switch (api->xsize_tag) {
+   switch (ppi->xsize_tag) {
 
       case Unknown:
-         tl_assert(api->xsize == 0);
-         tl_assert(api->freed_blocks == 1 || api->freed_blocks == 0);
-         tl_assert(!api->histo);
-         api->xsize_tag = Exactly;
-         api->xsize = bk->req_szB;
-         if (0) VG_(printf)("api %p   -->  Exactly(%lu)\n", api, api->xsize);
+         tl_assert(ppi->xsize == 0);
+         tl_assert(ppi->freed_blocks == 1 || ppi->freed_blocks == 0);
+         tl_assert(!ppi->histo);
+         ppi->xsize_tag = Exactly;
+         ppi->xsize = bk->req_szB;
+         if (0) VG_(printf)("ppi %p   -->  Exactly(%lu)\n", ppi, ppi->xsize);
          // and allocate the histo
          if (bk->histoW) {
-            api->histo = VG_(malloc)("dh.retire_Block.1",
-                                     api->xsize * sizeof(UInt));
-            VG_(memset)(api->histo, 0, api->xsize * sizeof(UInt));
+            ppi->histo = VG_(malloc)("dh.retire_Block.1",
+                                     ppi->xsize * sizeof(UInt));
+            VG_(memset)(ppi->histo, 0, ppi->xsize * sizeof(UInt));
          }
          break;
 
       case Exactly:
-         //tl_assert(api->freed_blocks > 1);
-         if (bk->req_szB != api->xsize) {
-            if (0) VG_(printf)("api %p   -->  Mixed(%lu -> %lu)\n",
-                               api, api->xsize, bk->req_szB);
-            api->xsize_tag = Mixed;
-            api->xsize = 0;
+         //tl_assert(ppi->freed_blocks > 1);
+         if (bk->req_szB != ppi->xsize) {
+            if (0) VG_(printf)("ppi %p   -->  Mixed(%lu -> %lu)\n",
+                               ppi, ppi->xsize, bk->req_szB);
+            ppi->xsize_tag = Mixed;
+            ppi->xsize = 0;
             // deallocate the histo, if any
-            if (api->histo) {
-               VG_(free)(api->histo);
-               api->histo = NULL;
+            if (ppi->histo) {
+               VG_(free)(ppi->histo);
+               ppi->histo = NULL;
             }
          }
          break;
 
       case Mixed:
-         //tl_assert(api->freed_blocks > 1);
+         //tl_assert(ppi->freed_blocks > 1);
          break;
 
       default:
@@ -404,17 +466,17 @@ static void retire_Block ( Block* bk, Bool because_freed )
    }
 
    // See if we can fold the histo data from this block into
-   // the data for the AP
-   if (api->xsize_tag == Exactly && api->histo && bk->histoW) {
-      tl_assert(api->xsize == bk->req_szB);
+   // the data for the PP.
+   if (ppi->xsize_tag == Exactly && ppi->histo && bk->histoW) {
+      tl_assert(ppi->xsize == bk->req_szB);
       UWord i;
-      for (i = 0; i < api->xsize; i++) {
-         // FIXME: do something better in case of overflow of api->histo[..]
+      for (i = 0; i < ppi->xsize; i++) {
+         // FIXME: do something better in case of overflow of ppi->histo[..]
          // Right now, at least don't let it overflow/wrap around
-         if (api->histo[i] <= 0xFFFE0000)
-            api->histo[i] += (UInt)bk->histoW[i];
+         if (ppi->histo[i] <= 0xFFFE0000)
+            ppi->histo[i] += (UInt)bk->histoW[i];
       }
-      if (0) VG_(printf)("fold in, AP = %p\n", api);
+      if (0) VG_(printf)("fold in, PP = %p\n", ppi);
    }
 
 #if 0
@@ -430,29 +492,30 @@ static void retire_Block ( Block* bk, Bool because_freed )
 #endif
 }
 
-/* This handles block resizing.  When a block with AP 'ec' has a
-   size change of 'delta', call here to update the APInfo. */
+/* This handles block resizing.  When a block with PP 'ec' has a
+   size change of 'delta', call here to update the PPInfo. */
 static void resize_Block(ExeContext* ec, SizeT old_req_szB, SizeT new_req_szB)
 {
+   tl_assert(clo_mode == Heap);
+
    Long    delta = (Long)new_req_szB - (Long)old_req_szB;
-   APInfo* api   = NULL;
+   PPInfo* ppi   = NULL;
    UWord   keyW  = 0;
    UWord   valW  = 0;
-   Bool    found = VG_(lookupFM)( apinfo,
+   Bool    found = VG_(lookupFM)( ppinfo,
                                   &keyW, &valW, (UWord)ec );
 
    tl_assert(found);
-   api = (APInfo*)valW;
-   tl_assert(api->ap == ec);
+   ppi = (PPInfo*)valW;
+   tl_assert(ppi->ec == ec);
 
    if (delta < 0) {
-      tl_assert(api->curr_bytes >= -delta);
+      tl_assert(ppi->curr_bytes >= -delta);
       tl_assert(g_curr_bytes >= -delta);
-   }
 
-   // Total bytes might be coming down from a possible peak.
-   if (delta < 0)
+      // Total bytes might be coming down from a possible peak.
       check_for_peak();
+   }
 
    // Note: we treat realloc() like malloc() + free() for total counts, i.e. we
    // increment total_blocks by 1 and increment total_bytes by new_req_szB.
@@ -462,35 +525,34 @@ static void resize_Block(ExeContext* ec, SizeT old_req_szB, SizeT new_req_szB)
    // calls to realloc wouldn't be counted towards the total_blocks count,
    // which is undesirable.
 
-   // Update global stats first.
+   // Update global stats and PPInfo stats.
 
    g_total_blocks++;
    g_total_bytes += new_req_szB;
 
+   ppi->total_blocks++;
+   ppi->total_bytes += new_req_szB;
+
    g_curr_blocks += 0;  // unchanged
    g_curr_bytes += delta;
-   if (g_curr_bytes > g_max_bytes) {
+
+   ppi->curr_blocks += 0;  // unchanged
+   ppi->curr_bytes += delta;
+
+   // The use of `>=` rather than `>` means that if there are multiple equal
+   // peaks we record the latest one, like `check_for_peak` does.
+   if (g_curr_bytes >= g_max_bytes) {
       g_max_blocks = g_curr_blocks;
       g_max_bytes = g_curr_bytes;
-      g_max_instrs = g_curr_instrs;
-   }
+      g_tgmax_instrs = g_curr_instrs;
 
-   // Now update APInfo stats.
-
-   api->total_blocks++;
-   api->total_bytes += new_req_szB;
-
-   api->curr_blocks += 0;  // unchanged
-   api->curr_bytes += delta;
-   if (api->curr_bytes > api->max_bytes) {
-      api->max_blocks = api->curr_blocks;
-      api->max_bytes  = api->curr_bytes;
+      ppi->max_blocks = ppi->curr_blocks;
+      ppi->max_bytes  = ppi->curr_bytes;
    }
 }
 
-
 //------------------------------------------------------------//
-//--- update both Block and APInfos after {m,re}alloc/free ---//
+//--- update both Block and PPInfos after {m,re}alloc/free ---//
 //------------------------------------------------------------//
 
 static
@@ -498,12 +560,13 @@ void* new_block ( ThreadId tid, void* p, SizeT req_szB, SizeT req_alignB,
                   Bool is_zeroed )
 {
    tl_assert(p == NULL); // don't handle custom allocators right now
-   SizeT actual_szB /*, slop_szB*/;
+   SizeT actual_szB;
 
    if ((SSizeT)req_szB < 0) return NULL;
 
-   if (req_szB == 0)
+   if (req_szB == 0) {
       req_szB = 1;  /* can't allow zero-sized blocks in the interval tree */
+   }
 
    // Allocate and zero if necessary
    if (!p) {
@@ -514,20 +577,21 @@ void* new_block ( ThreadId tid, void* p, SizeT req_szB, SizeT req_alignB,
       if (is_zeroed) VG_(memset)(p, 0, req_szB);
       actual_szB = VG_(cli_malloc_usable_size)(p);
       tl_assert(actual_szB >= req_szB);
-      /* slop_szB = actual_szB - req_szB; */
-   } else {
-      /* slop_szB = 0; */
+   }
+
+   if (clo_mode != Heap) {
+      return p;
    }
 
    // Make new Block, add to interval_tree.
    Block* bk = VG_(malloc)("dh.new_block.1", sizeof(Block));
    bk->payload      = (Addr)p;
    bk->req_szB      = req_szB;
-   bk->ap           = VG_(record_ExeContext)(tid, 0/*first word delta*/);
+   bk->ec           = VG_(record_ExeContext)(tid, 0/*first word delta*/);
    bk->allocd_at    = g_curr_instrs;
    bk->reads_bytes  = 0;
    bk->writes_bytes = 0;
-   // set up histogram array, if the block isn't too large
+   // Set up histogram array, if the block isn't too large.
    bk->histoW = NULL;
    if (req_szB <= HISTOGRAM_SIZE_LIMIT) {
       bk->histoW = VG_(malloc)("dh.new_block.2", req_szB * sizeof(UShort));
@@ -540,18 +604,19 @@ void* new_block ( ThreadId tid, void* p, SizeT req_szB, SizeT req_alignB,
 
    intro_Block(bk);
 
-   if (0) VG_(printf)("ALLOC %lu -> %p\n", req_szB, p);
-
    return p;
 }
 
 static
-void die_block ( void* p, Bool custom_free )
+void die_block ( void* p )
 {
-   tl_assert(!custom_free);  // at least for now
+   VG_(cli_free)(p);
+
+   if (clo_mode != Heap) {
+      return;
+   }
 
    Block* bk = find_Block_containing( (Addr)p );
-
    if (!bk) {
      return; // bogus free
    }
@@ -565,12 +630,8 @@ void die_block ( void* p, Bool custom_free )
       return; // bogus free
    }
 
-   if (0) VG_(printf)(" FREE %p %llu\n",
-                      p, g_curr_instrs - bk->allocd_at);
-
    retire_Block(bk, True/*because_freed*/);
 
-   VG_(cli_free)( (void*)bk->payload );
    delete_Block_starting_at( bk->payload );
    if (bk->histoW) {
       VG_(free)( bk->histoW );
@@ -579,14 +640,23 @@ void die_block ( void* p, Bool custom_free )
    VG_(free)( bk );
 }
 
-
 static
 void* renew_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
 {
-   if (0) VG_(printf)("REALL %p %lu\n", p_old, new_req_szB);
    void* p_new = NULL;
 
    tl_assert(new_req_szB > 0); // map 0 to 1
+
+   if (clo_mode != Heap) {
+      SizeT old_actual_szB = VG_(cli_malloc_usable_size)(p_old);
+      p_new = VG_(cli_malloc)(VG_(clo_alignment), new_req_szB);
+      if (!p_new) {
+         return NULL;
+      }
+      VG_(memmove)(p_new, p_old, VG_MIN(old_actual_szB, new_req_szB));
+      VG_(cli_free)(p_old);
+      return p_new;
+   }
 
    // Find the old block.
    Block* bk = find_Block_containing( (Addr)p_old );
@@ -595,7 +665,7 @@ void* renew_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
    }
 
    tl_assert(bk->req_szB > 0);
-   // assert the block finder is behaving sanely
+   // Assert the block finder is behaving sanely.
    tl_assert(bk->payload <= (Addr)p_old);
    tl_assert( (Addr)p_old < bk->payload + bk->req_szB );
 
@@ -612,9 +682,8 @@ void* renew_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
 
    // Actually do the allocation, if necessary.
    if (new_req_szB <= bk->req_szB) {
-
       // New size is smaller or same; block not moved.
-      resize_Block(bk->ap, bk->req_szB, new_req_szB);
+      resize_Block(bk->ec, bk->req_szB, new_req_szB);
       bk->req_szB = new_req_szB;
 
       // Update reads/writes for the implicit copy. Even though we didn't
@@ -623,10 +692,9 @@ void* renew_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
       bk->reads_bytes += new_req_szB;
       bk->writes_bytes += new_req_szB;
 
-      return p_old;
+      p_new = p_old;
 
    } else {
-
       // New size is bigger;  make new block, copy shared contents, free old.
       p_new = VG_(cli_malloc)(VG_(clo_alignment), new_req_szB);
       if (!p_new) {
@@ -651,7 +719,7 @@ void* renew_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
       bk->writes_bytes += bk->req_szB;
 
       // Update the metadata.
-      resize_Block(bk->ap, bk->req_szB, new_req_szB);
+      resize_Block(bk->ec, bk->req_szB, new_req_szB);
       bk->payload = (Addr)p_new;
       bk->req_szB = new_req_szB;
 
@@ -660,13 +728,10 @@ void* renew_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
          = VG_(addToFM)( interval_tree, (UWord)bk, (UWord)0/*no val*/);
       tl_assert(!present);
       fbc_cache0 = fbc_cache1 = NULL;
-
-      return p_new;
    }
-   /*NOTREACHED*/
-   tl_assert(0);
-}
 
+   return p_new;
+}
 
 //------------------------------------------------------------//
 //--- malloc() et al replacement wrappers                  ---//
@@ -682,9 +747,19 @@ static void* dh___builtin_new ( ThreadId tid, SizeT szB )
    return new_block( tid, NULL, szB, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
+static void* dh___builtin_new_aligned ( ThreadId tid, SizeT szB, SizeT alignB )
+{
+   return new_block( tid, NULL, szB, alignB, /*is_zeroed*/False );
+}
+
 static void* dh___builtin_vec_new ( ThreadId tid, SizeT szB )
 {
    return new_block( tid, NULL, szB, VG_(clo_alignment), /*is_zeroed*/False );
+}
+
+static void* dh___builtin_vec_new_aligned ( ThreadId tid, SizeT szB, SizeT alignB )
+{
+   return new_block( tid, NULL, szB, alignB, /*is_zeroed*/False );
 }
 
 static void* dh_calloc ( ThreadId tid, SizeT m, SizeT szB )
@@ -699,17 +774,27 @@ static void *dh_memalign ( ThreadId tid, SizeT alignB, SizeT szB )
 
 static void dh_free ( ThreadId tid __attribute__((unused)), void* p )
 {
-   die_block( p, /*custom_free*/False );
+   die_block(p);
 }
 
 static void dh___builtin_delete ( ThreadId tid, void* p )
 {
-   die_block( p, /*custom_free*/False);
+   die_block(p);
+}
+
+static void dh___builtin_delete_aligned ( ThreadId tid, void* p, SizeT align )
+{
+   die_block(p);
 }
 
 static void dh___builtin_vec_delete ( ThreadId tid, void* p )
 {
-   die_block( p, /*custom_free*/False );
+   die_block(p);
+}
+
+static void dh___builtin_vec_delete_aligned ( ThreadId tid, void* p, SizeT align )
+{
+   die_block(p);
 }
 
 static void* dh_realloc ( ThreadId tid, void* p_old, SizeT new_szB )
@@ -726,10 +811,13 @@ static void* dh_realloc ( ThreadId tid, void* p_old, SizeT new_szB )
 
 static SizeT dh_malloc_usable_size ( ThreadId tid, void* p )
 {
+   if (clo_mode != Heap) {
+      return VG_(cli_malloc_usable_size)(p);
+   }
+
    Block* bk = find_Block_containing( (Addr)p );
    return bk ? bk->req_szB : 0;
 }
-
 
 //------------------------------------------------------------//
 //--- memory references                                    ---//
@@ -755,6 +843,8 @@ void inc_histo_for_block ( Block* bk, Addr addr, UWord szB )
 static VG_REGPARM(2)
 void dh_handle_write ( Addr addr, UWord szB )
 {
+   tl_assert(clo_mode == Heap);
+
    Block* bk = find_Block_containing(addr);
    if (bk) {
       bk->writes_bytes += szB;
@@ -766,6 +856,8 @@ void dh_handle_write ( Addr addr, UWord szB )
 static VG_REGPARM(2)
 void dh_handle_read ( Addr addr, UWord szB )
 {
+   tl_assert(clo_mode == Heap);
+
    Block* bk = find_Block_containing(addr);
    if (bk) {
       bk->reads_bytes += szB;
@@ -773,7 +865,6 @@ void dh_handle_read ( Addr addr, UWord szB )
          inc_histo_for_block(bk, addr, szB);
    }
 }
-
 
 // Handle reads and writes by syscalls (read == kernel
 // reads user space, write == kernel writes user space).
@@ -784,6 +875,8 @@ static
 void dh_handle_noninsn_read ( CorePart part, ThreadId tid, const HChar* s,
                               Addr base, SizeT size )
 {
+   tl_assert(clo_mode == Heap);
+
    switch (part) {
       case Vg_CoreSysCall:
          dh_handle_read(base, size);
@@ -798,9 +891,21 @@ void dh_handle_noninsn_read ( CorePart part, ThreadId tid, const HChar* s,
 }
 
 static
+void dh_handle_noninsn_read_asciiz(CorePart part, ThreadId tid, const HChar* s,
+                                   Addr str)
+{
+   tl_assert(clo_mode == Heap);
+
+   tl_assert(part == Vg_CoreSysCall);
+   dh_handle_noninsn_read(part, tid, s, str, VG_(strlen)((const HChar*)str+1));
+}
+
+static
 void dh_handle_noninsn_write ( CorePart part, ThreadId tid,
                                Addr base, SizeT size )
 {
+   tl_assert(clo_mode == Heap);
+
    switch (part) {
       case Vg_CoreSysCall:
       case Vg_CoreClientReq:
@@ -812,7 +917,6 @@ void dh_handle_noninsn_write ( CorePart part, ThreadId tid,
          tl_assert(0);
    }
 }
-
 
 //------------------------------------------------------------//
 //--- Instrumentation                                      ---//
@@ -855,6 +959,10 @@ static
 void addMemEvent(IRSB* sbOut, Bool isWrite, Int szB, IRExpr* addr,
                  Int goff_sp)
 {
+   if (clo_mode != Heap) {
+      return;
+   }
+
    IRType   tyAddr   = Ity_INVALID;
    const HChar* hName= NULL;
    void*    hAddr    = NULL;
@@ -1078,37 +1186,58 @@ IRSB* dh_instrument ( VgCallbackClosure* closure,
 #undef mkU64
 #undef assign
 
-
 //------------------------------------------------------------//
-//--- Command line args                                    ---//
+//--- Client requests                                      ---//
 //------------------------------------------------------------//
 
-static const HChar* clo_dhat_out_file = "dhat.out.%p";
-
-static Bool dh_process_cmd_line_option(const HChar* arg)
+static Bool dh_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
 {
-   if VG_STR_CLO(arg, "--dhat-out-file", clo_dhat_out_file) {}
+   switch (arg[0]) {
+   case VG_USERREQ__DHAT_AD_HOC_EVENT: {
+      if (clo_mode != AdHoc) {
+         return False;
+      }
 
-   else
-      return VG_(replacement_malloc_process_cmd_line_option)(arg);
+      SizeT len = (SizeT)arg[1];
 
-   return True;
+      // Only the ec and req_szB fields are used by intro_Block().
+      Block bk;
+      VG_(memset)(&bk, 0, sizeof(bk));
+      bk.req_szB = len;
+      bk.ec      = VG_(record_ExeContext)(tid, 0/*first word delta*/);
+
+      intro_Block(&bk);
+
+      return True;
+   }
+
+   case _VG_USERREQ__DHAT_COPY: {
+      SizeT len = (SizeT)arg[1];
+
+      if (clo_mode != Copy) {
+         return False;
+      }
+
+      // Only the ec and req_szB fields are used by intro_Block().
+      Block bk;
+      VG_(memset)(&bk, 0, sizeof(bk));
+      bk.req_szB = len;
+      bk.ec      = VG_(record_ExeContext)(tid, 0/*first word delta*/);
+
+      intro_Block(&bk);
+
+      return True;
+   }
+
+   default:
+      VG_(message)(
+         Vg_UserMsg,
+         "Warning: unknown DHAT client request code %llx\n",
+         (ULong)arg[0]
+      );
+      return False;
+   }
 }
-
-static void dh_print_usage(void)
-{
-   VG_(printf)(
-"    --dhat-out-file=<file>  output file name [dhat.out.%%p]\n"
-   );
-}
-
-static void dh_print_debug_usage(void)
-{
-   VG_(printf)(
-"    (none)\n"
-   );
-}
-
 
 //------------------------------------------------------------//
 //--- Finalisation                                         ---//
@@ -1127,6 +1256,108 @@ static void dh_print_debug_usage(void)
 //   using VG_(apply_ExeContext) in combination with an InlIpCursor.
 //
 // - We use short field names and minimal whitespace to minimize file sizes.
+//
+// Sample output:
+//
+// {
+//   // Version number of the format. Incremented on each
+//   // backwards-incompatible change. A mandatory integer.
+//   "dhatFileVersion": 2,
+//
+//   // The invocation mode. A mandatory, free-form string.
+//   "mode": "heap",
+//
+//   // The verb used before above stack frames, i.e. "<verb> at {". A
+//   // mandatory string.
+//   "verb": "Allocated",
+//
+//   // Are block lifetimes recorded? Affects whether some other fields are
+//   // present. A mandatory boolean.
+//   "bklt": true,
+//
+//   // Are block accesses recorded? Affects whether some other fields are
+//   // present. A mandatory boolean.
+//   "bkacc": true,
+//
+//   // Byte/bytes/blocks-position units. Optional strings. "byte", "bytes",
+//   // and "blocks" are the values used if these fields are omitted.
+//   "bu": "byte", "bsu": "bytes", "bksu": "blocks",
+//
+//   // Time units (individual and 1,000,000x). Mandatory strings.
+//   "tu": "instrs", "Mtu": "Minstr"
+//
+//   // The "short-lived" time threshold, measures in "tu"s.
+//   // - bklt=true: a mandatory integer.
+//   // - bklt=false: omitted.
+//   "tuth": 500,
+//
+//   // The executed command. A mandatory string.
+//   "cmd": "date",
+//
+//   // The process ID. A mandatory integer.
+//   "pid": 61129
+//
+//   // The time at the end of execution (t-end). A mandatory integer.
+//   "te": 350682
+//
+//   // The time of the global max (t-gmax).
+//   // - bklt=true: a mandatory integer.
+//   // - bklt=false: omitted.
+//   "tg": 331312,
+//
+//   // The program points. A mandatory array.
+//   "pps": [
+//    {
+//     // Total bytes and blocks. Mandatory integers.
+//     "tb": 5, "tbk": 1,
+//
+//     // Total lifetimes of all blocks allocated at this PP.
+//     // - bklt=true: a mandatory integer.
+//     // - bklt=false: omitted.
+//     "tl": 274,
+//
+//     // The maximum bytes and blocks for this PP.
+//     // - bklt=true: mandatory integers.
+//     // - bklt=false: omitted.
+//     "mb": 5, "mbk": 1,
+//
+//     // The bytes and blocks at t-gmax for this PP.
+//     // - bklt=true: mandatory integers.
+//     // - bklt=false: omitted.
+//     "gb": 0, "gbk": 0,
+//
+//     // The bytes and blocks at t-end for this PP.
+//     // - bklt=true: mandatory integers.
+//     // - bklt=false: omitted.
+//     "eb": 0, "ebk": 0,
+//
+//     // The reads and writes of blocks for this PP.
+//     // - bkacc=true: mandatory integers.
+//     // - bkacc=false: omitted.
+//     "rb": 41, "wb": 5,
+//
+//     // The exact accesses of blocks for this PP. Only used when all
+//     // allocations are the same size and sufficiently small. A negative
+//     // element indicates run-length encoding of the following integer.
+//     // E.g. `-3, 4` means "three 4s in a row".
+//     // - bkacc=true: an optional array of integers.
+//     // - bkacc=false: omitted.
+//     "acc": [5, -3, 4, 2],
+//
+//     // Frames. Each element is an index into the "ftbl" array below.
+//     // - All modes: A mandatory array of integers.
+//     "fs": [1, 2, 3]
+//    }
+//   ],
+//
+//   // Frame table. A mandatory array of strings.
+//   "ftbl": [
+//     "[root]",
+//     "0x4AA1D9F: _nl_normalize_codeset (l10nflist.c:332)",
+//     "0x4A9B414: _nl_load_locale_from_archive (loadarchive.c:173)",
+//     "0x4A9A2BE: _nl_find_locale (findlocale.c:153)"
+//   ]
+// }
 
 static VgFile* fp;
 
@@ -1211,7 +1442,7 @@ static const HChar* json_escape(const HChar* s)
    return buf;
 }
 
-static void write_APInfo_frame(UInt n, DiEpoch ep, Addr ip, void* opaque)
+static void write_PPInfo_frame(UInt n, DiEpoch ep, Addr ip, void* opaque)
 {
    Bool* is_first = (Bool*)opaque;
    InlIPCursor* iipc = VG_(new_IIPC)(ep, ip);
@@ -1251,83 +1482,102 @@ static void write_APInfo_frame(UInt n, DiEpoch ep, Addr ip, void* opaque)
    VG_(delete_IIPC)(iipc);
 };
 
-static void write_APInfo(APInfo* api, Bool is_first)
+static void write_PPInfo(PPInfo* ppi, Bool is_first)
 {
-   tl_assert(api->total_blocks >= api->max_blocks);
-   tl_assert(api->total_bytes >= api->max_bytes);
-
-   FP(" %c{\"tb\":%llu,\"tbk\":%llu,\"tli\":%llu\n",
+   FP(" %c{\"tb\":%llu,\"tbk\":%llu\n",
       is_first ? '[' : ',',
-      api->total_bytes, api->total_blocks, api->total_lifetimes_instrs);
-   FP("  ,\"mb\":%llu,\"mbk\":%llu\n",
-      api->max_bytes, api->max_blocks);
-   FP("  ,\"gb\":%llu,\"gbk\":%llu\n",
-      api->at_tgmax_bytes, api->at_tgmax_blocks);
-   FP("  ,\"fb\":%llu,\"fbk\":%llu\n",
-      api->curr_bytes, api->curr_blocks);
-   FP("  ,\"rb\":%llu,\"wb\":%llu\n",
-      api->reads_bytes, api->writes_bytes);
+      ppi->total_bytes, ppi->total_blocks);
 
-   if (api->histo && api->xsize_tag == Exactly) {
-      FP("  ,\"acc\":[");
+   if (clo_mode == Heap) {
+      tl_assert(ppi->total_blocks >= ppi->max_blocks);
+      tl_assert(ppi->total_bytes >= ppi->max_bytes);
 
-      // Simple run-length encoding: when N entries in a row have the same
-      // value M, we print "-N,M". If there is just one in a row, we just
-      // print "M". This reduces file size significantly.
-      UShort repval = 0;
-      Int reps = 0;
-      for (UWord i = 0; i < api->xsize; i++) {
-         UShort h = api->histo[i];
-         if (repval == h) {
-            // Continue current run.
-            reps++;
-         } else {
-            // End of run; print it.
-            if (reps == 1) {
-               FP("%u,", repval);
-            } else if (reps > 1) {
-               FP("-%d,%u,", reps, repval);
+      FP("  ,\"tl\":%llu\n",
+         ppi->total_lifetimes_instrs);
+      FP("  ,\"mb\":%llu,\"mbk\":%llu\n",
+         ppi->max_bytes, ppi->max_blocks);
+      FP("  ,\"gb\":%llu,\"gbk\":%llu\n",
+         ppi->at_tgmax_bytes, ppi->at_tgmax_blocks);
+      FP("  ,\"eb\":%llu,\"ebk\":%llu\n",
+         ppi->curr_bytes, ppi->curr_blocks);
+      FP("  ,\"rb\":%llu,\"wb\":%llu\n",
+         ppi->reads_bytes, ppi->writes_bytes);
+
+      if (ppi->histo && ppi->xsize_tag == Exactly) {
+         FP("  ,\"acc\":[");
+
+         // Simple run-length encoding: when N entries in a row have the same
+         // value M, we print "-N,M". If there is just one in a row, we just
+         // print "M". This reduces file size significantly.
+         UShort repval = 0;
+         Int reps = 0;
+         for (UWord i = 0; i < ppi->xsize; i++) {
+            UShort h = ppi->histo[i];
+            if (repval == h) {
+               // Continue current run.
+               reps++;
+            } else {
+               // End of run; print it.
+               if (reps == 1) {
+                  FP("%u,", repval);
+               } else if (reps > 1) {
+                  FP("-%d,%u,", reps, repval);
+               }
+               reps = 1;
+               repval = h;
             }
-            reps = 1;
-            repval = h;
          }
-      }
-      // Print the final run.
-      if (reps == 1) {
-         FP("%u", repval);
-      } else if (reps > 1) {
-         FP("-%d,%u", reps, repval);
-      }
+         // Print the final run.
+         if (reps == 1) {
+            FP("%u", repval);
+         } else if (reps > 1) {
+            FP("-%d,%u", reps, repval);
+         }
 
-      FP("]\n");
+         FP("]\n");
+      }
+   } else {
+      tl_assert(ppi->curr_bytes == 0);
+      tl_assert(ppi->curr_blocks == 0);
+      tl_assert(ppi->max_bytes == 0);
+      tl_assert(ppi->max_blocks == 0);
+      tl_assert(ppi->at_tgmax_bytes == 0);
+      tl_assert(ppi->at_tgmax_blocks == 0);
+      tl_assert(ppi->total_lifetimes_instrs == 0);
+      tl_assert(ppi->freed_blocks == 0);
+      tl_assert(ppi->reads_bytes == 0);
+      tl_assert(ppi->writes_bytes == 0);
+      tl_assert(ppi->xsize_tag == 0);
+      tl_assert(ppi->xsize == 0);
+      tl_assert(ppi->histo == NULL);
    }
 
    FP("  ,\"fs\":");
    Bool is_first_frame = True;
-   VG_(apply_ExeContext)(write_APInfo_frame, &is_first_frame, api->ap);
+   VG_(apply_ExeContext)(write_PPInfo_frame, &is_first_frame, ppi->ec);
    FP("]\n");
 
    FP("  }\n");
 }
 
-static void write_APInfos(void)
+static void write_PPInfos(void)
 {
    UWord keyW, valW;
 
-   FP(",\"aps\":\n");
+   FP(",\"pps\":\n");
 
-   VG_(initIterFM)(apinfo);
+   VG_(initIterFM)(ppinfo);
    Bool is_first = True;
-   while (VG_(nextIterFM)(apinfo, &keyW, &valW)) {
-      APInfo* api = (APInfo*)valW;
-      tl_assert(api && api->ap == (ExeContext*)keyW);
-      write_APInfo(api, is_first);
+   while (VG_(nextIterFM)(ppinfo, &keyW, &valW)) {
+      PPInfo* ppi = (PPInfo*)valW;
+      tl_assert(ppi && ppi->ec == (ExeContext*)keyW);
+      write_PPInfo(ppi, is_first);
       is_first = False;
    }
-   VG_(doneIterFM)(apinfo);
+   VG_(doneIterFM)(ppinfo);
 
    if (is_first) {
-      // We didn't print any elements. This happens if apinfo is empty.
+      // We didn't print any elements. This happens if ppinfo is empty.
       FP(" [\n");
    }
 
@@ -1339,30 +1589,33 @@ static void dh_fini(Int exit_status)
    // This function does lots of allocations that it doesn't bother to free,
    // because execution is almost over anyway.
 
-   // Total bytes might be at a possible peak.
-   check_for_peak();
-
-   // Before printing statistics, we must harvest various stats (such as
-   // lifetimes and accesses) for all the blocks that are still alive.
    UWord keyW, valW;
-   VG_(initIterFM)( interval_tree );
-   while (VG_(nextIterFM)( interval_tree, &keyW, &valW )) {
-      Block* bk = (Block*)keyW;
-      tl_assert(valW == 0);
-      tl_assert(bk);
-      retire_Block(bk, False/*!because_freed*/);
-   }
-   VG_(doneIterFM)( interval_tree );
 
-   // Stats.
-   if (VG_(clo_stats)) {
-      VG_(dmsg)(" dhat: find_Block_containing:\n");
-      VG_(dmsg)("             found: %'lu (%'lu cached + %'lu uncached)\n",
-                stats__n_fBc_cached + stats__n_fBc_uncached,
-                stats__n_fBc_cached,
-                stats__n_fBc_uncached);
-      VG_(dmsg)("          notfound: %'lu\n", stats__n_fBc_notfound);
-      VG_(dmsg)("\n");
+   // Total bytes might be at a possible peak.
+   if (clo_mode == Heap) {
+      check_for_peak();
+
+      // Before printing statistics, we must harvest various stats (such as
+      // lifetimes and accesses) for all the blocks that are still alive.
+      VG_(initIterFM)( interval_tree );
+      while (VG_(nextIterFM)( interval_tree, &keyW, &valW )) {
+         Block* bk = (Block*)keyW;
+         tl_assert(valW == 0);
+         tl_assert(bk);
+         retire_Block(bk, False/*!because_freed*/);
+      }
+      VG_(doneIterFM)( interval_tree );
+
+      // Stats.
+      if (VG_(clo_stats)) {
+         VG_(dmsg)(" dhat: find_Block_containing:\n");
+         VG_(dmsg)("             found: %'lu (%'lu cached + %'lu uncached)\n",
+                   stats__n_fBc_cached + stats__n_fBc_uncached,
+                   stats__n_fBc_cached,
+                   stats__n_fBc_uncached);
+         VG_(dmsg)("          notfound: %'lu\n", stats__n_fBc_notfound);
+         VG_(dmsg)("\n");
+      }
    }
 
    // Create the frame table, and insert the special "[root]" node at index 0.
@@ -1392,7 +1645,28 @@ static void dh_fini(Int exit_status)
    }
 
    // Write to data file.
-   FP("{\"dhatFileVersion\":1\n");
+   FP("{\"dhatFileVersion\":2\n");
+
+   // The output mode, block booleans, and byte/block units.
+   if (clo_mode == Heap) {
+      FP(",\"mode\":\"heap\",\"verb\":\"Allocated\"\n");
+      FP(",\"bklt\":true,\"bkacc\":true\n");
+   } else if (clo_mode == Copy) {
+      FP(",\"mode\":\"copy\",\"verb\":\"Copied\"\n");
+      FP(",\"bklt\":false,\"bkacc\":false\n");
+   } else if (clo_mode == AdHoc) {
+      FP(",\"mode\":\"ad-hoc\",\"verb\":\"Occurred\"\n");
+      FP(",\"bklt\":false,\"bkacc\":false\n");
+      FP(",\"bu\":\"unit\",\"bsu\":\"units\",\"bksu\":\"events\"\n");
+   } else {
+      tl_assert(False);
+   }
+
+   // The time units.
+   FP(",\"tu\":\"instrs\",\"Mtu\":\"Minstr\"\n");
+   if (clo_mode == Heap) {
+      FP(",\"tuth\":500\n");
+   }
 
    // The command.
    const HChar* exe = VG_(args_the_exename);
@@ -1407,10 +1681,15 @@ static void dh_fini(Int exit_status)
    FP(",\"pid\":%d\n", VG_(getpid)());
 
    // Times.
-   FP(",\"mi\":%llu,\"ei\":%llu\n", g_max_instrs, g_curr_instrs);
+   FP(",\"te\":%llu\n", g_curr_instrs);
+   if (clo_mode == Heap) {
+      FP(",\"tg\":%llu\n", g_tgmax_instrs);
+   } else {
+      tl_assert(g_tgmax_instrs == 0);
+   }
 
    // APs.
-   write_APInfos();
+   write_PPInfos();
 
    // Frame table.
    FP(",\"ftbl\":\n");
@@ -1445,24 +1724,34 @@ static void dh_fini(Int exit_status)
    }
 
    // Print brief global stats.
-   VG_(umsg)("Total:     %'llu bytes in %'llu blocks\n",
-             g_total_bytes, g_total_blocks);
-   VG_(umsg)("At t-gmax: %'llu bytes in %'llu blocks\n",
-             g_max_bytes, g_max_blocks);
-   VG_(umsg)("At t-end:  %'llu bytes in %'llu blocks\n",
-             g_curr_bytes, g_curr_blocks);
-   VG_(umsg)("Reads:     %'llu bytes\n", g_reads_bytes);
-   VG_(umsg)("Writes:    %'llu bytes\n", g_writes_bytes);
+   VG_(umsg)("Total:     %'llu %s in %'llu %s\n",
+             g_total_bytes, clo_mode == AdHoc ? "units" : "bytes",
+             g_total_blocks, clo_mode == AdHoc ? "events" : "blocks");
+   if (clo_mode == Heap) {
+      VG_(umsg)("At t-gmax: %'llu bytes in %'llu blocks\n",
+                g_max_bytes, g_max_blocks);
+      VG_(umsg)("At t-end:  %'llu bytes in %'llu blocks\n",
+                g_curr_bytes, g_curr_blocks);
+      VG_(umsg)("Reads:     %'llu bytes\n", g_reads_bytes);
+      VG_(umsg)("Writes:    %'llu bytes\n", g_writes_bytes);
+   } else {
+      tl_assert(g_max_bytes == 0);
+      tl_assert(g_max_blocks == 0);
+      tl_assert(g_curr_bytes == 0);
+      tl_assert(g_curr_blocks == 0);
+      tl_assert(g_reads_bytes == 0);
+      tl_assert(g_writes_bytes == 0);
+   }
 
    // Print a how-to-view-the-profile hint.
    VG_(umsg)("\n");
    VG_(umsg)("To view the resulting profile, open\n");
    VG_(umsg)("  file://%s/%s\n", DHAT_VIEW_DIR, "dh_view.html");
-   VG_(umsg)("in a web browser, click on \"Load...\" "
+   VG_(umsg)("in a web browser, click on \"Load...\", "
              "and then select the file\n");
    VG_(umsg)("  %s\n", dhat_out_file);
-   VG_(umsg)("Scroll to the end the displayed page to see a short\n");
-   VG_(umsg)("explanation of some of the abbreviations used in the page.\n");
+   VG_(umsg)("The text at the bottom explains the abbreviations used in the "
+             "output.\n");
 
    VG_(free)(dhat_out_file);
 }
@@ -1473,6 +1762,11 @@ static void dh_fini(Int exit_status)
 
 static void dh_post_clo_init(void)
 {
+   if (clo_mode == Heap) {
+      VG_(track_pre_mem_read)        ( dh_handle_noninsn_read );
+      VG_(track_pre_mem_read_asciiz) ( dh_handle_noninsn_read_asciiz );
+      VG_(track_post_mem_write)      ( dh_handle_noninsn_write );
+   }
 }
 
 static void dh_pre_clo_init(void)
@@ -1488,31 +1782,31 @@ static void dh_pre_clo_init(void)
    VG_(basic_tool_funcs)          (dh_post_clo_init,
                                    dh_instrument,
                                    dh_fini);
-//zz
+
    // Needs.
    VG_(needs_libc_freeres)();
    VG_(needs_cxx_freeres)();
    VG_(needs_command_line_options)(dh_process_cmd_line_option,
                                    dh_print_usage,
                                    dh_print_debug_usage);
-//zz   VG_(needs_client_requests)     (dh_handle_client_request);
-//zz   VG_(needs_sanity_checks)       (dh_cheap_sanity_check,
-//zz                                   dh_expensive_sanity_check);
-   VG_(needs_malloc_replacement)  (dh_malloc,
-                                   dh___builtin_new,
-                                   dh___builtin_vec_new,
-                                   dh_memalign,
-                                   dh_calloc,
-                                   dh_free,
-                                   dh___builtin_delete,
-                                   dh___builtin_vec_delete,
-                                   dh_realloc,
-                                   dh_malloc_usable_size,
-                                   0 );
-
-   VG_(track_pre_mem_read)        ( dh_handle_noninsn_read );
-   //VG_(track_pre_mem_read_asciiz) ( check_mem_is_defined_asciiz );
-   VG_(track_post_mem_write)      ( dh_handle_noninsn_write );
+   VG_(needs_client_requests)     (dh_handle_client_request);
+// VG_(needs_sanity_checks)       (dh_cheap_sanity_check,
+//                                 dh_expensive_sanity_check);
+   VG_(needs_malloc_replacement)(dh_malloc,
+                                 dh___builtin_new,
+                                 dh___builtin_new_aligned,
+                                 dh___builtin_vec_new,
+                                 dh___builtin_vec_new_aligned,
+                                 dh_memalign,
+                                 dh_calloc,
+                                 dh_free,
+                                 dh___builtin_delete,
+                                 dh___builtin_delete_aligned,
+                                 dh___builtin_vec_delete,
+                                 dh___builtin_vec_delete_aligned,
+                                 dh_realloc,
+                                 dh_malloc_usable_size,
+                                 0 );
 
    tl_assert(!interval_tree);
    tl_assert(!fbc_cache0);
@@ -1523,8 +1817,8 @@ static void dh_pre_clo_init(void)
                                VG_(free),
                                interval_tree_Cmp );
 
-   apinfo = VG_(newFM)( VG_(malloc),
-                        "dh.apinfo.1",
+   ppinfo = VG_(newFM)( VG_(malloc),
+                        "dh.ppinfo.1",
                         VG_(free),
                         NULL/*unboxedcmp*/ );
 }

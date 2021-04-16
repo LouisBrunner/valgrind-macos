@@ -1,0 +1,6 @@
+Syscall param fcntl(arg) contains uninitialised byte(s)
+   ...
+   by 0x........: main (memfd.c:72)
+ Uninitialised value was created by a client request
+   at 0x........: main (memfd.c:71)
+

@@ -50,7 +50,8 @@ void ML_(read_debuginfo_dwarf3)
           DiSlice escn_debug_abbv,      /* .debug_abbrev */
           DiSlice escn_debug_line,      /* .debug_line */
           DiSlice escn_debug_str,       /* .debug_str */
-          DiSlice escn_debug_str_alt ); /* .debug_str */
+          DiSlice escn_debug_str_alt,   /* .debug_str */
+          DiSlice escn_debug_line_str );/* .debug_line_str */
 
 /* --------------------
    DWARF1 reader

@@ -158,7 +158,7 @@ static const char *select_platform(const char *clientname)
    if (strcmp (client, clientname) != 0)
       VG_(debugLog)(2, "launcher", "selecting platform for '%s'\n", client);
 
-   if ((fd = open(clientname, O_RDONLY)) < 0) {
+   if ((fd = open(client, O_RDONLY)) < 0) {
      return_null:
       free (client);
       return NULL;

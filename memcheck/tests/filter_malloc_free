@@ -1,0 +1,6 @@
+#! /bin/sh
+
+./filter_stderr "$@" |
+./filter_allocs |
+sed -e '/^malloc/d;/^free/d'
+

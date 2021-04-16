@@ -5,7 +5,7 @@ general valgrind monitor commands:
   v.info last_error       : show last error found
   v.info location <addr>  : show information about location <addr>
   v.info n_errs_found [msg] : show the nr of errors found so far and the given msg
-  v.info open_fds         : show open file descriptors (only if --track-fds=yes)
+  v.info open_fds         : show open file descriptors (only if --track-fds=[yes|all])
   v.kill                  : kill the Valgrind process
   v.clo <clo_option>...   : changes one or more dynamic command line options
      with no clo_option, show the dynamically changeable options.
@@ -64,7 +64,7 @@ general valgrind monitor commands:
   v.info last_error       : show last error found
   v.info location <addr>  : show information about location <addr>
   v.info n_errs_found [msg] : show the nr of errors found so far and the given msg
-  v.info open_fds         : show open file descriptors (only if --track-fds=yes)
+  v.info open_fds         : show open file descriptors (only if --track-fds=[yes|all])
   v.kill                  : kill the Valgrind process
   v.clo <clo_option>...   : changes one or more dynamic command line options
      with no clo_option, show the dynamically changeable options.

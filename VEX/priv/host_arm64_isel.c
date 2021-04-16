@@ -187,8 +187,11 @@ static ARM64RIL*   iselIntExpr_RIL       ( ISelEnv* env, IRExpr* e );
 static ARM64RI6*   iselIntExpr_RI6_wrk   ( ISelEnv* env, IRExpr* e );
 static ARM64RI6*   iselIntExpr_RI6       ( ISelEnv* env, IRExpr* e );
 
-static ARM64CondCode iselCondCode_wrk    ( ISelEnv* env, IRExpr* e );
-static ARM64CondCode iselCondCode        ( ISelEnv* env, IRExpr* e );
+static ARM64CondCode iselCondCode_C_wrk  ( ISelEnv* env, IRExpr* e );
+static ARM64CondCode iselCondCode_C      ( ISelEnv* env, IRExpr* e );
+
+static HReg        iselCondCode_R_wrk    ( ISelEnv* env, IRExpr* e );
+static HReg        iselCondCode_R        ( ISelEnv* env, IRExpr* e );
 
 static HReg        iselIntExpr_R_wrk     ( ISelEnv* env, IRExpr* e );
 static HReg        iselIntExpr_R         ( ISelEnv* env, IRExpr* e );
@@ -710,7 +713,7 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
              && guard->Iex.Const.con->Ico.U1 == True) {
             /* unconditional -- do nothing */
          } else {
-            cc = iselCondCode( env, guard );
+            cc = iselCondCode_C( env, guard );
          }
       }
 
@@ -790,6 +793,94 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
    upper 32 bits are arbitrary, so you should mask or sign extend
    partial values if necessary.
 */
+
+/* ---------------- RRS matching helper ---------------- */
+
+/* This helper matches 64-bit integer expressions of the form
+      {Add,Sub,And,Or,Xor}(E1, {Shl,Shr,Sar}(E2, immediate))
+   and
+      {Add,And,Or,Xor}({Shl,Shr,Sar}(E1, immediate), E2)
+   which is a useful thing to do because AArch64 can compute those in
+   a single instruction.
+ */
+static Bool matchesRegRegShift(/*OUT*/ARM64RRSOp* mainOp,
+                               /*OUT*/ARM64ShiftOp* shiftOp,
+                               /*OUT*/UChar* amt,
+                               /*OUT*/IRExpr** argUnshifted,
+                               /*OUT*/IRExpr** argToBeShifted,
+                               IRExpr* e)
+{
+   *mainOp         = (ARM64RRSOp)0;
+   *shiftOp        = (ARM64ShiftOp)0;
+   *amt            = 0;
+   *argUnshifted   = NULL;
+   *argToBeShifted = NULL;
+   if (e->tag != Iex_Binop) {
+      return False;
+   }
+   const IROp irMainOp = e->Iex.Binop.op;
+   Bool canSwap = True;
+   switch (irMainOp) {
+      case Iop_And64: *mainOp = ARM64rrs_AND; break;
+      case Iop_Or64:  *mainOp = ARM64rrs_OR;  break;
+      case Iop_Xor64: *mainOp = ARM64rrs_XOR; break;
+      case Iop_Add64: *mainOp = ARM64rrs_ADD; break;
+      case Iop_Sub64: *mainOp = ARM64rrs_SUB; canSwap = False; break;
+      default: return False;
+   }
+   /* The root node is OK.  Now check the right (2nd) arg. */
+   IRExpr* argL = e->Iex.Binop.arg1;
+   IRExpr* argR = e->Iex.Binop.arg2;
+
+   // This loop runs either one or two iterations.  In the first iteration, we
+   // check for a shiftable right (second) arg.  If that fails, at the end of
+   // the first iteration, the args are swapped, if that is valid, and we go
+   // round again, hence checking for a shiftable left (first) arg.
+   UInt iterNo = 1;
+   while (True) {
+      vassert(iterNo == 1 || iterNo == 2);
+      if (argR->tag == Iex_Binop) {
+         const IROp irShiftOp = argR->Iex.Binop.op;
+         if (irShiftOp == Iop_Shl64
+             || irShiftOp == Iop_Shr64 || irShiftOp == Iop_Sar64) {
+            IRExpr* argRL = argR->Iex.Binop.arg1;
+            const IRExpr* argRR = argR->Iex.Binop.arg2;
+            if (argRR->tag == Iex_Const) {
+               const IRConst* argRRconst = argRR->Iex.Const.con;
+               vassert(argRRconst->tag == Ico_U8); // due to typecheck rules
+               const UChar amount = argRRconst->Ico.U8;
+               if (amount >= 1 && amount <= 63) {
+                  // We got a match \o/
+                  // *mainOp is already set
+                  switch (irShiftOp) {
+                     case Iop_Shl64: *shiftOp = ARM64sh_SHL; break;
+                     case Iop_Shr64: *shiftOp = ARM64sh_SHR; break;
+                     case Iop_Sar64: *shiftOp = ARM64sh_SAR; break;
+                     default: vassert(0); // guarded above
+                  }
+                  *amt = amount;
+                  *argUnshifted = argL;
+                  *argToBeShifted = argRL;
+                  return True;
+               }
+            }
+         }
+      }
+      // We failed to get a match in the first iteration.  So, provided the
+      // root node isn't SUB, swap the arguments and make one further
+      // iteration.  If that doesn't succeed, we must give up.
+      if (iterNo == 1 && canSwap) {
+         IRExpr* tmp = argL;
+         argL = argR;
+         argR = tmp;
+         iterNo = 2;
+         continue;
+      }
+      // Give up.
+      return False;
+   }
+   /*NOTREACHED*/
+ }
 
 /* --------------------- AMode --------------------- */
 
@@ -1286,16 +1377,20 @@ static ARM64RI6* iselIntExpr_RI6_wrk ( ISelEnv* env, IRExpr* e )
 
 /* Generate code to evaluated a bit-typed expression, returning the
    condition code which would correspond when the expression would
-   notionally have returned 1. */
+   notionally have returned 1.
 
-static ARM64CondCode iselCondCode ( ISelEnv* env, IRExpr* e )
+   Note that iselCondCode_C and iselCondCode_R are mutually recursive.  For
+   future changes to either of them, take care not to introduce an infinite
+   loop involving the two of them.
+*/
+static ARM64CondCode iselCondCode_C ( ISelEnv* env, IRExpr* e )
 {
-   ARM64CondCode cc = iselCondCode_wrk(env,e);
+   ARM64CondCode cc = iselCondCode_C_wrk(env,e);
    vassert(cc != ARM64cc_NV);
    return cc;
 }
 
-static ARM64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
+static ARM64CondCode iselCondCode_C_wrk ( ISelEnv* env, IRExpr* e )
 {
    vassert(e);
    vassert(typeOfIRExpr(env->type_env,e) == Ity_I1);
@@ -1328,7 +1423,7 @@ static ARM64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    /* Not1(e) */
    if (e->tag == Iex_Unop && e->Iex.Unop.op == Iop_Not1) {
       /* Generate code for the arg, and negate the test condition */
-      ARM64CondCode cc = iselCondCode(env, e->Iex.Unop.arg);
+      ARM64CondCode cc = iselCondCode_C(env, e->Iex.Unop.arg);
       if (cc == ARM64cc_AL || cc == ARM64cc_NV) {
         return ARM64cc_AL;
       } else {
@@ -1407,7 +1502,7 @@ static ARM64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_CmpLT64U: return ARM64cc_CC;
          case Iop_CmpLE64S: return ARM64cc_LE;
          case Iop_CmpLE64U: return ARM64cc_LS;
-         default: vpanic("iselCondCode(arm64): CmpXX64");
+         default: vpanic("iselCondCode_C(arm64): CmpXX64");
       }
    }
 
@@ -1431,7 +1526,7 @@ static ARM64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_CmpLT32U: return ARM64cc_CC;
          case Iop_CmpLE32S: return ARM64cc_LE;
          case Iop_CmpLE32U: return ARM64cc_LS;
-         default: vpanic("iselCondCode(arm64): CmpXX32");
+         default: vpanic("iselCondCode_C(arm64): CmpXX32");
       }
    }
 
@@ -1447,7 +1542,7 @@ static ARM64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       switch (e->Iex.Binop.op) {
          case Iop_CasCmpEQ16: return ARM64cc_EQ;
          case Iop_CasCmpNE16: return ARM64cc_NE;
-         default: vpanic("iselCondCode(arm64): CmpXX16");
+         default: vpanic("iselCondCode_C(arm64): CmpXX16");
       }
    }
 
@@ -1463,37 +1558,74 @@ static ARM64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       switch (e->Iex.Binop.op) {
          case Iop_CasCmpEQ8: return ARM64cc_EQ;
          case Iop_CasCmpNE8: return ARM64cc_NE;
-         default: vpanic("iselCondCode(arm64): CmpXX8");
+         default: vpanic("iselCondCode_C(arm64): CmpXX8");
       }
    }
 
    /* --- And1(x,y), Or1(x,y) --- */
-   /* FIXME: We could (and probably should) do a lot better here, by using the
-      iselCondCode_C/_R scheme used in the amd64 insn selector. */
-    if (e->tag == Iex_Binop
+   if (e->tag == Iex_Binop
         && (e->Iex.Binop.op == Iop_And1 || e->Iex.Binop.op == Iop_Or1)) {
-       HReg x_as_64 = newVRegI(env);
-       ARM64CondCode cc_x = iselCondCode(env, e->Iex.Binop.arg1);
-       addInstr(env, ARM64Instr_Set64(x_as_64, cc_x));
-
-       HReg y_as_64 = newVRegI(env);
-       ARM64CondCode cc_y = iselCondCode(env, e->Iex.Binop.arg2);
-       addInstr(env, ARM64Instr_Set64(y_as_64, cc_y));
-
-       HReg tmp = newVRegI(env);
-       ARM64LogicOp lop
-          = e->Iex.Binop.op == Iop_And1 ? ARM64lo_AND : ARM64lo_OR;
-       addInstr(env, ARM64Instr_Logic(tmp, x_as_64, ARM64RIL_R(y_as_64), lop));
-
-       ARM64RIL* one = mb_mkARM64RIL_I(1);
-       vassert(one);
-       addInstr(env, ARM64Instr_Test(tmp, one));
-
-       return ARM64cc_NE;
-    }
+      HReg tmp = iselCondCode_R(env, e);
+      ARM64RIL* one = mb_mkARM64RIL_I(1);
+      vassert(one);
+      addInstr(env, ARM64Instr_Test(tmp, one));
+      return ARM64cc_NE;
+   }
 
    ppIRExpr(e);
-   vpanic("iselCondCode");
+   vpanic("iselCondCode_C");
+}
+
+
+/* --------------------- CONDCODE as int reg --------------------- */
+
+/* Generate code to evaluated a bit-typed expression, returning the resulting
+   value in bit 0 of an integer register.  WARNING: all of the other bits in the
+   register can be arbitrary.  Callers must mask them off or otherwise ignore
+   them, as necessary.
+
+   Note that iselCondCode_C and iselCondCode_R are mutually recursive.  For
+   future changes to either of them, take care not to introduce an infinite
+   loop involving the two of them.
+*/
+static HReg iselCondCode_R ( ISelEnv* env, IRExpr* e )
+{
+   /* Uh, there's nothing we can sanity check here, unfortunately. */
+   return iselCondCode_R_wrk(env,e);
+}
+
+/* DO NOT CALL THIS DIRECTLY ! */
+static HReg iselCondCode_R_wrk ( ISelEnv* env, IRExpr* e )
+{
+   vassert(e);
+   vassert(typeOfIRExpr(env->type_env,e) == Ity_I1);
+
+   /* var */
+   if (e->tag == Iex_RdTmp) {
+      return lookupIRTemp(env, e->Iex.RdTmp.tmp);
+   }
+
+   /* And1(x,y), Or1(x,y) */
+   if (e->tag == Iex_Binop
+       && (e->Iex.Binop.op == Iop_And1 || e->Iex.Binop.op == Iop_Or1)) {
+      HReg res = newVRegI(env);
+      HReg x_as_64 = iselCondCode_R(env, e->Iex.Binop.arg1);
+      HReg y_as_64 = iselCondCode_R(env, e->Iex.Binop.arg2);
+      ARM64LogicOp lop
+         = e->Iex.Binop.op == Iop_And1 ? ARM64lo_AND : ARM64lo_OR;
+      addInstr(env, ARM64Instr_Logic(res, x_as_64, ARM64RIL_R(y_as_64), lop));
+      return res;
+   }
+
+   /* Anything else, we hand off to iselCondCode_C and force the value into a
+      register. */
+   HReg res = newVRegI(env);
+   ARM64CondCode cc = iselCondCode_C(env, e);
+   addInstr(env, ARM64Instr_Set64(res, cc));
+   return res;
+
+   ppIRExpr(e);
+   vpanic("iselCondCode_R(arm64)");
 }
 
 
@@ -1577,7 +1709,34 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             break;
       }
 
-      /* ADD/SUB */
+      /* AND64/OR64/XOR64/ADD64/SUB64(e1, e2 shifted by imm)
+         AND64/OR64/XOR64/ADD64(e1 shifted by imm, e2)
+      */
+      {
+         switch (e->Iex.Binop.op) {
+            case Iop_And64: case Iop_Or64: case Iop_Xor64:
+            case Iop_Add64: case Iop_Sub64:{
+               ARM64RRSOp mainOp = ARM64rrs_INVALID;
+               ARM64ShiftOp shiftOp = (ARM64ShiftOp)0; // Invalid
+               IRExpr* argUnshifted = NULL;
+               IRExpr* argToBeShifted = NULL;
+               UChar amt = 0;
+               if (matchesRegRegShift(&mainOp, &shiftOp, &amt, &argUnshifted,
+                                      &argToBeShifted, e)) {
+                  HReg rDst = newVRegI(env);
+                  HReg rUnshifted = iselIntExpr_R(env, argUnshifted);
+                  HReg rToBeShifted = iselIntExpr_R(env, argToBeShifted);
+                  addInstr(env, ARM64Instr_RRS(rDst, rUnshifted, rToBeShifted,
+                                               shiftOp, amt, mainOp));
+                  return rDst;
+               }
+            }
+            default:
+               break;
+         }
+      }
+
+      /* ADD/SUB(e1, e2) (for any e1, e2) */
       switch (e->Iex.Binop.op) {
          case Iop_Add64: case Iop_Add32:
          case Iop_Sub64: case Iop_Sub32: {
@@ -1593,7 +1752,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             break;
       }
 
-      /* AND/OR/XOR */
+      /* AND/OR/XOR(e1, e2) (for any e1, e2) */
       switch (e->Iex.Binop.op) {
          case Iop_And64: case Iop_And32: lop = ARM64lo_AND; goto log_binop;
          case Iop_Or64:  case Iop_Or32:  lop = ARM64lo_OR;  goto log_binop;
@@ -1926,13 +2085,12 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_1Sto32:
          case Iop_1Sto64: {
             /* As with the iselStmt case for 'tmp:I1 = expr', we could
-               do a lot better here if it ever became necessary. */
-            HReg zero = newVRegI(env);
+               do a lot better here if it ever became necessary.  (CSDEC?) */
+            HReg zero = hregARM64_XZR_XSP(); // XZR in this context
             HReg one  = newVRegI(env);
             HReg dst  = newVRegI(env);
-            addInstr(env, ARM64Instr_Imm64(zero, 0));
             addInstr(env, ARM64Instr_Imm64(one,  1));
-            ARM64CondCode cc = iselCondCode(env, e->Iex.Unop.arg);
+            ARM64CondCode cc = iselCondCode_C(env, e->Iex.Unop.arg);
             addInstr(env, ARM64Instr_CSel(dst, one, zero, cc));
             addInstr(env, ARM64Instr_Shift(dst, dst, ARM64RI6_I6(63),
                                            ARM64sh_SHL));
@@ -2000,11 +2158,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                addInstr(env, ARM64Instr_Logic(dst, src, one, ARM64lo_AND));
             } else {
                /* CLONE-01 */
-               HReg zero = newVRegI(env);
+               HReg zero = hregARM64_XZR_XSP(); // XZR in this context
                HReg one  = newVRegI(env);
-               addInstr(env, ARM64Instr_Imm64(zero, 0));
                addInstr(env, ARM64Instr_Imm64(one,  1));
-               ARM64CondCode cc = iselCondCode(env, e->Iex.Unop.arg);
+               ARM64CondCode cc = iselCondCode_C(env, e->Iex.Unop.arg);
                addInstr(env, ARM64Instr_CSel(dst, one, zero, cc));
             }
             return dst;
@@ -2111,7 +2268,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          HReg r1  = iselIntExpr_R(env, e->Iex.ITE.iftrue);
          HReg r0  = iselIntExpr_R(env, e->Iex.ITE.iffalse);
          HReg dst = newVRegI(env);
-         cc = iselCondCode(env, e->Iex.ITE.cond);
+         cc = iselCondCode_C(env, e->Iex.ITE.cond);
          addInstr(env, ARM64Instr_CSel(dst, r1, r0, cc));
          return dst;
       }
@@ -2299,8 +2456,8 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
       /* Other cases */
       switch (e->Iex.Unop.op) {
          case Iop_NotV128:
-         case Iop_Abs64Fx2: case Iop_Abs32Fx4:
-         case Iop_Neg64Fx2: case Iop_Neg32Fx4:
+         case Iop_Abs64Fx2: case Iop_Abs32Fx4: case Iop_Abs16Fx8:
+         case Iop_Neg64Fx2: case Iop_Neg32Fx4: case Iop_Neg16Fx8:
          case Iop_Abs64x2:  case Iop_Abs32x4:
          case Iop_Abs16x8:  case Iop_Abs8x16:
          case Iop_Cls32x4:  case Iop_Cls16x8:  case Iop_Cls8x16:
@@ -2324,8 +2481,10 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
                case Iop_NotV128:           op = ARM64vecu_NOT;         break;
                case Iop_Abs64Fx2:          op = ARM64vecu_FABS64x2;    break;
                case Iop_Abs32Fx4:          op = ARM64vecu_FABS32x4;    break;
+               case Iop_Abs16Fx8:          op = ARM64vecu_FABS16x8;    break;
                case Iop_Neg64Fx2:          op = ARM64vecu_FNEG64x2;    break;
                case Iop_Neg32Fx4:          op = ARM64vecu_FNEG32x4;    break;
+               case Iop_Neg16Fx8:          op = ARM64vecu_FNEG16x8;    break;
                case Iop_Abs64x2:           op = ARM64vecu_ABS64x2;     break;
                case Iop_Abs32x4:           op = ARM64vecu_ABS32x4;     break;
                case Iop_Abs16x8:           op = ARM64vecu_ABS16x8;     break;
@@ -2435,14 +2594,19 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
 
    if (e->tag == Iex_Binop) {
       switch (e->Iex.Binop.op) {
+         case Iop_Sqrt16Fx8:
          case Iop_Sqrt32Fx4:
          case Iop_Sqrt64Fx2: {
             HReg arg = iselV128Expr(env, e->Iex.Binop.arg2);
             HReg res = newVRegV(env);
             set_FPCR_rounding_mode(env, e->Iex.Binop.arg1);
-            ARM64VecUnaryOp op 
-               = e->Iex.Binop.op == Iop_Sqrt32Fx4
-                    ? ARM64vecu_FSQRT32x4 : ARM64vecu_FSQRT64x2;
+            ARM64VecUnaryOp op;
+            switch (e->Iex.Binop.op) {
+               case Iop_Sqrt16Fx8: op = ARM64vecu_FSQRT16x8; break;
+               case Iop_Sqrt32Fx4: op = ARM64vecu_FSQRT32x4; break;
+               case Iop_Sqrt64Fx2: op = ARM64vecu_FSQRT64x2; break;
+               default: vassert(0);
+            }
             addInstr(env, ARM64Instr_VUnaryV(op, res, arg));
             return res;
          }
@@ -3000,6 +3164,7 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_Sub32Fx4: vecbop = ARM64vecb_FSUB32x4; break;
          case Iop_Mul32Fx4: vecbop = ARM64vecb_FMUL32x4; break;
          case Iop_Div32Fx4: vecbop = ARM64vecb_FDIV32x4; break;
+         case Iop_Add16Fx8: vecbop = ARM64vecb_FADD16x8; break;
          default: break;
       }
       if (vecbop != ARM64vecb_INVALID) {
@@ -3040,7 +3205,7 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
       // here.
       HReg rX = newVRegI(env);
 
-      ARM64CondCode cc = iselCondCode(env, e->Iex.ITE.cond);
+      ARM64CondCode cc = iselCondCode_C(env, e->Iex.ITE.cond);
       addInstr(env, ARM64Instr_Set64(rX, cc));
       // cond: rX = 1   !cond: rX = 0
 
@@ -3255,13 +3420,32 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
    }
 
+   if (e->tag == Iex_Qop) {
+      IRQop*       qop = e->Iex.Qop.details;
+      ARM64FpTriOp triop = ARM64fpt_INVALID;
+      switch (qop->op) {
+         case Iop_MAddF64: triop = ARM64fpt_FMADD; break;
+         case Iop_MSubF64: triop = ARM64fpt_FMSUB; break;
+         default: break;
+      }
+      if (triop != ARM64fpt_INVALID) {
+         HReg N = iselDblExpr(env, qop->arg2);
+         HReg M = iselDblExpr(env, qop->arg3);
+         HReg A = iselDblExpr(env, qop->arg4);
+         HReg dst  = newVRegD(env);
+         set_FPCR_rounding_mode(env, qop->arg1);
+         addInstr(env, ARM64Instr_VTriD(triop, dst, N, M, A));
+         return dst;
+      }
+   }
+
    if (e->tag == Iex_ITE) {
       /* ITE(ccexpr, iftrue, iffalse) */
       ARM64CondCode cc;
       HReg r1  = iselDblExpr(env, e->Iex.ITE.iftrue);
       HReg r0  = iselDblExpr(env, e->Iex.ITE.iffalse);
       HReg dst = newVRegD(env);
-      cc = iselCondCode(env, e->Iex.ITE.cond);
+      cc = iselCondCode_C(env, e->Iex.ITE.cond);
       addInstr(env, ARM64Instr_VFCSel(dst, r1, r0, cc, True/*64-bit*/));
       return dst;
    }
@@ -3445,9 +3629,29 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       HReg r1  = iselFltExpr(env, e->Iex.ITE.iftrue);
       HReg r0  = iselFltExpr(env, e->Iex.ITE.iffalse);
       HReg dst = newVRegD(env);
-      cc = iselCondCode(env, e->Iex.ITE.cond);
+      cc = iselCondCode_C(env, e->Iex.ITE.cond);
       addInstr(env, ARM64Instr_VFCSel(dst, r1, r0, cc, False/*!64-bit*/));
       return dst;
+   }
+
+   if (e->tag == Iex_Qop) {
+      IRQop*       qop = e->Iex.Qop.details;
+      ARM64FpTriOp triop = ARM64fpt_INVALID;
+      switch (qop->op) {
+         case Iop_MAddF32: triop = ARM64fpt_FMADD; break;
+         case Iop_MSubF32: triop = ARM64fpt_FMSUB; break;
+      default: break;
+      }
+
+      if (triop != ARM64fpt_INVALID) {
+         HReg N = iselFltExpr(env, qop->arg2);
+         HReg M = iselFltExpr(env, qop->arg3);
+         HReg A = iselFltExpr(env, qop->arg4);
+         HReg dst  = newVRegD(env);
+         set_FPCR_rounding_mode(env, qop->arg1);
+         addInstr(env, ARM64Instr_VTriS(triop, dst, N, M, A));
+         return dst;
+      }
    }
 
    ppIRExpr(e);
@@ -3497,6 +3701,25 @@ static HReg iselF16Expr_wrk ( ISelEnv* env, IRExpr* e )
       }
    }
 
+   if (e->tag == Iex_Unop) {
+      switch (e->Iex.Unop.op) {
+         case Iop_NegF16: {
+            HReg srcH = iselF16Expr(env, e->Iex.Unop.arg);
+            HReg dstH = newVRegD(env);
+            addInstr(env, ARM64Instr_VUnaryH(ARM64fpu_NEG, dstH, srcH));
+            return dstH;
+         }
+         case Iop_AbsF16: {
+            HReg srcH = iselF16Expr(env, e->Iex.Unop.arg);
+            HReg dstH = newVRegD(env);
+            addInstr(env, ARM64Instr_VUnaryH(ARM64fpu_ABS, dstH, srcH));
+            return dstH;
+         }
+         default:
+            break;
+      }
+   }
+
    if (e->tag == Iex_Binop) {
       switch (e->Iex.Binop.op) {
          case Iop_F32toF16: {
@@ -3512,6 +3735,13 @@ static HReg iselF16Expr_wrk ( ISelEnv* env, IRExpr* e )
             HReg dstH = newVRegD(env);
             addInstr(env, ARM64Instr_VCvtHD(False/*!hToD*/, dstH, srcD));
             return dstH;
+         }
+         case Iop_SqrtF16: {
+            HReg src = iselF16Expr(env, e->Iex.Binop.arg2);
+            set_FPCR_rounding_mode(env, e->Iex.Binop.arg1);
+            HReg dst = newVRegD(env);
+            addInstr(env, ARM64Instr_VUnaryH(ARM64fpu_SQRT, dst, src));
+            return dst;
          }
          default:
             break;
@@ -3706,7 +3936,13 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       IRType tyd  = typeOfIRExpr(env->type_env, stmt->Ist.Put.data);
       UInt   offs = (UInt)stmt->Ist.Put.offset;
       if (tyd == Ity_I64 && 0 == (offs & 7) && offs < (8<<12)) {
-         HReg        rD = iselIntExpr_R(env, stmt->Ist.Put.data);
+         HReg rD = INVALID_HREG;
+         if (isZeroU64(stmt->Ist.Put.data)) {
+            // In this context, XZR_XSP denotes the zero register.
+            rD = hregARM64_XZR_XSP();
+         } else {
+            rD = iselIntExpr_R(env, stmt->Ist.Put.data);
+         }
          ARM64AMode* am = mk_baseblock_64bit_access_amode(offs);
          addInstr(env, ARM64Instr_LdSt64(False/*!isLoad*/, rD, am));
          return;
@@ -3781,12 +4017,11 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
             in that case.  Also, could do this just with a single CINC
             insn. */
          /* CLONE-01 */
-         HReg zero = newVRegI(env);
+         HReg zero = hregARM64_XZR_XSP(); // XZR in this context
          HReg one  = newVRegI(env);
          HReg dst  = lookupIRTemp(env, tmp);
-         addInstr(env, ARM64Instr_Imm64(zero, 0));
          addInstr(env, ARM64Instr_Imm64(one,  1));
-         ARM64CondCode cc = iselCondCode(env, stmt->Ist.WrTmp.data);
+         ARM64CondCode cc = iselCondCode_C(env, stmt->Ist.WrTmp.data);
          addInstr(env, ARM64Instr_CSel(dst, one, zero, cc));
          return;
       }
@@ -4087,7 +4322,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          vpanic("isel_arm: Ist_Exit: dst is not a 64-bit value");
 
       ARM64CondCode cc 
-         = iselCondCode(env, stmt->Ist.Exit.guard);
+         = iselCondCode_C(env, stmt->Ist.Exit.guard);
       ARM64AMode* amPC
          = mk_baseblock_64bit_access_amode(stmt->Ist.Exit.offsIP);
 

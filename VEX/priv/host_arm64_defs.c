@@ -118,9 +118,13 @@ const RRegUniverse* getRRegUniverse_ARM64 ( void )
    // x8 is used as a ProfInc temporary
    // x9 is used as a spill/reload/chaining/call temporary
    // x30 as LR
-   // x31 because dealing with the SP-vs-ZR overloading is too
-   // confusing, and we don't need to do so, so let's just avoid
-   // the problem
+   //
+   // x31 is mentionable, but not allocatable, and is dangerous to use
+   // because of SP-vs-ZR overloading.  Here, we call it `XZR_XSP`.  Whether
+   // it denotes the zero register or the stack pointer depends both on what
+   // kind of instruction it appears in and even on the position within an
+   // instruction that it appears.  So be careful.  There's absolutely
+   // nothing to prevent shooting oneself in the foot.
    //
    // Currently, we have 15 allocatable integer registers:
    // 0 1 2 3 4 5 6 7 22 23 24 25 26 27 28
@@ -137,6 +141,7 @@ const RRegUniverse* getRRegUniverse_ARM64 ( void )
    ru->regs[ru->size++] = hregARM64_X8();
    ru->regs[ru->size++] = hregARM64_X9();
    ru->regs[ru->size++] = hregARM64_X21();
+   ru->regs[ru->size++] = hregARM64_XZR_XSP();
 
    rRegUniverse_ARM64_initted = True;
 
@@ -155,8 +160,8 @@ UInt ppHRegARM64 ( HReg reg )  {
    switch (hregClass(reg)) {
       case HRcInt64:
          r = hregEncoding(reg);
-         vassert(r >= 0 && r < 31);
-         return vex_printf("x%d", r);
+         vassert(r >= 0 && r <= 31);
+         return r ==31 ? vex_printf("xzr/xsp") : vex_printf("x%d", r);
       case HRcFlt64:
          r = hregEncoding(reg);
          vassert(r >= 0 && r < 32);
@@ -493,6 +498,17 @@ static const HChar* showARM64ShiftOp ( ARM64ShiftOp op ) {
    }
 }
 
+static const HChar* showARM64RRSOp ( ARM64RRSOp op ) {
+   switch (op) {
+      case ARM64rrs_ADD: return "add";
+      case ARM64rrs_SUB: return "sub";
+      case ARM64rrs_AND: return "and";
+      case ARM64rrs_OR:  return "orr";
+      case ARM64rrs_XOR: return "eor";
+      default: vpanic("showARM64RRSOp");
+   }
+}
+
 static const HChar* showARM64UnaryOp ( ARM64UnaryOp op ) {
    switch (op) {
       case ARM64un_NEG: return "neg";
@@ -546,6 +562,14 @@ static const HChar* showARM64FpBinOp ( ARM64FpBinOp op ) {
    }
 }
 
+static const HChar* showARM64FpTriOp ( ARM64FpTriOp op ) {
+   switch (op) {
+      case ARM64fpt_FMADD: return "fmadd";
+      case ARM64fpt_FMSUB: return "fmsub";
+      default: vpanic("showARM64FpTriOp");
+   }
+}
+
 static const HChar* showARM64FpUnaryOp ( ARM64FpUnaryOp op ) {
    switch (op) {
       case ARM64fpu_NEG:   return "neg  ";
@@ -576,6 +600,7 @@ static void showARM64VecBinOp(/*OUT*/const HChar** nm,
       case ARM64vecb_FMUL64x2:     *nm = "fmul  ";    *ar = "2d";   return;
       case ARM64vecb_FDIV64x2:     *nm = "fdiv  ";    *ar = "2d";   return;
       case ARM64vecb_FADD32x4:     *nm = "fadd  ";    *ar = "4s";   return;
+      case ARM64vecb_FADD16x8:     *nm = "fadd  ";    *ar = "8h";   return;
       case ARM64vecb_FSUB32x4:     *nm = "fsub  ";    *ar = "4s";   return;
       case ARM64vecb_FMUL32x4:     *nm = "fmul  ";    *ar = "4s";   return;
       case ARM64vecb_FDIV32x4:     *nm = "fdiv  ";    *ar = "4s";   return;
@@ -723,8 +748,10 @@ static void showARM64VecUnaryOp(/*OUT*/const HChar** nm,
    switch (op) {
       case ARM64vecu_FNEG64x2:    *nm = "fneg ";   *ar = "2d";  return;
       case ARM64vecu_FNEG32x4:    *nm = "fneg ";   *ar = "4s";  return;
+      case ARM64vecu_FNEG16x8:    *nm = "fneg ";   *ar = "8h";  return;
       case ARM64vecu_FABS64x2:    *nm = "fabs ";   *ar = "2d";  return;
       case ARM64vecu_FABS32x4:    *nm = "fabs ";   *ar = "4s";  return;
+      case ARM64vecu_FABS16x8:    *nm = "fabs ";   *ar = "8h";  return;
       case ARM64vecu_NOT:         *nm = "not  ";   *ar = "all"; return;
       case ARM64vecu_ABS64x2:     *nm = "abs  ";   *ar = "2d";  return;
       case ARM64vecu_ABS32x4:     *nm = "abs  ";   *ar = "4s";  return;
@@ -752,6 +779,7 @@ static void showARM64VecUnaryOp(/*OUT*/const HChar** nm,
       case ARM64vecu_FRSQRTE32x4: *nm = "frsqrte"; *ar = "4s";  return;
       case ARM64vecu_FSQRT64x2:   *nm = "fsqrt";   *ar = "2d";  return;
       case ARM64vecu_FSQRT32x4:   *nm = "fsqrt";   *ar = "4s";  return;
+      case ARM64vecu_FSQRT16x8:   *nm = "fsqrt";   *ar = "8h";  return;
       default: vpanic("showARM64VecUnaryOp");
    }
 }
@@ -843,6 +871,20 @@ ARM64Instr* ARM64Instr_Logic ( HReg dst,
    i->ARM64in.Logic.argL  = argL;
    i->ARM64in.Logic.argR  = argR;
    i->ARM64in.Logic.op    = op;
+   return i;
+}
+ARM64Instr* ARM64Instr_RRS ( HReg dst, HReg argL, HReg argR,
+                             ARM64ShiftOp shiftOp, UChar amt,
+                             ARM64RRSOp mainOp ) {
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
+   i->tag                 = ARM64in_RRS;
+   i->ARM64in.RRS.dst     = dst;
+   i->ARM64in.RRS.argL    = argL;
+   i->ARM64in.RRS.argR    = argR;
+   i->ARM64in.RRS.shiftOp = shiftOp;
+   i->ARM64in.RRS.amt     = amt;
+   i->ARM64in.RRS.mainOp  = mainOp;
+   vassert(amt >= 1 && amt <= 63);
    return i;
 }
 ARM64Instr* ARM64Instr_Test ( HReg argL, ARM64RIL* argR ) {
@@ -1134,6 +1176,14 @@ ARM64Instr* ARM64Instr_VUnaryS ( ARM64FpUnaryOp op, HReg dst, HReg src ) {
    i->ARM64in.VUnaryS.src = src;
    return i;
 }
+ARM64Instr* ARM64Instr_VUnaryH ( ARM64FpUnaryOp op, HReg dst, HReg src ) {
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
+   i->tag                 = ARM64in_VUnaryH;
+   i->ARM64in.VUnaryH.op  = op;
+   i->ARM64in.VUnaryH.dst = dst;
+   i->ARM64in.VUnaryH.src = src;
+   return i;
+}
 ARM64Instr* ARM64Instr_VBinD ( ARM64FpBinOp op,
                                HReg dst, HReg argL, HReg argR ) {
    ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
@@ -1152,6 +1202,28 @@ ARM64Instr* ARM64Instr_VBinS ( ARM64FpBinOp op,
    i->ARM64in.VBinS.dst  = dst;
    i->ARM64in.VBinS.argL = argL;
    i->ARM64in.VBinS.argR = argR;
+   return i;
+}
+ARM64Instr* ARM64Instr_VTriD ( ARM64FpTriOp op,
+                               HReg dst, HReg arg1, HReg arg2, HReg arg3 ) {
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
+   i->tag                = ARM64in_VTriD;
+   i->ARM64in.VTriD.op   = op;
+   i->ARM64in.VTriD.dst  = dst;
+   i->ARM64in.VTriD.arg1 = arg1;
+   i->ARM64in.VTriD.arg2 = arg2;
+   i->ARM64in.VTriD.arg3 = arg3;
+   return i;
+}
+ARM64Instr* ARM64Instr_VTriS ( ARM64FpTriOp op,
+                               HReg dst, HReg arg1, HReg arg2, HReg arg3 ) {
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
+   i->tag                = ARM64in_VTriS;
+   i->ARM64in.VTriS.op   = op;
+   i->ARM64in.VTriS.dst  = dst;
+   i->ARM64in.VTriS.arg1 = arg1;
+   i->ARM64in.VTriS.arg2 = arg2;
+   i->ARM64in.VTriS.arg3 = arg3;
    return i;
 }
 ARM64Instr* ARM64Instr_VCmpD ( HReg argL, HReg argR ) {
@@ -1410,6 +1482,16 @@ void ppARM64Instr ( const ARM64Instr* i ) {
          ppHRegARM64(i->ARM64in.Logic.argL);
          vex_printf(", ");
          ppARM64RIL(i->ARM64in.Logic.argR);
+         return;
+      case ARM64in_RRS:
+         vex_printf("%s    ", showARM64RRSOp(i->ARM64in.RRS.mainOp));
+         ppHRegARM64(i->ARM64in.RRS.dst);
+         vex_printf(", ");
+         ppHRegARM64(i->ARM64in.RRS.argL);
+         vex_printf(", ");
+         ppHRegARM64(i->ARM64in.RRS.argR);
+         vex_printf(", %s #%u", showARM64ShiftOp(i->ARM64in.RRS.shiftOp),
+                    i->ARM64in.RRS.amt);
          return;
       case ARM64in_Test:
          vex_printf("tst    ");
@@ -1740,6 +1822,12 @@ void ppARM64Instr ( const ARM64Instr* i ) {
          vex_printf(", ");
          ppHRegARM64asSreg(i->ARM64in.VUnaryS.src);
          return;
+      case ARM64in_VUnaryH:
+         vex_printf("f%s ", showARM64FpUnaryOp(i->ARM64in.VUnaryH.op));
+         ppHRegARM64asHreg(i->ARM64in.VUnaryH.dst);
+         vex_printf(", ");
+         ppHRegARM64asHreg(i->ARM64in.VUnaryH.src);
+         return;
       case ARM64in_VBinD:
          vex_printf("f%s   ", showARM64FpBinOp(i->ARM64in.VBinD.op));
          ppHRegARM64(i->ARM64in.VBinD.dst);
@@ -1755,6 +1843,26 @@ void ppARM64Instr ( const ARM64Instr* i ) {
          ppHRegARM64asSreg(i->ARM64in.VBinS.argL);
          vex_printf(", ");
          ppHRegARM64asSreg(i->ARM64in.VBinS.argR);
+         return;
+      case ARM64in_VTriD:
+         vex_printf("f%s   ", showARM64FpTriOp(i->ARM64in.VTriD.op));
+         ppHRegARM64(i->ARM64in.VTriD.dst);
+         vex_printf(", ");
+         ppHRegARM64(i->ARM64in.VTriD.arg1);
+         vex_printf(", ");
+         ppHRegARM64(i->ARM64in.VTriD.arg2);
+         vex_printf(", ");
+         ppHRegARM64(i->ARM64in.VTriD.arg3);
+         return;
+      case ARM64in_VTriS:
+         vex_printf("f%s   ", showARM64FpTriOp(i->ARM64in.VTriS.op));
+         ppHRegARM64asSreg(i->ARM64in.VTriS.dst);
+         vex_printf(", ");
+         ppHRegARM64asSreg(i->ARM64in.VTriS.arg1);
+         vex_printf(", ");
+         ppHRegARM64asSreg(i->ARM64in.VTriS.arg2);
+         vex_printf(", ");
+         ppHRegARM64asSreg(i->ARM64in.VTriS.arg3);
          return;
       case ARM64in_VCmpD:
          vex_printf("fcmp   ");
@@ -1962,6 +2070,11 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, const ARM64Instr* i, Bool mode64 )
          addHRegUse(u, HRmWrite, i->ARM64in.Logic.dst);
          addHRegUse(u, HRmRead, i->ARM64in.Logic.argL);
          addRegUsage_ARM64RIL(u, i->ARM64in.Logic.argR);
+         return;
+      case ARM64in_RRS:
+         addHRegUse(u, HRmWrite, i->ARM64in.RRS.dst);
+         addHRegUse(u, HRmRead, i->ARM64in.RRS.argL);
+         addHRegUse(u, HRmRead, i->ARM64in.RRS.argR);
          return;
       case ARM64in_Test:
          addHRegUse(u, HRmRead, i->ARM64in.Test.argL);
@@ -2187,6 +2300,10 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, const ARM64Instr* i, Bool mode64 )
          addHRegUse(u, HRmWrite, i->ARM64in.VUnaryS.dst);
          addHRegUse(u, HRmRead, i->ARM64in.VUnaryS.src);
          return;
+      case ARM64in_VUnaryH:
+         addHRegUse(u, HRmWrite, i->ARM64in.VUnaryH.dst);
+         addHRegUse(u, HRmRead, i->ARM64in.VUnaryH.src);
+         return;
       case ARM64in_VBinD:
          addHRegUse(u, HRmWrite, i->ARM64in.VBinD.dst);
          addHRegUse(u, HRmRead, i->ARM64in.VBinD.argL);
@@ -2196,6 +2313,18 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, const ARM64Instr* i, Bool mode64 )
          addHRegUse(u, HRmWrite, i->ARM64in.VBinS.dst);
          addHRegUse(u, HRmRead, i->ARM64in.VBinS.argL);
          addHRegUse(u, HRmRead, i->ARM64in.VBinS.argR);
+         return;
+      case ARM64in_VTriD:
+         addHRegUse(u, HRmWrite, i->ARM64in.VTriD.dst);
+         addHRegUse(u, HRmRead, i->ARM64in.VTriD.arg1);
+         addHRegUse(u, HRmRead, i->ARM64in.VTriD.arg2);
+         addHRegUse(u, HRmRead, i->ARM64in.VTriD.arg3);
+         return;
+      case ARM64in_VTriS:
+         addHRegUse(u, HRmWrite, i->ARM64in.VTriS.dst);
+         addHRegUse(u, HRmRead, i->ARM64in.VTriS.arg1);
+         addHRegUse(u, HRmRead, i->ARM64in.VTriS.arg2);
+         addHRegUse(u, HRmRead, i->ARM64in.VTriS.arg3);
          return;
       case ARM64in_VCmpD:
          addHRegUse(u, HRmRead, i->ARM64in.VCmpD.argL);
@@ -2318,6 +2447,11 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
          i->ARM64in.Logic.dst = lookupHRegRemap(m, i->ARM64in.Logic.dst);
          i->ARM64in.Logic.argL = lookupHRegRemap(m, i->ARM64in.Logic.argL);
          mapRegs_ARM64RIL(m, i->ARM64in.Logic.argR);
+         return;
+      case ARM64in_RRS:
+         i->ARM64in.RRS.dst = lookupHRegRemap(m, i->ARM64in.RRS.dst);
+         i->ARM64in.RRS.argL = lookupHRegRemap(m, i->ARM64in.RRS.argL);
+         i->ARM64in.RRS.argR = lookupHRegRemap(m, i->ARM64in.RRS.argR);
          return;
       case ARM64in_Test:
          i->ARM64in.Test.argL = lookupHRegRemap(m, i->ARM64in.Test.argL);
@@ -2444,6 +2578,10 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
          i->ARM64in.VUnaryS.dst = lookupHRegRemap(m, i->ARM64in.VUnaryS.dst);
          i->ARM64in.VUnaryS.src = lookupHRegRemap(m, i->ARM64in.VUnaryS.src);
          return;
+      case ARM64in_VUnaryH:
+         i->ARM64in.VUnaryH.dst = lookupHRegRemap(m, i->ARM64in.VUnaryH.dst);
+         i->ARM64in.VUnaryH.src = lookupHRegRemap(m, i->ARM64in.VUnaryH.src);
+         return;
       case ARM64in_VBinD:
          i->ARM64in.VBinD.dst  = lookupHRegRemap(m, i->ARM64in.VBinD.dst);
          i->ARM64in.VBinD.argL = lookupHRegRemap(m, i->ARM64in.VBinD.argL);
@@ -2453,6 +2591,18 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
          i->ARM64in.VBinS.dst  = lookupHRegRemap(m, i->ARM64in.VBinS.dst);
          i->ARM64in.VBinS.argL = lookupHRegRemap(m, i->ARM64in.VBinS.argL);
          i->ARM64in.VBinS.argR = lookupHRegRemap(m, i->ARM64in.VBinS.argR);
+         return;
+      case ARM64in_VTriD:
+         i->ARM64in.VTriD.dst  = lookupHRegRemap(m, i->ARM64in.VTriD.dst);
+         i->ARM64in.VTriD.arg1 = lookupHRegRemap(m, i->ARM64in.VTriD.arg1);
+         i->ARM64in.VTriD.arg2 = lookupHRegRemap(m, i->ARM64in.VTriD.arg2);
+         i->ARM64in.VTriD.arg3 = lookupHRegRemap(m, i->ARM64in.VTriD.arg3);
+         return;
+      case ARM64in_VTriS:
+         i->ARM64in.VTriS.dst  = lookupHRegRemap(m, i->ARM64in.VTriS.dst);
+         i->ARM64in.VTriS.arg1 = lookupHRegRemap(m, i->ARM64in.VTriS.arg1);
+         i->ARM64in.VTriS.arg2 = lookupHRegRemap(m, i->ARM64in.VTriS.arg2);
+         i->ARM64in.VTriS.arg3 = lookupHRegRemap(m, i->ARM64in.VTriS.arg3);
          return;
       case ARM64in_VCmpD:
          i->ARM64in.VCmpD.argL = lookupHRegRemap(m, i->ARM64in.VCmpD.argL);
@@ -2672,6 +2822,19 @@ static inline UInt iregEnc ( HReg r )
    return n;
 }
 
+static inline UInt iregEncOr31 ( HReg r )
+{
+   // This is the same as iregEnc() except that we're allowed to use the
+   // "special" encoding number 31, which means, depending on the context,
+   // either XZR/WZR or SP.
+   UInt n;
+   vassert(hregClass(r) == HRcInt64);
+   vassert(!hregIsVirtual(r));
+   n = hregEncoding(r);
+   vassert(n <= 31);
+   return n;
+}
+
 static inline UInt dregEnc ( HReg r )
 {
    UInt n;
@@ -2724,6 +2887,7 @@ static inline UInt qregEnc ( HReg r )
 #define X01000   BITS8(0,0,0, 0,1,0,0,0)
 #define X10000   BITS8(0,0,0, 1,0,0,0,0)
 #define X11000   BITS8(0,0,0, 1,1,0,0,0)
+#define X11001   BITS8(0,0,0, 1,1,0,0,1)
 #define X11110   BITS8(0,0,0, 1,1,1,1,0)
 #define X11111   BITS8(0,0,0, 1,1,1,1,1)
 
@@ -2732,6 +2896,7 @@ static inline UInt qregEnc ( HReg r )
 #define X000010  BITS8(0,0, 0,0,0,0,1,0)
 #define X000011  BITS8(0,0, 0,0,0,0,1,1)
 #define X000100  BITS8(0,0, 0,0,0,1,0,0)
+#define X000101  BITS8(0,0, 0,0,0,1,0,1)
 #define X000110  BITS8(0,0, 0,0,0,1,1,0)
 #define X000111  BITS8(0,0, 0,0,0,1,1,1)
 #define X001000  BITS8(0,0, 0,0,1,0,0,0)
@@ -2800,8 +2965,13 @@ static inline UInt qregEnc ( HReg r )
 #define X01110101  BITS8(0,1,1,1,0,1,0,1)
 #define X01110110  BITS8(0,1,1,1,0,1,1,0)
 #define X01110111  BITS8(0,1,1,1,0,1,1,1)
+#define X10001010  BITS8(1,0,0,0,1,0,1,0)
+#define X10001011  BITS8(1,0,0,0,1,0,1,1)
+#define X10101010  BITS8(1,0,1,0,1,0,1,0)
 #define X11000001  BITS8(1,1,0,0,0,0,0,1)
 #define X11000011  BITS8(1,1,0,0,0,0,1,1)
+#define X11001010  BITS8(1,1,0,0,1,0,1,0)
+#define X11001011  BITS8(1,1,0,0,1,0,1,1)
 #define X11010100  BITS8(1,1,0,1,0,1,0,0)
 #define X11010110  BITS8(1,1,0,1,0,1,1,0)
 #define X11011000  BITS8(1,1,0,1,1,0,0,0)
@@ -2812,7 +2982,8 @@ static inline UInt qregEnc ( HReg r )
 #define X11110011  BITS8(1,1,1,1,0,0,1,1)
 #define X11110101  BITS8(1,1,1,1,0,1,0,1)
 #define X11110111  BITS8(1,1,1,1,0,1,1,1)
-
+#define X11111000  BITS8(1,1,1,1,1,0,0,0)
+#define X11111010  BITS8(1,1,1,1,1,0,1,0)
 
 /* --- 4 fields --- */
 
@@ -2971,6 +3142,47 @@ static inline UInt X_3_6_1_6_6_5_5 ( UInt f1, UInt f2, UInt f3,
    return w;
 }
 
+static inline UInt X_3_8_5_1_5_5_5 ( UInt f1, UInt f2, UInt f3, UInt f4,
+                                     UInt f5, UInt f6, UInt f7 ) {
+   vassert(3+8+5+1+5+5+5 == 32);
+   vassert(f1 < (1<<3));
+   vassert(f2 < (1<<8));
+   vassert(f3 < (1<<5));
+   vassert(f4 < (1<<1));
+   vassert(f5 < (1<<5));
+   vassert(f6 < (1<<5));
+   vassert(f7 < (1<<5));
+   UInt w = 0;
+   w = (w << 3) | f1;
+   w = (w << 8) | f2;
+   w = (w << 5) | f3;
+   w = (w << 1) | f4;
+   w = (w << 5) | f5;
+   w = (w << 5) | f6;
+   w = (w << 5) | f7;
+   return w;
+}
+
+static inline UInt X_8_2_1_5_6_5_5 ( UInt f1, UInt f2, UInt f3, UInt f4,
+                                     UInt f5, UInt f6, UInt f7 ) {
+   vassert(8+2+1+5+6+5+5 == 32);
+   vassert(f1 < (1<<8));
+   vassert(f2 < (1<<2));
+   vassert(f3 < (1<<1));
+   vassert(f4 < (1<<5));
+   vassert(f5 < (1<<6));
+   vassert(f6 < (1<<5));
+   vassert(f7 < (1<<5));
+   UInt w = 0;
+   w = (w << 8) | f1;
+   w = (w << 2) | f2;
+   w = (w << 1) | f3;
+   w = (w << 5) | f4;
+   w = (w << 6) | f5;
+   w = (w << 5) | f6;
+   w = (w << 5) | f7;
+   return w;
+}
 
 //ZZ #define X0000  BITS4(0,0,0,0)
 //ZZ #define X0001  BITS4(0,0,0,1)
@@ -3264,13 +3476,14 @@ static UInt* do_load_or_store32 ( UInt* p,
 }
 
 
-/* Generate a 64 bit load or store to/from xD, using the given amode
+/* Generate a 64 bit integer load or store to/from xD, using the given amode
    for the address. */
 static UInt* do_load_or_store64 ( UInt* p,
                                   Bool isLoad, UInt xD, ARM64AMode* am )
 {
-   /* In all these cases, Rn can't be 31 since that means SP. */
-   vassert(xD <= 30);
+   /* In all these cases, Rn can't be 31 since that means SP.  But Rd can be
+      31, meaning XZR/WZR. */
+   vassert(xD <= 31);
    if (am->tag == ARM64am_RI9) {
       /* STUR Xd, [Xn|SP + simm9]:  11 111000 000 simm9 00 n d
          LDUR Xd, [Xn|SP + simm9]:  11 111000 010 simm9 00 n d
@@ -3428,6 +3641,31 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
          }
          goto done;
       }
+      case ARM64in_RRS: {
+         UInt top8 = 0;
+         switch (i->ARM64in.RRS.mainOp) {
+            case ARM64rrs_ADD: top8 = X10001011; break;
+            case ARM64rrs_SUB: top8 = X11001011; break;
+            case ARM64rrs_AND: top8 = X10001010; break;
+            case ARM64rrs_XOR: top8 = X11001010; break;
+            case ARM64rrs_OR:  top8 = X10101010; break;
+            default: vassert(0); /*NOTREACHED*/
+         }
+         UInt sh = 0;
+         switch (i->ARM64in.RRS.shiftOp) {
+            case ARM64sh_SHL: sh = X00; break;
+            case ARM64sh_SHR: sh = X01; break;
+            case ARM64sh_SAR: sh = X10; break;
+            default: vassert(0); /*NOTREACHED*/
+         }
+         UInt amt = i->ARM64in.RRS.amt;
+         vassert(amt >= 1 && amt <= 63);
+         *p++ = X_8_2_1_5_6_5_5(top8, sh, 0,
+                                iregEnc(i->ARM64in.RRS.argR), amt,
+                                iregEnc(i->ARM64in.RRS.argL),
+                                iregEnc(i->ARM64in.RRS.dst));
+         goto done;
+      }
       case ARM64in_Test: {
          UInt      rD   = 31; /* XZR, we are going to dump the result */
          UInt      rN   = iregEnc(i->ARM64in.Test.argL);
@@ -3550,7 +3788,7 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
       }
       case ARM64in_LdSt64: {
          p = do_load_or_store64( p, i->ARM64in.LdSt64.isLoad,
-                                 iregEnc(i->ARM64in.LdSt64.rD),
+                                 iregEncOr31(i->ARM64in.LdSt64.rD),
                                  i->ARM64in.LdSt64.amode );
          goto done;
       }
@@ -3745,9 +3983,9 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
          /* 100 1101 0100 mm cond 00 nn dd = CSEL Xd, Xn, Xm, cond */
          UInt dd   = iregEnc(i->ARM64in.CSel.dst);
          UInt nn   = iregEnc(i->ARM64in.CSel.argL);
-         UInt mm   = iregEnc(i->ARM64in.CSel.argR);
+         UInt mm   = iregEncOr31(i->ARM64in.CSel.argR); // Can be XZR
          UInt cond = (UInt)i->ARM64in.CSel.cond;
-         vassert(dd < 31 && nn < 31 && mm < 31 && cond < 16);
+         vassert(dd < 31 && nn < 31 && mm <= 31 && cond < 16);
          *p++ = X_3_8_5_6_5_5(X100, X11010100, mm, cond << 2, nn, dd);
          goto done;
       }
@@ -4293,6 +4531,35 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
          }
          goto bad;
       }
+      case ARM64in_VUnaryH: {
+         /* 31        23 21     16  14    9 4
+            000 11110 11 1 0000 0,1 10000 n d  FABS Hd, Hn
+            ------------------- 1,0 ---------  FNEG Hd, Hn
+            ------------------- 1,1 ---------  FSQRT Hd, Hn
+         */
+         UInt hD  = dregEnc(i->ARM64in.VUnaryH.dst);
+         UInt hN  = dregEnc(i->ARM64in.VUnaryH.src);
+         /* opc field (bits 15 and 16) */
+         UInt b16 = 2; /* impossible */
+         UInt b15 = 2; /* impossible */
+         switch (i->ARM64in.VUnaryH.op) {
+            case ARM64fpu_NEG:  b16 = 1; b15 = 0; break;
+            case ARM64fpu_SQRT: b16 = 1; b15 = 1; break;
+            case ARM64fpu_ABS:  b16 = 0; b15 = 1; break;
+            default: break;
+         }
+         /*
+            000, 11110 11 1,0000 01,10000 n d   FABS Hd, Hn
+            ---, ----- -- -,---- 10,----- n d   FNEG Hd, Hn
+            ---, ----- -- -,---- 11,----- n d   FSQRT Hd, Hn
+         */
+         if (b16 < 2 && b15 < 2) {
+            *p++ = X_3_8_5_6_5_5(X000, X11110111, (X0000 << 1) | b16,
+                                 (b15 << 5) | X10000, hN, hD);
+            goto done;
+         }
+         goto bad;
+      }
       case ARM64in_VBinD: {
          /* 31        23  20 15   11 9 4
             ---------------- 0000 ------   FMUL  --------
@@ -4337,6 +4604,44 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
          vassert(b1512 < 16);
          *p++
             = X_3_8_5_6_5_5(X000, X11110001, sM, (b1512 << 2) | X10, sN, sD);
+         goto done;
+      }
+      case ARM64in_VTriD: {
+         /* 31            20 15 14 9 4
+            000 11111 010 m  0  a  n d FMADD  Dd,Dn,Dm,Da
+            ---------------- 1  ------ FMSUB  -----------
+         */
+         UInt dD = dregEnc(i->ARM64in.VTriD.dst);
+         UInt dN = dregEnc(i->ARM64in.VTriD.arg1);
+         UInt dM = dregEnc(i->ARM64in.VTriD.arg2);
+         UInt dA = dregEnc(i->ARM64in.VTriD.arg3);
+         UInt b15 = 2; /* impossible */
+         switch (i->ARM64in.VTriD.op) {
+            case ARM64fpt_FMADD: b15 = 0; break;
+            case ARM64fpt_FMSUB: b15 = 1; break;
+            default: goto bad;
+         }
+         vassert(b15 < 2);
+         *p++ = X_3_8_5_1_5_5_5(X000, X11111010, dM, b15, dA, dN, dD);
+         goto done;
+      }
+      case ARM64in_VTriS: {
+         /* 31            20 15 14 9 4
+            000 11111 000 m  0  a  n d FMADD  Dd,Dn,Dm,Da
+            ---------------- 1  ------ FMSUB  -----------
+         */
+         UInt dD = dregEnc(i->ARM64in.VTriD.dst);
+         UInt dN = dregEnc(i->ARM64in.VTriD.arg1);
+         UInt dM = dregEnc(i->ARM64in.VTriD.arg2);
+         UInt dA = dregEnc(i->ARM64in.VTriD.arg3);
+         UInt b15 = 2; /* impossible */
+         switch (i->ARM64in.VTriD.op) {
+            case ARM64fpt_FMADD: b15 = 0; break;
+            case ARM64fpt_FMSUB: b15 = 1; break;
+            default: goto bad;
+         }
+         vassert(b15 < 2);
+         *p++ = X_3_8_5_1_5_5_5(X000, X11111000, dM, b15, dA, dN, dD);
          goto done;
       }
       case ARM64in_VCmpD: {
@@ -4582,6 +4887,9 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                break;
             case ARM64vecb_FADD32x4:
                *p++ = X_3_8_5_6_5_5(X010, X01110001, vM, X110101, vN, vD);
+               break;
+            case ARM64vecb_FADD16x8:
+               *p++ = X_3_8_5_6_5_5(X010, X01110010, vM, X000101, vN, vD);
                break;
             case ARM64vecb_FSUB64x2:
                *p++ = X_3_8_5_6_5_5(X010, X01110111, vM, X110101, vN, vD);
@@ -5038,8 +5346,10 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
          /* 31        23   20    15     9 4
             010 01110 11 1 00000 111110 n d  FABS Vd.2d,  Vn.2d
             010 01110 10 1 00000 111110 n d  FABS Vd.4s,  Vn.4s
+            010 01110 11 1 11000 111110 n d  FABS Vd.8h,  Vn.8h
             011 01110 11 1 00000 111110 n d  FNEG Vd.2d,  Vn.2d
             011 01110 10 1 00000 111110 n d  FNEG Vd.4s,  Vn.4s
+            011 01110 11 1 11000 111110 n d  FNEG Vd.8h,  Vn.8h
             011 01110 00 1 00000 010110 n d  NOT  Vd.16b, Vn.16b
 
             010 01110 11 1 00000 101110 n d  ABS  Vd.2d,  Vn.2d
@@ -5077,15 +5387,22 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
 
             011 01110 11 1 00001 111110 n d  FSQRT Vd.2d, Vn.2d
             011 01110 10 1 00001 111110 n d  FSQRT Vd.4s, Vn.4s
+            011 01110 11 1 11001 111110 n d  FSQRT Vd.8h, Vn.8h
          */
          UInt vD = qregEnc(i->ARM64in.VUnaryV.dst);
          UInt vN = qregEnc(i->ARM64in.VUnaryV.arg);
          switch (i->ARM64in.VUnaryV.op) {
+            case ARM64vecu_FABS16x8:
+               *p++ = X_3_8_5_6_5_5(X010, X01110111, X11000, X111110, vN, vD);
+               break;
             case ARM64vecu_FABS64x2:
                *p++ = X_3_8_5_6_5_5(X010, X01110111, X00000, X111110, vN, vD);
                break;
             case ARM64vecu_FABS32x4:
                *p++ = X_3_8_5_6_5_5(X010, X01110101, X00000, X111110, vN, vD);
+               break;
+            case ARM64vecu_FNEG16x8:
+               *p++ = X_3_8_5_6_5_5(X011, X01110111, X11000, X111110, vN, vD);
                break;
             case ARM64vecu_FNEG64x2:
                *p++ = X_3_8_5_6_5_5(X011, X01110111, X00000, X111110, vN, vD);
@@ -5173,6 +5490,9 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                break;
             case ARM64vecu_FSQRT32x4:
                *p++ = X_3_8_5_6_5_5(X011, X01110101, X00001, X111110, vN, vD);
+               break;
+            case ARM64vecu_FSQRT16x8:
+               *p++ = X_3_8_5_6_5_5(X011, X01110111, X11001, X111110, vN, vD);
                break;
             default:
                goto bad;

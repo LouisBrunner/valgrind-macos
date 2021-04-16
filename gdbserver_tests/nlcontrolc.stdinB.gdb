@@ -9,32 +9,43 @@ shell ./simulate_control_c --vgdb-prefix=./vgdb-prefix-nlcontrolc 1 grep main nl
 #
 continue
 #
-# Here, all tasks should be blocked in a loooonnnng select, all in WaitSys
-info threads
-# We will unblock them by changing their timeout argument
-# To avoid going into the frame where the timeval arg is,
-# it has been defined as global variables, as the nr
-# of calls on the stack differs between 32bits and 64bits,
-# and/or between OS.
-# ensure select finishes in a few milliseconds max:
-p t[0].tv_sec = 0
-p t[1].tv_sec = 0
-p t[2].tv_sec = 0
-p t[3].tv_sec = 0
+# Threads are burning cpu now
+# We would like to fully test info threads here, but which thread are Runnable
+# or Yielding is unpredictable. With a recent enough gdb, check the nr of
+# threads by state using pipe commands and grep/wc.
+init-if-undefined $_gdb_major = 0
+init-if-undefined $_gdb_minor = 0
+if $_gdb_major >= 9
+  | info threads | grep VgTs_Runnable | wc -l
+  | info threads | grep VgTs_Yielding | wc -l
+else
+  echo 1\n
+  echo 3\n
+end
+# We change the variables so that all the threads are blocked in a syscall
+p burn = 0
+p sleepms = 1000000
 #
-# We will change the burning parameters in a few  seconds
+#
 shell ./simulate_control_c --vgdb-prefix=./vgdb-prefix-nlcontrolc 1 grep changed nlcontrolc.stdoutB.out
 #
-echo changed burning parameters\n
+echo changed burning parameters to sleeping parameters\n
 continue
+# Here, all tasks should be blocked in a loooonnnng select, all in WaitSys
+info threads
+# We reset the sleepms to 0. The threads should still be blocked in the syscall
+p sleepms = 0
+shell ./simulate_control_c --vgdb-prefix=./vgdb-prefix-nlcontrolc 1 grep reset nlcontrolc.stdoutB.out
 #
-# Threads are burning cpu now
-# We would like to test info threads here, but which thread are Runnable or Yielding
-# is unpredictable.
-# info threads
-p burn = 0
-p loops = 0
-p report_finished = 0
+echo reset to sleeping parameters\n
 continue
-# and the process should stop very quickly now
+# threads should still be blocked in a loooonnnng select, all in WaitSys
+info threads
+if $_gdb_major >= 9
+  | info threads | grep VgTs_WaitSys | wc -l
+else
+  echo 4\n
+end
+# Make the process die.
+kill
 quit

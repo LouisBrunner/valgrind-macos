@@ -318,6 +318,55 @@ ULong generate_C_FPCC_helper( ULong irType, ULong src_hi, ULong src )
 }
 
 
+UInt generate_DFP_FPRF_value_helper( UInt gfield,
+                                     ULong exponent,
+                                     UInt exponent_bias,
+                                     Int min_norm_exp,
+                                     UInt sign,
+                                     UInt T_value_is_zero )
+{
+   UInt gfield_5_bit_mask = 0xF8000000;
+   UInt gfield_upper_5_bits = (gfield & gfield_5_bit_mask) >> (32 - 5);
+   UInt gfield_6_bit_mask = 0xF8000000;
+   UInt gfield_upper_6_bits = (gfield & gfield_6_bit_mask) >> (32 - 6);
+   UInt fprf_value = 0;
+   Int  unbiased_exponent = exponent - exponent_bias;
+
+   /* The assumption is the gfield bits are left justified. Mask off
+       the most significant 5-bits in the 32-bit wide field.  */
+   if ( T_value_is_zero == 1) {
+      if (sign == 0)
+         fprf_value = 0b00010;  // positive zero
+      else
+         fprf_value = 0b10010;  // negative zero
+  } else if ( unbiased_exponent < min_norm_exp ) {
+      if (sign == 0)
+         fprf_value = 0b10100;  // posative subnormal
+      else
+         fprf_value = 0b11000;  // negative subnormal
+
+  } else if ( gfield_upper_5_bits == 0b11110 ) {  // infinity
+      if (sign == 0)
+         fprf_value = 0b00101;  // positive infinity
+      else
+         fprf_value = 0b01001;  // negative infinity
+
+   } else if ( gfield_upper_6_bits == 0b111110 ) {
+      fprf_value = 0b10001;  // Quiet NaN
+
+   } else if ( gfield_upper_6_bits == 0b111111 ) {
+      fprf_value = 0b10001;  // Signaling NaN
+
+   } else {
+      if (sign == 0)
+         fprf_value = 0b00100;  // positive normal
+      else
+         fprf_value = 0b01000;  // negative normal
+   }
+
+   return fprf_value;
+}
+
 /*---------------------------------------------------------------*/
 /*--- Misc BCD clean helpers.                                 ---*/
 /*---------------------------------------------------------------*/
@@ -531,6 +580,1840 @@ ULong convert_from_national_helper( ULong src_hi, ULong src_low ) {
       tmp = tmp | ( hword << ( ( 3 - i ) * 4 ) );
    }
    return tmp;
+}
+
+/*------------------------------------------------*/
+/*--- Population count ---------------------------*/
+/*------------------------------------------------*/
+ULong population_count64_helper( ULong src ) {
+   /* Fast population count based on algorithm in the "Hacker's Delight" by
+      Henery S. Warren.  */
+   src = (src & 0x5555555555555555) + ((src >> 1) & 0x5555555555555555);
+   src = (src & 0x3333333333333333) + ((src >> 2) & 0x3333333333333333);
+   src = (src & 0x0F0F0F0F0F0F0F0F) + ((src >> 4) & 0x0F0F0F0F0F0F0F0F);
+   src = (src & 0x00FF00FF00FF00FF) + ((src >> 8) & 0x00FF00FF00FF00FF);
+   src = (src & 0x0000FFFF0000FFFF) + ((src >> 16) & 0x0000FFFF0000FFFF);
+   src = (src & 0x00000000FFFFFFFF) + ((src >> 32) & 0x00000000FFFFFFFF);
+   return src & 0x3F;
+}
+
+/*------------------------------------------------*/
+/*---- Extract/Deposit bits under mask helpers ---*/
+/*------------------------------------------------*/
+ULong extract_bits_under_mask_helper( ULong src, ULong mask, UInt flag ) {
+
+   UInt i;
+   ULong ones, zeros, mask_bit, bit_src;
+
+   zeros = 0;
+   ones = 0;
+
+   for (i=0; i<64; i++){
+      mask_bit = 0x1 & (mask >> (63-i));
+      bit_src = 0x1 & (src >> (63-i));
+
+      ones = ones << mask_bit;
+      ones = ones | (mask_bit & bit_src);
+
+      zeros = zeros << (1^mask_bit);
+      zeros = zeros | ((1^mask_bit) & bit_src);
+   }
+
+   if (flag == 1)
+      return ones;
+   else
+      return zeros;
+}
+
+UInt count_bits_under_mask_helper( ULong src, ULong mask, UInt flag ) {
+
+   UInt i, count_extracted_1, count_extracted_0;;
+   ULong mask_bit;
+
+   count_extracted_1 = 0;
+   count_extracted_0 = 0;
+
+   for (i=0; i<64; i++){
+      mask_bit = 0x1 & (mask >> (63-i));
+
+      if (mask_bit == 1)
+         count_extracted_1++;
+
+      if ((1^mask_bit) == 1)
+         count_extracted_0++;
+   }
+
+   if (flag == 1)
+      return count_extracted_1;
+   else
+      return count_extracted_0;
+}
+
+ULong deposit_bits_under_mask_helper( ULong src, ULong mask ) {
+
+   UInt i, src_bit_pos;
+   ULong result, mask_bit, bit_src;
+
+   result = 0;
+   src_bit_pos = 0;
+
+   for (i=0; i<64; i++){
+      mask_bit = 0x1 & (mask >> i);
+
+      if (mask_bit == 1) {
+         bit_src = 0x1 & (src >> src_bit_pos);
+         result = result | (bit_src << i);
+         src_bit_pos++;
+      }
+   }
+   return result;
+}
+
+/*----------------------------------------------*/
+/*--- Vector Evaluate Inst helper --------------*/
+/*----------------------------------------------*/
+   /* This is a 64-bit version of the VXS Vector Evaluate
+      instruction xxeval.  */
+
+ULong vector_evaluate64_helper( ULong srcA, ULong srcB, ULong srcC,
+                                ULong IMM ) {
+#define MAX_BITS 64
+#define MAX_IMM_BITS 8
+
+   UInt i, select;
+   ULong bitA, bitB, bitC, result;
+   ULong bitIMM;
+
+   result = 0;
+
+   for (i=0; i<MAX_BITS; i++){
+      bitA = 0x1 & (srcA >> i);
+      bitB = 0x1 & (srcB >> i);
+      bitC = 0x1 & (srcC >> i);
+
+      /* The value of select is IBM numbering based, i.e. MSB is bit 0 */
+      select = (bitA << 2) | (bitB << 1) | bitC;
+      bitIMM = (IMM >> (MAX_IMM_BITS - 1 - select)) & 0x1;
+      result = result | (bitIMM << i);
+   }
+   return result;
+#undef MAX_BITS
+#undef MAX_IMM_BITS
+}
+
+/*--------------------------------------------------*/
+/*---- VSX Vector Generate PCV from Mask helpers ---*/
+/*--------------------------------------------------*/
+static void write_VSX_entry (VexGuestPPC64State* gst, UInt reg_offset,
+                             ULong *vsx_entry)
+{
+   U128* pU128_dst;
+   pU128_dst = (U128*) (((UChar*) gst) + reg_offset);
+
+   /* The U128 type is defined as an array of unsigned intetgers.  */
+   /* Writing in LE order */
+   (*pU128_dst)[0] = (UInt)(vsx_entry[1] & 0xFFFFFFFF);
+   (*pU128_dst)[1] = (UInt)(vsx_entry[1] >> 32);
+   (*pU128_dst)[2] = (UInt)(vsx_entry[0] & 0xFFFFFFFF);
+   (*pU128_dst)[3] = (UInt)(vsx_entry[0] >> 32);
+   return;
+}
+
+/* CALLED FROM GENERATED CODE */
+void vector_gen_pvc_byte_mask_dirty_helper( VexGuestPPC64State* gst,
+                                            ULong src_hi, ULong src_lo,
+                                            UInt reg_offset, UInt imm ) {
+   /* The function computes the 128-bit result then writes it directly
+      into the guest state VSX register.  */
+
+   UInt  i, shift_by, sel_shift_by, half_sel;
+   ULong index, src, result[2];
+   ULong j;
+
+   result[0] = 0;
+   result[1] = 0;
+   j = 0;
+
+   /* The algorithm in the ISA is written with IBM numbering zero on left and
+      N-1 on right. The loop index is converted to "i" to match the algorithm
+      for claritiy of matching the C code to the algorithm in the ISA.  */
+
+   if (imm == 0b00) {    // big endian expansion
+      for( index = 0; index < 16; index++) {
+         i = 15 - index;
+
+         shift_by = i*8;
+
+         if ( i >= 8) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 7;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+               result[half_sel] |= j << shift_by;
+            j++;
+         } else {
+            result[half_sel] |= (index + (unsigned long long)0x10) << shift_by;
+         }
+      }
+
+
+   } else if (imm == 0b01) {    // big endian compression
+      /* If IMM=0b00001, let pcv be the permute control vector required to
+         enable a left-indexed permute (vperm or xxperm) to implement a
+         compression of the sparse byte elements in a source vector specified
+         by the byte-element mask in VSR[VRB+32] into the leftmost byte
+         elements of a result vector.
+      */
+      for( index = 0; index < 16; index++) {
+         i = 15 - index;
+         shift_by = i*8;
+
+         if ( i >= 8) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 7;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            if (j >= 8)
+               result[1] |= (index) << (15 - j)*8;
+            else
+               result[0] |= (index) << (7 - j)*8;
+            j++;
+         }
+      }
+      /* The algorithim says set to undefined, leave as 0
+      for( index = 3 - j; index < 4; index++) {
+         result |= (0 << (index*8));
+      }
+      */
+
+   } else if (imm == 0b10) {   //little-endian expansion
+      /* If IMM=0b00010, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement an
+         expansion of the rightmost byte elements of a source vector into the
+         byte elements of a result vector specified by the byte-element mask
+         in VSR[VRB+32].  */
+      for( index = 0; index < 16; index++) {
+         i = index;
+
+         shift_by = i*8;
+
+         if ( i >= 8) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 7;
+
+         /* mod shift amount by 8 since src is either the upper or lower
+            64-bits.  */
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+               result[half_sel] |= j << shift_by;
+            j++;
+         } else {
+            result[half_sel] |= (index + (unsigned long long)0x10) << shift_by;
+         }
+      }
+
+   } else if (imm == 0b11) {   //little-endian compression
+      /* If IMM=0b00011, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement a
+         compression of the sparse byte elements in a source vector specified
+         by the byte-element mask in VSR[VRB+32] into the rightmost byte
+         elements of a result vector.  */
+
+      for( index = 0; index < 16; index++) {
+         i = index;
+
+         shift_by = i*8;
+
+         if ( i >= 8) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 7;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            if (j >= 8)
+               result[0] |= (index) << (j-8)*8;
+            else
+               result[1] |= (index) << j*8;
+            j++;
+         }
+      }
+
+      /* The algorithim says set to undefined, leave as 0
+      for( index = 3 - j; index < 4; index++) {
+         result |= (0 << (index*8));
+      }
+      */
+
+   } else {
+      vex_printf("ERROR, vector_gen_pvc_byte_mask_dirty_helper, imm value %u not supported.\n",
+                 imm);
+      vassert(0);
+   }
+   write_VSX_entry( gst, reg_offset, result);
+}
+
+/* CALLED FROM GENERATED CODE */
+void vector_gen_pvc_hword_mask_dirty_helper( VexGuestPPC64State* gst,
+                                             ULong src_hi, ULong src_lo,
+                                             UInt reg_offset,
+                                             UInt imm ) {
+   /* The function computes the 128-bit result then writes it directly
+      into the guest state VSX register.  */
+   UInt  i, shift_by, sel_shift_by, half_sel;
+   ULong index, src, result[2];
+   ULong j;
+
+   result[0] = 0;
+   result[1] = 0;
+   j = 0;
+
+   /* The algorithm in the ISA is written with IBM numbering zero on left and
+      N-1 on right. The loop index is converted to "i" to match the algorithm
+      for claritiy of matching the C code to the algorithm in the ISA.  */
+
+   if (imm == 0b00) {    // big endian expansion
+      /* If IMM=0b00000, let pcv be the permute control vector required to
+         enable a left-indexed permute (vperm or xxperm) to implement an
+         expansion of the leftmost halfword elements of a source vector into
+         the halfword elements of a result vector specified by the halfword-
+         element mask in VSR[VRB+32].
+      */
+      for( index = 0; index < 8; index++) {
+         i = 7 - index;
+
+         shift_by = i*16;
+
+         if ( i >= 4) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 15;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            // half-word i, byte 0
+            result[half_sel] |= (2*j + 0x0) << (shift_by+8);
+            // half-word i, byte 1
+            result[half_sel] |= (2*j + 0x1) << shift_by;
+            j++;
+         } else {
+            result[half_sel] |= (2*index + 0x10) << (shift_by+8);
+            result[half_sel] |= (2*index + 0x11) << shift_by;
+         }
+      }
+
+   } else if (imm == 0b01) {    // big endian expansion
+      /* If IMM=0b00001,let pcv be the permute control vector required to
+         enable a left-indexed permute (vperm or xxperm) to implement a
+         compression of the sparse halfword elements in a source vector
+         specified by the halfword-element mask in VSR[VRB+32] into the
+         leftmost halfword elements of a result vector.
+      */
+      for( index = 0; index < 8; index++) {
+         i = 7 - index;
+
+         shift_by = i*16;
+
+         if ( i >= 4) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 15;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            if (j >= 4) {
+               // half-word i, byte 0
+               result[1] |= (2*index + 0x0) << ((7 - j)*16 + 8);
+               // half-word i, byte 1
+               result[1] |= (2*index + 0x1) << ((7 - j)*16);
+            } else {
+               // half-word i, byte 0
+               result[0] |= (2*index + 0x0) << ((3 - j)*16 + 8);
+               // half-word i, byte 1
+               result[0] |= (2*index + 0x1) << ((3 - j)*16);
+            }
+            j++;
+         }
+      }
+
+   } else if (imm == 0b10) {   //little-endian expansion
+      /* If IMM=0b00010, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement an
+         expansion of the rightmost halfword elements of a source vector into
+         the halfword elements of a result vector specified by the halfword-
+         element mask in VSR[VRB+32].
+       */
+      for( index = 0; index < 8; index++) {
+         i = index;
+         shift_by = i*16;
+
+         if ( i >= 4) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 15;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            // half-word i, byte 0
+            result[half_sel] |= (2*j + 0x00) << shift_by;
+            // half-word i, byte 1
+            result[half_sel] |= (2*j + 0x01) << (shift_by+8);
+            j++;
+
+         } else {
+            // half-word i, byte 0
+            result[half_sel] |= (2*index + 0x10) << shift_by;
+            // half-word i, byte 1
+            result[half_sel] |= (2*index + 0x11) << (shift_by+8);
+         }
+      }
+
+   } else if (imm == 0b11) {   //little-endian compression
+      /* If IMM=0b00011, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement a
+         compression of the sparse halfword elements in a source vector
+         specified by the halfword-element mask in VSR[VRB+32] into the
+         rightmost halfword elements of a result vector.  */
+      for( index = 0; index < 8; index++) {
+         i = index;
+         shift_by = i*16;
+
+         if ( i >= 4) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 15;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            if (j >= 4) {
+               // half-word j, byte 0
+               result[0] |= (2*index + 0x0) << ((j-4)*16);
+               // half-word j, byte 1
+               result[0] |= (2*index + 0x1) << ((j-4)*16+8);
+            } else {
+               // half-word j, byte 0
+               result[1] |= (2*index + 0x0) << (j*16);
+               // half-word j, byte 1
+               result[1] |= (2*index + 0x1) << ((j*16)+8);
+            }
+            j++;
+         }
+      }
+
+   } else {
+      vex_printf("ERROR, vector_gen_pvc_hword_dirty_mask_helper, imm value %u not supported.\n",
+                 imm);
+      vassert(0);
+   }
+   write_VSX_entry( gst, reg_offset, result);
+}
+
+/* CALLED FROM GENERATED CODE */
+void vector_gen_pvc_word_mask_dirty_helper( VexGuestPPC64State* gst,
+                                            ULong src_hi, ULong src_lo,
+                                            UInt reg_offset, UInt imm ) {
+   /* The function computes the 128-bit result then writes it directly
+      into the guest state VSX register.  */
+   UInt  i, shift_by, sel_shift_by, half_sel;
+   ULong index, src, result[2];
+   ULong j;
+
+   result[0] = 0;
+   result[1] = 0;
+   j = 0;
+
+   /* The algorithm in the ISA is written with IBM numbering zero on left and
+      N-1 on right. The loop index is converted to "i" to match the algorithm
+      for claritiy of matching the C code to the algorithm in the ISA.  */
+
+   if (imm == 0b00) {    // big endian expansion
+      /* If IMM=0b00000, let pcv be the permute control vector required to
+         enable a left-indexed permute (vperm or xxperm) to implement an
+         expansion of the leftmost word elements of a source vector into the
+         word elements of a result vector specified by the word-element mask
+         in VSR[VRB+32].
+      */
+      for( index = 0; index < 4; index++) {
+         i = 3 - index;
+
+         shift_by = i*32;
+
+         if ( i >= 2) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 31;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            result[half_sel] |= (4*j+0) << (shift_by+24);  // word i, byte 0
+            result[half_sel] |= (4*j+1) << (shift_by+16);  // word i, byte 1
+            result[half_sel] |= (4*j+2) << (shift_by+8);   // word i, byte 2
+            result[half_sel] |= (4*j+3) << shift_by;       // word i, byte 3
+            j++;
+         } else {
+            result[half_sel] |= (4*index + 0x10) << (shift_by+24);
+            result[half_sel] |= (4*index + 0x11) << (shift_by+16);
+            result[half_sel] |= (4*index + 0x12) << (shift_by+8);
+            result[half_sel] |= (4*index + 0x13) << shift_by;
+         }
+      }
+
+   } else if (imm == 0b01) {    // big endian compression
+      /* If IMM=0b00001, let pcv be the permute control vector required to
+         enable a left-indexed permute (vperm or xxperm) to implement a
+         compression of the sparse word elements in a source vector specified
+         by the word-element mask in VSR[VRB+32] into the leftmost word
+         elements of a result vector.
+      */
+      for( index = 0; index < 4; index++) {
+         i = 3 - index;
+
+         shift_by = i*32;
+
+         if ( i >= 2) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 31;
+
+         if (((src >> sel_shift_by) & 0x1) == 1) {
+            if (j >= 2) {
+               // word j, byte 0
+               result[1] |= (4*index+0) << ((3 - j)*32 + 24);
+               // word j, byte 1
+               result[1] |= (4*index+1) << ((3 - j)*32 + 16);
+               // word j, byte 2
+               result[1] |= (4*index+2) << ((3 - j)*32 + 8);
+               // word j, byte 3
+               result[1] |= (4*index+3) << ((3 - j)*32 + 0);
+            } else {
+               result[0] |= (4*index+0) << ((1 - j)*32 + 24);
+               result[0] |= (4*index+1) << ((1 - j)*32 + 16);
+               result[0] |= (4*index+2) << ((1 - j)*32 + 8);
+               result[0] |= (4*index+3) << ((1 - j)*32 + 0);
+            }
+            j++;
+         }
+      }
+
+   } else if (imm == 0b10) {   //little-endian expansion
+      /* If IMM=0b00010, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement an
+         expansion of the rightmost word elements of a source vector into the
+         word elements of a result vector specified by the word-element mask
+         in VSR[VRB+32].
+       */
+      for( index = 0; index < 4; index++) {
+         i = index;
+
+         shift_by = i*32;
+
+         if ( i >= 2) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 31;
+
+         if (((src >> sel_shift_by) & 0x1) == 1) {
+            result[half_sel] |= (4*j+0) << (shift_by + 0);  // word j, byte 0
+            result[half_sel] |= (4*j+1) << (shift_by + 8);  // word j, byte 1
+            result[half_sel] |= (4*j+2) << (shift_by + 16); // word j, byte 2
+            result[half_sel] |= (4*j+3) << (shift_by + 24); // word j, byte 3
+            j++;
+         } else {
+            result[half_sel] |= (4*index + 0x10) << (shift_by + 0);
+            result[half_sel] |= (4*index + 0x11) << (shift_by + 8);
+            result[half_sel] |= (4*index + 0x12) << (shift_by + 16);
+            result[half_sel] |= (4*index + 0x13) << (shift_by + 24);
+         }
+      }
+
+   } else if (imm == 0b11) {   //little-endian compression
+      /* If IMM=0b00011, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement a
+         compression of the sparse word elements in a source vector specified
+         by the word-element mask in VSR[VRB+32] into the rightmost word
+         elements of a result vector.  */
+      for( index = 0; index < 4; index++) {
+         i =index;
+
+         shift_by = i*32;
+
+         if ( i >= 2) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 31;
+
+         if (((src >> sel_shift_by) & 0x1) == 1) {
+            if (j >= 2){
+               // word j, byte 0
+               result[0] |= (4*index + 0x0) << ((j-2)*32+0);
+               // word j, byte 1
+               result[0] |= (4*index + 0x1) << ((j-2)*32+8);
+               // word j, byte 2
+               result[0] |= (4*index + 0x2) << ((j-2)*32+16);
+               // word j, byte 3
+               result[0] |= (4*index + 0x3) << ((j-2)*32+24);
+            } else {
+               result[1] |= (4*index + 0x0) << (j*32+0);
+               result[1] |= (4*index + 0x1) << (j*32+8);
+               result[1] |= (4*index + 0x2) << (j*32+16);
+               result[1] |= (4*index + 0x3) << (j*32+24);
+            }
+            j++;
+         }
+      }
+   } else {
+      vex_printf("ERROR, vector_gen_pvc_word_mask_dirty_helper, imm value %u not supported.\n",
+                 imm);
+      vassert(0);
+   }
+
+   write_VSX_entry( gst, reg_offset, result);
+}
+
+/* CALLED FROM GENERATED CODE */
+void vector_gen_pvc_dword_mask_dirty_helper( VexGuestPPC64State* gst,
+                                             ULong src_hi, ULong src_lo,
+                                             UInt reg_offset, UInt imm ) {
+   /* The function computes the 128-bit result then writes it directly
+      into the guest state VSX register.  */
+   UInt  sel_shift_by, half_sel;
+   ULong index, src, result[2];
+   ULong j, i;
+
+   result[0] = 0;
+   result[1] = 0;
+   j = 0;
+
+   /* The algorithm in the ISA is written with IBM numbering zero on left and
+      N-1 on right. The loop index is converted to "i" to match the algorithm
+      for claritiy of matching the C code to the algorithm in the ISA.  */
+
+   if (imm == 0b00) {    // big endian expansion
+      /* If IMM=0b00000, let pcv be the permute control vector required to
+         enable a left-indexed permute (vperm or xxperm) to implement an
+         expansion of the leftmost doubleword elements of a source vector into
+         the doubleword elements of a result vector specified by the
+         doubleword-element mask in VSR[VRB+32].
+      */
+      for( index = 0; index < 2; index++) {
+         i = 1 - index;
+
+         if ( i == 1) {
+            src = src_hi;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = 63;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            result[half_sel] |= (8*j + 0x0) << 56; // dword i, byte 0
+            result[half_sel] |= (8*j + 0x1) << 48; // dword i, byte 1
+            result[half_sel] |= (8*j + 0x2) << 40; // dword i, byte 2
+            result[half_sel] |= (8*j + 0x3) << 32; // dword i, byte 3
+            result[half_sel] |= (8*j + 0x4) << 24; // dword i, byte 4
+            result[half_sel] |= (8*j + 0x5) << 16; // dword i, byte 5
+            result[half_sel] |= (8*j + 0x6) << 8;  // dword i, byte 6
+            result[half_sel] |= (8*j + 0x7) << 0;  // dword i, byte 7
+            j++;
+         } else {
+            result[half_sel] |= (8*index + 0x10) << 56;
+            result[half_sel] |= (8*index + 0x11) << 48;
+            result[half_sel] |= (8*index + 0x12) << 40;
+            result[half_sel] |= (8*index + 0x13) << 32;
+            result[half_sel] |= (8*index + 0x14) << 24;
+            result[half_sel] |= (8*index + 0x15) << 16;
+            result[half_sel] |= (8*index + 0x16) << 8;
+            result[half_sel] |= (8*index + 0x17) << 0;
+         }
+      }
+   } else if (imm == 0b01) {    // big endian compression
+      /* If IMM=0b00001, let pcv be the the permute control vector required to
+         enable a left-indexed permute (vperm or xxperm) to implement a
+         compression of the sparse doubleword elements in a source vector
+         specified by the doubleword-element mask in VSR[VRB+32] into the
+         leftmost doubleword elements of a result vector.
+      */
+      for( index = 0; index < 2; index++) {
+         i = 1 - index;
+
+         if ( i == 1) {
+            src = src_hi;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = 63;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            if (j == 1) {
+               result[1] |= (8*index + 0x0) << 56;   // double-word j, byte 0
+               result[1] |= (8*index + 0x1) << 48;   // double-word j, byte 1
+               result[1] |= (8*index + 0x2) << 40;   // double-word j, byte 2
+               result[1] |= (8*index + 0x3) << 32;   // double-word j, byte 3
+               result[1] |= (8*index + 0x4) << 24;   // double-word j, byte 4
+               result[1] |= (8*index + 0x5) << 16;   // double-word j, byte 5
+               result[1] |= (8*index + 0x6) << 8;    // double-word j, byte 6
+               result[1] |= (8*index + 0x7) << 0;    // double-word j, byte 7
+            } else {
+               result[0] |= (8*index + 0x0) << 56;   // double-word j, byte 0
+               result[0] |= (8*index + 0x1) << 48;   // double-word j, byte 1
+               result[0] |= (8*index + 0x2) << 40;   // double-word j, byte 2
+               result[0] |= (8*index + 0x3) << 32;   // double-word j, byte 3
+               result[0] |= (8*index + 0x4) << 24;   // double-word j, byte 4
+               result[0] |= (8*index + 0x5) << 16;   // double-word j, byte 5
+               result[0] |= (8*index + 0x6) << 8;    // double-word j, byte 6
+               result[0] |= (8*index + 0x7) << 0;    // double-word j, byte 7
+            }
+            j++;
+         }
+      }
+   } else if (imm == 0b10) {   //little-endian expansion
+      /* If IMM=0b00010, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement an
+         expansion of the rightmost doubleword elements of a source vector
+         into the doubleword elements of a result vector specified by the
+         doubleword-element mask in VSR[VRB+32].
+       */
+
+      for( index = 0; index < 2; index++) {
+         i = index;
+
+         if ( i == 1) {
+            src = src_hi;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = 63;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            result[half_sel] |= (8*j+0) << 0;  // double-word i, byte 0
+            result[half_sel] |= (8*j+1) << 8;  // double-word i, byte 1
+            result[half_sel] |= (8*j+2) << 16; // double-word i, byte 2
+            result[half_sel] |= (8*j+3) << 24; // double-word i, byte 3
+            result[half_sel] |= (8*j+4) << 32; // double-word i, byte 4
+            result[half_sel] |= (8*j+5) << 40; // double-word i, byte 5
+            result[half_sel] |= (8*j+6) << 48; // double-word i, byte 6
+            result[half_sel] |= (8*j+7) << 56; // double-word i, byte 7
+            j++;
+         } else {
+            result[half_sel] |= (8*index + 0x10) << 0;
+            result[half_sel] |= (8*index + 0x11) << 8;
+            result[half_sel] |= (8*index + 0x12) << 16;
+            result[half_sel] |= (8*index + 0x13) << 24;
+            result[half_sel] |= (8*index + 0x14) << 32;
+            result[half_sel] |= (8*index + 0x15) << 40;
+            result[half_sel] |= (8*index + 0x16) << 48;
+            result[half_sel] |= (8*index + 0x17) << 56;
+         }
+      }
+
+   } else if (imm == 0b11) {   //little-endian compression
+      /* If IMM=0b00011, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement a
+         compression of the sparse doubleword elements in a source vector
+         specified by the doubleword-element mask in VSR[VRB+32] into the
+         rightmost doubleword elements of a result vector.  */
+      for( index = 0; index < 2; index++) {
+         i = index;
+
+         if ( i == 1) {
+            src = src_hi;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = 63;
+
+         if (((src >> sel_shift_by) & 0x1) == 1) {
+            if (j == 1) {
+               result[0] |= (8*index + 0x0) << 0;    // double-word j, byte 0
+               result[0] |= (8*index + 0x1) << 8;    // double-word j, byte 1
+               result[0] |= (8*index + 0x2) << 16;   // double-word j, byte 2
+               result[0] |= (8*index + 0x3) << 24;   // double-word j, byte 3
+               result[0] |= (8*index + 0x4) << 32;   // double-word j, byte 4
+               result[0] |= (8*index + 0x5) << 40;   // double-word j, byte 5
+               result[0] |= (8*index + 0x6) << 48;   // double-word j, byte 6
+               result[0] |= (8*index + 0x7) << 56;   // double-word j, byte 7
+            } else {
+               result[1] |= (8*index + 0x0) << 0;
+               result[1] |= (8*index + 0x1) << 8;
+               result[1] |= (8*index + 0x2) << 16;
+               result[1] |= (8*index + 0x3) << 24;
+               result[1] |= (8*index + 0x4) << 32;
+               result[1] |= (8*index + 0x5) << 40;
+               result[1] |= (8*index + 0x6) << 48;
+               result[1] |= (8*index + 0x7) << 56;
+            }
+            j++;
+         }
+      }
+   } else {
+      vex_printf("ERROR, vector_gen_pvc_dword_mask_helper, imm value %u not supported.\n",
+                 imm);
+      vassert(0);
+   }
+
+   write_VSX_entry( gst, reg_offset, result);
+}
+
+/*------------------------------------------------*/
+/*---- VSX Matrix signed integer GER functions ---*/
+/*------------------------------------------------*/
+static UInt exts4( UInt src)
+{
+   /* Input is an 4-bit value.  Extend bit 3 to bits [31:4] */
+   if (( src >> 3 ) & 0x1)
+      return src | 0xFFFFFFF0; /* sign bit is a 1, extend */
+   else
+      return src & 0xF;        /* make sure high order bits are zero */
+}
+
+static ULong exts8( UInt src)
+{
+   /* Input is an 8-bit value.  Extend bit 7 to bits [63:8] */
+   if (( src >> 7 ) & 0x1)
+      return src | 0xFFFFFFFFFFFFFF00ULL; /* sign bit is a 1, extend */
+   else
+      return src & 0xFF;        /* make sure high order bits are zero */
+}
+
+static ULong extz8( UInt src)
+{
+   /* Input is an 8-bit value.  Extend src on the left with zeros.  */
+   return src & 0xFF;        /* make sure high order bits are zero */
+}
+
+static ULong exts16to64( UInt src)
+{
+   /* Input is an 16-bit value.  Extend bit 15 to bits [63:16] */
+   if (( src >> 15 ) & 0x1)
+      return ((ULong) src) | 0xFFFFFFFFFFFF0000ULL; /* sign is 1, extend */
+   else
+      /* make sure high order bits are zero */
+      return ((ULong) src) & 0xFFFFULL;
+}
+
+static UInt chop64to32( Long src ) {
+   /* Take a 64-bit input, return the lower 32-bits */
+   return (UInt)(0xFFFFFFFF & src);
+}
+
+static UInt clampS64toS32( Long src ) {
+   /* Take a 64-bit signed input, clamp positive values to 2^31,
+      clamp negative values at -2^31. Return the result in an
+      unsigned 32-bit value.  */
+   Long max_val = 2147483647;  // 2^31-1
+   if ( src > max_val)
+      return (UInt)max_val;
+
+   if (src < -max_val)
+      return (UInt)-max_val;
+
+   return (UInt)src;
+}
+
+void write_ACC_entry (VexGuestPPC64State* gst, UInt offset, UInt acc, UInt reg,
+                      UInt *acc_word)
+{
+   U128* pU128_dst;
+
+   vassert( (acc >= 0) && (acc < 8) );
+   vassert( (reg >= 0) && (reg < 4) );
+
+   pU128_dst = (U128*) (((UChar*)gst) + offset + acc*4*sizeof(U128)
+                        + reg*sizeof(U128));
+
+   /* The U128 type is defined as an array of unsigned intetgers.  */
+   (*pU128_dst)[0] = acc_word[0];
+   (*pU128_dst)[1] = acc_word[1];
+   (*pU128_dst)[2] = acc_word[2];
+   (*pU128_dst)[3] = acc_word[3];
+   return;
+}
+
+void get_ACC_entry (VexGuestPPC64State* gst, UInt offset, UInt acc, UInt reg,
+                    UInt *acc_word)
+{
+   U128* pU128_src;
+
+   acc_word[3] = 0xDEAD;
+   acc_word[2] = 0xBEEF;
+   acc_word[1] = 0xBAD;
+   acc_word[0] = 0xBEEF;
+
+   vassert( (acc >= 0) && (acc < 8) );
+   vassert( (reg >= 0) && (reg < 4) );
+
+   pU128_src = (U128*) (((UChar*)gst) + offset + acc*4*sizeof(U128)
+                        + reg*sizeof(U128));
+
+   /* The U128 type is defined as an array of unsigned intetgers.  */
+   acc_word[0] = (*pU128_src)[0];
+   acc_word[1] = (*pU128_src)[1];
+   acc_word[2] = (*pU128_src)[2];
+   acc_word[3] = (*pU128_src)[3];
+   return;
+}
+
+void vsx_matrix_4bit_ger_dirty_helper ( VexGuestPPC64State* gst,
+                                        UInt offset_ACC,
+                                        ULong srcA_hi, ULong srcA_lo,
+                                        ULong srcB_hi, ULong srcB_lo,
+                                        UInt masks_inst )
+{
+   /* This helper calculates the result for one of the four ACC entires.
+      It is called twice, to get the hi and then the low 64-bit of the
+      128-bit result.  */
+   UInt i, j, mask, sum, inst, acc_entry, prefix_inst;
+
+   UInt srcA_nibbles[4][8];   /* word, nibble */
+   UInt srcB_nibbles[4][8];   /* word, nibble */
+   UInt acc_word[4];
+   UInt prod0, prod1, prod2, prod3, prod4, prod5, prod6, prod7;
+   UInt result[4];
+   UInt pmsk = 0;
+   UInt xmsk = 0;
+   UInt ymsk = 0;
+
+   mask = 0xF;
+   inst = (masks_inst >> 5) & 0xFF;
+   prefix_inst = (masks_inst >> 13) & 0x1;
+   acc_entry = masks_inst & 0xF;
+
+   /* LE word numbering */
+   if ( prefix_inst == 0 ) {
+      /* Set the masks for non-prefix instructions */
+      pmsk = 0b11111111;
+      xmsk = 0b1111;
+      ymsk = 0b1111;
+
+   } else {
+      pmsk = (masks_inst >> 22) & 0xFF;
+      xmsk = (masks_inst >> 18) & 0xF;
+      ymsk = (masks_inst >> 14) & 0xF;
+   }
+
+   /* Address nibbles using IBM numbering */
+   for( i = 0; i < 4; i++) {
+      /* Get the ACC contents directly from the PPC64 state */
+      get_ACC_entry (gst, offset_ACC, acc_entry, 3-i, acc_word);
+
+      // input is in double words
+      for( j = 0; j< 8; j++) {
+         srcA_nibbles[3][j] = (srcA_hi >> (60-4*j)) & mask;  // hi bits [63:32]
+         srcA_nibbles[2][j] = (srcA_hi >> (28-4*j)) & mask;  // hi bits [31:0]
+         srcA_nibbles[1][j] = (srcA_lo >> (60-4*j)) & mask;  // lo bits [63:32]
+         srcA_nibbles[0][j] = (srcA_lo >> (28-4*j)) & mask;  // lo bits [31:0]
+
+         srcB_nibbles[3][j] = (srcB_hi >> (60-4*j)) & mask;
+         srcB_nibbles[2][j] = (srcB_hi >> (28-4*j)) & mask;
+         srcB_nibbles[1][j] = (srcB_lo >> (60-4*j)) & mask;
+         srcB_nibbles[0][j] = (srcB_lo >> (28-4*j)) & mask;
+      }
+
+      for( j = 0; j < 4; j++) {
+         if (((xmsk >> i) & 0x1) & ((ymsk >> j) & 0x1)) {
+            if (((pmsk >> 7) & 0x1) == 0)
+               prod0 = 0;
+            else
+               prod0 = exts4( srcA_nibbles[i][0] )
+                  * exts4( srcB_nibbles[j][0] );
+
+            if (((pmsk >> 6) & 0x1) == 0)
+               prod1 = 0;
+            else
+               prod1 = exts4( srcA_nibbles[i][1] )
+                  * exts4( srcB_nibbles[j][1] );
+
+            if (((pmsk >> 5) & 0x1) == 0)
+               prod2 = 0;
+            else
+               prod2 = exts4( srcA_nibbles[i][2] )
+                  * exts4( srcB_nibbles[j][2] );
+
+            if (((pmsk >> 4) & 0x1) == 0)
+               prod3 = 0;
+            else
+               prod3 = exts4( srcA_nibbles[i][3] )
+                  * exts4(  srcB_nibbles[j][3] );
+
+            if (((pmsk >> 3) & 0x1) == 0)
+               prod4 = 0;
+            else
+               prod4 = exts4( srcA_nibbles[i][4] )
+                  * exts4( srcB_nibbles[j][4] );
+
+            if (((pmsk >> 2) & 0x1) == 0)
+               prod5 = 0;
+            else
+               prod5 = exts4( srcA_nibbles[i][5] )
+                  * exts4( srcB_nibbles[j][5] );
+
+            if (((pmsk >> 1) & 0x1) == 0)
+               prod6 = 0;
+            else
+               prod6 = exts4( srcA_nibbles[i][6] )
+                  * exts4( srcB_nibbles[j][6] );
+
+            if ((pmsk & 0x1) == 0)
+               prod7 = 0;
+            else
+               prod7 = exts4( srcA_nibbles[i][7] )
+                  * exts4( srcB_nibbles[j][7] );
+            /* sum is UInt so the result is choped to 32-bits */
+            sum = prod0 + prod1 + prod2 + prod3 + prod4
+               + prod5 + prod6 + prod7;
+
+            if ( inst == XVI4GER8 )
+               result[j] = sum;
+
+            else if ( inst == XVI4GER8PP )
+               result[j] = sum + acc_word[j];
+
+         } else {
+            result[j] = 0;
+         }
+      }
+      write_ACC_entry (gst, offset_ACC, acc_entry, 3-i, result);
+   }
+}
+
+void vsx_matrix_8bit_ger_dirty_helper( VexGuestPPC64State* gst,
+                                       UInt offset_ACC,
+                                       ULong srcA_hi, ULong srcA_lo,
+                                       ULong srcB_hi, ULong srcB_lo,
+                                       UInt masks_inst )
+{
+   UInt i, j, mask, inst, acc_entry, prefix_inst;
+
+   UInt srcA_bytes[4][4];   /* word, byte */
+   UInt srcB_bytes[4][4];   /* word, byte */
+   UInt acc_word[4];
+   ULong prod0, prod1, prod2, prod3, sum;
+   UInt result[4];
+   UInt pmsk = 0;
+   UInt xmsk = 0;
+   UInt ymsk = 0;
+
+   mask = 0xFF;
+   inst = (masks_inst >> 5) & 0xFF;
+   prefix_inst = (masks_inst >> 13) & 0x1;
+   acc_entry = masks_inst & 0xF;
+
+   /* LE word numbering */
+   if ( prefix_inst == 0 ) {
+      /* Set the masks */
+      pmsk = 0b1111;
+      xmsk = 0b1111;
+      ymsk = 0b1111;
+
+   } else {
+      pmsk = (masks_inst >> 26) & 0xF;
+      xmsk = (masks_inst >> 18) & 0xF;
+      ymsk = (masks_inst >> 14) & 0xF;
+   }
+
+   /* Address byes using IBM numbering */
+   for( i = 0; i < 4; i++) {
+      /* Get the ACC contents directly from the PPC64 state */
+      get_ACC_entry (gst, offset_ACC, acc_entry, 3-i, acc_word);
+
+      for( j = 0; j< 4; j++) {
+         srcA_bytes[3][j] = (srcA_hi >> (56-8*j)) & mask;
+         srcA_bytes[2][j] = (srcA_hi >> (24-8*j)) & mask;
+         srcA_bytes[1][j] = (srcA_lo >> (56-8*j)) & mask;
+         srcA_bytes[0][j] = (srcA_lo >> (24-8*j)) & mask;
+
+         srcB_bytes[3][j] = (srcB_hi >> (56-8*j)) & mask;
+         srcB_bytes[2][j] = (srcB_hi >> (24-8*j)) & mask;
+         srcB_bytes[1][j] = (srcB_lo >> (56-8*j)) & mask;
+         srcB_bytes[0][j] = (srcB_lo >> (24-8*j)) & mask;
+      }
+
+      for( j = 0; j < 4; j++) {
+         if (((xmsk >> i) & 0x1) & ((ymsk >> j) & 0x1)) {
+            if (((pmsk >> 3) & 0x1) == 0)
+               prod0 = 0;
+            else
+               prod0 =
+                  exts8( srcA_bytes[i][0] )
+                  * extz8( srcB_bytes[j][0] );
+
+            if (((pmsk >> 2) & 0x1) == 0)
+               prod1 = 0;
+            else
+               prod1 =
+                  exts8( srcA_bytes[i][1] )
+                  * extz8( srcB_bytes[j][1] );
+
+            if (((pmsk >> 1) & 0x1) == 0)
+               prod2 = 0;
+            else
+               prod2 =
+                  exts8( srcA_bytes[i][2] )
+                  * extz8( srcB_bytes[j][2] );
+
+            if (((pmsk >> 0) & 0x1) == 0)
+               prod3 = 0;
+            else
+               prod3 =
+                  exts8( srcA_bytes[i][3] )
+                  * extz8( srcB_bytes[j][3] );
+
+            /* sum is UInt so the result is choped to 32-bits */
+            sum = prod0 + prod1 + prod2 + prod3;
+
+            if ( inst == XVI8GER4 )
+               result[j] = chop64to32( sum );
+
+            else if ( inst == XVI8GER4PP )
+               result[j] = chop64to32( sum + acc_word[j] );
+
+            else if ( inst == XVI8GER4SPP )
+               result[j] = clampS64toS32(sum + acc_word[j]);
+
+         } else {
+            result[j] = 0;
+         }
+      }
+      write_ACC_entry (gst, offset_ACC, acc_entry, 3-i, result);
+   }
+}
+
+void vsx_matrix_16bit_ger_dirty_helper( VexGuestPPC64State* gst,
+                                        UInt offset_ACC,
+                                        ULong srcA_hi, ULong srcA_lo,
+                                        ULong srcB_hi, ULong srcB_lo,
+                                        UInt masks_inst )
+{
+   UInt i, j, mask, inst, acc_entry, prefix_inst;
+   ULong sum;
+   UInt srcA_word[4][2];   /* word, hword */
+   UInt srcB_word[4][2];   /* word, hword */
+   UInt acc_word[4];
+   ULong prod0, prod1;
+   UInt result[4];
+   UInt pmsk = 0;
+   UInt xmsk = 0;
+   UInt ymsk = 0;
+
+   mask = 0xFFFF;
+   inst = (masks_inst >> 5) & 0xFF;
+   prefix_inst = (masks_inst >> 13) & 0x1;
+   acc_entry = masks_inst & 0xF;
+
+   /* LE word numbering */
+   if ( prefix_inst == 0 ) {
+      /* Set the masks for non prefix instructions */
+      pmsk = 0b11;
+      xmsk = 0b1111;
+      ymsk = 0b1111;
+
+   } else {
+      pmsk = (masks_inst >> 28) & 0x3;
+      xmsk = (masks_inst >> 18) & 0xF;
+      ymsk = (masks_inst >> 14) & 0xF;
+   }
+
+   /* Address half-words using IBM numbering */
+   for( i = 0; i < 4; i++) {
+      /* Get the ACC contents directly from the PPC64 state */
+      get_ACC_entry (gst, offset_ACC, acc_entry, 3-i, acc_word);
+
+      for( j = 0; j< 2; j++) {
+         srcA_word[3][j] = (srcA_hi >> (48-16*j)) & mask;
+         srcA_word[2][j] = (srcA_hi >> (16-16*j)) & mask;
+         srcA_word[1][j] = (srcA_lo >> (48-16*j)) & mask;
+         srcA_word[0][j] = (srcA_lo >> (16-16*j)) & mask;
+
+         srcB_word[3][j] = (srcB_hi >> (48-16*j)) & mask;
+         srcB_word[2][j] = (srcB_hi >> (16-16*j)) & mask;
+         srcB_word[1][j] = (srcB_lo >> (48-16*j)) & mask;
+         srcB_word[0][j] = (srcB_lo >> (16-16*j)) & mask;
+      }
+
+      for( j = 0; j < 4; j++) {
+         if (((xmsk >> i) & 0x1) & ((ymsk >> j) & 0x1)) {
+            if (((pmsk >> 1) & 0x1) == 0)
+               prod0 = 0;
+
+            else
+               prod0 = exts16to64( srcA_word[i][0] )
+                  * exts16to64( srcB_word[j][0] );
+
+            if (((pmsk >> 0) & 0x1) == 0)
+               prod1 = 0;
+            else
+               prod1 = exts16to64( srcA_word[i][1] )
+                  * exts16to64( srcB_word[j][1] );
+
+            sum = prod0 + prod1;
+
+            if ( inst == XVI16GER2 )
+               result[j] = chop64to32( sum );
+
+            else if ( inst == XVI16GER2S )
+               result[j] = clampS64toS32( sum );
+
+            else if ( inst == XVI16GER2PP )
+               result[j] = chop64to32( sum + acc_word[j] );
+
+            else if ( inst == XVI16GER2SPP )
+               result[j] = clampS64toS32( sum + acc_word[j] );
+
+         } else {
+            result[j] = 0;
+         }
+      }
+      write_ACC_entry (gst, offset_ACC, acc_entry, 3-i, result);
+   }
+}
+
+//matrix 16 float stuff
+union
+convert_t {
+  UInt u32;
+  ULong u64;
+  Float f;
+  Double d;
+};
+
+static Float reinterpret_int_as_float( UInt input )
+{
+  /* Reinterpret the bit pattern of an int as a float. */
+ __attribute__ ((aligned (128)))   union convert_t conv;
+
+  conv.u32 = input;
+  return conv.f;
+}
+
+static UInt reinterpret_float_as_int( Float input )
+{
+  /* Reinterpret the bit pattern of an int as a float. */
+ __attribute__ ((aligned (128)))   union convert_t conv;
+
+  conv.f = input;
+  return conv.u32;
+}
+
+static Double reinterpret_long_as_double( ULong input )
+{
+  /* Reinterpret the bit pattern of an int as a float. */
+ __attribute__ ((aligned (128)))   union convert_t conv;
+
+  conv.u64 = input;
+  return conv.d;
+}
+
+static ULong reinterpret_double_as_long( Double input )
+{
+  /* Reinterpret the bit pattern of an int as a float. */
+ __attribute__ ((aligned (128)))   union convert_t conv;
+
+  conv.d = input;
+  return conv.u64;
+}
+
+static Double conv_f16_to_double( ULong input )
+{
+#  if defined (HAS_XSCVHPDP)
+   // This all seems to be very alignment sensitive??
+   __attribute__ ((aligned (64))) ULong src;
+   __attribute__ ((aligned (64))) Double result;
+   src = input;
+   __asm__ __volatile__ ("xscvhpdp %x0,%x1" : "=wa" (result) : "wa" (src));
+   return result;
+#  else
+   return 0.0;
+#  endif
+}
+
+#define BF16_SIGN_MASK   0x8000
+#define BF16_EXP_MASK    0x7F80
+#define BF16_FRAC_MASK   0x007F
+#define BF16_BIAS        127
+#define BF16_MAX_UNBIASED_EXP 127
+#define BF16_MIN_UNBIASED_EXP -126
+#define FLOAT_SIGN_MASK  0x80000000
+#define FLOAT_EXP_MASK   0x7F800000
+#define FLOAT_FRAC_MASK  0x007FFFFF
+#define FLOAT_FRAC_BIT8  0x00008000
+#define FLOAT_BIAS       127
+
+static Float conv_bf16_to_float( UInt input )
+{
+  /* input is 16-bit bfloat.
+     bias +127, exponent 8-bits, fraction 7-bits
+
+     output is 32-bit float.
+     bias +127, exponent 8-bits, fraction 22-bits
+  */
+
+  UInt input_exp, input_fraction, unbiased_exp;
+  UInt output_exp, output_fraction;
+  UInt sign;
+  union convert_t conv;
+
+  sign = (UInt)(input & BF16_SIGN_MASK);
+  input_exp = input & BF16_EXP_MASK;
+  unbiased_exp = (input_exp >> 7) - (UInt)BF16_BIAS;
+  input_fraction = input & BF16_FRAC_MASK;
+
+  if (((input_exp & BF16_EXP_MASK) == BF16_EXP_MASK) &&
+      (input_fraction != 0)) {
+     /* input is NaN or SNaN, exp all 1's, fraction != 0 */
+     output_exp = FLOAT_EXP_MASK;
+     output_fraction = input_fraction;
+
+  } else if(((input_exp & BF16_EXP_MASK) == BF16_EXP_MASK) &&
+      ( input_fraction == 0)) {
+     /* input is infinity,  exp all 1's, fraction = 0  */
+     output_exp = FLOAT_EXP_MASK;
+     output_fraction = 0;
+
+  } else if((input_exp == 0) && (input_fraction == 0)) {
+     /* input is zero */
+     output_exp = 0;
+     output_fraction = 0;
+
+  } else if((input_exp == 0) && (input_fraction != 0)) {
+     /* input is denormal */
+     output_fraction = input_fraction;
+     output_exp = (-(Int)BF16_BIAS + (Int)FLOAT_BIAS ) << 23;
+
+  } else {
+     /* result is normal */
+     output_exp = (unbiased_exp + FLOAT_BIAS) << 23;
+     output_fraction = input_fraction;
+  }
+
+  conv.u32 = sign << (31 - 15) | output_exp | (output_fraction << (23-7));
+  return conv.f;
+}
+
+static UInt conv_float_to_bf16( UInt input )
+{
+   /* input is 32-bit float stored as unsigned 32-bit.
+      bias +127, exponent 8-bits, fraction 23-bits
+
+      output is 16-bit bfloat.
+      bias +127, exponent 8-bits, fraction 7-bits
+
+      If the unbiased exponent of the input is greater than the max floating
+      point unbiased exponent value, the result of the floating point 16-bit
+      value is infinity.
+   */
+
+   UInt input_exp, input_fraction;
+   UInt output_exp, output_fraction;
+   UInt result, sign;
+
+   sign = input & FLOAT_SIGN_MASK;
+   input_exp = input & FLOAT_EXP_MASK;
+   input_fraction = input & FLOAT_FRAC_MASK;
+
+   if (((input_exp & FLOAT_EXP_MASK) == FLOAT_EXP_MASK) &&
+       (input_fraction != 0)) {
+      /* input is NaN or SNaN, exp all 1's, fraction != 0 */
+      output_exp = BF16_EXP_MASK;
+      output_fraction = (ULong)input_fraction >> (23 - 7);
+   } else if (((input_exp & FLOAT_EXP_MASK) == FLOAT_EXP_MASK) &&
+              ( input_fraction == 0)) {
+      /* input is infinity,  exp all 1's, fraction = 0  */
+      output_exp = BF16_EXP_MASK;
+      output_fraction = 0;
+   } else if ((input_exp == 0) && (input_fraction == 0)) {
+      /* input is zero */
+      output_exp = 0;
+      output_fraction = 0;
+   } else if ((input_exp == 0) && (input_fraction != 0)) {
+      /* input is denormal */
+      output_exp = 0;
+      output_fraction = (ULong)input_fraction >> (23 - 7);
+   } else {
+      /* result is normal */
+      output_exp = (input_exp - BF16_BIAS + FLOAT_BIAS) >> (23 - 7);
+      output_fraction = (ULong)input_fraction >> (23 - 7);
+
+      /* Round result. Look at the 8th bit position of the 32-bit floating
+         pointt fraction.  The F16 fraction is only 7 bits wide so if the 8th
+         bit of the F32 is a 1 we need to round up by adding 1 to the output
+         fraction.  */
+      if ((input_fraction & FLOAT_FRAC_BIT8) == FLOAT_FRAC_BIT8)
+         /* Round the F16 fraction up by 1 */
+         output_fraction = output_fraction + 1;
+   }
+
+   result = sign >> (31 - 15) | output_exp | output_fraction;
+   return result;
+}
+
+static Float conv_double_to_float( Double src )
+{
+  return (float) src ;
+}
+
+
+static Double negate_double( Double input )
+{
+   /* Don't negate a NaN value. A NaN has an exponet
+      of all 1's, non zero fraction. */
+   __attribute__ ((aligned (128))) union convert_t conv;
+
+   conv.d = input;
+
+   if ( ( ( conv.u64 & I64_EXP_MASK) == I64_EXP_MASK )
+        && ( ( conv.u64 & I64_FRACTION_MASK ) != 0 ) )
+      return input;
+   else
+      return -input;
+}
+
+static Float negate_float( Float input )
+{
+   /* Don't negate a NaN value. A NaN has an exponet
+      of all 1's, non zero fraction. */
+   __attribute__ ((aligned (128))) union convert_t conv;
+
+   conv.f = input;
+
+   if ( ( ( conv.u32 & I32_EXP_MASK) == I32_EXP_MASK )
+        && ( ( conv.u32 & I32_FRACTION_MASK ) != 0 ) )
+      return input;
+  else
+      return -input;
+}
+
+/* This C-helper takes a vector of two 32-bit floating point values
+ * and returns a vector containing two 16-bit bfloats.
+   input:    word0           word1
+   output  0x0   hword1   0x0    hword3
+   Called from generated code.
+ */
+ULong convert_from_floattobf16_helper( ULong src ) {
+   ULong resultHi, resultLo;
+
+   resultHi = (ULong)conv_float_to_bf16( (UInt)(src >> 32));
+   resultLo = (ULong)conv_float_to_bf16( (UInt)(src & 0xFFFFFFFF));
+   return (resultHi << 32) | resultLo;
+
+}
+
+/* This C-helper takes a vector of two 16-bit bfloating point values
+ * and returns a vector containing one 32-bit float.
+   input:   0x0   hword1   0x0    hword3
+   output:    word0           word1
+ */
+ULong convert_from_bf16tofloat_helper( ULong src ) {
+   ULong result;
+   union convert_t conv;
+   conv.f = conv_bf16_to_float( (UInt)(src >> 32) );
+   result = (ULong) conv.u32;
+   conv.f = conv_bf16_to_float( (UInt)(src & 0xFFFFFFFF));
+   result = (result << 32) | (ULong) conv.u32;
+   return result;
+ }
+
+void vsx_matrix_16bit_float_ger_dirty_helper( VexGuestPPC64State* gst,
+                                              UInt offset_ACC,
+                                              ULong srcA_hi, ULong srcA_lo,
+                                              ULong srcB_hi, ULong srcB_lo,
+                                              UInt masks_inst )
+{
+   UInt i, j, mask, inst, acc_entry, prefix_inst;
+
+   UInt srcA_word[4][2];   /* word, hword */
+   UInt srcB_word[4][2];   /* word, hword */
+   Double src10, src11, src20, src21;
+   UInt acc_word_input[4];
+   Float acc_word[4];
+   Double prod;
+   Double msum;
+   UInt result[4];
+   UInt pmsk = 0;
+   UInt xmsk = 0;
+   UInt ymsk = 0;
+
+   mask = 0xFFFF;
+   inst = (masks_inst >> 5) & 0xFF;
+   prefix_inst = (masks_inst >> 13) & 0x1;
+   acc_entry = masks_inst & 0xF;
+
+   if ( prefix_inst == 0 ) {
+      /* Set the masks for non-prefix instructions */
+      pmsk = 0b11;
+      xmsk = 0b1111;
+      ymsk = 0b1111;
+
+   } else {
+      /* Use mask supplied with prefix inst */
+      pmsk = (masks_inst >> 28) & 0x3;
+      xmsk = (masks_inst >> 18) & 0xF;
+      ymsk = (masks_inst >> 14) & 0xF;
+   }
+
+   /* Address half-words using IBM numbering */
+   for( i = 0; i < 4; i++) {
+      /* Get the ACC contents directly from the PPC64 state */
+      get_ACC_entry (gst, offset_ACC, acc_entry, 3-i, acc_word_input);
+
+      acc_word[3] = reinterpret_int_as_float( acc_word_input[3] );
+      acc_word[2] = reinterpret_int_as_float( acc_word_input[2] );
+      acc_word[1] = reinterpret_int_as_float( acc_word_input[1] );
+      acc_word[0] = reinterpret_int_as_float( acc_word_input[0] );
+
+      for( j = 0; j < 2; j++) {    // input is in double words
+         srcA_word[3][j] = (UInt)((srcA_hi >> (48-16*j)) & mask);
+         srcA_word[2][j] = (UInt)((srcA_hi >> (16-16*j)) & mask);
+         srcA_word[1][j] = (UInt)((srcA_lo >> (48-16*j)) & mask);
+         srcA_word[0][j] = (UInt)((srcA_lo >> (16-16*j)) & mask);
+
+         srcB_word[3][j] = (UInt)((srcB_hi >> (48-16*j)) & mask);
+         srcB_word[2][j] = (UInt)((srcB_hi >> (16-16*j)) & mask);
+         srcB_word[1][j] = (UInt)((srcB_lo >> (48-16*j)) & mask);
+         srcB_word[0][j] = (UInt)((srcB_lo >> (16-16*j)) & mask);
+      }
+
+      /* Note the isa is not consistent in the src naming.  Will use the
+         naming src10, src11, src20, src21 used with xvf16ger2 instructions.
+      */
+      for( j = 0; j < 4; j++) {
+         if (((pmsk >> 1) & 0x1) == 0) {
+            src10 = 0;
+            src20 = 0;
+         } else {
+            if (( inst  == XVF16GER2 ) || ( inst  == XVF16GER2PP )
+                || ( inst == XVF16GER2PN ) || ( inst  == XVF16GER2NP )
+                || ( inst == XVF16GER2NN )) {
+               src10 = conv_f16_to_double((ULong)srcA_word[i][0]);
+               src20 = conv_f16_to_double((ULong)srcB_word[j][0]);
+            } else {
+               /* Input is in bfloat format, result is stored in the
+                  "traditional" 64-bit float format. */
+               src10 = (double)conv_bf16_to_float((ULong)srcA_word[i][0]);
+               src20 = (double)conv_bf16_to_float((ULong)srcB_word[j][0]);
+            }
+         }
+
+         if ((pmsk & 0x1) == 0) {
+            src11 = 0;
+            src21 = 0;
+         } else {
+            if (( inst  == XVF16GER2 ) || ( inst  == XVF16GER2PP )
+                || ( inst == XVF16GER2PN ) || ( inst  == XVF16GER2NP )
+                || ( inst == XVF16GER2NN )) {
+               src11 = conv_f16_to_double((ULong)srcA_word[i][1]);
+               src21 = conv_f16_to_double((ULong)srcB_word[j][1]);
+            } else {
+               /* Input is in bfloat format, result is stored in the
+                  "traditional" 64-bit float format. */
+               src11 = (double)conv_bf16_to_float((ULong)srcA_word[i][1]);
+               src21 = (double)conv_bf16_to_float((ULong)srcB_word[j][1]);
+            }
+         }
+
+         prod = src10 * src20;
+         msum = prod + src11 * src21;
+
+         if (((xmsk >> i) & 0x1) & ((ymsk >> j) & 0x1)) {
+            /* Note, we do not track the exception handling bits
+               ox, ux, xx, si, mz, vxsnan and vximz in the FPSCR.  */
+
+            if (( inst == XVF16GER2 ) || ( inst == XVBF16GER2 ) )
+               result[j] = reinterpret_float_as_int(
+                  conv_double_to_float(msum) );
+
+            else if (( inst == XVF16GER2PP ) ||  (inst == XVBF16GER2PP ))
+               result[j] = reinterpret_float_as_int(
+                  conv_double_to_float(msum)
+                  + acc_word[j] );
+
+            else if (( inst == XVF16GER2PN ) || ( inst == XVBF16GER2PN ))
+               result[j] = reinterpret_float_as_int(
+                  conv_double_to_float(msum)
+                  + negate_float( acc_word[j] ) );
+
+            else if (( inst == XVF16GER2NP ) || ( inst == XVBF16GER2NP ))
+               result[j] = reinterpret_float_as_int(
+                  conv_double_to_float( negate_double( msum ) )
+                  + acc_word[j] );
+
+            else if (( inst == XVF16GER2NN ) || ( inst == XVBF16GER2NN ))
+               result[j] = reinterpret_float_as_int(
+                  conv_double_to_float( negate_double( msum ) )
+                  + negate_float( acc_word[j] ) );
+         } else {
+            result[j] = 0;
+         }
+      }
+      write_ACC_entry (gst, offset_ACC, acc_entry, 3-i, result);
+   }
+}
+
+void vsx_matrix_32bit_float_ger_dirty_helper( VexGuestPPC64State* gst,
+                                              UInt offset_ACC,
+                                              ULong srcA_hi, ULong srcA_lo,
+                                              ULong srcB_hi, ULong srcB_lo,
+                                              UInt masks_inst )
+{
+   UInt i, j, mask, inst, acc_entry, prefix_inst;
+
+   Float srcA_word[4];
+   Float srcB_word[4];
+   UInt acc_word_input[4];
+   Float acc_word[4];
+   UInt result[4];
+   UInt xmsk = 0;
+   UInt ymsk = 0;
+   Float src1, src2, acc;
+
+   mask = 0xFFFFFFFF;
+   inst = (masks_inst >> 5) & 0xFF;
+   prefix_inst = (masks_inst >> 13) & 0x1;
+   acc_entry = masks_inst & 0xF;
+
+   if ( prefix_inst == 0 ) {
+      /* Set the masks for non-prefix instructions */
+      xmsk = 0b1111;
+      ymsk = 0b1111;
+
+   } else {
+      xmsk = (masks_inst >> 18) & 0xF;
+      ymsk = (masks_inst >> 14) & 0xF;
+   }
+
+   srcA_word[3] = reinterpret_int_as_float( (srcA_hi >> 32) & mask );
+   srcA_word[2] = reinterpret_int_as_float( srcA_hi & mask );
+   srcA_word[1] = reinterpret_int_as_float( (srcA_lo >> 32) & mask );
+   srcA_word[0] = reinterpret_int_as_float( srcA_lo & mask );
+
+   srcB_word[3] = reinterpret_int_as_float( (srcB_hi >> 32) & mask );
+   srcB_word[2] = reinterpret_int_as_float( srcB_hi & mask );
+   srcB_word[1] = reinterpret_int_as_float( (srcB_lo >> 32) & mask );
+   srcB_word[0] = reinterpret_int_as_float( srcB_lo & mask );
+
+   /* Address byes using IBM numbering */
+   for( i = 0; i < 4; i++) {
+      /* Get the ACC contents directly from the PPC64 state */
+      get_ACC_entry (gst, offset_ACC, acc_entry, 3-i, acc_word_input);
+
+      acc_word[3] = reinterpret_int_as_float( acc_word_input[3] );
+      acc_word[2] = reinterpret_int_as_float( acc_word_input[2] );
+      acc_word[1] = reinterpret_int_as_float( acc_word_input[1] );
+      acc_word[0] = reinterpret_int_as_float( acc_word_input[0] );
+
+      for( j = 0; j < 4; j++) {
+
+         if ((((xmsk >> i) & 0x1) & ((ymsk >> j) & 0x1)) == 0x1) {
+            /* Note, we do not track the exception handling bits
+               ox, ux, xx, si, mz, vxsnan and vximz in the FPSCR.  */
+
+            src1 = srcA_word[i];
+            src2 = srcB_word[j];
+            acc = acc_word[j];
+
+            if ( inst == XVF32GER )
+               result[j] = reinterpret_float_as_int( src1 * src2 );
+
+            else if ( inst == XVF32GERPP )
+               result[j] = reinterpret_float_as_int( ( src1 * src2 ) + acc );
+
+            else if ( inst == XVF32GERPN )
+               result[j] = reinterpret_float_as_int( ( src1 * src2 )
+                                                     + negate_float( acc ) );
+
+            else if ( inst == XVF32GERNP )
+               result[j] = reinterpret_float_as_int(
+                  negate_float( src1 * src2 ) + acc );
+
+            else if ( inst == XVF32GERNN )
+               result[j] = reinterpret_float_as_int(
+                  negate_float( src1 * src2 ) + negate_float( acc ) );
+         } else {
+            result[j] = 0;
+         }
+      }
+      write_ACC_entry (gst, offset_ACC, acc_entry, 3-i, result);
+   }
+}
+
+void vsx_matrix_64bit_float_ger_dirty_helper( VexGuestPPC64State* gst,
+                                              UInt offset_ACC,
+                                              ULong srcX_hi, ULong srcX_lo,
+                                              ULong srcY_hi, ULong srcY_lo,
+                                              UInt masks_inst )
+{
+   /* This function just computes the result for one entry in the ACC. */
+   UInt i, j, inst, acc_entry, prefix_inst;
+
+   Double srcX_dword[4];
+   Double srcY_dword[2];
+   Double result[2];
+   UInt result_uint[4];
+   ULong result_ulong[2];
+   Double acc_dword[4];
+   ULong acc_word_ulong[2];
+   UInt acc_word_input[4];
+   UInt xmsk = 0;
+   UInt ymsk = 0;
+   UInt start_i;
+   Double src1, src2, acc;
+
+   inst = (masks_inst >> 8) & 0xFF;
+   prefix_inst = (masks_inst >> 16) & 0x1;
+   start_i = (masks_inst >> 4) & 0xF;
+   acc_entry = masks_inst & 0xF;
+
+   if ( prefix_inst == 0 ) {
+      /* Set the masks for non-prefix instructions */
+      xmsk = 0b1111;
+      ymsk = 0b11;
+
+   } else {
+      xmsk = (masks_inst >> 21) & 0xF;
+      ymsk = (masks_inst >> 19) & 0x3;
+   }
+
+   /* Need to store the srcX_dword in the correct index for the following
+      for loop.  */
+   srcX_dword[1+start_i] = reinterpret_long_as_double( srcX_lo);
+   srcX_dword[0+start_i] = reinterpret_long_as_double( srcX_hi );
+   srcY_dword[1] = reinterpret_long_as_double( srcY_lo );
+   srcY_dword[0] = reinterpret_long_as_double( srcY_hi );
+
+   for( i = start_i; i < start_i+2; i++) {
+      /* Get the ACC contents directly from the PPC64 state */
+      get_ACC_entry (gst, offset_ACC, acc_entry, 3 - i,
+                     acc_word_input);
+
+      acc_word_ulong[1] = acc_word_input[3];
+      acc_word_ulong[1] = (acc_word_ulong[1] << 32) | acc_word_input[2];
+      acc_word_ulong[0] = acc_word_input[1];
+      acc_word_ulong[0] = (acc_word_ulong[0] << 32) | acc_word_input[0];
+      acc_dword[0] = reinterpret_long_as_double( acc_word_ulong[0] );
+      acc_dword[1] = reinterpret_long_as_double( acc_word_ulong[1]);
+
+      for( j = 0; j < 2; j++) {
+
+         if (((xmsk >> i) & 0x1) & ((ymsk >> j) & 0x1)) {
+            /* Note, we do not track the exception handling bits
+               ox, ux, xx, si, mz, vxsnan and vximz in the FPSCR.  */
+
+            src1 = srcX_dword[i];
+            src2 = srcY_dword[j];
+            acc = acc_dword[j];
+
+            if ( inst == XVF64GER )
+               result[j] = src1 * src2;
+
+            else if ( inst == XVF64GERPP )
+               result[j] = ( src1 * src2 ) + acc;
+
+            else if ( inst == XVF64GERPN )
+               result[j] = ( src1 * src2 ) + negate_double( acc );
+
+            else if ( inst == XVF64GERNP )
+               result[j] = negate_double( src1 * src2 ) + acc;
+
+            else if ( inst == XVF64GERNN )
+               result[j] = negate_double( src1 * src2 ) + negate_double( acc );
+
+         } else {
+            result[j] = 0;
+         }
+      }
+
+      /* Need to store the two double float values as two unsigned ints in
+         order to store them to the ACC.  */
+      result_ulong[0] = reinterpret_double_as_long ( result[0] );
+      result_ulong[1] = reinterpret_double_as_long ( result[1] );
+
+      result_uint[0] = result_ulong[0] & 0xFFFFFFFF;
+      result_uint[1] = (result_ulong[0] >> 32) & 0xFFFFFFFF;
+      result_uint[2] = result_ulong[1] & 0xFFFFFFFF;
+      result_uint[3] = (result_ulong[1] >> 32) & 0xFFFFFFFF;
+
+      write_ACC_entry (gst, offset_ACC, acc_entry, 3 - i,
+                       result_uint);
+   }
 }
 
 /*----------------------------------------------*/
@@ -795,6 +2678,39 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
    VECZERO(vex_state->guest_VSR62);
    VECZERO(vex_state->guest_VSR63);
 
+   VECZERO( vex_state->guest_ACC_0_r0 );
+   VECZERO( vex_state->guest_ACC_0_r1 );
+   VECZERO( vex_state->guest_ACC_0_r2 );
+   VECZERO( vex_state->guest_ACC_0_r3 );
+   VECZERO( vex_state->guest_ACC_1_r0 );
+   VECZERO( vex_state->guest_ACC_1_r1 );
+   VECZERO( vex_state->guest_ACC_1_r2 );
+   VECZERO( vex_state->guest_ACC_1_r3 );
+   VECZERO( vex_state->guest_ACC_2_r0 );
+   VECZERO( vex_state->guest_ACC_2_r1 );
+   VECZERO( vex_state->guest_ACC_2_r2 );
+   VECZERO( vex_state->guest_ACC_2_r3 );
+   VECZERO( vex_state->guest_ACC_3_r0 );
+   VECZERO( vex_state->guest_ACC_3_r1 );
+   VECZERO( vex_state->guest_ACC_3_r2 );
+   VECZERO( vex_state->guest_ACC_3_r3 );
+   VECZERO( vex_state->guest_ACC_4_r0 );
+   VECZERO( vex_state->guest_ACC_4_r1 );
+   VECZERO( vex_state->guest_ACC_4_r2 );
+   VECZERO( vex_state->guest_ACC_4_r3 );
+   VECZERO( vex_state->guest_ACC_5_r0 );
+   VECZERO( vex_state->guest_ACC_5_r1 );
+   VECZERO( vex_state->guest_ACC_5_r2 );
+   VECZERO( vex_state->guest_ACC_5_r3 );
+   VECZERO( vex_state->guest_ACC_6_r0 );
+   VECZERO( vex_state->guest_ACC_6_r1 );
+   VECZERO( vex_state->guest_ACC_6_r2 );
+   VECZERO( vex_state->guest_ACC_6_r3 );
+   VECZERO( vex_state->guest_ACC_7_r0 );
+   VECZERO( vex_state->guest_ACC_7_r1 );
+   VECZERO( vex_state->guest_ACC_7_r2 );
+   VECZERO( vex_state->guest_ACC_7_r3 );
+
 #  undef VECZERO
 
    vex_state->guest_CIA  = 0;
@@ -1040,6 +2956,7 @@ void LibVEX_GuestPPC64_initialise ( /*OUT*/VexGuestPPC64State* vex_state )
    vex_state->guest_PPR = 0x4ULL << 50;  // medium priority
    vex_state->guest_PSPB = 0x100;  // an arbitrary non-zero value to start with
    vex_state->guest_DSCR = 0;
+
 }
 
 

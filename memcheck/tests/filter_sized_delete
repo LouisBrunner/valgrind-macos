@@ -1,0 +1,4 @@
+#! /bin/sh
+
+./filter_stderr "$@" |
+grep -v free | grep -v malloc

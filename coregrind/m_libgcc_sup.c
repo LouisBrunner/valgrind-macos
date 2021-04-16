@@ -59,3 +59,9 @@ unsigned long int __getauxval (unsigned long int type)
    return 0;
 }
 #endif
+
+#if defined(VGO_solaris)
+/* At least on Solaris 11.3 ar does not like
+   empty .ar files */
+int some_symbol_to_keep_ar_happy;
+#endif

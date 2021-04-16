@@ -7,3 +7,15 @@ Syscall param writev(vector[...]) points to unaddressable byte(s)
 Received EFAULT as expected
 Received EINVAL as expected
 Received EINVAL as expected
+Syscall param writev(vector) points to unaddressable byte(s)
+   ...
+   by 0x........: main (writev1.c:87)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Received EFAULT as expected
+Syscall param readv(vector) points to unaddressable byte(s)
+   ...
+   by 0x........: main (writev1.c:96)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Received EFAULT as expected

@@ -305,9 +305,9 @@ sub read_vgtest_file($)
     my ($f) = @_;
 
     # Defaults.
-    ($vgopts, $prog, $args)            = ("", undef, "");
+    ($vgopts, $prog, $args, @env)      = ("", undef, "", ());
     ($stdout_filter, $stderr_filter)   = (undef, undef);
-    ($progB, $argsB, $stdinB)          = (undef, "", undef);
+    ($progB, $argsB, $stdinB, @envB)   = (undef, "", undef, ());
     ($stdoutB_filter, $stderrB_filter) = (undef, undef);
     ($prereq, $post, $cleanup)         = (undef, undef, undef);
     ($stdout_filter_args, $stderr_filter_args)   = (undef, undef);
@@ -708,6 +708,8 @@ sub warn_about_EXTRA_REGTEST_OPTS()
 
 # nuke VALGRIND_OPTS
 $ENV{"VALGRIND_OPTS"} = "";
+# nuke DEBUGINFOD_URLS
+$ENV{"DEBUGINFOD_URLS"} = "";
 
 if ($ENV{"EXTRA_REGTEST_OPTS"}) {
     print "\n";

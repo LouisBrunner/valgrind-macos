@@ -4237,9 +4237,19 @@ static void* hg_cli____builtin_new ( ThreadId tid, SizeT n ) {
    return handle_alloc ( tid, n, VG_(clo_alignment),
                          /*is_zeroed*/False );
 }
+static void* hg_cli____builtin_new_aligned ( ThreadId tid, SizeT n, SizeT align ) {
+   if (((SSizeT)n) < 0) return NULL;
+   return handle_alloc ( tid, n, align,
+                         /*is_zeroed*/False );
+}
 static void* hg_cli____builtin_vec_new ( ThreadId tid, SizeT n ) {
    if (((SSizeT)n) < 0) return NULL;
    return handle_alloc ( tid, n, VG_(clo_alignment), 
+                         /*is_zeroed*/False );
+}
+static void* hg_cli____builtin_vec_new_aligned ( ThreadId tid, SizeT n, SizeT align ) {
+   if (((SSizeT)n) < 0) return NULL;
+   return handle_alloc ( tid, n, align,
                          /*is_zeroed*/False );
 }
 static void* hg_cli__memalign ( ThreadId tid, SizeT align, SizeT n ) {
@@ -4294,10 +4304,15 @@ static void hg_cli__free ( ThreadId tid, void* p ) {
 static void hg_cli____builtin_delete ( ThreadId tid, void* p ) {
    handle_free(tid, p);
 }
+static void hg_cli____builtin_delete_aligned ( ThreadId tid, void* p, SizeT align ) {
+   handle_free(tid, p);
+}
 static void hg_cli____builtin_vec_delete ( ThreadId tid, void* p ) {
    handle_free(tid, p);
 }
-
+static void hg_cli____builtin_vec_delete_aligned ( ThreadId tid, void* p, SizeT align ) {
+   handle_free(tid, p);
+}
 
 static void* hg_cli__realloc ( ThreadId tid, void* payloadV, SizeT new_size )
 {
@@ -6033,12 +6048,16 @@ static void hg_pre_clo_init ( void )
 
    VG_(needs_malloc_replacement)  (hg_cli__malloc,
                                    hg_cli____builtin_new,
+                                   hg_cli____builtin_new_aligned,
                                    hg_cli____builtin_vec_new,
+                                   hg_cli____builtin_vec_new_aligned,
                                    hg_cli__memalign,
                                    hg_cli__calloc,
                                    hg_cli__free,
                                    hg_cli____builtin_delete,
+                                   hg_cli____builtin_delete_aligned,
                                    hg_cli____builtin_vec_delete,
+                                   hg_cli____builtin_vec_delete_aligned,
                                    hg_cli__realloc,
                                    hg_cli_malloc_usable_size,
                                    HG_CLI__DEFAULT_MALLOC_REDZONE_SZB );

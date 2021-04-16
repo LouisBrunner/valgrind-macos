@@ -18,16 +18,18 @@ EXTRA_DIST = \
 # libmpiwrap-<platform>.so
 #----------------------------------------------------------------------------
 
-noinst_PROGRAMS  =
+# These are really real libraries, so they should go to libdir, not libexec.
+mpidir = $(pkglibdir)
+mpi_PROGRAMS  =
 if BUILD_MPIWRAP_PRI
-noinst_PROGRAMS += libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so
+mpi_PROGRAMS += libmpiwrap-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so
 endif
 if BUILD_MPIWRAP_SEC
-noinst_PROGRAMS += libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.so
+mpi_PROGRAMS += libmpiwrap-@VGCONF_ARCH_SEC@-@VGCONF_OS@.so
 endif
 
 if VGCONF_OS_IS_DARWIN
-noinst_DSYMS = $(noinst_PROGRAMS)
+mpi_DSYMS = $(mpi_PROGRAMS)
 endif
 
 

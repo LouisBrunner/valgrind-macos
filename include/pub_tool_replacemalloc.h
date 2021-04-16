@@ -39,6 +39,7 @@
 /* Can be called from VG_(tdict).malloc_malloc et al to do the actual
  * alloc/freeing. */
 extern void* VG_(cli_malloc) ( SizeT align, SizeT nbytes );
+extern void* VG_(cli_realloc)( void* ptr, SizeT nbytes );
 extern void  VG_(cli_free)   ( void* p );
 // Returns the usable size of a heap-block.  It's the asked-for size plus
 // possibly some more due to rounding up.

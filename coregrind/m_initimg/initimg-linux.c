@@ -47,7 +47,7 @@
 #include "pub_core_syscall.h"
 #include "pub_core_tooliface.h"       /* VG_TRACK */
 #include "pub_core_threadstate.h"     /* ThreadArchState */
-#include "priv_initimg_pathscan.h"
+#include "pub_core_pathscan.h"        /* find_executable */
 #include "pub_core_initimg.h"         /* self */
 
 /* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
@@ -64,7 +64,7 @@
 
 /* Load the client whose name is VG_(argv_the_exename). */
 
-static void load_client ( /*MOD*/ExeInfo* info, 
+static void load_client ( /*MOD*/ExeInfo* info,
                           /*OUT*/Addr*    client_ip,
 			  /*OUT*/Addr*    client_toc)
 {
@@ -73,7 +73,7 @@ static void load_client ( /*MOD*/ExeInfo* info,
    SysRes res;
 
    vg_assert( VG_(args_the_exename) != NULL);
-   exe_name = ML_(find_executable)( VG_(args_the_exename) );
+   exe_name = VG_(find_executable)( VG_(args_the_exename) );
 
    if (!exe_name) {
       VG_(printf)("valgrind: %s: command not found\n", VG_(args_the_exename));
@@ -143,9 +143,9 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
       paths.  We might not need the space for vgpreload_<tool>.so, but it
       doesn't hurt to over-allocate briefly.  The 16s are just cautious
       slop. */
-   Int preload_core_path_len = vglib_len + sizeof(preload_core) 
+   Int preload_core_path_len = vglib_len + sizeof(preload_core)
                                          + sizeof(VG_PLATFORM) + 16;
-   Int preload_tool_path_len = vglib_len + VG_(strlen)(toolname) 
+   Int preload_tool_path_len = vglib_len + VG_(strlen)(toolname)
                                          + sizeof(VG_PLATFORM) + 16;
    Int preload_string_len    = preload_core_path_len + preload_tool_path_len;
    HChar* preload_string     = VG_(malloc)("initimg-linux.sce.1",
@@ -156,10 +156,10 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    VG_(snprintf)(preload_tool_path, preload_tool_path_len,
                  "%s/vgpreload_%s-%s.so", VG_(libdir), toolname, VG_PLATFORM);
    if (VG_(access)(preload_tool_path, True/*r*/, False/*w*/, False/*x*/) == 0) {
-      VG_(snprintf)(preload_string, preload_string_len, "%s/%s-%s.so:%s", 
+      VG_(snprintf)(preload_string, preload_string_len, "%s/%s-%s.so:%s",
                     VG_(libdir), preload_core, VG_PLATFORM, preload_tool_path);
    } else {
-      VG_(snprintf)(preload_string, preload_string_len, "%s/%s-%s.so", 
+      VG_(snprintf)(preload_string, preload_string_len, "%s/%s-%s.so",
                     VG_(libdir), preload_core, VG_PLATFORM);
    }
    VG_(free)(preload_tool_path);
@@ -185,7 +185,7 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
       *cpp++ = *origenv++;
    }
    *cpp = NULL;
-   
+
    vg_assert(envc == (cpp - ret));
 
    /* Walk over the new environment, mashing as we go */
@@ -302,7 +302,7 @@ static HChar *copy_str(HChar **tab, const HChar *str)
 
 
 /* ----------------------------------------------------------------
- 
+
    This sets up the client's initial stack, containing the args,
    environment and aux vector.
 
@@ -364,7 +364,7 @@ struct auxv *find_auxv(UWord* sp)
    while (*sp != 0)     // skip env
       sp++;
    sp++;
-   
+
 #if defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
 # if defined AT_IGNOREPPC
    while (*sp == AT_IGNOREPPC)        // skip AT_IGNOREPPC entries
@@ -375,9 +375,9 @@ struct auxv *find_auxv(UWord* sp)
    return (struct auxv *)sp;
 }
 
-static 
+static
 Addr setup_client_stack( void*  init_sp,
-                         HChar** orig_envp, 
+                         HChar** orig_envp,
                          const ExeInfo* info,
                          UInt** client_auxv,
                          Addr   clstack_end,
@@ -417,7 +417,7 @@ Addr setup_client_stack( void*  init_sp,
    /* first of all, work out how big the client stack will be */
    stringsize   = 0;
 
-   /* paste on the extra args if the loader needs them (ie, the #! 
+   /* paste on the extra args if the loader needs them (ie, the #!
       interpreter and its argument) */
    argc = 0;
    if (info->interp_name != NULL) {
@@ -434,7 +434,7 @@ Addr setup_client_stack( void*  init_sp,
 
    for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
       argc++;
-      stringsize += VG_(strlen)( * (HChar**) 
+      stringsize += VG_(strlen)( * (HChar**)
                                    VG_(indexXA)( VG_(args_for_client), i ))
                     + 1;
    }
@@ -482,7 +482,7 @@ Addr setup_client_stack( void*  init_sp,
    client_SP = VG_ROUNDDN(client_SP, 16); /* make stack 16 byte aligned */
 
    /* base of the string table (aligned) */
-   stringbase = strtab = (HChar *)clstack_end 
+   stringbase = strtab = (HChar *)clstack_end
                          - VG_ROUNDUP(stringsize, sizeof(int));
 
    clstack_start = VG_PGROUNDDN(client_SP);
@@ -544,7 +544,7 @@ Addr setup_client_stack( void*  init_sp,
      ok = VG_(am_create_reservation)(
              resvn_start,
              resvn_size -inner_HACK,
-             SmUpper, 
+             SmUpper,
              anon_size +inner_HACK
           );
      if (ok) {
@@ -566,7 +566,7 @@ Addr setup_client_stack( void*  init_sp,
      }
 
      vg_assert(ok);
-     vg_assert(!sr_isError(res)); 
+     vg_assert(!sr_isError(res));
 
      /* Record stack extent -- needed for stack-change code. */
      VG_(clstk_start_base) = anon_start -inner_HACK;
@@ -591,7 +591,7 @@ Addr setup_client_stack( void*  init_sp,
 
    for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
       *ptr++ = (Addr)copy_str(
-                       &strtab, 
+                       &strtab,
                        * (HChar**) VG_(indexXA)( VG_(args_for_client), i )
                      );
    }
@@ -697,9 +697,13 @@ Addr setup_client_stack( void*  init_sp,
             }
 #           elif defined(VGP_s390x_linux)
             {
-               /* Advertise hardware features "below" TE and VXRS.  TE itself
-                  and anything above VXRS is not supported by Valgrind. */
-               auxv->u.a_val &= (VKI_HWCAP_S390_TE - 1) | VKI_HWCAP_S390_VXRS;
+               /* Out of the hardware features available on the platform,
+                  advertise those "below" TE, as well as the ones explicitly
+                  ORed in the expression below.  Anything else, such as TE
+                  itself, is not supported by Valgrind. */
+               auxv->u.a_val &= ((VKI_HWCAP_S390_TE - 1)
+                                 | VKI_HWCAP_S390_VXRS
+                                 | VKI_HWCAP_S390_VXRS_EXT);
             }
 #           elif defined(VGP_arm64_linux)
             {
@@ -721,6 +725,7 @@ Addr setup_client_stack( void*  init_sp,
          case AT_HWCAP2:  {
             Bool auxv_2_07, hw_caps_2_07;
             Bool auxv_3_0, hw_caps_3_0;
+            Bool auxv_3_1, hw_caps_3_1;
 
 	    /* The HWCAP2 field may contain an arch_2_07 entry that indicates
              * if the processor is compliant with the 2.07 ISA. (i.e. Power 8
@@ -745,6 +750,14 @@ Addr setup_client_stack( void*  init_sp,
                 PPC_FEATURE2_HAS_ISEL         0x08000000
                 PPC_FEATURE2_HAS_TAR          0x04000000
                 PPC_FEATURE2_HAS_VCRYPTO      0x02000000
+                PPC_FEATURE2_HTM_NOSC         0x01000000
+                PPC_FEATURE2_ARCH_3_00        0x00800000
+                PPC_FEATURE2_HAS_IEEE128      0x00400000
+                PPC_FEATURE2_DARN             0x00200000
+                PPC_FEATURE2_SCV              0x00100000
+                PPC_FEATURE2_HTM_NO_SUSPEND   0x00080000
+                PPC_FEATURE2_ARCH_3_1         0x00040000
+                PPC_FEATURE2_MMA              0x00020000
             */
             auxv_2_07 = (auxv->u.a_val & 0x80000000ULL) == 0x80000000ULL;
             hw_caps_2_07 = (vex_archinfo->hwcaps & VEX_HWCAPS_PPC64_ISA2_07)
@@ -771,9 +784,44 @@ Addr setup_client_stack( void*  init_sp,
                == VEX_HWCAPS_PPC64_ISA3_0;
 
             /* Verify the PPC_FEATURE2_ARCH_3_00 setting in HWCAP2
-	     * matches the setting in VEX HWCAPS.
-	     */
+             * matches the setting in VEX HWCAPS.
+             */
             vg_assert(auxv_3_0 == hw_caps_3_0);
+
+            /*  Power ISA version 3.1
+                https://ibm.ent.box.com/s/hhjfw0x0lrbtyzmiaffnbxh2fuo0fog0
+
+                64-bit ELF V? ABI specification for Power.  HWCAP2 bit pattern
+                for ISA 3.0, page ?.
+
+                ADD PUBLIC LINK WHEN AVAILABLE
+            */
+            /* ISA 3.1 */
+            auxv_3_1 = (auxv->u.a_val & 0x00040000ULL) == 0x00040000ULL;
+            hw_caps_3_1 = (vex_archinfo->hwcaps & VEX_HWCAPS_PPC64_ISA3_1)
+               == VEX_HWCAPS_PPC64_ISA3_1;
+
+            /* Verify the PPC_FEATURE2_ARCH_3_1 setting in HWCAP2
+             * matches the setting in VEX HWCAPS.
+             */
+            vg_assert(auxv_3_1 == hw_caps_3_1);
+
+            /* Mask unrecognized HWCAP bits.  Only keep the bits that have
+             * explicit support in VEX. Filter out HTM bits since the
+             * transaction begin instruction (tbegin) is always failed in
+             * Valgrind causing the code to execute the failure path.
+             * Also filter out the DARN random number (bug #411189).
+             * And the SCV syscall (bug #431157).
+             */
+            auxv->u.a_val &= (0x80000000ULL     /* ARCH_2_07 */
+                              | 0x20000000ULL   /* DSCR */
+                              | 0x10000000ULL   /* EBB */
+                              | 0x08000000ULL   /* ISEL */
+                              | 0x04000000ULL   /* TAR */
+                              | 0x04000000ULL   /* VEC_CRYPTO */
+                              | 0x00800000ULL   /* ARCH_3_00 */
+                              | 0x00400000ULL   /* HAS_IEEE128 */
+                              | 0x00040000ULL); /* ARCH_3_1 */
          }
 
             break;
@@ -786,16 +834,16 @@ Addr setup_client_stack( void*  init_sp,
             /* acquire cache info */
             if (auxv->u.a_val > 0) {
                VG_(machine_ppc32_set_clszB)( auxv->u.a_val );
-               VG_(debugLog)(2, "initimg", 
-                                "PPC32 icache line size %u (type %u)\n", 
+               VG_(debugLog)(2, "initimg",
+                                "PPC32 icache line size %u (type %u)\n",
                                 (UInt)auxv->u.a_val, (UInt)auxv->a_type );
             }
 #           elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
             /* acquire cache info */
             if (auxv->u.a_val > 0) {
                VG_(machine_ppc64_set_clszB)( auxv->u.a_val );
-               VG_(debugLog)(2, "initimg", 
-                                "PPC64 icache line size %u (type %u)\n", 
+               VG_(debugLog)(2, "initimg",
+                                "PPC64 icache line size %u (type %u)\n",
                                 (UInt)auxv->u.a_val, (UInt)auxv->a_type );
             }
 #           endif
@@ -853,7 +901,7 @@ Addr setup_client_stack( void*  init_sp,
          default:
             /* stomp out anything we don't know about */
             VG_(debugLog)(2, "initimg",
-                             "stomping auxv entry %llu\n", 
+                             "stomping auxv entry %llu\n",
                              (ULong)auxv->a_type);
             auxv->a_type = AT_IGNORE;
             break;
@@ -895,10 +943,10 @@ static void setup_client_dataseg ( SizeT max_size )
 
    /* Try to create the data seg and associated reservation where
       VG_(brk_base) says. */
-   ok = VG_(am_create_reservation)( 
-           resvn_start, 
-           resvn_size, 
-           SmLower, 
+   ok = VG_(am_create_reservation)(
+           resvn_start,
+           resvn_size,
+           SmLower,
            anon_size
         );
 
@@ -909,10 +957,10 @@ static void setup_client_dataseg ( SizeT max_size )
                       ( 0/*floating*/, anon_size+resvn_size, &ok );
       if (ok) {
          resvn_start = anon_start + anon_size;
-         ok = VG_(am_create_reservation)( 
-                 resvn_start, 
-                 resvn_size, 
-                 SmLower, 
+         ok = VG_(am_create_reservation)(
+                 resvn_start,
+                 resvn_size,
+                 SmLower,
                  anon_size
               );
          if (ok)
@@ -928,9 +976,9 @@ static void setup_client_dataseg ( SizeT max_size )
       segment is RWX natively, at least according to /proc/self/maps.
       Also, having a non-executable data seg would kill any program which
       tried to create code in the data seg and then run it. */
-   sres = VG_(am_mmap_anon_fixed_client)( 
-             anon_start, 
-             anon_size, 
+   sres = VG_(am_mmap_anon_fixed_client)(
+             anon_start,
+             anon_size,
              VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC
           );
    vg_assert(!sr_isError(sres));
@@ -1012,8 +1060,8 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii,
       iifii.clstack_max_size = szB;
 
       iifii.initial_client_SP
-         = setup_client_stack( init_sp, env, 
-                               &info, &iifii.client_auxv, 
+         = setup_client_stack( init_sp, env,
+                               &info, &iifii.client_auxv,
                                iicii.clstack_end, iifii.clstack_max_size,
                                vex_archinfo );
 
@@ -1022,7 +1070,7 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii,
       VG_(debugLog)(2, "initimg",
                        "Client info: "
                        "initial_IP=%p initial_TOC=%p brk_base=%p\n",
-                       (void*)(iifii.initial_client_IP), 
+                       (void*)(iifii.initial_client_IP),
                        (void*)(iifii.initial_client_TOC),
                        (void*)VG_(brk_base) );
       VG_(debugLog)(2, "initimg",
@@ -1034,10 +1082,10 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii,
 
    //--------------------------------------------------------------
    // Setup client data (brk) segment.  Initially a 1-page segment
-   // which abuts a shrinkable reservation. 
+   // which abuts a shrinkable reservation.
    //     p: load_client()     [for 'info' and hence VG_(brk_base)]
    //--------------------------------------------------------------
-   { 
+   {
       SizeT m1 = 1024 * 1024;
       SizeT m8 = 8 * m1;
       SizeT dseg_max_size = (SizeT)VG_(client_rlimit_data).rlim_cur;

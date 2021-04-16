@@ -92,29 +92,35 @@ SizeT VG_(malloc_effective_client_redzone_size)(void)
 /*--- Useful functions                                     ---*/
 /*------------------------------------------------------------*/
 
-void* VG_(cli_malloc) ( SizeT align, SizeT nbytes )                 
-{                                                                             
+void* VG_(cli_malloc) ( SizeT align, SizeT nbytes )
+{
    // 'align' should be valid (ie. big enough and a power of two) by now.
    // VG_(arena_memalign)() will abort if it's not.
    if (VG_MIN_MALLOC_SZB == align)
-      return VG_(arena_malloc)   ( VG_AR_CLIENT, "replacemalloc.cm.1", 
-                                   nbytes ); 
-   else                                                                       
-      return VG_(arena_memalign) ( VG_AR_CLIENT, "replacemalloc.cm.2", 
+      return VG_(arena_malloc)   ( VG_AR_CLIENT, "replacemalloc.cm.1",
+                                   nbytes );
+   else
+      return VG_(arena_memalign) ( VG_AR_CLIENT, "replacemalloc.cm.2",
                                    align, nbytes );
-}                                                                             
-
-void VG_(cli_free) ( void* p )                                   
-{                                                                             
-   VG_(arena_free) ( VG_AR_CLIENT, p );                          
 }
 
-// Useful for querying user blocks.           
-SizeT VG_(cli_malloc_usable_size) ( void* p )                    
-{                                                            
+void* VG_(cli_realloc) ( void* ptr, SizeT nbytes )
+{
+   return VG_(arena_realloc) ( VG_AR_CLIENT, "replacemalloc.cr.1",
+                               ptr, nbytes );
+}
+
+void VG_(cli_free) ( void* p )
+{
+   VG_(arena_free) ( VG_AR_CLIENT, p );
+}
+
+// Useful for querying user blocks.
+SizeT VG_(cli_malloc_usable_size) ( void* p )
+{
    return VG_(arena_malloc_usable_size)(VG_AR_CLIENT, p);
-}                                                            
-  
+}
+
 Bool VG_(addr_is_in_block)( Addr a, Addr start, SizeT size, SizeT rz_szB )
 {
    return ( start - rz_szB <= a  &&  a < start + size + rz_szB );

@@ -150,9 +150,74 @@ extern ULong convert_to_zoned_helper( ULong src_hi, ULong src_low,
                                       ULong return_upper );
 extern ULong convert_to_national_helper( ULong src, ULong return_upper );
 extern ULong convert_from_zoned_helper( ULong src_hi, ULong src_low );
+extern ULong convert_from_floattobf16_helper( ULong src );
+extern ULong convert_from_bf16tofloat_helper( ULong src );
 extern ULong convert_from_national_helper( ULong src_hi, ULong src_low );
 extern ULong generate_C_FPCC_helper( ULong size, ULong src_hi, ULong src );
+extern ULong extract_bits_under_mask_helper( ULong src, ULong mask,
+                                             UInt flag );
+extern UInt generate_DFP_FPRF_value_helper( UInt gfield, ULong exponent,
+                                            UInt exponent_bias,
+                                            Int min_norm_exp,
+                                            UInt sign, UInt T_value_is_zero );
+extern UInt count_bits_under_mask_helper( ULong src, ULong mask,
+                                          UInt flag );
+extern ULong deposit_bits_under_mask_helper( ULong src, ULong mask );
+extern ULong population_count64_helper( ULong src );
+extern ULong vector_evaluate64_helper( ULong srcA, ULong srcB, ULong srcC,
+                                       ULong IMM );
+void write_ACC_entry (VexGuestPPC64State* gst, UInt offset, UInt acc,
+                      UInt reg, UInt *result);
+void get_ACC_entry (VexGuestPPC64State* gst, UInt offset, UInt acc,
+                    UInt reg, UInt *result);
 
+extern void vector_gen_pvc_byte_mask_dirty_helper( VexGuestPPC64State* gst,
+                                                   ULong src_hi,
+                                                   ULong src_lo,
+                                                   UInt rtn_val, UInt IMM );
+extern void vector_gen_pvc_hword_mask_dirty_helper( VexGuestPPC64State* gst,
+                                                    ULong src_hi,
+                                                    ULong src_lo,
+                                                    UInt rtn_val, UInt IMM );
+extern void vector_gen_pvc_word_mask_dirty_helper( VexGuestPPC64State* gst,
+                                                   ULong src_hi,
+                                                   ULong src_lo,
+                                                   UInt rtn_val, UInt IMM );
+extern void vector_gen_pvc_dword_mask_dirty_helper( VexGuestPPC64State* gst,
+                                                    ULong src_hi,
+                                                    ULong src_lo,
+                                                    UInt rtn_val, UInt IMM );
+
+/* 8-bit XO value from instruction description */
+#define XVI4GER8       0b00100011
+#define XVI4GER8PP     0b00100010
+#define XVI8GER4       0b00000011
+#define XVI8GER4PP     0b00000010
+#define XVI8GER4SPP    0b01100011
+#define XVI16GER2      0b01001011
+#define XVI16GER2PP    0b01101011
+#define XVI16GER2S     0b00101011
+#define XVI16GER2SPP   0b00101010
+#define XVF16GER2      0b00010011
+#define XVF16GER2PP    0b00010010
+#define XVF16GER2PN    0b10010010
+#define XVF16GER2NP    0b01010010
+#define XVF16GER2NN    0b11010010
+#define XVBF16GER2     0b00110011
+#define XVBF16GER2PP   0b00110010
+#define XVBF16GER2PN   0b10110010
+#define XVBF16GER2NP   0b01110010
+#define XVBF16GER2NN   0b11110010
+#define XVF32GER       0b00011011
+#define XVF32GERPP     0b00011010
+#define XVF32GERPN     0b10011010
+#define XVF32GERNP     0b01011010
+#define XVF32GERNN     0b11011010
+#define XVF64GER       0b00111011
+#define XVF64GERPP     0b00111010
+#define XVF64GERPN     0b10111010
+#define XVF64GERNP     0b01111010
+#define XVF64GERNN     0b11111010
 
 /* --- DIRTY HELPERS --- */
 
@@ -171,6 +236,42 @@ extern void ppc64g_dirtyhelper_LVS ( VexGuestPPC64State* gst,
                                      UInt shift_right,
                                      UInt endness );
 
+extern void vsx_matrix_4bit_ger_dirty_helper( VexGuestPPC64State* gst,
+                                              UInt offset,
+                                              ULong srcA_hi, ULong srcA_lo,
+                                              ULong srcB_hi, ULong srcB_lo,
+                                              UInt inst_mask );
+extern void vsx_matrix_8bit_ger_dirty_helper( VexGuestPPC64State* gst,
+                                              UInt offset,
+                                              ULong srcA_hi, ULong srcA_lo,
+                                              ULong srcB_hi, ULong srcB_lo,
+                                              UInt inst_mask );
+extern void vsx_matrix_16bit_ger_dirty_helper( VexGuestPPC64State* gst,
+                                               UInt offset,
+                                               ULong srcA_hi, ULong srcA_lo,
+                                               ULong srcB_hi, ULong srcB_lo,
+                                               UInt inst_mask );
+extern void vsx_matrix_16bit_float_ger_dirty_helper( VexGuestPPC64State* gst,
+                                                     UInt offset,
+                                                     ULong srcA_hi,
+                                                     ULong srcA_lo,
+                                                     ULong srcB_hi,
+                                                     ULong srcB_lo,
+                                                     UInt masks_inst );
+extern void vsx_matrix_32bit_float_ger_dirty_helper( VexGuestPPC64State* gst,
+                                                     UInt offset,
+                                                     ULong srcA_hi,
+                                                     ULong srcA_lo,
+                                                     ULong srcB_hi,
+                                                     ULong srcB_lo,
+                                                     UInt masks_inst );
+extern void vsx_matrix_64bit_float_ger_dirty_helper( VexGuestPPC64State* gst,
+                                                     UInt offset,
+                                                     ULong srcX_hi,
+                                                     ULong srcX_lo,
+                                                     ULong srcY_hi,
+                                                     ULong srcY_lo,
+                                                     UInt masks_inst );
 #endif /* ndef __VEX_GUEST_PPC_DEFS_H */
 
 /*---------------------------------------------------------------*/

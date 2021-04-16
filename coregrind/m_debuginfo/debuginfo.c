@@ -2304,10 +2304,9 @@ Vg_FnNameKind VG_(get_fnname_kind) ( const HChar* name )
    } else if (
 #      if defined(VGO_linux)
        VG_STREQ("__libc_start_main",  name) ||  // glibc glibness
+       VG_STREQN(18, "__libc_start_main.", name) || // gcc optimization
        VG_STREQ("generic_start_main", name) ||  // Yellow Dog doggedness
-#      if defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
-       VG_STREQ("generic_start_main.isra.0", name) || // ppc glibness
-#      endif
+       VG_STREQN(19, "generic_start_main.", name) || // gcc optimization
 #      elif defined(VGO_darwin)
        // See readmacho.c for an explanation of this.
        VG_STREQ("start_according_to_valgrind", name) ||  // Darwin, darling
@@ -2893,7 +2892,9 @@ UWord evalCfiExpr ( const XArray* exprs, Int ix,
 #           elif defined(VGA_ppc32) || defined(VGA_ppc64be) \
                || defined(VGA_ppc64le)
 #           elif defined(VGP_arm64_linux)
+            case Creg_ARM64_SP: return eec->uregs->sp;
             case Creg_ARM64_X30: return eec->uregs->x30;
+            case Creg_ARM64_X29: return eec->uregs->x29;
 #           else
 #             error "Unsupported arch"
 #           endif

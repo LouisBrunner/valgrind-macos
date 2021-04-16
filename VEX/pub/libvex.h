@@ -100,6 +100,7 @@ typedef
 #define VEX_HWCAPS_AMD64_AVX2   (1<<11) /* AVX2 instructions */
 #define VEX_HWCAPS_AMD64_RDRAND (1<<13) /* RDRAND instructions */
 #define VEX_HWCAPS_AMD64_F16C   (1<<14) /* F16C instructions */
+#define VEX_HWCAPS_AMD64_RDSEED (1<<15) /* RDSEED instructions */
 
 /* ppc32: baseline capability is integer only */
 #define VEX_HWCAPS_PPC32_F     (1<<8)  /* basic (non-optional) FP */
@@ -111,6 +112,8 @@ typedef
 #define VEX_HWCAPS_PPC32_DFP   (1<<17) /* Decimal Floating Point (DFP) -- e.g., dadd */
 #define VEX_HWCAPS_PPC32_ISA2_07   (1<<19) /* ISA 2.07 -- e.g., mtvsrd */
 #define VEX_HWCAPS_PPC32_ISA3_0    (1<<21) /* ISA 3.0  -- e.g., cnttzw */
+#define VEX_HWCAPS_PPC32_ISA3_1    (1<<22) /* ISA 3.1  -- e.g., brh */
+/* ISA 3.1 not supported in 32-bit mode */
 
 /* ppc64: baseline capability is integer and basic FP insns */
 #define VEX_HWCAPS_PPC64_V     (1<<13) /* Altivec (VMX) */
@@ -121,6 +124,7 @@ typedef
 #define VEX_HWCAPS_PPC64_DFP   (1<<18) /* Decimal Floating Point (DFP) -- e.g., dadd */
 #define VEX_HWCAPS_PPC64_ISA2_07   (1<<20) /* ISA 2.07 -- e.g., mtvsrd */
 #define VEX_HWCAPS_PPC64_ISA3_0    (1<<22) /* ISA 3.0  -- e.g., cnttzw */
+#define VEX_HWCAPS_PPC64_ISA3_1    (1<<23) /* ISA 3.1  -- e.g., brh */
 
 /* s390x: Hardware capability encoding
 
@@ -167,7 +171,7 @@ typedef
 #define VEX_HWCAPS_S390X_MSA5  (1<<19)  /* message security assistance facility */
 #define VEX_HWCAPS_S390X_MI2   (1<<20)  /* miscellaneous-instruction-extensions facility 2 */
 #define VEX_HWCAPS_S390X_LSC2  (1<<21)  /* Conditional load/store facility2 */
-
+#define VEX_HWCAPS_S390X_VXE   (1<<22)  /* Vector-enhancements facility */
 
 /* Special value representing all available s390x hwcaps */
 #define VEX_HWCAPS_S390X_ALL   (VEX_HWCAPS_S390X_LDISP | \
@@ -185,7 +189,8 @@ typedef
                                 VEX_HWCAPS_S390X_VX    | \
                                 VEX_HWCAPS_S390X_MSA5  | \
                                 VEX_HWCAPS_S390X_MI2   | \
-                                VEX_HWCAPS_S390X_LSC2)
+                                VEX_HWCAPS_S390X_LSC2  | \
+                                VEX_HWCAPS_S390X_VXE)
 
 #define VEX_HWCAPS_S390X(x)  ((x) & ~VEX_S390X_MODEL_MASK)
 #define VEX_S390X_MODEL(x)   ((x) &  VEX_S390X_MODEL_MASK)
@@ -202,7 +207,18 @@ typedef
 #define VEX_ARM_ARCHLEVEL(x) ((x) & 0x3f)
 
 /* ARM64: baseline capability is AArch64 v8. */
-/* (no definitions since no variants so far) */
+#define VEX_HWCAPS_ARM64_FHM         (1 << 4)
+#define VEX_HWCAPS_ARM64_DPBCVAP     (1 << 5)
+#define VEX_HWCAPS_ARM64_DPBCVADP    (1 << 6)
+#define VEX_HWCAPS_ARM64_SM3         (1 << 7)
+#define VEX_HWCAPS_ARM64_SM4         (1 << 8)
+#define VEX_HWCAPS_ARM64_SHA3        (1 << 9)
+#define VEX_HWCAPS_ARM64_RDM         (1 << 10)
+#define VEX_HWCAPS_ARM64_ATOMICS     (1 << 11)
+#define VEX_HWCAPS_ARM64_I8MM        (1 << 12)
+#define VEX_HWCAPS_ARM64_BF16        (1 << 13)
+#define VEX_HWCAPS_ARM64_FP16        (1 << 14)
+#define VEX_HWCAPS_ARM64_VFP16       (1 << 15)
 
 /* MIPS baseline capability */
 /* Assigned Company values for bits 23:16 of the PRId Register

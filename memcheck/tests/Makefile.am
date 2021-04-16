@@ -69,7 +69,9 @@ dist_noinst_SCRIPTS = \
 	filter_strchr \
 	filter_varinfo3 \
 	filter_memcheck \
-	filter_overlaperror
+	filter_overlaperror \
+	filter_malloc_free \
+        filter_sized_delete
 
 noinst_HEADERS = leak.h
 
@@ -122,6 +124,9 @@ EXTRA_DIST = \
 	custom_alloc.stderr.exp custom_alloc.vgtest \
 		custom_alloc.stderr.exp-s390x-mvc \
 	custom-overlap.stderr.exp custom-overlap.vgtest \
+	cxx17_aligned_new.stderr.exp cxx17_aligned_new.vgtest \
+		cxx17_aligned_new.stderr.exp_32 \
+		cxx17_aligned_new.stdout.exp \
 	deep-backtrace.vgtest deep-backtrace.stderr.exp \
 	demangle.stderr.exp demangle.vgtest \
 	big_debuginfo_symbol.stderr.exp big_debuginfo_symbol.vgtest \
@@ -267,6 +272,7 @@ EXTRA_DIST = \
 	    sigkill.stderr.exp-glibc-2.28 sigkill.vgtest \
 	signal2.stderr.exp signal2.stdout.exp signal2.vgtest \
 	sigprocmask.stderr.exp sigprocmask.stderr.exp2 sigprocmask.vgtest \
+	sized_delete.stderr.exp sized_delete.stderr.exp-x86 sized_delete.vgtest \
 	static_malloc.stderr.exp static_malloc.vgtest \
 	stpncpy.vgtest stpncpy.stderr.exp stpncpy.stdout.exp \
 	strchr.stderr.exp strchr.stderr.exp2 strchr.stderr.exp3 strchr.vgtest \
@@ -549,6 +555,12 @@ sendmsg_CFLAGS		+= -D_XOPEN_SOURCE=600
 sendmsg_LDADD		= -lsocket -lnsl
 endif
 
+if HAVE_FSIZED_DEALLOCATION
+check_PROGRAMS += sized_delete
+sized_delete_SOURCES   = sized_delete.cpp
+sized_delete_CXXFLAGS  = $(AM_CXXFLAGS) @FLAG_FSIZED_DEALLOCATION@
+endif
+
 str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow \
 			  @FLAG_W_NO_MEMSET_TRANSPOSED_ARGS@
 
@@ -646,3 +658,9 @@ else
 endif
 
 xml1_CFLAGS             = $(AM_CFLAGS) -D_GNU_SOURCE
+
+if HAVE_ALIGNED_CXX_ALLOC
+check_PROGRAMS += cxx17_aligned_new
+cxx17_aligned_new_SOURCES  = cxx17_aligned_new.cpp
+cxx17_aligned_new_CXXFLAGS = -std=c++17
+endif

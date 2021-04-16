@@ -2050,6 +2050,7 @@ void do_client_request ( ThreadId tid )
       case VG_USERREQ__STACK_REGISTER: {
          UWord sid = VG_(register_stack)((Addr)arg[1], (Addr)arg[2]);
          SET_CLREQ_RETVAL( tid, sid );
+         VG_TRACK(register_stack, (Addr)arg[1], (Addr)arg[2]);
          break; }
 
       case VG_USERREQ__STACK_DEREGISTER: {
@@ -2070,11 +2071,15 @@ void do_client_request ( ThreadId tid )
 	 info->tl_realloc              = VG_(tdict).tool_realloc;
 	 info->tl_memalign             = VG_(tdict).tool_memalign;
 	 info->tl___builtin_new        = VG_(tdict).tool___builtin_new;
+	 info->tl___builtin_new_aligned = VG_(tdict).tool___builtin_new_aligned;
 	 info->tl___builtin_vec_new    = VG_(tdict).tool___builtin_vec_new;
+	 info->tl___builtin_vec_new_aligned    = VG_(tdict).tool___builtin_vec_new_aligned;
 	 info->tl_free                 = VG_(tdict).tool_free;
 	 info->tl___builtin_delete     = VG_(tdict).tool___builtin_delete;
+	 info->tl___builtin_delete_aligned     = VG_(tdict).tool___builtin_delete_aligned;
 	 info->tl___builtin_vec_delete = VG_(tdict).tool___builtin_vec_delete;
-         info->tl_malloc_usable_size   = VG_(tdict).tool_malloc_usable_size;
+	 info->tl___builtin_vec_delete_aligned = VG_(tdict).tool___builtin_vec_delete_aligned;
+	 info->tl_malloc_usable_size   = VG_(tdict).tool_malloc_usable_size;
 
 	 info->mallinfo                = VG_(mallinfo);
 	 info->clo_trace_malloc        = VG_(clo_trace_malloc);

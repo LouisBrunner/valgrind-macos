@@ -1371,8 +1371,12 @@ client request.
   <listitem>
     <para><varname>v.info open_fds</varname> shows the list of open file
     descriptors and details related to the file descriptor.
-    This only works if <option>--track-fds=yes</option>
-    was given at Valgrind startup.</para>
+    This only works if <option>--track-fds=yes</option> or
+    <option>--track-fds=all</option> (to include
+    <computeroutput>stdin</computeroutput>,
+    <computeroutput>stdout</computeroutput> and
+    <computeroutput>stderr</computeroutput>) was given at Valgrindr
+    startup.</para>
   </listitem>
   
   <listitem>

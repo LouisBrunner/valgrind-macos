@@ -86,6 +86,13 @@ void print_hex(const V128 value) {
    printf("%016lx | %016lx\n", value.u64[0], value.u64[1]);
 }
 
+void print_hex64(const V128 value, int zero_only) {
+   if (zero_only)
+      printf("%016lx | --\n", value.u64[0]);
+   else
+      printf("%016lx | %016lx\n", value.u64[0], value.u64[1]);
+}
+
 void print_f32(const V128 value, int even_only, int zero_only) {
    if (zero_only)
       printf("%a | -- | -- | --\n", value.f32[0]);
@@ -222,8 +229,10 @@ static void test_##insn##_selective(const s390x_test_usageInfo info) \
       {printf("  v_arg2   = "); print_hex(v_arg2);} \
    if (info & V128_V_ARG3_AS_INT) \
       {printf("  v_arg3   = "); print_hex(v_arg3);} \
-   if (info & V128_V_RES_AS_INT) \
-      {printf("  v_result = "); print_hex(v_result);} \
+   if (info & V128_V_RES_AS_INT) { \
+      printf("  v_result = "); \
+      print_hex64(v_result, info & V128_V_RES_ZERO_ONLY); \
+   } \
    \
    if (info & V128_V_ARG1_AS_FLOAT64) \
       {printf("  v_arg1   = "); print_f64(v_arg1, 0);} \

@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright IBM Corp. 2010-2017
+   Copyright IBM Corp. 2010-2020
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -263,26 +263,27 @@ extern ULong last_execute_target;
    before  S390_VEC_OP_LAST. */
 typedef enum {
    S390_VEC_OP_INVALID = 0,
-   S390_VEC_OP_VPKS = 1,
-   S390_VEC_OP_VPKLS = 2,
-   S390_VEC_OP_VFAE = 3,
-   S390_VEC_OP_VFEE = 4,
-   S390_VEC_OP_VFENE = 5,
-   S390_VEC_OP_VISTR = 6,
-   S390_VEC_OP_VSTRC = 7,
-   S390_VEC_OP_VCEQ = 8,
-   S390_VEC_OP_VTM = 9,
-   S390_VEC_OP_VGFM = 10,
-   S390_VEC_OP_VGFMA = 11,
-   S390_VEC_OP_VMAH = 12,
-   S390_VEC_OP_VMALH = 13,
-   S390_VEC_OP_VCH = 14,
-   S390_VEC_OP_VCHL = 15,
-   S390_VEC_OP_VFCE = 16,
-   S390_VEC_OP_VFCH = 17,
-   S390_VEC_OP_VFCHE = 18,
-   S390_VEC_OP_VFTCI = 19,
-   S390_VEC_OP_LAST = 20 // supposed to be the last element in enum
+   S390_VEC_OP_VPKS,
+   S390_VEC_OP_VPKLS,
+   S390_VEC_OP_VFAE,
+   S390_VEC_OP_VFEE,
+   S390_VEC_OP_VFENE,
+   S390_VEC_OP_VISTR,
+   S390_VEC_OP_VSTRC,
+   S390_VEC_OP_VCEQ,
+   S390_VEC_OP_VTM,
+   S390_VEC_OP_VGFM,
+   S390_VEC_OP_VGFMA,
+   S390_VEC_OP_VMAH,
+   S390_VEC_OP_VMALH,
+   S390_VEC_OP_VCH,
+   S390_VEC_OP_VCHL,
+   S390_VEC_OP_VFTCI,
+   S390_VEC_OP_VFMIN,
+   S390_VEC_OP_VFMAX,
+   S390_VEC_OP_VBPERM,
+   S390_VEC_OP_VMSL,
+   S390_VEC_OP_LAST             // supposed to be the last element in enum
 } s390x_vec_op_t;
 
 /* Arguments of s390x_dirtyhelper_vec_op(...) which are packed into one

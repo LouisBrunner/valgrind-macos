@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Startup: search PATH for an executable                       ---*/
-/*---                                      priv_initimg-pathscan.h ---*/
+/*--- Search PATH for an executable                                ---*/
+/*---                                                 m_pathscan.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -27,11 +27,11 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __PRIV_INITIMG_PATHSCAN_H
-#define __PRIV_INITIMG_PATHSCAN_H
+#ifndef __PUB_CORE_PATHSCAN_H
+#define __PUB_CORE_PATHSCAN_H
 
 #include "pub_core_basics.h"   // HChar
 
-extern const HChar* ML_(find_executable) ( const HChar* exec );
+extern const HChar* VG_(find_executable) ( const HChar* exec );
 
-#endif // ndef __PRIV_INITIMG_PATHSCAN_H
+#endif // ndef __PUB_CORE_PATHSCAN_H

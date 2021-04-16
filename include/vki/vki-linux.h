@@ -410,6 +410,23 @@ struct vki_sched_param {
 	int sched_priority;
 };
 
+struct vki_sched_attr {
+	vki_uint32_t size;
+	vki_uint32_t sched_policy;
+	vki_uint64_t sched_flags;
+
+	/* SCHED_NORMAL, SCHED_BATCH */
+	vki_int32_t sched_nice;
+
+	/* SCHED_FIFO, SCHED_RR */
+	vki_uint32_t sched_priority;
+
+	/* SCHED_DEADLINE */
+	vki_uint64_t sched_runtime;
+	vki_uint64_t sched_deadline;
+	vki_uint64_t sched_period;
+};
+
 #define VKI_TASK_COMM_LEN 16
 
 //----------------------------------------------------------------------
@@ -1487,6 +1504,9 @@ struct vki_dirent64 {
 #define VKI_F_SETPIPE_SZ    (VKI_F_LINUX_SPECIFIC_BASE + 7)
 #define VKI_F_GETPIPE_SZ    (VKI_F_LINUX_SPECIFIC_BASE + 8)
 
+#define VKI_F_ADD_SEALS     (VKI_F_LINUX_SPECIFIC_BASE + 9)
+#define VKI_F_GET_SEALS     (VKI_F_LINUX_SPECIFIC_BASE + 10)
+
 struct vki_flock {
 	short			l_type;
 	short			l_whence;
@@ -1871,6 +1891,7 @@ struct vki_ppdev_frob_struct {
 
 #define VKI_FIBMAP	_VKI_IO(0x00,1)	/* bmap access */
 #define VKI_FIGETBSZ    _VKI_IO(0x00,2)	/* get the block size used for bmap */
+#define VKI_FICLONE     _VKI_IOW(0x94, 9, int)
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/scsi/sg.h

@@ -1292,13 +1292,19 @@ static IRExpr* mkOnesOfPrimopResultType ( IROp op )
       case Iop_Or32:
          return IRExpr_Const(IRConst_U32(0xFFFFFFFF));
       case Iop_CmpEQ8x8:
+      case Iop_CmpEQ16x4:
+      case Iop_CmpEQ32x2:
       case Iop_Or64:
          return IRExpr_Const(IRConst_U64(0xFFFFFFFFFFFFFFFFULL));
       case Iop_CmpEQ8x16:
       case Iop_CmpEQ16x8:
       case Iop_CmpEQ32x4:
+      case Iop_CmpEQ64x2:
          return IRExpr_Const(IRConst_V128(0xFFFF));
+      case Iop_CmpEQ8x32:
+      case Iop_CmpEQ16x16:
       case Iop_CmpEQ32x8:
+      case Iop_CmpEQ64x4:
          return IRExpr_Const(IRConst_V256(0xFFFFFFFF));
       default:
          ppIROp(op);
@@ -2402,13 +2408,23 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                }
                break;
 
+            // in total 32 bits
             case Iop_CmpEQ32:
+            // in total 64 bits
             case Iop_CmpEQ64:
             case Iop_CmpEQ8x8:
+            case Iop_CmpEQ16x4:
+            case Iop_CmpEQ32x2:
+            // in total 128 bits
             case Iop_CmpEQ8x16:
             case Iop_CmpEQ16x8:
             case Iop_CmpEQ32x4:
+            case Iop_CmpEQ64x2:
+            // in total 256 bits
+            case Iop_CmpEQ8x32:
+            case Iop_CmpEQ16x16:
             case Iop_CmpEQ32x8:
+            case Iop_CmpEQ64x4:
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = mkOnesOfPrimopResultType(e->Iex.Binop.op);
                   break;

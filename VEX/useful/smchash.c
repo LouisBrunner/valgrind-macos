@@ -33,11 +33,11 @@ GuestBytes* read_one ( FILE* f )
   UInt i;
   UInt esum, csum;
 
-  GuestBytes* gb = malloc(sizeof(GuestBytes));
-  assert(gb);
-
   if (feof(f)) return NULL;
   assert(!ferror(f));
+
+  GuestBytes* gb = malloc(sizeof(GuestBytes));
+  assert(gb);
 
   r= fscanf(f, "GuestBytes %llx %d  ", &gb->ga, &gb->nbytes);
   if (0) printf("r = %d\n", r);

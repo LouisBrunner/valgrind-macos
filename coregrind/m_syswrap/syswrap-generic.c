@@ -823,11 +823,28 @@ getsockdetails(Int fd)
 /* Dump out a summary, and a more detailed list, of open file descriptors. */
 void VG_(show_open_fds) (const HChar* when)
 {
-   OpenFd *i = allocated_fds;
+   OpenFd *i;
+   int non_std = 0;
 
-   VG_(message)(Vg_UserMsg, "FILE DESCRIPTORS: %d open %s.\n", fd_count, when);
+   for (i = allocated_fds; i; i = i->next) {
+      if (i->fd > 2)
+         non_std++;
+   }
 
-   while (i) {
+   /* If we are running quiet and there are either no open file descriptors
+      or not tracking all fds, then don't report anything.  */
+   if ((fd_count == 0
+        || ((non_std == 0) && (VG_(clo_track_fds) < 2)))
+       && (VG_(clo_verbosity) == 0))
+      return;
+
+   VG_(message)(Vg_UserMsg, "FILE DESCRIPTORS: %d open (%d std) %s.\n",
+                fd_count, fd_count - non_std, when);
+
+   for (i = allocated_fds; i; i = i->next) {
+      if (i->fd <= 2 && VG_(clo_track_fds) < 2)
+          continue;
+
       if (i->pathname) {
          VG_(message)(Vg_UserMsg, "Open file descriptor %d: %s\n", i->fd,
                       i->pathname);
@@ -850,8 +867,6 @@ void VG_(show_open_fds) (const HChar* when)
          VG_(message)(Vg_UserMsg, "   <inherited from parent>\n");
          VG_(message)(Vg_UserMsg, "\n");
       }
-
-      i = i->next;
    }
 
    VG_(message)(Vg_UserMsg, "\n");
@@ -1960,11 +1975,27 @@ ML_(generic_POST_sys_semctl) ( ThreadId tid,
 static
 SizeT get_shm_size ( Int shmid )
 {
-#if defined(__NR_shmctl)
+   /*
+    * The excluded platforms below gained direct shmctl in Linux 5.1. Keep
+    * using ipc-multiplexed shmctl to keep compatibility with older kernel
+    * versions.
+    */
+#if defined(__NR_shmctl) && \
+    !defined(VGP_x86_linux) && !defined(VGP_mips32_linux) && \
+    !defined(VGP_ppc32_linux) && !defined(VGP_ppc64be_linux) && \
+    !defined(VGP_ppc64le_linux) && !defined(VGP_s390x_linux)
 #  ifdef VKI_IPC_64
    struct vki_shmid64_ds buf;
-#    if defined(VGP_amd64_linux) || defined(VGP_arm64_linux)
-     /* See bug 222545 comment 7 */
+     /*
+      * On Linux, the following ABIs use old shmid_ds by default with direct
+      * shmctl and require IPC_64 for shmid64_ds (i.e. the direct syscall is
+      * mapped to sys_old_shmctl):
+      *    alpha, arm, microblaze, mips n32/n64, xtensa
+      * Other Linux ABIs use shmid64_ds by default and do not recognize IPC_64
+      * with the direct shmctl syscall (but still recognize it for the
+      * ipc-multiplexed version if that exists for the ABI).
+      */
+#    if defined(VGO_linux) && !defined(VGP_arm_linux) && !defined(VGP_mips64_linux)
      SysRes __res = VG_(do_syscall3)(__NR_shmctl, shmid, 
                                      VKI_IPC_STAT, (UWord)&buf);
 #    else
@@ -4062,6 +4093,38 @@ Bool ML_(handle_auxv_open)(SyscallStatus *status, const HChar *filename,
 }
 #endif // defined(VGO_linux) || defined(VGO_solaris)
 
+#if defined(VGO_linux)
+Bool ML_(handle_self_exe_open)(SyscallStatus *status, const HChar *filename,
+                               int flags)
+{
+   HChar  name[30];   // large enough for /proc/<int>/exe
+
+   if (!ML_(safe_to_deref)((const void *) filename, 1))
+      return False;
+
+   /* Opening /proc/<pid>/exe or /proc/self/exe? */
+   VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
+   if (!VG_STREQ(filename, name) && !VG_STREQ(filename, "/proc/self/exe"))
+      return False;
+
+   /* Allow to open the file only for reading. */
+   if (flags & (VKI_O_WRONLY | VKI_O_RDWR)) {
+      SET_STATUS_Failure(VKI_EACCES);
+      return True;
+   }
+
+   SysRes sres = VG_(dup)(VG_(cl_exec_fd));
+   SET_STATUS_from_SysRes(sres);
+   if (!sr_isError(sres)) {
+      OffT off = VG_(lseek)(sr_Res(sres), 0, VKI_SEEK_SET);
+      if (off < 0)
+         SET_STATUS_Failure(VKI_EMFILE);
+   }
+
+   return True;
+}
+#endif // defined(VGO_linux)
+
 PRE(sys_open)
 {
    if (ARG2 & VKI_O_CREAT) {
@@ -4103,8 +4166,10 @@ PRE(sys_open)
       }
    }
 
-   /* Handle also the case of /proc/self/auxv or /proc/<pid>/auxv. */
-   if (ML_(handle_auxv_open)(status, (const HChar *)(Addr)ARG1, ARG2))
+   /* Handle also the case of /proc/self/auxv or /proc/<pid>/auxv
+      or /proc/self/exe or /proc/<pid>/exe. */
+   if (ML_(handle_auxv_open)(status, (const HChar *)(Addr)ARG1, ARG2)
+       || ML_(handle_self_exe_open)(status, (const HChar *)(Addr)ARG1, ARG2))
       return;
 #endif // defined(VGO_linux)
 
@@ -4291,8 +4356,7 @@ PRE(sys_readv)
       if ((Int)ARG3 >= 0)
          PRE_MEM_READ( "readv(vector)", ARG2, ARG3 * sizeof(struct vki_iovec) );
 
-      if (ARG2 != 0) {
-         /* ToDo: don't do any of the following if the vector is invalid */
+      if (ML_(safe_to_deref)((const void*)ARG2, ARG3*sizeof(struct vki_iovec *))) {
          vec = (struct vki_iovec *)(Addr)ARG2;
          for (i = 0; i < (Int)ARG3; i++)
             PRE_MEM_WRITE( "readv(vector[...])",
@@ -4644,8 +4708,8 @@ PRE(sys_writev)
       if ((Int)ARG3 >= 0)
          PRE_MEM_READ( "writev(vector)", 
                        ARG2, ARG3 * sizeof(struct vki_iovec) );
-      if (ARG2 != 0) {
-         /* ToDo: don't do any of the following if the vector is invalid */
+
+      if (ML_(safe_to_deref)((const void*)ARG2, ARG3*sizeof(struct vki_iovec *))) {
          vec = (struct vki_iovec *)(Addr)ARG2;
          for (i = 0; i < (Int)ARG3; i++)
             PRE_MEM_READ( "writev(vector[...])",

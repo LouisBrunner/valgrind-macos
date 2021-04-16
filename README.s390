@@ -46,9 +46,9 @@ false positives due to builtin string operations when running memcheck.
 
 Reading Material
 ----------------
-(1) Linux for zSeries ELF ABI Supplement
-    http://refspecs.linuxfoundation.org/ELF/zSeries/index.html
+(1) ELF ABI s390x Supplement
+    https://github.com/IBM/s390x-abi/releases
 (2) z/Architecture Principles of Operation
-    http://publibfi.boulder.ibm.com/epubs/pdf/dz9zr011.pdf
+    http://publibfp.dhe.ibm.com/epubs/pdf/a227832c.pdf
 (3) z/Architecture Reference Summary
-    http://publibfi.boulder.ibm.com/epubs/pdf/dz9zs009.pdf
+    https://www.ibm.com/support/pages/system/files/2020-07/SA22-7871-10.pdf

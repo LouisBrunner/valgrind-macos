@@ -45,9 +45,10 @@ ML_(new_dwarf3_reader) (
    DiSlice escn_debug_info,      DiSlice escn_debug_types,
    DiSlice escn_debug_abbv,      DiSlice escn_debug_line,
    DiSlice escn_debug_str,       DiSlice escn_debug_ranges,
+   DiSlice escn_debug_rnglists,  DiSlice escn_debug_loclists,
    DiSlice escn_debug_loc,       DiSlice escn_debug_info_alt,
    DiSlice escn_debug_abbv_alt,  DiSlice escn_debug_line_alt,
-   DiSlice escn_debug_str_alt
+   DiSlice escn_debug_str_alt,   DiSlice escn_debug_line_str
 );
 
 #endif /* ndef __PRIV_READDWARF3_H */

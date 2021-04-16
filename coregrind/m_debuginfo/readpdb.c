@@ -1633,16 +1633,16 @@ static ULong DEBUG_SnarfLinetab(
                      "  Adding line %d addr=%#lx end=%#lx\n", 
                      ((const unsigned short *)(pnt2.ui + linecount))[j],
                      startaddr, endaddr );
-                  ML_(addLineInfo)(
-                     di, 
-                     fnmdirstr_ix,
-                     startaddr, endaddr,
-                     ((const unsigned short *)(pnt2.ui + linecount))[j], j );
-                  n_lines_read++;
-               }
+               ML_(addLineInfo)(
+                   di,
+                   fnmdirstr_ix,
+                   startaddr, endaddr,
+                   ((const unsigned short *)(pnt2.ui + linecount))[j], j );
+               n_lines_read++;
             }
-        }
-    }
+         }
+      }
+   }
 
    if (debug)
       VG_(umsg)("END SnarfLineTab linetab=%p size=%d\n", 

@@ -278,8 +278,14 @@ static void showTy ( FILE* f, MPI_Datatype ty )
    else if (ty == MPI_LONG_INT)       fprintf(f,"LONG_INT");
    else if (ty == MPI_SHORT_INT)      fprintf(f,"SHORT_INT");
    else if (ty == MPI_2INT)           fprintf(f,"2INT");
+#  if defined(MPI_UB) && \
+      (!defined(OMPI_MAJOR_VERSION) || OMPI_MAJOR_VERSION < 3)
    else if (ty == MPI_UB)             fprintf(f,"UB");
+#  endif
+#  if defined(MPI_LB) && \
+      (!defined(OMPI_MAJOR_VERSION) || OMPI_MAJOR_VERSION < 3)
    else if (ty == MPI_LB)             fprintf(f,"LB");
+#  endif
 #  if defined(MPI_WCHAR)
    else if (ty == MPI_WCHAR)          fprintf(f,"WCHAR");
 #  endif
@@ -345,43 +351,46 @@ static void showCombiner ( FILE* f, int combiner )
 {
    switch (combiner) {
       case MPI_COMBINER_NAMED:       fprintf(f, "NAMED"); break;
-#if   defined(MPI_COMBINER_DUP)
+#     if defined(MPI_COMBINER_DUP)
       case MPI_COMBINER_DUP:         fprintf(f, "DUP"); break;
 #     endif
       case MPI_COMBINER_CONTIGUOUS:  fprintf(f, "CONTIGUOUS"); break;
       case MPI_COMBINER_VECTOR:      fprintf(f, "VECTOR"); break;
-#if   defined(MPI_COMBINER_HVECTOR_INTEGER)
+#     if defined(MPI_COMBINER_HVECTOR_INTEGER) && \
+         (!defined(OMPI_MAJOR_VERSION) || OMPI_MAJOR_VERSION < 3)
       case MPI_COMBINER_HVECTOR_INTEGER: fprintf(f, "HVECTOR_INTEGER"); break;
 #     endif
       case MPI_COMBINER_HVECTOR:     fprintf(f, "HVECTOR"); break;
       case MPI_COMBINER_INDEXED:     fprintf(f, "INDEXED"); break;
-#if   defined(MPI_COMBINER_HINDEXED_INTEGER)
+#     if defined(MPI_COMBINER_HINDEXED_INTEGER) && \
+         (!defined(OMPI_MAJOR_VERSION) || OMPI_MAJOR_VERSION < 3)
       case MPI_COMBINER_HINDEXED_INTEGER: fprintf(f, "HINDEXED_INTEGER"); break;
 #     endif
       case MPI_COMBINER_HINDEXED:    fprintf(f, "HINDEXED"); break;
-#if   defined(MPI_COMBINER_INDEXED_BLOCK)
+#     if defined(MPI_COMBINER_INDEXED_BLOCK)
       case MPI_COMBINER_INDEXED_BLOCK: fprintf(f, "INDEXED_BLOCK"); break;
 #     endif
-#if   defined(MPI_COMBINER_STRUCT_INTEGER)
+#     if defined(MPI_COMBINER_STRUCT_INTEGER) && \
+         (!defined(OMPI_MAJOR_VERSION) || OMPI_MAJOR_VERSION < 3)
       case MPI_COMBINER_STRUCT_INTEGER: fprintf(f, "STRUCT_INTEGER"); break;
 #     endif
       case MPI_COMBINER_STRUCT:      fprintf(f, "STRUCT"); break;
-#if   defined(MPI_COMBINER_SUBARRAY)
+#     if defined(MPI_COMBINER_SUBARRAY)
       case MPI_COMBINER_SUBARRAY:    fprintf(f, "SUBARRAY"); break;
 #     endif
-#if   defined(MPI_COMBINER_DARRAY)
+#     if defined(MPI_COMBINER_DARRAY)
       case MPI_COMBINER_DARRAY:      fprintf(f, "DARRAY"); break;
 #     endif
-#if   defined(MPI_COMBINER_F90_REAL)
+#     if defined(MPI_COMBINER_F90_REAL)
       case MPI_COMBINER_F90_REAL:    fprintf(f, "F90_REAL"); break;
 #     endif
-#if   defined(MPI_COMBINER_F90_COMPLEX)
+#     if defined(MPI_COMBINER_F90_COMPLEX)
       case MPI_COMBINER_F90_COMPLEX: fprintf(f, "F90_COMPLEX"); break;
 #     endif
-#if   defined(MPI_COMBINER_F90_INTEGER)
+#     if defined(MPI_COMBINER_F90_INTEGER)
       case MPI_COMBINER_F90_INTEGER: fprintf(f, "F90_INTEGER"); break;
 #     endif
-#if   defined(MPI_COMBINER_RESIZED)
+#     if defined(MPI_COMBINER_RESIZED)
       case MPI_COMBINER_RESIZED:     fprintf(f, "RESIZED"); break;
 #     endif
       default: fprintf(f, "showCombiner:??"); break;
@@ -459,7 +468,12 @@ static long extentOfTy ( MPI_Datatype ty )
 {
    int      r;
    MPI_Aint n;
+#  if defined(MPI_TYPE_EXTENT)
    r = PMPI_Type_extent(ty, &n);
+#  else
+   MPI_Aint lb;
+   r = MPI_Type_get_extent(ty, &lb, &n);
+#  endif
    assert(r == MPI_SUCCESS);
    return (long)n;
 }
@@ -733,8 +747,11 @@ void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
          f(base + offsetof(Ty,loc), sizeof(int));
          return;
       }
+#     if defined(MPI_LB) && defined(MPI_UB) && \
+         (!defined(OMPI_MAJOR_VERSION) || OMPI_MAJOR_VERSION < 3)
       if (ty == MPI_LB || ty == MPI_UB)
          return; /* have zero size, so nothing needs to be done */
+#     endif
       goto unhandled;
       /*NOTREACHED*/
    }

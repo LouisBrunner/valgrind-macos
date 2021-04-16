@@ -19,6 +19,9 @@ s/^\[?1034hReading symbols/Reading symbols/
 #       remove message about missing debuginfos
 /^Missing separate debuginfo/d
 
+#       remove messages about not being able to download debuginfos
+/^Download failed: /d
+
 #       suppress lines telling file _exit.c does not exist
 /\/_exit.c: No such file or directory/d
 

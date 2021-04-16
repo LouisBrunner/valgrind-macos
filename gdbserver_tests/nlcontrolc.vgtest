@@ -4,16 +4,16 @@
 #          and modify some variables
 #   the user can control-c an process with all threads in Running/Yielding
 #          and modify some variables
-# sleepers is started with argument so that it will compute during ages.
-# The variable modifications means it will exit in a reasonable time.
-# This test is disabled on Solaris because modifying select/poll/ppoll timeout
-# has no effect if a thread is already blocked in that syscall.
+# sleepers is started so that it burns CPU.
+# We then interrupt the process.
+# We modify variables so that instead of burning cpu, sleepers blocks
+# all threads in a select syscall.
 prog: sleepers
-args: 1000000000 1000000000 1000000000 BSBSBSBS 1
+args: 1000000000 0 100000 BSBSBSBS 1
 vgopts: --tool=none --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-nlcontrolc
 stderr_filter: filter_stderr
 # Bug 338633 nlcontrol hangs on arm64 currently.
-prereq: test -e gdb -a -f vgdb.invoker && ! ../tests/arch_test arm64 && ! ../tests/os_test solaris
+prereq: test -e gdb -a -f vgdb.invoker && ! ../tests/os_test solaris
 progB: gdb
 argsB: --quiet -l 60 --nx ./sleepers
 stdinB: nlcontrolc.stdinB.gdb

@@ -846,9 +846,8 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_process_vm_writev, sys_process_vm_writev),// 311
    LINX_(__NR_kcmp,              sys_kcmp),             // 312
    LINX_(__NR_finit_module,      sys_finit_module),     // 313
-//   LIN__(__NR_sched_setattr,     sys_ni_syscall),       // 314
-
-//   LIN__(__NR_sched_getattr,     sys_ni_syscall),       // 315
+   LINX_(__NR_sched_setattr,     sys_sched_setattr),    // 314
+   LINXY(__NR_sched_getattr,     sys_sched_getattr),    // 315
    LINX_(__NR_renameat2,         sys_renameat2),        // 316
 //   LIN__(__NR_seccomp,           sys_ni_syscall),       // 317
    LINXY(__NR_getrandom,         sys_getrandom),        // 318
@@ -874,6 +873,8 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_io_uring_setup,    sys_io_uring_setup),    // 425
    LINXY(__NR_io_uring_enter,    sys_io_uring_enter),    // 426
    LINXY(__NR_io_uring_register, sys_io_uring_register), // 427
+
+   LINX_(__NR_faccessat2,	 sys_faccessat2),        // 439
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

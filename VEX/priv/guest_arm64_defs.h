@@ -301,6 +301,17 @@ typedef
    }
    ARM64Condcode;
 
+/* Vector element size specifiers */
+
+typedef
+   enum {
+      ARM64VSizeH = 0, /* 16 bits (integer halfword or half-precision FP)    */
+      ARM64VSizeS = 1, /* 32 bits (integer shortword or single-precision FP) */
+      ARM64VSizeD = 2  /* 64 bits (integer word or double-precision FP)      */
+   }
+   ARM64VecESize;
+
+
 #endif /* ndef __VEX_GUEST_ARM64_DEFS_H */
 
 /*---------------------------------------------------------------*/

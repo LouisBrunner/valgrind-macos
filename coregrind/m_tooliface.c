@@ -336,12 +336,16 @@ void VG_(needs_info_location) (
 void VG_(needs_malloc_replacement)(
    void* (*malloc)               ( ThreadId, SizeT ),
    void* (*__builtin_new)        ( ThreadId, SizeT ),
+   void* (*__builtin_new_aligned)( ThreadId, SizeT, SizeT ),
    void* (*__builtin_vec_new)    ( ThreadId, SizeT ),
+   void* (*__builtin_vec_new_aligned)( ThreadId, SizeT, SizeT ),
    void* (*memalign)             ( ThreadId, SizeT, SizeT ),
    void* (*calloc)               ( ThreadId, SizeT, SizeT ),
    void  (*free)                 ( ThreadId, void* ),
    void  (*__builtin_delete)     ( ThreadId, void* ),
+   void  (*__builtin_delete_aligned)     ( ThreadId, void*, SizeT ),
    void  (*__builtin_vec_delete) ( ThreadId, void* ),
+   void  (*__builtin_vec_delete_aligned) ( ThreadId, void*, SizeT ),
    void* (*realloc)              ( ThreadId, void*, SizeT ),
    SizeT (*malloc_usable_size)   ( ThreadId, void* ), 
    SizeT client_malloc_redzone_szB
@@ -350,12 +354,16 @@ void VG_(needs_malloc_replacement)(
    VG_(needs).malloc_replacement        = True;
    VG_(tdict).tool_malloc               = malloc;
    VG_(tdict).tool___builtin_new        = __builtin_new;
+   VG_(tdict).tool___builtin_new_aligned = __builtin_new_aligned;
    VG_(tdict).tool___builtin_vec_new    = __builtin_vec_new;
+   VG_(tdict).tool___builtin_vec_new_aligned = __builtin_vec_new_aligned;
    VG_(tdict).tool_memalign             = memalign;
    VG_(tdict).tool_calloc               = calloc;
    VG_(tdict).tool_free                 = free;
    VG_(tdict).tool___builtin_delete     = __builtin_delete;
+   VG_(tdict).tool___builtin_delete_aligned = __builtin_delete_aligned;
    VG_(tdict).tool___builtin_vec_delete = __builtin_vec_delete;
+   VG_(tdict).tool___builtin_vec_delete_aligned = __builtin_vec_delete_aligned;
    VG_(tdict).tool_realloc              = realloc;
    VG_(tdict).tool_malloc_usable_size   = malloc_usable_size;
    VG_(tdict).tool_client_redzone_szB   = client_malloc_redzone_szB;
@@ -437,6 +445,8 @@ DEF1(track_die_mem_stack_160,     Addr)
 DEF0(track_die_mem_stack,         Addr, SizeT)
 
 DEF0(track_ban_mem_stack,         Addr, SizeT)
+
+DEF0(track_register_stack,        Addr, Addr)
 
 DEF0(track_pre_mem_read,          CorePart, ThreadId, const HChar*, Addr, SizeT)
 DEF0(track_pre_mem_read_asciiz,   CorePart, ThreadId, const HChar*, Addr)

@@ -1002,7 +1002,9 @@ static void ppCfiReg ( CfiReg reg )
       case Creg_ARM_R15:   VG_(printf)("R15"); break;
       case Creg_ARM_R14:   VG_(printf)("R14"); break;
       case Creg_ARM_R7:    VG_(printf)("R7");  break;
+      case Creg_ARM64_SP:  VG_(printf)("SP"); break;
       case Creg_ARM64_X30: VG_(printf)("X30"); break;
+      case Creg_ARM64_X29: VG_(printf)("X29"); break;
       case Creg_MIPS_RA:   VG_(printf)("RA"); break;
       case Creg_S390_IA:   VG_(printf)("IA"); break;
       case Creg_S390_SP:   VG_(printf)("SP"); break;
@@ -1299,7 +1301,7 @@ void ML_(addVar)( struct _DebugInfo* di,
       ML_(read_elf_debug_info). */
    vg_assert(di->fsm.have_rx_map && di->fsm.have_rw_map);
    if (level > 0 && ML_(find_rx_mapping)(di, aMin, aMax) == NULL) {
-      if (VG_(clo_verbosity) >= 0) {
+      if (VG_(clo_verbosity) > 1) {
          VG_(message)(Vg_DebugMsg, 
             "warning: addVar: in range %#lx .. %#lx outside "
             "all rx mapped areas (%s)\n",

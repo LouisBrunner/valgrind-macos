@@ -5,7 +5,7 @@
 /*
   This file is part of DRD, a thread error detector.
 
-  Copyright (C) 2006-2017 Bart Van Assche <bvanassche@acm.org>.
+  Copyright (C) 2006-2020 Bart Van Assche <bvanassche@acm.org>.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -151,7 +151,11 @@ static drd_rtld_guard_fn DRD_(rtld_bind_clear) = NULL;
  * @param[in] arg_decl Argument declaration list enclosed in parentheses.
  * @param[in] argl Argument list enclosed in parentheses.
  */
-#ifdef VGO_darwin
+#if defined(VGO_darwin)
+/*
+ * Note here VGO_darwin is used rather than VG_WRAP_THREAD_FUNCTION_LIBPTHREAD_ONLY
+ * because of the special-case code adding a function call
+ */
 static int never_true;
 #define PTH_FUNC(ret_ty, zf, implf, argl_decl, argl)                    \
    ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBPTHREAD_SONAME,zf) argl_decl;     \
@@ -164,20 +168,21 @@ static int never_true;
 	 fflush(stdout);						\
       return pth_func_result;						\
    }
-#elif defined(VGO_solaris)
-/* On Solaris, libpthread is just a filter library on top of libc.
- * Threading and synchronization functions in runtime linker are not
- * intercepted.
- */
+#elif defined(VG_WRAP_THREAD_FUNCTION_LIBC_ONLY)
 #define PTH_FUNC(ret_ty, zf, implf, argl_decl, argl)                    \
    ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBC_SONAME,zf) argl_decl;           \
    ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBC_SONAME,zf) argl_decl            \
    { return implf argl; }
-#else
+#elif defined(VG_WRAP_THREAD_FUNCTION_LIBC_AND_LIBPTHREAD)
 #define PTH_FUNC(ret_ty, zf, implf, argl_decl, argl)                    \
+   ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBC_SONAME,zf) argl_decl;           \
+   ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBC_SONAME,zf) argl_decl            \
+   { return implf argl; }                                               \
    ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBPTHREAD_SONAME,zf) argl_decl;     \
    ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBPTHREAD_SONAME,zf) argl_decl      \
    { return implf argl; }
+#else
+#  error "Unknown platform/thread wrapping"
 #endif
 
 /**

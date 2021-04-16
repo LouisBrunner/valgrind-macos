@@ -180,6 +180,7 @@ DECL_TEMPLATE(linux, sys_symlinkat);
 DECL_TEMPLATE(linux, sys_readlinkat);
 DECL_TEMPLATE(linux, sys_fchmodat);
 DECL_TEMPLATE(linux, sys_faccessat);
+DECL_TEMPLATE(linux, sys_faccessat2);
 DECL_TEMPLATE(linux, sys_utimensat);
 DECL_TEMPLATE(linux, sys_name_to_handle_at);
 DECL_TEMPLATE(linux, sys_open_by_handle_at);
@@ -227,6 +228,8 @@ DECL_TEMPLATE(linux, sys_fremovexattr);
 // syscalls.
 DECL_TEMPLATE(linux, sys_sched_setparam);
 DECL_TEMPLATE(linux, sys_sched_getparam);
+DECL_TEMPLATE(linux, sys_sched_setattr);
+DECL_TEMPLATE(linux, sys_sched_getattr);
 DECL_TEMPLATE(linux, sys_sched_setscheduler);
 DECL_TEMPLATE(linux, sys_sched_getscheduler);
 DECL_TEMPLATE(linux, sys_sched_yield);

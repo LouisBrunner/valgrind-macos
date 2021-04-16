@@ -6,6 +6,7 @@ dist_noinst_SCRIPTS =		    \
 	filter_annotate_barrier_xml \
 	filter_error_count	    \
 	filter_error_summary	    \
+	filter_lambda               \
 	filter_stderr               \
 	filter_stderr_and_thread_no \
 	filter_stderr_and_thread_no_and_offset \
@@ -266,6 +267,8 @@ EXTRA_DIST =                                        \
 	sem_open_traced.vgtest                      \
 	sem_wait.stderr.exp                         \
 	sem_wait.vgtest                             \
+	swapcontext.stderr.exp                      \
+	swapcontext.vgtest                          \
 	sigalrm.stderr.exp                          \
 	sigalrm.vgtest                              \
 	sigaltstack.stderr.exp                      \
@@ -466,6 +469,10 @@ if HAVE_PTHREAD_SPINLOCK
 check_PROGRAMS += pth_spinlock
 endif
 
+if HAVE_SWAPCONTEXT
+check_PROGRAMS += swapcontext
+endif
+
 if !VGCONF_OS_IS_DARWIN
 check_PROGRAMS += sem_wait
 endif
@@ -584,3 +591,10 @@ std_thread2_LDFLAGS          = -Wl,--no-as-needed
 endif
 
 sem_wait_SOURCES            = sem_wait.cpp
+
+swapcontext_SOURCES         = swapcontext.c
+swapcontext_CFLAGS          = $(AM_CFLAGS) -g
+if VGCONF_OS_IS_SOLARIS
+swapcontext_CFLAGS          += -D__EXTENSIONS__
+endif
+

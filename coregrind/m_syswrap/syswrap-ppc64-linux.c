@@ -470,7 +470,9 @@ PRE(sys_mmap)
 
 PRE(sys_fadvise64)
 {
-   PRINT("sys_fadvise64 ( %ld, %ld, %lu, %ld )",  SARG1, SARG2, SARG3, SARG4);
+   PRINT("sys_fadvise64 ( %" FMT_REGWORD "d, %" FMT_REGWORD "d, "
+                         "%" FMT_REGWORD "u, %" FMT_REGWORD "d )",
+         SARG1, SARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "fadvise64",
                  int, fd, vki_loff_t, offset, vki_size_t, len, int, advice);
 }
@@ -518,7 +520,9 @@ PRE(sys_rt_sigreturn)
 // GET/SETREGSET for now.
 PRE(sys_ptrace)
 {
-   PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", ARG1,ARG2,ARG3,ARG4);
+   PRINT("sys_ptrace ( %" FMT_REGWORD "d, %" FMT_REGWORD "d, "
+                      "%#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",
+         SARG1, SARG2, ARG3, ARG4);
    PRE_REG_READ4(int, "ptrace",
                  long, request, long, pid, long, addr, long, data);
    switch (ARG1) {
@@ -772,7 +776,7 @@ static SyscallTableEntry syscall_table[] = {
 
    GENXY(__NR_readv,             sys_readv),              // 145
    GENX_(__NR_writev,            sys_writev),             // 146
-// _____(__NR_getsid,            sys_getsid),             // 147
+   GENX_(__NR_getsid,            sys_getsid),             // 147
    GENX_(__NR_fdatasync,         sys_fdatasync),          // 148
    LINXY(__NR__sysctl,           sys_sysctl),             // 149
 
@@ -998,6 +1002,8 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_process_vm_readv,  sys_process_vm_readv), // 351
    LINX_(__NR_process_vm_writev, sys_process_vm_writev),// 352
 
+   LINX_(__NR_sched_setattr,     sys_sched_setattr),    // 355
+   LINXY(__NR_sched_getattr,     sys_sched_getattr),    // 356
    LINX_(__NR_renameat2,         sys_renameat2),        // 357
 
    LINXY(__NR_getrandom,         sys_getrandom),        // 359
@@ -1012,6 +1018,12 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_pwritev2,          sys_pwritev2),         // 381
 
    LINXY(__NR_statx,             sys_statx),            // 383
+
+   LINXY(__NR_io_uring_setup,    sys_io_uring_setup),    // 425
+   LINXY(__NR_io_uring_enter,    sys_io_uring_enter),    // 426
+   LINXY(__NR_io_uring_register, sys_io_uring_register), // 427
+
+   LINX_(__NR_faccessat2,        sys_faccessat2),       // 439
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

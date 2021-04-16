@@ -940,7 +940,7 @@ PRE(sys_clone)
          ("Valgrind does not support general clone().");
    }
 
-   if (SUCCESS) {
+   if (SUCCESS && RES != 0) {
       if (ARG_FLAGS & (VKI_CLONE_PARENT_SETTID | VKI_CLONE_PIDFD))
          POST_MEM_WRITE(ARG3, sizeof(Int));
       if (ARG_FLAGS & (VKI_CLONE_CHILD_SETTID | VKI_CLONE_CHILD_CLEARTID))
@@ -2099,8 +2099,29 @@ PRE(sys_epoll_ctl)
          SARG1, ( ARG2<3 ? epoll_ctl_s[ARG2] : "?" ), SARG3, ARG4);
    PRE_REG_READ4(long, "epoll_ctl",
                  int, epfd, int, op, int, fd, struct vki_epoll_event *, event);
-   if (ARG2 != VKI_EPOLL_CTL_DEL)
-      PRE_MEM_READ( "epoll_ctl(event)", ARG4, sizeof(struct vki_epoll_event) );
+   if (ARG2 != VKI_EPOLL_CTL_DEL) {
+      /* Just check the events field, the data field is for user space and
+         unused by the kernel.  */
+      struct vki_epoll_event *event = (struct vki_epoll_event *) ARG4;
+      PRE_MEM_READ( "epoll_ctl(event)", (Addr) &event->events,
+                    sizeof(__vki_u32) );
+   }
+}
+
+/* RES event records have been written (exclude padding).  */
+static void epoll_post_helper ( ThreadId tid, SyscallArgs* arrghs,
+                                SyscallStatus* status )
+{
+   vg_assert(SUCCESS);
+   if (RES > 0) {
+      Int i;
+      struct vki_epoll_event *events = (struct vki_epoll_event*)(Addr)ARG2;
+      for (i = 0; i < RES; i++) {
+         /* Assume both events and data are set (data is user space only). */
+         POST_FIELD_WRITE(events[i].events);
+         POST_FIELD_WRITE(events[i].data);
+      }
+   }
 }
 
 PRE(sys_epoll_wait)
@@ -2111,13 +2132,12 @@ PRE(sys_epoll_wait)
    PRE_REG_READ4(long, "epoll_wait",
                  int, epfd, struct vki_epoll_event *, events,
                  int, maxevents, int, timeout);
+   /* Assume all (maxevents) events records should be (fully) writable. */
    PRE_MEM_WRITE( "epoll_wait(events)", ARG2, sizeof(struct vki_epoll_event)*ARG3);
 }
 POST(sys_epoll_wait)
 {
-   vg_assert(SUCCESS);
-   if (RES > 0)
-      POST_MEM_WRITE( ARG2, sizeof(struct vki_epoll_event)*RES ) ;
+   epoll_post_helper (tid, arrghs, status);
 }
 
 PRE(sys_epoll_pwait)
@@ -2130,15 +2150,14 @@ PRE(sys_epoll_pwait)
                  int, epfd, struct vki_epoll_event *, events,
                  int, maxevents, int, timeout, vki_sigset_t *, sigmask,
                  vki_size_t, sigsetsize);
+   /* Assume all (maxevents) events records should be (fully) writable. */
    PRE_MEM_WRITE( "epoll_pwait(events)", ARG2, sizeof(struct vki_epoll_event)*ARG3);
    if (ARG5)
       PRE_MEM_READ( "epoll_pwait(sigmask)", ARG5, sizeof(vki_sigset_t) );
 }
 POST(sys_epoll_pwait)
 {
-   vg_assert(SUCCESS);
-   if (RES > 0)
-      POST_MEM_WRITE( ARG2, sizeof(struct vki_epoll_event)*RES ) ;
+   epoll_post_helper (tid, arrghs, status);
 }
 
 PRE(sys_eventfd)
@@ -3677,6 +3696,41 @@ POST(sys_sched_getparam)
    POST_MEM_WRITE( ARG2, sizeof(struct vki_sched_param) );
 }
 
+PRE(sys_sched_setattr)
+{
+   struct vki_sched_attr *attr;
+   PRINT("sched_setattr ( %ld, %#" FMT_REGWORD "x, %#"
+         FMT_REGWORD "x )", SARG1, ARG2, ARG3 );
+   PRE_REG_READ3(long, "sched_setattr",
+                 vki_pid_t, pid, struct sched_attr *, p, unsigned int, flags);
+   /* We need to be able to read at least the size field.  */
+   PRE_MEM_READ( "sched_setattr(attr->size)", ARG2, sizeof(vki_uint32_t) );
+   attr = (struct vki_sched_attr *)(Addr)ARG2;
+   if (ML_(safe_to_deref)(attr,sizeof(vki_uint32_t)))
+      PRE_MEM_READ( "sched_setattr(attr)", (Addr)attr, attr->size);
+}
+
+PRE(sys_sched_getattr)
+{
+   struct vki_sched_attr *attr;
+   PRINT("sched_getattr ( %ld, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x, %#"
+         FMT_REGWORD "x )", SARG1, ARG2, ARG3, ARG4 );
+   PRE_REG_READ4(long, "sched_getattr",
+                 vki_pid_t, pid, struct sched_attr *, p,
+                 unsigned int, size, unsigned int, flags);
+   /* We need to be able to read at least the size field.  */
+   PRE_MEM_READ( "sched_setattr(attr->size)", ARG2, sizeof(vki_uint32_t) );
+   /* And the kernel needs to be able to write to the whole struct size. */
+   attr = (struct vki_sched_attr *)(Addr)ARG2;
+   if (ML_(safe_to_deref)(attr,sizeof(vki_uint32_t)))
+      PRE_MEM_WRITE( "sched_setattr(attr)", (Addr)attr, attr->size);
+}
+POST(sys_sched_getattr)
+{
+   struct vki_sched_attr *attr = (struct vki_sched_attr *)(Addr)ARG2;
+   POST_MEM_WRITE( (Addr)attr, attr->size );
+}
+
 PRE(sys_sched_getscheduler)
 {
    PRINT("sys_sched_getscheduler ( %ld )", SARG1);
@@ -5073,7 +5127,7 @@ PRE(sys_shmctl)
    PRINT("sys_shmctl ( %ld, %ld, %#" FMT_REGWORD "x )", SARG1, SARG2, ARG3);
    PRE_REG_READ3(long, "shmctl",
                  int, shmid, int, cmd, struct shmid_ds *, buf);
-#ifdef VGP_amd64_linux
+#if defined(VGP_amd64_linux) || defined(VGP_arm64_linux)
    ML_(generic_PRE_sys_shmctl)(tid, ARG1,ARG2|VKI_IPC_64,ARG3);
 #else
    ML_(generic_PRE_sys_shmctl)(tid, ARG1,ARG2,ARG3);
@@ -5082,7 +5136,7 @@ PRE(sys_shmctl)
 
 POST(sys_shmctl)
 {
-#ifdef VGP_amd64_linux
+#if defined(VGP_amd64_linux) || defined(VGP_arm64_linux)
    ML_(generic_POST_sys_shmctl)(tid, RES,ARG1,ARG2|VKI_IPC_64,ARG3);
 #else
    ML_(generic_POST_sys_shmctl)(tid, RES,ARG1,ARG2,ARG3);
@@ -5691,6 +5745,22 @@ PRE(sys_openat)
       return;
    }
 
+   /* And for /proc/self/exe or /proc/<pid>/exe case. */
+
+   VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
+   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
+       && (VG_(strcmp)((HChar *)(Addr)ARG2, name) == 0 
+           || VG_(strcmp)((HChar *)(Addr)ARG2, "/proc/self/exe") == 0)) {
+      sres = VG_(dup)( VG_(cl_exec_fd) );
+      SET_STATUS_from_SysRes( sres );
+      if (!sr_isError(sres)) {
+         OffT off = VG_(lseek)( sr_Res(sres), 0, VKI_SEEK_SET );
+         if (off < 0)
+            SET_STATUS_Failure( VKI_EMFILE );
+      }
+      return;
+   }
+
    /* Otherwise handle normally */
    *flags |= SfMayBlock;
 }
@@ -5815,8 +5885,14 @@ PRE(sys_newfstatat)
          SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3);
    PRE_REG_READ3(long, "fstatat",
                  int, dfd, char *, file_name, struct stat *, buf);
-   PRE_MEM_RASCIIZ( "fstatat(file_name)", ARG2 );
-   PRE_MEM_WRITE( "fstatat(buf)", ARG3, sizeof(struct vki_stat) );
+   // See the comment about Rust in PRE(sys_statx). When glibc does support
+   // statx rust uses that instead of the system call, but glibc's statx is
+   // implemented in terms of fstatat, so the filename being NULL is
+   // transferred here.
+   if (ARG2 != 0) {
+      PRE_MEM_RASCIIZ( "fstatat(file_name)", ARG2 );
+      PRE_MEM_WRITE( "fstatat(buf)", ARG3, sizeof(struct vki_stat) );
+   }
 }
 
 POST(sys_newfstatat)
@@ -5932,6 +6008,15 @@ PRE(sys_faccessat)
    PRE_REG_READ3(long, "faccessat",
                  int, dfd, const char *, pathname, int, mode);
    PRE_MEM_RASCIIZ( "faccessat(pathname)", ARG2 );
+}
+
+PRE(sys_faccessat2)
+{
+   PRINT("sys_faccessat2 ( %ld, %#" FMT_REGWORD "x(%s), %ld, %ld )",
+         SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3, SARG4);
+   PRE_REG_READ4(long, "faccessat2",
+                 int, dfd, const char *, pathname, int, mode, int, flags);
+   PRE_MEM_RASCIIZ( "faccessat2(pathname)", ARG2 );
 }
 
 PRE(sys_name_to_handle_at)
@@ -6705,6 +6790,7 @@ PRE(sys_fcntl)
    case VKI_F_GETSIG:
    case VKI_F_GETLEASE:
    case VKI_F_GETPIPE_SZ:
+   case VKI_F_GET_SEALS:
       PRINT("sys_fcntl ( %" FMT_REGWORD "u, %" FMT_REGWORD "u )", ARG1, ARG2);
       PRE_REG_READ2(long, "fcntl", unsigned int, fd, unsigned int, cmd);
       break;
@@ -6719,6 +6805,7 @@ PRE(sys_fcntl)
    case VKI_F_SETOWN:
    case VKI_F_SETSIG:
    case VKI_F_SETPIPE_SZ:
+   case VKI_F_ADD_SEALS:
       PRINT("sys_fcntl[ARG3=='arg'] ( %" FMT_REGWORD "u, %" FMT_REGWORD
             "u, %" FMT_REGWORD "u )", ARG1, ARG2, ARG3);
       PRE_REG_READ3(long, "fcntl",
@@ -6851,6 +6938,7 @@ PRE(sys_fcntl64)
    case VKI_F_GETSIG:
    case VKI_F_SETSIG:
    case VKI_F_GETLEASE:
+   case VKI_F_GET_SEALS:
       PRINT("sys_fcntl64 ( %" FMT_REGWORD "u, %" FMT_REGWORD "u )", ARG1, ARG2);
       PRE_REG_READ2(long, "fcntl64", unsigned int, fd, unsigned int, cmd);
       break;
@@ -6862,6 +6950,7 @@ PRE(sys_fcntl64)
    case VKI_F_SETFL:
    case VKI_F_SETLEASE:
    case VKI_F_NOTIFY:
+   case VKI_F_ADD_SEALS:
       PRINT("sys_fcntl64[ARG3=='arg'] ( %" FMT_REGWORD "u, %" FMT_REGWORD
             "u, %" FMT_REGWORD "u )", ARG1, ARG2, ARG3);
       PRE_REG_READ3(long, "fcntl64",
@@ -7897,6 +7986,11 @@ PRE(sys_ioctl)
       break;
    case VKI_FIBMAP:
       PRE_MEM_READ( "ioctl(FIBMAP)", ARG3, sizeof(int));
+      break;
+   case VKI_FICLONE:
+      /* The direction of FICLONE (W) is incorrectly specified
+       * as it expects a file descriptor and not a pointer to
+       * user data */
       break;
 
    case VKI_FBIOGET_VSCREENINFO: /* 0x4600 */
@@ -10834,6 +10928,8 @@ POST(sys_ioctl)
       break;
    case VKI_FIBMAP:
       POST_MEM_WRITE(ARG3, sizeof(int));
+      break;
+   case VKI_FICLONE:
       break;
 
    case VKI_FBIOGET_VSCREENINFO: //0x4600

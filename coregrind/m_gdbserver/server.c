@@ -234,7 +234,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
 "  v.info last_error       : show last error found\n"
 "  v.info location <addr>  : show information about location <addr>\n"
 "  v.info n_errs_found [msg] : show the nr of errors found so far and the given msg\n"
-"  v.info open_fds         : show open file descriptors (only if --track-fds=yes)\n"
+"  v.info open_fds         : show open file descriptors (only if --track-fds=[yes|all])\n"
 "  v.kill                  : kill the Valgrind process\n"
 "  v.clo <clo_option>...   : changes one or more dynamic command line options\n"
 "     with no clo_option, show the dynamically changeable options.\n"
@@ -427,7 +427,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
             VG_(show_open_fds) ("");
          else
             VG_(gdb_printf)
-               ("Valgrind must be started with --track-fds=yes"
+               ("Valgrind must be started with --track-fds=[yes|all]"
                 " to show open fds\n");
          ret = 1;
          break;

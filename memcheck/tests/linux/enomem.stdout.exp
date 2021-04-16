@@ -1,0 +1,4 @@
+malloc: Cannot allocate memory
+calloc: Cannot allocate memory
+realloc: Cannot allocate memory
+memalign: Cannot allocate memory

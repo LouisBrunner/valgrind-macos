@@ -1,0 +1,4 @@
+prog: rdseed
+prereq: test -x rdseed && ../../../tests/x86_amd64_features amd64-rdseed
+vgopts: -q
+

@@ -1,0 +1,824 @@
+modsw result = 0
+modsw result = -1
+modsw result = -2
+modsw result = -3
+modsw result = -4
+modsw result = -5
+modsw result = -6
+modsw result = -7
+modsw result = -2147483647
+modsw result = 0
+modsw result = -1
+modsw result = -2
+modsw result = -3
+modsw result = -4
+modsw result = -5
+modsw result = -6
+modsw result = -2147483646
+modsw result = -2147483646
+modsw result = 0
+modsw result = -1
+modsw result = -2
+modsw result = -3
+modsw result = -4
+modsw result = -5
+modsw result = -2147483645
+modsw result = -2147483645
+modsw result = -2147483645
+modsw result = 0
+modsw result = -1
+modsw result = -2
+modsw result = -3
+modsw result = -4
+modsw result = -2147483644
+modsw result = -2147483644
+modsw result = -2147483644
+modsw result = -2147483644
+modsw result = 0
+modsw result = -1
+modsw result = -2
+modsw result = -3
+modsw result = -2147483643
+modsw result = -2147483643
+modsw result = -2147483643
+modsw result = -2147483643
+modsw result = -2147483643
+modsw result = 0
+modsw result = -1
+modsw result = -2
+modsw result = -2147483642
+modsw result = -2147483642
+modsw result = -2147483642
+modsw result = -2147483642
+modsw result = -2147483642
+modsw result = -2147483642
+modsw result = 0
+modsw result = -1
+modsw result = -2147483641
+modsw result = -2147483641
+modsw result = -2147483641
+modsw result = -2147483641
+modsw result = -2147483641
+modsw result = -2147483641
+modsw result = -2147483641
+modsw result = 0
+modsw result = 0
+modsw result = -1
+modsw result = -2
+modsw result = -1
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = -1
+modsw result = -2
+modsw result = -1
+modsw result = -4
+modsw result = 0
+modsw result = -1
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = -1
+modsw result = 0
+modsw result = -3
+modsw result = -3
+modsw result = 0
+modsw result = -1
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = -1
+modsw result = 0
+modsw result = -3
+modsw result = -2
+modsw result = -2
+modsw result = -2
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = -2
+modsw result = -2
+modsw result = -1
+modsw result = -1
+modsw result = -1
+modsw result = -1
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = -1
+modsw result = -1
+modsw result = -1
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = 1
+modsw result = 1
+modsw result = 1
+modsw result = 1
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = 1
+modsw result = 1
+modsw result = 1
+modsw result = 2
+modsw result = 2
+modsw result = 2
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = 2
+modsw result = 2
+modsw result = 3
+modsw result = 3
+modsw result = 0
+modsw result = 1
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = 1
+modsw result = 0
+modsw result = 3
+modsw result = 4
+modsw result = 0
+modsw result = 1
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = 0
+modsw result = 1
+modsw result = 0
+modsw result = 0
+modsw result = 2147483640
+modsw result = 2147483640
+modsw result = 2147483640
+modsw result = 2147483640
+modsw result = 2147483640
+modsw result = 2147483640
+modsw result = 1
+modsw result = 0
+modsw result = 2147483641
+modsw result = 2147483641
+modsw result = 2147483641
+modsw result = 2147483641
+modsw result = 2147483641
+modsw result = 2
+modsw result = 1
+modsw result = 0
+modsw result = 2147483642
+modsw result = 2147483642
+modsw result = 2147483642
+modsw result = 2147483642
+modsw result = 3
+modsw result = 2
+modsw result = 1
+modsw result = 0
+modsw result = 2147483643
+modsw result = 2147483643
+modsw result = 2147483643
+modsw result = 4
+modsw result = 3
+modsw result = 2
+modsw result = 1
+modsw result = 0
+modsw result = 2147483644
+modsw result = 2147483644
+modsw result = 5
+modsw result = 4
+modsw result = 3
+modsw result = 2
+modsw result = 1
+modsw result = 0
+modsw result = 2147483645
+modsw result = 6
+modsw result = 5
+modsw result = 4
+modsw result = 3
+modsw result = 2
+modsw result = 1
+modsw result = 0
+modsd result = 0
+modsd result = -1
+modsd result = -2
+modsd result = -3
+modsd result = -4
+modsd result = -5
+modsd result = -6
+modsd result = -7
+modsd result = -9223372036854775807
+modsd result = 0
+modsd result = -1
+modsd result = -2
+modsd result = -3
+modsd result = -4
+modsd result = -5
+modsd result = -6
+modsd result = -9223372036854775806
+modsd result = -9223372036854775806
+modsd result = 0
+modsd result = -1
+modsd result = -2
+modsd result = -3
+modsd result = -4
+modsd result = -5
+modsd result = -9223372036854775805
+modsd result = -9223372036854775805
+modsd result = -9223372036854775805
+modsd result = 0
+modsd result = -1
+modsd result = -2
+modsd result = -3
+modsd result = -4
+modsd result = -9223372036854775804
+modsd result = -9223372036854775804
+modsd result = -9223372036854775804
+modsd result = -9223372036854775804
+modsd result = 0
+modsd result = -1
+modsd result = -2
+modsd result = -3
+modsd result = -9223372036854775803
+modsd result = -9223372036854775803
+modsd result = -9223372036854775803
+modsd result = -9223372036854775803
+modsd result = -9223372036854775803
+modsd result = 0
+modsd result = -1
+modsd result = -2
+modsd result = -9223372036854775802
+modsd result = -9223372036854775802
+modsd result = -9223372036854775802
+modsd result = -9223372036854775802
+modsd result = -9223372036854775802
+modsd result = -9223372036854775802
+modsd result = 0
+modsd result = -1
+modsd result = -9223372036854775801
+modsd result = -9223372036854775801
+modsd result = -9223372036854775801
+modsd result = -9223372036854775801
+modsd result = -9223372036854775801
+modsd result = -9223372036854775801
+modsd result = -9223372036854775801
+modsd result = 0
+modsd result = 0
+modsd result = -1
+modsd result = -2
+modsd result = -1
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = -1
+modsd result = -2
+modsd result = -1
+modsd result = -4
+modsd result = 0
+modsd result = -1
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = -1
+modsd result = 0
+modsd result = -3
+modsd result = -3
+modsd result = 0
+modsd result = -1
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = -1
+modsd result = 0
+modsd result = -3
+modsd result = -2
+modsd result = -2
+modsd result = -2
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = -2
+modsd result = -2
+modsd result = -1
+modsd result = -1
+modsd result = -1
+modsd result = -1
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = -1
+modsd result = -1
+modsd result = -1
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = 1
+modsd result = 1
+modsd result = 1
+modsd result = 1
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = 1
+modsd result = 1
+modsd result = 1
+modsd result = 2
+modsd result = 2
+modsd result = 2
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = 2
+modsd result = 2
+modsd result = 3
+modsd result = 3
+modsd result = 0
+modsd result = 1
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = 1
+modsd result = 0
+modsd result = 3
+modsd result = 4
+modsd result = 0
+modsd result = 1
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = 0
+modsd result = 1
+modsd result = 0
+modsd result = 0
+modsd result = 9223372036854775800
+modsd result = 9223372036854775800
+modsd result = 9223372036854775800
+modsd result = 9223372036854775800
+modsd result = 9223372036854775800
+modsd result = 9223372036854775800
+modsd result = 1
+modsd result = 0
+modsd result = 9223372036854775801
+modsd result = 9223372036854775801
+modsd result = 9223372036854775801
+modsd result = 9223372036854775801
+modsd result = 9223372036854775801
+modsd result = 2
+modsd result = 1
+modsd result = 0
+modsd result = 9223372036854775802
+modsd result = 9223372036854775802
+modsd result = 9223372036854775802
+modsd result = 9223372036854775802
+modsd result = 3
+modsd result = 2
+modsd result = 1
+modsd result = 0
+modsd result = 9223372036854775803
+modsd result = 9223372036854775803
+modsd result = 9223372036854775803
+modsd result = 4
+modsd result = 3
+modsd result = 2
+modsd result = 1
+modsd result = 0
+modsd result = 9223372036854775804
+modsd result = 9223372036854775804
+modsd result = 5
+modsd result = 4
+modsd result = 3
+modsd result = 2
+modsd result = 1
+modsd result = 0
+modsd result = 9223372036854775805
+modsd result = 6
+modsd result = 5
+modsd result = 4
+modsd result = 3
+modsd result = 2
+modsd result = 1
+modsd result = 0
+moduw result = 0
+moduw result = 4294967288
+moduw result = 4294967288
+moduw result = 4294967288
+moduw result = 4294967288
+moduw result = 4294967288
+moduw result = 4294967288
+moduw result = 1
+moduw result = 0
+moduw result = 4294967289
+moduw result = 4294967289
+moduw result = 4294967289
+moduw result = 4294967289
+moduw result = 4294967289
+moduw result = 2
+moduw result = 1
+moduw result = 0
+moduw result = 4294967290
+moduw result = 4294967290
+moduw result = 4294967290
+moduw result = 4294967290
+moduw result = 3
+moduw result = 2
+moduw result = 1
+moduw result = 0
+moduw result = 4294967291
+moduw result = 4294967291
+moduw result = 4294967291
+moduw result = 4
+moduw result = 3
+moduw result = 2
+moduw result = 1
+moduw result = 0
+moduw result = 4294967292
+moduw result = 4294967292
+moduw result = 5
+moduw result = 4
+moduw result = 3
+moduw result = 2
+moduw result = 1
+moduw result = 0
+moduw result = 4294967293
+moduw result = 6
+moduw result = 5
+moduw result = 4
+moduw result = 3
+moduw result = 2
+moduw result = 1
+moduw result = 0
+moduw result = 0
+
+moduw result = 4294967291
+
+moduw result = 4294967291
+
+moduw result = 4294967291
+
+moduw result = 4294967291
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 1
+
+moduw result = 2
+
+moduw result = 3
+
+moduw result = 1
+
+moduw result = 0
+
+moduw result = 4294967292
+
+moduw result = 4294967292
+
+moduw result = 4294967292
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 2
+
+moduw result = 1
+
+moduw result = 0
+
+moduw result = 4294967293
+
+moduw result = 4294967293
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 1
+
+moduw result = 1
+
+moduw result = 1
+
+moduw result = 3
+
+moduw result = 2
+
+moduw result = 1
+
+moduw result = 0
+
+moduw result = 4294967294
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 2
+
+moduw result = 2
+
+moduw result = 4
+
+moduw result = 3
+
+moduw result = 2
+
+moduw result = 1
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 1
+
+moduw result = 0
+
+moduw result = 3
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 1
+
+moduw result = 1
+
+moduw result = 1
+
+moduw result = 1
+
+moduw result = 1
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 1
+
+moduw result = 1
+
+moduw result = 1
+
+moduw result = 2
+
+moduw result = 2
+
+moduw result = 2
+
+moduw result = 2
+
+moduw result = 2
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 2
+
+moduw result = 2
+
+moduw result = 3
+
+moduw result = 3
+
+moduw result = 3
+
+moduw result = 3
+
+moduw result = 3
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 1
+
+moduw result = 0
+
+moduw result = 3
+
+moduw result = 4
+
+moduw result = 4
+
+moduw result = 4
+
+moduw result = 4
+
+moduw result = 4
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 0
+
+moduw result = 1
+
+moduw result = 0
+
+modud result = 0
+modud result = 18446744073709551608
+modud result = 18446744073709551608
+modud result = 18446744073709551608
+modud result = 18446744073709551608
+modud result = 18446744073709551608
+modud result = 18446744073709551608
+modud result = 1
+modud result = 0
+modud result = 18446744073709551609
+modud result = 18446744073709551609
+modud result = 18446744073709551609
+modud result = 18446744073709551609
+modud result = 18446744073709551609
+modud result = 2
+modud result = 1
+modud result = 0
+modud result = 18446744073709551610
+modud result = 18446744073709551610
+modud result = 18446744073709551610
+modud result = 18446744073709551610
+modud result = 3
+modud result = 2
+modud result = 1
+modud result = 0
+modud result = 18446744073709551611
+modud result = 18446744073709551611
+modud result = 18446744073709551611
+modud result = 4
+modud result = 3
+modud result = 2
+modud result = 1
+modud result = 0
+modud result = 18446744073709551612
+modud result = 18446744073709551612
+modud result = 5
+modud result = 4
+modud result = 3
+modud result = 2
+modud result = 1
+modud result = 0
+modud result = 18446744073709551613
+modud result = 6
+modud result = 5
+modud result = 4
+modud result = 3
+modud result = 2
+modud result = 1
+modud result = 0
+modud result = 0
+modud result = 0
+modud result = 0
+modud result = 0
+modud result = 0
+modud result = 0
+modud result = 0
+modud result = 0
+modud result = 0
+modud result = 0
+modud result = 0
+modud result = 0
+modud result = 1
+modud result = 1
+modud result = 1
+modud result = 1
+modud result = 1
+modud result = 1
+modud result = 1
+modud result = 1
+modud result = 0
+modud result = 0
+modud result = 0
+modud result = 2
+modud result = 2
+modud result = 2
+modud result = 2
+modud result = 2
+modud result = 2
+modud result = 2
+modud result = 0
+modud result = 0
+modud result = 1
+modud result = 0
+modud result = 3
+modud result = 3
+modud result = 3
+modud result = 3
+modud result = 3
+modud result = 3
+modud result = 0
+modud result = 0
+modud result = 0
+modud result = 1
+modud result = 0
+modud result = 4
+modud result = 4
+modud result = 4
+modud result = 4
+modud result = 4
+modud result = 0
+modud result = 0
+modud result = 1
+modud result = 2
+modud result = 1
+modud result = 0
+modud result = 5
+modud result = 5
+modud result = 5
+modud result = 5
+modud result = 0
+modud result = 0
+modud result = 0
+modud result = 0
+modud result = 2
+modud result = 1
+modud result = 0
+modud result = 6
+modud result = 6
+modud result = 6
+modud result = 0
+modud result = 0
+modud result = 1
+modud result = 1
+modud result = 3
+modud result = 2
+modud result = 1
+modud result = 0
+modud result = 7
+modud result = 7
+modud result = 0
+modud result = 0
+modud result = 0
+modud result = 2
+modud result = 0
+modud result = 3
+modud result = 2
+modud result = 1
+modud result = 0
+modud result = 8
+modud result = 0
+modud result = 0
+modud result = 1
+modud result = 0
+modud result = 1
+modud result = 4
+modud result = 3
+modud result = 2
+modud result = 1
+modud result = 0

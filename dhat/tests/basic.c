@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include "dhat/dhat.h"
 
 int main(void)
 {
@@ -24,5 +25,9 @@ int main(void)
 
    free(c);
                                  // totals: 3008 read, 3516 write
+
+   // Should be ignored because we're not in ad hoc mode.
+   DHAT_AD_HOC_EVENT(100);
+
    return 0;
 }

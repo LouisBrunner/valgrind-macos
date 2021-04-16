@@ -1,0 +1,4 @@
+prereq: test -e swapcontext && ./supported_libpthread
+vgopts: --read-var-info=yes --check-stack-var=yes --show-confl-seg=no --num-callers=2
+prog: swapcontext
+stderr_filter: filter_stderr

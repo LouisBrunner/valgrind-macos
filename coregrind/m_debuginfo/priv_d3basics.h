@@ -108,6 +108,15 @@ typedef enum
     DW_TAG_type_unit = 0x41,
     DW_TAG_rvalue_reference_type = 0x42,
     DW_TAG_template_alias = 0x43,
+    /* DWARF 5.  */
+    DW_TAG_coarray_type = 0x44,
+    DW_TAG_generic_subrange = 0x45,
+    DW_TAG_dynamic_type = 0x46,
+    DW_TAG_atomic_type = 0x47,
+    DW_TAG_call_site = 0x48,
+    DW_TAG_call_site_parameter = 0x49,
+    DW_TAG_skeleton_unit = 0x4a,
+    DW_TAG_immutable_type = 0x4b,
     /* SGI/MIPS Extensions.  */
     DW_TAG_MIPS_loop = 0x4081,
     /* HP extensions.  See: ftp://ftp.hp.com/pub/lang/tools/WDB/wdb-4.0.tar.gz .  */
@@ -118,6 +127,11 @@ typedef enum
     DW_TAG_class_template = 0x4103,	/* For C++.  */
     DW_TAG_GNU_BINCL = 0x4104,
     DW_TAG_GNU_EINCL = 0x4105,
+    DW_TAG_GNU_template_template_param = 0x4106,
+    DW_TAG_GNU_template_parameter_pack = 0x4107,
+    DW_TAG_GNU_formal_parameter_pack = 0x4108,
+    DW_TAG_GNU_call_site = 0x4109,
+    DW_TAG_GNU_call_site_parameter = 0x410a,
     /* Extensions for UPC.  See: http://upc.gwu.edu/~upc.  */
     DW_TAG_upc_shared_type = 0x8765,
     DW_TAG_upc_strict_type = 0x8766,
@@ -164,13 +178,23 @@ typedef enum dwarf_source_language
     DW_LANG_D = 0x0013,
     /* DWARF 4.  */
     DW_LANG_Python = 0x0014,
-    /* DWARF 5-pre. Only what GCC already outputs. */
+    /* DWARF 5.  */
     DW_LANG_Go = 0x0016,
+    DW_LANG_Modula3 = 0x0017,
+    DW_LANG_Haskell = 0x0018,
+    DW_LANG_C_plus_plus_03 = 0x0019,
     DW_LANG_C_plus_plus_11 = 0x001a,
+    DW_LANG_OCaml = 0x001b,
+    DW_LANG_Rust = 0x001c,
     DW_LANG_C11 = 0x001d,
+    DW_LANG_Swift = 0x001e,
+    DW_LANG_Julia = 0x001f,
+    DW_LANG_Dylan = 0x0020,
     DW_LANG_C_plus_plus_14 = 0x0021,
     DW_LANG_Fortran03 = 0x0022,
     DW_LANG_Fortran08 = 0x0023,
+    DW_LANG_RenderScript = 0x0024,
+    DW_LANG_BLISS = 0x0025,
     /* MIPS.  */
     DW_LANG_Mips_Assembler = 0x8001,
     /* UPC.  */
@@ -207,6 +231,28 @@ typedef enum
     DW_FORM_exprloc = 0x18,
     DW_FORM_flag_present = 0x19,
     DW_FORM_ref_sig8 = 0x20,
+    /* DWARF 5 values.  */
+    DW_FORM_strx = 0x1a,
+    DW_FORM_addrx = 0x1b,
+    DW_FORM_ref_sup4 = 0x1c,
+    DW_FORM_strp_sup = 0x1d,
+    DW_FORM_data16 = 0x1e,
+    DW_FORM_line_strp = 0x1f,
+    DW_FORM_implicit_const = 0x21,
+    DW_FORM_loclistx = 0x22,
+    DW_FORM_rnglistx = 0x23,
+    DW_FORM_ref_sup8 = 0x24,
+    DW_FORM_strx1 = 0x25,
+    DW_FORM_strx2 = 0x26,
+    DW_FORM_strx3 = 0x27,
+    DW_FORM_strx4 = 0x28,
+    DW_FORM_addrx1 = 0x29,
+    DW_FORM_addrx2 = 0x2a,
+    DW_FORM_addrx3 = 0x2b,
+    DW_FORM_addrx4 = 0x2c,
+    /* GNU Debug Fission extensions.  */
+    DW_FORM_GNU_addr_index = 0x1f01,
+    DW_FORM_GNU_str_index = 0x1f02,
     /* Extensions for DWZ multifile.
        See http://www.dwarfstd.org/ShowIssue.php?issue=120604.1&type=open .  */
     DW_FORM_GNU_ref_alt = 0x1f20,
@@ -314,6 +360,36 @@ typedef enum
     DW_AT_const_expr      = 0x6c,
     DW_AT_enum_class      = 0x6d,
     DW_AT_linkage_name    = 0x6e,
+    DW_AT_string_length_bit_size = 0x6f,
+    DW_AT_string_length_byte_size = 0x70,
+    DW_AT_rank = 0x71,
+    DW_AT_str_offsets_base = 0x72,
+    DW_AT_addr_base = 0x73,
+    DW_AT_rnglists_base = 0x74,
+    /* 0x75 reserved.  */
+    DW_AT_dwo_name = 0x76,
+    DW_AT_reference = 0x77,
+    DW_AT_rvalue_reference = 0x78,
+    DW_AT_macros = 0x79,
+    DW_AT_call_all_calls = 0x7a,
+    DW_AT_call_all_source_calls = 0x7b,
+    DW_AT_call_all_tail_calls = 0x7c,
+    DW_AT_call_return_pc = 0x7d,
+    DW_AT_call_value = 0x7e,
+    DW_AT_call_origin = 0x7f,
+    DW_AT_call_parameter = 0x80,
+    DW_AT_call_pc = 0x81,
+    DW_AT_call_tail_call = 0x82,
+    DW_AT_call_target = 0x83,
+    DW_AT_call_target_clobbered = 0x84,
+    DW_AT_call_data_location = 0x85,
+    DW_AT_call_data_value = 0x86,
+    DW_AT_noreturn = 0x87,
+    DW_AT_alignment = 0x88,
+    DW_AT_export_symbols = 0x89,
+    DW_AT_deleted = 0x8a,
+    DW_AT_defaulted = 0x8b,
+    DW_AT_loclists_base = 0x8c,
     /* SGI/MIPS extensions.  */
     DW_AT_MIPS_fde = 0x2001,
     DW_AT_MIPS_loop_begin = 0x2002,
@@ -349,8 +425,39 @@ typedef enum
     DW_AT_body_begin = 0x2105,
     DW_AT_body_end   = 0x2106,
     DW_AT_GNU_vector = 0x2107,
+    DW_AT_GNU_guarded_by = 0x2108,
+    DW_AT_GNU_pt_guarded_by = 0x2109,
+    DW_AT_GNU_guarded = 0x210a,
+    DW_AT_GNU_pt_guarded = 0x210b,
+    DW_AT_GNU_locks_excluded = 0x210c,
+    DW_AT_GNU_exclusive_locks_required = 0x210d,
+    DW_AT_GNU_shared_locks_required = 0x210e,
+    DW_AT_GNU_odr_signature = 0x210f,
+    DW_AT_GNU_template_name = 0x2110,
+    DW_AT_GNU_call_site_value = 0x2111,
+    DW_AT_GNU_call_site_data_value = 0x2112,
+    DW_AT_GNU_call_site_target = 0x2113,
+    DW_AT_GNU_call_site_target_clobbered = 0x2114,
+    DW_AT_GNU_tail_call = 0x2115,
     DW_AT_GNU_all_tail_call_sites = 0x2116,
     DW_AT_GNU_all_call_sites = 0x2117,
+    DW_AT_GNU_all_source_call_sites = 0x2118,
+    DW_AT_GNU_locviews = 0x2137,
+    DW_AT_GNU_entry_view = 0x2138,
+    DW_AT_GNU_macros = 0x2119,
+    DW_AT_GNU_deleted = 0x211a,
+    /* GNU Debug Fission extensions.  */
+    DW_AT_GNU_dwo_name = 0x2130,
+    DW_AT_GNU_dwo_id = 0x2131,
+    DW_AT_GNU_ranges_base = 0x2132,
+    DW_AT_GNU_addr_base = 0x2133,
+    DW_AT_GNU_pubnames = 0x2134,
+    DW_AT_GNU_pubtypes = 0x2135,
+    /* https://gcc.gnu.org/wiki/DW_AT_GNU_numerator_denominator  */
+    DW_AT_GNU_numerator = 0x2303,
+    DW_AT_GNU_denominator = 0x2304,
+    /* https://gcc.gnu.org/wiki/DW_AT_GNU_bias  */
+    DW_AT_GNU_bias = 0x2305,
     /* VMS extensions.  */
     DW_AT_VMS_rtnbeg_pd_address = 0x2201,
     /* UPC extension.  */
@@ -387,6 +494,9 @@ typedef enum
     DW_ATE_decimal_float = 0xf,
     /* DWARF 4.  */
     DW_ATE_UTF = 0x10,
+    /* DWARF 5.  */
+    DW_ATE_UCS = 0x11,
+    DW_ATE_ASCII = 0x12,
     /* HP extensions.  */
     DW_ATE_HP_float80            = 0x80, /* Floating-point (80 bit).  */
     DW_ATE_HP_complex_float80    = 0x81, /* Complex floating-point (80 bit).  */
@@ -558,8 +668,35 @@ typedef enum
     /* DWARF 4 extensions.  */
     DW_OP_implicit_value = 0x9e,
     DW_OP_stack_value = 0x9f,
+    /* DWARF 5 extensions.  */
+    DW_OP_implicit_pointer = 0xa0,
+    DW_OP_addrx = 0xa1,
+    DW_OP_constx = 0xa2,
+    DW_OP_entry_value = 0xa3,
+    DW_OP_const_type = 0xa4,
+    DW_OP_regval_type = 0xa5,
+    DW_OP_deref_type = 0xa6,
+    DW_OP_xderef_type = 0xa7,
+    DW_OP_convert = 0xa8,
+    DW_OP_reinterpret = 0xa9,
     /* GNU extensions.  */
     DW_OP_GNU_push_tls_address = 0xe0,
+    DW_OP_GNU_uninit = 0xf0,
+    DW_OP_GNU_encoded_addr = 0xf1,
+    DW_OP_GNU_implicit_pointer = 0xf2,
+    DW_OP_GNU_entry_value = 0xf3,
+    DW_OP_GNU_const_type = 0xf4,
+    DW_OP_GNU_regval_type = 0xf5,
+    DW_OP_GNU_deref_type = 0xf6,
+    DW_OP_GNU_convert = 0xf7,
+    DW_OP_GNU_reinterpret = 0xf9,
+    DW_OP_GNU_parameter_ref = 0xfa,
+    /* GNU Debug Fission extensions.  */
+    DW_OP_GNU_addr_index = 0xfb,
+    DW_OP_GNU_const_index = 0xfc,
+    /* The GNU variable value extension.
+       See http://dwarfstd.org/ShowIssue.php?issue=161109.2 . */
+    DW_OP_GNU_variable_value = 0xfd,
     /* HP extensions.  */
     DW_OP_HP_unknown     = 0xe0, /* Ouch, the same as GNU_push_tls_address.  */
     DW_OP_HP_is_value    = 0xe1,
@@ -570,6 +707,62 @@ typedef enum
     DW_OP_HP_tls         = 0xe6
   }
   DW_OP;
+
+typedef enum
+  {
+    DW_UT_compile = 0x01,
+    DW_UT_type = 0x02,
+    DW_UT_partial = 0x03,
+    DW_UT_skeleton = 0x04,
+    DW_UT_split_compile = 0x05,
+    DW_UT_split_type = 0x06,
+
+    DW_UT_lo_user = 0x80,
+    DW_UT_hi_user = 0xff
+  }
+  DW_UT;
+
+typedef enum
+  {
+    DW_LNCT_path = 0x1,
+    DW_LNCT_directory_index = 0x2,
+    DW_LNCT_timestamp = 0x3,
+    DW_LNCT_size = 0x4,
+    DW_LNCT_MD5 = 0x5,
+
+    DW_LNCT_lo_user = 0x2000,
+    DW_LNCT_hi_user = 0x3fff
+  }
+  DW_LNCT;
+
+typedef enum
+  {
+    DW_RLE_end_of_list = 0x00,
+    DW_RLE_base_addressx = 0x01,
+    DW_RLE_startx_endx = 0x02,
+    DW_RLE_startx_length = 0x03,
+    DW_RLE_offset_pair = 0x04,
+    DW_RLE_base_address = 0x05,
+    DW_RLE_start_end = 0x06,
+    DW_RLE_start_length = 0x07
+  }
+  DW_RLE;
+
+typedef enum
+  {
+    DW_LLE_end_of_list = 0x00,
+    DW_LLE_base_addressx = 0x01,
+    DW_LLE_startx_endx = 0x02,
+    DW_LLE_startx_length = 0x03,
+    DW_LLE_offset_pair = 0x04,
+    DW_LLE_default_location = 0x05,
+    DW_LLE_base_address = 0x06,
+    DW_LLE_start_end = 0x07,
+    DW_LLE_start_length = 0x08,
+
+    DW_LLE_GNU_view_pair = 0x09
+  }
+  DW_LLE;
 
 const HChar* ML_(pp_DW_children) ( DW_children hashch );
 const HChar* ML_(pp_DW_TAG)      ( DW_TAG tag );

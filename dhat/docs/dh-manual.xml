@@ -16,15 +16,15 @@
 <sect1 id="dh-manual.overview" xreflabel="Overview">
 <title>Overview</title>
 
-<para>DHAT is a tool for examining how programs use their heap
+<para>DHAT is primarily a tool for examining how programs use their heap
 allocations.</para>
 
 <para>It tracks the allocated blocks, and inspects every memory access
-to find which block, if any, it is to. It presents, on an allocation point
+to find which block, if any, it is to. It presents, on a program point
 basis, information about these blocks such as sizes, lifetimes, numbers of
 reads and writes, and read and write patterns.</para>
 
-<para>Using this information it is possible to identify allocation points with
+<para>Using this information it is possible to identify program points with
 the following characteristics:</para>
 
 <itemizedlist>
@@ -53,6 +53,9 @@ by counting instructions, and so presents all age/time related figures
 as instruction counts. This sounds a little odd at first, but it
 makes runs repeatable in a way which is not possible if CPU time is
 used.</para>
+
+<para>DHAT also has support for copy profiling and ad hoc profiling. These are
+described below.</para>
 
 </sect1>
 
@@ -155,11 +158,12 @@ because this can significantly reduce the size of DHAT's output files.</para>
 
 <sect2 id="dh-output-header"><title>The Output Header</title>
 
-<para>The first part of the output shows the program command and process ID.
-For example:</para>
+<para>The first part of the output shows the mode, program command and process
+ID. For example:</para>
 
 <programlisting><![CDATA[
 Invocation {
+  Mode:    heap
   Command: /home/njn/moz/rust0/build/x86_64-unknown-linux-gnu/stage2/bin/rustc --crate-name tuple_stress src/main.rs
   PID:     18816
 }
@@ -179,18 +183,19 @@ Times {
 </sect2>
 
 
-<sect2 id="dh-ap-tree"><title>The AP Tree</title>
+<sect2 id="dh-ap-tree"><title>The PP Tree</title>
 
 <para>The third part of the output is the largest and most interesting part,
-showing the allocation point (AP) tree.</para>
+showing the program point (PP) tree.</para>
 
 
 <sect3 id="dh-structure"><title>Structure</title>
 
-<para>The following image shows a screenshot of part of an AP
+<para>The following image shows a screenshot of part of a PP
 tree. The font is very small because this screenshot is intended to
 demonstrate the high-level structure of the tree rather than the
-details within the text.</para>
+details within the text. (It is also slightly out-of-date, and doesn't quite
+match the current output produced by DHAT's viewer.)</para>
 
 <graphic fileref="images/dh-tree.png" scalefit="1"/>
 
@@ -228,7 +233,7 @@ email, bug report, etc.</para>
 <para>The root node looks like this:</para>
 
 <programlisting><![CDATA[
-AP 1/1 (25 children) {
+PP 1/1 (25 children) {
   Total:     1,355,253,987 bytes (100%, 67,454.81/Minstr) in 5,943,417 blocks (100%, 295.82/Minstr), avg size 228.03 bytes, avg lifetime 3,134,692,250.67 instrs (15.6% of program duration)
   At t-gmax: 423,930,307 bytes (100%) in 1,575,682 blocks (100%), avg size 269.05 bytes
   At t-end:  258,002 bytes (100%) in 2,129 blocks (100%), avg size 121.18 bytes
@@ -250,11 +255,11 @@ next example will explain these in more detail.</para>
 
 <sect3 id="dh-interior-nodes"><title>Interior Nodes</title>
 
-<para>AP nodes further down the tree show information about a subset of
+<para>PP nodes further down the tree show information about a subset of
 allocations. For example:</para>
 
 <programlisting><![CDATA[
-AP 1.1/25 (2 children) {
+PP 1.1/25 (2 children) {
   Total:     54,533,440 bytes (4.02%, 2,714.28/Minstr) in 458,839 blocks (7.72%, 22.84/Minstr), avg size 118.85 bytes, avg lifetime 1,127,259,403.64 instrs (5.61% of program duration)
   At t-gmax: 0 bytes (0%) in 0 blocks (0%), avg size 0 bytes
   At t-end:  0 bytes (0%) in 0 blocks (0%), avg size 0 bytes
@@ -288,7 +293,7 @@ stack trace that is shared by all the blocks covered by this node.</para>
 <para>The <computeroutput>Total</computeroutput> line shows that this node
 accounts for 4.02% of all bytes allocated during execution, and 7.72% of all
 blocks. These percentages are useful for comparing the significance of
-different nodes within a single profile; an AP that accounts for 10% of bytes
+different nodes within a single profile; a PP that accounts for 10% of bytes
 allocated is likely to be more interesting than one that accounts for
 2%.</para>
 
@@ -301,16 +306,16 @@ different workloads.</para>
 average size and lifetimes of these blocks.</para>
 
 <para>The <computeroutput>At t-gmax</computeroutput> line says shows that no
-blocks from this AP were alive when the global heap peak occurred. In other
+blocks from this PP were alive when the global heap peak occurred. In other
 words, these blocks do not contribute at all to the global heap peak.</para>
 
 <para>The <computeroutput>At t-end</computeroutput> line shows that no blocks
-were from this AP were alive at shutdown. In other words, all those blocks were
+were from this PP were alive at shutdown. In other words, all those blocks were
 explicitly freed before termination.</para>
 
 <para>The <computeroutput>Reads</computeroutput> and
 <computeroutput>Writes</computeroutput> lines show how many bytes were read 
-within this AP's blocks, the fraction this represents of all heap reads, and
+within this PP's blocks, the fraction this represents of all heap reads, and
 the read rate. Finally, it shows the read ratio, which is the number of reads
 per byte. In this case the number is 0.29, which is quite low -- if no byte was
 read twice, then only 29% of the allocated bytes, which means that at least 71%
@@ -336,7 +341,7 @@ vectors and hash tables, and isn't always fixable. </para>
 <para>This is a leaf node:</para>
 
 <programlisting><![CDATA[
-AP 1.1.1.1/2 {
+PP 1.1.1.1/2 {
   Total:     31,460,928 bytes (2.32%, 1,565.9/Minstr) in 262,171 blocks (4.41%, 13.05/Minstr), avg size 120 bytes, avg lifetime 986,406,885.05 instrs (4.91% of program duration)
   Max:       16,779,136 bytes in 65,543 blocks, avg size 256 bytes
   At t-gmax: 0 bytes (0%) in 0 blocks (0%), avg size 0 bytes
@@ -365,10 +370,10 @@ is a great-grandchild of the root; is the first grandchild of the node in the
 previous example; and has no children.</para>
 
 <para>Leaf nodes contain an additional <computeroutput>Max</computeroutput>
-line, indicating the peak memory use for the blocks covered by this AP. (This
+line, indicating the peak memory use for the blocks covered by this PP. (This
 peak may have occurred at a time other than
 <computeroutput>t-gmax</computeroutput>.) In this case, 31,460,298 bytes were
-allocated from this AP, but the maximum size alive at once was 16,779,136
+allocated from this PP, but the maximum size alive at once was 16,779,136
 bytes.</para>
 
 <para>Stack frames that begin with a <computeroutput>^</computeroutput> rather
@@ -383,7 +388,7 @@ This also means that each node makes complete sense on its own.</para>
 
 <sect3 id="dh-access-counts"><title>Access Counts</title>
 
-<para>If all blocks covered by an AP node have the same size, an additional
+<para>If all blocks covered by a PP node have the same size, an additional
 <computeroutput>Accesses</computeroutput> field will be present. It indicates
 how the reads and writes within these blocks were distributed. For
 example:</para>
@@ -399,7 +404,7 @@ Accesses: {
 }
 ]]></programlisting>
 
-<para>Every block covered by this AP was 32 bytes. Within all of those blocks,
+<para>Every block covered by this PP was 32 bytes. Within all of those blocks,
 byte 0 was accessed (read or written) 65,547 times, byte 1 was accessed 7
 times, byte 2 was accessed 8 times, and so on.</para>
 
@@ -425,12 +430,12 @@ layout inefficiencies.</para>
 
 <sect3 id="aggregate-nodes"><title>Aggregate Nodes</title>
 
-<para>The AP tree is very large and many nodes represent tiny numbers of blocks
+<para>The PP tree is very large and many nodes represent tiny numbers of blocks
 and bytes. Therefore, DHAT's viewer aggregates insignificant nodes like
 this:</para>
 
 <programlisting><![CDATA[
-AP 1.14.2/2 {
+PP 1.14.2/2 {
   Total:     5,175 blocks (0.09%, 0.26/Minstr)
   Allocated at {
     [5 insignificant]
@@ -449,15 +454,15 @@ case).</para>
 
 <sect2 id="dh-output-footer"><title>The Output Footer</title>
 
-<para>Below the AP tree is a line like this:</para>
+<para>Below the PP tree is a line like this:</para>
 
 <programlisting><![CDATA[
-AP significance threshold: total >= 59,434.17 blocks (1%)
+PP significance threshold: total >= 59,434.17 blocks (1%)
 ]]></programlisting>
 
-<para>It shows the function used to determine if an AP node is significant. All
+<para>It shows the function used to determine if a PP node is significant. All
 nodes that don't satisfy this function are aggregated. It is occasionally
-useful if you don't understand why an AP node has been aggregated. The exact
+useful if you don't understand why a PP node has been aggregated. The exact
 threshold depends on the sort metric (see below).</para>
 
 <para>Finally, the bottom of the page shows a legend that explains some of the
@@ -587,21 +592,21 @@ filtering, so that only nodes meeting a particular criteria are shown.</para>
 <para>The values within a node that represent the chosen sort metric are shown
 in bold, so they stand out.</para>
 
-<para>Here is part of an AP node found with "Total (blocks), tiny", showing
+<para>Here is part of a PP node found with "Total (blocks), tiny", showing
 blocks with an average size of only 8.67 bytes:</para>
 
 <programlisting><![CDATA[
 Total:     3,407,848 bytes (0.25%, 169.62/Minstr) in 393,214 blocks (6.62%, 19.57/Minstr), avg size 8.67 bytes, avg lifetime 1,167,795,629.1 instrs (5.81% of program duration)
 ]]></programlisting>
 
-<para>Here is part of an AP node found with "Total (blocks), short-lived",
+<para>Here is part of a PP node found with "Total (blocks), short-lived",
 showing blocks with an average lifetime of only 181.75 instructions:</para>
 
 <programlisting><![CDATA[
 Total:     23,068,584 bytes (1.7%, 1,148.19/Minstr) in 262,143 blocks (4.41%, 13.05/Minstr), avg size 88 bytes, avg lifetime 181.75 instrs (0% of program duration)
 ]]></programlisting>
 
-<para>Here is an example of an AP identified with "Total (blocks), zero reads
+<para>Here is an example of a PP identified with "Total (blocks), zero reads
 or zero writes", showing blocks that are allocated but never touched:</para>
 
 <programlisting><![CDATA[
@@ -613,7 +618,7 @@ Reads:     0 bytes (0%, 0/Minstr), 0/byte
 Writes:    0 bytes (0%, 0/Minstr), 0/byte
 ]]></programlisting>
 
-<para>All the blocks identified by these APs are good candidates for
+<para>All the blocks identified by these PPs are good candidates for
 optimization.</para>
 
 </sect2>
@@ -648,10 +653,10 @@ increasing the current heap size by 200 bytes and then decreasing it by 100
 bytes.) As a result, it can only increase the global heap peak (if indeed,
 this results in a new peak) by 100 bytes.</para>
 
-<para>Finally, the allocation point assigned to the block allocated by the
+<para>Finally, the program point assigned to the block allocated by the
 <computeroutput>malloc(100)</computeroutput> call is retained once the block
 is reallocated. Which means that all 300 bytes are attributed to that
-allocation point, and no separate allocation point is created for the
+program point, and no separate program point is created for the
 <computeroutput>realloc(200)</computeroutput> call. This may be surprising,
 but it has one large benefit.</para>
 
@@ -659,12 +664,84 @@ but it has one large benefit.</para>
 adds data to that buffer from numerous different points in the code,
 reallocating the buffer each time it gets full. (E.g. code generation in a
 compiler might work this way.) With the described approach, the first heap
-block and all subsequent heap blocks are attributed to the same allocation
-point. While this is something of a lie -- the first allocation point isn't
-actually responsible for the other allocations -- it is arguably better than
-having the allocation points spread around, in a distribution
-that unpredictably depends on whenever the reallocation points were
-triggered.</para>
+block and all subsequent heap blocks are attributed to the same program point.
+While this is something of a lie -- the first program point isn't actually
+responsible for the other allocations -- it is arguably better than having the
+program points spread around in a distribution that unpredictably depends on
+whenever the reallocations were triggered.</para>
+
+</sect1>
+
+
+<sect1 id="dh-manual.copy-profiling" xreflabel="Copy profiling">
+<title>Copy profiling</title>
+
+<para>If DHAT is invoked with <option>--mode=copy</option>, instead of
+profiling heap operations (allocations and deallocations), it profiles copy
+operations, such as <computeroutput>memcpy</computeroutput>,
+<computeroutput>memmove</computeroutput>,
+<computeroutput>strcpy</computeroutput>, and
+<computeroutput>bcopy</computeroutput>. This is sometimes useful.</para>
+
+<para>Here is an example PP node from this mode:</para>
+
+<programlisting><![CDATA[
+PP 1.1.2/5 (4 children) {
+  Total:     1,210,925 bytes (10.03%, 4,358.66/Minstr) in 112,717 blocks (35.2%, 405.72/Minstr), avg size 10.74 bytes
+  Copied at {
+    ^1: 0x4842524: memmove (vg_replace_strmem.c:1289)
+    #2: 0x1F0A0D: copy_nonoverlapping<u8> (intrinsics.rs:1858)
+    #3: 0x1F0A0D: copy_from_slice<u8> (mod.rs:2524)
+    #4: 0x1F0A0D: spec_extend<u8> (vec.rs:2227)
+    #5: 0x1F0A0D: extend_from_slice<u8> (vec.rs:1619)
+    #6: 0x1F0A0D: push_str (string.rs:821)
+    #7: 0x1F0A0D: write_str (string.rs:2418)
+    #8: 0x1F0A0D: <&mut W as core::fmt::Write>::write_str (mod.rs:195)
+  }
+}
+]]></programlisting>
+
+<para>It is very similar to the PP nodes for heap profiling, but with less
+information, because copy profiling doesn't involve any tracking of memory
+regions with lifetimes.</para>
+
+</sect1>
+
+
+<sect1 id="dh-manual.ad-hoc-profiling" xreflabel="Ad hoc profiling">
+<title>Ad hoc profiling</title>
+
+<para>If DHAT is invoked with <option>--mode=ad-hoc</option>, instead of
+profiling heap operations (allocations and deallocations), it profiles calls to
+the <computeroutput>DHAT_AD_HOC_EVENT</computeroutput> client request, which is
+declared in <filename>dhat/dhat.h</filename>.</para>
+
+<para>Here is an example PP node from this mode:</para>
+
+<programlisting><![CDATA[
+PP 1.1.1.1/2 {
+  Total:     30 units (17.65%, 115.97/Minstr) in 1 events (14.29%, 3.87/Minstr), avg size 30 units
+  Occurred at {
+    ^1: 0x109407: g (ad-hoc.c:4)
+    ^2: 0x109425: f (ad-hoc.c:8)
+    #3: 0x109497: main (ad-hoc.c:14)
+  }
+}
+]]></programlisting>
+
+<para>This kind of profiling is useful when you know a code path is hot but you
+want to know more about it.</para>
+
+<para>For example, you might want to know which callsites of a hot function
+account for most of the calls. You could put a
+<computeroutput>DHAT_AD_HOC_EVENT(1);</computeroutput> call at the start of
+that function.</para>
+
+<para>Alternatively, you might want to know the typical length of a vector in a
+hot location. You could put a
+<computeroutput>DHAT_AD_HOC_EVENT(len);</computeroutput> call at the
+appropriate location, when <computeroutput>len</computeroutput> is the length
+of the vector.</para>
 
 </sect1>
 
@@ -690,6 +767,17 @@ triggered.</para>
             can be used to embed the process ID and/or the contents of an
             environment variable in the name, as is the case for the core
             option <option><link linkend="opt.log-file">--log-file</link></option>.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.mode" xreflabel="--mode">
+    <term>
+      <option><![CDATA[--mode=<heap|copy|ad-hoc> [default: heap] ]]></option>
+    </term>
+    <listitem>
+      <para>The profiling mode: heap profiling, copy profiling, or ad hoc
+            profiling.
       </para>
     </listitem>
   </varlistentry>

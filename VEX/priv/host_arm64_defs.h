@@ -70,6 +70,13 @@ ST_IN HReg hregARM64_D13 ( void ) { return mkHReg(False, HRcFlt64,  13, 25); }
 ST_IN HReg hregARM64_X8  ( void ) { return mkHReg(False, HRcInt64,  8,  26); }
 ST_IN HReg hregARM64_X9  ( void ) { return mkHReg(False, HRcInt64,  9,  27); }
 ST_IN HReg hregARM64_X21 ( void ) { return mkHReg(False, HRcInt64, 21,  28); }
+
+// This is the integer register with encoding 31.  Be *very* careful how you
+// use it, since its meaning is dependent on the instruction and indeed even
+// the position within an instruction, that it appears.  It denotes either the
+// zero register or the stack pointer.
+ST_IN HReg hregARM64_XZR_XSP ( void ) { return mkHReg(False,
+                                                      HRcInt64, 31, 29); }
 #undef ST_IN
 
 extern UInt ppHRegARM64 ( HReg );
@@ -249,6 +256,17 @@ typedef
 
 typedef
    enum {
+      ARM64rrs_ADD=54,
+      ARM64rrs_SUB,
+      ARM64rrs_AND,
+      ARM64rrs_OR,
+      ARM64rrs_XOR,
+      ARM64rrs_INVALID
+   }
+   ARM64RRSOp;
+
+typedef
+   enum {
       ARM64un_NEG=60,
       ARM64un_NOT,
       ARM64un_CLZ,
@@ -291,6 +309,14 @@ typedef
 
 typedef
    enum {
+      ARM64fpt_FMADD=105,
+      ARM64fpt_FMSUB,
+      ARM64fpt_INVALID
+   }
+   ARM64FpTriOp;
+
+typedef
+   enum {
       ARM64fpu_NEG=110,
       ARM64fpu_ABS,
       ARM64fpu_SQRT,
@@ -309,6 +335,7 @@ typedef
                              ARM64vecb_MUL32x4,
       ARM64vecb_MUL16x8,     ARM64vecb_MUL8x16,
       ARM64vecb_FADD64x2,    ARM64vecb_FADD32x4,
+      ARM64vecb_FADD16x8,
       ARM64vecb_FSUB64x2,    ARM64vecb_FSUB32x4,
       ARM64vecb_FMUL64x2,    ARM64vecb_FMUL32x4,
       ARM64vecb_FDIV64x2,    ARM64vecb_FDIV32x4,
@@ -396,8 +423,8 @@ typedef
 
 typedef
    enum {
-      ARM64vecu_FNEG64x2=350, ARM64vecu_FNEG32x4,
-      ARM64vecu_FABS64x2,     ARM64vecu_FABS32x4,
+      ARM64vecu_FNEG64x2=350, ARM64vecu_FNEG32x4,     ARM64vecu_FNEG16x8,
+      ARM64vecu_FABS64x2,     ARM64vecu_FABS32x4,     ARM64vecu_FABS16x8,
       ARM64vecu_NOT,
       ARM64vecu_ABS64x2,      ARM64vecu_ABS32x4,
       ARM64vecu_ABS16x8,      ARM64vecu_ABS8x16,
@@ -412,7 +439,7 @@ typedef
       ARM64vecu_URSQRTE32x4,
       ARM64vecu_FRECPE64x2,   ARM64vecu_FRECPE32x4,
       ARM64vecu_FRSQRTE64x2,  ARM64vecu_FRSQRTE32x4,
-      ARM64vecu_FSQRT64x2,    ARM64vecu_FSQRT32x4,
+      ARM64vecu_FSQRT64x2,    ARM64vecu_FSQRT32x4,    ARM64vecu_FSQRT16x8,
       ARM64vecu_INVALID
    }
    ARM64VecUnaryOp;
@@ -460,6 +487,7 @@ typedef
       ARM64in_Arith=1220,
       ARM64in_Cmp,
       ARM64in_Logic,
+      ARM64in_RRS,
       ARM64in_Test,
       ARM64in_Shift,
       ARM64in_Unary,
@@ -496,8 +524,11 @@ typedef
       ARM64in_VCvtHD,   /* scalar 16 bit FP <--> 64 bit FP */
       ARM64in_VUnaryD,
       ARM64in_VUnaryS,
+      ARM64in_VUnaryH,
       ARM64in_VBinD,
       ARM64in_VBinS,
+      ARM64in_VTriD,
+      ARM64in_VTriS,
       ARM64in_VCmpD,
       ARM64in_VCmpS,
       ARM64in_VFCSel,
@@ -550,6 +581,15 @@ typedef
             ARM64RIL*    argR;
             ARM64LogicOp op;
          } Logic;
+         /* 64 bit AND/OR/XOR/ADD/SUB, reg, reg-with-imm-shift */
+         struct {
+            HReg         dst;
+            HReg         argL;
+            HReg         argR;
+            ARM64ShiftOp shiftOp;
+            UChar        amt; /* 1 to 63 only */
+            ARM64RRSOp   mainOp;
+         } RRS;
          /* 64 bit TST reg, reg or bimm (AND and set flags) */
          struct {
             HReg      argL;
@@ -785,6 +825,12 @@ typedef
             HReg           dst;
             HReg           src;
          } VUnaryS;
+         /* 16-bit FP unary */
+         struct {
+            ARM64FpUnaryOp op;
+            HReg           dst;
+            HReg           src;
+         } VUnaryH;
          /* 64-bit FP binary arithmetic */
          struct {
             ARM64FpBinOp op;
@@ -799,6 +845,22 @@ typedef
             HReg         argL;
             HReg         argR;
          } VBinS;
+         /* 64-bit FP ternary arithmetic */
+         struct {
+            ARM64FpTriOp op;
+            HReg         dst;
+            HReg         arg1;
+            HReg         arg2;
+            HReg         arg3;
+         } VTriD;
+         /* 32-bit FP ternary arithmetic */
+         struct {
+            ARM64FpTriOp op;
+            HReg         dst;
+            HReg         arg1;
+            HReg         arg2;
+            HReg         arg3;
+         } VTriS;
          /* 64-bit FP compare */
          struct {
             HReg argL;
@@ -923,6 +985,8 @@ typedef
 extern ARM64Instr* ARM64Instr_Arith   ( HReg, HReg, ARM64RIA*, Bool isAdd );
 extern ARM64Instr* ARM64Instr_Cmp     ( HReg, ARM64RIA*, Bool is64 );
 extern ARM64Instr* ARM64Instr_Logic   ( HReg, HReg, ARM64RIL*, ARM64LogicOp );
+extern ARM64Instr* ARM64Instr_RRS     ( HReg, HReg, HReg, ARM64ShiftOp,
+                                        UChar amt, ARM64RRSOp mainOp );
 extern ARM64Instr* ARM64Instr_Test    ( HReg, ARM64RIL* );
 extern ARM64Instr* ARM64Instr_Shift   ( HReg, HReg, ARM64RI6*, ARM64ShiftOp );
 extern ARM64Instr* ARM64Instr_Unary   ( HReg, HReg, ARM64UnaryOp );
@@ -968,8 +1032,13 @@ extern ARM64Instr* ARM64Instr_VCvtHS  ( Bool hToS, HReg dst, HReg src );
 extern ARM64Instr* ARM64Instr_VCvtHD  ( Bool hToD, HReg dst, HReg src );
 extern ARM64Instr* ARM64Instr_VUnaryD ( ARM64FpUnaryOp op, HReg dst, HReg src );
 extern ARM64Instr* ARM64Instr_VUnaryS ( ARM64FpUnaryOp op, HReg dst, HReg src );
+extern ARM64Instr* ARM64Instr_VUnaryH ( ARM64FpUnaryOp op, HReg dst, HReg src );
 extern ARM64Instr* ARM64Instr_VBinD   ( ARM64FpBinOp op, HReg, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VBinS   ( ARM64FpBinOp op, HReg, HReg, HReg );
+extern ARM64Instr* ARM64Instr_VTriD   ( ARM64FpTriOp op, HReg dst,
+                                        HReg, HReg, HReg );
+extern ARM64Instr* ARM64Instr_VTriS   ( ARM64FpTriOp op, HReg dst,
+                                        HReg, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VCmpD   ( HReg argL, HReg argR );
 extern ARM64Instr* ARM64Instr_VCmpS   ( HReg argL, HReg argR );
 extern ARM64Instr* ARM64Instr_VFCSel  ( HReg dst, HReg argL, HReg argR,

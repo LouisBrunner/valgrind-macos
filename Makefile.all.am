@@ -50,20 +50,20 @@ inplace-noinst_DSYMS: build-noinst_DSYMS
 	done
 
 # This is used by coregrind/Makefile.am and by <tool>/Makefile.am for doing
-# "make install".  It copies $(noinst_PROGRAMS) into $prefix/lib/valgrind/.
+# "make install".  It copies $(noinst_PROGRAMS) into $prefix/libexec/valgrind/.
 # It needs to be depended on by an 'install-exec-local' rule.
 install-noinst_PROGRAMS: $(noinst_PROGRAMS)
-	$(mkinstalldirs) $(DESTDIR)$(pkglibdir); \
+	$(mkinstalldirs) $(DESTDIR)$(pkglibexecdir); \
 	for f in $(noinst_PROGRAMS); do \
-	  $(INSTALL_PROGRAM) $$f $(DESTDIR)$(pkglibdir); \
+	  $(INSTALL_PROGRAM) $$f $(DESTDIR)$(pkglibexecdir); \
 	done
 
 # This is used by coregrind/Makefile.am and by <tool>/Makefile.am for doing
-# "make uninstall".  It removes $(noinst_PROGRAMS) from $prefix/lib/valgrind/.
+# "make uninstall".  It removes $(noinst_PROGRAMS) from $prefix/libexec/valgrind/.
 # It needs to be depended on by an 'uninstall-local' rule.
 uninstall-noinst_PROGRAMS:
 	for f in $(noinst_PROGRAMS); do \
-	  rm -f $(DESTDIR)$(pkglibdir)/$$f; \
+	  rm -f $(DESTDIR)$(pkglibexecdir)/$$f; \
 	done
 
 # Similar to install-noinst_PROGRAMS.
@@ -71,15 +71,15 @@ uninstall-noinst_PROGRAMS:
 # directories.  XXX: not sure whether the resulting permissions will be
 # correct when using 'cp -R'...
 install-noinst_DSYMS: build-noinst_DSYMS
-	$(mkinstalldirs) $(DESTDIR)$(pkglibdir); \
+	$(mkinstalldirs) $(DESTDIR)$(pkglibexecdir); \
 	for f in $(noinst_DSYMS); do \
-	  cp -R $$f.dSYM $(DESTDIR)$(pkglibdir); \
+	  cp -R $$f.dSYM $(DESTDIR)$(pkglibexecdir); \
 	done
 
 # Similar to uninstall-noinst_PROGRAMS.
 uninstall-noinst_DSYMS:
 	for f in $(noinst_DSYMS); do \
-	  rm -f $(DESTDIR)$(pkglibdir)/$$f.dSYM; \
+	  rm -f $(DESTDIR)$(pkglibexecdir)/$$f.dSYM; \
 	done
 
 # This needs to be depended on by a 'clean-local' rule.
@@ -122,6 +122,13 @@ AM_CFLAGS_BASE = \
 	@FLAG_FSANITIZE@ \
 	-fno-strict-aliasing \
 	-fno-builtin
+
+# Power ISA flag for use by guest_ppc_helpers.c
+if HAS_XSCVHPDP
+ISA_3_0_BUILD_FLAG = -DHAS_XSCVHPDP
+else
+ISA_3_0_BUILD_FLAG =
+endif
 
 if COMPILER_IS_CLANG
 AM_CFLAGS_BASE += -Wno-cast-align -Wno-self-assign \
@@ -203,7 +210,7 @@ AM_CFLAGS_PSO_PPC64BE_LINUX = @FLAG_M64@ $(AM_CFLAGS_BASE) $(AM_CFLAGS_PSO_BASE)
 AM_CCASFLAGS_PPC64BE_LINUX  = @FLAG_M64@ -g
 
 AM_FLAG_M3264_PPC64LE_LINUX = @FLAG_M64@
-AM_CFLAGS_PPC64LE_LINUX     = @FLAG_M64@ $(AM_CFLAGS_BASE)
+AM_CFLAGS_PPC64LE_LINUX     = @FLAG_M64@ $(AM_CFLAGS_BASE) $(ISA_3_0_BUILD_FLAG)
 AM_CFLAGS_PSO_PPC64LE_LINUX = @FLAG_M64@ $(AM_CFLAGS_BASE) $(AM_CFLAGS_PSO_BASE)
 AM_CCASFLAGS_PPC64LE_LINUX  = @FLAG_M64@ -g
 
@@ -261,8 +268,7 @@ AM_CCASFLAGS_MIPS64_LINUX  = @FLAG_M64@ -g
 
 AM_FLAG_M3264_X86_SOLARIS   = @FLAG_M32@
 AM_CFLAGS_X86_SOLARIS       = @FLAG_M32@ @PREFERRED_STACK_BOUNDARY_2@ \
-				$(AM_CFLAGS_BASE) -fomit-frame-pointer \
-				@SOLARIS_UNDEF_LARGESOURCE@
+				$(AM_CFLAGS_BASE) -fomit-frame-pointer @SOLARIS_UNDEF_LARGESOURCE@
 AM_CFLAGS_PSO_X86_SOLARIS   = @FLAG_M32@ $(AM_CFLAGS_BASE) $(AM_CFLAGS_PSO_BASE)
 AM_CCASFLAGS_X86_SOLARIS    = @FLAG_M32@ -g -D_ASM
 

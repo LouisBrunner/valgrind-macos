@@ -1,0 +1,4 @@
+prog: cxx17_aligned_new
+prereq: test -e ./cxx17_aligned_new
+vgopts: --trace-malloc=yes --show-mismatched-frees=yes
+stderr_filter: filter_malloc_free

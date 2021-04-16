@@ -806,8 +806,8 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_process_vm_writev, sys_process_vm_writev), // 271
    LINX_(__NR_kcmp,              sys_kcmp),              // 272
    LINX_(__NR_finit_module,      sys_finit_module),      // 273
-   //   (__NR_sched_setattr,     sys_ni_syscall),        // 274
-   //   (__NR_sched_getattr,     sys_ni_syscall),        // 275
+   LINX_(__NR_sched_setattr,     sys_sched_setattr),     // 274
+   LINXY(__NR_sched_getattr,     sys_sched_getattr),     // 275
    LINX_(__NR_renameat2,         sys_renameat2),         // 276
    //   (__NR_seccomp,           sys_ni_syscall),        // 277
    LINXY(__NR_getrandom,         sys_getrandom),         // 278
@@ -825,6 +825,12 @@ static SyscallTableEntry syscall_main_table[] = {
    //   (__NR_pkey_free,         sys_ni_syscall),        // 290
 
    LINXY(__NR_statx,             sys_statx),             // 397
+
+   LINXY(__NR_io_uring_setup,    sys_io_uring_setup),    // 425
+   LINXY(__NR_io_uring_enter,    sys_io_uring_enter),    // 426
+   LINXY(__NR_io_uring_register, sys_io_uring_register), // 427
+
+   LINX_(__NR_faccessat2,        sys_faccessat2),        // 439
 };
 
 

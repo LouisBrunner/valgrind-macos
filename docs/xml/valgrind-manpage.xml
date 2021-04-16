@@ -221,6 +221,19 @@ system: <filename>&vg-docs-path;</filename>, or online:
 
 </refsect1>
 
+<refsect1 id="debuginfod">
+<title>Debuginfod</title>
+
+<xi:include href="manual-core.xml"
+            xpointer="debuginfod.para.1"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+<xi:include href="manual-core.xml"
+            xpointer="debuginfod.para.2"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+<xi:include href="manual-core.xml"
+            xpointer="debuginfod.para.3"
+            xmlns:xi="http://www.w3.org/2001/XInclude" />
+</refsect1>
 
 <refsect1 id="see_also">
 <title>See Also</title>

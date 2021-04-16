@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright IBM Corp. 2010-2017
+   Copyright IBM Corp. 2010-2020
    Copyright (C) 2012-2017  Florian Krohm   (britzel@acm.org)
 
    This program is free software; you can redistribute it and/or
@@ -684,6 +684,8 @@ s390_insn* genMove_S390(HReg from, HReg to, Bool mode64)
    switch (hregClass(from)) {
    case HRcInt64:
       return s390_insn_move(sizeofIRType(Ity_I64), to, from);
+   case HRcFlt64:
+      return s390_insn_move(sizeofIRType(Ity_F64), to, from);
    case HRcVec128:
       return s390_insn_move(sizeofIRType(Ity_V128), to, from);
    default:
@@ -7870,6 +7872,10 @@ s390_insn_as_string(const s390_insn *insn)
          op = "v-vfloatabs";
          break;
 
+      case S390_VEC_FLOAT_NABS:
+         op = "v-vfloatnabs";
+         break;
+
       default:
          goto fail;
       }
@@ -9439,21 +9445,28 @@ s390_insn_unop_emit(UChar *buf, const s390_insn *insn)
 
    case S390_VEC_FLOAT_NEG: {
       vassert(insn->variant.unop.src.tag == S390_OPND_REG);
-      vassert(insn->size == 8);
+      vassert(insn->size >= 4);
       UChar v1 = hregNumber(insn->variant.unop.dst);
       UChar v2 = hregNumber(insn->variant.unop.src.variant.reg);
       return s390_emit_VFPSO(buf, v1, v2, s390_getM_from_size(insn->size), 0, 0);
    }
    case S390_VEC_FLOAT_ABS: {
       vassert(insn->variant.unop.src.tag == S390_OPND_REG);
-      vassert(insn->size == 8);
+      vassert(insn->size >= 4);
       UChar v1 = hregNumber(insn->variant.unop.dst);
       UChar v2 = hregNumber(insn->variant.unop.src.variant.reg);
       return s390_emit_VFPSO(buf, v1, v2, s390_getM_from_size(insn->size), 0, 2);
    }
+   case S390_VEC_FLOAT_NABS: {
+      vassert(insn->variant.unop.src.tag == S390_OPND_REG);
+      vassert(insn->size >= 4);
+      UChar v1 = hregNumber(insn->variant.unop.dst);
+      UChar v2 = hregNumber(insn->variant.unop.src.variant.reg);
+      return s390_emit_VFPSO(buf, v1, v2, s390_getM_from_size(insn->size), 0, 1);
+   }
    case S390_VEC_FLOAT_SQRT: {
       vassert(insn->variant.unop.src.tag == S390_OPND_REG);
-      vassert(insn->size == 8);
+      vassert(insn->size >= 4);
       UChar v1 = hregNumber(insn->variant.unop.dst);
       UChar v2 = hregNumber(insn->variant.unop.src.variant.reg);
       return s390_emit_VFSQ(buf, v1, v2, s390_getM_from_size(insn->size), 0);

@@ -164,9 +164,13 @@ extern void  amd64g_dirtyhelper_CPUID_sse3_and_cx16 ( VexGuestAMD64State* st );
 extern void  amd64g_dirtyhelper_CPUID_sse42_and_cx16 ( VexGuestAMD64State* st );
 extern void  amd64g_dirtyhelper_CPUID_avx_and_cx16 ( VexGuestAMD64State* st,
                                                      ULong hasF16C,
-                                                     ULong hasRDRAND );
-extern void  amd64g_dirtyhelper_CPUID_avx2 ( VexGuestAMD64State* st,
-                                             ULong hasF16C, ULong hasRDRAND );
+                                                     ULong hasRDRAND,
+                                                     ULong hasRDSEED );
+
+extern void amd64g_dirtyhelper_CPUID_avx2 ( VexGuestAMD64State* st,
+                                            ULong hasF16C, ULong hasRDRAND,
+                                            ULong hasRDSEED );
+
 
 extern void  amd64g_dirtyhelper_FINIT ( VexGuestAMD64State* );
 
@@ -194,6 +198,7 @@ extern void amd64g_dirtyhelper_SxDT ( void* address,
 // resulting C flag value in bit 32.
 extern ULong amd64g_dirtyhelper_RDRAND ( void );
 
+extern ULong amd64g_dirtyhelper_RDSEED ( void );
 
 /* Helps with PCMP{I,E}STR{I,M}.
 

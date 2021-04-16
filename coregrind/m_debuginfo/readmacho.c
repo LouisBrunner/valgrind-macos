@@ -1103,8 +1103,14 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
          = getsectdata(dsli, "__DWARF", "__debug_line", NULL);
       DiSlice debug_str_mscn
          = getsectdata(dsli, "__DWARF", "__debug_str", NULL);
+      DiSlice debug_line_str_mscn
+         = getsectdata(dsli, "__DWARF", "__debug_line_str", NULL);
       DiSlice debug_ranges_mscn
          = getsectdata(dsli, "__DWARF", "__debug_ranges", NULL);
+      DiSlice debug_rnglists_mscn
+         = getsectdata(dsli, "__DWARF", "__debug_rnglists", NULL);
+      DiSlice debug_loclists_mscn
+         = getsectdata(dsli, "__DWARF", "__debug_loclists", NULL);
       DiSlice debug_loc_mscn
          = getsectdata(dsli, "__DWARF", "__debug_loc", NULL);
 
@@ -1145,7 +1151,8 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                                       debug_abbv_mscn,
                                       debug_line_mscn,
                                       debug_str_mscn,
-                                      DiSlice_INVALID /* ALT .debug_str */ );
+                                      DiSlice_INVALID, /* ALT .debug_str */
+                                      debug_line_str_mscn );
 
          /* The new reader: read the DIEs in .debug_info to acquire
             information on variable types and locations or inline info.
@@ -1160,11 +1167,14 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                    debug_line_mscn,
                    debug_str_mscn,
                    debug_ranges_mscn,
+                   debug_rnglists_mscn,
+                   debug_loclists_mscn,
                    debug_loc_mscn,
                    DiSlice_INVALID, /* ALT .debug_info */
                    DiSlice_INVALID, /* ALT .debug_abbv */
                    DiSlice_INVALID, /* ALT .debug_line */
-                   DiSlice_INVALID  /* ALT .debug_str */
+                   DiSlice_INVALID, /* ALT .debug_str */
+                   debug_line_str_mscn  /* .debug_line_str */
             );
          }
       }

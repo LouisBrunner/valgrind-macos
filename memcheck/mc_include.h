@@ -150,12 +150,16 @@ SizeT MC_(get_cmalloc_n_frees) ( void );
 
 void* MC_(malloc)               ( ThreadId tid, SizeT n );
 void* MC_(__builtin_new)        ( ThreadId tid, SizeT n );
+void* MC_(__builtin_new_aligned)( ThreadId tid, SizeT n, SizeT alignB );
 void* MC_(__builtin_vec_new)    ( ThreadId tid, SizeT n );
+void* MC_(__builtin_vec_new_aligned)    ( ThreadId tid, SizeT n, SizeT alignB );
 void* MC_(memalign)             ( ThreadId tid, SizeT align, SizeT n );
 void* MC_(calloc)               ( ThreadId tid, SizeT nmemb, SizeT size1 );
 void  MC_(free)                 ( ThreadId tid, void* p );
 void  MC_(__builtin_delete)     ( ThreadId tid, void* p );
+void  MC_(__builtin_delete_aligned)     ( ThreadId tid, void* p, SizeT alignB );
 void  MC_(__builtin_vec_delete) ( ThreadId tid, void* p );
+void  MC_(__builtin_vec_delete_aligned) ( ThreadId tid, void* p, SizeT alignB );
 void* MC_(realloc)              ( ThreadId tid, void* p, SizeT new_size );
 SizeT MC_(malloc_usable_size)   ( ThreadId tid, void* p );
 

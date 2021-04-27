@@ -17447,40 +17447,34 @@ s390_irgen_VFENE(UChar v1, UChar v2, UChar v3, UChar m4, UChar m5)
 static const HChar *
 s390_irgen_VISTR(UChar v1, UChar v2, UChar m3, UChar m5)
 {
-   IRDirty* d;
-   IRTemp cc = newTemp(Ity_I64);
+   s390_insn_assert("vistr", m3 < 3 && m5 == (m5 & 1));
 
-   /* Check for specification exception */
-   vassert(m3 < 3);
-   vassert((m5 & 0b1110) == 0);
+   static const IROp compare_op[3] = {
+      Iop_CmpEQ8x16, Iop_CmpEQ16x8, Iop_CmpEQ32x4
+   };
+   IRExpr* t;
+   IRTemp op2 = newTemp(Ity_V128);
+   IRTemp op2term = newTemp(Ity_V128);
+   IRTemp mask = newTemp(Ity_V128);
 
-   s390x_vec_op_details_t details = { .serialized = 0ULL };
-   details.op = S390_VEC_OP_VISTR;
-   details.v1 = v1;
-   details.v2 = v2;
-   details.m4 = m3;
-   details.m5 = m5;
+   assign(op2, get_vr_qw(v2));
+   assign(op2term, binop(compare_op[m3], mkexpr(op2), mkV128(0)));
+   t = mkexpr(op2term);
 
-   d = unsafeIRDirty_1_N(cc, 0, "s390x_dirtyhelper_vec_op",
-                         &s390x_dirtyhelper_vec_op,
-                         mkIRExprVec_2(IRExpr_GSPTR(),
-                                       mkU64(details.serialized)));
-
-   d->nFxState = 2;
-   vex_bzero(&d->fxState, sizeof(d->fxState));
-   d->fxState[0].fx     = Ifx_Read;
-   d->fxState[0].offset = S390X_GUEST_OFFSET(guest_v0) + v2 * sizeof(V128);
-   d->fxState[0].size   = sizeof(V128);
-   d->fxState[1].fx     = Ifx_Write;
-   d->fxState[1].offset = S390X_GUEST_OFFSET(guest_v0) + v1 * sizeof(V128);
-   d->fxState[1].size   = sizeof(V128);
-
-   stmt(IRStmt_Dirty(d));
+   for (UChar i = m3; i < 4; i++) {
+      IRTemp s = newTemp(Ity_V128);
+      assign(s, binop(Iop_OrV128, t, binop(Iop_ShrV128, t, mkU8(8 << i))));
+      t = mkexpr(s);
+   }
+   assign(mask, unop(Iop_NotV128, t));
+   put_vr_qw(v1, binop(Iop_AndV128, mkexpr(op2), mkexpr(mask)));
 
    if (s390_vr_is_cs_set(m5)) {
+      IRTemp cc = newTemp(Ity_I64);
+      assign(cc, binop(Iop_And64, mkU64(3), unop(Iop_V128to64, mkexpr(mask))));
       s390_cc_set(cc);
    }
-
+   dis_res->hint = Dis_HintVerbose;
    return "vistr";
 }
 

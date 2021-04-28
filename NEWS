@@ -33,6 +33,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 423963  Error in child thread when CLONE_PIDFD is used
 429375  PPC ISA 3.1 support is missing, part 9
 433801  PPC ISA 3.1 support is missing, part 10 (ISA 3.1 support complete)
+433863  s390x: memcheck/tests/s390x/{cds,cs,csg} failures
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

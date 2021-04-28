@@ -1114,9 +1114,6 @@
 /memcheck/tests/s390x/*.stdout.out
 /memcheck/tests/s390x/Makefile
 /memcheck/tests/s390x/Makefile.in
-/memcheck/tests/s390x/cs
-/memcheck/tests/s390x/csg
-/memcheck/tests/s390x/cds
 /memcheck/tests/s390x/cdsg
 /memcheck/tests/s390x/cu21
 /memcheck/tests/s390x/cu42

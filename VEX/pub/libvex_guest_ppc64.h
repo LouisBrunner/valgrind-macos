@@ -328,6 +328,10 @@ typedef
       /* 2192 */   U128  guest_ACC_7_r2;
       /* 2208 */   U128  guest_ACC_7_r3;
 
+      /* 2224 */   UInt guest_syscall_flag;
+      /* 2228 */   UInt padding1;
+      /* 2232 */   UInt padding2;
+      /* 2236 */   UInt padding3;
       /* Padding to make it have an 16-aligned size */
       /* 2222    UInt  padding0; */
    }

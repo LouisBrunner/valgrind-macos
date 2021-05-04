@@ -145,11 +145,29 @@ SysRes VG_(mk_SysRes_ppc32_linux) ( UInt val, UInt cr0so ) {
    return res;
 }
 
-/* As per ppc32 version, cr0.so must be in l.s.b. of 2nd arg */
-SysRes VG_(mk_SysRes_ppc64_linux) ( ULong val, ULong cr0so ) {
+/* As per ppc32 version, for the sc instruction cr0.so must be in
+   l.s.b. of 2nd arg.
+   For the scv 0 instruction, the return value indicates failure if
+   it is -4095..-1 (i.e., it is >= -MAX_ERRNO (-4095) as an unsigned
+   comparison), in which case the error value is the negated return value. */
+SysRes VG_(mk_SysRes_ppc64_linux) ( ULong val, ULong cr0so, UInt flag ) {
    SysRes res;
-   res._isError = (cr0so & 1) != 0;
-   res._val     = val;
+
+   if (flag == SC_FLAG) {
+      /* sc instruction */
+      res._isError = (cr0so & 1) != 0;
+      res._val     = val;
+   } else if (flag == SCV_FLAG) {
+      /* scv instruction */
+      if ( (Long)val >= -4095 && (Long)val <= -1) {
+         res._isError = True;
+         res._val = (ULong)(-val);
+      } else {
+         res._isError = False;
+         res._val = (ULong)(val);
+      }
+   } else
+      vg_assert(0);
    return res;
 }
 
@@ -541,6 +559,12 @@ asm(
 "        addi         2,2,.TOC.-0b@l\n"
 "        .localentry do_syscall_WRK, .-do_syscall_WRK\n"
 "#endif"                            "\n"
+/* Check which system call instruction to issue*/
+"        ld   8, 56(3)\n"  /* arg 7 holds sc/scv flag */
+"        cmpdi 8,1\n"      /* check sc/scv flag not equal to SC_FLAG*/
+"        bne  issue_scv\n"
+
+/* setup and issue the sc instruction */
 "        std  3,-16(1)\n"  /* stash arg */
 "        ld   8, 48(3)\n"  /* sc arg 6 */
 "        ld   7, 40(3)\n"  /* sc arg 5 */
@@ -556,6 +580,34 @@ asm(
 "        srwi 3,3,28\n"
 "        andi. 3,3,1\n"
 "        std  3,8(5)\n"    /* argblock[1] = cr0.s0 & 1 */
+"        blr\n"            /* return */
+
+/*  setup to do scv instruction */
+"issue_scv: "
+/* The scv instruction requires a new stack frame */
+"        stdu    1,-80(1)\n"
+"        std     27,40(1)\n" /* save r27 to stack frame */
+"        mflr    27\n"       /* Get link register */
+"        std     27,16(1)\n" /* Save link register */
+
+/* setup and issue the scv instruction */
+"        std  3,-16(1)\n"  /* stash arg */
+"        ld   8, 48(3)\n"  /* sc arg 6 */
+"        ld   7, 40(3)\n"  /* sc arg 5 */
+"        ld   6, 32(3)\n"  /* sc arg 4 */
+"        ld   5, 24(3)\n"  /* sc arg 3 */
+"        ld   4, 16(3)\n"  /* sc arg 2 */
+"        ld   0,  0(3)\n"  /* sc number */
+"        ld   3,  8(3)\n"  /* sc arg 1 */
+"        scv  0\n"
+"        ld   5,-16(1)\n"  /* reacquire argblock ptr (r5 is caller-save) */
+"        std  3,0(5)\n"    /* argblock[0] = r3 */
+
+/* pop off stack frame */
+"        ld      27,16(1)\n"        /* Fetch LR from frame */
+"        mtlr    27\n"              /* restore LR */
+"        ld      27,40(1)\n"        /* restore r27 from stack frame */
+"        addi    1,1,80\n"
 "        blr\n"
 "        .size do_syscall_WRK, .-do_syscall_WRK\n"
 );
@@ -978,7 +1030,11 @@ SysRes VG_(do_syscall) ( UWord sysno, RegWord a1, RegWord a2, RegWord a3,
    return VG_(mk_SysRes_ppc32_linux)( val, cr0so );
 
 #  elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
-   ULong argblock[7];
+   ULong argblock[8];
+   /* PPC system calls have at most 6 arguments.  The Valgrind infrastructure
+      supports 8 system call arguments.  Argument 7 is used on PPC LE to pass
+      the flag indicating if the sc or scv instruction should be used for the
+      system call.  */
    argblock[0] = sysno;
    argblock[1] = a1;
    argblock[2] = a2;
@@ -986,8 +1042,9 @@ SysRes VG_(do_syscall) ( UWord sysno, RegWord a1, RegWord a2, RegWord a3,
    argblock[4] = a4;
    argblock[5] = a5;
    argblock[6] = a6;
+   argblock[7] = a7;
    do_syscall_WRK( &argblock[0] );
-   return VG_(mk_SysRes_ppc64_linux)( argblock[0], argblock[1] );
+   return VG_(mk_SysRes_ppc64_linux)( argblock[0], argblock[1], a7 );
 
 #  elif defined(VGP_arm_linux)
    UWord val = do_syscall_WRK(a1,a2,a3,a4,a5,a6,sysno);

@@ -726,6 +726,7 @@ Addr setup_client_stack( void*  init_sp,
             Bool auxv_2_07, hw_caps_2_07;
             Bool auxv_3_0, hw_caps_3_0;
             Bool auxv_3_1, hw_caps_3_1;
+            Bool auxv_scv_supported, hw_caps_scv_supported;
 
 	    /* The HWCAP2 field may contain an arch_2_07 entry that indicates
              * if the processor is compliant with the 2.07 ISA. (i.e. Power 8
@@ -796,6 +797,19 @@ Addr setup_client_stack( void*  init_sp,
 
                 ADD PUBLIC LINK WHEN AVAILABLE
             */
+
+            /* Check for SCV support */
+            auxv_scv_supported = (auxv->u.a_val & 0x00100000ULL)
+               == 0x00100000ULL;
+            hw_caps_scv_supported =
+               (vex_archinfo->hwcaps & VEX_HWCAPS_PPC64_SCV)
+               == VEX_HWCAPS_PPC64_SCV;
+
+            /* Verify the scv_supported setting in HWCAP2 matches the setting
+               in VEX HWCAPS.
+             */
+            vg_assert(auxv_scv_supported == hw_caps_scv_supported);
+
             /* ISA 3.1 */
             auxv_3_1 = (auxv->u.a_val & 0x00040000ULL) == 0x00040000ULL;
             hw_caps_3_1 = (vex_archinfo->hwcaps & VEX_HWCAPS_PPC64_ISA3_1)
@@ -820,6 +834,7 @@ Addr setup_client_stack( void*  init_sp,
                               | 0x04000000ULL   /* TAR */
                               | 0x04000000ULL   /* VEC_CRYPTO */
                               | 0x00800000ULL   /* ARCH_3_00 */
+                              | 0x00100000ULL   /* PPC_FEATURE2_SCV */
                               | 0x00400000ULL   /* HAS_IEEE128 */
                               | 0x00200000ULL   /* PPC_FEATURE2_DARN */
                               | 0x00040000ULL); /* ARCH_3_1 */

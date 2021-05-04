@@ -31,6 +31,14 @@
 
 #include "pub_core_basics.h"   // VG_ macro
 
+/* PPC64 supports two system call instructions.  The flags are used to
+   identify which of the two system call instructions sc or scv is to be
+   used.  The following flags must be consistently defined here and in
+   VEX/priv/guest_ppc_defs.h, in the do_syscall_WRK() assembly code
+   below and coregrind/m_syswrap/syscall-ppcle-linux.S code.  */
+#define SC_FLAG  1
+#define SCV_FLAG 2
+
 //--------------------------------------------------------------------
 // PURPOSE: This module contains the code for actually executing syscalls.
 //--------------------------------------------------------------------
@@ -51,19 +59,29 @@ extern SysRes VG_(do_syscall) ( UWord sysno,
 
 /* Macros make life easier. */
 
-#define vgPlain_do_syscall0(s)             VG_(do_syscall)((s),0,0,0,0,0,0,0,0)
+#if defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
+/* PPC64 uses the 7th argument to pass a flag indicating if the sc or scv
+   instruction is to be used for the system call.  Need to set the flag to the
+   sc instruction by default.  */
+#define A7 SC_FLAG
+#else
+#define A7 0
+#endif
+
+#define vgPlain_do_syscall0(s)             VG_(do_syscall)((s),0,0,0,0,0,0,A7,0)
+
 #define vgPlain_do_syscall1(s,a)           VG_(do_syscall)((s),(a),\
-                                                           0,0,0,0,0,0,0)
+                                                           0,0,0,0,0,A7,0)
 #define vgPlain_do_syscall2(s,a,b)         VG_(do_syscall)((s),(a),(b),\
-                                                           0,0,0,0,0,0)
+                                                           0,0,0,0,A7,0)
 #define vgPlain_do_syscall3(s,a,b,c)       VG_(do_syscall)((s),(a),(b),(c),\
-                                                           0,0,0,0,0)
+                                                           0,0,0,A7,0)
 #define vgPlain_do_syscall4(s,a,b,c,d)     VG_(do_syscall)((s),(a),(b),(c),\
-                                                           (d),0,0,0,0)
+                                                           (d),0,0,A7,0)
 #define vgPlain_do_syscall5(s,a,b,c,d,e)   VG_(do_syscall)((s),(a),(b),(c),\
-                                                           (d),(e),0,0,0)
+                                                           (d),(e),0,A7,0)
 #define vgPlain_do_syscall6(s,a,b,c,d,e,f) VG_(do_syscall)((s),(a),(b),(c),\
-                                                           (d),(e),(f),0,0)
+                                                           (d),(e),(f),A7,0)
 #define vgPlain_do_syscall7(s,a,b,c,d,e,f,g) VG_(do_syscall)((s),(a),(b),(c),\
                                                            (d),(e),(f),(g),0)
 #define vgPlain_do_syscall8(s,a,b,c,d,e,f,g,h) VG_(do_syscall)((s),(a),(b),(c),\
@@ -72,7 +90,7 @@ extern SysRes VG_(do_syscall) ( UWord sysno,
 extern SysRes VG_(mk_SysRes_x86_linux)   ( Int  val );
 extern SysRes VG_(mk_SysRes_amd64_linux) ( Long val );
 extern SysRes VG_(mk_SysRes_ppc32_linux) ( UInt  val, UInt  cr0so );
-extern SysRes VG_(mk_SysRes_ppc64_linux) ( ULong val, ULong cr0so );
+extern SysRes VG_(mk_SysRes_ppc64_linux) ( ULong val, ULong cr0so, UInt flag );
 extern SysRes VG_(mk_SysRes_arm_linux)   ( Int val );
 extern SysRes VG_(mk_SysRes_arm64_linux) ( Long val );
 extern SysRes VG_(mk_SysRes_x86_darwin)  ( UChar scclass, Bool isErr,
@@ -103,7 +121,6 @@ extern SysRes VG_(mk_SysRes_SuccessEx)   ( UWord val, UWord valEx );
    malloc-allocated or writable -- treat it as a constant. */
 
 extern const HChar* VG_(strerror) ( UWord errnum );
-
 
 #endif   // __PUB_CORE_SYSCALL_H
 

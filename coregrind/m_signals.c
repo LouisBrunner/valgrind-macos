@@ -359,8 +359,12 @@ typedef struct SigQueue {
    {
       ULong err = (uc->uc_mcontext.gp_regs[VKI_PT_CCR] >> 28) & 1;
       ULong r3  = uc->uc_mcontext.gp_regs[VKI_PT_R3];
+      ThreadId tid = VG_(lwpid_to_vgtid)(VG_(gettid)());
+      ThreadState *tst = VG_(get_ThreadState)(tid);
+
       if (err) r3 &= 0xFF;
-      return VG_(mk_SysRes_ppc64_linux)( r3, err );
+      return VG_(mk_SysRes_ppc64_linux)( r3, err,
+                                         tst->arch.vex.guest_syscall_flag);
    }
 #  define VG_UCONTEXT_TO_UnwindStartRegs(srP, uc)                       \
       { (srP)->r_pc = (uc)->uc_mcontext.gp_regs[VKI_PT_NIP];            \

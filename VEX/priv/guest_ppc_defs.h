@@ -276,6 +276,13 @@ extern ULong darn_dirty_helper ( UInt L );
 
 #endif /* ndef __VEX_GUEST_PPC_DEFS_H */
 
+/* SCV flag defines.  Must be consistently defined here and in
+   coregrind/pub_core_syscall.h,in the do_syscall_WRK() assembly code in
+   coregrind/m_syscall.c and coregrind/m_syswrap/syscall-ppc64le-linux.S
+   code.  */
+#define SC_FLAG  1
+#define SCV_FLAG 2
+
 /*---------------------------------------------------------------*/
 /*--- end                                    guest_ppc_defs.h ---*/
 /*---------------------------------------------------------------*/

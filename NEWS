@@ -19,6 +19,7 @@ support for X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
 
   - ISA 3.1 support is now complete
   - ISA 3.0 support for the darn instruction added.
+  - ISA 3.0 support for the vector system call instruction scv added.
 
 * ==================== TOOL CHANGES ====================
 
@@ -33,6 +34,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 
 423963  Error in child thread when CLONE_PIDFD is used
 429375  PPC ISA 3.1 support is missing, part 9
+431157  PPC_FEATURE2_SCV needs to be masked in AT_HWCAP2
 433801  PPC ISA 3.1 support is missing, part 10 (ISA 3.1 support complete)
 433863  s390x: memcheck/tests/s390x/{cds,cs,csg} failures
 434840  PPC64 darn instruction not supported

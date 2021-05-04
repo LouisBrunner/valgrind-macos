@@ -125,6 +125,8 @@ typedef
 #define VEX_HWCAPS_PPC64_ISA2_07   (1<<20) /* ISA 2.07 -- e.g., mtvsrd */
 #define VEX_HWCAPS_PPC64_ISA3_0    (1<<22) /* ISA 3.0  -- e.g., cnttzw */
 #define VEX_HWCAPS_PPC64_ISA3_1    (1<<23) /* ISA 3.1  -- e.g., brh */
+#define VEX_HWCAPS_PPC64_SCV       (1<<24) /* ISA 3.0, Kernel supports scv
+                                              instruction. */
 
 /* s390x: Hardware capability encoding
 

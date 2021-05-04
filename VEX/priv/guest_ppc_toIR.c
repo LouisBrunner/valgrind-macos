@@ -375,6 +375,7 @@ static Bool OV32_CA32_supported = False;
 #define OFFB_ACC_7_r1    offsetofPPCGuestState(guest_ACC_7_r1)
 #define OFFB_ACC_7_r2    offsetofPPCGuestState(guest_ACC_7_r2)
 #define OFFB_ACC_7_r3    offsetofPPCGuestState(guest_ACC_7_r3)
+#define OFFB_syscall_flag  offsetofPPCGuestState(guest_syscall_flag)
 
 
 /*------------------------------------------------------------*/
@@ -4067,6 +4068,18 @@ static IRExpr* /* ::Ity_I32 */  getFPCC ( void )
                        mkU32( 0xF ) ));
    return mkexpr(val);
 }
+
+static void put_syscall_flag( IRExpr* src )
+{
+   /* Need to pass a flag indicating if the system call is using the sc or
+      scv instructions.  Because Valgrind does an end-of-block after the
+      system call, the contents of a gpr can not be saved and restored after
+      the system call.  A custom guest state register guest_syscall_flag is
+      used to pass the flag so the guest state is not disturbed.  */
+
+   stmt( IRStmt_Put( offsetofPPCGuestState(guest_syscall_flag), src ) );
+}
+
 
 /*-----------------------------------------------------------*/
 /* Helpers to access VSX Accumulator register file
@@ -11011,6 +11024,7 @@ static Bool dis_trap ( UInt prefix, UInt theInstr,
 /*
   System Linkage Instructions
 */
+
 static Bool dis_syslink ( UInt prefix, UInt theInstr,
                           const VexAbiInfo* abiinfo, DisResult* dres )
 {
@@ -11019,14 +11033,27 @@ static Bool dis_syslink ( UInt prefix, UInt theInstr,
    /* There is no prefixed version of these instructions.  */
    PREFIX_CHECK
 
-   if (theInstr != 0x44000002) { // sc
-      if (theInstr != 0x44000001) // scv
-         vex_printf("dis_syslink(ppc)(theInstr)\n");
+   if ((theInstr != 0x44000002)       // sc
+       && (theInstr != 0x44000001)) { // scv
+       vex_printf("dis_syslink(ppc)(theInstr)\n");
       return False;
    }
 
-   // sc  (System Call, PPC32 p504)
-   DIP("sc\n");
+   /* The PPC syscall uses guest_GPR9 to pass a flag to indicate which
+      system call instruction is to be used.  Arg7 = SC_FLAG for the sc
+      instruction; Arg7 = SCV_FLAG for the scv instruction.  */
+   if (theInstr == 0x44000002) {
+      // sc  (System Call, PPC32 p504)
+      DIP("sc\n");
+      put_syscall_flag( mkU32(SC_FLAG) );
+   } else if (theInstr == 0x44000001) {
+      // scv
+      DIP("scv\n");
+      put_syscall_flag( mkU32(SCV_FLAG) );
+   } else {
+      /* Unknown instruction */
+      return False;
+   }
 
    /* Copy CIA into the IP_AT_SYSCALL pseudo-register, so that on Darwin
       Valgrind can back the guest up to this instruction if it needs
@@ -36113,8 +36140,9 @@ DisResult disInstr_PPC_WRK (
       goto decode_failure;
 
    /* System Linkage Instructions */
-   case 0x11: // sc
-      if (dis_syslink( prefix, theInstr, abiinfo, &dres)) goto decode_success;
+   case 0x11: // sc, scv
+      if (dis_syslink( prefix, theInstr, abiinfo, &dres))
+         goto decode_success;
       goto decode_failure;
 
    /* Trap Instructions */

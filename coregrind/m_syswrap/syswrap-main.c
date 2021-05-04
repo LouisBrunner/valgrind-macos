@@ -504,8 +504,19 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    canonical->arg4  = gst->guest_GPR6;
    canonical->arg5  = gst->guest_GPR7;
    canonical->arg6  = gst->guest_GPR8;
-   canonical->arg7  = 0;
+   /* ISA 3.0 adds the scv system call instruction.
+      The PPC syscalls have at most 6 args.  Arg 7 is being used to pass a
+      flag to indicate which system call instruction is to be used.
+      Arg7 = SC_FLAG for the sc instruction; Arg7 = SCV_FLAG for the scv
+      instruction.  The guest register guest_syscall_flag was created to pass
+      the flag so the actual guest state would not be changed. */
+   canonical->arg7  = gst->guest_syscall_flag;
    canonical->arg8  = 0;
+
+#if defined(VGP_ppc64be_linux)
+   /* The sc instruction is currently only supported on LE systems. */
+   vg_assert(gst->guest_syscall_flag == SC_FLAG);
+#endif
 
 #elif defined(VGP_arm_linux)
    VexGuestARMState* gst = (VexGuestARMState*)gst_vanilla;
@@ -829,6 +840,7 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
    gst->guest_GPR6 = canonical->arg4;
    gst->guest_GPR7 = canonical->arg5;
    gst->guest_GPR8 = canonical->arg6;
+   gst->guest_GPR9 = canonical->arg7;
 
 #elif defined(VGP_arm_linux)
    VexGuestARMState* gst = (VexGuestARMState*)gst_vanilla;
@@ -1004,10 +1016,15 @@ void getSyscallStatusFromGuestState ( /*OUT*/SyscallStatus*     canonical,
    canonical->what = SsComplete;
 
 #  elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
+   /* There is a Valgrind specific guest state register guest_syscall_flag
+      that is set to zero to indicate if the sc instruction was used or one
+      if the scv instruction was used for the system call.  */
    VexGuestPPC64State* gst   = (VexGuestPPC64State*)gst_vanilla;
    UInt                cr    = LibVEX_GuestPPC64_get_CR( gst );
    UInt                cr0so = (cr >> 28) & 1;
-   canonical->sres = VG_(mk_SysRes_ppc64_linux)( gst->guest_GPR3, cr0so );
+   UInt                flag  =  gst->guest_syscall_flag;
+
+   canonical->sres = VG_(mk_SysRes_ppc64_linux)( gst->guest_GPR3, cr0so, flag );
    canonical->what = SsComplete;
 
 #  elif defined(VGP_arm_linux)
@@ -1188,20 +1205,34 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
 #  elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
    VexGuestPPC64State* gst = (VexGuestPPC64State*)gst_vanilla;
    UInt old_cr = LibVEX_GuestPPC64_get_CR(gst);
+   UInt flag  =  gst->guest_syscall_flag;
+
    vg_assert(canonical->what == SsComplete);
-   if (sr_isError(canonical->sres)) {
-      /* set CR0.SO */
-      LibVEX_GuestPPC64_put_CR( old_cr | (1<<28), gst );
-      gst->guest_GPR3 = sr_Err(canonical->sres);
+   if (flag == SC_FLAG) {
+      /* sc syscall */
+      if (sr_isError(canonical->sres)) {
+         /* set CR0.SO */
+         LibVEX_GuestPPC64_put_CR( old_cr | (1<<28), gst );
+         gst->guest_GPR3 = sr_Err(canonical->sres);
+      } else {
+         /* clear CR0.SO */
+         LibVEX_GuestPPC64_put_CR( old_cr & ~(1<<28), gst );
+         gst->guest_GPR3 = sr_Res(canonical->sres);
+      }
+      VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
+                OFFSET_ppc64_GPR3, sizeof(UWord) );
+      VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
+                OFFSET_ppc64_CR0_0, sizeof(UChar) );
    } else {
-      /* clear CR0.SO */
-      LibVEX_GuestPPC64_put_CR( old_cr & ~(1<<28), gst );
-      gst->guest_GPR3 = sr_Res(canonical->sres);
+      /* scv system call instruction */
+      if (sr_isError(canonical->sres))
+         gst->guest_GPR3 = - (Long)canonical->sres._val;
+      else
+         gst->guest_GPR3 = canonical->sres._val;
+
+      VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
+                OFFSET_ppc64_GPR3, sizeof(UWord) );
    }
-   VG_TRACK( post_reg_write, Vg_CoreSysCall, tid, 
-             OFFSET_ppc64_GPR3, sizeof(UWord) );
-   VG_TRACK( post_reg_write, Vg_CoreSysCall, tid, 
-             OFFSET_ppc64_CR0_0, sizeof(UChar) );
 
 #  elif defined(VGP_arm_linux)
    VexGuestARMState* gst = (VexGuestARMState*)gst_vanilla;
@@ -1459,7 +1490,7 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
    layout->o_arg4   = OFFSET_ppc64_GPR6;
    layout->o_arg5   = OFFSET_ppc64_GPR7;
    layout->o_arg6   = OFFSET_ppc64_GPR8;
-   layout->uu_arg7  = -1; /* impossible value */
+   layout->o_arg7   = OFFSET_ppc64_GPR9;
    layout->uu_arg8  = -1; /* impossible value */
 
 #elif defined(VGP_arm_linux)
@@ -2343,16 +2374,20 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
       back over a syscall.
 
       sc == 44 00 00 02
+      or
+      scv == 44 00 00 01
    */
    {
       UChar *p = (UChar *)arch->vex.guest_CIA;
 
-      if (p[3] != 0x44 || p[2] != 0x0 || p[1] != 0x0 || p[0] != 0x02)
+      if (!(p[3] == 0x44 && p[2] == 0x0 && p[1] == 0x0
+            && (p[0] == 0x01 || p[0] == 0x02)))
          VG_(message)(Vg_DebugMsg,
                       "?! restarting over syscall at %#llx %02x %02x %02x %02x\n",
                       arch->vex.guest_CIA, p[3], p[2], p[1], p[0]);
 
-      vg_assert(p[3] == 0x44 && p[2] == 0x0 && p[1] == 0x0 && p[0] == 0x2);
+      vg_assert(p[3] == 0x44 && p[2] == 0x0 && p[1] == 0x0
+                && (p[0] == 0x1 || p[0] == 0x2));
    }
 
 #elif defined(VGP_arm_linux)
@@ -2670,10 +2705,29 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
       = ip < ML_(blksys_setup) || ip >= ML_(blksys_finished);
    in_setup_to_restart
       = ip >= ML_(blksys_setup) && ip < ML_(blksys_restart); 
+
+#if  defined(VGP_ppc64le_linux)
+   /* Starting with ISA 3.0, Power supports two system call instructions sc
+      and scv.  The code in file syscall-ppc64[be|le]-linux.S uses an input
+      to call the requested system call.  The definitions for blksys_restart
+      and blksys_complete must account for being at either of the two system
+      calls and account for the branch to lable 3 if the sc instruction was
+      called.  at_restart is true if the ip is at either system call
+      instruction.  in_complete_to_committed is true if the ip is between
+      blksys_complete and blksys_committed OR at the branch after the sc
+      instruction.  The scv instruction is currently only supported on LE. */
+   at_restart
+      = (ip == ML_(blksys_restart)) || ((ip-8) == ML_(blksys_restart));
+   in_complete_to_committed
+      = (ip >= ML_(blksys_complete) && ip < ML_(blksys_committed)) ||
+      ((ip+8) == ML_(blksys_complete));
+#else
    at_restart
       = ip == ML_(blksys_restart); 
    in_complete_to_committed
       = ip >= ML_(blksys_complete) && ip < ML_(blksys_committed); 
+#endif
+
    in_committed_to_finished
       = ip >= ML_(blksys_committed) && ip < ML_(blksys_finished);
 #  elif defined(VGO_darwin)

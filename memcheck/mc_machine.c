@@ -395,6 +395,7 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
       return 0+ GOF(ACC_7_r2);
    if (o >= GOF(ACC_7_r3) && o+sz <= GOF(ACC_7_r3)+SZB(ACC_7_r3))
       return 0+ GOF(ACC_7_r3);
+   if (o == GOF(syscall_flag) && sz == 4) return -1;
 
    VG_(printf)("MC_(get_otrack_shadow_offset)(ppc64)(off=%d,sz=%d)\n",
                offset,szB);

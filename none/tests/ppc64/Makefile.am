@@ -58,7 +58,8 @@ EXTRA_DIST = \
 	test_isa_3_1_AT.vgtest test_isa_3_1_AT.stderr.exp test_isa_3_1_AT.stdout.exp \
 	subnormal_test.stderr.exp  subnormal_test.stdout.exp \
 	subnormal_test.vgtest test_darn_inst.stderr.exp \
-	test_darn_inst.stdout.exp test_darn_inst.vgtest
+	test_darn_inst.stdout.exp test_darn_inst.vgtest \
+	scv_test.stderr.exp scv_test.stdout.exp scv_test.vgtest
 
 check_PROGRAMS = \
 	allexec \
@@ -72,7 +73,7 @@ check_PROGRAMS = \
 	subnormal_test test_darn_inst \
 	test_tm test_touch_tm data-cache-instructions \
 	power6_mf_gpr std_reg_imm \
-	twi_tdi tw_td power6_bcmp
+	twi_tdi tw_td power6_bcmp scv_test
 
 # lmw, stmw, lswi, lswx, stswi, stswx compile (and run) only on big endian.
 if VGCONF_PLATFORMS_INCLUDE_PPC64BE_LINUX

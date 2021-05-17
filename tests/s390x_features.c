@@ -270,6 +270,10 @@ static int go(char *feature, char *cpu)
       match = facilities[0] & FAC_BIT(57); /* message security assist 5 facility */
    } else if (strcmp(feature, "s390x-mi2") == 0 ) {
       match = facilities[0] & FAC_BIT(58);
+   } else if (strcmp(feature, "s390x-mi3") == 0 ) {
+      match = facilities[0] & FAC_BIT(61);
+   } else if (strcmp(feature, "s390x-vx2") == 0 ) {
+      match = facilities[2] & FAC_BIT(20);
    } else {
       return 2;          // Unrecognised feature.
    }

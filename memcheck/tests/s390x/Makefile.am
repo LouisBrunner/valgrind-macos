@@ -2,7 +2,7 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_stderr
 
-INSN_TESTS = cdsg cu21 cu42 ltgjhe vstrc vfae vistr
+INSN_TESTS = cdsg cu21 cu42 ltgjhe vstrc vfae vistr vstrs
 
 check_PROGRAMS = $(INSN_TESTS) 
 
@@ -18,3 +18,4 @@ AM_CCASFLAGS += @FLAG_M64@
 vstrc_CFLAGS  = $(AM_CFLAGS) -march=z13
 vfae_CFLAGS   = $(AM_CFLAGS) -march=z13
 vistr_CFLAGS  = $(AM_CFLAGS) -march=z13
+vstrs_CFLAGS  = $(AM_CFLAGS) -march=z13

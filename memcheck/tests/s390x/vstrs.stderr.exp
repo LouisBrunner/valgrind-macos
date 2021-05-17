@@ -1,0 +1,16 @@
+Use of uninitialised value of size 8
+   at 0x........: test_vstrs_char (vstrs.c:50)
+   by 0x........: main (vstrs.c:63)
+
+Use of uninitialised value of size 8
+   at 0x........: test_vstrs_char (vstrs.c:54)
+   by 0x........: main (vstrs.c:63)
+
+Use of uninitialised value of size 8
+   at 0x........: test_vstrs_char (vstrs.c:50)
+   by 0x........: main (vstrs.c:65)
+
+Use of uninitialised value of size 8
+   at 0x........: test_vstrs_char (vstrs.c:54)
+   by 0x........: main (vstrs.c:65)
+

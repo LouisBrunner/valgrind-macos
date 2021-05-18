@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright IBM Corp. 2010-2020
+   Copyright IBM Corp. 2010-2021
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -20503,6 +20503,9 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
                                    RRE_r2(ovl));  goto ok;
    case 0xb931: s390_format_RRE_RR(s390_irgen_CLGFR, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;
+   case 0xb938: /* SORTL */ goto unimplemented;
+   case 0xb939: /* DFLTCC */ goto unimplemented;
+   case 0xb93a: /* KDSA */ goto unimplemented;
    case 0xb93c: s390_format_RRE_RR(s390_irgen_PPNO, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;
    case 0xb93e: /* KIMD */ goto unimplemented;

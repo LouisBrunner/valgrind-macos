@@ -15,6 +15,10 @@ support for X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * s390:
 
+  - Support the miscellaneous-instruction-extensions facility 3 and the
+    vector-enhancements facility 2.  This enables programs compiled with
+    "-march=arch13" or "-march=z15" to be executed under Valgrind.
+
 * ppc64:
 
   - ISA 3.1 support is now complete
@@ -47,6 +51,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
         have debug information
 439590  glibc-2.34 breaks suppressions against obj:*/lib*/libc-2.*so*
 440670  unhandled ppc64le-linux syscall: 252 (statfs64) and 253 (fstatfs64)
+432387  s390x: z15 instructions support
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

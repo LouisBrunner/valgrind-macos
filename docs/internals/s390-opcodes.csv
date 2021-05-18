@@ -903,7 +903,7 @@ srk,"subtract 3 operands 32 bit",implemented,
 sgrk,"subtract 3 operands 64 bit",implemented,
 slrk,"subtract logical 3 operands 32 bit",implemented,
 slgrk,"subtract logical 3 operands 64 bit",implemented,
-popcnt,"population count","implemented",
+popcnt,"population count",implemented,"z196/arch13"
 rrbm,"reset reference bits multiple",N/A,"privileged instruction"
 cefbra,"convert from 32 bit fixed to short bfp with rounding mode",implemented,
 cdfbra,"convert from 32 bit fixed to long bfp with rounding mode",implemented,
@@ -1650,8 +1650,8 @@ vstrlr,"vector store rightmost with length",implemented,arch12
 vstrl,"vector store rightmost with immediate length",implemented,arch12
 vap,"vector add decimal","not implemented","arch12"
 vcp,"vector compare decimal","not implemented","arch12"
-vcvb,"vector convert to binary 32 bit","not implemented","arch12"
-vcvbg,"vector convert to binary 64 bit","not implemented","arch12"
+vcvb,"vector convert to binary 32 bit","not implemented","arch12/arch13"
+vcvbg,"vector convert to binary 64 bit","not implemented","arch12/arch13"
 vcvd,"vector convert to decimal 32 bit","not implemented","arch12"
 vcvdg,"vector convert to decimal 64 bit","not implemented","arch12"
 vdp,"vector divide decimal","not implemented","arch12"
@@ -1671,3 +1671,78 @@ llgfsg,"load logical and shift guarded 64 bit","not implemented","arch12"
 lgsc,"load guarded storage controls","not implemented","arch12"
 stgsc,"store guarded storage controls","not implemented","arch12"
 kma,"cipher message with galois counter mode","not implemented","arch12"
+ncrk,"and with complement 32 bit",implemented,arch13
+ncgrk,"and with complement 64 bit",implemented,arch13
+mvcrl,"move right to left",implemented,arch13
+nnrk,"nand 32 bit",implemented,arch13
+nngrk,"nand 64 bit",implemented,arch13
+nork,"nor 32 bit",implemented,arch13
+nogrk,"nor 64 bit",implemented,arch13
+nxrk,"not exclusive or 32 bit",implemented,arch13
+nxgrk,"not exclusive or 64 bit",implemented,arch13
+ocrk,"or with complement 32 bit",implemented,arch13
+ocgrk,"or with complement 64 bit",implemented,arch13
+selr,"select 32 bit",implemented,arch13
+selgr,"select 64 bit",implemented,arch13
+selfhr,"select high",implemented,arch13
+vlbr,"vector load byte reversed elements",implemented,arch13
+vlbrh,"vector load byte reversed halfword elements",implemented,arch13
+vlbrf,"vector load byte reversed word elements",implemented,arch13
+vlbrg,"vector load byte reversed doubleword elements",implemented,arch13
+vlbrq,"vector load byte reversed quadword elements",implemented,arch13
+vler,"vector load elements reversed",implemented,arch13
+vlerh,"vector load halfword elements reversed",implemented,arch13
+vlerf,"vector load word elements reversed",implemented,arch13
+vlerg,"vector load doubleword elements reversed",implemented,arch13
+vllebrz,"vector load byte reversed element and zero",implemented,arch13
+vllebrzh,"vector load byte reversed halfword element and zero",implemented,arch13
+vllebrzf,"vector load byte reversed word element and zero",implemented,arch13
+ldrv,"load byte reversed doubleword",implemented,arch13
+vllebrzg,"vector load byte reversed doubleword element and zero",implemented,arch13
+lerv,"load byte reversed word",implemented,arch13
+vllebrze,"vector load byte reversed word element left-aligned and zero",implemented,arch13
+vlebrh,"vector load byte reversed halfword element",implemented,arch13
+vlebrf,"vector load byte reversed word element",implemented,arch13
+vlebrg,"vector load byte reversed doubleword element",implemented,arch13
+vlbrrep,"vector load byte reversed element and replicate",implemented,arch13
+vlbrreph,"vector load byte reversed halfword element and replicate",implemented,arch13
+vlbrrepf,"vector load byte reversed word element and replicate",implemented,arch13
+vlbrrepg,"vector load byte reversed doubleword element and replicate",implemented,arch13
+vstbr,"vector store byte reversed elements",implemented,arch13
+vstbrh,"vector store byte reversed halfword elements",implemented,arch13
+vstbrf,"vector store byte reversed word elements",implemented,arch13
+vstbrg,"vector store byte reversed doubleword elements",implemented,arch13
+vstbrq,"vector store byte reversed quadword elements",implemented,arch13
+vster,"vector store elements reversed",implemented,arch13
+vsterh,"vector store halfword elements reversed",implemented,arch13
+vsterf,"vector store word elements reversed",implemented,arch13
+vsterg,"vector store doubleword elements reversed",implemented,arch13
+vstebrh,"vector store byte reversed halfword element",implemented,arch13
+vstebrf,"vector store byte reversed word element",implemented,arch13
+sterv,"store byte reversed word",implemented,arch13
+vstebrg,"vector store byte reversed doubleword element",implemented,arch13
+stdrv,"store byte reversed doubleword",implemented,arch13
+vsld,"vector shift left double by bit",implemented,arch13
+vsrd,"vector shift right double by bit",implemented,arch13
+vstrs,"vector string search",implemented,arch13
+vstrsb,"vector string search byte",implemented,arch13
+vstrsh,"vector string search halfword",implemented,arch13
+vstrsf,"vector string search word",implemented,arch13
+vstrszb,"vector string search byte zero",implemented,arch13
+vstrszh,"vector string search halfword zero",implemented,arch13
+vstrszf,"vector string search word zero",implemented,arch13
+vcfps,"vector fp convert from fixed",implemented,arch13
+vcefb,"vector fp convert from fixed 32 bit",implemented,arch13
+wcefb,"vector fp convert from fixed 32 bit",implemented,arch13
+vcfpl,"vector fp convert from logical",implemented,arch13
+vcelfb,"vector fp convert from logical 32 bit",implemented,arch13
+wcelfb,"vector fp convert from logical 32 bit",implemented,arch13
+vcsfp,"vector fp convert to fixed",implemented,arch13
+vcfeb,"vector fp convert to fixed 32 bit",implemented,arch13
+wcfeb,"vector fp convert to fixed 32 bit",implemented,arch13
+vclfp,"vector fp convert to logical",implemented,arch13
+vclfeb,"vector fp convert to logical 32 bit",implemented,arch13
+wclfeb,"vector fp convert to logical 32 bit",implemented,arch13
+dfltcc,"deflate conversion call","not implemented",arch13
+sortl,"sort lists","not implemented",arch13
+kdsa,"compute digital signature authentication","not implemented",arch13

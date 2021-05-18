@@ -28,19 +28,32 @@ my %csv_implemented = ();
 my %toir_implemented = ();
 my %toir_decoded = ();
 my %known_arch = map {($_ => 1)}
-    qw(g5 z900 z990 z9-109 z9-ec z10 z196 zEC12 z13 arch12);
+    qw(g5 z900 z990 z9-109 z9-ec z10 z196 zEC12 z13 arch12 arch13);
 
 # Patterns for identifying certain extended mnemonics that shall be
 # skipped in "s390-opc.txt" and "s390-opcodes.csv".
 
 my @extended_mnemonics = (
     "bi",			# extended mnemonic for bic
+    'brul?',
+    'jasl?',
+    'jctg?',
+    'jg?nop',
+    'jxleg?',
+    'jxhg?',
+    'l[de]rv',
+    'risbgn?z',
+    'st[de]rv',
     "va[bhfgq]",
     "vacc[bhfgq]",
     "vacccq",
     "vacq",
     "vavgl*[bhfg]",
     "vcdl*gb",
+    'vcfp[sl]',
+    '[vw]cel?fb',
+    'vc[sl]fp',
+    '[vw]cl?feb',
     "vceq[bhfg]s*",
     "vchl*[bhfg]s*",
     "vcl*gdb",
@@ -77,10 +90,14 @@ my @extended_mnemonics = (
     "vgfma*[bhfg]",
     "vgm[bhfg]",
     "vistr[bhfg]s*",
+    'vlbr[hfgq]',
+    'vlbrrep[hfg]',
     "vlc[bhfg]",
     "[vw]ldeb",
     "[vw]ledb",
+    'vler[hfg]',
     "vlgv[bhfg]",
+    'vllebrz[hfge]',
     "vllez[bhfg]",
     "vllezlf",
     "vlp[bhfg]",
@@ -105,7 +122,10 @@ my @extended_mnemonics = (
     "vsbiq",
     "vscbi[bhfgq]",
     "vseg[bfh]",
+    'vstbr[hfgq]',
+    'vster[hfg]',
     "vstrcz*[bhf]s*",
+    'vstrsz?[bhf]',
     "vsum(b|gh|gf|h|qf|qg)",
     "vuplh[bhf]",
     "vuph[bhf]",

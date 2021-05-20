@@ -40,6 +40,8 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 434840  PPC64 darn instruction not supported
 434296  s390x: False-positive memcheck diagnostics from vector string
         instructions
+435908  valgrind tries to fetch from deubginfod for files which already
+        have debug information
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

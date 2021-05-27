@@ -20,6 +20,7 @@ support for X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
   - ISA 3.1 support is now complete
   - ISA 3.0 support for the darn instruction added.
   - ISA 3.0 support for the vector system call instruction scv added.
+  - ISA 3.0 support for the copy, paste and cpabort instructions added.
 
 * ==================== TOOL CHANGES ====================
 
@@ -40,6 +41,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 434840  PPC64 darn instruction not supported
 434296  s390x: False-positive memcheck diagnostics from vector string
         instructions
+435665  PPC ISA 3.0 copy, paste, cpabort instructions are not supported 
 435908  valgrind tries to fetch from deubginfod for files which already
         have debug information
 

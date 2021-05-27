@@ -35603,6 +35603,151 @@ static Bool dis_vector_generate_pvc_from_mask ( UInt prefix,
    return True;
 }
 
+static Int dis_copy_paste ( UInt prefix, UInt theInstr,
+                           const VexAbiInfo* vbi )
+{
+   IRType ty = mode64 ? Ity_I64 : Ity_I32;
+   Bool L = IFIELD( theInstr, 21, 1 );
+   UInt bit0 = IFIELD( theInstr, 0, 1 );
+   UInt opc2 = ifieldOPClo10( theInstr );
+   UChar rA_addr = ifieldRegA(theInstr);
+   UChar rB_addr = ifieldRegB(theInstr);
+   IRTemp cr0 = newTemp( Ity_I8 );
+   UInt operation = INVALD_INST;
+   IRTemp EA_base = newTemp(ty);
+   IRExpr** args;
+   IRDirty* d;
+   UInt mFx = Ifx_None;
+   IRTemp helper_rtn = newTemp(Ity_I32);
+
+   /* There is no prefixed version of these instructions.  */
+   PREFIX_CHECK
+
+   assign( EA_base, ea_rAor0_idxd(rA_addr, rB_addr) );
+
+   if (ty != Ity_I64) {
+      vpanic( "ERROR PPC: copy, paste, cpabort only supported on 64-bit systems");
+      return False;
+   }
+
+   /* The dirty helper is passed the EA_bse for the 128-byte buffer and
+      and operation, i.e. which instruction to issue on the host.  It returns
+      uint32_t result.  The result is condition code CR0.  Only for the paste
+      instruction is the return value relevant and must be used to update the
+      guest state.  */
+
+   if (( opc2 == 0x306 ) && ( L == 1 )) {         // copy
+      DIP("copy %u,%u\n", rA_addr, rB_addr);
+      operation = COPY_INST;
+      mFx = Ifx_Read;
+
+   } else if ( opc2 == 0x346 ) {  // cpabort
+      DIP("cpabort\n");
+      operation = CPABORT_INST;
+      /* Abort data transfer if one is in progress.  */
+      /* cpabort does nothing to the guest state, just resets operation
+         on the host.  */
+
+   } else if (( opc2 == 0x386 ) && ( bit0 == 1 )) {  // paste.
+
+      /*   The Ifx_write will cause Memcheck will instrument the buffer, if
+           there is any undefinedness in the inputs, then all of the outputs
+           will be undefined.  Hence:
+
+              if    EA_base or operation contain any undefined bits
+
+              then  the return value is undefined and the specified 128-byte
+                    memory area are undefined after the call
+
+              else  the return value is undefined and the specified 128-byte
+                    memory area are defined after the call  */
+      DIP("paste %u,%u\n", rA_addr, rB_addr);
+      operation = PASTE_INST;
+      mFx = Ifx_Write;
+
+   } else {
+      /* Unknown instruction, should never get here.  */
+      return False;
+   }
+
+   /* Call dirty helper to issue the copy, paste or cpabort instruction on the
+      host.  */
+   args = mkIRExprVec_2( mkexpr(EA_base), mkU32(operation) );
+
+   /* The dirty helper needs to return the 8-bit condition code result from
+      the copy/paste instructions run on the host.  The follwoing hack is used
+      to get Memcheck to return an error if any of the bits in the 128-byte
+      copy-paste buffer are uninitialized.  The bottom 8-bits of helper_rtn
+      contain the condition code CR0.  The upper bits must all be zero.   */
+
+   d = unsafeIRDirty_1_N (
+      helper_rtn,
+      0/*regparms*/,
+      "copy_paste_abort_dirty_helper",
+      fnptr_to_fnentry( vbi, &copy_paste_abort_dirty_helper ),
+      args );
+
+   /* As part of the hack, we must set mFx/mAddr/mSize so as to declare the
+      memory area used by the copy/paste instructions.  */
+   d->mAddr = NULL;
+
+   if (mFx != Ifx_None) {
+      d->mFx = mFx;
+      d->mAddr = mkexpr(EA_base);
+      d->mSize = 128;  /* 128 byte memory region */
+   }
+
+   stmt( IRStmt_Dirty(d) );
+
+   /* The following Exit state is inserted with a test that the IR
+      optimization cannot remove.  */
+   stmt( IRStmt_Exit(
+            binop(Iop_CmpNE32, binop( Iop_And32, mkexpr(helper_rtn),
+                                      mkU32(0xFF00)),
+                  mkU32(0)),
+            Ijk_SigTRAP,
+            mode64 ? IRConst_U64(guest_CIA_curr_instr) :
+            IRConst_U32((UInt) guest_CIA_curr_instr),
+            OFFB_CIA
+      ));
+   /*  The effects of this hack are as follows:
+
+       (1) the above stmt() asks the IR to exit, asking Valgrind to hand
+       the program a SIGTRAP at this point, if the fake return value is
+       nonzero, however ..
+
+       (2) .. that never happens, because the actual return value is maked
+       out and the upper bits of the return are always zero.
+
+       (3) Memcheck will believe that any undefinedness in the copy/paste
+       area read by the helper will be propagated through to the helper_rtn
+       value, and will generate instrumentation to cause that to happen.
+
+       (4) Memcheck will instrument the IRStmt_Exit to check the definedness
+       computed by (3) and emit an error if helper_rtn value contains any
+       undefined bits.  Hence Memcheck will generate a warning for undefined
+       bits in the copy/paste buffer.
+
+       (5) Note that the IR optimisation passes do not know what value the
+       helper call will return.  Hence we are guaranteed that they can't
+       optimise away the IRStmt_Exit and its associated check.  */
+
+   /* Need to extract the actual return value and put it into the guest
+      state.  */
+   assign( cr0, unop(Iop_16to8,
+                     unop(Iop_32to16, mkexpr(helper_rtn))));
+
+   if (( opc2 == 0x386 ) && (bit0 == 1 )) {
+      /* Only the paste instruction sets CR0.
+         Update CR0 bits [3:1] with the copy/paste result with the host CR0
+         result value.  CR0 bit 0 must match the guest XER_OV value.  */
+      putCR0  ( 0, binop(Iop_And8, mkU8( 1  ), getXER_OV() ) );
+      putCR321( 0, binop(Iop_And8, mkU8( 0xE ), mkexpr(cr0) ) );
+   }
+
+   return True;
+}
+
 static Int dis_nop_prefix ( UInt prefix, UInt theInstr )
 {
    Bool is_prefix   = prefix_instruction( prefix );
@@ -37531,6 +37676,21 @@ DisResult disInstr_PPC_WRK (
       case 0x0FC: // bpermd
          if (!mode64) goto decode_failure;
          if (dis_int_logic( prefix, theInstr )) goto decode_success;
+         goto decode_failure;
+
+      case 0x306:  // copy
+         if ( !mode64 || !allow_isa_3_0 ) goto decode_failure;
+         if (dis_copy_paste( prefix, theInstr, abiinfo )) goto decode_success;
+         goto decode_failure;
+
+      case 0x346:  // cpabort
+         if ( !mode64 || !allow_isa_3_0 ) goto decode_failure;
+         if (dis_copy_paste( prefix, theInstr, abiinfo )) goto decode_success;
+         goto decode_failure;
+
+      case 0x386:  // paste.
+         if ( !mode64 || !allow_isa_3_0 ) goto decode_failure;
+         if (dis_copy_paste( prefix, theInstr, abiinfo )) goto decode_success;
          goto decode_failure;
 
       default:

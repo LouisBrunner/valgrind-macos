@@ -3163,6 +3163,35 @@ VexGuestLayout
             }
         };
 
+UInt copy_paste_abort_dirty_helper(UInt addr, UInt op) {
+#  if defined(__powerpc__)
+   ULong ret;
+   UInt cr;
+
+   if (op == COPY_INST)
+      __asm__ __volatile__ ("copy 0,%0" :: "r" (addr));
+
+   else if (op == PASTE_INST)
+      __asm__ __volatile__ ("paste. 0,%0" :: "r" (addr));
+
+   else if (op == CPABORT_INST)
+      __asm__ __volatile__ ("cpabort");
+
+   else
+      /* Unknown operation */
+      vassert(0);
+
+   /* Return the CR0 value. Contains status for the paste instruction. */
+   __asm__ __volatile__ ("mfocrf %0,128" : "=r" (cr));
+   __asm__ __volatile__ ("srawi %0,%1,28" : "=r" (ret) : "r" (cr));
+   /* Make sure the upper bits of the return value are zero per the hack
+      described in function dis_copy_paste().  */
+   return 0xFF & ret;
+# else
+   return 0;
+# endif
+}
+
 /*---------------------------------------------------------------*/
 /*--- end                                 guest_ppc_helpers.c ---*/
 /*---------------------------------------------------------------*/

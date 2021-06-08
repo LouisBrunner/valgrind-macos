@@ -287,6 +287,8 @@ void ppIROp ( IROp op )
       case Iop_SubF32:    vex_printf("SubF32"); return;
       case Iop_MulF32:    vex_printf("MulF32"); return;
       case Iop_DivF32:    vex_printf("DivF32"); return;
+      case Iop_SubF16:    vex_printf("SubF16"); return;
+      case Iop_AddF16:    vex_printf("AddF16"); return;
 
         /* 128 bit floating point */
       case Iop_AddF128:   vex_printf("AddF128");  return;
@@ -745,6 +747,8 @@ void ppIROp ( IROp op )
       case Iop_CmpGT32Fx2: vex_printf("CmpGT32Fx2"); return;
       case Iop_CmpEQ32Fx2: vex_printf("CmpEQ32Fx2"); return;
       case Iop_CmpGE32Fx2: vex_printf("CmpGE32Fx2"); return;
+      case Iop_CmpLT16Fx8: vex_printf("CmpLT16Fx8"); return;
+      case Iop_CmpLE16Fx8: vex_printf("CmpLE16Fx8"); return;
 
       case Iop_CmpEQ32F0x4: vex_printf("CmpEQ32F0x4"); return;
       case Iop_CmpLT32F0x4: vex_printf("CmpLT32F0x4"); return;
@@ -1431,7 +1435,8 @@ Bool primopMightTrap ( IROp op )
    case Iop_AddF64r32: case Iop_SubF64r32: case Iop_MulF64r32:
    case Iop_DivF64r32: case Iop_NegF64: case Iop_AbsF64:
    case Iop_NegF32: case Iop_AbsF32: case Iop_SqrtF64: case Iop_SqrtF32:
-   case Iop_NegF16: case Iop_AbsF16: case Iop_SqrtF16:
+   case Iop_NegF16: case Iop_AbsF16: case Iop_SqrtF16: case Iop_SubF16:
+   case Iop_AddF16:
    case Iop_CmpF64: case Iop_CmpF32: case Iop_CmpF128: case Iop_F64toI16S:
    case Iop_F64toI32S: case Iop_F64toI64S: case Iop_F64toI64U:
    case Iop_F64toI32U: case Iop_I32StoF64: case Iop_I64StoF64:
@@ -1611,6 +1616,7 @@ Bool primopMightTrap ( IROp op )
    case Iop_Add64Fx2: case Iop_Sub64Fx2: case Iop_Mul64Fx2: case Iop_Div64Fx2:
    case Iop_Max64Fx2: case Iop_Min64Fx2:
    case Iop_CmpEQ64Fx2: case Iop_CmpLT64Fx2: case Iop_CmpLE64Fx2:
+   case Iop_CmpLT16Fx8: case Iop_CmpLE16Fx8:
    case Iop_CmpUN64Fx2: case Iop_Abs64Fx2: case Iop_Neg64Fx2:
    case Iop_Sqrt64Fx2: case Iop_Scale2_64Fx2: case Iop_Log2_64Fx2:
    case Iop_RecipEst64Fx2: case Iop_RecipStep64Fx2: case Iop_RSqrtEst64Fx2:
@@ -3363,6 +3369,10 @@ void typeOfPrimop ( IROp op,
       case Iop_MulF32: case Iop_DivF32:
          TERNARY(ity_RMode,Ity_F32,Ity_F32, Ity_F32);
 
+      case Iop_AddF16:
+      case Iop_SubF16:
+         TERNARY(ity_RMode,Ity_F16, Ity_F16, Ity_F16);
+
       case Iop_NegF64: case Iop_AbsF64: 
          UNARY(Ity_F64, Ity_F64);
 
@@ -3542,6 +3552,7 @@ void typeOfPrimop ( IROp op,
       case Iop_Dup16x4: UNARY(Ity_I16, Ity_I64);
       case Iop_Dup32x2: UNARY(Ity_I32, Ity_I64);
 
+      case Iop_CmpLT16Fx8: case Iop_CmpLE16Fx8:
       case Iop_CmpEQ32Fx4: case Iop_CmpLT32Fx4:
       case Iop_CmpEQ64Fx2: case Iop_CmpLT64Fx2:
       case Iop_CmpLE32Fx4: case Iop_CmpUN32Fx4:

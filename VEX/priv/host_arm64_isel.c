@@ -1289,15 +1289,15 @@ static ARM64RIL* iselIntExpr_RIL ( ISelEnv* env, IRExpr* e )
 static ARM64RIL* iselIntExpr_RIL_wrk ( ISelEnv* env, IRExpr* e )
 {
    IRType ty = typeOfIRExpr(env->type_env,e);
-   vassert(ty == Ity_I64 || ty == Ity_I32);
-   
+   vassert(ty == Ity_I64 || ty == Ity_I32 || ty == Ity_I16);
+
    /* special case: immediate */
    if (e->tag == Iex_Const) {
       ARM64RIL* maybe = NULL;
       if (ty == Ity_I64) {
          vassert(e->Iex.Const.con->tag == Ico_U64);
          maybe = mb_mkARM64RIL_I(e->Iex.Const.con->Ico.U64);
-      } else {
+      } else if (ty == Ity_I32) {
          vassert(ty == Ity_I32);
          vassert(e->Iex.Const.con->tag == Ico_U32);
          UInt  u32 = e->Iex.Const.con->Ico.U32;
@@ -1309,6 +1309,11 @@ static ARM64RIL* iselIntExpr_RIL_wrk ( ISelEnv* env, IRExpr* e )
          if (!maybe) {
             maybe = mb_mkARM64RIL_I((u64 << 32) | u64);
          }
+      } else {
+         vassert(ty == Ity_I16);
+         vassert(e->Iex.Const.con->tag == Ico_U16);
+         // `maybe` is still NULL.  Be lame and fall through to the default
+         // case.  Obviously we could do better here.
       }
       if (maybe) return maybe;
       /* else fail, fall through to default case */
@@ -1715,7 +1720,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       {
          switch (e->Iex.Binop.op) {
             case Iop_And64: case Iop_Or64: case Iop_Xor64:
-            case Iop_Add64: case Iop_Sub64:{
+            case Iop_Add64: case Iop_Sub64: {
                ARM64RRSOp mainOp = ARM64rrs_INVALID;
                ARM64ShiftOp shiftOp = (ARM64ShiftOp)0; // Invalid
                IRExpr* argUnshifted = NULL;
@@ -1755,7 +1760,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       /* AND/OR/XOR(e1, e2) (for any e1, e2) */
       switch (e->Iex.Binop.op) {
          case Iop_And64: case Iop_And32: lop = ARM64lo_AND; goto log_binop;
-         case Iop_Or64:  case Iop_Or32:  lop = ARM64lo_OR;  goto log_binop;
+         case Iop_Or64:  case Iop_Or32:  case Iop_Or16: lop = ARM64lo_OR;  goto log_binop;
          case Iop_Xor64: case Iop_Xor32: lop = ARM64lo_XOR; goto log_binop;
          log_binop: {
             HReg      dst  = newVRegI(env);
@@ -2639,6 +2644,7 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_CmpEQ64Fx2: case Iop_CmpEQ32Fx4:
          case Iop_CmpLE64Fx2: case Iop_CmpLE32Fx4:
          case Iop_CmpLT64Fx2: case Iop_CmpLT32Fx4:
+         case Iop_CmpLT16Fx8: case Iop_CmpLE16Fx8:
          case Iop_Perm8x16:
          case Iop_InterleaveLO64x2: case Iop_CatEvenLanes32x4:
          case Iop_CatEvenLanes16x8: case Iop_CatEvenLanes8x16:
@@ -2721,7 +2727,9 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
                case Iop_CmpEQ32Fx4: op = ARM64vecb_FCMEQ32x4; break;
                case Iop_CmpLE64Fx2: op = ARM64vecb_FCMGE64x2; sw = True; break;
                case Iop_CmpLE32Fx4: op = ARM64vecb_FCMGE32x4; sw = True; break;
+               case Iop_CmpLE16Fx8: op = ARM64vecb_FCMGE16x8; sw = True; break;
                case Iop_CmpLT64Fx2: op = ARM64vecb_FCMGT64x2; sw = True; break;
+               case Iop_CmpLT16Fx8: op = ARM64vecb_FCMGT16x8; sw = True; break;
                case Iop_CmpLT32Fx4: op = ARM64vecb_FCMGT32x4; sw = True; break;
                case Iop_Perm8x16:   op = ARM64vecb_TBL1; break;
                case Iop_InterleaveLO64x2: op = ARM64vecb_UZP164x2; sw = True;
@@ -3745,6 +3753,24 @@ static HReg iselF16Expr_wrk ( ISelEnv* env, IRExpr* e )
          }
          default:
             break;
+      }
+   }
+
+   if (e->tag == Iex_Triop) {
+      IRTriop*     triop = e->Iex.Triop.details;
+      ARM64FpBinOp sglop = ARM64fpb_INVALID;
+      switch (triop->op) {
+         case Iop_AddF16: sglop = ARM64fpb_ADD; break;
+         case Iop_SubF16: sglop = ARM64fpb_SUB; break;
+         default: break;
+      }
+      if (sglop != ARM64fpb_INVALID) {
+         HReg argL = iselF16Expr(env, triop->arg2);
+         HReg argR = iselF16Expr(env, triop->arg3);
+         HReg dst  = newVRegD(env);
+         set_FPCR_rounding_mode(env, triop->arg1);
+         addInstr(env, ARM64Instr_VBinH(sglop, dst, argL, argR));
+         return dst;
       }
    }
 

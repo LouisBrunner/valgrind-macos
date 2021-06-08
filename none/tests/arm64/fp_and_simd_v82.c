@@ -2130,6 +2130,39 @@ void test_SMAXV ( void )
 /* -- this file.                                                 -- */
 /* ---------------------------------------------------------------- */
 
+// FADD <Hd>, <Hn>, <Hm>
+
+GEN_THREEVEC_TEST(fadd_h_00_01_02, "fadd h0, h1, h2",    0, 1, 2)
+GEN_THREEVEC_TEST(fadd_h_01_02_03, "fadd h1, h2, h3",    1, 2, 3)
+GEN_THREEVEC_TEST(fadd_h_02_03_04, "fadd h2, h3, h4",    2, 3, 4)
+GEN_THREEVEC_TEST(fadd_h_03_04_05, "fadd h3, h4, h5",    3, 4, 5)
+GEN_THREEVEC_TEST(fadd_h_04_05_06, "fadd h4, h5, h6",    4, 5, 6)
+GEN_THREEVEC_TEST(fadd_h_05_06_07, "fadd h5, h6, h7",    5, 6, 7)
+GEN_THREEVEC_TEST(fadd_h_06_07_08, "fadd h6, h7, h8",    6, 7, 8)
+GEN_THREEVEC_TEST(fadd_h_07_08_09, "fadd h7, h8, h9",    7, 8, 9)
+GEN_THREEVEC_TEST(fadd_h_08_09_10, "fadd h8, h9, h10",    8, 9, 10)
+GEN_THREEVEC_TEST(fadd_h_09_10_11, "fadd h9, h10, h11",    9, 10, 11)
+GEN_THREEVEC_TEST(fadd_h_10_11_12, "fadd h10, h11, h12",    10, 11, 12)
+GEN_THREEVEC_TEST(fadd_h_11_12_13, "fadd h11, h12, h13",    11, 12, 13)
+GEN_THREEVEC_TEST(fadd_h_12_13_14, "fadd h12, h13, h14",    12, 13, 14)
+GEN_THREEVEC_TEST(fadd_h_13_14_15, "fadd h13, h14, h15",    13, 14, 15)
+GEN_THREEVEC_TEST(fadd_h_14_15_16, "fadd h14, h15, h16",    14, 15, 16)
+GEN_THREEVEC_TEST(fadd_h_15_16_17, "fadd h15, h16, h17",    15, 16, 17)
+GEN_THREEVEC_TEST(fadd_h_16_17_18, "fadd h16, h17, h18",    16, 17, 18)
+GEN_THREEVEC_TEST(fadd_h_17_18_19, "fadd h17, h18, h19",    17, 18, 19)
+GEN_THREEVEC_TEST(fadd_h_18_19_20, "fadd h18, h19, h20",    18, 19, 20)
+GEN_THREEVEC_TEST(fadd_h_19_20_21, "fadd h19, h20, h21",    19, 20, 21)
+GEN_THREEVEC_TEST(fadd_h_20_21_22, "fadd h20, h21, h22",    20, 21, 22)
+GEN_THREEVEC_TEST(fadd_h_21_22_23, "fadd h21, h22, h23",    21, 22, 23)
+GEN_THREEVEC_TEST(fadd_h_22_23_24, "fadd h22, h23, h24",    22, 23, 24)
+GEN_THREEVEC_TEST(fadd_h_23_24_25, "fadd h23, h24, h25",    23, 24, 25)
+GEN_THREEVEC_TEST(fadd_h_24_25_26, "fadd h24, h25, h26",    24, 25, 26)
+GEN_THREEVEC_TEST(fadd_h_25_26_27, "fadd h25, h26, h27",    25, 26, 27)
+GEN_THREEVEC_TEST(fadd_h_26_27_28, "fadd h26, h27, h28",    26, 27, 28)
+GEN_THREEVEC_TEST(fadd_h_27_28_29, "fadd h27, h28, h29",    27, 28, 29)
+GEN_THREEVEC_TEST(fadd_h_28_29_30, "fadd h28, h29, h30",    28, 29, 30)
+GEN_THREEVEC_TEST(fadd_h_29_30_31, "fadd h29, h30, h31",    29, 30, 31)
+
 // FADDP <V><d>, <Vn>.<T>
 
 GEN_TWOVEC_TEST(faddp_h_2h_00_01,    "faddp h0, v1.2h",    0, 1)
@@ -2528,6 +2561,105 @@ GEN_TWOVEC_TEST(fsqrt_4h_28_29, "fsqrt v28.4h, v29.4h",    28, 29)
 GEN_TWOVEC_TEST(fsqrt_4h_29_30, "fsqrt v29.4h, v30.4h",    29, 30)
 GEN_TWOVEC_TEST(fsqrt_4h_30_31, "fsqrt v30.4h, v31.4h",    30, 31)
 
+// FABD <Hd>, <Hn>, <Hm>
+
+GEN_THREEVEC_TEST(fabd_h_00_01_02, "fabd h0, h1, h2",    0, 1, 2)
+GEN_THREEVEC_TEST(fabd_h_01_02_03, "fabd h1, h2, h3",    1, 2, 3)
+GEN_THREEVEC_TEST(fabd_h_02_03_04, "fabd h2, h3, h4",    2, 3, 4)
+GEN_THREEVEC_TEST(fabd_h_03_04_05, "fabd h3, h4, h5",    3, 4, 5)
+GEN_THREEVEC_TEST(fabd_h_04_05_06, "fabd h4, h5, h6",    4, 5, 6)
+GEN_THREEVEC_TEST(fabd_h_05_06_07, "fabd h5, h6, h7",    5, 6, 7)
+GEN_THREEVEC_TEST(fabd_h_06_07_08, "fabd h6, h7, h8",    6, 7, 8)
+GEN_THREEVEC_TEST(fabd_h_07_08_09, "fabd h7, h8, h9",    7, 8, 9)
+GEN_THREEVEC_TEST(fabd_h_08_09_10, "fabd h8, h9, h10",    8, 9, 10)
+GEN_THREEVEC_TEST(fabd_h_09_10_11, "fabd h9, h10, h11",    9, 10, 11)
+GEN_THREEVEC_TEST(fabd_h_10_11_12, "fabd h10, h11, h12",    10, 11, 12)
+GEN_THREEVEC_TEST(fabd_h_11_12_13, "fabd h11, h12, h13",    11, 12, 13)
+GEN_THREEVEC_TEST(fabd_h_12_13_14, "fabd h12, h13, h14",    12, 13, 14)
+GEN_THREEVEC_TEST(fabd_h_13_14_15, "fabd h13, h14, h15",    13, 14, 15)
+GEN_THREEVEC_TEST(fabd_h_14_15_16, "fabd h14, h15, h16",    14, 15, 16)
+GEN_THREEVEC_TEST(fabd_h_15_16_17, "fabd h15, h16, h17",    15, 16, 17)
+GEN_THREEVEC_TEST(fabd_h_16_17_18, "fabd h16, h17, h18",    16, 17, 18)
+GEN_THREEVEC_TEST(fabd_h_17_18_19, "fabd h17, h18, h19",    17, 18, 19)
+GEN_THREEVEC_TEST(fabd_h_18_19_20, "fabd h18, h19, h20",    18, 19, 20)
+GEN_THREEVEC_TEST(fabd_h_19_20_21, "fabd h19, h20, h21",    19, 20, 21)
+GEN_THREEVEC_TEST(fabd_h_20_21_22, "fabd h20, h21, h22",    20, 21, 22)
+GEN_THREEVEC_TEST(fabd_h_21_22_23, "fabd h21, h22, h23",    21, 22, 23)
+GEN_THREEVEC_TEST(fabd_h_22_23_24, "fabd h22, h23, h24",    22, 23, 24)
+GEN_THREEVEC_TEST(fabd_h_23_24_25, "fabd h23, h24, h25",    23, 24, 25)
+GEN_THREEVEC_TEST(fabd_h_24_25_26, "fabd h24, h25, h26",    24, 25, 26)
+GEN_THREEVEC_TEST(fabd_h_25_26_27, "fabd h25, h26, h27",    25, 26, 27)
+GEN_THREEVEC_TEST(fabd_h_26_27_28, "fabd h26, h27, h28",    26, 27, 28)
+GEN_THREEVEC_TEST(fabd_h_27_28_29, "fabd h27, h28, h29",    27, 28, 29)
+GEN_THREEVEC_TEST(fabd_h_28_29_30, "fabd h28, h29, h30",    28, 29, 30)
+GEN_THREEVEC_TEST(fabd_h_29_30_31, "fabd h29, h30, h31",    29, 30, 31)
+
+// FACGT <Hd>, <Hn>, <Hm>
+
+GEN_THREEVEC_TEST(facgt_h_00_01_02, "facgt h0, h1, h2",    0, 1, 2)
+GEN_THREEVEC_TEST(facgt_h_01_02_03, "facgt h1, h2, h3",    1, 2, 3)
+GEN_THREEVEC_TEST(facgt_h_02_03_04, "facgt h2, h3, h4",    2, 3, 4)
+GEN_THREEVEC_TEST(facgt_h_03_04_05, "facgt h3, h4, h5",    3, 4, 5)
+GEN_THREEVEC_TEST(facgt_h_04_05_06, "facgt h4, h5, h6",    4, 5, 6)
+GEN_THREEVEC_TEST(facgt_h_05_06_07, "facgt h5, h6, h7",    5, 6, 7)
+GEN_THREEVEC_TEST(facgt_h_06_07_08, "facgt h6, h7, h8",    6, 7, 8)
+GEN_THREEVEC_TEST(facgt_h_07_08_09, "facgt h7, h8, h9",    7, 8, 9)
+GEN_THREEVEC_TEST(facgt_h_08_09_10, "facgt h8, h9, h10",    8, 9, 10)
+GEN_THREEVEC_TEST(facgt_h_09_10_11, "facgt h9, h10, h11",    9, 10, 11)
+GEN_THREEVEC_TEST(facgt_h_10_11_12, "facgt h10, h11, h12",    10, 11, 12)
+GEN_THREEVEC_TEST(facgt_h_11_12_13, "facgt h11, h12, h13",    11, 12, 13)
+GEN_THREEVEC_TEST(facgt_h_12_13_14, "facgt h12, h13, h14",    12, 13, 14)
+GEN_THREEVEC_TEST(facgt_h_13_14_15, "facgt h13, h14, h15",    13, 14, 15)
+GEN_THREEVEC_TEST(facgt_h_14_15_16, "facgt h14, h15, h16",    14, 15, 16)
+GEN_THREEVEC_TEST(facgt_h_15_16_17, "facgt h15, h16, h17",    15, 16, 17)
+GEN_THREEVEC_TEST(facgt_h_16_17_18, "facgt h16, h17, h18",    16, 17, 18)
+GEN_THREEVEC_TEST(facgt_h_17_18_19, "facgt h17, h18, h19",    17, 18, 19)
+GEN_THREEVEC_TEST(facgt_h_18_19_20, "facgt h18, h19, h20",    18, 19, 20)
+GEN_THREEVEC_TEST(facgt_h_19_20_21, "facgt h19, h20, h21",    19, 20, 21)
+GEN_THREEVEC_TEST(facgt_h_20_21_22, "facgt h20, h21, h22",    20, 21, 22)
+GEN_THREEVEC_TEST(facgt_h_21_22_23, "facgt h21, h22, h23",    21, 22, 23)
+GEN_THREEVEC_TEST(facgt_h_22_23_24, "facgt h22, h23, h24",    22, 23, 24)
+GEN_THREEVEC_TEST(facgt_h_23_24_25, "facgt h23, h24, h25",    23, 24, 25)
+GEN_THREEVEC_TEST(facgt_h_24_25_26, "facgt h24, h25, h26",    24, 25, 26)
+GEN_THREEVEC_TEST(facgt_h_25_26_27, "facgt h25, h26, h27",    25, 26, 27)
+GEN_THREEVEC_TEST(facgt_h_26_27_28, "facgt h26, h27, h28",    26, 27, 28)
+GEN_THREEVEC_TEST(facgt_h_27_28_29, "facgt h27, h28, h29",    27, 28, 29)
+GEN_THREEVEC_TEST(facgt_h_28_29_30, "facgt h28, h29, h30",    28, 29, 30)
+GEN_THREEVEC_TEST(facgt_h_29_30_31, "facgt h29, h30, h31",    29, 30, 31)
+
+// FACGE <Hd>, <Hn>, <Hm>
+
+GEN_THREEVEC_TEST(facge_h_00_01_02, "facge h0, h1, h2",    0, 1, 2)
+GEN_THREEVEC_TEST(facge_h_01_02_03, "facge h1, h2, h3",    1, 2, 3)
+GEN_THREEVEC_TEST(facge_h_02_03_04, "facge h2, h3, h4",    2, 3, 4)
+GEN_THREEVEC_TEST(facge_h_03_04_05, "facge h3, h4, h5",    3, 4, 5)
+GEN_THREEVEC_TEST(facge_h_04_05_06, "facge h4, h5, h6",    4, 5, 6)
+GEN_THREEVEC_TEST(facge_h_05_06_07, "facge h5, h6, h7",    5, 6, 7)
+GEN_THREEVEC_TEST(facge_h_06_07_08, "facge h6, h7, h8",    6, 7, 8)
+GEN_THREEVEC_TEST(facge_h_07_08_09, "facge h7, h8, h9",    7, 8, 9)
+GEN_THREEVEC_TEST(facge_h_08_09_10, "facge h8, h9, h10",    8, 9, 10)
+GEN_THREEVEC_TEST(facge_h_09_10_11, "facge h9, h10, h11",    9, 10, 11)
+GEN_THREEVEC_TEST(facge_h_10_11_12, "facge h10, h11, h12",    10, 11, 12)
+GEN_THREEVEC_TEST(facge_h_11_12_13, "facge h11, h12, h13",    11, 12, 13)
+GEN_THREEVEC_TEST(facge_h_12_13_14, "facge h12, h13, h14",    12, 13, 14)
+GEN_THREEVEC_TEST(facge_h_13_14_15, "facge h13, h14, h15",    13, 14, 15)
+GEN_THREEVEC_TEST(facge_h_14_15_16, "facge h14, h15, h16",    14, 15, 16)
+GEN_THREEVEC_TEST(facge_h_15_16_17, "facge h15, h16, h17",    15, 16, 17)
+GEN_THREEVEC_TEST(facge_h_16_17_18, "facge h16, h17, h18",    16, 17, 18)
+GEN_THREEVEC_TEST(facge_h_17_18_19, "facge h17, h18, h19",    17, 18, 19)
+GEN_THREEVEC_TEST(facge_h_18_19_20, "facge h18, h19, h20",    18, 19, 20)
+GEN_THREEVEC_TEST(facge_h_19_20_21, "facge h19, h20, h21",    19, 20, 21)
+GEN_THREEVEC_TEST(facge_h_20_21_22, "facge h20, h21, h22",    20, 21, 22)
+GEN_THREEVEC_TEST(facge_h_21_22_23, "facge h21, h22, h23",    21, 22, 23)
+GEN_THREEVEC_TEST(facge_h_22_23_24, "facge h22, h23, h24",    22, 23, 24)
+GEN_THREEVEC_TEST(facge_h_23_24_25, "facge h23, h24, h25",    23, 24, 25)
+GEN_THREEVEC_TEST(facge_h_24_25_26, "facge h24, h25, h26",    24, 25, 26)
+GEN_THREEVEC_TEST(facge_h_25_26_27, "facge h25, h26, h27",    25, 26, 27)
+GEN_THREEVEC_TEST(facge_h_26_27_28, "facge h26, h27, h28",    26, 27, 28)
+GEN_THREEVEC_TEST(facge_h_27_28_29, "facge h27, h28, h29",    27, 28, 29)
+GEN_THREEVEC_TEST(facge_h_28_29_30, "facge h28, h29, h30",    28, 29, 30)
+GEN_THREEVEC_TEST(facge_h_29_30_31, "facge h29, h30, h31",    29, 30, 31)
+
 /* ---------------------------------------------------------------- */
 /* -- main()                                                     -- */
 /* ---------------------------------------------------------------- */
@@ -2535,6 +2667,39 @@ GEN_TWOVEC_TEST(fsqrt_4h_30_31, "fsqrt v30.4h, v31.4h",    30, 31)
 int main ( void )
 {
    assert(sizeof(V128) == 16);
+
+   printf("\nFADD <Hd>, <Hn>, <Hm>\n\n");
+
+   if (1) test_fadd_h_00_01_02(TyH);
+   if (1) test_fadd_h_01_02_03(TyH);
+   if (1) test_fadd_h_02_03_04(TyH);
+   if (1) test_fadd_h_03_04_05(TyH);
+   if (1) test_fadd_h_04_05_06(TyH);
+   if (1) test_fadd_h_05_06_07(TyH);
+   if (1) test_fadd_h_06_07_08(TyH);
+   if (1) test_fadd_h_07_08_09(TyH);
+   if (1) test_fadd_h_08_09_10(TyH);
+   if (1) test_fadd_h_09_10_11(TyH);
+   if (1) test_fadd_h_10_11_12(TyH);
+   if (1) test_fadd_h_11_12_13(TyH);
+   if (1) test_fadd_h_12_13_14(TyH);
+   if (1) test_fadd_h_13_14_15(TyH);
+   if (1) test_fadd_h_14_15_16(TyH);
+   if (1) test_fadd_h_15_16_17(TyH);
+   if (1) test_fadd_h_16_17_18(TyH);
+   if (1) test_fadd_h_17_18_19(TyH);
+   if (1) test_fadd_h_18_19_20(TyH);
+   if (1) test_fadd_h_19_20_21(TyH);
+   if (1) test_fadd_h_20_21_22(TyH);
+   if (1) test_fadd_h_21_22_23(TyH);
+   if (1) test_fadd_h_22_23_24(TyH);
+   if (1) test_fadd_h_23_24_25(TyH);
+   if (1) test_fadd_h_24_25_26(TyH);
+   if (1) test_fadd_h_25_26_27(TyH);
+   if (1) test_fadd_h_26_27_28(TyH);
+   if (1) test_fadd_h_27_28_29(TyH);
+   if (1) test_fadd_h_28_29_30(TyH);
+   if (1) test_fadd_h_29_30_31(TyH);
 
    printf("\nFADDP <V><d>, <Vn>.<T>\n\n");
 
@@ -2934,6 +3099,105 @@ int main ( void )
    if (1) test_fsqrt_4h_29_30(TyH);
    if (1) test_fsqrt_4h_30_31(TyH);
 
+   printf("\nFABD <Hd>, <Hn>, <Hm>\n\n");
+
+   if (1) test_fabd_h_00_01_02(TyH);
+   if (1) test_fabd_h_01_02_03(TyH);
+   if (1) test_fabd_h_02_03_04(TyH);
+   if (1) test_fabd_h_03_04_05(TyH);
+   if (1) test_fabd_h_04_05_06(TyH);
+   if (1) test_fabd_h_05_06_07(TyH);
+   if (1) test_fabd_h_06_07_08(TyH);
+   if (1) test_fabd_h_07_08_09(TyH);
+   if (1) test_fabd_h_08_09_10(TyH);
+   if (1) test_fabd_h_09_10_11(TyH);
+   if (1) test_fabd_h_10_11_12(TyH);
+   if (1) test_fabd_h_11_12_13(TyH);
+   if (1) test_fabd_h_12_13_14(TyH);
+   if (1) test_fabd_h_13_14_15(TyH);
+   if (1) test_fabd_h_14_15_16(TyH);
+   if (1) test_fabd_h_15_16_17(TyH);
+   if (1) test_fabd_h_16_17_18(TyH);
+   if (1) test_fabd_h_17_18_19(TyH);
+   if (1) test_fabd_h_18_19_20(TyH);
+   if (1) test_fabd_h_19_20_21(TyH);
+   if (1) test_fabd_h_20_21_22(TyH);
+   if (1) test_fabd_h_21_22_23(TyH);
+   if (1) test_fabd_h_22_23_24(TyH);
+   if (1) test_fabd_h_23_24_25(TyH);
+   if (1) test_fabd_h_24_25_26(TyH);
+   if (1) test_fabd_h_25_26_27(TyH);
+   if (1) test_fabd_h_26_27_28(TyH);
+   if (1) test_fabd_h_27_28_29(TyH);
+   if (1) test_fabd_h_28_29_30(TyH);
+   if (1) test_fabd_h_29_30_31(TyH);
+
+   printf("\nFACGT <Hd>, <Hn>, <Hm>\n\n");
+
+   if (1) test_facgt_h_00_01_02(TyH);
+   if (1) test_facgt_h_01_02_03(TyH);
+   if (1) test_facgt_h_02_03_04(TyH);
+   if (1) test_facgt_h_03_04_05(TyH);
+   if (1) test_facgt_h_04_05_06(TyH);
+   if (1) test_facgt_h_05_06_07(TyH);
+   if (1) test_facgt_h_06_07_08(TyH);
+   if (1) test_facgt_h_07_08_09(TyH);
+   if (1) test_facgt_h_08_09_10(TyH);
+   if (1) test_facgt_h_09_10_11(TyH);
+   if (1) test_facgt_h_10_11_12(TyH);
+   if (1) test_facgt_h_11_12_13(TyH);
+   if (1) test_facgt_h_12_13_14(TyH);
+   if (1) test_facgt_h_13_14_15(TyH);
+   if (1) test_facgt_h_14_15_16(TyH);
+   if (1) test_facgt_h_15_16_17(TyH);
+   if (1) test_facgt_h_16_17_18(TyH);
+   if (1) test_facgt_h_17_18_19(TyH);
+   if (1) test_facgt_h_18_19_20(TyH);
+   if (1) test_facgt_h_19_20_21(TyH);
+   if (1) test_facgt_h_20_21_22(TyH);
+   if (1) test_facgt_h_21_22_23(TyH);
+   if (1) test_facgt_h_22_23_24(TyH);
+   if (1) test_facgt_h_23_24_25(TyH);
+   if (1) test_facgt_h_24_25_26(TyH);
+   if (1) test_facgt_h_25_26_27(TyH);
+   if (1) test_facgt_h_26_27_28(TyH);
+   if (1) test_facgt_h_27_28_29(TyH);
+   if (1) test_facgt_h_28_29_30(TyH);
+   if (1) test_facgt_h_29_30_31(TyH);
+
+   printf("\nFACGE <Hd>, <Hn>, <Hm>\n\n");
+
+   if (1) test_facge_h_00_01_02(TyH);
+   if (1) test_facge_h_01_02_03(TyH);
+   if (1) test_facge_h_02_03_04(TyH);
+   if (1) test_facge_h_03_04_05(TyH);
+   if (1) test_facge_h_04_05_06(TyH);
+   if (1) test_facge_h_05_06_07(TyH);
+   if (1) test_facge_h_06_07_08(TyH);
+   if (1) test_facge_h_07_08_09(TyH);
+   if (1) test_facge_h_08_09_10(TyH);
+   if (1) test_facge_h_09_10_11(TyH);
+   if (1) test_facge_h_10_11_12(TyH);
+   if (1) test_facge_h_11_12_13(TyH);
+   if (1) test_facge_h_12_13_14(TyH);
+   if (1) test_facge_h_13_14_15(TyH);
+   if (1) test_facge_h_14_15_16(TyH);
+   if (1) test_facge_h_15_16_17(TyH);
+   if (1) test_facge_h_16_17_18(TyH);
+   if (1) test_facge_h_17_18_19(TyH);
+   if (1) test_facge_h_18_19_20(TyH);
+   if (1) test_facge_h_19_20_21(TyH);
+   if (1) test_facge_h_20_21_22(TyH);
+   if (1) test_facge_h_21_22_23(TyH);
+   if (1) test_facge_h_22_23_24(TyH);
+   if (1) test_facge_h_23_24_25(TyH);
+   if (1) test_facge_h_24_25_26(TyH);
+   if (1) test_facge_h_25_26_27(TyH);
+   if (1) test_facge_h_26_27_28(TyH);
+   if (1) test_facge_h_27_28_29(TyH);
+   if (1) test_facge_h_28_29_30(TyH);
+   if (1) test_facge_h_29_30_31(TyH);
+
    return 0;
 }
 
@@ -2942,6 +3206,7 @@ int main ( void )
 /* -- Useful strings when searching for blocks of test cases.    -- */
 /* ---------------------------------------------------------------- */
 /*
+   FADD <Hd>, <Hn>, <Hm> Floating-point Add (scalar).
    FADDP <V><d>, <Vn>.<T> Floating-point Add Pair of elements (scalar).
    FADDP <Vd>.<T>, <Vn>.<T>, <Vm>.<T> Floating-point Add Pairwise (vector).
    FABS <Hd>, <Hn> Floating-point Absolute value (scalar).
@@ -2950,4 +3215,7 @@ int main ( void )
    FNEG <Vd>.<T>, <Vn>.<T> Floating-point Negate (vector).
    FSQRT <Hd>, <Hn> Floating-point Square Root (scalar).
    FSQRT <Vd>.<T>, <Vn>.<T> Floating-point Square Root (vector).
+   FABD <Hd>, <Hn>, <Hm> Floating-point Absolute Difference (scalar).
+   FACGT <Hd>, <Hn>, <Hm> Floating-point Absolute Compare Greater than (scalar).
+   FACGE <Hd>, <Hn>, <Hm> Floating-point Absolute Compare Greater than or Equal (scalar).
 */

@@ -361,6 +361,8 @@ typedef
       ARM64vecb_FCMEQ64x2,   ARM64vecb_FCMEQ32x4,
       ARM64vecb_FCMGE64x2,   ARM64vecb_FCMGE32x4,
       ARM64vecb_FCMGT64x2,   ARM64vecb_FCMGT32x4,
+      ARM64vecb_FCMGE16x8,
+      ARM64vecb_FCMGT16x8,
       ARM64vecb_TBL1,
       ARM64vecb_UZP164x2,    ARM64vecb_UZP132x4,
       ARM64vecb_UZP116x8,    ARM64vecb_UZP18x16,
@@ -527,6 +529,7 @@ typedef
       ARM64in_VUnaryH,
       ARM64in_VBinD,
       ARM64in_VBinS,
+      ARM64in_VBinH,
       ARM64in_VTriD,
       ARM64in_VTriS,
       ARM64in_VCmpD,
@@ -845,6 +848,13 @@ typedef
             HReg         argL;
             HReg         argR;
          } VBinS;
+         /* 16-bit FP binary arithmetic */
+         struct {
+            ARM64FpBinOp op;
+            HReg         dst;
+            HReg         argL;
+            HReg         argR;
+         } VBinH;
          /* 64-bit FP ternary arithmetic */
          struct {
             ARM64FpTriOp op;
@@ -1035,6 +1045,7 @@ extern ARM64Instr* ARM64Instr_VUnaryS ( ARM64FpUnaryOp op, HReg dst, HReg src );
 extern ARM64Instr* ARM64Instr_VUnaryH ( ARM64FpUnaryOp op, HReg dst, HReg src );
 extern ARM64Instr* ARM64Instr_VBinD   ( ARM64FpBinOp op, HReg, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VBinS   ( ARM64FpBinOp op, HReg, HReg, HReg );
+extern ARM64Instr* ARM64Instr_VBinH   ( ARM64FpBinOp op, HReg, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VTriD   ( ARM64FpTriOp op, HReg dst,
                                         HReg, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VTriS   ( ARM64FpTriOp op, HReg dst,

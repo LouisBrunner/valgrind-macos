@@ -614,6 +614,9 @@ typedef
       /* :: IRRoundingMode(I32) x F16 -> F16 */
       Iop_SqrtF16,
 
+      /* :: IRRoundingMode(I32) x F16 x F16 -> F16 */
+      Iop_SubF16, Iop_AddF16,
+
       /* Comparison, yielding GT/LT/EQ/UN(ordered), as per the following:
             0x45 Unordered
             0x01 LT
@@ -1373,8 +1376,18 @@ typedef
 
       /* --- 16x8 vector FP --- */
 
+      /* binary :: IRRoundingMode(I32) x V128 -> V128 */
+      Iop_Sqrt16Fx8,
+
       /* ternary :: IRRoundingMode(I32) x V128 x V128 -> V128 */
       Iop_Add16Fx8,
+
+      /* binary */
+      Iop_CmpLT16Fx8, Iop_CmpLE16Fx8,
+
+      /* unary */
+      Iop_Abs16Fx8,
+      Iop_Neg16Fx8,
 
       /* --- 32x4 vector FP --- */
 
@@ -1393,13 +1406,10 @@ typedef
       Iop_PwMax32Fx4, Iop_PwMin32Fx4,
 
       /* unary */
-      Iop_Abs16Fx8,
       Iop_Abs32Fx4,
-      Iop_Neg16Fx8,
       Iop_Neg32Fx4,
 
       /* binary :: IRRoundingMode(I32) x V128 -> V128 */
-      Iop_Sqrt16Fx8,
       Iop_Sqrt32Fx4,
 
       /* Vector Reciprocal Estimate finds an approximate reciprocal of each

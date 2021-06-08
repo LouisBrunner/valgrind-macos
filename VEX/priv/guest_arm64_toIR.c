@@ -12863,6 +12863,50 @@ Bool dis_AdvSIMD_three_same_fp16(/*MB_OUT*/DisResult* dres, UInt insn,
       return True;
    }
 
+   if (bitU == 1 && size == X11 && opcode == BITS5(0,0,0,1,0)) {
+      /* -------- 1,11,00010 FABD 4h_4h_4h, 8h_8h_8h -------- */
+      IRTemp rm    = mk_get_IR_rounding_mode();
+      IRTemp t1    = newTempV128();
+      IRTemp t2    = newTempV128();
+      assign(t1, triop(Iop_Sub16Fx8, mkexpr(rm), getQReg128(nn), getQReg128(mm)));
+      assign(t2, unop(Iop_Abs16Fx8, mkexpr(t1)));
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, t2));
+      const HChar* arr = bitQ == 0 ? "4h" : "8h";
+      DIP("%s %s.%s, %s.%s, %s.%s\n", "fabd",
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      return True;
+   }
+
+   if (bitU == 1 && opcode == BITS5(0,0,1,0,1)) {
+      /* -------- 1,01,00101 FACGE 4h_4h_4h 8h_8h_8h -------- */
+      /* -------- 1,11,00101 FACGT 4h_4h_4h 8h_8h_8h -------- */
+      Bool isGT  = (size & 3) == 3;
+      IROp opCMP = isGT ? Iop_CmpLT16Fx8 : Iop_CmpLE16Fx8;
+      IROp opABS = Iop_Abs16Fx8;
+      IRTemp t1  = newTempV128();
+      assign(t1, binop(opCMP, unop(opABS, getQReg128(mm)),
+                              unop(opABS, getQReg128(nn))));
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, t1));
+      const HChar* arr = bitQ == 0 ? "4h" : "8h";
+      DIP("%s %s.%s, %s.%s, %s.%s\n", isGT ? "facgt" : "facge",
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      return True;
+   }
+
+   if (bitU == 0 && size == X01 && opcode == BITS5(0,0,0,1,0)) {
+      /* -------- 0,01,00010 FADD 4h_4h_4h, 8h_8h_8h -------- */
+      IRTemp rm = mk_get_IR_rounding_mode();
+      IRTemp t1 = newTempV128();
+      IRTemp t2 = newTempV128();
+      assign(t1, triop(Iop_Add16Fx8, mkexpr(rm), getQReg128(nn), getQReg128(mm)));
+      assign(t2, math_MAYBE_ZERO_HI64(bitQ, t1));
+      putQReg128(dd, mkexpr(t2));
+      const HChar* arr = bitQ == 0 ? "4h" : "8h";
+      DIP("%s %s.%s, %s.%s, %s.%s\n", "fadd",
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      return True;
+   }
+
    return False;
 #  undef INSN
 }

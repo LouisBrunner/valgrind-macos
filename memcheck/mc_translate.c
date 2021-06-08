@@ -3473,6 +3473,7 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
          IR is implemented.
       */
       case Iop_Add16Fx8:
+      case Iop_Sub16Fx8:
         return binary16Fx8_w_rm(mce, vatom1, vatom2, vatom3);
 
       case Iop_Add32Fx8:

@@ -619,6 +619,7 @@ static irop_t irops[] = {
   { DEFOP(Iop_ReinterpD64asI64,      UNDEF_SAME),   .s390x = 1, .ppc64 = 1, .ppc32 = 1 },
   /* ------------------ 128-bit SIMD FP. ------------------ */
   { DEFOP(Iop_Add16Fx8, UNDEF_UNKNOWN), },
+  { DEFOP(Iop_Sub16Fx8, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Add32Fx4, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Sub32Fx4, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Mul32Fx4, UNDEF_UNKNOWN), },

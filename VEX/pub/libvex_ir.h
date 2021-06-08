@@ -1380,7 +1380,7 @@ typedef
       Iop_Sqrt16Fx8,
 
       /* ternary :: IRRoundingMode(I32) x V128 x V128 -> V128 */
-      Iop_Add16Fx8,
+      Iop_Add16Fx8, Iop_Sub16Fx8,
 
       /* binary */
       Iop_CmpLT16Fx8, Iop_CmpLE16Fx8,

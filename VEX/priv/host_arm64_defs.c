@@ -602,6 +602,7 @@ static void showARM64VecBinOp(/*OUT*/const HChar** nm,
       case ARM64vecb_FADD32x4:     *nm = "fadd  ";    *ar = "4s";   return;
       case ARM64vecb_FADD16x8:     *nm = "fadd  ";    *ar = "8h";   return;
       case ARM64vecb_FSUB32x4:     *nm = "fsub  ";    *ar = "4s";   return;
+      case ARM64vecb_FSUB16x8:     *nm = "fsub  ";    *ar = "8h";   return;
       case ARM64vecb_FMUL32x4:     *nm = "fmul  ";    *ar = "4s";   return;
       case ARM64vecb_FDIV32x4:     *nm = "fdiv  ";    *ar = "4s";   return;
       case ARM64vecb_FMAX64x2:     *nm = "fmax  ";    *ar = "2d";   return;
@@ -4945,6 +4946,9 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
                break;
             case ARM64vecb_FSUB32x4:
                *p++ = X_3_8_5_6_5_5(X010, X01110101, vM, X110101, vN, vD);
+               break;
+            case ARM64vecb_FSUB16x8:
+               *p++ = X_3_8_5_6_5_5(X010, X01110110, vM, X000101, vN, vD);
                break;
             case ARM64vecb_FMUL64x2:
                *p++ = X_3_8_5_6_5_5(X011, X01110011, vM, X110111, vN, vD);

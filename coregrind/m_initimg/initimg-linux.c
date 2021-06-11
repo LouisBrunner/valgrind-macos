@@ -824,8 +824,9 @@ Addr setup_client_stack( void*  init_sp,
              * explicit support in VEX. Filter out HTM bits since the
              * transaction begin instruction (tbegin) is always failed in
              * Valgrind causing the code to execute the failure path.
-             * Also filter out the DARN random number (bug #411189).
-             * And the SCV syscall (bug #431157).
+             * The DARN random number (bug #411189) and the SCV syscall
+             * (bug #431157) have been fixed.  Can now include them in the
+             * HWCAP bits.
              */
             auxv->u.a_val &= (0x80000000ULL     /* ARCH_2_07 */
                               | 0x20000000ULL   /* DSCR */
@@ -837,7 +838,8 @@ Addr setup_client_stack( void*  init_sp,
                               | 0x00100000ULL   /* PPC_FEATURE2_SCV */
                               | 0x00400000ULL   /* HAS_IEEE128 */
                               | 0x00200000ULL   /* PPC_FEATURE2_DARN */
-                              | 0x00040000ULL); /* ARCH_3_1 */
+                              | 0x00040000ULL   /* ARCH_3_1 */
+                              | 0x00020000ULL); /* MMA instruction support */
          }
 
             break;

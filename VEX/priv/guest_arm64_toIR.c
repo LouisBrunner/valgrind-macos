@@ -11065,6 +11065,77 @@ Bool dis_AdvSIMD_scalar_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
 
 
 static
+Bool dis_AdvSIMD_scalar_two_reg_misc_fp16(/*MB_OUT*/DisResult* dres, UInt insn,
+                                          const VexArchInfo* archinfo)
+{
+   /* This decode function only handles instructions with half-precision
+      floating-point (fp16) operands.
+   */
+   if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_FP16) == 0)
+      return False;
+
+   /* 31 29 28    23   21    16     11 9 4
+      01 U  11110 size 11100 opcode 10 n d
+      Decode fields: u,size,opcode
+   */
+#  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,30) != BITS2(0,1)
+       || INSN(28,24) != BITS5(1,1,1,1,0)
+       || INSN(21,17) != BITS5(1,1,1,0,0)
+       || INSN(11,10) != BITS2(1,0)) {
+      return False;
+   }
+   UInt bitU   = INSN(29,29);
+   UInt size   = INSN(23,22);
+   UInt opcode = INSN(16,12);
+   UInt nn     = INSN(9,5);
+   UInt dd     = INSN(4,0);
+   vassert(size == 3);
+
+   /* Decoding FCM<condtion> based on opcode and bitU. ix used to select
+    * <condition>
+    */
+   UInt ix = 0; // Invalid <condition>
+   switch (opcode) {
+      case BITS5(0,1,1,0,1): ix = (bitU == 1) ? 4 : 1; break; // FCMLE=4,FCMEQ=1
+      case BITS5(0,1,1,0,0): ix = (bitU == 1) ? 5 : 2; break; // FCMGE=5,FCMGT=2
+      case BITS5(0,1,1,1,0): if (bitU == 0) ix = 3; break;    // FCMLT=3
+      default: break;
+   }
+   if (ix > 0) {
+      /* -------- 0,01101 FCMEQ h_h_#0.0 (ix 1) -------- */
+      /* -------- 0,01100 FCMGT h_h_#0.0 (ix 2) -------- */
+      /* -------- 0,01110 FCMLT h_h_#0.0 (ix 3) -------- */
+      /* -------- 1,01101 FCMLE h_h_#0.0 (ix 4) -------- */
+      /* -------- 1,01100 FCMGE h_h_#0.0 (ix 5) -------- */
+      IRType ity     = Ity_F16;
+      IROp   opCmp   = Iop_INVALID;
+      Bool   swap    = False;
+      const HChar* nm = "??";
+      switch (ix) {
+         case 1: nm = "fcmeq"; opCmp = Iop_CmpEQ16Fx8; break;
+         case 2: nm = "fcmgt"; opCmp = Iop_CmpLT16Fx8; swap = True; break;
+         case 3: nm = "fcmlt"; opCmp = Iop_CmpLT16Fx8; break;
+         case 4: nm = "fcmle"; opCmp = Iop_CmpLE16Fx8; break;
+         case 5: nm = "fcmge"; opCmp = Iop_CmpLE16Fx8; swap = True; break;
+         default: vassert(0);
+      }
+      IRExpr* zero = mkV128(0x0000);
+      IRTemp res   = newTempV128();
+      assign(res, swap ? binop(opCmp, zero, getQReg128(nn))
+                       : binop(opCmp, getQReg128(nn), zero));
+      putQReg128(dd, mkexpr(math_ZERO_ALL_EXCEPT_LOWEST_LANE(X01, mkexpr(res))));
+
+      DIP("%s %s, %s, #0.0\n", nm, nameQRegLO(dd, ity), nameQRegLO(nn, ity));
+      return True;
+   }
+
+   return False;
+#  undef INSN
+}
+
+
+static
 Bool dis_AdvSIMD_scalar_x_indexed_element(/*MB_OUT*/DisResult* dres, UInt insn)
 {
    /* 31   28    23   21 20 19 15     11   9 4
@@ -13696,6 +13767,44 @@ Bool dis_AdvSIMD_two_reg_misc_fp16(/*MB_OUT*/DisResult* dres, UInt insn,
       return True;
    }
 
+   /* Decoding FCM<condtion> based on opcode and bitU. ix used to select
+    * <condition>
+    */
+   UInt ix = 0; // Invalid <condition>
+   switch (opcode) {
+      case BITS5(0,1,1,0,1): ix = (bitU == 1) ? 4 : 1; break; // FCMLE=4,FCMEQ=1
+      case BITS5(0,1,1,0,0): ix = (bitU == 1) ? 5 : 2; break; // FCMGE=5,FCMGT=2
+      case BITS5(0,1,1,1,0): if (bitU == 0) ix = 3; break;    // FCMLT=3
+      default: break;
+   }
+   if (ix > 0) {
+      /* -------- 0,01101 FCMEQ 4h_4h,8h_8h _#0.0 (ix 1) -------- */
+      /* -------- 0,01100 FCMGT 4h_4h,8h_8h _#0.0 (ix 2) -------- */
+      /* -------- 0,01110 FCMLT 4h_4h,8h_8h _#0.0 (ix 3) -------- */
+      /* -------- 1,01101 FCMLE 4h_4h,8h_8h _#0.0 (ix 4) -------- */
+      /* -------- 1,01100 FCMGE 4h_4h,8h_8h _#0.0 (ix 5) -------- */
+      IROp   opCmp   = Iop_INVALID;
+      Bool   swap    = False;
+      const HChar* nm = "??";
+      switch (ix) {
+         case 1: nm = "fcmeq"; opCmp = Iop_CmpEQ16Fx8; break;
+         case 2: nm = "fcmgt"; opCmp = Iop_CmpLT16Fx8; swap = True; break;
+         case 3: nm = "fcmlt"; opCmp = Iop_CmpLT16Fx8; break;
+         case 4: nm = "fcmle"; opCmp = Iop_CmpLE16Fx8; break;
+         case 5: nm = "fcmge"; opCmp = Iop_CmpLE16Fx8; swap = True; break;
+         default: vassert(0);
+      }
+      IRExpr* zero = mkV128(0x0000);
+      IRTemp res = newTempV128();
+      assign(res, swap ? binop(opCmp, zero, getQReg128(nn))
+                       : binop(opCmp, getQReg128(nn), zero));
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, res));
+      const HChar* arr = bitQ == 0 ? "4h" : "8h";
+      DIP("%s %s.%s, %s.%s, #0.0\n", nm,
+          nameQReg128(dd), arr, nameQReg128(nn), arr);
+      return True;
+   }
+
    return False;
 #  undef INSN
 }
@@ -15323,6 +15432,8 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn,
    ok = dis_AdvSIMD_scalar_three_same_extra(dres, insn, archinfo);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_scalar_two_reg_misc(dres, insn);
+   if (UNLIKELY(ok)) return True;
+   ok = dis_AdvSIMD_scalar_two_reg_misc_fp16(dres, insn, archinfo);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_scalar_x_indexed_element(dres, insn);
    if (UNLIKELY(ok)) return True;

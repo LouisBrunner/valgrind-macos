@@ -3017,6 +3017,40 @@ GEN_THREEVEC_TEST(fcmeq_h_27_28_29, "fcmeq h27, h28, h29", 27, 28, 29)
 GEN_THREEVEC_TEST(fcmeq_h_28_29_30, "fcmeq h28, h29, h30", 28, 29, 30)
 GEN_THREEVEC_TEST(fcmeq_h_29_30_31, "fcmeq h29, h30, h31", 29, 30, 31)
 
+// FCMEQ <Hd>, <Hn>, #0.0
+
+GEN_TWOVEC_TEST(fcmeqz_h_00_01, "fcmeq h0, h1, #0.0", 0, 1)
+GEN_TWOVEC_TEST(fcmeqz_h_01_02, "fcmeq h1, h2, #0.0", 1, 2)
+GEN_TWOVEC_TEST(fcmeqz_h_02_03, "fcmeq h2, h3, #0.0", 2, 3)
+GEN_TWOVEC_TEST(fcmeqz_h_03_04, "fcmeq h3, h4, #0.0", 3, 4)
+GEN_TWOVEC_TEST(fcmeqz_h_04_05, "fcmeq h4, h5, #0.0", 4, 5)
+GEN_TWOVEC_TEST(fcmeqz_h_05_06, "fcmeq h5, h6, #0.0", 5, 6)
+GEN_TWOVEC_TEST(fcmeqz_h_06_07, "fcmeq h6, h7, #0.0", 6, 7)
+GEN_TWOVEC_TEST(fcmeqz_h_07_08, "fcmeq h7, h8, #0.0", 7, 8)
+GEN_TWOVEC_TEST(fcmeqz_h_08_09, "fcmeq h8, h9, #0.0", 8, 9)
+GEN_TWOVEC_TEST(fcmeqz_h_09_10, "fcmeq h9, h10, #0.0", 9, 10)
+GEN_TWOVEC_TEST(fcmeqz_h_10_11, "fcmeq h10, h11, #0.0", 10, 11)
+GEN_TWOVEC_TEST(fcmeqz_h_11_12, "fcmeq h11, h12, #0.0", 11, 12)
+GEN_TWOVEC_TEST(fcmeqz_h_12_13, "fcmeq h12, h13, #0.0", 12, 13)
+GEN_TWOVEC_TEST(fcmeqz_h_13_14, "fcmeq h13, h14, #0.0", 13, 14)
+GEN_TWOVEC_TEST(fcmeqz_h_14_15, "fcmeq h14, h15, #0.0", 14, 15)
+GEN_TWOVEC_TEST(fcmeqz_h_15_16, "fcmeq h15, h16, #0.0", 15, 16)
+GEN_TWOVEC_TEST(fcmeqz_h_16_17, "fcmeq h16, h17, #0.0", 16, 17)
+GEN_TWOVEC_TEST(fcmeqz_h_17_18, "fcmeq h17, h18, #0.0", 17, 18)
+GEN_TWOVEC_TEST(fcmeqz_h_18_19, "fcmeq h18, h19, #0.0", 18, 19)
+GEN_TWOVEC_TEST(fcmeqz_h_19_20, "fcmeq h19, h20, #0.0", 19, 20)
+GEN_TWOVEC_TEST(fcmeqz_h_20_21, "fcmeq h20, h21, #0.0", 20, 21)
+GEN_TWOVEC_TEST(fcmeqz_h_21_22, "fcmeq h21, h22, #0.0", 21, 22)
+GEN_TWOVEC_TEST(fcmeqz_h_22_23, "fcmeq h22, h23, #0.0", 22, 23)
+GEN_TWOVEC_TEST(fcmeqz_h_23_24, "fcmeq h23, h24, #0.0", 23, 24)
+GEN_TWOVEC_TEST(fcmeqz_h_24_25, "fcmeq h24, h25, #0.0", 24, 25)
+GEN_TWOVEC_TEST(fcmeqz_h_25_26, "fcmeq h25, h26, #0.0", 25, 26)
+GEN_TWOVEC_TEST(fcmeqz_h_26_27, "fcmeq h26, h27, #0.0", 26, 27)
+GEN_TWOVEC_TEST(fcmeqz_h_27_28, "fcmeq h27, h28, #0.0", 27, 28)
+GEN_TWOVEC_TEST(fcmeqz_h_28_29, "fcmeq h28, h29, #0.0", 28, 29)
+GEN_TWOVEC_TEST(fcmeqz_h_29_30, "fcmeq h29, h30, #0.0", 29, 30)
+GEN_TWOVEC_TEST(fcmeqz_h_30_31, "fcmeq h30, h31, #0.0", 30, 31)
+
 // FCMEQ <Vd>.<T>, <Vn>.<T>, <Vm>.<T>
 
 GEN_THREEVEC_TEST(fcmeq_8h_00_01_02, "fcmeq v0.8h, v1.8h, v2.8h", 0, 1, 2)
@@ -3081,6 +3115,72 @@ GEN_THREEVEC_TEST(fcmeq_4h_27_28_29, "fcmeq v27.4h, v28.4h, v29.4h", 27, 28, 29)
 GEN_THREEVEC_TEST(fcmeq_4h_28_29_30, "fcmeq v28.4h, v29.4h, v30.4h", 28, 29, 30)
 GEN_THREEVEC_TEST(fcmeq_4h_29_30_31, "fcmeq v29.4h, v30.4h, v31.4h", 29, 30, 31)
 
+// FCMEQ <Vd>.<T>, <Vn>.<T>, #0.0
+
+GEN_TWOVEC_TEST(fcmeqz_8h_00_01, "fcmeq v0.8h, v1.8h, #0.0", 0, 1)
+GEN_TWOVEC_TEST(fcmeqz_8h_01_02, "fcmeq v1.8h, v2.8h, #0.0", 1, 2)
+GEN_TWOVEC_TEST(fcmeqz_8h_02_03, "fcmeq v2.8h, v3.8h, #0.0", 2, 3)
+GEN_TWOVEC_TEST(fcmeqz_8h_03_04, "fcmeq v3.8h, v4.8h, #0.0", 3, 4)
+GEN_TWOVEC_TEST(fcmeqz_8h_04_05, "fcmeq v4.8h, v5.8h, #0.0", 4, 5)
+GEN_TWOVEC_TEST(fcmeqz_8h_05_06, "fcmeq v5.8h, v6.8h, #0.0", 5, 6)
+GEN_TWOVEC_TEST(fcmeqz_8h_06_07, "fcmeq v6.8h, v7.8h, #0.0", 6, 7)
+GEN_TWOVEC_TEST(fcmeqz_8h_07_08, "fcmeq v7.8h, v8.8h, #0.0", 7, 8)
+GEN_TWOVEC_TEST(fcmeqz_8h_08_09, "fcmeq v8.8h, v9.8h, #0.0", 8, 9)
+GEN_TWOVEC_TEST(fcmeqz_8h_09_10, "fcmeq v9.8h, v10.8h, #0.0", 9, 10)
+GEN_TWOVEC_TEST(fcmeqz_8h_10_11, "fcmeq v10.8h, v11.8h, #0.0", 10, 11)
+GEN_TWOVEC_TEST(fcmeqz_8h_11_12, "fcmeq v11.8h, v12.8h, #0.0", 11, 12)
+GEN_TWOVEC_TEST(fcmeqz_8h_12_13, "fcmeq v12.8h, v13.8h, #0.0", 12, 13)
+GEN_TWOVEC_TEST(fcmeqz_8h_13_14, "fcmeq v13.8h, v14.8h, #0.0", 13, 14)
+GEN_TWOVEC_TEST(fcmeqz_8h_14_15, "fcmeq v14.8h, v15.8h, #0.0", 14, 15)
+GEN_TWOVEC_TEST(fcmeqz_8h_15_16, "fcmeq v15.8h, v16.8h, #0.0", 15, 16)
+GEN_TWOVEC_TEST(fcmeqz_8h_16_17, "fcmeq v16.8h, v17.8h, #0.0", 16, 17)
+GEN_TWOVEC_TEST(fcmeqz_8h_17_18, "fcmeq v17.8h, v18.8h, #0.0", 17, 18)
+GEN_TWOVEC_TEST(fcmeqz_8h_18_19, "fcmeq v18.8h, v19.8h, #0.0", 18, 19)
+GEN_TWOVEC_TEST(fcmeqz_8h_19_20, "fcmeq v19.8h, v20.8h, #0.0", 19, 20)
+GEN_TWOVEC_TEST(fcmeqz_8h_20_21, "fcmeq v20.8h, v21.8h, #0.0", 20, 21)
+GEN_TWOVEC_TEST(fcmeqz_8h_21_22, "fcmeq v21.8h, v22.8h, #0.0", 21, 22)
+GEN_TWOVEC_TEST(fcmeqz_8h_22_23, "fcmeq v22.8h, v23.8h, #0.0", 22, 23)
+GEN_TWOVEC_TEST(fcmeqz_8h_23_24, "fcmeq v23.8h, v24.8h, #0.0", 23, 24)
+GEN_TWOVEC_TEST(fcmeqz_8h_24_25, "fcmeq v24.8h, v25.8h, #0.0", 24, 25)
+GEN_TWOVEC_TEST(fcmeqz_8h_25_26, "fcmeq v25.8h, v26.8h, #0.0", 25, 26)
+GEN_TWOVEC_TEST(fcmeqz_8h_26_27, "fcmeq v26.8h, v27.8h, #0.0", 26, 27)
+GEN_TWOVEC_TEST(fcmeqz_8h_27_28, "fcmeq v27.8h, v28.8h, #0.0", 27, 28)
+GEN_TWOVEC_TEST(fcmeqz_8h_28_29, "fcmeq v28.8h, v29.8h, #0.0", 28, 29)
+GEN_TWOVEC_TEST(fcmeqz_8h_29_30, "fcmeq v29.8h, v30.8h, #0.0", 29, 30)
+GEN_TWOVEC_TEST(fcmeqz_8h_30_31, "fcmeq v30.8h, v31.8h, #0.0", 30, 31)
+
+GEN_TWOVEC_TEST(fcmeqz_4h_00_01, "fcmeq v0.4h, v1.4h, #0.0", 0, 1)
+GEN_TWOVEC_TEST(fcmeqz_4h_01_02, "fcmeq v1.4h, v2.4h, #0.0", 1, 2)
+GEN_TWOVEC_TEST(fcmeqz_4h_02_03, "fcmeq v2.4h, v3.4h, #0.0", 2, 3)
+GEN_TWOVEC_TEST(fcmeqz_4h_03_04, "fcmeq v3.4h, v4.4h, #0.0", 3, 4)
+GEN_TWOVEC_TEST(fcmeqz_4h_04_05, "fcmeq v4.4h, v5.4h, #0.0", 4, 5)
+GEN_TWOVEC_TEST(fcmeqz_4h_05_06, "fcmeq v5.4h, v6.4h, #0.0", 5, 6)
+GEN_TWOVEC_TEST(fcmeqz_4h_06_07, "fcmeq v6.4h, v7.4h, #0.0", 6, 7)
+GEN_TWOVEC_TEST(fcmeqz_4h_07_08, "fcmeq v7.4h, v8.4h, #0.0", 7, 8)
+GEN_TWOVEC_TEST(fcmeqz_4h_08_09, "fcmeq v8.4h, v9.4h, #0.0", 8, 9)
+GEN_TWOVEC_TEST(fcmeqz_4h_09_10, "fcmeq v9.4h, v10.4h, #0.0", 9, 10)
+GEN_TWOVEC_TEST(fcmeqz_4h_10_11, "fcmeq v10.4h, v11.4h, #0.0", 10, 11)
+GEN_TWOVEC_TEST(fcmeqz_4h_11_12, "fcmeq v11.4h, v12.4h, #0.0", 11, 12)
+GEN_TWOVEC_TEST(fcmeqz_4h_12_13, "fcmeq v12.4h, v13.4h, #0.0", 12, 13)
+GEN_TWOVEC_TEST(fcmeqz_4h_13_14, "fcmeq v13.4h, v14.4h, #0.0", 13, 14)
+GEN_TWOVEC_TEST(fcmeqz_4h_14_15, "fcmeq v14.4h, v15.4h, #0.0", 14, 15)
+GEN_TWOVEC_TEST(fcmeqz_4h_15_16, "fcmeq v15.4h, v16.4h, #0.0", 15, 16)
+GEN_TWOVEC_TEST(fcmeqz_4h_16_17, "fcmeq v16.4h, v17.4h, #0.0", 16, 17)
+GEN_TWOVEC_TEST(fcmeqz_4h_17_18, "fcmeq v17.4h, v18.4h, #0.0", 17, 18)
+GEN_TWOVEC_TEST(fcmeqz_4h_18_19, "fcmeq v18.4h, v19.4h, #0.0", 18, 19)
+GEN_TWOVEC_TEST(fcmeqz_4h_19_20, "fcmeq v19.4h, v20.4h, #0.0", 19, 20)
+GEN_TWOVEC_TEST(fcmeqz_4h_20_21, "fcmeq v20.4h, v21.4h, #0.0", 20, 21)
+GEN_TWOVEC_TEST(fcmeqz_4h_21_22, "fcmeq v21.4h, v22.4h, #0.0", 21, 22)
+GEN_TWOVEC_TEST(fcmeqz_4h_22_23, "fcmeq v22.4h, v23.4h, #0.0", 22, 23)
+GEN_TWOVEC_TEST(fcmeqz_4h_23_24, "fcmeq v23.4h, v24.4h, #0.0", 23, 24)
+GEN_TWOVEC_TEST(fcmeqz_4h_24_25, "fcmeq v24.4h, v25.4h, #0.0", 24, 25)
+GEN_TWOVEC_TEST(fcmeqz_4h_25_26, "fcmeq v25.4h, v26.4h, #0.0", 25, 26)
+GEN_TWOVEC_TEST(fcmeqz_4h_26_27, "fcmeq v26.4h, v27.4h, #0.0", 26, 27)
+GEN_TWOVEC_TEST(fcmeqz_4h_27_28, "fcmeq v27.4h, v28.4h, #0.0", 27, 28)
+GEN_TWOVEC_TEST(fcmeqz_4h_28_29, "fcmeq v28.4h, v29.4h, #0.0", 28, 29)
+GEN_TWOVEC_TEST(fcmeqz_4h_29_30, "fcmeq v29.4h, v30.4h, #0.0", 29, 30)
+GEN_TWOVEC_TEST(fcmeqz_4h_30_31, "fcmeq v30.4h, v31.4h, #0.0", 30, 31)
+
 // FCMGE <Hd>, <Hn>, <Hm>
 
 GEN_THREEVEC_TEST(fcmge_h_00_01_02, "fcmge h0, h1, h2", 0, 1, 2)
@@ -3113,6 +3213,40 @@ GEN_THREEVEC_TEST(fcmge_h_26_27_28, "fcmge h26, h27, h28", 26, 27, 28)
 GEN_THREEVEC_TEST(fcmge_h_27_28_29, "fcmge h27, h28, h29", 27, 28, 29)
 GEN_THREEVEC_TEST(fcmge_h_28_29_30, "fcmge h28, h29, h30", 28, 29, 30)
 GEN_THREEVEC_TEST(fcmge_h_29_30_31, "fcmge h29, h30, h31", 29, 30, 31)
+
+// FCMGE <Hd>, <Hn>, #0.0
+
+GEN_TWOVEC_TEST(fcmgez_h_00_01, "fcmge h0, h1, #0.0", 0, 1)
+GEN_TWOVEC_TEST(fcmgez_h_01_02, "fcmge h1, h2, #0.0", 1, 2)
+GEN_TWOVEC_TEST(fcmgez_h_02_03, "fcmge h2, h3, #0.0", 2, 3)
+GEN_TWOVEC_TEST(fcmgez_h_03_04, "fcmge h3, h4, #0.0", 3, 4)
+GEN_TWOVEC_TEST(fcmgez_h_04_05, "fcmge h4, h5, #0.0", 4, 5)
+GEN_TWOVEC_TEST(fcmgez_h_05_06, "fcmge h5, h6, #0.0", 5, 6)
+GEN_TWOVEC_TEST(fcmgez_h_06_07, "fcmge h6, h7, #0.0", 6, 7)
+GEN_TWOVEC_TEST(fcmgez_h_07_08, "fcmge h7, h8, #0.0", 7, 8)
+GEN_TWOVEC_TEST(fcmgez_h_08_09, "fcmge h8, h9, #0.0", 8, 9)
+GEN_TWOVEC_TEST(fcmgez_h_09_10, "fcmge h9, h10, #0.0", 9, 10)
+GEN_TWOVEC_TEST(fcmgez_h_10_11, "fcmge h10, h11, #0.0", 10, 11)
+GEN_TWOVEC_TEST(fcmgez_h_11_12, "fcmge h11, h12, #0.0", 11, 12)
+GEN_TWOVEC_TEST(fcmgez_h_12_13, "fcmge h12, h13, #0.0", 12, 13)
+GEN_TWOVEC_TEST(fcmgez_h_13_14, "fcmge h13, h14, #0.0", 13, 14)
+GEN_TWOVEC_TEST(fcmgez_h_14_15, "fcmge h14, h15, #0.0", 14, 15)
+GEN_TWOVEC_TEST(fcmgez_h_15_16, "fcmge h15, h16, #0.0", 15, 16)
+GEN_TWOVEC_TEST(fcmgez_h_16_17, "fcmge h16, h17, #0.0", 16, 17)
+GEN_TWOVEC_TEST(fcmgez_h_17_18, "fcmge h17, h18, #0.0", 17, 18)
+GEN_TWOVEC_TEST(fcmgez_h_18_19, "fcmge h18, h19, #0.0", 18, 19)
+GEN_TWOVEC_TEST(fcmgez_h_19_20, "fcmge h19, h20, #0.0", 19, 20)
+GEN_TWOVEC_TEST(fcmgez_h_20_21, "fcmge h20, h21, #0.0", 20, 21)
+GEN_TWOVEC_TEST(fcmgez_h_21_22, "fcmge h21, h22, #0.0", 21, 22)
+GEN_TWOVEC_TEST(fcmgez_h_22_23, "fcmge h22, h23, #0.0", 22, 23)
+GEN_TWOVEC_TEST(fcmgez_h_23_24, "fcmge h23, h24, #0.0", 23, 24)
+GEN_TWOVEC_TEST(fcmgez_h_24_25, "fcmge h24, h25, #0.0", 24, 25)
+GEN_TWOVEC_TEST(fcmgez_h_25_26, "fcmge h25, h26, #0.0", 25, 26)
+GEN_TWOVEC_TEST(fcmgez_h_26_27, "fcmge h26, h27, #0.0", 26, 27)
+GEN_TWOVEC_TEST(fcmgez_h_27_28, "fcmge h27, h28, #0.0", 27, 28)
+GEN_TWOVEC_TEST(fcmgez_h_28_29, "fcmge h28, h29, #0.0", 28, 29)
+GEN_TWOVEC_TEST(fcmgez_h_29_30, "fcmge h29, h30, #0.0", 29, 30)
+GEN_TWOVEC_TEST(fcmgez_h_30_31, "fcmge h30, h31, #0.0", 30, 31)
 
 // FCMGE <Vd>.<T>, <Vn>.<T>, <Vm>.<T>
 
@@ -3178,6 +3312,72 @@ GEN_THREEVEC_TEST(fcmge_4h_27_28_29, "fcmge v27.4h, v28.4h, v29.4h", 27, 28, 29)
 GEN_THREEVEC_TEST(fcmge_4h_28_29_30, "fcmge v28.4h, v29.4h, v30.4h", 28, 29, 30)
 GEN_THREEVEC_TEST(fcmge_4h_29_30_31, "fcmge v29.4h, v30.4h, v31.4h", 29, 30, 31)
 
+// FCMGE <Vd>.<T>, <Vn>.<T>, #0.0
+
+GEN_TWOVEC_TEST(fcmgez_8h_00_01, "fcmge v0.8h, v1.8h, #0.0", 0, 1)
+GEN_TWOVEC_TEST(fcmgez_8h_01_02, "fcmge v1.8h, v2.8h, #0.0", 1, 2)
+GEN_TWOVEC_TEST(fcmgez_8h_02_03, "fcmge v2.8h, v3.8h, #0.0", 2, 3)
+GEN_TWOVEC_TEST(fcmgez_8h_03_04, "fcmge v3.8h, v4.8h, #0.0", 3, 4)
+GEN_TWOVEC_TEST(fcmgez_8h_04_05, "fcmge v4.8h, v5.8h, #0.0", 4, 5)
+GEN_TWOVEC_TEST(fcmgez_8h_05_06, "fcmge v5.8h, v6.8h, #0.0", 5, 6)
+GEN_TWOVEC_TEST(fcmgez_8h_06_07, "fcmge v6.8h, v7.8h, #0.0", 6, 7)
+GEN_TWOVEC_TEST(fcmgez_8h_07_08, "fcmge v7.8h, v8.8h, #0.0", 7, 8)
+GEN_TWOVEC_TEST(fcmgez_8h_08_09, "fcmge v8.8h, v9.8h, #0.0", 8, 9)
+GEN_TWOVEC_TEST(fcmgez_8h_09_10, "fcmge v9.8h, v10.8h, #0.0", 9, 10)
+GEN_TWOVEC_TEST(fcmgez_8h_10_11, "fcmge v10.8h, v11.8h, #0.0", 10, 11)
+GEN_TWOVEC_TEST(fcmgez_8h_11_12, "fcmge v11.8h, v12.8h, #0.0", 11, 12)
+GEN_TWOVEC_TEST(fcmgez_8h_12_13, "fcmge v12.8h, v13.8h, #0.0", 12, 13)
+GEN_TWOVEC_TEST(fcmgez_8h_13_14, "fcmge v13.8h, v14.8h, #0.0", 13, 14)
+GEN_TWOVEC_TEST(fcmgez_8h_14_15, "fcmge v14.8h, v15.8h, #0.0", 14, 15)
+GEN_TWOVEC_TEST(fcmgez_8h_15_16, "fcmge v15.8h, v16.8h, #0.0", 15, 16)
+GEN_TWOVEC_TEST(fcmgez_8h_16_17, "fcmge v16.8h, v17.8h, #0.0", 16, 17)
+GEN_TWOVEC_TEST(fcmgez_8h_17_18, "fcmge v17.8h, v18.8h, #0.0", 17, 18)
+GEN_TWOVEC_TEST(fcmgez_8h_18_19, "fcmge v18.8h, v19.8h, #0.0", 18, 19)
+GEN_TWOVEC_TEST(fcmgez_8h_19_20, "fcmge v19.8h, v20.8h, #0.0", 19, 20)
+GEN_TWOVEC_TEST(fcmgez_8h_20_21, "fcmge v20.8h, v21.8h, #0.0", 20, 21)
+GEN_TWOVEC_TEST(fcmgez_8h_21_22, "fcmge v21.8h, v22.8h, #0.0", 21, 22)
+GEN_TWOVEC_TEST(fcmgez_8h_22_23, "fcmge v22.8h, v23.8h, #0.0", 22, 23)
+GEN_TWOVEC_TEST(fcmgez_8h_23_24, "fcmge v23.8h, v24.8h, #0.0", 23, 24)
+GEN_TWOVEC_TEST(fcmgez_8h_24_25, "fcmge v24.8h, v25.8h, #0.0", 24, 25)
+GEN_TWOVEC_TEST(fcmgez_8h_25_26, "fcmge v25.8h, v26.8h, #0.0", 25, 26)
+GEN_TWOVEC_TEST(fcmgez_8h_26_27, "fcmge v26.8h, v27.8h, #0.0", 26, 27)
+GEN_TWOVEC_TEST(fcmgez_8h_27_28, "fcmge v27.8h, v28.8h, #0.0", 27, 28)
+GEN_TWOVEC_TEST(fcmgez_8h_28_29, "fcmge v28.8h, v29.8h, #0.0", 28, 29)
+GEN_TWOVEC_TEST(fcmgez_8h_29_30, "fcmge v29.8h, v30.8h, #0.0", 29, 30)
+GEN_TWOVEC_TEST(fcmgez_8h_30_31, "fcmge v30.8h, v31.8h, #0.0", 30, 31)
+
+GEN_TWOVEC_TEST(fcmgez_4h_00_01, "fcmge v0.4h, v1.4h, #0.0", 0, 1)
+GEN_TWOVEC_TEST(fcmgez_4h_01_02, "fcmge v1.4h, v2.4h, #0.0", 1, 2)
+GEN_TWOVEC_TEST(fcmgez_4h_02_03, "fcmge v2.4h, v3.4h, #0.0", 2, 3)
+GEN_TWOVEC_TEST(fcmgez_4h_03_04, "fcmge v3.4h, v4.4h, #0.0", 3, 4)
+GEN_TWOVEC_TEST(fcmgez_4h_04_05, "fcmge v4.4h, v5.4h, #0.0", 4, 5)
+GEN_TWOVEC_TEST(fcmgez_4h_05_06, "fcmge v5.4h, v6.4h, #0.0", 5, 6)
+GEN_TWOVEC_TEST(fcmgez_4h_06_07, "fcmge v6.4h, v7.4h, #0.0", 6, 7)
+GEN_TWOVEC_TEST(fcmgez_4h_07_08, "fcmge v7.4h, v8.4h, #0.0", 7, 8)
+GEN_TWOVEC_TEST(fcmgez_4h_08_09, "fcmge v8.4h, v9.4h, #0.0", 8, 9)
+GEN_TWOVEC_TEST(fcmgez_4h_09_10, "fcmge v9.4h, v10.4h, #0.0", 9, 10)
+GEN_TWOVEC_TEST(fcmgez_4h_10_11, "fcmge v10.4h, v11.4h, #0.0", 10, 11)
+GEN_TWOVEC_TEST(fcmgez_4h_11_12, "fcmge v11.4h, v12.4h, #0.0", 11, 12)
+GEN_TWOVEC_TEST(fcmgez_4h_12_13, "fcmge v12.4h, v13.4h, #0.0", 12, 13)
+GEN_TWOVEC_TEST(fcmgez_4h_13_14, "fcmge v13.4h, v14.4h, #0.0", 13, 14)
+GEN_TWOVEC_TEST(fcmgez_4h_14_15, "fcmge v14.4h, v15.4h, #0.0", 14, 15)
+GEN_TWOVEC_TEST(fcmgez_4h_15_16, "fcmge v15.4h, v16.4h, #0.0", 15, 16)
+GEN_TWOVEC_TEST(fcmgez_4h_16_17, "fcmge v16.4h, v17.4h, #0.0", 16, 17)
+GEN_TWOVEC_TEST(fcmgez_4h_17_18, "fcmge v17.4h, v18.4h, #0.0", 17, 18)
+GEN_TWOVEC_TEST(fcmgez_4h_18_19, "fcmge v18.4h, v19.4h, #0.0", 18, 19)
+GEN_TWOVEC_TEST(fcmgez_4h_19_20, "fcmge v19.4h, v20.4h, #0.0", 19, 20)
+GEN_TWOVEC_TEST(fcmgez_4h_20_21, "fcmge v20.4h, v21.4h, #0.0", 20, 21)
+GEN_TWOVEC_TEST(fcmgez_4h_21_22, "fcmge v21.4h, v22.4h, #0.0", 21, 22)
+GEN_TWOVEC_TEST(fcmgez_4h_22_23, "fcmge v22.4h, v23.4h, #0.0", 22, 23)
+GEN_TWOVEC_TEST(fcmgez_4h_23_24, "fcmge v23.4h, v24.4h, #0.0", 23, 24)
+GEN_TWOVEC_TEST(fcmgez_4h_24_25, "fcmge v24.4h, v25.4h, #0.0", 24, 25)
+GEN_TWOVEC_TEST(fcmgez_4h_25_26, "fcmge v25.4h, v26.4h, #0.0", 25, 26)
+GEN_TWOVEC_TEST(fcmgez_4h_26_27, "fcmge v26.4h, v27.4h, #0.0", 26, 27)
+GEN_TWOVEC_TEST(fcmgez_4h_27_28, "fcmge v27.4h, v28.4h, #0.0", 27, 28)
+GEN_TWOVEC_TEST(fcmgez_4h_28_29, "fcmge v28.4h, v29.4h, #0.0", 28, 29)
+GEN_TWOVEC_TEST(fcmgez_4h_29_30, "fcmge v29.4h, v30.4h, #0.0", 29, 30)
+GEN_TWOVEC_TEST(fcmgez_4h_30_31, "fcmge v30.4h, v31.4h, #0.0", 30, 31)
+
 // FCMGT <Hd>, <Hn>, <Hm>
 
 GEN_THREEVEC_TEST(fcmgt_h_00_01_02, "fcmgt h0, h1, h2", 0, 1, 2)
@@ -3210,6 +3410,40 @@ GEN_THREEVEC_TEST(fcmgt_h_26_27_28, "fcmgt h26, h27, h28", 26, 27, 28)
 GEN_THREEVEC_TEST(fcmgt_h_27_28_29, "fcmgt h27, h28, h29", 27, 28, 29)
 GEN_THREEVEC_TEST(fcmgt_h_28_29_30, "fcmgt h28, h29, h30", 28, 29, 30)
 GEN_THREEVEC_TEST(fcmgt_h_29_30_31, "fcmgt h29, h30, h31", 29, 30, 31)
+
+// FCMGT <Hd>, <Hn>, #0.0
+
+GEN_TWOVEC_TEST(fcmgtz_h_00_01, "fcmgt h0, h1, #0.0", 0, 1)
+GEN_TWOVEC_TEST(fcmgtz_h_01_02, "fcmgt h1, h2, #0.0", 1, 2)
+GEN_TWOVEC_TEST(fcmgtz_h_02_03, "fcmgt h2, h3, #0.0", 2, 3)
+GEN_TWOVEC_TEST(fcmgtz_h_03_04, "fcmgt h3, h4, #0.0", 3, 4)
+GEN_TWOVEC_TEST(fcmgtz_h_04_05, "fcmgt h4, h5, #0.0", 4, 5)
+GEN_TWOVEC_TEST(fcmgtz_h_05_06, "fcmgt h5, h6, #0.0", 5, 6)
+GEN_TWOVEC_TEST(fcmgtz_h_06_07, "fcmgt h6, h7, #0.0", 6, 7)
+GEN_TWOVEC_TEST(fcmgtz_h_07_08, "fcmgt h7, h8, #0.0", 7, 8)
+GEN_TWOVEC_TEST(fcmgtz_h_08_09, "fcmgt h8, h9, #0.0", 8, 9)
+GEN_TWOVEC_TEST(fcmgtz_h_09_10, "fcmgt h9, h10, #0.0", 9, 10)
+GEN_TWOVEC_TEST(fcmgtz_h_10_11, "fcmgt h10, h11, #0.0", 10, 11)
+GEN_TWOVEC_TEST(fcmgtz_h_11_12, "fcmgt h11, h12, #0.0", 11, 12)
+GEN_TWOVEC_TEST(fcmgtz_h_12_13, "fcmgt h12, h13, #0.0", 12, 13)
+GEN_TWOVEC_TEST(fcmgtz_h_13_14, "fcmgt h13, h14, #0.0", 13, 14)
+GEN_TWOVEC_TEST(fcmgtz_h_14_15, "fcmgt h14, h15, #0.0", 14, 15)
+GEN_TWOVEC_TEST(fcmgtz_h_15_16, "fcmgt h15, h16, #0.0", 15, 16)
+GEN_TWOVEC_TEST(fcmgtz_h_16_17, "fcmgt h16, h17, #0.0", 16, 17)
+GEN_TWOVEC_TEST(fcmgtz_h_17_18, "fcmgt h17, h18, #0.0", 17, 18)
+GEN_TWOVEC_TEST(fcmgtz_h_18_19, "fcmgt h18, h19, #0.0", 18, 19)
+GEN_TWOVEC_TEST(fcmgtz_h_19_20, "fcmgt h19, h20, #0.0", 19, 20)
+GEN_TWOVEC_TEST(fcmgtz_h_20_21, "fcmgt h20, h21, #0.0", 20, 21)
+GEN_TWOVEC_TEST(fcmgtz_h_21_22, "fcmgt h21, h22, #0.0", 21, 22)
+GEN_TWOVEC_TEST(fcmgtz_h_22_23, "fcmgt h22, h23, #0.0", 22, 23)
+GEN_TWOVEC_TEST(fcmgtz_h_23_24, "fcmgt h23, h24, #0.0", 23, 24)
+GEN_TWOVEC_TEST(fcmgtz_h_24_25, "fcmgt h24, h25, #0.0", 24, 25)
+GEN_TWOVEC_TEST(fcmgtz_h_25_26, "fcmgt h25, h26, #0.0", 25, 26)
+GEN_TWOVEC_TEST(fcmgtz_h_26_27, "fcmgt h26, h27, #0.0", 26, 27)
+GEN_TWOVEC_TEST(fcmgtz_h_27_28, "fcmgt h27, h28, #0.0", 27, 28)
+GEN_TWOVEC_TEST(fcmgtz_h_28_29, "fcmgt h28, h29, #0.0", 28, 29)
+GEN_TWOVEC_TEST(fcmgtz_h_29_30, "fcmgt h29, h30, #0.0", 29, 30)
+GEN_TWOVEC_TEST(fcmgtz_h_30_31, "fcmgt h30, h31, #0.0", 30, 31)
 
 // FCMGT <Vd>.<T>, <Vn>.<T>, <Vm>.<T>
 
@@ -3274,6 +3508,272 @@ GEN_THREEVEC_TEST(fcmgt_4h_26_27_28, "fcmgt v26.4h, v27.4h, v28.4h", 26, 27, 28)
 GEN_THREEVEC_TEST(fcmgt_4h_27_28_29, "fcmgt v27.4h, v28.4h, v29.4h", 27, 28, 29)
 GEN_THREEVEC_TEST(fcmgt_4h_28_29_30, "fcmgt v28.4h, v29.4h, v30.4h", 28, 29, 30)
 GEN_THREEVEC_TEST(fcmgt_4h_29_30_31, "fcmgt v29.4h, v30.4h, v31.4h", 29, 30, 31)
+
+// FCMGT <Vd>.<T>, <Vn>.<T>, #0.0
+
+GEN_TWOVEC_TEST(fcmgtz_8h_00_01, "fcmgt v0.8h, v1.8h, #0.0", 0, 1)
+GEN_TWOVEC_TEST(fcmgtz_8h_01_02, "fcmgt v1.8h, v2.8h, #0.0", 1, 2)
+GEN_TWOVEC_TEST(fcmgtz_8h_02_03, "fcmgt v2.8h, v3.8h, #0.0", 2, 3)
+GEN_TWOVEC_TEST(fcmgtz_8h_03_04, "fcmgt v3.8h, v4.8h, #0.0", 3, 4)
+GEN_TWOVEC_TEST(fcmgtz_8h_04_05, "fcmgt v4.8h, v5.8h, #0.0", 4, 5)
+GEN_TWOVEC_TEST(fcmgtz_8h_05_06, "fcmgt v5.8h, v6.8h, #0.0", 5, 6)
+GEN_TWOVEC_TEST(fcmgtz_8h_06_07, "fcmgt v6.8h, v7.8h, #0.0", 6, 7)
+GEN_TWOVEC_TEST(fcmgtz_8h_07_08, "fcmgt v7.8h, v8.8h, #0.0", 7, 8)
+GEN_TWOVEC_TEST(fcmgtz_8h_08_09, "fcmgt v8.8h, v9.8h, #0.0", 8, 9)
+GEN_TWOVEC_TEST(fcmgtz_8h_09_10, "fcmgt v9.8h, v10.8h, #0.0", 9, 10)
+GEN_TWOVEC_TEST(fcmgtz_8h_10_11, "fcmgt v10.8h, v11.8h, #0.0", 10, 11)
+GEN_TWOVEC_TEST(fcmgtz_8h_11_12, "fcmgt v11.8h, v12.8h, #0.0", 11, 12)
+GEN_TWOVEC_TEST(fcmgtz_8h_12_13, "fcmgt v12.8h, v13.8h, #0.0", 12, 13)
+GEN_TWOVEC_TEST(fcmgtz_8h_13_14, "fcmgt v13.8h, v14.8h, #0.0", 13, 14)
+GEN_TWOVEC_TEST(fcmgtz_8h_14_15, "fcmgt v14.8h, v15.8h, #0.0", 14, 15)
+GEN_TWOVEC_TEST(fcmgtz_8h_15_16, "fcmgt v15.8h, v16.8h, #0.0", 15, 16)
+GEN_TWOVEC_TEST(fcmgtz_8h_16_17, "fcmgt v16.8h, v17.8h, #0.0", 16, 17)
+GEN_TWOVEC_TEST(fcmgtz_8h_17_18, "fcmgt v17.8h, v18.8h, #0.0", 17, 18)
+GEN_TWOVEC_TEST(fcmgtz_8h_18_19, "fcmgt v18.8h, v19.8h, #0.0", 18, 19)
+GEN_TWOVEC_TEST(fcmgtz_8h_19_20, "fcmgt v19.8h, v20.8h, #0.0", 19, 20)
+GEN_TWOVEC_TEST(fcmgtz_8h_20_21, "fcmgt v20.8h, v21.8h, #0.0", 20, 21)
+GEN_TWOVEC_TEST(fcmgtz_8h_21_22, "fcmgt v21.8h, v22.8h, #0.0", 21, 22)
+GEN_TWOVEC_TEST(fcmgtz_8h_22_23, "fcmgt v22.8h, v23.8h, #0.0", 22, 23)
+GEN_TWOVEC_TEST(fcmgtz_8h_23_24, "fcmgt v23.8h, v24.8h, #0.0", 23, 24)
+GEN_TWOVEC_TEST(fcmgtz_8h_24_25, "fcmgt v24.8h, v25.8h, #0.0", 24, 25)
+GEN_TWOVEC_TEST(fcmgtz_8h_25_26, "fcmgt v25.8h, v26.8h, #0.0", 25, 26)
+GEN_TWOVEC_TEST(fcmgtz_8h_26_27, "fcmgt v26.8h, v27.8h, #0.0", 26, 27)
+GEN_TWOVEC_TEST(fcmgtz_8h_27_28, "fcmgt v27.8h, v28.8h, #0.0", 27, 28)
+GEN_TWOVEC_TEST(fcmgtz_8h_28_29, "fcmgt v28.8h, v29.8h, #0.0", 28, 29)
+GEN_TWOVEC_TEST(fcmgtz_8h_29_30, "fcmgt v29.8h, v30.8h, #0.0", 29, 30)
+GEN_TWOVEC_TEST(fcmgtz_8h_30_31, "fcmgt v30.8h, v31.8h, #0.0", 30, 31)
+
+GEN_TWOVEC_TEST(fcmgtz_4h_00_01, "fcmgt v0.4h, v1.4h, #0.0", 0, 1)
+GEN_TWOVEC_TEST(fcmgtz_4h_01_02, "fcmgt v1.4h, v2.4h, #0.0", 1, 2)
+GEN_TWOVEC_TEST(fcmgtz_4h_02_03, "fcmgt v2.4h, v3.4h, #0.0", 2, 3)
+GEN_TWOVEC_TEST(fcmgtz_4h_03_04, "fcmgt v3.4h, v4.4h, #0.0", 3, 4)
+GEN_TWOVEC_TEST(fcmgtz_4h_04_05, "fcmgt v4.4h, v5.4h, #0.0", 4, 5)
+GEN_TWOVEC_TEST(fcmgtz_4h_05_06, "fcmgt v5.4h, v6.4h, #0.0", 5, 6)
+GEN_TWOVEC_TEST(fcmgtz_4h_06_07, "fcmgt v6.4h, v7.4h, #0.0", 6, 7)
+GEN_TWOVEC_TEST(fcmgtz_4h_07_08, "fcmgt v7.4h, v8.4h, #0.0", 7, 8)
+GEN_TWOVEC_TEST(fcmgtz_4h_08_09, "fcmgt v8.4h, v9.4h, #0.0", 8, 9)
+GEN_TWOVEC_TEST(fcmgtz_4h_09_10, "fcmgt v9.4h, v10.4h, #0.0", 9, 10)
+GEN_TWOVEC_TEST(fcmgtz_4h_10_11, "fcmgt v10.4h, v11.4h, #0.0", 10, 11)
+GEN_TWOVEC_TEST(fcmgtz_4h_11_12, "fcmgt v11.4h, v12.4h, #0.0", 11, 12)
+GEN_TWOVEC_TEST(fcmgtz_4h_12_13, "fcmgt v12.4h, v13.4h, #0.0", 12, 13)
+GEN_TWOVEC_TEST(fcmgtz_4h_13_14, "fcmgt v13.4h, v14.4h, #0.0", 13, 14)
+GEN_TWOVEC_TEST(fcmgtz_4h_14_15, "fcmgt v14.4h, v15.4h, #0.0", 14, 15)
+GEN_TWOVEC_TEST(fcmgtz_4h_15_16, "fcmgt v15.4h, v16.4h, #0.0", 15, 16)
+GEN_TWOVEC_TEST(fcmgtz_4h_16_17, "fcmgt v16.4h, v17.4h, #0.0", 16, 17)
+GEN_TWOVEC_TEST(fcmgtz_4h_17_18, "fcmgt v17.4h, v18.4h, #0.0", 17, 18)
+GEN_TWOVEC_TEST(fcmgtz_4h_18_19, "fcmgt v18.4h, v19.4h, #0.0", 18, 19)
+GEN_TWOVEC_TEST(fcmgtz_4h_19_20, "fcmgt v19.4h, v20.4h, #0.0", 19, 20)
+GEN_TWOVEC_TEST(fcmgtz_4h_20_21, "fcmgt v20.4h, v21.4h, #0.0", 20, 21)
+GEN_TWOVEC_TEST(fcmgtz_4h_21_22, "fcmgt v21.4h, v22.4h, #0.0", 21, 22)
+GEN_TWOVEC_TEST(fcmgtz_4h_22_23, "fcmgt v22.4h, v23.4h, #0.0", 22, 23)
+GEN_TWOVEC_TEST(fcmgtz_4h_23_24, "fcmgt v23.4h, v24.4h, #0.0", 23, 24)
+GEN_TWOVEC_TEST(fcmgtz_4h_24_25, "fcmgt v24.4h, v25.4h, #0.0", 24, 25)
+GEN_TWOVEC_TEST(fcmgtz_4h_25_26, "fcmgt v25.4h, v26.4h, #0.0", 25, 26)
+GEN_TWOVEC_TEST(fcmgtz_4h_26_27, "fcmgt v26.4h, v27.4h, #0.0", 26, 27)
+GEN_TWOVEC_TEST(fcmgtz_4h_27_28, "fcmgt v27.4h, v28.4h, #0.0", 27, 28)
+GEN_TWOVEC_TEST(fcmgtz_4h_28_29, "fcmgt v28.4h, v29.4h, #0.0", 28, 29)
+GEN_TWOVEC_TEST(fcmgtz_4h_29_30, "fcmgt v29.4h, v30.4h, #0.0", 29, 30)
+GEN_TWOVEC_TEST(fcmgtz_4h_30_31, "fcmgt v30.4h, v31.4h, #0.0", 30, 31)
+
+// FCMLE <Hd>, <Hn>, #0.0
+
+GEN_TWOVEC_TEST(fcmlez_h_00_01, "fcmle h0, h1, #0.0", 0, 1)
+GEN_TWOVEC_TEST(fcmlez_h_01_02, "fcmle h1, h2, #0.0", 1, 2)
+GEN_TWOVEC_TEST(fcmlez_h_02_03, "fcmle h2, h3, #0.0", 2, 3)
+GEN_TWOVEC_TEST(fcmlez_h_03_04, "fcmle h3, h4, #0.0", 3, 4)
+GEN_TWOVEC_TEST(fcmlez_h_04_05, "fcmle h4, h5, #0.0", 4, 5)
+GEN_TWOVEC_TEST(fcmlez_h_05_06, "fcmle h5, h6, #0.0", 5, 6)
+GEN_TWOVEC_TEST(fcmlez_h_06_07, "fcmle h6, h7, #0.0", 6, 7)
+GEN_TWOVEC_TEST(fcmlez_h_07_08, "fcmle h7, h8, #0.0", 7, 8)
+GEN_TWOVEC_TEST(fcmlez_h_08_09, "fcmle h8, h9, #0.0", 8, 9)
+GEN_TWOVEC_TEST(fcmlez_h_09_10, "fcmle h9, h10, #0.0", 9, 10)
+GEN_TWOVEC_TEST(fcmlez_h_10_11, "fcmle h10, h11, #0.0", 10, 11)
+GEN_TWOVEC_TEST(fcmlez_h_11_12, "fcmle h11, h12, #0.0", 11, 12)
+GEN_TWOVEC_TEST(fcmlez_h_12_13, "fcmle h12, h13, #0.0", 12, 13)
+GEN_TWOVEC_TEST(fcmlez_h_13_14, "fcmle h13, h14, #0.0", 13, 14)
+GEN_TWOVEC_TEST(fcmlez_h_14_15, "fcmle h14, h15, #0.0", 14, 15)
+GEN_TWOVEC_TEST(fcmlez_h_15_16, "fcmle h15, h16, #0.0", 15, 16)
+GEN_TWOVEC_TEST(fcmlez_h_16_17, "fcmle h16, h17, #0.0", 16, 17)
+GEN_TWOVEC_TEST(fcmlez_h_17_18, "fcmle h17, h18, #0.0", 17, 18)
+GEN_TWOVEC_TEST(fcmlez_h_18_19, "fcmle h18, h19, #0.0", 18, 19)
+GEN_TWOVEC_TEST(fcmlez_h_19_20, "fcmle h19, h20, #0.0", 19, 20)
+GEN_TWOVEC_TEST(fcmlez_h_20_21, "fcmle h20, h21, #0.0", 20, 21)
+GEN_TWOVEC_TEST(fcmlez_h_21_22, "fcmle h21, h22, #0.0", 21, 22)
+GEN_TWOVEC_TEST(fcmlez_h_22_23, "fcmle h22, h23, #0.0", 22, 23)
+GEN_TWOVEC_TEST(fcmlez_h_23_24, "fcmle h23, h24, #0.0", 23, 24)
+GEN_TWOVEC_TEST(fcmlez_h_24_25, "fcmle h24, h25, #0.0", 24, 25)
+GEN_TWOVEC_TEST(fcmlez_h_25_26, "fcmle h25, h26, #0.0", 25, 26)
+GEN_TWOVEC_TEST(fcmlez_h_26_27, "fcmle h26, h27, #0.0", 26, 27)
+GEN_TWOVEC_TEST(fcmlez_h_27_28, "fcmle h27, h28, #0.0", 27, 28)
+GEN_TWOVEC_TEST(fcmlez_h_28_29, "fcmle h28, h29, #0.0", 28, 29)
+GEN_TWOVEC_TEST(fcmlez_h_29_30, "fcmle h29, h30, #0.0", 29, 30)
+GEN_TWOVEC_TEST(fcmlez_h_30_31, "fcmle h30, h31, #0.0", 30, 31)
+
+// FCMLE <Vd>.<T>, <Vn>.<T>, #0.0
+
+GEN_TWOVEC_TEST(fcmlez_8h_00_01, "fcmle v0.8h, v1.8h, #0.0", 0, 1)
+GEN_TWOVEC_TEST(fcmlez_8h_01_02, "fcmle v1.8h, v2.8h, #0.0", 1, 2)
+GEN_TWOVEC_TEST(fcmlez_8h_02_03, "fcmle v2.8h, v3.8h, #0.0", 2, 3)
+GEN_TWOVEC_TEST(fcmlez_8h_03_04, "fcmle v3.8h, v4.8h, #0.0", 3, 4)
+GEN_TWOVEC_TEST(fcmlez_8h_04_05, "fcmle v4.8h, v5.8h, #0.0", 4, 5)
+GEN_TWOVEC_TEST(fcmlez_8h_05_06, "fcmle v5.8h, v6.8h, #0.0", 5, 6)
+GEN_TWOVEC_TEST(fcmlez_8h_06_07, "fcmle v6.8h, v7.8h, #0.0", 6, 7)
+GEN_TWOVEC_TEST(fcmlez_8h_07_08, "fcmle v7.8h, v8.8h, #0.0", 7, 8)
+GEN_TWOVEC_TEST(fcmlez_8h_08_09, "fcmle v8.8h, v9.8h, #0.0", 8, 9)
+GEN_TWOVEC_TEST(fcmlez_8h_09_10, "fcmle v9.8h, v10.8h, #0.0", 9, 10)
+GEN_TWOVEC_TEST(fcmlez_8h_10_11, "fcmle v10.8h, v11.8h, #0.0", 10, 11)
+GEN_TWOVEC_TEST(fcmlez_8h_11_12, "fcmle v11.8h, v12.8h, #0.0", 11, 12)
+GEN_TWOVEC_TEST(fcmlez_8h_12_13, "fcmle v12.8h, v13.8h, #0.0", 12, 13)
+GEN_TWOVEC_TEST(fcmlez_8h_13_14, "fcmle v13.8h, v14.8h, #0.0", 13, 14)
+GEN_TWOVEC_TEST(fcmlez_8h_14_15, "fcmle v14.8h, v15.8h, #0.0", 14, 15)
+GEN_TWOVEC_TEST(fcmlez_8h_15_16, "fcmle v15.8h, v16.8h, #0.0", 15, 16)
+GEN_TWOVEC_TEST(fcmlez_8h_16_17, "fcmle v16.8h, v17.8h, #0.0", 16, 17)
+GEN_TWOVEC_TEST(fcmlez_8h_17_18, "fcmle v17.8h, v18.8h, #0.0", 17, 18)
+GEN_TWOVEC_TEST(fcmlez_8h_18_19, "fcmle v18.8h, v19.8h, #0.0", 18, 19)
+GEN_TWOVEC_TEST(fcmlez_8h_19_20, "fcmle v19.8h, v20.8h, #0.0", 19, 20)
+GEN_TWOVEC_TEST(fcmlez_8h_20_21, "fcmle v20.8h, v21.8h, #0.0", 20, 21)
+GEN_TWOVEC_TEST(fcmlez_8h_21_22, "fcmle v21.8h, v22.8h, #0.0", 21, 22)
+GEN_TWOVEC_TEST(fcmlez_8h_22_23, "fcmle v22.8h, v23.8h, #0.0", 22, 23)
+GEN_TWOVEC_TEST(fcmlez_8h_23_24, "fcmle v23.8h, v24.8h, #0.0", 23, 24)
+GEN_TWOVEC_TEST(fcmlez_8h_24_25, "fcmle v24.8h, v25.8h, #0.0", 24, 25)
+GEN_TWOVEC_TEST(fcmlez_8h_25_26, "fcmle v25.8h, v26.8h, #0.0", 25, 26)
+GEN_TWOVEC_TEST(fcmlez_8h_26_27, "fcmle v26.8h, v27.8h, #0.0", 26, 27)
+GEN_TWOVEC_TEST(fcmlez_8h_27_28, "fcmle v27.8h, v28.8h, #0.0", 27, 28)
+GEN_TWOVEC_TEST(fcmlez_8h_28_29, "fcmle v28.8h, v29.8h, #0.0", 28, 29)
+GEN_TWOVEC_TEST(fcmlez_8h_29_30, "fcmle v29.8h, v30.8h, #0.0", 29, 30)
+GEN_TWOVEC_TEST(fcmlez_8h_30_31, "fcmle v30.8h, v31.8h, #0.0", 30, 31)
+
+GEN_TWOVEC_TEST(fcmlez_4h_00_01, "fcmle v0.4h, v1.4h, #0.0", 0, 1)
+GEN_TWOVEC_TEST(fcmlez_4h_01_02, "fcmle v1.4h, v2.4h, #0.0", 1, 2)
+GEN_TWOVEC_TEST(fcmlez_4h_02_03, "fcmle v2.4h, v3.4h, #0.0", 2, 3)
+GEN_TWOVEC_TEST(fcmlez_4h_03_04, "fcmle v3.4h, v4.4h, #0.0", 3, 4)
+GEN_TWOVEC_TEST(fcmlez_4h_04_05, "fcmle v4.4h, v5.4h, #0.0", 4, 5)
+GEN_TWOVEC_TEST(fcmlez_4h_05_06, "fcmle v5.4h, v6.4h, #0.0", 5, 6)
+GEN_TWOVEC_TEST(fcmlez_4h_06_07, "fcmle v6.4h, v7.4h, #0.0", 6, 7)
+GEN_TWOVEC_TEST(fcmlez_4h_07_08, "fcmle v7.4h, v8.4h, #0.0", 7, 8)
+GEN_TWOVEC_TEST(fcmlez_4h_08_09, "fcmle v8.4h, v9.4h, #0.0", 8, 9)
+GEN_TWOVEC_TEST(fcmlez_4h_09_10, "fcmle v9.4h, v10.4h, #0.0", 9, 10)
+GEN_TWOVEC_TEST(fcmlez_4h_10_11, "fcmle v10.4h, v11.4h, #0.0", 10, 11)
+GEN_TWOVEC_TEST(fcmlez_4h_11_12, "fcmle v11.4h, v12.4h, #0.0", 11, 12)
+GEN_TWOVEC_TEST(fcmlez_4h_12_13, "fcmle v12.4h, v13.4h, #0.0", 12, 13)
+GEN_TWOVEC_TEST(fcmlez_4h_13_14, "fcmle v13.4h, v14.4h, #0.0", 13, 14)
+GEN_TWOVEC_TEST(fcmlez_4h_14_15, "fcmle v14.4h, v15.4h, #0.0", 14, 15)
+GEN_TWOVEC_TEST(fcmlez_4h_15_16, "fcmle v15.4h, v16.4h, #0.0", 15, 16)
+GEN_TWOVEC_TEST(fcmlez_4h_16_17, "fcmle v16.4h, v17.4h, #0.0", 16, 17)
+GEN_TWOVEC_TEST(fcmlez_4h_17_18, "fcmle v17.4h, v18.4h, #0.0", 17, 18)
+GEN_TWOVEC_TEST(fcmlez_4h_18_19, "fcmle v18.4h, v19.4h, #0.0", 18, 19)
+GEN_TWOVEC_TEST(fcmlez_4h_19_20, "fcmle v19.4h, v20.4h, #0.0", 19, 20)
+GEN_TWOVEC_TEST(fcmlez_4h_20_21, "fcmle v20.4h, v21.4h, #0.0", 20, 21)
+GEN_TWOVEC_TEST(fcmlez_4h_21_22, "fcmle v21.4h, v22.4h, #0.0", 21, 22)
+GEN_TWOVEC_TEST(fcmlez_4h_22_23, "fcmle v22.4h, v23.4h, #0.0", 22, 23)
+GEN_TWOVEC_TEST(fcmlez_4h_23_24, "fcmle v23.4h, v24.4h, #0.0", 23, 24)
+GEN_TWOVEC_TEST(fcmlez_4h_24_25, "fcmle v24.4h, v25.4h, #0.0", 24, 25)
+GEN_TWOVEC_TEST(fcmlez_4h_25_26, "fcmle v25.4h, v26.4h, #0.0", 25, 26)
+GEN_TWOVEC_TEST(fcmlez_4h_26_27, "fcmle v26.4h, v27.4h, #0.0", 26, 27)
+GEN_TWOVEC_TEST(fcmlez_4h_27_28, "fcmle v27.4h, v28.4h, #0.0", 27, 28)
+GEN_TWOVEC_TEST(fcmlez_4h_28_29, "fcmle v28.4h, v29.4h, #0.0", 28, 29)
+GEN_TWOVEC_TEST(fcmlez_4h_29_30, "fcmle v29.4h, v30.4h, #0.0", 29, 30)
+GEN_TWOVEC_TEST(fcmlez_4h_30_31, "fcmle v30.4h, v31.4h, #0.0", 30, 31)
+
+// FCMLT <Hd>, <Hn>, #0.0
+
+GEN_TWOVEC_TEST(fcmltz_h_00_01, "fcmlt h0, h1, #0.0", 0, 1)
+GEN_TWOVEC_TEST(fcmltz_h_01_02, "fcmlt h1, h2, #0.0", 1, 2)
+GEN_TWOVEC_TEST(fcmltz_h_02_03, "fcmlt h2, h3, #0.0", 2, 3)
+GEN_TWOVEC_TEST(fcmltz_h_03_04, "fcmlt h3, h4, #0.0", 3, 4)
+GEN_TWOVEC_TEST(fcmltz_h_04_05, "fcmlt h4, h5, #0.0", 4, 5)
+GEN_TWOVEC_TEST(fcmltz_h_05_06, "fcmlt h5, h6, #0.0", 5, 6)
+GEN_TWOVEC_TEST(fcmltz_h_06_07, "fcmlt h6, h7, #0.0", 6, 7)
+GEN_TWOVEC_TEST(fcmltz_h_07_08, "fcmlt h7, h8, #0.0", 7, 8)
+GEN_TWOVEC_TEST(fcmltz_h_08_09, "fcmlt h8, h9, #0.0", 8, 9)
+GEN_TWOVEC_TEST(fcmltz_h_09_10, "fcmlt h9, h10, #0.0", 9, 10)
+GEN_TWOVEC_TEST(fcmltz_h_10_11, "fcmlt h10, h11, #0.0", 10, 11)
+GEN_TWOVEC_TEST(fcmltz_h_11_12, "fcmlt h11, h12, #0.0", 11, 12)
+GEN_TWOVEC_TEST(fcmltz_h_12_13, "fcmlt h12, h13, #0.0", 12, 13)
+GEN_TWOVEC_TEST(fcmltz_h_13_14, "fcmlt h13, h14, #0.0", 13, 14)
+GEN_TWOVEC_TEST(fcmltz_h_14_15, "fcmlt h14, h15, #0.0", 14, 15)
+GEN_TWOVEC_TEST(fcmltz_h_15_16, "fcmlt h15, h16, #0.0", 15, 16)
+GEN_TWOVEC_TEST(fcmltz_h_16_17, "fcmlt h16, h17, #0.0", 16, 17)
+GEN_TWOVEC_TEST(fcmltz_h_17_18, "fcmlt h17, h18, #0.0", 17, 18)
+GEN_TWOVEC_TEST(fcmltz_h_18_19, "fcmlt h18, h19, #0.0", 18, 19)
+GEN_TWOVEC_TEST(fcmltz_h_19_20, "fcmlt h19, h20, #0.0", 19, 20)
+GEN_TWOVEC_TEST(fcmltz_h_20_21, "fcmlt h20, h21, #0.0", 20, 21)
+GEN_TWOVEC_TEST(fcmltz_h_21_22, "fcmlt h21, h22, #0.0", 21, 22)
+GEN_TWOVEC_TEST(fcmltz_h_22_23, "fcmlt h22, h23, #0.0", 22, 23)
+GEN_TWOVEC_TEST(fcmltz_h_23_24, "fcmlt h23, h24, #0.0", 23, 24)
+GEN_TWOVEC_TEST(fcmltz_h_24_25, "fcmlt h24, h25, #0.0", 24, 25)
+GEN_TWOVEC_TEST(fcmltz_h_25_26, "fcmlt h25, h26, #0.0", 25, 26)
+GEN_TWOVEC_TEST(fcmltz_h_26_27, "fcmlt h26, h27, #0.0", 26, 27)
+GEN_TWOVEC_TEST(fcmltz_h_27_28, "fcmlt h27, h28, #0.0", 27, 28)
+GEN_TWOVEC_TEST(fcmltz_h_28_29, "fcmlt h28, h29, #0.0", 28, 29)
+GEN_TWOVEC_TEST(fcmltz_h_29_30, "fcmlt h29, h30, #0.0", 29, 30)
+GEN_TWOVEC_TEST(fcmltz_h_30_31, "fcmlt h30, h31, #0.0", 30, 31)
+
+// FCMLT <Vd>.<T>, <Vn>.<T>, #0.0
+
+GEN_TWOVEC_TEST(fcmltz_8h_00_01, "fcmlt v0.8h, v1.8h, #0.0", 0, 1)
+GEN_TWOVEC_TEST(fcmltz_8h_01_02, "fcmlt v1.8h, v2.8h, #0.0", 1, 2)
+GEN_TWOVEC_TEST(fcmltz_8h_02_03, "fcmlt v2.8h, v3.8h, #0.0", 2, 3)
+GEN_TWOVEC_TEST(fcmltz_8h_03_04, "fcmlt v3.8h, v4.8h, #0.0", 3, 4)
+GEN_TWOVEC_TEST(fcmltz_8h_04_05, "fcmlt v4.8h, v5.8h, #0.0", 4, 5)
+GEN_TWOVEC_TEST(fcmltz_8h_05_06, "fcmlt v5.8h, v6.8h, #0.0", 5, 6)
+GEN_TWOVEC_TEST(fcmltz_8h_06_07, "fcmlt v6.8h, v7.8h, #0.0", 6, 7)
+GEN_TWOVEC_TEST(fcmltz_8h_07_08, "fcmlt v7.8h, v8.8h, #0.0", 7, 8)
+GEN_TWOVEC_TEST(fcmltz_8h_08_09, "fcmlt v8.8h, v9.8h, #0.0", 8, 9)
+GEN_TWOVEC_TEST(fcmltz_8h_09_10, "fcmlt v9.8h, v10.8h, #0.0", 9, 10)
+GEN_TWOVEC_TEST(fcmltz_8h_10_11, "fcmlt v10.8h, v11.8h, #0.0", 10, 11)
+GEN_TWOVEC_TEST(fcmltz_8h_11_12, "fcmlt v11.8h, v12.8h, #0.0", 11, 12)
+GEN_TWOVEC_TEST(fcmltz_8h_12_13, "fcmlt v12.8h, v13.8h, #0.0", 12, 13)
+GEN_TWOVEC_TEST(fcmltz_8h_13_14, "fcmlt v13.8h, v14.8h, #0.0", 13, 14)
+GEN_TWOVEC_TEST(fcmltz_8h_14_15, "fcmlt v14.8h, v15.8h, #0.0", 14, 15)
+GEN_TWOVEC_TEST(fcmltz_8h_15_16, "fcmlt v15.8h, v16.8h, #0.0", 15, 16)
+GEN_TWOVEC_TEST(fcmltz_8h_16_17, "fcmlt v16.8h, v17.8h, #0.0", 16, 17)
+GEN_TWOVEC_TEST(fcmltz_8h_17_18, "fcmlt v17.8h, v18.8h, #0.0", 17, 18)
+GEN_TWOVEC_TEST(fcmltz_8h_18_19, "fcmlt v18.8h, v19.8h, #0.0", 18, 19)
+GEN_TWOVEC_TEST(fcmltz_8h_19_20, "fcmlt v19.8h, v20.8h, #0.0", 19, 20)
+GEN_TWOVEC_TEST(fcmltz_8h_20_21, "fcmlt v20.8h, v21.8h, #0.0", 20, 21)
+GEN_TWOVEC_TEST(fcmltz_8h_21_22, "fcmlt v21.8h, v22.8h, #0.0", 21, 22)
+GEN_TWOVEC_TEST(fcmltz_8h_22_23, "fcmlt v22.8h, v23.8h, #0.0", 22, 23)
+GEN_TWOVEC_TEST(fcmltz_8h_23_24, "fcmlt v23.8h, v24.8h, #0.0", 23, 24)
+GEN_TWOVEC_TEST(fcmltz_8h_24_25, "fcmlt v24.8h, v25.8h, #0.0", 24, 25)
+GEN_TWOVEC_TEST(fcmltz_8h_25_26, "fcmlt v25.8h, v26.8h, #0.0", 25, 26)
+GEN_TWOVEC_TEST(fcmltz_8h_26_27, "fcmlt v26.8h, v27.8h, #0.0", 26, 27)
+GEN_TWOVEC_TEST(fcmltz_8h_27_28, "fcmlt v27.8h, v28.8h, #0.0", 27, 28)
+GEN_TWOVEC_TEST(fcmltz_8h_28_29, "fcmlt v28.8h, v29.8h, #0.0", 28, 29)
+GEN_TWOVEC_TEST(fcmltz_8h_29_30, "fcmlt v29.8h, v30.8h, #0.0", 29, 30)
+GEN_TWOVEC_TEST(fcmltz_8h_30_31, "fcmlt v30.8h, v31.8h, #0.0", 30, 31)
+
+GEN_TWOVEC_TEST(fcmltz_4h_00_01, "fcmlt v0.4h, v1.4h, #0.0", 0, 1)
+GEN_TWOVEC_TEST(fcmltz_4h_01_02, "fcmlt v1.4h, v2.4h, #0.0", 1, 2)
+GEN_TWOVEC_TEST(fcmltz_4h_02_03, "fcmlt v2.4h, v3.4h, #0.0", 2, 3)
+GEN_TWOVEC_TEST(fcmltz_4h_03_04, "fcmlt v3.4h, v4.4h, #0.0", 3, 4)
+GEN_TWOVEC_TEST(fcmltz_4h_04_05, "fcmlt v4.4h, v5.4h, #0.0", 4, 5)
+GEN_TWOVEC_TEST(fcmltz_4h_05_06, "fcmlt v5.4h, v6.4h, #0.0", 5, 6)
+GEN_TWOVEC_TEST(fcmltz_4h_06_07, "fcmlt v6.4h, v7.4h, #0.0", 6, 7)
+GEN_TWOVEC_TEST(fcmltz_4h_07_08, "fcmlt v7.4h, v8.4h, #0.0", 7, 8)
+GEN_TWOVEC_TEST(fcmltz_4h_08_09, "fcmlt v8.4h, v9.4h, #0.0", 8, 9)
+GEN_TWOVEC_TEST(fcmltz_4h_09_10, "fcmlt v9.4h, v10.4h, #0.0", 9, 10)
+GEN_TWOVEC_TEST(fcmltz_4h_10_11, "fcmlt v10.4h, v11.4h, #0.0", 10, 11)
+GEN_TWOVEC_TEST(fcmltz_4h_11_12, "fcmlt v11.4h, v12.4h, #0.0", 11, 12)
+GEN_TWOVEC_TEST(fcmltz_4h_12_13, "fcmlt v12.4h, v13.4h, #0.0", 12, 13)
+GEN_TWOVEC_TEST(fcmltz_4h_13_14, "fcmlt v13.4h, v14.4h, #0.0", 13, 14)
+GEN_TWOVEC_TEST(fcmltz_4h_14_15, "fcmlt v14.4h, v15.4h, #0.0", 14, 15)
+GEN_TWOVEC_TEST(fcmltz_4h_15_16, "fcmlt v15.4h, v16.4h, #0.0", 15, 16)
+GEN_TWOVEC_TEST(fcmltz_4h_16_17, "fcmlt v16.4h, v17.4h, #0.0", 16, 17)
+GEN_TWOVEC_TEST(fcmltz_4h_17_18, "fcmlt v17.4h, v18.4h, #0.0", 17, 18)
+GEN_TWOVEC_TEST(fcmltz_4h_18_19, "fcmlt v18.4h, v19.4h, #0.0", 18, 19)
+GEN_TWOVEC_TEST(fcmltz_4h_19_20, "fcmlt v19.4h, v20.4h, #0.0", 19, 20)
+GEN_TWOVEC_TEST(fcmltz_4h_20_21, "fcmlt v20.4h, v21.4h, #0.0", 20, 21)
+GEN_TWOVEC_TEST(fcmltz_4h_21_22, "fcmlt v21.4h, v22.4h, #0.0", 21, 22)
+GEN_TWOVEC_TEST(fcmltz_4h_22_23, "fcmlt v22.4h, v23.4h, #0.0", 22, 23)
+GEN_TWOVEC_TEST(fcmltz_4h_23_24, "fcmlt v23.4h, v24.4h, #0.0", 23, 24)
+GEN_TWOVEC_TEST(fcmltz_4h_24_25, "fcmlt v24.4h, v25.4h, #0.0", 24, 25)
+GEN_TWOVEC_TEST(fcmltz_4h_25_26, "fcmlt v25.4h, v26.4h, #0.0", 25, 26)
+GEN_TWOVEC_TEST(fcmltz_4h_26_27, "fcmlt v26.4h, v27.4h, #0.0", 26, 27)
+GEN_TWOVEC_TEST(fcmltz_4h_27_28, "fcmlt v27.4h, v28.4h, #0.0", 27, 28)
+GEN_TWOVEC_TEST(fcmltz_4h_28_29, "fcmlt v28.4h, v29.4h, #0.0", 28, 29)
+GEN_TWOVEC_TEST(fcmltz_4h_29_30, "fcmlt v29.4h, v30.4h, #0.0", 29, 30)
+GEN_TWOVEC_TEST(fcmltz_4h_30_31, "fcmlt v30.4h, v31.4h, #0.0", 30, 31)
 
 /* ---------------------------------------------------------------- */
 /* -- main()                                                     -- */
@@ -4170,6 +4670,40 @@ int main ( void )
    if (1) test_fcmeq_h_28_29_30(TyH);
    if (1) test_fcmeq_h_29_30_31(TyH);
 
+   printf("\nFCMEQ <Hd>, <Hn>, #0.0\n\n");
+
+   if (1) test_fcmeqz_h_00_01(TyH);
+   if (1) test_fcmeqz_h_01_02(TyH);
+   if (1) test_fcmeqz_h_02_03(TyH);
+   if (1) test_fcmeqz_h_03_04(TyH);
+   if (1) test_fcmeqz_h_04_05(TyH);
+   if (1) test_fcmeqz_h_05_06(TyH);
+   if (1) test_fcmeqz_h_06_07(TyH);
+   if (1) test_fcmeqz_h_07_08(TyH);
+   if (1) test_fcmeqz_h_08_09(TyH);
+   if (1) test_fcmeqz_h_09_10(TyH);
+   if (1) test_fcmeqz_h_10_11(TyH);
+   if (1) test_fcmeqz_h_11_12(TyH);
+   if (1) test_fcmeqz_h_12_13(TyH);
+   if (1) test_fcmeqz_h_13_14(TyH);
+   if (1) test_fcmeqz_h_14_15(TyH);
+   if (1) test_fcmeqz_h_15_16(TyH);
+   if (1) test_fcmeqz_h_16_17(TyH);
+   if (1) test_fcmeqz_h_17_18(TyH);
+   if (1) test_fcmeqz_h_18_19(TyH);
+   if (1) test_fcmeqz_h_19_20(TyH);
+   if (1) test_fcmeqz_h_20_21(TyH);
+   if (1) test_fcmeqz_h_21_22(TyH);
+   if (1) test_fcmeqz_h_22_23(TyH);
+   if (1) test_fcmeqz_h_23_24(TyH);
+   if (1) test_fcmeqz_h_24_25(TyH);
+   if (1) test_fcmeqz_h_25_26(TyH);
+   if (1) test_fcmeqz_h_26_27(TyH);
+   if (1) test_fcmeqz_h_27_28(TyH);
+   if (1) test_fcmeqz_h_28_29(TyH);
+   if (1) test_fcmeqz_h_29_30(TyH);
+   if (1) test_fcmeqz_h_30_31(TyH);
+
    printf("\nFCMEQ <Vd>.<T>, <Vn>.<T>, <Vm>.<T>\n\n");
 
    if (1) test_fcmeq_8h_00_01_02(TyH);
@@ -4234,6 +4768,72 @@ int main ( void )
    if (1) test_fcmeq_4h_28_29_30(TyH);
    if (1) test_fcmeq_4h_29_30_31(TyH);
 
+   printf("\nFCMEQ <Vd>.<T>, <Vn>.<T>, #0.0\n\n");
+
+   if (1) test_fcmeqz_8h_00_01(TyH);
+   if (1) test_fcmeqz_8h_01_02(TyH);
+   if (1) test_fcmeqz_8h_02_03(TyH);
+   if (1) test_fcmeqz_8h_03_04(TyH);
+   if (1) test_fcmeqz_8h_04_05(TyH);
+   if (1) test_fcmeqz_8h_05_06(TyH);
+   if (1) test_fcmeqz_8h_06_07(TyH);
+   if (1) test_fcmeqz_8h_07_08(TyH);
+   if (1) test_fcmeqz_8h_08_09(TyH);
+   if (1) test_fcmeqz_8h_09_10(TyH);
+   if (1) test_fcmeqz_8h_10_11(TyH);
+   if (1) test_fcmeqz_8h_11_12(TyH);
+   if (1) test_fcmeqz_8h_12_13(TyH);
+   if (1) test_fcmeqz_8h_13_14(TyH);
+   if (1) test_fcmeqz_8h_14_15(TyH);
+   if (1) test_fcmeqz_8h_15_16(TyH);
+   if (1) test_fcmeqz_8h_16_17(TyH);
+   if (1) test_fcmeqz_8h_17_18(TyH);
+   if (1) test_fcmeqz_8h_18_19(TyH);
+   if (1) test_fcmeqz_8h_19_20(TyH);
+   if (1) test_fcmeqz_8h_20_21(TyH);
+   if (1) test_fcmeqz_8h_21_22(TyH);
+   if (1) test_fcmeqz_8h_22_23(TyH);
+   if (1) test_fcmeqz_8h_23_24(TyH);
+   if (1) test_fcmeqz_8h_24_25(TyH);
+   if (1) test_fcmeqz_8h_25_26(TyH);
+   if (1) test_fcmeqz_8h_26_27(TyH);
+   if (1) test_fcmeqz_8h_27_28(TyH);
+   if (1) test_fcmeqz_8h_28_29(TyH);
+   if (1) test_fcmeqz_8h_29_30(TyH);
+   if (1) test_fcmeqz_8h_30_31(TyH);
+
+   if (1) test_fcmeqz_4h_00_01(TyH);
+   if (1) test_fcmeqz_4h_01_02(TyH);
+   if (1) test_fcmeqz_4h_02_03(TyH);
+   if (1) test_fcmeqz_4h_03_04(TyH);
+   if (1) test_fcmeqz_4h_04_05(TyH);
+   if (1) test_fcmeqz_4h_05_06(TyH);
+   if (1) test_fcmeqz_4h_06_07(TyH);
+   if (1) test_fcmeqz_4h_07_08(TyH);
+   if (1) test_fcmeqz_4h_08_09(TyH);
+   if (1) test_fcmeqz_4h_09_10(TyH);
+   if (1) test_fcmeqz_4h_10_11(TyH);
+   if (1) test_fcmeqz_4h_11_12(TyH);
+   if (1) test_fcmeqz_4h_12_13(TyH);
+   if (1) test_fcmeqz_4h_13_14(TyH);
+   if (1) test_fcmeqz_4h_14_15(TyH);
+   if (1) test_fcmeqz_4h_15_16(TyH);
+   if (1) test_fcmeqz_4h_16_17(TyH);
+   if (1) test_fcmeqz_4h_17_18(TyH);
+   if (1) test_fcmeqz_4h_18_19(TyH);
+   if (1) test_fcmeqz_4h_19_20(TyH);
+   if (1) test_fcmeqz_4h_20_21(TyH);
+   if (1) test_fcmeqz_4h_21_22(TyH);
+   if (1) test_fcmeqz_4h_22_23(TyH);
+   if (1) test_fcmeqz_4h_23_24(TyH);
+   if (1) test_fcmeqz_4h_24_25(TyH);
+   if (1) test_fcmeqz_4h_25_26(TyH);
+   if (1) test_fcmeqz_4h_26_27(TyH);
+   if (1) test_fcmeqz_4h_27_28(TyH);
+   if (1) test_fcmeqz_4h_28_29(TyH);
+   if (1) test_fcmeqz_4h_29_30(TyH);
+   if (1) test_fcmeqz_4h_30_31(TyH);
+
    printf("\nFCMGE <Hd>, <Hn>, <Hm>\n\n");
 
    if (1) test_fcmge_h_00_01_02(TyH);
@@ -4266,6 +4866,40 @@ int main ( void )
    if (1) test_fcmge_h_27_28_29(TyH);
    if (1) test_fcmge_h_28_29_30(TyH);
    if (1) test_fcmge_h_29_30_31(TyH);
+
+   printf("\nFCMGE <Hd>, <Hn>, #0.0\n\n");
+
+   if (1) test_fcmgez_h_00_01(TyH);
+   if (1) test_fcmgez_h_01_02(TyH);
+   if (1) test_fcmgez_h_02_03(TyH);
+   if (1) test_fcmgez_h_03_04(TyH);
+   if (1) test_fcmgez_h_04_05(TyH);
+   if (1) test_fcmgez_h_05_06(TyH);
+   if (1) test_fcmgez_h_06_07(TyH);
+   if (1) test_fcmgez_h_07_08(TyH);
+   if (1) test_fcmgez_h_08_09(TyH);
+   if (1) test_fcmgez_h_09_10(TyH);
+   if (1) test_fcmgez_h_10_11(TyH);
+   if (1) test_fcmgez_h_11_12(TyH);
+   if (1) test_fcmgez_h_12_13(TyH);
+   if (1) test_fcmgez_h_13_14(TyH);
+   if (1) test_fcmgez_h_14_15(TyH);
+   if (1) test_fcmgez_h_15_16(TyH);
+   if (1) test_fcmgez_h_16_17(TyH);
+   if (1) test_fcmgez_h_17_18(TyH);
+   if (1) test_fcmgez_h_18_19(TyH);
+   if (1) test_fcmgez_h_19_20(TyH);
+   if (1) test_fcmgez_h_20_21(TyH);
+   if (1) test_fcmgez_h_21_22(TyH);
+   if (1) test_fcmgez_h_22_23(TyH);
+   if (1) test_fcmgez_h_23_24(TyH);
+   if (1) test_fcmgez_h_24_25(TyH);
+   if (1) test_fcmgez_h_25_26(TyH);
+   if (1) test_fcmgez_h_26_27(TyH);
+   if (1) test_fcmgez_h_27_28(TyH);
+   if (1) test_fcmgez_h_28_29(TyH);
+   if (1) test_fcmgez_h_29_30(TyH);
+   if (1) test_fcmgez_h_30_31(TyH);
 
    printf("\nFCMGE <Vd>.<T>, <Vn>.<T>, <Vm>.<T>\n\n");
 
@@ -4331,6 +4965,72 @@ int main ( void )
    if (1) test_fcmge_4h_28_29_30(TyH);
    if (1) test_fcmge_4h_29_30_31(TyH);
 
+   printf("\nFCMGE <Vd>.<T>, <Vn>.<T>, #0.0\n\n");
+
+   if (1) test_fcmgez_8h_00_01(TyH);
+   if (1) test_fcmgez_8h_01_02(TyH);
+   if (1) test_fcmgez_8h_02_03(TyH);
+   if (1) test_fcmgez_8h_03_04(TyH);
+   if (1) test_fcmgez_8h_04_05(TyH);
+   if (1) test_fcmgez_8h_05_06(TyH);
+   if (1) test_fcmgez_8h_06_07(TyH);
+   if (1) test_fcmgez_8h_07_08(TyH);
+   if (1) test_fcmgez_8h_08_09(TyH);
+   if (1) test_fcmgez_8h_09_10(TyH);
+   if (1) test_fcmgez_8h_10_11(TyH);
+   if (1) test_fcmgez_8h_11_12(TyH);
+   if (1) test_fcmgez_8h_12_13(TyH);
+   if (1) test_fcmgez_8h_13_14(TyH);
+   if (1) test_fcmgez_8h_14_15(TyH);
+   if (1) test_fcmgez_8h_15_16(TyH);
+   if (1) test_fcmgez_8h_16_17(TyH);
+   if (1) test_fcmgez_8h_17_18(TyH);
+   if (1) test_fcmgez_8h_18_19(TyH);
+   if (1) test_fcmgez_8h_19_20(TyH);
+   if (1) test_fcmgez_8h_20_21(TyH);
+   if (1) test_fcmgez_8h_21_22(TyH);
+   if (1) test_fcmgez_8h_22_23(TyH);
+   if (1) test_fcmgez_8h_23_24(TyH);
+   if (1) test_fcmgez_8h_24_25(TyH);
+   if (1) test_fcmgez_8h_25_26(TyH);
+   if (1) test_fcmgez_8h_26_27(TyH);
+   if (1) test_fcmgez_8h_27_28(TyH);
+   if (1) test_fcmgez_8h_28_29(TyH);
+   if (1) test_fcmgez_8h_29_30(TyH);
+   if (1) test_fcmgez_8h_30_31(TyH);
+
+   if (1) test_fcmgez_4h_00_01(TyH);
+   if (1) test_fcmgez_4h_01_02(TyH);
+   if (1) test_fcmgez_4h_02_03(TyH);
+   if (1) test_fcmgez_4h_03_04(TyH);
+   if (1) test_fcmgez_4h_04_05(TyH);
+   if (1) test_fcmgez_4h_05_06(TyH);
+   if (1) test_fcmgez_4h_06_07(TyH);
+   if (1) test_fcmgez_4h_07_08(TyH);
+   if (1) test_fcmgez_4h_08_09(TyH);
+   if (1) test_fcmgez_4h_09_10(TyH);
+   if (1) test_fcmgez_4h_10_11(TyH);
+   if (1) test_fcmgez_4h_11_12(TyH);
+   if (1) test_fcmgez_4h_12_13(TyH);
+   if (1) test_fcmgez_4h_13_14(TyH);
+   if (1) test_fcmgez_4h_14_15(TyH);
+   if (1) test_fcmgez_4h_15_16(TyH);
+   if (1) test_fcmgez_4h_16_17(TyH);
+   if (1) test_fcmgez_4h_17_18(TyH);
+   if (1) test_fcmgez_4h_18_19(TyH);
+   if (1) test_fcmgez_4h_19_20(TyH);
+   if (1) test_fcmgez_4h_20_21(TyH);
+   if (1) test_fcmgez_4h_21_22(TyH);
+   if (1) test_fcmgez_4h_22_23(TyH);
+   if (1) test_fcmgez_4h_23_24(TyH);
+   if (1) test_fcmgez_4h_24_25(TyH);
+   if (1) test_fcmgez_4h_25_26(TyH);
+   if (1) test_fcmgez_4h_26_27(TyH);
+   if (1) test_fcmgez_4h_27_28(TyH);
+   if (1) test_fcmgez_4h_28_29(TyH);
+   if (1) test_fcmgez_4h_29_30(TyH);
+   if (1) test_fcmgez_4h_30_31(TyH);
+
    printf("\nFCMGT <Hd>, <Hn>, <Hm>\n\n");
 
    if (1) test_fcmgt_h_00_01_02(TyH);
@@ -4363,6 +5063,40 @@ int main ( void )
    if (1) test_fcmgt_h_27_28_29(TyH);
    if (1) test_fcmgt_h_28_29_30(TyH);
    if (1) test_fcmgt_h_29_30_31(TyH);
+
+   printf("\nFCMGT <Hd>, <Hn>, #0.0\n\n");
+
+   if (1) test_fcmgtz_h_00_01(TyH);
+   if (1) test_fcmgtz_h_01_02(TyH);
+   if (1) test_fcmgtz_h_02_03(TyH);
+   if (1) test_fcmgtz_h_03_04(TyH);
+   if (1) test_fcmgtz_h_04_05(TyH);
+   if (1) test_fcmgtz_h_05_06(TyH);
+   if (1) test_fcmgtz_h_06_07(TyH);
+   if (1) test_fcmgtz_h_07_08(TyH);
+   if (1) test_fcmgtz_h_08_09(TyH);
+   if (1) test_fcmgtz_h_09_10(TyH);
+   if (1) test_fcmgtz_h_10_11(TyH);
+   if (1) test_fcmgtz_h_11_12(TyH);
+   if (1) test_fcmgtz_h_12_13(TyH);
+   if (1) test_fcmgtz_h_13_14(TyH);
+   if (1) test_fcmgtz_h_14_15(TyH);
+   if (1) test_fcmgtz_h_15_16(TyH);
+   if (1) test_fcmgtz_h_16_17(TyH);
+   if (1) test_fcmgtz_h_17_18(TyH);
+   if (1) test_fcmgtz_h_18_19(TyH);
+   if (1) test_fcmgtz_h_19_20(TyH);
+   if (1) test_fcmgtz_h_20_21(TyH);
+   if (1) test_fcmgtz_h_21_22(TyH);
+   if (1) test_fcmgtz_h_22_23(TyH);
+   if (1) test_fcmgtz_h_23_24(TyH);
+   if (1) test_fcmgtz_h_24_25(TyH);
+   if (1) test_fcmgtz_h_25_26(TyH);
+   if (1) test_fcmgtz_h_26_27(TyH);
+   if (1) test_fcmgtz_h_27_28(TyH);
+   if (1) test_fcmgtz_h_28_29(TyH);
+   if (1) test_fcmgtz_h_29_30(TyH);
+   if (1) test_fcmgtz_h_30_31(TyH);
 
    printf("\nFCMGT <Vd>.<T>, <Vn>.<T>, <Vm>.<T>\n\n");
 
@@ -4428,6 +5162,272 @@ int main ( void )
    if (1) test_fcmgt_4h_28_29_30(TyH);
    if (1) test_fcmgt_4h_29_30_31(TyH);
 
+   printf("\nFCMGT <Vd>.<T>, <Vn>.<T>, #0.0\n\n");
+
+   if (1) test_fcmgtz_8h_00_01(TyH);
+   if (1) test_fcmgtz_8h_01_02(TyH);
+   if (1) test_fcmgtz_8h_02_03(TyH);
+   if (1) test_fcmgtz_8h_03_04(TyH);
+   if (1) test_fcmgtz_8h_04_05(TyH);
+   if (1) test_fcmgtz_8h_05_06(TyH);
+   if (1) test_fcmgtz_8h_06_07(TyH);
+   if (1) test_fcmgtz_8h_07_08(TyH);
+   if (1) test_fcmgtz_8h_08_09(TyH);
+   if (1) test_fcmgtz_8h_09_10(TyH);
+   if (1) test_fcmgtz_8h_10_11(TyH);
+   if (1) test_fcmgtz_8h_11_12(TyH);
+   if (1) test_fcmgtz_8h_12_13(TyH);
+   if (1) test_fcmgtz_8h_13_14(TyH);
+   if (1) test_fcmgtz_8h_14_15(TyH);
+   if (1) test_fcmgtz_8h_15_16(TyH);
+   if (1) test_fcmgtz_8h_16_17(TyH);
+   if (1) test_fcmgtz_8h_17_18(TyH);
+   if (1) test_fcmgtz_8h_18_19(TyH);
+   if (1) test_fcmgtz_8h_19_20(TyH);
+   if (1) test_fcmgtz_8h_20_21(TyH);
+   if (1) test_fcmgtz_8h_21_22(TyH);
+   if (1) test_fcmgtz_8h_22_23(TyH);
+   if (1) test_fcmgtz_8h_23_24(TyH);
+   if (1) test_fcmgtz_8h_24_25(TyH);
+   if (1) test_fcmgtz_8h_25_26(TyH);
+   if (1) test_fcmgtz_8h_26_27(TyH);
+   if (1) test_fcmgtz_8h_27_28(TyH);
+   if (1) test_fcmgtz_8h_28_29(TyH);
+   if (1) test_fcmgtz_8h_29_30(TyH);
+   if (1) test_fcmgtz_8h_30_31(TyH);
+
+   if (1) test_fcmgtz_4h_00_01(TyH);
+   if (1) test_fcmgtz_4h_01_02(TyH);
+   if (1) test_fcmgtz_4h_02_03(TyH);
+   if (1) test_fcmgtz_4h_03_04(TyH);
+   if (1) test_fcmgtz_4h_04_05(TyH);
+   if (1) test_fcmgtz_4h_05_06(TyH);
+   if (1) test_fcmgtz_4h_06_07(TyH);
+   if (1) test_fcmgtz_4h_07_08(TyH);
+   if (1) test_fcmgtz_4h_08_09(TyH);
+   if (1) test_fcmgtz_4h_09_10(TyH);
+   if (1) test_fcmgtz_4h_10_11(TyH);
+   if (1) test_fcmgtz_4h_11_12(TyH);
+   if (1) test_fcmgtz_4h_12_13(TyH);
+   if (1) test_fcmgtz_4h_13_14(TyH);
+   if (1) test_fcmgtz_4h_14_15(TyH);
+   if (1) test_fcmgtz_4h_15_16(TyH);
+   if (1) test_fcmgtz_4h_16_17(TyH);
+   if (1) test_fcmgtz_4h_17_18(TyH);
+   if (1) test_fcmgtz_4h_18_19(TyH);
+   if (1) test_fcmgtz_4h_19_20(TyH);
+   if (1) test_fcmgtz_4h_20_21(TyH);
+   if (1) test_fcmgtz_4h_21_22(TyH);
+   if (1) test_fcmgtz_4h_22_23(TyH);
+   if (1) test_fcmgtz_4h_23_24(TyH);
+   if (1) test_fcmgtz_4h_24_25(TyH);
+   if (1) test_fcmgtz_4h_25_26(TyH);
+   if (1) test_fcmgtz_4h_26_27(TyH);
+   if (1) test_fcmgtz_4h_27_28(TyH);
+   if (1) test_fcmgtz_4h_28_29(TyH);
+   if (1) test_fcmgtz_4h_29_30(TyH);
+   if (1) test_fcmgtz_4h_30_31(TyH);
+
+   printf("\nFCMLE <Hd>, <Hn>, #0.0\n\n");
+
+   if (1) test_fcmlez_h_00_01(TyH);
+   if (1) test_fcmlez_h_01_02(TyH);
+   if (1) test_fcmlez_h_02_03(TyH);
+   if (1) test_fcmlez_h_03_04(TyH);
+   if (1) test_fcmlez_h_04_05(TyH);
+   if (1) test_fcmlez_h_05_06(TyH);
+   if (1) test_fcmlez_h_06_07(TyH);
+   if (1) test_fcmlez_h_07_08(TyH);
+   if (1) test_fcmlez_h_08_09(TyH);
+   if (1) test_fcmlez_h_09_10(TyH);
+   if (1) test_fcmlez_h_10_11(TyH);
+   if (1) test_fcmlez_h_11_12(TyH);
+   if (1) test_fcmlez_h_12_13(TyH);
+   if (1) test_fcmlez_h_13_14(TyH);
+   if (1) test_fcmlez_h_14_15(TyH);
+   if (1) test_fcmlez_h_15_16(TyH);
+   if (1) test_fcmlez_h_16_17(TyH);
+   if (1) test_fcmlez_h_17_18(TyH);
+   if (1) test_fcmlez_h_18_19(TyH);
+   if (1) test_fcmlez_h_19_20(TyH);
+   if (1) test_fcmlez_h_20_21(TyH);
+   if (1) test_fcmlez_h_21_22(TyH);
+   if (1) test_fcmlez_h_22_23(TyH);
+   if (1) test_fcmlez_h_23_24(TyH);
+   if (1) test_fcmlez_h_24_25(TyH);
+   if (1) test_fcmlez_h_25_26(TyH);
+   if (1) test_fcmlez_h_26_27(TyH);
+   if (1) test_fcmlez_h_27_28(TyH);
+   if (1) test_fcmlez_h_28_29(TyH);
+   if (1) test_fcmlez_h_29_30(TyH);
+   if (1) test_fcmlez_h_30_31(TyH);
+
+   printf("\nFCMLE <Vd>.<T>, <Vn>.<T>, #0.0\n\n");
+
+   if (1) test_fcmlez_8h_00_01(TyH);
+   if (1) test_fcmlez_8h_01_02(TyH);
+   if (1) test_fcmlez_8h_02_03(TyH);
+   if (1) test_fcmlez_8h_03_04(TyH);
+   if (1) test_fcmlez_8h_04_05(TyH);
+   if (1) test_fcmlez_8h_05_06(TyH);
+   if (1) test_fcmlez_8h_06_07(TyH);
+   if (1) test_fcmlez_8h_07_08(TyH);
+   if (1) test_fcmlez_8h_08_09(TyH);
+   if (1) test_fcmlez_8h_09_10(TyH);
+   if (1) test_fcmlez_8h_10_11(TyH);
+   if (1) test_fcmlez_8h_11_12(TyH);
+   if (1) test_fcmlez_8h_12_13(TyH);
+   if (1) test_fcmlez_8h_13_14(TyH);
+   if (1) test_fcmlez_8h_14_15(TyH);
+   if (1) test_fcmlez_8h_15_16(TyH);
+   if (1) test_fcmlez_8h_16_17(TyH);
+   if (1) test_fcmlez_8h_17_18(TyH);
+   if (1) test_fcmlez_8h_18_19(TyH);
+   if (1) test_fcmlez_8h_19_20(TyH);
+   if (1) test_fcmlez_8h_20_21(TyH);
+   if (1) test_fcmlez_8h_21_22(TyH);
+   if (1) test_fcmlez_8h_22_23(TyH);
+   if (1) test_fcmlez_8h_23_24(TyH);
+   if (1) test_fcmlez_8h_24_25(TyH);
+   if (1) test_fcmlez_8h_25_26(TyH);
+   if (1) test_fcmlez_8h_26_27(TyH);
+   if (1) test_fcmlez_8h_27_28(TyH);
+   if (1) test_fcmlez_8h_28_29(TyH);
+   if (1) test_fcmlez_8h_29_30(TyH);
+   if (1) test_fcmlez_8h_30_31(TyH);
+
+   if (1) test_fcmlez_4h_00_01(TyH);
+   if (1) test_fcmlez_4h_01_02(TyH);
+   if (1) test_fcmlez_4h_02_03(TyH);
+   if (1) test_fcmlez_4h_03_04(TyH);
+   if (1) test_fcmlez_4h_04_05(TyH);
+   if (1) test_fcmlez_4h_05_06(TyH);
+   if (1) test_fcmlez_4h_06_07(TyH);
+   if (1) test_fcmlez_4h_07_08(TyH);
+   if (1) test_fcmlez_4h_08_09(TyH);
+   if (1) test_fcmlez_4h_09_10(TyH);
+   if (1) test_fcmlez_4h_10_11(TyH);
+   if (1) test_fcmlez_4h_11_12(TyH);
+   if (1) test_fcmlez_4h_12_13(TyH);
+   if (1) test_fcmlez_4h_13_14(TyH);
+   if (1) test_fcmlez_4h_14_15(TyH);
+   if (1) test_fcmlez_4h_15_16(TyH);
+   if (1) test_fcmlez_4h_16_17(TyH);
+   if (1) test_fcmlez_4h_17_18(TyH);
+   if (1) test_fcmlez_4h_18_19(TyH);
+   if (1) test_fcmlez_4h_19_20(TyH);
+   if (1) test_fcmlez_4h_20_21(TyH);
+   if (1) test_fcmlez_4h_21_22(TyH);
+   if (1) test_fcmlez_4h_22_23(TyH);
+   if (1) test_fcmlez_4h_23_24(TyH);
+   if (1) test_fcmlez_4h_24_25(TyH);
+   if (1) test_fcmlez_4h_25_26(TyH);
+   if (1) test_fcmlez_4h_26_27(TyH);
+   if (1) test_fcmlez_4h_27_28(TyH);
+   if (1) test_fcmlez_4h_28_29(TyH);
+   if (1) test_fcmlez_4h_29_30(TyH);
+   if (1) test_fcmlez_4h_30_31(TyH);
+
+   printf("\nFCMLT <Hd>, <Hn>, #0.0\n\n");
+
+   if (1) test_fcmltz_h_00_01(TyH);
+   if (1) test_fcmltz_h_01_02(TyH);
+   if (1) test_fcmltz_h_02_03(TyH);
+   if (1) test_fcmltz_h_03_04(TyH);
+   if (1) test_fcmltz_h_04_05(TyH);
+   if (1) test_fcmltz_h_05_06(TyH);
+   if (1) test_fcmltz_h_06_07(TyH);
+   if (1) test_fcmltz_h_07_08(TyH);
+   if (1) test_fcmltz_h_08_09(TyH);
+   if (1) test_fcmltz_h_09_10(TyH);
+   if (1) test_fcmltz_h_10_11(TyH);
+   if (1) test_fcmltz_h_11_12(TyH);
+   if (1) test_fcmltz_h_12_13(TyH);
+   if (1) test_fcmltz_h_13_14(TyH);
+   if (1) test_fcmltz_h_14_15(TyH);
+   if (1) test_fcmltz_h_15_16(TyH);
+   if (1) test_fcmltz_h_16_17(TyH);
+   if (1) test_fcmltz_h_17_18(TyH);
+   if (1) test_fcmltz_h_18_19(TyH);
+   if (1) test_fcmltz_h_19_20(TyH);
+   if (1) test_fcmltz_h_20_21(TyH);
+   if (1) test_fcmltz_h_21_22(TyH);
+   if (1) test_fcmltz_h_22_23(TyH);
+   if (1) test_fcmltz_h_23_24(TyH);
+   if (1) test_fcmltz_h_24_25(TyH);
+   if (1) test_fcmltz_h_25_26(TyH);
+   if (1) test_fcmltz_h_26_27(TyH);
+   if (1) test_fcmltz_h_27_28(TyH);
+   if (1) test_fcmltz_h_28_29(TyH);
+   if (1) test_fcmltz_h_29_30(TyH);
+   if (1) test_fcmltz_h_30_31(TyH);
+
+   printf("\nFCMLT <Vd>.<T>, <Vn>.<T>, #0.0\n\n");
+
+   if (1) test_fcmltz_8h_00_01(TyH);
+   if (1) test_fcmltz_8h_01_02(TyH);
+   if (1) test_fcmltz_8h_02_03(TyH);
+   if (1) test_fcmltz_8h_03_04(TyH);
+   if (1) test_fcmltz_8h_04_05(TyH);
+   if (1) test_fcmltz_8h_05_06(TyH);
+   if (1) test_fcmltz_8h_06_07(TyH);
+   if (1) test_fcmltz_8h_07_08(TyH);
+   if (1) test_fcmltz_8h_08_09(TyH);
+   if (1) test_fcmltz_8h_09_10(TyH);
+   if (1) test_fcmltz_8h_10_11(TyH);
+   if (1) test_fcmltz_8h_11_12(TyH);
+   if (1) test_fcmltz_8h_12_13(TyH);
+   if (1) test_fcmltz_8h_13_14(TyH);
+   if (1) test_fcmltz_8h_14_15(TyH);
+   if (1) test_fcmltz_8h_15_16(TyH);
+   if (1) test_fcmltz_8h_16_17(TyH);
+   if (1) test_fcmltz_8h_17_18(TyH);
+   if (1) test_fcmltz_8h_18_19(TyH);
+   if (1) test_fcmltz_8h_19_20(TyH);
+   if (1) test_fcmltz_8h_20_21(TyH);
+   if (1) test_fcmltz_8h_21_22(TyH);
+   if (1) test_fcmltz_8h_22_23(TyH);
+   if (1) test_fcmltz_8h_23_24(TyH);
+   if (1) test_fcmltz_8h_24_25(TyH);
+   if (1) test_fcmltz_8h_25_26(TyH);
+   if (1) test_fcmltz_8h_26_27(TyH);
+   if (1) test_fcmltz_8h_27_28(TyH);
+   if (1) test_fcmltz_8h_28_29(TyH);
+   if (1) test_fcmltz_8h_29_30(TyH);
+   if (1) test_fcmltz_8h_30_31(TyH);
+
+   if (1) test_fcmltz_4h_00_01(TyH);
+   if (1) test_fcmltz_4h_01_02(TyH);
+   if (1) test_fcmltz_4h_02_03(TyH);
+   if (1) test_fcmltz_4h_03_04(TyH);
+   if (1) test_fcmltz_4h_04_05(TyH);
+   if (1) test_fcmltz_4h_05_06(TyH);
+   if (1) test_fcmltz_4h_06_07(TyH);
+   if (1) test_fcmltz_4h_07_08(TyH);
+   if (1) test_fcmltz_4h_08_09(TyH);
+   if (1) test_fcmltz_4h_09_10(TyH);
+   if (1) test_fcmltz_4h_10_11(TyH);
+   if (1) test_fcmltz_4h_11_12(TyH);
+   if (1) test_fcmltz_4h_12_13(TyH);
+   if (1) test_fcmltz_4h_13_14(TyH);
+   if (1) test_fcmltz_4h_14_15(TyH);
+   if (1) test_fcmltz_4h_15_16(TyH);
+   if (1) test_fcmltz_4h_16_17(TyH);
+   if (1) test_fcmltz_4h_17_18(TyH);
+   if (1) test_fcmltz_4h_18_19(TyH);
+   if (1) test_fcmltz_4h_19_20(TyH);
+   if (1) test_fcmltz_4h_20_21(TyH);
+   if (1) test_fcmltz_4h_21_22(TyH);
+   if (1) test_fcmltz_4h_22_23(TyH);
+   if (1) test_fcmltz_4h_23_24(TyH);
+   if (1) test_fcmltz_4h_24_25(TyH);
+   if (1) test_fcmltz_4h_25_26(TyH);
+   if (1) test_fcmltz_4h_26_27(TyH);
+   if (1) test_fcmltz_4h_27_28(TyH);
+   if (1) test_fcmltz_4h_28_29(TyH);
+   if (1) test_fcmltz_4h_29_30(TyH);
+   if (1) test_fcmltz_4h_30_31(TyH);
+
    return 0;
 }
 
@@ -4455,9 +5455,19 @@ int main ( void )
    FCCMP <Hn>, <Hm>, #<nzcv>, <cond> Floating-point Conditional quiet Compare (scalar). 
    FCCMPE <Hn>, <Hm>, #<nzcv>, <cond> Floating-point Conditional signaling Compare (scalar).
    FCMEQ <Hd>, <Hn>, <Hm> Floating-point Compare Equal (scalar).
+   FCMEQ <Hd>, <Hn>, #0.0 Floating-point Compare Equal to zero (scalar).
    FCMEQ <Vd>.<T>, <Vn>.<T>, <Vm>.<T> Floating-point Compare Equal (vector).
+   FCMEQ <Vd>.<T>, <Vn>.<T>, #0.0 Floating-point Compare Equal to zero (vector).
    FCMGE <Hd>, <Hn>, <Hm> Floating-point Compare Greater than or Equal (scalar).
+   FCMGE <Hd>, <Hn>, #0.0 Floating-point Compare Greater than or Equal to zero (scalar).
    FCMGE <Vd>.<T>, <Vn>.<T>, <Vm>.<T> Floating-point Compare Greater than or Equal (vector).
+   FCMGE <Vd>.<T>, <Vn>.<T>, #0.0 Floating-point Compare Greater than or Equal to zero (vector).
    FCMGT <Hd>, <Hn>, <Hm> Floating-point Compare Greater than (scalar).
+   FCMGT <Hd>, <Hn>, #0.0 Floating-point Compare Greater than zero (scalar).
    FCMGT <Vd>.<T>, <Vn>.<T>, <Vm>.<T> Floating-point Compare Greater than (vector).
+   FCMGT <Vd>.<T>, <Vn>.<T>, #0.0 Floating-point Compare Greater than zero (vector).
+   FCMLE <Hd>, <Hn>, #0.0 Floating-point Compare Less than or Equal to zero (scalar).
+   FCMLE <Vd>.<T>, <Vn>.<T>, #0.0 Floating-point Compare Less than or Equal to zero (vector).
+   FCMLT <Hd>, <Hn>, #0.0 Floating-point Compare Less than zero (scalar).
+   FCMLT <Vd>.<T>, <Vn>.<T>, #0.0 Floating-point Compare Less than zero (vector).
 */

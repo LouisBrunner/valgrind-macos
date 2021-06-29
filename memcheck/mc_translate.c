@@ -4055,6 +4055,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       case Iop_CmpLT16Fx8:
       case Iop_CmpLE16Fx8:
+      case Iop_CmpEQ16Fx8:
          return binary16Fx8(mce, vatom1, vatom2);
 
       case Iop_Sub64F0x2:
@@ -4540,6 +4541,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          /*  I64 x I128 -> D128 */
          return mkLazy2(mce, Ity_I128, vatom1, vatom2);
 
+      case Iop_CmpF16:
       case Iop_CmpF32:
       case Iop_CmpF64:
       case Iop_CmpF128:

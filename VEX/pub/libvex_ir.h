@@ -628,6 +628,7 @@ typedef
       /* :: F64 x F64 -> IRCmpF64Result(I32) */
       Iop_CmpF64,
       Iop_CmpF32,
+      Iop_CmpF16,
       Iop_CmpF128,
 
       /* --- Int to/from FP conversions. --- */
@@ -1383,7 +1384,7 @@ typedef
       Iop_Add16Fx8, Iop_Sub16Fx8,
 
       /* binary */
-      Iop_CmpLT16Fx8, Iop_CmpLE16Fx8,
+      Iop_CmpLT16Fx8, Iop_CmpLE16Fx8, Iop_CmpEQ16Fx8,
 
       /* unary */
       Iop_Abs16Fx8,

@@ -1842,15 +1842,29 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return hi32;
       }
 
-      if (e->Iex.Binop.op == Iop_CmpF64 || e->Iex.Binop.op == Iop_CmpF32) {
-         Bool isD = e->Iex.Binop.op == Iop_CmpF64;
-         HReg dL  = (isD ? iselDblExpr : iselFltExpr)(env, e->Iex.Binop.arg1);
-         HReg dR  = (isD ? iselDblExpr : iselFltExpr)(env, e->Iex.Binop.arg2);
+      if (e->Iex.Binop.op == Iop_CmpF64 || e->Iex.Binop.op == Iop_CmpF32 ||
+          e->Iex.Binop.op == Iop_CmpF16) {
+         HReg (*iselExpr)(ISelEnv*, IRExpr*) = NULL;
+         ARM64Instr* (*VCmp)(HReg, HReg) = NULL;
+         if (e->Iex.Binop.op == Iop_CmpF64) {
+            iselExpr = &iselDblExpr;
+            VCmp     = &ARM64Instr_VCmpD;
+         }
+         else if (e->Iex.Binop.op == Iop_CmpF32) {
+            iselExpr = &iselFltExpr;
+            VCmp     = &ARM64Instr_VCmpS;
+         }
+         else {
+            iselExpr = &iselF16Expr;
+            VCmp     = &ARM64Instr_VCmpH;
+         }
+         HReg dL  = (iselExpr)(env, e->Iex.Binop.arg1);
+         HReg dR  = (iselExpr)(env, e->Iex.Binop.arg2);
          HReg dst = newVRegI(env);
          HReg imm = newVRegI(env);
          /* Do the compare (FCMP), which sets NZCV in PSTATE.  Then
             create in dst, the IRCmpF64Result encoded result. */
-         addInstr(env, (isD ? ARM64Instr_VCmpD : ARM64Instr_VCmpS)(dL, dR));
+         addInstr(env, (VCmp)(dL, dR));
          addInstr(env, ARM64Instr_Imm64(dst, 0));
          addInstr(env, ARM64Instr_Imm64(imm, 0x40)); // 0x40 = Ircr_EQ
          addInstr(env, ARM64Instr_CSel(dst, imm, dst, ARM64cc_EQ));
@@ -2644,7 +2658,7 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_CmpEQ64Fx2: case Iop_CmpEQ32Fx4:
          case Iop_CmpLE64Fx2: case Iop_CmpLE32Fx4:
          case Iop_CmpLT64Fx2: case Iop_CmpLT32Fx4:
-         case Iop_CmpLT16Fx8: case Iop_CmpLE16Fx8:
+         case Iop_CmpLT16Fx8: case Iop_CmpLE16Fx8: case Iop_CmpEQ16Fx8:
          case Iop_Perm8x16:
          case Iop_InterleaveLO64x2: case Iop_CatEvenLanes32x4:
          case Iop_CatEvenLanes16x8: case Iop_CatEvenLanes8x16:
@@ -2730,6 +2744,7 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
                case Iop_CmpLE16Fx8: op = ARM64vecb_FCMGE16x8; sw = True; break;
                case Iop_CmpLT64Fx2: op = ARM64vecb_FCMGT64x2; sw = True; break;
                case Iop_CmpLT16Fx8: op = ARM64vecb_FCMGT16x8; sw = True; break;
+               case Iop_CmpEQ16Fx8: op = ARM64vecb_FCMEQ16x8; sw = True; break;
                case Iop_CmpLT32Fx4: op = ARM64vecb_FCMGT32x4; sw = True; break;
                case Iop_Perm8x16:   op = ARM64vecb_TBL1; break;
                case Iop_InterleaveLO64x2: op = ARM64vecb_UZP164x2; sw = True;

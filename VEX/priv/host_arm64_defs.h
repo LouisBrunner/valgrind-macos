@@ -362,8 +362,8 @@ typedef
       ARM64vecb_FCMEQ64x2,   ARM64vecb_FCMEQ32x4,
       ARM64vecb_FCMGE64x2,   ARM64vecb_FCMGE32x4,
       ARM64vecb_FCMGT64x2,   ARM64vecb_FCMGT32x4,
-      ARM64vecb_FCMGE16x8,
-      ARM64vecb_FCMGT16x8,
+      ARM64vecb_FCMGE16x8,   ARM64vecb_FCMGT16x8,
+      ARM64vecb_FCMEQ16x8,
       ARM64vecb_TBL1,
       ARM64vecb_UZP164x2,    ARM64vecb_UZP132x4,
       ARM64vecb_UZP116x8,    ARM64vecb_UZP18x16,
@@ -535,6 +535,7 @@ typedef
       ARM64in_VTriS,
       ARM64in_VCmpD,
       ARM64in_VCmpS,
+      ARM64in_VCmpH,
       ARM64in_VFCSel,
       ARM64in_FPCR,
       ARM64in_FPSR,
@@ -882,6 +883,11 @@ typedef
             HReg argL;
             HReg argR;
          } VCmpS;
+         /* 16-bit FP compare */
+         struct {
+            HReg argL;
+            HReg argR;
+         } VCmpH;
          /* 32- or 64-bit FP conditional select */
          struct {
             HReg          dst;
@@ -1053,6 +1059,7 @@ extern ARM64Instr* ARM64Instr_VTriS   ( ARM64FpTriOp op, HReg dst,
                                         HReg, HReg, HReg );
 extern ARM64Instr* ARM64Instr_VCmpD   ( HReg argL, HReg argR );
 extern ARM64Instr* ARM64Instr_VCmpS   ( HReg argL, HReg argR );
+extern ARM64Instr* ARM64Instr_VCmpH   ( HReg argL, HReg argR );
 extern ARM64Instr* ARM64Instr_VFCSel  ( HReg dst, HReg argL, HReg argR,
                                         ARM64CondCode cond, Bool isD );
 extern ARM64Instr* ARM64Instr_FPCR    ( Bool toFPCR, HReg iReg );

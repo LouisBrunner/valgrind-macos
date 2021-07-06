@@ -42,6 +42,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 434296  s390x: False-positive memcheck diagnostics from vector string
         instructions
 435665  PPC ISA 3.0 copy, paste, cpabort instructions are not supported 
+438871  unhandled instruction bytes: 0xF3 0x49 0xF 0x6F 0x9C 0x24 0x60 0x2 0x0 0x0
 435908  valgrind tries to fetch from deubginfod for files which already
         have debug information
 

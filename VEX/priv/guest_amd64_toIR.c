@@ -13883,7 +13883,8 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          }
          goto decode_success;
       }
-      if (haveF3no66noF2(pfx) && sz == 4) {
+      if (haveF3no66noF2(pfx)
+          && (sz == 4 || /* ignore redundant REX.W */ sz == 8)) {
          /* F3 0F 6F = MOVDQU -- move from E (mem or xmm) to G (xmm). */
          modrm = getUChar(delta);
          if (epartIsReg(modrm)) {
@@ -14144,7 +14145,8 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
 
    case 0x7F:
       /* F3 0F 7F = MOVDQU -- move from G (xmm) to E (mem or xmm). */
-      if (haveF3no66noF2(pfx) && sz == 4) {
+      if (haveF3no66noF2(pfx)
+          && (sz == 4 || /* ignore redundant REX.W */ sz == 8)) {
          modrm = getUChar(delta);
          if (epartIsReg(modrm)) {
             goto decode_failure; /* awaiting test case */

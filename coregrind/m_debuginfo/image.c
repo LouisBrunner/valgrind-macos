@@ -523,14 +523,24 @@ static void realloc_CEnt ( DiImage* img, UInt entNo, SizeT szB, Bool fromC )
    to make space. */
 static void move_CEnt_to_top ( DiImage* img, UInt entNo )
 {
-   vg_assert(img->ces_used <= CACHE_N_ENTRIES);
-   vg_assert(entNo > 0 && entNo < img->ces_used);
-   CEnt* tmp = img->ces[entNo];
-   while (entNo > 0) {
+   vg_assert(entNo < img->ces_used);
+   if (LIKELY(entNo == 1)) {
+      CEnt* tmp = img->ces[1];
+      img->ces[entNo] = img->ces[0];
+      img->ces[0] = tmp;
+   } else {
+      vg_assert(entNo > 1); // a.k.a. >= 2
+      CEnt* tmp = img->ces[entNo];
       img->ces[entNo] = img->ces[entNo-1];
       entNo--;
+      img->ces[entNo] = img->ces[entNo-1];
+      entNo--;
+      while (entNo > 0) {
+         img->ces[entNo] = img->ces[entNo-1];
+         entNo--;
+      }
+      img->ces[0] = tmp;
    }
-   img->ces[0] = tmp;
 }
 
 /* Set the given entry so that it has a chunk of the file containing

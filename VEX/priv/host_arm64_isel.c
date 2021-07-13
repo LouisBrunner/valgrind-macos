@@ -2188,6 +2188,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_64to32:
          case Iop_64to16:
          case Iop_64to8:
+         case Iop_32to16:
             /* These are no-ops. */
             return iselIntExpr_R(env, e->Iex.Unop.arg);
 

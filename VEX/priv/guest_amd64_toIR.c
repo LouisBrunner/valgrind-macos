@@ -1814,6 +1814,7 @@ void setFlags_DEP1_DEP2 ( IROp op8, IRTemp dep1, IRTemp dep2, IRType ty )
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(ccOp)) );
    stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(dep1))) );
    stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto64(mkexpr(dep2))) );
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
 }
 
 
@@ -1840,6 +1841,7 @@ void setFlags_DEP1 ( IROp op8, IRTemp dep1, IRType ty )
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(ccOp)) );
    stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(dep1))) );
    stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0)) );
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
 }
 
 
@@ -1891,6 +1893,8 @@ static void setFlags_DEP1_DEP2_shift ( IROp    op64,
                      IRExpr_ITE( mkexpr(guardB),
                                  widenUto64(mkexpr(resUS)),
                                  IRExpr_Get(OFFB_CC_DEP2,Ity_I64) ) ));
+   stmt( IRStmt_Put( OFFB_CC_NDEP,
+                     mkU64(0) ));
 }
 
 
@@ -1943,6 +1947,7 @@ void setFlags_MUL ( IRType ty, IRTemp arg1, IRTemp arg2, ULong base_op )
    }
    stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(arg1)) ));
    stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto64(mkexpr(arg2)) ));
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
 }
 
 
@@ -5486,6 +5491,7 @@ static void fp_do_ucomi_ST0_STi ( UInt i, Bool pop_after )
                          binop(Iop_CmpF64, get_ST(0), get_ST(i))),
                    mkU64(0x45)
         )));
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
    if (pop_after)
       fp_pop();
 }
@@ -10260,6 +10266,7 @@ static Long dis_COMISD ( const VexAbiInfo* vbi, Prefix pfx,
                          binop(Iop_CmpF64, mkexpr(argL), mkexpr(argR)) ),
                    mkU64(0x45)
        )));
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
    return delta;
 }
 
@@ -10305,6 +10312,7 @@ static Long dis_COMISS ( const VexAbiInfo* vbi, Prefix pfx,
                                unop(Iop_F32toF64,mkexpr(argR)))),
                    mkU64(0x45)
        )));
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
    return delta;
 }
 
@@ -20608,6 +20616,7 @@ Long dis_ESC_NONE (
                              )
                        )
           );
+      stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
 
       /* Also need to set the D flag, which is held in bit 10 of t1.
          If zero, put 1 in OFFB_DFLAG, else -1 in OFFB_DFLAG. */
@@ -29900,6 +29909,7 @@ Long dis_ESC_0F38__VEX (
                                                : AMD64G_CC_OP_ANDN32)) );
          stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(dst))) );
          stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0)) );
+         stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
          *uses_vvvv = True;
          goto decode_success;
       }
@@ -29937,6 +29947,7 @@ Long dis_ESC_0F38__VEX (
                                                : AMD64G_CC_OP_BLSI32)) );
          stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(dst))) );
          stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto64(mkexpr(src))) );
+         stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
          *uses_vvvv = True;
          goto decode_success;
       }
@@ -29971,6 +29982,7 @@ Long dis_ESC_0F38__VEX (
                                                : AMD64G_CC_OP_BLSMSK32)) );
          stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(dst))) );
          stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto64(mkexpr(src))) );
+         stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
          *uses_vvvv = True;
          goto decode_success;
       }
@@ -30005,6 +30017,7 @@ Long dis_ESC_0F38__VEX (
                                                : AMD64G_CC_OP_BLSR32)) );
          stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(dst))) );
          stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto64(mkexpr(src))) );
+         stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
          *uses_vvvv = True;
          goto decode_success;
       }
@@ -30074,6 +30087,7 @@ Long dis_ESC_0F38__VEX (
                                                : AMD64G_CC_OP_BLSR32)) );
          stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(dst))) );
          stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto64(mkexpr(cond))) );
+         stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
          *uses_vvvv = True;
          goto decode_success;
       }
@@ -30282,6 +30296,7 @@ Long dis_ESC_0F38__VEX (
                                                : AMD64G_CC_OP_ANDN32)) );
          stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(dst))) );
          stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0)) );
+         stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
          *uses_vvvv = True;
          goto decode_success;
       }

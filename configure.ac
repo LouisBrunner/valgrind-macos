@@ -1090,6 +1090,31 @@ if test x$GLIBC_VERSION = x; then
     fi
 fi
 
+# If this is glibc then figure out the generic (in file) libc.so and
+# libpthread.so file paths to use in suppressions. Before 2.34 libpthread
+# was a separate library, afterwards it was merged into libc.so and
+# the library is called libc.so.6 (before it was libc-2.[0-9]+.so).
+# Use this fact to set GLIBC_LIBC_PATH and GLIBC_LIBPTHREAD_PATH.
+case ${GLIBC_VERSION} in
+2*)
+  AC_MSG_CHECKING([whether pthread_create needs libpthread])
+  AC_LINK_IFELSE([AC_LANG_CALL([], [pthread_create])],
+  [
+    AC_MSG_RESULT([no])
+    GLIBC_LIBC_PATH="*/lib*/libc.so.6"
+    GLIBC_LIBPTHREAD_PATH="$GLIBC_LIBC_PATH"
+  ], [
+    AC_MSG_RESULT([yes])
+    GLIBC_LIBC_PATH="*/lib*/libc-2.*so*"
+    GLIBC_LIBPTHREAD_PATH="*/lib*/libpthread-2.*so*"
+  ])
+  ;;
+*)
+  AC_MSG_CHECKING([not glibc...])
+  AC_MSG_RESULT([${GLIBC_VERSION}])
+  ;;
+esac
+
 AC_MSG_CHECKING([the glibc version])
 
 case "${GLIBC_VERSION}" in
@@ -1102,13 +1127,13 @@ case "${GLIBC_VERSION}" in
      2.[[3-6]])
 	AC_MSG_RESULT(${GLIBC_VERSION} family)
 	DEFAULT_SUPP="glibc-${GLIBC_VERSION}.supp ${DEFAULT_SUPP}"
-	DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
+	DEFAULT_SUPP="glibc-2.X-helgrind.supp ${DEFAULT_SUPP}"
 	DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
 	;;
      2.[[7-9]])
 	AC_MSG_RESULT(${GLIBC_VERSION} family)
 	DEFAULT_SUPP="glibc-2.X.supp ${DEFAULT_SUPP}"
-	DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
+	DEFAULT_SUPP="glibc-2.X-helgrind.supp ${DEFAULT_SUPP}"
 	DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
 	;;
      2.10|2.11)
@@ -1116,7 +1141,7 @@ case "${GLIBC_VERSION}" in
 	AC_DEFINE([GLIBC_MANDATORY_STRLEN_REDIRECT], 1,
 		  [Define to 1 if strlen() has been optimized heavily (amd64 glibc >= 2.10)])
 	DEFAULT_SUPP="glibc-2.X.supp ${DEFAULT_SUPP}"
-	DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
+	DEFAULT_SUPP="glibc-2.X-helgrind.supp ${DEFAULT_SUPP}"
 	DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
 	;;
      2.*)
@@ -1126,7 +1151,7 @@ case "${GLIBC_VERSION}" in
 	AC_DEFINE([GLIBC_MANDATORY_INDEX_AND_STRLEN_REDIRECT], 1,
 		  [Define to 1 if index() and strlen() have been optimized heavily (x86 glibc >= 2.12)])
 	DEFAULT_SUPP="glibc-2.X.supp ${DEFAULT_SUPP}"
-	DEFAULT_SUPP="glibc-2.34567-NPTL-helgrind.supp ${DEFAULT_SUPP}"
+	DEFAULT_SUPP="glibc-2.X-helgrind.supp ${DEFAULT_SUPP}"
 	DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
 	;;
      darwin)
@@ -1157,6 +1182,8 @@ case "${GLIBC_VERSION}" in
 esac
 
 AC_SUBST(GLIBC_VERSION)
+AC_SUBST(GLIBC_LIBC_PATH)
+AC_SUBST(GLIBC_LIBPTHREAD_PATH)
 
 
 if test "$VGCONF_OS" != "solaris"; then
@@ -4928,6 +4955,8 @@ AC_CONFIG_FILES([
    valgrind.spec
    valgrind.pc
    glibc-2.X.supp
+   glibc-2.X-helgrind.supp
+   glibc-2.X-drd.supp
    docs/Makefile 
    tests/Makefile 
    tests/vg_regtest 

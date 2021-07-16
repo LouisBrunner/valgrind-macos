@@ -111,6 +111,7 @@ s/\(0x........\) in ?? ()$/\1 in syscall .../
 #         If select.c sources are present, we can also get a line containing:
 #              return SYSCALL_CANCEL....
 s/in __select .*/in syscall .../
+s/in __select$/in syscall .../
 /exceptfds/d
 /sysv\/linux\/select\.c/d
 /return SYSCALL_CANCEL /d

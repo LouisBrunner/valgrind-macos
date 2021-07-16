@@ -18,6 +18,7 @@ sed -e '/relaying data between gdb and process/d'                        \
     
 # filter some debuginfo problems with ld.so and SLES11
 sed -e '/^1	rtld.c: No such file or directory\./d' |
+sed -e '/rtld.c: Inappropriate ioctl for device\./d' |
 
 # and filter out any remaining empty lines
 sed -e '/^$/d'

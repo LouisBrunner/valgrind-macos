@@ -921,6 +921,28 @@ ULong arm64g_dirtyhelper_MRS_ID_AA64ISAR0_EL1 ( void )
 #  endif
 }
 
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-arm64 platforms, return 0. */
+ULong arm64g_dirtyhelper_MRS_ID_AA64ISAR1_EL1 ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   ULong w = 0x5555555555555555ULL; /* overwritten */
+   __asm__ __volatile__("mrs %0, id_aa64isar1_el1" : "=r"(w));
+
+   // only nibble 0 DBP
+   w &= 0xF;
+   /* No dc cvadp only dc cvap */
+   if ( w & 0x2 ) {
+      w ^= 0x2;
+      w |= 0x1;
+   }
+
+   return w;
+#  else
+   return 0ULL;
+#  endif
+}
 
 void arm64g_dirtyhelper_PMULLQ ( /*OUT*/V128* res, ULong arg1, ULong arg2 )
 {

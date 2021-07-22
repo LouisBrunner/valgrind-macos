@@ -7710,7 +7710,18 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380620 /*MRS*/) {
       UInt tt    = INSN(4,0);
-      putIReg64orZR(tt, mkU64(0x0));
+      IRTemp val = newTemp(Ity_I64);
+      IRExpr** args = mkIRExprVec_0();
+      IRDirty* d    = unsafeIRDirty_1_N (
+                        val,
+                        0/*regparms*/,
+                        "arm64g_dirtyhelper_MRS_ID_AA64ISAR1_EL1",
+                        &arm64g_dirtyhelper_MRS_ID_AA64ISAR1_EL1,
+                        args
+                     );
+      /* execute the dirty call, dumping the result in val. */
+      stmt( IRStmt_Dirty(d) );
+      putIReg64orZR(tt, mkexpr(val));
       DIP("mrs %s, id_aa64isar1_el1 (FAKED)\n", nameIReg64orZR(tt));
       return True;
    }
@@ -7978,9 +7989,13 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
    /* ------------------ DC_CVAU ------------------ */
    /* D5 0B 7B 001 Rt  dc cvau, rT
       D5 0B 7E 001 Rt  dc civac, rT
+      D5 0B 7A 001 Rt  dc cvac, rT
+      D5 0B 7C 001 Rt  dc cvap, rT
    */
    if (   (INSN(31,0) & 0xFFFFFFE0) == 0xD50B7B20
-       || (INSN(31,0) & 0xFFFFFFE0) == 0xD50B7E20) {
+       || (INSN(31,0) & 0xFFFFFFE0) == 0xD50B7E20
+       || ((INSN(31,0) & 0xFFFFFFE0) == 0xD50B7A20)
+       || ((INSN(31,0) & 0xFFFFFFE0) == 0xD50B7C20)) {
       /* Exactly the same scheme as for IC IVAU, except we observe the
          dMinLine size, and request an Ijk_FlushDCache instead of
          Ijk_InvalICache. */

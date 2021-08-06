@@ -46,6 +46,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 435908  valgrind tries to fetch from deubginfod for files which already
         have debug information
 439590  glibc-2.34 breaks suppressions against obj:*/lib*/libc-2.*so*
+440670  unhandled ppc64le-linux syscall: 252 (statfs64) and 253 (fstatfs64)
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

@@ -599,7 +599,11 @@ asm(
 "        ld   4, 16(3)\n"  /* sc arg 2 */
 "        ld   0,  0(3)\n"  /* sc number */
 "        ld   3,  8(3)\n"  /* sc arg 1 */
+
+"        .machine push\n"
+"        .machine \"power9\"\n"
 "        scv  0\n"
+"        .machine pop\n"
 "        ld   5,-16(1)\n"  /* reacquire argblock ptr (r5 is caller-save) */
 "        std  3,0(5)\n"    /* argblock[0] = r3 */
 

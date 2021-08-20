@@ -1,5 +1,9 @@
 /* The copy, paste, cpabort are ISA 3.0 instructions.  However, the memory
-   to memory copy is only supported on ISA 3.1 era machines.  */
+   to memory copy is only supported on ISA 3.1 era machines.
+
+   The following test does a memory to memory copy test, an out of order
+   paste test, and a copy paste abort test.  This test is only supported
+   ISA 3.1 systems.  */
 
 #include <stdio.h>
 #include <stdint.h>
@@ -7,7 +11,7 @@
 #include <string.h>
 #include <malloc.h>
 
-#ifdef HAS_ISA_3_00
+#ifdef HAS_ISA_3_1
 #include <altivec.h>
 
 /* return CR0 in least significant bits */
@@ -17,17 +21,20 @@
 
 void test_copy (uint8_t *reg)
 {
-  __asm__ __volatile__ ("copy 0,%0" : : "r" (reg));
+  __asm__ __volatile__ (".machine push; .machine power9; " \
+                        "copy 0,%0; hwsync; .machine pop;" : : "r" (reg));
 }
 
 void test_paste (uint8_t *reg)
 {
-  __asm__ __volatile__ ("paste. 0,%0" : : "r" (reg));
+  __asm__ __volatile__ (".machine push; .machine power9; " \
+                        "paste. 0,%0; hwsync; .machine pop;" : : "r" (reg));
 }
 
 void test_cpabort (void)
 {
-  __asm__ __volatile__ ("cpabort");
+  __asm__ __volatile__ (".machine push; .machine power9; " \
+                        "cpabort; hwsync; .machine pop;");
 }
 
 #define NUM_ELEMENTS 128
@@ -39,7 +46,7 @@ void test_cpabort (void)
 
 int main()
 {
-#ifdef HAS_ISA_3_00
+#ifdef HAS_ISA_3_1
    int i;
    unsigned int cc_value;
    int result = SUCCESS;
@@ -65,6 +72,10 @@ int main()
    test_copy (src_buffer);
    test_paste (dst_buffer);
    GET_CR0(cc_value);
+
+#if DEBUG
+   printf("CR0 = 0x%x\n", cc_value);
+#endif
 
 #if DEBUG
    printf("AFTER COPY/PASTE Contents of src/dst buffer\n");
@@ -111,7 +122,7 @@ int main()
       printf("FAILURE.\n");
 
 #else
-  printf("HAS_ISA_3_00 not detected.\n");
+  printf("HAS_ISA_3_1 not detected.\n");
 #endif
    return 0;
 }

@@ -218,8 +218,8 @@ test_isa_3_1_AT_CFLAGS = $(test_isa_3_1_CFLAGS)
 subnormal_test_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_FLAG) $(ISA_2_06_FLAG) \
 			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_VSX) $(BUILD_FLAGS_ISA_2_06)
 
-test_copy_paste_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_3_00_FLAG) \
-			@FLAG_M64@ $(BUILD_FLAGS_ISA_3_00)
+test_copy_paste_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_3_1_FLAG) \
+			@FLAG_M64@ $(BUILD_FLAGS_ISA_3_1)
 
 test_isa_2_06_part3_LDADD = -lm
 test_dfp1_LDADD = -lm

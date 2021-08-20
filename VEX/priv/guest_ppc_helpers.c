@@ -3170,13 +3170,22 @@ UInt copy_paste_abort_dirty_helper(UInt addr, UInt op) {
    UInt cr;
 
    if (op == COPY_INST)
-      __asm__ __volatile__ ("copy 0,%0" :: "r" (addr));
+      __asm__ __volatile__ (".machine push;\n"
+                            ".machine power9;\n"
+                            "copy 0,%0;\n"
+                            ".machine pop" :: "r" (addr));
 
    else if (op == PASTE_INST)
-      __asm__ __volatile__ ("paste. 0,%0" :: "r" (addr));
+      __asm__ __volatile__ (".machine push;\n"
+                            ".machine power9;\n"
+                            "paste. 0,%0\n"
+                            ".machine pop" :: "r" (addr));
 
    else if (op == CPABORT_INST)
-      __asm__ __volatile__ ("cpabort");
+      __asm__ __volatile__ (".machine push;\n"
+                            ".machine power9;\n"
+                            "cpabort\n"
+                            ".machine pop");
 
    else
       /* Unknown operation */

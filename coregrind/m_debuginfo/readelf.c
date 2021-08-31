@@ -2879,13 +2879,15 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       /* Look for a build-id */
       HChar* buildid = find_buildid(mimg, False, False);
 
-      /* Look for a debug image that matches either the build-id or
+      /* If we don't have a .debug_info section in the main image then
+         look for a debug image that matches either the build-id or
          the debuglink-CRC32 in the main image.  If the main image
          doesn't contain either of those then this won't even bother
          to try looking.  This looks in all known places, including
          the --extra-debuginfo-path if specified and on the
          --debuginfo-server if specified. */
-      if (buildid != NULL || debuglink_escn.img != NULL) {
+      if (debug_info_escn.img == NULL &&
+          (buildid != NULL || debuglink_escn.img != NULL)) {
          /* Do have a debuglink section? */
          if (debuglink_escn.img != NULL) {
             UInt crc_offset 

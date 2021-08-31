@@ -1,0 +1,20 @@
+Use of uninitialised value of size 8
+   at 0x........: test_vfae_char (vfae.c:51)
+   by 0x........: main (vfae.c:61)
+
+Use of uninitialised value of size 8
+   at 0x........: test_vfae_char (vfae.c:51)
+   by 0x........: main (vfae.c:61)
+
+Use of uninitialised value of size 8
+   at 0x........: test_vfee_char (vfae.c:53)
+   by 0x........: main (vfae.c:65)
+
+Use of uninitialised value of size 8
+   at 0x........: test_vfene_char (vfae.c:55)
+   by 0x........: main (vfae.c:69)
+
+Use of uninitialised value of size 8
+   at 0x........: test_vfene_char (vfae.c:55)
+   by 0x........: main (vfae.c:69)
+

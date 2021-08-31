@@ -1,3 +1,5 @@
+# IMPORTANT: DO NOT EDIT glibc-2.X-drd.supp, as it is as a generated
+# file.  Instead edit glibc-2.X-drd.supp.in.
 #
 # Suppression patterns for ld, the dynamic loader.
 #
@@ -6,7 +8,7 @@
 {
    drd-ld
    drd:ConflictingAccess
-   obj:*/lib*/ld-*.so
+   obj:*/lib*/ld*.so*
 }
 
 #
@@ -22,7 +24,7 @@
 {
    drd-libc-stdio
    drd:ConflictingAccess
-   obj:*/lib*/libc-*
+   obj:@GLIBC_LIBC_PATH@
 }
 {
    drd-libc-thread-cancellation-test

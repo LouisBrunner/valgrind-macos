@@ -532,6 +532,7 @@ static IROp mkSUB ( IRType ty ) {
 
 static IROp mkADDF ( IRType ty ) {
    switch (ty) {
+      case Ity_F16: return Iop_AddF16;
       case Ity_F32: return Iop_AddF32;
       case Ity_F64: return Iop_AddF64;
       default: vpanic("mkADDF");
@@ -556,6 +557,7 @@ static IROp mkFMSUBF ( IRType ty ) {
 
 static IROp mkSUBF ( IRType ty ) {
    switch (ty) {
+      case Ity_F16: return Iop_SubF16;
       case Ity_F32: return Iop_SubF32;
       case Ity_F64: return Iop_SubF64;
       default: vpanic("mkSUBF");
@@ -10628,7 +10630,8 @@ Bool dis_AdvSIMD_scalar_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
 }
 
 static
-Bool dis_AdvSIMD_scalar_three_same_extra(/*MB_OUT*/DisResult* dres, UInt insn)
+Bool dis_AdvSIMD_scalar_three_same_extra(/*MB_OUT*/DisResult* dres, UInt insn,
+                                         const VexArchInfo* archinfo)
 {
    /* 31 29 28    23   21 20 15     10 9 4
       01 U  11110 size 0  m  opcode 1  n d
@@ -10673,6 +10676,71 @@ Bool dis_AdvSIMD_scalar_three_same_extra(/*MB_OUT*/DisResult* dres, UInt insn)
       const HChar  arr = "hs"[size];
       const HChar* nm  = isAdd ? "sqrdmlah" : "sqrdmlsh";
       DIP("%s %c%u, %c%u, %c%u\n", nm, arr, dd, arr, nn, arr, mm);
+      return True;
+   }
+
+   if (bitU == 1 && size == X11 && opcode == BITS5(0,0,0,1,0)) {
+      /* -------- 1,11,00010 FABD h_h_h -------- */
+      if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_FP16) == 0)
+         return False;
+      IRTemp res = newTemp(Ity_F16);
+      assign(res, unop(mkABSF(Ity_F16),
+                       triop(mkSUBF(Ity_F16),
+                             mkexpr(mk_get_IR_rounding_mode()),
+                             getQRegLO(nn,Ity_F16), getQRegLO(mm,Ity_F16))));
+      putQReg128(dd, mkV128(0x0000));
+      putQRegLO(dd, mkexpr(res));
+      DIP("fabd %s, %s, %s\n",
+          nameQRegLO(dd, Ity_F16), nameQRegLO(nn, Ity_F16), nameQRegLO(mm, Ity_F16));
+      return True;
+   }
+
+   if (size == X01 && opcode == BITS5(0,0,1,0,0)) {
+      /* -------- 0,01,00100 FCMEQ h_h_h -------- */
+      /* -------- 1,01,00100 FCMGE h_h_h -------- */
+      if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_FP16) == 0)
+         return False;
+      Bool   isGE  = bitU == 1;
+      IROp   opCMP = isGE ? Iop_CmpLE16Fx8 : Iop_CmpEQ16Fx8;
+      IRTemp res   = newTempV128();
+      /* Swap source and destination in order to use existing LE IR op for GE. */
+      assign(res, isGE ? binop(opCMP, getQReg128(mm), getQReg128(nn))
+                       : binop(opCMP, getQReg128(nn), getQReg128(mm)));
+      putQReg128(dd, mkexpr(math_ZERO_ALL_EXCEPT_LOWEST_LANE(X01, mkexpr(res))));
+      DIP("%s %s, %s, %s\n", isGE ? "fcmge" : "fcmeq",
+          nameQRegLO(dd, Ity_F16), nameQRegLO(nn, Ity_F16), nameQRegLO(mm, Ity_F16));
+      return True;
+   }
+
+   if (bitU == 1 && size == X11 && opcode == BITS5(0,0,1,0,0)) {
+      /* -------- 1,11,00100 FCMGT h_h_h -------- */
+      if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_FP16) == 0)
+         return False;
+      IRTemp res   = newTempV128();
+      /* Swap source and destination in order to use existing LT IR op for GT. */
+      assign(res, binop(Iop_CmpLT16Fx8, getQReg128(mm), getQReg128(nn)));
+      putQReg128(dd, mkexpr(math_ZERO_ALL_EXCEPT_LOWEST_LANE(X01, mkexpr(res))));
+      DIP("%s %s, %s, %s\n", "fcmgt",
+          nameQRegLO(dd, Ity_F16), nameQRegLO(nn, Ity_F16), nameQRegLO(mm, Ity_F16));
+      return True;
+   }
+
+   if (bitU == 1 && opcode == BITS5(0,0,1,0,1)) {
+      /* -------- 1,01,00101 FACGE h_h_h -------- */
+      /* -------- 1,01,00101 FACGT h_h_h -------- */
+      if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_FP16) == 0)
+         return False;
+      IRType ity   = Ity_F16;
+      Bool   isGT  = (size & 2) == 2;
+      IROp   opCMP = isGT ? Iop_CmpLT16Fx8 : Iop_CmpLE16Fx8;
+      IROp   opABS = Iop_Abs16Fx8;
+      IRTemp res   = newTempV128();
+      assign(res, binop(opCMP, unop(opABS, getQReg128(mm)),
+                               unop(opABS, getQReg128(nn))));
+      putQReg128(dd, mkexpr(math_ZERO_ALL_EXCEPT_LOWEST_LANE(X01,
+                                                             mkexpr(res))));
+      DIP("%s %s, %s, %s\n", isGT ? "facgt" : "facge",
+          nameQRegLO(dd, ity), nameQRegLO(nn, ity), nameQRegLO(mm, ity));
       return True;
    }
 
@@ -10988,6 +11056,77 @@ Bool dis_AdvSIMD_scalar_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       putQRegLane(dd, 0, mkexpr(res));
       HChar c = isD ? 'd' : 's';
       DIP("%s %c%u, %c%u\n", "frecpx", c, dd, c, nn);
+      return True;
+   }
+
+   return False;
+#  undef INSN
+}
+
+
+static
+Bool dis_AdvSIMD_scalar_two_reg_misc_fp16(/*MB_OUT*/DisResult* dres, UInt insn,
+                                          const VexArchInfo* archinfo)
+{
+   /* This decode function only handles instructions with half-precision
+      floating-point (fp16) operands.
+   */
+   if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_FP16) == 0)
+      return False;
+
+   /* 31 29 28    23   21    16     11 9 4
+      01 U  11110 size 11100 opcode 10 n d
+      Decode fields: u,size,opcode
+   */
+#  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,30) != BITS2(0,1)
+       || INSN(28,24) != BITS5(1,1,1,1,0)
+       || INSN(21,17) != BITS5(1,1,1,0,0)
+       || INSN(11,10) != BITS2(1,0)) {
+      return False;
+   }
+   UInt bitU   = INSN(29,29);
+   UInt size   = INSN(23,22);
+   UInt opcode = INSN(16,12);
+   UInt nn     = INSN(9,5);
+   UInt dd     = INSN(4,0);
+   vassert(size == 3);
+
+   /* Decoding FCM<condtion> based on opcode and bitU. ix used to select
+    * <condition>
+    */
+   UInt ix = 0; // Invalid <condition>
+   switch (opcode) {
+      case BITS5(0,1,1,0,1): ix = (bitU == 1) ? 4 : 1; break; // FCMLE=4,FCMEQ=1
+      case BITS5(0,1,1,0,0): ix = (bitU == 1) ? 5 : 2; break; // FCMGE=5,FCMGT=2
+      case BITS5(0,1,1,1,0): if (bitU == 0) ix = 3; break;    // FCMLT=3
+      default: break;
+   }
+   if (ix > 0) {
+      /* -------- 0,01101 FCMEQ h_h_#0.0 (ix 1) -------- */
+      /* -------- 0,01100 FCMGT h_h_#0.0 (ix 2) -------- */
+      /* -------- 0,01110 FCMLT h_h_#0.0 (ix 3) -------- */
+      /* -------- 1,01101 FCMLE h_h_#0.0 (ix 4) -------- */
+      /* -------- 1,01100 FCMGE h_h_#0.0 (ix 5) -------- */
+      IRType ity     = Ity_F16;
+      IROp   opCmp   = Iop_INVALID;
+      Bool   swap    = False;
+      const HChar* nm = "??";
+      switch (ix) {
+         case 1: nm = "fcmeq"; opCmp = Iop_CmpEQ16Fx8; break;
+         case 2: nm = "fcmgt"; opCmp = Iop_CmpLT16Fx8; swap = True; break;
+         case 3: nm = "fcmlt"; opCmp = Iop_CmpLT16Fx8; break;
+         case 4: nm = "fcmle"; opCmp = Iop_CmpLE16Fx8; break;
+         case 5: nm = "fcmge"; opCmp = Iop_CmpLE16Fx8; swap = True; break;
+         default: vassert(0);
+      }
+      IRExpr* zero = mkV128(0x0000);
+      IRTemp res   = newTempV128();
+      assign(res, swap ? binop(opCmp, zero, getQReg128(nn))
+                       : binop(opCmp, getQReg128(nn), zero));
+      putQReg128(dd, mkexpr(math_ZERO_ALL_EXCEPT_LOWEST_LANE(X01, mkexpr(res))));
+
+      DIP("%s %s, %s, #0.0\n", nm, nameQRegLO(dd, ity), nameQRegLO(nn, ity));
       return True;
    }
 
@@ -12773,8 +12912,15 @@ Bool dis_AdvSIMD_three_same_extra(/*MB_OUT*/DisResult* dres, UInt insn)
 }
 
 static
-Bool dis_AdvSIMD_three_same_fp16(/*MB_OUT*/DisResult* dres, UInt insn)
+Bool dis_AdvSIMD_three_same_fp16(/*MB_OUT*/DisResult* dres, UInt insn,
+                                 const VexArchInfo* archinfo)
 {
+   /* This decode function only handles instructions with half-precision
+      floating-point (fp16) operands.
+   */
+   if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_FP16) == 0)
+      return False;
+
    /* 31 30 29 28    23   21 20 15     10 9 4
       0  Q  U  01110 size 0  m  opcode 1  n d
       Decode fields: u,size,opcode
@@ -12814,6 +12960,77 @@ Bool dis_AdvSIMD_three_same_fp16(/*MB_OUT*/DisResult* dres, UInt insn)
                       mkexpr(preL), mkexpr(preR))));
       const HChar* arr = bitQ == 0 ? "4h" : "8h";
       DIP("%s %s.%s, %s.%s, %s.%s\n", "faddp",
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      return True;
+   }
+
+   if (bitU == 1 && size == X11 && opcode == BITS5(0,0,0,1,0)) {
+      /* -------- 1,11,00010 FABD 4h_4h_4h, 8h_8h_8h -------- */
+      IRTemp rm    = mk_get_IR_rounding_mode();
+      IRTemp t1    = newTempV128();
+      IRTemp t2    = newTempV128();
+      assign(t1, triop(Iop_Sub16Fx8, mkexpr(rm), getQReg128(nn), getQReg128(mm)));
+      assign(t2, unop(Iop_Abs16Fx8, mkexpr(t1)));
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, t2));
+      const HChar* arr = bitQ == 0 ? "4h" : "8h";
+      DIP("%s %s.%s, %s.%s, %s.%s\n", "fabd",
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      return True;
+   }
+
+   if (size == X01 && opcode == BITS5(0,0,1,0,0)) {
+      /* -------- 0,01,00100 FCMEQ 4h_4h_4h, 8h_8h_8h -------- */
+      /* -------- 1,01,00100 FCMGE 4h_4h_4h, 8h_8h_8h -------- */
+      Bool   isGE  = bitU == 1;
+      IRTemp t1    = newTempV128();
+      /* Swap source and destination in order to use existing LE IR op for GE. */
+      assign(t1, isGE ? binop(Iop_CmpLE16Fx8, getQReg128(mm), getQReg128(nn))
+                      : binop(Iop_CmpEQ16Fx8, getQReg128(nn), getQReg128(mm)));
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, t1));
+      const HChar* arr = bitQ == 0 ? "4h" : "8h";
+      DIP("%s %s.%s, %s.%s, %s.%s\n", isGE ? "fcmge" : "fcmeq",
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      return True;
+   }
+
+   if (size == X11 && opcode == BITS5(0,0,1,0,0)) {
+      /* -------- 1,11,00100 FCMGT 4h_4h_4h, 8h_8h_8h -------- */
+      IRTemp t1    = newTempV128();
+      /* Swap source and destination in order to use existing LT IR op for GT. */
+      assign(t1, binop(Iop_CmpLT16Fx8, getQReg128(mm), getQReg128(nn)));
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, t1));
+      const HChar* arr = bitQ == 0 ? "4h" : "8h";
+      DIP("%s %s.%s, %s.%s, %s.%s\n", "fcmgt",
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      return True;
+   }
+
+   if (bitU == 1 && opcode == BITS5(0,0,1,0,1)) {
+      /* -------- 1,01,00101 FACGE 4h_4h_4h 8h_8h_8h -------- */
+      /* -------- 1,11,00101 FACGT 4h_4h_4h 8h_8h_8h -------- */
+      Bool isGT  = (size & 3) == 3;
+      IROp opCMP = isGT ? Iop_CmpLT16Fx8 : Iop_CmpLE16Fx8;
+      IROp opABS = Iop_Abs16Fx8;
+      IRTemp t1  = newTempV128();
+      assign(t1, binop(opCMP, unop(opABS, getQReg128(mm)),
+                              unop(opABS, getQReg128(nn))));
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, t1));
+      const HChar* arr = bitQ == 0 ? "4h" : "8h";
+      DIP("%s %s.%s, %s.%s, %s.%s\n", isGT ? "facgt" : "facge",
+          nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
+      return True;
+   }
+
+   if (bitU == 0 && size == X01 && opcode == BITS5(0,0,0,1,0)) {
+      /* -------- 0,01,00010 FADD 4h_4h_4h, 8h_8h_8h -------- */
+      IRTemp rm = mk_get_IR_rounding_mode();
+      IRTemp t1 = newTempV128();
+      IRTemp t2 = newTempV128();
+      assign(t1, triop(Iop_Add16Fx8, mkexpr(rm), getQReg128(nn), getQReg128(mm)));
+      assign(t2, math_MAYBE_ZERO_HI64(bitQ, t1));
+      putQReg128(dd, mkexpr(t2));
+      const HChar* arr = bitQ == 0 ? "4h" : "8h";
+      DIP("%s %s.%s, %s.%s, %s.%s\n", "fadd",
           nameQReg128(dd), arr, nameQReg128(nn), arr, nameQReg128(mm), arr);
       return True;
    }
@@ -13496,8 +13713,15 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
 
 
 static
-Bool dis_AdvSIMD_two_reg_misc_fp16(/*MB_OUT*/DisResult* dres, UInt insn)
+Bool dis_AdvSIMD_two_reg_misc_fp16(/*MB_OUT*/DisResult* dres, UInt insn,
+                                   const VexArchInfo* archinfo)
 {
+   /* This decode function only handles instructions with half-precision
+      floating-point (fp16) operands.
+   */
+   if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_FP16) == 0)
+      return False;
+
    /* 31 30 29 28    23   21    16     11 9 4
       0  Q  U  01110 size 11100 opcode 10 n d
       Decode fields: U,size,opcode
@@ -13539,6 +13763,44 @@ Bool dis_AdvSIMD_two_reg_misc_fp16(/*MB_OUT*/DisResult* dres, UInt insn)
       putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, resV));
       const HChar* arr = bitQ == 0 ? "4h" : "8h";
       DIP("%s %s.%s, %s.%s\n", "fsqrt",
+          nameQReg128(dd), arr, nameQReg128(nn), arr);
+      return True;
+   }
+
+   /* Decoding FCM<condtion> based on opcode and bitU. ix used to select
+    * <condition>
+    */
+   UInt ix = 0; // Invalid <condition>
+   switch (opcode) {
+      case BITS5(0,1,1,0,1): ix = (bitU == 1) ? 4 : 1; break; // FCMLE=4,FCMEQ=1
+      case BITS5(0,1,1,0,0): ix = (bitU == 1) ? 5 : 2; break; // FCMGE=5,FCMGT=2
+      case BITS5(0,1,1,1,0): if (bitU == 0) ix = 3; break;    // FCMLT=3
+      default: break;
+   }
+   if (ix > 0) {
+      /* -------- 0,01101 FCMEQ 4h_4h,8h_8h _#0.0 (ix 1) -------- */
+      /* -------- 0,01100 FCMGT 4h_4h,8h_8h _#0.0 (ix 2) -------- */
+      /* -------- 0,01110 FCMLT 4h_4h,8h_8h _#0.0 (ix 3) -------- */
+      /* -------- 1,01101 FCMLE 4h_4h,8h_8h _#0.0 (ix 4) -------- */
+      /* -------- 1,01100 FCMGE 4h_4h,8h_8h _#0.0 (ix 5) -------- */
+      IROp   opCmp   = Iop_INVALID;
+      Bool   swap    = False;
+      const HChar* nm = "??";
+      switch (ix) {
+         case 1: nm = "fcmeq"; opCmp = Iop_CmpEQ16Fx8; break;
+         case 2: nm = "fcmgt"; opCmp = Iop_CmpLT16Fx8; swap = True; break;
+         case 3: nm = "fcmlt"; opCmp = Iop_CmpLT16Fx8; break;
+         case 4: nm = "fcmle"; opCmp = Iop_CmpLE16Fx8; break;
+         case 5: nm = "fcmge"; opCmp = Iop_CmpLE16Fx8; swap = True; break;
+         default: vassert(0);
+      }
+      IRExpr* zero = mkV128(0x0000);
+      IRTemp res = newTempV128();
+      assign(res, swap ? binop(opCmp, zero, getQReg128(nn))
+                       : binop(opCmp, getQReg128(nn), zero));
+      putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, res));
+      const HChar* arr = bitQ == 0 ? "4h" : "8h";
+      DIP("%s %s.%s, %s.%s, #0.0\n", nm,
           nameQReg128(dd), arr, nameQReg128(nn), arr);
       return True;
    }
@@ -14228,7 +14490,8 @@ Bool dis_AdvSIMD_fp_compare(/*MB_OUT*/DisResult* dres, UInt insn)
 
 
 static
-Bool dis_AdvSIMD_fp_conditional_compare(/*MB_OUT*/DisResult* dres, UInt insn)
+Bool dis_AdvSIMD_fp_conditional_compare(/*MB_OUT*/DisResult* dres, UInt insn,
+                                        const VexArchInfo* archinfo, Bool sigill_diag)
 {
    /* 31  28    23 21 20 15   11 9 4  3
       000 11110 ty 1  m  cond 01 n op nzcv
@@ -14248,46 +14511,65 @@ Bool dis_AdvSIMD_fp_conditional_compare(/*MB_OUT*/DisResult* dres, UInt insn)
    UInt nzcv = INSN(3,0);
    vassert(ty < 4 && op <= 1);
 
-   if (ty <= BITS2(0,1)) {
-      /* -------- 00,0 FCCMP  s_s -------- */
-      /* -------- 00,1 FCCMPE s_s -------- */
-      /* -------- 01,0 FCCMP  d_d -------- */
-      /* -------- 01,1 FCCMPE d_d -------- */
+   /* -------- 00,0 FCCMP  s_s -------- */
+   /* -------- 00,1 FCCMPE s_s -------- */
+   /* -------- 01,0 FCCMP  d_d -------- */
+   /* -------- 01,1 FCCMPE d_d -------- */
+   /* -------- 11,0 FCCMP  h_h -------- */
+   /* -------- 11,1 FCCMPE h_h -------- */
 
-      /* FCCMPE generates Invalid Operation exn if either arg is any kind
-         of NaN.  FCCMP generates Invalid Operation exn if either arg is a
-         signalling NaN.  We ignore this detail here and produce the same
-         IR for both.
-      */
-      Bool   isD    = (ty & 1) == 1;
-      Bool   isCMPE = op == 1;
-      IRType ity    = isD ? Ity_F64 : Ity_F32;
-      IRTemp argL   = newTemp(ity);
-      IRTemp argR   = newTemp(ity);
-      IRTemp irRes  = newTemp(Ity_I32);
-      assign(argL,  getQRegLO(nn, ity));
-      assign(argR,  getQRegLO(mm, ity));
-      assign(irRes, binop(isD ? Iop_CmpF64 : Iop_CmpF32,
-                          mkexpr(argL), mkexpr(argR)));
-      IRTemp condT = newTemp(Ity_I1);
-      assign(condT, unop(Iop_64to1, mk_arm64g_calculate_condition(cond)));
-      IRTemp nzcvT = mk_convert_IRCmpF64Result_to_NZCV(irRes);
-
-      IRTemp nzcvT_28x0 = newTemp(Ity_I64);
-      assign(nzcvT_28x0, binop(Iop_Shl64, mkexpr(nzcvT), mkU8(28)));
-
-      IRExpr* nzcvF_28x0 = mkU64(((ULong)nzcv) << 28);
-
-      IRTemp nzcv_28x0 = newTemp(Ity_I64);
-      assign(nzcv_28x0, IRExpr_ITE(mkexpr(condT),
-                                   mkexpr(nzcvT_28x0), nzcvF_28x0));
-      setFlags_COPY(nzcv_28x0);
-      DIP("fccmp%s %s, %s, #%u, %s\n", isCMPE ? "e" : "",
-          nameQRegLO(nn, ity), nameQRegLO(mm, ity), nzcv, nameCC(cond));
-      return True;
+   /* FCCMPE generates Invalid Operation exn if either arg is any kind
+      of NaN.  FCCMP generates Invalid Operation exn if either arg is a
+      signalling NaN.  We ignore this detail here and produce the same
+      IR for both.
+   */
+   Bool   isCMPE = op == 1;
+   IRType ity;
+   IROp   irop;
+   if (ty == 0) {
+      ity  = Ity_F32;
+      irop = Iop_CmpF32;
    }
+   else if (ty == 1) {
+      ity  = Ity_F64;
+      irop = Iop_CmpF64;
+   }
+   else if (ty == 3) {
+      if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_FP16) == 0)
+         return False;
+      ity  = Ity_F16;
+      irop = Iop_CmpF16;
+   }
+   else {
+      /* ty = 2 is an illegal encoding */
+      if (sigill_diag) {
+         vex_printf("ARM64 front end: dis_AdvSIMD_fp_conditional_compare\n");
+      }
+      return False;
+   }
+   IRTemp argL   = newTemp(ity);
+   IRTemp argR   = newTemp(ity);
+   IRTemp irRes  = newTemp(Ity_I32);
+   assign(argL,  getQRegLO(nn, ity));
+   assign(argR,  getQRegLO(mm, ity));
+   assign(irRes, binop(irop, mkexpr(argL), mkexpr(argR)));
+   IRTemp condT = newTemp(Ity_I1);
+   assign(condT, unop(Iop_64to1, mk_arm64g_calculate_condition(cond)));
+   IRTemp nzcvT = mk_convert_IRCmpF64Result_to_NZCV(irRes);
 
-   return False;
+   IRTemp nzcvT_28x0 = newTemp(Ity_I64);
+   assign(nzcvT_28x0, binop(Iop_Shl64, mkexpr(nzcvT), mkU8(28)));
+
+   IRExpr* nzcvF_28x0 = mkU64(((ULong)nzcv) << 28);
+
+   IRTemp nzcv_28x0 = newTemp(Ity_I64);
+   assign(nzcv_28x0, IRExpr_ITE(mkexpr(condT),
+                                mkexpr(nzcvT_28x0), nzcvF_28x0));
+   setFlags_COPY(nzcv_28x0);
+   DIP("fccmp%s %s, %s, #%u, %s\n", isCMPE ? "e" : "",
+       nameQRegLO(nn, ity), nameQRegLO(mm, ity), nzcv, nameCC(cond));
+   return True;
+
 #  undef INSN
 }
 
@@ -14533,7 +14815,8 @@ Bool dis_AdvSIMD_fp_data_proc_1_source(/*MB_OUT*/DisResult* dres, UInt insn)
 
 
 static
-Bool dis_AdvSIMD_fp_data_proc_2_source(/*MB_OUT*/DisResult* dres, UInt insn)
+Bool dis_AdvSIMD_fp_data_proc_2_source(/*MB_OUT*/DisResult* dres, UInt insn,
+                                       const VexArchInfo* archinfo)
 {
    /* 31  28    23 21 20 15     11 9 4
       000 11110 ty 1  m  opcode 10 n d
@@ -14605,6 +14888,20 @@ Bool dis_AdvSIMD_fp_data_proc_2_source(/*MB_OUT*/DisResult* dres, UInt insn)
       putQRegLO(dd, mkexpr(res));
       DIP("%s %s, %s, %s\n",
           nm, nameQRegLO(dd, ity), nameQRegLO(nn, ity), nameQRegLO(mm, ity));
+      return True;
+   }
+
+   if (ty == X11 && opcode <= BITS4(0,0,1,0)) {
+      /* ------- 11,0010: FADD h_h ------- */
+      if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_FP16) == 0)
+         return False;
+      IRTemp res = newTemp(Ity_F16);
+      assign(res, triop(mkADDF(Ity_F16), mkexpr(mk_get_IR_rounding_mode()),
+                             getQRegLO(nn, Ity_F16), getQRegLO(mm, Ity_F16)));
+      putQReg128(dd, mkV128(0));
+      putQRegLO(dd, mkexpr(res));
+      DIP("fadd %s, %s, %s\n",
+          nameQRegLO(dd, Ity_F16), nameQRegLO(nn, Ity_F16), nameQRegLO(mm, Ity_F16));
       return True;
    }
 
@@ -15107,7 +15404,7 @@ Bool dis_AdvSIMD_fp_to_from_int_conv(/*MB_OUT*/DisResult* dres, UInt insn)
 
 static
 Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn,
-                           const VexArchInfo* archinfo)
+                           const VexArchInfo* archinfo, Bool sigill_diag)
 {
    Bool ok;
    ok = dis_AdvSIMD_EXT(dres, insn);
@@ -15132,9 +15429,11 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn,
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_scalar_three_same(dres, insn);
    if (UNLIKELY(ok)) return True;
-   ok = dis_AdvSIMD_scalar_three_same_extra(dres, insn);
+   ok = dis_AdvSIMD_scalar_three_same_extra(dres, insn, archinfo);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_scalar_two_reg_misc(dres, insn);
+   if (UNLIKELY(ok)) return True;
+   ok = dis_AdvSIMD_scalar_two_reg_misc_fp16(dres, insn, archinfo);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_scalar_x_indexed_element(dres, insn);
    if (UNLIKELY(ok)) return True;
@@ -15146,11 +15445,11 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn,
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_three_same_extra(dres, insn);
    if (UNLIKELY(ok)) return True;
-   ok = dis_AdvSIMD_three_same_fp16(dres, insn);
+   ok = dis_AdvSIMD_three_same_fp16(dres, insn, archinfo);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_two_reg_misc(dres, insn);
    if (UNLIKELY(ok)) return True;
-   ok = dis_AdvSIMD_two_reg_misc_fp16(dres, insn);
+   ok = dis_AdvSIMD_two_reg_misc_fp16(dres, insn, archinfo);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_vector_x_indexed_elem(dres, insn);
    if (UNLIKELY(ok)) return True;
@@ -15162,13 +15461,13 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn,
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_fp_compare(dres, insn);
    if (UNLIKELY(ok)) return True;
-   ok = dis_AdvSIMD_fp_conditional_compare(dres, insn);
+   ok = dis_AdvSIMD_fp_conditional_compare(dres, insn, archinfo, sigill_diag);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_fp_conditional_select(dres, insn);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_fp_data_proc_1_source(dres, insn);
    if (UNLIKELY(ok)) return True;
-   ok = dis_AdvSIMD_fp_data_proc_2_source(dres, insn);
+   ok = dis_AdvSIMD_fp_data_proc_2_source(dres, insn, archinfo);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_fp_data_proc_3_source(dres, insn);
    if (UNLIKELY(ok)) return True;
@@ -15340,7 +15639,7 @@ Bool disInstr_ARM64_WRK (
          break;
       case BITS4(0,1,1,1): case BITS4(1,1,1,1): 
          // Data processing - SIMD and floating point
-         ok = dis_ARM64_simd_and_fp(dres, insn, archinfo);
+         ok = dis_ARM64_simd_and_fp(dres, insn, archinfo, sigill_diag);
          break;
       case BITS4(0,0,0,0): case BITS4(0,0,0,1):
       case BITS4(0,0,1,0): case BITS4(0,0,1,1):

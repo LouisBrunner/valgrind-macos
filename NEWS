@@ -18,6 +18,9 @@ support for X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
 * ppc64:
 
   - ISA 3.1 support is now complete
+  - ISA 3.0 support for the darn instruction added.
+  - ISA 3.0 support for the vector system call instruction scv added.
+  - ISA 3.0 support for the copy, paste and cpabort instructions added.
 
 * ==================== TOOL CHANGES ====================
 
@@ -32,7 +35,18 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 
 423963  Error in child thread when CLONE_PIDFD is used
 429375  PPC ISA 3.1 support is missing, part 9
+431157  PPC_FEATURE2_SCV needs to be masked in AT_HWCAP2
 433801  PPC ISA 3.1 support is missing, part 10 (ISA 3.1 support complete)
+433863  s390x: memcheck/tests/s390x/{cds,cs,csg} failures
+434840  PPC64 darn instruction not supported
+434296  s390x: False-positive memcheck diagnostics from vector string
+        instructions
+435665  PPC ISA 3.0 copy, paste, cpabort instructions are not supported 
+438871  unhandled instruction bytes: 0xF3 0x49 0xF 0x6F 0x9C 0x24 0x60 0x2 0x0 0x0
+435908  valgrind tries to fetch from deubginfod for files which already
+        have debug information
+439590  glibc-2.34 breaks suppressions against obj:*/lib*/libc-2.*so*
+440670  unhandled ppc64le-linux syscall: 252 (statfs64) and 253 (fstatfs64)
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

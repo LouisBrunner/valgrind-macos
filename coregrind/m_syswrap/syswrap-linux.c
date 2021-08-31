@@ -474,6 +474,7 @@ static SysRes clone_new_thread ( Word (*fn)(void *),
 #elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
    ULong        word64;
    UInt old_cr = LibVEX_GuestPPC64_get_CR( &ctst->arch.vex );
+   UInt flag = ctst->arch.vex.guest_syscall_flag;
    /* %r3 = 0 */
    ctst->arch.vex.guest_GPR3 = 0;
    /* %cr0.so = 0 */
@@ -486,7 +487,7 @@ static SysRes clone_new_thread ( Word (*fn)(void *),
    /* VG_(printf)("word64 = 0x%llx\n", word64); */
    res = VG_(mk_SysRes_ppc64_linux)
       (/*val*/(UInt)(word64 & 0xFFFFFFFFULL), 
-       /*errflag*/ (UInt)((word64 >> (32+28)) & 1));
+       /*errflag*/ (UInt)((word64 >> (32+28)) & 1), flag);
 #elif defined(VGP_s390x_linux)
    ULong        r2;
    ctst->arch.vex.guest_r2 = 0;

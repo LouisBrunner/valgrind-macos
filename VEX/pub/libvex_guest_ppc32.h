@@ -290,9 +290,8 @@ typedef
       /* 1924 */   U128  guest_ACC_7_r3;
 
    /* Padding to make it have an 16-aligned size */
-      /* 1940 */ UInt  padding2;
-//      /* 1944 */ UInt  padding3;
-//      /* 1948 */ UInt  padding4;
+      /* 1940 */   UInt guest_syscall_flag;
+      /* 1944 *    UInt  padding2; */
    }
    VexGuestPPC32State;
 

@@ -166,7 +166,8 @@ typedef enum {
    S390_INSN_VEC_AMODEINTOP,
    S390_INSN_VEC_UNOP,
    S390_INSN_VEC_BINOP,
-   S390_INSN_VEC_TRIOP
+   S390_INSN_VEC_TRIOP,
+   S390_INSN_VEC_REPLICATE
 } s390_insn_tag;
 
 
@@ -365,6 +366,7 @@ typedef enum {
    S390_VEC_PACK_SATURU,
    S390_VEC_COMPARE_EQUAL,
    S390_VEC_OR,
+   S390_VEC_ORC,
    S390_VEC_XOR,
    S390_VEC_AND,
    S390_VEC_MERGEL,
@@ -738,6 +740,11 @@ typedef struct {
          HReg          op2;    /* 128-bit second operand */
          HReg          op3;    /* 128-bit third operand */
       } vec_triop;
+      struct {
+         HReg          dst;    /* 128-bit result */
+         HReg          op1;    /* 128-bit first operand */
+         UChar         idx;    /* index of element to replicate */
+      } vec_replicate;
    } variant;
 } s390_insn;
 
@@ -853,6 +860,7 @@ s390_insn *s390_insn_vec_binop(UChar size, s390_vec_binop_t, HReg dst, HReg op1,
                                HReg op2);
 s390_insn *s390_insn_vec_triop(UChar size, s390_vec_triop_t, HReg dst, HReg op1,
                                HReg op2, HReg op3);
+s390_insn *s390_insn_vec_replicate(UChar size, HReg dst, HReg op1, UChar idx);
 
 const HChar *s390_insn_as_string(const s390_insn *);
 

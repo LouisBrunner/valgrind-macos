@@ -89,7 +89,6 @@ typedef
       Int o_sysno;
 #     if defined(VGP_x86_linux) || defined(VGP_amd64_linux) \
          || defined(VGP_ppc32_linux) \
-         || defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux) \
          || defined(VGP_arm_linux) || defined(VGP_s390x_linux) \
          || defined(VGP_arm64_linux) \
          || defined(VGP_nanomips_linux)
@@ -100,6 +99,15 @@ typedef
       Int o_arg5;
       Int o_arg6;
       Int uu_arg7;
+      Int uu_arg8;
+#     elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
+      Int o_arg1;
+      Int o_arg2;
+      Int o_arg3;
+      Int o_arg4;
+      Int o_arg5;
+      Int o_arg6;
+      Int o_arg7;
       Int uu_arg8;
 #     elif defined(VGP_mips32_linux)
       Int o_arg1;

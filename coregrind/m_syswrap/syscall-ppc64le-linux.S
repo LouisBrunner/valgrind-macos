@@ -70,6 +70,14 @@
 				  Int sigsetSzB)		// r7
 */
 /* from vki_arch.h */
+
+/* SCV flag defines.  Must be consistently defined here and in
+   coregrind/pub_core_syscall.h,in the do_syscall_WRK() assembly code in
+   coregrind/m_syscall.c and coregrind/m_syswrap/syscall-ppcle-linux.S code.
+*/
+#define SC_FLAG  1
+#define SCV_FLAG 2
+
 #define VKI_SIG_SETMASK 2
 
 .align 2
@@ -101,6 +109,10 @@ ML_(do_syscall_for_client_WRK):
         std     30,64(1)
         std     29,56(1)
         std     28,48(1)
+        std     27,40(1)        /* save r27 to stack frame */
+        mflr    27              /* Get link register */
+        std     27,16(1)        /* Save link register */
+        std     9,32(1)         /* save gpr 9 */
         mr      31,3            /* syscall number */
         mr      30,4            /* guest_state */
         mr      29,6            /* postmask */
@@ -123,14 +135,27 @@ ML_(do_syscall_for_client_WRK):
         ld      6,OFFSET_ppc64_GPR6(30)
         ld      7,OFFSET_ppc64_GPR7(30)
         ld      8,OFFSET_ppc64_GPR8(30)
+        ld      9,OFFSET_ppc64_GPR9(30)   /* get flag for sc or scv inst */
         mr      0,31            /* syscall number */
+        cmpdi   9,SC_FLAG
+        bne     8f              /* jump to scv call if gpr9 != 0 */
+        /* If you change the code between labels 2 and 3, you need to update
+           the corresponding ppc64le calculations for blksys_restart and
+           blksys_complete in function getSyscallArgsFromGuestState in file
+           syswrap-main.c.  */
 2:      sc                      /* do the syscall */
+        b       3f              /* jump over scv call */
+8:      scv     0
 
         /* put the result back in the threadstate  */
 3:	std     3,OFFSET_ppc64_GPR3(30)     /* gst->GPR3 = sc result */
+
 	/* copy cr0.so back to simulated state */
 	mfcr    5                           /* r5 = CR               */
 	rlwinm	5,5,4,31,31                 /* r5 = (CR >> 28) & 1   */
+	ld      9,OFFSET_ppc64_GPR9(30)
+	cmpdi   9,SC_FLAG
+	bne     4f                          /* scv does not change CR */
         stb     5,OFFSET_ppc64_CR0_0(30)    /* gst->CR0.SO = cr0.so  */
 
         /* block signals again */
@@ -150,6 +175,10 @@ ML_(do_syscall_for_client_WRK):
         ld      29,56(1)
         ld      30,64(1)
         ld      31,72(1)
+        ld      9,32(1)
+        ld      27,16(1)        /* Fetch LR from frame */
+        mtlr    27              /* restore LR */
+        ld      27,40(1)        /* restore r27 from stack frame */
         addi    1,1,80
         blr
 

@@ -912,7 +912,8 @@ static Int integerGuestReg64Offset ( UInt reg )
 /* Produce the name of an integer register, for printing purposes.
    reg is a number in the range 0 .. 15 that has been generated from a
    3-bit reg-field number and a REX extension bit.  irregular denotes
-   the case where sz==1 and no REX byte is present. */
+   the case where sz==1 and no REX byte is present and where the denoted
+   sub-register is bits 15:8 of the containing 64-bit register. */
 
 static 
 const HChar* nameIReg ( Int sz, UInt reg, Bool irregular )
@@ -929,13 +930,13 @@ const HChar* nameIReg ( Int sz, UInt reg, Bool irregular )
    static const HChar* ireg8_names[16]
      = { "%al",  "%cl",  "%dl",  "%bl",  "%spl", "%bpl", "%sil", "%dil",
          "%r8b", "%r9b", "%r10b","%r11b","%r12b","%r13b","%r14b","%r15b" };
-   static const HChar* ireg8_irregular[8] 
-     = { "%al", "%cl", "%dl", "%bl", "%ah", "%ch", "%dh", "%bh" };
+   static const HChar* ireg8_irregular[4]
+     = { "%ah", "%ch", "%dh", "%bh" };
 
    vassert(reg < 16);
    if (sz == 1) {
       if (irregular)
-         vassert(reg < 8);
+         vassert(reg >= 4 && reg < 8);
    } else {
       vassert(irregular == False);
    }
@@ -945,7 +946,8 @@ const HChar* nameIReg ( Int sz, UInt reg, Bool irregular )
       case 4: return ireg32_names[reg];
       case 2: return ireg16_names[reg];
       case 1: if (irregular) {
-                 return ireg8_irregular[reg];
+                 vassert(reg >= 4 && reg < 8);
+                 return ireg8_irregular[reg - 4];
               } else {
                  return ireg8_names[reg];
               }
@@ -962,7 +964,7 @@ Int offsetIReg ( Int sz, UInt reg, Bool irregular )
    vassert(reg < 16);
    if (sz == 1) {
       if (irregular)
-         vassert(reg < 8);
+         vassert(reg >= 4 && reg < 8);
    } else {
       vassert(irregular == False);
    }
@@ -988,7 +990,7 @@ Int offsetIReg ( Int sz, UInt reg, Bool irregular )
 static IRExpr* getIRegCL ( void )
 {
    vassert(host_endness == VexEndnessLE);
-   return IRExpr_Get( OFFB_RCX, Ity_I8 );
+   return unop(Iop_64to8, IRExpr_Get( OFFB_RCX, Ity_I64 ));
 }
 
 
@@ -1020,8 +1022,8 @@ static IRExpr* getIRegRAX ( Int sz )
 {
    vassert(host_endness == VexEndnessLE);
    switch (sz) {
-      case 1: return IRExpr_Get( OFFB_RAX, Ity_I8 );
-      case 2: return IRExpr_Get( OFFB_RAX, Ity_I16 );
+      case 1: return unop(Iop_64to8,  IRExpr_Get( OFFB_RAX, Ity_I64 ));
+      case 2: return unop(Iop_64to16, IRExpr_Get( OFFB_RAX, Ity_I64 ));
       case 4: return unop(Iop_64to32, IRExpr_Get( OFFB_RAX, Ity_I64 ));
       case 8: return IRExpr_Get( OFFB_RAX, Ity_I64 );
       default: vpanic("getIRegRAX(amd64)");
@@ -1068,8 +1070,8 @@ static IRExpr* getIRegRDX ( Int sz )
 {
    vassert(host_endness == VexEndnessLE);
    switch (sz) {
-      case 1: return IRExpr_Get( OFFB_RDX, Ity_I8 );
-      case 2: return IRExpr_Get( OFFB_RDX, Ity_I16 );
+      case 1: return unop(Iop_64to8,  IRExpr_Get( OFFB_RDX, Ity_I64 ));
+      case 2: return unop(Iop_64to16, IRExpr_Get( OFFB_RDX, Ity_I64 ));
       case 4: return unop(Iop_64to32, IRExpr_Get( OFFB_RDX, Ity_I64 ));
       case 8: return IRExpr_Get( OFFB_RDX, Ity_I64 );
       default: vpanic("getIRegRDX(amd64)");
@@ -1145,8 +1147,9 @@ static const HChar* nameIReg32 ( UInt regno )
 static IRExpr* getIReg16 ( UInt regno )
 {
    vassert(host_endness == VexEndnessLE);
-   return IRExpr_Get( integerGuestReg64Offset(regno),
-                      Ity_I16 );
+   return unop(Iop_64to16,
+               IRExpr_Get( integerGuestReg64Offset(regno),
+                           Ity_I64 ));
 }
 
 static void putIReg16 ( UInt regno, IRExpr* e )
@@ -1193,22 +1196,46 @@ static IRExpr* getIRegRexB ( Int sz, Prefix pfx, UInt lo3bits )
 {
    vassert(lo3bits < 8);
    vassert(IS_VALID_PFX(pfx));
-   vassert(sz == 8 || sz == 4 || sz == 2 || sz == 1);
-   if (sz == 4) {
-      sz = 8;
-      return unop(Iop_64to32,
-                  IRExpr_Get(
-                     offsetIReg( sz, lo3bits | (getRexB(pfx) << 3), 
-                                     False/*!irregular*/ ),
-                     szToITy(sz)
-                 )
-             );
-   } else {
-      return IRExpr_Get(
-                offsetIReg( sz, lo3bits | (getRexB(pfx) << 3), 
-                                toBool(sz==1 && !haveREX(pfx)) ),
-                szToITy(sz)
-             );
+   UInt regNo = (getRexB(pfx) << 3) | lo3bits;
+   switch (sz) {
+      case 8: {
+         return IRExpr_Get(
+                   offsetIReg( 8, regNo, False/*!irregular*/ ),
+                   Ity_I64
+                );
+      }
+      case 4: {
+         return unop(Iop_64to32,
+                     IRExpr_Get(
+                        offsetIReg( 8, regNo, False/*!irregular*/ ),
+                        Ity_I64
+                ));
+      }
+      case 2: {
+         return unop(Iop_64to16,
+                     IRExpr_Get(
+                        offsetIReg( 8, regNo, False/*!irregular*/ ),
+                        Ity_I64
+                ));
+      }
+      case 1: {
+         Bool irregular = !haveREX(pfx) && regNo >= 4 && regNo < 8;
+         if (irregular) {
+            return IRExpr_Get(
+                      offsetIReg( 1, regNo, True/*irregular*/ ),
+                      Ity_I8
+                   );
+         } else {
+            return unop(Iop_64to8,
+                        IRExpr_Get(
+                           offsetIReg( 8, regNo, False/*!irregular*/ ),
+                           Ity_I64
+                   ));
+         }
+      }
+      default: {
+         vpanic("getIRegRexB");
+      }
    }
 }
 
@@ -1218,9 +1245,9 @@ static void putIRegRexB ( Int sz, Prefix pfx, UInt lo3bits, IRExpr* e )
    vassert(IS_VALID_PFX(pfx));
    vassert(sz == 8 || sz == 4 || sz == 2 || sz == 1);
    vassert(typeOfIRExpr(irsb->tyenv, e) == szToITy(sz));
+   Bool irregular = sz == 1 && !haveREX(pfx) && lo3bits >= 4 && lo3bits < 8;
    stmt( IRStmt_Put( 
-            offsetIReg( sz, lo3bits | (getRexB(pfx) << 3), 
-                            toBool(sz==1 && !haveREX(pfx)) ),
+            offsetIReg( sz, lo3bits | (getRexB(pfx) << 3), irregular ),
             sz==4 ? unop(Iop_32Uto64,e) : e
    ));
 }
@@ -1269,20 +1296,39 @@ static UInt offsetIRegG ( Int sz, Prefix pfx, UChar mod_reg_rm )
    vassert(IS_VALID_PFX(pfx));
    vassert(sz == 8 || sz == 4 || sz == 2 || sz == 1);
    reg = gregOfRexRM( pfx, mod_reg_rm );
-   return offsetIReg( sz, reg, toBool(sz == 1 && !haveREX(pfx)) );
+   Bool irregular = sz == 1 && !haveREX(pfx) && reg >= 4 && reg < 8;
+   return offsetIReg( sz, reg, irregular );
 }
 
 static 
 IRExpr* getIRegG ( Int sz, Prefix pfx, UChar mod_reg_rm )
 {
-   if (sz == 4) {
-      sz = 8;
-      return unop(Iop_64to32,
-                  IRExpr_Get( offsetIRegG( sz, pfx, mod_reg_rm ),
-                              szToITy(sz) ));
-   } else {
-      return IRExpr_Get( offsetIRegG( sz, pfx, mod_reg_rm ),
-                         szToITy(sz) );
+   switch (sz) {
+      case 8: {
+         return IRExpr_Get( offsetIRegG( 8, pfx, mod_reg_rm ), Ity_I64 );
+      }
+      case 4: {
+         return unop(Iop_64to32,
+                     IRExpr_Get( offsetIRegG( 8, pfx, mod_reg_rm ), Ity_I64 ));
+      }
+      case 2: {
+         return unop(Iop_64to16,
+                     IRExpr_Get( offsetIRegG( 8, pfx, mod_reg_rm ), Ity_I64 ));
+      }
+      case 1: {
+         UInt regNo = gregOfRexRM( pfx, mod_reg_rm );
+         Bool irregular = !haveREX(pfx) && regNo >= 4 && regNo < 8;
+         if (irregular) {
+            return IRExpr_Get( offsetIRegG( 1, pfx, mod_reg_rm ), Ity_I8 );
+         } else {
+            return unop(Iop_64to8,
+                        IRExpr_Get( offsetIRegG( 8, pfx, mod_reg_rm ),
+                        Ity_I64 ));
+         }
+      }
+      default: {
+         vpanic("getIRegG");
+      }
    }
 }
 
@@ -1299,19 +1345,24 @@ void putIRegG ( Int sz, Prefix pfx, UChar mod_reg_rm, IRExpr* e )
 static
 const HChar* nameIRegG ( Int sz, Prefix pfx, UChar mod_reg_rm )
 {
-   return nameIReg( sz, gregOfRexRM(pfx,mod_reg_rm),
-                        toBool(sz==1 && !haveREX(pfx)) );
+   UInt regNo = gregOfRexRM( pfx, mod_reg_rm );
+   Bool irregular = sz == 1 && !haveREX(pfx) && regNo >= 4 && regNo < 8;
+   return nameIReg( sz, gregOfRexRM(pfx,mod_reg_rm), irregular );
 }
 
 
 static
 IRExpr* getIRegV ( Int sz, Prefix pfx )
 {
+   vassert(sz == 8 || sz == 4);
    if (sz == 4) {
-      sz = 8;
       return unop(Iop_64to32,
-                  IRExpr_Get( offsetIReg( sz, getVexNvvvv(pfx), False ),
-                              szToITy(sz) ));
+                  IRExpr_Get( offsetIReg( 8, getVexNvvvv(pfx), False ),
+                              Ity_I64 ));
+   } else if (sz == 2) {
+      return unop(Iop_64to16,
+                  IRExpr_Get( offsetIReg( 8, getVexNvvvv(pfx), False ),
+                              Ity_I64 ));
    } else {
       return IRExpr_Get( offsetIReg( sz, getVexNvvvv(pfx), False ),
                          szToITy(sz) );
@@ -1321,6 +1372,7 @@ IRExpr* getIRegV ( Int sz, Prefix pfx )
 static
 void putIRegV ( Int sz, Prefix pfx, IRExpr* e )
 {
+   vassert(sz == 8 || sz == 4);
    vassert(typeOfIRExpr(irsb->tyenv,e) == szToITy(sz));
    if (sz == 4) {
       e = unop(Iop_32Uto64,e);
@@ -1331,6 +1383,7 @@ void putIRegV ( Int sz, Prefix pfx, IRExpr* e )
 static
 const HChar* nameIRegV ( Int sz, Prefix pfx )
 {
+   vassert(sz == 8 || sz == 4);
    return nameIReg( sz, getVexNvvvv(pfx), False );
 }
 
@@ -1348,20 +1401,39 @@ static UInt offsetIRegE ( Int sz, Prefix pfx, UChar mod_reg_rm )
    vassert(IS_VALID_PFX(pfx));
    vassert(sz == 8 || sz == 4 || sz == 2 || sz == 1);
    reg = eregOfRexRM( pfx, mod_reg_rm );
-   return offsetIReg( sz, reg, toBool(sz == 1 && !haveREX(pfx)) );
+   Bool irregular = sz == 1 && !haveREX(pfx) && (reg >= 4 && reg < 8);
+   return offsetIReg( sz, reg, irregular );
 }
 
-static 
+static
 IRExpr* getIRegE ( Int sz, Prefix pfx, UChar mod_reg_rm )
 {
-   if (sz == 4) {
-      sz = 8;
-      return unop(Iop_64to32,
-                  IRExpr_Get( offsetIRegE( sz, pfx, mod_reg_rm ),
-                              szToITy(sz) ));
-   } else {
-      return IRExpr_Get( offsetIRegE( sz, pfx, mod_reg_rm ),
-                         szToITy(sz) );
+   switch (sz) {
+      case 8: {
+         return IRExpr_Get( offsetIRegE( 8, pfx, mod_reg_rm ), Ity_I64 );
+      }
+      case 4: {
+         return unop(Iop_64to32,
+                     IRExpr_Get( offsetIRegE( 8, pfx, mod_reg_rm ), Ity_I64 ));
+      }
+      case 2: {
+         return unop(Iop_64to16,
+                     IRExpr_Get( offsetIRegE( 8, pfx, mod_reg_rm ), Ity_I64 ));
+      }
+      case 1: {
+         UInt regNo = eregOfRexRM( pfx, mod_reg_rm );
+         Bool irregular = !haveREX(pfx) && regNo >= 4 && regNo < 8;
+         if (irregular) {
+            return IRExpr_Get( offsetIRegE( 1, pfx, mod_reg_rm ), Ity_I8 );
+         } else {
+            return unop(Iop_64to8,
+                        IRExpr_Get( offsetIRegE( 8, pfx, mod_reg_rm ),
+                        Ity_I64 ));
+         }
+      }
+      default: {
+         vpanic("getIRegE");
+      }
    }
 }
 
@@ -1378,8 +1450,9 @@ void putIRegE ( Int sz, Prefix pfx, UChar mod_reg_rm, IRExpr* e )
 static
 const HChar* nameIRegE ( Int sz, Prefix pfx, UChar mod_reg_rm )
 {
-   return nameIReg( sz, eregOfRexRM(pfx,mod_reg_rm),
-                        toBool(sz==1 && !haveREX(pfx)) );
+   UInt regNo = eregOfRexRM( pfx, mod_reg_rm );
+   Bool irregular = sz == 1 && !haveREX(pfx) && regNo >= 4 && regNo < 8;
+   return nameIReg( sz, eregOfRexRM(pfx,mod_reg_rm), irregular );
 }
 
 
@@ -1814,6 +1887,7 @@ void setFlags_DEP1_DEP2 ( IROp op8, IRTemp dep1, IRTemp dep2, IRType ty )
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(ccOp)) );
    stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(dep1))) );
    stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto64(mkexpr(dep2))) );
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
 }
 
 
@@ -1840,6 +1914,7 @@ void setFlags_DEP1 ( IROp op8, IRTemp dep1, IRType ty )
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(ccOp)) );
    stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(dep1))) );
    stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0)) );
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
 }
 
 
@@ -1891,6 +1966,8 @@ static void setFlags_DEP1_DEP2_shift ( IROp    op64,
                      IRExpr_ITE( mkexpr(guardB),
                                  widenUto64(mkexpr(resUS)),
                                  IRExpr_Get(OFFB_CC_DEP2,Ity_I64) ) ));
+   stmt( IRStmt_Put( OFFB_CC_NDEP,
+                     mkU64(0) ));
 }
 
 
@@ -1943,6 +2020,7 @@ void setFlags_MUL ( IRType ty, IRTemp arg1, IRTemp arg2, ULong base_op )
    }
    stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(arg1)) ));
    stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto64(mkexpr(arg2)) ));
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
 }
 
 
@@ -5486,6 +5564,7 @@ static void fp_do_ucomi_ST0_STi ( UInt i, Bool pop_after )
                          binop(Iop_CmpF64, get_ST(0), get_ST(i))),
                    mkU64(0x45)
         )));
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
    if (pop_after)
       fp_pop();
 }
@@ -10260,6 +10339,7 @@ static Long dis_COMISD ( const VexAbiInfo* vbi, Prefix pfx,
                          binop(Iop_CmpF64, mkexpr(argL), mkexpr(argR)) ),
                    mkU64(0x45)
        )));
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
    return delta;
 }
 
@@ -10305,6 +10385,7 @@ static Long dis_COMISS ( const VexAbiInfo* vbi, Prefix pfx,
                                unop(Iop_F32toF64,mkexpr(argR)))),
                    mkU64(0x45)
        )));
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
    return delta;
 }
 
@@ -13883,7 +13964,8 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          }
          goto decode_success;
       }
-      if (haveF3no66noF2(pfx) && sz == 4) {
+      if (haveF3no66noF2(pfx)
+          && (sz == 4 || /* ignore redundant REX.W */ sz == 8)) {
          /* F3 0F 6F = MOVDQU -- move from E (mem or xmm) to G (xmm). */
          modrm = getUChar(delta);
          if (epartIsReg(modrm)) {
@@ -14144,7 +14226,8 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
 
    case 0x7F:
       /* F3 0F 7F = MOVDQU -- move from G (xmm) to E (mem or xmm). */
-      if (haveF3no66noF2(pfx) && sz == 4) {
+      if (haveF3no66noF2(pfx)
+          && (sz == 4 || /* ignore redundant REX.W */ sz == 8)) {
          modrm = getUChar(delta);
          if (epartIsReg(modrm)) {
             goto decode_failure; /* awaiting test case */
@@ -20606,6 +20689,7 @@ Long dis_ESC_NONE (
                              )
                        )
           );
+      stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
 
       /* Also need to set the D flag, which is held in bit 10 of t1.
          If zero, put 1 in OFFB_DFLAG, else -1 in OFFB_DFLAG. */
@@ -29898,6 +29982,7 @@ Long dis_ESC_0F38__VEX (
                                                : AMD64G_CC_OP_ANDN32)) );
          stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(dst))) );
          stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0)) );
+         stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
          *uses_vvvv = True;
          goto decode_success;
       }
@@ -29935,6 +30020,7 @@ Long dis_ESC_0F38__VEX (
                                                : AMD64G_CC_OP_BLSI32)) );
          stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(dst))) );
          stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto64(mkexpr(src))) );
+         stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
          *uses_vvvv = True;
          goto decode_success;
       }
@@ -29969,6 +30055,7 @@ Long dis_ESC_0F38__VEX (
                                                : AMD64G_CC_OP_BLSMSK32)) );
          stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(dst))) );
          stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto64(mkexpr(src))) );
+         stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
          *uses_vvvv = True;
          goto decode_success;
       }
@@ -30003,6 +30090,7 @@ Long dis_ESC_0F38__VEX (
                                                : AMD64G_CC_OP_BLSR32)) );
          stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(dst))) );
          stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto64(mkexpr(src))) );
+         stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
          *uses_vvvv = True;
          goto decode_success;
       }
@@ -30072,6 +30160,7 @@ Long dis_ESC_0F38__VEX (
                                                : AMD64G_CC_OP_BLSR32)) );
          stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(dst))) );
          stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto64(mkexpr(cond))) );
+         stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
          *uses_vvvv = True;
          goto decode_success;
       }
@@ -30280,6 +30369,7 @@ Long dis_ESC_0F38__VEX (
                                                : AMD64G_CC_OP_ANDN32)) );
          stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(dst))) );
          stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0)) );
+         stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
          *uses_vvvv = True;
          goto decode_success;
       }

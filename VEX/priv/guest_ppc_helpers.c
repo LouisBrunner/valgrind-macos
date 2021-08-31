@@ -2416,6 +2416,27 @@ void vsx_matrix_64bit_float_ger_dirty_helper( VexGuestPPC64State* gst,
    }
 }
 
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER uses inline assembly to call random number instruction on
+   the host machine.  Note, the dirty helper takes the value returned from
+   the host and returns it.  The helper does not change the guest state
+   or guest memory.  */
+ULong darn_dirty_helper ( UInt L )
+{
+   ULong val = 0xFFFFFFFFFFFFFFFFULL;  /* error */
+
+#  if defined (HAS_DARN)
+   if ( L == 0)
+      __asm__ __volatile__("darn  %0,0" : "=r"(val));
+   else if (L == 1)
+      __asm__ __volatile__("darn  %0,1" : "=r"(val));
+   else if (L == 2)
+      __asm__ __volatile__("darn  %0,2" : "=r"(val));
+# endif
+
+   return val;
+}
+
 /*----------------------------------------------*/
 /*--- The exported fns ..                    ---*/
 /*----------------------------------------------*/
@@ -3141,6 +3162,35 @@ VexGuestLayout
 	      /* 11 */ ALWAYSDEFD64(guest_C_FPCC)
             }
         };
+
+UInt copy_paste_abort_dirty_helper(UInt addr, UInt op) {
+#  if defined(__powerpc__)
+   ULong ret;
+   UInt cr;
+
+   if (op == COPY_INST)
+      __asm__ __volatile__ ("copy 0,%0" :: "r" (addr));
+
+   else if (op == PASTE_INST)
+      __asm__ __volatile__ ("paste. 0,%0" :: "r" (addr));
+
+   else if (op == CPABORT_INST)
+      __asm__ __volatile__ ("cpabort");
+
+   else
+      /* Unknown operation */
+      vassert(0);
+
+   /* Return the CR0 value. Contains status for the paste instruction. */
+   __asm__ __volatile__ ("mfocrf %0,128" : "=r" (cr));
+   __asm__ __volatile__ ("srawi %0,%1,28" : "=r" (ret) : "r" (cr));
+   /* Make sure the upper bits of the return value are zero per the hack
+      described in function dis_copy_paste().  */
+   return 0xFF & ret;
+# else
+   return 0;
+# endif
+}
 
 /*---------------------------------------------------------------*/
 /*--- end                                 guest_ppc_helpers.c ---*/

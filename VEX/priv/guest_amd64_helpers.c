@@ -1681,6 +1681,21 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
                            mkU32(0)));
       }
 
+      if (isU64(cc_op, AMD64G_CC_OP_LOGICW) && isU64(cond, AMD64CondS)) {
+         /* word and/or/xor, then S --> (ULong)result[15] */
+         return binop(Iop_And64,
+                      binop(Iop_Shr64, cc_dep1, mkU8(15)),
+                      mkU64(1));
+      }
+      if (isU64(cc_op, AMD64G_CC_OP_LOGICW) && isU64(cond, AMD64CondNS)) {
+         /* word and/or/xor, then S --> (ULong) ~ result[15] */
+         return binop(Iop_Xor64,
+                      binop(Iop_And64,
+                            binop(Iop_Shr64, cc_dep1, mkU8(15)),
+                            mkU64(1)),
+                      mkU64(1));
+      }
+
       /*---------------- LOGICB ----------------*/
 
       if (isU64(cc_op, AMD64G_CC_OP_LOGICB) && isU64(cond, AMD64CondZ)) {
@@ -1798,18 +1813,31 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
                       binop(Iop_Shr64, cc_dep1, mkU8(31)),
                       mkU64(1));
       }
-      // The following looks correct to me, but never seems to happen because
-      // the front end converts jns to js by switching the fallthrough vs
-      // taken addresses.  See jcc_01().  But then why do other conditions
-      // considered by this function show up in both variants (xx and Nxx) ?
-      //if (isU64(cc_op, AMD64G_CC_OP_SHRL) && isU64(cond, AMD64CondNS)) {
-      //   /* SHRL/SARL, then NS --> (ULong) ~ result[31] */
-      //   vassert(0);
-      //   return binop(Iop_Xor64,
-      //                binop(Iop_And64,
-      //                      binop(Iop_Shr64, cc_dep1, mkU8(31)),
-      //                      mkU64(1)),
-      //                mkU64(1));
+      if (isU64(cc_op, AMD64G_CC_OP_SHRL) && isU64(cond, AMD64CondNS)) {
+         /* SHRL/SARL, then NS --> (ULong) ~ result[31] */
+         return binop(Iop_Xor64,
+                      binop(Iop_And64,
+                            binop(Iop_Shr64, cc_dep1, mkU8(31)),
+                            mkU64(1)),
+                      mkU64(1));
+      }
+
+      /*---------------- SHRW ----------------*/
+
+      if (isU64(cc_op, AMD64G_CC_OP_SHRW) && isU64(cond, AMD64CondZ)) {
+         /* SHRW, then Z --> test dep1 == 0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ32,
+                           unop(Iop_16Uto32, unop(Iop_64to16, cc_dep1)),
+                           mkU32(0)));
+      }
+      // No known test case for this, hence disabled:
+      //if (isU64(cc_op, AMD64G_CC_OP_SHRW) && isU64(cond, AMD64CondNZ)) {
+      //   /* SHRW, then NZ --> test dep1 == 0 */
+      //   return unop(Iop_1Uto64,
+      //               binop(Iop_CmpNE32,
+      //                     unop(Iop_16Uto32, unop(Iop_64to16, cc_dep1)),
+      //                     mkU32(0)));
       //}
 
       /*---------------- COPY ----------------*/
@@ -1902,6 +1930,18 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
             );
       }
 
+#     if 0
+      if (cond->tag == Iex_Const && cc_op->tag == Iex_Const) {
+         vex_printf("spec request failed: ");
+         vex_printf("   %s  ", function_name);
+         for (i = 0; i < 2/*arity*/; i++) {
+            vex_printf("  ");
+            ppIRExpr(args[i]);
+         }
+         vex_printf("\n");
+      }
+#     endif
+
       return NULL;
    }
 
@@ -1929,6 +1969,13 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
                      binop(Iop_CmpLT32U,
                            unop(Iop_64to32, cc_dep1), 
                            unop(Iop_64to32, cc_dep2)));
+      }
+      if (isU64(cc_op, AMD64G_CC_OP_SUBW)) {
+         /* C after sub denotes unsigned less than */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpLT64U,
+                           binop(Iop_And64,cc_dep1,mkU64(0xFFFF)),
+                           binop(Iop_And64,cc_dep2,mkU64(0xFFFF))));
       }
       if (isU64(cc_op, AMD64G_CC_OP_SUBB)) {
          /* C after sub denotes unsigned less than */
@@ -1958,8 +2005,10 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
          /* cflag after logic is zero */
          return mkU64(0);
       }
-      if (isU64(cc_op, AMD64G_CC_OP_DECL) || isU64(cc_op, AMD64G_CC_OP_INCL)
-          || isU64(cc_op, AMD64G_CC_OP_DECQ) || isU64(cc_op, AMD64G_CC_OP_INCQ)) {
+      if (isU64(cc_op, AMD64G_CC_OP_DECL)
+          || isU64(cc_op, AMD64G_CC_OP_INCL)
+          || isU64(cc_op, AMD64G_CC_OP_DECQ)
+          || isU64(cc_op, AMD64G_CC_OP_INCQ)) {
          /* If the thunk is dec or inc, the cflag is supplied as CC_NDEP. */
          return cc_ndep;
       }
@@ -1967,6 +2016,18 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
 #     if 0
       if (cc_op->tag == Iex_Const) {
          vex_printf("CFLAG "); ppIRExpr(cc_op); vex_printf("\n");
+      }
+#     endif
+
+#     if 0
+      if (cc_op->tag == Iex_Const) {
+         vex_printf("spec request failed: ");
+         vex_printf("   %s  ", function_name);
+         for (i = 0; i < 2/*arity*/; i++) {
+            vex_printf("  ");
+            ppIRExpr(args[i]);
+         }
+         vex_printf("\n");
       }
 #     endif
 

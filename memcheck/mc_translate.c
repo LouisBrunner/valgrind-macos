@@ -1966,6 +1966,18 @@ IRAtom* mkLazy3 ( MCEnv* mce, IRType finalVty,
       return at;
    }
 
+   /* I32 x I16 x I16 -> I16 */
+   /* 16-bit half-precision FP idiom, as (eg) happens on arm64 v8.2 onwards */
+   if (t1 == Ity_I32 && t2 == Ity_I16 && t3 == Ity_I16
+       && finalVty == Ity_I16) {
+      if (0) VG_(printf)("mkLazy3: I32 x I16 x I16 -> I16\n");
+      at = mkPCastTo(mce, Ity_I16, va1);
+      at = mkUifU(mce, Ity_I16, at, va2);
+      at = mkUifU(mce, Ity_I16, at, va3);
+      at = mkPCastTo(mce, Ity_I16, at);
+      return at;
+   }
+
    /* I32 x I128 x I128 -> I128 */
    /* Standard FP idiom: rm x FParg1 x FParg2 -> FPresult */
    if (t1 == Ity_I32 && t2 == Ity_I128 && t3 == Ity_I128
@@ -3394,6 +3406,10 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
       case Iop_DivF32:
          /* I32(rm) x F32 x F32 -> I32 */
          return mkLazy3(mce, Ity_I32, vatom1, vatom2, vatom3);
+      case Iop_AddF16:
+      case Iop_SubF16:
+         /* I32(rm) x F16 x F16 -> I16 */
+         return mkLazy3(mce, Ity_I16, vatom1, vatom2, vatom3);
       case Iop_SignificanceRoundD64:
          /* IRRoundingMode(I32) x I8 x D64 -> D64 */
          return mkLazy3(mce, Ity_I64, vatom1, vatom2, vatom3);
@@ -3457,6 +3473,7 @@ IRAtom* expr2vbits_Triop ( MCEnv* mce,
          IR is implemented.
       */
       case Iop_Add16Fx8:
+      case Iop_Sub16Fx8:
         return binary16Fx8_w_rm(mce, vatom1, vatom2, vatom3);
 
       case Iop_Add32Fx8:
@@ -4036,6 +4053,11 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_RSqrtStep64Fx2:
          return binary64Fx2(mce, vatom1, vatom2);      
 
+      case Iop_CmpLT16Fx8:
+      case Iop_CmpLE16Fx8:
+      case Iop_CmpEQ16Fx8:
+         return binary16Fx8(mce, vatom1, vatom2);
+
       case Iop_Sub64F0x2:
       case Iop_Mul64F0x2:
       case Iop_Min64F0x2:
@@ -4519,6 +4541,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          /*  I64 x I128 -> D128 */
          return mkLazy2(mce, Ity_I128, vatom1, vatom2);
 
+      case Iop_CmpF16:
       case Iop_CmpF32:
       case Iop_CmpF64:
       case Iop_CmpF128:

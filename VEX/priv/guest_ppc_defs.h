@@ -219,6 +219,11 @@ extern void vector_gen_pvc_dword_mask_dirty_helper( VexGuestPPC64State* gst,
 #define XVF64GERNP     0b01111010
 #define XVF64GERNN     0b11111010
 
+#define INVALD_INST    1
+#define COPY_INST      2
+#define PASTE_INST     3
+#define CPABORT_INST   4
+
 /* --- DIRTY HELPERS --- */
 
 extern ULong ppcg_dirtyhelper_MFTB ( void );
@@ -272,7 +277,17 @@ extern void vsx_matrix_64bit_float_ger_dirty_helper( VexGuestPPC64State* gst,
                                                      ULong srcY_hi,
                                                      ULong srcY_lo,
                                                      UInt masks_inst );
+extern ULong darn_dirty_helper ( UInt L );
+extern UInt copy_paste_abort_dirty_helper(UInt addr, UInt op);
+
 #endif /* ndef __VEX_GUEST_PPC_DEFS_H */
+
+/* SCV flag defines.  Must be consistently defined here and in
+   coregrind/pub_core_syscall.h,in the do_syscall_WRK() assembly code in
+   coregrind/m_syscall.c and coregrind/m_syswrap/syscall-ppc64le-linux.S
+   code.  */
+#define SC_FLAG  1
+#define SCV_FLAG 2
 
 /*---------------------------------------------------------------*/
 /*--- end                                    guest_ppc_defs.h ---*/

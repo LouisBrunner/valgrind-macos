@@ -1,0 +1,2 @@
+prereq: ../../../tests/check_ppc64_auxv_cap arch_3_1
+prog: test_copy_paste

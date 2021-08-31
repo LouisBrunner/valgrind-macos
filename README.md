@@ -41,14 +41,6 @@ Any `brew upgrade` will now correctly rebuild the latest `LouisBrunner/valgrind`
 brew upgrade --fetch-HEAD LouisBrunner/valgrind/valgrind
 ```
 
-### Deprecated method
-
-If you don't want to use `tap`, you can also install the formula directly, but note that `brew` will reinstall the upstream valgrind (which doesn't support latest macOS versions) when using `brew upgrade`.
-
-```sh
-brew install --HEAD https://raw.githubusercontent.com/LouisBrunner/valgrind-macos/master/valgrind.rb
-```
-
 ## TODO
 
  - Get historical build data from sourceforge for macOS 10.13

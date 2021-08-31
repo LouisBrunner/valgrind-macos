@@ -290,7 +290,9 @@ DECL_TEMPLATE(darwin, exchangedata);            // 223
 // NYI searchfs 225
 // GEN delete 226
 // NYI copyfile 226
-// 228
+#if DARWIN_VERS >= DARWIN_10_6
+DECL_TEMPLATE(darwin, fgetattrlist);            // 228
+#endif
 // 229
 // GEN poll 230
 DECL_TEMPLATE(darwin, watchevent);              // 231

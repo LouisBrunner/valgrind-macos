@@ -9501,6 +9501,31 @@ POST(audit_session_self)
   PRINT("audit-session %#lx", RES);
 }
 
+PRE(fgetattrlist)
+{
+   PRINT("fgetattrlist(%ld, %#lx, %#lx, %lu, %lu)",
+         ARG1, (HChar *)ARG1, ARG2, ARG3, ARG4, ARG5);
+   PRE_REG_READ5(int, "fgetattrlist",
+                 int,fd, struct vki_attrlist *,attrList,
+                 void *,attrBuf, vki_size_t,attrBufSize, unsigned int,options);
+   PRE_MEM_READ("fgetattrlist(attrList)", ARG2, sizeof(struct vki_attrlist));
+   PRE_MEM_WRITE("fgetattrlist(attrBuf)", ARG3, ARG4);
+}
+POST(fgetattrlist)
+{
+   if (ARG4 > sizeof(vki_uint32_t)) {
+      // attrBuf is uint32_t size followed by attr data
+      vki_uint32_t *sizep = (vki_uint32_t *)ARG3;
+      POST_MEM_WRITE(ARG3, sizeof(vki_uint32_t));
+      if (ARG5 & FSOPT_REPORT_FULLSIZE) {
+         // *sizep is bytes required for return value, including *sizep
+      } else {
+         // *sizep is actual bytes returned, including *sizep
+      }
+      scan_attrlist(tid, (struct vki_attrlist *)ARG2, sizep+1, MIN(*sizep, ARG4), &get1attr);
+   }
+}
+
 #endif /* DARWIN_VERS >= DARWIN_10_6 */
 
 
@@ -10991,7 +11016,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_delete,      sys_unlink),
 // _____(__NR_copyfile),
 #if DARWIN_VERS >= DARWIN_10_6
-// _____(__NR_fgetattrlist),
+   MACX_(__NR_fgetattrlist, fgetattrlist), // 228
 // _____(__NR_fsetattrlist),
 #else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(228)),   // ??

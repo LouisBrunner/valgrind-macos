@@ -2263,8 +2263,13 @@ void initialize_source_registers () {
       if (has_ra)  ra = 4*vrai;
       if (is_insert_double) {
 	 /* For an insert_double, the results are undefined
-	    for ra > 8, so modulo those into a valid range. */
-	 ra = ra % 9;
+	    for ra > 8, so modulo those into a valid range.
+	    Since ra is defined as a hard register, and due to gcc
+	    issue (PR101882) where a modulo operation fails with
+	    both input and output regs set to a hard register, this
+	    assignment references the args[] array again, versus
+	    ra = ra % 9;.  */
+	 ra = args[vrai] % 9;
       }
    }
 

@@ -52,6 +52,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 439590  glibc-2.34 breaks suppressions against obj:*/lib*/libc-2.*so*
 440670  unhandled ppc64le-linux syscall: 252 (statfs64) and 253 (fstatfs64)
 432387  s390x: z15 instructions support
+440906  Fix impossible constraint issue in P10 testcase.
 441512  Remove a unneeded / unnecessary prefix check.
 
 To see details of a given bug, visit

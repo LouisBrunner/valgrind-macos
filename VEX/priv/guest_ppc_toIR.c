@@ -14563,12 +14563,6 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
       pDIP( is_prefix, "stxvp %u,%llu(%u)\n", XTp, immediate_val, rA_addr );
       DIPp( is_prefix, ",%u", R );
 
-      if ( R == 1 ) {
-         vex_printf("Illegal instruction R = 1; pstxvp %u,%llu(%u)\n",
-                    XTp, immediate_val, rA_addr );
-         return False;
-      }
-
       assign( EA_8, binop( Iop_Add64, mkU64( 8 ), mkexpr( EA ) ) );
       assign( EA_16, binop( Iop_Add64, mkU64( 16 ), mkexpr( EA ) ) );
       assign( EA_24, binop( Iop_Add64, mkU64( 24 ), mkexpr( EA ) ) );

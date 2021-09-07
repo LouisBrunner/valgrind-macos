@@ -54,6 +54,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 432387  s390x: z15 instructions support
 440906  Fix impossible constraint issue in P10 testcase.
 441512  Remove a unneeded / unnecessary prefix check.
+441534  Update the expected output for test_isa_3_1_VRT.
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

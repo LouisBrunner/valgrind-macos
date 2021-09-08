@@ -1563,14 +1563,17 @@ AM_CONDITIONAL([HAS_VSX], [test x$ac_compiler_supports_vsx_flag = xyes \
                              -a x$HWCAP_HAS_VSX = xyes ])
 
 # DFP (Decimal Float)
+# The initial DFP support was added in Power 6.  The dcffix instruction
+# support was added in Power 7.
 AC_MSG_CHECKING([that assembler knows DFP])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
   #ifdef __s390__
   __asm__ __volatile__("adtr 1, 2, 3")
   #else
-  __asm__ __volatile__("dadd 1, 2, 3");
-  __asm__ __volatile__("dcffix 1, 2");
+__asm__ __volatile__(".machine power7;\n" \
+  "dadd 1, 2, 3;\n" \
+  "dcffix 1, 2");
   #endif
 ]])], [
 ac_asm_have_dfp=yes
@@ -1582,13 +1585,16 @@ AC_MSG_RESULT([no])
 AC_MSG_CHECKING([that compiler knows -mhard-dfp switch])
 safe_CFLAGS=$CFLAGS
 CFLAGS="-mhard-dfp -Werror"
+
+# The dcffix instruction is Power 7
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
   #ifdef __s390__
   __asm__ __volatile__("adtr 1, 2, 3")
   #else
-  __asm__ __volatile__("dadd 1, 2, 3");
-  __asm__ __volatile__("dcffix 1, 2");
+  __asm__ __volatile__(".machine power7;\n" \
+  "dadd 1, 2, 3;\n" \
+  "dcffix 1, 2");
   #endif
 ]])], [
 ac_compiler_have_dfp=yes

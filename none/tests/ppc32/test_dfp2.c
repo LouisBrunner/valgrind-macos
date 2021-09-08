@@ -668,6 +668,8 @@ int main(int argc, char ** argv, char ** envp) {
       i++;
    }
 
+#else
+   printf("HAS_DFP not detected.\n");
 #endif // HAS_DFP
    return 0;
 }

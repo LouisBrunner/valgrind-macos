@@ -8,6 +8,10 @@ noinst_HEADERS = ppc64_helpers.h isa_3_1_helpers.h isa_3_1_register_defines.h
 EXTRA_DIST = \
 	jm-int.stderr.exp jm-int.stdout.exp jm-int.vgtest jm-int.stdout.exp-LE \
 	jm-int.stdout.exp-LE-ISA3_0 \
+	jm-int-sh_algebraic.stderr.exp jm-int-sh_algebraic.stdout.exp \
+	jm-int-sh_algebraic.stdout.exp-LE \
+	jm-int-sh_algebraic.stdout.exp-LE-ISA3_0 \
+	jm-int-sh_algebraic.vgtest \
 	jm-int_other.stderr.exp jm-int_other.stdout.exp jm-int_other.vgtest \
 	jm-int_other.stdout.exp-LE \
 	jm-fp.stderr.exp  jm-fp.stdout.exp  jm-fp.vgtest jm-fp.stdout.exp-LE jm-fp.stdout.exp-LE2 jm-fp.stdout.exp-BE2 \

@@ -9,6 +9,8 @@ EXTRA_DIST = \
 	bug139050-ppc32.stdout.exp bug139050-ppc32.stderr.exp \
 	bug139050-ppc32.vgtest \
 	ldstrev.stderr.exp ldstrev.stdout.exp ldstrev.vgtest \
+	jm-int-sh_algebraic.stderr.exp jm-int-sh_algebraic.stdout.exp \
+	jm-int-sh_algebraic.vgtest \
 	jm-int.stderr.exp jm-int.stdout.exp jm-int.vgtest \
 	jm-int_other.stderr.exp jm-int_other.stdout.exp jm-int_other.vgtest \
 	jm-fp.stderr.exp jm-fp.stdout.exp jm-fp.vgtest jm-fp.stdout.exp-BE2 \

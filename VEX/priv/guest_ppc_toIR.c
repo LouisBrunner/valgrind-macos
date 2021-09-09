@@ -11499,7 +11499,7 @@ static Bool dis_memsync ( UInt prefix, UInt theInstr )
 /*
   Integer Shift Instructions
 */
-static Bool dis_int_shift ( UInt prefix, UInt theInstr )
+static Bool dis_int_shift ( UInt prefix, UInt theInstr, UInt allow_isa_3_0 )
 {
    /* X-Form, XS-Form */
    UChar opc1    = ifieldOPC(theInstr);
@@ -11575,11 +11575,16 @@ static Bool dis_int_shift ( UInt prefix, UInt theInstr )
                                           mkexpr(sh_amt)) ) );
          assign( rA, mkWidenFrom32(ty, e_tmp, /* Signed */True) );
 
+         /* Set CA bit */
          set_XER_CA_CA32( ty, PPCG_FLAG_OP_SRAW,
                           mkexpr(rA),
                           mkWidenFrom32(ty, mkexpr(rS_lo32), True),
                           mkWidenFrom32(ty, mkexpr(sh_amt), True ),
                           mkWidenFrom32(ty, getXER_CA_32(), True) );
+
+         if (allow_isa_3_0)
+            /* copy CA to CA32 */
+            putXER_CA32( unop(Iop_32to8, getXER_CA_32()));
          break;
       }
          
@@ -11597,11 +11602,16 @@ static Bool dis_int_shift ( UInt prefix, UInt theInstr )
                                          mkU8(sh_imm)) );
          }
 
+         /* Set CA bit */
          set_XER_CA_CA32( ty, PPCG_FLAG_OP_SRAWI,
                           mkexpr(rA),
                           mkWidenFrom32(ty, mkexpr(rS_lo32), /* Syned */True),
                           mkSzImm(ty, sh_imm),
                           mkWidenFrom32(ty, getXER_CA_32(), /* Syned */False) );
+
+         if (allow_isa_3_0)
+            /* copy CA to CA32 */
+            putXER_CA32( unop(Iop_32to8, getXER_CA_32()));
          break;
       
       case 0x218: // srw (Shift Right Word, PPC32 p508)
@@ -11672,9 +11682,14 @@ static Bool dis_int_shift ( UInt prefix, UInt theInstr )
                                           mkU64(63),
                                           mkexpr(sh_amt)) ))
                );
+         /* Set CA bit */
          set_XER_CA_CA32( ty, PPCG_FLAG_OP_SRAD,
                           mkexpr(rA), mkexpr(rS), mkexpr(sh_amt),
                           mkWidenFrom32(ty, getXER_CA_32(), /* Syned */False) );
+
+         if (allow_isa_3_0)
+            /* copy CA to CA32 */
+            putXER_CA32( unop(Iop_32to8, getXER_CA_32()));
          break;
       }
 
@@ -11685,11 +11700,16 @@ static Bool dis_int_shift ( UInt prefix, UInt theInstr )
              flag_rC ? ".":"", rA_addr, rS_addr, sh_imm);
          assign( rA, binop(Iop_Sar64, getIReg(rS_addr), mkU8(sh_imm)) );
 
+         /* Set CA bit */
          set_XER_CA_CA32( ty, PPCG_FLAG_OP_SRADI,
                           mkexpr(rA),
                           getIReg(rS_addr),
                           mkU64(sh_imm),
                           mkWidenFrom32(ty, getXER_CA_32(), /* Syned */False) );
+
+         if (allow_isa_3_0)
+            /* copy CA to CA32 */
+            putXER_CA32( unop(Iop_32to8, getXER_CA_32()));
          break;
 
       case 0x21B: // srd (Shift Right DWord, PPC64 p574)
@@ -37453,7 +37473,8 @@ DisResult disInstr_PPC_WRK (
       /* Integer Shift Instructions */
       case 0x018: case 0x318: case 0x338: // slw, sraw, srawi
       case 0x218:                         // srw
-         if (dis_int_shift( prefix, theInstr )) goto decode_success;
+         if (dis_int_shift( prefix, theInstr, allow_isa_3_0 ))
+            goto decode_success;
          goto decode_failure;
 
       /* 64bit Integer Shift Instructions */
@@ -37461,7 +37482,8 @@ DisResult disInstr_PPC_WRK (
       case 0x33A: case 0x33B: // sradi
       case 0x21B:             // srd
          if (!mode64) goto decode_failure;
-         if (dis_int_shift( prefix, theInstr )) goto decode_success;
+         if (dis_int_shift( prefix, theInstr, allow_isa_3_0 ))
+            goto decode_success;
          goto decode_failure;
 
       /* Integer Load Instructions */

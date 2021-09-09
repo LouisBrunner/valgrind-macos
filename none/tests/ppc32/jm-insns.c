@@ -381,6 +381,7 @@ enum test_flags {
     PPC_ALTIVEC    = 0x00040000,
     PPC_FALTIVEC   = 0x00050000,
     PPC_MISC       = 0x00060000,
+    PPC_SH_ALGEBRAIC = 0x00070000,
     PPC_FAMILY     = 0x000F0000,
     /* Flags: these may be combined, so use separate bitfields. */
     PPC_CR         = 0x01000000,
@@ -886,6 +887,14 @@ static void test_srd (void)
 }
 #endif // #ifdef __powerpc64__
 
+static test_t tests_il_ops_two_sh[] = {
+    { &test_sraw            , "        sraw", },
+#ifdef __powerpc64__
+    { &test_srad            , "        srad", },
+#endif // #ifdef __powerpc64__
+    { NULL,                   NULL,           },
+};
+
 static test_t tests_il_ops_two[] = {
     { &test_and             , "         and", },
     { &test_andc            , "        andc", },
@@ -896,11 +905,9 @@ static test_t tests_il_ops_two[] = {
     { &test_orc             , "         orc", },
     { &test_xor             , "         xor", },
     { &test_slw             , "         slw", },
-    { &test_sraw            , "        sraw", },
     { &test_srw             , "         srw", },
 #ifdef __powerpc64__
     { &test_sld             , "         sld", },
-    { &test_srad            , "        srad", },
     { &test_srd             , "         srd", },
 #endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
@@ -978,6 +985,14 @@ static void test_srd_ (void)
 }
 #endif // #ifdef __powerpc64__
 
+static test_t tests_ilr_ops_two_sh[] = {
+    { &test_sraw_           , "       sraw.", },
+#ifdef __powerpc64__
+    { &test_srad_           , "       srad.", },
+#endif // #ifdef __powerpc64__
+    { NULL,                   NULL,           },
+};
+
 static test_t tests_ilr_ops_two[] = {
     { &test_and_            , "        and.", },
     { &test_andc_           , "       andc.", },
@@ -988,11 +1003,9 @@ static test_t tests_ilr_ops_two[] = {
     { &test_orc_            , "        orc.", },
     { &test_xor_            , "        xor.", },
     { &test_slw_            , "        slw.", },
-    { &test_sraw_           , "       sraw.", },
     { &test_srw_            , "        srw.", },
 #ifdef __powerpc64__
     { &test_sld_            , "        sld.", },
-    { &test_srad_           , "       srad.", },
     { &test_srd_            , "        srd.", },
 #endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
@@ -1424,11 +1437,17 @@ extern void test_sradi (void);
 ASSEMBLY_FUNC("test_sradi", "sradi      17, 14, 0");
 #endif // #ifdef __powerpc64__
 
+static test_t tests_il_ops_spe_sh[] = {
+    { &test_srawi           , "       srawi", },
+#ifdef __powerpc64__
+    { &test_sradi           , "       sradi", },
+#endif // #ifdef __powerpc64__
+    { NULL,                   NULL,           },
+};
 static test_t tests_il_ops_spe[] = {
     { &test_rlwimi          , "      rlwimi", },
     { &test_rlwinm          , "      rlwinm", },
     { &test_rlwnm           , "       rlwnm", },
-    { &test_srawi           , "       srawi", },
     { &test_mfcr            , "        mfcr", },
     { &test_mfspr           , "       mfspr", },
     { &test_mtspr           , "       mtspr", },
@@ -1439,7 +1458,6 @@ static test_t tests_il_ops_spe[] = {
     { &test_rldicl          , "      rldicl", },
     { &test_rldicr          , "      rldicr", },
     { &test_rldimi          , "      rldimi", },
-    { &test_sradi           , "       sradi", },
 #endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
 };
@@ -1489,11 +1507,17 @@ extern void test_sradi_ (void);
 ASSEMBLY_FUNC("test_sradi_", "sradi.      17, 14, 0");
 #endif // #ifdef __powerpc64__
 
+static test_t tests_ilr_ops_spe_sh[] = {
+    { &test_srawi_          , "      srawi.", },
+#ifdef __powerpc64__
+    { &test_sradi_          , "      sradi.", },
+#endif // #ifdef __powerpc64__
+    { NULL,                   NULL,           },
+};
 static test_t tests_ilr_ops_spe[] = {
     { &test_rlwimi_         , "     rlwimi.", },
     { &test_rlwinm_         , "     rlwinm.", },
     { &test_rlwnm_          , "      rlwnm.", },
-    { &test_srawi_          , "      srawi.", },
     { &test_mcrf            , "        mcrf", },
     { &test_mcrxr           , "       mcrxr", },
     { &test_mtcrf           , "       mtcrf", },
@@ -1504,7 +1528,6 @@ static test_t tests_ilr_ops_spe[] = {
     { &test_rldicl_         , "     rldicl.", },
     { &test_rldicr_         , "     rldicr.", },
     { &test_rldimi_         , "     rldimi.", },
-    { &test_sradi_          , "      sradi.", },
 #endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
 };
@@ -3945,9 +3968,19 @@ static test_table_t all_tests[] = {
         0x00010202,
     },
     {
+        tests_il_ops_two_sh      ,
+        "PPC integer shift algebraic two args",
+        0x00070202,
+    },
+    {
         tests_ilr_ops_two     ,
         "PPC integer logical insns with two args with flags update",
         0x01010202,
+    },
+    {
+        tests_ilr_ops_two_sh     ,
+        "PPC integer shift algebraic two args with flags update",
+        0x01070202,
     },
     {
         tests_icr_ops_two     ,
@@ -4010,9 +4043,19 @@ static test_table_t all_tests[] = {
         0x00010207,
     },
     {
+        tests_il_ops_spe_sh      ,
+        "PPC shift algebraic with special forms",
+        0x00070207,
+    },
+    {
         tests_ilr_ops_spe     ,
         "PPC logical insns with special forms with flags update",
         0x01010207,
+    },
+    {
+        tests_ilr_ops_spe_sh     ,
+        "PPC shift algebraic with special forms with flags update",
+        0x01070207,
     },
     {
         tests_ild_ops_two_i16 ,
@@ -5728,6 +5771,11 @@ static void test_int_st_three_regs (const char* name,
 /* Used in do_tests, indexed by flags->nb_args
    Elements correspond to enum test_flags::num args
 */
+static test_loop_t int_sh_algebraic[] = {
+   &test_int_two_args,
+   &test_int_special,
+};
+
 static test_loop_t int_loops[] = {
    &test_int_one_arg,
    &test_int_two_args,
@@ -7465,7 +7513,7 @@ static int check_name (const char* name, const char *filter,
 typedef struct insn_sel_flags_t_struct {
    int one_arg, two_args, three_args;
    int arith, logical, compare, ldst;
-   int integer, floats, p405, altivec, faltivec, misc;
+   int integer, floats, p405, altivec, faltivec, misc, sh_algebraic;
    int cr;
 } insn_sel_flags_t;
 
@@ -7505,6 +7553,7 @@ static void do_tests ( insn_sel_flags_t seln_flags,
           (family == PPC_405      && !seln_flags.p405) ||
           (family == PPC_ALTIVEC  && !seln_flags.altivec) ||
           (family == PPC_MISC  && !seln_flags.misc) ||
+          (family == PPC_SH_ALGEBRAIC && !seln_flags.sh_algebraic) ||
           (family == PPC_FALTIVEC && !seln_flags.faltivec))
          continue;
       /* Check flags update */
@@ -7517,6 +7566,9 @@ static void do_tests ( insn_sel_flags_t seln_flags,
       switch (family) {
       case PPC_INTEGER:
          loop = &int_loops[nb_args - 1];
+         break;
+      case PPC_SH_ALGEBRAIC:
+         loop = &int_sh_algebraic[0];
          break;
       case PPC_MISC:
          loop = &misc_loops[0];
@@ -7625,6 +7677,7 @@ static void usage (void)
            "\t-f: test floating point instructions\n"
            "\t-a: test altivec instructions\n"
            "\t-m: test miscellaneous instructions\n"
+           "\t-s: test shift algebraic (sraw, srawi, srad, sradi) instructions\n"
            "\t-A: test all (int, fp, altivec) instructions\n"
            "\t-v: be verbose\n"
            "\t-h: display this help and exit\n"
@@ -7658,6 +7711,7 @@ int main (int argc, char **argv)
    flags.altivec    = 0;
    flags.faltivec   = 0;
    flags.cr         = -1;
+   flags.sh_algebraic = 0;
    
    while ((c = getopt(argc, argv, "123t:f:n:r:uvh")) != -1) {
       switch (c) {
@@ -7760,6 +7814,7 @@ int main (int argc, char **argv)
       flags.p405     = 1;
       flags.altivec  = 1;
       flags.faltivec = 1;
+      flags.algebraic = 1;
    }
    // Default cr update
    if (flags.cr == -1)
@@ -7795,14 +7850,19 @@ int main (int argc, char **argv)
    flags.p405       = 0;
    flags.altivec    = 0;
    flags.faltivec   = 0;
+   flags.sh_algebraic = 0;
    // Flags
    flags.cr         = 2;
 
-   while ((c = getopt(argc, argv, "ilcLfmahvA")) != -1) {
+   while ((c = getopt(argc, argv, "ilcLfmsahvA")) != -1) {
       switch (c) {
       case 'i':
          flags.arith    = 1;
          flags.integer  = 1;
+         break;
+      case 's':
+         flags.logical  = 1;
+         flags.sh_algebraic = 1;
          break;
       case 'l':
          flags.logical  = 1;
@@ -7895,6 +7955,7 @@ int main (int argc, char **argv)
       printf("    p405       = %d\n", flags.p405);
       printf("    altivec    = %d\n", flags.altivec);
       printf("    faltivec   = %d\n", flags.faltivec);
+      printf("    sh_algebraic = %d\n", flags.sh_algebraic);
       printf("  cr update: \n");
       printf("    cr         = %d\n", flags.cr);
       printf("\n");

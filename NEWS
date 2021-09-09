@@ -59,6 +59,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 442061  very slow execution under Fedora 34 (readdwarf3)
 443031  Gcc -many change requires explicit .machine directives
 443033  Add support for the ISA 3.0 mcrxrx instruction
+443034  Sraw, srawi, srad, sradi, mfs
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

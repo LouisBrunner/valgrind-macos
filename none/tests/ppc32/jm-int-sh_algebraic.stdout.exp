@@ -1,0 +1,45 @@
+PPC integer shift algebraic two args:
+        sraw 00000000, 00000000 => 00000000 (00000000 00000000)
+        sraw 00000000, 000f423f => 00000000 (00000000 00000000)
+        sraw 00000000, ffffffff => 00000000 (00000000 00000000)
+        sraw 000f423f, 00000000 => 000f423f (00000000 00000000)
+        sraw 000f423f, 000f423f => 00000000 (00000000 00000000)
+        sraw 000f423f, ffffffff => 00000000 (00000000 00000000)
+        sraw ffffffff, 00000000 => ffffffff (00000000 00000000)
+        sraw ffffffff, 000f423f => ffffffff (00000000 20000000)
+        sraw ffffffff, ffffffff => ffffffff (00000000 20000000)
+
+PPC integer shift algebraic two args with flags update:
+       sraw. 00000000, 00000000 => 00000000 (20000000 00000000)
+       sraw. 00000000, 000f423f => 00000000 (20000000 00000000)
+       sraw. 00000000, ffffffff => 00000000 (20000000 00000000)
+       sraw. 000f423f, 00000000 => 000f423f (40000000 00000000)
+       sraw. 000f423f, 000f423f => 00000000 (20000000 00000000)
+       sraw. 000f423f, ffffffff => 00000000 (20000000 00000000)
+       sraw. ffffffff, 00000000 => ffffffff (80000000 00000000)
+       sraw. ffffffff, 000f423f => ffffffff (80000000 20000000)
+       sraw. ffffffff, ffffffff => ffffffff (80000000 20000000)
+
+PPC shift algebraic with special forms:
+       srawi 00000000, 00000000 => 00000000 (00000000 00000000)
+       srawi 00000000, 000f423f => 00000000 (00000000 00000000)
+       srawi 00000000, ffffffff => 00000000 (00000000 00000000)
+       srawi 000f423f, 00000000 => 000f423f (00000000 00000000)
+       srawi 000f423f, 000f423f => 000f423f (00000000 00000000)
+       srawi 000f423f, ffffffff => 000f423f (00000000 00000000)
+       srawi ffffffff, 00000000 => ffffffff (00000000 00000000)
+       srawi ffffffff, 000f423f => ffffffff (00000000 00000000)
+       srawi ffffffff, ffffffff => ffffffff (00000000 00000000)
+
+PPC shift algebraic with special forms with flags update:
+      srawi. 00000000, 00000000 => 00000000 (20000000 00000000)
+      srawi. 00000000, 000f423f => 00000000 (20000000 00000000)
+      srawi. 00000000, ffffffff => 00000000 (20000000 00000000)
+      srawi. 000f423f, 00000000 => 000f423f (40000000 00000000)
+      srawi. 000f423f, 000f423f => 000f423f (40000000 00000000)
+      srawi. 000f423f, ffffffff => 000f423f (40000000 00000000)
+      srawi. ffffffff, 00000000 => ffffffff (80000000 00000000)
+      srawi. ffffffff, 000f423f => ffffffff (80000000 00000000)
+      srawi. ffffffff, ffffffff => ffffffff (80000000 00000000)
+
+All done. Tested 4 different instructions

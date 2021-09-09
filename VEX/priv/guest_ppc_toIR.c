@@ -11929,6 +11929,35 @@ static Bool dis_proc_ctl ( const VexAbiInfo* vbi, UInt prefix, UInt theInstr )
       break;
    }
       
+   case 0x240: { // mcrxrx (Move to Cond Register from XER)
+      IRTemp  OV   = newTemp(Ity_I32);
+      IRTemp  CA   = newTemp(Ity_I32);
+      IRTemp  OV32 = newTemp(Ity_I32);
+      IRTemp  CA32 = newTemp(Ity_I32);
+      IRTemp  tmp  = newTemp(Ity_I32);
+
+      if (b21to22 != 0 || b11to20 != 0) {
+         vex_printf("dis_proc_ctl(ppc)(mcrxrx,b21to22|b11to20)\n");
+         return False;
+      }
+      DIP("mcrxrx crf%d\n", crfD);
+      /* Move OV, OV32, CA, CA32 to condition register field BF */
+      assign( OV, binop( Iop_Shl32, getXER_OV_32(), mkU8( 3 ) ));
+      assign( CA, binop( Iop_Shl32, getXER_CA_32(), mkU8( 1 ) ));
+      assign( OV32, binop( Iop_Shl32, getXER_OV32_32(), mkU8( 2 ) ));
+      assign( CA32, getXER_CA32_32() );
+
+      /* Put [OV | OV32 | CA | CA32] into the condition code register */
+      assign( tmp,
+              binop( Iop_Or32,
+                     binop( Iop_Or32, mkexpr ( OV ),  mkexpr ( OV32 ) ),
+                     binop( Iop_Or32, mkexpr ( CA ),  mkexpr ( CA32 ) )
+                 ) );
+
+      putGST_field( PPC_GST_CR,  mkexpr( tmp ), crfD );
+      break;
+   }
+
    case 0x013: 
       // b11to20==0:      mfcr (Move from Cond Register, PPC32 p467)
       // b20==1 & b11==0: mfocrf (Move from One CR Field)
@@ -37514,6 +37543,7 @@ DisResult disInstr_PPC_WRK (
       case 0x200: case 0x013: case 0x153: // mcrxr, mfcr,  mfspr
       case 0x173: case 0x090: case 0x1D3: // mftb,  mtcrf, mtspr
       case 0x220:                         // mcrxrt
+      case 0x240:                         // mcrxrx
          if (dis_proc_ctl( abiinfo, prefix, theInstr )) goto decode_success;
          goto decode_failure;
 

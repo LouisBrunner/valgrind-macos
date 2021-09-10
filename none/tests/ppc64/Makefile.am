@@ -7,7 +7,7 @@ noinst_HEADERS = ppc64_helpers.h isa_3_1_helpers.h isa_3_1_register_defines.h
 
 EXTRA_DIST = \
 	jm-int.stderr.exp jm-int.stdout.exp jm-int.vgtest jm-int.stdout.exp-LE \
-   jm-int.stdout.exp-LE-ISA3_0 \
+	jm-int.stdout.exp-LE-ISA3_0 \
 	jm-int_other.stderr.exp jm-int_other.stdout.exp jm-int_other.vgtest \
 	jm-int_other.stdout.exp-LE \
 	jm-fp.stderr.exp  jm-fp.stdout.exp  jm-fp.vgtest jm-fp.stdout.exp-LE jm-fp.stdout.exp-LE2 jm-fp.stdout.exp-BE2 \
@@ -141,9 +141,6 @@ else
 HTM_FLAG =
 endif
 
-jm_insns_CFLAGS = $(AM_CFLAGS) -Wl,-z,norelro -Winline -Wall -O -g -mregnames \
-			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_ALTIVEC)
-
 if HAS_ISA_3_00
 BUILD_FLAGS_ISA_3_00 = -mcpu=power8
 ISA_3_00_FLAG = -DHAS_ISA_3_00
@@ -159,6 +156,9 @@ else
 BUILD_FLAGS_ISA_3_1 =
 ISA_3_1_FLAG =
 endif
+
+jm_insns_CFLAGS = $(AM_CFLAGS) -Wl,-z,norelro -Winline -Wall -O -g -mregnames \
+			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_ALTIVEC)
 
 test_isa_2_06_part1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_FLAG) \
 			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_VSX)

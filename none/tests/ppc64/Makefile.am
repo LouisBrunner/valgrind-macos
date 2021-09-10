@@ -21,7 +21,6 @@ EXTRA_DIST = \
 	tw_td.stderr.exp tw_td.stdout.exp tw_td.vgtest \
 	opcodes.h \
 	power6_bcmp.stderr.exp power6_bcmp.stdout.exp power6_bcmp.vgtest \
-	power6_mf_gpr.stderr.exp power6_mf_gpr.stdout.exp power6_mf_gpr.vgtest \
 	test_isa_2_06_part1.stderr.exp  test_isa_2_06_part1.stdout.exp  test_isa_2_06_part1.vgtest \
 	test_isa_2_06_part1.stdout.exp-LE \
 	test_isa_2_06_part2.stderr.exp  test_isa_2_06_part2.stdout.exp  test_isa_2_06_part2.vgtest \
@@ -75,7 +74,7 @@ check_PROGRAMS = \
 	test_isa_3_1_Misc test_isa_3_1_AT \
 	subnormal_test test_darn_inst test_copy_paste \
 	test_tm test_touch_tm data-cache-instructions \
-	power6_mf_gpr std_reg_imm \
+	std_reg_imm \
 	twi_tdi tw_td power6_bcmp scv_test
 
 # lmw, stmw, lswi, lswx, stswi, stswx compile (and run) only on big endian.

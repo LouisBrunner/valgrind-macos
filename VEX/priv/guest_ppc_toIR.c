@@ -8401,6 +8401,9 @@ static Bool dis_int_logic ( UInt prefix, UInt theInstr )
          break;
 
       case 0x2DF: { // mftgpr (move floating-point to general purpose register)
+         /* The mftgpr instruction was deprecated in Power 7, 2009 timeframe.
+            Leaving support in Valgrind for now (9/10/2021).  Can remove the
+            mftgpr support in Valgrind if the opcode ever gets reused.  */
          IRTemp frB = newTemp(Ity_F64);
          DIP("mftgpr r%u,fr%u\n", rS_addr, rB_addr);
 
@@ -8415,6 +8418,9 @@ static Bool dis_int_logic ( UInt prefix, UInt theInstr )
       }
 
       case 0x25F: { // mffgpr (move floating-point from general purpose register)
+         /* The mffgpr instruction was deprecated in Power 7, 2009 timeframe.
+            Leaving support in Valgrind for now (9/10/2021).  Can remove the
+            mftgpr support in Valgrind if the opcode ever gets reused.  */
          IRTemp frA = newTemp(Ity_F64);
          DIP("mffgpr fr%u,r%u\n", rS_addr, rB_addr);
 

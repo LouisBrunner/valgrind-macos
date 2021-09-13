@@ -3164,7 +3164,8 @@ VexGuestLayout
         };
 
 UInt copy_paste_abort_dirty_helper(UInt addr, UInt op) {
-#  if defined(__powerpc__)
+#  if defined(__powerpc__) && defined(HAS_ISA_3_00)
+/* The enable copy, paste., and cpabort were introduced in ISA 3.0. */
    ULong ret;
    UInt cr;
 

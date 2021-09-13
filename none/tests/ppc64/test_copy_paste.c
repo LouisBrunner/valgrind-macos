@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
+
+#ifdef HAS_ISA_3_00
 #include <altivec.h>
 
 /* return CR0 in least significant bits */
@@ -33,9 +35,11 @@ void test_cpabort (void)
 #define FAILURE 2
 #define DEBUG 0
 #define PASTE_ERROR 0
+#endif
 
 int main()
 {
+#ifdef HAS_ISA_3_00
    int i;
    unsigned int cc_value;
    int result = SUCCESS;
@@ -106,5 +110,8 @@ int main()
    else
       printf("FAILURE.\n");
 
+#else
+  printf("HAS_ISA_3_00 not detected.\n");
+#endif
    return 0;
 }

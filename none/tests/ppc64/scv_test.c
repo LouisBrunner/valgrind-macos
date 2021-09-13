@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+
+#ifdef HAS_ISA_3_00
 #include <asm/unistd.h>
 #include <sys/auxv.h>
-
 
 #define ASM_INPUT_0 "0" (r0)
 
@@ -55,9 +56,13 @@
 
 #define PPC_FEATURE2_SCV           0x00100000 /* scv syscall enabled */
 
+#endif
+
 int
 main(void)
 {
+
+#ifdef HAS_ISA_3_00
   int result;
   unsigned long hwcaps2_val;
 
@@ -81,5 +86,8 @@ main(void)
   }
 
   printf("Success\n");
+#else
+  printf("HAS_ISA_3_00 not detected.\n");
+#endif
   return 0;
 }

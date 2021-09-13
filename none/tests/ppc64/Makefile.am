@@ -88,11 +88,16 @@ AM_CCASFLAGS += @FLAG_M64@
 
 allexec_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
+scv_test_SOURCES = scv_test.c
+test_copy_paste_SOURCES = test_copy_paste.c
+test_mod_instructions_SOURCES = test_mod_instructions.c
+test_isa_3_0_SOURCES = test_isa_3_0.c
 test_isa_3_1_XT_SOURCES = test_isa_3_1_XT.c test_isa_3_1_common.c
 test_isa_3_1_RT_SOURCES = test_isa_3_1_RT.c test_isa_3_1_common.c
 test_isa_3_1_VRT_SOURCES = test_isa_3_1_VRT.c test_isa_3_1_common.c
 test_isa_3_1_Misc_SOURCES = test_isa_3_1_Misc.c test_isa_3_1_common.c
 test_isa_3_1_AT_SOURCES = test_isa_3_1_AT.c test_isa_3_1_common.c
+test_darn_inst_SOURCES = test_darn_inst.c
 
 if HAS_ALTIVEC
 BUILD_FLAG_ALTIVEC = -maltivec
@@ -111,7 +116,8 @@ BUILD_FLAG_VSX =
 endif
 
 if HAS_DFP
-BUILD_FLAGS_DFP = -mhard-dfp -mcpu=power6
+# The DFP test uses the Power7 dcffix instruction.
+BUILD_FLAGS_DFP = -mhard-dfp -mcpu=power7
 DFP_FLAG = -DHAS_DFP
 else
 BUILD_FLAGS_DFP =
@@ -192,6 +198,12 @@ test_touch_tm_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) 
 test_isa_3_0_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_3_00_FLAG) \
 			@FLAG_M64@ $(BUILD_FLAGS_ISA_3_00)
 
+scv_test_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_3_00_FLAG) \
+			@FLAG_M64@ $(BUILD_FLAGS_ISA_3_00)
+
+test_mod_instructions_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_3_00_FLAG) \
+			@FLAG_M64@ $(BUILD_FLAGS_ISA_3_00)
+
 test_darn_inst_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_3_00_FLAG) \
 			@FLAG_M64@ $(BUILD_FLAGS_ISA_3_00)
 
@@ -206,8 +218,8 @@ test_isa_3_1_AT_CFLAGS = $(test_isa_3_1_CFLAGS)
 subnormal_test_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_FLAG) $(ISA_2_06_FLAG) \
 			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_VSX) $(BUILD_FLAGS_ISA_2_06)
 
-test_copy_paste_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_FLAG) $(ISA_3_1_FLAG) \
-			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_VSX) $(BUILD_FLAGS_ISA_3_1)
+test_copy_paste_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_3_00_FLAG) \
+			@FLAG_M64@ $(BUILD_FLAGS_ISA_3_00)
 
 test_isa_2_06_part3_LDADD = -lm
 test_dfp1_LDADD = -lm

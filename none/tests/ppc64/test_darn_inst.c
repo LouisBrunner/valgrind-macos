@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+
+#ifdef HAS_ISA_3_00
 #include <altivec.h>
+#endif
 
 #define TRUE  1
 #define FALSE 0
@@ -9,6 +12,7 @@
 
 int main()
 {
+#ifdef HAS_ISA_3_00
   unsigned long long rand;
   int success = TRUE;
 
@@ -38,5 +42,8 @@ int main()
   else
      printf("Failure.\n");
 
+#else
+  printf("HAS_ISA_3_00 not detected.\n");
+#endif
   return 0;
 }

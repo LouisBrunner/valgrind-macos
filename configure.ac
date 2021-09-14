@@ -1693,7 +1693,7 @@ AC_MSG_CHECKING([that assembler knows darn instruction ])
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
-  __asm__ __volatile__("darn 1,0 ");
+  __asm__ __volatile__(".machine power9; darn 1,0 ");
 ]])], [
 ac_asm_have_darn_inst=yes
 AC_MSG_RESULT([yes])

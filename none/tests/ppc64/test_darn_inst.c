@@ -19,19 +19,22 @@ int main()
   /* The random number instruction returns 0xFFFFFFFFFFFFFFFFULL on error
      and an unsigned 64-bit value between 0 and 0xFFFFFFFFFFFFFFFEULL on
      success.  */
-  __asm__ __volatile__ ("darn %0,0" : "=r" (rand));
+  __asm__ __volatile__ (".machine push; .machine power9;" \
+                        "darn %0,0; .machine pop" : "=r" (rand));
   if (rand == ERROR) {
      success = FALSE;
      printf ("Error darn 0 result = 0%llx not in expected range.\n", rand);
   }
 
-  __asm__ __volatile__ ("darn %0,1" : "=r" (rand));
+  __asm__ __volatile__ (".machine push; .machine power9;" \
+                        "darn %0,1; .machine pop" : "=r" (rand));
   if (rand == ERROR) {
      success = FALSE;
      printf ("Error darn 1 result = 0%llx not in expected range.\n", rand);
   }
 
-  __asm__ __volatile__ ("darn %0,2" : "=r" (rand));
+  __asm__ __volatile__ (".machine push; .machine power9;" \
+                        "darn %0,2; .machine pop" : "=r" (rand));
   if (rand == ERROR) {
      success = FALSE;
        printf ("Error darn 2 result = 0%llx not in expected range.\n", rand);

@@ -2429,11 +2429,14 @@ ULong darn_dirty_helper ( UInt L )
 
 #  if defined (HAS_DARN)
    if ( L == 0)
-      __asm__ __volatile__("darn  %0,0" : "=r"(val));
+      __asm__ __volatile__(".machine push; .machine power9;" \
+                           "darn  %0,0; .machine pop;" : "=r"(val));
    else if (L == 1)
-      __asm__ __volatile__("darn  %0,1" : "=r"(val));
+      __asm__ __volatile__(".machine push; .machine power9;" \
+                           "darn  %0,1; .machine pop;" : "=r"(val));
    else if (L == 2)
-      __asm__ __volatile__("darn  %0,2" : "=r"(val));
+      __asm__ __volatile__(".machine push; .machine power9;"
+                           "darn  %0,2; .machine pop;" : "=r"(val));
 # endif
 
    return val;

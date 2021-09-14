@@ -1460,7 +1460,8 @@ extern void test_mcrf (void);
 ASSEMBLY_FUNC("test_mcrf", "mcrf      0, 0");
 
 extern void test_mcrxr (void);
-ASSEMBLY_FUNC("test_mcrxr", "mcrxr      0");
+ASSEMBLY_FUNC("test_mcrxr", ".machine push; .machine power6;" \
+              "mcrxr 0; .machine pop");
 
 extern void test_mtcrf (void);
 ASSEMBLY_FUNC("test_mtcrf", "mtcrf      0, 14");

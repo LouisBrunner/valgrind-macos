@@ -57,6 +57,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 441512  Remove a unneeded / unnecessary prefix check.
 441534  Update the expected output for test_isa_3_1_VRT.
 442061  very slow execution under Fedora 34 (readdwarf3)
+443031  Gcc -many change requires explicit .machine directives
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

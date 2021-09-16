@@ -3127,8 +3127,9 @@ static Bool parse_inl_DIE (
 
    UWord saved_die_c_offset  = get_position_of_Cursor( c_die );
 
-   /* Get info about DW_TAG_compile_unit and DW_TAG_partial_unit 'which
-      in theory could also contain inlined fn calls).  */
+   /* Get info about DW_TAG_compile_unit and DW_TAG_partial_unit which in theory
+      could also contain inlined fn calls, if they cover an address range.  */
+   Bool unit_has_addrs = False;
    if (dtag == DW_TAG_compile_unit || dtag == DW_TAG_partial_unit) {
       Bool have_lo    = False;
       Addr ip_lo    = 0;
@@ -3145,7 +3146,10 @@ static Bool parse_inl_DIE (
          if (attr == DW_AT_low_pc && cts.szB > 0) {
             ip_lo   = cts.u.val;
             have_lo = True;
+            unit_has_addrs = True;
          }
+         if (attr == DW_AT_ranges && cts.szB > 0)
+            unit_has_addrs = True;
          if (attr == DW_AT_comp_dir) {
             if (cts.szB >= 0)
                cc->barf("parse_inl_DIE compdir: expecting indirect string");
@@ -3278,9 +3282,10 @@ static Bool parse_inl_DIE (
 
    // Only recursively parse the (possible) children for the DIE which
    // might maybe contain a DW_TAG_inlined_subroutine:
-   return dtag == DW_TAG_lexical_block || dtag == DW_TAG_subprogram
-      || dtag == DW_TAG_inlined_subroutine
-      || dtag == DW_TAG_compile_unit || dtag == DW_TAG_partial_unit;
+   Bool ret = (unit_has_addrs
+               || dtag == DW_TAG_lexical_block || dtag == DW_TAG_subprogram
+               || dtag == DW_TAG_inlined_subroutine);
+   return ret;
 
   bad_DIE:
    dump_bad_die_and_barf("parse_inl_DIE", dtag, posn, level,
@@ -4759,9 +4764,36 @@ static void read_DIE (
          while (True) {
             atag = peek_ULEB128( c );
             if (atag == 0) break;
-            read_DIE( rangestree, tyents, tempvars, gexprs,
-                      typarser, varparser, inlparser,
-                      c, td3, cc, level+1 );
+            if (parse_children) {
+               read_DIE( rangestree, tyents, tempvars, gexprs,
+                         typarser, varparser, inlparser,
+                         c, td3, cc, level+1 );
+            } else {
+               Int skip_level = level + 1;
+               while (True) {
+                  atag = peek_ULEB128( c );
+                  if (atag == 0) {
+                     skip_level--;
+                     if (skip_level == level) break;
+                     /* Eat the terminating zero and continue skipping the
+                        children one level up.  */
+                     atag = get_ULEB128( c );
+                     vg_assert(atag == 0);
+                     continue;
+                  }
+
+                  abbv_code = get_ULEB128( c );
+                  abbv = get_abbv(cc, abbv_code);
+                  sibling = 0;
+                  skip_DIE (&sibling, c, abbv, cc);
+                  if (abbv->has_children) {
+                     if (sibling == 0)
+                        skip_level++;
+                     else
+                        set_position_of_Cursor( c, sibling );
+                  }
+               }
+            }
          }
          /* Now we need to eat the terminating zero */
          atag = get_ULEB128( c );

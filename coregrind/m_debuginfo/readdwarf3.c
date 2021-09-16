@@ -3134,6 +3134,8 @@ static Bool parse_inl_DIE (
       Bool have_lo    = False;
       Addr ip_lo    = 0;
       const HChar *compdir = NULL;
+      Bool has_stmt_list = False;
+      ULong debug_line_offset = 0;
 
       nf_i = 0;
       while (True) {
@@ -3159,15 +3161,19 @@ static Bool parse_inl_DIE (
             ML_(dinfo_free) (str);
          }
          if (attr == DW_AT_stmt_list && cts.szB > 0) {
-            read_filename_table( parser->fndn_ix_Table, compdir,
-                                 cc, cts.u.val, td3 );
+	    has_stmt_list = True;
+            debug_line_offset = cts.u.val;
          }
          if (attr == DW_AT_sibling && cts.szB > 0) {
             parser->sibling = cts.u.val;
          }
       }
-      if (level == 0)
+      if (level == 0) {
          setup_cu_svma (cc, have_lo, ip_lo, td3);
+         if (has_stmt_list && unit_has_addrs)
+            read_filename_table( parser->fndn_ix_Table, compdir,
+                                 cc, debug_line_offset, td3 );
+      }
    }
 
    if (dtag == DW_TAG_inlined_subroutine) {

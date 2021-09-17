@@ -17679,7 +17679,7 @@ s390_irgen_VSTRS(UChar v1, UChar v2, UChar v3, UChar v4, UChar m5, UChar m6)
    assign(result, unop(Iop_ClzNat64,
                        binop(Iop_Or64,
                              unop(Iop_V128HIto64, match),
-                             mkU64((1UL << 48) - 1))));
+                             mkU64((1ULL << 48) - 1))));
    put_vr_qw(v1, binop(Iop_64HLtoV128, mkexpr(result), mkU64(0)));
 
    /* Set condition code.

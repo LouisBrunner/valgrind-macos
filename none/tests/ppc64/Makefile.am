@@ -147,7 +147,7 @@ HTM_FLAG =
 endif
 
 if HAS_ISA_3_00
-BUILD_FLAGS_ISA_3_00 = -mcpu=power8
+BUILD_FLAGS_ISA_3_00 = -mcpu=power9
 ISA_3_00_FLAG = -DHAS_ISA_3_00
 else
 BUILD_FLAGS_ISA_3_00 =

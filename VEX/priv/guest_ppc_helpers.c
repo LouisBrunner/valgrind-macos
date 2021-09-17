@@ -1899,7 +1899,9 @@ static Double conv_f16_to_double( ULong input )
    __attribute__ ((aligned (64))) ULong src;
    __attribute__ ((aligned (64))) Double result;
    src = input;
-   __asm__ __volatile__ ("xscvhpdp %x0,%x1" : "=wa" (result) : "wa" (src));
+   __asm__ __volatile__ (".machine push;\n" ".machine power9;\n" \
+                         "xscvhpdp %x0,%x1 ;\n .machine pop" \
+                         : "=wa" (result) : "wa" (src) );
    return result;
 #  else
    return 0.0;

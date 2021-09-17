@@ -19,7 +19,8 @@
     register long int r8  __asm__ ("r8");                               \
     r0=name;                                                            \
     __asm__ __volatile__                                                \
-      ("scv 0\n\t"                                                      \
+      (".machine power9\n"                                              \
+       "scv 0\n\t"                                                      \
        "0:"                                                             \
        : "=&r" (r0),                                                    \
          "=&r" (r3), "=&r" (r4), "=&r" (r5),                            \

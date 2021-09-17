@@ -1658,7 +1658,8 @@ AC_MSG_CHECKING([that assembler knows ISA 3.00 ])
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
-  __asm__ __volatile__("cnttzw 1,2 ");
+__asm__ __volatile__ (".machine power9;\n" \
+	"cnttzw   1,3; \n" );
 ]])], [
 # guest_ppc_helpers.c needs the HAS_ISA_3_OO to enable copy, paste,
 # cpabort support
@@ -1677,7 +1678,8 @@ AC_MSG_CHECKING([that assembler knows xscvhpdp ])
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
-  __asm__ __volatile__("xscvhpdp 1,2 ");
+__asm__ __volatile__ (".machine power9;\n" \
+	"xscvhpdp 1,2;\n" );
 ]])], [
 ac_asm_have_xscvhpdp=yes
 AC_MSG_RESULT([yes])
@@ -1704,7 +1706,8 @@ AC_MSG_RESULT([no])
 AC_MSG_CHECKING([that assembler knows ISA 3.1 ])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]], [[
-  __asm__ __volatile__("brh 1,2 ");
+__asm__ __volatile__ (".machine power10;\n" \
+	"brh 1,2;\n ");
 ]])], [
 ac_asm_have_isa_3_1=yes
 AC_MSG_RESULT([yes])

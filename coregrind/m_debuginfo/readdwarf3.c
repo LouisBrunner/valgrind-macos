@@ -1801,9 +1801,6 @@ typedef
       Int     *level;  /* D3 DIE levels */
       Bool    *isFunc; /* from DW_AT_subprogram? */
       GExpr  **fbGX;   /* if isFunc, contains the FB expr, else NULL */
-      /* The fndn_ix file name/dirname table.  Is a mapping from dwarf
-         integer index to the index in di->fndnpool. */
-      XArray* /* of UInt* */ fndn_ix_Table;
    }
    D3VarParser;
 
@@ -1817,7 +1814,6 @@ var_parser_init ( D3VarParser *parser )
    parser->level  = NULL;
    parser->isFunc = NULL;
    parser->fbGX = NULL;
-   parser->fndn_ix_Table = NULL;
 }
 
 /* Release any memory hanging off a variable parser object */
@@ -2471,12 +2467,39 @@ static void bad_DIE_confusion(int linenr)
 }
 #define goto_bad_DIE do {bad_DIE_confusion(__LINE__); goto bad_DIE;} while (0)
 
+/* Reset the fndn_ix_Table.  When we come across the top level DIE for a CU we
+   will copy all the file names out of the .debug_line img area and use this
+   table to look up the copies when we later see filename numbers in
+   DW_TAG_variables etc. The table can be be reused between parsers (var and
+   inline) and between CUs. So we keep a copy of the last one parsed. Call
+   reset_fndn_ix_table before reading a new one from a new offset.  */
+static
+void reset_fndn_ix_table (XArray** fndn_ix_Table, ULong *debug_line_offset,
+                          ULong new_offset)
+{
+   vg_assert (new_offset == -1
+              || *debug_line_offset != new_offset);
+   Int size = *fndn_ix_Table == NULL ? 0 : VG_(sizeXA) (*fndn_ix_Table);
+   if (size > 0) {
+      VG_(deleteXA) (*fndn_ix_Table);
+      *fndn_ix_Table = NULL;
+   }
+   if (*fndn_ix_Table == NULL)
+      *fndn_ix_Table = VG_(newXA)( ML_(dinfo_zalloc),
+                                   "di.readdwarf3.reset_ix_table",
+                                   ML_(dinfo_free),
+                                   sizeof(UInt) );
+   *debug_line_offset = new_offset;
+}
+
 __attribute__((noinline))
 static void parse_var_DIE (
    /*MOD*/WordFM* /* of (XArray* of AddrRange, void) */ rangestree,
    /*MOD*/XArray* /* of TempVar* */ tempvars,
    /*MOD*/XArray* /* of GExpr* */ gexprs,
    /*MOD*/D3VarParser* parser,
+   XArray** fndn_ix_Table,
+   ULong *debug_line_offset,
    DW_TAG dtag,
    UWord posn,
    Int level,
@@ -2535,8 +2558,12 @@ static void parse_var_DIE (
             ML_(dinfo_free) (str);
          }
          if (attr == DW_AT_stmt_list && cts.szB > 0) {
-            read_filename_table( parser->fndn_ix_Table, compdir,
-                                 cc, cts.u.val, td3 );
+            if (cts.u.val != *debug_line_offset) {
+               reset_fndn_ix_table( fndn_ix_Table, debug_line_offset,
+                                    cts.u.val );
+               read_filename_table( *fndn_ix_Table, compdir,
+                                    cc, cts.u.val, td3 );
+            }
          }
       }
       if (have_lo && have_hi1 && hiIsRelative)
@@ -2730,8 +2757,8 @@ static void parse_var_DIE (
          if (attr == DW_AT_decl_file && cts.szB > 0) {
             Int ftabIx = (Int)cts.u.val;
             if (ftabIx >= 1
-                && ftabIx < VG_(sizeXA)( parser->fndn_ix_Table )) {
-               fndn_ix = *(UInt*)VG_(indexXA)( parser->fndn_ix_Table, ftabIx );
+                && ftabIx < VG_(sizeXA)( *fndn_ix_Table )) {
+               fndn_ix = *(UInt*)VG_(indexXA)( *fndn_ix_Table, ftabIx );
             }
             if (0) VG_(printf)("XXX filename fndn_ix = %u %s\n", fndn_ix,
                                ML_(fndn_ix2filename) (cc->di, fndn_ix));
@@ -2958,9 +2985,6 @@ static void parse_var_DIE (
 
 typedef
    struct {
-      /* The fndn_ix file name/dirname table.  Is a mapping from dwarf
-         integer index to the index in di->fndnpool. */
-      XArray* /* of UInt* */ fndn_ix_Table;
       UWord sibling; // sibling of the last read DIE (if it has a sibling).
    }
    D3InlParser;
@@ -3113,6 +3137,8 @@ static const HChar* get_inlFnName (Int absori, const CUConst* cc, Bool td3)
 __attribute__((noinline))
 static Bool parse_inl_DIE (
    /*MOD*/D3InlParser* parser,
+   XArray** fndn_ix_Table,
+   ULong *debug_line_offset,
    DW_TAG dtag,
    UWord posn,
    Int level,
@@ -3135,7 +3161,7 @@ static Bool parse_inl_DIE (
       Addr ip_lo    = 0;
       const HChar *compdir = NULL;
       Bool has_stmt_list = False;
-      ULong debug_line_offset = 0;
+      ULong cu_line_offset = 0;
 
       nf_i = 0;
       while (True) {
@@ -3162,7 +3188,7 @@ static Bool parse_inl_DIE (
          }
          if (attr == DW_AT_stmt_list && cts.szB > 0) {
 	    has_stmt_list = True;
-            debug_line_offset = cts.u.val;
+            cu_line_offset = cts.u.val;
          }
          if (attr == DW_AT_sibling && cts.szB > 0) {
             parser->sibling = cts.u.val;
@@ -3170,9 +3196,13 @@ static Bool parse_inl_DIE (
       }
       if (level == 0) {
          setup_cu_svma (cc, have_lo, ip_lo, td3);
-         if (has_stmt_list && unit_has_addrs)
-            read_filename_table( parser->fndn_ix_Table, compdir,
-                                 cc, debug_line_offset, td3 );
+         if (has_stmt_list && unit_has_addrs
+            && *debug_line_offset != cu_line_offset) {
+            reset_fndn_ix_table ( fndn_ix_Table, debug_line_offset,
+                                  cu_line_offset );
+            read_filename_table( *fndn_ix_Table, compdir,
+                                 cc, cu_line_offset, td3 );
+         }
       }
    }
 
@@ -3200,9 +3230,9 @@ static Bool parse_inl_DIE (
          if (attr == DW_AT_call_file && cts.szB > 0) {
             Int ftabIx = (Int)cts.u.val;
             if (ftabIx >= 1
-                && ftabIx < VG_(sizeXA)( parser->fndn_ix_Table )) {
+                && ftabIx < VG_(sizeXA)( *fndn_ix_Table )) {
                caller_fndn_ix = *(UInt*)
-                          VG_(indexXA)( parser->fndn_ix_Table, ftabIx );
+                          VG_(indexXA)( *fndn_ix_Table, ftabIx );
             }
             if (0) VG_(printf)("XXX caller_fndn_ix = %u %s\n", caller_fndn_ix,
                                ML_(fndn_ix2filename) (cc->di, caller_fndn_ix));
@@ -4652,6 +4682,8 @@ static void read_DIE (
    /*MOD*/D3TypeParser* typarser,
    /*MOD*/D3VarParser* varparser,
    /*MOD*/D3InlParser* inlparser,
+   XArray** fndn_ix_Table,
+   ULong *debug_line_offset,
    Cursor* c, Bool td3, CUConst* cc, Int level
 )
 {
@@ -4713,6 +4745,8 @@ static void read_DIE (
                      tempvars,
                      gexprs,
                      varparser,
+                     fndn_ix_Table,
+                     debug_line_offset,
                      (DW_TAG)atag,
                      posn,
                      level,
@@ -4734,6 +4768,8 @@ static void read_DIE (
       inlparser->sibling = 0;
       parse_children = 
          parse_inl_DIE( inlparser,
+                        fndn_ix_Table,
+                        debug_line_offset,
                         (DW_TAG)atag,
                         posn,
                         level,
@@ -4773,6 +4809,7 @@ static void read_DIE (
             if (parse_children) {
                read_DIE( rangestree, tyents, tempvars, gexprs,
                          typarser, varparser, inlparser,
+                         fndn_ix_Table, debug_line_offset,
                          c, td3, cc, level+1 );
             } else {
                Int skip_level = level + 1;
@@ -5006,6 +5043,8 @@ void new_dwarf3_reader_wrk (
    D3TypeParser typarser;
    D3VarParser varparser;
    D3InlParser inlparser;
+   XArray* /* of UInt */ fndn_ix_Table = NULL;
+   ULong debug_line_offset = (ULong) -1;
    Word  i, j, n;
    Bool td3 = di->trace_symtab;
    XArray* /* of TempVar* */ dioff_lookup_tab;
@@ -5145,6 +5184,10 @@ void new_dwarf3_reader_wrk (
                       "Overrun whilst reading alternate .debug_info section" );
          section_size = escn_debug_info_alt.szB;
 
+	 /* Keep track of the last line table we have seen,
+            it might turn up again.  */
+         reset_fndn_ix_table(&fndn_ix_Table, &debug_line_offset, (ULong) -1);
+
          TRACE_D3("\n------ Parsing alternate .debug_info section ------\n");
       } else if (pass == 1) {
          /* Now loop over the Compilation Units listed in the .debug_info
@@ -5155,6 +5198,10 @@ void new_dwarf3_reader_wrk (
                       "Overrun whilst reading .debug_info section" );
          section_size = escn_debug_info.szB;
 
+	 /* Keep track of the last line table we have seen,
+            it might turn up again.  */
+         reset_fndn_ix_table(&fndn_ix_Table, &debug_line_offset, (ULong) -1);
+
          TRACE_D3("\n------ Parsing .debug_info section ------\n");
       } else {
          if (!ML_(sli_is_valid)(escn_debug_types))
@@ -5164,6 +5211,10 @@ void new_dwarf3_reader_wrk (
          init_Cursor( &info, escn_debug_types, 0, barf,
                       "Overrun whilst reading .debug_types section" );
          section_size = escn_debug_types.szB;
+
+	 /* Keep track of the last line table we have seen,
+            it might turn up again.  */
+         reset_fndn_ix_table(&fndn_ix_Table, &debug_line_offset, (ULong) -1);
 
          TRACE_D3("\n------ Parsing .debug_types section ------\n");
       }
@@ -5257,26 +5308,6 @@ void new_dwarf3_reader_wrk (
                            unitary_range_list(0UL, ~0UL),
                            -1, False/*isFunc*/, NULL/*fbGX*/ );
 
-            /* And set up the fndn_ix_Table.  When we come across the top
-               level DIE for this CU (which is what the next call to
-               read_DIE should process) we will copy all the file names out
-               of the .debug_line img area and use this table to look up the
-               copies when we later see filename numbers in DW_TAG_variables
-               etc. */
-            vg_assert(!varparser.fndn_ix_Table );
-            varparser.fndn_ix_Table 
-               = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.ndrw.5var",
-                             ML_(dinfo_free),
-                             sizeof(UInt) );
-         }
-
-         if (VG_(clo_read_inline_info)) {
-            /* fndn_ix_Table for the inlined call parser */
-            vg_assert(!inlparser.fndn_ix_Table );
-            inlparser.fndn_ix_Table 
-               = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.ndrw.5inl",
-                             ML_(dinfo_free),
-                             sizeof(UInt) );
          }
 
          /* Now read the one-and-only top-level DIE for this CU. */
@@ -5284,6 +5315,7 @@ void new_dwarf3_reader_wrk (
          read_DIE( rangestree,
                    tyents, tempvars, gexprs,
                    &typarser, &varparser, &inlparser,
+                   &fndn_ix_Table, &debug_line_offset,
                    &info, td3, &cc, 0 );
 
          cu_offset_now = get_position_of_Cursor( &info );
@@ -5328,16 +5360,6 @@ void new_dwarf3_reader_wrk (
             typestack_preen( &typarser, td3, -2 );
          }
 
-         if (VG_(clo_read_var_info)) {
-            vg_assert(varparser.fndn_ix_Table );
-            VG_(deleteXA)( varparser.fndn_ix_Table );
-            varparser.fndn_ix_Table = NULL;
-         }
-         if (VG_(clo_read_inline_info)) {
-            vg_assert(inlparser.fndn_ix_Table );
-            VG_(deleteXA)( inlparser.fndn_ix_Table );
-            inlparser.fndn_ix_Table = NULL;
-         }
          clear_CUConst(&cc);
 
          if (cu_offset_now == section_size)
@@ -5346,6 +5368,8 @@ void new_dwarf3_reader_wrk (
       }
    }
 
+   if (fndn_ix_Table != NULL)
+      VG_(deleteXA)(fndn_ix_Table);
 
    if (VG_(clo_read_var_info)) {
       /* From here on we're post-processing the stuff we got
@@ -5661,8 +5685,6 @@ void new_dwarf3_reader_wrk (
       /* and the tyents_to_keep cache */
       ML_(dinfo_free)( tyents_to_keep_cache );
       tyents_to_keep_cache = NULL;
-
-      vg_assert( varparser.fndn_ix_Table == NULL );
 
       /* And the signatured type hash.  */
       VG_(HT_destruct) ( signature_types, ML_(dinfo_free) );

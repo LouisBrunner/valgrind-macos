@@ -4787,6 +4787,16 @@ static void read_DIE (
       vg_assert (inlparser->sibling == 0 || inlparser->sibling == sibling);
    }
 
+   /* Top level CU DIE, but we don't want to read anything else, just skip
+      to the end and return.  */
+   if (level == 0 && !parse_children) {
+      UWord cu_size_including_IniLen = (cc->unit_length
+                                        + (cc->is_dw64 ? 12 : 4));
+      set_position_of_Cursor( c, (cc->cu_start_offset
+                                  + cu_size_including_IniLen));
+      return;
+   }
+
    if (after_die_c_offset > 0) {
       // DIE was read by a parser above, so we know where the DIE ends.
       set_position_of_Cursor( c, after_die_c_offset );

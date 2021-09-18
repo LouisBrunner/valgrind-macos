@@ -295,6 +295,7 @@ void ML_(pp_TyEnt_C_ishly)( const XArray* /* of TyEnt */ tyents,
             case 'C': VG_(printf)("const "); break;
             case 'V': VG_(printf)("volatile "); break;
             case 'R': VG_(printf)("restrict "); break;
+            case 'A': VG_(printf)("atomic "); break;
             default: goto unhandled;
          }
          ML_(pp_TyEnt_C_ishly)(tyents, ent->Te.TyQual.typeR);

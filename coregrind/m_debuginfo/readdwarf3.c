@@ -470,6 +470,7 @@ typedef
       struct _DebugInfo* di;
       /* --- a hash table of g_abbv (i.e. parsed abbreviations) --- */
       VgHashTable *ht_abbvs;
+      ULong debug_abbrev_offset;
 
       /* True if this came from .debug_types; otherwise it came from
          .debug_info.  */
@@ -1101,13 +1102,6 @@ static g_abbv* get_abbv (const CUConst* cc, ULong abbv_code)
    return abbv;
 }
 
-/* Free the memory allocated in CUConst. */
-static void clear_CUConst (CUConst* cc)
-{
-   VG_(HT_destruct) ( cc->ht_abbvs, ML_(dinfo_free));
-   cc->ht_abbvs = NULL;
-}
-
 /* Parse the Compilation Unit header indicated at 'c' and 
    initialise 'cc' accordingly. */
 static __attribute__((noinline))
@@ -1115,6 +1109,8 @@ void parse_CU_Header ( /*OUT*/CUConst* cc,
                        Bool td3,
                        Cursor* c, 
                        DiSlice escn_debug_abbv,
+                       ULong last_debug_abbrev_offset,
+                       VgHashTable *last_ht_abbvs,
 		       Bool type_unit,
                        Bool alt_info )
 {
@@ -1190,7 +1186,15 @@ void parse_CU_Header ( /*OUT*/CUConst* cc,
    cc->debug_abbv.ioff += debug_abbrev_offset;
    cc->debug_abbv.szB  -= debug_abbrev_offset;
 
-   init_ht_abbvs(cc, td3);
+   cc->debug_abbrev_offset = debug_abbrev_offset;
+   if (last_ht_abbvs != NULL
+       && debug_abbrev_offset == last_debug_abbrev_offset) {
+      cc->ht_abbvs = last_ht_abbvs;
+   } else {
+      if (last_ht_abbvs != NULL)
+         VG_(HT_destruct) (last_ht_abbvs, ML_(dinfo_free));
+      init_ht_abbvs(cc, td3);
+   }
 }
 
 /* This represents a single signatured type.  It maps a type signature
@@ -5141,6 +5145,8 @@ void new_dwarf3_reader_wrk (
       TRACE_D3("\n------ Collecting signatures from "
                ".debug_types section ------\n");
 
+      ULong last_debug_abbrev_offset = (ULong) -1;
+      VgHashTable *last_ht_abbvs = NULL;
       while (True) {
          UWord   cu_start_offset, cu_offset_now;
          CUConst cc;
@@ -5149,7 +5155,9 @@ void new_dwarf3_reader_wrk (
          TRACE_D3("\n");
          TRACE_D3("  Compilation Unit @ offset 0x%lx:\n", cu_start_offset);
          /* parse_CU_header initialises the CU's abbv hash table.  */
-         parse_CU_Header( &cc, td3, &info, escn_debug_abbv, True, False );
+         parse_CU_Header( &cc, td3, &info, escn_debug_abbv,
+                          last_debug_abbrev_offset, last_ht_abbvs,
+                          True, False );
 
          /* Needed by cook_die.  */
          cc.types_cuOff_bias = escn_debug_info.szB;
@@ -5163,7 +5171,8 @@ void new_dwarf3_reader_wrk (
          cu_offset_now = (cu_start_offset + cc.unit_length
                           + (cc.is_dw64 ? 12 : 4));
 
-         clear_CUConst ( &cc);
+         last_debug_abbrev_offset = cc.debug_abbrev_offset;
+         last_ht_abbvs = cc.ht_abbvs;
 
          if (cu_offset_now >= escn_debug_types.szB) {
             break;
@@ -5171,6 +5180,8 @@ void new_dwarf3_reader_wrk (
 
          set_position_of_Cursor ( &info, cu_offset_now );
       }
+      if (last_ht_abbvs != NULL)
+         VG_(HT_destruct) (last_ht_abbvs, ML_(dinfo_free));
    }
 
    /* Perform three DIE-reading passes.  The first pass reads DIEs from
@@ -5229,6 +5240,8 @@ void new_dwarf3_reader_wrk (
          TRACE_D3("\n------ Parsing .debug_types section ------\n");
       }
 
+      ULong last_debug_abbrev_offset = (ULong) -1;
+      VgHashTable *last_ht_abbvs = NULL;
       while (True) {
          ULong   cu_start_offset, cu_offset_now;
          CUConst cc;
@@ -5277,9 +5290,11 @@ void new_dwarf3_reader_wrk (
          /* parse_CU_header initialises the CU's hashtable of abbvs ht_abbvs */
          if (pass == 0) {
             parse_CU_Header( &cc, td3, &info, escn_debug_abbv_alt,
+                             last_debug_abbrev_offset, last_ht_abbvs,
                              False, True );
          } else {
             parse_CU_Header( &cc, td3, &info, escn_debug_abbv,
+                             last_debug_abbrev_offset, last_ht_abbvs,
                              pass == 2, False );
          }
          cc.escn_debug_str      = pass == 0 ? escn_debug_str_alt
@@ -5370,12 +5385,15 @@ void new_dwarf3_reader_wrk (
             typestack_preen( &typarser, td3, -2 );
          }
 
-         clear_CUConst(&cc);
+         last_debug_abbrev_offset = cc.debug_abbrev_offset;
+         last_ht_abbvs = cc.ht_abbvs;
 
          if (cu_offset_now == section_size)
             break;
          /* else keep going */
       }
+      if (last_ht_abbvs != NULL)
+         VG_(HT_destruct) (last_ht_abbvs, ML_(dinfo_free));
    }
 
    if (fndn_ix_Table != NULL)

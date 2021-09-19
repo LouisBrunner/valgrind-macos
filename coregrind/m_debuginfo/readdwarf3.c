@@ -415,6 +415,23 @@ typedef
          described by this g_abbv; */
     } g_abbv;
 
+/* Holds information about the .debug_abbrev section for this CU.  The current
+  Cursor into the abbrev section, the known abbrev codes are but into an hash
+  table.  The (starting) offset into the abbrev_offset can be used to check
+  whether the abbv can be shared between CUs.  The done boolean is set when all
+  known codes have been read.  Initialize a new abbv_state with init_ht_abbvs.
+  To read any new abbrev codes not yet in the hash table call find_ht_abbvs
+  (get_abbv will first query the ht_abbvs, then if not done, call
+  find_ht_abbvs).  */
+typedef
+   struct _abbv_state {
+      Cursor c; /* Current cursor into .debug_abbrev.  */
+      VgHashTable *ht_abbvs; /* Hash table mapping codes to abbrevs.  */
+      ULong debug_abbrev_offset; /* Starting offset into .debug_abbrev.  */
+      Bool done; /* Whether there (might) still be new abbrev codes not yet
+                    in the cache.  */
+   } abbv_state;
+
 /* Holds information that is constant through the parsing of a
    Compilation Unit.  This is basically plumbed through to
    everywhere. */
@@ -468,9 +485,9 @@ typedef
       UWord  alt_cuOff_bias;
       /* --- Needed so we can add stuff to the string table. --- */
       struct _DebugInfo* di;
-      /* --- a hash table of g_abbv (i.e. parsed abbreviations) --- */
-      VgHashTable *ht_abbvs;
-      ULong debug_abbrev_offset;
+      /* --- State of the hash table of g_abbv (i.e. parsed abbreviations)
+             technically makes this struct not const.  --- */
+      abbv_state abbv;
 
       /* True if this came from .debug_types; otherwise it came from
          .debug_info.  */
@@ -998,18 +1015,27 @@ get_range_list ( const CUConst* cc,
 #define VARSZ_FORM 0xffffffff
 static UInt get_Form_szB (const CUConst* cc, DW_FORM form );
 
-/* Initialises the hash table of abbreviations.
-   We do a single scan of the abbv slice to parse and
-   build all abbreviations, for the following reasons:
-     * all or most abbreviations will be needed in any case
-       (at least for var-info reading).
-     * re-reading each time an abbreviation causes a lot of calls
-       to get_ULEB128.
-     * a CU should not have many abbreviations. */
-static void init_ht_abbvs (CUConst* cc,
+/* Initialises the hash table of abbreviations.  This only sets up the abbv
+   Cursor and hash table, but does not try to read any abbrevs yes. The actual
+   reading of abbrevs will be done by get_abbv by calling find_ht_abbvs on
+   demand if a requested abbrev code isn't in the hash table yet. When using the
+   inline parser a lot of abbrevs will not be needed so reading everything
+   upfront will often waste time and memory.  */
+static void init_ht_abbvs (CUConst* cc, ULong debug_abbrev_offset,
                            Bool td3)
 {
-   Cursor c;
+   Cursor *c = &cc->abbv.c;
+   init_Cursor( c, cc->debug_abbv, 0, cc->barf,
+               "Overrun whilst parsing .debug_abbrev section(2)" );
+   cc->abbv.ht_abbvs = VG_(HT_construct) ("di.readdwarf3.ht_abbvs");
+   cc->abbv.debug_abbrev_offset = debug_abbrev_offset;
+   cc->abbv.done = False;
+}
+
+static g_abbv *find_ht_abbvs (CUConst* cc, ULong abbv_code,
+                              Bool td3)
+{
+   Cursor *c;
    g_abbv *ta; // temporary abbreviation, reallocated if needed.
    UInt ta_nf_maxE; // max nr of pairs in ta.nf[], doubled when reallocated.
    UInt ta_nf_n;    // nr of pairs in ta->nf that are initialised.
@@ -1020,16 +1046,18 @@ static void init_ht_abbvs (CUConst* cc,
 
    ta_nf_maxE = 10; // starting with enough for 9 pairs+terminating pair.
    ta = ML_(dinfo_zalloc) ("di.readdwarf3.ht_ta_nf", SZ_G_ABBV(ta_nf_maxE));
-   cc->ht_abbvs = VG_(HT_construct) ("di.readdwarf3.ht_abbvs");
 
-   init_Cursor( &c, cc->debug_abbv, 0, cc->barf,
-               "Overrun whilst parsing .debug_abbrev section(2)" );
+   c = &cc->abbv.c;
    while (True) {
-      ta->abbv_code = get_ULEB128( &c );
-      if (ta->abbv_code == 0) break; /* end of the table */
+      ht_ta = NULL;
+      ta->abbv_code = get_ULEB128( c );
+      if (ta->abbv_code == 0) {
+         cc->abbv.done = True;
+         break; /* end of the table */
+      }
 
-      ta->atag = get_ULEB128( &c );
-      ta->has_children = get_UChar( &c );
+      ta->atag = get_ULEB128( c );
+      ta->has_children = get_UChar( c );
       ta_nf_n = 0;
       while (True) {
          if (ta_nf_n >= ta_nf_maxE) {
@@ -1040,10 +1068,10 @@ static void init_ht_abbvs (CUConst* cc,
             VG_(memcpy) (ta, old_ta, SZ_G_ABBV(ta_nf_n));
             ML_(dinfo_free) (old_ta);
          }
-         ta->nf[ta_nf_n].at_name = get_ULEB128( &c );
-         ta->nf[ta_nf_n].at_form = get_ULEB128( &c );
+         ta->nf[ta_nf_n].at_name = get_ULEB128( c );
+         ta->nf[ta_nf_n].at_form = get_ULEB128( c );
          if (ta->nf[ta_nf_n].at_form == DW_FORM_implicit_const)
-            ta->nf[ta_nf_n].at_val = get_SLEB128( &c );
+            ta->nf[ta_nf_n].at_val = get_SLEB128( c );
          if (ta->nf[ta_nf_n].at_name == 0 && ta->nf[ta_nf_n].at_form == 0) {
             ta_nf_n++;
             break; 
@@ -1075,7 +1103,7 @@ static void init_ht_abbvs (CUConst* cc,
 
       ht_ta = ML_(dinfo_zalloc) ("di.readdwarf3.ht_ta", SZ_G_ABBV(ta_nf_n));
       VG_(memcpy) (ht_ta, ta, SZ_G_ABBV(ta_nf_n));
-      VG_(HT_add_node) ( cc->ht_abbvs, ht_ta );
+      VG_(HT_add_node) ( cc->abbv.ht_abbvs, ht_ta );
       if (TD3) {
          TRACE_D3("  Adding abbv_code %lu TAG  %s [%s] nf %u ",
                   ht_ta->abbv_code, ML_(pp_DW_TAG)(ht_ta->atag),
@@ -1086,19 +1114,27 @@ static void init_ht_abbvs (CUConst* cc,
             TRACE_D3("[%u,%u] ", ta->nf[i].skip_szB, ta->nf[i].next_nf);
          TRACE_D3("\n");
       }
+      if (ht_ta->abbv_code == abbv_code)
+         break;
    }
 
    ML_(dinfo_free) (ta);
    #undef SZ_G_ABBV
+
+   return ht_ta;
 }
 
-static g_abbv* get_abbv (const CUConst* cc, ULong abbv_code)
+static g_abbv* get_abbv (CUConst* cc, ULong abbv_code,
+                         Bool td3)
 {
    g_abbv *abbv;
 
-   abbv = VG_(HT_lookup) (cc->ht_abbvs, abbv_code);
+   abbv = VG_(HT_lookup) (cc->abbv.ht_abbvs, abbv_code);
+   if (!abbv && !cc->abbv.done)
+      abbv = find_ht_abbvs (cc, abbv_code, td3);
    if (!abbv)
       cc->barf ("abbv_code not found in ht_abbvs table");
+
    return abbv;
 }
 
@@ -1109,8 +1145,7 @@ void parse_CU_Header ( /*OUT*/CUConst* cc,
                        Bool td3,
                        Cursor* c, 
                        DiSlice escn_debug_abbv,
-                       ULong last_debug_abbrev_offset,
-                       VgHashTable *last_ht_abbvs,
+                       abbv_state last_abbv,
 		       Bool type_unit,
                        Bool alt_info )
 {
@@ -1186,14 +1221,13 @@ void parse_CU_Header ( /*OUT*/CUConst* cc,
    cc->debug_abbv.ioff += debug_abbrev_offset;
    cc->debug_abbv.szB  -= debug_abbrev_offset;
 
-   cc->debug_abbrev_offset = debug_abbrev_offset;
-   if (last_ht_abbvs != NULL
-       && debug_abbrev_offset == last_debug_abbrev_offset) {
-      cc->ht_abbvs = last_ht_abbvs;
+   if (last_abbv.ht_abbvs != NULL
+       && debug_abbrev_offset == last_abbv.debug_abbrev_offset) {
+      cc->abbv = last_abbv;
    } else {
-      if (last_ht_abbvs != NULL)
-         VG_(HT_destruct) (last_ht_abbvs, ML_(dinfo_free));
-      init_ht_abbvs(cc, td3);
+      if (last_abbv.ht_abbvs != NULL)
+         VG_(HT_destruct) (last_abbv.ht_abbvs, ML_(dinfo_free));
+      init_ht_abbvs(cc, debug_abbrev_offset, td3);
    }
 }
 
@@ -3016,7 +3050,7 @@ typedef
    table is kept, while we must handle all abbreviations in all CUs
    referenced by an absori (being a reference to an alt CU, or a previous
    or following CU). */
-static const HChar* get_inlFnName (Int absori, const CUConst* cc, Bool td3)
+static const HChar* get_inlFnName (Int absori, CUConst* cc, Bool td3)
 {
    Cursor c;
    const g_abbv *abbv;
@@ -3072,7 +3106,7 @@ static const HChar* get_inlFnName (Int absori, const CUConst* cc, Bool td3)
                 "Overrun get_inlFnName absori");
 
    abbv_code = get_ULEB128( &c );
-   abbv      = get_abbv ( cc, abbv_code);
+   abbv      = get_abbv ( cc, abbv_code, td3);
    atag      = abbv->atag;
    TRACE_D3(" <get_inlFnName><%lx>: Abbrev Number: %llu (%s)\n",
             posn, abbv_code, ML_(pp_DW_TAG)( atag ) );
@@ -4707,7 +4741,7 @@ static void read_DIE (
    /* --- Deal with this DIE --- */
    posn      = cook_die( cc, get_position_of_Cursor( c ) );
    abbv_code = get_ULEB128( c );
-   abbv = get_abbv(cc, abbv_code);
+   abbv = get_abbv(cc, abbv_code, td3);
    atag      = abbv->atag;
 
    if (TD3) {
@@ -4840,7 +4874,7 @@ static void read_DIE (
                   }
 
                   abbv_code = get_ULEB128( c );
-                  abbv = get_abbv(cc, abbv_code);
+                  abbv = get_abbv(cc, abbv_code, td3);
                   sibling = 0;
                   skip_DIE (&sibling, c, abbv, cc);
                   if (abbv->has_children) {
@@ -5145,8 +5179,9 @@ void new_dwarf3_reader_wrk (
       TRACE_D3("\n------ Collecting signatures from "
                ".debug_types section ------\n");
 
-      ULong last_debug_abbrev_offset = (ULong) -1;
-      VgHashTable *last_ht_abbvs = NULL;
+      abbv_state last_abbv;
+      last_abbv.debug_abbrev_offset = (ULong) -1;
+      last_abbv.ht_abbvs = NULL;
       while (True) {
          UWord   cu_start_offset, cu_offset_now;
          CUConst cc;
@@ -5156,8 +5191,7 @@ void new_dwarf3_reader_wrk (
          TRACE_D3("  Compilation Unit @ offset 0x%lx:\n", cu_start_offset);
          /* parse_CU_header initialises the CU's abbv hash table.  */
          parse_CU_Header( &cc, td3, &info, escn_debug_abbv,
-                          last_debug_abbrev_offset, last_ht_abbvs,
-                          True, False );
+                          last_abbv, True, False );
 
          /* Needed by cook_die.  */
          cc.types_cuOff_bias = escn_debug_info.szB;
@@ -5171,8 +5205,7 @@ void new_dwarf3_reader_wrk (
          cu_offset_now = (cu_start_offset + cc.unit_length
                           + (cc.is_dw64 ? 12 : 4));
 
-         last_debug_abbrev_offset = cc.debug_abbrev_offset;
-         last_ht_abbvs = cc.ht_abbvs;
+         last_abbv = cc.abbv;
 
          if (cu_offset_now >= escn_debug_types.szB) {
             break;
@@ -5180,8 +5213,8 @@ void new_dwarf3_reader_wrk (
 
          set_position_of_Cursor ( &info, cu_offset_now );
       }
-      if (last_ht_abbvs != NULL)
-         VG_(HT_destruct) (last_ht_abbvs, ML_(dinfo_free));
+      if (last_abbv.ht_abbvs != NULL)
+         VG_(HT_destruct) (last_abbv.ht_abbvs, ML_(dinfo_free));
    }
 
    /* Perform three DIE-reading passes.  The first pass reads DIEs from
@@ -5240,8 +5273,9 @@ void new_dwarf3_reader_wrk (
          TRACE_D3("\n------ Parsing .debug_types section ------\n");
       }
 
-      ULong last_debug_abbrev_offset = (ULong) -1;
-      VgHashTable *last_ht_abbvs = NULL;
+      abbv_state last_abbv;
+      last_abbv.debug_abbrev_offset = (ULong) -1;
+      last_abbv.ht_abbvs = NULL;
       while (True) {
          ULong   cu_start_offset, cu_offset_now;
          CUConst cc;
@@ -5290,12 +5324,10 @@ void new_dwarf3_reader_wrk (
          /* parse_CU_header initialises the CU's hashtable of abbvs ht_abbvs */
          if (pass == 0) {
             parse_CU_Header( &cc, td3, &info, escn_debug_abbv_alt,
-                             last_debug_abbrev_offset, last_ht_abbvs,
-                             False, True );
+                             last_abbv, False, True );
          } else {
             parse_CU_Header( &cc, td3, &info, escn_debug_abbv,
-                             last_debug_abbrev_offset, last_ht_abbvs,
-                             pass == 2, False );
+                             last_abbv, pass == 2, False );
          }
          cc.escn_debug_str      = pass == 0 ? escn_debug_str_alt
                                             : escn_debug_str;
@@ -5385,15 +5417,14 @@ void new_dwarf3_reader_wrk (
             typestack_preen( &typarser, td3, -2 );
          }
 
-         last_debug_abbrev_offset = cc.debug_abbrev_offset;
-         last_ht_abbvs = cc.ht_abbvs;
+         last_abbv = cc.abbv;
 
          if (cu_offset_now == section_size)
             break;
          /* else keep going */
       }
-      if (last_ht_abbvs != NULL)
-         VG_(HT_destruct) (last_ht_abbvs, ML_(dinfo_free));
+      if (last_abbv.ht_abbvs != NULL)
+         VG_(HT_destruct) (last_abbv.ht_abbvs, ML_(dinfo_free));
    }
 
    if (fndn_ix_Table != NULL)

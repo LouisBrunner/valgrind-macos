@@ -97,11 +97,12 @@ run_test(uint16_t *dst, uint64_t dst_len, uint32_t *src, uint64_t src_len)
    printf("UTF16: ");
    if (dst_len - result.len1 == 0)
       printf(" <none>");
-   else
+   else {
       assert((dst_len - result.len1) % 2 == 0);
       for (i = 0; i < (dst_len - result.len1) / 2; ++i) {
          printf(" %04x", dst[i]);
       }
+   }
    printf("\n");
 
    printf("  cc = %d\n", result.cc);

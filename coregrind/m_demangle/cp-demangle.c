@@ -832,6 +832,9 @@ d_dump (struct demangle_component *dc, int indent)
     case DEMANGLE_COMPONENT_LITERAL_NEG:
       printf ("negative literal\n");
       break;
+    case DEMANGLE_COMPONENT_VENDOR_EXPR:
+      printf ("vendor expression\n");
+      break;
     case DEMANGLE_COMPONENT_JAVA_RESOURCE:
       printf ("java resource\n");
       break;
@@ -993,6 +996,7 @@ d_make_comp (struct d_info *di, enum demangle_component_type type,
     case DEMANGLE_COMPONENT_TRINARY_ARG1:
     case DEMANGLE_COMPONENT_LITERAL:
     case DEMANGLE_COMPONENT_LITERAL_NEG:
+    case DEMANGLE_COMPONENT_VENDOR_EXPR:
     case DEMANGLE_COMPONENT_COMPOUND_NAME:
     case DEMANGLE_COMPONENT_VECTOR_TYPE:
     case DEMANGLE_COMPONENT_CLONE:
@@ -2982,7 +2986,7 @@ d_parmlist (struct d_info *di)
 /* <bare-function-type> ::= [J]<type>+  */
 
 static struct demangle_component *
-d_bare_function_type (struct d_info *di, int has_return_tipe)
+d_bare_function_type (struct d_info *di, int has_return_type)
 {
   struct demangle_component *return_type;
   struct demangle_component *tl;
@@ -2994,10 +2998,10 @@ d_bare_function_type (struct d_info *di, int has_return_tipe)
   if (peek == 'J')
     {
       d_advance (di, 1);
-      has_return_tipe = 1;
+      has_return_type = 1;
     }
 
-  if (has_return_tipe)
+  if (has_return_type)
     {
       return_type = cplus_demangle_type (di);
       if (return_type == NULL)
@@ -3361,6 +3365,7 @@ d_unresolved_name (struct d_info *di)
 		::= cl <expression>+ E
                 ::= st <type>
                 ::= <template-param>
+		::= u <source-name> <template-arg>* E # vendor extended expression
 		::= <unresolved-name>
                 ::= <expr-primary>
 
@@ -3441,6 +3446,15 @@ d_expression_1 (struct d_info *di)
 	return NULL;
       return d_make_comp (di, DEMANGLE_COMPONENT_INITIALIZER_LIST,
 			  type, d_exprlist (di, 'E'));
+    }
+  else if (peek == 'u')
+    {
+      /* A vendor extended expression.  */
+      struct demangle_component *name, *args;
+      d_advance (di, 1);
+      name = d_source_name (di);
+      args = d_template_args_1 (di);
+      return d_make_comp (di, DEMANGLE_COMPONENT_VENDOR_EXPR, name, args);
     }
   else
     {
@@ -4246,6 +4260,7 @@ d_count_templates_scopes (struct d_print_info *dpi,
     case DEMANGLE_COMPONENT_TRINARY_ARG2:
     case DEMANGLE_COMPONENT_LITERAL:
     case DEMANGLE_COMPONENT_LITERAL_NEG:
+    case DEMANGLE_COMPONENT_VENDOR_EXPR:
     case DEMANGLE_COMPONENT_JAVA_RESOURCE:
     case DEMANGLE_COMPONENT_COMPOUND_NAME:
     case DEMANGLE_COMPONENT_DECLTYPE:
@@ -5542,18 +5557,9 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
       }
 
     case DEMANGLE_COMPONENT_EXTENDED_OPERATOR:
-      {
-	struct demangle_component *name = dc->u.s_extended_operator.name;
-	if (name->type == DEMANGLE_COMPONENT_NAME
-	    && !strncmp (name->u.s_name.s, "__alignof__", name->u.s_name.len))
-	  d_print_comp (dpi, options, dc->u.s_extended_operator.name);
-	else
-	  {
-	    d_append_string (dpi, "operator ");
-	    d_print_comp (dpi, options, dc->u.s_extended_operator.name);
-	  }
-	return;
-      }
+      d_append_string (dpi, "operator ");
+      d_print_comp (dpi, options, dc->u.s_extended_operator.name);
+      return;
 
     case DEMANGLE_COMPONENT_CONVERSION:
       d_append_string (dpi, "operator ");
@@ -5618,14 +5624,8 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
 	if (code && !strcmp (code, "gs"))
 	  /* Avoid parens after '::'.  */
 	  d_print_comp (dpi, options, operand);
-	else if ((code && !strcmp (code, "st"))
-		 || (op->type == DEMANGLE_COMPONENT_EXTENDED_OPERATOR
-		     && (op->u.s_extended_operator.name->type
-			 == DEMANGLE_COMPONENT_NAME)
-		     && !strncmp (op->u.s_extended_operator.name->u.s_name.s,
-				  "__alignof__",
-				  op->u.s_extended_operator.name->u.s_name.len)))
-	  /* Always print parens for sizeof (type) and __alignof__.  */
+	else if (code && !strcmp (code, "st"))
+	  /* Always print parens for sizeof (type).  */
 	  {
 	    d_append_char (dpi, '(');
 	    d_print_comp (dpi, options, operand);
@@ -5836,6 +5836,13 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
 	if (tp == D_PRINT_FLOAT)
 	  d_append_char (dpi, ']');
       }
+      return;
+
+    case DEMANGLE_COMPONENT_VENDOR_EXPR:
+      d_print_comp (dpi, options, d_left (dc));
+      d_append_char (dpi, '(');
+      d_print_comp (dpi, options, d_right (dc));
+      d_append_char (dpi, ')');
       return;
 
     case DEMANGLE_COMPONENT_NUMBER:

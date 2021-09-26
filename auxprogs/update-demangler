@@ -17,8 +17,8 @@ set -e
 #---------------------------------------------------------------------
 
 # You need to modify these revision numbers for your update.
-old_gcc_revision=7a312bbd41e190379d80b47e308a32c8bc4575c3  # the revision of the previous update
-new_gcc_revision=01d92cfd79872e4cffc78bf233bb9b767336beb8  # the revision for this update
+old_gcc_revision=01d92cfd79872e4cffc78bf233bb9b767336beb8 # the revision of the previous update
+new_gcc_revision=b3585c0836e729bed56b9afd4292177673a25ca0 # the revision for this update
 
 # Unless the organization of demangler related files has changed, no
 # changes below this line should be necessary.

@@ -40,6 +40,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 423963  Error in child thread when CLONE_PIDFD is used
 429375  PPC ISA 3.1 support is missing, part 9
 431157  PPC_FEATURE2_SCV needs to be masked in AT_HWCAP2
+431306  Update demangler to support Rust v0 name mangling
 433801  PPC ISA 3.1 support is missing, part 10 (ISA 3.1 support complete)
 433863  s390x: memcheck/tests/s390x/{cds,cs,csg} failures
 434840  PPC64 darn instruction not supported

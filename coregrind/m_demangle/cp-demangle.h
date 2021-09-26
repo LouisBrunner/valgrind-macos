@@ -1,5 +1,5 @@
 /* Internal demangler interface for g++ V3 ABI.
-   Copyright (C) 2003-2017 Free Software Foundation, Inc.
+   Copyright (C) 2003-2021 Free Software Foundation, Inc.
    Written by Ian Lance Taylor <ian@wasabisystems.com>.
 
    This file is part of the libiberty library, which is part of GCC.
@@ -111,10 +111,6 @@ struct d_info
   int next_sub;
   /* The number of available entries in the subs array.  */
   int num_subs;
-  /* The number of substitutions which we actually made from the subs
-     array, plus the number of template parameter references we
-     saw.  */
-  int did_subs;
   /* The last name we saw, for constructors and destructors.  */
   struct demangle_component *last_name;
   /* A running total of the length of large expansions from the
@@ -126,6 +122,13 @@ struct d_info
   /* Non-zero if we are parsing the type operand of a conversion
      operator, but not when in an expression.  */
   int is_conversion;
+  /*  1: using new unresolved-name grammar.
+     -1: using new unresolved-name grammar and saw an unresolved-name.
+      0: using old unresolved-name grammar.  */
+  int unresolved_name_state;
+  /* If DMGL_NO_RECURSE_LIMIT is not active then this is set to
+     the current recursion level.  */
+  unsigned int recursion_level;
 };
 
 /* To avoid running past the ending '\0', don't:
@@ -177,7 +180,7 @@ d_advance (struct d_info *di, int i)
 extern const struct demangle_operator_info cplus_demangle_operators[];
 #endif
 
-#define D_BUILTIN_TYPE_COUNT (33)
+#define D_BUILTIN_TYPE_COUNT (34)
 
 CP_STATIC_IF_GLIBCPP_V3
 const struct demangle_builtin_type_info

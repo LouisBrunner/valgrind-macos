@@ -67,7 +67,8 @@ EXTRA_DIST = \
 	scv_test.stderr.exp scv_test.stdout.exp scv_test.vgtest \
 	test_copy_paste.stderr.exp test_copy_paste.stdout.exp \
 	test_copy_paste.vgtest \
-	test_mcrxrx.vgtest test_mcrxrx.stderr.exp test_mcrxrx.stdout.exp
+	test_mcrxrx.vgtest test_mcrxrx.stderr.exp test_mcrxrx.stdout.exp \
+	test_lxvx_stxvx.vgtest test_lxvx_stxvx.stderr.exp test_lxvx_stxvx.stdout.exp-p8  test_lxvx_stxvx.stdout.exp-p9
 
 
 check_PROGRAMS = \
@@ -83,7 +84,7 @@ check_PROGRAMS = \
 	test_tm test_touch_tm data-cache-instructions \
 	std_reg_imm \
 	twi_tdi tw_td power6_bcmp scv_test \
-	test_mcrxrx
+	test_mcrxrx  test_lxvx_stxvx
 
 # lmw, stmw, lswi, lswx, stswi, stswx compile (and run) only on big endian.
 if VGCONF_PLATFORMS_INCLUDE_PPC64BE_LINUX
@@ -231,6 +232,18 @@ test_copy_paste_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG
 
 test_mcrxrx_CFLAGS = $(AM_FLAGS) -Winline -Wall -O -g -mregnames @FLAG_M64@  $(ISA_3_00_FLAG)
 
+#  ISA 2.06 and 2.07 the lxvx, stxvx instructions are nmemonics for the BE
+#  instructions lxvd2x and stxvd2x
+#  They are real endian aware instruction in ISA 3.0.
+
+if HAS_ISA_3_00
+test_lxvx_stxvx_CFLAGS = $(AM_FLAGS) -Winline -Wall -O -g -mregnames \
+	@FLAG_M64@  $(ISA_2_07_FLAG)  $(BUILD_FLAGS_ISA_3_00)
+else
+  test_lxvx_stxvx_CFLAGS = $(AM_FLAGS) -Winline -Wall -O -g -mregnames \
+	@FLAG_M64@  $(ISA_2_07_FLAG)   $(BUILD_FLAGS_ISA_2_07)
+endif
+
 test_isa_2_06_part3_LDADD = -lm
 test_dfp1_LDADD = -lm
 test_dfp2_LDADD = -lm
@@ -243,4 +256,5 @@ test_tm_LDADD = -lm
 test_touch_tm_LDADD = -lm
 test_isa_3_0_LDADD = -lm
 test_mcrxrx_LDADD = -lm
+test_lxvx_stxvx_LDADD = -lm
 

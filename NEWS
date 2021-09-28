@@ -63,6 +63,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 443178  Powerpc, test jm-mfspr expected output needs to be updated.
 443179  Need new test for the lxvx and stxvx instructions on ISA 2.07 and
         ISA 3.0 systems.
+443180  The subnormal test and the ISA 3.0 test generate compiler warnings.
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

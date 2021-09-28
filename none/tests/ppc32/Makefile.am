@@ -16,6 +16,7 @@ EXTRA_DIST = \
 	jm-fp.stderr.exp jm-fp.stdout.exp jm-fp.vgtest jm-fp.stdout.exp-BE2 \
 	jm-vmx.stderr.exp jm-vmx.stdout.exp jm-vmx.stdout.exp_Minus_nan \
 	jm-vmx.vgtest \
+	jm-mfspr.stderr.exp jm-mfspr.stdout.exp jm-mfspr.vgtest \
 	jm-misc.stderr.exp jm-misc.stdout.exp jm-misc.vgtest \
 	lsw.stderr.exp lsw.stdout.exp lsw.vgtest \
 	mftocrf.stderr.exp mftocrf.stdout.exp mftocrf.vgtest \

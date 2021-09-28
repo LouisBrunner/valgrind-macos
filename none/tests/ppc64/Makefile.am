@@ -12,6 +12,8 @@ EXTRA_DIST = \
 	jm-int-sh_algebraic.stdout.exp-LE \
 	jm-int-sh_algebraic.stdout.exp-LE-ISA3_0 \
 	jm-int-sh_algebraic.vgtest \
+	jm-mfspr.stderr.exp jm-mfspr.stdout.exp jm-mfspr.stdout.exp-ALT \
+	jm-mfspr.vgtest \
 	jm-int_other.stderr.exp jm-int_other.stdout.exp jm-int_other.vgtest \
 	jm-int_other.stdout.exp-LE \
 	jm-fp.stderr.exp  jm-fp.stdout.exp  jm-fp.vgtest jm-fp.stdout.exp-LE jm-fp.stdout.exp-LE2 jm-fp.stdout.exp-BE2 \

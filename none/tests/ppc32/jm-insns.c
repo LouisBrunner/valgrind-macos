@@ -382,6 +382,7 @@ enum test_flags {
     PPC_FALTIVEC   = 0x00050000,
     PPC_MISC       = 0x00060000,
     PPC_SH_ALGEBRAIC = 0x00070000,
+    PPC_MFSPR      = 0x00080000,
     PPC_FAMILY     = 0x000F0000,
     /* Flags: these may be combined, so use separate bitfields. */
     PPC_CR         = 0x01000000,
@@ -1444,13 +1445,17 @@ static test_t tests_il_ops_spe_sh[] = {
 #endif // #ifdef __powerpc64__
     { NULL,                   NULL,           },
 };
+static test_t tests_il_ops_mfspr[] = {
+    { &test_mfspr           , "       mfspr", },
+    { &test_mtspr           , "       mtspr", },
+    { NULL,                   NULL,           },
+};
+
 static test_t tests_il_ops_spe[] = {
     { &test_rlwimi          , "      rlwimi", },
     { &test_rlwinm          , "      rlwinm", },
     { &test_rlwnm           , "       rlwnm", },
     { &test_mfcr            , "        mfcr", },
-    { &test_mfspr           , "       mfspr", },
-    { &test_mtspr           , "       mtspr", },
 #ifdef __powerpc64__
     { &test_rldcl           , "       rldcl", },
     { &test_rldcr           , "       rldcr", },
@@ -4038,6 +4043,11 @@ static test_table_t all_tests[] = {
         0x01010201,
     },
     {
+        tests_il_ops_mfspr      ,
+        "PPC mfspr instructions",
+        0x00080207,
+    },
+    {
         tests_il_ops_spe      ,
         "PPC logical insns with special forms",
         0x00010207,
@@ -5776,7 +5786,11 @@ static test_loop_t int_sh_algebraic[] = {
    &test_int_special,
 };
 
-static test_loop_t int_loops[] = {
+static test_loop_t int_mfspr[] = {
+   &test_int_special,
+};
+ 
+ static test_loop_t int_loops[] = {
    &test_int_one_arg,
    &test_int_two_args,
    &test_int_three_args,
@@ -7513,7 +7527,7 @@ static int check_name (const char* name, const char *filter,
 typedef struct insn_sel_flags_t_struct {
    int one_arg, two_args, three_args;
    int arith, logical, compare, ldst;
-   int integer, floats, p405, altivec, faltivec, misc, sh_algebraic;
+   int integer, floats, p405, altivec, faltivec, misc, sh_algebraic, mfspr;
    int cr;
 } insn_sel_flags_t;
 
@@ -7554,6 +7568,7 @@ static void do_tests ( insn_sel_flags_t seln_flags,
           (family == PPC_ALTIVEC  && !seln_flags.altivec) ||
           (family == PPC_MISC  && !seln_flags.misc) ||
           (family == PPC_SH_ALGEBRAIC && !seln_flags.sh_algebraic) ||
+          (family == PPC_MFSPR && !seln_flags.mfspr) ||
           (family == PPC_FALTIVEC && !seln_flags.faltivec))
          continue;
       /* Check flags update */
@@ -7569,6 +7584,9 @@ static void do_tests ( insn_sel_flags_t seln_flags,
          break;
       case PPC_SH_ALGEBRAIC:
          loop = &int_sh_algebraic[0];
+         break;
+      case PPC_MFSPR:
+         loop = &int_mfspr[0];
          break;
       case PPC_MISC:
          loop = &misc_loops[0];
@@ -7678,6 +7696,7 @@ static void usage (void)
            "\t-a: test altivec instructions\n"
            "\t-m: test miscellaneous instructions\n"
            "\t-s: test shift algebraic (sraw, srawi, srad, sradi) instructions\n"
+           "\t-M: test mfspr instructions\n"
            "\t-A: test all (int, fp, altivec) instructions\n"
            "\t-v: be verbose\n"
            "\t-h: display this help and exit\n"
@@ -7712,6 +7731,7 @@ int main (int argc, char **argv)
    flags.faltivec   = 0;
    flags.cr         = -1;
    flags.sh_algebraic = 0;
+   flags.mfspr      = 0;
    
    while ((c = getopt(argc, argv, "123t:f:n:r:uvh")) != -1) {
       switch (c) {
@@ -7815,6 +7835,7 @@ int main (int argc, char **argv)
       flags.altivec  = 1;
       flags.faltivec = 1;
       flags.algebraic = 1;
+      flags.mfspr = 1;
    }
    // Default cr update
    if (flags.cr == -1)
@@ -7851,10 +7872,11 @@ int main (int argc, char **argv)
    flags.altivec    = 0;
    flags.faltivec   = 0;
    flags.sh_algebraic = 0;
+   flags.mfspr      = 0;
    // Flags
    flags.cr         = 2;
 
-   while ((c = getopt(argc, argv, "ilcLfmsahvA")) != -1) {
+   while ((c = getopt(argc, argv, "ilcLfmMsahvA")) != -1) {
       switch (c) {
       case 'i':
          flags.arith    = 1;
@@ -7863,6 +7885,10 @@ int main (int argc, char **argv)
       case 's':
          flags.logical  = 1;
          flags.sh_algebraic = 1;
+         break;
+      case 'M':
+         flags.logical  = 1;
+         flags.mfspr = 1;
          break;
       case 'l':
          flags.logical  = 1;
@@ -7956,6 +7982,7 @@ int main (int argc, char **argv)
       printf("    altivec    = %d\n", flags.altivec);
       printf("    faltivec   = %d\n", flags.faltivec);
       printf("    sh_algebraic = %d\n", flags.sh_algebraic);
+      printf("    mfspr      = %d\n", flags.mfspr);
       printf("  cr update: \n");
       printf("    cr         = %d\n", flags.cr);
       printf("\n");

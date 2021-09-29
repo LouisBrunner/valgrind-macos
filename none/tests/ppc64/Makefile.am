@@ -60,7 +60,8 @@ EXTRA_DIST = \
 	test_darn_inst.stdout.exp test_darn_inst.vgtest \
 	scv_test.stderr.exp scv_test.stdout.exp scv_test.vgtest \
 	test_copy_paste.stderr.exp test_copy_paste.stdout.exp \
-	test_copy_paste.vgtest
+	test_copy_paste.vgtest \
+	test_mcrxrx.vgtest test_mcrxrx.stderr.exp test_mcrxrx.stdout.exp
 
 
 check_PROGRAMS = \
@@ -75,7 +76,8 @@ check_PROGRAMS = \
 	subnormal_test test_darn_inst test_copy_paste \
 	test_tm test_touch_tm data-cache-instructions \
 	std_reg_imm \
-	twi_tdi tw_td power6_bcmp scv_test
+	twi_tdi tw_td power6_bcmp scv_test \
+	test_mcrxrx
 
 # lmw, stmw, lswi, lswx, stswi, stswx compile (and run) only on big endian.
 if VGCONF_PLATFORMS_INCLUDE_PPC64BE_LINUX
@@ -221,6 +223,8 @@ subnormal_test_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_FLAG)
 test_copy_paste_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_3_1_FLAG) \
 			@FLAG_M64@ $(BUILD_FLAGS_ISA_3_1)
 
+test_mcrxrx_CFLAGS = $(AM_FLAGS) -Winline -Wall -O -g -mregnames @FLAG_M64@  $(ISA_3_00_FLAG)
+
 test_isa_2_06_part3_LDADD = -lm
 test_dfp1_LDADD = -lm
 test_dfp2_LDADD = -lm
@@ -232,4 +236,5 @@ test_isa_2_07_part2_LDADD = -lm
 test_tm_LDADD = -lm
 test_touch_tm_LDADD = -lm
 test_isa_3_0_LDADD = -lm
+test_mcrxrx_LDADD = -lm
 

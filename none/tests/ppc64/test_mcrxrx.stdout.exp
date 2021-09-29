@@ -1,0 +1,16 @@
+mcrxrx                   =>  -   -   -   -  
+mcrxrx             CA32  => (LT) -   -   -  
+mcrxrx             OV32  =>  -   -  (EQ) -  
+mcrxrx        OV32 CA32  => (LT) -  (EQ) -  
+mcrxrx               CA  =>  -  (GT) -   -  
+mcrxrx          CA CA32  => (LT)(GT) -   -  
+mcrxrx          CA OV32  =>  -  (GT)(EQ) -  
+mcrxrx     CA OV32 CA32  => (LT)(GT)(EQ) -  
+mcrxrx               OV  =>  -   -   -  (SO)
+mcrxrx          OV CA32  => (LT) -   -  (SO)
+mcrxrx          OV OV32  =>  -   -  (EQ)(SO)
+mcrxrx     OV OV32 CA32  => (LT) -  (EQ)(SO)
+mcrxrx            OV CA  =>  -  (GT) -  (SO)
+mcrxrx       OV CA CA32  => (LT)(GT) -  (SO)
+mcrxrx       OV CA OV32  =>  -  (GT)(EQ)(SO)
+mcrxrx  OV CA OV32 CA32  => (LT)(GT)(EQ)(SO)

@@ -289,6 +289,16 @@
 /docs/Makefile.in
 /docs/valid-manpages
 /docs/valid-manual
+/docs/valgrind.1
+/docs/cg_annotate.1
+/docs/cg_diff.1
+/docs/cg_merge.1
+/docs/callgrind_annotate.1
+/docs/callgrind_control.1
+/docs/ms_print.1
+/docs/valgrind-listener.1
+/docs/valgrind-di-server.1
+/docs/vgdb.1
 
 # /docs/images/
 /docs/images/Makefile

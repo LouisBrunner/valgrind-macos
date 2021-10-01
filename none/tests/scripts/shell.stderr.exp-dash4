@@ -1,0 +1,8 @@
+./shell: 10: ./x86/: Permission denied
+./shell: 13: ./shell.vgtest: Permission denied
+execve(0x........(./shell_badinterp), 0x........, 0x........) failed, errno 2
+EXEC FAILED: I can't recover from execve() failing, so I'm dying.
+Add more stringent tests in PRE(sys_execve), or work out how to recover.
+./shell: 19: ./shell_binaryfile: Exec format error
+./shell: 22: ./shell_nosuchfile: not found
+./shell: 25: shell_nosuchfile: not found

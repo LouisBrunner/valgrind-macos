@@ -36,7 +36,8 @@
                "ipm %2\n\t"                                             \
                "srl %2,28\n\t"                                          \
                :"=f"(dst_reg), "=d"(ret), "=d" (cc)                     \
-               : "f"(src_reg), "d"(fn));                                \
+               : "f"(src_reg), "d"(fn)                                  \
+               : "cc");                                                 \
   ret_code = ret;                                                       \
   dst_reg;                                                              \
 })

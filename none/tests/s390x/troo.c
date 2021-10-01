@@ -41,7 +41,7 @@ troo_regs tr(uint8_t *addr, uint8_t *codepage, uint8_t *dest, uint64_t len,
                 " srl   %0,28\n"
                 : "=d"(cc),"+&d"(desaddr)
                 : "d" (srcaddr),"d"(test_byte),"d" (codepage2),"d"(length)
-                : "memory" );
+                : "cc", "memory" );
 
    regs.srcaddr = srcaddr;
    regs.len = length;

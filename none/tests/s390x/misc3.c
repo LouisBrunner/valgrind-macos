@@ -106,7 +106,7 @@ static int test_all_popcnt()
            [out1] "+d" (out1)                                   \
          : [a] "d" (a),                                         \
            [b] "d" (b)                                          \
-         : );                                                   \
+         : "cc");                                               \
                                                                 \
       printf("\t%016lx %016lx -> %016lx %016lx\n",              \
              a, b, out0, out1);                                 \

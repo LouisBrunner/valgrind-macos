@@ -15,6 +15,7 @@ volatile _Decimal128 d128_1, d128_2, result_128;
                  "srl %1,28\n\t"                                        \
                  :"+f" (d1), "=d" (cc)                                  \
                  :"f"(d2)                                               \
+                 :"cc"                                                  \
                  );                                                     \
     d1;                                                                 \
   })

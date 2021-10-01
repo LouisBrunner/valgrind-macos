@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include "opcodes.h"
 
-#define BRASLCLOBBER "0","1","2","3","4","5","14", \
+#define BRASLCLOBBER "cc", "0","1","2","3","4","5","14",        \
 		     "f0","f1","f2","f3","f4","f5","f6","f7"
 
 void if_eq(void)        { printf("equal\n");   }

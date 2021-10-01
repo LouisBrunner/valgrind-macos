@@ -163,7 +163,8 @@ static bool test_llzrgf(const uint32_t testedValue)
           : [testedValue] "r"(testedValue),                                    \
             [invertedValue] "r"(invertedValue),                                \
             [overrideValue] #ARGUMENT_ASM_TYPE(overrideValue),                 \
-            "[after]"(after));                                                 \
+            "[after]"(after)                                                   \
+          : "cc");                                                             \
                                                                                \
       SMART_RETURN_R64(TESTED_INSTRUCTION);                                    \
    }
@@ -199,7 +200,8 @@ declare_load_high_on_condition(locfhl, <, m)
           : [after] "=" #ARGUMENT_ASM_TYPE(after)                              \
           : [testedValue] "r"(testedValue),                                    \
             [invertedValue] "r"(invertedValue),                                \
-            [overrideValue] "r"(overrideValue));                               \
+            [overrideValue] "r"(overrideValue)                                 \
+          : "cc");                                                             \
                                                                                \
       SMART_RETURN_R64(TESTED_INSTRUCTION);                                    \
    }
@@ -235,7 +237,8 @@ declare_store_high_on_condition(stocfhl, <, m)
           : [after] "=r"(after)                                                \
           : [testedValue] "r"(testedValue),                                    \
             [invertedValue] "r"(invertedValue),                                \
-            "[after]"(after));                                                 \
+            "[after]"(after)                                                   \
+          : "cc");                                                             \
                                                                                \
       SMART_RETURN_R64(TESTED_INSTRUCTION);                                    \
    }
@@ -273,7 +276,8 @@ declare_load_halfword_immediate_on_condition(locghil, uint64_t, <, r)
           : [after] "=r"(after)                                           \
           : [testedValue] "r"(testedValue),                               \
             [invertedValue] "r"(invertedValue),                           \
-            "[after]"(after));                                            \
+            "[after]"(after)                                              \
+          : "cc");                                                        \
                                                                           \
       SMART_RETURN_R64(TESTED_INSTRUCTION);                               \
    }
@@ -314,7 +318,8 @@ static void test_all_locfh()
       __asm__ volatile("lcbb %[after], %[testedPointer], " #M_FIELD       \
                        "\n"                                               \
                        : [after] "=r"(after)                              \
-                       : [testedPointer] "m"(*testedPointer));            \
+                       : [testedPointer] "m"(*testedPointer)              \
+                       : "cc");                                           \
                                                                           \
       SMART_RETURN_R64(lcbb##M_FIELD);                                    \
    }

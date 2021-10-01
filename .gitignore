@@ -19,6 +19,8 @@
 /default.supp
 /depcomp
 /glibc-2.X.supp
+/glibc-2.X-drd.supp
+/glibc-2.X-helgrind.supp
 /install-sh
 /lib
 /Makefile

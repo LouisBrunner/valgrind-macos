@@ -12,6 +12,7 @@ EXTRA_DIST = \
 	bug338606 bug338606.vgtest bug338606.stderr.exp \
 	shell shell.vgtest shell.stderr.exp \
 	shell.stderr.exp-dash shell.stderr.exp-dash2 shell.stderr.exp-dash3 \
+	shell.stderr.exp-dash4 \
 	shell.stdout.exp shell.stderr.exp-illumos \
 	shell.stderr.exp-solaris shell.stderr.exp-solaris-spawn \
 	shell_badinterp shell_badinterp.vgtest shell_badinterp.stderr.exp \

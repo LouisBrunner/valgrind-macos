@@ -112,8 +112,11 @@ s/\(0x........\) in ?? ()$/\1 in syscall .../
 #              return SYSCALL_CANCEL....
 s/in __select .*/in syscall .../
 s/in __select$/in syscall .../
-/exceptfds/d
+/nfds=/d
+/exceptfds=/d
+/timeout=/d
 /sysv\/linux\/select\.c/d
+/sysv\/linux\/generic\/select.c/d
 /return SYSCALL_CANCEL /d
 
 #       a more specialised system call select stack trace part

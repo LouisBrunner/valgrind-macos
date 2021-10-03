@@ -3268,6 +3268,7 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
          case Ijk_NoRedir:     trcval = VEX_TRC_JMP_NOREDIR;     break;
          case Ijk_SigTRAP:     trcval = VEX_TRC_JMP_SIGTRAP;     break;
          case Ijk_SigSEGV:     trcval = VEX_TRC_JMP_SIGSEGV;     break;
+         case Ijk_SigBUS:      trcval = VEX_TRC_JMP_SIGBUS;      break;
          case Ijk_Boring:      trcval = VEX_TRC_JMP_BORING;      break;
          /* We don't expect to see the following being assisted. */
          case Ijk_Ret:

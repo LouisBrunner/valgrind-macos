@@ -4776,7 +4776,7 @@ static IRExpr * is_NaN_Vector( IRType element_size, IRExpr *src )
    IRTemp zeroV128  = newTemp( Ity_V128 );
    IRTemp exp_maskV128 = newTemp( Ity_V128 );
    IRTemp frac_maskV128 = newTemp( Ity_V128 );
-   IROp   opCmpEQ;
+   IROp   opCmpEQ =  Iop_INVALID;
 
    assign( zeroV128, mkV128( 0 ) );
 

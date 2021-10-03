@@ -103,7 +103,7 @@ extern UInt VG_(read_millisecond_timer) ( void );
 
 extern Int  VG_(gettimeofday)(struct vki_timeval *tv, struct vki_timezone *tz);
 
-#  if defined(VGO_linux) || defined(VGO_solaris)
+#  if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
 /* Get the clock value as specified by clk_id.  Asserts if unsuccesful.  */
 extern void VG_(clock_gettime)(struct vki_timespec *ts, vki_clockid_t clk_id);
 #  elif defined(VGO_darwin)

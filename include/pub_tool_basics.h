@@ -102,6 +102,8 @@ typedef  Word                 PtrdiffT;   // 32             64
 // always a signed 64-bit int.  So we defined our own Off64T as well.
 #if defined(VGO_linux) || defined(VGO_solaris)
 typedef Word                   OffT;      // 32             64
+#elif defined(VGO_freebsd)
+typedef Long                   OffT;      // 64             64
 #elif defined(VGO_darwin)
 typedef Long                   OffT;      // 64             64
 #else
@@ -225,6 +227,19 @@ typedef
       SysResMode _mode;
    }
    SysRes;
+#elif defined(VGO_freebsd)
+typedef
+   struct {
+      UWord _val;
+      UWord _val2;
+      Bool  _isError;
+#if defined(VGP_amd64_freebsd)
+      char  padding[7];
+#else
+      char  padding[3];
+#endif
+   }
+   SysRes;
 
 #elif defined(VGO_solaris)
 typedef
@@ -304,6 +319,27 @@ static inline Bool sr_EQ ( UInt sysno, SysRes sr1, SysRes sr2 ) {
    /* sysno is ignored for Linux/not-MIPS */
    return sr1._val == sr2._val
           && sr1._isError == sr2._isError;
+}
+
+#elif defined(VGO_freebsd)
+
+static inline Bool sr_isError ( SysRes sr ) {
+   return sr._isError;
+}
+static inline UWord sr_Res ( SysRes sr ) {
+   return sr._isError ? 0 : sr._val;
+}
+static inline UWord sr_ResHI ( SysRes sr ) {
+   return sr._isError ? 0 : sr._val2;
+}
+static inline UWord sr_Err ( SysRes sr ) {
+   return sr._isError ? sr._val : 0;
+}
+static inline Bool sr_EQ ( UInt sysno, SysRes sr1, SysRes sr2 ) {
+   return sr_Res(sr1) == sr_Res(sr2) 
+          && sr_ResHI(sr1) == sr_ResHI(sr2)
+          && ((sr_isError(sr1) && sr_isError(sr2)) 
+              || (!sr_isError(sr1) && !sr_isError(sr2)));
 }
 
 #elif defined(VGO_darwin)

@@ -131,4 +131,14 @@
           xmlns:xi="http://www.w3.org/2001/XInclude" />
     </literallayout>
     </chapter>
+    
+      <chapter id="dist.readme-freebsd"
+             xreflabel="Readme FreeBSD">
+    <title>README.freebsd</title>
+    <literallayout>
+      <xi:include href="../../README.freebsd"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </literallayout>
+    </chapter>
 </book>

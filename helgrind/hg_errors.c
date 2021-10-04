@@ -474,7 +474,7 @@ void HG_(record_error_Race) ( Thread* thr,
    XError xe;
    tl_assert( HG_(is_sane_Thread)(thr) );
 
-#  if defined(VGO_linux)
+#  if defined(VGO_linux) || defined(VGO_freebsd)
    /* Skip any races on locations apparently in GOTPLT sections.  This
       is said to be caused by ld.so poking PLT table entries (or
       whatever) when it writes the resolved address of a dynamically

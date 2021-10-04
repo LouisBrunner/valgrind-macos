@@ -665,7 +665,7 @@ static SyscallTableEntry syscall_table[] = {
    GENX_(__NR_setrlimit,         sys_setrlimit),      // 160 
    GENX_(__NR_chroot,            sys_chroot),         // 161 
    GENX_(__NR_sync,              sys_sync),           // 162 
-   //   (__NR_acct,              sys_acct),           // 163 
+   GENX_(__NR_acct,              sys_acct),           // 163
    GENX_(__NR_settimeofday,      sys_settimeofday),   // 164 
 
    LINX_(__NR_mount,             sys_mount),          // 165

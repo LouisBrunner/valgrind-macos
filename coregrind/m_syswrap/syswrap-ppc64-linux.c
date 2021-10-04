@@ -661,7 +661,7 @@ static SyscallTableEntry syscall_table[] = {
    GENX_(__NR_geteuid,           sys_geteuid),            //  49
 
    GENX_(__NR_getegid,           sys_getegid),            //  50
-// _____(__NR_acct,              sys_acct),               //  51
+   GENX_(__NR_acct,              sys_acct),               //  51
    LINX_(__NR_umount2,           sys_umount),             //  52
 // _____(__NR_lock,              sys_lock),               //  53
    LINXY(__NR_ioctl,             sys_ioctl),              //  54

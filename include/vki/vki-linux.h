@@ -5369,6 +5369,9 @@ struct vki_itimerspec64 {
 
 #define VKI_RLIM64_INFINITY (~0ULL)
 
+#define VKI_CLOSE_RANGE_UNSHARE (1U << 1)
+#define VKI_CLOSE_RANGE_CLOEXEC (1U << 2)
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

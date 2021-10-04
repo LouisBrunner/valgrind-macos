@@ -70,6 +70,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
         have debug information
 438871  unhandled instruction bytes: 0xF3 0x49 0xF 0x6F 0x9C 0x24 0x60 0x2 0x0 0x0
 439046  valgrind is unusably large when linked with lld
+439090  Implement close_range(2)
 439326  Valgrind 3.17.0 won't compile with Intel 2021 oneAPI compilers
 439590  glibc-2.34 breaks suppressions against obj:*/lib*/libc-2.*so*
 440670  unhandled ppc64le-linux syscall: 252 (statfs64) and 253 (fstatfs64)

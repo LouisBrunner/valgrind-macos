@@ -13315,6 +13315,68 @@ PRE(sys_execveat)
 
 }
 
+PRE(sys_close_range)
+{
+   SysRes res = VG_(mk_SysRes_Success)(0);
+   unsigned int beg, end;
+   unsigned int last = ARG2;
+
+   FUSE_COMPATIBLE_MAY_BLOCK();
+   PRINT("sys_close_range ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %"
+         FMT_REGWORD "u )", ARG1, ARG2, ARG3);
+   PRE_REG_READ3(long, "close_range",
+                 unsigned int, first, unsigned int, last,
+                 unsigned int, flags);
+
+   if (ARG1 > last) {
+      SET_STATUS_Failure( VKI_EINVAL );
+      return;
+   }
+
+   if (last >= VG_(fd_hard_limit))
+      last = VG_(fd_hard_limit) - 1;
+
+   if (ARG1 > last) {
+      SET_STATUS_Success ( 0 );
+      return;
+   }
+
+   beg = end = ARG1;
+   do {
+      if (end > last
+	  || (end == 2/*stderr*/ && VG_(debugLog_getLevel)() > 0)
+	  || end == VG_(log_output_sink).fd
+	  || end == VG_(xml_output_sink).fd) {
+         /* Split the range if it contains a file descriptor we're not
+          * supposed to close. */
+         if (end - 1 >= beg)
+             res = VG_(do_syscall3)(__NR_close_range, (UWord)beg, (UWord)end - 1, ARG3 );
+         beg = end + 1;
+      }
+   } while (end++ <= last);
+
+   /* If it failed along the way, it's presumably the flags being wrong. */
+   SET_STATUS_from_SysRes (res);
+}
+
+POST(sys_close_range)
+{
+   unsigned int fd;
+   unsigned int last = ARG2;
+
+   if (!VG_(clo_track_fds)
+       || (ARG3 & VKI_CLOSE_RANGE_CLOEXEC) != 0)
+      return;
+
+   if (last >= VG_(fd_hard_limit))
+      last = VG_(fd_hard_limit) - 1;
+
+   for (fd = ARG1; fd <= last; fd++)
+      if ((fd != 2/*stderr*/ || VG_(debugLog_getLevel)() == 0)
+	  && fd != VG_(log_output_sink).fd
+	  && fd != VG_(xml_output_sink).fd)
+      ML_(record_fd_close)(fd);
+}
 
 #undef PRE
 #undef POST

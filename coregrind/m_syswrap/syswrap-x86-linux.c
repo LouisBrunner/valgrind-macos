@@ -1646,6 +1646,7 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_io_uring_register, sys_io_uring_register),// 427
 
    GENX_(__NR_clone3,            sys_ni_syscall),       // 435
+   LINXY(__NR_close_range,       sys_close_range),      // 436
 
    LINX_(__NR_faccessat2,	 sys_faccessat2),       // 439
 };

@@ -42,6 +42,14 @@ runcmd () {
 # Startup
 #----------------------------------------------------------------------------
 
+if  [ `uname -o` = "FreeBSD" ]; then
+  CP=gcp
+  MAKE=gmake
+else
+  CP=cp
+  MAKE=make
+fi
+
 valgrind_git_repo="git://sourceware.org/git/valgrind.git/"
 
 # Must have exactly two arguments
@@ -72,7 +80,7 @@ if [ "${ABT_EVAL}" = "" ]; then
   ABT_EVAL="eval"
 fi
 if [ "${ABT_RUN_REGTEST}" = "" ]; then
-  ABT_RUN_REGTEST="make regtest"
+  ABT_RUN_REGTEST="${MAKE} regtest"
 fi
 
 if [ "${ABT_PERF_TOOLS}" = "" ]; then
@@ -118,7 +126,7 @@ for logfile in old new ; do
    # Check out, build, run tests
    runcmd $logfile \
           "Checking out Valgrind source tree" \
-          "cp -r --preserve=links valgrind-repo valgrind-$logfile && cd valgrind-$logfile && git checkout ${git_commit}" && \
+          "${CP} -r --preserve=links valgrind-repo valgrind-$logfile && cd valgrind-$logfile && git checkout ${git_commit}" && \
    \
    runcmd $logfile \
           "Configuring valgrind             " \
@@ -126,7 +134,7 @@ for logfile in old new ; do
    \
    runcmd $logfile \
           "Building valgrind                " \
-          "cd valgrind-$logfile && make -j ${ABT_JOBS} && make -j ${ABT_JOBS} check && make install" && \
+          "cd valgrind-$logfile && ${MAKE} -j ${ABT_JOBS} && ${MAKE} -j ${ABT_JOBS} check && ${MAKE} install" && \
    \
    runcmd $logfile \
           "Running regression tests         " \
@@ -177,11 +185,17 @@ END=`date "+%F %H:%M:%S %Z"`
 
 # Gather some information about this run and its environment
 valgrind_revision=$( ./valgrind-new/vg-in-place -v --version )
-gcc_version="`gcc --version 2> /dev/null | head -1`"
+if  [ `uname -o` = "FreeBSD" ]; then
+  gcc_version="`clang --version 2> /dev/null | head -1`"
+else
+  gcc_version="`gcc --version 2> /dev/null | head -1`"
+fi
 gdb_version="`gdb --version 2> /dev/null | head -1`"
 as_version="`as --version 2> /dev/null | head -1`"
 if [ `uname -o` = "Solaris" ]; then
   libc="Solaris libc"
+elif  [ `uname -o` = "FreeBSD" ]; then
+  libc="FreeBSD libc"
 else
   libc_so="`ls -1 /lib/libc.so.* /lib64/libc.so.* /lib32/libc.so.* /lib/*-linux-gnu/libc.so.* 2>/dev/null | tail -1`"
   libc="unknown"

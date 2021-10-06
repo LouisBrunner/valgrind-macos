@@ -2084,6 +2084,8 @@
 
 # /tests/
 /tests/*.dSYM
+/tests/filter_discards
+/tests/filter_stderr_basic
 /tests/.deps
 /tests/Makefile
 /tests/Makefile.in

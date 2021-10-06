@@ -5060,6 +5060,10 @@ AC_CONFIG_FILES([coregrind/link_tool_exe_darwin],
                 [chmod +x coregrind/link_tool_exe_darwin])
 AC_CONFIG_FILES([coregrind/link_tool_exe_solaris],
                 [chmod +x coregrind/link_tool_exe_solaris])
+AC_CONFIG_FILES([tests/filter_stderr_basic],
+                [chmod +x tests/filter_stderr_basic])
+AC_CONFIG_FILES([tests/filter_discards],
+                [chmod +x tests/filter_discards])
 AC_OUTPUT
 
 cat<<EOF

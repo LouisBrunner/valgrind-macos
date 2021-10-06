@@ -1,5 +1,7 @@
 #! /bin/sh
 
+SED=@SED@
+
 # This filter should be applied to *every* stderr result.  It removes
 # Valgrind startup stuff and pid numbers.
 #
@@ -18,14 +20,14 @@ perl -p -e 's/(==|--|\*\*)[0-9]{1,7}\1 //' |
 
 # Remove "Command: line".  (If wrapping occurs, it won't remove the
 # subsequent lines...)
-sed "/^Command: .*$/d" |
+$SED "/^Command: .*$/d" |
 
 # Remove "WARNING: assuming toc 0x.." strings
-sed "/^WARNING: assuming toc 0x*/d" |
+$SED "/^WARNING: assuming toc 0x*/d" |
 
 # Remove "Using Valgrind-$VERSION and LibVEX..." line.
 # Tools have to filter their own line themselves.
-sed "/^Using Valgrind-.* and LibVEX; rerun with -h for copyright info/ d" |
+$SED "/^Using Valgrind-.* and LibVEX; rerun with -h for copyright info/ d" |
 
 # Anonymise line numbers in vg_replace_malloc.c, remove dirname if present
 perl -p -e "s/(m_replacemalloc\/)?vg_replace_malloc.c:\d+\)/vg_replace_malloc.c:...\)/" |
@@ -34,13 +36,13 @@ perl -p -e "s/(m_replacemalloc\/)?vg_replace_malloc.c:\d+\)/vg_replace_malloc.c:
 perl -p -e "s/valgrind\.h:\d+\)/valgrind\.h:...\)/" |
 
 # Hide suppressed error counts
-sed "s/^\(ERROR SUMMARY[^(]*(suppressed: \)[0-9]*\( from \)[0-9]*)$/\10\20)/" |
+$SED "s/^\(ERROR SUMMARY[^(]*(suppressed: \)[0-9]*\( from \)[0-9]*)$/\10\20)/" |
 
 # Reduce some libc incompatibility
 $dir/filter_libc |
 
 # Remove line info out of order warnings
-sed "/warning: line info addresses out of order/d" |
+$SED "/warning: line info addresses out of order/d" |
 
 # Older bash versions print abnormal termination messages on the stderr
 # of the bash process. Newer bash versions redirect such messages properly.
@@ -53,20 +55,20 @@ perl -n -e 'print if !/^(Memory fault|Killed) $/' |
 
 # Translate intercepted glibc functions back to their canonical name
 perl -p -e "s/: memcpy\@\@?GLIBC_[.1-9]+ \(vg_replace_strmem.c:.*?\)/: memcpy \(vg_replace_strmem.c:...\)/" |
-sed -e "s/: \(__GI_\|__\|\)\(memcmp\|memcpy\|strcpy\|strncpy\|strchr\|strrchr\)\(\|_sse4_1\|_sse42\|_sse2_unaligned\|_sse2\) (vg_replace_strmem.c:/: \2 (vg_replace_strmem.c:/" |
+$SED -e "s/: \(__GI_\|__\|\)\(memcmp\|memcpy\|strcpy\|strncpy\|strchr\|strrchr\)\(\|_sse4_1\|_sse42\|_sse2_unaligned\|_sse2\) (vg_replace_strmem.c:/: \2 (vg_replace_strmem.c:/" |
 
 # Remove any ": dumping core" message as the user might have a
 # limit set that prevents the core dump
-sed "s/\(signal [0-9]* (SIG[A-Z]*)\): dumping core/\1/" |
+$SED "s/\(signal [0-9]* (SIG[A-Z]*)\): dumping core/\1/" |
 
 # Remove the size in "The main thread stack size..." message.
-sed "s/The main thread stack size used in this run was [0-9]*/The main thread stack size used in this run was .../" |
+$SED "s/The main thread stack size used in this run was [0-9]*/The main thread stack size used in this run was .../" |
 
 # Remove the size in "10482464 bytes below stack pointer" message.
-sed "s/[0-9][0-9]* bytes below stack pointer/.... bytes below stack pointer/" |
+$SED "s/[0-9][0-9]* bytes below stack pointer/.... bytes below stack pointer/" |
 
 # Suppress warnings from incompatible debug info
-sed '/warning: the debug information found in "[^"]*" does not match/d' |
+$SED '/warning: the debug information found in "[^"]*" does not match/d' |
 
 # Suppress warnings from Dwarf reader
-sed '/warning: evaluate_Dwarf3_Expr: unhandled DW_OP_/d'
+$SED '/warning: evaluate_Dwarf3_Expr: unhandled DW_OP_/d'

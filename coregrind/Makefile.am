@@ -51,7 +51,6 @@ valgrind_SOURCES = \
 endif
 if VGCONF_OS_IS_FREEBSD
 valgrind_SOURCES = \
-	launcher-freebsd.c \
 	m_debuglog.c
 endif
 

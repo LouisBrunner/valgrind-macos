@@ -480,10 +480,6 @@ if !VGCONF_OS_IS_DARWIN
 check_PROGRAMS += sem_wait
 endif
 
-if VGCONF_OS_IS_FREEBSD
-check_PROGRAMS += thread_name_freebsd
-endif
-
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI) @FLAG_W_EXTRA@ -Wno-inline -Wno-unused-parameter
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI) @FLAG_W_EXTRA@ @FLAG_FALIGNED_NEW@ \

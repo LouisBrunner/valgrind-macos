@@ -1,0 +1,251 @@
+<?xml version="1.0"?>
+
+<valgrindoutput>
+
+<protocolversion>4</protocolversion>
+<protocoltool>helgrind</protocoltool>
+
+<preamble>
+  <line>Helgrind, a thread error detector</line>
+  <line>Copyright (C) XXXX-YYYY, and GNU GPL'd, by OpenWorks LLP et al.</line>
+  <line>Using Valgrind-X.Y.X and LibVEX; rerun with -h for copyright info</line>
+  <line>Command: ./tc06_two_races</line>
+</preamble>
+
+<pid>...</pid>
+<ppid>...</ppid>
+<tool>helgrind</tool>
+
+<args>
+  <vargv>
+    <exe>...</exe>
+    <arg>--command-line-only=yes</arg>
+    <arg>--memcheck:leak-check=no</arg>
+    <arg>--tool=helgrind</arg>
+    <arg>--read-var-info=yes</arg>
+    <arg>--xml=yes</arg>
+    <arg>--xml-fd=2</arg>
+    <arg>--log-file=/dev/null</arg>
+  </vargv>
+  <argv>
+    <exe>...</exe>
+  </argv>
+</args>
+
+<status>
+  <state>RUNNING</state>
+  <time>...</time>
+</status>
+
+<announcethread>
+  <hthreadid>1</hthreadid>
+  <isrootthread></isrootthread>
+</announcethread>
+
+<announcethread>
+  <hthreadid>2</hthreadid>
+  <stack>
+    <frame>...</frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>tc06_two_races.c</file>
+      <line>26</line>
+    </frame>
+  </stack>
+</announcethread>
+
+<error>
+  <unique>...</unique>
+  <tid>...</tid>
+  <kind>Race</kind>
+  <xwhat>
+    <text>Possible data race during read of size 4 at 0x........ by thread #x</text>
+    <hthreadid>1</hthreadid>
+  </xwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>tc06_two_races.c</file>
+      <line>31</line>
+    </frame>
+  </stack>
+  <xauxwhat>
+    <text>This conflicts with a previous write of size 4 by thread #x</text>
+    <hthreadid>2</hthreadid>
+  </xauxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>child_fn</fn>
+      <dir>...</dir>
+      <file>tc06_two_races.c</file>
+      <line>14</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>mythread_wrapper</fn>
+      <dir>...</dir>
+      <file>hg_intercepts.c</file>
+      <line>...</line>
+    </frame>
+    <frame>...</frame>
+  </stack>
+  <auxwhat>Location 0x........ is 0 bytes inside global var "unprot1"</auxwhat>
+  <xauxwhat><text>declared at tc06_two_races.c:9</text> <file>tc06_two_races.c</file> <line>9</line> </xauxwhat>
+</error>
+
+<error>
+  <unique>...</unique>
+  <tid>...</tid>
+  <kind>Race</kind>
+  <xwhat>
+    <text>Possible data race during write of size 4 at 0x........ by thread #x</text>
+    <hthreadid>1</hthreadid>
+  </xwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>tc06_two_races.c</file>
+      <line>31</line>
+    </frame>
+  </stack>
+  <xauxwhat>
+    <text>This conflicts with a previous write of size 4 by thread #x</text>
+    <hthreadid>2</hthreadid>
+  </xauxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>child_fn</fn>
+      <dir>...</dir>
+      <file>tc06_two_races.c</file>
+      <line>14</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>mythread_wrapper</fn>
+      <dir>...</dir>
+      <file>hg_intercepts.c</file>
+      <line>...</line>
+    </frame>
+    <frame>...</frame>
+  </stack>
+  <auxwhat>Location 0x........ is 0 bytes inside global var "unprot1"</auxwhat>
+  <xauxwhat><text>declared at tc06_two_races.c:9</text> <file>tc06_two_races.c</file> <line>9</line> </xauxwhat>
+</error>
+
+<error>
+  <unique>...</unique>
+  <tid>...</tid>
+  <kind>Race</kind>
+  <xwhat>
+    <text>Possible data race during read of size 4 at 0x........ by thread #x</text>
+    <hthreadid>1</hthreadid>
+  </xwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>tc06_two_races.c</file>
+      <line>35</line>
+    </frame>
+  </stack>
+  <xauxwhat>
+    <text>This conflicts with a previous write of size 4 by thread #x</text>
+    <hthreadid>2</hthreadid>
+  </xauxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>child_fn</fn>
+      <dir>...</dir>
+      <file>tc06_two_races.c</file>
+      <line>18</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>mythread_wrapper</fn>
+      <dir>...</dir>
+      <file>hg_intercepts.c</file>
+      <line>...</line>
+    </frame>
+    <frame>...</frame>
+  </stack>
+  <auxwhat>Location 0x........ is 0 bytes inside global var "unprot2"</auxwhat>
+  <xauxwhat><text>declared at tc06_two_races.c:9</text> <file>tc06_two_races.c</file> <line>9</line> </xauxwhat>
+</error>
+
+<error>
+  <unique>...</unique>
+  <tid>...</tid>
+  <kind>Race</kind>
+  <xwhat>
+    <text>Possible data race during write of size 4 at 0x........ by thread #x</text>
+    <hthreadid>1</hthreadid>
+  </xwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>tc06_two_races.c</file>
+      <line>35</line>
+    </frame>
+  </stack>
+  <xauxwhat>
+    <text>This conflicts with a previous write of size 4 by thread #x</text>
+    <hthreadid>2</hthreadid>
+  </xauxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>child_fn</fn>
+      <dir>...</dir>
+      <file>tc06_two_races.c</file>
+      <line>18</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>mythread_wrapper</fn>
+      <dir>...</dir>
+      <file>hg_intercepts.c</file>
+      <line>...</line>
+    </frame>
+    <frame>...</frame>
+  </stack>
+  <auxwhat>Location 0x........ is 0 bytes inside global var "unprot2"</auxwhat>
+  <xauxwhat><text>declared at tc06_two_races.c:9</text> <file>tc06_two_races.c</file> <line>9</line> </xauxwhat>
+</error>
+
+
+<status>
+  <state>FINISHED</state>
+  <time>...</time>
+</status>
+
+<errorcounts>...</errorcounts>
+
+<suppcounts>...</suppcounts>
+
+</valgrindoutput>
+

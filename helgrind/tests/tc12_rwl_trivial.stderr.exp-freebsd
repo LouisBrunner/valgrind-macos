@@ -1,0 +1,31 @@
+
+---Thread-Announcement------------------------------------------
+
+Thread #x is the program's root thread
+
+----------------------------------------------------------------
+
+Thread #x unlocked a not-locked lock at 0x........
+   at 0x........: pthread_rwlock_unlock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
+   ...
+   by 0x........: main (tc12_rwl_trivial.c:29)
+ Lock at 0x........ was first observed
+   at 0x........: pthread_rwlock_init_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_rwlock_init (hg_intercepts.c:...)
+   by 0x........: main (tc12_rwl_trivial.c:18)
+ Address 0x........ is on thread #x's stack
+ in frame #x, created by main (tc12_rwl_trivial.c:14)
+
+
+----------------------------------------------------------------
+
+Thread #x's call to pthread_rwlock_unlock failed
+   with error code 1 (EPERM: Operation not permitted)
+   at 0x........: pthread_rwlock_unlock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_rwlock_unlock (hg_intercepts.c:...)
+   ...
+   by 0x........: main (tc12_rwl_trivial.c:29)
+
+
+ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

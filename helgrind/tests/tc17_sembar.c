@@ -4,6 +4,9 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <unistd.h>
+#if defined(VGO_freebsd)
+# include <sys/fcntl.h>
+#endif
 /* This is really a test of semaphore handling
    (sem_{init,destroy,post,wait}).  Using semaphores a barrier
    function is created.  Helgrind-3.3 (p.k.a Thrcheck) does understand
@@ -222,7 +225,7 @@ static sem_t* my_sem_init (char* identity, int pshared, unsigned count)
 {
    sem_t* s;
 
-#if defined(VGO_linux) || defined(VGO_solaris)
+#if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
    s = malloc(sizeof(*s));
    if (s) {
       if (sem_init(s, pshared, count) < 0) {

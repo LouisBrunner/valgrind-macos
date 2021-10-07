@@ -1,0 +1,40 @@
+
+---Thread-Announcement------------------------------------------
+
+Thread #x is the program's root thread
+
+----------------------------------------------------------------
+
+Thread #x's call to sem_init failed
+   with error code 22 (EINVAL: Invalid argument)
+   at 0x........: sem_init_WRK (hg_intercepts.c:...)
+   by 0x........: sem_init (hg_intercepts.c:...)
+   by 0x........: main (tc18_semabuse.c:23)
+
+----------------------------------------------------------------
+
+Thread #x's call to sem_wait failed
+   with error code 22 (EINVAL: Invalid argument)
+   at 0x........: sem_wait_WRK (hg_intercepts.c:...)
+   by 0x........: sem_wait (hg_intercepts.c:...)
+   by 0x........: main (tc18_semabuse.c:34)
+
+----------------------------------------------------------------
+
+Thread #x's call to sem_post failed
+   with error code 22 (EINVAL: Invalid argument)
+   at 0x........: sem_post_WRK (hg_intercepts.c:...)
+   by 0x........: sem_post (hg_intercepts.c:...)
+   ...
+   by 0x........: main (tc18_semabuse.c:40)
+
+----------------------------------------------------------------
+
+Thread #x's call to sem_destroy failed
+   with error code 22 (EINVAL: Invalid argument)
+   at 0x........: sem_destroy_WRK (hg_intercepts.c:...)
+   by 0x........: sem_destroy (hg_intercepts.c:...)
+   by 0x........: main (tc18_semabuse.c:42)
+
+
+ERROR SUMMARY: 4 errors from 4 contexts (suppressed: 0 from 0)

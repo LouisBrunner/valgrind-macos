@@ -84,7 +84,7 @@ do
           fi
         done
   
-        for f in $(ls -d filter* 2>/dev/null)
+        for f in $(ls -d filter* 2>/dev/null | grep -v \.in)
         do
           if ! echo "${parsed_makefile}" 2>/dev/null | grep '^ *dist_noinst_SCRIPTS *=' |
                grep -qw "$f"

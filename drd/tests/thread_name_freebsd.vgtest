@@ -1,0 +1,3 @@
+prereq: ../../tests/os_test freebsd
+vgopts: --read-var-info=yes --check-stack-var=yes --num-callers=3
+prog: thread_name_freebsd

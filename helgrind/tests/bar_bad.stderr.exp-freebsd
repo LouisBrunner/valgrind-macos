@@ -47,26 +47,12 @@ Thread #x: pthread_barrier_destroy: threads are waiting at barrier
    at 0x........: pthread_barrier_destroy (hg_intercepts.c:...)
    by 0x........: main (bar_bad.c:83)
 
----Thread-Announcement------------------------------------------
-
-Thread #x was created
-   ...
-   by 0x........: pthread_create@* (hg_intercepts.c:...)
-   by 0x........: main (bar_bad.c:77)
-
 ----------------------------------------------------------------
 
-Thread #x: pthread_barrier_wait: barrier is uninitialised
-   at 0x........: pthread_barrier_wait (hg_intercepts.c:...)
-   by 0x........: sleep1 (bar_bad.c:23)
-   by 0x........: mythread_wrapper (hg_intercepts.c:...)
-   ...
+Thread #x's call to pthread_barrier_destroy failed
+   with error code 16 (EBUSY: Device or resource busy)
+   at 0x........: pthread_barrier_destroy (hg_intercepts.c:...)
+   by 0x........: main (bar_bad.c:83)
 
 
 destroy a barrier that was never initialised
-----------------------------------------------------------------
-
-Thread #x: pthread_barrier_destroy: barrier was never initialised
-   at 0x........: pthread_barrier_destroy (hg_intercepts.c:...)
-   by 0x........: main (bar_bad.c:100)
-

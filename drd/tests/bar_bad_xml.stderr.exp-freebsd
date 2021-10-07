@@ -1,0 +1,286 @@
+<?xml version="1.0"?>
+
+<valgrindoutput>
+
+<protocolversion>4</protocolversion>
+<protocoltool>drd</protocoltool>
+
+<preamble>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+</preamble>
+
+<pid>...</pid>
+<ppid>...</ppid>
+<tool>drd</tool>
+
+<args>
+  <vargv>...</vargv>
+  <argv>
+    <exe>./../../helgrind/tests/bar_bad</exe>
+  </argv>
+</args>
+
+<status>
+  <state>RUNNING</state>
+  <time>...</time>
+</status>
+
+
+initialise a barrier with zero count
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>BarrierErr</kind>
+  <what>pthread_barrier_init: 'count' argument is zero: barrier 0x........</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>pthread_barrier_init</fn>
+      <dir>...</dir>
+      <file>drd_pthread_intercepts.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>bar_bad.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</error>
+
+
+initialise a barrier twice
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>BarrierErr</kind>
+  <what>Barrier reinitialization: barrier 0x........</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>pthread_barrier_init</fn>
+      <dir>...</dir>
+      <file>drd_pthread_intercepts.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>bar_bad.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  <first_observed_at>
+    <what>barrier</what>
+    <address>0x........</address>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>pthread_barrier_init</fn>
+      <dir>...</dir>
+      <file>drd_pthread_intercepts.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>bar_bad.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </first_observed_at>
+</error>
+
+
+initialise a barrier which has threads waiting on it
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>BarrierErr</kind>
+  <what>Barrier reinitialization: barrier 0x........</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>pthread_barrier_init</fn>
+      <dir>...</dir>
+      <file>drd_pthread_intercepts.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>bar_bad.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  <first_observed_at>
+    <what>barrier</what>
+    <address>0x........</address>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>pthread_barrier_init</fn>
+      <dir>...</dir>
+      <file>drd_pthread_intercepts.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>bar_bad.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </first_observed_at>
+</error>
+
+
+destroy a barrier that has waiting threads
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>BarrierErr</kind>
+  <what>Destruction of a barrier with active waiters: barrier 0x........</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>pthread_barrier_destroy</fn>
+      <dir>...</dir>
+      <file>drd_pthread_intercepts.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>bar_bad.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  <first_observed_at>
+    <what>barrier</what>
+    <address>0x........</address>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>pthread_barrier_init</fn>
+      <dir>...</dir>
+      <file>drd_pthread_intercepts.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>bar_bad.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </first_observed_at>
+</error>
+
+
+destroy a barrier that was never initialised
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>BarrierErr</kind>
+  <what>Destruction of barrier that is being waited upon: barrier 0x........</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>free</fn>
+      <dir>...</dir>
+      <file>vg_replace_malloc.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>bar_bad.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  <first_observed_at>
+    <what>barrier</what>
+    <address>0x........</address>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>pthread_barrier_init</fn>
+      <dir>...</dir>
+      <file>drd_pthread_intercepts.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>bar_bad.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </first_observed_at>
+</error>
+
+
+<status>
+  <state>FINISHED</state>
+  <time>...</time>
+</status>
+
+<errorcounts>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+</errorcounts>
+
+<suppcounts>...</suppcounts>
+
+</valgrindoutput>
+

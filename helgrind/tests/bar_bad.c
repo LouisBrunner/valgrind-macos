@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
+#include "config.h"
 
 void* child1 ( void* arg )
 {
@@ -95,7 +96,9 @@ int main ( void )
   bar5 = malloc(sizeof(pthread_barrier_t));
   assert(bar5);
   memset(bar5, 1, sizeof(*bar5));
+#if !defined(VGO_freebsd)
   pthread_barrier_destroy(bar5);
+#endif
 
   /* now we need to clean up the mess .. But skip canceling threads.  */
   /* r= pthread_cancel(thr1); assert(!r); // drd doesn't like it. Just exit.

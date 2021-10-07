@@ -87,10 +87,12 @@ EXTRA_DIST =                                        \
 	bar_bad.stderr.exp			    \
 	bar_bad.stderr.exp-nohang		    \
 	bar_bad.stderr.exp-solaris		    \
+	bar_bad.stderr.exp-freebsd		    \
 	bar_bad.vgtest				    \
 	bar_bad_xml.stderr.exp			    \
 	bar_bad_xml.stderr.exp-nohang		    \
 	bar_bad_xml.stderr.exp-solaris		    \
+	bar_bad_xml.stderr.exp-freebsd		    \
 	bar_bad_xml.vgtest			    \
 	bar_trivial.stderr.exp			    \
 	bar_trivial.stdout.exp			    \
@@ -213,6 +215,7 @@ EXTRA_DIST =                                        \
 	pth_detached2.vgtest                        \
 	pth_detached3.stderr.exp1                   \
 	pth_detached3.stderr.exp2                   \
+	pth_detached3.stderr.exp-freebsd            \
 	pth_detached3.vgtest                        \
 	pth_detached_sem.stderr.exp                 \
 	pth_detached_sem.stdout.exp                 \
@@ -235,6 +238,7 @@ EXTRA_DIST =                                        \
 	recursive_mutex.stderr.exp-linux            \
 	recursive_mutex.stderr.exp-darwin           \
 	recursive_mutex.stderr.exp-solaris          \
+	recursive_mutex.stderr.exp-freebsd          \
 	recursive_mutex.vgtest                      \
 	rwlock_race.stderr.exp	                    \
 	rwlock_race.stderr.exp2	                    \
@@ -313,6 +317,8 @@ EXTRA_DIST =                                        \
 	tc09_bad_unlock.stderr.exp-glibc2.8         \
 	tc09_bad_unlock.stderr.exp-s390             \
 	tc09_bad_unlock.stderr.exp-solaris          \
+	tc09_bad_unlock.stderr.exp-freebsd          \
+	tc09_bad_unlock.stderr.exp-freebsd-clang    \
 	tc09_bad_unlock.vgtest                      \
 	tc10_rec_lock.stderr.exp                    \
 	tc10_rec_lock.vgtest                        \
@@ -345,6 +351,7 @@ EXTRA_DIST =                                        \
 	tc23_bogus_condwait.stderr.exp-linux-ppc    \
 	tc23_bogus_condwait.stderr.exp-darwin-x86   \
 	tc23_bogus_condwait.stderr.exp-darwin-amd64 \
+	tc23_bogus_condwait.stderr.exp-freebsd      \
 	tc23_bogus_condwait.vgtest                  \
 	tc24_nonzero_sem.stderr.exp                 \
 	tc24_nonzero_sem.vgtest                     \
@@ -352,6 +359,8 @@ EXTRA_DIST =                                        \
 	thread_name.vgtest			    \
 	thread_name_xml.stderr.exp		    \
 	thread_name_xml.vgtest			    \
+	thread_name_freebsd.stderr.exp		    \
+	thread_name_freebsd.vgtest		    \
 	threaded-fork.stderr.exp		    \
 	threaded-fork.vgtest			    \
 	threaded-fork-vcs.stderr.exp		    \
@@ -410,7 +419,11 @@ check_PROGRAMS =      \
   threaded-fork       \
   trylock             \
   unit_bitmap         \
-  unit_vc
+  unit_vc             \
+  std_atomic          \
+  std_list            \
+  std_mutex	      \
+  std_string
 
 if HAVE_BOOST_1_35
 check_PROGRAMS += boost_thread
@@ -440,10 +453,6 @@ endif
 if CXX_CAN_INCLUDE_THREAD_HEADER
 if HAVE_SHARED_POINTER_ANNOTATION
 check_PROGRAMS += \
-  std_atomic      \
-  std_list        \
-  std_mutex	  \
-  std_string      \
   std_thread      \
   std_thread2
 endif
@@ -478,6 +487,10 @@ endif
 
 if !VGCONF_OS_IS_DARWIN
 check_PROGRAMS += sem_wait
+endif
+
+if VGCONF_OS_IS_FREEBSD
+check_PROGRAMS += thread_name_freebsd
 endif
 
 

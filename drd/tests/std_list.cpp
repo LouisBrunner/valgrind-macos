@@ -15,8 +15,33 @@
 #include <string>
 #include <sstream>
 #include <list>
+#if defined(__FreeBSD__)
+#include <mutex>
+#endif
 
 using namespace std;
+
+#if defined(__FreeBSD__)
+std::mutex g_mutex;
+
+// according to this
+// https://stackoverflow.com/questions/4057319/is-setlocale-thread-safe-function
+// setlocale is not thread safe, and indeed on FreeBSD
+// a load of errors are generated if this is not guarded
+void setlocale_wrapper()
+{
+   const std::lock_guard<std::mutex> lock(g_mutex);
+   setlocale(LC_ALL, "English");
+}
+
+#else
+
+void setlocale_wrapper()
+{
+   setlocale(LC_ALL, "English");
+}
+
+#endif
 
 class SubTest {
 public:
@@ -41,7 +66,7 @@ class Test {
 public:
   void setUp() {
     subTest = new SubTest();
-    setlocale(LC_ALL, "English");
+    setlocale_wrapper();
   }
   void tearDown() {
     delete subTest; }

@@ -1,6 +1,0 @@
-#!/bin/sh
-
-# Filter the error output of Valgrind such that only the line with the error
-# summary is kept. Bart Van Assche, February 26, 2008.
-
-sed -n -e 's/^.*\(ERROR SUMMARY.*\) ([^()]*)$/\1/' -e '/ERROR SUMMARY/p'

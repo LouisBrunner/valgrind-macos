@@ -19,3 +19,29 @@
    fun:allocate_stack
    fun:pthread_create@@GLIBC_2.2*
 }
+{
+   drd-gcc-runtims
+   drd:ConflictingAccess
+   obj:/lib/libgcc_s.so.1
+}
+{
+   drd-iterate-phdr
+   drd:ConflictingAccess
+   fun:dl_iterate_phdr
+}
+{
+   drd-unwind-cfa
+   drd:ConflictingAccess
+   fun:_Unwind_GetCFA
+}
+{
+   drd-thr
+   drd:ConflictingAccess
+   obj:/lib/libthr.so.3
+}
+{
+   drd-rtld
+   drd:ConflictingAccess
+   obj:/libexec/ld-elf*.so.1
+}
+

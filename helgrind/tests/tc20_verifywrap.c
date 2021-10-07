@@ -18,7 +18,7 @@
 #include "safe-pthread.h"
 #include "safe-semaphore.h"
 
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) && !defined(__FreeBSD__)
 
 #if defined(__sun__)
 /* Fake __GLIBC_PREREQ on Solaris. Pretend glibc >= 2.4. */

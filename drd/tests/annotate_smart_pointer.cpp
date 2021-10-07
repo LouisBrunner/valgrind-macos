@@ -37,6 +37,7 @@
 #include <pthread.h>   // pthread_mutex_t
 #endif
 #include "unified_annotations.h"
+#include "config.h"
 
 
 static bool s_enable_annotations;
@@ -142,7 +143,9 @@ public:
   {
     pthread_attr_t attr;
     pthread_attr_init(&attr);
+#if !defined(VGO_freebsd)
     pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN + 4096);
+#endif
     pthread_create(&m_tid, &attr, pf, arg);
     pthread_attr_destroy(&attr);
   }

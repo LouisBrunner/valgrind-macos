@@ -1,0 +1,45 @@
+
+
+initialise a barrier with zero count
+pthread_barrier_init: 'count' argument is zero: barrier 0x........
+   at 0x........: pthread_barrier_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (bar_bad.c:?)
+
+
+initialise a barrier twice
+Barrier reinitialization: barrier 0x........
+   at 0x........: pthread_barrier_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (bar_bad.c:?)
+barrier 0x........ was first observed at:
+   at 0x........: pthread_barrier_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (bar_bad.c:?)
+
+
+initialise a barrier which has threads waiting on it
+Barrier reinitialization: barrier 0x........
+   at 0x........: pthread_barrier_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (bar_bad.c:?)
+barrier 0x........ was first observed at:
+   at 0x........: pthread_barrier_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (bar_bad.c:?)
+
+
+destroy a barrier that has waiting threads
+Destruction of a barrier with active waiters: barrier 0x........
+   at 0x........: pthread_barrier_destroy (drd_pthread_intercepts.c:?)
+   by 0x........: main (bar_bad.c:?)
+barrier 0x........ was first observed at:
+   at 0x........: pthread_barrier_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (bar_bad.c:?)
+
+
+destroy a barrier that was never initialised
+Destruction of barrier that is being waited upon: barrier 0x........
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (bar_bad.c:?)
+barrier 0x........ was first observed at:
+   at 0x........: pthread_barrier_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (bar_bad.c:?)
+
+
+ERROR SUMMARY: 6 errors from 5 contexts (suppressed: 0 from 0)

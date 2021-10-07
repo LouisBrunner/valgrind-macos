@@ -48,6 +48,12 @@ typedef struct {
   data_t buffer[BUFFER_MAX];
 } buffer_t;
 
+typedef struct id_and_wait_s
+{
+    int id;
+    int wait_time;
+} id_and_wait_t;
+
 static int quiet = 0;
 static int use_locking = 1;
 
@@ -158,7 +164,8 @@ static buffer_t b;
 
 static void *producer(void* arg)
 {
-  int* id = arg;
+  id_and_wait_t* ctx = arg;
+  int* id = &ctx->id;
 
   buffer_send(&b, id);
   return NULL;
@@ -168,14 +175,16 @@ static void *producer(void* arg)
 
 static void *consumer(void* arg)
 {
-  int* id = arg;
+  id_and_wait_t* ctx = arg;
+  int id = ctx->id;
+  int wait_time = ctx->wait_time;
   int d;
 
-  usleep(rand() % MAXSLEEP);
+  usleep(wait_time);
   buffer_recv(&b, &d);
   if (! quiet)
   {
-    printf("%i: %i\n", *id, d);
+    printf("%i: %i\n", id, d);
     fflush(stdout);
   }
   return NULL;
@@ -187,7 +196,7 @@ int main(int argc, char** argv)
 {
   pthread_t producers[THREADS];
   pthread_t consumers[THREADS];
-  int thread_arg[THREADS];
+  id_and_wait_t thread_arg[THREADS];
   int i;
   int optchar;
 
@@ -210,7 +219,8 @@ int main(int argc, char** argv)
 
   for (i = 0; i < THREADS; ++i)
   {
-    thread_arg[i] = i;
+    thread_arg[i].id = i;
+    thread_arg[i].wait_time = rand() % MAXSLEEP;
     pthread_create(producers + i, NULL, producer, &thread_arg[i]);
   }
 

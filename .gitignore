@@ -354,6 +354,12 @@
 /drd/tests/*.stderr.out
 /drd/tests/*.stdout.diff*
 /drd/tests/*.stdout.out
+/drd/tests/filter_error_count
+/drd/tests/filter_error_summary
+/drd/tests/filter_stderr
+/drd/tests/filter_stderr_and_thread_no_and_offset
+/drd/tests/filter_thread_no
+/drd/tests/filter_xml_and_thread_no
 /drd/tests/.deps
 /drd/tests/annotate_barrier
 /drd/tests/annotate_hb_err
@@ -629,6 +635,7 @@
 /helgrind/tests/*.stderr.out
 /helgrind/tests/*.stdout.diff*
 /helgrind/tests/*.stdout.out
+/helgrind/tests/filter_stderr
 /helgrind/tests/.deps
 /helgrind/tests/annotate_hbefore
 /helgrind/tests/annotate_rwlock

@@ -1,0 +1,44 @@
+---Thread-Announcement------------------------------------------
+
+Thread #x was created
+   ...
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (locked_vs_unlocked2.c:61)
+
+---Thread-Announcement------------------------------------------
+
+Thread #x was created
+   ...
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (locked_vs_unlocked2.c:62)
+
+----------------------------------------------------------------
+
+ Lock at 0x........ was first observed
+   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
+   by 0x........: main (locked_vs_unlocked2.c:58)
+ Address 0x........ is 0 bytes inside data symbol "mx2a"
+
+ Lock at 0x........ was first observed
+   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
+   by 0x........: main (locked_vs_unlocked2.c:59)
+ Address 0x........ is 0 bytes inside data symbol "mx2b"
+
+ Lock at 0x........ was first observed
+   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
+   by 0x........: main (locked_vs_unlocked2.c:57)
+ Address 0x........ is 0 bytes inside data symbol "mx1b"
+
+Possible data race during write of size 4 at 0x........ by thread #x
+Locks held: 2, at addresses 0x........ 0x........
+   at 0x........: child_fn2 (locked_vs_unlocked2.c:44)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+
+This conflicts with a previous write of size 4 by thread #x
+Locks held: 2, at address 0x........ (and 1 that can't be shown)
+   at 0x........: child_fn1 (locked_vs_unlocked2.c:28)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+ Address 0x........ is 0 bytes inside data symbol "x"
+

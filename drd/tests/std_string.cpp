@@ -8,6 +8,9 @@
 #include <string>
 #include <cstring>
 #include <pthread.h>
+#if defined(__FreeBSD__)
+#include <stdio.h>
+#endif
 #include <stdlib.h>
 #include <unistd.h>
 

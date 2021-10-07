@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "config.h"
 
 void* child_fn ( void* arg )
 {
@@ -37,8 +38,10 @@ void nearly_main ( void )
          is reported in child_fn. */
    pthread_join(child, NULL );
 
+#if !defined(VGO_freebsd)
    /* Unlocking a totally bogus lock. */
    pthread_mutex_unlock( (pthread_mutex_t*) &bogus[50] ); /* ERROR */
+#endif
 
    /* Now we get a freeing-locked-lock error, since the stack
       frame is removed whilst mx2 is still locked. */

@@ -1,0 +1,40 @@
+
+Mutex not locked: mutex 0x........, recursion count 0, owner 0.
+   at 0x........: pthread_cond_wait (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:79)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:59)
+
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_cond_wait (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:82)
+rwlock 0x........ was first observed at:
+   at 0x........: pthread_rwlock_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:62)
+
+Mutex not locked by calling thread: mutex 0x........, recursion count 1, owner 2.
+   at 0x........: pthread_cond_wait (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:85)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:58)
+
+The impossible happened: mutex is locked simultaneously by two threads: mutex 0x........, recursion count 1, owner 2.
+   at 0x........: pthread_cond_wait (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:85)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:58)
+
+Thread 2:
+Mutex not locked by calling thread: mutex 0x........, recursion count 2, owner 1.
+   at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
+   by 0x........: grab_the_lock (tc23_bogus_condwait.c:47)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
+   by 0x........: main (tc23_bogus_condwait.c:58)
+
+
+ERROR SUMMARY: 6 errors from 5 contexts (suppressed: 0 from 0)

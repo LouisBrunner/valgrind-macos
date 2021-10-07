@@ -21,7 +21,7 @@ static const struct test *cur_test;
 
 
 
-static jmp_buf escape;
+static sigjmp_buf escape;
 
 #define BADADDR	((int *)0x1234)
 
@@ -133,7 +133,6 @@ int main()
 		const struct test tests[] = {
 #define T(n, sig, code, addr) { test##n, sig, code, addr }
 			T(1, SIGILL,	ILL_ILLOPN,     &test1_ill),
-
 			T(2, SIGTRAP,	128,		0), /* TRAP_BRKPT? */
 			T(3, SIGSEGV,	128,		0),
 			T(4, SIGSEGV,   128,		0),

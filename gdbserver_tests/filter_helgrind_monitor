@@ -12,6 +12,8 @@ $dir/filter_vgdb |
 # Perform Solaris-specific filtering.
 if $dir/../tests/os_test solaris; then
    $dir/filter_helgrind_monitor_solaris
+elif $dir/../tests/os_test freebsd; then
+   gsed -e '/\(rtld_start.S\|kill.S\|_exit.S\|_select.S\): No such file or directory/d'
 else
    cat
 fi |

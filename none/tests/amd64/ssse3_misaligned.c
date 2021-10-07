@@ -18,14 +18,22 @@ void maybe_fault ( int delta )
 
 void handler ( int signo )
 {
+#if defined(__FreeBSD__)
+   assert(signo == SIGBUS);
+#else
    assert(signo == SIGSEGV);
+#endif
    fprintf(stderr, "three\n");
    exit(0);
 }
 
 int main ( void )
 {
+#if defined(__FreeBSD__)
+   signal(SIGBUS, handler);
+#else
    signal(SIGSEGV, handler);
+#endif
    fprintf(stderr, "you should see: \"one\\ntwo\\nthree\\n\"\n");
    fprintf(stderr, "one\n");
    maybe_fault(0);

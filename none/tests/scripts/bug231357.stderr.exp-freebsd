@@ -1,0 +1,3 @@
+WARNING: Valgrind may not operate correctly in capability mode.
+         Please consider disabling capability by using the RUNNING_ON_VALGRIND mechanism.
+         See http://valgrind.org/docs/manual/manual-core-adv.html#manual-core-adv.clientreq

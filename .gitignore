@@ -571,7 +571,6 @@
 /gdbserver_tests/filter_memcheck_monitor
 /gdbserver_tests/filter_stderr
 /gdbserver_tests/filter_vgdb
-/gdbserver_tests/filter_vgdb.in.orig
 /gdbserver_tests/.deps
 /gdbserver_tests/clean_after_fork
 /gdbserver_tests/detailed

@@ -218,6 +218,12 @@ static inline void my_exit ( int x )
   STRRCHR(NONE, __dl_strrchr); /* in /system/bin/linker */
 #endif
 
+#elif defined(VGO_freebsd)
+ STRRCHR(VG_Z_LIBC_SONAME,   strrchr)
+ STRRCHR(VG_Z_LIBC_SONAME,   rindex)
+ STRRCHR(VG_Z_LD_ELF_SO_1,   strrchr)
+ STRRCHR(VG_Z_LD_ELF32_SO_1, strrchr)
+
 #elif defined(VGO_darwin)
  //STRRCHR(VG_Z_LIBC_SONAME,   strrchr)
  //STRRCHR(VG_Z_LIBC_SONAME,   rindex)
@@ -269,6 +275,12 @@ static inline void my_exit ( int x )
   STRCHR(NONE,        __dl_strchr)
 #endif
 
+#elif defined(VGO_freebsd)
+ STRCHR(VG_Z_LIBC_SONAME,          strchr)
+ STRCHR(VG_Z_LIBC_SONAME,          index)
+ STRCHR(VG_Z_LD_ELF_SO_1,          strchr)
+ STRCHR(VG_Z_LD_ELF32_SO_1,        strchr)
+
 #elif defined(VGO_darwin)
  STRCHR(VG_Z_LIBC_SONAME, strchr)
 # if DARWIN_VERS == DARWIN_10_9
@@ -318,6 +330,11 @@ static inline void my_exit ( int x )
  STRCAT(VG_Z_LIBC_SONAME, strcat)
  STRCAT(VG_Z_LIBC_SONAME, __GI_strcat)
 
+#elif defined(VGO_freebsd)
+ STRCAT(VG_Z_LIBC_SONAME,   strcat)
+ STRCAT(VG_Z_LD_ELF_SO_1,   strcat)
+ STRCAT(VG_Z_LD_ELF32_SO_1, strcat)
+
 #elif defined(VGO_darwin)
  //STRCAT(VG_Z_LIBC_SONAME, strcat)
 
@@ -356,6 +373,9 @@ static inline void my_exit ( int x )
    }
 
 #if defined(VGO_linux)
+ STRNCAT(VG_Z_LIBC_SONAME, strncat)
+
+#elif defined(VGO_freebsd)
  STRNCAT(VG_Z_LIBC_SONAME, strncat)
 
 #elif defined(VGO_darwin)
@@ -407,6 +427,11 @@ static inline void my_exit ( int x )
    }
 
 #if defined(VGO_linux)
+
+#elif defined(VGO_freebsd)
+ STRLCAT(VG_Z_LD_ELF_SO_1,   strlcat)
+ STRLCAT(VG_Z_LIBC_SONAME,   strlcat)
+ STRLCAT(VG_Z_LD_ELF32_SO_1, strlcat)
 
 #elif defined(VGO_darwin)
  //STRLCAT(VG_Z_LIBC_SONAME, strlcat)
@@ -479,6 +504,11 @@ static inline void my_exit ( int x )
   STRLEN(NONE, __dl_strlen); /* in /system/bin/linker */
 # endif
 
+#elif defined(VGO_freebsd)
+ STRLEN(VG_Z_LIBC_SONAME,   strlen)
+ STRLEN(VG_Z_LD_ELF_SO_1,   strlen)
+ STRLEN(VG_Z_LD_ELF32_SO_1, strlen)
+
 #elif defined(VGO_darwin)
  STRLEN(VG_Z_LIBC_SONAME, strlen)
 # if DARWIN_VERS >= DARWIN_10_9
@@ -523,6 +553,11 @@ static inline void my_exit ( int x )
  STRCPY(VG_Z_LIBC_SONAME, strcpy)
  STRCPY(VG_Z_LIBC_SONAME, __GI_strcpy)
 
+#elif defined(VGO_freebsd)
+ STRCPY(VG_Z_LIBC_SONAME,   strcpy)
+ STRCPY(VG_Z_LD_ELF_SO_1,   strcpy)
+ STRCPY(VG_Z_LD_ELF32_SO_1, strcpy)
+
 #elif defined(VGO_darwin)
  STRCPY(VG_Z_LIBC_SONAME, strcpy)
 # if DARWIN_VERS == DARWIN_10_9
@@ -565,6 +600,11 @@ static inline void my_exit ( int x )
  STRNCPY(VG_Z_LIBC_SONAME, __GI_strncpy)
  STRNCPY(VG_Z_LIBC_SONAME, __strncpy_sse2)
  STRNCPY(VG_Z_LIBC_SONAME, __strncpy_sse2_unaligned)
+
+#elif defined(VGO_freebsd)
+ STRNCPY(VG_Z_LIBC_SONAME,   strncpy)
+ STRNCPY(VG_Z_LD_ELF_SO_1,   strncpy)
+ STRNCPY(VG_Z_LD_ELF32_SO_1, strncpy)
 
 #elif defined(VGO_darwin)
  STRNCPY(VG_Z_LIBC_SONAME, strncpy)
@@ -618,6 +658,12 @@ static inline void my_exit ( int x )
  STRLCPY(VG_Z_LIBC_SONAME, strlcpy);
 #endif
 
+#elif defined(VGO_freebsd)
+ #define STRLCPY_CHECK_FOR_DSTSIZE_ZERO
+ STRLCPY(VG_Z_LD_ELF_SO_1,   strlcpy)
+ STRLCPY(VG_Z_LD_ELF32_SO_1, strlcpy)
+ STRLCPY(VG_Z_LIBC_SONAME,   strlcpy)
+
 #elif defined(VGO_darwin)
  #define STRLCPY_CHECK_FOR_DSTSIZE_ZERO
  //STRLCPY(VG_Z_LIBC_SONAME, strlcpy)
@@ -665,6 +711,11 @@ static inline void my_exit ( int x )
  STRNCMP(VG_Z_LIBC_SONAME, __strncmp_sse2)
  STRNCMP(VG_Z_LIBC_SONAME, __strncmp_sse42)
 
+#elif defined(VGO_freebsd)
+ STRNCMP(VG_Z_LIBC_SONAME, strncmp)
+ STRNCMP(VG_Z_LD_ELF_SO_1, strncmp)
+ STRNCMP(VG_Z_LD_ELF32_SO_1, strncmp)
+
 #elif defined(VGO_darwin)
  STRNCMP(VG_Z_LIBC_SONAME,        strncmp)
 # if DARWIN_VERS >= DARWIN_10_9
@@ -709,6 +760,11 @@ static inline void my_exit ( int x )
   STRCASECMP(VG_Z_LIBC_SONAME, __GI_strcasecmp)
 # endif
 
+#elif defined(VGO_freebsd)
+ STRCASECMP(VG_Z_LIBC_SONAME, strcasecmp)
+ STRNCMP(VG_Z_LD_ELF_SO_1, strcasecmp)
+ STRNCMP(VG_Z_LD_ELF32_SO_1, strcasecmp)
+
 #elif defined(VGO_darwin)
  //STRCASECMP(VG_Z_LIBC_SONAME, strcasecmp)
 
@@ -751,6 +807,11 @@ static inline void my_exit ( int x )
   STRNCASECMP(VG_Z_LIBC_SONAME, strncasecmp)
   STRNCASECMP(VG_Z_LIBC_SONAME, __GI_strncasecmp)
 # endif
+
+#elif defined(VGO_freebsd)
+ STRNCASECMP(VG_Z_LIBC_SONAME, strncasecmp)
+ STRNCASECMP(VG_Z_LD_ELF_SO_1, strncasecmp)
+ STRNCASECMP(VG_Z_LD_ELF32_SO_1, strncasecmp)
 
 #elif defined(VGO_darwin)
  //STRNCASECMP(VG_Z_LIBC_SONAME, strncasecmp)
@@ -871,6 +932,11 @@ static inline void my_exit ( int x )
   STRCMP(NONE, __dl_strcmp); /* in /system/bin/linker */
 # endif
 
+#elif defined(VGO_freebsd)
+ STRCMP(VG_Z_LIBC_SONAME, strcmp)
+ STRCMP(VG_Z_LD_ELF_SO_1, strcmp)
+ STRCMP(VG_Z_LD_ELF32_SO_1, strcmp)
+
 #elif defined(VGO_darwin)
  STRCMP(VG_Z_LIBC_SONAME, strcmp)
 # if DARWIN_VERS >= DARWIN_10_9
@@ -940,6 +1006,9 @@ static inline void my_exit ( int x )
    }
 
 #if defined(VGO_linux)
+ MEMRCHR(VG_Z_LIBC_SONAME, memrchr)
+
+#elif defined(VGO_freebsd)
  MEMRCHR(VG_Z_LIBC_SONAME, memrchr)
 
 #elif defined(VGO_darwin)
@@ -1064,6 +1133,11 @@ static inline void my_exit ( int x )
  */
  MEMCPY(NONE, ZuintelZufastZumemcpy)
 
+#elif defined(VGO_freebsd)
+ MEMCPY(VG_Z_LIBC_SONAME,  memcpy)
+ MEMCPY(VG_Z_LD_ELF_SO_1, memcpy)
+ MEMCPY(VG_Z_LD_ELF32_SO_1, memcpy)
+
 #elif defined(VGO_darwin)
 # if DARWIN_VERS <= DARWIN_10_6
   MEMCPY(VG_Z_LIBC_SONAME,  memcpy)
@@ -1129,6 +1203,10 @@ static inline void my_exit ( int x )
  MEMCMP(VG_Z_LIBC_SONAME, bcmp)
  MEMCMP(VG_Z_LD_SO_1,     bcmp)
 
+#elif defined(VGO_freebsd)
+ MEMCMP(VG_Z_LIBC_SONAME,  memcmp)
+ MEMCMP(VG_Z_LIBC_SONAME,  bcmp)
+
 #elif defined(VGO_darwin)
 # if DARWIN_VERS >= DARWIN_10_9
   MEMCMP(libsystemZuplatformZddylib, _platform_memcmp)
@@ -1180,6 +1258,16 @@ static inline void my_exit ( int x )
  STPCPY(VG_Z_LD_LINUX_X86_64_SO_2, stpcpy)
  STPCPY(VG_Z_LD_LINUX_AARCH64_SO_1,stpcpy)
 
+#elif defined(VGO_freebsd)
+ STPCPY(VG_Z_LD_ELF_SO_1,          stpcpy)
+ STPCPY(VG_Z_LD_ELF32_SO_1,        stpcpy)
+ STPCPY(VG_Z_LIBC_SONAME,          stpcpy)
+
+#elif defined(VGO_freebsd)
+ STPCPY(VG_Z_LD_ELF_SO_1,          stpcpy)
+ STPCPY(VG_Z_LD_ELF32_SO_1,        stpcpy)
+ STPCPY(VG_Z_LIBC_SONAME,          stpcpy)
+
 #elif defined(VGO_darwin)
  //STPCPY(VG_Z_LIBC_SONAME,          stpcpy)
  //STPCPY(VG_Z_DYLD,                 stpcpy)
@@ -1215,7 +1303,7 @@ static inline void my_exit ( int x )
       return dst_str; \
    }
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_freebsd)
  STPNCPY(VG_Z_LIBC_SONAME, stpncpy)
 #endif
 
@@ -1269,6 +1357,11 @@ static inline void my_exit ( int x )
 #if defined(VGO_linux)
  MEMSET(VG_Z_LIBC_SONAME, memset)
 
+#elif defined(VGO_freebsd)
+ MEMSET(VG_Z_LIBC_SONAME,   memset)
+ MEMSET(VG_Z_LD_ELF_SO_1,   memset)
+ MEMSET(VG_Z_LD_ELF32_SO_1, memset)
+
 #elif defined(VGO_darwin)
  //MEMSET(VG_Z_LIBC_SONAME, memset)
  //MEMSET(VG_Z_DYLD,        memset)
@@ -1292,6 +1385,11 @@ static inline void my_exit ( int x )
     arches MEMCPY_OK_FOR_FORWARD_MEMMOVE is set, which might cause memmove
     to call memcpy.  */
  MEMMOVE(VG_Z_LD64_SO_1, memmove)
+
+#elif defined(VGO_freebsd)
+ MEMMOVE(VG_Z_LD_ELF_SO_1,   memmove)
+ MEMMOVE(VG_Z_LD_ELF32_SO_1, memmove)
+ MEMMOVE(VG_Z_LIBC_SONAME,   memmove)
 
 #elif defined(VGO_darwin)
 # if DARWIN_VERS <= DARWIN_10_6
@@ -1337,6 +1435,11 @@ static inline void my_exit ( int x )
 
 #if defined(VGO_linux)
  BCOPY(VG_Z_LIBC_SONAME, bcopy)
+
+#elif defined(VGO_freebsd)
+ BCOPY(VG_Z_LIBC_SONAME,   bcopy)
+ BCOPY(VG_Z_LD_ELF_SO_1,   bcopy)
+ BCOPY(VG_Z_LD_ELF32_SO_1, bcopy)
 
 #elif defined(VGO_darwin)
  //BCOPY(VG_Z_LIBC_SONAME, bcopy)
@@ -1412,6 +1515,9 @@ static inline void my_exit ( int x )
    }
 
 #if defined(VGO_linux)
+ GLIBC232_STRCHRNUL(VG_Z_LIBC_SONAME, strchrnul)
+
+#elif defined(VGO_freebsd)
  GLIBC232_STRCHRNUL(VG_Z_LIBC_SONAME, strchrnul)
 
 #elif defined(VGO_darwin)
@@ -1667,6 +1773,9 @@ static inline void my_exit ( int x )
  STRSTR(VG_Z_LIBC_SONAME,          __strstr_sse2)
  STRSTR(VG_Z_LIBC_SONAME,          __strstr_sse42)
 
+#elif defined(VGO_freebsd)
+ STRSTR(VG_Z_LIBC_SONAME,          strstr)
+
 #elif defined(VGO_darwin)
 
 #elif defined(VGO_solaris)
@@ -1710,6 +1819,9 @@ static inline void my_exit ( int x )
    }
 
 #if defined(VGO_linux)
+ STRPBRK(VG_Z_LIBC_SONAME,          strpbrk)
+
+#elif defined(VGO_freebsd)
  STRPBRK(VG_Z_LIBC_SONAME,          strpbrk)
 
 #elif defined(VGO_darwin)
@@ -1759,6 +1871,9 @@ static inline void my_exit ( int x )
  STRCSPN(VG_Z_LIBC_SONAME,          strcspn)
  STRCSPN(VG_Z_LIBC_SONAME,          __GI_strcspn)
 
+#elif defined(VGO_freebsd)
+ STRCSPN(VG_Z_LIBC_SONAME,          strcspn)
+
 #elif defined(VGO_darwin)
 
 #elif defined(VGO_solaris)
@@ -1804,6 +1919,9 @@ static inline void my_exit ( int x )
    }
 
 #if defined(VGO_linux)
+ STRSPN(VG_Z_LIBC_SONAME,          strspn)
+
+#elif defined(VGO_freebsd)
  STRSPN(VG_Z_LIBC_SONAME,          strspn)
 
 #elif defined(VGO_darwin)
@@ -1862,6 +1980,9 @@ static inline void my_exit ( int x )
   STRCASESTR(VG_Z_LIBC_SONAME,      strcasestr)
 # endif
 
+#elif defined(VGO_freebsd)
+  STRCASESTR(VG_Z_LIBC_SONAME,      strcasestr)
+
 #elif defined(VGO_darwin)
 
 #elif defined(VGO_solaris)
@@ -1888,12 +2009,7 @@ static inline void my_exit ( int x )
       return i; \
    }
 
-#if defined(VGO_linux)
- WCSLEN(VG_Z_LIBC_SONAME,          wcslen)
-
-#elif defined(VGO_darwin)
-
-#elif defined(VGO_solaris)
+#if defined(VGO_linux) || defined(VGO_freebsd) || defined(VGO_solaris)
  WCSLEN(VG_Z_LIBC_SONAME,          wcslen)
 
 #endif
@@ -1915,7 +2031,7 @@ static inline void my_exit ( int x )
       return i;                          \
    }
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_freebsd)
  WCSNLEN(VG_Z_LIBC_SONAME, wcsnlen)
  WCSNLEN(VG_Z_LIBC_SONAME, __GI_wcsnlen)
 #endif
@@ -1947,7 +2063,7 @@ static inline void my_exit ( int x )
       return 0; \
    }
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_freebsd)
  WCSCMP(VG_Z_LIBC_SONAME,          wcscmp)
 #endif
 
@@ -1977,7 +2093,7 @@ static inline void my_exit ( int x )
          s1++; s2++; n++; \
       } \
    }
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_freebsd)
  WCSNCMP(VG_Z_LIBC_SONAME,          wcsncmp)
 #endif
 
@@ -2014,7 +2130,7 @@ static inline void my_exit ( int x )
       return dst_orig; \
    }
 
-#if defined(VGO_linux) || defined(VGO_solaris)
+#if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
  WCSCPY(VG_Z_LIBC_SONAME, wcscpy)
 #endif
 
@@ -2037,7 +2153,7 @@ static inline void my_exit ( int x )
       } \
    }
 
-#if defined(VGO_linux)
+#if defined(VGO_linux)  || defined(VGO_freebsd)
  WCSCHR(VG_Z_LIBC_SONAME,          wcschr)
 #endif
 /*---------------------- wcsrchr ----------------------*/
@@ -2059,7 +2175,7 @@ static inline void my_exit ( int x )
       } \
    }
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_freebsd)
  WCSRCHR(VG_Z_LIBC_SONAME, wcsrchr)
 #endif
 
@@ -2089,11 +2205,14 @@ static inline void my_exit ( int x )
  WMEMCHR(VG_Z_LIBC_SONAME, __GI_wmemchr)
 #endif
 
+#if defined(VGO_freebsd)
+ WMEMCHR(VG_Z_LIBC_SONAME, wmemchr)
+#endif
 /*------------------------------------------------------------*/
 /*--- Improve definedness checking of process environment  ---*/
 /*------------------------------------------------------------*/
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_freebsd)
 
 /* If these wind up getting generated via a macro, so that multiple
    versions of each function exist (as above), use the _EZU variants

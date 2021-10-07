@@ -14,7 +14,10 @@ int main(int argc, char **argv)
       char *const argv_exe[] = {"true", NULL};
       if (execve("/bin/true", argv_exe, NULL) < 0)
 #elif defined(VGO_darwin)
-      if (execve("/usr/bin/true", NULL, NULL) < 0)          
+      if (execve("/usr/bin/true", NULL, NULL) < 0)
+#elif defined(VGO_freebsd)
+      char *const argv_exe[] = {"true", NULL};
+      if (execve("/usr/bin/true", argv_exe, NULL) < 0)
 #else
       if (execve("/bin/true", NULL, NULL) < 0)
 #endif

@@ -2,6 +2,8 @@
 
 # filter the output of gdb.
 
+SED=/usr/bin/sed
+
 PATTERNFILE=$(mktemp filter_gdb.tmp.XXXXXXXXXX)
 cat > $PATTERNFILE <<EOF
 #       delete the initial lines between the launch of vgdb and the
@@ -24,6 +26,11 @@ s/^\[?1034hReading symbols/Reading symbols/
 
 #       suppress lines telling file _exit.c does not exist
 /\/_exit.c: No such file or directory/d
+
+#       On FreeBSD if the base and/or lib32 dbg components
+#       are installed but not system source then these
+#       errors get produced by GDB
+/\(rtld_start.S\|kill.S\|_exit.S\|_select.S\): No such file or directory/d
 
 #       Remove some Suse package manager messages
 /^Try: zypper install -C/d
@@ -136,6 +143,15 @@ s/in \.__select ()$/in syscall .../
 #           + yet another way to get a select system call
 s/in select () at \.\.\/sysdeps\/unix\/syscall-template\.S.*$/in syscall .../
 
+#          FreeBSD system call
+s/_select () at _select.S:.*$/0x........ in syscall .../
+
+#          FreeBSD system call again
+/in _select.S/d
+
+#          FreeBSD system call
+s/kill () at kill.S:.*$/0x........ in syscall .../
+
 #      filter out names which starts with a "."
 #      such names are used for "function descriptors" on ppc64
 #      bugzilla 406561
@@ -221,16 +237,16 @@ $dir/../tests/filter_addresses                                      |
 $dir/filter_memcheck_monitor "$@"                                   |
 
 # memcheck filter might leave some "..." lines, we are not interested
-sed -e '/^\ \ \ \ \.\.\.$/d'                                        |
+$SED -e '/^\ \ \ \ \.\.\.$/d'                                        |
 
 # Anonymise or remove, using the big list of PATTERN prepared above
-sed -f $PATTERNFILE |
+$SED -f $PATTERNFILE |
 
 # remove all the lines telling where the SIGFPE was trapped.
-sed -e '/after trap SIGFPE/,/after continue SIGFPE/d'                                              |
+$SED -e '/after trap SIGFPE/,/after continue SIGFPE/d'                                              |
 
 # join together two lines that gdb 7.1 splits in two (???)
 # (in a separate sed, as the below influences the behaviour of the other expressions)
-sed    -e :a -e '$!N;s/\n    at sleepers.c:39/ at sleepers.c:39/;ta' -e 'P;D' 
+$SED    -e :a -e '$!N;s/\n    at sleepers.c:39/ at sleepers.c:39/;ta' -e 'P;D' 
 
 rm $PATTERNFILE

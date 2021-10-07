@@ -5189,6 +5189,7 @@ AC_CONFIG_FILES([
    none/tests/linux/Makefile
    none/tests/darwin/Makefile
    none/tests/solaris/Makefile
+   none/tests/freebsd/Makefile
    none/tests/amd64-linux/Makefile
    none/tests/x86-linux/Makefile
    none/tests/amd64-darwin/Makefile
@@ -5215,6 +5216,14 @@ AC_CONFIG_FILES([tests/filter_stderr_basic],
                 [chmod +x tests/filter_stderr_basic])
 AC_CONFIG_FILES([tests/filter_discards],
                 [chmod +x tests/filter_discards])
+AC_CONFIG_FILES([gdbserver_tests/filter_gdb],
+                [chmod +x gdbserver_tests/filter_gdb])
+AC_CONFIG_FILES([gdbserver_tests/filter_memcheck_monitor],
+                [chmod +x gdbserver_tests/filter_memcheck_monitor])
+AC_CONFIG_FILES([gdbserver_tests/filter_stderr],
+                [chmod +x gdbserver_tests/filter_stderr])
+AC_CONFIG_FILES([gdbserver_tests/filter_vgdb],
+                [chmod +x gdbserver_tests/filter_vgdb])
 AC_CONFIG_FILES([drd/tests/filter_stderr],
                 [chmod +x drd/tests/filter_stderr])
 AC_CONFIG_FILES([drd/tests/filter_error_count],

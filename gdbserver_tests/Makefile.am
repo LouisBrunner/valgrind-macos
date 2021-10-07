@@ -86,11 +86,13 @@ EXTRA_DIST = \
 	mcsignopass.stderr.exp \
 	mcsignopass.stdinB.gdb \
 	mcsignopass.stdoutB.exp \
+	mcsignopass.stdoutB.exp-freebsd \
 	mcsignopass.vgtest \
 	mcsigpass.stderrB.exp \
 	mcsigpass.stderr.exp \
 	mcsigpass.stdinB.gdb \
 	mcsigpass.stdoutB.exp \
+	mcsigpass.stdoutB.exp-freebsd \
 	mcsigpass.vgtest \
 	mcvabits.stderrB.exp \
 	mcvabits.stderr.exp \

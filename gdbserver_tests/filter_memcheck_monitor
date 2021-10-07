@@ -4,11 +4,12 @@
 
 dir=`dirname $0`
 
+SED=/usr/bin/sed
+
 $dir/../memcheck/tests/filter_stderr "$@"              |
 
 # filter vgdb messages
 $dir/filter_vgdb                                       |
-
 
 
 # filter some normal error messages provided by some gdb
@@ -26,10 +27,10 @@ $dir/filter_vgdb                                       |
 # When doing inferior function calls from gdb (in mcmain_pic) there might be
 # extra heap usage from gdb that we aren't interested in tracking.
 #
-sed -e '/Cannot access memory at address 0x......../d'                   \
+$SED -e '/Cannot access memory at address 0x......../d'                   \
     -e '/^[1-9][0-9]*	\.\.\/sysdeps\/powerpc\/powerpc32\/dl-start\.S: No such file or directory\./d' \
     -e '/^Missing separate debuginfo/d'                                  \
     -e '/^Try: zypper install -C/d'                                      \
     -e 's/Test 3:   FAIL: expected si_code==2, not 128/Test 3:   PASS/'  \
-    -e 's/in use at exit: [0-9][0-9]* bytes in [0-9][0-9]* blocks/in use at exit: ... bytes in ... blocks/' \
+    -e 's/in use at exit: [0-9][0-9,]* bytes in [0-9][0-9]* blocks/in use at exit: ... bytes in ... blocks/' \
     -e '/^  total heap usage: /d'

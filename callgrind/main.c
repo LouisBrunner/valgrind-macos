@@ -1726,7 +1726,7 @@ void collect_time (struct vki_timespec *systime, struct vki_timespec *syscputime
       break;
     }
    case systime_nsec:
-#  if defined(VGO_linux) || defined(VGO_solaris)
+#  if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
       VG_(clock_gettime)(systime, VKI_CLOCK_MONOTONIC);
       VG_(clock_gettime)(syscputime, VKI_CLOCK_THREAD_CPUTIME_ID);
 

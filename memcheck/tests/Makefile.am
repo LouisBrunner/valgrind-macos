@@ -36,6 +36,9 @@ endif
 if VGCONF_OS_IS_SOLARIS
 SUBDIRS += solaris
 endif
+if VGCONF_OS_IS_FREEBSD
+SUBDIRS += freebsd
+endif
 
 # Platform-specific tests
 if VGCONF_PLATFORMS_INCLUDE_X86_LINUX
@@ -52,6 +55,12 @@ SUBDIRS += x86-solaris
 endif
 if VGCONF_PLATFORMS_INCLUDE_AMD64_SOLARIS
 SUBDIRS += amd64-solaris
+endif
+if VGCONF_PLATFORMS_INCLUDE_X86_FREEBSD
+SUBDIRS += x86-freebsd
+endif
+if VGCONF_PLATFORMS_INCLUDE_AMD64_FREEBSD
+SUBDIRS += amd64-freebsd
 endif
 
 DIST_SUBDIRS = x86 amd64 ppc32 ppc64 s390x linux \

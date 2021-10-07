@@ -113,7 +113,11 @@ valkyriedir  = $(top_builddir)/docs/vg-html
 downloadsdir = $(top_builddir)/docs/downloads
 vgdir        = $(top_builddir)/docs/valgrind
 
+if VGCONF_OS_IS_FREEBSD
+XML_CATALOG_FILES = /usr/local/share/xml/catalog
+else
 XML_CATALOG_FILES = /etc/xml/catalog
+endif
 
 # file to log print output to
 LOGFILE = print.log
@@ -132,6 +136,7 @@ XSL_FO_STYLE          = $(mylibdir)/vg-fo.xsl
 XSL_TEXT_STYLE        = $(mylibdir)/vg-faq2txt.xsl
 XSL_WEBSITE_STYLE     = $(mylibdir)/vg-html-website.xsl
 XSL_MAN_STYLES = \
+    /usr/local/share/xsl/docbook/manpages/docbook.xsl \
     /usr/share/sgml/docbook/xsl-stylesheets/manpages/docbook.xsl \
     /usr/share/xml/docbook/stylesheet/nwalsh/current/manpages/docbook.xsl \
     /usr/share/xml/docbook/stylesheet/nwalsh/manpages/docbook.xsl

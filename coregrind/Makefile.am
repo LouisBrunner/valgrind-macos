@@ -49,6 +49,11 @@ valgrind_SOURCES = \
 	launcher-linux.c \
 	m_debuglog.c
 endif
+if VGCONF_OS_IS_FREEBSD
+valgrind_SOURCES = \
+	launcher-freebsd.c \
+	m_debuglog.c
+endif
 
 # for valgrind coregrind building, use the LTO versions, in case they differ from non lto versions
 AR = ${LTO_AR}
@@ -91,6 +96,12 @@ vgdb_SOURCES += vgdb-invoker-none.c
 endif
 if VGCONF_OS_IS_SOLARIS
 vgdb_SOURCES += vgdb-invoker-solaris.c
+endif
+if VGCONF_OS_IS_FREEBSD
+# As with Darwin, we don't have ptrace PTRACE_PEEKTEXT
+# so we can't use vgdb-invoker-ptrace.c
+# Need to find an alternative, like Solaris
+vgdb_SOURCES += vgdb-invoker-none.c
 endif
 
 vgdb_CPPFLAGS  = $(AM_CPPFLAGS_PRI)

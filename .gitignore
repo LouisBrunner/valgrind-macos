@@ -55,6 +55,7 @@
 /auxprogs/getoff-nanomips-linux
 /auxprogs/getoff-amd64-solaris
 /auxprogs/getoff-x86-solaris
+/auxprogs/getoff-*-freebsd
 /auxprogs/libmpiwrap-PPC32_LINUX.so
 /auxprogs/libmpiwrap-PPC64_LINUX.so
 /auxprogs/libmpiwrap-x86-darwin.so
@@ -73,6 +74,7 @@
 /cachegrind/cachegrind-*-darwin
 /cachegrind/cachegrind-*-linux
 /cachegrind/cachegrind-*-solaris
+/cachegrind/cachegrind-*-freebsd
 /cachegrind/cg_annotate
 /cachegrind/cg_diff
 /cachegrind/cg_merge
@@ -119,6 +121,7 @@
 /callgrind/callgrind-*-darwin
 /callgrind/callgrind-*-linux
 /callgrind/callgrind-*-solaris
+/callgrind/callgrind-*-freebsd
 /callgrind/callgrind_annotate
 /callgrind/callgrind_control
 /callgrind/Makefile
@@ -152,6 +155,7 @@
 /coregrind/link_tool_exe_darwin
 /coregrind/link_tool_exe_linux
 /coregrind/link_tool_exe_solaris
+/coregrind/link_tool_exe_freebsd
 /coregrind/Makefile
 /coregrind/Makefile.in
 /coregrind/no_op_client_for_valgrind
@@ -259,11 +263,13 @@
 /dhat/dhat-*-darwin
 /dhat/dhat-*-linux
 /dhat/dhat-*-solaris
+/dhat/dhat-*-freebsd
 /dhat/Makefile
 /dhat/Makefile.in
 /dhat/vgpreload_dhat-*-linux.so
 /dhat/vgpreload_dhat-*-darwin.so
 /dhat/vgpreload_dhat-*-solaris.so
+/dhat/vgpreload_dhat-*-freebsd.so
 
 # /dhat/tests/
 /dhat/tests/Makefile
@@ -324,12 +330,14 @@
 /drd/drd-*-darwin
 /drd/drd-*-linux
 /drd/drd-*-solaris
+/drd/drd-*-freebsd
 /drd/Makefile
 /drd/Makefile.in
 /drd/splash2
 /drd/vgpreload_drd-*-linux.so
 /drd/vgpreload_drd-*-darwin.so
 /drd/vgpreload_drd-*-solaris.so
+/drd/vgpreload_drd-*-freebsd.so
 
 # /drd/docs/
 /drd/docs/.deps
@@ -455,6 +463,7 @@
 /drd/tests/tc24_nonzero_sem
 /drd/tests/threaded-fork
 /drd/tests/thread_name
+/drd/tests/thread_name_freebsd
 /drd/tests/trylock
 /drd/tests/tsan_unittest
 /drd/tests/unit_bitmap
@@ -552,6 +561,11 @@
 /gdbserver_tests/*.dSYM
 /gdbserver_tests/*.diff*
 /gdbserver_tests/*.out
+/gdbserver_tests/filter_gdb
+/gdbserver_tests/filter_memcheck_monitor
+/gdbserver_tests/filter_stderr
+/gdbserver_tests/filter_vgdb
+/gdbserver_tests/filter_vgdb.in.orig
 /gdbserver_tests/.deps
 /gdbserver_tests/clean_after_fork
 /gdbserver_tests/detailed
@@ -597,11 +611,13 @@
 /helgrind/helgrind-*-darwin
 /helgrind/helgrind-*-linux
 /helgrind/helgrind-*-solaris
+/helgrind/helgrind-*-freebsd
 /helgrind/Makefile
 /helgrind/Makefile.in
 /helgrind/vgpreload_helgrind-*-linux.so
 /helgrind/vgpreload_helgrind-*-darwin.so
 /helgrind/vgpreload_helgrind-*-solaris.so
+/helgrind/vgpreload_helgrind-*-freebsd.so
 
 # /helgrind/docs/
 /helgrind/docs/Makefile
@@ -683,6 +699,7 @@
 /lackey/lackey-*-darwin
 /lackey/lackey-*-linux
 /lackey/lackey-*-solaris
+/lackey/lackey-*-freebsd
 /lackey/Makefile
 /lackey/Makefile.in
 
@@ -707,6 +724,7 @@
 /massif/massif-*-darwin
 /massif/massif-*-linux
 /massif/massif-*-solaris
+/massif/massif-*-freebsd
 /massif/ms_print
 
 # /massif/docs/
@@ -765,6 +783,7 @@
 /memcheck/memcheck-*-darwin
 /memcheck/memcheck-*-linux
 /memcheck/memcheck-*-solaris
+/memcheck/memcheck-*-freebsd
 
 # /memcheck/docs/
 /memcheck/docs/Makefile.in
@@ -777,6 +796,8 @@
 /memcheck/tests/*.stderr.out
 /memcheck/tests/*.stdout.diff*
 /memcheck/tests/*.stdout.out
+/memcheck/tests/filter_dw4
+/memcheck/tests/filter_overlaperror
 /memcheck/tests/.deps
 /memcheck/tests/accounting
 /memcheck/tests/addressable
@@ -968,7 +989,7 @@
 /memcheck/tests/zeropage
 
 # /memcheck/tests/amd64/
-/memcheck/tests/amd64/*.diff
+/memcheck/tests/amd64/*.diff*
 /memcheck/tests/amd64/*.dSYM
 /memcheck/tests/amd64/*.out
 /memcheck/tests/amd64/.deps
@@ -1204,6 +1225,7 @@
 /memcheck/tests/x86/*.stderr.out
 /memcheck/tests/x86/*.stdout.diff
 /memcheck/tests/x86/*.stdout.out
+/memcheck/tests/x86/filter_pushfpopf
 /memcheck/tests/x86/.deps
 /memcheck/tests/x86/Makefile
 /memcheck/tests/x86/Makefile.in
@@ -1260,6 +1282,65 @@
 /memcheck/tests/x86-solaris/ldsoexec
 /memcheck/tests/x86-solaris/scalar
 
+# /memcheck/tests/freebsd/
+/memcheck/tests/freebsd/*.stderr.diff*
+/memcheck/tests/freebsd/*.stderr.out
+/memcheck/tests/freebsd/*.stdout.diff
+/memcheck/tests/freebsd/*.stdout.out
+/memcheck/tests/freebsd/.deps
+/memcheck/tests/freebsd/Makefile
+/memcheck/tests/freebsd/Makefile.in
+/memcheck/tests/freebsd/statfs
+/memcheck/tests/freebsd/pdfork_pdkill
+/memcheck/tests/freebsd/getfsstat
+/memcheck/tests/freebsd/inlinfo
+/memcheck/tests/freebsd/inlinfo_nested.so
+/memcheck/tests/freebsd/extattr
+/memcheck/tests/freebsd/sigwait
+/memcheck/tests/freebsd/chflags
+/memcheck/tests/freebsd/get_set_login
+/memcheck/tests/freebsd/revoke
+/memcheck/tests/freebsd/scalar
+/memcheck/tests/freebsd/capsicum
+/memcheck/tests/freebsd/getfh
+/memcheck/tests/freebsd/linkat
+/memcheck/tests/freebsd/scalar_fork
+/memcheck/tests/freebsd/scalar_thr_exit
+/memcheck/tests/freebsd/scalar_abort2
+/memcheck/tests/freebsd/scalar_pdfork
+/memcheck/tests/freebsd/scalar_vfork
+/memcheck/tests/freebsd/stat
+/memcheck/tests/freebsd/file_locking_wait6
+/memcheck/tests/freebsd/utimens
+/memcheck/tests/freebsd/access
+/memcheck/tests/freebsd/chmod_chown
+/memcheck/tests/freebsd/misc
+/memcheck/tests/freebsd/get_set_context
+/memcheck/tests/freebsd/utimes
+/memcheck/tests/freebsd/static_allocs
+
+# /memcheck/tests/amd64-freebsd
+/memcheck/tests/amd64-freebsd/*.stderr.diff
+/memcheck/tests/amd64-freebsd/*.stderr.out
+/memcheck/tests/amd64-freebsd/*.stdout.diff
+/memcheck/tests/amd64-freebsd/*.stdout.out
+/memcheck/tests/amd64-freebsd/.deps
+/memcheck/tests/amd64-freebsd/Makefile
+/memcheck/tests/amd64-freebsd/Makefile.in
+/memcheck/tests/amd64-freebsd/posix_fadvise
+/memcheck/tests/amd64-freebsd/posix_fallocate
+
+# /memcheck/tests/x86-freebsd
+/memcheck/tests/x86-freebsd/*.stderr.diff
+/memcheck/tests/x86-freebsd/*.stderr.out
+/memcheck/tests/x86-freebsd/*.stdout.diff
+/memcheck/tests/x86-freebsd/*.stdout.out
+/memcheck/tests/x86-freebsd/.deps
+/memcheck/tests/x86-freebsd/Makefile
+/memcheck/tests/x86-freebsd/Makefile.in
+/memcheck/tests/x86-freebsd/posix_fadvise
+/memcheck/tests/x86-freebsd/posix_fallocate
+
 # /mpi/
 /mpi/*.dSYM
 /mpi/*.so
@@ -1290,6 +1371,7 @@
 /none/none-*-darwin
 /none/none-*-linux
 /none/none-*-solaris
+/none/none-*-freebsd
 
 # /none/docs/
 /none/docs/Makefile.in
@@ -1945,6 +2027,18 @@
 /none/tests/solaris/stack-overflow
 /none/tests/solaris/stack_prot
 /none/tests/solaris/threads_exitall
+
+# /none/tests/freebsd/
+/none/tests/freebsd/*.stderr.diff
+/none/tests/freebsd/*.stderr.out
+/none/tests/freebsd/*.stdout.diff
+/none/tests/freebsd/*.stdout.out
+/none/tests/freebsd/.deps
+/none/tests/freebsd/Makefile
+/none/tests/freebsd/Makefile.in
+/none/tests/freebsd/auxv
+/none/tests/freebsd/osrel
+/none/tests/freebsd/swapcontext
 
 # /none/tests/x86/
 /none/tests/x86/*.dSYM

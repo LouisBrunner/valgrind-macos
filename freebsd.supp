@@ -1,0 +1,51 @@
+# Suppressions for FreeBSD / Memcheck
+#This is a workaround for a bug in rtld
+{
+   MEMCHECK-RTLD-32ON64
+   Memcheck:Addr4
+   fun:memcpy
+   fun:elf_aux_info
+}
+{
+   MEMCHECK-RTLD-COND
+   Memcheck:Cond
+   obj:/libexec/ld-elf*.so.1
+}
+{
+   MEMCHECK-RTLD-32ON64-ADDR4
+   Memcheck:Addr4
+   obj:/libexec/ld-elf32.so.1
+   obj:/libexec/ld-elf32.so.1
+}
+
+{
+   MEMCHECK-LIBSTDC++-REACHABLE
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:/usr/local/lib*/gcc9/libstdc++.so.*
+   obj:/libexec/ld-elf*.so.1
+   obj:/libexec/ld-elf*.so.1
+   obj:/libexec/ld-elf*.so.1
+}
+{
+   MEMCHECK-LIBC-REACHABLE
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:*/lib*/libc.so.7
+   obj:*/lib*/libc.so.7
+   obj:*/lib*/libc.so.7
+   fun:vfprintf_l
+}
+# clang only, should check that this is not a genuine error
+{
+   MEMCHECK-POSIX-FADVISE
+   Memcheck:Cond
+   fun:posix_fadvise
+}
+{
+   MEMCHECK-POSIX-FALLOCATE
+   Memcheck:Cond
+   fun:posix_fallocate
+}

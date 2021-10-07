@@ -47,6 +47,9 @@ endif
 if VGCONF_OS_IS_SOLARIS
 SUBDIRS += solaris
 endif
+if VGCONF_OS_IS_FREEBSD
+SUBDIRS += freebsd
+endif
 
 # Platform-specific tests
 if VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX
@@ -69,7 +72,7 @@ SUBDIRS += x86-solaris
 endif
 
 DIST_SUBDIRS = x86 amd64 ppc32 ppc64 arm arm64 s390x mips32 mips64 nanomips \
-               linux darwin solaris amd64-linux x86-linux amd64-darwin \
+               linux darwin solaris freebsd amd64-linux x86-linux amd64-darwin \
                x86-darwin amd64-solaris x86-solaris scripts .
 
 dist_noinst_SCRIPTS = \
@@ -265,9 +268,12 @@ if HAVE_NESTED_FUNCTIONS
 endif
 
 # This doesn't appear to be compilable on Darwin.
+if ! VGCONF_OS_IS_DARWIN_OR_FREEBSD
+   check_PROGRAMS += rlimit64_nofile
+endif
+
 if ! VGCONF_OS_IS_DARWIN
-   check_PROGRAMS += rlimit64_nofile \
-        ppoll_alarm
+   check_PROGRAMS += ppoll_alarm
 endif
 
 # clang does not know -ansi
@@ -328,9 +334,14 @@ pth_self_kill_LDADD	= -lpthread
 pth_stackalign_LDADD	= -lpthread
 pth_2sig_LDADD		= -lpthread
 pth_term_signal_LDADD	= -lpthread
-res_search_LDADD        = -lresolv -lpthread
+if VGCONF_OS_IS_FREEBSD
+   res_search_LDADD      = -lpthread
+   resolv_LDADD             = -lpthread
+else
+   res_search_LDADD      = -lresolv -lpthread
+   resolv_LDADD             = -lresolv -lpthread
+endif
 resolv_CFLAGS		= $(AM_CFLAGS)
-resolv_LDADD            = -lresolv -lpthread
 if VGCONF_OS_IS_SOLARIS
 resolv_CFLAGS		+= -U_REENTRANT
 endif
@@ -366,7 +377,7 @@ else
 endif
 
 vgprintf_nvalgrind_SOURCES = vgprintf.c
-vgprintf_nvalgrind_CFLAGS = -DNVALGRIND
+vgprintf_nvalgrind_CFLAGS = ${AM_CFLAGS} -DNVALGRIND
 
 valgrind_cpp_test_SOURCES = valgrind_cpp_test.cpp
 valgrind_cpp_test_LDADD   = -lstdc++

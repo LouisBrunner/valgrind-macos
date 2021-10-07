@@ -224,7 +224,7 @@ case "${host_cpu}" in
         ARCH_MAX="x86"
         ;;
 
-     x86_64) 
+     x86_64|amd64) 
         AC_MSG_RESULT([ok (${host_cpu})])
         ARCH_MAX="amd64"
         ;;
@@ -358,6 +358,57 @@ case "${host_os}" in
                     ;;
         esac
 
+        ;;
+
+     *freebsd*)
+        AC_MSG_RESULT([ok (${host_os})])
+        VGCONF_OS="freebsd"
+        AC_DEFINE([FREEBSD_10], 1000, [FREEBSD_VERS value for FreeBSD 10.x])
+        AC_DEFINE([FREEBSD_11], 1100, [FREEBSD_VERS value for FreeBSD 11.x])
+        AC_DEFINE([FREEBSD_12], 1200, [FREEBSD_VERS value for FreeBSD 12.0 to 12.1])
+        AC_DEFINE([FREEBSD_12_2], 1220, [FREEBSD_VERS value for FreeBSD 12.2])
+        AC_DEFINE([FREEBSD_13], 1300, [FREEBSD_VERS value for FreeBSD 13.x])
+        AC_DEFINE([FREEBSD_14], 1400, [FREEBSD_VERS value for FreeBSD 14.x])
+
+        AC_MSG_CHECKING([for the kernel version])
+        kernel=`uname -r`
+
+        case "${kernel}" in
+        10.*)
+           AC_MSG_RESULT([FreeBSD 10.x (${kernel})])
+           AC_DEFINE([FREEBSD_VERS], FREEBSD_10, [FreeBSD version])
+           ;;
+        11.*)
+           AC_MSG_RESULT([FreeBSD 11.x (${kernel})])
+           AC_DEFINE([FREEBSD_VERS], FREEBSD_11, [FreeBSD version])
+           ;;
+        12.*)
+           case "${kernel}" in
+           12.[[0-1]]-*)
+              AC_MSG_RESULT([FreeBSD 12.x (${kernel})])
+              AC_DEFINE([FREEBSD_VERS], FREEBSD_12, [FreeBSD version])
+              ;;
+           *)
+              AC_MSG_RESULT([FreeBSD 12.x (${kernel})])
+              AC_DEFINE([FREEBSD_VERS], FREEBSD_12_2, [FreeBSD version])
+              ;;
+           esac
+           ;;
+        13.*)
+           AC_MSG_RESULT([FreeBSD 13.x (${kernel})])
+           AC_DEFINE([FREEBSD_VERS], FREEBSD_13, [FreeBSD version])
+           ;;
+        14.*)
+           AC_MSG_RESULT([FreeBSD 14.x (${kernel})])
+           AC_DEFINE([FREEBSD_VERS], FREEBSD_14, [FreeBSD version])
+           ;;
+        *)
+           AC_MSG_RESULT([unsupported (${kernel})])
+           AC_MSG_ERROR([Valgrind works on FreeBSD 10.x to 14.x])
+           ;;
+        esac
+
+        DEFAULT_SUPP="freebsd.supp freebsd-helgrind.supp freebsd-drd.supp ${DEFAULT_SUPP}"
         ;;
 
      *darwin*)
@@ -660,6 +711,48 @@ case "$ARCH_MAX-$VGCONF_OS" in
         valt_load_address_pri_inner="0x38000000"
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
        ;;
+     x86-freebsd)
+        VGCONF_ARCH_PRI="x86"
+        VGCONF_ARCH_SEC=""
+        VGCONF_PLATFORM_PRI_CAPS="X86_FREEBSD"
+        VGCONF_PLATFORM_SEC_CAPS=""
+        valt_load_address_pri_norml="0x38000000"
+        valt_load_address_pri_inner="0x28000000"
+        valt_load_address_sec_norml="0xUNSET"
+        valt_load_address_sec_inner="0xUNSET"
+        AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
+        ;;
+     amd64-freebsd)
+        if test x$vg_cv_only64bit = xyes; then
+           VGCONF_ARCH_PRI="amd64"
+           VGCONF_ARCH_SEC=""
+           VGCONF_PLATFORM_PRI_CAPS="AMD64_FREEBSD"
+           VGCONF_PLATFORM_SEC_CAPS=""
+        elif test x$vg_cv_only32bit = xyes; then
+           VGCONF_ARCH_PRI="x86"
+           VGCONF_ARCH_SEC=""
+           VGCONF_PLATFORM_PRI_CAPS="X86_FREEBSD"
+           VGCONF_PLATFORM_SEC_CAPS=""
+        else
+           VGCONF_ARCH_PRI="amd64"
+           VGCONF_ARCH_SEC="x86"
+           VGCONF_PLATFORM_PRI_CAPS="AMD64_FREEBSD"
+           VGCONF_PLATFORM_SEC_CAPS="X86_FREEBSD"
+        fi
+	# These work with either base clang or ports installed gcc
+	# Hand rolled compilers probably need INSTALL_DIR/lib (at least for gcc)
+        if test x$is_clang = xclang ; then
+           FLAG_32ON64="-B/usr/lib32"
+        else
+           GCC_MAJOR_VERSION=`${CC} -dumpversion | $SED 's/\..*//' 2>/dev/null`
+           FLAG_32ON64="-B/usr/local/lib32/gcc${GCC_MAJOR_VERSION} -Wl,-rpath,/usr/local/lib32/gcc${GCC_MAJOR_VERSION}/"
+        fi
+        valt_load_address_pri_norml="0x38000000"
+        valt_load_address_pri_inner="0x28000000"
+        valt_load_address_sec_norml="0x38000000"
+        valt_load_address_sec_inner="0x28000000"
+        AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
+        ;;
      # Darwin gets identified as 32-bit even when it supports 64-bit.
      # (Not sure why, possibly because 'uname' returns "i386"?)  Just about
      # all Macs support both 32-bit and 64-bit, so we just build both.  If
@@ -860,12 +953,15 @@ esac
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_X86,   
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_LINUX \
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_LINUX \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xX86_FREEBSD \
+                 -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_FREEBSD \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN \
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_DARWIN \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xX86_SOLARIS \
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_SOLARIS )
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_AMD64, 
                test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_FREEBSD \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_SOLARIS )
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_PPC32, 
@@ -918,7 +1014,12 @@ AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_MIPS64_LINUX,
                test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX)
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_NANOMIPS_LINUX,
                test x$VGCONF_PLATFORM_PRI_CAPS = xNANOMIPS_LINUX)
-AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_X86_DARWIN,   
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_X86_FREEBSD,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xX86_FREEBSD \
+                 -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_FREEBSD)
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_AMD64_FREEBSD, 
+               test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_FREEBSD)
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_X86_DARWIN,
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN \
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_DARWIN)
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_AMD64_DARWIN, 
@@ -945,12 +1046,20 @@ AM_CONDITIONAL(VGCONF_OS_IS_LINUX,
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xNANOMIPS_LINUX)
+AM_CONDITIONAL(VGCONF_OS_IS_FREEBSD,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xX86_FREEBSD \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_FREEBSD)
 AM_CONDITIONAL(VGCONF_OS_IS_DARWIN,
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN)
 AM_CONDITIONAL(VGCONF_OS_IS_SOLARIS,
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_SOLARIS \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_SOLARIS)
+AM_CONDITIONAL(VGCONF_OS_IS_DARWIN_OR_FREEBSD,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xX86_FREEBSD \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_FREEBSD \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN)
 
 
 # Sometimes, in the Makefile.am files, it's useful to know whether or not
@@ -1068,6 +1177,14 @@ AC_EGREP_CPP([DARWIN_LIBC], [
 ],
 GLIBC_VERSION="darwin")
 
+AC_EGREP_CPP([FREEBSD_LIBC], [
+#include <sys/cdefs.h>
+#if defined(__FreeBSD__)
+  FREEBSD_LIBC
+#endif
+],
+GLIBC_VERSION="freebsd")
+
 # not really a version check
 AC_EGREP_CPP([BIONIC_LIBC], [
 #if defined(__ANDROID__)
@@ -1157,6 +1274,11 @@ case "${GLIBC_VERSION}" in
      darwin)
 	AC_MSG_RESULT(Darwin)
 	AC_DEFINE([DARWIN_LIBC], 1, [Define to 1 if you're using Darwin])
+	# DEFAULT_SUPP set by kernel version check above.
+	;;
+     freebsd)
+	AC_MSG_RESULT(FreeBSD)
+	AC_DEFINE([FREEBSD_LIBC], 1, [Define to 1 if you're using FreeBSD])
 	# DEFAULT_SUPP set by kernel version check above.
 	;;
      bionic)
@@ -1929,12 +2051,12 @@ case "${host_cpu}" in
         AC_MSG_CHECKING([if gcc accepts -m32])
 
         safe_CFLAGS=$CFLAGS
-        CFLAGS="-m32 -Werror"
+        CFLAGS="${FLAG_32ON64} -m32 -Werror"
 
         AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
           return 0;
         ]])], [
-        FLAG_M32="-m32"
+        FLAG_M32="${FLAG_32ON64} -m32"
         AC_MSG_RESULT([yes])
         ], [
         FLAG_M32=""
@@ -2273,6 +2395,7 @@ AC_GCC_WARNING_SUBST_NO([unused-function], [FLAG_W_NO_UNUSED_FUNCTION])
 AC_GCC_WARNING_SUBST_NO([static-local-in-inline], [FLAG_W_NO_STATIC_LOCAL_IN_INLINE])
 AC_GCC_WARNING_SUBST_NO([mismatched-new-delete], [FLAG_W_NO_MISMATCHED_NEW_DELETE])
 AC_GCC_WARNING_SUBST_NO([infinite-recursion], [FLAG_W_NO_INFINITE_RECURSION])
+AC_GCC_WARNING_SUBST_NO([expansion-to-defined], [FLAG_W_NO_EXPANSION_TO_DEFINED])
 
 AC_GCC_WARNING_SUBST([write-strings], [FLAG_W_WRITE_STRINGS])
 AC_GCC_WARNING_SUBST([empty-body], [FLAG_W_EMPTY_BODY])
@@ -2656,7 +2779,7 @@ CFLAGS=$safe_CFLAGS
 AC_MSG_CHECKING([if gcc accepts -no-pie])
 
 safe_CFLAGS=$CFLAGS
-CFLAGS="-no-pie"
+CFLAGS="-no-pie -Werror"
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
   return 0;
@@ -2679,30 +2802,52 @@ CFLAGS=$safe_CFLAGS
 # will reside. -Ttext aligns just the .text section start (but not any
 # other section).
 #
-# So test for -Ttext-segment which is supported by all bfd ld versions
+# LLVM ld.lld 10.0 changed the semantics of its -Ttext. See "Breaking changes"
+# in https://releases.llvm.org/10.0.0/tools/lld/docs/ReleaseNotes.html
+# The --image-base option (since version 6.0?) provides the semantics needed.
+# -Ttext-segment generates an error, but -Ttext now more closely
+# follows the GNU (bfd) ld's -Ttext.
+#
+# So test first for --image-base support, and if that fails then
+# for -Ttext-segment which is supported by all bfd ld versions
 # and use that if it exists. If it doesn't exist it must be an older
 # version of gold and we can fall back to using -Ttext which has the
 # right semantics.
 
-AC_MSG_CHECKING([if the linker accepts -Wl,-Ttext-segment])
-
 safe_CFLAGS=$CFLAGS
-CFLAGS="-static -nodefaultlibs -nostartfiles -Wl,-Ttext-segment=$valt_load_address_pri_norml -Werror"
+AC_MSG_CHECKING([if the linker accepts -Wl,--image-base])
+
+CFLAGS="-static -nodefaultlibs -nostartfiles -Wl,--image-base=$valt_load_address_pri_norml -Werror"
 
 AC_LINK_IFELSE(
 [AC_LANG_SOURCE([int _start () { return 0; }])],
 [
   linker_using_t_text="no"
-  AC_SUBST([FLAG_T_TEXT], ["-Ttext-segment"])
+  AC_SUBST([FLAG_T_TEXT], ["--image-base"])
   AC_MSG_RESULT([yes])
 ], [
-  linker_using_t_text="yes"
-  AC_SUBST([FLAG_T_TEXT], ["-Ttext"])
   AC_MSG_RESULT([no])
+
+  AC_MSG_CHECKING([if the linker accepts -Wl,-Ttext-segment])
+
+  CFLAGS="-static -nodefaultlibs -nostartfiles -Wl,-Ttext-segment=$valt_load_address_pri_norml -Werror"
+
+  AC_LINK_IFELSE(
+  [AC_LANG_SOURCE([int _start () { return 0; }])],
+  [
+    linker_using_t_text="no"
+    AC_SUBST([FLAG_T_TEXT], ["-Ttext-segment"])
+    AC_MSG_RESULT([yes])
+  ], [
+    linker_using_t_text="yes"
+    AC_SUBST([FLAG_T_TEXT], ["-Ttext"])
+    AC_MSG_RESULT([no])
+  ])
 ])
+
 CFLAGS=$safe_CFLAGS
 
-# If the linker only supports -Ttext (not -Ttext-segment) then we will
+# If the linker only supports -Ttext (not -Ttext-segment or --image-base) then we will
 # have to strip any build-id ELF NOTEs from the statically linked tools.
 # Otherwise the build-id NOTE might end up at the default load address.
 # (Pedantically if the linker is gold then -Ttext is fine, but newer
@@ -2728,7 +2873,7 @@ AC_LINK_IFELSE(
   AC_MSG_RESULT([no])
 ])
 else
-AC_MSG_NOTICE([ld -Ttext-segment used, no need to strip build-id NOTEs.])
+AC_MSG_NOTICE([ld --image-base or -Ttext-segment used, no need to strip build-id NOTEs.])
 AC_SUBST([FLAG_NO_BUILD_ID], [""])
 fi
 CFLAGS=$safe_CFLAGS
@@ -4515,6 +4660,7 @@ AC_PATH_PROG([MPI_CC], [mpicc], [mpicc],
 
 mflag_primary=
 if test x$VGCONF_PLATFORM_PRI_CAPS = xX86_LINUX \
+     -o x$VGCONF_PLATFORM_PRI_CAPS = xX86_FREEBSD \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC32_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xARM_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
@@ -4522,6 +4668,7 @@ if test x$VGCONF_PLATFORM_PRI_CAPS = xX86_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xX86_SOLARIS ; then
   mflag_primary=$FLAG_M32
 elif test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX \
+       -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_FREEBSD \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xARM64_LINUX \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \
@@ -4537,7 +4684,8 @@ mflag_secondary=
 if test x$VGCONF_PLATFORM_SEC_CAPS = xX86_LINUX \
      -o x$VGCONF_PLATFORM_SEC_CAPS = xPPC32_LINUX \
      -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_SOLARIS \
-     -o x$VGCONF_PLATFORM_SEC_CAPS = xMIPS32_LINUX ; then
+     -o x$VGCONF_PLATFORM_SEC_CAPS = xMIPS32_LINUX \
+     -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_FREEBSD ; then
   mflag_secondary=$FLAG_M32
 elif test x$VGCONF_PLATFORM_SEC_CAPS = xX86_DARWIN ; then
   mflag_secondary="$FLAG_M32 -arch i386"
@@ -4556,6 +4704,9 @@ AC_SUBST(MPI_CC)
 ## We leave the MPI_FLAG_M3264_ logic in mpi/Makefile.am and assume that
 ## mflag_primary/mflag_secondary are sufficient approximations of that behavior
 AM_COND_IF([VGCONF_OS_IS_LINUX],
+           [CFLAGS_MPI="-g -O -fno-omit-frame-pointer -Wall -fpic"
+            LDFLAGS_MPI="-fpic -shared"])
+AM_COND_IF([VGCONF_OS_IS_FREEBSD],
            [CFLAGS_MPI="-g -O -fno-omit-frame-pointer -Wall -fpic"
             LDFLAGS_MPI="-fpic -shared"])
 AM_COND_IF([VGCONF_OS_IS_DARWIN],

@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
-/*--- x86/FreeBSD-specific kernel interface: posix types.            ---*/
-/*---                                   vki_posixtypes-x86-freebsd.h ---*/
+/*--- x86/FreeBSD-specific kernel interface: posix types.          ---*/
+/*---                                 vki_posixtypes-x86-freebsd.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -10,6 +10,8 @@
 
    Copyright (C) 2000-2005 Julian Seward
       jseward@acm.org
+   Copyright (C) 2018-2021 Paul Floyd
+      pjfloyd@wanadoo.fr
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as

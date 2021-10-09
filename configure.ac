@@ -175,7 +175,7 @@ case "${is_clang}-${gcc_version}" in
      applellvm-5.1|applellvm-[[6-9]].*|applellvm-[[1-9][0-9]]*)
 	AC_MSG_RESULT([ok (Apple LLVM version ${gcc_version})])
 	;;
-     icc-1[[3-9]].*)
+     icc-1[[3-9]].*|icc-202[[0-9]].*)
 	AC_MSG_RESULT([ok (ICC version ${gcc_version})])
 	;;
      notclang-[[3-9]]|notclang-[[3-9]].*|notclang-[[1-9][0-9]]*)

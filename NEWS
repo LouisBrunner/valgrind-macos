@@ -47,19 +47,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 429375  PPC ISA 3.1 support is missing, part 9
 431157  PPC_FEATURE2_SCV needs to be masked in AT_HWCAP2
 431306  Update demangler to support Rust v0 name mangling
-433801  PPC ISA 3.1 support is missing, part 10 (ISA 3.1 support complete)
-433863  s390x: memcheck/tests/s390x/{cds,cs,csg} failures
-434840  PPC64 darn instruction not supported
-434296  s390x: False-positive memcheck diagnostics from vector string
-        instructions
-435665  PPC ISA 3.0 copy, paste, cpabort instructions are not supported 
-438871  unhandled instruction bytes: 0xF3 0x49 0xF 0x6F 0x9C 0x24 0x60 0x2 0x0 0x0
-435908  valgrind tries to fetch from deubginfod for files which already
-        have debug information
-439590  glibc-2.34 breaks suppressions against obj:*/lib*/libc-2.*so*
-440670  unhandled ppc64le-linux syscall: 252 (statfs64) and 253 (fstatfs64)
 432387  s390x: z15 instructions support
-439046  valgrind is unusably large when linked with lld
 433437  FreeBSD support, part 1
 433438  FreeBSD support, part 2
 433439  FreeBSD support, part 3
@@ -72,6 +60,19 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 433507  FreeBSD support, part 10
 433508  FreeBSD support, part 11
 433510  FreeBSD support, part 12
+433801  PPC ISA 3.1 support is missing, part 10 (ISA 3.1 support complete)
+433863  s390x: memcheck/tests/s390x/{cds,cs,csg} failures
+434296  s390x: False-positive memcheck diagnostics from vector string
+        instructions
+434840  PPC64 darn instruction not supported
+435665  PPC ISA 3.0 copy, paste, cpabort instructions are not supported 
+435908  valgrind tries to fetch from deubginfod for files which already
+        have debug information
+438871  unhandled instruction bytes: 0xF3 0x49 0xF 0x6F 0x9C 0x24 0x60 0x2 0x0 0x0
+439046  valgrind is unusably large when linked with lld
+439326  Valgrind 3.17.0 won't compile with Intel 2021 oneAPI compilers
+439590  glibc-2.34 breaks suppressions against obj:*/lib*/libc-2.*so*
+440670  unhandled ppc64le-linux syscall: 252 (statfs64) and 253 (fstatfs64)
 440906  Fix impossible constraint issue in P10 testcase.
 441512  Remove a unneeded / unnecessary prefix check.
 441534  Update the expected output for test_isa_3_1_VRT.

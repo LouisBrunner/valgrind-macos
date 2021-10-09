@@ -84,6 +84,8 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 443179  Need new test for the lxvx and stxvx instructions on ISA 2.07 and
         ISA 3.0 systems.
 443180  The subnormal test and the ISA 3.0 test generate compiler warnings.
+443314  In the latest GIT version, Valgrind with "--trace-flags" crashes at
+        "al" register
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

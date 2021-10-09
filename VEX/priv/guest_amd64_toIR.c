@@ -1188,8 +1188,9 @@ static const HChar* nameIRegRexB ( Int sz, Prefix pfx, UInt lo3bits )
    vassert(lo3bits < 8);
    vassert(IS_VALID_PFX(pfx));
    vassert(sz == 8 || sz == 4 || sz == 2 || sz == 1);
-   return nameIReg( sz, lo3bits | (getRexB(pfx) << 3), 
-                        toBool(sz==1 && !haveREX(pfx)) );
+   UInt regNo = lo3bits | (getRexB(pfx) << 3);
+   return nameIReg( sz, regNo,
+                        toBool(sz==1 && !haveREX(pfx) && regNo >= 4 && regNo < 8));
 }
 
 static IRExpr* getIRegRexB ( Int sz, Prefix pfx, UInt lo3bits )

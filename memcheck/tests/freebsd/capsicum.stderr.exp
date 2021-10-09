@@ -1,0 +1,41 @@
+WARNING: Valgrind may not operate correctly in capability mode.
+         Please consider disabling capability by using the RUNNING_ON_VALGRIND mechanism.
+         See http://valgrind.org/docs/manual/manual-core-adv.html#manual-core-adv.clientreq
+Syscall param cap_getmode(modep) points to unaddressable byte(s)
+   ...
+   by 0x........: main (capsicum.c:81)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param cap_rights_get(rights) points to unaddressable byte(s)
+   ...
+   by 0x........: main (capsicum.c:83)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param cap_rights_get(fd) contains uninitialised byte(s)
+   ...
+   by 0x........: main (capsicum.c:84)
+
+Syscall param cap_rights_get(rights) points to unaddressable byte(s)
+   ...
+   by 0x........: main (capsicum.c:88)
+ Address 0x........ is 0 bytes inside a block of size 16 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (capsicum.c:87)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (capsicum.c:85)
+
+Syscall param cap_rights_limit(fd) contains uninitialised byte(s)
+   ...
+   by 0x........: main (capsicum.c:90)
+
+Syscall param cap_rights_limit(rights) points to unaddressable byte(s)
+   ...
+   by 0x........: main (capsicum.c:92)
+ Address 0x........ is 0 bytes inside a block of size 16 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (capsicum.c:87)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (capsicum.c:85)
+

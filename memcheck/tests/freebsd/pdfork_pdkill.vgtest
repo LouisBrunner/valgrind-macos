@@ -1,0 +1,4 @@
+prog: pdfork_pdkill
+args: 10 2
+vgopts: -q --track-fds=all  --child-silent-after-fork=yes
+stderr_filter: filter_pts

@@ -1,0 +1,11 @@
+---------------------------------------------------------
+518:              SYS_pdfork 2s 0m
+---------------------------------------------------------
+Syscall param pdfork(fdp) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar_pdfork.c:10)
+
+Syscall param pdfork(flags) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar_pdfork.c:10)
+

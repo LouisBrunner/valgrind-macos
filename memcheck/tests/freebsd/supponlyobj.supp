@@ -1,0 +1,16 @@
+{
+   obj2
+   Memcheck:Cond
+   obj:*inlinfo_nested.so
+   obj:*inlinfo_nested.so
+}
+
+{
+   obj5
+   Memcheck:Cond
+   obj:*inlinfo_nested.so
+   obj:*inlinfo_nested.so
+   obj:*inlinfo_nested.so
+   obj:*inlinfo_nested.so
+   obj:*inlinfo_nested.so
+}

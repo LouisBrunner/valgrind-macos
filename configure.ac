@@ -5141,11 +5141,14 @@ AC_CONFIG_FILES([
    memcheck/tests/linux/debuginfod-check.vgtest
    memcheck/tests/darwin/Makefile
    memcheck/tests/solaris/Makefile
+   memcheck/tests/freebsd/Makefile
    memcheck/tests/amd64-linux/Makefile
    memcheck/tests/arm64-linux/Makefile
    memcheck/tests/x86-linux/Makefile
    memcheck/tests/amd64-solaris/Makefile
    memcheck/tests/x86-solaris/Makefile
+   memcheck/tests/amd64-freebsd/Makefile
+   memcheck/tests/x86-freebsd/Makefile
    memcheck/tests/ppc32/Makefile
    memcheck/tests/ppc64/Makefile
    memcheck/tests/s390x/Makefile
@@ -5216,6 +5219,14 @@ AC_CONFIG_FILES([tests/filter_stderr_basic],
                 [chmod +x tests/filter_stderr_basic])
 AC_CONFIG_FILES([tests/filter_discards],
                 [chmod +x tests/filter_discards])
+AC_CONFIG_FILES([memcheck/tests/filter_stderr],
+                [chmod +x memcheck/tests/filter_stderr])
+AC_CONFIG_FILES([memcheck/tests/filter_dw4],
+                [chmod +x memcheck/tests/filter_dw4])
+AC_CONFIG_FILES([memcheck/tests/filter_overlaperror],
+                [chmod +x memcheck/tests/filter_overlaperror])
+AC_CONFIG_FILES([memcheck/tests/x86/filter_pushfpopf],
+                [chmod +x memcheck/tests/x86/filter_pushfpopf])
 AC_CONFIG_FILES([gdbserver_tests/filter_gdb],
                 [chmod +x gdbserver_tests/filter_gdb])
 AC_CONFIG_FILES([gdbserver_tests/filter_memcheck_monitor],

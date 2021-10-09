@@ -1,0 +1,8 @@
+Conditional jump or move depends on uninitialised value(s)
+   ...
+   by 0x........: main (inlinfo.c:9)
+
+Conditional jump or move depends on uninitialised value(s)
+   ...
+   by 0x........: main (inlinfo.c:9)
+

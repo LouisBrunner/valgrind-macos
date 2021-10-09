@@ -1,0 +1,29 @@
+
+Undef 1 of 8 (stack, 32 bit)
+
+Undef 2 of 8 (stack, 32 bit)
+
+Undef 3 of 8 (stack, 64 bit)
+
+Undef 4 of 8 (mallocd, 32-bit)
+
+Undef 5 of 8 (realloc)
+
+Undef 6 of 8 (MALLOCLIKE_BLOCK)
+
+Undef 7 of 8 (brk)
+
+(currently disabled)
+
+Undef 8 of 8 (MAKE_MEM_UNDEFINED)
+
+Def 1 of 3
+
+Def 2 of 3
+
+Def 3 of 3
+Syscall param exit(status) contains uninitialised byte(s)
+   ...
+ Uninitialised value was created by a client request
+   at 0x........: main (origin1-yes.c:115)
+

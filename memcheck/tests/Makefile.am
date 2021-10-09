@@ -66,6 +66,7 @@ endif
 DIST_SUBDIRS = x86 amd64 ppc32 ppc64 s390x linux \
 		darwin solaris x86-linux amd64-linux arm64-linux \
 		x86-solaris amd64-solaris mips32 mips64 \
+		freebsd amd64-freebsd x86-freebsd \
 		common .
 
 dist_noinst_SCRIPTS = \
@@ -138,11 +139,13 @@ EXTRA_DIST = \
 		cxx17_aligned_new.stdout.exp \
 	deep-backtrace.vgtest deep-backtrace.stderr.exp \
 	demangle.stderr.exp demangle.vgtest \
+		demangle.stderr.exp-freebsd \
 	big_debuginfo_symbol.stderr.exp big_debuginfo_symbol.vgtest \
 	describe-block.stderr.exp describe-block.vgtest \
 	descr_belowsp.vgtest descr_belowsp.stderr.exp \
 	doublefree.stderr.exp doublefree.vgtest \
 	dw4.vgtest dw4.stderr.exp dw4.stderr.exp-solaris dw4.stdout.exp \
+		dw4.stderr.exp-freebsd \
 	err_disable1.vgtest err_disable1.stderr.exp \
 	err_disable2.vgtest err_disable2.stderr.exp \
 	err_disable3.vgtest err_disable3.stderr.exp \
@@ -155,8 +158,9 @@ EXTRA_DIST = \
 	execve1.stderr.exp execve1.vgtest execve1.stderr.exp-kfail \
 	execve2.stderr.exp execve2.vgtest execve2.stderr.exp-kfail \
 	file_locking.stderr.exp file_locking.vgtest \
-	fprw.stderr.exp fprw.stderr.exp-mips32-be fprw.stderr.exp-mips32-le \
-		fprw.vgtest \
+	fprw.stderr.exp fprw.stderr.exp-freebsd fprw.stderr.exp-mips32-be \
+		fprw.stderr.exp-mips32-le fprw.vgtest \
+		fprw.stderr.exp-freebsd-x86 \
 	fwrite.stderr.exp fwrite.vgtest fwrite.stderr.exp-kfail \
 	gone_abrt_xml.vgtest gone_abrt_xml.stderr.exp gone_abrt_xml.stderr.exp-solaris \
 	holey_buffer_too_small.vgtest holey_buffer_too_small.stdout.exp \
@@ -186,6 +190,7 @@ EXTRA_DIST = \
 	leak-autofreepool-4.vgtest leak-autofreepool-4.stderr.exp \
 	leak-autofreepool-5.vgtest leak-autofreepool-5.stderr.exp \
 	leak-autofreepool-6.vgtest leak-autofreepool-6.stderr.exp \
+	leak-autofreepool-5.stderr.exp-freebsd \
 	leak-tree.vgtest leak-tree.stderr.exp \
 	leak-segv-jmp.vgtest leak-segv-jmp.stderr.exp \
 	lks.vgtest lks.stdout.exp lks.supp lks.stderr.exp \
@@ -204,11 +209,13 @@ EXTRA_DIST = \
 	malloc2.stderr.exp malloc2.vgtest \
 	malloc3.stderr.exp malloc3.stdout.exp malloc3.vgtest \
 	manuel1.stderr.exp manuel1.stdout.exp manuel1.vgtest \
+		manuel1.stderr.exp-freebsd-clang \
 	manuel2.stderr.exp manuel2.stderr.exp64 manuel2.stdout.exp \
 		manuel2.vgtest \
 	manuel3.stderr.exp manuel3.vgtest \
 	match-overrun.stderr.exp match-overrun.vgtest match-overrun.supp \
 	memalign_test.stderr.exp memalign_test.vgtest \
+		memalign_test.stderr.exp-freebsd-clang \
 	memalign2.stderr.exp memalign2.vgtest \
 	memcmptest.stderr.exp memcmptest.stderr.exp2 \
 	memcmptest.stdout.exp memcmptest.vgtest \
@@ -225,9 +232,12 @@ EXTRA_DIST = \
 	noisy_child.vgtest noisy_child.stderr.exp noisy_child.stdout.exp \
 	null_socket.stderr.exp null_socket.vgtest \
 	origin1-yes.vgtest origin1-yes.stdout.exp origin1-yes.stderr.exp \
+		origin1-yes.stderr.exp-freebsd \
 	origin2-not-quite.vgtest origin2-not-quite.stdout.exp \
 	origin2-not-quite.stderr.exp \
+		origin2-not-quite.stderr.exp-freebsd \
 	origin3-no.vgtest origin3-no.stdout.exp \
+		origin3-no.stderr.exp-freebsd \
 	origin3-no.stderr.exp \
 	origin4-many.vgtest origin4-many.stdout.exp \
 	origin4-many.stderr.exp \
@@ -238,6 +248,8 @@ EXTRA_DIST = \
 	origin5-bz2.stderr.exp-glibc27-ppc64 \
 	origin5-bz2.stderr.exp-glibc212-s390x \
 	origin5-bz2.stderr.exp-glibc234-s390x \
+	origin5-bz2.stderr.exp-freebsd \
+	origin5-bz2.stderr.exp-freebsd-x86 \
 	origin5-bz2.stderr.exp-glibc218-mips32 \
 	origin6-fp.vgtest origin6-fp.stdout.exp \
 	origin6-fp.stderr.exp-glibc25-amd64 \
@@ -272,11 +284,13 @@ EXTRA_DIST = \
 	sbfragment.stdout.exp sbfragment.stderr.exp sbfragment.vgtest \
 	sem.stderr.exp sem.vgtest \
 	sendmsg.stderr.exp sendmsg.stderr.exp-solaris sendmsg.vgtest \
+	    sendmsg.stderr.exp-freebsd \
+	    sendmsg.stderr.exp-freebsd-x86 \
 	sh-mem.stderr.exp sh-mem.vgtest \
 	sh-mem-random.stderr.exp sh-mem-random.stdout.exp64 \
 	sh-mem-random.stdout.exp sh-mem-random.vgtest \
 	sigaltstack.stderr.exp sigaltstack.vgtest \
-	sigkill.stderr.exp sigkill.stderr.exp-darwin sigkill.stderr.exp-mips32 \
+	sigkill.stderr.exp sigkill.stderr.exp-darwin sigkill.stderr.exp-freebsd sigkill.stderr.exp-mips32 \
 	    sigkill.stderr.exp-solaris \
 	    sigkill.stderr.exp-glibc-2.28 sigkill.vgtest \
 	signal2.stderr.exp signal2.stdout.exp signal2.vgtest \
@@ -302,6 +316,8 @@ EXTRA_DIST = \
 	suppvarinfo5.stderr.exp suppvarinfo5.supp suppvarinfo5.vgtest \
 	test-plo-no.vgtest test-plo-no.stdout.exp \
 	    test-plo-no.stderr.exp-le64 test-plo-no.stderr.exp-le32 \
+	    test-plo-no.stderr.exp-le32-freebsd test-plo-no.stderr.exp-le64-freebsd \
+	    test-plo-no.stderr.exp-le32-freebsd-clang \
 	test-plo-yes.vgtest test-plo-yes.stdout.exp \
 	    test-plo-yes.stderr.exp-le64 test-plo-yes.stderr.exp-le32 \
 	    test-plo-no.stderr.exp-s390x-mvc \
@@ -314,12 +330,15 @@ EXTRA_DIST = \
 	unit_oset.stderr.exp unit_oset.stdout.exp unit_oset.vgtest \
 	varinfo1.vgtest varinfo1.stdout.exp varinfo1.stderr.exp \
 		varinfo1.stderr.exp-ppc64 \
+		varinfo1.stderr.exp-freebsd \
 	varinfo2.vgtest varinfo2.stdout.exp varinfo2.stderr.exp \
 		varinfo2.stderr.exp-ppc64 \
 	varinfo3.vgtest varinfo3.stdout.exp varinfo3.stderr.exp \
 		varinfo3.stderr.exp-ppc64 \
+		varinfo3.stderr.exp-freebsd \
 	varinfo4.vgtest varinfo4.stdout.exp varinfo4.stderr.exp \
 		varinfo4.stderr.exp-ppc64 \
+		varinfo4.stderr.exp-freebsd \
 	varinfo5.vgtest varinfo5.stdout.exp varinfo5.stderr.exp \
 		varinfo5.stderr.exp-ppc64 \
 	varinfo6.vgtest varinfo6.stdout.exp varinfo6.stderr.exp \
@@ -344,7 +363,8 @@ EXTRA_DIST = \
 	wrapmallocstatic.vgtest wrapmallocstatic.stdout.exp \
 	wrapmallocstatic.stderr.exp \
 	writev1.stderr.exp writev1.stderr.exp-solaris writev1.vgtest \
-	xml1.stderr.exp xml1.stdout.exp xml1.vgtest xml1.stderr.exp-s390x-mvc
+	xml1.stderr.exp xml1.stdout.exp xml1.vgtest xml1.stderr.exp-s390x-mvc \
+	leak_cpp_interior.stderr.exp-freebsd
 
 check_PROGRAMS = \
 	accounting \

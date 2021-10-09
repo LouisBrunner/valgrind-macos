@@ -265,7 +265,7 @@ test_stpcpy (void)
 }
 
 // DDD: better done by testing for the function.
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) && !defined(__FreeBSD__)
 static void
 test_stpncpy (void)
 {
@@ -467,7 +467,7 @@ test_strchr (void)
 }
 
 // DDD: better done by testing for the function.
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) && !defined(__FreeBSD__)
 static void
 test_strchrnul (void)
 {
@@ -504,7 +504,7 @@ test_strchrnul (void)
 #endif
 
 // DDD: better done by testing for the function.
-#if !defined(__APPLE__) && !defined(__sun)
+#if !defined(__APPLE__) && !defined(__sun) && !defined(__FreeBSD__)
 static void
 test_rawmemchr (void)
 {
@@ -580,7 +580,7 @@ test_strrchr (void)
 }
 
 // DDD: better done by testing for the function.
-#if !defined(__APPLE__) && !defined(__sun)
+#if !defined(__APPLE__) && !defined(__sun) && !defined(__FreeBSD__)
 static void
 test_memrchr (void)
 {
@@ -911,7 +911,7 @@ test_strsep (void)
   equal(one+4, "c", 50);
 
   {
-#   if !defined(__APPLE__)
+#   if !defined(__APPLE__) && !defined(__FreeBSD__)
     char text[] = "This,is,a,test";
     char *list = strdupa (text);
     equal (strsep (&list, ","), "This", 51);
@@ -1072,7 +1072,7 @@ test_memcpy (void)
     }
 }
 
-#if !defined(__APPLE__) && !defined(__sun)
+#if !defined(__APPLE__) && !defined(__sun) && !defined(__FreeBSD__)
 static void
 test_mempcpy (void)
 {
@@ -1288,7 +1288,7 @@ test_bzero (void)
   equal(one, "abcdef", 4);		/* Zero-length copy. */
 }
 
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) && !defined(__FreeBSD__)
 static void
 test_strndup (void)
 {
@@ -1423,7 +1423,7 @@ main (void)
   /* A closely related function is stpcpy.  */
   test_stpcpy ();
 
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) && !defined(__FreeBSD__)
   /* stpncpy.  */
   test_stpncpy ();
 #endif
@@ -1446,12 +1446,12 @@ main (void)
   /* strchr.  */
   test_strchr ();
 
-# if !defined(__APPLE__)
+# if !defined(__APPLE__) && !defined(__FreeBSD__)
   /* strchrnul.  */
   test_strchrnul ();
 # endif
 
-# if !defined(__APPLE__) && !defined(__sun)
+# if !defined(__APPLE__) && !defined(__sun) && !defined(__FreeBSD__)
   /* rawmemchr.  */
   test_rawmemchr ();
 # endif
@@ -1462,7 +1462,7 @@ main (void)
   /* strrchr.  */
   test_strrchr ();
 
-# if !defined(__APPLE__) && !defined(__sun)
+# if !defined(__APPLE__) && !defined(__sun) && !defined(__FreeBSD__)
   /* memrchr.  */
   test_memrchr ();
 # endif
@@ -1503,7 +1503,7 @@ main (void)
   /* memmove - must work on overlap.  */
   test_memmove ();
 
-# if !defined(__APPLE__) && !defined(__sun)
+# if !defined(__APPLE__) && !defined(__sun) && !defined(__FreeBSD__)
   /* mempcpy */
   test_mempcpy ();
 # endif
@@ -1523,7 +1523,7 @@ main (void)
   /* bcmp - somewhat like memcmp.  */
   test_bcmp ();
 
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) && !defined(__FreeBSD__)
   /* strndup.  */
   test_strndup ();
 #endif

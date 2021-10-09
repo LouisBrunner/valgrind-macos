@@ -1,0 +1,3 @@
+prereq: test -e ./utimens
+prog: utimens
+vgopts: -q

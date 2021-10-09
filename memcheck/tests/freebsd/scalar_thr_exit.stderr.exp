@@ -1,0 +1,12 @@
+---------------------------------------------------------
+431:            SYS_thr_exit 1s 1m
+---------------------------------------------------------
+Syscall param thr_exit(state) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar_thr_exit.c:10)
+
+Syscall param thr_exit(state) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar_thr_exit.c:10)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+

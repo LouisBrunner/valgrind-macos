@@ -1,0 +1,26 @@
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (xor-undef-amd64.c:17)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (xor-undef-amd64.c:38)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (xor-undef-amd64.c:65)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (xor-undef-amd64.c:92)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (xor-undef-amd64.c:117)
+
+
+HEAP SUMMARY:
+    in use at exit: 4,096 bytes in 1 blocks
+  total heap usage: 2 allocs, 1 frees, 4,144 bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
+
+For counts of detected and suppressed errors, rerun with: -v
+Use --track-origins=yes to see where uninitialised values come from
+ERROR SUMMARY: 5 errors from 5 contexts (suppressed: 0 from 0)

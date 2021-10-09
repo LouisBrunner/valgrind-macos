@@ -1,0 +1,36 @@
+futimens failed:: Bad file descriptor
+Syscall param futimens(fd) contains uninitialised byte(s)
+   at 0x........: futimens (in /...libc...)
+   by 0x........: main (utimens.c:51)
+
+Syscall param futimens(times) points to uninitialised byte(s)
+   at 0x........: futimens (in /...libc...)
+   by 0x........: main (utimens.c:51)
+ Address 0x........ is on thread 1's stack
+ in frame #1, created by main (utimens.c:17)
+
+Syscall param utimensat(fd) contains uninitialised byte(s)
+   at 0x........: utimensat (in /...libc...)
+   by 0x........: main (utimens.c:52)
+
+Syscall param utimensat(flag) contains uninitialised byte(s)
+   at 0x........: utimensat (in /...libc...)
+   by 0x........: main (utimens.c:52)
+
+Syscall param utimensat(path) points to unaddressable byte(s)
+   at 0x........: utimensat (in /...libc...)
+   by 0x........: main (utimens.c:52)
+ Address 0x........ is 0 bytes inside a block of size 4 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (utimens.c:50)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (utimens.c:49)
+
+Syscall param utimensat(times) points to uninitialised byte(s)
+   at 0x........: utimensat (in /...libc...)
+   by 0x........: main (utimens.c:52)
+ Address 0x........ is on thread 1's stack
+ in frame #1, created by main (utimens.c:17)
+

@@ -1,0 +1,47 @@
+Syscall param statfs(buf) points to unaddressable byte(s)
+   at 0x........: _statfs (in /...libc...)
+   by 0x........: statfs (in /...libc...)
+   by 0x........: main (statfs.c:28)
+ Address 0x........ is 0 bytes inside a block of size 2,344 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (statfs.c:25)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (statfs.c:24)
+
+Syscall param fstatfs(buf) points to unaddressable byte(s)
+   at 0x........: __sys_fstatfs (in /...libc...)
+   by 0x........: fstatfs (in /...libc...)
+   by 0x........: main (statfs.c:31)
+ Address 0x........ is 0 bytes inside a block of size 2,344 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (statfs.c:30)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (statfs.c:29)
+
+Syscall param statfs(buf) points to unaddressable byte(s)
+   at 0x........: _statfs (in /...libc...)
+   by 0x........: statfs (in /...libc...)
+   by 0x........: main (statfs.c:34)
+ Address 0x........ is 0 bytes after a block of size 2,341 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (statfs.c:33)
+
+Syscall param statfs(path) points to unaddressable byte(s)
+   at 0x........: _statfs (in /...libc...)
+   by 0x........: statfs (in /...libc...)
+   by 0x........: main (statfs.c:39)
+ Address 0x........ is 0 bytes inside a block of size 8 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (statfs.c:37)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (statfs.c:36)
+
+Syscall param fstatfs(fd) contains uninitialised byte(s)
+   at 0x........: __sys_fstatfs (in /...libc...)
+   by 0x........: fstatfs (in /...libc...)
+   by 0x........: main (statfs.c:42)
+

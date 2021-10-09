@@ -1,0 +1,5 @@
+parent: about to lock file for writing.
+parent: file locking attempt succeeded.
+child: about to lock file for writing.
+fcntl: Resource temporarily unavailable
+Test finished.

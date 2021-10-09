@@ -1,0 +1,96 @@
+Syscall param utimes(filename) points to unaddressable byte(s)
+   at 0x........: utimes (in /...libc...)
+   by 0x........: main (utimes.c:94)
+ Address 0x........ is 0 bytes inside a block of size 4 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (utimes.c:91)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (utimes.c:90)
+
+Syscall param utimes(tvp[0]) points to unaddressable byte(s)
+   at 0x........: utimes (in /...libc...)
+   by 0x........: main (utimes.c:94)
+ Address 0x........ is 0 bytes inside a block of size 4 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (utimes.c:91)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (utimes.c:90)
+
+Syscall param utimes(tvp[1]) points to unaddressable byte(s)
+   at 0x........: utimes (in /...libc...)
+   by 0x........: main (utimes.c:94)
+ Address 0x........ is 4 bytes after a block of size 4 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (utimes.c:91)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (utimes.c:90)
+
+Syscall param lutimes(path) points to unaddressable byte(s)
+   at 0x........: lutimes (in /...libc...)
+   by 0x........: main (utimes.c:95)
+ Address 0x........ is 0 bytes inside a block of size 4 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (utimes.c:91)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (utimes.c:90)
+
+Syscall param lutimes(times) points to unaddressable byte(s)
+   at 0x........: lutimes (in /...libc...)
+   by 0x........: main (utimes.c:95)
+ Address 0x........ is 0 bytes inside a block of size 4 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (utimes.c:91)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (utimes.c:90)
+
+Syscall param futimes(fd) contains uninitialised byte(s)
+   at 0x........: futimes (in /...libc...)
+   by 0x........: main (utimes.c:96)
+
+Syscall param futimes(times) points to unaddressable byte(s)
+   at 0x........: futimes (in /...libc...)
+   by 0x........: main (utimes.c:96)
+ Address 0x........ is 0 bytes inside a block of size 4 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (utimes.c:91)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (utimes.c:90)
+
+Syscall param futimesat(fd) contains uninitialised byte(s)
+   at 0x........: futimesat (in /...libc...)
+   by 0x........: main (utimes.c:97)
+
+Syscall param futimesat(path) points to unaddressable byte(s)
+   at 0x........: futimesat (in /...libc...)
+   by 0x........: main (utimes.c:97)
+ Address 0x........ is 0 bytes inside a block of size 4 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (utimes.c:91)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (utimes.c:90)
+
+Syscall param futimesat(times) points to unaddressable byte(s)
+   at 0x........: futimesat (in /...libc...)
+   by 0x........: main (utimes.c:97)
+ Address 0x........ is 0 bytes inside a block of size 4 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (utimes.c:91)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (utimes.c:90)
+

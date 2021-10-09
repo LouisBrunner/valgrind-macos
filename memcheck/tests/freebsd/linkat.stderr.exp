@@ -1,0 +1,94 @@
+Syscall param linkat(name1) points to unaddressable byte(s)
+   at 0x........: linkat (in /...libc...)
+   by 0x........: main (linkat.c:56)
+ Address 0x........ is 0 bytes inside a block of size 19 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (linkat.c:55)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (linkat.c:54)
+
+Syscall param symlinkat(name1) points to unaddressable byte(s)
+   at 0x........: symlinkat (in /...libc...)
+   by 0x........: main (linkat.c:57)
+ Address 0x........ is 0 bytes inside a block of size 19 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (linkat.c:55)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (linkat.c:54)
+
+Syscall param linkat(name2) points to unaddressable byte(s)
+   at 0x........: linkat (in /...libc...)
+   by 0x........: main (linkat.c:63)
+ Address 0x........ is 0 bytes inside a block of size 19 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (linkat.c:62)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (linkat.c:61)
+
+Syscall param unlinkat(path) points to unaddressable byte(s)
+   at 0x........: unlinkat (in /...libc...)
+   by 0x........: main (linkat.c:64)
+ Address 0x........ is 0 bytes inside a block of size 19 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (linkat.c:62)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (linkat.c:61)
+
+Syscall param symlinkat(name2) points to unaddressable byte(s)
+   at 0x........: symlinkat (in /...libc...)
+   by 0x........: main (linkat.c:68)
+ Address 0x........ is 0 bytes inside a block of size 19 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (linkat.c:67)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (linkat.c:66)
+
+Syscall param unlinkat(path) points to unaddressable byte(s)
+   at 0x........: unlinkat (in /...libc...)
+   by 0x........: main (linkat.c:69)
+ Address 0x........ is 0 bytes inside a block of size 19 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (linkat.c:67)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (linkat.c:66)
+
+Syscall param linkat(fd1) contains uninitialised byte(s)
+   at 0x........: linkat (in /...libc...)
+   by 0x........: main (linkat.c:72)
+
+Syscall param linkat(fd2) contains uninitialised byte(s)
+   at 0x........: linkat (in /...libc...)
+   by 0x........: main (linkat.c:72)
+
+Syscall param linkat(flag) contains uninitialised byte(s)
+   at 0x........: linkat (in /...libc...)
+   by 0x........: main (linkat.c:72)
+
+Syscall param symlinkat(fd) contains uninitialised byte(s)
+   at 0x........: symlinkat (in /...libc...)
+   by 0x........: main (linkat.c:73)
+
+Syscall param unlinkat(fd) contains uninitialised byte(s)
+   at 0x........: unlinkat (in /...libc...)
+   by 0x........: main (linkat.c:74)
+
+Syscall param unlinkat(flag) contains uninitialised byte(s)
+   at 0x........: unlinkat (in /...libc...)
+   by 0x........: main (linkat.c:74)
+
+Syscall param fdatasync(fd) contains uninitialised byte(s)
+   ...
+   by 0x........: main (linkat.c:82)
+

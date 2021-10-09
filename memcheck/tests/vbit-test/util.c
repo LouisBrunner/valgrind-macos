@@ -37,8 +37,12 @@
 #  else
 #  define __BYTE_ORDER    __BIG_ENDIAN
 #  endif
-#else
+#elif defined(__linux__)
 #include <endian.h>
+#else
+#define __BYTE_ORDER    BYTE_ORDER
+#define __LITTLE_ENDIAN LITTLE_ENDIAN
+#include <sys/endian.h>
 #endif
 #include <inttypes.h>
 #include "vtest.h"

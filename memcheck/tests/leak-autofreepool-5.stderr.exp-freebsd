@@ -1,0 +1,34 @@
+
+
+HEAP SUMMARY:
+    in use at exit: ... bytes in ... blocks
+  total heap usage: ... allocs, ... frees, ... bytes allocated
+
+Block 0x..........0x........ overlaps with block 0x..........0x........
+Blocks allocation contexts:
+   ...
+
+   ...
+This is usually caused by using VALGRIND_MALLOCLIKE_BLOCK in an inappropriate way.
+
+Memcheck: mc_leakcheck.c:... (void vgMemCheck_detect_memory_leaks(ThreadId, LeakCheckParams *)): the 'impossible' happened.
+
+host stacktrace:
+   ...
+
+sched status:
+  running_tid=1
+
+
+Note: see also the FAQ in the source distribution.
+It contains workarounds to several common problems.
+In particular, if Valgrind aborted or crashed after
+identifying problems in your program, there's a good chance
+that fixing those problems will prevent Valgrind aborting or
+crashing, especially if it happened in m_mallocfree.c.
+
+If that doesn't help, please report this bug to: www.valgrind.org
+
+In the bug report, send all the above text, the valgrind
+version, and what OS and version you are using.  Thanks.
+

@@ -1,0 +1,16 @@
+Syscall param posix_fallocate(offset_low) contains uninitialised byte(s)
+   at 0x........: posix_fallocate (in /...libc...)
+   by 0x........: main (posix_fallocate.c:13)
+
+Syscall param posix_fallocate(offset_high) contains uninitialised byte(s)
+   at 0x........: posix_fallocate (in /...libc...)
+   by 0x........: main (posix_fallocate.c:13)
+
+Syscall param posix_fallocate(len_low) contains uninitialised byte(s)
+   at 0x........: posix_fallocate (in /...libc...)
+   by 0x........: main (posix_fallocate.c:14)
+
+Syscall param posix_fallocate(len_high) contains uninitialised byte(s)
+   at 0x........: posix_fallocate (in /...libc...)
+   by 0x........: main (posix_fallocate.c:14)
+

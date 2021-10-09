@@ -1,0 +1,209 @@
+Syscall param extattr_get_file(attrnamespace) contains uninitialised byte(s)
+   at 0x........: extattr_get_file (in /...libc...)
+   by 0x........: main (extattr.c:50)
+
+Syscall param extattr_get_link(attrnamespace) contains uninitialised byte(s)
+   at 0x........: extattr_get_link (in /...libc...)
+   by 0x........: main (extattr.c:51)
+
+Syscall param extattr_get_fd(attrnamespace) contains uninitialised byte(s)
+   at 0x........: extattr_get_fd (in /...libc...)
+   by 0x........: main (extattr.c:52)
+
+Syscall param extattr_list_file(attrnamespace) contains uninitialised byte(s)
+   at 0x........: extattr_list_file (in /...libc...)
+   by 0x........: main (extattr.c:53)
+
+Syscall param extattr_list_link(attrnamespace) contains uninitialised byte(s)
+   at 0x........: extattr_list_link (in /...libc...)
+   by 0x........: main (extattr.c:54)
+
+Syscall param extattr_list_fd(attrnamespace) contains uninitialised byte(s)
+   at 0x........: extattr_list_fd (in /...libc...)
+   by 0x........: main (extattr.c:55)
+
+Syscall param extattr_delete_file(attrnamespace) contains uninitialised byte(s)
+   at 0x........: extattr_delete_file (in /...libc...)
+   by 0x........: main (extattr.c:56)
+
+Syscall param extattr_delete_link(attrnamespace) contains uninitialised byte(s)
+   at 0x........: extattr_delete_link (in /...libc...)
+   by 0x........: main (extattr.c:57)
+
+Syscall param extattr_delete_fd(attrnamespace) contains uninitialised byte(s)
+   at 0x........: extattr_delete_fd (in /...libc...)
+   by 0x........: main (extattr.c:58)
+
+Syscall param extattr_get_file(data) points to unaddressable byte(s)
+   at 0x........: extattr_get_file (in /...libc...)
+   by 0x........: main (extattr.c:62)
+ Address 0x........ is 0 bytes inside a block of size 64 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (extattr.c:61)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (extattr.c:60)
+
+Syscall param extattr_get_link(data) points to unaddressable byte(s)
+   at 0x........: extattr_get_link (in /...libc...)
+   by 0x........: main (extattr.c:63)
+ Address 0x........ is 0 bytes inside a block of size 64 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (extattr.c:61)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (extattr.c:60)
+
+Syscall param extattr_get_fd(data) points to unaddressable byte(s)
+   at 0x........: extattr_get_fd (in /...libc...)
+   by 0x........: main (extattr.c:64)
+ Address 0x........ is 0 bytes inside a block of size 64 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (extattr.c:61)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (extattr.c:60)
+
+Syscall param extattr_list_file(data) points to unaddressable byte(s)
+   at 0x........: extattr_list_file (in /...libc...)
+   by 0x........: main (extattr.c:67)
+ Address 0x........ is 0 bytes inside a block of size 64 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (extattr.c:66)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (extattr.c:65)
+
+Syscall param extattr_list_link(data) points to unaddressable byte(s)
+   at 0x........: extattr_list_link (in /...libc...)
+   by 0x........: main (extattr.c:68)
+ Address 0x........ is 0 bytes inside a block of size 64 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (extattr.c:66)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (extattr.c:65)
+
+Syscall param extattr_list_fd(data) points to unaddressable byte(s)
+   at 0x........: extattr_list_fd (in /...libc...)
+   by 0x........: main (extattr.c:69)
+ Address 0x........ is 0 bytes inside a block of size 64 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (extattr.c:66)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (extattr.c:65)
+
+Syscall param extattr_get_file(path) points to unaddressable byte(s)
+   at 0x........: extattr_get_file (in /...libc...)
+   by 0x........: main (extattr.c:73)
+ Address 0x........ is 0 bytes inside a block of size 6 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (extattr.c:72)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (extattr.c:71)
+
+Syscall param extattr_get_link(path) points to unaddressable byte(s)
+   at 0x........: extattr_get_link (in /...libc...)
+   by 0x........: main (extattr.c:74)
+ Address 0x........ is 0 bytes inside a block of size 6 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (extattr.c:72)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (extattr.c:71)
+
+Syscall param extattr_get_file(attrname) points to unaddressable byte(s)
+   at 0x........: extattr_get_file (in /...libc...)
+   by 0x........: main (extattr.c:75)
+ Address 0x........ is 0 bytes inside a block of size 6 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (extattr.c:72)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (extattr.c:71)
+
+Syscall param extattr_get_link(attrname) points to unaddressable byte(s)
+   at 0x........: extattr_get_link (in /...libc...)
+   by 0x........: main (extattr.c:76)
+ Address 0x........ is 0 bytes inside a block of size 6 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (extattr.c:72)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (extattr.c:71)
+
+Syscall param extattr_list_file(path) points to unaddressable byte(s)
+   at 0x........: extattr_list_file (in /...libc...)
+   by 0x........: main (extattr.c:77)
+ Address 0x........ is 0 bytes inside a block of size 6 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (extattr.c:72)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (extattr.c:71)
+
+Syscall param extattr_delete_file(path) points to unaddressable byte(s)
+   at 0x........: extattr_delete_file (in /...libc...)
+   by 0x........: main (extattr.c:78)
+ Address 0x........ is 0 bytes inside a block of size 6 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (extattr.c:72)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (extattr.c:71)
+
+Syscall param extattr_delete_link(path) points to unaddressable byte(s)
+   at 0x........: extattr_delete_link (in /...libc...)
+   by 0x........: main (extattr.c:79)
+ Address 0x........ is 0 bytes inside a block of size 6 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (extattr.c:72)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (extattr.c:71)
+
+Syscall param extattr_get_fd(fd) contains uninitialised byte(s)
+   at 0x........: extattr_get_fd (in /...libc...)
+   by 0x........: main (extattr.c:83)
+
+Syscall param extattr_list_fd(id) contains uninitialised byte(s)
+   at 0x........: extattr_list_fd (in /...libc...)
+   by 0x........: main (extattr.c:84)
+
+Syscall param extattr_delete_fd(fd) contains uninitialised byte(s)
+   at 0x........: extattr_delete_fd (in /...libc...)
+   by 0x........: main (extattr.c:85)
+
+Syscall param extattr_get_file(nbytes) contains uninitialised byte(s)
+   at 0x........: extattr_get_file (in /...libc...)
+   by 0x........: main (extattr.c:89)
+
+Syscall param extattr_get_link(nbytes) contains uninitialised byte(s)
+   at 0x........: extattr_get_link (in /...libc...)
+   by 0x........: main (extattr.c:90)
+
+Syscall param extattr_get_fd(nbytes) contains uninitialised byte(s)
+   at 0x........: extattr_get_fd (in /...libc...)
+   by 0x........: main (extattr.c:91)
+
+Syscall param extattr_list_file(nbytes) contains uninitialised byte(s)
+   at 0x........: extattr_list_file (in /...libc...)
+   by 0x........: main (extattr.c:92)
+
+Syscall param extattr_list_link(nbytes) contains uninitialised byte(s)
+   at 0x........: extattr_list_link (in /...libc...)
+   by 0x........: main (extattr.c:93)
+
+Syscall param extattr_list_fd(nbytes) contains uninitialised byte(s)
+   at 0x........: extattr_list_fd (in /...libc...)
+   by 0x........: main (extattr.c:94)
+

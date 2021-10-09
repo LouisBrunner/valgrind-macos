@@ -94,7 +94,9 @@ int main ( void )
 
   pthread_attr_t attr;
   r = pthread_attr_init(&attr); assert(!r);
+#if !defined(VGO_freebsd)
   r = pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN);
+#endif
 
   // create N threads to do child_fn_1 ...
   for (i = 0; i < NTHREADS; i++) {

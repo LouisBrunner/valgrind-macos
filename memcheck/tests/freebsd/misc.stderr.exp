@@ -1,0 +1,32 @@
+Syscall param uuidgen(store) points to unaddressable byte(s)
+   ...
+   by 0x........: main (misc.c:43)
+ Address 0x........ is 0 bytes inside a block of size 32 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (misc.c:42)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (misc.c:41)
+
+Syscall param uuidgen(count) contains uninitialised byte(s)
+   ...
+   by 0x........: main (misc.c:47)
+
+Syscall param getrandom(buflen) contains uninitialised byte(s)
+   ...
+   by 0x........: main (misc.c:53)
+
+Syscall param getrandom(flags) contains uninitialised byte(s)
+   ...
+   by 0x........: main (misc.c:53)
+
+Syscall param getrandom(buf) points to unaddressable byte(s)
+   ...
+   by 0x........: main (misc.c:58)
+ Address 0x........ is 0 bytes inside a block of size 100 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (misc.c:56)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (misc.c:55)
+

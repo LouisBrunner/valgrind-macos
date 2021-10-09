@@ -1,0 +1,48 @@
+Conditional jump or move depends on uninitialised value(s)
+   ...
+   by 0x........: use (insn-pmovmskb.c:48)
+   by 0x........: doit (insn-pmovmskb.c:69)
+   by 0x........: main (insn-pmovmskb.c:140)
+
+Use of uninitialised value of size 8
+   ...
+   by 0x........: use (insn-pmovmskb.c:48)
+   by 0x........: doit (insn-pmovmskb.c:69)
+   by 0x........: main (insn-pmovmskb.c:140)
+
+Use of uninitialised value of size 8
+   ...
+   by 0x........: use (insn-pmovmskb.c:48)
+   by 0x........: doit (insn-pmovmskb.c:69)
+   by 0x........: main (insn-pmovmskb.c:140)
+
+Use of uninitialised value of size 8
+   ...
+   by 0x........: use (insn-pmovmskb.c:48)
+   by 0x........: doit (insn-pmovmskb.c:69)
+   by 0x........: main (insn-pmovmskb.c:140)
+
+0: Invalid value is false
+1: Invalid value is false
+2: Invalid value is false
+3: Invalid value is false
+4: Invalid value is false
+5: Invalid value is false
+6: Invalid value is false
+7: Invalid value is false
+8: Invalid value is false
+9: Invalid value is false
+10: Invalid value is false
+11: Invalid value is false
+12: Invalid value is false
+13: Invalid value is false
+14: Invalid value is false
+15: Invalid value is false
+4: Invalid value is true
+5: Invalid value is true
+6: Invalid value is true
+7: Invalid value is true
+8: Invalid value is true
+9: Invalid value is true
+12: Invalid value is true
+13: Invalid value is true

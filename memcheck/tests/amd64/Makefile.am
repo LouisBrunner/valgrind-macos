@@ -17,6 +17,7 @@ EXTRA_DIST = \
 	insn-bsfl.vgtest insn-bsfl.stdout.exp insn-bsfl.stderr.exp \
 	insn-pcmpistri.vgtest insn-pcmpistri.stdout.exp insn-pcmpistri.stderr.exp \
 	insn-pmovmskb.vgtest insn-pmovmskb.stdout.exp insn-pmovmskb.stderr.exp \
+		insn-pmovmskb.stderr.exp-clang \
 	more_x87_fp.stderr.exp more_x87_fp.stdout.exp more_x87_fp.vgtest \
 	sh-mem-vec128-plo-no.vgtest \
 		sh-mem-vec128-plo-no.stderr.exp \
@@ -33,7 +34,7 @@ EXTRA_DIST = \
 	shr_edx.stderr.exp shr_edx.stdout.exp shr_edx.vgtest \
 	sse_memory.stderr.exp sse_memory.stdout.exp sse_memory.vgtest \
 	xor-undef-amd64.stderr.exp xor-undef-amd64.stdout.exp \
-	xor-undef-amd64.vgtest \
+	xor-undef-amd64.stderr.exp-freebsd xor-undef-amd64.vgtest \
 	xsave-avx.vgtest xsave-avx.stdout.exp xsave-avx.stderr.exp
 
 check_PROGRAMS = \

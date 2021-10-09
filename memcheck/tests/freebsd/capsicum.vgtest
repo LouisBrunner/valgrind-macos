@@ -1,0 +1,3 @@
+prereq: test -e ./capsicum
+prog: capsicum
+vgopts: -q

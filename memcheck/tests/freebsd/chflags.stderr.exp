@@ -1,0 +1,57 @@
+Syscall param fchflags(fd) contains uninitialised byte(s)
+   at 0x........: fchflags (in /...libc...)
+   by 0x........: main (chflags.c:22)
+
+Syscall param fchflags(flags) contains uninitialised byte(s)
+   at 0x........: fchflags (in /...libc...)
+   by 0x........: main (chflags.c:23)
+
+Syscall param chflags(flags) contains uninitialised byte(s)
+   at 0x........: chflags (in /...libc...)
+   by 0x........: main (chflags.c:30)
+
+Syscall param lchflags(flags) contains uninitialised byte(s)
+   at 0x........: lchflags (in /...libc...)
+   by 0x........: main (chflags.c:31)
+
+Syscall param chflagsat(flags) contains uninitialised byte(s)
+   at 0x........: chflagsat (in /...libc...)
+   by 0x........: main (chflags.c:32)
+
+Syscall param chflagsat(atflag) contains uninitialised byte(s)
+   at 0x........: chflagsat (in /...libc...)
+   by 0x........: main (chflags.c:35)
+
+Syscall param chflags(path) points to unaddressable byte(s)
+   at 0x........: chflags (in /...libc...)
+   by 0x........: main (chflags.c:39)
+ Address 0x........ is 0 bytes inside a block of size 12 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (chflags.c:37)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (chflags.c:11)
+
+Syscall param lchflags(path) points to unaddressable byte(s)
+   at 0x........: lchflags (in /...libc...)
+   by 0x........: main (chflags.c:40)
+ Address 0x........ is 0 bytes inside a block of size 12 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (chflags.c:37)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (chflags.c:11)
+
+Syscall param chflagsat(path) points to unaddressable byte(s)
+   at 0x........: chflagsat (in /...libc...)
+   by 0x........: main (chflags.c:41)
+ Address 0x........ is 0 bytes inside a block of size 12 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (chflags.c:37)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (chflags.c:11)
+

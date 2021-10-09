@@ -9,6 +9,9 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#if defined(VGO_freebsd)
+#include <signal.h>
+#endif
 
 static int pgsz;
 

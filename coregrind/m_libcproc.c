@@ -41,6 +41,7 @@
 #include "pub_core_syscall.h"
 #include "pub_core_xarray.h"
 #include "pub_core_clientstate.h"
+#include "pub_core_debuglog.h"   // VG_(debugLog)
 
 #if defined(VGO_darwin)
 /* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
@@ -65,7 +66,7 @@ HChar** VG_(client_envp) = NULL;
 const HChar *VG_(libdir) = VG_LIBDIR;
 
 const HChar *VG_(LD_PRELOAD_var_name) =
-#if defined(VGO_linux) || defined(VGO_solaris)
+#if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
    "LD_PRELOAD";
 #elif defined(VGO_darwin)
    "DYLD_INSERT_LIBRARIES";
@@ -346,7 +347,7 @@ void VG_(client_cmd_and_args)(HChar *buffer, SizeT buf_size)
 
 Int VG_(waitpid)(Int pid, Int *status, Int options)
 {
-#  if defined(VGO_linux)
+#  if defined(VGO_linux) || defined(VGO_freebsd)
    SysRes res = VG_(do_syscall4)(__NR_wait4,
                                  pid, (UWord)status, options, 0);
    return sr_isError(res) ? -1 : sr_Res(res);
@@ -581,10 +582,10 @@ Int VG_(system) ( const HChar* cmd )
    return zzz == -1 ? -1 : 0;
 }
 
-Int VG_(sysctl)(Int *name, UInt namelen, void *oldp, SizeT *oldlenp, void *newp, SizeT newlen)
+Int VG_(sysctl)(Int *name, UInt namelen, void *oldp, SizeT *oldlenp, const void *newp, SizeT newlen)
 {
    SysRes res;
-#  if defined(VGO_darwin)
+#  if defined(VGO_darwin) || defined(VGO_freebsd)
    res = VG_(do_syscall6)(__NR___sysctl,
                            (UWord)name, namelen, (UWord)oldp, (UWord)oldlenp, (UWord)newp, newlen);
 #  else
@@ -718,6 +719,15 @@ Int VG_(gettid)(void)
 
    return sr_Res(res);
 
+#  elif defined(VGO_freebsd)
+   SysRes res;
+   long tid;
+
+   res = VG_(do_syscall1)(__NR_thr_self, (UWord)&tid);
+   if (sr_isError(res))
+      tid = sr_Res(VG_(do_syscall0)(__NR_getpid));
+   return tid;
+
 #  elif defined(VGO_darwin)
    // Darwin's gettid syscall is something else.
    // Use Mach thread ports for lwpid instead.
@@ -744,7 +754,7 @@ Int VG_(getpgrp) ( void )
    /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
 #  if defined(VGP_arm64_linux) || defined(VGP_nanomips_linux)
    return sr_Res( VG_(do_syscall1)(__NR_getpgid, 0) );
-#  elif defined(VGO_linux) || defined(VGO_darwin)
+#  elif defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_freebsd)
    return sr_Res( VG_(do_syscall0)(__NR_getpgrp) );
 #  elif defined(VGO_solaris)
    /* Uses the shared pgrpsys syscall, 0 for the getpgrp variant. */
@@ -757,7 +767,7 @@ Int VG_(getpgrp) ( void )
 Int VG_(getppid) ( void )
 {
    /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
-#  if defined(VGO_linux) || defined(VGO_darwin)
+#  if defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_freebsd)
    return sr_Res( VG_(do_syscall0)(__NR_getppid) );
 #  elif defined(VGO_solaris)
    /* Uses the shared getpid/getppid syscall, val2 contains a parent pid. */
@@ -770,7 +780,7 @@ Int VG_(getppid) ( void )
 Int VG_(geteuid) ( void )
 {
    /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
-#  if defined(VGO_linux) || defined(VGO_darwin)
+#  if defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_freebsd)
    {
 #     if defined(__NR_geteuid32)
       // We use the 32-bit version if it's supported.  Otherwise, IDs greater
@@ -791,7 +801,7 @@ Int VG_(geteuid) ( void )
 
 Int VG_(getegid) ( void )
 {
-#  if defined(VGO_linux) || defined(VGO_darwin)
+#  if defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_freebsd)
    /* ASSUMES SYSCALL ALWAYS SUCCEEDS */
 #    if defined(__NR_getegid32)
    // We use the 32-bit version if it's supported.  Otherwise, IDs greater
@@ -838,7 +848,8 @@ Int VG_(getgroups)( Int size, UInt* list )
         || defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)  \
         || defined(VGO_darwin) || defined(VGP_s390x_linux)    \
         || defined(VGP_mips32_linux) || defined(VGP_arm64_linux) \
-        || defined(VGO_solaris) || defined(VGP_nanomips_linux)
+        || defined(VGO_solaris) || defined(VGP_nanomips_linux) \
+        || defined(VGO_freebsd)
    SysRes sres;
    sres = VG_(do_syscall2)(__NR_getgroups, size, (Addr)list);
    if (sr_isError(sres))
@@ -857,7 +868,7 @@ Int VG_(getgroups)( Int size, UInt* list )
 Int VG_(ptrace) ( Int request, Int pid, void *addr, void *data )
 {
    SysRes res;
-#  if defined(VGO_linux) || defined(VGO_darwin)
+#  if defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_freebsd)
    res = VG_(do_syscall4)(__NR_ptrace, request, pid, (UWord)addr, (UWord)data);
 #  elif defined(VGO_solaris)
    /* There is no ptrace syscall on Solaris.  Such requests has to be
@@ -887,7 +898,7 @@ Int VG_(fork) ( void )
       return -1;
    return sr_Res(res);
 
-#  elif defined(VGO_linux)
+#  elif defined(VGO_linux) || defined(VGO_freebsd)
    SysRes res;
    res = VG_(do_syscall0)(__NR_fork);
    if (sr_isError(res))
@@ -955,6 +966,13 @@ UInt VG_(read_millisecond_timer) ( void )
      }
    }
 
+#  elif defined(VGO_freebsd)
+   { SysRes res;
+     struct vki_timeval tv_now;
+     res = VG_(do_syscall2)(__NR_gettimeofday, (UWord)&tv_now, (UWord)NULL);
+     vg_assert(! sr_isError(res));
+     now = tv_now.tv_sec * 1000000ULL + tv_now.tv_usec;
+   }
 #  elif defined(VGO_darwin)
    // Weird: it seems that gettimeofday() doesn't fill in the timeval, but
    // rather returns the tv_sec as the low 32 bits of the result and the
@@ -978,7 +996,7 @@ UInt VG_(read_millisecond_timer) ( void )
    return (now - base) / 1000;
 }
 
-#  if defined(VGO_linux) || defined(VGO_solaris)
+#  if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
 void VG_(clock_gettime) ( struct vki_timespec *ts, vki_clockid_t clk_id )
 {
     SysRes res;
@@ -1025,6 +1043,16 @@ UInt VG_(get_user_milliseconds)(void)
       VG_(memset)(&ru, 0, sizeof(ru));
       SysRes sr = VG_(do_syscall2)(__NR_rusagesys, VKI__RUSAGESYS_GETRUSAGE,
                                    (UWord) &ru);
+      if (!sr_isError(sr)) {
+         res = ru.ru_utime.tv_sec * 1000 + ru.ru_utime.tv_usec / 1000;
+      }
+   }
+
+#  elif defined(VGO_freebsd)
+   {
+      struct vki_rusage ru;
+      VG_(memset)(&ru, 0, sizeof(ru));
+      SysRes sr = VG_(do_syscall2)(__NR_getrusage, VKI_RUSAGE_SELF, (UWord)&ru);
       if (!sr_isError(sr)) {
          res = ru.ru_utime.tv_sec * 1000 + ru.ru_utime.tv_usec / 1000;
       }
@@ -1105,6 +1133,62 @@ void VG_(do_atfork_child)(ThreadId tid)
          (*atforks[i].child)(tid);
 }
 
+/* ---------------------------------------------------------------------
+   FreeBSD sysctlbyname(), modfind(), etc
+   ------------------------------------------------------------------ */
+
+#if defined(VGO_freebsd)
+Int VG_(sysctlbyname)(const HChar *name, void *oldp, SizeT *oldlenp, const void *newp, SizeT newlen)
+{
+   Int oid[2];
+   Int real_oid[10];
+   SizeT oidlen;
+   int error;
+
+   oid[0] = 0;		/* magic */
+   oid[1] = 3;		/* undocumented */
+   oidlen = sizeof(real_oid);
+   error = VG_(sysctl)(oid, 2, real_oid, &oidlen, name, VG_(strlen)(name));
+   if (error < 0)
+      return error;
+   oidlen /= sizeof(int);
+   error = VG_(sysctl)(real_oid, oidlen, oldp, oldlenp, newp, newlen);
+   return error;
+}
+
+Int VG_(getosreldate)(void)
+{
+   static Int osreldate = 0;
+   SizeT osreldatel;
+
+   if (osreldate == 0) {
+      osreldatel = sizeof(osreldate);
+      VG_(sysctlbyname)("kern.osreldate", &osreldate, &osreldatel, 0, 0);
+   }
+   return (osreldate);
+}
+
+Bool VG_(is32on64)(void)
+{
+#if defined(VGP_amd64_freebsd)
+   return False;
+#elif defined(VGP_x86_freebsd)
+   SysRes res;
+   struct vg_stat stat_buf;
+   res = VG_(stat)("/libexec/ld-elf32.so.1", &stat_buf);
+   if (!sr_isError(res)) {
+      // file exists, we're running on amd64
+      VG_(debugLog)(1, "check-os-bitness", "i386 executable on amd64 kernel\n");
+      return True;
+   } else {
+      VG_(debugLog)(1, "check-os-bitness", "i386 executable on i386 kernel\n");
+      return False;
+   }
+#else
+#  error Unknown platform
+#endif
+}
+#endif
 
 /* ---------------------------------------------------------------------
    icache invalidation

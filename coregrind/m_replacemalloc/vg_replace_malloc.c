@@ -87,18 +87,19 @@
    10140 MALLOPT
    10150 MALLOC_TRIM
    10160 POSIX_MEMALIGN
-   10170 MALLOC_USABLE_SIZE
-   10180 PANIC
-   10190 MALLOC_STATS
-   10200 MALLINFO
-   10210 DEFAULT_ZONE
-   10220 CREATE_ZONE
-   10230 ZONE_FROM_PTR
-   10240 ZONE_CHECK
-   10250 ZONE_REGISTER
-   10260 ZONE_UNREGISTER
-   10270 ZONE_SET_NAME
-   10280 ZONE_GET_NAME
+   10170 ALIGNED_ALL0C
+   10180 MALLOC_USABLE_SIZE
+   10190 PANIC
+   10200 MALLOC_STATS
+   10210 MALLINFO
+   10220 DEFAULT_ZONE
+   10230 CREATE_ZONE
+   10240 ZONE_FROM_PTR
+   10250 ZONE_CHECK
+   10260 ZONE_REGISTER
+   10270 ZONE_UNREGISTER
+   10280 ZONE_SET_NAME
+   10290 ZONE_GET_NAME
 */
 
 /* 2 Apr 05: the Portland Group compiler, which uses cfront/ARM style
@@ -379,6 +380,10 @@ extern int *__errno_location (void) __attribute__((weak));
  ALLOC_or_NULL(VG_Z_LIBC_SONAME,      malloc,      malloc);
  ALLOC_or_NULL(SO_SYN_MALLOC,         malloc,      malloc);
 
+#elif defined(VGO_freebsd)
+ ALLOC_or_NULL(VG_Z_LIBC_SONAME,      malloc,      malloc);
+ ALLOC_or_NULL(SO_SYN_MALLOC,         malloc,      malloc);
+
 #elif defined(VGO_darwin)
  ALLOC_or_NULL(VG_Z_LIBC_SONAME,      malloc,      malloc);
  ALLOC_or_NULL(SO_SYN_MALLOC,         malloc,      malloc);
@@ -414,6 +419,20 @@ extern int *__errno_location (void) __attribute__((weak));
   ALLOC_or_BOMB(VG_Z_LIBSTDCXX_SONAME, _Znwm,          __builtin_new);
   ALLOC_or_BOMB(VG_Z_LIBCXX_SONAME,    _Znwm,          __builtin_new);
   ALLOC_or_BOMB(VG_Z_LIBC_SONAME,      _Znwm,          __builtin_new);
+  ALLOC_or_BOMB(SO_SYN_MALLOC,         _Znwm,          __builtin_new);
+ #endif
+
+#elif defined(VGO_freebsd)
+ // operator new(unsigned int), GNU mangling
+ #if VG_WORDSIZE == 4
+  ALLOC_or_BOMB(VG_Z_LIBSTDCXX_SONAME, _Znwj,          __builtin_new);
+  ALLOC_or_BOMB(VG_Z_LIBCXX_SONAME,    _Znwj,          __builtin_new);
+  ALLOC_or_BOMB(SO_SYN_MALLOC,         _Znwj,          __builtin_new);
+ #endif
+ // operator new(unsigned long), GNU mangling
+ #if VG_WORDSIZE == 8
+  ALLOC_or_BOMB(VG_Z_LIBSTDCXX_SONAME, _Znwm,          __builtin_new);
+  ALLOC_or_BOMB(VG_Z_LIBCXX_SONAME,    _Znwm,          __builtin_new);
   ALLOC_or_BOMB(SO_SYN_MALLOC,         _Znwm,          __builtin_new);
  #endif
 
@@ -461,6 +480,20 @@ extern int *__errno_location (void) __attribute__((weak));
   ALLOC_or_BOMB_ALIGNED(SO_SYN_MALLOC,         _ZnwmSt11align_val_t, __builtin_new_aligned);
  #endif
 
+#elif defined(VGO_freebsd)
+ // operator new(unsigned int), GNU mangling
+ #if VG_WORDSIZE == 4
+  ALLOC_or_BOMB_ALIGNED(VG_Z_LIBSTDCXX_SONAME, _ZnwjSt11align_val_t, __builtin_new_aligned);
+  ALLOC_or_BOMB_ALIGNED(VG_Z_LIBCXX_SONAME,    _ZnwjSt11align_val_t, __builtin_new_aligned);
+  ALLOC_or_BOMB_ALIGNED(SO_SYN_MALLOC,         _ZnwjSt11align_val_t, __builtin_new_aligned);
+ #endif
+ // operator new(unsigned long), GNU mangling
+ #if VG_WORDSIZE == 8
+  ALLOC_or_BOMB_ALIGNED(VG_Z_LIBSTDCXX_SONAME, _ZnwmSt11align_val_t, __builtin_new_aligned);
+  ALLOC_or_BOMB_ALIGNED(VG_Z_LIBCXX_SONAME,    _ZnwmSt11align_val_t, __builtin_new_aligned);
+  ALLOC_or_BOMB_ALIGNED(SO_SYN_MALLOC,         _ZnwmSt11align_val_t, __builtin_new_aligned);
+ #endif
+
 #elif defined(VGO_darwin)
 
 #elif defined(VGO_solaris)
@@ -495,6 +528,20 @@ extern int *__errno_location (void) __attribute__((weak));
   ALLOC_or_NULL(VG_Z_LIBCXX_SONAME,    _ZnwmRKSt9nothrow_t,  __builtin_new);
   ALLOC_or_NULL(VG_Z_LIBC_SONAME,      _ZnwmRKSt9nothrow_t,  __builtin_new);
   ALLOC_or_NULL(SO_SYN_MALLOC,         _ZnwmRKSt9nothrow_t,  __builtin_new);
+ #endif
+
+#elif defined(VGO_freebsd)
+ // operator new(unsigned, std::nothrow_t const&), GNU mangling
+ #if VG_WORDSIZE == 4
+  ALLOC_or_NULL(VG_Z_LIBSTDCXX_SONAME, _ZnwjRKSt9nothrow_t,  __builtin_new);
+  ALLOC_or_BOMB(VG_Z_LIBCXX_SONAME,    _ZnwjRKSt9nothrow_t,  __builtin_new);
+  ALLOC_or_NULL(SO_SYN_MALLOC,         _ZnwjRKSt9nothrow_t,  __builtin_new);
+ #endif
+ // operator new(unsigned long, std::nothrow_t const&), GNU mangling
+ #if VG_WORDSIZE == 8
+  ALLOC_or_NULL(VG_Z_LIBSTDCXX_SONAME, _ZnwmRKSt9nothrow_t,  __builtin_new);
+  ALLOC_or_NULL(VG_Z_LIBCXX_SONAME,    _ZnwmRKSt9nothrow_t,  __builtin_new);
+  ALLOC_or_NULL(SO_SYN_MALLOC,         _ZnwjRKSt9nothrow_t,  __builtin_new);
  #endif
 
 #elif defined(VGO_darwin)
@@ -541,6 +588,20 @@ extern int *__errno_location (void) __attribute__((weak));
   ALLOC_or_NULL_ALIGNED(SO_SYN_MALLOC,         _ZnwmSt11align_val_tRKSt9nothrow_t,  __builtin_new_aligned);
  #endif
 
+#elif defined(VGO_freebsd)
+ // operator new(unsigned int, std::align_val_t, std::nothrow_t const&), GNU mangling
+ #if VG_WORDSIZE == 4
+  ALLOC_or_NULL_ALIGNED(VG_Z_LIBSTDCXX_SONAME, _ZnwjSt11align_val_tRKSt9nothrow_t,  __builtin_new_aligned);
+  ALLOC_or_NULL_ALIGNED(VG_Z_LIBCXX_SONAME,    _ZnwjSt11align_val_tRKSt9nothrow_t,  __builtin_new_aligned);
+  ALLOC_or_NULL_ALIGNED(SO_SYN_MALLOC,         _ZnwjSt11align_val_tRKSt9nothrow_t,  __builtin_new_aligned);
+ #endif
+ // operator new(unsigned long, std::align_val_t, std::nothrow_t const&), GNU mangling
+ #if VG_WORDSIZE == 8
+  ALLOC_or_NULL_ALIGNED(VG_Z_LIBSTDCXX_SONAME, _ZnwmSt11align_val_tRKSt9nothrow_t,  __builtin_new_aligned);
+  ALLOC_or_NULL_ALIGNED(VG_Z_LIBCXX_SONAME,    _ZnwmSt11align_val_tRKSt9nothrow_t,  __builtin_new_aligned);
+  ALLOC_or_NULL_ALIGNED(SO_SYN_MALLOC,         _ZnwmSt11align_val_tRKSt9nothrow_t,  __builtin_new_aligned);
+ #endif
+
 #elif defined(VGO_darwin)
 
 #elif defined(VGO_solaris)
@@ -577,6 +638,20 @@ extern int *__errno_location (void) __attribute__((weak));
   ALLOC_or_BOMB(VG_Z_LIBCXX_SONAME,    _Znam,             __builtin_vec_new );
   ALLOC_or_BOMB(VG_Z_LIBC_SONAME,      _Znam,             __builtin_vec_new );
   ALLOC_or_BOMB(SO_SYN_MALLOC,         _Znam,             __builtin_vec_new );
+ #endif
+
+#elif defined(VGO_freebsd)
+ // operator new[](unsigned int), GNU mangling
+ #if VG_WORDSIZE == 4
+  ALLOC_or_BOMB(VG_Z_LIBSTDCXX_SONAME, _Znaj,             __builtin_vec_new );
+  ALLOC_or_BOMB(VG_Z_LIBCXX_SONAME,    _Znaj,             __builtin_vec_new );
+  ALLOC_or_BOMB(SO_SYN_MALLOC,         _Znaj,             __builtin_vec_new );
+ #endif
+ // operator new[](unsigned long), GNU mangling
+ #if VG_WORDSIZE == 8
+  ALLOC_or_BOMB(VG_Z_LIBSTDCXX_SONAME, _Znam,             __builtin_vec_new );
+  ALLOC_or_BOMB(VG_Z_LIBCXX_SONAME,    _Znam,             __builtin_vec_new );
+  ALLOC_or_BOMB(SO_SYN_MALLOC,         _Znaj,             __builtin_vec_new );
  #endif
 
 #elif defined(VGO_darwin)
@@ -623,6 +698,20 @@ extern int *__errno_location (void) __attribute__((weak));
   ALLOC_or_BOMB_ALIGNED(SO_SYN_MALLOC,         _ZnamSt11align_val_t, __builtin_vec_new_aligned );
  #endif
 
+#elif defined(VGO_freebsd)
+ // operator new[](unsigned int, std::align_val_t), GNU mangling
+ #if VG_WORDSIZE == 4
+  ALLOC_or_BOMB_ALIGNED(VG_Z_LIBSTDCXX_SONAME, _ZnajSt11align_val_t, __builtin_vec_new_aligned );
+  ALLOC_or_BOMB_ALIGNED(VG_Z_LIBCXX_SONAME,    _ZnajSt11align_val_t, __builtin_vec_new_aligned );
+  ALLOC_or_BOMB_ALIGNED(SO_SYN_MALLOC,         _ZnajSt11align_val_t, __builtin_vec_new_aligned );
+ #endif
+ // operator new[](unsigned long, std::align_val_t), GNU mangling
+ #if VG_WORDSIZE == 8
+  ALLOC_or_BOMB_ALIGNED(VG_Z_LIBSTDCXX_SONAME, _ZnamSt11align_val_t, __builtin_vec_new_aligned );
+  ALLOC_or_BOMB_ALIGNED(VG_Z_LIBCXX_SONAME,    _ZnamSt11align_val_t, __builtin_vec_new_aligned );
+  ALLOC_or_BOMB_ALIGNED(SO_SYN_MALLOC,         _ZnamSt11align_val_t, __builtin_vec_new_aligned );
+ #endif
+
 #elif defined(VGO_darwin)
 
 #elif defined(VGO_solaris)
@@ -656,6 +745,20 @@ extern int *__errno_location (void) __attribute__((weak));
   ALLOC_or_NULL(VG_Z_LIBCXX_SONAME,    _ZnamRKSt9nothrow_t, __builtin_vec_new );
   ALLOC_or_NULL(VG_Z_LIBC_SONAME,      _ZnamRKSt9nothrow_t, __builtin_vec_new );
   ALLOC_or_NULL(SO_SYN_MALLOC,         _ZnamRKSt9nothrow_t, __builtin_vec_new );
+ #endif
+
+#elif defined(VGO_freebsd)
+ // operator new[](unsigned, std::nothrow_t const&), GNU mangling
+ #if VG_WORDSIZE == 4
+  ALLOC_or_NULL(VG_Z_LIBSTDCXX_SONAME, _ZnajRKSt9nothrow_t, __builtin_vec_new );
+  ALLOC_or_NULL(VG_Z_LIBCXX_SONAME,    _ZnajRKSt9nothrow_t, __builtin_vec_new );
+  ALLOC_or_NULL(SO_SYN_MALLOC,         _ZnajRKSt9nothrow_t, __builtin_vec_new );
+ #endif
+ // operator new[](unsigned long, std::nothrow_t const&), GNU mangling
+ #if VG_WORDSIZE == 8
+  ALLOC_or_NULL(VG_Z_LIBSTDCXX_SONAME, _ZnamRKSt9nothrow_t, __builtin_vec_new );
+  ALLOC_or_NULL(VG_Z_LIBCXX_SONAME,    _ZnamRKSt9nothrow_t, __builtin_vec_new );
+  ALLOC_or_NULL(SO_SYN_MALLOC,         _ZnajRKSt9nothrow_t, __builtin_vec_new );
  #endif
 
 #elif defined(VGO_darwin)
@@ -699,6 +802,20 @@ extern int *__errno_location (void) __attribute__((weak));
   ALLOC_or_NULL_ALIGNED(VG_Z_LIBSTDCXX_SONAME, _ZnamSt11align_val_tRKSt9nothrow_t, __builtin_vec_new_aligned );
   ALLOC_or_NULL_ALIGNED(VG_Z_LIBCXX_SONAME,    _ZnamSt11align_val_tRKSt9nothrow_t, __builtin_vec_new_aligned );
   ALLOC_or_NULL_ALIGNED(VG_Z_LIBC_SONAME,      _ZnamSt11align_val_tRKSt9nothrow_t, __builtin_vec_new_aligned );
+  ALLOC_or_NULL_ALIGNED(SO_SYN_MALLOC,         _ZnamSt11align_val_tRKSt9nothrow_t, __builtin_vec_new_aligned );
+ #endif
+
+#elif defined(VGO_freebsd)
+ // operator new[](unsigned int, std::align_val_t, std::nothrow_t const&), GNU mangling
+ #if VG_WORDSIZE == 4
+  ALLOC_or_NULL_ALIGNED(VG_Z_LIBSTDCXX_SONAME, _ZnajSt11align_val_tRKSt9nothrow_t, __builtin_vec_new_aligned );
+  ALLOC_or_NULL_ALIGNED(VG_Z_LIBCXX_SONAME,    _ZnajSt11align_val_tRKSt9nothrow_t, __builtin_vec_new_aligned );
+  ALLOC_or_NULL_ALIGNED(SO_SYN_MALLOC,         _ZnajSt11align_val_tRKSt9nothrow_t, __builtin_vec_new_aligned );
+ #endif
+ // operator new[](unsigned long, std::align_val_t, std::nothrow_t const&), GNU mangling
+ #if VG_WORDSIZE == 8
+  ALLOC_or_NULL_ALIGNED(VG_Z_LIBSTDCXX_SONAME, _ZnamSt11align_val_tRKSt9nothrow_t, __builtin_vec_new_aligned );
+  ALLOC_or_NULL_ALIGNED(VG_Z_LIBCXX_SONAME,    _ZnamSt11align_val_tRKSt9nothrow_t, __builtin_vec_new_aligned );
   ALLOC_or_NULL_ALIGNED(SO_SYN_MALLOC,         _ZnamSt11align_val_tRKSt9nothrow_t, __builtin_vec_new_aligned );
  #endif
 
@@ -751,6 +868,10 @@ extern int *__errno_location (void) __attribute__((weak));
 
 #if defined(VGO_linux)
  FREE(VG_Z_LIBSTDCXX_SONAME,  free,                 free );
+ FREE(VG_Z_LIBC_SONAME,       free,                 free );
+ FREE(SO_SYN_MALLOC,          free,                 free );
+
+#elif defined(VGO_freebsd)
  FREE(VG_Z_LIBC_SONAME,       free,                 free );
  FREE(SO_SYN_MALLOC,          free,                 free );
 
@@ -815,6 +936,21 @@ extern int *__errno_location (void) __attribute__((weak));
 #endif
 
 
+#elif defined(VGO_freebsd)
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete );
+ FREE(VG_Z_LIBCXX_SONAME,     _ZdlPv,               __builtin_delete );
+ FREE(SO_SYN_MALLOC,          _ZdlPv,               __builtin_delete );
+ // operator delete(void*, unsigned long), C++14, GNU mangling
+#if __SIZEOF_SIZE_T__ == 4
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPvj,               __builtin_delete );
+ FREE(VG_Z_LIBCXX_SONAME,     _ZdlPvj,               __builtin_delete );
+ FREE(SO_SYN_MALLOC,          _ZdlPvj,               __builtin_delete );
+#elif __SIZEOF_SIZE_T__ == 8
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPvm,               __builtin_delete );
+ FREE(VG_Z_LIBCXX_SONAME,     _ZdlPvm,               __builtin_delete );
+ FREE(SO_SYN_MALLOC,          _ZdlPvm,               __builtin_delete );
+#endif
+
 #elif defined(VGO_darwin)
  // operator delete(void*), GNU mangling
  //FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete );
@@ -860,6 +996,23 @@ extern int *__errno_location (void) __attribute__((weak));
  FREE(SO_SYN_MALLOC,          _ZdlPvmSt11align_val_t,               __builtin_delete_aligned );
 #endif
 
+#elif defined(VGO_freebsd)
+ // operator delete(void*, std::align_val_t), GNU mangling
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPvSt11align_val_t,               __builtin_delete_aligned );
+ FREE(VG_Z_LIBCXX_SONAME,     _ZdlPvSt11align_val_t,               __builtin_delete_aligned );
+ FREE(SO_SYN_MALLOC,          _ZdlPvSt11align_val_t,               __builtin_delete_aligned );
+
+ // operator delete(void*, unsigned int, std::align_val_t), GNU mangling
+#if __SIZEOF_SIZE_T__ == 4
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPvjSt11align_val_t,               __builtin_delete_aligned );
+ FREE(VG_Z_LIBCXX_SONAME,     _ZdlPvjSt11align_val_t,               __builtin_delete_aligned );
+ FREE(SO_SYN_MALLOC,          _ZdlPvjSt11align_val_t,               __builtin_delete_aligned );
+ // operator delete(void*, unsigned long, std::align_val_t), GNU mangling
+#elif __SIZEOF_SIZE_T__ == 8
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPvmSt11align_val_t,               __builtin_delete_aligned );
+ FREE(VG_Z_LIBCXX_SONAME,     _ZdlPvmSt11align_val_t,               __builtin_delete_aligned );
+ FREE(SO_SYN_MALLOC,          _ZdlPvmSt11align_val_t,               __builtin_delete_aligned );
+#endif
 
 #elif defined(VGO_darwin)
 
@@ -890,6 +1043,12 @@ extern int *__errno_location (void) __attribute__((weak));
  FREE(VG_Z_LIBC_SONAME,      _ZdlPvRKSt9nothrow_t,  __builtin_delete );
  FREE(SO_SYN_MALLOC,         _ZdlPvRKSt9nothrow_t,  __builtin_delete );
 
+#elif defined(VGO_freebsd)
+ // operator delete(void*, std::nothrow_t const&), GNU mangling
+ FREE(VG_Z_LIBSTDCXX_SONAME, _ZdlPvRKSt9nothrow_t,  __builtin_delete );
+ FREE(VG_Z_LIBCXX_SONAME,    _ZdlPvRKSt9nothrow_t,  __builtin_delete );
+ FREE(SO_SYN_MALLOC,         _ZdlPvRKSt9nothrow_t,  __builtin_delete );
+
 #elif defined(VGO_darwin)
  // operator delete(void*, std::nothrow_t const&), GNU mangling
  //FREE(VG_Z_LIBSTDCXX_SONAME, _ZdlPvRKSt9nothrow_t,  __builtin_delete );
@@ -912,6 +1071,12 @@ extern int *__errno_location (void) __attribute__((weak));
  FREE(SO_SYN_MALLOC,         _ZdlPvSt11align_val_tRKSt9nothrow_t,  __builtin_delete_aligned );
 
  // no sized version of this operator
+
+#elif defined(VGO_freebsd)
+ // operator delete(void*, std::align_val_t, std::nothrow_t const&), GNU mangling
+ FREE(VG_Z_LIBSTDCXX_SONAME, _ZdlPvSt11align_val_tRKSt9nothrow_t,  __builtin_delete_aligned );
+ FREE(VG_Z_LIBCXX_SONAME,    _ZdlPvSt11align_val_tRKSt9nothrow_t,  __builtin_delete_aligned );
+ FREE(SO_SYN_MALLOC,         _ZdlPvSt11align_val_tRKSt9nothrow_t,  __builtin_delete_aligned );
 
 #elif defined(VGO_darwin)
 
@@ -950,6 +1115,22 @@ extern int *__errno_location (void) __attribute__((weak));
  FREE(VG_Z_LIBC_SONAME,       _ZdaPvm,              __builtin_vec_delete );
  FREE(SO_SYN_MALLOC,          _ZdaPvm,              __builtin_vec_delete );
 #endif
+
+#elif defined(VGO_freebsd)
+ // operator delete[](void*), GNU mangling
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPv,               __builtin_vec_delete );
+ FREE(VG_Z_LIBCXX_SONAME,     _ZdaPv,               __builtin_vec_delete );
+ FREE(SO_SYN_MALLOC,          _ZdaPv,               __builtin_vec_delete );
+ // operator delete[](void*, unsigned long), C++14, GNU mangling
+  #if __SIZEOF_SIZE_T__ == 4
+  FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvj,              __builtin_vec_delete );
+  FREE(VG_Z_LIBCXX_SONAME,     _ZdaPvj,              __builtin_vec_delete );
+  FREE(SO_SYN_MALLOC,          _ZdaPvj,              __builtin_vec_delete );
+ #elif __SIZEOF_SIZE_T__ == 8
+  FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvm,              __builtin_vec_delete );
+  FREE(VG_Z_LIBCXX_SONAME,     _ZdaPvm,              __builtin_vec_delete );
+  FREE(SO_SYN_MALLOC,          _ZdaPvm,              __builtin_vec_delete );
+ #endif
 
 #elif defined(VGO_darwin)
  // operator delete[](void*), not mangled (for gcc 2.96)
@@ -999,6 +1180,24 @@ extern int *__errno_location (void) __attribute__((weak));
  FREE(SO_SYN_MALLOC,          _ZdaPvmSt11align_val_t, __builtin_vec_delete_aligned );
 #endif
 
+#elif defined(VGO_freebsd)
+ // operator delete[](void*, std::align_val_t), GNU mangling
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvSt11align_val_t, __builtin_vec_delete_aligned );
+ FREE(VG_Z_LIBCXX_SONAME,     _ZdaPvSt11align_val_t, __builtin_vec_delete_aligned );
+ FREE(SO_SYN_MALLOC,          _ZdaPvSt11align_val_t, __builtin_vec_delete_aligned );
+
+ // operator delete[](void*, unsigned int, std::align_val_t), GNU mangling
+ #if __SIZEOF_SIZE_T__ == 4
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvjSt11align_val_t, __builtin_vec_delete_aligned );
+ FREE(VG_Z_LIBCXX_SONAME,     _ZdaPvjSt11align_val_t, __builtin_vec_delete_aligned );
+ FREE(SO_SYN_MALLOC,          _ZdaPvjSt11align_val_t, __builtin_vec_delete_aligned );
+ // operator delete[](void*, unsigned long, std::align_val_t), GNU mangling
+ #elif __SIZEOF_SIZE_T__ == 8
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvmSt11align_val_t, __builtin_vec_delete_aligned );
+ FREE(VG_Z_LIBCXX_SONAME,     _ZdaPvmSt11align_val_t, __builtin_vec_delete_aligned );
+ FREE(SO_SYN_MALLOC,          _ZdaPvmSt11align_val_t, __builtin_vec_delete_aligned );
+#endif
+
 #elif defined(VGO_darwin)
 
 #elif defined(VGO_solaris)
@@ -1027,6 +1226,12 @@ extern int *__errno_location (void) __attribute__((weak));
  FREE(VG_Z_LIBC_SONAME,       _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
  FREE(SO_SYN_MALLOC,          _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
 
+#elif defined(VGO_freebsd)
+ // operator delete[](void*, std::nothrow_t const&), GNU mangling
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
+ FREE(VG_Z_LIBCXX_SONAME,     _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
+ FREE(SO_SYN_MALLOC,          _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
+
 #elif defined(VGO_darwin)
  // operator delete[](void*, std::nothrow_t const&), GNU mangling
  //FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
@@ -1049,6 +1254,12 @@ extern int *__errno_location (void) __attribute__((weak));
  FREE(SO_SYN_MALLOC,          _ZdaPvSt11align_val_tRKSt9nothrow_t, __builtin_vec_delete_aligned );
 
  // no sized version of this operator
+
+#elif defined(VGO_freebsd)
+ // operator delete[](void*, std::align_val_t, std::nothrow_t const&), GNU mangling
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvSt11align_val_tRKSt9nothrow_t, __builtin_vec_delete_aligned );
+ FREE(VG_Z_LIBCXX_SONAME,     _ZdaPvSt11align_val_tRKSt9nothrow_t, __builtin_vec_delete_aligned );
+ FREE(SO_SYN_MALLOC,          _ZdaPvSt11align_val_tRKSt9nothrow_t, __builtin_vec_delete_aligned );
 
 #elif defined(VGO_darwin)
 
@@ -1113,6 +1324,10 @@ extern int *__errno_location (void) __attribute__((weak));
    }
 
 #if defined(VGO_linux)
+ CALLOC(VG_Z_LIBC_SONAME, calloc);
+ CALLOC(SO_SYN_MALLOC,    calloc);
+
+#elif defined(VGO_freebsd)
  CALLOC(VG_Z_LIBC_SONAME, calloc);
  CALLOC(SO_SYN_MALLOC,    calloc);
 
@@ -1187,9 +1402,45 @@ extern int *__errno_location (void) __attribute__((weak));
       return v; \
    }
 
+#define REALLOCF(soname, fnname) \
+   \
+   void* VG_REPLACE_FUNCTION_EZU(10091,soname,fnname) \
+            ( void* ptrV, SizeT new_size );\
+   void* VG_REPLACE_FUNCTION_EZU(10091,soname,fnname) \
+            ( void* ptrV, SizeT new_size ) \
+   { \
+      void* v; \
+      \
+      if (!init_done) init(); \
+      MALLOC_TRACE("reallocf(%p,%llu)", ptrV, (ULong)new_size ); \
+      \
+      if (ptrV == NULL) \
+         /* We need to call a malloc-like function; so let's use \
+            one which we know exists. */ \
+         return VG_REPLACE_FUNCTION_EZU(10010,VG_Z_LIBC_SONAME,malloc) \
+                   (new_size); \
+      if (new_size <= 0) { \
+         VG_REPLACE_FUNCTION_EZU(10050,VG_Z_LIBC_SONAME,free)(ptrV); \
+         MALLOC_TRACE(" = 0\n"); \
+         return NULL; \
+      } \
+      v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_realloc, ptrV, new_size ); \
+      MALLOC_TRACE(" = %p\n", v ); \
+      if (v == NULL) \
+         VG_REPLACE_FUNCTION_EZU(10050,VG_Z_LIBC_SONAME,free)(ptrV); \
+      MALLOC_TRACE(" = %p\n", v ); \
+      return v; \
+   }
+
 #if defined(VGO_linux)
  REALLOC(VG_Z_LIBC_SONAME, realloc);
  REALLOC(SO_SYN_MALLOC,    realloc);
+
+#elif defined(VGO_freebsd)
+ REALLOC(VG_Z_LIBC_SONAME, realloc);
+ REALLOC(SO_SYN_MALLOC,    realloc);
+ REALLOCF(VG_Z_LIBC_SONAME, reallocf);
+ REALLOCF(SO_SYN_MALLOC, reallocf);
 
 #elif defined(VGO_darwin)
  REALLOC(VG_Z_LIBC_SONAME, realloc);
@@ -1265,6 +1516,10 @@ extern int *__errno_location (void) __attribute__((weak));
  MEMALIGN(VG_Z_LIBC_SONAME, memalign);
  MEMALIGN(SO_SYN_MALLOC,    memalign);
 
+#elif defined(VGO_freebsd)
+ MEMALIGN(VG_Z_LIBC_SONAME, memalign);
+ MEMALIGN(SO_SYN_MALLOC,    memalign);
+
 #elif defined(VGO_darwin)
  MEMALIGN(VG_Z_LIBC_SONAME, memalign);
  MEMALIGN(SO_SYN_MALLOC,    memalign);
@@ -1309,6 +1564,10 @@ extern int *__errno_location (void) __attribute__((weak));
    }
 
 #if defined(VGO_linux)
+ VALLOC(VG_Z_LIBC_SONAME, valloc);
+ VALLOC(SO_SYN_MALLOC, valloc);
+
+#elif defined(VGO_freebsd)
  VALLOC(VG_Z_LIBC_SONAME, valloc);
  VALLOC(SO_SYN_MALLOC, valloc);
 
@@ -1429,6 +1688,10 @@ extern int *__errno_location (void) __attribute__((weak));
  POSIX_MEMALIGN(VG_Z_LIBC_SONAME, posix_memalign);
  POSIX_MEMALIGN(SO_SYN_MALLOC,    posix_memalign);
 
+#elif defined(VGO_freebsd)
+ POSIX_MEMALIGN(VG_Z_LIBC_SONAME, posix_memalign);
+ POSIX_MEMALIGN(SO_SYN_MALLOC,    posix_memalign);
+
 #elif defined(VGO_darwin)
  //POSIX_MEMALIGN(VG_Z_LIBC_SONAME, posix_memalign);
 
@@ -1438,13 +1701,53 @@ extern int *__errno_location (void) __attribute__((weak));
 
 #endif
 
+ /*---------------------- aligned_alloc ----------------------*/
+
+ #define ALIGNED_ALLOC(soname, fnname) \
+    \
+    void* VG_REPLACE_FUNCTION_EZU(10170,soname,fnname) \
+           ( SizeT alignment, SizeT size ); \
+    void* VG_REPLACE_FUNCTION_EZU(10170,soname,fnname) \
+           ( SizeT alignment, SizeT size ) \
+    { \
+       void *mem; \
+       \
+       /* Test whether the alignment argument is valid.  It must be \
+          a power of two multiple of sizeof (void *).  */ \
+       if (alignment == 0 \
+           || alignment % sizeof (void *) != 0 \
+           || (alignment & (alignment - 1)) != 0) \
+          return 0; \
+       \
+       mem = VG_REPLACE_FUNCTION_EZU(10110,VG_Z_LIBC_SONAME,memalign) \
+                (alignment, size); \
+       \
+       return mem; \
+    }
+
+ #if defined(VGO_linux)
+  ALIGNED_ALLOC(VG_Z_LIBC_SONAME, aligned_alloc);
+  ALIGNED_ALLOC(SO_SYN_MALLOC,    aligned_alloc);
+
+#elif defined(VGO_freebsd)
+ ALIGNED_ALLOC(G_Z_LIBC_SONAME, aligned_alloc);
+ ALIGNED_ALLOC(SO_SYN_MALLOC,   aligned_alloc);
+
+ #elif defined(VGO_darwin)
+  //ALIGNED_ALLOC(VG_Z_LIBC_SONAME, aligned_alloc);
+
+ #elif defined(VGO_solaris)
+  ALIGNED_ALLOC(VG_Z_LIBC_SONAME, aligned_alloc);
+  ALIGNED_ALLOC(SO_SYN_MALLOC,    aligned_alloc);
+
+ #endif
 
 /*---------------------- malloc_usable_size ----------------------*/
 
 #define MALLOC_USABLE_SIZE(soname, fnname) \
    \
-   SizeT VG_REPLACE_FUNCTION_EZU(10170,soname,fnname) ( void* p ); \
-   SizeT VG_REPLACE_FUNCTION_EZU(10170,soname,fnname) ( void* p ) \
+   SizeT VG_REPLACE_FUNCTION_EZU(10180,soname,fnname) ( void* p ); \
+   SizeT VG_REPLACE_FUNCTION_EZU(10180,soname,fnname) ( void* p ) \
    {  \
       SizeT pszB; \
       \
@@ -1470,6 +1773,10 @@ extern int *__errno_location (void) __attribute__((weak));
   MALLOC_USABLE_SIZE(SO_SYN_MALLOC,    dlmalloc_usable_size);
 # endif
 
+#elif defined(VGO_freebsd)
+ MALLOC_USABLE_SIZE(VG_Z_LIBC_SONAME, malloc_usable_size);
+ MALLOC_USABLE_SIZE(SO_SYN_MALLOC,    malloc_usable_size);
+
 #elif defined(VGO_darwin)
  //MALLOC_USABLE_SIZE(VG_Z_LIBC_SONAME, malloc_usable_size);
  MALLOC_USABLE_SIZE(VG_Z_LIBC_SONAME, malloc_size);
@@ -1491,8 +1798,8 @@ static void panic(const char *str)
 
 #define PANIC(soname, fnname) \
    \
-   void VG_REPLACE_FUNCTION_EZU(10180,soname,fnname) ( void ); \
-   void VG_REPLACE_FUNCTION_EZU(10180,soname,fnname) ( void )  \
+   void VG_REPLACE_FUNCTION_EZU(10190,soname,fnname) ( void ); \
+   void VG_REPLACE_FUNCTION_EZU(10190,soname,fnname) ( void )  \
    { \
       panic(#fnname); \
    }
@@ -1512,8 +1819,8 @@ static void panic(const char *str)
 
 #define MALLOC_STATS(soname, fnname) \
    \
-   void VG_REPLACE_FUNCTION_EZU(10190,soname,fnname) ( void ); \
-   void VG_REPLACE_FUNCTION_EZU(10190,soname,fnname) ( void )  \
+   void VG_REPLACE_FUNCTION_EZU(10200,soname,fnname) ( void ); \
+   void VG_REPLACE_FUNCTION_EZU(10200,soname,fnname) ( void )  \
    { \
       /* Valgrind's malloc_stats implementation does nothing. */ \
    }
@@ -1535,8 +1842,8 @@ static void panic(const char *str)
 // doesn't know that the call to mallinfo fills in mi.
 #define MALLINFO(soname, fnname) \
    \
-   struct vg_mallinfo VG_REPLACE_FUNCTION_EZU(10200,soname,fnname) ( void ); \
-   struct vg_mallinfo VG_REPLACE_FUNCTION_EZU(10200,soname,fnname) ( void ) \
+   struct vg_mallinfo VG_REPLACE_FUNCTION_EZU(10210,soname,fnname) ( void ); \
+   struct vg_mallinfo VG_REPLACE_FUNCTION_EZU(10210,soname,fnname) ( void ) \
    { \
       static struct vg_mallinfo mi; \
       DO_INIT; \
@@ -1597,8 +1904,8 @@ static vki_malloc_zone_t vg_default_zone = {
 
 #define DEFAULT_ZONE(soname, fnname) \
    \
-   void *VG_REPLACE_FUNCTION_EZU(10210,soname,fnname) ( void ); \
-   void *VG_REPLACE_FUNCTION_EZU(10210,soname,fnname) ( void )  \
+   void *VG_REPLACE_FUNCTION_EZU(10220,soname,fnname) ( void ); \
+   void *VG_REPLACE_FUNCTION_EZU(10220,soname,fnname) ( void )  \
    { \
       return &vg_default_zone; \
    }
@@ -1611,8 +1918,8 @@ DEFAULT_ZONE(SO_SYN_MALLOC,    malloc_default_purgeable_zone);
 
 #define CREATE_ZONE(soname, fnname) \
    \
-   void *VG_REPLACE_FUNCTION_EZU(10220,soname,fnname)(size_t sz, unsigned fl); \
-   void *VG_REPLACE_FUNCTION_EZU(10220,soname,fnname)(size_t sz, unsigned fl)  \
+   void *VG_REPLACE_FUNCTION_EZU(10230,soname,fnname)(size_t sz, unsigned fl); \
+   void *VG_REPLACE_FUNCTION_EZU(10230,soname,fnname)(size_t sz, unsigned fl)  \
    { \
       return &vg_default_zone; \
    }
@@ -1621,8 +1928,8 @@ CREATE_ZONE(VG_Z_LIBC_SONAME, malloc_create_zone);
 
 #define ZONE_FROM_PTR(soname, fnname) \
    \
-   void *VG_REPLACE_FUNCTION_EZU(10230,soname,fnname) ( void* ptr ); \
-   void *VG_REPLACE_FUNCTION_EZU(10230,soname,fnname) ( void* ptr )  \
+   void *VG_REPLACE_FUNCTION_EZU(10240,soname,fnname) ( void* ptr ); \
+   void *VG_REPLACE_FUNCTION_EZU(10240,soname,fnname) ( void* ptr )  \
    { \
       return &vg_default_zone; \
    }
@@ -1634,8 +1941,8 @@ ZONE_FROM_PTR(SO_SYN_MALLOC,    malloc_zone_from_ptr);
 // GrP fixme bypass libc's use of zone->introspect->check
 #define ZONE_CHECK(soname, fnname) \
    \
-   int VG_REPLACE_FUNCTION_EZU(10240,soname,fnname)(void* zone); \
-   int VG_REPLACE_FUNCTION_EZU(10240,soname,fnname)(void* zone)  \
+   int VG_REPLACE_FUNCTION_EZU(10250,soname,fnname)(void* zone); \
+   int VG_REPLACE_FUNCTION_EZU(10250,soname,fnname)(void* zone)  \
    { \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(zone); \
       panic(#fnname); \
@@ -1648,8 +1955,8 @@ ZONE_CHECK(SO_SYN_MALLOC,    malloc_zone_check);
 
 #define ZONE_REGISTER(soname, fnname) \
    \
-   void VG_REPLACE_FUNCTION_EZU(10250,soname,fnname)(void* zone); \
-   void VG_REPLACE_FUNCTION_EZU(10250,soname,fnname)(void* zone)  \
+   void VG_REPLACE_FUNCTION_EZU(10260,soname,fnname)(void* zone); \
+   void VG_REPLACE_FUNCTION_EZU(10260,soname,fnname)(void* zone)  \
    { \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(zone); \
    }
@@ -1660,8 +1967,8 @@ ZONE_REGISTER(SO_SYN_MALLOC,    malloc_zone_register);
 
 #define ZONE_UNREGISTER(soname, fnname) \
    \
-   void VG_REPLACE_FUNCTION_EZU(10260,soname,fnname)(void* zone); \
-   void VG_REPLACE_FUNCTION_EZU(10260,soname,fnname)(void* zone)  \
+   void VG_REPLACE_FUNCTION_EZU(10270,soname,fnname)(void* zone); \
+   void VG_REPLACE_FUNCTION_EZU(10270,soname,fnname)(void* zone)  \
    { \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(zone); \
    }
@@ -1672,8 +1979,8 @@ ZONE_UNREGISTER(SO_SYN_MALLOC,    malloc_zone_unregister);
 
 #define ZONE_SET_NAME(soname, fnname) \
    \
-   void VG_REPLACE_FUNCTION_EZU(10270,soname,fnname)(void* zone, char* nm); \
-   void VG_REPLACE_FUNCTION_EZU(10270,soname,fnname)(void* zone, char* nm)  \
+   void VG_REPLACE_FUNCTION_EZU(10280,soname,fnname)(void* zone, char* nm); \
+   void VG_REPLACE_FUNCTION_EZU(10280,soname,fnname)(void* zone, char* nm)  \
    { \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(zone); \
    }
@@ -1684,8 +1991,8 @@ ZONE_SET_NAME(SO_SYN_MALLOC,    malloc_set_zone_name);
 
 #define ZONE_GET_NAME(soname, fnname) \
    \
-   const char* VG_REPLACE_FUNCTION_EZU(10280,soname,fnname)(void* zone); \
-   const char* VG_REPLACE_FUNCTION_EZU(10280,soname,fnname)(void* zone)  \
+   const char* VG_REPLACE_FUNCTION_EZU(10290,soname,fnname)(void* zone); \
+   const char* VG_REPLACE_FUNCTION_EZU(10290,soname,fnname)(void* zone)  \
    { \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(zone); \
       return vg_default_zone.zone_name; \

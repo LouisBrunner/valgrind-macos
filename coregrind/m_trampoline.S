@@ -851,6 +851,72 @@ VG_(trampoline_stuff_end):
 #	undef UD2_1024
 #	undef UD2_PAGE
         
+/*---------------- x86-freebsd ----------------*/
+#else
+#if defined(VGP_x86_freebsd)
+
+.global VG_(trampoline_stuff_start)
+VG_(trampoline_stuff_start):
+
+.global VG_(x86_freebsd_SUBST_FOR_sigreturn)
+VG_(x86_freebsd_SUBST_FOR_sigreturn):
+	/*
+	 * PJF this magic number is fairly flakey
+	 * If ever it is wrong sys_fake_sigreturn will fail
+	 * the sigreturn will be to some bogus EIP address and
+	 * the client will likely terminate with a SIGILL
+	 * In this case adding some printfs to sigframe_create
+	 * and sys_fake_sigreturn should help debugging to
+	 * find the right offset
+	 */
+	lea	0x1c(%esp), %eax	/* args to sigreturn(ucontext_t *) */
+	pushl	%eax
+	pushl	%eax			/* fake return addr */
+/*	movl	0x44(%eax), %gs	; restore %gs, not done by sigreturn */
+        movl    $__NR_fake_sigreturn, %eax
+        int     $0x80
+        ud2
+
+.global VG_(trampoline_stuff_end)
+VG_(trampoline_stuff_end):
+
+#else
+#if defined(VGP_amd64_freebsd)
+
+#	define UD2_16     ud2 ; ud2 ; ud2 ; ud2 ;ud2 ; ud2 ; ud2 ; ud2
+#	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
+#	define UD2_256    UD2_64   ; UD2_64   ; UD2_64   ; UD2_64
+#	define UD2_1024   UD2_256  ; UD2_256  ; UD2_256  ; UD2_256
+#	define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024
+
+	/* a leading page of unexecutable code */
+	UD2_PAGE
+
+.global VG_(trampoline_stuff_start)
+VG_(trampoline_stuff_start):
+
+.global VG_(amd64_freebsd_SUBST_FOR_sigreturn)
+VG_(amd64_freebsd_SUBST_FOR_sigreturn):
+        /* This is a very specific sequence which GDB uses to
+           recognize signal handler frames. */
+        movq    $__NR_fake_sigreturn, %rax
+        movq	%rsp, %rdi
+        addq	$8,%rdi
+        syscall
+        ud2
+
+.global VG_(trampoline_stuff_end)
+VG_(trampoline_stuff_end):
+
+	/* and a trailing page of unexecutable code */
+	UD2_PAGE
+
+#	undef UD2_16
+#	undef UD2_64
+#	undef UD2_256
+#	undef UD2_1024
+#	undef UD2_PAGE
+
 /*---------------- x86-darwin ----------------*/
 #else
 #if defined(VGP_x86_darwin)
@@ -1615,6 +1681,8 @@ VG_(trampoline_stuff_end):
 #else
 #  error Unknown platform
 
+#endif
+#endif
 #endif
 #endif
 #endif

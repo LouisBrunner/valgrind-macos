@@ -58,9 +58,13 @@ void VG_(sigframe_create) ( ThreadId tid,
 
 /* Remove a signal frame from thread 'tid's stack, and 
    restore the CPU state from it. */
+#ifdef VGO_freebsd
+extern 
+void VG_(sigframe_destroy)( ThreadId tid );
+#else
 extern 
 void VG_(sigframe_destroy)( ThreadId tid, Bool isRT );
-
+#endif
 #if defined(VGO_solaris)
 extern
 void VG_(sigframe_return)(ThreadId tid, const vki_ucontext_t *uc);

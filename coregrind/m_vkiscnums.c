@@ -67,6 +67,17 @@ STATIC_ASSERT(__NR_pipe2 == 5287);
 #endif
 
 //---------------------------------------------------------------------------
+#elif defined(VGO_freebsd)
+//---------------------------------------------------------------------------
+
+const HChar* VG_(sysnum_string)(Word sysnum)
+{
+   static HChar buf[20+1];   // large enough
+
+   VG_(snprintf)(buf, sizeof(buf), "%3ld", sysnum);
+   return buf;
+}
+
 #elif defined(VGO_darwin)
 //---------------------------------------------------------------------------
 

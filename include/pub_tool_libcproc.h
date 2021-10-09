@@ -70,7 +70,7 @@ extern Int  VG_(system) ( const HChar* cmd );
 extern Int  VG_(spawn)  ( const HChar *filename, const HChar **argv );
 extern Int  VG_(fork)   ( void);
 extern void VG_(execv)  ( const HChar* filename, const HChar** argv );
-extern Int  VG_(sysctl) ( Int *name, UInt namelen, void *oldp, SizeT *oldlenp, void *newp, SizeT newlen );
+extern Int  VG_(sysctl) ( Int *name, UInt namelen, void *oldp, SizeT *oldlenp, const void *newp, SizeT newlen );
 
 /* ---------------------------------------------------------------------
    Resource limits and capabilities

@@ -1120,7 +1120,11 @@ void main_process_cmd_line_options( void )
 
 /* Number of file descriptors that Valgrind tries to reserve for
    its own use - just a small constant. */
+#if defined(VGO_freebsd)
+#define N_RESERVED_FDS (20)
+#else
 #define N_RESERVED_FDS (12)
+#endif
 
 static void setup_file_descriptors(void)
 {
@@ -1345,6 +1349,27 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    }
 
    //--------------------------------------------------------------
+   // FreeBSD check security.bsd.unprivileged_proc_debug sysctl
+   // This needs to be done before aspacemgr starts, otherwise that
+   // will fail with mysterious error codes
+   //--------------------------------------------------------------
+#if defined(VGO_freebsd)
+   Int val;
+   SizeT len = sizeof(val);
+   Int error = VG_(sysctlbyname)("security.bsd.unprivileged_proc_debug", &val, &len, 0, 0);
+   if (error != -1 && val != 1) {
+       VG_(debugLog)(0, "main", "Valgrind: FATAL:\n");
+       VG_(debugLog)(0, "main", "security.bsd.unprivileged_proc_debug sysctl is 0.\n");
+       VG_(debugLog)(0, "main", "   Set this sysctl with\n");
+       VG_(debugLog)(0, "main", "   'sysctl security.bsd.unprivileged_proc_debug=1'.\n");
+       VG_(debugLog)(0, "main", "   Cannot continue.\n");
+
+       VG_(exit)(1);
+   }
+#endif
+
+
+   //--------------------------------------------------------------
    // Start up the address space manager, and determine the
    // approximate location of the client's stack
    //   p: logging, plausible-stack
@@ -1550,7 +1575,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    if (!need_help) {
       VG_(debugLog)(1, "main", "Create initial image\n");
 
-#     if defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris)
+#     if defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris) || defined(VGO_freebsd)
       the_iicii.argv              = argv;
       the_iicii.envp              = envp;
       the_iicii.toolname          = VG_(clo_toolname);
@@ -1802,7 +1827,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    addr2dihandle = VG_(newXA)( VG_(malloc), "main.vm.2",
                                VG_(free), sizeof(Addr_n_ULong) );
 
-#  if defined(VGO_linux) || defined(VGO_solaris)
+#  if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
    { Addr* seg_starts;
      Int   n_seg_starts;
      Addr_n_ULong anu;
@@ -2326,7 +2351,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
 */
 static void final_tidyup(ThreadId tid)
 {
-#if defined(VGO_linux) || defined(VGO_solaris)
+#if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
    Addr freeres_wrapper = VG_(client_freeres_wrapper);
 
    vg_assert(VG_(is_running_thread)(tid));
@@ -2474,6 +2499,7 @@ static void final_tidyup(ThreadId tid)
    VG_(set_default_handler)(VKI_SIGBUS);
    VG_(set_default_handler)(VKI_SIGILL);
    VG_(set_default_handler)(VKI_SIGFPE);
+   VG_(set_default_handler)(VKI_SIGSYS);
 
    // We were exiting, so assert that...
    vg_assert(VG_(is_exiting)(tid));
@@ -2988,7 +3014,7 @@ asm(
 ".previous                                              \n\t"
 );
 #else
-#  error "Unknown linux platform"
+#  error "Unknown platform"
 #endif
 
 /* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
@@ -3252,6 +3278,113 @@ void _start_in_C_solaris ( UWord* pArgc )
    the_iicii.sp_at_startup = (Addr)pArgc;
 
    r = valgrind_main((Int)argc, argv, envp);
+   /* NOTREACHED */
+   VG_(exit)(r);
+}
+
+/*====================================================================*/
+/*=== Getting to main() alive: FreeBSD                             ===*/
+/*====================================================================*/
+#elif defined(VGO_freebsd)
+
+#if defined(VGP_x86_freebsd)
+asm("\n"
+    ".text\n"
+    "\t.globl _start\n"
+    "\t.type _start,@function\n"
+    "_start:\n"
+    /* set up the new stack in %eax */
+    "\tmovl  $vgPlain_interim_stack, %eax\n"
+    "\taddl  $"VG_STRINGIFY(VG_STACK_GUARD_SZB)", %eax\n"
+    "\taddl  $"VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)", %eax\n"
+    /* allocate at least 16 bytes on the new stack, and aligned */
+    "\tsubl  $16, %eax\n"
+    "\tandl  $~15, %eax\n"
+    /* install it, and collect the original one */
+    "\txchgl %eax, %esp\n"
+    "\tsubl  $12, %esp\n"  /* Keep stack 16-byte aligned. */
+    /* call _start_in_C_freebsd, passing it the startup %esp */
+    "\tpushl %eax\n"
+    "\tcall  _start_in_C_freebsd\n"
+    "\thlt\n"
+    ".previous\n"
+);
+#elif defined(VGP_amd64_freebsd)
+
+// @todo PJF I don't really understand why this is done this way
+// other amd64 platforms just put the new stack address in rdi
+// then do an exchange so that the stack pointer points to the
+// new stack and rdi (which is the 1st argument in the amd64 sysv abi)
+// contains the old stack
+
+// instead for amd64 the same thing is done for rsi, the second
+// function argument and rdi is unchanged
+//
+// In gdb I see the initial rdp is 8+rsp
+// e.g.
+// rdi            0x7fffffffe3b0
+// rsp            0x7fffffffe3a8
+//
+// Maybe on FreeBSD the pointer to argc is 16byte aligned and can be 8 bytes above the
+// start of the stack?
+
+asm("\n"
+    ".text\n"
+    "\t.globl _start\n"
+    "\t.type _start,@function\n"
+    "_start:\n"
+    /* set up the new stack in %rsi */
+    "\tmovq  $vgPlain_interim_stack, %rsi\n"
+    "\taddq  $"VG_STRINGIFY(VG_STACK_GUARD_SZB)", %rsi\n"
+    "\taddq  $"VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)", %rsi\n"
+    "\tandq  $~15, %rsi\n"
+    /* install it, and collect the original one */
+    "\txchgq %rsi, %rsp\n"
+    /* call _start_in_C_freebsd, passing it the startup %rsp */
+    "\tcall  _start_in_C_freebsd\n"
+    "\thlt\n"
+    ".previous\n"
+);
+#endif
+
+void *memcpy(void *dest, const void *src, size_t n);
+void *memcpy(void *dest, const void *src, size_t n) {
+   return VG_(memcpy)(dest, src, n);
+}
+void* memmove(void *dest, const void *src, SizeT n);
+void* memmove(void *dest, const void *src, SizeT n) {
+   return VG_(memmove)(dest,src,n);
+}
+void* memset(void *s, int c, SizeT n);
+void* memset(void *s, int c, SizeT n) {
+  return VG_(memset)(s,c,n);
+}
+
+__attribute__ ((used))
+void _start_in_C_freebsd ( UWord* pArgc, UWord *initial_sp );
+__attribute__ ((used))
+void _start_in_C_freebsd ( UWord* pArgc, UWord *initial_sp )
+{
+   Int     r;
+   Word    argc = pArgc[0];
+   HChar** argv = (HChar**)&pArgc[1];
+   HChar** envp = (HChar**)&pArgc[1+argc+1];
+
+   INNER_REQUEST
+      ((void) VALGRIND_STACK_REGISTER
+       (&VG_(interim_stack).bytes[0],
+        &VG_(interim_stack).bytes[0] + sizeof(VG_(interim_stack))));
+
+   VG_(memset)( &the_iicii, 0, sizeof(the_iicii) );
+   VG_(memset)( &the_iifii, 0, sizeof(the_iifii) );
+
+#if defined(VGP_amd64_freebsd)
+   the_iicii.sp_at_startup = (Addr)initial_sp;
+#else
+   the_iicii.sp_at_startup = (Addr)pArgc;
+#endif
+
+   r = valgrind_main( (Int)argc, argv, envp );
    /* NOTREACHED */
    VG_(exit)(r);
 }
@@ -3708,6 +3841,13 @@ UWord voucher_mach_msg_set ( UWord arg1 )
 }
 
 #endif
+
+
+Word VG_(get_usrstack)(void)
+{
+   return VG_PGROUNDDN(the_iicii.clstack_end - the_iifii.clstack_max_size);
+}
+
 
 
 /*--------------------------------------------------------------------*/

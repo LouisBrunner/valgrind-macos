@@ -225,6 +225,7 @@ typedef
       int offset_lwpid;
 
       int vgdb_pid;
+      int padding;
    } VgdbShared64;
 
 // The below typedef makes the life of valgrind easier.

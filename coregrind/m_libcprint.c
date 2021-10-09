@@ -1184,7 +1184,7 @@ void VG_(err_config_error) ( const HChar* format, ... )
    VG_(sr_as_string)()
    ------------------------------------------------------------------ */
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_freebsd)
 // FIXME: Does this function need to be adjusted for MIPS's _valEx ?
 const HChar *VG_(sr_as_string) ( SysRes sr )
 {

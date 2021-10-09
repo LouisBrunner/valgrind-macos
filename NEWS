@@ -4,8 +4,9 @@ Release 3.??.? (?? 2021)
 This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
 PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,
 MIPS64/Linux, ARM/Android, ARM64/Android, MIPS32/Android, X86/Android,
-X86/Solaris, AMD64/Solaris and AMD64/MacOSX 10.12.  There is also preliminary
-support for X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
+X86/Solaris, AMD64/Solaris, AMD64/MacOSX 10.12, X86/FreeBSD and
+AMD64/FreeBSD.  There is also preliminary support for X86/macOS 10.13,
+AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== CORE CHANGES ===================
 
@@ -25,6 +26,8 @@ support for X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
   - ISA 3.0 support for the darn instruction added.
   - ISA 3.0 support for the vector system call instruction scv added.
   - ISA 3.0 support for the copy, paste and cpabort instructions added.
+ 
+* Support for X86/FreeBSD and AMD64/FreeBSD has been added.
 
 * ==================== TOOL CHANGES ====================
 
@@ -56,6 +59,19 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 439590  glibc-2.34 breaks suppressions against obj:*/lib*/libc-2.*so*
 440670  unhandled ppc64le-linux syscall: 252 (statfs64) and 253 (fstatfs64)
 432387  s390x: z15 instructions support
+439046  valgrind is unusably large when linked with lld
+433437  FreeBSD support, part 1
+433438  FreeBSD support, part 2
+433439  FreeBSD support, part 3
+433469  FreeBSD support, part 4
+433473  FreeBSD support, part 5
+433477  FreeBSD support, part 6
+433479  FreeBSD support, part 7
+433504  FreeBSD support, part 8
+433506  FreeBSD support, part 9
+433507  FreeBSD support, part 10
+433508  FreeBSD support, part 11
+433510  FreeBSD support, part 12
 440906  Fix impossible constraint issue in P10 testcase.
 441512  Remove a unneeded / unnecessary prefix check.
 441534  Update the expected output for test_isa_3_1_VRT.

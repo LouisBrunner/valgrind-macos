@@ -28,7 +28,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#if defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris)
+#if defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris) || defined(VGO_freebsd)
 
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
@@ -938,7 +938,7 @@ void VG_(init_preopened_fds)(void)
   out:
    VG_(close)(sr_Res(f));
 
-#elif defined(VGO_darwin)
+#elif defined(VGO_darwin) || defined(VGO_freebsd)
    init_preopened_fds_without_proc_self_fd();
 
 #elif defined(VGO_solaris)
@@ -1142,6 +1142,10 @@ void pre_mem_read_sockaddr ( ThreadId tid,
 
    VG_(sprintf) ( outmsg, description, "sa_family" );
    PRE_MEM_READ( outmsg, (Addr) &sa->sa_family, sizeof(vki_sa_family_t));
+#if defined(VGO_freebsd)
+   VG_(sprintf) ( outmsg, description, "sa_len" );
+   PRE_MEM_READ( outmsg, (Addr) &sa->sa_len, sizeof(char));
+#endif
 
    /* Don't do any extra checking if we cannot determine the sa_family. */
    if (! ML_(safe_to_deref) (&sa->sa_family, sizeof(vki_sa_family_t)))
@@ -1819,7 +1823,15 @@ UInt get_sem_count( Int semid )
       return 0;
 
    return buf.sem_nsems;
+#  elif defined(__NR___semctl) /* FreeBSD */
+   struct vki_semid_ds buf;
+   arg.buf = &buf;
+   res = VG_(do_syscall4)(__NR___semctl, semid, 0, VKI_IPC_STAT, *(UWord *)&arg);
 
+   if (sr_isError(res))
+      return 0;
+
+   return buf.sem_nsems;
 #  elif defined(__NR_semsys) /* Solaris */
    struct vki_semid_ds buf;
    arg.buf = &buf;
@@ -1854,10 +1866,17 @@ ML_(generic_PRE_sys_semctl) ( ThreadId tid,
 #if defined(VKI_IPC_INFO)
    case VKI_IPC_INFO:
    case VKI_SEM_INFO:
+#if defined(VKI_IPC_64)
    case VKI_IPC_INFO|VKI_IPC_64:
    case VKI_SEM_INFO|VKI_IPC_64:
+#endif
+#if defined(VGO_freebsd)
+      PRE_MEM_WRITE( "semctl(IPC_INFO, arg.buf)",
+                     (Addr)arg.buf, sizeof(struct vki_semid_ds) );
+#else
       PRE_MEM_WRITE( "semctl(IPC_INFO, arg.buf)",
                      (Addr)arg.buf, sizeof(struct vki_seminfo) );
+#endif
       break;
 #endif
 
@@ -1933,9 +1952,15 @@ ML_(generic_POST_sys_semctl) ( ThreadId tid,
 #if defined(VKI_IPC_INFO)
    case VKI_IPC_INFO:
    case VKI_SEM_INFO:
+#if defined(VKI_IPC_64)
    case VKI_IPC_INFO|VKI_IPC_64:
    case VKI_SEM_INFO|VKI_IPC_64:
+#endif
+#if defined(VGO_freebsd)
+      POST_MEM_WRITE( (Addr)arg.buf, sizeof(struct vki_semid_ds) );
+#else
       POST_MEM_WRITE( (Addr)arg.buf, sizeof(struct vki_seminfo) );
+#endif
       break;
 #endif
 
@@ -2132,8 +2157,13 @@ ML_(generic_PRE_sys_shmctl) ( ThreadId tid,
    switch (arg1 /* cmd */) {
 #if defined(VKI_IPC_INFO)
    case VKI_IPC_INFO:
+#   if defined(VGO_freebsd)
+      PRE_MEM_WRITE( "shmctl(IPC_INFO, buf)",
+                     arg2, sizeof(struct vki_shmid_ds) );
+#   else
       PRE_MEM_WRITE( "shmctl(IPC_INFO, buf)",
                      arg2, sizeof(struct vki_shminfo) );
+#   endif
       break;
 #if defined(VKI_IPC_64)
    case VKI_IPC_INFO|VKI_IPC_64:
@@ -2191,11 +2221,17 @@ ML_(generic_POST_sys_shmctl) ( ThreadId tid,
    switch (arg1 /* cmd */) {
 #if defined(VKI_IPC_INFO)
    case VKI_IPC_INFO:
+#   if defined(VGO_freebsd)
+      POST_MEM_WRITE( arg2, sizeof(struct vki_shmid_ds) );
+#   else
       POST_MEM_WRITE( arg2, sizeof(struct vki_shminfo) );
+#   endif
       break;
+#if defined(VKI_IPC_64)
    case VKI_IPC_INFO|VKI_IPC_64:
       POST_MEM_WRITE( arg2, sizeof(struct vki_shminfo64) );
       break;
+#endif
 #endif
 
 #if defined(VKI_SHM_INFO)
@@ -2735,6 +2771,7 @@ PRE(sys_getpriority)
    PRE_REG_READ2(long, "getpriority", int, which, int, who);
 }
 
+#if !defined(VGO_freebsd)
 PRE(sys_pwrite64)
 {
    *flags |= SfMayBlock;
@@ -2755,6 +2792,7 @@ PRE(sys_pwrite64)
 #endif
    PRE_MEM_READ( "pwrite64(buf)", ARG2, ARG3 );
 }
+#endif
 
 PRE(sys_sync)
 {
@@ -2799,6 +2837,7 @@ PRE(sys_getsid)
    PRE_REG_READ1(long, "getsid", vki_pid_t, pid);
 }
 
+#if !defined(VGO_freebsd)
 PRE(sys_pread64)
 {
    *flags |= SfMayBlock;
@@ -2826,6 +2865,7 @@ POST(sys_pread64)
       POST_MEM_WRITE( ARG2, RES );
    }
 }
+#endif
 
 PRE(sys_mknod)
 {
@@ -3363,7 +3403,7 @@ PRE(sys_fchmod)
    PRE_REG_READ2(long, "fchmod", unsigned int, fildes, vki_mode_t, mode);
 }
 
-#if !defined(VGP_nanomips_linux)
+#if !defined(VGP_nanomips_linux) && !defined (VGO_freebsd)
 PRE(sys_newfstat)
 {
    FUSE_COMPATIBLE_MAY_BLOCK();
@@ -3404,7 +3444,7 @@ PRE(sys_fork)
 
    if (!SUCCESS) return;
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_freebsd)
    // RES is 0 for child, non-0 (the child's PID) for parent.
    is_child = ( RES == 0 ? True : False );
    child_pid = ( is_child ? -1 : RES );
@@ -3748,7 +3788,7 @@ void ML_(PRE_unknown_ioctl)(ThreadId tid, UWord request, UWord arg)
                unknown_ioctl[i] = request;
                moans--;
                VG_(umsg)("Warning: noted but unhandled ioctl 0x%lx"
-                         " with no size/direction hints.\n", request); 
+                         " with no size/direction hints.\n", request);
                VG_(umsg)("   This could cause spurious value errors to appear.\n");
                VG_(umsg)("   See README_MISSING_SYSCALL_OR_IOCTL for "
                          "guidance on writing a proper wrapper.\n" );
@@ -3884,7 +3924,7 @@ PRE(sys_link)
    PRE_MEM_RASCIIZ( "link(newpath)", ARG2);
 }
 
-#if !defined(VGP_nanomips_linux)
+#if !defined(VGP_nanomips_linux) && !defined(VGO_freebsd)
 PRE(sys_newlstat)
 {
    PRINT("sys_newlstat ( %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x )", ARG1,
@@ -3934,7 +3974,11 @@ void handle_sys_mprotect(ThreadId tid, SyscallStatus* status,
                          Addr *addr, SizeT *len, Int *prot)
 {
    if (!ML_(valid_client_addr)(*addr, *len, tid, "mprotect")) {
+#if defined(VGO_freebsd)
+      SET_STATUS_Failure( VKI_EINVAL );
+#else
       SET_STATUS_Failure( VKI_ENOMEM );
+#endif
    } 
 #if defined(VKI_PROT_GROWSDOWN)
    else 
@@ -4195,7 +4239,7 @@ PRE(sys_read)
    PRINT("sys_read ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %"
          FMT_REGWORD "u )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(ssize_t, "read",
-                 unsigned int, fd, char *, buf, vki_size_t, count);
+                 int, fd, char *, buf, vki_size_t, count);
 
    if (!ML_(fd_allowed)(ARG1, "read", tid, False))
       SET_STATUS_Failure( VKI_EBADF );
@@ -4284,7 +4328,8 @@ PRE(sys_poll)
 
 POST(sys_poll)
 {
-   if (RES >= 0) {
+   // RES is UWord so always >= 0
+   if (SUCCESS && RES >= 0) {
       UInt i;
       struct vki_pollfd* ufds = (struct vki_pollfd *)(Addr)ARG1;
       for (i = 0; i < ARG2; i++)
@@ -4483,7 +4528,11 @@ PRE(sys_setrlimit)
    }
    else if (((struct vki_rlimit *)(Addr)ARG2)->rlim_cur
             > ((struct vki_rlimit *)(Addr)ARG2)->rlim_max) {
+#if defined(VGO_freebsd)
+      SET_STATUS_Failure( VKI_EPERM );
+#else
       SET_STATUS_Failure( VKI_EINVAL );
+#endif
    }
    else if (arg1 == VKI_RLIMIT_NOFILE) {
       if (((struct vki_rlimit *)(Addr)ARG2)->rlim_cur > VG_(fd_hard_limit) ||
@@ -4536,7 +4585,7 @@ PRE(sys_setuid)
    PRE_REG_READ1(long, "setuid", vki_uid_t, uid);
 }
 
-#if !defined(VGP_nanomips_linux)
+#if !defined(VGP_nanomips_linux) && !defined(VGO_freebsd)
 PRE(sys_newstat)
 {
    FUSE_COMPATIBLE_MAY_BLOCK();
@@ -4551,7 +4600,9 @@ POST(sys_newstat)
 {
    POST_MEM_WRITE( ARG2, sizeof(struct vki_stat) );
 }
+#endif
 
+#if !defined(VGP_nanomips_linux)
 PRE(sys_statfs)
 {
    FUSE_COMPATIBLE_MAY_BLOCK();
@@ -4638,6 +4689,7 @@ PRE(sys_unlink)
    PRE_MEM_RASCIIZ( "unlink(pathname)", ARG1 );
 }
 
+#if !defined(VGO_freebsd)
 PRE(sys_newuname)
 {
    PRINT("sys_newuname ( %#" FMT_REGWORD "x )", ARG1);
@@ -4651,6 +4703,7 @@ POST(sys_newuname)
       POST_MEM_WRITE( ARG1, sizeof(struct vki_new_utsname) );
    }
 }
+#endif
 
 PRE(sys_waitpid)
 {
@@ -4793,7 +4846,7 @@ PRE(sys_sethostname)
 #undef PRE
 #undef POST
 
-#endif // defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris)
+#endif // defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris) || defined(VGO_freebsd)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

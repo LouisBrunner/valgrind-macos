@@ -364,6 +364,42 @@ SysRes VG_(mk_SysRes_amd64_solaris) ( Bool isErr, ULong val, ULong val2 )
    return res;
 }
 
+
+#elif defined(VGO_freebsd)
+
+SysRes VG_(mk_SysRes_x86_freebsd) ( UInt val, UInt val2, Bool err ) {
+   SysRes r;
+   r._isError = err;
+   r._val = val;
+   r._val2 = val2;
+   return r;
+}
+
+SysRes VG_(mk_SysRes_amd64_freebsd) ( ULong val, ULong val2, Bool err ) {
+   SysRes r;
+   r._isError = err;
+   r._val = val;
+   r._val2 = val2;
+   return r;
+}
+
+/* Generic constructors. */
+SysRes VG_(mk_SysRes_Error) ( UWord err ) {
+   SysRes r;
+   r._val     = err;
+   r._val2    = 0;
+   r._isError = True;
+   return r;
+}
+
+SysRes VG_(mk_SysRes_Success) ( UWord res ) {
+   SysRes r;
+   r._val     = res;
+   r._val2    = 0;
+   r._isError = False;
+   return r;
+}
+
 #else
 #  error "Unknown OS"
 #endif
@@ -668,6 +704,82 @@ asm(
 "        mov x7, 0\n"
 "        svc 0\n"
 "        ret\n"
+".previous\n"
+);
+
+#elif defined(VGP_x86_freebsd)
+/* Incoming args (syscall number + up to 8 args) are on the stack.
+   FreeBSD has a syscall called 'syscall' that takes all args (including
+   the syscall number) off the stack.  Since we're called, the return
+   address is on the stack as expected, so we can just call syscall(2)
+   and it Just Works.  Error is when carry is set.
+*/
+extern ULong do_syscall_WRK (
+          UWord syscall_no, 
+          UWord a1, UWord a2, UWord a3,
+          UWord a4, UWord a5, UWord a6,
+          UWord a7, UWord a8, UInt *flags
+       );
+asm(
+".text\n"
+"do_syscall_WRK:\n"
+"      movl    $0,%eax\n"      /* syscall number = "syscall" (0) to avoid stack frobbing
+*/
+"      int     $0x80\n"
+"      jb      1f\n"
+"      ret\n"
+"1:    movl    40(%esp),%ecx\n"        /* store carry in *flags */
+"      movl    $1,(%ecx)\n"
+"      ret\n"
+".previous\n"
+);
+
+#elif defined(VGP_amd64_freebsd)
+extern UWord do_syscall_WRK (
+          UWord syscall_no,    /* %rdi */
+          UWord a1,            /* %rsi */
+          UWord a2,            /* %rdx */
+          UWord a3,            /* %rcx */
+          UWord a4,            /* %r8 */
+          UWord a5,            /* %r9 */
+          UWord a6,            /* 8(%rsp) */
+          UWord a7,            /* 16(%rsp) */
+          UWord a8,            /* 24(%rsp) */
+          UInt *flags,         /* 32(%rsp) */
+          UWord *rv2           /* 40(%rsp) */
+       );
+asm(
+".text\n"
+"do_syscall_WRK:\n"
+        /* Convert function calling convention --> syscall calling
+           convention */
+"      pushq   %rbp\n"
+"      movq    %rsp, %rbp\n"
+"      movq    %rdi, %rax\n"    /* syscall_no */
+"      movq    %rsi, %rdi\n"    /* a1 */
+"      movq    %rdx, %rsi\n"    /* a2 */
+"      movq    %rcx, %rdx\n"    /* a3 */
+"      movq    %r8,  %r10\n"    /* a4 */
+"      movq    %r9,  %r8\n"     /* a5 */
+"      movq    16(%rbp), %r9\n"  /* a6 last arg from stack, account for %rbp */
+"      movq    24(%rbp), %r11\n" /* a7 from stack */
+"      pushq  %r11\n"
+"      movq    32(%rbp), %r11\n" /* a8 from stack */
+"      pushq  %r11\n"
+"      subq    $8,%rsp\n"      /* fake return addr */
+"      syscall\n"
+"      jb      1f\n"
+"      movq    48(%rbp),%rsi\n"
+"      movq    %rdx, (%rsi)\n"
+"      movq    %rbp, %rsp\n"
+"      popq    %rbp\n"
+"      ret\n"
+"1:\n"
+"      movq    40(%rbp), %rsi\n"
+"      movl    $1,(%rsi)\n"
+"      movq    %rbp, %rsp\n"
+"      popq    %rbp\n"
+"      ret\n"
 ".previous\n"
 );
 
@@ -1027,6 +1139,21 @@ SysRes VG_(do_syscall) ( UWord sysno, RegWord a1, RegWord a2, RegWord a3,
    UWord val = do_syscall_WRK(sysno,a1,a2,a3,a4,a5,a6);
    return VG_(mk_SysRes_amd64_linux)( val );
 
+#  elif defined(VGP_x86_freebsd)
+   ULong val;
+   UInt err = 0;
+   val = do_syscall_WRK(sysno, a1, a2, a3, a4, a5,
+                        a6, a7, a8, &err);
+   return VG_(mk_SysRes_x86_freebsd)( (UInt)val, (UInt)(val>>32), (err & 1) != 0 ? True : False);
+
+#  elif defined(VGP_amd64_freebsd)
+   UWord val;
+   UWord val2 = 0;
+   UInt err = 0;
+   val = do_syscall_WRK(sysno, a1, a2, a3, a4, a5,
+                        a6, a7, a8, &err, &val2);
+   return VG_(mk_SysRes_amd64_freebsd)( val, val2, (err & 1) != 0 ? True : False);
+
 #  elif defined(VGP_ppc32_linux)
    ULong ret     = do_syscall_WRK(sysno,a1,a2,a3,a4,a5,a6);
    UInt  val     = (UInt)(ret>>32);
@@ -1257,6 +1384,9 @@ const HChar* VG_(strerror) ( UWord errnum )
    case VKI_EOVERFLOW:   return "Value too large for defined data type";
 #     if defined(VKI_ERESTARTSYS)
       case VKI_ERESTARTSYS: return "ERESTARTSYS";
+#     endif
+#     if defined(VKI_ERESTART)
+      case VKI_ERESTART: return "ERESTART";
 #     endif
    default:              return "VG_(strerror): unknown error";
    }

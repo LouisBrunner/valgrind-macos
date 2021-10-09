@@ -1688,7 +1688,9 @@ Bool VG_(translate) ( ThreadId tid,
    vex_abiinfo.guest_amd64_assume_fs_is_const = True;
    vex_abiinfo.guest_amd64_assume_gs_is_const = True;
 #  endif
-
+#  if defined(VGP_amd64_freebsd)
+   vex_abiinfo.guest_amd64_assume_fs_is_const = True;
+#  endif
 #  if defined(VGP_amd64_darwin)
    vex_abiinfo.guest_amd64_assume_gs_is_const = True;
 #  endif

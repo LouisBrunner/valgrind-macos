@@ -26,7 +26,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_freebsd)
 
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
@@ -90,6 +90,9 @@ static void fill_ehdr(ESZ(Ehdr) *ehdr, Int num_phdrs)
    ehdr->e_ident[EI_CLASS]   = VG_ELF_CLASS;
    ehdr->e_ident[EI_DATA]    = VG_ELF_DATA2XXX;
    ehdr->e_ident[EI_VERSION] = EV_CURRENT;
+#if defined(VGO_freebsd)
+   ehdr->e_ident[EI_OSABI]   = ELFOSABI_FREEBSD;
+#endif
 
    ehdr->e_type = ET_CORE;
    ehdr->e_machine = VG_ELF_MACHINE;
@@ -193,6 +196,19 @@ static void write_note(Int fd, const struct note *n)
    VG_(write)(fd, &n->note, note_size(n));
 }
 
+#if defined(VGO_freebsd)
+static void fill_prpsinfo(const ThreadState *tst,
+                          struct vki_elf_prpsinfo *prpsinfo)
+{
+   VG_(memset)(prpsinfo, 0, sizeof(*prpsinfo));
+
+   prpsinfo->pr_version = VKI_PRPSINFO_VERSION;
+   prpsinfo->pr_psinfosz = sizeof(struct vki_elf_prpsinfo);
+   VG_(client_fname)(prpsinfo->pr_fname, sizeof(prpsinfo->pr_fname), False);
+   // why?
+   VG_(strncpy)(prpsinfo->pr_psargs, prpsinfo->pr_fname, sizeof(prpsinfo->pr_psargs) - 1);
+}
+#else
 static void fill_prpsinfo(const ThreadState *tst,
                           struct vki_elf_prpsinfo *prpsinfo)
 {
@@ -223,6 +239,7 @@ static void fill_prpsinfo(const ThreadState *tst,
    
    VG_(client_fname)(prpsinfo->pr_fname, sizeof(prpsinfo->pr_fname), False);
 }
+#endif
 
 static void fill_prstatus(const ThreadState *tst, 
 			  /*OUT*/struct vki_elf_prstatus *prs, 
@@ -238,6 +255,16 @@ static void fill_prstatus(const ThreadState *tst,
 
    VG_(memset)(prs, 0, sizeof(*prs));
 
+#if defined(VGO_freebsd)
+   prs->pr_version = VKI_PRSTATUS_VERSION;
+   prs->pr_statussz = sizeof(struct vki_elf_prstatus);
+   prs->pr_gregsetsz = sizeof(vki_elf_gregset_t);
+   prs->pr_fpregsetsz = sizeof(vki_elf_fpregset_t);
+   prs->pr_osreldate = VG_(getosreldate)();
+
+   prs->pr_cursig = si->si_signo;
+   prs->pr_pid = tst->os_state.lwpid;
+#else
    prs->pr_info.si_signo = si->si_signo;
    prs->pr_info.si_code = si->si_code;
    prs->pr_info.si_errno = 0;
@@ -248,6 +275,7 @@ static void fill_prstatus(const ThreadState *tst,
    prs->pr_ppid = 0;
    prs->pr_pgrp = VG_(getpgrp)();
    prs->pr_sid = VG_(getpgrp)();
+#endif
    
 #if defined(VGP_s390x_linux)
    /* prs->pr_reg has struct type. Need to take address. */
@@ -461,6 +489,45 @@ static void fill_prstatus(const ThreadState *tst,
    regs[VKI_MIPS32_EF_CP0_STATUS] = arch->vex.guest_CP0_status;
    regs[VKI_MIPS32_EF_CP0_EPC]    = arch->vex.guest_PC;
 #  undef DO
+#elif defined(VGP_amd64_freebsd)
+   regs->rflags = LibVEX_GuestAMD64_get_rflags( &((ThreadArchState*)arch)->vex );
+   regs->rsp    = arch->vex.guest_RSP;
+   regs->rip    = arch->vex.guest_RIP;
+   regs->rbx    = arch->vex.guest_RBX;
+   regs->rcx    = arch->vex.guest_RCX;
+   regs->rdx    = arch->vex.guest_RDX;
+   regs->rsi    = arch->vex.guest_RSI;
+   regs->rdi    = arch->vex.guest_RDI;
+   regs->rbp    = arch->vex.guest_RBP;
+   regs->rax    = arch->vex.guest_RAX;
+   regs->r8     = arch->vex.guest_R8;
+   regs->r9     = arch->vex.guest_R9;
+   regs->r10    = arch->vex.guest_R10;
+   regs->r11    = arch->vex.guest_R11;
+   regs->r12    = arch->vex.guest_R12;
+   regs->r13    = arch->vex.guest_R13;
+   regs->r14    = arch->vex.guest_R14;
+   regs->r15    = arch->vex.guest_R15;
+#elif defined(VGP_x86_freebsd)
+   regs->eflags = LibVEX_GuestX86_get_eflags( &arch->vex );
+   regs->esp    = arch->vex.guest_ESP;
+   regs->eip    = arch->vex.guest_EIP;
+
+   regs->ebx    = arch->vex.guest_EBX;
+   regs->ecx    = arch->vex.guest_ECX;
+   regs->edx    = arch->vex.guest_EDX;
+   regs->esi    = arch->vex.guest_ESI;
+   regs->edi    = arch->vex.guest_EDI;
+   regs->ebp    = arch->vex.guest_EBP;
+   regs->eax    = arch->vex.guest_EAX;
+
+   regs->cs     = arch->vex.guest_CS;
+   regs->ds     = arch->vex.guest_DS;
+   regs->ss     = arch->vex.guest_SS;
+   regs->es     = arch->vex.guest_ES;
+   regs->fs     = arch->vex.guest_FS;
+   regs->gs     = arch->vex.guest_GS;
+
 #else
 #  error Unknown ELF platform
 #endif
@@ -586,6 +653,16 @@ static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
    DO(24); DO(25); DO(26); DO(27); DO(28); DO(29); DO(30); DO(31);
 #  undef DO
 #elif defined(VGP_nanomips_linux)
+
+#elif defined(VGP_x86_freebsd)
+
+#elif defined(VGP_amd64_freebsd)
+
+#  define DO(n)  VG_(memcpy)(fpu->xmm_space + n * 4, \
+                             &arch->vex.guest_YMM##n[0], 16)
+   DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
+   DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
+#  undef DO
 
 #else
 #  error Unknown ELF platform

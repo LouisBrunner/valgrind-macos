@@ -99,6 +99,10 @@ extern Bool VG_(setup_client_dataseg)(void);
 extern void VG_(track_client_dataseg)(ThreadId tid);
 #endif
 
+#if defined(VGO_freebsd)
+extern Bool VG_(get_capability_mode)(void);
+#endif
+
 #endif   // __PUB_CORE_SYSWRAP_H
 
 /*--------------------------------------------------------------------*/

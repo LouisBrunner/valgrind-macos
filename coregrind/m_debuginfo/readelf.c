@@ -27,7 +27,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#if defined(VGO_linux) || defined(VGO_solaris)
+#if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
 
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
@@ -45,6 +45,7 @@
 #include "pub_core_syscall.h"
 #include "pub_core_tooliface.h"    /* VG_(needs) */
 #include "pub_core_xarray.h"
+#include "pub_core_libcproc.h"
 #include "priv_misc.h"             /* dinfo_zalloc/free/strdup */
 #include "priv_image.h"
 #include "priv_d3basics.h"
@@ -1118,6 +1119,80 @@ void read_elf_symtab__ppc64be_linux(
    VG_(OSetGen_Destroy)( oset );
 }
 
+#if defined(VGO_freebsd)
+
+/**
+ * read_and_set_osrel
+ *
+ * "osrel" is in an Elf note. It has values such as 1201000 for FreeBSD 12.1
+ * Some of the behaviour related to SIGSEGV and SIGBUS signals depends on the
+ * kernel reading this value.
+ *
+ * However in the case of Valgrind, the host is strictly statically linked and
+ * does not contain the NT_FREEBSD_ABI_TAG note. And even if it did, we want to
+ * override the value with that of the guest.
+ *
+ * At some later date we might want to look at the value of "fctl0" (note with the
+ * NT_FREEBSD_FEATURE_CTL type). This seems to be related to Address Space Layout
+ * Randomization. No hurry at the moment.
+ *
+ * See /usr/src/sys/kern/imgact_elf.c for details on how the kernel reads these
+ * notes.
+ */
+static
+void read_and_set_osrel(DiImage* img)
+{
+    if (is_elf_object_file_by_DiImage(img, False)) {
+       Word i;
+
+       ElfXX_Ehdr ehdr;
+       ML_(img_get)(&ehdr, img, 0, sizeof(ehdr));
+       /* Skip the phdrs when we have to search the shdrs. In separate
+          .debug files the phdrs might not be valid (they are a copy of
+          the main ELF file) and might trigger assertions when getting
+          image notes based on them. */
+       for (i = 0; i < ehdr.e_phnum; i++) {
+          ElfXX_Phdr phdr;
+          ML_(img_get)(&phdr, img,
+                       ehdr.e_phoff + i * ehdr.e_phentsize, sizeof(phdr));
+
+          if (phdr.p_type == PT_NOTE) {
+             ElfXX_Off note_ioff = phdr.p_offset;
+
+             while (note_ioff < phdr.p_offset + phdr.p_filesz) {
+                ElfXX_Nhdr note[2];
+                ML_(img_get)(note, img, (DiOffT)note_ioff, sizeof(note));
+                DiOffT name_ioff = note_ioff + sizeof(ElfXX_Nhdr);
+                //DiOffT desc_ioff = name_ioff + ((note[0].n_namesz + 3) & ~3);
+                if (ML_(img_strcmp_c)(img, name_ioff, "FreeBSD") == 0
+                    && note[0].n_type == NT_FREEBSD_ABI_TAG) {
+
+                    u_int32_t osrel = note[1].n_type;
+                    int name[4];
+                    name[0] = CTL_KERN;
+                    name[1] = KERN_PROC;
+                    name[2] = KERN_PROC_OSREL;
+                    name[3] = VG_(getpid)();
+                    SizeT newlen = sizeof(osrel);
+                    Int error = VG_(sysctl)(name, 4, NULL, NULL, &osrel, newlen);
+                    if (error == -1) {
+                        VG_(message)(Vg_DebugMsg, "Warning: failed to set osrel for current process with value %d\n", osrel);
+                    } else {
+                        if (VG_(clo_verbosity) > 1) {
+                            VG_(message)(Vg_DebugMsg, "Set osrel for current process with value %d\n", osrel);
+                        }
+                    }
+                }
+                note_ioff = note_ioff + sizeof(ElfXX_Nhdr)
+                                      + ((note[0].n_namesz + 3) & ~3)
+                                      + ((note[0].n_descsz + 3) & ~3);
+             }
+          }
+       }
+    }
+
+}
+#endif
 
 /*
  * Look for a build-id in an ELF image. The build-id specification
@@ -1701,7 +1776,7 @@ static HChar* readlink_path (const HChar *path)
 #if defined(VGP_arm64_linux) || defined(VGP_nanomips_linux)
       res = VG_(do_syscall4)(__NR_readlinkat, VKI_AT_FDCWD,
                                               (UWord)path, (UWord)buf, bufsiz);
-#elif defined(VGO_linux) || defined(VGO_darwin)
+#elif defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_freebsd)
       res = VG_(do_syscall3)(__NR_readlink, (UWord)path, (UWord)buf, bufsiz);
 #elif defined(VGO_solaris)
       res = VG_(do_syscall4)(__NR_readlinkat, VKI_AT_FDCWD, (UWord)path,
@@ -1939,14 +2014,14 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
       const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
       if (map->rx)
-         TRACE_SYMTAB("rx_map:  avma %#lx   size %lu  foff %ld\n",
-                      map->avma, map->size, map->foff);
+         TRACE_SYMTAB("rx_map:  avma %#lx   size %lu  foff %lld\n",
+                      map->avma, map->size, (Long)map->foff);
    }
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
       const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
       if (map->rw)
-         TRACE_SYMTAB("rw_map:  avma %#lx   size %lu  foff %ld\n",
-                      map->avma, map->size, map->foff);
+         TRACE_SYMTAB("rw_map:  avma %#lx   size %lu  foff %lld\n",
+                      map->avma, map->size, (Long)map->foff);
    }
 
    if (phdr_mnent == 0
@@ -2039,6 +2114,11 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                      item.svma_limit = a_phdr.p_vaddr + a_phdr.p_memsz;
                      item.bias       = map->avma - map->foff
                                        + a_phdr.p_offset - a_phdr.p_vaddr;
+#if (FREEBSD_VERS >= FREEBSD_12_2)
+                     if ((long long int)item.bias < 0LL) {
+                        item.bias = 0;
+                     }
+#endif
                      if (map->rw
                          && (a_phdr.p_flags & (PF_R | PF_W))
                             == (PF_R | PF_W)) {
@@ -2166,8 +2246,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
       const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
       if (map->rx)
-         TRACE_SYMTAB("rx: at %#lx are mapped foffsets %ld .. %lu\n",
-                      map->avma, map->foff, map->foff + map->size - 1 );
+         TRACE_SYMTAB("rx: at %#lx are mapped foffsets %lld .. %lld\n",
+                      map->avma, (Long)map->foff, (Long)(map->foff + map->size - 1) );
    }
    TRACE_SYMTAB("rx: contains these svma regions:\n");
    for (i = 0; i < VG_(sizeXA)(svma_ranges); i++) {
@@ -2179,8 +2259,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
       const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
       if (map->rw)
-         TRACE_SYMTAB("rw: at %#lx are mapped foffsets %ld .. %lu\n",
-                      map->avma, map->foff, map->foff + map->size - 1 );
+         TRACE_SYMTAB("rw: at %#lx are mapped foffsets %lld .. %lld\n",
+                      map->avma, (Long)map->foff, (Long)(map->foff + map->size - 1) );
    }
    TRACE_SYMTAB("rw: contains these svma regions:\n");
    for (i = 0; i < VG_(sizeXA)(svma_ranges); i++) {
@@ -2222,10 +2302,11 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          }
       }
 
-      TRACE_SYMTAB(" [sec %2ld]  %s %s  al%4u  foff %6ld .. %6lu  "
+      TRACE_SYMTAB(" [sec %2ld]  %s %s  al%4u  foff %6lld .. %6lld  "
                    "  svma %p  name \"%s\"\n", 
                    i, inrx ? "rx" : "  ", inrw ? "rw" : "  ", alyn,
-                   foff, (size == 0) ? foff : foff+size-1, (void *) svma, name);
+                   (Long) foff, (size == 0) ? (Long)foff : (Long)(foff+size-1),
+                   (void *) svma, name);
 
       /* Check for sane-sized segments.  SHT_NOBITS sections have zero
          size in the file and their offsets are just conceptual. */
@@ -2540,7 +2621,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          || defined(VGP_arm_linux) || defined (VGP_s390x_linux) \
          || defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
          || defined(VGP_arm64_linux) || defined(VGP_nanomips_linux) \
-         || defined(VGP_x86_solaris) || defined(VGP_amd64_solaris)
+         || defined(VGP_x86_solaris) || defined(VGP_amd64_solaris) \
+         || defined(VGP_x86_freebsd) || defined(VGP_amd64_freebsd)
       /* Accept .plt where mapped as rx (code) */
       if (0 == VG_(strcmp)(name, ".plt")) {
          if (inrx && !di->plt_present) {
@@ -2875,6 +2957,12 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       /* Now, see if we can find a debuginfo object, and if so connect
          |dimg| to it. */
       vg_assert(dimg == NULL && aimg == NULL);
+
+#if defined(VGO_freebsd)
+      /*  */
+      read_and_set_osrel(mimg);
+
+#endif
 
       /* Look for a build-id */
       HChar* buildid = find_buildid(mimg, False, False);
@@ -3512,7 +3600,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    /* NOTREACHED */
 }
 
-#endif // defined(VGO_linux) || defined(VGO_solaris)
+#endif // defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

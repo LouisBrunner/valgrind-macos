@@ -137,6 +137,9 @@ enum target_signal
     /* Used internally by Solaris threads.  See signal(5) on Solaris.  */
     TARGET_SIGNAL_CANCEL = 76,
 
+    /* Similar to the above, but for FreeBSD */
+    TARGET_SIGNAL_THR = 77,
+
     /* Yes, this pains me, too.  But LynxOS didn't have SIG32, and now
        GNU/Linux does, and we can't disturb the numbering, since it's
        part of the remote protocol.  Note that in some GDB's

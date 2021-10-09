@@ -404,6 +404,10 @@ enum target_signal target_signal_from_host (int hostsig)
    if (hostsig == VKI_SIGCANCEL)
       return TARGET_SIGNAL_CANCEL;
 #endif
+#if defined(VKI_SIGTHR)
+   if (hostsig == VKI_SIGTHR)
+      return TARGET_SIGNAL_THR;
+#endif
 #if defined (VKI_SIGLWP)
    if (hostsig == VKI_SIGLWP)
       return TARGET_SIGNAL_LWP;
@@ -656,6 +660,10 @@ int do_target_signal_to_host (enum target_signal oursig,
 #if defined (VKI_SIGCANCEL)
    case TARGET_SIGNAL_CANCEL:
       return VKI_SIGCANCEL;
+#endif
+#if defined (VKI_SIGTHR)
+   case TARGET_SIGNAL_THR:
+      return VKI_SIGTHR;
 #endif
 #if defined (VKI_SIGLWP)
    case TARGET_SIGNAL_LWP:

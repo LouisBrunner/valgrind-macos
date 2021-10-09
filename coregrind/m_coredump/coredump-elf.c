@@ -490,7 +490,7 @@ static void fill_prstatus(const ThreadState *tst,
    regs[VKI_MIPS32_EF_CP0_EPC]    = arch->vex.guest_PC;
 #  undef DO
 #elif defined(VGP_amd64_freebsd)
-   regs->rflags = LibVEX_GuestAMD64_get_rflags( &((ThreadArchState*)arch)->vex );
+   regs->rflags = LibVEX_GuestAMD64_get_rflags( &arch->vex );
    regs->rsp    = arch->vex.guest_RSP;
    regs->rip    = arch->vex.guest_RIP;
    regs->rbx    = arch->vex.guest_RBX;

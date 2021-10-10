@@ -231,5 +231,5 @@ looper_CFLAGS		= $(AM_CFLAGS) @FLAG_NO_PIE@
 sbbmisc_CFLAGS		= $(AM_CFLAGS) @FLAG_NO_PIE@
 shrld_CFLAGS		= $(AM_CFLAGS) @FLAG_NO_PIE@
 
-.def.c: $(srcdir)/gen_insn_test.pl
+.def.c:
 	$(PERL) $(srcdir)/gen_insn_test.pl < $< > $@

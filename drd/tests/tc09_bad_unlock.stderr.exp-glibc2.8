@@ -26,7 +26,7 @@ The object at address 0x........ is not a mutex.
 
 Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
    at 0x........: nearly_main (tc09_bad_unlock.c:48)
-   by 0x........: main (tc09_bad_unlock.c:52)
+   by 0x........: (below main)
 mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: nearly_main (tc09_bad_unlock.c:32)
@@ -49,7 +49,7 @@ The object at address 0x........ is not a mutex.
 
 Destroying locked mutex: mutex 0x........, recursion count 1, owner 1.
    at 0x........: nearly_main (tc09_bad_unlock.c:48)
-   by 0x........: main (tc09_bad_unlock.c:53)
+   by 0x........: (below main)
 mutex 0x........ was first observed at:
    at 0x........: pthread_mutex_init (drd_pthread_intercepts.c:?)
    by 0x........: nearly_main (tc09_bad_unlock.c:32)

@@ -89,3 +89,14 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 new_cpp_SOURCES		= new-cpp.cpp
 overloaded_new_SOURCES	= overloaded-new.cpp
 
+# Suppress warnings for issues we are testing for
+alloc_fns_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result
+big_alloc_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result
+culling1_CFLAGS		= $(AM_CFLAGS) -Wno-unused-result
+culling2_CFLAGS		= $(AM_CFLAGS) -Wno-unused-result
+deep_CFLAGS		= $(AM_CFLAGS) -Wno-unused-result
+ignoring_CFLAGS		= $(AM_CFLAGS) -Wno-unused-result
+insig_CFLAGS		= $(AM_CFLAGS) -Wno-unused-result
+long_names_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result
+one_CFLAGS		= $(AM_CFLAGS) -Wno-unused-result
+thresholds_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result

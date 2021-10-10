@@ -26,3 +26,5 @@ check_PROGRAMS = \
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
+# We don't care about unused malloc results
+big_CFLAGS  = $(AM_CFLAGS) -Wno-unused-result

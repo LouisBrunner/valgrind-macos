@@ -505,6 +505,12 @@ leak_cpp_interior_SOURCES	= leak_cpp_interior.cpp
 
 demangle_SOURCES = demangle.cpp
 
+# Suppress various gcc warnings which are correct, but for things
+# we are actually testing for at runtime.
+accounting_CFLAGS	= $(AM_CFLAGS) -Wno-alloc-size-larger-than
+bug155125_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result -Wno-alloc-size-larger-than
+malloc3_CFLAGS		= $(AM_CFLAGS) -Wno-alloc-size-larger-than
+
 big_debuginfo_symbol_SOURCES = big_debuginfo_symbol.cpp
 big_debuginfo_symbol_CXXFLAGS = $(AM_CXXFLAGS) -std=c++0x
 
@@ -590,7 +596,8 @@ sized_delete_SOURCES   = sized_delete.cpp
 sized_delete_CXXFLAGS  = $(AM_CXXFLAGS) @FLAG_FSIZED_DEALLOCATION@
 endif
 
-str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow \
+str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow -Wno-stringop-overflow \
+			  -Wno-stringop-truncation \
 			  @FLAG_W_NO_MEMSET_TRANSPOSED_ARGS@
 
 supp_CFLAGS             = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@

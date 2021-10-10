@@ -15,7 +15,7 @@
 
 int main(int argc, char **argv)
 {
-  struct mq_attr mqa;
+  struct mq_attr mqa, mqa2;
   mqd_t mqdw;
   mqd_t mqdr;
   char buffer[MSGSIZEMAX];
@@ -89,7 +89,8 @@ int main(int argc, char **argv)
       exit(1);
     }
 
-  if (mq_setattr(mqdw, &mqa, &mqa) < 0)
+  mqa2 = mqa;
+  if (mq_setattr(mqdw, &mqa, &mqa2) < 0)
     {
       perror("mq_setattr");
       mq_close(mqdr);

@@ -508,13 +508,17 @@ demangle_SOURCES = demangle.cpp
 # Suppress various gcc warnings which are correct, but for things
 # we are actually testing for at runtime.
 accounting_CFLAGS	= $(AM_CFLAGS) -Wno-alloc-size-larger-than
+badfree_CFLAGS		= $(AM_CFLAGS) -Wno-free-nonheap-object
 bug155125_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result -Wno-alloc-size-larger-than
+mallinfo_CFLAGS		= $(AM_CFLAGS) -Wno-deprecated-declarations
 malloc3_CFLAGS		= $(AM_CFLAGS) -Wno-alloc-size-larger-than
+sbfragment_CFLAGS	= $(AM_CFLAGS) -Wno-deprecated-declarations
+strchr_CFLAGS		= $(AM_CFLAGS) -Wno-uninitialized
 
 big_debuginfo_symbol_SOURCES = big_debuginfo_symbol.cpp
 big_debuginfo_symbol_CXXFLAGS = $(AM_CXXFLAGS) -std=c++0x
 
-bug340392_CFLAGS        = $(AM_CFLAGS) -O3
+bug340392_CFLAGS        = $(AM_CFLAGS) -O3 -Wno-maybe-uninitialized
 dw4_CFLAGS		= $(AM_CFLAGS) -gdwarf-4 -fdebug-types-section
 
 descr_belowsp_LDADD     = -lpthread
@@ -535,7 +539,7 @@ execve1_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
 execve2_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
-fprw_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
+fprw_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@ -Wno-free-nonheap-object
 
 inits_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
@@ -647,7 +651,7 @@ else
  varinfo5so_so_LDFLAGS  = -fpic $(AM_FLAG_M3264_PRI) -shared \
 				-Wl,-soname -Wl,varinfo5so.so
 endif
-varinforestrict_CFLAGS	= $(AM_CFLAGS) -O0 -g
+varinforestrict_CFLAGS	= $(AM_CFLAGS) -O0 -g -Wno-maybe-uninitialized
 
 # Build shared object for wrap7
 wrap7_SOURCES           = wrap7.c

@@ -92,6 +92,7 @@ void example1singleset(OSet* oset, char *descr)
    UWord  sorted_elts[NN]; // Used to test VG_(OSetGen_ResetIterAt)
 
    // Try some operations on an empty OSet to ensure they don't screw up.
+   v = 0;
    vg_assert( ! VG_(OSetGen_Contains)(oset, &v) );
    vg_assert( ! VG_(OSetGen_Lookup)(oset, &v) );
    vg_assert( ! VG_(OSetGen_Remove)(oset, &v) );

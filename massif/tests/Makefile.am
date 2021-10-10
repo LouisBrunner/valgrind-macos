@@ -100,3 +100,4 @@ insig_CFLAGS		= $(AM_CFLAGS) -Wno-unused-result
 long_names_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result
 one_CFLAGS		= $(AM_CFLAGS) -Wno-unused-result
 thresholds_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result
+realloc_CFLAGS		= $(AM_CFLAGS) -Wno-free-nonheap-object

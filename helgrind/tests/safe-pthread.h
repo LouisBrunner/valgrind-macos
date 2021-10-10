@@ -28,6 +28,7 @@ static void segv_handler( int signum, siginfo_t *siginfo, void *sigcontext ) {
    siglongjmp( env, EPERM );
 }
 
+static int safe_pthread_rwlock_unlock( pthread_rwlock_t *rwlock ) __attribute__((unused));
 /*
  * Wrapper for pthread_rwlock_unlock which may execute xend
  * unconditionally when used on a lock that is not locked.

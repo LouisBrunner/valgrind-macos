@@ -303,6 +303,7 @@ fdleak_creat_LDADD	= -lsocket -lnsl
 fdleak_socketpair_LDADD	= -lsocket -lnsl
 endif
 floored_LDADD 		= -lm
+ifunc_CFLAGS		= $(AM_CFLAGS) -Wno-unused-function
 manythreads_LDADD	= -lpthread
 if VGCONF_OS_IS_DARWIN
  nestedfns_CFLAGS	= $(AM_CFLAGS) -fnested-functions

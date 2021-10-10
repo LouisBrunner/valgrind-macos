@@ -584,7 +584,8 @@ origin6_fp_CFLAGS	= $(AM_CFLAGS) -O
 
 # Don't allow GCC to inline memcpy() and strcpy(),
 # because then we can't intercept it
-overlap_CFLAGS		= $(AM_CFLAGS) -fno-builtin-memcpy -fno-builtin-strcpy
+overlap_CFLAGS		= $(AM_CFLAGS) -fno-builtin-memcpy -fno-builtin-strcpy \
+			  -Wno-fortify-source
 
 resvn_stack_CFLAGS      = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
@@ -602,6 +603,7 @@ endif
 
 str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow -Wno-stringop-overflow \
 			  -Wno-stringop-truncation \
+			  -Wno-fortify-source -Wno-suspicious-bzero \
 			  @FLAG_W_NO_MEMSET_TRANSPOSED_ARGS@
 
 supp_CFLAGS             = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
@@ -702,5 +704,6 @@ xml1_CFLAGS             = $(AM_CFLAGS) -D_GNU_SOURCE
 if HAVE_ALIGNED_CXX_ALLOC
 check_PROGRAMS += cxx17_aligned_new
 cxx17_aligned_new_SOURCES  = cxx17_aligned_new.cpp
-cxx17_aligned_new_CXXFLAGS = -std=c++17
+# need C++ 17, and we deliberately mismatch new and delete
+cxx17_aligned_new_CXXFLAGS = -std=c++17 -Wno-mismatched-new-delete
 endif

@@ -88,6 +88,10 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 # C++ tests
 new_cpp_SOURCES		= new-cpp.cpp
 overloaded_new_SOURCES	= overloaded-new.cpp
+# pre C++11 compilers don't have exception specs
+# C++11 and later compilers may complain about not having
+# exception specs
+overloaded_new_CXXFLAGS	= $(AM_CXXFLAGS) -Wno-implicit-exception-spec-mismatch -Wno-missing-exception-spec
 
 # Suppress warnings for issues we are testing for
 alloc_fns_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result

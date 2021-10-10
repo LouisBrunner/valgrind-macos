@@ -14,6 +14,7 @@ static void abrt_handler( int signum, siginfo_t *siginfo, void *sigcontext ) {
    siglongjmp( env, EINVAL );
 }
 
+static int safe_sem_post( sem_t *sem ) __attribute__((unused));
 static int safe_sem_post( sem_t *sem ) {
    struct sigaction sa;
    struct sigaction oldsa;

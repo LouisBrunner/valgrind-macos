@@ -12954,10 +12954,30 @@ PRE(sys_bpf)
             }
          }
          break;
+      case VKI_BPF_MAP_LOOKUP_AND_DELETE_ELEM:
+         /* Perform a lookup on an eBPF map. Read key, write value (delete key) */
+         PRE_MEM_READ("bpf(attr->key)", (Addr)&attr->key, sizeof(attr->key));
+         PRE_MEM_READ("bpf(attr->value)", (Addr)&attr->value, sizeof(attr->value));
+         PRE_MEM_READ("bpf(attr->map_fd)", (Addr)&attr->map_fd, sizeof(attr->map_fd));
+         if (ML_(safe_to_deref)(attr, ARG3)) {
+            if (!ML_(fd_allowed)(attr->map_fd, "bpf", tid, False)) {
+               SET_STATUS_Failure(VKI_EBADF);
+               break;
+            }
+            /* Get size of key and value for this map. */
+            if (bpf_map_get_sizes(attr->map_fd, &key_size, &value_size)) {
+               PRE_MEM_READ("bpf(attr->key)", attr->key, key_size);
+               PRE_MEM_WRITE("bpf(attr->value)", attr->value, value_size);
+            }
+         }
+         break;
+      case VKI_BPF_MAP_FREEZE:
+	 /* Freeze map, read map_fd (write frozen flag, not visible to user space). */
+         PRE_MEM_READ("bpf(attr->map_fd)", (Addr)&attr->map_fd, sizeof(attr->map_fd));
+	 break;
       default:
          VG_(message)(Vg_DebugMsg,
-                      "FATAL: unhandled eBPF command %lu\n", ARG1);
-         VG_(core_panic)("... bye!\n");
+                      "WARNING: unhandled eBPF command %lu\n", ARG1);
          break;
    }
 }
@@ -13054,10 +13074,16 @@ POST(sys_bpf)
          POST_MEM_WRITE((Addr)&attr->task_fd_query.probe_offset, sizeof(attr->task_fd_query.probe_offset));
          POST_MEM_WRITE((Addr)&attr->task_fd_query.probe_addr, sizeof(attr->task_fd_query.probe_addr));
          break;
+      case VKI_BPF_MAP_LOOKUP_AND_DELETE_ELEM:
+         if (bpf_map_get_sizes(attr->map_fd, &key_size, &value_size))
+            POST_MEM_WRITE(attr->value, value_size);
+	 break;
+      case VKI_BPF_MAP_FREEZE:
+	 /* Freeze map, read map_fd (write frozen flag, not visible to user space). */
+	 break;
       default:
          VG_(message)(Vg_DebugMsg,
-                      "FATAL: unhandled eBPF command %lu\n", ARG1);
-         VG_(core_panic)("... bye!\n");
+                      "WARNING: unhandled eBPF command %lu\n", ARG1);
          break;
    }
 }

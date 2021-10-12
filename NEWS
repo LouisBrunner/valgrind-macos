@@ -44,6 +44,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 368960  WARNING: unhandled amd64-linux syscall: 163 (acct)
 407589  [Linux] Add support for C11 aligned_alloc() and GNU reallocarray()
 423963  Error in child thread when CLONE_PIDFD is used
+426148  crash with "impossible happened" when running BPF CO-RE programs
 429375  PPC ISA 3.1 support is missing, part 9
 431157  PPC_FEATURE2_SCV needs to be masked in AT_HWCAP2
 431306  Update demangler to support Rust v0 name mangling

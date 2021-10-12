@@ -4966,6 +4966,8 @@ enum vki_bpf_cmd {
 	VKI_BPF_BTF_LOAD,
 	VKI_BPF_BTF_GET_FD_BY_ID,
 	VKI_BPF_TASK_FD_QUERY,
+	VKI_BPF_MAP_LOOKUP_AND_DELETE_ELEM,
+	VKI_BPF_MAP_FREEZE,
 };
 
 enum vki_bpf_map_type {

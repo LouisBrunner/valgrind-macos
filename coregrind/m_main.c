@@ -2168,6 +2168,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
 	     || tids_schedretcode == VgSrc_ExitProcess
              || tids_schedretcode == VgSrc_FatalSig );
 
+   /* Try to do final tidyup on "normal" exit, not on FatalSig.  */
    if (tids_schedretcode == VgSrc_ExitThread) {
 
       // We are the last surviving thread.  Right?
@@ -2185,7 +2186,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
       vg_assert(VG_(is_running_thread)(tid));
       vg_assert(VG_(count_living_threads)() == 1);
 
-   } else {
+   } else if (tids_schedretcode == VgSrc_ExitProcess) {
 
       // We may not be the last surviving thread.  However, we
       // want to shut down the entire process.  We hold the lock

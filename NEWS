@@ -86,6 +86,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 443180  The subnormal test and the ISA 3.0 test generate compiler warnings.
 443314  In the latest GIT version, Valgrind with "--trace-flags" crashes at
         "al" register
+443605  Don't call final_tidyup (__libc_freeres) on FatalSignal
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

@@ -31,7 +31,7 @@ int main ( void )
    int  res;
    assert(sizeof(long int) == sizeof(void*));
 
-#if !defined(VGO_freebsd) || (FREEBSD_VERS >= FREEBSD_12)
+#if !defined(VGO_freebsd) || (FREEBSD_VERS >= FREEBSD_12_2)
    // Check behaviour of memalign/free for big alignment.
    // In particular, the below aims at checking that a
    // superblock with a big size is not marked as reclaimable

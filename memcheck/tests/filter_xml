@@ -11,6 +11,8 @@ sed "s/<obj>.*<\/obj>/<obj>...<\/obj>/" |
 sed "s/<line>.*<\/line>/<line>...<\/line>/" |
 sed "s/<dir>.*<\/dir>/<dir>...<\/dir>/" |
 sed "s/<count>.*<\/count>/<count>...<\/count>/" |
+# Filter out @* version symbol function names
+sed "s/<fn>\(.*\)\@\*<\/fn>/<fn>\1<\/fn>/" |
 sed "s/of size [48]</of size N</" |
 perl    -p -e "s/(m_replacemalloc\/)?vg_replace_malloc.c/vg_replace_malloc.c/" |
 perl -0 -p -e "s/<suppcounts>.*<\/suppcounts>/<suppcounts>...<\/suppcounts>/s" |

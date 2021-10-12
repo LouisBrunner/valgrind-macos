@@ -16,6 +16,7 @@
 #include <assert.h>
 #include "tests/malloc.h"
 #include <errno.h>
+#include "../../config.h"
 
 int main ( void )
 {
@@ -30,6 +31,7 @@ int main ( void )
    int  res;
    assert(sizeof(long int) == sizeof(void*));
 
+#if !defined(VGO_freebsd) || (FREEBSD_VERS >= FREEBSD_12)
    // Check behaviour of memalign/free for big alignment.
    // In particular, the below aims at checking that a
    // superblock with a big size is not marked as reclaimable
@@ -78,6 +80,7 @@ int main ( void )
 
    p = memalign(4 * 1024 * 1024, 100);   assert(0 == (long)p % (4 * 1024 * 1024));
    p = memalign(16 * 1024 * 1024, 100);   assert(0 == (long)p % (16 * 1024 * 1024));
+#endif
 
 #  define PM(a,b,c) posix_memalign((void**)a, b, c)
 

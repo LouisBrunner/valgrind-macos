@@ -19,6 +19,7 @@ fi |
 # Remove line numbers referring to drd's source code.
 # Remove libpthread's version number.
 # Remove line numbers from stack traces.
+# Extract start_thread because it can be in libpthread or libc.
 $SED \
 -e "/^drd, a thread error detector$/d" \
 -e "s/^Allocation context: stack of thread \([0-9]*\), offset -[0-9]*$/Allocation context: stack of thread \1, offset .../" \
@@ -30,6 +31,7 @@ $SED \
 -e "s/(\(functional\|thread\):[0-9]*)/(\1:...)/" \
 -e "s/(tc20_verifywrap.c:261)/(tc20_verifywrap.c:262)/" \
 -e "/^Copyright (C) 2006-20.., and GNU GPL'd, by Bart Van Assche.$/d" \
+-e "s/start_thread ([^)]*)/start_thread/" \
 -e "s/\([A-Za-z_]*\) (clone.S:[0-9]*)/\1 (in \/...libc...)/" \
 -e "s/\([A-Za-z_]*\) (swapcontext.S:[0-9]*)/\1 (in \/...libc...)/" \
 -e "s/_swapcontext/swapcontext/" \

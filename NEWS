@@ -1,4 +1,4 @@
-Release 3.??.? (?? 2021)
+Release 3.18.0 (15 Oct 2021)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
@@ -94,6 +94,7 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
 
+(3.18.0.RC1: 12 Oct 2021)
 
 Release 3.17.0 (19 Mar 2021)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -2293,6 +2293,7 @@ Vg_FnNameKind VG_(get_fnname_kind) ( const HChar* name )
    } else if (
 #      if defined(VGO_linux)
        VG_STREQ("__libc_start_main",  name) ||  // glibc glibness
+       VG_STREQ("__libc_start_call_main",  name) ||  // glibc glibness
        VG_STREQN(18, "__libc_start_main.", name) || // gcc optimization
        VG_STREQ("generic_start_main", name) ||  // Yellow Dog doggedness
        VG_STREQN(19, "generic_start_main.", name) || // gcc optimization

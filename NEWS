@@ -1,3 +1,4 @@
+
 Release 3.18.0 (15 Oct 2021)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -10,18 +11,18 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== CORE CHANGES ===================
 
-  - The libiberty demangler has been updated, which brings support
-    for Rust v0 name demangling
+* The libiberty demangler has been updated, which brings support for Rust v0
+  name demangling
 
-  - __libc_freeres isn't called anymore after the program recieves
-    a fatal signal. Causing some internal glibc resources to hang
-    around, but preventing any crashes after the program has ended.
+* __libc_freeres isn't called anymore after the program recieves a fatal
+  signal. Causing some internal glibc resources to hang around, but preventing
+  any crashes after the program has ended.
 
-  - The DWARF reader is now much faster at startup when just
-    --read-inline-info=yes (the default in most cases) is given.
+* The DWARF reader is now very much faster at startup when just
+  --read-inline-info=yes (the default in most cases) is given.
 
-  - glibc 2.34, which moved various functions from libpthread.so
-    into libc.so, is now supported.
+* glibc 2.34, which moved various functions from libpthread.so into libc.so,
+  is now supported.
 
 * ================== PLATFORM CHANGES =================
 
@@ -45,6 +46,10 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
   - ISA 3.0 support for the copy, paste and cpabort instructions added.
  
 * Support for X86/FreeBSD and AMD64/FreeBSD has been added.
+
+* ==================== OTHER CHANGES ====================
+
+* Memcheck on amd64: minor fixes to remove some false positive undef-value errors
 
 * ==================== FIXED BUGS ====================
 
@@ -110,6 +115,8 @@ To see details of a given bug, visit
 where XXXXXX is the bug number as listed below.
 
 (3.18.0.RC1: 12 Oct 2021)
+
+
 
 Release 3.17.0 (19 Mar 2021)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

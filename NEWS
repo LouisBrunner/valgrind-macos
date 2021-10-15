@@ -11,18 +11,18 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== CORE CHANGES ===================
 
-* The libiberty demangler has been updated, which brings support for Rust v0
-  name demangling
+* The libiberty demangler has been updated, which brings support for
+  Rust v0 name demangling
 
-* __libc_freeres isn't called anymore after the program recieves a fatal
-  signal. Causing some internal glibc resources to hang around, but preventing
-  any crashes after the program has ended.
+* __libc_freeres isn't called anymore after the program recieves a
+  fatal signal. Causing some internal glibc resources to hang around,
+  but preventing any crashes after the program has ended.
 
 * The DWARF reader is now very much faster at startup when just
   --read-inline-info=yes (the default in most cases) is given.
 
-* glibc 2.34, which moved various functions from libpthread.so into libc.so,
-  is now supported.
+* glibc 2.34, which moved various functions from libpthread.so into
+  libc.so, is now supported.
 
 * ================== PLATFORM CHANGES =================
 
@@ -34,9 +34,10 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * s390:
 
-  - Support the miscellaneous-instruction-extensions facility 3 and the
-    vector-enhancements facility 2.  This enables programs compiled with
-    "-march=arch13" or "-march=z15" to be executed under Valgrind.
+  - Support the miscellaneous-instruction-extensions facility 3 and
+    the vector-enhancements facility 2.  This enables programs
+    compiled with "-march=arch13" or "-march=z15" to be executed
+    under Valgrind.
 
 * ppc64:
 
@@ -49,7 +50,8 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== OTHER CHANGES ====================
 
-* Memcheck on amd64: minor fixes to remove some false positive undef-value errors
+* Memcheck on amd64: minor fixes to remove some false positive
+  undef-value errors
 
 * ==================== FIXED BUGS ====================
 
@@ -89,12 +91,12 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 435665  PPC ISA 3.0 copy, paste, cpabort instructions are not supported 
 435908  valgrind tries to fetch from deubginfod for files which already
         have debug information
-438871  unhandled instruction bytes: 0xF3 0x49 0xF 0x6F 0x9C 0x24 0x60 0x2 0x0 0x0
+438871  unhandled instruction bytes: 0xF3 0x49 0xF 0x6F 0x9C 0x24 0x60 0x2
 439046  valgrind is unusably large when linked with lld
 439090  Implement close_range(2)
 439326  Valgrind 3.17.0 won't compile with Intel 2021 oneAPI compilers
 439590  glibc-2.34 breaks suppressions against obj:*/lib*/libc-2.*so*
-440670  unhandled ppc64le-linux syscall: 252 (statfs64) and 253 (fstatfs64)
+440670  unhandled ppc64le-linux syscall: 252 statfs64 and 253 fstatfs64
 440906  Fix impossible constraint issue in P10 testcase.
 441512  Remove a unneeded / unnecessary prefix check.
 441534  Update the expected output for test_isa_3_1_VRT.
@@ -105,9 +107,9 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 443178  Powerpc, test jm-mfspr expected output needs to be updated.
 443179  Need new test for the lxvx and stxvx instructions on ISA 2.07 and
         ISA 3.0 systems.
-443180  The subnormal test and the ISA 3.0 test generate compiler warnings.
-443314  In the latest GIT version, Valgrind with "--trace-flags" crashes at
-        "al" register
+443180  The subnormal test and the ISA 3.0 test generate compiler warnings
+443314  In the latest GIT version, Valgrind with "--trace-flags" crashes
+        at "al" register
 443605  Don't call final_tidyup (__libc_freeres) on FatalSignal
 
 To see details of a given bug, visit
@@ -115,6 +117,7 @@ To see details of a given bug, visit
 where XXXXXX is the bug number as listed below.
 
 (3.18.0.RC1: 12 Oct 2021)
+(3.18.0:     15 Oct 2021)
 
 
 

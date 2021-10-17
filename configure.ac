@@ -8,7 +8,30 @@
 ##------------------------------------------------------------##
 
 # Process this file with autoconf to produce a configure script.
-AC_INIT([Valgrind],[3.18.1],[valgrind-users@lists.sourceforge.net])
+#
+# Define major, minor, micro and suffix here once, then reuse them
+# for version number in valgrind.h and vg-entities (documentation).
+# suffix must be empty for a release, otherwise it is GIT or RC1, etc.
+# Also set the (expected/last) release date here.
+# Do not forget to rerun ./autogen.sh
+m4_define([v_major_ver], [3])
+m4_define([v_minor_ver], [18])
+m4_define([v_micro_ver], [1])
+m4_define([v_suffix_ver], [])
+m4_define([v_rel_date], ["15 Oct 2021"])
+m4_define([v_version],
+	  m4_if(v_suffix_ver, [],
+		[v_major_ver.v_minor_ver.v_micro_ver],
+		[v_major_ver.v_minor_ver.v_micro_ver.v_suffix_ver]))
+AC_INIT([Valgrind],[v_version],[valgrind-users@lists.sourceforge.net])
+
+# For valgrind.h
+AC_SUBST(VG_VER_MAJOR, v_major_ver)
+AC_SUBST(VG_VER_MINOR, v_minor_ver)
+
+# For docs/xml/vg-entities.xml
+AC_SUBST(VG_DATE, v_rel_date)
+
 AC_CONFIG_SRCDIR(coregrind/m_main.c)
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects])
@@ -5121,7 +5144,9 @@ AC_CONFIG_FILES([
    glibc-2.X.supp
    glibc-2.X-helgrind.supp
    glibc-2.X-drd.supp
+   include/valgrind.h
    docs/Makefile 
+   docs/xml/vg-entities.xml
    tests/Makefile 
    tests/vg_regtest 
    perf/Makefile 
@@ -5255,6 +5280,7 @@ AC_OUTPUT
 
 cat<<EOF
 
+                    Version: ${VERSION}
          Maximum build arch: ${ARCH_MAX}
          Primary build arch: ${VGCONF_ARCH_PRI}
        Secondary build arch: ${VGCONF_ARCH_SEC}

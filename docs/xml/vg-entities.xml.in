@@ -6,8 +6,8 @@
 
 <!-- valgrind release + version stuff -->
 <!ENTITY rel-type    "Release">
-<!ENTITY rel-version "3.18.0">
-<!ENTITY rel-date    "15 Oct 2021">
+<!ENTITY rel-version "@VERSION@">
+<!ENTITY rel-date    "@VG_DATE@">
 
 <!-- where the docs are installed -->
 <!ENTITY vg-docs-path  "$INSTALL/share/doc/valgrind/html/index.html">

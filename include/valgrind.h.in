@@ -88,8 +88,8 @@
     && (__VALGRIND_MAJOR__ > 3                                   \
         || (__VALGRIND_MAJOR__ == 3 && __VALGRIND_MINOR__ >= 6))
 */
-#define __VALGRIND_MAJOR__    3
-#define __VALGRIND_MINOR__    18
+#define __VALGRIND_MAJOR__    @VG_VER_MAJOR@
+#define __VALGRIND_MINOR__    @VG_VER_MINOR@
 
 
 #include <stdarg.h>

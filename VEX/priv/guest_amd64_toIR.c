@@ -10139,34 +10139,34 @@ static IRTemp math_PALIGNR_XMM ( IRTemp sV, IRTemp dV, UInt imm8 )
    This assumes that guest_RIP_curr_instr is set correctly!
    On FreeBSD, this kind of error generates a SIGBUS. */
 static
-void gen_SIGNAL_if_not_XX_aligned ( IRTemp effective_addr, ULong mask )
+void gen_SIGNAL_if_not_XX_aligned ( const VexAbiInfo* vbi,
+                                    IRTemp effective_addr, ULong mask )
 {
    stmt(
       IRStmt_Exit(
          binop(Iop_CmpNE64,
                binop(Iop_And64,mkexpr(effective_addr),mkU64(mask)),
                mkU64(0)),
-#if defined(VGO_freebsd)
-         Ijk_SigBUS,
-#else
-         Ijk_SigSEGV,
-#endif
+         vbi->guest_amd64_sigbus_on_misalign ? Ijk_SigBUS : Ijk_SigSEGV,
          IRConst_U64(guest_RIP_curr_instr),
          OFFB_RIP
       )
    );
 }
 
-static void gen_SIGNAL_if_not_16_aligned ( IRTemp effective_addr ) {
-   gen_SIGNAL_if_not_XX_aligned(effective_addr, 16-1);
+static void gen_SIGNAL_if_not_16_aligned ( const VexAbiInfo* vbi,
+                                           IRTemp effective_addr ) {
+   gen_SIGNAL_if_not_XX_aligned(vbi, effective_addr, 16-1);
 }
 
-static void gen_SIGNAL_if_not_32_aligned ( IRTemp effective_addr ) {
-   gen_SIGNAL_if_not_XX_aligned(effective_addr, 32-1);
+static void gen_SIGNAL_if_not_32_aligned ( const VexAbiInfo* vbi,
+                                           IRTemp effective_addr ) {
+   gen_SIGNAL_if_not_XX_aligned(vbi, effective_addr, 32-1);
 }
 
-static void gen_SIGNAL_if_not_64_aligned ( IRTemp effective_addr ) {
-   gen_SIGNAL_if_not_XX_aligned(effective_addr, 64-1);
+static void gen_SIGNAL_if_not_64_aligned ( const VexAbiInfo* vbi,
+                                           IRTemp effective_addr ) {
+   gen_SIGNAL_if_not_XX_aligned(vbi, effective_addr, 64-1);
 }
 
 
@@ -11922,7 +11922,7 @@ static Long dis_XSAVE ( const VexAbiInfo* vbi,
 
    addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
    delta += alen;
-   gen_SIGNAL_if_not_64_aligned(addr);
+   gen_SIGNAL_if_not_64_aligned(vbi, addr);
 
    DIP("%sxsave %s\n", sz==8 ? "rex64/" : "", dis_buf);
 
@@ -11966,7 +11966,7 @@ static Long dis_FXSAVE ( const VexAbiInfo* vbi,
 
    addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
    delta += alen;
-   gen_SIGNAL_if_not_16_aligned(addr);
+   gen_SIGNAL_if_not_16_aligned(vbi, addr);
 
    DIP("%sfxsave %s\n", sz==8 ? "rex64/" : "", dis_buf);
 
@@ -12177,7 +12177,7 @@ static Long dis_XRSTOR ( const VexAbiInfo* vbi,
 
    addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
    delta += alen;
-   gen_SIGNAL_if_not_64_aligned(addr);
+   gen_SIGNAL_if_not_64_aligned(vbi, addr);
 
    DIP("%sxrstor %s\n", sz==8 ? "rex64/" : "", dis_buf);
 
@@ -12247,7 +12247,7 @@ static Long dis_FXRSTOR ( const VexAbiInfo* vbi,
 
    addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
    delta += alen;
-   gen_SIGNAL_if_not_16_aligned(addr);
+   gen_SIGNAL_if_not_16_aligned(vbi, addr);
 
    DIP("%sfxrstor %s\n", sz==8 ? "rex64/" : "", dis_buf);
 
@@ -12953,7 +12953,7 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
             delta += 1;
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             putXMMReg( gregOfRexRM(pfx,modrm), 
                        loadLE(Ity_V128, mkexpr(addr)) );
             DIP("movapd %s,%s\n", dis_buf,
@@ -12974,7 +12974,7 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
             delta += 1;
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             putXMMReg( gregOfRexRM(pfx,modrm), 
                        loadLE(Ity_V128, mkexpr(addr)) );
             DIP("movaps %s,%s\n", dis_buf,
@@ -12998,7 +12998,7 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
             delta += 1;
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             storeLE( mkexpr(addr), getXMMReg(gregOfRexRM(pfx,modrm)) );
             DIP("movaps %s,%s\n", nameXMMReg(gregOfRexRM(pfx,modrm)),
                                   dis_buf );
@@ -13018,7 +13018,7 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
             delta += 1;
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             storeLE( mkexpr(addr), getXMMReg(gregOfRexRM(pfx,modrm)) );
             DIP("movapd %s,%s\n", nameXMMReg(gregOfRexRM(pfx,modrm)),
                                   dis_buf );
@@ -13216,7 +13216,7 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          modrm = getUChar(delta);
          if (!epartIsReg(modrm)) {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             storeLE( mkexpr(addr), getXMMReg(gregOfRexRM(pfx,modrm)) );
             DIP("movntp%s %s,%s\n", sz==2 ? "d" : "s",
                                     dis_buf,
@@ -13961,7 +13961,7 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
             delta += 1;
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             putXMMReg( gregOfRexRM(pfx,modrm), 
                        loadLE(Ity_V128, mkexpr(addr)) );
             DIP("movdqa %s,%s\n", dis_buf,
@@ -14261,7 +14261,7 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
                                    nameXMMReg(eregOfRexRM(pfx,modrm)));
          } else {
             addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             delta += alen;
             storeLE( mkexpr(addr), getXMMReg(gregOfRexRM(pfx,modrm)) );
             DIP("movdqa %s, %s\n", nameXMMReg(gregOfRexRM(pfx,modrm)), dis_buf);
@@ -14942,7 +14942,7 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          modrm = getUChar(delta);
          if (!epartIsReg(modrm)) {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             storeLE( mkexpr(addr), getXMMReg(gregOfRexRM(pfx,modrm)) );
             DIP("movntdq %s,%s\n", dis_buf,
                                    nameXMMReg(gregOfRexRM(pfx,modrm)));
@@ -15369,7 +15369,7 @@ static Long dis_MOVSxDUP_128 ( const VexAbiInfo* vbi, Prefix pfx,
    } else {
       addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
       if (!isAvx)
-         gen_SIGNAL_if_not_16_aligned( addr );
+         gen_SIGNAL_if_not_16_aligned( vbi, addr );
       assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
       DIP("%smovs%cdup %s,%s\n",
           isAvx ? "v" : "", isL ? 'l' : 'h', dis_buf, nameXMMReg(rG));
@@ -15724,7 +15724,7 @@ static Long dis_PHADD_128 ( const VexAbiInfo* vbi, Prefix pfx, Long delta,
    } else {
       addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
       if (!isAvx)
-         gen_SIGNAL_if_not_16_aligned( addr );
+         gen_SIGNAL_if_not_16_aligned( vbi, addr );
       assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
       DIP("%sph%s %s,%s\n", isAvx ? "v" : "", str,
           dis_buf, nameXMMReg(rG));
@@ -15884,7 +15884,7 @@ Long dis_ESC_0F38__SupSSE3 ( Bool* decode_OK,
                                   nameXMMReg(gregOfRexRM(pfx,modrm)));
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
             delta += alen;
             DIP("pshufb %s,%s\n", dis_buf,
@@ -16036,7 +16036,7 @@ Long dis_ESC_0F38__SupSSE3 ( Bool* decode_OK,
             DIP("pmaddubsw %s,%s\n", nameXMMReg(rE), nameXMMReg(rG));
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
             delta += alen;
             DIP("pmaddubsw %s,%s\n", dis_buf, nameXMMReg(rG));
@@ -16131,7 +16131,7 @@ Long dis_ESC_0F38__SupSSE3 ( Bool* decode_OK,
                                         nameXMMReg(gregOfRexRM(pfx,modrm)));
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
             delta += alen;
             DIP("psign%s %s,%s\n", str, dis_buf,
@@ -16215,7 +16215,7 @@ Long dis_ESC_0F38__SupSSE3 ( Bool* decode_OK,
                                     nameXMMReg(gregOfRexRM(pfx,modrm)));
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
             delta += alen;
             DIP("pmulhrsw %s,%s\n", dis_buf,
@@ -16294,7 +16294,7 @@ Long dis_ESC_0F38__SupSSE3 ( Bool* decode_OK,
                                        nameXMMReg(gregOfRexRM(pfx,modrm)));
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
             delta += alen;
             DIP("pabs%s %s,%s\n", str, dis_buf,
@@ -16401,7 +16401,7 @@ Long dis_ESC_0F3A__SupSSE3 ( Bool* decode_OK,
                                        nameXMMReg(gregOfRexRM(pfx,modrm)));
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 1 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
             d64 = (Long)getUChar(delta+alen);
             delta += alen+1;
@@ -16946,7 +16946,7 @@ static Long dis_xTESTy_128 ( const VexAbiInfo* vbi, Prefix pfx,
    } else {
       addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
       if (!isAvx)
-         gen_SIGNAL_if_not_16_aligned( addr );
+         gen_SIGNAL_if_not_16_aligned( vbi, addr );
       assign(vecE, loadLE( Ity_V128, mkexpr(addr) ));
       delta += alen;
       DIP( "%s%stest%s %s,%s\n",
@@ -17748,7 +17748,7 @@ static Long dis_PHMINPOSUW_128 ( const VexAbiInfo* vbi, Prefix pfx,
    } else {
       addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
       if (!isAvx)
-         gen_SIGNAL_if_not_16_aligned(addr);
+         gen_SIGNAL_if_not_16_aligned(vbi, addr);
       assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
       delta += alen;
       DIP("%sphminposuw %s,%s\n", mbV, dis_buf, nameXMMReg(rG));
@@ -17982,7 +17982,7 @@ Long dis_ESC_0F38__SSE4 ( Bool* decode_OK,
                  nameXMMReg( gregOfRexRM(pfx, modrm) ) );
          } else {
             addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             assign(vecE, loadLE( Ity_V128, mkexpr(addr) ));
             delta += alen;
             DIP( "%s %s,%s\n", nm,
@@ -18115,7 +18115,7 @@ Long dis_ESC_0F38__SSE4 ( Bool* decode_OK,
          modrm = getUChar(delta);
          if (!epartIsReg(modrm)) {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             putXMMReg( gregOfRexRM(pfx,modrm),
                        loadLE(Ity_V128, mkexpr(addr)) );
             DIP("movntdqa %s,%s\n", dis_buf,
@@ -18144,7 +18144,7 @@ Long dis_ESC_0F38__SSE4 ( Bool* decode_OK,
                  nameXMMReg( gregOfRexRM(pfx, modrm) ) );
          } else {
             addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             assign( argL, loadLE( Ity_V128, mkexpr(addr) ));
             delta += alen;
             DIP( "packusdw %s,%s\n",
@@ -18327,7 +18327,7 @@ Long dis_ESC_0F38__SSE4 ( Bool* decode_OK,
                  nameXMMReg( gregOfRexRM(pfx, modrm) ) );
          } else {
             addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             assign( argL, loadLE( Ity_V128, mkexpr(addr) ));
             delta += alen;
             DIP( "pmulld %s,%s\n",
@@ -19298,7 +19298,7 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
                       nameXMMReg( gregOfRexRM(pfx, modrm) ) );
          } else {
             addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
-            gen_SIGNAL_if_not_16_aligned(addr);
+            gen_SIGNAL_if_not_16_aligned(vbi, addr);
             assign( src0, loadLE(Ity_F32,
                                  binop(Iop_Add64, mkexpr(addr), mkU64(0) )));
             assign( src1, loadLE(Ity_F32,
@@ -19360,7 +19360,7 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
                       nameXMMReg( gregOfRexRM(pfx, modrm) ) );
          } else {
             addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 1 );
-            gen_SIGNAL_if_not_16_aligned(addr);
+            gen_SIGNAL_if_not_16_aligned(vbi, addr);
             assign( src0, loadLE(Ity_F64,
                                  binop(Iop_Add64, mkexpr(addr), mkU64(0) )));
             assign( src1, loadLE(Ity_F64,
@@ -19465,7 +19465,7 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
          } else {
             addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 
                              1/* imm8 is 1 byte after the amode */ );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
             imm8 = (Int)getUChar(delta+alen);
             delta += alen+1;
@@ -19501,7 +19501,7 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
          } else {
             addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 
                              1/* imm8 is 1 byte after the amode */ );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
             imm8 = (Int)getUChar(delta+alen);
             delta += alen+1;
@@ -19538,7 +19538,7 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
          } else {
             addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 
                              1/* imm8 is 1 byte after the amode */ );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
             imm8 = (Int)getUChar(delta+alen);
             delta += alen+1;
@@ -19760,7 +19760,7 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
          } else {
             addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 
                              1/* imm8 is 1 byte after the amode */ );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
             imm8 = (Int)getUChar(delta+alen);
             delta += alen+1;
@@ -19793,7 +19793,7 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
          } else {
             addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 
                              1/* imm8 is 1 byte after the amode */ );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
             imm8 = (Int)getUChar(delta+alen);
             delta += alen+1;
@@ -19829,7 +19829,7 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
          } else {
             addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 
                              1/* imm8 is 1 byte after the amode */ );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
             imm8 = (Int)getUChar(delta+alen);
             delta += alen+1;
@@ -19866,7 +19866,7 @@ Long dis_ESC_0F3A__SSE4 ( Bool* decode_OK,
          } else {
             addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 
                              1/* imm8 is 1 byte after the amode */ );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             assign( svec, loadLE( Ity_V128, mkexpr(addr) ) );
             imm8 = (Int)getUChar(delta+alen);
             delta += alen+1;
@@ -22365,7 +22365,7 @@ Long dis_ESC_0F (
 
          /* cmpxchg16b requires an alignment check. */
          if (sz == 8)
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
 
          /* Get the expected and new values. */
          assign( expdHi64, getIReg64(R_RDX) );
@@ -24770,7 +24770,7 @@ Long dis_ESC_0F__VEX (
             delta += 1;
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             putYMMRegLoAndZU( rG, loadLE(Ity_V128, mkexpr(addr)) );
             DIP("vmovapd %s,%s\n", dis_buf, nameXMMReg(rG));
             delta += alen;
@@ -24788,7 +24788,7 @@ Long dis_ESC_0F__VEX (
             delta += 1;
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_32_aligned( addr );
+            gen_SIGNAL_if_not_32_aligned( vbi, addr );
             putYMMReg( rG, loadLE(Ity_V256, mkexpr(addr)) );
             DIP("vmovapd %s,%s\n", dis_buf, nameYMMReg(rG));
             delta += alen;
@@ -24806,7 +24806,7 @@ Long dis_ESC_0F__VEX (
             delta += 1;
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             putYMMRegLoAndZU( rG, loadLE(Ity_V128, mkexpr(addr)) );
             DIP("vmovaps %s,%s\n", dis_buf, nameXMMReg(rG));
             delta += alen;
@@ -24824,7 +24824,7 @@ Long dis_ESC_0F__VEX (
             delta += 1;
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_32_aligned( addr );
+            gen_SIGNAL_if_not_32_aligned( vbi, addr );
             putYMMReg( rG, loadLE(Ity_V256, mkexpr(addr)) );
             DIP("vmovaps %s,%s\n", dis_buf, nameYMMReg(rG));
             delta += alen;
@@ -24845,7 +24845,7 @@ Long dis_ESC_0F__VEX (
             delta += 1;
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             storeLE( mkexpr(addr), getXMMReg(rG) );
             DIP("vmovapd %s,%s\n", nameXMMReg(rG), dis_buf );
             delta += alen;
@@ -24863,7 +24863,7 @@ Long dis_ESC_0F__VEX (
             delta += 1;
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_32_aligned( addr );
+            gen_SIGNAL_if_not_32_aligned( vbi, addr );
             storeLE( mkexpr(addr), getYMMReg(rG) );
             DIP("vmovapd %s,%s\n", nameYMMReg(rG), dis_buf );
             delta += alen;
@@ -24882,7 +24882,7 @@ Long dis_ESC_0F__VEX (
             goto decode_success;
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             storeLE( mkexpr(addr), getXMMReg(rG) );
             DIP("vmovaps %s,%s\n", nameXMMReg(rG), dis_buf );
             delta += alen;
@@ -24901,7 +24901,7 @@ Long dis_ESC_0F__VEX (
             goto decode_success;
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_32_aligned( addr );
+            gen_SIGNAL_if_not_32_aligned( vbi, addr );
             storeLE( mkexpr(addr), getYMMReg(rG) );
             DIP("vmovaps %s,%s\n", nameYMMReg(rG), dis_buf );
             delta += alen;
@@ -25040,7 +25040,7 @@ Long dis_ESC_0F__VEX (
          assign(tS, getXMMReg(rS));
          addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
          delta += alen;
-         gen_SIGNAL_if_not_16_aligned(addr);
+         gen_SIGNAL_if_not_16_aligned(vbi, addr);
          storeLE(mkexpr(addr), mkexpr(tS));
          DIP("vmovntp%c %s,%s\n", have66(pfx) ? 'd' : 's',
              nameXMMReg(rS), dis_buf);
@@ -25056,7 +25056,7 @@ Long dis_ESC_0F__VEX (
          assign(tS, getYMMReg(rS));
          addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
          delta += alen;
-         gen_SIGNAL_if_not_32_aligned(addr);
+         gen_SIGNAL_if_not_32_aligned(vbi, addr);
          storeLE(mkexpr(addr), mkexpr(tS));
          DIP("vmovntp%c %s,%s\n", have66(pfx) ? 'd' : 's',
              nameYMMReg(rS), dis_buf);
@@ -26047,7 +26047,7 @@ Long dis_ESC_0F__VEX (
             addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
             delta += alen;
             if (isA)
-               gen_SIGNAL_if_not_32_aligned(addr);
+               gen_SIGNAL_if_not_32_aligned(vbi, addr);
             assign(tD, loadLE(Ity_V256, mkexpr(addr)));
             DIP("vmovdq%c %s,%s\n", ch, dis_buf, nameYMMReg(rD));
          }
@@ -26072,7 +26072,7 @@ Long dis_ESC_0F__VEX (
             addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
             delta += alen;
             if (isA)
-               gen_SIGNAL_if_not_16_aligned(addr);
+               gen_SIGNAL_if_not_16_aligned(vbi, addr);
             assign(tD, loadLE(Ity_V128, mkexpr(addr)));
             DIP("vmovdq%c %s,%s\n", ch, dis_buf, nameXMMReg(rD));
          }
@@ -26610,7 +26610,7 @@ Long dis_ESC_0F__VEX (
             addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
             delta += alen;
             if (isA)
-               gen_SIGNAL_if_not_32_aligned(addr);
+               gen_SIGNAL_if_not_32_aligned(vbi, addr);
             storeLE(mkexpr(addr), mkexpr(tS));
             DIP("vmovdq%c %s,%s\n", ch, nameYMMReg(rS), dis_buf);
          }
@@ -26635,7 +26635,7 @@ Long dis_ESC_0F__VEX (
             addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
             delta += alen;
             if (isA)
-               gen_SIGNAL_if_not_16_aligned(addr);
+               gen_SIGNAL_if_not_16_aligned(vbi, addr);
             storeLE(mkexpr(addr), mkexpr(tS));
             DIP("vmovdq%c %s,%s\n", ch, nameXMMReg(rS), dis_buf);
          }
@@ -27307,7 +27307,7 @@ Long dis_ESC_0F__VEX (
          UInt rG     = gregOfRexRM(pfx,modrm);
          if (!epartIsReg(modrm)) {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_16_aligned( addr );
+            gen_SIGNAL_if_not_16_aligned( vbi, addr );
             storeLE( mkexpr(addr), getXMMReg(rG) );
             DIP("vmovntdq %s,%s\n", dis_buf, nameXMMReg(rG));
             delta += alen;
@@ -27321,7 +27321,7 @@ Long dis_ESC_0F__VEX (
          UInt rG     = gregOfRexRM(pfx,modrm);
          if (!epartIsReg(modrm)) {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
-            gen_SIGNAL_if_not_32_aligned( addr );
+            gen_SIGNAL_if_not_32_aligned( vbi, addr );
             storeLE( mkexpr(addr), getYMMReg(rG) );
             DIP("vmovntdq %s,%s\n", dis_buf, nameYMMReg(rG));
             delta += alen;
@@ -28942,7 +28942,7 @@ Long dis_ESC_0F38__VEX (
          IRTemp tD    = newTemp(Ity_V128);
          addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
          delta += alen;
-         gen_SIGNAL_if_not_16_aligned(addr);
+         gen_SIGNAL_if_not_16_aligned(vbi, addr);
          assign(tD, loadLE(Ity_V128, mkexpr(addr)));
          DIP("vmovntdqa %s,%s\n", dis_buf, nameXMMReg(rD));
          putYMMRegLoAndZU(rD, mkexpr(tD));
@@ -28956,7 +28956,7 @@ Long dis_ESC_0F38__VEX (
          IRTemp tD    = newTemp(Ity_V256);
          addr = disAMode( &alen, vbi, pfx, delta, dis_buf, 0 );
          delta += alen;
-         gen_SIGNAL_if_not_32_aligned(addr);
+         gen_SIGNAL_if_not_32_aligned(vbi, addr);
          assign(tD, loadLE(Ity_V256, mkexpr(addr)));
          DIP("vmovntdqa %s,%s\n", dis_buf, nameYMMReg(rD));
          putYMMReg(rD, mkexpr(tD));

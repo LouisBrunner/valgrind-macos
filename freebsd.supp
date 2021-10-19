@@ -23,13 +23,13 @@
    Memcheck:Leak
    match-leak-kinds: reachable
    fun:malloc
-   obj:/usr/local/lib*/gcc9/libstdc++.so.*
+   obj:/usr/local/lib*/gcc*/libstdc++.so.*
    obj:/libexec/ld-elf*.so.1
    obj:/libexec/ld-elf*.so.1
    obj:/libexec/ld-elf*.so.1
 }
 {
-   MEMCHECK-LIBC-REACHABLE
+   MEMCHECK-LIBC-REACHABLE-1
    Memcheck:Leak
    match-leak-kinds: reachable
    fun:malloc
@@ -48,4 +48,14 @@
    MEMCHECK-POSIX-FALLOCATE
    Memcheck:Cond
    fun:posix_fallocate
+}
+{
+   MEMCHECK-LIBX-REACHABLE-2
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:/lib/libc.so.7
+   obj:/lib/libc.so.7
+   obj:/lib/libc.so.7
+   fun:fwrite
 }

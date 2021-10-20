@@ -9838,23 +9838,24 @@ static Bool dis_int_store_ds_prefix ( UInt prefix,
             if (host_endness == VexEndnessBE) {
 
                /* upper 64-bits */
-               assign( EA_hi, ea_rAor0_simm( rA_addr, immediate_val ) );
+               assign( EA_hi, mkexpr(EA));
 
                /* lower 64-bits */
-               assign( EA_lo, ea_rAor0_simm( rA_addr, immediate_val+8 ) );
+               assign( EA_lo, binop(Iop_Add64, mkexpr(EA), mkU64(8)));
+
             } else {
                /* upper 64-bits */
-               assign( EA_hi, ea_rAor0_simm( rA_addr, immediate_val+8 ) );
+               assign( EA_hi, binop(Iop_Add64, mkexpr(EA), mkU64(8)));
 
                /* lower 64-bits */
-               assign( EA_lo, ea_rAor0_simm( rA_addr, immediate_val ) );
+               assign( EA_lo, mkexpr(EA));
             }
          } else {
             /* upper half of upper 64-bits */
-            assign( EA_hi, ea_rAor0_simm( rA_addr, immediate_val+4 ) );
+            assign( EA_hi, binop(Iop_Add32, mkexpr(EA), mkU32(4)));
 
             /* lower half of upper 64-bits */
-            assign( EA_lo, ea_rAor0_simm( rA_addr, immediate_val+12 ) );
+            assign( EA_lo, binop(Iop_Add32, mkexpr(EA), mkU32(12)));
          }
 
          /* Note, the store order for stq instruction is the same for BE

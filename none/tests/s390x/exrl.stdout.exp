@@ -11,3 +11,5 @@ after:  target = |0123456789aXXXXX|
 ------- EXRL to OR in the syscall number (writes out target)
         target = |0123456789aXXXXX|
 
+------- EXRL with negative offset
+        target = |01010101010XXXXX|

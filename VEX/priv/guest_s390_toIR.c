@@ -399,6 +399,22 @@ mkF64i(ULong value)
    return IRExpr_Const(IRConst_F64i(value));
 }
 
+/* Return the 64-bit address with the given 32-bit "relative long" offset from
+   the current guest instruction being translated. */
+static __inline__ Addr64
+addr_rel_long(UInt offset)
+{
+   return guest_IA_curr_instr + ((Addr64)(Long)(Int)offset << 1);
+}
+
+/* Return the 64-bit address with the given 16-bit "relative" offset from the
+   current guest instruction being translated. */
+static __inline__ Addr64
+addr_relative(UShort offset)
+{
+   return guest_IA_curr_instr + ((Addr64)(Long)(Short)offset << 1);
+}
+
 /* Little helper function for my sanity. ITE = if-then-else */
 static IRExpr *
 mkite(IRExpr *condition, IRExpr *iftrue, IRExpr *iffalse)
@@ -5516,7 +5532,7 @@ static const HChar *
 s390_irgen_BRAS(UChar r1, UShort i2)
 {
    put_gpr_dw0(r1, mkU64(guest_IA_curr_instr + 4ULL));
-   call_function_and_chase(guest_IA_curr_instr + ((ULong)(Long)(Short)i2 << 1));
+   call_function_and_chase(addr_relative(i2));
 
    return "bras";
 }
@@ -5525,7 +5541,7 @@ static const HChar *
 s390_irgen_BRASL(UChar r1, UInt i2)
 {
    put_gpr_dw0(r1, mkU64(guest_IA_curr_instr + 6ULL));
-   call_function_and_chase(guest_IA_curr_instr + ((ULong)(Long)(Int)i2 << 1));
+   call_function_and_chase(addr_rel_long(i2));
 
    return "brasl";
 }
@@ -5538,12 +5554,11 @@ s390_irgen_BRC(UChar r1, UShort i2)
    if (r1 == 0) {
    } else {
       if (r1 == 15) {
-         always_goto_and_chase(
-               guest_IA_curr_instr + ((ULong)(Long)(Short)i2 << 1));
+         always_goto_and_chase(addr_relative(i2));
       } else {
          assign(cond, s390_call_calculate_cond(r1));
          if_condition_goto(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
-                           guest_IA_curr_instr + ((ULong)(Long)(Short)i2 << 1));
+                           addr_relative(i2));
 
       }
    }
@@ -5561,11 +5576,11 @@ s390_irgen_BRCL(UChar r1, UInt i2)
    if (r1 == 0) {
    } else {
       if (r1 == 15) {
-         always_goto_and_chase(guest_IA_curr_instr + ((ULong)(Long)(Int)i2 << 1));
+         always_goto_and_chase(addr_rel_long(i2));
       } else {
          assign(cond, s390_call_calculate_cond(r1));
          if_condition_goto(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
-                           guest_IA_curr_instr + ((ULong)(Long)(Int)i2 << 1));
+                           addr_rel_long(i2));
       }
    }
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
@@ -5579,7 +5594,7 @@ s390_irgen_BRCT(UChar r1, UShort i2)
 {
    put_gpr_w1(r1, binop(Iop_Sub32, get_gpr_w1(r1), mkU32(1)));
    if_condition_goto(binop(Iop_CmpNE32, get_gpr_w1(r1), mkU32(0)),
-                     guest_IA_curr_instr + ((ULong)(Long)(Short)i2 << 1));
+                     addr_relative(i2));
 
    return "brct";
 }
@@ -5589,7 +5604,7 @@ s390_irgen_BRCTH(UChar r1, UInt i2)
 {
    put_gpr_w0(r1, binop(Iop_Sub32, get_gpr_w0(r1), mkU32(1)));
    if_condition_goto(binop(Iop_CmpNE32, get_gpr_w0(r1), mkU32(0)),
-                     guest_IA_curr_instr + ((ULong)(Long)(Short)i2 << 1));
+                     addr_relative(i2));
 
    return "brcth";
 }
@@ -5599,7 +5614,7 @@ s390_irgen_BRCTG(UChar r1, UShort i2)
 {
    put_gpr_dw0(r1, binop(Iop_Sub64, get_gpr_dw0(r1), mkU64(1)));
    if_condition_goto(binop(Iop_CmpNE64, get_gpr_dw0(r1), mkU64(0)),
-                     guest_IA_curr_instr + ((ULong)(Long)(Short)i2 << 1));
+                     addr_relative(i2));
 
    return "brctg";
 }
@@ -5612,7 +5627,7 @@ s390_irgen_BRXH(UChar r1, UChar r3, UShort i2)
    assign(value, get_gpr_w1(r3 | 1));
    put_gpr_w1(r1, binop(Iop_Add32, get_gpr_w1(r1), get_gpr_w1(r3)));
    if_condition_goto(binop(Iop_CmpLT32S, mkexpr(value), get_gpr_w1(r1)),
-                     guest_IA_curr_instr + ((ULong)(Long)(Short)i2 << 1));
+                     addr_relative(i2));
 
    return "brxh";
 }
@@ -5625,7 +5640,7 @@ s390_irgen_BRXHG(UChar r1, UChar r3, UShort i2)
    assign(value, get_gpr_dw0(r3 | 1));
    put_gpr_dw0(r1, binop(Iop_Add64, get_gpr_dw0(r1), get_gpr_dw0(r3)));
    if_condition_goto(binop(Iop_CmpLT64S, mkexpr(value), get_gpr_dw0(r1)),
-                     guest_IA_curr_instr + ((ULong)(Long)(Short)i2 << 1));
+                     addr_relative(i2));
 
    return "brxhg";
 }
@@ -5638,7 +5653,7 @@ s390_irgen_BRXLE(UChar r1, UChar r3, UShort i2)
    assign(value, get_gpr_w1(r3 | 1));
    put_gpr_w1(r1, binop(Iop_Add32, get_gpr_w1(r1), get_gpr_w1(r3)));
    if_condition_goto(binop(Iop_CmpLE32S, get_gpr_w1(r1), mkexpr(value)),
-                     guest_IA_curr_instr + ((ULong)(Long)(Short)i2 << 1));
+                     addr_relative(i2));
 
    return "brxle";
 }
@@ -5651,7 +5666,7 @@ s390_irgen_BRXLG(UChar r1, UChar r3, UShort i2)
    assign(value, get_gpr_dw0(r3 | 1));
    put_gpr_dw0(r1, binop(Iop_Add64, get_gpr_dw0(r1), get_gpr_dw0(r3)));
    if_condition_goto(binop(Iop_CmpLE64S, get_gpr_dw0(r1), mkexpr(value)),
-                     guest_IA_curr_instr + ((ULong)(Long)(Short)i2 << 1));
+                     addr_relative(i2));
 
    return "brxlg";
 }
@@ -5782,8 +5797,7 @@ s390_irgen_CRL(UChar r1, UInt i2)
    IRTemp op2 = newTemp(Ity_I32);
 
    assign(op1, get_gpr_w1(r1));
-   assign(op2, load(Ity_I32, mkU64(guest_IA_curr_instr + ((ULong)(Long)(Int)
-          i2 << 1))));
+   assign(op2, load(Ity_I32, mkU64(addr_rel_long(i2))));
    s390_cc_thunk_putSS(S390_CC_OP_SIGNED_COMPARE, op1, op2);
 
    return "crl";
@@ -5796,8 +5810,7 @@ s390_irgen_CGRL(UChar r1, UInt i2)
    IRTemp op2 = newTemp(Ity_I64);
 
    assign(op1, get_gpr_dw0(r1));
-   assign(op2, load(Ity_I64, mkU64(guest_IA_curr_instr + ((ULong)(Long)(Int)
-          i2 << 1))));
+   assign(op2, load(Ity_I64, mkU64(addr_rel_long(i2))));
    s390_cc_thunk_putSS(S390_CC_OP_SIGNED_COMPARE, op1, op2);
 
    return "cgrl";
@@ -5810,8 +5823,7 @@ s390_irgen_CGFRL(UChar r1, UInt i2)
    IRTemp op2 = newTemp(Ity_I64);
 
    assign(op1, get_gpr_dw0(r1));
-   assign(op2, unop(Iop_32Sto64, load(Ity_I32, mkU64(guest_IA_curr_instr +
-          ((ULong)(Long)(Int)i2 << 1)))));
+   assign(op2, unop(Iop_32Sto64, load(Ity_I32, mkU64(addr_rel_long(i2)))));
    s390_cc_thunk_putSS(S390_CC_OP_SIGNED_COMPARE, op1, op2);
 
    return "cgfrl";
@@ -5875,15 +5887,14 @@ s390_irgen_CRJ(UChar r1, UChar r2, UShort i4, UChar m3)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto_and_chase(
-                guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
+         always_goto_and_chase(addr_relative(i4));
       } else {
          assign(op1, get_gpr_w1(r1));
          assign(op2, get_gpr_w1(r2));
          assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_SIGNED_COMPARE,
                                               op1, op2));
          if_condition_goto(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
-                           guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
+                           addr_relative(i4));
 
       }
    }
@@ -5901,15 +5912,14 @@ s390_irgen_CGRJ(UChar r1, UChar r2, UShort i4, UChar m3)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto_and_chase(
-                guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
+         always_goto_and_chase(addr_relative(i4));
       } else {
          assign(op1, get_gpr_dw0(r1));
          assign(op2, get_gpr_dw0(r2));
          assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_SIGNED_COMPARE,
                                               op1, op2));
          if_condition_goto(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
-                           guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
+                           addr_relative(i4));
 
       }
    }
@@ -5975,14 +5985,14 @@ s390_irgen_CIJ(UChar r1, UChar m3, UShort i4, UChar i2)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto_and_chase(guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
+         always_goto_and_chase(addr_relative(i4));
       } else {
          assign(op1, get_gpr_w1(r1));
          op2 = (Int)(Char)i2;
          assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_SIGNED_COMPARE, op1,
                                               mktemp(Ity_I32, mkU32((UInt)op2))));
          if_condition_goto(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
-                           guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
+                           addr_relative(i4));
 
       }
    }
@@ -6000,14 +6010,14 @@ s390_irgen_CGIJ(UChar r1, UChar m3, UShort i4, UChar i2)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto_and_chase(guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
+         always_goto_and_chase(addr_relative(i4));
       } else {
          assign(op1, get_gpr_dw0(r1));
          op2 = (Long)(Char)i2;
          assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_SIGNED_COMPARE, op1,
                                               mktemp(Ity_I64, mkU64((ULong)op2))));
          if_condition_goto(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
-                           guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
+                           addr_relative(i4));
 
       }
    }
@@ -6131,8 +6141,7 @@ s390_irgen_CHRL(UChar r1, UInt i2)
    IRTemp op2 = newTemp(Ity_I32);
 
    assign(op1, get_gpr_w1(r1));
-   assign(op2, unop(Iop_16Sto32, load(Ity_I16, mkU64(guest_IA_curr_instr +
-          ((ULong)(Long)(Int)i2 << 1)))));
+   assign(op2, unop(Iop_16Sto32, load(Ity_I16, mkU64(addr_rel_long(i2)))));
    s390_cc_thunk_putSS(S390_CC_OP_SIGNED_COMPARE, op1, op2);
 
    return "chrl";
@@ -6145,8 +6154,7 @@ s390_irgen_CGHRL(UChar r1, UInt i2)
    IRTemp op2 = newTemp(Ity_I64);
 
    assign(op1, get_gpr_dw0(r1));
-   assign(op2, unop(Iop_16Sto64, load(Ity_I16, mkU64(guest_IA_curr_instr +
-          ((ULong)(Long)(Int)i2 << 1)))));
+   assign(op2, unop(Iop_16Sto64, load(Ity_I16, mkU64(addr_rel_long(i2)))));
    s390_cc_thunk_putSS(S390_CC_OP_SIGNED_COMPARE, op1, op2);
 
    return "cghrl";
@@ -6401,8 +6409,7 @@ s390_irgen_CLRL(UChar r1, UInt i2)
    IRTemp op2 = newTemp(Ity_I32);
 
    assign(op1, get_gpr_w1(r1));
-   assign(op2, load(Ity_I32, mkU64(guest_IA_curr_instr + ((ULong)(Long)(Int)
-          i2 << 1))));
+   assign(op2, load(Ity_I32, mkU64(addr_rel_long(i2))));
    s390_cc_thunk_putZZ(S390_CC_OP_UNSIGNED_COMPARE, op1, op2);
 
    return "clrl";
@@ -6415,8 +6422,7 @@ s390_irgen_CLGRL(UChar r1, UInt i2)
    IRTemp op2 = newTemp(Ity_I64);
 
    assign(op1, get_gpr_dw0(r1));
-   assign(op2, load(Ity_I64, mkU64(guest_IA_curr_instr + ((ULong)(Long)(Int)
-          i2 << 1))));
+   assign(op2, load(Ity_I64, mkU64(addr_rel_long(i2))));
    s390_cc_thunk_putZZ(S390_CC_OP_UNSIGNED_COMPARE, op1, op2);
 
    return "clgrl";
@@ -6429,8 +6435,7 @@ s390_irgen_CLGFRL(UChar r1, UInt i2)
    IRTemp op2 = newTemp(Ity_I64);
 
    assign(op1, get_gpr_dw0(r1));
-   assign(op2, unop(Iop_32Uto64, load(Ity_I32, mkU64(guest_IA_curr_instr +
-          ((ULong)(Long)(Int)i2 << 1)))));
+   assign(op2, unop(Iop_32Uto64, load(Ity_I32, mkU64(addr_rel_long(i2)))));
    s390_cc_thunk_putZZ(S390_CC_OP_UNSIGNED_COMPARE, op1, op2);
 
    return "clgfrl";
@@ -6443,8 +6448,7 @@ s390_irgen_CLHRL(UChar r1, UInt i2)
    IRTemp op2 = newTemp(Ity_I32);
 
    assign(op1, get_gpr_w1(r1));
-   assign(op2, unop(Iop_16Uto32, load(Ity_I16, mkU64(guest_IA_curr_instr +
-          ((ULong)(Long)(Int)i2 << 1)))));
+   assign(op2, unop(Iop_16Uto32, load(Ity_I16, mkU64(addr_rel_long(i2)))));
    s390_cc_thunk_putZZ(S390_CC_OP_UNSIGNED_COMPARE, op1, op2);
 
    return "clhrl";
@@ -6457,8 +6461,7 @@ s390_irgen_CLGHRL(UChar r1, UInt i2)
    IRTemp op2 = newTemp(Ity_I64);
 
    assign(op1, get_gpr_dw0(r1));
-   assign(op2, unop(Iop_16Uto64, load(Ity_I16, mkU64(guest_IA_curr_instr +
-          ((ULong)(Long)(Int)i2 << 1)))));
+   assign(op2, unop(Iop_16Uto64, load(Ity_I16, mkU64(addr_rel_long(i2)))));
    s390_cc_thunk_putZZ(S390_CC_OP_UNSIGNED_COMPARE, op1, op2);
 
    return "clghrl";
@@ -6730,14 +6733,14 @@ s390_irgen_CLRJ(UChar r1, UChar r2, UShort i4, UChar m3)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto_and_chase(guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
+         always_goto_and_chase(addr_relative(i4));
       } else {
          assign(op1, get_gpr_w1(r1));
          assign(op2, get_gpr_w1(r2));
          assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_UNSIGNED_COMPARE,
                                               op1, op2));
          if_condition_goto(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
-                           guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
+                           addr_relative(i4));
 
       }
    }
@@ -6755,14 +6758,14 @@ s390_irgen_CLGRJ(UChar r1, UChar r2, UShort i4, UChar m3)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto_and_chase(guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
+         always_goto_and_chase(addr_relative(i4));
       } else {
          assign(op1, get_gpr_dw0(r1));
          assign(op2, get_gpr_dw0(r2));
          assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_UNSIGNED_COMPARE,
                                               op1, op2));
          if_condition_goto(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
-                           guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
+                           addr_relative(i4));
 
       }
    }
@@ -6828,14 +6831,14 @@ s390_irgen_CLIJ(UChar r1, UChar m3, UShort i4, UChar i2)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto_and_chase(guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
+         always_goto_and_chase(addr_relative(i4));
       } else {
          assign(op1, get_gpr_w1(r1));
          op2 = (UInt)i2;
          assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_UNSIGNED_COMPARE, op1,
                                               mktemp(Ity_I32, mkU32(op2))));
          if_condition_goto(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
-                           guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
+                           addr_relative(i4));
 
       }
    }
@@ -6853,14 +6856,14 @@ s390_irgen_CLGIJ(UChar r1, UChar m3, UShort i4, UChar i2)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto_and_chase(guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
+         always_goto_and_chase(addr_relative(i4));
       } else {
          assign(op1, get_gpr_dw0(r1));
          op2 = (ULong)i2;
          assign(cond, s390_call_calculate_icc(m3, S390_CC_OP_UNSIGNED_COMPARE, op1,
                                               mktemp(Ity_I64, mkU64(op2))));
          if_condition_goto(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
-                           guest_IA_curr_instr + ((ULong)(Long)(Short)i4 << 1));
+                           addr_relative(i4));
 
       }
    }
@@ -7539,8 +7542,7 @@ s390_irgen_LGFI(UChar r1, UInt i2)
 static const HChar *
 s390_irgen_LRL(UChar r1, UInt i2)
 {
-   put_gpr_w1(r1, load(Ity_I32, mkU64(guest_IA_curr_instr + ((ULong)(Long)(Int)
-              i2 << 1))));
+   put_gpr_w1(r1, load(Ity_I32, mkU64(addr_rel_long(i2))));
 
    return "lrl";
 }
@@ -7548,8 +7550,7 @@ s390_irgen_LRL(UChar r1, UInt i2)
 static const HChar *
 s390_irgen_LGRL(UChar r1, UInt i2)
 {
-   put_gpr_dw0(r1, load(Ity_I64, mkU64(guest_IA_curr_instr + ((ULong)(Long)(Int)
-               i2 << 1))));
+   put_gpr_dw0(r1, load(Ity_I64, mkU64(addr_rel_long(i2))));
 
    return "lgrl";
 }
@@ -7557,8 +7558,7 @@ s390_irgen_LGRL(UChar r1, UInt i2)
 static const HChar *
 s390_irgen_LGFRL(UChar r1, UInt i2)
 {
-   put_gpr_dw0(r1, unop(Iop_32Sto64, load(Ity_I32, mkU64(guest_IA_curr_instr +
-               ((ULong)(Long)(Int)i2 << 1)))));
+   put_gpr_dw0(r1, unop(Iop_32Sto64, load(Ity_I32, mkU64(addr_rel_long(i2)))));
 
    return "lgfrl";
 }
@@ -7598,7 +7598,7 @@ s390_irgen_LAEY(UChar r1, IRTemp op2addr)
 static const HChar *
 s390_irgen_LARL(UChar r1, UInt i2)
 {
-   put_gpr_dw0(r1, mkU64(guest_IA_curr_instr + ((ULong)(Long)(Int)i2 << 1)));
+   put_gpr_dw0(r1, mkU64(addr_rel_long(i2)));
 
    return "larl";
 }
@@ -8038,8 +8038,7 @@ s390_irgen_LGHI(UChar r1, UShort i2)
 static const HChar *
 s390_irgen_LHRL(UChar r1, UInt i2)
 {
-   put_gpr_w1(r1, unop(Iop_16Sto32, load(Ity_I16, mkU64(guest_IA_curr_instr +
-              ((ULong)(Long)(Int)i2 << 1)))));
+   put_gpr_w1(r1, unop(Iop_16Sto32, load(Ity_I16, mkU64(addr_rel_long(i2)))));
 
    return "lhrl";
 }
@@ -8047,8 +8046,7 @@ s390_irgen_LHRL(UChar r1, UInt i2)
 static const HChar *
 s390_irgen_LGHRL(UChar r1, UInt i2)
 {
-   put_gpr_dw0(r1, unop(Iop_16Sto64, load(Ity_I16, mkU64(guest_IA_curr_instr +
-               ((ULong)(Long)(Int)i2 << 1)))));
+   put_gpr_dw0(r1, unop(Iop_16Sto64, load(Ity_I16, mkU64(addr_rel_long(i2)))));
 
    return "lghrl";
 }
@@ -8088,8 +8086,7 @@ s390_irgen_LLGF(UChar r1, IRTemp op2addr)
 static const HChar *
 s390_irgen_LLGFRL(UChar r1, UInt i2)
 {
-   put_gpr_dw0(r1, unop(Iop_32Uto64, load(Ity_I32, mkU64(guest_IA_curr_instr +
-               ((ULong)(Long)(Int)i2 << 1)))));
+   put_gpr_dw0(r1, unop(Iop_32Uto64, load(Ity_I32, mkU64(addr_rel_long(i2)))));
 
    return "llgfrl";
 }
@@ -8169,8 +8166,7 @@ s390_irgen_LLGH(UChar r1, IRTemp op2addr)
 static const HChar *
 s390_irgen_LLHRL(UChar r1, UInt i2)
 {
-   put_gpr_w1(r1, unop(Iop_16Uto32, load(Ity_I16, mkU64(guest_IA_curr_instr +
-              ((ULong)(Long)(Int)i2 << 1)))));
+   put_gpr_w1(r1, unop(Iop_16Uto32, load(Ity_I16, mkU64(addr_rel_long(i2)))));
 
    return "llhrl";
 }
@@ -8178,8 +8174,7 @@ s390_irgen_LLHRL(UChar r1, UInt i2)
 static const HChar *
 s390_irgen_LLGHRL(UChar r1, UInt i2)
 {
-   put_gpr_dw0(r1, unop(Iop_16Uto64, load(Ity_I16, mkU64(guest_IA_curr_instr +
-               ((ULong)(Long)(Int)i2 << 1)))));
+   put_gpr_dw0(r1, unop(Iop_16Uto64, load(Ity_I16, mkU64(addr_rel_long(i2)))));
 
    return "llghrl";
 }
@@ -10064,8 +10059,7 @@ s390_irgen_STG(UChar r1, IRTemp op2addr)
 static const HChar *
 s390_irgen_STRL(UChar r1, UInt i2)
 {
-   store(mkU64(guest_IA_curr_instr + ((ULong)(Long)(Int)i2 << 1)),
-         get_gpr_w1(r1));
+   store(mkU64(addr_rel_long(i2)), get_gpr_w1(r1));
 
    return "strl";
 }
@@ -10073,8 +10067,7 @@ s390_irgen_STRL(UChar r1, UInt i2)
 static const HChar *
 s390_irgen_STGRL(UChar r1, UInt i2)
 {
-   store(mkU64(guest_IA_curr_instr + ((ULong)(Long)(Int)i2 << 1)),
-         get_gpr_dw0(r1));
+   store(mkU64(addr_rel_long(i2)), get_gpr_dw0(r1));
 
    return "stgrl";
 }
@@ -10203,8 +10196,7 @@ s390_irgen_STHY(UChar r1, IRTemp op2addr)
 static const HChar *
 s390_irgen_STHRL(UChar r1, UInt i2)
 {
-   store(mkU64(guest_IA_curr_instr + ((ULong)(Long)(Int)i2 << 1)),
-         get_gpr_hw3(r1));
+   store(mkU64(addr_rel_long(i2)), get_gpr_hw3(r1));
 
    return "sthrl";
 }
@@ -13282,7 +13274,7 @@ static const HChar *
 s390_irgen_EXRL(UChar r1, UInt offset)
 {
    IRTemp addr = newTemp(Ity_I64);
-   Addr64 bytes_addr = guest_IA_curr_instr + offset * 2UL;
+   Addr64 bytes_addr = addr_rel_long(offset);
    UChar *bytes = (UChar *)(HWord)bytes_addr;
    /* we might save one round trip because we know the target */
    if (!last_execute_target)

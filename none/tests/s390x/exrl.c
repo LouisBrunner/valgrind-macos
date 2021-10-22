@@ -54,6 +54,17 @@ int main(void)
    printf("|\n");
    printf("\n");
 
+   printf("------- EXRL with negative offset\n");
+   asm volatile( "j    2f\n\t"
+                 "1:\n\t"
+                 "mvc  2(1,%0),0(%0)\n\t"
+                 "2:\n\t"
+                 "lghi 1,8\n\t"
+                 ".insn ril,0xc60000000000,1,1b\n\t" // exrl 1, 1b
+                 : : "a" (target)
+                 : "1", "2", "3", "4");
+   printf("        target = |%s|\n", target);
+
    return 0;
 }
 

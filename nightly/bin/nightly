@@ -185,13 +185,14 @@ END=`date "+%F %H:%M:%S %Z"`
 
 # Gather some information about this run and its environment
 valgrind_revision=$( ./valgrind-new/vg-in-place -v --version )
+as_version=""
 if  [ `uname -o` = "FreeBSD" ]; then
   gcc_version="`clang --version 2> /dev/null | head -1`"
 else
   gcc_version="`gcc --version 2> /dev/null | head -1`"
+  as_version="`as --version 2> /dev/null | head -1`"
 fi
 gdb_version="`gdb --version 2> /dev/null | head -1`"
-as_version="`as --version 2> /dev/null | head -1`"
 if [ `uname -o` = "Solaris" ]; then
   libc="Solaris libc"
 elif  [ `uname -o` = "FreeBSD" ]; then
@@ -222,7 +223,9 @@ fi
 echo "valgrind revision: $valgrind_revision" >  final
 echo "C compiler:        $gcc_version"       >> final
 echo "GDB:               $gdb_version"       >> final
-echo "Assembler:         $as_version"        >> final
+if [ -n "${as_version}" ] ; then
+   echo "Assembler:         $as_version"        >> final
+fi
 echo "C library:         $libc"              >> final
 echo "uname -mrs:        $uname_stuff"       >> final
 echo "Vendor version:    $vendor_stuff"      >> final

@@ -29,3 +29,6 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 # We don't care about uninitialized or unused malloc results
 basic_CFLAGS  = $(AM_CFLAGS) -Wno-uninitialized
 big_CFLAGS  = $(AM_CFLAGS) -Wno-unused-result
+
+# Prevent the copying functions from being inlined
+copy_CFLAGS = $(AM_CFLAGS) -fno-builtin

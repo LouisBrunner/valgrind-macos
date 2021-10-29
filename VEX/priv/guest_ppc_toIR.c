@@ -25359,19 +25359,17 @@ dis_vx_load ( UInt prefix, UInt theInstr )
 
       else
          irx_addr = mkexpr( EA );
-
-      byte = load( Ity_I64, irx_addr );
+      /* byte load */
+      byte = load( Ity_I8, irx_addr );
       putVSReg( XT, binop( Iop_64HLtoV128,
-                            binop( Iop_And64,
-                                   byte,
-                                   mkU64( 0xFF ) ),
+                           unop( Iop_8Uto64, byte ),
                            mkU64( 0 ) ) );
       break;
    }
 
    case 0x32D: // lxsihzx
    {
-      IRExpr *byte;
+      IRExpr *hword;
       IRExpr* irx_addr;
 
       DIP("lxsihzx %u,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
@@ -25382,11 +25380,10 @@ dis_vx_load ( UInt prefix, UInt theInstr )
       else
          irx_addr = mkexpr( EA );
 
-      byte = load( Ity_I64, irx_addr );
+      hword = load( Ity_I16, irx_addr );
       putVSReg( XT, binop( Iop_64HLtoV128,
-                            binop( Iop_And64,
-                                   byte,
-                                   mkU64( 0xFFFF ) ),
+                            unop( Iop_16Uto64,
+                                  hword ),
                            mkU64( 0 ) ) );
       break;
    }

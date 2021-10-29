@@ -43,11 +43,12 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 
 444242  s390x: Valgrind crashes on EXRL with negative offset
 444495  dhat/tests/copy fails on s390x
+444571  PPC, fix the lxsibzx and lxsihzx so they only load their respective
+        sized data.
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
-
 
 
 Release 3.18.0 (15 Oct 2021)

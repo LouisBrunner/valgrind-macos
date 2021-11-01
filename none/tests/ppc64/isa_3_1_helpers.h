@@ -43,6 +43,9 @@ extern void debug_show_current_iteration();
 extern void debug_dump_buffer();
 
 extern void identify_form_components(const char *, const char *);
+extern void identify_instruction_by_func_name(const char *);
+extern void init_pcrelative_write_target();
+extern void print_pcrelative_write_target();
 extern void dump_vsxargs();
 extern void generic_prologue();
 extern void build_args_table();
@@ -57,6 +60,21 @@ extern void initialize_target_registers();
 extern void initialize_source_registers();
 extern void set_up_iterators();
 extern void initialize_buffer(int);
+
+/* This (TEXT_BSS_DELTA) is the relative distance between those
+   sections as set by the linker options for the R==1 tests. */
+#define TEXT_BSS_DELTA 0x20000
+#define RELOC_BUFFER_SIZE 0x1000
+extern unsigned long long pcrelative_buff_addr(int);
+#define PAD_ORI	\
+	__asm__ __volatile__ ("ori 21,21,21"); \
+	__asm__ __volatile__ ("ori 22,22,22");\
+	__asm__ __volatile__ ("ori 23,23,23");\
+	__asm__ __volatile__ ("ori 24,24,24");\
+	__asm__ __volatile__ ("ori 25,25,25");\
+	__asm__ __volatile__ ("ori 26,26,26");\
+	__asm__ __volatile__ ("ori 27,27,27");\
+	__asm__ __volatile__ ("ori 28,28,28");
 
 extern int verbose;
 #define debug_printf(X) if (verbose>0) printf(X);

@@ -61,6 +61,8 @@ EXTRA_DIST = \
 	test_isa_3_1_VRT.vgtest test_isa_3_1_VRT.stderr.exp test_isa_3_1_VRT.stdout.exp \
 	test_isa_3_1_Misc.vgtest test_isa_3_1_Misc.stderr.exp test_isa_3_1_Misc.stdout.exp \
 	test_isa_3_1_AT.vgtest test_isa_3_1_AT.stderr.exp test_isa_3_1_AT.stdout.exp \
+	test_isa_3_1_R1_RT.vgtest test_isa_3_1_R1_RT.stderr.exp test_isa_3_1_R1_RT.stdout.exp \
+	test_isa_3_1_R1_XT.vgtest test_isa_3_1_R1_XT.stderr.exp test_isa_3_1_R1_XT.stdout.exp \
 	subnormal_test.stderr.exp  subnormal_test.stdout.exp \
 	subnormal_test.vgtest test_darn_inst.stderr.exp \
 	test_darn_inst.stdout.exp test_darn_inst.vgtest \
@@ -68,8 +70,8 @@ EXTRA_DIST = \
 	test_copy_paste.stderr.exp test_copy_paste.stdout.exp \
 	test_copy_paste.vgtest \
 	test_mcrxrx.vgtest test_mcrxrx.stderr.exp test_mcrxrx.stdout.exp \
-	test_lxvx_stxvx.vgtest test_lxvx_stxvx.stderr.exp test_lxvx_stxvx.stdout.exp-p8  test_lxvx_stxvx.stdout.exp-p9
-
+	test_lxvx_stxvx.vgtest test_lxvx_stxvx.stderr.exp \
+	test_lxvx_stxvx.stdout.exp-p8  test_lxvx_stxvx.stdout.exp-p9
 
 check_PROGRAMS = \
 	allexec \
@@ -80,11 +82,12 @@ check_PROGRAMS = \
 	test_isa_3_0 test_mod_instructions \
 	test_isa_3_1_RT test_isa_3_1_XT test_isa_3_1_VRT \
 	test_isa_3_1_Misc test_isa_3_1_AT \
+	test_isa_3_1_R1_RT test_isa_3_1_R1_XT \
 	subnormal_test test_darn_inst test_copy_paste \
 	test_tm test_touch_tm data-cache-instructions \
 	std_reg_imm \
 	twi_tdi tw_td power6_bcmp scv_test \
-	test_mcrxrx  test_lxvx_stxvx
+	test_mcrxrx test_lxvx_stxvx
 
 # lmw, stmw, lswi, lswx, stswi, stswx compile (and run) only on big endian.
 if VGCONF_PLATFORMS_INCLUDE_PPC64BE_LINUX
@@ -106,6 +109,8 @@ test_isa_3_1_RT_SOURCES = test_isa_3_1_RT.c test_isa_3_1_common.c
 test_isa_3_1_VRT_SOURCES = test_isa_3_1_VRT.c test_isa_3_1_common.c
 test_isa_3_1_Misc_SOURCES = test_isa_3_1_Misc.c test_isa_3_1_common.c
 test_isa_3_1_AT_SOURCES = test_isa_3_1_AT.c test_isa_3_1_common.c
+test_isa_3_1_R1_XT_SOURCES = test_isa_3_1_R1_XT.c test_isa_3_1_common.c
+test_isa_3_1_R1_RT_SOURCES = test_isa_3_1_R1_RT.c test_isa_3_1_common.c
 test_darn_inst_SOURCES = test_darn_inst.c
 
 if HAS_ALTIVEC
@@ -223,6 +228,11 @@ test_isa_3_1_XT_CFLAGS = $(test_isa_3_1_CFLAGS)
 test_isa_3_1_VRT_CFLAGS = $(test_isa_3_1_CFLAGS)
 test_isa_3_1_Misc_CFLAGS = $(test_isa_3_1_CFLAGS)
 test_isa_3_1_AT_CFLAGS = $(test_isa_3_1_CFLAGS)
+
+# The _R1_foo tests exercise pc-relative instructions, so require the bss and text sections
+# exist at known offsets with respect to each other.
+test_isa_3_1_R1_RT_CFLAGS = $(test_isa_3_1_CFLAGS) -Wl,-Tbss,0x20000 -Wl,-Ttext,0x40000
+test_isa_3_1_R1_XT_CFLAGS = $(test_isa_3_1_CFLAGS) -Wl,-Tbss,0x20000 -Wl,-Ttext,0x40000
 
 subnormal_test_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_FLAG) $(ISA_2_06_FLAG) \
 			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_VSX) $(BUILD_FLAGS_ISA_2_06)

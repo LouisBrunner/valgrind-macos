@@ -45,6 +45,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 444495  dhat/tests/copy fails on s390x
 444571  PPC, fix the lxsibzx and lxsihzx so they only load their respective
         sized data.
+444836  PPC, pstq instruction for R=1 is not storing to the correct address.
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

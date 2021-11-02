@@ -134,6 +134,7 @@ s/in \(.__\)\{0,1\}select () from \/.*$/in syscall .../
 /^   from \/lib\/libc.so.*$/d
 /^   from \/lib64\/libc.so.*$/d
 /^   from \/lib64\/.*\/libc.so.*$/d
+/^   from \/lib64\/.*\/libc-.*.so/d
 
 #       and yet another (gdb 7.0 way) to get a system call
 s/in select ()$/in syscall .../

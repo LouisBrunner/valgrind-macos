@@ -490,13 +490,14 @@ typedef __vki_signalfn_t *__vki_sighandler_t;
 #define  VKI_SIGIO      23
 #define  VKI_SIGXCPU    24
 #define  VKI_SIGXFSZ    25
-#define  VKI_SIGVTALRM     26
+#define  VKI_SIGVTALRM  26
 #define  VKI_SIGPROF    27
-#define  VKI_SIGWINCH      28
+#define  VKI_SIGWINCH   28
 #define  VKI_SIGINFO    29
 #define  VKI_SIGUSR1    30
 #define  VKI_SIGUSR2    31
 #define  VKI_SIGTHR     32
+#define  VKI_SIGLIBRT   33
 
 #define  VKI_SIGRTMIN      65
 #define  VKI_SIGRTMAX      126

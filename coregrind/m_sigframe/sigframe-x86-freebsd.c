@@ -304,6 +304,8 @@ static Addr build_sigframe(ThreadState *tst,
       err = 0;
    }
 
+   frame->puContext =  (Addr)&frame->uContext;
+
    synth_ucontext(tst->tid, siginfo, trapno, err, mask,
                   &frame->uContext, &frame->fpstate);
 

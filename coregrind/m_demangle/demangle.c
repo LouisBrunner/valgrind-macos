@@ -118,8 +118,13 @@ void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
    }
 
    /* Possibly undo (1) */
+   // - C++ mangled symbols start with "_Z" (possibly with exceptions?)
+   // - Rust "legacy" mangled symbols start with "_Z".
+   // - Rust "v0" mangled symbols start with "_R".
+   // XXX: the Java/Rust/Ada demangling here probably doesn't work. See
+   // https://bugs.kde.org/show_bug.cgi?id=445235 for details.
    if (do_cxx_demangling && VG_(clo_demangle)
-       && orig != NULL && orig[0] == '_' && orig[1] == 'Z') {
+       && orig != NULL && orig[0] == '_' && (orig[1] == 'Z' || orig[1] == 'R')) {
       /* !!! vvv STATIC vvv !!! */
       static HChar* demangled = NULL;
       /* !!! ^^^ STATIC ^^^ !!! */

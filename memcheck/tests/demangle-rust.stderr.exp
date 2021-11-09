@@ -1,0 +1,6 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: <rustc_middle::ty::PredicateKind as rustc_middle::ty::fold::TypeFoldable>::fold_with::<rustc_infer::infer::resolve::OpportunisticVarResolver> (demangle-rust.c:12)
+   by 0x........: rustc_expand::mbe::macro_parser::parse_tt (demangle-rust.c:18)
+   by 0x........: core::str::lossy::Utf8Lossy::from_bytes (demangle-rust.c:24)
+   by 0x........: main (demangle-rust.c:29)
+

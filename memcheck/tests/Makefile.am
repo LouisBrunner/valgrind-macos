@@ -281,6 +281,7 @@ EXTRA_DIST = \
 	realloc3.stderr.exp realloc3.vgtest \
 	recursive-merge.stderr.exp recursive-merge.vgtest \
 	resvn_stack.stderr.exp resvn_stack.vgtest \
+	demangle-rust.vgtest demangle-rust.stderr.exp \
 	sbfragment.stdout.exp sbfragment.stderr.exp sbfragment.vgtest \
 	sem.stderr.exp sem.vgtest \
 	sendmsg.stderr.exp sendmsg.stderr.exp-solaris sendmsg.vgtest \

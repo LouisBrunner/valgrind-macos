@@ -392,6 +392,7 @@ check_PROGRAMS = \
 	custom_alloc \
 	custom-overlap \
 	demangle \
+	demangle-rust \
 	big_debuginfo_symbol \
 	deep-backtrace \
 	describe-block \
@@ -505,6 +506,7 @@ endif
 leak_cpp_interior_SOURCES	= leak_cpp_interior.cpp
 
 demangle_SOURCES = demangle.cpp
+demangle_rust_SOURCES = demangle-rust.c
 
 # Suppress various gcc warnings which are correct, but for things
 # we are actually testing for at runtime.

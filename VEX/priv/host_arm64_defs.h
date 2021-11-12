@@ -720,6 +720,7 @@ typedef
             Int  szB; /* 1, 2, 4 or 8 */
          } StrEX;
          /* x1 = CAS(x3(addr), x5(expected) -> x7(new)),
+            and trashes x8
             where x1[8*szB-1 : 0] == x5[8*szB-1 : 0] indicates success,
                   x1[8*szB-1 : 0] != x5[8*szB-1 : 0] indicates failure.
             Uses x8 as scratch (but that's not allocatable).
@@ -738,7 +739,7 @@ typedef
             -- if branch taken, failure; x1[[8*szB-1 : 0] holds old value
             -- attempt to store
             stxr    w8, x7, [x3]
-            -- if store successful, x1==0, so the eor is "x1 := x5"
+            -- if store successful, x8==0
             -- if store failed,     branch back and try again.
             cbne    w8, loop
            after:
@@ -746,6 +747,12 @@ typedef
          struct {
             Int szB; /* 1, 2, 4 or 8 */
          } CAS;
+         /* Doubleworld CAS, 2 x 32 bit or 2 x 64 bit
+            x0(oldLSW),x1(oldMSW)
+               = DCAS(x2(addr), x4(expectedLSW),x5(expectedMSW)
+                                -> x6(newLSW),x7(newMSW))
+            and trashes x8, x9 and x3
+         */
          struct {
             Int szB; /* 4 or 8 */
          } CASP;

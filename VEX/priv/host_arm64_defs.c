@@ -2271,6 +2271,7 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, const ARM64Instr* i, Bool mode64 )
          addHRegUse(u, HRmWrite, hregARM64_X1());
          addHRegUse(u, HRmWrite, hregARM64_X9());
          addHRegUse(u, HRmWrite, hregARM64_X8());
+         addHRegUse(u, HRmWrite, hregARM64_X3());
          break;
       case ARM64in_MFence:
          return;
@@ -4254,16 +4255,16 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
 
               -- always:
               cmp     x0, x8                 // EB08001F
-              bne     out                    // 540000E1 (b.ne #28 <out>)
+              bne     out                    // 540000A1
               cmp     x1, x9                 // EB09003F
-              bne     out                    // 540000A1 (b.ne #20 <out>)
+              bne     out                    // 54000061
 
               -- one of:
-              stxp    w1, x6, x7, [x2]       // C8211C46
-              stxp    w1, w6, w7, [x2]       // 88211C46
+              stxp    w3, x6, x7, [x2]       // C8231C46
+              stxp    w3, w6, w7, [x2]       // 88231C46
 
               -- always:
-              cbnz    w1, loop               // 35FFFE81 (cbnz w1, #-48 <loop>)
+              cbnz    w3, loop               // 35FFFF03
             out:
          */
          switch (i->ARM64in.CASP.szB) {
@@ -4277,15 +4278,15 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             default: vassert(0);
          }
          *p++ = 0xEB08001F;
-         *p++ = 0x540000E1;
-         *p++ = 0xEB09003F;
          *p++ = 0x540000A1;
+         *p++ = 0xEB09003F;
+         *p++ = 0x54000061;
          switch (i->ARM64in.CASP.szB) {
-            case 8:  *p++ = 0xC8211C46; break;
-            case 4:  *p++ = 0x88211C46; break;
+            case 8:  *p++ = 0xC8231C46; break;
+            case 4:  *p++ = 0x88231C46; break;
             default: vassert(0);
          }
-         *p++ = 0x35FFFE81;
+         *p++ = 0x35FFFF03;
          goto done;
       }
       case ARM64in_MFence: {

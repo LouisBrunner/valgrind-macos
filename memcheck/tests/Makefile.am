@@ -140,7 +140,6 @@ EXTRA_DIST = \
 		cxx17_aligned_new.stdout.exp \
 	deep-backtrace.vgtest deep-backtrace.stderr.exp \
 	demangle.stderr.exp demangle.vgtest \
-		demangle.stderr.exp-freebsd \
 	big_debuginfo_symbol.stderr.exp big_debuginfo_symbol.vgtest \
 	describe-block.stderr.exp describe-block.vgtest \
 	descr_belowsp.vgtest descr_belowsp.stderr.exp \

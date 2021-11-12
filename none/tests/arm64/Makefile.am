@@ -14,8 +14,10 @@ EXTRA_DIST = \
         fmadd_sub.stdout.exp fmadd_sub.stderr.exp fmadd_sub.vgtest \
 	fp_and_simd_v82.stdout.exp fp_and_simd_v82.stderr.exp \
 	fp_and_simd_v82.vgtest \
-	ldxp_stxp.stdout.exp ldxp_stxp.stderr.exp \
-	ldxp_stxp_basisimpl.vgtest ldxp_stxp_fallbackimpl.vgtest
+	ldxp_stxp_basisimpl.stdout.exp ldxp_stxp_basisimpl.stderr.exp \
+	ldxp_stxp_basisimpl.vgtest \
+	ldxp_stxp_fallbackimpl.stdout.exp ldxp_stxp_fallbackimpl.stderr.exp \
+	ldxp_stxp_fallbackimpl.vgtest
 
 check_PROGRAMS = \
 	allexec \

@@ -269,6 +269,8 @@ typedef
       Ico_U16, 
       Ico_U32, 
       Ico_U64,
+      Ico_U128,  /* 128-bit restricted integer constant,
+                    same encoding scheme as V128 */
       Ico_F32,   /* 32-bit IEEE754 floating */
       Ico_F32i,  /* 32-bit unsigned int to be interpreted literally
                     as a IEEE754 single value. */
@@ -295,6 +297,7 @@ typedef
          UShort U16;
          UInt   U32;
          ULong  U64;
+         UShort U128;
          Float  F32;
          UInt   F32i;
          Double F64;
@@ -311,6 +314,7 @@ extern IRConst* IRConst_U8   ( UChar );
 extern IRConst* IRConst_U16  ( UShort );
 extern IRConst* IRConst_U32  ( UInt );
 extern IRConst* IRConst_U64  ( ULong );
+extern IRConst* IRConst_U128 ( UShort );
 extern IRConst* IRConst_F32  ( Float );
 extern IRConst* IRConst_F32i ( UInt );
 extern IRConst* IRConst_F64  ( Double );

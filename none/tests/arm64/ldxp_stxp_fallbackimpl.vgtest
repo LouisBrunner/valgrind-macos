@@ -1,0 +1,2 @@
+prog: ldxp_stxp
+vgopts: -q --sim-hints=fallback-llsc

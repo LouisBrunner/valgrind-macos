@@ -90,6 +90,7 @@ EXTRA_DIST = \
 	addressable.stderr.exp addressable.stdout.exp addressable.vgtest \
 	atomic_incs.stderr.exp atomic_incs.vgtest \
 	atomic_incs.stdout.exp-32bit atomic_incs.stdout.exp-64bit \
+	atomic_incs.stdout.exp-64bit-and-128bit \
 	badaddrvalue.stderr.exp \
 	badaddrvalue.stdout.exp badaddrvalue.vgtest \
         exit_on_first_error.stderr.exp \

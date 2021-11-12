@@ -1059,6 +1059,16 @@ ARM64Instr* ARM64Instr_StrEX ( Int szB ) {
    vassert(szB == 8 || szB == 4 || szB == 2 || szB == 1);
    return i;
 }
+ARM64Instr* ARM64Instr_LdrEXP ( void ) {
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
+   i->tag        = ARM64in_LdrEXP;
+   return i;
+}
+ARM64Instr* ARM64Instr_StrEXP ( void ) {
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
+   i->tag        = ARM64in_StrEXP;
+   return i;
+}
 ARM64Instr* ARM64Instr_CAS ( Int szB ) {
    ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag             = ARM64in_CAS;
@@ -1699,12 +1709,19 @@ void ppARM64Instr ( const ARM64Instr* i ) {
                     sz, i->ARM64in.StrEX.szB == 8 ? 'x' : 'w');
          return;
       }
+      case ARM64in_LdrEXP:
+         vex_printf("ldxp   x2, x3, [x4]");
+         return;
+      case ARM64in_StrEXP:
+         vex_printf("stxp   w0, x2, x3, [x4]");
+         return;
       case ARM64in_CAS: {
          vex_printf("x1 = cas(%dbit)(x3, x5 -> x7)", 8 * i->ARM64in.CAS.szB);
          return;
       }
       case ARM64in_CASP: {
-         vex_printf("x0,x1 = casp(%dbit)(x2, x4,x5 -> x6,x7)", 8 * i->ARM64in.CASP.szB);
+         vex_printf("x0,x1 = casp(2x%dbit)(x2, x4,x5 -> x6,x7)",
+                    8 * i->ARM64in.CASP.szB);
          return;
       }
       case ARM64in_MFence:
@@ -2253,6 +2270,17 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, const ARM64Instr* i, Bool mode64 )
          addHRegUse(u, HRmWrite, hregARM64_X0());
          addHRegUse(u, HRmRead, hregARM64_X2());
          return;
+      case ARM64in_LdrEXP:
+         addHRegUse(u, HRmRead, hregARM64_X4());
+         addHRegUse(u, HRmWrite, hregARM64_X2());
+         addHRegUse(u, HRmWrite, hregARM64_X3());
+         return;
+      case ARM64in_StrEXP:
+         addHRegUse(u, HRmRead, hregARM64_X4());
+         addHRegUse(u, HRmWrite, hregARM64_X0());
+         addHRegUse(u, HRmRead, hregARM64_X2());
+         addHRegUse(u, HRmRead, hregARM64_X3());
+         return;
       case ARM64in_CAS:
          addHRegUse(u, HRmRead, hregARM64_X3());
          addHRegUse(u, HRmRead, hregARM64_X5());
@@ -2570,6 +2598,10 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
       case ARM64in_LdrEX:
          return;
       case ARM64in_StrEX:
+         return;
+      case ARM64in_LdrEXP:
+         return;
+      case ARM64in_StrEXP:
          return;
       case ARM64in_CAS:
          return;
@@ -4166,6 +4198,16 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             default: break;
          }
          goto bad;
+      }
+      case ARM64in_LdrEXP: {
+         // 820C7FC8   ldxp x2, x3, [x4]
+         *p++ = 0xC87F0C82;
+         goto done;
+      }
+      case ARM64in_StrEXP: {
+         // 820C20C8   stxp w0, x2, x3, [x4]
+         *p++ = 0xC8200C82;
+         goto done;
       }
       case ARM64in_CAS: {
          /* This isn't simple.  For an explanation see the comment in

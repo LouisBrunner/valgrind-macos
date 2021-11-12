@@ -76,6 +76,7 @@ void ppIRConst ( const IRConst* con )
       case Ico_U16:  vex_printf( "0x%x:I16",     (UInt)(con->Ico.U16)); break;
       case Ico_U32:  vex_printf( "0x%x:I32",     (UInt)(con->Ico.U32)); break;
       case Ico_U64:  vex_printf( "0x%llx:I64",   (ULong)(con->Ico.U64)); break;
+      case Ico_U128: vex_printf( "I128{0x%04x}", (UInt)(con->Ico.U128)); break;
       case Ico_F32:  u.f32 = con->Ico.F32;
                      vex_printf( "F32{0x%x}",   u.i32);
                      break;
@@ -2266,6 +2267,13 @@ IRConst* IRConst_U64 ( ULong u64 )
    c->Ico.U64 = u64;
    return c;
 }
+IRConst* IRConst_U128 ( UShort con )
+{
+   IRConst* c  = LibVEX_Alloc_inline(sizeof(IRConst));
+   c->tag      = Ico_U128;
+   c->Ico.U128 = con;
+   return c;
+}
 IRConst* IRConst_F32 ( Float f32 )
 {
    IRConst* c = LibVEX_Alloc_inline(sizeof(IRConst));
@@ -4230,6 +4238,7 @@ IRType typeOfIRConst ( const IRConst* con )
       case Ico_U16:   return Ity_I16;
       case Ico_U32:   return Ity_I32;
       case Ico_U64:   return Ity_I64;
+      case Ico_U128:  return Ity_I128;
       case Ico_F32:   return Ity_F32;
       case Ico_F32i:  return Ity_F32;
       case Ico_F64:   return Ity_F64;
@@ -5129,7 +5138,7 @@ void tcStmt ( const IRSB* bb, const IRStmt* stmt, IRType gWordTy )
          tyRes = typeOfIRTemp(tyenv, stmt->Ist.LLSC.result);
          if (stmt->Ist.LLSC.storedata == NULL) {
             /* it's a LL */
-            if (tyRes != Ity_I64 && tyRes != Ity_I32
+            if (tyRes != Ity_I128 && tyRes != Ity_I64 && tyRes != Ity_I32
                 && tyRes != Ity_I16 && tyRes != Ity_I8)
                sanityCheckFail(bb,stmt,"Ist.LLSC(LL).result :: bogus");
          } else {
@@ -5137,7 +5146,7 @@ void tcStmt ( const IRSB* bb, const IRStmt* stmt, IRType gWordTy )
             if (tyRes != Ity_I1)
                sanityCheckFail(bb,stmt,"Ist.LLSC(SC).result: not :: Ity_I1");
             tyData = typeOfIRExpr(tyenv, stmt->Ist.LLSC.storedata);
-            if (tyData != Ity_I64 && tyData != Ity_I32
+            if (tyData != Ity_I128 && tyData != Ity_I64 && tyData != Ity_I32
                 && tyData != Ity_I16 && tyData != Ity_I8)
                sanityCheckFail(bb,stmt,
                                "Ist.LLSC(SC).result :: storedata bogus");
@@ -5385,6 +5394,7 @@ Int sizeofIRType ( IRType ty )
 IRType integerIRTypeOfSize ( Int szB )
 {
    switch (szB) {
+      case 16: return Ity_I128;
       case 8: return Ity_I64;
       case 4: return Ity_I32;
       case 2: return Ity_I16;

@@ -81,10 +81,6 @@
   fun:pool
   fun:__static_initialization_and_destruction_0
   fun:_GLOBAL__sub_I_eh_alloc.cc
-  fun:call_init.part.0
-  fun:call_init
-  fun:_dl_init
-  obj:*lib*/ld-2.*.so
 }
 {
    malloc-leaks-cxx-stl-string-classes-debug2

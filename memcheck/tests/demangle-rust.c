@@ -9,7 +9,9 @@
 // A v0 symbol that demangles to: <rustc_middle::ty::PredicateKind as rustc_middle::ty::fold::TypeFoldable>::fold_with::<rustc_infer::infer::resolve::OpportunisticVarResolver>
 int _RINvYNtNtCs4uGc65yWeeX_12rustc_middle2ty13PredicateKindNtNtB5_4fold12TypeFoldable9fold_withNtNtNtCsgI90OQiJWEs_11rustc_infer5infer7resolve24OpportunisticVarResolverECsdozMG8X9FIu_21rustc_trait_selection(int *p)
 {
-   return *p ? 1 : 2;
+   free(p);
+   free(p);
+   return 1;
 }
 
 // A v0 symbol that demangles to: rustc_expand::mbe::macro_parser::parse_tt

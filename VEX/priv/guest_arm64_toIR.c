@@ -4833,6 +4833,34 @@ static IRTemp gen_zwidening_load ( UInt szB, IRTemp addr )
 }
 
 
+/* Generate a SIGBUS followed by a restart of the current instruction if
+   `effective_addr` is `align`-aligned.  This is required behaviour for atomic
+   instructions.  This assumes that guest_RIP_curr_instr is set correctly!
+
+   This is hardwired to generate SIGBUS because so far the only supported arm64
+   (arm64-linux) does that.  Should we need to later extend it to generate some
+   other signal, use the same scheme as with gen_SIGNAL_if_not_XX_aligned in
+   guest_amd64_toIR.c. */
+static
+void gen_SIGBUS_if_not_XX_aligned ( IRTemp effective_addr, ULong align )
+{
+   if (align == 1) {
+      return;
+   }
+   vassert(align == 16 || align == 8 || align == 4 || align == 2);
+   stmt(
+      IRStmt_Exit(
+         binop(Iop_CmpNE64,
+               binop(Iop_And64,mkexpr(effective_addr),mkU64(align-1)),
+               mkU64(0)),
+         Ijk_SigBUS,
+         IRConst_U64(guest_PC_curr_instr),
+         OFFB_PC
+      )
+   );
+}
+
+
 /* Generate a "standard 7" name, from bitQ and size.  But also
    allow ".1d" since that's occasionally useful. */
 static
@@ -6670,7 +6698,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
 
       IRTemp ea = newTemp(Ity_I64);
       assign(ea, getIReg64orSP(nn));
-      /* FIXME generate check that ea is szB-aligned */
+      gen_SIGBUS_if_not_XX_aligned(ea, szB);
 
       if (isLD && ss == BITS5(1,1,1,1,1)) {
          IRTemp res = newTemp(ty);
@@ -6803,7 +6831,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
 
       IRTemp ea = newTemp(Ity_I64);
       assign(ea, getIReg64orSP(nn));
-      /* FIXME generate check that ea is 2*elemSzB-aligned */
+      gen_SIGBUS_if_not_XX_aligned(ea, fullSzB);
 
       if (isLD && ss == BITS5(1,1,1,1,1)) {
          if (abiinfo->guest__use_fallback_LLSC) {
@@ -7044,7 +7072,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
 
       IRTemp ea = newTemp(Ity_I64);
       assign(ea, getIReg64orSP(nn));
-      /* FIXME generate check that ea is szB-aligned */
+      gen_SIGBUS_if_not_XX_aligned(ea, szB);
 
       if (isLD) {
          IRTemp res = newTemp(ty);
@@ -7159,6 +7187,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
 
       IRTemp ea = newTemp(Ity_I64);
       assign(ea, getIReg64orSP(nn));
+      gen_SIGBUS_if_not_XX_aligned(ea, szB);
 
       // Insert barrier before loading for acquire and acquire-release variants:
       // A and AL.
@@ -7266,6 +7295,10 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
       IRType ty = integerIRTypeOfSize(szB);
       Bool is64 = szB == 8;
 
+      IRTemp ea = newTemp(Ity_I64);
+      assign(ea, getIReg64orSP(nn));
+      gen_SIGBUS_if_not_XX_aligned(ea, szB);
+
       IRExpr *exp = narrowFrom64(ty, getIReg64orZR(ss));
       IRExpr *new = narrowFrom64(ty, getIReg64orZR(tt));
 
@@ -7275,7 +7308,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
       // Store the result back if LHS remains unchanged in memory.
       IRTemp old = newTemp(ty);
       stmt( IRStmt_CAS(mkIRCAS(/*oldHi*/IRTemp_INVALID, old,
-                               Iend_LE, getIReg64orSP(nn),
+                               Iend_LE, mkexpr(ea),
                                /*expdHi*/NULL, exp,
                                /*dataHi*/NULL, new)) );
 
@@ -7307,6 +7340,10 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
       if ((ss & 0x1) || (tt & 0x1)) {
          /* undefined; fall through */
       } else {
+         IRTemp ea = newTemp(Ity_I64);
+         assign(ea, getIReg64orSP(nn));
+         gen_SIGBUS_if_not_XX_aligned(ea, is64 ? 16 : 8);
+
          IRExpr *expLo = getIRegOrZR(is64, ss);
          IRExpr *expHi = getIRegOrZR(is64, ss + 1);
          IRExpr *newLo = getIRegOrZR(is64, tt);
@@ -7318,7 +7355,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
             stmt(IRStmt_MBE(Imbe_Fence));
 
          stmt( IRStmt_CAS(mkIRCAS(oldHi, oldLo,
-                                  Iend_LE, getIReg64orSP(nn),
+                                  Iend_LE, mkexpr(ea),
                                   expHi, expLo,
                                   newHi, newLo)) );
 

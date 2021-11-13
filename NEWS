@@ -51,10 +51,12 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 445032  valgrind/memcheck crash with SIGSEGV when SIGVTALRM timer used and
         libthr.so associated
 445354  arm64 backend: incorrect code emitted for doubleword CAS
+445415  arm64 front end: alignment checks missing for atomic instructions
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed below.
+
 
 
 Release 3.18.0 (15 Oct 2021)

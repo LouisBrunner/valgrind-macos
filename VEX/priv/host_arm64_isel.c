@@ -4483,6 +4483,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          case Ijk_InvalICache:
          case Ijk_FlushDCache:
          case Ijk_SigTRAP:
+         case Ijk_SigBUS:
          case Ijk_Yield: {
             HReg r = iselIntExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
             addInstr(env, ARM64Instr_XAssisted(r, amPC, cc,
@@ -4576,8 +4577,8 @@ static void iselNext ( ISelEnv* env,
       case Ijk_InvalICache:
       case Ijk_FlushDCache:
       case Ijk_SigTRAP:
-      case Ijk_Yield:
-      {
+      case Ijk_SigBUS:
+      case Ijk_Yield: {
          HReg        r    = iselIntExpr_R(env, next);
          ARM64AMode* amPC = mk_baseblock_64bit_access_amode(offsIP);
          addInstr(env, ARM64Instr_XAssisted(r, amPC, ARM64cc_AL, jk));

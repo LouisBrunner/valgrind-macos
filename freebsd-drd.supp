@@ -168,3 +168,10 @@
    fun:_ZNSt3__15mutexD1Ev
    fun:__cxa_finalize
 }
+{
+   DRD-FREEBSD130-JEMALLOC
+   drd:ConflictingAccess
+   obj:*/lib*/libc.so.7
+   obj:*/lib*/libc.so.7
+   fun:_malloc_postfork
+}

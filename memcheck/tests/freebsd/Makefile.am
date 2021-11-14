@@ -71,14 +71,16 @@ EXTRA_DIST = \
 	utimes.stderr.exp-x86 \
 	utimes.stderr.exp \
 	static_allocs.vgtest \
-	static_allocs.stderr.exp
+	static_allocs.stderr.exp \
+	fexecve.vgtest \
+	fexecve.stderr.exp
 
 check_PROGRAMS = \
 	statfs pdfork_pdkill getfsstat inlinfo inlinfo_nested.so extattr \
 	sigwait chflags get_set_login revoke scalar capsicum getfh \
 	linkat scalar_fork scalar_thr_exit scalar_abort2 scalar_pdfork \
 	scalar_vfork stat file_locking_wait6 utimens access chmod_chown \
-	misc get_set_context utimes static_allocs
+	misc get_set_context utimes static_allocs fexecve
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)

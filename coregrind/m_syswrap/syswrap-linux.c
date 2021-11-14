@@ -13332,7 +13332,7 @@ PRE(sys_execveat)
        return;
    }
 
-   handle_pre_sys_execve(tid, status, (Addr) path, arg_2, arg_3, 1,
+   handle_pre_sys_execve(tid, status, (Addr) path, arg_2, arg_3, EXECVEAT,
                          check_pathptr);
 
    /* The exec failed, we keep running... cleanup. */

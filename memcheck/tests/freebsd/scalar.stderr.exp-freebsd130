@@ -3941,14 +3941,6 @@ Syscall param fexecve(argv) contains uninitialised byte(s)
 Syscall param fexecve(envp) contains uninitialised byte(s)
    ...
 
-Syscall param fexecve(argv) points to unaddressable byte(s)
-   ...
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
-
-Syscall param fexecve(envp) points to unaddressable byte(s)
-   ...
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
-
 ---------------------------------------------------------
 493:   SYS_freebsd11_fstatat 4s 2m
 ---------------------------------------------------------

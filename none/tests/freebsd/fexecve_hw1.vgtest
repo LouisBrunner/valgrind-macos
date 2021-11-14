@@ -1,0 +1,5 @@
+prereq: test -e hello_world
+prog: fexecve
+args: -r -e
+vgopts: -q
+

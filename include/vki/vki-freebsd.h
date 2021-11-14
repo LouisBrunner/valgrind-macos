@@ -1536,11 +1536,17 @@ struct vki_dirent {
 #define VKI_O_WRONLY   O_WRONLY
 #define VKI_O_RDWR     O_RDWR
 
+#define VKI_FREAD FREAD
+#define VKI_WRITE WRITE
+
 #define VKI_O_NONBLOCK    O_NONBLOCK
 #define VKI_O_APPEND   O_APPEND
 #define VKI_O_CREAT    O_CREAT
 #define VKI_O_TRUNC    O_TRUNC
 #define VKI_O_EXCL     O_EXCL
+#define VKI_O_DIRECTORY	O_DIRECTORY
+#define VKI_O_EXEC      O_EXEC
+#define VKI_O_SEARCH	O_EXEC
 
 #define VKI_AT_FDCWD            AT_FDCWD
 

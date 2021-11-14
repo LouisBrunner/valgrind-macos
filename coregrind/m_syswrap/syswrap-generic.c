@@ -2919,7 +2919,7 @@ void VG_(reap_threads)(ThreadId self)
 
 /* This handles the common part of the PRE macro for execve and execveat. */
 void handle_pre_sys_execve(ThreadId tid, SyscallStatus *status, Addr pathname,
-                           Addr arg_2, Addr arg_3, Bool is_execveat,
+                           Addr arg_2, Addr arg_3, ExecveType execveType,
                            Bool check_pathptr)
 {
    HChar*       path = NULL;       /* path to executable */
@@ -2934,10 +2934,19 @@ void handle_pre_sys_execve(ThreadId tid, SyscallStatus *status, Addr pathname,
    const char   *str;
    char         str2[30], str3[30];
 
-   if (is_execveat)
-       str = "execveat";
-   else
-       str = "execve";
+   switch (execveType) {
+   case EXECVE:
+      str = "execve";
+      break;
+   case EXECVEAT:
+      str = "execveat";
+      break;
+   case FEXECVE:
+      str = "fexecve";
+      break;
+   default:
+      vg_assert(False);
+   }
 
    VG_(strcpy)(str2, str);
    VG_(strcpy)(str3, str);
@@ -3230,7 +3239,7 @@ PRE(sys_execve)
    Addr arg_2 = (Addr)ARG2;
    Addr arg_3 = (Addr)ARG3;
 
-   handle_pre_sys_execve(tid, status, (Addr)pathname, arg_2, arg_3, 0, True);
+   handle_pre_sys_execve(tid, status, (Addr)pathname, arg_2, arg_3, EXECVE, True);
 }
 
 PRE(sys_access)

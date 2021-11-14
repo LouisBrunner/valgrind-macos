@@ -4898,11 +4898,77 @@ PRE(sys_fexecve)
 {
    PRINT("sys_fexecve ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",
          SARG1,ARG2,ARG3);
-   PRE_REG_READ3(long, "fexecve",
+   PRE_REG_READ3(int, "fexecve",
                  int, fd, char * const *, argv,
                  char * const *, envp);
-   PRE_MEM_RASCIIZ( "fexecve(argv)", ARG2 );
-   PRE_MEM_RASCIIZ( "fexecve(envp)", ARG3 );
+
+   if (!ML_(fd_allowed)(ARG1, "fexecve", tid, False)) {
+      SET_STATUS_Failure(VKI_EBADF);
+      return;
+   }
+
+   const HChar *fname;
+
+   if (VG_(resolve_filename)(ARG1, &fname) == False) {
+      SET_STATUS_Failure(VKI_ENOENT);
+      return;
+   }
+
+   struct vg_stat stats;
+   if (VG_(fstat)(ARG1, &stats) != 0) {
+      SET_STATUS_Failure(VKI_EACCES);
+      return;
+   }
+
+   Int openFlags;
+
+   if (VG_(resolve_filemode)(ARG1, &openFlags) == False) {
+      SET_STATUS_Failure(VKI_ENOENT);
+      return;
+   }
+
+   /*
+    * openFlags is in kernel FFLAGS format
+    * (see /usr/include/sys/fcntl.h)
+    * which alllows us to tell if RDONLY is set
+    *
+    */
+
+   Bool isScript = False;
+
+   SysRes res;
+   res = VG_(open)(fname, VKI_O_RDONLY,
+                   VKI_S_IRUSR|VKI_S_IRGRP|VKI_S_IROTH);
+   if (sr_isError(res)) {
+      SET_STATUS_Failure(VKI_ENOENT);
+      return;
+   } else {
+      char buf[2];
+      VG_(read)((Int)sr_Res(res), buf, 2);
+      VG_(close)((Int)sr_Res(res));
+      if (buf[0] == '#' && buf[1] == '!')
+      {
+         isScript = True;
+      }
+   }
+
+   if (isScript) {
+      if (!(openFlags & VKI_FREAD)) {
+         SET_STATUS_Failure(VKI_EACCES);
+         return;
+      }
+   } else {
+      if (!((openFlags & VKI_O_EXEC) ||
+            (stats.mode & (VKI_S_IXUSR|VKI_S_IXGRP|VKI_S_IXOTH)))) {
+         SET_STATUS_Failure(VKI_EACCES);
+         return;
+      }
+   }
+
+   Addr arg_2 = (Addr)ARG2;
+   Addr arg_3 = (Addr)ARG3;
+
+   handle_pre_sys_execve(tid, status, (Addr)fname, arg_2, arg_3, FEXECVE, False);
 }
 
 // SYS_freebsd11_fstatat   493

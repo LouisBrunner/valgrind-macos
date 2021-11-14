@@ -1,0 +1,4 @@
+prog: fexecve
+args: -r -t
+vgopts: -q
+

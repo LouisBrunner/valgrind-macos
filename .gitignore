@@ -1330,6 +1330,7 @@
 /memcheck/tests/freebsd/get_set_context
 /memcheck/tests/freebsd/utimes
 /memcheck/tests/freebsd/static_allocs
+/memcheck/tests/freebsd/fexecve
 
 # /memcheck/tests/amd64-freebsd
 /memcheck/tests/amd64-freebsd/*.stderr.diff
@@ -2051,6 +2052,8 @@
 /none/tests/freebsd/auxv
 /none/tests/freebsd/osrel
 /none/tests/freebsd/swapcontext
+/none/tests/freebsd/fexecve
+/none/tests/freebsd/hello_world
 
 # /none/tests/x86/
 /none/tests/x86/*.dSYM

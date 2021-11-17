@@ -227,7 +227,7 @@ DECL_TEMPLATE(freebsd, sys_timer_getoverrun) // 239
 // unimpl ffclock_setestimate 242
 // unimpl ffclock_getestimate 243
 DECL_TEMPLATE(freebsd, sys_clock_nanosleep) // 244
-// unimpl clock_getcpuclockid2 247
+DECL_TEMPLATE(freebsd, sys_clock_getcpuclockid2) // 247
 // unimpl ntp_gettime 248
 DECL_TEMPLATE(freebsd, sys_minherit) // 250
 DECL_TEMPLATE(freebsd, sys_rfork) // 251

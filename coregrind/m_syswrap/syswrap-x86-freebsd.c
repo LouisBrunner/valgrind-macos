@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Platform-specific syscalls stuff.        syswrap-x86-freebsd.c ---*/
+/*--- Platform-specific syscalls stuff.      syswrap-x86-freebsd.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -661,6 +661,20 @@ PRE(sys_freebsd6_ftruncate)
                  unsigned int, length_low, unsigned int, length_high);
 }
 #endif
+
+// SYS_clock_getcpuclockid2   247
+// no manpage for this, from syscalls.master
+// int clock_getcpuclockid2(id_t id, int which, _Out_ clockid_t *clock_id);
+PRE(sys_clock_getcpuclockid2)
+{
+   PRINT("sys_clock_getcpuclockid2( %lld, %" FMT_REGWORD "d, %#" FMT_REGWORD "x )",
+         MERGE64(ARG1,ARG2),SARG3,ARG4);
+   PRE_REG_READ4(int, "clock_getcpuclockid2",
+                 vki_uint32_t, MERGE64_FIRST(offset),
+                 vki_uint32_t, MERGE64_SECOND(offset),
+                 int, len, clockid_t *, clock_id);
+   PRE_MEM_WRITE("clock_getcpuclockid2(clock_id)", ARG3, sizeof(vki_clockid_t));
+}
 
 // SYS_rfork 251
 // pid_t rfork(int flags);

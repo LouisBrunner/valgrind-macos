@@ -2438,12 +2438,17 @@ PRE(sys_clock_nanosleep)
 POST(sys_clock_nanosleep)
 {
    if (ARG2 != 0)
-      PRE_MEM_WRITE( "clock_nanosleep(rmtp)", ARG2, sizeof(struct vki_timespec) );
+      POST_MEM_WRITE( ARG2, sizeof(struct vki_timespec) );
 }
 
 // SYS_clock_getcpuclockid2   247
-// no manpage for this
-// @todo
+// x86/amd64
+
+POST(sys_clock_getcpuclockid2)
+{
+   POST_MEM_WRITE(ARG3, sizeof(vki_clockid_t));
+}
+
 
 // SYS_ntp_gettime   248
 // int ntp_gettime(struct ntptimeval *);
@@ -6519,7 +6524,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    // unimpl SYS_ffclock_getestimate                       243
 
    BSDXY(__NR_clock_nanosleep,  sys_clock_nanosleep),   // 244
-   // unimpl SYS_clock_getcpuclockid2                      247
+   BSDXY(__NR_clock_getcpuclockid2, sys_clock_getcpuclockid2), // 247
 
    // unimpl SYS_ntp_gettime                               248
    BSDXY(__NR_minherit,         sys_minherit),          // 250

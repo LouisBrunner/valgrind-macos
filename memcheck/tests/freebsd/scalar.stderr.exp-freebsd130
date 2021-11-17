@@ -1891,6 +1891,22 @@ Syscall param clock_nanosleep(rmtp) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
+247:SYS_clock_getcpuclockid2 3s 1m
+---------------------------------------------------------
+Syscall param clock_getcpuclockid2(id) contains uninitialised byte(s)
+   ...
+
+Syscall param clock_getcpuclockid2(len) contains uninitialised byte(s)
+   ...
+
+Syscall param clock_getcpuclockid2(clock_id) contains uninitialised byte(s)
+   ...
+
+Syscall param clock_getcpuclockid2(clock_id) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
 250:            SYS_minherit @todo
 ---------------------------------------------------------
 ---------------------------------------------------------

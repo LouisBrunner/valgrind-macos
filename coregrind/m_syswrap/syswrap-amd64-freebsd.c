@@ -290,6 +290,18 @@ PRE(sys_freebsd6_ftruncate)
 }
 #endif
 
+// SYS_clock_getcpuclockid2   247
+// no manpage for this, from syscalls.master
+// int clock_getcpuclockid2(id_t id, int which, _Out_ clockid_t *clock_id);
+PRE(sys_clock_getcpuclockid2)
+{
+   PRINT("sys_clock_getcpuclockid2( %" FMT_REGWORD "d, %" FMT_REGWORD "d, %#" FMT_REGWORD "x )",
+         SARG1,SARG2,ARG3);
+   PRE_REG_READ3(int, "clock_getcpuclockid2",
+                 id_t, id, int, len, clockid_t *, clock_id);
+   PRE_MEM_WRITE("clock_getcpuclockid2(clock_id)", ARG3, sizeof(vki_clockid_t));
+}
+
 // SYS_rfork 251
 // pid_t rfork(int flags);
 PRE(sys_rfork)

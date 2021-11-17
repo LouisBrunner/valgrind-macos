@@ -889,7 +889,9 @@ int main(void)
    SY(SYS_clock_nanosleep, x0+5000, x0+3000, x0, x0+1); SUCC;
 #endif
 
-   // unimpl SYS_clock_getcpuclockid2                      247
+   // SYS_clock_getcpuclockid2                             247
+   GO(SYS_clock_getcpuclockid2, "3s 1m");
+   SY(SYS_clock_getcpuclockid2, x0+1, x0+1, x0+1); FAIL;
 
    // BSDXY(__NR_ntp_gettime,      sys_ntp_gettime),       // 248
 

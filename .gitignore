@@ -384,6 +384,7 @@
 /drd/tests/bug322621
 /drd/tests/circular_buffer
 /drd/tests/concurrent_close
+/drd/tests/condvar
 /drd/tests/custom_alloc
 /drd/tests/dlopen_lib.so
 /drd/tests/dlopen_main

@@ -105,6 +105,8 @@ EXTRA_DIST =                                        \
 	circular_buffer.vgtest			    \
 	concurrent_close.stderr.exp		    \
 	concurrent_close.vgtest			    \
+	condvar.stderr.exp			    \
+	condvar.vgtest				    \
 	custom_alloc.stderr.exp			    \
 	custom_alloc.vgtest			    \
 	custom_alloc_fiw.stderr.exp		    \
@@ -458,6 +460,11 @@ check_PROGRAMS += \
 endif
 endif
 
+if CXX_CAN_INCLUDE_CONDITION_VARIABLE_HEADER
+check_PROGRAMS += \
+    condvar
+endif
+
 if HAVE_OPENMP
 check_PROGRAMS += omp_matinv omp_prime omp_printf
 endif
@@ -502,6 +509,8 @@ LDADD = -lpthread
 
 
 bug322621_SOURCES           = bug322621.cpp
+condvar_SOURCES		    = condvar.cpp
+condvar_CXXFLAGS            = $(AM_CXXFLAGS) -std=c++0x
 concurrent_close_SOURCES    = concurrent_close.cpp
 if !VGCONF_OS_IS_FREEBSD
 dlopen_main_LDADD           = -ldl

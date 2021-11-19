@@ -1175,6 +1175,30 @@ PTH_FUNCS(int, condZureltimedwait, pthread_cond_timedwait_intercept,
           (cond, mutex, timeout));
 #endif /* VGO_solaris */
 
+
+static __always_inline
+int pthread_cond_clockwait_intercept(pthread_cond_t *cond,
+                                     pthread_mutex_t *mutex,
+                                     clockid_t clockid,
+                                     const struct timespec* abstime)
+{
+   int   ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_COND_WAIT,
+                                   cond, mutex, DRD_(mutex_type)(mutex), 0, 0);
+   CALL_FN_W_WWWW(ret, fn, cond, mutex, clockid, abstime);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_COND_WAIT,
+                                   cond, mutex, 1, 0, 0);
+   return ret;
+}
+
+PTH_FUNCS(int, pthreadZucondZuclockwait, pthread_cond_clockwait_intercept,
+          (pthread_cond_t *cond, pthread_mutex_t *mutex,
+            clockid_t clockid, const struct timespec* abstime),
+          (cond, mutex, clockid, abstime));
+
+
 // NOTE: be careful to intercept only pthread_cond_signal() and not Darwin's
 // pthread_cond_signal_thread_np(). The former accepts one argument; the latter
 // two. Intercepting all pthread_cond_signal* functions will cause only one

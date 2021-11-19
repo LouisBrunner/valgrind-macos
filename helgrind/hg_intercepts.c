@@ -1409,6 +1409,88 @@ static int pthread_cond_timedwait_WRK(pthread_cond_t* cond,
 #  error "Unsupported OS"
 #endif
 
+//-----------------------------------------------------------
+// glibc:   pthread_cond_clockwait
+//
+__attribute__((noinline))
+static int pthread_cond_clockwait_WRK(pthread_cond_t* cond,
+                                      pthread_mutex_t* mutex,
+                                      clockid_t clockid,
+                                      struct timespec* abstime,
+                                      int timeout_error)
+{
+   int ret;
+   OrigFn fn;
+   unsigned long mutex_is_valid;
+   Bool abstime_is_valid;
+   VALGRIND_GET_ORIG_FN(fn);
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< pthread_cond_clockwait %p %p %p",
+                      cond, mutex, abstime);
+      fflush(stderr);
+   }
+
+   /* Tell the tool a cond-wait is about to happen, so it can check
+      for bogus argument values.  In return it tells us whether it
+      thinks the mutex is valid or not. */
+   DO_CREQ_W_WW(mutex_is_valid,
+                _VG_USERREQ__HG_PTHREAD_COND_WAIT_PRE,
+                pthread_cond_t*,cond, pthread_mutex_t*,mutex);
+   assert(mutex_is_valid == 1 || mutex_is_valid == 0);
+
+   abstime_is_valid = abstime->tv_nsec >= 0 && abstime->tv_nsec < 1000000000;
+
+   /* Tell the tool we're about to drop the mutex.  This reflects the
+      fact that in a cond_wait, we show up holding the mutex, and the
+      call atomically drops the mutex and waits for the cv to be
+      signalled. */
+   if (mutex_is_valid && abstime_is_valid) {
+      DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_UNLOCK_PRE,
+                  pthread_mutex_t*,mutex);
+   }
+
+   CALL_FN_W_WWWW(ret, fn, cond,mutex,clockid,abstime);
+
+   if (mutex_is_valid && !abstime_is_valid && ret != EINVAL) {
+      DO_PthAPIerror("Bug in libpthread: pthread_cond_clockwait "
+                     "invalid abstime did not cause"
+                     " EINVAL", ret);
+   }
+
+   if (mutex_is_valid && abstime_is_valid) {
+      /* and now we have the mutex again if (ret == 0 || ret == timeout) */
+      DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
+                   pthread_mutex_t *, mutex,
+                   long, (ret == 0 || ret == timeout_error) ? True : False);
+   }
+
+   DO_CREQ_v_WWWW(_VG_USERREQ__HG_PTHREAD_COND_WAIT_POST,
+                  pthread_cond_t*,cond, pthread_mutex_t*,mutex,
+                  long,ret == timeout_error,
+                  long, (ret == 0 || ret == timeout_error) && mutex_is_valid
+                        ? True : False);
+
+   if (ret != 0 && ret != timeout_error) {
+      DO_PthAPIerror( "pthread_cond_clockwait", ret );
+   }
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " cotimedwait -> %d >>\n", ret);
+   }
+
+   return ret;
+}
+
+#if defined(VGO_linux)
+   PTH_FUNC(int, pthreadZucondZuclockwait, // pthread_cond_clockwait
+                 pthread_cond_t* cond, pthread_mutex_t* mutex,
+                 clockid_t clockid,
+                 struct timespec* abstime) {
+      return pthread_cond_clockwait_WRK(cond, mutex, clockid, abstime, ETIMEDOUT);
+   }
+#endif
+
 
 //-----------------------------------------------------------
 // glibc:   pthread_cond_signal@GLIBC_2.0

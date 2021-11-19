@@ -69,7 +69,7 @@
    fun:call_init*
 }
 {
-  malloc-leaks-cxx-stl-string-classes-debug
+  libstdcxx-emergency-eh-alloc-pool
   Memcheck:Leak
   match-leak-kinds: reachable
   fun:malloc

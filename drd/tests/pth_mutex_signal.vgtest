@@ -1,0 +1,3 @@
+prereq: ./supported_libpthread && [ -e pth_mutex_signal ]
+vgopts: --check-stack-var=yes --read-var-info=yes
+prog: pth_mutex_signal

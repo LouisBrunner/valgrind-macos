@@ -1529,7 +1529,7 @@ to use standard memory allocation functions instead of memory pools by
 setting the environment variable
 <literal>GLIBCXX_FORCE_NEW</literal>. For more information, see also
 the <ulink
-url="http://gcc.gnu.org/onlinedocs/libstdc++/manual/bk01pt04ch11.html">libstdc++
+url="https://gcc.gnu.org/onlinedocs/libstdc++/manual/debug.html">libstdc++
 manual</ulink>.
 </para>
 

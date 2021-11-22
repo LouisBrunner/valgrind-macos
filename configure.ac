@@ -4608,6 +4608,14 @@ AC_TYPE_OFF_T
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
 
+AC_CHECK_TYPE([struct statx], [
+  AC_DEFINE([HAVE_STRUCT_STATX_IN_SYS_STAT_H], 1,
+            [Define to 1 if <sys/stat.h> declares struct statx.])
+], [], [
+  #define _GNU_SOURCE
+  #include <sys/stat.h>
+])
+
 
 #----------------------------------------------------------------------------
 # Checks for library functions.
@@ -4645,6 +4653,7 @@ AC_CHECK_FUNCS([     \
         pthread_yield              \
         pwritev      \
         pwritev2     \
+        rawmemchr    \
         readlinkat   \
         semtimedop   \
         setcontext   \

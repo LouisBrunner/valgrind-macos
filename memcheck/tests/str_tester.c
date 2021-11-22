@@ -503,8 +503,7 @@ test_strchrnul (void)
 }
 #endif
 
-// DDD: better done by testing for the function.
-#if !defined(__APPLE__) && !defined(__sun) && !defined(__FreeBSD__)
+#ifdef HAVE_RAWMEMCHR
 static void
 test_rawmemchr (void)
 {
@@ -1451,7 +1450,7 @@ main (void)
   test_strchrnul ();
 # endif
 
-# if !defined(__APPLE__) && !defined(__sun) && !defined(__FreeBSD__)
+# ifdef HAVE_RAWMEMCHR
   /* rawmemchr.  */
   test_rawmemchr ();
 # endif

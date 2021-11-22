@@ -1,5 +1,6 @@
 /* Test (somewhat) stats and stat.  */
 #define _GNU_SOURCE
+#include "config.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -7,9 +8,7 @@
 #include <assert.h>
 #include <string.h>
 #include <sys/syscall.h>
-#if __GLIBC_PREREQ(2,28)
-/* struct statx provided in sys/stat.h */
-#else
+#ifndef HAVE_STRUCT_STATX_IN_SYS_STAT_H
 #include <linux/stat.h>
 #endif
 #include <errno.h>

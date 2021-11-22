@@ -426,6 +426,7 @@
 /drd/tests/pth_detached_sem
 /drd/tests/pth_inconsistent_cond_wait
 /drd/tests/pth_mutex_reinit
+/drd/tests/pth_mutex_signal
 /drd/tests/pth_process_shared_mutex
 /drd/tests/pth_spinlock
 /drd/tests/pth_uninitialized_cond

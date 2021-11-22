@@ -1067,6 +1067,7 @@ DECL_TEMPLATE(solaris, sys_getpeername);
 DECL_TEMPLATE(solaris, sys_getsockname);
 DECL_TEMPLATE(solaris, sys_getsockopt);
 DECL_TEMPLATE(solaris, sys_setsockopt);
+DECL_TEMPLATE(solaris, sys_lwp_mutex_unlock);
 DECL_TEMPLATE(solaris, sys_lwp_mutex_register);
 DECL_TEMPLATE(solaris, sys_uucopy);
 DECL_TEMPLATE(solaris, sys_umount2);
@@ -10635,6 +10636,21 @@ PRE(sys_lwp_mutex_register)
    PRE_FIELD_READ("lwp_mutex_register(mp->mutex_type)", mp->vki_mutex_type);
 }
 
+PRE(sys_lwp_mutex_unlock)
+{
+   /* int lwp_mutex_unlock(lwp_mutex_t *lp); */
+   vki_lwp_mutex_t *lp = (vki_lwp_mutex_t*)ARG1;
+   PRINT("sys_lwp_mutex_unlock ( %#lx )", ARG1);
+   PRE_REG_READ1(int, "lwp_mutex_unlock", lwp_mutex_t *, lp);
+   PRE_MEM_READ("lwp_mutex_unlock(lp)", (Addr)lp, sizeof(vki_lwp_mutex_t));
+   PRE_MEM_WRITE("lwp_mutex_unlock(lp)", (Addr)lp, sizeof(vki_lwp_mutex_t));
+}
+
+POST(sys_lwp_mutex_unlock)
+{
+   POST_MEM_WRITE(ARG1, sizeof(vki_lwp_mutex_t));
+}
+
 PRE(sys_uucopy)
 {
    /* int uucopy(const void *s1, void *s2, size_t n); */
@@ -11027,6 +11043,7 @@ static SyscallTableEntry syscall_table[] = {
    SOLXY(__NR_getsockname,          sys_getsockname),           /* 244 */
    SOLXY(__NR_getsockopt,           sys_getsockopt),            /* 245 */
    SOLX_(__NR_setsockopt,           sys_setsockopt),            /* 246 */
+   SOLXY(__NR_lwp_mutex_unlock,     sys_lwp_mutex_unlock),      /* 250 */
    SOLX_(__NR_lwp_mutex_register,   sys_lwp_mutex_register),    /* 252 */
    SOLXY(__NR_uucopy,               sys_uucopy),                /* 254 */
    SOLX_(__NR_umount2,              sys_umount2)                /* 255 */

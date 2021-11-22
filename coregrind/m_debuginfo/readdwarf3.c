@@ -3358,7 +3358,7 @@ static Bool parse_inl_DIE (
    // might maybe contain a DW_TAG_inlined_subroutine:
    Bool ret = (unit_has_addrs
                || dtag == DW_TAG_lexical_block || dtag == DW_TAG_subprogram
-               || dtag == DW_TAG_inlined_subroutine);
+               || dtag == DW_TAG_inlined_subroutine || dtag == DW_TAG_namespace);
    return ret;
 
   bad_DIE:

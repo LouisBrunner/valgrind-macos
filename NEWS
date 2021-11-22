@@ -53,6 +53,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 445300  [PATCH] Fix building tests with Musl
 445354  arm64 backend: incorrect code emitted for doubleword CAS
 445415  arm64 front end: alignment checks missing for atomic instructions
+445668  Inline stack frame generation is broken for Rust binaries
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

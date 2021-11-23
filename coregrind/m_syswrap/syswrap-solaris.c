@@ -10639,6 +10639,8 @@ PRE(sys_lwp_mutex_register)
 PRE(sys_lwp_mutex_unlock)
 {
    /* int lwp_mutex_unlock(lwp_mutex_t *lp); */
+   /* see https://github.com/illumos/illumos-gate/blob/master/usr/src/uts/common/syscall/lwp_sobj.c#L3137-L3138
+    * (illumos, obviously) */
    vki_lwp_mutex_t *lp = (vki_lwp_mutex_t*)ARG1;
    PRINT("sys_lwp_mutex_unlock ( %#lx )", ARG1);
    PRE_REG_READ1(int, "lwp_mutex_unlock", lwp_mutex_t *, lp);

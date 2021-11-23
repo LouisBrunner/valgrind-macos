@@ -578,7 +578,7 @@ Addr setup_client_stack( void*  init_sp,
    /* --- auxv --- */
    auxv = (struct auxv *)ptr;
    *client_auxv = (UInt *)auxv;
-#if defined(VGP_x86_freebsd)
+#if defined(VGP_x86_freebsd)  && (VGO_freebsd <= FREEBSD_13)
    int* pagesizes = NULL;
 #endif
 
@@ -610,6 +610,17 @@ Addr setup_client_stack( void*  init_sp,
     * copies out the data for a sysctl sees this discrepancy and
     * sets an ENOMEM error. So guest execution doesn't even get past
     * executing the dynamic linker.
+    *
+    * This was fixed in the kernel in May 2020, see
+    * https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=246215
+    *
+    * That means this workaround is not needed for
+    * FreeBSD 13 or later, any version
+    * FreeBSD 12 1201515 and later
+    * FreeBSD 11 1104501 and later
+    *
+    * Because this is rather complicated I've just disabled the hack
+    * for 13 and later
     */
 
    for (; orig_auxv->a_type != AT_NULL; auxv++, orig_auxv++) {
@@ -649,7 +660,7 @@ Addr setup_client_stack( void*  init_sp,
          // case AT_CANARYLEN:
          // case AT_EXECPATH:
          // case AT_CANARY:
-#if defined(VGP_x86_freebsd)
+#if defined(VGP_x86_freebsd) && (VGO_freebsd <= FREEBSD_13)
       case AT_PAGESIZESLEN:
          if (!VG_(is32on64)()) {
             VG_(debugLog)(2, "initimg",

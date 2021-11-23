@@ -190,7 +190,9 @@ int main()
 	return 0;
 }
 
+static volatile s_zero;
+
 static int zero()
 {
-	return 0;
+	return s_zero;
 }

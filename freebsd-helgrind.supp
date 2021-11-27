@@ -50,6 +50,20 @@
    obj:/lib/libthr.so.3
 }
 {
+   HELGRIND-PTHREAD-EXIT6
+   Helgrind:Race
+   obj:*/lib*/libcxxrt.so.1
+   obj:*/lib*/libthr.so.3
+   obj:*/lib*/libthr.so.3
+   obj:*/lib*/libthr.so.3
+   obj:*/lib*/libgcc_s.so.1
+   fun:_Unwind_ForcedUnwind
+   obj:*/lib*/libthr.so.3
+   obj:*/lib*/libthr.so.3
+   fun:pthread_exit
+   obj:*/lib*/libthr.so.3
+}
+{
    HELGRIND-PTHREAD-BARRIER2
    Helgrind:Race
    fun:pthread_barrier_init

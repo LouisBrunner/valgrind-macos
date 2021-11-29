@@ -78,7 +78,7 @@ static struct {
       {"SIGWIND", "SIGWIND"},
       {"SIGPHONE", "SIGPHONE"},
       {"SIGWAITING", "Process's LWPs are blocked"},
-      {"SIGLWP", "Signal LWP"},
+      {"SIGLWP", "Signal LWP"}, /* FreeBSD SIGTHR */
       {"SIGDANGER", "Swap space dangerously low"},
       {"SIGGRANT", "Monitor mode granted"},
       {"SIGRETRACT", "Need to relinquish monitor mode"},
@@ -404,10 +404,6 @@ enum target_signal target_signal_from_host (int hostsig)
    if (hostsig == VKI_SIGCANCEL)
       return TARGET_SIGNAL_CANCEL;
 #endif
-#if defined(VKI_SIGTHR)
-   if (hostsig == VKI_SIGTHR)
-      return TARGET_SIGNAL_THR;
-#endif
 #if defined (VKI_SIGLWP)
    if (hostsig == VKI_SIGLWP)
       return TARGET_SIGNAL_LWP;
@@ -474,6 +470,10 @@ enum target_signal target_signal_from_host (int hostsig)
 #if defined (VKI_SIGLIBRT)
    if (hostsig == VKI_SIGLIBRT)
       return TARGET_SIGNAL_LIBRT;
+#endif
+#if defined(VKI_SIGTHR)
+   if (hostsig == VKI_SIGTHR)
+      return TARGET_SIGNAL_LWP;
 #endif
 
 #if defined (VKI_SIGRTMIN)
@@ -661,10 +661,6 @@ int do_target_signal_to_host (enum target_signal oursig,
    case TARGET_SIGNAL_CANCEL:
       return VKI_SIGCANCEL;
 #endif
-#if defined (VKI_SIGTHR)
-   case TARGET_SIGNAL_THR:
-      return VKI_SIGTHR;
-#endif
 #if defined (VKI_SIGLWP)
    case TARGET_SIGNAL_LWP:
       return VKI_SIGLWP;
@@ -731,6 +727,10 @@ int do_target_signal_to_host (enum target_signal oursig,
 #if defined (SIGLIBRT)
    case TARGET_SIGNAL_LIBRT:
       return SIGLIBRT;
+#endif
+#if defined (VKI_SIGTHR)
+   case TARGET_SIGNAL_LWP:
+      return VKI_SIGTHR;
 #endif
 
    default:

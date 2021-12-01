@@ -37,6 +37,13 @@
    fun:random_r
    fun:random
 }
+{
+   drd-glibc-io-xsputn-mempcpy
+   drd:ConflictingAccess
+   fun:__GI_mempcpy
+   fun:_IO_*xsputn*
+   obj:@GLIBC_LIBC_PATH@ 
+}
 
 #
 # Suppression patterns for libstdc++, the implementation of the standard C++

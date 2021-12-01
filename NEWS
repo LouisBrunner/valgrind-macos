@@ -54,6 +54,9 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 445354  arm64 backend: incorrect code emitted for doubleword CAS
 445415  arm64 front end: alignment checks missing for atomic instructions
 445668  Inline stack frame generation is broken for Rust binaries
+446139  DRD/Helgrind with std::shared_timed_mutex::try_lock_until and try_lock_shared_until false positives
+446138  DRD/Helgrind with std::timed_mutex::try_lock_until false positives
+446281  Add a DRD suppression for fwrite
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

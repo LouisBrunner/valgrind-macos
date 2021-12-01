@@ -16,7 +16,7 @@ class Valgrind < Formula
   end
 
   head do
-    url "https://github.com/LouisBrunner/valgrind-macos.git"
+    url "git://github.com/LouisBrunner/valgrind-macos.git"
 
     depends_on "autoconf" => :build
     depends_on "automake" => :build

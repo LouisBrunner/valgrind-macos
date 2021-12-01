@@ -2011,6 +2011,52 @@ AC_LANG(C)
 
 AM_CONDITIONAL(CXX_CAN_INCLUDE_CONDITION_VARIABLE_HEADER, test x$ac_cxx_can_include_condition_variable_header = xyes)
 
+# check for std::shared_timed_mutex, this is a C++ 14 feature
+
+AC_MSG_CHECKING([that C++ compiler can use std::shared_timed_mutex])
+AC_LANG(C++)
+safe_CXXFLAGS=$CXXFLAGS
+CXXFLAGS="-std=c++1y -pthread"
+
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+#include <shared_mutex>
+std::shared_timed_mutex test_mutex;
+])],
+[
+ac_cxx_can_use_shared_timed_mutex=yes
+AC_MSG_RESULT([yes])
+], [
+ac_cxx_can_use_shared_timed_mutex=no
+AC_MSG_RESULT([no])
+])
+CXXFLAGS=$safe_CXXFLAGS
+AC_LANG(C)
+
+AM_CONDITIONAL(CXX_CAN_USE_SHARED_TIMED_MUTEX, test x$ac_cxx_can_use_shared_timed_mutex = xyes)
+
+# check for std::shared_mutex, this is a C++ 11 feature
+
+AC_MSG_CHECKING([that C++ compiler can use std::timed_mutex])
+AC_LANG(C++)
+safe_CXXFLAGS=$CXXFLAGS
+CXXFLAGS="-std=c++0x -pthread"
+
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+#include <mutex>
+std::timed_mutex test_mutex;
+])],
+[
+ac_cxx_can_use_timed_mutex=yes
+AC_MSG_RESULT([yes])
+], [
+ac_cxx_can_use_timed_mutex=no
+AC_MSG_RESULT([no])
+])
+CXXFLAGS=$safe_CXXFLAGS
+AC_LANG(C)
+
+AM_CONDITIONAL(CXX_CAN_USE_TIMED_MUTEX, test x$ac_cxx_can_use_timed_mutex = xyes)
+
 # On aarch64 before glibc 2.20 we would get the kernel user_pt_regs instead
 # of the user_regs_struct from sys/user.h. They are structurally the same
 # but we get either one or the other.

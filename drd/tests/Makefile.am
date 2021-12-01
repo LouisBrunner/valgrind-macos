@@ -275,6 +275,8 @@ EXTRA_DIST =                                        \
 	sem_open_traced.vgtest                      \
 	sem_wait.stderr.exp                         \
 	sem_wait.vgtest                             \
+	shared_timed_mutex.stderr.exp               \
+	shared_timed_mutex.vgtest                   \
 	swapcontext.stderr.exp                      \
 	swapcontext.vgtest                          \
 	sigalrm.stderr.exp                          \
@@ -369,6 +371,8 @@ EXTRA_DIST =                                        \
 	threaded-fork.vgtest			    \
 	threaded-fork-vcs.stderr.exp		    \
 	threaded-fork-vcs.vgtest		    \
+	timed_mutex.stderr.exp                      \
+	timed_mutex.vgtest                          \
 	tls_threads.stderr.exp			    \
 	tls_threads.vgtest			    \
 	trylock.stderr.exp                          \
@@ -466,6 +470,16 @@ endif
 if CXX_CAN_INCLUDE_CONDITION_VARIABLE_HEADER
 check_PROGRAMS += \
     condvar
+endif
+
+if CXX_CAN_USE_SHARED_TIMED_MUTEX
+check_PROGRAMS += \
+    shared_timed_mutex
+endif
+
+if CXX_CAN_USE_TIMED_MUTEX
+check_PROGRAMS += \
+    timed_mutex
 endif
 
 if HAVE_OPENMP
@@ -593,6 +607,9 @@ if VGCONF_OS_IS_SOLARIS
 rwlock_test_CFLAGS          += -D__EXTENSIONS__
 endif
 
+shared_timed_mutex_SOURCES  = shared_timed_mutex.cpp
+shared_timed_mutex_CXXFLAGS = $(AM_CXXFLAGS) -std=c++1y
+
 std_atomic_SOURCES          = std_atomic.cpp
 std_atomic_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x -Wno-sign-compare
 
@@ -628,3 +645,5 @@ if VGCONF_OS_IS_SOLARIS
 swapcontext_CFLAGS          += -D__EXTENSIONS__
 endif
 
+timed_mutex_SOURCES         = timed_mutex.cpp
+timed_mutex_CXXFLAGS        = $(AM_CXXFLAGS) -std=c++0x

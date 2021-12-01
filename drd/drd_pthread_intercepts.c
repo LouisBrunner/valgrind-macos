@@ -1017,6 +1017,26 @@ PTH_FUNCS(int,
 #endif /* VGO_solaris */
 
 static __always_inline
+int pthread_mutex_clocklock_intercept(pthread_mutex_t *mutex,
+                                      clockid_t clockid,
+                                      const struct timespec *abs_timeout)
+{
+   int   ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_MUTEX_LOCK,
+                                   mutex, DRD_(mutex_type)(mutex), 0, 0, 0);
+   CALL_FN_W_WWW(ret, fn, mutex, clockid, abs_timeout);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_MUTEX_LOCK,
+                                   mutex, ret == 0, 0, 0, 0);
+   return ret;
+}
+
+PTH_FUNCS(int, pthreadZumutexZuclocklock, pthread_mutex_clocklock_intercept,
+          (pthread_mutex_t *mutex, clockid_t clockid, const struct timespec *abs_timeout),
+          (mutex, clockid, abs_timeout));
+
+static __always_inline
 int pthread_mutex_unlock_intercept(pthread_mutex_t *mutex)
 {
    int ret;
@@ -1795,6 +1815,27 @@ PTH_FUNCS(int, pthreadZurwlockZureltimedrdlockZunp,
 #endif /* VGO_solaris */
 
 static __always_inline
+int pthread_rwlock_clockrdlock_intercept(pthread_rwlock_t* rwlock,
+                                         clockid_t clockid,
+                                         const struct timespec *timeout)
+{
+   int   ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_RWLOCK_RDLOCK,
+                                   rwlock, 0, 0, 0, 0);
+   CALL_FN_W_WWW(ret, fn, rwlock, clockid, timeout);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_RWLOCK_RDLOCK,
+                                   rwlock, ret == 0, 0, 0, 0);
+   return ret;
+}
+
+PTH_FUNCS(int,
+          pthreadZurwlockZuclockrdlock, pthread_rwlock_clockrdlock_intercept,
+          (pthread_rwlock_t* rwlock, clockid_t clockid, const struct timespec *timeout),
+          (rwlock, clockid, timeout));
+
+static __always_inline
 int pthread_rwlock_timedwrlock_intercept(pthread_rwlock_t* rwlock,
                                          const struct timespec *timeout)
 {
@@ -1819,6 +1860,28 @@ PTH_FUNCS(int, pthreadZurwlockZureltimedwrlockZunp,
           (pthread_rwlock_t *rwlock, const struct timespec *timeout),
           (rwlock, timeout));
 #endif /* VGO_solaris */
+
+static __always_inline
+int pthread_rwlock_clockwrlock_intercept(pthread_rwlock_t* rwlock,
+                                         clockid_t clockid,
+                                         const struct timespec *timeout)
+{
+   int   ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_RWLOCK_WRLOCK,
+                                   rwlock, 0, 0, 0, 0);
+   CALL_FN_W_WWW(ret, fn, rwlock, clockid, timeout);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_RWLOCK_WRLOCK,
+                                   rwlock, ret == 0, 0, 0, 0);
+   return ret;
+}
+
+PTH_FUNCS(int,
+          pthreadZurwlockZuclockwrlock, pthread_rwlock_clockwrlock_intercept,
+          (pthread_rwlock_t* rwlock, clockid_t clockid, const struct timespec *timeout),
+          (rwlock, clockid, timeout));
+
 
 static __always_inline
 int pthread_rwlock_tryrdlock_intercept(pthread_rwlock_t* rwlock)

@@ -442,6 +442,7 @@
 /drd/tests/sem_as_mutex
 /drd/tests/sem_open
 /drd/tests/sem_wait
+/drd/tests/shared_timed_mutex
 /drd/tests/sigalrm
 /drd/tests/std_atomic
 /drd/tests/std_list
@@ -476,6 +477,7 @@
 /drd/tests/threaded-fork
 /drd/tests/thread_name
 /drd/tests/thread_name_freebsd
+/drd/tests/timed_mutex
 /drd/tests/trylock
 /drd/tests/tsan_unittest
 /drd/tests/unit_bitmap

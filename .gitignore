@@ -1056,6 +1056,7 @@
 /memcheck/tests/arm64-linux/.deps
 /memcheck/tests/arm64-linux/Makefile
 /memcheck/tests/arm64-linux/Makefile.in
+/memcheck/tests/arm64-linux/scalar
 
 # /memcheck/tests/common/
 /memcheck/tests/common/Makefile
@@ -1653,6 +1654,16 @@
 /none/tests/arm64/.deps
 /none/tests/arm64/Makefile
 /none/tests/arm64/Makefile.in
+/none/tests/arm64/allexec
+/none/tests/arm64/atomics_v81
+/none/tests/arm64/crc32
+/none/tests/arm64/cvtf_imm
+/none/tests/arm64/fmadd_sub
+/none/tests/arm64/fp_and_simd
+/none/tests/arm64/fp_and_simd_v82
+/none/tests/arm64/integer
+/none/tests/arm64/memory
+/none/tests/arm64/simd_v81
 
 # /none/tests/darwin/
 /none/tests/darwin/*.dSYM

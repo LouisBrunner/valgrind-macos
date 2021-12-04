@@ -1110,6 +1110,7 @@ PTH_FUNC(int, pthreadZumutexZureltimedlock, // pthread_mutex_reltimedlock
 }
 #endif
 
+#if defined(VGP_linux)
 //-----------------------------------------------------------
 // glibc:   pthread_mutex_clocklock
 //
@@ -1157,6 +1158,7 @@ PTH_FUNC(int, pthreadZumutexZuclocklock, // pthread_mutex_clocklock
          void *timeout) {
    return mutex_clocklock_WRK(mutex, clockid, timeout);
 }
+#endif
 
 //-----------------------------------------------------------
 // glibc:   pthread_mutex_unlock
@@ -1456,6 +1458,7 @@ static int pthread_cond_timedwait_WRK(pthread_cond_t* cond,
 #  error "Unsupported OS"
 #endif
 
+#if defined(VGO_linux)
 //-----------------------------------------------------------
 // glibc:   pthread_cond_clockwait
 //
@@ -1529,7 +1532,6 @@ static int pthread_cond_clockwait_WRK(pthread_cond_t* cond,
    return ret;
 }
 
-#if defined(VGO_linux)
    PTH_FUNC(int, pthreadZucondZuclockwait, // pthread_cond_clockwait
                  pthread_cond_t* cond, pthread_mutex_t* mutex,
                  clockid_t clockid,
@@ -2732,6 +2734,7 @@ PTH_FUNC(int, pthreadZurwlockZutimedrdlock, // pthread_rwlock_timedrdlock
 #  error "Unsupported OS"
 #endif
 
+#if defined(VGO_linux)
 //-----------------------------------------------------------
 // glibc:   pthread_rwlock_clockrdlock
 //
@@ -2765,7 +2768,7 @@ static int pthread_rwlock_clockrdlock_WRK(pthread_rwlock_t *rwlock,
    }
    return ret;
 }
-#if defined(VGO_linux)
+
 PTH_FUNC(int, pthreadZurwlockZuclockrdlock, // pthread_rwlock_clockrdlock
               pthread_rwlock_t *rwlock,
               clockid_t clockid,
@@ -2834,7 +2837,7 @@ PTH_FUNC(int, pthreadZurwlockZutimedwrlock, // pthread_rwlock_timedwrlock
 #  error "Unsupported OS"
 #endif
 
-
+#if defined(VGO_linux)
 //-----------------------------------------------------------
 // glibc:   pthread_rwlock_clockwrlock
 //
@@ -2868,7 +2871,7 @@ static int pthread_rwlock_clockwrlock_WRK(pthread_rwlock_t *rwlock,
    }
    return ret;
 }
-#if defined(VGO_linux)
+
 PTH_FUNC(int, pthreadZurwlockZuclockwrlock, // pthread_rwlock_clockwrlock
               pthread_rwlock_t *rwlock,
               clockid_t clockid,

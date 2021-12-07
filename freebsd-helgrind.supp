@@ -174,3 +174,13 @@
    Helgrind:Race
    obj:/usr/lib*/libomp.so
 }
+{
+   HELGRIND-CXX-UNWIND
+   Helgrind:Race
+   obj:/lib/libcxxrt.so.1
+   obj:/lib/libthr.so.3
+   obj:/lib/libthr.so.3
+   obj:/lib/libthr.so.3
+   obj:/lib/libgcc_s.so.1
+   fun:_Unwind_ForcedUnwind
+}

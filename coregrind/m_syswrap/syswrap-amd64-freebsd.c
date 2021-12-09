@@ -424,8 +424,8 @@ PRE(sys_sigreturn)
    PRE_REG_READ1(int, "sigreturn",
                  struct vki_ucontext *, ucp);
 
-   PRE_MEM_READ( "sigreturn(ucp)", ARG1, sizeof(struct vki_ucontext) );
-   PRE_MEM_WRITE( "sigreturn(ucp)", ARG1, sizeof(struct vki_ucontext) );
+   PRE_MEM_READ( "sigreturn(scp)", ARG1, sizeof(struct vki_ucontext) );
+   PRE_MEM_WRITE( "sigreturn(scp)", ARG1, sizeof(struct vki_ucontext) );
 }
 
 static void restore_mcontext(ThreadState *tst, struct vki_mcontext *sc)

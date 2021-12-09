@@ -899,7 +899,29 @@ VG_(trampoline_stuff_start):
 VG_(amd64_freebsd_SUBST_FOR_sigreturn):
         /* This is a very specific sequence which GDB uses to
            recognize signal handler frames. */
+
         movq    $__NR_fake_sigreturn, %rax
+
+        /* running the preprocessor on
+         * src/amd64.amd64/lib/libc/sigreturn.S
+         * gives
+         * .text; .p2align 4,0x90; .globl __sys_sigreturn;
+         * .type __sys_sigreturn,@function; __sys_sigreturn:;
+         * .cfi_startproc; .weak sigreturn; .equ sigreturn,__sys_sigreturn;
+         *  .weak _sigreturn; .equ _sigreturn,__sys_sigreturn;
+         *  mov $417,%eax;
+         * movq %rcx, %r10;
+         * syscall; jb .cerror; ret; .size __sys_sigreturn, . - __sys_sigreturn;
+         *  .cfi_endproc
+         */
+
+        /*
+         * sigframe in sigframe-amd64-freebsd.c
+         * differs from sigframe in /usr/include/x86/sigframe.h
+         * by having the address to this trampoline first
+         * so I assume that the +8 is to get back to the
+         * FreeBSD sigframe
+         */
         movq	%rsp, %rdi
         addq	$8,%rdi
         syscall

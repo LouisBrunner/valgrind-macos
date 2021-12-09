@@ -3197,10 +3197,10 @@ Warning: bad act handler address 0x........ in sigaction()
 ---------------------------------------------------------
 417:           SYS_sigreturn 1s 1m
 ---------------------------------------------------------
-Syscall param sigreturn(ucp) contains uninitialised byte(s)
+Syscall param sigreturn(scp) contains uninitialised byte(s)
    ...
 
-Syscall param sigreturn(ucp) points to unaddressable byte(s)
+Syscall param sigreturn(scp) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 

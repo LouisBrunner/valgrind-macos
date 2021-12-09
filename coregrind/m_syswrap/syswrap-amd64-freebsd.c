@@ -422,7 +422,7 @@ PRE(sys_sigreturn)
 {
    PRINT("sys_sigreturn ( %#" FMT_REGWORD "x )", ARG1);
    PRE_REG_READ1(int, "sigreturn",
-                 struct vki_ucontext *, ucp);
+                 struct vki_ucontext *, scp);
 
    PRE_MEM_READ( "sigreturn(scp)", ARG1, sizeof(struct vki_ucontext) );
    PRE_MEM_WRITE( "sigreturn(scp)", ARG1, sizeof(struct vki_ucontext) );
@@ -1064,10 +1064,10 @@ PRE(sys_fake_sigreturn)
 
    PRINT("sys_sigreturn ( %#" FMT_REGWORD "x )", ARG1);
    PRE_REG_READ1(long, "sigreturn",
-                 struct vki_ucontext *, ucp);
+                 struct vki_ucontext *, scp);
 
-   PRE_MEM_READ( "sigreturn(ucp)", ARG1, sizeof(struct vki_ucontext) );
-   PRE_MEM_WRITE( "sigreturn(ucp)", ARG1, sizeof(struct vki_ucontext) );
+   PRE_MEM_READ( "sigreturn(scp)", ARG1, sizeof(struct vki_ucontext) );
+   PRE_MEM_WRITE( "sigreturn(scp)", ARG1, sizeof(struct vki_ucontext) );
 
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(tid >= 1 && tid < VG_N_THREADS);

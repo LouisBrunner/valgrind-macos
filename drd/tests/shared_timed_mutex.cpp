@@ -15,12 +15,19 @@ bool reads_done = false;
 void f()
 {
     auto now=std::chrono::steady_clock::now();
-    if (test_mutex.try_lock_until(now + std::chrono::seconds(3)))
+    auto then = now + std::chrono::seconds(3);
+    int i;
+    for (i = 0; i < 3 && std::chrono::steady_clock::now() < then; ++i)
     {
-       --global;
-       test_mutex.unlock();
+       if (test_mutex.try_lock_until(then))
+       {
+          --global;
+          test_mutex.unlock();
+          break;
+       }
     }
-    else
+    
+    if (i == 3)
     {
         std::cerr << "Lock failed\n";
     }
@@ -29,11 +36,16 @@ void f()
 void g()
 {
     auto now=std::chrono::steady_clock::now();
-    if (test_mutex.try_lock_shared_until(now + std::chrono::seconds(2)))
+    auto then = now + std::chrono::seconds(2);
+    int i;
+    for (i = 0; i < 3 && std::chrono::steady_clock::now() < then; ++i)
     {
-       test_mutex.unlock_shared();
+        if (test_mutex.try_lock_shared_until(then))
+        {
+            test_mutex.unlock_shared();
+        }
     }
-    else
+    if (i == 3)
     {
         std::cerr << "Lock shared failed\n";
     }

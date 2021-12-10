@@ -3782,7 +3782,7 @@ Syscall param thr_kill2(sig) contains uninitialised byte(s)
    ...
 
 ---------------------------------------------------------
-482:  SYS_shm_open (SHM_ANON) 3s 0m
+482:            SYS_shm_open (SHM_ANON) 3s 0m
 ---------------------------------------------------------
 Syscall param shm_open(path) contains uninitialised byte(s)
    ...
@@ -4242,7 +4242,7 @@ Syscall param jail_remove(jid) contains uninitialised byte(s)
    ...
 
 ---------------------------------------------------------
-509: SYS_closefrom 1s 0m
+509:           SYS_closefrom 1s 0m
 ---------------------------------------------------------
 Syscall param closefrom(lowfd) contains uninitialised byte(s)
    ...

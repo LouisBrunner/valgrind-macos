@@ -894,11 +894,11 @@ POST(sys_getsockname)
 // generic
 
 // SYS_chflags 34
-// int fchflags(int fd, unsigned long flags)
+// int chflags(const char *path, unsigned long flags)
 PRE(sys_chflags)
 {
    PRINT("sys_chflags ( %#" FMT_REGWORD "x(%s), 0x%" FMT_REGWORD "x )", ARG1,(char *)ARG1,ARG2);
-   PRE_REG_READ2(long, "chflags",
+   PRE_REG_READ2(int, "chflags",
                  const char *, path, unsigned long, flags);
    PRE_MEM_RASCIIZ( "chflags(path)", ARG1 );
 }
@@ -5189,9 +5189,8 @@ PRE(sys_unlinkat)
 // int posix_openpt(int oflag);
 PRE(sys_posix_openpt)
 {
-   PRINT("sys_posix_openpt ( %" FMT_REGWORD "d )", SARG2);
+   PRINT("sys_posix_openpt ( %" FMT_REGWORD "d )", SARG1);
    PRE_REG_READ1(int, "posix_openpt", int, oflag);
-
 }
 
 // SYS_gssd_syscall  505

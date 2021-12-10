@@ -9,4 +9,8 @@ sed '/in frame #., created by/d' |
 
 # And finally remove temporary line with frame #0 present to unify
 # stack traces between x86 and amd64.
-sed '/at 0x........: syscall (in \/...libc...)/d'
+sed '/at 0x........: syscall (in \/...libc...)/d' |
+
+# filter differences between FreeBSD 12 and 13/14
+
+sed 's/_freebsd12//'

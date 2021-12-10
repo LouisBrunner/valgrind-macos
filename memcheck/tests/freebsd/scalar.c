@@ -1731,7 +1731,7 @@ int main(void)
 
    /* SYS_posix_openpt            504 */
    GO(SYS_posix_openpt, "1s 1m");
-   SY(SYS_posix_openpt, x0+0xffff0000); FAIL;
+   SY(SYS_posix_openpt, x0+0x8); FAIL;
 
    // gssd_syscall                505
 

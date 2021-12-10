@@ -4200,9 +4200,6 @@ Syscall param unlinkat(path) points to unaddressable byte(s)
 Syscall param posix_openpt(oflag) contains uninitialised byte(s)
    ...
 
-Conditional jump or move depends on uninitialised value(s)
-   ...
-
 ---------------------------------------------------------
 506:            SYS_jail_get 3s 1m
 ---------------------------------------------------------

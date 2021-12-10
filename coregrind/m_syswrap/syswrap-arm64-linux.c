@@ -823,8 +823,9 @@ static SyscallTableEntry syscall_main_table[] = {
    //   (__NR_pkey_mprotect,     sys_ni_syscall),        // 288
    //   (__NR_pkey_alloc,        sys_ni_syscall),        // 289
    //   (__NR_pkey_free,         sys_ni_syscall),        // 290
+   LINXY(__NR_statx,             sys_statx),             // 291
 
-   LINXY(__NR_statx,             sys_statx),             // 397
+   GENX_(__NR_rseq,              sys_ni_syscall),        // 293
 
    LINXY(__NR_io_uring_setup,    sys_io_uring_setup),    // 425
    LINXY(__NR_io_uring_enter,    sys_io_uring_enter),    // 426

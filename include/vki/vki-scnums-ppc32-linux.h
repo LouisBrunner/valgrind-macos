@@ -415,6 +415,7 @@
 #define __NR_pkey_alloc		384
 #define __NR_pkey_free		385
 #define __NR_pkey_mprotect	386
+#define __NR_rseq		387
 
 #endif /* __VKI_SCNUMS_PPC32_LINUX_H */
 

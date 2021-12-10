@@ -342,8 +342,11 @@
 #define __NR_s390_guarded_storage	378
 #define __NR_statx			379
 #define __NR_s390_sthyi			380
+#define __NR_kexec_file_load		381
+#define __NR_io_pgetevents		382
+#define __NR_rseq			383
 
-#define NR_syscalls 381
+#define NR_syscalls 384
 
 /* 
  * There are some system calls that are not present on 64 bit, some

@@ -1028,6 +1028,8 @@ static SyscallTableEntry syscall_table[] = {
 
    LINXY(__NR_statx,             sys_statx),            // 383
 
+   GENX_(__NR_rseq,              sys_ni_syscall),       // 387
+
    LINXY(__NR_clock_gettime64,   sys_clock_gettime64),  // 403
    LINX_(__NR_clock_settime64,   sys_clock_settime64),  // 404
 

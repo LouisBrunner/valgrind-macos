@@ -2035,9 +2035,6 @@ int main(void)
 
    GO(SYS___sysctlbyname, "(putnew) 4s 2m");
    SY(SYS___sysctlbyname, x0, x0+1, NULL, NULL, x0+1, x0+2); FAIL;
-   
-   GO(SYS___realpathat, " 5s 2m");
-   SY(SYS___realpathat, x0+0xffff, x0, x0, x0+100, x0+2); FAIL;
 
 #endif
 

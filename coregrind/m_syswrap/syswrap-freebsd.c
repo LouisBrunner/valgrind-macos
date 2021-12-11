@@ -6145,7 +6145,7 @@ POST(sys_fhreadlink)
 
 #if (FREEBSD_VERS >= FREEBSD_12_2)
 
-// SYS___sysctlbyname
+// SYS___sysctlbyname 570
 // int sysctlbyname(const char *name, void *oldp, size_t *oldlenp,
 //                  const void *newp, size_t newlen);
 // syscalls.master:
@@ -6206,7 +6206,11 @@ POST(sys___sysctlbyname)
    }
 }
 
-// SYS___realpathat
+#endif // (FREEBSD_VERS >= FREEBSD_12_2)
+
+#if (FREEBSD_VERS >= FREEBSD_13)
+
+// SYS___realpathat 474
 // from syscalls.master
 //         int __realpathat(int fd,
 //         _In_z_ const char *path,
@@ -6228,11 +6232,7 @@ POST(sys___realpathat)
    POST_MEM_WRITE((Addr)ARG3, ARG4);
 }
 
-#endif // (FREEBSD_VERS >= FREEBSD_12_2)
-
-#if (FREEBSD_VERS >= FREEBSD_13)
-
-// SYS___specialfd
+// SYS___specialfd 577
 // syscalls.master
 // int __specialfd(int type,
 //                _In_reads_bytes_(len) const void *req,
@@ -6939,10 +6939,13 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    // unimpl __NR_funlinkat           568
    // unimpl __NR_copy_file_range     569
    BSDXY(__NR___sysctlbyname,   sys___sysctlbyname),    // 570
+
+#if (FREEBSD_VERS >= FREEBSD_13)
    // unimpl __NR_shm_open2           571
    // unimpl __NR_shm_rename          572
    // unimpl __NR_sigfastblock        573
    BSDXY( __NR___realpathat,    sys___realpathat),      // 574
+#endif
    // unimpl __NR_close_range         575
 #endif
 

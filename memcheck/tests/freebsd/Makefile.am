@@ -33,7 +33,6 @@ EXTRA_DIST = \
 	scalar.vgtest \
 	scalar.stderr.exp \
 		scalar.stderr.exp-x86 \
-		scalar.stderr.exp-freebsd130-x86 \
 	capsicum.vgtest \
 	capsicum.stderr.exp \
 	getfh.vgtest \

@@ -72,7 +72,15 @@ EXTRA_DIST = \
 	static_allocs.vgtest \
 	static_allocs.stderr.exp \
 	fexecve.vgtest \
-	fexecve.stderr.exp
+	fexecve.stderr.exp \
+	realpathat.vgtest \
+	realpathat.stderr.exp \
+	scalar_13_plus.vgtest \
+	scalar_13_plus.stderr.exp \
+	eventfd1.vgtest \
+	eventfd1.stderr.exp eventfd1.stdout.exp \
+	eventfd2.vgtest \
+	eventfd2.stderr.exp eventfd2.stdout.exp
 
 check_PROGRAMS = \
 	statfs pdfork_pdkill getfsstat inlinfo inlinfo_nested.so extattr \
@@ -91,5 +99,11 @@ inlinfo_LDADD = inlinfo_nested.so
 inlinfo_nested_so_SOURCES = inlinfo_nested.c
 inlinfo_nested_so_CFLAGS = $(AM_CFLAGS) -fPIC @FLAG_W_NO_UNINITIALIZED@
 inlinfo_nested_so_LDFLAGS = -Wl,-rpath,$(top_builddir)/memcheck/tests/freebsd -shared -fPIC
+
+if FREEBSD_VERS_13_PLUS
+check_PROGRAMS += realpathat scalar_13_plus eventfd1 eventfd2
+
+scalar_13_plus_CFLAGS = ${AM_CFLAGS} -g
+endif
 
 scalar_CFLAGS = ${AM_CFLAGS} -g

@@ -59,6 +59,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 446138  DRD/Helgrind with std::timed_mutex::try_lock_until false positives
 446281  Add a DRD suppression for fwrite
 446103  Memcheck: `--track-origins=yes` causes extreme slowdowns for large mmap/munmap
+446823  FreeBSD - missing syscalls when using libzm4
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

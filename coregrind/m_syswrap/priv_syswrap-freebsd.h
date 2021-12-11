@@ -526,7 +526,7 @@ DECL_TEMPLATE(freebsd, sys___sysctlbyname) // 570
 // unimpl __NR_shm_open2           571
 // unimpl __NR_shm_rename          572
 // unimpl __NR_sigfastblock        573
-// unimpl __NR___realpathat        574
+DECL_TEMPLATE(freebsd, sys___realpathat) // 574
 // unimpl __NR_close_range         575
 
 #endif
@@ -534,12 +534,7 @@ DECL_TEMPLATE(freebsd, sys___sysctlbyname) // 570
 #if (FREEBSD_VERS >= FREEBSD_13)
 
 // unimpl __NR_rpctls_syscall      576
-
-#endif
-
-#if (FREEBSD_VERS >= FREEBSD_14)
-
-// unimpl __NR___specialfd         577
+DECL_TEMPLATE(freebsd, sys___specialfd) // 577
 // unimpl __NR_aio_writev          578
 // unimpl __NR_aio_readv           579
 

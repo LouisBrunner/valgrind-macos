@@ -1,0 +1,4 @@
+Child writing 2 to efd
+Child completed write loop
+Parent about to read
+Parent read 2 (0x2) from efd

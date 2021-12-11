@@ -6206,7 +6206,46 @@ POST(sys___sysctlbyname)
    }
 }
 
-#endif
+// SYS___realpathat
+// from syscalls.master
+//         int __realpathat(int fd,
+//         _In_z_ const char *path,
+//         _Out_writes_z_(size) char *buf,
+//         size_t size,
+//         int flags)
+PRE(sys___realpathat)
+{
+   PRINT("sys___realpathat ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x, %" FMT_REGWORD "u %" FMT_REGWORD "d )",
+         SARG1,ARG2,(const char*)ARG2,ARG3,ARG4,SARG5 );
+   PRE_REG_READ5(int, "__realpathat", int, fd, const char *, path,
+                 char *, buf, vki_size_t, size, int, flags);
+   PRE_MEM_RASCIIZ("__realpathat(path)", (Addr)ARG2);
+   PRE_MEM_WRITE("__realpathat(buf)", (Addr)ARG3, ARG4);
+}
+
+POST(sys___realpathat)
+{
+   POST_MEM_WRITE((Addr)ARG3, ARG4);
+}
+
+#endif // (FREEBSD_VERS >= FREEBSD_12_2)
+
+#if (FREEBSD_VERS >= FREEBSD_13)
+
+// SYS___specialfd
+// syscalls.master
+// int __specialfd(int type,
+//                _In_reads_bytes_(len) const void *req,
+//                 size_t len);
+PRE(sys___specialfd)
+{
+   PRINT("sys___specialfd ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u )",
+         SARG1,ARG2,(const char*)ARG2,ARG3 );
+   PRE_REG_READ3(int, "__specialfd", int, type, const void *, req, vki_size_t, len);
+   PRE_MEM_READ("__specialfd(req)", (Addr)ARG2, ARG3);
+}
+
+#endif // (FREEBSD_VERS >= FREEBSD_13)
 
 #undef PRE
 #undef POST
@@ -6903,16 +6942,13 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    // unimpl __NR_shm_open2           571
    // unimpl __NR_shm_rename          572
    // unimpl __NR_sigfastblock        573
-   // unimpl __NR___realpathat        574
+   BSDXY( __NR___realpathat,    sys___realpathat),      // 574
    // unimpl __NR_close_range         575
 #endif
 
 #if (FREEBSD_VERS >= FREEBSD_13)
    // unimpl __NR_rpctls_syscall      576
-#endif
-
-#if (FREEBSD_VERS >= FREEBSD_14)
-   // unimpl __NR___specialfd         577
+   BSDX_(__NR___specialfd,      sys___specialfd),       // 577
    // unimpl __NR_aio_writev          578
    // unimpl __NR_aio_readv           579
 #endif

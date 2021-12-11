@@ -387,11 +387,17 @@ case "${host_os}" in
         AC_MSG_RESULT([ok (${host_os})])
         VGCONF_OS="freebsd"
         AC_DEFINE([FREEBSD_10], 1000, [FREEBSD_VERS value for FreeBSD 10.x])
+        freebsd_10=1000
         AC_DEFINE([FREEBSD_11], 1100, [FREEBSD_VERS value for FreeBSD 11.x])
+        freebsd_11=1100
         AC_DEFINE([FREEBSD_12], 1200, [FREEBSD_VERS value for FreeBSD 12.0 to 12.1])
+        freebsd_12=1200
         AC_DEFINE([FREEBSD_12_2], 1220, [FREEBSD_VERS value for FreeBSD 12.2])
+        freebsd_12_2=1220
         AC_DEFINE([FREEBSD_13], 1300, [FREEBSD_VERS value for FreeBSD 13.x])
+        freebsd_13=1300
         AC_DEFINE([FREEBSD_14], 1400, [FREEBSD_VERS value for FreeBSD 14.x])
+        freebsd_14=1400
 
         AC_MSG_CHECKING([for the kernel version])
         kernel=`uname -r`
@@ -400,30 +406,36 @@ case "${host_os}" in
         10.*)
            AC_MSG_RESULT([FreeBSD 10.x (${kernel})])
            AC_DEFINE([FREEBSD_VERS], FREEBSD_10, [FreeBSD version])
+           freebsd_vers=$freebsd_10
            ;;
         11.*)
            AC_MSG_RESULT([FreeBSD 11.x (${kernel})])
            AC_DEFINE([FREEBSD_VERS], FREEBSD_11, [FreeBSD version])
+           freebsd_vers=$freebsd_11
            ;;
         12.*)
            case "${kernel}" in
            12.[[0-1]]-*)
               AC_MSG_RESULT([FreeBSD 12.x (${kernel})])
               AC_DEFINE([FREEBSD_VERS], FREEBSD_12, [FreeBSD version])
+              freebsd_vers=$freebsd_12
               ;;
            *)
               AC_MSG_RESULT([FreeBSD 12.x (${kernel})])
               AC_DEFINE([FREEBSD_VERS], FREEBSD_12_2, [FreeBSD version])
+              freebsd_vers=$freebsd_12_2
               ;;
            esac
            ;;
         13.*)
            AC_MSG_RESULT([FreeBSD 13.x (${kernel})])
            AC_DEFINE([FREEBSD_VERS], FREEBSD_13, [FreeBSD version])
+           freebsd_vers=$freebsd_13
            ;;
         14.*)
            AC_MSG_RESULT([FreeBSD 14.x (${kernel})])
            AC_DEFINE([FREEBSD_VERS], FREEBSD_14, [FreeBSD version])
+           freebsd_vers=$freebsd_14
            ;;
         *)
            AC_MSG_RESULT([unsupported (${kernel})])
@@ -4601,6 +4613,25 @@ AM_CONDITIONAL(SOLARIS_RESERVE_SYSSTAT_ADDR, false)
 AM_CONDITIONAL(SOLARIS_RESERVE_SYSSTAT_ZONE_ADDR, false)
 AM_CONDITIONAL(SOLARIS_SYSTEM_STATS_SYSCALL, false)
 fi # test "$VGCONF_OS" = "solaris"
+
+#----------------------------------------------------------------------------
+# FreeBSD-specific checks.
+#----------------------------------------------------------------------------
+
+# Rather than having a large number of feature test as above with Solaris
+# these tests are per-version. This may not be entirely relialable for
+# FreeBSD development branches (XX.Y-CURRENT) or pre-release branches
+# (XX.Y-STABLE) but it should work for XX-Y-RELEASE
+
+if test "$VGCONF_OS" = "freebsd" ; then
+
+AM_CONDITIONAL(FREEBSD_VERS_13_PLUS, test $freebsd_vers -ge $freebsd_13)
+
+else
+
+AM_CONDITIONAL(FREEBSD_VERS_13_PLUS, false)
+
+fi # test "$VGCONF_OS" = "freebsd"
 
 
 #----------------------------------------------------------------------------

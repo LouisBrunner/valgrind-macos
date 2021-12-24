@@ -9,20 +9,20 @@ For a detailed leak analysis, rerun with: --leak-check=full
 For lists of detected and suppressed errors, rerun with: -s
 ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 Unaddressable byte(s) found during client check request
-   at 0x........: test2 (addressable.c:48)
-   by 0x........: main (addressable.c:125)
+   at 0x........: test2 (addressable.c:51)
+   by 0x........: main (addressable.c:128)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Invalid write of size 1
-   at 0x........: test2 (addressable.c:51)
-   by 0x........: main (addressable.c:125)
+   at 0x........: test2 (addressable.c:54)
+   by 0x........: main (addressable.c:128)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 
 Process terminating with default action of signal N (SIGSEGV or SIGBUS)
  Bad memory (SIGSEGV or SIGBUS) at address 0x........
-   at 0x........: test2 (addressable.c:51)
-   by 0x........: main (addressable.c:125)
+   at 0x........: test2 (addressable.c:54)
+   by 0x........: main (addressable.c:128)
  If you believe this happened as a result of a stack
  overflow in your program's main thread (unlikely but
  possible), you can try to increase the size of the
@@ -49,8 +49,8 @@ ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 
 Process terminating with default action of signal N (SIGSEGV or SIGBUS)
  Bad memory (SIGSEGV or SIGBUS) at address 0x........
-   at 0x........: test4 (addressable.c:74)
-   by 0x........: main (addressable.c:125)
+   at 0x........: test4 (addressable.c:77)
+   by 0x........: main (addressable.c:128)
 
 HEAP SUMMARY:
     in use at exit: ... bytes in ... blocks
@@ -61,13 +61,13 @@ For a detailed leak analysis, rerun with: --leak-check=full
 For lists of detected and suppressed errors, rerun with: -s
 ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 Uninitialised byte(s) found during client check request
-   at 0x........: test5 (addressable.c:85)
-   by 0x........: main (addressable.c:125)
+   at 0x........: test5 (addressable.c:88)
+   by 0x........: main (addressable.c:128)
  Address 0x........ is in a rw- anonymous segment
 
 Uninitialised byte(s) found during client check request
-   at 0x........: test5 (addressable.c:91)
-   by 0x........: main (addressable.c:125)
+   at 0x........: test5 (addressable.c:94)
+   by 0x........: main (addressable.c:128)
  Address 0x........ is in a r-- anonymous segment
 
 

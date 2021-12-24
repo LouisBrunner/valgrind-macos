@@ -1,0 +1,60 @@
+#!/usr/bin/env perl
+
+use warnings;
+use strict;
+use feature 'say';
+
+# Replace pthread_create with pthread_create@* which is expected on Linux
+s/pthread_create \(hg_intercepts.c:/pthread_create@* \(hg_intercepts.c:/g;
+
+# ditto pthread_cond_destroy
+s/pthread_cond_destroy \(hg_intercepts.c:/pthread_cond_destroy@* \(hg_intercepts.c:/g;
+
+# ditto pthread_cond_timedwait
+s/pthread_cond_timedwait \(hg_intercepts.c:/pthread_cond_timedwait@* \(hg_intercepts.c:/g;
+
+my @regex = (
+            ["   by 0x\.{8}: pthread_create_WRK \(hg_intercepts.c:[0-9]{3,4}\)",
+             "   by 0x.{8}: pthread_create\@\* \(hg_intercepts.c:[0-9]{3,4}\)",
+             "   by 0x........: pthread_create@* \(hg_intercepts.c:...\)"
+            ]
+            );
+
+foreach my $item (@regex) {
+   my $just_saw_first_line;
+
+   while (<>) {
+
+      if ($just_saw_first_line and not /^$item->[1]/) {
+         say $item->[2];
+      }
+
+      $just_saw_first_line = /^$item->[0]/;
+      print
+   }
+}
+
+# because of optimization, there's one less line in the callstack when VG is built with clang
+# not this is a host difference, not a client one
+#s/(0x........: pthread_create_WRK \(hg_intercepts.c:433\)\n)(?!   by 0x........: pthread_create@\* \(hg_intercepts.c:472\))/$1   by 0x........: pthread_create@* (hg_intercepts.c:...)\n/;
+#s/$   by 0x\.{8}: pthread_create_WRK \(hg_intercepts.c:[0-9]{3,4}\).(?!   by 0x\.{8}: pthread_create@\* \(hg_intercepts.c:[0-9]{3,4}\))^/   by 0x........: pthread_create_WRK \(hg_intercepts.c:...\)\n   by 0x........: pthread_create@* \(hg_intercepts.c:...\)\n/s;
+
+#s/0x\.{8}: pthread_destroy_WRK \(hg_intercepts.c:[0-9]+\).(?!    by 0x[0-9A-F]+: pthread_destroy@\* \(hg_intercepts.c:[0-9]+\))/0x........: pthread_destroy_WRK \(hg_intercepts.c:...\)\n   by 0x........: pthread_destroy@* \(hg_intercepts.c:...\)\n/gms;
+
+#s/0x\.{8}: pthread_cond_timedwait_WRK \(hg_intercepts.c:\.{3,4}\).(?!   by 0x[0-9A-F]+: pthread_cond_timedwait@\* \(hg_intercepts.c:\.{3,4}\))/0x........: pthread_cond_timedwait_WRK \(hg_intercepts.c:...\)\n   by 0x........: pthread_cond_timedwait@* \(hg_intercepts.c:...\)\n/gms;
+
+#s/0x\.{8}: mutex_lock_WRK \(hg_intercepts.c:[0-9]+\).(?!   by 0x\.{8}: pthread_mutex_lock \(hg_intercepts.c:[0-9]+\))/0x........: mutex_lock_WRK \(hg_intercepts.c:...\)\n   by 0x........: pthread_mutex_lock \(hg_intercepts.c:...\)\n/gms;
+
+#s/0x\.{8}: mutex_unlock_WRK \(hg_intercepts.c:.[0-9]+\).(?!   by 0x\.{8}: pthread_mutex_unlock \(hg_intercepts.c:.[0-9]+\))/0x........: mutex_unlock_WRK \(hg_intercepts.c:...\)\n   by 0x........: pthread_mutex_unlock \(hg_intercepts.c:...\)\n/gms;
+
+#s/0x\.{8}: pthread_cond_wait_WRK \(hg_intercepts.c:.[0-9]+\).(?!   by 0x\.{8}: pthread_cond_wait \(hg_intercepts.c:.[0-9]+\))/0x........: pthread_cond_wait_WRK (hg_intercepts.c:...)\n   by 0x........: pthread_cond_wait (hg_intercepts.c:...)\n/gms;
+
+#s/0x\.{8}: pthread_cond_signal_WRK \(hg_intercepts.c:[0-9]+\).(?!   by 0x\.{8}: pthread_cond_signal \(hg_intercepts.c:....\))/0x........: pthread_cond_signal_WRK (hg_intercepts.c:...)\n   by 0x........: pthread_cond_signal (hg_intercepts.c:...)\n/gms;
+
+#s/0x\.{8}: sem_init_WRK \(hg_intercepts.c:.[0-9]+\).(?!   by 0x\.{8}: sem_init \(hg_intercepts.c:.[0-9]+\))/0x........: sem_init_WRK (hg_intercepts.c:...)\n   by 0x........: sem_init (hg_intercepts.c:...)\n/gms;
+
+#s/0x\.{8}: sem_wait_WRK \(hg_intercepts.c:[0-9]+\).(?!   by 0x\.{8}: sem_wait \(hg_intercepts.c:....\))/0x........: sem_wait_WRK (hg_intercepts.c:...)\n   by 0x........: sem_wait (hg_intercepts.c:...)\n/gms;
+
+#s/0x\.{8}: sem_post_WRK \(hg_intercepts.c:[0-9]+\).(?!   by 0x\.{8}: sem_post \(hg_intercepts.c:.[0-9]+\))/0x........: sem_post_WRK (hg_intercepts.c:...)\n   by 0x........: sem_post (hg_intercepts.c:...)\n/gms;
+
+#s/0x\.{8}: sem_destroy_WRK \(hg_intercepts.c:[0-9]+\).(?!   by 0x\.{8}: sem_destroy \(hg_intercepts.c:....\))/0x........: sem_destroy_WRK (hg_intercepts.c:...)\n   by 0x........: sem_destroy (hg_intercepts.c:...)\n/gms;

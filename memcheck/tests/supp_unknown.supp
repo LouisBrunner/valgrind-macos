@@ -13,3 +13,11 @@
    fun:main
 }
 
+{
+   FreeBSD GCC i386
+   Memcheck:Jump
+   obj:*
+   fun:_start1
+   fun:(below main)
+}
+

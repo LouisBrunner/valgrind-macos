@@ -1,0 +1,2 @@
+prog: scalar_thr_exit
+vgopts: -q

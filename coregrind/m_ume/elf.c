@@ -26,7 +26,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#if defined(VGO_linux) || defined(VGO_solaris)
+#if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
 
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
@@ -39,6 +39,7 @@
 #include "pub_core_libcfile.h"      // VG_(open) et al
 #include "pub_core_machine.h"       // VG_ELF_CLASS (XXX: which should be moved)
 #include "pub_core_mallocfree.h"    // VG_(malloc), VG_(free)
+#include "pub_core_vkiscnums.h"
 #include "pub_core_syscall.h"       // VG_(strerror)
 #include "pub_core_ume.h"           // self
 
@@ -642,6 +643,15 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
          VG_(pread)(fd, buf, ph->p_filesz, ph->p_offset);
          buf[ph->p_filesz] = '\0';
 
+#if defined(VGP_x86_freebsd)
+         sres._isError = True;
+         /* Hack.  FreeBSD's kernel overloads the interpreter name. */
+         if (VG_(strcmp)(buf, "/libexec/ld-elf.so.1") == 0 ||
+             VG_(strcmp)(buf, "/usr/libexec/ld-elf.so.1") == 0) {
+            sres = VG_(open)("/libexec/ld-elf32.so.1", VKI_O_RDONLY, 0);
+         }
+         if (sr_isError(sres))
+#endif
          sres = VG_(open)(buf, VKI_O_RDONLY, 0);
          if (sr_isError(sres)) {
             VG_(printf)("valgrind: m_ume.c: can't open interpreter\n");
@@ -868,7 +878,7 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
    return 0;
 }
 
-#endif // defined(VGO_linux) || defined(VGO_solaris)
+#endif // defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

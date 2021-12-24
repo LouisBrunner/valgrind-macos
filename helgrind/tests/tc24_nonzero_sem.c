@@ -9,6 +9,9 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <unistd.h>
+#if defined(VGO_freebsd)
+# include <sys/fcntl.h>
+#endif
 
 #define N_THREADS 3
 
@@ -50,7 +53,7 @@ static sem_t* my_sem_init (char* identity, int pshared, unsigned count)
 {
    sem_t* s;
 
-#if defined(VGO_linux) || defined(VGO_solaris)
+#if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
    s = malloc(sizeof(*s));
    if (s) {
       if (sem_init(s, pshared, count) < 0) {

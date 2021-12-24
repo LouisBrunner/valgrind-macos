@@ -8,6 +8,7 @@
 #include <setjmp.h>
 #include "tests/sys_mman.h"
 #include <unistd.h>
+#include "../../config.h"
 
 /* Division by zero triggers a SIGFPE on x86 and x86_64,
    but not on the PowerPC architecture.
@@ -35,7 +36,7 @@
  * BUS_ADRERR is used for bus time out while BUS_OBJERR is translated
  * from underlying codes FC_OBJERR (x86) or ASYNC_BERR (sparc).
  */
-#if defined(VGO_solaris)
+#if defined(VGO_solaris) || (defined(VGO_freebsd) && (FREEBSD_VERS >= FREEBSD_12_2))
 #  define BUS_ERROR_SI_CODE  BUS_OBJERR
 #else
 #  define BUS_ERROR_SI_CODE  BUS_ADRERR
@@ -166,7 +167,11 @@ int main()
 #define T(n, sig, code, addr) { test##n, sig, code, addr }
 			T(1, SIGSEGV,	SEGV_MAPERR,	BADADDR),
 			T(2, SIGSEGV,	SEGV_ACCERR,	mapping),
+#if defined(VGO_freebsd) && (FREEBSD_VERS < FREEBSD_12_2)
+			T(3, SIGSEGV,	BUS_ERROR_SI_CODE, &mapping[FILESIZE+10]),
+#else
 			T(3, SIGBUS,	BUS_ERROR_SI_CODE, &mapping[FILESIZE+10]),
+#endif
 			T(4, SIGFPE,    DIVISION_BY_ZERO_SI_CODE, 0),
 #undef T
 		};
@@ -185,7 +190,9 @@ int main()
 	return 0;
 }
 
+static volatile s_zero;
+
 static int zero()
 {
-	return 0;
+	return s_zero;
 }

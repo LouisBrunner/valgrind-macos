@@ -89,7 +89,8 @@ void ltdtr(_Decimal64 in)
                "ipm %1\n\t"
                "srl %1,28\n\t"
                :[out] "=d" (out), "=d" (cc)
-               :[in] "f" (in));
+               :[in] "f" (in)
+               :"cc");
   printf("LTDTR ");
   DFP_VAL_PRINT(in, _Decimal64);
   printf(" -> %d\n", cc);
@@ -103,7 +104,8 @@ void ltxtr(_Decimal128 in)
                "ipm %1\n\t"
                "srl %1,28\n\t"
                :[out] "=f" (out), "=d" (cc)
-               :[in] "f" (in));
+               :[in] "f" (in)
+               :"cc");
   printf("LTXTR ");
   DFP_VAL_PRINT(in, _Decimal128);
   printf(" -> %d\n", cc);

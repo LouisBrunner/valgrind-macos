@@ -99,7 +99,7 @@ big_loop:
 	
 print_error:
 	mov 	$4,%eax			# write syscall
-#if defined(VGO_darwin)
+#if defined(VGO_darwin) || defined(VGO_freebsd)
 	pushl	$22
 	pushl	$error
 	pushl	$1
@@ -120,7 +120,7 @@ print_error:
 
 exit:
 	movl	$1,	%eax		# SYSCALL_EXIT
-#if defined(VGO_darwin)
+#if defined(VGO_darwin) || defined(VGO_freebsd)
 	pushl	result
 	int	$0x80
 #elif defined(VGO_linux)

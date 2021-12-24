@@ -70,7 +70,7 @@ extern Int  VG_(system) ( const HChar* cmd );
 extern Int  VG_(spawn)  ( const HChar *filename, const HChar **argv );
 extern Int  VG_(fork)   ( void);
 extern void VG_(execv)  ( const HChar* filename, const HChar** argv );
-extern Int  VG_(sysctl) ( Int *name, UInt namelen, void *oldp, SizeT *oldlenp, void *newp, SizeT newlen );
+extern Int  VG_(sysctl) ( Int *name, UInt namelen, void *oldp, SizeT *oldlenp, const void *newp, SizeT newlen );
 
 /* ---------------------------------------------------------------------
    Resource limits and capabilities
@@ -103,7 +103,7 @@ extern UInt VG_(read_millisecond_timer) ( void );
 
 extern Int  VG_(gettimeofday)(struct vki_timeval *tv, struct vki_timezone *tz);
 
-#  if defined(VGO_linux) || defined(VGO_solaris)
+#  if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
 /* Get the clock value as specified by clk_id.  Asserts if unsuccesful.  */
 extern void VG_(clock_gettime)(struct vki_timespec *ts, vki_clockid_t clk_id);
 #  elif defined(VGO_darwin)

@@ -4776,7 +4776,7 @@ static IRExpr * is_NaN_Vector( IRType element_size, IRExpr *src )
    IRTemp zeroV128  = newTemp( Ity_V128 );
    IRTemp exp_maskV128 = newTemp( Ity_V128 );
    IRTemp frac_maskV128 = newTemp( Ity_V128 );
-   IROp   opCmpEQ;
+   IROp   opCmpEQ =  Iop_INVALID;
 
    assign( zeroV128, mkV128( 0 ) );
 
@@ -8401,6 +8401,9 @@ static Bool dis_int_logic ( UInt prefix, UInt theInstr )
          break;
 
       case 0x2DF: { // mftgpr (move floating-point to general purpose register)
+         /* The mftgpr instruction was deprecated in Power 7, 2009 timeframe.
+            Leaving support in Valgrind for now (9/10/2021).  Can remove the
+            mftgpr support in Valgrind if the opcode ever gets reused.  */
          IRTemp frB = newTemp(Ity_F64);
          DIP("mftgpr r%u,fr%u\n", rS_addr, rB_addr);
 
@@ -8415,6 +8418,9 @@ static Bool dis_int_logic ( UInt prefix, UInt theInstr )
       }
 
       case 0x25F: { // mffgpr (move floating-point from general purpose register)
+         /* The mffgpr instruction was deprecated in Power 7, 2009 timeframe.
+            Leaving support in Valgrind for now (9/10/2021).  Can remove the
+            mftgpr support in Valgrind if the opcode ever gets reused.  */
          IRTemp frA = newTemp(Ity_F64);
          DIP("mffgpr fr%u,r%u\n", rS_addr, rB_addr);
 
@@ -9832,23 +9838,24 @@ static Bool dis_int_store_ds_prefix ( UInt prefix,
             if (host_endness == VexEndnessBE) {
 
                /* upper 64-bits */
-               assign( EA_hi, ea_rAor0_simm( rA_addr, immediate_val ) );
+               assign( EA_hi, mkexpr(EA));
 
                /* lower 64-bits */
-               assign( EA_lo, ea_rAor0_simm( rA_addr, immediate_val+8 ) );
+               assign( EA_lo, binop(Iop_Add64, mkexpr(EA), mkU64(8)));
+
             } else {
                /* upper 64-bits */
-               assign( EA_hi, ea_rAor0_simm( rA_addr, immediate_val+8 ) );
+               assign( EA_hi, binop(Iop_Add64, mkexpr(EA), mkU64(8)));
 
                /* lower 64-bits */
-               assign( EA_lo, ea_rAor0_simm( rA_addr, immediate_val ) );
+               assign( EA_lo, mkexpr(EA));
             }
          } else {
             /* upper half of upper 64-bits */
-            assign( EA_hi, ea_rAor0_simm( rA_addr, immediate_val+4 ) );
+            assign( EA_hi, binop(Iop_Add32, mkexpr(EA), mkU32(4)));
 
             /* lower half of upper 64-bits */
-            assign( EA_lo, ea_rAor0_simm( rA_addr, immediate_val+12 ) );
+            assign( EA_lo, binop(Iop_Add32, mkexpr(EA), mkU32(12)));
          }
 
          /* Note, the store order for stq instruction is the same for BE
@@ -11493,7 +11500,7 @@ static Bool dis_memsync ( UInt prefix, UInt theInstr )
 /*
   Integer Shift Instructions
 */
-static Bool dis_int_shift ( UInt prefix, UInt theInstr )
+static Bool dis_int_shift ( UInt prefix, UInt theInstr, UInt allow_isa_3_0 )
 {
    /* X-Form, XS-Form */
    UChar opc1    = ifieldOPC(theInstr);
@@ -11569,11 +11576,16 @@ static Bool dis_int_shift ( UInt prefix, UInt theInstr )
                                           mkexpr(sh_amt)) ) );
          assign( rA, mkWidenFrom32(ty, e_tmp, /* Signed */True) );
 
+         /* Set CA bit */
          set_XER_CA_CA32( ty, PPCG_FLAG_OP_SRAW,
                           mkexpr(rA),
                           mkWidenFrom32(ty, mkexpr(rS_lo32), True),
                           mkWidenFrom32(ty, mkexpr(sh_amt), True ),
                           mkWidenFrom32(ty, getXER_CA_32(), True) );
+
+         if (allow_isa_3_0)
+            /* copy CA to CA32 */
+            putXER_CA32( unop(Iop_32to8, getXER_CA_32()));
          break;
       }
          
@@ -11591,11 +11603,16 @@ static Bool dis_int_shift ( UInt prefix, UInt theInstr )
                                          mkU8(sh_imm)) );
          }
 
+         /* Set CA bit */
          set_XER_CA_CA32( ty, PPCG_FLAG_OP_SRAWI,
                           mkexpr(rA),
                           mkWidenFrom32(ty, mkexpr(rS_lo32), /* Syned */True),
                           mkSzImm(ty, sh_imm),
                           mkWidenFrom32(ty, getXER_CA_32(), /* Syned */False) );
+
+         if (allow_isa_3_0)
+            /* copy CA to CA32 */
+            putXER_CA32( unop(Iop_32to8, getXER_CA_32()));
          break;
       
       case 0x218: // srw (Shift Right Word, PPC32 p508)
@@ -11666,9 +11683,14 @@ static Bool dis_int_shift ( UInt prefix, UInt theInstr )
                                           mkU64(63),
                                           mkexpr(sh_amt)) ))
                );
+         /* Set CA bit */
          set_XER_CA_CA32( ty, PPCG_FLAG_OP_SRAD,
                           mkexpr(rA), mkexpr(rS), mkexpr(sh_amt),
                           mkWidenFrom32(ty, getXER_CA_32(), /* Syned */False) );
+
+         if (allow_isa_3_0)
+            /* copy CA to CA32 */
+            putXER_CA32( unop(Iop_32to8, getXER_CA_32()));
          break;
       }
 
@@ -11679,11 +11701,16 @@ static Bool dis_int_shift ( UInt prefix, UInt theInstr )
              flag_rC ? ".":"", rA_addr, rS_addr, sh_imm);
          assign( rA, binop(Iop_Sar64, getIReg(rS_addr), mkU8(sh_imm)) );
 
+         /* Set CA bit */
          set_XER_CA_CA32( ty, PPCG_FLAG_OP_SRADI,
                           mkexpr(rA),
                           getIReg(rS_addr),
                           mkU64(sh_imm),
                           mkWidenFrom32(ty, getXER_CA_32(), /* Syned */False) );
+
+         if (allow_isa_3_0)
+            /* copy CA to CA32 */
+            putXER_CA32( unop(Iop_32to8, getXER_CA_32()));
          break;
 
       case 0x21B: // srd (Shift Right DWord, PPC64 p574)
@@ -11923,6 +11950,35 @@ static Bool dis_proc_ctl ( const VexAbiInfo* vbi, UInt prefix, UInt theInstr )
       break;
    }
       
+   case 0x240: { // mcrxrx (Move to Cond Register from XER)
+      IRTemp  OV   = newTemp(Ity_I32);
+      IRTemp  CA   = newTemp(Ity_I32);
+      IRTemp  OV32 = newTemp(Ity_I32);
+      IRTemp  CA32 = newTemp(Ity_I32);
+      IRTemp  tmp  = newTemp(Ity_I32);
+
+      if (b21to22 != 0 || b11to20 != 0) {
+         vex_printf("dis_proc_ctl(ppc)(mcrxrx,b21to22|b11to20)\n");
+         return False;
+      }
+      DIP("mcrxrx crf%d\n", crfD);
+      /* Move OV, OV32, CA, CA32 to condition register field BF */
+      assign( OV, binop( Iop_Shl32, getXER_OV_32(), mkU8( 3 ) ));
+      assign( CA, binop( Iop_Shl32, getXER_CA_32(), mkU8( 1 ) ));
+      assign( OV32, binop( Iop_Shl32, getXER_OV32_32(), mkU8( 2 ) ));
+      assign( CA32, getXER_CA32_32() );
+
+      /* Put [OV | OV32 | CA | CA32] into the condition code register */
+      assign( tmp,
+              binop( Iop_Or32,
+                     binop( Iop_Or32, mkexpr ( OV ),  mkexpr ( OV32 ) ),
+                     binop( Iop_Or32, mkexpr ( CA ),  mkexpr ( CA32 ) )
+                 ) );
+
+      putGST_field( PPC_GST_CR,  mkexpr( tmp ), crfD );
+      break;
+   }
+
    case 0x013: 
       // b11to20==0:      mfcr (Move from Cond Register, PPC32 p467)
       // b20==1 & b11==0: mfocrf (Move from One CR Field)
@@ -14562,12 +14618,6 @@ static Bool dis_fp_pair_prefix ( UInt prefix, UInt theInstr )
       /* Endian aware prefixed load */
       pDIP( is_prefix, "stxvp %u,%llu(%u)\n", XTp, immediate_val, rA_addr );
       DIPp( is_prefix, ",%u", R );
-
-      if ( R == 1 ) {
-         vex_printf("Illegal instruction R = 1; pstxvp %u,%llu(%u)\n",
-                    XTp, immediate_val, rA_addr );
-         return False;
-      }
 
       assign( EA_8, binop( Iop_Add64, mkU64( 8 ), mkexpr( EA ) ) );
       assign( EA_16, binop( Iop_Add64, mkU64( 16 ), mkexpr( EA ) ) );
@@ -25310,19 +25360,17 @@ dis_vx_load ( UInt prefix, UInt theInstr )
 
       else
          irx_addr = mkexpr( EA );
-
-      byte = load( Ity_I64, irx_addr );
+      /* byte load */
+      byte = load( Ity_I8, irx_addr );
       putVSReg( XT, binop( Iop_64HLtoV128,
-                            binop( Iop_And64,
-                                   byte,
-                                   mkU64( 0xFF ) ),
+                           unop( Iop_8Uto64, byte ),
                            mkU64( 0 ) ) );
       break;
    }
 
    case 0x32D: // lxsihzx
    {
-      IRExpr *byte;
+      IRExpr *hword;
       IRExpr* irx_addr;
 
       DIP("lxsihzx %u,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
@@ -25333,11 +25381,10 @@ dis_vx_load ( UInt prefix, UInt theInstr )
       else
          irx_addr = mkexpr( EA );
 
-      byte = load( Ity_I64, irx_addr );
+      hword = load( Ity_I16, irx_addr );
       putVSReg( XT, binop( Iop_64HLtoV128,
-                            binop( Iop_And64,
-                                   byte,
-                                   mkU64( 0xFFFF ) ),
+                            unop( Iop_16Uto64,
+                                  hword ),
                            mkU64( 0 ) ) );
       break;
    }
@@ -37424,7 +37471,8 @@ DisResult disInstr_PPC_WRK (
       /* Integer Shift Instructions */
       case 0x018: case 0x318: case 0x338: // slw, sraw, srawi
       case 0x218:                         // srw
-         if (dis_int_shift( prefix, theInstr )) goto decode_success;
+         if (dis_int_shift( prefix, theInstr, allow_isa_3_0 ))
+            goto decode_success;
          goto decode_failure;
 
       /* 64bit Integer Shift Instructions */
@@ -37432,7 +37480,8 @@ DisResult disInstr_PPC_WRK (
       case 0x33A: case 0x33B: // sradi
       case 0x21B:             // srd
          if (!mode64) goto decode_failure;
-         if (dis_int_shift( prefix, theInstr )) goto decode_success;
+         if (dis_int_shift( prefix, theInstr, allow_isa_3_0 ))
+            goto decode_success;
          goto decode_failure;
 
       /* Integer Load Instructions */
@@ -37514,6 +37563,7 @@ DisResult disInstr_PPC_WRK (
       case 0x200: case 0x013: case 0x153: // mcrxr, mfcr,  mfspr
       case 0x173: case 0x090: case 0x1D3: // mftb,  mtcrf, mtspr
       case 0x220:                         // mcrxrt
+      case 0x240:                         // mcrxrx
          if (dis_proc_ctl( abiinfo, prefix, theInstr )) goto decode_success;
          goto decode_failure;
 

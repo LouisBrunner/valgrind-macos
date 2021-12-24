@@ -232,6 +232,8 @@ enum target_signal
 
     /* If you are adding a new signal, add it just above this comment.  */
 
+
+
     /* Last and unused enum value, for sizing arrays, etc.  */
     TARGET_SIGNAL_LAST
   };

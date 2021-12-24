@@ -30,6 +30,7 @@
 #include "pub_core_threadstate.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcbase.h"
+#include "pub_core_libcprint.h"
 #include "pub_core_libcfile.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
@@ -906,6 +907,20 @@ Bool VG_(machine_get_hwcaps)( void )
      if (!have_cx8)
         return False;
 
+#if defined(VGP_x86_freebsd)
+     if (have_sse1 || have_sse2) {
+	Int sc, error;
+	SizeT scl;
+	/* Regardless of whether cpuid says, the OS has to enable SSE first! */
+	scl = sizeof(sc);
+	error = VG_(sysctlbyname)("hw.instruction_sse", &sc, &scl, 0, 0);
+	if (error == -1 || sc != 1) {
+	    have_sse1 = 0;
+	    have_sse2 = 0;
+	    VG_(message)(Vg_UserMsg, "Warning: cpu has SSE, but the OS has not enabled it.  Disabling in valgrind!");
+	}
+     }
+#endif
      /* Figure out if this is an AMD that can do MMXEXT. */
      have_mmxext = False;
      if (0 == VG_(strcmp)(vstr, "AuthenticAMD")
@@ -2353,7 +2368,7 @@ Int VG_(machine_get_size_of_largest_guest_register) ( void )
 void* VG_(fnptr_to_fnentry)( void* f )
 {
 #  if defined(VGP_x86_linux) || defined(VGP_amd64_linux)  \
-      || defined(VGP_arm_linux) || defined(VGO_darwin)          \
+      || defined(VGP_arm_linux) || defined(VGO_darwin) || defined(VGO_freebsd) \
       || defined(VGP_ppc32_linux) || defined(VGP_ppc64le_linux) \
       || defined(VGP_s390x_linux) || defined(VGP_mips32_linux) \
       || defined(VGP_mips64_linux) || defined(VGP_arm64_linux) \

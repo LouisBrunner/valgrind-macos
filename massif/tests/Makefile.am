@@ -10,6 +10,7 @@ EXTRA_DIST = \
 	basic2.post.exp basic2.stderr.exp basic2.vgtest \
 	big-alloc.post.exp big-alloc.post.exp-64bit big-alloc.post.exp-ppc64 \
 	big-alloc.stderr.exp big-alloc.vgtest \
+	big-alloc.post.exp-x86-freebsd \
 	deep-A.post.exp deep-A.stderr.exp deep-A.vgtest \
 	deep-B.post.exp deep-B.stderr.exp deep-B.vgtest \
 	deep-C.post.exp deep-C.stderr.exp deep-C.vgtest \
@@ -27,11 +28,13 @@ EXTRA_DIST = \
 	mmapunmap.post.exp mmapunmap.post.exp-ppc64 \
 	mmapunmap.stderr.exp mmapunmap.vgtest \
 	new-cpp.post.exp new-cpp.stderr.exp new-cpp.vgtest \
+		new-cpp.post.exp-freebsd new-cpp.post.exp-x86-freebsd-gcc \
 	no-stack-no-heap.post.exp no-stack-no-heap.stderr.exp no-stack-no-heap.vgtest \
 	null.post.exp null.stderr.exp null.vgtest \
 	one.post.exp one.post.exp2 one.stderr.exp one.vgtest \
 	overloaded-new.post.exp overloaded-new.post.exp-mips32 \
 	overloaded-new.stderr.exp overloaded-new.vgtest \
+		overloaded-new.post.exp-freebsd overloaded-new.post.exp-x86-freebsd-gcc \
 	pages_as_heap.stderr.exp pages_as_heap.vgtest \
 	peak.post.exp peak.stderr.exp peak.vgtest \
 	peak2.post.exp peak2.stderr.exp peak2.vgtest \
@@ -49,7 +52,8 @@ EXTRA_DIST = \
 	thresholds_10_10.post.exp \
 	thresholds_10_10.stderr.exp thresholds_10_10.vgtest \
 	zero1.post.exp zero1.stderr.exp zero1.vgtest \
-	zero2.post.exp zero2.stderr.exp zero2.vgtest
+	zero2.post.exp zero2.stderr.exp zero2.vgtest \
+	overloaded-new.post.exp-freebsd
 
 check_PROGRAMS = \
 	alloc-fns \
@@ -84,4 +88,20 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 # C++ tests
 new_cpp_SOURCES		= new-cpp.cpp
 overloaded_new_SOURCES	= overloaded-new.cpp
+# pre C++11 compilers don't have exception specs
+# C++11 and later compilers may complain about not having
+# exception specs
+overloaded_new_CXXFLAGS	= $(AM_CXXFLAGS) -Wno-implicit-exception-spec-mismatch -Wno-missing-exception-spec
 
+# Suppress warnings for issues we are testing for
+alloc_fns_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result
+big_alloc_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result
+culling1_CFLAGS		= $(AM_CFLAGS) -Wno-unused-result
+culling2_CFLAGS		= $(AM_CFLAGS) -Wno-unused-result
+deep_CFLAGS		= $(AM_CFLAGS) -Wno-unused-result
+ignoring_CFLAGS		= $(AM_CFLAGS) -Wno-unused-result
+insig_CFLAGS		= $(AM_CFLAGS) -Wno-unused-result
+long_names_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result
+one_CFLAGS		= $(AM_CFLAGS) -Wno-unused-result
+thresholds_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result
+realloc_CFLAGS		= $(AM_CFLAGS) -Wno-free-nonheap-object

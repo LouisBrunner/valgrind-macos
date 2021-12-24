@@ -134,11 +134,13 @@ bool uses_acc_vsrs;
 bool uses_pmsk;
 bool uses_buffer;  // Buffer related.
 bool uses_load_buffer, uses_store_buffer, uses_any_buffer;
+bool updates_byte, updates_halfword, updates_word; // output helpers.
 bool uses_quad;
 unsigned long output_mask;  // Output field special handling.
 bool instruction_is_sp, instruction_is_sp_estimate;
 bool instruction_is_dp, instruction_is_dp_estimate;
 bool instruction_is_b16;
+bool instruction_is_relative;
 
 unsigned long long min (unsigned long long a, unsigned long long b) {
    if ( a < b )
@@ -236,6 +238,18 @@ void identify_form_components (const char *instruction_name,
       (strncmp (instruction_name, "pmst", 4) == 0) ||
       (strncmp (instruction_name, "pst", 3) == 0) ||
       (strncmp (instruction_name, "st", 2) == 0));
+   updates_byte = (
+      (strncmp (instruction_name, "pstb", 4) == 0) );
+   updates_halfword = (
+      (strncmp (instruction_name, "psth", 4) == 0) ||
+       (strncmp (instruction_name, "pstfs", 4) == 0) ||
+       (strncmp (instruction_name, "pstxsd", 4) == 0) ||
+       (strncmp (instruction_name, "pstxssp", 4) == 0) ||
+       (strncmp (instruction_name, "pstxv", 4) == 0) ||
+       (strncmp (instruction_name, "psfs", 4) == 0) );
+   updates_word = (
+      (strncmp (instruction_name, "pstw", 4) == 0) );
+
    uses_any_buffer = (strstr (cur_form, "(RA)") != NULL);
    uses_buffer = uses_any_buffer||uses_load_buffer||uses_store_buffer;
 
@@ -268,6 +282,15 @@ void identify_form_components (const char *instruction_name,
    instruction_is_b16 =         ( current_test.mask & B16_MASK        );
 }
 
+/* Parse the provided function name to set assorted values.
+   In particular, set an indicator when the instruction test has
+   indicated it will run with R==1 that indicates it is a PC-relative
+   instruction.  Those tests should all have "_R1" as part of
+   the function name.  */
+void identify_instruction_by_func_name(const char * function_name) {
+   instruction_is_relative = ( (strstr (function_name, "R1") != NULL));
+}
+
 void display_form_components (char * cur_form) {
    printf (" %s\n", cur_form);
    printf ("Instruction form elements: ");
@@ -288,7 +311,7 @@ void display_form_components (char * cur_form) {
    if (has_frbp) printf ("frbp ");
    if (has_frs)  printf ("frs ");
    if (has_frsp) printf ("frsp ");
-   if (has_frt)  printf ("frt ");
+   if (has_frt)  printf ("frt%s ",(instruction_is_relative)?"-raw":"");
    if (has_frtp) printf ("frtp ");
    if (has_xa)   printf ("xa ");
    if (has_xap)  printf ("xap ");
@@ -298,6 +321,7 @@ void display_form_components (char * cur_form) {
    if (has_xsp)  printf ("xsp ");
    if (has_xt)   printf ("xt ");
    if (has_xtp)  printf ("xtp ");
+   if (instruction_is_relative)  printf ("R==1 ");
    if (uses_acc_src) printf ("AS ");
    if (uses_acc_dest) printf ("AT ");
    printf ("\n");
@@ -991,6 +1015,107 @@ if (debug_show_values) printf (" buffer:");
   }
 }
 
+/* **** Reloc Buffer **************************************** */
+/* Create a large buffer to be the destination for pc-relative
+ * writes.  This test is built with linker hints in order
+ * to ensure our buffer, stored in the .bss section, is at a
+ * mostly known offset from the instructions being exercised,
+ * so a hardcoded offset from the PC (pc-relative) will be
+ * on-target.
+ * If there are significant reworks to the code, the bss or
+ * text sections, or the offsets used may need to change.
+ *
+ * The linker hints are specifically -Tbss and -Ttext.
+ * gcc foo.c test_isa_3_1_common.c -I../../../   -Wl,-Tbss 0x20000 -Wl,-Ttext 0x40000
+ */
+ /* RELOC_BUFFER_SIZE is defined to 0x1000 in isa_3_1_helpers.h  */
+#define RELOC_BUFFER_PATTERN 0x0001000100010001
+volatile unsigned long long pcrelative_write_target[RELOC_BUFFER_SIZE];
+
+/* Initialize the buffer to known values. */
+void init_pcrelative_write_target() {
+       int i;
+       for (i=0;i<RELOC_BUFFER_SIZE;i++)
+               pcrelative_write_target[i]=i*RELOC_BUFFER_PATTERN;
+}
+
+/* Review the pcrelative_write_target buffer; and print any
+   elements that vary from the initialized value.
+   Exclude portions of the output as appropriate if the current test
+   is marked for byte,halfword,word.  */
+void print_pcrelative_write_target() {
+  int i,z,rshift;
+  unsigned long long curr_value;
+  unsigned long long ref_value;
+  unsigned long long curr_token,init_token;
+  for (i=0;i<RELOC_BUFFER_SIZE;i++) {
+    ref_value=i*RELOC_BUFFER_PATTERN;
+    curr_value = pcrelative_write_target[i];
+    if (ref_value != curr_value) {
+      printf(" ");
+      if (verbose)
+	printf("delta found: %d %llx -> %llx\n",i,ref_value,curr_value);
+      if (updates_byte) {
+	for (z=0;z<8;z++) {
+	  rshift=z*8;
+	  if (verbose) printf("z:%d ",z);
+	  init_token = (ref_value>>rshift) & 0xff;
+	  curr_token = (curr_value>>rshift) & 0xff;
+	  if (verbose)
+	    printf("wms byte:: %llx -> %llx \n",init_token,curr_token);
+	  if (init_token == curr_token && (updates_byte||updates_halfword||updates_word) ) {
+	     printf("%2s","  ");
+	  } else {
+	    printf("%02llx",curr_token);
+	  }
+        }
+      }
+      else if (updates_halfword) {
+	for (z=0;z<4;z++) {
+	  rshift=z*16;
+	  if (verbose) printf("z:%d ",z);
+	  init_token = (ref_value>>rshift) & 0xffff;
+	  curr_token = (curr_value>>rshift) & 0xffff;
+	  if (verbose)
+	    printf("wms half:: %llx -> %llx \n",init_token,curr_token);
+	  if (init_token == curr_token) {
+	     printf("%2s","  ");
+	  } else {
+	    printf("%04llx",curr_token);
+	  }
+        }
+      }
+      else if (updates_word) {
+	for (z=0;z<2;z++) {
+	  rshift=z*32;
+	  if (verbose) printf("z:%d ",z);
+	  init_token = (ref_value>>rshift) & 0xffffffff;
+	  curr_token = (curr_value>>rshift) & 0xffffffff;
+	  if (verbose)
+	    printf("wms word:: %llx -> %llx \n",init_token,curr_token);
+	  if (init_token == curr_token ) {
+	     printf("%2s","  ");
+	  } else {
+	    printf("%08llx",curr_token);
+	  }
+        }
+      }
+      else {
+	printf("%016llx ",curr_value);
+      }
+    }
+  }
+}
+
+/* Helper that returns the address of the pcrelative_write_target buffer.
+   Due to variances in where the sections land in memory, this value is
+   used to normalize the results.  (see paddi tests for usage).   */
+unsigned long long pcrelative_buff_addr(int x) {
+   /* Return the base address of the array.  The base address will be
+      a function of the code load address.  */
+   return (unsigned long long) &pcrelative_write_target[x];
+}
+
 void print_undefined () {
    if (debug_show_values)
       printf (" [Undef]");
@@ -1339,7 +1464,7 @@ void print_frt () {
       /* If the result is a dfp128 value, the dfp128 value is
          contained in the frt, frtp values which are split across
          a pair of VSRs.  */
-      if (uses_dfp128_output) {
+      if (!instruction_is_relative && uses_dfp128_output) {
 	 if (verbose) print_vsr (28);
 	 if (verbose) print_vsr (29);
 	 value1 = get_vsrhd_vs28 ();
@@ -1347,7 +1472,12 @@ void print_frt () {
 	 dissect_dfp128_float (value1, value3);
       } else {
 	 if (debug_show_raw_values) generic_print_float_as_hex (frt);
-	 printf (" %e", frt);
+	 if (instruction_is_relative) {
+	    printf ("_ %e _ ", frt);
+	    print_vsr (28);
+	 } else {
+		printf (" %e", frt);
+	  }
 	 if (has_frtp) {
 	    if (debug_show_raw_values) generic_print_float_as_hex (frtp);
 	    printf (" %e", frtp);
@@ -1652,7 +1782,15 @@ void print_all() {
 void print_register_header () {
   post_test = 0;
   if (debug_show_all_regs) print_all();
-  if (has_ra) print_ra ();
+
+  if (has_ra) {
+	  /* Suppress the print of RA if the instruction has
+	     R==1, since the ra value must be zero for the
+	     instruction to be valid.  */
+	  if (!instruction_is_relative)
+		 print_ra();
+  }
+
   if (has_rb) print_rb ();
   if (has_rc) print_rc ();
   if (has_rs) print_rs();
@@ -1893,6 +2031,11 @@ void set_up_iterators () {
 	   a_start=1; b_start=3; c_start=0; m_start=0;
    } else {
 	   a_start=0; b_start=0; c_start=0; m_start=0;
+   }
+   /* Special casing for R==1 tests. */
+   if (instruction_is_relative) {
+	  a_iters = 1;
+	  m_start=3; m_iters=4;
    }
    if ((has_vra+has_vrb+has_vrc+has_vrm+has_xa+has_xb+uses_MC > 2) &&
        (!debug_enable_all_iters)) {
@@ -2196,15 +2339,12 @@ void initialize_source_registers () {
 	  vrb[0] = vsxargs[ (vrbi  ) % isr_modulo];
 	  vrb[1] = vsxargs[ (vrbi+1) % isr_modulo];
    }
- 
-  if (has_xa) { 
-    vec_xa[0] = vsxargs[ (vrai  ) % isr_modulo];
-    vec_xa[1] = vsxargs[ (vrai+1) % isr_modulo];
-  }
-  if (has_xb) {
-    vec_xb[0] = vsxargs[ (vrbi  ) % isr_modulo];
-    vec_xb[1] = vsxargs[ (vrbi+1) % isr_modulo];
-  }
+
+   if (instruction_is_relative) {
+     /* for pstxsd and friends using R=1 */
+     vec_xa[0] = vsxargs[ (vrai+2  ) % isr_modulo];
+     vec_xa[1] = vsxargs[ (vrai+3  ) % isr_modulo];
+   }
 
    // xap 'shares' with the second half of an xa-pair.
   if (has_xap ) {
@@ -2263,8 +2403,13 @@ void initialize_source_registers () {
       if (has_ra)  ra = 4*vrai;
       if (is_insert_double) {
 	 /* For an insert_double, the results are undefined
-	    for ra > 8, so modulo those into a valid range. */
-	 ra = ra % 9;
+	    for ra > 8, so modulo those into a valid range.
+	    Since ra is defined as a hard register, and due to gcc
+	    issue (PR101882) where a modulo operation fails with
+	    both input and output regs set to a hard register, this
+	    assignment references the args[] array again, versus
+	    ra = ra % 9;.  */
+	 ra = args[vrai] % 9;
       }
    }
 

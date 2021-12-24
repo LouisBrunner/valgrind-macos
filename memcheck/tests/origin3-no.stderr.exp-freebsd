@@ -1,0 +1,22 @@
+
+Undef 1 of 8 (8 bit undef)
+
+Undef 2 of 8 (8 bits of 32 undef)
+
+Undef 3 of 8 (32 bit undef)
+
+Undef 4 of 8 (32 bit undef, unaligned)
+
+Undef 5 of 8 (32 bit undef, modified)
+
+Undef 6 of 8 (32 bit undef, unaligned, strange, #1)
+
+Undef 7 of 8 (32 bit undef, unaligned, strange, #2)
+
+Undef 8 of 8 (32 bit undef, unaligned, strange, #3)
+Syscall param exit(status) contains uninitialised byte(s)
+   ...
+ Uninitialised value was created by a client request
+   at 0x........: t6 (origin3-no.c:105)
+   by 0x........: main (origin3-no.c:33)
+

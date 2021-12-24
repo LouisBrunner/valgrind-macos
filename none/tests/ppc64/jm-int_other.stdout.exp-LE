@@ -89,16 +89,6 @@ PPC integer logical insns with two args:
          slw ffffffffffffffff, 0000001cbe991def => 0000000000000000 (00000000 00000000)
          slw ffffffffffffffff, ffffffffffffffff => 0000000000000000 (00000000 00000000)
 
-        sraw 0000000000000000, 0000000000000000 => 0000000000000000 (00000000 00000000)
-        sraw 0000000000000000, 0000001cbe991def => 0000000000000000 (00000000 00000000)
-        sraw 0000000000000000, ffffffffffffffff => 0000000000000000 (00000000 00000000)
-        sraw 0000001cbe991def, 0000000000000000 => ffffffffbe991def (00000000 00000000)
-        sraw 0000001cbe991def, 0000001cbe991def => ffffffffffffffff (00000000 20000000)
-        sraw 0000001cbe991def, ffffffffffffffff => ffffffffffffffff (00000000 20000000)
-        sraw ffffffffffffffff, 0000000000000000 => ffffffffffffffff (00000000 00000000)
-        sraw ffffffffffffffff, 0000001cbe991def => ffffffffffffffff (00000000 20000000)
-        sraw ffffffffffffffff, ffffffffffffffff => ffffffffffffffff (00000000 20000000)
-
          srw 0000000000000000, 0000000000000000 => 0000000000000000 (00000000 00000000)
          srw 0000000000000000, 0000001cbe991def => 0000000000000000 (00000000 00000000)
          srw 0000000000000000, ffffffffffffffff => 0000000000000000 (00000000 00000000)
@@ -118,16 +108,6 @@ PPC integer logical insns with two args:
          sld ffffffffffffffff, 0000000000000000 => ffffffffffffffff (00000000 00000000)
          sld ffffffffffffffff, 0000001cbe991def => 0000000000000000 (00000000 00000000)
          sld ffffffffffffffff, ffffffffffffffff => 0000000000000000 (00000000 00000000)
-
-        srad 0000000000000000, 0000000000000000 => 0000000000000000 (00000000 00000000)
-        srad 0000000000000000, 0000001cbe991def => 0000000000000000 (00000000 00000000)
-        srad 0000000000000000, ffffffffffffffff => 0000000000000000 (00000000 00000000)
-        srad 0000001cbe991def, 0000000000000000 => 0000001cbe991def (00000000 00000000)
-        srad 0000001cbe991def, 0000001cbe991def => 0000000000000000 (00000000 00000000)
-        srad 0000001cbe991def, ffffffffffffffff => 0000000000000000 (00000000 00000000)
-        srad ffffffffffffffff, 0000000000000000 => ffffffffffffffff (00000000 00000000)
-        srad ffffffffffffffff, 0000001cbe991def => ffffffffffffffff (00000000 20000000)
-        srad ffffffffffffffff, ffffffffffffffff => ffffffffffffffff (00000000 20000000)
 
          srd 0000000000000000, 0000000000000000 => 0000000000000000 (00000000 00000000)
          srd 0000000000000000, 0000001cbe991def => 0000000000000000 (00000000 00000000)
@@ -230,16 +210,6 @@ PPC integer logical insns with two args with flags update:
         slw. ffffffffffffffff, 0000001cbe991def => 0000000000000000 (20000000 00000000)
         slw. ffffffffffffffff, ffffffffffffffff => 0000000000000000 (20000000 00000000)
 
-       sraw. 0000000000000000, 0000000000000000 => 0000000000000000 (20000000 00000000)
-       sraw. 0000000000000000, 0000001cbe991def => 0000000000000000 (20000000 00000000)
-       sraw. 0000000000000000, ffffffffffffffff => 0000000000000000 (20000000 00000000)
-       sraw. 0000001cbe991def, 0000000000000000 => ffffffffbe991def (80000000 00000000)
-       sraw. 0000001cbe991def, 0000001cbe991def => ffffffffffffffff (80000000 20000000)
-       sraw. 0000001cbe991def, ffffffffffffffff => ffffffffffffffff (80000000 20000000)
-       sraw. ffffffffffffffff, 0000000000000000 => ffffffffffffffff (80000000 00000000)
-       sraw. ffffffffffffffff, 0000001cbe991def => ffffffffffffffff (80000000 20000000)
-       sraw. ffffffffffffffff, ffffffffffffffff => ffffffffffffffff (80000000 20000000)
-
         srw. 0000000000000000, 0000000000000000 => 0000000000000000 (20000000 00000000)
         srw. 0000000000000000, 0000001cbe991def => 0000000000000000 (20000000 00000000)
         srw. 0000000000000000, ffffffffffffffff => 0000000000000000 (20000000 00000000)
@@ -259,16 +229,6 @@ PPC integer logical insns with two args with flags update:
         sld. ffffffffffffffff, 0000000000000000 => ffffffffffffffff (80000000 00000000)
         sld. ffffffffffffffff, 0000001cbe991def => 0000000000000000 (20000000 00000000)
         sld. ffffffffffffffff, ffffffffffffffff => 0000000000000000 (20000000 00000000)
-
-       srad. 0000000000000000, 0000000000000000 => 0000000000000000 (20000000 00000000)
-       srad. 0000000000000000, 0000001cbe991def => 0000000000000000 (20000000 00000000)
-       srad. 0000000000000000, ffffffffffffffff => 0000000000000000 (20000000 00000000)
-       srad. 0000001cbe991def, 0000000000000000 => 0000001cbe991def (40000000 00000000)
-       srad. 0000001cbe991def, 0000001cbe991def => 0000000000000000 (20000000 00000000)
-       srad. 0000001cbe991def, ffffffffffffffff => 0000000000000000 (20000000 00000000)
-       srad. ffffffffffffffff, 0000000000000000 => ffffffffffffffff (80000000 00000000)
-       srad. ffffffffffffffff, 0000001cbe991def => ffffffffffffffff (80000000 20000000)
-       srad. ffffffffffffffff, ffffffffffffffff => ffffffffffffffff (80000000 20000000)
 
         srd. 0000000000000000, 0000000000000000 => 0000000000000000 (20000000 00000000)
         srd. 0000000000000000, 0000001cbe991def => 0000000000000000 (20000000 00000000)
@@ -653,27 +613,9 @@ PPC logical insns with special forms:
        rlwnm ffffffffffffffff, ffffffffffffffff, 31,  0 => ffffffff80000001 (00000000 00000000)
        rlwnm ffffffffffffffff, ffffffffffffffff, 31, 31 => 0000000000000001 (00000000 00000000)
 
-       srawi 0000000000000000,  0 => 0000000000000000 (00000000 00000000)
-       srawi 0000000000000000, 31 => 0000000000000000 (00000000 00000000)
-       srawi 0000001cbe991def,  0 => ffffffffbe991def (00000000 00000000)
-       srawi 0000001cbe991def, 31 => ffffffffffffffff (00000000 20000000)
-       srawi ffffffffffffffff,  0 => ffffffffffffffff (00000000 00000000)
-       srawi ffffffffffffffff, 31 => ffffffffffffffff (00000000 20000000)
-
         mfcr (0000000000000000) => 0000000000000000 (00000000 00000000)
         mfcr (0000001cbe991def) => 00000000be991def (be991def 00000000)
         mfcr (ffffffffffffffff) => 00000000ffffffff (ffffffff 00000000)
-
-       mfspr 1 (00000000) -> mtxer -> mfxer => 0000000000000000
-       mfspr 1 (be991def) -> mtxer -> mfxer => 00000000a000006f
-       mfspr 1 (ffffffff) -> mtxer -> mfxer => 00000000e000007f
-       mfspr 8 (00000000) ->  mtlr ->  mflr => 0000000000000000
-       mfspr 8 (be991def) ->  mtlr ->  mflr => ffffffffbe991def
-       mfspr 8 (ffffffff) ->  mtlr ->  mflr => ffffffffffffffff
-       mfspr 9 (00000000) -> mtctr -> mfctr => 0000000000000000
-       mfspr 9 (be991def) -> mtctr -> mfctr => ffffffffbe991def
-       mfspr 9 (ffffffff) -> mtctr -> mfctr => ffffffffffffffff
-
 
        rldcl 0000000000000000, 0000000000000000,  0 => 0000000000000000 (00000000 00000000)
        rldcl 0000000000000000, 0000000000000000,  7 => 0000000000000000 (00000000 00000000)
@@ -2061,37 +2003,6 @@ PPC logical insns with special forms:
       rldimi ffffffffffffffff, 63, 56 => ffffffffffffffff (00000000 00000000)
       rldimi ffffffffffffffff, 63, 63 => ffffffffffffffff (00000000 00000000)
 
-       sradi 0000000000000000,  0 => 0000000000000000 (00000000 00000000)
-       sradi 0000000000000000,  7 => 0000000000000000 (00000000 00000000)
-       sradi 0000000000000000, 14 => 0000000000000000 (00000000 00000000)
-       sradi 0000000000000000, 21 => 0000000000000000 (00000000 00000000)
-       sradi 0000000000000000, 28 => 0000000000000000 (00000000 00000000)
-       sradi 0000000000000000, 35 => 0000000000000000 (00000000 00000000)
-       sradi 0000000000000000, 42 => 0000000000000000 (00000000 00000000)
-       sradi 0000000000000000, 49 => 0000000000000000 (00000000 00000000)
-       sradi 0000000000000000, 56 => 0000000000000000 (00000000 00000000)
-       sradi 0000000000000000, 63 => 0000000000000000 (00000000 00000000)
-       sradi 0000001cbe991def,  0 => 0000001cbe991def (00000000 00000000)
-       sradi 0000001cbe991def,  7 => 00000000397d323b (00000000 00000000)
-       sradi 0000001cbe991def, 14 => 000000000072fa64 (00000000 00000000)
-       sradi 0000001cbe991def, 21 => 000000000000e5f4 (00000000 00000000)
-       sradi 0000001cbe991def, 28 => 00000000000001cb (00000000 00000000)
-       sradi 0000001cbe991def, 35 => 0000000000000003 (00000000 00000000)
-       sradi 0000001cbe991def, 42 => 0000000000000000 (00000000 00000000)
-       sradi 0000001cbe991def, 49 => 0000000000000000 (00000000 00000000)
-       sradi 0000001cbe991def, 56 => 0000000000000000 (00000000 00000000)
-       sradi 0000001cbe991def, 63 => 0000000000000000 (00000000 00000000)
-       sradi ffffffffffffffff,  0 => ffffffffffffffff (00000000 00000000)
-       sradi ffffffffffffffff,  7 => ffffffffffffffff (00000000 20000000)
-       sradi ffffffffffffffff, 14 => ffffffffffffffff (00000000 20000000)
-       sradi ffffffffffffffff, 21 => ffffffffffffffff (00000000 20000000)
-       sradi ffffffffffffffff, 28 => ffffffffffffffff (00000000 20000000)
-       sradi ffffffffffffffff, 35 => ffffffffffffffff (00000000 20000000)
-       sradi ffffffffffffffff, 42 => ffffffffffffffff (00000000 20000000)
-       sradi ffffffffffffffff, 49 => ffffffffffffffff (00000000 20000000)
-       sradi ffffffffffffffff, 56 => ffffffffffffffff (00000000 20000000)
-       sradi ffffffffffffffff, 63 => ffffffffffffffff (00000000 20000000)
-
 PPC logical insns with special forms with flags update:
      rlwimi. 0000000000000000,  0,  0,  0 => 0000000000000000 (20000000 00000000)
      rlwimi. 0000000000000000,  0,  0, 31 => 0000000000000000 (20000000 00000000)
@@ -2179,13 +2090,6 @@ PPC logical insns with special forms with flags update:
       rlwnm. ffffffffffffffff, ffffffffffffffff,  0, 31 => 00000000ffffffff (40000000 00000000)
       rlwnm. ffffffffffffffff, ffffffffffffffff, 31,  0 => ffffffff80000001 (80000000 00000000)
       rlwnm. ffffffffffffffff, ffffffffffffffff, 31, 31 => 0000000000000001 (40000000 00000000)
-
-      srawi. 0000000000000000,  0 => 0000000000000000 (20000000 00000000)
-      srawi. 0000000000000000, 31 => 0000000000000000 (20000000 00000000)
-      srawi. 0000001cbe991def,  0 => ffffffffbe991def (80000000 00000000)
-      srawi. 0000001cbe991def, 31 => ffffffffffffffff (80000000 20000000)
-      srawi. ffffffffffffffff,  0 => ffffffffffffffff (80000000 00000000)
-      srawi. ffffffffffffffff, 31 => ffffffffffffffff (80000000 20000000)
 
         mcrf 0, 0 (0000000000000000) => (00000000 00000000)
         mcrf 0, 7 (0000000000000000) => (00000000 00000000)
@@ -3725,37 +3629,6 @@ PPC logical insns with special forms with flags update:
      rldimi. ffffffffffffffff, 63, 56 => ffffffffffffffff (80000000 00000000)
      rldimi. ffffffffffffffff, 63, 63 => ffffffffffffffff (80000000 00000000)
 
-      sradi. 0000000000000000,  0 => 0000000000000000 (20000000 00000000)
-      sradi. 0000000000000000,  7 => 0000000000000000 (20000000 00000000)
-      sradi. 0000000000000000, 14 => 0000000000000000 (20000000 00000000)
-      sradi. 0000000000000000, 21 => 0000000000000000 (20000000 00000000)
-      sradi. 0000000000000000, 28 => 0000000000000000 (20000000 00000000)
-      sradi. 0000000000000000, 35 => 0000000000000000 (20000000 00000000)
-      sradi. 0000000000000000, 42 => 0000000000000000 (20000000 00000000)
-      sradi. 0000000000000000, 49 => 0000000000000000 (20000000 00000000)
-      sradi. 0000000000000000, 56 => 0000000000000000 (20000000 00000000)
-      sradi. 0000000000000000, 63 => 0000000000000000 (20000000 00000000)
-      sradi. 0000001cbe991def,  0 => 0000001cbe991def (40000000 00000000)
-      sradi. 0000001cbe991def,  7 => 00000000397d323b (40000000 00000000)
-      sradi. 0000001cbe991def, 14 => 000000000072fa64 (40000000 00000000)
-      sradi. 0000001cbe991def, 21 => 000000000000e5f4 (40000000 00000000)
-      sradi. 0000001cbe991def, 28 => 00000000000001cb (40000000 00000000)
-      sradi. 0000001cbe991def, 35 => 0000000000000003 (40000000 00000000)
-      sradi. 0000001cbe991def, 42 => 0000000000000000 (20000000 00000000)
-      sradi. 0000001cbe991def, 49 => 0000000000000000 (20000000 00000000)
-      sradi. 0000001cbe991def, 56 => 0000000000000000 (20000000 00000000)
-      sradi. 0000001cbe991def, 63 => 0000000000000000 (20000000 00000000)
-      sradi. ffffffffffffffff,  0 => ffffffffffffffff (80000000 00000000)
-      sradi. ffffffffffffffff,  7 => ffffffffffffffff (80000000 20000000)
-      sradi. ffffffffffffffff, 14 => ffffffffffffffff (80000000 20000000)
-      sradi. ffffffffffffffff, 21 => ffffffffffffffff (80000000 20000000)
-      sradi. ffffffffffffffff, 28 => ffffffffffffffff (80000000 20000000)
-      sradi. ffffffffffffffff, 35 => ffffffffffffffff (80000000 20000000)
-      sradi. ffffffffffffffff, 42 => ffffffffffffffff (80000000 20000000)
-      sradi. ffffffffffffffff, 49 => ffffffffffffffff (80000000 20000000)
-      sradi. ffffffffffffffff, 56 => ffffffffffffffff (80000000 20000000)
-      sradi. ffffffffffffffff, 63 => ffffffffffffffff (80000000 20000000)
-
 PPC integer load insns
     with one register + one 16 bits immediate args with flags update:
          lbz   0, (0000000000000000) => 0000000000000000,   0 (00000000 00000000)
@@ -3975,4 +3848,4 @@ PPC integer store insns with three register args:
        stdux 0000001cbe991def,   8 => 0000001cbe991def,  8 (00000000 00000000)
        stdux ffffffffffffffff,  16 => ffffffffffffffff, 16 (00000000 00000000)
 
-All done. Tested 131 different instructions
+All done. Tested 121 different instructions

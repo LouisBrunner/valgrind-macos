@@ -2,9 +2,11 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 #include <sys/resource.h>
 #include <unistd.h>
 #include "fdleak.h"
+#include "config.h"
 
 int main(int argc, char **argv)
 {
@@ -20,12 +22,22 @@ int main(int argc, char **argv)
       exit(1);
    }
 
+   int expected_errno;
+#if defined(VGO_freebsd)
+   expected_errno = EPERM;
+#else
+   expected_errno = EINVAL;
+#endif
    newrlim.rlim_cur = oldrlim.rlim_max+1;
    newrlim.rlim_max = oldrlim.rlim_max;
    if (setrlimit(RLIMIT_NOFILE, &newrlim) == -1)
    {
-      if (errno != EINVAL) {
+      if (errno != expected_errno) {
+#if defined(VGO_freebsd)
+         fprintf(stderr, "setrlimit exceeding hardlimit must set errno=EPERM\n");
+#else
          fprintf(stderr, "setrlimit exceeding hardlimit must set errno=EINVAL\n");
+#endif
          exit(1);
       }
    }

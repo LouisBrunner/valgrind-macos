@@ -1024,6 +1024,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_pwritev2,          sys_pwritev2),         // 393
 
    LINXY(__NR_statx,             sys_statx),            // 397
+   GENX_(__NR_rseq,              sys_ni_syscall),       // 398
 
    LINXY(__NR_clock_gettime64,   sys_clock_gettime64),  // 403
    LINX_(__NR_clock_settime64,   sys_clock_settime64),  // 404
@@ -1052,6 +1053,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_io_uring_register, sys_io_uring_register), // 427
 
    GENX_(__NR_clone3,            sys_ni_syscall),        // 435
+   LINXY(__NR_close_range,       sys_close_range),       // 436
 
    LINX_(__NR_faccessat2,    sys_faccessat2),           // 439
 };

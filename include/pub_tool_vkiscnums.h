@@ -44,7 +44,6 @@ extern const HChar *VG_(sysnum_string) (Word sysnum);
 // Macro provided for backward compatibility purposes.
 #define VG_SYSNUM_STRING(sysnum) VG_(sysnum_string)(sysnum)
 
-
 #endif   // __PUB_TOOL_VKISCNUMS_H
 
 /*--------------------------------------------------------------------*/

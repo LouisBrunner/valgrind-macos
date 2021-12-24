@@ -1,0 +1,14 @@
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+test1 () at faultstatus.c:117
+117		*BADADDR = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+test2 () at faultstatus.c:122
+122		mapping[0] = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+test3 () at faultstatus.c:127
+127		mapping[FILESIZE+10];
+Continuing.
+Program received signal SIGFPE, Arithmetic exception.

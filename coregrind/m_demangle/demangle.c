@@ -47,16 +47,11 @@
 /*------------------------------------------------------------*/
 
 /* The demangler's job is to take a raw symbol name and turn it into
-   something a Human Bean can understand.  Our mangling model
-   comprises a three stage pipeline.  Mangling pushes names forward
-   through the pipeline (0, then 1, then 2) and demangling is
-   obviously the reverse.  In practice it is highly unlikely that a
-   name would require all stages, but it is not impossible either.
+   something a Human Bean can understand.  There are two levels of
+   mangling.
 
-   0. If we're working with Rust, Rust names are lightly mangled by
-      the Rust front end.
-
-   1. Then the name is subject to standard C++ mangling.
+   1. First, C++ names are mangled by the compiler.  So we'll have to
+      undo that.
 
    2. Optionally, in relatively rare cases, the resulting name is then
       itself encoded using Z-escaping (see pub_core_redir.h) so as to
@@ -64,8 +59,7 @@
 
    Therefore, VG_(demangle) first tries to undo (2).  If successful,
    the soname part is discarded (humans don't want to see that).
-   Then, it tries to undo (1) (using demangling code from GNU/FSF) and
-   finally it tries to undo (0).
+   Then, it tries to undo (1) (using demangling code from GNU/FSF).
 
    Finally, it changes the name of all symbols which are known to be
    functions below main() to "(below main)".  This helps reduce
@@ -76,18 +70,7 @@
    If do_cxx_demangle == True, it does all the above stages:
    - undo (2) [Z-encoding]
    - undo (1) [C++ mangling]
-   - if (1) succeeds, undo (0) [Rust mangling]
    - do the below-main hack
-
-   Rust demangling (0) is only done if C++ demangling (1) succeeds
-   because Rust demangling is performed in-place, and it is difficult
-   to prove that we "own" the storage -- hence, that the in-place
-   operation is safe -- unless it is clear that it has come from the
-   C++ demangler, which returns its output in a heap-allocated buffer
-   which we can be sure we own.  In practice (Nov 2016) this does not
-   seem to be a problem, since the Rust compiler appears to apply C++
-   mangling after Rust mangling, so we never encounter symbols that
-   require Rust demangling but not C++ demangling.
 
    If do_cxx_demangle == False, the C++ and Rust stags are skipped:
    - undo (2) [Z-encoding]
@@ -135,8 +118,13 @@ void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
    }
 
    /* Possibly undo (1) */
+   // - C++ mangled symbols start with "_Z" (possibly with exceptions?)
+   // - Rust "legacy" mangled symbols start with "_Z".
+   // - Rust "v0" mangled symbols start with "_R".
+   // XXX: the Java/Rust/Ada demangling here probably doesn't work. See
+   // https://bugs.kde.org/show_bug.cgi?id=445235 for details.
    if (do_cxx_demangling && VG_(clo_demangle)
-       && orig != NULL && orig[0] == '_' && orig[1] == 'Z') {
+       && orig != NULL && orig[0] == '_' && (orig[1] == 'Z' || orig[1] == 'R')) {
       /* !!! vvv STATIC vvv !!! */
       static HChar* demangled = NULL;
       /* !!! ^^^ STATIC ^^^ !!! */
@@ -149,23 +137,6 @@ void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
       demangled = ML_(cplus_demangle) ( orig, DMGL_ANSI | DMGL_PARAMS );
 
       *result = (demangled == NULL) ? orig : demangled;
-
-      if (demangled) {
-         /* Possibly undo (0).  This is the only place where it is
-            safe, from a storage management perspective, to
-            Rust-demangle the symbol.  That's because Rust demangling
-            happens in place, so we need to be sure that the storage
-            it is happening in is actually owned by us, and non-const.
-            In this case, the value returned by ML_(cplus_demangle)
-            does have that property. */
-         if (rust_is_mangled(demangled)) {
-            rust_demangle_sym(demangled);
-         }
-         *result = demangled;
-      } else {
-         *result = orig;
-      }
-
    } else {
       *result = orig;
    }

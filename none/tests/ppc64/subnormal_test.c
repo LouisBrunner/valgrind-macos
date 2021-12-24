@@ -75,6 +75,13 @@ void do_tests( void ) {
    vector unsigned long srcA, srcB, srcC, arg_list[NUM_ARGS], dst;
    int i, j, k;
 
+   srcA[0] = 0;  // initialize to remove compiler warnings
+   srcA[1] = 0;
+   srcB[0] = 0;  // initialize to remove compiler warnings
+   srcB[1] = 0;
+   srcC[0] = 0;  // initialize to remove compiler warnings
+   srcC[1] = 0;
+
    arg_list[0][0] = 0x8000012480000124ULL;
    arg_list[0][1] = 0x8000012480000124ULL;
 
@@ -124,7 +131,8 @@ void do_tests( void ) {
      srcA[0] = arg_list[i][0];
      srcA[1] = arg_list[i][1];
 
-     printf ("srcA   = 0x%016lx 0x%016lx\n\n", srcA[1], srcA[0]);
+     printf ("srcA   = 0x%016lx 0x%016lx\n\n", (unsigned long)srcA[1],
+             (unsigned long) srcA[0]);
      __asm__ __volatile__ ("vcfsx %0,%1,31" : "=v" (dst): "v" (srcA));
      printf ("   vcfsx(srcA) result = ");
      print_vector_elements(dst);
@@ -165,7 +173,7 @@ void do_tests( void ) {
         number. Square root can't generate a subnormal result.  */
      __asm__ __volatile__ ("vrsqrtefp %0,%1" : "=v" (dst): "v" (srcA));
      printf ("   vrsqrtefp(srcA) result   = 0x%016lx 0x%016lx\n\n",
-             dst[1], dst[0]);
+             (unsigned long) dst[1], (unsigned long) dst[0]);
 
      for ( j = START_j; j < STOP_j; j++) {
        srcB[0] = arg_list[j][0];
@@ -173,7 +181,8 @@ void do_tests( void ) {
        dst[0] = 0xFFFFFFFFFFFFFFFF;
        dst[1] = 0xFFFFFFFFFFFFFFFF;
 
-       printf ("srcB   = 0x%016lx 0x%016lx\n\n", srcB[1], srcB[0]);
+       printf ("srcB   = 0x%016lx 0x%016lx\n\n", (unsigned long) srcB[1],
+               (unsigned long) srcB[0]);
        __asm__ __volatile__ ("vaddfp %0,%1,%2" : "=v" (dst): "v" (srcA), "v" (srcB));
        printf ("    vaddfp(srcA,srcB) result = ");
        print_vector_elements(dst);
@@ -214,7 +223,8 @@ void do_tests( void ) {
 	 dst[0] = 0xFFFFFFFFFFFFFFFF;
 	 dst[1] = 0xFFFFFFFFFFFFFFFF;
 
-	 printf ("srcC   = 0x%016lx 0x%016lx\n\n", srcC[1], srcC[0]);
+	 printf ("srcC   = 0x%016lx 0x%016lx\n\n", (unsigned long) srcC[1],
+                 (unsigned long) srcC[0]);
 
 	 __asm__ __volatile__ ("vmaddfp %0,%1,%2,%3" : "=v" (dst): "v" (srcA), "v" (srcC), "v" (srcB));
 	 printf("i=%d, j=%d, k=%d  ", i, j, k);
@@ -263,9 +273,9 @@ int main()
    __asm__ __volatile__ ("mfvscr %0"  : "=v"(vreg));
 
 #ifdef VGP_ppc64le_linux
-   printf("vscr set to 0x%lx\n", vreg[0]);
+   printf("vscr set to 0x%lx\n", (unsigned long) vreg[0]);
 #else
-   printf("vscr set to 0x%lx\n", vreg[1]);
+   printf("vscr set to 0x%lx\n", (unsigned long) vreg[1]);
 #endif
 
    do_tests();
@@ -289,9 +299,9 @@ int main()
    __asm__ __volatile__ ("mfvscr %0"  : "=v"(vreg));
 
 #ifdef VGP_ppc64le_linux
-   printf("vscr set to 0x%lx\n", vreg[0]);
+   printf("vscr set to 0x%lx\n", (unsigned long) vreg[0]);
 #else
-   printf("vscr set to 0x%lx\n", vreg[1]);
+   printf("vscr set to 0x%lx\n", (unsigned long) vreg[1]);
 #endif
 
    do_tests();

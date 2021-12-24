@@ -509,8 +509,10 @@ typedef
       ARM64in_AddToSP,     /* move SP by small, signed constant */
       ARM64in_FromSP,      /* move SP to integer register */
       ARM64in_Mul,
-      ARM64in_LdrEX,
-      ARM64in_StrEX,
+      ARM64in_LdrEX,       /* load exclusive, single register */
+      ARM64in_StrEX,       /* store exclusive, single register */
+      ARM64in_LdrEXP,      /* load exclusive, register pair, 2x64-bit only */
+      ARM64in_StrEXP,      /* store exclusive, register pair, 2x64-bit only */
       ARM64in_CAS,
       ARM64in_CASP,
       ARM64in_MFence,
@@ -719,7 +721,14 @@ typedef
          struct {
             Int  szB; /* 1, 2, 4 or 8 */
          } StrEX;
+         /* LDXP x2, x3, [x4].  This is 2x64-bit only. */
+         struct {
+         } LdrEXP;
+         /* STXP w0, x2, x3, [x4].  This is 2x64-bit only. */
+         struct {
+         } StrEXP;
          /* x1 = CAS(x3(addr), x5(expected) -> x7(new)),
+            and trashes x8
             where x1[8*szB-1 : 0] == x5[8*szB-1 : 0] indicates success,
                   x1[8*szB-1 : 0] != x5[8*szB-1 : 0] indicates failure.
             Uses x8 as scratch (but that's not allocatable).
@@ -738,7 +747,7 @@ typedef
             -- if branch taken, failure; x1[[8*szB-1 : 0] holds old value
             -- attempt to store
             stxr    w8, x7, [x3]
-            -- if store successful, x1==0, so the eor is "x1 := x5"
+            -- if store successful, x8==0
             -- if store failed,     branch back and try again.
             cbne    w8, loop
            after:
@@ -746,6 +755,12 @@ typedef
          struct {
             Int szB; /* 1, 2, 4 or 8 */
          } CAS;
+         /* Doubleworld CAS, 2 x 32 bit or 2 x 64 bit
+            x0(oldLSW),x1(oldMSW)
+               = DCAS(x2(addr), x4(expectedLSW),x5(expectedMSW)
+                                -> x6(newLSW),x7(newMSW))
+            and trashes x8, x9 and x3
+         */
          struct {
             Int szB; /* 4 or 8 */
          } CASP;
@@ -1030,6 +1045,8 @@ extern ARM64Instr* ARM64Instr_Mul     ( HReg dst, HReg argL, HReg argR,
                                         ARM64MulOp op );
 extern ARM64Instr* ARM64Instr_LdrEX   ( Int szB );
 extern ARM64Instr* ARM64Instr_StrEX   ( Int szB );
+extern ARM64Instr* ARM64Instr_LdrEXP  ( void );
+extern ARM64Instr* ARM64Instr_StrEXP  ( void );
 extern ARM64Instr* ARM64Instr_CAS     ( Int szB );
 extern ARM64Instr* ARM64Instr_CASP    ( Int szB );
 extern ARM64Instr* ARM64Instr_MFence  ( void );

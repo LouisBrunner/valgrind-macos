@@ -1,0 +1,254 @@
+#! /bin/sh
+
+# filter the output of gdb.
+
+SED=@SED@
+
+PATTERNFILE=$(mktemp filter_gdb.tmp.XXXXXXXXXX)
+cat > $PATTERNFILE <<EOF
+#       delete the initial lines between the launch of vgdb and the
+#         output of the echo command telling it is launched.
+#         This removes a whole lot of uninteresting lines varying
+#         with OS/glibc/gdb dep
+/Remote debugging using/,/vgdb launched process attached/d
+
+#       general way to delete uninteresting and varying lines.
+/filter_gdb BEGIN drop/,/filter_gdb END drop/d
+
+#       initial tty control character sent by gdb 7.0
+s/^\[?1034hReading symbols/Reading symbols/
+
+#       remove message about missing debuginfos
+/^Missing separate debuginfo/d
+
+#       remove messages about not being able to download debuginfos
+/^Download failed: /d
+
+#       suppress lines telling file _exit.c does not exist
+/\/_exit.c: No such file or directory/d
+
+#       On FreeBSD if the base and/or lib32 dbg components
+#       are installed but not system source then these
+#       errors get produced by GDB
+/\(rtld_start.S\|kill.S\|_exit.S\|_select.S\): No such file or directory/d
+
+#       Remove some Suse package manager messages
+/^Try: zypper install -C/d
+
+#       Remove vgdb message
+/relaying data between gdb and process/d
+
+#       Anonymise pid numbers
+s/pid [0-9][0-9]*/pid ..../g
+
+#       filter 'remote target killed' messages (produced by gdb >= 8.2)
+/(Remote target) killed/d
+
+#       Anonymise Thread numbers
+s/Thread [0-9][0-9]*/Thread ..../g
+
+#       delete thread switches
+/\[Switching to Thread ....\]/d
+
+#       ??? Probably we had a 'Switching ' message in front of
+#        a frame line ?
+s/\(\[Switching to thread [1234] (Thread ....)\]\)#0/\1\n#0/
+
+#       Anonymise info threads output (e.g. which thread is running and syscall)
+s/^\([ \* ] [0-9] Thread .... (tid [0-9] VgTs_WaitSys)  0x........ in\).*$/\1 syscall .../
+
+#       Newer gdb say Thread .... hit Breakpoint, we expect just Breakpoint.
+s/^Thread .... hit Breakpoint /Breakpoint /
+
+#       We expect "Program received" instead of "Thread .... received"
+s/^Thread .... received /Program received /
+
+s/#[0-9]\(  0x........ in sleeper_or_burner\)/#.\1/
+
+#	Some gdb versions don't show the source line:number after switching
+#		threads in #0  0x........ in do_burn ().
+s/\(#0  0x........ in do_burn ()\) at sleepers.c:41/\1/
+
+
+#       delete Reading symbols file lines
+#       Note: The 'done.' in "Reading symbols from <exe>...done."
+#         is optional (bugzilla 406357).
+/^Reading symbols from .*\.\.\.\(done\.\)\?/d
+
+#       delete Loaded symbols file lines
+/^Loaded symbols for .*$/d
+
+#       delete language switch messages.
+/^Current language.*/d
+/^The current source language is.*/d
+
+#       'exited with code' and 'exited normally' are printed slightly
+#       differently between gdb versions, normalize to "Program exited...".
+s/^.*\( exited with code [0-9]\+\).$/Program\1\./g
+s/^.*\( exited normally\).$/Program\1\./g
+
+#       remove gdb prompts.
+s/(gdb) //g
+
+#       remove gdb continuation prompts.
+s/^>[> ]*//
+
+#       remove gdb done prompts.
+/^done\.$/d
+
+#       anonymise a 'general' system calls stack trace part
+s/in _dl_sysinfo_int80 () from \/lib\/ld-linux.so.*/in syscall .../
+
+#       anonymise kill syscall.
+s/in kill ().*$/in syscall .../
+
+#       anonymise syscall on ppc64 (bugzilla #284305)
+s/in .*kill ().*$/in syscall .../
+
+
+s/in _dl_sysinfo_int80 ()/in syscall .../
+/^   from \/lib\/ld-linux.so.*$/d
+s/\(0x........\) in ?? () from \/lib.*$/\1 in syscall .../
+s/\(0x........\) in ?? ()$/\1 in syscall .../
+
+#       4 expressions to cover glibc 2.27 way to do a select, such as
+#          * 1    Thread 5548 (tid 1 VgTs_WaitSys) 0x0000000004f6203f in __GI___select (
+#              nfds=0, readfds=0x0, writefds=0x0, exceptfds=0x0, timeout=0x30a0e0 <t>)
+#              at ../sysdeps/unix/sysv/linux/select.c:41
+#         If select.c sources are present, we can also get a line containing:
+#              return SYSCALL_CANCEL....
+s/in __select .*/in syscall .../
+s/in __select$/in syscall .../
+/nfds=/d
+/exceptfds=/d
+/timeout=/d
+/sysv\/linux\/select\.c/d
+/sysv\/linux\/generic\/select.c/d
+/return SYSCALL_CANCEL /d
+/r = SYSCALL_CANCEL /d
+
+#       a more specialised system call select stack trace part
+#             (on 32 bits, we have an int_80, on 64 bits, directly select)
+s/in \(.__\)\{0,1\}select () from \/.*$/in syscall .../
+
+/^   from \/lib\/libc.so.*$/d
+/^   from \/lib64\/libc.so.*$/d
+/^   from \/lib64\/.*\/libc.so.*$/d
+/^   from \/lib64\/.*\/libc-.*.so/d
+
+#       and yet another (gdb 7.0 way) to get a system call
+s/in select ()$/in syscall .../
+
+#       and yet another (gdb 7.0 arm way) to get a system call
+s/in \.__select ()$/in syscall .../
+
+#           + yet another way to get a select system call
+s/in select () at \.\.\/sysdeps\/unix\/syscall-template\.S.*$/in syscall .../
+
+#          FreeBSD system call
+s/_select () at _select.S:.*$/0x........ in syscall .../
+
+#          FreeBSD system call again
+/in _select.S/d
+
+#          FreeBSD system call
+s/kill () at kill.S:.*$/0x........ in syscall .../
+
+#      filter out names which starts with a "."
+#      such names are used for "function descriptors" on ppc64
+#      bugzilla 406561
+s/in \.__select () at \.\.\/sysdeps\/unix\/syscall-template\.S.*$/in syscall .../
+
+#       cleanup some lines for a system call (on ubuntu 10 64 bits)
+#           (pay attention : there are tab characters there in)
+/^[ 	]*at \.\.\/sysdeps\/unix\/syscall-template\.S/d
+/^[ 	]*in \.\.\/sysdeps\/unix\/syscall-template\.S/d
+
+/^[1-9][0-9]*[ 	]*\.\.\/sysdeps\/unix\/syscall-template\.S/d
+/^[1-9][0-9]*[ 	]in *\.\.\/sysdeps\/unix\/syscall-template\.S/d
+/^[1-9][0-9]*[ 	]T_PSEUDO (SYSCALL_SYMBOL, SYSCALL_NAME, SYSCALL_NARGS)/d
+
+#       and yet another (Solaris way) to get a poll system call
+#             (on 32 bits, we have /lib/libc.so.*, on 64 bits, /lib/64/libc.so.*)
+s/in __pollsys () from \/.*$/in syscall .../
+/^   from \/lib\/64\/libc.so.*$/d
+
+#       which registers can't be modified
+s/\(Could not write register \)".*"/\1 "xxx"/
+s/\(ERROR changing register \).*$/\1 xxx regno y/
+
+#       special transform for arm/ppc watchpoints which have an additional address
+#              at the beginning
+s/0x........ in \(main (argc=1, argv=0x........) at watchpoints.c:[24][3689]\)/\1/
+
+s/0x........ in \(main () at clean_after_fork.c:34\)/\1/
+
+#       SIGFPE backtrace is varying so much that we just remove all lines
+#       after the signal trapping using an expr in this sed, followed by another sed.
+s/\(^.*signal SIGFPE.*$\)/\1\nafter trap SIGFPE/
+
+#	gdb might also try to show the "entry value" p=p@entry=0x...
+s/p=p@entry=0x/p=0x/
+
+#       for hgtls the breakpoint p=... address might show var location.
+s/\(^Breakpoint 1, tls_ptr (p=0x........\) <tests[0-9+]*>\() at tls.c:55\)/\1\2/
+
+/Id   Target Id *Frame/d
+s/^\([ \*] [1234] \) *Thread /\1Thread /
+
+#	Ordering of '  Thread .... (tid .' might differ between gdb version,
+#	so remove all such lines except the "current" one (starts with '*').
+s/^  [0-9] Thread .... (tid [0-9] .*$//
+
+#       transform info thread of 7.3 into the layout of 7.2 and before.
+s/VgTs_WaitSys) 0x/VgTs_WaitSys)  0x/
+
+#       delete lines telling that some memory can't be accessed: this is
+#         a.o. produced by gdb 7.2 on arm (same with standard gdbserver)
+/Cannot access memory at address 0x......../d
+
+#       Filter 'New thread' lines
+#       gdb 7.9 reports new threads at different moment than the previous versions.
+#       Filter these new threads lines so as to not be dependent on this
+#       gdb aspect.
+/\[New Thread/d
+
+#       406355
+#       adjust filtering for the new gdb output
+#       mcsigpass and mcsignopass tests fails due to the slightly different
+#       gdb output. Filter the tests output to make it the same for different
+#       gdb version. Change mcsigpass and mcsignopass .exp to fit filtered
+#       .out.
+s/^0x........ in \(\w\+ (\)/\1/
+
+#       delete empty lines (the last line (only made of prompts) sometimes
+#           finishes with a new line, sometimes not ???).
+/^$/d
+
+
+EOF
+
+dir=`dirname $0`
+
+$dir/filter_stderr                                                  |
+
+# Anonymise addresses
+$dir/../tests/filter_addresses                                      |
+
+# memcheck stuff
+$dir/filter_memcheck_monitor "$@"                                   |
+
+# memcheck filter might leave some "..." lines, we are not interested
+$SED -e '/^\ \ \ \ \.\.\.$/d'                                        |
+
+# Anonymise or remove, using the big list of PATTERN prepared above
+$SED -f $PATTERNFILE |
+
+# remove all the lines telling where the SIGFPE was trapped.
+$SED -e '/after trap SIGFPE/,/after continue SIGFPE/d'                                              |
+
+# join together two lines that gdb 7.1 splits in two (???)
+# (in a separate sed, as the below influences the behaviour of the other expressions)
+$SED    -e :a -e '$!N;s/\n    at sleepers.c:39/ at sleepers.c:39/;ta' -e 'P;D' 
+
+rm $PATTERNFILE

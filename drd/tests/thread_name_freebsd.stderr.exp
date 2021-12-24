@@ -1,0 +1,93 @@
+
+
+thread_func instance 1
+
+Thread 2 (thread_func instance 1):
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
+   by 0x........: thread_func (thread_name_freebsd.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+
+
+thread_func instance 2
+
+Thread 3 (thread_func instance 2):
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
+   by 0x........: thread_func (thread_name_freebsd.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+
+
+thread_func instance 3
+
+Thread 4 (thread_func instance 3):
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
+   by 0x........: thread_func (thread_name_freebsd.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+
+
+thread_func instance 4
+
+Thread 5 (thread_func instance 4):
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
+   by 0x........: thread_func (thread_name_freebsd.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+
+
+thread_func instance 5
+
+Thread 6 (thread_func instance 5):
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
+   by 0x........: thread_func (thread_name_freebsd.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+
+
+thread_func instance 6
+
+Thread 7 (thread_func instance 6):
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
+   by 0x........: thread_func (thread_name_freebsd.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+
+
+thread_func instance 7
+
+Thread 8 (thread_func instance 7):
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
+   by 0x........: thread_func (thread_name_freebsd.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+
+
+thread_func instance 8
+
+Thread 9 (thread_func instance 8):
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
+   by 0x........: thread_func (thread_name_freebsd.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+
+
+thread_func instance 9
+
+Thread 10 (thread_func instance 9):
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
+   by 0x........: thread_func (thread_name_freebsd.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+
+
+thread_func instance 10
+
+Thread 11 (thread_func instance 10):
+The object at address 0x........ is not a mutex.
+   at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
+   by 0x........: thread_func (thread_name_freebsd.c:?)
+   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+
+
+ERROR SUMMARY: 10 errors from 10 contexts (suppressed: 0 from 0)

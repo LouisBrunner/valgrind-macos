@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include "fdleak.h"
+#include <sys/uio.h>
 
 char filea[24];
 char fileb[24];

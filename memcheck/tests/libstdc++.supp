@@ -52,39 +52,30 @@
 # All the following suppressions are variants of
 # _dl_init -> call_init which calls the DT_INIT_ARRAY functions
 
+# These suppressions are sensitive to changes to GCC and libstdc++
+# in order to generate a suppression stanza run
+#
+# /vg-in-place --gen-suppressions=all --show-reachable=yes --leak-check=full --run-cxx-freeres=no  memcheck/tests/leak_cpp_interior
+#
+# since leaks are ordered by increasing size the stanza to look for is the last one
+
+
 {
    malloc-leaks-cxx-stl-string-classes
    Memcheck:Leak
    match-leak-kinds: reachable
    fun:malloc
    obj:*lib*/libstdc++.so*
-   fun:call_init.part.0
-   fun:call_init
-   fun:_dl_init
-   obj:*lib*/ld-2.*.so
+   fun:call_init*
 }
 {
-   malloc-leaks-cxx-stl-string-classes-2
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   obj:*lib*/libstdc++.so*
-   fun:call_init.part.0
-   fun:_dl_init
-   obj:*lib*/ld-2.*.so
-}
-{
-  malloc-leaks-cxx-stl-string-classes-debug
+  libstdcxx-emergency-eh-alloc-pool
   Memcheck:Leak
   match-leak-kinds: reachable
   fun:malloc
   fun:pool
   fun:__static_initialization_and_destruction_0
   fun:_GLOBAL__sub_I_eh_alloc.cc
-  fun:call_init.part.0
-  fun:call_init
-  fun:_dl_init
-  obj:*lib*/ld-2.*.so
 }
 {
    malloc-leaks-cxx-stl-string-classes-debug2
@@ -107,4 +98,14 @@
    fun:call_init.part.0
    fun:_dl_init
    obj:*lib*/ld-2.*.so
+}
+{
+   FreeBSD-leaks-g++-malloc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:/usr/local/lib*/gcc*/libstdc++.so*
+   obj:/libexec/ld-elf*.so.1
+   obj:/libexec/ld-elf*.so.1
+   obj:/libexec/ld-elf*.so.1
 }

@@ -1,0 +1,4 @@
+prog: chflags
+vgopts: -q
+cleanup: rm -f chflags.tst
+

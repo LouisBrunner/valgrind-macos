@@ -1,3 +1,7 @@
 prog: nocwd
 vgopts: -q --trace-children=yes
 cleanup: chmod u+rwx /tmp/wd_test_*; rm -rf /tmp/wd_test_*
+
+# on FreeBSD, capsicum stops us from removing the gdb pipes left over in /tmp
+# Don't really want to do an "rm /tmp/vgdb-pipe*" in case another instance
+# is running

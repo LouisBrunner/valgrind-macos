@@ -1,0 +1,10 @@
+Invalid free() / delete / delete[] / realloc()
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (memalign_test.c:25)
+ Address 0x........ is 0 bytes inside a block of size 111,110 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (memalign_test.c:23)
+ Block was alloc'd at
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: main (memalign_test.c:16)
+

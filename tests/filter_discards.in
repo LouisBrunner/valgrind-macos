@@ -1,0 +1,11 @@
+#! /bin/sh
+
+dir=`dirname $0`
+
+SED=@SED@
+
+
+# Remove number and position of discards
+$SED "s/discard [0-9]\+ ([0-9]\+ -> [0-9]\+) translations in range/discard ... (... -> ...) translations in range/"     |
+
+$dir/filter_addresses

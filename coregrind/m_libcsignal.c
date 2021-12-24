@@ -34,6 +34,7 @@
 #include "pub_core_libcassert.h"
 #include "pub_core_syscall.h"
 #include "pub_core_libcsignal.h"    /* self */
+#include "pub_core_libcproc.h"
 
 #if !defined(VGO_solaris)
 #   define _VKI_MAXSIG (_VKI_NSIG - 1)
@@ -214,7 +215,7 @@ void VG_(sigcomplementset)( vki_sigset_t* dst, const vki_sigset_t* src )
 */
 Int VG_(sigprocmask)( Int how, const vki_sigset_t* set, vki_sigset_t* oldset)
 {
-#  if defined(VGO_linux) || defined(VGO_solaris)
+#  if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
 #  if defined(__NR_rt_sigprocmask)
    SysRes res = VG_(do_syscall4)(__NR_rt_sigprocmask, 
                                  how, (UWord)set, (UWord)oldset, 
@@ -317,6 +318,18 @@ Int VG_(sigaction) ( Int signum,
    SysRes res = VG_(do_syscall3)(__NR_sigaction,
                                  signum, (UWord)act, (UWord)oldact);
    return sr_isError(res) ? -1 : 0;
+   
+#  elif defined(VGO_freebsd)
+   SysRes res = VG_(do_syscall3)(__NR_sigaction,
+                                 signum, (UWord)act, (UWord)oldact);
+   return sr_isError(res) ? -1 : 0;
+
+
+#  elif defined(VGO_freebsd)
+   SysRes res = VG_(do_syscall3)(__NR_sigaction,
+                                 signum, (UWord)act, (UWord)oldact);
+   return sr_isError(res) ? -1 : 0;
+
 
 #  else
 #    error "Unsupported OS"
@@ -329,7 +342,7 @@ void
 VG_(convert_sigaction_fromK_to_toK)( const vki_sigaction_fromK_t* fromK,
                                      /*OUT*/vki_sigaction_toK_t* toK )
 {
-#  if defined(VGO_linux) || defined(VGO_solaris)
+#  if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
    *toK = *fromK;
 #  elif defined(VGO_darwin)
    toK->ksa_handler = fromK->ksa_handler;
@@ -346,7 +359,7 @@ Int VG_(kill)( Int pid, Int signo )
 {
 #  if defined(VGO_linux) || defined(VGO_solaris)
    SysRes res = VG_(do_syscall2)(__NR_kill, pid, signo);
-#  elif defined(VGO_darwin)
+#  elif defined(VGO_darwin) || defined(VGO_freebsd)
    SysRes res = VG_(do_syscall3)(__NR_kill,
                                  pid, signo, 1/*posix-compliant*/);
 #  else
@@ -385,6 +398,11 @@ Int VG_(tkill)( Int lwpid, Int signo )
 #     endif
    return sr_isError(res) ? -1 : 0;
 
+#  elif defined(VGO_freebsd)
+   SysRes res;
+   res = VG_(do_syscall2)(__NR_thr_kill, lwpid, signo);
+   return sr_isError(res) ? -1 : 0;
+
 #  else
 #    error "Unsupported plat"
 #  endif
@@ -411,7 +429,7 @@ Int VG_(tkill)( Int lwpid, Int signo )
 /* ---------- sigtimedwait_zero: Linux ----------- */
 
 #if defined(VGO_linux)
-Int VG_(sigtimedwait_zero)( const vki_sigset_t *set, 
+Int VG_(sigtimedwait_zero)( const vki_sigset_t *set,
                             vki_siginfo_t *info )
 {
    static const struct vki_timespec zero = { 0, 0 };
@@ -545,6 +563,19 @@ Int VG_(sigtimedwait_zero)( const vki_sigset_t *set, vki_siginfo_t *info )
    static const struct vki_timespec zero = { 0, 0 };
    SysRes res = VG_(do_syscall3)(__NR_sigtimedwait, (UWord)set, (UWord)info,
                                  (UWord)&zero);
+   return sr_isError(res) ? -1 : sr_Res(res);
+}
+
+#elif defined(VGO_freebsd)
+
+
+Int VG_(sigtimedwait_zero)( const vki_sigset_t *set, 
+                            vki_siginfo_t *info )
+{
+   static const struct vki_timespec zero = { 0, 0 };
+
+   SysRes res = VG_(do_syscall3)(__NR_sigtimedwait, (UWord)set, (UWord)info,
+                                   (UWord)&zero);
    return sr_isError(res) ? -1 : sr_Res(res);
 }
 

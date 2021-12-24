@@ -300,6 +300,10 @@ Bool waitstopped (pid_t pid, int signal_expected, const char *msg)
 
          // realloc a bigger queue, and store new signal at the end.
          // This is not very efficient but we assume not many sigs are queued.
+         if (signal_queue_sz >= 64) {
+            DEBUG(0, "too many queued signals while waiting for SIGSTOP\n");
+            return False;
+         }
          signal_queue_sz++;
          signal_queue = vrealloc(signal_queue,
                                  sizeof(siginfo_t) * signal_queue_sz);

@@ -157,14 +157,18 @@ typedef
          note of bits 23 and 22. */
       UInt  guest_FPCR;
 
-      /* Fallback LL/SC support.  See bugs 344524 and 369459. */
-      ULong guest_LLSC_SIZE; // 0==no current transaction, else 1,2,4 or 8.
+      /* Fallback LL/SC support.  See bugs 344524 and 369459.  _LO64 and _HI64
+         contain the original contents of _ADDR+0 .. _ADDR+15, but only _SIZE
+         number of bytes of it.  The remaining 16-_SIZE bytes of them must be
+         zero. */
+      ULong guest_LLSC_SIZE; // 0==no current transaction, else 1,2,4,8 or 16.
       ULong guest_LLSC_ADDR; // Address of transaction.
-      ULong guest_LLSC_DATA; // Original value at _ADDR, zero-extended.
+      ULong guest_LLSC_DATA_LO64; // Original value at _ADDR+0.
+      ULong guest_LLSC_DATA_HI64; // Original value at _ADDR+8.
 
       /* Padding to make it have an 16-aligned size */
       /* UInt  pad_end_0; */
-      ULong pad_end_1;
+      /* ULong pad_end_1; */
    }
    VexGuestARM64State;
 

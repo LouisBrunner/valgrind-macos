@@ -17,8 +17,8 @@ set -e
 #---------------------------------------------------------------------
 
 # You need to modify these revision numbers for your update.
-old_gcc_revision=r240068  # the revision of the previous update
-new_gcc_revision=r246502  # the revision for this update
+old_gcc_revision=01d92cfd79872e4cffc78bf233bb9b767336beb8 # the revision of the previous update
+new_gcc_revision=b3585c0836e729bed56b9afd4292177673a25ca0 # the revision for this update
 
 # Unless the organization of demangler related files has changed, no
 # changes below this line should be necessary.
@@ -33,62 +33,60 @@ cd $DIR
 
 echo "Updating the demangler in $DIR"
 
-# 1) Check out files from old GCC revision
+# 1) Make a shallow clone of the GCC repo containing only the 2 commits we need
+mkdir gcc
+cd gcc
+git init
+git remote add origin git://gcc.gnu.org/git/gcc.git
+git config core.sparsecheckout true
+echo "libiberty/*" > .git/info/sparse-checkout
+echo "include/*" >> .git/info/sparse-checkout
+git fetch --depth 1 origin $old_gcc_revision $new_gcc_revision
+git checkout $old_gcc_revision
+cd ..
+
+# 2) Check out files from old GCC revision
 echo "Checking out GCC files @ $old_gcc_revision"
 
-mkdir gcc-$old_gcc_revision
-cd    gcc-$old_gcc_revision
-svn co -$old_gcc_revision svn://gcc.gnu.org/svn/gcc/trunk/libiberty libiberty > /dev/null
-svn co -$old_gcc_revision svn://gcc.gnu.org/svn/gcc/trunk/include   include   > /dev/null
-rm -rf libiberty/.svn
-rm -rf include/.svn
-cd ..
-
-# 2) Assemble the ones we need in $DIR/$old_gcc_revision
+# 3) Assemble the ones we need in $DIR/$old_gcc_revision
 mkdir $old_gcc_revision
 cd    $old_gcc_revision
-cp    ../gcc-$old_gcc_revision/include/ansidecl.h .
-cp    ../gcc-$old_gcc_revision/include/demangle.h .
-cp    ../gcc-$old_gcc_revision/include/dyn-string.h .
-cp    ../gcc-$old_gcc_revision/include/safe-ctype.h .
-cp    ../gcc-$old_gcc_revision/libiberty/cp-demangle.c .
-cp    ../gcc-$old_gcc_revision/libiberty/cp-demangle.h .
-cp    ../gcc-$old_gcc_revision/libiberty/cplus-dem.c .
-cp    ../gcc-$old_gcc_revision/libiberty/dyn-string.c .
-cp    ../gcc-$old_gcc_revision/libiberty/d-demangle.c .
-cp    ../gcc-$old_gcc_revision/libiberty/rust-demangle.c .
-cp    ../gcc-$old_gcc_revision/libiberty/safe-ctype.c .
+cp    ../gcc/include/ansidecl.h .
+cp    ../gcc/include/demangle.h .
+cp    ../gcc/include/dyn-string.h .
+cp    ../gcc/include/safe-ctype.h .
+cp    ../gcc/libiberty/cp-demangle.c .
+cp    ../gcc/libiberty/cp-demangle.h .
+cp    ../gcc/libiberty/cplus-dem.c .
+cp    ../gcc/libiberty/dyn-string.c .
+cp    ../gcc/libiberty/d-demangle.c .
+cp    ../gcc/libiberty/rust-demangle.c .
+cp    ../gcc/libiberty/safe-ctype.c .
 cd ..
 
-# 3) Check out files from new GCC revision
-
+# 4) Check out files from new GCC revision
 echo "Checking out GCC files @ $new_gcc_revision"
-mkdir gcc-$new_gcc_revision
-cd    gcc-$new_gcc_revision
-svn co -$new_gcc_revision svn://gcc.gnu.org/svn/gcc/trunk/libiberty libiberty > /dev/null
-svn co -$new_gcc_revision svn://gcc.gnu.org/svn/gcc/trunk/include   include   > /dev/null
-rm -rf libiberty/.svn
-rm -rf include/.svn
+cd gcc
+git checkout $new_gcc_revision
 cd ..
 
-# 4) Assemble the ones we need in $DIR/$new_gcc_revision
-
+# 5) Assemble the ones we need in $DIR/$new_gcc_revision
 mkdir $new_gcc_revision
 cd    $new_gcc_revision
-cp    ../gcc-$new_gcc_revision/include/ansidecl.h .
-cp    ../gcc-$new_gcc_revision/include/demangle.h .
-cp    ../gcc-$new_gcc_revision/include/dyn-string.h .
-cp    ../gcc-$new_gcc_revision/include/safe-ctype.h .
-cp    ../gcc-$new_gcc_revision/libiberty/cp-demangle.c .
-cp    ../gcc-$new_gcc_revision/libiberty/cp-demangle.h .
-cp    ../gcc-$new_gcc_revision/libiberty/cplus-dem.c .
-cp    ../gcc-$new_gcc_revision/libiberty/dyn-string.c .
-cp    ../gcc-$new_gcc_revision/libiberty/d-demangle.c .
-cp    ../gcc-$new_gcc_revision/libiberty/rust-demangle.c .
-cp    ../gcc-$new_gcc_revision/libiberty/safe-ctype.c .
+cp    ../gcc/include/ansidecl.h .
+cp    ../gcc/include/demangle.h .
+cp    ../gcc/include/dyn-string.h .
+cp    ../gcc/include/safe-ctype.h .
+cp    ../gcc/libiberty/cp-demangle.c .
+cp    ../gcc/libiberty/cp-demangle.h .
+cp    ../gcc/libiberty/cplus-dem.c .
+cp    ../gcc/libiberty/dyn-string.c .
+cp    ../gcc/libiberty/d-demangle.c .
+cp    ../gcc/libiberty/rust-demangle.c .
+cp    ../gcc/libiberty/safe-ctype.c .
 cd ..
 
-# 5) Sparse check out valgrind coregrind/m_demangle into old_m_demangle
+# 6) Sparse check out valgrind coregrind/m_demangle into old_m_demangle
 echo "Checking out coregrind/m_demangle"
 mkdir valgrind-sparse-clone
 cd valgrind-sparse-clone
@@ -101,18 +99,18 @@ cd ..
 mv valgrind-sparse-clone/coregrind/m_demangle old_m_demangle
 rm -rf valgrind-sparse-clone
 
-# 6) Create new_m_demangle
+# 7) Create new_m_demangle
 cp -rp old_m_demangle new_m_demangle
 cp -rp $new_gcc_revision/*.[ch] new_m_demangle
 
-# 7) Compare files from previous GCC revision against old_m_demangle
+# 8) Compare files from previous GCC revision against old_m_demangle
 #    (This gets us the changes we made to the demangler).
 echo "Creating patch"
 set +e
 diff -r -u $old_gcc_revision old_m_demangle > our-changes
 echo "Patch file 'our-changes' created"
 
-# 7) See how the patch would apply
+# 9) See how the patch would apply
 echo "Attempting to apply the patch (but not actualy doing it)."
 cd new_m_demangle
 patch --dry -p1 < ../our-changes

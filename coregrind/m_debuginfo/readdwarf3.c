@@ -33,7 +33,7 @@
    without prior written permission.
 */
 
-#if defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris)
+#if defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris) || defined(VGO_freebsd)
 
 /* REFERENCE (without which this code will not make much sense):
 
@@ -415,6 +415,23 @@ typedef
          described by this g_abbv; */
     } g_abbv;
 
+/* Holds information about the .debug_abbrev section for this CU.  The current
+  Cursor into the abbrev section, the known abbrev codes are but into an hash
+  table.  The (starting) offset into the abbrev_offset can be used to check
+  whether the abbv can be shared between CUs.  The done boolean is set when all
+  known codes have been read.  Initialize a new abbv_state with init_ht_abbvs.
+  To read any new abbrev codes not yet in the hash table call find_ht_abbvs
+  (get_abbv will first query the ht_abbvs, then if not done, call
+  find_ht_abbvs).  */
+typedef
+   struct _abbv_state {
+      Cursor c; /* Current cursor into .debug_abbrev.  */
+      VgHashTable *ht_abbvs; /* Hash table mapping codes to abbrevs.  */
+      ULong debug_abbrev_offset; /* Starting offset into .debug_abbrev.  */
+      Bool done; /* Whether there (might) still be new abbrev codes not yet
+                    in the cache.  */
+   } abbv_state;
+
 /* Holds information that is constant through the parsing of a
    Compilation Unit.  This is basically plumbed through to
    everywhere. */
@@ -468,8 +485,9 @@ typedef
       UWord  alt_cuOff_bias;
       /* --- Needed so we can add stuff to the string table. --- */
       struct _DebugInfo* di;
-      /* --- a hash table of g_abbv (i.e. parsed abbreviations) --- */
-      VgHashTable *ht_abbvs;
+      /* --- State of the hash table of g_abbv (i.e. parsed abbreviations)
+             technically makes this struct not const.  --- */
+      abbv_state abbv;
 
       /* True if this came from .debug_types; otherwise it came from
          .debug_info.  */
@@ -997,18 +1015,27 @@ get_range_list ( const CUConst* cc,
 #define VARSZ_FORM 0xffffffff
 static UInt get_Form_szB (const CUConst* cc, DW_FORM form );
 
-/* Initialises the hash table of abbreviations.
-   We do a single scan of the abbv slice to parse and
-   build all abbreviations, for the following reasons:
-     * all or most abbreviations will be needed in any case
-       (at least for var-info reading).
-     * re-reading each time an abbreviation causes a lot of calls
-       to get_ULEB128.
-     * a CU should not have many abbreviations. */
-static void init_ht_abbvs (CUConst* cc,
+/* Initialises the hash table of abbreviations.  This only sets up the abbv
+   Cursor and hash table, but does not try to read any abbrevs yes. The actual
+   reading of abbrevs will be done by get_abbv by calling find_ht_abbvs on
+   demand if a requested abbrev code isn't in the hash table yet. When using the
+   inline parser a lot of abbrevs will not be needed so reading everything
+   upfront will often waste time and memory.  */
+static void init_ht_abbvs (CUConst* cc, ULong debug_abbrev_offset,
                            Bool td3)
 {
-   Cursor c;
+   Cursor *c = &cc->abbv.c;
+   init_Cursor( c, cc->debug_abbv, 0, cc->barf,
+               "Overrun whilst parsing .debug_abbrev section(2)" );
+   cc->abbv.ht_abbvs = VG_(HT_construct) ("di.readdwarf3.ht_abbvs");
+   cc->abbv.debug_abbrev_offset = debug_abbrev_offset;
+   cc->abbv.done = False;
+}
+
+static g_abbv *find_ht_abbvs (CUConst* cc, ULong abbv_code,
+                              Bool td3)
+{
+   Cursor *c;
    g_abbv *ta; // temporary abbreviation, reallocated if needed.
    UInt ta_nf_maxE; // max nr of pairs in ta.nf[], doubled when reallocated.
    UInt ta_nf_n;    // nr of pairs in ta->nf that are initialised.
@@ -1019,16 +1046,18 @@ static void init_ht_abbvs (CUConst* cc,
 
    ta_nf_maxE = 10; // starting with enough for 9 pairs+terminating pair.
    ta = ML_(dinfo_zalloc) ("di.readdwarf3.ht_ta_nf", SZ_G_ABBV(ta_nf_maxE));
-   cc->ht_abbvs = VG_(HT_construct) ("di.readdwarf3.ht_abbvs");
 
-   init_Cursor( &c, cc->debug_abbv, 0, cc->barf,
-               "Overrun whilst parsing .debug_abbrev section(2)" );
+   c = &cc->abbv.c;
    while (True) {
-      ta->abbv_code = get_ULEB128( &c );
-      if (ta->abbv_code == 0) break; /* end of the table */
+      ht_ta = NULL;
+      ta->abbv_code = get_ULEB128( c );
+      if (ta->abbv_code == 0) {
+         cc->abbv.done = True;
+         break; /* end of the table */
+      }
 
-      ta->atag = get_ULEB128( &c );
-      ta->has_children = get_UChar( &c );
+      ta->atag = get_ULEB128( c );
+      ta->has_children = get_UChar( c );
       ta_nf_n = 0;
       while (True) {
          if (ta_nf_n >= ta_nf_maxE) {
@@ -1039,10 +1068,10 @@ static void init_ht_abbvs (CUConst* cc,
             VG_(memcpy) (ta, old_ta, SZ_G_ABBV(ta_nf_n));
             ML_(dinfo_free) (old_ta);
          }
-         ta->nf[ta_nf_n].at_name = get_ULEB128( &c );
-         ta->nf[ta_nf_n].at_form = get_ULEB128( &c );
+         ta->nf[ta_nf_n].at_name = get_ULEB128( c );
+         ta->nf[ta_nf_n].at_form = get_ULEB128( c );
          if (ta->nf[ta_nf_n].at_form == DW_FORM_implicit_const)
-            ta->nf[ta_nf_n].at_val = get_SLEB128( &c );
+            ta->nf[ta_nf_n].at_val = get_SLEB128( c );
          if (ta->nf[ta_nf_n].at_name == 0 && ta->nf[ta_nf_n].at_form == 0) {
             ta_nf_n++;
             break; 
@@ -1074,7 +1103,7 @@ static void init_ht_abbvs (CUConst* cc,
 
       ht_ta = ML_(dinfo_zalloc) ("di.readdwarf3.ht_ta", SZ_G_ABBV(ta_nf_n));
       VG_(memcpy) (ht_ta, ta, SZ_G_ABBV(ta_nf_n));
-      VG_(HT_add_node) ( cc->ht_abbvs, ht_ta );
+      VG_(HT_add_node) ( cc->abbv.ht_abbvs, ht_ta );
       if (TD3) {
          TRACE_D3("  Adding abbv_code %lu TAG  %s [%s] nf %u ",
                   ht_ta->abbv_code, ML_(pp_DW_TAG)(ht_ta->atag),
@@ -1085,27 +1114,28 @@ static void init_ht_abbvs (CUConst* cc,
             TRACE_D3("[%u,%u] ", ta->nf[i].skip_szB, ta->nf[i].next_nf);
          TRACE_D3("\n");
       }
+      if (ht_ta->abbv_code == abbv_code)
+         break;
    }
 
    ML_(dinfo_free) (ta);
    #undef SZ_G_ABBV
+
+   return ht_ta;
 }
 
-static g_abbv* get_abbv (const CUConst* cc, ULong abbv_code)
+static g_abbv* get_abbv (CUConst* cc, ULong abbv_code,
+                         Bool td3)
 {
    g_abbv *abbv;
 
-   abbv = VG_(HT_lookup) (cc->ht_abbvs, abbv_code);
+   abbv = VG_(HT_lookup) (cc->abbv.ht_abbvs, abbv_code);
+   if (!abbv && !cc->abbv.done)
+      abbv = find_ht_abbvs (cc, abbv_code, td3);
    if (!abbv)
       cc->barf ("abbv_code not found in ht_abbvs table");
-   return abbv;
-}
 
-/* Free the memory allocated in CUConst. */
-static void clear_CUConst (CUConst* cc)
-{
-   VG_(HT_destruct) ( cc->ht_abbvs, ML_(dinfo_free));
-   cc->ht_abbvs = NULL;
+   return abbv;
 }
 
 /* Parse the Compilation Unit header indicated at 'c' and 
@@ -1115,6 +1145,7 @@ void parse_CU_Header ( /*OUT*/CUConst* cc,
                        Bool td3,
                        Cursor* c, 
                        DiSlice escn_debug_abbv,
+                       abbv_state last_abbv,
 		       Bool type_unit,
                        Bool alt_info )
 {
@@ -1190,7 +1221,14 @@ void parse_CU_Header ( /*OUT*/CUConst* cc,
    cc->debug_abbv.ioff += debug_abbrev_offset;
    cc->debug_abbv.szB  -= debug_abbrev_offset;
 
-   init_ht_abbvs(cc, td3);
+   if (last_abbv.ht_abbvs != NULL
+       && debug_abbrev_offset == last_abbv.debug_abbrev_offset) {
+      cc->abbv = last_abbv;
+   } else {
+      if (last_abbv.ht_abbvs != NULL)
+         VG_(HT_destruct) (last_abbv.ht_abbvs, ML_(dinfo_free));
+      init_ht_abbvs(cc, debug_abbrev_offset, td3);
+   }
 }
 
 /* This represents a single signatured type.  It maps a type signature
@@ -1801,9 +1839,6 @@ typedef
       Int     *level;  /* D3 DIE levels */
       Bool    *isFunc; /* from DW_AT_subprogram? */
       GExpr  **fbGX;   /* if isFunc, contains the FB expr, else NULL */
-      /* The fndn_ix file name/dirname table.  Is a mapping from dwarf
-         integer index to the index in di->fndnpool. */
-      XArray* /* of UInt* */ fndn_ix_Table;
    }
    D3VarParser;
 
@@ -1817,7 +1852,6 @@ var_parser_init ( D3VarParser *parser )
    parser->level  = NULL;
    parser->isFunc = NULL;
    parser->fbGX = NULL;
-   parser->fndn_ix_Table = NULL;
 }
 
 /* Release any memory hanging off a variable parser object */
@@ -2471,12 +2505,39 @@ static void bad_DIE_confusion(int linenr)
 }
 #define goto_bad_DIE do {bad_DIE_confusion(__LINE__); goto bad_DIE;} while (0)
 
+/* Reset the fndn_ix_Table.  When we come across the top level DIE for a CU we
+   will copy all the file names out of the .debug_line img area and use this
+   table to look up the copies when we later see filename numbers in
+   DW_TAG_variables etc. The table can be be reused between parsers (var and
+   inline) and between CUs. So we keep a copy of the last one parsed. Call
+   reset_fndn_ix_table before reading a new one from a new offset.  */
+static
+void reset_fndn_ix_table (XArray** fndn_ix_Table, ULong *debug_line_offset,
+                          ULong new_offset)
+{
+   vg_assert (new_offset == -1
+              || *debug_line_offset != new_offset);
+   Int size = *fndn_ix_Table == NULL ? 0 : VG_(sizeXA) (*fndn_ix_Table);
+   if (size > 0) {
+      VG_(deleteXA) (*fndn_ix_Table);
+      *fndn_ix_Table = NULL;
+   }
+   if (*fndn_ix_Table == NULL)
+      *fndn_ix_Table = VG_(newXA)( ML_(dinfo_zalloc),
+                                   "di.readdwarf3.reset_ix_table",
+                                   ML_(dinfo_free),
+                                   sizeof(UInt) );
+   *debug_line_offset = new_offset;
+}
+
 __attribute__((noinline))
 static void parse_var_DIE (
    /*MOD*/WordFM* /* of (XArray* of AddrRange, void) */ rangestree,
    /*MOD*/XArray* /* of TempVar* */ tempvars,
    /*MOD*/XArray* /* of GExpr* */ gexprs,
    /*MOD*/D3VarParser* parser,
+   XArray** fndn_ix_Table,
+   ULong *debug_line_offset,
    DW_TAG dtag,
    UWord posn,
    Int level,
@@ -2535,8 +2596,12 @@ static void parse_var_DIE (
             ML_(dinfo_free) (str);
          }
          if (attr == DW_AT_stmt_list && cts.szB > 0) {
-            read_filename_table( parser->fndn_ix_Table, compdir,
-                                 cc, cts.u.val, td3 );
+            if (cts.u.val != *debug_line_offset) {
+               reset_fndn_ix_table( fndn_ix_Table, debug_line_offset,
+                                    cts.u.val );
+               read_filename_table( *fndn_ix_Table, compdir,
+                                    cc, cts.u.val, td3 );
+            }
          }
       }
       if (have_lo && have_hi1 && hiIsRelative)
@@ -2730,8 +2795,8 @@ static void parse_var_DIE (
          if (attr == DW_AT_decl_file && cts.szB > 0) {
             Int ftabIx = (Int)cts.u.val;
             if (ftabIx >= 1
-                && ftabIx < VG_(sizeXA)( parser->fndn_ix_Table )) {
-               fndn_ix = *(UInt*)VG_(indexXA)( parser->fndn_ix_Table, ftabIx );
+                && ftabIx < VG_(sizeXA)( *fndn_ix_Table )) {
+               fndn_ix = *(UInt*)VG_(indexXA)( *fndn_ix_Table, ftabIx );
             }
             if (0) VG_(printf)("XXX filename fndn_ix = %u %s\n", fndn_ix,
                                ML_(fndn_ix2filename) (cc->di, fndn_ix));
@@ -2958,9 +3023,6 @@ static void parse_var_DIE (
 
 typedef
    struct {
-      /* The fndn_ix file name/dirname table.  Is a mapping from dwarf
-         integer index to the index in di->fndnpool. */
-      XArray* /* of UInt* */ fndn_ix_Table;
       UWord sibling; // sibling of the last read DIE (if it has a sibling).
    }
    D3InlParser;
@@ -2988,7 +3050,7 @@ typedef
    table is kept, while we must handle all abbreviations in all CUs
    referenced by an absori (being a reference to an alt CU, or a previous
    or following CU). */
-static const HChar* get_inlFnName (Int absori, const CUConst* cc, Bool td3)
+static const HChar* get_inlFnName (Int absori, CUConst* cc, Bool td3)
 {
    Cursor c;
    const g_abbv *abbv;
@@ -3044,7 +3106,7 @@ static const HChar* get_inlFnName (Int absori, const CUConst* cc, Bool td3)
                 "Overrun get_inlFnName absori");
 
    abbv_code = get_ULEB128( &c );
-   abbv      = get_abbv ( cc, abbv_code);
+   abbv      = get_abbv ( cc, abbv_code, td3);
    atag      = abbv->atag;
    TRACE_D3(" <get_inlFnName><%lx>: Abbrev Number: %llu (%s)\n",
             posn, abbv_code, ML_(pp_DW_TAG)( atag ) );
@@ -3113,6 +3175,8 @@ static const HChar* get_inlFnName (Int absori, const CUConst* cc, Bool td3)
 __attribute__((noinline))
 static Bool parse_inl_DIE (
    /*MOD*/D3InlParser* parser,
+   XArray** fndn_ix_Table,
+   ULong *debug_line_offset,
    DW_TAG dtag,
    UWord posn,
    Int level,
@@ -3127,12 +3191,15 @@ static Bool parse_inl_DIE (
 
    UWord saved_die_c_offset  = get_position_of_Cursor( c_die );
 
-   /* Get info about DW_TAG_compile_unit and DW_TAG_partial_unit 'which
-      in theory could also contain inlined fn calls).  */
+   /* Get info about DW_TAG_compile_unit and DW_TAG_partial_unit which in theory
+      could also contain inlined fn calls, if they cover an address range.  */
+   Bool unit_has_addrs = False;
    if (dtag == DW_TAG_compile_unit || dtag == DW_TAG_partial_unit) {
       Bool have_lo    = False;
       Addr ip_lo    = 0;
       const HChar *compdir = NULL;
+      Bool has_stmt_list = False;
+      ULong cu_line_offset = 0;
 
       nf_i = 0;
       while (True) {
@@ -3145,7 +3212,10 @@ static Bool parse_inl_DIE (
          if (attr == DW_AT_low_pc && cts.szB > 0) {
             ip_lo   = cts.u.val;
             have_lo = True;
+            unit_has_addrs = True;
          }
+         if (attr == DW_AT_ranges && cts.szB > 0)
+            unit_has_addrs = True;
          if (attr == DW_AT_comp_dir) {
             if (cts.szB >= 0)
                cc->barf("parse_inl_DIE compdir: expecting indirect string");
@@ -3155,15 +3225,23 @@ static Bool parse_inl_DIE (
             ML_(dinfo_free) (str);
          }
          if (attr == DW_AT_stmt_list && cts.szB > 0) {
-            read_filename_table( parser->fndn_ix_Table, compdir,
-                                 cc, cts.u.val, td3 );
+	    has_stmt_list = True;
+            cu_line_offset = cts.u.val;
          }
          if (attr == DW_AT_sibling && cts.szB > 0) {
             parser->sibling = cts.u.val;
          }
       }
-      if (level == 0)
+      if (level == 0) {
          setup_cu_svma (cc, have_lo, ip_lo, td3);
+         if (has_stmt_list && unit_has_addrs
+            && *debug_line_offset != cu_line_offset) {
+            reset_fndn_ix_table ( fndn_ix_Table, debug_line_offset,
+                                  cu_line_offset );
+            read_filename_table( *fndn_ix_Table, compdir,
+                                 cc, cu_line_offset, td3 );
+         }
+      }
    }
 
    if (dtag == DW_TAG_inlined_subroutine) {
@@ -3190,9 +3268,9 @@ static Bool parse_inl_DIE (
          if (attr == DW_AT_call_file && cts.szB > 0) {
             Int ftabIx = (Int)cts.u.val;
             if (ftabIx >= 1
-                && ftabIx < VG_(sizeXA)( parser->fndn_ix_Table )) {
+                && ftabIx < VG_(sizeXA)( *fndn_ix_Table )) {
                caller_fndn_ix = *(UInt*)
-                          VG_(indexXA)( parser->fndn_ix_Table, ftabIx );
+                          VG_(indexXA)( *fndn_ix_Table, ftabIx );
             }
             if (0) VG_(printf)("XXX caller_fndn_ix = %u %s\n", caller_fndn_ix,
                                ML_(fndn_ix2filename) (cc->di, caller_fndn_ix));
@@ -3278,9 +3356,10 @@ static Bool parse_inl_DIE (
 
    // Only recursively parse the (possible) children for the DIE which
    // might maybe contain a DW_TAG_inlined_subroutine:
-   return dtag == DW_TAG_lexical_block || dtag == DW_TAG_subprogram
-      || dtag == DW_TAG_inlined_subroutine
-      || dtag == DW_TAG_compile_unit || dtag == DW_TAG_partial_unit;
+   Bool ret = (unit_has_addrs
+               || dtag == DW_TAG_lexical_block || dtag == DW_TAG_subprogram
+               || dtag == DW_TAG_inlined_subroutine || dtag == DW_TAG_namespace);
+   return ret;
 
   bad_DIE:
    dump_bad_die_and_barf("parse_inl_DIE", dtag, posn, level,
@@ -4191,14 +4270,15 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
    }
 
    if (dtag == DW_TAG_volatile_type || dtag == DW_TAG_const_type
-       || dtag == DW_TAG_restrict_type) {
+       || dtag == DW_TAG_restrict_type || dtag == DW_TAG_atomic_type) {
       Int have_ty = 0;
       VG_(memset)(&typeE, 0, sizeof(typeE));
       typeE.cuOff = D3_INVALID_CUOFF;
       typeE.tag   = Te_TyQual;
       typeE.Te.TyQual.qual
          = (dtag == DW_TAG_volatile_type ? 'V'
-            : (dtag == DW_TAG_const_type ? 'C' : 'R'));
+            : (dtag == DW_TAG_const_type ? 'C'
+               : (dtag == DW_TAG_restrict_type ? 'R' : 'A')));
       /* target type defaults to 'void' */
       typeE.Te.TyQual.typeR = D3_FAKEVOID_CUOFF;
       nf_i = 0;
@@ -4640,6 +4720,8 @@ static void read_DIE (
    /*MOD*/D3TypeParser* typarser,
    /*MOD*/D3VarParser* varparser,
    /*MOD*/D3InlParser* inlparser,
+   XArray** fndn_ix_Table,
+   ULong *debug_line_offset,
    Cursor* c, Bool td3, CUConst* cc, Int level
 )
 {
@@ -4659,7 +4741,7 @@ static void read_DIE (
    /* --- Deal with this DIE --- */
    posn      = cook_die( cc, get_position_of_Cursor( c ) );
    abbv_code = get_ULEB128( c );
-   abbv = get_abbv(cc, abbv_code);
+   abbv = get_abbv(cc, abbv_code, td3);
    atag      = abbv->atag;
 
    if (TD3) {
@@ -4701,6 +4783,8 @@ static void read_DIE (
                      tempvars,
                      gexprs,
                      varparser,
+                     fndn_ix_Table,
+                     debug_line_offset,
                      (DW_TAG)atag,
                      posn,
                      level,
@@ -4722,6 +4806,8 @@ static void read_DIE (
       inlparser->sibling = 0;
       parse_children = 
          parse_inl_DIE( inlparser,
+                        fndn_ix_Table,
+                        debug_line_offset,
                         (DW_TAG)atag,
                         posn,
                         level,
@@ -4737,6 +4823,16 @@ static void read_DIE (
       if (sibling == 0)
          sibling = inlparser->sibling;
       vg_assert (inlparser->sibling == 0 || inlparser->sibling == sibling);
+   }
+
+   /* Top level CU DIE, but we don't want to read anything else, just skip
+      to the end and return.  */
+   if (level == 0 && !parse_children) {
+      UWord cu_size_including_IniLen = (cc->unit_length
+                                        + (cc->is_dw64 ? 12 : 4));
+      set_position_of_Cursor( c, (cc->cu_start_offset
+                                  + cu_size_including_IniLen));
+      return;
    }
 
    if (after_die_c_offset > 0) {
@@ -4758,9 +4854,37 @@ static void read_DIE (
          while (True) {
             atag = peek_ULEB128( c );
             if (atag == 0) break;
-            read_DIE( rangestree, tyents, tempvars, gexprs,
-                      typarser, varparser, inlparser,
-                      c, td3, cc, level+1 );
+            if (parse_children) {
+               read_DIE( rangestree, tyents, tempvars, gexprs,
+                         typarser, varparser, inlparser,
+                         fndn_ix_Table, debug_line_offset,
+                         c, td3, cc, level+1 );
+            } else {
+               Int skip_level = level + 1;
+               while (True) {
+                  atag = peek_ULEB128( c );
+                  if (atag == 0) {
+                     skip_level--;
+                     if (skip_level == level) break;
+                     /* Eat the terminating zero and continue skipping the
+                        children one level up.  */
+                     atag = get_ULEB128( c );
+                     vg_assert(atag == 0);
+                     continue;
+                  }
+
+                  abbv_code = get_ULEB128( c );
+                  abbv = get_abbv(cc, abbv_code, td3);
+                  sibling = 0;
+                  skip_DIE (&sibling, c, abbv, cc);
+                  if (abbv->has_children) {
+                     if (sibling == 0)
+                        skip_level++;
+                     else
+                        set_position_of_Cursor( c, sibling );
+                  }
+               }
+            }
          }
          /* Now we need to eat the terminating zero */
          atag = get_ULEB128( c );
@@ -4967,6 +5091,8 @@ void new_dwarf3_reader_wrk (
    D3TypeParser typarser;
    D3VarParser varparser;
    D3InlParser inlparser;
+   XArray* /* of UInt */ fndn_ix_Table = NULL;
+   ULong debug_line_offset = (ULong) -1;
    Word  i, j, n;
    Bool td3 = di->trace_symtab;
    XArray* /* of TempVar* */ dioff_lookup_tab;
@@ -5053,6 +5179,9 @@ void new_dwarf3_reader_wrk (
       TRACE_D3("\n------ Collecting signatures from "
                ".debug_types section ------\n");
 
+      abbv_state last_abbv;
+      last_abbv.debug_abbrev_offset = (ULong) -1;
+      last_abbv.ht_abbvs = NULL;
       while (True) {
          UWord   cu_start_offset, cu_offset_now;
          CUConst cc;
@@ -5061,7 +5190,8 @@ void new_dwarf3_reader_wrk (
          TRACE_D3("\n");
          TRACE_D3("  Compilation Unit @ offset 0x%lx:\n", cu_start_offset);
          /* parse_CU_header initialises the CU's abbv hash table.  */
-         parse_CU_Header( &cc, td3, &info, escn_debug_abbv, True, False );
+         parse_CU_Header( &cc, td3, &info, escn_debug_abbv,
+                          last_abbv, True, False );
 
          /* Needed by cook_die.  */
          cc.types_cuOff_bias = escn_debug_info.szB;
@@ -5075,7 +5205,7 @@ void new_dwarf3_reader_wrk (
          cu_offset_now = (cu_start_offset + cc.unit_length
                           + (cc.is_dw64 ? 12 : 4));
 
-         clear_CUConst ( &cc);
+         last_abbv = cc.abbv;
 
          if (cu_offset_now >= escn_debug_types.szB) {
             break;
@@ -5083,6 +5213,8 @@ void new_dwarf3_reader_wrk (
 
          set_position_of_Cursor ( &info, cu_offset_now );
       }
+      if (last_abbv.ht_abbvs != NULL)
+         VG_(HT_destruct) (last_abbv.ht_abbvs, ML_(dinfo_free));
    }
 
    /* Perform three DIE-reading passes.  The first pass reads DIEs from
@@ -5106,6 +5238,10 @@ void new_dwarf3_reader_wrk (
                       "Overrun whilst reading alternate .debug_info section" );
          section_size = escn_debug_info_alt.szB;
 
+	 /* Keep track of the last line table we have seen,
+            it might turn up again.  */
+         reset_fndn_ix_table(&fndn_ix_Table, &debug_line_offset, (ULong) -1);
+
          TRACE_D3("\n------ Parsing alternate .debug_info section ------\n");
       } else if (pass == 1) {
          /* Now loop over the Compilation Units listed in the .debug_info
@@ -5115,6 +5251,10 @@ void new_dwarf3_reader_wrk (
          init_Cursor( &info, escn_debug_info, 0, barf,
                       "Overrun whilst reading .debug_info section" );
          section_size = escn_debug_info.szB;
+
+	 /* Keep track of the last line table we have seen,
+            it might turn up again.  */
+         reset_fndn_ix_table(&fndn_ix_Table, &debug_line_offset, (ULong) -1);
 
          TRACE_D3("\n------ Parsing .debug_info section ------\n");
       } else {
@@ -5126,9 +5266,16 @@ void new_dwarf3_reader_wrk (
                       "Overrun whilst reading .debug_types section" );
          section_size = escn_debug_types.szB;
 
+	 /* Keep track of the last line table we have seen,
+            it might turn up again.  */
+         reset_fndn_ix_table(&fndn_ix_Table, &debug_line_offset, (ULong) -1);
+
          TRACE_D3("\n------ Parsing .debug_types section ------\n");
       }
 
+      abbv_state last_abbv;
+      last_abbv.debug_abbrev_offset = (ULong) -1;
+      last_abbv.ht_abbvs = NULL;
       while (True) {
          ULong   cu_start_offset, cu_offset_now;
          CUConst cc;
@@ -5177,10 +5324,10 @@ void new_dwarf3_reader_wrk (
          /* parse_CU_header initialises the CU's hashtable of abbvs ht_abbvs */
          if (pass == 0) {
             parse_CU_Header( &cc, td3, &info, escn_debug_abbv_alt,
-                             False, True );
+                             last_abbv, False, True );
          } else {
             parse_CU_Header( &cc, td3, &info, escn_debug_abbv,
-                             pass == 2, False );
+                             last_abbv, pass == 2, False );
          }
          cc.escn_debug_str      = pass == 0 ? escn_debug_str_alt
                                             : escn_debug_str;
@@ -5218,26 +5365,6 @@ void new_dwarf3_reader_wrk (
                            unitary_range_list(0UL, ~0UL),
                            -1, False/*isFunc*/, NULL/*fbGX*/ );
 
-            /* And set up the fndn_ix_Table.  When we come across the top
-               level DIE for this CU (which is what the next call to
-               read_DIE should process) we will copy all the file names out
-               of the .debug_line img area and use this table to look up the
-               copies when we later see filename numbers in DW_TAG_variables
-               etc. */
-            vg_assert(!varparser.fndn_ix_Table );
-            varparser.fndn_ix_Table 
-               = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.ndrw.5var",
-                             ML_(dinfo_free),
-                             sizeof(UInt) );
-         }
-
-         if (VG_(clo_read_inline_info)) {
-            /* fndn_ix_Table for the inlined call parser */
-            vg_assert(!inlparser.fndn_ix_Table );
-            inlparser.fndn_ix_Table 
-               = VG_(newXA)( ML_(dinfo_zalloc), "di.readdwarf3.ndrw.5inl",
-                             ML_(dinfo_free),
-                             sizeof(UInt) );
          }
 
          /* Now read the one-and-only top-level DIE for this CU. */
@@ -5245,6 +5372,7 @@ void new_dwarf3_reader_wrk (
          read_DIE( rangestree,
                    tyents, tempvars, gexprs,
                    &typarser, &varparser, &inlparser,
+                   &fndn_ix_Table, &debug_line_offset,
                    &info, td3, &cc, 0 );
 
          cu_offset_now = get_position_of_Cursor( &info );
@@ -5289,24 +5417,18 @@ void new_dwarf3_reader_wrk (
             typestack_preen( &typarser, td3, -2 );
          }
 
-         if (VG_(clo_read_var_info)) {
-            vg_assert(varparser.fndn_ix_Table );
-            VG_(deleteXA)( varparser.fndn_ix_Table );
-            varparser.fndn_ix_Table = NULL;
-         }
-         if (VG_(clo_read_inline_info)) {
-            vg_assert(inlparser.fndn_ix_Table );
-            VG_(deleteXA)( inlparser.fndn_ix_Table );
-            inlparser.fndn_ix_Table = NULL;
-         }
-         clear_CUConst(&cc);
+         last_abbv = cc.abbv;
 
          if (cu_offset_now == section_size)
             break;
          /* else keep going */
       }
+      if (last_abbv.ht_abbvs != NULL)
+         VG_(HT_destruct) (last_abbv.ht_abbvs, ML_(dinfo_free));
    }
 
+   if (fndn_ix_Table != NULL)
+      VG_(deleteXA)(fndn_ix_Table);
 
    if (VG_(clo_read_var_info)) {
       /* From here on we're post-processing the stuff we got
@@ -5623,8 +5745,6 @@ void new_dwarf3_reader_wrk (
       ML_(dinfo_free)( tyents_to_keep_cache );
       tyents_to_keep_cache = NULL;
 
-      vg_assert( varparser.fndn_ix_Table == NULL );
-
       /* And the signatured type hash.  */
       VG_(HT_destruct) ( signature_types, ML_(dinfo_free) );
 
@@ -5759,7 +5879,7 @@ ML_(new_dwarf3_reader) (
    TRACE_SYMTAB("\n");
 #endif
 
-#endif // defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris)
+#endif // defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris) || defined(VGO_freebsd)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

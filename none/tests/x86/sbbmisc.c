@@ -220,7 +220,7 @@ int main ( void )
    sbb_ib_al();
    printf("r1 = %d %d\n", (int)out_b1, (int)out_b2);
 
-   in_w = 49999;
+   in_w = -15537; /* was 49999 but that causes a warning */
    sbb_iw_ax();
    printf("r2 = %d %d\n", (int)out_w1, (int)out_w2);
 
@@ -252,7 +252,7 @@ int main ( void )
    adc_ib_al();
    printf("r8 = %d %d\n", (int)out_b1, (int)out_b2);
 
-   in_w = 49999;
+   in_w = -15537;
    adc_iw_ax();
    printf("r9 = %d %d\n", (int)out_w1, (int)out_w2);
 

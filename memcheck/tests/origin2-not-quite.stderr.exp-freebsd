@@ -1,0 +1,11 @@
+
+Undef 1 of 3 (64-bit FP)
+
+Undef 2 of 3 (32-bit FP)
+
+Undef 3 of 3 (int)
+Syscall param exit(status) contains uninitialised byte(s)
+   ...
+ Uninitialised value was created by a stack allocation
+   at 0x........: t3 (origin2-not-quite.c:51)
+

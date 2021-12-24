@@ -7,7 +7,13 @@ noinst_HEADERS = ppc64_helpers.h isa_3_1_helpers.h isa_3_1_register_defines.h
 
 EXTRA_DIST = \
 	jm-int.stderr.exp jm-int.stdout.exp jm-int.vgtest jm-int.stdout.exp-LE \
-   jm-int.stdout.exp-LE-ISA3_0 \
+	jm-int.stdout.exp-LE-ISA3_0 \
+	jm-int-sh_algebraic.stderr.exp jm-int-sh_algebraic.stdout.exp \
+	jm-int-sh_algebraic.stdout.exp-LE \
+	jm-int-sh_algebraic.stdout.exp-LE-ISA3_0 \
+	jm-int-sh_algebraic.vgtest \
+	jm-mfspr.stderr.exp jm-mfspr.stdout.exp jm-mfspr.stdout.exp-ALT \
+	jm-mfspr.vgtest \
 	jm-int_other.stderr.exp jm-int_other.stdout.exp jm-int_other.vgtest \
 	jm-int_other.stdout.exp-LE \
 	jm-fp.stderr.exp  jm-fp.stdout.exp  jm-fp.vgtest jm-fp.stdout.exp-LE jm-fp.stdout.exp-LE2 jm-fp.stdout.exp-BE2 \
@@ -21,7 +27,6 @@ EXTRA_DIST = \
 	tw_td.stderr.exp tw_td.stdout.exp tw_td.vgtest \
 	opcodes.h \
 	power6_bcmp.stderr.exp power6_bcmp.stdout.exp power6_bcmp.vgtest \
-	power6_mf_gpr.stderr.exp power6_mf_gpr.stdout.exp power6_mf_gpr.vgtest \
 	test_isa_2_06_part1.stderr.exp  test_isa_2_06_part1.stdout.exp  test_isa_2_06_part1.vgtest \
 	test_isa_2_06_part1.stdout.exp-LE \
 	test_isa_2_06_part2.stderr.exp  test_isa_2_06_part2.stdout.exp  test_isa_2_06_part2.vgtest \
@@ -56,13 +61,17 @@ EXTRA_DIST = \
 	test_isa_3_1_VRT.vgtest test_isa_3_1_VRT.stderr.exp test_isa_3_1_VRT.stdout.exp \
 	test_isa_3_1_Misc.vgtest test_isa_3_1_Misc.stderr.exp test_isa_3_1_Misc.stdout.exp \
 	test_isa_3_1_AT.vgtest test_isa_3_1_AT.stderr.exp test_isa_3_1_AT.stdout.exp \
+	test_isa_3_1_R1_RT.vgtest test_isa_3_1_R1_RT.stderr.exp test_isa_3_1_R1_RT.stdout.exp \
+	test_isa_3_1_R1_XT.vgtest test_isa_3_1_R1_XT.stderr.exp test_isa_3_1_R1_XT.stdout.exp \
 	subnormal_test.stderr.exp  subnormal_test.stdout.exp \
 	subnormal_test.vgtest test_darn_inst.stderr.exp \
 	test_darn_inst.stdout.exp test_darn_inst.vgtest \
 	scv_test.stderr.exp scv_test.stdout.exp scv_test.vgtest \
 	test_copy_paste.stderr.exp test_copy_paste.stdout.exp \
-	test_copy_paste.vgtest
-
+	test_copy_paste.vgtest \
+	test_mcrxrx.vgtest test_mcrxrx.stderr.exp test_mcrxrx.stdout.exp \
+	test_lxvx_stxvx.vgtest test_lxvx_stxvx.stderr.exp \
+	test_lxvx_stxvx.stdout.exp-p8  test_lxvx_stxvx.stdout.exp-p9
 
 check_PROGRAMS = \
 	allexec \
@@ -73,10 +82,12 @@ check_PROGRAMS = \
 	test_isa_3_0 test_mod_instructions \
 	test_isa_3_1_RT test_isa_3_1_XT test_isa_3_1_VRT \
 	test_isa_3_1_Misc test_isa_3_1_AT \
+	test_isa_3_1_R1_RT test_isa_3_1_R1_XT \
 	subnormal_test test_darn_inst test_copy_paste \
 	test_tm test_touch_tm data-cache-instructions \
-	power6_mf_gpr std_reg_imm \
-	twi_tdi tw_td power6_bcmp scv_test
+	std_reg_imm \
+	twi_tdi tw_td power6_bcmp scv_test \
+	test_mcrxrx test_lxvx_stxvx
 
 # lmw, stmw, lswi, lswx, stswi, stswx compile (and run) only on big endian.
 if VGCONF_PLATFORMS_INCLUDE_PPC64BE_LINUX
@@ -89,11 +100,18 @@ AM_CCASFLAGS += @FLAG_M64@
 
 allexec_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
+scv_test_SOURCES = scv_test.c
+test_copy_paste_SOURCES = test_copy_paste.c
+test_mod_instructions_SOURCES = test_mod_instructions.c
+test_isa_3_0_SOURCES = test_isa_3_0.c
 test_isa_3_1_XT_SOURCES = test_isa_3_1_XT.c test_isa_3_1_common.c
 test_isa_3_1_RT_SOURCES = test_isa_3_1_RT.c test_isa_3_1_common.c
 test_isa_3_1_VRT_SOURCES = test_isa_3_1_VRT.c test_isa_3_1_common.c
 test_isa_3_1_Misc_SOURCES = test_isa_3_1_Misc.c test_isa_3_1_common.c
 test_isa_3_1_AT_SOURCES = test_isa_3_1_AT.c test_isa_3_1_common.c
+test_isa_3_1_R1_XT_SOURCES = test_isa_3_1_R1_XT.c test_isa_3_1_common.c
+test_isa_3_1_R1_RT_SOURCES = test_isa_3_1_R1_RT.c test_isa_3_1_common.c
+test_darn_inst_SOURCES = test_darn_inst.c
 
 if HAS_ALTIVEC
 BUILD_FLAG_ALTIVEC = -maltivec
@@ -112,7 +130,8 @@ BUILD_FLAG_VSX =
 endif
 
 if HAS_DFP
-BUILD_FLAGS_DFP = -mhard-dfp -mcpu=power6
+# The DFP test uses the Power7 dcffix instruction.
+BUILD_FLAGS_DFP = -mhard-dfp -mcpu=power7
 DFP_FLAG = -DHAS_DFP
 else
 BUILD_FLAGS_DFP =
@@ -141,11 +160,8 @@ else
 HTM_FLAG =
 endif
 
-jm_insns_CFLAGS = $(AM_CFLAGS) -Wl,-z,norelro -Winline -Wall -O -g -mregnames \
-			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_ALTIVEC)
-
 if HAS_ISA_3_00
-BUILD_FLAGS_ISA_3_00 = -mcpu=power8
+BUILD_FLAGS_ISA_3_00 = -mcpu=power9
 ISA_3_00_FLAG = -DHAS_ISA_3_00
 else
 BUILD_FLAGS_ISA_3_00 =
@@ -159,6 +175,9 @@ else
 BUILD_FLAGS_ISA_3_1 =
 ISA_3_1_FLAG =
 endif
+
+jm_insns_CFLAGS = $(AM_CFLAGS) -Wl,-z,norelro -Winline -Wall -O -g -mregnames \
+			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_ALTIVEC)
 
 test_isa_2_06_part1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_FLAG) \
 			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_VSX)
@@ -193,6 +212,12 @@ test_touch_tm_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) 
 test_isa_3_0_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_3_00_FLAG) \
 			@FLAG_M64@ $(BUILD_FLAGS_ISA_3_00)
 
+scv_test_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_3_00_FLAG) \
+			@FLAG_M64@ $(BUILD_FLAGS_ISA_3_00)
+
+test_mod_instructions_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_3_00_FLAG) \
+			@FLAG_M64@ $(BUILD_FLAGS_ISA_3_00)
+
 test_darn_inst_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_3_00_FLAG) \
 			@FLAG_M64@ $(BUILD_FLAGS_ISA_3_00)
 
@@ -204,11 +229,30 @@ test_isa_3_1_VRT_CFLAGS = $(test_isa_3_1_CFLAGS)
 test_isa_3_1_Misc_CFLAGS = $(test_isa_3_1_CFLAGS)
 test_isa_3_1_AT_CFLAGS = $(test_isa_3_1_CFLAGS)
 
+# The _R1_foo tests exercise pc-relative instructions, so require the bss and text sections
+# exist at known offsets with respect to each other.
+test_isa_3_1_R1_RT_CFLAGS = $(test_isa_3_1_CFLAGS) -Wl,-Tbss,0x20000 -Wl,-Ttext,0x40000
+test_isa_3_1_R1_XT_CFLAGS = $(test_isa_3_1_CFLAGS) -Wl,-Tbss,0x20000 -Wl,-Ttext,0x40000
+
 subnormal_test_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_FLAG) $(ISA_2_06_FLAG) \
 			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_VSX) $(BUILD_FLAGS_ISA_2_06)
 
-test_copy_paste_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_FLAG) $(ISA_3_1_FLAG) \
-			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_VSX) $(BUILD_FLAGS_ISA_3_1)
+test_copy_paste_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_3_1_FLAG) \
+			@FLAG_M64@ $(BUILD_FLAGS_ISA_3_1)
+
+test_mcrxrx_CFLAGS = $(AM_FLAGS) -Winline -Wall -O -g -mregnames @FLAG_M64@  $(ISA_3_00_FLAG)
+
+#  ISA 2.06 and 2.07 the lxvx, stxvx instructions are nmemonics for the BE
+#  instructions lxvd2x and stxvd2x
+#  They are real endian aware instruction in ISA 3.0.
+
+if HAS_ISA_3_00
+test_lxvx_stxvx_CFLAGS = $(AM_FLAGS) -Winline -Wall -O -g -mregnames \
+	@FLAG_M64@  $(ISA_2_07_FLAG)  $(BUILD_FLAGS_ISA_3_00)
+else
+  test_lxvx_stxvx_CFLAGS = $(AM_FLAGS) -Winline -Wall -O -g -mregnames \
+	@FLAG_M64@  $(ISA_2_07_FLAG)   $(BUILD_FLAGS_ISA_2_07)
+endif
 
 test_isa_2_06_part3_LDADD = -lm
 test_dfp1_LDADD = -lm
@@ -221,4 +265,6 @@ test_isa_2_07_part2_LDADD = -lm
 test_tm_LDADD = -lm
 test_touch_tm_LDADD = -lm
 test_isa_3_0_LDADD = -lm
+test_mcrxrx_LDADD = -lm
+test_lxvx_stxvx_LDADD = -lm
 

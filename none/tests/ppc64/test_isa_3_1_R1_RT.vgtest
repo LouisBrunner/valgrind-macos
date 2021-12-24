@@ -1,0 +1,2 @@
+prereq: ../../../tests/check_ppc64_auxv_cap arch_3_1
+prog: test_isa_3_1_R1_RT

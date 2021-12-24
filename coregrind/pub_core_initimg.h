@@ -66,7 +66,7 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo );
 
 /* ------------------------- Linux ------------------------- */
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_freebsd)
 
 struct _IICreateImageInfo {
    /* ------ Mandatory fields ------ */

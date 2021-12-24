@@ -12954,10 +12954,30 @@ PRE(sys_bpf)
             }
          }
          break;
+      case VKI_BPF_MAP_LOOKUP_AND_DELETE_ELEM:
+         /* Perform a lookup on an eBPF map. Read key, write value (delete key) */
+         PRE_MEM_READ("bpf(attr->key)", (Addr)&attr->key, sizeof(attr->key));
+         PRE_MEM_READ("bpf(attr->value)", (Addr)&attr->value, sizeof(attr->value));
+         PRE_MEM_READ("bpf(attr->map_fd)", (Addr)&attr->map_fd, sizeof(attr->map_fd));
+         if (ML_(safe_to_deref)(attr, ARG3)) {
+            if (!ML_(fd_allowed)(attr->map_fd, "bpf", tid, False)) {
+               SET_STATUS_Failure(VKI_EBADF);
+               break;
+            }
+            /* Get size of key and value for this map. */
+            if (bpf_map_get_sizes(attr->map_fd, &key_size, &value_size)) {
+               PRE_MEM_READ("bpf(attr->key)", attr->key, key_size);
+               PRE_MEM_WRITE("bpf(attr->value)", attr->value, value_size);
+            }
+         }
+         break;
+      case VKI_BPF_MAP_FREEZE:
+	 /* Freeze map, read map_fd (write frozen flag, not visible to user space). */
+         PRE_MEM_READ("bpf(attr->map_fd)", (Addr)&attr->map_fd, sizeof(attr->map_fd));
+	 break;
       default:
          VG_(message)(Vg_DebugMsg,
-                      "FATAL: unhandled eBPF command %lu\n", ARG1);
-         VG_(core_panic)("... bye!\n");
+                      "WARNING: unhandled eBPF command %lu\n", ARG1);
          break;
    }
 }
@@ -13054,10 +13074,16 @@ POST(sys_bpf)
          POST_MEM_WRITE((Addr)&attr->task_fd_query.probe_offset, sizeof(attr->task_fd_query.probe_offset));
          POST_MEM_WRITE((Addr)&attr->task_fd_query.probe_addr, sizeof(attr->task_fd_query.probe_addr));
          break;
+      case VKI_BPF_MAP_LOOKUP_AND_DELETE_ELEM:
+         if (bpf_map_get_sizes(attr->map_fd, &key_size, &value_size))
+            POST_MEM_WRITE(attr->value, value_size);
+	 break;
+      case VKI_BPF_MAP_FREEZE:
+	 /* Freeze map, read map_fd (write frozen flag, not visible to user space). */
+	 break;
       default:
          VG_(message)(Vg_DebugMsg,
-                      "FATAL: unhandled eBPF command %lu\n", ARG1);
-         VG_(core_panic)("... bye!\n");
+                      "WARNING: unhandled eBPF command %lu\n", ARG1);
          break;
    }
 }
@@ -13306,7 +13332,7 @@ PRE(sys_execveat)
        return;
    }
 
-   handle_pre_sys_execve(tid, status, (Addr) path, arg_2, arg_3, 1,
+   handle_pre_sys_execve(tid, status, (Addr) path, arg_2, arg_3, EXECVEAT,
                          check_pathptr);
 
    /* The exec failed, we keep running... cleanup. */
@@ -13315,6 +13341,68 @@ PRE(sys_execveat)
 
 }
 
+PRE(sys_close_range)
+{
+   SysRes res = VG_(mk_SysRes_Success)(0);
+   unsigned int beg, end;
+   unsigned int last = ARG2;
+
+   FUSE_COMPATIBLE_MAY_BLOCK();
+   PRINT("sys_close_range ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %"
+         FMT_REGWORD "u )", ARG1, ARG2, ARG3);
+   PRE_REG_READ3(long, "close_range",
+                 unsigned int, first, unsigned int, last,
+                 unsigned int, flags);
+
+   if (ARG1 > last) {
+      SET_STATUS_Failure( VKI_EINVAL );
+      return;
+   }
+
+   if (last >= VG_(fd_hard_limit))
+      last = VG_(fd_hard_limit) - 1;
+
+   if (ARG1 > last) {
+      SET_STATUS_Success ( 0 );
+      return;
+   }
+
+   beg = end = ARG1;
+   do {
+      if (end > last
+	  || (end == 2/*stderr*/ && VG_(debugLog_getLevel)() > 0)
+	  || end == VG_(log_output_sink).fd
+	  || end == VG_(xml_output_sink).fd) {
+         /* Split the range if it contains a file descriptor we're not
+          * supposed to close. */
+         if (end - 1 >= beg)
+             res = VG_(do_syscall3)(__NR_close_range, (UWord)beg, (UWord)end - 1, ARG3 );
+         beg = end + 1;
+      }
+   } while (end++ <= last);
+
+   /* If it failed along the way, it's presumably the flags being wrong. */
+   SET_STATUS_from_SysRes (res);
+}
+
+POST(sys_close_range)
+{
+   unsigned int fd;
+   unsigned int last = ARG2;
+
+   if (!VG_(clo_track_fds)
+       || (ARG3 & VKI_CLOSE_RANGE_CLOEXEC) != 0)
+      return;
+
+   if (last >= VG_(fd_hard_limit))
+      last = VG_(fd_hard_limit) - 1;
+
+   for (fd = ARG1; fd <= last; fd++)
+      if ((fd != 2/*stderr*/ || VG_(debugLog_getLevel)() == 0)
+	  && fd != VG_(log_output_sink).fd
+	  && fd != VG_(xml_output_sink).fd)
+      ML_(record_fd_close)(fd);
+}
 
 #undef PRE
 #undef POST

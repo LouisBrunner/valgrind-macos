@@ -3,5 +3,6 @@ child
 parent, pre-fork
 parent
 FINAL VALUES:  8 bit -74,  16 bit 32694,  32 bit 6913974,  64 bit 682858642110
+               128 bit 0x0000000000000000:0x0000000000000000
 PASS
 parent exits

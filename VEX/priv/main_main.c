@@ -1563,6 +1563,7 @@ void LibVEX_default_VexAbiInfo ( /*OUT*/VexAbiInfo* vbi )
    vbi->guest_stack_redzone_size       = 0;
    vbi->guest_amd64_assume_fs_is_const = False;
    vbi->guest_amd64_assume_gs_is_const = False;
+   vbi->guest_amd64_sigbus_on_misalign = False;
    vbi->guest_ppc_zap_RZ_at_blr        = False;
    vbi->guest_ppc_zap_RZ_at_bl         = NULL;
    vbi->guest__use_fallback_LLSC       = False;

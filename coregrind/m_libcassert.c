@@ -49,7 +49,7 @@
    ------------------------------------------------------------------ */
 
 #if defined(VGP_x86_linux) || defined(VGP_x86_darwin) \
-    || defined(VGP_x86_solaris)
+    || defined(VGP_x86_solaris) || defined(VGP_x86_freebsd)
 #  define GET_STARTREGS(srP)                              \
       { UInt eip, esp, ebp;                               \
         __asm__ __volatile__(                             \
@@ -66,7 +66,7 @@
         (srP)->misc.X86.r_ebp = ebp;                      \
       }
 #elif defined(VGP_amd64_linux) || defined(VGP_amd64_darwin) \
-      || defined(VGP_amd64_solaris)
+      || defined(VGP_amd64_solaris) || defined(VGP_amd64_freebsd)
 #  define GET_STARTREGS(srP)                              \
       { ULong rip, rsp, rbp;                              \
         __asm__ __volatile__(                             \
@@ -309,7 +309,7 @@ void VG_(exit_now)( Int status )
 {
 #if defined(VGO_linux)
    (void)VG_(do_syscall1)(__NR_exit_group, status );
-#elif defined(VGO_darwin) || defined(VGO_solaris)
+#elif defined(VGO_darwin) || defined(VGO_solaris) || defined(VGO_freebsd)
    (void)VG_(do_syscall1)(__NR_exit, status );
 #else
 #  error Unknown OS

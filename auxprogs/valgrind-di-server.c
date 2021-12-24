@@ -774,10 +774,12 @@ static Bool handle_transaction ( int conn_no )
          int r = fstat(fd, &stat_buf);
          if (r != 0) {
             res = mk_Frame_asciiz("FAIL", "OPEN: cannot stat file");
+            close(fd);
             ok = False;
          }
          if (ok && stat_buf.st_size == 0) {
             res = mk_Frame_asciiz("FAIL", "OPEN: file has zero size");
+            close(fd);
             ok = False;
          }
          if (ok) {

@@ -107,6 +107,7 @@ void set_pc (CORE_ADDR newpc)
 #define itype_rt(x) ((x >> 16) & 0x1f)
 #define rtype_funct(x) (x & 0x3f)
 
+static inline UInt getUInt(UChar * p) __attribute__((unused));
 /* Do a endian load of a 32-bit word, regardless of the
    endianness of the underlying host. */
 static inline UInt getUInt(UChar * p)

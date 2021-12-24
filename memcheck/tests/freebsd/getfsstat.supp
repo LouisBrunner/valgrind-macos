@@ -1,0 +1,38 @@
+# Not sure if these are issues in getfsstat
+# or should be in the general suppression file
+{
+   MEMCHECK-LIBC-COND-PRINTF-1
+   Memcheck:Cond
+   fun:strlen
+   obj:/lib/libc.so.7
+   fun:vfprintf_l
+}
+{
+   MEMCHECK-LIBC-COND-PRINTF-2
+   Memcheck:Cond
+   fun:memchr
+   obj:/lib/libc.so.7
+   obj:/lib/libc.so.7
+   fun:vfprintf_l
+}
+{
+   MEMCHECK-LIBC-COND-PRINTF-3
+   Memcheck:Param
+   write(buf)
+   fun:_write
+   obj:/lib/libc.so.7
+   obj:/lib/libc.so.7
+   obj:/lib/libc.so.7
+   obj:/lib/libc.so.7
+   fun:vfprintf_l
+}
+{
+   MEMCHECK-LIBC-WRITE-EXIT
+   Memcheck:Param
+   write(buf)
+   fun:_write
+   obj:/lib/libc.so.7
+   obj:/lib/libc.so.7
+   obj:/lib/libc.so.7
+   fun:exit
+}

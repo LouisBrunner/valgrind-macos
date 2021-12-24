@@ -1,0 +1,3 @@
+prereq: test -e ./statfs
+prog: statfs
+vgopts: -q

@@ -29,14 +29,14 @@ int main(void)
 {
    // Do them separately rather than all in one array so they all have
    // different origins.
-   int* p_ui1 = malloc(sizeof(int));
-   int* p_ui2 = malloc(sizeof(int));
-   int* p_ui3 = malloc(sizeof(int));
-   int* p_ui4 = malloc(sizeof(int));
-   int* p_ui5 = malloc(sizeof(int));
-   int* p_ui6 = malloc(sizeof(int));
-   int* p_ui7 = malloc(sizeof(int));
-   int* p_ui8 = malloc(sizeof(int));
+   volatile int* p_ui1 = malloc(sizeof(int));
+   volatile int* p_ui2 = malloc(sizeof(int));
+   volatile int* p_ui3 = malloc(sizeof(int));
+   volatile int* p_ui4 = malloc(sizeof(int));
+   volatile int* p_ui5 = malloc(sizeof(int));
+   volatile int* p_ui6 = malloc(sizeof(int));
+   volatile int* p_ui7 = malloc(sizeof(int));
+   volatile int* p_ui8 = malloc(sizeof(int));
    int  ui1 = *p_ui1;
    int  ui2 = *p_ui2;
    int  ui3 = *p_ui3;

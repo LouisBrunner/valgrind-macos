@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#ifdef HAS_ISA_3_00
 long test_modsd( long srcA, long srcB)
 {
   long dst;
@@ -31,9 +32,11 @@ unsigned test_moduw( unsigned srcA, unsigned srcB)
 
    return dst;
 }
+#endif
 
 int main()
 {
+#ifdef HAS_ISA_3_00
    int srcA_si, srcB_si, dst_si;
    unsigned int srcA_ui, srcB_ui, dst_ui;
    long srcA_sl, srcB_sl, dst_sl;
@@ -245,7 +248,9 @@ int main()
 	 printf ("modud result = %lu\n", dst_ul);
 #endif
        }
-
+#else
+  printf("HAS_ISA_3_00 not detected.\n");
+#endif  // HAS_ISA_3_0
    return 0;
 }
 

@@ -1,0 +1,103 @@
+ncrk
+	0000000000000000 0000000000000000 -> decaffee00000000 cc=0
+	0000000000000000 ffffffffffffffff -> decaffee00000000 cc=0
+	ffffffffffffffff 0000000000000000 -> decaffeeffffffff cc=1
+	ffffffffffffffff ffffffffffffffff -> decaffee00000000 cc=0
+	0012345678abcdef 0000000000000000 -> decaffee78abcdef cc=1
+	0012345678abcdef ffffffffffffffff -> decaffee00000000 cc=0
+	55555555aaaaaaaa aaaaaaaa55555555 -> decaffeeaaaaaaaa cc=1
+ncgrk
+	0000000000000000 0000000000000000 -> 0000000000000000 cc=0
+	0000000000000000 ffffffffffffffff -> 0000000000000000 cc=0
+	ffffffffffffffff 0000000000000000 -> ffffffffffffffff cc=1
+	ffffffffffffffff ffffffffffffffff -> 0000000000000000 cc=0
+	0012345678abcdef 0000000000000000 -> 0012345678abcdef cc=1
+	0012345678abcdef ffffffffffffffff -> 0000000000000000 cc=0
+	55555555aaaaaaaa aaaaaaaa55555555 -> 55555555aaaaaaaa cc=1
+nnrk
+	0000000000000000 0000000000000000 -> decaffeeffffffff cc=1
+	0000000000000000 ffffffffffffffff -> decaffeeffffffff cc=1
+	ffffffffffffffff 0000000000000000 -> decaffeeffffffff cc=1
+	ffffffffffffffff ffffffffffffffff -> decaffee00000000 cc=0
+	0012345678abcdef 0000000000000000 -> decaffeeffffffff cc=1
+	0012345678abcdef ffffffffffffffff -> decaffee87543210 cc=1
+	55555555aaaaaaaa aaaaaaaa55555555 -> decaffeeffffffff cc=1
+nngrk
+	0000000000000000 0000000000000000 -> ffffffffffffffff cc=1
+	0000000000000000 ffffffffffffffff -> ffffffffffffffff cc=1
+	ffffffffffffffff 0000000000000000 -> ffffffffffffffff cc=1
+	ffffffffffffffff ffffffffffffffff -> 0000000000000000 cc=0
+	0012345678abcdef 0000000000000000 -> ffffffffffffffff cc=1
+	0012345678abcdef ffffffffffffffff -> ffedcba987543210 cc=1
+	55555555aaaaaaaa aaaaaaaa55555555 -> ffffffffffffffff cc=1
+nork
+	0000000000000000 0000000000000000 -> decaffeeffffffff cc=1
+	0000000000000000 ffffffffffffffff -> decaffee00000000 cc=0
+	ffffffffffffffff 0000000000000000 -> decaffee00000000 cc=0
+	ffffffffffffffff ffffffffffffffff -> decaffee00000000 cc=0
+	0012345678abcdef 0000000000000000 -> decaffee87543210 cc=1
+	0012345678abcdef ffffffffffffffff -> decaffee00000000 cc=0
+	55555555aaaaaaaa aaaaaaaa55555555 -> decaffee00000000 cc=0
+nogrk
+	0000000000000000 0000000000000000 -> ffffffffffffffff cc=1
+	0000000000000000 ffffffffffffffff -> 0000000000000000 cc=0
+	ffffffffffffffff 0000000000000000 -> 0000000000000000 cc=0
+	ffffffffffffffff ffffffffffffffff -> 0000000000000000 cc=0
+	0012345678abcdef 0000000000000000 -> ffedcba987543210 cc=1
+	0012345678abcdef ffffffffffffffff -> 0000000000000000 cc=0
+	55555555aaaaaaaa aaaaaaaa55555555 -> 0000000000000000 cc=0
+nxrk
+	0000000000000000 0000000000000000 -> decaffeeffffffff cc=1
+	0000000000000000 ffffffffffffffff -> decaffee00000000 cc=0
+	ffffffffffffffff 0000000000000000 -> decaffee00000000 cc=0
+	ffffffffffffffff ffffffffffffffff -> decaffeeffffffff cc=1
+	0012345678abcdef 0000000000000000 -> decaffee87543210 cc=1
+	0012345678abcdef ffffffffffffffff -> decaffee78abcdef cc=1
+	55555555aaaaaaaa aaaaaaaa55555555 -> decaffee00000000 cc=0
+nxgrk
+	0000000000000000 0000000000000000 -> ffffffffffffffff cc=1
+	0000000000000000 ffffffffffffffff -> 0000000000000000 cc=0
+	ffffffffffffffff 0000000000000000 -> 0000000000000000 cc=0
+	ffffffffffffffff ffffffffffffffff -> ffffffffffffffff cc=1
+	0012345678abcdef 0000000000000000 -> ffedcba987543210 cc=1
+	0012345678abcdef ffffffffffffffff -> 0012345678abcdef cc=1
+	55555555aaaaaaaa aaaaaaaa55555555 -> 0000000000000000 cc=0
+ocrk
+	0000000000000000 0000000000000000 -> decaffeeffffffff cc=1
+	0000000000000000 ffffffffffffffff -> decaffee00000000 cc=0
+	ffffffffffffffff 0000000000000000 -> decaffeeffffffff cc=1
+	ffffffffffffffff ffffffffffffffff -> decaffeeffffffff cc=1
+	0012345678abcdef 0000000000000000 -> decaffeeffffffff cc=1
+	0012345678abcdef ffffffffffffffff -> decaffee78abcdef cc=1
+	55555555aaaaaaaa aaaaaaaa55555555 -> decaffeeaaaaaaaa cc=1
+ocgrk
+	0000000000000000 0000000000000000 -> ffffffffffffffff cc=1
+	0000000000000000 ffffffffffffffff -> 0000000000000000 cc=0
+	ffffffffffffffff 0000000000000000 -> ffffffffffffffff cc=1
+	ffffffffffffffff ffffffffffffffff -> ffffffffffffffff cc=1
+	0012345678abcdef 0000000000000000 -> ffffffffffffffff cc=1
+	0012345678abcdef ffffffffffffffff -> 0012345678abcdef cc=1
+	55555555aaaaaaaa aaaaaaaa55555555 -> 55555555aaaaaaaa cc=1
+popcnt
+	0000000000000000 ->  0 cc=0
+	0000000000000001 ->  1 cc=1
+	8000000000000000 ->  1 cc=1
+	ffffffffffffffff -> 64 cc=1
+	ff427e3800556bcd -> 33 cc=1
+selr
+	ffffffffffffffff 0000000000000000 -> 0cafebadffffffff 0badcafe00000000
+	0000000000000000 ffffffffffffffff -> 0cafebad00000000 0badcafeffffffff
+	1234567890abcdef fedcba9876543210 -> 0cafebad90abcdef 0badcafe76543210
+selgr
+	ffffffffffffffff 0000000000000000 -> ffffffffffffffff 0000000000000000
+	0000000000000000 ffffffffffffffff -> 0000000000000000 ffffffffffffffff
+	1234567890abcdef fedcba9876543210 -> 1234567890abcdef fedcba9876543210
+selfhr
+	ffffffffffffffff 0000000000000000 -> ffffffff0badcafe 000000000cafebad
+	0000000000000000 ffffffffffffffff -> 000000000badcafe ffffffff0cafebad
+	1234567890abcdef fedcba9876543210 -> 123456780badcafe fedcba980cafebad
+mvcrl
+	abbcdefghijklmnopqrstuvwxyz-01234klmnopqrstuvwxyz-0123456789.ABC
+	DEFGHIJKLMNOPQRSTUVWXYZabcdefghi456789.ABCDEFGHIJKLMNOPQRSTUVWXY
+	Zabcdefghijklmnopqrstuvwxyz-0123456789.ABCDEFGHIJKLMNOPQRSTUVWXY
+	Zabcdefghijklmnopqrstuvwxyz-0123456789.ABCDEFGHIJKLMNOPQRSTUVWZ

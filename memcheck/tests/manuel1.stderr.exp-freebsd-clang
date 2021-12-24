@@ -1,0 +1,28 @@
+[[[
+Conditional jump or move depends on uninitialised value(s)
+   ...
+   by 0x........: main (manuel1.c:7)
+
+[[[
+Conditional jump or move depends on uninitialised value(s)
+   ...
+   by 0x........: main (manuel1.c:7)
+
+[[[
+Conditional jump or move depends on uninitialised value(s)
+   ...
+   by 0x........: main (manuel1.c:7)
+
+[[[
+Conditional jump or move depends on uninitialised value(s)
+   ...
+   by 0x........: main (manuel1.c:7)
+
+[[[
+Syscall param write(buf) points to uninitialised byte(s)
+   ...
+ Address 0x........ is 4 bytes inside a block of size 131,072 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (manuel1.c:7)
+

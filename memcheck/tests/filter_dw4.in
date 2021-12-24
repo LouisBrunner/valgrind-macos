@@ -1,0 +1,13 @@
+#! /bin/sh
+
+SED=@SED@
+
+# Size of structure s1 differs between 32-bit and 64-bit programs.
+$SED "s/inside a block of size [0-9]* alloc'd/inside a block of size ... alloc'd/" |
+
+# remove directory name and pid from mapped filename
+$SED "s/file .*valgrind-dw4-test.[1-9][0-9]*/file valgrind-dw4-test.PID/" |
+
+./filter_stderr "$@"
+
+exit 0

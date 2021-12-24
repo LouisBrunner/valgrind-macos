@@ -8,6 +8,8 @@
 
 #undef PLAT_x86_darwin
 #undef PLAT_amd64_darwin
+#undef PLAT_x86_freebsd
+#undef PLAT_amd64_freebsd
 #undef PLAT_x86_linux
 #undef PLAT_amd64_linux
 #undef PLAT_ppc32_linux
@@ -23,6 +25,10 @@
 #  define PLAT_x86_darwin 1
 #elif defined(__APPLE__) && defined(__x86_64__)
 #  define PLAT_amd64_darwin 1
+#elif defined(__FreeBSD__) && defined(__i386__)
+#  define PLAT_x86_freebsd 1
+#elif defined(__FreeBSD__) && defined(__amd64__)
+#  define PLAT_amd64_freebsd 1
 #elif defined(__linux__) && defined(__i386__)
 #  define PLAT_x86_linux 1
 #elif defined(__linux__) && defined(__x86_64__)
@@ -49,7 +55,8 @@
 
 #if defined(PLAT_amd64_linux) || defined(PLAT_x86_linux) \
     || defined(PLAT_amd64_darwin) || defined(PLAT_x86_darwin) \
-    || defined(PLAT_amd64_solaris) || defined(PLAT_x86_solaris)
+    || defined(PLAT_amd64_solaris) || defined(PLAT_x86_solaris) \
+    || defined(PLAT_amd64_freebsd) || defined(PLAT_x86_freebsd)
 #  define INC(_lval,_lqual) \
       __asm__ __volatile__ ( \
       "lock ; incl (%0)" : /*out*/ : /*in*/"r"(&(_lval)) : "memory", "cc" )

@@ -1899,7 +1899,9 @@ static Double conv_f16_to_double( ULong input )
    __attribute__ ((aligned (64))) ULong src;
    __attribute__ ((aligned (64))) Double result;
    src = input;
-   __asm__ __volatile__ ("xscvhpdp %x0,%x1" : "=wa" (result) : "wa" (src));
+   __asm__ __volatile__ (".machine push;\n" ".machine power9;\n" \
+                         "xscvhpdp %x0,%x1 ;\n .machine pop" \
+                         : "=wa" (result) : "wa" (src) );
    return result;
 #  else
    return 0.0;
@@ -2427,11 +2429,14 @@ ULong darn_dirty_helper ( UInt L )
 
 #  if defined (HAS_DARN)
    if ( L == 0)
-      __asm__ __volatile__("darn  %0,0" : "=r"(val));
+      __asm__ __volatile__(".machine push; .machine power9;" \
+                           "darn  %0,0; .machine pop;" : "=r"(val));
    else if (L == 1)
-      __asm__ __volatile__("darn  %0,1" : "=r"(val));
+      __asm__ __volatile__(".machine push; .machine power9;" \
+                           "darn  %0,1; .machine pop;" : "=r"(val));
    else if (L == 2)
-      __asm__ __volatile__("darn  %0,2" : "=r"(val));
+      __asm__ __volatile__(".machine push; .machine power9;"
+                           "darn  %0,2; .machine pop;" : "=r"(val));
 # endif
 
    return val;
@@ -3164,18 +3169,28 @@ VexGuestLayout
         };
 
 UInt copy_paste_abort_dirty_helper(UInt addr, UInt op) {
-#  if defined(__powerpc__)
+#  if defined(__powerpc__) && defined(HAS_ISA_3_00)
+/* The enable copy, paste., and cpabort were introduced in ISA 3.0. */
    ULong ret;
    UInt cr;
 
    if (op == COPY_INST)
-      __asm__ __volatile__ ("copy 0,%0" :: "r" (addr));
+      __asm__ __volatile__ (".machine push;\n"
+                            ".machine power9;\n"
+                            "copy 0,%0;\n"
+                            ".machine pop" :: "r" (addr));
 
    else if (op == PASTE_INST)
-      __asm__ __volatile__ ("paste. 0,%0" :: "r" (addr));
+      __asm__ __volatile__ (".machine push;\n"
+                            ".machine power9;\n"
+                            "paste. 0,%0\n"
+                            ".machine pop" :: "r" (addr));
 
    else if (op == CPABORT_INST)
-      __asm__ __volatile__ ("cpabort");
+      __asm__ __volatile__ (".machine push;\n"
+                            ".machine power9;\n"
+                            "cpabort\n"
+                            ".machine pop");
 
    else
       /* Unknown operation */

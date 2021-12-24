@@ -8,6 +8,7 @@
 #include <fcntl.h>    /* O_RDONLY */
 #include <pthread.h>
 #include <unistd.h>   /* close() */
+#include "config.h"
 
 /* Happens with two threads also */
 #define THREAD_COUNT 256
@@ -32,7 +33,9 @@ int main()
   pthread_t threads[THREAD_COUNT];
 
   pthread_attr_init(&attr);
+#if !defined(VGO_freebsd)
   pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN);
+#endif
   for (i = 0; i < THREAD_COUNT; ++i) {
     r = pthread_create(&threads[i], &attr, thread, 0);
     if (r != 0) {

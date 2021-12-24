@@ -1,4 +1,5 @@
 // Simple smoke test to see that the demangler is actually working
+#include <cstdlib>
 
 namespace abc {
 template <typename T1, typename T2> 
@@ -6,7 +7,8 @@ class def {
   public:
     T1 xyzzy(T1 *p, T2 *)
     {
-      return *p ? 10 : 20;
+      free(p);
+      return 10;
     }
   };
 };

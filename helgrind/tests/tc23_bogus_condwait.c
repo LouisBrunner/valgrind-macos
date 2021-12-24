@@ -7,6 +7,9 @@
 #include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
+#if defined(VGO_freebsd)
+#include <sys/fcntl.h>
+#endif
 pthread_mutex_t mx[4]; 
 pthread_cond_t cv; pthread_rwlock_t rwl;
 sem_t* quit_now;
@@ -15,9 +18,11 @@ static int my_sem_destroy(sem_t*);
 static int my_sem_wait(sem_t*); static int my_sem_post(sem_t*);
 void* rescue_me ( void* uu )
 {
+#if !defined(VGO_freebsd)
   /* wait for, and unblock, the first wait */
   sleep(1);
   pthread_cond_signal( &cv );
+#endif
 
   /* wait for, and unblock, the second wait */
   sleep(1);
@@ -65,8 +70,10 @@ int main ( void )
   /* Do stupid things and hope that rescue_me gets us out of
      trouble */
 
+#if !defined(VGO_freebsd)
   /* mx is bogus */
   r= pthread_cond_wait(&cv, (pthread_mutex_t*)(4 + (char*)&mx[0]) );
+#endif
 
   /* mx is not locked */
   r= pthread_cond_wait(&cv, &mx[3]);
@@ -98,7 +105,7 @@ static sem_t* my_sem_init (char* identity, int pshared, unsigned count)
 {
    sem_t* s;
 
-#if defined(VGO_linux) || defined(VGO_solaris)
+#if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
    s = malloc(sizeof(*s));
    if (s) {
       if (sem_init(s, pshared, count) < 0) {

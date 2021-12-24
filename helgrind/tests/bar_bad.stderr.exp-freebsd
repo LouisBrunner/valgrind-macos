@@ -1,0 +1,58 @@
+
+initialise a barrier with zero count
+---Thread-Announcement------------------------------------------
+
+Thread #x is the program's root thread
+
+----------------------------------------------------------------
+
+Thread #x: pthread_barrier_init: 'count' argument is zero
+   at 0x........: pthread_barrier_init (hg_intercepts.c:...)
+   by 0x........: main (bar_bad.c:44)
+
+----------------------------------------------------------------
+
+Thread #x's call to pthread_barrier_init failed
+   with error code 22 (EINVAL: Invalid argument)
+   at 0x........: pthread_barrier_init (hg_intercepts.c:...)
+   by 0x........: main (bar_bad.c:44)
+
+
+initialise a barrier twice
+----------------------------------------------------------------
+
+Thread #x: pthread_barrier_init: barrier is already initialised
+   at 0x........: pthread_barrier_init (hg_intercepts.c:...)
+   by 0x........: main (bar_bad.c:50)
+
+
+initialise a barrier which has threads waiting on it
+----------------------------------------------------------------
+
+Thread #x: pthread_barrier_init: barrier is already initialised
+   at 0x........: pthread_barrier_init (hg_intercepts.c:...)
+   by 0x........: main (bar_bad.c:65)
+
+----------------------------------------------------------------
+
+Thread #x: pthread_barrier_init: threads are waiting at barrier
+   at 0x........: pthread_barrier_init (hg_intercepts.c:...)
+   by 0x........: main (bar_bad.c:65)
+
+
+destroy a barrier that has waiting threads
+----------------------------------------------------------------
+
+Thread #x: pthread_barrier_destroy: threads are waiting at barrier
+   at 0x........: pthread_barrier_destroy (hg_intercepts.c:...)
+   by 0x........: main (bar_bad.c:83)
+
+----------------------------------------------------------------
+
+Thread #x's call to pthread_barrier_destroy failed
+   with error code 16 (EBUSY: Device or resource busy)
+   at 0x........: pthread_barrier_destroy (hg_intercepts.c:...)
+   by 0x........: main (bar_bad.c:83)
+
+
+destroy a barrier that was never initialised

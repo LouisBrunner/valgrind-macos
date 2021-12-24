@@ -1,0 +1,65 @@
+Syscall param lchmod(mode) contains uninitialised byte(s)
+   ...
+   by 0x........: main (chmod_chown.c:61)
+
+Syscall param lchmod(path) points to unaddressable byte(s)
+   ...
+   by 0x........: main (chmod_chown.c:61)
+ Address 0x........ is 0 bytes inside a block of size 4 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (chmod_chown.c:55)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (chmod_chown.c:54)
+
+Syscall param fchmodat(fd) contains uninitialised byte(s)
+   ...
+   by 0x........: main (chmod_chown.c:62)
+
+Syscall param fchmodat(mode) contains uninitialised byte(s)
+   ...
+   by 0x........: main (chmod_chown.c:62)
+
+Syscall param fchmodat(flag) contains uninitialised byte(s)
+   ...
+   by 0x........: main (chmod_chown.c:62)
+
+Syscall param fchmodat(path) points to unaddressable byte(s)
+   ...
+   by 0x........: main (chmod_chown.c:62)
+ Address 0x........ is 0 bytes inside a block of size 4 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (chmod_chown.c:55)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (chmod_chown.c:54)
+
+Syscall param fchownat(fd) contains uninitialised byte(s)
+   ...
+   by 0x........: main (chmod_chown.c:63)
+
+Syscall param fchownat(owner) contains uninitialised byte(s)
+   ...
+   by 0x........: main (chmod_chown.c:63)
+
+Syscall param fchownat(group) contains uninitialised byte(s)
+   ...
+   by 0x........: main (chmod_chown.c:63)
+
+Syscall param fchownat(flag) contains uninitialised byte(s)
+   ...
+   by 0x........: main (chmod_chown.c:63)
+
+Syscall param fchownat(path) points to unaddressable byte(s)
+   ...
+   by 0x........: main (chmod_chown.c:63)
+ Address 0x........ is 0 bytes inside a block of size 4 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (chmod_chown.c:55)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (chmod_chown.c:54)
+

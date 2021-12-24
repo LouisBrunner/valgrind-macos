@@ -17,12 +17,16 @@ First of all:
 
 - Go over the docs, make sure they're up to date.
 
-- Update version number and date in docs/xml/vg-entities.xml.  (Exact
-  release date probably won't be known yet, updating it is in the list below
-  of tasks for the official release.)
+- Update version number and date in configure.ac. Probably just the
+  v_suffix_ver, set it to RC1. The v_rel_date probably won't be known yet,
+  updating it is in the list below of tasks for the official release.
+  Note that the date MUST be quoted with ["...date string..."].
 
-- Make sure __VALGRIND_MAJOR__ and __VALGRIND_MINOR__ are correct
-  for the release.  (include/valgrind.h)
+- Make sure the after ./autogen.sh && ./configure
+  __VALGRIND_MAJOR__ and __VALGRIND_MINOR__ are correct for the release.
+  (include/valgrind.h)
+  And that docs/xml/vg-entities.xml contains the correct release number
+  and release date.
 
 - Write release notes, add to NEWS.  Include a list of fixed bugs from
   Bugzilla.  It's unclear how to do this consistently.  The approach
@@ -105,11 +109,16 @@ releases, bug-fix-only releases might not need one):
 
   * s390x: Ensure README.s390 is up-to-date and URLs therein are not stale.
 
-- Change release number in AC_INIT() in configure.ac to "X.Y.Z-rcN", where
-  'N' is the release candidate number.
+- Change release number (v_major_ver, v_minor_ver, v_micro_ver)
+  in configure.ac, set v_suffix_ver to RCN, where 'N' is the release
+  candidate number. Don't forget to ./autogen.sh and ./configure afterwards.
 
 - Make the tarball ("make dist") and put it on the web somewhere (it doesn't
   have to be on valgrind.org if another site is easier).
+  https://sourceware.org/pub/valgrind/ is the default release site now.
+  You need a shell account on sourceware.org, then scp it with:
+  scp valgrind-X.YY-RCN.tar.bz \
+    USER@sourceware.org:/sourceware/ftp/pub/valgrind/
 
 - Ensure the tarball builds, runs, regtests on the platforms of interest.
   However redundant this seems, sometimes it can be that a from-the-repo
@@ -134,16 +143,14 @@ releases, bug-fix-only releases might not need one):
 
 For the official release:
 
-- Again, update date in docs/xml/vg-entities.xml for the official release
-  date.
+- Again, update date (v_rel_date) in configure.ac for the official release
+  date and set v_suffix_ver to empty [] in configure.ac.
 
 - Do pre-release testing:
   - Make sure regtests run ok on all platforms of interest.
   - Make sure Mozilla and OpenOffice run ok on all platforms of interest.
 
-- Change release number in AC_INIT() in configure.ac to "X.Y.Z".
-
-- Make the tarball ("make dist").
+- Run ./autogen.sh && ./configure && make dist to make the tarball.
 
 - Check tarball builds, installs, regtests on platforms of interest.
   If not, fix and repeat until success.
@@ -178,8 +185,8 @@ For the official release:
   - Update the "release-date" and "release-version" in php/.htconfx.
   - Other pages that might need updating:  downloads/repository.html.
 
-- Change release number in AC_INIT() in configure.ac to "X.Y.Z.GIT", where
-  X.Y.Z is one more than the release just done.
+- Change release number in configure.ac with v_minor_ver one more than the
+  release just done. Set v_suffix_ver to [GIT].
 
 - Make sure the release notes are present in the NEWS file on the master and
   the branch.

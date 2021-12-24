@@ -48,7 +48,9 @@ int main()
 	deep = &here - SIZE;
 
 	sa.sa_handler = handler;
+#if defined(SA_NODEFER)
 	sa.sa_flags = SA_NODEFER;
+#endif
 	sigemptyset(&sa.sa_mask);
 	
 	sigaction(SIGUSR1, &sa, NULL);

@@ -1,0 +1,6 @@
+#! /bin/sh
+
+SED=@SED@
+
+./filter_allocs "$@" |
+$SED 's/\(Memcheck: mc_leakcheck.c:\)[0-9]*\(.*impossible.*happened.*\)/\1...\2/'

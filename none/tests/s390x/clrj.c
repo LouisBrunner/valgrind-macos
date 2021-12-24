@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include "opcodes.h"
 
-#define BRASLCLOBBER "0","1","2","3","4","5","14", \
+#define BRASLCLOBBER "cc", "0","1","2","3","4","5","14",        \
 		     "f0","f1","f2","f3","f4","f5","f6","f7"
 
 void if_eq(void)        { printf("equal\n");   }
@@ -37,7 +37,7 @@ void compare_never(uint32_t value1, uint32_t value2)
                 "j     0f\n\t"
                 "brasl 14,if_taken\n\t"
                 "0: aghi 15,160\n\t"
-                : : "d"(val1), "d"(val2) : "15", BRASLCLOBBER);
+                : : "d"(val1), "d"(val2) : BRASLCLOBBER);
    return;
 }
 
@@ -53,7 +53,7 @@ void compare_always(uint32_t value1, uint32_t value2)
                 "j     0f\n\t"
                 "brasl 14,if_taken\n\t"
                 "0: aghi 15,160\n\t"
-                : : "d"(val1), "d"(val2) : "15", BRASLCLOBBER);
+                : : "d"(val1), "d"(val2) : BRASLCLOBBER);
    return;
 }
 
@@ -69,7 +69,7 @@ void compare_le(uint32_t value1, uint32_t value2)
                 "j     0f\n\t"
                 "brasl 14,if_le\n\t"
                 "0: aghi 15,160\n\t"
-                : : "d"(val1), "d"(val2) : "15", BRASLCLOBBER);
+                : : "d"(val1), "d"(val2) : BRASLCLOBBER);
    return;
 }
 
@@ -85,7 +85,7 @@ void compare_ge(uint32_t value1, uint32_t value2)
                 "j     0f\n\t"
                 "brasl 14,if_ge\n\t"
                 "0: aghi 15,160\n\t"
-                : : "d"(val1), "d"(val2) : "15", BRASLCLOBBER);
+                : : "d"(val1), "d"(val2) : BRASLCLOBBER);
    return;
 }
 
@@ -101,7 +101,7 @@ void compare_gt(uint32_t value1, uint32_t value2)
                 "j     0f\n\t"
                 "brasl 14,if_gt\n\t"
                 "0: aghi 15,160\n\t"
-                : : "d"(val1), "d"(val2) : "15", BRASLCLOBBER);
+                : : "d"(val1), "d"(val2) : BRASLCLOBBER);
    return;
 }
 
@@ -117,7 +117,7 @@ void compare_lt(uint32_t value1, uint32_t value2)
                 "j     0f\n\t"
                 "brasl 14,if_lt\n\t"
                 "0: aghi 15,160\n\t"
-                : : "d"(val1), "d"(val2) : "15", BRASLCLOBBER);
+                : : "d"(val1), "d"(val2) : BRASLCLOBBER);
    return;
 }
 
@@ -133,7 +133,7 @@ void compare_eq(uint32_t value1, uint32_t value2)
                 "j     0f\n\t"
                 "brasl 14,if_eq\n\t"
                 "0: aghi 15,160\n\t"
-                : : "d"(val1), "d"(val2) : "15", BRASLCLOBBER);
+                : : "d"(val1), "d"(val2) : BRASLCLOBBER);
    return;
 }
 
@@ -149,7 +149,7 @@ void compare_ne(uint32_t value1, uint32_t value2)
                 "j     0f\n\t"
                 "brasl 14,if_ne\n\t"
                 "0: aghi 15,160\n\t"
-                : : "d"(val1), "d"(val2) : "15", BRASLCLOBBER);
+                : : "d"(val1), "d"(val2) : BRASLCLOBBER);
    return;
 }
 

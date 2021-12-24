@@ -1,0 +1,82 @@
+#! @PERL@
+
+# This script handles linking the tool executables on FreeBSD,
+# statically and at an alternative load address.
+#
+# Linking statically sidesteps all sorts of complications to do with
+# having two copies of the dynamic linker (valgrind's and the
+# client's) coexisting in the same process.  The alternative load
+# address is needed because Valgrind itself will load the client at
+# whatever address it specifies, which is almost invariably the
+# default load address.  Hence we can't allow Valgrind itself (viz,
+# the tool executable) to be loaded at that address.
+#
+# Unfortunately there's no standard way to do 'static link at
+# alternative address', so these link_tool_exe_*.in scripts handle
+# the per-platform hoop-jumping.
+#
+# What we get passed here is:
+#   first arg
+#      the alternative load address
+#   all the rest of the args
+#      the compiler invocation to do the final link, that
+#      the build system would have done, left to itself
+#
+# We just let the script 'die' if something is wrong, rather than do
+# proper error reporting.  We don't expect the users to run this
+# directly.  It is only run as part of the build process, with
+# carefully constrained inputs.
+#
+# FreeBSD specific complications:
+#
+# - in the initial version of this file, the linker(s) it was targeted
+#   at supported only -Ttext to load the code at an alternative address,
+#   and did not require removing the build notes in order to function
+#   correctly, so the work done by configure to determine what should go
+#   into the FLAG_T_TEXT was ignored.
+#
+# - LLVM's ld.lld, for at least versions 8.0 (shipping with FreeBSD 12.1)
+#   and 9.0 support the -Ttext option and behave as desired.  As of
+#   LLVM ld.lld version 10.0 a breaking change made -Ttext unusable,
+#   however the --image-base option has the desired semantics.
+#   It turns out that ld.lld has supported --image-base since at least
+#   as far back as version 8.0.
+#
+# So: what we actually do:
+#
+#   pass the specified command to the linker as-is, except, add
+#   "-static" and the value of FLAG_T_TEXT as determined by configure.
+#   Previously we did this by adding these options after the first
+#   word of the rest of the arguments, which works in the common case
+#   when it's something like "gcc". But the linker invocation itself
+#   might be multiple words, say if it's "ccache gcc". So we now put
+#   the new options at the end instead.
+#
+
+use warnings;
+use strict;
+
+# expect at least: alt-load-address gcc -o foo bar.o
+die "Not enough arguments"
+    if (($#ARGV + 1) < 5);
+
+my $ala = $ARGV[0];
+shift; # Remove $ala from @ARGV
+
+# check for plausible-ish alt load address
+die "Bogus alt-load address"
+    if (length($ala) < 3 || index($ala, "0x") != 0);
+
+my $cmd = join(" ", @ARGV, "-static -Wl,@FLAG_T_TEXT@=$ala");
+
+#print "link_tool_exe_freebsd: $cmd\n";
+
+
+# Execute the command:
+my $r = system("$cmd");
+
+if ($r == 0) {
+    exit 0;
+} else {
+    exit 1;
+}

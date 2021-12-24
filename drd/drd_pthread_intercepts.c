@@ -57,6 +57,10 @@
 #include "drd_clientreq.h"
 #include "pub_tool_redir.h" /* VG_WRAP_FUNCTION_ZZ() */
 
+#if defined(VGO_freebsd)
+#include <dlfcn.h>
+#endif
+
 #if defined(VGO_solaris)
 /*
  * Solaris usually provides pthread_* functions on top of Solaris threading
@@ -168,6 +172,11 @@ static int never_true;
 	 fflush(stdout);						\
       return pth_func_result;						\
    }
+#elif defined(VG_WRAP_THREAD_FUNCTION_LIBPTHREAD_ONLY)
+#define PTH_FUNC(ret_ty, zf, implf, argl_decl, argl)                    \
+ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBPTHREAD_SONAME,zf) argl_decl;        \
+ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBPTHREAD_SONAME,zf) argl_decl         \
+{	return implf argl; }
 #elif defined(VG_WRAP_THREAD_FUNCTION_LIBC_ONLY)
 #define PTH_FUNC(ret_ty, zf, implf, argl_decl, argl)                    \
    ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBC_SONAME,zf) argl_decl;           \
@@ -183,6 +192,13 @@ static int never_true;
    { return implf argl; }
 #else
 #  error "Unknown platform/thread wrapping"
+#endif
+
+#if defined(VGO_freebsd)
+#define LIBC_FUNC(ret_ty, zf, implf, argl_decl, argl)                    \
+   ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBC_SONAME,zf) argl_decl;           \
+   ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBC_SONAME,zf) argl_decl            \
+   { return implf argl; }
 #endif
 
 /**
@@ -252,6 +268,27 @@ static void DRD_(sema_up)(DrdSema* sema);
  */
 static void DRD_(init)(void)
 {
+#if defined(VGO_freebsd)
+   {
+      /*
+       * On FreeBSD, pthead functions are all in libthr.so
+       * However libc.so contains stubs. In this ctor function,
+       * calling DRD_(set_pthread_id)() results in a call to
+       * pthread_self() resolving to the libc.so stub which
+       * returns a junk value for the tid. Subsequent calls
+       * to pthread_create() then also cause calls to
+       * DRD_(set_pthread_id)(), but this time with pthread_self()
+       * resolving to the good libthr.so version (since this is later
+       * and libthr.so has been loaded). That causes an assert
+       * since we expect the tid to either be INVALID_POSIX_THREADID
+       * or the same as the current tid, and the junk value
+       * is neither. So we force loading of libthr.so, which
+       * avoids this junk tid value.
+       */
+      dlclose(dlopen("/lib/libthr.so.3", RTLD_NOW|RTLD_GLOBAL|RTLD_NODELETE));
+   }
+#endif
+
    DRD_(check_threading_library)();
    DRD_(set_pthread_id)();
 #if defined(VGO_solaris)
@@ -980,6 +1017,26 @@ PTH_FUNCS(int,
 #endif /* VGO_solaris */
 
 static __always_inline
+int pthread_mutex_clocklock_intercept(pthread_mutex_t *mutex,
+                                      clockid_t clockid,
+                                      const struct timespec *abs_timeout)
+{
+   int   ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_MUTEX_LOCK,
+                                   mutex, DRD_(mutex_type)(mutex), 0, 0, 0);
+   CALL_FN_W_WWW(ret, fn, mutex, clockid, abs_timeout);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_MUTEX_LOCK,
+                                   mutex, ret == 0, 0, 0, 0);
+   return ret;
+}
+
+PTH_FUNCS(int, pthreadZumutexZuclocklock, pthread_mutex_clocklock_intercept,
+          (pthread_mutex_t *mutex, clockid_t clockid, const struct timespec *abs_timeout),
+          (mutex, clockid, abs_timeout));
+
+static __always_inline
 int pthread_mutex_unlock_intercept(pthread_mutex_t *mutex)
 {
    int ret;
@@ -1137,6 +1194,30 @@ PTH_FUNCS(int, condZureltimedwait, pthread_cond_timedwait_intercept,
            const struct timespec *timeout),
           (cond, mutex, timeout));
 #endif /* VGO_solaris */
+
+
+static __always_inline
+int pthread_cond_clockwait_intercept(pthread_cond_t *cond,
+                                     pthread_mutex_t *mutex,
+                                     clockid_t clockid,
+                                     const struct timespec* abstime)
+{
+   int   ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_COND_WAIT,
+                                   cond, mutex, DRD_(mutex_type)(mutex), 0, 0);
+   CALL_FN_W_WWWW(ret, fn, cond, mutex, clockid, abstime);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_COND_WAIT,
+                                   cond, mutex, 1, 0, 0);
+   return ret;
+}
+
+PTH_FUNCS(int, pthreadZucondZuclockwait, pthread_cond_clockwait_intercept,
+          (pthread_cond_t *cond, pthread_mutex_t *mutex,
+            clockid_t clockid, const struct timespec* abstime),
+          (cond, mutex, clockid, abstime));
+
 
 // NOTE: be careful to intercept only pthread_cond_signal() and not Darwin's
 // pthread_cond_signal_thread_np(). The former accepts one argument; the latter
@@ -1352,8 +1433,13 @@ int sem_init_intercept(sem_t *sem, int pshared, unsigned int value)
    return ret;
 }
 
+#if defined(VGO_freebsd)
+LIBC_FUNC(int, semZuinit, sem_init_intercept,
+          (sem_t *sem, int pshared, unsigned int value), (sem, pshared, value));
+#else
 PTH_FUNCS(int, semZuinit, sem_init_intercept,
           (sem_t *sem, int pshared, unsigned int value), (sem, pshared, value));
+#endif
 
 #if defined(VGO_solaris)
 static __always_inline
@@ -1390,7 +1476,12 @@ int sem_destroy_intercept(sem_t *sem)
    return ret;
 }
 
+#if defined(VGO_freebsd)
+LIBC_FUNC(int, semZudestroy, sem_destroy_intercept, (sem_t *sem), (sem));
+#else
 PTH_FUNCS(int, semZudestroy, sem_destroy_intercept, (sem_t *sem), (sem));
+#endif
+
 #if defined(VGO_solaris)
 PTH_FUNCS(int, semaZudestroy, sem_destroy_intercept, (sem_t *sem), (sem));
 #endif /* VGO_solaris */
@@ -1414,9 +1505,15 @@ sem_t* sem_open_intercept(const char *name, int oflag, mode_t mode,
    return ret;
 }
 
+#if defined(VGO_freebsd)
+LIBC_FUNC(sem_t *, semZuopen, sem_open_intercept,
+          (const char *name, int oflag, mode_t mode, unsigned int value),
+          (name, oflag, mode, value));
+#else
 PTH_FUNCS(sem_t *, semZuopen, sem_open_intercept,
           (const char *name, int oflag, mode_t mode, unsigned int value),
           (name, oflag, mode, value));
+#endif
 
 static __always_inline int sem_close_intercept(sem_t *sem)
 {
@@ -1431,7 +1528,11 @@ static __always_inline int sem_close_intercept(sem_t *sem)
    return ret;
 }
 
+#if defined(VGO_freebsd)
+LIBC_FUNC(int, semZuclose, sem_close_intercept, (sem_t *sem), (sem));
+#else
 PTH_FUNCS(int, semZuclose, sem_close_intercept, (sem_t *sem), (sem));
+#endif
 
 static __always_inline int sem_wait_intercept(sem_t *sem)
 {
@@ -1446,7 +1547,12 @@ static __always_inline int sem_wait_intercept(sem_t *sem)
    return ret;
 }
 
+#if defined(VGO_freebsd)
+LIBC_FUNC(int, semZuwait, sem_wait_intercept, (sem_t *sem), (sem));
+#else
 PTH_FUNCS(int, semZuwait, sem_wait_intercept, (sem_t *sem), (sem));
+#endif
+
 #if defined(VGO_solaris)
 PTH_FUNCS(int, semaZuwait, sem_wait_intercept, (sem_t *sem), (sem));
 #endif /* VGO_solaris */
@@ -1464,7 +1570,11 @@ static __always_inline int sem_trywait_intercept(sem_t *sem)
    return ret;
 }
 
+#if defined(VGO_freebsd)
+LIBC_FUNC(int, semZutrywait, sem_trywait_intercept, (sem_t *sem), (sem));
+#else
 PTH_FUNCS(int, semZutrywait, sem_trywait_intercept, (sem_t *sem), (sem));
+#endif
 #if defined(VGO_solaris)
 PTH_FUNCS(int, semaZutrywait, sem_trywait_intercept, (sem_t *sem), (sem));
 #endif /* VGO_solaris */
@@ -1483,9 +1593,15 @@ int sem_timedwait_intercept(sem_t *sem, const struct timespec *abs_timeout)
    return ret;
 }
 
+#if defined(VGO_freebsd)
+LIBC_FUNC(int, semZutimedwait, sem_timedwait_intercept,
+          (sem_t *sem, const struct timespec *abs_timeout),
+          (sem, abs_timeout));
+#else
 PTH_FUNCS(int, semZutimedwait, sem_timedwait_intercept,
           (sem_t *sem, const struct timespec *abs_timeout),
           (sem, abs_timeout));
+#endif
 #if defined(VGO_solaris)
 PTH_FUNCS(int, semaZutimedwait, sem_timedwait_intercept,
           (sem_t *sem, const struct timespec *timeout),
@@ -1508,7 +1624,11 @@ static __always_inline int sem_post_intercept(sem_t *sem)
    return ret;
 }
 
+#if defined(VGO_freebsd)
+LIBC_FUNC(int, semZupost, sem_post_intercept, (sem_t *sem), (sem));
+#else
 PTH_FUNCS(int, semZupost, sem_post_intercept, (sem_t *sem), (sem));
+#endif
 #if defined(VGO_solaris)
 PTH_FUNCS(int, semaZupost, sem_post_intercept, (sem_t *sem), (sem));
 #endif /* VGO_solaris */
@@ -1695,6 +1815,27 @@ PTH_FUNCS(int, pthreadZurwlockZureltimedrdlockZunp,
 #endif /* VGO_solaris */
 
 static __always_inline
+int pthread_rwlock_clockrdlock_intercept(pthread_rwlock_t* rwlock,
+                                         clockid_t clockid,
+                                         const struct timespec *timeout)
+{
+   int   ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_RWLOCK_RDLOCK,
+                                   rwlock, 0, 0, 0, 0);
+   CALL_FN_W_WWW(ret, fn, rwlock, clockid, timeout);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_RWLOCK_RDLOCK,
+                                   rwlock, ret == 0, 0, 0, 0);
+   return ret;
+}
+
+PTH_FUNCS(int,
+          pthreadZurwlockZuclockrdlock, pthread_rwlock_clockrdlock_intercept,
+          (pthread_rwlock_t* rwlock, clockid_t clockid, const struct timespec *timeout),
+          (rwlock, clockid, timeout));
+
+static __always_inline
 int pthread_rwlock_timedwrlock_intercept(pthread_rwlock_t* rwlock,
                                          const struct timespec *timeout)
 {
@@ -1719,6 +1860,28 @@ PTH_FUNCS(int, pthreadZurwlockZureltimedwrlockZunp,
           (pthread_rwlock_t *rwlock, const struct timespec *timeout),
           (rwlock, timeout));
 #endif /* VGO_solaris */
+
+static __always_inline
+int pthread_rwlock_clockwrlock_intercept(pthread_rwlock_t* rwlock,
+                                         clockid_t clockid,
+                                         const struct timespec *timeout)
+{
+   int   ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_RWLOCK_WRLOCK,
+                                   rwlock, 0, 0, 0, 0);
+   CALL_FN_W_WWW(ret, fn, rwlock, clockid, timeout);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_RWLOCK_WRLOCK,
+                                   rwlock, ret == 0, 0, 0, 0);
+   return ret;
+}
+
+PTH_FUNCS(int,
+          pthreadZurwlockZuclockwrlock, pthread_rwlock_clockwrlock_intercept,
+          (pthread_rwlock_t* rwlock, clockid_t clockid, const struct timespec *timeout),
+          (rwlock, clockid, timeout));
+
 
 static __always_inline
 int pthread_rwlock_tryrdlock_intercept(pthread_rwlock_t* rwlock)

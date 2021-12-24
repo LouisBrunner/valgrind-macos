@@ -1,0 +1,100 @@
+
+---Thread-Announcement------------------------------------------
+
+Thread #x is the program's root thread
+
+----------------------------------------------------------------
+
+Thread #x: pthread_cond_{timed}wait called with un-held mutex
+   at 0x........: pthread_cond_wait_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
+   by 0x........: main (tc23_bogus_condwait.c:79)
+
+----------------------------------------------------------------
+
+Thread #x's call to pthread_cond_wait failed
+   with error code 1 (EPERM: Operation not permitted)
+   at 0x........: pthread_cond_wait_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
+   by 0x........: main (tc23_bogus_condwait.c:79)
+
+----------------------------------------------------------------
+
+Thread #x: pthread_cond_{timed}wait called with mutex of type pthread_rwlock_t*
+   at 0x........: pthread_cond_wait_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
+   by 0x........: main (tc23_bogus_condwait.c:82)
+
+----------------------------------------------------------------
+
+Thread #x: pthread_cond_{timed}wait: cond is associated with a different mutex
+   at 0x........: pthread_cond_wait_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
+   by 0x........: main (tc23_bogus_condwait.c:82)
+
+----------------------------------------------------------------
+
+Thread #x's call to pthread_cond_wait failed
+   with error code 1 (EPERM: Operation not permitted)
+   at 0x........: pthread_cond_wait_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
+   by 0x........: main (tc23_bogus_condwait.c:82)
+
+----------------------------------------------------------------
+
+Thread #x: pthread_cond_{timed}wait called with mutex held by a different thread
+   at 0x........: pthread_cond_wait_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
+   by 0x........: main (tc23_bogus_condwait.c:85)
+
+----------------------------------------------------------------
+
+Thread #x: pthread_cond_{timed}wait: cond is associated with a different mutex
+   at 0x........: pthread_cond_wait_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
+   by 0x........: main (tc23_bogus_condwait.c:85)
+
+----------------------------------------------------------------
+
+Thread #x's call to pthread_cond_wait failed
+   with error code 1 (EPERM: Operation not permitted)
+   at 0x........: pthread_cond_wait_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_wait@* (hg_intercepts.c:...)
+   by 0x........: main (tc23_bogus_condwait.c:85)
+
+---Thread-Announcement------------------------------------------
+
+Thread #x was created
+   ...
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (tc23_bogus_condwait.c:69)
+
+----------------------------------------------------------------
+
+Thread #x: pthread_cond_{signal,broadcast}: dubious: associated lock is not held by any thread
+   at 0x........: pthread_cond_signal_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_signal (hg_intercepts.c:...)
+   by 0x........: rescue_me (tc23_bogus_condwait.c:29)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+
+----------------------------------------------------------------
+
+Thread #x: pthread_cond_{signal,broadcast}: dubious: associated lock is not held by any thread
+   at 0x........: pthread_cond_signal_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_signal (hg_intercepts.c:...)
+   by 0x........: rescue_me (tc23_bogus_condwait.c:33)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+
+----------------------------------------------------------------
+
+Thread #x: pthread_cond_{signal,broadcast}: dubious: associated lock is not held by any thread
+   at 0x........: pthread_cond_signal_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_signal (hg_intercepts.c:...)
+   by 0x........: rescue_me (tc23_bogus_condwait.c:37)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+
+
+ERROR SUMMARY: 11 errors from 11 contexts (suppressed: 0 from 0)

@@ -300,7 +300,7 @@
 //#define __NR_sockconfig                 SYS_sockconfig
 //#define __NR_ntp_gettime                SYS_ntp_gettime
 //#define __NR_ntp_adjtime                SYS_ntp_adjtime
-//#define __NR_lwp_mutex_unlock           SYS_lwp_mutex_unlock
+#define __NR_lwp_mutex_unlock           SYS_lwp_mutex_unlock
 //#define __NR_lwp_mutex_trylock          SYS_lwp_mutex_trylock
 #define __NR_lwp_mutex_register         SYS_lwp_mutex_register
 //#define __NR_cladm                      SYS_cladm

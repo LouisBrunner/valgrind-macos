@@ -57,7 +57,7 @@
 #include "priv_tytypes.h"
 #include "priv_storage.h"
 #include "priv_readdwarf.h"
-#if defined(VGO_linux) || defined(VGO_solaris)
+#if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
 # include "priv_readelf.h"
 # include "priv_readdwarf3.h"
 # include "priv_readpdb.h"
@@ -832,7 +832,7 @@ void VG_(di_initialise) ( void )
 /*---                                                        ---*/
 /*--------------------------------------------------------------*/
 
-#if defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris)
+#if defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris) || defined(VGO_freebsd)
 
 /* Helper (indirect) for di_notify_ACHIEVE_ACCEPT_STATE */
 static Bool overlaps_DebugInfoMappings ( const DebugInfoMapping* map1,
@@ -983,7 +983,7 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
    truncate_DebugInfoMapping_overlaps( di, di->fsm.maps );
 
    /* And acquire new info. */
-#  if defined(VGO_linux) || defined(VGO_solaris)
+#  if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
    ok = ML_(read_elf_debug_info)( di );
 #  elif defined(VGO_darwin)
    ok = ML_(read_macho_debug_info)( di );
@@ -1222,6 +1222,13 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    if (!(is_rx_map || is_rw_map || is_ro_map))
       return 0;
 
+#if defined(VGO_freebsd)
+   /* Ignore non-fixed read-only mappings.  The dynamic linker may be
+    * mapping something for its own transient purposes. */
+   if (!seg->isFF && is_ro_map)
+      return 0;
+#endif
+
    /* Peer at the first few bytes of the file, to see if it is an ELF */
    /* object file. Ignore the file if we do not have read permission. */
    VG_(memset)(buf1k, 0, sizeof(buf1k));
@@ -1265,7 +1272,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    vg_assert(sr_Res(preadres) > 0 && sr_Res(preadres) <= sizeof(buf1k) );
 
    /* We're only interested in mappings of object files. */
-#  if defined(VGO_linux) || defined(VGO_solaris)
+#  if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
    if (!ML_(is_elf_object_file)( buf1k, (SizeT)sr_Res(preadres), False ))
       return 0;
 #  elif defined(VGO_darwin)
@@ -1714,7 +1721,7 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
    if (pdbname) ML_(dinfo_free)(pdbname);
 }
 
-#endif /* defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris) */
+#endif /* defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris) || defined(VGO_freebsd) */
 
 
 /*------------------------------------------------------------*/
@@ -2304,10 +2311,13 @@ Vg_FnNameKind VG_(get_fnname_kind) ( const HChar* name )
    } else if (
 #      if defined(VGO_linux)
        VG_STREQ("__libc_start_main",  name) ||  // glibc glibness
+       VG_STREQ("__libc_start_call_main",  name) ||  // glibc glibness
        VG_STREQN(18, "__libc_start_main.", name) || // gcc optimization
        VG_STREQ("generic_start_main", name) ||  // Yellow Dog doggedness
        VG_STREQN(19, "generic_start_main.", name) || // gcc optimization
        VG_STREQ("_start", name) ||
+#      elif defined(VGO_freebsd)
+       VG_STREQ("_start", name) || // FreeBSD libc
 #      elif defined(VGO_darwin)
        // See readmacho.c for an explanation of this.
        VG_STREQ("start_according_to_valgrind", name) ||  // Darwin, darling

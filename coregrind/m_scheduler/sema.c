@@ -108,8 +108,8 @@ void ML_(sema_down)( vg_sema_t *sema, Bool as_LL )
    INNER_REQUEST(ANNOTATE_RWLOCK_ACQUIRED(sema, /*is_w*/1));
 
    if (ret != 1) 
-      VG_(debugLog)(0, "scheduler", 
-                       "VG_(sema_down): read returned %d\n", ret);
+      VG_(debugLog)(1, "scheduler",
+                       "ML_(sema_down): read returned %d\n", ret);
 
    if (ret == -VKI_EINTR)
       goto again;

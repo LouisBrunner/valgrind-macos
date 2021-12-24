@@ -1,4 +1,4 @@
-prereq: ../../tests/os_test linux || ../../tests/os_test solaris
+prereq: ../../tests/os_test linux || ../../tests/os_test solaris || ../../tests/os_test freebsd
 prog: ppoll_alarm
 vgopts: -q
 stderr_filter: filter_stderr

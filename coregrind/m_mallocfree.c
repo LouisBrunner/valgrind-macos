@@ -1011,6 +1011,14 @@ Superblock* maybe_findSb ( Arena* a, Addr ad )
 /*--- Functions for working with freelists.                ---*/
 /*------------------------------------------------------------*/
 
+#if defined(__clang__)
+/* The nicely aligned 'returns' in the function below produce
+ * misleading indentation warnings. Rather than turn the
+ * warning off globally, just turn it off for the block of code. */
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmisleading-indentation"
+#endif
+
 // Nb: Determination of which freelist a block lives on is based on the
 // payload size, not block size.
 
@@ -1119,6 +1127,10 @@ UInt pszB_to_listNo_SLOW ( SizeT pszB__divided_by__VG_MIN_MALLOC_SZB )
    /*NOTREACHED*/
    vg_assert(0);
 }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 static inline
 UInt pszB_to_listNo ( SizeT pszB )

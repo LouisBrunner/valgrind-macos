@@ -703,7 +703,8 @@ Addr setup_client_stack( void*  init_sp,
                   itself, is not supported by Valgrind. */
                auxv->u.a_val &= ((VKI_HWCAP_S390_TE - 1)
                                  | VKI_HWCAP_S390_VXRS
-                                 | VKI_HWCAP_S390_VXRS_EXT);
+                                 | VKI_HWCAP_S390_VXRS_EXT
+                                 | VKI_HWCAP_S390_VXRS_EXT2);
             }
 #           elif defined(VGP_arm64_linux)
             {
@@ -891,7 +892,8 @@ Addr setup_client_stack( void*  init_sp,
 #        if !defined(VGP_ppc32_linux) && !defined(VGP_ppc64be_linux) \
             && !defined(VGP_ppc64le_linux) \
             && !defined(VGP_mips32_linux) && !defined(VGP_mips64_linux) \
-            && !defined(VGP_nanomips_linux)
+            && !defined(VGP_nanomips_linux) \
+            && !defined(VGP_s390x_linux)
          case AT_SYSINFO_EHDR: {
             /* Trash this, because we don't reproduce it */
             const NSegment* ehdrseg = VG_(am_find_nsegment)((Addr)auxv->u.a_ptr);

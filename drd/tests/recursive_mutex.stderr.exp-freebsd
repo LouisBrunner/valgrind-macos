@@ -1,0 +1,18 @@
+
+
+Non-recursive mutex.
+second lock call failed !
+Mutex not locked by calling thread: mutex 0x........, recursion count 0, owner 1.
+   at 0x........: pthread_mutex_unlock (drd_pthread_intercepts.c:?)
+   by 0x........: lock_twice (recursive_mutex.c:?)
+   by 0x........: main (recursive_mutex.c:?)
+mutex 0x........ was first observed at:
+   at 0x........: pthread_mutex_trylock (drd_pthread_intercepts.c:?)
+   by 0x........: lock_twice (recursive_mutex.c:?)
+   by 0x........: main (recursive_mutex.c:?)
+
+second unlock call failed !
+
+Done.
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

@@ -1,0 +1,5 @@
+10 bytes in 1 blocks are definitely lost in loss record ... of ...
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: realloc (vg_replace_malloc.c:...)
+   by 0x........: main (static_allocs.c:34)
+

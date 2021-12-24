@@ -1,0 +1,22 @@
+Syscall param sigwait(sig) points to unaddressable byte(s)
+   at 0x........: _sigwait (in /...libc...)
+   by 0x........: __sigwait (in /...libc...)
+   by 0x........: main (sigwait.c:58)
+ Address 0x........ is 0 bytes inside a block of size 4 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (sigwait.c:57)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (sigwait.c:56)
+
+Syscall param sigwait(set) points to unaddressable byte(s)
+   at 0x........: _sigwait (in /...libc...)
+   by 0x........: __sigwait (in /...libc...)
+   by 0x........: main (sigwait.c:64)
+ Address 0x........ is 0 bytes inside a block of size 16 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (sigwait.c:60)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (sigwait.c:27)
+

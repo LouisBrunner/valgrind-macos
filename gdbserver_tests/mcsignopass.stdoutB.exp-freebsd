@@ -1,0 +1,56 @@
+Signal        Stop	Print	Pass to program	Description
+SIGSEGV       Yes	Yes	No		Segmentation fault
+Signal        Stop	Print	Pass to program	Description
+SIGBUS        Yes	Yes	Yes		Bus error
+Signal        Stop	Print	Pass to program	Description
+SIGFPE        Yes	Yes	Yes		Arithmetic exception
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+test1 () at faultstatus.c:117
+117		*BADADDR = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+test1 () at faultstatus.c:117
+117		*BADADDR = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+test1 () at faultstatus.c:117
+117		*BADADDR = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+test1 () at faultstatus.c:117
+117		*BADADDR = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+test1 () at faultstatus.c:117
+117		*BADADDR = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+test1 () at faultstatus.c:117
+117		*BADADDR = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+test1 () at faultstatus.c:117
+117		*BADADDR = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+test1 () at faultstatus.c:117
+117		*BADADDR = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+test1 () at faultstatus.c:117
+117		*BADADDR = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+test1 () at faultstatus.c:117
+117		*BADADDR = 'x';
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+test1 () at faultstatus.c:117
+117		*BADADDR = 'x';
+Signal        Stop	Print	Pass to program	Description
+SIGSEGV       No	Yes	Yes		Segmentation fault
+Continuing.
+Program received signal SIGSEGV, Segmentation fault.
+Program received signal SIGSEGV, Segmentation fault.
+Program received signal SIGFPE, Arithmetic exception.

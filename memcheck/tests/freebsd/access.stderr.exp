@@ -1,0 +1,53 @@
+Syscall param access(mode) contains uninitialised byte(s)
+   at 0x........: access (in /...libc...)
+   by 0x........: main (access.c:37)
+
+Syscall param access(pathname) points to unaddressable byte(s)
+   at 0x........: access (in /...libc...)
+   by 0x........: main (access.c:37)
+ Address 0x........ is 0 bytes inside a block of size 4 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (access.c:36)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (access.c:35)
+
+Syscall param eaccess(mode) contains uninitialised byte(s)
+   at 0x........: eaccess (in /...libc...)
+   by 0x........: main (access.c:38)
+
+Syscall param eaccess(path) points to unaddressable byte(s)
+   at 0x........: eaccess (in /...libc...)
+   by 0x........: main (access.c:38)
+ Address 0x........ is 0 bytes inside a block of size 4 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (access.c:36)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (access.c:35)
+
+Syscall param faccessat(fd) contains uninitialised byte(s)
+   at 0x........: faccessat (in /...libc...)
+   by 0x........: main (access.c:39)
+
+Syscall param faccessat(flag) contains uninitialised byte(s)
+   at 0x........: faccessat (in /...libc...)
+   by 0x........: main (access.c:39)
+
+Syscall param faccessat(path) points to unaddressable byte(s)
+   at 0x........: faccessat (in /...libc...)
+   by 0x........: main (access.c:39)
+ Address 0x........ is 0 bytes inside a block of size 4 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (access.c:36)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (access.c:35)
+
+Syscall param exit(status) contains uninitialised byte(s)
+   ...
+   by 0x........: main (access.c:41)
+

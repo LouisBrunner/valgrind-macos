@@ -1,0 +1,21 @@
+Syscall param getfsstat(buf) points to unaddressable byte(s)
+   at 0x........: _getfsstat (in /...libc...)
+   by 0x........: getfsstat (in /...libc...)
+   by 0x........: main (getfsstat.c:25)
+ Address 0x........ is 0 bytes inside a block of size 2,344 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (getfsstat.c:24)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (getfsstat.c:23)
+
+Syscall param getfsstat(len) contains uninitialised byte(s)
+   at 0x........: _getfsstat (in /...libc...)
+   by 0x........: getfsstat (in /...libc...)
+   by 0x........: main (getfsstat.c:30)
+
+Syscall param getfsstat(flags) contains uninitialised byte(s)
+   at 0x........: _getfsstat (in /...libc...)
+   by 0x........: getfsstat (in /...libc...)
+   by 0x........: main (getfsstat.c:31)
+

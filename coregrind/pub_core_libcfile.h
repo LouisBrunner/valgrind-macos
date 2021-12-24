@@ -44,6 +44,11 @@ extern Int VG_(fcntl)   ( Int fd, Int cmd, Addr arg );
 /* Convert an fd into a filename */
 extern Bool VG_(resolve_filename) ( Int fd, const HChar** buf );
 
+#if defined(VGO_freebsd)
+/* get the flags used to obtain an fd */
+extern Bool VG_(resolve_filemode) ( Int fd, Int * result );
+#endif
+
 /* Return the size of a file, or -1 in case of error */
 extern Long VG_(fsize) ( Int fd );
 

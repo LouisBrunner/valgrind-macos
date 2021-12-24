@@ -323,9 +323,11 @@
 #define __NR_pkey_alloc 289
 #define __NR_pkey_free 290
 #define __NR_statx 291
+#define __NR_io_pgetevents 291
+#define __NR_rseq 293
 
 #undef __NR_syscalls
-#define __NR_syscalls 292
+#define __NR_syscalls 294
 
 ///*
 // * All syscalls below here should go away really,

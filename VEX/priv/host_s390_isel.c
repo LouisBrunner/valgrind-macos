@@ -4192,6 +4192,15 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
          return dst;
       }
 
+      case Iop_Perm8x16:
+         size = 16;
+         reg1 = s390_isel_vec_expr(env, arg1);
+         reg2 = s390_isel_vec_expr(env, arg2);
+
+         addInstr(env, s390_insn_vec_triop(size, S390_VEC_PERM,
+                                           dst, reg1, reg1, reg2));
+         return dst;
+
       case Iop_CmpEQ8x16:
          size = 1;
          vec_binop = S390_VEC_COMPARE_EQUAL;

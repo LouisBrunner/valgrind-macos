@@ -1,0 +1,37 @@
+#! /bin/sh
+
+dir=`dirname $0`
+
+SED=@SED@
+
+$dir/../../tests/filter_stderr_basic                    |
+
+# Anonymise addresses
+$dir/../../tests/filter_addresses                       |
+
+# Remove "Memcheck, ..." line and the following copyright line.
+$SED "/^Memcheck, a memory error detector/ , /./ d" |
+
+# Replace exit_group() with exit(), because you can get either on Linux
+# depending on the system.
+perl -p -e "s/param exit_group\(status\)/param exit(status)/" |
+
+# Leak check filtering.
+$SED "s/checked [0-9,]* bytes./checked ... bytes./" |
+
+# More leak check filtering.  For systems that do extra libc allocations
+# (eg. Darwin) there may be extra (reachable, and thus not shown) loss
+# records.  So we filter out the loss record numbers.
+perl -p -e "s/in loss record \d+ of \d+/in loss record ... of .../" |
+
+# Filter out glibc debuginfo if installed.
+perl -p -e "s/\(syscall-template.S:[0-9]*\)/(in \/...libc...)/" |
+perl -p -e "s/sendmsg \(sendmsg.c:[0-9]*\)/sendmsg (in \/...libc...)/" |
+perl -p -e "s/\(socket.S:[0-9]*\)/(in \/...libc...)/" |
+
+# Newer architectures (aarch64) implement poll by calling ppoll directly.
+perl -p -e "s/Syscall param ppoll\(ufds/Syscall param poll\(ufds/" |
+
+$dir/../../memcheck/tests/filter_memcheck "$@"
+
+exit 0

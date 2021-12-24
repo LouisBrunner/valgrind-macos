@@ -5,8 +5,8 @@ Program received signal SIGTRAP, Trace/breakpoint trap.
 Now threads are burning CPU
 Continuing.
 Program received signal SIGTRAP, Trace/breakpoint trap.
-0x........ in do_burn () at sleepers.c:41
-41	   for (i = 0; i < burn; i++) loopnr++;
+do_burn () at sleepers.c:40
+40	   for (i = 0; i < burn; i++) loopnr++;
 $1 = 0
 $2 = 0
 $3 = 0

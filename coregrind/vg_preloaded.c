@@ -45,7 +45,7 @@
 #include "pub_core_debuginfo.h"  // Needed for pub_core_redir.h
 #include "pub_core_redir.h"      // For VG_NOTIFY_ON_LOAD
 
-#if defined(VGO_linux) || defined(VGO_solaris)
+#if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
 
 /* ---------------------------------------------------------------------
    Hook for running __gnu_cxx::__freeres() and __libc_freeres() once
@@ -206,6 +206,10 @@ void VG_REPLACE_FUNCTION_ZU(libSystemZdZaZddylib, arc4random_addrandom)(unsigned
     // GrP fixme ought to check [dat..dat+datlen) is defined
     // but don't care if it's initialized
 }
+
+#elif defined(VGO_freebsd)
+
+// nothing specific currently
 
 #elif defined(VGO_solaris)
 

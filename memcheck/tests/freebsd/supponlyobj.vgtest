@@ -1,0 +1,4 @@
+# Test suppressions with only obj: markers.
+prog: inlinfo
+vgopts: -q --read-inline-info=no --suppressions=supponlyobj.supp
+stderr_filter_args: inlinfo.c

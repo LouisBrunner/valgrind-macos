@@ -86,11 +86,13 @@ EXTRA_DIST = \
 	mcsignopass.stderr.exp \
 	mcsignopass.stdinB.gdb \
 	mcsignopass.stdoutB.exp \
+	mcsignopass.stdoutB.exp-freebsd \
 	mcsignopass.vgtest \
 	mcsigpass.stderrB.exp \
 	mcsigpass.stderr.exp \
 	mcsigpass.stdinB.gdb \
 	mcsigpass.stdoutB.exp \
+	mcsigpass.stdoutB.exp-freebsd \
 	mcsigpass.vgtest \
 	mcvabits.stderrB.exp \
 	mcvabits.stderr.exp \
@@ -155,17 +157,20 @@ check_PROGRAMS = \
 	clean_after_fork \
 	fork_chain \
 	gone \
-	main_pic \
 	passsigalrm \
 	self_invalidate \
 	sleepers \
 	t \
 	watchpoints
 
+if !VGCONF_OS_IS_FREEBSD
+  check_PROGRAMS += main_pic
+
+  main_pic_LDFLAGS = @FLAG_PIE@
+  main_pic_CFLAGS = $(AM_CFLAGS) -fPIC
+endif
+
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 LDADD = -lpthread
-
-main_pic_LDFLAGS = @FLAG_PIE@
-main_pic_CFLAGS	 = $(AM_CFLAGS) -fPIC

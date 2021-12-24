@@ -845,35 +845,37 @@ sub annotate_ann_files($)
             }
 
             # Annotate chosen lines, tracking total counts of lines printed
-            $pairs[0] = 1 if ($pairs[0] < 1);
-            while (@pairs) {
-                my $low  = shift @pairs;
-                my $high = shift @pairs;
-                while ($. < $low-1) {
-                    my $tmp = <INPUTFILE>;
-                    last unless (defined $tmp);     # hack to detect EOF
-                }
-                my $src_line;
-                # Print line number, unless start of file
-                print("-- line $low " . '-' x 40 . "\n") if ($low != 1);
-                while (($. < $high) && ($src_line = <INPUTFILE>)) {
-                    if (defined $line_nums[0] && $. == $line_nums[0]) {
-                        print_CC($src_file_CCs->{$.}, $CC_col_widths);
-                        add_array_a_to_b($src_file_CCs->{$.}, 
-                                         $printed_totals_CC);
-                        shift(@line_nums);
-
-                    } else {
-                        print_CC([], $CC_col_widths);
+            if (@pairs) {
+                $pairs[0] = 1 if ($pairs[0] < 1);
+                while (@pairs) {
+                    my $low  = shift @pairs;
+                    my $high = shift @pairs;
+                    while ($. < $low-1) {
+                        my $tmp = <INPUTFILE>;
+                        last unless (defined $tmp);     # hack to detect EOF
                     }
+                    my $src_line;
+                    # Print line number, unless start of file
+                    print("-- line $low " . '-' x 40 . "\n") if ($low != 1);
+                    while (($. < $high) && ($src_line = <INPUTFILE>)) {
+                        if (defined $line_nums[0] && $. == $line_nums[0]) {
+                            print_CC($src_file_CCs->{$.}, $CC_col_widths);
+                            add_array_a_to_b($src_file_CCs->{$.}, 
+                                             $printed_totals_CC);
+                            shift(@line_nums);
 
-                    print(" $src_line");
-                }
-                # Print line number, unless EOF
-                if ($src_line) {
-                    print("-- line $high " . '-' x 40 . "\n");
-                } else {
-                    last;
+                        } else {
+                            print_CC([], $CC_col_widths);
+                        }
+
+                        print(" $src_line");
+                    }
+                    # Print line number, unless EOF
+                    if ($src_line) {
+                        print("-- line $high " . '-' x 40 . "\n");
+                    } else {
+                        last;
+                    }
                 }
             }
 

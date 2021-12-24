@@ -1,0 +1,2 @@
+prereq: ../../../tests/check_ppc64_auxv_cap arch_3_00
+prog: test_mcrxrx

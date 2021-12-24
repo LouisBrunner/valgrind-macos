@@ -1,0 +1,65 @@
+#! /bin/sh
+
+dir=`dirname $0`
+
+SED=@SED@
+
+$dir/../../tests/filter_stderr_basic                    |
+
+# Anonymise addresses
+$dir/../../tests/filter_addresses                       |
+
+# Perform Solaris-specific filtering.
+if $dir/../../tests/os_test solaris; then
+   perl -p $dir/filter_stderr_solaris
+else
+   cat
+fi |
+
+# And FreeBSD
+if $dir/../../tests/os_test freebsd; then
+   #perl -p $dir/filter_stderr_freebsd
+   awk -f $dir/filter_freebsd.awk
+else
+   cat
+fi |
+
+# get rid of the numbers in bits of text "Thread #n", "thread #n",
+# "Thread n" and "thread n", "tid n"
+# as these make some tests more scheduling sensitive -- those where
+# there are multiple threads which play interchangeable roles.
+$SED \
+ -e "s/tid [0-9][0-9]*/tid #x/g" \
+ -e "s/hread #[0-9][0-9]*/hread #x/g" \
+ -e "s/hread [0-9][0-9]*/hread x/g" |
+
+# Likewise for frame numbers, which depend on compilation.
+$SED -e "s/frame #[0-9][0-9]*/frame #x/g" | \
+
+# Remove the message that more than hundred errors have been detected
+# (consists of two lines) and also the empty line above it.
+awk 'BEGIN{begin=1} {if ($0 == "More than 100 errors detected.  Subsequent errors") { getline; getline; } else { if (begin) begin = 0; else print last_line; }; last_line = $0; } END { if (! begin) print last_line; }' |
+
+# Merge sem_wait and sem_wait@*, as either could be used.  Likewise for
+# sem_post.
+$SED \
+ -e "s/sem_wait@\*/sem_wait/" \
+ -e "s/sem_post@\*/sem_post/" |
+
+# Remove "Helgrind, ..." line and the following copyright line;
+# also the standard postamble (does such a word exist?)
+# And also remove pthread_create_WRK lines, as ppc64 stacktraces
+# do not contain them (at least on gcc110/fedora18).
+$SED \
+ -e "/^Helgrind, a thread error detector/ , /./ d" \
+ -e "/^For lists of detected and suppressed errors, rerun with: -s$/d" \
+ -e "/^Use --history-level=approx or =none to gain increased speed, at$/d" \
+ -e "/^the cost of reduced accuracy of conflicting-access information$/d" \
+ -e "/pthread_create_WRK (hg_intercepts.c:/d" |
+
+# Some arches return ENOSYS instead of EINVAL for undefined futex operations.
+$SED -e "s/with error code 38 (ENOSYS: Function not implemented)/with error code 22 (EINVAL: Invalid argument)/" |
+
+$dir/../../helgrind/tests/filter_helgrind "$@"
+
+exit 0

@@ -4,7 +4,7 @@
 /*--- The address space manager: segment initialisation and        ---*/
 /*--- tracking, stack operations                                   ---*/
 /*---                                                              ---*/
-/*--- Implementation for Linux (and Darwin!)     aspacemgr-linux.c ---*/
+/*--- Implementation for Linux, Darwin, Solaris and FreeBSD        ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -30,7 +30,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#if defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris)
+#if defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris) || defined(VGO_freebsd)
 
 /* *************************************************************
    DO NOT INCLUDE ANY OTHER FILES HERE.
@@ -314,6 +314,8 @@ Addr VG_(clo_aspacem_minAddr)
 # endif
 #elif defined(VGO_solaris)
    = (Addr) 0x00100000; // 1MB
+#elif defined(VGO_freebsd)
+   = (Addr) 0x04000000; // 64M
 #else
 #endif
 
@@ -367,7 +369,12 @@ static void parse_procselfmaps (
 #  define ARM_LINUX_FAKE_COMMPAGE_END1  0xFFFF1000
 #endif
 
-
+#if !defined(VKI_MAP_STACK)
+/* this is only defined for FreeBSD
+ * for readability, define it to 0
+ * for other platforms */
+#define VKI_MAP_STACK 0
+#endif
 
 /*-----------------------------------------------------------------*/
 /*---                                                           ---*/
@@ -871,7 +878,7 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
          cmp_devino = False;
 #endif
 
-#if defined(VGO_darwin)
+#if defined(VGO_darwin) || defined(VGO_freebsd)
       // GrP fixme kernel info doesn't have dev/inode
       cmp_devino = False;
       
@@ -1491,7 +1498,13 @@ static void init_nsegment ( /*OUT*/NSegment* seg )
    seg->mode     = 0;
    seg->offset   = 0;
    seg->fnIdx    = -1;
-   seg->hasR = seg->hasW = seg->hasX = seg->hasT = seg->isCH = False;
+
+   seg->hasR     = seg->hasW = seg->hasX = seg->hasT
+                 = seg->isCH = False;
+#if defined(VGO_freebsd)
+   seg->isFF     = False;
+#endif
+
 }
 
 /* Make an NSegment which holds a reservation. */
@@ -1637,6 +1650,81 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
 
    suggested_clstack_end = -1; // ignored; Mach-O specifies its stack
 
+   // --- Freebsd ------------------------------------------
+#elif defined(VGO_freebsd)
+
+
+   VG_(debugLog)(2, "aspacem",
+                    "        sp_at_startup = 0x%010lx (supplied)\n",
+                    sp_at_startup );
+
+# if VG_WORDSIZE == 4
+
+   aspacem_maxAddr = VG_PGROUNDDN( sp_at_startup ) - 1;
+# else
+   aspacem_maxAddr = (Addr) (Addr)0x800000000UL - 1; // 32G
+#  ifdef ENABLE_INNER
+   { Addr cse = VG_PGROUNDDN( sp_at_startup ) - 1;
+     if (aspacem_maxAddr > cse)
+        aspacem_maxAddr = cse;
+   }
+#    endif // ENABLE_INNER
+# endif
+
+   aspacem_cStart = aspacem_minAddr;
+   aspacem_vStart = VG_PGROUNDUP((aspacem_minAddr + aspacem_maxAddr + 1) / 2);
+
+#  ifdef ENABLE_INNER
+   aspacem_vStart -= 0x10000000UL; // 512M
+#  endif // ENABLE_INNER
+
+   // starting with FreeBSD 10.4, the stack is created with a zone
+   // that is marked MAP_GUARD. This zone is reserved but unmapped,
+   // and fills the space up to the end of the segment
+   // see man mmap
+
+   // Version number from
+   // https://www.freebsd.org/doc/en_US.ISO8859-1/books/porters-handbook/versions-10.html
+
+   // On x86 this is 0x3FE0000
+   // And on amd64 it is 0x1FFE0000 (536739840)
+   // There is less of an issue on amd64 as we just choose some arbitrary address rather then trying
+   // to squeeze in just below the host stack
+
+   // Some of this is in sys/vm/vm_map.c, for instance vm_map_stack and vm_map_stack_locked
+   // These refer to the kernel global sgrowsiz, which seems to be the initial size
+   // of the user stack, 128k on my system
+   //
+   // This seems to be in the sysctl kern.sgrowsiz
+   // Then there is kern.maxssiz which is the total stack size (grow size + guard area)
+   // In other words guard area = maxssiz - sgrowsiz
+
+#if (__FreeBSD_version >= 1003516)
+
+#if 0
+   // this block implements what is described above
+   // this makes no changes to the regression tests
+   // I'm keeping it for a rainy day.
+   // note this needs
+   // #include "pub_core_libcproc.h"
+   SizeT kern_maxssiz;
+   SizeT kern_sgrowsiz;
+   SizeT sysctl_size = sizeof(SizeT);
+   VG_(sysctlbyname)("kern.maxssiz", &kern_maxssiz, &sysctl_size, NULL, 0);
+   VG_(sysctlbyname)("kern.sgrowsiz", &kern_sgrowsiz, &sysctl_size, NULL, 0);
+
+   suggested_clstack_end = aspacem_maxAddr - (kern_maxssiz - kern_sgrowsiz) + VKI_PAGE_SIZE;
+#endif
+
+   suggested_clstack_end = aspacem_maxAddr - 64*1024*1024UL
+                                           + VKI_PAGE_SIZE;
+
+#else
+   suggested_clstack_end = aspacem_maxAddr - 16*1024*1024UL
+                                           + VKI_PAGE_SIZE;
+
+#endif
+
    // --- Solaris ------------------------------------------
 #elif defined(VGO_solaris)
 #  if VG_WORDSIZE == 4
@@ -1759,7 +1847,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    suggested_clstack_end = aspacem_maxAddr - 16*1024*1024ULL
                                            + VKI_PAGE_SIZE;
 
-#endif
+#endif /* #else of 'defined(VGO_solaris)' */
    // --- (end) --------------------------------------------
 
    aspacem_assert(VG_IS_PAGE_ALIGNED(aspacem_minAddr));
@@ -2165,13 +2253,13 @@ VG_(am_notify_client_mmap)( Addr a, SizeT len, UInt prot, UInt flags,
    needDiscard = any_Ts_in_range( a, len );
 
    init_nsegment( &seg );
-   seg.kind   = (flags & VKI_MAP_ANONYMOUS) ? SkAnonC : SkFileC;
+   seg.kind   = (flags & (VKI_MAP_ANONYMOUS | VKI_MAP_STACK)) ? SkAnonC : SkFileC;
    seg.start  = a;
    seg.end    = a + len - 1;
    seg.hasR   = toBool(prot & VKI_PROT_READ);
    seg.hasW   = toBool(prot & VKI_PROT_WRITE);
    seg.hasX   = toBool(prot & VKI_PROT_EXEC);
-   if (!(flags & VKI_MAP_ANONYMOUS)) {
+   if (!(flags & (VKI_MAP_ANONYMOUS | VKI_MAP_STACK))) {
       // Nb: We ignore offset requests in anonymous mmaps (see bug #126722)
       seg.offset = offset;
       if (ML_(am_get_fd_d_i_m)(fd, &dev, &ino, &mode)) {
@@ -2182,6 +2270,9 @@ VG_(am_notify_client_mmap)( Addr a, SizeT len, UInt prot, UInt flags,
       if (ML_(am_resolve_filename)(fd, buf, VKI_PATH_MAX)) {
          seg.fnIdx = ML_(am_allocate_segname)( buf );
       }
+#if defined(VGO_freebsd)
+      seg.isFF = (flags & VKI_MAP_FIXED);
+#endif
    }
    add_segment( &seg );
    AM_SANITY_CHECK;
@@ -2423,6 +2514,9 @@ SysRes VG_(am_mmap_named_file_fixed_client_flags)
    } else if (ML_(am_resolve_filename)(fd, buf, VKI_PATH_MAX)) {
       seg.fnIdx = ML_(am_allocate_segname)( buf );
    }
+#if defined(VGO_freebsd)
+   seg.isFF = (flags & VKI_MAP_FIXED);
+#endif
    add_segment( &seg );
 
    AM_SANITY_CHECK;
@@ -2733,6 +2827,9 @@ static SysRes VG_(am_mmap_file_float_valgrind_flags) ( SizeT length, UInt prot,
    if (ML_(am_resolve_filename)(fd, buf, VKI_PATH_MAX)) {
       seg.fnIdx = ML_(am_allocate_segname)( buf );
    }
+#if defined(VGO_freebsd)
+   seg.isFF = (flags & VKI_MAP_FIXED);
+#endif
    add_segment( &seg );
 
    AM_SANITY_CHECK;
@@ -3796,13 +3893,89 @@ Bool VG_(get_changed_segments)(
    return !css_overflowed;
 }
 
-#endif // defined(VGO_darwin)
 
 /*------END-procmaps-parser-for-Darwin---------------------------*/
 
+/*------BEGIN-procmaps-parser-for-Freebsd------------------------*/
+#elif defined(VGO_freebsd)
+
+/* Size of a smallish table used to read /proc/self/map entries. */
+#define M_PROCMAP_BUF 10485760	/* 10M */
+
+/* static ... to keep it out of the stack frame. */
+static char procmap_buf[M_PROCMAP_BUF];
+
+static void parse_procselfmaps (
+      void (*record_mapping)( Addr addr, SizeT len, UInt prot,
+                              ULong dev, ULong ino, Off64T offset,
+                              const HChar* filename ),
+      void (*record_gap)( Addr addr, SizeT len )
+   )
+{
+    Addr   start, endPlusOne, gapStart;
+    char* filename;
+    char   *p;
+    UInt          prot;
+    ULong  foffset, dev, ino;
+    struct vki_kinfo_vmentry *kve;
+    vki_size_t len;
+    Int    oid[4];
+    SysRes sres;
+
+    foffset = ino = 0; /* keep gcc-4.1.0 happy */
+
+    oid[0] = VKI_CTL_KERN;
+    oid[1] = VKI_KERN_PROC;
+    oid[2] = VKI_KERN_PROC_VMMAP;
+    oid[3] = sr_Res(VG_(do_syscall0)(__NR_getpid));
+    len = sizeof(procmap_buf);
+
+    sres = VG_(do_syscall6)(__NR___sysctl, (UWord)oid, 4, (UWord)procmap_buf,
+       (UWord)&len, 0, 0);
+    if (sr_isError(sres)) {
+       VG_(debugLog)(0, "procselfmaps", "sysctl %lu\n", sr_Err(sres));
+       ML_(am_exit)(1);
+    }
+    gapStart = Addr_MIN;
+    p = procmap_buf;
+    while (p < (char *)procmap_buf + len) {
+       kve = (struct vki_kinfo_vmentry *)p;
+       start      = (UWord)kve->kve_start;
+       endPlusOne = (UWord)kve->kve_end;
+       foffset    = kve->kve_offset;
+       filename   = kve->kve_path;
+       dev        = kve->kve_fsid;
+       ino        = kve->kve_fileid;
+       if (filename[0] != '/') {
+         filename = NULL;
+         foffset = 0;
+       }
+ 
+       prot = 0;
+       if (kve->kve_protection & VKI_KVME_PROT_READ)  prot |= VKI_PROT_READ;
+       if (kve->kve_protection & VKI_KVME_PROT_WRITE) prot |= VKI_PROT_WRITE;
+       if (kve->kve_protection & VKI_KVME_PROT_EXEC)  prot |= VKI_PROT_EXEC;
+ 
+       if (record_gap && gapStart < start)
+          (*record_gap) ( gapStart, start-gapStart );
+ 
+       if (record_mapping && start < endPlusOne)
+          (*record_mapping) ( start, endPlusOne-start,
+                              prot, dev, ino,
+                              foffset, filename );
+       gapStart = endPlusOne;
+       p += kve->kve_structsize;
+    }
+ 
+    if (record_gap && gapStart < Addr_MAX)
+       (*record_gap) ( gapStart, Addr_MAX - gapStart + 1 );
+}
+
+/*------END-procmaps-parser-for-Freebsd--------------------------*/
+
 /*------BEGIN-procmaps-parser-for-Solaris------------------------*/
 
-#if defined(VGO_solaris)
+#elif defined(VGO_solaris)
 
 /* Note: /proc/self/xmap contains extended information about already
    materialized mappings whereas /proc/self/rmap contains information about
@@ -4112,7 +4285,7 @@ Bool VG_(am_search_for_new_segment)(Addr *addr, SizeT *size, UInt *prot)
 
 /*------END-procmaps-parser-for-Solaris--------------------------*/
 
-#endif // defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris)
+#endif // defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris) || defined(VGO_freebsd)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

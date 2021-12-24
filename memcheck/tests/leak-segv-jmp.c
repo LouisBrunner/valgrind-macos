@@ -227,6 +227,88 @@ asm(
 ".previous\n"
 );
 
+#elif defined(VGP_x86_freebsd)
+
+#define __NR_mprotect 74
+
+/* Incoming args (syscall number + up to 8 args) are on the stack.
+   FreeBSD has a syscall called 'syscall' that takes all args (including
+   the syscall number) off the stack.  Since we're called, the return
+   address is on the stack as expected, so we can just call syscall(2)
+   and it Just Works.  Error is when carry is set.
+*/
+extern ULong do_syscall_WRK (
+          UWord syscall_no,
+          UWord a1, UWord a2, UWord a3,
+          UWord a4, UWord a5, UWord a6,
+          UWord a7, UWord a8, UInt *flags
+       );
+asm(
+".text\n"
+"do_syscall_WRK:\n"
+"      movl    $0,%eax\n"      /* syscall number = "syscall" (0) to avoid stack frobbing
+*/
+"      int     $0x80\n"
+"      jb      1f\n"
+"      ret\n"
+"1:    movl    40(%esp),%ecx\n"        /* store carry in *flags */
+"      movl    $1,(%ecx)\n"
+"      ret\n"
+".previous\n"
+);
+
+#elif defined(VGP_amd64_freebsd)
+
+#define __NR_mprotect 74
+
+extern UWord do_syscall_WRK (
+          UWord syscall_no,    /* %rdi */
+          UWord a1,            /* %rsi */
+          UWord a2,            /* %rdx */
+          UWord a3,            /* %rcx */
+          UWord a4,            /* %r8 */
+          UWord a5,            /* %r9 */
+          UWord a6,            /* 8(%rsp) */
+          UWord a7,            /* 16(%rsp) */
+          UWord a8,            /* 24(%rsp) */
+          UInt *flags,         /* 32(%rsp) */
+          UWord *rv2           /* 40(%rsp) */
+       );
+asm(
+".text\n"
+"do_syscall_WRK:\n"
+        /* Convert function calling convention --> syscall calling
+           convention */
+"      pushq   %rbp\n"
+"      movq    %rsp, %rbp\n"
+"      movq    %rdi, %rax\n"    /* syscall_no */
+"      movq    %rsi, %rdi\n"    /* a1 */
+"      movq    %rdx, %rsi\n"    /* a2 */
+"      movq    %rcx, %rdx\n"    /* a3 */
+"      movq    %r8,  %r10\n"    /* a4 */
+"      movq    %r9,  %r8\n"     /* a5 */
+"      movq    16(%rbp), %r9\n"  /* a6 last arg from stack, account for %rbp */
+"      movq    24(%rbp), %r11\n" /* a7 from stack */
+"      pushq  %r11\n"
+"      movq    32(%rbp), %r11\n" /* a8 from stack */
+"      pushq  %r11\n"
+"      subq    $8,%rsp\n"      /* fake return addr */
+"      syscall\n"
+"      jb      1f\n"
+"      movq    48(%rbp),%rsi\n"
+"      movq    %rdx, (%rsi)\n"
+"      movq    %rbp, %rsp\n"
+"      popq    %rbp\n"
+"      ret\n"
+"1:\n"
+"      movq    40(%rbp), %rsi\n"
+"      movl    $1,(%rsi)\n"
+"      movq    %rbp, %rsp\n"
+"      popq    %rbp\n"
+"      ret\n"
+".previous\n"
+);
+
 #else
 // Ensure the file compiles even if the syscall nr is not defined.
 #ifndef __NR_mprotect
@@ -260,6 +342,20 @@ static void non_simd_mprotect (long tid, void* addr, long len)
    mprotect_result = do_syscall_WRK((UWord) addr, len, PROT_NONE,
                                     0, 0, 0,
                                     __NR_mprotect);
+#elif defined(VGP_x86_freebsd)
+
+   UInt flags = 0U;
+   mprotect_result = do_syscall_WRK(__NR_mprotect,
+                                    (UWord) addr, len, PROT_NONE,
+                                    0, 0, 0, 0, 0, &flags);
+#elif defined(VGP_amd64_freebsd)
+
+   UInt flags = 0U;
+   UWord rv2 = 0U;
+   mprotect_result = do_syscall_WRK(__NR_mprotect,
+                                    (UWord) addr, len, PROT_NONE,
+                                    0, 0, 0, 0, 0, &flags, &rv2);
+
 #else
    mprotect_result = do_syscall_WRK(__NR_mprotect,
                                     (UWord) addr, len, PROT_NONE,

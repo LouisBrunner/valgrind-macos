@@ -48,7 +48,7 @@ rep_loop:
 	#================================
 exit:
      	mov	$1,%eax
-#if defined(VGO_darwin)
+#if defined(VGO_darwin) || defined(VGO_freebsd)
 	pushl   $0			# we return 0
 	int     $0x80          		# and exit
 #elif defined(VGO_linux)

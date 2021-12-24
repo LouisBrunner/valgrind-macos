@@ -1,0 +1,49 @@
+Syscall param fstatat(path) points to unaddressable byte(s)
+   ...
+   by 0x........: stat (in /...libc...)
+   by 0x........: main (stat.c:52)
+ Address 0x........ is 0 bytes inside a block of size 7 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (stat.c:50)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (stat.c:49)
+
+Syscall param fstatat(sb) points to unaddressable byte(s)
+   ...
+   by 0x........: stat (in /...libc...)
+   by 0x........: main (stat.c:57)
+ Address 0x........ is 0 bytes inside a block of size 208 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (stat.c:55)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (stat.c:54)
+
+Syscall param fstat(sb) points to unaddressable byte(s)
+   at 0x........: __sys_fstat (in /...libc...)
+   by 0x........: fstat (in /...libc...)
+   by 0x........: main (stat.c:61)
+ Address 0x........ is 0 bytes inside a block of size 208 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (stat.c:60)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (stat.c:59)
+
+Syscall param fstat(fd) contains uninitialised byte(s)
+   at 0x........: __sys_fstat (in /...libc...)
+   by 0x........: fstat (in /...libc...)
+   by 0x........: main (stat.c:64)
+
+Syscall param fstatat(fd) contains uninitialised byte(s)
+   ...
+   by 0x........: fstatat (in /...libc...)
+   by 0x........: main (stat.c:66)
+
+Syscall param fstatat(flag) contains uninitialised byte(s)
+   ...
+   by 0x........: fstatat (in /...libc...)
+   by 0x........: main (stat.c:67)
+

@@ -1,0 +1,16 @@
+Invalid free() / delete / delete[] / realloc()
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: <rustc_middle::ty::PredicateKind as rustc_middle::ty::fold::TypeFoldable>::fold_with::<rustc_infer::infer::resolve::OpportunisticVarResolver> (demangle-rust.c:13)
+   by 0x........: rustc_expand::mbe::macro_parser::parse_tt (demangle-rust.c:20)
+   by 0x........: core::str::lossy::Utf8Lossy::from_bytes (demangle-rust.c:26)
+   by 0x........: main (demangle-rust.c:31)
+ Address 0x........ is 0 bytes inside a block of size 4 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: <rustc_middle::ty::PredicateKind as rustc_middle::ty::fold::TypeFoldable>::fold_with::<rustc_infer::infer::resolve::OpportunisticVarResolver> (demangle-rust.c:12)
+   by 0x........: rustc_expand::mbe::macro_parser::parse_tt (demangle-rust.c:20)
+   by 0x........: core::str::lossy::Utf8Lossy::from_bytes (demangle-rust.c:26)
+   by 0x........: main (demangle-rust.c:31)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (demangle-rust.c:31)
+

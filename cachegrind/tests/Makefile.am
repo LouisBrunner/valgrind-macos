@@ -18,6 +18,7 @@ EXTRA_DIST = \
 	ann2.post.exp ann2.stderr.exp ann2.vgtest \
 	chdir.vgtest chdir.stderr.exp \
 	clreq.vgtest clreq.stderr.exp \
+	diff.post.exp diff.stderr.exp diff.vgtest \
 	dlclose.vgtest dlclose.stderr.exp dlclose.stdout.exp \
 	notpower2.vgtest notpower2.stderr.exp \
 	test.c a.c \
@@ -30,7 +31,9 @@ AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 # C ones
+if !VGCONF_OS_IS_FREEBSD
 dlclose_LDADD		= -ldl
+endif
 if VGCONF_OS_IS_DARWIN
 myprint_so_LDFLAGS	= $(AM_CFLAGS) -dynamic -dynamiclib -all_load -fpic
 else

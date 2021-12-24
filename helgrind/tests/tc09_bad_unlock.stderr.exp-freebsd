@@ -1,0 +1,150 @@
+
+---Thread-Announcement------------------------------------------
+
+Thread #x is the program's root thread
+
+----------------------------------------------------------------
+
+Thread #x unlocked a not-locked lock at 0x........
+   at 0x........: mutex_unlock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:28)
+   by 0x........: main (tc09_bad_unlock.c:52)
+ Lock at 0x........ was first observed
+   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:24)
+   by 0x........: main (tc09_bad_unlock.c:52)
+ Address 0x........ is on thread #x's stack
+ in frame #x, created by nearly_main (tc09_bad_unlock.c:17)
+
+
+----------------------------------------------------------------
+
+Thread #x's call to pthread_mutex_unlock failed
+   with error code 1 (EPERM: Operation not permitted)
+   at 0x........: mutex_unlock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:28)
+   by 0x........: main (tc09_bad_unlock.c:52)
+
+---Thread-Announcement------------------------------------------
+
+Thread #x was created
+   ...
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:36)
+   by 0x........: main (tc09_bad_unlock.c:52)
+
+----------------------------------------------------------------
+
+Thread #x unlocked lock at 0x........ currently held by thread #x
+   at 0x........: mutex_unlock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
+   by 0x........: child_fn (tc09_bad_unlock.c:12)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+ Lock at 0x........ was first observed
+   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:32)
+   by 0x........: main (tc09_bad_unlock.c:52)
+ Address 0x........ is on thread #x's stack
+ in frame #x, created by nearly_main (tc09_bad_unlock.c:17)
+
+
+----------------------------------------------------------------
+
+Thread #x's call to pthread_mutex_unlock failed
+   with error code 1 (EPERM: Operation not permitted)
+   at 0x........: mutex_unlock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
+   by 0x........: child_fn (tc09_bad_unlock.c:12)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+
+---------------------
+----------------------------------------------------------------
+
+Thread #x unlocked a not-locked lock at 0x........
+   at 0x........: mutex_unlock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:28)
+   by 0x........: main (tc09_bad_unlock.c:53)
+ Lock at 0x........ was first observed
+   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:24)
+   by 0x........: main (tc09_bad_unlock.c:52)
+ Address 0x........ is on thread #x's stack
+ in frame #x, created by nearly_main (tc09_bad_unlock.c:17)
+
+
+----------------------------------------------------------------
+
+Thread #x's call to pthread_mutex_unlock failed
+   with error code 1 (EPERM: Operation not permitted)
+   at 0x........: mutex_unlock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:28)
+   by 0x........: main (tc09_bad_unlock.c:53)
+
+----------------------------------------------------------------
+
+Thread #x: Attempt to re-lock a non-recursive lock I already hold
+   at 0x........: mutex_lock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_mutex_lock (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:33)
+   by 0x........: main (tc09_bad_unlock.c:53)
+ Lock was previously acquired
+   at 0x........: mutex_lock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_mutex_lock (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:33)
+   by 0x........: main (tc09_bad_unlock.c:52)
+
+----------------------------------------------------------------
+
+Thread #x: Bug in libpthread: recursive write lock granted on mutex/wrlock which does not support recursion
+   at 0x........: mutex_lock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_mutex_lock (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:33)
+   by 0x........: main (tc09_bad_unlock.c:53)
+
+---Thread-Announcement------------------------------------------
+
+Thread #x was created
+   ...
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:36)
+   by 0x........: main (tc09_bad_unlock.c:53)
+
+----------------------------------------------------------------
+
+Thread #x unlocked lock at 0x........ currently held by thread #x
+   at 0x........: mutex_unlock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
+   by 0x........: child_fn (tc09_bad_unlock.c:12)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+ Lock at 0x........ was first observed
+   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
+   by 0x........: nearly_main (tc09_bad_unlock.c:32)
+   by 0x........: main (tc09_bad_unlock.c:52)
+ Address 0x........ is on thread #x's stack
+ in frame #x, created by nearly_main (tc09_bad_unlock.c:17)
+
+
+----------------------------------------------------------------
+
+Thread #x's call to pthread_mutex_unlock failed
+   with error code 1 (EPERM: Operation not permitted)
+   at 0x........: mutex_unlock_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_mutex_unlock (hg_intercepts.c:...)
+   by 0x........: child_fn (tc09_bad_unlock.c:12)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+   ...
+
+----------------------------------------------------------------
+
+Thread #x: Exiting thread still holds 1 lock
+   ...
+
+
+ERROR SUMMARY: 11 errors from 11 contexts (suppressed: 0 from 0)

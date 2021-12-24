@@ -12,7 +12,12 @@ EXTRA_DIST = \
 	atomics_v81.stdout.exp atomics_v81.stderr.exp atomics_v81.vgtest \
 	simd_v81.stdout.exp simd_v81.stderr.exp simd_v81.vgtest \
         fmadd_sub.stdout.exp fmadd_sub.stderr.exp fmadd_sub.vgtest \
-	fp_and_simd_v82.stdout.exp fp_and_simd_v82.stderr.exp fp_and_simd_v82.vgtest
+	fp_and_simd_v82.stdout.exp fp_and_simd_v82.stderr.exp \
+	fp_and_simd_v82.vgtest \
+	ldxp_stxp_basisimpl.stdout.exp ldxp_stxp_basisimpl.stderr.exp \
+	ldxp_stxp_basisimpl.vgtest \
+	ldxp_stxp_fallbackimpl.stdout.exp ldxp_stxp_fallbackimpl.stderr.exp \
+	ldxp_stxp_fallbackimpl.vgtest
 
 check_PROGRAMS = \
 	allexec \
@@ -20,7 +25,8 @@ check_PROGRAMS = \
 	fp_and_simd \
 	integer \
 	memory \
-	fmadd_sub
+	fmadd_sub \
+	ldxp_stxp
 
 if BUILD_ARMV8_CRC_TESTS
   check_PROGRAMS += crc32

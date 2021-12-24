@@ -1,0 +1,13 @@
+PPC mfspr instructions:
+       mfspr 1 (00000000) -> mtxer -> mfxer => 0000000000000000
+       mfspr 1 (be991def) -> mtxer -> mfxer => 00000000a000006f
+       mfspr 1 (ffffffff) -> mtxer -> mfxer => 00000000e000007f
+       mfspr 8 (00000000) ->  mtlr ->  mflr => 0000000000000000
+       mfspr 8 (be991def) ->  mtlr ->  mflr => ffffffffbe991def
+       mfspr 8 (ffffffff) ->  mtlr ->  mflr => ffffffffffffffff
+       mfspr 9 (00000000) -> mtctr -> mfctr => 0000000000000000
+       mfspr 9 (be991def) -> mtctr -> mfctr => ffffffffbe991def
+       mfspr 9 (ffffffff) -> mtctr -> mfctr => ffffffffffffffff
+
+
+All done. Tested 2 different instructions

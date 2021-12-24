@@ -440,6 +440,11 @@ typedef
          the same value? (typically 0x60 on darwin)? */
       Bool guest_amd64_assume_gs_is_const;
 
+      /* AMD64 GUESTS only: for a misaligned memory access, for which we should
+         generate a trap, should we generate SigBUS (a la FreeBSD) or SIGSEGV
+         (Linux, OSX) ?? */
+      Bool guest_amd64_sigbus_on_misalign;
+
       /* PPC GUESTS only: should we zap the stack red zone at a 'blr'
          (function return) ? */
       Bool guest_ppc_zap_RZ_at_blr;
@@ -635,7 +640,7 @@ typedef
 extern void LibVEX_Init (
 
    /* failure exit function */
-#  if __cplusplus == 1 && __GNUC__ && __GNUC__ <= 3
+#  if defined(__cplusplus) && defined(__GNUC__) && __GNUC__ <= 3
    /* g++ 3.x doesn't understand attributes on function parameters.
       See #265762. */
 #  else

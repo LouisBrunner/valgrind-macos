@@ -605,6 +605,8 @@ int main() {
       i++;
    }
 
+#else
+   printf("HAS_DFP not detected.\n");
 #endif // HAS_DFP
    return 0;
 }

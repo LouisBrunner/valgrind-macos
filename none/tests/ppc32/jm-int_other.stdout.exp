@@ -89,16 +89,6 @@ PPC integer logical insns with two args:
          slw ffffffff, 000f423f => 00000000 (00000000 00000000)
          slw ffffffff, ffffffff => 00000000 (00000000 00000000)
 
-        sraw 00000000, 00000000 => 00000000 (00000000 00000000)
-        sraw 00000000, 000f423f => 00000000 (00000000 00000000)
-        sraw 00000000, ffffffff => 00000000 (00000000 00000000)
-        sraw 000f423f, 00000000 => 000f423f (00000000 00000000)
-        sraw 000f423f, 000f423f => 00000000 (00000000 00000000)
-        sraw 000f423f, ffffffff => 00000000 (00000000 00000000)
-        sraw ffffffff, 00000000 => ffffffff (00000000 00000000)
-        sraw ffffffff, 000f423f => ffffffff (00000000 20000000)
-        sraw ffffffff, ffffffff => ffffffff (00000000 20000000)
-
          srw 00000000, 00000000 => 00000000 (00000000 00000000)
          srw 00000000, 000f423f => 00000000 (00000000 00000000)
          srw 00000000, ffffffff => 00000000 (00000000 00000000)
@@ -199,16 +189,6 @@ PPC integer logical insns with two args with flags update:
         slw. ffffffff, 00000000 => ffffffff (80000000 00000000)
         slw. ffffffff, 000f423f => 00000000 (20000000 00000000)
         slw. ffffffff, ffffffff => 00000000 (20000000 00000000)
-
-       sraw. 00000000, 00000000 => 00000000 (20000000 00000000)
-       sraw. 00000000, 000f423f => 00000000 (20000000 00000000)
-       sraw. 00000000, ffffffff => 00000000 (20000000 00000000)
-       sraw. 000f423f, 00000000 => 000f423f (40000000 00000000)
-       sraw. 000f423f, 000f423f => 00000000 (20000000 00000000)
-       sraw. 000f423f, ffffffff => 00000000 (20000000 00000000)
-       sraw. ffffffff, 00000000 => ffffffff (80000000 00000000)
-       sraw. ffffffff, 000f423f => ffffffff (80000000 20000000)
-       sraw. ffffffff, ffffffff => ffffffff (80000000 20000000)
 
         srw. 00000000, 00000000 => 00000000 (20000000 00000000)
         srw. 00000000, 000f423f => 00000000 (20000000 00000000)
@@ -537,27 +517,9 @@ PPC logical insns with special forms:
        rlwnm ffffffff, ffffffff, 31,  0 => 80000001 (00000000 00000000)
        rlwnm ffffffff, ffffffff, 31, 31 => 00000001 (00000000 00000000)
 
-       srawi 00000000,  0 => 00000000 (00000000 00000000)
-       srawi 00000000, 31 => 00000000 (00000000 00000000)
-       srawi 000f423f,  0 => 000f423f (00000000 00000000)
-       srawi 000f423f, 31 => 00000000 (00000000 00000000)
-       srawi ffffffff,  0 => ffffffff (00000000 00000000)
-       srawi ffffffff, 31 => ffffffff (00000000 20000000)
-
         mfcr (00000000) => 00000000 (00000000 00000000)
         mfcr (000f423f) => 000f423f (000f423f 00000000)
         mfcr (ffffffff) => ffffffff (ffffffff 00000000)
-
-       mfspr 1 (00000000) -> mtxer -> mfxer => 00000000
-       mfspr 1 (000f423f) -> mtxer -> mfxer => 0000003f
-       mfspr 1 (ffffffff) -> mtxer -> mfxer => e000007f
-       mfspr 8 (00000000) ->  mtlr ->  mflr => 00000000
-       mfspr 8 (000f423f) ->  mtlr ->  mflr => 000f423f
-       mfspr 8 (ffffffff) ->  mtlr ->  mflr => ffffffff
-       mfspr 9 (00000000) -> mtctr -> mfctr => 00000000
-       mfspr 9 (000f423f) -> mtctr -> mfctr => 000f423f
-       mfspr 9 (ffffffff) -> mtctr -> mfctr => ffffffff
-
 
 PPC logical insns with special forms with flags update:
      rlwimi. 00000000,  0,  0,  0 => 00000000 (20000000 00000000)
@@ -646,13 +608,6 @@ PPC logical insns with special forms with flags update:
       rlwnm. ffffffff, ffffffff,  0, 31 => ffffffff (80000000 00000000)
       rlwnm. ffffffff, ffffffff, 31,  0 => 80000001 (80000000 00000000)
       rlwnm. ffffffff, ffffffff, 31, 31 => 00000001 (40000000 00000000)
-
-      srawi. 00000000,  0 => 00000000 (20000000 00000000)
-      srawi. 00000000, 31 => 00000000 (20000000 00000000)
-      srawi. 000f423f,  0 => 000f423f (40000000 00000000)
-      srawi. 000f423f, 31 => 00000000 (20000000 00000000)
-      srawi. ffffffff,  0 => ffffffff (80000000 00000000)
-      srawi. ffffffff, 31 => ffffffff (80000000 20000000)
 
         mcrf 0, 0 (00000000) => (00000000 00000000)
         mcrf 0, 7 (00000000) => (00000000 00000000)
@@ -966,4 +921,4 @@ PPC integer store insns with three register args:
        stwux 000f423f, 4 => 000f423f, 4 (00000000 00000000)
        stwux ffffffff, 8 => ffffffff, 8 (00000000 00000000)
 
-All done. Tested 92 different instructions
+All done. Tested 86 different instructions

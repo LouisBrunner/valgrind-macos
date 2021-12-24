@@ -28,3 +28,4 @@ AM_CFLAGS    += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
 AM_CXXFLAGS  += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
 AM_CCASFLAGS += @FLAG_M32@
 
+scalar_supp_CFLAGS = $(AM_CFLAGS) -Wno-uninitialized

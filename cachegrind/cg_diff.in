@@ -191,15 +191,17 @@ sub read_input_file($)
     my $currFileName;
     my $currFileFuncName;
 
-    my %CCs;                    # hash("$filename#$funcname" => CC array)
+    my %CCs;                    # hash("$filename###$funcname" => CC array)
     my $currCC = undef;         # CC array
 
     my $summaryCC;
 
     # Read body of input file.
     while (<INPUTFILE>) {
-        s/#.*$//;   # remove comments
-        if (s/^(\d+)\s+//) {
+        # Skip comments and empty lines.
+        next if /^\s*$/ || /^\#/;
+
+        if (s/^(-?\d+)\s+//) {
             my $CC = line_to_CC($_, $numEvents);
             defined($currCC) || die;
             add_array_a_to_b($CC, $currCC);
@@ -210,7 +212,7 @@ sub read_input_file($)
             if (defined $mod_funcname) {
                 eval "\$tmpFuncName =~ $mod_funcname";
             }
-            $currFileFuncName = "$currFileName#$tmpFuncName";
+            $currFileFuncName = "$currFileName###$tmpFuncName";
             $currCC = $CCs{$currFileFuncName};
             if (not defined $currCC) {
                 $currCC = [];
@@ -225,9 +227,6 @@ sub read_input_file($)
             # Assume that a "fn=" line is followed by a "fl=" line.
             $currFileFuncName = undef;  
 
-        } elsif (s/^\s*$//) {
-            # blank, do nothing
-        
         } elsif (s/^summary:\s+//) {
             $summaryCC = line_to_CC($_, $numEvents);
             (scalar(@$summaryCC) == @events) 
@@ -260,7 +259,7 @@ my $events1;
 my $events2;
 
 # Individual CCs, organised by filename/funcname/line_num.
-# hashref("$filename#$funcname", CC array)
+# hashref("$filename###$funcname", CC array)
 my $CCs1;
 my $CCs2;
 
@@ -313,7 +312,7 @@ print("\n");
 
 while (my ($filefuncname, $CC) = each(%$CCs2)) {
 
-    my @x = split(/#/, $filefuncname);
+    my @x = split(/###/, $filefuncname);
     (scalar @x == 2) || die;
 
     print("fl=$x[0]\n");

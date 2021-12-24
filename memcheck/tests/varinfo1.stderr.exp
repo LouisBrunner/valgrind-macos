@@ -33,5 +33,5 @@ Uninitialised byte(s) found during client check request
    at 0x........: croak (varinfo1.c:28)
    by 0x........: main (varinfo1.c:56)
  Location 0x........ is 0 bytes inside local var "local"
- declared at varinfo1.c:46, in frame #1 of thread 1
+ declared at varinfo1.c:46, in frame #X of thread 1
 

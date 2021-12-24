@@ -1,0 +1,3 @@
+prereq: ./supported_libpthread && [ -e condvar ]
+vgopts: --check-stack-var=yes --read-var-info=yes
+prog: condvar

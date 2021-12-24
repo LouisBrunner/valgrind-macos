@@ -1,0 +1,42 @@
+---------------------------------------------------------
+574:        SYS___realpathat  5s 2m
+---------------------------------------------------------
+Syscall param __realpathat(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param __realpathat(path) contains uninitialised byte(s)
+   ...
+
+Syscall param __realpathat(buf) contains uninitialised byte(s)
+   ...
+
+Syscall param __realpathat(size) contains uninitialised byte(s)
+   ...
+
+Syscall param __realpathat(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param __realpathat(path) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param __realpathat(buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+577:         SYS___specialfd 3s 1m
+---------------------------------------------------------
+Syscall param __specialfd(type) contains uninitialised byte(s)
+   ...
+
+Syscall param __specialfd(req) contains uninitialised byte(s)
+   ...
+
+Syscall param __specialfd(len) contains uninitialised byte(s)
+   ...
+
+Syscall param __specialfd(req) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+

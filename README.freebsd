@@ -1,0 +1,196 @@
+Installing from ports or via pkg
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you are using FreeBSD 11.3 or later, then you should be able to install
+Valgrind using either
+
+pkg install devel/valgrind
+
+or alternatively from ports (if installed)
+
+cd /usr/ports/devel/valgrind && make install clean
+
+
+Building Valgrind
+~~~~~~~~~~~~~~~~~
+
+Install ports for autoconf, automake, libtool and gmake.
+
+$ sh autogen.sh
+$ ./configure --prefix=/where/ever
+$ gmake
+$ gmake install
+
+Known Limitations (December 2020)
+
+0. Be aware that if you use a wrapper script and run Valgrind on the wrapper
+   script Valgrind may hit restrictions if the wrapper script runs any
+   Capsicum enabled applications. Examples of Capsicum enabled applications
+   are echo, basename, tee, uniq and wc. It is recommended that you either
+   avoid these applications or that you run Valgrind directly on your test
+   application.
+1. There are some limitations when running Valgrind on code that was compiled
+   with clang.  These issues are not present with code compiled with GCC.
+   a) There may be missing source information concerning variables.
+   b) The client request mechanism may not work entirely correctly.
+   c) Code that uses OpenMP will generate spurious errors.
+2. There are some limitations specific to i386
+   a) In some cases signals are mishandled causing Valgrind to terminate and
+      report a SIGSEGV.
+   b) Applications that create and join many threads may crash.
+
+Notes for Developers
+~~~~~~~~~~~~~~~~~~~~
+
+See README_DEVELOPERS, README_MISSING_SYSCALL_OR_IOCTL and docs/*
+for more general information for developers.
+
+0. Adding syscalls.
+
+When adding syscalls, you need to look at the manpage and also syscalls.master
+(online at
+https://github.com/freebsd/freebsd/blob/master/sys/kern/syscalls.master
+and for 32bit
+https://github.com/freebsd/freebsd/blob/master/sys/compat/freebsd32/syscalls.master
+
+and if you installed the src package there should also be
+
+/usr/src/sys/kern/syscalls.master
+and
+/usr/src/sys/compat/freebsd32/syscalls.master)
+
+syscalls.master is particularly useful for seeing quickly whether parameters
+are inputs or outputs.
+
+The syscall wrappers can vary from trivial to difficult. Fortunately, many are
+either trivial (no arguments) or easy (Valgrind just needs to know what memory
+is being read or written). Some syscalls, such as those involving process
+creation and termination, signals and memory mapping require deeper interaction
+with Valgrind.
+
+When you add syscalls you will need to modify several files
+   a) include/vki/vki-scnums-freebsd.h
+      This file contains one #define for each syscall. The _NR_ prefix (Linux
+      style) is used rather than SYS_ for compatibility with the rest of the
+      Valgrind source.
+   b) coregrind/m_syswrap/priv_syswrap-freebsd.h
+      This uses the DECL_TEMPLATE macro to generate declarations for the syscall
+      before and after wrappers.
+   c) coregrind/m_syswrap/syswrap-freebsd.c
+      This is where the bulk of the code resides. Toward the end of the file
+      the BSDX_/BSDXY macros are used to generate entries in the table of
+      syscalls. BSDX_ is used for wrappers that only have a 'before', BSDXY
+      if both wrappers are required. In general, syscalls that have no arguments
+      or only input arguments just need a BSDX_ macro (before only). Syscalls
+      with output arguments need a BSDXY macro (before and after).
+   d) If the syscall uses 64bit arguments (long long) then instead of putting
+      the wrapper definitions in syswrap-freebsd.c there will be one definition
+      for each platform amd64 and x86 in syswrap-x86-freebsd.c and
+      syswrap-amd64-freebsd.c.
+      Each long long needs to be split into two ARGs in the x86 version.
+
+The PRE (before) wrapper
+------------------------
+
+Each PRE wrapper always contains the following two macro calls
+
+PRINT. This outputs the syscall name and argument values when Valgrind is
+executed with
+--trace-syscalls=yes
+
+PRE_READ_REGX. This macro lets Valgrind know about the number and types of the
+syscall arguments which allows Valgrind to check that they are initialized.
+X is the number of arguments. It is best that the argument names match
+the man page, but the must match the types and number of arguments in
+syscalls.master.
+Occasionally there are differences between the two.
+
+If the syscall takes pointers to memory there will be one of the following for
+each pointer argument.
+
+PRE_MEM_RASCIIZ for NULL terminated ascii strings.
+
+PRE_MEM_READ for pointers to structures or arrays that are read.
+
+PRE_MEM_WRITE for pointers to structures or arrays that are written.
+
+As a rule, the definitions of structures are copied into vki-freebsd.h
+with the vki- prefix. [vki - Valgrind kernel interface; this was done
+historically to protect against discrepancies between user include
+structure definitions and kernel definitions on Linux].
+
+The POST (after) wrapper
+------------------------
+
+These are much easier.
+
+They just contain a POST_MEM_WRITE macro for each output argument.
+
+1. Running regression tests
+
+In order to run all of the regression tests you will need to install
+the following packages
+gdb
+gsed
+
+In addition to running "make" you will need to run
+"make check" to build the regression test exectutables
+and "make regtest".  Again, more details can be seen in
+README_DEVELOPERS.
+
+If you want to run the 'nightly' script (see nightly/README.txt)
+you will need to install coreutils and modify the
+nightly/conf/freebsd.* files. The default configuration
+sends an e-mail to the valgrind-testresults mailing list.
+
+Feedback
+~~~~~~~~
+
+If you find any problems please create a bugzilla report at
+https://bugs.kde.org using the Valgrind product.
+
+Alternatively you can use the FreeBSD bugilla
+https://bugs.freebsd.org
+
+Credits
+~~~~~~~
+
+Valgrind was originally ported to FreeBSD by Doug Rabson
+in 2004.
+
+Paul Floyd (that's me), started looking at this project in late 2018,
+took a long pause and then continued in earnest in January 2020.
+
+A big thanks to Nick Briggs for helping with the x86 version.
+
+Kyle Evans and Ed Maste for contributing patches and helping with the
+integration with FreeBSD ports.
+
+Prior to 2018 many others have also contributed.
+
+Dimitry Andric
+Simon Barner
+Roman Bogorodskiy
+Rebecca Cran
+Bryan Drewery
+Brian Fundakowski Feldman
+Denis Generalov
+Mikolaj Golub
+Eugene Kilachkoff
+Xin LI
+Phil Longstaff
+Pav Lucistnik
+Conrad Meyer
+Julien Nadeau
+Frerich Raabe
+Doug Rabson
+Craig Rodrigues
+Tom Russo
+Stephen Sanders
+Stanislav Sedov
+Andrei V. Shetuhin
+Niklas Sorensson
+Ryan Stone
+Jerry Toung
+Yuri
+

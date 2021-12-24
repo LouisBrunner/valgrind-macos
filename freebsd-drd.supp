@@ -1,0 +1,177 @@
+# Suppressions for FreeBSD / DRD
+
+{
+   DRD-LDRT
+   drd:ConflictingAccess
+   obj:/libexec/ld-elf*.so.1
+}
+{
+   DRD-PTHREAD-EXIT1
+   drd:ConflictingAccess
+   ...
+   fun:pthread_exit
+}
+{
+   DRD-PTHREAD_CREATE1
+   drd:ConflictingAccess
+   ...
+   fun:pthread_create
+}
+{
+   DRD-PTHREAD-EXIT2
+   drd:ConflictingAccess
+   obj:*/lib*/libthr.so.3
+   fun:pthread_exit
+}
+{
+   DRD-PRINTF1
+   drd:ConflictingAccess
+   fun:f*lockfile
+}
+{
+   DRD-MANY1
+   drd:ConflictingAccess
+   obj:/lib/libthr.so.3
+   obj:/libexec/ld-elf*.so.1
+}
+{
+   DRD-MANY2
+   drd:ConflictingAccess
+   obj:*/lib*/libthr.so.3
+   obj:*/lib*/libthr.so.3
+   obj:/libexec/ld-elf*.so.1
+}
+{
+   DRD-MANY3
+   drd:ConflictingAccess
+   obj:*/lib*/libthr.so.3
+   obj:*/lib*/libthr.so.3
+   obj:*/lib*/libthr.so.3
+   obj:/libexec/ld-elf*.so.1
+}
+{
+   DRD-UNWIND1
+   drd:ConflictingAccess
+   ...
+   fun:dl_iterate_phdr
+   obj:*/lib*/libgcc_s.so.1
+}
+{
+   DRD-PTHREAD-DETACH1
+   drd:ConflictingAccess
+   obj:*/lib*/libthr.so.3
+   fun:pthread_detach
+}
+{
+   DRD-LIBGOMP
+   drd:ConflictingAccess
+   obj:/usr/local/lib*/gcc*/libgomp.so.1.0.0
+}
+{
+   DRD-LIBOMP
+   drd:ConflictingAccess
+   obj:/usr/lib*/libomp.so
+}
+{
+   DRD-LIBGOMP3
+   drd:ConflictingAccess
+   fun:.omp_outlined*
+}
+{
+   DRD-LIBGOMP4
+   drd:ConflictingAccess
+   obj:*/lib*/libthr.so.3
+   obj:*/lib*/libthr.so.3
+   obj:*/lib*/libthr.so.3
+   fun:pthread_setspecific
+}
+{
+   DRD-UNWIND1
+   drd:ConflictingAccess
+   fun:_Unwind_GetCFA
+   obj:*/lib*/libthr.so.3
+   obj:*/lib*/libgcc_s.so.1
+}
+{
+   DRD-UNWIND2
+   drd:ConflictingAccess
+   ...
+   fun:_Unwind_ForcedUnwind
+}
+{
+   DRD-PTHREAD-ATTR1
+   drd:ConflictingAccess
+   fun:pthread_attr_get_np
+}
+{
+   DRD-PTHREAD-SETSPECIFIC
+   drd:ConflictingAccess
+   fun:pthread_setspecific
+}
+{
+   DRD-MEMSET
+   drd:ConflictingAccess
+   fun:memset
+   obj:*/lib*/libthr.so.3
+}
+{
+   DRD-SET-POINTER
+   drd:ConflictingAccess
+   fun:_ZNSt3__121__thread_specific_ptrINS_15__thread_structEE11set_pointerEPS1_
+}
+{
+   DRD-DL-ITERATE-PHDR
+   drd:ConflictingAccess
+   ...
+   obj:*/lib*/libthr.so.3
+   obj:/libexec/ld-elf*.so.1
+   fun:dl_iterate_phdr
+}
+{
+   DRD-LIBGCC-S
+   drd:ConflictingAccess
+   obj:*/lib*/libgcc_s.so.1
+   obj:*/lib*/libgcc_s.so.1
+   obj:*/lib*/libgcc_s.so.1
+   obj:*/lib*/libgcc_s.so.1
+   obj:*/lib*/libgcc_s.so.1
+   obj:*/lib*/libgcc_s.so.1
+}
+{
+   DRD-DLOPEN
+   drd:ConflictingAccess
+   obj:*/lib*/libthr.so.3
+   obj:/libexec/ld-elf*.so.1
+   obj:/libexec/ld-elf*.so.1
+   obj:/libexec/ld-elf*.so.1
+   fun:dlopen
+}
+{
+   DRD-LD-ELF
+   drd:ConflictingAccess
+   obj:*/lib*/libthr.so.3
+   ...
+   obj:/libexec/ld-elf*.so.1
+}
+{
+   DRD-SNPRINTF
+   drd:ConflictingAccess
+   ...
+   obj:*/lib*/libc.so.7
+   fun:snprintf
+}
+{
+   DRD-FREEBSD122-OMP
+   drd:MutexErr
+   fun:pthread_mutex_destroy_intercept
+   fun:pthread_mutex_destroy
+   fun:_ZNSt3__15mutexD1Ev
+   fun:__cxa_finalize
+}
+{
+   DRD-FREEBSD130-JEMALLOC
+   drd:ConflictingAccess
+   obj:*/lib*/libc.so.7
+   obj:*/lib*/libc.so.7
+   fun:_malloc_postfork
+}

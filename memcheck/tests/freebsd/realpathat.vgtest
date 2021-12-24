@@ -1,0 +1,3 @@
+prog: realpathat
+prereq: test -e ./realpathat
+vgopts: -q

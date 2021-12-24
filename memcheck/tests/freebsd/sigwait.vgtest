@@ -1,0 +1,3 @@
+prog: sigwait
+vgopts: -q
+stderr_filter: filter_sigwait

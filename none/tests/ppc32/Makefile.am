@@ -9,11 +9,14 @@ EXTRA_DIST = \
 	bug139050-ppc32.stdout.exp bug139050-ppc32.stderr.exp \
 	bug139050-ppc32.vgtest \
 	ldstrev.stderr.exp ldstrev.stdout.exp ldstrev.vgtest \
+	jm-int-sh_algebraic.stderr.exp jm-int-sh_algebraic.stdout.exp \
+	jm-int-sh_algebraic.vgtest \
 	jm-int.stderr.exp jm-int.stdout.exp jm-int.vgtest \
 	jm-int_other.stderr.exp jm-int_other.stdout.exp jm-int_other.vgtest \
 	jm-fp.stderr.exp jm-fp.stdout.exp jm-fp.vgtest jm-fp.stdout.exp-BE2 \
 	jm-vmx.stderr.exp jm-vmx.stdout.exp jm-vmx.stdout.exp_Minus_nan \
 	jm-vmx.vgtest \
+	jm-mfspr.stderr.exp jm-mfspr.stdout.exp jm-mfspr.vgtest \
 	jm-misc.stderr.exp jm-misc.stdout.exp jm-misc.vgtest \
 	lsw.stderr.exp lsw.stdout.exp lsw.vgtest \
 	mftocrf.stderr.exp mftocrf.stdout.exp mftocrf.vgtest \

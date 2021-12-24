@@ -27,6 +27,7 @@
 #include "pub_core_libcsignal.h"
 #include "pub_core_options.h"
 #include "pub_core_aspacemgr.h"
+#include "pub_core_syswrap.h"
 
 #include "server.h"
 
@@ -322,7 +323,11 @@ void remote_open (const HChar *name)
        (Addr) VG_(threads), VG_N_THREADS, sizeof(ThreadState), 
        offsetof(ThreadState, status),
        offsetof(ThreadState, os_state) + offsetof(ThreadOSstate, lwpid),
-       0};
+       0
+#if VEX_HOST_WORDSIZE == 8
+         , 0
+#endif
+   };
 
    user = VG_(getenv)("LOGNAME");
    if (user == NULL) user = VG_(getenv)("USER");
@@ -519,12 +524,30 @@ void remote_close (void)
         from_gdb ? from_gdb : "NULL",
         to_gdb ? to_gdb : "NULL",
         shared_mem ? shared_mem : "NULL");
-   if (pid == pid_from_to_creator && from_gdb && VG_(unlink) (from_gdb) == -1)
-      warning ("could not unlink %s\n", from_gdb);
-   if (pid == pid_from_to_creator && to_gdb && VG_(unlink) (to_gdb) == -1)
-      warning ("could not unlink %s\n", to_gdb);
-   if (pid == pid_from_to_creator && shared_mem && VG_(unlink) (shared_mem) == -1)
-      warning ("could not unlink %s\n", shared_mem);
+
+   // PJF this is not ideal
+   // if the guest enters capability mode then the unlink calls will fail
+   // this may well also apply to Linux and seccomp
+   // I don't have any thoughts on how to fix it, other than forking early on
+   // having the child run the guest and the parent wait()ing and then
+   // the parent doing the cleanup
+
+   Bool unlinkPossible = True;
+#if defined(VGO_freebsd)
+   unlinkPossible = (VG_(get_capability_mode)() == False);
+#endif
+
+   if (unlinkPossible == True) {
+      if (pid == pid_from_to_creator && from_gdb && VG_(unlink) (from_gdb) == -1)
+         warning ("could not unlink %s\n", from_gdb);
+      if (pid == pid_from_to_creator && to_gdb && VG_(unlink) (to_gdb) == -1)
+         warning ("could not unlink %s\n", to_gdb);
+      if (pid == pid_from_to_creator && shared_mem && VG_(unlink) (shared_mem) == -1)
+         warning ("could not unlink %s\n", shared_mem);
+   } else {
+       VG_(debugLog)(1, "remote close",
+                        "cannot unlink gdb pipes\n");
+   }
    free (from_gdb);
    from_gdb = NULL;
    free (to_gdb);

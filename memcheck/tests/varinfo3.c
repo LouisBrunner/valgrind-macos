@@ -21,13 +21,13 @@
 void croak ( void* aV )
 {
   char* a = (char*)aV;
-  char* undefp = malloc(1);
+  volatile char* undefp = malloc(1);
   char saved = *a;
   assert(undefp);
   *a = *undefp;
   (void) VALGRIND_CHECK_MEM_IS_DEFINED(a, 1);
   *a = saved;
-  free(undefp);
+  free((void*)undefp);
 }
 
 #include <stdio.h>

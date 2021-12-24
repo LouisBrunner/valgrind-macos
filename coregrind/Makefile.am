@@ -49,6 +49,11 @@ valgrind_SOURCES = \
 	launcher-linux.c \
 	m_debuglog.c
 endif
+if VGCONF_OS_IS_FREEBSD
+valgrind_SOURCES = \
+	launcher-freebsd.c \
+	m_debuglog.c
+endif
 
 # for valgrind coregrind building, use the LTO versions, in case they differ from non lto versions
 AR = ${LTO_AR}
@@ -91,6 +96,12 @@ vgdb_SOURCES += vgdb-invoker-none.c
 endif
 if VGCONF_OS_IS_SOLARIS
 vgdb_SOURCES += vgdb-invoker-solaris.c
+endif
+if VGCONF_OS_IS_FREEBSD
+# As with Darwin, we don't have ptrace PTRACE_PEEKTEXT
+# so we can't use vgdb-invoker-ptrace.c
+# Need to find an alternative, like Solaris
+vgdb_SOURCES += vgdb-invoker-none.c
 endif
 
 vgdb_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
@@ -276,6 +287,7 @@ noinst_HEADERS = \
 	m_syswrap/priv_syswrap-generic.h \
 	m_syswrap/priv_syswrap-linux.h \
 	m_syswrap/priv_syswrap-linux-variants.h \
+	m_syswrap/priv_syswrap-freebsd.h \
 	m_syswrap/priv_syswrap-darwin.h \
 	m_syswrap/priv_syswrap-solaris.h \
 	m_syswrap/priv_syswrap-main.h \
@@ -378,6 +390,8 @@ COREGRIND_SOURCES_COMMON = \
 	m_dispatch/dispatch-mips32-linux.S \
 	m_dispatch/dispatch-mips64-linux.S \
 	m_dispatch/dispatch-nanomips-linux.S \
+	m_dispatch/dispatch-x86-freebsd.S \
+	m_dispatch/dispatch-amd64-freebsd.S \
 	m_dispatch/dispatch-x86-darwin.S \
 	m_dispatch/dispatch-amd64-darwin.S \
 	m_dispatch/dispatch-x86-solaris.S \
@@ -402,6 +416,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_gdbserver/valgrind-low-nanomips.c \
 	m_gdbserver/version.c \
 	m_initimg/initimg-linux.c \
+	m_initimg/initimg-freebsd.c \
 	m_initimg/initimg-darwin.c \
 	m_initimg/initimg-solaris.c \
 	m_mach/mach_basics.c \
@@ -417,6 +432,8 @@ COREGRIND_SOURCES_COMMON = \
 	m_sigframe/sigframe-common.c \
 	m_sigframe/sigframe-x86-linux.c \
 	m_sigframe/sigframe-amd64-linux.c \
+	m_sigframe/sigframe-x86-freebsd.c \
+	m_sigframe/sigframe-amd64-freebsd.c \
 	m_sigframe/sigframe-ppc32-linux.c \
 	m_sigframe/sigframe-ppc64-linux.c \
 	m_sigframe/sigframe-arm-linux.c \
@@ -439,6 +456,8 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syscall-mips32-linux.S \
 	m_syswrap/syscall-mips64-linux.S \
 	m_syswrap/syscall-nanomips-linux.S \
+	m_syswrap/syscall-x86-freebsd.S \
+	m_syswrap/syscall-amd64-freebsd.S \
 	m_syswrap/syscall-x86-darwin.S \
 	m_syswrap/syscall-amd64-darwin.S \
 	m_syswrap/syscall-x86-solaris.S \
@@ -447,12 +466,15 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syswrap-generic.c \
 	m_syswrap/syswrap-linux.c \
 	m_syswrap/syswrap-linux-variants.c \
+	m_syswrap/syswrap-freebsd.c \
 	m_syswrap/syswrap-darwin.c \
 	m_syswrap/syswrap-solaris.c \
 	m_syswrap/syswrap-x86-linux.c \
 	m_syswrap/syswrap-amd64-linux.c \
 	m_syswrap/syswrap-ppc32-linux.c \
 	m_syswrap/syswrap-ppc64-linux.c \
+	m_syswrap/syswrap-x86-freebsd.c \
+	m_syswrap/syswrap-amd64-freebsd.c \
 	m_syswrap/syswrap-arm-linux.c \
 	m_syswrap/syswrap-arm64-linux.c \
 	m_syswrap/syswrap-s390x-linux.c \

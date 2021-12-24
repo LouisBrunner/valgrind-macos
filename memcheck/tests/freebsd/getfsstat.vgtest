@@ -1,0 +1,4 @@
+prereq: test -e ./getfsstat
+prog: getfsstat
+vgopts: -q --suppressions=getfsstat.supp
+stdout_filter: ./dump_stdout

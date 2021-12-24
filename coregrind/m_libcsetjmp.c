@@ -37,7 +37,7 @@
 /* See include/pub_tool_libcsetjmp.h for background and rationale. */
 
 /* The alternative implementations are for ppc{32,64}-linux and
-   {amd64,x86}-{linux,darwin,solaris}.  See #259977.  That leaves only
+   {amd64,x86}-{linux,darwin,solaris,freebsd}.  See #259977.  That leaves only
    {arm,s390x}-linux using the gcc builtins now.
 */
 
@@ -377,16 +377,16 @@ __asm__(
 #endif /* VGP_ppc64be_linux */
 
 
-/* -------- amd64-{linux,darwin,solaris} -------- */
+/* -------- amd64-{linux,darwin,solaris,freebsd} -------- */
 
 #if defined(VGP_amd64_linux) || defined(VGP_amd64_darwin) || \
-    defined(VGP_amd64_solaris)
+    defined(VGP_amd64_solaris) || defined(VGP_amd64_freebsd)
 
 __asm__(
 ".text"  "\n"
 ""       "\n"
 
-#if defined(VGP_amd64_linux) || defined(VGP_amd64_solaris)
+#if defined(VGP_amd64_linux) || defined(VGP_amd64_solaris) || defined(VGP_amd64_freebsd)
 ".global VG_MINIMAL_SETJMP"  "\n"  // rdi = jmp_buf
 "VG_MINIMAL_SETJMP:"  "\n"
 
@@ -423,7 +423,7 @@ __asm__(
 ""       "\n"
 
 
-#if defined(VGP_amd64_linux) || defined(VGP_amd64_solaris)
+#if defined(VGP_amd64_linux) || defined(VGP_amd64_solaris) || defined(VGP_amd64_freebsd)
 ".global VG_MINIMAL_LONGJMP"  "\n"
 "VG_MINIMAL_LONGJMP:"  "\n"    // rdi = jmp_buf
 
@@ -471,19 +471,19 @@ __asm__(
 #endif
 );
 
-#endif /* VGP_amd64_linux || VGP_amd64_darwin || VGP_amd64_solaris */
+#endif /* VGP_amd64_linux || VGP_amd64_darwin || VGP_amd64_solaris || VGP_amd64_freebsd */
 
 
-/* -------- x86-{linux,darwin,solaris} -------- */
+/* -------- x86-{linux,darwin,solaris,freebsd} -------- */
 
 #if defined(VGP_x86_linux) || defined(VGP_x86_darwin) || \
-    defined(VGP_x86_solaris)
+    defined(VGP_x86_solaris) || defined(VGP_x86_freebsd)
 
 __asm__(
 ".text"  "\n"
 ""       "\n"
 
-#if defined(VGP_x86_linux) || defined(VGP_x86_solaris)
+#if defined(VGP_x86_linux) || defined(VGP_x86_solaris) || defined(VGP_x86_freebsd)
 ".global VG_MINIMAL_SETJMP"  "\n"  // eax = jmp_buf
 "VG_MINIMAL_SETJMP:"  "\n"
 
@@ -514,7 +514,7 @@ __asm__(
 ""       "\n"
 
 
-#if defined(VGP_x86_linux) || defined(VGP_x86_solaris)
+#if defined(VGP_x86_linux) || defined(VGP_x86_solaris) || defined(VGP_x86_freebsd)
 ".global VG_MINIMAL_LONGJMP"  "\n"
 "VG_MINIMAL_LONGJMP:"  "\n"    // eax = jmp_buf
 
@@ -548,7 +548,7 @@ __asm__(
 #endif
 );
 
-#endif /* VGP_x86_linux || VGP_x86_darwin || VGP_x86_solaris */
+#endif /* VGP_x86_linux || VGP_x86_darwin || VGP_x86_solaris || VGP_x86_freebsd */
 
 #if defined(VGP_mips32_linux)
 

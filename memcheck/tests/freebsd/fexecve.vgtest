@@ -1,0 +1,2 @@
+prog: fexecve
+vgopts: -q

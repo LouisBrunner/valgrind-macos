@@ -14,7 +14,11 @@
 #define VG_STRINGIFZ(__str)  #__str
 #define VG_STRINGIFY(__str)  VG_STRINGIFZ(__str)
 
-#if defined(VGO_linux) || defined(VGO_darwin)
+#if defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_freebsd)
+#if !defined(__NR_readlink)
+# define __NR_readlink 58
+#endif
+
 #define __NR_READLINK        VG_STRINGIFY(__NR_readlink)
 
 extern long my_readlink ( const char* path );

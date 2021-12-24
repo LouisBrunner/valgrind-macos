@@ -46,6 +46,8 @@ platforms:
 - nanoMIPS/Linux
 - X86/Solaris
 - AMD64/Solaris
+- X86/FreeBSD
+- AMD64/FreeBSD
 
 Note that AMD64 is just another name for x86_64, and Valgrind runs fine
 on Intel processors.  Also note that the core of macOS is called

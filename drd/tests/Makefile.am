@@ -87,10 +87,12 @@ EXTRA_DIST =                                        \
 	bar_bad.stderr.exp			    \
 	bar_bad.stderr.exp-nohang		    \
 	bar_bad.stderr.exp-solaris		    \
+	bar_bad.stderr.exp-freebsd		    \
 	bar_bad.vgtest				    \
 	bar_bad_xml.stderr.exp			    \
 	bar_bad_xml.stderr.exp-nohang		    \
 	bar_bad_xml.stderr.exp-solaris		    \
+	bar_bad_xml.stderr.exp-freebsd		    \
 	bar_bad_xml.vgtest			    \
 	bar_trivial.stderr.exp			    \
 	bar_trivial.stdout.exp			    \
@@ -103,6 +105,8 @@ EXTRA_DIST =                                        \
 	circular_buffer.vgtest			    \
 	concurrent_close.stderr.exp		    \
 	concurrent_close.vgtest			    \
+	condvar.stderr.exp			    \
+	condvar.vgtest				    \
 	custom_alloc.stderr.exp			    \
 	custom_alloc.vgtest			    \
 	custom_alloc_fiw.stderr.exp		    \
@@ -213,6 +217,7 @@ EXTRA_DIST =                                        \
 	pth_detached2.vgtest                        \
 	pth_detached3.stderr.exp1                   \
 	pth_detached3.stderr.exp2                   \
+	pth_detached3.stderr.exp-freebsd            \
 	pth_detached3.vgtest                        \
 	pth_detached_sem.stderr.exp                 \
 	pth_detached_sem.stdout.exp                 \
@@ -222,6 +227,8 @@ EXTRA_DIST =                                        \
 	pth_inconsistent_cond_wait.vgtest           \
 	pth_mutex_reinit.stderr.exp		    \
 	pth_mutex_reinit.vgtest			    \
+	pth_mutex_signal.stderr.exp		    \
+	pth_mutex_signal.vgtest			    \
 	pth_once.stderr.exp			    \
 	pth_once.vgtest				    \
 	pth_process_shared_mutex.stderr.exp         \
@@ -235,6 +242,7 @@ EXTRA_DIST =                                        \
 	recursive_mutex.stderr.exp-linux            \
 	recursive_mutex.stderr.exp-darwin           \
 	recursive_mutex.stderr.exp-solaris          \
+	recursive_mutex.stderr.exp-freebsd          \
 	recursive_mutex.vgtest                      \
 	rwlock_race.stderr.exp	                    \
 	rwlock_race.stderr.exp2	                    \
@@ -267,6 +275,8 @@ EXTRA_DIST =                                        \
 	sem_open_traced.vgtest                      \
 	sem_wait.stderr.exp                         \
 	sem_wait.vgtest                             \
+	shared_timed_mutex.stderr.exp               \
+	shared_timed_mutex.vgtest                   \
 	swapcontext.stderr.exp                      \
 	swapcontext.vgtest                          \
 	sigalrm.stderr.exp                          \
@@ -313,6 +323,8 @@ EXTRA_DIST =                                        \
 	tc09_bad_unlock.stderr.exp-glibc2.8         \
 	tc09_bad_unlock.stderr.exp-s390             \
 	tc09_bad_unlock.stderr.exp-solaris          \
+	tc09_bad_unlock.stderr.exp-freebsd          \
+	tc09_bad_unlock.stderr.exp-freebsd-clang    \
 	tc09_bad_unlock.vgtest                      \
 	tc10_rec_lock.stderr.exp                    \
 	tc10_rec_lock.vgtest                        \
@@ -345,6 +357,7 @@ EXTRA_DIST =                                        \
 	tc23_bogus_condwait.stderr.exp-linux-ppc    \
 	tc23_bogus_condwait.stderr.exp-darwin-x86   \
 	tc23_bogus_condwait.stderr.exp-darwin-amd64 \
+	tc23_bogus_condwait.stderr.exp-freebsd      \
 	tc23_bogus_condwait.vgtest                  \
 	tc24_nonzero_sem.stderr.exp                 \
 	tc24_nonzero_sem.vgtest                     \
@@ -352,10 +365,14 @@ EXTRA_DIST =                                        \
 	thread_name.vgtest			    \
 	thread_name_xml.stderr.exp		    \
 	thread_name_xml.vgtest			    \
+	thread_name_freebsd.stderr.exp		    \
+	thread_name_freebsd.vgtest		    \
 	threaded-fork.stderr.exp		    \
 	threaded-fork.vgtest			    \
 	threaded-fork-vcs.stderr.exp		    \
 	threaded-fork-vcs.vgtest		    \
+	timed_mutex.stderr.exp                      \
+	timed_mutex.vgtest                          \
 	tls_threads.stderr.exp			    \
 	tls_threads.vgtest			    \
 	trylock.stderr.exp                          \
@@ -399,8 +416,8 @@ check_PROGRAMS =      \
   pth_detached3       \
   pth_inconsistent_cond_wait \
   pth_mutex_reinit    \
+  pth_mutex_signal    \
   pth_process_shared_mutex   \
-  pth_uninitialized_cond \
   recursive_mutex     \
   rwlock_race         \
   rwlock_test         \
@@ -411,7 +428,11 @@ check_PROGRAMS =      \
   threaded-fork       \
   trylock             \
   unit_bitmap         \
-  unit_vc
+  unit_vc             \
+  std_atomic          \
+  std_list            \
+  std_mutex	      \
+  std_string
 
 if HAVE_BOOST_1_35
 check_PROGRAMS += boost_thread
@@ -428,8 +449,12 @@ endif
 
 if HAVE_BUILTIN_ATOMIC_CXX
 check_PROGRAMS +=        \
-  annotate_smart_pointer \
-  tsan_unittest
+  annotate_smart_pointer
+endif
+
+if !VGCONF_OS_IS_FREEBSD
+check_PROGRAMS += tsan_unittest \
+  pth_uninitialized_cond
 endif
 
 # clang 3.3 will generate errors about libstdc++ headers from 
@@ -437,13 +462,24 @@ endif
 if CXX_CAN_INCLUDE_THREAD_HEADER
 if HAVE_SHARED_POINTER_ANNOTATION
 check_PROGRAMS += \
-  std_atomic      \
-  std_list        \
-  std_mutex	  \
-  std_string      \
   std_thread      \
   std_thread2
 endif
+endif
+
+if CXX_CAN_INCLUDE_CONDITION_VARIABLE_HEADER
+check_PROGRAMS += \
+    condvar
+endif
+
+if CXX_CAN_USE_SHARED_TIMED_MUTEX
+check_PROGRAMS += \
+    shared_timed_mutex
+endif
+
+if CXX_CAN_USE_TIMED_MUTEX
+check_PROGRAMS += \
+    timed_mutex
 endif
 
 if HAVE_OPENMP
@@ -477,6 +513,10 @@ if !VGCONF_OS_IS_DARWIN
 check_PROGRAMS += sem_wait
 endif
 
+if VGCONF_OS_IS_FREEBSD
+check_PROGRAMS += thread_name_freebsd
+endif
+
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI) @FLAG_W_EXTRA@ -Wno-inline -Wno-unused-parameter
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI) @FLAG_W_EXTRA@ @FLAG_FALIGNED_NEW@ \
@@ -486,8 +526,12 @@ LDADD = -lpthread
 
 
 bug322621_SOURCES           = bug322621.cpp
+condvar_SOURCES		    = condvar.cpp
+condvar_CXXFLAGS            = $(AM_CXXFLAGS) -std=c++0x
 concurrent_close_SOURCES    = concurrent_close.cpp
+if !VGCONF_OS_IS_FREEBSD
 dlopen_main_LDADD           = -ldl
+endif
 dlopen_lib_so_SOURCES       = dlopen_lib.c
 dlopen_lib_so_CFLAGS        = -fPIC
 dlopen_lib_so_LDFLAGS       = -shared -fPIC
@@ -563,6 +607,9 @@ if VGCONF_OS_IS_SOLARIS
 rwlock_test_CFLAGS          += -D__EXTENSIONS__
 endif
 
+shared_timed_mutex_SOURCES  = shared_timed_mutex.cpp
+shared_timed_mutex_CXXFLAGS = $(AM_CXXFLAGS) -std=c++1y
+
 std_atomic_SOURCES          = std_atomic.cpp
 std_atomic_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x -Wno-sign-compare
 
@@ -598,3 +645,5 @@ if VGCONF_OS_IS_SOLARIS
 swapcontext_CFLAGS          += -D__EXTENSIONS__
 endif
 
+timed_mutex_SOURCES         = timed_mutex.cpp
+timed_mutex_CXXFLAGS        = $(AM_CXXFLAGS) -std=c++0x

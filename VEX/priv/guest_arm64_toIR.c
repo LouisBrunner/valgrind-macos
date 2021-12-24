@@ -1184,9 +1184,10 @@ static IRExpr* narrowFrom64 ( IRType dstTy, IRExpr* e )
 #define OFFB_CMSTART  offsetof(VexGuestARM64State,guest_CMSTART)
 #define OFFB_CMLEN    offsetof(VexGuestARM64State,guest_CMLEN)
 
-#define OFFB_LLSC_SIZE offsetof(VexGuestARM64State,guest_LLSC_SIZE)
-#define OFFB_LLSC_ADDR offsetof(VexGuestARM64State,guest_LLSC_ADDR)
-#define OFFB_LLSC_DATA offsetof(VexGuestARM64State,guest_LLSC_DATA)
+#define OFFB_LLSC_SIZE      offsetof(VexGuestARM64State,guest_LLSC_SIZE)
+#define OFFB_LLSC_ADDR      offsetof(VexGuestARM64State,guest_LLSC_ADDR)
+#define OFFB_LLSC_DATA_LO64 offsetof(VexGuestARM64State,guest_LLSC_DATA_LO64)
+#define OFFB_LLSC_DATA_HI64 offsetof(VexGuestARM64State,guest_LLSC_DATA_HI64)
 
 
 /* ---------------- Integer registers ---------------- */
@@ -4832,6 +4833,34 @@ static IRTemp gen_zwidening_load ( UInt szB, IRTemp addr )
 }
 
 
+/* Generate a SIGBUS followed by a restart of the current instruction if
+   `effective_addr` is `align`-aligned.  This is required behaviour for atomic
+   instructions.  This assumes that guest_RIP_curr_instr is set correctly!
+
+   This is hardwired to generate SIGBUS because so far the only supported arm64
+   (arm64-linux) does that.  Should we need to later extend it to generate some
+   other signal, use the same scheme as with gen_SIGNAL_if_not_XX_aligned in
+   guest_amd64_toIR.c. */
+static
+void gen_SIGBUS_if_not_XX_aligned ( IRTemp effective_addr, ULong align )
+{
+   if (align == 1) {
+      return;
+   }
+   vassert(align == 16 || align == 8 || align == 4 || align == 2);
+   stmt(
+      IRStmt_Exit(
+         binop(Iop_CmpNE64,
+               binop(Iop_And64,mkexpr(effective_addr),mkU64(align-1)),
+               mkU64(0)),
+         Ijk_SigBUS,
+         IRConst_U64(guest_PC_curr_instr),
+         OFFB_PC
+      )
+   );
+}
+
+
 /* Generate a "standard 7" name, from bitQ and size.  But also
    allow ".1d" since that's occasionally useful. */
 static
@@ -6652,7 +6681,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
         (coregrind/m_scheduler/scheduler.c, run_thread_for_a_while()
          has to do this bit)
    */   
-   if (INSN(29,23) == BITS7(0,0,1,0,0,0,0)
+   if (INSN(29,24) == BITS6(0,0,1,0,0,0)
        && (INSN(23,21) & BITS3(1,0,1)) == BITS3(0,0,0)
        && INSN(14,10) == BITS5(1,1,1,1,1)) {
       UInt szBlg2     = INSN(31,30);
@@ -6669,7 +6698,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
 
       IRTemp ea = newTemp(Ity_I64);
       assign(ea, getIReg64orSP(nn));
-      /* FIXME generate check that ea is szB-aligned */
+      gen_SIGBUS_if_not_XX_aligned(ea, szB);
 
       if (isLD && ss == BITS5(1,1,1,1,1)) {
          IRTemp res = newTemp(ty);
@@ -6678,7 +6707,8 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
             // if it faults.
             IRTemp loaded_data64 = newTemp(Ity_I64);
             assign(loaded_data64, widenUto64(ty, loadLE(ty, mkexpr(ea))));
-            stmt( IRStmt_Put( OFFB_LLSC_DATA, mkexpr(loaded_data64) ));
+            stmt( IRStmt_Put( OFFB_LLSC_DATA_LO64, mkexpr(loaded_data64) ));
+            stmt( IRStmt_Put( OFFB_LLSC_DATA_HI64, mkU64(0) ));
             stmt( IRStmt_Put( OFFB_LLSC_ADDR, mkexpr(ea) ));
             stmt( IRStmt_Put( OFFB_LLSC_SIZE, mkU64(szB) ));
             putIReg64orZR(tt, mkexpr(loaded_data64));
@@ -6729,7 +6759,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
             ));
             // Fail if the data doesn't match the LL data
             IRTemp llsc_data64 = newTemp(Ity_I64);
-            assign(llsc_data64, IRExpr_Get(OFFB_LLSC_DATA, Ity_I64));
+            assign(llsc_data64, IRExpr_Get(OFFB_LLSC_DATA_LO64, Ity_I64));
             stmt( IRStmt_Exit(
                       binop(Iop_CmpNE64, widenUto64(ty, loadLE(ty, mkexpr(ea))),
                                          mkexpr(llsc_data64)),
@@ -6771,6 +6801,257 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
       /* else fall through */
    }
 
+   /* -------------------- LD{,A}XP -------------------- */
+   /* -------------------- ST{,L}XP -------------------- */
+   /* 31 30 29     23  20    15 14  9  4
+       1 sz 001000 011 11111 0  t2  n  t1   LDXP  Rt1, Rt2, [Xn|SP]
+       1 sz 001000 011 11111 1  t2  n  t1   LDAXP Rt1, Rt2, [Xn|SP]
+       1 sz 001000 001 s     0  t2  n  t1   STXP  Ws, Rt1, Rt2, [Xn|SP]
+       1 sz 001000 001 s     1  t2  n  t1   STLXP Ws, Rt1, Rt2, [Xn|SP]
+   */
+   /* See just above, "LD{,A}X{R,RH,RB} / ST{,L}X{R,RH,RB}", for detailed
+      comments about this implementation.  Note the 'sz' field here is only 1
+      bit; above, it is 2 bits, and has a different encoding.
+   */
+   if (INSN(31,31) == 1
+       && INSN(29,24) == BITS6(0,0,1,0,0,0)
+       && (INSN(23,21) & BITS3(1,0,1)) == BITS3(0,0,1)) {
+      Bool elemIs64   = INSN(30,30) == 1;
+      Bool isLD       = INSN(22,22) == 1;
+      Bool isAcqOrRel = INSN(15,15) == 1;
+      UInt ss         = INSN(20,16);
+      UInt tt2        = INSN(14,10);
+      UInt nn         = INSN(9,5);
+      UInt tt1        = INSN(4,0);
+
+      UInt   elemSzB = elemIs64 ? 8 : 4;
+      UInt   fullSzB = 2 * elemSzB;
+      IRType elemTy  = integerIRTypeOfSize(elemSzB);
+      IRType fullTy  = integerIRTypeOfSize(fullSzB);
+
+      IRTemp ea = newTemp(Ity_I64);
+      assign(ea, getIReg64orSP(nn));
+      gen_SIGBUS_if_not_XX_aligned(ea, fullSzB);
+
+      if (isLD && ss == BITS5(1,1,1,1,1)) {
+         if (abiinfo->guest__use_fallback_LLSC) {
+            // Fallback implementation of LL.
+            // Do the load first so we don't update any guest state if it
+            // faults.  Assumes little-endian guest.
+            if (fullTy == Ity_I64) {
+               vassert(elemSzB == 4);
+               IRTemp loaded_data64 = newTemp(Ity_I64);
+               assign(loaded_data64, loadLE(fullTy, mkexpr(ea)));
+               stmt( IRStmt_Put( OFFB_LLSC_DATA_LO64, mkexpr(loaded_data64) ));
+               stmt( IRStmt_Put( OFFB_LLSC_DATA_HI64, mkU64(0) ));
+               stmt( IRStmt_Put( OFFB_LLSC_ADDR, mkexpr(ea) ));
+               stmt( IRStmt_Put( OFFB_LLSC_SIZE, mkU64(8) ));
+               putIReg64orZR(tt1, unop(Iop_32Uto64,
+                                       unop(Iop_64to32,
+                                            mkexpr(loaded_data64))));
+               putIReg64orZR(tt2, unop(Iop_32Uto64,
+                                       unop(Iop_64HIto32,
+                                            mkexpr(loaded_data64))));
+            } else {
+               vassert(elemSzB == 8 && fullTy == Ity_I128);
+               IRTemp loaded_data128 = newTemp(Ity_I128);
+               // Hack: do the load as V128 rather than I128 so as to avoid
+               // having to implement I128 loads in the arm64 back end.
+               assign(loaded_data128, unop(Iop_ReinterpV128asI128,
+                                           loadLE(Ity_V128, mkexpr(ea))));
+               IRTemp loaded_data_lo64 = newTemp(Ity_I64);
+               IRTemp loaded_data_hi64 = newTemp(Ity_I64);
+               assign(loaded_data_lo64, unop(Iop_128to64,
+                                             mkexpr(loaded_data128)));
+               assign(loaded_data_hi64, unop(Iop_128HIto64,
+                                             mkexpr(loaded_data128)));
+               stmt( IRStmt_Put( OFFB_LLSC_DATA_LO64,
+                                 mkexpr(loaded_data_lo64) ));
+               stmt( IRStmt_Put( OFFB_LLSC_DATA_HI64,
+                                 mkexpr(loaded_data_hi64) ));
+               stmt( IRStmt_Put( OFFB_LLSC_ADDR, mkexpr(ea) ));
+               stmt( IRStmt_Put( OFFB_LLSC_SIZE, mkU64(16) ));
+               putIReg64orZR(tt1, mkexpr(loaded_data_lo64));
+               putIReg64orZR(tt2, mkexpr(loaded_data_hi64));
+            }
+         } else {
+            // Non-fallback implementation of LL.
+            IRTemp res = newTemp(fullTy); // I64 or I128
+            stmt(IRStmt_LLSC(Iend_LE, res, mkexpr(ea), NULL/*LL*/));
+            // Assuming a little-endian guest here.  Rt1 goes at the lower
+            // address, so it must live in the least significant half of `res`.
+            IROp opGetLO = fullTy == Ity_I128 ? Iop_128to64   : Iop_64to32;
+            IROp opGetHI = fullTy == Ity_I128 ? Iop_128HIto64 : Iop_64HIto32;
+            putIReg64orZR(tt1, widenUto64(elemTy, unop(opGetLO, mkexpr(res))));
+            putIReg64orZR(tt2, widenUto64(elemTy, unop(opGetHI, mkexpr(res))));
+         }
+         if (isAcqOrRel) {
+            stmt(IRStmt_MBE(Imbe_Fence));
+         }
+         DIP("ld%sxp %s, %s, [%s] %s\n",
+             isAcqOrRel ? (isLD ? "a" : "l") : "",
+             nameIRegOrZR(elemSzB == 8, tt1),
+             nameIRegOrZR(elemSzB == 8, tt2),
+             nameIReg64orSP(nn),
+             abiinfo->guest__use_fallback_LLSC
+                ? "(fallback implementation)" : "");
+         return True;
+      }
+      if (!isLD) {
+         if (isAcqOrRel) {
+            stmt(IRStmt_MBE(Imbe_Fence));
+         }
+         if (abiinfo->guest__use_fallback_LLSC) {
+            // Fallback implementation of SC.
+            // This is really ugly, since we don't have any way to do
+            // proper if-then-else.  First, set up as if the SC failed,
+            // and jump forwards if it really has failed.
+
+            // Continuation address
+            IRConst* nia = IRConst_U64(guest_PC_curr_instr + 4);
+
+            // "the SC failed".  Any non-zero value means failure.
+            putIReg64orZR(ss, mkU64(1));
+
+            IRTemp tmp_LLsize = newTemp(Ity_I64);
+            assign(tmp_LLsize, IRExpr_Get(OFFB_LLSC_SIZE, Ity_I64));
+            stmt( IRStmt_Put( OFFB_LLSC_SIZE, mkU64(0) // "no transaction"
+            ));
+            // Fail if no or wrong-size transaction
+            vassert((fullSzB == 8 && fullTy == Ity_I64)
+                    || (fullSzB == 16 && fullTy == Ity_I128));
+            stmt( IRStmt_Exit(
+                     binop(Iop_CmpNE64, mkexpr(tmp_LLsize), mkU64(fullSzB)),
+                     Ijk_Boring, nia, OFFB_PC
+            ));
+            // Fail if the address doesn't match the LL address
+            stmt( IRStmt_Exit(
+                      binop(Iop_CmpNE64, mkexpr(ea),
+                                         IRExpr_Get(OFFB_LLSC_ADDR, Ity_I64)),
+                      Ijk_Boring, nia, OFFB_PC
+            ));
+            // The data to be stored.
+            IRTemp store_data = newTemp(fullTy);
+            if (fullTy == Ity_I64) {
+               assign(store_data,
+                      binop(Iop_32HLto64,
+                            narrowFrom64(Ity_I32, getIReg64orZR(tt2)),
+                            narrowFrom64(Ity_I32, getIReg64orZR(tt1))));
+            } else {
+               assign(store_data,
+                      binop(Iop_64HLto128,
+                            getIReg64orZR(tt2), getIReg64orZR(tt1)));
+            }
+
+            if (fullTy == Ity_I64) {
+               // 64 bit (2x32 bit) path
+               // Fail if the data in memory doesn't match the data stashed by
+               // the LL.
+               IRTemp llsc_data_lo64 = newTemp(Ity_I64);
+               assign(llsc_data_lo64,
+                      IRExpr_Get(OFFB_LLSC_DATA_LO64, Ity_I64));
+               stmt( IRStmt_Exit(
+                         binop(Iop_CmpNE64, loadLE(Ity_I64, mkexpr(ea)),
+                                            mkexpr(llsc_data_lo64)),
+                      Ijk_Boring, nia, OFFB_PC
+               ));
+               // Try to CAS the new value in.
+               IRTemp old = newTemp(Ity_I64);
+               IRTemp expd = newTemp(Ity_I64);
+               assign(expd, mkexpr(llsc_data_lo64));
+               stmt( IRStmt_CAS(mkIRCAS(/*oldHi*/IRTemp_INVALID, old,
+                                        Iend_LE, mkexpr(ea),
+                                        /*expdHi*/NULL, mkexpr(expd),
+                                        /*dataHi*/NULL, mkexpr(store_data)
+               )));
+               // Fail if the CAS failed (viz, old != expd)
+               stmt( IRStmt_Exit(
+                         binop(Iop_CmpNE64, mkexpr(old), mkexpr(expd)),
+                         Ijk_Boring, nia, OFFB_PC
+               ));
+            } else {
+               // 128 bit (2x64 bit) path
+               // Fail if the data in memory doesn't match the data stashed by
+               // the LL.
+               IRTemp llsc_data_lo64 = newTemp(Ity_I64);
+               assign(llsc_data_lo64,
+                      IRExpr_Get(OFFB_LLSC_DATA_LO64, Ity_I64));
+               IRTemp llsc_data_hi64 = newTemp(Ity_I64);
+               assign(llsc_data_hi64,
+                      IRExpr_Get(OFFB_LLSC_DATA_HI64, Ity_I64));
+               IRTemp data_at_ea = newTemp(Ity_I128);
+               assign(data_at_ea,
+                      unop(Iop_ReinterpV128asI128,
+                           loadLE(Ity_V128, mkexpr(ea))));
+               stmt( IRStmt_Exit(
+                        binop(Iop_CmpNE64,
+                              unop(Iop_128to64, mkexpr(data_at_ea)),
+                              mkexpr(llsc_data_lo64)),
+                        Ijk_Boring, nia, OFFB_PC
+               ));
+               stmt( IRStmt_Exit(
+                        binop(Iop_CmpNE64,
+                              unop(Iop_128HIto64, mkexpr(data_at_ea)),
+                              mkexpr(llsc_data_hi64)),
+                        Ijk_Boring, nia, OFFB_PC
+               ));
+               // Try to CAS the new value in.
+               IRTemp old_lo64 = newTemp(Ity_I64);
+               IRTemp old_hi64 = newTemp(Ity_I64);
+               IRTemp expd_lo64 = newTemp(Ity_I64);
+               IRTemp expd_hi64 = newTemp(Ity_I64);
+               IRTemp store_data_lo64 = newTemp(Ity_I64);
+               IRTemp store_data_hi64 = newTemp(Ity_I64);
+               assign(expd_lo64, mkexpr(llsc_data_lo64));
+               assign(expd_hi64, mkexpr(llsc_data_hi64));
+               assign(store_data_lo64, unop(Iop_128to64, mkexpr(store_data)));
+               assign(store_data_hi64, unop(Iop_128HIto64, mkexpr(store_data)));
+               stmt( IRStmt_CAS(mkIRCAS(old_hi64, old_lo64,
+                                        Iend_LE, mkexpr(ea),
+                                        mkexpr(expd_hi64), mkexpr(expd_lo64),
+                                        mkexpr(store_data_hi64),
+                                        mkexpr(store_data_lo64)
+               )));
+               // Fail if the CAS failed (viz, old != expd)
+               stmt( IRStmt_Exit(
+                        binop(Iop_CmpNE64, mkexpr(old_lo64), mkexpr(expd_lo64)),
+                        Ijk_Boring, nia, OFFB_PC
+               ));
+               stmt( IRStmt_Exit(
+                        binop(Iop_CmpNE64, mkexpr(old_hi64), mkexpr(expd_hi64)),
+                        Ijk_Boring, nia, OFFB_PC
+               ));
+            }
+            // Otherwise we succeeded (!)
+            putIReg64orZR(ss, mkU64(0));
+         } else {
+            // Non-fallback implementation of SC.
+            IRTemp  res     = newTemp(Ity_I1);
+            IRExpr* dataLO  = narrowFrom64(elemTy, getIReg64orZR(tt1));
+            IRExpr* dataHI  = narrowFrom64(elemTy, getIReg64orZR(tt2));
+            IROp    opMerge = fullTy == Ity_I128 ? Iop_64HLto128 : Iop_32HLto64;
+            IRExpr* data    = binop(opMerge, dataHI, dataLO);
+            // Assuming a little-endian guest here.  Rt1 goes at the lower
+            // address, so it must live in the least significant half of `data`.
+            stmt(IRStmt_LLSC(Iend_LE, res, mkexpr(ea), data));
+            /* IR semantics: res is 1 if store succeeds, 0 if it fails.
+               Need to set rS to 1 on failure, 0 on success. */
+            putIReg64orZR(ss, binop(Iop_Xor64, unop(Iop_1Uto64, mkexpr(res)),
+                                               mkU64(1)));
+         }
+         DIP("st%sxp %s, %s, %s, [%s] %s\n",
+             isAcqOrRel ? (isLD ? "a" : "l") : "",
+             nameIRegOrZR(False, ss),
+             nameIRegOrZR(elemSzB == 8, tt1),
+             nameIRegOrZR(elemSzB == 8, tt2),
+             nameIReg64orSP(nn),
+             abiinfo->guest__use_fallback_LLSC
+                ? "(fallback implementation)" : "");
+         return True;
+      }
+      /* else fall through */
+   }
+
    /* ------------------ LDA{R,RH,RB} ------------------ */
    /* ------------------ STL{R,RH,RB} ------------------ */
    /* 31 29     23  20      14    9 4
@@ -6791,7 +7072,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
 
       IRTemp ea = newTemp(Ity_I64);
       assign(ea, getIReg64orSP(nn));
-      /* FIXME generate check that ea is szB-aligned */
+      gen_SIGBUS_if_not_XX_aligned(ea, szB);
 
       if (isLD) {
          IRTemp res = newTemp(ty);
@@ -6906,6 +7187,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
 
       IRTemp ea = newTemp(Ity_I64);
       assign(ea, getIReg64orSP(nn));
+      gen_SIGBUS_if_not_XX_aligned(ea, szB);
 
       // Insert barrier before loading for acquire and acquire-release variants:
       // A and AL.
@@ -7013,6 +7295,10 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
       IRType ty = integerIRTypeOfSize(szB);
       Bool is64 = szB == 8;
 
+      IRTemp ea = newTemp(Ity_I64);
+      assign(ea, getIReg64orSP(nn));
+      gen_SIGBUS_if_not_XX_aligned(ea, szB);
+
       IRExpr *exp = narrowFrom64(ty, getIReg64orZR(ss));
       IRExpr *new = narrowFrom64(ty, getIReg64orZR(tt));
 
@@ -7022,7 +7308,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
       // Store the result back if LHS remains unchanged in memory.
       IRTemp old = newTemp(ty);
       stmt( IRStmt_CAS(mkIRCAS(/*oldHi*/IRTemp_INVALID, old,
-                               Iend_LE, getIReg64orSP(nn),
+                               Iend_LE, mkexpr(ea),
                                /*expdHi*/NULL, exp,
                                /*dataHi*/NULL, new)) );
 
@@ -7054,6 +7340,10 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
       if ((ss & 0x1) || (tt & 0x1)) {
          /* undefined; fall through */
       } else {
+         IRTemp ea = newTemp(Ity_I64);
+         assign(ea, getIReg64orSP(nn));
+         gen_SIGBUS_if_not_XX_aligned(ea, is64 ? 16 : 8);
+
          IRExpr *expLo = getIRegOrZR(is64, ss);
          IRExpr *expHi = getIRegOrZR(is64, ss + 1);
          IRExpr *newLo = getIRegOrZR(is64, tt);
@@ -7065,7 +7355,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
             stmt(IRStmt_MBE(Imbe_Fence));
 
          stmt( IRStmt_CAS(mkIRCAS(oldHi, oldLo,
-                                  Iend_LE, getIReg64orSP(nn),
+                                  Iend_LE, mkexpr(ea),
                                   expHi, expLo,
                                   newHi, newLo)) );
 

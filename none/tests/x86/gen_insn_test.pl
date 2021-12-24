@@ -135,6 +135,8 @@ typedef union {
 
 static sigjmp_buf catchpoint;
 
+static char state[108];
+
 static void handle_sigill(int signum)
 {
    siglongjmp(catchpoint, 1);
@@ -634,7 +636,6 @@ while (<>)
 
     my $stateargnum = $argnum++;
 
-    print qq|   char state\[108\];\n|;
     print qq|\n|;
     print qq|   if (sigsetjmp(catchpoint, 1) == 0)\n|;
     print qq|   \{\n|;

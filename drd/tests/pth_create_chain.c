@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
+#include "config.h"
 
 
 static pthread_t s_thread[1000];
@@ -23,7 +24,9 @@ static void* thread_func(void* p)
     // std::cout << "create " << thread_count << std::endl;
     s_arg[thread_count] = thread_count;
     pthread_attr_init(&attr);
+#if !defined(VGO_freebsd)
     pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN);
+#endif
     pthread_create(&s_thread[thread_count], &attr, thread_func,
                    &s_arg[thread_count]);
     pthread_attr_destroy(&attr);
@@ -47,7 +50,9 @@ int main(int argc, char** argv)
   thread_count--;
   // std::cout << "create " << thread_count << std::endl;
   pthread_attr_init(&attr);
+#if !defined(VGO_freebsd)
   pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN);
+#endif
   pthread_create(&s_thread[thread_count], &attr, thread_func,
                  &thread_count);
   pthread_attr_destroy(&attr);

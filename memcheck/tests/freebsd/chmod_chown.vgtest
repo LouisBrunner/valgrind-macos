@@ -1,0 +1,3 @@
+prereq: test -e ./chmod_chown
+prog: chmod_chown
+vgopts: -q

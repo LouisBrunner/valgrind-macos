@@ -1,0 +1,37 @@
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (varinfo1.c:28)
+   by 0x........: main (varinfo1.c:49)
+ Address 0x........ is 1 bytes inside a block of size 3 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (varinfo1.c:47)
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (varinfo1.c:28)
+   by 0x........: main (varinfo1.c:52)
+ Location 0x........ is 0 bytes inside global var "global_u1"
+ declared at varinfo1.c:35
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (varinfo1.c:28)
+   by 0x........: main (varinfo1.c:53)
+ Location 0x........ is 0 bytes inside global var "global_i1"
+ declared at varinfo1.c:37
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (varinfo1.c:28)
+   by 0x........: main (varinfo1.c:54)
+ Location 0x........ is 0 bytes inside global_u2[3],
+ a global variable declared at varinfo1.c:39
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (varinfo1.c:28)
+   by 0x........: main (varinfo1.c:55)
+ Location 0x........ is 0 bytes inside global_i2[7],
+ a global variable declared at varinfo1.c:41
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (varinfo1.c:28)
+   by 0x........: main (varinfo1.c:56)
+ Address 0x........ is on thread 1's stack
+ in frame #X, created by main (varinfo1.c:45)
+

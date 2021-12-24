@@ -11,6 +11,8 @@
    is not == 0 everywhere. */
 # if defined(VGO_linux)
 #define IOCTL_REQUEST_BASE (0x12345670 | _IOC(_IOC_NONE,0,0,0))
+# elif defined(VGO_freebsd)
+#define IOCTL_REQUEST_BASE (0x12345670 | _IO(0,0))
 # else
 #define IOCTL_REQUEST_BASE  0x12345670
 # endif

@@ -1,3 +1,4 @@
 prereq: test -e pth_uninitialized_cond && ./supported_libpthread
 vgopts: --read-var-info=yes --check-stack-var=yes
 prog: pth_uninitialized_cond
+cleanup: rm -f vgcore.*

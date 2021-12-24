@@ -1,0 +1,186 @@
+# Suppressions for FreeBSD / Helgrind
+
+{
+   HELGRIND-LIBTHR1
+   Helgrind:Race
+   obj:*/lib*/libthr.so.3
+}
+{
+   HELGRIND-LIB-LDRT1
+   Helgrind:Race
+   obj:/libexec/ld-elf*.so.1
+}
+{
+   HELGRIND-PTHREAD-EXIT0
+   Helgrind:Race
+   fun:thr_exit
+   obj:*/lib*/libthr.so.3
+   obj:*/lib*/libthr.so.3
+}
+{
+   HELGRIND-PTHREAD-EXIT1
+   Helgrind:Race
+   fun:_pthread_exit_mask
+   fun:pthread_exit
+   obj:*/lib*/libthr.so.3
+}
+{
+   HELGRIND-PTHREAD-EXIT2
+   Helgrind:Race
+   fun:__sys_thr_exit
+   fun:_pthread_exit_mask
+   fun:pthread_exit
+   obj:*/lib*/libthr.so.3
+}
+{
+   HELGRIND-PTHREAD-EXIT4
+   Helgrind:Race
+   fun:_thr_try_gc
+   obj:*/lib*/libthr.so.3
+   fun:pthread_join_WRK
+   fun:pthread_join
+}
+{
+   HELGRIND-PTHREAD-EXIT5
+   Helgrind:Race
+   fun:__sys_thr_exit
+   obj:*/lib*/libthr.so.3
+   fun:_pthread_exit_mask
+   fun:pthread_exit
+   obj:/lib/libthr.so.3
+}
+{
+   HELGRIND-PTHREAD-EXIT6
+   Helgrind:Race
+   obj:*/lib*/libcxxrt.so.1
+   obj:*/lib*/libthr.so.3
+   obj:*/lib*/libthr.so.3
+   obj:*/lib*/libthr.so.3
+   obj:*/lib*/libgcc_s.so.1
+   fun:_Unwind_ForcedUnwind
+   obj:*/lib*/libthr.so.3
+   obj:*/lib*/libthr.so.3
+   fun:pthread_exit
+   obj:*/lib*/libthr.so.3
+}
+{
+   HELGRIND-PTHREAD-BARRIER2
+   Helgrind:Race
+   fun:pthread_barrier_init
+}
+# added PJF
+{
+   HELGRIND-EXIT1
+   Helgrind:Race
+   obj:/libexec/ld-elf*.so.1
+   obj:/libexec/ld-elf*.so.1
+   fun:__cxa_finalize
+   fun:exit
+}
+{
+   HELGRIND-EXIT2
+   Helgrind:Race
+   obj:/libexec/ld-elf*.so.1
+   obj:/libexec/ld-elf*.so.1
+   fun:_rtld_error
+   obj:/libexec/ld-elf*.so.1
+   obj:/libexec/ld-elf*.so.1
+   fun:__cxa_finalize
+   fun:exit
+}
+{
+   HELGRIND-EDIT3
+   Helgrind:Race
+   fun:_rtld_error
+   obj:/libexec/ld-elf*.so.1
+   obj:/libexec/ld-elf*.so.1
+   fun:__cxa_finalize
+   fun:exit
+}
+{
+   HELGRIND-EXIT3
+   Helgrind:Race
+   obj:/libexec/ld-elf*.so.1
+   obj:/libexec/ld-elf*.so.1
+   obj:/libexec/ld-elf*.so.1
+   obj:/libexec/ld-elf*.so.1
+   fun:__cxa_finalize
+   fun:exit
+}
+# PJF not sure exactly what the cause of this is, but it looks like it is the
+# tls used for pthread_self() with a conflict between pthread_create and
+# mythread_wrapper which coverst create/join/exit
+{
+   HELGRIND-PTHREAD-CREATE1
+   Helgrind:Race
+   obj:/libexec/ld-elf*.so.1
+   fun:_rtld_allocate_tls
+   obj:*/lib*/libthr.so.3
+   obj:*/lib*/libthr.so.3
+   fun:pthread_create
+}
+{
+   HELGRIND-PTHREAD-CREATE2
+   Helgrind:Race
+   fun:memset
+   obj:*/lib*/libthr.so.3
+   fun:pthread_create
+}
+# PJF again a pthread_self() hazard
+{
+   HELGRIND-PTHREAD-SELF1
+   Helgrind:Race
+   fun:mythread_wrapper
+   obj:*/lib*/libthr.so.3
+}
+{
+   HELGRIND-SEM-CLOCKWAIT1
+   Helgrind:Race
+   fun:sem_clockwait_np
+}
+{
+   HELGRIND-UMTX-OP1
+   Helgrind:Race
+   fun:_umtx_op
+}
+{
+   HELGRIND-SEM-POST1
+   Helgrind:Race
+   fun:sem_post
+}
+{
+   HELGRIND-GCC-UNWIND1
+   Helgrind:Race
+   obj:/lib/libgcc_s.so.1
+}
+{
+   HELGRIND-LIBC-PRINTF1
+   Helgrind:Race
+   fun:flockfile
+}
+{
+   HELGRIND-LIBC-PRINTF2
+   Helgrind:Race
+   fun:funlockfile
+}
+{
+   HELGRIND-MUTEX-LOCK1
+   Helgrind:Race
+   fun:memset
+   obj:*/lib*/libthr.so.3
+}
+{
+   HELGRIND-LIBOMP
+   Helgrind:Race
+   obj:/usr/lib*/libomp.so
+}
+{
+   HELGRIND-CXX-UNWIND
+   Helgrind:Race
+   obj:/lib/libcxxrt.so.1
+   obj:/lib/libthr.so.3
+   obj:/lib/libthr.so.3
+   obj:/lib/libthr.so.3
+   obj:/lib/libgcc_s.so.1
+   fun:_Unwind_ForcedUnwind
+}

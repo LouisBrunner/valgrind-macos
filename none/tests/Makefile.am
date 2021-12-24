@@ -47,6 +47,9 @@ endif
 if VGCONF_OS_IS_SOLARIS
 SUBDIRS += solaris
 endif
+if VGCONF_OS_IS_FREEBSD
+SUBDIRS += freebsd
+endif
 
 # Platform-specific tests
 if VGCONF_PLATFORMS_INCLUDE_AMD64_LINUX
@@ -69,7 +72,7 @@ SUBDIRS += x86-solaris
 endif
 
 DIST_SUBDIRS = x86 amd64 ppc32 ppc64 arm arm64 s390x mips32 mips64 nanomips \
-               linux darwin solaris amd64-linux x86-linux amd64-darwin \
+               linux darwin solaris freebsd amd64-linux x86-linux amd64-darwin \
                x86-darwin amd64-solaris x86-solaris scripts .
 
 dist_noinst_SCRIPTS = \
@@ -90,7 +93,7 @@ EXTRA_DIST = \
 	ansi.stderr.exp ansi.vgtest \
 	args.stderr.exp args.stdout.exp args.vgtest \
 	async-sigs.stderr.exp async-sigs.stderr.exp-mips32 \
-	async-sigs.vgtest \
+	async-sigs.vgtest async-sigs.stderr.exp-freebsd \
 	bigcode.vgtest bigcode.stderr.exp bigcode.stdout.exp \
 	bitfield1.stderr.exp bitfield1.vgtest \
 	bug129866.vgtest bug129866.stderr.exp bug129866.stdout.exp \
@@ -142,7 +145,9 @@ EXTRA_DIST = \
 	munmap_exe.stderr.exp munmap_exe.vgtest \
 	nestedfns.stderr.exp nestedfns.stdout.exp nestedfns.vgtest \
 	nocwd.stdout.exp nocwd.stderr.exp nocwd.vgtest \
+	nocwd.stderr.exp-freebsd \
 	nodir.stderr.exp nodir.vgtest \
+		nodir.stderr.exp-freebsd \
 	pending.stdout.exp pending.stderr.exp pending.vgtest \
 	ppoll_alarm.stdout.exp ppoll_alarm.stderr.exp ppoll_alarm.vgtest \
 	procfs-linux.stderr.exp-with-readlinkat \
@@ -181,6 +186,7 @@ EXTRA_DIST = \
 	require-text-symbol-2.vgtest \
 		require-text-symbol-2.stderr.exp-libcso1 \
 		require-text-symbol-2.stderr.exp-libcso6 \
+		require-text-symbol-2.stderr.exp-freebsd \
 	res_search.stderr.exp res_search.stdout.exp res_search.vgtest \
 	resolv.stderr.exp resolv.stdout.exp resolv.vgtest \
 	rlimit_nofile.stderr.exp rlimit_nofile.stdout.exp rlimit_nofile.vgtest \
@@ -265,9 +271,12 @@ if HAVE_NESTED_FUNCTIONS
 endif
 
 # This doesn't appear to be compilable on Darwin.
+if ! VGCONF_OS_IS_DARWIN_OR_FREEBSD
+   check_PROGRAMS += rlimit64_nofile
+endif
+
 if ! VGCONF_OS_IS_DARWIN
-   check_PROGRAMS += rlimit64_nofile \
-        ppoll_alarm
+   check_PROGRAMS += ppoll_alarm
 endif
 
 # clang does not know -ansi
@@ -294,6 +303,7 @@ fdleak_creat_LDADD	= -lsocket -lnsl
 fdleak_socketpair_LDADD	= -lsocket -lnsl
 endif
 floored_LDADD 		= -lm
+ifunc_CFLAGS		= $(AM_CFLAGS) -Wno-unused-function
 manythreads_LDADD	= -lpthread
 if VGCONF_OS_IS_DARWIN
  nestedfns_CFLAGS	= $(AM_CFLAGS) -fnested-functions
@@ -328,9 +338,14 @@ pth_self_kill_LDADD	= -lpthread
 pth_stackalign_LDADD	= -lpthread
 pth_2sig_LDADD		= -lpthread
 pth_term_signal_LDADD	= -lpthread
-res_search_LDADD        = -lresolv -lpthread
+if VGCONF_OS_IS_FREEBSD
+   res_search_LDADD      = -lpthread
+   resolv_LDADD             = -lpthread
+else
+   res_search_LDADD      = -lresolv -lpthread
+   resolv_LDADD             = -lresolv -lpthread
+endif
 resolv_CFLAGS		= $(AM_CFLAGS)
-resolv_LDADD            = -lresolv -lpthread
 if VGCONF_OS_IS_SOLARIS
 resolv_CFLAGS		+= -U_REENTRANT
 endif
@@ -366,7 +381,7 @@ else
 endif
 
 vgprintf_nvalgrind_SOURCES = vgprintf.c
-vgprintf_nvalgrind_CFLAGS = -DNVALGRIND
+vgprintf_nvalgrind_CFLAGS = ${AM_CFLAGS} -DNVALGRIND
 
 valgrind_cpp_test_SOURCES = valgrind_cpp_test.cpp
 valgrind_cpp_test_LDADD   = -lstdc++

@@ -1,4 +1,4 @@
-#include <unistd.h>
+#include <stdio.h>
 
 char base[] ="0123456789012345678901234567890123456789";
 
@@ -16,44 +16,36 @@ stmg_no_wrap(void)
                  : "a" (base)
                  : "5", "6", "7");
    /* Write out BUF */
-   asm volatile( "lghi 2, 1\n\t"   // stdout
-                 "lgr  3, %0\n\t"  // buf
-                 "lghi 4, 24\n\t"  // len = 3*8 bytes
-                 "svc  4\n\t"
-                 : : "a" (buf)
-                 : "2", "3", "4");
+   fwrite(buf, sizeof(buf), 1, stdout);
 }
 
 void
 stmg_wrap(void)
 {
-   char buf[64];
+   char buf[32];
 
    /* Wrap around case; copies 32 bytes from BASE to BUF */
-   asm volatile( "lg   15,  0(%1)\n\t"
+   asm volatile( "lgr   3, 15\n\t"     /* save stack pointer */
                  "lg    0,  8(%1)\n\t"
                  "lg    1, 16(%1)\n\t"
                  "lg    2, 24(%1)\n\t"
+                 "lg   15,  0(%1)\n\t"
                  "stmg 15, 2, %0\n\t"
-                 :"=m" (buf)
+                 "lgr  15, 3"          /* restore stack pointer */
+                 :"=S" (buf)
                  : "a" (base)
-                 : "15", "0", "1", "2");
+                 : "0", "1", "2", "3");
    /* Write out BUF */
-   asm volatile( "lghi 2, 1\n\t"   // stdout
-                 "lgr  3, %0\n\t"  // buf
-                 "lghi 4, 32\n\t"  // len = 4*8 bytes
-                 "svc  4\n\t"
-                 : : "a" (buf)
-                 : "2", "3", "4");
+   fwrite(buf, sizeof(buf), 1, stdout);
 }
 
 
 int main(void)
 {
    stmg_no_wrap();
-   write(1, "\n", 1);
+   putchar('\n');
    stmg_wrap();
-   write(1, "\n", 1);
+   putchar('\n');
 
    return 0;
 }

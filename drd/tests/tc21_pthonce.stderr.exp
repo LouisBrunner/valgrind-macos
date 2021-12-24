@@ -3,7 +3,7 @@ Thread 3:
 Conflicting load by thread 3 at 0x........ size 4
    at 0x........: child (tc21_pthonce.c:74)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
-   by 0x........: (within libpthread-?.?.so)
+   by 0x........: start_thread
 Allocation context: BSS section of tc21_pthonce
 Other segment start (thread 2)
    (thread finished, call stack no longer available)
@@ -13,7 +13,7 @@ Other segment end (thread 2)
 Conflicting store by thread 3 at 0x........ size 4
    at 0x........: child (tc21_pthonce.c:74)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
-   by 0x........: (within libpthread-?.?.so)
+   by 0x........: start_thread
 Allocation context: BSS section of tc21_pthonce
 Other segment start (thread 2)
    (thread finished, call stack no longer available)

@@ -1376,8 +1376,8 @@ static void maybe_complete ( Bool         error_in_status,
       if (count_from_Status(&recv_count, shadow->datatype, status)) {
          make_mem_defined_if_addressable(shadow->buf, recv_count, shadow->datatype);
          if (opt_verbosity > 1)
-            fprintf(stderr, "%s %5d: sReq- %p (completed)\n", 
-                            preamble, my_pid, request_before);
+            fprintf(stderr, "%s %5d: sReq- 0x%lx (completed)\n",
+                            preamble, my_pid, (unsigned long) request_before);
       }
       delete_shadow_Request(request_before);
    }

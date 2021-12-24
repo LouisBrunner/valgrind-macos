@@ -18,16 +18,16 @@
 #include "safe-pthread.h"
 #include "safe-semaphore.h"
 
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) && !defined(__FreeBSD__)
 
-#if defined(__sun__)
-/* Fake __GLIBC_PREREQ on Solaris. Pretend glibc >= 2.4. */
-# define __GLIBC_PREREQ
-#else
+#if defined(__GLIBC__)
 #if !defined(__GLIBC_PREREQ)
 # error "This program needs __GLIBC_PREREQ (in /usr/include/features.h)"
 #endif
-#endif /* __sun__ */
+#else
+/* Fake __GLIBC_PREREQ. Pretend glibc >= 2.4. */
+# define __GLIBC_PREREQ
+#endif /* __GLIBC__ */
 
 typedef union {
    pthread_spinlock_t spinlock;

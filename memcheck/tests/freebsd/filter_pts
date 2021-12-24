@@ -1,0 +1,5 @@
+#! /bin/sh
+
+../filter_stderr "$@" |
+
+gsed 's/Open file descriptor.*/Open file descriptor .../'

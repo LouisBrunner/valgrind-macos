@@ -1,0 +1,9 @@
+#! /bin/sh
+
+SED=@SED@
+
+# Get rid of the numbers as these make some tests more scheduling sensitive
+# -- those where there are multiple threads which play interchangeable roles.
+grep -v "^Thread [0-9][0-9]*:$" |
+$SED -e "s:hread [0-9][0-9]*:hread x:g" \
+    -e "s:of thread [0-9][0-9]*$:of thread x:g"

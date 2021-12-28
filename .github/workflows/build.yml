@@ -61,7 +61,12 @@ jobs:
         path: ${{ env.TEST_FOLDER }}/
 
   build_macos:
-    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-10.15, macos-11]
+
+    runs-on: ${{ matrix.os }}
     env:
       PLATFORM: macos
 

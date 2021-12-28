@@ -299,6 +299,39 @@ SysRes VG_(mk_SysRes_amd64_darwin) ( UChar scclass, Bool isErr,
    return res;
 }
 
+SysRes VG_(mk_SysRes_arm64_darwin) ( UChar scclass, Bool isErr,
+                                     ULong wHI, ULong wLO )
+{
+   SysRes res;
+   res._wHI  = 0;
+   res._wLO  = 0;
+   res._mode = 0; /* invalid */
+   vg_assert(isErr == False || isErr == True);
+   vg_assert(sizeof(UWord) == sizeof(ULong));
+   switch (scclass) {
+      case VG_DARWIN_SYSCALL_CLASS_UNIX:
+         res._wLO  = wLO;
+         res._wHI  = wHI;
+         res._mode = isErr ? SysRes_UNIX_ERR : SysRes_UNIX_OK;
+         break;
+      case VG_DARWIN_SYSCALL_CLASS_MACH:
+         vg_assert(!isErr);
+         vg_assert(wHI == 0);
+         res._wLO  = wLO;
+         res._mode = SysRes_MACH;
+         break;
+      case VG_DARWIN_SYSCALL_CLASS_MDEP:
+         vg_assert(!isErr);
+         vg_assert(wHI == 0);
+         res._wLO  = wLO;
+         res._mode = SysRes_MDEP;
+         break;
+      default:
+         vg_assert(0);
+   }
+   return res;
+}
+
 /* Generic constructors.  We assume (without checking if this makes
    any sense, from the caller's point of view) that these are for the
    UNIX style of syscall. */
@@ -917,6 +950,61 @@ asm(".private_extern _do_syscall_mach_WRK\n"
     "        retq                     \n"
     );
 
+#elif defined(VGP_arm64_darwin)
+
+/* Incoming args (syscall number + up to 9 args) come in registers
+
+   The kernel's syscall calling convention is:
+   * the syscall number goes in x16
+   * the args are passed to the syscall in registers and the stack
+   * the call instruction is 'svc 0x80'
+   Return value:
+   * MACH,MDEP: the return value comes back in x0
+   * UNIX: the return value comes back in x1:x0 (hi64:lo64)
+   Error:
+   * MACH,MDEP: no error is returned
+   * UNIX: the carry flag indicates success or failure
+
+   nb here, sizeof(UWord) == sizeof(ULong)
+*/
+
+__private_extern__ UWord
+do_syscall_unix_WRK ( UWord a1, UWord a2, UWord a3, /* x0, x1, x2 */
+                      UWord a4, UWord a5, UWord a6, /* x3, x4, x5 */
+                      UWord a7, UWord a8,           /* x6, x7 */
+                      UWord syscall_no,             /* 8(rsp) */
+                      /*OUT*/ULong* errflag,        /* 16(rsp) */
+                      /*OUT*/ULong* res2 );         /* 24(rsp) */
+// Unix syscall: 128-bit return in x1:x0, with LSB in x0
+// error indicated by carry flag: clear=good, set=bad
+asm(".private_extern _do_syscall_unix_WRK\n"
+    "_do_syscall_unix_WRK:\n"
+    "        ldr     x8, [sp, #16]    \n"  /* assume syscall success */
+    "        str     xzr, [x8]        \n"
+    "        ldr     x8, [sp, #8]     \n"  /* load syscall_no */
+    "        svc     0x80             \n"
+    "        bcc     1f               \n"  /* jump if success */
+    "        ldr     x9, [sp, #16]    \n"  /* syscall failed - set *errflag */
+    "        mov     x10, #1          \n"  /* syscall failed - set *errflag */
+    "        str     x10, [x9]        \n"
+    "    1:  ldr     x9, [sp, #24]    \n"  /* save 2nd result word */
+    "        str     x1, [x9]         \n"
+    "        ret                      \n"  /* return 1st result word */
+    );
+
+__private_extern__ UWord
+do_syscall_mach_WRK ( UWord a1, UWord a2, UWord a3, /* x0, x1, x2 */
+                      UWord a4, UWord a5, UWord a6, /* x3, x4, x5 */
+                      UWord a7, UWord a8,           /* x6, x7 */
+                      UWord syscall_no );           /* 8(rsp) */
+// Mach trap: 64-bit result, no error flag
+asm(".private_extern _do_syscall_mach_WRK\n"
+    "_do_syscall_mach_WRK:\n"
+    "        ldr     x8, [sp, #8]     \n"  /* load syscall_no */
+    "        svc #0                   \n"
+    "        ret                      \n"
+    );
+
 #elif defined(VGP_s390x_linux)
 
 static UWord do_syscall_WRK (
@@ -1234,6 +1322,26 @@ SysRes VG_(do_syscall) ( UWord sysno, RegWord a1, RegWord a2, RegWord a3,
    }
    return VG_(mk_SysRes_amd64_darwin)( scclass, err ? True : False, wHI, wLO );
   
+#  elif defined(VGP_arm64_darwin)
+   ULong wLO = 0, wHI = 0, err = 0;
+   UChar scclass = VG_DARWIN_SYSNO_CLASS(sysno);
+   switch (scclass) {
+      case VG_DARWIN_SYSCALL_CLASS_UNIX:
+         wLO = do_syscall_unix_WRK(a1,a2,a3,a4,a5,a6,a7,a8,
+                                   VG_DARWIN_SYSNO_FOR_KERNEL(sysno), &err, &wHI);
+         break;
+      case VG_DARWIN_SYSCALL_CLASS_MACH:
+      case VG_DARWIN_SYSCALL_CLASS_MDEP:
+         wLO = do_syscall_mach_WRK(a1,a2,a3,a4,a5,a6,a7,a8,
+                                   VG_DARWIN_SYSNO_FOR_KERNEL(sysno));
+         err = 0;
+         break;
+      default:
+         vg_assert(0);
+         break;
+   }
+   return VG_(mk_SysRes_arm64_darwin)( scclass, err ? True : False, wHI, wLO );
+
 #elif defined(VGP_s390x_linux)
    UWord val;
 

@@ -2055,7 +2055,9 @@ void ML_(read_debuginfo_dwarf1) (
 #  define SP_REG         7
 #  define RA_REG_DEFAULT 16
 #elif defined(VGP_arm64_darwin)
-#error unimplemented
+#  define FP_REG         29
+#  define SP_REG         31
+#  define RA_REG_DEFAULT 30
 #elif defined(VGP_s390x_linux)
 #  define FP_REG         11    // sometimes s390 has a frame pointer in r11
 #  define SP_REG         15    // stack is always r15
@@ -2082,7 +2084,8 @@ void ML_(read_debuginfo_dwarf1) (
 # define N_CFI_REGS 72
 #elif defined(VGP_arm_linux)
 # define N_CFI_REGS 320
-#elif defined(VGP_arm64_linux)
+#elif defined(VGP_arm64_linux) || defined(VGP_arm64_darwin)
+// TODO: this might be widely wrong for darwin
 # define N_CFI_REGS 128
 #elif defined(VGP_s390x_linux)
 # define N_CFI_REGS 66

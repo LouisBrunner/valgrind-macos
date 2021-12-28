@@ -330,6 +330,20 @@ load_genericthread(struct thread_command *threadcmd, int type,
          return 0;
       }
 
+#elif defined(VGA_arm64)
+      if (flavor == ARM_THREAD_STATE64 && count == ARM_THREAD_STATE64_COUNT){
+         arm_thread_state64_t *state = (arm_thread_state64_t *)p;
+         out_info->entry = (vki_uint8_t *)state->__pc;
+         if (type == LC_UNIXTHREAD) {
+            out_info->stack_end =
+              (vki_uint8_t *)(state->__sp ? state->__sp : VKI_USRSTACK64);
+            vg_assert(VG_IS_PAGE_ALIGNED(out_info->stack_end));
+            out_info->stack_end--;
+         }
+         if (customstack) *customstack = state->__sp;
+         return 0;
+      }
+
 #else
 # error unknown platform
 #endif
@@ -721,6 +735,8 @@ load_fat_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
    good_arch = CPU_TYPE_I386;
 #elif defined(VGA_amd64)
    good_arch = CPU_TYPE_X86_64;
+#elif defined(VGA_arm64)
+   good_arch = CPU_TYPE_ARM64;
 #else
 # error unknown architecture
 #endif
@@ -865,4 +881,3 @@ Int VG_(load_macho)(Int fd, const HChar *name, ExeInfo *info)
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
-

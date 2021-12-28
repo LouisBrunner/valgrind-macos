@@ -116,7 +116,6 @@ typedef uint32_t vki_u32;
 #define vki_itimerval itimerval
 #define vki_timezone timezone
 
-
 #include <sys/stat.h>
 
 #define	VKI_S_ISBLK(m)	S_ISBLK(m)
@@ -1124,6 +1123,15 @@ struct ByteRangeLockPB2
 
 //#define vki_errno_t
 typedef int vki_errno_t;
+
+
+// FIXME: massive hack to ensure we get stat64/statfs64 defined
+// as the 64 version of the stat syscalls are deprecated,
+// this could break at any time.
+#if __DARWIN_ONLY_64_BIT_INO_T
+struct stat64 __DARWIN_STRUCT_STAT64;
+struct statfs64 __DARWIN_STRUCT_STATFS64;
+#endif
 
 
 /* necp stuff.  This doesn't appear to exist in any user space include

@@ -1274,7 +1274,210 @@ VG_(trampoline_stuff_end):
 #else
 #if defined(VGP_arm64_darwin)
 
-#error unimplemented
+#       define UD2_4      .word 0xFFFFFFFF
+#	define UD2_16     UD2_4    ; UD2_4    ; UD2_4    ; UD2_4
+#	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
+#	define UD2_256    UD2_64   ; UD2_64   ; UD2_64   ; UD2_64
+#	define UD2_1024   UD2_256  ; UD2_256  ; UD2_256  ; UD2_256
+#	define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024
+
+	/* a leading page of unexecutable code */
+	UD2_PAGE
+
+.global VG_(trampoline_stuff_start)
+VG_(trampoline_stuff_start):
+
+.global VG_(arm64_darwin_SUBST_FOR_sigreturn)
+VG_(arm64_darwin_SUBST_FOR_sigreturn):
+  /* XXX does this need to have any special form? (cf x86-linux version) */
+  ldr x16, =__NR_DARWIN_FAKE_SIGRETURN
+  svc 0x80
+  .long 0xFFFFFFFF /*illegal insn*/
+
+.global VG_(arm64_darwin_REDIR_FOR_strlen)
+VG_(arm64_darwin_REDIR_FOR_strlen):
+// From arm64-linux
+	mov	x2, x0
+	ldrb	w0, [x0]
+	cbz	w0, .L5
+	mov	x0, 0
+.L4:
+	add	x0, x0, 1
+	ldrb	w1, [x2,x0]
+	cbnz	w1, .L4
+	ret
+.L5:
+	mov	x0, 0
+	ret
+
+.globl VG_(arm64_darwin_REDIR_FOR_strcat)
+VG_(arm64_darwin_REDIR_FOR_strcat):
+; 	movq	%rdi, %rdx
+; 	jmp	1f
+; 0:
+; 	incq	%rdx
+; 1:
+; 	cmpb	$0, (%rdx)
+; 	jne	0b
+; 2:
+; 	movzbl	(%rsi), %eax
+; 	incq	%rsi
+; 	movb	%al, (%rdx)
+; 	incq	%rdx
+; 	testb	%al, %al
+; 	jne	2b
+; 	movq	%rdi, %rax
+; 	ret
+
+
+.globl VG_(arm64_darwin_REDIR_FOR_strcmp)
+VG_(arm64_darwin_REDIR_FOR_strcmp):
+; 	jmp	1f
+; 0:
+; 	incq	%rdi
+; 	incq	%rsi
+; 1:
+; 	movzbl	(%rdi), %eax
+; 	testb	%al, %al
+; 	je	2f
+; 	cmpb	(%rsi), %al
+; 	je	0b
+; 2:
+; 	movzbl	(%rsi), %edx
+; 	movzbl	%al, %eax
+; 	subl	%edx, %eax
+; 	ret
+// From arm64-linux
+  ldrb    w2, [x0]
+  ldrb    w3, [x1]
+  cmp     w2, w3
+  bcc     .L22
+.L21:
+  bhi     .L25
+  cbz     w2, .L26
+  ldrb    w2, [x0,1]!
+  ldrb    w3, [x1,1]!
+  cmp     w2, w3
+  bcs     .L21
+.L22:
+  mov     x0, -1
+  ret
+.L25:
+  mov     x0, 1
+  ret
+.L26:
+  mov     x0, 0
+  ret
+
+.globl VG_(arm64_darwin_REDIR_FOR_strcpy)
+VG_(arm64_darwin_REDIR_FOR_strcpy):
+; 	pushq	%rbp
+; 	movq	%rdi, %rdx
+; 	movq	%rsp, %rbp
+; 	jmp	1f
+; 0:
+; 	incq	%rsi
+; 	incq	%rdx
+; 1:
+; 	movzbl	(%rsi), %eax
+; 	testb	%al, %al
+; 	movb	%al, (%rdx)
+; 	jne	0b
+; 	leave
+; 	movq	%rdi, %rax
+; 	ret
+
+.globl VG_(arm64_darwin_REDIR_FOR_strlcat)
+VG_(arm64_darwin_REDIR_FOR_strlcat):
+; 	pushq	%rbp
+; 	leaq	(%rdx,%rdi), %rax
+; 	movq	%rdi, %rcx
+; 	movq	%rsp, %rbp
+; 	pushq	%rbx
+; 	subq	$8, %rsp
+; 	jmp	1f
+; 0:
+; 	incq	%rcx
+; 1:
+; 	cmpq	%rcx, %rax
+; 	je	2f
+; 	cmpb	$0, (%rcx)
+; 	jne	0b
+; 2:
+; 	movq	%rcx, %rbx
+; 	subq	%rdi, %rbx
+; 	movq	%rdx, %rdi
+; 	subq	%rbx, %rdi
+; 	je	3f
+; 	movq	%rsi, %rax
+; 	jmp	6f
+; 3:
+; 	movq	%rsi, %rdi
+; 	call	VG_(arm64_darwin_REDIR_FOR_strlen)
+; 	jmp	7f
+; 4:
+; 	cmpq	$1, %rdi
+; 	je	5f
+; 	movb	%dl, (%rcx)
+; 	decq	%rdi
+; 	incq	%rcx
+; 5:
+; 	incq	%rax
+; 6:
+; 	movzbl	(%rax), %edx
+; 	testb	%dl, %dl
+; 	jne	4b
+; 	movb	$0, (%rcx)
+; 	subq	%rsi, %rax
+; 7:
+; 	leaq	(%rbx,%rax), %rax
+; 	addq	$8, %rsp
+; 	popq	%rbx
+; 	leave
+; 	ret
+
+.globl VG_(arm64_darwin_REDIR_FOR_arc4random)
+VG_(arm64_darwin_REDIR_FOR_arc4random):
+	/* not very random, hope dyld won't mind */
+	ldr	x0, =0x76616c6772696e64
+	ret
+
+.globl VG_(arm64_darwin_REDIR_FOR_strchr)
+VG_(arm64_darwin_REDIR_FOR_strchr):
+;         pushq   %rbp
+;         movq    %rsp, %rbp
+;         movb    (%rdi), %cl
+;         cmpb    %sil, %cl
+;         jne     1f
+;         movq    %rdi, %rax
+;         popq    %rbp
+;         ret
+; 1:
+;         testb   %cl, %cl
+;         movl    $0, %eax
+;         je      2f
+;         movb    1(%rdi), %cl
+;         incq    %rdi
+;         cmpb    %sil, %cl
+;         movq    %rdi, %rax
+;         jne     1b
+; 2:
+;         popq    %rbp
+;         ret
+
+.global VG_(trampoline_stuff_end)
+VG_(trampoline_stuff_end):
+
+	/* and a trailing page of unexecutable code */
+	UD2_PAGE
+
+#	undef UD2_4
+#	undef UD2_16
+#	undef UD2_64
+#	undef UD2_256
+#	undef UD2_1024
+#	undef UD2_PAGE
+
 
 /*---------------- s390x-linux ----------------*/
 #else
@@ -1709,6 +1912,7 @@ VG_(trampoline_stuff_end):
 #else
 #  error Unknown platform
 
+#endif
 #endif
 #endif
 #endif

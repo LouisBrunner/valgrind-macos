@@ -180,7 +180,7 @@ void arm64g_dirtyhelper_SHA256SU1 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
 //ZZ 
 //ZZ #define ARMG_CC_MASK_N    (1 << ARMG_CC_SHIFT_N)
 //ZZ #define ARMG_CC_MASK_Z    (1 << ARMG_CC_SHIFT_Z)
-//ZZ #define ARMG_CC_MASK_C    (1 << ARMG_CC_SHIFT_C)
+#define ARM64G_CC_MASK_C    (1 << ARM64G_CC_SHIFT_C)
 //ZZ #define ARMG_CC_MASK_V    (1 << ARMG_CC_SHIFT_V)
 //ZZ #define ARMG_CC_MASK_Q    (1 << ARMG_CC_SHIFT_Q)
 

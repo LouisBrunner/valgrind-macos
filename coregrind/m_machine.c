@@ -1804,7 +1804,13 @@ Bool VG_(machine_get_hwcaps)( void )
 
      r = VG_(sigaction)(VKI_SIGILL, NULL, &saved_sigill_act);
      vg_assert(r == 0);
+#if defined(VGO_darwin)
+     tmp_sigill_act.ksa_handler = saved_sigill_act.ksa_handler;
+     tmp_sigill_act.sa_mask = saved_sigill_act.sa_mask;
+     tmp_sigill_act.sa_flags = saved_sigill_act.sa_flags;
+#else
      tmp_sigill_act = saved_sigill_act;
+#endif
 
      /* NODEFER: signal handler does not return (from the kernel's point of
         view), hence if it is to successfully catch a signal more than once,
@@ -1833,10 +1839,12 @@ Bool VG_(machine_get_hwcaps)( void )
 
      VG_(machine_get_cache_info)(&vai);
 
+#if !defined(VGO_darwin)
      /* Check whether we need to use the fallback LLSC implementation.
         If the check fails, give up. */
      if (! VG_(parse_cpuinfo)())
         return False;
+#endif
 
      /* 0 denotes 'not set'.  The range of legitimate values here,
         after being set that is, is 2 though 17 inclusive. */

@@ -3011,7 +3011,7 @@ UWord evalCfiExpr ( const XArray* exprs, Int ix,
             case Creg_MIPS_RA: return eec->uregs->ra;
 #           elif defined(VGA_ppc32) || defined(VGA_ppc64be) \
                || defined(VGA_ppc64le)
-#           elif defined(VGP_arm64_linux)
+#           elif defined(VGP_arm64_linux) || defined(VGP_arm64_darwin)
             case Creg_ARM64_SP: return eec->uregs->sp;
             case Creg_ARM64_X30: return eec->uregs->x30;
             case Creg_ARM64_X29: return eec->uregs->x29;
@@ -3279,7 +3279,7 @@ static Addr compute_cfa ( const D3UnwindRegs* uregs,
          cfa = cfsi_m->cfa_off + uregs->fp;
          break;
 #     elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
-#     elif defined(VGP_arm64_linux)
+#     elif defined(VGP_arm64_linux) || defined(VGP_arm64_darwin)
       case CFIC_ARM64_SPREL: 
          cfa = cfsi_m->cfa_off + uregs->sp;
          break;
@@ -3429,7 +3429,7 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
 #  elif defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_nanomips)
    ipHere = uregsHere->pc;
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
-#  elif defined(VGP_arm64_linux)
+#  elif defined(VGP_arm64_linux) || defined(VGP_arm64_darwin)
    ipHere = uregsHere->pc;
 #  else
 #    error "Unknown arch"
@@ -3571,7 +3571,7 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    COMPUTE(uregsPrev.sp, uregsHere->sp, cfsi_m->sp_how, cfsi_m->sp_off);
    COMPUTE(uregsPrev.fp, uregsHere->fp, cfsi_m->fp_how, cfsi_m->fp_off);
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
-#  elif defined(VGP_arm64_linux)
+#  elif defined(VGP_arm64_linux) || defined(VGP_arm64_darwin)
    COMPUTE(uregsPrev.pc,  uregsHere->pc,  cfsi_m->ra_how,  cfsi_m->ra_off);
    COMPUTE(uregsPrev.sp,  uregsHere->sp,  cfsi_m->sp_how,  cfsi_m->sp_off);
    COMPUTE(uregsPrev.x30, uregsHere->x30, cfsi_m->x30_how, cfsi_m->x30_off);

@@ -1813,6 +1813,27 @@ ULong LibVEX_GuestARM64_get_nzcv ( /*IN*/const VexGuestARM64State* vex_state )
 }
 
 /* VISIBLE TO LIBVEX CLIENT */
+void LibVEX_GuestARM64_put_nzcv_c ( /*MOD*/VexGuestARM64State* vex_state,
+                                    ULong new_carry_flag )
+{
+  ULong nzcv = arm64g_calculate_flags_nzcv(
+    vex_state->guest_CC_OP,
+    vex_state->guest_CC_DEP1,
+    vex_state->guest_CC_DEP2,
+    vex_state->guest_CC_NDEP
+  );
+  if (new_carry_flag & 1) {
+    nzcv |= ARM64G_CC_MASK_C;
+  } else {
+    nzcv &= ~ARM64G_CC_MASK_C;
+  }
+  vex_state->guest_CC_OP   = ARM64G_CC_OP_COPY;
+  vex_state->guest_CC_DEP1 = nzcv;
+  vex_state->guest_CC_DEP2 = 0;
+  vex_state->guest_CC_NDEP = 0;
+}
+
+/* VISIBLE TO LIBVEX CLIENT */
 ULong LibVEX_GuestARM64_get_fpsr ( const VexGuestARM64State* vex_state )
 {
    UInt w32 = vex_state->guest_QCFLAG[0] | vex_state->guest_QCFLAG[1]
@@ -1872,6 +1893,7 @@ void LibVEX_GuestARM64_initialise ( /*OUT*/VexGuestARM64State* vex_state )
 //ZZ    vex_state->guest_CMSTART = 0;
 //ZZ    vex_state->guest_CMLEN   = 0;
 //ZZ    vex_state->guest_NRADDR  = 0;
+//ZZ    vex_state->guest_SC_CLASS = 0;
 //ZZ    vex_state->guest_IP_AT_SYSCALL = 0;
 //ZZ 
 //ZZ    vex_state->guest_D0  = 0;
@@ -2003,7 +2025,7 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 9,
+          .n_alwaysDefd = 10,
 
           /* flags thunk: OP is always defd, whereas DEP1 and DEP2
              have to be tracked.  See detailed comment in gdefs.h on
@@ -2016,8 +2038,9 @@ VexGuestLayout
                  /* 4 */ ALWAYSDEFD(guest_CMSTART),
                  /* 5 */ ALWAYSDEFD(guest_CMLEN),
                  /* 6 */ ALWAYSDEFD(guest_NRADDR),
-                 /* 7 */ ALWAYSDEFD(guest_IP_AT_SYSCALL),
-                 /* 8 */ ALWAYSDEFD(guest_TPIDR_EL0)
+                 /* 7 */ ALWAYSDEFD(guest_SC_CLASS),
+                 /* 8 */ ALWAYSDEFD(guest_IP_AT_SYSCALL),
+                 /* 9 */ ALWAYSDEFD(guest_TPIDR_EL0)
                }
         };
 

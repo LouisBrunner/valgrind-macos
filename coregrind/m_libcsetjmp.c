@@ -36,9 +36,9 @@
 
 /* See include/pub_tool_libcsetjmp.h for background and rationale. */
 
-/* The alternative implementations are for ppc{32,64}-linux and
-   {amd64,x86}-{linux,darwin,solaris,freebsd}.  See #259977.  That leaves only
-   {arm,s390x}-linux using the gcc builtins now.
+/* The alternative implementations are for ppc{32,64}-linux,
+   {amd64,x86}-{linux,darwin,solaris,freebsd} and arm64-darwin.
+   See #259977.  That leaves only {arm,s390x}-linux using the gcc builtins now.
 */
 
 /* ------------ ppc32-linux ------------ */
@@ -375,6 +375,61 @@ __asm__(
 ".previous"  "\n"
 );
 #endif /* VGP_ppc64be_linux */
+
+
+/* ------------ arm64-darwin ------------ */
+
+#if defined(VGP_arm64_darwin)
+__asm__(
+".text\n"
+
+".globl _VG_MINIMAL_SETJMP"  "\n"
+"_VG_MINIMAL_SETJMP:"  "\n" // x0 = jmp_buf
+"        mov             x1, sp\n" /* can't STP from sp */
+"        stp             x19, x20,       [x0, #0x00]\n"
+"        stp             x21, x22,       [x0, #0x10]\n"
+"        stp             x23, x24,       [x0, #0x20]\n"
+"        stp             x25, x26,       [x0, #0x30]\n"
+"        stp             x27, x28,       [x0, #0x40]\n"
+"        stp             x29, lr,        [x0, #0x50]\n"
+"        stp             fp, x1,         [x0, #0x60]\n"
+"        stp             d8, d9,         [x0, #0x70]\n"
+"        stp             d10, d11,       [x0, #0x80]\n"
+"        stp             d12, d13,       [x0, #0x90]\n"
+"        stp             d14, d15,       [x0, #0xA0]\n"
+"        mov             x0, sp\n"
+"        str             x0,             [x0, #0xB0]\n"
+"        mov             x0, #0\n"
+"        ret\n"
+
+".globl _VG_MINIMAL_LONGJMP"  "\n"
+"_VG_MINIMAL_LONGJMP:"  "\n" // x0 = jmp_buf
+"        ldp             x19, x20,       [x0, #0x00]\n"
+"        ldp             x21, x22,       [x0, #0x10]\n"
+"        ldp             x23, x24,       [x0, #0x20]\n"
+"        ldp             x25, x26,       [x0, #0x30]\n"
+"        ldp             x27, x28,       [x0, #0x40]\n"
+"        ldp             x29, lr,        [x0, #0x50]\n"
+"        ldp             fp, x2,         [x0, #0x60]\n"
+"        ldp             d8, d9,         [x0, #0x70]\n"
+"        ldp             d10, d11,       [x0, #0x80]\n"
+"        ldp             d12, d13,       [x0, #0x90]\n"
+"        ldp             d14, d15,       [x0, #0xA0]\n"
+"        mov             sp, x2\n"
+"        ldr             x0,             [x0, #0xB0]\n"
+         // make sp look like we really did a return
+"        add             sp, sp, 8\n"
+         // continue at RA of original call.  Note: this is a
+         // nasty trick.  We assume that %rax is nonzero, and so the
+         // caller can differentiate this case from the normal _SETJMP
+         // return case.  If the return address ever is zero, then
+         // we're hosed; but that seems pretty unlikely given that it
+         // would mean we'd be executing at the wraparound point of the
+         // address space.
+"        br              x0\n"
+);
+
+#endif /* VGP_arm64_darwin */
 
 
 /* -------- amd64-{linux,darwin,solaris,freebsd} -------- */

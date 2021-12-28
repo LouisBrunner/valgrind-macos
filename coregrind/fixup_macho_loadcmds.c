@@ -103,14 +103,14 @@
 
 #undef PLAT_x86_darwin
 #undef PLAT_amd64_darwin
-#undef PLAT_aarch64_darwin
+#undef PLAT_arm64_darwin
 
 #if defined(__APPLE__) && defined(__i386__)
 #  define PLAT_x86_darwin 1
 #elif defined(__APPLE__) && defined(__x86_64__)
 #  define PLAT_amd64_darwin 1
 #elif defined(__APPLE__) && defined(__aarch64__)
-#  define PLAT_aarch64_darwin 1
+#  define PLAT_arm64_darwin 1
 #else
 #  error "Can't be compiled on this platform"
 #endif
@@ -118,7 +118,12 @@
 #include <mach-o/loader.h>
 #include <mach-o/nlist.h>
 #include <mach-o/fat.h>
+
+#ifdef PLAT_arm64_darwin
+# include <mach/arm/thread_status.h>
+#else
 #include <mach/i386/thread_status.h>
+#endif
 
 /* Get hold of DARWIN_VERS, and check it has a sane value. */
 #include "config.h"
@@ -463,13 +468,22 @@ void modify_macho_loadcmds ( HChar* filename,
             UInt* w32s = (UInt*)( (UChar*)tcmd + sizeof(*tcmd) );
             if (DEBUGPRINTING)
                printf("UnixThread: flavor %u = ", w32s[0]);
+#ifdef PLAT_arm64_darwin
+            if (w32s[0] == ARM_THREAD_STATE64 && !have_rsp) {
+               if (DEBUGPRINTING)
+                  printf("ARM_THREAD_STATE64\n");
+               arm_thread_state64_t* state64
+                  = (arm_thread_state64_t*)(&w32s[2]);
+               init_rsp = state64->__sp;
+#else
             if (w32s[0] == x86_THREAD_STATE64 && !have_rsp) {
                if (DEBUGPRINTING)
                   printf("x86_THREAD_STATE64\n");
                x86_thread_state64_t* state64
                   = (x86_thread_state64_t*)(&w32s[2]);
-               have_rsp = True;
                init_rsp = state64->__rsp;
+#endif
+               have_rsp = True;
                if (DEBUGPRINTING)
                   printf("rsp = 0x%llx\n", init_rsp);
             } else {

@@ -172,6 +172,12 @@ SysRes VG_(am_do_mmap_NO_NOTIFY)( Addr start, SizeT length, UInt prot,
    }
    res = VG_(do_syscall6)(__NR_mmap, (UWord)start, length,
                           prot, flags, (UInt)fd, offset);
+#  elif defined(VGP_arm64_darwin)
+   if (fd == 0  &&  (flags & VKI_MAP_ANONYMOUS)) {
+       fd = -1;  // MAP_ANON with fd==0 is EINVAL
+   }
+   res = VG_(do_syscall6)(__NR_mmap, (UWord)start, length,
+                          prot, flags, (UInt)fd, offset);
 #  elif defined(VGP_x86_freebsd)
    if (flags & VKI_MAP_ANONYMOUS && fd == 0)
       fd = -1;

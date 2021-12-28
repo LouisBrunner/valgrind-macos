@@ -140,7 +140,8 @@
         (srP)->misc.ARM.r11 = block[4];                   \
         (srP)->misc.ARM.r7  = block[5];                   \
       }
-#elif defined(VGP_arm64_linux)
+// TODO: might be wrong
+#elif defined(VGP_arm64_linux) || defined(VGP_arm64_darwin)
 #  define GET_STARTREGS(srP)                              \
       { ULong block[4];                                   \
         __asm__ __volatile__(                             \

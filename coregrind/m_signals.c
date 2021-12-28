@@ -518,6 +518,63 @@ VgHashTable *ht_sigchld_ignore = NULL;
       srP->misc.AMD64.r_rbp = (ULong)(ss->__rbp);
    }
 
+#elif defined(VGP_arm64_darwin)
+
+   static inline Addr VG_UCONTEXT_INSTR_PTR( void* ucV ) {
+      ucontext_t* uc = (ucontext_t*)ucV;
+      struct __darwin_mcontext64* mc = uc->uc_mcontext;
+      struct __darwin_arm_thread_state64* ss = &mc->__ss;
+      return ss->__pc;
+   }
+   static inline Addr VG_UCONTEXT_STACK_PTR( void* ucV ) {
+      ucontext_t* uc = (ucontext_t*)ucV;
+      struct __darwin_mcontext64* mc = uc->uc_mcontext;
+      struct __darwin_arm_thread_state64* ss = &mc->__ss;
+      return ss->__sp;
+   }
+   static inline SysRes VG_UCONTEXT_SYSCALL_SYSRES( void* ucV,
+                                                    UWord scclass ) {
+      /* This is copied from the x86-darwin case.  I'm not sure if it
+	 is correct. */
+      ucontext_t* uc = (ucontext_t*)ucV;
+      struct __darwin_mcontext64* mc = uc->uc_mcontext;
+      struct __darwin_arm_thread_state64* ss = &mc->__ss;
+      /* duplicates logic in m_syswrap.getSyscallStatusFromGuestState */
+      ULong carry = (1 << 29) & ss->__cpsr;
+      ULong err = 0;
+      ULong wLO = 0;
+      ULong wHI = 0;
+      switch (scclass) {
+         case VG_DARWIN_SYSCALL_CLASS_UNIX:
+            err = carry;
+            wLO = ss->__x[0];
+            wHI = ss->__x[1];
+            break;
+         case VG_DARWIN_SYSCALL_CLASS_MACH:
+            wLO = ss->__x[0];
+            break;
+         case VG_DARWIN_SYSCALL_CLASS_MDEP:
+            wLO = ss->__x[0];
+            break;
+         default:
+            vg_assert(0);
+            break;
+      }
+      return VG_(mk_SysRes_arm64_darwin)( scclass, err ? True : False,
+					  wHI, wLO );
+   }
+   static inline
+   void VG_UCONTEXT_TO_UnwindStartRegs( UnwindStartRegs* srP,
+                                        void* ucV ) {
+      ucontext_t* uc = (ucontext_t*)ucV;
+      struct __darwin_mcontext64* mc = uc->uc_mcontext;
+      struct __darwin_arm_thread_state64* ss = &mc->__ss;
+      srP->r_pc = (ULong)(ss->__pc);
+      srP->r_sp = (ULong)(ss->__sp);
+      srP->misc.ARM64.x29 = ss->__fp;
+      srP->misc.ARM64.x30 = ss->__lr;
+   }
+
 #elif defined(VGP_x86_freebsd)
 #  define VG_UCONTEXT_INSTR_PTR(uc)       ((UWord)(uc)->uc_mcontext.eip)
 #  define VG_UCONTEXT_STACK_PTR(uc)       ((UWord)(uc)->uc_mcontext.esp)
@@ -1005,6 +1062,15 @@ extern void my_sigreturn(void);
    "    svc  0x0\n" \
    ".previous\n"
 
+#elif defined(VGP_arm64_darwin)
+#  define _MY_SIGRETURN(name) \
+   ".text\n" \
+   ".globl my_sigreturn\n" \
+   "my_sigreturn:\n\t" \
+   "    ldr  x16, =" VG_STRINGIFY(__NR_DARWIN_FAKE_SIGRETURN) "\n\t" \
+   "    svc  0x80\n" \
+   ".previous\n"
+
 #elif defined(VGP_x86_darwin)
 #  define _MY_SIGRETURN(name) \
    ".text\n" \
@@ -1109,9 +1175,8 @@ static void handle_SCSS_change ( Bool force_update )
 
       ksa.ksa_handler = skss.skss_per_sig[sig].skss_handler;
       ksa.sa_flags    = skss.skss_per_sig[sig].skss_flags;
-#     if !defined(VGP_ppc32_linux) && \
-         !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin) && \
-         !defined(VGP_mips32_linux) && !defined(VGO_solaris) && !defined(VGO_freebsd)
+#     if !defined(VGP_ppc32_linux) && !defined(VGP_mips32_linux) && \
+         !defined(VGO_darwin) && !defined(VGO_solaris) && !defined(VGO_freebsd)
       ksa.sa_restorer = my_sigreturn;
 #     endif
       /* Re above ifdef (also the assertion below), PaulM says:
@@ -1155,8 +1220,7 @@ static void handle_SCSS_change ( Bool force_update )
 #        endif
          vg_assert(ksa_old.sa_flags 
                    == skss_old.skss_per_sig[sig].skss_flags);
-#        if !defined(VGP_ppc32_linux) && \
-            !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin) && \
+#        if !defined(VGP_ppc32_linux) && !defined(VGO_darwin) && \
             !defined(VGP_mips32_linux) && !defined(VGP_mips64_linux) && \
             !defined(VGP_nanomips_linux) && !defined(VGO_solaris) && \
             !defined(VGO_freebsd)

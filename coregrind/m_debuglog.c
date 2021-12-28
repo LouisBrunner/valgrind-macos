@@ -393,6 +393,41 @@ static UInt local_sys_getpid ( void )
    return __res;
 }
 
+#elif defined(VGP_arm64_darwin)
+
+__attribute__((noinline))
+static UInt local_sys_write_stderr ( const HChar* buf, Int n )
+{
+   UInt __res;
+   __asm__ volatile (
+      "mov  x0, #2\n"        /* push stderr */
+      "ldr  x1, %[buf]\n"    /* push buf */
+      "ldr  x2, %[n]\n"      /* push n */
+      "ldr  x16, ="VG_STRINGIFY(VG_DARWIN_SYSNO_FOR_KERNEL(__NR_write_nocancel))"\n"
+      "svc  0x80\n"          /* write(stderr, buf, n) */
+      "bcc  1f\n"
+      "mov  x0, -1\n"        /* set status to -1 if less than 1 byte written */
+      "1: \n"
+      "str  x0, %[result]\n" /* __res = eax */
+      : [result] "=mr" (__res)
+      : [buf] "g" (buf), [n] "g" (n)
+      : "x8", "x0", "x1", "x2", "cc" );
+   return __res;
+}
+
+static UInt local_sys_getpid ( void )
+{
+   UInt __res;
+   __asm__ volatile (
+      "ldr x16, ="VG_STRINGIFY(VG_DARWIN_SYSNO_FOR_KERNEL(__NR_getpid))"\n"
+      "svc 0x80\n"             /* getpid() */
+      "str x0, %[result]\n"    /* set __res = eax */
+      : [result] "=mr" (__res)
+      :
+      : "x8", "x0", "cc" );
+   return __res;
+}
+
 #elif defined(VGP_s390x_linux)
 
 static UInt local_sys_write_stderr ( const HChar* buf, Int n )

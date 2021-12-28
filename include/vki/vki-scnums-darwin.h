@@ -103,7 +103,7 @@
     :  VG_DARWIN_SYSNO_INDEX(sysno) \
     )
 
-#elif defined(VGA_amd64)
+#elif defined(VGA_amd64) || defined(VGA_arm64)
    // For 64-bit systems, we don't need to do anything to the syscall number.
 #  define VG_DARWIN_SYSNO_FOR_KERNEL(sysno) (sysno)
 
@@ -132,6 +132,14 @@
 // 0, 1, 2 are invalid
 #define __NR_thread_fast_set_cthread_self VG_DARWIN_SYSCALL_CONSTRUCT_MDEP(3)
 // 4, 5, 6 are invalid
+
+#elif defined(VGA_arm64)
+
+// 0 icache flush
+// 1 dcache flush
+#define __NR_thread_set_cthread_self VG_DARWIN_SYSCALL_CONSTRUCT_MDEP(2)
+// 3 get thread
+// others are invalid
 
 #else
 #  error unknown architecture

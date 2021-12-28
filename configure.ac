@@ -209,9 +209,9 @@ AM_COND_IF([VGCONF_OS_IS_DARWIN],
 
   darwin_sdk="$darwin_platform$darwin_version"
   if test "x$XCRUN" != "xno"; then
-    if test "x$darwin_version" != ""; then
+    if test "x$darwin_version" != "x"; then
         if test x`xcrun --sdk $darwin_sdk --show-sdk-version` != x$darwin_version; then
-            AC_MSG_ERROR([Couldn't find SDK for $darwin_sdk (check 'xcodebuild -showsdks' for available ones)])
+            AC_MSG_ERROR([Couldn't find SDK for $darwin_sdk version $darwin_version (check 'xcodebuild -showsdks' for available ones)])
         fi
     fi
 

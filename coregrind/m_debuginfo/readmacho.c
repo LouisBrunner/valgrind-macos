@@ -202,6 +202,8 @@ static DiSlice map_image_aboard ( DebugInfo* di, /* only for err msgs */
          Int cputype = CPU_TYPE_X86;
 #        elif defined(VGA_amd64)
          Int cputype = CPU_TYPE_X86_64;
+#        elif defined(VGA_arm64)
+         Int cputype = CPU_TYPE_ARM64;
 #        else
 #          error "unknown architecture"
 #        endif

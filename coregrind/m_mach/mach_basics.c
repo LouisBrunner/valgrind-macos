@@ -40,6 +40,7 @@ extern mach_port_name_t thread_self_trap(void);
 extern mach_port_t mach_reply_port(void);
 
 /* Global variables set in mach_init() */
+int vm_page_shift = 0;
 vm_size_t vm_page_size = 0;
 mach_port_name_t mach_task_self_ = 0;
 
@@ -85,6 +86,9 @@ void VG_(mach_init)(void)
 
     // GrP fixme host_page_size(host_self_trap(), &vm_page_size);
     vm_page_size = 4096;
+
+    // FIXME: stored in COMM_PAGE + 0x025, (1 << 12) = 4096
+    vm_page_shift = 12;
 }
 
 #endif // defined(VGO_darwin) 

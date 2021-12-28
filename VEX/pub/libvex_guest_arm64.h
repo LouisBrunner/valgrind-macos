@@ -144,6 +144,9 @@ typedef
          replace-style ones. */
       ULong guest_NRADDR;
 
+      /* Used for Darwin syscall dispatching. */
+      ULong guest_SC_CLASS;
+
       /* Needed for Darwin (but mandated for all guest architectures):
          program counter at the last syscall insn (int 0x80/81/82,
          sysenter, syscall, svc).  Used when backing up to restart a
@@ -189,6 +192,12 @@ void LibVEX_GuestARM64_initialise ( /*OUT*/VexGuestARM64State* vex_state );
 extern
 ULong LibVEX_GuestARM64_get_nzcv ( /*IN*/
                                    const VexGuestARM64State* vex_state );
+
+/* Set the carry flag in the given state to 'new_carry_flag', which
+   should be zero or one. */
+extern
+void LibVEX_GuestARM64_put_nzcv_c ( /*MOD*/VexGuestARM64State* vex_state,
+                                    ULong new_carry_flag );
 
 /* Calculate the ARM64 FPSR state from the saved data, in the format
    36x0:qc:27x0 */

@@ -981,11 +981,11 @@ asm(".private_extern _do_syscall_unix_WRK\n"
     "_do_syscall_unix_WRK:\n"
     "        ldr     x8, [sp, #16]    \n"  /* assume syscall success */
     "        str     xzr, [x8]        \n"
-    "        ldr     x8, [sp, #8]     \n"  /* load syscall_no */
+    "        ldr     x16, [sp, #8]    \n"  /* load syscall_no */
     "        svc     0x80             \n"
     "        bcc     1f               \n"  /* jump if success */
     "        ldr     x9, [sp, #16]    \n"  /* syscall failed - set *errflag */
-    "        mov     x10, #1          \n"  /* syscall failed - set *errflag */
+    "        mov     x10, #1          \n"
     "        str     x10, [x9]        \n"
     "    1:  ldr     x9, [sp, #24]    \n"  /* save 2nd result word */
     "        str     x1, [x9]         \n"
@@ -1000,8 +1000,8 @@ do_syscall_mach_WRK ( UWord a1, UWord a2, UWord a3, /* x0, x1, x2 */
 // Mach trap: 64-bit result, no error flag
 asm(".private_extern _do_syscall_mach_WRK\n"
     "_do_syscall_mach_WRK:\n"
-    "        ldr     x8, [sp, #8]     \n"  /* load syscall_no */
-    "        svc #0                   \n"
+    "        ldr     x16, [sp, #8]    \n"  /* load syscall_no */
+    "        svc     0x80             \n"
     "        ret                      \n"
     );
 

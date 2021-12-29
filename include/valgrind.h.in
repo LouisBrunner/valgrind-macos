@@ -110,6 +110,7 @@
 */
 #undef PLAT_x86_darwin
 #undef PLAT_amd64_darwin
+#undef PLAT_arm64_darwin
 #undef PLAT_x86_freebsd
 #undef PLAT_amd64_freebsd
 #undef PLAT_x86_win32
@@ -133,6 +134,8 @@
 #  define PLAT_x86_darwin 1
 #elif defined(__APPLE__) && defined(__x86_64__)
 #  define PLAT_amd64_darwin 1
+#elif defined(__APPLE__) && defined(__aarch64__)
+#  define PLAT_arm64_darwin 1
 #elif defined(__FreeBSD__) && defined(__i386__)
 #  define PLAT_x86_freebsd 1
 #elif defined(__FreeBSD__) && defined(__amd64__)
@@ -768,9 +771,9 @@ typedef
 
 #endif /* PLAT_arm_linux */
 
-/* ------------------------ arm64-linux ------------------------- */
+/* -------------------- arm64-{linux,darwin} -------------------- */
 
-#if defined(PLAT_arm64_linux)
+#if defined(PLAT_arm64_linux) || defined(PLAT_arm64_darwin)
 
 typedef
    struct { 
@@ -4281,19 +4284,26 @@ typedef
 
 #endif /* PLAT_arm_linux */
 
-/* ------------------------ arm64-linux ------------------------ */
+/* -------------------- arm64-{linux,darwin} -------------------- */
 
-#if defined(PLAT_arm64_linux)
+#if defined(PLAT_arm64_linux) || defined(PLAT_arm64_darwin)
+
+// x18 is reserved by Apple and cannot be used (lots of warnings otherwise)
+#if defined(PLAT_arm64_darwin)
+#define __CALLER_SAVED_REGS_SPECIAL
+#else
+#define __CALLER_SAVED_REGS_SPECIAL , "x18"
+#endif
 
 /* These regs are trashed by the hidden call. */
 #define __CALLER_SAVED_REGS \
      "x0", "x1", "x2", "x3","x4", "x5", "x6", "x7", "x8", "x9",   \
      "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17",      \
-     "x18", "x19", "x20", "x30",                                  \
+     "x19", "x20", "x30",                                  \
      "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9",  \
      "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17",      \
      "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25",      \
-     "v26", "v27", "v28", "v29", "v30", "v31"
+     "v26", "v27", "v28", "v29", "v30", "v31" __CALLER_SAVED_REGS_SPECIAL
 
 /* x21 is callee-saved, so we can use it to save and restore SP around
    the hidden call. */
@@ -7147,6 +7157,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 
 #undef PLAT_x86_darwin
 #undef PLAT_amd64_darwin
+#undef PLAT_arm64_darwin
 #undef PLAT_x86_win32
 #undef PLAT_amd64_win64
 #undef PLAT_x86_linux

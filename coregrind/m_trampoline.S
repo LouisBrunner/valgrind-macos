@@ -1328,6 +1328,8 @@ VG_(arm64_darwin_REDIR_FOR_strcat):
 ; 	jne	2b
 ; 	movq	%rdi, %rax
 ; 	ret
+  // FIXME: MISSING IMPLEMENTATION
+  ret
 
 
 .globl VG_(arm64_darwin_REDIR_FOR_strcmp)
@@ -1386,6 +1388,8 @@ VG_(arm64_darwin_REDIR_FOR_strcpy):
 ; 	leave
 ; 	movq	%rdi, %rax
 ; 	ret
+  // FIXME: MISSING IMPLEMENTATION
+  ret
 
 .globl VG_(arm64_darwin_REDIR_FOR_strlcat)
 VG_(arm64_darwin_REDIR_FOR_strlcat):
@@ -1435,6 +1439,9 @@ VG_(arm64_darwin_REDIR_FOR_strlcat):
 ; 	popq	%rbx
 ; 	leave
 ; 	ret
+  // FIXME: MISSING IMPLEMENTATION
+  mov x0, 0
+  ret
 
 .globl VG_(arm64_darwin_REDIR_FOR_arc4random)
 VG_(arm64_darwin_REDIR_FOR_arc4random):
@@ -1464,6 +1471,9 @@ VG_(arm64_darwin_REDIR_FOR_strchr):
 ; 2:
 ;         popq    %rbp
 ;         ret
+  // FIXME: MISSING IMPLEMENTATION
+  mov x0, 0
+  ret
 
 .global VG_(trampoline_stuff_end)
 VG_(trampoline_stuff_end):

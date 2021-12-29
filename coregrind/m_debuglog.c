@@ -401,17 +401,17 @@ static UInt local_sys_write_stderr ( const HChar* buf, Int n )
    UInt __res;
    __asm__ volatile (
       "mov  x0, #2\n"        /* push stderr */
-      "ldr  x1, %[buf]\n"    /* push buf */
-      "ldr  x2, %[n]\n"      /* push n */
+      "mov  x1, %[buf]\n"    /* push buf */
+      "mov  x2, %[n]\n"      /* push n */
       "ldr  x16, ="VG_STRINGIFY(VG_DARWIN_SYSNO_FOR_KERNEL(__NR_write_nocancel))"\n"
       "svc  0x80\n"          /* write(stderr, buf, n) */
       "bcc  1f\n"
       "mov  x0, -1\n"        /* set status to -1 if less than 1 byte written */
       "1: \n"
-      "str  x0, %[result]\n" /* __res = eax */
-      : [result] "=mr" (__res)
-      : [buf] "g" (buf), [n] "g" (n)
-      : "x8", "x0", "x1", "x2", "cc" );
+      "mov  %[result], x0\n" /* __res = x0 */
+      : [result] "=X" (__res)
+      : [buf] "X" (buf), [n] "X" (n)
+      : "x16", "x0", "x1", "x2", "cc" );
    return __res;
 }
 
@@ -421,10 +421,10 @@ static UInt local_sys_getpid ( void )
    __asm__ volatile (
       "ldr x16, ="VG_STRINGIFY(VG_DARWIN_SYSNO_FOR_KERNEL(__NR_getpid))"\n"
       "svc 0x80\n"             /* getpid() */
-      "str x0, %[result]\n"    /* set __res = eax */
-      : [result] "=mr" (__res)
+      "mov %[result], x0\n"    /* set __res = x0 */
+      : [result] "=X" (__res)
       :
-      : "x8", "x0", "cc" );
+      : "x16", "x0", "cc" );
    return __res;
 }
 

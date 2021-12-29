@@ -60,6 +60,7 @@ static struct {
    { CPU_TYPE_X86,       "i386",   "x86" },
    { CPU_TYPE_X86_64,    "x86_64", "amd64" },
    { CPU_TYPE_ARM,       "arm",    "arm" },
+   { CPU_TYPE_ARM64,     "arm64",  "arm64" },
    /* Not that it's actually relevant, since we don't support PPC on
       MacOS X, but .. the Apple PPC descriptors refer to the BE
       variant, since the LE variant is something that appeared long

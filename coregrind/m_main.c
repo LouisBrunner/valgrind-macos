@@ -3155,39 +3155,32 @@ asm("\n"
     "\tint $3\n"
 );
 #elif defined(VGP_arm64_darwin)
-// asm("\n"
-//     ".text\n"
-//     "\t.globl __start\n"
-//     ".align 3,0xD503201F\n"
-//     "__start:\n"
-//     /* set up the new stack in x0 */
-//     // "\tadrp x0, _vgPlain_interim_stack@PAGE\n"
-//     // "\tadd  x0, x0, _vgPlain_interim_stack@PAGEOFF\n"
-//     // "\tldr  x1, ="VG_STRINGIFY(VG_STACK_GUARD_SZB)"\n"
-//     // "\tadd  x0, x0, x1\n"
-//     // "\tldr  x1, ="VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)"\n"
-//     // "\tadd  x0, x0, x1\n"
-//     // "\tand  x0, x0, -16\n"
+asm("\n"
+    ".text\n"
+    "\t.globl __start\n"
+    // ".align 3,0xD503201F\n"
+    "__start:\n"
+    /* set up the new stack in x0 */
+    "\tadrp x0, _vgPlain_interim_stack@PAGE\n"
+    "\tadd  x0, x0, _vgPlain_interim_stack@PAGEOFF\n"
+    "\tldr  x1, ="VG_STRINGIFY(VG_STACK_GUARD_SZB)"\n"
+    "\tadd  x0, x0, x1\n"
+    "\tldr  x1, ="VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)"\n"
+    "\tadd  x0, x0, x1\n"
+    "\tand  x0, x0, -16\n"
 
-//     // /* install it, and collect the original one */
-//     // "\tmov  x1, sp\n"
-//     // "\tmov  sp, x0\n"
-//     // "\tmov  x0, x1\n"
+    /* install it, and collect the original one */
+    "\tmov  x1, sp\n"
+    "\tmov  sp, x0\n"
+    "\tmov  x0, x1\n"
 
-//     // /* call _start_in_C_darwin, passing it the startup sp */
-//     // "\tb  __start_in_C_darwin\n"
+    /* call _start_in_C_darwin, passing it the startup sp */
+    "\tb    __start_in_C_darwin\n"
 
-//     // // Not sure if this is right?
-//     // "\tudf #0\n"
-//     // "\tudf #0\n"
-//     "mov x0, 1\n"
-//     "mov x16, 1\n"
-//     "svc #0\n"
-// );
-void VG_(do_syscall)();
-void _start() {
-  VG_(do_syscall)(1,42,0,0,0,0,0,0,0);
-}
+    // Not sure if this is right?
+    "\tudf  #0\n"
+    "\tudf  #0\n"
+);
 #else
 #error missing architecture
 #endif

@@ -1065,8 +1065,8 @@ case "$ARCH_MAX-$VGCONF_OS" in
            VGCONF_ARCH_SEC=""
 	   VGCONF_PLATFORM_PRI_CAPS="ARM64_DARWIN"
 	   VGCONF_PLATFORM_SEC_CAPS=""
-           valt_load_address_pri_norml="0x18b000000"
-           valt_load_address_pri_inner="0x16b000000"
+           valt_load_address_pri_norml="0x16FE00000"
+           valt_load_address_pri_inner="0x14FE00000"
 	if test x$vg_cv_only32bit = xyes; then
     AC_MSG_RESULT([32-bit build with Darwin arm64 (aach64) is unsupported])
 	fi

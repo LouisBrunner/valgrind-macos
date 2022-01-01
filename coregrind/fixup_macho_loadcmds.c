@@ -90,7 +90,7 @@
    SVMA to zero.  Seems to work and have no obvious bad side effects.
 */
 
-#define DEBUGPRINTING 0
+#define DEBUGPRINTING 1
 
 #include <assert.h>
 #include <stdlib.h>
@@ -313,7 +313,7 @@ static Int map_image_aboard ( /*OUT*/ImageInfo* ii, HChar* filename )
 #          elif defined(PLAT_amd64_darwin)
            cputype = CPU_TYPE_X86_64;
 #          elif defined(PLAT_arm64_darwin)
-           cputype = CPU_TYPE_ARM;
+           cputype = CPU_TYPE_ARM64;
 #          else
 #            error "unknown architecture"
 #          endif
@@ -452,6 +452,42 @@ void modify_macho_loadcmds ( HChar* filename,
                if (DEBUGPRINTING)
                   printf("LC_UNIXTHREAD");
                break;
+#if defined(PLAT_arm64_darwin)
+            // We can't build tool statically on arm64 (XNU forbids loading them)
+            // so we need to allow some DYLD sections
+            case LC_DYLD_INFO_ONLY:
+               if (DEBUGPRINTING)
+                  printf("LC_DYLD_INFO_ONLY");
+               break;
+            case LC_LOAD_DYLINKER:
+               if (DEBUGPRINTING)
+                  printf("LC_LOAD_DYLINKER");
+               break;
+            case LC_BUILD_VERSION:
+               if (DEBUGPRINTING)
+                  printf("LC_BUILD_VERSION");
+               break;
+            case LC_MAIN:
+               if (DEBUGPRINTING)
+                  printf("LC_MAIN");
+               break;
+            case LC_LOAD_DYLIB:
+               if (DEBUGPRINTING)
+                  printf("LC_LOAD_DYLIB");
+               break;
+            case LC_FUNCTION_STARTS:
+               if (DEBUGPRINTING)
+                  printf("LC_FUNCTION_STARTS");
+               break;
+            case LC_DATA_IN_CODE:
+               if (DEBUGPRINTING)
+                  printf("LC_DATA_IN_CODE");
+               break;
+            case LC_CODE_SIGNATURE:
+               if (DEBUGPRINTING)
+                  printf("LC_CODE_SIGNATURE");
+               break;
+#endif
             default:
                if (DEBUGPRINTING)
                   printf("???");

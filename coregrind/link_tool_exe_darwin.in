@@ -23,8 +23,8 @@
 #      the build system would have done, left to itself
 #
 # We just let the script 'die' if something is wrong, rather than do
-# proper error reporting.  We don't expect the users to run this 
-# directly.  It is only run as part of the build process, with 
+# proper error reporting.  We don't expect the users to run this
+# directly.  It is only run as part of the build process, with
 # carefully constrained inputs.
 #
 #
@@ -153,6 +153,7 @@ $cmd = "$cmd -arch $archstr";
 $cmd = "$cmd -macosx_version_min 10.6";
 $cmd = "$cmd -o $outname";
 $cmd = "$cmd -u __start -e __start";
+#$cmd = "$cmd -dead_strip_dylibs -lSystem -L /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib";
 
 my $stack_addr = Math::BigInt->new( $ala ) - $TX_STACK_OFFSET_BEFORE_TEXT;
 my $stack_addr_str = $stack_addr->as_hex();

@@ -60,6 +60,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 446281  Add a DRD suppression for fwrite
 446103  Memcheck: `--track-origins=yes` causes extreme slowdowns for large mmap/munmap
 446823  FreeBSD - missing syscalls when using libzm4
+447991  s390x: Valgrind indicates illegal instruction on wflrx
 447995  Valgrind segfault on power10 due to hwcap checking code
 449483  Powerpc: vcmpgtsq., vcmpgtuq,, vcmpequq. instructions not setting the
         condition code correctly.

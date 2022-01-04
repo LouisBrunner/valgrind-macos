@@ -80,7 +80,8 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 * ==================== CORE CHANGES ===================
 
 * The libiberty demangler has been updated, which brings support for
-  Rust v0 name demangling
+  Rust v0 name demangling. [Update: alas, due to a bug, this support
+  isn't working in 3.18.0.]
 
 * __libc_freeres isn't called anymore after the program recieves a
   fatal signal. Causing some internal glibc resources to hang around,

@@ -1817,6 +1817,7 @@
 /none/tests/arm64/memory_test
 /none/tests/arm64/simd_dotprod
 /none/tests/arm64/simd_v81
+/none/tests/arm64/sha512_v82
 
 # /none/tests/darwin/
 /none/tests/darwin/*.dSYM

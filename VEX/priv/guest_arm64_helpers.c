@@ -928,11 +928,6 @@ ULong arm64g_dirtyhelper_MRS_ID_AA64ISAR0_EL1 ( void )
    //     10
    //     109876543210
    w &= 0xF000F0FFFFFF;
-   /* Degredate SHA2 from b0010 to b0001*/
-   if ( (w >> 12) & 0x2 ) {
-      w ^= (0x2 << 12);
-      w |= (0x1 << 12);
-   }
 
    return w;
 #  else
@@ -1227,6 +1222,11 @@ static inline UInt ROR32 ( UInt x, UInt sh ) {
    return (x >> sh) | (x << (32 - sh));
 }
 
+static inline ULong ROR64 ( ULong x, ULong sh ) {
+   vassert(sh > 0 && sh < 64);
+   return (x >> sh) | (x << (64 - sh));
+}
+
 static inline UInt SHAchoose ( UInt x, UInt y, UInt z ) {
    return ((y ^ z) & x) ^ z;
 }
@@ -1458,6 +1458,70 @@ void arm64g_dirtyhelper_SHA256SU1 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
       elt = elt + op1.w32[e] + T0.w32[e];
       res->w32[e] = elt;
    }
+}
+
+/* CALLED FROM GENERATED CODE */
+void arm64g_dirtyhelper_SHA512H2 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                   ULong nHi, ULong nLo, ULong mHi, ULong mLo )
+{
+   vassert(nHi == 0);
+   ULong X = nLo;
+   V128 Y; Y.w64[1] = mHi; Y.w64[0] = mLo;
+   V128 W; W.w64[1] = dHi; W.w64[0] = dLo;
+   ULong NSigma0 = ROR64(Y.w64[0], 28) ^ ROR64(Y.w64[0], 34)
+      ^ ROR64(Y.w64[0], 39);
+   res->w64[1] = (X & Y.w64[1]) ^ (X & Y.w64[0]) ^ (Y.w64[1] & Y.w64[0]);
+   res->w64[1] += NSigma0 + W.w64[1];
+   NSigma0 = ROR64(res->w64[1], 28) ^ ROR64(res->w64[1], 34)
+      ^ ROR64(res->w64[1], 39);
+   res->w64[0] = (res->w64[1] & Y.w64[0]) ^ (res->w64[1] & Y.w64[1])
+      ^ (Y.w64[0] & Y.w64[1]);
+   res->w64[0] += NSigma0 + W.w64[0];
+}
+
+/* CALLED FROM GENERATED CODE */
+void arm64g_dirtyhelper_SHA512H ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                  ULong nHi, ULong nLo, ULong mHi, ULong mLo )
+{
+   V128 X; X.w64[1] = nHi; X.w64[0] = nLo;
+   V128 Y; Y.w64[1] = mHi; Y.w64[0] = mLo;
+   V128 W; W.w64[1] = dHi; W.w64[0] = dLo;
+   ULong MSigma1 = ROR64(Y.w64[1], 14) ^ ROR64(Y.w64[1], 18)
+      ^ ROR64(Y.w64[1], 41);
+   res->w64[1] = (Y.w64[1] & X.w64[0]) ^ (~Y.w64[1] & X.w64[1]);
+   res->w64[1] += MSigma1 + W.w64[1];
+   ULong tmp = res->w64[1] + Y.w64[0];
+   MSigma1 = ROR64(tmp, 14) ^ ROR64(tmp, 18) ^ ROR64(tmp, 41);
+   res->w64[0] = (tmp & Y.w64[1]) ^ (~tmp & X.w64[0]);
+   res->w64[0] += MSigma1 + W.w64[0];
+}
+
+/* CALLED FROM GENERATED CODE */
+void arm64g_dirtyhelper_SHA512SU0 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                    ULong nHi, ULong nLo )
+
+{
+   vassert(nHi == 0);
+   ULong X = nLo;
+   V128 W; W.w64[1] = dHi; W.w64[0] = dLo;
+   ULong sig0 = ROR64(W.w64[1], 1) ^ ROR64(W.w64[1], 8) ^ (W.w64[1] >> 7);
+   res->w64[0] = W.w64[0] + sig0;
+   sig0 = ROR64(X, 1) ^ ROR64(X, 8) ^ (X >> 7);
+   res->w64[1] = W.w64[1] + sig0;
+}
+
+/* CALLED FROM GENERATED CODE */
+void arm64g_dirtyhelper_SHA512SU1 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                    ULong nHi, ULong nLo,
+                                    ULong mHi, ULong mLo )
+{
+   V128 X; X.w64[1] = nHi; X.w64[0] = nLo;
+   V128 Y; Y.w64[1] = mHi; Y.w64[0] = mLo;
+   V128 W; W.w64[1] = dHi; W.w64[0] = dLo;
+   ULong sig1 = ROR64(X.w64[1], 19) ^ ROR64(X.w64[1], 61) ^ (X.w64[1] >> 6);
+   res->w64[1] = W.w64[1] + sig1 + Y.w64[1];
+   sig1 = ROR64(X.w64[0], 19) ^ ROR64(X.w64[0], 61) ^ (X.w64[0] >> 6);
+   res->w64[0] = W.w64[0] + sig1 + Y.w64[0];
 }
 
 

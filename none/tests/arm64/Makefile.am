@@ -22,7 +22,8 @@ EXTRA_DIST = \
 	ldxp_stxp_basisimpl.stdout.exp ldxp_stxp_basisimpl.stderr.exp \
 	ldxp_stxp_basisimpl.vgtest \
 	ldxp_stxp_fallbackimpl.stdout.exp ldxp_stxp_fallbackimpl.stderr.exp \
-	ldxp_stxp_fallbackimpl.vgtest
+	ldxp_stxp_fallbackimpl.vgtest sha512_v82.stdout.exp sha512_v82.stderr.exp \
+	sha512_v82.vgtest
 
 check_PROGRAMS = \
 	allexec \
@@ -44,7 +45,7 @@ if BUILD_ARMV81_TESTS
 endif
 
 if BUILD_ARMV82_TESTS
-  check_PROGRAMS += fp_and_simd_v82
+  check_PROGRAMS += fp_and_simd_v82 sha512_v82
 endif
 
 if HAVE_CXX17
@@ -70,13 +71,18 @@ simd_v81_CFLAGS    = $(AM_CFLAGS) -march=armv8.1-a+crypto
 simd_dotprod_CFLAGS    = $(AM_CFLAGS) -march=armv8.2-a+dotprod
 fp_and_simd_CFLAGS = $(AM_CFLAGS) -march=armv8-a+crypto
 fp_and_simd_v82_CFLAGS = $(AM_CFLAGS) -march=armv8.2-a+fp16+crypto
+# SHA-512 is not part of SHA-3, either as an algorithm or in Arm features, but
+# GCC lumps SHA-512 and SHA-3 extensions together as "sha3".
+sha512_v82_CFLAGS = $(AM_CFLAGS) -march=armv8.2-a+sha3
 frinta_frintn_SOURCES  = frinta_frintn.cpp
 frinta_frintn_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 integer_CFLAGS     = $(AM_CFLAGS) -g -O0 -DTEST_BFM=0
 
 fp_and_simd_SOURCES     = fp_and_simd.c simd.h simd.c
 fp_and_simd_v82_SOURCES = fp_and_simd_v82.c simd.h simd.c
+sha512_v82_SOURCES      = sha512_v82.c simd.h simd.c
 
 fp_and_simd_LDADD  = -lm
 simd_v81_LDADD     = -lm
 fp_and_simd_v82_LDADD  = -lm
+sha512_v82_LDADD  = -lm

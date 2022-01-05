@@ -14806,7 +14806,7 @@ Bool dis_AdvSIMD_crypto_aes(/*MB_OUT*/DisResult* dres, UInt insn)
 static
 Bool dis_AdvSIMD_crypto_three_reg_sha(/*MB_OUT*/DisResult* dres, UInt insn)
 {
-   /* 31   28   23 21 20 15 14  11 9 4
+   /* 31   27   23 21 20 15 14  11 9 4
       0101 1110 sz 0  m  0  opc 00 n d
       Decode fields are: sz,opc
    */
@@ -14910,7 +14910,7 @@ Bool dis_AdvSIMD_crypto_three_reg_sha(/*MB_OUT*/DisResult* dres, UInt insn)
 static
 Bool dis_AdvSIMD_crypto_two_reg_sha(/*MB_OUT*/DisResult* dres, UInt insn)
 {
-   /* 31   28   23 21    16  11 9 4
+   /* 31   27   23 21    16  11 9 4
       0101 1110 sz 10100 opc 10 n d
       Decode fields are: sz,opc
    */
@@ -14995,6 +14995,142 @@ Bool dis_AdvSIMD_crypto_two_reg_sha(/*MB_OUT*/DisResult* dres, UInt insn)
       return True;
    }
    
+   return False;
+#  undef INSN
+}
+
+
+static
+Bool dis_AdvSIMD_crypto_three_reg_sha512(/*MB_OUT*/DisResult* dres, UInt insn)
+{
+   /* 31   27   23  20 15 14 13 11  9 4
+      1100 1110 011 m  1  o  00 opc n d
+      Decode fields are: o,opc
+   */
+#  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,21) != BITS11(1,1,0,0,1,1,1,0,0,1,1) || INSN(15,15) != 1
+       || INSN(13,12) != BITS2(0,0)) {
+      return False;
+   }
+   UInt mm   = INSN(20,16);
+   UInt bitO = INSN(14,14);
+   UInt opc  = INSN(11,10);
+   UInt nn   = INSN(9,5);
+   UInt dd   = INSN(4,0);
+   if (bitO == 0 && opc <= BITS2(1,0)) {
+      /* -------- 0,00 SHA512H   Qd,    Qn,    Vm.2D -------- */
+      /* -------- 0,01 SHA512H2  Qd,    Qn,    Vm.2D -------- */
+      /* -------- 0,10 SHA512SU1 Vd.2D, Vn.2D, Vm.2D -------- */
+      vassert(opc < 3);
+      const HChar* inames[3] = { "sha512h", "sha512h2", "sha512su1" };
+      void(*helpers[3])(V128*,ULong,ULong,ULong,ULong,ULong,ULong)
+         = { &arm64g_dirtyhelper_SHA512H,  &arm64g_dirtyhelper_SHA512H2,
+             &arm64g_dirtyhelper_SHA512SU1 };
+      const HChar* hnames[3]
+         = { "arm64g_dirtyhelper_SHA512H",  "arm64g_dirtyhelper_SHA512H2",
+             "arm64g_dirtyhelper_SHA512SU1" };
+      IRTemp vD   = newTemp(Ity_V128);
+      IRTemp vN   = newTemp(Ity_V128);
+      IRTemp vM   = newTemp(Ity_V128);
+      IRTemp vDhi = newTemp(Ity_I64);
+      IRTemp vDlo = newTemp(Ity_I64);
+      IRTemp vNhi = newTemp(Ity_I64);
+      IRTemp vNlo = newTemp(Ity_I64);
+      IRTemp vMhi = newTemp(Ity_I64);
+      IRTemp vMlo = newTemp(Ity_I64);
+      assign(vD,   getQReg128(dd));
+      assign(vN,   getQReg128(nn));
+      assign(vM,   getQReg128(mm));
+      assign(vDhi, unop(Iop_V128HIto64, mkexpr(vD)));
+      assign(vDlo, unop(Iop_V128to64,   mkexpr(vD)));
+      /* vNhi is initialized below. */
+      assign(vNlo, unop(Iop_V128to64,   mkexpr(vN)));
+      assign(vMhi, unop(Iop_V128HIto64, mkexpr(vM)));
+      assign(vMlo, unop(Iop_V128to64,   mkexpr(vM)));
+      /* SHA512H2 does not use the upper half of the N register. Mask it off so
+         that Memcheck doesn't complain unnecessarily. */
+      switch (opc) {
+         case BITS2(0,1):
+            assign(vNhi, mkU64(0));
+            break;
+         case BITS2(0,0): case BITS2(1,0):
+            assign(vNhi, unop(Iop_V128HIto64, mkexpr(vN)));
+            break;
+         default:
+            vassert(0);
+      }
+      IRTemp res = newTemp(Ity_V128);
+      IRDirty* di
+         = unsafeIRDirty_1_N( res, 0/*regparms*/, hnames[opc], helpers[opc],
+                              mkIRExprVec_7(
+                                 IRExpr_VECRET(),
+                                 mkexpr(vDhi), mkexpr(vDlo), mkexpr(vNhi),
+                                 mkexpr(vNlo), mkexpr(vMhi), mkexpr(vMlo)));
+      stmt(IRStmt_Dirty(di));
+      putQReg128(dd, mkexpr(res));
+      switch (opc) {
+         case BITS2(0,0): case BITS2(0,1):
+            DIP("%s q%u, q%u, v%u.2d\n", inames[opc], dd, nn, mm);
+            break;
+         case BITS2(1,0):
+            DIP("%s v%u.2d, v%u.2d, v%u.2d\n", inames[opc], dd, nn, mm);
+            break;
+         default:
+            vassert(0);
+      }
+      return True;
+   }
+
+   return False;
+#  undef INSN
+}
+
+
+static
+Bool dis_AdvSIMD_crypto_two_reg_sha512(/*MB_OUT*/DisResult* dres, UInt insn)
+{
+   /* 31   27   23   19   15   11  9 4
+      1100 1110 1100 0000 1000 opc n d
+      Decode fields are: opc
+   */
+#  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,20) != BITS12(1,1,0,0,1,1,1,0,1,1,0,0)
+       || INSN(19,12) != BITS8(0,0,0,0,1,0,0,0)) {
+      return False;
+   }
+   UInt opc = INSN(11,10);
+   UInt nn  = INSN(9,5);
+   UInt dd  = INSN(4,0);
+   if (opc == BITS2(0,0)) {
+      /* -------- 00 SHA512SU0 Vd.2D, Vn.2D -------- */
+      IRTemp vD   = newTemp(Ity_V128);
+      IRTemp vN   = newTemp(Ity_V128);
+      IRTemp vDhi = newTemp(Ity_I64);
+      IRTemp vDlo = newTemp(Ity_I64);
+      IRTemp vNhi = newTemp(Ity_I64);
+      IRTemp vNlo = newTemp(Ity_I64);
+      assign(vD,   getQReg128(dd));
+      assign(vN,   getQReg128(nn));
+      /* SHA512SU0 ignores the upper half of the N register. Mask it off, so
+         that Memcheck doesn't complain unnecessarily. */
+      assign(vDhi, unop(Iop_V128HIto64, mkexpr(vD)));
+      assign(vDlo, unop(Iop_V128to64,   mkexpr(vD)));
+      assign(vNhi, mkU64(0));
+      assign(vNlo, unop(Iop_V128to64,   mkexpr(vN)));
+      IRTemp   res = newTemp(Ity_V128);
+      IRDirty* di  = unsafeIRDirty_1_N( res, 0/*regparms*/,
+                                        "arm64g_dirtyhelper_SHA512SU0",
+                                        &arm64g_dirtyhelper_SHA512SU0,
+                                        mkIRExprVec_5(
+                                           IRExpr_VECRET(),
+                                           mkexpr(vDhi), mkexpr(vDlo),
+                                           mkexpr(vNhi), mkexpr(vNlo)) );
+      stmt(IRStmt_Dirty(di));
+      putQReg128(dd, mkexpr(res));
+      DIP("sha512su0 v%u.2d, v%u.2d\n", dd, nn);
+      return True;
+   }
+
    return False;
 #  undef INSN
 }
@@ -16134,6 +16270,10 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn,
    ok = dis_AdvSIMD_crypto_three_reg_sha(dres, insn);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_crypto_two_reg_sha(dres, insn);
+   if (UNLIKELY(ok)) return True;
+   ok = dis_AdvSIMD_crypto_three_reg_sha512(dres, insn);
+   if (UNLIKELY(ok)) return True;
+   ok = dis_AdvSIMD_crypto_two_reg_sha512(dres, insn);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_fp_compare(dres, insn);
    if (UNLIKELY(ok)) return True;

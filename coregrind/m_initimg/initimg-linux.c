@@ -734,6 +734,7 @@ Addr setup_client_stack( void*  init_sp,
                                | VKI_HWCAP_PMULL        \
                                | VKI_HWCAP_SHA1         \
                                | VKI_HWCAP_SHA2         \
+                               | VKI_HWCAP_SHA512       \
                                | VKI_HWCAP_CRC32        \
                                | VKI_HWCAP_FP           \
                                | VKI_HWCAP_ASIMD        \

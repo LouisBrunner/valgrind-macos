@@ -175,6 +175,19 @@ extern
 void arm64g_dirtyhelper_SHA256SU1 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
                                     ULong nHi, ULong nLo,
                                     ULong mHi, ULong mLo );
+extern
+void arm64g_dirtyhelper_SHA512H2 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                   ULong nHi, ULong nLo, ULong mHi, ULong mLo );
+extern
+void arm64g_dirtyhelper_SHA512H ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                  ULong nHi, ULong nLo, ULong mHi, ULong mLo );
+extern
+void arm64g_dirtyhelper_SHA512SU0 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                    ULong nHi, ULong nLo );
+extern
+void arm64g_dirtyhelper_SHA512SU1 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                    ULong nHi, ULong nLo,
+                                    ULong mHi, ULong mLo );
 
 
 /*---------------------------------------------------------*/

@@ -46,6 +46,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
         == 434283
 444481  gdb_server test failures on s390x
 444495  dhat/tests/copy fails on s390x
+444552  memcheck/tests/sem fails on s390x with glibc 2.34
 444571  PPC, fix the lxsibzx and lxsihzx so they only load their respective
         sized data.
 444836  PPC, pstq instruction for R=1 is not storing to the correct address.

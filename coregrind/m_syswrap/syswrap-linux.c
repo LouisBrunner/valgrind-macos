@@ -4774,10 +4774,20 @@ PRE(sys_ipc)
       break;
    }
    case VKI_SEMTIMEDOP:
+#ifdef VGP_s390x_linux
+      /* On s390x Linux platforms the sys_ipc semtimedop call has four instead
+         of five parameters, where the timeout is passed in the third instead of
+         the fifth. */
+      PRE_REG_READ5(int, "ipc",
+                    vki_uint, call, int, first, int, second, long, third,
+                    void *, ptr);
+      ML_(generic_PRE_sys_semtimedop)( tid, ARG2, ARG5, ARG3, ARG4 );
+#else
       PRE_REG_READ6(int, "ipc",
                     vki_uint, call, int, first, int, second, int, third,
                     void *, ptr, long, fifth);
       ML_(generic_PRE_sys_semtimedop)( tid, ARG2, ARG5, ARG3, ARG6 );
+#endif
       *flags |= SfMayBlock;
       break;
    case VKI_MSGSND:

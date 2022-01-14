@@ -1246,7 +1246,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_isa_3_0 = False;
      } else {
-        __asm__ __volatile__(".long 0x7d205434"); /* cnttzw RT, RB */
+        __asm__ __volatile__(".long 00x7f140434":::"r20"); /* cnttzw r20,r24 */
      }
 
      // ISA 3.1 not supported on 32-bit systems
@@ -1358,7 +1358,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_V = False;
      } else {
-        __asm__ __volatile__(".long 0x10000484"); /*vor 0,0,0*/
+        __asm__ __volatile__(".long 0x10000484"); /* vor v0,v0,v0 */
      }
 
      /* General-Purpose optional (fsqrt, fsqrts) */
@@ -1366,7 +1366,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_FX = False;
      } else {
-        __asm__ __volatile__(".long 0xFC00002C"); /*fsqrt 0,0*/
+        __asm__ __volatile__(".long 0xFC00002C"); /* fsqrt f0,f0 */
      }
 
      /* Graphics optional (stfiwx, fres, frsqrte, fsel) */
@@ -1374,7 +1374,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_GX = False;
      } else {
-        __asm__ __volatile__(".long 0xFC000034"); /*frsqrte 0,0*/
+        __asm__ __volatile__(".long 0xFC000034"); /* frsqrte f0,f0 */
      }
 
      /* VSX support implies Power ISA 2.06 */
@@ -1382,7 +1382,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_VX = False;
      } else {
-        __asm__ __volatile__(".long 0xf0000564"); /* xsabsdp XT,XB */
+        __asm__ __volatile__(".long 0xf0000564"); /* xsabsdp vs0,vs0 */
      }
 
      /* Check for Decimal Floating Point (DFP) support. */
@@ -1390,7 +1390,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_DFP = False;
      } else {
-        __asm__ __volatile__(".long 0xee4e8005"); /* dadd  FRT,FRA, FRB */
+        __asm__ __volatile__(".long 0xec0e8005"); /* dadd f0,f14,f16 */
      }
 
      /* Check for ISA 2.07 support. */
@@ -1398,7 +1398,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_isa_2_07 = False;
      } else {
-        __asm__ __volatile__(".long 0x7c000166"); /* mtvsrd XT,RA */
+        __asm__ __volatile__(".long 0x7c000166"); /* mtvsrd f0,r0 */
      }
 
      /* Check for ISA 3.0 support. */
@@ -1406,7 +1406,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_isa_3_0 = False;
      } else {
-        __asm__ __volatile__(".long  0x7d205434"); /* cnttzw RT, RB */
+        __asm__ __volatile__(".long 0x7f140434":::"r20"); /* cnttzw r20,r24 */
      }
 
      /* Check for ISA 3.1 support. */
@@ -1414,7 +1414,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_isa_3_1 = False;
      } else {
-        __asm__ __volatile__(".long 0x7f1401b6"); /* brh  RA, RS */
+        __asm__ __volatile__(".long 0x7f1401b6":::"r20"); /* brh r20,r24 */
      }
 
      /* Check if Host supports scv instruction */
@@ -1424,9 +1424,9 @@ Bool VG_(machine_get_hwcaps)( void )
      } else {
         /* Set r0 to 13 for the system time call.  Don't want to make a random
            system call.  */
-        __asm__ __volatile__(".long 0x7c000278"); /* clear r0 */
-        __asm__ __volatile__(".long 0x6009000d"); /* set r0 to 13 */
-        __asm__ __volatile__(".long 0x44000001"); /* scv */
+        __asm__ __volatile__(".long 0x7c000278"); /* clear r0 with xor r0,r0,r0 */
+        __asm__ __volatile__(".long 0x6000000d"); /* set r0 to 13 with ori r0,r0,13 */
+        __asm__ __volatile__(".long 0x44000001"); /* scv 0 */
      }
 
      /* determine dcbz/dcbzl sizes while we still have the signal

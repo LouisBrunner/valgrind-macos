@@ -609,6 +609,16 @@ typedef struct vki_siginfo {
 #define VKI_TRAP_DTRACE 3   /* DTrace induced trap.                 */
 #define VKI_TRAP_CAP    4   /* Capabilities protective trap.        */
 
+/*
+ * SIGCHLD si_codes
+ */
+#define VKI_CLD_EXITED    1  /* child has exited */
+#define VKI_CLD_KILLED    2  /* child was killed */
+#define VKI_CLD_DUMPED    3  /* child terminated abnormally */
+#define VKI_CLD_TRAPPED   4  /* traced child has trapped */
+#define VKI_CLD_STOPPED   5  /* child has stopped */
+#define VKI_CLD_CONTINUED 6  /* stopped child has continued */
+
 #if 0 /* freebsd-6 */
 typedef struct vki_sigevent {
    int sigev_notify;

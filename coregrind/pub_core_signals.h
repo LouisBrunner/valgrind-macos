@@ -35,6 +35,7 @@
 
 #include "pub_tool_signals.h"       // I want to get rid of this header...
 #include "pub_core_vki.h"           // vki_sigset_t et al.
+#include "pub_tool_hashtable.h"
 
 /* Highest signal the kernel will let us use */
 extern Int VG_(max_signal);
@@ -84,6 +85,15 @@ extern Bool VG_(extend_stack)(ThreadId tid, Addr addr);
 /* Forces the client's signal handler to SIG_DFL - generally just
    before using that signal to kill the process. */
 extern void VG_(set_default_handler)(Int sig);
+
+/* Hash table of PIDs from which SIGCHLD is ignored.  */
+extern VgHashTable *ht_sigchld_ignore;
+
+/* Hash table node where each key represents a PID.  */
+typedef struct _ht_ignore_node {
+   struct _ht_ignore_node *next;
+   UWord   key;
+} ht_ignore_node;
 
 #endif   // __PUB_CORE_SIGNALS_H
 

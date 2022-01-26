@@ -38,6 +38,7 @@
 #include "pub_core_libcsignal.h"
 #include "pub_core_seqmatch.h"
 #include "pub_core_mallocfree.h"
+#include "pub_core_signals.h"
 #include "pub_core_syscall.h"
 #include "pub_core_xarray.h"
 #include "pub_core_clientstate.h"
@@ -888,14 +889,68 @@ Int VG_(ptrace) ( Int request, Int pid, void *addr, void *data )
    Fork
    ------------------------------------------------------------------ */
 
+/* Record PID of a child process in order to avoid sending any SIGCHLD from
+   it to the client.  If PID is 0 then this is the child process and it
+   should synch with the parent to ensure it can't send any SIGCHLD before
+   the parent has registered its PID.
+
+   FDS should be initialized with VG_(pipe). This function closes both
+   file descriptors.  */
+static void register_sigchld_ignore ( Int pid, Int fds[2])
+{
+   Int child_wait = 1;
+   ht_ignore_node *n;
+
+   if (fds[0] < 0 || fds[1] < 0)
+      return;
+
+   if (pid == 0) {
+      /* Before proceeding, ensure parent has recorded child PID in map
+         of SIGCHLD to ignore */
+      while (child_wait == 1)
+      {
+         if (VG_(read)(fds[0], &child_wait, sizeof(Int)) <= 0) {
+            VG_(message)(Vg_DebugMsg,
+               "warning: Unable to record PID of internal process (read)\n");
+            child_wait = 0;
+         }
+      }
+
+      VG_(close)(fds[0]);
+      return;
+   }
+
+   n = VG_(malloc)("ht.ignore.node", sizeof(ht_ignore_node));
+   n->key = pid;
+   if (ht_sigchld_ignore == NULL)
+      ht_sigchld_ignore = VG_(HT_construct)("ht.sigchld.ignore");
+   VG_(HT_add_node)(ht_sigchld_ignore, n);
+
+   child_wait = 0;
+   if (VG_(write)(fds[1], &child_wait, sizeof(Int)) <= 0)
+      VG_(message)(Vg_DebugMsg,
+         "warning: Unable to record PID of internal process (write)\n");
+
+   VG_(close)(fds[1]);
+}
+
 Int VG_(fork) ( void )
 {
+   Int fds[2];
+
+   if (VG_(pipe)(fds) != 0) {
+      VG_(message)(Vg_DebugMsg,
+         "warning: Unable to record PID of internal process (pipe)\n");
+      fds[0] = fds[1] = -1;
+   }
+
 #  if defined(VGP_arm64_linux) || defined(VGP_nanomips_linux)
    SysRes res;
    res = VG_(do_syscall5)(__NR_clone, VKI_SIGCHLD,
                           (UWord)NULL, (UWord)NULL, (UWord)NULL, (UWord)NULL);
    if (sr_isError(res))
       return -1;
+   register_sigchld_ignore(sr_Res(res), fds);
    return sr_Res(res);
 
 #  elif defined(VGO_linux) || defined(VGO_freebsd)
@@ -903,6 +958,7 @@ Int VG_(fork) ( void )
    res = VG_(do_syscall0)(__NR_fork);
    if (sr_isError(res))
       return -1;
+   register_sigchld_ignore(sr_Res(res), fds);
    return sr_Res(res);
 
 #  elif defined(VGO_darwin)
@@ -912,8 +968,10 @@ Int VG_(fork) ( void )
       return -1;
    /* on success: wLO = child pid; wHI = 1 for child, 0 for parent */
    if (sr_ResHI(res) != 0) {
+      register_sigchld_ignore(0, fds);
       return 0;  /* this is child: return 0 instead of child pid */
    }
+   register_sigchld_ignore(sr_Res(res), fds);
    return sr_Res(res);
 
 #  elif defined(VGO_solaris)
@@ -930,8 +988,10 @@ Int VG_(fork) ( void )
               child,
         val2 = 0 in the parent process, 1 in the child process. */
    if (sr_ResHI(res) != 0) {
+      register_sigchld_ignore(0, fds);
       return 0;
    }
+   register_sigchld_ignore(sr_Res(res), fds);
    return sr_Res(res);
 
 #  else

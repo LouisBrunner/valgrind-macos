@@ -207,6 +207,7 @@
 #include "pub_core_aspacemgr.h"
 #include "pub_core_errormgr.h"
 #include "pub_core_gdbserver.h"
+#include "pub_core_hashtable.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
 #include "pub_core_libcprint.h"
@@ -246,6 +247,9 @@ typedef struct SigQueue {
    Int	next;
    vki_siginfo_t sigs[N_QUEUED_SIGNALS];
 } SigQueue;
+
+/* Hash table of PIDs from which SIGCHLD is ignored.  */
+VgHashTable *ht_sigchld_ignore = NULL;
 
 /* ------ Macros for pulling stuff out of ucontexts ------ */
 
@@ -2057,6 +2061,28 @@ static void deliver_signal ( ThreadId tid, const vki_siginfo_t *info,
    SCSS_Per_Signal	*handler = &scss.scss_per_sig[sigNo];
    void			*handler_fn;
    ThreadState		*tst = VG_(get_ThreadState)(tid);
+
+#if defined(VGO_linux)
+   /* If this signal is SIGCHLD and it came from a process which valgrind
+      created for some internal use, then it should not be delivered to
+      the client.  */
+   if (sigNo == VKI_SIGCHLD && ht_sigchld_ignore != NULL) {
+      Int pid = info->_sifields._sigchld._pid;
+      ht_ignore_node *n = VG_(HT_lookup)(ht_sigchld_ignore, pid);
+
+      if (n != NULL) {
+         /* If the child has terminated, remove its PID from the
+            ignore list.  */
+         if (info->si_code == VKI_CLD_EXITED
+             || info->si_code == VKI_CLD_KILLED
+             || info->si_code == VKI_CLD_DUMPED) {
+            VG_(HT_remove)(ht_sigchld_ignore, pid);
+            VG_(free)(n);
+         }
+         return;
+      }
+   }
+#endif
 
    if (VG_(clo_trace_signals))
       VG_(dmsg)("delivering signal %d (%s):%d to thread %u\n", 

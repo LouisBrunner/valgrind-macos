@@ -29155,9 +29155,15 @@ static Bool dis_vx_quadword_arith ( UInt prefix, UInt theInstr )
 
          assign ( eq, Quad_precision_int_eq( vA, vB ) );
 
-         assign( cc, binop( Iop_Shl32,
-                            unop( Iop_1Uto32, mkexpr( eq ) ),
-                            mkU8( 1 ) ) );
+         /* if true cc = 0b0100, if flase cc= 0b0010 */
+         assign( cc, binop( Iop_Or32,
+                            binop( Iop_Shl32,
+                                   unop( Iop_1Uto32, mkexpr( eq ) ),
+                                   mkU8( 3 ) ),
+                            binop( Iop_Shl32,
+                                   unop( Iop_1Uto32,
+                                         unop( Iop_Not1, mkexpr( eq ) ) ),
+                                   mkU8( 1 ) ) ) );
 
          if (Rc) putGST_field( PPC_GST_CR, mkexpr( cc ), cc_field );
 
@@ -29190,10 +29196,15 @@ static Bool dis_vx_quadword_arith ( UInt prefix, UInt theInstr )
             assign ( gt, Quad_precision_sint_gt( vA, vB ) );
          }
 
-         assign( cc, binop( Iop_Shl32,
-                            unop( Iop_1Uto32, mkexpr( gt ) ),
-                            mkU8( 2 ) ) );
-
+         /* if true cc = 0b0100, if flase cc= 0b0010 */
+         assign( cc, binop( Iop_Or32,
+                            binop( Iop_Shl32,
+                                   unop( Iop_1Uto32, mkexpr( gt ) ),
+                                   mkU8( 3 ) ),
+                            binop( Iop_Shl32,
+                                   unop( Iop_1Uto32,
+                                         unop( Iop_Not1, mkexpr( gt ) ) ),
+                                   mkU8( 1 ) ) ) );
          if (Rc) putGST_field( PPC_GST_CR, mkexpr( cc ), cc_field );
 
          putVReg( vT_addr, binop( Iop_64HLtoV128,

@@ -343,38 +343,9 @@ static Bool OV32_CA32_supported = False;
 #define OFFB_PPR         offsetofPPCGuestState(guest_PPR)
 #define OFFB_PSPB        offsetofPPCGuestState(guest_PSPB)
 #define OFFB_DSCR        offsetofPPCGuestState(guest_DSCR)
+/* Note the offset for the various ACC entries are calculated based on
+   the OFFB_ACC_0_r0 value.  */
 #define OFFB_ACC_0_r0    offsetofPPCGuestState(guest_ACC_0_r0)
-#define OFFB_ACC_0_r1    offsetofPPCGuestState(guest_ACC_0_r1)
-#define OFFB_ACC_0_r2    offsetofPPCGuestState(guest_ACC_0_r2)
-#define OFFB_ACC_0_r3    offsetofPPCGuestState(guest_ACC_0_r3)
-#define OFFB_ACC_1_r0    offsetofPPCGuestState(guest_ACC_1_r0)
-#define OFFB_ACC_1_r1    offsetofPPCGuestState(guest_ACC_1_r1)
-#define OFFB_ACC_1_r2    offsetofPPCGuestState(guest_ACC_1_r2)
-#define OFFB_ACC_1_r3    offsetofPPCGuestState(guest_ACC_1_r3)
-#define OFFB_ACC_2_r0    offsetofPPCGuestState(guest_ACC_2_r0)
-#define OFFB_ACC_2_r1    offsetofPPCGuestState(guest_ACC_2_r1)
-#define OFFB_ACC_2_r2    offsetofPPCGuestState(guest_ACC_2_r2)
-#define OFFB_ACC_2_r3    offsetofPPCGuestState(guest_ACC_2_r3)
-#define OFFB_ACC_3_r0    offsetofPPCGuestState(guest_ACC_3_r0)
-#define OFFB_ACC_3_r1    offsetofPPCGuestState(guest_ACC_3_r1)
-#define OFFB_ACC_3_r2    offsetofPPCGuestState(guest_ACC_3_r2)
-#define OFFB_ACC_3_r3    offsetofPPCGuestState(guest_ACC_3_r3)
-#define OFFB_ACC_4_r0    offsetofPPCGuestState(guest_ACC_4_r0)
-#define OFFB_ACC_4_r1    offsetofPPCGuestState(guest_ACC_4_r1)
-#define OFFB_ACC_4_r2    offsetofPPCGuestState(guest_ACC_4_r2)
-#define OFFB_ACC_4_r3    offsetofPPCGuestState(guest_ACC_4_r3)
-#define OFFB_ACC_5_r0    offsetofPPCGuestState(guest_ACC_5_r0)
-#define OFFB_ACC_5_r1    offsetofPPCGuestState(guest_ACC_5_r1)
-#define OFFB_ACC_5_r2    offsetofPPCGuestState(guest_ACC_5_r2)
-#define OFFB_ACC_5_r3    offsetofPPCGuestState(guest_ACC_5_r3)
-#define OFFB_ACC_6_r0    offsetofPPCGuestState(guest_ACC_6_r0)
-#define OFFB_ACC_6_r1    offsetofPPCGuestState(guest_ACC_6_r1)
-#define OFFB_ACC_6_r2    offsetofPPCGuestState(guest_ACC_6_r2)
-#define OFFB_ACC_6_r3    offsetofPPCGuestState(guest_ACC_6_r3)
-#define OFFB_ACC_7_r0    offsetofPPCGuestState(guest_ACC_7_r0)
-#define OFFB_ACC_7_r1    offsetofPPCGuestState(guest_ACC_7_r1)
-#define OFFB_ACC_7_r2    offsetofPPCGuestState(guest_ACC_7_r2)
-#define OFFB_ACC_7_r3    offsetofPPCGuestState(guest_ACC_7_r3)
 #define OFFB_syscall_flag  offsetofPPCGuestState(guest_syscall_flag)
 
 
@@ -4084,258 +4055,42 @@ static void put_syscall_flag( IRExpr* src )
 /*-----------------------------------------------------------*/
 /* Helpers to access VSX Accumulator register file
  *-----------------------------------------------------------*/
-static void putACC( UInt index, UInt reg, IRExpr* src )
+static UInt ACC_offset( UInt index, UInt reg )
 {
-   switch (index) {
-   case 0:
-      switch (reg) {
-      case 0:
-         stmt( IRStmt_Put( OFFB_ACC_0_r0, src ) );
-         break;
-      case 1:
-         stmt( IRStmt_Put( OFFB_ACC_0_r1, src ) );
-         break;
-      case 2:
-         stmt( IRStmt_Put( OFFB_ACC_0_r2, src ) );
-         break;
-      case 3:
-         stmt( IRStmt_Put( OFFB_ACC_0_r3, src ) );
-         break;
-      }
-      break;
+#define SizeofACC_row       16     /* size of ACC row in bytes */
+#define ACC_row_per_entry   4
+#define ACC_num_entries     8
 
-   case 1:
-      switch (reg) {
-      case 0:
-         stmt( IRStmt_Put( OFFB_ACC_1_r0, src ) );
-         break;
-      case 1:
-         stmt( IRStmt_Put( OFFB_ACC_1_r1, src ) );
-         break;
-      case 2:
-         stmt( IRStmt_Put( OFFB_ACC_1_r2, src ) );
-         break;
-      case 3:
-         stmt( IRStmt_Put( OFFB_ACC_1_r3, src ) );
-         break;
-      }
-      break;
-
-   case 2:
-      switch (reg) {
-      case 0:
-         stmt( IRStmt_Put( OFFB_ACC_2_r0, src ) );
-         break;
-      case 1:
-         stmt( IRStmt_Put( OFFB_ACC_2_r1, src ) );
-         break;
-      case 2:
-         stmt( IRStmt_Put( OFFB_ACC_2_r2, src ) );
-         break;
-      case 3:
-         stmt( IRStmt_Put( OFFB_ACC_2_r3, src ) );
-         break;
-      }
-      break;
-
-   case 3:
-      switch (reg) {
-      case 0:
-         stmt( IRStmt_Put( OFFB_ACC_3_r0, src ) );
-         break;
-      case 1:
-         stmt( IRStmt_Put( OFFB_ACC_3_r1, src ) );
-         break;
-      case 2:
-         stmt( IRStmt_Put( OFFB_ACC_3_r2, src ) );
-         break;
-      case 3:
-         stmt( IRStmt_Put( OFFB_ACC_3_r3, src ) );
-         break;
-      }
-      break;
-
-   case 4:
-      switch (reg) {
-      case 0:
-         stmt( IRStmt_Put( OFFB_ACC_4_r0, src ) );
-         break;
-      case 1:
-         stmt( IRStmt_Put( OFFB_ACC_4_r1, src ) );
-         break;
-      case 2:
-         stmt( IRStmt_Put( OFFB_ACC_4_r2, src ) );
-         break;
-      case 3:
-         stmt( IRStmt_Put( OFFB_ACC_4_r3, src ) );
-         break;
-      }
-      break;
-
-   case 5:
-      switch (reg) {
-      case 0:
-         stmt( IRStmt_Put( OFFB_ACC_5_r0, src ) );
-         break;
-      case 1:
-         stmt( IRStmt_Put( OFFB_ACC_5_r1, src ) );
-         break;
-      case 2:
-         stmt( IRStmt_Put( OFFB_ACC_5_r2, src ) );
-         break;
-      case 3:
-         stmt( IRStmt_Put( OFFB_ACC_5_r3, src ) );
-         break;
-      }
-      break;
-
-   case 6:
-      switch (reg) {
-      case 0:
-         stmt( IRStmt_Put( OFFB_ACC_6_r0, src ) );
-         break;
-      case 1:
-         stmt( IRStmt_Put( OFFB_ACC_6_r1, src ) );
-         break;
-      case 2:
-         stmt( IRStmt_Put( OFFB_ACC_6_r2, src ) );
-         break;
-      case 3:
-         stmt( IRStmt_Put( OFFB_ACC_6_r3, src ) );
-         break;
-      }
-      break;
-
-   case 7:
-      switch (reg) {
-      case 0:
-         stmt( IRStmt_Put( OFFB_ACC_7_r0, src ) );
-         break;
-      case 1:
-         stmt( IRStmt_Put( OFFB_ACC_7_r1, src ) );
-         break;
-      case 2:
-         stmt( IRStmt_Put( OFFB_ACC_7_r2, src ) );
-         break;
-      case 3:
-         stmt( IRStmt_Put( OFFB_ACC_7_r3, src ) );
-         break;
-      }
-      break;
-   }
+   vassert(index < ACC_num_entries);
+   vassert(reg < ACC_row_per_entry);
+   return index * ACC_row_per_entry * SizeofACC_row  + reg * SizeofACC_row;
 }
 
-static IRExpr* /* :: Ity_V128 */ getACC ( UInt index, UInt reg )
+static UInt base_acc_addr( Bool ACC_mapped_on_VSR )
+{
+   /* Return base ACC address if ACC mapped over vsrs or as a separate
+      register file.  */
+   if ( ACC_mapped_on_VSR )   /* ISA 3.1 implementation */
+      return offsetofPPCGuestState( guest_VSR0 );
+   else
+      return offsetofPPCGuestState( guest_ACC_0_r0 );
+}
+
+static void putACC( UInt index, UInt reg, IRExpr* src, Bool ACC_mapped_on_VSR)
+
+{
+   stmt( IRStmt_Put( base_acc_addr( ACC_mapped_on_VSR )
+                     + ACC_offset( index, reg), src ) );
+}
+
+static IRExpr* /* :: Ity_V128 */ getACC ( UInt index, UInt reg,
+                                          Bool ACC_mapped_on_VSR)
 {
    vassert( (index >= 0) && (index < 8) );
    vassert( (reg >= 0) && (reg < 4) );
-   //   vex_printf("getACC (%d, %d)) \n", index, reg);
-   switch (index) {
-   case 0:
-      switch (reg) {
-      case 0:
-         return IRExpr_Get( OFFB_ACC_0_r0, Ity_V128 );
-      case 1:
-         return IRExpr_Get( OFFB_ACC_0_r1, Ity_V128 );
-      case 2:
-         return IRExpr_Get( OFFB_ACC_0_r2, Ity_V128 );
-      case 3:
-         return IRExpr_Get( OFFB_ACC_0_r3, Ity_V128 );
-      }
-      break;
 
-   case 1:
-      switch (reg) {
-      case 0:
-         return IRExpr_Get( OFFB_ACC_1_r0, Ity_V128 );
-      case 1:
-         return IRExpr_Get( OFFB_ACC_1_r1, Ity_V128 );
-      case 2:
-         return IRExpr_Get( OFFB_ACC_1_r2, Ity_V128 );
-      case 3:
-         return IRExpr_Get( OFFB_ACC_1_r3, Ity_V128 );
-      }
-      break;
-
-   case 2:
-      switch (reg) {
-      case 0:
-         return IRExpr_Get( OFFB_ACC_2_r0, Ity_V128 );
-      case 1:
-         return IRExpr_Get( OFFB_ACC_2_r1, Ity_V128 );
-      case 2:
-         return IRExpr_Get( OFFB_ACC_2_r2, Ity_V128 );
-      case 3:
-         return IRExpr_Get( OFFB_ACC_2_r3, Ity_V128 );
-      }
-      break;
-
-   case 3:
-      switch (reg) {
-      case 0:
-         return IRExpr_Get( OFFB_ACC_3_r0, Ity_V128 );
-      case 1:
-         return IRExpr_Get( OFFB_ACC_3_r1, Ity_V128 );
-      case 2:
-         return IRExpr_Get( OFFB_ACC_3_r2, Ity_V128 );
-      case 3:
-         return IRExpr_Get( OFFB_ACC_3_r3, Ity_V128 );
-      }
-      break;
-
-   case 4:
-      switch (reg) {
-      case 0:
-         return IRExpr_Get( OFFB_ACC_4_r0, Ity_V128 );
-      case 1:
-         return IRExpr_Get( OFFB_ACC_4_r1, Ity_V128 );
-      case 2:
-         return IRExpr_Get( OFFB_ACC_4_r2, Ity_V128 );
-      case 3:
-         return IRExpr_Get( OFFB_ACC_4_r3, Ity_V128 );
-      }
-      break;
-
-   case 5:
-      switch (reg) {
-      case 0:
-         return IRExpr_Get( OFFB_ACC_5_r0, Ity_V128 );
-      case 1:
-         return IRExpr_Get( OFFB_ACC_5_r1, Ity_V128 );
-      case 2:
-         return IRExpr_Get( OFFB_ACC_5_r2, Ity_V128 );
-      case 3:
-         return IRExpr_Get( OFFB_ACC_5_r3, Ity_V128 );
-      }
-      break;
-
-   case 6:
-      switch (reg) {
-      case 0:
-         return IRExpr_Get( OFFB_ACC_6_r0, Ity_V128 );
-      case 1:
-         return IRExpr_Get( OFFB_ACC_6_r1, Ity_V128 );
-      case 2:
-         return IRExpr_Get( OFFB_ACC_6_r2, Ity_V128 );
-      case 3:
-         return IRExpr_Get( OFFB_ACC_6_r3, Ity_V128 );
-      }
-      break;
-
-   case 7:
-      switch (reg) {
-      case 0:
-         return IRExpr_Get( OFFB_ACC_7_r0, Ity_V128 );
-      case 1:
-         return IRExpr_Get( OFFB_ACC_7_r1, Ity_V128 );
-      case 2:
-         return IRExpr_Get( OFFB_ACC_7_r2, Ity_V128 );
-      case 3:
-         return IRExpr_Get( OFFB_ACC_7_r3, Ity_V128 );
-      }
-      break;
-   }
-   return 0;   // error
+   return IRExpr_Get( base_acc_addr( ACC_mapped_on_VSR )
+                      + ACC_offset( index, reg), Ity_V128 );
 }
 
 
@@ -5885,7 +5640,10 @@ static IRExpr * vector_evaluate_inst ( const VexAbiInfo* vbi,
    return binop( Iop_64HLtoV128, mkexpr( result_hi ), mkexpr( result_lo ) );
 }
 
-static void setup_fxstate_struct( IRDirty* d, UInt AT, IREffect AT_fx ) {
+static void setup_fxstate_struct( IRDirty* d, UInt AT, IREffect AT_fx,
+                                  Bool ACC_mapped_on_VSR ) {
+   UInt acc_base_address;
+
    /* declare guest state effects, writing to four ACC 128-bit regs. */
    d->nFxState = 4;
    vex_bzero(&d->fxState, sizeof(d->fxState));
@@ -5898,58 +5656,14 @@ static void setup_fxstate_struct( IRDirty* d, UInt AT, IREffect AT_fx ) {
    d->fxState[3].fx     = AT_fx;
    d->fxState[3].size   = sizeof(U128);
 
-   switch (AT) {
-   case 0:
-      d->fxState[0].offset = OFFB_ACC_0_r0;
-      d->fxState[1].offset = OFFB_ACC_0_r1;
-      d->fxState[2].offset = OFFB_ACC_0_r2;
-      d->fxState[3].offset = OFFB_ACC_0_r3;
-      break;
-   case 1:
-      d->fxState[0].offset = OFFB_ACC_1_r0;
-      d->fxState[1].offset = OFFB_ACC_1_r1;
-      d->fxState[2].offset = OFFB_ACC_1_r2;
-      d->fxState[3].offset = OFFB_ACC_1_r3;
-      break;
-   case 2:
-      d->fxState[0].offset = OFFB_ACC_2_r0;
-      d->fxState[1].offset = OFFB_ACC_2_r1;
-      d->fxState[2].offset = OFFB_ACC_2_r2;
-      d->fxState[3].offset = OFFB_ACC_2_r3;
-      break;
-   case 3:
-      d->fxState[0].offset = OFFB_ACC_3_r0;
-      d->fxState[1].offset = OFFB_ACC_3_r1;
-      d->fxState[2].offset = OFFB_ACC_3_r2;
-      d->fxState[3].offset = OFFB_ACC_3_r3;
-      break;
-   case 4:
-      d->fxState[0].offset = OFFB_ACC_4_r0;
-      d->fxState[1].offset = OFFB_ACC_4_r1;
-      d->fxState[2].offset = OFFB_ACC_4_r2;
-      d->fxState[3].offset = OFFB_ACC_4_r3;
-      break;
-   case 5:
-      d->fxState[0].offset = OFFB_ACC_5_r0;
-      d->fxState[1].offset = OFFB_ACC_5_r1;
-      d->fxState[2].offset = OFFB_ACC_5_r2;
-      d->fxState[3].offset = OFFB_ACC_5_r3;
-      break;
-   case 6:
-      d->fxState[0].offset = OFFB_ACC_6_r0;
-      d->fxState[1].offset = OFFB_ACC_6_r1;
-      d->fxState[2].offset = OFFB_ACC_6_r2;
-      d->fxState[3].offset = OFFB_ACC_6_r3;
-      break;
-   case 7:
-      d->fxState[0].offset = OFFB_ACC_7_r0;
-      d->fxState[1].offset = OFFB_ACC_7_r1;
-      d->fxState[2].offset = OFFB_ACC_7_r2;
-      d->fxState[3].offset = OFFB_ACC_7_r3;
-      break;
-   default:
-      vassert( (AT >= 0) && (AT < 8));
-   }
+   vassert( (AT >= 0) && (AT < 8));
+
+   acc_base_address = base_acc_addr( ACC_mapped_on_VSR );
+
+   d->fxState[0].offset = acc_base_address + ACC_offset( AT, 0);
+   d->fxState[1].offset = acc_base_address + ACC_offset( AT, 1);
+   d->fxState[2].offset = acc_base_address + ACC_offset( AT, 2);
+   d->fxState[3].offset = acc_base_address + ACC_offset( AT, 3);
    return;
 }
 #define MATRIX_4BIT_INT_GER     1
@@ -5962,7 +5676,11 @@ static void setup_fxstate_struct( IRDirty* d, UInt AT, IREffect AT_fx ) {
 static void vsx_matrix_ger ( const VexAbiInfo* vbi,
                              UInt inst_class,
                              IRExpr *srcA, IRExpr *srcB,
-                             UInt AT, UInt mask_inst ) {
+                             UInt AT, UInt mask_inst,
+                             Bool ACC_mapped_on_VSR) {
+
+   UInt acc_base_addr = base_acc_addr( ACC_mapped_on_VSR );
+
    /* This helper function does the VSX Matrix 4-bit Signed Integer GER
       (Rank-8 Update) instructions xvi4ger8, xvi4ger8pp, pmxvi4ger8,
       pmxvi4ger8pp.  The instructions work on four V128 values, and three
@@ -5986,7 +5704,7 @@ static void vsx_matrix_ger ( const VexAbiInfo* vbi,
       The dirty helper does not return data.  */
    IRExpr** args = mkIRExprVec_7(
       IRExpr_GSPTR(),
-      mkU32(offsetofPPCGuestState(guest_ACC_0_r0)),
+      mkU32( acc_base_addr ),
       mkexpr(srcA_hi), mkexpr(srcA_lo),
       mkexpr(srcB_hi), mkexpr(srcB_lo),
       mkU32( (mask_inst << 5) | AT ));
@@ -6079,7 +5797,7 @@ static void vsx_matrix_ger ( const VexAbiInfo* vbi,
       return;
    }
 
-   setup_fxstate_struct( d, AT, AT_fx );
+   setup_fxstate_struct( d, AT, AT_fx, ACC_mapped_on_VSR );
 
    /* execute the dirty call, side-effecting guest state */
    stmt( IRStmt_Dirty(d) );
@@ -6088,7 +5806,11 @@ static void vsx_matrix_ger ( const VexAbiInfo* vbi,
 static void vsx_matrix_64bit_float_ger ( const VexAbiInfo* vbi,
                                          IRExpr *srcA, IRExpr *srcA1,
                                          IRExpr *srcB,
-                                         UInt AT, UInt mask_inst ) {
+                                         UInt AT, UInt mask_inst,
+                                         Bool ACC_mapped_on_VSR ) {
+
+   UInt acc_base_addr = base_acc_addr( ACC_mapped_on_VSR );
+
    /* This helper function does the VSX Matrix 64-bit floating-point GER
       (Rank-1 Update) instructions xvf64ger, xvf64gerpp, xvf64gerpn,
       xvf64gernp, xvf64gernn, pmxvf64ger, pmxvf64gerpp, pmxvf64gerpn,
@@ -6125,7 +5847,7 @@ static void vsx_matrix_64bit_float_ger ( const VexAbiInfo* vbi,
 
    IRExpr** args1 = mkIRExprVec_7(
       IRExpr_GSPTR(),
-      mkU32( offsetofPPCGuestState(guest_ACC_0_r0) ),
+      mkU32( acc_base_addr ),
       mkexpr(srcX1_hi), mkexpr(srcX1_lo),
       mkexpr(srcY_hi), mkexpr(srcY_lo),
       mkU32( combined_args ));
@@ -6153,7 +5875,7 @@ static void vsx_matrix_64bit_float_ger ( const VexAbiInfo* vbi,
       fnptr_to_fnentry( vbi, &vsx_matrix_64bit_float_ger_dirty_helper ),
       args1 );
 
-   setup_fxstate_struct( d, AT, AT_fx );
+   setup_fxstate_struct( d, AT, AT_fx, ACC_mapped_on_VSR );
 
    /* execute the dirty call, side-effecting guest state */
    stmt( IRStmt_Dirty(d) );
@@ -6163,7 +5885,7 @@ static void vsx_matrix_64bit_float_ger ( const VexAbiInfo* vbi,
 
    IRExpr** args2 = mkIRExprVec_7(
       IRExpr_GSPTR(),
-      mkU32( offsetofPPCGuestState(guest_ACC_0_r0) ),
+      mkU32( acc_base_addr ),
       mkexpr(srcX_hi), mkexpr(srcX_lo),
       mkexpr(srcY_hi), mkexpr(srcY_lo),
       mkU32( combined_args ));
@@ -6174,7 +5896,7 @@ static void vsx_matrix_64bit_float_ger ( const VexAbiInfo* vbi,
       fnptr_to_fnentry( vbi, &vsx_matrix_64bit_float_ger_dirty_helper ),
       args2 );
 
-   setup_fxstate_struct( d, AT, AT_fx );
+   setup_fxstate_struct( d, AT, AT_fx, ACC_mapped_on_VSR );
 
    /* execute the dirty call, side-effecting guest state */
    stmt( IRStmt_Dirty(d) );
@@ -35028,7 +34750,8 @@ static Bool dis_test_LSB_by_bit ( UInt prefix, UInt theInstr )
 }
 
 static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
-                                         const VexAbiInfo* vbi )
+                                         const VexAbiInfo* vbi,
+                                         Bool ACC_mapped_on_VSR )
 {
    UChar opc1 = ifieldOPC(theInstr);
    UChar opc2 = IFIELD( theInstr, 1, 10);
@@ -35051,55 +34774,64 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
          DIP("xvi4ger8 %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_4BIT_INT_GER,
                          getVSReg( rA_addr ), getVSReg( rB_addr ),
-                         AT, ( ( inst_prefix << 8 ) | XO ) );
+                         AT, ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVI4GER8PP:
          DIP("xvi4ger8pp %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_4BIT_INT_GER,
                          getVSReg( rA_addr ), getVSReg( rB_addr ),
-                         AT, ( ( inst_prefix << 8 ) | XO ) );
+                         AT, ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVI8GER4:
          DIP("xvi8ger4 %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_8BIT_INT_GER,
                          getVSReg( rA_addr ), getVSReg( rB_addr ),
-                         AT, ( ( inst_prefix << 8 ) | XO ) );
+                         AT, ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVI8GER4PP:
          DIP("xvi8ger4pp %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_8BIT_INT_GER,
                          getVSReg( rA_addr ), getVSReg( rB_addr ),
-                         AT, ( ( inst_prefix << 8 ) | XO ) );
+                         AT, ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVI8GER4SPP:
          DIP("xvi8ger4spp %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_8BIT_INT_GER,
                          getVSReg( rA_addr ), getVSReg( rB_addr ),
-                         AT, ( ( inst_prefix << 8 ) | XO ) );
+                         AT, ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVI16GER2S:
          DIP("xvi16ger2s %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_16BIT_INT_GER,
                          getVSReg( rA_addr ), getVSReg( rB_addr ),
-                         AT, ( ( inst_prefix << 8 ) | XO ) );
+                         AT, ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVI16GER2SPP:
          DIP("xvi16ger2pps %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_16BIT_INT_GER,
                          getVSReg( rA_addr ), getVSReg( rB_addr ),
-                         AT, ( ( inst_prefix << 8 ) | XO ) );
+                         AT, ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVI16GER2:
          DIP("xvi16ger2 %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_16BIT_INT_GER,
                          getVSReg( rA_addr ), getVSReg( rB_addr ),
-                         AT, ( ( inst_prefix << 8 ) | XO ) );
+                         AT, ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVI16GER2PP:
          DIP("xvi16ger2pp %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_16BIT_INT_GER,
                          getVSReg( rA_addr ), getVSReg( rB_addr ),
-                         AT, ( ( inst_prefix << 8 ) | XO ) );
+                         AT, ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
 
       case XVF16GER2:
@@ -35107,140 +34839,160 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
          vsx_matrix_ger( vbi, MATRIX_16BIT_FLOAT_GER,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ), AT,
-                         ( ( inst_prefix << 8 ) | XO ) );
+                         ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVF16GER2PP:
          DIP("xvf16ger2pp %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_16BIT_FLOAT_GER,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ), AT,
-                         ( ( inst_prefix << 8 ) | XO ) );
+                         ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVF16GER2PN:
          DIP("xvf16ger2pn %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_16BIT_FLOAT_GER,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ), AT,
-                         ( ( inst_prefix << 8 ) | XO ) );
+                         ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVF16GER2NP:
          DIP("xvf16ger2np %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_16BIT_FLOAT_GER,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ), AT,
-                         ( ( inst_prefix << 8 ) | XO ) );
+                         ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVF16GER2NN:
          DIP("xvf16ger2nn %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_16BIT_FLOAT_GER,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ), AT,
-                         ( ( inst_prefix << 8 ) | XO ) );
+                         ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVBF16GER2:
          DIP("xvbf16ger2 %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_16BIT_FLOAT_GER,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ), AT,
-                         ( ( inst_prefix << 8 ) | XO ) );
+                         ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVBF16GER2PP:
          DIP("xvbf16ger2pp %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_16BIT_FLOAT_GER,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ), AT,
-                         ( ( inst_prefix << 8 ) | XO ) );
+                         ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVBF16GER2PN:
          DIP("xvbf16ger2pn %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_16BIT_FLOAT_GER,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ), AT,
-                         ( ( inst_prefix << 8 ) | XO ) );
+                         ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVBF16GER2NP:
          DIP("xvbf16ger2np %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_16BIT_FLOAT_GER,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ), AT,
-                         ( ( inst_prefix << 8 ) | XO ) );
+                         ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVBF16GER2NN:
          DIP("xvbf16ger2nn %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_16BIT_FLOAT_GER,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ), AT,
-                         ( ( inst_prefix << 8 ) | XO ) );
+                         ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVF32GER:
          DIP("xvf32ger %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_32BIT_FLOAT_GER,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ), AT,
-                         ( ( inst_prefix << 8 ) | XO ) );
+                         ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVF32GERPP:
          DIP("xvf32gerpp %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_32BIT_FLOAT_GER,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ), AT,
-                         ( ( inst_prefix << 8 ) | XO ) );
+                         ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVF32GERPN:
          DIP("xvf32gerpn %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_32BIT_FLOAT_GER,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ), AT,
-                         ( ( inst_prefix << 8 ) | XO ) );
+                         ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVF32GERNP:
          DIP("xvf32gernp %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_32BIT_FLOAT_GER,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ), AT,
-                         ( ( inst_prefix << 8 ) | XO ) );
+                         ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVF32GERNN:
          DIP("xvf32gernn %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_ger( vbi, MATRIX_32BIT_FLOAT_GER,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ), AT,
-                         ( ( inst_prefix << 8 ) | XO ) );
+                         ( ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVF64GER:
          DIP("xvf64ger %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_64bit_float_ger( vbi, getVSReg( rA_addr ),
                                      getVSReg( rA_addr+1 ),
                                      getVSReg( rB_addr ), AT,
-                                     ( ( inst_prefix << 8 ) | XO ) );
+                                     ( ( inst_prefix << 8 ) | XO ),
+                                     ACC_mapped_on_VSR );
          break;
       case XVF64GERPP:
          DIP("xvfd642gerpp %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_64bit_float_ger( vbi, getVSReg( rA_addr ),
                                      getVSReg( rA_addr+1 ),
                                      getVSReg( rB_addr ), AT,
-                                     ( ( inst_prefix << 8 ) | XO ) );
+                                     ( ( inst_prefix << 8 ) | XO ),
+                                     ACC_mapped_on_VSR );
          break;
       case XVF64GERPN:
          DIP("xvf64gerpn %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_64bit_float_ger( vbi, getVSReg( rA_addr ),
                                      getVSReg( rA_addr+1 ),
                                      getVSReg( rB_addr ), AT,
-                                     ( ( inst_prefix << 8 ) | XO ) );
+                                     ( ( inst_prefix << 8 ) | XO ),
+                                     ACC_mapped_on_VSR );
          break;
       case XVF64GERNP:
          DIP("xvf64gernp %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_64bit_float_ger( vbi, getVSReg( rA_addr ),
                                      getVSReg( rA_addr+1 ),
                                      getVSReg( rB_addr ), AT,
-                                     ( ( inst_prefix << 8 ) | XO ) );
+                                     ( ( inst_prefix << 8 ) | XO ),
+                                     ACC_mapped_on_VSR );
          break;
       case XVF64GERNN:
          DIP("xvf64gernn %u,r%u, r%u\n", AT, rA_addr, rB_addr);
          vsx_matrix_64bit_float_ger( vbi, getVSReg( rA_addr ),
                                      getVSReg( rA_addr+1 ),
                                      getVSReg( rB_addr ), AT,
-                                     ( ( inst_prefix << 8 ) | XO ) );
+                                     ( ( inst_prefix << 8 ) | XO ),
+                                     ACC_mapped_on_VSR );
          break;
       default:
          vex_printf("ERROR, dis_vsx_accumulator_prefix, Unknown X0 = 0x%x value.\n", XO);
@@ -35265,7 +35017,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
          vsx_matrix_ger( vbi, MATRIX_4BIT_INT_GER,
                          getVSReg( rA_addr ), getVSReg( rB_addr ),
                          AT,
-                         ( (MASKS << 9 )  | ( inst_prefix << 8 ) | XO) );
+                         ( (MASKS << 9 )  | ( inst_prefix << 8 ) | XO),
+                         ACC_mapped_on_VSR );
          break;
       case XVI4GER8PP:
          PMSK = IFIELD( prefix, 8, 8);
@@ -35276,7 +35029,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
          vsx_matrix_ger( vbi, MATRIX_4BIT_INT_GER,
                          getVSReg( rA_addr ), getVSReg( rB_addr ),
                          AT,
-                         ( (MASKS << 9 ) | ( inst_prefix << 8 ) | XO ) );
+                         ( (MASKS << 9 ) | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVI8GER4:
         PMSK = IFIELD( prefix, 12, 4);
@@ -35287,7 +35041,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
          vsx_matrix_ger( vbi, MATRIX_8BIT_INT_GER,
                          getVSReg( rA_addr ), getVSReg( rB_addr ),
                          AT,
-                         ( (MASKS << 9 ) | ( inst_prefix << 8 ) | XO ) );
+                         ( (MASKS << 9 ) | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVI8GER4PP:
          PMSK = IFIELD( prefix, 12, 4);
@@ -35298,7 +35053,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
          vsx_matrix_ger( vbi, MATRIX_8BIT_INT_GER,
                          getVSReg( rA_addr ), getVSReg( rB_addr ),
                          AT,
-                         ( (MASKS << 9 ) | ( inst_prefix << 8 ) | XO ) );
+                         ( (MASKS << 9 ) | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVI8GER4SPP:
          PMSK = IFIELD( prefix, 12, 4);
@@ -35309,7 +35065,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
          vsx_matrix_ger( vbi, MATRIX_8BIT_INT_GER,
                          getVSReg( rA_addr ), getVSReg( rB_addr ),
                          AT,
-                         ( (MASKS << 9 ) | ( inst_prefix << 8 ) | XO ) );
+                         ( (MASKS << 9 ) | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVI16GER2:
          PMSK = IFIELD( prefix, 12, 4);
@@ -35320,7 +35077,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
          vsx_matrix_ger( vbi, MATRIX_16BIT_INT_GER,
                          getVSReg( rA_addr ), getVSReg( rB_addr ),
                          AT,
-                         ( (MASKS << 9 ) | ( inst_prefix << 8 ) | XO ) );
+                         ( (MASKS << 9 ) | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVI16GER2PP:
          PMSK = IFIELD( prefix, 12, 4);
@@ -35331,7 +35089,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
          vsx_matrix_ger( vbi, MATRIX_16BIT_INT_GER,
                          getVSReg( rA_addr ), getVSReg( rB_addr ),
                          AT,
-                         ( (MASKS << 9 ) | ( inst_prefix << 8 ) | XO ) );
+                         ( (MASKS << 9 ) | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVI16GER2S:
          PMSK = IFIELD( prefix, 14, 2);
@@ -35342,7 +35101,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
          vsx_matrix_ger( vbi, MATRIX_16BIT_INT_GER,
                          getVSReg( rA_addr ), getVSReg( rB_addr ),
                          AT,
-                         ( (MASKS << 9 ) | ( inst_prefix << 8 ) | XO ) );
+                         ( (MASKS << 9 ) | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVI16GER2SPP:
          PMSK = IFIELD( prefix, 14, 2);
@@ -35353,7 +35113,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
          vsx_matrix_ger( vbi, MATRIX_16BIT_INT_GER,
                          getVSReg( rA_addr ), getVSReg( rB_addr ),
                          AT,
-                         ( (MASKS << 9 ) | ( inst_prefix << 8 ) | XO ) );
+                         ( (MASKS << 9 ) | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVBF16GER2:
          PMSK = IFIELD( prefix, 14, 2);
@@ -35364,7 +35125,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ),
                          AT, ( (MASKS << 9 )
-                               | ( inst_prefix << 8 ) | XO ) );
+                               | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVBF16GER2PP:
          PMSK = IFIELD( prefix, 14, 2);
@@ -35375,7 +35137,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ),
                          AT, ( (MASKS << 9 )
-                               | ( inst_prefix << 8 ) | XO ) );
+                               | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVBF16GER2PN:
          PMSK = IFIELD( prefix, 14, 2);
@@ -35386,7 +35149,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ),
                          AT, ( (MASKS << 9 )
-                               | ( inst_prefix << 8 ) | XO ) );
+                               | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVBF16GER2NP:
          PMSK = IFIELD( prefix, 14, 2);
@@ -35397,7 +35161,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ),
                          AT, ( (MASKS << 9 )
-                               | ( inst_prefix << 8 ) | XO ) );
+                               | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVBF16GER2NN:
          PMSK = IFIELD( prefix, 14, 2);
@@ -35408,7 +35173,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ),
                          AT, ( (MASKS << 9 )
-                               | ( inst_prefix << 8 ) | XO ) );
+                               | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVF16GER2:
          PMSK = IFIELD( prefix, 14, 2);
@@ -35419,7 +35185,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ),
                          AT, ( (MASKS << 9 )
-                               | ( inst_prefix << 8 ) | XO ) );
+                               | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVF16GER2PP:
          PMSK = IFIELD( prefix, 14, 2);
@@ -35430,7 +35197,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ),
                          AT, ( (MASKS << 9 )
-                               | ( inst_prefix << 8 ) | XO ) );
+                               | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVF16GER2PN:
          PMSK = IFIELD( prefix, 14, 2);
@@ -35441,7 +35209,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ),
                          AT, ( (MASKS << 9 )
-                               | ( inst_prefix << 8 ) | XO ) );
+                               | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVF16GER2NP:
          PMSK = IFIELD( prefix, 14, 2);
@@ -35452,7 +35221,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ),
                          AT, ( (MASKS << 9 )
-                               | ( inst_prefix << 8 ) | XO ) );
+                               | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVF16GER2NN:
          PMSK = IFIELD( prefix, 14, 2);
@@ -35463,7 +35233,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ),
                          AT, ( (MASKS << 9 )
-                               | ( inst_prefix << 8 ) | XO ) );
+                               | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVF32GER:
          PMSK = IFIELD( prefix, 14, 2);
@@ -35473,7 +35244,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
          vsx_matrix_ger( vbi, MATRIX_32BIT_FLOAT_GER,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ), AT,
-                         ( ( MASKS << 9 ) | ( inst_prefix << 8 ) | XO ) );
+                         ( ( MASKS << 9 ) | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVF32GERPP:
          PMSK = IFIELD( prefix, 14, 2);
@@ -35483,7 +35255,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
          vsx_matrix_ger( vbi, MATRIX_32BIT_FLOAT_GER,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ), AT,
-                         ( ( MASKS << 9) | ( inst_prefix << 8 ) | XO ) );
+                         ( ( MASKS << 9) | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVF32GERPN:
          PMSK = 0;
@@ -35493,7 +35266,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
          vsx_matrix_ger( vbi, MATRIX_32BIT_FLOAT_GER,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ), AT,
-                         ( ( MASKS << 9) | ( inst_prefix << 8 ) | XO ) );
+                         ( ( MASKS << 9) | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVF32GERNP:
          PMSK = 0;
@@ -35503,7 +35277,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
          vsx_matrix_ger( vbi, MATRIX_32BIT_FLOAT_GER,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ), AT,
-                         ( ( MASKS << 9) | ( inst_prefix << 8 ) | XO ) );
+                         ( ( MASKS << 9) | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVF32GERNN:
          PMSK = 0;
@@ -35513,7 +35288,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
          vsx_matrix_ger( vbi, MATRIX_32BIT_FLOAT_GER,
                          getVSReg( rA_addr ),
                          getVSReg( rB_addr ), AT,
-                         ( ( MASKS << 9) | ( inst_prefix << 8 ) | XO ) );
+                         ( ( MASKS << 9) | ( inst_prefix << 8 ) | XO ),
+                         ACC_mapped_on_VSR );
          break;
       case XVF64GER:
          PMSK = 0;
@@ -35524,7 +35300,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
                                      getVSReg( rA_addr+1 ),
                                      getVSReg( rB_addr ), AT,
                                      ( ( MASKS << 9) | ( inst_prefix << 8 )
-                                       | XO ) );
+                                       | XO ),
+                                     ACC_mapped_on_VSR );
          break;
       case XVF64GERPP:
          PMSK = 0;
@@ -35535,7 +35312,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
                                      getVSReg( rA_addr+1 ),
                                      getVSReg( rB_addr ), AT,
                                      ( ( MASKS << 9) | ( inst_prefix << 8 )
-                                       | XO ) );
+                                       | XO ),
+                                     ACC_mapped_on_VSR );
          break;
       case XVF64GERPN:
          PMSK = 0;
@@ -35546,7 +35324,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
                                      getVSReg( rA_addr+1 ),
                                      getVSReg( rB_addr ), AT,
                                      ( ( MASKS << 9) | ( inst_prefix << 8 )
-                                       | XO ) );
+                                       | XO ),
+                                     ACC_mapped_on_VSR );
          break;
       case XVF64GERNP:
          PMSK = 0;
@@ -35557,7 +35336,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
                                      getVSReg( rA_addr+1 ),
                                      getVSReg( rB_addr ), AT,
                                      ( ( MASKS << 9) | ( inst_prefix << 8 )
-                                       | XO ) );
+                                       | XO ),
+                                     ACC_mapped_on_VSR );
          break;
       case XVF64GERNN:
          PMSK = 0;
@@ -35568,7 +35348,8 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
                                      getVSReg( rA_addr+1 ),
                                      getVSReg( rB_addr ), AT,
                                      ( ( MASKS << 9) | ( inst_prefix << 8 )
-                                       | XO ) );
+                                       | XO ),
+                                     ACC_mapped_on_VSR );
          break;
       default:
          return False;
@@ -35578,10 +35359,10 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
       // FYI, this is not a prefix instruction
       DIP("xxmfacc %u\n", AT);
 
-      putVSReg( 4*AT+0, getACC( AT, 0 ) );
-      putVSReg( 4*AT+1, getACC( AT, 1 ) );
-      putVSReg( 4*AT+2, getACC( AT, 2 ) );
-      putVSReg( 4*AT+3, getACC( AT, 3 ) );
+      putVSReg( 4*AT+0, getACC( AT, 0, ACC_mapped_on_VSR ) );
+      putVSReg( 4*AT+1, getACC( AT, 1, ACC_mapped_on_VSR ) );
+      putVSReg( 4*AT+2, getACC( AT, 2, ACC_mapped_on_VSR ) );
+      putVSReg( 4*AT+3, getACC( AT, 3, ACC_mapped_on_VSR ) );
 
    } else if ((opc1 == 0x1F) && (opc2 == 0xB1) && (bit11_15 == 3) && !prefix) {
       // FYI, this is not a prefix instruction
@@ -35590,19 +35371,19 @@ static Bool dis_vsx_accumulator_prefix ( UInt prefix, UInt theInstr,
       DIP("xxsetaccz %u\n", AT);
 
       assign( zero128, binop(Iop_64HLtoV128, mkU64( 0 ), mkU64( 0 ) ) );
-      putACC( AT, 0, mkexpr( zero128 ) );
-      putACC( AT, 1, mkexpr( zero128 ) );
-      putACC( AT, 2, mkexpr( zero128 ) );
-      putACC( AT, 3, mkexpr( zero128 ) );
+      putACC( AT, 0, mkexpr( zero128 ), ACC_mapped_on_VSR );
+      putACC( AT, 1, mkexpr( zero128 ), ACC_mapped_on_VSR );
+      putACC( AT, 2, mkexpr( zero128 ), ACC_mapped_on_VSR );
+      putACC( AT, 3, mkexpr( zero128 ), ACC_mapped_on_VSR );
 
    } else if ((opc1 == 0x1F) && (opc2 == 0xB1) && (bit11_15 == 1) && !prefix) {
       // FYI, this is not a prefix instruction
       DIP("xxmtacc %u\n", AT);
 
-      putACC( AT, 0, getVSReg( 4*AT+0 ) );
-      putACC( AT, 1, getVSReg( 4*AT+1 ) );
-      putACC( AT, 2, getVSReg( 4*AT+2 ) );
-      putACC( AT, 3, getVSReg( 4*AT+3 ) );
+      putACC( AT, 0, getVSReg( 4*AT+0 ), ACC_mapped_on_VSR );
+      putACC( AT, 1, getVSReg( 4*AT+1 ), ACC_mapped_on_VSR );
+      putACC( AT, 2, getVSReg( 4*AT+2 ), ACC_mapped_on_VSR );
+      putACC( AT, 3, getVSReg( 4*AT+3 ), ACC_mapped_on_VSR );
 
  } else {
       vex_printf("ERROR, dis_vsx_accumulator_prefix, Unknown instruction theInstr = 0x%x\n",
@@ -35923,6 +35704,21 @@ DisResult disInstr_PPC_WRK (
    Bool      allow_isa_3_0  = False;
    Bool      allow_isa_3_1  = False;
    Bool      is_prefix;
+
+  /* In ISA 3.1 the ACC is implemented on top of the vsr0 thru vsr31.
+
+     NOTE, ISA 3.1 says in the future the ACC implentation may change.  It
+     doesn't say how it might change but the assumption is the ACC might be
+     implemented as a separate register file. If/when the ACC is implemented
+     as a separate register file, ACC_mapped_on_VSR can be set to False, and
+     Valgrind will instead utilize the separate register file.   2/8/2022
+
+     For example, if ISA_3.2 implements the ACC as a separate register
+     file, there will need to be a check after the if (mode64) statement below
+     of the form:      if (allow_isa_3_2) ACC_mapped_on_VSR = False;
+     to set the flag to indicate the ACC is implemented as a separate register
+     file.  */
+   Bool      ACC_mapped_on_VSR = True;
 
    /* What insn variants are we supporting today? */
    if (mode64) {
@@ -36702,7 +36498,8 @@ DisResult disInstr_PPC_WRK (
              (opc2 == XVF64GERPN)     ||       // xvf64gerpn
              (opc2 == XVF64GERNP)     ||       // xvf64gernp
              (opc2 == XVF64GERNN)) {           // xvf64gernn
-            if (dis_vsx_accumulator_prefix( prefix, theInstr, abiinfo ) )
+            if (dis_vsx_accumulator_prefix( prefix, theInstr, abiinfo,
+                                            ACC_mapped_on_VSR ) )
                goto decode_success;
             goto decode_failure;
          } else {
@@ -36713,7 +36510,8 @@ DisResult disInstr_PPC_WRK (
 
       } else {
          // lxacc
-         if (dis_vsx_accumulator_prefix( prefix, theInstr, abiinfo ) )
+         if (dis_vsx_accumulator_prefix( prefix, theInstr, abiinfo,
+                                         ACC_mapped_on_VSR ) )
             goto decode_success;
          goto decode_failure;
       }
@@ -36982,7 +36780,8 @@ DisResult disInstr_PPC_WRK (
    case 0x3F:
       if ( prefix_instruction( prefix ) ) {  // stxacc
          if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
-         if (dis_vsx_accumulator_prefix( prefix, theInstr, abiinfo ) )
+         if (dis_vsx_accumulator_prefix( prefix, theInstr, abiinfo,
+                ACC_mapped_on_VSR ) )
             goto decode_success;
          goto decode_failure;
       }
@@ -37324,7 +37123,8 @@ DisResult disInstr_PPC_WRK (
    case 0x1F:
       if ( prefix_instruction( prefix ) ) {  // stxacc
          if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
-         if (dis_vsx_accumulator_prefix( prefix, theInstr, abiinfo ) )
+         if (dis_vsx_accumulator_prefix( prefix, theInstr, abiinfo,
+                ACC_mapped_on_VSR ) )
             goto decode_success;
          goto decode_failure;
       }
@@ -37392,7 +37192,8 @@ DisResult disInstr_PPC_WRK (
       case 0xB1:         // xxmfacc, xxsetaccz
          {
             if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
-            if (dis_vsx_accumulator_prefix( prefix, theInstr, abiinfo ) )
+            if (dis_vsx_accumulator_prefix( prefix, theInstr, abiinfo,
+                                            ACC_mapped_on_VSR ) )
                goto decode_success;
             goto decode_failure;
          }

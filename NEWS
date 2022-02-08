@@ -66,6 +66,8 @@ are not entered into bugzilla tend to get forgotten about or ignored.
         condition code correctly.
 449672  ppc64 --track-origins=yes failures because of bad cmov addHRegUse
 449838  sigsegv liburing the 'impossible' happened for io_uring_setup
+450025  Powerc: ACC file not implemented as a logical overlay of the VSR
+        registers.
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

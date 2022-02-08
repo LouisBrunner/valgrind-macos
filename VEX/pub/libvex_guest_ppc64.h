@@ -292,6 +292,13 @@ typedef
       /* 1700 */ UInt  guest_PSPB;      // Problem State Priority Boost register
       /* 1704 */ ULong guest_DSCR;      // Data Stream Control register
 
+      /* Historical note, Initial ACC support was implemented to use a separate
+         register file, but in practice (ISA 3.1) the hardware implementation
+         logically overlays over the existing VSR registers. This may change
+         in future hardware, so the current implementation assumes ACC and VSRs
+         logically contain the same data, but code remains in place to support
+         future implementations that may require a separate register file.
+         02/08/2022. */
       /* The guest_ACC_entries must be in order and sequential.  The helper
          routines get_ACC_entry(), write_ACC_entry() calculate the offset of
          the ACC entry based on a address of guest_ACC_0_r0.  */

@@ -2590,7 +2590,7 @@ void getRegUsage_PPCInstr ( HRegUsage* u, const PPCInstr* i, Bool mode64 )
       return;
    case Pin_CMov:
       addRegUsage_PPCRI(u,  i->Pin.CMov.src);
-      addHRegUse(u, HRmWrite, i->Pin.CMov.dst);
+      addHRegUse(u, HRmModify, i->Pin.CMov.dst);
       return;
    case Pin_Load:
       addRegUsage_PPCAMode(u, i->Pin.Load.src);

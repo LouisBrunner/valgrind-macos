@@ -65,6 +65,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 449483  Powerpc: vcmpgtsq., vcmpgtuq,, vcmpequq. instructions not setting the
         condition code correctly.
 449672  ppc64 --track-origins=yes failures because of bad cmov addHRegUse
+449838  sigsegv liburing the 'impossible' happened for io_uring_setup
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

@@ -13206,7 +13206,7 @@ POST(sys_io_uring_setup)
       SET_STATUS_Failure( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)(Addr)ARG1);
+         ML_(record_fd_open_nameless)(tid, RES);
       POST_MEM_WRITE(ARG2 + offsetof(struct vki_io_uring_params, sq_off),
                      sizeof(struct vki_io_sqring_offsets) +
                      sizeof(struct vki_io_cqring_offsets));

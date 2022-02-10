@@ -56,6 +56,7 @@ than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
 426751  Valgrind reports "still reachable" memory using musl (alpine running inside docker)
+432801  Valgrind 3.16.1 reports a jump based on uninitialized memory somehow related to clang and signals
 433857  Add validation to C++17 aligned new/delete alignment size
 433859  Add mismatched detection to C++ 17 aligned new/delete
 460192  Add epoll_pwait2

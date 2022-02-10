@@ -1246,7 +1246,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_isa_3_0 = False;
      } else {
-        __asm__ __volatile__(".long 00x7f140434":::"r20"); /* cnttzw r20,r24 */
+        __asm__ __volatile__(".long 0x7f140434":::"r20"); /* cnttzw r20,r24 */
      }
 
      // ISA 3.1 not supported on 32-bit systems

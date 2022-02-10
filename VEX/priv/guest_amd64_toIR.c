@@ -20580,7 +20580,7 @@ Long dis_ESC_NONE (
       if (haveF2orF3(pfx)) goto decode_failure;
       if (sz == 8) {
          putIRegRAX( 8, unop(Iop_32Sto64, getIRegRAX(4)) );
-         DIP(/*"cdqe\n"*/"cltq");
+         DIP(/*"cdqe\n"*/"cltq\n");
          return delta;
       }
       if (sz == 4) {

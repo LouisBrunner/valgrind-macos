@@ -10755,7 +10755,8 @@ static Bool dis_trap ( UInt prefix, UInt theInstr,
 */
 
 static Bool dis_syslink ( UInt prefix, UInt theInstr,
-                          const VexAbiInfo* abiinfo, DisResult* dres )
+                          const VexAbiInfo* abiinfo, DisResult* dres,
+                          Bool allow_scv, Bool sigill_diag )
 {
    IRType ty = mode64 ? Ity_I64 : Ity_I32;
 
@@ -10776,9 +10777,14 @@ static Bool dis_syslink ( UInt prefix, UInt theInstr,
       DIP("sc\n");
       put_syscall_flag( mkU32(SC_FLAG) );
    } else if (theInstr == 0x44000001) {
-      // scv
-      DIP("scv\n");
-      put_syscall_flag( mkU32(SCV_FLAG) );
+      if (allow_scv) {   // scv
+         DIP("scv\n");
+         put_syscall_flag( mkU32(SCV_FLAG) );
+      } else {
+         if (sigill_diag)
+            vex_printf("The scv instruction is not supported in this environment per the HWCAPS2 capability flags.\n");
+         return False;
+      }
    } else {
       /* Unknown instruction */
       return False;
@@ -35703,6 +35709,7 @@ DisResult disInstr_PPC_WRK (
    Bool      allow_isa_2_07 = False;
    Bool      allow_isa_3_0  = False;
    Bool      allow_isa_3_1  = False;
+   Bool      allow_scv = False;
    Bool      is_prefix;
 
   /* In ISA 3.1 the ACC is implemented on top of the vsr0 thru vsr31.
@@ -35731,6 +35738,7 @@ DisResult disInstr_PPC_WRK (
       allow_isa_2_07 = (0 != (hwcaps & VEX_HWCAPS_PPC64_ISA2_07));
       allow_isa_3_0  = (0 != (hwcaps & VEX_HWCAPS_PPC64_ISA3_0));
       allow_isa_3_1  = (0 != (hwcaps & VEX_HWCAPS_PPC64_ISA3_1));
+      allow_scv  = archinfo->ppc_scv_supported;
    } else {
       allow_F  = (0 != (hwcaps & VEX_HWCAPS_PPC32_F));
       allow_V  = (0 != (hwcaps & VEX_HWCAPS_PPC32_V));
@@ -35741,6 +35749,7 @@ DisResult disInstr_PPC_WRK (
       allow_isa_2_07 = (0 != (hwcaps & VEX_HWCAPS_PPC32_ISA2_07));
       allow_isa_3_0  = (0 != (hwcaps & VEX_HWCAPS_PPC32_ISA3_0));
       /* ISA 3.1 is not supported in 32-bit mode */
+      /* The scv instruction is not supported in 32-bit mode */
    }
 
    /* Enable writting the OV32 and CA32 bits added with ISA3.0 */
@@ -36140,7 +36149,8 @@ DisResult disInstr_PPC_WRK (
 
    /* System Linkage Instructions */
    case 0x11: // sc, scv
-      if (dis_syslink( prefix, theInstr, abiinfo, &dres))
+      if (dis_syslink( prefix, theInstr, abiinfo, &dres, allow_scv,
+                       sigill_diag))
          goto decode_success;
       goto decode_failure;
 

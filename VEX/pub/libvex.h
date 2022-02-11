@@ -362,6 +362,8 @@ typedef
       /* PPC32/PPC64 only: sizes zeroed by the dcbz/dcbzl instructions
          (bug#135264) */
       UInt ppc_dcbz_szB;
+      /* PPC32/PPC64 only: True scv is supported */
+      Bool ppc_scv_supported;
       UInt ppc_dcbzl_szB; /* 0 means unsupported (SIGILL) */
       /* ARM64: I- and D- minimum line sizes in log2(bytes), as
          obtained from ctr_el0.DminLine and .IminLine.  For example, a

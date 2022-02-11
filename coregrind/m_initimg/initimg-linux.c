@@ -727,7 +727,7 @@ Addr setup_client_stack( void*  init_sp,
             Bool auxv_2_07, hw_caps_2_07;
             Bool auxv_3_0, hw_caps_3_0;
             Bool auxv_3_1, hw_caps_3_1;
-            Bool auxv_scv_supported, hw_caps_scv_supported;
+            Bool auxv_scv_supported;
 
 	    /* The HWCAP2 field may contain an arch_2_07 entry that indicates
              * if the processor is compliant with the 2.07 ISA. (i.e. Power 8
@@ -799,17 +799,16 @@ Addr setup_client_stack( void*  init_sp,
                 ADD PUBLIC LINK WHEN AVAILABLE
             */
 
-            /* Check for SCV support */
+            /* Check for SCV support, Can not test scv instruction to see
+               if the system supports scv.  Issuing an scv intruction on a
+               system that does not have scv in the HWCAPS results in a
+               message in dmsg  "Facility 'SCV' unavailable (12), exception".
+               Will have to just use the scv setting from HWCAPS2 to determine
+               if the host supports scv.  */
             auxv_scv_supported = (auxv->u.a_val & 0x00100000ULL)
                == 0x00100000ULL;
-            hw_caps_scv_supported =
-               (vex_archinfo->hwcaps & VEX_HWCAPS_PPC64_SCV)
-               == VEX_HWCAPS_PPC64_SCV;
 
-            /* Verify the scv_supported setting in HWCAP2 matches the setting
-               in VEX HWCAPS.
-             */
-            vg_assert(auxv_scv_supported == hw_caps_scv_supported);
+            VG_(machine_ppc64_set_scv_support)(auxv_scv_supported);
 
             /* ISA 3.1 */
             auxv_3_1 = (auxv->u.a_val & 0x00040000ULL) == 0x00040000ULL;

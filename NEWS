@@ -70,6 +70,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 449838  sigsegv liburing the 'impossible' happened for io_uring_setup
 450025  Powerc: ACC file not implemented as a logical overlay of the VSR
         registers.
+450536  Powerpc: valgrind throws 'facility scv unavailable exception'
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

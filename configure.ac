@@ -514,12 +514,14 @@ case "${host_os}" in
         AC_DEFINE([DARWIN_10_14], 101400, [DARWIN_VERS value for macOS 10.14])
         AC_DEFINE([DARWIN_10_15], 101500, [DARWIN_VERS value for macOS 10.15])
         AC_DEFINE([DARWIN_11_00], 110000, [DARWIN_VERS value for macOS 11.0])
+        AC_DEFINE([DARWIN_12_00], 110000, [DARWIN_VERS value for macOS 12.0])
 
         AC_DEFINE([XCODE_10_XX], 101400, [XCODE_VERS value for Xcode earlier than 10.15])
         AC_DEFINE([XCODE_10_14_6], 101406, [XCODE_VERS value for Xcode 10.14.6])
         AC_DEFINE([XCODE_10_15], 101500, [XCODE_VERS value for Xcode 10.15])
         AC_DEFINE([XCODE_11_0], 110000, [XCODE_VERS value for Xcode 11.0])
         AC_DEFINE([XCODE_12_0], 120000, [XCODE_VERS value for Xcode 12.0])
+        AC_DEFINE([XCODE_13_0], 130000, [XCODE_VERS value for Xcode 13.0])
 
         # Substitute the Xcode include path detected earlier
         AC_SUBST(XCODE_INC_DIR, [$xcodedir_inc])
@@ -616,9 +618,15 @@ case "${host_os}" in
       DEFAULT_SUPP="darwin20.supp ${DEFAULT_SUPP}"
       DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
                   ;;
+       21.*)
+      AC_MSG_RESULT([Darwin 21.x (${kernel}) / macOS 12 Monterey])
+      AC_DEFINE([DARWIN_VERS], DARWIN_12_00, [Darwin / Mac OS X version])
+      DEFAULT_SUPP="darwin21.supp ${DEFAULT_SUPP}"
+      DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
+                  ;;
              *)
 		  AC_MSG_RESULT([unsupported (${kernel})])
-		  AC_MSG_ERROR([Valgrind works on Darwin 10.x-20.x (Mac OS X 10.6-10.11 and macOS 10.12-11.0)])
+		  AC_MSG_ERROR([Valgrind works on Darwin 10.x-21.x (Mac OS X 10.6-10.11 and macOS 10.12-12.0)])
 		  ;;
 	esac
 
@@ -643,9 +651,12 @@ case "${host_os}" in
 	        12.*)
             AC_DEFINE([XCODE_VERS], XCODE_12_0, [Xcode version])
             ;;
+	        13.*)
+            AC_DEFINE([XCODE_VERS], XCODE_13_0, [Xcode version])
+            ;;
 	        *)
             AC_MSG_RESULT([unsupported (${xcodeversion})])
-            AC_MSG_ERROR([Valgrind works on Darwin 10.x-19.x (Mac OS X 10.6-11 and macOS 10.12-15)])
+            AC_MSG_ERROR([Valgrind works on Darwin 10.x-21.x (Mac OS X 10.6-11 and macOS 10.12-12.0)])
             ;;
 	      esac
         AC_MSG_RESULT([${xcodeversion}])

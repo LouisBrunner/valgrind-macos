@@ -416,7 +416,6 @@ check_PROGRAMS =      \
   pth_detached3       \
   pth_inconsistent_cond_wait \
   pth_mutex_reinit    \
-  pth_mutex_signal    \
   pth_process_shared_mutex   \
   recursive_mutex     \
   rwlock_race         \
@@ -457,7 +456,7 @@ check_PROGRAMS += tsan_unittest \
   pth_uninitialized_cond
 endif
 
-# clang 3.3 will generate errors about libstdc++ headers from 
+# clang 3.3 will generate errors about libstdc++ headers from
 # gcc (Ubuntu/Linaro 4.6.3-1ubuntu5) 4.6.3
 if CXX_CAN_INCLUDE_THREAD_HEADER
 if HAVE_SHARED_POINTER_ANNOTATION
@@ -510,7 +509,8 @@ check_PROGRAMS += swapcontext
 endif
 
 if !VGCONF_OS_IS_DARWIN
-check_PROGRAMS += sem_wait
+# pth_mutex_signal is disabled on macOS as it doesn't support real-time signals
+check_PROGRAMS += sem_wait pth_mutex_signal
 endif
 
 if VGCONF_OS_IS_FREEBSD

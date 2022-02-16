@@ -93,6 +93,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 449838  sigsegv liburing the 'impossible' happened for io_uring_setup
 450025  Powerc: ACC file not implemented as a logical overlay of the VSR
         registers.
+450437  Warn for execve syscall with argv or argv[0] being NULL
 450536  Powerpc: valgrind throws 'facility scv unavailable exception'
 451626  Syscall param bpf(attr->raw_tracepoint.name) points to unaddressable byte(s)
 451827  [ppc64le] VEX temporary storage exhausted with several vbpermq instructions

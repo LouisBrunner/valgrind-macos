@@ -95,9 +95,9 @@ int main(void)
    char *argv_envp[] = {(char *) (x0 + 1), NULL};
    GO(__NR_execve, "4s 2m");
    SY(__NR_execve, x0 + 1, x0 + argv_envp, x0); FAIL;
-
+   char *argv_ok[] = {"frob", NULL};
    GO(__NR_execve, "4s 2m");
-   SY(__NR_execve, x0 + 1, x0, x0 + argv_envp); FAIL;
+   SY(__NR_execve, x0 + 1, x0 + argv_ok, x0 + argv_envp); FAIL;
 
    // __NR_chdir 12
    GO(__NR_chdir, "1s 1m");

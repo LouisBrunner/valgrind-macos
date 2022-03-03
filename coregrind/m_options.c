@@ -106,6 +106,7 @@ VgVgdb VG_(clo_vgdb)           = Vg_VgdbYes;
 #endif
 Int    VG_(clo_vgdb_poll)      = 5000; 
 Int    VG_(clo_vgdb_error)     = 999999999;
+Bool   VG_(clo_launched_with_multi)  = False;
 UInt   VG_(clo_vgdb_stop_at)   = 0;
 const HChar *VG_(clo_vgdb_prefix)    = NULL;
 const HChar *VG_(arg_vgdb_prefix)    = NULL;

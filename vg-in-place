@@ -28,5 +28,5 @@ vgbasedir=`dirname $scriptname`
 # 'inner' builds.
 VALGRIND_LIB="$vgbasedir/.in_place" \
     VALGRIND_LIB_INNER="$vgbasedir/.in_place" \
-    "$vgbasedir/coregrind/valgrind" "$@"
+    exec "$vgbasedir/coregrind/valgrind" "$@"
 

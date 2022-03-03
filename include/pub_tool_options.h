@@ -332,6 +332,11 @@ extern Bool VG_(clo_stats);
    Note that this value can be changed dynamically. */
 extern Int VG_(clo_vgdb_error);
 
+/* Set by vgdb in --multi mode when launching valgrind. This suppresses
+   the "TO DEBUG" banner because vgdb will take care of attaching in that
+   case.  */
+extern Bool VG_(clo_launched_with_multi);
+
 /* If user has provided the --vgdb-prefix command line option,
    VG_(arg_vgdb_prefix) points at the provided argument (including the
    '--vgdb-prefix=' string).

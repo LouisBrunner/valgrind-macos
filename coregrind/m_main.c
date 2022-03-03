@@ -279,6 +279,7 @@ static void usage_NORETURN ( int need_help )
 "    --progress-interval=<number>  report progress every <number>\n"
 "                                  CPU seconds [0, meaning disabled]\n"
 "    --command-line-only=no|yes  only use command line options [no]\n"
+"    --launched-with-multi=no|yes  valgrind launched in vgdb multi mode [no]\n"
 "\n"
 "  Vex options for all Valgrind tools:\n"
 "    --vex-iropt-verbosity=<0..9>           [0]\n"
@@ -562,6 +563,8 @@ static void process_option (Clo_Mode mode,
    }
    else if VG_INT_CLOM (cloPD, arg, "--vgdb-poll",      VG_(clo_vgdb_poll)) {}
    else if VG_INT_CLOM (cloPD, arg, "--vgdb-error", VG_(clo_vgdb_error)) {}
+   else if VG_BOOL_CLO (arg, "--launched-with-multi",
+                        VG_(clo_launched_with_multi)) {}
    else if VG_USET_CLOM (cloPD, arg, "--vgdb-stop-at",
                          "startup,exit,abexit,valgrindabexit",
                          VG_(clo_vgdb_stop_at)) {}

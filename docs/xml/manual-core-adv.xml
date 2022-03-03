@@ -482,6 +482,29 @@ Loaded symbols for /lib/ld-linux.so.2
 (gdb) 
 ]]></programlisting>
 
+<para>If you want to use the <option>--multi</option> mode which makes vgdb start in extended-remote mode, set the following in GDB:
+<screen><![CDATA[
+# gdb prog
+(gdb) set remote exec-file prog
+(gdb) set sysroot /
+(gdb) target extended-remote | vgdb --multi --vargs -q
+(gdb) start
+Temporary breakpoint 1 at 0x24e0
+Starting program: prog
+relaying data between gdb and process 2999348
+
+Temporary breakpoint 1, 0x000000000010a4a0 in main ()
+(gdb)
+]]></screen>
+</para>
+
+<para>Note that in <option>--multi</option> mode you don't have to
+start valgrind separately. vgdb will start valgrind for
+you. vgdb <option>--multi</option> mode is experimental and currently
+has some limitations like not being able to see program stdin and
+stdout. Also you have to explicitly set the remote exec-file and
+sysroot to tell GDB the "remote" and local files are the same.</para>
+
 <para>Once GDB is connected to the Valgrind gdbserver, it can be used
 in the same way as if you were debugging the program natively:</para>
  <itemizedlist>
@@ -1254,7 +1277,7 @@ $5 = 36
 
 <para> vgdb ("Valgrind to GDB") is a small program that is used as an
 intermediary between Valgrind and GDB or a shell.
-Therefore, it has two usage modes:
+It has three usage modes:
 </para>
 <!-- start of xi:include in the manpage -->
 <orderedlist id="vgdb.desc.modes">
@@ -1273,6 +1296,19 @@ Therefore, it has two usage modes:
     gdbserver.  For this usage, only OPTION(s) can be given, but no
     COMMAND can be given.
     </para>
+  </listitem>
+
+  <listitem id="manual-core-adv.vgdb-multi" xreflabel="vgdb multi">
+      <para>In the <option>--multi</option> mode, Vgdb uses the extended
+      remote protocol to communicate with Gdb.  This allows you to view
+      output from both valgrind and GDB in the GDB session. This is
+      accomplished via the "target extended-remote | vgdb --multi". In
+      this mode you no longer need to start valgrind yourself. vgdb will
+      start up valgrind when gdb tells it to run a new program. For this
+      usage, the vgdb OPTIONS(s) can also include <option>--valgrind</option>
+      and <option>--vargs</option> to describe how valgrind should be
+      started.
+      </para>
   </listitem>
 
 </orderedlist>
@@ -1369,7 +1405,28 @@ gdb prog
     where targetip is the ip address or hostname of the target computer.
     </para></listitem>
   </varlistentry>
-   
+
+  <varlistentry>
+    <term><option>--vgdb-multi</option></term>
+    <listitem><para>Makes vgdb start in extended-remote mode and to wait
+    for gdb to tell us what to run.</para></listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>--valgrind</option></term>
+    <listitem><para>The path to valgrind to use, in extended-remote
+    mode. If not specified, the system valgrind will be
+    launched.</para></listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><option>--vargs</option></term>
+    <listitem><para>Options to run valgrind with, in extended-remote
+    mode. For example <option>-q</option>. Everything
+    following <option>--vargs</option> will be provided as arguments
+    to valgrind as is. </para></listitem>
+  </varlistentry>
+
   <varlistentry>
     <term><option>-c</option></term>
     <listitem><para>To give more than one command to a

@@ -34,6 +34,17 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
     $3 = 40
     (gdb) monitor who_point_at 0x1130a0 40
 
+* The vgdb utility now supports extended-remote protocol when
+  invoked with --multi. In this mode the GDB run command is
+  supported. Which means you don't need to run gdb and valgrind
+  from different terminals. So for example to start you program
+  in gdb and run it under valgrind you can do:
+  $ gdb prog
+  (gdb) set remote exec-file prog
+  (gdb) set sysroot /
+  (gdb) target extended-remote | vgdb --multi
+  (gdb) start
+
 * The behaviour of realloc with a size of zero can now
   be changed for tools that intercept malloc. Those
   tools are memcheck, helgrind, drd, massif and dhat.
@@ -116,6 +127,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 392331  Spurious lock not held error from inside pthread_cond_timedwait
 400793  pthread_rwlock_timedwrlock false positive
 433873  openat2 syscall unimplemented on Linux
+434057  Add stdio mode to valgrind's gdbserver
 435441  valgrind fails to interpose malloc on musl 1.2.2 due to weak symbol name and no libc soname
 444110  priv/guest_ppc_toIR.c:36198:31: warning: duplicated 'if' condition.
 444488  Use glibc.pthread.stack_cache_size tunable

@@ -12920,8 +12920,9 @@ PRE(sys_bpf)
                break;
             }
             /* Name is limited to 128 characters in kernel/bpf/syscall.c. */
-            pre_asciiz_str(tid, attr->raw_tracepoint.name, 128,
-                           "bpf(attr->raw_tracepoint.name)");
+            if (attr->raw_tracepoint.name != NULL)
+               pre_asciiz_str(tid, attr->raw_tracepoint.name, 128,
+                              "bpf(attr->raw_tracepoint.name)");
          }
          break;
       case VKI_BPF_BTF_LOAD:

@@ -31771,7 +31771,7 @@ static Bool dis_VSR_byte_mask ( UInt prefix, UInt theInstr,
    }
 }
 
-static Bool dis_av_quad ( UInt prefix, UInt theInstr )
+static Bool dis_av_quad ( UInt prefix, UInt theInstr, const VexAbiInfo* vbi )
 {
    /* VX-Form */
    UChar opc1     = ifieldOPC(theInstr);
@@ -31828,71 +31828,27 @@ static Bool dis_av_quad ( UInt prefix, UInt theInstr )
       return True;
    case 0x054C: // vbpermq
    {
-#define BPERMD_IDX_MASK 0x00000000000000FFULL
-#define BPERMD_BIT_MASK 0x8000000000000000ULL
-      int i;
-      IRExpr * vB_expr = mkexpr(vB);
-      IRExpr * res = binop(Iop_AndV128, mkV128(0), mkV128(0));
-      DIP("vbpermq v%d,v%d,v%d\n", vRT_addr, vRA_addr, vRB_addr);
-      for (i = 0; i < 16; i++) {
-         IRTemp idx_tmp = newTemp( Ity_V128 );
-         IRTemp perm_bit = newTemp( Ity_V128 );
-         IRTemp idx = newTemp( Ity_I8 );
-         IRTemp idx_LT127 = newTemp( Ity_I1 );
-         IRTemp idx_LT127_ity128 = newTemp( Ity_V128 );
+      /* The original supports was done with Iops but it caused the internal
+         temorary storage to be exhausted if there were three or more vbpermq
+         instructions in a row. Changed to a clean helper on 3/24/2022  */
+      IRTemp res_hi = newTemp( Ity_I64 );
+      IRExpr * res_low = mkU64(0);
+      assign( res_hi,
+              mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+                             "vbpermq_clean_helper",
+                             fnptr_to_fnentry( vbi,
+                                               &vbpermq_clean_helper ),
+                             mkIRExprVec_4( unop( Iop_V128HIto64,
+                                                  mkexpr(vA) ),
+                                            unop( Iop_V128to64,
+                                                  mkexpr(vA) ),
+                                            unop( Iop_V128HIto64,
+                                                  mkexpr(vB) ),
+                                            unop( Iop_V128to64,
+                                                  mkexpr(vB) ) ) ) );
 
-         assign( idx_tmp,
-                 binop( Iop_AndV128,
-                        binop( Iop_64HLtoV128,
-                               mkU64(0),
-                               mkU64(BPERMD_IDX_MASK) ),
-                        vB_expr ) );
-         assign( idx_LT127,
-                 binop( Iop_CmpEQ32,
-                        unop ( Iop_64to32,
-                               unop( Iop_V128to64, binop( Iop_ShrV128,
-                                                          mkexpr(idx_tmp),
-                                                          mkU8(7) ) ) ),
-                        mkU32(0) ) );
-
-         /* Below, we set idx to determine which bit of vA to use for the
-          * perm bit.  If idx_LT127 is 0, the perm bit is forced to '0'.
-          */
-         assign( idx,
-                 binop( Iop_And8,
-                        unop( Iop_1Sto8,
-                              mkexpr(idx_LT127) ),
-                        unop( Iop_32to8,
-                              unop( Iop_V128to32, mkexpr( idx_tmp ) ) ) ) );
-
-         assign( idx_LT127_ity128,
-                 binop( Iop_64HLtoV128,
-                        mkU64(0),
-                        unop( Iop_32Uto64,
-                              unop( Iop_1Uto32, mkexpr(idx_LT127 ) ) ) ) );
-         assign( perm_bit,
-                 binop( Iop_AndV128,
-                        mkexpr( idx_LT127_ity128 ),
-                        binop( Iop_ShrV128,
-                               binop( Iop_AndV128,
-                                      binop (Iop_64HLtoV128,
-                                             mkU64( BPERMD_BIT_MASK ),
-                                             mkU64(0)),
-                                      binop( Iop_ShlV128,
-                                             mkexpr( vA ),
-                                             mkexpr( idx ) ) ),
-                               mkU8( 127 ) ) ) );
-         res = binop( Iop_OrV128,
-                      res,
-                      binop( Iop_ShlV128,
-                             mkexpr( perm_bit ),
-                             mkU8( i + 64 ) ) );
-         vB_expr = binop( Iop_ShrV128, vB_expr, mkU8( 8 ) );
-      }
-      putVReg( vRT_addr, res);
+      putVReg( vRT_addr, binop( Iop_64HLtoV128, mkexpr( res_hi ), res_low ) );
       return True;
-#undef BPERMD_IDX_MASK
-#undef BPERMD_BIT_MASK
    }
 
    default:
@@ -37680,7 +37636,7 @@ DisResult disInstr_PPC_WRK (
       case 0x3D: case 0x3C:            // vaddecuq, vaddeuqm
       case 0x3F: case 0x3E:            // vsubecuq, vsubeuqm
          if (!allow_V) goto decode_noV;
-         if (dis_av_quad( prefix, theInstr)) goto decode_success;
+         if (dis_av_quad( prefix, theInstr, abiinfo)) goto decode_success;
          goto decode_failure;
 
       default:
@@ -38026,7 +37982,7 @@ DisResult disInstr_PPC_WRK (
       case 0x540: case 0x500:             // vsubcuq, vsubuqm
       case 0x54C:                         // vbpermq
          if (!allow_V) goto decode_noV;
-         if (dis_av_quad( prefix, theInstr)) goto decode_success;
+         if (dis_av_quad( prefix, theInstr, abiinfo)) goto decode_success;
          goto decode_failure;
 
       default:

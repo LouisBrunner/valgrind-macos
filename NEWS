@@ -72,6 +72,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
         registers.
 450536  Powerpc: valgrind throws 'facility scv unavailable exception'
 451626  Syscall param bpf(attr->raw_tracepoint.name) points to unaddressable byte(s)
+451827  [ppc64le] VEX temporary storage exhausted with several vbpermq instructions
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

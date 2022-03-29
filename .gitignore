@@ -1100,7 +1100,7 @@
 /memcheck/tests/linux/lsframe2
 /memcheck/tests/linux/Makefile
 /memcheck/tests/linux/Makefile.in
-/memcheck/tests/linux/memfd
+/memcheck/tests/linux/memfd_create
 /memcheck/tests/linux/rfcomm
 /memcheck/tests/linux/sigqueue
 /memcheck/tests/linux/stack_changes

@@ -1,4 +1,4 @@
-Release 3.??.? (?? 202?)
+Release 3.19.0 (08 Apr 202?)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
@@ -10,27 +10,39 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== CORE CHANGES ===================
 
+* Fix Rust v0 name demangling.
+* The Linux rseq syscall is now implemented as (silently) returning ENOSYS.
+* Add FreeBSD syscall wrappers for __specialfd and __realpathat.
+
 * ================== PLATFORM CHANGES =================
 
 * arm64:
+  - ignore the "v8.x" architecture levels, only look at actual CPU features
+    present. Fixes mismatch detected between RDMA and atomics features
+    preventing startup on some QEMU configurations.
+  - Implement LD{,A}XP and ST{,L}XP
+  - Fix incorrect code emitted for doubleword CAS.
 
 * s390:
+  - Fix sys_ipc semtimedop syscall
+  - Fix VFLRX and WFLRX instructions
+  - Fix EXRL instruction with negative offset
 
 * ppc64:
+  - Reimplement the vbpermq instruction support to generate less Iops and
+    avoid overflowing internal buffers.
+  - Fix checking for scv support to avoid "Facility 'SCV' unavailable (12),
+    exception" messages in dmsg.
+  - Fix setting condition code for Vector Compare quad word instructions.
+  - Fix fix lxsibzx, lxsihzx and lxsihzx instructions so they only load
+    their respective sized data.
+  - Fix the prefixed stq instruction in PC relative mode.
 
 * ==================== TOOL CHANGES ===================
 
-* DHAT:
-
-* Cachegrind:
-
-* Callgrind:
-
-* Massif:
-
 * Memcheck:
-
-* =================== OTHER CHANGES ==================
+  - Speed up --track-origins=yes for large (in the range of hundreds to
+    thousands of megabytes) mmap/munmaps.
 
 * ==================== FIXED BUGS ====================
 
@@ -78,6 +90,7 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed above.
 
+(3.19.0.RC1: 02 Apr 2022)
 
 
 Release 3.18.0 (15 Oct 2021)

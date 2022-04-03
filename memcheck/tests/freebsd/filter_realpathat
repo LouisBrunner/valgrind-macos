@@ -1,0 +1,7 @@
+#! /bin/sh
+
+gsed 's/Invalid write of size 8/Invalid write of size .../' |
+
+../filter_stderr "$@"
+
+exit 0

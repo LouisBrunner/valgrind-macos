@@ -1,3 +1,4 @@
 prog: realpathat
 prereq: test -e ./realpathat
 vgopts: -q
+stderr_filter: filter_realpathat

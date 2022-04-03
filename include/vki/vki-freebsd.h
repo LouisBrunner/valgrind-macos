@@ -2285,23 +2285,26 @@ typedef struct vki_domainset vki_domainset_t;
 // From sys/procctl.h
 //----------------------------------------------------------------------
 
-#define PROC_SPROTECT           1
-#define PROC_REAP_ACQUIRE       2
-#define PROC_REAP_RELEASE       3
-#define PROC_REAP_STATUS        4
-#define PROC_REAP_GETPIDS       5
-#define PROC_REAP_KILL          6
-#define PROC_TRACE_CTL          7
-#define PROC_TRACE_STATUS       8
-#define PROC_TRAPCAP_CTL        9
-#define PROC_TRAPCAP_STATUS     10
-#define PROC_PDEATHSIG_CTL      11
-#define PROC_PDEATHSIG_STATUS   12
-#define PROC_ASLR_CTL           13
-#define PROC_ASLR_STATUS        14
-#define PROC_STACKGAP_CTL       17
-#define PROC_STACKGAP_STATUS    18
-
+#define VKI_PROC_SPROTECT           1
+#define VKI_PROC_REAP_ACQUIRE       2
+#define VKI_PROC_REAP_RELEASE       3
+#define VKI_PROC_REAP_STATUS        4
+#define VKI_PROC_REAP_GETPIDS       5
+#define VKI_PROC_REAP_KILL          6
+#define VKI_PROC_TRACE_CTL          7
+#define VKI_PROC_TRACE_STATUS       8
+#define VKI_PROC_TRAPCAP_CTL        9
+#define VKI_PROC_TRAPCAP_STATUS     10
+#define VKI_PROC_PDEATHSIG_CTL      11
+#define VKI_PROC_PDEATHSIG_STATUS   12
+#define VKI_PROC_ASLR_CTL           13
+#define VKI_PROC_ASLR_STATUS        14
+#define VKI_PROC_STACKGAP_CTL       17
+#define VKI_PROC_STACKGAP_STATUS    18
+#define VKI_PROC_NO_NEW_PRIVS_CTL   19
+#define VKI_PROC_NO_NEW_PRIVS_STATUS 20
+#define VKI_PROC_WXMAP_CTL          21
+#define VKI_PROC_WXMAP_STATUS       22
 
 struct vki_procctl_reaper_status {
    u_int   rs_flags;

@@ -1357,21 +1357,23 @@ PRE(sys_procctl)
                  vki_uint32_t, MERGE64_SECOND(id),
                  int, cmd, void *, arg);
    switch (ARG4) {
-   case PROC_ASLR_CTL:
-   case PROC_SPROTECT:
-   case PROC_TRACE_CTL:
-   case PROC_TRAPCAP_CTL:
-   case PROC_PDEATHSIG_CTL:
-   case PROC_STACKGAP_CTL:
+   case VKI_PROC_ASLR_CTL:
+   case VKI_PROC_SPROTECT:
+   case VKI_PROC_TRACE_CTL:
+   case VKI_PROC_TRAPCAP_CTL:
+   case VKI_PROC_PDEATHSIG_CTL:
+   case VKI_PROC_STACKGAP_CTL:
+   case VKI_PROC_NO_NEW_PRIVS_CTL:
+   case VKI_PROC_WXMAP_CTL:
       PRE_MEM_READ("procctl(arg)", ARG5, sizeof(int));
       break;
-   case PROC_REAP_STATUS:
+   case VKI_PROC_REAP_STATUS:
       PRE_MEM_READ("procctl(arg)", ARG5, sizeof(struct vki_procctl_reaper_status));
       break;
-   case PROC_REAP_GETPIDS:
+   case VKI_PROC_REAP_GETPIDS:
       PRE_MEM_READ("procctl(arg)", ARG5, sizeof(struct vki_procctl_reaper_pids));
       break;
-   case PROC_REAP_KILL:
+   case VKI_PROC_REAP_KILL:
       /* The first three fields are reads
        * int rk_sig;
        * u_int rk_flags;
@@ -1386,14 +1388,14 @@ PRE(sys_procctl)
       PRE_MEM_READ("procctl(arg)", ARG5, sizeof(int) + sizeof(u_int) + sizeof(vki_pid_t));
       PRE_MEM_WRITE("procctl(arg)", ARG5+offsetof(struct vki_procctl_reaper_kill, rk_killed), sizeof(u_int) + sizeof(vki_pid_t));
       break;
-   case PROC_ASLR_STATUS:
-   case PROC_PDEATHSIG_STATUS:
-   case PROC_STACKGAP_STATUS:
-   case PROC_TRAPCAP_STATUS:
-   case PROC_TRACE_STATUS:
+   case VKI_PROC_ASLR_STATUS:
+   case VKI_PROC_PDEATHSIG_STATUS:
+   case VKI_PROC_STACKGAP_STATUS:
+   case VKI_PROC_TRAPCAP_STATUS:
+   case VKI_PROC_TRACE_STATUS:
       PRE_MEM_WRITE("procctl(arg)", ARG5, sizeof(int));
-   case PROC_REAP_ACQUIRE:
-   case PROC_REAP_RELEASE:
+   case VKI_PROC_REAP_ACQUIRE:
+   case VKI_PROC_REAP_RELEASE:
    default:
       break;
    }
@@ -1402,14 +1404,16 @@ PRE(sys_procctl)
 POST(sys_procctl)
 {
    switch (ARG4) {
-   case PROC_REAP_KILL:
+   case VKI_PROC_REAP_KILL:
       POST_MEM_WRITE(ARG5+offsetof(struct vki_procctl_reaper_kill, rk_killed), sizeof(u_int) + sizeof(vki_pid_t));
       break;
-   case PROC_ASLR_STATUS:
-   case PROC_PDEATHSIG_STATUS:
-   case PROC_STACKGAP_STATUS:
-   case PROC_TRAPCAP_STATUS:
-   case PROC_TRACE_STATUS:
+   case VKI_PROC_ASLR_STATUS:
+   case VKI_PROC_PDEATHSIG_STATUS:
+   case VKI_PROC_STACKGAP_STATUS:
+   case VKI_PROC_TRAPCAP_STATUS:
+   case VKI_PROC_TRACE_STATUS:
+   case VKI_PROC_NO_NEW_PRIVS_STATUS:
+   case VKI_PROC_WXMAP_STATUS:
       POST_MEM_WRITE(ARG5, sizeof(int));
    default:
       break;

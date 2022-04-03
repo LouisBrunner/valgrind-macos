@@ -1336,6 +1336,10 @@
 /memcheck/tests/freebsd/utimes
 /memcheck/tests/freebsd/static_allocs
 /memcheck/tests/freebsd/fexecve
+/memcheck/tests/freebsd/eventfd1
+/memcheck/tests/freebsd/eventfd2
+/memcheck/tests/freebsd/realpathat
+/memcheck/tests/freebsd/scalar_13_plus
 
 # /memcheck/tests/amd64-freebsd
 /memcheck/tests/amd64-freebsd/*.stderr.diff

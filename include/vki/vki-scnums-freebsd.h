@@ -640,7 +640,7 @@
 
 #endif
 
-#if (FREEBSD_VERS >= FREEBSD_13)
+#if (FREEBSD_VERS >= FREEBSD_13_0)
 
 #define __NR_rpctls_syscall      576
 #define __NR___specialfd         577

@@ -578,7 +578,7 @@ Addr setup_client_stack( void*  init_sp,
    /* --- auxv --- */
    auxv = (struct auxv *)ptr;
    *client_auxv = (UInt *)auxv;
-#if defined(VGP_x86_freebsd)  && (VGO_freebsd <= FREEBSD_13)
+#if defined(VGP_x86_freebsd)  && (VGO_freebsd <= FREEBSD_13_0)
    int* pagesizes = NULL;
 #endif
 
@@ -660,7 +660,7 @@ Addr setup_client_stack( void*  init_sp,
          // case AT_CANARYLEN:
          // case AT_EXECPATH:
          // case AT_CANARY:
-#if defined(VGP_x86_freebsd) && (VGO_freebsd <= FREEBSD_13)
+#if defined(VGP_x86_freebsd) && (VGO_freebsd <= FREEBSD_13_0)
       case AT_PAGESIZESLEN:
          if (!VG_(is32on64)()) {
             VG_(debugLog)(2, "initimg",
@@ -685,7 +685,7 @@ Addr setup_client_stack( void*  init_sp,
          // case AT_TIMEKEEP:
          break;
 
-#if (FREEBSD_VERS >= FREEBSD_13)
+#if (FREEBSD_VERS >= FREEBSD_13_0)
       case AT_BSDFLAGS:
       case AT_ARGC:
       // case AT_ARGV:

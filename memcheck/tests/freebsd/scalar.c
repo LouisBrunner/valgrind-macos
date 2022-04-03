@@ -1615,7 +1615,7 @@ int main(void)
    SY(SYS_thr_kill2, x0-1, x0-1, x0+9999); FAIL;
 
    /* SYS_shm_open                482 */
-#if (FREEBSD_VERS >= FREEBSD_13)
+#if (FREEBSD_VERS >= FREEBSD_13_0)
    GO(SYS_freebsd12_shm_open, "(SHM_ANON) 3s 0m");
    SY(SYS_freebsd12_shm_open, x0+SHM_ANON, x0+2, x0+9); SUCC;
 #else
@@ -1748,7 +1748,7 @@ int main(void)
    SY(SYS_jail_remove, x0+1); FAIL;
 
    /* SYS_closefrom               509 */
-#if (FREEBSD_VERS >= FREEBSD_13)
+#if (FREEBSD_VERS >= FREEBSD_13_0)
    GO(SYS_freebsd12_closefrom, "1s 0m");
    SY(SYS_freebsd12_closefrom, x0+100000); SUCC;
 #else

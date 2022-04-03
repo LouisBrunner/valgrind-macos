@@ -1348,14 +1348,14 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       VG_(exit)(1);
    }
 
+#if defined(VGO_freebsd)
+   Int val;
+   SizeT len = sizeof(val);
    //--------------------------------------------------------------
    // FreeBSD check security.bsd.unprivileged_proc_debug sysctl
    // This needs to be done before aspacemgr starts, otherwise that
    // will fail with mysterious error codes
    //--------------------------------------------------------------
-#if defined(VGO_freebsd)
-   Int val;
-   SizeT len = sizeof(val);
    Int error = VG_(sysctlbyname)("security.bsd.unprivileged_proc_debug", &val, &len, 0, 0);
    if (error != -1 && val != 1) {
        VG_(debugLog)(0, "main", "Valgrind: FATAL:\n");
@@ -1366,6 +1366,50 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
 
        VG_(exit)(1);
    }
+
+   //--------------------------------------------------------------
+   // FreeBSD also check for sysctl kern.elf64.allow_wx=0
+   // This is a sysctl that prevents applications from mmap'ing
+   // segments that are writeable and executable
+   //--------------------------------------------------------------
+#if defined(VGP_amd64_freebsd)
+   error = VG_(sysctlbyname)("kern.elf64.allow_wx", &val, &len, 0, 0);
+      if (error != -1 && val != 1) {
+         VG_(debugLog)(0, "main", "Valgrind: FATAL:\n");
+         VG_(debugLog)(0, "main", "sysctl kern.elf64.allow_wx sysctl is 0.\n");
+         VG_(debugLog)(0, "main", "   Set this sysctl with\n");
+         VG_(debugLog)(0, "main", "   'sysctl kern.elf64.allow_wx sysctl=1'.\n");
+         // the below code doesn't work as I expected
+         // the proccontrol command doesn't cause sysctlbyname to get a modified value
+         // which means that valgrind will still detect allow_wx == 0 and exit here
+//#if (FREEBSD_VERS >= FREEBSD_13_1)
+//          VG_(debugLog)(0, "main", "   Or, alternatively, run valgrind with\n");
+//          VG_(debugLog)(0, "main", "   'proccontrol -m wxmap -s enable valgrind [options] prog-and-args'\n");
+//#endif
+          VG_(debugLog)(0, "main", "   Cannot continue.\n");
+
+          VG_(exit)(1);
+      }
+
+#endif
+
+      /* also 323bit version */
+#if defined(VGP_x86_freebsd)
+   error = VG_(sysctlbyname)("kern.elf32.allow_wx", &val, &len, 0, 0);
+      if (error != -1 && val != 1) {
+          VG_(debugLog)(0, "main", "Valgrind: FATAL:\n");
+          VG_(debugLog)(0, "main", "sysctl kern.elf32.allow_wx sysctl is 0.\n");
+          VG_(debugLog)(0, "main", "   Set this sysctl with\n");
+          VG_(debugLog)(0, "main", "   'sysctl kern.elf32.allow_wx sysctl=1'.\n");
+//#if (FREEBSD_VERS >= FREEBSD_13_1)
+//          VG_(debugLog)(0, "main", "   Or, alternatively, run valgrind with\n");
+//          VG_(debugLog)(0, "main", "   'proccontrol -m wxmap -s enable valgrind [options] prog-and-args'\n");
+//#endif
+          VG_(debugLog)(0, "main", "   Cannot continue.\n");
+
+          VG_(exit)(1);
+      }
+#endif
 #endif
 
 

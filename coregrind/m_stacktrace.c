@@ -283,7 +283,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    if (do_stats) stats.nr++;
 
    // Does this apply to macOS 10.14 and earlier?
-#  if defined(VGO_freebsd) && (FREEBSD_VERS < FREEBSD_13)
+#  if defined(VGO_freebsd) && (FREEBSD_VERS < FREEBSD_13_0)
    if (VG_(is_valid_tid)(tid_if_known) &&
       VG_(is_in_syscall)(tid_if_known) &&
       i < max_n_ips) {

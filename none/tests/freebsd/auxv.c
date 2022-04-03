@@ -39,7 +39,7 @@ Elf_AuxStr aux_map[AT_COUNT] = {
         {"AT_HWCAP2", 26},
 // FreeBSD 12 and 11
 //        {"AT_COUNT", 27},
-#if (FREEBSD_VERS >= FREEBSD_13)
+#if (FREEBSD_VERS >= FREEBSD_13_0)
         {"AT_BSDFLAGS", 27},
         {"AT_ARGC", 28},
         {"AT_ARGV", 29},

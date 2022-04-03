@@ -6208,7 +6208,7 @@ POST(sys___sysctlbyname)
 
 #endif // (FREEBSD_VERS >= FREEBSD_12_2)
 
-#if (FREEBSD_VERS >= FREEBSD_13)
+#if (FREEBSD_VERS >= FREEBSD_13_0)
 
 // SYS___realpathat 474
 // from syscalls.master
@@ -6940,7 +6940,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    // unimpl __NR_copy_file_range     569
    BSDXY(__NR___sysctlbyname,   sys___sysctlbyname),    // 570
 
-#if (FREEBSD_VERS >= FREEBSD_13)
+#if (FREEBSD_VERS >= FREEBSD_13_0)
    // unimpl __NR_shm_open2           571
    // unimpl __NR_shm_rename          572
    // unimpl __NR_sigfastblock        573
@@ -6949,7 +6949,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    // unimpl __NR_close_range         575
 #endif
 
-#if (FREEBSD_VERS >= FREEBSD_13)
+#if (FREEBSD_VERS >= FREEBSD_13_0)
    // unimpl __NR_rpctls_syscall      576
    BSDX_(__NR___specialfd,      sys___specialfd),       // 577
    // unimpl __NR_aio_writev          578

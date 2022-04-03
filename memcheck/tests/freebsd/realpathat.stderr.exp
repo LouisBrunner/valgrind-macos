@@ -10,7 +10,7 @@ Invalid write of size 4
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (realpathat.c:17)
 
-Invalid write of size ...
+Invalid write of size 4
    at 0x........: main (realpathat.c:21)
  Address 0x........ is 0 bytes inside a block of size 1 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
@@ -21,6 +21,10 @@ Syscall param __realpathat(fd) contains uninitialised byte(s)
    by 0x........: main (realpathat.c:22)
 
 Syscall param __realpathat(size) contains uninitialised byte(s)
+   ...
+   by 0x........: main (realpathat.c:22)
+
+Syscall param __realpathat(flags) contains uninitialised byte(s)
    ...
    by 0x........: main (realpathat.c:22)
 
@@ -116,7 +120,7 @@ Invalid read of size 1
 Invalid write of size 2
    ...
    by 0x........: main (realpathat.c:32)
- Address 0x........ is 55 bytes inside a block of size 100 free'd
+ Address 0x........ is ... bytes inside a block of size 100 free'd
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (realpathat.c:29)
  Block was alloc'd at
@@ -127,7 +131,7 @@ Invalid read of size 1
    at 0x........: strlcat (vg_replace_strmem.c:...)
    ...
    by 0x........: main (realpathat.c:32)
- Address 0x........ is 56 bytes inside a block of size 100 free'd
+ Address 0x........ is ... bytes inside a block of size 100 free'd
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (realpathat.c:29)
  Block was alloc'd at
@@ -138,7 +142,7 @@ Invalid write of size 1
    at 0x........: strlcat (vg_replace_strmem.c:...)
    ...
    by 0x........: main (realpathat.c:32)
- Address 0x........ is 56 bytes inside a block of size 100 free'd
+ Address 0x........ is ... bytes inside a block of size 100 free'd
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (realpathat.c:29)
  Block was alloc'd at
@@ -149,7 +153,7 @@ Invalid write of size 1
    at 0x........: strlcat (vg_replace_strmem.c:...)
    ...
    by 0x........: main (realpathat.c:32)
- Address 0x........ is 66 bytes inside a block of size 100 free'd
+ Address 0x........ is ... bytes inside a block of size 100 free'd
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (realpathat.c:29)
  Block was alloc'd at
@@ -159,7 +163,7 @@ Invalid write of size 1
 Syscall param fstatat(path) points to unaddressable byte(s)
    ...
    by 0x........: main (realpathat.c:32)
- Address 0x........ is 56 bytes inside a block of size 100 free'd
+ Address 0x........ is ... bytes inside a block of size 100 free'd
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (realpathat.c:29)
  Block was alloc'd at

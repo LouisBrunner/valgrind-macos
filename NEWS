@@ -13,6 +13,7 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 * Fix Rust v0 name demangling.
 * The Linux rseq syscall is now implemented as (silently) returning ENOSYS.
 * Add FreeBSD syscall wrappers for __specialfd and __realpathat.
+* Remove FreeBSD dependencies on COMPAT10, which fixes compatibility with HardenedBSD
 
 * ================== PLATFORM CHANGES =================
 
@@ -43,6 +44,9 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 * Memcheck:
   - Speed up --track-origins=yes for large (in the range of hundreds to
     thousands of megabytes) mmap/munmaps.
+* DRD/Helgrind:
+  - Several fixes for new versions of libstd++ using new posix try_lock
+    functions
 
 * ==================== FIXED BUGS ====================
 
@@ -53,6 +57,8 @@ bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
 than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
+403802  leak_cpp_interior fails with some reachable blocks different than expected
+435732  memcheck/tests/leak_cpp_interior fails with gcc11
 444242  s390x: Valgrind crashes on EXRL with negative offset
 444399  arm64: unhandled instruction 0xC87F2D89 (LD{,A}XP and ST{,L}XP).
         == 434283
@@ -62,17 +68,22 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 444571  PPC, fix the lxsibzx and lxsihzx so they only load their respective
         sized data.
 444836  PPC, pstq instruction for R=1 is not storing to the correct address.
+444925  fexecve syscall wrapper not properly implemented
 445032  valgrind/memcheck crash with SIGSEGV when SIGVTALRM timer used and
         libthr.so associated
 445300  [PATCH] Fix building tests with Musl
 445354  arm64 backend: incorrect code emitted for doubleword CAS
 445415  arm64 front end: alignment checks missing for atomic instructions
+445504  Using C++ condition_variable results in bogus "mutex is locked simultaneously by two threads" warning
+445607  Unhandled amd64-freebsd syscall: 247
 445668  Inline stack frame generation is broken for Rust binaries
 445916  Demangle Rust v0 symbols with .llvm suffix
 446139  DRD/Helgrind with std::shared_timed_mutex::try_lock_until and try_lock_shared_until false positives
 446138  DRD/Helgrind with std::timed_mutex::try_lock_until false positives
 446281  Add a DRD suppression for fwrite
 446103  Memcheck: `--track-origins=yes` causes extreme slowdowns for large mmap/munmap
+446139  DRD/Helgrind with std::shared_timed_mutex::try_lock_until and try_lock_shared_until false
+446251  TARGET_SIGNAL_THR added to enum target_signal
 446823  FreeBSD - missing syscalls when using libzm4
 447991  s390x: Valgrind indicates illegal instruction on wflrx
 447995  Valgrind segfault on power10 due to hwcap checking code

@@ -31830,22 +31830,42 @@ static Bool dis_av_quad ( UInt prefix, UInt theInstr, const VexAbiInfo* vbi )
    {
       /* The original supports was done with Iops but it caused the internal
          temorary storage to be exhausted if there were three or more vbpermq
-         instructions in a row. Changed to a clean helper on 3/24/2022  */
+         instructions in a row. Changed to a clean helper on 3/24/2022.  For
+         Powerpc 32-bit support, passing two 128-bit arguments doesn't work.
+         Hence, the helper is called twice to calculate the result for the
+         upper and lower 64-bit vB register indicies.  */
       IRTemp res_hi = newTemp( Ity_I64 );
+      IRTemp res_0 = newTemp( Ity_I32 );
+      IRTemp res_1 = newTemp( Ity_I32 );
       IRExpr * res_low = mkU64(0);
-      assign( res_hi,
-              mkIRExprCCall( Ity_I64, 0 /*regparms*/,
+      assign( res_0,
+              mkIRExprCCall( Ity_I32, 0 /*regparms*/,
                              "vbpermq_clean_helper",
                              fnptr_to_fnentry( vbi,
                                                &vbpermq_clean_helper ),
-                             mkIRExprVec_4( unop( Iop_V128HIto64,
+                             mkIRExprVec_3( unop( Iop_V128HIto64,
                                                   mkexpr(vA) ),
                                             unop( Iop_V128to64,
                                                   mkexpr(vA) ),
                                             unop( Iop_V128HIto64,
-                                                  mkexpr(vB) ),
+                                                  mkexpr(vB) ) ) ) );
+      assign( res_1,
+              mkIRExprCCall( Ity_I32, 0 /*regparms*/,
+                             "vbpermq_clean_helper",
+                             fnptr_to_fnentry( vbi,
+                                               &vbpermq_clean_helper ),
+                             mkIRExprVec_3( unop( Iop_V128HIto64,
+                                                  mkexpr(vA) ),
+                                            unop( Iop_V128to64,
+                                                  mkexpr(vA) ),
                                             unop( Iop_V128to64,
                                                   mkexpr(vB) ) ) ) );
+      assign( res_hi, binop( Iop_32HLto64,
+                             mkU32( 0 ),
+                             binop( Iop_Or32,
+                                    binop( Iop_Shl32, mkexpr( res_0 ),
+                                           mkU8( 8 ) ),
+                                    mkexpr( res_1 ) ) ) );
 
       putVReg( vRT_addr, binop( Iop_64HLtoV128, mkexpr( res_hi ), res_low ) );
       return True;

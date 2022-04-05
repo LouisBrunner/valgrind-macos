@@ -164,8 +164,7 @@ extern UInt count_bits_under_mask_helper( ULong src, ULong mask,
                                           UInt flag );
 extern ULong deposit_bits_under_mask_helper( ULong src, ULong mask );
 extern ULong population_count64_helper( ULong src );
-extern ULong vbpermq_clean_helper( ULong vA_high, ULong vA_low,
-                                   ULong vB_high, ULong vB_low );
+extern UInt vbpermq_clean_helper( ULong vA_high, ULong vA_low, ULong vB);
 extern ULong vector_evaluate64_helper( ULong srcA, ULong srcB, ULong srcC,
                                        ULong IMM );
 void write_ACC_entry (VexGuestPPC64State* gst, UInt offset, UInt acc,

@@ -704,17 +704,13 @@ ULong vector_evaluate64_helper( ULong srcA, ULong srcB, ULong srcC,
 /*---------------------------------------------------------------*/
 /* --- Clean helper for vbpermq instruction                   ---*/
 /*---------------------------------------------------------------*/
-ULong vbpermq_clean_helper( ULong vA_high, ULong vA_low,
-                            ULong vB_high, ULong vB_low) {
+UInt vbpermq_clean_helper( ULong vA_high, ULong vA_low, ULong vB) {
    ULong bit, result = 0x0;
    UInt i, index;
 
    /* IBM numbering bit 0 on is MSB, bit 63 is LSB */
-   for ( i = 0; i < 16; i++) {
-      if (i < 8)
-         index = 0xFFULL & (vB_high >> (56 - 8*i) );
-      else
-         index = 0xFFULL & (vB_low  >> (56 - 8*(i-8)));
+   for ( i = 0; i < 8; i++) {
+      index = 0xFFULL & (vB >> (56 - 8*i) );
 
       if (index < 64) {
          bit = 0x1 & (vA_high >> (63 - index));
@@ -725,7 +721,7 @@ ULong vbpermq_clean_helper( ULong vA_high, ULong vA_low,
       } else
          bit = 0;
 
-      result |= bit << (15 - i);
+      result |= bit << (7 - i);
    }
    return result;
 }

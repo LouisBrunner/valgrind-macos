@@ -3856,6 +3856,7 @@ POST(sys_swapcontext)
       POST_MEM_WRITE( ARG1, sizeof(struct vki_ucontext) );
 }
 
+// @todo PJF In FreeBSD 14 and onwards this is SYS_freebsd13_swapoff
 // SYS_swapoff 424
 // int swapoff(const char *special);
 PRE(sys_swapoff)
@@ -6245,7 +6246,7 @@ PRE(sys___specialfd)
    PRE_MEM_READ("__specialfd(req)", (Addr)ARG2, ARG3);
 }
 
-#endif // (FREEBSD_VERS >= FREEBSD_13)
+#endif // (FREEBSD_VERS >= FREEBSD_13_0)
 
 #undef PRE
 #undef POST
@@ -6954,6 +6955,12 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    BSDX_(__NR___specialfd,      sys___specialfd),       // 577
    // unimpl __NR_aio_writev          578
    // unimpl __NR_aio_readv           579
+#endif
+
+#if (FREEBSD_VERS >= FREEBSD_14)
+   // unimpl __NR_fspacectl           580
+   // unimpl __NR_sched_getcpu        581
+   // unimpl __NR_swapoff             582
 #endif
 
    BSDX_(__NR_fake_sigreturn,   sys_fake_sigreturn),    // 1000, fake sigreturn

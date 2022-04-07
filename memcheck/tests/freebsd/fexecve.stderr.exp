@@ -9,6 +9,11 @@ Syscall param fexecve(argv) points to uninitialised byte(s)
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (fexecve.c:17)
 
+Syscall param fexecve(argv[0]) points to unaddressable byte(s)
+   at 0x........: fexecve (in /...libc...)
+   by 0x........: main (fexecve.c:29)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
 Syscall param fexecve(envp) points to uninitialised byte(s)
    at 0x........: fexecve (in /...libc...)
    by 0x........: main (fexecve.c:29)

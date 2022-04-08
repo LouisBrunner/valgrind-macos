@@ -666,6 +666,7 @@
 /helgrind/tests/Makefile.in
 /helgrind/tests/pth_barrier
 /helgrind/tests/pth_destroy_cond
+/helgrind/tests/pth_mempcpy_false_races
 /helgrind/tests/rwlock_race
 /helgrind/tests/rwlock_test
 /helgrind/tests/shmem_abits

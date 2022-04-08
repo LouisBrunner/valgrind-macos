@@ -1204,6 +1204,8 @@ AC_SUBST(DEFAULT_SUPP)
 AC_CHECK_HEADER([features.h])
 
 if test x$ac_cv_header_features_h = xyes; then
+  AC_DEFINE([HAVE_HEADER_FEATURES_H], 1,
+          [Define to 1 if you have the `features.h' header.])
   rm -f conftest.$ac_ext
   cat <<_ACEOF >conftest.$ac_ext
 #include <features.h>

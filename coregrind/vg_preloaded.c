@@ -45,6 +45,10 @@
 #include "pub_core_debuginfo.h"  // Needed for pub_core_redir.h
 #include "pub_core_redir.h"      // For VG_NOTIFY_ON_LOAD
 
+#ifdef HAVE_HEADER_FEATURES_H
+#include <features.h>
+#endif
+
 #if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
 
 /* ---------------------------------------------------------------------

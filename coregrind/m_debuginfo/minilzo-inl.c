@@ -1875,6 +1875,10 @@ extern "C" {
 
 #endif
 
+#ifdef HAVE_HEADER_FEATURES_H
+#include <features.h>
+#endif
+
 #undef LZO_HAVE_CONFIG_H
 #include "minilzo.h"
 

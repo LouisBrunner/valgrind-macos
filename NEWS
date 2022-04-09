@@ -1,4 +1,4 @@
-Release 3.19.0 (08 Apr 2022)
+Release 3.19.0 (11 Apr 2022)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
@@ -106,6 +106,7 @@ To see details of a given bug, visit
 where XXXXXX is the bug number as listed above.
 
 (3.19.0.RC1: 02 Apr 2022)
+(3.19.0.RC2: 08 Apr 2022)
 
 
 Release 3.18.0 (15 Oct 2021)

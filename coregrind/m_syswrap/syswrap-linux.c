@@ -13307,7 +13307,7 @@ PRE(sys_execveat)
            if (path[0] == '\0') {
                if (ARG5 & VKI_AT_EMPTY_PATH) {
                    if (VG_(resolve_filename)(ARG1, &buf)) {
-                       VG_(strcpy)(path, buf);
+                       path = buf;
                        check_pathptr = False;
                    }
                }

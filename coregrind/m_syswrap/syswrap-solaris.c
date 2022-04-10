@@ -3618,6 +3618,10 @@ PRE(sys_fdsync)
 PRE(sys_execve)
 {
    Int i, j;
+   Addr arg_2_check;
+   const char* str2 = "execve(argv)";
+   const char* str3 = "execve(argv[0])";
+   const char* str4 = "execve(argv[i])";
    /* This is a Solaris specific version of the generic pre-execve wrapper. */
 
 #if defined(SOLARIS_EXECVE_SYSCALL_TAKES_FLAGS)
@@ -3645,12 +3649,8 @@ PRE(sys_execve)
 
    if (ARG1_is_fd == False)
       PRE_MEM_RASCIIZ("execve(filename)", ARG1);
-   if (ARG2)
-      ML_(pre_argv_envp)(ARG2, tid, "execve(argv)", "execve(argv[i])");
-   if (ARG3)
-      ML_(pre_argv_envp)(ARG3, tid, "execve(envp)", "execve(envp[i])");
-
-   /* Erk.  If the exec fails, then the following will have made a mess of
+   
+    /* Erk.  If the exec fails, then the following will have made a mess of
       things which makes it hard for us to continue.  The right thing to do is
       piece everything together again in POST(execve), but that's close to
       impossible.  Instead, we make an effort to check that the execve will
@@ -3676,6 +3676,34 @@ PRE(sys_execve)
 
       if (stats.nlink > 1)
          VG_(unimplemented)("Syswrap of execve where fd points to a hardlink.");
+   }
+
+   arg_2_check = (Addr)ARG2;
+
+   /* argv[] should not be NULL and valid.  */
+   PRE_MEM_READ(str2, arg_2_check, sizeof(Addr));
+
+   /* argv[0] should not be NULL and valid.  */
+   if (ML_(safe_to_deref)((HChar **) (Addr)arg_2_check, sizeof(HChar *))) {
+      Addr argv0 = *(Addr*)arg_2_check;
+      PRE_MEM_RASCIIZ( str3, argv0 );
+      /* The rest of argv can be NULL or a valid string pointer.  */
+      if (VG_(am_is_valid_for_client)(arg_2_check, sizeof(HChar), VKI_PROT_READ)) {
+         arg_2_check += sizeof(HChar*);
+         ML_(pre_argv_envp)( arg_2_check, tid, str2, str4 );
+       }
+   } else {
+      SET_STATUS_Failure(VKI_EFAULT);
+      return;
+    }
+
+   if (ARG3 != 0) {
+      /* At least the terminating NULL must be addressable. */
+      if (!ML_(safe_to_deref)((HChar **) (Addr)ARG3, sizeof(HChar *))) {
+         SET_STATUS_Failure(VKI_EFAULT);
+         return;
+      }
+      ML_(pre_argv_envp)( ARG3, tid, "execve(envp)", "execve(envp[i])" );
    }
 
    /* Check that the name at least begins in client-accessible storage. */

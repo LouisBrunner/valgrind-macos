@@ -1110,7 +1110,7 @@ PTH_FUNC(int, pthreadZumutexZureltimedlock, // pthread_mutex_reltimedlock
 }
 #endif
 
-#if defined(VGP_linux)
+#if defined(VGO_linux)
 //-----------------------------------------------------------
 // glibc:   pthread_mutex_clocklock
 //

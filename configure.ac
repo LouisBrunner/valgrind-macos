@@ -1527,6 +1527,21 @@ AC_DEFINE([HAVE_PTHREAD_RWLOCK_T], 1,
 AC_MSG_RESULT([no])
 ])
 
+# Check for CLOCKID_T
+
+AC_MSG_CHECKING([for clockid_t])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <time.h>
+]], [[
+  clockid_t c;
+]])], [
+AC_MSG_RESULT([yes])
+AC_DEFINE([HAVE_CLOCKID_T], 1,
+          [Define to 1 if you have the `clockid_t' type.])
+], [
+AC_MSG_RESULT([no])
+])
 
 # Check for PTHREAD_MUTEX_ADAPTIVE_NP
 

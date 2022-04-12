@@ -27,7 +27,7 @@ EXTRA_DIST = \
 	fexecve_txt.vgtest \
 	fexecve_txt.stderr.exp \
 	452275.vgtest \
-	452275.stderr.out
+	452275.stderr.exp
 
 check_PROGRAMS = \
 	auxv osrel swapcontext hello_world fexecve 452275

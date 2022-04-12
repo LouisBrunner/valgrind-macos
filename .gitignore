@@ -1341,6 +1341,7 @@
 /memcheck/tests/freebsd/eventfd2
 /memcheck/tests/freebsd/realpathat
 /memcheck/tests/freebsd/scalar_13_plus
+/memcheck/tests/freebsd/452275
 
 # /memcheck/tests/amd64-freebsd
 /memcheck/tests/amd64-freebsd/*.stderr.diff
@@ -2074,6 +2075,7 @@
 /none/tests/freebsd/swapcontext
 /none/tests/freebsd/fexecve
 /none/tests/freebsd/hello_world
+/none/tests/freebsd/452275
 
 # /none/tests/x86/
 /none/tests/x86/*.dSYM
@@ -2185,6 +2187,16 @@
 /none/tests/x86-solaris/coredump_single_thread
 /none/tests/x86-solaris/coredump_single_thread_sse
 /none/tests/x86-solaris/syscalls
+
+# /none/tests/x86-freebsd/
+/none/tests/x86-freebsd/*.stderr.diff
+/none/tests/x86-freebsd/*.stderr.out
+/none/tests/x86-freebsd/*.stdout.diff
+/none/tests/x86-freebsd/*.stdout.out
+/none/tests/x86-freebsd/.deps
+/none/tests/x86-freebsd/Makefile
+/none/tests/x86-freebsd/Makefile.in
+/none/tests/x86-freebsd/445032
 
 # /perf/
 /perf/*.dSYM

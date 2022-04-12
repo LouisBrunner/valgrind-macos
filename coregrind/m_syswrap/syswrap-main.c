@@ -2564,6 +2564,9 @@ void VG_(post_syscall) (ThreadId tid)
   extern const Addr ML_(blksys_complete);
   extern const Addr ML_(blksys_committed);
   extern const Addr ML_(blksys_finished);
+#if defined(VGO_freebsd)
+  extern const Addr ML_(blksys_saving_cflag);
+#endif
 #elif defined(VGO_darwin)
   /* Darwin requires extra uglyness */
   extern const Addr ML_(blksys_setup_MACH);
@@ -2581,6 +2584,7 @@ void VG_(post_syscall) (ThreadId tid)
   extern const Addr ML_(blksys_complete_UNIX);
   extern const Addr ML_(blksys_committed_UNIX);
   extern const Addr ML_(blksys_finished_UNIX);
+  extern const Addr ML_(blksys_saving_cflag);
 #elif defined(VGO_solaris)
   extern const Addr ML_(blksys_setup);
   extern const Addr ML_(blksys_complete);
@@ -3110,6 +3114,18 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
 #  else
 #    error "Unknown OS"
 #  endif
+
+#if defined(VGO_freebsd) || defined(VGO_darwin)
+  if (outside_range)
+  {
+     if (ML_(blksys_saving_cflag))
+     {
+        outside_range = False;
+        in_complete_to_committed = True;
+     }
+  }
+#endif
+
 
    /* Figure out what the state of the syscall was by examining the
       (real) IP at the time of the signal, and act accordingly. */

@@ -106,23 +106,23 @@ ML_(do_syscall_for_client_WRK):
 
 	/* 6 register parameters */
 	movq    -16(%rbp), %r11 /* r11 = VexGuestAMD64State * */
-        movq    OFFSET_amd64_RDI(%r11), %rdi
-        movq    OFFSET_amd64_RSI(%r11), %rsi
-        movq    OFFSET_amd64_RDX(%r11), %rdx
-        movq    OFFSET_amd64_R10(%r11), %r10
-        movq    OFFSET_amd64_R8(%r11), %r8
-        movq    OFFSET_amd64_R9(%r11), %r9
-        /* 2 stack parameters plus return address (ignored by syscall) */
-        movq    OFFSET_amd64_RSP(%r11), %r11 /* r11 = simulated RSP */
-        movq    16(%r11), %rax
-        pushq   %rax
-        movq    8(%r11), %rax
-        pushq   %rax
+   movq    OFFSET_amd64_RDI(%r11), %rdi
+   movq    OFFSET_amd64_RSI(%r11), %rsi
+   movq    OFFSET_amd64_RDX(%r11), %rdx
+   movq    OFFSET_amd64_R10(%r11), %r10
+   movq    OFFSET_amd64_R8(%r11), %r8
+   movq    OFFSET_amd64_R9(%r11), %r9
+   /* 2 stack parameters plus return address (ignored by syscall) */
+   movq    OFFSET_amd64_RSP(%r11), %r11 /* r11 = simulated RSP */
+   movq    16(%r11), %rax
+   pushq   %rax
+   movq    8(%r11), %rax
+   pushq   %rax
 	/* (fake) return address. */
-        movq    0(%r11), %rax
-        pushq   %rax
-        /* syscallno */
-        movq    -8(%rbp), %rax
+   movq    0(%r11), %rax
+   pushq   %rax
+   /* syscallno */
+   movq    -8(%rbp), %rax
 
 	/* If rip==2, then the syscall was either just about
 	   to start, or was interrupted and the kernel was
@@ -144,7 +144,9 @@ ML_(do_syscall_for_client_WRK):
 	movq    %rax, %rdi      /* arg1 = new flag */
 	movq    %r11, %rsi      /* arg2 = vex state */
 	addq    $24, %rsp       /* remove syscall parameters */
+   movq    $0x1,  ML_(blksys_saving_cflag)
 	call    LibVEX_GuestAMD64_put_rflag_c
+   movq    $0x0,  ML_(blksys_saving_cflag)
 
 4:	/* Re-block signals.  If eip is in [4,5), then the syscall
 	   is complete and we needn't worry about it. */
@@ -196,6 +198,12 @@ ML_(blksys_complete):	.quad 3b
 ML_(blksys_committed):	.quad 4b
 ML_(blksys_finished):	.quad 5b
 .previous
+
+ .data
+ .globl ML_(blksys_saving_cflag)
+ ML_(blksys_saving_cflag):	.quad 0
+ .previous
+
 
 #endif /* defined(VGP_amd64_freebsd) */
 

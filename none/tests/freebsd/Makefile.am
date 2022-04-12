@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = filter_stderr test.sh
+dist_noinst_SCRIPTS = filter_stderr test.sh filter_452275
 EXTRA_DIST = \
 	auxv.vgtest \
 	auxv.stderr.exp \
@@ -25,10 +25,12 @@ EXTRA_DIST = \
 	fexecve_script2.stdout.exp \
 	fexecve_script2.stderr.exp \
 	fexecve_txt.vgtest \
-	fexecve_txt.stderr.exp
+	fexecve_txt.stderr.exp \
+	452275.vgtest \
+	452275.stderr.out
 
 check_PROGRAMS = \
-	auxv osrel swapcontext hello_world fexecve
+	auxv osrel swapcontext hello_world fexecve 452275
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)

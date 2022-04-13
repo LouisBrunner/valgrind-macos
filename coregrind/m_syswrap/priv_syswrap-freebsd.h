@@ -371,7 +371,13 @@ DECL_TEMPLATE(freebsd, sys_sigreturn) // 417
 DECL_TEMPLATE(freebsd, sys_getcontext) // 421
 DECL_TEMPLATE(freebsd, sys_setcontext) // 422
 DECL_TEMPLATE(freebsd, sys_swapcontext) // 423
+
+#if (FREEBSD_VERS >= FREEBSD_14)
+DECL_TEMPLATE(freebsd, sys_freebsd13_swapoff) // 424
+#else
 DECL_TEMPLATE(freebsd, sys_swapoff) // 424
+#endif
+
 DECL_TEMPLATE(freebsd, sys___acl_get_link) // 425
 DECL_TEMPLATE(freebsd, sys___acl_set_link) // 426
 DECL_TEMPLATE(freebsd, sys___acl_delete_link) // 427
@@ -544,6 +550,13 @@ DECL_TEMPLATE(freebsd, sys___specialfd) // 577
 // unimpl __NR_aio_writev          578
 // unimpl __NR_aio_readv           579
 
+#endif
+
+#if (FREEBSD_VERS >= FREEBSD_14)
+
+// unimpl __NR_fspacectl   580
+// unimpl __NR_sched_getcpu        581
+DECL_TEMPLATE(freebsd, __NR_swapoff) // 582
 #endif
 
 DECL_TEMPLATE(freebsd, sys_fake_sigreturn)

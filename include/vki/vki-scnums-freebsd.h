@@ -458,7 +458,11 @@
 #define __NR_getcontext          421
 #define __NR_setcontext          422
 #define __NR_swapcontext         423
+#if (FREEBSD_VERS >= FREEBSD_14)
+#define __NR_freebsd14_swapoff   424
+#else
 #define __NR_swapoff             424
+#endif
 #define __NR___acl_get_link      425
 #define __NR___acl_set_link      426
 #define __NR___acl_delete_link   427

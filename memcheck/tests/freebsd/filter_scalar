@@ -13,4 +13,5 @@ sed '/at 0x........: syscall (in \/...libc...)/d' |
 
 # filter differences between FreeBSD 12 and 13/14
 
-sed 's/SYS_freebsd12/          SYS/'
+sed 's/SYS_freebsd12/          SYS/' |
+sed 's/SYS_freebsd13/          SYS/'

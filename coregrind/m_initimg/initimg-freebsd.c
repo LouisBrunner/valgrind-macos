@@ -690,12 +690,17 @@ Addr setup_client_stack( void*  init_sp,
       case AT_ARGC:
       // case AT_ARGV:
       case AT_ENVC:
-         // case AT_ENVV:
-         // case AT_PS_STRINGS:
+      // case AT_ENVV:
+      // case AT_PS_STRINGS:
 #endif
 
 #if (FREEBSD_VERS >= FREEBSD_14)
-         // case AT_FXRNG:
+      // I think that this is a pointer to a "fenestrasX" structture
+      // lots of stuff that I don't understand
+      // arc4random, passing through VDSO page ...
+      // case AT_FXRNG:
+      // Again a pointer, to the VDSO base for use by rtld
+      // case AT_KPRELOAD:
 #endif
 
       case AT_PHDR:

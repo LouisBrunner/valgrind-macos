@@ -556,7 +556,7 @@ DECL_TEMPLATE(freebsd, sys___specialfd) // 577
 
 // unimpl __NR_fspacectl   580
 // unimpl __NR_sched_getcpu        581
-DECL_TEMPLATE(freebsd, __NR_swapoff) // 582
+DECL_TEMPLATE(freebsd, sys_swapoff) // 582
 #endif
 
 DECL_TEMPLATE(freebsd, sys_fake_sigreturn)

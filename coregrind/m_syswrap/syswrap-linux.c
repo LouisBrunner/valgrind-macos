@@ -4116,6 +4116,24 @@ POST(sys_memfd_create)
    }
 }
 
+PRE(sys_memfd_secret)
+{
+   PRINT("sys_memfd_secret ( %#" FMT_REGWORD "x )", ARG1);
+   PRE_REG_READ1(int, "memfd_secret", unsigned int, flags);
+}
+
+POST(sys_memfd_secret)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "memfd_secret", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_nameless)(tid, RES);
+   }
+}
+
 PRE(sys_membarrier)
 {
    PRINT("sys_membarrier ( %#" FMT_REGWORD "x )", ARG1);

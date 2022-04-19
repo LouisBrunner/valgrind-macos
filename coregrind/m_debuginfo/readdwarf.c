@@ -1271,8 +1271,38 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
                break;
             case 0x19: /* FORM_flag_present */
                break;
+            case 0x1a: /* FORM_strx */
+               (void)step_leb128U(&p);
+               break;
+            case 0x1b: /* FORM_addrx */
+               (void)step_leb128U(&p);
+               break;
             case 0x20: /* FORM_ref_sig8 */
                p = ML_(cur_plus)(p, 8);
+               break;
+            case 0x25: /* FORM_strx1 */
+               p = ML_(cur_plus)(p, 1);
+               break;
+            case 0x26: /* FORM_strx2 */
+               p = ML_(cur_plus)(p, 2);
+               break;
+            case 0x27: /* FORM_strx3 */
+               p = ML_(cur_plus)(p, 3);
+               break;
+            case 0x28: /* FORM_strx4 */
+               p = ML_(cur_plus)(p, 4);
+               break;
+            case 0x29: /* FORM_addrx1 */
+               p = ML_(cur_plus)(p, 1);
+               break;
+            case 0x2a: /* FORM_addrx2 */
+               p = ML_(cur_plus)(p, 2);
+               break;
+            case 0x2b: /* FORM_addrx3 */
+               p = ML_(cur_plus)(p, 3);
+               break;
+            case 0x2c: /* FORM_addrx4 */
+               p = ML_(cur_plus)(p, 4);
                break;
             case 0x1f20: /* FORM_GNU_ref_alt */
                p = ML_(cur_plus)(p, ui->dw64 ? 8 : 4);

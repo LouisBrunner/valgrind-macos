@@ -2831,6 +2831,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       DiSlice debug_ranges_escn   = DiSlice_INVALID; // .debug_ranges (dwarf2)
       DiSlice debug_rnglists_escn = DiSlice_INVALID; // .debug_rnglists(dwarf5)
       DiSlice debug_loclists_escn = DiSlice_INVALID; // .debug_loclists(dwarf5)
+      DiSlice debug_addr_escn     = DiSlice_INVALID; // .debug_addr   (dwarf5)
+      DiSlice debug_str_offsets_escn = DiSlice_INVALID; // .debug_str_offsets (dwarf5)
       DiSlice debug_loc_escn      = DiSlice_INVALID; // .debug_loc    (dwarf2)
       DiSlice debug_frame_escn    = DiSlice_INVALID; // .debug_frame  (dwarf2)
       DiSlice debug_line_alt_escn = DiSlice_INVALID; // .debug_line   (alt)
@@ -2959,6 +2961,14 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          FIND(   ".debug_frame",       debug_frame_escn)
          if (!ML_(sli_is_valid)(debug_frame_escn))
             FIND(".zdebug_frame",      debug_frame_escn)
+
+         FIND(   ".debug_addr",        debug_addr_escn)
+         if (!ML_(sli_is_valid)(debug_addr_escn))
+            FIND(".zdebug_addr",       debug_addr_escn)
+
+         FIND(   ".debug_str_offsets", debug_str_offsets_escn)
+         if (!ML_(sli_is_valid)(debug_str_offsets_escn))
+            FIND(".zdebug_str_offsets", debug_str_offsets_escn)
 
          FIND(   ".debug",             dwarf1d_escn)
          FIND(   ".line",              dwarf1l_escn)
@@ -3291,6 +3301,14 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             if (!ML_(sli_is_valid)(debug_frame_escn))
                FIND(need_dwarf2,     ".zdebug_frame",     debug_frame_escn)
 
+            FIND(   need_dwarf2,     ".debug_addr",       debug_addr_escn)
+            if (!ML_(sli_is_valid)(debug_addr_escn))
+               FIND(need_dwarf2,     ".zdebug_addr",      debug_addr_escn)
+
+            FIND(   need_dwarf2,     ".debug_str_offsets", debug_str_offsets_escn)
+            if (!ML_(sli_is_valid)(debug_str_offsets_escn))
+               FIND(need_dwarf2,     ".zdebug_str_offsets", debug_str_offsets_escn)
+
             if (!ML_(sli_is_valid)(debugaltlink_escn))
                FIND(   need_dwarf2,     ".gnu_debugaltlink", debugaltlink_escn)
 
@@ -3532,7 +3550,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                    debug_rnglists_escn, debug_loclists_escn,
                    debug_loc_escn,      debug_info_alt_escn,
                    debug_abbv_alt_escn, debug_line_alt_escn,
-                   debug_str_alt_escn,  debug_line_str_escn
+                   debug_str_alt_escn,  debug_line_str_escn,
+                   debug_addr_escn,     debug_str_offsets_escn
             );
          }
       }

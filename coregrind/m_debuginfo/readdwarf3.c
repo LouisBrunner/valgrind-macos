@@ -479,10 +479,18 @@ typedef
       DiSlice escn_debug_info_alt;
       DiSlice escn_debug_str_alt;
       DiSlice escn_debug_line_str;
+      DiSlice escn_debug_addr;
+      DiSlice escn_debug_str_offsets;
       /* How much to add to .debug_types resp. alternate .debug_info offsets
          in cook_die*.  */
       UWord  types_cuOff_bias;
       UWord  alt_cuOff_bias;
+      /* DW_AT_addr_base */
+      Addr   cu_addr_base;
+      Bool   cu_has_addr_base;
+      /* DW_AT_str_offsets_base */
+      Addr   cu_str_offsets_base;
+      Bool   cu_has_str_offsets_base;
       /* --- Needed so we can add stuff to the string table. --- */
       struct _DebugInfo* di;
       /* --- State of the hash table of g_abbv (i.e. parsed abbreviations)
@@ -1294,6 +1302,87 @@ typedef
    }
    FormContents;
 
+// Read data for get_Form_contents() from .debug_addr for the 'index' entry.
+static void get_Form_contents_addr( /*OUT*/FormContents* cts, DW_FORM form,
+                                    ULong index, const CUConst* cc, Bool td3 )
+{
+   if(!cc->cu_has_addr_base) {
+      VG_(printf)(
+         "get_Form_contents_addr: %u (%s) without DW_AT_addr_base\n",
+         form, ML_(pp_DW_FORM)(form));
+      cc->barf("get_Form_contents_addr: DW_AT_addr_base not set");
+   }
+   /* We make the same word-size assumption as DW_FORM_addr. */
+   UWord addr_pos = cc->cu_addr_base + index * sizeof(UWord);
+   Cursor cur;
+   init_Cursor( &cur, cc->escn_debug_addr, addr_pos, cc->barf,
+                "get_Form_contents_addr: index points outside .debug_addr" );
+   if (TD3) {
+      HChar* tmp = ML_(cur_read_strdup)(get_DiCursor_from_Cursor(&cur), "di.getFC.1");
+      TRACE_D3("(indirect address, offset: 0x%lx): %s", addr_pos, tmp);
+      ML_(dinfo_free)(tmp);
+   }
+   cts->u.val = (ULong)(UWord)get_UWord(&cur);
+   cts->szB   = sizeof(UWord);
+   TRACE_D3("0x%lx", (UWord)cts->u.val);
+}
+
+// Read data for get_Form_contents() from .debug_str for the given offset.
+static void get_Form_contents_str( /*OUT*/FormContents* cts, DW_FORM form,
+                                    UWord offset, const CUConst* cc, Bool td3 )
+{
+   if (!ML_(sli_is_valid)(cc->escn_debug_str)
+       || offset >= cc->escn_debug_str.szB) {
+      VG_(printf)(
+         "get_Form_contents_str: %u (%s) points outside .debug_str\n",
+         form, ML_(pp_DW_FORM)(form));
+      cc->barf("get_Form_contents_str: index points outside .debug_str");
+   }
+   /* FIXME: check the entire string lies inside debug_str,
+      not just the first byte of it. */
+   DiCursor str
+      = ML_(cur_plus)( ML_(cur_from_sli)(cc->escn_debug_str), offset );
+   if (TD3) {
+      HChar* tmp = ML_(cur_read_strdup)(str, "di.getFC.1");
+      TRACE_D3("(indirect string, offset: 0x%lx): %s", offset, tmp);
+      ML_(dinfo_free)(tmp);
+   }
+   cts->u.cur = str;
+   cts->szB   = - (Long)(1 + (ULong)ML_(cur_strlen)(str));
+}
+
+static inline UInt sizeof_Dwarfish_UWord (Bool is_dw64)
+{
+   if (is_dw64)
+      return sizeof(ULong);
+   else
+      return sizeof(UInt);
+}
+
+// Read data for get_Form_contents() from .debug_str_offsets for the 'index' entry.
+static void get_Form_contents_str_offsets( /*OUT*/FormContents* cts, DW_FORM form,
+                                    ULong index, const CUConst* cc, Bool td3 )
+{
+   if(!cc->cu_has_str_offsets_base) {
+      VG_(printf)(
+         "get_Form_contents_str_offsets: %u (%s) without DW_AT_str_offsets_base\n",
+         form, ML_(pp_DW_FORM)(form));
+      cc->barf("get_Form_contents_str_offsets: DW_AT_str_offsets_base not set");
+   }
+   UWord str_offsets_pos = cc->cu_str_offsets_base
+                           + index * sizeof_Dwarfish_UWord (cc->is_dw64);
+   Cursor cur;
+   init_Cursor( &cur, cc->escn_debug_str_offsets, str_offsets_pos, cc->barf,
+                "get_Form_contents_str_offsets: index "
+                "points outside .debug_str_offsets" );
+   if (TD3) {
+      HChar* tmp = ML_(cur_read_strdup)(get_DiCursor_from_Cursor(&cur), "di.getFC.1");
+      TRACE_D3("(indirect string offset, offset: 0x%lx): %s", str_offsets_pos, tmp);
+      ML_(dinfo_free)(tmp);
+   }
+   get_Form_contents_str( cts, form, get_Dwarfish_UWord(&cur, cc->is_dw64), cc, td3 );
+}
+
 /* From 'c', get the Form data into 'cts'.  Either it gets a 1/2/4/8
    byte scalar value, or (a reference to) zero or more bytes starting
    at a DiCursor.*/
@@ -1409,21 +1498,7 @@ void get_Form_contents ( /*OUT*/FormContents* cts,
       case DW_FORM_strp: {
          /* this is an offset into .debug_str */
          UWord uw = (UWord)get_Dwarfish_UWord( c, cc->is_dw64 );
-         if (!ML_(sli_is_valid)(cc->escn_debug_str)
-             || uw >= cc->escn_debug_str.szB)
-            cc->barf("get_Form_contents: DW_FORM_strp "
-                     "points outside .debug_str");
-         /* FIXME: check the entire string lies inside debug_str,
-            not just the first byte of it. */
-         DiCursor str
-            = ML_(cur_plus)( ML_(cur_from_sli)(cc->escn_debug_str), uw );
-         if (TD3) {
-            HChar* tmp = ML_(cur_read_strdup)(str, "di.getFC.1");
-            TRACE_D3("(indirect string, offset: 0x%lx): %s", uw, tmp);
-            ML_(dinfo_free)(tmp);
-         }
-         cts->u.cur = str;
-         cts->szB   = - (Long)(1 + (ULong)ML_(cur_strlen)(str));
+         get_Form_contents_str( cts, form, uw, cc, td3 );
          break;
       }
       case DW_FORM_line_strp: {
@@ -1654,20 +1729,61 @@ void get_Form_contents ( /*OUT*/FormContents* cts,
          break;
       }
 
+      case DW_FORM_addrx: {
+         /* this is an offset into .debug_addr */
+         ULong index = (ULong)(Long)get_ULEB128(c);
+         get_Form_contents_addr(cts, form, index, cc, td3);
+         break;
+      }
+      case DW_FORM_addrx1: {
+         /* this is an offset into .debug_addr */
+         ULong index = (ULong)get_UChar(c);
+         get_Form_contents_addr(cts, form, index, cc, td3);
+         break;
+      }
+      case DW_FORM_addrx2: {
+         /* this is an offset into .debug_addr */
+         ULong index = (ULong)get_UShort(c);
+         get_Form_contents_addr(cts, form, index, cc, td3);
+         break;
+      }
+      case DW_FORM_addrx4: {
+         /* this is an offset into .debug_addr */
+         ULong index = (ULong)get_UInt(c);
+         get_Form_contents_addr(cts, form, index, cc, td3);
+         break;
+      }
+      case DW_FORM_strx: {
+         /* this is an offset into .debug_str_offsets */
+         ULong index = (ULong)(Long)get_ULEB128(c);
+         get_Form_contents_str_offsets(cts, form, index, cc, td3);
+         break;
+      }
+      case DW_FORM_strx1: {
+         /* this is an offset into .debug_str_offsets */
+         ULong index = get_UChar(c);
+         get_Form_contents_str_offsets(cts, form, index, cc, td3);
+         break;
+      }
+      case DW_FORM_strx2: {
+         /* this is an offset into .debug_str_offsets */
+         ULong index = (ULong)get_UShort(c);
+         get_Form_contents_str_offsets(cts, form, index, cc, td3);
+         break;
+      }
+      case DW_FORM_strx4: {
+         /* this is an offset into .debug_str_offsets */
+         ULong index = (ULong)get_UInt(c);
+         get_Form_contents_str_offsets(cts, form, index, cc, td3);
+         break;
+      }
+
       default:
          VG_(printf)(
             "get_Form_contents: unhandled %u (%s) at <%llx>\n",
             form, ML_(pp_DW_FORM)(form), get_position_of_Cursor(c));
          c->barf("get_Form_contents: unhandled DW_FORM");
    }
-}
-
-static inline UInt sizeof_Dwarfish_UWord (Bool is_dw64)
-{
-   if (is_dw64)
-      return sizeof(ULong);
-   else
-      return sizeof(UInt);
 }
 
 #define VARSZ_FORM 0xffffffff
@@ -1740,6 +1856,22 @@ UInt get_Form_szB (const CUConst* cc, DW_FORM form )
          return sizeof_Dwarfish_UWord(cc->is_dw64);
       case DW_FORM_implicit_const:
 	 return 0; /* Value inside abbrev. */
+      case DW_FORM_addrx:
+         return VARSZ_FORM;
+      case DW_FORM_strx:
+         return VARSZ_FORM;
+      case DW_FORM_addrx1:
+      case DW_FORM_strx1:
+         return 1;
+      case DW_FORM_addrx2:
+      case DW_FORM_strx2:
+         return 2;
+      case DW_FORM_addrx3:
+      case DW_FORM_strx3:
+         return 3;
+      case DW_FORM_addrx4:
+      case DW_FORM_strx4:
+         return 4;
       default:
          VG_(printf)(
             "get_Form_szB: unhandled %u (%s)\n",
@@ -2432,6 +2564,65 @@ static void setup_cu_svma(CUConst* cc, Bool have_lo, Addr ip_lo, Bool td3)
    }
 }
 
+/* Setup info from DW_AT_addr_base and DW_AT_str_offsets_base. This needs to be
+   done early, because other DW_AT_* info may depend on it. */
+static void setup_cu_bases(CUConst* cc, Cursor* c_die, const g_abbv* abbv)
+{
+   FormContents cts;
+   UInt nf_i;
+   ULong saved_c_pos;
+   if(cc->cu_has_addr_base && cc->cu_has_str_offsets_base)
+      return;
+   saved_c_pos = get_position_of_Cursor(c_die);
+   nf_i = 0;
+   while (!cc->cu_has_addr_base || !cc->cu_has_str_offsets_base) {
+      DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
+      DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+      const name_form *nf = &abbv->nf[nf_i];
+      if (attr == 0 && form == 0)
+         break;
+      if (attr != DW_AT_addr_base && attr != DW_AT_str_offsets_base ) {
+         const UInt form_szB = get_Form_szB (cc, form);
+         if (form_szB == VARSZ_FORM) {
+            if(form == DW_FORM_addrx || form == DW_FORM_strx) {
+               /* Skip without interpreting them, they depend on *_base. */
+               (void) get_ULEB128(c_die);
+            } else {
+               /* Need to read the contents of this one to skip it. */
+               get_Form_contents( &cts, cc, c_die, False /*td3*/,
+                                  &abbv->nf[nf_i] );
+            }
+         } else {
+            /* Skip without even reading it, as it may depend on *_base. */
+            advance_position_of_Cursor (c_die, form_szB);
+         }
+         nf_i++;
+         continue;
+      }
+      get_Form_contents( &cts, cc, c_die, False/*td3*/, nf );
+      if (attr == DW_AT_addr_base && cts.szB > 0) {
+         Addr addr_base = cts.u.val;
+         if (cc->cu_has_addr_base)
+            vg_assert (addr_base == cc->cu_addr_base);
+         else {
+            cc->cu_has_addr_base = True;
+            cc->cu_addr_base = addr_base;
+         }
+      }
+      if (attr == DW_AT_str_offsets_base && cts.szB > 0) {
+         Addr str_offsets_base = cts.u.val;
+         if (cc->cu_has_str_offsets_base)
+            vg_assert (str_offsets_base == cc->cu_str_offsets_base);
+         else {
+            cc->cu_has_str_offsets_base = True;
+            cc->cu_str_offsets_base = str_offsets_base;
+         }
+       }
+       nf_i++;
+   }
+   set_position_of_Cursor(c_die, saved_c_pos);
+}
+
 static void trace_DIE(
    DW_TAG dtag,
    UWord posn,
@@ -2571,6 +2762,9 @@ static void parse_var_DIE (
       Addr ip_hi1   = 0;
       Addr rangeoff = 0;
       const HChar *compdir = NULL;
+
+      if (level == 0)
+         setup_cu_bases(cc, c_die, abbv);
       nf_i = 0;
       while (True) {
          DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
@@ -3207,6 +3401,8 @@ static Bool parse_inl_DIE (
       Bool has_stmt_list = False;
       ULong cu_line_offset = 0;
 
+      if (level == 0)
+         setup_cu_bases(cc, c_die, abbv);
       nf_i = 0;
       while (True) {
          DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
@@ -3566,7 +3762,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
                              Int level,
                              Cursor* c_die,
                              const g_abbv *abbv,
-                             const CUConst* cc,
+                             CUConst* cc,
                              Bool td3 )
 {
    FormContents cts;
@@ -3591,6 +3787,8 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
    if (dtag == DW_TAG_compile_unit
        || dtag == DW_TAG_type_unit
        || dtag == DW_TAG_partial_unit) {
+      if (level == 0)
+         setup_cu_bases(cc, c_die, abbv);
       /* See if we can find DW_AT_language, since it is important for
          establishing array bounds (see DW_TAG_subrange_type below in
          this fn) */
@@ -5081,7 +5279,8 @@ void new_dwarf3_reader_wrk (
    DiSlice escn_debug_rnglists,  DiSlice escn_debug_loclists,
    DiSlice escn_debug_loc,       DiSlice escn_debug_info_alt,
    DiSlice escn_debug_abbv_alt,  DiSlice escn_debug_line_alt,
-   DiSlice escn_debug_str_alt,   DiSlice escn_debug_line_str
+   DiSlice escn_debug_str_alt,   DiSlice escn_debug_line_str,
+   DiSlice escn_debug_addr,      DiSlice escn_debug_str_offsets
 )
 {
    XArray* /* of TyEnt */     tyents = NULL;
@@ -5349,9 +5548,15 @@ void new_dwarf3_reader_wrk (
          cc.escn_debug_info_alt = escn_debug_info_alt;
          cc.escn_debug_str_alt  = escn_debug_str_alt;
          cc.escn_debug_line_str = escn_debug_line_str;
+         cc.escn_debug_addr     = escn_debug_addr;
+         cc.escn_debug_str_offsets = escn_debug_str_offsets;
          cc.types_cuOff_bias    = escn_debug_info.szB;
          cc.alt_cuOff_bias      = escn_debug_info.szB + escn_debug_types.szB;
          cc.cu_start_offset     = cu_start_offset;
+         cc.cu_addr_base        = 0;
+         cc.cu_has_addr_base    = False;
+         cc.cu_str_offsets_base = 0;
+         cc.cu_has_str_offsets_base = False;
          cc.di = di;
          /* The CU's svma can be deduced by looking at the AT_low_pc
             value in the top level TAG_compile_unit, which is the topmost
@@ -5795,7 +6000,8 @@ ML_(new_dwarf3_reader) (
    DiSlice escn_debug_rnglists,  DiSlice escn_debug_loclists,
    DiSlice escn_debug_loc,       DiSlice escn_debug_info_alt,
    DiSlice escn_debug_abbv_alt,  DiSlice escn_debug_line_alt,
-   DiSlice escn_debug_str_alt,   DiSlice escn_debug_line_str
+   DiSlice escn_debug_str_alt,   DiSlice escn_debug_line_str,
+   DiSlice escn_debug_addr,      DiSlice escn_debug_str_offsets
 )
 {
    volatile Int  jumped;
@@ -5819,7 +6025,8 @@ ML_(new_dwarf3_reader) (
                              escn_debug_rnglists, escn_debug_loclists,
                              escn_debug_loc,      escn_debug_info_alt,
                              escn_debug_abbv_alt, escn_debug_line_alt,
-                             escn_debug_str_alt,  escn_debug_line_str );
+                             escn_debug_str_alt,  escn_debug_line_str,
+                             escn_debug_addr,     escn_debug_str_offsets );
       d3rd_jmpbuf_valid = False;
       TRACE_D3("\n------ .debug_info reading was successful ------\n");
    } else {

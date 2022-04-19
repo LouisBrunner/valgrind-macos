@@ -1113,6 +1113,10 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
          = getsectdata(dsli, "__DWARF", "__debug_loclists", NULL);
       DiSlice debug_loc_mscn
          = getsectdata(dsli, "__DWARF", "__debug_loc", NULL);
+      DiSlice debug_addr_mscn
+         = getsectdata(dsli, "__DWARF", "__debug_addr", NULL);
+      DiSlice debug_str_offsets_mscn
+         = getsectdata(dsli, "__DWARF", "__debug_str_offsets", NULL);
 
       /* It appears (jrs, 2014-oct-19) that section "__eh_frame" in
          segment "__TEXT" appears in both the main and dsym files, but
@@ -1174,7 +1178,9 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                    DiSlice_INVALID, /* ALT .debug_abbv */
                    DiSlice_INVALID, /* ALT .debug_line */
                    DiSlice_INVALID, /* ALT .debug_str */
-                   debug_line_str_mscn  /* .debug_line_str */
+                   debug_line_str_mscn,  /* .debug_line_str */
+                   debug_addr_mscn,
+                   debug_str_offsets_mscn
             );
          }
       }

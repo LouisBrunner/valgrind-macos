@@ -1056,6 +1056,7 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
    UShort ver;
 
    UChar    addr_size = 0;
+   UChar    unit_type = 0;
    DiCursor p = unitblock_img;
    DiCursor end_img;
    DiCursor abbrev_img;
@@ -1073,7 +1074,7 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
 
    if (ver >= 5)
       /* unit_type for DWARF5 */
-      /* unit_type = */ ML_(cur_step_UChar)(&p);
+      unit_type = ML_(cur_step_UChar)(&p);
    else
       /* get offset in abbrev */
       atoffs = ui->dw64 ? ML_(cur_step_ULong)(&p)
@@ -1082,10 +1083,32 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
    /* Address size */
    addr_size = ML_(cur_step_UChar)(&p);
 
-   if (ver >= 5)
+   if (ver >= 5) {
       /* get offset in abbrev */
       atoffs = ui->dw64 ? ML_(cur_step_ULong)(&p)
                         : (ULong)(ML_(cur_step_UInt)(&p));
+
+      /* read any extra fields */
+      switch(unit_type) {
+         case DW_UT_compile:
+         case DW_UT_partial:
+            break;
+         case DW_UT_skeleton:
+         case DW_UT_split_compile:
+            /* dwo_id = */ ML_(cur_step_ULong)(&p);
+            break;
+         case DW_UT_type:
+         case DW_UT_split_type:
+            /* type_signature = */ ML_(cur_step_ULong)(&p);
+            /* type_offset = */ ui->dw64 ? ML_(cur_step_ULong)(&p)
+                                         : (ULong)(ML_(cur_step_UInt)(&p));
+            break;
+         default:
+            VG_(printf)( "### unhandled dwarf2 unit_type code 0x%x\n",
+                         unit_type );
+            break;
+      }
+   }
 
    /* End of this block */
    end_img = ML_(cur_plus)(unitblock_img, blklen + (ui->dw64 ? 12 : 4)); 

@@ -1200,9 +1200,15 @@ void parse_CU_Header ( /*OUT*/CUConst* cc,
    cc->is_type_unit = type_unit;
    cc->is_alt_info = alt_info;
 
-   if (type_unit || (cc->version >= 5 && unit_type == DW_UT_type)) {
+   if (type_unit || (cc->version >= 5 && (unit_type == DW_UT_type
+                                          || unit_type == DW_UT_split_type))) {
       cc->type_signature = get_ULong( c );
       cc->type_offset = get_Dwarfish_UWord( c, cc->is_dw64 );
+   }
+
+   if (cc->version >= 5 && (unit_type == DW_UT_skeleton
+                            || unit_type == DW_UT_split_compile)) {
+      /* dwo_id = */ get_ULong( c );
    }
 
    /* Set up cc->debug_abbv to point to the relevant table for this

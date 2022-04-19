@@ -1280,6 +1280,12 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
             case 0x20: /* FORM_ref_sig8 */
                p = ML_(cur_plus)(p, 8);
                break;
+            case 0x22: /* FORM_loclistx */
+               (void)step_leb128U(&p);
+               break;
+            case 0x23: /* FORM_rnglistx */
+               (void)step_leb128U(&p);
+               break;
             case 0x25: /* FORM_strx1 */
                p = ML_(cur_plus)(p, 1);
                break;

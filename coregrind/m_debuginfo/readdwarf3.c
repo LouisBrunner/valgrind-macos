@@ -491,6 +491,12 @@ typedef
       /* DW_AT_str_offsets_base */
       Addr   cu_str_offsets_base;
       Bool   cu_has_str_offsets_base;
+      /* DW_AT_rnglists_base */
+      Addr   cu_rnglists_base;
+      Bool   cu_has_rnglists_base;
+      /* DW_AT_loclists_base */
+      Addr   cu_loclists_base;
+      Bool   cu_has_loclists_base;
       /* --- Needed so we can add stuff to the string table. --- */
       struct _DebugInfo* di;
       /* --- State of the hash table of g_abbv (i.e. parsed abbreviations)
@@ -1435,6 +1441,40 @@ void get_Form_contents ( /*OUT*/FormContents* cts,
          cts->szB   = cc->is_dw64 ? 8 : 4;
          TRACE_D3("%llu", cts->u.val);
          break;
+      case DW_FORM_rnglistx: {
+         if(!cc->cu_has_rnglists_base) {
+            cc->barf("get_Form_contents: DW_FORM_rnglistsx"
+                     " without DW_AT_rnglists_base");
+         }
+         /* Convert index to offset pointing to the offsets list. */
+         ULong index = get_ULEB128(c);
+         ULong offset_to_offset = cc->cu_rnglists_base + index * sizeof_Dwarfish_UWord( cc->is_dw64 );
+         /* And read the offset value from there. */
+         Cursor cur;
+         init_Cursor( &cur, cc->escn_debug_rnglists, offset_to_offset, cc->barf,
+                      "get_Form_contents: index points outside .debug_rnglists" );
+         cts->u.val = cc->cu_rnglists_base + get_Dwarfish_UWord(&cur, cc->is_dw64);
+         cts->szB   = 8;
+         TRACE_D3("%llu", cts->u.val);
+         break;
+      }
+      case DW_FORM_loclistx: {
+         if(!cc->cu_has_loclists_base) {
+            cc->barf("get_Form_contents: DW_FORM_loclistsx"
+                     " without DW_AT_loclists_base");
+         }
+         /* Convert index to offset pointing to the offsets list. */
+         ULong index = get_ULEB128(c);
+         ULong offset_to_offset = cc->cu_loclists_base + index * sizeof_Dwarfish_UWord( cc->is_dw64 );
+         /* And read the offset value from there. */
+         Cursor cur;
+         init_Cursor( &cur, cc->escn_debug_loclists, offset_to_offset, cc->barf,
+                      "get_Form_contents: index points outside .debug_loclists" );
+         cts->u.val = cc->cu_loclists_base + get_Dwarfish_UWord(&cur, cc->is_dw64);
+         cts->szB   = 8;
+         TRACE_D3("%llu", cts->u.val);
+         break;
+      }
       case DW_FORM_sdata:
          cts->u.val = (ULong)(Long)get_SLEB128(c);
          cts->szB   = 8;
@@ -1807,6 +1847,9 @@ UInt get_Form_szB (const CUConst* cc, DW_FORM form )
             return 8;
          else
             return 4;
+      case DW_FORM_rnglistx:
+      case DW_FORM_loclistx:
+         return VARSZ_FORM;
       case DW_FORM_sdata:
          return VARSZ_FORM;
       case DW_FORM_udata:
@@ -2571,27 +2614,32 @@ static void setup_cu_svma(CUConst* cc, Bool have_lo, Addr ip_lo, Bool td3)
    }
 }
 
-/* Setup info from DW_AT_addr_base and DW_AT_str_offsets_base. This needs to be
-   done early, because other DW_AT_* info may depend on it. */
+/* Setup info from DW_AT_addr_base, DW_AT_str_offsets_base, DW_AT_rnglists_base
+   and DW_AT_loclists_base. This needs to be done early, because other DW_AT_*
+   info may depend on it. */
 static void setup_cu_bases(CUConst* cc, Cursor* c_die, const g_abbv* abbv)
 {
    FormContents cts;
    UInt nf_i;
    ULong saved_c_pos;
-   if(cc->cu_has_addr_base && cc->cu_has_str_offsets_base)
+   if(cc->cu_has_addr_base && cc->cu_has_str_offsets_base
+      && cc->cu_has_rnglists_base && cc->cu_has_loclists_base)
       return;
    saved_c_pos = get_position_of_Cursor(c_die);
    nf_i = 0;
-   while (!cc->cu_has_addr_base || !cc->cu_has_str_offsets_base) {
+   while (!cc->cu_has_addr_base || !cc->cu_has_str_offsets_base
+      || !cc->cu_has_rnglists_base || !cc->cu_has_loclists_base) {
       DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
       DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
       const name_form *nf = &abbv->nf[nf_i];
       if (attr == 0 && form == 0)
          break;
-      if (attr != DW_AT_addr_base && attr != DW_AT_str_offsets_base ) {
+      if (attr != DW_AT_addr_base && attr != DW_AT_str_offsets_base
+          && attr != DW_AT_rnglists_base && attr != DW_AT_loclists_base) {
          const UInt form_szB = get_Form_szB (cc, form);
          if (form_szB == VARSZ_FORM) {
-            if(form == DW_FORM_addrx || form == DW_FORM_strx) {
+            if(form == DW_FORM_addrx || form == DW_FORM_strx
+               || form == DW_FORM_rnglistx || form == DW_FORM_loclistx) {
                /* Skip without interpreting them, they depend on *_base. */
                (void) get_ULEB128(c_die);
             } else {
@@ -2623,6 +2671,24 @@ static void setup_cu_bases(CUConst* cc, Cursor* c_die, const g_abbv* abbv)
          else {
             cc->cu_has_str_offsets_base = True;
             cc->cu_str_offsets_base = str_offsets_base;
+         }
+       }
+      if (attr == DW_AT_rnglists_base && cts.szB > 0) {
+         Addr rnglists_base = cts.u.val;
+         if (cc->cu_has_rnglists_base)
+            vg_assert (rnglists_base == cc->cu_rnglists_base);
+         else {
+            cc->cu_has_rnglists_base = True;
+            cc->cu_rnglists_base = rnglists_base;
+         }
+       }
+      if (attr == DW_AT_loclists_base && cts.szB > 0) {
+         Addr loclists_base = cts.u.val;
+         if (cc->cu_has_loclists_base)
+            vg_assert (loclists_base == cc->cu_loclists_base);
+         else {
+            cc->cu_has_loclists_base = True;
+            cc->cu_loclists_base = loclists_base;
          }
        }
        nf_i++;
@@ -5564,6 +5630,10 @@ void new_dwarf3_reader_wrk (
          cc.cu_has_addr_base    = False;
          cc.cu_str_offsets_base = 0;
          cc.cu_has_str_offsets_base = False;
+         cc.cu_rnglists_base = 0;
+         cc.cu_has_rnglists_base = False;
+         cc.cu_loclists_base = 0;
+         cc.cu_has_loclists_base = False;
          cc.di = di;
          /* The CU's svma can be deduced by looking at the AT_low_pc
             value in the top level TAG_compile_unit, which is the topmost

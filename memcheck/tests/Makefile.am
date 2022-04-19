@@ -555,7 +555,7 @@ long_namespace_xml_SOURCES = long_namespace_xml.cpp
 
 manuel1_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
-memalign2_CFLAGS	= $(AM_CFLAGS)
+memalign2_CFLAGS	= $(AM_CFLAGS) -Wno-non-power-of-two-alignment
 if VGCONF_OS_IS_SOLARIS
 memalign2_CFLAGS	+= -D__EXTENSIONS__
 endif

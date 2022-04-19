@@ -282,8 +282,8 @@ if ! VGCONF_OS_IS_DARWIN
    check_PROGRAMS += ppoll_alarm
 endif
 
-# clang does not know -ansi
-if ! COMPILER_IS_CLANG
+# older (?) clang does not know -ansi
+if HAVE_ANSI
    check_PROGRAMS += ansi
 endif
 

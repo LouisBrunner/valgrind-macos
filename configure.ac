@@ -2900,6 +2900,24 @@ AC_MSG_RESULT([no])
 ])
 CFLAGS=$safe_CFLAGS
 
+AC_MSG_CHECKING([if gcc accepts -ansi])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-ansi"
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+   return 0;
+]])], [
+ac_have_ansi=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_ansi=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL([HAVE_ANSI], [test x$ac_have_ansi = xyes])
+
+CFLAGS=$safe_CFLAGS
+
 
 # Does this compiler support -no-pie?
 # On Ubuntu 16.10+, gcc produces position independent executables (PIE) by

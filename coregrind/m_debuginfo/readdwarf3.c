@@ -1899,8 +1899,15 @@ void skip_DIE (UWord  *sibling,
             *sibling = cts.u.val;
          nf_i++;
       } else if (abbv->nf[nf_i].skip_szB == VARSZ_FORM) {
-         get_Form_contents( &cts, cc, c_die, False /*td3*/,
-                            &abbv->nf[nf_i] );
+         DW_FORM form = abbv->nf[nf_i].at_form;
+         if(form == DW_FORM_addrx || form == DW_FORM_strx
+            || form == DW_FORM_rnglistx || form == DW_FORM_loclistx) {
+            /* Skip without interpreting them, they may depend on e.g.
+               DW_AT_addr_base that has not been read yet. */
+            (void) get_ULEB128(c_die);
+         } else
+            get_Form_contents( &cts, cc, c_die, False /*td3*/,
+                               &abbv->nf[nf_i] );
          nf_i++;
       } else {
          advance_position_of_Cursor (c_die, (ULong)abbv->nf[nf_i].skip_szB);

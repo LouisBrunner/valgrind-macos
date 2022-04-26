@@ -2826,7 +2826,8 @@ static void parse_var_DIE (
 
    if (dtag == DW_TAG_compile_unit
        || dtag == DW_TAG_type_unit
-       || dtag == DW_TAG_partial_unit) {
+       || dtag == DW_TAG_partial_unit
+       || dtag == DW_TAG_skeleton_unit) {
       Bool have_lo    = False;
       Bool have_hi1   = False;
       Bool hiIsRelative = False;
@@ -3467,7 +3468,8 @@ static Bool parse_inl_DIE (
    /* Get info about DW_TAG_compile_unit and DW_TAG_partial_unit which in theory
       could also contain inlined fn calls, if they cover an address range.  */
    Bool unit_has_addrs = False;
-   if (dtag == DW_TAG_compile_unit || dtag == DW_TAG_partial_unit) {
+   if (dtag == DW_TAG_compile_unit || dtag == DW_TAG_partial_unit
+       || dtag == DW_TAG_skeleton_unit) {
       Bool have_lo    = False;
       Addr ip_lo    = 0;
       const HChar *compdir = NULL;
@@ -3859,7 +3861,8 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
 
    if (dtag == DW_TAG_compile_unit
        || dtag == DW_TAG_type_unit
-       || dtag == DW_TAG_partial_unit) {
+       || dtag == DW_TAG_partial_unit
+       || dtag == DW_TAG_skeleton_unit) {
       if (level == 0)
          setup_cu_bases(cc, c_die, abbv);
       /* See if we can find DW_AT_language, since it is important for

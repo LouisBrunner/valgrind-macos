@@ -1136,7 +1136,8 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
 
       tag = step_leb128U( &abbrev_img );
 
-      if ( tag != 0x0011 /*TAG_compile_unit*/ )
+      if ( tag != 0x0011 /*TAG_compile_unit*/
+           && tag != 0x004a /*TAG_skeleton_unit*/ )
          return; /* Not a compile unit (might be partial) or broken DWARF. */
 
       /* DW_CHILDREN_yes or DW_CHILDREN_no */
@@ -1330,7 +1331,8 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
          }
          
          /* Now store the members we need in the UnitInfo structure */
-         if ( tag == 0x0011 /*TAG_compile_unit*/ ) {
+         if ( tag == 0x0011 /*TAG_compile_unit*/
+              || tag == 0x004a /*TAG_skeleton_unit*/ ) {
                  if ( name == 0x03 ) ui->name = sval;      /* DW_AT_name */
             else if ( name == 0x1b ) ui->compdir = sval;   /* DW_AT_compdir */
             else if ( name == 0x10 ) ui->stmt_list = cval; /* DW_AT_stmt_list */

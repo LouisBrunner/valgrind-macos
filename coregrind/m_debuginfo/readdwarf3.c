@@ -314,6 +314,25 @@ static Long get_SLEB128 ( Cursor* c ) {
       result |= -(1ULL << shift);
    return result;
 }
+static UInt get_UInt3 ( Cursor* c ) {
+   UChar c1, c2, c3;
+   vg_assert(is_sane_Cursor(c));
+   if (c->sli_next + 3 > c->sli.ioff + c->sli.szB) {
+      c->barf(c->barfstr);
+      /*NOTREACHED*/
+      vg_assert(0);
+   }
+   c1 = ML_(img_get_UChar)(c->sli.img, c->sli_next);
+   c2 = ML_(img_get_UChar)(c->sli.img, c->sli_next+1);
+   c3 = ML_(img_get_UChar)(c->sli.img, c->sli_next+2);
+   c->sli_next += 3;
+#if defined(VG_BIGENDIAN)
+   return c1 << 16 | c2 << 8 | c3;
+#else
+   return c1 | c2 << 8 | c3 << 16;
+#endif
+}
+
 
 /* Assume 'c' points to the start of a string.  Return a DiCursor of
    whatever it points at, and advance it past the terminating zero.
@@ -1846,6 +1865,12 @@ void get_Form_contents ( /*OUT*/FormContents* cts,
          get_Form_contents_addr(cts, form, index, cc, td3);
          break;
       }
+      case DW_FORM_addrx3: {
+         /* this is an offset into .debug_addr */
+         ULong index = (ULong)get_UInt3(c);
+         get_Form_contents_addr(cts, form, index, cc, td3);
+         break;
+      }
       case DW_FORM_addrx4: {
          /* this is an offset into .debug_addr */
          ULong index = (ULong)get_UInt(c);
@@ -1867,6 +1892,12 @@ void get_Form_contents ( /*OUT*/FormContents* cts,
       case DW_FORM_strx2: {
          /* this is an offset into .debug_str_offsets */
          ULong index = (ULong)get_UShort(c);
+         get_Form_contents_str_offsets(cts, form, index, cc, td3);
+         break;
+      }
+      case DW_FORM_strx3: {
+         /* this is an offset into .debug_str_offsets */
+         ULong index = (ULong)get_UInt3(c);
          get_Form_contents_str_offsets(cts, form, index, cc, td3);
          break;
       }

@@ -43,6 +43,7 @@ void g()
         if (test_mutex.try_lock_shared_until(then))
         {
             test_mutex.unlock_shared();
+            break;
         }
     }
     if (i == 3)

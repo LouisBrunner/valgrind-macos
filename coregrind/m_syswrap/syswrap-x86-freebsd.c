@@ -395,7 +395,7 @@ static void deallocate_LGDTs_for_thread ( VexGuestX86State* vex )
 
    if (0)
       VG_(printf)("deallocate_LGDTs_for_thread: "
-                  "ldt = 0x%x, gdt = 0x%x\n",
+                  "ldt = 0x%llx, gdt = 0x%llx\n",
                   vex->guest_LDT, vex->guest_GDT );
 
    if (vex->guest_LDT != (HWord)NULL) {
@@ -481,6 +481,26 @@ static SysRes sys_get_thread_area ( ThreadId tid, Int idx, void ** basep )
 
 void VG_(cleanup_thread) ( ThreadArchState* arch )
 {
+   /*
+    * This is what x86 Linux does but it doesn't work off the bat for x86 FreeBSD
+    * My suspicion is that the rtld code uses the TCB stored in the GDT after the
+    * end of thr_exit.
+    * Alternatively the rtld use is after the start of the next thread and we haven't
+    * reallocated this memory
+    */
+   /*deallocate_LGDTs_for_thread( &arch->vex );*/
+
+   /*
+    * This was plan B, just recycle the slot
+    * It fixes none/tests/manythreads
+    * but it breaks drd/tests/fork-parallel
+    */
+#if 0
+   VexGuestX86SegDescr* gdt = (VexGuestX86SegDescr*) arch->vex.guest_GDT;
+   if (gdt)
+      translate_to_hw_format(0, &gdt[arch->vex.guest_GS >> 3]);
+#endif
+
 }
 
 
@@ -698,7 +718,7 @@ PRE(sys_rfork)
       *flags |= SfYieldAfter;
    }
 #else
-   VG_(message)(Vg_UserMsg, "fork() not implemented");
+   VG_(message)(Vg_UserMsg, "rfork() not implemented");
    VG_(unimplemented)("Valgrind does not support rfork() yet.");
    SET_STATUS_Failure( VKI_ENOSYS );
 #endif

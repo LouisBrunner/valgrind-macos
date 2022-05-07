@@ -2126,17 +2126,23 @@ struct vki_kinfo_vmentry {
    int   kve_type;
    ULong kve_start;
    ULong kve_end;
-   Off64T   kve_offset;
+   ULong   kve_offset;
    ULong   kve_fileid;
-   UInt    kve_fsid;
+   UInt    kve_fsid_freebsd11;
    int   kve_flags;
    int   kve_resident;
    int   kve_private_resident;
    int   kve_protection;
    int   kve_ref_count;
    int   kve_shadow_count;
-   int   _kve_pad0;
-   int   kve_ispare[16];
+   int      kve_vn_type;
+   ULong kve_vn_size;
+   UInt kve_vn_rdev_freebsd11;
+   UShort kve_vn_mode;
+   UShort kve_status;
+   ULong kve_vn_fsid;
+   ULong kve_vn_rdev;
+   int      _kve_ispare[8];
    char  kve_path[VKI_PATH_MAX];
 };
 

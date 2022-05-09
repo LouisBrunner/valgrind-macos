@@ -162,6 +162,9 @@ VgXTMemory VG_(clo_xtree_memory) =  Vg_XTMemory_None;
 const HChar* VG_(clo_xtree_memory_file) = "xtmemory.kcg.%p";
 Bool VG_(clo_xtree_compress_strings) = True;
 
+#if defined(VGO_linux)
+Bool VG_(clo_enable_debuginfod) = True;
+#endif
 Int    VG_(clo_dump_error)     = 0;
 Int    VG_(clo_backtrace_size) = 12;
 Int    VG_(clo_merge_recursive_frames) = 0; // default value: no merge

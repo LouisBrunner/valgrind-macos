@@ -40,6 +40,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 452274  memcheck crashes with Assertion 'sci->status.what == SsIdle' failed
 452779  Valgrind fails to build on FreeBSD 13.0 with llvm-devel (15.0.0)
 453055  shared_timed_mutex drd test fails with "Lock shared failed" message
+453602  Missing command line option to enable/disable debuginfod
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

@@ -126,6 +126,12 @@ extern const HChar* VG_(clo_trace_children_skip_by_arg);
    after the subsequent exec(). */
 extern Bool  VG_(clo_child_silent_after_fork);
 
+#if defined(VGO_linux)
+/* If True, valgrind will attempt to query debuginfod servers for
+   any missing debuginfo. */
+extern Bool VG_(clo_enable_debuginfod);
+#endif
+
 /* If the user specified --log-file=STR and/or --xml-file=STR, these
    hold STR before expansion. */
 extern const HChar *VG_(clo_log_fname_unexpanded);

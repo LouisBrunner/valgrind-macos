@@ -1595,7 +1595,7 @@ DiImage* find_debug_file( struct _DebugInfo* di,
    }
 
 #  if defined(VGO_linux)
-   if (dimg == NULL)
+   if (VG_(clo_enable_debuginfod) && dimg == NULL)
       dimg = find_debug_file_debuginfod(objpath, &debugpath, buildid, crc, rel_ok);
 #  endif
 

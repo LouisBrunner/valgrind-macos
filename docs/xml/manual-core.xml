@@ -599,19 +599,20 @@ to <computeroutput>malloc.</computeroutput>.</para>
 <para id="debuginfod.para.1">Valgrind supports the downloading of debuginfo
 files via debuginfod, an HTTP server for distributing ELF/DWARF debugging
 information. When a debuginfo file cannot be found locally, Valgrind is able
-to query debuginfod servers for the file using its build-id.</para>
+to query debuginfod servers for the file using the file's build-id.</para>
 
 <para id="debuginfod.para.2">In order to use this feature
-<computeroutput>debuginfod-find</computeroutput> must be installed and
-<computeroutput>$DEBUGINFOD_URLS</computeroutput> must contain URLs of
-debuginfod servers. Valgrind does not support
+<computeroutput>debuginfod-find</computeroutput> must be installed and the
+<computeroutput>$DEBUGINFOD_URLS</computeroutput> environment variable must
+contain space-separated URLs of debuginfod servers. Valgrind does not support
 <computeroutput>debuginfod-find</computeroutput> verbose output that is
 normally enabled with <computeroutput>$DEBUGINFOD_PROGRESS</computeroutput>
 and <computeroutput>$DEBUGINFOD_VERBOSE</computeroutput>. These environment
-variables will be ignored.</para>
+variables will be ignored. This feature is supported on Linux only.</para>
 
 <para id="debuginfod.para.3">For more information regarding debuginfod, see
-https://sourceware.org/elfutils/Debuginfod.html</para>
+<ulink url="https://sourceware.org/elfutils/Debuginfod.html">Elfutils Debuginfod</ulink>
+.</para>
 
 </sect1>
 
@@ -986,6 +987,21 @@ in most cases.  We group the available options by rough categories.</para>
       further details, see 
       <link linkend="&vg-comment-id;">the commentary</link>
       in the manual.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.enable-debuginfod" xreflabel="--enable-debuginfod">
+    <term>
+      <option><![CDATA[--enable-debuginfod=<no|yes> [default: yes] ]]></option>
+    </term>
+    <listitem>
+      <para>When enabled Valgrind will attempt to download missing debuginfo
+      from debuginfod servers if space-separated server URLs are present
+      in the <computeroutput>$DEBUGINFOD_URLS</computeroutput> environment
+      variable.  This option is supported on Linux only.
+      <!-- commented out because it causes broken links in the man page
+      For more information see <xref linkend="manual-core.debuginfod"/>.
+      --></para>
     </listitem>
   </varlistentry>
 

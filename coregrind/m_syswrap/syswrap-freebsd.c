@@ -6221,7 +6221,43 @@ POST(sys___sysctlbyname)
 
 #if (FREEBSD_VERS >= FREEBSD_13_0)
 
-// SYS___realpathat 474
+// SYS_shm_open2   571
+// from syscalls.master
+// int shm_open2(_In_z_ const char *path,
+//               int flags,
+//               mode_t mode,
+//               int shmflags,
+//               _In_z_ const char *name);
+PRE(sys_shm_open2)
+{
+   PRE_REG_READ5(int, "shm_open2",
+                 const char *, path, int, flags, vki_mode_t, mode, int, shmflags, const char*, name);
+   if (ARG1 == VKI_SHM_ANON) {
+      PRINT("sys_shm_open2(%#" FMT_REGWORD "x(SHM_ANON), %" FMT_REGWORD "u, %hu, %d, %#" FMT_REGWORD "x(%s))",
+            ARG1, ARG2, (vki_mode_t)ARG3, (Int)ARG4, ARG5, (HChar*)ARG5);
+   } else {
+      PRINT("sys_shm_open2(%#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u, %hu, %d, %#" FMT_REGWORD "x(%s))",
+            ARG1, (HChar *)ARG1, ARG2, (vki_mode_t)ARG3, (Int)ARG4, ARG5, (HChar*)ARG5);
+      PRE_MEM_RASCIIZ( "shm_open2(path)", ARG1 );
+   }
+
+    PRE_MEM_RASCIIZ( "shm_open2(name)", ARG5 );
+   *flags |= SfMayBlock;
+}
+
+POST(sys_shm_open2)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "shm_open2", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)ARG1);
+   }
+}
+
+// SYS___realpathat 574
 // from syscalls.master
 //         int __realpathat(int fd,
 //         _In_z_ const char *path,
@@ -6969,7 +7005,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    BSDXY(__NR___sysctlbyname,   sys___sysctlbyname),    // 570
 
 #if (FREEBSD_VERS >= FREEBSD_13_0)
-   // unimpl __NR_shm_open2           571
+   BSDXY(__NR_shm_open2,        sys_shm_open2),         // 571
    // unimpl __NR_shm_rename          572
    // unimpl __NR_sigfastblock        573
    BSDXY( __NR___realpathat,    sys___realpathat),      // 574

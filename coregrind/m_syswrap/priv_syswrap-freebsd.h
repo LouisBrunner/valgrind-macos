@@ -533,7 +533,7 @@ DECL_TEMPLATE(freebsd, sys___sysctlbyname) // 570
 #if (FREEBSD_VERS >= FREEBSD_13_0)
 // looks like close_range got backported
 // to 12.2 leaving these 4 marked as UNIMPL in 12.2
-// unimpl __NR_shm_open2           571
+DECL_TEMPLATE(freebsd, sys_shm_open2) // 571
 // unimpl __NR_shm_rename          572
 // unimpl __NR_sigfastblock        573
 DECL_TEMPLATE(freebsd, sys___realpathat) // 574

@@ -1147,6 +1147,12 @@ void read_and_set_osrel(DiImage* img)
 
        ElfXX_Ehdr ehdr;
        ML_(img_get)(&ehdr, img, 0, sizeof(ehdr));
+
+       /* only set osrel for executable files, not for subsequent shared libraries */
+       if (ehdr.e_type != ET_EXEC) {
+          return;
+       }
+
        /* Skip the phdrs when we have to search the shdrs. In separate
           .debug files the phdrs might not be valid (they are a copy of
           the main ELF file) and might trigger assertions when getting

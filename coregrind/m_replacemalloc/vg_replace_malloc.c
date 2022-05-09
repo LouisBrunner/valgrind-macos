@@ -193,15 +193,27 @@ static void init(void);
    if (info.clo_trace_malloc) {        \
       VALGRIND_INTERNAL_PRINTF(format, ## args ); }
 
-/* Tries to set ERRNO to ENOMEM if possible.
-   Only implemented for glibc at the moment.
-*/
+/* Tries to set ERRNO to ENOMEM/EINVAL if possible. */
 #if defined(VGO_linux)
 extern int *__errno_location (void) __attribute__((weak));
 #define SET_ERRNO_ENOMEM if (__errno_location)        \
       (*__errno_location ()) = VKI_ENOMEM;
+#define SET_ERRNO_EINVAL {}
+#elif defined(VGO_freebsd)
+extern int *__error (void) __attribute__((weak));
+#define SET_ERRNO_ENOMEM if (__error)        \
+      (*__error ()) = VKI_ENOMEM;
+#define SET_ERRNO_EINVAL if (__error)        \
+      (*__error ()) = VKI_EINVAL;
+#elif defined(VGO_solaris)
+extern int *___errno (void) __attribute__((weak));
+#define SET_ERRNO_ENOMEM if (___errno)        \
+      (*___errno ()) = VKI_ENOMEM;
+#define SET_ERRNO_EINVAL if (___errno)        \
+      (*___errno ()) = VKI_EINVAL;
 #else
 #define SET_ERRNO_ENOMEM {}
+#define SET_ERRNO_EINVAL {}
 #endif
 
 /* Below are new versions of malloc, __builtin_new, free,
@@ -1482,6 +1494,7 @@ extern int *__errno_location (void) __attribute__((weak));
       \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_memalign, alignment, n ); \
       MALLOC_TRACE(" = %p\n", v ); \
+      if (!v) SET_ERRNO_ENOMEM; \
       return v; \
    }
 
@@ -1703,6 +1716,32 @@ extern int *__errno_location (void) __attribute__((weak));
 
  /*---------------------- aligned_alloc ----------------------*/
 
+ /*
+  * No OS does things the same way.
+  *
+  * Linux, the man page claims that the alignment must be a power
+  * of two and that size should be a multiple of alignment.
+  * However the only case that returns EINVAL (glibc 2.34)
+  * is if the alignement is  > SIZE_MAX / 2 + 1
+  * Also this is just a weak alias for memalign so this wrapper
+  * has no effect on Linux.
+  *
+  * FreeBSD. the man page claims alignment must be a power of 2.
+  * UB if size is not an integral multiple of alignment.
+  * The code checks that the alignment is a power of
+  * 2 and not less than the minumum alignment (1)
+  *
+  * Solaris: doesn't seem to exist on 11.3
+  * Illumos: invalid if the size is 0, the alignment is 0, the
+  * alignment is not a multiple of 4 (no power of 2
+  * requirement even though the manpage claims is) or the
+  * alignment is greater than MAX_ALIGN (whatever that is).
+  * Wrapper function that just calls memalign
+  *
+  */
+
+#if defined (VGO_linux)
+
  #define ALIGNED_ALLOC(soname, fnname) \
     \
     void* VG_REPLACE_FUNCTION_EZU(10170,soname,fnname) \
@@ -1724,6 +1763,33 @@ extern int *__errno_location (void) __attribute__((weak));
        \
        return mem; \
     }
+
+#else
+
+ #define ALIGNED_ALLOC(soname, fnname) \
+    \
+    void* VG_REPLACE_FUNCTION_EZU(10170,soname,fnname) \
+           ( SizeT alignment, SizeT size ); \
+    void* VG_REPLACE_FUNCTION_EZU(10170,soname,fnname) \
+           ( SizeT alignment, SizeT size ) \
+    { \
+       void *mem; \
+       \
+       if (alignment == 0 \
+           || size % alignment != 0 \
+           || (alignment & (alignment - 1)) != 0) { \
+          SET_ERRNO_EINVAL; \
+          return 0; \
+       } \
+       \
+       mem = VG_REPLACE_FUNCTION_EZU(10110,VG_Z_LIBC_SONAME,memalign) \
+                (alignment, size); \
+       \
+       if (!mem) SET_ERRNO_ENOMEM; \
+       \
+       return mem; \
+    }
+#endif
 
  #if defined(VGO_linux)
   ALIGNED_ALLOC(VG_Z_LIBC_SONAME, aligned_alloc);

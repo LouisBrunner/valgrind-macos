@@ -6241,7 +6241,9 @@ PRE(sys_shm_open2)
       PRE_MEM_RASCIIZ( "shm_open2(path)", ARG1 );
    }
 
-    PRE_MEM_RASCIIZ( "shm_open2(name)", ARG5 );
+   if (ARG5) {
+      PRE_MEM_RASCIIZ( "shm_open2(name)", ARG5 );
+   }
    *flags |= SfMayBlock;
 }
 

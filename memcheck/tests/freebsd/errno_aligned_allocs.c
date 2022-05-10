@@ -23,7 +23,7 @@ int main(void)
    res = posix_memalign((void**)&p, 40, 160);
    assert(p == NULL && res == EINVAL);
    // too big
-   res = posix_memalign((void**)&p, 16, 1UL<<48);
+   res = posix_memalign((void**)&p, 16, (sizeof(size_t) == 8) ? 1UL<<48 : 1UL<<31);
    assert(p == NULL && res == ENOMEM);
    errno = 0;
    

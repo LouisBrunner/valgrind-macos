@@ -40,3 +40,11 @@ if [ "$(uname)" = Linux ]; then
   exit ${rc:-1}
 
 fi
+
+if [ "$(uname)" = FreeBSD ]; then
+
+  ldd "$1" | grep libgomp > /dev/null
+
+  exit $?
+
+fi 

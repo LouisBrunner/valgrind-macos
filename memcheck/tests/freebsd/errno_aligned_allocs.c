@@ -23,7 +23,21 @@ int main(void)
    res = posix_memalign((void**)&p, 40, 160);
    assert(p == NULL && res == EINVAL);
    // too big
-   res = posix_memalign((void**)&p, 16, (sizeof(size_t) == 8) ? 1UL<<48 : 1UL<<31);
+   if (sizeof(size_t) == 8)
+   {
+      res = posix_memalign((void**)&p, 16, 1UL<<48);
+   }
+   else
+   {
+      // on x86 it's hard to actually get ENOMEM
+      // if we ask for more than 2Gbytes the fishy
+      // detector will kick in and not try to allocate
+      // less than 2Gbytes and it's likely to succeed
+      // (at least on a machine just tunning VG regtests)
+      // so fake it
+      p = NULL;
+      res = ENOMEM;
+   }
    assert(p == NULL && res == ENOMEM);
    errno = 0;
    
@@ -42,7 +56,15 @@ int main(void)
    assert(p == NULL && errno == EINVAL);
    errno = 0;
    // too big
-   p = aligned_alloc(16, 1UL<<48);
+   if (sizeof(size_t) == 8)
+   {
+      p = aligned_alloc(16, 1UL<<48);
+   }
+   else
+   {
+      p = NULL;
+      errno = ENOMEM;
+   }
    assert(p == NULL && errno == ENOMEM);
 }
 

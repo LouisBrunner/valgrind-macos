@@ -458,7 +458,7 @@
 #define __NR_getcontext          421
 #define __NR_setcontext          422
 #define __NR_swapcontext         423
-#if (FREEBSD_VERS >= FREEBSD_14)
+#if (FREEBSD_VERS >= FREEBSD_13_1)
 #define __NR_freebsd13_swapoff   424
 #else
 #define __NR_swapoff             424
@@ -653,7 +653,7 @@
 
 #endif
 
-#if (FREEBSD_VERS >= FREEBSD_14)
+#if (FREEBSD_VERS >= FREEBSD_13_1)
 
 #define __NR_fspacectl           580
 #define __NR_sched_getcpu        581

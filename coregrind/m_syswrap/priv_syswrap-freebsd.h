@@ -372,7 +372,7 @@ DECL_TEMPLATE(freebsd, sys_getcontext) // 421
 DECL_TEMPLATE(freebsd, sys_setcontext) // 422
 DECL_TEMPLATE(freebsd, sys_swapcontext) // 423
 
-#if (FREEBSD_VERS >= FREEBSD_14)
+#if (FREEBSD_VERS >= FREEBSD_13_1)
 DECL_TEMPLATE(freebsd, sys_freebsd13_swapoff) // 424
 #else
 DECL_TEMPLATE(freebsd, sys_swapoff) // 424
@@ -552,7 +552,7 @@ DECL_TEMPLATE(freebsd, sys___specialfd) // 577
 
 #endif
 
-#if (FREEBSD_VERS >= FREEBSD_14)
+#if (FREEBSD_VERS >= FREEBSD_13_1)
 
 // unimpl __NR_fspacectl   580
 // unimpl __NR_sched_getcpu        581

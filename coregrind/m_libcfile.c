@@ -119,6 +119,8 @@ Bool VG_(resolve_filename) ( Int fd, const HChar** result )
    return False;
 
 #elif defined(VGO_freebsd)
+
+#if (1)
    Int mib[4];
    SysRes sres;
    vki_size_t len;
@@ -148,16 +150,36 @@ Bool VG_(resolve_filename) ( Int fd, const HChar** result )
    eb = filedesc_buf + len;
    while (bp < eb) {
       kf = (struct vki_kinfo_file *)bp;
-      if (kf->kf_fd == fd)
+      if (kf->vki_kf_fd == fd)
          break;
-      bp += kf->kf_structsize;
+      bp += kf->vki_kf_structsize;
    }
-   if (bp >= eb || *kf->kf_path == '\0')
+   if (bp >= eb || *kf->vki_kf_path == '\0')
      VG_(strncpy)( buf, "[unknown]", bufsiz );
    else
-     VG_(strncpy)( buf, kf->kf_path, bufsiz );
+     VG_(strncpy)( buf, kf->vki_kf_path, bufsiz );
    *result = buf;
    return True;
+#else
+   // PJF it will be a relief to get rid of the above bit of ugliness
+   // however it does not seem to have the same functionality
+   // regarding pipes where it profuces just an empty string
+   struct vki_kinfo_file kinfo_file;
+   kinfo_file.vki_kf_structsize = VKI_KINFO_FILE_SIZE;
+   if (0 == VG_(fcntl) ( fd, VKI_F_KINFO, (Addr)&kinfo_file )) {
+      static HChar *buf = NULL;
+
+      if (buf == NULL)
+         buf = VG_(malloc)("resolve_filename", VKI_PATH_MAX);
+
+      *result = buf;
+      VG_(strcpy)( buf, kinfo_file.vki_kf_path );
+      if (buf[0] == '/') return True;
+   }
+   *result = NULL;
+   return False;
+#endif
+
 #  elif defined(VGO_darwin)
    HChar tmp[VKI_MAXPATHLEN+1];
    if (0 == VG_(fcntl)(fd, VKI_F_GETPATH, (UWord)tmp)) {
@@ -181,6 +203,8 @@ Bool VG_(resolve_filename) ( Int fd, const HChar** result )
 
 #if defined(VGO_freebsd)
 
+
+#if (1)
 /* This should only be called after a successful call to
  * Bool VG_(resolve_filename) ( Int fd, const HChar** result )
  * so that filedesc_buf is still valid for fd */
@@ -194,16 +218,29 @@ Bool VG_(resolve_filemode) ( Int fd, Int * result )
    eb = filedesc_buf + sizeof(filedesc_buf);
    while (bp < eb) {
       kf = (struct vki_kinfo_file *)bp;
-      if (kf->kf_fd == fd)
+      if (kf->vki_kf_fd == fd)
          break;
-      bp += kf->kf_structsize;
+      bp += kf->vki_kf_structsize;
    }
    if (bp >= eb)
      *result = -1;
    else
-     *result = kf->kf_flags;
+     *result = kf->vki_kf_flags;
    return True;
 }
+#else
+/* less ugly version, no dependency on resolve_filename */
+Bool VG_(resolve_filemode) ( Int fd, Int * result )
+{
+   struct vki_kinfo_file kinfo_file;
+   kinfo_file.vki_kf_structsize = VKI_KINFO_FILE_SIZE;
+   if (0 == VG_(fcntl) ( fd, VKI_F_KINFO, (Addr)&kinfo_file )) {
+      *result = kinfo_file.vki_kf_flags;
+      return True;
+   }
+   return False;
+}
+#endif
 #endif
 
 

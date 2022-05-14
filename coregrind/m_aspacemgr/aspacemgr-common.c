@@ -422,6 +422,9 @@ Bool ML_(am_resolve_filename) ( Int fd, /*OUT*/HChar* buf, Int nbuf )
       return False;
 
 #elif defined(VGO_freebsd)
+
+
+#if (1)
    Int mib[4];
    SysRes sres;
    vki_size_t len;
@@ -444,15 +447,29 @@ Bool ML_(am_resolve_filename) ( Int fd, /*OUT*/HChar* buf, Int nbuf )
    eb = filedesc_buf + len;
    while (bp < eb) {
       kf = (struct vki_kinfo_file *)bp;
-      if (kf->kf_fd == fd)
+      if (kf->vki_kf_fd == fd)
          break;
-      bp += kf->kf_structsize;
+      bp += kf->vki_kf_structsize;
    }
-   if (bp >= eb || *kf->kf_path == '\0')
+   if (bp >= eb || *kf->vki_kf_path == '\0')
      VG_(strncpy)( buf, "[unknown]", nbuf );
    else
-     VG_(strncpy)( buf, kf->kf_path, nbuf );
+     VG_(strncpy)( buf, kf->vki_kf_path, nbuf );
    return True;
+#else
+   // PJF it will be a relief to get rid of the above bit of ugliness
+   struct vki_kinfo_file kinfo_file;
+   kinfo_file.vki_kf_structsize = VKI_KINFO_FILE_SIZE;
+   if (0 == ML_(am_fcntl) ( fd, VKI_F_KINFO, (Addr)&kinfo_file )) {
+      if (nbuf > 0) {
+         VG_(strncpy)( buf, kinfo_file.vki_kf_path, nbuf < VKI_PATH_MAX ? nbuf : VKI_PATH_MAX );
+         buf[nbuf-1] = 0;
+      }
+      if (buf[0] == '/') return True;
+   }
+   return False;
+#endif
+
 #elif defined(VGO_darwin)
    HChar tmp[VKI_MAXPATHLEN+1];
    if (0 == ML_(am_fcntl)(fd, VKI_F_GETPATH, (UWord)tmp)) {

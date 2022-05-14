@@ -1326,6 +1326,15 @@ PRE(sys_fcntl)
                     int, fd, int, cmd,
                     struct flock *, lock);
       break;
+   case VKI_F_KINFO:
+      PRINT("sys_fcntl[ARG3=='kinfo_file'] ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )", ARG1,ARG2,ARG3);
+      PRE_REG_READ3(int, "fcntl",
+                    int, fd, int, cmd,
+                    struct vki_kinfo_file *, kinfo);
+      if (ARG3) {
+         struct vki_kinfo_file* p_kinfo_file = (struct vki_kinfo_file*)ARG3;
+         PRE_MEM_WRITE("fcntl(ARG3=='kinfo_file)", ARG3, p_kinfo_file->vki_kf_structsize);
+      }
 
    default:
       PRINT("sys_fcntl[UNKNOWN] ( %lu, %lu, %lu )", ARG1,ARG2,ARG3);
@@ -3856,7 +3865,7 @@ POST(sys_swapcontext)
       POST_MEM_WRITE( ARG1, sizeof(struct vki_ucontext) );
 }
 
-#if (FREEBSD_VERS >= FREEBSD_14)
+#if (FREEBSD_VERS >= FREEBSD_13_1)
 // SYS_freebsd13_swapoff 424
 // int swapoff(const char *special);
 PRE(sys_freebsd13_swapoff)
@@ -6296,7 +6305,7 @@ PRE(sys___specialfd)
 
 #endif // (FREEBSD_VERS >= FREEBSD_13_0)
 
-#if (FREEBSD_VERS >= FREEBSD_14)
+#if (FREEBSD_VERS >= FREEBSD_13_1)
 
 // SYS_swapoff 582
 // int swapoff(const char *special, u_int flags);
@@ -6813,7 +6822,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    BSDX_(__NR_setcontext,       sys_setcontext),        // 422
    BSDXY(__NR_swapcontext,      sys_swapcontext),       // 423
 
-#if (FREEBSD_VERS >= FREEBSD_14)
+#if (FREEBSD_VERS >= FREEBSD_13_1)
    BSDX_(__NR_freebsd13_swapoff, sys_freebsd13_swapoff), // 424
 #else
    BSDX_(__NR_swapoff,          sys_swapoff),           // 424
@@ -7022,7 +7031,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    // unimpl __NR_aio_readv           579
 #endif
 
-#if (FREEBSD_VERS >= FREEBSD_14)
+#if (FREEBSD_VERS >= FREEBSD_13_1)
    // unimpl __NR_fspacectl           580
    // unimpl __NR_sched_getcpu        581
    BSDX_(__NR_swapoff,          sys_swapoff),           // 582

@@ -7,6 +7,7 @@ EXTRA_DIST = \
 	auxv.stderr.exp \
 	auxv.stderr.exp-32on64 \
 	auxv.stderr.exp-freebsd13 \
+	auxv.stderr.exp-freebsd131 \
 	osrel.vgtest \
 	osrel.stderr.exp \
 	osrel.stdout.exp \

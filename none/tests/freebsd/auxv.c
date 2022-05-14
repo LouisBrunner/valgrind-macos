@@ -48,7 +48,7 @@ Elf_AuxStr aux_map[AT_COUNT] = {
         {"AT_PS_STRINGS", 32},
 //        {"AT_COUNT", 33},
 #endif
-#if (FREEBSD_VERS >= FREEBSD_14)
+#if (FREEBSD_VERS >= FREEBSD_13_1)
         {"AT_FXRNG", 33},
         {"AT_KPRELOAD", 34},
 

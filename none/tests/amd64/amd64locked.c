@@ -14,6 +14,8 @@ typedef  unsigned short          UShort;
 typedef  unsigned long           UWord;
 typedef  char                    HChar;
 
+
+__attribute__((noinline))
 unsigned myrandom(void)
 {
    /* Simple multiply-with-carry random generator. */

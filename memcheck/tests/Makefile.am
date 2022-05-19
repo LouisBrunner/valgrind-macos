@@ -219,6 +219,7 @@ EXTRA_DIST = \
 	memalign2.stderr.exp memalign2.vgtest \
 	memcmptest.stderr.exp memcmptest.stderr.exp2 \
 	memcmptest.stdout.exp memcmptest.vgtest \
+	memmem.stderr.exp memmem.vgtest \
 	mempool.stderr.exp mempool.vgtest \
 	mempool2.stderr.exp mempool2.vgtest \
 	metadata.stderr.exp metadata.stdout.exp metadata.vgtest \
@@ -417,6 +418,7 @@ check_PROGRAMS = \
 	malloc_usable malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
 	match-overrun \
 	memalign_test memalign2 memcmptest mempool mempool2 mmaptest \
+	memmem \
 	mismatches new_override metadata \
 	nanoleak_supp nanoleak2 new_nothrow \
 	noisy_child \

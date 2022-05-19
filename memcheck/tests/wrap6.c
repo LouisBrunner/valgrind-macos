@@ -588,6 +588,7 @@ UInt I_WRAP_SONAME_FNNAME_ZU(NONE,fn_11)
 
 /* --------------- 12 --------------- */  
 
+__attribute__((noinline))
 UInt fn_12 ( UInt a1, UInt a2, UInt a3, UInt a4, UInt a5, UInt a6,
              UInt a7, UInt a8, UInt a9, UInt a10, UInt a11, UInt a12 )
 {

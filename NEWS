@@ -42,6 +42,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 453055  shared_timed_mutex drd test fails with "Lock shared failed" message
 453602  Missing command line option to enable/disable debuginfod
 452802  Handle lld 9+ split RW PT_LOAD segments correctly
+454040  s390x: False-positive memcheck:cond in memmem on arch13 systems 
 456171  [PATCH] FreeBSD: Don't record address errors when accessing the 'kern.ps_strings' sysctl struct
 n-i-bz  Implement vgdb invoker on FreeBSD
 

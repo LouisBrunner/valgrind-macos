@@ -103,6 +103,7 @@
    20430 WMEMCHR
    20440 WCSNLEN
    20450 WSTRNCMP
+   20460 MEMMEM
 */
 
 #if defined(VGO_solaris)
@@ -1798,6 +1799,41 @@ static inline void my_exit ( int x )
 #elif defined(VGO_solaris)
  STRSTR(VG_Z_LIBC_SONAME,          strstr)
 
+#endif
+
+/*---------------------- memmem ----------------------*/
+
+#define MEMMEM(soname, fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(20460,soname,fnname) \
+         (const void* haystack, SizeT hlen, const void* needle, SizeT nlen); \
+   void* VG_REPLACE_FUNCTION_EZU(20460,soname,fnname) \
+         (const void* haystack, SizeT hlen, const void* needle, SizeT nlen) \
+   { \
+      const HChar* h = haystack; \
+      const HChar* n = needle; \
+      \
+      /* If the needle is the empty string, match immediately. */ \
+      if (nlen == 0) return CONST_CAST(void *,h); \
+      \
+      HChar n0 = n[0]; \
+      \
+      for (; hlen >= nlen; hlen--, h++) { \
+         if (h[0] != n0) continue; \
+         \
+         UWord i; \
+         for (i = 1; i < nlen; i++) { \
+            if (n[i] != h[i]) \
+               break; \
+         } \
+         if (i == nlen) \
+           return CONST_CAST(HChar *,h); \
+         \
+      } \
+      return NULL; \
+   }
+
+#if defined(VGP_s390x_linux)
+ MEMMEM(VG_Z_LIBC_SONAME,          memmem)
 #endif
 
 

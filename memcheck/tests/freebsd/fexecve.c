@@ -21,8 +21,8 @@ int main(int argc, char **argv, char** envp)
    int * new_fd = malloc(sizeof(int));
    *new_fd += fd;
    new_argv[1] = new_envp[1] = NULL;
-   argv[0] = arg1;
-   envp[0] = env1;
+   new_argv[0] = arg1;
+   new_envp[0] = env1;
 
    free(arg1);
    free(env1);

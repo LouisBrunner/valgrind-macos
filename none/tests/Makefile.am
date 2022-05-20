@@ -104,7 +104,9 @@ EXTRA_DIST = \
 	closeall.stderr.exp closeall.vgtest \
 	cmdline0.stderr.exp cmdline0.stdout.exp cmdline0.vgtest \
 	cmdline1.stderr.exp cmdline1.stdout.exp cmdline1.vgtest \
+		cmdline1.stdout.exp-non-linux \
 	cmdline2.stderr.exp cmdline2.stdout.exp cmdline2.vgtest \
+		cmdline2.stdout.exp-non-linux \
 	cmdline3.stderr.exp cmdline3.vgtest \
 	cmdline4.stderr.exp cmdline4.vgtest \
 	cmdline5.stderr.exp cmdline5.vgtest \

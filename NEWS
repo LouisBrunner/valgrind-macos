@@ -93,6 +93,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 369030  Wrap linux syscall: 171 (setdomainname)
 388526  Inconsistent severity in message text: "WARNING: Serious error"
 418756  MAP_FIXED_NOREPLACE mmap flag unsupported
+454276  Some IPC syscalls is missing for x86 linux
 476465  AArch64 ARMv8.3 LDAPR/LDAPRH/LDAPRB instructions not supported
 493430  Review all syscalls that use or return (new) file descriptors
 493434  Add --track-fds=bad mode (no "leak" tracking)

@@ -14,6 +14,7 @@ void *slavethread(void *arg)
 
 int main(int argc, char **argv)
 {
+    const struct timespec alittle = { 0, 1000000000 / 100 };   // 0.01 seconds.
     int i;
     for (i = 0; i < 10; i++) {
         pthread_t slave;
@@ -28,7 +29,7 @@ int main(int argc, char **argv)
         case 0: // child
             sleep(2); // Should be enough to ensure (some) threads are created
             for (i = 0; i < 20 && kill(pid, SIGTERM) == 0; i++)
-                ;
+                nanosleep(&alittle, NULL);
             exit(0);
         case -1:
             perror("fork");

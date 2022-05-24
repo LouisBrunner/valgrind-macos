@@ -5482,10 +5482,30 @@ PRE(sys_pdkill)
       return;
    }
 
-   /* If we're sending SIGKILL, check to see if the target is one of
-      our threads and handle it specially. */
-   if (ARG2 == VKI_SIGKILL && ML_(do_sigkill)(ARG1, -1))
-      SET_STATUS_Success(0);
+   /* Ther was some code here to check if the kill is to this process
+    *
+    * But it was totally wrong
+    *
+    * It was calling ML_(do_sigkill)(Int pid, Int tgid)
+    *
+    * With a file descriptor
+    *
+    * Fortunately this will never match a real process otherwise
+    * it might have accidentally killed us.
+    *
+    * For a start we need the pid, obtained with pdgetpid
+    * Next ML_(do_sigkill) doesn't map to FreeBSD. It takes a
+    * pid (lwpid) and a tgid (threadgroup)
+    *
+    * On FreeBSD lwpid is the tid and threadgroup is the pid
+    * The kill functions operate on pids, not tids.
+    *
+    * One last thing, I don't see how pdkill could do a self
+    * kill 9. It neads an fd which implied pdfork whichimplies
+    * that the fd/pid are for a child process
+    */
+
+   SET_STATUS_from_SysRes(VG_(do_syscall2)(SYSNO, ARG1, ARG2));
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg, "pdkill: sent signal %ld to fd %ld\n",

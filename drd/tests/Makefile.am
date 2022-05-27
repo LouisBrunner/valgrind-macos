@@ -74,7 +74,7 @@ EXTRA_DIST =                                        \
 	annotate_trace_memory.stderr.exp-mips32	   \
 	annotate_trace_memory.vgtest		    \
 	annotate_trace_memory_xml.stderr.exp-32bit  \
-	annotate_trace_memory_xml.stderr.exp-32bit-ckang \
+	annotate_trace_memory_xml.stderr.exp-32bit-clang \
 	annotate_trace_memory_xml.stderr.exp-64bit  \
 	annotate_trace_memory_xml.stderr.exp-mips32 \
 	annotate_trace_memory_xml.vgtest	    \

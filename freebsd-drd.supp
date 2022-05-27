@@ -50,6 +50,11 @@
    obj:/libexec/ld-elf*.so.1
 }
 {
+   DRD-MANY4
+   drd:ConflictingAccess
+   obj:/lib/libthr.so.3
+}
+{
    DRD-UNWIND1
    drd:ConflictingAccess
    ...

@@ -735,6 +735,10 @@ asm(
 );
 
 #elif defined(VGP_amd64_freebsd)
+/* Convert function calling convention --> SYSCALL_STD calling
+   convention
+   PJF - not sure why we don't use SYSCALL0 convention like x86
+ */
 extern UWord do_syscall_WRK (
           UWord syscall_no,    /* %rdi */
           UWord a1,            /* %rsi */
@@ -751,8 +755,6 @@ extern UWord do_syscall_WRK (
 asm(
 ".text\n"
 "do_syscall_WRK:\n"
-        /* Convert function calling convention --> syscall calling
-           convention */
 "      pushq   %rbp\n"
 "      movq    %rsp, %rbp\n"
 "      movq    %rdi, %rax\n"    /* syscall_no */
@@ -761,21 +763,21 @@ asm(
 "      movq    %rcx, %rdx\n"    /* a3 */
 "      movq    %r8,  %r10\n"    /* a4 */
 "      movq    %r9,  %r8\n"     /* a5 */
-"      movq    16(%rbp), %r9\n"  /* a6 last arg from stack, account for %rbp */
+"      movq    16(%rbp), %r9\n" /* a6 last arg from stack, account for %rbp */
 "      movq    24(%rbp), %r11\n" /* a7 from stack */
 "      pushq  %r11\n"
 "      movq    32(%rbp), %r11\n" /* a8 from stack */
 "      pushq  %r11\n"
-"      subq    $8,%rsp\n"      /* fake return addr */
+"      subq    $8,%rsp\n"       /* fake return addr */
 "      syscall\n"
 "      jb      1f\n"
-"      movq    48(%rbp),%rsi\n"
-"      movq    %rdx, (%rsi)\n"
+"      movq    48(%rbp),%rsi\n" /* success */
+"      movq    %rdx, (%rsi)\n"  /* second return value */
 "      movq    %rbp, %rsp\n"
 "      popq    %rbp\n"
 "      ret\n"
-"1:\n"
-"      movq    40(%rbp), %rsi\n"
+"1:\n"                          /* error path */
+"      movq    40(%rbp), %rsi\n" /* flags */
 "      movl    $1,(%rsi)\n"
 "      movq    %rbp, %rsp\n"
 "      popq    %rbp\n"

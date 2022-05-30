@@ -77,115 +77,124 @@
 
 .globl ML_(do_syscall_for_client_WRK)
 ML_(do_syscall_for_client_WRK):
-	/* save callee-saved regs */
-	pushq	%rbp
-	movq	%rsp, %rbp
-	pushq	%rdi  // -8(%rbp)   syscallno
-	pushq	%rsi  // -16(%rbp)  guest_state
-	pushq	%rdx  // -24(%rbp)  sysmask
-	pushq	%rcx  // -32(%rbp)  postmask
-	pushq	%r8   // -40(%rbp)  sigsetSzB
+   /* save callee-saved regs */
+   pushq %rbp
+   movq  %rsp, %rbp
+   pushq %rdi  // -8(%rbp)   syscallno
+   pushq %rsi  // -16(%rbp)  guest_state
+   pushq %rdx  // -24(%rbp)  sysmask
+   pushq %rcx  // -32(%rbp)  postmask
+   pushq %r8   // -40(%rbp)  sigsetSzB
 
-1:	/* Even though we can't take a signal until the sigprocmask completes,
-	   start the range early.
-	   If eip is in the range [1,2), the syscall hasn't been started yet */
+1: /* Even though we can't take a signal until the sigprocmask completes,
+      start the range early.
+      If eip is in the range [1,2), the syscall hasn't been started yet */
 
-	/* Set the signal mask which should be current during the syscall. */
-	/* Save and restore all 5 arg regs round the call.  This is easier
-           than figuring out the minimal set to save/restore. */
+   /* Set the signal mask which should be current during the syscall. */
+   /* Save and restore all 5 arg regs round the call.  This is easier
+      than figuring out the minimal set to save/restore. */
 
-	movq	$__NR_sigprocmask, %rax		// syscall #
-	movq	$VKI_SIG_SETMASK, %rdi		// how
-	movq	%rdx, %rsi			// sysmask
-	movq	%rcx, %rdx			// postmask
-	syscall
+   movq  $__NR_sigprocmask, %rax		// syscall #
+   movq  $VKI_SIG_SETMASK, %rdi		// how
+   movq  %rdx, %rsi			// sysmask
+   movq  %rcx, %rdx			// postmask
+   syscall
 
-	jb	7f	/* sigprocmask failed */
+   jb	7f	/* sigprocmask failed */
 
-	/* OK, that worked.  Now do the syscall proper. */
+   /* OK, that worked.  Now do the syscall proper. */
 
-	/* 6 register parameters */
-	movq    -16(%rbp), %r11 /* r11 = VexGuestAMD64State * */
-   movq    OFFSET_amd64_RDI(%r11), %rdi
-   movq    OFFSET_amd64_RSI(%r11), %rsi
-   movq    OFFSET_amd64_RDX(%r11), %rdx
-   movq    OFFSET_amd64_R10(%r11), %r10
-   movq    OFFSET_amd64_R8(%r11), %r8
-   movq    OFFSET_amd64_R9(%r11), %r9
+   /* 6 register parameters */
+   movq  -16(%rbp), %r11 /* r11 = VexGuestAMD64State * */
+   movq  OFFSET_amd64_RDI(%r11), %rdi
+   movq  OFFSET_amd64_RSI(%r11), %rsi
+   movq  OFFSET_amd64_RDX(%r11), %rdx
+   movq  OFFSET_amd64_R10(%r11), %r10
+   movq  OFFSET_amd64_R8(%r11), %r8
+   movq  OFFSET_amd64_R9(%r11), %r9
    /* 2 stack parameters plus return address (ignored by syscall) */
-   movq    OFFSET_amd64_RSP(%r11), %r11 /* r11 = simulated RSP */
-   movq    16(%r11), %rax
-   pushq   %rax
-   movq    8(%r11), %rax
-   pushq   %rax
-	/* (fake) return address. */
-   movq    0(%r11), %rax
-   pushq   %rax
+   /* @todo PJF there is a potential bug here
+    * syscall can take up to 8 arguments
+    * but when syscall0 or syscall198 is being used
+    * one argument is used for the syscall0/198 id
+    * and one for the actual id and in this case
+    * there could be 3 stack parameters.
+    * However, only mmap takes 8 arguments
+    * and only on x86. It would be an unlikely combination,
+    * but this might break one day. */
+   movq  OFFSET_amd64_RSP(%r11), %r11 /* r11 = simulated RSP */
+   movq  16(%r11), %rax
+   pushq %rax
+   movq  8(%r11), %rax
+   pushq %rax
+   /* (fake) return address. */
+   movq  0(%r11), %rax
+   pushq %rax
    /* syscallno */
-   movq    -8(%rbp), %rax
+   movq  -8(%rbp), %rax
 
-	/* If rip==2, then the syscall was either just about
-	   to start, or was interrupted and the kernel was
-	   restarting it. */
-2:	syscall
-3:	/* In the range [3, 4), the syscall result is in %rax,
-	   but hasn't been committed to RAX. */
+   /* If rip==2, then the syscall was either just about
+      to start, or was interrupted and the kernel was
+      restarting it. */
+2:   syscall
+3:   /* In the range [3, 4), the syscall result is in %rax,
+      but hasn't been committed to RAX. */
 
-	/* stack contents: 3 words for syscall above, plus our prologue */
-        setc    0(%rsp)         /* stash returned carry flag */
+   /* stack contents: 3 words for syscall above, plus our prologue */
+   setc  0(%rsp)         /* stash returned carry flag */
 
-	movq    -16(%rbp), %r11 /* r11 = VexGuestAMD64State * */
-	movq    %rax, OFFSET_amd64_RAX(%r11)    /* save back to RAX */
-	movq    %rdx, OFFSET_amd64_RDX(%r11)    /* save back to RDX */
+   movq  -16(%rbp), %r11 /* r11 = VexGuestAMD64State * */
+   movq  %rax, OFFSET_amd64_RAX(%r11)    /* save back to RAX */
+   movq  %rdx, OFFSET_amd64_RDX(%r11)    /* save back to RDX */
 
-	/* save carry flag to VEX */
-	xorq    %rax, %rax
-	movb    0(%rsp), %al
-	movq    %rax, %rdi      /* arg1 = new flag */
-	movq    %r11, %rsi      /* arg2 = vex state */
-	addq    $24, %rsp       /* remove syscall parameters */
-   movq    $0x1,  ML_(blksys_saving_cflag)
-	call    LibVEX_GuestAMD64_put_rflag_c
-   movq    $0x0,  ML_(blksys_saving_cflag)
+   /* save carry flag to VEX */
+   xorq  %rax, %rax
+   movb  0(%rsp), %al
+   movq  %rax, %rdi      /* arg1 = new flag */
+   movq  %r11, %rsi      /* arg2 = vex state */
+   addq  $24, %rsp       /* remove syscall parameters */
+   movq  $0x1,  ML_(blksys_saving_cflag)
+   call  LibVEX_GuestAMD64_put_rflag_c
+   movq  $0x0,  ML_(blksys_saving_cflag)
 
-4:	/* Re-block signals.  If eip is in [4,5), then the syscall
-	   is complete and we needn't worry about it. */
+4: /* Re-block signals.  If eip is in [4,5), then the syscall
+      is complete and we needn't worry about it. */
 
-	movq	$__NR_sigprocmask, %rax	// syscall #
-	movq	$VKI_SIG_SETMASK, %rdi		// how
-	movq	-32(%rbp), %rsi			// postmask
-	xorq	%rdx, %rdx			// NULL
-	syscall
+   movq  $__NR_sigprocmask, %rax	// syscall #
+   movq  $VKI_SIG_SETMASK, %rdi		// how
+   movq  -32(%rbp), %rsi			// postmask
+   xorq  %rdx, %rdx			// NULL
+   syscall
 
-	jb	7f	/* sigprocmask failed */
+   jb    7f /* sigprocmask failed */
 
 5:	/* now safe from signals */
 
-	xorq	%rax,%rax
-	movq	-8(%rbp), %rdi
-	movq	-16(%rbp), %rsi
-	movq	-24(%rbp), %rdx
-	movq	-32(%rbp), %rcx
-	movq	-40(%rbp), %r8
-	movq    %rbp, %rsp
-	popq	%rbp
-	ret
+   xorq  %rax,%rax
+   movq  -8(%rbp), %rdi
+   movq  -16(%rbp), %rsi
+   movq  -24(%rbp), %rdx
+   movq  -32(%rbp), %rcx
+   movq  -40(%rbp), %r8
+   movq  %rbp, %rsp
+   popq  %rbp
+   ret
 
 7:	/* failure:	 return 0x8000 | error code */
-	orq	$0x8000, %rax
-	movq	-8(%rbp), %rdi
-	movq	-16(%rbp), %rsi
-	movq	-24(%rbp), %rdx
-	movq	-32(%rbp), %rcx
-	movq	-40(%rbp), %r8
-	movq    %rbp, %rsp
-	popq	%rbp
-	ret
+   orq   $0x8000, %rax
+   movq  -8(%rbp), %rdi
+   movq  -16(%rbp), %rsi
+   movq  -24(%rbp), %rdx
+   movq  -32(%rbp), %rcx
+   movq  -40(%rbp), %r8
+   movq  %rbp, %rsp
+   popq  %rbp
+   ret
 
 .section .rodata
-/* export the ranges so that
-   VG_(fixup_guest_state_after_syscall_interrupted) can do the
-   right thing */
+   /* export the ranges so that
+      VG_(fixup_guest_state_after_syscall_interrupted) can do the
+      right thing */
 
 .globl ML_(blksys_setup)
 .globl ML_(blksys_restart)

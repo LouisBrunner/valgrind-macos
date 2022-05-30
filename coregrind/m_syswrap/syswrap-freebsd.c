@@ -1763,7 +1763,7 @@ PRE(sys_seteuid)
 // int stat(char *path, struct freebsd11_stat *sb);
 PRE(sys_freebsd11_stat)
 {
-   PRINT("sys_stat ( %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x )",ARG1,(char *)ARG1,ARG2);
+   PRINT("sys_freebsd11_stat ( %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x )",ARG1,(char *)ARG1,ARG2);
    PRE_REG_READ2(int, "stat", char *, path, struct freebsd11_stat *, sb);
    PRE_MEM_RASCIIZ( "stat(path)", ARG1 );
    PRE_MEM_WRITE( "stat(sb)", ARG2, sizeof(struct vki_freebsd11_stat) );
@@ -1792,7 +1792,7 @@ POST(sys_freebsd11_fstat)
 // int lstat(const char * restrict path, struct stat * restrict sb);
 PRE(sys_freebsd11_lstat)
 {
-   PRINT("sys_lstat ( %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x )",ARG1,(char *)ARG1,ARG2);
+   PRINT("sys_freebsd11_lstat ( %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x )",ARG1,(char *)ARG1,ARG2);
    PRE_REG_READ2(sb, "lstat", const char *, path, struct freebsd11_stat *, sb);
    PRE_MEM_RASCIIZ( "lstat(path)", ARG1 );
    PRE_MEM_WRITE( "lstat(sb)", ARG2, sizeof(struct vki_freebsd11_stat) );

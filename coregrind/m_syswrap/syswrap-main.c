@@ -585,6 +585,11 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    UWord *stack = (UWord *)gst->guest_RSP;
 
    // FreeBSD supports different calling conventions
+   // @todo PJF this all seems over complicated to me
+   // SYSCALL_STD is OK but for the other
+   // two here we overwrite canonical->sysno with
+   // the final syscall number but then in do_syscall_for_client
+   // we switch real_syscallno back to __NR_syscall or __NR___syscall
    switch (gst->guest_RAX) {
    case __NR_syscall:
       canonical->klass = VG_FREEBSD_SYSCALL0;
@@ -595,7 +600,7 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       canonical->sysno = gst->guest_RDI;
       break;
    default:
-      canonical->klass = 0;
+      canonical->klass = VG_FREEBSD_SYSCALL_STD;
       canonical->sysno = gst->guest_RAX;
       break;
    }

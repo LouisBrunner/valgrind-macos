@@ -29,8 +29,17 @@
 
 #include "config.h"
 
+// this is the syscall format used by e.g., libc functions like 'write'
+// this is the one used 99.999% of the time
+// the two others are only for experimental or testing use
+// (but we use them in the scalar tests).
 #define VG_FREEBSD_SYSCALL_STD 0
+// this is the syscall format used by 'syscall'
 #define VG_FREEBSD_SYSCALL0    1
+// this is the syscall format used by '__syscall'
+// it is the same as VG_FREEBSD_SYSCALL0 except that
+// it ensures that 64bit argument alignment is correct
+// that makes no difference for amd64, x86 not sure
 #define VG_FREEBSD_SYSCALL198  2
 
 // From sys/syscall.h

@@ -184,3 +184,8 @@
    obj:/lib/libgcc_s.so.1
    fun:_Unwind_ForcedUnwind
 }
+{
+   HELGRIND-GUARD-VARIABLE
+   Helgrind:Race
+   fun:_ZL11*
+}

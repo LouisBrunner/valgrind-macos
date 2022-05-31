@@ -185,3 +185,8 @@
    drd:ConflictingAccess
    fun:_ZNSt3__119__thread_local_dataEv
 }
+{
+   DRD-FREEBSD140-GUARD-VARIABLE
+   drd:ConflictingAccess
+   fun:_ZL11get_counterv
+}

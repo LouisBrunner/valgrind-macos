@@ -180,3 +180,8 @@
    obj:*/lib*/libc.so.7
    fun:_malloc_postfork
 }
+{
+   DRD-FREEBSD140-LIBC-THREAD-LOCAL-DATA
+   drd:ConflictingAccess
+   fun:_ZNSt3__119__thread_local_dataEv
+}

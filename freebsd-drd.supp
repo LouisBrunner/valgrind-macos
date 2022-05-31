@@ -188,5 +188,5 @@
 {
    DRD-FREEBSD140-GUARD-VARIABLE
    drd:ConflictingAccess
-   fun:_ZL11get_counterv
+   fun:_ZL11*
 }

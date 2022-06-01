@@ -4790,6 +4790,11 @@ AC_CHECK_FUNCS([     \
         swapcontext  \
         syscall      \
         utimensat    \
+        mempcpy      \
+        stpncpy      \
+        strchrnul    \
+        memrchr      \
+        strndup      \
         ])
 
 # AC_CHECK_LIB adds any library found to the variable LIBS, and links these

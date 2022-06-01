@@ -108,3 +108,5 @@ scalar_13_plus_CFLAGS = ${AM_CFLAGS} -g
 endif
 
 scalar_CFLAGS = ${AM_CFLAGS} -g
+
+errno_aligned_allocs_CFLAGS = ${AM_CFLAGS} -Wno-non-power-of-two-alignment

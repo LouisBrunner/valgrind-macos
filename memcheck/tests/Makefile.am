@@ -145,7 +145,6 @@ EXTRA_DIST = \
 	descr_belowsp.vgtest descr_belowsp.stderr.exp \
 	doublefree.stderr.exp doublefree.vgtest \
 	dw4.vgtest dw4.stderr.exp dw4.stderr.exp-solaris dw4.stdout.exp \
-		dw4.stderr.exp-freebsd \
 	err_disable1.vgtest err_disable1.stderr.exp \
 	err_disable2.vgtest err_disable2.stderr.exp \
 	err_disable3.vgtest err_disable3.stderr.exp \

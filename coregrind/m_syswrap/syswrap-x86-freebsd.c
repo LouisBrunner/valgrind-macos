@@ -351,7 +351,6 @@ static VexGuestX86SegDescr* alloc_zeroed_x86_GDT ( void )
    return VG_(arena_calloc)(VG_AR_CORE, "di.syswrap-x86.azxG.1", nbytes, 1);
 }
 
-#if 0
 /* Create a zeroed-out LDT. */
 static VexGuestX86SegDescr* alloc_zeroed_x86_LDT ( void )
 {
@@ -408,7 +407,6 @@ static void deallocate_LGDTs_for_thread ( VexGuestX86State* vex )
       vex->guest_GDT = (HWord)NULL;
    }
 }
-#endif
 
 static SysRes sys_set_thread_area ( ThreadId tid, Int *idxptr, void *base)
 {
@@ -475,6 +473,36 @@ static SysRes sys_get_thread_area ( ThreadId tid, Int idx, void ** basep )
    return VG_(mk_SysRes_Success)( 0 );
 }
 
+static
+void x86_setup_LDT_GDT ( /*OUT*/ ThreadArchState *child,
+                         /*IN*/  ThreadArchState *parent )
+{
+   /* We inherit our parent's LDT. */
+   if (parent->vex.guest_LDT == (HWord)NULL) {
+      /* We hope this is the common case. */
+      child->vex.guest_LDT = (HWord)NULL;
+   } else {
+      /* No luck .. we have to take a copy of the parent's. */
+      child->vex.guest_LDT = (HWord)alloc_zeroed_x86_LDT();
+      copy_LDT_from_to( (VexGuestX86SegDescr*)(HWord)parent->vex.guest_LDT,
+                        (VexGuestX86SegDescr*)(HWord)child->vex.guest_LDT );
+   }
+
+   /* Either we start with an empty GDT (the usual case) or inherit a
+      copy of our parents' one (Quadrics Elan3 driver -style clone
+      only). */
+   child->vex.guest_GDT = (HWord)NULL;
+
+   if (parent->vex.guest_GDT != (HWord)NULL) {
+      //child->vex.guest_GDT = (HWord)alloc_system_x86_GDT();
+      child->vex.guest_GDT = (HWord)alloc_zeroed_x86_GDT();
+      copy_GDT_from_to( (VexGuestX86SegDescr*)(HWord)parent->vex.guest_GDT,
+                        (VexGuestX86SegDescr*)(HWord)child->vex.guest_GDT );
+   }
+}
+
+
+
 /* ---------------------------------------------------------------------
    More thread stuff
    ------------------------------------------------------------------ */
@@ -488,19 +516,7 @@ void VG_(cleanup_thread) ( ThreadArchState* arch )
     * Alternatively the rtld use is after the start of the next thread and we haven't
     * reallocated this memory
     */
-   /*deallocate_LGDTs_for_thread( &arch->vex );*/
-
-   /*
-    * This was plan B, just recycle the slot
-    * It fixes none/tests/manythreads
-    * but it breaks drd/tests/fork-parallel
-    */
-#if 0
-   VexGuestX86SegDescr* gdt = (VexGuestX86SegDescr*) arch->vex.guest_GDT;
-   if (gdt)
-      translate_to_hw_format(0, &gdt[arch->vex.guest_GS >> 3]);
-#endif
-
+   deallocate_LGDTs_for_thread( &arch->vex );
 }
 
 
@@ -1068,6 +1084,8 @@ PRE(sys_thr_new)
    ctst->arch.vex.guest_EDX = 0;
    LibVEX_GuestX86_put_eflag_c(0, &ctst->arch.vex);
 
+   x86_setup_LDT_GDT(&ctst->arch, &ptst->arch);
+
    ctst->os_state.parent = tid;
 
    /* inherit signal mask */
@@ -1087,7 +1105,9 @@ PRE(sys_thr_new)
 
    if (debug)
       VG_(printf)("clone child has SETTLS: tls at %#lx\n", (Addr)tp.tls_base);
+
    sys_set_thread_area( ctid, &idx, tp.tls_base );
+
    ctst->arch.vex.guest_GS = (idx << 3) | 3;   /* GSEL(GUGS_SEL, SEL_UPL) */
    tp.tls_base = 0;  /* Don't have the kernel do it too */
 

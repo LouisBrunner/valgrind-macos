@@ -5200,7 +5200,8 @@ PRE(sys_symlinkat)
 PRE(sys_unlinkat)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_unlinkat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s) )", ARG1,ARG2,(char*)ARG2);
+   PRINT("sys_unlinkat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u ",
+         ARG1, ARG2, (char*)ARG2, ARG3);
    PRE_REG_READ3(int, "unlinkat", int, fd, const char *, path, int, flag);
    PRE_MEM_RASCIIZ( "unlinkat(path)", ARG2 );
 }
@@ -6185,6 +6186,50 @@ POST(sys_fhreadlink)
 
 #if (FREEBSD_VERS >= FREEBSD_12_2)
 
+// SYS_unlinkat   568
+// int funlinkat(int dfd, const char *path, int fd, int flag);
+PRE(sys_funlinkat)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_funlinkat ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u, %" FMT_REGWORD"u )",
+         SARG1, ARG2, (char*)ARG2, ARG4, ARG5);
+   PRE_REG_READ4(int, "funlinkat", int, dfd, const char *, path, int, fd, int, flag);
+   PRE_MEM_RASCIIZ( "funlinkat(path)", ARG2 );
+}
+
+// SYS_copy_file_range 569
+// ssize_t copy_file_range(int infd, off_t *inoffp, int outfd, off_t *outoffp,
+//                         size_t len, unsigned int flags);
+PRE(sys_copy_file_range)
+{
+  PRINT("sys_copy_file_range (%" FMT_REGWORD"d, %#" FMT_REGWORD "x, %" FMT_REGWORD "d, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "d, %" FMT_REGWORD "d)",
+        SARG1, ARG2, SARG3, ARG4, (char*)ARG4, SARG5, SARG6);
+
+  PRE_REG_READ6(vki_ssize_t, "copy_file_range",
+                int, "infd",
+                vki_off_t *, "inoffp",
+                int, "outfd",
+                vki_off_t *, "outoffp",
+                vki_size_t, "len",
+                unsigned int, "flags");
+
+  /* File descriptors are "specially" tracked by valgrind.
+     valgrind itself uses some, so make sure someone didn't
+     put in one of our own...  */
+  if (!ML_(fd_allowed)(ARG1, "copy_file_range(infd)", tid, False) ||
+      !ML_(fd_allowed)(ARG3, "copy_file_range(infd)", tid, False)) {
+     SET_STATUS_Failure( VKI_EBADF );
+  } else {
+     /* Now see if the offsets are defined. PRE_MEM_READ will
+        double check it can dereference them. */
+     if (ARG2 != 0)
+        PRE_MEM_READ( "copy_file_range(inoffp)", ARG2, sizeof(vki_off_t));
+     if (ARG4 != 0)
+        PRE_MEM_READ( "copy_file_range(outoffp)", ARG4, sizeof(vki_off_t));
+  }
+}
+
+
 // SYS___sysctlbyname 570
 // int sysctlbyname(const char *name, void *oldp, size_t *oldlenp,
 //                  const void *newp, size_t newlen);
@@ -7031,8 +7076,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 #endif // FREEBSD_VERS >= FREEBSD_12
 
 #if (FREEBSD_VERS >= FREEBSD_12_2)
-   // unimpl __NR_funlinkat           568
-   // unimpl __NR_copy_file_range     569
+   BSDX_(__NR_funlinkat,        sys_funlinkat),         // 568
+   BSDX_(__NR_copy_file_range,  sys_copy_file_range),   // 569
    BSDXY(__NR___sysctlbyname,   sys___sysctlbyname),    // 570
 
 #if (FREEBSD_VERS >= FREEBSD_13_0)

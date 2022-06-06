@@ -768,6 +768,25 @@ ULong amd64g_calculate_rflags_all_WRK ( ULong cc_op,
    }
 }
 
+#if defined(VGO_freebsd) || defined(VGO_darwin)
+
+/* This dummy function is just used to have an address just after
+   amd64g_calculate_rflags_all_WRK */
+
+static
+void _______VVVVVVVV_amd64g_calculate_rflags_all_WRK_VVVVVVVV_______ (void)
+{
+}
+
+/* Export addresses of amd64g_calculate_rflags_all_WRK and
+   _______VVVVVVVV_amd64g_calculate_rflags_all_WRK_VVVVVVVV_______
+   Used in syswrap-main.c / VG_(post_syscall) in the case where
+   the above function was interrupted and we need to work out
+   what needs to be done for the resumption */
+
+Addr addr_amd64g_calculate_rflags_all_WRK = (Addr)amd64g_calculate_rflags_all_WRK;
+Addr addr________VVVVVVVV_amd64g_calculate_rflags_all_WRK_VVVVVVVV_______ = (Addr)_______VVVVVVVV_amd64g_calculate_rflags_all_WRK_VVVVVVVV_______;
+#endif
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* Calculate all the 6 flags from the supplied thunk parameters. */
@@ -994,6 +1013,15 @@ LibVEX_GuestAMD64_put_rflag_c ( ULong new_carry_flag,
    vex_state->guest_CC_NDEP = 0;
 }
 
+#if defined(VGO_freebsd) || defined(VGO_darwin)
+/* Used in syswrap-main.c / VG_(post_syscall) in the case where
+   the above function was interrupted and we need to work out
+   what needs to be done for the resumption. These functions
+   are extern so no need for 'addr' global variables */
+void _______VVVVVVVV_after_GuestAMD64_put_rflag_c_VVVVVVVV_______ (void)
+{
+}
+#endif
 
 /*---------------------------------------------------------------*/
 /*--- %rflags translation-time function specialisers.         ---*/

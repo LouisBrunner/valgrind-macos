@@ -143,9 +143,7 @@ ML_(do_syscall_for_client_WRK):
    movl  $0, 0(%esp)
    movb  12(%esp), %al
    movb  %al, 0(%esp)
-   movl  $0x1, ML_(blksys_saving_cflag)
    call  LibVEX_GuestX86_put_eflag_c
-   movl  $0x0, ML_(blksys_saving_cflag)
    addl  $12, %esp
 
 4: /* Re-block signals.  If eip is in [4,5), then the syscall is
@@ -192,11 +190,6 @@ ML_(blksys_complete):   .long 3b
 ML_(blksys_committed):  .long 4b
 ML_(blksys_finished):   .long 5b
 .previous
-
- .data
- .globl ML_(blksys_saving_cflag)
- ML_(blksys_saving_cflag):	.long 0
- .previous
 
 #endif // defined(VGP_x86_freebsd)
 

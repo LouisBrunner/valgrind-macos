@@ -248,11 +248,6 @@ ML_(blksys_complete_UNIX):	.quad MK_L_SCCLASS_N(UNIX,3)
 ML_(blksys_committed_UNIX):	.quad MK_L_SCCLASS_N(UNIX,4)
 ML_(blksys_finished_UNIX):	.quad MK_L_SCCLASS_N(UNIX,5)
 
-.data
-globl ML_(blksys_saving_cflag)
-ML_(blksys_saving_cflag):	.quad 0
-.previous
-
 #endif // defined(VGP_amd64_darwin)
 
 /* Let the linker know we don't need an executable stack */

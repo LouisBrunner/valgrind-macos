@@ -46,8 +46,8 @@ check_PROGRAMS = \
 	insn-pmovmskb \
 	sh-mem-vec128 \
 	sse_memory \
-	xor-undef-amd64 \
-	shr_edx
+	xor-undef-amd64
+
 if BUILD_AVX_TESTS
  check_PROGRAMS += sh-mem-vec256 xsave-avx
 endif
@@ -58,6 +58,13 @@ endif
 if !COMPILER_IS_CLANG
  check_PROGRAMS += \
  	more_x87_fp
+endif
+
+# initially this was a "not clang" test
+# but the problem is macOS, not clang
+if !VGCONF_OS_IS_DARWIN
+ check_PROGRAMS += \
+	shr_edx
 endif
 
 AM_CFLAGS    += @FLAG_M64@

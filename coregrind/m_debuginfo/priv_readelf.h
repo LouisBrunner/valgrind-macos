@@ -52,6 +52,8 @@ extern Bool ML_(is_elf_object_file)( const void* image, SizeT n_image,
 */
 extern Bool ML_(read_elf_debug_info) ( DebugInfo* di );
 
+extern Bool ML_(check_elf_and_get_rw_loads) ( Int fd, const HChar* filename, Int * rw_load_count );
+
 
 #endif /* ndef __PRIV_READELF_H */
 

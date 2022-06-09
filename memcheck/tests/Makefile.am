@@ -342,6 +342,7 @@ EXTRA_DIST = \
 		varinfo4.stderr.exp-freebsd \
 	varinfo5.vgtest varinfo5.stdout.exp varinfo5.stderr.exp \
 		varinfo5.stderr.exp-ppc64 \
+		varinfo5.stderr.exp-freebsd \
 	varinfo6.vgtest varinfo6.stdout.exp varinfo6.stderr.exp \
 		varinfo6.stderr.exp-ppc64 \
 	varinforestrict.vgtest varinforestrict.stderr.exp \

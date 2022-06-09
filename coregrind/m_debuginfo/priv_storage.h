@@ -585,7 +585,7 @@ struct _DebugInfoFSM
    HChar*  dbgname;   /* in mallocville (VG_AR_DINFO)               */
    XArray* maps;      /* XArray of DebugInfoMapping structs         */
    Bool  have_rx_map; /* did we see a r?x mapping yet for the file? */
-   Bool  have_rw_map; /* did we see a rw? mapping yet for the file? */
+   Int   rw_map_count; /* count of w? mappings seen (may be > 1 )   */
    Bool  have_ro_map; /* did we see a r-- mapping yet for the file? */
 };
 

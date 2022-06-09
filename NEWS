@@ -41,6 +41,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 452779  Valgrind fails to build on FreeBSD 13.0 with llvm-devel (15.0.0)
 453055  shared_timed_mutex drd test fails with "Lock shared failed" message
 453602  Missing command line option to enable/disable debuginfod
+452802  Handle lld 9+ split RW PT_LOAD segments correctly
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

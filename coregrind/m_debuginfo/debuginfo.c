@@ -665,7 +665,7 @@ static void check_CFSI_related_invariants ( const DebugInfo* di )
       been successfully read.  And that shouldn't happen until we have
       both a r-x and rw- mapping for the object.  Hence: */
    vg_assert(di->fsm.have_rx_map);
-   vg_assert(di->fsm.have_rw_map);
+   vg_assert(di->fsm.rw_map_count);
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
       const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
       /* We are interested in r-x mappings only */
@@ -1024,15 +1024,95 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
 
 
 /* Notify the debuginfo system about a new mapping.  This is the way
-   new debug information gets loaded.  If allow_SkFileV is True, it
-   will try load debug info if the mapping at 'a' belongs to Valgrind;
-   whereas normally (False) it will not do that.  This allows us to
-   carefully control when the thing will read symbols from the
-   Valgrind executable itself.
+   new debug information gets loaded.
+
+   redelf -e will output something like
+
+   readelf -e says
+
+   Program Headers:
+  Type           Offset             VirtAddr           PhysAddr
+                 FileSiz            MemSiz              Flg    Align
+  PHDR           0x0000000000000040 0x0000000000200040 0x0000000000200040
+                 0x0000000000000268 0x0000000000000268  R      0x8
+  INTERP         0x00000000000002a8 0x00000000002002a8 0x00000000002002a8
+                 0x0000000000000015 0x0000000000000015  R      0x1
+      [Requesting program interpreter: /libexec/ld-elf.so.1]
+  LOAD           0x0000000000000000 0x0000000000200000 0x0000000000200000
+                 0x0000000000002acc 0x0000000000002acc  R      0x1000
+  LOAD           0x0000000000002ad0 0x0000000000203ad0 0x0000000000203ad0
+                 0x0000000000004a70 0x0000000000004a70  R E    0x1000
+  LOAD           0x0000000000007540 0x0000000000209540 0x0000000000209540
+                 0x00000000000001d8 0x00000000000001d8  RW     0x1000
+  LOAD           0x0000000000007720 0x000000000020a720 0x000000000020a720
+                 0x00000000000002b8 0x00000000000005a0  RW     0x1000
+  DYNAMIC        0x0000000000007570 0x0000000000209570 0x0000000000209570
+                 0x00000000000001a0 0x00000000000001a0  RW     0x8
+  GNU_RELRO      0x0000000000007540 0x0000000000209540 0x0000000000209540
+                 0x00000000000001d8 0x00000000000001d8  R      0x1
+  GNU_EH_FRAME   0x0000000000002334 0x0000000000202334 0x0000000000202334
+                 0x000000000000012c 0x000000000000012c  R      0x4
+  GNU_STACK      0x0000000000000000 0x0000000000000000 0x0000000000000000
+                 0x0000000000000000 0x0000000000000000  RW     0
+  NOTE           0x00000000000002c0 0x00000000002002c0 0x00000000002002c0
+                 0x0000000000000048 0x0000000000000048  R      0x4
+
+   This function will be called for the "LOAD" segments above.
+
+   This function gets called from 2 contexts
+
+   "HOST TRIGGERED"
+
+   1a. For the tool exe and tool/core shared libs. These are already
+       mmap'd when the host starts so we look at something like the
+       /proc filesystem to get the mapping after the event and build
+       up the NSegments from that.
+
+   1b. Then the host loads ld.so and the guest exe. This is done in
+       the sequence
+          load_client -> VG_(do_exec) -> VG_(do_exec_inner) ->
+          exe_handlers->load_fn ( == VG_(load_ELF) ).
+
+       This does the mmap'ing and creats the associated NSegments.
+
+       The NSegments may get merged, (see maybe_merge_nsegments)
+       so there could be more PT_LOADs than there are NSegments.
+       VG_(di_notify_mmap) is called by iterating over the
+       NSegments
+
+   "GUEST TRIGGERED"
+
+   2.  When the guest loads any further shared libs (libc,
+       other dependencies, dlopens) using mmap.
+
+       There are a few variations for syswraps/platforms.
+
+       In this case the NSegment could possibly be merged,
+       but that is irrelevant because di_notify_mmap is being
+       called directy on the mmap result.
+
+   If allow_SkFileV is True, it will try load debug info if the
+   mapping at 'a' belongs to Valgrind; whereas normally (False)
+   it will not do that.  This allows us to carefully control when
+   the thing will read symbols from the Valgrind executable itself.
 
    If use_fd is not -1, that is used instead of the filename; this
    avoids perturbing fcntl locks, which are released by simply
    re-opening and closing the same file (even via different fd!).
+
+   Read-only mappings will be ignored.
+   There may be 1 or 2 RW mappings.
+   There will also be 1 RX mapping.
+
+   If there is no RX or no RW mapping then we will not attempt to
+   read debuginfo for the file.
+
+   In order to know whether there are 1 or 2 RW mappings we
+   need to check the ELF headers. And in the case that we
+   detect 2 RW mappings we need to double check that they
+   aren't contiguous in memory resulting in merged NSegemnts.
+
+   This does not apply to Darwin which just checks the Mach-O header
 
    If a call to VG_(di_notify_mmap) causes debug info to be read, then
    the returned ULong is an abstract handle which can later be used to
@@ -1044,12 +1124,19 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
 ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
 {
    NSegment const * seg;
+   Int rw_load_count;
    const HChar* filename;
    Bool       is_rx_map, is_rw_map, is_ro_map;
+
    DebugInfo* di;
    Int        actual_fd, oflags;
+#if defined(VGO_darwin)
    SysRes     preadres;
    HChar      buf1k[1024];
+#else
+   Bool       elf_ok;
+#endif
+
    const Bool       debug = VG_(debugLog_getLevel)() >= 3;
    SysRes     statres;
    struct vg_stat statbuf;
@@ -1211,9 +1298,12 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
       return 0;
 #endif
 
+#if defined(VGO_darwin)
    /* Peer at the first few bytes of the file, to see if it is an ELF */
    /* object file. Ignore the file if we do not have read permission. */
    VG_(memset)(buf1k, 0, sizeof(buf1k));
+#endif
+
    oflags = VKI_O_RDONLY;
 #  if defined(VKI_O_LARGEFILE)
    oflags |= VKI_O_LARGEFILE;
@@ -1237,6 +1327,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
       actual_fd = use_fd;
    }
 
+#if defined(VGO_darwin)
    preadres = VG_(pread)( actual_fd, buf1k, sizeof(buf1k), 0 );
    if (use_fd == -1) {
       VG_(close)( actual_fd );
@@ -1246,20 +1337,33 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
       DebugInfo fake_di;
       VG_(memset)(&fake_di, 0, sizeof(fake_di));
       fake_di.fsm.filename = ML_(dinfo_strdup)("di.debuginfo.nmm", filename);
-      ML_(symerr)(&fake_di, True, "can't read file to inspect ELF header");
+      ML_(symerr)(&fake_di, True, "can't read file to inspect Mach-O headers");
       return 0;
    }
    if (sr_Res(preadres) == 0)
       return 0;
    vg_assert(sr_Res(preadres) > 0 && sr_Res(preadres) <= sizeof(buf1k) );
+#endif
 
    /* We're only interested in mappings of object files. */
 #  if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
-   if (!ML_(is_elf_object_file)( buf1k, (SizeT)sr_Res(preadres), False ))
+
+   rw_load_count = 0;
+
+   elf_ok = ML_(check_elf_and_get_rw_loads) ( actual_fd, filename, &rw_load_count );
+
+   if (use_fd == -1) {
+      VG_(close)( actual_fd );
+   }
+
+   if (!elf_ok) {
       return 0;
+   }
+
 #  elif defined(VGO_darwin)
    if (!ML_(is_macho_object_file)( buf1k, (SizeT)sr_Res(preadres) ))
       return 0;
+   rw_load_count = 1;
 #  else
 #    error "unknown OS"
 #  endif
@@ -1311,15 +1415,20 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
 
    /* Update flags about what kind of mappings we've already seen. */
    di->fsm.have_rx_map |= is_rx_map;
-   di->fsm.have_rw_map |= is_rw_map;
+   /* This is a bit of a hack, using a Bool as a counter */
+   if (is_rw_map)
+     ++di->fsm.rw_map_count;
    di->fsm.have_ro_map |= is_ro_map;
 
    /* So, finally, are we in an accept state? */
    vg_assert(!di->have_dinfo);
-   if (di->fsm.have_rx_map && di->fsm.have_rw_map) {
+   if (di->fsm.have_rx_map &&
+       rw_load_count >= 1 &&
+       di->fsm.rw_map_count == rw_load_count) {
       /* Ok, so, finally, we found what we need, and we haven't
          already read debuginfo for this object.  So let's do so now.
          Yee-ha! */
+
       if (debug)
          VG_(dmsg)("di_notify_mmap-5: "
                    "achieved accept state for %s\n", filename);
@@ -1416,7 +1525,7 @@ void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot )
          continue; /* need to have a r-- mapping for this object */
       if (di->fsm.have_rx_map)
          continue; /* rx- mapping already exists */
-      if (!di->fsm.have_rw_map)
+      if (!di->fsm.rw_map_count)
          continue; /* need to have a rw- mapping */
       /* Try to find a mapping matching the memory area. */
       for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
@@ -1454,7 +1563,7 @@ void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot )
    }
 
    /* Check if we're now in an accept state and read debuginfo.  Finally. */
-   if (di->fsm.have_rx_map && di->fsm.have_rw_map && !di->have_dinfo) {
+   if (di->fsm.have_rx_map && di->fsm.rw_map_count && !di->have_dinfo) {
       if (debug)
          VG_(dmsg)("di_notify_vm_protect-5: "
                      "achieved accept state for %s\n", di->fsm.filename);
@@ -1669,7 +1778,7 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
    { DebugInfo* di = find_or_create_DebugInfo_for(exename);
 
      /* this di must be new, since we just nuked any old stuff in the range */
-     vg_assert(di && !di->fsm.have_rx_map && !di->fsm.have_rw_map);
+     vg_assert(di && !di->fsm.have_rx_map && !di->fsm.rw_map_count);
      vg_assert(!di->have_dinfo);
 
      /* don't set up any of the di-> fields; let

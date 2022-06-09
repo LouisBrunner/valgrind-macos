@@ -13302,7 +13302,7 @@ PRE(sys_execveat)
    return;
 #endif
 
-   char *path = (char*) ARG2;
+   const HChar *path = (const HChar*) ARG2;
    Addr arg_2    = ARG3;
    Addr arg_3    = ARG4;
    const HChar   *buf;

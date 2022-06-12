@@ -704,7 +704,7 @@ PRE(sys_freebsd6_ftruncate)
 PRE(sys_clock_getcpuclockid2)
 {
    PRINT("sys_clock_getcpuclockid2( %lld, %" FMT_REGWORD "d, %#" FMT_REGWORD "x )",
-         MERGE64(ARG1,ARG2),SARG3,ARG4);
+         (vki_id_t)MERGE64(ARG1,ARG2),SARG3,ARG4);
    PRE_REG_READ4(int, "clock_getcpuclockid2",
                  vki_uint32_t, MERGE64_FIRST(offset),
                  vki_uint32_t, MERGE64_SECOND(offset),
@@ -1290,7 +1290,7 @@ POST(sys_cpuset_getid)
 PRE(sys_cpuset_getaffinity)
 {
    PRINT("sys_cpuset_getaffinity ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %lld, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )",
-         ARG1, ARG2, MERGE64(ARG3, ARG4), ARG5, ARG6);
+         ARG1, ARG2, (vki_id_t)MERGE64(ARG3, ARG4), ARG5, ARG6);
    PRE_REG_READ6(int, "cpuset_getaffinity",
                  vki_cpulevel_t, level, vki_cpuwhich_t, which,
                  vki_uint32_t, MERGE64_FIRST(id),

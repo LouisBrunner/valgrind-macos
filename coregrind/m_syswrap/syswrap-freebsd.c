@@ -1335,6 +1335,7 @@ PRE(sys_fcntl)
          struct vki_kinfo_file* p_kinfo_file = (struct vki_kinfo_file*)ARG3;
          PRE_MEM_WRITE("fcntl(ARG3=='kinfo_file)", ARG3, p_kinfo_file->vki_kf_structsize);
       }
+      break;
 
    default:
       PRINT("sys_fcntl[UNKNOWN] ( %lu, %lu, %lu )", ARG1,ARG2,ARG3);

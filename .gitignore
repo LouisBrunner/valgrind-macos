@@ -92,6 +92,8 @@
 # /cachegrind/tests/
 /cachegrind/tests/*.dSYM
 /cachegrind/tests/*.so
+/cachegrind/tests/*.post.diff*
+/cachegrind/tests/*.post.out
 /cachegrind/tests/*.stderr.diff*
 /cachegrind/tests/*.stderr.out
 /cachegrind/tests/*.stdout.diff*
@@ -137,6 +139,8 @@
 
 # /callgrind/tests/
 /callgrind/tests/*.dSYM
+/callgrind/tests/*.post.diff*
+/callgrind/tests/*.post.out
 /callgrind/tests/*.stderr.diff*
 /callgrind/tests/*.stderr.out
 /callgrind/tests/*.stdout.diff*

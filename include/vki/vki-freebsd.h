@@ -40,21 +40,6 @@
      is used.
 
    The files the code is taken from is indicated.
-
-   Note especially that the types are not the glibc versions, many of which
-   are different to those in here.
-
-   Also note that this file contains all the generic header info, ie. that
-   from linux/include/linux/ *.h.  The arch-specific header info, eg. that
-   from linux/include/asm-i386/ *.h, is in vki-$PLATFORM.h and
-   vki_posixtypes-$PLATFORM.h.  (Two files are required to avoid
-   circular dependencies between the generic VKI header and the
-   arch-specific VKI header.  It's possible in the future, as more stuff
-   gets pulled in, that we might have to split files up some more to avoid
-   further circular dependencies.)
-
-   Finally, note that it is assumed that __KERNEL__ is set for all these
-   definitions, which affects some of them.
 */
 
 #ifndef VKI_FREEBSD_H
@@ -1448,22 +1433,22 @@ union vki_semun {
 #define VKI_WNOHANG  0x00000001
 
 typedef enum vki_idtype {
-   P_PID,
-   P_PPID,
-   P_PGID,
-   P_SID,
-   P_CID,
-   P_UID,
-   P_GID,
-   P_ALL,
-   P_LWPID,
-   P_TASKID,
-   P_PROJID,
-   P_POOLID,
-   P_JAILID,
-   P_CTID,
-   P_CPUID,
-   P_PSETID
+   VKI_P_PID,
+   VKI_P_PPID,
+   VKI_P_PGID,
+   VKI_P_SID,
+   VKI_P_CID,
+   VKI_P_UID,
+   VKI_P_GID,
+   VKI_P_ALL,
+   VKI_P_LWPID,
+   VKI_P_TASKID,
+   VKI_P_PROJID,
+   VLI_P_POOLID,
+   VKI_P_JAILID,
+   VKI_P_CTID,
+   VKI_P_CPUID,
+   VKI_P_PSETID
 } vki_idtype_t;
 
 //----------------------------------------------------------------------
@@ -1535,7 +1520,7 @@ struct vki_dirent {
    vki_uint16_t   d_reclen;
    vki_uint8_t d_type;
    vki_uint8_t d_namelen;
-   char     d_name[256]; /* We must not include limits.h! */
+   char     vki_d_name[256]; /* We must not include limits.h! */
 };
 
 //----------------------------------------------------------------------

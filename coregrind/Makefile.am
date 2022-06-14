@@ -98,10 +98,7 @@ if VGCONF_OS_IS_SOLARIS
 vgdb_SOURCES += vgdb-invoker-solaris.c
 endif
 if VGCONF_OS_IS_FREEBSD
-# As with Darwin, we don't have ptrace PTRACE_PEEKTEXT
-# so we can't use vgdb-invoker-ptrace.c
-# Need to find an alternative, like Solaris
-vgdb_SOURCES += vgdb-invoker-none.c
+vgdb_SOURCES += vgdb-invoker-freebsd.c
 endif
 
 vgdb_CPPFLAGS  = $(AM_CPPFLAGS_PRI)

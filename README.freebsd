@@ -34,6 +34,8 @@ Known Limitations (June 2022)
    a) There may be missing source information concerning variables due
       to DWARF extensions ised by GCC.
    b) Code that uses OpenMP will generate spurious errors.
+2. vgdb invoker, which uses ptrace, may cause system calls to be
+   interrupted.
 
 Notes for Developers
 ~~~~~~~~~~~~~~~~~~~~

@@ -113,6 +113,7 @@ EXTRA_DIST = \
 	nlcontrolc.stderr.exp \
 	nlcontrolc.stdinB.gdb \
 	nlcontrolc.stdoutB.exp \
+	nlcontrolc.stdoutB.exp-freebsd \
 	nlcontrolc.vgtest \
 	nlfork_chain.stderr.exp \
 	nlfork_chain.stdout.exp \

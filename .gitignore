@@ -1358,6 +1358,7 @@
 /memcheck/tests/amd64-freebsd/Makefile.in
 /memcheck/tests/amd64-freebsd/posix_fadvise
 /memcheck/tests/amd64-freebsd/posix_fallocate
+/memcheck/tests/amd64-freebsd/reallocf
 
 # /memcheck/tests/x86-freebsd
 /memcheck/tests/x86-freebsd/*.stderr.diff

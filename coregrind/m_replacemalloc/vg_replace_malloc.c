@@ -1431,15 +1431,17 @@ extern int *___errno (void) __attribute__((weak));
             one which we know exists. */ \
          return VG_REPLACE_FUNCTION_EZU(10010,VG_Z_LIBC_SONAME,malloc) \
                    (new_size); \
-      if (new_size <= 0) { \
+      if (new_size == 0) { \
          VG_REPLACE_FUNCTION_EZU(10050,VG_Z_LIBC_SONAME,free)(ptrV); \
          MALLOC_TRACE(" = 0\n"); \
-         return NULL; \
+         return ptrV; \
       } \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_realloc, ptrV, new_size ); \
       MALLOC_TRACE(" = %p\n", v ); \
-      if (v == NULL) \
+      if (v == NULL) {\
          VG_REPLACE_FUNCTION_EZU(10050,VG_Z_LIBC_SONAME,free)(ptrV); \
+         SET_ERRNO_ENOMEM; \
+      } \
       MALLOC_TRACE(" = %p\n", v ); \
       return v; \
    }

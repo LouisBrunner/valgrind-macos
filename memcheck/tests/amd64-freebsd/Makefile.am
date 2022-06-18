@@ -9,7 +9,7 @@ EXTRA_DIST = \
 	posix_fadvise.stderr.exp \
 	posix_fallocate.stderr.exp \
 	reallocf.vgtest \
-	reallocf.stderr.out
+	reallocf.stderr.exp
 
 check_PROGRAMS = \
 	posix_fadvise posix_fallocate reallocf

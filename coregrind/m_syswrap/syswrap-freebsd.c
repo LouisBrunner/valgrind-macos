@@ -1943,6 +1943,23 @@ POST(sys_getdirentries)
 // freebsd6_ftruncate 201 FREEBSD_VERS <= 10
 // x86/amd64
 
+static Bool sysctl_kern_ps_strings(SizeT* out, SizeT* outlen)
+{
+   Word tmp = -1;
+   const struct auxv *cauxv;
+
+   for (cauxv = (struct auxv*)VG_(client_auxv); cauxv->a_type != VKI_AT_NULL; cauxv++) {
+      if (cauxv->a_type == VKI_AT_PS_STRINGS) {
+         tmp = (Word)cauxv->u.a_ptr;
+
+         *out = tmp;
+         *outlen = sizeof(size_t);
+         return True;
+      }
+   }
+   return False;
+}
+
 // SYS___sysctl   202
 /* int __sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen); */
 /*               ARG1        ARG2          ARG3         ARG4           ARG5        ARG6 */
@@ -2015,11 +2032,21 @@ PRE(sys___sysctl)
          size_t* out = (size_t*)ARG3;
          size_t* outlen = (size_t*)ARG4;
          *out = tmp;
-         *outlen = sizeof(size_t);
+         *outlen = sizeof(ULong);
          SET_STATUS_Success(0);
       }
    }
 
+   /*
+    * 2. kern.ps_strings
+    */
+   if (SARG2 >= 2 && ML_(safe_to_deref)(name, 2*sizeof(int))) {
+      if (name[0] == 1 && name[1] == 32) {
+         if (sysctl_kern_ps_strings((SizeT*)ARG3, (SizeT*)ARG4)) {
+           SET_STATUS_Success(0);
+         }
+      }
+   }
 
    PRE_REG_READ6(int, "__sysctl", int *, name, vki_u_int32_t, namelen, void *, oldp,
                  vki_size_t *, oldlenp, void *, newp, vki_size_t, newlen);
@@ -6248,6 +6275,16 @@ PRE(sys___sysctlbyname)
    PRE_REG_READ6(int, "__sysctlbyname", const char *, name, vki_size_t, namelen,
                  void *, oldp, vki_size_t *, oldlenp,
                  void *, newp, vki_size_t, newlen);
+
+
+   const char* name = (const char*)ARG1;
+   if (ML_(safe_to_deref)(name, sizeof("kern.ps_strings")) &&
+       VG_(strcmp)(name, "kern.ps_strings") == 0) {
+      if (sysctl_kern_ps_strings((SizeT*)ARG3, (SizeT*)ARG4)) {
+        SET_STATUS_Success(0);
+      }
+   }
+
    // read number of ints specified in ARG2 from mem pointed to by ARG1
    PRE_MEM_READ("__sysctlbyname(name)", (Addr)ARG1, ARG2 * sizeof(int));
 
@@ -6270,7 +6307,7 @@ PRE(sys___sysctlbyname)
          if (ML_(safe_to_deref)((void*)(Addr)ARG4, sizeof(vki_size_t))) {
             PRE_MEM_WRITE("__sysctlbyname(oldp)", (Addr)ARG3, *(vki_size_t *)ARG4);
          } else {
-            VG_(dmsg)("Warning: Bad oldlenp address %p in sysctl\n",
+            VG_(dmsg)("Warning: Bad oldlenp address %p in sysctlbyname\n",
                       (void *)(Addr)ARG4);
             SET_STATUS_Failure ( VKI_EFAULT );
          }
@@ -6332,6 +6369,14 @@ POST(sys_shm_open2)
       if (VG_(clo_track_fds))
          ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)ARG1);
    }
+}
+
+// SYS_sigfastblock
+// int sigfastblock(int cmd, void *ptr);
+PRE(sys_sigfastblock)
+{
+   PRINT("sys_sigfastblock ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x )", SARG1, ARG2);
+   PRE_REG_READ2(int, "sigfasblock", int, cmd, void*, ptr);
 }
 
 // SYS___realpathat 574
@@ -7084,7 +7129,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 #if (FREEBSD_VERS >= FREEBSD_13_0)
    BSDXY(__NR_shm_open2,        sys_shm_open2),         // 571
    // unimpl __NR_shm_rename          572
-   // unimpl __NR_sigfastblock        573
+   BSDX_(__NR_sigfastblock,     sys_sigfastblock),      // 573
    BSDXY( __NR___realpathat,    sys___realpathat),      // 574
 #endif
    // unimpl __NR_close_range         575

@@ -1347,6 +1347,7 @@
 /memcheck/tests/freebsd/scalar_13_plus
 /memcheck/tests/freebsd/452275
 /memcheck/tests/freebsd/errno_aligned_allocs
+/memcheck/tests/freebsd/setproctitle
 
 # /memcheck/tests/amd64-freebsd
 /memcheck/tests/amd64-freebsd/*.stderr.diff

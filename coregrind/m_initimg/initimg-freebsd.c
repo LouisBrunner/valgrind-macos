@@ -298,6 +298,19 @@ static HChar *copy_str(HChar **tab, const HChar *str)
    return orig;
 }
 
+/* Add byte onto the string table, and return its address */
+static HChar *copy_bytes(HChar **tab, const HChar *src, SizeT size)
+{
+   HChar *cp = *tab;
+   /*VG_ROUNDUP(cp, sizeof(Word));*/
+   HChar *orig = cp;
+
+   VG_(memcpy)(cp, src, size);
+
+   *tab = cp+size;
+
+   return orig;
+}
 
 /* ----------------------------------------------------------------
 
@@ -308,25 +321,25 @@ static HChar *copy_str(HChar **tab, const HChar *str)
 
    higher address +-----------------+ <- clstack_end
                   |                 |
-        : string table    :
-        |                 |
-        +-----------------+
-        | AT_NULL         |
-        -                 -
-        | auxv            |
-        +-----------------+
-        | NULL            |
-        -                 -
-        | envp            |
-        +-----------------+
-        | NULL            |
-        -                 -
-        | argv            |
-        +-----------------+
-        | argc            |
+                  : string table    :
+                  |                 |
+                  +-----------------+
+                  | AT_NULL         |
+                  -                 -
+                  | auxv            |
+                  +-----------------+
+                  | NULL            |
+                  -                 -
+                  | envp            |
+                  +-----------------+
+                  | NULL            |
+                  -                 -
+                  | argv            |
+                  +-----------------+
+                  | argc            |
    lower address  +-----------------+ <- sp
                   | undefined       |
-        :                 :
+                  :                 :
 
    Allocate and create the initial client stack.  It is allocated down
    from clstack_end, which was previously determined by the address
@@ -335,14 +348,6 @@ static HChar *copy_str(HChar **tab, const HChar *str)
    The client's auxv is created by copying and modifying our own one.
 
    ---------------------------------------------------------------- */
-
-struct auxv {
-   Word a_type;
-   union {
-      void *a_ptr;
-      Word a_val;
-   } u;
-};
 
 static
 struct auxv *find_auxv(UWord* sp)
@@ -385,6 +390,7 @@ Addr setup_client_stack( void*  init_sp,
    Addr clstack_start;
    Int i;
    Bool have_exename;
+   Word client_argv;
 
    vg_assert(VG_IS_PAGE_ALIGNED(clstack_end+1));
    vg_assert( VG_(args_for_client) );
@@ -428,10 +434,45 @@ Addr setup_client_stack( void*  init_sp,
       stringsize += VG_(strlen)(*cpp) + 1;
    }
 
+   Int canarylen = -1;
+   Int pagesizeslen =  -1;
+
    /* now, how big is the auxv? */
    auxsize = sizeof(*auxv);   /* there's always at least one entry: AT_NULL */
    for (cauxv = orig_auxv; cauxv->a_type != AT_NULL; cauxv++) {
       auxsize += sizeof(*cauxv);
+      switch(cauxv->a_type) {
+      case AT_EXECPATH:
+         stringsize += VG_(strlen)(cauxv->u.a_ptr) + 1;
+         break;
+      case AT_CANARYLEN:
+         canarylen = cauxv->u.a_val;
+         /*VG_ROUNDUP(stringsize, sizeof(Word));*/
+         stringsize += canarylen;
+         break;
+      case AT_PAGESIZESLEN:
+         pagesizeslen = cauxv->u.a_val;
+         /*VG_ROUNDUP(stringsize, sizeof(Word));*/
+         stringsize += pagesizeslen;
+         break;
+#if 0
+      case AT_TIMEKEEP:
+         /*VG_ROUNDUP(stringsize, sizeof(Word));*/
+         stringsize += sizeof(struct vki_vdso_timehands);
+         break;
+#endif
+#if (FREEBSD_VERS >= FREEBSD_13_0)
+      case AT_PS_STRINGS:
+         stringsize += sizeof(struct vki_ps_strings);
+         break;
+#endif
+#if (FREEBSD_VERS >= FREEBSD_13_1)
+      // case AT_FXRNG:
+      // case AT_KPRELOAD:
+#endif
+      default:
+         break;
+      }
    }
 
    /* OK, now we know how big the client stack is */
@@ -553,6 +594,7 @@ Addr setup_client_stack( void*  init_sp,
    *ptr++ = argc + (have_exename ? 1 : 0);
 
    /* --- client argv --- */
+   client_argv = (Word)ptr;
    if (info->interp_name)
       *ptr++ = (Addr)copy_str(&strtab, info->interp_name);
    if (info->interp_args)
@@ -578,50 +620,7 @@ Addr setup_client_stack( void*  init_sp,
    /* --- auxv --- */
    auxv = (struct auxv *)ptr;
    *client_auxv = (UInt *)auxv;
-#if defined(VGP_x86_freebsd)  && (VGO_freebsd <= FREEBSD_13_0)
-   int* pagesizes = NULL;
-#endif
-
-   /*
-    * The PAGESIZES hack - PJF
-    *
-    * Normally a standalone application has a full auxv which, among
-    * many other things contains a vector of integers (PAGESIZES)
-    * of a platform dependent length (PAGESIZESLEN). On x86 the
-    * length is 2, on amd64 the length is 3 (there are other lengths
-    * for architectures not supported on Valgrind).
-    *
-    * When the dynamic loader executes it will run a routine
-    * static void init_pagesizes(Elf_Auxinfo **aux_info)
-    * (see /usr/src/libexec/rtld-elf/rltd.c). If the PAGESIZES info is in
-    * auxv, init_pagesizes will use that. However, normally this loop
-    * does not copy 'pointered' elements (because that would generate
-    * 'Invalid reads' in the guest). This means that the auxv that
-    * Valgrind provides to ldrt *doesn't* normally contain
-    * PAGESIZES.
-    *
-    * So init_pagesizes falls back to using sysctlnametomib/sysctl
-    * to read "hw.pagesizes". Unfortunately there seems to be a bug
-    * in this for an x86 executable compiled and running on an amd64
-    * kernel.
-    *
-    * The application sees MAXPAGESLEN as 3 (from the amd64 headers)
-    * but the x86 kernel sees MAXPAGESLEN as 2. The routine that
-    * copies out the data for a sysctl sees this discrepancy and
-    * sets an ENOMEM error. So guest execution doesn't even get past
-    * executing the dynamic linker.
-    *
-    * This was fixed in the kernel in May 2020, see
-    * https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=246215
-    *
-    * That means this workaround is not needed for
-    * FreeBSD 13 or later, any version
-    * FreeBSD 12 1201515 and later
-    * FreeBSD 11 1104501 and later
-    *
-    * Because this is rather complicated I've just disabled the hack
-    * for 13 and later
-    */
+   VG_(client_auxv) = (UWord *)*client_auxv;
 
    for (; orig_auxv->a_type != AT_NULL; auxv++, orig_auxv++) {
 
@@ -650,6 +649,9 @@ Addr setup_client_stack( void*  init_sp,
       case AT_STACKPROT:
       case AT_NCPUS:
       case AT_OSRELDATE:
+      case AT_PAGESIZESLEN:
+      case AT_CANARYLEN:
+
 #if (FREEBSD_VERS >= FREEBSD_11)
       // FreeBSD 11+ also have HWCAP and HWCAP2
       case AT_EHDRFLAGS:
@@ -657,41 +659,47 @@ Addr setup_client_stack( void*  init_sp,
          /* All these are pointerless, so we don't need to do
             anything about them. */
          break;
-         // case AT_CANARYLEN:
-         // case AT_EXECPATH:
-         // case AT_CANARY:
-#if defined(VGP_x86_freebsd) && (VGO_freebsd <= FREEBSD_13_0)
-      case AT_PAGESIZESLEN:
-         if (!VG_(is32on64)()) {
-            VG_(debugLog)(2, "initimg",
-                          "stomping auxv entry %llu\n",
-                          (ULong)auxv->a_type);
+
+      case AT_EXECPATH:
+         auxv->u.a_ptr = copy_str(&strtab, orig_auxv->u.a_ptr);
+         break;
+      case AT_CANARY:
+         if (canarylen >= 1)
+            auxv->u.a_ptr = copy_bytes(&strtab, orig_auxv->u.a_ptr, canarylen);
+         else
             auxv->a_type = AT_IGNORE;
-         }
          break;
       case AT_PAGESIZES:
-         if (VG_(is32on64)()) {
-            pagesizes = VG_(malloc)("initimg-freebsd.cpauxv.1", 2*sizeof(int));
-            pagesizes[0] = ((int*)auxv->u.a_ptr)[0];
-            pagesizes[1] = ((int*)auxv->u.a_ptr)[1];
-         } else {
-            VG_(debugLog)(2, "initimg",
-                          "stomping auxv entry %llu\n",
-                          (ULong)auxv->a_type);
+         if (pagesizeslen >= 1)
+            auxv->u.a_ptr = copy_bytes(&strtab, orig_auxv->u.a_ptr, pagesizeslen);
+         else
             auxv->a_type = AT_IGNORE;
-         }
+         break;
+#if 0
+         /*
+          * @todo PJF this crashes intermittently
+          */
+      case AT_TIMEKEEP:
+         auxv->u.a_ptr = copy_bytes(&strtab, orig_auxv->u.a_ptr, sizeof(struct vki_vdso_timehands));
          break;
 #endif
-         // case AT_TIMEKEEP:
-         break;
 
 #if (FREEBSD_VERS >= FREEBSD_13_0)
       case AT_BSDFLAGS:
       case AT_ARGC:
-      // case AT_ARGV:
       case AT_ENVC:
-      // case AT_ENVV:
-      // case AT_PS_STRINGS:
+         break;
+      case AT_PS_STRINGS:
+         auxv->u.a_ptr = copy_bytes(&strtab, orig_auxv->u.a_ptr, sizeof(struct vki_ps_strings));
+         ((struct vki_ps_strings*)auxv->u.a_ptr)->ps_envstr = (char**)VG_(client_envp);
+         ((struct vki_ps_strings*)auxv->u.a_ptr)->ps_argvstr = (char**)client_argv;
+         break;
+      case AT_ARGV:
+         auxv->u.a_val = client_argv;
+         break;
+      case AT_ENVV:
+         auxv->u.a_val = (Word)VG_(client_envp);
+         break;
 #endif
 
 #if (FREEBSD_VERS >= FREEBSD_13_1)

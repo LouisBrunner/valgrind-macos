@@ -2466,7 +2466,24 @@ struct vki_jail {
    struct in6_addr *ip6;
 };
 
+//----------------------------------------------------------------------
+// From sys/exec.h
+//----------------------------------------------------------------------
 
+struct vki_ps_strings {
+   char** ps_argvstr;
+   unsigned int ps_nargvstr;
+
+   char** ps_envstr;
+   unsigned int ps_nenvstr;
+};
+
+//----------------------------------------------------------------------
+// From sys/elf_common.h
+//----------------------------------------------------------------------
+
+#define VKI_AT_NULL 0
+#define VKI_AT_PS_STRINGS 32
 
 // See syswrap-freebsd.c PRE/POST(sys_ioctl)
 #if 0

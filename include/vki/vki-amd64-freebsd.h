@@ -219,4 +219,29 @@ struct vki_sigaction_base {
 typedef  struct vki_sigaction_base  vki_sigaction_toK_t;
 typedef  struct vki_sigaction_base  vki_sigaction_fromK_t;
 
+//----------------------------------------------------------------------
+// sys/vdso.h
+//----------------------------------------------------------------------
+#define VKI_VDSO_TIMEHANDS_MD                       \
+        vki_uint32_t        th_x86_shift;           \
+        vki_uint32_t        th_x86_hpet_idx;        \
+        vki_uint32_t        th_res[6];
+
+struct vki_bintime {
+        vki_time_t  sec;
+        vki_uint64_t frac;
+};
+
+struct vki_vdso_timehands {
+        vki_uint32_t        th_algo;
+        vki_uint32_t        th_gen;
+        vki_uint64_t        th_scale;
+        vki_uint32_t        th_offset_count;
+        vki_uint32_t        th_counter_mask;
+        struct vki_bintime  th_offset;
+        struct vki_bintime  th_boottime;
+        VKI_VDSO_TIMEHANDS_MD
+};
+
+
 #endif /* VKI_AMD64_FREEBSD_H */

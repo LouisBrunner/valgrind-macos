@@ -81,14 +81,18 @@ EXTRA_DIST = \
 	eventfd2.vgtest \
 	eventfd2.stderr.exp eventfd2.stdout.exp \
 	errno_aligned_allocs.vgtest \
-	errno_aligned_allocs.stderr.exp
+	errno_aligned_allocs.stderr.exp \
+	setproctitle.vgtest \
+	setproctitle.stderr.exp \
+	setproctitle.stdout.exp
 
 check_PROGRAMS = \
 	statfs pdfork_pdkill getfsstat inlinfo inlinfo_nested.so extattr \
 	sigwait chflags get_set_login revoke scalar capsicum getfh \
 	linkat scalar_fork scalar_thr_exit scalar_abort2 scalar_pdfork \
 	scalar_vfork stat file_locking_wait6 utimens access chmod_chown \
-	misc get_set_context utimes static_allocs fexecve errno_aligned_allocs
+	misc get_set_context utimes static_allocs fexecve errno_aligned_allocs \
+	setproctitle
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)

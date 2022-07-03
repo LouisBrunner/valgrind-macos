@@ -2034,7 +2034,7 @@ PRE(sys___sysctl)
    if (SARG2 >= 2 && ML_(safe_to_deref)(name, 2*sizeof(int))) {
       if (name[0] == 1 && name[1] == 33) {
          // kern.userstack
-         sysctl_kern_usrstack((size_t*)ARG3, (size_t*)ARG4);
+         sysctl_kern_usrstack((SizeT*)ARG3, (SizeT*)ARG4);
          SET_STATUS_Success(0);
       }
    }
@@ -6289,7 +6289,7 @@ PRE(sys___sysctlbyname)
 
    if (ML_(safe_to_deref)(name, sizeof("kern.usrstack")) &&
       VG_(strcmp)(name, "kern.usrstack") == 0) {
-      sysctl_kern_usrstack((size_t*)ARG3, (size_t*)ARG4);
+      sysctl_kern_usrstack((SizeT*)ARG3, (SizeT*)ARG4);
       SET_STATUS_Success(0);
    }
 

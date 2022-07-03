@@ -685,7 +685,9 @@ Addr setup_client_stack( void*  init_sp,
 #endif
 
 #if (FREEBSD_VERS >= FREEBSD_13_0)
-      case AT_BSDFLAGS:
+      /* @todo PJF BSDFLAGS causes serveral testcases to crash.
+         Not sure why, it seems to be used for sigfastblock */
+      // case AT_BSDFLAGS:
       case AT_ARGC:
       case AT_ENVC:
          break;

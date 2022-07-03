@@ -1,0 +1,3 @@
+prog: usrstack
+vgopts: -q
+

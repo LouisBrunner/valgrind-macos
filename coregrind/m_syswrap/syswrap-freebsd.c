@@ -1960,6 +1960,12 @@ static Bool sysctl_kern_ps_strings(SizeT* out, SizeT* outlen)
    return False;
 }
 
+static void sysctl_kern_usrstack(SizeT* out, SizeT* outlen)
+{
+   *out = VG_(get_usrstack)();
+   *outlen = sizeof(ULong);
+}
+
 // SYS___sysctl   202
 /* int __sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen); */
 /*               ARG1        ARG2          ARG3         ARG4           ARG5        ARG6 */
@@ -2028,11 +2034,7 @@ PRE(sys___sysctl)
    if (SARG2 >= 2 && ML_(safe_to_deref)(name, 2*sizeof(int))) {
       if (name[0] == 1 && name[1] == 33) {
          // kern.userstack
-         Word tmp = VG_(get_usrstack)();
-         size_t* out = (size_t*)ARG3;
-         size_t* outlen = (size_t*)ARG4;
-         *out = tmp;
-         *outlen = sizeof(ULong);
+         sysctl_kern_usrstack((size_t*)ARG3, (size_t*)ARG4);
          SET_STATUS_Success(0);
       }
    }
@@ -6281,8 +6283,14 @@ PRE(sys___sysctlbyname)
    if (ML_(safe_to_deref)(name, sizeof("kern.ps_strings")) &&
        VG_(strcmp)(name, "kern.ps_strings") == 0) {
       if (sysctl_kern_ps_strings((SizeT*)ARG3, (SizeT*)ARG4)) {
-        SET_STATUS_Success(0);
+         SET_STATUS_Success(0);
       }
+   }
+
+   if (ML_(safe_to_deref)(name, sizeof("kern.usrstack")) &&
+      VG_(strcmp)(name, "kern.usrstack") == 0) {
+      sysctl_kern_usrstack((size_t*)ARG3, (size_t*)ARG4);
+      SET_STATUS_Success(0);
    }
 
    // read number of ints specified in ARG2 from mem pointed to by ARG1

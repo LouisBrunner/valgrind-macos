@@ -3897,7 +3897,7 @@ UWord voucher_mach_msg_set ( UWord arg1 )
 
 Word VG_(get_usrstack)(void)
 {
-   return VG_PGROUNDDN(the_iicii.clstack_end - the_iifii.clstack_max_size);
+   return VG_PGROUNDDN(the_iicii.clstack_end) + VKI_PAGE_SIZE;
 }
 
 

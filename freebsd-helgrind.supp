@@ -6,7 +6,7 @@
    obj:*/lib*/libthr.so.3*
 }
 {
-   HELGRIND-LIB-LDRT1
+   HELGRIND-LIB-RTLD1
    Helgrind:Race
    obj:/libexec/ld-elf*.so.1
 }
@@ -18,20 +18,7 @@
    obj:*/lib*/libthr.so.3
 }
 {
-   HELGRIND-PTHREAD-EXIT1
-   Helgrind:Race
-   fun:_pthread_exit_mask
-   fun:pthread_exit
-}
-{
-   HELGRIND-PTHREAD-EXIT2
-   Helgrind:Race
-   fun:__sys_thr_exit
-   fun:_pthread_exit_mask
-   fun:pthread_exit
-}
-{
-   HELGRIND-PTHREAD-EXIT4
+   HELGRIND-PTHREAD-JOIN
    Helgrind:Race
    fun:_thr_try_gc
    obj:*/lib*/libthr.so.3
@@ -39,64 +26,10 @@
    fun:pthread_join
 }
 {
-   HELGRIND-PTHREAD-EXIT5
+   HELGRIND-PTHREAD-EXIT
    Helgrind:Race
-   fun:__sys_thr_exit
-   obj:*/lib*/libthr.so.3*
-   fun:_pthread_exit_mask
+   ...
    fun:pthread_exit
-}
-{
-   HELGRIND-PTHREAD-EXIT6
-   Helgrind:Race
-   obj:*/lib*/libcxxrt.so.1
-   obj:*/lib*/libthr.so.3
-   obj:*/lib*/libthr.so.3
-   obj:*/lib*/libthr.so.3
-   obj:*/lib*/libgcc_s.so.1
-   fun:_Unwind_ForcedUnwind
-   obj:*/lib*/libthr.so.3
-   obj:*/lib*/libthr.so.3
-   fun:pthread_exit
-}
-{
-   HELGRIND-PTHREAD-EXIT7
-   Helgrind:Race
-   obj:*/lib*/libc.so.7
-   fun:_malloc_thread_cleanup
-   obj:*/lib*/libthr.so.3
-   obj:*/lib*/libthr.so.3
-   fun:pthread_exit
-}
-{
-   HELGRIND-PTHREAD-EXIT8
-   Helgrind:Race
-   fun:__cxa_thread_call_dtors
-   obj:*/lib*/libthr.so.3
-   fun:pthread_exit
-}
-{
-   HELGRIND-PTHREAD-EXIT9
-   Helgrind:Race
-   fun:thr_exit
-   obj:*/lib*/libthr.so.3*
-   fun:_pthread_exit_mask
-}
-{
-   HELGRIND-PTHREAD-EXIT10
-   Helgrind:Race
-   obj:*/lib*/libc.so.7
-   fun:_malloc_thread_cleanup
-   obj:*/lib*/libthr.so.3*
-   fun:_pthread_exit_mask
-   fun:_Tthr_exit
-}
-{
-   HELGRIND-PTHREAD-EXIT11
-   Helgrind:Race
-   fun:__cxa_thread_call_dtors
-   fun:_pthread_exit_mask
-   fun:_Tthr_exit
 }
 {
    HELGRIND-PTHREAD-BARRIER2
@@ -161,21 +94,6 @@
    obj:*/lib*/libthr.so.3
    fun:pthread_create
 }
-# same as previous, but with debug build of libthr
-{
-   HELGRIND-PTHREAD-CREATE3
-   Helgrind:Race
-   fun:memset
-   fun:_thr_alloc
-   fun:pthread_create
-}
-# another for debug build of libthr
-{
-   HELGRIND-PTHREAD-CREATE4
-   Helgrind:Race
-   fun:thr_new
-   fun:pthread_create
-}
 # PJF again a pthread_self() hazard
 {
    HELGRIND-PTHREAD-SELF1
@@ -218,14 +136,6 @@
    Helgrind:Race
    fun:memset
    obj:*/lib*/libthr.so.3
-}
-{
-   HELGRIND-MUTEX-LOCK2
-   Helgrind:Race
-   fun:memset
-   fun:__crt_calloc
-   fun:__thr_calloc
-   fun:mutex_init
 }
 {
    HELGRIND-LIBOMP

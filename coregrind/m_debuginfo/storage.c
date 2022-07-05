@@ -365,11 +365,6 @@ void ML_(addSym) ( struct _DebugInfo* di, DiSym* sym )
    vg_assert(sym->pri_name != NULL);
    vg_assert(sym->sec_names == NULL);
 
-#if defined(VGO_freebsd)
-   if (sym->size == 0)
-      sym->size = 1;
-#endif
-
    /* Ignore zero-sized syms. */
    if (sym->size == 0) return;
 

@@ -4571,7 +4571,7 @@ static void parse_type_DIE ( /*MOD*/XArray* /* of TyEnt */ tyents,
          boundE.Te.Bound.knownL = True;
          boundE.Te.Bound.knownU = True;
          boundE.Te.Bound.boundL = lower;
-         boundE.Te.Bound.boundU = lower + count;
+         boundE.Te.Bound.boundU = lower + count - 1;
       } else {
          /* FIXME: handle more cases */
          goto_bad_DIE;

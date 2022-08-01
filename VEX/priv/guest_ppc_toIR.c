@@ -12137,11 +12137,13 @@ static Bool dis_proc_ctl ( const VexAbiInfo* vbi, UInt prefix, UInt theInstr )
 */
 static Bool dis_cache_manage ( UInt prefix, UInt theInstr,
                                DisResult*   dres,
+                               UInt allow_isa_3_1,
                                const VexArchInfo* guest_archinfo )
 {
    /* X-Form */
    UChar opc1    = ifieldOPC(theInstr);
    UChar b21to25 = ifieldRegDS(theInstr);
+   UChar flag_L  = IFIELD(theInstr, 21, 2);
    UChar rA_addr = ifieldRegA(theInstr);
    UChar rB_addr = ifieldRegB(theInstr);
    UInt  opc2    = ifieldOPClo10(theInstr);
@@ -12194,6 +12196,20 @@ static Bool dis_cache_manage ( UInt prefix, UInt theInstr,
       
    case 0x056: // dcbf (Data Cache Block Flush, PPC32 p382)
       DIP("dcbf r%u,r%u\n", rA_addr, rB_addr);
+
+      /* Check the L field and ISA version.
+         dcbf ra, rb, 0          dcbf
+         dcbf ra, rb, 1          dcbf local
+         dcbf ra, rb, 3          dcbf local primary
+         dcbf ra, rb, 4          dcbf block fjush to persistent storage    isa 3.1
+         dcbf ra, rb, 6          dcbf block store to persistent storage    isa 3.1
+ */
+               if (!((flag_L == 0 || flag_L == 1 || flag_L == 3)
+               || ((flag_L == 4 || flag_L == 6) && allow_isa_3_1 == True)))
+         {
+            vex_printf("dis_cache_manage(ppc)(dcbf,flag_L)\n");
+            return False;
+         }
       /* nop as far as vex is concerned */
       break;
       
@@ -37383,7 +37399,8 @@ DisResult disInstr_PPC_WRK (
       case 0x2F6: case 0x056: case 0x036: // dcba, dcbf,   dcbst
       case 0x116: case 0x0F6: case 0x3F6: // dcbt, dcbtst, dcbz
       case 0x3D6:                         // icbi
-         if (dis_cache_manage( prefix, theInstr, &dres, archinfo ))
+         if (dis_cache_manage( prefix, theInstr, &dres, allow_isa_3_1,
+                               archinfo ))
             goto decode_success;
          goto decode_failure;
 

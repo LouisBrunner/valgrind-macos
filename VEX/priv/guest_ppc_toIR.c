@@ -10815,7 +10815,8 @@ static Bool dis_syslink ( UInt prefix, UInt theInstr,
   check any stores it does.  Instead, the reservation is cancelled when
   the scheduler switches to another thread (run_thread_for_a_while()).
 */
-static Bool dis_memsync ( UInt prefix, UInt theInstr )
+static Bool dis_memsync ( UInt prefix, UInt theInstr,
+                          UInt allow_isa_3_0, UInt allow_isa_3_1)
 {
    /* X-Form, XL-Form */
    UChar opc1    = ifieldOPC(theInstr);
@@ -11048,16 +11049,24 @@ static Bool dis_memsync ( UInt prefix, UInt theInstr )
 
             sync    =       sync 0
             lwsync  =       sync 1
-            ptesync =       sync 2    *** TODO - not implemented ***
+            ptesync =       sync 2                         ISA 3.0 and newer
+            persistent heavyweight sync (phsync) = sync 4  ISA 3.1 and newer
+            persistent lightweight sync (plsync) = sync 5  ISA 3.1 and newer
          */
          if (b11to20 != 0 || b0 != 0) {
             vex_printf("dis_memsync(ppc)(sync/lwsync,b11to20|b0)\n");
             return False;
          }
-         if (flag_L != 0/*sync*/ && flag_L != 1/*lwsync*/) {
+
+         if (!((flag_L == 0/*sync*/ || flag_L == 1/*lwsync*/)
+               || (flag_L == 2/*ptesync*/  && allow_isa_3_0 == True)
+               || ((flag_L == 4/*phsync*/ || flag_L == 5/*plsync*/)
+                   && allow_isa_3_1 == True)))
+         {
             vex_printf("dis_memsync(ppc)(sync/lwsync,flag_L)\n");
             return False;
          }
+
          DIP("%ssync\n", flag_L == 1 ? "lw" : "");
          /* Insert a memory fence.  It's sometimes important that these
             are carried through to the generated code. */
@@ -37098,7 +37107,8 @@ DisResult disInstr_PPC_WRK (
          
       /* Memory Synchronization Instructions */
       case 0x096: // isync
-         if (dis_memsync( prefix, theInstr )) goto decode_success;
+         if (dis_memsync( prefix, theInstr, allow_isa_3_0, allow_isa_3_1 ))
+            goto decode_success;
          goto decode_failure;
 
       default:
@@ -37337,22 +37347,26 @@ DisResult disInstr_PPC_WRK (
       case 0x034: case 0x074:             // lbarx, lharx
       case 0x2B6: case 0x2D6:             // stbcx, sthcx
          if (!allow_isa_2_07) goto decode_noP8;
-         if (dis_memsync( prefix, theInstr )) goto decode_success;
+         if (dis_memsync( prefix, theInstr, allow_isa_3_0, allow_isa_3_1 ))
+            goto decode_success;
          goto decode_failure;
 
       case 0x356: case 0x014: case 0x096: // eieio, lwarx, stwcx.
       case 0x256:                         // sync
-         if (dis_memsync( prefix, theInstr )) goto decode_success;
+         if (dis_memsync( prefix, theInstr, allow_isa_3_0, allow_isa_3_1 ))
+            goto decode_success;
          goto decode_failure;
          
       /* 64bit Memory Synchronization Instructions */
       case 0x054: case 0x0D6: // ldarx, stdcx.
          if (!mode64) goto decode_failure;
-         if (dis_memsync( prefix, theInstr )) goto decode_success;
+         if (dis_memsync( prefix, theInstr, allow_isa_3_0, allow_isa_3_1 ))
+            goto decode_success;
          goto decode_failure;
 
       case 0x114: case 0x0B6: // lqarx, stqcx.
-         if (dis_memsync( prefix, theInstr )) goto decode_success;
+         if (dis_memsync( prefix, theInstr, allow_isa_3_0, allow_isa_3_1 ))
+            goto decode_success;
          goto decode_failure;
 
       /* Processor Control Instructions */

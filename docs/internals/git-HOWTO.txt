@@ -14,7 +14,7 @@ Valgrind Users
 
 Valgrind users can clone the Valgrind source code repository as follows:
 
-git clone git://sourceware.org/git/valgrind.git/
+git clone https://sourceware.org/git/valgrind.git/
 
 Valgrind Developers
 -------------------

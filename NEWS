@@ -22,6 +22,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 
 170510  Don't warn about ioctl of size 0 without direction hint
 444110  priv/guest_ppc_toIR.c:36198:31: warning: duplicated 'if' condition.
+459476  vgdb: allow address reuse to avoid "address already in use" errorsuse" errors
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

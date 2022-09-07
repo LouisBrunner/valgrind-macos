@@ -498,6 +498,14 @@ void wait_for_gdb_connect(int in_port)
       XERROR(errno, "cannot create socket\n");
    }
 
+   /* allow address reuse to avoid "address already in use" errors */
+
+   int one = 1;
+   if (setsockopt(listen_gdb, SOL_SOCKET, SO_REUSEADDR,
+                  &one, sizeof(one)) < 0) {
+      XERROR(errno, "cannot enable address reuse\n");
+   }
+
     memset(&addr, 0, sizeof(addr));
 
     addr.sin_family = AF_INET;

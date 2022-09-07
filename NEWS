@@ -45,6 +45,8 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 454040  s390x: False-positive memcheck:cond in memmem on arch13 systems 
 456171  [PATCH] FreeBSD: Don't record address errors when accessing the 'kern.ps_strings' sysctl struct
 n-i-bz  Implement vgdb invoker on FreeBSD
+458845  PowerPC: The L field for the dcbf and sync instruction should be
+        3 bits in ISA 3.1.
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

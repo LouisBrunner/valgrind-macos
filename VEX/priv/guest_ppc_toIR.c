@@ -10821,7 +10821,8 @@ static Bool dis_memsync ( UInt prefix, UInt theInstr,
    /* X-Form, XL-Form */
    UChar opc1    = ifieldOPC(theInstr);
    UInt  b11to25 = IFIELD(theInstr, 11, 15);
-   UChar flag_L  = IFIELD(theInstr, 21, 2);   //ISA 3.0
+   /* The L-field is 2 bits in ISA 3.0 and earlier and 3 bits in ISA 3.1 */
+   UChar flag_L  = IFIELD(theInstr, 21, (allow_isa_3_1 ? 3 : 2));
    UInt  b11to20 = IFIELD(theInstr, 11, 10);
    UInt  M0      = IFIELD(theInstr, 11, 5);
    UChar rD_addr = ifieldRegDS(theInstr);
@@ -12143,7 +12144,8 @@ static Bool dis_cache_manage ( UInt prefix, UInt theInstr,
    /* X-Form */
    UChar opc1    = ifieldOPC(theInstr);
    UChar b21to25 = ifieldRegDS(theInstr);
-   UChar flag_L  = IFIELD(theInstr, 21, 2);
+   /* The L-field is 2 bits in ISA 3.0 and earlier and 3 bits in ISA 3.1 */
+   UChar flag_L  = IFIELD(theInstr, 21, (allow_isa_3_1 ? 3 : 2));
    UChar rA_addr = ifieldRegA(theInstr);
    UChar rB_addr = ifieldRegB(theInstr);
    UInt  opc2    = ifieldOPClo10(theInstr);

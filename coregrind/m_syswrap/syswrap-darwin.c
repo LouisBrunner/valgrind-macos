@@ -87,11 +87,12 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
 {
    VgSchedReturnCode ret;
    ThreadId     tid = (ThreadId)tidW;
+   Int          lwpid = VG_(gettid)();
    ThreadState* tst = VG_(get_ThreadState)(tid);
 
-   VG_(debugLog)(1, "syswrap-darwin", 
-                    "thread_wrapper(tid=%u): entry\n", 
-                    tid);
+   VG_(debugLog)(1, "syswrap-darwin",
+                    "thread_wrapper(tid=%u,lwpid=%d): entry\n",
+                    tid, lwpid);
 
    vg_assert(tst->status == VgTs_Init);
 
@@ -107,7 +108,7 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
 
    VG_TRACK(pre_thread_first_insn, tid);
 
-   tst->os_state.lwpid = VG_(gettid)();
+   tst->os_state.lwpid = lwpid;
    tst->os_state.threadgroup = VG_(getpid)();
 
    /* Thread created with all signals blocked; scheduler will set the
@@ -116,13 +117,13 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
    ret = VG_(scheduler)(tid);
 
    vg_assert(VG_(is_exiting)(tid));
-   
+
    vg_assert(tst->status == VgTs_Runnable);
    vg_assert(VG_(is_running_thread)(tid));
 
-   VG_(debugLog)(1, "syswrap-darwin", 
-                    "thread_wrapper(tid=%u): done\n", 
-                    tid);
+   VG_(debugLog)(1, "syswrap-darwin",
+                    "thread_wrapper(tid=%u,lwpid=%d): done\n",
+                    tid, lwpid);
 
    /* Return to caller, still holding the lock. */
    return ret;

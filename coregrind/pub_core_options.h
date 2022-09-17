@@ -79,10 +79,11 @@ extern Int VG_(clo_vgdb_poll);
 /* Specify when Valgrind gdbserver stops the execution and wait
    for a GDB to connect. */
 typedef
-   enum {                       // Stop :
-      VgdbStopAt_Startup,       // just before the client starts to execute.
-      VgdbStopAt_Exit,          // just before the client exits.
-      VgdbStopAt_ValgrindAbExit // on abnormal valgrind exit.
+   enum {                       // Stop just before ...
+      VgdbStopAt_Startup,       // ... the client starts to execute.
+      VgdbStopAt_Exit,          // ... the client exits with any exit code..
+      VgdbStopAt_Abexit,        // ... the client exits with a non 0 exit code.
+      VgdbStopAt_ValgrindAbExit // ... an abnormal valgrind exit.
    }
    VgdbStopAt;
 // Build mask to check or set VgdbStop_At a membership

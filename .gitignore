@@ -914,6 +914,7 @@
 /memcheck/tests/memalign2
 /memcheck/tests/memalign_test
 /memcheck/tests/memcmptest
+/memcheck/tests/memmem
 /memcheck/tests/mempool
 /memcheck/tests/mempool2
 /memcheck/tests/metadata

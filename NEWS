@@ -10,6 +10,9 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== CORE CHANGES ===================
 
+* The option "--vgdb-stop-at=event1,event2,..." accepts the new value abexit.
+  This indicates to invoke gdbserver when your program exits abnormally
+  (i.e. with a non zero exit code).
 * Fix Rust v0 name demangling.
 * The Linux rseq syscall is now implemented as (silently) returning ENOSYS.
 * Add FreeBSD syscall wrappers for __specialfd and __realpathat.
@@ -47,6 +50,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 n-i-bz  Implement vgdb invoker on FreeBSD
 458845  PowerPC: The L field for the dcbf and sync instruction should be
         3 bits in ISA 3.1.
+459031  Documentation on --error-exitcode incomplete
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

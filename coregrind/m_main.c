@@ -109,7 +109,7 @@ static void usage_NORETURN ( int need_help )
 "                              and follow the on-screen directions\n"
 "    --vgdb-stop-at=event1,event2,... invoke gdbserver for given events [none]\n"
 "         where event is one of:\n"
-"           startup exit valgrindabexit all none\n"
+"           startup exit abexit valgrindabexit all none\n"
 "    --track-fds=no|yes|all    track open file descriptors? [no]\n"
 "                              all includes reporting stdin, stdout and stderr\n"
 "    --time-stamp=no|yes       add timestamps to log messages? [no]\n"
@@ -554,7 +554,7 @@ static void process_option (Clo_Mode mode,
    else if VG_INT_CLOM (cloPD, arg, "--vgdb-poll",      VG_(clo_vgdb_poll)) {}
    else if VG_INT_CLOM (cloPD, arg, "--vgdb-error", VG_(clo_vgdb_error)) {}
    else if VG_USET_CLOM (cloPD, arg, "--vgdb-stop-at",
-                         "startup,exit,valgrindabexit",
+                         "startup,exit,abexit,valgrindabexit",
                          VG_(clo_vgdb_stop_at)) {}
    else if VG_STR_CLO (arg, "--vgdb-prefix",    VG_(clo_vgdb_prefix)) {
       VG_(arg_vgdb_prefix) = arg;
@@ -2190,6 +2190,21 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    vg_assert(0);
 }
 
+/* Return the exit code to use when tid exits, depending on the tid os_state
+   exit code and the clo options controlling valgrind exit code. */
+static
+Int tid_exit_code (ThreadId tid)
+{
+   if (VG_(clo_error_exitcode) > 0 && VG_(get_n_errs_found)() > 0)
+      /* Change the application return code to user's return code,
+         if an error was found */
+      return VG_(clo_error_exitcode);
+   else
+      /* otherwise, return the client's exit code, in the normal
+         way. */
+      return VG_(threads)[tid].os_state.exitcode;
+}
+
 /* Do everything which needs doing when the last thread exits or when
    a thread exits requesting a complete process exit.
 
@@ -2256,8 +2271,14 @@ void shutdown_actions_NORETURN( ThreadId tid,
    }
 
    /* Final call to gdbserver, if requested. */
-   if (VG_(gdbserver_stop_at) (VgdbStopAt_Exit)) {
-      VG_(umsg)("(action at exit) vgdb me ... \n");
+   if (VG_(gdbserver_stop_at) (VgdbStopAt_Abexit)
+              && tid_exit_code (tid) != 0) {
+      VG_(umsg)("(action at abexit, exit code %d) vgdb me ... \n",
+                tid_exit_code (tid));
+      VG_(gdbserver) (tid);
+   } else if (VG_(gdbserver_stop_at) (VgdbStopAt_Exit)) {
+      VG_(umsg)("(action at exit, exit code %d) vgdb me ... \n",
+                tid_exit_code (tid));
       VG_(gdbserver) (tid);
    }
    VG_(threads)[tid].status = VgTs_Empty;
@@ -2362,16 +2383,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
    switch (tids_schedretcode) {
    case VgSrc_ExitThread:  /* the normal way out (Linux, Solaris) */
    case VgSrc_ExitProcess: /* the normal way out (Darwin) */
-      /* Change the application return code to user's return code,
-         if an error was found */
-      if (VG_(clo_error_exitcode) > 0
-          && VG_(get_n_errs_found)() > 0) {
-         VG_(client_exit)( VG_(clo_error_exitcode) );
-      } else {
-         /* otherwise, return the client's exit code, in the normal
-            way. */
-         VG_(client_exit)( VG_(threads)[tid].os_state.exitcode );
-      }
+      VG_(client_exit)(tid_exit_code (tid));
       /* NOT ALIVE HERE! */
       VG_(core_panic)("entered the afterlife in main() -- ExitT/P");
       break; /* what the hell :) */

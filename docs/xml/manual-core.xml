@@ -848,13 +848,17 @@ in most cases.  We group the available options by rough categories.</para>
       for other events, specified in one of the following ways:  </para>
       <itemizedlist>
         <listitem><para>a comma separated list of one or more of
-            <option>startup exit valgrindabexit</option>.</para>
+            <option>startup exit abexit valgrindabexit</option>.</para>
 
           <para>The values <option>startup</option> <option>exit</option>
-          <option>valgrindabexit</option> respectively indicate to
-          invoke gdbserver before your program is executed, after the
-          last instruction of your program, on Valgrind abnormal exit
-          (e.g. internal error, out of memory, ...).</para>
+          <option>valgrindabexit</option> respectively indicate to invoke
+          gdbserver before your program is executed, after the last instruction
+          of your program, on Valgrind abnormal exit (e.g. internal error, out
+          of memory, ...).</para>
+
+          <para>The option <option>abexit</option> is similar to <option>exit</option>
+          but tells to invoke gdbserver only when your application exits abnormally
+          (i.e. with an exit code different of 0). </para>
 
           <para>Note: <option>startup</option> and
           <option>--vgdb-error=0</option> will both cause Valgrind
@@ -866,7 +870,7 @@ in most cases.  We group the available options by rough categories.</para>
         
         <listitem><para><option>all</option> to specify the complete set.
             It is equivalent to
-            <option>--vgdb-stop-at=startup,exit,valgrindabexit</option>.</para>
+            <option>--vgdb-stop-at=startup,exit,abexit,valgrindabexit</option>.</para>
         </listitem>
         
         <listitem><para><option>none</option> for the empty set.</para>
@@ -1239,7 +1243,11 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       that value is returned instead, if Valgrind detects any errors.
       This is useful for using Valgrind as part of an automated test
       suite, since it makes it easy to detect test cases for which
-      Valgrind has reported errors, just by inspecting return codes.</para>
+      Valgrind has reported errors, just by inspecting return codes.
+      When set to a nonzero value and Valgrind detects no error,
+      the return value of Valgrind will be the return value of the
+      program being simulated.
+      </para>
     </listitem>
   </varlistentry>
 

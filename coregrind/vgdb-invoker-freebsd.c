@@ -477,7 +477,7 @@ Bool invoker_invoke_gdbserver (pid_t pid)
                                &check,
                                regsize);
       if (rw != 0) {
-         ERROR(rw, "push check arg ptrace_write_memory");
+         ERROR(rw, "push check arg ptrace_write_memory\n");
          detach_from_all_threads(pid);
          return False;
       }
@@ -490,7 +490,7 @@ Bool invoker_invoke_gdbserver (pid_t pid)
                                &bad_return,
                                regsize);
       if (rw != 0) {
-         ERROR(rw, "push bad_return return address ptrace_write_memory");
+         ERROR(rw, "push bad_return return address ptrace_write_memory\n");
          detach_from_all_threads(pid);
          return False;
       }
@@ -535,7 +535,7 @@ Bool invoker_invoke_gdbserver (pid_t pid)
                                &bad_return,
                                sizeof(bad_return));
       if (rw != 0) {
-         ERROR(rw, "push bad_return return address ptrace_write_memory");
+         ERROR(rw, "push bad_return return address ptrace_write_memory\n");
          detach_from_all_threads(pid);
          return False;
       }

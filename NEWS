@@ -51,6 +51,7 @@ n-i-bz  Implement vgdb invoker on FreeBSD
 458845  PowerPC: The L field for the dcbf and sync instruction should be
         3 bits in ISA 3.1.
 459031  Documentation on --error-exitcode incomplete
+459477  XERROR messages lacks ending '\n' in vgdb
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

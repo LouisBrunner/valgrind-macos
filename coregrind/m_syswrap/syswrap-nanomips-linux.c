@@ -828,6 +828,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_ (__NR_clone3,                 sys_ni_syscall),
    LINXY (__NR_close_range,            sys_close_range),
    LINX_ (__NR_faccessat2,             sys_faccessat2),
+   LINXY (__NR_epoll_pwait2,           sys_epoll_pwait2),
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) (UInt sysno)

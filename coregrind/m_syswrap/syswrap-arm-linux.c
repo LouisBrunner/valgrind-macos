@@ -1057,6 +1057,8 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_close_range,       sys_close_range),       // 436
 
    LINX_(__NR_faccessat2,    sys_faccessat2),           // 439
+
+   LINXY(__NR_epoll_pwait2,      sys_epoll_pwait2),      // 441
 };
 
 

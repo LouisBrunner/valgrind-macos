@@ -2165,6 +2165,29 @@ POST(sys_epoll_pwait)
    epoll_post_helper (tid, arrghs, status);
 }
 
+PRE(sys_epoll_pwait2)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_epoll_pwait2 ( %ld, %#" FMT_REGWORD "x, %ld, %#"
+          FMT_REGWORD "x, %#" FMT_REGWORD "x, %" FMT_REGWORD "u )",
+         SARG1, ARG2, SARG3, ARG4, ARG5, ARG6);
+   PRE_REG_READ6(long, "epoll_pwait2",
+                 int, epfd, struct vki_epoll_event *, events,
+                 int, maxevents, const struct timespec64 *, timeout,
+                 vki_sigset_t *, sigmask, vki_size_t, sigsetsize);
+   /* Assume all (maxevents) events records should be (fully) writable. */
+   PRE_MEM_WRITE( "epoll_pwait2(events)", ARG2, sizeof(struct vki_epoll_event)*ARG3);
+   /* epoll_pwait2 only supports 64bit timespec. */
+   if (ARG4)
+      pre_read_timespec64(tid, "epoll_pwait2(timeout)", ARG4);
+   if (ARG5)
+      PRE_MEM_READ( "epoll_pwait2(sigmask)", ARG5, sizeof(vki_sigset_t) );
+}
+POST(sys_epoll_pwait2)
+{
+   epoll_post_helper (tid, arrghs, status);
+}
+
 PRE(sys_eventfd)
 {
    PRINT("sys_eventfd ( %" FMT_REGWORD "u )", ARG1);

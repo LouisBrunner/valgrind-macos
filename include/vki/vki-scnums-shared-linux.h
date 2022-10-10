@@ -46,6 +46,8 @@
 
 #define __NR_faccessat2		439
 
+#define __NR_epoll_pwait2		441
+
 #define __NR_memfd_secret		447
 
 #endif

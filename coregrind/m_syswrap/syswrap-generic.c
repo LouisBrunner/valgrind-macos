@@ -4410,6 +4410,7 @@ PRE(sys_readv)
 {
    Int i;
    struct vki_iovec * vec;
+   char buf[sizeof("writev(vector[])") + 11];
    *flags |= SfMayBlock;
    PRINT("sys_readv ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %"
          FMT_REGWORD "u )", ARG1, ARG2, ARG3);
@@ -4424,9 +4425,10 @@ PRE(sys_readv)
 
       if (ML_(safe_to_deref)((const void*)ARG2, ARG3*sizeof(struct vki_iovec *))) {
          vec = (struct vki_iovec *)(Addr)ARG2;
-         for (i = 0; i < (Int)ARG3; i++)
-            PRE_MEM_WRITE( "readv(vector[...])",
-                           (Addr)vec[i].iov_base, vec[i].iov_len );
+         for (i = 0; i < (Int)ARG3; i++) {
+            VG_(sprintf)(buf, "writev(vector[%d])", i);
+            PRE_MEM_WRITE(buf, (Addr)vec[i].iov_base, vec[i].iov_len );
+         }
       }
    }
 }
@@ -4770,6 +4772,7 @@ PRE(sys_writev)
 {
    Int i;
    struct vki_iovec * vec;
+   char buf[sizeof("writev(vector[])") + 11];
    *flags |= SfMayBlock;
    PRINT("sys_writev ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %"
          FMT_REGWORD "u )", ARG1, ARG2, ARG3);
@@ -4785,9 +4788,10 @@ PRE(sys_writev)
 
       if (ML_(safe_to_deref)((const void*)ARG2, ARG3*sizeof(struct vki_iovec *))) {
          vec = (struct vki_iovec *)(Addr)ARG2;
-         for (i = 0; i < (Int)ARG3; i++)
-            PRE_MEM_READ( "writev(vector[...])",
-                           (Addr)vec[i].iov_base, vec[i].iov_len );
+         for (i = 0; i < (Int)ARG3; i++) {
+            VG_(sprintf)(buf, "writev(vector[%d])", i);
+            PRE_MEM_READ( buf, (Addr)vec[i].iov_base, vec[i].iov_len );
+         }
       }
    }
 }

@@ -38,6 +38,7 @@ bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
 than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
+131186  writev reports error in (vector[...])
 434764  iconv_open causes ld.so v2.28+ to use optimised strncmp
 446754  Improve error codes from alloc functions under memcheck
 452274  memcheck crashes with Assertion 'sci->status.what == SsIdle' failed

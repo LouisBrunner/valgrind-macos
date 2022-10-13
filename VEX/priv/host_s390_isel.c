@@ -4552,6 +4552,10 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
          goto Iop_VV_wrk;
       }
 
+      case Iop_Sqrt32Fx4:
+         size = 4;
+         vec_unop = S390_VEC_FLOAT_SQRT;
+         goto Iop_irrm_V_wrk;
       case Iop_Sqrt64Fx2:
          size = 8;
          vec_unop = S390_VEC_FLOAT_SQRT;

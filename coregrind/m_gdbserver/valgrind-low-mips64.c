@@ -131,12 +131,7 @@ CORE_ADDR get_pc (void)
 static
 void set_pc (CORE_ADDR newpc)
 {
-   Bool mod;
-   supply_register_by_name ("pc", &newpc, &mod);
-   if (mod)
-      dlog(1, "set pc to %p\n", C2v (newpc));
-   else
-      dlog(1, "set pc not changed %p\n", C2v (newpc));
+   supply_register_by_name ("pc", &newpc);
 }
 
 /* These are the fields of 32 bit mips instructions. */

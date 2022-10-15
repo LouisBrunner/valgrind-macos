@@ -129,7 +129,7 @@ CORE_ADDR get_pc (void)
    unsigned long pc;
 
    collect_register_by_name ("rip", &pc);
-   
+
    dlog(1, "stop pc is %p\n", (void *) pc);
    return pc;
 }
@@ -137,12 +137,7 @@ CORE_ADDR get_pc (void)
 static
 void set_pc (CORE_ADDR newpc)
 {
-   Bool mod;
-   supply_register_by_name ("rip", &newpc, &mod);
-   if (mod)
-      dlog(1, "set pc to %p\n", C2v (newpc));
-   else
-      dlog(1, "set pc not changed %p\n", C2v (newpc));
+   supply_register_by_name ("rip", &newpc);
 }
 
 /* store registers in the guest state (gdbserver_to_valgrind)

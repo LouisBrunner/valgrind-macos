@@ -51,6 +51,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 n-i-bz  Implement vgdb invoker on FreeBSD
 458845  PowerPC: The L field for the dcbf and sync instruction should be
         3 bits in ISA 3.1.
+458915  Remove register cache to fix 458915 gdbserver causes wrong syscall return
 459031  Documentation on --error-exitcode incomplete
 459477  XERROR messages lacks ending '\n' in vgdb
 

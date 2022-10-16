@@ -1171,7 +1171,7 @@ void read_and_set_osrel(DiImage* img)
                 DiOffT name_ioff = note_ioff + sizeof(ElfXX_Nhdr);
                 //DiOffT desc_ioff = name_ioff + ((note[0].n_namesz + 3) & ~3);
                 if (ML_(img_strcmp_c)(img, name_ioff, "FreeBSD") == 0
-                    && note[0].n_type == NT_FREEBSD_ABI_TAG) {
+                    && note[0].n_type == VKI_NT_FREEBSD_ABI_TAG) {
 
                     u_int32_t osrel = note[1].n_type;
                     int name[4];

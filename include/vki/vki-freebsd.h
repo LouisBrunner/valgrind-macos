@@ -200,7 +200,7 @@ typedef __vki_fd_set    vki_fd_set;
 #endif
 
 //----------------------------------------------------------------------
-// linux and freebsd version hacks
+// freebsd version hacks
 //----------------------------------------------------------------------
 #ifndef ELFMAG
 #define ELFMAG "\177ELF"   /* magic string */
@@ -214,10 +214,6 @@ typedef __vki_fd_set    vki_fd_set;
 #define ELF_NOTE_GNU "GNU"
 #endif
 
-// This is not defined on FreeBSD 10.4
-#if !defined(NT_FREEBSD_ABI_TAG)
-#define NT_FREEBSD_ABI_TAG 1
-#endif
 
 #define VKI_ELF_NOTE_ROUNDSIZE 4
 
@@ -2484,6 +2480,10 @@ struct vki_ps_strings {
 
 #define VKI_AT_NULL 0
 #define VKI_AT_PS_STRINGS 32
+
+#define VKI_NT_FREEBSD_ABI_TAG 1
+#define VKI_NT_FREEBSD_FEATURE_CTL	4
+#define VKI_NT_FREEBSD_FCTL_WXNEEDED	0x00000008
 
 // See syswrap-freebsd.c PRE/POST(sys_ioctl)
 #if 0

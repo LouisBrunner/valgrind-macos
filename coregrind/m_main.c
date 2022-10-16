@@ -1373,50 +1373,6 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
 
        VG_(exit)(1);
    }
-
-   //--------------------------------------------------------------
-   // FreeBSD also check for sysctl kern.elf64.allow_wx=0
-   // This is a sysctl that prevents applications from mmap'ing
-   // segments that are writeable and executable
-   //--------------------------------------------------------------
-#if defined(VGP_amd64_freebsd)
-   error = VG_(sysctlbyname)("kern.elf64.allow_wx", &val, &len, 0, 0);
-      if (error != -1 && val != 1) {
-         VG_(debugLog)(0, "main", "Valgrind: FATAL:\n");
-         VG_(debugLog)(0, "main", "sysctl kern.elf64.allow_wx sysctl is 0.\n");
-         VG_(debugLog)(0, "main", "   Set this sysctl with\n");
-         VG_(debugLog)(0, "main", "   'sysctl kern.elf64.allow_wx sysctl=1'.\n");
-         // the below code doesn't work as I expected
-         // the proccontrol command doesn't cause sysctlbyname to get a modified value
-         // which means that valgrind will still detect allow_wx == 0 and exit here
-//#if (FREEBSD_VERS >= FREEBSD_13_1)
-//          VG_(debugLog)(0, "main", "   Or, alternatively, run valgrind with\n");
-//          VG_(debugLog)(0, "main", "   'proccontrol -m wxmap -s enable valgrind [options] prog-and-args'\n");
-//#endif
-          VG_(debugLog)(0, "main", "   Cannot continue.\n");
-
-          VG_(exit)(1);
-      }
-
-#endif
-
-      /* also 323bit version */
-#if defined(VGP_x86_freebsd)
-   error = VG_(sysctlbyname)("kern.elf32.allow_wx", &val, &len, 0, 0);
-      if (error != -1 && val != 1) {
-          VG_(debugLog)(0, "main", "Valgrind: FATAL:\n");
-          VG_(debugLog)(0, "main", "sysctl kern.elf32.allow_wx sysctl is 0.\n");
-          VG_(debugLog)(0, "main", "   Set this sysctl with\n");
-          VG_(debugLog)(0, "main", "   'sysctl kern.elf32.allow_wx sysctl=1'.\n");
-//#if (FREEBSD_VERS >= FREEBSD_13_1)
-//          VG_(debugLog)(0, "main", "   Or, alternatively, run valgrind with\n");
-//          VG_(debugLog)(0, "main", "   'proccontrol -m wxmap -s enable valgrind [options] prog-and-args'\n");
-//#endif
-          VG_(debugLog)(0, "main", "   Cannot continue.\n");
-
-          VG_(exit)(1);
-      }
-#endif
 #endif
 
 
@@ -3350,6 +3306,47 @@ void _start_in_C_solaris ( UWord* pArgc )
 /*=== Getting to main() alive: FreeBSD                             ===*/
 /*====================================================================*/
 #elif defined(VGO_freebsd)
+
+/*
+ * Could probably extract __FreeBSD_version at configure time
+ */
+/* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
+#include <sys/param.h>       /* __FreeBSD_version */
+/* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
+
+/*
+ * We need to add two elf notes in order for image activator to parse
+ * additional binary properites.
+ * First note declares the ABI, second is the feature note.
+ * This is primarly used to turn off W^X policy for all valgrind tools,
+ * as they don't work with it enabled.
+ */
+
+/* Based on FreeBSD sources: lib/csu/common/crtbrand.S */
+asm("\n"
+    ".section .note.tag,\"aG\",%note,.freebsd.noteG,comdat\n"
+    ".p2align        2\n"
+    ".4byte          2f-1f\n"
+    ".4byte          4f-3f\n"
+    ".4byte          "VG_STRINGIFY(VKI_NT_FREEBSD_ABI_TAG)"\n"
+"1:  .asciz          \"FreeBSD\"\n"
+"2:  .p2align        2\n"
+"3:  .4byte          "VG_STRINGIFY(__FreeBSD_version)"\n"
+"4:  .previous\n"
+);
+
+/* Based on FreeBSD sources: lib/csu/common/feature_note.S */
+asm("\n"
+    ".section .note.tag,\"a\",%note\n"
+    ".p2align        2\n"
+    ".4byte          2f-1f\n"
+    ".4byte          4f-3f\n"
+    ".4byte          "VG_STRINGIFY(VKI_NT_FREEBSD_FEATURE_CTL)"\n"
+"1:  .asciz          \"FreeBSD\"\n"
+"2:  .p2align        2\n"
+"3:  .4byte          "VG_STRINGIFY(VKI_NT_FREEBSD_FCTL_WXNEEDED)"\n"
+"4:  .previous\n"
+);
 
 #if defined(VGP_x86_freebsd)
 asm("\n"

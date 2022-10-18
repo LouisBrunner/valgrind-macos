@@ -718,7 +718,7 @@ Addr setup_client_stack( void*  init_sp,
          auxv->u.a_val = VG_(get_usrstack)();
          break;
       case AT_USRSTACKLIM:
-         auxv->u.a_val = VG_(get_usrstacklim)();
+         auxv->u.a_val = clstack_max_size;
          break;
 #endif
 

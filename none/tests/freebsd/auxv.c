@@ -55,7 +55,7 @@ Elf_AuxStr aux_map[AT_COUNT] = {
 #endif
 #if (FREEBSD_VERS >= FREEBSD_14)
         {"AT_USRSTACKBASE", 35},
-        {"AT_USRSTACKLIM", 36),
+        {"AT_USRSTACKLIM", 36},
 //      {"AT_COUNT", 37},
 #endif
 };

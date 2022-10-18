@@ -3908,11 +3908,6 @@ Word VG_(get_usrstack)(void)
 {
    return VG_PGROUNDDN(the_iicii.clstack_end) + VKI_PAGE_SIZE;
 }
-
-Word VG_(get_usrstacklim)(void)
-{
-   return the_iifii.clstack_max_size;
-}
 #endif
 
 

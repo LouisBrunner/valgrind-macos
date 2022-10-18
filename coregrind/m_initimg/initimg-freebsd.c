@@ -713,6 +713,15 @@ Addr setup_client_stack( void*  init_sp,
       // case AT_KPRELOAD:
 #endif
 
+#if (FREEBSD_VERS >= FREEBSD_14)
+      case AT_USRSTACKBASE:
+         auxv->u.a_val = VG_(get_usrstack)();
+         break;
+      case AT_USRSTACKLIM:
+         auxv->a_type = AT_IGNORE;
+         break;
+#endif
+
       case AT_PHDR:
          if (info->phdr == 0)
             auxv->a_type = AT_IGNORE;

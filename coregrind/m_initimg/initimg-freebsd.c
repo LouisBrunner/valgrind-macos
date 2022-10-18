@@ -718,7 +718,7 @@ Addr setup_client_stack( void*  init_sp,
          auxv->u.a_val = VG_(get_usrstack)();
          break;
       case AT_USRSTACKLIM:
-         auxv->a_type = AT_IGNORE;
+         auxv->u.a_val = VG_(get_usrstacklim)();
          break;
 #endif
 

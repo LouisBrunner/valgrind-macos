@@ -2022,7 +2022,7 @@ PRE(sys___sysctl)
    /*
     * Special handling cases
     *
-    * 1. kern.userstack
+    * 1. kern.usrstack
     *    This sysctl returns the address of the bottom of the user stack
     *    (that is the highest user stack address, since the stack grows
     *    downwards). Without any special handling this would return the
@@ -2034,7 +2034,7 @@ PRE(sys___sysctl)
     */
    if (SARG2 >= 2 && ML_(safe_to_deref)(name, 2*sizeof(int))) {
       if (name[0] == 1 && name[1] == 33) {
-         // kern.userstack
+         // kern.usrstack
          sysctl_kern_usrstack((SizeT*)ARG3, (SizeT*)ARG4);
          SET_STATUS_Success(0);
       }

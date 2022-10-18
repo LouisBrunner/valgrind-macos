@@ -38,7 +38,7 @@ Elf_AuxStr aux_map[AT_COUNT] = {
         {"AT_HWCAP", 25},
         {"AT_HWCAP2", 26},
 // FreeBSD 12 and 11
-//        {"AT_COUNT", 27},
+//      {"AT_COUNT", 27},
 #if (FREEBSD_VERS >= FREEBSD_13_0)
         {"AT_BSDFLAGS", 27},
         {"AT_ARGC", 28},
@@ -46,13 +46,17 @@ Elf_AuxStr aux_map[AT_COUNT] = {
         {"AT_ENVC", 30},
         {"AT_ENVV", 31},
         {"AT_PS_STRINGS", 32},
-//        {"AT_COUNT", 33},
+//      {"AT_COUNT", 33},
 #endif
 #if (FREEBSD_VERS >= FREEBSD_13_1)
         {"AT_FXRNG", 33},
         {"AT_KPRELOAD", 34},
-
-//        {"AT_COUNT", 35},
+//      {"AT_COUNT", 35},
+#endif
+#if (FREEBSD_VERS >= FREEBSD_14)
+        {"AT_USRSTACKBASE", 35},
+        {"AT_USRSTACKLIM", 36),
+//      {"AT_COUNT", 37},
 #endif
 };
 

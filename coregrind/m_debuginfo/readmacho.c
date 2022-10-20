@@ -714,7 +714,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    /* This should be ensured by our caller (that we're in the accept
       state). */
    vg_assert(di->fsm.have_rx_map);
-   vg_assert(di->fsm.have_rw_map);
+   vg_assert(di->fsm.rw_map_count);
 
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
       const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);

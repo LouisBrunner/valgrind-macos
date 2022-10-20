@@ -541,9 +541,9 @@ ML_(cmp_for_DiAddrRange_range) ( const void* keyV, const void* elemV );
    essentially an ultra-trivial finite state machine which, when it
    reaches an accept state, signals that we should now read debug info
    from the object into the associated struct _DebugInfo.  The accept
-   state is arrived at when have_rx_map and have_rw_map both become
-   true.  The initial state is one in which we have no observations,
-   so have_rx_map and have_rw_map are both false.
+   state is arrived at when have_rx_map is true and rw_map_count
+   is 1 or 2.  The initial state is one in which we have no observations,
+   so have_rx_map is false and rw_map_count is 0.
 
    This all started as a rather ad-hoc solution, but was further
    expanded to handle weird object layouts, e.g. more than one rw

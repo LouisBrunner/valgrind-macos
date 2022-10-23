@@ -3682,6 +3682,11 @@ Bool ML_(check_elf_and_get_rw_loads) ( Int fd, const HChar* filename, Int * rw_l
 #else
    flag_x = 0;
 #endif
+
+#if defined(VGO_solaris)
+   flag_x = 0;
+#endif
+
    vg_assert(ehdr_mioff == 0); // ensured by its initialisation
    ok = ML_(img_valid)(mimg, ehdr_mioff, sizeof(ehdr_m));
    vg_assert(ok); // ML_(is_elf_object_file) should ensure this

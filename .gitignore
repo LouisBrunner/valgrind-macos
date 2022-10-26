@@ -2032,6 +2032,7 @@
 /none/tests/s390x/vector_float
 /none/tests/s390x/misc3
 /none/tests/s390x/vec2
+/none/tests/s390x/vec2_float
 
 # /none/tests/scripts/
 /none/tests/scripts/*.dSYM

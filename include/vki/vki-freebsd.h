@@ -2517,7 +2517,7 @@ struct vki_ps_strings {
 #define VKI_AT_KPRELOAD	34
 /* added in FreeBSD 14 */
 #define VKI_AT_USRSTACKBASE 35
-#define VKI_T_USRSTACKLIM 36
+#define VKI_AT_USRSTACKLIM 36
 
 /* AT_COUNT depends on the FreeBSD version, not currently used */
 

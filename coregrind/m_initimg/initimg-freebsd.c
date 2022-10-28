@@ -52,12 +52,6 @@
 #include "pub_core_pathscan.h"
 #include "pub_core_initimg.h"         /* self */
 
-/* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
-/* This is for ELF types etc, and also the AT_ constants. */
-#include <elf.h>
-/* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
-
-
 /*====================================================================*/
 /*=== Loading the client                                           ===*/
 /*====================================================================*/
@@ -439,30 +433,30 @@ Addr setup_client_stack( void*  init_sp,
 
    /* now, how big is the auxv? */
    auxsize = sizeof(*auxv);   /* there's always at least one entry: AT_NULL */
-   for (cauxv = orig_auxv; cauxv->a_type != AT_NULL; cauxv++) {
+   for (cauxv = orig_auxv; cauxv->a_type != VKI_AT_NULL; cauxv++) {
       auxsize += sizeof(*cauxv);
       switch(cauxv->a_type) {
-      case AT_EXECPATH:
+      case VKI_AT_EXECPATH:
          stringsize += VG_(strlen)(cauxv->u.a_ptr) + 1;
          break;
-      case AT_CANARYLEN:
+      case VKI_AT_CANARYLEN:
          canarylen = cauxv->u.a_val;
          /*VG_ROUNDUP(stringsize, sizeof(Word));*/
          stringsize += canarylen;
          break;
-      case AT_PAGESIZESLEN:
+      case VKI_AT_PAGESIZESLEN:
          pagesizeslen = cauxv->u.a_val;
          /*VG_ROUNDUP(stringsize, sizeof(Word));*/
          stringsize += pagesizeslen;
          break;
 #if 0
-      case AT_TIMEKEEP:
+      case VKI_AT_TIMEKEEP:
          /*VG_ROUNDUP(stringsize, sizeof(Word));*/
          stringsize += sizeof(struct vki_vdso_timehands);
          break;
 #endif
 #if (FREEBSD_VERS >= FREEBSD_13_0)
-      case AT_PS_STRINGS:
+      case VKI_AT_PS_STRINGS:
          stringsize += sizeof(struct vki_ps_strings);
          break;
 #endif
@@ -622,7 +616,7 @@ Addr setup_client_stack( void*  init_sp,
    *client_auxv = (UInt *)auxv;
    VG_(client_auxv) = (UWord *)*client_auxv;
 
-   for (; orig_auxv->a_type != AT_NULL; auxv++, orig_auxv++) {
+   for (; orig_auxv->a_type != VKI_AT_NULL; auxv++, orig_auxv++) {
 
       /* copy the entry... */
       *auxv = *orig_auxv;
@@ -637,49 +631,49 @@ Addr setup_client_stack( void*  init_sp,
        */
       switch(auxv->a_type) {
 
-      case AT_IGNORE:
-      case AT_PHENT:
-      case AT_PAGESZ:
-      case AT_FLAGS:
-      case AT_NOTELF:
-      case AT_UID:
-      case AT_EUID:
-      case AT_GID:
-      case AT_EGID:
-      case AT_STACKPROT:
-      case AT_NCPUS:
-      case AT_OSRELDATE:
-      case AT_PAGESIZESLEN:
-      case AT_CANARYLEN:
+      case VKI_AT_IGNORE:
+      case VKI_AT_PHENT:
+      case VKI_AT_PAGESZ:
+      case VKI_AT_FLAGS:
+      case VKI_AT_NOTELF:
+      case VKI_AT_UID:
+      case VKI_AT_EUID:
+      case VKI_AT_GID:
+      case VKI_AT_EGID:
+      case VKI_AT_STACKPROT:
+      case VKI_AT_NCPUS:
+      case VKI_AT_OSRELDATE:
+      case VKI_AT_PAGESIZESLEN:
+      case VKI_AT_CANARYLEN:
 
 #if (FREEBSD_VERS >= FREEBSD_11)
       // FreeBSD 11+ also have HWCAP and HWCAP2
-      case AT_EHDRFLAGS:
+      case VKI_AT_EHDRFLAGS:
 #endif
          /* All these are pointerless, so we don't need to do
             anything about them. */
          break;
 
-      case AT_EXECPATH:
+      case VKI_AT_EXECPATH:
          auxv->u.a_ptr = copy_str(&strtab, orig_auxv->u.a_ptr);
          break;
-      case AT_CANARY:
+      case VKI_AT_CANARY:
          if (canarylen >= 1)
             auxv->u.a_ptr = copy_bytes(&strtab, orig_auxv->u.a_ptr, canarylen);
          else
-            auxv->a_type = AT_IGNORE;
+            auxv->a_type = VKI_AT_IGNORE;
          break;
-      case AT_PAGESIZES:
+      case VKI_AT_PAGESIZES:
          if (pagesizeslen >= 1)
             auxv->u.a_ptr = copy_bytes(&strtab, orig_auxv->u.a_ptr, pagesizeslen);
          else
-            auxv->a_type = AT_IGNORE;
+            auxv->a_type = VKI_AT_IGNORE;
          break;
 #if 0
          /*
           * @todo PJF this crashes intermittently
           */
-      case AT_TIMEKEEP:
+      case VKI_AT_TIMEKEEP:
          auxv->u.a_ptr = copy_bytes(&strtab, orig_auxv->u.a_ptr, sizeof(struct vki_vdso_timehands));
          break;
 #endif
@@ -688,18 +682,18 @@ Addr setup_client_stack( void*  init_sp,
       /* @todo PJF BSDFLAGS causes serveral testcases to crash.
          Not sure why, it seems to be used for sigfastblock */
       // case AT_BSDFLAGS:
-      case AT_ARGC:
-      case AT_ENVC:
+      case VKI_AT_ARGC:
+      case VKI_AT_ENVC:
          break;
-      case AT_PS_STRINGS:
+      case VKI_AT_PS_STRINGS:
          auxv->u.a_ptr = copy_bytes(&strtab, orig_auxv->u.a_ptr, sizeof(struct vki_ps_strings));
          ((struct vki_ps_strings*)auxv->u.a_ptr)->ps_envstr = (char**)VG_(client_envp);
          ((struct vki_ps_strings*)auxv->u.a_ptr)->ps_argvstr = (char**)client_argv;
          break;
-      case AT_ARGV:
+      case VKI_AT_ARGV:
          auxv->u.a_val = client_argv;
          break;
-      case AT_ENVV:
+      case VKI_AT_ENVV:
          auxv->u.a_val = (Word)VG_(client_envp);
          break;
 #endif
@@ -714,33 +708,33 @@ Addr setup_client_stack( void*  init_sp,
 #endif
 
 #if (FREEBSD_VERS >= FREEBSD_14)
-      case AT_USRSTACKBASE:
+      case VKI_AT_USRSTACKBASE:
          auxv->u.a_val = VG_(get_usrstack)();
          break;
-      case AT_USRSTACKLIM:
+      case VKI_AT_USRSTACKLIM:
          auxv->u.a_val = clstack_max_size;
          break;
 #endif
 
-      case AT_PHDR:
+      case VKI_AT_PHDR:
          if (info->phdr == 0)
-            auxv->a_type = AT_IGNORE;
+            auxv->a_type = VKI_AT_IGNORE;
          else
             auxv->u.a_val = info->phdr;
          break;
 
-      case AT_PHNUM:
+      case VKI_AT_PHNUM:
          if (info->phdr == 0)
-            auxv->a_type = AT_IGNORE;
+            auxv->a_type = VKI_AT_IGNORE;
          else
             auxv->u.a_val = info->phnum;
          break;
 
-      case AT_BASE:
+      case VKI_AT_BASE:
          auxv->u.a_val = info->interp_offset;
          break;
 
-      case AT_ENTRY:
+      case VKI_AT_ENTRY:
          auxv->u.a_val = info->entry;
          break;
 
@@ -749,12 +743,12 @@ Addr setup_client_stack( void*  init_sp,
          VG_(debugLog)(2, "initimg",
                        "stomping auxv entry %llu\n",
                        (ULong)auxv->a_type);
-         auxv->a_type = AT_IGNORE;
+         auxv->a_type = VKI_AT_IGNORE;
          break;
       }
    }
    *auxv = *orig_auxv;
-   vg_assert(auxv->a_type == AT_NULL);
+   vg_assert(auxv->a_type == VKI_AT_NULL);
 
    vg_assert((strtab-stringbase) == stringsize);
 

@@ -2479,7 +2479,48 @@ struct vki_ps_strings {
 //----------------------------------------------------------------------
 
 #define VKI_AT_NULL 0
+#define VKI_AT_IGNORE 1
+#define VKI_AT_EXECFD 2
+#define VKI_AT_PHDR 3
+#define VKI_AT_PHENT 4
+#define VKI_AT_PHNUM 5
+#define VKI_AT_PAGESZ 6
+#define VKI_AT_BASE 7
+#define VKI_AT_FLAGS 8
+#define VKI_AT_ENTRY 9
+#define VKI_AT_NOTELF 10
+#define VKI_AT_UID 11
+#define VKI_AT_EUID 12
+#define VKI_AT_GID 13
+#define VKI_AT_EGID 14
+#define VKI_AT_EXECPATH 15
+#define VKI_AT_CANARY 16
+#define VKI_AT_CANARYLEN 17
+#define VKI_AT_OSRELDATE 18
+#define VKI_AT_NCPUS	19
+#define VKI_AT_PAGESIZES 20
+#define VKI_AT_PAGESIZESLEN 21
+#define VKI_AT_TIMEKEEP 22
+#define VKI_AT_STACKPROT 23
+#define VKI_AT_EHDRFLAGS 24
+#define VKI_AT_HWCAP 25
+#define VKI_AT_HWCAP2 26
+/* added in FreeBSD 13 */
+#define VKI_AT_BSDFLAGS 27
+#define VKI_AT_ARGC 28
+#define VKI_AT_ARGV 29
+#define VKI_AT_ENVC 30
+#define VKI_AT_ENVV 31
 #define VKI_AT_PS_STRINGS 32
+/* added in FreeBSD 13.1 */
+#define VKI_AT_FXRNG	33
+#define VKI_AT_KPRELOAD	34
+/* added in FreeBSD 14 */
+#define VKI_AT_USRSTACKBASE 35
+#define VKI_T_USRSTACKLIM 36
+
+/* AT_COUNT depends on the FreeBSD version, not currently used */
+
 
 #define VKI_NT_FREEBSD_ABI_TAG 1
 #define VKI_NT_FREEBSD_FEATURE_CTL	4

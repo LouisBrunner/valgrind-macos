@@ -36012,11 +36012,11 @@ DisResult disInstr_PPC_WRK (
             // splat instructions: xxpermx
             if (dis_vector_permute_prefix( prefix, theInstr, abiinfo ))
                goto decode_success;
-         } else if (is_prefix && ( ptype == pType1 ) ) {  // plbz:  load instruction
+         } else if (is_prefix && ( ptype == pType2 ) ) {  // plbz:  load instruction
             if ( !(allow_isa_3_1) ) goto decode_noIsa3_1;
             if (dis_int_load_prefix( prefix, theInstr ))
                goto decode_success;
-         } else {  // lbz:  load instruction
+         } else if (!is_prefix) {  // lbz:  load instruction
             if (dis_int_load_prefix( prefix, theInstr ))
                goto decode_success;
          }

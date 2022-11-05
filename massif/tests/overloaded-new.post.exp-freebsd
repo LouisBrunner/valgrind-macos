@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 Command:            ./overloaded-new
-Massif arguments:   --stacks=no --time-unit=B --massif-out-file=massif.out --ignore-fn=__part_load_locale --ignore-fn=__time_load_locale --ignore-fn=dwarf2_unwind_dyld_add_image_hook --ignore-fn=get_or_create_key_element --ignore-fn=_GLOBAL__sub_I_eh_alloc.cc --ignore-fn=call_init.part.0
+Massif arguments:   --stacks=no --time-unit=B --massif-out-file=massif.out --ignore-fn=__part_load_locale --ignore-fn=__time_load_locale --ignore-fn=dwarf2_unwind_dyld_add_image_hook --ignore-fn=get_or_create_key_element --ignore-fn=_GLOBAL__sub_I_eh_alloc.cc --ignore-fn=call_init.part.0 --ignore-fn=call_init
 ms_print arguments: massif.out
 --------------------------------------------------------------------------------
 
@@ -43,7 +43,7 @@ Number of snapshots: 12
   5         84,744           84,744           84,704            40            0
   6         84,744           84,744           84,704            40            0
 99.95% (84,704B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
-->85.79% (72,704B) 0x........: ??? (in /usr/local/lib/gcc10/libstdc++.so.6.0.28)
+->85.79% (72,704B) 0x........: ??? (in /usr/local/lib/gcc/libstdc++.so.6.0.28)
 | ->85.79% (72,704B) 0x........: ??? (in /libexec/ld-elf.so.1)
 |   ->85.79% (72,704B) 0x........: ??? (in /libexec/ld-elf.so.1)
 |     ->85.79% (72,704B) 0x........: ??? (in /libexec/ld-elf.so.1)

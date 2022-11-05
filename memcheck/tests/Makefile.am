@@ -145,7 +145,6 @@ EXTRA_DIST = \
 	descr_belowsp.vgtest descr_belowsp.stderr.exp \
 	doublefree.stderr.exp doublefree.vgtest \
 	dw4.vgtest dw4.stderr.exp dw4.stderr.exp-solaris dw4.stdout.exp \
-		dw4.stderr.exp-freebsd \
 	err_disable1.vgtest err_disable1.stderr.exp \
 	err_disable2.vgtest err_disable2.stderr.exp \
 	err_disable3.vgtest err_disable3.stderr.exp \
@@ -163,6 +162,7 @@ EXTRA_DIST = \
 		fprw.stderr.exp-freebsd-x86 \
 	fwrite.stderr.exp fwrite.vgtest fwrite.stderr.exp-kfail \
 	gone_abrt_xml.vgtest gone_abrt_xml.stderr.exp gone_abrt_xml.stderr.exp-solaris \
+		gone_abrt_xml.stderr.exp-freebsd \
 	holey_buffer_too_small.vgtest holey_buffer_too_small.stdout.exp \
 	holey_buffer_too_small.stderr.exp \
 	inits.stderr.exp inits.vgtest \
@@ -219,6 +219,7 @@ EXTRA_DIST = \
 	memalign2.stderr.exp memalign2.vgtest \
 	memcmptest.stderr.exp memcmptest.stderr.exp2 \
 	memcmptest.stdout.exp memcmptest.vgtest \
+	memmem.stderr.exp memmem.vgtest \
 	mempool.stderr.exp mempool.vgtest \
 	mempool2.stderr.exp mempool2.vgtest \
 	metadata.stderr.exp metadata.stdout.exp metadata.vgtest \
@@ -342,6 +343,7 @@ EXTRA_DIST = \
 		varinfo4.stderr.exp-freebsd \
 	varinfo5.vgtest varinfo5.stdout.exp varinfo5.stderr.exp \
 		varinfo5.stderr.exp-ppc64 \
+		varinfo5.stderr.exp-freebsd \
 	varinfo6.vgtest varinfo6.stdout.exp varinfo6.stderr.exp \
 		varinfo6.stderr.exp-ppc64 \
 	varinforestrict.vgtest varinforestrict.stderr.exp \
@@ -365,7 +367,7 @@ EXTRA_DIST = \
 	wrapmallocstatic.stderr.exp \
 	writev1.stderr.exp writev1.stderr.exp-solaris writev1.vgtest \
 	xml1.stderr.exp xml1.stdout.exp xml1.vgtest xml1.stderr.exp-s390x-mvc \
-	leak_cpp_interior.stderr.exp-freebsd
+	leak_cpp_interior.stderr.exp-freebsd leak_cpp_interior.stderr.exp-freebsd-32bit
 
 check_PROGRAMS = \
 	accounting \
@@ -416,6 +418,7 @@ check_PROGRAMS = \
 	malloc_usable malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
 	match-overrun \
 	memalign_test memalign2 memcmptest mempool mempool2 mmaptest \
+	memmem \
 	mismatches new_override metadata \
 	nanoleak_supp nanoleak2 new_nothrow \
 	noisy_child \
@@ -555,7 +558,7 @@ long_namespace_xml_SOURCES = long_namespace_xml.cpp
 
 manuel1_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
-memalign2_CFLAGS	= $(AM_CFLAGS)
+memalign2_CFLAGS	= $(AM_CFLAGS) -Wno-non-power-of-two-alignment
 if VGCONF_OS_IS_SOLARIS
 memalign2_CFLAGS	+= -D__EXTENSIONS__
 endif

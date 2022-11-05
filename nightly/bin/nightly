@@ -50,7 +50,7 @@ else
   MAKE=make
 fi
 
-valgrind_git_repo="git://sourceware.org/git/valgrind.git/"
+valgrind_git_repo="https://sourceware.org/git/valgrind.git/"
 
 # Must have exactly two arguments
 if [ $# -ne 2 ] ; then

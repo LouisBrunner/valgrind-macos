@@ -142,7 +142,7 @@ static void test_vcmpequq (void) {
 }
 static void test_dotted_vcmpequq (void) {
   SET_CR_ZERO;
-  __asm__ __volatile__ ("vcmpequq %0, %1, %2"
+  __asm__ __volatile__ ("vcmpequq. %0, %1, %2"
 				: "=v" (vrt) : "v" (vra), "v" (vrb) );
   GET_CR(current_cr); SET_CR_ZERO;
 }
@@ -152,7 +152,7 @@ static void test_vcmpgtsq (void) {
 }
 static void test_dotted_vcmpgtsq (void) {
   SET_CR_ZERO;
-  __asm__ __volatile__ ("vcmpgtsq %0, %1, %2"
+  __asm__ __volatile__ ("vcmpgtsq. %0, %1, %2"
 				: "=v" (vrt) : "v" (vra), "v" (vrb) );
   GET_CR(current_cr); SET_CR_ZERO;
 }
@@ -162,7 +162,7 @@ static void test_vcmpgtuq (void) {
 }
 static void test_dotted_vcmpgtuq (void) {
   SET_CR_ZERO;
-  __asm__ __volatile__ ("vcmpgtuq %0, %1, %2"
+  __asm__ __volatile__ ("vcmpgtuq. %0, %1, %2"
 				: "=v" (vrt) : "v" (vra), "v" (vrb) );
   GET_CR(current_cr); SET_CR_ZERO;
 }

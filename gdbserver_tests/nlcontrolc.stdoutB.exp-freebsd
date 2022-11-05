@@ -1,0 +1,22 @@
+Continuing.
+Program received signal SIGTRAP, Trace/breakpoint trap.
+do_burn () at sleepers.c:40
+40	   for (i = 0; i < burn; i++) loopnr++;
+ > > > > > >       1
+       3
+$1 = 0
+$2 = 1000000
+changed burning parameters to sleeping parameters
+Continuing.
+Program received signal SIGTRAP, Trace/breakpoint trap.
+0x........ in syscall ...
+* 1 Thread .... (tid 1 VgTs_WaitSys)  0x........ in syscall ...
+$3 = 0
+reset to sleeping parameters
+Continuing.
+Program received signal SIGTRAP, Trace/breakpoint trap.
+sleeper_or_burner (v=0x........) at sleepers.c:81
+81	   for (i = 0; i < loops; i++) {
+* 1 Thread .... (tid 1 VgTs_Runnable) 0x........ in sleeper_or_burner (v=0x........) at sleepers.c:81
+ > > > >       3
+Kill the program being debugged? (y or n) [answered Y; input not from terminal]

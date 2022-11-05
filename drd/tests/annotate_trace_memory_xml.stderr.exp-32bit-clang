@@ -1,0 +1,302 @@
+<?xml version="1.0"?>
+
+<valgrindoutput>
+
+<protocolversion>4</protocolversion>
+<protocoltool>drd</protocoltool>
+
+<preamble>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+</preamble>
+
+<pid>...</pid>
+<ppid>...</ppid>
+<tool>drd</tool>
+
+<args>
+  <vargv>...</vargv>
+  <argv>
+    <exe>./annotate_trace_memory</exe>
+  </argv>
+</args>
+
+<status>
+  <state>RUNNING</state>
+  <time>...</time>
+</status>
+
+float
+  <trace><text>store 0x........ size 4 val 1065353216/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>load  0x........ size 4 (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>store 0x........ size 4 val 1077936128/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+double
+  <trace><text>store 0x........ size 8 val 4613937818241073152/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>load  0x........ size 8 (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>store 0x........ size 8 val 4619567317775286272/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+uint8_t
+  <trace><text>store 0x........ size 1 val 5/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>load  0x........ size 1 (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>store 0x........ size 1 val 11/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+uint16_t
+  <trace><text>store 0x........ size 2 val 7/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>load  0x........ size 2 (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>store 0x........ size 2 val 8/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+uint32_t
+  <trace><text>store 0x........ size 4 val 8/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>load  0x........ size 4 (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>store 0x........ size 4 val 9/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+uint64_t
+  <trace><text>store 0x........ size 4 val 0/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>store 0x........ size 4 val 9/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>load  0x........ size 4 (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>load  0x........ size 4 (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>store 0x........ size 4 val 0/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+  <trace><text>store 0x........ size 4 val 305419905/0x........ (thread x / vc ...)</text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>annotate_trace_memory.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  </trace>
+Done.
+
+<status>
+  <state>FINISHED</state>
+  <time>...</time>
+</status>
+
+<errorcounts>
+</errorcounts>
+
+<suppcounts>...</suppcounts>
+
+</valgrindoutput>
+

@@ -17,8 +17,8 @@ set -e
 #---------------------------------------------------------------------
 
 # You need to modify these revision numbers for your update.
-old_gcc_revision=01d92cfd79872e4cffc78bf233bb9b767336beb8 # the revision of the previous update
-new_gcc_revision=b3585c0836e729bed56b9afd4292177673a25ca0 # the revision for this update
+old_gcc_revision=b3585c0836e729bed56b9afd4292177673a25ca0 # the revision of the previous update
+new_gcc_revision=d3b2ead595467166c849950ecd3710501a5094d9 # the revision for this update
 
 # Unless the organization of demangler related files has changed, no
 # changes below this line should be necessary.
@@ -37,7 +37,7 @@ echo "Updating the demangler in $DIR"
 mkdir gcc
 cd gcc
 git init
-git remote add origin git://gcc.gnu.org/git/gcc.git
+git remote add origin https://gcc.gnu.org/git/gcc.git
 git config core.sparsecheckout true
 echo "libiberty/*" > .git/info/sparse-checkout
 echo "include/*" >> .git/info/sparse-checkout
@@ -91,7 +91,7 @@ echo "Checking out coregrind/m_demangle"
 mkdir valgrind-sparse-clone
 cd valgrind-sparse-clone
 git init
-git remote add origin -f git://sourceware.org/git/valgrind.git/
+git remote add origin -f https://sourceware.org/git/valgrind.git/
 git config core.sparsecheckout true
 echo "coregrind/m_demangle/*" > .git/info/sparse-checkout
 git pull origin master

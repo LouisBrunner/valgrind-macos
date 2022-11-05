@@ -309,8 +309,8 @@ ThreadId VG_(alloc_ThreadState) ( void )
    Int i;
    for (i = 1; i < VG_N_THREADS; i++) {
       if (VG_(threads)[i].status == VgTs_Empty) {
-	 VG_(threads)[i].status = VgTs_Init;
-	 VG_(threads)[i].exitreason = VgSrc_None;
+         VG_(threads)[i].status = VgTs_Init;
+         VG_(threads)[i].exitreason = VgSrc_None;
          if (VG_(threads)[i].thread_name)
             VG_(free)(VG_(threads)[i].thread_name);
          VG_(threads)[i].thread_name = NULL;
@@ -469,9 +469,9 @@ void VG_(get_thread_out_of_syscall)(ThreadId tid)
 
    if (VG_(threads)[tid].status == VgTs_WaitSys) {
       if (VG_(clo_trace_signals)) {
-	 VG_(message)(Vg_DebugMsg, 
+         VG_(message)(Vg_DebugMsg,
                       "get_thread_out_of_syscall zaps tid %u lwp %d\n",
-		      tid, VG_(threads)[tid].os_state.lwpid);
+                      tid, VG_(threads)[tid].os_state.lwpid);
       }
 #     if defined(VGO_darwin)
       {
@@ -657,7 +657,7 @@ static void sched_fork_cleanup(ThreadId me)
    for (tid = 1; tid < VG_N_THREADS; tid++) {
       if (tid != me) {
          mostly_clear_thread_record(tid);
-	 VG_(threads)[tid].status = VgTs_Empty;
+         VG_(threads)[tid].status = VgTs_Empty;
          VG_(clear_syscallInfo)(tid);
       }
    }

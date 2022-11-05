@@ -170,6 +170,11 @@ Syscall param execve(filename) points to unaddressable byte(s)
    by 0x........: main (scalar.c:90)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
+Syscall param execve(argv) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:90)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
 -----------------------------------------------------
  11:         __NR_execve 3s 1m
 -----------------------------------------------------
@@ -186,6 +191,11 @@ Syscall param execve(envp) contains uninitialised byte(s)
    by 0x........: main (scalar.c:93)
 
 Syscall param execve(filename) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:93)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param execve(argv) points to unaddressable byte(s)
    ...
    by 0x........: main (scalar.c:93)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
@@ -216,7 +226,7 @@ Syscall param execve(argv) points to uninitialised byte(s)
  Address 0x........ is on thread 1's stack
  in frame #1, created by main (scalar.c:29)
 
-Syscall param execve(argv[i]) points to unaddressable byte(s)
+Syscall param execve(argv[0]) points to unaddressable byte(s)
    ...
    by 0x........: main (scalar.c:97)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
@@ -564,6 +574,9 @@ Syscall param pipe(filedes) contains uninitialised byte(s)
    ...
    by 0x........: main (scalar.c:225)
 
+
+More than 100 errors detected.  Subsequent errors
+will still be recorded, but in less detail than before.
 Syscall param pipe(filedes) points to unaddressable byte(s)
    ...
    by 0x........: main (scalar.c:225)
@@ -576,9 +589,6 @@ Syscall param times(buf) contains uninitialised byte(s)
    ...
    by 0x........: main (scalar.c:229)
 
-
-More than 100 errors detected.  Subsequent errors
-will still be recorded, but in less detail than before.
 Syscall param times(buf) points to unaddressable byte(s)
    ...
    by 0x........: main (scalar.c:229)

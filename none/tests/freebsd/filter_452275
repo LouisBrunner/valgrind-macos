@@ -1,0 +1,6 @@
+#! /bin/sh
+
+./filter_stderr |
+
+sed 's/ //g'
+

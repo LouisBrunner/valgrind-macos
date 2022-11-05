@@ -351,7 +351,6 @@ static VexGuestX86SegDescr* alloc_zeroed_x86_GDT ( void )
    return VG_(arena_calloc)(VG_AR_CORE, "di.syswrap-x86.azxG.1", nbytes, 1);
 }
 
-#if 0
 /* Create a zeroed-out LDT. */
 static VexGuestX86SegDescr* alloc_zeroed_x86_LDT ( void )
 {
@@ -395,7 +394,7 @@ static void deallocate_LGDTs_for_thread ( VexGuestX86State* vex )
 
    if (0)
       VG_(printf)("deallocate_LGDTs_for_thread: "
-                  "ldt = 0x%x, gdt = 0x%x\n",
+                  "ldt = 0x%llx, gdt = 0x%llx\n",
                   vex->guest_LDT, vex->guest_GDT );
 
    if (vex->guest_LDT != (HWord)NULL) {
@@ -408,7 +407,6 @@ static void deallocate_LGDTs_for_thread ( VexGuestX86State* vex )
       vex->guest_GDT = (HWord)NULL;
    }
 }
-#endif
 
 static SysRes sys_set_thread_area ( ThreadId tid, Int *idxptr, void *base)
 {
@@ -475,12 +473,50 @@ static SysRes sys_get_thread_area ( ThreadId tid, Int idx, void ** basep )
    return VG_(mk_SysRes_Success)( 0 );
 }
 
+static
+void x86_setup_LDT_GDT ( /*OUT*/ ThreadArchState *child,
+                         /*IN*/  ThreadArchState *parent )
+{
+   /* We inherit our parent's LDT. */
+   if (parent->vex.guest_LDT == (HWord)NULL) {
+      /* We hope this is the common case. */
+      child->vex.guest_LDT = (HWord)NULL;
+   } else {
+      /* No luck .. we have to take a copy of the parent's. */
+      child->vex.guest_LDT = (HWord)alloc_zeroed_x86_LDT();
+      copy_LDT_from_to( (VexGuestX86SegDescr*)(HWord)parent->vex.guest_LDT,
+                        (VexGuestX86SegDescr*)(HWord)child->vex.guest_LDT );
+   }
+
+   /* Either we start with an empty GDT (the usual case) or inherit a
+      copy of our parents' one (Quadrics Elan3 driver -style clone
+      only). */
+   child->vex.guest_GDT = (HWord)NULL;
+
+   if (parent->vex.guest_GDT != (HWord)NULL) {
+      //child->vex.guest_GDT = (HWord)alloc_system_x86_GDT();
+      child->vex.guest_GDT = (HWord)alloc_zeroed_x86_GDT();
+      copy_GDT_from_to( (VexGuestX86SegDescr*)(HWord)parent->vex.guest_GDT,
+                        (VexGuestX86SegDescr*)(HWord)child->vex.guest_GDT );
+   }
+}
+
+
+
 /* ---------------------------------------------------------------------
    More thread stuff
    ------------------------------------------------------------------ */
 
 void VG_(cleanup_thread) ( ThreadArchState* arch )
 {
+   /*
+    * This is what x86 Linux does but it doesn't work off the bat for x86 FreeBSD
+    * My suspicion is that the rtld code uses the TCB stored in the GDT after the
+    * end of thr_exit.
+    * Alternatively the rtld use is after the start of the next thread and we haven't
+    * reallocated this memory
+    */
+   deallocate_LGDTs_for_thread( &arch->vex );
 }
 
 
@@ -668,7 +704,7 @@ PRE(sys_freebsd6_ftruncate)
 PRE(sys_clock_getcpuclockid2)
 {
    PRINT("sys_clock_getcpuclockid2( %lld, %" FMT_REGWORD "d, %#" FMT_REGWORD "x )",
-         MERGE64(ARG1,ARG2),SARG3,ARG4);
+         (vki_id_t)MERGE64(ARG1,ARG2),SARG3,ARG4);
    PRE_REG_READ4(int, "clock_getcpuclockid2",
                  vki_uint32_t, MERGE64_FIRST(offset),
                  vki_uint32_t, MERGE64_SECOND(offset),
@@ -698,7 +734,7 @@ PRE(sys_rfork)
       *flags |= SfYieldAfter;
    }
 #else
-   VG_(message)(Vg_UserMsg, "fork() not implemented");
+   VG_(message)(Vg_UserMsg, "rfork() not implemented");
    VG_(unimplemented)("Valgrind does not support rfork() yet.");
    SET_STATUS_Failure( VKI_ENOSYS );
 #endif
@@ -1048,6 +1084,8 @@ PRE(sys_thr_new)
    ctst->arch.vex.guest_EDX = 0;
    LibVEX_GuestX86_put_eflag_c(0, &ctst->arch.vex);
 
+   x86_setup_LDT_GDT(&ctst->arch, &ptst->arch);
+
    ctst->os_state.parent = tid;
 
    /* inherit signal mask */
@@ -1067,7 +1105,9 @@ PRE(sys_thr_new)
 
    if (debug)
       VG_(printf)("clone child has SETTLS: tls at %#lx\n", (Addr)tp.tls_base);
+
    sys_set_thread_area( ctid, &idx, tp.tls_base );
+
    ctst->arch.vex.guest_GS = (idx << 3) | 3;   /* GSEL(GUGS_SEL, SEL_UPL) */
    tp.tls_base = 0;  /* Don't have the kernel do it too */
 
@@ -1250,7 +1290,7 @@ POST(sys_cpuset_getid)
 PRE(sys_cpuset_getaffinity)
 {
    PRINT("sys_cpuset_getaffinity ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %lld, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )",
-         ARG1, ARG2, MERGE64(ARG3, ARG4), ARG5, ARG6);
+         ARG1, ARG2, (vki_id_t)MERGE64(ARG3, ARG4), ARG5, ARG6);
    PRE_REG_READ6(int, "cpuset_getaffinity",
                  vki_cpulevel_t, level, vki_cpuwhich_t, which,
                  vki_uint32_t, MERGE64_FIRST(id),
@@ -1357,21 +1397,23 @@ PRE(sys_procctl)
                  vki_uint32_t, MERGE64_SECOND(id),
                  int, cmd, void *, arg);
    switch (ARG4) {
-   case PROC_ASLR_CTL:
-   case PROC_SPROTECT:
-   case PROC_TRACE_CTL:
-   case PROC_TRAPCAP_CTL:
-   case PROC_PDEATHSIG_CTL:
-   case PROC_STACKGAP_CTL:
+   case VKI_PROC_ASLR_CTL:
+   case VKI_PROC_SPROTECT:
+   case VKI_PROC_TRACE_CTL:
+   case VKI_PROC_TRAPCAP_CTL:
+   case VKI_PROC_PDEATHSIG_CTL:
+   case VKI_PROC_STACKGAP_CTL:
+   case VKI_PROC_NO_NEW_PRIVS_CTL:
+   case VKI_PROC_WXMAP_CTL:
       PRE_MEM_READ("procctl(arg)", ARG5, sizeof(int));
       break;
-   case PROC_REAP_STATUS:
+   case VKI_PROC_REAP_STATUS:
       PRE_MEM_READ("procctl(arg)", ARG5, sizeof(struct vki_procctl_reaper_status));
       break;
-   case PROC_REAP_GETPIDS:
+   case VKI_PROC_REAP_GETPIDS:
       PRE_MEM_READ("procctl(arg)", ARG5, sizeof(struct vki_procctl_reaper_pids));
       break;
-   case PROC_REAP_KILL:
+   case VKI_PROC_REAP_KILL:
       /* The first three fields are reads
        * int rk_sig;
        * u_int rk_flags;
@@ -1386,14 +1428,14 @@ PRE(sys_procctl)
       PRE_MEM_READ("procctl(arg)", ARG5, sizeof(int) + sizeof(u_int) + sizeof(vki_pid_t));
       PRE_MEM_WRITE("procctl(arg)", ARG5+offsetof(struct vki_procctl_reaper_kill, rk_killed), sizeof(u_int) + sizeof(vki_pid_t));
       break;
-   case PROC_ASLR_STATUS:
-   case PROC_PDEATHSIG_STATUS:
-   case PROC_STACKGAP_STATUS:
-   case PROC_TRAPCAP_STATUS:
-   case PROC_TRACE_STATUS:
+   case VKI_PROC_ASLR_STATUS:
+   case VKI_PROC_PDEATHSIG_STATUS:
+   case VKI_PROC_STACKGAP_STATUS:
+   case VKI_PROC_TRAPCAP_STATUS:
+   case VKI_PROC_TRACE_STATUS:
       PRE_MEM_WRITE("procctl(arg)", ARG5, sizeof(int));
-   case PROC_REAP_ACQUIRE:
-   case PROC_REAP_RELEASE:
+   case VKI_PROC_REAP_ACQUIRE:
+   case VKI_PROC_REAP_RELEASE:
    default:
       break;
    }
@@ -1402,14 +1444,16 @@ PRE(sys_procctl)
 POST(sys_procctl)
 {
    switch (ARG4) {
-   case PROC_REAP_KILL:
+   case VKI_PROC_REAP_KILL:
       POST_MEM_WRITE(ARG5+offsetof(struct vki_procctl_reaper_kill, rk_killed), sizeof(u_int) + sizeof(vki_pid_t));
       break;
-   case PROC_ASLR_STATUS:
-   case PROC_PDEATHSIG_STATUS:
-   case PROC_STACKGAP_STATUS:
-   case PROC_TRAPCAP_STATUS:
-   case PROC_TRACE_STATUS:
+   case VKI_PROC_ASLR_STATUS:
+   case VKI_PROC_PDEATHSIG_STATUS:
+   case VKI_PROC_STACKGAP_STATUS:
+   case VKI_PROC_TRAPCAP_STATUS:
+   case VKI_PROC_TRACE_STATUS:
+   case VKI_PROC_NO_NEW_PRIVS_STATUS:
+   case VKI_PROC_WXMAP_STATUS:
       POST_MEM_WRITE(ARG5, sizeof(int));
    default:
       break;

@@ -1,0 +1,191 @@
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (tests/varinfo5so.c:29)
+   by 0x........: varinfo1_main (tests/varinfo5so.c:52)
+   by 0x........: varinfo5_main (tests/varinfo5so.c:154)
+   by 0x........: main (tests/varinfo5.c:5)
+ Address 0x........ is 1 bytes inside a block of size 3 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: varinfo1_main (tests/varinfo5so.c:50)
+   by 0x........: varinfo5_main (tests/varinfo5so.c:154)
+   by 0x........: main (tests/varinfo5.c:5)
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (tests/varinfo5so.c:29)
+   by 0x........: varinfo1_main (tests/varinfo5so.c:55)
+   by 0x........: varinfo5_main (tests/varinfo5so.c:154)
+   by 0x........: main (tests/varinfo5.c:5)
+ Location 0x........ is 0 bytes inside global var "global_u1"
+ declared at varinfo5so.c:38
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (tests/varinfo5so.c:29)
+   by 0x........: varinfo1_main (tests/varinfo5so.c:56)
+   by 0x........: varinfo5_main (tests/varinfo5so.c:154)
+   by 0x........: main (tests/varinfo5.c:5)
+ Location 0x........ is 0 bytes inside global var "global_i1"
+ declared at varinfo5so.c:40
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (tests/varinfo5so.c:29)
+   by 0x........: varinfo1_main (tests/varinfo5so.c:57)
+   by 0x........: varinfo5_main (tests/varinfo5so.c:154)
+   by 0x........: main (tests/varinfo5.c:5)
+ Location 0x........ is 0 bytes inside global_u2[3],
+ a global variable declared at varinfo5so.c:42
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (tests/varinfo5so.c:29)
+   by 0x........: varinfo1_main (tests/varinfo5so.c:58)
+   by 0x........: varinfo5_main (tests/varinfo5so.c:154)
+   by 0x........: main (tests/varinfo5.c:5)
+ Location 0x........ is 0 bytes inside global_i2[7],
+ a global variable declared at varinfo5so.c:44
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (tests/varinfo5so.c:29)
+   by 0x........: varinfo1_main (tests/varinfo5so.c:59)
+   by 0x........: varinfo5_main (tests/varinfo5so.c:154)
+   by 0x........: main (tests/varinfo5.c:5)
+ Location 0x........ is 0 bytes inside local var "local"
+ declared at varinfo5so.c:49, in frame #X of thread 1
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (tests/varinfo5so.c:29)
+   by 0x........: foo2 (tests/varinfo5so.c:71)
+   by 0x........: varinfo2_main (tests/varinfo5so.c:81)
+   by 0x........: varinfo5_main (tests/varinfo5so.c:155)
+   by 0x........: main (tests/varinfo5.c:5)
+ Location 0x........ is 0 bytes inside var[7],
+ declared at varinfo5so.c:69, in frame #X of thread 1
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (tests/varinfo5so.c:29)
+   by 0x........: foo2 (tests/varinfo5so.c:73)
+   by 0x........: varinfo2_main (tests/varinfo5so.c:81)
+   by 0x........: varinfo5_main (tests/varinfo5so.c:155)
+   by 0x........: main (tests/varinfo5.c:5)
+ Location 0x........ is 2 bytes inside var.bar,
+ declared at varinfo5so.c:72, in frame #X of thread 1
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (tests/varinfo5so.c:29)
+   by 0x........: foo2 (tests/varinfo5so.c:76)
+   by 0x........: varinfo2_main (tests/varinfo5so.c:81)
+   by 0x........: varinfo5_main (tests/varinfo5so.c:155)
+   by 0x........: main (tests/varinfo5.c:5)
+ Address 0x........ is on thread 1's stack
+ in frame #X, created by foo2 (varinfo5so.c:66)
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (tests/varinfo5so.c:29)
+   by 0x........: foo3 (tests/varinfo5so.c:106)
+   by 0x........: varinfo3_main (tests/varinfo5so.c:118)
+   by 0x........: varinfo5_main (tests/varinfo5so.c:156)
+   by 0x........: main (tests/varinfo5.c:5)
+ Location 0x........ is 0 bytes inside static_global_def[1],
+ a global variable declared at varinfo5so.c:87
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (tests/varinfo5so.c:29)
+   by 0x........: foo3 (tests/varinfo5so.c:107)
+   by 0x........: varinfo3_main (tests/varinfo5so.c:118)
+   by 0x........: varinfo5_main (tests/varinfo5so.c:156)
+   by 0x........: main (tests/varinfo5.c:5)
+ Location 0x........ is 0 bytes inside nonstatic_global_def[2],
+ a global variable declared at varinfo5so.c:88
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (tests/varinfo5so.c:29)
+   by 0x........: foo3 (tests/varinfo5so.c:108)
+   by 0x........: varinfo3_main (tests/varinfo5so.c:118)
+   by 0x........: varinfo5_main (tests/varinfo5so.c:156)
+   by 0x........: main (tests/varinfo5.c:5)
+ Location 0x........ is 0 bytes inside static_global_undef[3],
+ a global variable declared at varinfo5so.c:89
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (tests/varinfo5so.c:29)
+   by 0x........: foo3 (tests/varinfo5so.c:109)
+   by 0x........: varinfo3_main (tests/varinfo5so.c:118)
+   by 0x........: varinfo5_main (tests/varinfo5so.c:156)
+   by 0x........: main (tests/varinfo5.c:5)
+ Location 0x........ is 0 bytes inside nonstatic_global_undef[4],
+ a global variable declared at varinfo5so.c:90
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (tests/varinfo5so.c:29)
+   by 0x........: bar3 (tests/varinfo5so.c:94)
+   by 0x........: foo3 (tests/varinfo5so.c:110)
+   by 0x........: varinfo3_main (tests/varinfo5so.c:118)
+   by 0x........: varinfo5_main (tests/varinfo5so.c:156)
+   by 0x........: main (tests/varinfo5.c:5)
+ Address 0x........ is 5 bytes inside data symbol "foo3.static_local_def"
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (tests/varinfo5so.c:29)
+   by 0x........: bar3 (tests/varinfo5so.c:95)
+   by 0x........: foo3 (tests/varinfo5so.c:110)
+   by 0x........: varinfo3_main (tests/varinfo5so.c:118)
+   by 0x........: varinfo5_main (tests/varinfo5so.c:156)
+   by 0x........: main (tests/varinfo5.c:5)
+ Address 0x........ is on thread 1's stack
+ in frame #X, created by foo3 (varinfo5so.c:101)
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (tests/varinfo5so.c:29)
+   by 0x........: bar3 (tests/varinfo5so.c:96)
+   by 0x........: foo3 (tests/varinfo5so.c:110)
+   by 0x........: varinfo3_main (tests/varinfo5so.c:118)
+   by 0x........: varinfo5_main (tests/varinfo5so.c:156)
+   by 0x........: main (tests/varinfo5.c:5)
+ Address 0x........ is 7 bytes inside data symbol "foo3.static_local_undef"
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (tests/varinfo5so.c:29)
+   by 0x........: bar3 (tests/varinfo5so.c:97)
+   by 0x........: foo3 (tests/varinfo5so.c:110)
+   by 0x........: varinfo3_main (tests/varinfo5so.c:118)
+   by 0x........: varinfo5_main (tests/varinfo5so.c:156)
+   by 0x........: main (tests/varinfo5.c:5)
+ Address 0x........ is on thread 1's stack
+ in frame #X, created by foo3 (varinfo5so.c:101)
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (tests/varinfo5so.c:29)
+   by 0x........: blah4 (tests/varinfo5so.c:137)
+   by 0x........: varinfo4_main (tests/varinfo5so.c:146)
+   by 0x........: varinfo5_main (tests/varinfo5so.c:157)
+   by 0x........: main (tests/varinfo5.c:5)
+ Location 0x........ is 1 byte inside a[3].xyzzy[21].c1,
+ declared at varinfo5so.c:135, in frame #X of thread 1
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (tests/varinfo5so.c:29)
+   by 0x........: blah4 (tests/varinfo5so.c:138)
+   by 0x........: varinfo4_main (tests/varinfo5so.c:146)
+   by 0x........: varinfo5_main (tests/varinfo5so.c:157)
+   by 0x........: main (tests/varinfo5.c:5)
+ Location 0x........ is 0 bytes inside a[5].bong,
+ declared at varinfo5so.c:135, in frame #X of thread 1
+
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (tests/varinfo5so.c:29)
+   by 0x........: blah4 (tests/varinfo5so.c:139)
+   by 0x........: varinfo4_main (tests/varinfo5so.c:146)
+   by 0x........: varinfo5_main (tests/varinfo5so.c:157)
+   by 0x........: main (tests/varinfo5.c:5)
+ Location 0x........ is 1 byte inside a[3].xyzzy[21].c2[2],
+ declared at varinfo5so.c:135, in frame #X of thread 1
+
+answer is 0
+Uninitialised byte(s) found during client check request
+   at 0x........: croak (tests/varinfo5so.c:29)
+   by 0x........: fun_c (tests/varinfo5so.c:164)
+   by 0x........: fun_b (./varinfo5so.c:168)
+   by 0x........: fun_a (./varinfo5so.c:172)
+   by 0x........: inlinetest (./varinfo5so.c:178)
+   by 0x........: varinfo5_main (./varinfo5so.c:158)
+   by 0x........: main (tests/varinfo5.c:5)
+ Address 0x........ is on thread 1's stack
+ in frame #X, created by varinfo5_main (varinfo5so.c:153)
+

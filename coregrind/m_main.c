@@ -109,13 +109,17 @@ static void usage_NORETURN ( int need_help )
 "                              and follow the on-screen directions\n"
 "    --vgdb-stop-at=event1,event2,... invoke gdbserver for given events [none]\n"
 "         where event is one of:\n"
-"           startup exit valgrindabexit all none\n"
+"           startup exit abexit valgrindabexit all none\n"
 "    --track-fds=no|yes|all    track open file descriptors? [no]\n"
 "                              all includes reporting stdin, stdout and stderr\n"
 "    --time-stamp=no|yes       add timestamps to log messages? [no]\n"
 "    --log-fd=<number>         log messages to file descriptor [2=stderr]\n"
 "    --log-file=<file>         log messages to <file>\n"
 "    --log-socket=ipaddr:port  log messages to socket ipaddr:port\n"
+#if defined(VGO_linux)
+"    --enable-debuginfod=no|yes query debuginfod servers for missing\n"
+"                              debuginfo [yes]\n"
+#endif
 "\n"
 "  user options for Valgrind tools that report errors:\n"
 "    --xml=yes                 emit error output in XML (some tools only)\n"
@@ -550,7 +554,7 @@ static void process_option (Clo_Mode mode,
    else if VG_INT_CLOM (cloPD, arg, "--vgdb-poll",      VG_(clo_vgdb_poll)) {}
    else if VG_INT_CLOM (cloPD, arg, "--vgdb-error", VG_(clo_vgdb_error)) {}
    else if VG_USET_CLOM (cloPD, arg, "--vgdb-stop-at",
-                         "startup,exit,valgrindabexit",
+                         "startup,exit,abexit,valgrindabexit",
                          VG_(clo_vgdb_stop_at)) {}
    else if VG_STR_CLO (arg, "--vgdb-prefix",    VG_(clo_vgdb_prefix)) {
       VG_(arg_vgdb_prefix) = arg;
@@ -600,6 +604,9 @@ static void process_option (Clo_Mode mode,
    else if VG_BOOL_CLO(arg, "--run-cxx-freeres",  VG_(clo_run_cxx_freeres)) {}
    else if VG_BOOL_CLOM(cloPD, arg, "--show-below-main",  VG_(clo_show_below_main)) {}
    else if VG_BOOL_CLO(arg, "--keep-debuginfo",   VG_(clo_keep_debuginfo)) {}
+#if defined(VGO_linux)
+   else if VG_BOOL_CLO(arg, "--enable-debuginfod", VG_(clo_enable_debuginfod)) {}
+#endif
    else if VG_BOOL_CLOM(cloPD, arg, "--time-stamp",       VG_(clo_time_stamp)) {}
    else if VG_STR_CLO(arg, "--track-fds",         tmp_str) {
       if (VG_(strcmp)(tmp_str, "yes") == 0)
@@ -1348,14 +1355,14 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       VG_(exit)(1);
    }
 
+#if defined(VGO_freebsd)
+   Int val;
+   SizeT len = sizeof(val);
    //--------------------------------------------------------------
    // FreeBSD check security.bsd.unprivileged_proc_debug sysctl
    // This needs to be done before aspacemgr starts, otherwise that
    // will fail with mysterious error codes
    //--------------------------------------------------------------
-#if defined(VGO_freebsd)
-   Int val;
-   SizeT len = sizeof(val);
    Int error = VG_(sysctlbyname)("security.bsd.unprivileged_proc_debug", &val, &len, 0, 0);
    if (error != -1 && val != 1) {
        VG_(debugLog)(0, "main", "Valgrind: FATAL:\n");
@@ -2123,6 +2130,21 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    vg_assert(0);
 }
 
+/* Return the exit code to use when tid exits, depending on the tid os_state
+   exit code and the clo options controlling valgrind exit code. */
+static
+Int tid_exit_code (ThreadId tid)
+{
+   if (VG_(clo_error_exitcode) > 0 && VG_(get_n_errs_found)() > 0)
+      /* Change the application return code to user's return code,
+         if an error was found */
+      return VG_(clo_error_exitcode);
+   else
+      /* otherwise, return the client's exit code, in the normal
+         way. */
+      return VG_(threads)[tid].os_state.exitcode;
+}
+
 /* Do everything which needs doing when the last thread exits or when
    a thread exits requesting a complete process exit.
 
@@ -2189,8 +2211,14 @@ void shutdown_actions_NORETURN( ThreadId tid,
    }
 
    /* Final call to gdbserver, if requested. */
-   if (VG_(gdbserver_stop_at) (VgdbStopAt_Exit)) {
-      VG_(umsg)("(action at exit) vgdb me ... \n");
+   if (VG_(gdbserver_stop_at) (VgdbStopAt_Abexit)
+              && tid_exit_code (tid) != 0) {
+      VG_(umsg)("(action at abexit, exit code %d) vgdb me ... \n",
+                tid_exit_code (tid));
+      VG_(gdbserver) (tid);
+   } else if (VG_(gdbserver_stop_at) (VgdbStopAt_Exit)) {
+      VG_(umsg)("(action at exit, exit code %d) vgdb me ... \n",
+                tid_exit_code (tid));
       VG_(gdbserver) (tid);
    }
    VG_(threads)[tid].status = VgTs_Empty;
@@ -2295,16 +2323,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
    switch (tids_schedretcode) {
    case VgSrc_ExitThread:  /* the normal way out (Linux, Solaris) */
    case VgSrc_ExitProcess: /* the normal way out (Darwin) */
-      /* Change the application return code to user's return code,
-         if an error was found */
-      if (VG_(clo_error_exitcode) > 0
-          && VG_(get_n_errs_found)() > 0) {
-         VG_(client_exit)( VG_(clo_error_exitcode) );
-      } else {
-         /* otherwise, return the client's exit code, in the normal
-            way. */
-         VG_(client_exit)( VG_(threads)[tid].os_state.exitcode );
-      }
+      VG_(client_exit)(tid_exit_code (tid));
       /* NOT ALIVE HERE! */
       VG_(core_panic)("entered the afterlife in main() -- ExitT/P");
       break; /* what the hell :) */
@@ -3272,6 +3291,47 @@ void _start_in_C_solaris ( UWord* pArgc )
 /*====================================================================*/
 #elif defined(VGO_freebsd)
 
+/*
+ * Could probably extract __FreeBSD_version at configure time
+ */
+/* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
+#include <sys/param.h>       /* __FreeBSD_version */
+/* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
+
+/*
+ * We need to add two elf notes in order for image activator to parse
+ * additional binary properites.
+ * First note declares the ABI, second is the feature note.
+ * This is primarly used to turn off W^X policy for all valgrind tools,
+ * as they don't work with it enabled.
+ */
+
+/* Based on FreeBSD sources: lib/csu/common/crtbrand.S */
+asm("\n"
+    ".section .note.tag,\"aG\",%note,.freebsd.noteG,comdat\n"
+    ".p2align        2\n"
+    ".4byte          2f-1f\n"
+    ".4byte          4f-3f\n"
+    ".4byte          "VG_STRINGIFY(VKI_NT_FREEBSD_ABI_TAG)"\n"
+"1:  .asciz          \"FreeBSD\"\n"
+"2:  .p2align        2\n"
+"3:  .4byte          "VG_STRINGIFY(__FreeBSD_version)"\n"
+"4:  .previous\n"
+);
+
+/* Based on FreeBSD sources: lib/csu/common/feature_note.S */
+asm("\n"
+    ".section .note.tag,\"a\",%note\n"
+    ".p2align        2\n"
+    ".4byte          2f-1f\n"
+    ".4byte          4f-3f\n"
+    ".4byte          "VG_STRINGIFY(VKI_NT_FREEBSD_FEATURE_CTL)"\n"
+"1:  .asciz          \"FreeBSD\"\n"
+"2:  .p2align        2\n"
+"3:  .4byte          "VG_STRINGIFY(VKI_NT_FREEBSD_FCTL_WXNEEDED)"\n"
+"4:  .previous\n"
+);
+
 #if defined(VGP_x86_freebsd)
 asm("\n"
     ".text\n"
@@ -3827,11 +3887,12 @@ UWord voucher_mach_msg_set ( UWord arg1 )
 
 #endif
 
-
+#if defined(VGO_freebsd)
 Word VG_(get_usrstack)(void)
 {
-   return VG_PGROUNDDN(the_iicii.clstack_end - the_iifii.clstack_max_size);
+   return VG_PGROUNDDN(the_iicii.clstack_end) + VKI_PAGE_SIZE;
 }
+#endif
 
 
 

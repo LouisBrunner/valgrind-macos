@@ -1,5 +1,5 @@
 /* Demangler for the D programming language
-   Copyright (C) 2014-2021 Free Software Foundation, Inc.
+   Copyright (C) 2014-2022 Free Software Foundation, Inc.
    Written by Iain Buclaw (ibuclaw@gdcproject.org)
 
 This file is part of the libiberty library.
@@ -269,15 +269,15 @@ dlang_hexdigit (const char *mangled, char *ret)
 
   c = mangled[0];
   if (!ISDIGIT (c))
-    (*ret) = (c - (ISUPPER (c) ? 'A' : 'a') + 10);
+    *ret = c - (ISUPPER (c) ? 'A' : 'a') + 10;
   else
-    (*ret) = (c - '0');
+    *ret = c - '0';
 
   c = mangled[1];
   if (!ISDIGIT (c))
-    (*ret) = (*ret << 4) | (c - (ISUPPER (c) ? 'A' : 'a') + 10);
+    *ret = (*ret << 4) | (c - (ISUPPER (c) ? 'A' : 'a') + 10);
   else
-    (*ret) = (*ret << 4) | (c - '0');
+    *ret = (*ret << 4) | (c - '0');
 
   mangled += 2;
 
@@ -354,7 +354,7 @@ dlang_decode_backref (const char *mangled, long *ret)
 static const char *
 dlang_backref (const char *mangled, const char **ret, struct dlang_info *info)
 {
-  (*ret) = NULL;
+  *ret = NULL;
 
   if (mangled == NULL || *mangled != 'Q')
     return NULL;
@@ -372,7 +372,7 @@ dlang_backref (const char *mangled, const char **ret, struct dlang_info *info)
     return NULL;
 
   /* Set the position of the back reference.  */
-  (*ret) = qpos - refpos;
+  *ret = qpos - refpos;
 
   return mangled;
 }
@@ -1666,12 +1666,18 @@ dlang_parse_qualified (string *decl, const char *mangled,
   size_t n = 0;
   do
     {
+      /* Skip over anonymous symbols.  */
+      if (*mangled == '0')
+      {
+	do
+	  mangled++;
+	while (*mangled == '0');
+
+	continue;
+      }
+
       if (n++)
 	string_append (decl, ".");
-
-      /* Skip over anonymous symbols.  */
-      while (*mangled == '0')
-	mangled++;
 
       mangled = dlang_identifier (decl, mangled, info);
 

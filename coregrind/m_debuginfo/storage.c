@@ -365,11 +365,6 @@ void ML_(addSym) ( struct _DebugInfo* di, DiSym* sym )
    vg_assert(sym->pri_name != NULL);
    vg_assert(sym->sec_names == NULL);
 
-#if defined(VGO_freebsd)
-   if (sym->size == 0)
-      sym->size = 1;
-#endif
-
    /* Ignore zero-sized syms. */
    if (sym->size == 0) return;
 
@@ -616,7 +611,7 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
    /* Rule out ones which are completely outside the r-x mapped area.
       See "Comment_Regarding_Text_Range_Checks" elsewhere in this file
       for background and rationale. */
-   vg_assert(di->fsm.have_rx_map && di->fsm.have_rw_map);
+   vg_assert(di->fsm.have_rx_map && di->fsm.rw_map_count);
    if (ML_(find_rx_mapping)(di, this, this + size - 1) == NULL) {
        if (0)
           VG_(message)(Vg_DebugMsg, 
@@ -798,7 +793,7 @@ void ML_(addDiCfSI) ( struct _DebugInfo* di,
                    "warning: DiCfSI %#lx .. %#lx is huge; length = %u (%s)\n",
                    base, base + len - 1, len, di->soname);
 
-   vg_assert(di->fsm.have_rx_map && di->fsm.have_rw_map);
+   vg_assert(di->fsm.have_rx_map && di->fsm.rw_map_count);
    /* Find mapping where at least one end of the CFSI falls into. */
    map  = ML_(find_rx_mapping)(di, base, base);
    map2 = ML_(find_rx_mapping)(di, base + len - 1,
@@ -1304,7 +1299,7 @@ void ML_(addVar)( struct _DebugInfo* di,
    /* This is assured us by top level steering logic in debuginfo.c,
       and it is re-checked at the start of
       ML_(read_elf_debug_info). */
-   vg_assert(di->fsm.have_rx_map && di->fsm.have_rw_map);
+   vg_assert(di->fsm.have_rx_map && di->fsm.rw_map_count);
    if (level > 0 && ML_(find_rx_mapping)(di, aMin, aMax) == NULL) {
       if (VG_(clo_verbosity) > 1) {
          VG_(message)(Vg_DebugMsg, 

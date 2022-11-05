@@ -24,13 +24,15 @@ usage: valgrind [options] prog-and-args
                               and follow the on-screen directions
     --vgdb-stop-at=event1,event2,... invoke gdbserver for given events [none]
          where event is one of:
-           startup exit valgrindabexit all none
+           startup exit abexit valgrindabexit all none
     --track-fds=no|yes|all    track open file descriptors? [no]
                               all includes reporting stdin, stdout and stderr
     --time-stamp=no|yes       add timestamps to log messages? [no]
     --log-fd=<number>         log messages to file descriptor [2=stderr]
     --log-file=<file>         log messages to <file>
     --log-socket=ipaddr:port  log messages to socket ipaddr:port
+    --enable-debuginfod=no|yes query debuginfod servers for missing
+                              debuginfo [yes]
 
   user options for Valgrind tools that report errors:
     --xml=yes                 emit error output in XML (some tools only)

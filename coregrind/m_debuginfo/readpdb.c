@@ -2363,7 +2363,7 @@ Bool ML_(read_pdb_debug_info)(
          map.rx   = False;
          map.rw   = True;
          VG_(addToXA)(di->fsm.maps, &map);
-         di->fsm.have_rw_map = True;
+         di->fsm.rw_map_count = 1;
 
          di->data_present = True;
          if (di->data_avma == 0) {
@@ -2385,7 +2385,7 @@ Bool ML_(read_pdb_debug_info)(
       }
    }
 
-   if (di->fsm.have_rx_map && di->fsm.have_rw_map && !di->have_dinfo) {
+   if (di->fsm.have_rx_map && di->fsm.rw_map_count && !di->have_dinfo) {
       vg_assert(di->fsm.filename);
       TRACE_SYMTAB("\n");
       TRACE_SYMTAB("------ start PE OBJECT with PDB INFO "

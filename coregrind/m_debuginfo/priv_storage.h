@@ -541,9 +541,9 @@ ML_(cmp_for_DiAddrRange_range) ( const void* keyV, const void* elemV );
    essentially an ultra-trivial finite state machine which, when it
    reaches an accept state, signals that we should now read debug info
    from the object into the associated struct _DebugInfo.  The accept
-   state is arrived at when have_rx_map and have_rw_map both become
-   true.  The initial state is one in which we have no observations,
-   so have_rx_map and have_rw_map are both false.
+   state is arrived at when have_rx_map is true and rw_map_count
+   is 1 or 2.  The initial state is one in which we have no observations,
+   so have_rx_map is false and rw_map_count is 0.
 
    This all started as a rather ad-hoc solution, but was further
    expanded to handle weird object layouts, e.g. more than one rw
@@ -585,7 +585,7 @@ struct _DebugInfoFSM
    HChar*  dbgname;   /* in mallocville (VG_AR_DINFO)               */
    XArray* maps;      /* XArray of DebugInfoMapping structs         */
    Bool  have_rx_map; /* did we see a r?x mapping yet for the file? */
-   Bool  have_rw_map; /* did we see a rw? mapping yet for the file? */
+   Int   rw_map_count; /* count of w? mappings seen (may be > 1 )   */
    Bool  have_ro_map; /* did we see a r-- mapping yet for the file? */
 };
 

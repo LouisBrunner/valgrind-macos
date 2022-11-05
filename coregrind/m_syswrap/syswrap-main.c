@@ -585,6 +585,11 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    UWord *stack = (UWord *)gst->guest_RSP;
 
    // FreeBSD supports different calling conventions
+   // @todo PJF this all seems over complicated to me
+   // SYSCALL_STD is OK but for the other
+   // two here we overwrite canonical->sysno with
+   // the final syscall number but then in do_syscall_for_client
+   // we switch real_syscallno back to __NR_syscall or __NR___syscall
    switch (gst->guest_RAX) {
    case __NR_syscall:
       canonical->klass = VG_FREEBSD_SYSCALL0;
@@ -595,7 +600,7 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       canonical->sysno = gst->guest_RDI;
       break;
    default:
-      canonical->klass = 0;
+      canonical->klass = VG_FREEBSD_SYSCALL_STD;
       canonical->sysno = gst->guest_RAX;
       break;
    }
@@ -3110,6 +3115,46 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
 #  else
 #    error "Unknown OS"
 #  endif
+
+#if defined(VGO_freebsd) || defined(VGO_darwin)
+  if (outside_range)
+  {
+     /* This is not guaranteed to work since the compiler / link editor
+        could lay out the binary functions in a different order to
+        the source file. However, it seems to work. */
+
+#if defined (VGA_amd64)
+
+     vg_assert((Addr)_______VVVVVVVV_after_GuestAMD64_put_rflag_c_VVVVVVVV_______ >
+               (Addr)LibVEX_GuestAMD64_put_rflag_c );
+
+     vg_assert(addr________VVVVVVVV_amd64g_calculate_rflags_all_WRK_VVVVVVVV_______ >
+               addr_amd64g_calculate_rflags_all_WRK);
+
+     if ((ip >= (Addr)LibVEX_GuestAMD64_put_rflag_c &&
+          ip <  (Addr)_______VVVVVVVV_after_GuestAMD64_put_rflag_c_VVVVVVVV_______) ||
+         (ip >= addr_amd64g_calculate_rflags_all_WRK &&
+         ip < addr________VVVVVVVV_amd64g_calculate_rflags_all_WRK_VVVVVVVV_______))
+#else
+
+     vg_assert((Addr)_______VVVVVVVV_after_LibVEX_GuestX86_put_eflag_c_VVVVVVVV_______ >
+               (Addr)LibVEX_GuestX86_put_eflag_c);
+ 
+     vg_assert(addr________VVVVVVVV_x86g_calculate_eflags_all_WRK_VVVVVVVV_______>
+              addr_x86g_calculate_eflags_all_WRK);
+
+     if ((ip >= (Addr)LibVEX_GuestX86_put_eflag_c &&
+         ip <  (Addr)_______VVVVVVVV_after_LibVEX_GuestX86_put_eflag_c_VVVVVVVV_______) ||
+         (ip >= addr_x86g_calculate_eflags_all_WRK &&
+          ip < addr________VVVVVVVV_x86g_calculate_eflags_all_WRK_VVVVVVVV_______))
+#endif
+     {
+        outside_range = False;
+        in_complete_to_committed = True;
+     }
+  }
+#endif
+
 
    /* Figure out what the state of the syscall was by examining the
       (real) IP at the time of the signal, and act accordingly. */

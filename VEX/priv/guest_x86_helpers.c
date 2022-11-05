@@ -567,6 +567,20 @@ UInt x86g_calculate_eflags_all_WRK ( UInt cc_op,
    }
 }
 
+#if defined(VGO_freebsd) || defined(VGO_darwin)
+
+/* see guest_amd64_helpers.c
+   Used in syswrap-main.c / VG_(post_syscall) for signal
+   resumption */
+
+static void _______VVVVVVVV_after_x86g_calculate_eflags_all_WRK_VVVVVVVV_______ (void)
+{
+}
+
+Addr addr_x86g_calculate_eflags_all_WRK = (Addr)x86g_calculate_eflags_all_WRK;
+Addr addr________VVVVVVVV_x86g_calculate_eflags_all_WRK_VVVVVVVV_______ = (Addr)_______VVVVVVVV_after_x86g_calculate_eflags_all_WRK_VVVVVVVV_______;
+#endif
+
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* Calculate all the 6 flags from the supplied thunk parameters. */
@@ -789,6 +803,15 @@ LibVEX_GuestX86_put_eflag_c ( UInt new_carry_flag,
    vex_state->guest_CC_DEP2 = 0;
    vex_state->guest_CC_NDEP = 0;
 }
+
+#if defined(VGO_freebsd) || defined(VGO_darwin)
+
+/* Used in syswrap-main.c / VG_(post_syscall) for signal resumption */
+
+void _______VVVVVVVV_after_LibVEX_GuestX86_put_eflag_c_VVVVVVVV_______ (void)
+{
+}
+#endif
 
 
 /*---------------------------------------------------------------*/

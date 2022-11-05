@@ -1,162 +1,172 @@
 Invalid write of size 4
-   at 0x........: main (realpathat.c:18)
+   at 0x........: main (realpathat.c:19)
  Address 0x........ is 0 bytes inside a block of size 1 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (realpathat.c:16)
 
 Invalid write of size 4
-   at 0x........: main (realpathat.c:19)
+   at 0x........: main (realpathat.c:20)
  Address 0x........ is 0 bytes inside a block of size 1 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (realpathat.c:17)
 
+Invalid write of size 4
+   at 0x........: main (realpathat.c:21)
+ Address 0x........ is 0 bytes inside a block of size 1 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (realpathat.c:18)
+
 Syscall param __realpathat(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (realpathat.c:20)
+   by 0x........: main (realpathat.c:22)
 
 Syscall param __realpathat(size) contains uninitialised byte(s)
    ...
-   by 0x........: main (realpathat.c:20)
+   by 0x........: main (realpathat.c:22)
+
+Syscall param __realpathat(flags) contains uninitialised byte(s)
+   ...
+   by 0x........: main (realpathat.c:22)
 
 Invalid read of size 1
    ...
-   by 0x........: main (realpathat.c:30)
+   by 0x........: main (realpathat.c:32)
  Address 0x........ is 0 bytes inside a block of size 31 free'd
    at 0x........: free (vg_replace_malloc.c:...)
-   by 0x........: main (realpathat.c:28)
+   by 0x........: main (realpathat.c:30)
  Block was alloc'd at
    at 0x........: malloc (vg_replace_malloc.c:...)
    ...
-   by 0x........: main (realpathat.c:26)
+   by 0x........: main (realpathat.c:28)
 
 Syscall param __realpathat(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (realpathat.c:30)
+   by 0x........: main (realpathat.c:32)
  Address 0x........ is 0 bytes inside a block of size 31 free'd
    at 0x........: free (vg_replace_malloc.c:...)
-   by 0x........: main (realpathat.c:28)
+   by 0x........: main (realpathat.c:30)
  Block was alloc'd at
    at 0x........: malloc (vg_replace_malloc.c:...)
    ...
-   by 0x........: main (realpathat.c:26)
+   by 0x........: main (realpathat.c:28)
 
 Syscall param __realpathat(buf) points to unaddressable byte(s)
    ...
-   by 0x........: main (realpathat.c:30)
+   by 0x........: main (realpathat.c:32)
  Address 0x........ is 0 bytes inside a block of size 100 free'd
    at 0x........: free (vg_replace_malloc.c:...)
-   by 0x........: main (realpathat.c:27)
+   by 0x........: main (realpathat.c:29)
  Block was alloc'd at
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (realpathat.c:25)
+   by 0x........: main (realpathat.c:27)
 
 Invalid read of size 1
    ...
-   by 0x........: main (realpathat.c:30)
+   by 0x........: main (realpathat.c:32)
  Address 0x........ is 0 bytes inside a block of size 31 free'd
    at 0x........: free (vg_replace_malloc.c:...)
-   by 0x........: main (realpathat.c:28)
+   by 0x........: main (realpathat.c:30)
  Block was alloc'd at
    at 0x........: malloc (vg_replace_malloc.c:...)
    ...
-   by 0x........: main (realpathat.c:26)
+   by 0x........: main (realpathat.c:28)
 
 Syscall param __getcwd(buf) points to unaddressable byte(s)
    ...
-   by 0x........: main (realpathat.c:30)
+   by 0x........: main (realpathat.c:32)
  Address 0x........ is 0 bytes inside a block of size 100 free'd
    at 0x........: free (vg_replace_malloc.c:...)
-   by 0x........: main (realpathat.c:27)
+   by 0x........: main (realpathat.c:29)
  Block was alloc'd at
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (realpathat.c:25)
+   by 0x........: main (realpathat.c:27)
 
 Invalid read of size 1
    at 0x........: strlcpy (vg_replace_strmem.c:...)
    ...
-   by 0x........: main (realpathat.c:30)
+   by 0x........: main (realpathat.c:32)
  Address 0x........ is 0 bytes inside a block of size 31 free'd
    at 0x........: free (vg_replace_malloc.c:...)
-   by 0x........: main (realpathat.c:28)
+   by 0x........: main (realpathat.c:30)
  Block was alloc'd at
    at 0x........: malloc (vg_replace_malloc.c:...)
    ...
-   by 0x........: main (realpathat.c:26)
+   by 0x........: main (realpathat.c:28)
 
 Invalid read of size 1
    at 0x........: strlcpy (vg_replace_strmem.c:...)
    ...
-   by 0x........: main (realpathat.c:30)
+   by 0x........: main (realpathat.c:32)
  Address 0x........ is 1 bytes inside a block of size 31 free'd
    at 0x........: free (vg_replace_malloc.c:...)
-   by 0x........: main (realpathat.c:28)
+   by 0x........: main (realpathat.c:30)
  Block was alloc'd at
    at 0x........: malloc (vg_replace_malloc.c:...)
    ...
-   by 0x........: main (realpathat.c:26)
+   by 0x........: main (realpathat.c:28)
 
 Invalid read of size 1
    at 0x........: strlcpy (vg_replace_strmem.c:...)
    ...
-   by 0x........: main (realpathat.c:30)
+   by 0x........: main (realpathat.c:32)
  Address 0x........ is 30 bytes inside a block of size 31 free'd
    at 0x........: free (vg_replace_malloc.c:...)
-   by 0x........: main (realpathat.c:28)
+   by 0x........: main (realpathat.c:30)
  Block was alloc'd at
    at 0x........: malloc (vg_replace_malloc.c:...)
    ...
-   by 0x........: main (realpathat.c:26)
+   by 0x........: main (realpathat.c:28)
 
 Invalid write of size 2
    ...
-   by 0x........: main (realpathat.c:30)
- Address 0x........ is 55 bytes inside a block of size 100 free'd
+   by 0x........: main (realpathat.c:32)
+ Address 0x........ is ... bytes inside a block of size 100 free'd
    at 0x........: free (vg_replace_malloc.c:...)
-   by 0x........: main (realpathat.c:27)
+   by 0x........: main (realpathat.c:29)
  Block was alloc'd at
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (realpathat.c:25)
+   by 0x........: main (realpathat.c:27)
 
 Invalid read of size 1
    at 0x........: strlcat (vg_replace_strmem.c:...)
    ...
-   by 0x........: main (realpathat.c:30)
- Address 0x........ is 56 bytes inside a block of size 100 free'd
+   by 0x........: main (realpathat.c:32)
+ Address 0x........ is ... bytes inside a block of size 100 free'd
    at 0x........: free (vg_replace_malloc.c:...)
-   by 0x........: main (realpathat.c:27)
+   by 0x........: main (realpathat.c:29)
  Block was alloc'd at
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (realpathat.c:25)
+   by 0x........: main (realpathat.c:27)
 
 Invalid write of size 1
    at 0x........: strlcat (vg_replace_strmem.c:...)
    ...
-   by 0x........: main (realpathat.c:30)
- Address 0x........ is 56 bytes inside a block of size 100 free'd
+   by 0x........: main (realpathat.c:32)
+ Address 0x........ is ... bytes inside a block of size 100 free'd
    at 0x........: free (vg_replace_malloc.c:...)
-   by 0x........: main (realpathat.c:27)
+   by 0x........: main (realpathat.c:29)
  Block was alloc'd at
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (realpathat.c:25)
+   by 0x........: main (realpathat.c:27)
 
 Invalid write of size 1
    at 0x........: strlcat (vg_replace_strmem.c:...)
    ...
-   by 0x........: main (realpathat.c:30)
- Address 0x........ is 66 bytes inside a block of size 100 free'd
+   by 0x........: main (realpathat.c:32)
+ Address 0x........ is ... bytes inside a block of size 100 free'd
    at 0x........: free (vg_replace_malloc.c:...)
-   by 0x........: main (realpathat.c:27)
+   by 0x........: main (realpathat.c:29)
  Block was alloc'd at
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (realpathat.c:25)
+   by 0x........: main (realpathat.c:27)
 
 Syscall param fstatat(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (realpathat.c:30)
- Address 0x........ is 56 bytes inside a block of size 100 free'd
+   by 0x........: main (realpathat.c:32)
+ Address 0x........ is ... bytes inside a block of size 100 free'd
    at 0x........: free (vg_replace_malloc.c:...)
-   by 0x........: main (realpathat.c:27)
+   by 0x........: main (realpathat.c:29)
  Block was alloc'd at
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (realpathat.c:25)
+   by 0x........: main (realpathat.c:27)
 

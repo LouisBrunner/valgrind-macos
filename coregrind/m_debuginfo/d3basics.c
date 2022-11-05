@@ -435,6 +435,37 @@ const HChar* ML_(pp_DW_AT) ( DW_AT attr )
    return "DW_AT_???";
 }
 
+const HChar* ML_(pp_DW_LLE) ( DW_LLE entry )
+{
+   switch (entry) {
+      case DW_LLE_end_of_list: return "DW_LLE_end_of_list";
+      case DW_LLE_base_addressx: return "DW_LLE_base_addressx";
+      case DW_LLE_startx_endx: return "DW_LLE_startx_endx";
+      case DW_LLE_startx_length: return "DW_LLE_startx_length";
+      case DW_LLE_offset_pair: return "DW_LLE_offset_pair";
+      case DW_LLE_default_location: return "DW_LLE_default_location";
+      case DW_LLE_base_address: return "DW_LLE_base_address";
+      case DW_LLE_start_end: return "DW_LLE_start_end";
+      case DW_LLE_start_length: return "DW_LLE_start_length";
+      case DW_LLE_GNU_view_pair: return "DW_LLE_GNU_view_pair";
+   }
+   return "DW_LLE_???";
+}
+
+const HChar* ML_(pp_DW_RLE) ( DW_RLE entry )
+{
+   switch (entry) {
+      case DW_RLE_end_of_list: return "DW_RLE_end_of_list";
+      case DW_RLE_base_addressx: return "DW_RLE_base_addressx";
+      case DW_RLE_startx_endx: return "DW_RLE_startx_endx";
+      case DW_RLE_startx_length: return "DW_RLE_startx_length";
+      case DW_RLE_offset_pair: return "DW_RLE_offset_pair";
+      case DW_RLE_base_address: return "DW_RLE_base_address";
+      case DW_RLE_start_end: return "DW_RLE_start_end";
+      case DW_RLE_start_length: return "DW_RLE_start_length";
+   }
+   return "DW_RLE_???";
+}
 
 /* ------ To do with evaluation of Dwarf expressions ------ */
 

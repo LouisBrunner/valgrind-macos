@@ -1,0 +1,3 @@
+prog: pth_mempcpy_false_races
+vgopts: -q
+stdout_filter: ../../gdbserver_tests/filter_make_empty

@@ -33,7 +33,7 @@ To set up nightly testing for a machine, do the following.
 
 (1) Clone a shallow copy from the repository, eg:
 
-        git clone --depth 1 git://sourceware.org/git/valgrind.git/ $DIR
+        git clone --depth 1 https://sourceware.org/git/valgrind.git/ $DIR
 
     where $DIR is the name of the directory you want it to be in.
     You'll probably want to include "nightly" in the directory name.

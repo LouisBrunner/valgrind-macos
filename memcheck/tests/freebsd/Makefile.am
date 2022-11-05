@@ -2,7 +2,7 @@
 include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_stderr filter_pts dump_stdout filter_sigwait \
-	filter_scalar
+	filter_scalar filter_realpathat filter_fstat
 
 EXTRA_DIST = \
 	scalar.h \
@@ -79,14 +79,20 @@ EXTRA_DIST = \
 	eventfd1.vgtest \
 	eventfd1.stderr.exp eventfd1.stdout.exp \
 	eventfd2.vgtest \
-	eventfd2.stderr.exp eventfd2.stdout.exp
+	eventfd2.stderr.exp eventfd2.stdout.exp \
+	errno_aligned_allocs.vgtest \
+	errno_aligned_allocs.stderr.exp \
+	setproctitle.vgtest \
+	setproctitle.stderr.exp \
+	setproctitle.stdout.exp
 
 check_PROGRAMS = \
 	statfs pdfork_pdkill getfsstat inlinfo inlinfo_nested.so extattr \
 	sigwait chflags get_set_login revoke scalar capsicum getfh \
 	linkat scalar_fork scalar_thr_exit scalar_abort2 scalar_pdfork \
 	scalar_vfork stat file_locking_wait6 utimens access chmod_chown \
-	misc get_set_context utimes static_allocs fexecve
+	misc get_set_context utimes static_allocs fexecve errno_aligned_allocs \
+	setproctitle
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
@@ -106,3 +112,5 @@ scalar_13_plus_CFLAGS = ${AM_CFLAGS} -g
 endif
 
 scalar_CFLAGS = ${AM_CFLAGS} -g
+
+errno_aligned_allocs_CFLAGS = ${AM_CFLAGS} -Wno-non-power-of-two-alignment

@@ -2,5 +2,5 @@
 # the post-processing of the cgout-test file.
 prog: ../../tests/true
 vgopts: --callgrind-out-file=callgrind.out
-post: perl ../../callgrind/callgrind_annotate --show=Ir,I1mr,ILmr --show-percs=no --include=../../cachegrind/tests ../../cachegrind/tests/cgout-test
+post: touch ../../cachegrind/tests/cgout-test && perl ../../callgrind/callgrind_annotate --show=Ir,I1mr,ILmr --show-percs=no --include=../../cachegrind/tests ../../cachegrind/tests/cgout-test
 cleanup: rm callgrind.out

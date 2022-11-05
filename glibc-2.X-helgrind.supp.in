@@ -49,7 +49,8 @@
 {
    helgrind-glibc-io-xsputn-mempcpy
    Helgrind:Race
-   fun:__GI_mempcpy
+   fun:*mem*cpy
+   ...
    fun:_IO_*xsputn*
    obj:@GLIBC_LIBC_PATH@
 }

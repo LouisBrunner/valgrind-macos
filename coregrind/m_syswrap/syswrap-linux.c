@@ -70,11 +70,12 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
 {
    VgSchedReturnCode ret;
    ThreadId     tid = (ThreadId)tidW;
+   Int          lwpid = VG_(gettid)();
    ThreadState* tst = VG_(get_ThreadState)(tid);
 
-   VG_(debugLog)(1, "syswrap-linux", 
-                    "thread_wrapper(tid=%u): entry\n", 
-                    tid);
+   VG_(debugLog)(1, "syswrap-linux",
+                    "thread_wrapper(tid=%u,lwpid=%d): entry\n",
+                    tid, lwpid);
 
    vg_assert(tst->status == VgTs_Init);
 
@@ -90,7 +91,7 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
 
    VG_TRACK(pre_thread_first_insn, tid);
 
-   tst->os_state.lwpid = VG_(gettid)();
+   tst->os_state.lwpid = lwpid;
    /* Set the threadgroup for real.  This overwrites the provisional value set
       in do_clone().  See comments in do_clone for background, also #226116. */
    tst->os_state.threadgroup = VG_(getpid)();
@@ -101,13 +102,13 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
    ret = VG_(scheduler)(tid);
 
    vg_assert(VG_(is_exiting)(tid));
-   
+
    vg_assert(tst->status == VgTs_Runnable);
    vg_assert(VG_(is_running_thread)(tid));
 
-   VG_(debugLog)(1, "syswrap-linux", 
-                    "thread_wrapper(tid=%u): exit, schedreturncode %s\n", 
-                    tid, VG_(name_of_VgSchedReturnCode)(ret));
+   VG_(debugLog)(1, "syswrap-linux",
+                    "thread_wrapper(tid=%u,lwpid=%d): exit, schedreturncode %s\n",
+                    tid, lwpid, VG_(name_of_VgSchedReturnCode)(ret));
 
    /* Return to caller, still holding the lock. */
    return ret;
@@ -4116,6 +4117,24 @@ POST(sys_memfd_create)
    }
 }
 
+PRE(sys_memfd_secret)
+{
+   PRINT("sys_memfd_secret ( %#" FMT_REGWORD "x )", ARG1);
+   PRE_REG_READ1(int, "memfd_secret", unsigned int, flags);
+}
+
+POST(sys_memfd_secret)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "memfd_secret", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_nameless)(tid, RES);
+   }
+}
+
 PRE(sys_membarrier)
 {
    PRINT("sys_membarrier ( %#" FMT_REGWORD "x )", ARG1);
@@ -4774,10 +4793,20 @@ PRE(sys_ipc)
       break;
    }
    case VKI_SEMTIMEDOP:
+#ifdef VGP_s390x_linux
+      /* On s390x Linux platforms the sys_ipc semtimedop call has four instead
+         of five parameters, where the timeout is passed in the third instead of
+         the fifth. */
+      PRE_REG_READ5(int, "ipc",
+                    vki_uint, call, int, first, int, second, long, third,
+                    void *, ptr);
+      ML_(generic_PRE_sys_semtimedop)( tid, ARG2, ARG5, ARG3, ARG4 );
+#else
       PRE_REG_READ6(int, "ipc",
                     vki_uint, call, int, first, int, second, int, third,
                     void *, ptr, long, fifth);
       ML_(generic_PRE_sys_semtimedop)( tid, ARG2, ARG5, ARG3, ARG6 );
+#endif
       *flags |= SfMayBlock;
       break;
    case VKI_MSGSND:
@@ -12910,8 +12939,9 @@ PRE(sys_bpf)
                break;
             }
             /* Name is limited to 128 characters in kernel/bpf/syscall.c. */
-            pre_asciiz_str(tid, attr->raw_tracepoint.name, 128,
-                           "bpf(attr->raw_tracepoint.name)");
+            if (attr->raw_tracepoint.name != 0)
+               pre_asciiz_str(tid, attr->raw_tracepoint.name, 128,
+                              "bpf(attr->raw_tracepoint.name)");
          }
          break;
       case VKI_BPF_BTF_LOAD:
@@ -13206,7 +13236,7 @@ POST(sys_io_uring_setup)
       SET_STATUS_Failure( VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)(Addr)ARG1);
+         ML_(record_fd_open_nameless)(tid, RES);
       POST_MEM_WRITE(ARG2 + offsetof(struct vki_io_uring_params, sq_off),
                      sizeof(struct vki_io_sqring_offsets) +
                      sizeof(struct vki_io_cqring_offsets));
@@ -13273,7 +13303,7 @@ PRE(sys_execveat)
    return;
 #endif
 
-   char *path = (char*) ARG2;
+   const HChar *path = (const HChar*) ARG2;
    Addr arg_2    = ARG3;
    Addr arg_3    = ARG4;
    const HChar   *buf;
@@ -13296,7 +13326,7 @@ PRE(sys_execveat)
            if (path[0] == '\0') {
                if (ARG5 & VKI_AT_EMPTY_PATH) {
                    if (VG_(resolve_filename)(ARG1, &buf)) {
-                       VG_(strcpy)(path, buf);
+                       path = buf;
                        check_pathptr = False;
                    }
                }

@@ -78,11 +78,12 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
 {
    VgSchedReturnCode ret;
    ThreadId     tid = (ThreadId)tidW;
+   Int          lwpid = VG_(gettid)();
    ThreadState* tst = VG_(get_ThreadState)(tid);
 
    VG_(debugLog)(1, "syswrap-freebsd",
-                 "thread_wrapper(tid=%u): entry\n",
-                 tid);
+                 "thread_wrapper(tid=%u,lwpid=%d): entry\n",
+                 tid, lwpid);
 
    vg_assert(tst->status == VgTs_Init);
 
@@ -98,7 +99,7 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
 
    VG_TRACK(pre_thread_first_insn, tid);
 
-   tst->os_state.lwpid = VG_(gettid)();
+   tst->os_state.lwpid = lwpid;
    /* Set the threadgroup for real.  This overwrites the provisional value set
       in do_clone().  See comments in do_clone for background, also #226116. */
    tst->os_state.threadgroup = VG_(getpid)();
@@ -114,8 +115,8 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
    vg_assert(VG_(is_running_thread)(tid));
 
    VG_(debugLog)(1, "syswrap-freebsd",
-                 "thread_wrapper(tid=%u): exit, schedreturncode %s\n",
-                 tid, VG_(name_of_VgSchedReturnCode)(ret));
+                 "thread_wrapper(tid=%u,lwpid=%d): exit, schedreturncode %s\n",
+                 tid, lwpid, VG_(name_of_VgSchedReturnCode)(ret));
 
    /* Return to caller, still holding the lock. */
    return ret;
@@ -1326,6 +1327,16 @@ PRE(sys_fcntl)
                     int, fd, int, cmd,
                     struct flock *, lock);
       break;
+   case VKI_F_KINFO:
+      PRINT("sys_fcntl[ARG3=='kinfo_file'] ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )", ARG1,ARG2,ARG3);
+      PRE_REG_READ3(int, "fcntl",
+                    int, fd, int, cmd,
+                    struct vki_kinfo_file *, kinfo);
+      if (ARG3) {
+         struct vki_kinfo_file* p_kinfo_file = (struct vki_kinfo_file*)ARG3;
+         PRE_MEM_WRITE("fcntl(ARG3=='kinfo_file)", ARG3, p_kinfo_file->vki_kf_structsize);
+      }
+      break;
 
    default:
       PRINT("sys_fcntl[UNKNOWN] ( %lu, %lu, %lu )", ARG1,ARG2,ARG3);
@@ -1754,7 +1765,7 @@ PRE(sys_seteuid)
 // int stat(char *path, struct freebsd11_stat *sb);
 PRE(sys_freebsd11_stat)
 {
-   PRINT("sys_stat ( %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x )",ARG1,(char *)ARG1,ARG2);
+   PRINT("sys_freebsd11_stat ( %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x )",ARG1,(char *)ARG1,ARG2);
    PRE_REG_READ2(int, "stat", char *, path, struct freebsd11_stat *, sb);
    PRE_MEM_RASCIIZ( "stat(path)", ARG1 );
    PRE_MEM_WRITE( "stat(sb)", ARG2, sizeof(struct vki_freebsd11_stat) );
@@ -1783,7 +1794,7 @@ POST(sys_freebsd11_fstat)
 // int lstat(const char * restrict path, struct stat * restrict sb);
 PRE(sys_freebsd11_lstat)
 {
-   PRINT("sys_lstat ( %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x )",ARG1,(char *)ARG1,ARG2);
+   PRINT("sys_freebsd11_lstat ( %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x )",ARG1,(char *)ARG1,ARG2);
    PRE_REG_READ2(sb, "lstat", const char *, path, struct freebsd11_stat *, sb);
    PRE_MEM_RASCIIZ( "lstat(path)", ARG1 );
    PRE_MEM_WRITE( "lstat(sb)", ARG2, sizeof(struct vki_freebsd11_stat) );
@@ -1933,6 +1944,29 @@ POST(sys_getdirentries)
 // freebsd6_ftruncate 201 FREEBSD_VERS <= 10
 // x86/amd64
 
+static Bool sysctl_kern_ps_strings(SizeT* out, SizeT* outlen)
+{
+   Word tmp = -1;
+   const struct auxv *cauxv;
+
+   for (cauxv = (struct auxv*)VG_(client_auxv); cauxv->a_type != VKI_AT_NULL; cauxv++) {
+      if (cauxv->a_type == VKI_AT_PS_STRINGS) {
+         tmp = (Word)cauxv->u.a_ptr;
+
+         *out = tmp;
+         *outlen = sizeof(size_t);
+         return True;
+      }
+   }
+   return False;
+}
+
+static void sysctl_kern_usrstack(SizeT* out, SizeT* outlen)
+{
+   *out = VG_(get_usrstack)();
+   *outlen = sizeof(ULong);
+}
+
 // SYS___sysctl   202
 /* int __sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen); */
 /*               ARG1        ARG2          ARG3         ARG4           ARG5        ARG6 */
@@ -1988,7 +2022,7 @@ PRE(sys___sysctl)
    /*
     * Special handling cases
     *
-    * 1. kern.userstack
+    * 1. kern.usrstack
     *    This sysctl returns the address of the bottom of the user stack
     *    (that is the highest user stack address, since the stack grows
     *    downwards). Without any special handling this would return the
@@ -2000,16 +2034,22 @@ PRE(sys___sysctl)
     */
    if (SARG2 >= 2 && ML_(safe_to_deref)(name, 2*sizeof(int))) {
       if (name[0] == 1 && name[1] == 33) {
-         // kern.userstack
-         Word tmp = VG_(get_usrstack)();
-         size_t* out = (size_t*)ARG3;
-         size_t* outlen = (size_t*)ARG4;
-         *out = tmp;
-         *outlen = sizeof(size_t);
+         // kern.usrstack
+         sysctl_kern_usrstack((SizeT*)ARG3, (SizeT*)ARG4);
          SET_STATUS_Success(0);
       }
    }
 
+   /*
+    * 2. kern.ps_strings
+    */
+   if (SARG2 >= 2 && ML_(safe_to_deref)(name, 2*sizeof(int))) {
+      if (name[0] == 1 && name[1] == 32) {
+         if (sysctl_kern_ps_strings((SizeT*)ARG3, (SizeT*)ARG4)) {
+           SET_STATUS_Success(0);
+         }
+      }
+   }
 
    PRE_REG_READ6(int, "__sysctl", int *, name, vki_u_int32_t, namelen, void *, oldp,
                  vki_size_t *, oldlenp, void *, newp, vki_size_t, newlen);
@@ -3856,6 +3896,16 @@ POST(sys_swapcontext)
       POST_MEM_WRITE( ARG1, sizeof(struct vki_ucontext) );
 }
 
+#if (FREEBSD_VERS >= FREEBSD_13_1)
+// SYS_freebsd13_swapoff 424
+// int swapoff(const char *special);
+PRE(sys_freebsd13_swapoff)
+{
+   PRINT("sys_freebsd13_swapoff ( %#" FMT_REGWORD "x(%s) )", ARG1,(char *)ARG1);
+   PRE_REG_READ1(int, "swapoff", const char *, special);
+   PRE_MEM_RASCIIZ( "swapoff(special)", ARG1 );
+}
+#else
 // SYS_swapoff 424
 // int swapoff(const char *special);
 PRE(sys_swapoff)
@@ -3864,6 +3914,7 @@ PRE(sys_swapoff)
    PRE_REG_READ1(int, "swapoff", const char *, special);
    PRE_MEM_RASCIIZ( "swapoff(special)", ARG1 );
 }
+#endif
 
 // SYS___acl_get_link   425
 // int __acl_get_link(const char *path, acl_type_t type, struct acl *aclp);
@@ -5180,7 +5231,8 @@ PRE(sys_symlinkat)
 PRE(sys_unlinkat)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_unlinkat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s) )", ARG1,ARG2,(char*)ARG2);
+   PRINT("sys_unlinkat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u ",
+         ARG1, ARG2, (char*)ARG2, ARG3);
    PRE_REG_READ3(int, "unlinkat", int, fd, const char *, path, int, flag);
    PRE_MEM_RASCIIZ( "unlinkat(path)", ARG2 );
 }
@@ -5462,10 +5514,30 @@ PRE(sys_pdkill)
       return;
    }
 
-   /* If we're sending SIGKILL, check to see if the target is one of
-      our threads and handle it specially. */
-   if (ARG2 == VKI_SIGKILL && ML_(do_sigkill)(ARG1, -1))
-      SET_STATUS_Success(0);
+   /* Ther was some code here to check if the kill is to this process
+    *
+    * But it was totally wrong
+    *
+    * It was calling ML_(do_sigkill)(Int pid, Int tgid)
+    *
+    * With a file descriptor
+    *
+    * Fortunately this will never match a real process otherwise
+    * it might have accidentally killed us.
+    *
+    * For a start we need the pid, obtained with pdgetpid
+    * Next ML_(do_sigkill) doesn't map to FreeBSD. It takes a
+    * pid (lwpid) and a tgid (threadgroup)
+    *
+    * On FreeBSD lwpid is the tid and threadgroup is the pid
+    * The kill functions operate on pids, not tids.
+    *
+    * One last thing, I don't see how pdkill could do a self
+    * kill 9. It neads an fd which implied pdfork whichimplies
+    * that the fd/pid are for a child process
+    */
+
+   SET_STATUS_from_SysRes(VG_(do_syscall2)(SYSNO, ARG1, ARG2));
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg, "pdkill: sent signal %ld to fd %ld\n",
@@ -6145,6 +6217,50 @@ POST(sys_fhreadlink)
 
 #if (FREEBSD_VERS >= FREEBSD_12_2)
 
+// SYS_unlinkat   568
+// int funlinkat(int dfd, const char *path, int fd, int flag);
+PRE(sys_funlinkat)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_funlinkat ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u, %" FMT_REGWORD"u )",
+         SARG1, ARG2, (char*)ARG2, ARG4, ARG5);
+   PRE_REG_READ4(int, "funlinkat", int, dfd, const char *, path, int, fd, int, flag);
+   PRE_MEM_RASCIIZ( "funlinkat(path)", ARG2 );
+}
+
+// SYS_copy_file_range 569
+// ssize_t copy_file_range(int infd, off_t *inoffp, int outfd, off_t *outoffp,
+//                         size_t len, unsigned int flags);
+PRE(sys_copy_file_range)
+{
+  PRINT("sys_copy_file_range (%" FMT_REGWORD"d, %#" FMT_REGWORD "x, %" FMT_REGWORD "d, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "d, %" FMT_REGWORD "d)",
+        SARG1, ARG2, SARG3, ARG4, (char*)ARG4, SARG5, SARG6);
+
+  PRE_REG_READ6(vki_ssize_t, "copy_file_range",
+                int, "infd",
+                vki_off_t *, "inoffp",
+                int, "outfd",
+                vki_off_t *, "outoffp",
+                vki_size_t, "len",
+                unsigned int, "flags");
+
+  /* File descriptors are "specially" tracked by valgrind.
+     valgrind itself uses some, so make sure someone didn't
+     put in one of our own...  */
+  if (!ML_(fd_allowed)(ARG1, "copy_file_range(infd)", tid, False) ||
+      !ML_(fd_allowed)(ARG3, "copy_file_range(infd)", tid, False)) {
+     SET_STATUS_Failure( VKI_EBADF );
+  } else {
+     /* Now see if the offsets are defined. PRE_MEM_READ will
+        double check it can dereference them. */
+     if (ARG2 != 0)
+        PRE_MEM_READ( "copy_file_range(inoffp)", ARG2, sizeof(vki_off_t));
+     if (ARG4 != 0)
+        PRE_MEM_READ( "copy_file_range(outoffp)", ARG4, sizeof(vki_off_t));
+  }
+}
+
+
 // SYS___sysctlbyname 570
 // int sysctlbyname(const char *name, void *oldp, size_t *oldlenp,
 //                  const void *newp, size_t newlen);
@@ -6162,6 +6278,22 @@ PRE(sys___sysctlbyname)
    PRE_REG_READ6(int, "__sysctlbyname", const char *, name, vki_size_t, namelen,
                  void *, oldp, vki_size_t *, oldlenp,
                  void *, newp, vki_size_t, newlen);
+
+
+   const char* name = (const char*)ARG1;
+   if (ML_(safe_to_deref)(name, sizeof("kern.ps_strings")) &&
+       VG_(strcmp)(name, "kern.ps_strings") == 0) {
+      if (sysctl_kern_ps_strings((SizeT*)ARG3, (SizeT*)ARG4)) {
+         SET_STATUS_Success(0);
+      }
+   }
+
+   if (ML_(safe_to_deref)(name, sizeof("kern.usrstack")) &&
+      VG_(strcmp)(name, "kern.usrstack") == 0) {
+      sysctl_kern_usrstack((SizeT*)ARG3, (SizeT*)ARG4);
+      SET_STATUS_Success(0);
+   }
+
    // read number of ints specified in ARG2 from mem pointed to by ARG1
    PRE_MEM_READ("__sysctlbyname(name)", (Addr)ARG1, ARG2 * sizeof(int));
 
@@ -6184,7 +6316,7 @@ PRE(sys___sysctlbyname)
          if (ML_(safe_to_deref)((void*)(Addr)ARG4, sizeof(vki_size_t))) {
             PRE_MEM_WRITE("__sysctlbyname(oldp)", (Addr)ARG3, *(vki_size_t *)ARG4);
          } else {
-            VG_(dmsg)("Warning: Bad oldlenp address %p in sysctl\n",
+            VG_(dmsg)("Warning: Bad oldlenp address %p in sysctlbyname\n",
                       (void *)(Addr)ARG4);
             SET_STATUS_Failure ( VKI_EFAULT );
          }
@@ -6208,9 +6340,55 @@ POST(sys___sysctlbyname)
 
 #endif // (FREEBSD_VERS >= FREEBSD_12_2)
 
-#if (FREEBSD_VERS >= FREEBSD_13)
+#if (FREEBSD_VERS >= FREEBSD_13_0)
 
-// SYS___realpathat 474
+// SYS_shm_open2   571
+// from syscalls.master
+// int shm_open2(_In_z_ const char *path,
+//               int flags,
+//               mode_t mode,
+//               int shmflags,
+//               _In_z_ const char *name);
+PRE(sys_shm_open2)
+{
+   PRE_REG_READ5(int, "shm_open2",
+                 const char *, path, int, flags, vki_mode_t, mode, int, shmflags, const char*, name);
+   if (ARG1 == VKI_SHM_ANON) {
+      PRINT("sys_shm_open2(%#" FMT_REGWORD "x(SHM_ANON), %" FMT_REGWORD "u, %hu, %d, %#" FMT_REGWORD "x(%s))",
+            ARG1, ARG2, (vki_mode_t)ARG3, (Int)ARG4, ARG5, (HChar*)ARG5);
+   } else {
+      PRINT("sys_shm_open2(%#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u, %hu, %d, %#" FMT_REGWORD "x(%s))",
+            ARG1, (HChar *)ARG1, ARG2, (vki_mode_t)ARG3, (Int)ARG4, ARG5, (HChar*)ARG5);
+      PRE_MEM_RASCIIZ( "shm_open2(path)", ARG1 );
+   }
+
+   if (ARG5) {
+      PRE_MEM_RASCIIZ( "shm_open2(name)", ARG5 );
+   }
+   *flags |= SfMayBlock;
+}
+
+POST(sys_shm_open2)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "shm_open2", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)ARG1);
+   }
+}
+
+// SYS_sigfastblock
+// int sigfastblock(int cmd, void *ptr);
+PRE(sys_sigfastblock)
+{
+   PRINT("sys_sigfastblock ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x )", SARG1, ARG2);
+   PRE_REG_READ2(int, "sigfasblock", int, cmd, void*, ptr);
+}
+
+// SYS___realpathat 574
 // from syscalls.master
 //         int __realpathat(int fd,
 //         _In_z_ const char *path,
@@ -6245,7 +6423,20 @@ PRE(sys___specialfd)
    PRE_MEM_READ("__specialfd(req)", (Addr)ARG2, ARG3);
 }
 
-#endif // (FREEBSD_VERS >= FREEBSD_13)
+#endif // (FREEBSD_VERS >= FREEBSD_13_0)
+
+#if (FREEBSD_VERS >= FREEBSD_13_1)
+
+// SYS_swapoff 582
+// int swapoff(const char *special, u_int flags);
+PRE(sys_swapoff)
+{
+   PRINT("sys_swapoff ( %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u )", ARG1,(char *)ARG1, ARG2);
+   PRE_REG_READ2(int, "swapoff", const char *, special, u_int, flags);
+   PRE_MEM_RASCIIZ( "swapoff(special)", ARG1 );
+}
+
+#endif
 
 #undef PRE
 #undef POST
@@ -6751,7 +6942,11 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    BSDX_(__NR_setcontext,       sys_setcontext),        // 422
    BSDXY(__NR_swapcontext,      sys_swapcontext),       // 423
 
+#if (FREEBSD_VERS >= FREEBSD_13_1)
+   BSDX_(__NR_freebsd13_swapoff, sys_freebsd13_swapoff), // 424
+#else
    BSDX_(__NR_swapoff,          sys_swapoff),           // 424
+#endif
    BSDXY(__NR___acl_get_link,   sys___acl_get_link),    // 425
    BSDX_(__NR___acl_set_link,   sys___acl_set_link),    // 426
    BSDX_(__NR___acl_delete_link, sys___acl_delete_link), // 427
@@ -6936,24 +7131,30 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 #endif // FREEBSD_VERS >= FREEBSD_12
 
 #if (FREEBSD_VERS >= FREEBSD_12_2)
-   // unimpl __NR_funlinkat           568
-   // unimpl __NR_copy_file_range     569
+   BSDX_(__NR_funlinkat,        sys_funlinkat),         // 568
+   BSDX_(__NR_copy_file_range,  sys_copy_file_range),   // 569
    BSDXY(__NR___sysctlbyname,   sys___sysctlbyname),    // 570
 
-#if (FREEBSD_VERS >= FREEBSD_13)
-   // unimpl __NR_shm_open2           571
+#if (FREEBSD_VERS >= FREEBSD_13_0)
+   BSDXY(__NR_shm_open2,        sys_shm_open2),         // 571
    // unimpl __NR_shm_rename          572
-   // unimpl __NR_sigfastblock        573
+   BSDX_(__NR_sigfastblock,     sys_sigfastblock),      // 573
    BSDXY( __NR___realpathat,    sys___realpathat),      // 574
 #endif
    // unimpl __NR_close_range         575
 #endif
 
-#if (FREEBSD_VERS >= FREEBSD_13)
+#if (FREEBSD_VERS >= FREEBSD_13_0)
    // unimpl __NR_rpctls_syscall      576
    BSDX_(__NR___specialfd,      sys___specialfd),       // 577
    // unimpl __NR_aio_writev          578
    // unimpl __NR_aio_readv           579
+#endif
+
+#if (FREEBSD_VERS >= FREEBSD_13_1)
+   // unimpl __NR_fspacectl           580
+   // unimpl __NR_sched_getcpu        581
+   BSDX_(__NR_swapoff,          sys_swapoff),           // 582
 #endif
 
    BSDX_(__NR_fake_sigreturn,   sys_fake_sigreturn),    // 1000, fake sigreturn

@@ -29,8 +29,17 @@
 
 #include "config.h"
 
+// this is the syscall format used by e.g., libc functions like 'write'
+// this is the one used 99.999% of the time
+// the two others are only for experimental or testing use
+// (but we use them in the scalar tests).
 #define VG_FREEBSD_SYSCALL_STD 0
+// this is the syscall format used by 'syscall'
 #define VG_FREEBSD_SYSCALL0    1
+// this is the syscall format used by '__syscall'
+// it is the same as VG_FREEBSD_SYSCALL0 except that
+// it ensures that 64bit argument alignment is correct
+// that makes no difference for amd64, x86 not sure
 #define VG_FREEBSD_SYSCALL198  2
 
 // From sys/syscall.h
@@ -458,7 +467,11 @@
 #define __NR_getcontext          421
 #define __NR_setcontext          422
 #define __NR_swapcontext         423
+#if (FREEBSD_VERS >= FREEBSD_13_1)
+#define __NR_freebsd13_swapoff   424
+#else
 #define __NR_swapoff             424
+#endif
 #define __NR___acl_get_link      425
 #define __NR___acl_set_link      426
 #define __NR___acl_delete_link   427
@@ -640,12 +653,20 @@
 
 #endif
 
-#if (FREEBSD_VERS >= FREEBSD_13)
+#if (FREEBSD_VERS >= FREEBSD_13_0)
 
 #define __NR_rpctls_syscall      576
 #define __NR___specialfd         577
 #define __NR_aio_writev          578
 #define __NR_aio_readv           579
+
+#endif
+
+#if (FREEBSD_VERS >= FREEBSD_13_1)
+
+#define __NR_fspacectl           580
+#define __NR_sched_getcpu        581
+#define __NR_swapoff             582
 
 #endif
 

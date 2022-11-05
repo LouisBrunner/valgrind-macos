@@ -541,6 +541,10 @@ Syscall param execve(filename) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
+Syscall param execve(argv) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
 ---------------------------------------------------------
  60:               SYS_umask 1s 0m
 ---------------------------------------------------------
@@ -5286,7 +5290,7 @@ Syscall param __sysctlbyname(oldlenp) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-Warning: Bad oldlenp address 0x........ in sysctl
+Warning: Bad oldlenp address 0x........ in sysctlbyname
 ---------------------------------------------------------
 570:      SYS___sysctlbyname (putnew) 4s 2m
 ---------------------------------------------------------

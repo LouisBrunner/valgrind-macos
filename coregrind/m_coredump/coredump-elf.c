@@ -699,6 +699,15 @@ void dump_one_thread(struct note **notelist, const vki_siginfo_t *si, ThreadId t
 {
    vki_elf_fpregset_t  fpu;
    struct vki_elf_prstatus prstatus;
+   const HChar* name;
+#  if   !defined(VGO_freebsd)
+   name = "CORE";
+#  else
+   /* lldb on FreeBSD expects a prstatus with name "FreeBSD"
+    * see llvm::Error ProcessElfCore::parseFreeBSDNotes(llvm::ArrayRef<CoreNote> notes) in ProcessElfCore.cpp
+    * Otherwise it exits with "Could not find NT_PRSTATUS note in core file." */
+   name = "FreeBSD";
+#  endif
    VG_(memset)(&fpu, 0, sizeof(fpu));
    VG_(memset)(&prstatus, 0, sizeof(prstatus));
 #     if defined(VGP_x86_linux) && !defined(VGPV_x86_linux_android)
@@ -716,7 +725,7 @@ void dump_one_thread(struct note **notelist, const vki_siginfo_t *si, ThreadId t
          && !defined(VGPV_mips32_linux_android) \
          && !defined(VGPV_arm64_linux_android) \
          && !defined(VGP_nanomips_linux)
-      add_note(notelist, "CORE", NT_FPREGSET, &fpu, sizeof(fpu));
+      add_note(notelist, name, NT_FPREGSET, &fpu, sizeof(fpu));
 #     endif
 
       fill_prstatus(&VG_(threads)[tid], &prstatus, si);
@@ -724,7 +733,7 @@ void dump_one_thread(struct note **notelist, const vki_siginfo_t *si, ThreadId t
          && !defined(VGPV_x86_linux_android) \
          && !defined(VGPV_mips32_linux_android) \
          && !defined(VGPV_arm64_linux_android)
-      add_note(notelist, "CORE", NT_PRSTATUS, &prstatus, sizeof(prstatus));
+      add_note(notelist, name, NT_PRSTATUS, &prstatus, sizeof(prstatus));
 #     endif
 }
 

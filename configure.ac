@@ -15,7 +15,7 @@
 # Also set the (expected/last) release date here.
 # Do not forget to rerun ./autogen.sh
 m4_define([v_major_ver], [3])
-m4_define([v_minor_ver], [19])
+m4_define([v_minor_ver], [21])
 m4_define([v_micro_ver], [0])
 m4_define([v_suffix_ver], [GIT-lbmacos])
 m4_define([v_rel_date], ["?? ??? 202?"])
@@ -447,8 +447,10 @@ case "${host_os}" in
         freebsd_12=1200
         AC_DEFINE([FREEBSD_12_2], 1220, [FREEBSD_VERS value for FreeBSD 12.2])
         freebsd_12_2=1220
-        AC_DEFINE([FREEBSD_13], 1300, [FREEBSD_VERS value for FreeBSD 13.x])
-        freebsd_13=1300
+        AC_DEFINE([FREEBSD_13_0], 1300, [FREEBSD_VERS value for FreeBSD 13.0])
+        freebsd_13_0=1300
+        AC_DEFINE([FREEBSD_13_1], 1310, [FREEBSD_VERS value for FreeBSD 13.1+])
+        freebsd_13_1=1310
         AC_DEFINE([FREEBSD_14], 1400, [FREEBSD_VERS value for FreeBSD 14.x])
         freebsd_14=1400
 
@@ -481,9 +483,18 @@ case "${host_os}" in
            esac
            ;;
         13.*)
-           AC_MSG_RESULT([FreeBSD 13.x (${kernel})])
-           AC_DEFINE([FREEBSD_VERS], FREEBSD_13, [FreeBSD version])
-           freebsd_vers=$freebsd_13
+           case "${kernel}" in
+           13.0-*)
+              AC_MSG_RESULT([FreeBSD 13.0 (${kernel})])
+              AC_DEFINE([FREEBSD_VERS], FREEBSD_13_0, [FreeBSD version])
+              freebsd_vers=$freebsd_13_0
+              ;;
+           *)
+              AC_MSG_RESULT([FreeBSD 13.1+ (${kernel})])
+              AC_DEFINE([FREEBSD_VERS], FREEBSD_13_1, [FreeBSD version])
+              freebsd_vers=$freebsd_13_1
+              ;;
+           esac
            ;;
         14.*)
            AC_MSG_RESULT([FreeBSD 14.x (${kernel})])
@@ -496,7 +507,7 @@ case "${host_os}" in
            ;;
         esac
 
-        DEFAULT_SUPP="freebsd.supp freebsd-helgrind.supp freebsd-drd.supp ${DEFAULT_SUPP}"
+        DEFAULT_SUPP="$srcdir/freebsd.supp $srcdir/freebsd-helgrind.supp $srcdir/freebsd-drd.supp ${DEFAULT_SUPP}"
         ;;
 
      *darwin*)
@@ -547,56 +558,56 @@ case "${host_os}" in
 	     9.*)
 		  AC_MSG_RESULT([Darwin 9.x (${kernel}) / Mac OS X 10.5 Leopard])
 		  AC_DEFINE([DARWIN_VERS], DARWIN_10_5, [Darwin / Mac OS X version])
-		  DEFAULT_SUPP="darwin9.supp ${DEFAULT_SUPP}"
-		  DEFAULT_SUPP="darwin9-drd.supp ${DEFAULT_SUPP}"
+                  DEFAULT_SUPP="$srcdir/darwin9.supp ${DEFAULT_SUPP}"
+                  DEFAULT_SUPP="$srcdir/darwin9-drd.supp ${DEFAULT_SUPP}"
 		  ;;
 	     10.*)
 		  AC_MSG_RESULT([Darwin 10.x (${kernel}) / Mac OS X 10.6 Snow Leopard])
 		  AC_DEFINE([DARWIN_VERS], DARWIN_10_6, [Darwin / Mac OS X version])
-		  DEFAULT_SUPP="darwin10.supp ${DEFAULT_SUPP}"
-		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
+                  DEFAULT_SUPP="$srcdir/darwin10.supp ${DEFAULT_SUPP}"
+                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
 		  ;;
 	     11.*)
 		  AC_MSG_RESULT([Darwin 11.x (${kernel}) / Mac OS X 10.7 Lion])
 		  AC_DEFINE([DARWIN_VERS], DARWIN_10_7, [Darwin / Mac OS X version])
-		  DEFAULT_SUPP="darwin11.supp ${DEFAULT_SUPP}"
-		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
+                  DEFAULT_SUPP="$srcdir/darwin11.supp ${DEFAULT_SUPP}"
+                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
 		  ;;
 	     12.*)
 		  AC_MSG_RESULT([Darwin 12.x (${kernel}) / Mac OS X 10.8 Mountain Lion])
 		  AC_DEFINE([DARWIN_VERS], DARWIN_10_8, [Darwin / Mac OS X version])
-		  DEFAULT_SUPP="darwin12.supp ${DEFAULT_SUPP}"
-		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
+                  DEFAULT_SUPP="$srcdir/darwin12.supp ${DEFAULT_SUPP}"
+                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
 		  ;;
 	     13.*)
 		  AC_MSG_RESULT([Darwin 13.x (${kernel}) / Mac OS X 10.9 Mavericks])
 		  AC_DEFINE([DARWIN_VERS], DARWIN_10_9, [Darwin / Mac OS X version])
-		  DEFAULT_SUPP="darwin13.supp ${DEFAULT_SUPP}"
-		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
+                  DEFAULT_SUPP="$srcdir/darwin13.supp ${DEFAULT_SUPP}"
+                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
 		  ;;
 	     14.*)
 		  AC_MSG_RESULT([Darwin 14.x (${kernel}) / Mac OS X 10.10 Yosemite])
 		  AC_DEFINE([DARWIN_VERS], DARWIN_10_10, [Darwin / Mac OS X version])
-		  DEFAULT_SUPP="darwin14.supp ${DEFAULT_SUPP}"
-		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
+                  DEFAULT_SUPP="$srcdir/darwin14.supp ${DEFAULT_SUPP}"
+                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
 		  ;;
 	     15.*)
 		  AC_MSG_RESULT([Darwin 15.x (${kernel}) / Mac OS X 10.11 El Capitan])
 		  AC_DEFINE([DARWIN_VERS], DARWIN_10_11, [Darwin / Mac OS X version])
-		  DEFAULT_SUPP="darwin15.supp ${DEFAULT_SUPP}"
-		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
+                  DEFAULT_SUPP="$srcdir/darwin15.supp ${DEFAULT_SUPP}"
+                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
 		  ;;
 	     16.*)
 		  AC_MSG_RESULT([Darwin 16.x (${kernel}) / macOS 10.12 Sierra])
 		  AC_DEFINE([DARWIN_VERS], DARWIN_10_12, [Darwin / Mac OS X version])
-		  DEFAULT_SUPP="darwin16.supp ${DEFAULT_SUPP}"
-		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
+                  DEFAULT_SUPP="$srcdir/darwin16.supp ${DEFAULT_SUPP}"
+                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
 		  ;;
 	     17.*)
 		  AC_MSG_RESULT([Darwin 17.x (${kernel}) / macOS 10.13 High Sierra])
 		  AC_DEFINE([DARWIN_VERS], DARWIN_10_13, [Darwin / Mac OS X version])
-		  DEFAULT_SUPP="darwin17.supp ${DEFAULT_SUPP}"
-		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="$srcdir/darwin17.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
 		  ;;
              18.*)
                   AC_MSG_RESULT([Darwin 18.x (${kernel}) / macOS 10.14 Mojave])
@@ -659,10 +670,10 @@ case "${host_os}" in
         uname_v=$( uname -v )
         case "$uname_v" in
              11.4.*)
-                 DEFAULT_SUPP="solaris12.supp ${DEFAULT_SUPP}"
+                 DEFAULT_SUPP="$srcdir/solaris12.supp ${DEFAULT_SUPP}"
                  ;;
              *)
-                 DEFAULT_SUPP="solaris11.supp ${DEFAULT_SUPP}"
+                 DEFAULT_SUPP="$srcdir/solaris11.supp ${DEFAULT_SUPP}"
                  ;;
 	esac
         ;;
@@ -670,7 +681,7 @@ case "${host_os}" in
      solaris2.12*)
         AC_MSG_RESULT([ok (${host_os})])
         VGCONF_OS="solaris"
-        DEFAULT_SUPP="solaris12.supp ${DEFAULT_SUPP}"
+        DEFAULT_SUPP="$srcdir/solaris12.supp ${DEFAULT_SUPP}"
         ;;
 
      *)
@@ -1275,6 +1286,8 @@ AC_SUBST(DEFAULT_SUPP)
 AC_CHECK_HEADER([features.h])
 
 if test x$ac_cv_header_features_h = xyes; then
+  AC_DEFINE([HAVE_HEADER_FEATURES_H], 1,
+          [Define to 1 if you have the `features.h' header.])
   rm -f conftest.$ac_ext
   cat <<_ACEOF >conftest.$ac_ext
 #include <features.h>
@@ -1354,15 +1367,15 @@ AC_MSG_CHECKING([the glibc version])
 case "${GLIBC_VERSION}" in
      2.2)
 	AC_MSG_RESULT(${GLIBC_VERSION} family)
-	DEFAULT_SUPP="glibc-2.2.supp ${DEFAULT_SUPP}"
-	DEFAULT_SUPP="glibc-2.2-LinuxThreads-helgrind.supp ${DEFAULT_SUPP}"
-	DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
+        DEFAULT_SUPP="$srcdir/glibc-2.2.supp ${DEFAULT_SUPP}"
+        DEFAULT_SUPP="$srcdir/glibc-2.2-LinuxThreads-helgrind.supp ${DEFAULT_SUPP}"
+        DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
 	;;
      2.[[3-6]])
 	AC_MSG_RESULT(${GLIBC_VERSION} family)
-	DEFAULT_SUPP="glibc-${GLIBC_VERSION}.supp ${DEFAULT_SUPP}"
-	DEFAULT_SUPP="glibc-2.X-helgrind.supp ${DEFAULT_SUPP}"
-	DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
+        DEFAULT_SUPP="$srcdir/glibc-${GLIBC_VERSION}.supp ${DEFAULT_SUPP}"
+        DEFAULT_SUPP="glibc-2.X-helgrind.supp ${DEFAULT_SUPP}"
+        DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
 	;;
      2.[[7-9]])
 	AC_MSG_RESULT(${GLIBC_VERSION} family)
@@ -1375,8 +1388,8 @@ case "${GLIBC_VERSION}" in
 	AC_DEFINE([GLIBC_MANDATORY_STRLEN_REDIRECT], 1,
 		  [Define to 1 if strlen() has been optimized heavily (amd64 glibc >= 2.10)])
 	DEFAULT_SUPP="glibc-2.X.supp ${DEFAULT_SUPP}"
-	DEFAULT_SUPP="glibc-2.X-helgrind.supp ${DEFAULT_SUPP}"
-	DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
+        DEFAULT_SUPP="glibc-2.X-helgrind.supp ${DEFAULT_SUPP}"
+        DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
 	;;
      2.*)
 	AC_MSG_RESULT(${GLIBC_VERSION} family)
@@ -1385,8 +1398,8 @@ case "${GLIBC_VERSION}" in
 	AC_DEFINE([GLIBC_MANDATORY_INDEX_AND_STRLEN_REDIRECT], 1,
 		  [Define to 1 if index() and strlen() have been optimized heavily (x86 glibc >= 2.12)])
 	DEFAULT_SUPP="glibc-2.X.supp ${DEFAULT_SUPP}"
-	DEFAULT_SUPP="glibc-2.X-helgrind.supp ${DEFAULT_SUPP}"
-	DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
+        DEFAULT_SUPP="glibc-2.X-helgrind.supp ${DEFAULT_SUPP}"
+        DEFAULT_SUPP="glibc-2.X-drd.supp ${DEFAULT_SUPP}"
 	;;
      darwin)
 	AC_MSG_RESULT(Darwin)
@@ -1401,7 +1414,7 @@ case "${GLIBC_VERSION}" in
      bionic)
 	AC_MSG_RESULT(Bionic)
 	AC_DEFINE([BIONIC_LIBC], 1, [Define to 1 if you're using Bionic])
-	DEFAULT_SUPP="bionic.supp ${DEFAULT_SUPP}"
+	DEFAULT_SUPP="$srcdir/bionic.supp ${DEFAULT_SUPP}"
 	;;
      solaris)
 	AC_MSG_RESULT(Solaris)
@@ -1411,7 +1424,7 @@ case "${GLIBC_VERSION}" in
      musl)
 	AC_MSG_RESULT(Musl)
 	AC_DEFINE([MUSL_LIBC], 1, [Define to 1 if you're using Musl libc])
-	DEFAULT_SUPP="musl.supp ${DEFAULT_SUPP}"
+	DEFAULT_SUPP="$srcdir/musl.supp ${DEFAULT_SUPP}"
 	;;
      2.0|2.1|*)
 	AC_MSG_RESULT([unsupported version ${GLIBC_VERSION}])
@@ -1430,8 +1443,8 @@ if test "$VGCONF_OS" != "solaris"; then
     # attempt to detect whether such libraries are installed on the
     # build machine (or even if any X facilities are present); just
     # add the suppressions antidisirregardless.
-    DEFAULT_SUPP="xfree-4.supp ${DEFAULT_SUPP}"
-    DEFAULT_SUPP="xfree-3.supp ${DEFAULT_SUPP}"
+    DEFAULT_SUPP="$srcdir/xfree-4.supp ${DEFAULT_SUPP}"
+    DEFAULT_SUPP="$srcdir/xfree-3.supp ${DEFAULT_SUPP}"
 fi
 
 
@@ -1598,6 +1611,21 @@ AC_DEFINE([HAVE_PTHREAD_RWLOCK_T], 1,
 AC_MSG_RESULT([no])
 ])
 
+# Check for CLOCKID_T
+
+AC_MSG_CHECKING([for clockid_t])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <time.h>
+]], [[
+  clockid_t c;
+]])], [
+AC_MSG_RESULT([yes])
+AC_DEFINE([HAVE_CLOCKID_T], 1,
+          [Define to 1 if you have the `clockid_t' type.])
+], [
+AC_MSG_RESULT([no])
+])
 
 # Check for PTHREAD_MUTEX_ADAPTIVE_NP
 
@@ -2952,6 +2980,24 @@ AC_MSG_RESULT([yes])
 AC_SUBST([FLAG_PIE], [""])
 AC_MSG_RESULT([no])
 ])
+CFLAGS=$safe_CFLAGS
+
+AC_MSG_CHECKING([if gcc accepts -ansi])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-ansi"
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+   return 0;
+]])], [
+ac_have_ansi=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_ansi=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL([HAVE_ANSI], [test x$ac_have_ansi = xyes])
+
 CFLAGS=$safe_CFLAGS
 
 
@@ -4707,7 +4753,7 @@ fi # test "$VGCONF_OS" = "solaris"
 
 if test "$VGCONF_OS" = "freebsd" ; then
 
-AM_CONDITIONAL(FREEBSD_VERS_13_PLUS, test $freebsd_vers -ge $freebsd_13)
+AM_CONDITIONAL(FREEBSD_VERS_13_PLUS, test $freebsd_vers -ge $freebsd_13_0)
 
 else
 
@@ -4765,7 +4811,7 @@ CFLAGS="$save_CFLAGS"
 AC_TYPE_UID_T
 AC_TYPE_OFF_T
 AC_TYPE_SIZE_T
-AC_HEADER_TIME
+AC_CHECK_HEADERS_ONCE([sys/time.h])
 
 AC_CHECK_TYPE([struct statx], [
   AC_DEFINE([HAVE_STRUCT_STATX_IN_SYS_STAT_H], 1,
@@ -4828,6 +4874,11 @@ AC_CHECK_FUNCS([     \
         swapcontext  \
         syscall      \
         utimensat    \
+        mempcpy      \
+        stpncpy      \
+        strchrnul    \
+        memrchr      \
+        strndup      \
         ])
 CFLAGS="$save_CFLAGS"
 
@@ -5416,6 +5467,7 @@ AC_CONFIG_FILES([
    none/tests/x86-darwin/Makefile
    none/tests/amd64-solaris/Makefile
    none/tests/x86-solaris/Makefile
+   none/tests/x86-freebsd/Makefile
    exp-bbv/Makefile
    exp-bbv/tests/Makefile
    exp-bbv/tests/x86/Makefile

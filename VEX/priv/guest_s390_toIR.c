@@ -19008,7 +19008,7 @@ s390_irgen_VFLL(UChar v1, UChar v2, UChar m3, UChar m4, UChar m5)
 static const HChar *
 s390_irgen_VFLR(UChar v1, UChar v2, UChar m3, UChar m4, UChar m5)
 {
-   s390_insn_assert("vflr", m3 == 3 || (s390_host_has_vxe && m3 == 2));
+   s390_insn_assert("vflr", m3 == 3 || (s390_host_has_vxe && m3 == 4));
 
    if (m3 == 3)
       s390_vector_fp_convert(Iop_F64toF32, Ity_F64, Ity_F32, True,

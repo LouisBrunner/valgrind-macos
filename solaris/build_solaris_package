@@ -22,7 +22,7 @@
 # - pkgrepo set -s $repo_uri publisher/prefix=valgrind
 #
 
-GITREPO=git://sourceware.org/git/valgrind.git/
+GITREPO=https://sourceware.org/git/valgrind.git/
 TMPDIR=/var/tmp/valgrind-build
 SRCDIR=$TMPDIR/sources
 INSTALLDIR=$TMPDIR/install

@@ -290,7 +290,6 @@ void valgrind_resume (struct thread_resume *resume_info)
            "stop_pc %p changed to be resume_pc %s\n",
            C2v(stop_pc), sym(resume_pc));
    }
-   regcache_invalidate();
 }
 
 unsigned char valgrind_wait (char *ourstatus)
@@ -304,7 +303,6 @@ unsigned char valgrind_wait (char *ourstatus)
    pid = VG_(getpid) ();
    dlog(1, "enter valgrind_wait pid %d\n", pid);
 
-   regcache_invalidate();
    valgrind_update_threads(pid);
 
    /* First see if we are done with this process. */
@@ -355,14 +353,13 @@ unsigned char valgrind_wait (char *ourstatus)
 }
 
 /* Fetch one register from valgrind VEX guest state.  */
-static
-void fetch_register (int regno)
+void valgrind_fetch_register (int regno, unsigned char *buf)
 {
    int size;
    ThreadState *tst = (ThreadState *) inferior_target_data (current_inferior);
    ThreadId tid = tst->tid;
 
-   if (regno >= the_low_target.num_regs) {
+   if (regno < 0 || regno >= the_low_target.num_regs) {
       dlog(0, "error fetch_register regno %d max %d\n",
            regno, the_low_target.num_regs);
       return;
@@ -370,16 +367,13 @@ void fetch_register (int regno)
    size = register_size (regno);
    if (size > 0) {
       Bool mod;
-      char buf [size];
       VG_(memset) (buf, 0, size); // registers not fetched will be seen as 0.
       (*the_low_target.transfer_register) (tid, regno, buf,
                                            valgrind_to_gdbserver, size, &mod);
       // Note: the *mod received from transfer_register is not interesting.
-      // We are interested to see if the register data in the register cache is modified.
-      supply_register (regno, buf, &mod);
       if (mod && VG_(debugLog_getLevel)() > 1) {
          char bufimage [2*size + 1];
-         heximage (bufimage, buf, size);
+         heximage (bufimage, (char*) buf, size);
          dlog(3, "fetched register %d size %d name %s value %s tid %u status %s\n", 
               regno, size, the_low_target.reg_defs[regno].name, bufimage, 
               tid, VG_(name_of_ThreadStatus) (tst->status));
@@ -387,102 +381,74 @@ void fetch_register (int regno)
    }
 }
 
-/* Fetch all registers, or just one, from the child process.  */
-static
-void usr_fetch_inferior_registers (int regno)
-{
-   if (regno == -1 || regno == 0)
-      for (regno = 0; regno < the_low_target.num_regs; regno++)
-         fetch_register (regno);
-   else
-      fetch_register (regno);
-}
-
-/* Store our register values back into the inferior.
-   If REGNO is -1, do this for all registers.
-   Otherwise, REGNO specifies which register (so we can save time).  */
-static
-void usr_store_inferior_registers (int regno)
+/* Store register REGNO value back into the inferior VEX state.  */
+void valgrind_store_register (int regno, const unsigned char *buf)
 {
    int size;
    ThreadState *tst = (ThreadState *) inferior_target_data (current_inferior);
    ThreadId tid = tst->tid;
-   
-   if (regno >= 0) {
 
-      if (regno >= the_low_target.num_regs) {
-         dlog(0, "error store_register regno %d max %d\n",
-              regno, the_low_target.num_regs);
-         return;
+   if (regno < 0 || regno >= the_low_target.num_regs) {
+      dlog(0, "error store_register regno %d max %d\n",
+           regno, the_low_target.num_regs);
+      return;
+   }
+
+   size = register_size (regno);
+   if (size > 0) {
+      Bool mod;
+      Addr old_SP, new_SP;
+
+      if (regno == the_low_target.stack_pointer_regno) {
+         /* When the stack pointer register is changed such that
+            the stack is extended, we better inform the tool of the
+            stack increase.  This is needed in particular to avoid
+            spurious Memcheck errors during Inferior calls. So, we
+            save in old_SP the SP before the change. A change of
+            stack pointer is also assumed to have initialised this
+            new stack space. For the typical example of an inferior
+            call, gdb writes arguments on the stack, and then
+            changes the stack pointer. As the stack increase tool
+            function might mark it as undefined, we have to call it
+            at the good moment. */
+         VG_(memset) ((void *) &old_SP, 0, size);
+         (*the_low_target.transfer_register) (tid, regno, (void *) &old_SP,
+                                              valgrind_to_gdbserver, size, &mod);
       }
-      
-      size = register_size (regno);
-      if (size > 0) {
-         Bool mod;
-         Addr old_SP, new_SP;
-         char buf[size];
 
-         if (regno == the_low_target.stack_pointer_regno) {
-            /* When the stack pointer register is changed such that
-               the stack is extended, we better inform the tool of the
-               stack increase.  This is needed in particular to avoid
-               spurious Memcheck errors during Inferior calls. So, we
-               save in old_SP the SP before the change. A change of
-               stack pointer is also assumed to have initialised this
-               new stack space. For the typical example of an inferior
-               call, gdb writes arguments on the stack, and then
-               changes the stack pointer. As the stack increase tool
-               function might mark it as undefined, we have to call it
-               at the good moment. */
-            VG_(memset) ((void *) &old_SP, 0, size);
-            (*the_low_target.transfer_register) (tid, regno, (void *) &old_SP, 
-                                                 valgrind_to_gdbserver, size, &mod);
-         }
+      char buf_copy[size]; 
+      /* copy buf to buf_copy to avoid warnings passing a const to transfer_register.
+         This is ok as transfer_register called with gdbserver_to_valgrind will read from
+         buf and write to VEX state. */
+      VG_(memcpy) (buf_copy, buf, size);
 
-         VG_(memset) (buf, 0, size);
-         collect_register (regno, buf);
-         (*the_low_target.transfer_register) (tid, regno, buf, 
-                                              gdbserver_to_valgrind, size, &mod);
-         if (mod && VG_(debugLog_getLevel)() > 1) {
-            char bufimage [2*size + 1];
-            heximage (bufimage, buf, size);
-            dlog(2, 
-                 "stored register %d size %d name %s value %s "
-                 "tid %u status %s\n", 
-                 regno, size, the_low_target.reg_defs[regno].name, bufimage, 
-                 tid, VG_(name_of_ThreadStatus) (tst->status));
-         }
-         if (regno == the_low_target.stack_pointer_regno) {
-            VG_(memcpy) (&new_SP, buf, size);
-            if (old_SP > new_SP) {
-               Word delta  = (Word)new_SP - (Word)old_SP;
-               dlog(1, 
-                    "   stack increase by stack pointer changed from %p to %p "
-                    "delta %ld\n",
-                    (void*) old_SP, (void *) new_SP,
-                    delta);
-               VG_TRACK( new_mem_stack_w_ECU, new_SP, -delta, 0 );
-               VG_TRACK( new_mem_stack,       new_SP, -delta );
-               VG_TRACK( post_mem_write, Vg_CoreClientReq, tid,
-                         new_SP, -delta);
-            }
+      (*the_low_target.transfer_register) (tid, regno, buf_copy,
+                                           gdbserver_to_valgrind, size, &mod);
+      if (mod && VG_(debugLog_getLevel)() > 1) {
+         char bufimage [2*size + 1];
+         heximage (bufimage, buf_copy, size);
+         dlog(2, 
+              "stored register %d size %d name %s value %s "
+              "tid %u status %s\n", 
+              regno, size, the_low_target.reg_defs[regno].name, bufimage, 
+              tid, VG_(name_of_ThreadStatus) (tst->status));
+      }
+      if (regno == the_low_target.stack_pointer_regno) {
+         VG_(memcpy) (&new_SP, buf, size);
+         if (old_SP > new_SP) {
+            Word delta  = (Word)new_SP - (Word)old_SP;
+            dlog(1, 
+                 "   stack increase by stack pointer changed from %p to %p "
+                 "delta %ld\n",
+                 (void*) old_SP, (void *) new_SP,
+                 delta);
+            VG_TRACK( new_mem_stack_w_ECU, new_SP, -delta, 0 );
+            VG_TRACK( new_mem_stack,       new_SP, -delta );
+            VG_TRACK( post_mem_write, Vg_CoreClientReq, tid,
+                      new_SP, -delta);
          }
       }
    }
-   else {
-      for (regno = 0; regno < the_low_target.num_regs; regno++)
-         usr_store_inferior_registers (regno);
-   }
-}
-
-void valgrind_fetch_registers (int regno)
-{
-   usr_fetch_inferior_registers (regno);
-}
-
-void valgrind_store_registers (int regno)
-{
-   usr_store_inferior_registers (regno);
 }
 
 Bool hostvisibility = False;
@@ -806,7 +772,6 @@ void initialize_shadow_low(Bool shadow_mode)
     non_shadow_num_regs = the_low_target.num_regs;
   }
 
-  regcache_invalidate();
   if (the_low_target.reg_defs != non_shadow_reg_defs) {
      free (the_low_target.reg_defs);
   }

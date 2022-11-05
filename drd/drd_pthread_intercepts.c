@@ -1016,6 +1016,7 @@ PTH_FUNCS(int,
           (mutex, timeout));
 #endif /* VGO_solaris */
 
+#if defined(HAVE_CLOCKID_T)
 static __always_inline
 int pthread_mutex_clocklock_intercept(pthread_mutex_t *mutex,
                                       clockid_t clockid,
@@ -1035,6 +1036,7 @@ int pthread_mutex_clocklock_intercept(pthread_mutex_t *mutex,
 PTH_FUNCS(int, pthreadZumutexZuclocklock, pthread_mutex_clocklock_intercept,
           (pthread_mutex_t *mutex, clockid_t clockid, const struct timespec *abs_timeout),
           (mutex, clockid, abs_timeout));
+#endif
 
 static __always_inline
 int pthread_mutex_unlock_intercept(pthread_mutex_t *mutex)
@@ -1196,6 +1198,7 @@ PTH_FUNCS(int, condZureltimedwait, pthread_cond_timedwait_intercept,
 #endif /* VGO_solaris */
 
 
+#if defined(HAVE_CLOCKID_T)
 static __always_inline
 int pthread_cond_clockwait_intercept(pthread_cond_t *cond,
                                      pthread_mutex_t *mutex,
@@ -1217,6 +1220,7 @@ PTH_FUNCS(int, pthreadZucondZuclockwait, pthread_cond_clockwait_intercept,
           (pthread_cond_t *cond, pthread_mutex_t *mutex,
             clockid_t clockid, const struct timespec* abstime),
           (cond, mutex, clockid, abstime));
+#endif
 
 
 // NOTE: be careful to intercept only pthread_cond_signal() and not Darwin's
@@ -1814,6 +1818,8 @@ PTH_FUNCS(int, pthreadZurwlockZureltimedrdlockZunp,
           (rwlock, timeout));
 #endif /* VGO_solaris */
 
+
+#if defined(HAVE_CLOCKID_T)
 static __always_inline
 int pthread_rwlock_clockrdlock_intercept(pthread_rwlock_t* rwlock,
                                          clockid_t clockid,
@@ -1834,6 +1840,7 @@ PTH_FUNCS(int,
           pthreadZurwlockZuclockrdlock, pthread_rwlock_clockrdlock_intercept,
           (pthread_rwlock_t* rwlock, clockid_t clockid, const struct timespec *timeout),
           (rwlock, clockid, timeout));
+#endif
 
 static __always_inline
 int pthread_rwlock_timedwrlock_intercept(pthread_rwlock_t* rwlock,
@@ -1861,6 +1868,8 @@ PTH_FUNCS(int, pthreadZurwlockZureltimedwrlockZunp,
           (rwlock, timeout));
 #endif /* VGO_solaris */
 
+
+#if defined(HAVE_CLOCKID_T)
 static __always_inline
 int pthread_rwlock_clockwrlock_intercept(pthread_rwlock_t* rwlock,
                                          clockid_t clockid,
@@ -1881,6 +1890,7 @@ PTH_FUNCS(int,
           pthreadZurwlockZuclockwrlock, pthread_rwlock_clockwrlock_intercept,
           (pthread_rwlock_t* rwlock, clockid_t clockid, const struct timespec *timeout),
           (rwlock, clockid, timeout));
+#endif
 
 
 static __always_inline

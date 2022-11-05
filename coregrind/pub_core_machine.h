@@ -221,6 +221,7 @@ void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
    -------------
    ppc64: initially:  call VG_(machine_get_hwcaps)
                       call VG_(machine_ppc64_set_clszB)
+                      call VG_(machine_ppc64_set_scv_support)
 
           then safe to use VG_(machine_get_VexArchInfo) 
                        and VG_(machine_ppc64_has_VMX)
@@ -255,6 +256,7 @@ extern void VG_(machine_ppc32_set_clszB)( Int );
 
 #if defined(VGA_ppc64be) || defined(VGA_ppc64le)
 extern void VG_(machine_ppc64_set_clszB)( Int );
+extern void VG_(machine_ppc64_set_scv_support)( Int );
 #endif
 
 #if defined(VGA_arm)

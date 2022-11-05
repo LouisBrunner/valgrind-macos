@@ -17,3 +17,15 @@ Syscall param execveat(argv) points to uninitialised byte(s)
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (sys-execveat.c:41)
 
+Syscall param execveat(argv[0]) points to unaddressable byte(s)
+   ...
+   by 0x........: sys_execveat (sys-execveat.c:16)
+   by 0x........: main (sys-execveat.c:51)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param execveat(argv) points to unaddressable byte(s)
+   ...
+   by 0x........: sys_execveat (sys-execveat.c:16)
+   by 0x........: main (sys-execveat.c:52)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+

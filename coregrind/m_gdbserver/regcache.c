@@ -29,9 +29,7 @@
 
 struct inferior_regcache_data
 {
-   int registers_valid;
    unsigned char *registers;
-   Bool *register_supplied; /* set to True once it has been supplied */
 };
 
 static int register_bytes;
@@ -42,8 +40,7 @@ static int num_registers;
 const char **gdbserver_expedite_regs;
 
 static
-struct inferior_regcache_data * get_regcache (struct thread_info *inf,
-                                              int fetch)
+struct inferior_regcache_data * get_regcache (struct thread_info *inf)
 {
    struct inferior_regcache_data *regcache;
 
@@ -52,36 +49,7 @@ struct inferior_regcache_data * get_regcache (struct thread_info *inf,
    if (regcache == NULL)
       fatal ("no register cache\n");
 
-   /* FIXME - fetch registers for INF */
-   if (fetch && regcache->registers_valid == 0) {
-      valgrind_fetch_registers (0);
-      regcache->registers_valid = 1;
-   }
-
    return regcache;
-}
-
-void regcache_invalidate_one (struct inferior_list_entry *entry)
-{
-   struct thread_info *thread = (struct thread_info *) entry;
-   struct inferior_regcache_data *regcache;
-
-   regcache = (struct inferior_regcache_data *) inferior_regcache_data (thread);
-
-   if (regcache->registers_valid) {
-      struct thread_info *saved_inferior = current_inferior;
-
-      current_inferior = thread;
-      valgrind_store_registers (-1);
-      current_inferior = saved_inferior;
-   }
-
-   regcache->registers_valid = 0;
-}
-
-void regcache_invalidate ()
-{
-   for_each_inferior (&all_threads, regcache_invalidate_one);
 }
 
 int registers_length (void)
@@ -92,7 +60,7 @@ int registers_length (void)
 void *new_register_cache (void)
 {
    struct inferior_regcache_data *regcache;
-   
+
    regcache = malloc (sizeof (*regcache));
 
    /* Make sure to zero-initialize the register cache when it is created,
@@ -101,12 +69,6 @@ void *new_register_cache (void)
    regcache->registers = calloc (1, register_bytes);
    if (regcache->registers == NULL)
       fatal ("Could not allocate register cache.\n");
-
-   regcache->register_supplied = calloc (1, num_registers);
-   if (regcache->register_supplied == NULL)
-      fatal ("Could not allocate register_supplied cache.\n");
-
-   regcache->registers_valid = 0;
 
    return regcache;
 }
@@ -117,7 +79,6 @@ void free_register_cache (void *regcache_p)
       = (struct inferior_regcache_data *) regcache_p;
 
    free (regcache->registers);
-   free (regcache->register_supplied);
    free (regcache);
 }
 
@@ -142,7 +103,7 @@ void regcache_realloc_one (struct inferior_list_entry *entry)
 void set_register_cache (struct reg *regs, int n)
 {
    int offset, i;
-  
+
    reg_defs = regs;
    num_registers = n;
 
@@ -159,15 +120,17 @@ void set_register_cache (struct reg *regs, int n)
 
 void registers_to_string (char *buf)
 {
-   unsigned char *registers = get_regcache (current_inferior, 1)->registers;
+   unsigned char *registers = get_regcache (current_inferior)->registers;
 
+   for (int i = 0; i < num_registers; i++)
+      valgrind_fetch_register (i, registers + (reg_defs[i].offset / 8));
    convert_int_to_ascii (registers, buf, register_bytes);
 }
 
 void registers_from_string (const char *buf)
 {
    int len = strlen (buf);
-   unsigned char *registers = get_regcache (current_inferior, 1)->registers;
+   unsigned char *registers = get_regcache (current_inferior)->registers;
 
    if (len != register_bytes * 2) {
       warning ("Wrong sized register packet (expected %d bytes, got %d)\n",
@@ -199,62 +162,33 @@ int register_size (int n)
    return reg_defs[n].size / 8;
 }
 
-static
-unsigned char *register_data (int n, int fetch)
+void supply_register (int n, const void *buf)
 {
-   unsigned char *registers
-      = get_regcache (current_inferior, fetch)->registers;
-
-   return registers + (reg_defs[n].offset / 8);
-}
-static
-unsigned char *register_data_for_supply (int n, int fetch, Bool *mod)
-{
-   struct inferior_regcache_data * cache 
-      = get_regcache (current_inferior, fetch);
-   unsigned char *registers = cache->registers;
-
-   if (cache->register_supplied[n])
-      *mod = False;
-   else
-      *mod = True;
-   cache->register_supplied[n] = True;
-   return registers + (reg_defs[n].offset / 8);
+   valgrind_store_register (n, buf);
 }
 
-void supply_register (int n, const void *buf, Bool *mod)
+void supply_register_from_string (int n, const char *buf)
 {
-   Bool new;
-   VG_(dmemcpy) (register_data_for_supply (n, 0, &new), 
-                 buf, register_size (n), mod);
-   if (new)
-      *mod = True;
-}
-
-void supply_register_from_string (int n, const char *buf, Bool *mod)
-{
-   Bool new;
    unsigned char bytes_register[register_size (n)];
    convert_ascii_to_int (buf, bytes_register, register_size (n));
-   VG_(dmemcpy) (register_data_for_supply (n, 0, &new), 
-                 bytes_register, register_size (n), mod);
-   if (new)
-      *mod = True;
+   valgrind_store_register (n, bytes_register);
 }
 
-void supply_register_by_name (const char *name, const void *buf, Bool *mod)
+void supply_register_by_name (const char *name, const void *buf)
 {
-   supply_register (find_regno (name), buf, mod);
+   supply_register (find_regno (name), buf);
 }
 
 void collect_register (int n, void *buf)
 {
-   VG_(memcpy) (buf, register_data (n, 1), register_size (n));
+   valgrind_fetch_register (n, buf);
 }
 
 void collect_register_as_string (int n, char *buf)
 {
-   convert_int_to_ascii (register_data (n, 1), buf, register_size (n));
+   unsigned char local_buf [register_size (n)];
+   valgrind_fetch_register (n, local_buf);
+   convert_int_to_ascii (local_buf, buf, register_size (n));
 }
 
 void collect_register_by_name (const char *name, void *buf)

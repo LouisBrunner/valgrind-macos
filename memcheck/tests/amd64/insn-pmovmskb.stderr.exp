@@ -1,144 +1,144 @@
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:69)
-   by 0x........: main (insn-pmovmskb.c:140)
+   by 0x........: doit (insn-pmovmskb.c:71)
+   by 0x........: main (insn-pmovmskb.c:142)
 
 0: Invalid value is false
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:73)
-   by 0x........: main (insn-pmovmskb.c:140)
+   by 0x........: doit (insn-pmovmskb.c:75)
+   by 0x........: main (insn-pmovmskb.c:142)
 
 1: Invalid value is false
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:77)
-   by 0x........: main (insn-pmovmskb.c:140)
+   by 0x........: doit (insn-pmovmskb.c:79)
+   by 0x........: main (insn-pmovmskb.c:142)
 
 2: Invalid value is false
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:81)
-   by 0x........: main (insn-pmovmskb.c:140)
+   by 0x........: doit (insn-pmovmskb.c:83)
+   by 0x........: main (insn-pmovmskb.c:142)
 
 3: Invalid value is false
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:85)
-   by 0x........: main (insn-pmovmskb.c:140)
+   by 0x........: doit (insn-pmovmskb.c:87)
+   by 0x........: main (insn-pmovmskb.c:142)
 
 4: Invalid value is false
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:89)
-   by 0x........: main (insn-pmovmskb.c:140)
+   by 0x........: doit (insn-pmovmskb.c:91)
+   by 0x........: main (insn-pmovmskb.c:142)
 
 5: Invalid value is false
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:93)
-   by 0x........: main (insn-pmovmskb.c:140)
+   by 0x........: doit (insn-pmovmskb.c:95)
+   by 0x........: main (insn-pmovmskb.c:142)
 
 6: Invalid value is false
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:97)
-   by 0x........: main (insn-pmovmskb.c:140)
+   by 0x........: doit (insn-pmovmskb.c:99)
+   by 0x........: main (insn-pmovmskb.c:142)
 
 7: Invalid value is false
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:101)
-   by 0x........: main (insn-pmovmskb.c:140)
+   by 0x........: doit (insn-pmovmskb.c:103)
+   by 0x........: main (insn-pmovmskb.c:142)
 
 8: Invalid value is false
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:105)
-   by 0x........: main (insn-pmovmskb.c:140)
+   by 0x........: doit (insn-pmovmskb.c:107)
+   by 0x........: main (insn-pmovmskb.c:142)
 
 9: Invalid value is false
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:109)
-   by 0x........: main (insn-pmovmskb.c:140)
+   by 0x........: doit (insn-pmovmskb.c:111)
+   by 0x........: main (insn-pmovmskb.c:142)
 
 10: Invalid value is false
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:113)
-   by 0x........: main (insn-pmovmskb.c:140)
+   by 0x........: doit (insn-pmovmskb.c:115)
+   by 0x........: main (insn-pmovmskb.c:142)
 
 11: Invalid value is false
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:117)
-   by 0x........: main (insn-pmovmskb.c:140)
+   by 0x........: doit (insn-pmovmskb.c:119)
+   by 0x........: main (insn-pmovmskb.c:142)
 
 12: Invalid value is false
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:121)
-   by 0x........: main (insn-pmovmskb.c:140)
+   by 0x........: doit (insn-pmovmskb.c:123)
+   by 0x........: main (insn-pmovmskb.c:142)
 
 13: Invalid value is false
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:125)
-   by 0x........: main (insn-pmovmskb.c:140)
+   by 0x........: doit (insn-pmovmskb.c:127)
+   by 0x........: main (insn-pmovmskb.c:142)
 
 14: Invalid value is false
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:129)
-   by 0x........: main (insn-pmovmskb.c:140)
+   by 0x........: doit (insn-pmovmskb.c:131)
+   by 0x........: main (insn-pmovmskb.c:142)
 
 15: Invalid value is false
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:85)
-   by 0x........: main (insn-pmovmskb.c:143)
+   by 0x........: doit (insn-pmovmskb.c:87)
+   by 0x........: main (insn-pmovmskb.c:145)
 
 4: Invalid value is true
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:89)
-   by 0x........: main (insn-pmovmskb.c:143)
+   by 0x........: doit (insn-pmovmskb.c:91)
+   by 0x........: main (insn-pmovmskb.c:145)
 
 5: Invalid value is true
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:93)
-   by 0x........: main (insn-pmovmskb.c:143)
+   by 0x........: doit (insn-pmovmskb.c:95)
+   by 0x........: main (insn-pmovmskb.c:145)
 
 6: Invalid value is true
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:97)
-   by 0x........: main (insn-pmovmskb.c:143)
+   by 0x........: doit (insn-pmovmskb.c:99)
+   by 0x........: main (insn-pmovmskb.c:145)
 
 7: Invalid value is true
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:101)
-   by 0x........: main (insn-pmovmskb.c:143)
+   by 0x........: doit (insn-pmovmskb.c:103)
+   by 0x........: main (insn-pmovmskb.c:145)
 
 8: Invalid value is true
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:105)
-   by 0x........: main (insn-pmovmskb.c:143)
+   by 0x........: doit (insn-pmovmskb.c:107)
+   by 0x........: main (insn-pmovmskb.c:145)
 
 9: Invalid value is true
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:117)
-   by 0x........: main (insn-pmovmskb.c:143)
+   by 0x........: doit (insn-pmovmskb.c:119)
+   by 0x........: main (insn-pmovmskb.c:145)
 
 12: Invalid value is true
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: use (insn-pmovmskb.c:48)
-   by 0x........: doit (insn-pmovmskb.c:121)
-   by 0x........: main (insn-pmovmskb.c:143)
+   by 0x........: doit (insn-pmovmskb.c:123)
+   by 0x........: main (insn-pmovmskb.c:145)
 
 13: Invalid value is true

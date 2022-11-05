@@ -1147,6 +1147,12 @@ void read_and_set_osrel(DiImage* img)
 
        ElfXX_Ehdr ehdr;
        ML_(img_get)(&ehdr, img, 0, sizeof(ehdr));
+
+       /* only set osrel for executable files, not for subsequent shared libraries */
+       if (ehdr.e_type != ET_EXEC) {
+          return;
+       }
+
        /* Skip the phdrs when we have to search the shdrs. In separate
           .debug files the phdrs might not be valid (they are a copy of
           the main ELF file) and might trigger assertions when getting
@@ -1165,7 +1171,7 @@ void read_and_set_osrel(DiImage* img)
                 DiOffT name_ioff = note_ioff + sizeof(ElfXX_Nhdr);
                 //DiOffT desc_ioff = name_ioff + ((note[0].n_namesz + 3) & ~3);
                 if (ML_(img_strcmp_c)(img, name_ioff, "FreeBSD") == 0
-                    && note[0].n_type == NT_FREEBSD_ABI_TAG) {
+                    && note[0].n_type == VKI_NT_FREEBSD_ABI_TAG) {
 
                     u_int32_t osrel = note[1].n_type;
                     int name[4];
@@ -1176,10 +1182,10 @@ void read_and_set_osrel(DiImage* img)
                     SizeT newlen = sizeof(osrel);
                     Int error = VG_(sysctl)(name, 4, NULL, NULL, &osrel, newlen);
                     if (error == -1) {
-                        VG_(message)(Vg_DebugMsg, "Warning: failed to set osrel for current process with value %d\n", osrel);
+                        VG_(message)(Vg_DebugMsg, "Warning: failed to set osrel for current process with value %u\n", osrel);
                     } else {
                         if (VG_(clo_verbosity) > 1) {
-                            VG_(message)(Vg_DebugMsg, "Set osrel for current process with value %d\n", osrel);
+                            VG_(message)(Vg_DebugMsg, "Set osrel for current process with value %u\n", osrel);
                         }
                     }
                 }
@@ -1589,7 +1595,7 @@ DiImage* find_debug_file( struct _DebugInfo* di,
    }
 
 #  if defined(VGO_linux)
-   if (dimg == NULL)
+   if (VG_(clo_enable_debuginfod) && dimg == NULL)
       dimg = find_debug_file_debuginfod(objpath, &debugpath, buildid, crc, rel_ok);
 #  endif
 
@@ -1918,7 +1924,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
    vg_assert(di);
    vg_assert(di->fsm.have_rx_map == True);
-   vg_assert(di->fsm.have_rw_map == True);
+   vg_assert(di->fsm.rw_map_count >= 1);
    vg_assert(di->have_dinfo == False);
    vg_assert(di->fsm.filename);
    vg_assert(!di->symtab);
@@ -2114,11 +2120,6 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                      item.svma_limit = a_phdr.p_vaddr + a_phdr.p_memsz;
                      item.bias       = map->avma - map->foff
                                        + a_phdr.p_offset - a_phdr.p_vaddr;
-#if (FREEBSD_VERS >= FREEBSD_12_2)
-                     if ((long long int)item.bias < 0LL) {
-                        item.bias = 0;
-                     }
-#endif
                      if (map->rw
                          && (a_phdr.p_flags & (PF_R | PF_W))
                             == (PF_R | PF_W)) {
@@ -2258,9 +2259,10 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
    }
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
       const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
-      if (map->rw)
+      if (map->rw) {
          TRACE_SYMTAB("rw: at %#lx are mapped foffsets %lld .. %lld\n",
                       map->avma, (Long)map->foff, (Long)(map->foff + map->size - 1) );
+      }
    }
    TRACE_SYMTAB("rw: contains these svma regions:\n");
    for (i = 0; i < VG_(sizeXA)(svma_ranges); i++) {
@@ -2284,28 +2286,34 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       UInt   alyn = a_shdr.sh_addralign;
       Bool   nobits = a_shdr.sh_type == SHT_NOBITS;
       /* Look through our collection of info obtained from the PT_LOAD
-         headers, and make 'inrx' and 'inrw' point to the first entry
+         headers, and make 'inrx' and 'inrw1' point to the first entry
          in each that intersects 'avma'.  If in each case none is found,
          leave the relevant pointer at NULL. */
       RangeAndBias* inrx = NULL;
-      RangeAndBias* inrw = NULL;
+      RangeAndBias* inrw1 = NULL;
+      /* Depending on the link editro there may be two RW PT_LOAD headers
+       * If so this will point to the seond one */
+      RangeAndBias* inrw2 = NULL;
+      /* used to switch between inrw1 and inrw2 */
+      RangeAndBias* inrw;
+
       for (j = 0; j < VG_(sizeXA)(svma_ranges); j++) {
          RangeAndBias* rng = VG_(indexXA)(svma_ranges, j);
          if (svma >= rng->svma_base && svma < rng->svma_limit) {
             if (!inrx && rng->exec) {
                inrx = rng;
-            } else if (!inrw && !rng->exec) {
-               inrw = rng;
+            } else if (!inrw1 && !rng->exec) {
+               inrw1 = rng;
+            }  else if (!inrw2 && !rng->exec) {
+               inrw2 = rng;
             }
-            if (inrx && inrw)
-               break;
          }
       }
 
-      TRACE_SYMTAB(" [sec %2ld]  %s %s  al%4u  foff %6lld .. %6lld  "
+      TRACE_SYMTAB(" [sec %2ld]  %s %s %s  al%4u  foff %6lld .. %6lld  "
                    "  svma %p  name \"%s\"\n", 
-                   i, inrx ? "rx" : "  ", inrw ? "rw" : "  ", alyn,
-                   (Long) foff, (size == 0) ? (Long)foff : (Long)(foff+size-1),
+                   i, inrx ? "rx" : "  ", inrw1 ? "rw" : "  ", inrw2 ? "rw" : "  ",
+                   alyn, (Long) foff, (size == 0) ? (Long)foff : (Long)(foff+size-1),
                    (void *) svma, name);
 
       /* Check for sane-sized segments.  SHT_NOBITS sections have zero
@@ -2344,6 +2352,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       /* Find avma-s for: .text .data .sdata .rodata .bss .sbss .plt .got .opd
          and .eh_frame */
 
+      /* In inrw2 is non-NULL then it will be used for .data .got.plt .bss */
+
       /* Accept .text where mapped as rx (code), even if zero-sized */
       if (0 == VG_(strcmp)(name, ".text")) {
          if (inrx && !di->text_present) {
@@ -2374,6 +2384,13 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                          "%#lx .. %#lx\n", svma, svma + size - 1);
          } else
 #        endif /* SOLARIS_PT_SUNDWTRACE_THRP */
+
+        if (inrw2) {
+           inrw = inrw2;
+        } else {
+           inrw = inrw1;
+        }
+
          if (inrw && !di->data_present) {
             di->data_present = True;
             di->data_svma = svma;
@@ -2396,14 +2413,14 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* Accept .sdata where mapped as rw (data) */
       if (0 == VG_(strcmp)(name, ".sdata")) {
-         if (inrw && !di->sdata_present) {
+         if (inrw1 && !di->sdata_present) {
             di->sdata_present = True;
             di->sdata_svma = svma;
-            di->sdata_avma = svma + inrw->bias;
+            di->sdata_avma = svma + inrw1->bias;
             di->sdata_size = size;
-            di->sdata_bias = inrw->bias;
+            di->sdata_bias = inrw1->bias;
             di->sdata_debug_svma = svma;
-            di->sdata_debug_bias = inrw->bias;
+            di->sdata_debug_bias = inrw1->bias;
             TRACE_SYMTAB("acquiring .sdata svma = %#lx .. %#lx\n",
                          di->sdata_svma,
                          di->sdata_svma + di->sdata_size - 1);
@@ -2428,10 +2445,10 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                di->rodata_avma += inrx->bias;
                di->rodata_bias = inrx->bias;
                di->rodata_debug_bias = inrx->bias;
-            } else if (inrw) {
-               di->rodata_avma += inrw->bias;
-               di->rodata_bias = inrw->bias;
-               di->rodata_debug_bias = inrw->bias;
+            } else if (inrw1) {
+               di->rodata_avma += inrw1->bias;
+               di->rodata_bias = inrw1->bias;
+               di->rodata_debug_bias = inrw1->bias;
             } else {
                BAD(".rodata");
             }
@@ -2450,15 +2467,15 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       }
 
       if (0 == VG_(strcmp)(name, ".dynbss")) {
-         if (inrw && !di->bss_present) {
+         if (inrw1 && !di->bss_present) {
             dynbss_present = True;
             di->bss_present = True;
             di->bss_svma = svma;
-            di->bss_avma = svma + inrw->bias;
+            di->bss_avma = svma + inrw1->bias;
             di->bss_size = size;
-            di->bss_bias = inrw->bias;
+            di->bss_bias = inrw1->bias;
             di->bss_debug_svma = svma;
-            di->bss_debug_bias = inrw->bias;
+            di->bss_debug_bias = inrw1->bias;
             TRACE_SYMTAB("acquiring .dynbss svma = %#lx .. %#lx\n",
                          di->bss_svma,
                          di->bss_svma + di->bss_size - 1);
@@ -2472,6 +2489,13 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* Accept .bss where mapped as rw (data), even if zero-sized */
       if (0 == VG_(strcmp)(name, ".bss")) {
+
+         if (inrw2) {
+            inrw = inrw2;
+         } else {
+            inrw = inrw1;
+         }
+
          if (inrw && dynbss_present) {
             vg_assert(di->bss_present);
             dynbss_present = False;
@@ -2538,15 +2562,15 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       }
 
       if (0 == VG_(strcmp)(name, ".sdynbss")) {
-         if (inrw && !di->sbss_present) {
+         if (inrw1 && !di->sbss_present) {
             sdynbss_present = True;
             di->sbss_present = True;
             di->sbss_svma = svma;
-            di->sbss_avma = svma + inrw->bias;
+            di->sbss_avma = svma + inrw1->bias;
             di->sbss_size = size;
-            di->sbss_bias = inrw->bias;
+            di->sbss_bias = inrw1->bias;
             di->sbss_debug_svma = svma;
-            di->sbss_debug_bias = inrw->bias;
+            di->sbss_debug_bias = inrw1->bias;
             TRACE_SYMTAB("acquiring .sdynbss svma = %#lx .. %#lx\n",
                          di->sbss_svma,
                          di->sbss_svma + di->sbss_size - 1);
@@ -2560,7 +2584,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* Accept .sbss where mapped as rw (data) */
       if (0 == VG_(strcmp)(name, ".sbss")) {
-         if (inrw && sdynbss_present) {
+         if (inrw1 && sdynbss_present) {
             vg_assert(di->sbss_present);
             sdynbss_present = False;
             vg_assert(di->sbss_svma + di->sbss_size == svma);
@@ -2568,18 +2592,18 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             TRACE_SYMTAB("acquiring .sbss svma = %#lx .. %#lx\n",
                          svma, svma + size - 1);
             TRACE_SYMTAB("acquiring .sbss avma = %#lx .. %#lx\n",
-                         svma + inrw->bias, svma + inrw->bias + size - 1);
+                         svma + inrw1->bias, svma + inrw1->bias + size - 1);
             TRACE_SYMTAB("acquiring .sbss bias = %#lx\n", (UWord)di->sbss_bias);
          } else
 
-         if (inrw && !di->sbss_present) {
+         if (inrw1 && !di->sbss_present) {
             di->sbss_present = True;
             di->sbss_svma = svma;
-            di->sbss_avma = svma + inrw->bias;
+            di->sbss_avma = svma + inrw1->bias;
             di->sbss_size = size;
-            di->sbss_bias = inrw->bias;
+            di->sbss_bias = inrw1->bias;
             di->sbss_debug_svma = svma;
-            di->sbss_debug_bias = inrw->bias;
+            di->sbss_debug_bias = inrw1->bias;
             TRACE_SYMTAB("acquiring .sbss svma = %#lx .. %#lx\n",
                          di->sbss_svma,
                          di->sbss_svma + di->sbss_size - 1);
@@ -2594,9 +2618,9 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* Accept .got where mapped as rw (data) */
       if (0 == VG_(strcmp)(name, ".got")) {
-         if (inrw && !di->got_present) {
+         if (inrw1 && !di->got_present) {
             di->got_present = True;
-            di->got_avma = svma + inrw->bias;
+            di->got_avma = svma + inrw1->bias;
             di->got_size = size;
             TRACE_SYMTAB("acquiring .got avma = %#lx\n", di->got_avma);
          } else {
@@ -2606,6 +2630,13 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* Accept .got.plt where mapped as rw (data) */
       if (0 == VG_(strcmp)(name, ".got.plt")) {
+
+         if (inrw2) {
+            inrw = inrw2;
+         } else {
+            inrw = inrw1;
+         }
+
          if (inrw && !di->gotplt_present) {
             di->gotplt_present = True;
             di->gotplt_avma = svma + inrw->bias;
@@ -2637,9 +2668,9 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 #     elif defined(VGP_ppc32_linux)
       /* Accept .plt where mapped as rw (data) */
       if (0 == VG_(strcmp)(name, ".plt")) {
-         if (inrw && !di->plt_present) {
+         if (inrw1 && !di->plt_present) {
             di->plt_present = True;
-            di->plt_avma = svma + inrw->bias;
+            di->plt_avma = svma + inrw1->bias;
             di->plt_size = size;
             TRACE_SYMTAB("acquiring .plt avma = %#lx\n", di->plt_avma);
          } else {
@@ -2649,13 +2680,13 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 #     elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
       /* Accept .plt where mapped as rw (data), or unmapped */
       if (0 == VG_(strcmp)(name, ".plt")) {
-         if (inrw && !di->plt_present) {
+         if (inrw1 && !di->plt_present) {
             di->plt_present = True;
-            di->plt_avma = svma + inrw->bias;
+            di->plt_avma = svma + inrw1->bias;
             di->plt_size = size;
             TRACE_SYMTAB("acquiring .plt avma = %#lx\n", di->plt_avma);
          } else 
-         if ((!inrw) && (!inrx) && size > 0 && !di->plt_present) {
+         if ((!inrw1) && (!inrx) && size > 0 && !di->plt_present) {
             /* File contains a .plt, but it didn't get mapped.
                Presumably it is not required on this platform.  At
                least don't reject the situation as invalid. */
@@ -2672,9 +2703,9 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
       /* Accept .opd where mapped as rw (data) */
       if (0 == VG_(strcmp)(name, ".opd")) {
-         if (inrw && !di->opd_present) {
+         if (inrw1 && !di->opd_present) {
             di->opd_present = True;
-            di->opd_avma = svma + inrw->bias;
+            di->opd_avma = svma + inrw1->bias;
             di->opd_size = size;
             TRACE_SYMTAB("acquiring .opd avma = %#lx\n", di->opd_avma);
          } else {
@@ -2694,8 +2725,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                          di->ehframe_avma[di->n_ehframe]);
             di->n_ehframe++;
          } else
-         if (inrw && di->n_ehframe < N_EHFRAME_SECTS) {
-            di->ehframe_avma[di->n_ehframe] = svma + inrw->bias;
+         if (inrw1 && di->n_ehframe < N_EHFRAME_SECTS) {
+            di->ehframe_avma[di->n_ehframe] = svma + inrw1->bias;
             di->ehframe_size[di->n_ehframe] = size;
             TRACE_SYMTAB("acquiring .eh_frame avma = %#lx\n",
                          di->ehframe_avma[di->n_ehframe]);
@@ -2800,6 +2831,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       DiSlice debug_ranges_escn   = DiSlice_INVALID; // .debug_ranges (dwarf2)
       DiSlice debug_rnglists_escn = DiSlice_INVALID; // .debug_rnglists(dwarf5)
       DiSlice debug_loclists_escn = DiSlice_INVALID; // .debug_loclists(dwarf5)
+      DiSlice debug_addr_escn     = DiSlice_INVALID; // .debug_addr   (dwarf5)
+      DiSlice debug_str_offsets_escn = DiSlice_INVALID; // .debug_str_offsets (dwarf5)
       DiSlice debug_loc_escn      = DiSlice_INVALID; // .debug_loc    (dwarf2)
       DiSlice debug_frame_escn    = DiSlice_INVALID; // .debug_frame  (dwarf2)
       DiSlice debug_line_alt_escn = DiSlice_INVALID; // .debug_line   (alt)
@@ -2928,6 +2961,14 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          FIND(   ".debug_frame",       debug_frame_escn)
          if (!ML_(sli_is_valid)(debug_frame_escn))
             FIND(".zdebug_frame",      debug_frame_escn)
+
+         FIND(   ".debug_addr",        debug_addr_escn)
+         if (!ML_(sli_is_valid)(debug_addr_escn))
+            FIND(".zdebug_addr",       debug_addr_escn)
+
+         FIND(   ".debug_str_offsets", debug_str_offsets_escn)
+         if (!ML_(sli_is_valid)(debug_str_offsets_escn))
+            FIND(".zdebug_str_offsets", debug_str_offsets_escn)
 
          FIND(   ".debug",             dwarf1d_escn)
          FIND(   ".line",              dwarf1l_escn)
@@ -3260,6 +3301,14 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             if (!ML_(sli_is_valid)(debug_frame_escn))
                FIND(need_dwarf2,     ".zdebug_frame",     debug_frame_escn)
 
+            FIND(   need_dwarf2,     ".debug_addr",       debug_addr_escn)
+            if (!ML_(sli_is_valid)(debug_addr_escn))
+               FIND(need_dwarf2,     ".zdebug_addr",      debug_addr_escn)
+
+            FIND(   need_dwarf2,     ".debug_str_offsets", debug_str_offsets_escn)
+            if (!ML_(sli_is_valid)(debug_str_offsets_escn))
+               FIND(need_dwarf2,     ".zdebug_str_offsets", debug_str_offsets_escn)
+
             if (!ML_(sli_is_valid)(debugaltlink_escn))
                FIND(   need_dwarf2,     ".gnu_debugaltlink", debugaltlink_escn)
 
@@ -3501,7 +3550,8 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                    debug_rnglists_escn, debug_loclists_escn,
                    debug_loc_escn,      debug_info_alt_escn,
                    debug_abbv_alt_escn, debug_line_alt_escn,
-                   debug_str_alt_escn,  debug_line_str_escn
+                   debug_str_alt_escn,  debug_line_str_escn,
+                   debug_addr_escn,     debug_str_offsets_escn
             );
          }
       }
@@ -3599,6 +3649,99 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
    /* NOTREACHED */
 }
+
+Bool ML_(check_elf_and_get_rw_loads) ( Int fd, const HChar* filename, Int * rw_load_count )
+{
+   Bool     res, ok;
+   UWord    i;
+   DiImage* mimg = NULL;
+   DiOffT   ehdr_mioff = 0;
+   DiOffT   phdr_mioff    = 0;
+   UWord    phdr_mnent    = 0U;
+   UWord    phdr_ment_szB = 0U;
+
+   res = False;
+
+   mimg = ML_(img_from_fd)(fd, filename);
+   if (mimg == NULL) {
+      VG_(message)(Vg_UserMsg, "warning: connection to image %s failed\n",
+                               filename );
+      VG_(message)(Vg_UserMsg, "         cannot read program headers \n" );
+      return False;
+   }
+
+   ok = is_elf_object_file_by_DiImage(mimg, False);
+   if (!ok) {
+      goto out;
+   }
+
+   ElfXX_Ehdr ehdr_m;
+   Elf64_Word flag_x;
+#if defined(VGA_amd64) || defined(VGA_ppc64be) || defined(VGA_ppc64le) || defined(VGA_arm) || defined(VGA_arm64)
+   flag_x = PF_X;
+#else
+   flag_x = 0;
+#endif
+
+#if defined(VGO_solaris)
+   flag_x = 0;
+#endif
+
+   vg_assert(ehdr_mioff == 0); // ensured by its initialisation
+   ok = ML_(img_valid)(mimg, ehdr_mioff, sizeof(ehdr_m));
+   vg_assert(ok); // ML_(is_elf_object_file) should ensure this
+   ML_(img_get)(&ehdr_m, mimg, ehdr_mioff, sizeof(ehdr_m));
+
+   phdr_mioff    = ehdr_mioff + ehdr_m.e_phoff;
+   phdr_mnent    = ehdr_m.e_phnum;
+   phdr_ment_szB = ehdr_m.e_phentsize;
+
+   for (i = 0U; i < phdr_mnent; i++) {
+      ElfXX_Phdr a_phdr;
+      ML_(img_get)(&a_phdr, mimg,
+                   INDEX_BIS(phdr_mioff, i, phdr_ment_szB),
+                   sizeof(a_phdr));
+
+      if (a_phdr.p_type == PT_LOAD) {
+         if (a_phdr.p_memsz > 0) {
+            if (((a_phdr.p_flags & (PF_R | PF_W)) == (PF_R | PF_W)) &&
+                ((a_phdr.p_flags & flag_x) == 0)) {
+               ++*rw_load_count;
+            }
+
+            /*
+             * Hold your horses
+             * Just because The ELF file contains 2 RW PT_LOAD segments it
+             * doesn't mean that Valgrind will also make 2 calls to
+             * VG_(di_notify_mmap). If the stars are all aligned
+             * (which usually means that the ELF file is the client
+             * executable with the segment offset for the
+             * second PT_LOAD falls exactly on 0x1000) then the NSegements
+             * will get merged and VG_(di_notify_mmap) only gets called once. */
+            if (*rw_load_count == 2 &&
+                ehdr_m.e_type == ET_EXEC &&
+                a_phdr.p_offset == VG_PGROUNDDN(a_phdr.p_offset) )
+            {
+               *rw_load_count = 1;
+            }
+         }
+      }
+   } /* for (i = 0; i < phdr_Mnent; i++) ... */
+
+   res = True;
+
+  out:
+   {
+      /* Last, but not least, detach from the image(s). */
+      if (mimg) ML_(img_free)(mimg);
+
+      return res;
+   } /* out: */
+
+   /* NOTREACHED */
+}
+
+
 
 #endif // defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
 

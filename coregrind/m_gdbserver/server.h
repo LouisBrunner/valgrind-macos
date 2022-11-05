@@ -315,7 +315,7 @@ int unhexify (char *bin, const char *hex, int count);
 int hexify (char *hex, const char *bin, int count);
 /* heximage builds an image of bin according to byte order of the architecture 
    Useful for register and int image */
-char* heximage (char *buf, char *bin, int count);
+char* heximage (char *buf, const char *bin, int count);
 
 /* convert from CORE_ADDR to void* */
 void* C2v(CORE_ADDR addr);

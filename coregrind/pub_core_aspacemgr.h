@@ -384,9 +384,10 @@ extern Bool VG_(am_search_for_new_segment)(Addr *start, SizeT *size,
                                            UInt *prot);
 #endif
 
+#if defined(VGO_freebsd)
 /* For kern.usrstack syscall on FreeBSD */
 extern Word VG_(get_usrstack)(void);
-
+#endif
 
 #endif   // __PUB_CORE_ASPACEMGR_H
 

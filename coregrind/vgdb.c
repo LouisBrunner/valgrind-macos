@@ -176,7 +176,7 @@ void map_vgdbshared(char* shared_mem)
       XERROR(errno, "error opening %s shared memory file\n", shared_mem);
 
    if (fstat(shared_mem_fd, &fdstat) != 0)
-      XERROR(errno, "fstat");
+      XERROR(errno, "fstat\n");
 
    if (fdstat.st_size == sizeof(VgdbShared64))
       s = (void*) &shared64;
@@ -495,7 +495,7 @@ void wait_for_gdb_connect(int in_port)
    int gdb_connect;
 
    if (-1 == listen_gdb) {
-      XERROR(errno, "cannot create socket");
+      XERROR(errno, "cannot create socket\n");
    }
 
     memset(&addr, 0, sizeof(addr));
@@ -505,16 +505,16 @@ void wait_for_gdb_connect(int in_port)
     addr.sin_addr.s_addr = INADDR_ANY;
 
     if (-1 == bind(listen_gdb, (struct sockaddr *)&addr, sizeof(addr))) {
-      XERROR(errno, "bind failed");
+      XERROR(errno, "bind failed\n");
     }
     TSFPRINTF(stderr, "listening on port %d ...", in_port);
     if (-1 == listen(listen_gdb, 1)) {
-      XERROR(errno, "error listen failed");
+      XERROR(errno, "error listen failed\n");
     }
 
     gdb_connect = accept(listen_gdb, NULL, NULL);
     if (gdb_connect < 0) {
-        XERROR(errno, "accept failed");
+        XERROR(errno, "accept failed\n");
     }
     fprintf(stderr, "connected.\n");
     fflush(stderr);
@@ -766,7 +766,7 @@ void install_handlers(void)
    /* unmask all signals, in case the process that launched vgdb
       masked some. */
    if (sigprocmask(SIG_SETMASK, &action.sa_mask, NULL) != 0)
-      XERROR(errno, "vgdb error sigprocmask");
+      XERROR(errno, "vgdb error sigprocmask\n");
 }
 
 /* close the FIFOs provided connections, terminate the invoker thread.  */

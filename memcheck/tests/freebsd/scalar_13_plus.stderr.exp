@@ -1,4 +1,52 @@
 ---------------------------------------------------------
+571:           SYS_shm_open2  5s 2m
+---------------------------------------------------------
+Syscall param shm_open2(path) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(mode) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(shmflags) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(name) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(path) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param shm_open2(name) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+571:           SYS_shm_open2  5s 1m
+---------------------------------------------------------
+Syscall param shm_open2(path) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(mode) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(shmflags) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(name) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(name) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
 574:        SYS___realpathat  5s 2m
 ---------------------------------------------------------
 Syscall param __realpathat(fd) contains uninitialised byte(s)

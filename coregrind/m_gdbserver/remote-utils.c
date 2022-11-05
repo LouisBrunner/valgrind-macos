@@ -688,7 +688,7 @@ int hexify (char *hex, const char *bin, int count)
 
 /* builds an image of bin according to byte order of the architecture 
    Useful for register and int image */
-char* heximage (char *buf, char *bin, int count)
+char* heximage (char *buf, const char *bin, int count)
 {
 #if (VKI_LITTLE_ENDIAN)
    char rev[count]; 

@@ -75,6 +75,11 @@ Syscall param execve(filename) points to unaddressable byte(s)
    by 0x........: main (scalar.c:91)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
+Syscall param execve(argv) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:91)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
 -----------------------------------------------------
  49:          __NR_chdir 1s 1m
 -----------------------------------------------------
@@ -576,13 +581,13 @@ Syscall param getpriority(who) contains uninitialised byte(s)
 -----------------------------------------------------
 140:    __NR_setpriority 3s 0m
 -----------------------------------------------------
+
+More than 100 errors detected.  Subsequent errors
+will still be recorded, but in less detail than before.
 Syscall param setpriority(which) contains uninitialised byte(s)
    ...
    by 0x........: main (scalar.c:458)
 
-
-More than 100 errors detected.  Subsequent errors
-will still be recorded, but in less detail than before.
 Syscall param setpriority(who) contains uninitialised byte(s)
    ...
    by 0x........: main (scalar.c:458)

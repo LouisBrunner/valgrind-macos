@@ -79,10 +79,11 @@ extern Int VG_(clo_vgdb_poll);
 /* Specify when Valgrind gdbserver stops the execution and wait
    for a GDB to connect. */
 typedef
-   enum {                       // Stop :
-      VgdbStopAt_Startup,       // just before the client starts to execute.
-      VgdbStopAt_Exit,          // just before the client exits.
-      VgdbStopAt_ValgrindAbExit // on abnormal valgrind exit.
+   enum {                       // Stop just before ...
+      VgdbStopAt_Startup,       // ... the client starts to execute.
+      VgdbStopAt_Exit,          // ... the client exits with any exit code..
+      VgdbStopAt_Abexit,        // ... the client exits with a non 0 exit code.
+      VgdbStopAt_ValgrindAbExit // ... an abnormal valgrind exit.
    }
    VgdbStopAt;
 // Build mask to check or set VgdbStop_At a membership
@@ -125,6 +126,12 @@ extern const HChar* VG_(clo_trace_children_skip_by_arg);
    after fork() calls.  Although note they become un-silent again
    after the subsequent exec(). */
 extern Bool  VG_(clo_child_silent_after_fork);
+
+#if defined(VGO_linux)
+/* If True, valgrind will attempt to query debuginfod servers for
+   any missing debuginfo. */
+extern Bool VG_(clo_enable_debuginfod);
+#endif
 
 /* If the user specified --log-file=STR and/or --xml-file=STR, these
    hold STR before expansion. */

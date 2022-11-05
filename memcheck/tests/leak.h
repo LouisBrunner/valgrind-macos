@@ -143,6 +143,11 @@
                                   "$8", "$9", "$10", "$11", "$12", "$13",    \
                                   "$14", "$15", "$24", "$25", "$31");        \
    } while (0)
+#elif defined (__clang__) && defined(VGA_x86)
+#define CLEAR_CALLER_SAVED_REGS                                              \
+   do {                                                                      \
+      __asm__ __volatile__ ("movl $0, %ecx\n\t"); \
+   } while (0)
 #else
 #define CLEAR_CALLER_SAVED_REGS  /*nothing*/
 #endif

@@ -22,7 +22,15 @@
 #ifndef REGCACHE_H
 #define REGCACHE_H
 
-#include "pub_core_basics.h"    // Bool
+/* Defines support routines to get/set registers for the valgrind
+   remote GDB server.
+   This file used to provide a real register cache, where the register
+   values were written to by GDB without directly reaching the valgrind VEX
+   state.  In the real GDB gdbserver, this cache was used to avoid a ptrace
+   system call each time a register has to be re-read. In valgrind, registers
+   are directly accessible by the embedded gdbserver. So, read/write registers
+   operations by GDB are directly executed from/to the valgrind VEX registers. */
+
 
 struct inferior_list_entry;
 
@@ -33,11 +41,6 @@ void *new_register_cache (void);
 /* Release all memory associated with the register cache for INFERIOR.  */
 
 void free_register_cache (void *regcache);
-
-/* Invalidate cached registers for one or all threads.  */
-
-void regcache_invalidate_one (struct inferior_list_entry *);
-void regcache_invalidate (void);
 
 /* Convert all registers to a string in the currently specified remote
    format.  */
@@ -62,16 +65,15 @@ int find_regno (const char *name);
 
 extern const char **gdbserver_expedite_regs;
 
-/* *mod set to True if *buf provides a new value. */
-void supply_register (int n, const void *buf, Bool *mod);
+/* Sets the value of register N to buf content. */
+void supply_register (int n, const void *buf);
 
 /* Reads register data from buf (hex string in target byte order)
-   and stores it in the register cache.
-   *mod set to True if *buf provides a new value. */
-void supply_register_from_string (int n, const char *buf, Bool *mod);
+   and stores it in the register cache.  */
+void supply_register_from_string (int n, const char *buf);
 
-/* *mod set to True if *buf provides a new value. */
-void supply_register_by_name (const char *name, const void *buf, Bool *mod);
+/* Sets the value of register identified by NAME to buf content. */
+void supply_register_by_name (const char *name, const void *buf);
 
 void collect_register (int n, void *buf);
 

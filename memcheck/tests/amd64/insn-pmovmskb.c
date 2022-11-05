@@ -45,8 +45,10 @@ static void use(int index, int invalid)
 
    /* Create a conditional branch on which our output depends, so that
       memcheck cannot possibly optimize it away, either. */
-   fprintf(stderr, "%d: Invalid value is %s\n",
-           index, invalid ? "true" : "false");
+   if (invalid)
+      fprintf(stderr, "%d: Invalid value is true\n", index);
+   else
+      fprintf(stderr, "%d: Invalid value is false\n", index);
 }
 
 static void doit(ULong vbits_hi, ULong vbits_lo, ULong val_hi, ULong val_lo)

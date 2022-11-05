@@ -43,10 +43,10 @@ void f(char* a, char* b, wchar_t* wa, wchar_t* wb) {
    memcpy (a, b, 1000); // Redirects to memmove
    memcpy (a, b, 1000); // Redirects to memmove
    memmove(a, b, 1000);
-#if defined(VGO_solaris) || defined(VGO_darwin) || (defined(VGO_freebsd) && defined(__GNUC__))
-   memcpy(a, b, 1000);
-#else
+#if defined(HAVE_MEMPCPY)
    mempcpy(a, b, 1000);
+#else
+   memcpy(a, b, 1000);
 #endif
    bcopy  (a, b, 1000); // Redirects to memmove
    strcpy (a, b);

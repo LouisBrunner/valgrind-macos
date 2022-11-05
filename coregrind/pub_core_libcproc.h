@@ -90,6 +90,15 @@ extern void VG_(do_atfork_child)  ( ThreadId tid );
 extern Int VG_(sysctlbyname)(const HChar *name, void *oldp, SizeT *oldlenp, const void *newp, SizeT newlen);
 extern Int VG_(getosreldate)(void);
 extern Bool VG_(is32on64)(void);
+
+struct auxv {
+   Word a_type;
+   union {
+      void *a_ptr;
+      Word a_val;
+   } u;
+};
+
 #endif
 
 // icache invalidation

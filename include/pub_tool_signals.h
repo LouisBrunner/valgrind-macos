@@ -30,6 +30,7 @@
 #define __PUB_TOOL_SIGNALS_H
 
 #include "pub_tool_basics.h"   // Addr
+#include "pub_tool_hashtable.h" // VgHashTable
 
 // Register an interest in apparently internal faults; used code which
 // wanders around dangerous memory (ie, leakcheck).  The catcher is
@@ -42,6 +43,15 @@
 // the need for this file.
 typedef void (*fault_catcher_t)(Int sig, Addr addr);
 extern fault_catcher_t VG_(set_fault_catcher)(fault_catcher_t catcher);
+
+/* Hash table of PIDs from which SIGCHLD is ignored.  */
+extern VgHashTable *ht_sigchld_ignore;
+
+/* Hash table node where each key represents a PID.  */
+typedef struct _ht_ignore_node {
+   struct _ht_ignore_node *next;
+   UWord   key;
+} ht_ignore_node;
 
 #endif   // __PUB_TOOL_SIGNALS_H
 

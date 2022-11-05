@@ -323,6 +323,9 @@ DECL_TEMPLATE(linux, sys_io_uring_register);
 // Linux-specific (new in Linux 5.9)
 DECL_TEMPLATE(linux, sys_close_range);
 
+// Linux-specific (new in Linux 5.14)
+DECL_TEMPLATE(linux, sys_memfd_secret);
+
 /* ---------------------------------------------------------------------
    Wrappers for sockets and ipc-ery.  These are split into standalone
    procedures because x86-linux hides them inside multiplexors

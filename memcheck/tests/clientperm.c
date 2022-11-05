@@ -26,14 +26,20 @@ int main ( void )
 
    for (i = 0; i < 100; i++)
      sum += aa[i];
-   printf("sum is %s\n", sum > 0 ? "positive" : "non-positive");
+   if (sum > 0)
+      printf("sum is positive\n");
+   else
+      printf("sum is non-positive\n");
 
    m = VALGRIND_DISCARD(m);
    printf("m_rm: returned value is %d\n", m );
 
    for (i = 0; i < 100; i++)
      sum += aa[i];
-   printf("sum is %s\n", sum > 0 ? "positive" : "non-positive");
+   if (sum > 0)
+      printf("sum is positive\n");
+   else
+      printf("sum is non-positive\n");
 
    return 0;
 }

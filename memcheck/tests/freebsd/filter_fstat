@@ -1,0 +1,12 @@
+#! /bin/sh
+
+../filter_stderr "$@" |
+
+gsed '/by 0x........: stat (in \/...libc...)/d;/by 0x........: fstat (in \/...libc...)/d;/by 0x........: fstatat (in \/...libc...)/d' |
+gsed '/by 0x........: statfs (in \/...libc...)/d;/by 0x........: fstatfs (in \/...libc...)/d' |
+
+# fox x86 compatibility
+
+gsed 's/bytes inside a block of size 208 free/bytes inside a block of size 224 free/'
+
+exit 0

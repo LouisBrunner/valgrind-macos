@@ -15,9 +15,11 @@ int main(void)
    // bad
    int * bad_int1 = malloc(sizeof(char));
    int * bad_int2 = malloc(sizeof(char));
+   size_t * bad_sz = malloc(sizeof(char));
    *bad_int1 = AT_FDCWD;
    *bad_int2 = 0;
-   syscall(SYS___realpathat, *bad_int1, self_path, buf, *bad_int2);
+   *bad_sz = PATH_MAX;
+   syscall(SYS___realpathat, *bad_int1, self_path, buf, *bad_sz,  *bad_int2);
    free(bad_int1);
    free(bad_int2);
    

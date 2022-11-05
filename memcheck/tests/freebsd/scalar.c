@@ -1396,9 +1396,15 @@ int main(void)
    GO(SYS_swapcontext, "2s 2m");
    SY(SYS_swapcontext, x0+1, x0+2); FAIL;
 
+#if (FREEBSD_VERS >= FREEBSD_13_1)
+   /* SYS_freebsd13_swapoff                 424 */
+   GO(SYS_freebsd13_swapoff, "1s 1m");
+   SY(SYS_freebsd13_swapoff, x0+1); FAIL;
+#else
    /* SYS_swapoff                 424 */
    GO(SYS_swapoff, "1s 1m");
    SY(SYS_swapoff, x0+1); FAIL;
+#endif
 
    /* SYS___acl_get_link          425 */
    GO(SYS___acl_get_link, "3s 2m");
@@ -1615,7 +1621,7 @@ int main(void)
    SY(SYS_thr_kill2, x0-1, x0-1, x0+9999); FAIL;
 
    /* SYS_shm_open                482 */
-#if (FREEBSD_VERS >= FREEBSD_13)
+#if (FREEBSD_VERS >= FREEBSD_13_0)
    GO(SYS_freebsd12_shm_open, "(SHM_ANON) 3s 0m");
    SY(SYS_freebsd12_shm_open, x0+SHM_ANON, x0+2, x0+9); SUCC;
 #else
@@ -1748,7 +1754,7 @@ int main(void)
    SY(SYS_jail_remove, x0+1); FAIL;
 
    /* SYS_closefrom               509 */
-#if (FREEBSD_VERS >= FREEBSD_13)
+#if (FREEBSD_VERS >= FREEBSD_13_0)
    GO(SYS_freebsd12_closefrom, "1s 0m");
    SY(SYS_freebsd12_closefrom, x0+100000); SUCC;
 #else

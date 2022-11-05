@@ -894,7 +894,7 @@ Bool invoker_invoke_gdbserver (pid_t pid)
                                &check,
                                regsize);
       if (rw != 0) {
-         ERROR(rw, "push check arg ptrace_write_memory");
+         ERROR(rw, "push check arg ptrace_write_memory\n");
          detach_from_all_threads(pid);
          return False;
       }
@@ -907,7 +907,7 @@ Bool invoker_invoke_gdbserver (pid_t pid)
                                &bad_return,
                                regsize);
       if (rw != 0) {
-         ERROR(rw, "push bad_return return address ptrace_write_memory");
+         ERROR(rw, "push bad_return return address ptrace_write_memory\n");
          detach_from_all_threads(pid);
          return False;
       }
@@ -945,10 +945,10 @@ Bool invoker_invoke_gdbserver (pid_t pid)
       user_mod.regs.uregs[15] = shared32->invoke_gdbserver;
 
 #elif defined(VGA_arm64)
-      XERROR(0, "TBD arm64: vgdb a 32 bits executable with a 64 bits exe");
+      XERROR(0, "TBD arm64: vgdb a 32 bits executable with a 64 bits exe\n");
 
 #elif defined(VGA_s390x)
-      XERROR(0, "(fn32) s390x has no 32bits implementation");
+      XERROR(0, "(fn32) s390x has no 32bits implementation\n");
 #elif defined(VGA_mips32) || defined(VGA_nanomips)
       /* put check arg in register 4 */
       p[4] = check;
@@ -986,7 +986,7 @@ Bool invoker_invoke_gdbserver (pid_t pid)
                                &bad_return,
                                sizeof(bad_return));
       if (rw != 0) {
-         ERROR(rw, "push bad_return return address ptrace_write_memory");
+         ERROR(rw, "push bad_return return address ptrace_write_memory\n");
          detach_from_all_threads(pid);
          return False;
       }

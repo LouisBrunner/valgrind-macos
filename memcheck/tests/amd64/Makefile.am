@@ -47,6 +47,7 @@ check_PROGRAMS = \
 	sh-mem-vec128 \
 	sse_memory \
 	xor-undef-amd64
+
 if BUILD_AVX_TESTS
  check_PROGRAMS += sh-mem-vec256 xsave-avx
 endif
@@ -56,8 +57,14 @@ endif
 # clang 3.5.0 barfs about -mfancy-math-387
 if !COMPILER_IS_CLANG
  check_PROGRAMS += \
- 	more_x87_fp \
- 	shr_edx
+ 	more_x87_fp
+endif
+
+# initially this was a "not clang" test
+# but the problem is macOS, not clang
+if !VGCONF_OS_IS_DARWIN
+ check_PROGRAMS += \
+	shr_edx
 endif
 
 AM_CFLAGS    += @FLAG_M64@

@@ -874,6 +874,49 @@ DiImage* ML_(img_from_local_file)(const HChar* fullpath)
    return img;
 }
 
+/* As above, but uses fd rather than filename */
+DiImage* ML_(img_from_fd)(Int fd, const HChar* fullpath)
+{
+   struct vg_stat stat_buf;
+   DiOffT         size;
+
+   if (VG_(fstat)(fd, &stat_buf) != 0) {
+      return NULL;
+   }
+
+   size = stat_buf.size;
+   if (size == 0 || size == DiOffT_INVALID
+       || /* size is unrepresentable as a SizeT */
+          size != (DiOffT)(SizeT)(size)) {
+      return NULL;
+   }
+
+   DiImage* img = ML_(dinfo_zalloc)("di.image.ML_iflf.1", sizeof(DiImage));
+   img->source.is_local = True;
+   img->source.fd       = fd;
+   img->size            = size;
+   img->real_size       = size;
+   img->ces_used        = 0;
+   img->source.name     = ML_(dinfo_strdup)("di.image.ML_iflf.2", fullpath);
+   img->cslc            = NULL;
+   img->cslc_size       = 0;
+   img->cslc_used       = 0;
+   /* img->ces is already zeroed out */
+   vg_assert(img->source.fd >= 0);
+
+   /* Force the zeroth entry to be the first chunk of the file.
+      That's likely to be the first part that's requested anyway, and
+      loading it at this point forcing img->cent[0] to always be
+      non-empty, thereby saving us an is-it-empty check on the fast
+      path in get(). */
+   UInt entNo = alloc_CEnt(img, CACHE_ENTRY_SIZE, False/*!fromC*/);
+   vg_assert(entNo == 0);
+   set_CEnt(img, 0, 0);
+
+   return img;
+}
+
+
 
 /* Create an image from a file on a remote debuginfo server.  This is
    more complex.  There are lots of ways in which it can fail. */
@@ -1007,20 +1050,9 @@ DiOffT ML_(img_mark_compressed_part)(DiImage* img, DiOffT offset, SizeT szC,
    return ret;
 }
 
-void ML_(img_done)(DiImage* img)
+void ML_(img_free)(DiImage* img)
 {
    vg_assert(img != NULL);
-   if (img->source.is_local) {
-      /* Close the file; nothing else to do. */
-      vg_assert(img->source.session_id == 0);
-      VG_(close)(img->source.fd);
-   } else {
-      /* Close the socket.  The server can detect this and will scrub
-         the connection when it happens, so there's no need to tell it
-         explicitly by sending it a "CLOSE" message, or any such. */
-      vg_assert(img->source.session_id != 0);
-      VG_(close)(img->source.fd);
-   }
 
    /* Free up the cache entries, ultimately |img| itself. */
    UInt i;
@@ -1036,6 +1068,26 @@ void ML_(img_done)(DiImage* img)
    ML_(dinfo_free)(img->cslc);
    ML_(dinfo_free)(img);
 }
+
+void ML_(img_done)(DiImage* img)
+{
+   vg_assert(img != NULL);
+   if (img->source.is_local) {
+      /* Close the file; nothing else to do. */
+      vg_assert(img->source.session_id == 0);
+      VG_(close)(img->source.fd);
+   } else {
+      /* Close the socket.  The server can detect this and will scrub
+         the connection when it happens, so there's no need to tell it
+         explicitly by sending it a "CLOSE" message, or any such. */
+      vg_assert(img->source.session_id != 0);
+      VG_(close)(img->source.fd);
+   }
+
+   ML_(img_free)(img);
+}
+
+
 
 DiOffT ML_(img_size)(const DiImage* img)
 {

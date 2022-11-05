@@ -52,12 +52,6 @@
 #include "pub_core_pathscan.h"
 #include "pub_core_initimg.h"         /* self */
 
-/* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
-/* This is for ELF types etc, and also the AT_ constants. */
-#include <elf.h>
-/* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
-
-
 /*====================================================================*/
 /*=== Loading the client                                           ===*/
 /*====================================================================*/
@@ -298,6 +292,19 @@ static HChar *copy_str(HChar **tab, const HChar *str)
    return orig;
 }
 
+/* Add byte onto the string table, and return its address */
+static HChar *copy_bytes(HChar **tab, const HChar *src, SizeT size)
+{
+   HChar *cp = *tab;
+   /*VG_ROUNDUP(cp, sizeof(Word));*/
+   HChar *orig = cp;
+
+   VG_(memcpy)(cp, src, size);
+
+   *tab = cp+size;
+
+   return orig;
+}
 
 /* ----------------------------------------------------------------
 
@@ -308,25 +315,25 @@ static HChar *copy_str(HChar **tab, const HChar *str)
 
    higher address +-----------------+ <- clstack_end
                   |                 |
-        : string table    :
-        |                 |
-        +-----------------+
-        | AT_NULL         |
-        -                 -
-        | auxv            |
-        +-----------------+
-        | NULL            |
-        -                 -
-        | envp            |
-        +-----------------+
-        | NULL            |
-        -                 -
-        | argv            |
-        +-----------------+
-        | argc            |
+                  : string table    :
+                  |                 |
+                  +-----------------+
+                  | AT_NULL         |
+                  -                 -
+                  | auxv            |
+                  +-----------------+
+                  | NULL            |
+                  -                 -
+                  | envp            |
+                  +-----------------+
+                  | NULL            |
+                  -                 -
+                  | argv            |
+                  +-----------------+
+                  | argc            |
    lower address  +-----------------+ <- sp
                   | undefined       |
-        :                 :
+                  :                 :
 
    Allocate and create the initial client stack.  It is allocated down
    from clstack_end, which was previously determined by the address
@@ -335,14 +342,6 @@ static HChar *copy_str(HChar **tab, const HChar *str)
    The client's auxv is created by copying and modifying our own one.
 
    ---------------------------------------------------------------- */
-
-struct auxv {
-   Word a_type;
-   union {
-      void *a_ptr;
-      Word a_val;
-   } u;
-};
 
 static
 struct auxv *find_auxv(UWord* sp)
@@ -385,6 +384,7 @@ Addr setup_client_stack( void*  init_sp,
    Addr clstack_start;
    Int i;
    Bool have_exename;
+   Word client_argv;
 
    vg_assert(VG_IS_PAGE_ALIGNED(clstack_end+1));
    vg_assert( VG_(args_for_client) );
@@ -428,10 +428,45 @@ Addr setup_client_stack( void*  init_sp,
       stringsize += VG_(strlen)(*cpp) + 1;
    }
 
+   Int canarylen = -1;
+   Int pagesizeslen =  -1;
+
    /* now, how big is the auxv? */
    auxsize = sizeof(*auxv);   /* there's always at least one entry: AT_NULL */
-   for (cauxv = orig_auxv; cauxv->a_type != AT_NULL; cauxv++) {
+   for (cauxv = orig_auxv; cauxv->a_type != VKI_AT_NULL; cauxv++) {
       auxsize += sizeof(*cauxv);
+      switch(cauxv->a_type) {
+      case VKI_AT_EXECPATH:
+         stringsize += VG_(strlen)(cauxv->u.a_ptr) + 1;
+         break;
+      case VKI_AT_CANARYLEN:
+         canarylen = cauxv->u.a_val;
+         /*VG_ROUNDUP(stringsize, sizeof(Word));*/
+         stringsize += canarylen;
+         break;
+      case VKI_AT_PAGESIZESLEN:
+         pagesizeslen = cauxv->u.a_val;
+         /*VG_ROUNDUP(stringsize, sizeof(Word));*/
+         stringsize += pagesizeslen;
+         break;
+#if 0
+      case VKI_AT_TIMEKEEP:
+         /*VG_ROUNDUP(stringsize, sizeof(Word));*/
+         stringsize += sizeof(struct vki_vdso_timehands);
+         break;
+#endif
+#if (FREEBSD_VERS >= FREEBSD_13_0)
+      case VKI_AT_PS_STRINGS:
+         stringsize += sizeof(struct vki_ps_strings);
+         break;
+#endif
+#if (FREEBSD_VERS >= FREEBSD_13_1)
+      // case AT_FXRNG:
+      // case AT_KPRELOAD:
+#endif
+      default:
+         break;
+      }
    }
 
    /* OK, now we know how big the client stack is */
@@ -553,6 +588,7 @@ Addr setup_client_stack( void*  init_sp,
    *ptr++ = argc + (have_exename ? 1 : 0);
 
    /* --- client argv --- */
+   client_argv = (Word)ptr;
    if (info->interp_name)
       *ptr++ = (Addr)copy_str(&strtab, info->interp_name);
    if (info->interp_args)
@@ -578,52 +614,9 @@ Addr setup_client_stack( void*  init_sp,
    /* --- auxv --- */
    auxv = (struct auxv *)ptr;
    *client_auxv = (UInt *)auxv;
-#if defined(VGP_x86_freebsd)  && (VGO_freebsd <= FREEBSD_13)
-   int* pagesizes = NULL;
-#endif
+   VG_(client_auxv) = (UWord *)*client_auxv;
 
-   /*
-    * The PAGESIZES hack - PJF
-    *
-    * Normally a standalone application has a full auxv which, among
-    * many other things contains a vector of integers (PAGESIZES)
-    * of a platform dependent length (PAGESIZESLEN). On x86 the
-    * length is 2, on amd64 the length is 3 (there are other lengths
-    * for architectures not supported on Valgrind).
-    *
-    * When the dynamic loader executes it will run a routine
-    * static void init_pagesizes(Elf_Auxinfo **aux_info)
-    * (see /usr/src/libexec/rtld-elf/rltd.c). If the PAGESIZES info is in
-    * auxv, init_pagesizes will use that. However, normally this loop
-    * does not copy 'pointered' elements (because that would generate
-    * 'Invalid reads' in the guest). This means that the auxv that
-    * Valgrind provides to ldrt *doesn't* normally contain
-    * PAGESIZES.
-    *
-    * So init_pagesizes falls back to using sysctlnametomib/sysctl
-    * to read "hw.pagesizes". Unfortunately there seems to be a bug
-    * in this for an x86 executable compiled and running on an amd64
-    * kernel.
-    *
-    * The application sees MAXPAGESLEN as 3 (from the amd64 headers)
-    * but the x86 kernel sees MAXPAGESLEN as 2. The routine that
-    * copies out the data for a sysctl sees this discrepancy and
-    * sets an ENOMEM error. So guest execution doesn't even get past
-    * executing the dynamic linker.
-    *
-    * This was fixed in the kernel in May 2020, see
-    * https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=246215
-    *
-    * That means this workaround is not needed for
-    * FreeBSD 13 or later, any version
-    * FreeBSD 12 1201515 and later
-    * FreeBSD 11 1104501 and later
-    *
-    * Because this is rather complicated I've just disabled the hack
-    * for 13 and later
-    */
-
-   for (; orig_auxv->a_type != AT_NULL; auxv++, orig_auxv++) {
+   for (; orig_auxv->a_type != VKI_AT_NULL; auxv++, orig_auxv++) {
 
       /* copy the entry... */
       *auxv = *orig_auxv;
@@ -638,85 +631,110 @@ Addr setup_client_stack( void*  init_sp,
        */
       switch(auxv->a_type) {
 
-      case AT_IGNORE:
-      case AT_PHENT:
-      case AT_PAGESZ:
-      case AT_FLAGS:
-      case AT_NOTELF:
-      case AT_UID:
-      case AT_EUID:
-      case AT_GID:
-      case AT_EGID:
-      case AT_STACKPROT:
-      case AT_NCPUS:
-      case AT_OSRELDATE:
+      case VKI_AT_IGNORE:
+      case VKI_AT_PHENT:
+      case VKI_AT_PAGESZ:
+      case VKI_AT_FLAGS:
+      case VKI_AT_NOTELF:
+      case VKI_AT_UID:
+      case VKI_AT_EUID:
+      case VKI_AT_GID:
+      case VKI_AT_EGID:
+      case VKI_AT_STACKPROT:
+      case VKI_AT_NCPUS:
+      case VKI_AT_OSRELDATE:
+      case VKI_AT_PAGESIZESLEN:
+      case VKI_AT_CANARYLEN:
+
 #if (FREEBSD_VERS >= FREEBSD_11)
       // FreeBSD 11+ also have HWCAP and HWCAP2
-      case AT_EHDRFLAGS:
+      case VKI_AT_EHDRFLAGS:
 #endif
          /* All these are pointerless, so we don't need to do
             anything about them. */
          break;
-         // case AT_CANARYLEN:
-         // case AT_EXECPATH:
-         // case AT_CANARY:
-#if defined(VGP_x86_freebsd) && (VGO_freebsd <= FREEBSD_13)
-      case AT_PAGESIZESLEN:
-         if (!VG_(is32on64)()) {
-            VG_(debugLog)(2, "initimg",
-                          "stomping auxv entry %llu\n",
-                          (ULong)auxv->a_type);
-            auxv->a_type = AT_IGNORE;
-         }
+
+      case VKI_AT_EXECPATH:
+         auxv->u.a_ptr = copy_str(&strtab, orig_auxv->u.a_ptr);
          break;
-      case AT_PAGESIZES:
-         if (VG_(is32on64)()) {
-            pagesizes = VG_(malloc)("initimg-freebsd.cpauxv.1", 2*sizeof(int));
-            pagesizes[0] = ((int*)auxv->u.a_ptr)[0];
-            pagesizes[1] = ((int*)auxv->u.a_ptr)[1];
-         } else {
-            VG_(debugLog)(2, "initimg",
-                          "stomping auxv entry %llu\n",
-                          (ULong)auxv->a_type);
-            auxv->a_type = AT_IGNORE;
-         }
+      case VKI_AT_CANARY:
+         if (canarylen >= 1)
+            auxv->u.a_ptr = copy_bytes(&strtab, orig_auxv->u.a_ptr, canarylen);
+         else
+            auxv->a_type = VKI_AT_IGNORE;
+         break;
+      case VKI_AT_PAGESIZES:
+         if (pagesizeslen >= 1)
+            auxv->u.a_ptr = copy_bytes(&strtab, orig_auxv->u.a_ptr, pagesizeslen);
+         else
+            auxv->a_type = VKI_AT_IGNORE;
+         break;
+#if 0
+         /*
+          * @todo PJF this crashes intermittently
+          */
+      case VKI_AT_TIMEKEEP:
+         auxv->u.a_ptr = copy_bytes(&strtab, orig_auxv->u.a_ptr, sizeof(struct vki_vdso_timehands));
          break;
 #endif
-         // case AT_TIMEKEEP:
-         break;
 
-#if (FREEBSD_VERS >= FREEBSD_13)
-      case AT_BSDFLAGS:
-      case AT_ARGC:
-      // case AT_ARGV:
-      case AT_ENVC:
-         // case AT_ENVV:
-         // case AT_PS_STRINGS:
+#if (FREEBSD_VERS >= FREEBSD_13_0)
+      /* @todo PJF BSDFLAGS causes serveral testcases to crash.
+         Not sure why, it seems to be used for sigfastblock */
+      // case AT_BSDFLAGS:
+      case VKI_AT_ARGC:
+      case VKI_AT_ENVC:
+         break;
+      case VKI_AT_PS_STRINGS:
+         auxv->u.a_ptr = copy_bytes(&strtab, orig_auxv->u.a_ptr, sizeof(struct vki_ps_strings));
+         ((struct vki_ps_strings*)auxv->u.a_ptr)->ps_envstr = (char**)VG_(client_envp);
+         ((struct vki_ps_strings*)auxv->u.a_ptr)->ps_argvstr = (char**)client_argv;
+         break;
+      case VKI_AT_ARGV:
+         auxv->u.a_val = client_argv;
+         break;
+      case VKI_AT_ENVV:
+         auxv->u.a_val = (Word)VG_(client_envp);
+         break;
+#endif
+
+#if (FREEBSD_VERS >= FREEBSD_13_1)
+      // I think that this is a pointer to a "fenestrasX" structture
+      // lots of stuff that I don't understand
+      // arc4random, passing through VDSO page ...
+      // case AT_FXRNG:
+      // Again a pointer, to the VDSO base for use by rtld
+      // case AT_KPRELOAD:
 #endif
 
 #if (FREEBSD_VERS >= FREEBSD_14)
-         // case AT_FXRNG:
+      case VKI_AT_USRSTACKBASE:
+         auxv->u.a_val = VG_(get_usrstack)();
+         break;
+      case VKI_AT_USRSTACKLIM:
+         auxv->u.a_val = clstack_max_size;
+         break;
 #endif
 
-      case AT_PHDR:
+      case VKI_AT_PHDR:
          if (info->phdr == 0)
-            auxv->a_type = AT_IGNORE;
+            auxv->a_type = VKI_AT_IGNORE;
          else
             auxv->u.a_val = info->phdr;
          break;
 
-      case AT_PHNUM:
+      case VKI_AT_PHNUM:
          if (info->phdr == 0)
-            auxv->a_type = AT_IGNORE;
+            auxv->a_type = VKI_AT_IGNORE;
          else
             auxv->u.a_val = info->phnum;
          break;
 
-      case AT_BASE:
+      case VKI_AT_BASE:
          auxv->u.a_val = info->interp_offset;
          break;
 
-      case AT_ENTRY:
+      case VKI_AT_ENTRY:
          auxv->u.a_val = info->entry;
          break;
 
@@ -725,12 +743,12 @@ Addr setup_client_stack( void*  init_sp,
          VG_(debugLog)(2, "initimg",
                        "stomping auxv entry %llu\n",
                        (ULong)auxv->a_type);
-         auxv->a_type = AT_IGNORE;
+         auxv->a_type = VKI_AT_IGNORE;
          break;
       }
    }
    *auxv = *orig_auxv;
-   vg_assert(auxv->a_type == AT_NULL);
+   vg_assert(auxv->a_type == VKI_AT_NULL);
 
    vg_assert((strtab-stringbase) == stringsize);
 
@@ -981,6 +999,15 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    /* Tell the tool that we just wrote to the registers. */
    VG_TRACK( post_reg_write, Vg_CoreStartup, /*tid*/1, /*offset*/0,
              sizeof(VexGuestArchState));
+
+   /* Tell the tool about the client data segment and then kill it which will
+      make it inaccessible/unaddressable. */
+   const NSegment *seg = VG_(am_find_nsegment)(VG_(brk_base));
+   vg_assert(seg);
+   vg_assert(seg->kind == SkAnonC);
+   VG_TRACK(new_mem_brk, VG_(brk_base), seg->end + 1 - VG_(brk_base),
+            1/*tid*/);
+   VG_TRACK(die_mem_brk, VG_(brk_base), seg->end + 1 - VG_(brk_base));
 }
 
 #endif // defined(VGO_freebsd)

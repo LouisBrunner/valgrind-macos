@@ -50,6 +50,11 @@
    obj:/libexec/ld-elf*.so.1
 }
 {
+   DRD-MANY4
+   drd:ConflictingAccess
+   obj:/lib/libthr.so.3
+}
+{
    DRD-UNWIND1
    drd:ConflictingAccess
    ...
@@ -174,4 +179,14 @@
    obj:*/lib*/libc.so.7
    obj:*/lib*/libc.so.7
    fun:_malloc_postfork
+}
+{
+   DRD-FREEBSD140-LIBC-THREAD-LOCAL-DATA
+   drd:ConflictingAccess
+   fun:_ZNSt3__119__thread_local_dataEv
+}
+{
+   DRD-FREEBSD140-GUARD-VARIABLE
+   drd:ConflictingAccess
+   fun:_ZL11*
 }

@@ -1,0 +1,90 @@
+{
+   HELGRIND-LIB-RTLD2
+   Helgrind:Race
+   fun:allocate_tls
+}
+{
+   HELGRIND-LIB-RTLD3
+   Helgrind:Race
+   fun:symlook_obj
+}
+{
+   HELGRIND-LIB-RTLD4
+   Helgrind:Race
+   fun:objlist_call_fini
+}
+{
+   HELGRIND-LIB-RTLD5
+   Helgrind:Race
+   fun:_rtld_error
+}
+{
+   HELGRIND-LIB-RTLD6
+   Helgrind:Race
+   fun:errmsg_save
+}
+{
+   HELGRIND-LIB-RTLD7
+   Helgrind:Race
+   fun:rtld_vsnprintf
+}
+{
+   HELGRIND-LIB-RTLD8
+   Helgrind:Race
+   fun:snprintf_func
+}
+{
+   HELGRIND-LIB-RTLD9
+   Helgrind:Race
+   fun:strlen
+}
+{
+   HELGRIND-LIB-RTLD10
+   Helgrind:Race
+   fun:symlook_default
+}
+{
+   HELGRIND-LIB-RTLD11
+   Helgrind:Race
+   ...
+   fun:dl_iterate_phdr
+}
+{
+   HELGRIND-LIB-RTLD12
+   Helgrind:Race
+   fun:morecore
+}
+{
+   HELGRIND-LIB-RTLD13
+   Helgrind:Race
+   fun:__crt_malloc
+}
+{
+   HELGRIND-LIB-RTLD14
+   Helgrind:Race
+   fun:globallist_curr
+}
+{
+   HELGRIND-LIB-RTLD15
+   Helgrind:Race
+   fun:tls_get_addr_common
+}
+{
+   HELGRIND-LIB-RTLD16
+   Helgrind:Race
+   fun:memset
+   ...
+   fun:allocate_tls
+}
+{
+   HELGRIND-LIB-RTLD17
+   Helgrind:Race
+   fun:__crt_free
+}
+{
+   HELGRIND-LIB-RTLD18
+   Helgrind:Race
+   ...
+   fun:free_tls
+}
+

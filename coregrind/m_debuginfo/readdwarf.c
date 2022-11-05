@@ -1056,6 +1056,7 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
    UShort ver;
 
    UChar    addr_size = 0;
+   UChar    unit_type = 0;
    DiCursor p = unitblock_img;
    DiCursor end_img;
    DiCursor abbrev_img;
@@ -1073,7 +1074,7 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
 
    if (ver >= 5)
       /* unit_type for DWARF5 */
-      /* unit_type = */ ML_(cur_step_UChar)(&p);
+      unit_type = ML_(cur_step_UChar)(&p);
    else
       /* get offset in abbrev */
       atoffs = ui->dw64 ? ML_(cur_step_ULong)(&p)
@@ -1082,10 +1083,32 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
    /* Address size */
    addr_size = ML_(cur_step_UChar)(&p);
 
-   if (ver >= 5)
+   if (ver >= 5) {
       /* get offset in abbrev */
       atoffs = ui->dw64 ? ML_(cur_step_ULong)(&p)
                         : (ULong)(ML_(cur_step_UInt)(&p));
+
+      /* read any extra fields */
+      switch(unit_type) {
+         case DW_UT_compile:
+         case DW_UT_partial:
+            break;
+         case DW_UT_skeleton:
+         case DW_UT_split_compile:
+            /* dwo_id = */ ML_(cur_step_ULong)(&p);
+            break;
+         case DW_UT_type:
+         case DW_UT_split_type:
+            /* type_signature = */ ML_(cur_step_ULong)(&p);
+            /* type_offset = */ ui->dw64 ? ML_(cur_step_ULong)(&p)
+                                         : (ULong)(ML_(cur_step_UInt)(&p));
+            break;
+         default:
+            VG_(printf)( "### unhandled dwarf2 unit_type code 0x%x\n",
+                         unit_type );
+            break;
+      }
+   }
 
    /* End of this block */
    end_img = ML_(cur_plus)(unitblock_img, blklen + (ui->dw64 ? 12 : 4)); 
@@ -1113,7 +1136,8 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
 
       tag = step_leb128U( &abbrev_img );
 
-      if ( tag != 0x0011 /*TAG_compile_unit*/ )
+      if ( tag != 0x0011 /*TAG_compile_unit*/
+           && tag != 0x004a /*TAG_skeleton_unit*/ )
          return; /* Not a compile unit (might be partial) or broken DWARF. */
 
       /* DW_CHILDREN_yes or DW_CHILDREN_no */
@@ -1248,8 +1272,44 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
                break;
             case 0x19: /* FORM_flag_present */
                break;
+            case 0x1a: /* FORM_strx */
+               (void)step_leb128U(&p);
+               break;
+            case 0x1b: /* FORM_addrx */
+               (void)step_leb128U(&p);
+               break;
             case 0x20: /* FORM_ref_sig8 */
                p = ML_(cur_plus)(p, 8);
+               break;
+            case 0x22: /* FORM_loclistx */
+               (void)step_leb128U(&p);
+               break;
+            case 0x23: /* FORM_rnglistx */
+               (void)step_leb128U(&p);
+               break;
+            case 0x25: /* FORM_strx1 */
+               p = ML_(cur_plus)(p, 1);
+               break;
+            case 0x26: /* FORM_strx2 */
+               p = ML_(cur_plus)(p, 2);
+               break;
+            case 0x27: /* FORM_strx3 */
+               p = ML_(cur_plus)(p, 3);
+               break;
+            case 0x28: /* FORM_strx4 */
+               p = ML_(cur_plus)(p, 4);
+               break;
+            case 0x29: /* FORM_addrx1 */
+               p = ML_(cur_plus)(p, 1);
+               break;
+            case 0x2a: /* FORM_addrx2 */
+               p = ML_(cur_plus)(p, 2);
+               break;
+            case 0x2b: /* FORM_addrx3 */
+               p = ML_(cur_plus)(p, 3);
+               break;
+            case 0x2c: /* FORM_addrx4 */
+               p = ML_(cur_plus)(p, 4);
                break;
             case 0x1f20: /* FORM_GNU_ref_alt */
                p = ML_(cur_plus)(p, ui->dw64 ? 8 : 4);
@@ -1271,7 +1331,8 @@ void read_unitinfo_dwarf2( /*OUT*/UnitInfo* ui,
          }
          
          /* Now store the members we need in the UnitInfo structure */
-         if ( tag == 0x0011 /*TAG_compile_unit*/ ) {
+         if ( tag == 0x0011 /*TAG_compile_unit*/
+              || tag == 0x004a /*TAG_skeleton_unit*/ ) {
                  if ( name == 0x03 ) ui->name = sval;      /* DW_AT_name */
             else if ( name == 0x1b ) ui->compdir = sval;   /* DW_AT_compdir */
             else if ( name == 0x10 ) ui->stmt_list = cval; /* DW_AT_stmt_list */

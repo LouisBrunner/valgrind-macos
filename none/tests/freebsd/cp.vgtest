@@ -1,0 +1,7 @@
+# basic smoke test, but even this can fail
+# the copy_file_range syscall was added in FreeBSD 12
+# and then used in the cp command
+prog: /bin/cp
+args: cp.vgtest cp.out
+vgopts: -q
+cleanup: rm cp.out

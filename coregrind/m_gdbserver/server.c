@@ -1306,7 +1306,6 @@ void server_main (void)
       case 'P': {
          int regno;
          char *regbytes;
-         Bool mod;
          ThreadState *tst;
          regno = strtol(&own_buf[1], NULL, 16);
          regbytes = strchr(&own_buf[0], '=') + 1;
@@ -1318,7 +1317,7 @@ void server_main (void)
             We assume we do not need to very specific here, and that we
             can just refuse all of these. */
          if (tst->status == VgTs_Runnable || tst->status == VgTs_Yielding) {
-            supply_register_from_string (regno, regbytes, &mod);
+            supply_register_from_string (regno, regbytes);
             write_ok (own_buf);
          } else {
             /* at least from gdb 6.6 onwards, an E. error

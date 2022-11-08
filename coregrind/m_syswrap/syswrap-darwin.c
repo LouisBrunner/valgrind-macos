@@ -75,6 +75,11 @@ typedef HChar name_t[BOOTSTRAP_MAX_NAME_LEN];
 
 typedef uint64_t mig_addr_t;
 
+// Apple started using more inclusive language in macOS 13.0
+#if DARWIN_VERS < DARWIN_13_0
+#define HOST_IO_MAIN_PORT HOST_IO_MASTER_PORT
+#endif
+
 
 // Saved ports
 static mach_port_t vg_host_port = 0;
@@ -5255,8 +5260,8 @@ PRE(host_get_special_port)
             PRINT("host_get_special_port(%s, HOST_PRIV_PORT)",
                   name_for_port(MACH_REMOTE));
             break;
-        case HOST_IO_MASTER_PORT:
-            PRINT("host_get_special_port(%s, HOST_IO_MASTER_PORT)",
+        case HOST_IO_MAIN_PORT:
+            PRINT("host_get_special_port(%s, HOST_IO_MAIN_PORT)",
                   name_for_port(MACH_REMOTE));
             break;
         // Not provided by kernel
@@ -5317,7 +5322,7 @@ POST(host_get_special_port)
         case HOST_PRIV_PORT:
             assign_port_name(reply->port.name, "priv-%p");
             break;
-        case HOST_IO_MASTER_PORT:
+        case HOST_IO_MAIN_PORT:
             assign_port_name(reply->port.name, "io-master-%p");
             break;
         // Not provided by kernel

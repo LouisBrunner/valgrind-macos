@@ -8,23 +8,33 @@ Valgrind now builds and works on every macOS version
 
 Note that some features are still in progress:
 
- - crash when using wqthread (used in certain UI frameworks)
- - using threads and signals is undefined
+- crash when using wqthread (used in certain UI frameworks)
+- using threads and signals is undefined
 
 It is currently tested on 10.14.6 and 10.15.4.
 
 Checkout the [`patches`](https://github.com/LouisBrunner/valgrind-macos/commits/patches) branch for a list of patches that can be directly applied to the upstream Valgrind.
+
+### macOS 11 and later
+
+Due to changes on how
+
+### Apple Silicon
+
+There is currently no easy way to get Valgrind working on arm64 due to difference on how the XNU kernel treat arm64 and amd64 binaries.
 
 ## Usage
 
 In case you already have Valgrind installed, you might need to `brew remove` it first.
 
 In order to use this version, first tap this repository:
+
 ```sh
 brew tap LouisBrunner/valgrind
 ```
 
 Then, install `valgrind`:
+
 ```sh
 brew install --HEAD LouisBrunner/valgrind/valgrind
 ```
@@ -43,19 +53,20 @@ brew upgrade --fetch-HEAD LouisBrunner/valgrind/valgrind
 
 ## TODO
 
- - Get historical build data from sourceforge for macOS 10.13
- - pthread and signals blocking (re-enable tests) [patch in progess]
- - wqthread broken (see #4) [patch in progress]
- - drd thread related crash on 10.15
- - `-UNHANDLED` messages
- - Run regtest in parallel [patch in progess]
+- pthread and signals blocking (re-enable tests) [patch in progess]
+- wqthread broken (see #4) [patch in progress]
+- drd thread related crash on 10.15
+- `-UNHANDLED` messages
+- Run regtest in parallel [patch in progess]
+- macOS 11 and later leak tracking [patch in progess]
+- Apple Silicon support [on hold]
 
 ## Tests
 
 Some tests are blocking and were therefore disabled on macOS:
 
- - `none/tests/pselect_alarm`
- - `none/tests/pth_term_signal`
+- `none/tests/pselect_alarm`
+- `none/tests/pth_term_signal`
 
 ### Linux (Ubuntu 18.04)
 

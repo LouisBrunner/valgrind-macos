@@ -187,6 +187,13 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    
    vg_assert(envc == (cpp - ret));
 
+   /* Change VYLD_ to DYLD */
+   for (i = 0; i < envc; i++) {
+      if (0 == VG_(strncmp)(ret[i], "VYLD_", 5)) {
+         ret[i][0] = 'D';
+      }
+   }
+
    /* Walk over the new environment, mashing as we go */
    for (cpp = ret; cpp && *cpp; cpp++) {
       if (VG_(memcmp)(*cpp, ld_preload, ld_preload_len) == 0) {
@@ -246,14 +253,6 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
          ret[i] = ret[i+1];
       envc--;
    }
-
-   /* Change VYLD_ to DYLD */
-   for (i = 0; i < envc; i++) {
-      if (0 == VG_(strncmp)(ret[i], "VYLD_", 5)) {
-         ret[i][0] = 'D';
-      }
-   }
-
 
    VG_(free)(preload_string);
    ret[envc] = NULL;

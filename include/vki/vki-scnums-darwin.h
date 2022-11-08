@@ -64,7 +64,7 @@
 #define VG_DARWIN_SYSCALL_NUMBER_MASK     (~VG_DARWIN_SYSCALL_CLASS_MASK)
 
 #define VG_DARWIN_SYSCALL_CLASS_NONE      0       /* Invalid */
-#define VG_DARWIN_SYSCALL_CLASS_MACH      1       /* Mach */      
+#define VG_DARWIN_SYSCALL_CLASS_MACH      1       /* Mach */
 #define VG_DARWIN_SYSCALL_CLASS_UNIX      2       /* Unix/BSD */
 #define VG_DARWIN_SYSCALL_CLASS_MDEP      3       /* Machine-dependent */
 #define VG_DARWIN_SYSCALL_CLASS_DIAG      4       /* Diagnostics */
@@ -232,7 +232,7 @@
 
 
 // bsd/sys/syscall.h
- 
+
 #define	__NR_syscall        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(0)
 #define	__NR_exit           VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(1)
 #define	__NR_fork           VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(2) // was UX64
@@ -874,6 +874,9 @@
 #elif DARWIN_VERS == DARWIN_10_15
 #define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(534)
 #elif DARWIN_VERS == DARWIN_11_00
+// FIXME: lb, wrong, will need to wait for AAPL to release kernel sources
+#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(534)
+#elif DARWIN_VERS == DARWIN_12_00
 // FIXME: lb, wrong, will need to wait for AAPL to release kernel sources
 #define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(534)
 #else

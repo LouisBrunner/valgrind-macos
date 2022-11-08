@@ -61,7 +61,7 @@
 
 #include <mach/mach.h>
 
-static void x86_thread_state64_from_vex(x86_thread_state64_t *mach, 
+static void x86_thread_state64_from_vex(x86_thread_state64_t *mach,
                                         VexGuestAMD64State *vex)
 {
     mach->__rax = vex->guest_RAX;
@@ -90,7 +90,7 @@ static void x86_thread_state64_from_vex(x86_thread_state64_t *mach,
 }
 
 
-static void x86_float_state64_from_vex(x86_float_state64_t *mach, 
+static void x86_float_state64_from_vex(x86_float_state64_t *mach,
                                        VexGuestAMD64State *vex)
 {
    // DDD: #warning GrP fixme fp state
@@ -114,9 +114,9 @@ static void x86_float_state64_from_vex(x86_float_state64_t *mach,
 }
 
 
-void thread_state_from_vex(thread_state_t mach_generic, 
-                           thread_state_flavor_t flavor, 
-                           mach_msg_type_number_t count, 
+void thread_state_from_vex(thread_state_t mach_generic,
+                           thread_state_flavor_t flavor,
+                           mach_msg_type_number_t count,
                            VexGuestArchState *vex_generic)
 {
    VexGuestAMD64State *vex = (VexGuestAMD64State *)vex_generic;
@@ -143,7 +143,7 @@ void thread_state_from_vex(thread_state_t mach_generic,
       ((x86_float_state_t *)mach_generic)->fsh.count = count;
       x86_float_state64_from_vex(&((x86_float_state_t *)mach_generic)->ufs.fs64, vex);
       break;
-       
+
    case x86_EXCEPTION_STATE:
       VG_(printf)("thread_state_from_vex: TODO, want exception state\n");
       vg_assert(0);
@@ -155,7 +155,7 @@ void thread_state_from_vex(thread_state_t mach_generic,
 }
 
 
-static void x86_thread_state64_to_vex(const x86_thread_state64_t *mach, 
+static void x86_thread_state64_to_vex(const x86_thread_state64_t *mach,
                                       VexGuestAMD64State *vex)
 {
    LibVEX_GuestAMD64_initialise(vex);
@@ -177,14 +177,14 @@ static void x86_thread_state64_to_vex(const x86_thread_state64_t *mach,
    vex->guest_R13 = mach->__r13;
    vex->guest_R14 = mach->__r14;
    vex->guest_R15 = mach->__r15;
-   /* GrP fixme 
+   /* GrP fixme
    vex->guest_CS = mach->__cs;
    vex->guest_FS = mach->__fs;
    vex->guest_GS = mach->__gs;
    */
 }
 
-static void x86_float_state64_to_vex(const x86_float_state64_t *mach, 
+static void x86_float_state64_to_vex(const x86_float_state64_t *mach,
                                      VexGuestAMD64State *vex)
 {
    // DDD: #warning GrP fixme fp state
@@ -208,13 +208,13 @@ static void x86_float_state64_to_vex(const x86_float_state64_t *mach,
 }
 
 
-void thread_state_to_vex(const thread_state_t mach_generic, 
-                         thread_state_flavor_t flavor, 
-                         mach_msg_type_number_t count, 
+void thread_state_to_vex(const thread_state_t mach_generic,
+                         thread_state_flavor_t flavor,
+                         mach_msg_type_number_t count,
                          VexGuestArchState *vex_generic)
 {
    VexGuestAMD64State *vex = (VexGuestAMD64State *)vex_generic;
-   
+
    switch(flavor) {
    case x86_THREAD_STATE64:
       vg_assert(count == x86_THREAD_STATE64_COUNT);
@@ -232,13 +232,13 @@ void thread_state_to_vex(const thread_state_t mach_generic,
 }
 
 
-ThreadState *build_thread(const thread_state_t state, 
-                          thread_state_flavor_t flavor, 
+ThreadState *build_thread(const thread_state_t state,
+                          thread_state_flavor_t flavor,
                           mach_msg_type_number_t count)
 {
    ThreadId tid = VG_(alloc_ThreadState)();
    ThreadState *tst = VG_(get_ThreadState)(tid);
-    
+
    vg_assert(flavor == x86_THREAD_STATE64);
    vg_assert(count == x86_THREAD_STATE64_COUNT);
 
@@ -258,9 +258,9 @@ ThreadState *build_thread(const thread_state_t state,
 // Edit the thread state to send to the real kernel.
 // The real thread will run start_thread_NORETURN(tst)
 // on a separate non-client stack.
-void hijack_thread_state(thread_state_t mach_generic, 
-                         thread_state_flavor_t flavor, 
-                         mach_msg_type_number_t count, 
+void hijack_thread_state(thread_state_t mach_generic,
+                         thread_state_flavor_t flavor,
+                         mach_msg_type_number_t count,
                          ThreadState *tst)
 {
    x86_thread_state64_t *mach = (x86_thread_state64_t *)mach_generic;
@@ -331,7 +331,7 @@ asm(
 
 
 
-void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg, 
+void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg,
                     Addr stacksize, Addr flags, Addr sp)
 {
    vki_sigset_t blockall;
@@ -350,7 +350,7 @@ void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg,
    VG_(sigprocmask)(VKI_SIG_SETMASK, &blockall, NULL);
 
    // Set thread's registers
-   // Do this FIRST because some code below tries to collect a backtrace, 
+   // Do this FIRST because some code below tries to collect a backtrace,
    // which requires valid register data.
    LibVEX_GuestAMD64_initialise(vex);
    vex->guest_RIP = pthread_starter;
@@ -378,11 +378,11 @@ void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg,
 
       // pthread structure
       ML_(notify_core_and_tool_of_mmap)(
-            stack+stacksize, pthread_structsize, 
+            stack+stacksize, pthread_structsize,
             VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_PRIVATE, -1, 0);
       // stack contents
       ML_(notify_core_and_tool_of_mmap)(
-            stack, stacksize, 
+            stack, stacksize,
             VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_PRIVATE, -1, 0);
       // guard page
       ML_(notify_core_and_tool_of_mmap)(
@@ -398,13 +398,13 @@ void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg,
    // But we don't have ptid here...
    //VG_TRACK ( pre_thread_ll_create, ptid, tst->tid );
 
-   // Tell parent thread's POST(sys_bsdthread_create) that we're done 
+   // Tell parent thread's POST(sys_bsdthread_create) that we're done
    // initializing registers and mapping memory.
    semaphore_signal(tst->os_state.child_done);
    // LOCK IS GONE BELOW THIS POINT
 
    // Go!
-   call_on_new_stack_0_1(tst->os_state.valgrind_stack_init_SP, 0, 
+   call_on_new_stack_0_1(tst->os_state.valgrind_stack_init_SP, 0,
                          start_thread_NORETURN, (Word)tst);
 
    /*NOTREACHED*/
@@ -423,14 +423,14 @@ asm(
 );
 
 
-/*  wqthread note: The kernel may create or destroy pthreads in the 
-    wqthread pool at any time with no userspace interaction, 
-    and wqthread_start may be entered at any time with no userspace 
+/*  wqthread note: The kernel may create or destroy pthreads in the
+    wqthread pool at any time with no userspace interaction,
+    and wqthread_start may be entered at any time with no userspace
     interaction.
-    To handle this in valgrind, we create and destroy a valgrind 
+    To handle this in valgrind, we create and destroy a valgrind
     thread for every work item.
 */
-void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem, 
+void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
                      Int reuse, Addr sp)
 {
    ThreadState *tst;
@@ -451,7 +451,7 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
 
    if (0) VG_(printf)(
              "wqthread_hijack: self %#lx, kport %#lx, "
-	     "stackaddr %#lx, workitem %#lx, reuse/flags %x, sp %#lx\n", 
+	     "stackaddr %#lx, workitem %#lx, reuse/flags %x, sp %#lx\n",
 	     self, kport, stackaddr, workitem, (UInt)reuse, sp);
 
    /* Start the thread with all signals blocked.  VG_(scheduler) will
@@ -487,15 +487,17 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
             || DARWIN_VERS == DARWIN_10_13 \
             || DARWIN_VERS == DARWIN_10_14 \
             || DARWIN_VERS == DARWIN_10_15 \
-            || DARWIN_VERS == DARWIN_11_00
+            || DARWIN_VERS == DARWIN_11_00 \
+            || DARWIN_VERS == DARWIN_12_00 \
+            || DARWIN_VERS == DARWIN_13_00
        UWord magic_delta = 0xE0;
 #      else
 #        error "magic_delta: to be computed on new OS version"
          // magic_delta = tst->os_state.pthread - self
 #      endif
 
-       // This thread already exists; we're merely re-entering 
-       // after leaving via workq_ops(WQOPS_THREAD_RETURN). 
+       // This thread already exists; we're merely re-entering
+       // after leaving via workq_ops(WQOPS_THREAD_RETURN).
        // Don't allocate any V thread resources.
        // Do reset thread registers.
        ThreadId tid = VG_(lwpid_to_vgtid)(kport);
@@ -514,14 +516,14 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
    }
    else {
        // This is a new thread.
-       tst = VG_(get_ThreadState)(VG_(alloc_ThreadState)());        
+       tst = VG_(get_ThreadState)(VG_(alloc_ThreadState)());
        vex = &tst->arch.vex;
        allocstack(tst->tid);
        LibVEX_GuestAMD64_initialise(vex);
    }
-       
+
    // Set thread's registers
-   // Do this FIRST because some code below tries to collect a backtrace, 
+   // Do this FIRST because some code below tries to collect a backtrace,
    // which requires valid register data.
    vex->guest_RIP = wqthread_starter;
    vex->guest_RDI = self;
@@ -536,7 +538,7 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
    stack = VG_PGROUNDUP(sp) - stacksize;
 
    if (is_reuse) {
-      // Continue V's thread back in the scheduler. 
+      // Continue V's thread back in the scheduler.
       // The client thread is of course in another location entirely.
 
       /* Drop the lock before going into
@@ -548,27 +550,27 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
          right now. */
       VG_(release_BigLock_LL)("wqthread_hijack(1)");
       ML_(wqthread_continue_NORETURN)(tst->tid);
-   } 
+   }
    else {
       // Record thread's stack and Mach port and pthread struct
       tst->os_state.pthread = self;
       tst->os_state.lwpid = kport;
       record_named_port(tst->tid, kport, MACH_PORT_RIGHT_SEND, "wqthread-%p");
-      
+
       // kernel allocated stack - needs mapping
       tst->client_stack_highest_byte = stack+stacksize-1;
       tst->client_stack_szB = stacksize;
 
       // GrP fixme scheduler lock?!
-      
+
       // pthread structure
       ML_(notify_core_and_tool_of_mmap)(
-            stack+stacksize, pthread_structsize, 
+            stack+stacksize, pthread_structsize,
             VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_PRIVATE, -1, 0);
       // stack contents
       // GrP fixme uninitialized!
       ML_(notify_core_and_tool_of_mmap)(
-            stack, stacksize, 
+            stack, stacksize,
             VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_PRIVATE, -1, 0);
       // guard page
       // GrP fixme ban_mem_stack!
@@ -589,7 +591,7 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
          this thread slot in the meantime, we're hosed.  Is that
          possible, though? */
       VG_(release_BigLock_LL)("wqthread_hijack(2)");
-      call_on_new_stack_0_1(tst->os_state.valgrind_stack_init_SP, 0, 
+      call_on_new_stack_0_1(tst->os_state.valgrind_stack_init_SP, 0,
                             start_thread_NORETURN, (Word)tst);
    }
 

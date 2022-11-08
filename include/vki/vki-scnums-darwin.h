@@ -874,11 +874,11 @@
 #elif DARWIN_VERS == DARWIN_10_15
 #define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(534)
 #elif DARWIN_VERS == DARWIN_11_00
-// FIXME: lb, wrong, will need to wait for AAPL to release kernel sources
-#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(534)
+#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(545)
 #elif DARWIN_VERS == DARWIN_12_00
-// FIXME: lb, wrong, will need to wait for AAPL to release kernel sources
-#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(534)
+#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(551)
+#elif DARWIN_VERS == DARWIN_13_00
+#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(555)
 #else
 #error unknown darwin version
 #endif

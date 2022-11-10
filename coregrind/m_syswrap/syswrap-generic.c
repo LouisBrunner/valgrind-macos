@@ -3795,7 +3795,7 @@ void ML_(PRE_unknown_ioctl)(ThreadId tid, UWord request, UWord arg)
        * drivers with a large number of strange ioctl
        * commands becomes very tiresome.
        */
-   } else if (/* size == 0 || */ dir == _VKI_IOC_NONE) {
+   } else if (dir == _VKI_IOC_NONE && size > 0) {
       static UWord unknown_ioctl[10];
       static Int moans = sizeof(unknown_ioctl) / sizeof(unknown_ioctl[0]);
 
@@ -3809,7 +3809,7 @@ void ML_(PRE_unknown_ioctl)(ThreadId tid, UWord request, UWord arg)
                unknown_ioctl[i] = request;
                moans--;
                VG_(umsg)("Warning: noted but unhandled ioctl 0x%lx"
-                         " with no size/direction hints.\n", request);
+                         " with no direction hints.\n", request);
                VG_(umsg)("   This could cause spurious value errors to appear.\n");
                VG_(umsg)("   See README_MISSING_SYSCALL_OR_IOCTL for "
                          "guidance on writing a proper wrapper.\n" );

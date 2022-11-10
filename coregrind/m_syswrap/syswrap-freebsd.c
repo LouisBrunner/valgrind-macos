@@ -1013,7 +1013,7 @@ PRE(sys_ioctl)
       * drivers with a large number of strange ioctl
       * commands becomes very tiresome.
       */
-   } else if ((dir == _VKI_IOC_NONE) && size > 0) {
+   } else if (dir == _VKI_IOC_NONE && size > 0) {
       static UWord unknown_ioctl[10];
       static Int moans = sizeof(unknown_ioctl) / sizeof(unknown_ioctl[0]);
       if (moans > 0 && !VG_(clo_xml)) {
@@ -1026,11 +1026,10 @@ PRE(sys_ioctl)
                unknown_ioctl[i] = ARG2;
                moans--;
                VG_(umsg)("Warning: noted but unhandled ioctl 0x%lx"
-                         " with no size/direction hints.\n", ARG2);
+                         " with no direction hints.\n", ARG2);
                VG_(umsg)("   This could cause spurious value errors to appear.\n");
                VG_(umsg)("   See README_MISSING_SYSCALL_OR_IOCTL for "
                          "guidance on writing a proper wrapper.\n" );
-               //VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
                return;
             }
          }

@@ -1,0 +1,3 @@
+valgrind: Bad option: --trace-children=foo
+valgrind: Invalid boolean value 'foo' (should be 'yes' or 'no')
+valgrind: Use --help for more information or consult the user manual.

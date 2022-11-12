@@ -6077,7 +6077,7 @@ static const HChar * MC_(parse_leak_heuristics_tokens) =
 static Bool mc_process_cmd_line_options(const HChar* arg)
 {
    const HChar* tmp_str;
-   Int   tmp_show;
+   Bool   tmp_show;
 
    tl_assert( MC_(clo_mc_level) >= 1 && MC_(clo_mc_level) <= 3 );
 

@@ -1622,9 +1622,9 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
     </term>
     <listitem>
       <para>This option is only relevant when running Valgrind on
-      Mac OS X.</para>
+      macOS.</para>
 
-      <para>Mac OS X uses a deferred debug information (debuginfo)
+      <para>macOS uses a deferred debug information (debuginfo)
       linking scheme.  When object files containing debuginfo are
       linked into a <computeroutput>.dylib</computeroutput> or an
       executable, the debuginfo is not copied into the final file.
@@ -2225,7 +2225,7 @@ need to use them.</para>
         <listitem>
           <para><option>no-nptl-pthread-stackcache: </option>
             This hint is only relevant when running Valgrind on Linux;
-            it is ignored on Solaris and Mac OS X.</para>
+            it is ignored on FreeBSD, Solaris and macOS.</para>
 
           <para>The GNU glibc pthread library
             (<function>libpthread.so</function>), which is used by

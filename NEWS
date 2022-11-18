@@ -80,6 +80,7 @@ n-i-bz  Implement vgdb invoker on FreeBSD
 458915  Remove register cache to fix 458915 gdbserver causes wrong syscall return
 459031  Documentation on --error-exitcode incomplete
 459477  XERROR messages lacks ending '\n' in vgdb
+462007  Implicit int in none/tests/faultstatus.c
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

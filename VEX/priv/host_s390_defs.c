@@ -8356,6 +8356,7 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_VEC_PWSUM_DW:         op = "v-vpwsumdw"; break;
       case S390_VEC_PWSUM_QW:         op = "v-vpwsumqw"; break;
       case S390_VEC_INIT_FROM_GPRS:   op = "v-vinitfromgprs"; break;
+      case S390_VEC_INIT_FROM_FPRS:   op = "v-vinitfromfprs"; break;
       case S390_VEC_FLOAT_ADD:        op = "v-vfloatadd"; break;
       case S390_VEC_FLOAT_SUB:        op = "v-vfloatsub"; break;
       case S390_VEC_FLOAT_MUL:        op = "v-vfloatmul"; break;
@@ -8771,6 +8772,9 @@ s390_insn_move_emit(UChar *buf, const s390_insn *insn)
          } else {
             return s390_emit_LGDRw(buf, dst, src);
          }
+      }
+      if (dst_class == HRcFlt64 && src_class == HRcVec128) {
+         return s390_emit_VLR(buf, dst, src);
       }
       /* A move between floating point registers and general purpose
          registers of different size should never occur and indicates
@@ -11692,6 +11696,8 @@ s390_insn_vec_binop_emit(UChar *buf, const s390_insn *insn)
          return s390_emit_VSUMQ(buf, v1, v2, v3, s390_getM_from_size(size));
       case S390_VEC_INIT_FROM_GPRS:
          return s390_emit_VLVGP(buf, v1, v2, v3);
+      case S390_VEC_INIT_FROM_FPRS:
+         return s390_emit_VMRH(buf, v1, v2, v3, 3);
       case S390_VEC_FLOAT_ADD:
          return s390_emit_VFA(buf, v1, v2, v3, s390_getM_from_size(size), 0);
       case S390_VEC_FLOAT_SUB:
@@ -11722,6 +11728,7 @@ static UChar *
 s390_insn_vec_triop_emit(UChar *buf, const s390_insn *insn)
 {
    s390_vec_triop_t tag = insn->variant.vec_triop.tag;
+   UChar size = insn->size;
    UChar v1 = hregNumber(insn->variant.vec_triop.dst);
    UChar v2 = hregNumber(insn->variant.vec_triop.op1);
    UChar v3 = hregNumber(insn->variant.vec_triop.op2);
@@ -11729,13 +11736,15 @@ s390_insn_vec_triop_emit(UChar *buf, const s390_insn *insn)
 
    switch (tag) {
       case S390_VEC_PERM: {
-         vassert(insn->size == 16);
+         vassert(size == 16);
          return s390_emit_VPERM(buf, v1, v2, v3, v4);
       }
       case S390_VEC_FLOAT_MADD:
-         return s390_emit_VFMA(buf, v1, v2, v3, v4, 0, 3);
+         return s390_emit_VFMA(buf, v1, v2, v3, v4, 0,
+                               s390_getM_from_size(size));
       case S390_VEC_FLOAT_MSUB:
-         return s390_emit_VFMS(buf, v1, v2, v3, v4, 0, 3);
+         return s390_emit_VFMS(buf, v1, v2, v3, v4, 0,
+                               s390_getM_from_size(size));
       default:
          goto fail;
    }

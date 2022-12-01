@@ -19382,7 +19382,6 @@ s390_irgen_VFMIN(UChar v1, UChar v2, UChar v3, UChar m4, UChar m5, UChar m6)
 
    Bool isSingleElementOp = s390_vr_is_single_element_control_set(m5);
    IRDirty* d;
-   IRTemp cc = newTemp(Ity_I64);
 
    s390x_vec_op_details_t details = { .serialized = 0ULL };
    details.op = S390_VEC_OP_VFMIN;
@@ -19393,7 +19392,7 @@ s390_irgen_VFMIN(UChar v1, UChar v2, UChar v3, UChar m4, UChar m5, UChar m6)
    details.m5 = m5;
    details.m6 = m6;
 
-   d = unsafeIRDirty_1_N(cc, 0, "s390x_dirtyhelper_vec_op",
+   d = unsafeIRDirty_0_N(0, "s390x_dirtyhelper_vec_op",
                          &s390x_dirtyhelper_vec_op,
                          mkIRExprVec_2(IRExpr_GSPTR(),
                                        mkU64(details.serialized)));
@@ -19413,7 +19412,6 @@ s390_irgen_VFMIN(UChar v1, UChar v2, UChar v3, UChar m4, UChar m5, UChar m6)
    d->fxState[2].size = sizeof(V128);
 
    stmt(IRStmt_Dirty(d));
-   s390_cc_set(cc);
    return "vfmin";
 }
 
@@ -19425,7 +19423,6 @@ s390_irgen_VFMAX(UChar v1, UChar v2, UChar v3, UChar m4, UChar m5, UChar m6)
 
    Bool isSingleElementOp = s390_vr_is_single_element_control_set(m5);
    IRDirty* d;
-   IRTemp cc = newTemp(Ity_I64);
 
    s390x_vec_op_details_t details = { .serialized = 0ULL };
    details.op = S390_VEC_OP_VFMAX;
@@ -19436,7 +19433,7 @@ s390_irgen_VFMAX(UChar v1, UChar v2, UChar v3, UChar m4, UChar m5, UChar m6)
    details.m5 = m5;
    details.m6 = m6;
 
-   d = unsafeIRDirty_1_N(cc, 0, "s390x_dirtyhelper_vec_op",
+   d = unsafeIRDirty_0_N(0, "s390x_dirtyhelper_vec_op",
                          &s390x_dirtyhelper_vec_op,
                          mkIRExprVec_2(IRExpr_GSPTR(),
                                        mkU64(details.serialized)));
@@ -19456,7 +19453,6 @@ s390_irgen_VFMAX(UChar v1, UChar v2, UChar v3, UChar m4, UChar m5, UChar m6)
    d->fxState[2].size = sizeof(V128);
 
    stmt(IRStmt_Dirty(d));
-   s390_cc_set(cc);
    return "vfmax";
 }
 

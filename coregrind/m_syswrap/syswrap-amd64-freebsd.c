@@ -321,6 +321,7 @@ PRE(sys_preadv)
 {
    Int i;
    struct vki_iovec * vec;
+   char buf[sizeof("preadv(iov[])") + 11];
    *flags |= SfMayBlock;
    PRINT("sys_preadv ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %"
          FMT_REGWORD "d, %" FMT_REGWORD "d )", SARG1, ARG2, SARG3, SARG4);
@@ -333,12 +334,12 @@ PRE(sys_preadv)
       if ((Int)ARG3 > 0)
          PRE_MEM_READ( "preadv(iov)", ARG2, ARG3 * sizeof(struct vki_iovec) );
 
-      // @todo PJF improve this like readv
       if (ML_(safe_to_deref)((struct vki_iovec *)ARG2, ARG3 * sizeof(struct vki_iovec))) {
          vec = (struct vki_iovec *)(Addr)ARG2;
-         for (i = 0; i < (Int)ARG3; i++)
-            PRE_MEM_WRITE( "preadv(iov[...])",
-                           (Addr)vec[i].iov_base, vec[i].iov_len );
+         for (i = 0; i < (Int)ARG3; i++) {
+            VG_(sprintf)(buf, "preadv(iov[%d])", i);
+            PRE_MEM_WRITE(buf, (Addr)vec[i].iov_base, vec[i].iov_len);
+         }
       }
    }
 }
@@ -368,6 +369,7 @@ PRE(sys_pwritev)
 {
    Int i;
    struct vki_iovec * vec;
+   char buf[sizeof("pwritev(iov[])") + 11];
    *flags |= SfMayBlock;
    PRINT("sys_pwritev ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %"
          FMT_REGWORD "d, %" FMT_REGWORD "d )", SARG1, ARG2, SARG3, SARG4);
@@ -383,9 +385,10 @@ PRE(sys_pwritev)
          PRE_MEM_READ( "pwritev(vector)", ARG2, ARG3 * sizeof(struct vki_iovec) );
       if (ML_(safe_to_deref)((struct vki_iovec *)ARG2, ARG3 * sizeof(struct vki_iovec))) {
          vec = (struct vki_iovec *)(Addr)ARG2;
-         for (i = 0; i < (Int)ARG3; i++)
-            PRE_MEM_READ( "pwritev(iov[...])",
-                          (Addr)vec[i].iov_base, vec[i].iov_len );
+         for (i = 0; i < (Int)ARG3; i++) {
+            VG_(sprintf)(buf, "pwritev(iov[%d])", i);
+            PRE_MEM_READ(buf, (Addr)vec[i].iov_base, vec[i].iov_len );
+         }
       }
    }
 }

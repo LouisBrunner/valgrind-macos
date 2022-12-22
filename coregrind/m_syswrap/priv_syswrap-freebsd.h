@@ -419,6 +419,8 @@ DECL_TEMPLATE(freebsd, sys_abort2) // 463
 DECL_TEMPLATE(freebsd, sys_thr_set_name) // 464
 DECL_TEMPLATE(freebsd, sys_aio_fsync) // 465
 DECL_TEMPLATE(freebsd, sys_rtprio_thread) // 466
+DECL_TEMPLATE(freebsd, sys_sctp_generic_sendmsg) // 472
+DECL_TEMPLATE(freebsd, sys_sctp_generic_recvmsg) // 474
 DECL_TEMPLATE(freebsd, sys_pread) // 475
 DECL_TEMPLATE(freebsd, sys_pwrite) // 476
 DECL_TEMPLATE(freebsd, sys_mmap) // 477

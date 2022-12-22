@@ -1571,11 +1571,27 @@ int main(void)
    // sctp_peeloff                471
 
    // sctp_generic_sendmsg        472
+   GO(SYS_sctp_generic_sendmsg, "7s 1m");
+   SY(SYS_sctp_generic_sendmsg, x0+1, x0+2, x0+3, x0+4, x0+5, x0+6, x0+7); FAIL;
 
    // sctp_generic_sendmsg_iov    473
 
    // sctp_generic_recvmsg        474
+   GO(SYS_sctp_generic_recvmsg, "7s 4m");
+   SY(SYS_sctp_generic_recvmsg, x0+1, x0+2, x0+300, x0+4, x0+5, x0+6, x0+7); FAIL;
 
+   {
+      socklen_t fromlen = 64;
+      struct iovec iov;
+      GO(SYS_sctp_generic_recvmsg, "6s 4m");
+      SY(SYS_sctp_generic_recvmsg, x0+1, x0+2, x0+300, x0+4, &fromlen, x0+6, x0+7); FAIL;
+
+      iov.iov_base = x0+8;
+      iov.iov_len = x0+9;
+
+      GO(SYS_sctp_generic_recvmsg, "6s 6m");
+      SY(SYS_sctp_generic_recvmsg, x0+1, &iov, 1, x0+4, x0+5, x0+6, x0+7); FAIL;
+   }
 
    /* SYS_pread                   475 */
    GO(SYS_pread, "4s 1m");

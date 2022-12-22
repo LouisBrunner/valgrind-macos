@@ -84,7 +84,13 @@ EXTRA_DIST = \
 	errno_aligned_allocs.stderr.exp \
 	setproctitle.vgtest \
 	setproctitle.stderr.exp \
-	setproctitle.stdout.exp
+	setproctitle.stdout.exp \
+	sctp.vgtest \
+	sctp.stderr.exp \
+	sctp.stdout.exp \
+	sctp2.vgtest \
+	sctp2.stderr.exp \
+	sctp2.stdout.exp
 
 check_PROGRAMS = \
 	statfs pdfork_pdkill getfsstat inlinfo inlinfo_nested.so extattr \
@@ -92,7 +98,7 @@ check_PROGRAMS = \
 	linkat scalar_fork scalar_thr_exit scalar_abort2 scalar_pdfork \
 	scalar_vfork stat file_locking_wait6 utimens access chmod_chown \
 	misc get_set_context utimes static_allocs fexecve errno_aligned_allocs \
-	setproctitle
+	setproctitle sctp sctp2
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)

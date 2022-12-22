@@ -750,13 +750,13 @@ PRE(sys_preadv)
    PRINT("sys_preadv ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %"
          FMT_REGWORD "d, %llu )", SARG1, ARG2, SARG3, MERGE64(ARG4,ARG5));
    PRE_REG_READ5(ssize_t, "preadv",
-                 int, fd, const struct iovec *, iovr,
+                 int, fd, const struct iovec *, iov,
                  int, iovcnt, vki_uint32_t, MERGE64_FIRST(offset),
                  vki_uint32_t, MERGE64_SECOND(offset));
    if (!ML_(fd_allowed)(ARG1, "preadv", tid, False)) {
       SET_STATUS_Failure( VKI_EBADF );
    } else {
-      if ((Int)ARG3 >= 0)
+      if ((Int)ARG3 > 0)
          PRE_MEM_READ( "preadv(iov)", ARG2, ARG3 * sizeof(struct vki_iovec) );
 
       if (ML_(safe_to_deref)((struct vki_iovec *)ARG2, ARG3 * sizeof(struct vki_iovec))) {

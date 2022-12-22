@@ -4770,11 +4770,28 @@ POST(sys_rtprio_thread)
 // int sctp_peeloff(int s, sctp_assoc_t id);
 // @todo
 
+
 // SYS_sctp_generic_sendmsg   472
 // int sctp_generic_sendmsg(int s, void *msg, int msglen, struct sockaddr *to,
 //                          socklen_t len, struct sctp_sndrcvinfo *sinfo, int flags);
-// @tdo
+//
+// Not called directly from libc
+PRE(sys_sctp_generic_sendmsg)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_sctp_generic_sendmsg ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %" FMT_REGWORD "d )",SARG1,ARG2,ARG3,ARG4,SARG5,ARG6,SARG7);
+   PRE_REG_READ7(ssize_t, "sctp_generic_sendmsg",
+                 int, s, void *, msg, int, msglen,
+                 struct sockaddr *, to, socklen_t, len,
+                 struct sctp_sndrcvinfo *, sinfo, int, flags);
 
+   PRE_MEM_READ( "sctp_generic_sendmsg(msg)", ARG2, ARG3);
+
+   ML_(pre_mem_read_sockaddr) (tid, "sctp_generic_sendmsg(to)", (struct vki_sockaddr *)ARG4, ARG5);
+
+   if (ARG6 != (Addr)NULL)
+      PRE_MEM_READ( "sctp_generic_sendmsg(sinfo)", ARG6, sizeof(struct vki_sctp_sndrcvinfo));
+}
 
 // SYS_sctp_generic_sendmsg_iov  473
 // int sctp_generic_sendmsg_iov(int s, struct iovec *iov, int iovlen,
@@ -4785,7 +4802,56 @@ POST(sys_rtprio_thread)
 // int sctp_generic_recvmsg(int s, struct iovec *iov, int iovlen,
 //                          struct sockaddr *from, socklen_t *fromlen,
 //                          struct sctp_sndrcvinfo *sinfo, int *msgflags);
-// @todo
+//
+// Not called directly from libc
+PRE(sys_sctp_generic_recvmsg)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_sctp_generic_recvmsg ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",SARG1,ARG2,SARG3,ARG4,ARG5,ARG6,ARG7);
+   PRE_REG_READ7(ssize_t, "sctp_generic_recvmsg",
+                 int, s, struct iovec *, iov, int, iovlen,
+                 struct sockaddr *, from, socklen_t *, fromlen,
+                 struct sctp_sndrcvinfo *, sinfo, int *, msgflags);
+
+   // in the sctp_recvmsg libc wrapper this is always 1
+   if ((Int)ARG3 > 0) {
+      PRE_MEM_READ( "sctp_generic_recvmsg(iov)", ARG2, ARG3 * sizeof(struct vki_iovec) );
+   }
+   if (ML_(safe_to_deref)((const void*)ARG2, ARG3 * sizeof(struct vki_iovec))) {
+      struct vki_iovec* iovec = (struct vki_iovec*)ARG2;
+      PRE_MEM_WRITE("sctp_generic_recvmsg(iov.iov_base)", (Addr)iovec->iov_base, iovec->iov_len);
+   }
+
+   if (ARG4 != (Addr)NULL)
+      ML_(buf_and_len_pre_check) (tid, ARG4, ARG5,
+		                  "sctp_generic_recvmsg(from)",
+                        "sctp_generic_recvmsg(fromlen_in)");
+
+   if (ARG6 != (Addr)NULL)
+      PRE_MEM_WRITE("sctp_generic_recvmsg(sinfo)", ARG6, sizeof(struct vki_sctp_sndrcvinfo));
+
+   if (ARG7 != (Addr)NULL)
+      PRE_MEM_WRITE("sctp_generic_recvmsg(msgflags)", ARG7, sizeof(int));
+}
+
+POST(sys_sctp_generic_recvmsg)
+{
+   vg_assert(SUCCESS);
+   struct vki_iovec* iovec = (struct vki_iovec*)ARG2;
+   POST_MEM_WRITE((Addr)iovec->iov_base, iovec->iov_len);
+
+   POST_MEM_WRITE( ARG2, ARG3*sizeof(struct vki_iovec) );
+
+   if (ARG4 != (Addr)NULL)
+      ML_(buf_and_len_post_check) (tid, VG_(mk_SysRes_Success)(RES), ARG4, ARG5,
+              "sctp_generic_recvmsg(fromlen_out)");
+
+   if (ARG6 != (Addr)NULL)
+      POST_MEM_WRITE(ARG6, sizeof(struct vki_sctp_sndrcvinfo));
+
+   if (ARG7 != (Addr)NULL)
+      POST_MEM_WRITE(ARG7, sizeof(int));
+}
 
 // SYS_pread   475
 // x86/amd64
@@ -7000,10 +7066,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    BSDXY(__NR_rtprio_thread,    sys_rtprio_thread),     // 466
 
    // unimpl sctp_peeloff                                  471
-
-   // unimpl sctp_generic_sendmsg                          472
+   BSDX_(__NR_sctp_generic_sendmsg, sys_sctp_generic_sendmsg), // 472
    // unimpl sctp_generic_sendmsg_iov                      473
-   // unimpl sctp_generic_recvmsg                          474
+   BSDXY(__NR_sctp_generic_recvmsg, sys_sctp_generic_recvmsg), // 474
    BSDXY(__NR_pread,            sys_pread),             // 475
 
    BSDX_(__NR_pwrite,           sys_pwrite),            // 476

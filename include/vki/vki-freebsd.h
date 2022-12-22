@@ -772,6 +772,28 @@ struct vki_sockaddr_in6 {
 };
 
 //----------------------------------------------------------------------
+// From netinet/sctp_uio.h
+//----------------------------------------------------------------------
+#define VKI_SCTP_ALIGN_RESV_PAD 92
+
+typedef vki_uint32_t vki_sctp_assoc_t;
+
+struct vki_sctp_sndrcvinfo {
+   vki_uint16_t sinfo_stream;
+   vki_uint16_t sinfo_ssn;
+   vki_uint16_t sinfo_flags;
+   vki_uint32_t sinfo_ppid;
+   vki_uint32_t sinfo_context;
+   vki_uint32_t sinfo_timetolive;
+   vki_uint32_t sinfo_tsn;
+   vki_uint32_t sinfo_cumtsn;
+   vki_sctp_assoc_t sinfo_assoc_id;
+   vki_uint16_t sinfo_keynumber;
+   vki_uint16_t sinfo_keynumber_valid;
+   vki_uint8_t __reserve_pad[VKI_SCTP_ALIGN_RESV_PAD];
+};
+
+//----------------------------------------------------------------------
 // From sys/un.h
 //----------------------------------------------------------------------
 

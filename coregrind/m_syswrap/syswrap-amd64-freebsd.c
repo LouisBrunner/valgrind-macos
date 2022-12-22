@@ -325,14 +325,15 @@ PRE(sys_preadv)
    PRINT("sys_preadv ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %"
          FMT_REGWORD "d, %" FMT_REGWORD "d )", SARG1, ARG2, SARG3, SARG4);
    PRE_REG_READ4(ssize_t, "preadv",
-                 int, fd, const struct iovec *, iovr,
+                 int, fd, const struct iovec *, iov,
                  int, iovcnt, vki_off_t, offset);
    if (!ML_(fd_allowed)(ARG1, "preadv", tid, False)) {
       SET_STATUS_Failure( VKI_EBADF );
    } else {
-      if ((Int)ARG3 >= 0)
+      if ((Int)ARG3 > 0)
          PRE_MEM_READ( "preadv(iov)", ARG2, ARG3 * sizeof(struct vki_iovec) );
 
+      // @todo PJF improve this like readv
       if (ML_(safe_to_deref)((struct vki_iovec *)ARG2, ARG3 * sizeof(struct vki_iovec))) {
          vec = (struct vki_iovec *)(Addr)ARG2;
          for (i = 0; i < (Int)ARG3; i++)

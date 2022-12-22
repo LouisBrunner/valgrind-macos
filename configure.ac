@@ -694,13 +694,13 @@ case "${host_os}" in
       DEFAULT_SUPP="darwin20.supp ${DEFAULT_SUPP}"
       DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
                   ;;
-       21.*)
+       macosx-21.*|iphoneos-15.*)
       AC_MSG_RESULT([Darwin 21.x (${kernel}) / macOS 12 Monterey])
       AC_DEFINE([DARWIN_VERS], DARWIN_12_00, [Darwin / Mac OS X version])
       DEFAULT_SUPP="darwin21.supp ${DEFAULT_SUPP}"
       DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
                   ;;
-       22.*)
+       macosx-22.*|iphoneos-16.*)
       AC_MSG_RESULT([Darwin 22.x (${kernel}) / macOS 13 Ventura])
       AC_DEFINE([DARWIN_VERS], DARWIN_13_00, [Darwin / Mac OS X version])
       DEFAULT_SUPP="darwin22.supp ${DEFAULT_SUPP}"

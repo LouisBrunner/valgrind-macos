@@ -10,6 +10,8 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== CORE CHANGES ===================
 
+* Make the address space limit on FreeBSD amd64 128Gbytes
+  (the same as Linux and Solaris, it was 32Gbytes)
 
 * ==================== FIXED BUGS ====================
 

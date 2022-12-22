@@ -1662,7 +1662,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
 
    aspacem_maxAddr = VG_PGROUNDDN( sp_at_startup ) - 1;
 # else
-   aspacem_maxAddr = (Addr) (Addr)0x800000000UL - 1; // 32G
+   aspacem_maxAddr = (Addr)0x2000000000ULL - 1; // 128G
 #  ifdef ENABLE_INNER
    { Addr cse = VG_PGROUNDDN( sp_at_startup ) - 1;
      if (aspacem_maxAddr > cse)

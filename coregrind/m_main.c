@@ -889,9 +889,9 @@ static void process_option (Clo_Mode mode,
 
 void VG_(process_dynamic_option) (Clo_Mode mode, HChar *value)
 {
-   process_option (mode, value, NULL);
-   // This is not supposed to change values in process_option_state,
-   // so we can give a NULL.
+   struct process_option_state dummy;
+   process_option (mode, value, &dummy);
+   // No need to handle a process_option_state once valgrind has started.
 }
 
 /* Peer at previously set up VG_(args_for_valgrind) and do some

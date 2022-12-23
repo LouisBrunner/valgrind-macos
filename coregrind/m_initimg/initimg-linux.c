@@ -120,19 +120,19 @@ static void load_client ( /*MOD*/ExeInfo* info,
    If this needs to handle any more variables it should be hacked
    into something table driven.  The copy is VG_(malloc)'d space.
 */
-static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
+static HChar** setup_client_env ( HChar** origenv, const HChar* toolname, Bool use_stack_cache_tunable)
 {
    vg_assert(origenv);
    vg_assert(toolname);
 
-   const HChar* preload_core    = "vgpreload_core";
-   const HChar* ld_preload      = "LD_PRELOAD=";
-   const HChar* v_launcher      = VALGRIND_LAUNCHER "=";
-   Int    ld_preload_len  = VG_(strlen)( ld_preload );
-   Int    v_launcher_len  = VG_(strlen)( v_launcher );
-   Bool   ld_preload_done = False;
-   Int    vglib_len       = VG_(strlen)(VG_(libdir));
-   Bool   debug           = False;
+   const HChar* preload_core      = "vgpreload_core";
+   const HChar* ld_preload        = "LD_PRELOAD=";
+   const HChar* v_launcher        = VALGRIND_LAUNCHER "=";
+   Int    ld_preload_len          = VG_(strlen)( ld_preload );
+   Int    v_launcher_len          = VG_(strlen)( v_launcher );
+   Bool   ld_preload_done         = False;
+   Int    vglib_len               = VG_(strlen)(VG_(libdir));
+   Bool   debug                   = False;
 
    HChar** cpp;
    HChar** ret;
@@ -175,9 +175,10 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
       if (debug) VG_(printf)("XXXXXXXXX: BEFORE %s\n", *cpp);
    }
 
-   /* Allocate a new space */
+   /* Allocate a new space
+    * Size is envc + 1 new entry + maybe one for GLIBC_TUNABLES + NULL */
    ret = VG_(malloc) ("initimg-linux.sce.3",
-                      sizeof(HChar *) * (envc+1+1)); /* 1 new entry + NULL */
+                      sizeof(HChar *) * (envc+1+1+(use_stack_cache_tunable ? 1 : 0)));
 
    /* copy it over */
    for (cpp = ret; *origenv; ) {
@@ -201,6 +202,18 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 
          ld_preload_done = True;
       }
+      if (use_stack_cache_tunable) {
+          /* overwrite value found with zeroes */
+          const HChar* search_string = "glibc.pthread.stack_cache_size=";
+          HChar* val;
+          if ((val = VG_(strstr)(*cpp, search_string))) {
+              val += VG_(strlen)(search_string);
+              while (*val != '\0' && *val != ':') {
+                  *val++ = '0';
+              }
+              use_stack_cache_tunable = False;
+          }
+      }
       if (debug) VG_(printf)("XXXXXXXXX: MASH   %s\n", *cpp);
    }
 
@@ -213,6 +226,10 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 
       ret[envc++] = cp;
       if (debug) VG_(printf)("XXXXXXXXX: ADD    %s\n", cp);
+   }
+
+   if (use_stack_cache_tunable) {
+      ret[envc++] = VG_(strdup)("initimg-linux.sce.6", "GLIBC_TUNABLES=glibc.pthread.stack_cache_size=0");
    }
 
    /* ret[0 .. envc-1] is live now. */
@@ -1004,6 +1021,26 @@ static void setup_client_dataseg ( SizeT max_size )
    vg_assert(sr_Res(sres) == anon_start);
 }
 
+/*
+ * In glibc 2.34 we need to use the TUNABLE mechanism to
+ * disable stack cache when --sim-hints=no-nptl-pthread-stackcache
+ * is specified. This needs to be done in the same manner
+ * as LD_PRELOAD.
+ *
+ * See https://bugs.kde.org/show_bug.cgi?id=444488
+ */
+static Bool need_stack_cache_tunable(HChar** argv)
+{
+    while (argv && *argv) {
+        if (VG_(strncmp)(*argv, "--sim-hints=", VG_(strlen)("--sim-hints=")) == 0) {
+            if (VG_(strstr)(*argv, "no-nptl-pthread-stackcache")) {
+                return True;
+            }
+        }
+        ++argv;
+    }
+    return False;
+}
 
 /*====================================================================*/
 /*=== TOP-LEVEL: VG_(setup_client_initial_image)                   ===*/
@@ -1046,7 +1083,7 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii,
    //   p: get_helprequest_and_toolname [for toolname]
    //--------------------------------------------------------------
    VG_(debugLog)(1, "initimg", "Setup client env\n");
-   env = setup_client_env(iicii.envp, iicii.toolname);
+   env =  setup_client_env(iicii.envp, iicii.toolname, need_stack_cache_tunable(iicii.argv));
 
    //--------------------------------------------------------------
    // Setup client stack, eip, and VG_(client_arg[cv])

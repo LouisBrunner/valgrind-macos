@@ -1348,8 +1348,36 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
                to be added without risk of overflow. */
          }
       } else {
-          VG_(debugLog)(0,"sched",
-                        "WARNING: pthread stack cache cannot be disabled!\n");
+          /*
+           * glibc 2.34 no longer has stack_cache_actsize as a visible variable
+           * so we switch to using the GLIBC_TUNABLES env var. Processing for that
+           * is done in initimg-linux.c / setup_client_env  for all glibc
+           *
+           * If we don't detect stack_cache_actsize we want to be able to tell
+           * whether it is an unexpected error or if it is no longer there.
+           * In the latter case we don't print a warning.
+           */
+          Bool print_warning = True;
+          if (VG_(client__gnu_get_libc_version_addr) != NULL) {
+              const HChar* gnu_libc_version = VG_(client__gnu_get_libc_version_addr)();
+              if (gnu_libc_version != NULL) {
+                  HChar* glibc_version_tok = VG_(strdup)("scheduler.1", gnu_libc_version);
+                  const HChar* str_major = VG_(strtok)(glibc_version_tok, ".");
+                  Long major = VG_(strtoll10)(str_major, NULL);
+                  const HChar* str_minor = VG_(strtok)(NULL, ".");
+                  Long minor = VG_(strtoll10)(str_minor, NULL);
+                  if (major >= 2 && minor >= 34) {
+                      print_warning = False;
+                  }
+                  VG_(free)(glibc_version_tok);
+              }
+          } else {
+
+          }
+          if (print_warning) {
+              VG_(debugLog)(0,"sched",
+                            "WARNING: pthread stack cache cannot be disabled!\n");
+          }
           VG_(clo_sim_hints) &= ~SimHint2S(SimHint_no_nptl_pthread_stackcache);
           /* Remove SimHint_no_nptl_pthread_stackcache from VG_(clo_sim_hints)
              to avoid having a msg for all following threads. */

@@ -25,6 +25,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 170510  Don't warn about ioctl of size 0 without direction hint
 351857  confusing error message about valid command line option
 444110  priv/guest_ppc_toIR.c:36198:31: warning: duplicated 'if' condition.
+444488  Use glibc.pthread.stack_cache_size tunable
 459476  vgdb: allow address reuse to avoid "address already in use" errorsuse" errors
 462830  WARNING: unhandled amd64-freebsd syscall: 474
 463027  broken check for MPX instruction support in assembler

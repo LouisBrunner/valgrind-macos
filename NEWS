@@ -27,6 +27,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 444110  priv/guest_ppc_toIR.c:36198:31: warning: duplicated 'if' condition.
 459476  vgdb: allow address reuse to avoid "address already in use" errorsuse" errors
 462830  WARNING: unhandled amd64-freebsd syscall: 474
+463027  broken check for MPX instruction support in assembler
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

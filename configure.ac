@@ -3410,9 +3410,9 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
     asm ("bndmov %bnd0,(%rsp)");
     asm ("bndldx 3(%rbx,%rdx), %bnd2");
     asm ("bnd call foo\n"
-          bnd jmp  end\n"
-          foo: bnd ret\n"
-          end: nop");
+         "bnd jmp  end\n"
+         "foo: bnd ret\n"
+         "end: nop");
   } while (0)
 ]])], [
 ac_have_as_mpx=yes

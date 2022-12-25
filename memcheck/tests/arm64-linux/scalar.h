@@ -1,3 +1,6 @@
+/* This is the arm64 variant of memcheck/tests/x86-linux/scalar.h */
+#include "../../../include/vki/vki-scnums-arm64-linux.h"
+
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -8,7 +11,10 @@
 #include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/mman.h>
-#include <unistd.h>
+
+// Since we use vki_unistd.h, we can't include <unistd.h>.  So we have to
+// declare this ourselves.
+extern long int syscall (long int __sysno, ...) __THROW;
 
 // Thorough syscall scalar arg checking.  Also serves as thorough checking
 // for (very) basic syscall use.  Generally not trying to do anything

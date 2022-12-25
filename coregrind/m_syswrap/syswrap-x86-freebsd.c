@@ -79,7 +79,7 @@ void ML_(call_on_new_stack_0_1) ( Addr stack,
 //  8(%esp) == retaddr
 // 12(%esp) == f
 // 16(%esp) == arg1
-asm(
+__asm__(
    ".text\n"
    ".globl vgModuleLocal_call_on_new_stack_0_1\n"
    "vgModuleLocal_call_on_new_stack_0_1:\n"

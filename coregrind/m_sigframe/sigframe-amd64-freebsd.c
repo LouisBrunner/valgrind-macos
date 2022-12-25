@@ -175,9 +175,10 @@ static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
 
    if (VG_(extend_stack)(tid, addr)) {
       stackseg = VG_(am_find_nsegment)(addr);
-      if (0 && stackseg)
+      if (0 && stackseg) {
          VG_(printf)("frame=%#lx seg=%#lx-%#lx\n",
                      addr, stackseg->start, stackseg->end);
+      }
    }
 
    if (stackseg == NULL || !stackseg->hasR || !stackseg->hasW) {
@@ -185,10 +186,11 @@ static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
          Vg_UserMsg,
          "Can't extend stack to %#lx during signal delivery for thread %u:\n",
          addr, tid);
-      if (stackseg == NULL)
+      if (stackseg == NULL) {
          VG_(message)(Vg_UserMsg, "  no stack segment\n");
-      else
+      } else {
          VG_(message)(Vg_UserMsg, "  too small or bad protection modes\n");
+      }
 
       /* set SIGSEGV to default handler */
       VG_(set_default_handler)(VKI_SIGSEGV);
@@ -246,8 +248,9 @@ static Addr build_sigframe(ThreadState *tst,
    rsp = VG_ROUNDDN(rsp, 16) - 8;
    frame = (struct sigframe *)rsp;
 
-   if (!extend(tst, rsp, sizeof(*frame)))
+   if (!extend(tst, rsp, sizeof(*frame))) {
       return rsp_top_of_frame;
+   }
 
    /* retaddr, siginfo, uContext fields are to be written */
    VG_TRACK( pre_mem_write, Vg_CoreSignal, tst->tid, "signal handler frame",
@@ -392,8 +395,9 @@ static
 SizeT restore_sigframe ( ThreadState *tst,
                          struct sigframe *frame, Int *sigNo )
 {
-   if (restore_vg_sigframe(tst, &frame->vg, sigNo))
+   if (restore_vg_sigframe(tst, &frame->vg, sigNo)) {
       restore_sigcontext(tst, &frame->uContext.uc_mcontext, &frame->fpstate);
+   }
 
    return sizeof(*frame);
 }

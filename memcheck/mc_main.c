@@ -369,7 +369,7 @@ static void update_SM_counts(SecMap* oldSM, SecMap* newSM)
 */
 #if ENABLE_ASSEMBLY_HELPERS && defined(PERF_FAST_LOADV) \
     && (defined(VGP_arm_linux) \
-        || defined(VGP_x86_linux) || defined(VGP_x86_solaris))
+        || defined(VGP_x86_linux) || defined(VGP_x86_solaris) || defined(VGP_x86_freebsd))
 /* mc_main_asm.c needs visibility on a few things declared in this file.
    MC_MAIN_STATIC allows to define them static if ok, i.e. on
    platforms that are not using hand-coded asm statements. */
@@ -5028,7 +5028,7 @@ VG_REGPARM(1) ULong MC_(helperc_LOADV64be) ( Addr a )
 /* See mc_main_asm.c */
 
 #elif ENABLE_ASSEMBLY_HELPERS && defined(PERF_FAST_LOADV) \
-      && (defined(VGP_x86_linux) || defined(VGP_x86_solaris))
+      && (defined(VGP_x86_linux) || defined(VGP_x86_solaris) || defined(VGP_x86_freebsd))
 /* See mc_main_asm.c */
 
 #else

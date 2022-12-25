@@ -110,8 +110,9 @@ int ptrace_write_memory (pid_t inferior_pid, CORE_ADDR memaddr,
 
    if (debuglevel >= 1) {
       DEBUG (1, "Writing ");
-      for (i = 0; i < len; i++)
+      for (i = 0; i < len; i++) {
          PDEBUG (1, "%02x", ((const unsigned char*)myaddr)[i]);
+      }
       PDEBUG(1, " to %p\n", (void *) memaddr);
    }
 
@@ -139,8 +140,9 @@ int ptrace_write_memory (pid_t inferior_pid, CORE_ADDR memaddr,
       errno = 0;
       ptrace (PT_WRITE_I, inferior_pid,
               (PTRACE_ARG3_TYPE) addr, buffer[i]);
-      if (errno)
+      if (errno) {
          return errno;
+      }
    }
 
    return 0;
@@ -160,15 +162,18 @@ char *status_image (int status)
 
    if (WIFSIGNALED(status)) {
       APPEND ("WIFSIGNALED %d ", WTERMSIG(status));
-      if (WCOREDUMP(status)) APPEND ("WCOREDUMP ");
+      if (WCOREDUMP(status)) {
+         APPEND ("WCOREDUMP ");
+      }
    }
 
    if (WIFSTOPPED(status))
       APPEND ("WIFSTOPPED %d ", WSTOPSIG(status));
 
 #ifdef WIFCONTINUED
-   if (WIFCONTINUED(status))
+   if (WIFCONTINUED(status)) {
       APPEND ("WIFCONTINUED ");
+   }
 #endif
 
    return result;
@@ -212,8 +217,9 @@ Bool waitstopped (pid_t pid, int signal_expected, const char *msg)
 
       assert (WIFSTOPPED(status));
       signal_received = WSTOPSIG(status);
-      if (signal_received == signal_expected)
+      if (signal_received == signal_expected) {
          break;
+      }
 
       /* pid received a signal which is not the signal we are waiting for.
          If we have not (yet) changed the registers of the inferior

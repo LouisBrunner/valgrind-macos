@@ -72,7 +72,7 @@ void ML_(call_on_new_stack_0_1) ( Addr stack,
 // %rsi == retaddr
 // %rdx == f
 // %rcx == arg1
-asm(
+__asm__(
    ".text\n"
    ".globl vgModuleLocal_call_on_new_stack_0_1\n"
    "vgModuleLocal_call_on_new_stack_0_1:\n"
@@ -178,8 +178,6 @@ POST(sys_sysarch)
    case VKI_AMD64_SET_FSBASE:
       break;
    case VKI_AMD64_GET_FSBASE:
-      POST_MEM_WRITE( ARG2, sizeof(void *) );
-      break;
    case VKI_AMD64_GET_XFPUSTATE:
       POST_MEM_WRITE( ARG2, sizeof(void *) );
       break;
@@ -331,8 +329,9 @@ PRE(sys_preadv)
    if (!ML_(fd_allowed)(ARG1, "preadv", tid, False)) {
       SET_STATUS_Failure( VKI_EBADF );
    } else {
-      if ((Int)ARG3 > 0)
+      if ((Int)ARG3 > 0) {
          PRE_MEM_READ( "preadv(iov)", ARG2, ARG3 * sizeof(struct vki_iovec) );
+      }
 
       if (ML_(safe_to_deref)((struct vki_iovec *)ARG2, ARG3 * sizeof(struct vki_iovec))) {
          vec = (struct vki_iovec *)(Addr)ARG2;
@@ -355,10 +354,14 @@ POST(sys_preadv)
       /* RES holds the number of bytes read. */
       for (i = 0; i < (Int)ARG3; i++) {
          Int nReadThisBuf = vec[i].iov_len;
-         if (nReadThisBuf > remains) nReadThisBuf = remains;
+         if (nReadThisBuf > remains) {
+            nReadThisBuf = remains;
+         }
          POST_MEM_WRITE( (Addr)vec[i].iov_base, nReadThisBuf );
          remains -= nReadThisBuf;
-         if (remains < 0) VG_(core_panic)("preadv: remains < 0");
+         if (remains < 0) {
+            VG_(core_panic)("preadv: remains < 0");
+         }
       }
    }
 }
@@ -381,8 +384,9 @@ PRE(sys_pwritev)
    if (!ML_(fd_allowed)(ARG1, "pwritev", tid, False)) {
       SET_STATUS_Failure( VKI_EBADF );
    } else {
-      if ((Int)ARG3 >= 0)
+      if ((Int)ARG3 >= 0) {
          PRE_MEM_READ( "pwritev(vector)", ARG2, ARG3 * sizeof(struct vki_iovec) );
+      }
       if (ML_(safe_to_deref)((struct vki_iovec *)ARG2, ARG3 * sizeof(struct vki_iovec))) {
          vec = (struct vki_iovec *)(Addr)ARG2;
          for (i = 0; i < (Int)ARG3; i++) {
@@ -406,11 +410,13 @@ PRE(sys_sendfile)
                  int, fd, int, s, vki_off_t, offset, size_t, nbytes,
                  void *, hdtr, vki_off_t *, sbytes, int, flags);
 
-   if (ARG5 != 0)
+   if (ARG5 != 0) {
       PRE_MEM_READ("sendfile(hdtr)", ARG5, sizeof(struct vki_sf_hdtr));
+   }
 
-   if (ARG6 != 0)
+   if (ARG6 != 0) {
       PRE_MEM_WRITE( "sendfile(sbytes)", ARG6, sizeof(vki_off_t) );
+   }
 }
 
 POST(sys_sendfile)
@@ -567,7 +573,8 @@ PRE(sys_setcontext)
 // int swapcontext(ucontext_t *oucp, const ucontext_t *ucp);
 PRE(sys_swapcontext)
 {
-   struct vki_ucontext *ucp, *oucp;
+   struct vki_ucontext *ucp;
+   struct vki_ucontext *oucp;
    ThreadState* tst;
 
    PRINT("sys_swapcontext ( %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )", ARG1, ARG2);
@@ -623,7 +630,8 @@ PRE(sys_thr_new)
    ThreadState* ptst = VG_(get_ThreadState)(tid);
    ThreadState* ctst = VG_(get_ThreadState)(ctid);
    SysRes       res;
-   vki_sigset_t blockall, savedmask;
+   vki_sigset_t blockall;
+   vki_sigset_t savedmask;
    struct vki_thr_param tp;
    Addr stk;
 
@@ -689,8 +697,9 @@ PRE(sys_thr_new)
       label below, to clean up. */
    VG_TRACK ( pre_thread_ll_create, tid, ctid );
 
-   if (debug)
+   if (debug) {
       VG_(printf)("clone child has SETTLS: tls at %#lx\n", (Addr)tp.tls_base);
+   }
    ctst->arch.vex.guest_FS_CONST = (UWord)tp.tls_base;
    tp.tls_base = 0;  /* Don't have the kernel do it too */
 

@@ -235,7 +235,7 @@ static void run_a_thread_NORETURN ( Word tidW )
          between marking it Empty and exiting.  Hence the
          assembler. */
 #if defined(VGP_x86_freebsd)    /* FreeBSD has args on the stack */
-      asm volatile (
+      __asm__ volatile (
          "movl    %1, %0\n"    /* set tst->status = VgTs_Empty */
          "movl    %2, %%eax\n"    /* set %eax = __NR_thr_exit */
          "movl    %3, %%ebx\n"    /* set %ebx = tst->os_state.exitcode */
@@ -249,7 +249,7 @@ static void run_a_thread_NORETURN ( Word tidW )
          : "eax", "ebx"
       );
 #elif defined(VGP_amd64_freebsd)
-      asm volatile (
+      __asm__ volatile (
          "movl   %1, %0\n"    /* set tst->status = VgTs_Empty */
          "movq   %2, %%rax\n"    /* set %rax = __NR_thr_exit */
          "movq   %3, %%rdi\n"    /* set %rdi = tst->os_state.exitcode */
@@ -294,11 +294,13 @@ Addr ML_(allocstack)(ThreadId tid)
       case a stack hasn't been allocated) or they are both non-zero,
       in which case it has. */
 
-   if (tst->os_state.valgrind_stack_base == 0)
+   if (tst->os_state.valgrind_stack_base == 0) {
       vg_assert(tst->os_state.valgrind_stack_init_SP == 0);
+   }
 
-   if (tst->os_state.valgrind_stack_base != 0)
+   if (tst->os_state.valgrind_stack_base != 0) {
       vg_assert(tst->os_state.valgrind_stack_init_SP != 0);
+   }
 
    /* If no stack is present, allocate one. */
 
@@ -5994,8 +5996,9 @@ POST(sys_ppoll)
    if (SUCCESS && ((Word)RES != -1)) {
       UInt i;
       struct vki_pollfd* ufds = (struct vki_pollfd *)(Addr)ARG1;
-      for (i = 0; i < ARG2; i++)
+      for (i = 0; i < ARG2; i++) {
          POST_MEM_WRITE( (Addr)(&ufds[i].revents), sizeof(ufds[i].revents) );
+      }
    }
    ML_(free_safe_mask) ( (Addr)ARG4 );
 }
@@ -6184,23 +6187,28 @@ PRE(sys_kevent)
                  int, kq, struct vki_kevent *, changelist, int, nchanges,
                  struct vki_kevent *, eventlist, int, nevents,
                  struct timespec *, timeout);
-   if (ARG2 != 0 && ARG3 != 0)
+   if (ARG2 != 0 && ARG3 != 0) {
       PRE_MEM_READ( "kevent(changelist)", ARG2, sizeof(struct vki_kevent)*ARG3 );
-   if (ARG4 != 0 && ARG5 != 0)
+   }
+   if (ARG4 != 0 && ARG5 != 0) {
       PRE_MEM_WRITE( "kevent(eventlist)", ARG4, sizeof(struct vki_kevent)*ARG5);
-   if (ARG5 != 0)
+   }
+   if (ARG5 != 0) {
       *flags |= SfMayBlock;
-   if (ARG6 != 0)
+   }
+   if (ARG6 != 0) {
       PRE_MEM_READ( "kevent(timeout)",
                     ARG6, sizeof(struct vki_timespec));
+   }
 }
 
 POST(sys_kevent)
 {
    vg_assert(SUCCESS);
    if ((Word)RES != -1) {
-      if (ARG4 != 0)
+      if (ARG4 != 0) {
          POST_MEM_WRITE( ARG4, sizeof(struct vki_kevent)*RES) ;
+      }
    }
 }
 
@@ -7233,10 +7241,10 @@ const SyscallTableEntry* ML_(get_freebsd_syscall_entry) ( UInt sysno )
    /* Is it in the contiguous initial section of the table? */
    if (sysno < syscall_table_size) {
       const SyscallTableEntry* sys = &ML_(syscall_table)[sysno];
-      if (sys->before == NULL)
+      if (sys->before == NULL) {
          return NULL; /* no entry */
-      else
-         return sys;
+      }
+      return sys;
    }
 
    /* Can't find a wrapper */

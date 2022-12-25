@@ -293,7 +293,9 @@ typedef
       XE_UnlockBogus,    // unlocking an address not known to be a lock
       XE_PthAPIerror,    // error from the POSIX pthreads API
       XE_LockOrder,      // lock order error
-      XE_Misc            // misc other error (w/ string to describe it)
+      XE_Misc,           // misc other error (w/ string to describe it)
+      XE_Dubious         // a bit like misc for cases where the POSIX
+                         // spec is unclear on error conditons
    }
    XErrorTag;
 
@@ -381,7 +383,8 @@ typedef
       XS_UnlockBogus,
       XS_PthAPIerror,
       XS_LockOrder,
-      XS_Misc
+      XS_Misc,
+      XS_Dubious
    }
    XSuppTag;
 
@@ -654,6 +657,30 @@ void HG_(record_error_Misc) ( Thread* thr, const HChar* errstr )
    HG_(record_error_Misc_w_aux)(thr, errstr, NULL, NULL);
 }
 
+void HG_(record_error_Dubious_w_aux) ( Thread* thr, const HChar* errstr,
+                                    const HChar* auxstr, ExeContext* auxctx )
+{
+   XError xe;
+   tl_assert( HG_(is_sane_Thread)(thr) );
+   tl_assert(errstr);
+   init_XError(&xe);
+   xe.tag = XE_Dubious;
+   xe.XE.Misc.thr    = thr;
+   xe.XE.Misc.errstr = string_table_strdup(errstr);
+   xe.XE.Misc.auxstr = auxstr ? string_table_strdup(auxstr) : NULL;
+   xe.XE.Misc.auxctx = auxctx;
+   // FIXME: tid vs thr
+   tl_assert( HG_(is_sane_ThreadId)(thr->coretid) );
+   tl_assert( thr->coretid != VG_INVALID_THREADID );
+   VG_(maybe_record_error)( thr->coretid,
+                            XE_Dubious, 0, NULL, &xe );
+}
+
+void HG_(record_error_Dubious) ( Thread* thr, const HChar* errstr )
+{
+   HG_(record_error_Dubious_w_aux)(thr, errstr, NULL, NULL);
+}
+
 Bool HG_(eq_Error) ( VgRes not_used, const Error* e1, const Error* e2 )
 {
    XError *xe1, *xe2;
@@ -692,6 +719,9 @@ Bool HG_(eq_Error) ( VgRes not_used, const Error* e1, const Error* e2 )
       case XE_Misc:
          return xe1->XE.Misc.thr == xe2->XE.Misc.thr
                 && 0==VG_(strcmp)(xe1->XE.Misc.errstr, xe2->XE.Misc.errstr);
+      case XE_Dubious:
+      return xe1->XE.Misc.thr == xe2->XE.Misc.thr
+             && 0==VG_(strcmp)(xe1->XE.Misc.errstr, xe2->XE.Misc.errstr);
       default:
          tl_assert(0);
    }
@@ -872,6 +902,9 @@ void HG_(before_pp_Error) ( const Error* err )
    tl_assert(xe);
 
    switch (VG_(get_error_kind)(err)) {
+      case XE_Dubious:
+         announce_one_thread( xe->XE.Misc.thr );
+         break;
       case XE_Misc:
          announce_one_thread( xe->XE.Misc.thr );
          break;
@@ -931,6 +964,40 @@ void HG_(pp_Error) ( const Error* err )
       emit( "  <kind>%s</kind>\n", HG_(get_error_name)(err));
 
    switch (VG_(get_error_kind)(err)) {
+   case XE_Dubious: {
+      tl_assert( HG_(is_sane_Thread)( xe->XE.Misc.thr ) );
+
+      if (xml) {
+
+         emit( "  <xwhat>\n" );
+         emit( "    <text>Thread #%d: %s</text>\n",
+               (Int)xe->XE.Misc.thr->errmsg_index,
+               xe->XE.Misc.errstr );
+         emit( "    <hthreadid>%d</hthreadid>\n",
+               (Int)xe->XE.Misc.thr->errmsg_index );
+         emit( "  </xwhat>\n" );
+         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         if (xe->XE.Misc.auxstr) {
+            emit("  <auxwhat>%s</auxwhat>\n", xe->XE.Misc.auxstr);
+            if (xe->XE.Misc.auxctx)
+               VG_(pp_ExeContext)( xe->XE.Misc.auxctx );
+         }
+
+      } else {
+
+         emit( "Thread #%d: %s\n",
+               (Int)xe->XE.Misc.thr->errmsg_index,
+               xe->XE.Misc.errstr );
+         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         if (xe->XE.Misc.auxstr) {
+            emit(" %s\n", xe->XE.Misc.auxstr);
+            if (xe->XE.Misc.auxctx)
+               VG_(pp_ExeContext)( xe->XE.Misc.auxctx );
+         }
+
+      }
+      break;
+   }
 
    case XE_Misc: {
       tl_assert( HG_(is_sane_Thread)( xe->XE.Misc.thr ) );
@@ -1325,6 +1392,7 @@ const HChar* HG_(get_error_name) ( const Error* err )
       case XE_PthAPIerror:    return "PthAPIerror";
       case XE_LockOrder:      return "LockOrder";
       case XE_Misc:           return "Misc";
+      case XE_Dubious:        return "Dubious";
       default: tl_assert(0); /* fill in missing case */
    }
 }
@@ -1344,6 +1412,7 @@ Bool HG_(recognised_suppression) ( const HChar* name, Supp *su )
    TRY("PthAPIerror",    XS_PthAPIerror);
    TRY("LockOrder",      XS_LockOrder);
    TRY("Misc",           XS_Misc);
+   TRY("Dubious",        XS_Dubious);
    return False;
 #  undef TRY
 }
@@ -1366,6 +1435,7 @@ Bool HG_(error_matches_suppression) ( const Error* err, const Supp* su )
    case XS_PthAPIerror:    return VG_(get_error_kind)(err) == XE_PthAPIerror;
    case XS_LockOrder:      return VG_(get_error_kind)(err) == XE_LockOrder;
    case XS_Misc:           return VG_(get_error_kind)(err) == XE_Misc;
+   case XS_Dubious:        return VG_(get_error_kind)(err) == XE_Dubious;
    //case XS_: return VG_(get_error_kind)(err) == XE_;
    default: tl_assert(0); /* fill in missing cases */
    }

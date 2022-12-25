@@ -2448,7 +2448,7 @@ static void evh__HG_PTHREAD_COND_SIGNAL_PRE ( ThreadId tid, void* cond )
                "pthread_cond_{signal,broadcast}: associated lock is a rwlock");
          }
          if (lk->heldBy == NULL) {
-            HG_(record_error_Misc)(thr,
+            HG_(record_error_Dubious)(thr,
                "pthread_cond_{signal,broadcast}: dubious: "
                "associated lock is not held by any thread");
          }

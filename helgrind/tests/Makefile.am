@@ -16,6 +16,9 @@ EXTRA_DIST = \
 	annotate_smart_pointer.vgtest annotate_smart_pointer.stdout.exp \
 		annotate_smart_pointer.stderr.exp \
 	bug322621.vgtest bug322621.stderr.exp \
+	bug392331.vgtest bug392331.stdout.exp bug392331.stderr.exp \
+	bug392331_supp.vgtest bug392331_supp.stdout.exp bug392331_supp.stderr.exp \
+	bug392331.supp \
 	cond_init_destroy.vgtest cond_init_destroy.stderr.exp \
 	cond_timedwait_invalid.vgtest cond_timedwait_invalid.stdout.exp \
 		cond_timedwait_invalid.stderr.exp \
@@ -139,6 +142,7 @@ noinst_HEADERS = safe-pthread.h safe-semaphore.h
 # should be conditionally compiled like tc20_verifywrap is.
 check_PROGRAMS = \
 	annotate_hbefore \
+	bug392331 \
 	cond_init_destroy \
 	cond_timedwait_invalid \
 	cond_timedwait_test \
@@ -238,3 +242,6 @@ annotate_hbefore_CFLAGS = $(AM_CFLAGS)
 endif
 
 bug322621_SOURCES = bug322621.cpp
+bug392331_SOURCES = bug392331.cpp
+bug392331_CXXFLAGS = $(AM_CXXFLAGS) -std=c++17
+

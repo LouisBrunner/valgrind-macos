@@ -1,0 +1,7 @@
+{
+   Check that Dubious suppression works
+   Helgrind:Dubious
+   fun:pthread_cond_signal_WRK
+   fun:pthread_cond_signal
+   fun:_ZNSt3__118condition_variable10notify_oneEv
+}

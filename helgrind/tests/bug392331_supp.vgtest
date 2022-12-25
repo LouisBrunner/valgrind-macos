@@ -1,2 +1,2 @@
-vgopts: -q --suppressions=bug392331.suppr
+vgopts: -q --suppressions=bug392331.supp
 prog: bug392331

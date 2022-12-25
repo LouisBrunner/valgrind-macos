@@ -4253,8 +4253,9 @@ PRE(sys__umtx_op)
                     struct umtx *, obj, int, op, unsigned long, id,
                     size_t, timeout_size, struct vki_timespec *, timeout);
       PRE_MEM_READ( "_umtx_op_lock(mtx)", ARG1, sizeof(struct vki_umtx) );
-      if (ARG5)
+      if (ARG5) {
          PRE_MEM_READ( "_umtx_op_lock(timespec)", ARG5, ARG4 );
+      }
       PRE_MEM_WRITE( "_umtx_op_lock(mtx)", ARG1, sizeof(struct vki_umtx) );
       *flags |= SfMayBlock;
       break;
@@ -4279,6 +4280,8 @@ PRE(sys__umtx_op)
 
       if (ARG5) {
          PRE_MEM_READ( "_umtx_op_wait(timeout)", ARG5, ARG4 );
+      } else {
+         *flags |= SfKernelRestart;
       }
 
       break;
@@ -4294,9 +4297,11 @@ PRE(sys__umtx_op)
                     struct umutex *, obj, int, op, unsigned long, noid,
                     size_t, timeout_size, struct vki_timespec *, timeout);
       PRE_MEM_READ( "_umtx_op_mutex_trylock(mutex)", ARG1, sizeof(struct vki_umutex) );
-      if (ARG5)
+      if (ARG5) {
          PRE_MEM_READ( "_umtx_op_mutex_trylock(timespec)", ARG5, ARG4 );
+      }
       PRE_MEM_WRITE( "_umtx_op_mutex_trylock(mutex)", ARG1, sizeof(struct vki_umutex) );
+      *flags |= SfMayBlock | SfKernelRestart;
       break;
    case VKI_UMTX_OP_MUTEX_LOCK:
       PRINT( "sys__umtx_op ( %#" FMT_REGWORD "x, MUTEX_LOCK, %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x)", ARG1, ARG3, ARG4, ARG5);
@@ -4304,10 +4309,11 @@ PRE(sys__umtx_op)
                     struct umutex *, obj, int, op, unsigned long, noid,
                     size_t, timeout_size, struct vki_timespec *, timeout);
       PRE_MEM_READ( "_umtx_op_mutex_lock(mutex)", ARG1, sizeof(struct vki_umutex) );
-      if (ARG5)
+      if (ARG5) {
          PRE_MEM_READ( "_umtx_op_mutex_lock(timespec)", ARG5, ARG4 );
+      }
       PRE_MEM_WRITE( "_umtx_op_mutex_lock(mutex)", ARG1, sizeof(struct vki_umutex) );
-      *flags |= SfMayBlock;
+      *flags |= SfMayBlock | SfKernelRestart;
       break;
    case VKI_UMTX_OP_MUTEX_UNLOCK:
       PRINT( "sys__umtx_op ( %#" FMT_REGWORD "x, MUTEX_UNLOCK)", ARG1);
@@ -4323,8 +4329,9 @@ PRE(sys__umtx_op)
                     unsigned int *, old_ceiling);
       PRE_MEM_READ( "_umtx_op_set_ceiling(mutex)", ARG1, sizeof(struct vki_umutex) );
       PRE_MEM_WRITE( "_umtx_op_set_ceiling(mutex)", ARG1, sizeof(struct vki_umutex) );
-      if (ARG4)
+      if (ARG4) {
          PRE_MEM_WRITE( "_umtx_op_set_ceiling(old_ceiling)", ARG4, sizeof(vki_uint32_t) );
+      }
       break;
    case VKI_UMTX_OP_CV_WAIT:
       PRINT( "sys__umtx_op ( %#" FMT_REGWORD "x, CV_WAIT, %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x)", ARG1, ARG3, ARG4, ARG5);
@@ -4335,8 +4342,9 @@ PRE(sys__umtx_op)
       PRE_MEM_WRITE( "_umtx_op_cv_wait(cond)", ARG1, sizeof(struct vki_ucond) );
       PRE_MEM_READ( "_umtx_op_cv_wait(mutex)", ARG4, sizeof(struct vki_umutex) );
       PRE_MEM_WRITE( "_umtx_op_cv_wait(mutex)", ARG4, sizeof(struct vki_umutex) );
-      if (ARG5)
+      if (ARG5) {
          PRE_MEM_READ( "_umtx_op_cv_wait(timespec)", ARG5, sizeof(struct vki_timespec) );
+      }
       *flags |= SfMayBlock;
       break;
    case VKI_UMTX_OP_CV_SIGNAL:
@@ -4359,8 +4367,9 @@ PRE(sys__umtx_op)
                     int *, obj, int, op, unsigned long, id,
                     size_t, timeout_wait, struct vki_timespec *, timeout);
       PRE_MEM_READ( "_umtx_op_wait(uint)", ARG1, sizeof(int) );
-      if (ARG5)
+      if (ARG5) {
          PRE_MEM_READ( "_umtx_op_wait(timespec)", ARG5, ARG4 );
+      }
       *flags |= SfMayBlock;
       break;
    case VKI_UMTX_OP_RW_RDLOCK:
@@ -4394,8 +4403,9 @@ PRE(sys__umtx_op)
                     int *, obj, int, op, unsigned long, id,
                     size_t, timeout_size, struct vki_timespec *, timeout);
       PRE_MEM_READ( "_umtx_op_wait_private(uint)", ARG1, sizeof(int) );
-      if (ARG5)
+      if (ARG5) {
          PRE_MEM_READ( "_umtx_op_wait_private(umtx_time)", ARG5, ARG4 );
+      }
       *flags |= SfMayBlock;
       break;
    case VKI_UMTX_OP_WAKE_PRIVATE:
@@ -4426,8 +4436,9 @@ PRE(sys__umtx_op)
                     size_t, timeout_size, struct vki_timespec *, timeout);
       PRE_MEM_READ( "_umtx_op_sem_wait(usem)", ARG1, sizeof(struct vki_usem) );
       PRE_MEM_WRITE( "_umtx_op_sem_wait(usem)", ARG1, sizeof(struct vki_usem) );
-      if (ARG5)
+      if (ARG5) {
          PRE_MEM_READ( "_umtx_op_sem_wait(umtx_time)", ARG5, ARG4 );
+      }
       *flags |= SfMayBlock;
       break;
    case VKI_UMTX_OP_SEM_WAKE:
@@ -4474,8 +4485,9 @@ PRE(sys__umtx_op)
    case VKI_UMTX_OP_ROBUST_LISTS:
       // val (ARG2) ought to be the same as sizeof(struct vki_umtx_robust_lists_params)
       // then the structure contains a pointer to mutex structures
-      if (ARG1 != sizeof(struct vki_umtx_robust_lists_params))
+      if (ARG1 != sizeof(struct vki_umtx_robust_lists_params)) {
          SET_STATUS_Failure( VKI_ENOSYS );
+      }
       PRINT( "sys__umtx_op ( %#" FMT_REGWORD "x, ROBUST_LISTS, %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x)", ARG1, ARG3, ARG4, ARG5);
       PRE_REG_READ3(long, "_umtx_op_robust_lists",
                     struct umtx_robust_lists_params *, obj, int, op, unsigned long, flags);

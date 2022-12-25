@@ -185,6 +185,7 @@ typedef
 #define SfPollAfter     (1 << 3) /* poll for signals on completion    */
 #define SfYieldAfter    (1 << 4) /* yield on completion               */
 #define SfNoWriteResult (1 << 5) /* don't write result to guest state */
+#define SfKernelRestart (1 << 6) /* needs a manual restart            */
 
 
 /* ---------------------------------------------------------------------

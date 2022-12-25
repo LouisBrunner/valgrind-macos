@@ -761,10 +761,11 @@ PRE(sys_pread)
                  unsigned int, fd, char *, buf, vki_size_t, count,
                  unsigned long, off);
 
-   if (!ML_(fd_allowed)(ARG1, "read", tid, False))
+   if (!ML_(fd_allowed)(ARG1, "read", tid, False)) {
       SET_STATUS_Failure( VKI_EBADF );
-   else
+   } else {
       PRE_MEM_WRITE( "pread(buf)", ARG2, ARG3 );
+   }
 }
 
 POST(sys_pread)
@@ -789,10 +790,11 @@ PRE(sys_pwrite)
    if (!ok && ARG1 == 2/*stderr*/
          && SimHintiS(SimHint_enable_outer, VG_(clo_sim_hints)))
       ok = True;
-   if (!ok)
+   if (!ok) {
       SET_STATUS_Failure( VKI_EBADF );
-   else
+   } else {
       PRE_MEM_READ( "pwrite(buf)", ARG2, ARG3 );
+   }
 }
 
 // SYS_mmap 477

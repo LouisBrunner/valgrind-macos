@@ -959,12 +959,12 @@ struct vki_termios {
  * We actually have a 16 bit "base" ioctl, which may or may not be decoded
  * into number/group
  */
-#define _VKI_IOC_BASEBITS  16
-#define _VKI_IOC_NRBITS    8  /* "num" on freebsd */
-#define _VKI_IOC_TYPEBITS  8  /* "group" on freebsd */
+#define _VKI_IOC_BASEBITS  16U
+#define _VKI_IOC_NRBITS    8U  /* "num" on freebsd */
+#define _VKI_IOC_TYPEBITS  8U  /* "group" on freebsd */
 
-#define _VKI_IOC_SIZEBITS  13
-#define _VKI_IOC_DIRBITS   3
+#define _VKI_IOC_SIZEBITS  13U
+#define _VKI_IOC_DIRBITS   3U
 
 #define _VKI_IOC_BASEMASK  ((1ul << _VKI_IOC_BASEBITS)-1)
 #define _VKI_IOC_NRMASK    ((1ul << _VKI_IOC_NRBITS)-1)
@@ -972,8 +972,8 @@ struct vki_termios {
 #define _VKI_IOC_SIZEMASK  ((1ul << _VKI_IOC_SIZEBITS)-1)
 #define _VKI_IOC_DIRMASK   ((1ul << _VKI_IOC_DIRBITS)-1)
 
-#define  _VKI_IOC_BASESHIFT   0
-#define _VKI_IOC_NRSHIFT   0
+#define  _VKI_IOC_BASESHIFT   0U
+#define _VKI_IOC_NRSHIFT   0U
 #define _VKI_IOC_TYPESHIFT (_VKI_IOC_NRSHIFT+_VKI_IOC_NRBITS)
 #define _VKI_IOC_SIZESHIFT (_VKI_IOC_TYPESHIFT+_VKI_IOC_TYPEBITS)
 #define _VKI_IOC_DIRSHIFT  (_VKI_IOC_SIZESHIFT+_VKI_IOC_SIZEBITS)
@@ -1013,7 +1013,7 @@ extern unsigned int __vki_invalid_size_argument_for_IOC;
 // From sys/random.h
 //----------------------------------------------------------------------
 
-#define VKI_GRND_NONBLOCK 0x1
+#define VKI_GRND_NONBLOCK 0x1U
 
 //----------------------------------------------------------------------
 // From sys/termios.h

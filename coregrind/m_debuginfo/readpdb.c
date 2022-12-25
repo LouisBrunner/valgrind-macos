@@ -1545,8 +1545,9 @@ static ULong DEBUG_SnarfLinetab(
    Bool  debug = di->trace_symtab;
    ULong n_lines_read = 0;
 
-   if (debug)
+   if (debug) {
       VG_(umsg)("BEGIN SnarfLineTab linetab=%p size=%d\n", linetab, size);
+   }
 
    /*
     * Now get the important bits.

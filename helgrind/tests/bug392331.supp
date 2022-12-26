@@ -1,7 +1,25 @@
 {
-   Check that Dubious suppression works
+   Check that Dubious suppression works FreeBSD
    Helgrind:Dubious
    fun:pthread_cond_signal_WRK
    fun:pthread_cond_signal
    fun:_ZNSt3__118condition_variable10notify_oneEv
+}
+{
+   Check that Dubious suppression works Linux standalone
+   Helgrind:Dubious
+   fun:pthread_cond_signal_WRK
+   fun:pthread_cond_signal@*
+   fun:__gthread_cond_signal
+   fun:UnknownInlinedFun
+   fun:_ZNSt18condition_variable10notify_oneEv
+}
+# for some very strange reason the suppression is different
+# when running under regtest
+{
+   Check that Dubious suppression works Linux regtest
+   Helgrind:Dubious
+   fun:pthread_cond_signal_WRK
+   fun:pthread_cond_signal@*
+   fun:_ZNSt18condition_variable10notify_oneEv
 }

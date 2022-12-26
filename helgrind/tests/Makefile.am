@@ -142,7 +142,6 @@ noinst_HEADERS = safe-pthread.h safe-semaphore.h
 # should be conditionally compiled like tc20_verifywrap is.
 check_PROGRAMS = \
 	annotate_hbefore \
-	bug392331 \
 	cond_init_destroy \
 	cond_timedwait_invalid \
 	cond_timedwait_test \
@@ -242,6 +241,9 @@ annotate_hbefore_CFLAGS = $(AM_CFLAGS)
 endif
 
 bug322621_SOURCES = bug322621.cpp
+if HAVE_CXX17
+check_PROGRAMS += bug392331
 bug392331_SOURCES = bug392331.cpp
 bug392331_CXXFLAGS = $(AM_CXXFLAGS) -std=c++17
+endif
 

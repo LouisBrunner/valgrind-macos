@@ -2009,6 +2009,26 @@ AC_MSG_RESULT([no])
 # clang 3.3 cannot process <thread> from e.g.
 # gcc (Ubuntu/Linaro 4.6.3-1ubuntu5) 4.6.3
 
+AC_MSG_CHECKING([that C++ compiler can compile C++17 code])
+AC_LANG(C++)
+safe_CXXFLAGS=$CXXFLAGS
+CXXFLAGS=-std=c++17
+
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+int x;
+])],
+[
+ac_have_cxx_17=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_cxx_17=no
+AC_MSG_RESULT([no])
+])
+CXXFLAGS=$safe_CXXFLAGS
+AC_LANG(C)
+
+AM_CONDITIONAL(HAVE_CXX17, test x$ac_have_cxx_17 = xyes)
+
 AC_MSG_CHECKING([that C++ compiler can include <thread> header file])
 AC_LANG(C++)
 safe_CXXFLAGS=$CXXFLAGS

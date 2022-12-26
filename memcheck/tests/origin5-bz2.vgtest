@@ -1,3 +1,4 @@
+prereq: ! ../../tests/os_test freebsd
 prog: origin5-bz2
 vgopts: -q --track-origins=yes
 args: x

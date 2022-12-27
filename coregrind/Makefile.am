@@ -766,6 +766,8 @@ GDBSERVER_XML_FILES = \
 # so as to make sure these get copied into the install tree
 vglibdir = $(pkglibexecdir)
 vglib_DATA  = $(GDBSERVER_XML_FILES)
+vglib_DATA  += m_gdbserver/valgrind-monitor.py
+vglib_DATA  += m_gdbserver/valgrind-monitor-def.py
 
 # so as to make sure these get copied into the tarball
 EXTRA_DIST  += $(GDBSERVER_XML_FILES)

@@ -1792,8 +1792,19 @@ is:</para>
 
 <sect1 id="mc-manual.monitor-commands" xreflabel="Memcheck Monitor Commands">
 <title>Memcheck Monitor Commands</title>
-<para>The Memcheck tool provides monitor commands handled by Valgrind's
-built-in gdbserver (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>).
+<para>The Memcheck tool provides monitor commands handled by Valgrind's built-in
+  gdbserver (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>).
+  Valgrind python code provides GDB front end commands giving an easier usage of
+  the memcheck monitor commands (see
+  <xref linkend="manual-core-adv.gdbserver-gdbmonitorfrontend"/>).  To launch a
+  memcheck monitor command via its GDB front end command, instead of prefixing
+  the command with "monitor", you must use the GDB <varname>memcheck</varname>
+  command (or the shorter aliases <varname>mc</varname>).  Using the memcheck
+  GDB front end command provide a more flexible usage, such as evaluation of
+  address and length arguments by GDB. In GDB, you can use <varname>help
+  memcheck</varname> to get help about the memcheck front end monitor commands
+  and you can use <varname>apropos memcheck</varname> to get all the commands
+  mentionning the word "memcheck" in their name or on-line help.
 </para>
 
 <itemizedlist>
@@ -1836,6 +1847,23 @@ Address 0x804A2F0 len 10 has 1 bytes unaddressable
 (gdb)
 ]]></programlisting>
 
+    <para>The GDB memcheck front end command <varname>memcheck xb ADDR
+      [LEN]</varname> accepts any address expression for its first ADDR
+      argument. The second optional argument is any integer expression. Note
+      that these 2 arguments must be separated by a space.
+      The following example shows how to get the definedness of
+      <varname>string10</varname> using the memcheck xb front end command.
+    </para>
+<programlisting><![CDATA[
+(gdb) mc xb &string10 sizeof(string10)
+                  ff      00      ff      00      ff      __      ff      00
+0x804A2F0:      0x3f    0x6e    0x3f    0x65    0x3f    0x??     0x3f    0x65
+                  ff      00
+0x804A2F8:      0x3f    0x00
+Address 0x804A2F0 len 10 has 1 bytes unaddressable
+(gdb)
+]]></programlisting>
+
     <para> The command xb cannot be used with registers. To get
       the validity bits of a register, you must start Valgrind with the
       option <option>--vgdb-shadow-registers=yes</option>. The validity
@@ -1866,15 +1894,19 @@ $10 = 0x0
     with their V bits values.
     </para>
     <para>
-    The following example shows the result of <varname>get_vibts</varname>
-    on the <varname>string10</varname> used in the  <varname>xb</varname>
-    command explanation.
+    The following example shows the result of <varname>get_vbits</varname> on
+    the <varname>string10</varname> used in the <varname>xb</varname> command
+    explanation. The GDB memcheck equivalent front end command <varname>memcheck
+    get_vbits ADDR [LEN]</varname>accepts any ADDR expression and any LEN
+    expression (separated by a space).
     </para>
 <programlisting><![CDATA[
 (gdb) monitor get_vbits 0x804a2f0 10
 ff00ff00 ff__ff00 ff00
 Address 0x804A2F0 len 10 has 1 bytes unaddressable
-(gdb) 
+(gdb) memcheck get_vbits &string10 sizeof(string10)
+ff00ff00 ff__ff00 ff00
+Address 0x804A2F0 len 10 has 1 bytes unaddressable
 ]]></programlisting>
 
   </listitem>
@@ -1895,15 +1927,27 @@ Address 0x804A2F0 len 10 has 1 bytes unaddressable
     that the first letter of <varname>Definedifaddressable</varname>
     is an uppercase D to avoid confusion with <varname>defined</varname>.
     </para>
+    
+    <para>The GDB equivalent memcheck front end commands <varname>memcheck
+      make_memory [noaccess|undefined|defined|Definedifaddressable] ADDR
+      [LEN]</varname> accept any address expression for their first ADDR
+      argument. The second optional argument is any integer expression. Note
+      that these 2 arguments must be separated by a space.
+    </para>
 
     <para>
     In the following example, the first byte of the
-    <varname>string10</varname> is marked as defined:
+    <varname>string10</varname> is marked as defined and then is marked
+    noaccess:
     </para>
 <programlisting><![CDATA[
 (gdb) monitor make_memory defined 0x8049e28  1
 (gdb) monitor get_vbits 0x8049e28 10
 0000ff00 ff00ff00 ff00
+(gdb) memcheck make_memory noaccess &string10[0]
+(gdb) memcheck get_vbits &string10 sizeof(string10)
+__00ff00 ff00ff00 ff00
+Address 0x8049E28 len 10 has 1 bytes unaddressable
 (gdb) 
 ]]></programlisting>
   </listitem>
@@ -1924,6 +1968,13 @@ Address 0x8049E28 len 1 defined
 ==14698==  declared at prog.c:10, in frame #0 of thread 1
 (gdb) 
 ]]></programlisting>
+    <para>The GDB equivalent memcheck front end commands <varname>memcheck
+      check_memory [addressable|defined] ADDR [LEN]</varname> accept any address
+      expression for their first ADDR argument. The second optional argument is
+      any integer expression. Note that these 2 arguments must be separated by a
+      space.
+    </para>
+
   </listitem>
 
   <listitem>
@@ -2044,6 +2095,15 @@ Address 0x8049E28 len 1 defined
     reachable any</computeroutput> (or, using
     abbreviation: <computeroutput>mo l f r a</computeroutput>).
     </para>
+    
+    <para>The GDB equivalent memcheck front end command <varname>memcheck
+        leak_check</varname> auto-completes the user input by providing the full
+      list of keywords still relevant according to what is already typed. For
+      example, if the "summary" keyword has been provided, the following TABs to
+      auto-complete other items will not propose anymore "full" and "xtleak".
+      Note that KIND and HEUR values are not part of auto-completed elements.
+    </para>
+
   </listitem>
 
   <listitem>
@@ -2163,6 +2223,12 @@ Address 0x8049E28 len 1 defined
     search for dangling pointers to a freed block.
     Each location pointing at addr (or pointing inside addr if interior pointers
     are being searched for) will be described.
+    </para>
+
+    <para>The GDB equivalent memcheck front end command <varname>memcheck
+      who_points_at ADDR [LEN]</varname> accept any address expression for its
+      first ADDR argument. The second optional argument is any integer
+      expression. Note that these 2 arguments must be separated by a space.
     </para>
 
     <para>In the below example, the pointers to the 'tree block A' (see example

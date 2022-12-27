@@ -15,6 +15,10 @@ cat > $PATTERNFILE <<EOF
 #       general way to delete uninteresting and varying lines.
 /filter_gdb BEGIN drop/,/filter_gdb END drop/d
 
+#       delete the messages produced by valgrind python code.
+/Loaded.*valgrind-monitor.py$/d
+/Type "help valgrind" for more info\.$/d
+
 #       initial tty control character sent by gdb 7.0
 s/^\[?1034hReading symbols/Reading symbols/
 

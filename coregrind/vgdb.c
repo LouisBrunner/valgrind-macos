@@ -1167,8 +1167,9 @@ void usage(void)
 "  -d  arg tells to show debug info. Multiple -d args for more debug info\n"
 "\n"
 "  -h --help shows this message\n"
+"  The GDB python code defining GDB front end valgrind commands is:\n       %s\n"
 "  To get help from the Valgrind gdbserver, use vgdb help\n"
-"\n", vgdb_prefix_default()
+"\n", vgdb_prefix_default(), VG_LIBDIR "/valgrind-monitor.py"
            );
    invoker_restrictions_msg();
 }

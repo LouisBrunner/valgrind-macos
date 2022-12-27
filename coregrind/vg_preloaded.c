@@ -49,6 +49,19 @@
 #include <features.h>
 #endif
 
+/* Instruct GDB via a .debug_gdb_scripts section to load the valgrind and tool
+   front-end commands.  */
+/* Note: The "MS" section flags are to remove duplicates.  */
+#define DEFINE_GDB_PY_SCRIPT(script_name) \
+  asm("\
+.pushsection \".debug_gdb_scripts\", \"MS\",@progbits,1\n\
+.byte 1 /* Python */\n\
+.asciz \"" script_name "\"\n\
+.popsection \n\
+");
+
+DEFINE_GDB_PY_SCRIPT(VG_LIBDIR "/valgrind-monitor.py")
+
 #if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
 
 /* ---------------------------------------------------------------------

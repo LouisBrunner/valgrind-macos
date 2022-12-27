@@ -13,6 +13,30 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 * Make the address space limit on FreeBSD amd64 128Gbytes
   (the same as Linux and Solaris, it was 32Gbytes)
 
+* When GDB is used to debug a program running under valgrind using
+  the valgrind gdbserver, GDB will automatically load some
+  python code provided in valgrind defining GDB front end commands
+  corresponding to the valgrind monitor commands.
+  These GDB front end commands accept the same format as
+  the monitor commands directly sent to the Valgrind gdbserver.
+  These GDB front end commands provide a better integration
+  in the GDB command line interface, so as to use for example
+  GDB auto-completion, command specific help, searching for
+  a command or command help matching a regexp, ...
+  For relevant monitor commands, GDB will evaluate arguments
+  to make the use of monitor commands easier.
+  For example, instead of having to print the address of a variable
+  to pass it to a subsequent monitor command, the GDB front end
+  command will evaluate the address argument. It is for example
+  possible to do:
+    (gdb) memcheck who_point_at &some_struct sizeof(some_struct)
+  instead of:
+    (gdb) p &some_struct
+    $2 = (some_struct_type *) 0x1130a0 <some_struct>
+    (gdb) p sizeof(some_struct)
+    $3 = 40
+    (gdb) monitor who_point_at 0x1130a0 40
+
 * ==================== TOOL CHANGES ===================
 
 * Memcheck:
@@ -24,11 +48,23 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
     Whenever a "delta" leak search is done (i.e. when specifying
     "new" or "increased" or "changed" in the monitor command),
     the new loss records have a "new" marker.
+  - Valgrind now contains python code that defines GDB memcheck
+    front end monitor commands. See CORE CHANGES.
 
 * Helgrind:
   - The option ---history-backtrace-size=<number> allows to configure
     the number of entries to record in the stack traces of "old"
     accesses. Previously, this number was hardcoded to 8.
+  - Valgrind now contains python code that defines GDB helgrind
+    front end monitor commands. See CORE CHANGES.
+
+* Callgrind:
+  - Valgrind now contains python code that defines GDB callgrind
+    front end monitor commands. See CORE CHANGES.
+
+* Massif:
+  - Valgrind now contains python code that defines GDB massif
+    front end monitor commands. See CORE CHANGES.
 
 * ==================== FIXED BUGS ====================
 

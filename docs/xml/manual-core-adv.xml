@@ -591,7 +591,7 @@ works across all devices and scenarios.
        xreflabel="Monitor command handling by the Valgrind gdbserver">
 <title>Monitor command handling by the Valgrind gdbserver</title>
 
-<para> The Valgrind gdbserver provides additional Valgrind-specific
+<para>The Valgrind gdbserver provides additional Valgrind-specific
 functionality via "monitor commands".  Such monitor commands can be
 sent from the GDB command line or from the shell command line or
 requested by the client program using the VALGRIND_MONITOR_COMMAND
@@ -628,11 +628,11 @@ command:
 ]]></screen>
 </para>
 
-<para>GDB will send the <computeroutput>leak_check</computeroutput>
-command to the Valgrind gdbserver.  The Valgrind gdbserver will
-execute the monitor command itself, if it recognises it to be a Valgrind core
-monitor command.  If it is not recognised as such, it is assumed to
-be tool-specific and is handed to the tool for execution.  For example:
+<para>GDB sends as a single string all what follows 'monitor' to the Valgrind
+gdbserver.  The Valgrind gdbserver parses the string and will execute the
+monitor command itself, if it recognises it to be a Valgrind core monitor
+command.  If it is not recognised as such, it is assumed to be tool-specific and
+is handed to the tool for execution.  For example:  
 </para>
 <programlisting><![CDATA[
 (gdb) monitor leak_check full reachable any
@@ -650,9 +650,9 @@ be tool-specific and is handed to the tool for execution.  For example:
 (gdb) 
 ]]></programlisting>
 
-<para>As with other GDB commands, the Valgrind gdbserver will accept
-abbreviated monitor command names and arguments, as long as the given
-abbreviation is unambiguous.  For example, the above
+<para>Similarly to GDB, the Valgrind gdbserver will accept abbreviated monitor
+command names and arguments, as long as the given abbreviation is unambiguous.
+For example, the above
 <computeroutput>leak_check</computeroutput>
 command can also be typed as:
 <screen><![CDATA[
@@ -703,6 +703,130 @@ continue: the program execution is controlled explicitly using GDB
 ...
 ]]></programlisting>
 
+</sect2>
+
+<sect2 id="manual-core-adv.gdbserver-gdbmonitorfrontend"
+       xreflabel="GDB front end commands for Valgrind gdbserver monitor commands">
+<title>GDB front end commands for Valgrind gdbserver monitor commands</title>
+
+<para>As explained in
+  <xref linkend="manual-core-adv.gdbserver-commandhandling"/>, valgrind monitor
+  commands consist in strings that are not interpreted by GDB.  GDB has no
+  knowledge of these valgrind monitor commands.  The GDB 'command line
+  interface' infrastructure however provides interesting functionalities to help
+  typing commands such as auto-completion, command specific help, searching for
+  a command or command help matching a regexp, ...
+</para>
+
+<para>To have a better integration of the valgrind monitor commands in the GDB
+  command line interface, Valgrind provides python code defining a GDB front end
+  command for each valgrind monitor command.  Similarly, for each tool specific
+  monitor command, the python code provides a matching GDB front end command.
+</para>
+
+<para>Like other GDB commands, the GDB front end Valgrind monitor commands are
+  hierarchically structured starting from 5 "top" GDB commands. Subcommands are
+  defined below these "top" commands.  To ease typing, shorter aliases are also
+  provided.
+
+  <itemizedlist>
+    <listitem>
+      <para><computeroutput>valgrind</computeroutput> (aliased
+      by <computeroutput>vg</computeroutput>
+      and <computeroutput>v</computeroutput>) is the top GDB command providing
+      front end commands to the Valgrind general monitor commands.</para>
+    </listitem>
+    <listitem>
+      <para><computeroutput>memcheck</computeroutput> (aliased
+        by <computeroutput>mc</computeroutput>) is the top GDB command
+        providing the front end commands corresponding to the memcheck specific
+        monitor commands.</para>
+    </listitem>
+    <listitem>
+      <para><computeroutput>callgrind</computeroutput> (aliased
+        by <computeroutput>cg</computeroutput>) is the top GDB command
+        providing the front end commands corresponding to the callgrind specific
+        monitor commands.</para>
+    </listitem>
+    <listitem>
+      <para><computeroutput>massif</computeroutput> (aliased
+        by <computeroutput>ms</computeroutput>) is the top GDB command
+        providing the front end commands corresponding to the massif specific
+        monitor commands.</para>
+    </listitem>
+    <listitem>
+      <para><computeroutput>helgrind</computeroutput> (aliased
+        by <computeroutput>hg</computeroutput>) is the top GDB command
+        providing the front end commands corresponding to the helgrind specific
+        monitor commands.</para>
+    </listitem>
+  </itemizedlist>
+</para>
+
+<para>The usage of a GDB front end command is compatible with a direct usage of
+  the Valgrind monitor command.  The below example shows a direct usage of the
+  Memcheck monitor command <computeroutput>xb</computeroutput> to examine the
+  definedness status of the some_mem array and equivalent usages based on the GDB
+  front end commands.
+
+<programlisting><![CDATA[
+(gdb) list
+1	int main()
+2	{
+3	  char some_mem[5];
+4	  return 0;
+5	}
+(gdb) p &some_mem
+$2 = (char (*)[5]) 0x1ffefffe5b
+(gdb) p sizeof(some_mem)
+$3 = 5
+(gdb) monitor xb 0x1ffefffe5b 5
+		  ff	  ff	  ff	  ff	  ff
+0x1FFEFFFE5B:	0x00	0x00	0x00	0x00	0x00
+(gdb) memcheck xb 0x1ffefffe5b 5
+		  ff	  ff	  ff	  ff	  ff
+0x1FFEFFFE5B:	0x00	0x00	0x00	0x00	0x00
+(gdb) mc xb &some_mem sizeof(some_mem)
+		  ff	  ff	  ff	  ff	  ff
+0x1FFEFFFE5B:	0x00	0x00	0x00	0x00	0x00
+(gdb) 
+]]></programlisting>
+
+It is worth noting down that the third command uses the
+alias <computeroutput>mc</computeroutput>.  This command also shows a
+significant advantage of using the GDB front end commands: as GDB "understands"
+the structure of these front end commands, where relevant, these front end
+commands will evaluate their arguments. In the case of
+the <computeroutput>xb</computeroutput> command, the
+GDB <computeroutput>xb</computeroutput> command evaluates its second argument
+(which must be an address expression) and its optional second argument (which
+must be an integer expression).
+</para>
+
+<para>GDB will auto-load the python code defining the Valgrind front end
+  commands as soon as GDB detects that the executable being debugged is running
+  under valgrind.  This detection is based on observing that the Valgrind
+  process has loaded a specific Valgrind shared library.  The loading of this
+  library is done by the dynamic loader very early on in the execution of the
+  process.  If GDB is used to connect to a Valgrind process that has not yet
+  started its execution (such as when Valgrind was started with the
+  option <computeroutput>--vgdb-stop-at=startup</computeroutput>
+  or <computeroutput>--vgdb-error=0</computeroutput>), then the GDB front end
+  commands will not yet be auto-loaded.  To have the GDB front end commands
+  auto-loaded, you can put a breakpoint e.g. in main and use the GDB
+  command <computeroutput>continue</computeroutput>. Alternatively, you can add
+  in your .gdbinit a line that loads the python code at GDB startup such as:
+<programlisting><![CDATA[
+source /path/to/valgrind/python/code/valgrind-monitor.py
+]]></programlisting>
+</para>
+<para>
+The exact path to use in the source command depends on your Valgrind
+installation.  The output of the shell command <computeroutput>vgdb
+--help</computeroutput> contains the absolute path name for the python file you
+can source in your .gdbinit to define the GDB valgrind front end monitor
+commands.
+</para>
 </sect2>
 
 <sect2 id="manual-core-adv.gdbserver-threads"
@@ -1307,9 +1431,24 @@ commands, refer to <xref linkend="mc-manual.monitor-commands"/>,
 
 <para> The monitor commands can be sent either from a shell command line, by using a
 standalone vgdb, or from GDB, by using GDB's "monitor"
-command (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>).
+command (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>) or
+by GDB's "valgrind" front end commands (see
+<xref linkend="manual-core-adv.gdbserver-gdbmonitorfrontend"/>).  
 They can also be launched by the client program, using the VALGRIND_MONITOR_COMMAND
 client request.
+</para>
+<para>Whatever the way the monitor command is launched, it will behave the same
+  way. However, using the GDB's valgrind front end commands allows to benefit
+  from the GDB infrastructure, such as expression evaluation.  When relevant,
+  the description of a monitor command below describes the additional
+  flexibility provided by the GDB valgrind front end command.  To launch a
+  valgrind monitor command via its GDB front end command, instead of prefixing
+  the command with "monitor", you must use the GDB <varname>valgrind</varname>
+  command (or the shorter aliases <varname>vg</varname>
+  or <varname>v</varname>).  In GDB, you can use <varname>help
+  valgrind</varname> to get help about the valgrind front end monitor commands
+  and you can use <varname>apropos valgrind</varname> to get all the commands
+  mentionning the word "valgrind" in their name or on-line help.
 </para>
 
 <itemizedlist>
@@ -1319,6 +1458,13 @@ client request.
     of the tool. The optional "debug" argument tells to also give help
     for the monitor commands aimed at Valgrind internals debugging.
     </para>
+    <para>Note that this monitor command produces the help information as
+      provided by valgrind gdbserver.  The GDB help given e.g. by <varname>help
+      valgrind</varname> or <varname>help valgrind v.info</varname> provides the
+      help of the GDB front end command for the equivalent valgrind gdbserver
+      monitor command. This "GDB help" describes the additional flexibility
+      provided by the GDB front end command.
+      </para>
   </listitem>
 
   <listitem>
@@ -1345,13 +1491,28 @@ client request.
     detailed information about global or local (stack) variables.
     </para>
 <programlisting><![CDATA[
-(gdb) monitor v.info location 0x8050b20
- Location 0x8050b20 is 0 bytes inside global var "mx"
+(gdb) monitor v.info location 0x1130a0
+ Location 0x1130a0 is 0 bytes inside global var "mx"
  declared at tc19_shadowmem.c:19
+(gdb) mo v.in loc 0x1ffefffe10
+ Location 0x1ffefffe10 is 0 bytes inside info.child,
+ declared at tc19_shadowmem.c:139, in frame #1 of thread 1
+(gdb) 
+]]></programlisting>
 
-(gdb) mo v.in loc 0x582f33c
- Location 0x582f33c is 0 bytes inside local var "info"
- declared at tc19_shadowmem.c:282, in frame #1 of thread 3
+<para>The GDB valgrind front end command <varname>valgrind v.info location ADDR</varname>
+  accepts any address expression for its ADDR argument. In the below examples, mx is
+  a global struct and info is a pointer to a structure. Instead of having to print the
+  addresses of the structure and printing the pointer variable, you can directly use the
+  expressions in the GDB valgrind front end command argument.
+  </para>
+<programlisting><![CDATA[
+(gdb) valgrind v.info location &mx
+ Location 0x1130a0 is 0 bytes inside global var "mx"
+ declared at tc19_shadowmem.c:19
+(gdb) v v.i lo info
+ Location 0x1ffefffe10 is 0 bytes inside info.child,
+ declared at tc19_shadowmem.c:139, in frame #1 of thread 1
 (gdb) 
 ]]></programlisting>
   </listitem>
@@ -1375,16 +1536,28 @@ client request.
     <option>--track-fds=all</option> (to include
     <computeroutput>stdin</computeroutput>,
     <computeroutput>stdout</computeroutput> and
-    <computeroutput>stderr</computeroutput>) was given at Valgrindr
-    startup.</para>
+    <computeroutput>stderr</computeroutput>) was given at Valgrind startup.</para>
   </listitem>
   
   <listitem>
     <para><varname>v.clo &lt;clo_option&gt;...</varname> changes one or more
         dynamic command line options. If no clo_option is given, lists the
         dynamically changeable options. See
-        <xref linkend="manual-core.dynopts"/>.
-      </para>
+      <xref linkend="manual-core.dynopts"/>.
+      The below shows example of changing the value of <varname>--vgdb-error</varname>
+      using directly the valgrind monitor command, using the equivalent GDB valgrind front end command.
+      It also shows how a more flexible setting can be done using the GDB eval command.
+    </para>
+<programlisting><![CDATA[
+(gdb) mo v.clo --vgdb-error=10
+==2808839== Handling new value --vgdb-error=10 for option --vgdb-error
+(gdb) v v.clo --vgdb-error=11
+==2808839== Handling new value --vgdb-error=11 for option --vgdb-error
+(gdb) set var $nnn = 15
+(gdb) eval "v v.clo --vgdb-error=%d", $nnn + 1
+==2808839== Handling new value --vgdb-error=16 for option --vgdb-error
+(gdb)
+]]></programlisting>
   </listitem>
 
   <listitem>
@@ -1417,7 +1590,10 @@ client request.
     "no-op" command to a Valgrind gdbserver so as to continue the
     execution of the guest process.
     </para>
-  </listitem>
+    <para>The GDB valgrind front end command <varname>valgrind v.wait
+      MS</varname> accepts any integer expression for its MS argument, while the
+      monitor command accepts only integer numbers.
+    </para>  </listitem>
 
   <listitem>
     <para><varname>v.kill</varname> requests the gdbserver to kill
@@ -1428,12 +1604,29 @@ client request.
 
   <listitem>
     <para><varname>v.set vgdb-error &lt;errornr&gt;</varname>
+      dynamically changes the value of the 
+      <option>--vgdb-error</option> valgrind command line argument. A
+      typical usage of this is to start with
+      <option>--vgdb-error=0</option> on the
+      command line, then set a few breakpoints, set the vgdb-error value
+      to a huge value and continue execution. Note that you can also change
+      this value using e.g. <varname>v.clo --vgdb-error=12</varname></para>
+    <para>The GDB valgrind front end command <varname>valgrind v.set vgdb-error
+      NUM</varname> accepts any integer expression for its ERRORNR argument, while
+      the monitor command accepts only integer numbers.
+    </para>
+  </listitem>
+
+  <listitem>
+    <para><varname>v.set merge-recursive-frames &lt;num&gt;</varname>
     dynamically changes the value of the 
-    <option>--vgdb-error</option> argument. A
-    typical usage of this is to start with
-    <option>--vgdb-error=0</option> on the
-    command line, then set a few breakpoints, set the vgdb-error value
-    to a huge value and continue execution.</para>
+      <option>--merge-recursive-frames</option> valgrind command line argument.
+     Note that you can also change
+    this value using e.g. <varname>v.clo --merge-recursive-frames=5</varname></para>
+    <para>The GDB valgrind front end command <varname>valgrind v.set merge-recursive-frames
+      NUM</varname> accepts any integer expression for its NUM argument, while
+      the monitor command accepts only integer numbers.
+    </para>
   </listitem>
 
   <listitem>
@@ -1537,6 +1730,11 @@ problems or bugs.</para>
     The default value of &lt;len&gt; is 1, giving the unwind information
     for the instruction at &lt;addr&gt;.
     </para>
+    <para>The GDB valgrind front end command <varname>valgrind v.info unwind
+      ADDR [LEN]</varname> accepts any address expression for its first ADDR
+      argument, such as $pc. The second optional argument is any integer
+      expression. Note that these 2 arguments must be separated by a space.
+    </para>
   </listitem>
 
   <listitem>
@@ -1544,6 +1742,9 @@ problems or bugs.</para>
     Valgrind debug log level to &lt;intvalue&gt;.  This allows to
     dynamically change the log level of Valgrind e.g. when a problem
     is detected.</para>
+    <para>The GDB valgrind front end command <varname>valgrind v.set debuglog
+      LEVEL</varname> accepts any address expression for its LEVEL argument.
+    </para>
   </listitem>
 
   <listitem>
@@ -1556,11 +1757,14 @@ problems or bugs.</para>
 
 <screen><![CDATA[
 (gdb) monitor v.set hostvisibility yes
-(gdb) add-symbol-file /path/to/tool/executable/file/memcheck-x86-linux 0x58000000
-add symbol table from file "/path/to/tool/executable/file/memcheck-x86-linux" at
-	.text_addr = 0x58000000
+Enabled access to Valgrind memory/status by GDB
+If not yet done, tell GDB which valgrind file(s) to use, typically:
+add-symbol-file /home/philippe/valgrind/git/improve/Inst/libexec/valgrind/memcheck-amd64-linux 0x58001000
+(gdb) add-symbol-file /home/philippe/valgrind/git/improve/Inst/libexec/valgrind/memcheck-amd64-linux 0x58001000
+add symbol table from file "/home/philippe/valgrind/git/improve/Inst/libexec/valgrind/memcheck-amd64-linux" at
+	.text_addr = 0x58001000
 (y or n) y
-Reading symbols from /path/to/tool/executable/file/memcheck-x86-linux...done.
+Reading symbols from /home/philippe/valgrind/git/improve/Inst/libexec/valgrind/memcheck-amd64-linux...
 (gdb) 
 ]]></screen>
 
@@ -1600,6 +1804,11 @@ $5 = {iropt_verbosity = 0, iropt_level = 2,
     active for some other reason, for example because there is a breakpoint at
     this address or because gdbserver is in single stepping
     mode.</para>
+    <para>The GDB valgrind front end command <varname>valgrind v.translate ADDR
+      [TRACEFLAG]</varname> accepts any address expression for its first ADDR
+      argument, such as $pc. The second optional argument is any integer
+      expression. Note that these 2 arguments must be separated by a space.
+    </para>
   </listitem>
 
 </itemizedlist>

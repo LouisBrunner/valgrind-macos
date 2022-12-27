@@ -1385,9 +1385,19 @@ Helgrind:</para>
 
 <sect1 id="hg-manual.monitor-commands" xreflabel="Helgrind Monitor Commands">
 <title>Helgrind Monitor Commands</title>
-<para>The Helgrind tool provides monitor commands handled by Valgrind's
-built-in gdbserver (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>).
-</para>
+<para>The Helgrind tool provides monitor commands handled by Valgrind's built-in
+  gdbserver (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>).
+  Valgrind python code provides GDB front end commands giving an easier usage of
+  the helgrind monitor commands (see
+  <xref linkend="manual-core-adv.gdbserver-gdbmonitorfrontend"/>).  To launch an
+  helgrind monitor command via its GDB front end command, instead of prefixing
+  the command with "monitor", you must use the GDB <varname>helgrind</varname>
+  command (or the shorter aliases <varname>hg</varname>).  Using the helgrind
+  GDB front end command provide a more flexible usage, such as evaluation of
+  address and length arguments by GDB.  In GDB, you can use <varname>help
+  helgrind</varname> to get help about the helgrind front end monitor commands
+  and you can use <varname>apropos helgrind</varname> to get all the commands
+  mentionning the word "helgrind" in their name or on-line help. </para>
 <itemizedlist>
   <listitem>
     <para><varname>info locks [lock_addr]</varname> shows the list of locks
@@ -1431,6 +1441,11 @@ Lock ga 0x8049a20 {
 }
 ]]></programlisting>
 
+    <para>The GDB equivalent helgrind front end command <varname>helgrind info locks
+      [ADDR]</varname> accept any address expression for its first ADDR
+      argument.
+    </para>
+
   </listitem>
 
   <listitem>
@@ -1467,6 +1482,22 @@ write of size 4 at 0x8049D88 by thread #9 tid 2
 ==6319==    by 0x39B924: start_thread (pthread_create.c:297)
 ==6319==    by 0x2F107D: clone (clone.S:130)
 
+]]></programlisting>
+    <para>The GDB equivalent helgrind front end command <varname>helgrind
+      accesshistory ADDR [LEN]</varname> accept any address expression for its
+      first ADDR argument. The second optional argument is any integer
+      expression. Note that these 2 arguments must be separated by a space,
+      like in the following example:
+    </para>
+<programlisting><![CDATA[
+(gdb) hg accesshistory &mx sizeof(mx)
+read of size 4 at 0x1130A8 by thread #2 tid (exited)
+==302== Locks held: none
+==302==    at 0x1094AC: child8 (tc19_shadowmem.c:37)
+==302==    by 0x10A0DF: steer (tc19_shadowmem.c:288)
+==302==    by 0x48448A3: mythread_wrapper (hg_intercepts.c:406)
+==302==    by 0x4879EA6: start_thread (pthread_create.c:477)
+==302==    by 0x4990A2E: clone (clone.S:95)
 ]]></programlisting>
 
   </listitem>

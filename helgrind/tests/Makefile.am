@@ -66,6 +66,7 @@ EXTRA_DIST = \
 	pth_spinlock.vgtest pth_spinlock.stdout.exp pth_spinlock.stderr.exp \
 	rwlock_race.vgtest rwlock_race.stdout.exp rwlock_race.stderr.exp \
 	rwlock_test.vgtest rwlock_test.stdout.exp rwlock_test.stderr.exp \
+	shared_timed_mutex.vgtest shared_timed_mutex.stderr.exp \
 	shmem_abits.vgtest shmem_abits.stdout.exp shmem_abits.stderr.exp \
 	stackteardown.vgtest stackteardown.stdout.exp stackteardown.stderr.exp \
 	t2t_laog.vgtest t2t_laog.stdout.exp t2t_laog.stderr.exp \

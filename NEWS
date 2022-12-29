@@ -18,7 +18,7 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 * Helgrind:
   - The option ---history-backtrace-size=<number> allows to configure
     the number of entries to record in the stack traces of "old"
-    accesses. Previous, this number was hardcoded to 8.
+    accesses. Previously, this number was hardcoded to 8.
 
 * ==================== FIXED BUGS ====================
 

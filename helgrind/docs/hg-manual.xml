@@ -666,9 +666,9 @@ the point it was detected.</para>
 "<computeroutput>This conflicts with a previous
 write</computeroutput>".  This shows a previous access which also
 accessed the stated address, and which is believed to be racing
-against the access in the first call stack. Note that this second
-call stack is limited to a maximum of 8 entries to limit the
-memory usage.</para>
+against the access in the first call stack. Note that this second call
+stack is limited to a maximum of <varname>--history-backtrace-size</varname>
+entries with a default value of 8 to limit the memory usage.</para>
 
 <para>Finally, Helgrind may attempt to give a description of the
 raced-on address in source level terms.  In this example, it
@@ -1117,13 +1117,13 @@ unlock(mx)                             unlock(mx)
       [default: full] ]]></option>
     </term>
     <listitem>
-      <para><option>--history-level=full</option> (the default) causes
-        Helgrind collects enough information about "old" accesses that
-        it can produce two stack traces in a race report -- both the
-        stack trace for the current access, and the trace for the
-        older, conflicting access. To limit memory usage, "old" accesses
-        stack traces are limited to a maximum of 8 entries, even if
-        <option>--num-callers</option> value is bigger.</para>
+      <para><option>--history-level=full</option> (the default) causes Helgrind
+        collects enough information about "old" accesses that it can produce two
+        stack traces in a race report -- both the stack trace for the current
+        access, and the trace for the older, conflicting access. To limit memory
+        usage, "old" accesses stack traces are limited to a maximum
+        of <varname>--history-backtrace-size</varname> entries (default 8) or
+        to <option>--num-callers</option> value if this value is smaller.</para>
       <para>Collecting such information is expensive in both speed and
         memory, particularly for programs that do many inter-thread
         synchronisation events (locks, unlocks, etc).  Without such
@@ -1150,6 +1150,19 @@ unlock(mx)                             unlock(mx)
     </listitem>
   </varlistentry>
   
+  <varlistentry id="opt.history-backtrace-size"
+                xreflabel="--history-backtrace-size">
+    <term>
+      <option><![CDATA[--history-backtrace-size=<number>
+      [default: 8] ]]></option>
+    </term>
+    <listitem>
+      <para>When <varname>--history-level=full</varname> is selected,
+        <varname>--history-backtrace-size=number</varname> indicates how many
+        entries to record in "old" accesses stack traces.</para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.delta-stacktrace"
                 xreflabel="--delta-stacktrace">
     <term>

@@ -2222,9 +2222,6 @@ static int pthread_spin_trylock_WRK(pthread_spinlock_t *lock)
               pthread_rwlock_unlock
               pthread_rwlock_tryrdlock
               pthread_rwlock_trywrlock
-
-   Unhandled: pthread_rwlock_timedrdlock
-              pthread_rwlock_timedwrlock
 */
 
 //-----------------------------------------------------------
@@ -2676,7 +2673,7 @@ static int pthread_rwlock_tryrdlock_WRK(pthread_rwlock_t* rwlock)
 
 
 //-----------------------------------------------------------
-// glibc:   Unhandled
+// glibc:   pthread_rwlock_timedrdlock
 // darwin:  Unhandled
 // Solaris: pthread_rwlock_timedrdlock
 // Solaris: pthread_rwlock_reltimedrdlock_np
@@ -2712,6 +2709,11 @@ static int pthread_rwlock_timedrdlock_WRK(pthread_rwlock_t *rwlock,
    return ret;
 }
 #if defined(VGO_linux)
+PTH_FUNC(int, pthreadZurwlockZutimedrdlock, // pthread_rwlock_timedrdlock
+              pthread_rwlock_t *rwlock,
+              const struct timespec *timeout) {
+   return pthread_rwlock_timedrdlock_WRK(rwlock, timeout);
+}
 #elif defined(VGO_darwin)
 #elif defined(VGO_freebsd)
 PTH_FUNC(int, pthreadZurwlockZutimedrdlock, // pthread_rwlock_timedrdlock
@@ -2779,8 +2781,7 @@ PTH_FUNC(int, pthreadZurwlockZuclockrdlock, // pthread_rwlock_clockrdlock
 
 
 //-----------------------------------------------------------
-// glibc:   Unhandled
-// darwin:  Unhandled
+// glibc:   pthread_rwlock_timedwrlock
 // Solaris: pthread_rwlock_timedwrlock
 // Solaris: pthread_rwlock_reltimedwrlock_np
 // FreeBSD: pthread_rwlock_timedwrlock
@@ -2815,6 +2816,11 @@ static int pthread_rwlock_timedwrlock_WRK(pthread_rwlock_t *rwlock,
    return ret;
 }
 #if defined(VGO_linux)
+PTH_FUNC(int, pthreadZurwlockZutimedwrlock, // pthread_rwlock_timedwrlock
+              pthread_rwlock_t *rwlock,
+              const struct timespec *timeout) {
+   return pthread_rwlock_timedwrlock_WRK(rwlock, timeout);
+}
 #elif defined(VGO_darwin)
 #elif defined(VGO_freebsd)
 PTH_FUNC(int, pthreadZurwlockZutimedwrlock, // pthread_rwlock_timedwrlock

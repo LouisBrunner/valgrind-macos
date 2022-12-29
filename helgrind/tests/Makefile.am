@@ -134,7 +134,8 @@ EXTRA_DIST = \
 	tc24_nonzero_sem.vgtest tc24_nonzero_sem.stdout.exp \
 		tc24_nonzero_sem.stderr.exp \
 	tls_threads.vgtest tls_threads.stdout.exp \
-		tls_threads.stderr.exp
+		tls_threads.stderr.exp \
+	trylock.vgtest trylock.stderr.exp
 
 # Wrapper headers used by some check programs.
 noinst_HEADERS = safe-pthread.h safe-semaphore.h

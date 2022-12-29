@@ -1,8 +1,8 @@
 
 Thread 3:
 Conflicting load by thread 3 at 0x........ size 4
-   at 0x........: th (hg04_race.c:10)
-   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+   at 0x........: th10 (hg04_race.c:11)
+   by 0x........: th9 (hg04_race.c:17)
 Location 0x........ is 0 bytes inside global var "shared"
 declared at hg04_race.c:6
 Other segment start (thread 2)
@@ -11,8 +11,8 @@ Other segment end (thread 2)
    (thread finished, call stack no longer available)
 
 Conflicting store by thread 3 at 0x........ size 4
-   at 0x........: th (hg04_race.c:10)
-   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
+   at 0x........: th10 (hg04_race.c:11)
+   by 0x........: th9 (hg04_race.c:17)
 Location 0x........ is 0 bytes inside global var "shared"
 declared at hg04_race.c:6
 Other segment start (thread 2)

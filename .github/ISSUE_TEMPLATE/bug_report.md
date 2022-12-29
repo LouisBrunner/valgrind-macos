@@ -19,7 +19,8 @@ assignees: ''
 
 <!-- include if relevant -->
 
-### Versions
+### Information
 
- * macOS (`sw_vers`): X.Y
- * Xcode (`xcrun --sdk macosx --show-sdk-version`): X.Y
+ * macOS architecture (`uname -m`): amd64/arm64
+ * macOS version (`sw_vers`): X.Y
+ * Xcode version (`xcrun --sdk macosx --show-sdk-version`): X.Y

@@ -135,6 +135,7 @@ EXTRA_DIST = \
 		tc24_nonzero_sem.stderr.exp \
 	tls_threads.vgtest tls_threads.stdout.exp \
 		tls_threads.stderr.exp \
+	tls_threads2.vgtest tls_threads2.stderr.exp \
 	trylock.vgtest trylock.stderr.exp
 
 # Wrapper headers used by some check programs.

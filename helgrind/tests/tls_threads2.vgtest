@@ -1,0 +1,4 @@
+prereq: ../../tests/os_test linux
+env: GLIBC_TUNABLES=glibc.pthread.mutex_spin_count=4:glibc.pthread.stack_cache_size=41943040:glibc.pthread.rseq=1
+prog: tls_threads
+vgopts: -q --sim-hints=no-nptl-pthread-stackcache

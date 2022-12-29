@@ -34,6 +34,7 @@ EXTRA_DIST = \
 	hg02_deadlock.vgtest hg02_deadlock.stdout.exp hg02_deadlock.stderr.exp \
 	hg03_inherit.vgtest hg03_inherit.stdout.exp hg03_inherit.stderr.exp \
 	hg04_race.vgtest hg04_race.stdout.exp hg04_race.stderr.exp \
+	hg04_race_h9.vgtest hg04_race_h9.stdout.exp hg04_race_h9.stderr.exp \
 	hg05_race2.vgtest hg05_race2.stdout.exp hg05_race2.stderr.exp \
 	hg06_readshared.vgtest hg06_readshared.stdout.exp \
 		hg06_readshared.stderr.exp \

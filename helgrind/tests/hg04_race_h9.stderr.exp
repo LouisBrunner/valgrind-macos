@@ -40,6 +40,7 @@ Locks held: none
    by 0x........: th5 (hg04_race.c:41)
    by 0x........: th4 (hg04_race.c:47)
    by 0x........: th3 (hg04_race.c:53)
+   by 0x........: th2 (hg04_race.c:59)
  Location 0x........ is 0 bytes inside global var "shared"
  declared at hg04_race.c:6
 
@@ -70,6 +71,7 @@ Locks held: none
    by 0x........: th5 (hg04_race.c:41)
    by 0x........: th4 (hg04_race.c:47)
    by 0x........: th3 (hg04_race.c:53)
+   by 0x........: th2 (hg04_race.c:59)
  Location 0x........ is 0 bytes inside global var "shared"
  declared at hg04_race.c:6
 

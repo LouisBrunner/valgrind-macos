@@ -75,10 +75,12 @@ typedef HChar name_t[BOOTSTRAP_MAX_NAME_LEN];
 
 typedef uint64_t mig_addr_t;
 
-// Apple started using more inclusive language in macOS 13.0
-#if DARWIN_VERS < DARWIN_13_0
+// Apple started using more inclusive language in Xcode 12+ and macOS 13+
+#if !defined(HOST_IO_MAIN_PORT)
 #define HOST_IO_MAIN_PORT HOST_IO_MASTER_PORT
 #endif
+
+
 
 
 // Saved ports

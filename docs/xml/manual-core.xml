@@ -2303,6 +2303,23 @@ need to use them.</para>
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.scheduling-quantum" xreflabel="--scheduling-quantum">
+    <term>
+      <option><![CDATA[--scheduling-quantum=<number>   [default: 100000] ]]></option>
+    </term>
+    <listitem>
+      <para>The <option>--scheduling-quantum</option> option controls
+      the maximum number of basic blocks executed by a thread before releasing
+      the lock used by Valgrind to serialise thread execution.  Smaller values
+      give finer interleaving but increases the scheduling overhead. Finer
+      interleaving can be useful to reproduce race conditions with helgrind or
+      DRD.  For more details about the Valgrind thread serialisation scheme and
+      its impact on performance and thread scheduling, see
+      <xref linkend="&vg-pthreads-perf-sched-id;"/>.
+      </para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="opt.fair-sched" xreflabel="--fair-sched">
     <term>
       <option><![CDATA[--fair-sched=<no|yes|try>    [default: no] ]]></option>

@@ -150,6 +150,11 @@ Bool   VG_(clo_debug_dump_frames) = False;
 Bool   VG_(clo_trace_redir)    = False;
 enum FairSchedType
        VG_(clo_fair_sched)     = disable_fair_sched;
+/* VG_(clo_scheduling_quantum) defines the thread-scheduling timeslice,
+   in terms of the number of basic blocks we attempt to run each thread for.
+   Smaller values give finer interleaving but much increased scheduling
+   overheads. */
+Word   VG_(clo_scheduling_quantum) = 100000;
 Bool   VG_(clo_trace_sched)    = False;
 Bool   VG_(clo_profile_heap)   = False;
 UInt   VG_(clo_progress_interval) = 0; /* in seconds, 1 .. 3600,

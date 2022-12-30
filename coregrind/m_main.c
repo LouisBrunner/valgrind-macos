@@ -202,6 +202,8 @@ static void usage_NORETURN ( int need_help )
 "         where hint is one of:\n"
 "           lax-ioctls lax-doors fuse-compatible enable-outer\n"
 "           no-inner-prefix no-nptl-pthread-stackcache fallback-llsc none\n"
+"    --scheduling-quantum=<number>  thread-scheduling timeslice in number of\n"
+"           basic blocks [100000]\n"
 "    --fair-sched=no|yes|try   schedule threads fairly on multicore systems [no]\n"
 "    --kernel-variant=variant1,variant2,...\n"
 "         handle non-standard kernel variants [none]\n"
@@ -622,6 +624,8 @@ static void process_option (Clo_Mode mode,
    else if VG_BOOL_CLOM(cloPD, arg, "--trace-children",   VG_(clo_trace_children)) {}
    else if VG_BOOL_CLOM(cloPD, arg, "--child-silent-after-fork",
                         VG_(clo_child_silent_after_fork)) {}
+else if VG_INT_CLOM(cloPD, arg, "--scheduling-quantum", 
+                    VG_(clo_scheduling_quantum)) {}
    else if VG_STR_CLO(arg, "--fair-sched",        tmp_str) {
       if (VG_(Clo_Mode)() != cloP)
          ;

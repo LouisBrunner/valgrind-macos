@@ -157,3 +157,8 @@
    Helgrind:Race
    fun:_ZL11*
 }
+{
+   HELGRIND-CXX-TLS
+   Helgrind:Race
+   fun:_ZNSt3__121__thread_specific_ptrINS_15__thread_structEE11set_pointerEPS1_
+}

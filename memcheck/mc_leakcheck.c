@@ -1275,25 +1275,29 @@ static void get_printing_rules(LeakCheckParams* lcp,
    Bool delta_considered;
 
    switch (lcp->deltamode) {
-   case LCD_Any: 
+   case LCD_Any:
       delta_considered = lr->num_blocks > 0;
       break;
    case LCD_Increased:
-      delta_considered 
+      delta_considered
          = lr->szB > lr->old_szB
          || lr->indirect_szB > lr->old_indirect_szB
          || lr->num_blocks > lr->old_num_blocks;
       break;
-   case LCD_Changed: 
+   case LCD_Changed:
       delta_considered = lr->szB != lr->old_szB
          || lr->indirect_szB != lr->old_indirect_szB
          || lr->num_blocks != lr->old_num_blocks;
+      break;
+   case LCD_New:
+      delta_considered
+         = lr->num_blocks > 0 && lr->old_num_blocks == 0;
       break;
    default:
       tl_assert(0);
    }
 
-   *print_record = lcp->mode == LC_Full && delta_considered 
+   *print_record = lcp->mode == LC_Full && delta_considered
       && RiS(lr->key.state,lcp->show_leak_kinds);
    // We don't count a leaks as errors with lcp->mode==LC_Summary.
    // Otherwise you can get high error counts with few or no error

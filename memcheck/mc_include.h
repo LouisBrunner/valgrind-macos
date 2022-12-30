@@ -430,10 +430,11 @@ typedef
 
 typedef
    enum {
-      LCD_Any,       // output all loss records, whatever the delta
-      LCD_Increased, // output loss records with an increase in size or blocks
-      LCD_Changed,   // output loss records with an increase or 
-                     //decrease in size or blocks
+      LCD_Any,       // Output all loss records, whatever the delta.
+      LCD_Increased, // Output loss records with an increase in size or blocks.
+      LCD_Changed,   // Output loss records with an increase or
+                     // decrease in size or blocks.
+      LCD_New        // Output new loss records.
    }
    LeakCheckDeltaMode;
 

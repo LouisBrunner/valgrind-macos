@@ -15,6 +15,16 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== TOOL CHANGES ===================
 
+* Memcheck:
+  - When doing a delta leak_search, it is now possible to only
+    output the new loss records compared to the previous leak search.
+    This is available in the memcheck monitor command 'leak_search'
+    by specifying the "new" keyword or in your program by using
+    the client request VALGRIND_DO_NEW_LEAK_CHECK.
+    Whenever a "delta" leak search is done (i.e. when specifying
+    "new" or "increased" or "changed" in the monitor command),
+    the new loss records have a "new" marker.
+
 * Helgrind:
   - The option ---history-backtrace-size=<number> allows to configure
     the number of entries to record in the stack traces of "old"

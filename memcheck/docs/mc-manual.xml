@@ -1930,7 +1930,7 @@ Address 0x8049E28 len 1 defined
     <para><varname>leak_check [full*|summary|xtleak]
                               [kinds &lt;set&gt;|reachable|possibleleak*|definiteleak]
                               [heuristics heur1,heur2,...]
-                              [increased*|changed|any]
+                              [new|increased*|changed|any]
                               [unlimited*|limited &lt;max_loss_records_output&gt;]
           </varname>
     performs a leak check. The <varname>*</varname> in the arguments
@@ -1980,18 +1980,22 @@ Address 0x8049E28 len 1 defined
     <varname>heuristics none</varname>.
     </para>
 
-    <para>The <varname>[increased*|changed|any]</varname> argument controls what
-    kinds of changes are shown for a <varname>full</varname> leak search. The
-    value <varname>increased</varname> specifies that only block
+    <para>The <varname>[new|increased*|changed|any]</varname> argument controls
+    what kinds of changes are shown for a <varname>full</varname> leak search.
+    The value <varname>increased</varname> specifies that only block
     allocation stacks with an increased number of leaked bytes or
     blocks since the previous leak check should be shown.  The
     value <varname>changed</varname> specifies that allocation stacks
     with any change since the previous leak check should be shown.
+    The value <varname>new</varname> specifies to show only the block
+    allocation stacks that are new since the previous leak search.
     The value <varname>any</varname> specifies that all leak entries
-    should be shown, regardless of any increase or decrease.  When
-    If <varname>increased</varname> or <varname>changed</varname> are
-    specified, the leak report entries will show the delta relative to
-    the previous leak report.
+    should be shown, regardless of any increase or decrease.
+    If <varname>new</varname> or <varname>increased</varname> or
+    <varname>changed</varname> are specified, the leak report entries will show
+    the delta relative to the previous leak report and the new loss records
+    will have a "new" marker (even when <varname>increased</varname> or
+    <varname>changed</varname> were specified).
     </para>
 
     <para>The following example shows usage of the 
@@ -2004,7 +2008,7 @@ Address 0x8049E28 len 1 defined
     there was no increase since the previous leak search.</para>
 <programlisting><![CDATA[
 (gdb) monitor leak_check full possibleleak increased
-==19520== 16 (+16) bytes in 1 (+1) blocks are possibly lost in loss record 9 of 12
+==19520== 16 (+16) bytes in 1 (+1) blocks are possibly lost in new loss record 9 of 12
 ==19520==    at 0x40070B4: malloc (vg_replace_malloc.c:263)
 ==19520==    by 0x80484D5: mk (leak-cases.c:52)
 ==19520==    by 0x804855F: f (leak-cases.c:81)
@@ -2292,6 +2296,12 @@ arguments.</para>
     entries for which there was an increase or decrease in leaked
     bytes or leaked number of blocks since the previous leak search. It
     has no return value.</para>
+  </listitem>
+
+  <listitem>
+    <para><varname>VALGRIND_DO_NEW_LEAK_CHECK</varname>: same as
+   <varname> VALGRIND_DO_LEAK_CHECK</varname> but only shows the new
+    entries since the previous leak search.  It has no return value.</para>
   </listitem>
 
   <listitem>

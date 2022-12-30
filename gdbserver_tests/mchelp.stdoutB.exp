@@ -32,7 +32,7 @@ memcheck monitor commands:
   leak_check [full*|summary|xtleak]
                 [kinds kind1,kind2,...|reachable|possibleleak*|definiteleak]
                 [heuristics heur1,heur2,...]
-                [increased*|changed|any]
+                [new|increased*|changed|any]
                 [unlimited*|limited <max_loss_records_output>]
             * = defaults
          xtleak produces an xtree full leak result in xtleak.kcg.%p.%n
@@ -106,7 +106,7 @@ memcheck monitor commands:
   leak_check [full*|summary|xtleak]
                 [kinds kind1,kind2,...|reachable|possibleleak*|definiteleak]
                 [heuristics heur1,heur2,...]
-                [increased*|changed|any]
+                [new|increased*|changed|any]
                 [unlimited*|limited <max_loss_records_output>]
             * = defaults
          xtleak produces an xtree full leak result in xtleak.kcg.%p.%n

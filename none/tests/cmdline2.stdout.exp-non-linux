@@ -113,6 +113,8 @@ usage: valgrind [options] prog-and-args
          where hint is one of:
            lax-ioctls lax-doors fuse-compatible enable-outer
            no-inner-prefix no-nptl-pthread-stackcache fallback-llsc none
+    --scheduling-quantum=<number>  thread-scheduling timeslice in number of
+           basic blocks [100000]
     --fair-sched=no|yes|try   schedule threads fairly on multicore systems [no]
     --kernel-variant=variant1,variant2,...
          handle non-standard kernel variants [none]

@@ -75,6 +75,15 @@ typedef uint64_t mach_msg_option64_t;
 #define MACH64_SEND_MQ_CALL 0x0000000400000000ull
 #define MACH64_SEND_ANY 0x0000000800000000ull
 
+typedef struct {
+	/* a mach_msg_header_t* or mach_msg_aux_header_t* */
+	mach_vm_address_t               msgv_data;
+	/* if msgv_rcv_addr is non-zero, use it as rcv address instead */
+	mach_vm_address_t               msgv_rcv_addr;
+	mach_msg_size_t                 msgv_send_size;
+	mach_msg_size_t                 msgv_rcv_size;
+} mach_msg_vector_t;
+
 extern mach_msg_return_t
 mach_msg2(void *data,
           mach_msg_option64_t options,
@@ -193,23 +202,31 @@ mach_msg(msg, option, send_size, rcv_size, rcv_name, timeout, notify)
 {
 
 #if DARWIN_VERS >= DARWIN_13
-    uint64_t desc_count = 0;
-    if (option & MACH_SEND_MSG && msg->msgh_bits & MACH_MSGH_BITS_COMPLEX) {
-        if (send_size >= sizeof(mach_msg_body_t)) {
-          desc_count = ((mach_msg_body_t*)msg)->msgh_descriptor_count;
+    mach_msg_base_t *base;
+    if (option & MACH64_MSG_VECTOR) {
+      base = (mach_msg_base_t *)((mach_msg_vector_t *)msg)->msgv_data;
+    } else {
+      base = (mach_msg_base_t *)msg;
         }
+
+	  mach_msg_size_t descriptors = 0;
+    if (option & MACH_SEND_MSG && msg->msgh_bits & MACH_MSGH_BITS_COMPLEX) {
+      descriptors = base->body.msgh_descriptor_count;
     }
 
+#define MACH_MSG2_SHIFT_ARGS(lo, hi) ((uint64_t)hi << 32 | (uint32_t)lo)
     return mach_msg2(
       msg,
       ((mach_msg_option64_t)option) | MACH64_SEND_KOBJECT_CALL,
-      (uint64_t)msg->msgh_bits | ((uint64_t)send_size << 32),
-      (uint64_t)msg->msgh_remote_port | ((uint64_t)msg->msgh_local_port << 32),
-      (uint64_t)msg->msgh_voucher_port | ((uint64_t)msg->msgh_id << 32),
-      (uint64_t)desc_count | ((uint64_t)rcv_name << 32),
-      (uint64_t)rcv_size | ((uint64_t)0 << 32),
+      MACH_MSG2_SHIFT_ARGS(msg->msgh_bits, send_size),
+      MACH_MSG2_SHIFT_ARGS(msg->msgh_remote_port, msg->msgh_local_port),
+      MACH_MSG2_SHIFT_ARGS(msg->msgh_voucher_port, msg->msgh_id),
+      MACH_MSG2_SHIFT_ARGS(descriptors, rcv_name),
+      MACH_MSG2_SHIFT_ARGS(rcv_size, 0),
       timeout
     );
+#undef MACH_MSG2_SHIFT_ARGS
+
 #else
     mach_msg_return_t mr;
 

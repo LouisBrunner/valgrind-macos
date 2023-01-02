@@ -225,7 +225,11 @@ DECL_TEMPLATE(darwin, gethostuuid);             // 142
 DECL_TEMPLATE(darwin, mount);                   // 167
 // old ustat
 DECL_TEMPLATE(darwin, csops);                   // 169
+#if DARWIN_VERS >= DARWIN_10_8
+DECL_TEMPLATE(darwin, csops_audittoken);        // 170
+#else
 // old table
+#endif
 // old wait3
 // old rpause
 // NYI waitid 173
@@ -664,6 +668,37 @@ DECL_TEMPLATE(darwin, abort_with_payload);          // 521
 // NYI kqueue_workloop_ctl                          // 530
 // NYI __mach_bridge_remote_time                    // 531
 #endif /* DARWIN_VERS >= DARWIN_10_14 */
+#if DARWIN_VERS >= DARWIN_10_15
+// NYI coalition_ledger               // 532
+// NYI log_data                       // 533
+// NYI memorystatus_available_memory  // 534
+#endif
+#if DARWIN_VERS >= DARWIN_11_00
+// NYI shared_region_map_and_slide_2_np   // 536
+// NYI pivot_root                         // 537
+// NYI task_inspect_for_pid               // 538
+// NYI task_read_for_pid                  // 539
+// NYI sys_preadv                         // 540
+// NYI sys_pwritev                        // 541
+// NYI sys_preadv_nocancel                // 542
+// NYI sys_pwritev_nocancel               // 543
+// NYI ulock_wait2                        // 544
+// NYI proc_info_extended_id              // 545
+#endif
+#if DARWIN_VERS >= DARWIN_12_00
+// NYI tracker_action         // 546
+// NYI debug_syscall_reject   // 547
+#endif
+#if DARWIN_VERS >= DARWIN_13_00
+// NYI sys_debug_syscall_reject_config  // 548
+// NYI graftdmg                         // 549
+DECL_TEMPLATE(darwin, map_with_linking_np); // 550
+// NYI freadlink                        // 551
+// NYI sys_record_system_event          // 552
+// NYI mkfifoat                         // 553
+// NYI mknodat                          // 554
+// NYI ungraftdmg                       // 555
+#endif
 
 // Mach message helpers
 DECL_TEMPLATE(darwin, mach_port_set_context);

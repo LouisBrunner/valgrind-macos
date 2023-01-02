@@ -308,9 +308,9 @@ tool-specific macros).</para>
        xreflabel="&vg-gdbserver-label;">
 <title>Debugging your program using Valgrind gdbserver and GDB</title>
 
-<para>A program running under Valgrind is not executed directly by the
-CPU.  Instead it runs on a synthetic CPU provided by Valgrind.  This is
-why a debugger cannot debug your program when it runs on Valgrind.
+<para>A program running under Valgrind is not executed directly by the CPU.
+Instead it runs on a synthetic CPU provided by Valgrind.  This is why a debugger
+cannot natively debug your program when it runs on Valgrind.
 </para>
 <para>
 This section describes how GDB can interact with the

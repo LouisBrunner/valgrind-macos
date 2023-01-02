@@ -407,7 +407,11 @@
 #define	__NR_mount          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(167)
 			/* 168  old ustat */
 #define __NR_csops          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(169)
+#if DARWIN_VERS >= DARWIN_10_8
+#define __NR_csops_audittoken VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(170)
+#else
 			/* 170  old table */
+#endif
 			/* 171  old wait3 */
 			/* 172  old rpause */
 #define	__NR_waitid         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(173)
@@ -856,6 +860,41 @@
 #define	__NR_kqueue_workloop_ctl    VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(530)
 #define	__NR___mach_bridge_remote_time VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(531)
 #endif /* DARWIN_VERS >= DARWIN_10_14 */
+
+#if DARWIN_VERS >= DARWIN_10_15
+#define __NR_coalition_ledger               VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(532)
+#define __NR_log_data                       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(533)
+#define __NR_memorystatus_available_memory  VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(534)
+#endif
+
+#if DARWIN_VERS >= DARWIN_11_00
+#define __NR_shared_region_map_and_slide_2_np   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(536)
+#define __NR_pivot_root                         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(537)
+#define __NR_task_inspect_for_pid               VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(538)
+#define __NR_task_read_for_pid                  VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(539)
+#define __NR_sys_preadv                         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(540)
+#define __NR_sys_pwritev                        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(541)
+#define __NR_sys_preadv_nocancel                VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(542)
+#define __NR_sys_pwritev_nocancel               VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(543)
+#define __NR_ulock_wait2                        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(544)
+#define __NR_proc_info_extended_id              VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(545)
+#endif
+
+#if DARWIN_VERS >= DARWIN_12_00
+#define __NR_tracker_action         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(546)
+#define __NR_debug_syscall_reject   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(547)
+#endif
+
+#if DARWIN_VERS >= DARWIN_13_00
+#define __NR_sys_debug_syscall_reject_config  VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(548)
+#define __NR_graftdmg                         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(549)
+#define __NR_map_with_linking_np              VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(550)
+#define __NR_freadlink                        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(551)
+#define __NR_sys_record_system_event          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(552)
+#define __NR_mkfifoat                         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(553)
+#define __NR_mknodat                          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(554)
+#define __NR_ungraftdmg                       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(555)
+#endif
 
 #if DARWIN_VERS < DARWIN_10_6
 #define	__NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(427)

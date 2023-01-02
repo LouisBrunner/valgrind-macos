@@ -188,6 +188,15 @@
 }
 
 {
+   OSX1300:dyld-prepare-maplink
+   Memcheck:Param
+   map_with_linking_np(link_info)
+   ...
+   fun:_ZN5dyld4L7prepareERNS_4APIsEPKN5dyld313MachOAnalyzerE
+   ...
+}
+
+{
    OSX1300:dyld-prepare-cond
    Memcheck:Cond
    ...
@@ -361,5 +370,70 @@
    Memcheck:Addr16
    ...
    fun:_ZN5dyld46Loader19makeDyldCacheLoaderER11DiagnosticsRNS_12RuntimeStateEPKcRKNS0_11LoadOptionsEjPKN6mach_o6LayoutE
+   ...
+}
+
+{
+   OSX1300:dyld-sections-cond
+   Memcheck:Cond
+   ...
+   fun:___ZNK5dyld39MachOFile14forEachSectionEU13block_pointerFvRKNS0_11SectionInfoEbRbE_block_invoke
+   ...
+}
+
+{
+   OSX1300:dyld-sections-value8
+   Memcheck:Value8
+   ...
+   fun:___ZNK5dyld39MachOFile14forEachSectionEU13block_pointerFvRKNS0_11SectionInfoEbRbE_block_invoke
+   ...
+}
+
+{
+   OSX1300:dyld-sections-addr1
+   Memcheck:Addr1
+   ...
+   fun:___ZNK5dyld39MachOFile14forEachSectionEU13block_pointerFvRKNS0_11SectionInfoEbRbE_block_invoke
+   ...
+}
+
+{
+   OSX1300:dyld-sections-addr2
+   Memcheck:Addr2
+   ...
+   fun:___ZNK5dyld39MachOFile14forEachSectionEU13block_pointerFvRKNS0_11SectionInfoEbRbE_block_invoke
+   ...
+}
+
+{
+   OSX1300:dyld-sections-addr4
+   Memcheck:Addr4
+   ...
+   fun:___ZNK5dyld39MachOFile14forEachSectionEU13block_pointerFvRKNS0_11SectionInfoEbRbE_block_invoke
+   ...
+}
+
+{
+   OSX1300:dyld-sections-addr8
+   Memcheck:Addr8
+   ...
+   fun:___ZNK5dyld39MachOFile14forEachSectionEU13block_pointerFvRKNS0_11SectionInfoEbRbE_block_invoke
+   ...
+}
+
+{
+   OSX1300:dyld-sections-addr16
+   Memcheck:Addr16
+   ...
+   fun:___ZNK5dyld39MachOFile14forEachSectionEU13block_pointerFvRKNS0_11SectionInfoEbRbE_block_invoke
+   ...
+}
+
+{
+   OSX1300:dyld-sections-machmsg
+   Memcheck:Param
+   mach_msg2(receive buffer)
+   ...
+   fun:___ZNK5dyld39MachOFile14forEachSectionEU13block_pointerFvRKNS0_11SectionInfoEbRbE_block_invoke
    ...
 }

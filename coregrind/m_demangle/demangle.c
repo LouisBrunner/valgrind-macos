@@ -90,6 +90,9 @@
 
 /* This is the main, standard demangler entry point. */
 
+const HChar * blockInvoke = "_block_invoke";
+const HChar * blockInvokeHuman = "invocation function for block in ";
+
 /* Upon return, *RESULT will point to the demangled name.
    The memory buffer that holds the demangled name is allocated on the
    heap and will be deallocated in the next invocation. Conceptually,
@@ -137,6 +140,43 @@ void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
       demangled = ML_(cplus_demangle) ( orig, DMGL_ANSI | DMGL_PARAMS );
 
       *result = (demangled == NULL) ? orig : demangled;
+
+   } else if (do_cxx_demangling && VG_(clo_demangle)
+       && orig != NULL && VG_(strlen)(orig) >= 4
+       && orig[0] == '_' && orig[1] == '_' && orig[2] == '_' && orig[3] == 'Z') {
+      // Some Objective-C mangled symbols start with "___Z" and ends with "_block_invoke(_?[0-9]+)?".
+
+      /* !!! vvv STATIC vvv !!! */
+      static HChar* demangled = NULL;
+      /* !!! ^^^ STATIC ^^^ !!! */
+
+      /* Remove "_block_invoke" and whatever is after */
+      HChar* origNoBlock = xstrdup(orig);
+      HChar* block = VG_(strstr)(origNoBlock, blockInvoke);
+      if (block) {
+         block[0] = '\0';
+      }
+
+      /* Free up previously demangled name */
+      if (demangled) {
+         VG_(arena_free) (VG_AR_DEMANGLE, demangled);
+         demangled = NULL;
+      }
+      HChar* desc = ML_(cplus_demangle) ( origNoBlock + 2, DMGL_ANSI | DMGL_PARAMS );
+      VG_(arena_free) (VG_AR_DEMANGLE, origNoBlock);
+
+      if (desc && block) {
+        /* Add a suffix to explain the "_block_invoke" part */
+        demangled = xmalloc(VG_(strlen)(blockInvokeHuman) + VG_(strlen)(desc) + 1);
+        VG_(strcpy) (demangled, blockInvokeHuman);
+        VG_(strcpy) (demangled + VG_(strlen)(blockInvokeHuman), desc);
+        VG_(arena_free) (VG_AR_DEMANGLE, desc);
+      } else {
+        demangled = desc;
+      }
+
+      *result = (demangled == NULL) ? orig : demangled;
+
    } else {
       *result = orig;
    }

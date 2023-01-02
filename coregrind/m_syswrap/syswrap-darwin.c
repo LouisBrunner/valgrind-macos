@@ -8856,6 +8856,18 @@ POST(mach_msg)
    }
 }
 
+#if DARWIN_VERS >= DARWIN_13
+PRE(mach_msg2)
+{
+   PRINT("mach_msg2(TODO)");
+  // TODO: FINISH
+}
+
+POST(mach_msg2)
+{
+  // TODO: FINISH
+}
+#endif
 
 POST(mach_msg_unhandled)
 {
@@ -11562,7 +11574,11 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
 // _____(__NR_task_name_for_pid),
    MACXY(__NR_task_for_pid, task_for_pid),
    MACXY(__NR_pid_for_task, pid_for_task),
+#if DARWIN_VERS >= DARWIN_13
+   MACXY(__NR_mach_msg2_trap, mach_msg2),
+#else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(47)),
+#endif
 #if defined(VGA_x86)
 // _____(__NR_macx_swapon),
 // _____(__NR_macx_swapoff),

@@ -72,6 +72,18 @@ _mach_msg_trap:
 	syscall
 	ret
 
+#if DARWIN_VERS >= DARWIN_13
+	// mach_msg_return_t mach_msg2_trap(...)
+	.text
+	.align 4
+	.globl _mach_msg2_trap
+_mach_msg2_trap:
+	movq	$__NR_mach_msg2_trap, %rax
+	movq	%rcx, %r10
+	syscall
+	ret
+#endif
+
 	// mach_port_t mach_reply_port(...)
 	.text
 	.align 4

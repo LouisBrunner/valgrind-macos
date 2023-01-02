@@ -327,13 +327,15 @@ void VG_(print_preamble)(Bool logging_to_fd)
                    "Valgrind library directory: %s\n", VG_(libdir));
    }
 
-#if defined(VGO_darwin) && DARWIN_VERS >= DARWIN_11_00
+#if defined(VGO_darwin)
+#if DARWIN_VERS >= DARWIN_11_00
    VG_(message)(Vg_UserMsg,
     "\n"
     "Support for macOS 11 and later is currently experimental\n"
     "Some reports (especially memory leaks) might be missing or incorrect\n"
     "\n"
   );
+#endif
 #endif
 }
 

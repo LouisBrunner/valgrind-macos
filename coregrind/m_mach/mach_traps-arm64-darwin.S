@@ -58,6 +58,17 @@ _mach_msg_trap:
 	svc 0x80
 	ret
 
+#if DARWIN_VERS >= DARWIN_13
+	// mach_msg_return_t mach_msg2_trap(...)
+	.text
+	.align 4
+	.globl _mach_msg2_trap
+_mach_msg2_trap:
+	ldr	x16, =__NR_mach_msg2_trap
+	svc 0x80
+	ret
+#endif
+
 	// mach_port_t mach_reply_port(...)
 	.text
 	.align 4

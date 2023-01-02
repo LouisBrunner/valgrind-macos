@@ -1,25 +1,25 @@
-/* 
+/*
  * Mach Operating System
  * Copyright (c) 1991,1990,1989 Carnegie Mellon University
  * All Rights Reserved.
- * 
+ *
  * Permission to use, copy, modify and distribute this software and its
  * documentation is hereby granted, provided that both the copyright
  * notice and this permission notice appear in all copies of the
  * software, derivative works or modified versions, and any portions
  * thereof, and that both notices appear in supporting documentation.
- * 
+ *
  * CARNEGIE MELLON ALLOWS FREE USE OF THIS SOFTWARE IN ITS "AS IS"
  * CONDITION.  CARNEGIE MELLON DISCLAIMS ANY LIABILITY OF ANY KIND FOR
  * ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THIS SOFTWARE.
- * 
+ *
  * Carnegie Mellon requests users of this software to return to
- * 
+ *
  *  Software Distribution Coordinator  or  Software.Distribution@CS.CMU.EDU
  *  School of Computer Science
  *  Carnegie Mellon University
  *  Pittsburgh PA 15213-3890
- * 
+ *
  * any improvements or extensions that they make and grant Carnegie Mellon
  * the rights to redistribute these changes.
  */
@@ -30,14 +30,14 @@
  * Fixed to not pass MACH_SEND_INTERRUPT and MACH_RCV_INTERRUPT
  * to the kernel.
  * [92/01/20            rpd]
- * 
+ *
  * Revision 2.2  92/01/15  17:17:13  rpd
  * Created from msg.c.
  * [92/01/15            rpd]
- * 
+ *
  */
 
-#if defined(VGO_darwin) 
+#if defined(VGO_darwin)
 
 #include "pub_core_basics.h"
 #include "pub_core_mach.h"
@@ -181,8 +181,8 @@ mach_msg2(data, option64, msgh_bits_and_send_size, msgh_remote_and_local_port, m
 
 #define LIBMACH_OPTIONS (MACH_SEND_INTERRUPT|MACH_RCV_INTERRUPT)
 
-extern mach_msg_return_t 
-mach_msg_trap(mach_msg_header_t *msg, 
+extern mach_msg_return_t
+mach_msg_trap(mach_msg_header_t *msg,
               mach_msg_option_t option,
               mach_msg_size_t send_size,
               mach_msg_size_t rcv_size,
@@ -266,7 +266,7 @@ mach_msg(msg, option, send_size, rcv_size, rcv_name, timeout, notify)
 #endif
 }
 
-#endif // defined(VGO_darwin) 
+#endif // defined(VGO_darwin)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

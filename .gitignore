@@ -653,6 +653,7 @@
 /helgrind/tests/bar_bad
 /helgrind/tests/bar_trivial
 /helgrind/tests/bug322621
+/helgrind/tests/bug327548
 /helgrind/tests/bug392331
 /helgrind/tests/cond_init_destroy
 /helgrind/tests/cond_timedwait_invalid

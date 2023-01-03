@@ -879,7 +879,9 @@ static int mutex_destroy_WRK(pthread_mutex_t *mutex)
 
    if (mutex != NULL) {
       static const pthread_mutex_t mutex_init = PTHREAD_MUTEX_INITIALIZER;
+      VALGRIND_HG_DISABLE_CHECKING(mutex, sizeof(*mutex));
       mutex_is_init = my_memcmp(mutex, &mutex_init, sizeof(*mutex)) == 0;
+      VALGRIND_HG_ENABLE_CHECKING(mutex, sizeof(*mutex));
    } else {
       mutex_is_init = 0;
    }
@@ -1785,7 +1787,9 @@ static int pthread_cond_destroy_WRK(pthread_cond_t* cond)
 
    if (cond != NULL) {
       const pthread_cond_t cond_init = PTHREAD_COND_INITIALIZER;
+      VALGRIND_HG_DISABLE_CHECKING(cond, sizeof(*cond));
       cond_is_init = my_memcmp(cond, &cond_init, sizeof(*cond)) == 0;
+      VALGRIND_HG_ENABLE_CHECKING(cond, sizeof(*cond));
    } else {
      cond_is_init = 0;
    }

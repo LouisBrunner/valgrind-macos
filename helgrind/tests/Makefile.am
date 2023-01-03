@@ -16,6 +16,7 @@ EXTRA_DIST = \
 	annotate_smart_pointer.vgtest annotate_smart_pointer.stdout.exp \
 		annotate_smart_pointer.stderr.exp \
 	bug322621.vgtest bug322621.stderr.exp \
+	bug327548.vgtest bug327548.stderr.exp \
 	bug392331.vgtest bug392331.stdout.exp bug392331.stderr.exp \
 	bug392331_supp.vgtest bug392331_supp.stdout.exp bug392331_supp.stderr.exp \
 	bug392331.supp \
@@ -146,6 +147,7 @@ noinst_HEADERS = safe-pthread.h safe-semaphore.h
 # should be conditionally compiled like tc20_verifywrap is.
 check_PROGRAMS = \
 	annotate_hbefore \
+	bug327548 \
 	cond_init_destroy \
 	cond_timedwait_invalid \
 	cond_timedwait_test \

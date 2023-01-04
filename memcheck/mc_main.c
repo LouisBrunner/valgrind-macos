@@ -79,6 +79,10 @@ static void ocache_sarp_Clear_Origins ( Addr, UWord ); /* fwds */
    paths */
 #define OC_ENABLE_ASSERTIONS 0
 
+/* Change this to 1 for experimental, higher precision origin tracking
+   8- and 16-bit store handling. */
+#define OC_PRECISION_STORE 1
+
 
 /*------------------------------------------------------------*/
 /*--- Comments on the origin tracking implementation       ---*/
@@ -7655,12 +7659,31 @@ void VG_REGPARM(2) MC_(helperc_b_store1)( Addr a, UWord d32 ) {
 
    line = find_OCacheLine( a );
 
+#if OC_PRECISION_STORE
+   if (LIKELY(d32 == 0)) {
+      // The byte is defined.  Just mark it as so in the descr and leave the w32
+      // unchanged.  This may make the descr become zero, so the line no longer
+      // contains useful info, but that's OK.  No loss of information.
+      line->u.main.descr[lineoff] &= ~(1 << byteoff);
+   } else if (d32 == line->u.main.w32[lineoff]) {
+      // At least one of the four bytes in the w32 is undefined with the same
+      // origin.  Just extend the mask.  No loss of information.
+      line->u.main.descr[lineoff] |= (1 << byteoff);
+   } else {
+      // Here, we have a conflict: at least one byte in the group is undefined
+      // but with some other origin.  We can't represent both origins, so we
+      // forget about the previous origin and install this one instead.
+      line->u.main.descr[lineoff] = (1 << byteoff);
+      line->u.main.w32[lineoff] = d32;
+   }
+#else
    if (d32 == 0) {
       line->u.main.descr[lineoff] &= ~(1 << byteoff);
    } else {
       line->u.main.descr[lineoff] |= (1 << byteoff);
       line->u.main.w32[lineoff] = d32;
    }
+#endif
 }
 
 void VG_REGPARM(2) MC_(helperc_b_store2)( Addr a, UWord d32 ) {
@@ -7683,12 +7706,25 @@ void VG_REGPARM(2) MC_(helperc_b_store2)( Addr a, UWord d32 ) {
 
    line = find_OCacheLine( a );
 
+#if OC_PRECISION_STORE
+   // Same logic as in the store1 case above.
+   if (LIKELY(d32 == 0)) {
+      line->u.main.descr[lineoff] &= ~(3 << byteoff);
+   } else if (d32 == line->u.main.w32[lineoff]) {
+      line->u.main.descr[lineoff] |= (3 << byteoff);
+      line->u.main.w32[lineoff] = d32;
+   } else {
+      line->u.main.descr[lineoff] = (3 << byteoff);
+      line->u.main.w32[lineoff] = d32;
+   }
+#else
    if (d32 == 0) {
       line->u.main.descr[lineoff] &= ~(3 << byteoff);
    } else {
       line->u.main.descr[lineoff] |= (3 << byteoff);
       line->u.main.w32[lineoff] = d32;
    }
+#endif
 }
 
 void VG_REGPARM(2) MC_(helperc_b_store4)( Addr a, UWord d32 ) {

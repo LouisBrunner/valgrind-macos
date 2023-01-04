@@ -1245,7 +1245,6 @@ static Bool dh_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
    }
 
    default:
-      if (0)
       VG_(message)(
          Vg_UserMsg,
          "Warning: unknown DHAT client request code %llx\n",

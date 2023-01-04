@@ -64,7 +64,11 @@ void this_function_halts(unsigned long long a0, unsigned long long a1,
     __asm__ volatile("movq $0xfeed04040404cafe,%r11");
     __asm__ volatile("movq $0xfeed05050505cafe,%r12");
     __asm__ volatile("movq $0xfeed06060606cafe,%r13");
+// Starting with macOS 12.0, dyld uses r14 for its own purposes,
+// changing it crashes the process outside of main.
+#if DARWIN_VERS < DARWIN_12_00
     __asm__ volatile("movq $0xfeed07070707cafe,%r14");
+#endif
     __asm__ volatile("movq $0xfeed08080808cafe,%r15");
     __asm__ volatile("hlt");
     ran_after_fault++;
@@ -84,7 +88,11 @@ void this_function_int3s(unsigned long long a0, unsigned long long a1,
     __asm__ volatile("movq $0xfeed04040404cafe,%r11");
     __asm__ volatile("movq $0xfeed05050505cafe,%r12");
     __asm__ volatile("movq $0xfeed06060606cafe,%r13");
+// Starting with macOS 12.0, dyld uses r14 for its own purposes,
+// changing it crashes the process outside of main.
+#if DARWIN_VERS < DARWIN_12_00
     __asm__ volatile("movq $0xfeed07070707cafe,%r14");
+#endif
     __asm__ volatile("movq $0xfeed08080808cafe,%r15");
     __asm__ volatile("int $3");
     ran_after_fault++;

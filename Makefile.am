@@ -3,8 +3,6 @@ AUTOMAKE_OPTIONS = 1.10
 
 include $(top_srcdir)/Makefile.all.am 
 
-REGTEST_ARGS ?=
-
 TOOLS = \
 		memcheck \
 		cachegrind \
@@ -50,7 +48,8 @@ SUPP_FILES = \
 	freebsd.supp freebsd-helgrind.supp freebsd-drd.supp \
 	darwin10.supp darwin10-drd.supp \
 	darwin11.supp darwin12.supp darwin13.supp darwin14.supp darwin15.supp \
-	darwin16.supp darwin17.supp darwin18.supp \
+	darwin16.supp darwin17.supp darwin18.supp darwin19.supp darwin20.supp \
+	darwin21.supp darwin22.supp \
 	bionic.supp \
 	solaris11.supp solaris12.supp \
 	musl.supp
@@ -78,7 +77,7 @@ default.supp: $(DEFAULT_SUPP_FILES)
 ## Ensure make exits with error if PERL fails or post_regtest_checks fails.
 regtest: check
 	$(top_srcdir)/gdbserver_tests/make_local_links $(GDB)
-	if @PERL@ tests/vg_regtest $(REGTEST_ARGS) gdbserver_tests $(TOOLS) $(EXP_TOOLS) ; then \
+	if @PERL@ tests/vg_regtest gdbserver_tests $(TOOLS) $(EXP_TOOLS) ; then \
 	   tests/post_regtest_checks $(abs_top_srcdir) gdbserver_tests $(TOOLS) $(EXP_TOOLS); \
 	else \
 	   tests/post_regtest_checks $(abs_top_srcdir) gdbserver_tests $(TOOLS) $(EXP_TOOLS); \

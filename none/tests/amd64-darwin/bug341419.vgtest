@@ -1,3 +1,4 @@
+prereq: [ $(uname) = Linux ]
 prog: bug341419
 vgopts: -q
 cleanup: rm -f vgcore.*

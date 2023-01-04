@@ -44,9 +44,9 @@ jobs:
       - name: create artifacts folder
         run: mkdir -p ${{ env.TEST_FOLDER }}/outputs
       - name: regression tests
-        run: make regtest || true
-        env:
-          REGTEST_ARGS: --results-to=${{ env.TEST_FOLDER }}/results.txt
+        run: (make regtest | tee ${{ env.TEST_FOLDER }}/results.txt) || true
+      - name: debug output
+        run: cat ${{ env.TEST_FOLDER }}/results.txt
       - name: trim results
         run: sed '1,2d;$d' ${{ env.TEST_FOLDER }}/results.txt > results-tests.txt
       - name: copy failing test outputs

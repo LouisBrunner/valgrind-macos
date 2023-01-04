@@ -151,11 +151,14 @@ static Word interval_tree_Cmp ( UWord k1, UWord k2 )
    return 0;
 }
 
-// 2-entry cache for find_Block_containing
+// 3-entry cache for find_Block_containing
 static Block* fbc_cache0 = NULL;
 static Block* fbc_cache1 = NULL;
+static Block* fbc_cache2 = NULL;
 
-static UWord stats__n_fBc_cached = 0;
+static UWord stats__n_fBc_cached0 = 0;
+static UWord stats__n_fBc_cached1 = 0;
+static UWord stats__n_fBc_cached2 = 0;
 static UWord stats__n_fBc_uncached = 0;
 static UWord stats__n_fBc_notfound = 0;
 
@@ -167,19 +170,30 @@ static Block* find_Block_containing ( Addr a )
               && fbc_cache0->payload <= a
               && a < fbc_cache0->payload + fbc_cache0->req_szB)) {
       // found at 0
-      stats__n_fBc_cached++;
+      stats__n_fBc_cached0++;
       return fbc_cache0;
    }
    if (LIKELY(fbc_cache1
               && fbc_cache1->payload <= a
               && a < fbc_cache1->payload + fbc_cache1->req_szB)) {
       // found at 1; swap 0 and 1
-      Block* tmp = fbc_cache0;
-      fbc_cache0 = fbc_cache1;
-      fbc_cache1 = tmp;
-      stats__n_fBc_cached++;
-      return fbc_cache0;
+      Block* tmp = fbc_cache1;
+      fbc_cache1 = fbc_cache0;
+      fbc_cache0 = tmp;
+      stats__n_fBc_cached1++;
+      return tmp;
    }
+   if (LIKELY(fbc_cache2
+              && fbc_cache2->payload <= a
+              && a < fbc_cache2->payload + fbc_cache2->req_szB)) {
+      // found at 2; swap 1 and 2
+      Block* tmp = fbc_cache2;
+      fbc_cache2 = fbc_cache1;
+      fbc_cache1 = tmp;
+      stats__n_fBc_cached2++;
+      return tmp;
+   }
+
    Block fake;
    fake.payload = a;
    fake.req_szB = 1;
@@ -196,6 +210,7 @@ static Block* find_Block_containing ( Addr a )
    Block* res = (Block*)foundkey;
    tl_assert(res != &fake);
    // put at the top position
+   fbc_cache2 = fbc_cache1;
    fbc_cache1 = fbc_cache0;
    fbc_cache0 = res;
    stats__n_fBc_uncached++;
@@ -214,7 +229,7 @@ static void delete_Block_starting_at ( Addr a )
    Bool found = VG_(delFromFM)( interval_tree,
                                 NULL, NULL, (Addr)&fake );
    tl_assert(found);
-   fbc_cache0 = fbc_cache1 = NULL;
+   fbc_cache0 = fbc_cache1 = fbc_cache2 = NULL;
 }
 
 //------------------------------------------------------------//
@@ -600,7 +615,7 @@ void* new_block ( ThreadId tid, void* p, SizeT req_szB, SizeT req_alignB,
 
    Bool present = VG_(addToFM)( interval_tree, (UWord)bk, (UWord)0/*no val*/);
    tl_assert(!present);
-   fbc_cache0 = fbc_cache1 = NULL;
+   fbc_cache0 = fbc_cache1 = fbc_cache2 = NULL;
 
    intro_Block(bk);
 
@@ -727,7 +742,7 @@ void* renew_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
       Bool present
          = VG_(addToFM)( interval_tree, (UWord)bk, (UWord)0/*no val*/);
       tl_assert(!present);
-      fbc_cache0 = fbc_cache1 = NULL;
+      fbc_cache0 = fbc_cache1 = fbc_cache2 = NULL;
    }
 
    return p_new;
@@ -1230,6 +1245,7 @@ static Bool dh_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
    }
 
    default:
+      if (0)
       VG_(message)(
          Vg_UserMsg,
          "Warning: unknown DHAT client request code %llx\n",
@@ -1609,11 +1625,17 @@ static void dh_fini(Int exit_status)
       // Stats.
       if (VG_(clo_stats)) {
          VG_(dmsg)(" dhat: find_Block_containing:\n");
-         VG_(dmsg)("             found: %'lu (%'lu cached + %'lu uncached)\n",
-                   stats__n_fBc_cached + stats__n_fBc_uncached,
-                   stats__n_fBc_cached,
+         VG_(dmsg)(" dhat:   found: %'lu\n",
+                   stats__n_fBc_cached0 + stats__n_fBc_cached1
+                                        + stats__n_fBc_cached2
+                                        + stats__n_fBc_uncached);
+         VG_(dmsg)(" dhat:     at cache0 %'14lu     at cache1 %'14lu\n",
+                   stats__n_fBc_cached0,
+                   stats__n_fBc_cached1);
+         VG_(dmsg)(" dhat:     at cache2 %'14lu     uncached  %'14lu\n",
+                   stats__n_fBc_cached2,
                    stats__n_fBc_uncached);
-         VG_(dmsg)("          notfound: %'lu\n", stats__n_fBc_notfound);
+         VG_(dmsg)(" dhat: notfound: %'lu\n", stats__n_fBc_notfound);
          VG_(dmsg)("\n");
       }
    }
@@ -1777,6 +1799,7 @@ static void dh_pre_clo_init(void)
    VG_(details_copyright_author)(
       "Copyright (C) 2010-2018, and GNU GPL'd, by Mozilla Foundation");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
+   VG_(details_avg_translation_sizeB) ( 600 );
 
    // Basic functions.
    VG_(basic_tool_funcs)          (dh_post_clo_init,
@@ -1811,6 +1834,7 @@ static void dh_pre_clo_init(void)
    tl_assert(!interval_tree);
    tl_assert(!fbc_cache0);
    tl_assert(!fbc_cache1);
+   tl_assert(!fbc_cache2);
 
    interval_tree = VG_(newFM)( VG_(malloc),
                                "dh.interval_tree.1",

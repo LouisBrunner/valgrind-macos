@@ -200,8 +200,8 @@ extern void VG_(discard_translations) ( Addr  start, ULong range,
 
 extern void VG_(print_tt_tc_stats) ( void );
 
-extern UInt VG_(get_bbs_translated) ( void );
-extern UInt VG_(get_bbs_discarded_or_dumped) ( void );
+extern ULong VG_(get_bbs_translated) ( void );
+extern ULong VG_(get_bbs_discarded_or_dumped) ( void );
 
 /* Add to / search the auxiliary, small, unredirected translation
    table. */

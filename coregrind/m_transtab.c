@@ -2664,12 +2664,12 @@ static Double safe_idiv( ULong a, ULong b )
    return (b == 0 ? 0 : (Double)a / (Double)b);
 }
 
-UInt VG_(get_bbs_translated) ( void )
+ULong VG_(get_bbs_translated) ( void )
 {
    return n_in_count;
 }
 
-UInt VG_(get_bbs_discarded_or_dumped) ( void )
+ULong VG_(get_bbs_discarded_or_dumped) ( void )
 {
    return n_disc_count + n_dump_count;
 }

@@ -322,6 +322,7 @@ DECL_TEMPLATE(linux, sys_io_uring_register);
 
 // Linux-specific (new in Linux 5.9)
 DECL_TEMPLATE(linux, sys_close_range);
+DECL_TEMPLATE(linux, sys_openat2);
 
 // Linux-specific (new in Linux 5.14)
 DECL_TEMPLATE(linux, sys_memfd_secret);

@@ -5375,6 +5375,21 @@ struct vki_itimerspec64 {
    struct vki_timespec it_value;
 };
 
+/* From include/linux/openat2.h */
+
+struct vki_open_how {
+    vki_uint64_t vki_flags;
+    vki_uint64_t vki_mode;
+    vki_uint64_t vki_resolve;
+};
+
+#define VKI_RESOLVE_NO_XDEV		0x01
+#define VKI_RESOLVE_NO_MAGICLINKS	0x02
+#define VKI_RESOLVE_NO_SYMLINKS	0x04
+#define VKI_RESOLVE_BENEATH		0x08
+#define VKI_RESOLVE_IN_ROOT		0x10
+#define VKI_RESOLVE_CACHED		0x20
+
 #ifndef VKI_RLIM_INFINITY
 #define VKI_RLIM_INFINITY (~0UL)
 #endif

@@ -1586,7 +1586,7 @@ int main(void)
       GO(SYS_sctp_generic_recvmsg, "6s 4m");
       SY(SYS_sctp_generic_recvmsg, x0+1, x0+2, x0+300, x0+4, &fromlen, x0+6, x0+7); FAIL;
 
-      iov.iov_base = x0+8;
+      iov.iov_base = (void*)(x0+8);
       iov.iov_len = x0+9;
 
       GO(SYS_sctp_generic_recvmsg, "6s 6m");

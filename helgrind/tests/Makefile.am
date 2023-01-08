@@ -233,6 +233,7 @@ endif
 
 if HAVE_BUILTIN_ATOMIC
 check_PROGRAMS += annotate_rwlock
+annotate_rwlock_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@
 endif
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)

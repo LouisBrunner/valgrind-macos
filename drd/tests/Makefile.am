@@ -526,7 +526,8 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI) @FLAG_W_EXTRA@ @FLAG_FALIGNED_NEW@ \
 
 LDADD = -lpthread
 
-
+annotate_sem_CFLAGS         = $(AM_CFLAGS) @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@
+annotate_rwlock_CFLAGS      = $(AM_CFLAGS) @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@
 bug322621_SOURCES           = bug322621.cpp
 condvar_SOURCES		    = condvar.cpp
 condvar_CXXFLAGS            = $(AM_CXXFLAGS) -std=c++0x
@@ -604,7 +605,7 @@ if HAVE_PTHREAD_BARRIER
 matinv_LDADD                = $(LDADD) -lm
 endif
 
-rwlock_test_CFLAGS          = $(AM_CFLAGS)
+rwlock_test_CFLAGS          = $(AM_CFLAGS) @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@
 if VGCONF_OS_IS_SOLARIS
 rwlock_test_CFLAGS          += -D__EXTENSIONS__
 endif
@@ -613,16 +614,16 @@ shared_timed_mutex_SOURCES  = shared_timed_mutex.cpp
 shared_timed_mutex_CXXFLAGS = $(AM_CXXFLAGS) -std=c++1y
 
 std_atomic_SOURCES          = std_atomic.cpp
-std_atomic_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x -Wno-sign-compare
+std_atomic_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x @FLAG_W_NO_SIGN_COMPARE@
 
 std_list_SOURCES            = std_list.cpp
-std_list_CXXFLAGS           = $(AM_CXXFLAGS) -std=c++0x -Wno-sign-compare
+std_list_CXXFLAGS           = $(AM_CXXFLAGS) -std=c++0x @FLAG_W_NO_SIGN_COMPARE@
 
 std_mutex_SOURCES           = std_mutex.cpp
-std_mutex_CXXFLAGS          = $(AM_CXXFLAGS) -std=c++0x -Wno-sign-compare
+std_mutex_CXXFLAGS          = $(AM_CXXFLAGS) -std=c++0x @FLAG_W_NO_SIGN_COMPARE@
 
 std_string_SOURCES          = std_string.cpp
-std_string_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x -Wno-sign-compare
+std_string_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x @FLAG_W_NO_SIGN_COMPARE@
 
 # Note: -Wl,--no-as-needed is a workaround for
 # https://bugs.launchpad.net/ubuntu/+source/gcc-defaults/+bug/1228201

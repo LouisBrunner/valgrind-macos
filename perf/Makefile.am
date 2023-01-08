@@ -30,6 +30,7 @@ AM_CXXFLAGS += -O $(AM_FLAG_M3264_PRI)
 bz2_CFLAGS	= $(AM_CFLAGS) -Wno-inline
 
 fbench_CFLAGS   = $(AM_CFLAGS) -O2
+ffbench_CFLAGS  = $(AM_CFLAGS) @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@
 ffbench_LDADD	= -lm
 memrw_LDADD	= -lpthread
 

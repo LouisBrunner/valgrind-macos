@@ -119,4 +119,6 @@ endif
 
 scalar_CFLAGS = ${AM_CFLAGS} -g
 
-errno_aligned_allocs_CFLAGS = ${AM_CFLAGS} -Wno-non-power-of-two-alignment
+errno_aligned_allocs_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@
+
+extattr_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@

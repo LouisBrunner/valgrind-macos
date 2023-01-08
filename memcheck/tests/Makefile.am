@@ -539,7 +539,7 @@ reach_thread_register_LDADD	= -lpthread
 thread_alloca_LDADD     = -lpthread
 threadname_LDADD 	= -lpthread
 
-error_counts_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
+error_counts_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@ @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@
 
 execve1_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 

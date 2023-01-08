@@ -1081,7 +1081,7 @@ PRE(sys_fake_sigreturn)
 {
    ThreadState* tst;
    struct vki_ucontext *uc;
-   int rflags;
+   ULong rflags;
 
    PRINT("sys_sigreturn ( %#" FMT_REGWORD "x )", ARG1);
    PRE_REG_READ1(long, "sigreturn",
@@ -1118,7 +1118,7 @@ PRE(sys_fake_sigreturn)
       the guest registers written by VG_(sigframe_destroy). */
    rflags = LibVEX_GuestAMD64_get_rflags(&tst->arch.vex);
    SET_STATUS_from_SysRes( VG_(mk_SysRes_amd64_freebsd)( tst->arch.vex.guest_RAX,
-                           tst->arch.vex.guest_RDX, (rflags & 1) != 0 ? True : False) );
+                           tst->arch.vex.guest_RDX, (rflags & 1U) != 0U ? True : False) );
 
    /*
     * Signal handler might have changed the signal mask.  Respect that.

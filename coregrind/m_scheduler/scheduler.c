@@ -754,20 +754,20 @@ void VG_(scheduler_init_phase2) ( ThreadId tid_main,
 /* Use gcc's built-in setjmp/longjmp.  longjmp must not restore signal
    mask state, but does need to pass "val" through.  jumped must be a
    volatile UWord. */
-#define SCHEDSETJMP(tid, jumped, stmt)					\
-   do {									\
-      ThreadState * volatile _qq_tst = VG_(get_ThreadState)(tid);	\
-									\
-      (jumped) = VG_MINIMAL_SETJMP(_qq_tst->sched_jmpbuf);              \
-      if ((jumped) == ((UWord)0)) {                                     \
-	 vg_assert(!_qq_tst->sched_jmpbuf_valid);			\
-	 _qq_tst->sched_jmpbuf_valid = True;				\
-	 stmt;								\
-      }	else if (VG_(clo_trace_sched))					\
-	 VG_(printf)("SCHEDSETJMP(line %d) tid %u, jumped=%lu\n",       \
-                     __LINE__, tid, jumped);                            \
-      vg_assert(_qq_tst->sched_jmpbuf_valid);				\
-      _qq_tst->sched_jmpbuf_valid = False;				\
+#define SCHEDSETJMP(tid, jumped, stmt)                            \
+   do {                                                           \
+      ThreadState * volatile _qq_tst = VG_(get_ThreadState)(tid); \
+                                                                  \
+      (jumped) = VG_MINIMAL_SETJMP(_qq_tst->sched_jmpbuf);        \
+      if ((jumped) == ((UWord)0)) {                               \
+         vg_assert(!_qq_tst->sched_jmpbuf_valid);                 \
+         _qq_tst->sched_jmpbuf_valid = True;                      \
+         stmt;                                                    \
+      }	else if (VG_(clo_trace_sched))                           \
+         VG_(printf)("SCHEDSETJMP(line %d) tid %u, jumped=%lu\n", \
+                     __LINE__, tid, jumped);                      \
+      vg_assert(_qq_tst->sched_jmpbuf_valid);                     \
+      _qq_tst->sched_jmpbuf_valid = False;                        \
    } while(0)
 
 

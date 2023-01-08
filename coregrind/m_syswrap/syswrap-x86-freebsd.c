@@ -317,15 +317,16 @@ out:
 /* Translate a struct modify_ldt_ldt_s to a VexGuestX86SegDescr */
 
 static
-void translate_to_hw_format ( /* IN  */ void* base,
-                                        /* OUT */ VexGuestX86SegDescr* out)
+void translate_to_hw_format( /* IN  */ void* base,
+                             /* OUT */ VexGuestX86SegDescr* out)
 {
    UInt entry_1, entry_2;
    UInt base_addr = (UInt) base;
    vg_assert(8 == sizeof(VexGuestX86SegDescr));
 
-   if (0)
+   if (0) {
       VG_(printf)("translate_to_hw_format: base %p\n", base );
+   }
 
    /* Allow LDTs to be cleared by the user. */
    if (base == 0) {
@@ -372,8 +373,9 @@ static void copy_LDT_from_to ( VexGuestX86SegDescr* src,
    Int i;
    vg_assert(src);
    vg_assert(dst);
-   for (i = 0; i < VEX_GUEST_X86_LDT_NENT; i++)
+   for (i = 0; i < VEX_GUEST_X86_LDT_NENT; i++) {
       dst[i] = src[i];
+   }
 }
 
 /* Copy contents between two existing GDTs. */
@@ -383,8 +385,9 @@ static void copy_GDT_from_to ( VexGuestX86SegDescr* src,
    Int i;
    vg_assert(src);
    vg_assert(dst);
-   for (i = 0; i < VEX_GUEST_X86_GDT_NENT; i++)
+   for (i = 0; i < VEX_GUEST_X86_GDT_NENT; i++) {
       dst[i] = src[i];
+   }
 }
 
 /* Free this thread's DTs, if it has any. */
@@ -392,10 +395,11 @@ static void deallocate_LGDTs_for_thread ( VexGuestX86State* vex )
 {
    vg_assert(sizeof(HWord) == sizeof(void*));
 
-   if (0)
+   if (0) {
       VG_(printf)("deallocate_LGDTs_for_thread: "
                   "ldt = 0x%llx, gdt = 0x%llx\n",
                   vex->guest_LDT, vex->guest_GDT );
+   }
 
    if (vex->guest_LDT != (HWord)NULL) {
       free_LDT_or_GDT( (VexGuestX86SegDescr*)vex->guest_LDT );
@@ -432,12 +436,14 @@ static SysRes sys_set_thread_area ( ThreadId tid, Int *idxptr, void *base)
          Wine). */
       for (idx = 1; idx < VEX_GUEST_X86_GDT_NENT; idx++) {
          if (gdt[idx].LdtEnt.Words.word1 == 0
-               && gdt[idx].LdtEnt.Words.word2 == 0)
+               && gdt[idx].LdtEnt.Words.word2 == 0) {
             break;
+         }
       }
 
-      if (idx == VEX_GUEST_X86_GDT_NENT)
+      if (idx == VEX_GUEST_X86_GDT_NENT) {
          return VG_(mk_SysRes_Error)( VKI_ESRCH );
+      }
    } else if (idx < 0 || idx == 0 || idx >= VEX_GUEST_X86_GDT_NENT) {
       /* Similarly, reject attempts to use GDT[0]. */
       return VG_(mk_SysRes_Error)( VKI_EINVAL );

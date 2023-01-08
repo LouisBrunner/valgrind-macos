@@ -124,7 +124,8 @@ Bool VG_(resolve_filename) ( Int fd, const HChar** result )
    Int mib[4];
    SysRes sres;
    vki_size_t len;
-   Char *bp, *eb;
+   Char *bp;
+   Char *eb;
    struct vki_kinfo_file *kf;
    static HChar *buf = NULL;
    static SizeT  bufsiz = 0;
@@ -150,14 +151,16 @@ Bool VG_(resolve_filename) ( Int fd, const HChar** result )
    eb = filedesc_buf + len;
    while (bp < eb) {
       kf = (struct vki_kinfo_file *)bp;
-      if (kf->vki_kf_fd == fd)
+      if (kf->vki_kf_fd == fd) {
          break;
+      }
       bp += kf->vki_kf_structsize;
    }
-   if (bp >= eb || *kf->vki_kf_path == '\0')
+   if (bp >= eb || *kf->vki_kf_path == '\0') {
      VG_(strncpy)( buf, "[unknown]", bufsiz );
-   else
+   } else {
      VG_(strncpy)( buf, kf->vki_kf_path, bufsiz );
+   }
    *result = buf;
    return True;
 #else
@@ -210,7 +213,8 @@ Bool VG_(resolve_filename) ( Int fd, const HChar** result )
  * so that filedesc_buf is still valid for fd */
 Bool VG_(resolve_filemode) ( Int fd, Int * result )
 {
-   Char *bp, *eb;
+   Char *bp;
+   Char *eb;
    struct vki_kinfo_file *kf;
 
    /* Walk though the list. */
@@ -218,14 +222,16 @@ Bool VG_(resolve_filemode) ( Int fd, Int * result )
    eb = filedesc_buf + sizeof(filedesc_buf);
    while (bp < eb) {
       kf = (struct vki_kinfo_file *)bp;
-      if (kf->vki_kf_fd == fd)
+      if (kf->vki_kf_fd == fd) {
          break;
+      }
       bp += kf->vki_kf_structsize;
    }
-   if (bp >= eb)
+   if (bp >= eb) {
      *result = -1;
-   else
+   } else {
      *result = kf->vki_kf_flags;
+   }
    return True;
 }
 #else

@@ -15,9 +15,15 @@ cat > $PATTERNFILE <<EOF
 #       general way to delete uninteresting and varying lines.
 /filter_gdb BEGIN drop/,/filter_gdb END drop/d
 
-#       delete the messages produced by valgrind python code.
+#       delete messages produced by valgrind python code loading.
 /Loaded.*valgrind-monitor.py$/d
 /Type "help valgrind" for more info\.$/d
+
+#       delete messages produced when GDB auto-load denies loading python code.
+#       Note that the first pattern is also present in filter_vgdb.in
+#       as this line is output on stderr.
+/warning: File .*valgrind-monitor.py.*declined.*/d
+/To enable execution of this file add/,/info "(gdb)Auto-loading safe path"/d
 
 #       initial tty control character sent by gdb 7.0
 s/^\[?1034hReading symbols/Reading symbols/

@@ -369,6 +369,7 @@ thread_exits_LDADD	= -lpthread
 threaded_fork_LDADD	= -lpthread
 threadederrno_CFLAGS	= $(AM_CFLAGS)
 threadederrno_LDADD	= -lpthread
+timestamp_CFLAGS	= -lpthread @FLAG_W_NO_USE_AFTER_FREE@
 tls_SOURCES		= tls.c tls2.c
 tls_DEPENDENCIES	= tls.so tls2.so
 tls_LDFLAGS		= -Wl,-rpath,$(abs_top_builddir)/none/tests

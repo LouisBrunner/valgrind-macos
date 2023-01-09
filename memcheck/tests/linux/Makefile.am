@@ -101,3 +101,9 @@ dlclose_leak_DEPENDENCIES     = dlclose_leak_so.so
 dlclose_leak_LDADD            = -ldl
 dlclose_leak_LDFLAGS          = $(AM_FLAG_M3264_PRI) \
                                 -Wl,-rpath,$(top_builddir)/memcheck/tests/linux
+
+enomem_CFLAGS                 = $(AM_CFLAGS) @FLAG_W_NO_USE_AFTER_FREE@
+sys_preadv_pwritev_CFLAGS     = $(AM_CFLAGS) @FLAG_W_NO_STRINGOP_OVERFLOW@ @FLAG_W_NO_STRINGOP_OVERREAD@ \
+                                @FLAG_W_NO_NONNULL@
+sys_preadv2_pwritev2_CFLAGS   = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@ @FLAG_W_NO_STRINGOP_OVERREAD@ \
+                                @FLAG_W_NO_STRINGOP_OVERFLOW@

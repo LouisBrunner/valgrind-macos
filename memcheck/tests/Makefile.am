@@ -476,16 +476,24 @@ cdebug_zlib_gnu_SOURCES = cdebug.c
 cdebug_zlib_gnu_CFLAGS = $(AM_CFLAGS) -g -gz=zlib-gnu @FLAG_W_NO_UNINITIALIZED@
 endif
 
+if HAVE_ALIGNED_CXX_ALLOC
+check_PROGRAMS += cxx17_aligned_new
+endif
+
+if HAVE_PTHREAD_BARRIER
+check_PROGRAMS += reach_thread_register
+endif
+
+if HAVE_FSIZED_DEALLOCATION
+check_PROGRAMS += sized_delete
+endif
+
 if HAVE_GNU_STPNCPY
 check_PROGRAMS += stpncpy
 endif
 
 if HAVE_PTHREAD_SETNAME_NP
 check_PROGRAMS += threadname 
-endif
-
-if HAVE_PTHREAD_BARRIER
-check_PROGRAMS += reach_thread_register
 endif
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
@@ -502,14 +510,15 @@ else
 atomic_incs_CFLAGS = $(AM_CFLAGS)
 endif
 
+badpoll_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_STRINGOP_OVERFLOW@
+badrw_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
+big_blocks_freed_list_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_USE_AFTER_FREE@
+
 if VGCONF_OS_IS_SOLARIS
 buflen_check_LDADD	= -lsocket -lnsl
 endif
 
 leak_cpp_interior_SOURCES	= leak_cpp_interior.cpp
-
-demangle_SOURCES = demangle.cpp
-demangle_rust_SOURCES = demangle-rust.c
 
 # Suppress various gcc warnings which are correct, but for things
 # we are actually testing for at runtime.
@@ -525,6 +534,15 @@ big_debuginfo_symbol_SOURCES = big_debuginfo_symbol.cpp
 big_debuginfo_symbol_CXXFLAGS = $(AM_CXXFLAGS) -std=c++0x
 
 bug340392_CFLAGS        = $(AM_CFLAGS) -O3 -Wno-maybe-uninitialized
+
+if HAVE_ALIGNED_CXX_ALLOC
+cxx17_aligned_new_SOURCES  = cxx17_aligned_new.cpp
+cxx17_aligned_new_CXXFLAGS = -std=c++17 @FLAG_W_NO_MISMATCHED_NEW_DELETE@
+endif
+
+demangle_SOURCES = demangle.cpp
+demangle_rust_SOURCES = demangle-rust.c
+demangle_rust_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_USE_AFTER_FREE@
 dw4_CFLAGS		= $(AM_CFLAGS) -gdwarf-4 -fdebug-types-section
 
 descr_belowsp_LDADD     = -lpthread
@@ -534,10 +552,6 @@ err_disable4_CFLAGS	= $(AM_CFLAGS)
 if VGCONF_OS_IS_SOLARIS
 err_disable4_CFLAGS	+= -D_XOPEN_SOURCE=600
 endif
-reach_thread_register_CFLAGS	= $(AM_CFLAGS) -O2
-reach_thread_register_LDADD	= -lpthread
-thread_alloca_LDADD     = -lpthread
-threadname_LDADD 	= -lpthread
 
 error_counts_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@ @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@
 
@@ -545,7 +559,7 @@ execve1_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
 execve2_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
-fprw_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@ -Wno-free-nonheap-object
+fprw_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@ @FLAG_W_NO_FREE_NONHEAP_OBJECT@ @FLAG_W_NO_USE_AFTER_FREE@
 
 inits_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
@@ -556,9 +570,12 @@ inltemplate_CXXFLAGS = $(AM_CXXFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
 long_namespace_xml_SOURCES = long_namespace_xml.cpp
 
-manuel1_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
+malloc_free_fill_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_USE_AFTER_FREE@
+malloc1_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_USE_AFTER_FREE@
+manuel1_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
+manuel3_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
-memalign2_CFLAGS	= $(AM_CFLAGS) -Wno-non-power-of-two-alignment
+memalign2_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@
 if VGCONF_OS_IS_SOLARIS
 memalign2_CFLAGS	+= -D__EXTENSIONS__
 endif
@@ -571,6 +588,8 @@ mismatches_CXXFLAGS	= $(AM_CXXFLAGS) @FLAG_W_NO_MISMATCHED_NEW_DELETE@
 new_nothrow_SOURCES 	= new_nothrow.cpp
 new_override_SOURCES 	= new_override.cpp
 
+noisy_child_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_USE_AFTER_FREE@
+
 if VGCONF_OS_IS_SOLARIS
 null_socket_LDADD	= -lsocket -lnsl
 endif
@@ -582,7 +601,7 @@ origin2_not_quite_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 origin3_no_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
 # This requires optimisation in order to get just one resulting error.
-origin4_many_CFLAGS	= $(AM_CFLAGS) -O
+origin4_many_CFLAGS	= $(AM_CFLAGS) -O @FLAG_W_NO_USE_AFTER_FREE@ @FLAG_W_NO_UNINITIALIZED@
 
 # Apply -O so as to run in reasonable time.
 origin5_bz2_CFLAGS	= $(AM_CFLAGS) -O -Wno-inline
@@ -591,7 +610,11 @@ origin6_fp_CFLAGS	= $(AM_CFLAGS) -O
 # Don't allow GCC to inline memcpy() and strcpy(),
 # because then we can't intercept it
 overlap_CFLAGS		= $(AM_CFLAGS) -fno-builtin-memcpy -fno-builtin-strcpy \
-			  -Wno-fortify-source
+			  -Wno-fortify-source @FLAG_W_NO_STRINGOP_OVERFLOW@
+
+partial_load_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_USE_AFTER_FREE@
+reach_thread_register_CFLAGS	= $(AM_CFLAGS) -O2
+reach_thread_register_LDADD	= -lpthread
 
 resvn_stack_CFLAGS      = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
@@ -602,15 +625,14 @@ sendmsg_LDADD		= -lsocket -lnsl
 endif
 
 if HAVE_FSIZED_DEALLOCATION
-check_PROGRAMS += sized_delete
 sized_delete_SOURCES   = sized_delete.cpp
 sized_delete_CXXFLAGS  = $(AM_CXXFLAGS) @FLAG_FSIZED_DEALLOCATION@
 endif
 
-str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow -Wno-stringop-overflow \
+str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow @FLAG_W_NO_STRINGOP_OVERFLOW@ \
 			  -Wno-stringop-truncation \
 			  -Wno-fortify-source -Wno-suspicious-bzero \
-			  @FLAG_W_NO_MEMSET_TRANSPOSED_ARGS@
+			  @FLAG_W_NO_MEMSET_TRANSPOSED_ARGS@ @FLAG_W_NO_STRINGOP_OVERREAD@
 
 supp_CFLAGS             = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
@@ -623,6 +645,13 @@ supp1_CFLAGS            = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 supp2_SOURCES		= supp.c
 supp2_CFLAGS            = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
+suppfree_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_USE_AFTER_FREE@
+test_plo_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_USE_AFTER_FREE@
+
+thread_alloca_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_FORMAT_OVERFLOW@
+thread_alloca_LDADD     = -lpthread
+threadname_LDADD 	= -lpthread
+
 vcpu_bz2_CFLAGS		= $(AM_CFLAGS) -O2
 vcpu_fbench_CFLAGS	= $(AM_CFLAGS) -O2
 vcpu_fnfns_CFLAGS	= $(AM_CFLAGS) -O2
@@ -631,12 +660,12 @@ wrap6_CFLAGS		= $(AM_CFLAGS) -O2
 
 # To make it a bit more realistic, have some optimisation enabled
 # for the varinfo tests.  We still expect sane results.
-varinfo1_CFLAGS		= $(AM_CFLAGS) -O
-varinfo2_CFLAGS		= $(AM_CFLAGS) -O -Wno-shadow
-varinfo3_CFLAGS		= $(AM_CFLAGS) -O
-varinfo4_CFLAGS		= $(AM_CFLAGS) -O
+varinfo1_CFLAGS		= $(AM_CFLAGS) -O @FLAG_W_NO_MAYBE_UNINITIALIZED@
+varinfo2_CFLAGS		= $(AM_CFLAGS) -O -Wno-shadow @FLAG_W_NO_MAYBE_UNINITIALIZED@
+varinfo3_CFLAGS		= $(AM_CFLAGS) -O @FLAG_W_NO_MAYBE_UNINITIALIZED@
+varinfo4_CFLAGS		= $(AM_CFLAGS) -O @FLAG_W_NO_MAYBE_UNINITIALIZED@
 varinfo5_CFLAGS		= $(AM_CFLAGS) -O
-varinfo6_CFLAGS		= $(AM_CFLAGS) -O
+varinfo6_CFLAGS		= $(AM_CFLAGS) -O @FLAG_W_NO_MAYBE_UNINITIALIZED@
 
 # Build shared object for varinfo5
 varinfo5_SOURCES        = varinfo5.c
@@ -651,7 +680,7 @@ else
 endif
 
 varinfo5so_so_SOURCES   = varinfo5so.c
-varinfo5so_so_CFLAGS    = $(AM_CFLAGS) -fpic -O -Wno-shadow
+varinfo5so_so_CFLAGS    = $(AM_CFLAGS) -fpic -O -Wno-shadow @FLAG_W_NO_MAYBE_UNINITIALIZED@
 if VGCONF_OS_IS_DARWIN
  varinfo5so_so_LDFLAGS  = -fpic $(AM_FLAG_M3264_PRI) -dynamic \
 				-dynamiclib -all_load
@@ -705,11 +734,6 @@ else
 				-Wl,-soname -Wl,wrapmallocso.so
 endif
 
-xml1_CFLAGS             = $(AM_CFLAGS) -D_GNU_SOURCE
+writev1_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_STRINGOP_OVERFLOW@ @FLAG_W_NO_STRINGOP_OVERREAD@
+xml1_CFLAGS             = $(AM_CFLAGS) -D_GNU_SOURCE @FLAG_W_NO_UNINITIALIZED@ @FLAG_W_NO_USE_AFTER_FREE@
 
-if HAVE_ALIGNED_CXX_ALLOC
-check_PROGRAMS += cxx17_aligned_new
-cxx17_aligned_new_SOURCES  = cxx17_aligned_new.cpp
-# need C++ 17, and we deliberately mismatch new and delete
-cxx17_aligned_new_CXXFLAGS = -std=c++17 -Wno-mismatched-new-delete
-endif

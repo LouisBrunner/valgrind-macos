@@ -76,4 +76,4 @@ insn_pcmpistri_CFLAGS	= $(AM_CFLAGS)
 more_x87_fp_CFLAGS	= $(AM_CFLAGS) -O -ffast-math -mfpmath=387 \
 				-mfancy-math-387
 more_x87_fp_LDADD	= -lm
-shr_edx_CFLAGS		= $(AM_CFLAGS) @FLAG_NO_PIE@
+shr_edx_CFLAGS		= $(AM_CFLAGS) @FLAG_NO_PIE@ @FLAG_W_NO_UNINITIALIZED@

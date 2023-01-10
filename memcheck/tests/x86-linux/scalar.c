@@ -1276,10 +1276,6 @@ int main(void)
    GO(__NR_epoll_create1, "1s 0m");
    SY(__NR_epoll_create1, x0); SUCC_OR_FAIL;
 
-   // __NR_openat2 337
-   GO(__NR_openat2, "4s 2m");
-   SY(__NR_openat2, x0, x0+1, x0+1, x0); FAIL;
-
    // __NR_process_vm_readv 347
    GO(__NR_process_vm_readv, "6s 2m");
    SY(__NR_process_vm_readv, x0, x0, x0+1, x0, x0+1, x0); FAIL;

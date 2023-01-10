@@ -4146,69 +4146,40 @@ Syscall param epoll_create1(flags) contains uninitialised byte(s)
    by 0x........: main (scalar.c:1277)
 
 -----------------------------------------------------
-437:        __NR_openat2 4s 2m
------------------------------------------------------
-Syscall param openat2(dfd) contains uninitialised byte(s)
-   ...
-   by 0x........: main (scalar.c:1281)
-
-Syscall param openat2(filename) contains uninitialised byte(s)
-   ...
-   by 0x........: main (scalar.c:1281)
-
-Syscall param openat2(how) contains uninitialised byte(s)
-   ...
-   by 0x........: main (scalar.c:1281)
-
-Syscall param openat2(size) contains uninitialised byte(s)
-   ...
-   by 0x........: main (scalar.c:1281)
-
-Syscall param openat2(filename) points to unaddressable byte(s)
-   ...
-   by 0x........: main (scalar.c:1281)
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
-
-Syscall param openat2(how) points to unaddressable byte(s)
-   ...
-   by 0x........: main (scalar.c:1281)
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
-
------------------------------------------------------
 347:__NR_process_vm_readv 6s 2m
 -----------------------------------------------------
 Syscall param process_vm_readv(pid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1285)
+   by 0x........: main (scalar.c:1281)
 
 Syscall param process_vm_readv(lvec) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1285)
+   by 0x........: main (scalar.c:1281)
 
 Syscall param process_vm_readv(liovcnt) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1285)
+   by 0x........: main (scalar.c:1281)
 
 Syscall param process_vm_readv(rvec) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1285)
+   by 0x........: main (scalar.c:1281)
 
 Syscall param process_vm_readv(riovcnt) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1285)
+   by 0x........: main (scalar.c:1281)
 
 Syscall param process_vm_readv(flags) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1285)
+   by 0x........: main (scalar.c:1281)
 
 Syscall param process_vm_readv(lvec) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1285)
+   by 0x........: main (scalar.c:1281)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param process_vm_readv(rvec) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1285)
+   by 0x........: main (scalar.c:1281)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -4216,36 +4187,36 @@ Syscall param process_vm_readv(rvec) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param process_vm_writev(pid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1289)
+   by 0x........: main (scalar.c:1285)
 
 Syscall param process_vm_writev(lvec) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1289)
+   by 0x........: main (scalar.c:1285)
 
 Syscall param process_vm_writev(liovcnt) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1289)
+   by 0x........: main (scalar.c:1285)
 
 Syscall param process_vm_writev(rvec) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1289)
+   by 0x........: main (scalar.c:1285)
 
 Syscall param process_vm_writev(riovcnt) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1289)
+   by 0x........: main (scalar.c:1285)
 
 Syscall param process_vm_writev(flags) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1289)
+   by 0x........: main (scalar.c:1285)
 
 Syscall param process_vm_writev(lvec) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1289)
+   by 0x........: main (scalar.c:1285)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param process_vm_writev(rvec) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1289)
+   by 0x........: main (scalar.c:1285)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -4261,5 +4232,5 @@ it at http://valgrind.org/support/bug_reports.html.
 -----------------------------------------------------
 Syscall param exit(status) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1297)
+   by 0x........: main (scalar.c:1293)
 

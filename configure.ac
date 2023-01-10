@@ -5228,6 +5228,21 @@ fi
 AM_CONDITIONAL([HAVE_BUILTIN_ATOMIC64],
                [test x$ac_have_builtin_atomic64 = xyes])
 
+               
+AC_MSG_CHECKING([if platform has openat2 syscall])
+
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+  #include <sys/syscall.h>
+]], [[
+  return __NR_openat2
+]])], [
+  ac_have_openat2=yes
+], [
+  ac_have_openat2=no
+])
+
+AM_CONDITIONAL([HAVE_OPENAT2],
+               [test x$ac_have_openat2 = xyes])
 
 # does g++ have built-in functions for atomic memory access ?
 AC_MSG_CHECKING([if g++ supports __sync_add_and_fetch])

@@ -1,0 +1,2 @@
+prog: scalar_openat2
+vgopts: -q

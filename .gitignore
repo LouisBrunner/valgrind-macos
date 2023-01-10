@@ -1287,6 +1287,7 @@
 /memcheck/tests/x86-linux/Makefile.in
 /memcheck/tests/x86-linux/scalar
 /memcheck/tests/x86-linux/scalar_exit_group
+/memcheck/tests/x86-linux/scalar_openat2
 /memcheck/tests/x86-linux/scalar_fork
 /memcheck/tests/x86-linux/scalar_supp
 /memcheck/tests/x86-linux/scalar_vfork

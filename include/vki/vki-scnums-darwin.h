@@ -794,7 +794,9 @@
 #define __NR_faccessat              VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(466)
 #define __NR_fstatat64              VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(470)
 #define __NR_readlinkat             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(473)
+#if DARWIN_VERS >= DARWIN_10_15
 #define __NR_mkdirat                VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(475)
+#endif
 #define __NR_bsdthread_ctl          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(478)
 #define __NR_csrctl                 VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(483)
 #define __NR_guarded_open_dprotected_np VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(484)

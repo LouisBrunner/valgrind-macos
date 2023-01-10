@@ -43,7 +43,7 @@ jobs:
         run: ./configure
       - name: build
         run: make
-       - name: Setup tmate session
+      - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
         with:
           limit-access-to-actor: true

@@ -43,11 +43,11 @@ jobs:
         run: ./configure
       - name: build
         run: make
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
         with:
           limit-access-to-actor: true
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        # if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
       - name: try ls -l
         run: ./vg-in-place ls -l
       - name: build regression tests

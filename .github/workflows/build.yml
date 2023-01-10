@@ -4,12 +4,6 @@ on:
   push:
   pull_request_target:
   workflow_dispatch:
-    inputs:
-      debug_enabled:
-        type: boolean
-        description: "Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)"
-        required: false
-        default: false
 
 env:
   TEST_FOLDER: .github/test
@@ -43,11 +37,6 @@ jobs:
         run: ./configure
       - name: build
         run: make
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
       - name: try ls -l
         run: ./vg-in-place ls -l
       - name: build regression tests

@@ -67,7 +67,6 @@ Some tests are hanging and were therefore disabled on macOS:
 
 - `none/tests/pselect_alarm`
 - `none/tests/pth_term_signal`
-- `none/tests/amd64-darwin/bug341419`
 
 ### Linux (Ubuntu 20.04)
 

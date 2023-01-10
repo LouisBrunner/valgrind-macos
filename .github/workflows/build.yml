@@ -43,15 +43,22 @@ jobs:
         run: make check
       - name: create artifacts folder
         run: mkdir -p ${{ env.TEST_FOLDER }}/outputs
-      - name: regression tests
-        run: (make regtest | tee ${{ env.TEST_FOLDER }}/results.txt) || true
-      - name: debug output
+      - name: build tests
+        run: make check
+      - name: run regression tests
+        run: make regtest | tee raw-results.txt
+      - name: debug output (REMOVE)
+        run: cat raw-results.txt
+      - name: process results
+        if: always()
+        run: awk '/^== [0-9]+ tests, .* ==$/{flag=1;next}/^$/{flag=0}flag' < raw-results.txt > ${{ env.TEST_FOLDER }}/results.txt
+      - name: debug output (REMOVE)
         run: cat ${{ env.TEST_FOLDER }}/results.txt
-      - name: trim results
-        run: sed '1,2d;$d' ${{ env.TEST_FOLDER }}/results.txt > results-tests.txt
       - name: copy failing test outputs
-        run: cat ${{ env.TEST_FOLDER }}/results.txt | sed 1,2d | cut -f 1 -d' ' | xargs -L1 -I % sh -c 'cp %.*.diff* ${{ env.TEST_FOLDER }}/outputs/'
+        if: always()
+        run: cat ${{ env.TEST_FOLDER }}/results.txt | cut -f 1 -d' ' | xargs -L1 -I % sh -c 'cp %.*.diff* ${{ env.TEST_FOLDER }}/outputs/'
       - name: calculate difference between tests
+        if: always()
         uses: LouisBrunner/diff-action@v0.2.0
         with:
           old: .github/${{ matrix.os }}-expected.txt

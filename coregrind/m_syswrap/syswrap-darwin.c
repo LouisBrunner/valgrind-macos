@@ -8856,7 +8856,7 @@ POST(mach_msg)
    }
 }
 
-#if DARWIN_VERS >= DARWIN_13
+#if DARWIN_VERS >= DARWIN_13_00
 
 #define MACH64_MSG_VECTOR 0x0000000100000000ull
 
@@ -11796,7 +11796,7 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
 // _____(__NR_task_name_for_pid),
    MACXY(__NR_task_for_pid, task_for_pid),
    MACXY(__NR_pid_for_task, pid_for_task),
-#if DARWIN_VERS >= DARWIN_13
+#if DARWIN_VERS >= DARWIN_13_00
    MACXY(__NR_mach_msg2_trap, mach_msg2),
 #else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(47)),

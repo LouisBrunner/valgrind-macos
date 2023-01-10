@@ -45,7 +45,7 @@
 #include <mach/port.h>
 #include <mach/message.h>
 
-#if DARWIN_VERS >= DARWIN_13
+#if DARWIN_VERS >= DARWIN_13_00
 // All of those should be defined in mach/message.h, but they are not.
 typedef uint64_t mach_msg_option64_t;
 #define MACH64_SEND_MSG MACH_SEND_MSG
@@ -201,7 +201,7 @@ mach_msg(msg, option, send_size, rcv_size, rcv_name, timeout, notify)
     mach_port_t notify;
 {
 
-#if DARWIN_VERS >= DARWIN_13
+#if DARWIN_VERS >= DARWIN_13_00
     mach_msg_base_t *base;
     if (option & MACH64_MSG_VECTOR) {
       base = (mach_msg_base_t *)((mach_msg_vector_t *)msg)->msgv_data;

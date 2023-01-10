@@ -192,7 +192,7 @@
 #define __NR_task_for_pid                     VG_DARWIN_SYSCALL_CONSTRUCT_MACH(45)
 #define __NR_pid_for_task                     VG_DARWIN_SYSCALL_CONSTRUCT_MACH(46)
 
-#if DARWIN_VERS >= DARWIN_13
+#if DARWIN_VERS >= DARWIN_13_00
 #define __NR_mach_msg2_trap                   VG_DARWIN_SYSCALL_CONSTRUCT_MACH(47)
 #endif
 

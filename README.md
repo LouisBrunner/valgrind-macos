@@ -63,7 +63,7 @@ brew upgrade --fetch-HEAD LouisBrunner/valgrind/valgrind
 
 ## Tests
 
-Some tests are blocking and were therefore disabled on macOS:
+Some tests are hanging and were therefore disabled on macOS:
 
 - `none/tests/pselect_alarm`
 - `none/tests/pth_term_signal`

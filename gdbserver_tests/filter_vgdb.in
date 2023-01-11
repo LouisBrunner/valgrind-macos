@@ -32,6 +32,11 @@ $SED -e '/_exit.c: Inappropriate ioctl for device\./d' |
 
 # filter python loading denied error message (see also filter_gdb.in)
 $SED -e '/warning: File .*valgrind-monitor.py.*declined.*/d' |
+# and remove loading error messages when python scripts haven't
+# been installed yet (running against vg-in-place)
+$SED -e '/warning: Missing auto-load script.*/d' |
+$SED -e '/of file .*vgpreload.*so.*/d' |
+$SED -e '/Use.*info auto-load python-scripts.*/d' |
 
 # and filter out any remaining empty lines
 $SED -e '/^$/d'

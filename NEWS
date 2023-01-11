@@ -76,6 +76,7 @@ than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
 170510  Don't warn about ioctl of size 0 without direction hint
+241072  List tools in --help output
 327548  false positive while destroying mutex
 351857  confusing error message about valid command line option
 392331  Spurious lock not held error from inside pthread_cond_timedwait

@@ -2,6 +2,9 @@ usage: valgrind [options] prog-and-args
 
   tool-selection option, with default in [ ]:
     --tool=<name>             use the Valgrind tool named <name> [memcheck]
+                              available tools are:
+                              memcheck cachegrind callgrind helgrind drd
+                              massif dhat lackey none exp-bbv
 
   basic user options for all Valgrind tools, with defaults in [ ]:
     -h --help                 show this message

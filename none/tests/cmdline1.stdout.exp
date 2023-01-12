@@ -34,6 +34,8 @@ usage: valgrind [options] prog-and-args
     --log-fd=<number>         log messages to file descriptor [2=stderr]
     --log-file=<file>         log messages to <file>
     --log-socket=ipaddr:port  log messages to socket ipaddr:port
+    --enable-debuginfod=no|yes query debuginfod servers for missing
+                              debuginfo [yes]
 
   user options for Valgrind tools that report errors:
     --xml=yes                 emit error output in XML (some tools only)

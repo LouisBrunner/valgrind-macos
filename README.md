@@ -4,24 +4,28 @@ This repository contains a version of Valgrind including a few patches to improv
 
 ## Status
 
-Valgrind now builds and works on every macOS version
+| Version                     | x86 | amd64 | arm64  | ppc    |
+| --------------------------- | --- | ----- | ------ | ------ |
+| macOS 10.13 and earlier[^1] | ✅  | ✅    | -      | ❌[^4] |
+| macOS 10.14 (Mojave)        | ✅  | ✅    | -      | -      |
+| macOS 10.15 (Catalina)      | ✅  | ✅    | -      | -      |
+| macOS 11 (Big Sur)[^3]      | -   | ✅    | ❌[^2] | -      |
+| macOS 12 (Monterey)[^3]     | -   | ✅    | ❌[^2] | -      |
+| macOS 13 (Ventura)[^3]      | -   | ✅    | ❌[^2] | -      |
 
-Note that some features are still in progress:
+[^1]: Supported as part of upstream Valgrind.
+[^2]: Apple Silicon support in progress ([#56](https://github.com/LouisBrunner/valgrind-macos/issues/56))
+[^3]: macOS 11 and later doesn't track leak correctly ([#19](https://github.com/LouisBrunner/valgrind-macos/issues/19))
+[^4]: PowerPC is unsupported ([#62](https://github.com/LouisBrunner/valgrind-macos/issues/62))
 
-- crash when using wqthread (used in certain UI frameworks)
-- using threads and signals is undefined
+Note that every version from macOS 10.12 onwards currently has the following issues:
 
-It is currently tested on 10.14.6 and 10.15.4.
+- crash when using wqthread which is used in certain UI frameworks, especially Apple's, e.g. CoreFoundation ([#4](https://github.com/LouisBrunner/valgrind-macos/issues/4))
+- using threads and signals together is undefined (crashes, hanging, etc), note: a few tests were disabled because of that
+- drd thread related crash on 10.15 (probably onwards)
+- lots of `-UNHANDLED` messages on macOS 12 and earlier
 
-Checkout the [`patches`](https://github.com/LouisBrunner/valgrind-macos/commits/patches) branch for a list of patches that can be directly applied to the upstream Valgrind.
-
-### macOS 11 and later
-
-Due to changes on how macOS bundles and loads system dylibs, Valgrind is currently unable to track memory allocation correctly and thus to report memory leaks on macOS 11 and later.
-
-### Apple Silicon
-
-There is currently no easy way to get Valgrind working on arm64 due to difference on how the XNU kernel treat arm64 and amd64 binaries.
+<!-- Checkout the [`patches`](https://github.com/LouisBrunner/valgrind-macos/commits/patches) branch for a list of patches that can be directly applied to the upstream Valgrind. -->
 
 ## Usage
 
@@ -50,16 +54,6 @@ Any `brew upgrade` will now correctly rebuild the latest `LouisBrunner/valgrind`
 ```sh
 brew upgrade --fetch-HEAD LouisBrunner/valgrind/valgrind
 ```
-
-## TODO
-
-- pthread and signals blocking (re-enable tests) [patch in progess]
-- wqthread broken (see #4) [patch in progress]
-- drd thread related crash on 10.15
-- `-UNHANDLED` messages
-- Run regtest in parallel [patch in progess]
-- macOS 11 and later leak tracking [patch in progess]
-- Apple Silicon support [on hold]
 
 ## Tests
 

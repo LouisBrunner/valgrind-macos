@@ -1048,6 +1048,14 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( const UChar* expr, UWord exprszB,
                FAIL("evaluate_Dwarf3_Expr: DW_OP_stack_value "
                     "does not terminate expression");
             break;
+	 case DW_OP_entry_value:
+	 case DW_OP_GNU_entry_value:
+            /* This provides a DWARF expression where any register op
+               needs tobe evaluated as if the value that register had
+               upon entering the function.  Which is non-trivial to
+               implement.  */
+            FAIL("evaluate_Dwarf3_Expr: Unhandled DW_OP entry_value");
+            return res;
          default:
             if (!VG_(clo_xml))
                VG_(message)(Vg_DebugMsg, 

@@ -4263,6 +4263,7 @@ PRE(sys__umtx_op)
       they're always pointers.  They may not be used though. */
    switch(ARG2) {
    case VKI_UMTX_OP_LOCK:
+      // marked as COMPAT10
       PRINT( "sys__umtx_op ( %#" FMT_REGWORD "x, LOCK, %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x)", ARG1, ARG3, ARG4, ARG5);
       PRE_REG_READ5(long, "_umtx_op_lock",
                     struct umtx *, obj, int, op, unsigned long, id,
@@ -4275,6 +4276,7 @@ PRE(sys__umtx_op)
       *flags |= SfMayBlock;
       break;
    case VKI_UMTX_OP_UNLOCK:
+      // marked as COMPAT10
       PRINT( "sys__umtx_op ( %#" FMT_REGWORD "x, UNLOCK, %" FMT_REGWORD "u)", ARG1, ARG3);
       PRE_REG_READ3(long, "_umtx_op_unlock",
                     struct umtx *, obj, int, op, unsigned long, id);
@@ -4295,8 +4297,6 @@ PRE(sys__umtx_op)
 
       if (ARG5) {
          PRE_MEM_READ( "_umtx_op_wait(timeout)", ARG5, ARG4 );
-      } else {
-         *flags |= SfKernelRestart;
       }
 
       break;
@@ -4308,17 +4308,17 @@ PRE(sys__umtx_op)
       break;
    case VKI_UMTX_OP_MUTEX_TRYLOCK:
       PRINT( "sys__umtx_op ( %#" FMT_REGWORD "x, MUTEX_TRYLOCK, %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x)", ARG1, ARG3, ARG4, ARG5);
-      PRE_REG_READ5(long, "_umtx_op_mutex_trylock",
-                    struct umutex *, obj, int, op, unsigned long, noid,
-                    size_t, timeout_size, struct vki_timespec *, timeout);
+      PRE_REG_READ2(long, "_umtx_op_mutex_trylock", struct umutex *, obj, int, op);
       PRE_MEM_READ( "_umtx_op_mutex_trylock(mutex)", ARG1, sizeof(struct vki_umutex) );
-      if (ARG5) {
-         PRE_MEM_READ( "_umtx_op_mutex_trylock(timespec)", ARG5, ARG4 );
-      }
       PRE_MEM_WRITE( "_umtx_op_mutex_trylock(mutex)", ARG1, sizeof(struct vki_umutex) );
+      /* not too sure about the restart here
+       * it's hard to test as if the mutex is locked this returns EBUSY
+       * so there is only a small window where the syscall could be interrupted */
       *flags |= SfMayBlock | SfKernelRestart;
       break;
    case VKI_UMTX_OP_MUTEX_LOCK:
+      // called by pthread_mutex_lock
+      // when the atribute UMUTEX_PRIO_PROTECT or UMUTEX_PRIO_INHERIT is set
       PRINT( "sys__umtx_op ( %#" FMT_REGWORD "x, MUTEX_LOCK, %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x)", ARG1, ARG3, ARG4, ARG5);
       PRE_REG_READ5(long, "_umtx_op_mutex_lock",
                     struct umutex *, obj, int, op, unsigned long, noid,
@@ -4326,9 +4326,11 @@ PRE(sys__umtx_op)
       PRE_MEM_READ( "_umtx_op_mutex_lock(mutex)", ARG1, sizeof(struct vki_umutex) );
       if (ARG5) {
          PRE_MEM_READ( "_umtx_op_mutex_lock(timespec)", ARG5, ARG4 );
+      } else {
+         *flags |= SfKernelRestart;
       }
       PRE_MEM_WRITE( "_umtx_op_mutex_lock(mutex)", ARG1, sizeof(struct vki_umutex) );
-      *flags |= SfMayBlock | SfKernelRestart;
+      *flags |= SfMayBlock;
       break;
    case VKI_UMTX_OP_MUTEX_UNLOCK:
       PRINT( "sys__umtx_op ( %#" FMT_REGWORD "x, MUTEX_UNLOCK)", ARG1);
@@ -4430,6 +4432,8 @@ PRE(sys__umtx_op)
       PRE_MEM_READ( "_umtx_op_wake_private(mtx)", ARG1, sizeof(struct vki_umtx) );
       break;
    case VKI_UMTX_OP_MUTEX_WAIT:
+      // pthread_mutex_lock without prio flags
+      // does not need to be restarted
       PRINT( "sys__umtx_op ( %#" FMT_REGWORD "x, MUTEX_WAIT, %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x)", ARG1, ARG3, ARG4, ARG5);
       PRE_REG_READ2(long, "_umtx_op_mutex_wait",
                     struct umutex *, obj, int, op);
@@ -4438,6 +4442,7 @@ PRE(sys__umtx_op)
       *flags |= SfMayBlock;
       break;
    case VKI_UMTX_OP_MUTEX_WAKE:
+      // marked as deprecated
       PRINT( "sys__umtx_op ( %#" FMT_REGWORD "x, MUTEX_WAKE, %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x)", ARG1, ARG3, ARG4, ARG5);
       PRE_REG_READ2(long, "_umtx_op_mutex_wake",
                     struct umutex *, obj, int, op);
@@ -4445,6 +4450,7 @@ PRE(sys__umtx_op)
       PRE_MEM_WRITE( "_umtx_op_mutex_wake(mutex)", ARG1, sizeof(struct vki_umutex) );
       break;
    case VKI_UMTX_OP_SEM_WAIT:
+      // marked as deprecated
       PRINT( "sys__umtx_op ( %#" FMT_REGWORD "x, SEM_WAIT, %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x)", ARG1, ARG3, ARG4, ARG5);
       PRE_REG_READ5(long, "_umtx_op_sem_wait",
                     struct usem *, obj, int, op, unsigned long, id,
@@ -4457,6 +4463,7 @@ PRE(sys__umtx_op)
       *flags |= SfMayBlock;
       break;
    case VKI_UMTX_OP_SEM_WAKE:
+      // marked as deprecated
       PRINT( "sys__umtx_op ( %#" FMT_REGWORD "x, SEM_WAKE, %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x)", ARG1, ARG3, ARG4, ARG5);
       PRE_REG_READ2(long, "_umtx_op_sem_wake",
                     struct umutex *, obj, int, op);

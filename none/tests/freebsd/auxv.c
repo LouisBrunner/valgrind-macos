@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <elf.h>
+#include <sys/exec.h>
 #include "../../../config.h"
 
 /* /usr/include/x86/elf.h AT_* defs */
@@ -71,5 +72,38 @@ int main(int argc, char* argv[], char* envp[])
     {
         aux_str = &aux_map[auxp->a_type];
         fprintf(stderr, "val: %s int: %02d ptr: 0x%lx\n", aux_str->str_val, aux_str->type, auxp->a_un.a_val);
+        switch ( aux_str->type)
+        {
+        case AT_EXECPATH:
+            if (auxp->a_un.a_val != 0)
+            {
+                fprintf(stderr, "EXECPATH: %s\n", (char*)auxp->a_un.a_val);
+            }
+            break;
+        case AT_ARGV:
+            if (auxp->a_un.a_val != 0)
+            {
+                fprintf(stderr, "ARGV: %s\n", *(char**)auxp->a_un.a_val);
+            }
+            break;
+        case AT_ENVV:
+            if (auxp->a_un.a_val != 0)
+            {
+                /* can't leave this in regtest don't know what it
+                 * will be */
+                /*fprintf(stderr, "ENVV: %s\n", *(char**)auxp->a_un.a_val);*/
+            }
+            break;
+        case AT_PS_STRINGS:
+            if (auxp->a_un.a_val != 0)
+            {
+                struct ps_strings *ppss = (struct ps_strings*)auxp->a_un.a_val;
+                fprintf(stderr, "PS_STRINGS ARGV: %s\n", *ppss->ps_argvstr);
+                /* can't leave this in regtest don't know what it
+                 * will be */
+                /*fprintf(stderr, "PS_STRINGS ENVV: %s\n", *ppss->ps_envstr);*/
+            }
+            break;
+        }
     }
 }

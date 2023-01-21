@@ -1761,7 +1761,6 @@ const HChar *VG_(dirname)(const HChar *path)
 }
 
 #if defined(VGO_freebsd)
-#if (FREEBSD_VERS >= FREEBSD_13_0)
 /*
  * I did look at nicking this from FreeBSD, it's fairly easy to port
  * but I was put off by the copyright and 3-clause licence
@@ -1777,9 +1776,38 @@ Bool VG_(realpath)(const HChar *path, HChar *resolved)
 {
    vg_assert(path);
    vg_assert(resolved);
+#if (FREEBSD_VERS >= FREEBSD_13_0)
    return !sr_isError(VG_(do_syscall5)(__NR___realpathat, VKI_AT_FDCWD, (RegWord)path, (RegWord)resolved, VKI_PATH_MAX, 0));
-}
+#else
+   // poor man's realpath
+   const HChar *resolved_name;
+   HChar tmp[VKI_PATH_MAX];
+
+   struct vg_stat statbuf;
+   SysRes res = VG_(lstat)(exe_name, &statbuf);
+
+   if (sr_isError(res)) {
+      return False;
+   } else if (VKI_S_ISLNK(statbuf.mode)) {
+      SizeT link_len = VG_(readlink)(exe_name, tmp, VKI_PATH_MAX);
+      tmp[link_len] = '\0';
+      resolved_name = tmp;
+   } else {
+      // not a link
+      resolved_name = exe_name;
+   }
+
+   if (resolved_name[0] != '/') {
+      // relative path
+      if (resolved_name[0] == '.' && resolved_name[1] == '/') {
+         resolved_name += 2;
+      }
+      VG_(snprintf)(out, *len, "%s/%s", VG_(get_startup_wd)(), resolved_name);
+   } else {
+      VG_(snprintf)(out, *len, "%s", resolved_name);
+   }
 #endif
+}
 #endif
 
 

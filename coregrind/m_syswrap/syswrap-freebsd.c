@@ -1944,39 +1944,12 @@ static Bool sysctl_kern_proc_pathname(HChar *out, SizeT *len)
    // is this stashed somewhere?
    const HChar *exe_name = VG_(find_executable)(VG_(args_the_exename));
 
-#if (FREEBSD_VERS >= FREEBSD_13_0)
-   return VG_(realpath)(exe_name, out);
-#else
-   // poor man's realpath
-   const HChar *resolved_name;
-   HChar tmp[VKI_PATH_MAX];
-
-   struct vg_stat statbuf;
-   SysRes res = VG_(lstat)(exe_name, &statbuf);
-
-   if (sr_isError(res)) {
+   if (!VG_(realpath)(exe_name, out)) {
       return False;
-   } else if (VKI_S_ISLNK(statbuf.mode)) {
-      SizeT link_len = VG_(readlink)(exe_name, tmp, VKI_PATH_MAX);
-      tmp[link_len] = '\0';
-      resolved_name = tmp;
-   } else {
-      // not a link
-      resolved_name = exe_name;
    }
 
-   if (resolved_name[0] != '/') {
-      // relative path
-      if (resolved_name[0] == '.' && resolved_name[1] == '/') {
-         resolved_name += 2;
-      }
-      VG_(snprintf)(out, *len, "%s/%s", VG_(get_startup_wd)(), resolved_name);
-   } else {
-      VG_(snprintf)(out, *len, "%s", resolved_name);
-   }
    *len = VG_(strlen)(out)+1;
    return True;
-#endif
 }
 
 // SYS___sysctl   202

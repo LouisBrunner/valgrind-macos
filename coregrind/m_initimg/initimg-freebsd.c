@@ -410,6 +410,10 @@ Addr setup_client_stack( void*  init_sp,
    vg_assert(VG_IS_PAGE_ALIGNED(clstack_end+1));
    vg_assert( VG_(args_for_client) );
 
+   const HChar *exe_name = VG_(find_executable)(VG_(args_the_exename));
+   HChar resolved_name[VKI_PATH_MAX];
+   VG_(realpath)(exe_name, resolved_name);
+
    /* use our own auxv as a prototype */
    orig_auxv = find_auxv(init_sp);
 
@@ -459,8 +463,7 @@ Addr setup_client_stack( void*  init_sp,
       auxsize += sizeof(*cauxv);
       switch(cauxv->a_type) {
       case VKI_AT_EXECPATH:
-         // @todo PJF this is wrong this will be the name of the execed tool
-         stringsize += VG_(strlen)(cauxv->u.a_ptr) + 1;
+         stringsize += VG_(strlen)(resolved_name) + 1;
          break;
       case VKI_AT_CANARYLEN:
          canarylen = cauxv->u.a_val;
@@ -686,8 +689,7 @@ Addr setup_client_stack( void*  init_sp,
          break;
 
       case VKI_AT_EXECPATH:
-         // @todo PJF this is wrong this will be the name of the execed tool
-         auxv->u.a_ptr = copy_str(&strtab, orig_auxv->u.a_ptr);
+         auxv->u.a_ptr = copy_str(&strtab, resolved_name);
          break;
       case VKI_AT_CANARY:
          if (canarylen >= 1) {

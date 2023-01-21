@@ -1,7 +1,8 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = filter_stderr test.sh filter_452275
+dist_noinst_SCRIPTS = filter_stderr test.sh filter_452275 filter_auxv
+
 EXTRA_DIST = \
 	auxv.vgtest \
 	auxv.stderr.exp \

@@ -1082,7 +1082,7 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
    "GUEST TRIGGERED"
 
    2.  When the guest loads any further shared libs (valgrind core and
-       tool preload shred libraries, libc, other dependencies, dlopens)
+       tool preload shared libraries, libc, other dependencies, dlopens)
        using mmap. The call will be from ML_(generic_PRE_sys_mmap) or
        a platform-specific variation.
 
@@ -1090,7 +1090,7 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
 
        In this case the NSegment could possibly be merged,
        but that is irrelevant because di_notify_mmap is being
-       called directy on the mmap result.
+       called directly on the mmap result.
 
    If allow_SkFileV is True, it will try load debug info if the
    mapping at 'a' belongs to Valgrind; whereas normally (False)
